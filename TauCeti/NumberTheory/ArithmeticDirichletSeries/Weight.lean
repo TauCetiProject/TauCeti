@@ -996,6 +996,14 @@ def toIdealArithmeticFunction (χ : UnitaryIdealWeight K) : IdealArithmeticFunct
 theorem toIdealArithmeticFunction_apply (χ : UnitaryIdealWeight K) (I : (Ideal (𝓞 K))⁰) :
     χ.toIdealArithmeticFunction I = χ.1 I := (rfl)
 
+/-- The ideal arithmetic function of a unitary weight agrees with that of its underlying
+multiplicative weight. -/
+theorem toIdealArithmeticFunction_eq_val (χ : UnitaryIdealWeight K) :
+    χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := by
+  funext I
+  rw [toIdealArithmeticFunction_apply,
+    MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
+
 /-- **Regrouping absorbs an imaginary norm twist.** For `z.re = 0`, twisting a unitary weight by
 `N(I) ^ (-z)` multiplies its `n`-th norm coefficient by `n ^ (-z)`. -/
 @[simp]

@@ -139,12 +139,6 @@ theorem hasCancellation_conj_iff {χ : UnitaryIdealWeight K} :
       Complex.norm_conj]
   simp only [HasCancellation, h]
 
-private theorem unitary_toIdealArithmeticFunction_eq_val (ψ : UnitaryIdealWeight K) :
-    ψ.toIdealArithmeticFunction = ψ.1.toIdealArithmeticFunction := by
-  funext I
-  rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
-    MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
-
 /-!
 ### Deleting finitely many Euler factors
 -/
@@ -175,8 +169,8 @@ theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellat
           idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction x -
             χ.1 𝔭.asIdeal * idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
               (x / Ideal.absNorm 𝔭.asIdeal) := by
-        rw [unitary_toIdealArithmeticFunction_eq_val,
-          unitary_toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrict,
+        rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+          UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrict,
           UnitaryIdealWeight.val_restrict]
         exact χ.1.idealSummatory_restrict_insert hT h𝔭 x
       have hsecond : ‖idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
@@ -266,10 +260,10 @@ theorem continuedLFunctionOfWeight_restrict_of_one_lt_re (χ : UnitaryIdealWeigh
       continuedLFunctionOfWeight χ s *
         ∏ 𝔭 ∈ S, (1 - χ.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
   rw [continuedLFunctionOfWeight_eq_LSeries _ hs, continuedLFunctionOfWeight_eq_LSeries _ hs,
-    unitary_toIdealArithmeticFunction_eq_val, unitary_toIdealArithmeticFunction_eq_val,
-    UnitaryIdealWeight.val_restrict]
+    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrict]
   exact χ.1.LSeries_restrict S (by
-    rw [← unitary_toIdealArithmeticFunction_eq_val]
+    rw [← UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
     exact summable_idealTerm_of_unitary_of_one_lt_re χ hs)
 
 /-- **Deleting finitely many Euler factors, across the line `Re s = 1`.** Under cancellation both
@@ -349,7 +343,7 @@ theorem not_hasCancellation_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u 
     filter_upwards [self_mem_nhdsWithin] with t (ht : (1 : ℝ) < t)
     have hre : (1 : ℝ) < ((t : ℂ) + (u : ℂ) * Complex.I).re := by simpa using ht
     rw [continuedLFunctionOfWeight_eq_LSeries χ hre,
-      unitary_toIdealArithmeticFunction_eq_val]
+      UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
   have hne : (NumberField.dedekindZeta_residue K : ℂ) *
       ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ)) ≠ 0 :=
     mul_ne_zero (by exact_mod_cast (NumberField.dedekindZeta_residue_pos K).ne')
