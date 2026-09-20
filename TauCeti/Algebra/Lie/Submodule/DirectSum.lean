@@ -175,9 +175,10 @@ theorem IsInternal.lieModuleProjection_toLinearMap {N : ι → LieSubmodule R L 
         (TauCeti.internalProjection h.submodule_iSupIndep h.submodule_iSup_eq_top i) := by
   apply LinearMap.ext
   intro m
-  rw [show ⇑(h.lieModuleProjection i : M →ₗ[R] M) = h.lieModuleProjection i from
-      LieModuleHom.coe_toLinearMap _, h.lieModuleProjection_apply, LinearMap.comp_apply]
-  exact h.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection i m
+  rw [LieModuleHom.coe_toLinearMap (h.lieModuleProjection i),
+    IsInternal.lieModuleProjection_apply h i m, LinearMap.comp_apply]
+  exact _root_.DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
+    h i m
 
 /-- Over a finite index type the equivariant projections onto the summands sum to the identity. -/
 theorem IsInternal.sum_lieModuleProjection_apply [Fintype ι]
