@@ -426,24 +426,8 @@ theorem tangentCoordChange_toMatrix {ι : Type*} [Fintype ι] [DecidableEq ι] (
   rw [← coordChangeL_toMatrix b hα hβ]
   congr 1
   ext v
-  change tangentCoordChange I α β x v =
-    (trivializationAt E (TangentSpace I) α).coordChangeL 𝕜
-      (trivializationAt E (TangentSpace I) β) x v
-  rw [Bundle.Trivialization.coe_coordChangeL
-    (trivializationAt E (TangentSpace I) α)
-    (trivializationAt E (TangentSpace I) β) ⟨hα, hβ⟩]
-  simp only [LinearEquiv.trans_apply, Bundle.Trivialization.linearEquivAt_apply,
-    Bundle.Trivialization.linearEquivAt_symm_apply]
-  symm
-  have hread := continuousLinearMapAt_symmL_coordChange
-    (I := I) (x := α) (x₀ := β) (y := x)
-    (by simpa only [TangentBundle.trivializationAt_baseSet] using hα)
-    (by simpa only [TangentBundle.trivializationAt_baseSet] using hβ) v
-  rw [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem
-      (R := 𝕜) (e := trivializationAt E (TangentSpace I) β) hβ,
-    Bundle.Trivialization.symmL_apply
-      (R := 𝕜) (e := trivializationAt E (TangentSpace I) α) hα] at hread
-  exact hread
+  exact (VectorBundleCore.trivializationAt_coordChange_eq
+    (Z := tangentBundleCore I M) ⟨hα, hβ⟩ v).symm
 
 end TangentReading
 
