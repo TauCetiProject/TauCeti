@@ -41,7 +41,8 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable (R : Type u) [CommRing R]
 variable (L : Type v) [LieRing L] [LieAlgebra R L]
 
-local instance : Module Rᵐᵒᵖ L :=
+/-- The right scalar action on `L` induced by commutativity of `R`. -/
+local instance moduleMulOpposite : Module Rᵐᵒᵖ L :=
   Module.compHom _ ((RingHom.id R).fromOpposite mul_comm)
 
 local instance : IsCentralScalar R L := ⟨fun _ _ ↦ rfl⟩
