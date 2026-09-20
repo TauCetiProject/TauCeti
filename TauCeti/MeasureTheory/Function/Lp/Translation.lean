@@ -40,6 +40,8 @@ exchanging the order of integration.
 * `MeasureTheory.Measure.continuous_translateLp`: strong continuity of translation for `p < ∞`.
 * `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
   increment with its pointwise `eLpNorm`.
+* `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
+  domain whose translate stays in the original domain.
 * `TauCeti.tendsto_eLpNorm_comp_add_sub_of_memLp`: translation increments of an `Lᵖ` function
   tend to zero.
 * `TauCeti.lintegral_enorm_comp_add_sub_rpow_le`: the translation estimate in `∫⁻` form.
@@ -62,7 +64,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
+open MeasureTheory Set TopologicalSpace
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
@@ -152,6 +154,26 @@ theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
 end LpTranslation
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+  [BorelSpace E] [NormedAddCommGroup F] {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal}
+
+/-- An `Lᵖ` function remains `Lᵖ` after translation on any set whose translate lies in the
+original domain. This is the restricted-domain counterpart of precomposition by
+`MeasureTheory.Measure.translateLp`. -/
+theorem MemLp.comp_add_right_restrict_of_mapsTo {Omega V : Opens E} {h : E} {f : E → F}
+    (hf : MemLp f p (mu.restrict Omega)) (hVO : MapsTo (· + h) V Omega) :
+    MemLp (fun x => f (x + h)) p (mu.restrict V) := by
+  have hpre : (V : Set E) ⊆ (· + h) ⁻¹' (Omega : Set E) := hVO
+  have hcomp : MemLp (f ∘ (· + h)) p (mu.restrict ((· + h) ⁻¹' (Omega : Set E))) :=
+    hf.comp_measurePreserving ((measurePreserving_add_right mu h).restrict_preimage_emb
+      (Homeomorph.addRight h).measurableEmbedding Omega)
+  simpa only [Function.comp_def] using
+    hcomp.mono_measure (Measure.restrict_mono_set mu hpre)
+
+end MeasureTheory
 
 namespace TauCeti
 
