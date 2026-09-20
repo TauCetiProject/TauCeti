@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
 public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
@@ -20,12 +21,13 @@ completion map `completionAlgHom v w`. Together these give the semi-local map
 semilocalHom v : K_v ⊗[K] L →ₐ[K_v] ∏_{w ∣ v} L_w,    a ⊗ x ↦ (a · x)_w .
 ```
 
-This file constructs that map, proves that it is surjective, and derives the degree bound
-`∑_{w ∣ v} [L_w : K_v] ≤ [L : K]`.
-
-The map is in fact an isomorphism, and equality holds in the degree inequality (Neukirch II
-(8.3)). Injectivity is the reverse inequality `∑_{w ∣ v} [L_w : K_v] ≥ [L : K]`, which is not
-proved here.
+This file constructs that map and shows that it is an isomorphism `semilocalEquiv v`: the
+semi-local decomposition of Neukirch II (8.3). Surjectivity is weak approximation above `v`
+together with the closedness of a finite-dimensional subspace. Injectivity is then a count of
+degrees, because the source has degree `[L : K]` over `K_v` and the target has degree
+`∑_{w ∣ v} [L_w : K_v]`, which is `∑_{w ∣ v} e(w ∣ v) · f(w ∣ v) = [L : K]` by the fundamental
+identity. The counterpart at the infinite places is Mathlib's
+`NumberField.InfinitePlace.sum_inertiaDeg_eq_finrank`.
 
 The places above `v` are indexed by the subtype
 `{w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}`, which is finite
@@ -37,16 +39,19 @@ The places above `v` are indexed by the subtype
 
 * `TauCeti.semilocalHom`: the semi-local map
   `K_v ⊗[K] L →ₐ[K_v] ∏_{w ∣ v} L_w`.
+* `TauCeti.semilocalEquiv`: that map, as an isomorphism of `K_v`-algebras.
 
 ## Main results
 
-* `TauCeti.semilocalHom_tmul`: its value on pure tensors,
-  `semilocalHom v (a ⊗ₜ x) w = algebraMap K_v L_w a * algebraMap L L_w x`.
+* `TauCeti.semilocalHom_tmul` and `TauCeti.semilocalEquiv_tmul`: the value on pure tensors,
+  `semilocalEquiv v (a ⊗ₜ x) w = algebraMap K_v L_w a * algebraMap L L_w x`, which determines
+  the map.
 * `TauCeti.denseRange_algebraMap_pi_liesOver`: `L` is dense in
   `∏_{w ∣ v} L_w`.
-* `TauCeti.semilocalHom_surjective`: the semi-local map is surjective.
-* `TauCeti.sum_finrank_adicCompletion_le_finrank`:
-  `∑_{w ∣ v} [L_w : K_v] ≤ [L : K]`.
+* `TauCeti.semilocalHom_surjective` and `TauCeti.semilocalHom_injective`: the semi-local map is
+  surjective and injective.
+* `TauCeti.sum_finrank_adicCompletion_eq_finrank`:
+  `∑_{w ∣ v} [L_w : K_v] = [L : K]`.
 
 ## References
 
@@ -129,13 +134,61 @@ theorem semilocalHom_surjective : Function.Surjective (semilocalHom L v) := by
     (denseRange_algebraMap_pi_liesOver L v y)
 
 attribute [local instance] Fintype.ofFinite in
-/-- The local degrees above `v` add up to at most the global degree:
-`∑_{w ∣ v} [L_w : K_v] ≤ [L : K]`. -/
-theorem sum_finrank_adicCompletion_le_finrank :
+/-- **The local degrees above `v` add up to the global degree**:
+`∑_{w ∣ v} [L_w : K_v] = [L : K]`. Each local degree is `e(w ∣ v) · f(w ∣ v)`, and the sum of
+those products over the primes above `v` is the global degree. -/
+theorem sum_finrank_adicCompletion_eq_finrank :
     ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
-        finrank (v.adicCompletion K) (w.1.adicCompletion L) ≤ finrank K L := by
-  have h := (semilocalHom L v).toLinearMap.finrank_le_finrank_of_surjective
-    (semilocalHom_surjective L v)
-  rwa [finrank_pi_fintype, finrank_baseChange] at h
+        finrank (v.adicCompletion K) (w.1.adicCompletion L) = finrank K L := by
+  have _ : Finite (𝒪 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  let _ : Fintype (v.asIdeal.primesOver (𝒪 L)) :=
+    Fintype.ofEquiv _ (liesOverEquivPrimesOver (𝒪 L) v)
+  calc ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
+          finrank (v.adicCompletion K) (w.1.adicCompletion L)
+      = ∑ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
+          w.1.asIdeal.ramificationIdx (𝒪 K) * w.1.asIdeal.inertiaDeg (𝒪 K) :=
+        Finset.sum_congr rfl fun w _ ↦
+          have _ : Finite (𝒪 L ⧸ w.1.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.1.ne_bot
+          finrank_adicCompletion v w.1
+    _ = ∑ Q : v.asIdeal.primesOver (𝒪 L),
+          (Q : Ideal (𝒪 L)).ramificationIdx (𝒪 K) * (Q : Ideal (𝒪 L)).inertiaDeg (𝒪 K) :=
+        Fintype.sum_equiv (liesOverEquivPrimesOver (𝒪 L) v) _ _ fun w ↦ by
+          rw [liesOverEquivPrimesOver_apply]
+    _ = finrank (𝒪 K) (𝒪 L) := Ideal.sum_ramification_inertia_eq_finrank v.asIdeal (𝒪 L)
+    _ = finrank K L := (IsFractionRing.finrank_eq (𝒪 K) K (𝒪 L) L).symm
+
+attribute [local instance] Fintype.ofFinite in
+/-- **The semi-local map is injective.** Its source and target have the same degree over `K_v`,
+by `sum_finrank_adicCompletion_eq_finrank`, and it is surjective. -/
+theorem semilocalHom_injective : Function.Injective (semilocalHom L v) := by
+  have hdim : finrank (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) =
+      finrank (v.adicCompletion K)
+        ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
+          w.1.adicCompletion L) := by
+    rw [finrank_pi_fintype, finrank_baseChange, sum_finrank_adicCompletion_eq_finrank]
+  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
+    (f := (semilocalHom L v).toLinearMap)).2 (semilocalHom_surjective L v)
+
+/-- **The semi-local decomposition** `K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`: completing `L` at the
+finitely many places above a finite place `v` of `K` decomposes the scalar extension of `L` to
+`K_v` into the product of those completions. -/
+def semilocalEquiv :
+    v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
+      ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
+        w.1.adicCompletion L) :=
+  AlgEquiv.ofBijective (semilocalHom L v) ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩
+
+@[simp]
+theorem coe_semilocalEquiv : ⇑(semilocalEquiv L v) = semilocalHom L v := (rfl)
+
+variable {L v}
+
+/-- **The semi-local decomposition on a pure tensor**, the formula that determines it. -/
+theorem semilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
+    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    semilocalEquiv L v (a ⊗ₜ x) w =
+      algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
+        algebraMap L (w.1.adicCompletion L) x := by
+  simp
 
 end TauCeti
