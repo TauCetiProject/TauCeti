@@ -29,10 +29,11 @@ and that count is
   the contributing cosets are the fixed points of the `p`-element `s⁻¹x` acting on the cosets of
   `H` in `C_G(s)`.
 
-So the induced class function takes values prime to `p` on the whole `p`-section of `s`, and
-vanishes off the conjugates of that section.  This is the local computation behind Brauer's
-induction theorem, which writes every character as an integral combination of characters induced
-from elementary subgroups: one such class function is attached to each `p`-regular class, and their
+So `TauCeti.pSectionCosetCard` is prime to `p` on the whole `p`-section of `s`, and the induced
+class function's value there is the cast of this count into the coefficient semiring.  It vanishes
+off the conjugates of that section.  This is the local computation behind Brauer's induction
+theorem, which writes every character as an integral combination of characters induced from
+elementary subgroups: one such class function is attached to each `p`-regular class, and their
 values modulo `p` are what an integral combination is assembled from.
 
 ## Main definitions
