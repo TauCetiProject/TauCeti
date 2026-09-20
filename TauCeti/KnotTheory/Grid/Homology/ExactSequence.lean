@@ -115,7 +115,7 @@ theorem X_smul_restrictScalars_gridChainHat_eq_zero
 
 /-- The blocked variable annihilates the specialization map. -/
 @[simp]
-theorem X_smul_simplyBlockedSpecializationHom :
+theorem X_smul_simplyBlockedSpecializationHom_eq_zero :
     (MvPolynomial.X i : MvPolynomial (Fin n) R) • simplyBlockedSpecializationHom R i = 0 :=
   ModuleCat.hom_ext (LinearMap.ext fun c => by
     rw [ModuleCat.hom_smul, LinearMap.smul_apply]
@@ -201,7 +201,7 @@ noncomputable def simplyBlockedShortComplex :
       refine HomologicalComplex.hom_ext _ _ fun j => ?_
       rw [HomologicalComplex.comp_f, HomologicalComplex.smul_f_apply, HomologicalComplex.id_f,
         Linear.smul_comp, Category.id_comp, simplyBlockedSpecializationChainHom_f,
-        ← Linear.comp_smul, ← Linear.smul_comp, X_smul_simplyBlockedSpecializationHom,
+        ← Linear.comp_smul, ← Linear.smul_comp, X_smul_simplyBlockedSpecializationHom_eq_zero,
         Limits.zero_comp, Limits.comp_zero, HomologicalComplex.zero_f])
 
 /-- The left-hand complex of the specialization sequence is `GC⁻(G)`. -/
@@ -249,7 +249,7 @@ private noncomputable def simplyBlockedShortComplexModule :
   ShortComplex.mk ((MvPolynomial.X i : MvPolynomial (Fin n) R) •
       𝟙 (ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n)))
     (simplyBlockedSpecializationHom R i) (by
-      rw [Linear.smul_comp, Category.id_comp, X_smul_simplyBlockedSpecializationHom])
+      rw [Linear.smul_comp, Category.id_comp, X_smul_simplyBlockedSpecializationHom_eq_zero])
 
 omit [CharP R 2] in
 private theorem simplyBlockedShortComplexModule_shortExact :
