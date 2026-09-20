@@ -35,6 +35,8 @@ spreads this to every positive-definite scale.
 
 * `TauCeti.map_symmetricCongruence_nonsingularWishartMeasure` — congruence by an invertible
   matrix carries the law of scale `S` to the law of scale `C * S * Cᵀ`;
+* `TauCeti.map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_of_det_ne_zero` — the same
+  statement for the unbundled congruence map of a matrix of nonzero determinant;
 * `TauCeti.nonsingularWishartMeasure_eq_map_sqrt` — a nonsingular Wishart law of positive-definite
   scale is the standard one transported by the congruence with the square root of that scale;
 * `TauCeti.isProbabilityMeasure_nonsingularWishartMeasure` — the law is a probability measure at
@@ -169,6 +171,24 @@ theorem map_symmetricCongruence_nonsingularWishartMeasure (n : ℝ)
     rw [nonsingularWishartMeasure_of_not_posDef n hS, Measure.map_zero,
       nonsingularWishartMeasure_of_not_posDef n hT]
 
+/-- **Congruence by a matrix of nonzero determinant carries the nonsingular Wishart law of scale
+`S` to the one of scale `C * S * Cᵀ`.** This is
+`TauCeti.map_symmetricCongruence_nonsingularWishartMeasure` for the unbundled congruence map
+`Matrix.symmetricCongruenceLinearMap`, which is the form that composes with the congruences by
+rectangular matrices. -/
+theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_of_det_ne_zero (n : ℝ)
+    (S : Matrix (Fin p) (Fin p) ℝ) {C : Matrix (Fin p) (Fin p) ℝ} (hC : C.det ≠ 0) :
+    (nonsingularWishartMeasure n S).map (Matrix.symmetricCongruenceLinearMap C) =
+      nonsingularWishartMeasure n (C * S * Cᵀ) := by
+  set G := Matrix.GeneralLinearGroup.mkOfDetNeZero C hC
+  have hcoe : (G : Matrix (Fin p) (Fin p) ℝ) = C := rfl
+  have hfun : ⇑(Matrix.GeneralLinearGroup.symmetricCongruence G) =
+      ⇑(Matrix.symmetricCongruenceLinearMap C) :=
+    funext fun A => Subtype.ext (by
+      rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply,
+        Matrix.coe_symmetricCongruenceLinearMap_apply, hcoe])
+  rw [← hfun, map_symmetricCongruence_nonsingularWishartMeasure n S G, hcoe]
+
 /-! ### The standard scale -/
 
 /-- At the scale `2⁻¹ • 1` the exponential weight of the Wishart density is `exp (-trace A)` and
@@ -242,23 +262,16 @@ private theorem nonsingularWishartMeasure_eq_map_sqrt_smul_one (n : ℝ) (hS : S
     have h := (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg (c⁻¹ • S))).1.eq
     rwa [Matrix.conjTranspose_eq_transpose_of_trivial] at h
   have hCu : IsUnit (CFC.sqrt (c⁻¹ • S)) := hT.isStrictlyPositive.isUnit_cfcSqrt _
-  have hcoe : ((hCu.unit : Matrix.GeneralLinearGroup (Fin p) ℝ) :
-      Matrix (Fin p) (Fin p) ℝ) = CFC.sqrt (c⁻¹ • S) := hCu.unit_spec
-  have hscale : ((hCu.unit : Matrix.GeneralLinearGroup (Fin p) ℝ) :
-        Matrix (Fin p) (Fin p) ℝ) * (c • 1) *
-      ((hCu.unit : Matrix.GeneralLinearGroup (Fin p) ℝ) : Matrix (Fin p) (Fin p) ℝ)ᵀ = S := by
-    rw [hcoe, hherm, Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, hsq, smul_smul,
+  have hdet : (CFC.sqrt (c⁻¹ • S)).det ≠ 0 :=
+    isUnit_iff_ne_zero.1 ((Matrix.isUnit_iff_isUnit_det _).1 hCu)
+  have hscale : CFC.sqrt (c⁻¹ • S) * (c • (1 : Matrix (Fin p) (Fin p) ℝ)) *
+      (CFC.sqrt (c⁻¹ • S))ᵀ = S := by
+    rw [hherm, Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, hsq, smul_smul,
       mul_inv_cancel₀ hc.ne', one_smul]
-  have hmap := map_symmetricCongruence_nonsingularWishartMeasure n (c • 1)
-    (hCu.unit : Matrix.GeneralLinearGroup (Fin p) ℝ)
+  have hmap := map_symmetricCongruenceLinearMap_nonsingularWishartMeasure_of_det_ne_zero n
+    (c • (1 : Matrix (Fin p) (Fin p) ℝ)) hdet
   rw [hscale] at hmap
-  have hfun : ⇑(Matrix.GeneralLinearGroup.symmetricCongruence
-        (hCu.unit : Matrix.GeneralLinearGroup (Fin p) ℝ)) =
-      ⇑(Matrix.symmetricCongruenceLinearMap (CFC.sqrt (c⁻¹ • S))) :=
-    funext fun A => Subtype.ext (by
-      rw [Matrix.GeneralLinearGroup.coe_symmetricCongruence_apply,
-        Matrix.coe_symmetricCongruenceLinearMap_apply, hcoe])
-  rw [← hmap, hfun]
+  exact hmap.symm
 
 /-- **A nonsingular Wishart law of positive-definite scale is the standard one transported by a
 congruence.** The congruence with the square root of the scale carries the law of scale `1` to the

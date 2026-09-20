@@ -116,6 +116,14 @@ theorem inf_mem (hσ : σ ∈ Φ.cones) (hτ : τ ∈ Φ.cones) :
     σ ⊓ τ ∈ Φ.cones :=
   Φ.mem_of_isFaceOf hσ (Φ.inf_isFaceOf_left hσ hτ)
 
+/-- A fan has finitely many cones. -/
+instance : Finite Φ.cones := Φ.finite_cones.to_subtype
+
+/-- An inclusion of cones of a fan is a face inclusion: if `τ ≤ σ`, then `τ = τ ⊓ σ` is a face
+of `σ`. -/
+theorem isFaceOf_of_le (hσ : σ ∈ Φ.cones) (hτ : τ ∈ Φ.cones) (h : τ ≤ σ) : τ.IsFaceOf σ :=
+  inf_eq_left.2 h ▸ Φ.inf_isFaceOf_right hτ hσ
+
 /-- A nonempty fan contains the zero cone. Its affine chart is the dense torus, which is therefore
 an open subset of every chart of the fan. -/
 theorem bot_mem (hσ : σ ∈ Φ.cones) : (⊥ : PointedCone ℝ V) ∈ Φ.cones :=

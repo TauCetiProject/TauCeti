@@ -17,10 +17,8 @@ exact sequence of chain complexes `0 ⟶ C(X) ⟶ C(Y) ⟶ C(Y, X) ⟶ 0` and th
 of these short exact sequences, and deduces that the connecting morphism is natural, so that it
 forms a natural transformation `SSetPair.homologyδNatTrans`.
 
-This file records that the maps from ambient to relative simplicial homology of a pair of
-simplicial sets are natural in the pair: the ambient-to-relative homology maps commute with
-morphisms of simplicial-set pairs.  This is the homological form of the naturality that Mathlib's
-`SSetPair.chainComplexFunctorπ` expresses on chains.
+It also records that the quotient maps from ambient to relative homology are natural in the pair:
+they commute with morphisms of simplicial-set pairs.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -100,7 +98,7 @@ lemma homologyπ_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (R : D) (n : �
       P.homologyπ R n ≫ SSetPair.homologyMap f R n := by
   have h : SSet.chainComplexMap f.right R ≫ P'.chainComplexπ R =
       P.chainComplexπ R ≫ SSetPair.chainComplexMap f R :=
-    ((SSetPair.chainComplexFunctorπ D).app R).naturality f
+    ((chainComplexFunctorπ D).app R).naturality f
   rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp, h]
 
 end SSetPair

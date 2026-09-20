@@ -36,23 +36,6 @@ open scoped WithZero
 
 variable (p : ℕ) [Fact p.Prime]
 
-namespace TauCeti
-
-private theorem valueGroupWithZeroIsoInt_padic (x : ℚ_[p]) :
-    valueGroupWithZeroIsoInt ℚ_[p] (valuation ℚ_[p] x) = Padic.mulValuation x := by
-  let e := valueGroupWithZeroIsoInt ℚ_[p]
-  let v := (valuation ℚ_[p]).map e.toMonoidWithZeroHom e.toOrderIso.monotone
-  have hv : Function.Surjective v := e.surjective.comp valuation_surjective
-  have hw : Function.Surjective (Padic.mulValuation (p := p)) := by
-    intro z
-    obtain ⟨q, hq⟩ := Rat.surjective_padicValuation p z
-    exact ⟨q, by simpa [← Padic.comap_mulValuation_eq_padicValuation] using hq⟩
-  exact DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective hv hw
-    ((Valuation.isEquiv_map_self_of_strictMono e.toMonoidWithZeroHom e.strictMono).trans
-      (ValuativeRel.isEquiv _ _))) x
-
-end TauCeti
-
 namespace Padic
 
 /-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
@@ -60,28 +43,20 @@ Mathlib's p-adic valuation. -/
 @[simp]
 theorem normalizedValuationWithZero_eq_inv_mulValuation (x : ℚ_[p]) :
     TauCeti.normalizedValuationWithZero ℚ_[p] x = (Padic.mulValuation x)⁻¹ := by
-  apply inv_injective
-  simp only [inv_inv]
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  let u : ℚ_[p]ˣ := Units.mk0 x hx
-  have hu : (u : ℚ_[p]) = x := by simp [u]
-  rw [← hu, TauCeti.normalizedValuationWithZero_coe]
-  have hcoe (a : Multiplicative ℤ) : (a : ℤᵐ⁰) = WithZero.exp a.toAdd := by
-    rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
-  rw [hcoe, ← WithZero.exp_neg, Padic.mulValuation_toFun]
-  simp only [Units.ne_zero, ↓reduceIte, WithZero.exp_inj, neg_inj]
-  rw [TauCeti.toAdd_normalizedValuation_eq_neg_log,
-    TauCeti.valueGroupWithZeroIsoInt_padic]
-  simp [Padic.mulValuation]
+  refine Valuation.normalizedValuationWithZero_eq_inv_of_surjective _ (fun z ↦ ?_) x
+  obtain ⟨q, hq⟩ := Rat.surjective_padicValuation p z
+  exact ⟨q, by simpa [← Padic.comap_mulValuation_eq_padicValuation] using hq⟩
 
 /-- The additive normalized valuation on `ℚ_[p]` is Mathlib's p-adic valuation. -/
 @[simp]
 theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
     (TauCeti.normalizedValuation ℚ_[p] x).toAdd = (x : ℚ_[p]).valuation := by
-  rw [TauCeti.toAdd_normalizedValuation_eq_neg_log,
-    TauCeti.valueGroupWithZeroIsoInt_padic]
-  simp [Padic.mulValuation, x.ne_zero]
+  have h := normalizedValuationWithZero_eq_inv_mulValuation p (x : ℚ_[p])
+  rw [TauCeti.normalizedValuationWithZero_coe] at h
+  have hcoe (a : Multiplicative ℤ) : (a : ℤᵐ⁰) = WithZero.exp a.toAdd := by
+    rw [WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
+  rw [hcoe, Padic.mulValuation_toFun, ite_eq_right x.ne_zero, ← WithZero.exp_neg, neg_neg] at h
+  exact WithZero.exp_injective h
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.

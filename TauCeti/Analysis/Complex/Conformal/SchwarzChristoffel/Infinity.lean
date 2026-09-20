@@ -117,7 +117,7 @@ theorem exists_norm_schwarzChristoffelIntegrand_le_of_le_norm (a e : ι → ℝ)
   calc ‖schwarzChristoffelIntegrand a e z‖ = ∏ i, dist z (a i : ℂ) ^ e i :=
         norm_schwarzChristoffelIntegrand a e z
     _ ≤ ∏ i, (2 ^ |e i| * ‖z‖ ^ e i) :=
-        Finset.prod_le_prod (fun i _ => Real.rpow_nonneg dist_nonneg _) fun i _ => key i
+        Finset.prod_le_prod₀ (fun i _ => Real.rpow_nonneg dist_nonneg _) fun i _ => key i
     _ = (2 ^ ∑ i, |e i|) * ‖z‖ ^ ∑ i, e i := by
         rw [Finset.prod_mul_distrib, ← Real.rpow_sum_of_pos h2, ← Real.rpow_sum_of_pos hz0]
 

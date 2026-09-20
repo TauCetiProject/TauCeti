@@ -153,6 +153,26 @@ theorem simplyBlockedComplex_d (i : Fin n) :
   unfold simplyBlockedComplex
   exact oneObjectHomologicalComplex_d _ _ _
 
+/-- Identify the object of the specialized complex with its explicit chain module. -/
+noncomputable def simplyBlockedChainEquiv (i : Fin n) :
+    (G.simplyBlockedComplex R i).X () ≃ₗ[MvPolynomial {c : Fin n // c ≠ i} R]
+      GridChainHat R n i :=
+  (eqToIso (G.simplyBlockedComplex_X R i ())).toLinearEquiv
+
+/-- The explicit chain identification intertwines the categorical and grid differentials. -/
+theorem simplyBlockedChainEquiv_d (i : Fin n) (c : (G.simplyBlockedComplex R i).X ()) :
+    G.simplyBlockedChainEquiv R i ((G.simplyBlockedComplex R i).d () () c) =
+      G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i c) := by
+  -- Express the linear equivalence as its categorical transport map so that composition
+  -- cancels the two opposite transports in `simplyBlockedComplex_d`.
+  change (eqToHom (G.simplyBlockedComplex_X R i ()))
+      ((G.simplyBlockedComplex R i).d () () c) =
+    G.simplyBlockedDifferential R i ((eqToHom (G.simplyBlockedComplex_X R i ())) c)
+  rw [G.simplyBlockedComplex_d]
+  simp only [ModuleCat.comp_apply]
+  rw [← ModuleCat.comp_apply, Category.assoc, eqToHom_trans]
+  simp
+
 end GridDiagram
 
 end TauCeti

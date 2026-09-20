@@ -39,6 +39,8 @@ Lie-algebra theory.
   matrix with nonnegative diagonal is the identity.
 * `Matrix.IsLowerTriangular.eq_of_mul_transpose_self_eq` — lower-triangular matrices with positive
   diagonal are determined by their product with their transpose.
+* `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
+  lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
   matrix is the corresponding power of the diagonal entry.
 * `Matrix.isUpperUnitriangular_geom_sum_of_isUpperTriangular_of_diag_eq_zero` — the geometric
@@ -217,6 +219,34 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hB hki, mul_zero]
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- **The leading principal submatrix of a lower-triangular Gram matrix is a Gram matrix.** The
+first `q` rows of a lower-triangular matrix vanish outside their first `q` columns, so the leading
+`q × q` block of `L * Lᵀ` sees only the leading `q × q` block of `L`. -/
+theorem IsLowerTriangular.submatrix_castLE_mul_transpose {p q : ℕ}
+    {L : Matrix (Fin p) (Fin p) R} (hL : L.IsLowerTriangular) (hqp : q ≤ p) :
+    (L * Lᵀ).submatrix (Fin.castLE hqp) (Fin.castLE hqp) =
+      L.submatrix (Fin.castLE hqp) (Fin.castLE hqp) *
+        (L.submatrix (Fin.castLE hqp) (Fin.castLE hqp))ᵀ := by
+  ext i j
+  simp only [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.transpose_apply]
+  have hvanish : ∀ k ∈ (Finset.univ : Finset (Fin p)),
+      k ∉ Finset.univ.image (Fin.castLE hqp) →
+      L (Fin.castLE hqp i) k * L (Fin.castLE hqp j) k = 0 := by
+    intro k _ hk
+    have hkq : q ≤ (k : ℕ) := by
+      by_contra hcon
+      exact hk (Finset.mem_image.2
+        ⟨⟨(k : ℕ), not_le.1 hcon⟩, Finset.mem_univ _, by ext; simp⟩)
+    have hlt : Fin.castLE hqp i < k := by
+      have hi : ((Fin.castLE hqp i : Fin p) : ℕ) = (i : ℕ) := rfl
+      have := i.isLt
+      simp only [Fin.lt_def, hi]
+      omega
+    have h0 : L (Fin.castLE hqp i) k = 0 := hL hlt
+    rw [h0, zero_mul]
+  rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.image (Fin.castLE hqp))) hvanish,
+    Finset.sum_image fun x _ y _ hxy => Fin.castLE_injective hqp hxy]
 
 /-- A lower-triangular matrix over an ordered field with nonnegative diagonal whose product with
 its transpose is the identity is itself the identity. -/

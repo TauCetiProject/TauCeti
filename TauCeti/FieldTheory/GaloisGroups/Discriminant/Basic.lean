@@ -49,6 +49,8 @@ nothing; this is recorded as
   the permutation of the roots that it induces.
 * `Polynomial.Monic.isSquare_discr_iff_mem_range`: `discr f` is a square in `F` exactly when
   `discrSqrt e` comes from `F`.
+* `TauCeti.discrSqrt_mem_range_iff`: the root-difference product comes from `F` exactly when the
+  Galois image is even; this does not require monicity.
 * `Polynomial.Monic.isSquare_discr_iff_range_le_alternatingGroup`: **the discriminant test**,
   valid away from characteristic `2`.
 * `Polynomial.Monic.isSquare_discr_of_char_two`: in characteristic `2` the discriminant of every
@@ -106,8 +108,7 @@ theorem _root_.AlgEquiv.map_discrSqrt (ϕ : E ≃ₐ[F] E) (e : Fin f.natDegree 
 open scoped Classical in
 /-- Away from characteristic `2`, the product of the root differences comes from the base field
 exactly when the Galois image consists of even permutations of the roots. -/
-theorem _root_.Polynomial.Monic.discrSqrt_mem_range_iff [IsGalois F E]
-    (hf : f.Monic) (hsep : f.Separable) (hchar : ringChar F ≠ 2)
+theorem discrSqrt_mem_range_iff [IsGalois F E] (hchar : ringChar F ≠ 2)
     (e : Fin f.natDegree ≃ f.rootSet E) :
     discrSqrt e ∈ Set.range (algebraMap F E) ↔
       (Gal.galActionHom f E).range ≤ alternatingGroup (f.rootSet E) := by
@@ -126,7 +127,7 @@ theorem _root_.Polynomial.Monic.discrSqrt_mem_range_iff [IsGalois F E]
     · exact h1
     -- An odd permutation would negate a nonzero element and fix it, forcing `2 = 0` in `E`.
     rw [h1] at hϕ
-    refine absurd ?_ (hf.discrSqrt_ne_zero hsep e)
+    refine absurd ?_ (discrSqrt_ne_zero e)
     have hdouble : (2 : E) * discrSqrt e = 0 := by
       simp only [Units.smul_def, Units.val_neg, Units.val_one, neg_smul, one_smul] at hϕ
       linear_combination -hϕ
@@ -147,7 +148,7 @@ theorem _root_.Polynomial.Monic.isSquare_discr_iff_range_le_alternatingGroup
     IsSquare f.discr ↔ (Gal.galActionHom f E).range ≤ alternatingGroup (f.rootSet E) := by
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  exact (hf.isSquare_discr_iff_mem_range hsep e).trans (hf.discrSqrt_mem_range_iff hsep hchar e)
+  exact (hf.isSquare_discr_iff_mem_range hsep e).trans (discrSqrt_mem_range_iff hchar e)
 
 /-- In characteristic `2` the discriminant of every monic polynomial is a square. For a separable
 polynomial, the sign of a permutation acts trivially because `-1 = 1`, so the product of the root

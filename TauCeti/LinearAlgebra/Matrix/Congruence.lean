@@ -22,6 +22,8 @@ transpose instead. These identities transport Wishart trace transforms along con
 * `Matrix.det_one_add_smul_transpose_mul_mul`,
   `Matrix.det_one_sub_smul_transpose_mul_mul` — the corresponding determinant pencil identities,
   instances of the Weinstein--Aronszajn identity `Matrix.det_one_add_mul_comm`.
+* `Matrix.submatrix_one_mul_mul_submatrix_one` — congruence by a selection matrix is the
+  corresponding submatrix.
 
 ## References
 
@@ -62,5 +64,17 @@ theorem det_one_sub_smul_transpose_mul_mul {m n R : Type*} [Fintype m] [Fintype 
     det (1 - c • ((Mᵀ * B * M) * A)) = det (1 - c • (B * (M * A * Mᵀ))) := by
   simpa only [sub_eq_add_neg, neg_smul] using
     det_one_add_smul_transpose_mul_mul (-c) B M A
+
+/-- **Congruence by a selection matrix reads off a submatrix.** The matrix
+`(1 : Matrix n n R).submatrix f id` keeps the rows named by `f` and its transpose
+`(1 : Matrix n n R).submatrix id f` keeps the columns, so congruating with it keeps exactly the
+rows and columns named by `f`. -/
+@[simp]
+theorem submatrix_one_mul_mul_submatrix_one {m n R : Type*} [Fintype n] [DecidableEq n]
+    [NonAssocSemiring R] (f : m → n) (A : Matrix n n R) :
+    (1 : Matrix n n R).submatrix f id * A * (1 : Matrix n n R).submatrix id f =
+      A.submatrix f f := by
+  ext i j
+  simp [Matrix.mul_apply, Matrix.one_apply, Finset.sum_ite_eq, Finset.sum_ite_eq']
 
 end Matrix

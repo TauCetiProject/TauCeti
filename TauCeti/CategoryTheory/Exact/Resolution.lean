@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Exact.BaseChange
 public import TauCeti.CategoryTheory.Exact.Biproduct
 public import TauCeti.CategoryTheory.Exact.Functor
 public import TauCeti.CategoryTheory.Exact.Split
@@ -68,6 +69,11 @@ property, before any projectivity hypothesis is available.
   resolution of length at most `n + 1` yields a first conflation `K ↪ Q ↠ X` together with a
   resolution of `K` of length at most `n`; this is how an induction on the length peels off one
   step.
+* `TauCeti.ExactStructure.exists_conflation_prop_X₂_admitsFiniteResolution_X₁`: an object admitting
+  a finite resolution has a conflation whose middle term satisfies `P` and whose kernel still
+  admits a finite resolution.
+* `TauCeti.ExactStructure.exists_finiteResolution_X₁_length_le_of_prop_X₃`: kernel closure for `P`
+  preserves the resolution-length bound along a deflation onto an object satisfying `P`.
 * `TauCeti.ExactStructure.admitsFiniteResolution_induction`: the object property of admitting a
   finite `P`-resolution is the smallest one containing `P` and closed under passing from the
   subobject of a conflation with resolving middle term to its quotient.
@@ -522,6 +528,52 @@ def admitsFiniteResolution : ObjectProperty C := fun X => Nonempty (FiniteResolu
 
 @[simp] theorem admitsFiniteResolution_iff {X : C} :
     E.admitsFiniteResolution P X ↔ Nonempty (FiniteResolution E P X) := Iff.rfl
+
+section ResolutionCover
+
+variable {E P} [P.IsClosedUnderIsomorphisms] [P.ContainsZero]
+
+/-- An object admitting a finite `P`-resolution is the quotient of a conflation `K ↪ Q ↠ X`
+whose middle term satisfies `P` and whose kernel again admits a finite `P`-resolution. -/
+theorem exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (X : C)
+    (hX : E.admitsFiniteResolution P X) :
+    ∃ (K Q : C) (i : K ⟶ Q) (p : Q ⟶ X) (hip : i ≫ p = 0), P Q ∧
+      E.Conflation (ShortComplex.mk i p hip) ∧ E.admitsFiniteResolution P K := by
+  obtain ⟨r⟩ := (E.admitsFiniteResolution_iff P).mp hX
+  obtain ⟨K, Q, i, p, hip, hQ, hc, s, -⟩ :=
+    E.exists_conflation_of_exists_finiteResolution_length_le_succ (n := r.length) ⟨r, by omega⟩
+  exact ⟨K, Q, i, p, hip, hQ, hc, (E.admitsFiniteResolution_iff P).mpr ⟨s⟩⟩
+
+end ResolutionCover
+
+section KernelResolution
+
+variable {E P} [P.IsClosedUnderIsomorphisms]
+
+/-- For a replete property closed under kernels of deflations between its objects, the kernel of a
+deflation from an object of `P`-dimension at most `n` onto an object of `P` has `P`-dimension at
+most `n`. -/
+theorem exists_finiteResolution_X₁_length_le_of_prop_X₃ {n : ℕ}
+    (hkernel : ∀ {T : ShortComplex C}, E.Conflation T → P T.X₂ → P T.X₃ → P T.X₁)
+    {S : ShortComplex C} (hS : E.Conflation S) (h₃ : P S.X₃)
+    (h₂ : ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n) :
+    ∃ r : E.FiniteResolution P S.X₁, r.length ≤ n := by
+  let _ : P.ContainsZero := ⟨(0 : C), isZero_zero C,
+    hkernel (E.conflation_zero_id S.X₃) h₃ h₃⟩
+  cases n with
+  | zero =>
+      obtain ⟨r, hr⟩ := h₂
+      have hX₂ : P S.X₂ := by simpa using r.prop_syzygy hr
+      exact ⟨.base (hkernel hS hX₂ h₃), by simp⟩
+  | succ n =>
+      obtain ⟨K, Q, i, a, hia, hQ, hc, s, hs⟩ :=
+        E.exists_conflation_of_exists_finiteResolution_length_le_succ h₂
+      -- The kernel `L` of the composite deflation `Q ↠ X₂ ↠ X₃` satisfies `P`, and `K ↪ L ↠ X₁`.
+      obtain ⟨L, c, α, β, hc', hβ, hL, hKL, -, -⟩ := E.exists_conflation_comp' hS hc
+      exact ⟨.step (hkernel (T := ShortComplex.mk c (a ≫ S.g) hc') hL hQ h₃)
+        β α hβ hKL s, by simpa using hs⟩
+
+end KernelResolution
 
 /-- An object satisfying `P` admits a finite `P`-resolution, namely the empty chain. -/
 theorem le_admitsFiniteResolution : P ≤ E.admitsFiniteResolution P :=

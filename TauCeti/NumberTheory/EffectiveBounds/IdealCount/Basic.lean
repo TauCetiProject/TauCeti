@@ -65,7 +65,7 @@ private theorem prodLeTuples_finite (n : ℕ) (X : ℝ) : (prodLeTuples n X).Fin
   apply Set.Finite.subset (Set.finite_Icc (1 : Fin n → ℕ) (fun _ => ⌊X⌋₊))
   rintro d ⟨hpos, hprod⟩
   refine ⟨fun i => hpos i, fun i => Nat.le_floor ?_⟩
-  exact le_trans (mod_cast Finset.single_le_prod' (fun a _ => hpos a) (Finset.mem_univ i)) hprod
+  exact le_trans (mod_cast Finset.single_le_prod (fun a _ => hpos a) (Finset.mem_univ i)) hprod
 
 /-- `∑_{j=1}^{N} 1/j² ≤ 2`, from the Basel sum `π²/6 < 2`. -/
 private theorem sum_one_div_sq_le_two (N : ℕ) :
@@ -89,7 +89,7 @@ private theorem prodLeTuples_succ_eq_iUnion (n : ℕ) (X : ℝ) :
     · refine le_trans ?_ h.2
       rw [Fin.prod_univ_castSucc]
       exact le_mul_of_one_le_left (Nat.cast_nonneg _)
-        (mod_cast Finset.one_le_prod' fun i _ => h.1 _)
+        (mod_cast Finset.one_le_prod fun i _ => h.1 _)
     · exact fun i => h.1 _
     · rw [le_div_iff₀ (mod_cast h.1 (Fin.last n))]
       rw [Fin.prod_univ_castSucc] at h

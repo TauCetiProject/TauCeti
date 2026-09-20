@@ -139,14 +139,9 @@ theorem mapValue_diagonalTorusPoints (phi : A →ₐ[R] B)
           (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ))) phi f) := by
   apply (pointsMulEquiv (R := R) (A := B) N).injective
   rw [pointsMulEquiv_mapValue N phi (diagonalTorusPoints f),
-    pointsMulEquiv_diagonalTorusPoints, pointsMulEquiv_diagonalTorusPoints]
-  ext i j
-  by_cases hij : i = j
-  · subst j
-    simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, ite_eq_left]
-    exact (congrArg Units.val
-      (SplitTorus.pointsMulEquiv_mapValue phi f (ULift.up i))).symm
-  · simp [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, hij]
+    pointsMulEquiv_diagonalTorusPoints, pointsMulEquiv_diagonalTorusPoints, map_diagGL]
+  exact congrArg diagGL
+    (funext fun i ↦ (SplitTorus.pointsMulEquiv_mapValue phi f (ULift.up i)).symm)
 
 /-- Conjugation by a diagonal-torus point acts on the root subgroup for `εᵢ - εⱼ` by
 the corresponding character `t ↦ tᵢ tⱼ⁻¹`. -/

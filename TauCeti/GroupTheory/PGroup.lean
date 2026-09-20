@@ -9,13 +9,14 @@ import Mathlib.GroupTheory.Nilpotent
 public import Mathlib.GroupTheory.PGroup
 
 /-!
-# Normal subgroups with `p`-group quotient
+# Results about `p`-groups
 
 Mathlib's `IsPGroup.to_quotient` says that every quotient of a `p`-group is again a `p`-group.
 This file records the complementary behaviour, in which the group is fixed and the normal
 subgroup varies: how the property `IsPGroup p (G ⧸ N)` of *the quotient* behaves under
 intersection of normal subgroups and under preimage along a group homomorphism. It also records
-closure of `p`-groups under binary and finite products.
+closure of `p`-groups under binary and finite products and their disjointness from subgroups of
+order prime to `p`.
 
 The two quotient statements are group-theoretic, with no topology. They are what makes the family of
 normal subgroups with `p`-group quotient usable: `IsPGroup.quotient_inf` says the family is
@@ -28,6 +29,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
 
 * `IsPGroup.prod`: a product of two `p`-groups is a `p`-group.
 * `IsPGroup.pi`: a finite product of `p`-groups is a `p`-group.
+* `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
+  to `p` trivially.
 * `IsPGroup.index_eq_prime_of_isCoatom`: a maximal subgroup of a finite `p`-group has index
   `p`.
 * `IsPGroup.quotient_inf`: if `G ⧸ M` and `G ⧸ N` are `p`-groups, so is `G ⧸ (M ⊓ N)`.
@@ -61,6 +64,16 @@ theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, G
   obtain ⟨k, hk⟩ := pow_dvd_pow p (Finset.single_le_sum (fun j _ ↦ Nat.zero_le (n j))
     (Finset.mem_univ i))
   rw [Pi.pow_apply, hk, pow_mul, hn, one_pow, Pi.one_apply]
+
+/-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
+theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}
+    (hC : ¬ p ∣ Nat.card C) (hQ : IsPGroup p Q) : Disjoint C Q := by
+  rw [Subgroup.disjoint_def]
+  intro g hg hgQ
+  by_contra hg1
+  refine hC ((?_ : p ∣ orderOf g).trans ?_)
+  · simpa [Subgroup.orderOf_mk] using hQ.dvd_orderOf (g := (⟨g, hgQ⟩ : Q)) (by simpa using hg1)
+  · simpa [Subgroup.orderOf_mk] using orderOf_dvd_natCard (⟨g, hg⟩ : C)
 
 /-- A maximal subgroup of a finite `p`-group has index `p`. -/
 theorem _root_.IsPGroup.index_eq_prime_of_isCoatom [Finite G] [hp : Fact p.Prime]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.LFunction
+public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 
 /-!
