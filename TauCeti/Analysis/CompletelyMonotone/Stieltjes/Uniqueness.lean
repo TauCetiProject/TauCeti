@@ -194,7 +194,8 @@ theorem Measure.ext_of_forall_integral_inv_add_eq (hμ : Integrable stieltjesWei
     intro n
     have hev : (fun u : ℝ => ∫ x : ℝ≥0, (u + (x : ℝ))⁻¹ ∂μ) =ᶠ[𝓝 (1 : ℝ)]
         fun u : ℝ => ∫ x : ℝ≥0, (u + (x : ℝ))⁻¹ ∂ν := by
-      filter_upwards [isOpen_Ioi.mem_nhds (show (1 : ℝ) ∈ Ioi 0 by norm_num)] with u hu
+      have hone : (1 : ℝ) ∈ Ioi 0 := mem_Ioi.mpr one_pos
+      filter_upwards [isOpen_Ioi.mem_nhds hone] with u hu
       exact h u hu
     have hderiv := hev.iteratedDeriv_eq n
     rw [iteratedDeriv_integral_inv_add hμ n one_pos,
