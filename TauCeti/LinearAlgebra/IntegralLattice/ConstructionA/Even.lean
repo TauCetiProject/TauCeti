@@ -47,24 +47,6 @@ open Matrix
 
 variable (m : ℕ+) {ι : Type*} [Fintype ι]
 
-/-- The norm of a Construction A vector is its dot product with itself, divided by the
-modulus. -/
-@[simp]
-theorem integralLattice_norm (C : AddSubgroup (ι → ZMod m))
-    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
-    (x : ι → ℚ) : (integralLattice m C hC).norm x = (x ⬝ᵥ x) / m := by
-  rw [IntegralLattice.norm_apply, integralLattice_form, form_apply]
-
-/-- The norm of a rational vector with integer coordinates is the sum of the squares of those
-coordinates, divided by the modulus. -/
-theorem integralLattice_norm_intCast (C : AddSubgroup (ι → ZMod m))
-    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
-    (z : ι → ℤ) :
-    (integralLattice m C hC).norm (fun i ↦ ((z i : ℚ))) = ((∑ i, z i ^ 2 : ℤ) : ℚ) / m := by
-  rw [integralLattice_norm]
-  congr 1
-  simp [dotProduct, pow_two]
-
 /-- **A Construction A lattice is even exactly when `2m` divides the sum of the squares of every
 integer lift of a codeword.** -/
 theorem isEven_integralLattice_iff_intCast (C : AddSubgroup (ι → ZMod m))

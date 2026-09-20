@@ -222,6 +222,24 @@ theorem integralLattice_form (C : AddSubgroup (ι → ZMod m))
     (integralLattice m C hC).form = form m := by
   simp [integralLattice]
 
+/-- The norm of a Construction A vector is its dot product with itself, divided by the
+modulus. -/
+@[simp]
+theorem integralLattice_norm (C : AddSubgroup (ι → ZMod m))
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
+    (x : ι → ℚ) : (integralLattice m C hC).norm x = (x ⬝ᵥ x) / m := by
+  rw [IntegralLattice.norm_apply, integralLattice_form, form_apply]
+
+/-- The norm of a rational vector with integer coordinates is the sum of the squares of those
+coordinates, divided by the modulus. -/
+theorem integralLattice_norm_intCast (C : AddSubgroup (ι → ZMod m))
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
+    (z : ι → ℤ) :
+    (integralLattice m C hC).norm (fun i ↦ ((z i : ℚ))) = ((∑ i, z i ^ 2 : ℤ) : ℚ) / m := by
+  rw [integralLattice_norm]
+  congr 1
+  simp [dotProduct, pow_two]
+
 /-- The dual carrier of the bundled Construction A lattice is the carrier of the dual code. -/
 @[simp]
 theorem integralLattice_dualCarrier (C : AddSubgroup (ι → ZMod m))
