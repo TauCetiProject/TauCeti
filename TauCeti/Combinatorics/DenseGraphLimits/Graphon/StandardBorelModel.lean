@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Pullback
-public import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
+import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
 
 /-!
 # Every graphon is pulled back from a standard Borel carrier
@@ -14,7 +14,7 @@ public import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
 A graphon is jointly measurable, so it depends on only countably many measurable sets of each
 argument: it factors as `W x y = V (q x) (q y)` through a measurable `q : Ω → ℕ → Bool` into the
 Cantor space, and the factor `V` is again symmetric and `[0, 1]`-valued
-(`TauCeti.DenseGraphLimits.Graphon.exists_comap_standardBorel`). Since `q` is measure preserving
+(`TauCeti.DenseGraphLimits.Graphon.exists_comap_natBool`). Since `q` is measure preserving
 onto the pushforward `μ.map q`, this presents an arbitrary graphon as a pullback
 `W = V.comap q` of a graphon on a **standard Borel** probability carrier.
 
@@ -29,7 +29,7 @@ symmetric and in `[0, 1]`.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.Graphon.exists_comap_standardBorel` — every graphon is the pullback,
+* `TauCeti.DenseGraphLimits.Graphon.exists_comap_natBool` — every graphon is the pullback,
   along a measurable map to the Cantor space, of a graphon on the pushforward measure.
 
 ## References
@@ -55,31 +55,22 @@ measure `μ.map q`, with `W = V.comap q`; no hypothesis on `Ω` is needed.
 The map `q` is measure preserving from `μ` onto `μ.map q` by construction, so `W` and `V` have the
 same observables; this is the reduction that lets a statement proved over standard Borel carriers
 be transported to an arbitrary probability carrier. -/
-theorem Graphon.exists_comap_standardBorel (W : Graphon Ω μ) :
+theorem Graphon.exists_comap_natBool (W : Graphon Ω μ) :
     ∃ (q : Ω → ℕ → Bool) (hq : Measurable q) (V : Graphon (ℕ → Bool) (μ.map q)),
       V.comap q hq μ = W := by
   obtain ⟨q, g, hq, hg, hW⟩ :=
-    TauCeti.MeasureTheory.exists_measurable_comp_prodMap_self
-      (f := Function.uncurry (W : Ω → Ω → ℝ)) W.measurable
+    W.measurable.exists_eq_measurable_comp_prodMap_self
   have hgq : ∀ x y : Ω, g (q x, q y) = W x y := fun x y => (congrFun hW (x, y)).symm
-  -- Average with the transpose and truncate: both are invisible along `q`.
-  set V : (ℕ → Bool) → (ℕ → Bool) → ℝ := fun a b => max 0 (min 1 ((g (a, b) + g (b, a)) / 2))
-    with hV
-  have hVmem : ∀ a b, V a b ∈ Set.Icc (0 : ℝ) 1 :=
-    fun a b => ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩
-  have hVsymm : ∀ a b, V a b = V b a := fun a b => by simp [hV, add_comm]
-  have hVmeas : Measurable (Function.uncurry V) :=
-    measurable_const.max (measurable_const.min
-      (((hg.comp (measurable_fst.prodMk measurable_snd)).add
-        (hg.comp (measurable_snd.prodMk measurable_fst))).div_const 2))
+  let V : Graphon (ℕ → Bool) (μ.map q) := Graphon.clampSymm (μ.map q) (fun a b => g (a, b)) hg
   have hVq : ∀ x y, V (q x) (q y) = W x y := by
     intro x y
-    have hhalf : (W x y + W x y) / 2 = W x y := by ring
-    rw [hV]
-    simp only [hgq, W.symm y x, hhalf, min_eq_right (W.le_one x y), max_eq_right (W.nonneg x y)]
-  exact ⟨q, hq, ⟨⟨V, hVsymm, hVmeas, 1, fun a b =>
-      abs_le.2 ⟨by linarith [(hVmem a b).1], (hVmem a b).2⟩⟩, hVmem⟩,
-    Graphon.ext fun x y => by rw [Graphon.comap_apply]; exact hVq x y⟩
+    change Graphon.clampSymm (μ.map q) (fun a b => g (a, b)) hg (q x) (q y) = W x y
+    calc
+      _ = g (q x, q y) := Graphon.clampSymm_apply_of_mem (μ.map q)
+        (fun a b => g (a, b)) hg (x := q x) (y := q y)
+        (by rw [hgq, hgq, W.symm]) (by rw [hgq]; exact W.mem_Icc x y)
+      _ = W x y := hgq x y
+  exact ⟨q, hq, V, Graphon.ext fun x y => by simp only [Graphon.comap_apply]; exact hVq x y⟩
 
 end DenseGraphLimits
 

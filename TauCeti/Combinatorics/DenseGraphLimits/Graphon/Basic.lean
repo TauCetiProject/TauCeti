@@ -36,6 +36,8 @@ homomorphism densities, the cut metric, sampling — integrates against `μ` and
 * `TauCeti.DenseGraphLimits.Graphon` — the `[0, 1]`-valued symmetric kernel, with a `FunLike`
   coercion, extensionality by the underlying function, and the `toSymmKernel` projection.
 * `TauCeti.DenseGraphLimits.Graphon.const` — the constant graphon with value `p : I`.
+* `TauCeti.DenseGraphLimits.Graphon.clampSymm` — turn a measurable real-valued kernel into a
+  graphon by averaging with its transpose and clamping to `[0, 1]`.
 
 ## Main results
 
@@ -43,6 +45,8 @@ homomorphism densities, the cut metric, sampling — integrates against `μ` and
   kernel;
 * `Graphon.nonneg`, `Graphon.le_one` — the pointwise range constraint, in eliminator form;
 * `Graphon.const_apply` — the constant graphon evaluates to its parameter.
+* `Graphon.clampSymm_apply_of_mem` — symmetrizing and clamping leaves a symmetric value already in
+  `[0, 1]` unchanged.
 
 ## References
 
@@ -88,6 +92,10 @@ instance instFunLike : FunLike (Graphon Ω μ) Ω (Ω → ℝ) where
     congr 1
     exact DFunLike.coe_injective h
 
+/-- Constructing a graphon does not change the underlying function of its symmetric kernel. -/
+@[simp]
+theorem coe_mk (K : SymmKernel Ω μ) (hmem) : ⇑(Graphon.mk K hmem) = ⇑K := rfl
+
 /-- Projecting a graphon to its kernel does not change the underlying function. -/
 @[simp]
 theorem coe_toSymmKernel (W : Graphon Ω μ) : ⇑W.toSymmKernel = ⇑W := rfl
@@ -112,6 +120,37 @@ theorem nonneg (W : Graphon Ω μ) (x y : Ω) : 0 ≤ W x y := (W.mem_Icc x y).1
 
 /-- A graphon is bounded above by `1`. -/
 theorem le_one (W : Graphon Ω μ) (x y : Ω) : W x y ≤ 1 := (W.mem_Icc x y).2
+
+/-- Average a measurable real-valued kernel with its transpose and clamp the result to `[0, 1]`.
+
+This is the common strict-representative construction: averaging enforces pointwise symmetry, and
+clamping enforces the graphon range without changing values that were already symmetric and in
+`[0, 1]`. -/
+@[expose]
+noncomputable def clampSymm (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω → Ω → ℝ)
+    (hf : Measurable (Function.uncurry f)) : Graphon Ω μ where
+  toSymmKernel :=
+    { toFun := fun x y => max 0 (min 1 ((f x y + f y x) / 2))
+      symm' := fun x y => by simp only [add_comm]
+      meas' := measurable_const.max (measurable_const.min
+        ((hf.add (hf.comp (measurable_snd.prodMk measurable_fst))).div_const 2))
+      bdd' := ⟨1, fun x y => abs_le.2
+        ⟨by linarith [le_max_left (0 : ℝ) (min 1 ((f x y + f y x) / 2))],
+          max_le zero_le_one (min_le_left _ _)⟩⟩ }
+  mem01' := fun x y => ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩
+
+/-- Evaluating `clampSymm` gives the averaged and clamped kernel. -/
+@[simp]
+theorem clampSymm_apply (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω → Ω → ℝ)
+    (hf : Measurable (Function.uncurry f)) (x y : Ω) :
+    clampSymm μ f hf x y = max 0 (min 1 ((f x y + f y x) / 2)) := rfl
+
+/-- Symmetrizing and clamping does not change a value that is symmetric and already in `[0, 1]`. -/
+theorem clampSymm_apply_of_mem (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω → Ω → ℝ)
+    (hf : Measurable (Function.uncurry f)) {x y : Ω} (hsymm : f x y = f y x)
+    (hmem : f x y ∈ Set.Icc (0 : ℝ) 1) : clampSymm μ f hf x y = f x y := by
+  rw [clampSymm_apply, ← hsymm, add_self_div_two, min_eq_right hmem.2,
+    max_eq_right hmem.1]
 
 /-- The **constant graphon** with value `p`.
 

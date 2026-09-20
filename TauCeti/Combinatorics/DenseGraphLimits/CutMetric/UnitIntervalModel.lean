@@ -6,8 +6,8 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
-public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
+import TauCeti.Combinatorics.DenseGraphLimits.Graphon.StandardBorelModel
 import TauCeti.MeasureTheory.Measure.UnitIntervalMap
 
 /-!
@@ -23,7 +23,7 @@ its cut class, which is what `cutDist_unitIntervalModel` records.
 
 The standard Borel hypothesis the map theorem needs costs nothing, because every graphon is
 already a pullback from a standard Borel carrier
-(`TauCeti.DenseGraphLimits.Graphon.exists_comap_standardBorel`, Janson, Lemma 7.3): a jointly
+(`TauCeti.DenseGraphLimits.Graphon.exists_comap_natBool`, Janson, Lemma 7.3): a jointly
 measurable kernel reads only countably many measurable sets of each argument. Composing the two
 reductions puts *every* graphon, on an arbitrary probability carrier, at cut distance zero from
 one on the unit interval (Janson, Theorem 7.1) -- the carrier-free representation the separation
@@ -84,11 +84,11 @@ distance, so a cross-carrier statement invariant under `cutDist = 0` may be prov
 
 The carrier is reduced in two steps, neither of which moves the cut class: a graphon is first
 rewritten as a pullback from a standard Borel carrier
-(`TauCeti.DenseGraphLimits.Graphon.exists_comap_standardBorel`), which `unitIntervalModel` then
+(`TauCeti.DenseGraphLimits.Graphon.exists_comap_natBool`), which `unitIntervalModel` then
 reads on the unit interval. -/
 theorem exists_graphon_unitInterval_cutDist_eq_zero (W : Graphon Ω μ) :
     ∃ V : Graphon I (volume : Measure I), cutDist W V = 0 := by
-  obtain ⟨q, hq, V, hV⟩ := W.exists_comap_standardBorel
+  obtain ⟨q, hq, V, hV⟩ := W.exists_comap_natBool
   have hVW : cutDist V W = 0 := by
     have h : cutDist V (V.comap q hq μ) = cutDist V V := cutDist_comap_right V V ⟨hq, rfl⟩
     rwa [hV, cutDist_self] at h
