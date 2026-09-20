@@ -984,32 +984,6 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
 
 /-! ### Six components -/
 
-/-- The intersection form at a vector supported on a chain of six distinct components is negative
-when every nonconsecutive intersection vanishes. -/
-private lemma chain_six_form_neg (hcard : 6 < Fintype.card T.Component)
-    {g h i j k l : T.Component}
-    (hgh : g ≠ h) (hgi : g ≠ i) (hgj : g ≠ j) (hgk : g ≠ k) (hgl : g ≠ l)
-    (hhi : h ≠ i) (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l)
-    (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l)
-    (hkl : k ≠ l) (hgi0 : T.intersection g i = 0) (hgj0 : T.intersection g j = 0)
-    (hgk0 : T.intersection g k = 0) (hgl0 : T.intersection g l = 0)
-    (hhj0 : T.intersection h j = 0) (hhk0 : T.intersection h k = 0)
-    (hhl0 : T.intersection h l = 0) (hik0 : T.intersection i k = 0)
-    (hil0 : T.intersection i l = 0) (hjl0 : T.intersection j l = 0)
-    (y₁ y₂ y₃ y₄ y₅ y₆ : ℤ) (hy₁ : y₁ ≠ 0) :
-    T.intersection g g * y₁ ^ 2 + T.intersection h h * y₂ ^ 2 +
-          T.intersection i i * y₃ ^ 2 + T.intersection j j * y₄ ^ 2 +
-        T.intersection k k * y₅ ^ 2 + T.intersection l l * y₆ ^ 2 +
-      2 * (T.intersection g h * y₁ * y₂ + T.intersection h i * y₂ * y₃ +
-        T.intersection i j * y₃ * y₄ + T.intersection j k * y₄ * y₅ +
-        T.intersection k l * y₅ * y₆) < 0 := by
-  have hneg := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik hil
-    hjk hjl hkl (y₁ := y₁) (y₂ := y₂) (y₃ := y₃) (y₄ := y₄) (y₅ := y₅) (y₆ := y₆)
-    (fun hy ↦ hy₁ hy.1)
-  rw [hgi0, hgj0, hgk0, hgl0, hhj0, hhk0, hhl0, hik0, hil0, hjl0] at hneg
-  ring_nf at hneg ⊢
-  exact hneg
-
 /-- The factor data used to classify a chain of six components. -/
 private theorem chain_six_factors (hcard : 6 < Fintype.card T.Component)
     {g h i j k l : T.Component}
@@ -1120,18 +1094,36 @@ private theorem chain_six_factors (hcard : 6 < Fintype.card T.Component)
       have ha_two : a ≤ 2 := by omega
       have hb_two : b ≤ 2 := by omega
       interval_cases a <;> interval_cases b <;> omega
-    have key := T.chain_six_form_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik hil
-      hjk hjl hkl zgi zgj zgk zgl zhj zhk zhl zik zil zjl
     rcases factors_of_mul_eq_two hp₁pos hq₁pos hbad.1 with
       ⟨hp₁, hq₁⟩ | ⟨hp₁, hq₁⟩ <;>
       rcases factors_of_mul_eq_two hp₅pos hq₅pos hbad.2 with
         ⟨hp₅, hq₅⟩ | ⟨hp₅, hq₅⟩
     all_goals subst_vars
     all_goals first
-      | linarith [key 1 2 2 2 2 2 one_ne_zero]
-      | linarith [key 1 2 2 2 2 1 one_ne_zero]
-      | linarith [key 1 1 1 1 1 1 one_ne_zero]
-      | linarith [key 2 2 2 2 2 1 (by norm_num)]
+      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
+          hil hjk hjl hkl (y₁ := 1) (y₂ := 2) (y₃ := 2) (y₄ := 2) (y₅ := 2) (y₆ := 2)
+          (by norm_num)
+        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
+        ring_nf at key
+        linarith
+      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
+          hil hjk hjl hkl (y₁ := 1) (y₂ := 2) (y₃ := 2) (y₄ := 2) (y₅ := 2) (y₆ := 1)
+          (by norm_num)
+        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
+        ring_nf at key
+        linarith
+      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
+          hil hjk hjl hkl (y₁ := 1) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (y₆ := 1)
+          (by norm_num)
+        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
+        ring_nf at key
+        linarith
+      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
+          hil hjk hjl hkl (y₁ := 2) (y₂ := 2) (y₃ := 2) (y₄ := 2) (y₅ := 2) (y₆ := 1)
+          (by norm_num)
+        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
+        ring_nf at key
+        linarith
   · rcases hm₁ with h₁ | h₁ | h₁ <;> rcases hm₂ with h₂ | h₂ | h₂ <;> omega
 
 /-- Six components of self-intersection `-2w` forming a chain in a numerical type with more than
