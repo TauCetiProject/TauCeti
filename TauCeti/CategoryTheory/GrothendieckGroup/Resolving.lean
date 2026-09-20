@@ -379,6 +379,7 @@ theorem map_comp_resolutionEquiv_symm (F : C ⥤ D) [F.Additive]
 
 /-- Applying a conflation-exact functor preserving resolving objects carries the Euler class of an
 object to the Euler class of its image. -/
+@[simp]
 theorem map_eulerClassOf (F : C ⥤ D) [F.Additive]
     (hF : E.IsConflationExact E' F) (hPP' : ∀ X : P.FullSubcategory, P' (F.obj X.obj))
     (X : C) :

@@ -120,14 +120,35 @@ end ObjectProperty
 
 namespace Equivalence
 
+/-- The forward functor on corresponding full subcategories is the lift of the original functor. -/
+theorem congrFullSubcategory_functor_eq_lift
+    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
+    (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
+    (e.congrFullSubcategory h).functor =
+      Q.lift (P.ι ⋙ e.functor) (fun ⟨X, hX⟩ ↦ by rwa [← h] at hX) :=
+  rfl
+
+/-- The inverse functor on corresponding full subcategories is the lift of the original inverse. -/
+theorem congrFullSubcategory_inverse_eq_lift
+    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
+    (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
+    (e.congrFullSubcategory h).inverse =
+      P.lift (Q.ι ⋙ e.inverse) (fun ⟨Y, hY⟩ ↦ by
+        rw [← h]
+        exact Q.prop_of_iso (e.counitIso.app Y).symm hY) :=
+  rfl
+
 /-- The functor of an equivalence restricted to corresponding full subcategories is additive. -/
 instance congrFullSubcategory_functor_additive
     {C : Type u₁} [Category.{v₁} C] [Preadditive C]
     {D : Type u₂} [Category.{v₂} D] [Preadditive D]
     {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
     (e : C ≌ D) [e.functor.Additive] (h : Q.inverseImage e.functor = P) :
-    (e.congrFullSubcategory h).functor.Additive :=
-  inferInstanceAs (Q.lift (P.ι ⋙ e.functor) _).Additive
+    (e.congrFullSubcategory h).functor.Additive := by
+  rw [congrFullSubcategory_functor_eq_lift]
+  infer_instance
 
 /-- The inverse of an equivalence restricted to corresponding full subcategories is additive. -/
 instance congrFullSubcategory_inverse_additive
@@ -135,8 +156,9 @@ instance congrFullSubcategory_inverse_additive
     {D : Type u₂} [Category.{v₂} D] [Preadditive D]
     {P : ObjectProperty C} {Q : ObjectProperty D} [Q.IsClosedUnderIsomorphisms]
     (e : C ≌ D) [e.inverse.Additive] (h : Q.inverseImage e.functor = P) :
-    (e.congrFullSubcategory h).inverse.Additive :=
-  inferInstanceAs (P.lift (Q.ι ⋙ e.inverse) _).Additive
+    (e.congrFullSubcategory h).inverse.Additive := by
+  rw [congrFullSubcategory_inverse_eq_lift]
+  infer_instance
 
 end Equivalence
 
