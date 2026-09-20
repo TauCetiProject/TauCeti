@@ -93,13 +93,13 @@ def descend (D : Γ.CuspDatum) (f : ℍ → ℂ) : {q : 𝔻 // q ≠ 0} → ℂ
   fun q ↦ cuspExtension D f q
 
 /-- The descended function is the restriction of the cusp extension to the punctured unit disc. -/
+@[simp]
 theorem descend_apply (D : Γ.CuspDatum) (f : ℍ → ℂ) (q : {q : 𝔻 // q ≠ 0}) :
     descend D f q = cuspExtension D f q :=
   (rfl)
 
 /-- An invariant function is recovered by pulling its punctured-disc descent back along the
 normalized q-coordinate. -/
-@[simp]
 theorem descend_qCoordinate (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z) (z : ℍ) :
     descend D f (qCoordinate D z) = f z := by
