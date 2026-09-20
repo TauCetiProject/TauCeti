@@ -64,6 +64,8 @@ Both are proved by evaluating at the four normal forms, which is enough by
 
 ## Main results
 
+* `TauCeti.GL2CuspidalVirtualCharacter_def` and `TauCeti.coe_GL2CuspidalVirtualCharacter`: the
+  defining equation, as class functions and as functions on `GL₂(F)`.
 * `TauCeti.GL2CuspidalVirtualCharacter_apply_scalar`,
   `TauCeti.GL2CuspidalVirtualCharacter_apply_diagGL`,
   `TauCeti.GL2CuspidalVirtualCharacter_apply_jordanGL` and
@@ -77,9 +79,12 @@ Both are proved by evaluating at the four normal forms, which is enough by
 
 ## Implementation notes
 
-The four values and the degree are `simp` lemmas, as the character values of the other rows of the
-table are; the defining equation `TauCeti.GL2CuspidalVirtualCharacter_apply` is not, since
-rewriting with it would undo them.
+The four values and the degree are `simp` lemmas, as the character values of the two inductions
+(`TauCeti.character_GL2ScalarUnipotentInduction_scalar`,
+`TauCeti.character_GL2EllipticInduction_scalar` and their siblings) are; the defining equations
+`TauCeti.GL2CuspidalVirtualCharacter_def`, `TauCeti.coe_GL2CuspidalVirtualCharacter` and
+`TauCeti.GL2CuspidalVirtualCharacter_apply` are not, since rewriting with them would undo the
+values.
 
 ## References
 
@@ -111,23 +116,37 @@ noncomputable def GL2CuspidalVirtualCharacter (θ : Eˣ →* ℂˣ) (ψ : AddCha
 
 variable {F E}
 
-/-- The defining equation of the cuspidal virtual character. -/
+/-- The defining equation of the cuspidal virtual character, as class functions: it is the
+difference of the class functions of the two induced representations. -/
+theorem GL2CuspidalVirtualCharacter_def (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    GL2CuspidalVirtualCharacter F E hE θ ψ =
+      ClassFunction.ofFDRep
+          (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ) -
+        ClassFunction.ofFDRep (GL2EllipticInduction F E hE θ) :=
+  (rfl)
+
+/-- The defining equation of the cuspidal virtual character, as functions on `GL₂(F)`: it is the
+difference of the two induced characters. -/
+theorem coe_GL2CuspidalVirtualCharacter (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
+    (GL2CuspidalVirtualCharacter F E hE θ ψ).1 =
+      (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ).character -
+        (GL2EllipticInduction F E hE θ).character := by
+  rw [GL2CuspidalVirtualCharacter_def, Submodule.coe_sub]
+  exact congrArg₂ (· - ·) (funext (ClassFunction.ofFDRep_apply _))
+    (funext (ClassFunction.ofFDRep_apply _))
+
+/-- The defining equation of the cuspidal virtual character, pointwise. -/
 theorem GL2CuspidalVirtualCharacter_apply (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) (g : GL (Fin 2) F) :
     (GL2CuspidalVirtualCharacter F E hE θ ψ).1 g =
       (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ).character g -
         (GL2EllipticInduction F E hE θ).character g := by
-  rw [GL2CuspidalVirtualCharacter, Submodule.coe_sub, Pi.sub_apply, ClassFunction.ofFDRep_apply,
-    ClassFunction.ofFDRep_apply]
+  rw [coe_GL2CuspidalVirtualCharacter, Pi.sub_apply]
 
 /-- **The cuspidal virtual character is a virtual character**, being a difference of two
 characters.  This is what makes the classical norm-`1` test available for it. -/
 theorem GL2CuspidalVirtualCharacter_mem_virtualCharacters (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     (GL2CuspidalVirtualCharacter F E hE θ ψ).1 ∈ virtualCharacters ℂ (GL (Fin 2) F) := by
-  have hfun : (GL2CuspidalVirtualCharacter F E hE θ ψ).1 =
-      (GL2ScalarUnipotentInduction F (θ.comp (Units.map (algebraMap F E : F →* E))) ψ).character -
-        (GL2EllipticInduction F E hE θ).character :=
-    funext fun g => GL2CuspidalVirtualCharacter_apply hE θ ψ g
-  rw [hfun]
+  rw [coe_GL2CuspidalVirtualCharacter]
   exact sub_mem (character_mem_virtualCharacters _) (character_mem_virtualCharacters _)
 
 /-! ### The four values -/
@@ -205,31 +224,29 @@ theorem GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one (θ : Eˣ →* ℂˣ) {
 /-- **The cuspidal virtual character of `θ^q` is that of `θ`**: the `q`-power map fixes `Fˣ`, so
 the central and Jordan values are unchanged, and it is an involution on `Eˣ` exchanging the two
 elliptic summands.  So the cuspidal series is parametrized by the orbits `{θ, θ^q}`. -/
-theorem GL2CuspidalVirtualCharacter_comp_powMonoidHom (θ : Eˣ →* ℂˣ) {ψ : AddChar F ℂ}
-    (hψ : ψ ≠ 1) :
+theorem GL2CuspidalVirtualCharacter_comp_powMonoidHom (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     GL2CuspidalVirtualCharacter F E hE (θ.comp (powMonoidHom (Fintype.card F))) ψ =
       GL2CuspidalVirtualCharacter F E hE θ ψ := by
-  have hfix : ∀ a : Fˣ, (Units.map (algebraMap F E : F →* E) a) ^ Fintype.card F =
-      Units.map (algebraMap F E : F →* E) a := fun a =>
-    Units.ext (by
-      rw [Units.val_pow_eq_pow_val, ← Nat.card_eq_fintype_card]
-      exact (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr ⟨(a : F), rfl⟩)
-  have hinv : ∀ x : Eˣ, (x ^ Fintype.card F) ^ Fintype.card F = x := fun x =>
-    Units.ext (by
-      rw [Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val, ← Nat.card_eq_fintype_card]
-      exact FiniteField.pow_natCard_pow_natCard hE (x : E))
+  -- the restriction of `θ^q` to `Fˣ` is that of `θ`, so the Gelfand-Graev terms coincide
+  have hcomp : (θ.comp (powMonoidHom (Fintype.card F))).comp
+      (Units.map (algebraMap F E : F →* E)) = θ.comp (Units.map (algebraMap F E : F →* E)) :=
+    MonoidHom.ext fun a => by
+      rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.comp_apply, powMonoidHom_apply,
+        ← Nat.card_eq_fintype_card, FiniteField.units_map_algebraMap_pow_natCard]
   refine ClassFunction.eq_of_forall_gl2NormalForm E hE (fun a => ?_) (fun a b hab => ?_)
     (fun a => ?_) (fun x hx => ?_)
-  · rw [GL2CuspidalVirtualCharacter_apply_scalar, GL2CuspidalVirtualCharacter_apply_scalar,
-      MonoidHom.comp_apply, powMonoidHom_apply, hfix a]
+  · rw [GL2CuspidalVirtualCharacter_apply, GL2CuspidalVirtualCharacter_apply, hcomp,
+      character_GL2EllipticInduction_scalar, character_GL2EllipticInduction_scalar,
+      MonoidHom.comp_apply, powMonoidHom_apply, ← Nat.card_eq_fintype_card,
+      FiniteField.units_map_algebraMap_pow_natCard]
   · rw [GL2CuspidalVirtualCharacter_apply_diagGL _ _ _ (by simpa using hab),
       GL2CuspidalVirtualCharacter_apply_diagGL _ _ _ (by simpa using hab)]
-  · rw [GL2CuspidalVirtualCharacter_apply_jordanGL _ _ hψ a one_ne_zero,
-      GL2CuspidalVirtualCharacter_apply_jordanGL _ _ hψ a one_ne_zero,
-      MonoidHom.comp_apply, powMonoidHom_apply, hfix a]
+  · rw [GL2CuspidalVirtualCharacter_apply, GL2CuspidalVirtualCharacter_apply, hcomp,
+      character_GL2EllipticInduction_jordanGL _ _ _ _ a one_ne_zero,
+      character_GL2EllipticInduction_jordanGL _ _ _ _ a one_ne_zero]
   · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ _ hx,
       GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ _ hx,
       MonoidHom.comp_apply, MonoidHom.comp_apply, powMonoidHom_apply, powMonoidHom_apply,
-      hinv x, add_comm]
+      ← Nat.card_eq_fintype_card, FiniteField.units_pow_natCard_pow_natCard hE x, add_comm]
 
 end TauCeti

@@ -81,8 +81,11 @@ That the four normal forms exhaust the conjugacy classes is
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses`; as in
 `TauCeti/RepresentationTheory/CharacterTable/GL2/CharacterValues.lean`, the values below are
 stated at the normal forms themselves rather than assembled into a single case distinction. None
-of the four is a `simp` lemma: they evaluate a class function at a normal form, and neither side
-is a normal form for `simp`.
+of the four class-function values is a `simp` lemma: they evaluate `indClassFun` of an arbitrary
+function at a normal form, and the right-hand side, a value of that function, is no normal form for
+`simp` either. The four character values they specialise to are `simp` lemmas: there the left-hand
+side is the character of `TauCeti.GL2EllipticInduction` at a normal form and the right-hand side is
+the closed form it reduces to.
 
 ## References
 
@@ -365,16 +368,9 @@ theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
     (GL2EllipticInduction F E hE θ).character (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (Nat.card F : ℂ) * ((Nat.card F : ℂ) - 1) *
         θ (Units.map (algebraMap F E : F →* E) a) := by
-  have hpre : (GL2NonSplitTorus.unitsEquiv hE).symm
-      ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, GL2NonSplitTorus.scalar_mem hE a⟩ =
-        Units.map (algebraMap F E : F →* E) a := by
-    rw [MulEquiv.symm_apply_eq]
-    exact Subtype.ext (by
-      rw [GL2NonSplitTorus.coe_unitsEquiv_apply,
-        GL2NonSplitTorus.gl2NonSplitTorusHom_map_algebraMap])
   rw [character_GL2EllipticInduction_eq_indClassFun,
-    GL2NonSplitTorus.indClassFun_scalar hE _ a, character_GL2NonSplitTorusRep, hpre,
-    GL2NonSplitTorus.index_eq, nsmul_eq_mul, Nat.cast_mul,
+    GL2NonSplitTorus.indClassFun_scalar hE _ a, character_GL2NonSplitTorusRep,
+    GL2NonSplitTorus.unitsEquiv_symm_scalar, GL2NonSplitTorus.index_eq, nsmul_eq_mul, Nat.cast_mul,
     Nat.cast_sub Nat.card_pos]
   ring
 
