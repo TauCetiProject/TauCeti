@@ -40,7 +40,6 @@ which in turn surjects onto the kernel of that action. On a knot grid the action
 
 ## Main definitions
 
-* `TauCeti.simplyBlockedRingHom`: setting `V_i` to zero, as a ring homomorphism.
 * `TauCeti.simplyBlockedSpecializationHom`: specialization as a morphism of modules over the
   unspecialized polynomial ring.
 * `TauCeti.GridDiagram.simplyBlockedComplexRestrictScalars`: the specialized complex, regarded
@@ -48,8 +47,8 @@ which in turn surjects onto the kernel of that action. On a knot grid the action
 * `TauCeti.GridDiagram.simplyBlockedSpecializationChainHom`: specialization as a chain map.
 * `TauCeti.GridDiagram.simplyBlockedShortComplex`: the short complex above.
 * `TauCeti.GridDiagram.simplyBlockedHomologyMap` and
-  `TauCeti.GridDiagram.simplyBlockedHomologyδ`: the two connecting maps of the long exact
-  sequence.
+  `TauCeti.GridDiagram.simplyBlockedHomologyδ`: the specialization-induced map and the connecting
+  map of the long exact sequence, respectively.
 
 ## Main results
 
@@ -71,14 +70,6 @@ public section
 namespace TauCeti
 
 open CategoryTheory MvPolynomial
-
-/-- Setting the blocked variable `V_i` to zero, as a ring homomorphism
-`R[V₀, …, V_{n-1}] → R[V_c | c ≠ i]`. It is the homomorphism over which
-`TauCeti.simplyBlockedSpecialization` is semilinear. -/
-noncomputable def simplyBlockedRingHom {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
-    MvPolynomial (Fin n) R →+* MvPolynomial {c : Fin n // c ≠ i} R :=
-  (MvPolynomial.killCompl (R := R) (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-    Subtype.val_injective).toRingHom
 
 section Modules
 
@@ -103,27 +94,21 @@ theorem simplyBlockedSpecializationHom_hom_apply (c : GridChainMinus R n) :
   unfold simplyBlockedSpecializationHom
   rfl
 
+/-- Restriction of scalars makes a source scalar act through the specialization homomorphism. -/
+theorem smul_restrictScalars_gridChainHat (p : MvPolynomial (Fin n) R)
+    (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
+      (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
+    p • y = simplyBlockedRingHom R i p • y :=
+  rfl
+
 /-- The blocked variable annihilates the specialized chain module: it acts through the
 specialization, which sends it to zero. -/
 @[simp]
 theorem X_smul_restrictScalars_gridChainHat_eq_zero
     (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
       (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
-    simplyBlockedRingHom R i (MvPolynomial.X i) • y = 0 := by
-  have hzero : simplyBlockedRingHom R i (MvPolynomial.X i) = 0 :=
-    by
-      change MvPolynomial.killCompl (R := R)
-        (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-        (Subtype.val_injective : Function.Injective
-          (Subtype.val : {c : Fin n // c ≠ i} → Fin n)) (MvPolynomial.X i) = 0
-      rw [MvPolynomial.X]
-      exact MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range
-        (Subtype.val_injective : Function.Injective
-          (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-        (s := Finsupp.single i 1) 1 (a := i) (by simp) (by simp)
-  have h : simplyBlockedRingHom R i (MvPolynomial.X i) • y = 0 := by rw [hzero, zero_smul]
-  -- The restricted action is by definition the action through the specialization.
-  exact h
+    (MvPolynomial.X i : MvPolynomial (Fin n) R) • y = 0 := by
+  rw [smul_restrictScalars_gridChainHat, simplyBlockedRingHom_X_self, zero_smul]
 
 /-- The blocked variable annihilates the specialization map. -/
 @[simp]
@@ -131,8 +116,6 @@ theorem X_smul_simplyBlockedSpecializationHom :
     (MvPolynomial.X i : MvPolynomial (Fin n) R) • simplyBlockedSpecializationHom R i = 0 :=
   ModuleCat.hom_ext (LinearMap.ext fun c => by
     rw [ModuleCat.hom_smul, LinearMap.smul_apply]
-    change simplyBlockedRingHom R i (MvPolynomial.X i) •
-      (simplyBlockedSpecializationHom R i).hom c = _
     rw [X_smul_restrictScalars_gridChainHat_eq_zero, ModuleCat.hom_zero,
       LinearMap.zero_apply])
 
@@ -206,9 +189,7 @@ theorem simplyBlockedSpecializationChainHom_f (j : Unit) :
   (rfl)
 
 /-- The short complex of complexes given by multiplication by `V_i` and specialization at
-`V_i = 0`. Its components are exposed, so that the short exact sequence below can be fed to
-the homology sequence machinery. -/
-@[expose]
+`V_i = 0`. -/
 noncomputable def simplyBlockedShortComplex :
     ShortComplex
       (HomologicalComplex (ModuleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit)) :=
@@ -242,15 +223,22 @@ theorem simplyBlockedShortComplex_X₃ :
 /-- The first map of the specialization sequence is multiplication by `V_i`. -/
 @[simp]
 theorem simplyBlockedShortComplex_f :
-    (G.simplyBlockedShortComplex R i).f =
-      (MvPolynomial.X i : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R) :=
-  (rfl)
+    eqToHom (G.simplyBlockedShortComplex_X₁ R i).symm ≫
+        (G.simplyBlockedShortComplex R i).f ≫
+        eqToHom (G.simplyBlockedShortComplex_X₂ R i) =
+      (MvPolynomial.X i : MvPolynomial (Fin n) R) • 𝟙 (G.unblockedComplex R) := by
+  unfold simplyBlockedShortComplex
+  simp
 
 /-- The second map of the specialization sequence is specialization at `V_i = 0`. -/
 @[simp]
 theorem simplyBlockedShortComplex_g :
-    (G.simplyBlockedShortComplex R i).g = G.simplyBlockedSpecializationChainHom R i :=
-  (rfl)
+    eqToHom (G.simplyBlockedShortComplex_X₂ R i).symm ≫
+        (G.simplyBlockedShortComplex R i).g ≫
+        eqToHom (G.simplyBlockedShortComplex_X₃ R i) =
+      G.simplyBlockedSpecializationChainHom R i := by
+  unfold simplyBlockedShortComplex
+  simp
 
 /-- The module-level short complex underlying the sequence of complexes. -/
 private noncomputable def simplyBlockedShortComplexModule :

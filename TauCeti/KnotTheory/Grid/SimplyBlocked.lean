@@ -32,6 +32,7 @@ specialization.
 ## Main definitions
 
 * `TauCeti.GridChainHat`: the free module underlying the one-variable specialization.
+* `TauCeti.simplyBlockedRingHom`: setting `V_i` to zero, as a ring homomorphism.
 * `TauCeti.simplyBlockedSpecialization`: coefficientwise specialization of `GC⁻` at `V_i = 0`.
 * `TauCeti.GridDiagram.simplyBlockedRectangles`: the empty, `X`-avoiding rectangles which also
   avoid the chosen `O`-marking.
@@ -71,20 +72,40 @@ here. -/
 abbrev GridChainHat (R : Type*) [CommSemiring R] (n : ℕ) (i : Fin n) : Type _ :=
   GridChain (MvPolynomial {c : Fin n // c ≠ i} R) n
 
+/-- Setting the blocked variable `V_i` to zero, as a ring homomorphism
+`R[V₀, …, V_{n-1}] → R[V_c | c ≠ i]`. It is the homomorphism over which
+`TauCeti.simplyBlockedSpecialization` is semilinear. -/
+noncomputable abbrev simplyBlockedRingHom {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
+    MvPolynomial (Fin n) R →+* MvPolynomial {c : Fin n // c ≠ i} R :=
+  (MvPolynomial.killCompl (R := R) (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+    Subtype.val_injective).toRingHom
+
+/-- The coefficient specialization is `MvPolynomial.killCompl`. -/
+@[simp]
+theorem simplyBlockedRingHom_apply {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n)
+    (p : MvPolynomial (Fin n) R) :
+    simplyBlockedRingHom R i p =
+      MvPolynomial.killCompl (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+        Subtype.val_injective p :=
+  by
+    unfold simplyBlockedRingHom
+    rfl
+
+/-- The blocked variable specializes to zero. -/
+@[simp]
+theorem simplyBlockedRingHom_X_self {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
+    simplyBlockedRingHom R i (MvPolynomial.X i) = 0 := by
+  rw [simplyBlockedRingHom_apply, MvPolynomial.X]
+  exact MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range Subtype.val_injective
+    (s := Finsupp.single i 1) 1 (a := i) (by simp) (by simp)
+
 /-- Coefficientwise specialization of an unblocked grid chain at `V_i = 0`.
 
 This is semilinear over `MvPolynomial.killCompl`: specializing a polynomial multiple of a chain
 specializes both the scalar and every coefficient. -/
 noncomputable def simplyBlockedSpecialization {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
-    GridChainMinus R n →ₛₗ[
-      (MvPolynomial.killCompl (R := R) (f := Subtype.val)
-        (Subtype.val_injective : Function.Injective
-          (Subtype.val : {c : Fin n // c ≠ i} → Fin n))).toRingHom]
-      GridChainHat R n i :=
-  Finsupp.mapRange.linearMap
-    (MvPolynomial.killCompl (R := R) (f := Subtype.val)
-      (Subtype.val_injective : Function.Injective
-        (Subtype.val : {c : Fin n // c ≠ i} → Fin n))).toRingHom.toSemilinearMap
+    GridChainMinus R n →ₛₗ[simplyBlockedRingHom R i] GridChainHat R n i :=
+  Finsupp.mapRange.linearMap (simplyBlockedRingHom R i).toSemilinearMap
 
 /-- Specializing a grid chain applies `MvPolynomial.killCompl` to each coefficient. -/
 @[simp]
@@ -93,7 +114,7 @@ theorem simplyBlockedSpecialization_apply {n : ℕ} (R : Type*) [CommSemiring R]
     simplyBlockedSpecialization R i c x =
       MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective (c x) := by
   rw [simplyBlockedSpecialization, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
-    RingHom.coe_toSemilinearMap, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+    RingHom.coe_toSemilinearMap, simplyBlockedRingHom_apply]
 
 /-- Specialization sends a single supported coefficient to the single supported specialized
 coefficient. -/
@@ -105,7 +126,7 @@ theorem simplyBlockedSpecialization_single {n : ℕ} (R : Type*) [CommSemiring R
         (MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective a) := by
   classical
   rw [simplyBlockedSpecialization, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
-    RingHom.coe_toSemilinearMap, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+    RingHom.coe_toSemilinearMap, simplyBlockedRingHom_apply]
 
 /-! ### Specialization as a quotient map -/
 
@@ -113,15 +134,20 @@ section Specialization
 
 variable {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n)
 
+/-- The coefficient specialization is surjective. -/
+theorem simplyBlockedRingHom_surjective : Function.Surjective (simplyBlockedRingHom R i) :=
+  fun p ↦ ⟨MvPolynomial.rename Subtype.val p, by simp⟩
+
 /-- Specialization at `V_i = 0` is surjective: renaming the surviving variables back is a
 section of it. -/
 theorem simplyBlockedSpecialization_surjective :
-    Function.Surjective (simplyBlockedSpecialization R i) := fun g =>
-  ⟨Finsupp.mapRange (MvPolynomial.rename (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-      (map_zero _) g,
-    Finsupp.ext fun x => by
-      rw [simplyBlockedSpecialization_apply, Finsupp.mapRange_apply,
-        MvPolynomial.killCompl_rename_app]⟩
+    Function.Surjective (simplyBlockedSpecialization R i) := by
+  intro g
+  obtain ⟨f, hf⟩ := Finsupp.mapRange_surjective (simplyBlockedRingHom R i) (map_zero _)
+    (simplyBlockedRingHom_surjective R i) g
+  refine ⟨f, ?_⟩
+  unfold simplyBlockedSpecialization
+  exact hf
 
 /-- Multiplication by the blocked variable `V_i` is injective on the unblocked grid chain
 module. -/
@@ -133,6 +159,18 @@ theorem X_smul_gridChainMinus_injective :
     (MvPolynomial.isRegular_X (R := R) (n := i)).left ?_
   simpa only [Finsupp.smul_apply, smul_eq_mul] using DFunLike.congr_fun h x
 
+/-- Multiplication by `V_i` and coefficient specialization form an exact pair. -/
+theorem exact_X_mul_simplyBlockedRingHom :
+    Function.Exact (fun p : MvPolynomial (Fin n) R => MvPolynomial.X i * p)
+      (simplyBlockedRingHom R i) := by
+  have hrange : Set.range (Subtype.val : {c : Fin n // c ≠ i} → Fin n) = {i}ᶜ := by
+    ext d
+    simp
+  intro p
+  rw [simplyBlockedRingHom_apply,
+    MvPolynomial.killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange]
+  constructor <;> rintro ⟨q, hq⟩ <;> exact ⟨q, hq.symm⟩
+
 /-- The chains killed by specialization at `V_i = 0` are exactly the multiples of `V_i`:
 together with `TauCeti.X_smul_gridChainMinus_injective` and
 `TauCeti.simplyBlockedSpecialization_surjective` this presents the specialized chain module as
@@ -141,35 +179,17 @@ theorem exact_X_smul_simplyBlockedSpecialization :
     Function.Exact
       (fun c : GridChainMinus R n => (MvPolynomial.X i : MvPolynomial (Fin n) R) • c)
       (simplyBlockedSpecialization R i) := by
-  have hrange : Set.range (Subtype.val : {c : Fin n // c ≠ i} → Fin n) = {i}ᶜ := by
-    ext d
-    simp
+  have hmap :
+      (fun c : GridChainMinus R n => (MvPolynomial.X i : MvPolynomial (Fin n) R) • c) =
+        Finsupp.mapRange (fun p => MvPolynomial.X i * p) (mul_zero _) := by
+    funext c
+    ext x
+    simp [Finsupp.smul_apply]
   intro c
-  constructor
-  · intro h
-    have hdvd : ∀ x, MvPolynomial.X i ∣ c x := fun x => by
-      rw [← MvPolynomial.killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange,
-        ← simplyBlockedSpecialization_apply R i c x, h, Finsupp.coe_zero, Pi.zero_apply]
-    refine ⟨Finsupp.mapRange (fun p => p.divMonomial (Finsupp.single i 1))
-      (MvPolynomial.zero_divMonomial _) c, Finsupp.ext fun x => ?_⟩
-    have hmod : (c x).modMonomial (Finsupp.single i 1) = 0 :=
-      MvPolynomial.X_dvd_iff_modMonomial_eq_zero.mp (hdvd x)
-    have hsplit := MvPolynomial.divMonomial_add_modMonomial_single (c x) i
-    rw [hmod, add_zero] at hsplit
-    rw [Finsupp.smul_apply, Finsupp.mapRange_apply, smul_eq_mul, hsplit]
-  · rintro ⟨d, rfl⟩
-    refine Finsupp.ext fun x => ?_
-    have hX : MvPolynomial.killCompl (R := R)
-        (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-        (Subtype.val_injective : Function.Injective
-          (Subtype.val : {c : Fin n // c ≠ i} → Fin n)) (MvPolynomial.X i) = 0 := by
-      rw [MvPolynomial.X]
-      exact MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range
-        (Subtype.val_injective : Function.Injective
-          (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
-        (s := Finsupp.single i 1) 1 (a := i) (by simp) (by simp)
-    rw [simplyBlockedSpecialization_apply, Finsupp.smul_apply, smul_eq_mul, map_mul,
-      hX, zero_mul, Finsupp.coe_zero, Pi.zero_apply]
+  rw [Finsupp.ext_iff, hmap, Finsupp.range_mapRange]
+  simp only [simplyBlockedSpecialization_apply, Finsupp.coe_zero, Pi.zero_apply,
+    Set.mem_ofPred_eq]
+  exact forall_congr' fun x => exact_X_mul_simplyBlockedRingHom R i (c x)
 
 end Specialization
 
@@ -358,7 +378,7 @@ private theorem simplyBlockedSpecialization_unblockedDifferential_single (i : Fi
     ← Finsupp.smul_single_one x
       (MvPolynomial.killCompl (f := Subtype.val) Subtype.val_injective a),
     map_smul, G.simplyBlockedDifferential_single R i x]
-  simp only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+  rw [simplyBlockedRingHom_apply]
 
 /-- Coefficientwise specialization intertwines the unblocked and simply blocked maps. -/
 @[simp]
