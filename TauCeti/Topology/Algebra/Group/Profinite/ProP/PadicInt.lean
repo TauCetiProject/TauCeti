@@ -59,7 +59,10 @@ theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
       apply (PadicInt.norm_le_pow_iff_mem_span_pow x.toAdd n).mpr
       rw [← PadicInt.ker_toZModPow]
       have hxzero : PadicInt.toZModPow n x.toAdd = 0 := by
-        simpa [MonoidHom.mem_ker, f] using hx
+        change (PadicInt.toZModPow n).toAddMonoidHom x.toAdd = 0
+        have hx' := congrArg Multiplicative.toAdd (MonoidHom.mem_ker.mp hx)
+        simpa only [f, AddMonoidHom.coe_toMultiplicative, Function.comp_apply,
+          toAdd_ofAdd, toAdd_one] using hx'
       exact RingHom.mem_ker.mpr hxzero
     simpa [dist_zero_right] using hxnorm
   have htarget : IsPGroup p (Multiplicative (ZMod (p ^ n))) :=
@@ -75,6 +78,7 @@ theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
 
 /-- The element `1 : ℤ_[p]` topologically generates the additive group of the `p`-adic
 integers. -/
+@[simp]
 theorem topologicallyGenerates_one_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
     (Subgroup.closure ({Multiplicative.ofAdd (1 : ℤ_[p])} : Set _)).topologicalClosure = ⊤ := by
   let f : Multiplicative ℤ →* Multiplicative ℤ_[p] :=
@@ -95,7 +99,9 @@ theorem topologicallyGenerates_one_multiplicative_padicInt (p : ℕ) [Fact p.Pri
     exact top_unique (Subgroup.le_topologicalClosure ⊤)
   have hf : Continuous f := continuous_of_discreteTopology
   have hdense : DenseRange f := PadicInt.denseRange_intCast
-  simpa [f] using topologicalClosure_closure_image_eq_top hgen hf hdense
+  convert topologicalClosure_closure_image_eq_top hgen hf hdense using 1
+  simp only [Set.image_singleton, f, AddMonoidHom.coe_toMultiplicative,
+    Function.comp_apply, toAdd_ofAdd, Int.coe_castAddHom, Int.cast_one]
 
 /-- The additive group of the `p`-adic integers is topologically finitely generated. -/
 theorem isTopologicallyFinitelyGenerated_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
@@ -104,6 +110,7 @@ theorem isTopologicallyFinitelyGenerated_multiplicative_padicInt (p : ℕ) [Fact
     (topologicallyGenerates_one_multiplicative_padicInt p)
 
 /-- The natural-number topological generator rank of the additive group of `ℤ_[p]` is one. -/
+@[simp]
 theorem topologicalGeneratorRankNat_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
     topologicalGeneratorRankNat (Multiplicative ℤ_[p])
       (isTopologicallyFinitelyGenerated_multiplicative_padicInt p) = 1 := by
@@ -111,7 +118,7 @@ theorem topologicalGeneratorRankNat_multiplicative_padicInt (p : ℕ) [Fact p.Pr
   have hle : topologicalGeneratorRankNat (Multiplicative ℤ_[p]) hfg ≤ 1 := by
     simpa using topologicalGeneratorRankNat_le hfg
       (s := {Multiplicative.ofAdd (1 : ℤ_[p])})
-      (by simpa using topologicallyGenerates_one_multiplicative_padicInt p)
+      (by simp)
   have hne : topologicalGeneratorRankNat (Multiplicative ℤ_[p]) hfg ≠ 0 := by
     intro hzero
     have hrank : topologicalGeneratorRank (Multiplicative ℤ_[p]) = 0 := by
@@ -123,6 +130,7 @@ theorem topologicalGeneratorRankNat_multiplicative_padicInt (p : ℕ) [Fact p.Pr
   omega
 
 /-- The cardinal-valued topological generator rank of the additive group of `ℤ_[p]` is one. -/
+@[simp]
 theorem topologicalGeneratorRank_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
     topologicalGeneratorRank (Multiplicative ℤ_[p]) = 1 := by
   rw [← topologicalGeneratorRankNat_eq_topologicalGeneratorRank
