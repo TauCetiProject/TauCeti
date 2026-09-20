@@ -106,8 +106,8 @@ theorem circleCayleyInv_boundaryCayley (x : ℝ) :
 /-- The real part of a boundary Cayley point. -/
 @[simp]
 theorem boundaryCayley_re (x : ℝ) :
-    (boundaryCayley x : ℂ).re = (x ^ 2 - 1) / (x ^ 2 + 1) := by
-  rw [coe_boundaryCayley, div_re]
+    (((x : ℂ) - I) / ((x : ℂ) + I)).re = (x ^ 2 - 1) / (x ^ 2 + 1) := by
+  rw [div_re]
   simp only [sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
     normSq_apply]
   ring
@@ -115,8 +115,8 @@ theorem boundaryCayley_re (x : ℝ) :
 /-- The imaginary part of a boundary Cayley point. -/
 @[simp]
 theorem boundaryCayley_im (x : ℝ) :
-    (boundaryCayley x : ℂ).im = -(2 * x) / (x ^ 2 + 1) := by
-  rw [coe_boundaryCayley, div_im]
+    (((x : ℂ) - I) / ((x : ℂ) + I)).im = -(2 * x) / (x ^ 2 + 1) := by
+  rw [div_im]
   simp only [sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
     normSq_apply]
   ring
@@ -146,13 +146,13 @@ theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
   have hquadpos : 0 < (z : ℂ).im ^ 2 + (1 - (z : ℂ).re) ^ 2 :=
     add_pos_of_nonneg_of_pos (sq_nonneg _) (sq_pos_of_ne_zero hden)
   apply Complex.ext
-  · rw [boundaryCayley_re]
+  · rw [coe_boundaryCayley, boundaryCayley_re]
     simp only [circleCayleyInv]
     have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
     rw [div_eq_iff hdenom.ne']
     field_simp [hden, hquadpos.ne']
     nlinarith [hquad]
-  · rw [boundaryCayley_im]
+  · rw [coe_boundaryCayley, boundaryCayley_im]
     simp only [circleCayleyInv]
     have hdenom : 0 < (-(z : ℂ).im / (1 - (z : ℂ).re)) ^ 2 + 1 := by positivity
     rw [div_eq_iff hdenom.ne']
