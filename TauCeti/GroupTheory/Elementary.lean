@@ -537,7 +537,7 @@ theorem exists_mul_eq_of_mem_pElementaryOfSylow {x : G} (hx : x ∈ pElementaryO
 The factorisation of `TauCeti.exists_mul_eq_of_mem_pElementaryOfSylow` splits the element into a
 factor of order prime to `p` and a `p`-element, so it is *the* factorisation of
 `TauCeti.eq_pPart`. -/
-theorem pPart_mem_map_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x : G}
+theorem pPart_mem_map_sylow_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x : G}
     (hx : x ∈ pElementaryOfSylow s P) :
     pPart p x ∈ (P : Subgroup (centralizer ({s} : Set G))).map
       (centralizer ({s} : Set G)).subtype := by

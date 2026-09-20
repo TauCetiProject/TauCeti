@@ -72,16 +72,20 @@ open _root_.Subgroup
 
 universe u v
 
-variable {k : Type u} [Semiring k] {G : Type v} [Group G] {p : ℕ} {s : G}
+variable {k : Type u} {G : Type v} [Group G] {p : ℕ} {s : G}
   {P : Sylow p (centralizer ({s} : Set G))}
 
 /-! ### The indicator of a `p`-section and the class function it induces -/
+
+section Indicator
+
+variable [Zero k] [One k]
 
 open scoped Classical in
 /-- **The indicator of the `p`-section of `s`** inside the `p`-elementary subgroup attached to `s`
 and a Sylow `p`-subgroup `P` of the centraliser of `s`: it is `1` on the elements whose `p`-free
 part is `s`, and `0` elsewhere. -/
-noncomputable def pSectionIndicator (k : Type u) [Semiring k] (s : G)
+noncomputable def pSectionIndicator (k : Type u) [Zero k] [One k] (s : G)
     (P : Sylow p (centralizer ({s} : Set G))) : ↥(pElementaryOfSylow s P) → k :=
   fun x => if pFreePart p (x : G) = s then 1 else 0
 
@@ -91,6 +95,10 @@ open scoped Classical in
 theorem pSectionIndicator_apply (x : ↥(pElementaryOfSylow s P)) :
     pSectionIndicator k s P x = if pFreePart p (x : G) = s then 1 else 0 :=
   (rfl)
+
+end Indicator
+
+variable [Semiring k]
 
 /-- **The `p`-section indicator is a class function.**  Conjugation transports the `p`-free part,
 and the `p`-elementary subgroup centralises `s`, so conjugating inside it does not move the
@@ -118,11 +126,6 @@ by `TauCeti.indPSectionIndicator_eq_pSectionCosetCard`. -/
 noncomputable def indPSectionIndicator (k : Type u) [Semiring k] [Finite G] (s : G)
     (P : Sylow p (centralizer ({s} : Set G))) : G → k :=
   indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P)
-
-/-- `TauCeti.indPSectionIndicator` unfolded to an induced class function. -/
-theorem indPSectionIndicator_def [Finite G] :
-    indPSectionIndicator k s P = indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P) :=
-  (rfl)
 
 /-- The induced `p`-section indicator is a class function of `G`. -/
 theorem indPSectionIndicator_mem_classFunction [Finite G] :
@@ -158,7 +161,7 @@ theorem conj_mem_pElementaryOfSylow_and_pFreePart_eq_iff [Fact p.Prime] (hs : ¬
     refine ⟨hfree ▸ heq, ?_⟩
     rw [← hpart]
     exact map_sylow_le_pElementaryOfSylow s P
-      (pPart_mem_map_of_mem_pElementaryOfSylow s P hs hmem)
+      (pPart_mem_map_sylow_of_mem_pElementaryOfSylow s P hs hmem)
   · rintro ⟨heq, hmem⟩
     refine ⟨?_, hfree.trans heq⟩
     have hx : g⁻¹ * x * g = (g⁻¹ * pFreePart p x * g) * (g⁻¹ * pPart p x * g) :=
@@ -173,7 +176,7 @@ theorem indPSectionIndicator_eq_pSectionCosetCard [Finite G] [Fact p.Prime]
     indPSectionIndicator k s P x = (pSectionCosetCard s P x : k) := by
   classical
   let := Fintype.ofFinite (G ⧸ pElementaryOfSylow s P)
-  rw [indPSectionIndicator_def, indClassFun_apply, pSectionCosetCard, Nat.card_eq_fintype_card,
+  rw [indPSectionIndicator, indClassFun_apply, pSectionCosetCard, Nat.card_eq_fintype_card,
     Fintype.card_subtype, ← Finset.sum_boole]
   refine Finset.sum_congr rfl fun t _ => ?_
   by_cases hmem : (Quotient.out t)⁻¹ * x * Quotient.out t ∈ pElementaryOfSylow s P
@@ -293,12 +296,14 @@ private theorem pSectionCosetCard_eq_card_fixed {x : G} (hx : pFreePart p x = s)
 centraliser of `s`**, which is prime to `p` by
 `TauCeti.not_dvd_relIndex_pElementaryOfSylow`: the `p`-part of `s` is trivial, so every coset of
 the subgroup in the centraliser contributes. -/
+@[simp]
 theorem pSectionCosetCard_self [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
     pSectionCosetCard s P s =
       (pElementaryOfSylow s P).relIndex (centralizer ({s} : Set G)) := by
   have hx : pFreePart p s = s :=
     (eq_pFreePart Fact.out (Commute.one_right s) (mul_one s) hs (k := 0) (by simp)).symm
-  have hu := pPart_mem_centralizer_pFreePart p s
+  have hu : pPart p s ∈ centralizer ({pFreePart p s} : Set G) :=
+    mem_centralizer_singleton_iff.2 (commute_pFreePart_pPart p s).symm.eq
   rw [hx] at hu
   have hpart : pPart p s = 1 := by
     have h := pFreePart_mul_pPart p s
@@ -321,7 +326,8 @@ points modulo `p`. -/
 theorem pSectionCosetCard_modEq [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x : G}
     (hx : pFreePart p x = s) :
     pSectionCosetCard s P x ≡ pSectionCosetCard s P s [MOD p] := by
-  have hu := pPart_mem_centralizer_pFreePart p x
+  have hu : pPart p x ∈ centralizer ({pFreePart p x} : Set G) :=
+    mem_centralizer_singleton_iff.2 (commute_pFreePart_pPart p x).symm.eq
   rw [hx] at hu
   have hpg : IsPGroup p (zpowers (⟨pPart p x, hu⟩ : ↥(centralizer ({s} : Set G)))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
@@ -353,6 +359,7 @@ theorem not_dvd_pSectionCosetCard [Finite G] [Fact p.Prime] (hs : ¬ p ∣ order
     ((pSectionCosetCard_modEq hs hx).symm.trans (Nat.modEq_zero_iff_dvd.2 hdvd))
 
 /-- **The value of the induced `p`-section indicator at `s`.** -/
+@[simp]
 theorem indPSectionIndicator_self [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
     indPSectionIndicator k s P s =
       ((pElementaryOfSylow s P).relIndex (centralizer ({s} : Set G)) : k) := by

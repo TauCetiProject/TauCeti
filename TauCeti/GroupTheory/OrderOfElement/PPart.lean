@@ -103,11 +103,6 @@ theorem pFreePart_one (p : ℕ) : pFreePart p (1 : G) = 1 := one_pow _
 @[simp]
 theorem pPart_one (p : ℕ) : pPart p (1 : G) = 1 := by rw [pPart, pFreePart_one, inv_one, mul_one]
 
-/-- The `p`-part centralises the `p`-free part. -/
-theorem pPart_mem_centralizer_pFreePart (p : ℕ) (x : G) :
-    pPart p x ∈ Subgroup.centralizer ({pFreePart p x} : Set G) :=
-  Subgroup.mem_centralizer_singleton_iff.2 (commute_pFreePart_pPart p x).symm.eq
-
 /-- **Conjugation transports the `p`-free part.**  Both factors are powers of `x` cut out by an
 exponent that only depends on the order of `x`, and conjugation preserves orders. -/
 @[simp]
