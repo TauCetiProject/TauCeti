@@ -142,13 +142,11 @@ theorem coe_dualSemigroupCoord (c : ToricRay σ ⊕ ι) :
   simp [dualSemigroupCoord]
 
 /-- A dual basis character takes the value `1` on its own basis vector. -/
-@[simp]
 theorem dualSemigroupCoord_apply_basis_self (c : ToricRay σ ⊕ ι) :
     ((dualSemigroupCoord hi hσ hb c : dualSemigroup hi σ) : N →+ ℤ) (b c) = 1 := by
   simp [Module.Basis.coord_apply]
 
 /-- A dual basis character vanishes on every other basis vector. -/
-@[simp]
 theorem dualSemigroupCoord_apply_basis_of_ne {c c' : ToricRay σ ⊕ ι} (h : c' ≠ c) :
     ((dualSemigroupCoord hi hσ hb c : dualSemigroup hi σ) : N →+ ℤ) (b c') = 0 := by
   simp [Module.Basis.coord_apply, Finsupp.single_eq_of_ne (Ne.symm h)]
