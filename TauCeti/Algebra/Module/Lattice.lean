@@ -70,9 +70,12 @@ theorem _root_.Module.Basis.span_range_extendOfIsLattice {κ : Type*} {N : Submo
     Submodule.map_top, Submodule.range_subtype]
 
 /-- The `R`-finrank of a free full lattice in `V` equals the `K`-finrank of the ambient space. -/
-theorem Submodule.IsLattice.finrank_eq_finrank [IsDomain R]
+theorem Submodule.IsLattice.finrank_eq_finrank
     (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
     Module.finrank R N = Module.finrank K V := by
+  -- `R` embeds in the field `K`, so it is nontrivial, and a nontrivial commutative ring satisfies
+  -- the strong rank condition that comparing the two bases needs.
+  have : Nontrivial R := (algebraMap R K).domain_nontrivial
   let b := Module.Free.chooseBasis R N
   exact congr_arg Cardinal.toNat
     (b.mk_eq_rank''.symm.trans (b.extendOfIsLattice K).mk_eq_rank'')
