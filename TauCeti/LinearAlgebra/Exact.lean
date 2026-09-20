@@ -12,7 +12,9 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 This file records two elementary consequences of exactness at the middle term: finite-dimensional
 outer vector spaces (over a division ring) force the middle vector space to be finite-dimensional,
-and trivial outer types force the middle additive group to be trivial.
+and trivial outer types force the middle type to be trivial. The second needs no algebraic
+structure beyond a distinguished zero in each of the three types, which is already what
+`Function.Exact` and the hypothesis `f 0 = 0` refer to.
 -/
 
 public section
@@ -33,7 +35,7 @@ theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGr
     (fun x ↦ by rw [← h x, ← Subtype.coe_inj]; simp) g.surjective_rangeRestrict
 
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are trivial, then so is `N`. -/
-theorem subsingleton_of_exact {M N P : Type*} [Zero M] [AddCommGroup N] [Zero P] {f : M → N}
+theorem subsingleton_of_exact {M N P : Type*} [Zero M] [Zero N] [Zero P] {f : M → N}
     {g : N → P} (h : Function.Exact f g) (hf : f 0 = 0) [Subsingleton M] [Subsingleton P] :
     Subsingleton N := by
   refine subsingleton_of_forall_eq 0 fun x ↦ ?_
