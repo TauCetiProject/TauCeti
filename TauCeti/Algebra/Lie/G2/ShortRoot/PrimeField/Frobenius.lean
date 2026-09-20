@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PointsFunctor
 public import TauCeti.FieldTheory.Finite.Frobenius
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Frobenius
@@ -15,6 +16,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Frobenius
 This file defines the Frobenius endomorphisms of the carrier's matrix-valued points. The
 finite-field Frobenius algebra homomorphism exists for every `ZMod 3`-algebra, including the zero
 ring, so the coefficient formula and all functor laws need no separate characteristic hypothesis.
+It also records the cubic Frobenius of the carrier itself, as an endomorphism of its coordinate
+Hopf algebra and of the group scheme, and identifies the induced action on scheme-valued points
+with the point map at `m = 1`.
 
 Over an algebraic closure of `𝔽₃`, and for `0 < m`, the points fixed by the `3 ^ m`-power
 Frobenius are those with entries in the field of `3 ^ m` elements, which is how a group of type
@@ -33,6 +37,11 @@ square is the `3`-power Frobenius defined here.
 * `PrimeField.frobenius_eq_self_iff` and `PrimeField.map_subtype_fixedSubgroup_frobenius_eq` say
   which points it fixes, and identify the fixed subgroup with the carrier's points over the
   Frobenius-fixed subalgebra. No finiteness of either side is asserted.
+* `PrimeField.frobeniusCoordinateMap` and `PrimeField.frobeniusHom` are the cubic Frobenius of the
+  carrier's coordinate Hopf algebra and of the carrier group scheme, with
+  `PrimeField.map_carrierGenericMatrix_frobeniusCoordinateMap` its action on the universal point
+  and `PrimeField.schemePointsMulEquiv_comp_frobeniusHom` identifying the induced action on
+  scheme-valued points with `PrimeField.frobenius 1`.
 
 ## References
 
@@ -47,7 +56,9 @@ characteristic-three instance. -/
 
 public section
 
+open AlgebraicGeometry CategoryTheory
 open scoped Matrix
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.G2ShortRoot
 
@@ -162,6 +173,95 @@ theorem map_subtype_fixedSubgroup_frobenius_eq (m : ℕ) (A : Type v) [CommRing 
     TauCeti.GeneralLinear.map_hopfIdealPointsSubgroup_subalgebra 7 definingIdeal _,
     points_eq_hopfIdealPointsSubgroup A, TauCeti.FiniteField.frobeniusFixedSubalgebra_def,
     _root_.Matrix.GeneralLinearGroup.range_map_val_equalizer]
+
+/-! ## Frobenius on the coordinate Hopf algebra and on the carrier -/
+
+/-- **The cubic Frobenius endomorphism of the carrier coordinate Hopf algebra**, the `3`-power
+map of the coordinate Hopf algebra over `𝔽₃`. -/
+noncomputable def frobeniusCoordinateMap : carrierAlgebra ⟶ carrierAlgebra :=
+  CommHopfAlgCat.ofHom (TauCeti.frobeniusBialgHom (ZMod 3) carrierAlgebra)
+
+/-- The Frobenius coordinate map cubes every element of the carrier coordinate Hopf algebra. -/
+@[simp]
+theorem frobeniusCoordinateMap_apply (x : carrierAlgebra) :
+    frobeniusCoordinateMap.hom x = x ^ 3 := by
+  rw [frobeniusCoordinateMap, CommHopfAlgCat.hom_ofHom, TauCeti.frobeniusBialgHom_apply,
+    ZMod.card]
+
+/-- The Frobenius coordinate map cubes the universal point of the carrier entrywise. -/
+theorem map_carrierGenericMatrix_frobeniusCoordinateMap :
+    carrierGenericMatrix.map frobeniusCoordinateMap.hom.toAlgHom =
+      carrierGenericMatrix.map (fun x => x ^ 3) := by
+  ext i j
+  rw [Matrix.map_apply, Matrix.map_apply, BialgHom.coe_toAlgHom, frobeniusCoordinateMap_apply]
+
+/-- **The cubic Frobenius as an endomorphism of the short-root type-`G₂` carrier over `𝔽₃`.** -/
+noncomputable def frobeniusHom : groupScheme ⟶ groupScheme :=
+  eqToHom groupScheme_eq_commonKernelSpec ≫
+    (hopfSpec (CommRingCat.of (ZMod 3))).map frobeniusCoordinateMap.op ≫
+      eqToHom groupScheme_eq_commonKernelSpec.symm
+
+/-- The carrier Frobenius is the scheme morphism induced by `frobeniusCoordinateMap`. -/
+theorem frobeniusHom_eq_map_frobeniusCoordinateMap :
+    frobeniusHom =
+      eqToHom groupScheme_eq_commonKernelSpec ≫
+        (hopfSpec (CommRingCat.of (ZMod 3))).map frobeniusCoordinateMap.op ≫
+          eqToHom groupScheme_eq_commonKernelSpec.symm := by
+  rw [frobeniusHom]
+
+private theorem pointsMulEquiv_map_frobeniusCoordinateMap
+    {B : Type} [CommRing B] [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra) (CommAlgCat.of (ZMod 3) B)) :
+    pointsMulEquiv (CommAlgCat.of (ZMod 3) B) (AlgHom.mapDomain frobeniusCoordinateMap.hom q) =
+      frobenius 1 B (pointsMulEquiv (CommAlgCat.of (ZMod 3) B) q) := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_pointsMulEquiv_eq_map_carrierGenericMatrix]
+  ext i j
+  rw [coe_frobenius_apply, coe_pointsMulEquiv_eq_map_carrierGenericMatrix, Matrix.map_apply,
+    Matrix.map_apply, pow_one, ← map_pow, ← frobeniusCoordinateMap_apply]
+  exact AlgHom.mapDomain_apply_apply frobeniusCoordinateMap.hom q (carrierGenericMatrix i j)
+
+/-- The action induced by `frobeniusHom` on scheme-valued carrier points is the cubic Frobenius
+`frobenius 1` of matrix-valued points. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_frobeniusHom
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶ groupScheme.X) :
+    schemePointsMulEquiv B (p ≫ frobeniusHom.hom.hom) =
+      frobenius 1 B (schemePointsMulEquiv B p) := by
+  obtain ⟨q, rfl⟩ := (groupSchemePointMulEquiv B).surjective p
+  rw [frobeniusHom_eq_map_frobeniusCoordinateMap, groupSchemePointMulEquiv_comp_coordinateMap,
+    schemePointsMulEquiv_groupSchemePointMulEquiv, schemePointsMulEquiv_groupSchemePointMulEquiv]
+  exact pointsMulEquiv_map_frobeniusCoordinateMap q
+
+/-- On scheme-valued points, composing a numbered root subgroup with the carrier Frobenius cubes
+its parameter. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_rootSubgroup_comp_frobeniusHom
+    (k : Fin 2 ⊕ Fin 2) (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
+      (AdditiveGroup.groupScheme (ZMod 3)).X) :
+    schemePointsMulEquiv B (p ≫ (rootSubgroup k).hom.hom ≫ frobeniusHom.hom.hom) =
+      rootSubgroupPoints k B
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv B p) ^ 3)) := by
+  rw [← Category.assoc, schemePointsMulEquiv_comp_frobeniusHom,
+    schemePointsMulEquiv_comp_rootSubgroup, frobenius_rootSubgroupPoints]
+  norm_num
+
+/-- On scheme-valued points, composing the weight torus with the carrier Frobenius cubes every
+torus coordinate. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_weightTorus_comp_frobeniusHom
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
+      (SplitTorus.groupScheme (ZMod 3) (Fin 2)).X) :
+    schemePointsMulEquiv B (p ≫ weightTorus.hom.hom ≫ frobeniusHom.hom.hom) =
+      weightTorusPoints B (SplitTorus.schemePointsMulEquiv p ^ 3) := by
+  rw [← Category.assoc, schemePointsMulEquiv_comp_frobeniusHom,
+    schemePointsMulEquiv_comp_weightTorus, frobenius_weightTorusPoints]
+  norm_num
 
 end PrimeField
 

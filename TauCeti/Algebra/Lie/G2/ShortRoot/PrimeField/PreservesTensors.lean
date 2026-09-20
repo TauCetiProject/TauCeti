@@ -18,8 +18,10 @@ Both statements are equations between matrices, so they pass from the generators
 generated subgroup of points, and hence to the universal point of the carrier's coordinate Hopf
 algebra.
 
-This is what the special isogeny of characteristic three needs: the matrix `Matrix.g2SpecialIsogeny`
-of signed two-by-two minors is multiplicative exactly on matrices preserving both tensors.
+This is what the special isogeny of characteristic three needs: by `Matrix.g2SpecialIsogeny_mul`,
+the matrix `Matrix.g2SpecialIsogeny` of signed two-by-two minors is multiplicative on a product
+`g * h` of matrices preserving the cross product whenever the left factor `g` also fixes the
+invariant dual form by congruence. Points of the carrier satisfy both hypotheses.
 
 ## Main results
 
@@ -262,31 +264,6 @@ theorem preservesDualForm_of_mem_points {g : _root_.Matrix.GeneralLinearGroup (F
       rw [hs, map_algebraMap_invariantDualFormPrime,
         coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal]
       exact diagonal_torusCharacter_mul_invariantDualForm_mul_transpose s
-
-/-- Preserving the type-`G₂` cross product is inherited by the image of a matrix under an
-algebra map. -/
-theorem preservesG2Cross_map {S T : Type*} [CommRing S] [CommRing T]
-    [Algebra (ZMod 3) S] [Algebra (ZMod 3) T] (f : S →ₐ[ZMod 3] T)
-    {M : Matrix (Fin 7) (Fin 7) S} (h : PreservesG2Cross M) :
-    PreservesG2Cross (M.map f) := by
-  rw [← preserves_crossOperatorPrime_iff] at h ⊢
-  exact ConstantMultiplication.Preserves.map (ZMod 3) 7 crossOperatorPrime h f
-
-/-- Fixing the invariant dual form by congruence is inherited by the image of a matrix under a
-ring homomorphism. -/
-theorem preservesDualForm_map {S T : Type*} [Ring S] [Ring T] (f : S →+* T)
-    {M : Matrix (Fin 7) (Fin 7) S}
-    (h : M * invariantDualForm.map (Int.cast : ℤ → S) * Mᵀ =
-      invariantDualForm.map (Int.cast : ℤ → S)) :
-    M.map f * invariantDualForm.map (Int.cast : ℤ → T) * (M.map f)ᵀ =
-      invariantDualForm.map (Int.cast : ℤ → T) := by
-  have hform : (invariantDualForm.map (Int.cast : ℤ → S)).map (f : S → T) =
-      invariantDualForm.map (Int.cast : ℤ → T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun z => map_intCast f z)
-  have himg := congrArg (fun N : Matrix (Fin 7) (Fin 7) S => N.map (f : S →+* T)) h
-  simp only [Matrix.map_mul, Matrix.transpose_map] at himg
-  rwa [hform] at himg
 
 private theorem coe_universalPoint :
     ((TauCeti.GeneralLinear.pointToGeneralLinear 7 (toConv carrierQuotient.hom.toAlgHom) :
