@@ -82,6 +82,7 @@ instance instIsPerfectFixedPoints : Group.IsPerfect (of m hvalid).FixedPoints :=
 
 /-- **The Steinberg fixed points of a valid Suzuki index have trivial centre**, the centre of the
 generated Suzuki group being trivial at every parameter. -/
+@[simp]
 theorem center_fixedPoints_eq_bot : Subgroup.center (of m hvalid).FixedPoints = ⊥ := by
   rw [← Subgroup.map_center_eq (suzukiGroupEquivFixedPoints m hvalid),
     Suzuki.center_suzukiGroup_eq_bot m, Subgroup.map_bot]
@@ -96,6 +97,8 @@ own derived subgroup modulo the centre of that derived subgroup. -/
 def groupEquivFixedPoints : (of m hvalid).Group ≃* (of m hvalid).FixedPoints :=
   DerivedCentralQuotient.mulEquivOfCenterEqBot center_fixedPoints_eq_bot
 
+/-- The fixed-point equivalence sends the class represented by an element of the commutator
+subgroup to that element of the fixed-point group. -/
 @[simp]
 theorem groupEquivFixedPoints_mk (x : ↥(commutator (of m hvalid).FixedPoints)) :
     groupEquivFixedPoints m hvalid (x : (of m hvalid).Group) =
@@ -111,15 +114,17 @@ Neither side is asserted to be finite or simple. -/
 def groupEquivSuzukiGroup : (of m hvalid).Group ≃* ↥(suzukiGroup m) :=
   (groupEquivFixedPoints m hvalid).trans (suzukiGroupEquivFixedPoints m hvalid).symm
 
+/-- The Suzuki-group equivalence sends the class represented by an element of the commutator
+subgroup to the corresponding element of the generated Suzuki group. -/
 @[simp]
 theorem groupEquivSuzukiGroup_mk (x : ↥(commutator (of m hvalid).FixedPoints)) :
     groupEquivSuzukiGroup m hvalid (x : (of m hvalid).Group) =
       (suzukiGroupEquivFixedPoints m hvalid).symm (x : (of m hvalid).FixedPoints) := by
   rw [groupEquivSuzukiGroup, MulEquiv.trans_apply, groupEquivFixedPoints_mk]
 
-/-- Read backwards, the identification sends a standard-matrix generator to the class of the
-Steinberg fixed point it scalar-extends to; every fixed point lies in the derived subgroup, the
-fixed points being perfect. -/
+/-- Read backwards, the identification sends an element of the generated Suzuki group to the class
+of the Steinberg fixed point it scalar-extends to; every fixed point lies in the derived subgroup,
+the fixed points being perfect. -/
 @[simp]
 theorem groupEquivSuzukiGroup_symm_apply (g : ↥(suzukiGroup m)) :
     (groupEquivSuzukiGroup m hvalid).symm g =
@@ -128,8 +133,8 @@ theorem groupEquivSuzukiGroup_symm_apply (g : ↥(suzukiGroup m)) :
   rw [MulEquiv.symm_apply_eq, groupEquivSuzukiGroup_mk, MulEquiv.symm_apply_apply]
 
 /-- **The identification with the generated group is inverse to the generator embedding**: the
-class of a Steinberg fixed point `x` goes to the standard-matrix generator whose coordinate change
-and scalar extension is `x`. -/
+class of a Steinberg fixed point `x` goes to the element of the generated Suzuki group whose
+coordinate change and scalar extension is `x`. -/
 theorem generatorEmbedding_groupEquivSuzukiGroup_mk
     (x : ↥(commutator (of m hvalid).FixedPoints)) :
     generatorEmbedding m hvalid (groupEquivSuzukiGroup m hvalid (x : (of m hvalid).Group)) =
