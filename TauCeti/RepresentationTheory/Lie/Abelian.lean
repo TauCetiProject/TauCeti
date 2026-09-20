@@ -129,6 +129,13 @@ theorem abelianSquareZeroRepresentation_injective [IsLieAbelian L] :
   have h := LinearMap.congr_fun hxy (1, 0)
   simpa using congrArg Prod.snd h
 
+/-- The carrier of the canonical square-zero representation has dimension one more than the
+abelian Lie algebra. -/
+theorem finrank_abelianSquareZeroRepresentation (K : Type u) [DivisionRing K]
+    (A : Type v) [AddCommGroup A] [Module K A] [FiniteDimensional K A] :
+    Module.finrank K (K × A) = Module.finrank K A + 1 := by
+  simp [add_comm]
+
 /-- Every finite-dimensional abelian Lie algebra has an explicit faithful finite-dimensional
 representation whose operators have pairwise-zero products. -/
 theorem exists_faithful_squareZeroRepresentation (K : Type u) [Field K]
