@@ -24,6 +24,8 @@ coordinates in the simple-root basis.
 
 ## Main results
 
+* `TauCeti.apply_root_eq_mul_height` says that a linear functional taking the constant value `c`
+  on the simple roots takes the value `c · ht(α)` on every root.
 * `TauCeti.sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero` says that height respects integral
   relations among roots.
 * `TauCeti.sum_mul_height_eq_of_sum_zsmul_root_eq` compares the heights of two integral
@@ -45,6 +47,17 @@ universe u v w x
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N)
+
+/-- **A functional constant on the simple roots is that constant times the height.** Expanding a
+root in the simple roots and applying the functional termwise turns the value `c` on every simple
+root into the value `c · ht(α)` on every root. -/
+theorem apply_root_eq_mul_height [CharZero R] (b : P.Base) (g : M →ₗ[R] R) {c : R}
+    (hg : ∀ j ∈ b.support, g (P.root j) = c) (i : ι) :
+    g (P.root i) = c * (b.height i : R) := by
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
+  rw [hf, map_sum, b.height_eq_sum hf, Int.cast_sum, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j hj ↦ by
+    rw [map_zsmul, hg j hj, zsmul_eq_mul, mul_comm]
 
 section HeightLinearMap
 
@@ -72,13 +85,8 @@ theorem heightLinearMap_simpleRoot (b : P.Base) (i : b.support) :
 @[simp]
 theorem heightLinearMap_root [CharZero R] (b : P.Base) (i : ι) :
     heightLinearMap P b (P.root i) = (b.height i : R) := by
-  classical
-  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
-  rw [hf, map_sum, b.height_eq_sum hf, Int.cast_sum]
-  apply Finset.sum_congr rfl
-  intro j hj
-  rw [map_zsmul, heightLinearMap_simpleRoot P b ⟨j, hj⟩]
-  simp only [zsmul_one]
+  rw [apply_root_eq_mul_height P b (heightLinearMap P b) (c := 1)
+    (fun j hj ↦ heightLinearMap_simpleRoot P b ⟨j, hj⟩) i, one_mul]
 
 end HeightLinearMap
 
