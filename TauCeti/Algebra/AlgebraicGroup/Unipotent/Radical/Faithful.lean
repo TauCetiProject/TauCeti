@@ -106,7 +106,7 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful
   let _ : Algebra.Smooth k (CommHopfAlgCat.quotient H.obj I) :=
     (smoothCommHopfAlgProperty_iff _).mp <|
       (smoothCommHopfAlgProperty_iff _).mpr hU'.1
-  let _ : IsReduced (CommHopfAlgCat.quotient H.obj I) := isReduced_of_smooth_of_field k _
+  let _ : IsReduced (CommHopfAlgCat.quotient H.obj I) := isReduced_of_smooth k _
   have hu : ∀ g : WithConv (CommHopfAlgCat.quotient H.obj I →ₐ[k] k),
       HopfAlgebra.IsUnipotentPoint g :=
     geometricallyUnipotentPointsCommHopfAlgProperty.forall_isUnipotentPoint hgeom

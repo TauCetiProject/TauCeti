@@ -30,6 +30,9 @@ what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
   involution, with `TauCeti.FiniteField.pow_natCard_ne` and
   `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` its two consequences for an element
   outside `K`.
+* `TauCeti.FiniteField.units_map_algebraMap_pow_natCard` and
+  `TauCeti.FiniteField.units_pow_natCard_pow_natCard`: the fixed-point and involution statements
+  as equalities of units, the form in which a character of `Lˣ` consumes them.
 
 Mathlib has the easy direction (`FiniteField.pow_card`) but not the equivalence.
 `IsGalois.mem_range_algebraMap_iff_fixed` characterises the base field of a Galois extension by
@@ -109,6 +112,13 @@ theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
 theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
   fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
 
+/-- **A unit of the base field is fixed by the `q`-power map**, as an equality in `Lˣ`. -/
+theorem units_map_algebraMap_pow_natCard (a : Kˣ) :
+    Units.map (algebraMap K L : K →* L) a ^ Nat.card K = Units.map (algebraMap K L : K →* L) a :=
+  Units.ext (by
+    rw [Units.val_pow_eq_pow_val]
+    exact (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr ⟨(a : K), rfl⟩)
+
 end Finite
 
 /-! ### Quadratic extensions -/
@@ -131,6 +141,14 @@ theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
     rw [Module.natCard_eq_pow_finrank (K := K) (V := L), h2]
   rw [← pow_mul, ← pow_two, ← hcard, Nat.card_eq_fintype_card]
   exact _root_.FiniteField.pow_card a
+
+/-- **In a quadratic extension the `q`-power map is an involution on units**, the units-level
+form of `TauCeti.FiniteField.pow_natCard_pow_natCard`. -/
+theorem units_pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : Lˣ) :
+    (a ^ Nat.card K) ^ Nat.card K = a :=
+  Units.ext (by
+    rw [Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
+    exact pow_natCard_pow_natCard h2 (a : L))
 
 /-- **In a quadratic extension the `q`-th power of an element outside the base field is again
 outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to

@@ -22,13 +22,19 @@ are false for a `MonoidWithZero` with an arbitrary topology. `ContinuousSMul A M
 joint continuity, strictly more than these proofs use.
 
 Nothing here is Huber-specific, or even ring-specific. The hypothesis is about `A`, but the
-absorption and covering results act on a space `M` carrying a zero and a zero-preserving
-`A`-action — `[Zero M] [TopologicalSpace M] [MulActionWithZero A M]`, no additive structure on `M`
-required, so `M` is *not* assumed to be a module. That is the form Henkel's theorem needs, since
-his Baire argument covers the *domain* of the map rather than the base ring; taking `M = A`
-recovers the ring statements. The bridge to Huber theory — that the powers of a pseudouniformiser
-are such a sequence, so a Tate ring qualifies — is in
-`TauCeti/RingTheory/Huber/ZeroSequenceOfUnits.lean`.
+results act on a space `M` carrying a zero and a scalar multiplication by `A` — `[Zero M]`,
+`[TopologicalSpace M]`, and a scalar multiplication, with no additive structure on `M` required,
+so `M` is *not* assumed to be a module.
+
+How much scalar multiplication is needed splits the file in two. The two pointwise absorption
+results ask for `[SMul A M]` and `h0 : (0 : A) • x = 0` at the given vector. The covering
+theorem requires `[MulAction A M]` and `h0 : ∀ x : M, (0 : A) • x = 0`.
+Neither requires scalar multiplication to preserve zero in the vector argument.
+
+That is the form Henkel's theorem needs, since his Baire argument covers the *domain* of the map
+rather than the base ring; taking `M = A` recovers the ring statements. The bridge to Huber
+theory — that the powers of a pseudouniformiser are such a sequence, so a Tate ring qualifies —
+is in `TauCeti/RingTheory/Huber/ZeroSequenceOfUnits.lean`.
 
 The covering is the point, and it must be **countable**. Henkel's proof applies a Baire argument
 to the sets `uₙ⁻¹ • U` indexed by `n : ℕ`; a cover indexed by all of `Aˣ` would exhaust `M` just
@@ -46,12 +52,12 @@ All three carry the continuity hypothesis described above; the covering needs it
 the two pointwise results only at their own.
 
 * `TauCeti.exists_smul_mem_of_tendsto_zero`: along any zero sequence of units, some term carries a
-  given element of a space carrying a zero-preserving `A`-action into a given neighbourhood of
-  zero.
+  given element of a space with `[SMul A M]` and `0 • x = 0` into a neighbourhood of zero.
 * `TauCeti.iUnion_inv_smul_eq_univ_of_tendsto_zero`: its dilates `uₙ⁻¹ • U` cover `M`, indexed
-  by `ℕ`.
+  by `ℕ`. This needs `[MulAction A M]` and `0 • x = 0` for every vector.
 * `TauCeti.HasZeroSequenceOfUnits.exists_unit_smul_mem`: the weaker unit-only form of absorption —
-  it produces some `v : Aˣ`, with no sequence and no term index.
+  it produces some `v : Aˣ`, with no sequence and no term index. Being an absorption result it too
+  needs only `[SMul A M]` and `0 • x = 0` at the given vector.
 
 ## References
 
@@ -88,46 +94,54 @@ variable {A}
 
 section Absorption
 
-variable {M : Type*} [Zero M] [TopologicalSpace M] [MulActionWithZero A M]
+section SMul
+
+variable {M : Type*} [Zero M] [TopologicalSpace M] [SMul A M]
   {u : ℕ → Aˣ} (hu : Tendsto (fun n ↦ ((u n : A))) atTop (𝓝 0))
 include hu
 
 /-- **Absorption.** Along a zero sequence of units in `A`, every element of a space `M` carrying a
-zero-preserving `A`-action is carried into every neighbourhood of zero by some term of the
-sequence.
+scalar multiplication by `A` satisfying `0 • x = 0` is carried into every neighbourhood of zero
+by some term of the sequence.
 
 Stated for an arbitrary such sequence rather than a chosen one, so a caller holding a concrete
 sequence — the powers of a pseudouniformiser, say — gets the conclusion for *that* sequence.
 
-The only topological input is `hc`, and it is needed only at the one `x` the conclusion is about
-and only at `0 : A`: the proof is `uₙ • x → 0 • x = 0`. It is an unbundled hypothesis because
-Mathlib has no class for "continuous in the scalar, vector fixed" — `ContinuousSMul A M` is joint
-continuity, which is strictly more than this argument uses. At `M = A` it is discharged by
-`(continuous_mul_const x).continuousAt` modulo `smul_eq_mul`. -/
-theorem exists_smul_mem_of_tendsto_zero (x : M) (hc : ContinuousAt (fun a : A ↦ a • x) 0)
+The hypothesis `hc` requires continuity of `a ↦ a • x` at `0 : A`, with `x` fixed. This is
+weaker than the joint continuity required by `ContinuousSMul A M`. When `M = A`,
+`(continuous_mul_const x).continuousAt` supplies this hypothesis modulo `smul_eq_mul`. -/
+theorem exists_smul_mem_of_tendsto_zero (x : M) (h0 : (0 : A) • x = 0)
+    (hc : ContinuousAt (fun a : A ↦ a • x) 0)
     {U : Set M} (hU : U ∈ 𝓝 (0 : M)) :
     ∃ n : ℕ, ((u n : A)) • x ∈ U := by
   have hsmul : Tendsto (fun n ↦ ((u n : A)) • x) atTop (𝓝 ((0 : A) • x)) :=
     Filter.Tendsto.comp hc hu
-  rw [zero_smul] at hsmul
+  rw [h0] at hsmul
   exact (hsmul.eventually_mem hU).exists
+
+end SMul
+
+variable {M : Type*} [Zero M] [TopologicalSpace M] [MulAction A M]
+  {u : ℕ → Aˣ} (hu : Tendsto (fun n ↦ ((u n : A))) atTop (𝓝 0))
+include hu
 
 /-- **The countable covering Henkel's Baire argument runs on**: the dilates `uₙ⁻¹ • U` of a
 neighbourhood of zero exhaust `M`. The index is `ℕ`, which is what makes the cover usable in a
 Baire argument — a cover by all of `Aˣ` would exhaust `M` too but could not start that argument.
 Henkel needs this for the *domain* of the map, which is why `M` is not just the base ring. -/
 theorem iUnion_inv_smul_eq_univ_of_tendsto_zero
+    (h0 : ∀ x : M, (0 : A) • x = 0)
     (hc : ∀ x : M, ContinuousAt (fun a : A ↦ a • x) 0) {U : Set M} (hU : U ∈ 𝓝 (0 : M)) :
     ⋃ n : ℕ, ((u n)⁻¹ : Aˣ) • U = Set.univ := by
   refine Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr ?_
-  obtain ⟨n, hn⟩ := exists_smul_mem_of_tendsto_zero hu x (hc x) hU
+  obtain ⟨n, hn⟩ := exists_smul_mem_of_tendsto_zero hu x (h0 x) (hc x) hU
   exact ⟨n, Set.mem_inv_smul_set_iff.mpr (by rwa [Units.smul_def])⟩
 
 end Absorption
 
 namespace HasZeroSequenceOfUnits
 
-variable {M : Type*} [Zero M] [TopologicalSpace M] [MulActionWithZero A M]
+variable {M : Type*} [Zero M] [TopologicalSpace M] [SMul A M]
   [HasZeroSequenceOfUnits A]
 
 /-- Some unit of `A` carries a given element of `M` into a given neighbourhood of zero.
@@ -136,10 +150,11 @@ Deliberately not phrased with a sequence: quantifying over an unconstrained `u :
 say no more than this, since a constant sequence witnesses it. The sequence matters only for
 `iUnion_inv_smul_eq_univ_of_tendsto_zero`, which is stated for a given sequence carrying its own
 convergence hypothesis rather than restated at class level. -/
-theorem exists_unit_smul_mem (x : M) (hc : ContinuousAt (fun a : A ↦ a • x) 0) {U : Set M}
+theorem exists_unit_smul_mem (x : M) (h0 : (0 : A) • x = 0)
+    (hc : ContinuousAt (fun a : A ↦ a • x) 0) {U : Set M}
     (hU : U ∈ 𝓝 (0 : M)) : ∃ v : Aˣ, (v : A) • x ∈ U := by
   obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
-  obtain ⟨n, hn⟩ := exists_smul_mem_of_tendsto_zero hu x hc hU
+  obtain ⟨n, hn⟩ := exists_smul_mem_of_tendsto_zero hu x h0 hc hU
   exact ⟨u n, hn⟩
 
 end HasZeroSequenceOfUnits

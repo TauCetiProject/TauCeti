@@ -52,6 +52,7 @@ multiplicities of a minimal numerical type.
   submatrix on four distinct components is positive when there are more than four components.
 * `TauCeti.NumericalType.intersection_five_neg`: the intersection form at a vector supported on
   five distinct components, written out, is negative when there are more than five components.
+* `TauCeti.NumericalType.intersection_six_neg`: the analogous formula for six components.
 -/
 
 public section
@@ -506,6 +507,88 @@ theorem intersection_five_neg (hcard : 5 < Fintype.card T.Component)
       T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁, T.intersection_comm c₄ c₂,
       T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
       T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄]
+    ring
+  rw [← hval]
+  exact T.sum_sum_intersection_mul_neg hsu hmem
+
+/-! ### Six components -/
+
+/-- In a numerical type with more than six components, the intersection form is negative definite
+on vectors supported on six distinct components. -/
+theorem intersection_six_neg (hcard : 6 < Fintype.card T.Component)
+    {c₁ c₂ c₃ c₄ c₅ c₆ : T.Component}
+    (h₁₂ : c₁ ≠ c₂) (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₅ : c₁ ≠ c₅) (h₁₆ : c₁ ≠ c₆)
+    (h₂₃ : c₂ ≠ c₃) (h₂₄ : c₂ ≠ c₄) (h₂₅ : c₂ ≠ c₅) (h₂₆ : c₂ ≠ c₆)
+    (h₃₄ : c₃ ≠ c₄) (h₃₅ : c₃ ≠ c₅) (h₃₆ : c₃ ≠ c₆)
+    (h₄₅ : c₄ ≠ c₅) (h₄₆ : c₄ ≠ c₆) (h₅₆ : c₅ ≠ c₆)
+    {y₁ y₂ y₃ y₄ y₅ y₆ : ℤ}
+    (hy : ¬(y₁ = 0 ∧ y₂ = 0 ∧ y₃ = 0 ∧ y₄ = 0 ∧ y₅ = 0 ∧ y₆ = 0)) :
+    T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
+          T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
+        T.intersection c₅ c₅ * y₅ ^ 2 + T.intersection c₆ c₆ * y₆ ^ 2 +
+      2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
+        T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
+        T.intersection c₁ c₆ * y₁ * y₆ + T.intersection c₂ c₃ * y₂ * y₃ +
+        T.intersection c₂ c₄ * y₂ * y₄ + T.intersection c₂ c₅ * y₂ * y₅ +
+        T.intersection c₂ c₆ * y₂ * y₆ + T.intersection c₃ c₄ * y₃ * y₄ +
+        T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₃ c₆ * y₃ * y₆ +
+        T.intersection c₄ c₅ * y₄ * y₅ + T.intersection c₄ c₆ * y₄ * y₆ +
+        T.intersection c₅ c₆ * y₅ * y₆) < 0 := by
+  classical
+  let y : T.Component → ℤ := fun m ↦
+    if m = c₁ then y₁ else if m = c₂ then y₂ else if m = c₃ then y₃
+      else if m = c₄ then y₄ else if m = c₅ then y₅ else if m = c₆ then y₆ else 0
+  have e₁ : y c₁ = y₁ := by simp [y]
+  have e₂ : y c₂ = y₂ := by simp [y, h₁₂.symm]
+  have e₃ : y c₃ = y₃ := by simp [y, h₁₃.symm, h₂₃.symm]
+  have e₄ : y c₄ = y₄ := by simp [y, h₁₄.symm, h₂₄.symm, h₃₄.symm]
+  have e₅ : y c₅ = y₅ := by
+    simp [y, h₁₅.symm, h₂₅.symm, h₃₅.symm, h₄₅.symm]
+  have e₆ : y c₆ = y₆ := by
+    simp [y, h₁₆.symm, h₂₆.symm, h₃₆.symm, h₄₆.symm, h₅₆.symm]
+  have hmem : ∃ i ∈ ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component), y i ≠ 0 := by
+    rcases (by omega : y₁ ≠ 0 ∨ y₂ ≠ 0 ∨ y₃ ≠ 0 ∨ y₄ ≠ 0 ∨ y₅ ≠ 0 ∨ y₆ ≠ 0) with
+      h | h | h | h | h | h
+    · exact ⟨c₁, by simp, by rw [e₁]; exact h⟩
+    · exact ⟨c₂, by simp, by rw [e₂]; exact h⟩
+    · exact ⟨c₃, by simp, by rw [e₃]; exact h⟩
+    · exact ⟨c₄, by simp, by rw [e₄]; exact h⟩
+    · exact ⟨c₅, by simp, by rw [e₅]; exact h⟩
+    · exact ⟨c₆, by simp, by rw [e₆]; exact h⟩
+  have hsu : ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component) ≠ univ := by
+    exact (card_lt_iff_ne_univ _).mp (card_le_six.trans_lt hcard)
+  have hval : ∑ i ∈ ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component),
+      ∑ j ∈ ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component),
+        T.intersection i j * y i * y j =
+      T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
+            T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
+          T.intersection c₅ c₅ * y₅ ^ 2 + T.intersection c₆ c₆ * y₆ ^ 2 +
+        2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
+          T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
+          T.intersection c₁ c₆ * y₁ * y₆ + T.intersection c₂ c₃ * y₂ * y₃ +
+          T.intersection c₂ c₄ * y₂ * y₄ + T.intersection c₂ c₅ * y₂ * y₅ +
+          T.intersection c₂ c₆ * y₂ * y₆ + T.intersection c₃ c₄ * y₃ * y₄ +
+          T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₃ c₆ * y₃ * y₆ +
+          T.intersection c₄ c₅ * y₄ * y₅ + T.intersection c₄ c₆ * y₄ * y₆ +
+          T.intersection c₅ c₆ * y₅ * y₆) := by
+    have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅, c₆} : Finset T.Component) := by
+      simp [h₁₂, h₁₃, h₁₄, h₁₅, h₁₆]
+    have n₂ : c₂ ∉ ({c₃, c₄, c₅, c₆} : Finset T.Component) := by
+      simp [h₂₃, h₂₄, h₂₅, h₂₆]
+    have n₃ : c₃ ∉ ({c₄, c₅, c₆} : Finset T.Component) := by
+      simp [h₃₄, h₃₅, h₃₆]
+    have n₄ : c₄ ∉ ({c₅, c₆} : Finset T.Component) := by simp [h₄₅, h₄₆]
+    have n₅ : c₅ ∉ ({c₆} : Finset T.Component) := by simp [h₅₆]
+    simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄,
+      sum_insert n₅, sum_singleton, e₁, e₂, e₃, e₄, e₅, e₆,
+      T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
+      T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁,
+      T.intersection_comm c₄ c₂, T.intersection_comm c₄ c₃,
+      T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
+      T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
+      T.intersection_comm c₆ c₁, T.intersection_comm c₆ c₂,
+      T.intersection_comm c₆ c₃, T.intersection_comm c₆ c₄,
+      T.intersection_comm c₆ c₅]
     ring
   rw [← hval]
   exact T.sum_sum_intersection_mul_neg hsu hmem

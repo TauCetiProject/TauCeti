@@ -82,7 +82,7 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent
     -- `H` packages this coordinate algebra with its finite-type proof, so its carrier is
     -- definitionally the coordinate algebra on which smoothness supplies reducedness.
     change IsReduced (coordinateHopfAlgebra k m)
-    exact isReduced_of_smooth_of_field k _
+    exact isReduced_of_smooth k _
   let _ : Comodule k (coordinateHopfAlgebra k m) (Fin (m + m) → k) := standardComodule k m
   have hcr : Comodule.IsCompletelyReducible k (coordinateHopfAlgebra k m)
       (Fin (m + m) → k) := by
