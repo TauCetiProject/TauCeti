@@ -191,9 +191,11 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank)
     G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
 
 /-- **The `q`-power Frobenius is the recorded power of the prime-field Frobenius.** This is the
-relation against which the square of the odd-power Steinberg endomorphism is measured. -/
+relation against which the square of the odd-power Steinberg endomorphism is measured. The type
+annotation selects the composition monoid structure on endomorphisms used by the power. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius =
+      (show Monoid.End d.AmbientGroup from d.primeFrobenius) ^ d.1.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, G2ShortRoot.PrimeField.frobenius_pow, Nat.one_mul]
 
 end
