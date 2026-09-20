@@ -33,6 +33,11 @@ sign-valued character used to prove bimultiplicativity of the Hilbert symbol.
   criterion.
 * `Subgroup.signIndicator_mul_iff_index_le_two`: the finite-index form of the criterion.
 * `Subgroup.signIndicatorHom`: the resulting homomorphism when the index divides two.
+
+## References
+
+* Mathlib's `Subgroup.index_dvd_two_iff` and `Subgroup.mul_mem_iff_of_index_two` provide the
+  index-two subgroup criteria used to prove multiplicativity.
 -/
 
 public section
@@ -127,7 +132,7 @@ theorem _root_.Subgroup.signIndicator_mul_iff_index_le_two (H : Subgroup G) [H.F
     · simp [hindex]
 
 /-- The sign indicator, bundled as a homomorphism when the subgroup index divides two. -/
-@[expose] noncomputable def _root_.Subgroup.signIndicatorHom (H : Subgroup G)
+noncomputable def _root_.Subgroup.signIndicatorHom (H : Subgroup G)
     (hindex : H.index ∣ 2) :
     G →* ℤˣ where
   toFun := H.signIndicator
@@ -139,7 +144,9 @@ theorem _root_.Subgroup.signIndicator_mul_iff_index_le_two (H : Subgroup G) [H.F
 theorem _root_.Subgroup.signIndicatorHom_apply (H : Subgroup G) (hindex : H.index ∣ 2)
     (x : G) :
     H.signIndicatorHom hindex x = H.signIndicator x :=
-  rfl
+  by
+    change H.signIndicator x = H.signIndicator x
+    rfl
 
 /-- The kernel of the sign-indicator homomorphism is the original subgroup. -/
 @[simp]
