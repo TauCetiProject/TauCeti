@@ -244,20 +244,21 @@ end Coordinate
 section CoordinateSurjective
 
 variable {F A C B : Type*} [CommSemiring F] [Semiring A] [Algebra F A] [Semiring C] [Algebra F C]
-  [Ring B] [Algebra F B]
+  [Semiring B] [IsLeftCancelAdd B] [Algebra F B]
 
 /-- If the image of `(1, 0)` is the unit then the first coordinate map is surjective as soon as `φ`
 is: the image of `(0, 1)` is then complementary to `1`, so it vanishes, and with it the whole
 second coordinate.
 
-Unlike the construction itself this needs `B` additively cancellative, to pass from
-`1 + φ (0, 1) = 1` to `φ (0, 1) = 0`. -/
+Unlike the construction itself this needs `B` additively left-cancellative, to pass from
+`1 + φ (0, 1) = 1 + 0` to `φ (0, 1) = 0`. That is all it needs -- a cancellative semiring will
+do, without subtraction. -/
 theorem prodFirstAlgHom_surjective (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1)
     (hφ : Function.Surjective φ) : Function.Surjective (prodFirstAlgHom φ hu) := by
   have hw : φ (0, 1) = 0 := by
     have hsum := map_one_zero_add_map_zero_one φ
     rw [hu] at hsum
-    simpa using hsum
+    exact add_left_cancel (b := φ (0, 1)) (c := 0) (by rw [hsum, add_zero])
   intro b
   obtain ⟨⟨a₁, a₂⟩, rfl⟩ := hφ b
   refine ⟨a₁, ?_⟩
