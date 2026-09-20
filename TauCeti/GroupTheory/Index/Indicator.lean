@@ -49,7 +49,7 @@ variable {G : Type*} [Group G]
 open scoped Classical in
 /-- The sign indicator of a subgroup: it is `1` on the subgroup and `-1` off it. -/
 noncomputable def _root_.Subgroup.signIndicator (H : Subgroup G) (x : G) : ℤˣ :=
-  if x ∈ H then 1 else -1
+  (H : Set G)ᶜ.mulIndicator (fun _ ↦ (-1 : ℤˣ)) x
 
 /-- The sign indicator is `1` on its subgroup. -/
 @[simp]
