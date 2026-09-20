@@ -60,6 +60,9 @@ exhausted by the level sets `{f ≥ 1 / (n + 1)}`, each of finite measure by Che
   subadditivity and the two endpoint bounds.
 * `TauCeti.lintegral_rpow_le_of_mul_meas_lt_le_of_le_eLpNormEssSup`: operator-level
   Marcinkiewicz interpolation.
+* `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with a finite `L^p`
+  lower integral lives on a σ-finite part of the measure, which is what makes Tonelli's theorem
+  available without an s-finiteness hypothesis.
 
 ## References
 
@@ -175,7 +178,7 @@ private theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable_of_sFin
 /-- A function with a finite `L^p` norm is carried by a σ-finite part of the measure: the level
 sets `{f ≥ 1 / (n + 1)}` have finite measure by Chebyshev's inequality applied to `f ^ p`, and they
 exhaust `{f > 0}`. -/
-private theorem sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top (hf : Measurable f)
+theorem sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top (hf : Measurable f)
     (hp : 0 < p) (htop : ∫⁻ x, f x ^ p ∂μ ≠ ∞) : SigmaFinite (μ.restrict {x | 0 < f x}) := by
   have hsmeas : MeasurableSet {x | 0 < f x} := measurableSet_lt measurable_const hf
   have hlevel : ∀ n : ℕ, μ {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ f x} ≠ ∞ := by
