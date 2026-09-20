@@ -22,8 +22,8 @@ namespace TauCeti
 
 section Preimage
 
-variable {𝕜 E P : Type*} [NormedDivisionRing 𝕜] [SeminormedAddCommGroup E]
-  [Module 𝕜 E] [NormSMulClass 𝕜 E] [PseudoMetricSpace P] [NormedAddTorsor E P]
+variable {𝕜 E P : Type*} [NormedAddGroup 𝕜] [SeminormedAddCommGroup E]
+  [SMul 𝕜 E] [NormSMulClass 𝕜 E] [PseudoMetricSpace P] [NormedAddTorsor E P]
 
 /-- The affine normalization map `y ↦ c • y +ᵥ x` pulls the ball `Metric.ball x (‖c‖ * r)` back
 to `Metric.ball 0 r`, for nonzero scale `c`. -/
