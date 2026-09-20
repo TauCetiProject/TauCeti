@@ -98,7 +98,6 @@ theorem descend_apply (D : Γ.CuspDatum) (f : ℍ → ℂ) (q : {q : 𝔻 // q �
 
 /-- An invariant function is recovered by pulling its punctured-disc descent back along the
 normalized q-coordinate. -/
-@[simp]
 theorem descend_qCoordinate (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z) (z : ℍ) :
     descend D f (qCoordinate D z) = f z := by
