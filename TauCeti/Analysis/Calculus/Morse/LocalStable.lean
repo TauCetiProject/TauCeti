@@ -79,12 +79,9 @@ theorem exists_localStableSet_eq_lipschitzGraph
       (∀ y : ℝ → E,
         IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
         MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
-  let hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥ :=
-    LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective
   let P := h.stableProjection
   obtain ⟨K, alpha, hK, halpha, hs, hu⟩ :=
-    h.contDiffAt.exists_stableProjection_exponential_bounds hker
-  rw [← h.stableProjection_eq_contDiffAt] at hs hu
+    h.exists_stableProjection_exponential_bounds
   let epsilon : ℝ≥0 := alpha * C / (8 * K * (K + C))
   have hepsilon : 0 < epsilon := by
     dsimp only [epsilon]

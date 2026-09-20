@@ -28,6 +28,9 @@ turns convergence into contraction.
   flows contract exponentially with a common positive rate.
 * `ContDiffAt.exists_stableProjection_exponential_bounds`: the same estimates in the projection
   form consumed by the Lyapunov--Perron construction.
+* `TauCeti.IsNondegenerateCriticalPoint.exists_stableProjection_exponential_bounds`: the
+  projection-form estimates specialized to the canonical projection at a nondegenerate critical
+  point.
 
 ## References
 
@@ -106,5 +109,26 @@ theorem exists_stableProjection_exponential_bounds (hf : ContDiffAt ℝ 2 f x)
     (hf.isIdempotentElem_stableProjection hker) halpha hs' hu'
 
 end ContDiffAt
+
+namespace TauCeti.IsNondegenerateCriticalPoint
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] {f : E → ℝ} {x : E}
+
+/-- At a nondegenerate critical point, the canonical stable projection gives an exponential
+dichotomy for the negative Hessian operator. -/
+theorem exists_stableProjection_exponential_bounds (h : IsNondegenerateCriticalPoint f x) :
+    ∃ (K alpha : ℝ≥0), 0 < K ∧ 0 < alpha ∧
+      (∀ t : ℝ, 0 ≤ t → ∀ v : E,
+        ‖NormedSpace.exp (t • (-hessianOperator f x)) (h.stableProjection v)‖ ≤
+          K * Real.exp (-alpha * t) * ‖v‖) ∧
+      (∀ t : ℝ, t ≤ 0 → ∀ v : E,
+        ‖NormedSpace.exp (t • (-hessianOperator f x)) (v - h.stableProjection v)‖ ≤
+          K * Real.exp (alpha * t) * ‖v‖) := by
+  rw [h.stableProjection_eq_contDiffAt]
+  exact h.contDiffAt.exists_stableProjection_exponential_bounds
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+end TauCeti.IsNondegenerateCriticalPoint
 
 end

@@ -333,6 +333,29 @@ theorem isIdempotentElem_stableProjection (h : IsNondegenerateCriticalPoint f x)
   simpa only [stableProjection] using h.contDiffAt.isIdempotentElem_stableProjection
     (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
 
+/-- A vector is killed by the stable projection at a nondegenerate critical point exactly when it
+is unstable. -/
+@[simp]
+theorem stableProjection_apply_eq_zero_iff (h : IsNondegenerateCriticalPoint f x) {v : E} :
+    h.stableProjection v = 0 ↔ v ∈ h.contDiffAt.unstableLinearSubspace := by
+  simpa only [stableProjection] using h.contDiffAt.stableProjection_apply_eq_zero_iff
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) (v := v)
+
+/-- A vector is fixed by the stable projection at a nondegenerate critical point exactly when it
+is stable. -/
+@[simp]
+theorem stableProjection_apply_eq_self_iff (h : IsNondegenerateCriticalPoint f x) {v : E} :
+    h.stableProjection v = v ↔ v ∈ h.contDiffAt.stableLinearSubspace := by
+  simpa only [stableProjection] using h.contDiffAt.stableProjection_apply_eq_self_iff
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) (v := v)
+
+/-- The stable projection at a nondegenerate critical point takes every vector into the stable
+linear subspace. -/
+theorem stableProjection_apply_mem (h : IsNondegenerateCriticalPoint f x) (v : E) :
+    h.stableProjection v ∈ h.contDiffAt.stableLinearSubspace := by
+  simpa only [stableProjection] using h.contDiffAt.stableProjection_apply_mem
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) v
+
 /-- The negative Hessian operator commutes with the stable projection at a nondegenerate critical
 point. -/
 theorem commute_neg_hessianOperator_stableProjection (h : IsNondegenerateCriticalPoint f x) :
