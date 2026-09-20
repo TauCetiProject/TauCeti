@@ -67,6 +67,12 @@ theorem injective_iff_projective (hE : E.IsFrobenius) (X : C) :
     E.isInjective X ↔ E.isProjective X :=
   (IsFrobenius.projective_iff_injective hE X).symm
 
+/-- In a Frobenius exact structure, the middle term of any relative injective presentation is
+relatively projective. -/
+theorem isProjective_I (hE : E.IsFrobenius) {X : C} (P : E.InjectivePresentation X) :
+    E.isProjective P.I :=
+  (hE.projective_iff_injective P.I).mpr P.isInjective
+
 /-- The opposite of a Frobenius exact structure is Frobenius. -/
 theorem op (hE : E.IsFrobenius) : E.op.IsFrobenius where
   enoughProjectives := enoughInjectives_iff_op_enoughProjectives.mp hE.enoughInjectives
