@@ -275,7 +275,7 @@ theorem weightSpace_glIrreducible_eq_span_singleton (hmu : IsGlDominantIntegral 
     (lieSpan_glIrreducibleGenerator_eq_top hmu)
 
 /-- **The top weight has multiplicity one in `L(mu)`.** -/
-theorem finrank_weightSpace_glIrreducible (hmu : IsGlDominantIntegral mu) :
+@[simp] theorem finrank_weightSpace_glIrreducible (hmu : IsGlDominantIntegral mu) :
     finrank K (weightSpace (glIrreducible N mu)
         ((glWeightEquiv K (Fin N) mu : Module.Dual K (diagonalCartan K (Fin N))) :
           diagonalCartan K (Fin N) → K)) = 1 :=
