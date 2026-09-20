@@ -145,7 +145,6 @@ theorem clampSymm_apply (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω → 
     clampSymm μ f hf x y = max 0 (min 1 ((f x y + f y x) / 2)) := (rfl)
 
 /-- Symmetrizing and clamping does not change a value that is symmetric and already in `[0, 1]`. -/
-@[simp]
 theorem clampSymm_apply_of_symm_of_mem (μ : Measure Ω) [IsProbabilityMeasure μ]
     (f : Ω → Ω → ℝ)
     (hf : Measurable (Function.uncurry f)) {x y : Ω} (hsymm : f x y = f y x)
