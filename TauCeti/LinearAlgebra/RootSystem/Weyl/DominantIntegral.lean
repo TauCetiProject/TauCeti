@@ -99,7 +99,8 @@ theorem exists_coroot'_eq_natCast_add_one_of_mem_posRoots
   choose! g hg using hx
   set S : ℕ := ∑ i ∈ b.support, f i * (g i + 1) with hS
   have hcast : P.coroot' j x = (S : R) := by
-    rw [hsum x, hS]
+    rw [hsum, LinearMap.sum_apply, hS]
+    simp only [LinearMap.smul_apply, smul_eq_mul]
     push_cast
     exact Finset.sum_congr rfl fun i hi ↦ by rw [hg i hi]
   have hone : 1 ≤ S := by

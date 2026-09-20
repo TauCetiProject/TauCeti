@@ -301,7 +301,8 @@ variable {x : M}
 theorem coroot'_nonneg_of_mem_posRoots (hx : x ∈ dominantChamber P b) {i : ι}
     (hi : i ∈ posRoots P b) : 0 ≤ P.coroot' i x := by
   obtain ⟨f, -, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
-  rw [hsum x]
+  rw [hsum, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply, smul_eq_mul]
   exact Finset.sum_nonneg fun j hj ↦
     mul_nonneg (by positivity) ((mem_dominantChamber P b x).mp hx j hj)
 
@@ -319,7 +320,8 @@ theorem coroot'_pos_of_mem_posRoots (hx : x ∈ openDominantChamber P b) {i : ι
   -- Some simple coroot really occurs in the expansion, because a coroot is never zero.
   obtain ⟨f, ⟨j, hj, hfj⟩, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
   have hx' := (mem_openDominantChamber P b x).mp hx
-  rw [hsum x]
+  rw [hsum, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply, smul_eq_mul]
   refine Finset.sum_pos' (fun k hk ↦ mul_nonneg (by positivity) (hx' k hk).le) ⟨j, hj, ?_⟩
   exact mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hfj) (hx' j hj)
 

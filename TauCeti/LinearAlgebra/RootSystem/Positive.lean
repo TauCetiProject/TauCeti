@@ -689,9 +689,9 @@ theorem exists_coroot_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P
 functionals, with at least one simple coroot genuinely occurring. -/
 theorem exists_coroot'_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
     ∃ f : ι → ℕ, (∃ j ∈ b.support, f j ≠ 0) ∧
-      ∀ x : M, P.coroot' i x = ∑ j ∈ b.support, (f j : R) * P.coroot' j x := by
+      P.coroot' i = ∑ j ∈ b.support, (f j : R) • P.coroot' j := by
   obtain ⟨f, -, hsum⟩ := exists_coroot_eq_sum_nat_of_mem_posRoots P b hi
-  refine ⟨f, ?_, fun x ↦ ?_⟩
+  refine ⟨f, ?_, ?_⟩
   · by_contra hcon
     push Not at hcon
     have : NeZero (2 : R) := ⟨by exact_mod_cast (by norm_num : (2 : ℕ) ≠ 0)⟩
@@ -700,11 +700,8 @@ theorem exists_coroot'_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots 
     exact Finset.sum_eq_zero fun j hj ↦ by simp [hcon j hj]
   · -- `RootPairing.coroot'` is an abbreviation for the transpose of `P.toLinearMap` applied to a
     -- coroot, so unfolding it is what carries the expansion of `P.coroot i` to the dual side.
-    have hcoroot' : P.coroot' i = ∑ j ∈ b.support, (f j : R) • P.coroot' j := by
-      simp only [_root_.RootPairing.coroot']
-      rw [hsum, map_sum]
-      exact Finset.sum_congr rfl fun j _ ↦ by simp [Nat.cast_smul_eq_nsmul]
-    rw [hcoroot', LinearMap.sum_apply]
-    exact Finset.sum_congr rfl fun j _ ↦ by simp
+    simp only [_root_.RootPairing.coroot']
+    rw [hsum, map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by simp [Nat.cast_smul_eq_nsmul]
 
 end TauCeti
