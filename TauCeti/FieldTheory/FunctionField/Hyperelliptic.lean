@@ -40,8 +40,8 @@ characteristic two every function field of genus two is hyperelliptic.
 
 * `TauCeti.exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two`: a divisor of degree two
   with `ℓ ≥ 2` produces a rational subfield of index two; no hypothesis on the characteristic.
-* `TauCeti.isHyperellipticFunctionField_iff_exists_degree_eq_two_and_two_le_dim`: the intrinsic
-  characterization, away from characteristic two.
+* `TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim`:
+  the intrinsic characterization, away from characteristic two.
 * `TauCeti.exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two` and
   `TauCeti.isHyperellipticFunctionField_of_genus_eq_two`: genus two gives an index-two rational
   subfield, and away from characteristic two makes `F` hyperelliptic.
@@ -83,12 +83,15 @@ structure IsHyperellipticFunctionField (k F : Type*) [Field k] [Field F] [Algebr
 
 /-! ### From the index-two subfield to a divisor of degree two -/
 
-/-- **The pole divisor of an index-two generator has degree two and `ℓ ≥ 2`**: its degree is
-`[F : k(x)]` by the product formula, and its Riemann--Roch space contains the two independent
-functions `1` and `x`. -/
+/-- **A hyperelliptic function field has a divisor of degree two whose Riemann--Roch space has
+dimension at least two.**  This is the forward half of the intrinsic characterization
+`TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim`,
+and it needs no hypothesis on the characteristic. -/
 theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
     (hF : IsFunctionField k F) (hhyp : IsHyperellipticFunctionField k F) :
     ∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A := by
+  -- The pole divisor of an index-two generator `x` has degree `[F : k(x)]` by the product
+  -- formula, and its Riemann--Roch space contains the two independent functions `1` and `x`.
   obtain ⟨x, hx, hrank, -⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
   have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
   refine ⟨Divisor.poles hF (Units.mk0 x hx0), ?_, ?_⟩
@@ -102,8 +105,9 @@ theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
 rational subfield of index two**, as soon as the genus is positive.
 
 No hypothesis on the characteristic is made, and no separability is claimed: this is the part of
-Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  Positivity of
-the genus is what rules out `F = k(x)`, which would make the degree one instead of two. -/
+Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  The genus
+hypothesis cannot be dropped: over a rational function field the subfield produced would be all
+of `F`. -/
 theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F ≠ 0)
     {A : Divisor k F} (hA : Divisor.degree A = 2) (hdim : 2 ≤ Divisor.dim A) :
@@ -147,7 +151,7 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
       Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) :=
     (Divisor.degree_poles hF (Units.mk0 x hx0) hx).symm
   have hpos : 0 < Module.finrank k⟮x⟯ F := Module.finrank_pos
-  have hne : Module.finrank k⟮x⟯ F ≠ 1 := fun h1 ↦ hg (genus_eq_zero_of_adjoin_eq_top hF hex hx
+  have hne : Module.finrank k⟮x⟯ F ≠ 1 := fun h1 ↦ hg (genus_eq_zero_of_adjoin_eq_top hx
     (IntermediateField.finrank_eq_one_iff_eq_top.mp h1))
   exact ⟨x, hx, by omega⟩
 
@@ -158,7 +162,7 @@ some divisor of degree two has a Riemann--Roch space of dimension at least two.
 The characteristic hypothesis is used only to make the index-two subextension separable, so the
 forward implication `TauCeti.IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim`
 and the subfield half of the converse hold without it. -/
-theorem isHyperellipticFunctionField_iff_exists_degree_eq_two_and_two_le_dim
+theorem isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (h2 : (2 : k) ≠ 0) :
     IsHyperellipticFunctionField k F ↔
       2 ≤ genus k F ∧ ∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A := by
@@ -174,32 +178,35 @@ theorem isHyperellipticFunctionField_iff_exists_degree_eq_two_and_two_le_dim
 
 /-! ### Genus two -/
 
-/-- **In genus two the canonical divisor has degree two and `ℓ = 2`**: `deg W = 2g - 2` and
-`ℓ(W) = g` for a Riemann--Roch divisor `W`. -/
-theorem exists_degree_eq_two_and_two_le_dim_of_genus_eq_two (hF : IsFunctionField k F)
+/-- **A function field of genus two has a divisor of degree two whose Riemann--Roch space has
+dimension exactly two.**  It supplies the divisor hypotheses of
+`TauCeti.exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two` in genus two. -/
+theorem exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 2) :
-    ∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A := by
+    ∃ A : Divisor k F, Divisor.degree A = 2 ∧ Divisor.dim A = 2 := by
+  -- A Riemann--Roch divisor `W` is one: `deg W = 2g - 2 = 2` and `ℓ(W) = g = 2`.
   obtain ⟨W, hW⟩ := exists_isRiemannRochDivisor hF hex
   refine ⟨W, ?_, ?_⟩
   · rw [hW.degree_eq hF hex, hg]; norm_num
   · rw [hW.dim_eq hF hex, hg]
 
 /-- **Every function field of genus two has a rational subfield of index two** (Stichtenoth,
-Lemma 6.2.2), over an arbitrary constant field: the canonical pencil is a divisor of degree two
-with `ℓ = 2`.  Separability of that subextension is *not* claimed here; see
+Lemma 6.2.2), over an arbitrary constant field.  Separability of that subextension is *not*
+claimed here; away from characteristic two it is automatic, see
 `TauCeti.isHyperellipticFunctionField_of_genus_eq_two`. -/
 theorem exists_transcendental_finrank_adjoin_eq_two_of_genus_eq_two (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 2) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
-  obtain ⟨A, hA, hdim⟩ := exists_degree_eq_two_and_two_le_dim_of_genus_eq_two hF hex hg
-  exact exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim
+  obtain ⟨A, hA, hdim⟩ := exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two hF hex hg
+  exact exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim.ge
 
 /-- **Every function field of genus two away from characteristic two is hyperelliptic**
 (Stichtenoth, Lemma 6.2.2). -/
 theorem isHyperellipticFunctionField_of_genus_eq_two (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h2 : (2 : k) ≠ 0) (hg : genus k F = 2) :
-    IsHyperellipticFunctionField k F :=
-  (isHyperellipticFunctionField_iff_exists_degree_eq_two_and_two_le_dim hF hex h2).mpr
-    ⟨by omega, exists_degree_eq_two_and_two_le_dim_of_genus_eq_two hF hex hg⟩
+    IsHyperellipticFunctionField k F := by
+  obtain ⟨A, hA, hdim⟩ := exists_degree_eq_two_and_dim_eq_two_of_genus_eq_two hF hex hg
+  exact (isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim
+    hF hex h2).mpr ⟨by omega, A, hA, hdim.ge⟩
 
 end TauCeti

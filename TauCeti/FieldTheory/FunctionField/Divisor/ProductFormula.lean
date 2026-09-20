@@ -134,12 +134,15 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   rw [Divisor.dim_def]
   simpa using hcard
 
-/-- **`ℓ(l (x)_∞) ≥ l + 1`** for a function `x` transcendental over `k`: the powers
-`1, x, …, xˡ` are `k`-linearly independent and have no poles outside those of `x`.  This is the
-growth estimate above for the single function `1`. -/
+/-- **`ℓ(l (x)_∞) ≥ l + 1`** for a function `x` transcendental over `k`: the Riemann--Roch
+space of `l` times the pole divisor of `x` has dimension at least `l + 1`.  Compared against
+Riemann--Roch in large degree, this is the lower bound behind the product formula and behind
+the vanishing of the genus of a rational function field. -/
 theorem Divisor.succ_le_dim_nsmul_poles (hF : IsFunctionField k F) (x : Fˣ)
     (hx : Transcendental k (x : F)) (l : ℕ) :
     l + 1 ≤ Divisor.dim (l • Divisor.poles hF x) := by
+  -- The powers `1, x, …, xˡ` are `k`-linearly independent and have no poles outside those of
+  -- `x`: this is the growth estimate above for the single function `1`.
   have hone : Divisor.poles hF (1 : Fˣ) = 0 := WeilDivisor.ext fun P ↦ by simp
   have hc : LinearIndependent k⟮(x : F)⟯ fun _ : Unit ↦ ((1 : Fˣ) : F) :=
     linearIndependent_unique_iff.mpr (by simp)
