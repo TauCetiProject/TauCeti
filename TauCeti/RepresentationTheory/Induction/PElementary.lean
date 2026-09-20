@@ -137,7 +137,7 @@ of the `p`-elementary subgroup whose representatives conjugate the `p`-free part
 the `p`-part of `x` into the subgroup.  By
 `TauCeti.conj_mem_pElementaryOfSylow_and_pFreePart_eq_iff` this says exactly that the conjugate of
 `x` lies in the `p`-section of `s`. -/
-noncomputable def pSectionCosetCard [Finite G] (s : G)
+noncomputable def pSectionCosetCard (s : G)
     (P : Sylow p (centralizer ({s} : Set G))) (x : G) : ℕ :=
   Nat.card {t : G ⧸ pElementaryOfSylow s P //
     (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t = s ∧
@@ -190,7 +190,7 @@ theorem indPSectionIndicator_eq_pSectionCosetCard [Finite G] [Fact p.Prime]
 /-! ### Vanishing off the conjugates of the `p`-section -/
 
 /-- **The count vanishes unless the `p`-free part of `x` is conjugate to `s`.** -/
-theorem pSectionCosetCard_eq_zero_of_not_isConj [Finite G] {x : G}
+theorem pSectionCosetCard_eq_zero_of_not_isConj {x : G}
     (hx : ¬ IsConj (pFreePart p x) s) : pSectionCosetCard s P x = 0 := by
   have : IsEmpty {t : G ⧸ pElementaryOfSylow s P //
       (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t = s ∧
@@ -247,7 +247,7 @@ private theorem out_mk_conj_mem (a : G) {z : ↥(centralizer ({s} : Set G))}
 /-- **The contributing cosets are the cosets fixed inside the centraliser.**  A representative
 contributes exactly when it centralises `s` and conjugates `a` into the `p`-elementary subgroup,
 and passing to the centraliser turns the second condition into fixing the coset. -/
-private theorem card_cosets_eq [Finite G] (a : G) (ha : a ∈ centralizer ({s} : Set G)) :
+private theorem card_cosets_eq (a : G) (ha : a ∈ centralizer ({s} : Set G)) :
     Nat.card {t : G ⧸ pElementaryOfSylow s P //
         (Quotient.out t)⁻¹ * s * Quotient.out t = s ∧
           (Quotient.out t)⁻¹ * a * Quotient.out t ∈ pElementaryOfSylow s P} =
@@ -287,7 +287,7 @@ private theorem pPart_mem_centralizer {x : G} (hx : pFreePart p x = s) :
 
 /-- **On the `p`-section of `s` the contributing cosets are the cosets of the `p`-elementary
 subgroup in the centraliser of `s` that the `p`-part of `x` fixes.** -/
-private theorem pSectionCosetCard_eq_card_fixed [Finite G] {x : G} (hx : pFreePart p x = s)
+private theorem pSectionCosetCard_eq_card_fixed {x : G} (hx : pFreePart p x = s)
     (hu : pPart p x ∈ centralizer ({s} : Set G)) :
     pSectionCosetCard s P x =
       Nat.card {q : ↥(centralizer ({s} : Set G)) ⧸
