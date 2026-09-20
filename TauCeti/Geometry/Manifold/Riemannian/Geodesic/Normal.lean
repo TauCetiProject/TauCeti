@@ -242,7 +242,7 @@ theorem continuousOn_riemannianLog (h : IsNormalDomain I M p U) :
 omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
 /-- The exponential map and Riemannian logarithm as a partial diffeomorphism from a normal domain
 to its normal neighbourhood. -/
-@[expose] def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
+def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
     PartialDiffeomorph (modelWithCornersSelf ℝ (TangentSpace I p)) I
       (TangentSpace I p) M ∞ where
   toPartialEquiv :=
@@ -262,22 +262,22 @@ to its normal neighbourhood. -/
 omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
 /-- The source of the normal-domain partial diffeomorphism is the normal domain. -/
 @[simp] theorem toPartialDiffeomorph_source (h : IsNormalDomain I M p U) :
-    h.toPartialDiffeomorph.source = U := rfl
+    h.toPartialDiffeomorph.source = U := (rfl)
 
 omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
 /-- The target of the normal-domain partial diffeomorphism is the normal neighbourhood. -/
 @[simp] theorem toPartialDiffeomorph_target (h : IsNormalDomain I M p U) :
-    h.toPartialDiffeomorph.target = riemannianExp I M p '' U := rfl
+    h.toPartialDiffeomorph.target = riemannianExp I M p '' U := (rfl)
 
 omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
 /-- The forward map of the normal-domain partial diffeomorphism is the exponential map. -/
 @[simp] theorem coe_toPartialDiffeomorph (h : IsNormalDomain I M p U) :
-    ⇑h.toPartialDiffeomorph = riemannianExp I M p := rfl
+    ⇑h.toPartialDiffeomorph = riemannianExp I M p := (rfl)
 
 omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
 /-- The inverse map of the normal-domain partial diffeomorphism is the Riemannian logarithm. -/
 @[simp] theorem toPartialDiffeomorph_symm_apply (h : IsNormalDomain I M p U) (q : M) :
-    h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := rfl
+    h.toPartialDiffeomorph.toPartialEquiv.symm q = riemannianLog I M p U q := (rfl)
 
 end IsNormalDomain
 
