@@ -38,10 +38,13 @@ passes from the field `K` to the integers through `TauCeti.intCast_coweightPairi
 
 * `TauCeti.finrank_mul_prod_coweightPairing_weylVector_eq`: the division-free form
   `dim M · ∏_{α>0} ⟨ρ, α^∨⟩ = ∏_{α>0} ⟨lam + ρ, α^∨⟩` of the dimension formula, in `ℤ`.
-* `TauCeti.weyl_dimension_formula`: **the Weyl dimension formula**
+* `TauCeti.finrank_eq_prod_coweightPairing_div`: **the Weyl dimension formula**
   `dim M = ∏_{α>0} ⟨lam + ρ, α^∨⟩ / ⟨ρ, α^∨⟩`, in `ℚ`.
-* `TauCeti.finrank_irreducibleQuotient_eq_prod_coweightPairing_div`: the same formula for the
-  named carrier `L(lam)`, at a dominant integral weight whose Verma module is nonzero.
+
+The corresponding formula for the named carrier `L(lam)` requires the general nonvanishing of
+the Verma generator, which is the linear-independence half of Poincaré--Birkhoff--Witt and is not
+yet available in the repository. Consequently this file does not state the roadmap's unconditional
+named-carrier theorem under an additional nonvanishing hypothesis.
 
 ## References
 
@@ -114,7 +117,7 @@ the product running over the positive roots, with `ρ` the Weyl vector of the ba
 `⟨·, α^∨⟩` the integer coroot pairing `TauCeti.coweightPairing`. Such an `M` is irreducible, so
 this is the dimension of `L(lam)` for every dominant integral weight `lam` at which `L(lam)` is
 nonzero. -/
-theorem weyl_dimension_formula :
+theorem finrank_eq_prod_coweightPairing_div :
     (finrank K M : ℚ)
       = ∏ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
           (coweightPairing (lam + weylVector (IsKilling.rootSystem H) b) i : ℚ) /
@@ -126,25 +129,5 @@ theorem weyl_dimension_formula :
   exact_mod_cast finrank_mul_prod_coweightPairing_weylVector_eq hv hgen
 
 end HighestWeightModule
-
-/-! ### The formula at the named carrier `L(lam)` -/
-
-/-- **The Weyl dimension formula for `L(lam)`.** For a dominant integral weight `lam` at which
-the Verma module `M(lam)` is nonzero,
-
-`dim L(lam) = ∏_{α>0} ⟨lam + ρ, α^∨⟩ / ⟨ρ, α^∨⟩`.
-
-The nonvanishing hypothesis cannot be dropped: `L(lam)` is the zero module when `M(lam)` is
-(`TauCeti.subsingleton_irreducibleQuotient_iff`), whereas the right-hand side, a product of
-quotients of positive integers, is not zero. -/
-theorem finrank_irreducibleQuotient_eq_prod_coweightPairing_div (hlam : IsDominantIntegral b lam)
-    (h : vermaGenerator b lam ≠ 0) :
-    (finrank K (irreducibleQuotient b lam) : ℚ)
-      = ∏ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
-          (coweightPairing (lam + weylVector (IsKilling.rootSystem H) b) i : ℚ) /
-            (coweightPairing (weylVector (IsKilling.rootSystem H) b) i : ℚ) := by
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hlam
-  exact weyl_dimension_formula (isHighestWeightVector_irreducibleQuotientGenerator b lam h)
-    (lieSpan_irreducibleQuotientGenerator_eq_top b lam)
 
 end TauCeti
