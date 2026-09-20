@@ -14,16 +14,17 @@ This file restricts the adjoint action of the full Chevalley lattice reduced mod
 twenty-six-dimensional short-root ideal. It expresses that representation in the canonical basis
 of short-root vectors and the two short simple coroots.
 
-This is the representation used to recover the quotient of the modular Chevalley algebra by its
-short-root ideal. In the construction of the characteristic-two exceptional isogeny, the ambient
-group acts on this represented quotient and the result is read back in the short-root module.
+This restricted action `ρ : L → End(I)` is the input to the represented quotient
+`ρ(L) / ρ(I)` used in the construction of the characteristic-two exceptional isogeny. Only the
+action on the ideal is defined here; identifying that represented quotient with the quotient of
+the modular Chevalley algebra by its short-root ideal needs a later theorem.
 
 ## Main definitions
 
 * `TauCeti.DynkinType.f4ShortRootAdjoint`: the restricted adjoint representation.
 * `TauCeti.DynkinType.f4ShortRootAdjointMatrix`: its matrix in the canonical basis
   `f4ShortRootLieIdealBasis`.
-* `TauCeti.DynkinType.f4ShortRootSimpleAdjoint`: the operators at the positive and negative
+* `TauCeti.DynkinType.f4ShortRootSignedSimpleAdjoint`: the operators at the positive and negative
   simple roots.
 
 ## Main results
@@ -39,6 +40,9 @@ group acts on this represented quotient and the result is read back in the short
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * R. W. Carter, *Simple Groups of Lie Type*, §12.3.
+
+Formal provenance: the declaration order and proof plan are adapted from this project's
+`cfsg/a0-integration-reference` branch at commit `b2a9572a2`.
 -/
 
 public section
@@ -61,13 +65,13 @@ noncomputable def f4ShortRootAdjoint :=
   rfl
 
 /-- Matrix of the modular short-root adjoint action in its integral-weight basis. -/
-noncomputable abbrev f4ShortRootAdjointMatrix
+noncomputable def f4ShortRootAdjointMatrix
     (X : f4ModularChevalleyLieAlgebra) : Matrix (Fin 26) (Fin 26) (ZMod 2) :=
   LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
     (f4ShortRootAdjoint X)
 
 /-- An entry of the adjoint matrix is the corresponding ambient bracket coordinate. -/
-theorem f4ShortRootAdjointMatrix_apply
+@[simp] theorem f4ShortRootAdjointMatrix_apply
     (X : f4ModularChevalleyLieAlgebra) (i j : Fin 26) :
     f4ShortRootAdjointMatrix X i j =
       f4ModularChevalleyBasis.repr
@@ -75,13 +79,16 @@ theorem f4ShortRootAdjointMatrix_apply
         (f4ShortRootBasisCoordinate i) := by
   calc
     _ = f4ShortRootLieIdealBasis.repr
-        (f4ShortRootAdjoint X (f4ShortRootLieIdealBasis j)) i :=
-      LinearMap.toMatrix_apply _ _ _ _ _
+        (f4ShortRootAdjoint X (f4ShortRootLieIdealBasis j)) i := by
+      -- Unfold the named adjoint matrix to apply the general matrix-entry formula.
+      change (LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
+        (f4ShortRootAdjoint X)) i j = _
+      exact LinearMap.toMatrix_apply _ _ _ _ _
     _ = f4ModularChevalleyBasis.repr
         (f4ShortRootAdjoint X (f4ShortRootLieIdealBasis j) :
           f4ModularChevalleyLieAlgebra)
         (f4ShortRootBasisCoordinate i) :=
-      f4ShortRootLieIdealBasis_repr _ _
+      f4ShortRootLieIdealBasis_repr_apply _ _
     _ = _ := congrArg
       (fun Y : f4ModularChevalleyLieAlgebra =>
         f4ModularChevalleyBasis.repr Y (f4ShortRootBasisCoordinate i))
@@ -105,34 +112,35 @@ noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
     f4ModularChevalleyLieAlgebra :=
   f4ModularRootVector (f4SignedSimpleRootIndex k)
 
-/-- The simple-root adjoint operator restricted to the modular short-root ideal. -/
-noncomputable def f4ShortRootSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
+/-- The signed simple-root adjoint operator restricted to the modular short-root ideal. -/
+noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
     Module.End (ZMod 2) f4ShortRootLieIdeal :=
   f4ShortRootAdjoint (f4ModularSignedSimpleRootVector k)
 
-/-- The simple-root adjoint operator is the bracket with its signed simple root vector. -/
-@[simp] theorem coe_f4ShortRootSimpleAdjoint_apply
+/-- The signed simple-root adjoint operator is the bracket with its signed simple root vector. -/
+@[simp] theorem coe_f4ShortRootSignedSimpleAdjoint_apply
     (k : Fin 4 ⊕ Fin 4) (y : f4ShortRootLieIdeal) :
-    (f4ShortRootSimpleAdjoint k y : f4ModularChevalleyLieAlgebra) =
+    (f4ShortRootSignedSimpleAdjoint k y : f4ModularChevalleyLieAlgebra) =
       ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
         (y : f4ModularChevalleyLieAlgebra)⁆ := by
   rfl
 
-/-- The matrix of the simple-root adjoint operator in the canonical short-root basis. -/
-noncomputable def f4ShortRootSimpleAdjointMatrix (k : Fin 4 ⊕ Fin 4) :
+/-- The matrix of the signed simple-root adjoint operator in the canonical short-root basis. -/
+noncomputable def f4ShortRootSignedSimpleAdjointMatrix (k : Fin 4 ⊕ Fin 4) :
     Matrix (Fin 26) (Fin 26) (ZMod 2) :=
   LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
-    (f4ShortRootSimpleAdjoint k)
+    (f4ShortRootSignedSimpleAdjoint k)
 
-/-- Entries of a simple-root adjoint matrix are the corresponding ideal-basis coordinates. -/
-@[simp] theorem f4ShortRootSimpleAdjointMatrix_apply
+/-- Entries of a signed simple-root adjoint matrix are the corresponding ideal-basis
+coordinates. -/
+@[simp] theorem f4ShortRootSignedSimpleAdjointMatrix_apply
     (k : Fin 4 ⊕ Fin 4) (a b : Fin 26) :
-    f4ShortRootSimpleAdjointMatrix k a b =
+    f4ShortRootSignedSimpleAdjointMatrix k a b =
       (f4ShortRootLieIdealBasis.repr
-        (f4ShortRootSimpleAdjoint k (f4ShortRootLieIdealBasis b))) a := by
+        (f4ShortRootSignedSimpleAdjoint k (f4ShortRootLieIdealBasis b))) a := by
   -- Unfold the named adjoint matrix to apply the general matrix-entry formula.
   change (LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
-    (f4ShortRootSimpleAdjoint k)) a b = _
+    (f4ShortRootSignedSimpleAdjoint k)) a b = _
   exact LinearMap.toMatrix_apply _ _ _ _ _
 
 /-- On a short-root basis column whose translate is again short, the restricted adjoint action

@@ -21,7 +21,7 @@ zero-weight coordinates as the simple coroots at zero-based Lean indices `2` and
   of each of the twenty-six short-root coordinates.
 * `TauCeti.DynkinType.f4ShortRootBasis`: the resulting basis of `f4ShortRootSubspace`.
 * `TauCeti.DynkinType.f4ShortRootLieIdealBasis`: the same basis, carried by the Lie ideal
-  `f4ShortRootLieIdeal`; `f4ShortRootLieIdealBasis_repr` identifies its coordinates with the
+  `f4ShortRootLieIdeal`; `f4ShortRootLieIdealBasis_repr_apply` identifies its coordinates with the
   ambient Chevalley coordinates.
 -/
 
@@ -227,7 +227,7 @@ theorem coe_f4ShortRootLieIdealBasis_symm_inr (k : Fin 2) :
   exact coe_f4ShortRootBasis_symm_inr k
 
 /-- Coordinates in the ideal basis agree with the corresponding ambient Chevalley coordinates. -/
-theorem f4ShortRootLieIdealBasis_repr (y : f4ShortRootLieIdeal) (i : Fin 26) :
+theorem f4ShortRootLieIdealBasis_repr_apply (y : f4ShortRootLieIdeal) (i : Fin 26) :
     f4ShortRootLieIdealBasis.repr y i =
       f4ModularChevalleyBasis.repr (y : f4ModularChevalleyLieAlgebra)
         (f4ShortRootBasisCoordinate i) := by
