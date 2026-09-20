@@ -27,13 +27,14 @@ width.
 
 These block marginals retain each finite-dimensional marginal of the random path law, rather than
 only its one-coordinate marginals. The conditional directing laws obtained at different widths
-are not yet coupled; making those factorizations compatible and assembling their cell-level
-randomizations is the remaining step toward the Aldous--Hoover representation.
+are not coupled by this result.
 
 ## Main definitions and results
 
-* `TauCeti.Probability.blockMarginals` -- the sequence of consecutive `m`-coordinate marginals;
-* `TauCeti.Probability.codedBlockMarginals` -- those marginals in the canonical measurable code;
+* `MeasureTheory.ProbabilityMeasure.blockMarginals` -- the sequence of consecutive
+  `m`-coordinate marginals;
+* `MeasureTheory.ProbabilityMeasure.codedBlockMarginals` -- those marginals in the canonical
+  measurable code;
 * `TauCeti.Probability.fullyExchangeable_blockMarginals_of_invariant` -- invariance of the random
   path-measure law makes the block marginals fully exchangeable;
 * `TauCeti.Probability.conditionallyIID_codedBlockMarginals_of_invariant` -- their conditional
@@ -70,16 +71,20 @@ private def blockIndex (m : ℕ) [NeZero m] (i : ℕ) (j : Fin m) : ℕ :=
 
 /-- The path of consecutive `m`-coordinate marginals of a probability measure on path space.
 The positive-width hypothesis is exactly what identifies `ℕ` with `ℕ × Fin m`. -/
-def blockMarginals (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] :
+def _root_.MeasureTheory.ProbabilityMeasure.blockMarginals
+    (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] :
     ℕ → ProbabilityMeasure (Fin m → α) :=
   fun i => P.map fun x j => x (blockIndex m i j)
 
 /-- Evaluation of the path of finite block marginals. -/
 @[simp]
-theorem blockMarginals_apply (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] (i : ℕ) :
-    blockMarginals P m i =
+theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_apply
+    (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] (i : ℕ) :
+    P.blockMarginals m i =
       P.map (fun x j => x ((Nat.divModEquiv m).symm (i, j))) :=
   (rfl)
+
+open MeasureTheory.ProbabilityMeasure
 
 /-- The path of finite block marginals depends measurably on the probability measure on path
 space. -/
@@ -126,16 +131,18 @@ private theorem blockMarginals_map_blockPerm (P : ProbabilityMeasure (ℕ → α
 
 /-- The finite block marginals of a random path measure, represented in the canonical measurable
 injective code for probability measures on a countably generated space. -/
-def codedBlockMarginals (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m]
+def _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals
+    (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m]
     [MeasurableSpace.CountablyGenerated (Fin m → α)] :
     ℕ → (ProbabilityMeasureCodeIndex (Fin m → α) → ℝ≥0∞) :=
-  fun i => probabilityMeasureCode (blockMarginals P m i)
+  fun i => probabilityMeasureCode (P.blockMarginals m i)
 
 /-- Evaluation of a coded finite block marginal. -/
 @[simp]
-theorem codedBlockMarginals_apply (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m]
+theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_apply
+    (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m]
     [MeasurableSpace.CountablyGenerated (Fin m → α)] (i : ℕ) :
-    codedBlockMarginals P m i = probabilityMeasureCode (blockMarginals P m i) :=
+    P.codedBlockMarginals m i = probabilityMeasureCode (P.blockMarginals m i) :=
   (rfl)
 
 /-- The path of coded finite block marginals is measurable. -/

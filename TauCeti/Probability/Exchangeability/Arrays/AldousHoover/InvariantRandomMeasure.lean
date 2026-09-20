@@ -107,7 +107,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedBlockMarginals
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α),
       ConditionallyIIDWith μ (arrayRow X) ν ∧
         ∀ (m : ℕ) [NeZero m],
-          ConditionallyIID (μ.map ν) fun i P => codedBlockMarginals P m i := by
+          ConditionallyIID (μ.map ν) fun i P => P.codedBlockMarginals m i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
   have hinv' := map_directing_invariant hν hinv
   exact ⟨ν, hν, fun m => conditionallyIID_codedBlockMarginals_of_invariant (μ.map ν) m hinv'⟩
