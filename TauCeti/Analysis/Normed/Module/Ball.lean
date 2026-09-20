@@ -18,9 +18,12 @@ spheres back to their corresponding sets centered at zero.
 The scalars carry no algebraic structure at all: `[Norm 𝕜] [SMul 𝕜 E] [NormSMulClass 𝕜 E]` is
 the whole assumption, since `NormSMulClass` is exactly the tie between the action and the two
 norms that these computations run on. Accordingly the scale is constrained by `0 < ‖c‖` rather
-than by `c ≠ 0`, which is not even statable without a zero; over a `NormedDivisionRing` the two
-agree by `norm_pos_iff`, and that lemma is `@[simp]`, so a caller holding `c ≠ 0` discharges the
-side condition automatically.
+than by `c ≠ 0`, which is not even statable without a zero.
+
+Over a `NormedDivisionRing` the two agree by `norm_pos_iff`. A caller holding `hc : c ≠ 0` passes
+`norm_pos_iff.2 hc`, or discharges the side goal with `simp [hc]`; bare `simp` does not close it,
+because its discharger rewrites `0 < ‖c‖` to `¬c = 0` and then does not reach for `hc` in the
+local context.
 -/
 
 public section
