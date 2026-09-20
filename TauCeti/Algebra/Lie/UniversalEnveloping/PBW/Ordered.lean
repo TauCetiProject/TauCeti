@@ -118,6 +118,7 @@ variable {ι : Type w} [LE ι]
 /-- An induced enveloping-algebra map sends the ordered monomials in a family exactly to the
 ordered monomials in its image family. This statement does not require the Lie map or the family
 to be surjective. -/
+@[simp]
 theorem image_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
     (map R f).toLinearMap '' orderedPBWMonomials R L e k =
       orderedPBWMonomials R M (fun i ↦ f (e i)) k := by
@@ -135,6 +136,7 @@ theorem image_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
 
 /-- The induced enveloping-algebra map carries the span of the ordered monomials in a family
 onto the span of the corresponding ordered monomials in its image family. -/
+@[simp]
 theorem map_span_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
     (Submodule.span R (orderedPBWMonomials R L e k)).map (map R f).toLinearMap =
       Submodule.span R (orderedPBWMonomials R M (fun i ↦ f (e i)) k) := by

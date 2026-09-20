@@ -240,10 +240,7 @@ theorem map_wordFiltration_eq (g : A →ₐ[R] B) (f' : N →ₗ[R] B)
   rw [wordFiltration_eq_pow, wordFiltration_eq_pow, Submodule.map_pow, h]
 
 /-- A compatible algebra homomorphism maps every word-filtration step onto the corresponding
-target step when its map on the generating modules is surjective.
-
-No surjectivity assumption on the algebra homomorphism is needed: surjectivity on the generators
-already lets every target word lift to a source word. -/
+target step when its map on the generating modules is surjective. -/
 theorem map_wordFiltration_eq_of_surjective (q : M →ₗ[R] N) (hq : Function.Surjective q)
     (g : A →ₐ[R] B) (f' : N →ₗ[R] B)
     (h : g.toLinearMap.comp f = f'.comp q) (k : ℕ) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Quotient
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Ordered
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Functoriality
 
 /-!
 # PBW filtrations under surjective Lie maps
@@ -45,20 +45,6 @@ variable [LieRing L] [LieAlgebra R L]
 variable [LieRing M] [LieAlgebra R M]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- A surjective Lie homomorphism maps each PBW filtration step onto the corresponding target
-step. Surjectivity is needed only on the Lie generators; the generic word-filtration theorem then
-lifts target words without requiring a Lie-homomorphic section. -/
-theorem map_pbwFiltration_eq_of_surjective (f : LieHom R L M) (hf : Function.Surjective f)
-    (k : ℕ) :
-    (pbwFiltration R L k).map (map R f).toLinearMap = pbwFiltration R M k := by
-  rw [pbwFiltration_def, pbwFiltration_def]
-  apply map_wordFiltration_eq_of_surjective
-    (_root_.UniversalEnvelopingAlgebra.ι R : LieHom R L _).toLinearMap
-    f.toLinearMap hf (map R f)
-    (_root_.UniversalEnvelopingAlgebra.ι R : LieHom R M _).toLinearMap _ k
-  ext x
-  exact map_ι R f x
 
 /-- A surjective Lie homomorphism also maps the step immediately preceding each PBW degree onto
 the corresponding preceding step. -/
