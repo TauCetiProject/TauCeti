@@ -114,22 +114,6 @@ theorem herbrandQuotient_eq_zero_iff {M : Rep R G} :
       Infinite (tateCohomology M 0) ∨ Infinite (tateCohomology M (-1)) := by
   simp [herbrandQuotient_def, Nat.card_eq_zero]
 
-/-- Degree-zero Tate cohomology of a finite representation is finite: it is a subquotient of the
-coefficient module. -/
-instance finite_tateCohomology_zero (M : Rep R G) [Finite M] : Finite (tateCohomology M 0) :=
-  have : Finite (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
-    Finite.of_surjective _ (Submodule.mkQ_surjective _)
-  (H0IsoNormQuotient M).toLinearEquiv.toEquiv.finite_iff.mpr this
-
-/-- Degree `-1` Tate cohomology of a finite representation is finite: it is a subquotient of the
-coefficient module. -/
-instance finite_tateCohomology_negOne (M : Rep R G) [Finite M] :
-    Finite (tateCohomology M (-1)) :=
-  have : Finite (ker M.ρ.norm ⧸
-      (Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
-    Finite.of_surjective _ (Submodule.mkQ_surjective _)
-  (HNegOneIsoNormKernelQuotient M).toLinearEquiv.toEquiv.finite_iff.mpr this
-
 /-- For a finite representation of a finite cyclic group the two low-degree Tate groups have the
 same order. -/
 theorem natCard_tateCohomology_zero_eq_natCard_tateCohomology_negOne_of_finite [IsCyclic G]
