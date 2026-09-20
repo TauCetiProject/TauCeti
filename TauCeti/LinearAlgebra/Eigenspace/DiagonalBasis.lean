@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
+public import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Invariant subspaces of an endomorphism diagonal in a basis
@@ -41,9 +42,6 @@ algebraic closedness, and the answer names the basis vectors involved.
   basis vectors it contains.
 * `Module.Basis.exists_apply_eq_and_mem_span_singleton`: a nonzero eigenvector of `f` is a
   multiple of a single basis vector, whose eigenvalue is its eigenvalue.
-* `Module.Basis.eq_smul_of_support_subset_singleton`: a vector supported on one coordinate is that
-  coordinate times the corresponding basis vector.  This one mentions no endomorphism and holds
-  over any semiring.
 -/
 
 public section
@@ -51,23 +49,6 @@ public section
 namespace TauCeti
 
 variable {ι K V : Type*}
-
-/-! ### A vector supported on a single coordinate -/
-
-section SingletonSupport
-
-variable [Semiring K] [AddCommMonoid V] [Module K V]
-
-/-- **A vector whose only possibly nonzero coordinate is the `i`-th one is that coordinate times
-the `i`-th basis vector.** -/
-theorem _root_.Module.Basis.eq_smul_of_support_subset_singleton (b : Module.Basis ι K V) {w : V}
-    {i : ι} (h : (b.repr w).support ⊆ {i}) : w = b.repr w i • b i :=
-  calc w = b.repr.symm (b.repr w) := (b.repr.symm_apply_apply w).symm
-    _ = b.repr.symm (Finsupp.single i (b.repr w i)) :=
-        congrArg _ (Finsupp.support_subset_singleton.1 h)
-    _ = b.repr w i • b i := b.repr_symm_single i _
-
-end SingletonSupport
 
 /-! ### The coordinates are scaled by the eigenvalues -/
 
@@ -141,7 +122,7 @@ private theorem self_mem_aux (b : Module.Basis ι K V) (hf : ∀ i, f (b i) = a 
       -- naming that coordinate keeps it from being rewritten along with `w` below
       set c := b.repr w i
       have hmem : c⁻¹ • w ∈ W := W.smul_mem _ hw
-      rwa [b.eq_smul_of_support_subset_singleton hsub, smul_smul, inv_mul_cancel₀ hi,
+      rwa [b.eq_smul_of_repr_support_subset_singleton hsub, smul_smul, inv_mul_cancel₀ hi,
         one_smul] at hmem
     · -- otherwise some other coordinate `j` is nonzero, and can be cleared
       obtain ⟨j, hjs, hji⟩ := Finset.not_subset.1 hsub
@@ -203,7 +184,7 @@ theorem _root_.Module.Basis.exists_apply_eq_and_mem_span_singleton (b : Module.B
   have hsupp : (b.repr w).support ⊆ {i} := fun k hk =>
     Finset.mem_singleton.2
       (ha ((mul_right_cancel₀ (Finsupp.mem_support_iff.1 hk) (hcoord k)).trans hci.symm))
-  rw [b.eq_smul_of_support_subset_singleton hsupp]
+  rw [b.eq_smul_of_repr_support_subset_singleton hsupp]
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
 
 end Domain
