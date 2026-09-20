@@ -189,6 +189,7 @@ def semilocalEquiv :
 variable {L v}
 
 /-- The underlying map of the semi-local equivalence is `semilocalHom`. -/
+@[simp]
 theorem coe_semilocalEquiv : ⇑(semilocalEquiv L v) = semilocalHom L v := by
   rw [semilocalEquiv, AlgEquiv.coe_ofBijective]
 
@@ -199,6 +200,7 @@ theorem semilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
     semilocalEquiv L v (a ⊗ₜ x) w =
       algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
         algebraMap L (w.1.adicCompletion L) x := by
-  simp [semilocalEquiv]
+  rw [coe_semilocalEquiv]
+  exact semilocalHom_tmul a x w
 
 end TauCeti

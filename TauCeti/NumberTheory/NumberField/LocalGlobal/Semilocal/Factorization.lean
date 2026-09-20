@@ -307,6 +307,8 @@ def factorFieldEquivCompletion (q : completionFactors L v) :
       ((IntermediateField.equivOfEq (completionPrimitive_primitive L v w)).trans
         (IntermediateField.topEquiv)))
 
+/-- The factor-field equivalence sends the residue class of `X` to the image of the chosen
+primitive generator in the corresponding completion. -/
 @[simp]
 theorem factorFieldEquivCompletion_root (q : completionFactors L v) :
     factorFieldEquivCompletion L v q (AdjoinRoot.root q.1) =
@@ -337,7 +339,8 @@ private def semilocalFactorHom (q : completionFactors L v) :
   Algebra.TensorProduct.lift (Algebra.ofId _ _) (factorFieldAlgHom L v q)
     fun _ _ ↦ .all _ _
 
-private def semilocalCrtHom :
+/-- The homomorphism assembling the factor-field maps coordinatewise. -/
+def semilocalCrtHom :
     v.adicCompletion K ⊗[K] L →ₐ[v.adicCompletion K]
       ((q : completionFactors L v) → AdjoinRoot q.1) :=
   AlgHom.pi fun q ↦ semilocalFactorHom L v q
@@ -387,14 +390,29 @@ def semilocalCrtEquiv :
       ((q : completionFactors L v) → AdjoinRoot q.1) :=
   AlgEquiv.ofBijective (semilocalCrtHom L v) (semilocalCrtHom_bijective L v)
 
+/-- The underlying map of the Chinese remainder equivalence is `semilocalCrtHom`. -/
+@[simp]
+theorem coe_semilocalCrtEquiv : ⇑(semilocalCrtEquiv L v) = semilocalCrtHom L v := by
+  rw [semilocalCrtEquiv, AlgEquiv.coe_ofBijective]
+
+/-- The Chinese remainder equivalence on a pure tensor, evaluated at one factor. -/
+@[simp]
+theorem semilocalCrtEquiv_tmul (a : v.adicCompletion K) (x : L)
+    (q : completionFactors L v) :
+    semilocalCrtEquiv L v (a ⊗ₜ x) q =
+      algebraMap (v.adicCompletion K) (AdjoinRoot q.1) a * factorFieldAlgHom L v q x := by
+  rw [coe_semilocalCrtEquiv]
+  simp [semilocalCrtHom, semilocalFactorHom]
+
 /-- **The CRT assembly is the semi-local decomposition.** After identifying every factor field
 with its corresponding completion and reindexing factors by places, `semilocalCrtEquiv` agrees
 with `semilocalEquiv`. -/
 theorem semilocalEquiv_eq_crt :
-    (semilocalCrtEquiv L v).trans (factorFieldsEquivCompletions L v) = semilocalEquiv L v := by
+    semilocalEquiv L v =
+      (semilocalCrtEquiv L v).trans (factorFieldsEquivCompletions L v) := by
   apply AlgEquiv.ext
   intro z
-  simpa [semilocalCrtEquiv, coe_semilocalEquiv] using
-    factorFieldsEquivCompletions_semilocalCrtHom L v z
+  rw [AlgEquiv.trans_apply, coe_semilocalCrtEquiv, coe_semilocalEquiv]
+  exact (factorFieldsEquivCompletions_semilocalCrtHom L v z).symm
 
 end TauCeti
