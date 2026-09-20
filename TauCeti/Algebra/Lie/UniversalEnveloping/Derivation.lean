@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DualNumber
 public import TauCeti.Algebra.Lie.Derivation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
+-- Private: the dual numbers appear only in the construction below, never in a statement.
+import Mathlib.Algebra.DualNumber
 
 /-!
 # Lifting a Lie derivation to the enveloping algebra
@@ -71,12 +72,11 @@ read in (Mathlib's `Derivation` needs a commutative algebra, and `LieDerivation`
 bracket, so neither applies to `U(L)`).  The bundling is also what lets `D ↦ Dᵁ` be a `LieHom`,
 since the target is a Lie algebra on the nose.
 
-`TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_mul` is deliberately *not* a `simp` lemma:
-the generic `TauCeti.derivationLieAlgebra.leibniz` already is one and already rewrites that
-left-hand side, so the `simpNF` linter rejects the tag with "simp can prove this: by simp only [*,
-@TauCeti.derivationLieAlgebra.leibniz]".  The lemma is stated all the same, because the Leibniz
-rule is the defining property of the extension and a user should not have to reach for the generic
-bundled-derivation API to find it.
+The canonical `simp` rule for `Dᵁ (a * b)` is the generic `TauCeti.derivationLieAlgebra.leibniz`,
+which holds of every bundled derivation;
+`TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_mul` is its specialisation to `Dᵁ`, stated
+under a name a reader of this file will look for because the Leibniz rule is the defining property
+of the extension, and carrying no `simp` tag of its own.
 
 No lemma with `UniversalEnvelopingAlgebra.ι` on the left-hand side is a `simp` lemma here, for the
 reason recorded in `TauCeti/Algebra/Lie/UniversalEnveloping/Basic.lean`: `simp` rewrites `ι` through
@@ -176,8 +176,8 @@ private theorem fst_dualAlgHom (D : LieDerivation R L L) (a : U) :
   have h : (TrivSqZeroExt.fstHom R U U).comp (dualAlgHom R L D) = AlgHom.id R U := by
     apply _root_.UniversalEnvelopingAlgebra.hom_ext
     refine LieHom.ext fun x => ?_
-    change (dualAlgHom R L D (_root_.UniversalEnvelopingAlgebra.ι R x)).fst
-      = _root_.UniversalEnvelopingAlgebra.ι R x
+    simp only [LieHom.comp_apply, AlgHom.coe_toLieHom, AlgHom.comp_apply,
+      TrivSqZeroExt.fstHom_apply, AlgHom.id_apply]
     rw [dualAlgHom, _root_.UniversalEnvelopingAlgebra.lift_ι_apply]
     exact fst_dualMap R L D x
   exact congrArg (fun g : U →ₐ[R] U => g a) h
@@ -208,7 +208,8 @@ noncomputable def envelopingDerivation (D : LieDerivation R L L) : derivationLie
     rw [dualEnd_apply, dualEnd_apply, dualEnd_apply, map_mul, DualNumber.snd_mul,
       fst_dualAlgHom, fst_dualAlgHom, add_comm]⟩
 
--- Not a `simp` lemma: see the implementation notes.
+-- Not a `simp` lemma: `derivationLieAlgebra.leibniz` is the general one; see the implementation
+-- notes.
 /-- **The associative Leibniz rule for the extension**: `Dᵁ (a * b) = Dᵁ a * b + a * Dᵁ b`. -/
 theorem envelopingDerivation_mul (D : LieDerivation R L L) (a b : U) :
     (envelopingDerivation R L D : Module.End R U) (a * b)
