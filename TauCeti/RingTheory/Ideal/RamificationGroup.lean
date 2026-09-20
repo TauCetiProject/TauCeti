@@ -79,6 +79,7 @@ def ramificationGroup (Q : Ideal B) (i : ℕ) : Subgroup G := (Q ^ (i + 1)).iner
 
 variable {G}
 
+/-- Membership in the `i`-th ramification group means acting trivially modulo `Q ^ (i + 1)`. -/
 @[simp]
 theorem mem_ramificationGroup_iff {Q : Ideal B} {i : ℕ} {σ : G} :
     σ ∈ Q.ramificationGroup G i ↔ ∀ x : B, σ • x - x ∈ Q ^ (i + 1) :=
@@ -86,6 +87,7 @@ theorem mem_ramificationGroup_iff {Q : Ideal B} {i : ℕ} {σ : G} :
 
 variable (G)
 
+/-- The `i`-th ramification group of `Q` is the inertia group of `Q ^ (i + 1)`. -/
 theorem ramificationGroup_eq_inertia_pow (Q : Ideal B) (i : ℕ) :
     Q.ramificationGroup G i = (Q ^ (i + 1)).inertia G :=
   (rfl)
@@ -101,6 +103,7 @@ theorem ramificationGroup_antitone (Q : Ideal B) : Antitone (Q.ramificationGroup
   rw [mem_ramificationGroup_iff] at hσ ⊢
   exact fun x ↦ Ideal.pow_le_pow_right (by omega) (hσ x)
 
+/-- Every ramification group is contained in the inertia group. -/
 theorem ramificationGroup_le_inertia (Q : Ideal B) (i : ℕ) :
     Q.ramificationGroup G i ≤ Q.inertia G := by
   simpa using ramificationGroup_antitone G Q (Nat.zero_le i)
