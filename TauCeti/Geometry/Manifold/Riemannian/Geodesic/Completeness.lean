@@ -178,8 +178,10 @@ complete for its Riemannian distance, every maximal geodesic is defined for all 
 implication from assertion (c) to assertion (d) of do Carmo's Hopf–Rinow theorem. -/
 theorem isGeodesicallyCompleteAt_of_completeSpace [CompleteSpace M] (p : M) :
     IsGeodesicallyCompleteAt I M p := by
-  rw [isGeodesicallyCompleteAt_iff]
+  rw [← expDomain_eq_univ_iff]
+  apply eq_univ_of_forall
   intro v
+  rw [mem_expDomain_iff]
   set x₀ : TangentBundle I M := TotalSpace.mk' E p v
   have hJ : maximalIntegralCurveInterval (geodesicSpray I M) x₀ = geodesicInterval I M p v :=
     maximalIntegralCurveInterval_geodesicSpray p v
@@ -208,8 +210,11 @@ theorem isGeodesicallyCompleteAt_of_completeSpace [CompleteSpace M] (p : M) :
       ((eventually_notMem_nhdsGT_maximalIntegralCurve hspray h0 hglb hK).and
         (Filter.eventually_iff.2 (Ioo_mem_nhdsGT (ha0.trans hb)))).exists
     exact ht1 (hmem t ht2)
-  rw [← hJ]
-  exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 hup hlow
+  have hinterval : geodesicInterval I M p v = univ := by
+    rw [← hJ]
+    exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 hup hlow
+  rw [hinterval]
+  exact mem_univ 1
 
 /-- In a complete Riemannian manifold the maximal geodesic with initial data `(p, v)` is a
 geodesic on the whole real line. -/
@@ -217,7 +222,11 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic_univ [CompleteSpace M] (p : M)
     (v : TangentSpace I p) :
     IsGeodesicCurveOnFrom I (maximalGeodesic I M p v) univ p v := by
   have h := isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
-  rwa [isGeodesicallyCompleteAt_iff.1 (isGeodesicallyCompleteAt_of_completeSpace p) v] at h
+  have hdomain : expDomain I M p = univ :=
+    expDomain_eq_univ_iff.2 (isGeodesicallyCompleteAt_of_completeSpace p)
+  have hinterval : geodesicInterval I M p v = univ := by
+    rw [geodesicInterval_eq_preimage_expDomain, hdomain, preimage_univ]
+  rwa [hinterval] at h
 
 /-- **The exponential map of a complete Riemannian manifold is everywhere defined**, its domain
 being the whole tangent space at every point. -/

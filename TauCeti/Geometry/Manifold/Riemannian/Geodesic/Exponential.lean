@@ -45,8 +45,6 @@ a local diffeomorphism at `0`, the input to normal neighbourhoods.  Finally, the
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
   diffeomorphism at `0`.
-* `TauCeti.Manifold.isGeodesicallyCompleteAt_iff`: geodesic completeness at `p` restated as the
-  maximal interval condition it abbreviates.
 * `TauCeti.Manifold.expDomain_eq_univ_iff`: the exponential map at `p` is defined on all of
   `T_p M` exactly when `M` is geodesically complete at `p`.
 
@@ -337,13 +335,6 @@ variable (I M) in
 `p` is defined for all time. -/
 def IsGeodesicallyCompleteAt (p : M) : Prop :=
   ∀ v : TangentSpace I p, geodesicInterval I M p v = univ
-
-omit [I.Boundaryless] in
-/-- Geodesic completeness at `p` unfolds to the statement that every maximal geodesic interval
-at `p` is all of `ℝ`. -/
-theorem isGeodesicallyCompleteAt_iff {p : M} :
-    IsGeodesicallyCompleteAt I M p ↔ ∀ v : TangentSpace I p, geodesicInterval I M p v = univ :=
-  Iff.rfl
 
 /-- **Completeness at a point via the exponential map.**  The exponential map at `p` is defined on
 all of `T_p M` exactly when every geodesic leaving `p` is defined for all time. -/
