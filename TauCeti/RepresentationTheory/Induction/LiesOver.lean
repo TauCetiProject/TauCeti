@@ -26,8 +26,7 @@ the given intertwiner with the unit `FDRep.indFDRepUnit`, which is injective.
 
 ## Main statements
 
-* `FDRep.liesOver_iff`, `FDRep.liesOver_of_ne_zero`, `FDRep.LiesOver.exists_ne_zero`: the
-  characterisation by nonzero intertwiners.
+* `FDRep.liesOver_iff`: the characterisation by nonzero intertwiners.
 * `FDRep.LiesOver.of_iso_left`, `FDRep.LiesOver.of_iso_right`: transport across isomorphisms.
 * `FDRep.LiesOver.indFDRep`: induction preserves lying over along the composite homomorphism.
 
@@ -63,21 +62,11 @@ theorem liesOver_iff :
     U.LiesOver φ V ↔ ∃ f : V ⟶ (Action.res (FGModuleCat k) φ).obj U, f ≠ 0 :=
   Iff.rfl
 
-/-- A nonzero intertwiner `V ⟶ Res_φ U` witnesses that `U` lies over `V`. -/
-theorem liesOver_of_ne_zero {f : V ⟶ (Action.res (FGModuleCat k) φ).obj U} (hf : f ≠ 0) :
-    U.LiesOver φ V :=
-  ⟨f, hf⟩
-
-/-- If `U` lies over `V` along `φ`, some intertwiner `V ⟶ Res_φ U` is nonzero. -/
-theorem LiesOver.exists_ne_zero (h : U.LiesOver φ V) :
-    ∃ f : V ⟶ (Action.res (FGModuleCat k) φ).obj U, f ≠ 0 :=
-  h
-
 /-- Lying over is invariant under isomorphism of the larger representation. -/
 theorem LiesOver.of_iso_left {U' : FDRep k H} (e : U ≅ U') (h : U.LiesOver φ V) :
     U'.LiesOver φ V := by
-  obtain ⟨f, hf⟩ := h.exists_ne_zero
-  refine liesOver_of_ne_zero (f := f ≫ ((Action.res (FGModuleCat k) φ).mapIso e).hom) ?_
+  obtain ⟨f, hf⟩ := h
+  refine ⟨f ≫ ((Action.res (FGModuleCat k) φ).mapIso e).hom, ?_⟩
   intro hzero
   exact hf ((cancel_mono ((Action.res (FGModuleCat k) φ).mapIso e).hom).mp
     (hzero.trans Limits.zero_comp.symm))
@@ -85,8 +74,8 @@ theorem LiesOver.of_iso_left {U' : FDRep k H} (e : U ≅ U') (h : U.LiesOver φ 
 /-- Lying over is invariant under isomorphism of the smaller representation. -/
 theorem LiesOver.of_iso_right {V' : FDRep k N} (e : V ≅ V') (h : U.LiesOver φ V) :
     U.LiesOver φ V' := by
-  obtain ⟨f, hf⟩ := h.exists_ne_zero
-  refine liesOver_of_ne_zero (f := e.inv ≫ f) ?_
+  obtain ⟨f, hf⟩ := h
+  refine ⟨e.inv ≫ f, ?_⟩
   intro hzero
   exact hf ((cancel_epi e.inv).mp (hzero.trans Limits.comp_zero.symm))
 
@@ -101,9 +90,9 @@ variable {k G : Type u} {N : Type v} [Field k] [Group G] [Group N]
 theorem LiesOver.indFDRep {S : Subgroup G} [S.FiniteIndex] {A : FDRep k S}
     {φ : N →* S} {V : FDRep k N} (h : A.LiesOver φ V) :
     (indFDRep A).LiesOver (S.subtype.comp φ) V := by
-  obtain ⟨f, hf⟩ := h.exists_ne_zero
+  obtain ⟨f, hf⟩ := h
   let η := (Action.res (FGModuleCat k) φ).map (indFDRepUnit A)
-  refine liesOver_of_ne_zero (f := f ≫ η) fun hzero => hf ?_
+  refine ⟨f ≫ η, fun hzero => hf ?_⟩
   apply Action.Hom.ext
   ext v
   have hv := ConcreteCategory.congr_hom hzero v
