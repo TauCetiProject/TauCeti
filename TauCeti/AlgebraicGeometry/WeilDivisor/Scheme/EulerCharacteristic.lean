@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.LineBundle.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.ResidueSequence
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRochSpace
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Space
 
 /-!
 # The Euler characteristic of `𝒪_X(D)` and the degree of a line bundle
