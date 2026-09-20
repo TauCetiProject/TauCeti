@@ -56,7 +56,9 @@ def curvatureTensorCLM (x : M) :
 /-- The continuous-linear curvature tensor evaluates to the original pointwise tensor. -/
 @[simp]
 theorem curvatureTensorCLM_apply (x : M) (u v : TangentSpace I x) (w : V x) :
-    cov.curvatureTensorCLM x u v w = cov.curvatureTensor x u v w := (rfl)
+    cov.curvatureTensorCLM x u v w = cov.curvatureTensor x u v w := by
+  simp only [curvatureTensorCLM, LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp,
+    LinearEquiv.coe_coe, Function.comp_apply, LinearMap.compr₂_apply]
 
 /-- The curvature tensor of a smooth connection is a smooth section of the iterated
 hom bundle. This requires neither metric compatibility nor vanishing torsion. -/
