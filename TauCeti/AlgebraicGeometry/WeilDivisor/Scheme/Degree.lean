@@ -40,12 +40,6 @@ noncomputable section
 def relativeDegree (f : X ⟶ Y) : SchemeWeilDivisor X →+ ℤ :=
   WeilDivisor.weightedDegree fun x : CodimensionOnePoint X ↦ (f.residueDegree x : ℤ)
 
-/-- The relative degree is the weighted degree for the residue-degree weights. -/
-lemma relativeDegree_def (f : X ⟶ Y) :
-    relativeDegree f =
-      WeilDivisor.weightedDegree fun x : CodimensionOnePoint X ↦ (f.residueDegree x : ℤ) :=
-  (rfl)
-
 /-- The relative degree is the finite sum of coefficients times residue degrees. -/
 lemma relativeDegree_apply (f : X ⟶ Y) (D : SchemeWeilDivisor X) :
     relativeDegree f D = D.sum fun x n ↦ n * (f.residueDegree x : ℤ) := by

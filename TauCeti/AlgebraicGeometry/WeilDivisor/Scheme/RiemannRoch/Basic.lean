@@ -28,18 +28,8 @@ sections, so that its `H¹` has dimension exactly `g - 1 - deg D`: a nonzero glo
 `𝒪_X(D)` is a rational function `f` with `div f + D ≥ 0`, and the degree of that effective divisor
 is `deg D`, because degree is a linear-equivalence invariant.
 
-That invariance is itself proved here, together with the vanishing of the degree of a principal
-divisor. Linearly equivalent divisors have isomorphic sheaves, hence equal Euler characteristics,
-hence equal degrees; this is the scheme-theoretic counterpart of the product formula for a
-function field, and it is what makes the degree descend to the divisor class group.
-
 ## Main declarations
 
-* `SchemeWeilDivisor.relativeDegree_eq_of_linearlyEquivalent` and
-  `SchemeWeilDivisor.relativeDegree_principalDivisor`: the degree is a linear-equivalence
-  invariant, and a principal divisor has degree zero;
-  `SchemeWeilDivisor.isWeightedDegreeZero_residueDegree` restates the latter in the form the
-  abstract degree-zero divisor class group asks for;
 * `SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus` and
   `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf`: the
   Riemann–Roch theorem, for the Euler characteristic and in terms of the two dimensions;
@@ -70,51 +60,6 @@ namespace AlgebraicGeometry
 universe u
 
 namespace SchemeWeilDivisor
-
-section Degree
-
-variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
-  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
-  (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
-  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
-
-/-- **The degree is a linear-equivalence invariant.** On a proper integral curve over `k` whose
-codimension-one local rings are discrete valuation rings, with `H¹(X, 𝒪_X)` finite-dimensional,
-linearly equivalent Weil divisors have the same degree: their sheaves are isomorphic, so their
-Euler characteristics agree. -/
-theorem relativeDegree_eq_of_linearlyEquivalent (hX : ∀ y : X, coheight y ≤ 1)
-    {D E : SchemeWeilDivisor X}
-    (h : (WeilDivisor.OrderSystem.ofScheme X).LinearlyEquivalent D E) :
-    relativeDegree (X ↘ Spec (.of k)) D = relativeDegree (X ↘ Spec (.of k)) E := by
-  have hχ : Scheme.Modules.eulerCharBelow k X (sheaf D) 2 =
-      Scheme.Modules.eulerCharBelow k X (sheaf E) 2 :=
-    Scheme.Modules.eulerCharBelow_congr k (nonempty_iso_sheaf_of_linearlyEquivalent h).some 2
-  rw [eulerCharBelow_sheaf_eq_relativeDegree_add k hX D,
-    eulerCharBelow_sheaf_eq_relativeDegree_add k hX E] at hχ
-  exact add_right_cancel hχ
-
-/-- **A principal divisor has degree zero.** On a proper integral curve over `k` whose
-codimension-one local rings are discrete valuation rings, with `H¹(X, 𝒪_X)` finite-dimensional,
-the divisor of a nonzero rational function has degree zero. -/
-theorem relativeDegree_principalDivisor (hX : ∀ y : X, coheight y ≤ 1)
-    (f : Additive X.functionFieldˣ) :
-    relativeDegree (X ↘ Spec (.of k))
-        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f) = 0 := by
-  have h := relativeDegree_eq_of_linearlyEquivalent k hX
-    (D := (WeilDivisor.OrderSystem.ofScheme X).principalDivisor f) (E := 0)
-    (by simpa using WeilDivisor.OrderSystem.linearlyEquivalent_add_principalDivisor _ 0 f)
-  rwa [map_zero] at h
-
-/-- **The residue-degree weights kill principal divisors.** This is
-`SchemeWeilDivisor.relativeDegree_principalDivisor` in the form consumed by the abstract
-degree-zero divisor class group `WeilDivisor.OrderSystem.picZero`. -/
-theorem isWeightedDegreeZero_residueDegree (hX : ∀ y : X, coheight y ≤ 1) :
-    (WeilDivisor.OrderSystem.ofScheme X).IsWeightedDegreeZero
-      fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ) := fun f ↦ by
-  rw [← relativeDegree_def]
-  exact relativeDegree_principalDivisor k hX f
-
-end Degree
 
 section Curve
 
