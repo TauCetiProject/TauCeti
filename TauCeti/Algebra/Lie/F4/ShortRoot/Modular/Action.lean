@@ -91,24 +91,6 @@ noncomputable def f4ShortRootAdjointMatrix
         f4ModularChevalleyBasis.repr Y (f4ShortRootBasisCoordinate i))
       (coe_f4ShortRootAdjoint_apply X (f4ShortRootLieIdealBasis j))
 
-/-- The pinned root index of a positive or negative simple root. -/
-def f4SignedSimpleRootIndex : Fin 4 ⊕ Fin 4 → Fin 48
-  | .inl i => Fin.castAdd 44 i
-  | .inr i => f4OppositeRootIndex (Fin.castAdd 44 i)
-
-/-- A positive simple-root label is its pinned root index. -/
-@[simp] theorem f4SignedSimpleRootIndex_inl (i : Fin 4) :
-    f4SignedSimpleRootIndex (.inl i) = Fin.castAdd 44 i := (rfl)
-
-/-- A negative simple-root label is the index opposite to the corresponding positive root. -/
-@[simp] theorem f4SignedSimpleRootIndex_inr (i : Fin 4) :
-    f4SignedSimpleRootIndex (.inr i) = f4OppositeRootIndex (Fin.castAdd 44 i) := (rfl)
-
-/-- A pinned positive or negative simple root vector in the reduced Chevalley lattice. -/
-noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
-    f4ModularChevalleyLieAlgebra :=
-  f4ModularRootVector (f4SignedSimpleRootIndex k)
-
 /-- The signed simple-root adjoint operator restricted to the modular short-root ideal. -/
 noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
     Module.End (ZMod 2) f4ShortRootLieIdeal :=
@@ -120,7 +102,8 @@ noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
     (f4ShortRootSignedSimpleAdjoint k y : f4ModularChevalleyLieAlgebra) =
       ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
         (y : f4ModularChevalleyLieAlgebra)⁆ := by
-  rfl
+  simp only [f4ShortRootSignedSimpleAdjoint, coe_f4ShortRootAdjoint_apply,
+    f4ModularSignedSimpleRootVector_eq]
 
 /-- The matrix of the signed simple-root adjoint operator in the canonical short-root basis. -/
 noncomputable def f4ShortRootSignedSimpleAdjointMatrix (k : Fin 4 ⊕ Fin 4) :
