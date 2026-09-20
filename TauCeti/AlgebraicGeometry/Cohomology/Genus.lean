@@ -105,14 +105,16 @@ theorem finrank_cohomology_zero_trivial_eq_one [IsIntegral X]
   -- open is the structure-ring section module itself. Expose that construction once here instead
   -- of asking a reflexive equivalence to identify the two section types implicitly.
   change finrank k Γ(X, ⊤) = 1
-  let v : Γ(X, ⊤) := 1
-  have hv : v ≠ 0 := one_ne_zero
-  refine (finrank_eq_one_iff_of_nonzero' v hv).mpr fun w ↦ ?_
+  have hv : (1 : Γ(X, ⊤)) ≠ 0 := one_ne_zero
+  refine (finrank_eq_one_iff_of_nonzero' 1 hv).mpr fun w ↦ ?_
   obtain ⟨c, hc⟩ := hφ w
   refine ⟨c, ?_⟩
-  change Scheme.Modules.baseRingToGlobalSections k X c • (1 : Γ(X, ⊤)) = w
-  rw [smul_eq_mul, mul_one]
   calc
+    c • (1 : Γ(X, ⊤)) =
+      Scheme.Modules.baseRingToGlobalSections k X c • (1 : Γ(X, ⊤)) :=
+      Scheme.Modules.base_smul_globalSections k X (SheafOfModules.unit X.ringCatSheaf) c
+        (1 : Γ(X, ⊤))
+    _ = Scheme.Modules.baseRingToGlobalSections k X c := by rw [smul_eq_mul, mul_one]
     Scheme.Modules.baseRingToGlobalSections k X c = w := hc
 
 /-- **The Euler characteristic of the structure sheaf.** On a geometrically connected integral
