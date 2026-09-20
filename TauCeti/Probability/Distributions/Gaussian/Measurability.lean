@@ -10,14 +10,14 @@ public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 /-!
 # Parameter measurability of multivariate Gaussian distributions
 
-This file records joint measurability of the multivariate Gaussian law when the covariance
-parameter is supplied by its matrix entries.  This coordinate form lets a measurable random mean
-and raw matrix-valued parameter define a measure-valued kernel without first bundling the matrix.
+This file records joint measurability of the multivariate Gaussian law when its raw matrix
+parameter is supplied by its entries.  This coordinate form lets a measurable random mean and
+matrix-valued parameter define a measure-valued kernel without first bundling the matrix.
 
 ## Main result
 
 * `TauCeti.measurable_multivariateGaussian` — the Gaussian law is jointly measurable in its mean
-  and every coordinate of its covariance matrix.
+  and every coordinate of its raw matrix parameter.
 -/
 
 public section
@@ -31,8 +31,8 @@ namespace TauCeti
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The multivariate Gaussian law is jointly measurable in its mean and every coordinate of its
-covariance matrix.  No positivity hypothesis is needed because `multivariateGaussian` is defined
-for every matrix. -/
+raw matrix parameter.  When the matrix is positive semidefinite it is the covariance matrix;
+otherwise `multivariateGaussian` is the Dirac measure at the mean. -/
 @[fun_prop]
 theorem measurable_multivariateGaussian :
     Measurable fun q : EuclideanSpace ℝ ι × (ι → ι → ℝ) =>
