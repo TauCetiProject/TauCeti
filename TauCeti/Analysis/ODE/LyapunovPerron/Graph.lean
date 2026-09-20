@@ -41,7 +41,7 @@ the local stable set, and differentiability and tangency of the graph.
   `ContinuousLinearMap.norm_lyapunovPerronGraphMap_le` is the resulting cone bound.
 * `ContinuousLinearMap.setOf_lyapunovPerronSolution_zero_eq_image`: the fixed-point set is the
   graph of the graph map over the range of `P`.
-* `ContinuousLinearMap.invOn_lyapunovPerronGraphMap` and
+* `ContinuousLinearMap.invOn_add_lyapunovPerronGraphMap` and
   `ContinuousLinearMap.bijOn_apply_setOf_lyapunovPerronSolution_zero`: `P` parametrizes the
   fixed-point set by the range of `P`.
 * `ContinuousLinearMap.setOf_exists_isIntegralCurveOn_bounded_eq_image` and
@@ -186,7 +186,7 @@ include hP hAP
 
 /-- The projection `P` and the parametrization `v ↦ v + graph map v` are mutually inverse between
 the Lyapunov--Perron fixed-point set and the range of `P`. -/
-theorem invOn_lyapunovPerronGraphMap :
+theorem invOn_add_lyapunovPerronGraphMap :
     Set.InvOn (fun v ↦ v + lyapunovPerronGraphMap A P N hs hu hα hN hsmall v) P
       {x : X | lyapunovPerronSolution A P N hs hu hα hN hsmall x 0 = x} (Set.range P) := by
   constructor
@@ -211,7 +211,7 @@ theorem setOf_lyapunovPerronSolution_zero_eq_image :
   simp only [Set.mem_ofPred_eq, Set.mem_image, Set.mem_range]
   constructor
   · exact fun hx ↦
-      ⟨P x, ⟨x, rfl⟩, (invOn_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP).1 hx⟩
+      ⟨P x, ⟨x, rfl⟩, (invOn_add_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP).1 hx⟩
   · rintro ⟨-, ⟨w, rfl⟩, rfl⟩
     rw [lyapunovPerronGraphMap_map hs hu hα hN hsmall hP,
       ← lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap,
@@ -221,7 +221,8 @@ theorem setOf_lyapunovPerronSolution_zero_eq_image :
 theorem bijOn_apply_setOf_lyapunovPerronSolution_zero :
     Set.BijOn P {x : X | lyapunovPerronSolution A P N hs hu hα hN hsmall x 0 = x}
       (Set.range P) :=
-  (invOn_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP).bijOn (fun x _ ↦ ⟨x, rfl⟩) fun v hv ↦ by
+  (invOn_add_lyapunovPerronGraphMap hs hu hα hN hsmall hP hAP).bijOn
+    (fun x _ ↦ ⟨x, rfl⟩) fun v hv ↦ by
     rw [setOf_lyapunovPerronSolution_zero_eq_image hs hu hα hN hsmall hP hAP]
     exact ⟨v, hv, rfl⟩
 
