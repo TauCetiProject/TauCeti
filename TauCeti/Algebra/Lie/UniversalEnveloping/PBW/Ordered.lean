@@ -140,9 +140,7 @@ onto the span of the corresponding ordered monomials in its image family. -/
 theorem map_span_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
     (Submodule.span R (orderedPBWMonomials R L e k)).map (map R f).toLinearMap =
       Submodule.span R (orderedPBWMonomials R M (fun i ↦ f (e i)) k) := by
-  rw [Submodule.map_span]
-  change Submodule.span R (map R f '' orderedPBWMonomials R L e k) = _
-  rw [image_orderedPBWMonomials R L f e k]
+  rw [Submodule.map_span, AlgHom.coe_toLinearMap, image_orderedPBWMonomials R L f e k]
 
 end Map
 

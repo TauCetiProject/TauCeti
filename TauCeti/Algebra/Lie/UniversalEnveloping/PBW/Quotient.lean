@@ -19,6 +19,8 @@ results in `PBW.Functoriality`.
 
 * `TauCeti.UniversalEnvelopingAlgebra.map_mkQ_pbwFiltration`: specialization to a quotient by a
   Lie ideal.
+* `TauCeti.UniversalEnvelopingAlgebra.map_mkQ_pbwFiltrationPrevious`: the same for the step
+  immediately preceding a filtration degree.
 * `TauCeti.UniversalEnvelopingAlgebra.mapFiltration_mkQ_surjective`: the induced linear map between
   quotient filtration steps is surjective.
 
@@ -51,6 +53,14 @@ theorem map_mkQ_pbwFiltration (k : ℕ) :
     (pbwFiltration R L k).map (map R I.mkQ).toLinearMap =
       pbwFiltration R (L ⧸ I) k :=
   map_pbwFiltration_eq_of_surjective R I.mkQ I.mkQ_surjective k
+
+/-- The enveloping-algebra map induced by a Lie quotient maps the step immediately preceding each
+PBW filtration degree onto the corresponding preceding step of the quotient enveloping algebra. -/
+@[simp]
+theorem map_mkQ_pbwFiltrationPrevious (k : ℕ) :
+    (pbwFiltrationPrevious R L k).map (map R I.mkQ).toLinearMap =
+      pbwFiltrationPrevious R (L ⧸ I) k :=
+  map_pbwFiltrationPrevious_eq_of_surjective R I.mkQ I.mkQ_surjective k
 
 /-- The linear map on each PBW filtration step induced by a Lie quotient is surjective. -/
 theorem mapFiltration_mkQ_surjective (k : ℕ) :
