@@ -107,7 +107,7 @@ section General
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
 variable {M : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
 
-/-! ### The endomorphism attached to an idempotent at a sink -/
+/-! ### The endomorphism attached to an idempotent at a vertex -/
 
 section VertexEnd
 
@@ -261,7 +261,7 @@ theorem vertexEnd_eq_zero_iff :
 
 end VertexEnd
 
-/-! ### Idempotents at a sink of an indecomposable representation -/
+/-! ### Idempotents at a vertex of an indecomposable representation -/
 
 section Idempotents
 
