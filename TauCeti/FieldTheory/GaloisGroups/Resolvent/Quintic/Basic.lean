@@ -22,16 +22,17 @@ affine maps `a ↦ a + 1` and `a ↦ 2a + 1` that generate it permute the summan
 orbit of `Φ` under the whole symmetric group therefore has `120 / 20 = 6` elements, and the
 orbit resolvent of a quintic is a sextic.
 
-That the stabilizer is *exactly* `F₂₀`, and not merely contained in it, is what lets the
-factorization of the sextic detect `F₂₀`: a mere containment would leave the orbit smaller than
-the coset space `S₅ / F₂₀`, and the resolvent would no longer separate the cosets.
+That the stabilizer is *exactly* `F₂₀`, and not merely contained in it, identifies the six
+universal orbit elements with the cosets `S₅ / F₂₀`. After specialization their values may still
+collide, so using a rational root to detect containment in a conjugate of `F₂₀` requires
+separation evidence, for example a nonzero discriminant of the specialized sextic.
 
 `TauCeti.resolventSextic f` is the specialization of this specification at a quintic `f` over
 `ℤ`. Integrality is a theorem about `ResolventSpec.specialize` and not an extra hypothesis, so
 the sextic is a monic integral polynomial of degree six; the sextic over `ℚ` is its image under
-`Polynomial.map`, by `TauCeti.ResolventSpec.specialize_map`. Being monic and integral, it has
-only integral rational roots, which is what makes "the Galois image lies in a conjugate of
-`F₂₀`" a finite condition on integers for an irreducible quintic.
+`Polynomial.map`, by `TauCeti.ResolventSpec.specialize_map`. Being monic and integral, any
+rational root is integral, reducing the rational-root search to integers; concluding containment
+from such a root separately requires the separation evidence above.
 
 ## Main definitions
 
@@ -48,8 +49,8 @@ only integral rational roots, which is what makes "the Galois image lies in a co
 
 ## References
 
-* D. S. Dummit, *Solving solvable quintics*, Mathematics of Computation **57** (1991), §1. The
-  invariant is his, with his `x₁, …, x₅` read as `x₀, …, x₄`.
+* D. S. Dummit, *Solving solvable quintics*, Mathematics of Computation **57** (1991), §2,
+  p. 388. The invariant is his, with his `x₁, …, x₅` read as `x₀, …, x₄`.
 -/
 
 public section
@@ -134,37 +135,37 @@ theorem rename_quinticF20Invariant_eq_self_iff (σ : Perm (Fin 5)) :
       σ ∈ referenceSubgroup 5 ⟨2, by simp⟩ := by
   have hle := referenceSubgroup_five_two_le_renameStabilizer
   have hstab : renameStabilizer quinticF20Invariant = referenceSubgroup 5 ⟨2, by simp⟩ := by
-    -- The stabilizer contains the transitive group `5T3`, so it is itself transitive and its
-    -- order is one of `5`, `10`, `20`, `60`, `120`. The first two are not multiples of the
-    -- order `20` of `5T3`; order `60` is the alternating group, which does not contain the odd
-    -- permutations of `5T3`; and order `120` is the whole group, which does not fix the
-    -- invariant. So the order is `20` and the containment is an equality.
+    -- The stabilizer contains the transitive group `5T3`, so it is itself transitive. Its label
+    -- cannot be `5T1` or `5T2` by order, `5T4` by parity, or `5T5` because the whole group does
+    -- not fix the invariant. It is therefore `5T3`, and the containment is an equality.
     have : MulAction.IsPretransitive (renameStabilizer quinticF20Invariant) (Fin 5) := by
       constructor
       intro x y
       obtain ⟨g, hg⟩ := (isPretransitive_referenceSubgroup 5 ⟨2, by simp⟩).exists_smul_eq x y
       exact ⟨⟨(g : Perm (Fin 5)), hle g.2⟩, hg⟩
-    have hmem := natCard_mem_of_natCard_eq_five_of_isPretransitive (α := Fin 5) (by simp)
+    obtain ⟨j, hj⟩ := exists_transitiveGroupLabel_five
       (renameStabilizer quinticF20Invariant)
-    have hmul := (renameStabilizer quinticF20Invariant).index_mul_card
-    rw [Nat.card_perm, Nat.card_fin] at hmul
+    have hcard := hj.natCard_eq
     have hdvd := Subgroup.card_dvd_of_le hle
     rw [natCard_referenceSubgroup_five_two] at hdvd
-    refine (Subgroup.eq_of_le_of_card_ge hle ?_).symm
-    rw [natCard_referenceSubgroup_five_two]
-    simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
-    simp only [Nat.factorial] at hmul
-    rcases hmem with h | h | h | h | h
-    · rw [h] at hdvd; norm_num at hdvd
-    · rw [h] at hdvd; norm_num at hdvd
-    · omega
-    · rw [h] at hmul
-      have halt : renameStabilizer quinticF20Invariant = alternatingGroup (Fin 5) :=
-        eq_alternatingGroup_of_index_eq_two (by omega)
-      exact absurd (halt ▸ hle) not_referenceSubgroup_five_two_le_alternatingGroup
-    · rw [h] at hmul
-      have htop : renameStabilizer quinticF20Invariant = ⊤ :=
-        Subgroup.index_eq_one.1 (by omega)
+    obtain ⟨j, hjlt⟩ := j
+    rw [numTransitiveGroups_five] at hjlt
+    interval_cases j
+    · rw [natCard_referenceSubgroup_five_zero] at hcard
+      rw [hcard] at hdvd
+      norm_num at hdvd
+    · rw [natCard_referenceSubgroup_five_one] at hcard
+      rw [hcard] at hdvd
+      norm_num at hdvd
+    · exact (Subgroup.eq_of_le_of_card_ge hle (by
+        rw [hcard, natCard_referenceSubgroup_five_two])).symm
+    · have halt : renameStabilizer quinticF20Invariant ≤ alternatingGroup (Fin 5) :=
+        hj.le_alternatingGroup_iff.mpr (by simp)
+      exact absurd (hle.trans halt) not_referenceSubgroup_five_two_le_alternatingGroup
+    · have htop : renameStabilizer quinticF20Invariant = ⊤ :=
+        Subgroup.eq_top_of_card_eq (renameStabilizer quinticF20Invariant) (by
+          rw [hcard, natCard_referenceSubgroup_five_four, Nat.card_perm, Nat.card_fin]
+          norm_num [Nat.factorial])
       exact absurd (MvPolynomial.mem_renameStabilizer.1
         (htop ▸ Subgroup.mem_top (swap (0 : Fin 5) 1))) rename_swap_quinticF20Invariant_ne
   rw [← MvPolynomial.mem_renameStabilizer, hstab]
