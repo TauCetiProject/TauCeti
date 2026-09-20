@@ -50,6 +50,7 @@ The places above `v` are indexed by the subtype
   `∏_{w ∣ v} L_w`.
 * `TauCeti.semilocalHom_surjective` and `TauCeti.semilocalHom_injective`: the semi-local map is
   surjective and injective.
+* `TauCeti.coe_semilocalEquiv`: the equivalence has `semilocalHom` as its underlying map.
 * `TauCeti.sum_finrank_adicCompletion_eq_finrank`:
   `∑_{w ∣ v} [L_w : K_v] = [L : K]`.
 
@@ -186,6 +187,10 @@ def semilocalEquiv :
       ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩)
 
 variable {L v}
+
+/-- The underlying map of the semi-local equivalence is `semilocalHom`. -/
+theorem coe_semilocalEquiv : ⇑(semilocalEquiv L v) = semilocalHom L v := by
+  rw [semilocalEquiv, AlgEquiv.coe_ofBijective]
 
 /-- **The semi-local decomposition on a pure tensor**, the formula that determines it. -/
 @[simp]

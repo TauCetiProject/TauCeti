@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.FieldTheory.PrimitiveElement
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -19,7 +19,7 @@ places `w` of `L` above `v`; their quotient fields are the completions `L_w`. Th
 remainder assembly of these factor fields agrees with `semilocalEquiv`.
 
 This is the factor/CRT realization of Neukirch II, Proposition (8.3). The underlying semi-local
-equivalence is constructed in `TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal` without
+equivalence is constructed in `TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic` without
 choosing a primitive element.
 
 ## Main definitions
@@ -218,8 +218,7 @@ private theorem completionPolynomial_eq_prod :
   exact ((semilocalPowerBasis (K := K) L).natDegree_minpoly.trans
     (semilocalPowerBasis (K := K) L).finrank.symm).le
 
-/-- The normalized factor attached to a place above `v`. -/
-def completionFactorOfPlace
+private def completionFactorOfPlace
     (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
     completionFactors L v := by
   exact ⟨completionFactor L v w, completionFactor_irreducible L v w,
@@ -260,7 +259,7 @@ theorem completionFactorsEquivPlaces_symm_apply_val
     (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
     ((completionFactorsEquivPlaces L v).symm w).1 = completionFactor L v w :=
   by
-    change (completionFactorOfPlace L v w).1 = completionFactor L v w
+    rw [completionFactorsEquivPlaces, Equiv.symm_symm, Equiv.ofBijective_apply]
     rfl
 
 private theorem completionFactor_eq
@@ -324,22 +323,14 @@ theorem factorFieldEquivCompletion_algebraMap (q : completionFactors L v) (x : L
     factorFieldEquivCompletion L v q (factorFieldAlgHom L v q x) =
       algebraMap L ((completionFactorsEquivPlaces L v q).1.adicCompletion L) x := by
   let f : L →ₐ[K] (completionFactorsEquivPlaces L v q).1.adicCompletion L :=
-    { toRingHom := (factorFieldEquivCompletion L v q).toRingEquiv.toRingHom.comp
-        (factorFieldAlgHom L v q).toRingHom
-      commutes' r := by
-        change factorFieldEquivCompletion L v q
-          (factorFieldAlgHom L v q (algebraMap K L r)) =
-          algebraMap K ((completionFactorsEquivPlaces L v q).1.adicCompletion L) r
-        rw [(factorFieldAlgHom L v q).commutes]
-        rw [AdjoinRoot.algebraMap_eq',
-          IsScalarTower.algebraMap_apply K (v.adicCompletion K)]
-        exact (factorFieldEquivCompletion L v q).commutes _ }
+    ((factorFieldEquivCompletion L v q).toAlgHom.restrictScalars K).comp
+      (factorFieldAlgHom L v q)
   let g : L →ₐ[K] (completionFactorsEquivPlaces L v q).1.adicCompletion L :=
     IsScalarTower.toAlgHom K L _
   have hfg : f = g := (semilocalPowerBasis (K := K) L).algHom_ext (by
     simp [f, g, factorFieldEquivCompletion_root])
-  change f x = g x
-  exact DFunLike.congr_fun hfg x
+  simpa only [f, g, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+    AlgEquiv.toAlgHom_apply, IsScalarTower.toAlgHom_apply] using DFunLike.congr_fun hfg x
 
 private def semilocalFactorHom (q : completionFactors L v) :
     v.adicCompletion K ⊗[K] L →ₐ[v.adicCompletion K] AdjoinRoot q.1 :=
@@ -396,13 +387,6 @@ def semilocalCrtEquiv :
       ((q : completionFactors L v) → AdjoinRoot q.1) :=
   AlgEquiv.ofBijective (semilocalCrtHom L v) (semilocalCrtHom_bijective L v)
 
-private theorem semilocalEquiv_apply (z : v.adicCompletion K ⊗[K] L) :
-    semilocalEquiv L v z = semilocalHom L v z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
-  | tmul a x => ext w; simp
-  | add x y hx hy => simp [map_add, hx, hy]
-
 /-- **The CRT assembly is the semi-local decomposition.** After identifying every factor field
 with its corresponding completion and reindexing factors by places, `semilocalCrtEquiv` agrees
 with `semilocalEquiv`. -/
@@ -410,8 +394,7 @@ theorem semilocalEquiv_eq_crt :
     (semilocalCrtEquiv L v).trans (factorFieldsEquivCompletions L v) = semilocalEquiv L v := by
   apply AlgEquiv.ext
   intro z
-  rw [semilocalEquiv_apply]
-  simpa [semilocalCrtEquiv] using
+  simpa [semilocalCrtEquiv, coe_semilocalEquiv] using
     factorFieldsEquivCompletions_semilocalCrtHom L v z
 
 end TauCeti
