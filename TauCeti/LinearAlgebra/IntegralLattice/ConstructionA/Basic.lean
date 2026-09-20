@@ -138,9 +138,8 @@ theorem form_nondegenerate : (form m (ι := ι)).Nondegenerate := by
 theorem form_posDef : (form m (ι := ι)).toQuadraticMap.PosDef := by
   intro x hx
   rw [LinearMap.BilinMap.toQuadraticMap_apply, form_apply]
-  have hnonneg : (0 : ℚ) ≤ x ⬝ᵥ x := Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (x i)
-  have hne : x ⬝ᵥ x ≠ 0 := fun h ↦ hx (dotProduct_self_eq_zero.mp h)
-  exact div_pos (hnonneg.lt_of_ne' hne) (by exact_mod_cast m.pos)
+  exact div_pos (by simpa using (dotProduct_self_star_pos_iff (v := x)).mpr hx)
+    (by exact_mod_cast m.pos)
 
 /-- Pairing with `m eᵢ` reads off the `i`th coordinate. -/
 @[simp↓]
