@@ -182,6 +182,8 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A]
       pointsMulEquiv (CommAlgCat.of (ZMod 3) A) q := by
   simp [schemePointsMulEquiv]
 
+/-- Composing the quotient-coordinate carrier point with `carrierι` gives the corresponding
+point of the ambient `GL₇`. -/
 lemma groupSchemePointMulEquiv_comp_carrierι (A : Type) [CommRing A]
     [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points

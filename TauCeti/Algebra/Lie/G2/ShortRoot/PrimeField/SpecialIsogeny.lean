@@ -8,8 +8,10 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Endomorphism
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.MultiplicativeMatrix
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Endomorphism
+public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.SpecialIsogeny
 public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IsogenyMultiplicative
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Frobenius
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PreservesTensors
 
 /-!
@@ -207,18 +209,15 @@ private theorem g2SpecialIsogeny_coe_rootSubgroupPoints
       rw [coe_rootSubgroupPoints_inr_one, coe_rootSubgroupPoints_inr_zero,
         g2SpecialIsogeny_one_add_smul_loweringMatrix_one]
 
-/-- The map induced by the special isogeny on the weight torus, `(s₀, s₁) ↦ (s₁, s₀³)`. -/
-def specialIsogenyTorusMap (s : Fin 2 → Aˣ) : Fin 2 → Aˣ := ![s 1, s 0 ^ 3]
-
 private theorem g2SpecialIsogeny_coe_weightTorusPoints (s : Fin 2 → Aˣ) :
     g2SpecialIsogeny ((weightTorusPoints A s :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      ((weightTorusPoints A (specialIsogenyTorusMap s) :
+      ((weightTorusPoints A ![s 1, s 0 ^ 3] :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) := by
   rw [coe_weightTorusPoints, coe_weightTorusPoints,
     IntegralToralClosure.coe_weightTorusPoints_eq_diagonal,
     IntegralToralClosure.coe_weightTorusPoints_eq_diagonal,
-    specialIsogenyTorusMap, g2SpecialIsogeny_diagonal_torusCharacter]
+    g2SpecialIsogeny_diagonal_torusCharacter]
 
 private theorem map_genericMatrix_comp {K L : CommHopfAlgCat (ZMod 3)}
     (chi : TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7 ⟶ K) (chi' : K ⟶ L) :
@@ -277,7 +276,7 @@ private theorem commonKernelHopfIdeal_toIdeal_le_ker_ambientCoordinateMap :
   · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
     refine toIdeal_le_ker_of_map_genericMatrix_eq _
       (weightTorusPoints ((DiagonalizableGroup.coordinateRing (ZMod 3)
-        (SplitTorus.characterGroup (Fin 2))).obj) (specialIsogenyTorusMap s)) ?_
+        (SplitTorus.characterGroup (Fin 2))).obj) ![s 1, s 0 ^ 3]) ?_
     rw [map_genericMatrix_ambientCoordinateMap_comp_commonKernelLift, hs]
     exact g2SpecialIsogeny_coe_weightTorusPoints s
 
@@ -431,7 +430,7 @@ theorem specialIsogeny_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (t : A) :
 @[simp]
 theorem specialIsogeny_weightTorusPoints (s : Fin 2 → Aˣ) :
     specialIsogeny A (weightTorusPoints A s) =
-      weightTorusPoints A (specialIsogenyTorusMap s) := by
+      weightTorusPoints A ![s 1, s 0 ^ 3] := by
   apply Subtype.ext
   apply Units.ext
   rw [coe_specialIsogeny]
@@ -463,14 +462,6 @@ private theorem map_pow_map {S T : Type*} [CommRing S] [CommRing T]
   ext a b
   rw [Matrix.map_apply, Matrix.map_apply, Matrix.map_apply, Matrix.map_apply, map_pow]
 
-private theorem specialIsogenyTorusMap_specialIsogenyTorusMap {B : Type*} [CommRing B]
-    (s : Fin 2 → Bˣ) :
-    specialIsogenyTorusMap (specialIsogenyTorusMap s) = s ^ 3 := by
-  funext i
-  fin_cases i <;>
-    simp only [specialIsogenyTorusMap, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Pi.pow_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one]
-
 private theorem g2SpecialIsogeny_g2SpecialIsogeny_coe_rootSubgroupPoints_eq_map_pow
     {B : Type*} [CommRing B] [Algebra (ZMod 3) B]
     (k : Fin 2 ⊕ Fin 2) (u : Multiplicative B) :
@@ -495,14 +486,26 @@ private theorem g2SpecialIsogeny_g2SpecialIsogeny_coe_rootSubgroupPoints_eq_map_
   norm_num
 
 private theorem g2SpecialIsogeny_g2SpecialIsogeny_coe_weightTorusPoints_eq_map_pow
-    {B : Type*} [CommRing B] [Algebra (ZMod 3) B] (s : Fin 2 → Bˣ) :
+    {B : Type} [CommRing B] [Algebra (ZMod 3) B] (s : Fin 2 → Bˣ) :
     g2SpecialIsogeny (g2SpecialIsogeny
         ((weightTorusPoints B s : _root_.Matrix.GeneralLinearGroup (Fin 7) B) :
           Matrix (Fin 7) (Fin 7) B)) =
       ((weightTorusPoints B s : _root_.Matrix.GeneralLinearGroup (Fin 7) B) :
         Matrix (Fin 7) (Fin 7) B).map (fun x => x ^ 3) := by
-  rw [g2SpecialIsogeny_coe_weightTorusPoints, g2SpecialIsogeny_coe_weightTorusPoints,
-    specialIsogenyTorusMap_specialIsogenyTorusMap]
+  rw [g2SpecialIsogeny_coe_weightTorusPoints,
+    g2SpecialIsogeny_coe_weightTorusPoints]
+  have hsquare :
+      ![![s 1, s 0 ^ 3] 1, ![s 1, s 0 ^ 3] 0 ^ 3] = s ^ 3 := by
+    let p := (SplitTorus.schemePointsMulEquiv (R := ZMod 3) (A := B)).symm s
+    have h := congrArg
+      (fun f => SplitTorus.schemePointsMulEquiv (p ≫ f.hom.hom))
+      (TauCeti.DynkinType.g2SpecialTorusEnd_comp_self (ZMod 3))
+    rw [Grp.comp_hom_hom, ← Category.assoc] at h
+    funext i
+    simpa only [p, TauCeti.DynkinType.schemePointsMulEquiv_g2SpecialTorusEnd,
+      SplitTorus.schemePointsMulEquiv_powEnd, MulEquiv.apply_symm_apply,
+      Pi.pow_apply, zpow_ofNat] using congrFun h i
+  rw [hsquare]
   have hfrob := frobenius_weightTorusPoints 1 B s
   rw [pow_one] at hfrob
   rw [← hfrob]
@@ -757,9 +760,17 @@ theorem schemePointsMulEquiv_comp_weightTorus_comp_specialIsogenyHom
       (SplitTorus.groupScheme (ZMod 3) (Fin 2)).X) :
     schemePointsMulEquiv B
         (p ≫ weightTorus.hom.hom ≫ specialIsogenyHom.hom.hom) =
-      weightTorusPoints B (specialIsogenyTorusMap (SplitTorus.schemePointsMulEquiv p)) := by
+      weightTorusPoints B (SplitTorus.schemePointsMulEquiv
+        (p ≫ (TauCeti.DynkinType.g2SpecialTorusEnd (ZMod 3)).hom.hom)) := by
   rw [← Category.assoc, schemePointsMulEquiv_comp_specialIsogenyHom,
     schemePointsMulEquiv_comp_weightTorus, specialIsogeny_weightTorusPoints]
+  have hcoords : ![SplitTorus.schemePointsMulEquiv p 1,
+        SplitTorus.schemePointsMulEquiv p 0 ^ 3] =
+      SplitTorus.schemePointsMulEquiv
+        (p ≫ (TauCeti.DynkinType.g2SpecialTorusEnd (ZMod 3)).hom.hom) := by
+    funext i
+    exact (TauCeti.DynkinType.schemePointsMulEquiv_g2SpecialTorusEnd (ZMod 3) p i).symm
+  rw [hcoords]
 
 /-- On scheme-valued points, composing a numbered root subgroup with carrier Frobenius cubes its
 parameter. -/

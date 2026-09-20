@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Preserves
 public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Generators
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Frobenius
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PointsFunctor
 
 /-!
 # Tensor invariance for the short-root type-G2 carrier over the prime field
