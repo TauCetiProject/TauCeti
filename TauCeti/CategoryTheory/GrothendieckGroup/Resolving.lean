@@ -44,6 +44,11 @@ keeps the inductions on lengths well founded.
 * `TauCeti.ExactStructure.IsResolving.resolutionEquiv`,
   `TauCeti.ExactStructure.IsResolving.resolutionEquiv_of` and
   `TauCeti.ExactStructure.IsResolving.resolutionEquiv_symm_of`: **the resolution theorem**.
+* `TauCeti.ExactStructure.IsResolving.map_comp_resolutionEquiv` and
+  `TauCeti.ExactStructure.IsResolving.map_comp_resolutionEquiv_symm`: naturality of the resolution
+  theorem in a conflation-exact functor preserving the resolving properties.
+* `TauCeti.ExactStructure.IsResolving.mapEquiv_comp_resolutionEquiv`: invariance of the resolution
+  theorem under an exact equivalence identifying the resolving properties.
 
 ## Implementation notes
 
@@ -70,7 +75,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe w v u
+universe w w' v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   {E : ExactStructure C} {P : ObjectProperty C} [E.IsResolving P]
@@ -333,6 +338,107 @@ noncomputable def resolutionEquiv : ExactK0 (E.resolvingSubcategory P) ≃+ Exac
   eulerHom_of E P X
 
 end ResolutionTheorem
+
+section Naturality
+
+variable [EssentiallySmall.{w} C]
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
+  {E' : ExactStructure D} {P' : ObjectProperty D} [E'.IsResolving P']
+
+/-- **Naturality of the resolution theorem.** A conflation-exact functor carrying the resolving
+property `P` into `P'` commutes with the comparison from the exact `K₀` of the resolving
+subcategory to the ambient exact `K₀`. -/
+theorem map_comp_resolutionEquiv (F : C ⥤ D) [F.Additive]
+    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+    (ExactK0.map F hF).comp (resolutionEquiv E P).toAddMonoidHom =
+      (resolutionEquiv E' P').toAddMonoidHom.comp
+        (ExactK0.map (P.mapFullSubcategory P' F hPP')
+          (E.isConflationExact_mapFullSubcategory IsResolving.isExtensionClosed
+            IsResolving.isExtensionClosed F hF hPP')) := by
+  apply ExactK0.hom_ext
+  intro X
+  simp
+
+/-- The inverse maps in the resolution theorem are natural: applying a functor to the Euler class
+of a finite resolution gives the Euler class after applying the functor. -/
+theorem map_comp_resolutionEquiv_symm (F : C ⥤ D) [F.Additive]
+    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+    (ExactK0.map (P.mapFullSubcategory P' F hPP')
+        (E.isConflationExact_mapFullSubcategory IsResolving.isExtensionClosed
+          IsResolving.isExtensionClosed F hF hPP')).comp
+        (resolutionEquiv E P).symm.toAddMonoidHom =
+      (resolutionEquiv E' P').symm.toAddMonoidHom.comp (ExactK0.map F hF) := by
+  apply DFunLike.ext _ _
+  intro x
+  apply (resolutionEquiv E' P').injective
+  have h := DFunLike.congr_fun (map_comp_resolutionEquiv (E := E) (P := P) F hF hPP')
+    ((resolutionEquiv E P).symm x)
+  simpa only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.apply_symm_apply] using h.symm
+
+/-- Applying a conflation-exact functor preserving resolving objects carries the Euler class of an
+object to the Euler class of its image. -/
+theorem map_eulerClassOf (F : C ⥤ D) [F.Additive]
+    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) (X : C) :
+    ExactK0.map (P.mapFullSubcategory P' F hPP')
+        (E.isConflationExact_mapFullSubcategory IsResolving.isExtensionClosed
+          IsResolving.isExtensionClosed F hF hPP')
+        (E.eulerClassOf IsResolving.isExtensionClosed (IsResolving.finiteResolution X)) =
+      E'.eulerClassOf IsResolving.isExtensionClosed
+        (IsResolving.finiteResolution (F.obj X)) := by
+  have h := DFunLike.congr_fun (map_comp_resolutionEquiv_symm (E := E) (P := P) F hF hPP')
+    (ExactK0.of X)
+  simpa only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    resolutionEquiv_symm_of, ExactK0.map_of] using h
+
+local instance (Q : ObjectProperty D) [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts] :
+    Q.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero Q
+
+/-- **Equivalence invariance of the resolution theorem.** An exact equivalence identifying two
+resolving properties intertwines both the ambient exact `K₀` equivalence and the equivalence of
+the resolving subcategories with their resolution-theorem comparisons. -/
+theorem mapEquiv_comp_resolutionEquiv (e : C ≌ D) [e.functor.Additive] [e.inverse.Additive]
+    (hF : E.IsConflationExact E' e.functor) (hG : E'.IsConflationExact E e.inverse)
+    (h : P'.inverseImage e.functor = P) :
+    (ExactK0.mapEquiv e hF hG).toAddMonoidHom.comp
+        (resolutionEquiv E P).toAddMonoidHom =
+      (resolutionEquiv E' P').toAddMonoidHom.comp
+        (ExactK0.mapEquiv (e.congrFullSubcategory h)
+          (E.isConflationExact_congrFullSubcategory_functor
+            IsResolving.isExtensionClosed IsResolving.isExtensionClosed e hF h)
+          (E.isConflationExact_congrFullSubcategory_inverse
+            IsResolving.isExtensionClosed IsResolving.isExtensionClosed e hG
+              h)).toAddMonoidHom := by
+  apply ExactK0.hom_ext
+  intro X
+  simp
+
+/-- The inverse resolution maps are invariant under an exact equivalence identifying the
+resolving properties. -/
+theorem mapEquiv_comp_resolutionEquiv_symm
+    (e : C ≌ D) [e.functor.Additive] [e.inverse.Additive]
+    (hF : E.IsConflationExact E' e.functor) (hG : E'.IsConflationExact E e.inverse)
+    (h : P'.inverseImage e.functor = P) :
+    (ExactK0.mapEquiv (e.congrFullSubcategory h)
+        (E.isConflationExact_congrFullSubcategory_functor
+          IsResolving.isExtensionClosed IsResolving.isExtensionClosed e hF h)
+        (E.isConflationExact_congrFullSubcategory_inverse
+          IsResolving.isExtensionClosed IsResolving.isExtensionClosed e hG h)).toAddMonoidHom.comp
+        (resolutionEquiv E P).symm.toAddMonoidHom =
+      (resolutionEquiv E' P').symm.toAddMonoidHom.comp
+        (ExactK0.mapEquiv e hF hG).toAddMonoidHom := by
+  apply DFunLike.ext _ _
+  intro x
+  apply (resolutionEquiv E' P').injective
+  have h' := DFunLike.congr_fun
+    (mapEquiv_comp_resolutionEquiv (E := E) (P := P) e hF hG h)
+    ((resolutionEquiv E P).symm x)
+  simpa only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.apply_symm_apply] using h'.symm
+
+end Naturality
 
 end IsResolving
 
