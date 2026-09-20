@@ -40,8 +40,8 @@ while the reverse inequality is the nonarchimedean bound on a sum.
 * `TauCeti.PowerSeries.IsDistinguished.gaussNorm_mul_add_eq_max`: the norm identity.
 * `TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add`: the quotient and the
   remainder of a Weierstrass division are unique.
-* `TauCeti.PowerSeries.IsDistinguished.eq_zero_of_mul_eq_zero`: a distinguished series is not a
-  zero divisor on restricted series.
+* `TauCeti.PowerSeries.IsDistinguished.eq_zero_of_mul_eq_zero`: a distinguished series has no
+  nonzero restricted left annihilator.
 
 ## References
 
@@ -191,8 +191,8 @@ theorem IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add (hf : IsDistinguished c 
       (fun _ ↦ norm_eq_zero.mp) hc
       (hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero hrr))).mp hgr
 
-/-- A series which is restricted and distinguished at a positive radius is not a zero divisor on
-restricted series: the estimate forces a restricted annihilator to have Gauss norm zero. -/
+/-- A series which is restricted and distinguished at a positive radius has no nonzero restricted
+left annihilator: the estimate forces such an annihilator to have Gauss norm zero. -/
 theorem IsDistinguished.eq_zero_of_mul_eq_zero (hf : IsDistinguished c s f) (hc : 0 < c)
     (hfr : f.IsRestricted c) (hq : q.IsRestricted c) (h : q * f = 0) : q = 0 :=
   (hf.eq_and_eq_of_mul_add_eq_mul_add (r := 0) (q' := 0) (r' := 0) hc hfr hq
