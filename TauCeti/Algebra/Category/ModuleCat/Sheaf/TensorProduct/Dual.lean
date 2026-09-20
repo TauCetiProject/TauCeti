@@ -41,6 +41,7 @@ basis sections of `free I` they give `δᵢⱼ`.
   `TauCeti.SheafOfModules.coevaluation_free`: its evaluation and coevaluation on basis sections;
 * `TauCeti.SheafOfModules.ihomFreeIso` and `TauCeti.SheafOfModules.dualFreeIso`: the internal Hom
   out of `free I`, and the dual sheaf of `free I`;
+* `TauCeti.SheafOfModules.dualFreeι`: the basis sections of the dual sheaf;
 * `TauCeti.SheafOfModules.ιFree_tensorHom_dualFreeIso_inv_comp_ev` and its `_of_ne` variant: the
   dual basis.
 -/
@@ -159,23 +160,35 @@ def dualFreeIso :
 
 variable {I}
 
+/-- The `i`-th basis section of the dual of `free I`, obtained by transporting the corresponding
+basis section along `TauCeti.SheafOfModules.dualFreeIso`. -/
+def dualFreeι (i : I) :
+    unit (ringCatSheaf R) ⟶
+      (ihom (free (R := ringCatSheaf R) I)).obj (unit (ringCatSheaf R)) :=
+  ιFree i ≫ (dualFreeIso (R := R) I).inv
+
 /-- The basis sections of the dual sheaf are the dual basis: the `i`-th one evaluates on the
 `i`-th basis section of `free I` to `1`. -/
 @[reassoc (attr := simp)]
 theorem ιFree_tensorHom_dualFreeIso_inv_comp_ev (i : I) :
-    (ιFree i ⊗ₘ (ιFree i ≫ (dualFreeIso (R := R) I).inv)) ≫
-        (ihom.ev (free (R := ringCatSheaf R) I)).app (𝟙_ _) =
+    (ιFree i ⊗ₘ dualFreeι (R := R) i) ≫
+      (ihom.ev (free (R := ringCatSheaf R) I)).app (unit (ringCatSheaf R)) =
       (ρ_ (𝟙_ (SheafOfModules.{u} (ringCatSheaf R)))).hom := by
-  rw [dualFreeIso, tensorHom_ihomUnitIso_inv_comp_ev, ιFree_tensorHom_ιFree_evaluation]
+  rw [dualFreeι, dualFreeIso]
+  change (ιFree i ⊗ₘ (ιFree i ≫ (ihomUnitIso (free I) (free I)).inv)) ≫
+    (ihom.ev (free I)).app (𝟙_ _) = _
+  rw [tensorHom_ihomUnitIso_inv_comp_ev, ιFree_tensorHom_ιFree_evaluation]
 
 /-- The basis sections of the dual sheaf are the dual basis: the `i`-th one evaluates on the
 `j`-th basis section of `free I` to `0` when `i ≠ j`. -/
 @[reassoc (attr := simp)]
 theorem ιFree_tensorHom_dualFreeIso_inv_comp_ev_of_ne {i j : I} (h : i ≠ j) :
-    (ιFree i ⊗ₘ (ιFree j ≫ (dualFreeIso (R := R) I).inv)) ≫
-        (ihom.ev (free (R := ringCatSheaf R) I)).app (𝟙_ _) = 0 := by
-  rw [dualFreeIso, tensorHom_ihomUnitIso_inv_comp_ev,
-    ιFree_tensorHom_ιFree_evaluation_of_ne h]
+    (ιFree i ⊗ₘ dualFreeι (R := R) j) ≫
+      (ihom.ev (free (R := ringCatSheaf R) I)).app (unit (ringCatSheaf R)) = 0 := by
+  rw [dualFreeι, dualFreeIso]
+  change (ιFree i ⊗ₘ (ιFree j ≫ (ihomUnitIso (free I) (free I)).inv)) ≫
+    (ihom.ev (free I)).app (𝟙_ _) = 0
+  rw [tensorHom_ihomUnitIso_inv_comp_ev, ιFree_tensorHom_ιFree_evaluation_of_ne h]
 
 end SheafOfModules
 
