@@ -17,12 +17,18 @@ the quotient `A ⧸ I`: the degree-`i` piece of the quotient is the image of the
 sense used throughout Tau Ceti: the graded pieces are submodules of the quotient itself, and the
 direct sum of the pieces is compared with the quotient itself, not with a separate graded copy.
 
-The input is `TauCeti.GradedAlgebra.gradeQuot 𝒜 I i`, the image of `𝒜 i` under
-`Ideal.Quotient.mkₐ R I`. Because the ideal is homogeneous, distinct degrees cannot cancel against
-each other modulo `I`: a finite sum of homogeneous elements of pairwise different degrees dies in
-the quotient only componentwise, since projecting onto any one degree reads off that summand. That
-observation proves independence of the pieces, and together with the surjectivity of the quotient
-map it proves that the pieces form an internal decomposition.
+`TauCeti.GradedAlgebra.gradeQuot 𝒜 I i` is the image of `𝒜 i` under
+`Ideal.Quotient.mkₐ R I`. Its basic API works over a commutative semiring of scalars for any
+family of submodules and any two-sided ideal. Multiplicative families descend to multiplicative
+families, and spanning families descend to spanning families. In particular, these results apply
+to overlapping pieces such as a polynomial degree filtration; they do not assert a direct-sum
+grading in that case.
+
+For a graded algebra over a commutative ring and a homogeneous ideal, distinct degrees cannot
+cancel against each other modulo `I`: a finite sum of homogeneous elements of pairwise different
+degrees dies in the quotient only componentwise, since projecting onto any one degree reads off
+that summand. That observation proves independence of the pieces. Together with the surjectivity
+of the quotient map, it proves that the pieces form an internal decomposition.
 
 ## Main definitions
 
@@ -38,11 +44,12 @@ map it proves that the pieces form an internal decomposition.
   of any spanning family of the original piece.
 * `TauCeti.GradedAlgebra.mem_span_of_mem_gradeQuot`: a spanning result for the original piece
   descends to the quotient.
-* `TauCeti.GradedAlgebra.gradeQuot_eq_bot_of_le`: a piece whose original grading lies in `I`
+* `TauCeti.GradedAlgebra.gradeQuot_eq_bot_of_le`: a piece contained in `I`
   vanishes.
-* `TauCeti.GradedAlgebra.iSupIndep_gradeQuot`, `TauCeti.GradedAlgebra.iSup_gradeQuot_eq_top`, and
-  `TauCeti.GradedAlgebra.isInternal_gradeQuot`: **the quotient is the internal direct sum of its
-  graded pieces.**
+* `TauCeti.GradedAlgebra.iSup_gradeQuot_eq_top`: a spanning family spans the quotient.
+* `TauCeti.GradedAlgebra.iSupIndep_gradeQuot` and
+  `TauCeti.GradedAlgebra.isInternal_gradeQuot`: for a homogeneous ideal in a graded algebra,
+  the quotient is the internal direct sum of its graded pieces.
 
 ## Implementation notes
 
@@ -53,17 +60,14 @@ instance: it depends on the homogeneity of `I`, and registering it globally woul
 competing grading to every quotient of every graded algebra at once. Callers introduce it locally
 with `letI` where an instance is needed.
 
-Mathlib's graded structure on a quotient by a homogeneous ideal is the open PR
-[#36501](https://github.com/leanprover-community/mathlib4/pull/36501) by Antoine Chambert-Loir,
-and the shape of this construction follows it: the degree-`i` piece as the image of `𝒜 i` under
-the quotient map, independence of the pieces via `GradedRing.proj`, and the induced
-`GradedAlgebra` assembled from `DirectSum.IsInternal`. That PR is not pinned here; when it lands
-this construction should be replaced by it.
+The construction follows Antoine Chambert-Loir's
+[Mathlib PR #36501](https://github.com/leanprover-community/mathlib4/pull/36501): the degree-`i`
+piece as the image of `𝒜 i` under the quotient map, independence of the pieces via
+`GradedRing.proj`, and the induced `GradedAlgebra` assembled from `DirectSum.IsInternal`.
 
 ## References
 
-This construction states for an arbitrary graded algebra the descent clause of the grading bullet
-of Layer 0 of `TauCetiRoadmap/ZigzagPreprojective/README.md`; see Assem--Simson--Skowroński,
+Assem--Simson--Skowroński,
 *Elements of the Representation Theory of Associative Algebras I*, Ch. II.
 -/
 
@@ -73,31 +77,27 @@ namespace TauCeti
 
 namespace GradedAlgebra
 
-universe u v w
+section Pieces
 
-variable {ι R A : Type*} [DecidableEq ι] [AddMonoid ι] [CommRing R] [Ring A] [Algebra R A]
-  (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (I : Ideal A) [I.IsTwoSided]
+variable {ι R A : Type*} [CommSemiring R] [Ring A] [Algebra R A]
+  (𝒜 : ι → Submodule R A) (I : Ideal A) [I.IsTwoSided]
 
-/-- The degree-`i` piece of the quotient of `A` by a two-sided ideal `I`: the image of the
-degree-`i` piece `𝒜 i` under the quotient map. Homogeneity of `I`, which is what makes this family
-a grading, is needed only for the results below, not for the definition. -/
+/-- The image of `𝒜 i` in the quotient by a two-sided ideal `I`. The family `𝒜` need not be
+a grading. When it is a grading and `I` is homogeneous, these images grade the quotient. -/
 noncomputable def gradeQuot (i : ι) : Submodule R (A ⧸ I) :=
   (𝒜 i).map (Ideal.Quotient.mkₐ R I).toLinearMap
 
-omit [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] in
-/-- Membership in the descended degree-`i` piece is being the class of a homogeneous element. -/
+/-- Membership in the descended piece is being the class of an element of the original piece. -/
 theorem mem_gradeQuot_iff {i : ι} {x : A ⧸ I} :
     x ∈ gradeQuot 𝒜 I i ↔ ∃ y ∈ 𝒜 i, Ideal.Quotient.mk I y = x :=
   Submodule.mem_map
 
-omit [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] in
-/-- A homogeneous element lands in the degree-`i` piece of the quotient. -/
+/-- An element of `𝒜 i` lands in the corresponding piece of the quotient. -/
 @[simp]
 theorem mk_mem_gradeQuot {i : ι} {y : A} (hy : y ∈ 𝒜 i) :
     Ideal.Quotient.mk I y ∈ gradeQuot 𝒜 I i :=
   Submodule.mem_map.2 ⟨y, hy, rfl⟩
 
-omit [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] in
 /-- The descended degree-`i` piece is the span of the images of any spanning family of the
 original piece: descending commutes with spanning. -/
 theorem gradeQuot_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s) :
@@ -105,7 +105,6 @@ theorem gradeQuot_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.sp
   rw [gradeQuot, hs, Submodule.map_span]
   rfl
 
-omit [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] in
 /-- A member of a descended piece lies in the span of `t` if the images of a spanning family of
 the original piece lie in that span. -/
 theorem mem_span_of_mem_gradeQuot {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s)
@@ -119,26 +118,45 @@ theorem mem_span_of_mem_gradeQuot {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.
   rintro u ⟨z, hz, rfl⟩
   exact hmem z hz
 
-omit [DecidableEq ι] [AddMonoid ι] [GradedAlgebra 𝒜] in
-/-- A piece whose original grading lies in `I` vanishes in the quotient. -/
+/-- A piece contained in `I` vanishes in the quotient. -/
 theorem gradeQuot_eq_bot_of_le {i : ι} (hle : ∀ y ∈ 𝒜 i, y ∈ I) : gradeQuot 𝒜 I i = ⊥ := by
   refine eq_bot_iff.2 fun x hx => ?_
   obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.1 hx
   exact Ideal.Quotient.eq_zero_iff_mem.2 (hle y hy)
 
 /-- Multiplication adds degrees, as an inclusion of products of pieces. -/
-theorem gradeQuot_mul_gradeQuot_le (m n : ι) :
+theorem gradeQuot_mul_gradeQuot_le [Add ι] [SetLike.GradedMul 𝒜] (m n : ι) :
     gradeQuot 𝒜 I m * gradeQuot 𝒜 I n ≤ gradeQuot 𝒜 I (m + n) := by
   simp only [gradeQuot, ← Submodule.map_mul (𝒜 m) (𝒜 n) (Ideal.Quotient.mkₐ R I)]
   exact Submodule.map_mono (Submodule.mul_le.2 fun _ hx _ hy => SetLike.mul_mem_graded hx hy)
 
 /-- **Multiplication adds degrees** in the quotient: the product of a degree-`m` class and a
 degree-`n` class lies in degree `m + n`. -/
-theorem mul_mem_gradeQuot {m n : ι} {x y : A ⧸ I}
+theorem mul_mem_gradeQuot [Add ι] [SetLike.GradedMul 𝒜] {m n : ι} {x y : A ⧸ I}
     (hx : x ∈ gradeQuot 𝒜 I m) (hy : y ∈ gradeQuot 𝒜 I n) : x * y ∈ gradeQuot 𝒜 I (m + n) :=
   gradeQuot_mul_gradeQuot_le 𝒜 I m n (Submodule.mul_mem_mul hx hy)
 
+/-- The multiplicative structure of the descended pieces: the unit lies in degree `0` and
+multiplication adds degrees. This supplies the instance data for downstream `GradedAlgebra`
+constructions; neither independence of the pieces nor homogeneity of `I` is required. Since
+`SetLike.GradedMonoid` is a `Prop`-valued class, this can be registered globally without
+attaching data to unrelated quotients. -/
+instance [AddMonoid ι] [SetLike.GradedMonoid 𝒜] : SetLike.GradedMonoid (gradeQuot 𝒜 I) where
+  one_mem := mk_mem_gradeQuot 𝒜 I SetLike.GradedOne.one_mem
+  mul_mem _ _ _ _ hx hy := mul_mem_gradeQuot 𝒜 I hx hy
+
+/-- If the original pieces span `A`, their images span the quotient. The pieces may overlap. -/
+theorem iSup_gradeQuot_eq_top (h𝒜 : ⨆ i, 𝒜 i = ⊤) : ⨆ i, gradeQuot 𝒜 I i = ⊤ := by
+  simp only [gradeQuot]
+  rw [← Submodule.map_iSup, h𝒜, Submodule.map_top, LinearMap.range_eq_top]
+  exact Ideal.Quotient.mkₐ_surjective R I
+
+end Pieces
+
 section Internal
+
+variable {ι R A : Type*} [DecidableEq ι] [AddMonoid ι] [CommRing R] [Ring A] [Algebra R A]
+  (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (I : Ideal A) [I.IsTwoSided]
 
 /-- Projecting a homogeneous element onto any degree picks out the element itself in its own
 degree and zero elsewhere. Private: it packages two standard rewriting steps. -/
@@ -183,30 +201,12 @@ theorem iSupIndep_gradeQuot (hI : I.IsHomogeneous 𝒜) : iSupIndep (gradeQuot �
   rw [← ha j hj, Ideal.Quotient.eq_zero_iff_mem]
   exact hjmem
 
-/-- The descended pieces span the whole quotient, because the quotient map does. -/
-theorem iSup_gradeQuot_eq_top : ⨆ i, gradeQuot 𝒜 I i = ⊤ := by
-  simp only [gradeQuot]
-  rw [← Submodule.map_iSup (Ideal.Quotient.mkₐ R I).toLinearMap,
-    DirectSum.IsInternal.submodule_iSup_eq_top (DirectSum.Decomposition.isInternal 𝒜)]
-  refine eq_top_iff.2 fun x _ => ?_
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I x
-  exact ⟨a, trivial, rfl⟩
-
-/-- **The quotient is the internal direct sum of its descended pieces**: this is the comparison of
-the direct-sum graded algebra with the ungraded quotient asked for by the roadmap, in the internal
-sense in which the pieces live inside the quotient itself. -/
+/-- The quotient by a homogeneous ideal is the internal direct sum of its descended pieces. -/
 theorem isInternal_gradeQuot (hI : I.IsHomogeneous 𝒜) :
     DirectSum.IsInternal (gradeQuot 𝒜 I) :=
   DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top (iSupIndep_gradeQuot 𝒜 I hI)
-    (iSup_gradeQuot_eq_top 𝒜 I)
-
-/-- The multiplicative structure of the descended pieces: the unit lies in degree `0` and
-multiplication adds degrees. This supplies the instance data for downstream `GradedAlgebra`
-constructions. Since `SetLike.GradedMonoid` is a `Prop`-valued class, this can be registered
-globally without attaching data to unrelated quotients. -/
-instance : SetLike.GradedMonoid (gradeQuot 𝒜 I) where
-  one_mem := mk_mem_gradeQuot 𝒜 I SetLike.GradedOne.one_mem
-  mul_mem _ _ _ _ hx hy := mul_mem_gradeQuot 𝒜 I hx hy
+    (iSup_gradeQuot_eq_top 𝒜 I
+      (DirectSum.Decomposition.isInternal 𝒜).submodule_iSup_eq_top)
 
 /-- **The induced grading on the quotient**: the descended pieces form a graded algebra. This is
 kept as a definition rather than an instance because it depends on the homogeneity of `I`; see
