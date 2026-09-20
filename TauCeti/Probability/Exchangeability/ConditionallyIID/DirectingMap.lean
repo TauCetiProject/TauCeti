@@ -51,9 +51,8 @@ Suppose `ν` directs `X`, while `ξ` directs `Y`. If, after selecting the coordi
 an injection `k`, applying `g` gives `Y` coordinatewise almost surely, then `ξ` is almost surely
 the pushforward of `ν` by `g`.
 
-The probability hypothesis is the one needed for almost-sure uniqueness of directing measures;
-countable generation of the target measurable space promotes equality on a determining class to
-equality of probability measures. -/
+The theorem assumes that the base measure is a probability measure and that the target measurable
+space is countably generated. -/
 theorem ConditionallyIIDWith.ae_map_directing_eq_of_comp_injective
     [IsProbabilityMeasure μ] [CountablyGenerated β]
     {X : ι → Ω → α} {Y : ℕ → Ω → β}
