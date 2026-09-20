@@ -27,6 +27,11 @@ are resolving whenever every object admits a finite projective resolution. For t
 example, kernel closure follows because a conflation with projective quotient splits, making its
 kernel a retract of the projective middle term.
 
+Finally, the resolving hypotheses control `P`-dimension along conflations with a resolving term.
+The proofs use only pullbacks of deflations and the Noether conflation of a composite deflation,
+never a splitting, and are what make the Euler class of a finite resolution well defined in
+`TauCeti/CategoryTheory/GrothendieckGroup/Resolving.lean`.
+
 ## Main definitions
 
 * `TauCeti.ExactStructure.IsResolving`: the resolving hypotheses for an object property.
@@ -36,14 +41,18 @@ kernel a retract of the projective middle term.
 ## Main results
 
 * `TauCeti.ExactStructure.IsResolving.prop_X₁`: closure under kernels of admissible deflations.
-* `TauCeti.ExactStructure.resolvingSubcategory_conflation_iff`: the conflations of the induced
-  exact structure are precisely the ambient conflations.
 * `TauCeti.ExactStructure.IsResolving.isConflationExact_ι` and
   `TauCeti.ExactStructure.IsResolving.reflectsConflations_ι`: the inclusion preserves and
   reflects conflations.
 * `TauCeti.ExactStructure.isResolving_top`: the full category is resolving.
 * `TauCeti.ExactStructure.isResolving_isProjective`: finite projective resolutions make the
   relatively projective objects a resolving subcategory.
+* `TauCeti.ExactStructure.IsResolving.exists_finiteResolution_X₁_length_le_of_prop_X₂`:
+  **dimension shifting**. If `K ↪ Q ↠ X` is a conflation with `Q` resolving and `X` has
+  `P`-dimension at most `n + 1`, then `K` has `P`-dimension at most `n`.
+* `TauCeti.ExactStructure.IsResolving.exists_finiteResolution_X₂_length_le_of_prop_X₃` and
+  `TauCeti.ExactStructure.IsResolving.exists_finiteResolution_X₁_length_le_of_prop_X₃`: extensions
+  of a resolving object, and kernels of deflations onto one, do not raise `P`-dimension.
 
 ## References
 
@@ -55,7 +64,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Limits ZeroObject
 
 universe v u
 
@@ -82,27 +91,21 @@ class IsResolving : Prop extends P.ContainsZero, P.IsClosedUnderBinaryProducts w
 
 /-- The exact structure on the full subcategory of resolving objects induced from the ambient
 exact structure. Its conflations are precisely the ambient conflations whose three terms satisfy
-`P`. -/
-noncomputable def resolvingSubcategory [E.IsResolving P] : ExactStructure P.FullSubcategory :=
+`P`. It is by definition `TauCeti.ExactStructure.fullSubcategory`, so the Grothendieck-group
+API of induced structures applies to it unchanged. -/
+noncomputable abbrev resolvingSubcategory [E.IsResolving P] : ExactStructure P.FullSubcategory :=
   E.fullSubcategory P IsResolving.isExtensionClosed
-
-/-- A short complex of a resolving subcategory is a conflation of the induced exact structure
-exactly when its image in the ambient category is a conflation. -/
-@[simp]
-theorem resolvingSubcategory_conflation_iff [E.IsResolving P]
-    (S : ShortComplex P.FullSubcategory) :
-    (E.resolvingSubcategory P).Conflation S ↔ E.Conflation (S.map P.ι) :=
-  E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed S
 
 /-- The inclusion of a resolving subcategory preserves conflations. -/
 theorem IsResolving.isConflationExact_ι [E.IsResolving P] :
     (E.resolvingSubcategory P).IsConflationExact E P.ι where
-  map_conflation hS := (E.resolvingSubcategory_conflation_iff P _).mp hS
+  map_conflation hS := (E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed _).mp hS
 
 /-- The inclusion of a resolving subcategory reflects conflations. -/
 theorem IsResolving.reflectsConflations_ι [E.IsResolving P] :
     (E.resolvingSubcategory P).ReflectsConflations E P.ι where
-  reflects_conflation hS := (E.resolvingSubcategory_conflation_iff P _).mpr hS
+  reflects_conflation hS :=
+    (E.fullSubcategory_conflation_iff IsResolving.isExtensionClosed _).mpr hS
 
 /-- The property of all objects is resolving for every exact structure. -/
 instance isResolving_top : E.IsResolving (⊤ : ObjectProperty C) where
@@ -126,6 +129,91 @@ theorem isResolving_isProjective
       E.isProjective.prop_of_iso s.isoBinaryBiproduct h₂
     exact ObjectProperty.IsStableUnderRetracts.of_biprod_left E.isProjective hbiprod
   finiteResolution := hfinite
+
+section DimensionShifting
+
+variable {E P} [E.IsResolving P]
+
+/-- The two halves of the dimension-shifting induction: at level `n`, an extension of an object
+of `P` by an object of `P`-dimension at most `n` has `P`-dimension at most `n`, and a kernel of a
+deflation from an object of `P` onto an object of `P`-dimension at most `n + 1` has
+`P`-dimension at most `n`. -/
+private theorem dimension_shift_aux (n : ℕ) :
+    (∀ {S : ShortComplex C}, E.Conflation S → P S.X₃ →
+      (∃ r : E.FiniteResolution P S.X₁, r.length ≤ n) →
+      ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n) ∧
+    (∀ {S : ShortComplex C}, E.Conflation S → P S.X₂ →
+      (∃ r : E.FiniteResolution P S.X₃, r.length ≤ n + 1) →
+      ∃ r : E.FiniteResolution P S.X₁, r.length ≤ n) := by
+  have : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
+  -- The kernel statement at level `n` follows from the extension statement at level `n`, by
+  -- pulling back the given deflation along the first step of a short resolution.
+  have kernel : ∀ n : ℕ, (∀ {S : ShortComplex C}, E.Conflation S → P S.X₃ →
+      (∃ r : E.FiniteResolution P S.X₁, r.length ≤ n) →
+      ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n) →
+      ∀ {S : ShortComplex C}, E.Conflation S → P S.X₂ →
+        (∃ r : E.FiniteResolution P S.X₃, r.length ≤ n + 1) →
+        ∃ r : E.FiniteResolution P S.X₁, r.length ≤ n := by
+    intro n ext S hS h₂ h₃
+    obtain ⟨K₀, Q₀, i₀, p₀, h₀, hQ₀, hc₀, hK₀⟩ :=
+      E.exists_conflation_of_exists_finiteResolution_length_le_succ h₃
+    have : HasPullback S.g p₀ :=
+      E.hasPullbacks_deflations.hasPullback p₀ (E.isDeflation_g hS)
+    have sq : IsPullback (pullback.fst S.g p₀) (pullback.snd S.g p₀) S.g p₀ :=
+      IsPullback.of_hasPullback _ _
+    let T₁ := ShortComplex.mk (baseChangeι S sq) (pullback.snd S.g p₀)
+      (baseChangeι_snd S sq)
+    have hY₁ : E.Conflation T₁ := by
+      simpa only [T₁, baseChange_def] using E.conflation_baseChange hS sq
+    let T₂ := ShortComplex.mk (baseChangeι (ShortComplex.mk i₀ p₀ h₀) sq.flip)
+      (pullback.fst S.g p₀) (baseChangeι_snd (ShortComplex.mk i₀ p₀ h₀) sq.flip)
+    have hY₂ : E.Conflation T₂ := by
+      simpa only [T₂, baseChange_def] using E.conflation_baseChange hc₀ sq.flip
+    exact E.exists_finiteResolution_X₁_length_le_of_prop_X₃ (P := P)
+      IsResolving.prop_X₁ (S := T₁) hY₁ hQ₀ (ext (S := T₂) hY₂ h₂ hK₀)
+  induction n with
+  | zero =>
+      have ext : ∀ {S : ShortComplex C}, E.Conflation S → P S.X₃ →
+          (∃ r : E.FiniteResolution P S.X₁, r.length ≤ 0) →
+          ∃ r : E.FiniteResolution P S.X₂, r.length ≤ 0 := by
+        rintro S hS h₃ ⟨r, hr⟩
+        have hX₁ : P S.X₁ := by simpa using r.prop_syzygy hr
+        exact ⟨.base (IsResolving.isExtensionClosed.prop_X₂ hS hX₁ h₃), by simp⟩
+      exact ⟨ext, kernel 0 ext⟩
+  | succ n ih =>
+      -- Cover `X₂` by an object `Q` of `P`; the kernel `L` of `Q ↠ X₂ ↠ X₃` satisfies `P`, and
+      -- the kernel of `Q ↠ X₂` is a kernel of `L ↠ X₁`, of `P`-dimension at most `n`.
+      have ext : ∀ {S : ShortComplex C}, E.Conflation S → P S.X₃ →
+          (∃ r : E.FiniteResolution P S.X₁, r.length ≤ n + 1) →
+          ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n + 1 := by
+        intro S hS h₃ h₁
+        obtain ⟨K, Q, i, a, hia, hQ, hc, -⟩ :=
+          E.exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (P := P) S.X₂
+            (IsResolving.finiteResolution S.X₂)
+        obtain ⟨L, c, α, β, hc', hβ, hL, hKL, -, -⟩ := E.exists_conflation_comp' hS hc
+        obtain ⟨t, ht⟩ := ih.2 (S := ShortComplex.mk β α hβ) hKL
+          (IsResolving.prop_X₁ (S := ShortComplex.mk c (a ≫ S.g) hc') hL hQ h₃) h₁
+        exact ⟨.step hQ i a hia hc t, by simpa using ht⟩
+      exact ⟨ext, kernel (n + 1) ext⟩
+
+/-- An extension of an object of `P` by an object of `P`-dimension at most `n` has
+`P`-dimension at most `n`. -/
+theorem IsResolving.exists_finiteResolution_X₂_length_le_of_prop_X₃ {n : ℕ}
+    {S : ShortComplex C} (hS : E.Conflation S) (h₃ : P S.X₃)
+    (h₁ : ∃ r : E.FiniteResolution P S.X₁, r.length ≤ n) :
+    ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n :=
+  (dimension_shift_aux n).1 hS h₃ h₁
+
+/-- **Dimension shifting.** If `K ↪ Q ↠ X` is a conflation with `Q` in the resolving
+subcategory and `X` has `P`-dimension at most `n + 1`, then `K` has `P`-dimension at most `n`,
+whichever first step `Q ↠ X` is chosen. -/
+theorem IsResolving.exists_finiteResolution_X₁_length_le_of_prop_X₂ {n : ℕ}
+    {S : ShortComplex C} (hS : E.Conflation S) (h₂ : P S.X₂)
+    (h₃ : ∃ r : E.FiniteResolution P S.X₃, r.length ≤ n + 1) :
+    ∃ r : E.FiniteResolution P S.X₁, r.length ≤ n :=
+  (dimension_shift_aux n).2 hS h₂ h₃
+
+end DimensionShifting
 
 end ExactStructure
 

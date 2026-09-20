@@ -22,7 +22,9 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup`: the matrix subgroup cut out by a Hopf ideal
   in the general-linear coordinate ring.
 * `TauCeti.GeneralLinear.mem_hopfIdealPointsSubgroup_iff`: membership is characterized by
-  vanishing on the Hopf ideal.
+  vanishing on the Hopf ideal, with
+  `TauCeti.GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker`
+  reading it as a kernel containment for an algebra-valued point.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_le_of_le`: larger Hopf ideals cut out smaller
   point subgroups.
 * `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_sup`: a join of Hopf ideals cuts out the
@@ -31,6 +33,8 @@ vanishing on the Hopf ideal and is functorial in the value algebra.
   value algebra.
 * `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroup_injective`: an injective homomorphism of
   value algebras induces an injective map of point subgroups.
+* `TauCeti.GeneralLinear.map_hopfIdealPointsSubgroup_subalgebra`: the points valued in a
+  subalgebra are the ambient points that descend to it.
 * `TauCeti.GeneralLinear.mapHopfIdealPointsSubgroupCongr`: that functoriality read through
   presentations of two subgroups as point subgroups, so that a carrier defined by a Hopf ideal
   states its induced map in its own named API.
@@ -107,6 +111,22 @@ theorem pointsMulEquiv_mapPointsFunctor_mem_hopfIdealPointsSubgroup
     simpa only [BialgHom.coe_toAlgHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using hx'
   rw [hxmap, map_zero]
 
+/-- An `A`-valued point lies in the subgroup cut out by a Hopf ideal exactly when its algebra
+homomorphism kills that ideal. -/
+theorem pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (A : Type w) [CommRing A] [Algebra R A]
+    (chi : coordinateHopfAlgebra R n →ₐ[R] A) :
+    pointToGeneralLinear n (toConv chi) ∈ hopfIdealPointsSubgroup n I A ↔
+      I.toIdeal ≤ RingHom.ker chi.toRingHom := by
+  rw [mem_hopfIdealPointsSubgroup_iff]
+  simp only [← pointsMulEquiv_apply, MulEquiv.symm_apply_apply, WithConv.ofConv_toConv]
+  constructor
+  · intro h x hx
+    rw [RingHom.mem_ker]
+    exact h x hx
+  · intro h x hx
+    exact (RingHom.mem_ker.mp (h hx))
+
 /-- Applying a value-algebra homomorphism entrywise preserves the general-linear point subgroup
 cut out by a Hopf ideal. -/
 theorem map_mem_hopfIdealPointsSubgroup
@@ -181,6 +201,27 @@ theorem mapHopfIdealPointsSubgroup_injective
   refine Subtype.ext
     (Matrix.GeneralLinearGroup.map_injective (n := Fin n) (f := (φ : A →+* B)) hφ ?_)
   rw [← coe_mapHopfIdealPointsSubgroup, ← coe_mapHopfIdealPointsSubgroup, h]
+
+/-- **The matrix points valued in a subalgebra, read in the ambient general linear group.** They
+are exactly the `A`-valued points that are entrywise images of invertible matrices over the
+subalgebra: such a matrix kills the Hopf ideal over the subalgebra as soon as its image does over
+`A`, because the inclusion is injective. -/
+theorem map_hopfIdealPointsSubgroup_subalgebra
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (S : Subalgebra R A) :
+    (hopfIdealPointsSubgroup n I ↥S).map
+        (Matrix.GeneralLinearGroup.map (S.val : ↥S →+* A)) =
+      hopfIdealPointsSubgroup n I A ⊓
+        (Matrix.GeneralLinearGroup.map (n := Fin n) (S.val : ↥S →+* A)).range := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨g, hg, rfl⟩
+    exact Subgroup.mem_inf.mpr ⟨map_mem_hopfIdealPointsSubgroup n I S.val hg, ⟨g, rfl⟩⟩
+  · rintro g hg
+    obtain ⟨hgI, g₀, rfl⟩ := Subgroup.mem_inf.mp hg
+    refine ⟨g₀, (mem_hopfIdealPointsSubgroup_iff n I ↥S g₀).mpr fun x hx => ?_, rfl⟩
+    have h0 := (mem_hopfIdealPointsSubgroup_iff n I A _).mp hgI x hx
+    rw [← mapValue_pointsMulEquiv_symm_apply, AlgHom.mapValue_apply, ofConv_toConv,
+      AlgHom.comp_apply] at h0
+    exact Subtype.ext h0
 
 /-! ### Transport along a presentation of the point subgroup
 

@@ -21,9 +21,10 @@ quadratic form `x ↦ xᵀ A x` is therefore negative semidefinite, and it vanis
 rational multiples of `m` ([Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X)).
 Since `m` has no zero entry, the form is negative definite on the vectors that vanish at some
 component, that is, on the vectors supported on a proper subset of the components. In
-particular every proper principal submatrix of `A` is negative definite, and for two distinct
-components `i` and `j` of a numerical type with more than two components,
-`aᵢⱼ² < aᵢᵢ aⱼⱼ`.
+particular every proper principal submatrix of `A` is negative definite. Written out, this gives
+`aᵢⱼ² < aᵢᵢ aⱼⱼ` for two distinct components `i` and `j` of a numerical type with more than two
+components, and a negative determinant for the `3 × 3` submatrix on three distinct components of a
+numerical type with more than three components.
 
 These are the inputs of the classification of configurations of `(-2)`-indices in
 [Stacks, Section 0C7L](https://stacks.math.columbia.edu/tag/0C7L), which in turn bounds the
@@ -38,6 +39,8 @@ multiplicities of a minimal numerical type.
   vanishing at some component.
 * `TauCeti.NumericalType.intersection_sq_lt_intersection_mul_intersection`: `aᵢⱼ² < aᵢᵢ aⱼⱼ` for
   distinct components when there are more than two components.
+* `TauCeti.NumericalType.intersection_det_triple_neg`: the determinant of the principal `3 × 3`
+  submatrix on three distinct components is negative when there are more than three components.
 -/
 
 public section
@@ -164,6 +167,83 @@ theorem intersection_sq_lt_intersection_mul_intersection (hcard : 2 < Fintype.ca
   rw [T.dotProduct_intersection_mulVec_of_support_pair hij x
     (fun l hl ↦ by simp [x, hl.1, hl.2]), hxi, hxj] at hneg
   nlinarith
+
+/-! ### Three components -/
+
+/-- A sum over the components of a function vanishing outside three distinct components. -/
+private lemma sum_eq_of_support_triple {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
+    (hjk : j ≠ k) (y : T.Component → ℤ) (hy : ∀ l, l ≠ i → l ≠ j → l ≠ k → y l = 0) :
+    ∑ l, y l = y i + y j + y k := by
+  have hsub : ∑ l ∈ ({i, j, k} : Finset T.Component), y l = ∑ l, y l := by
+    refine sum_subset (subset_univ _) fun l _ hl ↦ ?_
+    simp only [mem_insert, mem_singleton, not_or] at hl
+    exact hy l hl.1 hl.2.1 hl.2.2
+  rw [← hsub, sum_insert (by simp [hij, hik]), sum_insert (by simp [hjk]), sum_singleton]
+  ring
+
+/-- The intersection form evaluated at a vector supported on three distinct components. -/
+private lemma dotProduct_intersection_mulVec_of_support_triple {i j k : T.Component} (hij : i ≠ j)
+    (hik : i ≠ k) (hjk : j ≠ k) (x : T.Component → ℤ)
+    (hx : ∀ l, l ≠ i → l ≠ j → l ≠ k → x l = 0) :
+    x ⬝ᵥ T.intersection *ᵥ x =
+      T.intersection i i * x i ^ 2 + T.intersection j j * x j ^ 2 +
+        T.intersection k k * x k ^ 2 + 2 * T.intersection i j * x i * x j +
+        2 * T.intersection i k * x i * x k + 2 * T.intersection j k * x j * x k := by
+  have hrow (l : T.Component) : (T.intersection *ᵥ x) l =
+      T.intersection l i * x i + T.intersection l j * x j + T.intersection l k * x k := by
+    rw [mulVec, dotProduct]
+    exact T.sum_eq_of_support_triple hij hik hjk _ fun m h₁ h₂ h₃ ↦ by
+      rw [hx m h₁ h₂ h₃, mul_zero]
+  rw [dotProduct, T.sum_eq_of_support_triple hij hik hjk _
+    (fun l h₁ h₂ h₃ ↦ by rw [hx l h₁ h₂ h₃, zero_mul]), hrow i, hrow j, hrow k,
+    T.intersection_comm j i, T.intersection_comm k i, T.intersection_comm k j]
+  ring
+
+/-- In a numerical type with more than three components, the principal `3 × 3` submatrix of the
+intersection matrix on three distinct components `i`, `j`, `k` is negative definite, so its
+determinant `aᵢᵢaⱼⱼaₖₖ - aᵢᵢaⱼₖ² - aⱼⱼaᵢₖ² - aₖₖaᵢⱼ² + 2aᵢⱼaᵢₖaⱼₖ`, written out on the left below,
+is negative. -/
+theorem intersection_det_triple_neg (hcard : 3 < Fintype.card T.Component)
+    {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) :
+    T.intersection i i * T.intersection j j * T.intersection k k -
+          T.intersection i i * T.intersection j k ^ 2 -
+        T.intersection j j * T.intersection i k ^ 2 -
+      T.intersection k k * T.intersection i j ^ 2 +
+        2 * T.intersection i j * T.intersection i k * T.intersection j k < 0 := by
+  -- Write `M` for the principal submatrix on `{i, j, k}`. The vector `x` below is the last column
+  -- of the adjugate of `M`, so that `M x = det M • eₖ` and hence the intersection form at `x` is
+  -- `(det M) xₖ`. Its last entry `xₖ` is positive by the two-component case, and the form at `x`
+  -- is negative because `x` vanishes at a fourth component.
+  have hxk : 0 < T.intersection i i * T.intersection j j - T.intersection i j ^ 2 :=
+    sub_pos.mpr (T.intersection_sq_lt_intersection_mul_intersection (by omega) hij)
+  obtain ⟨l, hl⟩ : (((univ.erase i).erase j).erase k).Nonempty := by
+    rw [← card_pos, card_erase_of_mem (by simp [hik.symm, hjk.symm]),
+      card_erase_of_mem (by simp [hij.symm]), card_erase_of_mem (mem_univ i), card_univ]
+    omega
+  simp only [mem_erase, mem_univ, and_true] at hl
+  obtain ⟨hlk, hlj, hli⟩ := hl
+  let x : T.Component → ℤ := fun m ↦
+    if m = i then T.intersection i j * T.intersection j k - T.intersection i k * T.intersection j j
+    else if m = j then
+      T.intersection i j * T.intersection i k - T.intersection i i * T.intersection j k
+    else if m = k then T.intersection i i * T.intersection j j - T.intersection i j ^ 2
+    else 0
+  have hvi : x i =
+      T.intersection i j * T.intersection j k - T.intersection i k * T.intersection j j := by
+    simp [x]
+  have hvj : x j =
+      T.intersection i j * T.intersection i k - T.intersection i i * T.intersection j k := by
+    simp [x, hij.symm]
+  have hvk : x k = T.intersection i i * T.intersection j j - T.intersection i j ^ 2 := by
+    simp [x, hik.symm, hjk.symm]
+  have hneg := T.dotProduct_intersection_mulVec_neg
+    (x := x) (fun h ↦ hxk.ne' (hvk.symm.trans (congrFun h k))) (i := l)
+    (by simp [x, hli, hlj, hlk])
+  rw [T.dotProduct_intersection_mulVec_of_support_triple hij hik hjk x
+    (fun m h₁ h₂ h₃ ↦ by simp [x, h₁, h₂, h₃]), hvi, hvj, hvk] at hneg
+  by_contra hdet
+  rw [not_lt] at hdet
+  linarith [mul_nonneg hdet hxk.le]
 
 end NumericalType
 

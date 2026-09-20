@@ -44,6 +44,8 @@ carrying the action of `a` to precomposition with right multiplication by `a`.
   finite-dimensional modules; each embeds into a finite power of it.
 * `Module.Projective.of_finiteDimensional_injective`: over a finite-dimensional right
   self-injective algebra, every finite-dimensional injective module is projective.
+* `Module.Finite.exists_injective_linearMap_pi`: over a finite-dimensional right self-injective
+  algebra, every finitely generated module embeds into a finite free module.
 
 ## References
 
@@ -161,5 +163,33 @@ theorem _root_.Module.Projective.of_finiteDimensional_injective [FiniteDimension
     .of_equiv' DFinsupp.linearEquivFunOnFintype
   obtain ⟨g, hg⟩ := Module.Injective.extension_property A M _ _ f hf LinearMap.id
   exact .of_split f g hg
+
+/-- **Over a finite-dimensional right self-injective algebra, every finitely generated module
+embeds into a finite free module.** The module embeds into a finite power of `D(A_A)`, which is
+finitely generated and projective, hence a direct summand of a finite free module. -/
+theorem _root_.Module.Finite.exists_injective_linearMap_pi [FiniteDimensional k A]
+    (hA : Module.Injective Aᵐᵒᵖ A) (M : Type*) [AddCommGroup M] [Module A M]
+    [Module.Finite A M] : ∃ (n : ℕ) (f : M →ₗ[A] (Fin n → A)), Function.Injective f := by
+  -- `M` is finite-dimensional over `k` through the structure map `k → A`.
+  let : Module k M := Module.compHom M (algebraMap k A)
+  have : IsScalarTower k A M := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : FiniteDimensional k M := Module.Finite.trans A M
+  -- The left module `D(A_A)`: `(a · φ) x = φ (x * a)`.
+  let : Module A (Module.Dual k A) := Module.compHom _ (dualRightAction k A)
+  have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
+    (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
+  have : IsScalarTower k A (Module.Dual k A) := IsScalarTower.of_algebraMap_smul fun c φ ↦ by
+    ext x
+    simp only [hsmul, ← Algebra.commutes, ← Algebra.smul_def, map_smul,
+      LinearMap.smul_apply]
+  have : Module.Finite A (Module.Dual k A) := .of_restrictScalars_finite k A _
+  have : Module.Projective A (Module.Dual k A) :=
+    .of_linearEquiv_dual hA (LinearEquiv.refl k _) hsmul
+  obtain ⟨n, f, hf⟩ := (LinearEquiv.refl k _).exists_injective_linearMap_pi_of_dual hsmul M
+  have : Module.Projective A (Fin n → Module.Dual k A) :=
+    .of_equiv' DFinsupp.linearEquivFunOnFintype
+  obtain ⟨m, -, g, -, hg, -⟩ :=
+    Module.Finite.exists_comp_eq_id_of_projective A (Fin n → Module.Dual k A)
+  exact ⟨m, g ∘ₗ f, hg.comp hf⟩
 
 end TauCeti

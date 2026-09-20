@@ -70,9 +70,11 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd`: the antitonicity `Γ₁(N) ≤ Γ₁(M)` for
   `M ∣ N`, after mapping to `GL₂(ℝ)`.
 * `CongruenceSubgroup.mapGL_mem_normalizer_Gamma1_map` and
-  `CongruenceSubgroup.Gamma1_map_inv_conjAct_eq`: `(Gamma1 N).map (mapGL S)` is invariant
-  under conjugation by `Γ₀(N)` elements in `GL₂(S)`, over any commutative ring `S`, stated as
-  normalizer membership and — over `ℝ` — as a pointwise conjugation.
+  `CongruenceSubgroup.Gamma1_map_inv_conjAct_eq`:
+  `(Gamma1 N).map (mapGL S)` is invariant under conjugation by `Γ₀(N)` elements in `GL₂(S)`,
+  over any commutative ring `S`, stated as normalizer membership and — over `ℝ` — as a
+  pointwise conjugation. `CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1` is the corresponding
+  level-transfer rule after multiplying an arbitrary real matrix on the left.
 * `CongruenceSubgroup.Gamma0Map_toHomUnits_surjective`: every unit of `ZMod N` is the
   lower-right entry of a matrix in `Γ₀(N)` (via strong approximation for `SL₂`).
 * `CongruenceSubgroup.exists_mem_Gamma_map_intCast_zmod_eq`: **strong approximation along a
@@ -279,6 +281,14 @@ theorem Gamma1_map_inv_conjAct_eq (g : ↥(Gamma0 N)) :
     (Gamma1 N).map (mapGL ℝ) = (Gamma1 N).map (mapGL ℝ) :=
   Subgroup.conjAct_pointwise_smul_eq_self
     (Subgroup.inv_mem _ (mapGL_mem_normalizer_Gamma1_map ℝ g))
+
+/-- Left multiplication by an element of `Γ₀(N)` does not change the conjugated real
+`Γ₁(N)`-level. -/
+theorem conjAct_mapGL_mul_smul_Gamma1 {A : SL(2, ℤ)} (hA : A ∈ Gamma0 N)
+    (x : GL (Fin 2) ℝ) :
+    ConjAct.toConjAct (mapGL ℝ A * x)⁻¹ • (Gamma1 N).map (mapGL ℝ) =
+      ConjAct.toConjAct x⁻¹ • (Gamma1 N).map (mapGL ℝ) := by
+  rw [_root_.mul_inv_rev, map_mul, mul_smul, Gamma1_map_inv_conjAct_eq ⟨A, hA⟩]
 
 /-- If two `Γ₀(N)` elements have equal image under `Gamma0Map`, their ratio
 `g₁ · g₂⁻¹` lies in `Γ₁(N)` (as an `SL₂(ℤ)` element). -/

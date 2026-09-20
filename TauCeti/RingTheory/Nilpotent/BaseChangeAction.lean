@@ -342,6 +342,32 @@ theorem baseChangeExp_tmul_of_pow_eq_zero (x : A) (M : S)
       ∑ n ∈ range k, (t ^ n * r) ⊗ₜ[ℤ] integralDividedPower x M n (hM n) v := by
   simp [baseChangeExp_of_pow_eq_zero x M hM hk, smul_tmul']
 
+/-- The base-changed exponential on a pure tensor may be truncated at any power that annihilates
+that tensor's module vector. This only requires pointwise nilpotence at `v`; the separate
+`IsNilpotent x` hypothesis supplies a global bound used to expand `baseChangeExp`. -/
+theorem baseChangeExp_tmul_of_pow_smul_eq_zero (x : A) (M : S)
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (hx : IsNilpotent x)
+    {k : ℕ} (t r : R) (v : M) (hk : x ^ k • (v : V) = 0) :
+    baseChangeExp x M hM t (r ⊗ₜ[ℤ] v) =
+      ∑ n ∈ range k, (t ^ n * r) ⊗ₜ[ℤ] integralDividedPower x M n (hM n) v := by
+  have hglobal : x ^ max (nilpotencyClass x) k = 0 :=
+    pow_eq_zero_of_le (Nat.le_max_left _ _) (pow_nilpotencyClass hx)
+  rw [baseChangeExp_tmul_of_pow_eq_zero x M hM hglobal]
+  symm
+  apply sum_subset (range_mono (Nat.le_max_right _ _))
+  intro n hn hnnot
+  have hkn : k ≤ n := by
+    simpa only [mem_range, not_lt] using hnnot
+  have hpow : x ^ n • (v : V) = 0 := by
+    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hkn
+    rw [pow_add, (Commute.pow_pow_self x k d).eq, mul_smul, hk, smul_zero]
+  have hdiv : integralDividedPower x M n (hM n) v = 0 := by
+    apply Subtype.ext
+    rw [coe_integralDividedPower_apply, Associative.dividedPower_def,
+      Algebra.smul_def, mul_smul, hpow, smul_zero]
+    rfl
+  rw [hdiv, TensorProduct.tmul_zero]
+
 /-- Binomial convolution identity for truncated divided-power series. -/
 private theorem sum_pow_smul_mul_sum_pow_smul {R : Type*} [CommSemiring R]
     {B : Type*} [NonUnitalNonAssocSemiring B] [Module R B] [SMulCommClass R B B]

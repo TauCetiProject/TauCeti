@@ -53,7 +53,7 @@ theorem integrable_prod_toReal {ι : Type*} {ν : Measure Ω} [IsFiniteMeasure �
   refine (integrable_const (1 : ℝ)).mono' hg_meas.aestronglyMeasurable ?_
   filter_upwards [(Filter.eventually_all_finset s).2 hf_le] with ω hω
   rw [Real.norm_of_nonneg (Finset.prod_nonneg fun i _ => ENNReal.toReal_nonneg)]
-  exact Finset.prod_le_one (fun i _ => ENNReal.toReal_nonneg) fun i hi =>
+  exact Finset.prod_le_one₀ (fun i _ => ENNReal.toReal_nonneg) fun i hi =>
     ENNReal.toReal_le_of_le_ofReal zero_le_one (by rw [ENNReal.ofReal_one]; exact hω i hi)
 
 /-- **The real integral of a finite product is its `ℝ≥0∞` integral.** Only the *product* need be

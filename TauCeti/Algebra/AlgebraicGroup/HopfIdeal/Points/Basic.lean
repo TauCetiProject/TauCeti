@@ -27,8 +27,6 @@ the point factors uniquely through the quotient algebra.
   ambient points.
 * `CommHopfAlgCat.liftQuotientPoint`: factor an ambient point through `H ⧸ I` when it
   kills `I`.
-* `CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp`: a coordinate
-  morphism factoring through the quotient induces the ambient point map through the inclusion.
 * `CommHopfAlgCat.mem_range_quotientPointsHom_iff`: quotient points are exactly ambient
   points killing `I`.
 * `CommHopfAlgCat.quotientPointsSubgroup`: the subgroup of ambient points cut out by `I`.
@@ -91,11 +89,9 @@ lemma quotientPointsHom_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
   rw [quotientPointsHom_apply, ofConv_toConv, AlgHom.comp_apply]
   exact congrArg f.ofConv (mkQuotient_apply H I h)
 
-/-- Mapping a point along a coordinate morphism that factors through a Hopf-ideal quotient is the
-same as first mapping it to the quotient and then including the quotient point into the ambient
-point group. -/
-/- Formal source: the analogous lemma was independently developed for the type-`F₄` sibling
-construction in [TauCeti PR #6823](https://github.com/TauCetiProject/TauCeti/pull/6823). -/
+/-- Mapping a point along a coordinate morphism that factors through a Hopf-ideal quotient is
+the same as first mapping it to the quotient and then including the quotient point into the
+ambient point group. -/
 lemma mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
     {H K : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
     (f : quotient H I ⟶ K) (g : H ⟶ K) (hfg : mkQuotient H I ≫ f = g)

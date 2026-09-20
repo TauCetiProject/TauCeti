@@ -46,6 +46,10 @@ functoriality needed for the overlap and cocycle maps in fan gluing.
   `TauCeti.Toric.IsRegularCone.isOpenImmersion_faceAffineToricSchemeMap`: for a face `τ` of a
   regular cone `σ`, the coordinate ring of `τ` is the localization of that of `σ` away from a
   single monomial, and the affine toric scheme of `τ` is an open subscheme of that of `σ`.
+* `TauCeti.Toric.range_faceAffineToricSchemeMap` and
+  `TauCeti.Toric.IsRegularCone.range_faceAffineToricSchemeMap_inf`: the image of the affine
+  toric scheme of a face is a basic open set, and for faces of a regular cone the image of an
+  intersection of faces is the intersection of their images.
 * `TauCeti.Toric.Fan.affineToricChart`, `TauCeti.Toric.Fan.affineToricOverlap`,
   `TauCeti.Toric.Fan.affineToricOverlapLeft` and `TauCeti.Toric.Fan.affineToricOverlapRight`: the
   affine toric charts of a fan and the two maps from their pairwise overlap; these maps are open
@@ -211,6 +215,32 @@ theorem isOpenImmersion_affineToricSchemeMap_inf_ker {N : Type u} [AddCommGroup 
   convert h using 1
   exact affineToricSchemeMap_def ..
 
+private theorem range_faceAffineToricSchemeMap_of_eq (hi : IsIntegralLattice i) (hσ : σ.FG)
+    (hτσ : τ.IsFaceOf σ) (m : dualSemigroup hi σ)
+    (hm : σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)) = τ) :
+    Set.range (faceAffineToricSchemeMap hi hτσ) =
+      (PrimeSpectrum.basicOpen (MonoidAlgebra.single (ofAdd m) (1 : ℂ)) :
+        Set (PrimeSpectrum (affineCoordinateRing hi σ))) := by
+  subst hm
+  let := (faceAffineCoordinateRingMap hi hτσ).toRingHom.toAlgebra
+  have : IsLocalization.Away (MonoidAlgebra.single (ofAdd m) (1 : ℂ))
+      (affineCoordinateRing hi
+        (σ ⊓ PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter m)))) :=
+    isLocalization_away_affineCoordinateRingMap_inf_ker hi hσ m
+  rw [faceAffineToricSchemeMap_def]
+  exact PrimeSpectrum.localization_away_comap_range _ _
+
+/-- For a character `m` in the dual semigroup of a finitely generated cone `σ`, the image of the
+affine toric scheme of the face `σ ⊓ ker m` in that of `σ` is the basic open set where the
+monomial of `m` does not vanish. -/
+theorem range_faceAffineToricSchemeMap (hi : IsIntegralLattice i) (hσ : σ.FG)
+    (m : dualSemigroup hi σ) :
+    Set.range (faceAffineToricSchemeMap hi
+      (PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup hi m).1 m.2))) =
+      (PrimeSpectrum.basicOpen (MonoidAlgebra.single (ofAdd m) (1 : ℂ)) :
+        Set (PrimeSpectrum (affineCoordinateRing hi σ))) :=
+  range_faceAffineToricSchemeMap_of_eq hi hσ _ m rfl
+
 namespace IsRegularCone
 
 variable {τ : PointedCone ℝ V}
@@ -244,6 +274,26 @@ theorem isOpenImmersion_faceAffineToricSchemeMap {N : Type u} [AddCommGroup N] {
   rw [faceAffineToricSchemeMap_def, faceAffineCoordinateRingMap]
   convert isOpenImmersion_affineToricSchemeMap_inf_ker hi hσ.fg ⟨m, hm⟩ using 1
   exact (affineToricSchemeMap_def ..).symm
+
+/-- For two faces `τ` and `υ` of a regular cone `σ`, the image of the affine toric scheme of
+`τ ⊓ υ` in that of `σ` is the intersection of the images of the affine toric schemes of `τ` and
+of `υ`. -/
+theorem range_faceAffineToricSchemeMap_inf (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {υ : PointedCone ℝ V} (hτ : τ.IsFaceOf σ) (hυ : υ.IsFaceOf σ) :
+    Set.range (faceAffineToricSchemeMap hi (hτ.inf_left hυ)) =
+      Set.range (faceAffineToricSchemeMap hi hτ) ∩ Set.range (faceAffineToricSchemeMap hi hυ) := by
+  obtain ⟨m₁, hm₁, h₁⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hτ
+  obtain ⟨m₂, hm₂, h₂⟩ := hσ.exists_mem_dualSemigroup_inf_ker_eq hi hυ
+  have hmul : MonoidAlgebra.single (ofAdd (⟨m₁, hm₁⟩ + ⟨m₂, hm₂⟩ : dualSemigroup hi σ)) (1 : ℂ) =
+      MonoidAlgebra.single (ofAdd ⟨m₁, hm₁⟩) 1 * MonoidAlgebra.single (ofAdd ⟨m₂, hm₂⟩) 1 := by
+    rw [MonoidAlgebra.single_mul_single, ofAdd_add, mul_one]
+  rw [range_faceAffineToricSchemeMap_of_eq hi hσ.fg hτ ⟨m₁, hm₁⟩ h₁,
+    range_faceAffineToricSchemeMap_of_eq hi hσ.fg hυ ⟨m₂, hm₂⟩ h₂,
+    range_faceAffineToricSchemeMap_of_eq hi hσ.fg _ (⟨m₁, hm₁⟩ + ⟨m₂, hm₂⟩)
+      (by rw [AddSubmonoid.coe_add, map_add, PointedCone.inf_ker_add
+        ((mem_dualSemigroup hi m₁).1 hm₁) ((mem_dualSemigroup hi m₂).1 hm₂), h₁, h₂]),
+    hmul, PrimeSpectrum.basicOpen_mul]
+  exact TopologicalSpace.Opens.coe_inf ..
 
 end IsRegularCone
 

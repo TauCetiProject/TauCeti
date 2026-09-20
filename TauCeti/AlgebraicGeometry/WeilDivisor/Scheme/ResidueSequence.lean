@@ -41,8 +41,8 @@ does not. When `y` is closed its image is the whole skyscraper sheaf
 
 Over a base field `k`, the long exact cohomology sequence of the residue sequence gives
 
-* `SchemeWeilDivisor.finiteDimensional_cohomology_sheaf_add_ofPoint`: `Hⁱ(X, 𝒪_X(D + y))` is
-  finite-dimensional when `Hⁱ(X, 𝒪_X(D))` is and `[κ(y) : k]` is finite, and
+* `SchemeWeilDivisor.finiteDimensional_cohomology_sheaf_add_ofPoint_iff`: when `[κ(y) : k]` is
+  finite, `Hⁱ(X, 𝒪_X(D + y))` is finite-dimensional exactly when `Hⁱ(X, 𝒪_X(D))` is, and
 * `SchemeWeilDivisor.eulerCharBelow_sheaf_add_ofPoint`: `χ(𝒪_X(D + y)) = χ(𝒪_X(D)) + [κ(y) : k]`,
   the induction step of the Riemann–Roch formula `χ(𝒪_X(D)) = deg D + χ(𝒪_X)`.
 
@@ -446,6 +446,51 @@ theorem finiteDimensional_cohomology_sheaf_add_ofPoint (hclosed : IsClosed ({(y 
   rw [← residueShortComplex_X₂ (g := Additive.toMul g) hg]
   exact Scheme.Modules.finiteDimensional_cohomology_X₂ k X
     (residueShortComplex_shortExact (g := Additive.toMul g) hclosed hg) i
+
+/-- **Removing a point preserves finite-dimensionality of cohomology.** If `y` is a closed
+codimension-one point with finite residue field over `k`, and `Hⁱ(X, 𝒪_X(D + y))` is
+finite-dimensional, then so is `Hⁱ(X, 𝒪_X(D))`. -/
+theorem finiteDimensional_cohomology_sheaf_of_add_ofPoint
+    (hclosed : IsClosed ({(y : X)} : Set X))
+    (hy : (X ↘ Spec (.of k)).residueDegree y ≠ 0) (i : ℕ)
+    [hD : FiniteDimensional k
+      (Scheme.Modules.Cohomology (sheaf (D + WeilDivisor.ofPoint y)) i)] :
+    FiniteDimensional k (Scheme.Modules.Cohomology (sheaf D) i) := by
+  obtain ⟨g, hg⟩ := exists_orderAt_eq y (WeilDivisor.coeff D y + 1)
+  rw [orderAt_apply] at hg
+  let S := residueShortComplex (Additive.toMul g) hg
+  have hS : S.ShortExact := residueShortComplex_shortExact hclosed hg
+  have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₂ i) := by
+    dsimp only [S]
+    rw [residueShortComplex_X₂]
+    exact hD
+  rw [← residueShortComplex_X₁ (g := Additive.toMul g) hg]
+  cases i with
+  | zero =>
+    -- `H⁰(X, 𝒪_X(D))` embeds into `H⁰(X, 𝒪_X(D + y))`.
+    have := hS.mono_f
+    refine Module.Finite.of_injective (Scheme.Modules.cohomologyMapBaseLinear k X S.f 0) ?_
+    intro a b hab
+    simp only [Scheme.Modules.cohomologyMapBaseLinear_apply,
+      Scheme.Modules.cohomologyFunctor_map] at hab
+    exact Scheme.Modules.cohomologyMap_injective S.f hab
+  | succ i =>
+    have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₃ i) := by
+      dsimp only [S]
+      rw [residueShortComplex_X₃]
+      exact Scheme.finiteDimensional_cohomology_skyscraperResidueField k hy i
+    exact Scheme.Modules.finiteDimensional_cohomology_X₁ k X hS i (i + 1) rfl
+
+/-- **Finite-dimensionality of cohomology is unchanged by adding a point.** For a closed
+codimension-one point `y` with finite residue field over `k`, `Hⁱ(X, 𝒪_X(D + y))` is
+finite-dimensional exactly when `Hⁱ(X, 𝒪_X(D))` is. -/
+theorem finiteDimensional_cohomology_sheaf_add_ofPoint_iff
+    (hclosed : IsClosed ({(y : X)} : Set X))
+    (hy : (X ↘ Spec (.of k)).residueDegree y ≠ 0) (i : ℕ) :
+    FiniteDimensional k (Scheme.Modules.Cohomology (sheaf (D + WeilDivisor.ofPoint y)) i) ↔
+      FiniteDimensional k (Scheme.Modules.Cohomology (sheaf D) i) :=
+  ⟨fun _ ↦ finiteDimensional_cohomology_sheaf_of_add_ofPoint k hclosed hy i,
+    fun _ ↦ finiteDimensional_cohomology_sheaf_add_ofPoint k hclosed hy i⟩
 
 /-- **The Euler characteristic of `𝒪_X(D + y)`.** If `y` is a closed codimension-one point with
 residue degree `[κ(y) : k]` finite and nonzero, and `H⁰(X, 𝒪_X(D))` and `H¹(X, 𝒪_X(D))` are

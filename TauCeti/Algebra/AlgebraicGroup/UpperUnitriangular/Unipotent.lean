@@ -19,7 +19,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 For a natural number `n`, corestricting the standard `O(GL_n)`-comodule along
 `O(GL_n) → O(U_n)` gives the standard comodule of `O(U_n)` on `R^n`. Its coaction is given by
 the generic upper-unitriangular matrix. Its coordinate morphism is the closed immersion
-`U_n → GL_n`, so this comodule is faithful.  At every point its action is
+`U_n → GL_n`, so this comodule is faithful. At every point its action is
 the corresponding upper-unitriangular matrix, hence is unipotent.  The faithful-representation
 criterion then proves that every geometric point of `U_n` is unipotent.
 
@@ -74,59 +74,42 @@ corestricting the standard general-linear comodule along `O(GL_n) → O(U_n)`. -
 noncomputable def standardComodule :
     Comodule R (coordinateHopfAlgebra R (Fin n)) (Fin n → R) := by
   let _ := GeneralLinear.standardComodule R n
-  let c := Comodule.Corestrict (M := Fin n → R) (coordinateMap R n).hom.toCoalgHom
-  have hcoact : c.coact = standardCoact R n := by
-    apply (Pi.basisFun R (Fin n)).ext
-    intro j
-    rw [Comodule.corestrict_coact_apply, GeneralLinear.standardComodule_coact,
-      Pi.basisFun_apply, GeneralLinear.standardCoact_apply_basisFun, standardCoact_apply_basisFun]
-    simp [BialgHom.toCoalgHom_apply]
-  -- Keep the explicit coaction definitionally so its computation lemmas remain simp-normal.
-  exact
-    { coact := standardCoact R n
-      coassoc := by simpa only [hcoact] using c.coassoc
-      lTensor_counit_comp_coact := by simpa only [hcoact] using c.lTensor_counit_comp_coact }
+  exact Comodule.Corestrict (M := Fin n → R) (coordinateMap R n).hom.toCoalgHom
 
 /-- The coaction of the standard comodule is `standardCoact`. -/
-@[simp]
 theorem standardComodule_coact :
-    (standardComodule R n).coact = standardCoact R n :=
-  (rfl)
+    (standardComodule R n).coact = standardCoact R n := by
+  let _ := GeneralLinear.standardComodule R n
+  rw [standardComodule]
+  apply (Pi.basisFun R (Fin n)).ext
+  intro j
+  rw [Comodule.corestrict_coact_apply, GeneralLinear.standardComodule_coact,
+    Pi.basisFun_apply, GeneralLinear.standardCoact_apply_basisFun, standardCoact_apply_basisFun]
+  simp [BialgHom.toCoalgHom_apply]
 
 attribute [local instance] standardComodule
 
 /-- The coefficient matrix of the standard comodule is the generic upper-unitriangular matrix. -/
-@[simp]
 theorem coefficientMatrix_basisFun :
     Comodule.coefficientMatrix (C := coordinateHopfAlgebra R (Fin n))
         (Pi.basisFun R (Fin n)) = fun i j ↦
           coordinateHopfAlgebraAlgEquiv R (Fin n) (genericMatrix R (Fin n) i j) := by
+  let _ := GeneralLinear.standardComodule R n
+  rw [standardComodule]
+  rw [Comodule.coefficientMatrix_corestrict, GeneralLinear.coefficientMatrix_basisFun]
   ext i j
-  rw [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-    standardComodule_coact, Pi.basisFun_apply, standardCoact_apply_basisFun]
-  simp [Pi.single_apply]
+  rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply]
+  simp [BialgHom.toCoalgHom_apply, coordinateMap_genericMatrix_apply]
 
 /-- The coordinate morphism of the standard comodule is the coordinate morphism of the closed
 immersion `U_n → GL_n`. -/
-@[simp]
 theorem coordinateBialgHom_basisFun :
     Comodule.coordinateBialgHom (H := coordinateHopfAlgebra R (Fin n))
         (Pi.basisFun R (Fin n)) = (coordinateMap R n).hom := by
-  apply BialgHom.ext
-  intro x
-  have hAlg :
-      (Comodule.coordinateBialgHom (H := coordinateHopfAlgebra R (Fin n))
-          (Pi.basisFun R (Fin n))).toAlgHom = (coordinateMap R n).hom.toAlgHom := by
-    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext R n
-    intro i j
-    calc
-      _ = Comodule.coefficientMatrix (C := coordinateHopfAlgebra R (Fin n))
-            (Pi.basisFun R (Fin n)) i j :=
-        Comodule.coordinateBialgHom_X (Pi.basisFun R (Fin n)) i j
-      _ = coordinateHopfAlgebraAlgEquiv R (Fin n) (genericMatrix R (Fin n) i j) := by
-        rw [coefficientMatrix_basisFun]
-      _ = _ := (coordinateMap_genericMatrix_apply R n i j).symm
-  exact DFunLike.congr_fun hAlg x
+  let _ := GeneralLinear.standardComodule R n
+  rw [standardComodule]
+  rw [Comodule.coordinateBialgHom_corestrict,
+    GeneralLinear.coordinateBialgHom_basisFun, BialgHom.comp_id]
 
 /-- The standard comodule of `U_n` is faithful. -/
 theorem isFaithful_standardComodule :
@@ -172,7 +155,6 @@ theorem standardScalarExtensionEquiv_comp_endOfPoint
 
 /-- Transporting the standard point action to `A^n` gives the natural linear action of the
 associated upper-unitriangular matrix. -/
-@[simp]
 theorem congrLinearEquiv_pointsAction_eq_toLin
     (g : WithConv (coordinateHopfAlgebra R (Fin n) →ₐ[R] A)) :
     LinearMap.GeneralLinearGroup.ofLinearEquiv
