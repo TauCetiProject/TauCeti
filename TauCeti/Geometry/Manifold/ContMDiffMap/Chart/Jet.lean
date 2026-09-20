@@ -69,6 +69,15 @@ theorem chartIteratedFDeriv_apply
       (writtenInExtChartAt I (modelWithCornersSelf 𝕜 F) x f) (extChartAt I x).target y := by
   rfl
 
+/-- The ordinary application of a chart jet agrees with its explicit continuous-map coercion. -/
+theorem chartIteratedFDeriv_coe_apply
+    (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M) (m : ℕ) (hm : m ≤ n)
+    (y : (extChartAt I x).target) :
+    chartIteratedFDeriv f x m hm y =
+      DFunLike.coe (F := C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target), E [×m]→L[𝕜] F))
+        (chartIteratedFDeriv f x m hm) y := by
+  rfl
+
 /-- In a self-model target chart, the chart jet is the ordinary coordinate derivative. -/
 theorem chartIteratedFDeriv_self_target_apply
     (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M) (m : ℕ) (hm : m ≤ n)
@@ -76,11 +85,9 @@ theorem chartIteratedFDeriv_self_target_apply
     chartIteratedFDeriv f x m hm y =
       iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt I x).symm)
         (extChartAt I x).target y := by
-  have h := chartIteratedFDeriv_apply f x m hm y
+  rw [chartIteratedFDeriv_coe_apply, chartIteratedFDeriv_apply]
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id,
-    PartialEquiv.refl_coe, Function.id_comp] at h
-  convert h using 1
-  rfl
+    PartialEquiv.refl_coe, Function.id_comp]
 
 /-- Order zero of the chart jet recovers the map in source coordinates. -/
 @[simp]
