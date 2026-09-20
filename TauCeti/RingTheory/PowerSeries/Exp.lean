@@ -103,6 +103,7 @@ theorem expAlgHom_single (φ : M →+ R) (m : M) (c : k) :
 
 /-- **The constant coefficient of the exponential specialization is the sum of the
 coefficients**: the specialization at `X = 0` is the augmentation of the monoid algebra. -/
+@[simp]
 theorem constantCoeff_expAlgHom (φ : M →+ R) (f : k[M]) :
     constantCoeff (expAlgHom φ f) = algebraMap k R (f.coeff.sum fun _ c ↦ c) := by
   rw [expAlgHom, lift_apply, map_finsuppSum, Finsupp.sum, Finsupp.sum, map_sum]

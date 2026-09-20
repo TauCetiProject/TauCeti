@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.HighestWeight.Minuscule
+public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.Weight.Lattice
 public import TauCeti.Algebra.Lie.HighestWeight.Weyl.Character
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Dimension
@@ -40,11 +40,6 @@ passes from the field `K` to the integers through `TauCeti.intCast_coweightPairi
   `dim M · ∏_{α>0} ⟨ρ, α^∨⟩ = ∏_{α>0} ⟨lam + ρ, α^∨⟩` of the dimension formula, in `ℤ`.
 * `TauCeti.finrank_eq_prod_coweightPairing_div`: **the Weyl dimension formula**
   `dim M = ∏_{α>0} ⟨lam + ρ, α^∨⟩ / ⟨ρ, α^∨⟩`, in `ℚ`.
-
-The corresponding formula for the named carrier `L(lam)` requires the general nonvanishing of
-the Verma generator, which is the linear-independence half of Poincaré--Birkhoff--Witt and is not
-yet available in the repository. Consequently this file does not state the roadmap's unconditional
-named-carrier theorem under an additional nonvanishing hypothesis.
 
 ## References
 

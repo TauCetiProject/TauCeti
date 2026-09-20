@@ -45,12 +45,16 @@ theorem coeff_card_mul_prod_of_constantCoeff_eq_zero (s : Finset ι) {f : ι →
   induction s using Finset.induction_on generalizing g with
   | empty => simp
   | insert a s ha ih =>
+    -- The new factor is `f a = X * q`, so its linear coefficient is the constant coefficient of
+    -- `q`, and the whole product has one factor of `X` in front, which lowers the degree by one.
     obtain ⟨q, hq⟩ := X_dvd_iff.mpr (hf a (Finset.mem_insert_self a s))
     have h1 : coeff 1 (f a) = constantCoeff q := by
       rw [hq, coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply]
-    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.card_insert_of_notMem ha, h1, hq,
-      show g * (X * q * ∏ i ∈ s, f i) = X * (g * q * ∏ i ∈ s, f i) by ring, coeff_succ_X_mul,
-      ih (fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)) (g * q), map_mul]
+    have hX : g * ∏ i ∈ insert a s, f i = X * (g * q * ∏ i ∈ s, f i) := by
+      rw [Finset.prod_insert ha, hq]; ring
+    rw [hX, Finset.card_insert_of_notMem ha, coeff_succ_X_mul,
+      ih (fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)) (g * q), Finset.prod_insert ha, h1,
+      map_mul]
     ring
 
 end PowerSeries

@@ -39,9 +39,13 @@ for every vector `x` of the weight space. This extends
 `RootPairing.InvariantForm.two_mul_apply_root_root` from the roots to all of `M`. -/
 theorem two_mul_apply_root (x : M) (j : ι) :
     2 * B.form x (P.root j) = P.coroot' j x * B.form (P.root j) (P.root j) := by
-  rw [two_mul, ← eq_sub_iff_add_eq]
-  nth_rw 1 [← B.isOrthogonal_reflection j x (P.root j)]
-  rw [reflection_apply, reflection_apply_self, LinearMap.map_sub₂, LinearMap.map_smul₂,
-    smul_eq_mul, map_neg, map_neg, mul_neg, neg_sub_neg]
+  -- The reflection in `α := P.root j` preserves the form, and it sends `x` to `x - ⟨x, α^∨⟩ α`
+  -- and `α` to `-α`.
+  have h : B.form (x - P.coroot' j x • P.root j) (-P.root j) = B.form x (P.root j) := by
+    rw [← reflection_apply_self, ← reflection_apply]
+    exact B.apply_reflection_reflection j x (P.root j)
+  -- Expanding the left-hand side by bilinearity turns that into the claim.
+  rw [LinearMap.map_sub₂, LinearMap.map_smul₂, map_neg, map_neg, smul_eq_mul] at h
+  linear_combination -h
 
 end RootPairing.InvariantForm
