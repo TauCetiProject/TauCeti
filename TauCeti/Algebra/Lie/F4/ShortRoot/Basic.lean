@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Presentation.Serre
-public import TauCeti.LinearAlgebra.Matrix.Step
+import TauCeti.LinearAlgebra.Matrix.Step
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.ShortRootWeight
 
 /-!
@@ -109,7 +109,7 @@ private theorem diagonal_mul_stepMatrix (d : Fin 26 → ℤ) (t : Fin 26 → Fin
     Matrix.diagonal d * stepMatrix t c = stepMatrix t fun b => d (t b) * c b := by
   ext a b
   rw [((Matrix.isStep_diagonal d).mul (isStep_stepMatrix t c)).apply a b, stepMatrix_apply]
-  rfl
+  simp only [Function.comp_apply, id_eq]
 
 /-- A step matrix times a diagonal matrix rescales each column by the diagonal entry at its
 index. -/
@@ -117,7 +117,7 @@ private theorem stepMatrix_mul_diagonal (t : Fin 26 → Fin 26) (c : Fin 26 → 
     stepMatrix t c * Matrix.diagonal d = stepMatrix t fun b => c b * d b := by
   ext a b
   rw [((isStep_stepMatrix t c).mul (Matrix.isStep_diagonal d)).apply a b, stepMatrix_apply]
-  rfl
+  simp only [Function.comp_apply, id_eq]
 
 /-! ## The tables -/
 

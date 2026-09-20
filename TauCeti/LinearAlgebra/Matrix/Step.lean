@@ -35,6 +35,10 @@ have decidable equality.
 The target of a column with coefficient zero is unconstrained, so the pair `(t, c)` is not
 determined by the matrix; every statement below takes the witnessing pair as data.
 
+The step-matrix API is adapted from the formalization in
+[Tau Ceti PR #6711](https://github.com/TauCetiProject/TauCeti/pull/6711), the special isogeny
+of type `F₄` in characteristic two on matrices.
+
 ## Main definitions
 
 * `Matrix.IsStep`: the property, witnessed by a target function and a coefficient function.
@@ -105,6 +109,7 @@ theorem IsStep.apply (h : M.IsStep t c) (a : m) (b : n) :
 end Zero
 
 /-- A diagonal matrix is the step matrix of the identity target and its own diagonal. -/
+@[simp]
 theorem isStep_diagonal [DecidableEq n] [Zero R] (d : n → R) : (diagonal d).IsStep id d := by
   refine isStep_of_apply fun a b => ?_
   rw [diagonal_apply, Function.id_def]
@@ -114,6 +119,7 @@ theorem isStep_diagonal [DecidableEq n] [Zero R] (d : n → R) : (diagonal d).Is
 
 /-- The identity matrix is the step matrix of the identity target and the constant coefficient
 one. -/
+@[simp]
 theorem isStep_one [DecidableEq n] [Zero R] [One R] : (1 : Matrix n n R).IsStep id 1 :=
   isStep_of_apply fun _ _ => one_apply
 
