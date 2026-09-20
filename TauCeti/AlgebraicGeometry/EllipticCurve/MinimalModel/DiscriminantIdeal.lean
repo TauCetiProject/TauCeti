@@ -76,8 +76,8 @@ variable (O : Type*) [CommRing O] [IsDedekindDomain O]
 /-- **The discriminant of an equation minimal at `v` has `v`-adic valuation `exp (-v (Δ_min,ᵥ))`.**
 This is `valuation_Δ_eq_exp_neg_of_isMinimal_smul` read through the `v`-adic valuation of `O`
 rather than through the discrete valuation of `Oᵥ`. -/
-theorem valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) [W.IsElliptic] {W' : WeierstrassCurve K}
+theorem valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation (W : WeierstrassCurve K)
+    (v : HeightOneSpectrum O) [W.IsElliptic] {W' : WeierstrassCurve K}
     [IsMinimal (Localization.AtPrime v.asIdeal) W'] (D : VariableChange K) (hD : D • W = W') :
     v.valuation K W'.Δ =
       WithZero.exp
@@ -104,13 +104,13 @@ private theorem valuation_Δ_eq_exp_neg_count (v : HeightOneSpectrum O) {W : Wei
 /-- **At a prime where the equation is minimal, the exponent of `𝔭ᵥ` in the discriminant is
 `v (Δ_min,ᵥ)`.** Here `d` is a global integral representative of `Δ W`, supplied separately by
 the hypothesis `hd`; minimality at `v` supplies only integrality over the localisation. -/
-theorem count_span_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
-    {W : WeierstrassCurve K} [W.IsElliptic] {d : O} (hd : algebraMap O K d = W.Δ)
+theorem count_span_Δ_eq_localMinimalDiscriminantValuation (W : WeierstrassCurve K)
+    (v : HeightOneSpectrum O) [W.IsElliptic] {d : O} (hd : algebraMap O K d = W.Δ)
     (hv : IsMinimal (Localization.AtPrime v.asIdeal) W) :
     (Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors =
       W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
   have := hv -- minimality at `v` is what the next line resolves as an instance
-  have hexp := valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O v W
+  have hexp := valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v
     (1 : VariableChange K) (one_smul _ W)
   rw [valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_inj, neg_inj, Nat.cast_inj] at hexp
   exact hexp
@@ -118,8 +118,8 @@ theorem count_span_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectru
 /-- **An integral equation has discriminant exponent at least the local minimal one at every
 prime.** Minimality maximises the multiplicative valuation of the discriminant, which is to
 minimise its exponent. -/
-theorem localMinimalDiscriminantValuation_le_count_span_Δ (v : HeightOneSpectrum O)
-    {W : WeierstrassCurve K} [W.IsElliptic] [IsIntegral O W] {d : O}
+theorem localMinimalDiscriminantValuation_le_count_span_Δ (W : WeierstrassCurve K)
+    (v : HeightOneSpectrum O) [W.IsElliptic] [IsIntegral O W] {d : O}
     (hd : algebraMap O K d = W.Δ) :
     W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) ≤
       (Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors := by
@@ -130,7 +130,7 @@ theorem localMinimalDiscriminantValuation_le_count_span_Δ (v : HeightOneSpectru
     rw [← hC, inv_smul_smul]
   have hle := valuation_Δ_le_of_isMinimal_smul (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
   rw [v.valuation_maximalIdeal_localizationAtPrime, v.valuation_maximalIdeal_localizationAtPrime,
-    valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O v W C hC,
+    valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC,
     valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_le_exp, neg_le_neg_iff, Nat.cast_le] at hle
   exact hle
 
@@ -152,9 +152,8 @@ theorem minimalDiscriminantIdeal_smul (D : VariableChange K) (W : WeierstrassCur
     minimalDiscriminantIdeal O (D • W) = minimalDiscriminantIdeal O W := by
   simp only [minimalDiscriminantIdeal, localMinimalDiscriminantValuation_smul]
 
-/-- **The product defining the minimal discriminant ideal is finite.** Every equation has an
-integral model, whose discriminant is divisible by only finitely many primes, and each local
-minimal exponent is at most the exponent there. -/
+/-- **The product defining the minimal discriminant ideal is finite.** Thus the defining
+`finprod` agrees with a finite product of the nontrivial local factors. -/
 theorem hasFiniteMulSupport_pow_localMinimalDiscriminantValuation (W : WeierstrassCurve K)
     [W.IsElliptic] :
     Function.HasFiniteMulSupport fun v : HeightOneSpectrum O =>
@@ -165,7 +164,7 @@ theorem hasFiniteMulSupport_pow_localMinimalDiscriminantValuation (W : Weierstra
   refine Ideal.hasFiniteMulSupport_asIdeal_pow_of_le_count
     (Submodule.span_singleton_eq_bot.mp.mt (ne_zero_of_algebraMap_eq_Δ hd)) _ fun v => ?_
   rw [← localMinimalDiscriminantValuation_smul _ C W]
-  exact localMinimalDiscriminantValuation_le_count_span_Δ v hd
+  exact localMinimalDiscriminantValuation_le_count_span_Δ (C • W) v hd
 
 /-- **The minimal discriminant ideal is nonzero.** -/
 theorem minimalDiscriminantIdeal_ne_bot (W : WeierstrassCurve K) [W.IsElliptic] :
@@ -179,7 +178,7 @@ local minimal exponents back off the ideal, so results about `𝔇_{E/K}` can be
 unfolding the defining product. -/
 @[simp]
 theorem count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation
-    (v : HeightOneSpectrum O) (W : WeierstrassCurve K) [W.IsElliptic] :
+    (W : WeierstrassCurve K) (v : HeightOneSpectrum O) [W.IsElliptic] :
     (Associates.mk v.asIdeal).count (Associates.mk (minimalDiscriminantIdeal O W)).factors =
       W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
   have hexp : ∀ᶠ w : HeightOneSpectrum O in Filter.cofinite,
@@ -208,7 +207,7 @@ theorem minimalDiscriminantIdeal_dvd_span {W : WeierstrassCurve K} [W.IsElliptic
     minimalDiscriminantIdeal]
   exact finprod_le_finprod (Ideal.hasFiniteMulSupport hspan)
     (hasFiniteMulSupport_pow_localMinimalDiscriminantValuation O W) fun v =>
-      Ideal.pow_le_pow_right (localMinimalDiscriminantValuation_le_count_span_Δ v hd)
+      Ideal.pow_le_pow_right (localMinimalDiscriminantValuation_le_count_span_Δ W v hd)
 
 /-- **A globally minimal equation computes the minimal discriminant ideal as `(Δ W)`.** -/
 theorem minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal {W : WeierstrassCurve K}
@@ -218,7 +217,7 @@ theorem minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal {W : WeierstrassCurv
     Submodule.span_singleton_eq_bot.mp.mt (ne_zero_of_algebraMap_eq_Δ hd)
   rw [minimalDiscriminantIdeal, ← Ideal.finprod_heightOneSpectrum_factorization hspan]
   exact finprod_congr fun v =>
-    congrArg _ (count_span_Δ_eq_localMinimalDiscriminantValuation v hd (h.isMinimal v)).symm
+    congrArg _ (count_span_Δ_eq_localMinimalDiscriminantValuation W v hd (h.isMinimal v)).symm
 
 /-- **Among integral equations, `𝔇_{E/K} = (Δ W)` holds exactly for the globally minimal ones.**
 Integrality is not optional: a non-integral change of variables can fix `Δ` while destroying
@@ -235,9 +234,9 @@ theorem isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span {W : WeierstrassCur
     rw [← hC, inv_smul_smul]
   refine isMinimal_of_valuation_Δ_eq_of_isMinimal_smul _ C⁻¹ hCinv ?_
   rw [v.valuation_maximalIdeal_localizationAtPrime, v.valuation_maximalIdeal_localizationAtPrime,
-    valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O v W C hC,
+    valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC,
     valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_inj, neg_inj, Nat.cast_inj, ← h]
-  exact count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation O v W
+  exact count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation O W v
 
 end WeierstrassCurve
 

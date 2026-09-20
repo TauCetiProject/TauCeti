@@ -193,10 +193,8 @@ end Descent
 end VariableChange
 
 /-- **Every Weierstrass equation over the fraction field of a ring `R` has an integral model
-over `R`.** The change of variables `(u, 0, 0, 0)` multiplies `aᵢ` by `u⁻ⁱ`, so a single common
-denominator of the five coefficients clears all of them at once. Mathlib's `exists_isIntegral`
-proves the same over a valuation ring, where one coefficient dominates the others; over an
-arbitrary base ring the denominators are cleared together instead. -/
+over `R`.** This supplies an integral equation for arguments that compare field-valued curve
+invariants with ideals of the base ring. -/
 theorem exists_smul_isIntegral (R : Type*) [CommRing R] {K : Type*} [Field K]
     [Algebra R K] [IsFractionRing R K] (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, IsIntegral R (C • W) := by
@@ -221,10 +219,8 @@ theorem exists_smul_isIntegral (R : Type*) [CommRing R] {K : Type*} [Field K]
   · simpa [IsLocalization.IsInteger, variableChange_a₆] using key 4 5
 
 /-- **An integral model stays integral over a larger ring of the tower.** If `W` has coefficients
-in `R` and `R` maps to `S` compatibly with their maps to `K`, then `W` has coefficients in `S`:
-the integral model over `R` is pushed forward along `algebraMap R S`. The Dedekind-domain use is
-`S` a localisation of `R` inside `K`, where it turns integrality over the whole ring into
-integrality at each prime. -/
+in `R` and `R` maps to `S` compatibly with their maps to `K`, then `W` has coefficients in `S`.
+In particular, global integrality over a Dedekind domain gives integrality at each localisation. -/
 theorem IsIntegral.of_isScalarTower {R S K : Type*} [CommRing R] [CommRing S] [Field K]
     [Algebra R K] [Algebra R S] [Algebra S K] [IsScalarTower R S K] (W : WeierstrassCurve K)
     [IsIntegral R W] : IsIntegral S W :=

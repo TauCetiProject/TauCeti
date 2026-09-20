@@ -99,12 +99,8 @@ theorem isInteger_of_forall_isInteger_localizationAtPrime (x : K)
   exact v.valuation_algebraMap_le_one_of_isLocalizationAtPrime r
 
 /-- **The localisation at `v` is the ring of integers of the `v`-adic valuation on `K`.** The
-inclusion is injective and lands in the valuation ring by
-`valuation_algebraMap_le_one_of_isLocalizationAtPrime`, and it is onto it because Mathlib's
-`valuationSubringAtPrime_eq_valuationSubring` identifies the valuation subring of `v` with the
-localisation sitting inside `K`. This is the packaging `Valuation.Integers` consumes, which brings
-with it that a unit is exactly an element of valuation one and that divisibility is comparison of
-valuations. -/
+result packages this identification as `Valuation.Integers`, making its unit and divisibility API
+available for the localisation. -/
 theorem integers_valuation_localizationAtPrime :
     (v.valuation K).Integers (Localization.AtPrime v.asIdeal) where
   hom_inj := IsFractionRing.injective _ K

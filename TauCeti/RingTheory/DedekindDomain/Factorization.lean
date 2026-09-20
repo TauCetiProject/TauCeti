@@ -112,10 +112,8 @@ open _root_.IsDedekindDomain
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 /-- **A family of prime powers whose exponents are bounded by the multiplicities of a nonzero
-ideal has finite multiplicative support.** Only finitely many primes divide `I`, so all but
-finitely many of the bounding multiplicities, and hence of the exponents, vanish.
-`Ideal.hasFiniteMulSupport` is the case `e v = (Associates.mk v.asIdeal).count
-(Associates.mk I).factors` of the multiplicities themselves. -/
+ideal has finite multiplicative support.** This permits products of such prime powers to be
+handled as finite products. -/
 theorem hasFiniteMulSupport_asIdeal_pow_of_le_count {I : Ideal R} (hI : I ≠ 0)
     (e : HeightOneSpectrum R → ℕ)
     (he : ∀ v, e v ≤ (Associates.mk v.asIdeal).count (Associates.mk I).factors) :
