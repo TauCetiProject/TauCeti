@@ -31,8 +31,8 @@ rather than by unfolding: `proCKernel_finiteGroupClassP_eq_proPKernel` identifie
 kernels for the class of finite `p`-groups, and `proCCompletion.equivMaximalProPQuotient` is
 the resulting topological isomorphism of completions.
 
-Because a class of finite groups speaks only about groups in a single universe, a group and
-its continuous homomorphisms are confined to that universe here, unlike in the pro-`p` case.
+Membership is transported through `Shrink`, so the class, the groups, and the continuous
+homomorphisms between them may live in independent universes.
 
 ## Main definitions
 
@@ -67,11 +67,11 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v w x
 
 section Defs
 
-variable (C : FiniteGroupClass.{u}) (G : Type u) [Group G] [TopologicalSpace G]
+variable (C : FiniteGroupClass.{u}) (G : Type v) [Group G] [TopologicalSpace G]
 
 /-- A topological group is **pro-`C`** when every quotient by an open normal subgroup is a
 finite group in the class `C`. For a profinite group these quotients are exactly its
@@ -90,7 +90,7 @@ instance proCKernel_normal : (proCKernel C G).Normal :=
   Subgroup.normal_iInf_normal fun U ↦ U.1.isNormal'
 
 /-- The **pro-`C` completion** `G ⧸ proCKernel C G`. -/
-abbrev proCCompletion : Type u := G ⧸ proCKernel C G
+abbrev proCCompletion : Type v := G ⧸ proCKernel C G
 
 /-- The canonical homomorphism from `G` to its pro-`C` completion. -/
 abbrev proCCompletion.mk : G →* proCCompletion C G :=
@@ -111,7 +111,7 @@ theorem proCCompletion.continuous_mk : Continuous (proCCompletion.mk C G) :=
 
 end Defs
 
-variable {C : FiniteGroupClass.{u}} {G H : Type u} [Group G] [TopologicalSpace G]
+variable {C : FiniteGroupClass.{u}} {G : Type v} {H : Type w} [Group G] [TopologicalSpace G]
 variable [Group H] [TopologicalSpace H]
 
 /-- The defining property of `IsProC`, available to modules that only see the declaration and
@@ -190,7 +190,7 @@ theorem proCCompletion.map_id :
 
 /-- Functoriality: the induced maps compose. -/
 @[simp]
-theorem proCCompletion.map_comp {K : Type u} [Group K] [TopologicalSpace K] (f : G →* H)
+theorem proCCompletion.map_comp {K : Type x} [Group K] [TopologicalSpace K] (f : G →* H)
     (hf : Continuous f) (g : H →* K) (hg : Continuous g) :
     proCCompletion.map (C := C) (g.comp f) (hg.comp hf) =
       (proCCompletion.map g hg).comp (proCCompletion.map f hf) := by
@@ -209,7 +209,7 @@ theorem exists_openNormalSubgroup_memFinite_le {M : Subgroup G} (hM : IsOpen (M 
     (hKM : proCKernel C G ≤ M) :
     ∃ U : OpenNormalSubgroup G, C.MemFinite (G ⧸ U.toSubgroup) ∧ U.toSubgroup ≤ M := by
   -- The defining family, and the closed sets it cuts out outside `M`.
-  let S : Type u := {U : OpenNormalSubgroup G // C.MemFinite (G ⧸ U.toSubgroup)}
+  let S : Type v := {U : OpenNormalSubgroup G // C.MemFinite (G ⧸ U.toSubgroup)}
   let t : S → Set G := fun U ↦ (U.1 : Set G) \ (M : Set G)
   -- The family contains the whole group, so it is nonempty.
   have _ : Subsingleton (G ⧸ (openNormalSubgroupTop G).toSubgroup) :=
@@ -280,7 +280,7 @@ end Compact
 
 section UniversalProperty
 
-variable {P : Type u} [Group P] [TopologicalSpace P] [IsTopologicalGroup P] [CompactSpace P]
+variable {P : Type w} [Group P] [TopologicalSpace P] [IsTopologicalGroup P] [CompactSpace P]
   [TotallyDisconnectedSpace P]
 
 /-- A continuous homomorphism to a profinite pro-`C` group kills the `C`-kernel. -/
@@ -326,7 +326,7 @@ theorem proCCompletion.lift_unique (hP : IsProC C P) (f : G →* P) (hf : Contin
 
 /-- Naturality in the source: the factorisation of `f ∘ u` is the factorisation of `f`
 precomposed with the map induced by `u`. -/
-theorem proCCompletion.lift_comp_map {G' : Type u} [Group G'] [TopologicalSpace G']
+theorem proCCompletion.lift_comp_map {G' : Type x} [Group G'] [TopologicalSpace G']
     (hP : IsProC C P) (f : G →* P) (hf : Continuous f) (u : G' →* G) (hu : Continuous u) :
     (proCCompletion.lift hP f hf).comp (proCCompletion.map (C := C) u hu) =
       proCCompletion.lift hP (f.comp u) (hf.comp hu) := by
@@ -335,7 +335,7 @@ theorem proCCompletion.lift_comp_map {G' : Type u} [Group G'] [TopologicalSpace 
 
 /-- Naturality in the target: postcomposing the factorisation of `f` with a continuous
 homomorphism of profinite pro-`C` groups gives the factorisation of the composite. -/
-theorem proCCompletion.comp_lift {Q : Type u} [Group Q] [TopologicalSpace Q]
+theorem proCCompletion.comp_lift {Q : Type x} [Group Q] [TopologicalSpace Q]
     [IsTopologicalGroup Q] [CompactSpace Q] [TotallyDisconnectedSpace Q] (hP : IsProC C P)
     (hQ : IsProC C Q) (f : G →* P) (hf : Continuous f) (v : P →* Q) (hv : Continuous v) :
     v.comp (proCCompletion.lift hP f hf) = proCCompletion.lift hQ (v.comp f) (hv.comp hf) := by
@@ -412,7 +412,7 @@ section Comparison
 variable [IsTopologicalGroup G] [CompactSpace G] {p : ℕ}
 
 /-- For the class of finite `p`-groups, being pro-`C` is being pro-`p`. -/
-theorem isProC_finiteGroupClassP_iff : IsProC (finiteGroupClassP p) G ↔ IsProP p G := by
+theorem isProC_finiteGroupClassP_iff : IsProC (finiteGroupClassP.{v} p) G ↔ IsProP p G := by
   rw [isProC_iff, isProP_iff]
   refine forall_congr' fun U ↦ ?_
   have : Finite (G ⧸ U.toSubgroup) := Subgroup.quotient_finite_of_isOpen _ U.toOpenSubgroup.isOpen
@@ -423,7 +423,7 @@ subgroups are cut out by different index sets: the pro-`p` kernel by the open no
 with `p`-group quotient, the `C`-kernel by those whose quotient is in addition recorded as
 finite, which for a compact group is automatic. -/
 theorem proCKernel_finiteGroupClassP_eq_proPKernel :
-    proCKernel (finiteGroupClassP p) G = proPKernel p G := by
+    proCKernel (finiteGroupClassP.{v} p) G = proPKernel p G := by
   refine SetLike.ext fun x ↦ ?_
   rw [mem_proCKernel_iff, mem_proPKernel_iff]
   refine forall_congr' fun U ↦ ?_
@@ -433,10 +433,10 @@ theorem proCKernel_finiteGroupClassP_eq_proPKernel :
 /-- The pro-`C` completion at the class of finite `p`-groups is the maximal pro-`p` quotient. -/
 def proCCompletion.equivMaximalProPQuotient (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [CompactSpace G] :
-    proCCompletion (finiteGroupClassP p) G ≃ₜ* maximalProPQuotient p G :=
+    proCCompletion (finiteGroupClassP.{u} p) G ≃ₜ* maximalProPQuotient p G :=
   ContinuousMulEquiv.mk
     (QuotientGroup.quotientMulEquivOfEq proCKernel_finiteGroupClassP_eq_proPKernel)
-    ((QuotientGroup.isQuotientMap_mk (proCKernel (finiteGroupClassP p) G)).continuous_iff.mpr
+    ((QuotientGroup.isQuotientMap_mk (proCKernel (finiteGroupClassP.{u} p) G)).continuous_iff.mpr
       QuotientGroup.continuous_mk)
     ((QuotientGroup.isQuotientMap_mk (proPKernel p G)).continuous_iff.mpr
       QuotientGroup.continuous_mk)
@@ -445,7 +445,8 @@ def proCCompletion.equivMaximalProPQuotient (p : ℕ) (G : Type u) [Group G] [To
 element. -/
 @[simp]
 theorem proCCompletion.equivMaximalProPQuotient_mk (x : G) :
-    proCCompletion.equivMaximalProPQuotient p G (x : proCCompletion (finiteGroupClassP p) G) =
+    proCCompletion.equivMaximalProPQuotient p G
+        (x : proCCompletion (finiteGroupClassP.{v} p) G) =
       (x : maximalProPQuotient p G) :=
   (rfl)
 
@@ -453,7 +454,7 @@ theorem proCCompletion.equivMaximalProPQuotient_mk (x : G) :
 trivial. Its pro-`C` completion is then the group itself, by
 `TauCeti.proCCompletion.equivOfIsProC`. -/
 theorem proCKernel_finiteGroupClassAll_eq_bot [TotallyDisconnectedSpace G] :
-    proCKernel finiteGroupClassAll G = ⊥ :=
+    proCKernel finiteGroupClassAll.{v} G = ⊥ :=
   proCKernel_eq_bot_iff.mpr fun U ↦ by
     have : Finite (G ⧸ U.toSubgroup) :=
       Subgroup.quotient_finite_of_isOpen _ U.toOpenSubgroup.isOpen
