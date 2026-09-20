@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -15,7 +16,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 For a torsion-free smooth connection on the tangent bundle, curvature satisfies
 `R(X,Y)Z + R(Y,Z)X + R(Z,X)Y = 0`. We prove this on smooth vector fields and then
-on individual tangent vectors. No metric or fibre norm is required.
+on individual tangent vectors. An auxiliary `RiemannianBundle` supplies the compatible
+fibre norms used by the curvature API. Neither regularity of this metric nor
+compatibility of the connection with it is required.
 
 Together with the skew-adjointness of metric curvature, this identity gives the
 pair-interchange symmetry of the Riemann tensor and symmetry of its Ricci contraction.
@@ -37,17 +40,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (TangentSpace I : M → Type _)]
   {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
   [ContMDiffCovariantDerivative cov ∞]
 
+-- Fix the fibre norms explicitly: otherwise the implementation of `TangentSpace` can
+-- cause elaboration to select the model-space norm instead of the bundle's norm.
+local notation "tangentNorm" => fun x : M ↦
+  (inferInstance : NormedAddCommGroup (TangentSpace I x))
+
+omit [RiemannianBundle (TangentSpace I : M → Type _)] in
 private theorem apply_mlieBracket_of_torsion_eq_zero (ht : cov.torsion = 0)
     {Y Z : Π x : M, TangentSpace I x}
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
     (x : M) (u : TangentSpace I x) :
     cov (mlieBracket I Y Z) x u =
       cov (fun y ↦ cov Z y (Y y)) x u - cov (fun y ↦ cov Y y (Z y)) x u := by
-  have hYZ := cov.contMDiff_apply (V := TangentSpace I) hY hZ
-  have hZY := cov.contMDiff_apply (V := TangentSpace I) hZ hY
+  have hYZ := cov.contMDiff_apply (V := TangentSpace I)
+    hY hZ
+  have hZY := cov.contMDiff_apply (V := TangentSpace I)
+    hZ hY
   have heq : mlieBracket I Y Z =
       (fun y ↦ cov Z y (Y y)) - fun y ↦ cov Y y (Z y) := by
     funext y
@@ -67,6 +79,7 @@ private theorem apply_mlieBracket_of_torsion_eq_zero (ht : cov.torsion = 0)
 local notation "curvature" => cov.curvatureOperator (I := I) (M := M) (F := E)
   (V := TangentSpace I)
 
+omit [RiemannianBundle (TangentSpace I : M → Type _)] in
 /-- The first Bianchi identity for smooth vector fields and a torsion-free smooth
 connection on the tangent bundle. -/
 theorem curvatureOperator_cyclic_eq_zero (ht : cov.torsion = 0)
@@ -104,7 +117,7 @@ theorem curvatureOperator_cyclic_eq_zero (ht : cov.torsion = 0)
 
 variable [T2Space M]
 
-local notation "tensor" => cov.curvatureTensor
+local notation "tensor" => cov.curvatureTensor (fiberNorm := tangentNorm)
 
 /-- The first Bianchi identity on tangent vectors. It applies in particular to the
 Levi-Civita connection, which has zero torsion. -/
@@ -114,9 +127,9 @@ theorem curvatureTensor_cyclic_eq_zero (ht : cov.torsion = 0)
   obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
   obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
   obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
-  rw [curvatureTensor_apply cov x hX hY hZ,
-    curvatureTensor_apply cov x hY hZ hX,
-    curvatureTensor_apply cov x hZ hX hY]
+  rw [curvatureTensor_apply (fiberNorm := tangentNorm) cov x hX hY hZ,
+    curvatureTensor_apply (fiberNorm := tangentNorm) cov x hY hZ hX,
+    curvatureTensor_apply (fiberNorm := tangentNorm) cov x hZ hX hY]
   exact curvatureOperator_cyclic_eq_zero ht hX hY hZ x
 
 end CovariantDerivative
