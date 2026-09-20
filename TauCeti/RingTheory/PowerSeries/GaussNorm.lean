@@ -78,9 +78,10 @@ variable (c) (s) (f)
 /-- `f` is **distinguished of degree `s`** at the radius `c` when its Gauss norm at `c` is attained
 in degree `s` and every later coefficient is strictly smaller.
 
-At the unit radius this is the classical condition that the leading coefficient of `f` dominates,
-in the sense of Bosch–Güntzer–Remmert §5.2. At a positive radius, a nonzero restricted series is
-distinguished of exactly one degree (`TauCeti.PowerSeries.exists_isDistinguished` and
+At the unit radius this is a norm-theoretic analogue of the classical condition that the leading
+coefficient of `f` dominates, in the sense of Bosch–Güntzer–Remmert §5.2. At a positive radius, a
+nonzero restricted series is distinguished of exactly one degree
+(`TauCeti.PowerSeries.exists_isDistinguished` and
 `TauCeti.PowerSeries.IsDistinguished.unique`), so this is a genuine invariant of `f` and `c` rather
 than extra data.
 
