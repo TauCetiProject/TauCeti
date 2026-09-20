@@ -96,12 +96,6 @@ def localStableGraphMap : X → X :=
 
 variable {A P N r}
 
-theorem localStableGraphMap_def :
-    localStableGraphMap A P N r hs hu hα hr hN hsmall =
-      lyapunovPerronGraphMap A P (N ∘ TauCeti.radialRetraction r) hs hu hα
-        (hN.comp_radialRetraction hr) hsmall :=
-  (rfl)
-
 /-- The local stable graph map takes values in the kernel of `P`, so its graph over the range of
 `P` really is a graph. -/
 @[simp]
@@ -210,7 +204,7 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
       (P w) with hγ
     have hγ0 : γ 0 = P w + localStableGraphMap A P N r hs hu hα hr hN hsmall (P w) := by
       rw [hγ, lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap hs hu hα hMlip hsmall,
-        hPP, localStableGraphMap_def]
+        hPP, localStableGraphMap]
     have hmaps : MapsTo (fun t : ℝ ↦ γ t.toNNReal) (Ici 0) (closedBall 0 r) := fun t _ ↦ by
       rw [mem_closedBall_zero_iff]
       calc ‖γ t.toNNReal‖ ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖P w‖ := hbound _ _
@@ -228,8 +222,8 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
 
 omit hr in
 /-- **The local stable-manifold theorem, Lipschitz form.** Near a hyperbolic equilibrium the
-initial values of the forward solutions that stay in a fixed small ball form the graph of a
-Lipschitz map over a ball in the stable subspace `range P`. -/
+initial values of the forward solutions that stay in a fixed small ball, truncated by the condition
+`‖P x‖ ≤ ρ`, form the graph of a Lipschitz map over a ball in the stable subspace `range P`. -/
 theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image (hr0 : 0 < r) :
     ∃ ρ > 0,
       {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0) ∧ y 0 = x ∧

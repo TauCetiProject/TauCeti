@@ -53,25 +53,23 @@ ball of radius `r` centred at the origin: vectors of norm at most `r` are fixed 
 pulled back along their ray to the sphere of radius `r`. -/
 noncomputable def radialRetraction (r : ℝ) (x : E) : E := min 1 (r / ‖x‖) • x
 
-theorem radialRetraction_def (r : ℝ) (x : E) : radialRetraction r x = min 1 (r / ‖x‖) • x := (rfl)
-
 @[simp]
 theorem radialRetraction_zero (r : ℝ) : radialRetraction r (0 : E) = 0 := by
-  simp [radialRetraction_def]
+  simp [radialRetraction]
 
 /-- The radial retraction fixes the closed ball of radius `r`. -/
 @[simp]
 theorem radialRetraction_of_norm_le (h : ‖x‖ ≤ r) : radialRetraction r x = x := by
   rcases eq_or_lt_of_le (norm_nonneg x) with hx | hx
-  · rw [radialRetraction_def, norm_eq_zero.1 hx.symm, smul_zero]
-  · rw [radialRetraction_def, min_eq_left ((le_div_iff₀ hx).2 (by linarith)), one_smul]
+  · rw [radialRetraction, norm_eq_zero.1 hx.symm, smul_zero]
+  · rw [radialRetraction, min_eq_left ((le_div_iff₀ hx).2 (by linarith)), one_smul]
 
 /-- Outside the closed ball of radius `r` the radial retraction scales by `r / ‖x‖`. -/
 theorem radialRetraction_of_le_norm (h : r ≤ ‖x‖) :
     radialRetraction r x = (r / ‖x‖) • x := by
   rcases eq_or_lt_of_le (norm_nonneg x) with hx | hx
-  · rw [radialRetraction_def, ← hx, div_zero, min_eq_right zero_le_one]
-  · rw [radialRetraction_def, min_eq_right ((div_le_one hx).2 h)]
+  · rw [radialRetraction, ← hx, div_zero, min_eq_right zero_le_one]
+  · rw [radialRetraction, min_eq_right ((div_le_one hx).2 h)]
 
 /-- For nonnegative radius, the radial retraction has norm `min ‖x‖ r`. -/
 @[simp]
