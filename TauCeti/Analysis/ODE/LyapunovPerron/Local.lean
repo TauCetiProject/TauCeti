@@ -22,9 +22,10 @@ closed ball of radius `r`, using the radial retraction of
 Cutting off replaces `N` by `N ∘ radialRetraction r`, which agrees with `N` on the ball, fixes the
 origin, and is globally Lipschitz with twice the constant that `N` has on the ball. Feeding it to
 the Lyapunov--Perron machinery produces `ContinuousLinearMap.localStableGraphMap`, a Lipschitz map
-into the kernel of `P` whose graph over the range of `P` is the **local stable set**: the set of
-initial values of the forward solutions of `y' = A y + N y` that never leave the ball of radius
-`r`. Confinement already forces such a solution to tend to `0`, so the set deserves its name.
+into the kernel of `P`. Under the stated bound on `ρ`, the local stable set truncated by
+`‖P x‖ ≤ ρ` is its graph over `range P ∩ closedBall 0 ρ`: these are the initial values of the
+forward solutions of `y' = A y + N y` that never leave the ball of radius `r`. Confinement already
+forces such a solution to tend to `0`, so the set deserves its name.
 
 The two descriptions match exactly where the cutoff is invisible. A confined forward solution of
 the original equation solves the cut-off equation as well, so it always lies on the graph; and
@@ -85,9 +86,10 @@ variable (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
 /-- The **local stable graph map**: the Lyapunov--Perron graph map of the nonlinearity `N` cut off
 outside the closed ball of radius `r`.
 
-Its graph over the range of `P` is the local stable set of the equilibrium `0` of
-`y' = A y + N y`, by
-`ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`. -/
+Under the bound on `ρ` in
+`ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`, its graph over
+`range P ∩ closedBall 0 ρ` is the local stable set of the equilibrium `0` of `y' = A y + N y`
+truncated by `‖P x‖ ≤ ρ`. -/
 def localStableGraphMap : X → X :=
   lyapunovPerronGraphMap A P (N ∘ TauCeti.radialRetraction r) hs hu hα
     (hN.comp_radialRetraction hr) hsmall

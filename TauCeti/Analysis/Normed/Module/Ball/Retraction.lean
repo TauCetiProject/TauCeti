@@ -12,23 +12,23 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 # The radial retraction onto a closed ball
 
 In a real normed space, `TauCeti.radialRetraction r` scales a vector `x` by
-`min 1 (r / ‖x‖)`: it fixes the closed ball of radius `r` and pushes everything outside it to the
-sphere of radius `r` along the ray through the origin. It is the standard device for turning a map
-that is only Lipschitz near the origin into a globally Lipschitz map agreeing with it near the
-origin, and it is used that way to cut off the nonlinearity of a differential equation outside a
-small ball around an equilibrium.
+`min 1 (r / ‖x‖)`. When `0 ≤ r`, it fixes the closed ball of radius `r` and pushes everything
+outside it to the sphere of radius `r` along the ray through the origin. It is the standard device
+for turning a map that is only Lipschitz near the origin into a globally Lipschitz map agreeing with
+it near the origin, and it is used that way to cut off the nonlinearity of a differential equation
+outside a small ball around an equilibrium.
 
-The retraction is `2`-Lipschitz in any normed space, and `2` is the constant carried by
-`TauCeti.lipschitzWith_radialRetraction`; it is not optimal in every space (in a Hilbert space the
-retraction is the metric projection onto a convex set, hence `1`-Lipschitz) but the exact constant
-never matters for cutting off, where one is free to shrink the radius instead.
+For `0 ≤ r`, the retraction is `2`-Lipschitz in any normed space, and `2` is the constant carried
+by `TauCeti.lipschitzWith_radialRetraction`; it is not optimal in every space (in a Hilbert space
+the retraction is the metric projection onto a convex set, hence `1`-Lipschitz) but the exact
+constant never matters for cutting off, where one is free to shrink the radius instead.
 
 ## Main declarations
 
-* `TauCeti.radialRetraction`: the retraction of a real normed space onto the closed ball of
-  radius `r` centred at the origin.
-* `TauCeti.norm_radialRetraction`: its norm is `min ‖x‖ r`.
-* `TauCeti.lipschitzWith_radialRetraction`: it is `2`-Lipschitz.
+* `TauCeti.radialRetraction`: scaling by `min 1 (r / ‖x‖)`; when `0 ≤ r`, this is the retraction
+  onto the closed ball of radius `r` centred at the origin.
+* `TauCeti.norm_radialRetraction`: for `0 ≤ r`, its norm is `min ‖x‖ r`.
+* `TauCeti.lipschitzWith_radialRetraction`: for `0 ≤ r`, it is `2`-Lipschitz.
 * `LipschitzOnWith.comp_radialRetraction`: precomposing with it makes a map that is Lipschitz on
   the closed ball of radius `r` globally Lipschitz, with twice the constant.
 
@@ -48,9 +48,9 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {r : ℝ} {x y : E}
 
-/-- The **radial retraction** of a real normed space onto the closed ball of radius `r` centred at
-the origin: `x` is scaled by `min 1 (r / ‖x‖)`, so vectors of norm at most `r` are fixed and the
-others are pulled back along their ray to the sphere of radius `r`. -/
+/-- Scale `x` by `min 1 (r / ‖x‖)`. When `0 ≤ r`, this is the **radial retraction** onto the closed
+ball of radius `r` centred at the origin: vectors of norm at most `r` are fixed and the others are
+pulled back along their ray to the sphere of radius `r`. -/
 noncomputable def radialRetraction (r : ℝ) (x : E) : E := min 1 (r / ‖x‖) • x
 
 theorem radialRetraction_def (r : ℝ) (x : E) : radialRetraction r x = min 1 (r / ‖x‖) • x := (rfl)
@@ -60,6 +60,7 @@ theorem radialRetraction_zero (r : ℝ) : radialRetraction r (0 : E) = 0 := by
   simp [radialRetraction_def]
 
 /-- The radial retraction fixes the closed ball of radius `r`. -/
+@[simp]
 theorem radialRetraction_of_norm_le (h : ‖x‖ ≤ r) : radialRetraction r x = x := by
   rcases eq_or_lt_of_le (norm_nonneg x) with hx | hx
   · rw [radialRetraction_def, norm_eq_zero.1 hx.symm, smul_zero]
@@ -111,10 +112,12 @@ private theorem norm_radialRetraction_sub_le (hr : 0 ≤ r) (hyx : ‖y‖ ≤ �
     rw [radialRetraction_of_norm_le hyr]
     have hsplit : (r / ‖x‖) • x - y = ((r / ‖x‖) • x - x) + (x - y) := by abel
     have hmove : ‖(r / ‖x‖) • x - x‖ = ‖x‖ - r := by
-      rw [show (r / ‖x‖) • x - x = (r / ‖x‖ - 1) • x by rw [sub_smul, one_smul],
-        norm_smul, Real.norm_eq_abs,
-        abs_of_nonpos (sub_nonpos.2 ((div_le_one hx0).2 hrx)), neg_sub, sub_mul, one_mul,
-        div_mul_cancel₀ _ hx0.ne']
+      calc
+        ‖(r / ‖x‖) • x - x‖ = ‖(r / ‖x‖ - 1) • x‖ := by rw [sub_smul, one_smul]
+        _ = ‖x‖ - r := by
+          rw [norm_smul, Real.norm_eq_abs,
+            abs_of_nonpos (sub_nonpos.2 ((div_le_one hx0).2 hrx)), neg_sub, sub_mul, one_mul,
+            div_mul_cancel₀ _ hx0.ne']
     calc ‖(r / ‖x‖) • x - y‖ ≤ ‖(r / ‖x‖) • x - x‖ + ‖x - y‖ := hsplit ▸ norm_add_le _ _
       _ = (‖x‖ - r) + ‖x - y‖ := by rw [hmove]
       _ ≤ 2 * ‖x - y‖ := by linarith
