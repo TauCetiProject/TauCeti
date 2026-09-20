@@ -22,6 +22,7 @@ namespace TauCeti
 
 /-- The span over `ℤ/nℤ` has the same underlying additive subgroup as the subgroup generated
 by the set. This also includes `n = 0`, where `ZMod 0 = ℤ`. -/
+@[simp]
 theorem span_zmod_eq_addSubgroupClosure {n : ℕ} {M : Type*} [AddCommGroup M] [Module (ZMod n) M]
     (s : Set M) :
     (Submodule.span (ZMod n) s).toAddSubgroup = AddSubgroup.closure s := by
