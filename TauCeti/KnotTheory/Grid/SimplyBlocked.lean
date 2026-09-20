@@ -156,11 +156,8 @@ theorem simplyBlockedSpecialization_surjective :
 module. -/
 theorem X_smul_gridChainMinus_injective :
     Function.Injective
-      fun c : GridChainMinus R n => (MvPolynomial.X i : MvPolynomial (Fin n) R) • c := by
-  intro c d h
-  refine Finsupp.ext fun x =>
-    (MvPolynomial.isRegular_X (R := R) (n := i)).left ?_
-  simpa only [Finsupp.smul_apply, smul_eq_mul] using DFunLike.congr_fun h x
+      fun c : GridChainMinus R n => (MvPolynomial.X i : MvPolynomial (Fin n) R) • c :=
+  (MvPolynomial.isRegular_X (R := R) (n := i)).left.isSMulRegular.finsupp
 
 /-- Multiplication by `V_i` and coefficient specialization form an exact pair. -/
 theorem exact_X_mul_simplyBlockedRingHom :
