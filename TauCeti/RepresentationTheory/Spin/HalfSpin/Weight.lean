@@ -50,10 +50,10 @@ eigenvalues for the family `H`, no Cartan subalgebra being exhibited; and no wei
 highest, since no ordering of the coordinates is used to single out a Borel. What the parity
 statements do supply for the type-`Dₗ` fork is the parity flip between the two candidate
 highest-weight vectors of `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean`:
-by `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus` the basis vector with every
-coordinate occupied lies in `S⁺` exactly when the one obtained from it by erasing a coordinate lies
-in `S⁻`. That equivalence between two memberships is all it says; which summand each of the two
-vectors actually lies in is read off `TauCeti.basis_mem_spinPlus_iff` and
+by `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`, at `s = Finset.univ`, the basis
+vector with every coordinate occupied lies in `S⁺` exactly when the one obtained from it by erasing
+a coordinate lies in `S⁻`. That equivalence between two memberships is all it says; which summand
+each of the two vectors actually lies in is read off `TauCeti.basis_mem_spinPlus_iff` and
 `TauCeti.basis_mem_spinMinus_iff`, from the parity of the number of coordinates.
 
 ## Main results
@@ -71,9 +71,10 @@ vectors actually lies in is read off `TauCeti.basis_mem_spinPlus_iff` and
   of a half-spin summand are the sign vectors of the matching parity**, and
   `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinPlus` and
   `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus` count them, `2 ^ (l - 1)` each.
-* `TauCeti.basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus`: **the two type-`Dₗ` fork
-  vectors flip parity**, the basis vector with every coordinate occupied lying in `S⁺` exactly when
-  the one obtained from it by erasing a coordinate lies in `S⁻`.
+* `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`: **erasing an occupied coordinate
+  flips the summand**, a basis vector lying in `S⁺` exactly when the one obtained from it by
+  erasing one of its coordinates lies in `S⁻`. At `s = Finset.univ` these are the two type-`Dₗ`
+  fork vectors.
 
 ## References
 
@@ -110,26 +111,25 @@ theorem basis_mem_spinMinus_iff (s : Finset ι) :
   rw [mem_spinMinus, b.exteriorAlgebra_mem_evenOdd_iff s 1, ZMod.natCast_eq_one_iff_odd]
 
 omit [Nontrivial K] in
-/-- **The two type-`Dₗ` fork vectors flip parity.** The vector with every coordinate occupied lies
-in `S⁺` exactly when the vector obtained from it by erasing one coordinate lies in `S⁻`, erasing a
-coordinate changing the parity of the number of coordinates. This is the equivalence of the two
-memberships only: which of the two summands each vector actually lies in depends on the parity of
-the number of coordinates, and is `TauCeti.basis_mem_spinPlus_iff` together with
-`TauCeti.basis_mem_spinMinus_iff`. These are the two vectors that
-`TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean` shows to be annihilated by
-every positive simple generator, with the fork fundamental weights. -/
-theorem basis_univ_mem_spinPlus_iff_basis_univ_erase_mem_spinMinus [Fintype ι] (i : ι) :
-    b.ExteriorAlgebra Finset.univ ∈ spinPlus Q P ↔
-      b.ExteriorAlgebra (Finset.univ.erase i) ∈ spinMinus Q P := by
+/-- **Erasing an occupied coordinate flips the summand.** A basis vector lies in `S⁺` exactly when
+the vector obtained from it by erasing one of its coordinates lies in `S⁻`, erasing a coordinate
+changing the parity of the number of coordinates. This is the equivalence of the two memberships
+only: which of the two summands each vector actually lies in depends on the parity of the number of
+coordinates, and is `TauCeti.basis_mem_spinPlus_iff` together with
+`TauCeti.basis_mem_spinMinus_iff`. At `s = Finset.univ` these are the two type-`Dₗ` fork vectors
+that `TauCeti/RepresentationTheory/Spin/Polarization/TypeD/ForkWeights.lean` shows to be
+annihilated by every positive simple generator, with the fork fundamental weights. -/
+theorem basis_mem_spinPlus_iff_basis_erase_mem_spinMinus {s : Finset ι} {i : ι} (hi : i ∈ s) :
+    b.ExteriorAlgebra s ∈ spinPlus Q P ↔ b.ExteriorAlgebra (s.erase i) ∈ spinMinus Q P := by
   rcases subsingleton_or_nontrivial K with _ | _
   -- Over a trivial ring every spinor is `0`, so both sides hold.
   · have : Subsingleton (ExteriorAlgebra K P.W) := Module.subsingleton K _
     have hmem : ∀ (x : ExteriorAlgebra K P.W) (N : Submodule K (ExteriorAlgebra K P.W)), x ∈ N :=
       fun x N => by rw [Subsingleton.elim x 0]; exact N.zero_mem
     exact ⟨fun _ => hmem _ _, fun _ => hmem _ _⟩
-  have hpos : 1 ≤ Fintype.card ι := Fintype.card_pos_iff.mpr ⟨i⟩
-  rw [basis_mem_spinPlus_iff, basis_mem_spinMinus_iff,
-    Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, Nat.even_iff, Nat.odd_iff]
+  have hpos : 1 ≤ s.card := Finset.card_pos.mpr ⟨i, hi⟩
+  rw [basis_mem_spinPlus_iff, basis_mem_spinMinus_iff, Finset.card_erase_of_mem hi,
+    Nat.even_iff, Nat.odd_iff]
   omega
 
 end Parity
@@ -249,7 +249,7 @@ theorem ncard_setOf_spinWeightSpace_ne_bot_and_le_spinPlus [Finite ι] :
     {χ : ι → K | spinWeightSpace Q P b χ ≠ ⊥ ∧
         spinWeightSpace Q P b χ ≤ spinPlus Q P}.ncard = 2 ^ (Nat.card ι - 1) := by
   rw [setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even P b,
-    ncard_spinWeight_image_even]
+    ncard_image_spinWeight_even]
 
 /-- **`S⁻` carries `2 ^ (l - 1)` weights**, matching `TauCeti.finrank_spinMinus` over a field.
 Unlike its `S⁺` counterpart this asks the coordinates to be nonempty, there being no weight at all
@@ -258,7 +258,7 @@ theorem ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus [Finite ι] [Nonempt
     {χ : ι → K | spinWeightSpace Q P b χ ≠ ⊥ ∧
         spinWeightSpace Q P b χ ≤ spinMinus Q P}.ncard = 2 ^ (Nat.card ι - 1) := by
   rw [setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd P b,
-    ncard_spinWeight_image_odd]
+    ncard_image_spinWeight_odd]
 
 end WeightSpace
 

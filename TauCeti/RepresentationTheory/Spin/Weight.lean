@@ -90,7 +90,7 @@ rest of the layer this file opens.
 * `TauCeti.range_spinWeight`: for a finite index type the weights are exactly the sign vectors,
   and, when `K` is nontrivial, `TauCeti.ncard_range_spinWeight` counts them: there are `2 ^ l` of
   them on an index type of cardinality `l`.
-* `TauCeti.ncard_spinWeight_image_even` and `TauCeti.ncard_spinWeight_image_odd`: **the two
+* `TauCeti.ncard_image_spinWeight_even` and `TauCeti.ncard_image_spinWeight_odd`: **the two
   parities of sign vector are equinumerous**, `2 ^ (l - 1)` each. These are the weights of the two
   half-spin summands; the identification is
   `TauCeti/RepresentationTheory/Spin/HalfSpin/Weight.lean`.
@@ -219,16 +219,16 @@ cardinality `l`: half of the `2 ^ l` sign vectors of `TauCeti.ncard_range_spinWe
 index type contributing its one empty sign vector to `2 ^ (0 - 1) = 1`. These are the weights of
 the even half-spin summand, by
 `TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even`. -/
-theorem ncard_spinWeight_image_even [Finite ι] [Nontrivial K] :
+theorem ncard_image_spinWeight_even [Finite ι] [Nontrivial K] :
     (spinWeight K '' {s : Finset ι | Even s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
   rw [Set.ncard_image_of_injective _ spinWeight_injective]
   exact card_even_card_finset
 
 /-- **The sign vectors with an odd number of `+` signs number `2 ^ (l - 1)`**, the other half of
-`TauCeti.ncard_spinWeight_image_even`, on a nonempty index type: the empty index type has no sign
+`TauCeti.ncard_image_spinWeight_even`, on a nonempty index type: the empty index type has no sign
 vector of odd parity. These are the weights of the odd half-spin summand, by
 `TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd`. -/
-theorem ncard_spinWeight_image_odd [Finite ι] [Nonempty ι] [Nontrivial K] :
+theorem ncard_image_spinWeight_odd [Finite ι] [Nonempty ι] [Nontrivial K] :
     (spinWeight K '' {s : Finset ι | Odd s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
   rw [Set.ncard_image_of_injective _ spinWeight_injective]
   exact card_odd_card_finset
