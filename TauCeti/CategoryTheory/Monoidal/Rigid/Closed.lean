@@ -61,6 +61,19 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (D Y : C) [ExactPairing D Y]
 
+/-- The evaluation of an exact pairing transported across an isomorphism in its left argument. -/
+@[reassoc (attr := simp)]
+theorem exactPairingCongrLeft_evaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
+    @ExactPairing.evaluation C _ _ X Y (exactPairingCongrLeft i) = Y ◁ i.hom ≫ ε_ X' Y :=
+  rfl
+
+/-- The coevaluation of an exact pairing transported across an isomorphism in its left
+argument. -/
+@[reassoc (attr := simp)]
+theorem exactPairingCongrLeft_coevaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
+    @ExactPairing.coevaluation C _ _ X Y (exactPairingCongrLeft i) = η_ X' Y ≫ i.inv ▷ Y :=
+  rfl
+
 /-- The unit of the adjunction `tensorLeft Y ⊣ tensorLeft D` attached to an exact pairing
 `ExactPairing D Y` inserts the coevaluation. -/
 theorem tensorLeftAdjunction_unit_app (Z : C) :
@@ -171,7 +184,7 @@ theorem tensorHom_ihomUnitIso_inv_comp_ev {M N : C} (f : M ⟶ Y) (g : N ⟶ D) 
 
 /-- Transporting the pairing along `TauCeti.ihomUnitIso` exhibits the internal hom of `Y` into
 the unit as a left dual of `Y`: the categorical dual of `Y` is `Hom(Y, 𝟙_ C)`. -/
-@[reducible]
+@[instance_reducible]
 def exactPairingIhomUnit : ExactPairing (Y ⟶[C] 𝟙_ C) Y :=
   exactPairingCongrLeft (ihomUnitIso D Y)
 
@@ -181,7 +194,7 @@ evaluation. -/
 theorem exactPairingIhomUnit_evaluation :
     @ExactPairing.evaluation C _ _ (Y ⟶[C] 𝟙_ C) Y (exactPairingIhomUnit D Y) =
       (ihom.ev Y).app (𝟙_ C) := by
-  change Y ◁ (ihomUnitIso D Y).hom ≫ ε_ D Y = _
+  rw [exactPairingIhomUnit, exactPairingCongrLeft_evaluation]
   rw [← whiskerLeft_ihomUnitIso_inv_comp_ev (D := D) (Y := Y),
     ← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id]
   simp
@@ -192,7 +205,6 @@ the original coevaluation with the inverse comparison. -/
 theorem exactPairingIhomUnit_coevaluation :
     @ExactPairing.coevaluation C _ _ (Y ⟶[C] 𝟙_ C) Y (exactPairingIhomUnit D Y) =
       η_ D Y ≫ (ihomUnitIso D Y).inv ▷ Y := by
-  unfold ExactPairing.coevaluation exactPairingIhomUnit exactPairingCongrLeft
-  rfl
+  rw [exactPairingIhomUnit, exactPairingCongrLeft_coevaluation]
 
 end TauCeti

@@ -168,6 +168,13 @@ def dualFreeι (i : I) :
         (𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) :=
   ιFree i ≫ (dualFreeIso (R := R) I).inv
 
+/-- Transporting a dual basis section back along `TauCeti.SheafOfModules.dualFreeIso` recovers
+the corresponding basis section of the free sheaf. -/
+@[reassoc (attr := simp)]
+theorem dualFreeι_comp_dualFreeIso_hom (i : I) :
+    dualFreeι (R := R) i ≫ (dualFreeIso (R := R) I).hom = ιFree i := by
+  rw [dualFreeι, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+
 /-- The basis sections of the dual sheaf are the dual basis: the `i`-th one evaluates on the
 `i`-th basis section of `free I` to `1`. -/
 @[reassoc, simp]
