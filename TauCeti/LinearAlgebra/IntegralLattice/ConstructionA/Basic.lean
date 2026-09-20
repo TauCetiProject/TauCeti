@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 public import TauCeti.InformationTheory.Coding.EuclideanDual
 public import Mathlib.Algebra.Module.ZMod
@@ -27,9 +28,10 @@ and the resulting integral lattice is unimodular exactly when the code is self-d
 Additive codes over `ZMod m` are canonically submodules through `AddSubgroup.toZModSubmodule`;
 their dual here is the existing `Submodule.euclideanDual`, transported back to an additive
 subgroup. The modulus is a positive natural number; no primality hypothesis is needed.
-Only nonvanishing of the modulus is used here. The type `ℕ+` supplies `NeZero (m : ℕ)` and
-excludes zero even in the carrier and form definitions. At `m = 1`, the construction is the integer
-coordinate lattice with the ordinary dot product, and the same results apply.
+Only nonvanishing of the modulus is used here. The type `ℕ+` supplies
+`NeZero (m : ℕ)` and excludes zero even in the carrier and form definitions. The normalized form
+is positive definite, so every Construction A lattice is definite. At `m = 1`, the construction
+is the integer coordinate lattice with the ordinary dot product, and the same results apply.
 
 ## References
 
@@ -132,6 +134,15 @@ theorem form_nondegenerate : (form m (ι := ι)).Nondegenerate := by
     (IsRegular.of_ne_zero (inv_ne_zero (NeZero.ne (m : ℚ))))]
   exact (dotProductBilin_isPerfPair ℚ ι).nondegenerate
 
+/-- The Construction A form is positive definite: the dot product of a nonzero rational vector
+with itself is positive, and dividing by the modulus preserves that. -/
+theorem form_posDef : (form m (ι := ι)).toQuadraticMap.PosDef := by
+  intro x hx
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, form_apply]
+  have hnonneg : (0 : ℚ) ≤ x ⬝ᵥ x := Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (x i)
+  have hne : x ⬝ᵥ x ≠ 0 := fun h ↦ hx (dotProduct_self_eq_zero.mp h)
+  exact div_pos (hnonneg.lt_of_ne' hne) (by exact_mod_cast m.pos)
+
 /-- Pairing with `m eᵢ` reads off the `i`th coordinate. -/
 @[simp↓]
 theorem form_single_right [DecidableEq ι] (x : ι → ℚ) (i : ι) :
@@ -226,6 +237,12 @@ instance isNondegenerate_integralLattice (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).IsNondegenerate where
   nondegenerate := by rw [integralLattice_form]; exact form_nondegenerate m
+
+/-- Construction A always produces a positive-definite lattice. -/
+theorem isPosDef_integralLattice (C : AddSubgroup (ι → ZMod m))
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
+    (integralLattice m C hC).IsPosDef := by
+  simpa only [IntegralLattice.IsPosDef, integralLattice_form] using form_posDef m (ι := ι)
 
 /-- An integral Construction A lattice is unimodular exactly when its code is self-dual. -/
 theorem isUnimodular_integralLattice_iff (C : AddSubgroup (ι → ZMod m))

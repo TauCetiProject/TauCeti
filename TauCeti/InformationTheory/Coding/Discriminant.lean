@@ -49,6 +49,9 @@ a lattice.
   the Lagrangian condition is self-duality.
 * `TauCeti.coordinatePower_zmodStandard_quadratic`: the coordinate quadratic value over an even
   `ℤ/m` is the sum of the squares of the coordinate lifts divided by `2m`.
+* `TauCeti.coordinatePower_zmodStandard_quadratic_intCast_eq_zero_iff` and
+  `TauCeti.isIsotropic_coordinatePower_zmodStandard_quadratic_intCast_iff`: the same values and
+  isotropy read off any coordinatewise integer lift.
 * `TauCeti.isIsotropic_coordinatePower_zmodStandard_quadratic_iff`: quadratic isotropy over an
   even `ℤ/m` is divisibility of the sum of squared canonical representatives by `2m`.
 * `TauCeti.isIsotropic_coordinatePower_zmodStandard_two_iff_isDoublyEven`: over `ℤ/2` quadratic
@@ -183,6 +186,35 @@ theorem coordinatePower_zmodStandard_quadratic_intCast (z : ι → ℤ) :
       Finset.sum_congr rfl fun i _ ↦ FiniteQuadraticModule.zmodStandardMap_intCast m hm (z i)
     _ = _ := (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ)))
       (fun i ↦ ((z i : ℤ) : ℚ) ^ 2 / (2 * m)) Finset.univ).symm
+
+/-- The quadratic value of a word over an even `ℤ/m` vanishes exactly when `2m` divides the sum
+of the squares of a coordinatewise integer lift. -/
+theorem coordinatePower_zmodStandard_quadratic_intCast_eq_zero_iff (z : ι → ℤ) :
+    ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).quadratic
+        (fun i ↦ ((z i : ZMod m))) = 0 ↔ (2 * m : ℤ) ∣ ∑ i, z i ^ 2 := by
+  have hsum : ∑ i, (z i : ℚ) ^ 2 = ((∑ i, z i ^ 2 : ℤ) : ℚ) := by push_cast; rfl
+  have hden : ((2 * m : ℕ) : ℚ) = 2 * m := by push_cast; rfl
+  rw [coordinatePower_zmodStandard_quadratic_intCast, hsum, ← hden,
+    AddCircle.coe_intCast_div_natCast_eq_zero_iff (Nat.mul_ne_zero two_ne_zero (NeZero.ne m))]
+  push_cast
+  rfl
+
+/-- Quadratic isotropy of an additive code over an even `ℤ/m` means that `2m` divides the sum of
+the squares of every coordinatewise integer lift of a codeword. -/
+theorem isIsotropic_coordinatePower_zmodStandard_quadratic_intCast_iff
+    (C : AdditiveCode (ZMod m) ι) :
+    ((FiniteQuadraticModule.zmodStandard m hm).coordinatePower ι).IsIsotropic C ↔
+      ∀ z : ι → ℤ, (fun i ↦ ((z i : ZMod m))) ∈ C → (2 * m : ℤ) ∣ ∑ i, z i ^ 2 := by
+  rw [FiniteQuadraticModule.isIsotropic_def]
+  constructor
+  · intro h z hz
+    exact (coordinatePower_zmodStandard_quadratic_intCast_eq_zero_iff m hm z).mp (h _ hz)
+  · intro h x hx
+    have hlift : (fun i ↦ ((((x i).val : ℤ) : ZMod m))) = x := by
+      simp [ZMod.natCast_val, ZMod.cast_id]
+    have hq := (coordinatePower_zmodStandard_quadratic_intCast_eq_zero_iff m hm
+      (fun i ↦ ((x i).val : ℤ))).mpr (h _ (by rw [hlift]; exact hx))
+    rwa [hlift] at hq
 
 /-- Quadratic isotropy of an additive code over an even `ℤ/m` means that the sum of the squares
 of the canonical representatives of every codeword is divisible by `2m`. -/
