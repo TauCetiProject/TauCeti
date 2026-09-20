@@ -101,23 +101,23 @@ theorem finrank_code : Module.finrank (ZMod 3) code = 6 := by
   rw [code_def, Matrix.finrank_generatedBy, rank_generator]
 
 /-- Encoding is a linear equivalence between messages and codewords. -/
-noncomputable def encodeEquiv : (Fin 6 → ZMod 3) ≃ₗ[ZMod 3] code :=
+noncomputable def encodingEquiv : (Fin 6 → ZMod 3) ≃ₗ[ZMod 3] code :=
   (LinearEquiv.ofInjective generator.vecMulLinear vecMul_generator_injective).trans
     (LinearEquiv.ofEq _ _ (by rw [code_def, Matrix.generatedBy_def]))
 
 /-- The encoding equivalence sends each message to its product with the generator. -/
 @[simp]
-theorem coe_encodeEquiv_apply (a : Fin 6 → ZMod 3) : (encodeEquiv a : Fin 12 → ZMod 3) =
+theorem encodingEquiv_apply (a : Fin 6 → ZMod 3) : (encodingEquiv a : Fin 12 → ZMod 3) =
     a ᵥ* generator := by
-  simp only [encodeEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  simp only [encodingEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
   exact LinearEquiv.ofInjective_apply generator.vecMulLinear a
 
 /-- The inverse encoding equivalence reads the first six coordinates of a codeword. -/
 @[simp]
-theorem encodeEquiv_symm_apply (x : code) (i : Fin 6) :
-    encodeEquiv.symm x i = x.1 (i.castAdd 6) := by
-  have h := congrArg (fun y : code ↦ y.1 (i.castAdd 6)) (encodeEquiv.apply_symm_apply x)
-  simpa only [coe_encodeEquiv_apply, vecMul_generator_castAdd] using h
+theorem encodingEquiv_symm_apply (x : code) (i : Fin 6) :
+    encodingEquiv.symm x i = x.1 (i.castAdd 6) := by
+  have h := congrArg (fun y : code ↦ y.1 (i.castAdd 6)) (encodingEquiv.apply_symm_apply x)
+  simpa only [encodingEquiv_apply, vecMul_generator_castAdd] using h
 
 /-- The code has 729 words. -/
 @[simp↓]
@@ -127,7 +127,7 @@ theorem natCard_code : Nat.card code = 729 := by
 
 /-- The generator rows are mutually orthogonal. -/
 @[simp]
-theorem generator_mul_transpose : generator * generatorᵀ = 0 := by decide
+theorem generator_mul_transpose_eq_zero : generator * generatorᵀ = 0 := by decide
 
 /-- The extended ternary Golay code is Euclidean self-dual. -/
 @[simp]
@@ -136,7 +136,7 @@ theorem euclideanDual_code : code.euclideanDual = code := by
   apply Submodule.eq_euclideanDual_of_le_of_card_le_two_mul_finrank
   · rw [code_def, ← Matrix.checkedBy_eq_euclideanDual_generatedBy,
       Matrix.generatedBy_le_checkedBy_iff]
-    exact generator_mul_transpose
+    exact generator_mul_transpose_eq_zero
   · simp
 
 /-- The generator is also a parity-check matrix of the same code. -/
@@ -179,7 +179,7 @@ theorem weightDistribution_code (w : ℕ) :
     exact Nat.card_congr
       ((Equiv.subtypeSubtypeEquivSubtypeInter (fun x ↦ x ∈ code)
         (fun x ↦ hammingNorm x = w)).symm.trans
-        (encodeEquiv.toEquiv.subtypeEquiv (fun x ↦ by simp)).symm)
+        (encodingEquiv.toEquiv.subtypeEquiv (fun x ↦ by simp)).symm)
   rw [hc]
   by_cases h6 : w = 6
   · subst w

@@ -35,6 +35,7 @@ theorem dotProduct_self_eq_hammingNorm_ternary (x : ι → ZMod 3) :
   exact (by decide : ∀ a : ZMod 3, a * a = ((if a ≠ 0 then 1 else 0 : ℕ) : ZMod 3)) (x i)
 
 /-- A ternary word is orthogonal to itself exactly when its weight is divisible by three. -/
+@[simp↓]
 theorem dotProduct_self_eq_zero_iff_three_dvd_hammingNorm (x : ι → ZMod 3) :
     x ⬝ᵥ x = 0 ↔ 3 ∣ hammingNorm x := by
   rw [dotProduct_self_eq_hammingNorm_ternary, ZMod.natCast_eq_zero_iff]
