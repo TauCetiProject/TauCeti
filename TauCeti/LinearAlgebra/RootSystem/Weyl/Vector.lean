@@ -165,7 +165,9 @@ theorem coroot'_twoWeylVector_eq_two_mul_height_flip (i : ι) :
     rw [← hpair]
     exact coroot'_twoWeylVector P b hj
   rw [hpair i]
-  exact apply_root_eq_mul_height P.flip b.flip (P.toLinearMap (twoWeylVector P b)) hg i
+  have hval := apply_root_eq_height_zsmul P.flip b.flip
+    (P.toLinearMap (twoWeylVector P b)).toAddMonoidHom hg i
+  rwa [LinearMap.toAddMonoidHom_coe, zsmul_eq_mul, mul_comm] at hval
 
 /-- **The sum of the positive roots pairs to a nonzero scalar with every coroot.** No order on the
 coefficient ring is involved: the pairing is twice the height of the coroot, and no root has height
