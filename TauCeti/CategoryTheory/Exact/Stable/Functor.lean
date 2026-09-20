@@ -95,15 +95,12 @@ stable ideal of the source into the projective stable ideal of the target. -/
 theorem projectiveStableIdeal_le_comap {F : Functor C D} [F.Additive]
     (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) :
     E.projectiveStableIdeal ≤ E'.projectiveStableIdeal.comap F := by
-  intro X Y f hf
-  rw [MorphismIdeal.mem_comap_hom, ExactStructure.mem_projectiveStableIdeal_iff]
-  rw [ExactStructure.mem_projectiveStableIdeal_iff] at hf
-  obtain ⟨Z, hZ, i, p, rfl⟩ := (ObjectProperty.factorsThrough_iff E.isProjective _).1 hf
-  rw [F.map_comp]
-  have hZ' : E.projectiveInjective Z := by
-    rwa [hE.projectiveInjective_eq_isProjective]
+  rw [hE.projectiveStableIdeal_eq_factorIdeal]
+  apply ObjectProperty.factorIdeal_le_iff.2
+  intro X Y Z hZ i p
+  rw [MorphismIdeal.mem_comap_hom, ExactStructure.mem_projectiveStableIdeal_iff, F.map_comp]
   exact ObjectProperty.factorsThrough_comp E'.isProjective
-    ((E'.projectiveInjective_iff _).1 (hF.map_projectiveInjective hZ')).1 _ _
+    ((E'.projectiveInjective_iff _).1 (hF.map_projectiveInjective hZ)).1 _ _
 
 /-- A stable conflation-exact functor between Frobenius exact categories descends to their
 projective stable categories. -/
@@ -189,6 +186,22 @@ noncomputable def stableNatIso {F G : Functor C D} [F.Additive] [G.Additive]
     (hE : E.IsFrobenius) (α : F ≅ G) : hF.stableFunctor hE ≅ hG.stableFunctor hE :=
   E.projectiveStableIdeal.mapNatIso E'.projectiveStableIdeal
     (hF.projectiveStableIdeal_le_comap hE) (hG.projectiveStableIdeal_le_comap hE) α
+
+/-- The forward component of a descended natural isomorphism is the descended transformation. -/
+@[simp]
+theorem stableNatIso_hom {F G : Functor C D} [F.Additive] [G.Additive]
+    (hF : StableConflationExact E E' F) (hG : StableConflationExact E E' G)
+    (hE : E.IsFrobenius) (α : F ≅ G) :
+    (stableNatIso hF hG hE α).hom = stableNatTrans hF hG hE α.hom :=
+  MorphismIdeal.mapNatIso_hom _ _ _ _ _
+
+/-- The inverse component of a descended natural isomorphism is the descended inverse. -/
+@[simp]
+theorem stableNatIso_inv {F G : Functor C D} [F.Additive] [G.Additive]
+    (hF : StableConflationExact E E' F) (hG : StableConflationExact E E' G)
+    (hE : E.IsFrobenius) (α : F ≅ G) :
+    (stableNatIso hF hG hE α).inv = stableNatTrans hG hF hE α.inv :=
+  MorphismIdeal.mapNatIso_inv _ _ _ _ _
 
 /-- An equivalence which is stable conflation-exact in both directions induces an equivalence of
 projective stable categories. -/
