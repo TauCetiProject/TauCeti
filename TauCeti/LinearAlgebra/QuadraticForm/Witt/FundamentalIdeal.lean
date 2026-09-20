@@ -71,7 +71,6 @@ theorem mem_fundamentalIdeal_iff {x : WittRing K} :
 
 /-- The Witt class of a regular form belongs to the fundamental ideal exactly when its rank is
 even. -/
-@[simp]
 theorem wittClass_mem_fundamentalIdeal_iff (x : RegularFormClass K) :
     wittClass x ∈ fundamentalIdeal K ↔ Even (RegularFormClass.rank x) := by
   rw [mem_fundamentalIdeal_iff, WittRing.dimMod2_wittClass,
@@ -115,7 +114,6 @@ theorem WittRing.dimMod2_oneFoldPfisterClass (a : Kˣ) :
   exact ZMod.natCast_self 2
 
 /-- Every one-fold Pfister class belongs to the fundamental ideal. -/
-@[simp]
 theorem oneFoldPfisterClass_mem_fundamentalIdeal (a : Kˣ) :
     oneFoldPfisterClass a ∈ fundamentalIdeal K := by
   rw [mem_fundamentalIdeal_iff, WittRing.dimMod2_oneFoldPfisterClass]
