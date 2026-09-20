@@ -91,8 +91,10 @@ theorem simplyBlockedRingHom_apply {n : ℕ} (R : Type*) [CommSemiring R] (i : F
     unfold simplyBlockedRingHom
     rfl
 
-/-- The blocked variable specializes to zero. -/
-@[simp]
+/-- The blocked variable specializes to zero.
+
+Not a `simp` lemma: `TauCeti.simplyBlockedRingHom_apply` and
+`MvPolynomial.killCompl_X_of_notMem_range` already rewrite the left-hand side to `0`. -/
 theorem simplyBlockedRingHom_X_eq_zero {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
     simplyBlockedRingHom R i (MvPolynomial.X i) = 0 := by
   rw [simplyBlockedRingHom_apply]
