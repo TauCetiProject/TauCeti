@@ -19,15 +19,8 @@ rational map is injective, and epic exactly when its rational map is surjective.
 allow categorical subobjects to be identified with rational Hodge substructures, and hence allow
 orthogonal complements to be used to split categorical monomorphisms.
 
-The converse to cancellation uses Hodge projectors: a monomorphism kills the projector onto its
-kernel, while an epimorphism forces the projector onto its image to be the identity. This uses
-polarizability only as a property; no polarization is chosen as part of a categorical object.
-Full faithfulness of the mixed realization gives reflection of monomorphisms and epimorphisms,
-but does not by itself give preservation. Thus the mixed-Hodge criteria alone do not supply
-these forward implications; the projectors provide cancellation witnesses in this category.
-Isomorphisms are detected by the rational realization using the existing mixed-Hodge inverse.
-Consequently the category is balanced, and the rational realization preserves monomorphisms
-and epimorphisms and reflects isomorphisms.
+A morphism is an isomorphism exactly when its rational map is bijective. The category is balanced,
+and the rational realization preserves monomorphisms and epimorphisms and reflects isomorphisms.
 
 ## References
 
