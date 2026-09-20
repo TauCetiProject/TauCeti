@@ -27,8 +27,8 @@ finitely supported permutations of `ℕ` (`exchangeableLaw_iff_smulInvariantMeas
 among them is therefore ergodicity of that action, by the general characterisation
 `ErgodicSMul.iff_mem_extremePoints` for a countable group; ergodicity is triviality of the
 exchangeable σ-algebra (`exchangeableSigma_trivial_iff_ergodicSMul`); and, for a standard Borel
-state space, triviality is the i.i.d. property (`exchangeableSigma_trivial_iff_iid`). The forward
-direction, that an i.i.d. law is extreme, needs no standard Borel hypothesis.
+state space, triviality is the i.i.d. property (`exchangeableSigma_trivial_iff_iid`). The
+implication from i.i.d. to extreme needs no standard Borel hypothesis.
 
 The one-sided shift ergodicity of an i.i.d. law, `ergodic_shift_infinitePi_const`, is recorded
 here as well: shift-invariant events are exchangeable events, so the Hewitt–Savage zero-one law

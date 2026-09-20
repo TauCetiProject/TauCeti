@@ -138,11 +138,8 @@ theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsF
     rw [Measure.map_map (Measurable.of_eval fun i => measurable_pi_apply _) hπm]
     congr 1
     funext x i
-    -- `π` is `σ` on the range of `Fin.valEmbedding`; the goal is that identity read at `i`
-    change x (σ i).val = x (π i.val)
-    have := Equiv.Perm.viaFintypeEmbedding_apply_image σ Fin.valEmbedding i
-    simp only [Fin.valEmbedding_apply] at this
-    rw [this]
+    simpa only [Function.comp_apply, permReindex_apply, Fin.valEmbedding_apply] using
+      (congrArg x (Equiv.Perm.viaFintypeEmbedding_apply_image σ Fin.valEmbedding i)).symm
   have := (exchangeable_iff_exchangeableLaw_pathLaw hmeas).1 hexch
   rwa [hpath] at this
 
