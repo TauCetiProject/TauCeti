@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
-public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.Finiteness.Prod
 
@@ -56,6 +55,9 @@ private def abelianSquareZeroOperator (x : L) : Module.End R (R × L) :=
 @[simp, grind =]
 private theorem abelianSquareZeroOperator_apply (x : L) (z : R × L) :
     abelianSquareZeroOperator R L x z = (0, z.1 • x) := by
+  -- `TrivSqZeroExt R L` is defined as `R × L`, but Mathlib provides no named equivalence
+  -- exposing that implementation. These transports connect its multiplication to the public
+  -- product carrier; the coordinate goals then use only the documented multiplication formula.
   change @Mul.mul (TrivSqZeroExt R L) _ (TrivSqZeroExt.inr x) z = _
   ext
   · change 0 * z.1 = 0
@@ -74,9 +76,11 @@ private theorem abelianSquareZeroOperatorLinearMap_apply (x : L) :
 
 private theorem abelianSquareZeroOperator_mul_eq_zero (x y : L) :
     abelianSquareZeroOperator R L x * abelianSquareZeroOperator R L y = 0 := by
-  change Algebra.lmul R (TrivSqZeroExt R L) (TrivSqZeroExt.inr x) *
-      Algebra.lmul R (TrivSqZeroExt R L) (TrivSqZeroExt.inr y) = 0
-  rw [← map_mul, TrivSqZeroExt.inr_mul_inr, map_zero]
+  apply LinearMap.ext
+  intro z
+  rw [Module.End.mul_apply, abelianSquareZeroOperator_apply,
+    abelianSquareZeroOperator_apply]
+  simp
 
 /-- The canonical representation of an abelian Lie algebra by square-zero operators on `R × L`.
 The first coordinate records the scalar that the acting element transfers to the second
@@ -124,13 +128,6 @@ theorem abelianSquareZeroRepresentation_injective [IsLieAbelian L] :
   intro x y hxy
   have h := LinearMap.congr_fun hxy (1, 0)
   simpa using congrArg Prod.snd h
-
-/-- The carrier of the canonical square-zero representation has dimension one more than the
-abelian Lie algebra. -/
-theorem finrank_abelianSquareZeroRepresentation (K : Type u) [DivisionRing K]
-    (A : Type v) [AddCommGroup A] [Module K A] [FiniteDimensional K A] :
-    Module.finrank K (K × A) = Module.finrank K A + 1 := by
-  simp [add_comm]
 
 /-- Every finite-dimensional abelian Lie algebra has an explicit faithful finite-dimensional
 representation whose operators have pairwise-zero products. -/
