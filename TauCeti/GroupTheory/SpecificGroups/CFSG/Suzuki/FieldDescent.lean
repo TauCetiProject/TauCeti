@@ -28,6 +28,8 @@ identifies the two constructions; it is not asserted here.
   Frobenius-fixed field.
 * `SuzukiLieIndex.map_fixedSubgroup_le_range_generatorEmbedding`: every Suzuki fixed point has
   finite-field coordinates under the generator embedding.
+* `SuzukiLieIndex.mem_finiteFixedSubgroup_iff`: membership in the finite-field fixed subgroup is
+  the alternating-form equation together with the isogeny equation over the generator field.
 * `SuzukiLieIndex.suzukiGroup_le_finiteFixedSubgroup`: the standard generated group lies in the
   exact finite-field preimage.
 * `SuzukiLieIndex.finiteFixedSubgroupEquiv`: scalar extension identifies the finite-field
@@ -172,6 +174,48 @@ theorem mem_finiteFixedSubgroup (m : ℕ) (hvalid : (LieTypeIndex.suzuki m).Vali
         (fixedSubgroup (of m hvalid).steinberg).map
           (SpStd.points 1 (of m hvalid).1.Closure).subtype :=
   Iff.rfl
+
+/-- Over the generator field, a matrix is a Steinberg fixed point exactly when its coordinate
+change preserves the alternating form and has special isogeny equal to its entrywise
+`2^(m+1)`-st power. -/
+theorem mem_finiteFixedSubgroup_iff (m : ℕ) (hvalid : (LieTypeIndex.suzuki m).Valid)
+    {g : GL (Fin 4) (GaloisField 2 (2 * m + 1))} :
+    g ∈ finiteFixedSubgroup m hvalid ↔
+      ((Suzuki.coordinateEquiv (GaloisField 2 (2 * m + 1)) g :
+            GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
+          Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) *
+          JFin 2 (GaloisField 2 (2 * m + 1)) *
+          ((Suzuki.coordinateEquiv (GaloisField 2 (2 * m + 1)) g :
+              GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
+            Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1)))ᵀ =
+        JFin 2 (GaloisField 2 (2 * m + 1)) ∧
+      Matrix.symplecticSpecialIsogeny
+          ((Suzuki.coordinateEquiv (GaloisField 2 (2 * m + 1)) g :
+              GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
+            Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) =
+        (((Suzuki.coordinateEquiv (GaloisField 2 (2 * m + 1)) g :
+              GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
+            Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))).map
+              (fun x ↦ x ^ 2 ^ (m + 1))) := by
+  refine ⟨fun hg ↦ ?_, fun h ↦ (mem_finiteFixedSubgroup m hvalid).mpr
+    (generatorEmbedding_mem_map_fixedSubgroup m hvalid g h.1 h.2)⟩
+  rw [mem_finiteFixedSubgroup, (of m hvalid).mem_map_fixedSubgroup_steinberg_iff,
+    coe_generatorEmbedding, SuzukiReeIndex.halfExponent_suzuki,
+    Matrix.symplecticSpecialIsogeny_map] at hg
+  obtain ⟨hsymp, hiso⟩ := hg
+  have hf := (generatorFieldEmbedding m hvalid).injective
+  set G := ((Suzuki.coordinateEquiv (GaloisField 2 (2 * m + 1)) g :
+      GL (Fin 4) (GaloisField 2 (2 * m + 1))) : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1)))
+  refine ⟨Matrix.map_injective hf ?_, ?_⟩
+  · have key : (G * JFin 2 (GaloisField 2 (2 * m + 1)) * Gᵀ).map
+        (generatorFieldEmbedding m hvalid) =
+        (JFin 2 (GaloisField 2 (2 * m + 1))).map (generatorFieldEmbedding m hvalid) := by
+      rw [Matrix.map_mul, Matrix.map_mul, Matrix.transpose_map, JFin_map]
+      exact hsymp
+    exact key
+  · ext i j
+    apply hf
+    simpa [Matrix.map_apply, map_pow] using hiso i j
 
 /-- The standard generated Suzuki group lies in the exact finite-field preimage of the Steinberg
 fixed points. Equality is the finite-field generation theorem identifying the two constructions. -/
