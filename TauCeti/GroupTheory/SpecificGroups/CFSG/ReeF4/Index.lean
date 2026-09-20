@@ -154,7 +154,7 @@ first power at the two long simple roots, Bourbaki nodes `1` and `2`, and the se
 two short ones. This is the `F₄` reading of the general convention
 `TauCeti.SuzukiReeIndex.exponent_of_isLongSimpleRoot`, whose long-root predicate is the
 Bourbaki-numbered one of `TauCeti.DynkinType`. -/
-theorem exponent_eq (d : ReeF4LieIndex) (i : Fin d.1.rank) :
+@[simp] theorem exponent_eq (d : ReeF4LieIndex) (i : Fin d.1.rank) :
     d.toSuzukiReeIndex.exponent i = if (i : ℕ) < 2 then 1 else 2 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   -- The index type `Fin d.1.rank` depends on the diagram, so `dynkinType_eq` cannot be rewritten

@@ -21,6 +21,8 @@ family's carrier, whose defining equations and exceptional isogeny live in chara
   type `F₄` has characteristic two.
 -/
 
+-- Adapted from `TauCeti.GroupTheory.SpecificGroups.CFSG.ReeG2.Closure`.
+
 public section
 
 namespace TauCeti.ReeF4LieIndex
