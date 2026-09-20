@@ -6,17 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.End
+import Mathlib.Algebra.Group.AddChar
 
 /-!
 # Powers of an additively indexed family of endomorphisms
 
 A family `f : ℕ → M →* M` of endomorphisms of a monoid indexed additively, so that `f 0` is the
-identity and `f (a + b)` is the composite of `f a` and `f b`, turns multiplication of indices into
-powers in the endomorphism monoid `Monoid.End M`: the `m`-th power of `f k` is `f (k * m)`.
+identity and `f (a + b)` is the composite of `f a` and `f b`, is an additive character
+`AddChar ℕ (Monoid.End M)`, and so turns multiplication of indices into powers in the
+endomorphism monoid: the `m`-th power of `f k` is `f (k * m)`.
 
 This is the shape of the iteration laws of an iterated Frobenius, `Frob_0 = id` and
-`Frob_(a + b) = Frob_a ∘ Frob_b`, and the lemma derives the power law `Frob_k ^ m = Frob_(k * m)`
-from them once, so that each Chevalley carrier only supplies its two iteration laws.
+`Frob_(a + b) = Frob_a ∘ Frob_b`, and the lemma packages Mathlib's `AddChar.map_nsmul_eq_pow`
+for that shape once, so that each Chevalley carrier only supplies its two iteration laws.
 
 ## Main results
 
@@ -36,8 +38,14 @@ and `f (a + b) = f a ∘ f b`, then the `m`-th power of `f k` is `f (k * m)`. -/
 theorem Monoid.End.pow_eq_of_add_eq_comp (f : ℕ → M →* M) (h0 : f 0 = MonoidHom.id M)
     (hadd : ∀ a b, f (a + b) = (f a).comp (f b)) (k m : ℕ) :
     (show Monoid.End M from f k) ^ m = f (k * m) := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, h0]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, hadd]; rfl
+  let ψ : AddChar ℕ (Monoid.End M) :=
+    { toFun := fun j => f j
+      map_zero_eq_one' := h0
+      map_add_eq_mul' := hadd }
+  have hpow := AddChar.map_nsmul_eq_pow ψ m k
+  -- Expose the function supplied to `AddChar.mk` and the natural-number scalar action.
+  change f (m * k) = (show Monoid.End M from f k) ^ m at hpow
+  rw [Nat.mul_comm] at hpow
+  exact hpow.symm
 
 end TauCeti
