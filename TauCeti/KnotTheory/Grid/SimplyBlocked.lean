@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
+public import TauCeti.Algebra.MvPolynomial.Rename
 public import TauCeti.KnotTheory.Grid.Unblocked
 
 /-!
@@ -39,6 +41,10 @@ specialization.
 
 ## Main results
 
+* `TauCeti.simplyBlockedSpecialization_surjective` and
+  `TauCeti.exact_X_smul_simplyBlockedSpecialization`: specialization presents the specialized
+  chain module as the quotient of `GC⁻` by the multiples of `V_i`, which
+  `TauCeti.X_smul_gridChainMinus_injective` says form a copy of `GC⁻`.
 * `TauCeti.GridDiagram.simplyBlockedCoefficient_eq_sum`: a matrix coefficient is the sum, over the
   rectangles which avoid the blocked `O`-marking, of the product of the variables of the other
   `O`-markings the rectangle covers.
@@ -100,6 +106,63 @@ theorem simplyBlockedSpecialization_single {n : ℕ} (R : Type*) [CommSemiring R
   classical
   rw [simplyBlockedSpecialization, Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
     RingHom.coe_toSemilinearMap, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+
+/-! ### Specialization as a quotient map -/
+
+section Specialization
+
+variable {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n)
+
+/-- Specialization at `V_i = 0` is surjective: renaming the surviving variables back is a
+section of it. -/
+theorem simplyBlockedSpecialization_surjective :
+    Function.Surjective (simplyBlockedSpecialization R i) := fun g =>
+  ⟨Finsupp.mapRange (MvPolynomial.rename (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+      (map_zero _) g,
+    Finsupp.ext fun x => by
+      rw [simplyBlockedSpecialization_apply, Finsupp.mapRange_apply,
+        MvPolynomial.killCompl_rename_app]⟩
+
+/-- Multiplication by the blocked variable `V_i` is injective on the unblocked grid chain
+module. -/
+theorem X_smul_gridChainMinus_injective :
+    Function.Injective
+      fun c : GridChainMinus R n => (MvPolynomial.X i : MvPolynomial (Fin n) R) • c := by
+  intro c d h
+  refine Finsupp.ext fun x => MvPolynomial.X_mul_right_injective i ?_
+  simpa only [Finsupp.smul_apply, smul_eq_mul] using DFunLike.congr_fun h x
+
+/-- The chains killed by specialization at `V_i = 0` are exactly the multiples of `V_i`:
+together with `TauCeti.X_smul_gridChainMinus_injective` and
+`TauCeti.simplyBlockedSpecialization_surjective` this presents the specialized chain module as
+the quotient of `GC⁻` by a copy of itself. -/
+theorem exact_X_smul_simplyBlockedSpecialization :
+    Function.Exact
+      (fun c : GridChainMinus R n => (MvPolynomial.X i : MvPolynomial (Fin n) R) • c)
+      (simplyBlockedSpecialization R i) := by
+  have hrange : Set.range (Subtype.val : {c : Fin n // c ≠ i} → Fin n) = {i}ᶜ := by
+    ext d
+    simp
+  intro c
+  constructor
+  · intro h
+    have hdvd : ∀ x, MvPolynomial.X i ∣ c x := fun x => by
+      rw [← MvPolynomial.killCompl_eq_zero_iff_X_dvd Subtype.val_injective hrange,
+        ← simplyBlockedSpecialization_apply R i c x, h, Finsupp.coe_zero, Pi.zero_apply]
+    refine ⟨Finsupp.mapRange (fun p => p.divMonomial (Finsupp.single i 1))
+      (MvPolynomial.zero_divMonomial _) c, Finsupp.ext fun x => ?_⟩
+    have hmod : (c x).modMonomial (Finsupp.single i 1) = 0 :=
+      MvPolynomial.X_dvd_iff_modMonomial_eq_zero.mp (hdvd x)
+    have hsplit := MvPolynomial.divMonomial_add_modMonomial_single (c x) i
+    rw [hmod, add_zero] at hsplit
+    rw [Finsupp.smul_apply, Finsupp.mapRange_apply, smul_eq_mul, hsplit]
+  · rintro ⟨d, rfl⟩
+    refine Finsupp.ext fun x => ?_
+    rw [simplyBlockedSpecialization_apply, Finsupp.smul_apply, smul_eq_mul, map_mul,
+      MvPolynomial.killCompl_X_of_notMem_range Subtype.val_injective (by simp),
+      zero_mul, Finsupp.coe_zero, Pi.zero_apply]
+
+end Specialization
 
 namespace GridDiagram
 
