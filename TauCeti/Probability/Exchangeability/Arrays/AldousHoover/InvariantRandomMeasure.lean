@@ -9,8 +9,6 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.DeFinetti
 -- Public: the coded marginal process and its conditional factorization occur in the conclusion.
 public import TauCeti.Probability.Exchangeability.RandomMeasure.Block
--- Non-public: measurability of pushforward on probability measures is used in the proof.
-import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Coded coordinate marginals of an invariant random row law
@@ -60,25 +58,6 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
-/-- The invariant law supplied for a directing random measure, rewritten as invariance of its
-pushforward law on `ProbabilityMeasure (ℕ → α)`. -/
-private theorem map_directing_invariant
-    {μ : Measure Ω} {X : ℕ → Ω → (ℕ → α)} {ν : Ω → ProbabilityMeasure (ℕ → α)}
-    (hν : ConditionallyIIDWith μ X ν)
-    (hinv : ∀ τ : Equiv.Perm ℕ,
-      μ.map (fun ω => (ν ω).map (fun x : ℕ → α => fun k => x (τ k))) = μ.map ν) :
-    ∀ τ : Equiv.Perm ℕ, (μ.map ν).map (fun P => P.map (permReindex τ)) = μ.map ν := by
-  intro τ
-  have hpush : Measurable fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ) :=
-    TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
-  rw [Measure.map_map hpush hν.measurable_directing]
-  have hcomp : (fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ)) ∘ ν =
-      fun ω => (ν ω).map (fun x : ℕ → α => fun k => x (τ k)) := by
-    funext ω
-    congr 1
-  rw [hcomp]
-  exact hinv τ
-
 /-- **The coded coordinate marginals of a row directing measure admit a conditional de Finetti
 factorization.** A separately exchangeable array has a row directing measure `ν` such that, under
 the law of `ν`, the measurable injective codes of its one-coordinate marginals are conditionally
@@ -92,7 +71,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginal
       ConditionallyIIDWith μ (arrayRow X) ν ∧
         ConditionallyIID (μ.map ν) fun i P => codedCoordinateMarginals P i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
-  have hinv' := map_directing_invariant hν hinv
+  have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing hinv
   exact ⟨ν, hν, conditionallyIID_codedCoordinateMarginals_of_invariant (μ.map ν) hinv'⟩
 
 /-- **Every positive-width block marginal of a row directing measure admits a conditional de
@@ -109,7 +88,7 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedBlockMarginals
         ∀ (m : ℕ) [NeZero m],
           ConditionallyIID (μ.map ν) fun i P => P.codedBlockMarginals m i := by
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
-  have hinv' := map_directing_invariant hν hinv
+  have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing hinv
   exact ⟨ν, hν, fun m => conditionallyIID_codedBlockMarginals_of_invariant (μ.map ν) m hinv'⟩
 
 end Probability

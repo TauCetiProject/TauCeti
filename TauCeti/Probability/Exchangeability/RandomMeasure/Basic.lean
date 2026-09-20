@@ -44,6 +44,8 @@ one-coordinate pushforwards, not its higher finite-dimensional marginals.
 
 ## Main definitions and results
 
+* `TauCeti.Probability.map_map_permReindex_eq_of_map_eq` -- pointwise reindexing invariance
+  implies invariance of the law of a random path measure;
 * `TauCeti.Probability.coordinateMarginals` -- the path of one-coordinate marginals of a
   path law;
 * `TauCeti.Probability.coordinateMarginals_map_permReindex` -- equivariance under coordinate
@@ -82,6 +84,25 @@ namespace Probability
 open TauCeti.MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α]
+
+/-- Pointwise invariance of a measurable random path measure under reindexing implies invariance
+of its pushforward law under the induced action on probability measures. -/
+theorem map_map_permReindex_eq_of_map_eq
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {ν : Ω → ProbabilityMeasure (ℕ → α)} (hν : Measurable ν)
+    (hinv : ∀ τ : Equiv.Perm ℕ,
+      μ.map (fun ω => (ν ω).map (fun x : ℕ → α => fun k => x (τ k))) = μ.map ν) :
+    ∀ τ : Equiv.Perm ℕ, (μ.map ν).map (fun P => P.map (permReindex τ)) = μ.map ν := by
+  intro τ
+  have hpush : Measurable fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ) :=
+    measurable_probabilityMeasure_map (measurable_reindex τ)
+  rw [Measure.map_map hpush hν]
+  have hcomp : (fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ)) ∘ ν =
+      fun ω => (ν ω).map (fun x : ℕ → α => fun k => x (τ k)) := by
+    funext ω
+    congr 1
+  rw [hcomp]
+  exact hinv τ
 
 /-- The path of one-coordinate marginals of a probability measure on path space. -/
 def coordinateMarginals (P : ProbabilityMeasure (ℕ → α)) : ℕ → ProbabilityMeasure α :=
