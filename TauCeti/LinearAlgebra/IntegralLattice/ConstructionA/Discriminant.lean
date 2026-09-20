@@ -138,7 +138,6 @@ end Standard
 
 /-- The zero-code Construction A lattice has diagonal Gram matrix `m I`, hence discriminant
 `m ^ #ι`. -/
-@[simp]
 theorem discriminant_integralLattice_bot :
     (integralLattice m (⊥ : AddSubgroup (ι → ZMod m))
       (by simp)).discriminant = (m : ℕ) ^ Fintype.card ι := by
