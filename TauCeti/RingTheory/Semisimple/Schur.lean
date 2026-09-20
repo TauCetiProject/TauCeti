@@ -248,10 +248,11 @@ variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N] [IsSim
 /-- **Schur's lemma, vanishing form, in dimensions.**  Between inequivalent simple modules the
 hom space is trivial, hence of dimension zero.
 
-Only `Module.finrank_zero_of_subsingleton` is used, so the scalars need only be a nontrivial
-commutative semiring -- the commutativity is what `Algebra k A` already asks for, and the
-nontriviality is what makes `finrank` of a subsingleton zero rather than junk. The
-`FiniteDimensional` companion below is where a division ring comes in. -/
+Schur's lemma is normally read with a field of scalars, but this half of it does not need one.
+The conclusion is a statement about the zero module, whose `Module.finrank` vanishes over any
+nontrivial commutative semiring, and that is all `k` is asked to be here. So the result is
+available wherever the simple modules live over an algebra, without first arranging a field to
+measure the hom space in. -/
 theorem finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (h : IsEmpty (S ≃ₗ[A] N)) :
     Module.finrank k (S →ₗ[A] N) = 0 := by
   have : Subsingleton (S →ₗ[A] N) := subsingleton_linearMap_of_isEmpty_linearEquiv h
