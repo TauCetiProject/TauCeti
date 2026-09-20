@@ -38,8 +38,9 @@ a lattice.
 
 ## Main declarations
 
-* `TauCeti.coordinatePower_zmodStandard_pairing`: the coordinate pairing over `ℤ/m` is the dot
-  product divided by `m`.
+* `TauCeti.coordinatePower_zmodStandard_pairing` and
+  `TauCeti.coordinatePower_zmodStandard_pairing_intCast`: the coordinate pairing over `ℤ/m` is
+  the dot product divided by `m`, including for arbitrary integer lifts.
 * `TauCeti.orthogonalComplement_coordinatePower_zmodStandard`: the orthogonal complement of a
   code is its Euclidean dual.
 * `TauCeti.isIsotropic_coordinatePower_zmodStandard_iff_le_euclideanDual` and
@@ -76,6 +77,19 @@ theorem coordinatePower_zmodStandard_pairing (x y : ι → ZMod m) :
       ZMod.toRatAddCircle m (x ⬝ᵥ y) := by
   rw [FiniteBilinearModule.coordinatePower_pairing, dotProduct, map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ FiniteBilinearModule.zmodStandard_pairing m (x i) (y i)
+
+/-- The pairing of two words over `ℤ/m`, computed using arbitrary coordinatewise integer lifts. -/
+theorem coordinatePower_zmodStandard_pairing_intCast (a b : ι → ℤ) :
+    ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).pairing
+        (fun i ↦ (a i : ZMod m)) (fun i ↦ (b i : ZMod m)) =
+      (((∑ i, (a i : ℚ) * (b i : ℚ)) / m : ℚ) : AddCircle (1 : ℚ)) := by
+  rw [FiniteBilinearModule.coordinatePower_pairing, Finset.sum_div]
+  calc
+    _ = ∑ i, ((((a i : ℤ) : ℚ) * (b i : ℚ) / m : ℚ) : AddCircle (1 : ℚ)) :=
+      Finset.sum_congr rfl fun i _ ↦
+        FiniteBilinearModule.zmodStandard_pairing_intCast m (a i) (b i)
+    _ = _ := (map_sum (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ)))
+      (fun i ↦ (a i : ℚ) * (b i : ℚ) / m) Finset.univ).symm
 
 /-- Two words over `ℤ/m` are orthogonal for the coordinate pairing exactly when their dot
 product vanishes. -/
@@ -187,6 +201,11 @@ theorem isIsotropic_coordinatePower_zmodStandard_quadratic_iff
       (Nat.mul_ne_zero (by norm_num) (NeZero.ne m))]
   exact Int.natCast_dvd_natCast
 
+private theorem zmod_two_val_eq_indicator (a : ZMod 2) :
+    a.val = if a ≠ 0 then 1 else 0 := by
+  revert a
+  decide
+
 /-- The quadratic value of a binary word is a quarter of its Hamming weight. -/
 theorem coordinatePower_zmodStandard_two_quadratic (x : ι → ZMod 2) :
     ((FiniteQuadraticModule.zmodStandard 2 even_two).coordinatePower ι).quadratic x =
@@ -195,8 +214,7 @@ theorem coordinatePower_zmodStandard_two_quadratic (x : ι → ZMod 2) :
   have hval : ∀ a : ZMod 2, ((a.val : ℚ)) ^ 2 = if a ≠ 0 then (1 : ℚ) else 0 := by
     intro a
     -- a binary residue has representative `0` or `1`, and both are their own squares
-    have hrep : a.val = if a ≠ 0 then 1 else 0 := by revert a; decide
-    rw [hrep]
+    rw [zmod_two_val_eq_indicator]
     split <;> norm_num
   have : ∑ i, ((x i).val : ℚ) ^ 2 = (hammingNorm x : ℚ) := by
     simp only [hval, Finset.sum_boole, hammingNorm]
@@ -213,8 +231,7 @@ theorem isIsotropic_coordinatePower_zmodStandard_two_iff (C : AdditiveCode (ZMod
   refine forall₂_congr fun x _ ↦ ?_
   have hval : ∀ a : ZMod 2, a.val ^ 2 = if a ≠ 0 then 1 else 0 := by
     intro a
-    have hrep : a.val = if a ≠ 0 then 1 else 0 := by revert a; decide
-    rw [hrep]
+    rw [zmod_two_val_eq_indicator]
     split <;> norm_num
   simp only [hval, Finset.sum_boole, hammingNorm]
   norm_num
