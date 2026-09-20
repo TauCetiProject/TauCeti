@@ -110,6 +110,7 @@ theorem natDegree_galResolvent [Nontrivial L] (Φ : MvPolynomial (Fin n) ℤ) (x
 /-- **The roots of the orbit resolvent are the values of the orbit.** Over a domain the orbit
 resolvent has, with multiplicity, one root for each element of the rename-orbit of `Φ`, namely its
 value at `x`; distinct orbit elements may take the same value there. -/
+@[simp]
 theorem roots_galResolvent [IsDomain L] (Φ : MvPolynomial (Fin n) ℤ) (x : Fin n → L) :
     (galResolvent Φ x).roots =
       (renameOrbit Φ).val.map fun Ψ => MvPolynomial.eval₂ (Int.castRingHom L) x Ψ := by

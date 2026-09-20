@@ -88,11 +88,11 @@ private theorem apply_eval₂_rootEnum (e : f.rootSet E ≃ Fin n) (ϕ : E ≃�
     ϕ (MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) Ψ)
       = MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) (MvPolynomial.rename
           ⇑(e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ))) Ψ) := by
-  rw [MvPolynomial.eval₂_rename, rootEnum_comp_permCongrHom]
-  induction Ψ using MvPolynomial.induction_on with
-  | C a => rw [MvPolynomial.eval₂_C, MvPolynomial.eval₂_C]; simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => simp [hp]
+  have h := MvPolynomial.hom_eval₂ Ψ (Int.castRingHom E) (ϕ : E →+* E) (rootEnum e)
+  rw [show ((ϕ : E →+* E).comp (Int.castRingHom E)) = Int.castRingHom E from
+    RingHom.ext_int _ _] at h
+  rw [MvPolynomial.eval₂_rename, rootEnum_comp_permCongrHom, Function.comp_def]
+  exact h
 
 -- Over `E` the resolvent of `f` is the orbit product at the numbered roots.
 omit [Fact ((f.map (algebraMap F E)).Splits)] in
@@ -154,7 +154,7 @@ theorem exists_isRoot_specialize_of_le_map_conj [IsGalois F E] (hf : f.Monic) (h
 /-! ## From a root of a separable resolvent to the Galois image -/
 
 /-- **A root of a separable resolvent confines the Galois image to a conjugate of `H`.** Let `f`
-be monic and separable of degree `n`, let `E` be a Galois splitting extension, and let the
+be monic and separable of degree `n`, let `E` be a normal splitting extension, and let the
 resolvent of `f` for the specification be separable. The values of the orbit of the invariant at
 the roots of `f` are then pairwise distinct, so a root of the resolvent in `F` is the value of
 exactly one renamed invariant; that invariant is fixed by every element of the Galois image, which
@@ -164,7 +164,7 @@ Separability of the resolvent is what makes the argument work, and it cannot be 
 cosets whose invariants happen to collide at the roots of a particular `f` produce a root of the
 resolvent in `F` that constrains the Galois image no further. The opposite implication,
 `TauCeti.ResolventSpec.exists_isRoot_specialize_of_le_map_conj`, holds unconditionally. -/
-theorem exists_le_map_conj_of_isRoot_specialize [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
+theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic) (hsep : f.Separable)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hres : (spec.specialize F f).Separable) {a : F} (ha : (spec.specialize F f).IsRoot a) :
     ∃ τ : Equiv.Perm (Fin n),
