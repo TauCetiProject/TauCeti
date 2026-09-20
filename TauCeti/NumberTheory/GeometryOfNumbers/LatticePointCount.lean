@@ -7,17 +7,19 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.NumberTheory.GeometryOfNumbers.BoundaryCount
 public import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 import TauCeti.Topology.Frontier
 
 /-!
-# Counting the lattice points of a dilated body, with a power-saving error
+# Counting the lattice points of a dilated body, with a boundary-order error
 
 Let `L` be a `ℤ`-lattice in an `n`-dimensional real normed space `E`, let `μ` be an additive Haar
 measure on `E`, and let `D` be a bounded set whose frontier is Lipschitz parametrizable in
-dimension `n - 1`.  Dilating `D` by `c` multiplies its volume by `c ^ n`, and each point of `L` in
-`c • D` accounts for one cell of the lattice, of volume `covolume L μ`.  So
+dimension `n - 1`.  When `0 < n`, the resulting error is power-saving. Dilating `D` by `c`
+multiplies its volume by `c ^ n`, and each point of `L` in `c • D` accounts for one cell of the
+lattice, of volume `covolume L μ`.  So
 
 ```text
 #(c • D ∩ L) = μ D / covolume L μ * c ^ n + O(c ^ (n - 1)) as c → ∞.
@@ -61,10 +63,6 @@ Lipschitz hypothesis is used, and the only source of the error term.
   `|#(c • D ∩ L) - μ D / covolume L μ * c ^ n| ≤ A * c ^ (n - 1)` for `c ≥ 1`, with `A`
   independent of `c`.
 * `TauCeti.isBigO_ncard_smul_inter_sub`: the same bound as an asymptotic statement.
-* `ZSpan.convex_fundamentalDomain` and `ZSpan.sub_eq_fract_of_sub_mem_fundamentalDomain`: the two
-  properties of the fundamental domain of a basis, beyond those Mathlib records, that the cell
-  decomposition uses.
-
 ## References
 
 * S. Lang, *Algebraic Number Theory*, Chapter VI, Section 2.
@@ -105,9 +103,9 @@ end Cells
 
 section Counting
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   [MeasurableSpace E] [BorelSpace E] {L : Submodule ℤ E} [DiscreteTopology L]
-  {μ : Measure E} [μ.IsAddHaarMeasure] {F X : Set E}
+  {μ : Measure E} [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ] {F X : Set E}
 
 /-- **Counting lattice points by cells.**  Let `F` be a bounded measurable convex set containing
 `0` whose lattice translates `w + F`, for `w` in a discrete `L`, tile `E`.  Then for every bounded
@@ -203,44 +201,21 @@ theorem abs_ncard_inter_mul_sub_measureReal_le
 
 end Counting
 
-section FundamentalDomain
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ι : Type*}
-
-/-- The fundamental domain of a basis is convex: it is cut out by the conditions
-`b.repr x i ∈ [0, 1)`, one convex condition per coordinate. -/
-theorem _root_.ZSpan.convex_fundamentalDomain (β : Basis ι ℝ E) :
-    Convex ℝ (ZSpan.fundamentalDomain β) := by
-  intro x hx y hy a t ha ht hat
-  rw [ZSpan.mem_fundamentalDomain] at hx hy ⊢
-  intro i
-  simpa using convex_Ico (0 : ℝ) 1 (hx i) (hy i) ha ht hat
-
-/-- Translating `x` into the fundamental domain by a lattice vector produces the fractional part
-of `x`.  In particular that lattice vector is determined by `x`, which is the uniqueness in
-`ZSpan.exist_unique_vadd_mem_fundamentalDomain` in subtraction rather than `+ᵥ` form. -/
-theorem _root_.ZSpan.sub_eq_fract_of_sub_mem_fundamentalDomain [Fintype ι] (β : Basis ι ℝ E)
-    (x : E) {w : E} (hw : w ∈ span ℤ (Set.range β))
-    (hk : x - w ∈ ZSpan.fundamentalDomain β) :
-    x - w = ZSpan.fract β x := by
-  rw [← ZSpan.fract_eq_self.mpr hk, sub_eq_add_neg, ZSpan.fract_add_ZSpan β x (neg_mem hw)]
-
-end FundamentalDomain
-
 section Lattice
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {L : Submodule ℤ E} [DiscreteTopology L] [IsZLattice ℝ L]
   {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- **Lattice points in a dilated body, with a power-saving error.**  For a bounded set `D` whose
+/-- **Lattice points in a dilated body, with a boundary-order error.**  For a bounded set `D` whose
 frontier is Lipschitz parametrizable in dimension `n - 1`, with `n = finrank ℝ E`, the number of
 lattice points of `c • D` is `μ D / covolume L μ * c ^ n` up to `A * c ^ (n - 1)`, with `A`
 independent of `c ≥ 1`.
 
 The main term is the volume of `c • D` divided by the covolume of the lattice.  The error is the
 number of lattice cells meeting the frontier of the dilate, so its order is governed by the
-parametrization dimension of `frontier D` alone. -/
+parametrization dimension of `frontier D` alone. When `0 < n`, this is power-saving relative to
+the order `c ^ n` main term; the theorem itself also covers zero-dimensional spaces. -/
 theorem exists_abs_ncard_smul_inter_sub_le {D : Set E} (hDb : IsBounded D)
     (hDfr : IsLipschitzParametrizable (finrank ℝ E - 1) (frontier D)) :
     ∃ A ≥ (0 : ℝ), ∀ c : ℝ, 1 ≤ c →
@@ -260,10 +235,20 @@ theorem exists_abs_ncard_smul_inter_sub_le {D : Set E} (hDb : IsBounded D)
     ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ)
   have hκ : 0 < μ.real F := hcov ▸ ZLattice.covolume_pos L μ
   have hFu : ∀ x : E, ∀ w₁ ∈ (L : Set E), ∀ w₂ ∈ (L : Set E),
-      x - w₁ ∈ F → x - w₂ ∈ F → w₁ = w₂ := fun x w₁ h₁ w₂ h₂ k₁ k₂ ↦
-    sub_right_injective
-      ((ZSpan.sub_eq_fract_of_sub_mem_fundamentalDomain β x ((hmem w₁).mp h₁) k₁).trans
-        (ZSpan.sub_eq_fract_of_sub_mem_fundamentalDomain β x ((hmem w₂).mp h₂) k₂).symm)
+      x - w₁ ∈ F → x - w₂ ∈ F → w₁ = w₂ := fun x w₁ h₁ w₂ h₂ k₁ k₂ ↦ by
+    have hw₁ : -w₁ ∈ span ℤ (Set.range β) := neg_mem ((hmem w₁).mp h₁)
+    have hw₂ : -w₂ ∈ span ℤ (Set.range β) := neg_mem ((hmem w₂).mp h₂)
+    have heq : (⟨-w₁, hw₁⟩ : span ℤ (Set.range β)) = ⟨-w₂, hw₂⟩ :=
+      (ZSpan.exist_unique_vadd_mem_fundamentalDomain β x).unique
+        (by
+          change -w₁ + x ∈ ZSpan.fundamentalDomain β
+          rw [add_comm, ← sub_eq_add_neg, ← hFdef]
+          exact k₁)
+        (by
+          change -w₂ + x ∈ ZSpan.fundamentalDomain β
+          rw [add_comm, ← sub_eq_add_neg, ← hFdef]
+          exact k₂)
+    exact neg_injective (congrArg Subtype.val heq)
   have hFe : ∀ x : E, ∃ w ∈ (L : Set E), x - w ∈ F := fun x ↦
     ⟨(ZSpan.floor β x : E), (hmem _).mpr (ZSpan.floor β x).2,
       ZSpan.fract_mem_fundamentalDomain β x⟩
