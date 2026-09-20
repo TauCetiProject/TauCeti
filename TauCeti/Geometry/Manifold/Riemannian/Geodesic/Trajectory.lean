@@ -63,13 +63,6 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
 
 variable [T2Space (TangentBundle I M)]
 
-omit [I.Boundaryless] [T2Space (TangentBundle I M)] in
-private theorem contMDiff_one_geodesicSpray :
-    CMDiff 1 (fun w : TangentBundle I M ↦
-      (⟨w, geodesicSpray I M w⟩ : TangentBundle I.tangent (TangentBundle I M))) := by
-  exact (contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω))
-    (m := ∞) (k := ∞) (by norm_num) (by norm_num)).of_le (by norm_num)
-
 omit [T2Space (TangentBundle I M)] in
 private theorem contMDiffOn_two_proj_of_isMIntegralCurveOn_geodesicSpray
     {z : ℝ → TangentBundle I M} {s : Set ℝ} (hs : IsOpen s)

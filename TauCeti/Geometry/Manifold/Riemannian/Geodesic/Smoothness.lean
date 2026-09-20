@@ -23,7 +23,9 @@ geodesic equation.
 ## Main result
 
 * `TauCeti.Manifold.contMDiff_geodesicSpray`: the geodesic spray is `C^n` when the manifold is
-  `C^(n + 2)` and its Riemannian metric is `C^(n + 1)`.
+  `C^(n + 2)` and its Riemannian metric is `C^(n + 1)`, with
+  `TauCeti.Manifold.contMDiff_one_geodesicSpray` the `C^1` case consumed by the integral-curve
+  API.
 * `IsMIntegralCurveOn.isGeodesicCurveOnFrom_proj`: a spray integral curve on an open set projects
   to a geodesic with the initial data encoded by its value at zero.
 
@@ -141,6 +143,16 @@ theorem contMDiff_geodesicSpray [IsManifold I 2 M] [IsManifold I m M]
   exact (contMDiffOn_prod_module_iff _).2
     ⟨hv, ((hΓ'.clm_apply hv).clm_apply hv).neg⟩
 
+/-- **The geodesic spray is a `C^1` vector field** on the tangent bundle of a `C^3` manifold with
+a `C^2` Riemannian metric.  This is the regularity at which Mathlib's integral-curve existence,
+uniqueness and extension theorems consume the spray. -/
+theorem contMDiff_one_geodesicSpray [IsManifold I 3 M]
+    [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)] :
+    CMDiff 1 (fun z : TangentBundle I M ↦
+      (⟨z, geodesicSpray I M z⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
+  contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω)) (m := 3) (k := 2)
+    (by norm_num) (by norm_num)
+
 end TauCeti.Manifold
 
 namespace IsMIntegralCurveOn
@@ -164,8 +176,7 @@ theorem isGeodesicCurveOnFrom_proj
     TangentBundle.contMDiffVectorBundle
   have hspray : CMDiff 1 (fun q : TangentBundle I M ↦
       (⟨q, geodesicSpray I M q⟩ : TangentBundle I.tangent (TangentBundle I M))) :=
-    contMDiff_geodesicSpray (I := I) (M := M) (n := (1 : ℕ∞ω)) (m := 3) (k := 2)
-      (by norm_num) (by norm_num)
+    contMDiff_one_geodesicSpray
   have hbase : ContMDiffOn (modelWithCornersSelf ℝ ℝ) I 2
       (fun t ↦ (z t).proj) s := by
     apply contMDiffOn_of_locally_contMDiffOn
