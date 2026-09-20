@@ -11,11 +11,11 @@ public import TauCeti.Algebra.Lie.Basic
 /-!
 # The nilradical of a Lie algebra
 
-The **nilradical** of a Lie algebra `L` is its largest ideal that is nilpotent *as a Lie algebra*.
-It is built here as `TauCeti.LieAlgebra.nilradical R L`, the supremum of the ideals `I` with
-`LieRing.IsNilpotent I`, and it is itself nilpotent as soon as `L` is Noetherian, so that the
-supremum really is a largest element.  It sits between the centre and the solvable radical, and
-every one of its elements is `ad`-nilpotent.
+The **nilradical** of a Lie algebra `L` is the supremum of its ideals that are nilpotent *as Lie
+algebras*, built here as `TauCeti.LieAlgebra.nilradical R L`, the supremum of the ideals `I` with
+`LieRing.IsNilpotent I`.  As soon as `L` is Noetherian that supremum is itself nilpotent, so it is
+then a largest element: the largest nilpotent ideal.  It sits between the centre and the solvable
+radical, and, again for Noetherian `L`, every one of its elements is `ad`-nilpotent.
 
 Mathlib's `LieAlgebra.maxNilpotentIdeal R L` is a *different* ideal: the largest ideal on which the
 ambient algebra `L` acts nilpotently.  It is contained in the nilradical
@@ -42,15 +42,16 @@ namespace, where dot notation on that Mathlib type elaborates.
 
 ## Main definitions
 
-* `TauCeti.LieAlgebra.nilradical`: the largest ideal of `L` that is nilpotent as a Lie algebra.
+* `TauCeti.LieAlgebra.nilradical`: the supremum of the ideals of `L` that are nilpotent as Lie
+  algebras, the largest such ideal as soon as `L` is Noetherian.
 
 ## Main statements
 
 * `LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` and `LieIdeal.isNilpotent_iff_isNilpotent_ambient`:
   the two ambient readings of nilpotency of an ideal.
 * `LieIdeal.isNilpotentSup`: a sum of nilpotent ideals is nilpotent.
-* `LieIdeal.le_nilradical`: a nilpotent ideal is contained in the nilradical, with no Noetherian
-  assumption.
+* `LieIdeal.le_nilradical` and `TauCeti.LieAlgebra.nilradical_le_iff`: the two halves of the
+  universal property of the supremum, neither needing a Noetherian assumption.
 * `TauCeti.LieAlgebra.nilradicalIsNilpotent`: over a Noetherian Lie algebra the nilradical is
   nilpotent, so `LieIdeal.isNilpotent_iff_le_nilradical` characterises it.
 * `TauCeti.LieAlgebra.maxNilpotentIdeal_le_nilradical`, `TauCeti.LieAlgebra.center_le_nilradical`
@@ -81,6 +82,7 @@ theorem lcs_antitone (I : LieIdeal R L) : Antitone (I.lcs M) :=
   antitone_nat_of_succ_le fun k ↦ by
     rw [lcs_succ]; exact LieSubmodule.lie_le_right _ _
 
+/-- The series `M ≥ ⁅I, M⁆ ≥ ⁅I, ⁅I, M⁆⁆ ≥ ⋯` attached to an ideal is monotone in that ideal. -/
 theorem lcs_mono {I J : LieIdeal R L} (h : I ≤ J) (k : ℕ) : I.lcs M k ≤ J.lcs M k := by
   induction k with
   | zero => simp
@@ -141,27 +143,32 @@ theorem isNilpotent_iff_isNilpotent_ambient (I : LieIdeal R L) :
   rw [isNilpotent_iff_exists_lcs_eq_bot, LieModule.isNilpotent_iff R]
   exact exists_congr fun k ↦ lcs_eq_bot_iff I L k
 
-theorem isNilpotent_of_le {I J : LieIdeal R L} (h : I ≤ J) (hJ : LieRing.IsNilpotent J) :
-    LieRing.IsNilpotent I := by
-  obtain ⟨k, hk⟩ := (isNilpotent_iff_exists_lcs_eq_bot J).1 hJ
-  exact (isNilpotent_iff_exists_lcs_eq_bot I).2 ⟨k, le_bot_iff.1 (hk ▸ lcs_mono L h k)⟩
+/-- An ideal contained in a nilpotent ideal is itself nilpotent as a Lie algebra.  This is the
+nilpotent counterpart of Mathlib's `LieAlgebra.le_solvable_ideal_solvable`. -/
+theorem isNilpotent_of_le {I J : LieIdeal R L} (h : I ≤ J) (_ : LieRing.IsNilpotent J) :
+    LieRing.IsNilpotent I :=
+  (inclusion_injective h).lieAlgebra_isNilpotent
+
+/-- A surjective Lie algebra homomorphism maps a nilpotent ideal to a nilpotent ideal. -/
+theorem isNilpotent_map_of_surjective {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (I : LieIdeal R L) (g : L →ₗ⁅R⁆ L') (hg : Function.Surjective g)
+    (hI : LieRing.IsNilpotent I) : LieRing.IsNilpotent (I.map g) := by
+  let _ : LieRing.IsNilpotent I := hI
+  let f : I →ₗ⁅R⁆ I.map g :=
+    { toFun := fun x ↦ ⟨g x, LieIdeal.mem_map x.property⟩
+      map_add' := fun _ _ ↦ by ext; exact map_add g _ _
+      map_smul' := fun _ _ ↦ by ext; exact map_smul g _ _
+      map_lie' := fun {_ _} ↦ by ext; exact g.map_lie _ _ }
+  apply Function.Surjective.lieAlgebra_isNilpotent (f := f)
+  intro y
+  obtain ⟨x, hx⟩ := LieIdeal.mem_map_of_surjective hg y.property
+  exact ⟨x, Subtype.ext hx⟩
 
 /-- A Lie algebra equivalence maps a nilpotent ideal to a nilpotent ideal. -/
 theorem isNilpotent_map_equiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (I : LieIdeal R L) (e : L ≃ₗ⁅R⁆ L') (hI : LieRing.IsNilpotent I) :
-    LieRing.IsNilpotent (I.map e.toLieHom) := by
-  let _ : LieRing.IsNilpotent I := hI
-  let f : I →ₗ⁅R⁆ I.map e.toLieHom :=
-    { toFun := fun x ↦ ⟨e x, LieIdeal.mem_map x.property⟩
-      map_add' := fun _ _ ↦ by ext; exact map_add e _ _
-      map_smul' := fun _ _ ↦ by ext; exact map_smul e _ _
-      map_lie' := fun {_ _} ↦ by ext; exact e.map_lie _ _ }
-  apply Function.Surjective.lieAlgebra_isNilpotent (f := f)
-  intro y
-  obtain ⟨x, hx⟩ := LieIdeal.mem_map_of_surjective e.surjective y.property
-  refine ⟨x, ?_⟩
-  apply Subtype.ext
-  exact hx
+    LieRing.IsNilpotent (I.map e.toLieHom) :=
+  isNilpotent_map_of_surjective I e.toLieHom e.surjective hI
 
 /-- Every element of a nilpotent ideal acts nilpotently in the adjoint representation. -/
 theorem isNilpotent_ad_of_mem (I : LieIdeal R L) [LieRing.IsNilpotent I] {x : L} (hx : x ∈ I) :
@@ -248,6 +255,13 @@ direction of `LieIdeal.isNilpotent_iff_le_nilradical`, which needs no Noetherian
 theorem _root_.LieIdeal.le_nilradical (I : LieIdeal R L) (h : LieRing.IsNilpotent I) :
     I ≤ nilradical R L :=
   le_sSup h
+
+/-- The nilradical is below an ideal `J` exactly when every nilpotent ideal is.  This is the
+elimination half of the universal property of the supremum defining the nilradical, dual to
+`LieIdeal.le_nilradical`, and like it needs no Noetherian assumption. -/
+theorem nilradical_le_iff {J : LieIdeal R L} :
+    nilradical R L ≤ J ↔ ∀ I : LieIdeal R L, LieRing.IsNilpotent I → I ≤ J :=
+  ⟨fun h I hI ↦ (LieIdeal.le_nilradical R L I hI).trans h, fun h ↦ sSup_le h⟩
 
 /-- Over a Noetherian Lie algebra the nilradical is exactly the ideals nilpotent as Lie algebras.
 

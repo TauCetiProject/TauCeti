@@ -56,6 +56,9 @@ instance instAddCommGroup : AddCommGroup (AffineLine K) := inferInstanceAs (AddC
 
 instance instModule : Module K (AffineLine K) := inferInstanceAs (Module K (K × K))
 
+instance instIsNoetherian [IsNoetherian K K] : IsNoetherian K (AffineLine K) :=
+  inferInstanceAs (IsNoetherian K (K × K))
+
 instance instBracket : Bracket (AffineLine K) (AffineLine K) :=
   ⟨fun u v ↦ ((0 : K), u.1 * v.2 - u.2 * v.1)⟩
 
@@ -114,12 +117,14 @@ def translation (K : Type*) [CommRing K] : AffineLine K := (0, 1)
 def translationIdeal (K : Type*) [CommRing K] : LieIdeal K (AffineLine K) where
   carrier := {u | u.1 = 0}
   add_mem' {u v} hu hv := by
-    change (u + v).1 = 0
-    rw [fst_add, show u.1 = 0 from hu, show v.1 = 0 from hv, add_zero]
-  zero_mem' := fst_zero
+    simp only [Set.mem_ofPred_eq] at hu hv ⊢
+    rw [fst_add, hu, hv, add_zero]
+  zero_mem' := by
+    simp only [Set.mem_ofPred_eq]
+    exact fst_zero
   smul_mem' c u hu := by
-    change (c • u).1 = 0
-    rw [fst_smul, show u.1 = 0 from hu, mul_zero]
+    simp only [Set.mem_ofPred_eq] at hu ⊢
+    rw [fst_smul, hu, mul_zero]
   lie_mem {u v} _ := fst_lie u v
 
 @[simp] theorem mem_translationIdeal {u : AffineLine K} :
@@ -129,19 +134,32 @@ def translationIdeal (K : Type*) [CommRing K] : LieIdeal K (AffineLine K) where
 theorem translationIdeal_toSubmodule :
     (translationIdeal K).toSubmodule = Submodule.span K {translation K} := by
   refine le_antisymm (fun u hu ↦ ?_) ?_
-  · replace hu : u.1 = 0 := hu
+  · rw [LieSubmodule.mem_toSubmodule, mem_translationIdeal] at hu
     rw [Submodule.mem_span_singleton]
     exact ⟨u.2, by ext <;> simp [hu]⟩
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact fst_translation
+
+/-- The translation `y` is nonzero. -/
+theorem translation_ne_zero (K : Type*) [CommRing K] [Nontrivial K] : translation K ≠ 0 := by
+  intro h
+  have h2 := congrArg (fun u : AffineLine K ↦ u.2) h
+  simp at h2
+
+/-- The ideal of translations is nonzero. -/
+theorem translationIdeal_ne_bot (K : Type*) [CommRing K] [Nontrivial K] :
+    translationIdeal K ≠ ⊥ := by
+  intro h
+  have hmem : translation K ∈ translationIdeal K := mem_translationIdeal.2 fst_translation
+  rw [h, LieSubmodule.mem_bot] at hmem
+  exact translation_ne_zero K hmem
 
 /-- The ideal of translations is abelian. -/
 theorem lie_translationIdeal_translationIdeal :
     ⁅translationIdeal K, (translationIdeal K : LieIdeal K (AffineLine K))⁆ = ⊥ := by
   rw [LieSubmodule.lie_eq_bot_iff]
   intro u hu v hv
-  replace hu : u.1 = 0 := hu
-  replace hv : v.1 = 0 := hv
+  rw [mem_translationIdeal] at hu hv
   ext <;> simp [hu, hv]
 
 /-- The ideal of translations is abelian, hence nilpotent as a Lie algebra, so it is contained in
@@ -156,22 +174,6 @@ instance isNilpotentTranslationIdeal : LieRing.IsNilpotent (translationIdeal K) 
 section Field
 
 variable (K : Type*) [Field K]
-
-instance instIsNoetherian : IsNoetherian K (AffineLine K) :=
-  inferInstanceAs (IsNoetherian K (K × K))
-
-/-- The translation `y` is nonzero. -/
-theorem translation_ne_zero : translation K ≠ 0 := by
-  intro h
-  have h2 := congrArg (fun u : AffineLine K ↦ u.2) h
-  simp at h2
-
-/-- The ideal of translations is nonzero. -/
-theorem translationIdeal_ne_bot : translationIdeal K ≠ ⊥ := by
-  intro h
-  have hmem : translation K ∈ translationIdeal K := mem_translationIdeal.2 fst_translation
-  rw [h, LieSubmodule.mem_bot] at hmem
-  exact translation_ne_zero K hmem
 
 /-- Every nonzero ideal contains the translation `y`. -/
 theorem translation_mem_of_ne_bot {N : LieIdeal K (AffineLine K)} (h : N ≠ ⊥) :
@@ -216,7 +218,8 @@ theorem translation_mem_lcs_self {N : LieIdeal K (AffineLine K)} {u : AffineLine
     rw [LieIdeal.lcs_succ]
     have hmem : ⁅u, translation K⁆ ∈ ⁅N, LieIdeal.lcs N (AffineLine K) k⁆ :=
       LieSubmodule.lie_mem_lie hu ih
-    rwa [show ⁅u, translation K⁆ = translation K by ext <;> simp [hu1]] at hmem
+    have hbracket : ⁅u, translation K⁆ = translation K := by ext <;> simp [hu1]
+    rwa [hbracket] at hmem
 
 /-- No nonzero ideal is acted on nilpotently by the whole algebra. -/
 theorem not_isNilpotent_of_ne_bot {N : LieIdeal K (AffineLine K)} (h : N ≠ ⊥) :
