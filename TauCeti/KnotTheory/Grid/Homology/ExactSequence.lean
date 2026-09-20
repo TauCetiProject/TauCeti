@@ -37,7 +37,7 @@ which in turn surjects onto the kernel of that action. On a knot grid the action
 `GH⁻(G)` is the action of `U` on the `R[U]`-module of
 `TauCeti.KnotTheory.Grid.Homology.Unblocked`, by
 `TauCeti.GridDiagram.IsKnot.X_smul_unblockedHomology`. The knot-facing exactness corollaries below
-state the outer maps using this `U`-action.
+state the two exactness assertions that involve that action using it.
 
 ## Main definitions
 
@@ -60,7 +60,8 @@ state the outer maps using this `U`-action.
   `TauCeti.GridDiagram.exact_simplyBlockedHomologyδ_X_smul`: exactness of the long exact sequence
   at its three spots.
 * The corresponding theorems in `TauCeti.GridDiagram.IsKnot` express the outer maps using the
-  `R[U]`-action on knot-grid unblocked homology.
+  `R[U]`-action on knot-grid unblocked homology. Exactness at the middle spot mentions no scalar
+  action, so it needs no knot-facing restatement.
 
 ## References
 
@@ -380,16 +381,6 @@ theorem exact_X_smul_simplyBlockedHomologyMap (hG : G.IsKnot) (i : Fin n) :
   let _ := hG.unblockedHomologyModule R
   simpa only [hG.X_smul_unblockedHomology i] using
     G.exact_X_smul_simplyBlockedHomologyMap R i
-
-/-- **Exactness at simply blocked homology for a knot grid**: a class killed by the connecting
-map comes from `GH⁻(G)`. -/
-theorem exact_simplyBlockedHomologyMap_δ (hG : G.IsKnot) (i : Fin n) :
-    Function.Exact
-      ((G.simplyBlockedHomologyMap R i).hom :
-        G.unblockedHomology R → hG.simplyBlockedHomology R i)
-      ((G.simplyBlockedHomologyδ R i).hom :
-        hG.simplyBlockedHomology R i → G.unblockedHomology R) :=
-  G.exact_simplyBlockedHomologyMap_δ R i
 
 /-- **Exactness at the outer `GH⁻(G)` for a knot grid**: a class annihilated by `U` is in the
 image of the connecting map. -/
