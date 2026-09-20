@@ -58,6 +58,8 @@ that any group below is finite, perfect, or simple.
 * `TauCeti.ReeG2LieIndex.frobenius_simpleRootSubgroup` and
   `TauCeti.ReeG2LieIndex.primeFrobenius_simpleRootSubgroup` give the two Frobenius actions on the
   numbered root subgroups.
+* `TauCeti.ReeG2LieIndex.rootGeneratorWeight_eq_root_simpleIndex` certifies that the carrier and
+  index use the same Bourbaki numbering of the simple roots.
 * `TauCeti.ReeG2LieIndex.frobenius_eq_primeFrobenius_pow` identifies the `q`-power Frobenius as
   the recorded iterate of the prime-field one.
 * `TauCeti.ReeG2LieIndex.mem_fixedSubgroup_frobenius_iff` characterizes the `q`-rational points
@@ -72,7 +74,8 @@ that any group below is finite, perfect, or simple.
 -/
 
 /- Formal source: the declaration order, statements, and proof plan are adapted from the
-characteristic-two sibling `TauCeti.ReeF4LieIndex` introduced in TauCetiProject/TauCeti#7666,
+characteristic-two carrier attachment for `TauCeti.ReeF4LieIndex`
+(`TauCeti/GroupTheory/SpecificGroups/CFSG/ReeF4/Carrier.lean`) in TauCetiProject/TauCeti#7666,
 specialized to the seven-dimensional characteristic-three carrier. That sibling in turn follows
 the earlier attachments `TauCeti.TypeE6LieIndex` and `TauCeti.RankTwoBLieIndex`. -/
 
@@ -109,6 +112,19 @@ theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i =
       G2ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_two i)) d.1.Closure :=
   (rfl)
+
+/-- **The simple-root subgroups sit at the simple roots of the `G₂` root datum.** The character by
+which the carrier's split weight torus rescales the parameter of `simpleRootSubgroup i` is the
+`i`-th simple root of `TauCeti.DynkinType.simplyConnectedRootDatum` at `G₂`, in the same Bourbaki
+numbering. This is the sense in which the carrier serves the diagram the index names; it is not a
+claim that the carrier is the pinned group of that diagram, no pinning being constructed for it. -/
+theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
+    DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (finCongr d.rank_eq_two i)) =
+      (DynkinType.G2.simplyConnectedRootDatum DynkinType.valid_G2).root
+        (DynkinType.G2.simpleIndex DynkinType.valid_G2 (finCongr d.rank_eq_two i)) := by
+  simpa only [DynkinType.rank_G2] using
+    DynkinType.G2.rootGeneratorWeight_inl_eq_root_simpleIndex DynkinType.valid_G2
+      (finCongr d.rank_eq_two i)
 
 /-! ## The Frobenius endomorphisms -/
 
