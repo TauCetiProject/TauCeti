@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Algebra.Polynomial.FieldDivision
@@ -44,11 +43,6 @@ and the resulting series of quotients and remainders converges coefficientwise.
 * `TauCeti.PowerSeries.IsDistinguished.gaussNorm_mul_add_eq_max`: the norm identity.
 * `TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add`: the quotient and the
   remainder of a Weierstrass division are unique.
-* `TauCeti.PowerSeries.IsDistinguished.trunc`,
-  `TauCeti.PowerSeries.IsDistinguished.gaussNorm_trunc` and
-  `TauCeti.PowerSeries.IsDistinguished.gaussNorm_sub_trunc_lt`: the polynomial part of a
-  distinguished series is distinguished of the same degree and the same Gauss norm, and the
-  tail it leaves is strictly smaller.
 * `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq` and
   `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq`: over a complete nonarchimedean
   field, every restricted power series has a unique Weierstrass division by `f`.
@@ -74,71 +68,6 @@ namespace TauCeti.PowerSeries
 section NormedRing
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {f q r : PowerSeries R}
-
-section Truncation
-
-/-- Truncating a series just past a degree in which its Gauss norm is attained leaves that norm
-unchanged. -/
-@[simp] theorem IsDistinguished.gaussNorm_trunc (hf : IsDistinguished c s f) :
-    ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).gaussNorm norm c
-      = f.gaussNorm norm c := by
-  have hcoeff (m : ℕ) : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff m =
-      if m < s + 1 then f.coeff m else 0 := by
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  refine le_antisymm ?_ ?_
-  · rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [hcoeff m]
-    split_ifs
-    · exact PowerSeries.le_gaussNorm norm c f hf.hasGaussNorm m
-    · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
-  · have hbdd : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).HasGaussNorm norm c :=
-      hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero (n := s + 1)
-        fun m hm ↦ by rw [hcoeff m, ite_eq_right (by omega)])
-    have h := PowerSeries.le_gaussNorm norm c _ hbdd s
-    rw [hcoeff s, ite_eq_left (Nat.lt_succ_self s)] at h
-    exact le_of_eq_of_le hf.norm_coeff_mul_pow_eq.symm h
-
-/-- The truncation of a distinguished series just past its distinguished degree is again
-distinguished of that degree. It is the polynomial part `f⁻` a Weierstrass division divides by. -/
-theorem IsDistinguished.trunc (hf : IsDistinguished c s f) :
-    IsDistinguished c s ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) := by
-  have hcoeff (m : ℕ) : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff m =
-      if m < s + 1 then f.coeff m else 0 := by
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  refine ⟨?_, fun m hm ↦ ?_⟩
-  · rw [hcoeff s, ite_eq_left (Nat.lt_succ_self s), hf.gaussNorm_trunc]
-    exact hf.norm_coeff_mul_pow_eq
-  · rw [hcoeff m, ite_eq_right (by omega), hf.gaussNorm_trunc]
-    simpa using hf.gaussNorm_pos
-
-/-- The tail `f⁺` left by truncating a restricted distinguished series just past its
-distinguished degree has strictly smaller Gauss norm than the series itself. This is the
-contraction factor of the Weierstrass division algorithm. -/
-theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc : 0 < c)
-    (hfr : f.IsRestricted c) :
-    (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
-      < f.gaussNorm norm c := by
-  have hcoeff (m : ℕ) : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).coeff m =
-      if m < s + 1 then 0 else f.coeff m := by
-    rw [map_sub, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-    split_ifs <;> simp
-  have htr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
-    rw [sub_eq_add_neg]
-    exact PowerSeries.isRestricted.add c hfr (PowerSeries.isRestricted.neg c
-      (isRestricted_of_forall_coeff_eq_zero (n := s + 1) fun m hm ↦ by
-        rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, ite_eq_right (by omega)]))
-  rcases eq_or_ne (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)) 0 with h0 | h0
-  · rw [h0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-    exact hf.gaussNorm_pos
-  · obtain ⟨n, hn⟩ := exists_isDistinguished hc htr h0
-    have hns : s < n := by
-      by_contra hcon
-      exact hn.coeff_ne_zero (by rw [hcoeff n, ite_eq_left (by omega)])
-    rw [← hn.norm_coeff_mul_pow_eq, hcoeff n, ite_eq_right (by omega)]
-    exact hf.norm_coeff_mul_pow_lt n hns
-
-end Truncation
 
 variable [IsUltrametricDist R] [NormMulClass R]
 
