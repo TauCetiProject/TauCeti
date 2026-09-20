@@ -47,12 +47,6 @@ ordered-monomial stage of PBW.
 * `TauCeti.UniversalEnvelopingAlgebra.mapAssociatedGraded_comp_pbwAssociatedGradedMap`: the
   canonical map from the symmetric algebra is natural.
 
-## Roadmap
-
-This supplies the functoriality component of Layer 3, "PBW, a substantial sub-project", in
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. It is used by the
-Chevalley--Demazure construction in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, on which
-the pinned ambient groups in milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` depend.
 -/
 
 public section
@@ -245,28 +239,46 @@ local notation "ιM" =>
   LieHom.toLinearMap (_root_.UniversalEnvelopingAlgebra.ι R :
     M →ₗ⁅R⁆ _root_.UniversalEnvelopingAlgebra R M)
 
+private noncomputable def mapWordFiltration (f : LieHom R L M) (k : ℕ) :
+    TauCeti.Algebra.wordFiltration ιL k →ₗ[R]
+      TauCeti.Algebra.wordFiltration ιM k :=
+  (map R f).toLinearMap.restrict fun x hx => by
+    have hx' : (x : _root_.UniversalEnvelopingAlgebra R L) ∈ pbwFiltration R L k := by
+      rwa [pbwFiltration_def]
+    simpa only [LinearMap.coe_restrict_apply, AlgHom.toLinearMap_apply, pbwFiltration_def] using
+      map_mem_pbwFiltration R f hx'
+
+@[simp]
+private theorem mapWordFiltration_id (k : ℕ) :
+    mapWordFiltration R (LieHom.id : LieHom R L L) k = LinearMap.id := by
+  apply LinearMap.ext
+  intro x
+  apply Subtype.ext
+  simp [mapWordFiltration]
+
+@[simp]
+private theorem mapWordFiltration_comp (f : LieHom R L M) (g : LieHom R M N) (k : ℕ) :
+    mapWordFiltration R (g.comp f) k =
+      (mapWordFiltration R g k).comp (mapWordFiltration R f k) := by
+  apply LinearMap.ext
+  intro x
+  apply Subtype.ext
+  simp [mapWordFiltration]
+
 /-- The linear map on the degree-`k` PBW graded pieces induced by a Lie homomorphism. -/
 noncomputable def mapGradedPiece (f : LieHom R L M) (k : ℕ) :
     PBWGradedPiece R L k →ₗ[R] PBWGradedPiece R M k :=
   (previousRestricted ιL k).mapQ (previousRestricted ιM k)
-    ((TauCeti.UniversalEnvelopingAlgebra.map R f).toLinearMap.restrict fun x hx => by
-      have hx' : (x : _root_.UniversalEnvelopingAlgebra R L) ∈
-          pbwFiltration R L k := by
-        rwa [pbwFiltration_def]
-      have hmap := map_mem_pbwFiltration R f hx'
-      change TauCeti.UniversalEnvelopingAlgebra.map R f
-          (x : _root_.UniversalEnvelopingAlgebra R L) ∈ _
-      rwa [pbwFiltration_def] at hmap) (by
+    (mapWordFiltration R f k) (by
       intro x hx
       rw [Submodule.mem_comap, mem_previousRestricted_iff]
       rw [mem_previousRestricted_iff] at hx
       have hx' : (x : _root_.UniversalEnvelopingAlgebra R L) ∈
           pbwFiltrationPrevious R L k := by
         rwa [pbwFiltrationPrevious_def]
-      have hmap := map_mem_pbwFiltrationPrevious R f hx'
-      change TauCeti.UniversalEnvelopingAlgebra.map R f
-          (x : _root_.UniversalEnvelopingAlgebra R L) ∈ _
-      rwa [pbwFiltrationPrevious_def] at hmap)
+      simpa only [mapWordFiltration, LinearMap.coe_restrict_apply, AlgHom.toLinearMap_apply,
+        pbwFiltrationPrevious_def] using
+        map_mem_pbwFiltrationPrevious R f hx')
 
 /-- On quotient representatives, the induced map on a PBW graded piece is the enveloping-algebra
 map restricted to the corresponding filtration step. -/
@@ -292,29 +304,18 @@ theorem mapGradedPiece_mk (f : LieHom R L M) (k : ℕ)
 @[simp]
 theorem mapGradedPiece_id (k : ℕ) :
     mapGradedPiece R (LieHom.id : LieHom R L L) k = LinearMap.id := by
-  apply LinearMap.ext
-  intro x
-  induction x using Submodule.Quotient.induction_on with
-  | _ x =>
-      rw [mapGradedPiece_mk]
-      apply congrArg Submodule.Quotient.mk
-      apply Subtype.ext
-      simp
+  unfold mapGradedPiece
+  simp only [mapWordFiltration_id]
+  exact Submodule.mapQ_id (previousRestricted ιL k)
 
 /-- Composition of Lie homomorphisms becomes composition on each PBW graded piece. -/
 @[simp]
 theorem mapGradedPiece_comp (f : LieHom R L M) (g : LieHom R M N) (k : ℕ) :
     mapGradedPiece R (g.comp f) k =
       (mapGradedPiece R g k).comp (mapGradedPiece R f k) := by
-  apply LinearMap.ext
-  intro x
-  induction x using Submodule.Quotient.induction_on with
-  | _ x =>
-      rw [LinearMap.comp_apply, mapGradedPiece_mk, mapGradedPiece_mk,
-        mapGradedPiece_mk]
-      apply congrArg Submodule.Quotient.mk
-      apply Subtype.ext
-      simp
+  unfold mapGradedPiece
+  simp only [mapWordFiltration_comp]
+  exact Submodule.mapQ_comp _ _ _ _ _ _ _
 
 /-- The induced map on degree zero preserves the homogeneous unit. -/
 @[simp]
@@ -350,16 +351,12 @@ noncomputable def mapAssociatedGraded (f : LieHom R L M) :
   DirectSum.toAlgebra R (PBWGradedPiece R L)
     (fun k => (DirectSum.lof R ℕ (PBWGradedPiece R M) k).comp (mapGradedPiece R f k))
     (by
-      change DirectSum.of (PBWGradedPiece R M) 0
-          (mapGradedPiece R f 0 (gradedOne _)) = 1
-      rw [mapGradedPiece_gradedOne, associatedGraded_of_gradedOne])
+      simp only [LinearMap.comp_apply, DirectSum.lof_eq_of, gradedGOne_one,
+        mapGradedPiece_gradedOne, associatedGraded_of_gradedOne])
     (by
       intro i j x y
-      change DirectSum.of (PBWGradedPiece R M) (i + j)
-          (mapGradedPiece R f (i + j) (gradedMul _ i j x y)) =
-        DirectSum.of (PBWGradedPiece R M) i (mapGradedPiece R f i x) *
-          DirectSum.of (PBWGradedPiece R M) j (mapGradedPiece R f j y)
-      rw [associatedGraded_of_mul_of, mapGradedPiece_gradedMul])
+      simp only [LinearMap.comp_apply, DirectSum.lof_eq_of, gradedGMul_mul,
+        mapGradedPiece_gradedMul, associatedGraded_of_mul_of])
 
 /-- On a homogeneous element, the induced associated-graded map is the map on that graded
 piece. -/
@@ -367,6 +364,8 @@ piece. -/
 theorem mapAssociatedGraded_of (f : LieHom R L M) (k : ℕ) (x : PBWGradedPiece R L k) :
     mapAssociatedGraded R f (DirectSum.of (PBWGradedPiece R L) k x) =
       DirectSum.of (PBWGradedPiece R M) k (mapGradedPiece R f k x) := by
+  -- `DirectSum.toAlgebra` is implemented through `DirectSum.toAddMonoid` and has no separate
+  -- computation lemma on `DirectSum.of`, so expose that underlying map here.
   change DirectSum.toAddMonoid
       (fun k => ((DirectSum.lof R ℕ (PBWGradedPiece R M) k).comp
         (mapGradedPiece R f k)).toAddMonoidHom)
@@ -393,6 +392,7 @@ theorem mapAssociatedGraded_comp (f : LieHom R L M) (g : LieHom R M N) :
 
 /-- The associated-graded map sends a degree-one PBW generator to the generator induced by the
 original Lie homomorphism. -/
+@[simp]
 theorem mapAssociatedGraded_pbwGradedGenerator (f : LieHom R L M) (x : L) :
     mapAssociatedGraded R f (pbwGradedGenerator R L x) =
       pbwGradedGenerator R M (f x) := by
