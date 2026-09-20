@@ -25,7 +25,7 @@ the `ℤ_p` example used when identifying the free pro-`p` group on one generato
 ## Main results
 
 * `TauCeti.isProP_multiplicative_padicInt`: `Multiplicative ℤ_[p]` is pro-`p`.
-* `TauCeti.topologicallyGenerates_one_multiplicative_padicInt`: the element `1` topologically
+* `TauCeti.topologicallyGenerates_ofAdd_one_padicInt`: the element `1` topologically
   generates `Multiplicative ℤ_[p]`.
 * `TauCeti.topologicalGeneratorRank_multiplicative_padicInt`: its topological generator rank is
   one.
@@ -59,10 +59,8 @@ theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
       apply (PadicInt.norm_le_pow_iff_mem_span_pow x.toAdd n).mpr
       rw [← PadicInt.ker_toZModPow]
       have hxzero : PadicInt.toZModPow n x.toAdd = 0 := by
-        change (PadicInt.toZModPow n).toAddMonoidHom x.toAdd = 0
-        have hx' := congrArg Multiplicative.toAdd (MonoidHom.mem_ker.mp hx)
-        simpa only [f, AddMonoidHom.coe_toMultiplicative, Function.comp_apply,
-          toAdd_ofAdd, toAdd_one] using hx'
+        have hf_apply : (f x).toAdd = PadicInt.toZModPow n x.toAdd := rfl
+        rw [← hf_apply, MonoidHom.mem_ker.mp hx, toAdd_one]
       exact RingHom.mem_ker.mpr hxzero
     simpa [dist_zero_right] using hxnorm
   have htarget : IsPGroup p (Multiplicative (ZMod (p ^ n))) :=
@@ -79,7 +77,7 @@ theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
 /-- The element `1 : ℤ_[p]` topologically generates the additive group of the `p`-adic
 integers. -/
 @[simp]
-theorem topologicallyGenerates_one_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
+theorem topologicallyGenerates_ofAdd_one_padicInt (p : ℕ) [Fact p.Prime] :
     (Subgroup.closure ({Multiplicative.ofAdd (1 : ℤ_[p])} : Set _)).topologicalClosure = ⊤ := by
   let f : Multiplicative ℤ →* Multiplicative ℤ_[p] :=
     (Int.castAddHom ℤ_[p]).toMultiplicative
@@ -107,7 +105,7 @@ theorem topologicallyGenerates_one_multiplicative_padicInt (p : ℕ) [Fact p.Pri
 theorem isTopologicallyFinitelyGenerated_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
     IsTopologicallyFinitelyGenerated (Multiplicative ℤ_[p]) :=
   (Set.finite_singleton (Multiplicative.ofAdd (1 : ℤ_[p]))).isTopologicallyFinitelyGenerated
-    (topologicallyGenerates_one_multiplicative_padicInt p)
+    (topologicallyGenerates_ofAdd_one_padicInt p)
 
 /-- The natural-number topological generator rank of the additive group of `ℤ_[p]` is one. -/
 @[simp]
