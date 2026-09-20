@@ -35,7 +35,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Translate a test function in the opposite direction, regarding it as a test function on an
 open set containing the translated support. -/
-@[expose] def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, ℝ)) :
+def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, ℝ)) :
     𝓓(Omega, ℝ) :=
   ⟨fun y => phi (y - h),
     phi.contDiff.comp (contDiff_id.sub contDiff_const),
@@ -62,7 +62,7 @@ open set containing the translated support. -/
 /-- Translating a test function evaluates it at the oppositely translated point. -/
 theorem translateTestFunction_apply (hVO : MapsTo (· + h) V Omega)
     (phi : 𝓓(V, ℝ)) (y : E) : translateTestFunction hVO phi y = phi (y - h) :=
-  rfl
+  (rfl)
 
 /-- The directional derivative of a translated test function is the translated directional
 derivative. -/
