@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 /-!
 # Separation of the adele ring of a number field

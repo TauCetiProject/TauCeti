@@ -17,6 +17,7 @@ Mathlib's `IsDedekindDomain.FiniteAdeleRing R K` is the restricted product of th
 about it that are not stated in Mathlib:
 
 * the finite adele ring is Hausdorff, since each completion is;
+* multiplication and the multiplicative unit are computed place by place;
 * an element of `K` is integral at every finite place exactly when it lies in `R`, so the integral
   finite adeles meet the diagonal copy of `K` in `R`;
 * **strong approximation**: `K` is dense in the finite adele ring.
@@ -35,6 +36,8 @@ approximates `a`.
 
 ## Main results
 
+* `IsDedekindDomain.FiniteAdeleRing.one_apply` and `IsDedekindDomain.FiniteAdeleRing.mul_apply`:
+  the value of `1` and of a product at a finite place.
 * `IsDedekindDomain.FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff`: the diagonal
   image of `x : K` is integral at every finite place if and only if `x` lies in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_adicCompletionIntegers`: a finite adele
@@ -63,7 +66,18 @@ instance : T2Space (FiniteAdeleRing R K) :=
     RestrictedProduct (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
       (fun v ↦ v.adicCompletionIntegers K) Filter.cofinite
 
-variable {R K} in
+variable {R K}
+
+-- `FiniteAdeleRing R K` is a `def` wrapping the restricted product, so
+-- `RestrictedProduct.one_apply` and `RestrictedProduct.mul_apply` do not apply to it directly;
+-- these are their restatements, and like them they hold by `rfl`.
+/-- The value of `1 : 𝔸ᶠ[R, K]` at a finite place is `1`. -/
+@[simp] theorem one_apply (v : HeightOneSpectrum R) : (1 : FiniteAdeleRing R K) v = 1 := rfl
+
+/-- Multiplication of finite adeles is computed place by place. -/
+@[simp] theorem mul_apply (a b : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
+    (a * b) v = a v * b v := rfl
+
 /-- The diagonal image of an element of `K` in the finite adele ring is integral at every finite
 place exactly when the element lies in `R`. -/
 theorem forall_algebraMap_mem_adicCompletionIntegers_iff (x : K) :
