@@ -250,6 +250,7 @@ theorem envelopingDerivation_ι' (D : LieDerivation R L L) (x : L) :
 /-- **The range of a lifted derivation lies in a two-sided ideal exactly when its values on the
 canonical generators do.** The reverse implication follows because the generators and scalars
 generate `U(L)`, while the Leibniz rule and two-sidedness keep the ideal closed at products. -/
+@[simp]
 theorem envelopingDerivation_range_le_iff (D : LieDerivation R L L) (I : Ideal U)
     [I.IsTwoSided] :
     LinearMap.range (envelopingDerivation R L D : Module.End R U) ≤ I.restrictScalars R ↔
