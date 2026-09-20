@@ -121,9 +121,10 @@ theorem eulerDegreeHom_classGroupAddEquivLineBundleClass
     rw [WeilDivisor.weightedDegree_apply, ← relativeDegree_apply]
   simpa [classGroupAddEquivLineBundleClass_apply] using hdegree
 
-/-- A divisor class is in `Cl⁰(X)` exactly when its line bundle is in `Pic⁰(X)`. -/
+/-- The line bundle of a divisor class has Euler degree zero exactly when the divisor class is in
+`Cl⁰(X)`. -/
 @[simp]
-lemma classGroupAddEquivLineBundleClass_mem_picZero_iff
+lemma eulerDegree_classGroupToLineBundleClass_eq_zero_iff_mem_picZero
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
     LineBundleClass.eulerDegree k (classGroupToLineBundleClass hX.out c) = 0 ↔
       c ∈ (WeilDivisor.OrderSystem.ofScheme X).picZero
@@ -148,8 +149,8 @@ theorem map_picZero :
   · rintro ⟨c, hc, rfl⟩
     rw [LineBundleClass.mem_picZero_iff, AddEquiv.coe_toAddMonoidHom,
       classGroupAddEquivLineBundleClass_apply, toMul_ofMul]
-    exact (classGroupAddEquivLineBundleClass_mem_picZero_iff k c).mpr hc
-  · apply (classGroupAddEquivLineBundleClass_mem_picZero_iff k _).mp
+    exact (eulerDegree_classGroupToLineBundleClass_eq_zero_iff_mem_picZero k c).mpr hc
+  · apply (eulerDegree_classGroupToLineBundleClass_eq_zero_iff_mem_picZero k _).mp
     have happly := congrArg Additive.toMul
       ((classGroupAddEquivLineBundleClass X).apply_symm_apply a)
     rw [classGroupAddEquivLineBundleClass_apply, toMul_ofMul] at happly
