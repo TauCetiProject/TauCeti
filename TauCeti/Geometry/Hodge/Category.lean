@@ -129,7 +129,7 @@ noncomputable abbrev asMixed (X : PolarizableHodgeStructureCat.{u} n) :
 
 /-- An ordinary morphism of polarizable rational Hodge structures, implemented as a morphism of
 the corresponding pure mixed Hodge structures. The concentrated weight condition is automatic. -/
-abbrev Hom (X Y : PolarizableHodgeStructureCat.{u} n) :=
+abbrev Hom (X Y : PolarizableHodgeStructureCat.{u} n) : Type u :=
   MixedHodgeStructure.Hom X.asMixed.hs Y.asMixed.hs
 
 namespace Hom
@@ -253,7 +253,6 @@ theorem rational_obj (X : PolarizableHodgeStructureCat.{u} n) : rational.obj X =
 
 /-- The rational realization sends a morphism to its underlying rational linear map, up to the
 object equalities in `rational_obj`. -/
-@[simp]
 theorem rational_map_hom {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
     HEq (rational.map f).hom f.toRatLinearMap := by
   rw [rational, Functor.comp_map]
@@ -291,7 +290,6 @@ theorem complex_obj (X : PolarizableHodgeStructureCat.{u} n) :
 
 /-- The complex realization sends a morphism to its derived complex linear map, up to the object
 equalities in `complex_obj`. -/
-@[simp]
 theorem complex_map_hom {X Y : PolarizableHodgeStructureCat.{u} n} (f : X ⟶ Y) :
     HEq (complex.map f).hom f.toLinearMap := by
   rw [complex, Functor.comp_map]
