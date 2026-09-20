@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.IterateOneParameter
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
@@ -308,20 +309,16 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
           (Multiplicative.toAdd u ^
             (d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
               SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) := by
+  have hsq : ∀ (j : Fin d.1.rank) (t : Multiplicative d.1.Closure),
+      d.halfFrobenius (d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup j t)) =
+        d.toRankTwoBLieIndex.simpleRootSubgroup j
+          (Multiplicative.ofAdd (Multiplicative.toAdd t ^ d.1.characteristic)) := fun j t => by
+    rw [halfFrobenius_halfFrobenius, RankTwoBLieIndex.primeFrobenius_simpleRootSubgroup]
   have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  have hodd : d.1.fieldExponent = 2 * SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1 :=
-    SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex
-  have hexp : d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
-      SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
-        SuzukiReeIndex.exponent d.toSuzukiReeIndex i *
-          d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex :=
-    Nat.mul_comm _ _
-  rw [hpow, hodd, Function.iterate_succ_apply, d.halfFrobenius_simpleRootSubgroup i u,
-    d.halfFrobenius_iterate_two_mul, RankTwoBLieIndex.simpleRootSubgroup_def,
-    SpStd.frobenius_rootSubgroupPoints, ← RankTwoBLieIndex.simpleRootSubgroup_def, hexp]
-  congr 2
-  exact (pow_mul _ _ _).symm
+  rw [hpow, SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex]
+  exact iterate_two_mul_add_one_apply_ofAdd_pow d.halfFrobenius_simpleRootSubgroup hsq
+    (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex) i u
 
 /-! ## The finite-group candidate -/
 
