@@ -103,7 +103,7 @@ theorem points_eq_hopfIdealPointsSubgroup (A : Type v) [CommRing A] [Algebra (ZM
 
 /-- The points of the quotient coordinate Hopf algebra are the named matrix-valued carrier
 points. -/
-private noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
+noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
     HopfAlgebra.points
         (R := ZMod 3) (H := CommHopfAlgCat.quotient
           (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -115,7 +115,7 @@ private noncomputable def pointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
       simpa only [definingIdeal_def] using points_eq_hopfIdealPointsSubgroup A)).symm
 
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
-private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
+theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient
         (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -130,7 +130,7 @@ private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (CommHopfAlgCat.commonKernelHopfIdeal generator) A q
 
 /-- Mathlib's spectrum-points equivalence for the quotient presentation of the carrier. -/
-private noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A]
+noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A]
     [Algebra (ZMod 3) A] :
     WithConv ((CommHopfAlgCat.quotient
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -140,7 +140,7 @@ private noncomputable def groupSchemePointMulEquiv (A : Type) [CommRing A]
     simpa only [definingIdeal_def] using groupScheme_def)
 
 /-- The carrier's underlying scheme is the spectrum of its quotient coordinate Hopf algebra. -/
-private lemma groupScheme_X_left :
+lemma groupScheme_X_left :
     groupScheme.X.left = Spec (CommRingCat.of (CommHopfAlgCat.quotient
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
       (CommHopfAlgCat.commonKernelHopfIdeal generator))) := by
@@ -152,7 +152,7 @@ private lemma groupScheme_X_left :
 
 /-- The underlying spectrum map of the carrier point associated to a quotient-coordinate
 point. -/
-private lemma groupSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
+lemma groupSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     [Algebra (ZMod 3) A]
     (q : WithConv ((CommHopfAlgCat.quotient
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -171,7 +171,7 @@ noncomputable def schemePointsMulEquiv (A : Type) [CommRing A] [Algebra (ZMod 3)
 
 /-- A quotient-coordinate point gives the same named carrier point under the scheme and matrix
 presentations. -/
-private theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A]
+theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRing A]
     [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient
@@ -182,7 +182,7 @@ private theorem schemePointsMulEquiv_groupSchemePointMulEquiv (A : Type) [CommRi
       pointsMulEquiv (CommAlgCat.of (ZMod 3) A) q := by
   simp [schemePointsMulEquiv]
 
-private lemma groupSchemePointMulEquiv_comp_carrierι (A : Type) [CommRing A]
+lemma groupSchemePointMulEquiv_comp_carrierι (A : Type) [CommRing A]
     [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient

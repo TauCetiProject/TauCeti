@@ -5,13 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Endomorphism
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Preserves
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.MultiplicativeMatrix
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Endomorphism
-public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
 public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Generators
-public import TauCeti.Algebra.Lie.G2.ShortRoot.IsogenyMultiplicative
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Frobenius
 
 /-!
@@ -26,17 +21,8 @@ algebra.
 This is what the special isogeny of characteristic three needs: the matrix `Matrix.g2SpecialIsogeny`
 of signed two-by-two minors is multiplicative exactly on matrices preserving both tensors.
 
-## Main definitions
-
-* `TauCeti.G2ShortRoot.PrimeField.carrierAlgebra`: the carrier's coordinate Hopf algebra, the
-  quotient of that of `GL₇` by the common kernel of the generators.
-* `TauCeti.G2ShortRoot.PrimeField.carrierGenericMatrix`: its universal point, the generic matrix
-  of `GL₇` pushed along the quotient map.
-
 ## Main results
 
-* `TauCeti.G2ShortRoot.PrimeField.carrierGenericMatrix_def`: the defining equation of the
-  universal point.
 * `TauCeti.G2ShortRoot.PrimeField.preservesG2Cross_of_mem_points` and
   `TauCeti.G2ShortRoot.PrimeField.preservesDualForm_of_mem_points`: every matrix-valued point of
   the carrier preserves both tensors.
@@ -286,10 +272,9 @@ theorem preservesG2Cross_map {S T : Type*} [CommRing S] [CommRing T]
   rw [← preserves_crossOperatorPrime_iff] at h ⊢
   exact ConstantMultiplication.Preserves.map (ZMod 3) 7 crossOperatorPrime h f
 
-/-- Fixing the invariant dual form by congruence is inherited by the image of a matrix under an
-algebra map. -/
-theorem preservesDualForm_map {S T : Type*} [CommRing S] [CommRing T]
-    [Algebra (ZMod 3) S] [Algebra (ZMod 3) T] (f : S →ₐ[ZMod 3] T)
+/-- Fixing the invariant dual form by congruence is inherited by the image of a matrix under a
+ring homomorphism. -/
+theorem preservesDualForm_map {S T : Type*} [Ring S] [Ring T] (f : S →+* T)
     {M : Matrix (Fin 7) (Fin 7) S}
     (h : M * invariantDualForm.map (Int.cast : ℤ → S) * Mᵀ =
       invariantDualForm.map (Int.cast : ℤ → S)) :
@@ -300,33 +285,8 @@ theorem preservesDualForm_map {S T : Type*} [CommRing S] [CommRing T]
     rw [Matrix.map_map]
     exact congrArg _ (funext fun z => map_intCast f z)
   have himg := congrArg (fun N : Matrix (Fin 7) (Fin 7) S => N.map (f : S →+* T)) h
-  simp only [Matrix.map_mul, Matrix.transpose_map, AlgHom.coe_toRingHom] at himg
+  simp only [Matrix.map_mul, Matrix.transpose_map] at himg
   rwa [hform] at himg
-
-/-- The coordinate Hopf algebra of the short-root type-`G₂` carrier over `𝔽₃`. -/
-noncomputable abbrev carrierAlgebra : CommHopfAlgCat (ZMod 3) :=
-  CommHopfAlgCat.quotient (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-    (CommHopfAlgCat.commonKernelHopfIdeal generator)
-
-/-- The quotient map of the coordinate Hopf algebra of `GL₇` onto that of the carrier. -/
-noncomputable abbrev carrierQuotient :
-    TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7 ⟶ carrierAlgebra :=
-  CommHopfAlgCat.mkQuotient (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-    (CommHopfAlgCat.commonKernelHopfIdeal generator)
-
-/-- The universal point of the carrier: the generic matrix of `GL₇` pushed to the carrier's
-coordinate Hopf algebra. -/
--- `@[expose]` is forced by the module system: `carrierGenericMatrix_def` below is the public
--- API for unfolding this definition, and an exported theorem may only unfold exposed bodies.
-@[expose] noncomputable def carrierGenericMatrix : Matrix (Fin 7) (Fin 7) carrierAlgebra :=
-  (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map carrierQuotient.hom.toAlgHom
-
-/-- The universal point of the carrier is the generic matrix of `GL₇` pushed along
-`carrierQuotient`.  Consumers should unfold `carrierGenericMatrix` through this lemma. -/
-theorem carrierGenericMatrix_def :
-    carrierGenericMatrix =
-      (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map carrierQuotient.hom.toAlgHom :=
-  rfl
 
 private theorem coe_universalPoint :
     ((TauCeti.GeneralLinear.pointToGeneralLinear 7 (toConv carrierQuotient.hom.toAlgHom) :
