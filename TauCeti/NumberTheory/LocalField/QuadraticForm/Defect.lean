@@ -9,6 +9,7 @@ import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.NumberTheory.LocalField.FractionalIdeal
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 import TauCeti.NumberTheory.LocalField.Squares
 
@@ -379,16 +380,6 @@ section UnitDefect
 
 variable {π : 𝒪[K]}
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- An approximation `u - ξ²` of a unit by a square is itself integral, so `ξ` is integral. -/
-private theorem valuation_le_one_of_valuation_sub_sq_le_one {u : Kˣ}
-    (hu : valuation K (u : K) = 1) {ξ : K} (hξ : valuation K ((u : K) - ξ ^ 2) ≤ 1) :
-    valuation K ξ ≤ 1 := by
-  rw [← pow_le_one_iff (two_ne_zero), ← map_pow]
-  calc valuation K (ξ ^ 2) = valuation K ((u : K) - ((u : K) - ξ ^ 2)) := by rw [sub_sub_cancel]
-    _ ≤ max (valuation K (u : K)) (valuation K ((u : K) - ξ ^ 2)) := (valuation K).map_sub _ _
-    _ ≤ 1 := max_le hu.le hξ
-
 /-- **The improvement step of O'Meara 63:2.** In residue characteristic two, an approximation
 `u - ξ²` of a unit `u` of order exactly `2k` with `k < v_K(2)` is not optimal: writing
 `(u - ξ²)/π^{2k} ≡ s² mod 𝓂[K]`, which is possible because the residue field is perfect of
@@ -418,8 +409,11 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
     rw [← IsLocalRing.residue_eq_zero_iff]
     simp [sq, ht]
   have hsv : valuation K (c - (s : K) ^ 2) ≤ valuation K (π : K) := by
-    have h := (mem_maximalIdeal_pow_iff_valuation_le hπ
-      ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2) 1).mp (by simpa only [pow_one] using hsmem)
+    have h := (Set.ext_iff.mp
+      (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) 1)
+      ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2)).mp (by
+        change ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2) ∈ 𝓂[K] ^ 1
+        simpa only [pow_one] using hsmem)
     rw [pow_one] at h
     convert h using 1
     simp
@@ -441,7 +435,7 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
     have hv2 : valuation K (2 : K) ≤ valuation K (π : K) ^ natCastValuation K 2 h2 :=
       (valuation_natCast_eq_pow hπ 2 h2).le
     have hξ1 : valuation K ξ ≤ 1 :=
-      valuation_le_one_of_valuation_sub_sq_le_one hu
+      valuation_le_one_of_sub_sq_le_one hu
         (hξ ▸ pow_le_one₀ zero_le hπ1.le)
     have hs1 : valuation K (s : K) ≤ 1 := (Valuation.mem_integer_iff _ _).mp s.2
     calc valuation K (2 * ξ * ((π : K) ^ k * (s : K)))
@@ -587,13 +581,20 @@ theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠
 /-- For `k < v_K(2)`, the unit represented by `1 + π^(2k+1)` has defect exponent exactly
 `2k+1`. -/
 theorem defectExponent_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
-    (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2)
-    (hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0) :
-    defectExponent (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0) =
+    (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2) :
+    defectExponent (Units.mk0 (1 + (π : K) ^ (2 * k + 1))
+      (one_add_pow_ne_zero_of_valuation_lt_one
+        (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ) (by omega))) =
       ((2 * k + 1 : ℕ) : ℤ) := by
   have hπ0 : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
+  have hπ1 : valuation K (π : K) < 1 :=
+    Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
+  let hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0 :=
+    one_add_pow_ne_zero_of_valuation_lt_one hπ1 (by omega)
+  change defectExponent (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0) = _
   let u : Kˣ := Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0
-  have hnsq : ¬IsSquare u := not_isSquare_one_add_pow_odd h2 hπ hk hu0
+  have hnsq : ¬IsSquare u := by
+    simpa only [u] using not_isSquare_one_add_pow_odd h2 hπ hk
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hnsq
   have hp0 : (π : K) ^ (2 * k + 1) ≠ 0 := pow_ne_zero _ hπ0
   let p : Kˣ := Units.mk0 ((π : K) ^ (2 * k + 1)) hp0
@@ -638,12 +639,11 @@ theorem exists_unit_defectExponent_eq_odd (h2 : (2 : K) ≠ 0)
   have huval : valuation K (1 + (π : K) ^ (2 * k + 1)) = 1 :=
     (valuation K).map_one_add_of_lt hp1
   have hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0 := by
-    intro h
-    rw [h, map_zero] at huval
-    exact zero_ne_one huval
+    exact one_add_pow_ne_zero_of_valuation_lt_one hπ1 (by omega)
   let u : Kˣ := Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0
-  exact ⟨u, by simpa [u] using huval, not_isSquare_one_add_pow_odd h2 hπ hk hu0,
-    defectExponent_one_add_pow_odd h2 hπ hk hu0⟩
+  exact ⟨u, by simpa [u] using huval, by
+    simpa only [u] using not_isSquare_one_add_pow_odd h2 hπ hk, by
+    simpa only [u] using defectExponent_one_add_pow_odd h2 hπ hk⟩
 
 /-- **The possible defects of a unit, as ideals** (O'Meara 63:2). The quadratic defect of a
 nonsquare unit of `𝒪[K]` is `𝓂[K] ^ (2 v_K(2))`, which is the ideal `4 𝒪[K]` by

@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Henselian
 public import TauCeti.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 import TauCeti.Algebra.Group.Units.Basic
 
@@ -212,9 +213,13 @@ theorem valuation_sub_sq_one_ne_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
 
 /-- For `k < v_K(2)`, the unit represented by `1 + π^(2k+1)` is not a square. -/
 theorem not_isSquare_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
-    (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2)
-    (hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0) :
-    ¬IsSquare (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0) := by
+    (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2) :
+    ¬IsSquare (Units.mk0 (1 + (π : K) ^ (2 * k + 1))
+      (one_add_pow_ne_zero_of_valuation_lt_one
+        (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ) (by omega))) := by
+  let hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0 := one_add_pow_ne_zero_of_valuation_lt_one
+    (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ) (by omega)
+  change ¬IsSquare (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0)
   intro hsq
   obtain ⟨ξ, hξ⟩ := isSquare_units_val_iff.mpr hsq
   apply valuation_sub_sq_one_ne_odd h2 hπ hk ξ
