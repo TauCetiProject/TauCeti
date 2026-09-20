@@ -68,15 +68,6 @@ def completionPolynomial : (v.adicCompletion K)[X] :=
   (minpoly K (semilocalPowerBasis (K := K) L).gen).map
     (algebraMap K (v.adicCompletion K))
 
-/-- The completed primitive polynomial is the minimal polynomial of the chosen primitive element,
-with its coefficients mapped to `K_v`. -/
-@[simp]
-theorem completionPolynomial_def :
-    completionPolynomial L v =
-      (minpoly K (semilocalPowerBasis (K := K) L).gen).map
-        (algebraMap K (v.adicCompletion K)) := by
-  rw [completionPolynomial]
-
 /-- The normalized irreducible factors over `K_v` of the chosen primitive element's minimal
 polynomial. -/
 abbrev completionFactors :=
@@ -415,9 +406,14 @@ def semilocalCrtEquiv :
 @[simp]
 theorem coe_semilocalCrtEquiv : ⇑(semilocalCrtEquiv L v) = semilocalCrtHom L v := by
   funext z
-  simp only [semilocalCrtEquiv, AlgEquiv.trans_apply, TauCeti.semilocalEquiv,
-    AlgEquiv.ofBijective_apply]
+  simp only [semilocalCrtEquiv, AlgEquiv.trans_apply]
   rw [AlgEquiv.symm_apply_eq, factorFieldsEquivCompletions_semilocalCrtHom]
+  induction z using TensorProduct.induction_on with
+  | zero => simp
+  | tmul a x =>
+      ext w
+      rw [semilocalEquiv_tmul, semilocalHom_tmul]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The Chinese remainder equivalence on a pure tensor, evaluated at one factor. -/
 @[simp]

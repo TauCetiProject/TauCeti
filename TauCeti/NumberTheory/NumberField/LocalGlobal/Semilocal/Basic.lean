@@ -171,7 +171,7 @@ theorem semilocalHom_injective : Function.Injective (semilocalHom L v) := by
 /-- **The semi-local decomposition** `K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`: completing `L` at the
 finitely many places above a finite place `v` of `K` decomposes the scalar extension of `L` to
 `K_v` into the product of those completions. -/
-@[expose] def semilocalEquiv :
+def semilocalEquiv :
     v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L) :=
