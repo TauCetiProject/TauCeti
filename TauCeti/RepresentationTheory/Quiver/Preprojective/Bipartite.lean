@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.LastArrow
+public import TauCeti.Combinatorics.Quiver.AlternatingSign
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 
 /-!
@@ -244,6 +244,7 @@ variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
 
 /-- **In characteristic two the signless relator is the preprojective relator.** The two differ
 only in the sign of the tail backtracks. -/
+@[simp]
 theorem signlessPreprojectiveRelator_eq_localPreprojectiveRelator_of_two_eq_zero
     (h2 : (2 : k) = 0) (v : Q) :
     signlessPreprojectiveRelator k (Symmetrify.of.obj v) = localPreprojectiveRelator k v := by
@@ -253,6 +254,7 @@ theorem signlessPreprojectiveRelator_eq_localPreprojectiveRelator_of_two_eq_zero
 
 /-- **In characteristic two the signless and the preprojective relation ideals coincide**, for
 every finite quiver, bipartite or not. -/
+@[simp]
 theorem signlessPreprojectiveIdeal_eq_preprojectiveIdeal_of_two_eq_zero (h2 : (2 : k) = 0) :
     signlessPreprojectiveIdeal k (Symmetrify Q) = preprojectiveIdeal k Q := by
   rw [signlessPreprojectiveIdeal_eq_span,
