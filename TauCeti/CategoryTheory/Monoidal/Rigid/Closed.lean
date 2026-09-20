@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Adjunction.Unique
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
-public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Basic
 
 /-!
 # The internal hom out of a dualizable object
@@ -36,9 +36,6 @@ is their uniqueness isomorphism `CategoryTheory.Adjunction.rightAdjointUniq`.
 
 ## Main declarations
 
-* `TauCeti.tensorLeftAdjunction_unit_app` and `TauCeti.tensorLeftAdjunction_counit_app`: the unit
-  and the counit of the adjunction attached to an exact pairing, as the coevaluation and the
-  evaluation;
 * `TauCeti.ihomIsoTensorLeft`: the natural isomorphism `ihom Y ≅ tensorLeft D`, together with the
   componentwise formulas `TauCeti.ihomIsoTensorLeft_hom_app`,
   `TauCeti.ihomIsoTensorLeft_inv_app` and
@@ -60,36 +57,6 @@ namespace TauCeti
 universe v u
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (D Y : C) [ExactPairing D Y]
-
-/-- The evaluation of an exact pairing transported across an isomorphism in its left argument.
-
-This is not a `simp` lemma: `CategoryTheory.exactPairingCongrLeft` is how a transported pairing
-is *built*, so rewriting with it would unfold the evaluation of every such pairing and rob the
-transported instance of its own normal form. -/
-@[reassoc]
-theorem exactPairingCongrLeft_evaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
-    @ExactPairing.evaluation C _ _ X Y (exactPairingCongrLeft i) = Y ◁ i.hom ≫ ε_ X' Y :=
-  rfl
-
-/-- The coevaluation of an exact pairing transported across an isomorphism in its left
-argument. Not a `simp` lemma, for the reason given on
-`TauCeti.exactPairingCongrLeft_evaluation`. -/
-@[reassoc]
-theorem exactPairingCongrLeft_coevaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
-    @ExactPairing.coevaluation C _ _ X Y (exactPairingCongrLeft i) = η_ X' Y ≫ i.inv ▷ Y :=
-  rfl
-
-/-- The unit of the adjunction `tensorLeft Y ⊣ tensorLeft D` attached to an exact pairing
-`ExactPairing D Y` inserts the coevaluation. -/
-theorem tensorLeftAdjunction_unit_app (Z : C) :
-    (tensorLeftAdjunction D Y).unit.app Z = (λ_ Z).inv ≫ η_ D Y ▷ Z ≫ (α_ D Y Z).hom := by
-  simp [tensorLeftAdjunction, tensorLeftHomEquiv]
-
-/-- The counit of the adjunction `tensorLeft Y ⊣ tensorLeft D` attached to an exact pairing
-`ExactPairing D Y` contracts the evaluation. -/
-theorem tensorLeftAdjunction_counit_app (Z : C) :
-    (tensorLeftAdjunction D Y).counit.app Z = (α_ Y D Z).inv ≫ ε_ D Y ▷ Z ≫ (λ_ Z).hom := by
-  simp [tensorLeftAdjunction, tensorLeftHomEquiv]
 
 variable [Closed Y]
 
@@ -188,8 +155,11 @@ theorem tensorHom_ihomUnitIso_inv_comp_ev {M N : C} (f : M ⟶ Y) (g : N ⟶ D) 
   rw [h, Category.assoc, whiskerLeft_ihomUnitIso_inv_comp_ev]
 
 /-- Transporting the pairing along `TauCeti.ihomUnitIso` exhibits the internal hom of `Y` into
-the unit as a left dual of `Y`: the categorical dual of `Y` is `Hom(Y, 𝟙_ C)`. -/
-@[instance_reducible]
+the unit as a left dual of `Y`: the categorical dual of `Y` is `Hom(Y, 𝟙_ C)`.
+
+This is deliberately not an instance because the chosen dual `D` is not determined by the
+resulting `ExactPairing` type. -/
+@[reducible]
 def exactPairingIhomUnit : ExactPairing (Y ⟶[C] 𝟙_ C) Y :=
   exactPairingCongrLeft (ihomUnitIso D Y)
 
