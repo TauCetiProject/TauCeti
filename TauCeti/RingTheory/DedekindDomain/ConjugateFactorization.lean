@@ -22,7 +22,7 @@ The count is what makes such factorizations a source of many ideals with a presc
 product: taking `S` to be a set of primes above rational primes that split into conjugate pairs,
 the theorem produces exactly `2 ^ (#S / 2)` ideals `A` with `A · σA` the prescribed ideal. The
 argument is the interplay of two facts: a divisor of a product of distinct primes is the product
-of a subset of them (`UniqueFactorizationMonoid.exists_subset_finset_prod_eq_of_dvd`), and the
+of a subset of them (`TauCeti.exists_subset_finset_prod_eq_of_dvd`), and the
 transversals of a fixed-point-free involution are counted by
 `TauCeti.ncard_setOf_isInvolutionTransversal`.
 

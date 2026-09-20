@@ -24,7 +24,9 @@ monoid of nonzero ideals of a Dedekind domain.
 
 public section
 
-namespace UniqueFactorizationMonoid
+namespace TauCeti
+
+open UniqueFactorizationMonoid
 
 variable {α : Type*} [CommMonoidWithZero α] [UniqueFactorizationMonoid α]
   [StrongNormalizationMonoid α] [Subsingleton αˣ] {S T : Finset α}
@@ -53,4 +55,4 @@ theorem exists_subset_finset_prod_eq_of_dvd [Nontrivial α] (hS : ∀ p ∈ S, P
   rw [Finset.prod_eq_multiset_prod, Multiset.map_id']
   exact (associated_iff_eq.1 (prod_normalizedFactors hzero)).symm
 
-end UniqueFactorizationMonoid
+end TauCeti
