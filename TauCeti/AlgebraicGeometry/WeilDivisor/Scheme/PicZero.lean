@@ -115,13 +115,14 @@ theorem eulerDegreeHom_classGroupAddEquivLineBundleClass
         (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
         (isWeightedDegreeZero_residueDegree k hX.out) c := by
   obtain ⟨D, rfl⟩ := (WeilDivisor.OrderSystem.ofScheme X).divisorClass_surjective c
-  rw [LineBundleClass.eulerDegreeHom_apply, classGroupAddEquivLineBundleClass_apply,
-    toMul_ofMul, classGroupToLineBundleClass_divisorClass,
-    LineBundleClass.eulerDegree_toLineBundleClass,
-    WeilDivisor.OrderSystem.weightedDegreeClass_divisorClass, WeilDivisor.weightedDegree_apply,
-    ← relativeDegree_apply]
+  have hdegree : relativeDegree (X ↘ Spec (.of k)) D =
+      WeilDivisor.weightedDegree
+        (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ)) D := by
+    rw [WeilDivisor.weightedDegree_apply, ← relativeDegree_apply]
+  simpa [classGroupAddEquivLineBundleClass_apply] using hdegree
 
 /-- A divisor class is in `Cl⁰(X)` exactly when its line bundle is in `Pic⁰(X)`. -/
+@[simp]
 lemma classGroupAddEquivLineBundleClass_mem_picZero_iff
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
     classGroupAddEquivLineBundleClass X c ∈ LineBundleClass.picZero k X ↔
@@ -194,7 +195,7 @@ def weightedDegreeZeroQuotientAddEquivPicZero :
   ((WeilDivisor.OrderSystem.ofScheme X).weightedDegreeZeroQuotientEquivPicZero _
     (isWeightedDegreeZero_residueDegree k hX.out)).trans (classGroupAddEquivPicZero k X)
 
-/-- `Pic⁰ X ≅ Div⁰(X) / (principal divisors)` sends the class of a degree-zero divisor `D` to the
+/-- `Div⁰(X) / (principal divisors) ≅ Pic⁰ X` sends the class of a degree-zero divisor `D` to the
 class of `𝒪_X(D)`. -/
 @[simp]
 lemma coe_weightedDegreeZeroQuotientAddEquivPicZero_mk
@@ -203,10 +204,7 @@ lemma coe_weightedDegreeZeroQuotientAddEquivPicZero_mk
     (weightedDegreeZeroQuotientAddEquivPicZero k X (QuotientAddGroup.mk D) :
         Additive (LineBundleClass X)) =
       Additive.ofMul (toLineBundleClass hX.out (D : SchemeWeilDivisor X)) := by
-  rw [weightedDegreeZeroQuotientAddEquivPicZero, AddEquiv.trans_apply,
-    coe_classGroupAddEquivPicZero_apply,
-    WeilDivisor.OrderSystem.coe_weightedDegreeZeroQuotientEquivPicZero_mk,
-    classGroupAddEquivLineBundleClass_apply, classGroupToLineBundleClass_divisorClass]
+  simp [weightedDegreeZeroQuotientAddEquivPicZero]
 
 section RationalPoint
 
