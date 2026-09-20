@@ -145,15 +145,18 @@ noncomputable def suspensionLoopIso (X : C) :
 /-- The comparison `ΣΩX ⟶ X` is natural in the stable category. -/
 theorem projectiveStableFunctor_map_fromSuspensionLoop_naturality {X Y : C} (f : X ⟶ Y) :
     E.projectiveStableFunctor.map
-        (hE.suspensionMap (hE.enoughProjectives.loopMap f) ≫ hE.fromSuspensionLoop Y) =
+        ((hE.suspensionPresentation _).cokernelMap (hE.suspensionPresentation _)
+          (hE.enoughProjectives.loopMap f) ≫ hE.fromSuspensionLoop Y) =
       E.projectiveStableFunctor.map (hE.fromSuspensionLoop X ≫ f) := by
   let S := ShortComplex.mk _ _ (hE.suspensionPresentation (hE.enoughProjectives.loopObj X)).zero
   let T := ShortComplex.mk _ _ (hE.enoughProjectives.loopInflation_comp_loopDeflation Y)
   let φ : S ⟶ T :=
     { τ₁ := hE.enoughProjectives.loopMap f
-      τ₂ := hE.suspensionMiddleMap (hE.enoughProjectives.loopMap f) ≫
+      τ₂ := (hE.suspensionPresentation _).middleMap (hE.suspensionPresentation _)
+          (hE.enoughProjectives.loopMap f) ≫
         suspensionLoopMiddleMap hE Y
-      τ₃ := hE.suspensionMap (hE.enoughProjectives.loopMap f) ≫ hE.fromSuspensionLoop Y
+      τ₃ := (hE.suspensionPresentation _).cokernelMap (hE.suspensionPresentation _)
+          (hE.enoughProjectives.loopMap f) ≫ hE.fromSuspensionLoop Y
       comm₁₂ := by simp [S, T]
       comm₂₃ := by simp [S, T] }
   let ψ : S ⟶ T :=
@@ -283,22 +286,26 @@ noncomputable def loopSuspensionIso (X : C) :
 theorem projectiveStableFunctor_map_toLoopSuspension_naturality {X Y : C} (f : X ⟶ Y) :
     E.projectiveStableFunctor.map (f ≫ hE.toLoopSuspension Y) =
       E.projectiveStableFunctor.map
-        (hE.toLoopSuspension X ≫ hE.enoughProjectives.loopMap (hE.suspensionMap f)) := by
+        (hE.toLoopSuspension X ≫ hE.enoughProjectives.loopMap
+          ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f)) := by
   let S := ShortComplex.mk _ _ (hE.suspensionPresentation X).zero
   let hT := hE.enoughProjectives.conflation_loopInflation_loopDeflation (hE.suspensionObj Y)
   let T := ShortComplex.mk _ _
     (hE.enoughProjectives.loopInflation_comp_loopDeflation (hE.suspensionObj Y))
   let φ : S ⟶ T :=
     { τ₁ := f ≫ hE.toLoopSuspension Y
-      τ₂ := hE.suspensionMiddleMap f ≫ loopSuspensionMiddleMap hE Y
-      τ₃ := hE.suspensionMap f
+      τ₂ := (hE.suspensionPresentation X).middleMap (hE.suspensionPresentation Y) f ≫
+        loopSuspensionMiddleMap hE Y
+      τ₃ := (hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f
       comm₁₂ := by simp [S, T]
       comm₂₃ := by simp [S, T] }
   let ψ : S ⟶ T :=
-    { τ₁ := hE.toLoopSuspension X ≫ hE.enoughProjectives.loopMap (hE.suspensionMap f)
+    { τ₁ := hE.toLoopSuspension X ≫ hE.enoughProjectives.loopMap
+        ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f)
       τ₂ := loopSuspensionMiddleMap hE X ≫
-        hE.enoughProjectives.loopMiddleMap (hE.suspensionMap f)
-      τ₃ := hE.suspensionMap f
+        hE.enoughProjectives.loopMiddleMap
+          ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f)
+      τ₃ := (hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f
       comm₁₂ := by simp [S, T]
       comm₂₃ := by simp [S, T] }
   exact E.projectiveStableFunctor_map_τ₁_eq_of_τ₃_eq hT

@@ -30,7 +30,6 @@ presentation of `X` is canonically isomorphic to `ΣX` in the stable category, n
 
 * `TauCeti.ExactStructure.IsFrobenius.suspensionPresentation`: the chosen injective conflation.
 * `TauCeti.ExactStructure.IsFrobenius.suspensionObj`: its cokernel term `ΣX`.
-* `TauCeti.ExactStructure.IsFrobenius.suspensionMap`: a chosen induced map before quotienting.
 * `TauCeti.ExactStructure.IsFrobenius.stableSuspension`: the additive suspension endofunctor of
   the projective stable category.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj`: the comparison of the
@@ -84,56 +83,6 @@ noncomputable abbrev suspensionDeflation (X : C) :
 theorem isProjective_suspensionInjective (X : C) : E.isProjective (hE.suspensionInjective X) :=
   (hE.projective_iff_injective _).mpr (hE.suspensionPresentation X).isInjective
 
-/-- The middle map between chosen injective presentations extending `f : X ⟶ Y`. -/
-noncomputable def suspensionMiddleMap {X Y : C} (f : X ⟶ Y) :
-    hE.suspensionInjective X ⟶ hE.suspensionInjective Y :=
-  (hE.suspensionPresentation X).middleMap (hE.suspensionPresentation Y) f
-
-/-- The chosen middle map is the extension supplied by the chosen injective presentations. -/
-theorem suspensionMiddleMap_def {X Y : C} (f : X ⟶ Y) :
-    hE.suspensionMiddleMap f =
-      (hE.suspensionPresentation X).middleMap (hE.suspensionPresentation Y) f :=
-  (rfl)
-
-/-- The chosen middle map extends `f` across the suspension inflations. -/
-@[reassoc (attr := simp)]
-theorem suspensionInflation_comp_suspensionMiddleMap {X Y : C} (f : X ⟶ Y) :
-    hE.suspensionInflation X ≫ hE.suspensionMiddleMap f =
-      f ≫ hE.suspensionInflation Y :=
-  (hE.suspensionPresentation X).i_comp_middleMap (hE.suspensionPresentation Y) f
-
-/-- The map `Σf : ΣX ⟶ ΣY` induced by a chosen extension between injective
-presentations. Its image in the stable quotient is independent of the chosen extension. -/
-noncomputable def suspensionMap {X Y : C} (f : X ⟶ Y) :
-    hE.suspensionObj X ⟶ hE.suspensionObj Y :=
-  (hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f
-
-/-- The suspension map is the morphism induced on the cokernel terms of the chosen injective
-presentations. -/
-theorem suspensionMap_def {X Y : C} (f : X ⟶ Y) :
-    hE.suspensionMap f =
-      (hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f :=
-  (rfl)
-
-/-- The induced suspension map makes the square on the two deflations commute. -/
-@[reassoc (attr := simp)]
-theorem suspensionDeflation_comp_suspensionMap {X Y : C} (f : X ⟶ Y) :
-    hE.suspensionDeflation X ≫ hE.suspensionMap f =
-      hE.suspensionMiddleMap f ≫ hE.suspensionDeflation Y :=
-  (hE.suspensionPresentation X).p_comp_cokernelMap (hE.suspensionPresentation Y) f
-
-/-- Any pair of maps between the chosen suspension presentations inducing `f` gives the same
-morphism as `suspensionMap f` after passing to the stable quotient. -/
-theorem projectiveStableFunctor_map_suspensionMap_eq {X Y : C} (f : X ⟶ Y)
-    (a : hE.suspensionInjective X ⟶ hE.suspensionInjective Y)
-    (g : hE.suspensionObj X ⟶ hE.suspensionObj Y)
-    (ha : hE.suspensionInflation X ≫ a = f ≫ hE.suspensionInflation Y)
-    (hg : hE.suspensionDeflation X ≫ g = a ≫ hE.suspensionDeflation Y) :
-    E.projectiveStableFunctor.map (hE.suspensionMap f) =
-      E.projectiveStableFunctor.map g :=
-  ExactStructure.projectiveStableFunctor_map_cokernelMap_eq _ _
-    (hE.isProjective_suspensionInjective Y) f a g ha hg
-
 /-- Suspension from the exact category to its stable quotient, built from the chosen injective
 presentations. -/
 public noncomputable def suspensionToStable : C ⥤ E.ProjectiveStableCategory :=
@@ -147,12 +96,14 @@ public theorem suspensionToStable_obj (X : C) :
       E.projectiveStableFunctor.obj (hE.suspensionObj X) :=
   E.suspensionToStableOfPresentations_obj _ _ X
 
-/-- Suspension to the stable quotient sends `f` to the image of the chosen `suspensionMap`. -/
+/-- Suspension to the stable quotient sends `f` to the image of the map induced between the
+chosen injective presentations. -/
 @[simp]
 public theorem suspensionToStable_map {X Y : C} (f : X ⟶ Y) :
     hE.suspensionToStable.map f =
       eqToHom (hE.suspensionToStable_obj X) ≫
-        E.projectiveStableFunctor.map (hE.suspensionMap f) ≫
+        E.projectiveStableFunctor.map
+          ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f) ≫
           eqToHom (hE.suspensionToStable_obj Y).symm :=
   E.suspensionToStableOfPresentations_map _ _ f
 
@@ -206,12 +157,14 @@ public theorem stableSuspension_obj_projectiveStableFunctor_obj (X : C) :
     simp only [stableSuspension, CategoryTheory.Quotient.lift_obj_functor_obj,
       hE.suspensionToStable_obj]
 
-/-- On represented morphisms, stable suspension is induced by the chosen `suspensionMap`. -/
+/-- On represented morphisms, stable suspension is induced by the chosen injective
+presentations. -/
 @[simp]
 public theorem stableSuspension_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶ Y) :
     hE.stableSuspension.map (E.projectiveStableFunctor.map f) =
       eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj X) ≫
-        E.projectiveStableFunctor.map (hE.suspensionMap f) ≫
+        E.projectiveStableFunctor.map
+          ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f) ≫
           eqToHom (hE.stableSuspension_obj_projectiveStableFunctor_obj Y).symm :=
   (conj_eqToHom_iff_heq _ _
     (hE.stableSuspension_obj_projectiveStableFunctor_obj X)
@@ -254,9 +207,9 @@ theorem projectiveStableIsoSuspensionObj_hom_naturality {X Y : C}
     E.projectiveStableFunctor.map (P.cokernelMap Q f) ≫
         (hE.projectiveStableIsoSuspensionObj Q).hom =
       (hE.projectiveStableIsoSuspensionObj P).hom ≫
-        E.projectiveStableFunctor.map (hE.suspensionMap f) := by
-  rw [suspensionMap_def]
-  exact ExactStructure.projectiveStableIso_hom_naturality
+        E.projectiveStableFunctor.map
+          ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f) :=
+  ExactStructure.projectiveStableIso_hom_naturality
     P (hE.suspensionPresentation X) Q (hE.suspensionPresentation Y) (hE.isProjective_I P)
     (hE.isProjective_suspensionInjective X) (hE.isProjective_I Q)
     (hE.isProjective_suspensionInjective Y) f

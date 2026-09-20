@@ -90,6 +90,7 @@ theorem projectiveStableFunctor_map_cokernelMap_id (P : E.InjectivePresentation 
 
 /-- In the projective stable category, the morphisms induced on cokernel terms of relative
 injective presentations compose. -/
+@[simp]
 theorem projectiveStableFunctor_map_cokernelMap_comp (P : E.InjectivePresentation X)
     (Q : E.InjectivePresentation Y) (R : E.InjectivePresentation Z) (hR : E.isProjective R.I)
     (f : X ⟶ Y) (g : Y ⟶ Z) :
