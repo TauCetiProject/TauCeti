@@ -170,6 +170,15 @@ theorem mk_toRatLinearMap (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier) (hf) :
     (mk f hf).hom.toRatLinearMap = f :=
   by simp [mk]
 
+/-- The complex map of the constructed morphism is the complexification of the supplied rational
+linear map. -/
+@[simp]
+theorem mk_toLinearMap (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier) (hf) :
+    (mk f hf).hom.toLinearMap =
+      rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        Y.isBaseChangeRat Y.isBaseChangeComplex f := by
+  rw [MixedHodgeStructure.Hom.toLinearMap_def, mk_toRatLinearMap]
+
 /-- Construct a morphism from a rational linear map whose complexification is a morphism of
 the underlying pure Hodge structures. -/
 noncomputable def ofIsMorphism (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier)
@@ -183,6 +192,15 @@ noncomputable def ofIsMorphism (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier)
 theorem ofIsMorphism_toRatLinearMap (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier) (hf) :
     (ofIsMorphism f hf).hom.toRatLinearMap = f :=
   by simp [ofIsMorphism]
+
+/-- The complex map of the morphism built from an unbundled Hodge morphism is the complexification
+of the supplied rational linear map. -/
+@[simp]
+theorem ofIsMorphism_toLinearMap (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier) (hf) :
+    (ofIsMorphism f hf).hom.toLinearMap =
+      rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        Y.isBaseChangeRat Y.isBaseChangeComplex f := by
+  rw [MixedHodgeStructure.Hom.toLinearMap_def, ofIsMorphism_toRatLinearMap]
 
 /-- A rational Hodge morphism is a morphism of the underlying pure Hodge structures on the
 complexifications. -/
