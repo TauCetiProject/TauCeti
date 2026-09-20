@@ -69,8 +69,8 @@ theorem continuous_toZModPow (n : ℕ) : Continuous (toZModPow (p := p) n) := by
 /-- A coarser truncation of `x` is a finer truncation of `x` read modulo the coarser
 modulus. -/
 theorem appr_modEq (x : ℤ_[p]) {m n : ℕ} (h : m ≤ n) : x.appr n ≡ x.appr m [MOD p ^ m] := by
-  obtain ⟨c, hc⟩ := dvd_appr_sub_appr x m n h
-  exact ((Nat.modEq_iff_dvd' (appr_mono x h)).mpr ⟨c, hc⟩).symm
+  rw [← ZMod.natCast_eq_natCast_iff, ← ZMod.cast_natCast (pow_dvd_pow p h) (x.appr n),
+    ← toZModPow_eq_natCast_appr, ← toZModPow_eq_natCast_appr, cast_toZModPow m n h]
 
 /-- Truncation is additive modulo `p ^ n`. -/
 theorem appr_add_modEq (x y : ℤ_[p]) (n : ℕ) :

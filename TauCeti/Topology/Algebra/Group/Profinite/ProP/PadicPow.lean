@@ -40,7 +40,8 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.padicPow_natCast`, `TauCeti.IsProP.padicPow_intCast`: the power extends the
   natural and integer powers.
 * `TauCeti.IsProP.padicPow_add`, `TauCeti.IsProP.padicPow_mul`: the exponent laws; and
-  `TauCeti.IsProP.mul_padicPow` in the base, for an abelian group.
+  `TauCeti.IsProP.inv_padicPow`, `TauCeti.IsProP.mul_padicPow` in the base, the latter for an
+  abelian group.
 * `TauCeti.IsProP.continuous_padicPow`: the action `ℤ_[p] × A → A` is jointly continuous.
 * `TauCeti.IsProP.eq_padicPow_of_continuous`: the power is the unique continuous extension of
   the natural powers.
@@ -173,6 +174,15 @@ theorem one_padicPow (hA : IsProP p A) (l : ℤ_[p]) : hA.padicPow (1 : A) l = 1
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
   rw [hA.mk_padicPow 1 l hn]
   simp
+
+/-- The `p`-adic power of an inverse is the inverse of the `p`-adic power. -/
+@[simp]
+theorem inv_padicPow (hA : IsProP p A) (a : A) (l : ℤ_[p]) :
+    hA.padicPow a⁻¹ l = (hA.padicPow a l)⁻¹ := by
+  refine eq_of_forall_mk_eq fun U ↦ ?_
+  obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
+  rw [QuotientGroup.mk_inv, hA.mk_padicPow a⁻¹ l hn, hA.mk_padicPow a l hn,
+    QuotientGroup.mk_inv, inv_pow]
 
 /-- Negating the exponent inverts the `p`-adic power. -/
 theorem padicPow_neg (hA : IsProP p A) (a : A) (l : ℤ_[p]) :
