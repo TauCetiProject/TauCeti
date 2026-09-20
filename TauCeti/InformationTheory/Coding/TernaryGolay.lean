@@ -60,7 +60,7 @@ theorem code_def : code = generator.generatedBy := (rfl)
 
 /-- A word belongs to the code exactly when it is the encoding of a message. -/
 @[simp]
-theorem mem_code {x : Fin 12 → ZMod 3} :
+theorem mem_code_iff {x : Fin 12 → ZMod 3} :
     x ∈ code ↔ ∃ a : Fin 6 → ZMod 3, a ᵥ* generator = x := by
   rw [code_def, Matrix.mem_generatedBy_iff]
 
@@ -147,7 +147,7 @@ theorem checkedBy_generator : generator.checkedBy = code := by
 /-- Every word has weight zero, six, nine, or twelve. -/
 theorem hammingNorm_mem {x : Fin 12 → ZMod 3} (hx : x ∈ code) :
     hammingNorm x ∈ ({0, 6, 9, 12} : Finset ℕ) := by
-  obtain ⟨a, rfl⟩ := mem_code.mp hx
+  obtain ⟨a, rfl⟩ := mem_code_iff.mp hx
   exact (by decide +kernel : ∀ a : Fin 6 → ZMod 3,
     hammingNorm (a ᵥ* generator) ∈ ({0, 6, 9, 12} : Finset ℕ)) a
 
@@ -193,7 +193,7 @@ theorem weightDistribution_code (w : ℕ) :
   simp only [h0, h6, h9, h12, ↓reduceIte]
   apply Fintype.card_eq_zero_iff.mpr
   refine ⟨fun ⟨a, ha⟩ ↦ ?_⟩
-  have h := hammingNorm_mem (mem_code.mpr ⟨a, rfl⟩)
+  have h := hammingNorm_mem (mem_code_iff.mpr ⟨a, rfl⟩)
   simp only [ha, Finset.mem_insert, Finset.mem_singleton] at h
   tauto
 
