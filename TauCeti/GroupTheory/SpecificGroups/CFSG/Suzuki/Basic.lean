@@ -318,10 +318,12 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
   rw [hpow, SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex]
   exact iterate_two_mul_add_one_apply_pow
-    (x := fun j a => d.toRankTwoBLieIndex.simpleRootSubgroup j (Multiplicative.ofAdd a))
-    (fun j a => d.halfFrobenius_simpleRootSubgroup j (Multiplicative.ofAdd a))
-    (fun j a => hsq j (Multiplicative.ofAdd a))
-    (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex) i (Multiplicative.toAdd u)
+    (x := fun a => d.toRankTwoBLieIndex.simpleRootSubgroup i (Multiplicative.ofAdd a))
+    (y := fun a => d.toRankTwoBLieIndex.simpleRootSubgroup
+      (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) (Multiplicative.ofAdd a))
+    (fun a => d.halfFrobenius_simpleRootSubgroup i (Multiplicative.ofAdd a))
+    (fun a => hsq (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) (Multiplicative.ofAdd a))
+    (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex) (Multiplicative.toAdd u)
 
 /-! ## The finite-group candidate -/
 
