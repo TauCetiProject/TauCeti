@@ -29,9 +29,11 @@ cardinality of a *finite* topological generating set, available exactly when `G`
 finitely generated. Every numerical rank statement — Schreier-type bounds, deficiencies, Euler
 formulas, anything that subtracts ranks — is about the accessor rather than about the cardinal,
 and `TauCeti.topologicalGeneratorRankNat_eq_topologicalGeneratorRank` is what ties the two
-together. The accessor needs no compactness and no convergence condition, since a finite set
-converges to `1` in any topological group; compactness enters only through the comparison with
-the cardinal rank.
+together. A comparison of the cardinal ranks of two groups is stated in `Cardinal.lift` form, so
+that the groups need not share a universe, with the same-universe form derived from it. The
+accessor needs no compactness and no convergence condition, since a finite set converges to `1`
+in any topological group; compactness enters only through the comparison with the cardinal
+rank.
 
 ## Main definitions
 
@@ -44,12 +46,13 @@ the cardinal rank.
 
 * `TauCeti.topologicalGeneratorRank_le`: a topological generating set converging to `1` bounds the
   rank by its cardinality.
+* `TauCeti.lift_topologicalGeneratorRank_congr`, `TauCeti.topologicalGeneratorRank_congr`: the
+  rank is invariant under a topological group isomorphism, with no compactness needed.
 * `TauCeti.exists_convergesToOne_mk_eq_topologicalGeneratorRank`: in a profinite group the
   infimum is attained.
-* `TauCeti.topologicalGeneratorRank_le_of_surjective`,
+* `TauCeti.lift_topologicalGeneratorRank_le_of_surjective`,
+  `TauCeti.topologicalGeneratorRank_le_of_surjective`,
   `TauCeti.topologicalGeneratorRank_quotient_le`: a continuous surjection does not raise the rank.
-* `TauCeti.topologicalGeneratorRank_congr`: the rank is invariant under a topological group
-  isomorphism.
 * `TauCeti.topologicalGeneratorRank_lt_aleph0_iff`: the rank is finite exactly under topological
   finite generation.
 * `TauCeti.topologicalGeneratorRank_eq_zero_iff`: the rank vanishes exactly on the trivial group.
@@ -124,9 +127,53 @@ theorem topologicalGeneratorRank_le {s : Set G} (hs : ConvergesToOne s)
     (⟨s, hs, hgen⟩ : {t : Set G // ConvergesToOne t ∧
       (Subgroup.closure t).topologicalClosure = ⊤})
 
+section Congr
+
+variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+
+/-- Topologically isomorphic groups have the same topological generator rank: an isomorphism
+carries the generating sets converging to `1` of one group bijectively onto those of the other, so
+the two infima are taken over the same cardinals. No compactness is needed, the empty case
+included: if neither group has such a generating set both ranks are the empty infimum `0`. The two
+groups need not share a universe, so the comparison is between `Cardinal.lift`s;
+`TauCeti.topologicalGeneratorRank_congr` is the same-universe form. -/
+theorem lift_topologicalGeneratorRank_congr (e : G ≃ₜ* H) :
+    Cardinal.lift.{v} (topologicalGeneratorRank G)
+      = Cardinal.lift.{u} (topologicalGeneratorRank H) := by
+  have hrange : Set.range (fun s : {s : Set G // ConvergesToOne s ∧
+        (Subgroup.closure s).topologicalClosure = ⊤} ↦ Cardinal.lift.{v} #(s.1 : Set G))
+      = Set.range (fun t : {t : Set H // ConvergesToOne t ∧
+        (Subgroup.closure t).topologicalClosure = ⊤} ↦ Cardinal.lift.{u} #(t.1 : Set H)) := by
+    refine Set.Subset.antisymm ?_ ?_
+    · rintro _ ⟨⟨s, hs, hgen⟩, rfl⟩
+      refine ⟨⟨(e.toMulEquiv.toMonoidHom : G →* H) '' s,
+        hs.image (e.toMulEquiv.toMonoidHom : G →* H) e.continuous,
+        topologicalClosure_closure_image_eq_top hgen e.continuous e.surjective.denseRange⟩, ?_⟩
+      exact Cardinal.mk_congr_lift
+        (Equiv.Set.image (e.toMulEquiv.toMonoidHom : G → H) s e.injective).symm
+    · rintro _ ⟨⟨t, ht, hgen⟩, rfl⟩
+      refine ⟨⟨(e.symm.toMulEquiv.toMonoidHom : H →* G) '' t,
+        ht.image (e.symm.toMulEquiv.toMonoidHom : H →* G) e.symm.continuous,
+        topologicalClosure_closure_image_eq_top hgen e.symm.continuous
+          e.symm.surjective.denseRange⟩, ?_⟩
+      exact Cardinal.mk_congr_lift
+        (Equiv.Set.image (e.symm.toMulEquiv.toMonoidHom : H → G) t e.symm.injective).symm
+  rw [topologicalGeneratorRank_def, topologicalGeneratorRank_def, Cardinal.lift_iInf,
+    Cardinal.lift_iInf]
+  exact congrArg sInf hrange
+
+/-- Topologically isomorphic groups in the same universe have the same topological generator
+rank. -/
+theorem topologicalGeneratorRank_congr {H : Type u} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (e : G ≃ₜ* H) :
+    topologicalGeneratorRank G = topologicalGeneratorRank H := by
+  simpa using lift_topologicalGeneratorRank_congr e
+
+end Congr
+
 section Profinite
 
-variable {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
 variable (G) in
 /-- In a profinite group the infimum defining the topological generator rank is **attained**:
@@ -148,20 +195,32 @@ theorem exists_convergesToOne_mk_eq_topologicalGeneratorRank [CompactSpace G]
   exact hs
 
 /-- A continuous surjective homomorphism cannot raise the topological generator rank: the image
-of a topological generating set converging to `1` is one again. Compactness of the source is what
-supplies the generating set that is pushed forward: a group admitting no set converging to `1` at
-all has rank `0` by the empty infimum, while its quotients can have positive rank, so the
-hypothesis is not decoration. -/
-theorem topologicalGeneratorRank_le_of_surjective [CompactSpace G] [TotallyDisconnectedSpace G]
-    (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
-    topologicalGeneratorRank H ≤ topologicalGeneratorRank G := by
+of a topological generating set converging to `1` is one again. The source and the target need
+not share a universe, so the comparison is between `Cardinal.lift`s;
+`TauCeti.topologicalGeneratorRank_le_of_surjective` is the same-universe form. Compactness of the
+source is what supplies the generating set that is pushed forward: a group admitting no set
+converging to `1` at all has rank `0` by the empty infimum, while its quotients can have positive
+rank, so the hypothesis is not decoration. -/
+theorem lift_topologicalGeneratorRank_le_of_surjective [CompactSpace G]
+    [TotallyDisconnectedSpace G] (f : G →* H) (hf : Continuous f)
+    (hsurj : Function.Surjective f) :
+    Cardinal.lift.{u} (topologicalGeneratorRank H)
+      ≤ Cardinal.lift.{v} (topologicalGeneratorRank G) := by
   obtain ⟨s, hs, hgen, hcard⟩ := exists_convergesToOne_mk_eq_topologicalGeneratorRank G
-  calc topologicalGeneratorRank H
-      ≤ #((f '' s : Set H)) :=
-        topologicalGeneratorRank_le (hs.image f hf)
-          (topologicalClosure_closure_image_eq_top hgen hf hsurj.denseRange)
-    _ ≤ #(s : Set G) := Cardinal.mk_image_le
-    _ = topologicalGeneratorRank G := hcard
+  calc Cardinal.lift.{u} (topologicalGeneratorRank H)
+      ≤ Cardinal.lift.{u} #((f '' s : Set H)) :=
+        Cardinal.lift_le.mpr (topologicalGeneratorRank_le (hs.image f hf)
+          (topologicalClosure_closure_image_eq_top hgen hf hsurj.denseRange))
+    _ ≤ Cardinal.lift.{v} #(s : Set G) := Cardinal.mk_image_le_lift
+    _ = Cardinal.lift.{v} (topologicalGeneratorRank G) := by rw [hcard]
+
+/-- A continuous surjective homomorphism onto a group in the same universe cannot raise the
+topological generator rank. -/
+theorem topologicalGeneratorRank_le_of_surjective {H : Type u} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] [CompactSpace G] [TotallyDisconnectedSpace G] (f : G →* H)
+    (hf : Continuous f) (hsurj : Function.Surjective f) :
+    topologicalGeneratorRank H ≤ topologicalGeneratorRank G := by
+  simpa using lift_topologicalGeneratorRank_le_of_surjective f hf hsurj
 
 /-- Passing to a quotient cannot raise the topological generator rank. -/
 theorem topologicalGeneratorRank_quotient_le [CompactSpace G] [TotallyDisconnectedSpace G]
@@ -169,17 +228,6 @@ theorem topologicalGeneratorRank_quotient_le [CompactSpace G] [TotallyDisconnect
     topologicalGeneratorRank (G ⧸ N) ≤ topologicalGeneratorRank G :=
   topologicalGeneratorRank_le_of_surjective (QuotientGroup.mk' N) QuotientGroup.continuous_mk
     (QuotientGroup.mk'_surjective N)
-
-/-- Topologically isomorphic profinite groups have the same topological generator rank. -/
-theorem topologicalGeneratorRank_congr [CompactSpace G] [TotallyDisconnectedSpace G]
-    (e : G ≃ₜ* H) : topologicalGeneratorRank G = topologicalGeneratorRank H := by
-  have : CompactSpace H := e.toHomeomorph.compactSpace
-  have : TotallyDisconnectedSpace H := e.toHomeomorph.totallyDisconnectedSpace
-  apply le_antisymm
-  · exact topologicalGeneratorRank_le_of_surjective e.symm.toMulEquiv.toMonoidHom
-      e.symm.continuous e.symm.surjective
-  · exact topologicalGeneratorRank_le_of_surjective e.toMulEquiv.toMonoidHom
-      e.continuous e.surjective
 
 /-- The topological generator rank of a profinite group is finite exactly when the group is
 topologically finitely generated. -/
