@@ -46,7 +46,8 @@ and supported in `lam - Q⁺` already pins the element down completely once its 
 the Weyl numerator `N(lam)` therefore comes down to the statement that no dominant integral weight
 other than `lam` carries a nonzero coefficient, which is
 `TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_zero_of_isDominantIntegral_of_ne` in
-`TauCeti/Algebra/Lie/HighestWeight/WeylCharacter.lean`, together with the same facts about `N(lam)`.
+`TauCeti/Algebra/Lie/HighestWeight/Weyl/Character.lean`, together with the same facts about
+`N(lam)`.
 
 The determination is read off from
 `TauCeti.IsDotAlternating.eq_of_forall_coeff_dominantIntegral_eq` rather than from the chamber

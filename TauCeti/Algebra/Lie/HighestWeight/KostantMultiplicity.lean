@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.HighestWeight.WeylCharacter
+public import TauCeti.Algebra.Lie.HighestWeight.Weyl.Character
 public import TauCeti.LinearAlgebra.RootSystem.KostantPartition.Multiplicity
 
 /-!
