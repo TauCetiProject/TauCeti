@@ -10,7 +10,9 @@ public import Mathlib.MeasureTheory.Group.Measure
 /-!
 # Measures invariant under addition
 
-This file records measure formulas for finite families of disjoint additive translates.
+This file records measure formulas for finite families of disjoint additive translates.  In
+lattice-point counting, the formula turns disjoint translates of a fundamental-domain cell into
+measure bounds that can be compared with the number of cells.
 
 ## Main results
 

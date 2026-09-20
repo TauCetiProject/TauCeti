@@ -34,7 +34,7 @@ namespace AddSubgroup
 variable {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
 
 /-- A discrete additive subgroup meets a bounded set in a finite set: it is closed and discrete,
-so the intersection is both discrete and compact. -/
+and the bounded set is contained in its compact closure. -/
 theorem finite_inter (L : AddSubgroup E) [DiscreteTopology L] {s : Set E} (hs : IsBounded s) :
     (s ∩ (L : Set E)).Finite :=
   Metric.finite_isBounded_inter_isClosed
