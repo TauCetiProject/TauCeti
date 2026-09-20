@@ -17,13 +17,20 @@ import Mathlib.Tactic.Field
 A change of variables `D : VariableChange K` carrying one integral Weierstrass model to another
 need not be integral itself: its scaling factor `D.u` is a unit of `K`, and `D.r`, `D.s`, `D.t` are
 elements of `K`. This file shows that when `R` is integrally closed in `K`, as soon as `D.u` comes
-from a unit of `R` the rest follows — `D` is the base change of a `VariableChange R`.
+from a unit of `R` the rest follows — `D` is the base change of a `VariableChange R`. Two further
+facts about integral models sit beside it: over a domain with fraction field `K` every equation
+has an integral model, obtained by clearing a common denominator of the coefficients, and
+integrality is inherited by a larger ring of a tower.
 
 ## Main results
 
 * `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`: for `R` integrally closed in
   `K` (`IsIntegrallyClosedIn R K`), if `D • W₁ = W₂` with `W₁` and `W₂` integral over `R` and `D.u`
   the image of a unit of `R`, then `D = C₀.baseChange K` for some `C₀ : VariableChange R`.
+* `WeierstrassCurve.exists_smul_isIntegral`: every equation over `K` has an integral model over a
+  domain `R` with fraction field `K`.
+* `WeierstrassCurve.IsIntegral.of_isScalarTower`: integrality passes to a larger ring of the
+  tower.
 
 The integral-closedness hypothesis is what the proof actually consumes. A discrete valuation ring
 with its fraction field is the intended application and satisfies it through
@@ -61,10 +68,11 @@ the file is named for them.
 ⚠ *mathlib-track*. Statements about Mathlib's own `IsIntegral` for Weierstrass models and
 `VariableChange.baseChange`, with no Tau Ceti definitions involved.
 
-Ported from FLT, https://github.com/ImperialCollegeLondon/FLT
+The descent is ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 @ `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0` (Apache-2.0), file
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Reduction.lean`, declaration
-`WeierstrassCurve.exists_variableChange_baseChange_eq_of_smul_eq`, by Kevin Buzzard. The source
+`WeierstrassCurve.exists_variableChange_baseChange_eq_of_smul_eq`, by Kevin Buzzard;
+`exists_smul_isIntegral` and `IsIntegral.of_isScalarTower` are not from that source. The source
 commit is FLT PR #1088, "Quadratic twist to split multiplicative reduction". The mathematics is
 unchanged: the same three polynomials, the same `linear_combination` certificates. The single
 66-line proof is split into the three integrality arguments plus their assembly, so that no
@@ -183,6 +191,45 @@ theorem exists_baseChange_eq_of_smul_eq {W₁ W₂ : WeierstrassCurve K}
 end Descent
 
 end VariableChange
+
+/-- **Every Weierstrass equation over the fraction field of a domain `R` has an integral model
+over `R`.** The change of variables `(u, 0, 0, 0)` multiplies `aᵢ` by `u⁻ⁱ`, so a single common
+denominator of the five coefficients clears all of them at once. Mathlib's `exists_isIntegral`
+proves the same over a valuation ring, where one coefficient dominates the others; over an
+arbitrary domain the denominators are cleared together instead. -/
+theorem exists_smul_isIntegral (R : Type*) [CommRing R] [IsDomain R] {K : Type*} [Field K]
+    [Algebra R K] [IsFractionRing R K] (W : WeierstrassCurve K) :
+    ∃ C : VariableChange K, IsIntegral R (C • W) := by
+  obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R)
+    ![W.a₁, W.a₂, W.a₃, W.a₄, W.a₆]
+  have hb₀ : algebraMap R K (b : R) ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors b.2
+  -- One denominator suffices for every power: `bⁿ⁺¹ aᵢ = bⁿ · (b aᵢ)`.
+  have key : ∀ (i : Fin 5) (n : ℕ), IsLocalization.IsInteger R
+      (algebraMap R K (b : R) ^ (n + 1) * ![W.a₁, W.a₂, W.a₃, W.a₄, W.a₆] i) := by
+    intro i n
+    have hi := hb i
+    rw [Algebra.smul_def] at hi
+    rw [pow_succ, mul_assoc]
+    exact IsLocalization.isInteger_mul ⟨(b : R) ^ n, by rw [map_pow]⟩ hi
+  refine ⟨⟨(Units.mk0 _ hb₀)⁻¹, 0, 0, 0⟩, isIntegral_of_exists_lift R ?_ ?_ ?_ ?_ ?_⟩
+  · simpa [IsLocalization.IsInteger, variableChange_a₁] using key 0 0
+  · simpa [IsLocalization.IsInteger, variableChange_a₂] using key 1 1
+  · simpa [IsLocalization.IsInteger, variableChange_a₃] using key 2 2
+  · simpa [IsLocalization.IsInteger, variableChange_a₄] using key 3 3
+  · simpa [IsLocalization.IsInteger, variableChange_a₆] using key 4 5
+
+/-- **An integral model stays integral over a larger ring of the tower.** If `W` has coefficients
+in `R` and `R` maps to `S` compatibly with their maps to `K`, then `W` has coefficients in `S`:
+the integral model over `R` is pushed forward along `algebraMap R S`. The Dedekind-domain use is
+`S` a localisation of `R` inside `K`, where it turns integrality over the whole ring into
+integrality at each prime. -/
+theorem IsIntegral.of_isScalarTower {R S K : Type*} [CommRing R] [CommRing S] [Field K]
+    [Algebra R K] [Algebra R S] [Algebra S K] [IsScalarTower R S K] (W : WeierstrassCurve K)
+    [IsIntegral R W] : IsIntegral S W :=
+  ⟨(integralModel R W).map (algebraMap R S), by
+    rw [baseChange, map_map, ← IsScalarTower.algebraMap_eq, ← baseChange,
+      baseChange_integralModel_eq R W]⟩
 
 end WeierstrassCurve
 
