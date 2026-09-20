@@ -70,15 +70,12 @@ private lemma cayley_mem_ball {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlan
 
 private lemma inverseCayley_mem_upperHalfPlane {w : ℂ} (hw : w ∈ ball (0 : ℂ) 1) :
     I * (1 + w) / (1 - w) ∈ UpperHalfPlane.upperHalfPlaneSet := by
-  let u : UnitDisc := ⟨w, (Subsemigroup.mem_unitBall ℂ).2 (mem_ball_zero_iff.mp hw)⟩
+  let u : UnitDisc := Complex.UnitDisc.mk w (mem_ball_zero_iff.mp hw)
   let i : UpperHalfPlane := ⟨I, by simp⟩
   have heq : I * (1 + w) / (1 - w) =
       ((UpperHalfPlane.discCoordinateHomeomorph i).symm u : ℂ) := by
     rw [UpperHalfPlane.coe_discCoordinateHomeomorph_symm_apply]
-    change I * (1 + w) / (1 - w) =
-      (I - conj I * (u : ℂ)) / (1 - (u : ℂ))
-    rw [show (u : ℂ) = w from rfl]
-    simp only [conj_I, neg_mul, sub_neg_eq_add]
+    simp only [i, u, Complex.UnitDisc.coe_mk, conj_I, neg_mul, sub_neg_eq_add]
     ring
   rw [heq]
   exact ((UpperHalfPlane.discCoordinateHomeomorph i).symm u).coe_im_pos
@@ -125,8 +122,7 @@ theorem exists_isFiniteMeasure_eq_I_mul_herglotzTransform_cayley_add {F : ℂ �
   rw [hc] at h
   calc
     F z = I * (-I * F z) := by
-      rw [show I * (-I * F z) = -(I * I) * F z by ring, I_mul_I]
-      simp
+      rw [← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul]
     _ = I * (μ.herglotzTransform ((z - I) / (z + I)) + ((-(F I).re : ℝ) : ℂ) * I) :=
       congrArg (I * ·) h
     _ = I * μ.herglotzTransform ((z - I) / (z + I)) + (F I).re := by
