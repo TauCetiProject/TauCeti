@@ -81,10 +81,12 @@ of the number of coordinates.
   `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinPlus` and
   `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus` count them, `2 ^ (l - 1)` each,
   the `S⁻` count on a nonempty set of coordinates.
-* `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`: **erasing an occupied coordinate
+* `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus` and
+  `TauCeti.basis_mem_spinMinus_iff_basis_erase_mem_spinPlus`: **erasing an occupied coordinate
   flips the summand**, a basis vector lying in `S⁺` exactly when the one obtained from it by
-  erasing one of its coordinates lies in `S⁻`. Specialized to `ι = Fin n` at `s = Finset.univ`
-  and `i` the final coordinate `⟨n - 1, _⟩`, these are the two type-`Dₗ` fork vectors.
+  erasing one of its coordinates lies in `S⁻`, and in `S⁻` exactly when that one lies in `S⁺`.
+  Specialized to `ι = Fin n` at `s = Finset.univ` and `i` the final coordinate `⟨n - 1, _⟩`,
+  these are the two type-`Dₗ` fork vectors.
 
 ## References
 
@@ -127,6 +129,16 @@ theorem basis_mem_spinMinus_iff (s : Finset ι) :
   rw [mem_spinMinus, b.exteriorAlgebra_mem_evenOdd_iff s 1, ZMod.natCast_eq_one_iff_odd]
 
 omit [Nontrivial K] in
+/-- Over a trivial ring every spinor is `0`, so it lies in every submodule of the spinor module.
+This is the degenerate case of the two parity flips below, which is why neither of them needs a
+nontriviality hypothesis. -/
+private theorem mem_of_subsingleton [Subsingleton K] (x : ExteriorAlgebra K P.W)
+    (N : Submodule K (ExteriorAlgebra K P.W)) : x ∈ N := by
+  have : Subsingleton (ExteriorAlgebra K P.W) := Module.subsingleton K _
+  rw [Subsingleton.elim x 0]
+  exact N.zero_mem
+
+omit [Nontrivial K] in
 /-- **Erasing an occupied coordinate flips the summand.** A basis vector lies in `S⁺` exactly when
 the vector obtained from it by erasing one of its coordinates lies in `S⁻`, erasing a coordinate
 changing the parity of the number of coordinates. This is the equivalence of the two memberships
@@ -140,13 +152,22 @@ over any other index type, the statement is not about that fork. -/
 theorem basis_mem_spinPlus_iff_basis_erase_mem_spinMinus {s : Finset ι} {i : ι} (hi : i ∈ s) :
     b.ExteriorAlgebra s ∈ spinPlus Q P ↔ b.ExteriorAlgebra (s.erase i) ∈ spinMinus Q P := by
   rcases subsingleton_or_nontrivial K with _ | _
-  -- Over a trivial ring every spinor is `0`, so both sides hold.
-  · have : Subsingleton (ExteriorAlgebra K P.W) := Module.subsingleton K _
-    have hmem : ∀ (x : ExteriorAlgebra K P.W) (N : Submodule K (ExteriorAlgebra K P.W)), x ∈ N :=
-      fun x N => by rw [Subsingleton.elim x 0]; exact N.zero_mem
-    exact ⟨fun _ => hmem _ _, fun _ => hmem _ _⟩
+  · exact ⟨fun _ => mem_of_subsingleton P _ _, fun _ => mem_of_subsingleton P _ _⟩
   have hpos : 1 ≤ s.card := Finset.card_pos.mpr ⟨i, hi⟩
   rw [basis_mem_spinPlus_iff, basis_mem_spinMinus_iff, Finset.card_erase_of_mem hi,
+    Nat.even_iff, Nat.odd_iff]
+  omega
+
+omit [Nontrivial K] in
+/-- **Erasing an occupied coordinate flips the summand**, the other half of
+`TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`: a basis vector lies in `S⁻` exactly
+when the vector obtained from it by erasing one of its coordinates lies in `S⁺`. -/
+theorem basis_mem_spinMinus_iff_basis_erase_mem_spinPlus {s : Finset ι} {i : ι} (hi : i ∈ s) :
+    b.ExteriorAlgebra s ∈ spinMinus Q P ↔ b.ExteriorAlgebra (s.erase i) ∈ spinPlus Q P := by
+  rcases subsingleton_or_nontrivial K with _ | _
+  · exact ⟨fun _ => mem_of_subsingleton P _ _, fun _ => mem_of_subsingleton P _ _⟩
+  have hpos : 1 ≤ s.card := Finset.card_pos.mpr ⟨i, hi⟩
+  rw [basis_mem_spinMinus_iff, basis_mem_spinPlus_iff, Finset.card_erase_of_mem hi,
     Nat.even_iff, Nat.odd_iff]
   omega
 
