@@ -64,6 +64,10 @@ theorem mem_iff {f : G → k} :
     f ∈ ClassFunction k G ↔ ∀ g h : G, f (h * g * h⁻¹) = f g :=
   Iff.rfl
 
+/-- On a commutative group every function is a class function: conjugation is the identity. -/
+theorem mem_of_isMulCommutative [IsMulCommutative G] (f : G → k) : f ∈ ClassFunction k G :=
+  mem_iff.2 fun g h => by rw [IsMulCommutative.is_comm.comm h g, mul_inv_cancel_right]
+
 /-- Class functions take the same value on conjugate elements. -/
 theorem eq_of_isConj (f : ClassFunction k G) {g h : G} (hgh : IsConj g h) :
     f.1 g = f.1 h := by

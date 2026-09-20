@@ -48,6 +48,9 @@ representation of a group, from the eigenvalues alone, with no invariant inner p
   algebraically closed field.
 * `TauCeti.Representation.isIntegral_char`: **character values are algebraic integers**, over an
   arbitrary field. The bundled `FDRep` form is Mathlib's `FDRep.isIntegral_character`.
+* `Representation.char_mem_of_forall_pow_eq_one_mem`: over an algebraically closed field,
+  a character value at `g` with `g ^ n = 1` lies in every subring containing the `n`-th roots of
+  unity.
 * `TauCeti.Representation.exists_char_eq_intCast` and `FDRep.exists_char_eq_intCast`:
   **a rational character is integer-valued**.
 * `FDRep.intCharacter`: the resulting `ℤ`-valued character of a rational representation of
@@ -141,6 +144,17 @@ theorem isIntegral_char (ρ : Representation k G V) {g : G} {n : ℕ}
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
   exact End.isIntegral_trace_of_pow_eq_one hn hf
 
+/-- **Character values lie in every subring containing the relevant roots of unity.** Over an
+algebraically closed field, if `g ^ n = 1` and the subring `A` of `k` contains every `n`-th root of
+unity, then `ρ.character g ∈ A`, being a sum of `n`-th roots of unity. -/
+theorem _root_.Representation.char_mem_of_forall_pow_eq_one_mem [IsAlgClosed k]
+    (ρ : Representation k G V) {g : G}
+    {n : ℕ} (hg : g ^ n = 1) {A : Subring k} (hA : ∀ x : k, x ^ n = 1 → x ∈ A) :
+    ρ.character g ∈ A := by
+  obtain ⟨s, -, hroot, hsum⟩ := exists_multiset_rootsOfUnity_char_eq_sum ρ hg
+  rw [hsum]
+  exact A.multiset_sum_mem s fun μ hμ => hA μ (hroot μ hμ)
+
 end Field
 
 section Rat
@@ -181,12 +195,12 @@ unity and `g ^ n = 1`, then `ρ.character g` lies in the subring `ℤ[ζ]` of `�
 theorem char_mem_adjoin_of_isPrimitiveRoot (ρ : Representation ℂ G V) {g : G} {ζ : ℂ} {n : ℕ}
     [NeZero n] (hζ : IsPrimitiveRoot ζ n) (hg : g ^ n = 1) :
     ρ.character g ∈ Algebra.adjoin ℤ ({ζ} : Set ℂ) := by
-  obtain ⟨s, -, hroot, hsum⟩ := exists_multiset_rootsOfUnity_char_eq_sum ρ hg
   have hmem : ζ ∈ Algebra.adjoin ℤ ({ζ} : Set ℂ) := Algebra.subset_adjoin rfl
-  rw [hsum]
-  refine Subalgebra.multiset_sum_mem (Algebra.adjoin ℤ ({ζ} : Set ℂ)) fun μ hμ => ?_
-  obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one (hroot μ hμ)
-  exact Subalgebra.pow_mem _ hmem i
+  have hA : ∀ μ : ℂ, μ ^ n = 1 → μ ∈ (Algebra.adjoin ℤ ({ζ} : Set ℂ)).toSubring := by
+    intro μ hμ
+    obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hμ
+    exact Subalgebra.mem_toSubring.2 (Subalgebra.pow_mem _ hmem i)
+  exact Subalgebra.mem_toSubring.1 (Representation.char_mem_of_forall_pow_eq_one_mem ρ hg hA)
 
 /-- Over `ℂ` a character value at an element of finite order is bounded in absolute value by the
 degree of the representation, since it is a sum of `finrank ℂ V` many roots of unity. -/

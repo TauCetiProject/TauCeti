@@ -72,31 +72,15 @@ end ClassFunction
 
 variable {k : Type u} {G : Type v} [Field k] [Group G]
 
-/-- Restriction of functions along the inclusion of a subgroup, as an additive map.  It is the
-vehicle for propagating a property through the additive generation of the virtual-character
-lattice, and is not part of the interface: `TauCeti.ClassFunction.comap` is the class-function
-form, and the restriction of a plain function is written `fun s : S => f s`. -/
-private def compSubtypeAddHom (S : Subgroup G) : (G → k) →+ (S → k) where
-  toFun f s := f s
-  map_zero' := rfl
-  map_add' _ _ := rfl
-
-/-- **Restriction preserves virtual characters.**  The restriction of a character is the character
-of the restricted representation (`TauCeti.character_resFDRep`), and restriction is additive, so
-the property propagates through the additive generation of the lattice.
+/-- **Restriction preserves virtual characters.**  It is the pullback along the inclusion of the
+subgroup, `TauCeti.comp_mem_virtualCharacters`; the restriction of a plain function is written
+`fun s : S => f s`, and `TauCeti.ClassFunction.comap` is the class-function form.
 
 This is the additive half of the statement that restriction `R(G) → R(S)` is a ring homomorphism;
 its multiplicativity is the pointwise `TauCeti.mul_mem_virtualCharacters` on each side. -/
 theorem comp_subtype_mem_virtualCharacters (S : Subgroup G) {f : G → k}
-    (hf : f ∈ virtualCharacters k G) : (fun s : S => f s) ∈ virtualCharacters k S := by
-  have hle : virtualCharacters k G ≤ (virtualCharacters k S).comap (compSubtypeAddHom S) := by
-    refine virtualCharacters_le fun V => ?_
-    have h : compSubtypeAddHom S V.character = (resFDRep S V).character :=
-      funext fun s => (character_resFDRep S V s).symm
-    rw [AddSubgroup.mem_comap, h]
-    exact character_mem_virtualCharacters _
-  have hmem := hle hf
-  rwa [AddSubgroup.mem_comap] at hmem
+    (hf : f ∈ virtualCharacters k G) : (fun s : S => f s) ∈ virtualCharacters k S :=
+  comp_mem_virtualCharacters S.subtype hf
 
 /-- **Induction preserves virtual characters.**  A character of the subgroup induces to a character
 (`TauCeti.ClassFunction.ind_ofFDRep_mem_virtualCharacters`), and induction is additive, so the

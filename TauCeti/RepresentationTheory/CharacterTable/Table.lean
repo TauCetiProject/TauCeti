@@ -55,6 +55,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.card_conjClass_mul_sum_characterTable_mul_characterTable_inv` and
   `TauCeti.sum_characterTable_mul_conj`: **second (column) orthogonality**, over `k` and in its
   Hermitian form over `ℂ`.
+* `TauCeti.irreducibleCharacter_apply_mem_of_forall_pow_eq_one_mem`: the entries lie in every
+  subring containing the `|G|`-th roots of unity.
 * `TauCeti.characterTable_one`: the identity-class column of the table lists the degrees, which are
   positive (`TauCeti.characterDegree_pos`) and have squares summing to `|G|`
   (`TauCeti.sum_characterDegree_sq_eq_card`); in characteristic zero they moreover divide `|G|`
@@ -233,6 +235,14 @@ theorem irreducibleCharacter_one (i : Fin (Nat.card (ConjClasses G))) :
     irreducibleCharacter k i 1 = (characterDegree k i : k) := by
   rw [← character_irreducibleRepresentation k i, _root_.Representation.char_one]
   simp
+
+/-- **The values of the irreducible characters lie in every subring of `k` containing the
+`|G|`-th roots of unity**, each value being a sum of such roots. -/
+theorem irreducibleCharacter_apply_mem_of_forall_pow_eq_one_mem {A : Subring k}
+    (hA : ∀ x : k, x ^ Nat.card G = 1 → x ∈ A) (i : Fin (Nat.card (ConjClasses G))) (g : G) :
+    irreducibleCharacter k i g ∈ A := by
+  rw [← character_irreducibleRepresentation k i]
+  exact Representation.char_mem_of_forall_pow_eq_one_mem _ (pow_card_eq_one' (x := g)) hA
 
 /-- **The degree of an irreducible character is positive**: an irreducible representation is
 nonzero, so the space affording the character has positive dimension. -/

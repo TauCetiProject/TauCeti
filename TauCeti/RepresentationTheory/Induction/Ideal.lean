@@ -109,6 +109,20 @@ theorem indClassFun_mem_indVirtualCharacters {S : Subgroup G} (hS : P S) {ψ : S
     (hψ : ψ ∈ virtualCharacters k S) : indClassFun S ψ ∈ indVirtualCharacters k G P :=
   AddSubgroup.subset_closure ⟨S, hS, ψ, hψ, rfl⟩
 
+/-- **Induction preserves `A`-combinations of virtual characters**, for any subring `A` of `k`:
+an `A`-combination of virtual characters of a subgroup of the family induces to an
+`A`-combination of induced virtual characters, induction being additive and `k`-homogeneous. -/
+theorem indClassFun_mem_span_indVirtualCharacters (A : Subring k) {S : Subgroup G} (hS : P S)
+    {ψ : S → k} (hψ : ψ ∈ Submodule.span A (virtualCharacters k S : Set (S → k))) :
+    indClassFun S ψ ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k)) := by
+  induction hψ using Submodule.span_induction with
+  | mem x hx => exact Submodule.subset_span (indClassFun_mem_indVirtualCharacters hS hx)
+  | zero => rw [indClassFun_zero]; exact Submodule.zero_mem _
+  | add x y _ _ hx hy => rw [indClassFun_add]; exact Submodule.add_mem _ hx hy
+  | smul a x _ hx =>
+    rw [Subring.smul_def, indClassFun_smul, ← Subring.smul_def]
+    exact Submodule.smul_mem _ a hx
+
 /-- The universal property of `TauCeti.ClassFunction.indVirtualCharacters`: it is contained in an
 additive subgroup exactly when every induced virtual character of the family is. -/
 theorem indVirtualCharacters_le_iff {H : AddSubgroup (G → k)} :

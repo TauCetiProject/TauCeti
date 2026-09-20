@@ -57,7 +57,9 @@ values modulo `p` are what an integral combination is assembled from.
   relative index of `H` in `C_G(s)`.
 * `TauCeti.pSectionCosetCard_modEq`: on the `p`-section of `s` the count is that relative index
   modulo `p`.
-* `TauCeti.not_dvd_pSectionCosetCard`: hence the count is prime to `p` on the whole `p`-section.
+* `TauCeti.not_dvd_pSectionCosetCard`: hence the count is prime to `p` on the whole `p`-section,
+  and by conjugation invariance (`TauCeti.pSectionCosetCard_conj`) on every conjugate of it,
+  `TauCeti.not_dvd_pSectionCosetCard_of_isConj`.
 
 ## References
 
@@ -127,6 +129,11 @@ by `TauCeti.indPSectionIndicator_eq_pSectionCosetCard`. -/
 noncomputable def indPSectionIndicator (k : Type u) [Semiring k] [Finite G] (s : G)
     (P : Sylow p (centralizer ({s} : Set G))) : G → k :=
   indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P)
+
+/-- The induced `p`-section indicator is the induction of the `p`-section indicator. -/
+theorem indPSectionIndicator_def [Finite G] :
+    indPSectionIndicator k s P = indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P) :=
+  (rfl)
 
 /-- The induced `p`-section indicator is a class function of `G`. -/
 theorem indPSectionIndicator_mem_classFunction [Finite G] :
@@ -364,6 +371,22 @@ theorem not_dvd_pSectionCosetCard [Finite G] [Fact p.Prime] {x : G}
   rw [← pSectionCosetCard_self hs]
   exact Nat.modEq_zero_iff_dvd.1
     ((pSectionCosetCard_modEq hx).symm.trans (Nat.modEq_zero_iff_dvd.2 hdvd))
+
+/-- **The count is a class function of `x`**: it is the induced `p`-section indicator read with
+natural-number coefficients, and induced class functions are class functions. -/
+theorem pSectionCosetCard_conj [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) (c x : G) :
+    pSectionCosetCard s P (c * x * c⁻¹) = pSectionCosetCard s P x := by
+  have h := ClassFunction.mem_iff.1
+    (indPSectionIndicator_mem_classFunction (k := ℕ) (s := s) (P := P)) x c
+  simpa only [indPSectionIndicator_eq_pSectionCosetCard hs, Nat.cast_id] using h
+
+/-- **The count is prime to `p` on every conjugate of the `p`-section of `s`**: the class-function
+form of `TauCeti.not_dvd_pSectionCosetCard`. -/
+theorem not_dvd_pSectionCosetCard_of_isConj [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
+    {x : G} (hx : IsConj (pFreePart p x) s) : ¬ p ∣ pSectionCosetCard s P x := by
+  obtain ⟨c, hc⟩ := isConj_iff.1 hx
+  rw [← pSectionCosetCard_conj hs c x]
+  exact not_dvd_pSectionCosetCard (by rw [pFreePart_conj, hc])
 
 /-- **The value of the induced `p`-section indicator at `s`.** -/
 @[simp]
