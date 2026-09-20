@@ -27,10 +27,9 @@ results act on a space `M` carrying a zero and a zero-compatible `A`-action — 
 so `M` is *not* assumed to be a module.
 
 How much scalar multiplication is needed splits the file in two. The two pointwise absorption
-results ask only for `[SMulWithZero A M]`: their proof evaluates the action at the single scalar
-`0`, so `zero_smul` is the whole of what they use and no action law enters. The covering theorem
-dilates by `uₙ⁻¹`, which means the *units* of `A` must act on `M`; that is
-`[MulActionWithZero A M]`. Both are weaker than a module structure.
+results ask only for `[SMulWithZero A M]` -- no action laws. The covering theorem dilates by
+`uₙ⁻¹`, which means the *units* of `A` must act on `M`; that is `[MulActionWithZero A M]`. Both are
+weaker than a module structure.
 
 That is the form Henkel's theorem needs, since his Baire argument covers the *domain* of the map
 rather than the base ring; taking `M = A` recovers the ring statements. The bridge to Huber
@@ -103,8 +102,7 @@ include hu
 
 /-- **Absorption.** Along a zero sequence of units in `A`, every element of a space `M` carrying a
 zero-compatible scalar multiplication by `A` is carried into every neighbourhood of zero by some
-term of the sequence. `[SMulWithZero A M]` is all this needs: the proof evaluates the action at
-the single scalar `0`, so no action law enters.
+term of the sequence. `[SMulWithZero A M]` is all this needs -- no action laws.
 
 Stated for an arbitrary such sequence rather than a chosen one, so a caller holding a concrete
 sequence — the powers of a pseudouniformiser, say — gets the conclusion for *that* sequence.
