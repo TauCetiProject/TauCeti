@@ -282,8 +282,9 @@ noncomputable def coneChartAmbientHomeomorph (g : AddGeneratingFamily (dualSemig
           (continuous_apply _).comp (continuous_snd.comp continuous_subtype_val)
         apply Units.continuous_iff.2
         exact ⟨hval, by
-          have hinv := hval.inv₀ (fun z ↦ mem_mixedChartDomain.1 z.2 c)
-          change Continuous (fun z : {z // z ∈ mixedChartDomain k l} ↦ (z.1.2 c)⁻¹) at hinv
+          have hinv : Continuous
+              (fun z : {z // z ∈ mixedChartDomain k l} ↦ (z.1.2 c)⁻¹) :=
+            (hval.inv₀ (fun z ↦ mem_mixedChartDomain.1 z.2 c)).congr fun _ ↦ rfl
           simpa only [Units.val_inv_eq_inv_val, Units.val_mk0] using hinv⟩)
 
 @[simp]
