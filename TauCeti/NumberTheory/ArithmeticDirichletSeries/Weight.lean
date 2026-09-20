@@ -342,6 +342,25 @@ theorem badPrimes_restrict (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
     (χ.restrict S hS).badPrimes = χ.badPrimes ∪ S := by
   simp [restrict]
 
+/-- Restricting away from no prime at all changes nothing. -/
+@[simp]
+theorem restrict_empty (χ : MultiplicativeIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : χ.restrict ∅ hS = χ := by
+  ext I
+  rcases eq_or_ne I ⊥ with rfl | hI
+  · simp
+  · simp [hI]
+
+open scoped Classical in
+/-- **Forbidding one more prime.** Restricting away from `insert 𝔭 S` kills the ideals divisible
+by `𝔭` and agrees with the restriction away from `S` on the others. -/
+theorem restrict_insert_apply (χ : MultiplicativeIdealWeight K)
+    {𝔭 : HeightOneSpectrum (𝓞 K)} (hS : S.Finite) (hS' : (insert 𝔭 S).Finite)
+    (I : Ideal (𝓞 K)) :
+    χ.restrict (insert 𝔭 S) hS' I = if 𝔭.asIdeal ∣ I then 0 else χ.restrict S hS I := by
+  rw [restrict_apply, restrict_apply, Ideal.isPrimeTo_insert_iff]
+  by_cases hdvd : 𝔭.asIdeal ∣ I <;> simp [hdvd]
+
 /-- Restricting the trivial weight away from `S` gives the indicator weight of ideals prime to
 every prime in `S`. -/
 @[simp]
@@ -877,6 +896,12 @@ noncomputable def restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectr
 theorem val_restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
     (hS : S.Finite) : (restrict χ S hS).1 = χ.1.restrict S hS := (rfl)
 
+/-- Restricting a unitary weight away from no prime at all changes nothing. -/
+@[simp]
+theorem restrict_empty (χ : UnitaryIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : restrict χ ∅ hS = χ :=
+  Subtype.ext (by rw [val_restrict, MultiplicativeIdealWeight.restrict_empty])
+
 section Transport
 
 variable {L M : Type*} [Field L] [NumberField L] [Field M] [NumberField M]
@@ -970,6 +995,11 @@ def toIdealArithmeticFunction (χ : UnitaryIdealWeight K) : IdealArithmeticFunct
 @[simp]
 theorem toIdealArithmeticFunction_apply (χ : UnitaryIdealWeight K) (I : (Ideal (𝓞 K))⁰) :
     χ.toIdealArithmeticFunction I = χ.1 I := (rfl)
+
+/-- Defining equation of `TauCeti.UnitaryIdealWeight.toIdealArithmeticFunction`; its body is not
+exposed. -/
+theorem toIdealArithmeticFunction_def (χ : UnitaryIdealWeight K) :
+    χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := (rfl)
 
 /-- **Regrouping absorbs an imaginary norm twist.** For `z.re = 0`, twisting a unitary weight by
 `N(I) ^ (-z)` multiplies its `n`-th norm coefficient by `n ^ (-z)`. -/

@@ -47,6 +47,10 @@ exponent is `1` exactly on the primes themselves, which is `TauCeti.primePowerEx
 prime-power carrier, and `TauCeti.primePowerSummatory_eq_primeSummatory` uses it to read a
 prime-power sum concentrated on the exponent-one part as a sum over primes.
 
+`TauCeti.idealsLE_filter_dvd` identifies the ideals below a cutoff divisible by a fixed nonzero
+ideal `P` with the multiples of `P`, and `TauCeti.idealSummatory_ite_dvd` reads the corresponding
+part of a summatory function at the rescaled cutoff `x / N(P)`.
+
 Two lemmas move a summatory function between the three carriers.
 `TauCeti.idealSummatory_eq_primePowerSummatory` reads an ideal weight vanishing off the prime
 powers as a prime-power weight, and `TauCeti.idealSummatory_eq_sum_range_normFiber` regroups an
@@ -330,6 +334,34 @@ theorem idealsLE_one : idealsLE K 1 = {1} := by
       fun hI ↦ by simp [hI]⟩
   rw [h, normFiber_one]
 
+open Classical in
+/-- **The multiples of a nonzero ideal below a cutoff.** The nonzero integral ideals of absolute
+norm at most `x` divisible by `P` are exactly the products `P * J`, for `J` a nonzero integral
+ideal of absolute norm at most `x / N(P)`. -/
+theorem idealsLE_filter_dvd (P : (Ideal (𝓞 K))⁰) (x : ℝ) :
+    (idealsLE K x).filter (fun I : (Ideal (𝓞 K))⁰ ↦ (P : Ideal (𝓞 K)) ∣ (I : Ideal (𝓞 K))) =
+      (idealsLE K (x / Ideal.absNorm (P : Ideal (𝓞 K)))).image (fun J ↦ P * J) := by
+  have hP : (0 : ℝ) < Ideal.absNorm (P : Ideal (𝓞 K)) := by
+    exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors P
+  ext I
+  simp only [Finset.mem_filter, Finset.mem_image, mem_normLE]
+  constructor
+  · rintro ⟨hle, J, hJ⟩
+    have hJ0 : J ≠ 0 := by
+      rintro rfl
+      exact mem_nonZeroDivisors_iff_ne_zero.mp I.2 (by simpa using hJ)
+    refine ⟨⟨J, mem_nonZeroDivisors_of_ne_zero hJ0⟩, ?_, Subtype.ext hJ.symm⟩
+    rw [le_div_iff₀ hP]
+    calc (Ideal.absNorm J : ℝ) * Ideal.absNorm (P : Ideal (𝓞 K))
+        = (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) := by rw [hJ, map_mul]; push_cast; ring
+      _ ≤ x := hle
+  · rintro ⟨J, hJ, rfl⟩
+    refine ⟨?_, by rw [Submonoid.coe_mul]; exact dvd_mul_right _ _⟩
+    rw [Submonoid.coe_mul, map_mul]
+    rw [le_div_iff₀ hP] at hJ
+    push_cast
+    linarith
+
 /-- Below the cutoff `2` there is no height-one prime to count. -/
 theorem primesLE_eq_empty_of_lt_two {x : ℝ} (hx : x < 2) : primesLE K x = ∅ :=
   normLE_eq_empty_of_lt _ two_le_absNorm_asIdeal_real hx
@@ -451,6 +483,19 @@ theorem idealSummatory_eq_zero_of_lt_one {M : Type*} [AddCommMonoid M]
 theorem idealSummatory_one {M : Type*} [AddCommMonoid M] (w : (Ideal (𝓞 K))⁰ → M) :
     idealSummatory K w 1 = w 1 := by
   rw [idealSummatory_apply, idealsLE_one, Finset.sum_singleton]
+
+open Classical in
+/-- **Restricting an ideal summatory function to the multiples of a nonzero ideal `P`.** Summing a
+weight over the nonzero ideals below `x` divisible by `P` is summing the weight of `P * J` over
+the nonzero ideals `J` below `x / N(P)`, because the absolute norm is multiplicative. -/
+theorem idealSummatory_ite_dvd {M : Type*} [AddCommMonoid M] (P : (Ideal (𝓞 K))⁰)
+    (w : (Ideal (𝓞 K))⁰ → M) (x : ℝ) :
+    idealSummatory K (fun I ↦ if (P : Ideal (𝓞 K)) ∣ (I : Ideal (𝓞 K)) then w I else 0) x =
+      idealSummatory K (fun J ↦ w (P * J)) (x / Ideal.absNorm (P : Ideal (𝓞 K))) := by
+  rw [idealSummatory_apply, ← Finset.sum_filter, idealsLE_filter_dvd, idealSummatory_apply,
+    Finset.sum_image fun a _ b _ h ↦
+      Subtype.ext (mul_left_cancel₀ (mem_nonZeroDivisors_iff_ne_zero.mp P.2)
+        (by simpa using congrArg (fun I : (Ideal (𝓞 K))⁰ ↦ (I : Ideal (𝓞 K))) h))]
 
 open Classical in
 /-- The ideals of absolute norm at most `x` and of absolute norm exactly `n` are the whole norm
