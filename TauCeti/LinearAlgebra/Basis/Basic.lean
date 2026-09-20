@@ -11,8 +11,9 @@ public import Mathlib.LinearAlgebra.Basis.Basic
 # Reading a vector off a one-point coordinate support
 
 A vector whose coordinates in a basis vanish outside a single index is that one coordinate times
-the corresponding basis vector.  This is the converse direction to `Module.Basis.repr_symm_single`,
-packaged for the common situation where a support bound is what one has in hand.
+the corresponding basis vector.  This repackages `Module.Basis.repr_symm_single`, which it runs
+through in the same direction, for the common situation where what one holds is a bound on the
+support rather than an explicit `Finsupp.single`.
 
 Nothing here needs more than a semiring of scalars, since only `Finsupp.support_subset_singleton`
 and the coordinate isomorphism are involved.
