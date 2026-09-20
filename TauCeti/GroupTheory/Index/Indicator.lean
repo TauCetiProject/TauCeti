@@ -76,11 +76,6 @@ theorem _root_.Subgroup.signIndicator_eq_neg_one_iff (H : Subgroup G) {x : G} :
     exact Int.units_ne_iff_eq_neg.mpr (by simp)
   · simp [hx]
 
-/-- The sign indicator takes the identity to `1`. -/
-@[simp]
-theorem _root_.Subgroup.signIndicator_one (H : Subgroup G) : H.signIndicator 1 = 1 :=
-  H.signIndicator_of_mem H.one_mem
-
 /-- **The sign indicator is multiplicative exactly when the subgroup index divides two.**
 
 This is the version without a finiteness assumption.  The divisibility condition is essential:
@@ -136,7 +131,7 @@ theorem _root_.Subgroup.signIndicator_mul_iff_index_le_two (H : Subgroup G) [H.F
     (hindex : H.index ∣ 2) :
     G →* ℤˣ where
   toFun := H.signIndicator
-  map_one' := H.signIndicator_one
+  map_one' := H.signIndicator_of_mem H.one_mem
   map_mul' := H.signIndicator_mul_iff_index_dvd_two.mpr hindex
 
 /-- The bundled sign-indicator homomorphism evaluates to the underlying sign indicator. -/
