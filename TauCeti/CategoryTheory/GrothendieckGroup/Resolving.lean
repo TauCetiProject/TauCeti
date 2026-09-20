@@ -350,11 +350,11 @@ variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
 property `P` into `P'` commutes with the comparison from the exact `K₀` of the resolving
 subcategory to the ambient exact `K₀`. -/
 theorem map_comp_resolutionEquiv (F : C ⥤ D) [F.Additive]
-    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+    (hF : E.IsConflationExact E' F) (hPP' : ∀ X : P.FullSubcategory, P' (F.obj X.obj)) :
     (ExactK0.map F hF).comp (resolutionEquiv E P).toAddMonoidHom =
       (resolutionEquiv E' P').toAddMonoidHom.comp
-        (ExactK0.map (P.mapFullSubcategory P' F hPP')
-          (E.isConflationExact_mapFullSubcategory IsResolving.isExtensionClosed
+        (ExactK0.map (P'.lift (P.ι ⋙ F) hPP')
+          (E.isConflationExact_lift IsResolving.isExtensionClosed
             IsResolving.isExtensionClosed F hF hPP')) := by
   apply ExactK0.hom_ext
   intro X
@@ -363,9 +363,9 @@ theorem map_comp_resolutionEquiv (F : C ⥤ D) [F.Additive]
 /-- The inverse maps in the resolution theorem are natural: applying a functor to the Euler class
 of a finite resolution gives the Euler class after applying the functor. -/
 theorem map_comp_resolutionEquiv_symm (F : C ⥤ D) [F.Additive]
-    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
-    (ExactK0.map (P.mapFullSubcategory P' F hPP')
-        (E.isConflationExact_mapFullSubcategory IsResolving.isExtensionClosed
+    (hF : E.IsConflationExact E' F) (hPP' : ∀ X : P.FullSubcategory, P' (F.obj X.obj)) :
+    (ExactK0.map (P'.lift (P.ι ⋙ F) hPP')
+        (E.isConflationExact_lift IsResolving.isExtensionClosed
           IsResolving.isExtensionClosed F hF hPP')).comp
         (resolutionEquiv E P).symm.toAddMonoidHom =
       (resolutionEquiv E' P').symm.toAddMonoidHom.comp (ExactK0.map F hF) := by
@@ -380,9 +380,10 @@ theorem map_comp_resolutionEquiv_symm (F : C ⥤ D) [F.Additive]
 /-- Applying a conflation-exact functor preserving resolving objects carries the Euler class of an
 object to the Euler class of its image. -/
 theorem map_eulerClassOf (F : C ⥤ D) [F.Additive]
-    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) (X : C) :
-    ExactK0.map (P.mapFullSubcategory P' F hPP')
-        (E.isConflationExact_mapFullSubcategory IsResolving.isExtensionClosed
+    (hF : E.IsConflationExact E' F) (hPP' : ∀ X : P.FullSubcategory, P' (F.obj X.obj))
+    (X : C) :
+    ExactK0.map (P'.lift (P.ι ⋙ F) hPP')
+        (E.isConflationExact_lift IsResolving.isExtensionClosed
           IsResolving.isExtensionClosed F hF hPP')
         (E.eulerClassOf IsResolving.isExtensionClosed (IsResolving.finiteResolution X)) =
       E'.eulerClassOf IsResolving.isExtensionClosed

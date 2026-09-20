@@ -44,7 +44,7 @@ finite projective resolution, be treated as an exact category in its own right.
   `CategoryTheory.ObjectProperty.IsClosedUnderExtensions`.
 * `TauCeti.ExactStructure.isConflationExact_ι`,
   `TauCeti.ExactStructure.isConflationExact_ιOfLE`,
-  `TauCeti.ExactStructure.isConflationExact_mapFullSubcategory`, and
+  `TauCeti.ExactStructure.isConflationExact_lift`, and
   `TauCeti.ExactStructure.reflectsConflations_ι`: the inclusion of the subcategory is
   conflation-exact and reflects conflations, and a conflation-exact functor restricting to two
   extension-closed properties remains conflation-exact on their full subcategories.
@@ -314,18 +314,18 @@ theorem isConflationExact_ιOfLE {Q : ObjectProperty C} [Q.ContainsZero]
 
 /-- A conflation-exact functor carrying one extension-closed property into another restricts to a
 conflation-exact functor between their induced exact structures. -/
-theorem isConflationExact_mapFullSubcategory
+theorem isConflationExact_lift
     {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
     [HasBinaryBiproducts D] {E' : ExactStructure D} {Q : ObjectProperty D} [Q.ContainsZero]
     [Q.IsClosedUnderBinaryProducts] (hQ : E'.IsExtensionClosed Q) (F : C ⥤ D) [F.Additive]
-    (hF : E.IsConflationExact E' F) (hPQ : P ≤ Q.inverseImage F) :
+    (hF : E.IsConflationExact E' F) (hPQ : ∀ X : P.FullSubcategory, Q (F.obj X.obj)) :
     (E.fullSubcategory P hP).IsConflationExact (E'.fullSubcategory Q hQ)
-      (P.mapFullSubcategory Q F hPQ) where
+      (Q.lift (P.ι ⋙ F) hPQ) where
   map_conflation {S} hS := by
     rw [fullSubcategory_conflation_iff] at hS ⊢
     apply E'.conflation_of_iso ?_ (hF.map_conflation hS)
     simpa only [ShortComplex.map_comp] using
-      (S.mapNatIso (P.mapFullSubcategoryCompιIso Q F hPQ)).symm
+      (S.mapNatIso (Q.liftCompιIso (P.ι ⋙ F) hPQ)).symm
 
 /-- The forward functor of an exact equivalence restricts to a conflation-exact functor between
 corresponding extension-closed full subcategories. -/
@@ -337,9 +337,8 @@ theorem isConflationExact_congrFullSubcategory_functor
     [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
     (h : Q.inverseImage e.functor = P) :
     (E.fullSubcategory P hP).IsConflationExact (E'.fullSubcategory Q hQ)
-      (e.congrFullSubcategory h).functor := by
-  exact (E.isConflationExact_mapFullSubcategory hP hQ e.functor hF h.ge).of_iso
-    (e.mapFullSubcategoryIsoCongrFullSubcategoryFunctor h)
+      (e.congrFullSubcategory h).functor :=
+  E.isConflationExact_lift hP hQ e.functor hF (fun ⟨X, hX⟩ ↦ by rwa [← h] at hX)
 
 /-- The inverse functor of an exact equivalence restricts to a conflation-exact functor between
 corresponding extension-closed full subcategories. -/
@@ -351,12 +350,10 @@ theorem isConflationExact_congrFullSubcategory_inverse
     [e.inverse.Additive] (hG : E'.IsConflationExact E e.inverse)
     (h : Q.inverseImage e.functor = P) :
     (E'.fullSubcategory Q hQ).IsConflationExact (E.fullSubcategory P hP)
-      (e.congrFullSubcategory h).inverse := by
-  have hQP : Q ≤ P.inverseImage e.inverse := fun Y hY ↦ by
-    rw [prop_inverseImage_iff, ← h]
-    exact Q.prop_of_iso (e.counitIso.app Y).symm hY
-  exact (E'.isConflationExact_mapFullSubcategory hQ hP e.inverse hG hQP).of_iso
-    (e.mapFullSubcategoryIsoCongrFullSubcategoryInverse h hQP)
+      (e.congrFullSubcategory h).inverse :=
+  E'.isConflationExact_lift hQ hP e.inverse hG (fun ⟨Y, hY⟩ ↦ by
+    rw [← h]
+    exact Q.prop_of_iso (e.counitIso.app Y).symm hY)
 
 /-- The inclusion of an extension-closed full subcategory reflects conflations: a short complex
 of the subcategory whose image is a conflation of `E` is a conflation of the induced structure. -/
