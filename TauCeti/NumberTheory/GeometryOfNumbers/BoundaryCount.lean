@@ -15,17 +15,18 @@ public import TauCeti.Topology.MetricSpace.LipschitzParametrizable
 /-!
 # Counting points of a discrete subgroup near a dilated Lipschitz-parametrizable set
 
-Let `L` be a discrete additive subgroup of a proper normed group `E`, and let `S ⊆ E` be
+Let `L` be a discrete additive subgroup of a proper normed real vector space `E`, and let `S ⊆ E` be
 Lipschitz parametrizable in dimension `d`, that is, covered by finitely many Lipschitz images of
 the unit `d`-cube.  Dilating `S` by a factor `c ≥ 1` and thickening it by a fixed bounded set `B`
 produces a region that carries `O(c ^ d)` points of `L`.
 
-This is the quantitative half of Lipschitz parametrizability, and it is a genuinely smaller order
-than the `c ^ (dim E)` points carried by a dilated body: it is what turns a codimension-one
-boundary regularity hypothesis into a power-saving error term in a lattice-point count.  The
-thickening by `B` is what the application needs: the lattice cells `x + F` that meet a dilated
-region `c • S` are exactly the `x ∈ L` lying in `c • S + (-F)`, so a count of cells meeting the
-boundary of a dilated body is a count of the points of `L` in such a region.
+This is the quantitative half of Lipschitz parametrizability.  When `d` is strictly smaller than
+the ambient dimension, as in the codimension-one boundary application, it is a genuinely smaller
+order than the `c ^ (dim E)` points carried by a dilated body and hence gives a power-saving error
+term in a lattice-point count.  The thickening by `B` is what the application needs: the lattice
+cells `x + F` that meet a dilated region `c • S` are exactly the `x ∈ L` lying in
+`c • S + (-F)`, so a count of cells meeting the boundary of a dilated body is a count of the
+points of `L` in such a region.
 
 The proof subdivides the unit cube into `m ^ d` subcubes of side `1 / m`, with `m` of size
 `c`, so that each chart maps a subcube into a set of diameter at most one after dilating by `c`.
@@ -39,6 +40,8 @@ constant, so the total count is at most a constant times the number `m ^ d` of s
 * `AddSubgroup.ncard_inter_le_ncard_closedBall_inter`: a set of diameter at most `r` carries at
   most as many points of a discrete subgroup as the closed ball of radius `r` centred at the
   origin.
+* `TauCeti.IsLipschitzParametrizable.finite_smul_add_inter`: a bounded thickening of a dilated
+  Lipschitz-parametrizable set meets a discrete subgroup in a finite set.
 * `TauCeti.IsLipschitzParametrizable.exists_ncard_smul_add_inter_le`: the explicit bound
   `#((c • S + B) ∩ L) ≤ A * c ^ d` for `c ≥ 1`, with `A` independent of `c`.
 * `TauCeti.IsLipschitzParametrizable.isBigO_ncard_smul_add_inter`: the same bound as an
@@ -84,6 +87,19 @@ end AddSubgroup
 namespace TauCeti.IsLipschitzParametrizable
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+
+/-- A bounded thickening of a dilated Lipschitz-parametrizable set meets a discrete subgroup in a
+finite set. -/
+theorem finite_smul_add_inter {d : ℕ} {S : Set E}
+    (hS : IsLipschitzParametrizable d S) (L : AddSubgroup E) [DiscreteTopology L]
+    {B : Set E} (hB : IsBounded B) (c : ℝ) :
+    ((c • S + B) ∩ (L : Set E)).Finite := by
+  obtain ⟨n, C, f, hf, hcov⟩ := isLipschitzParametrizable_iff.1 hS
+  apply L.finite_inter_of_isBounded
+  apply isBounded_add
+  · exact ((Bornology.isBounded_iUnion.2 fun i ↦
+      ((isCompact_Icc.image_of_continuousOn (hf i).continuousOn).isBounded)).subset hcov).smul₀ c
+  · exact hB
 
 /-- **The boundary count.**  If `S` is Lipschitz parametrizable in dimension `d` and `B` is
 bounded, then for `c ≥ 1` the thickened dilate `c • S + B` contains at most `A * c ^ d` points of
@@ -145,7 +161,9 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
           exacts [hrB b hb, dist_comm (0 : E) b' ▸ hrB b' hb']
       _ = ρ := by rw [hρ]; ring
   -- Count: cover, then bound the points of `L` in each of the `n * m ^ d` pieces by `N`.
-  have hcount : ((c • S + B) ∩ (L : Set E)).ncard ≤ n * m ^ d * N := by
+  have hfinite := hS.finite_smul_add_inter L hB c
+  have hcount : hfinite.toFinset.card ≤ n * m ^ d * N := by
+    rw [← Set.ncard_eq_toFinset_card _ hfinite]
     calc ((c • S + B) ∩ (L : Set E)).ncard
         ≤ (⋃ p, P p ∩ (L : Set E)).ncard := by
           refine Set.ncard_le_ncard ?_ (Set.finite_iUnion fun p ↦ L.finite_inter_of_isBounded
@@ -163,8 +181,9 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
     rw [hm]
     push_cast
     nlinarith
-  calc (((c • S + B) ∩ (L : Set E)).ncard : ℝ) ≤ ((n * m ^ d * N : ℕ) : ℝ) := by
-        exact_mod_cast hcount
+  calc (((c • S + B) ∩ (L : Set E)).ncard : ℝ)
+        = (hfinite.toFinset.card : ℝ) := by rw [Set.ncard_eq_toFinset_card _ hfinite]
+    _ ≤ ((n * m ^ d * N : ℕ) : ℝ) := by exact_mod_cast hcount
     _ = (n : ℝ) * (m : ℝ) ^ d * N := by push_cast; ring
     _ ≤ (n : ℝ) * (c * ((C : ℝ) + 2)) ^ d * N := by gcongr
     _ = (n * ((C : ℝ) + 2) ^ d * N) * c ^ d := by rw [mul_pow]; ring
