@@ -22,17 +22,13 @@ directing measure `ξ`, uniqueness forces `ν.map g = ξ` almost surely.
 
 The same conclusion holds when the mapped coordinates are first selected along an injection and
 then changed almost surely. This form compares directing measures attached to two different
-presentations of one conditionally i.i.d. family. The countable-family version puts all such
-comparisons on one common almost-sure set; it is useful for projective families of finite
-marginals, where all restriction maps must commute simultaneously.
+presentations of one conditionally i.i.d. family. Countable families of such comparisons can be
+put on one common almost-sure set with `ae_all_iff`.
 
 ## Main results
 
 * `ConditionallyIIDWith.ae_map_directing_eq_of_comp_injective` compares directing measures after
   a measurable value map, an injective coordinate selection, and an a.e. change of the process.
-* `ConditionallyIIDWith.ae_map_directing_eq_of_ae_eq` is the coordinate-preserving form.
-* `ConditionallyIIDWith.ae_forall_map_directing_eq_of_comp_injective` makes a countable family of
-  these compatibility equations hold simultaneously.
 -/
 
 public section
@@ -69,43 +65,6 @@ theorem ConditionallyIIDWith.ae_map_directing_eq_of_comp_injective
       (fun ω => (ν ω).map g) :=
     (hX.comp_injective hk).map_values hg
   exact conditionallyIID_ae_unique (hmap.congr_process hXY) hY
-
-/-- **Coordinate-preserving compatibility of directing measures with a measurable value map.**
-If `Y i` is almost surely `g ∘ X i` for every coordinate, its directing measure is almost surely
-the pushforward of the directing measure of `X`. -/
-theorem ConditionallyIIDWith.ae_map_directing_eq_of_ae_eq
-    [IsProbabilityMeasure μ] [CountablyGenerated β]
-    {X : ℕ → Ω → α} {Y : ℕ → Ω → β}
-    (hX : ConditionallyIIDWith μ X ν) (hY : ConditionallyIIDWith μ Y ξ)
-    {g : α → β} (hg : Measurable g)
-    (hXY : ∀ i, (fun ω => g (X i ω)) =ᵐ[μ] Y i) :
-    (fun ω => (ν ω).map g) =ᵐ[μ] ξ :=
-  hX.ae_map_directing_eq_of_comp_injective hY hg Function.injective_id hXY
-
-/-- **Countably many directing-measure compatibility equations hold on one almost-sure set.**
-
-For each `c`, the process `Y c` is obtained almost surely by mapping an injectively selected
-subfamily of `X` through `g c`. If `ξ c` directs `Y c`, then simultaneously for every `c` it is
-the corresponding pushforward of the directing measure of `X`.
-
-The common null set is essential when the equations express compatibility of a countable
-projective family: separate almost-sure statements cannot be substituted pointwise into all
-levels at once without this promotion. -/
-theorem ConditionallyIIDWith.ae_forall_map_directing_eq_of_comp_injective
-    {γ : Type*} [Countable γ] {δ : γ → Type*}
-    [∀ c, MeasurableSpace (δ c)] [∀ c, CountablyGenerated (δ c)]
-    [IsProbabilityMeasure μ]
-    {X : ι → Ω → α}
-    (hX : ConditionallyIIDWith μ X ν)
-    (Y : (c : γ) → ℕ → Ω → δ c) (ξ : (c : γ) → Ω → ProbabilityMeasure (δ c))
-    (hY : ∀ c, ConditionallyIIDWith μ (Y c) (ξ c))
-    (g : (c : γ) → α → δ c) (hg : ∀ c, Measurable (g c))
-    (k : γ → ℕ → ι) (hk : ∀ c, Function.Injective (k c))
-    (hXY : ∀ c i, (fun ω => g c (X (k c i) ω)) =ᵐ[μ] Y c i) :
-    ∀ᵐ ω ∂μ, ∀ c, (ν ω).map (g c) = ξ c ω := by
-  rw [ae_all_iff]
-  exact fun c => hX.ae_map_directing_eq_of_comp_injective
-    (hY c) (hg c) (hk c) (hXY c)
 
 end Probability
 
