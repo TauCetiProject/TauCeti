@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+public import Mathlib.LinearAlgebra.Matrix.Basis
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -44,6 +45,8 @@ identification.
   tangent bundle of the tangent bundle.
 * `TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange`: reading a tangent vector through the
   preferred trivializations of two charts is the tangent coordinate change between them.
+* `TauCeti.Manifold.tangentCoordChange_toMatrix`: in a finite basis, this coordinate change is the
+  change-of-basis matrix between the corresponding chart-local frames.
 * `TauCeti.Manifold.tangentSpaceOpenEquiv`: the canonical continuous linear equivalence between
   the tangent space of an open submanifold and the ambient tangent space.
 * `TauCeti.Manifold.mfderiv_subtype_val`: the differential of the inclusion is the canonical
@@ -411,6 +414,39 @@ theorem continuousLinearMapAt_symmL_coordChange {x x₀ y : M}
   have hy3 : y ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hyx₀
   exact tangentCoordChange_comp (I := I) (w := x) (x := y) (y := x₀) (z := y) (v := u)
     ⟨⟨hy1, hy2⟩, hy3⟩
+
+/-- The matrix of a tangent coordinate change in a finite basis of the model space is the
+change-of-basis matrix between the corresponding chart-local frames. -/
+theorem tangentCoordChange_toMatrix {ι : Type*} [Fintype ι] [DecidableEq ι] (α β : M)
+    (b : Basis ι 𝕜 E) {x : M}
+    (hα : x ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (hβ : x ∈ (trivializationAt E (TangentSpace I) β).baseSet) :
+    LinearMap.toMatrix b b (tangentCoordChange I α β x).toLinearMap =
+      ((trivializationAt E (TangentSpace I) β).basisAt b hβ).toMatrix
+        ((trivializationAt E (TangentSpace I) α).basisAt b hα) := by
+  ext i j
+  rw [LinearMap.toMatrix_apply, Module.Basis.toMatrix_apply]
+  rw [Bundle.Trivialization.basisAt, Bundle.Trivialization.basisAt]
+  simp only [Module.Basis.map_repr, Module.Basis.map_apply]
+  have hread := continuousLinearMapAt_symmL_coordChange
+    (I := I) (x := α) (x₀ := β) (y := x)
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using hα)
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using hβ)
+    (b j)
+  rw [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem
+      (R := 𝕜) (e := trivializationAt E (TangentSpace I) β) hβ,
+    Bundle.Trivialization.symmL_apply
+      (R := 𝕜) (e := trivializationAt E (TangentSpace I) α) hα] at hread
+  apply congrArg (fun v : E ↦ b.repr v i)
+  symm
+  rw [LinearEquiv.symm_symm]
+  -- `basisAt` uses `linearEquivAt`, while the coordinate-change lemma uses the propositionally
+  -- equal continuous maps; their coercions have no rewriting lemma in this direction.
+  change
+    ((trivializationAt E (TangentSpace I) β)
+      ⟨x, (trivializationAt E (TangentSpace I) α).symm x (b j)⟩).2 =
+        tangentCoordChange I α β x (b j)
+  exact hread
 
 end TangentReading
 
