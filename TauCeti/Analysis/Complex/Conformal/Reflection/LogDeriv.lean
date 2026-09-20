@@ -80,9 +80,6 @@ arbitrary target line; its holomorphy and its agreement with `f` on the closed u
 * `TauCeti.exists_differentiableOn_eqOn_logDeriv_deriv` -- the pre-Schwarzian derivative of a map
   of the upper half-plane with straight boundary arcs away from a set `S` continues to a
   conjugation-symmetric function holomorphic away from the real points of `S`.
-* `TauCeti.exists_eqOn_affine_iff_logDeriv_deriv_eqOn` -- two locally conformal holomorphic
-  functions on a domain have the same pre-Schwarzian derivative exactly when one is an affine
-  postcomposition of the other.
 
 ## References
 
@@ -97,32 +94,6 @@ namespace TauCeti
 open Complex Set Topology
 
 variable {Ω : Set ℂ} {F f : ℂ → ℂ} {c u q b : ℂ}
-
-/-- **Affine rigidity of the pre-Schwarzian derivative.** Two holomorphic functions with
-holomorphic, nonvanishing derivatives on a domain have equal pre-Schwarzian derivatives exactly
-when one is obtained from the other by postcomposition with an affine map of nonzero slope.
-
-The additive constant disappears after one differentiation. The multiplicative constant is then
-detected by Mathlib's `logDeriv_eqOn_iff`, applied to the two first derivatives. -/
-theorem exists_eqOn_affine_iff_logDeriv_deriv_eqOn (hΩopen : IsOpen Ω)
-    (hΩconn : IsPreconnected Ω) {f g : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f Ω) (hg : DifferentiableOn ℂ g Ω)
-    (hfn : ∀ z ∈ Ω, deriv f z ≠ 0) (hgn : ∀ z ∈ Ω, deriv g z ≠ 0) :
-    (∃ a : ℂ, a ≠ 0 ∧ ∃ b : ℂ, EqOn f (fun z => a * g z + b) Ω) ↔
-      EqOn (logDeriv (deriv f)) (logDeriv (deriv g)) Ω := by
-  rw [logDeriv_eqOn_iff (hf.deriv hΩopen) (hg.deriv hΩopen) hΩopen hΩconn hgn hfn]
-  constructor
-  · rintro ⟨a, ha, b, hfg⟩
-    refine ⟨a, ha, fun z hz => ?_⟩
-    have hderiv := hfg.deriv hΩopen hz
-    simpa [deriv_const_mul_field] using hderiv
-  · rintro ⟨a, ha, hderiv⟩
-    refine ⟨a, ha, ?_⟩
-    have hag : DifferentiableOn ℂ (fun z => a * g z) Ω :=
-      fun z hz => (hg z hz).const_mul a
-    obtain ⟨b, hb⟩ := hΩopen.exists_eq_add_of_deriv_eq hΩconn hf hag fun z hz => by
-      simpa [deriv_const_mul_field] using hderiv hz
-    exact ⟨b, hb⟩
 
 /-- **The derivative inherits an affine reflection identity, without its constant.** If `F`
 carries conjugation to the affine reflection `w ↦ c + u * conj w` on a conjugation-symmetric open

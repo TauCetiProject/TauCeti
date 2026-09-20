@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
+public import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 
 /-!
@@ -27,11 +27,11 @@ here recovers the map itself as an affine image of the normalized primitive.
 
 ## Main result
 
-* `TauCeti.exists_eqOn_affine_schwarzChristoffelPrimitive_iff` -- a locally conformal holomorphic
-  map solves the Schwarz--Christoffel pre-Schwarzian equation exactly when it is an affine
-  postcomposition of the normalized Schwarz--Christoffel primitive.
-* `TauCeti.eqOn_affine_schwarzChristoffelPrimitive_of_logDeriv_deriv_eqOn` -- the same integration
-  result with the affine constants read off from the value and derivative at the normalization
+* `TauCeti.exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff` -- a locally conformal
+  holomorphic map solves the Schwarz--Christoffel pre-Schwarzian equation exactly when it is
+  `A * primitive + B` for a nonzero `A`.
+* `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn` -- the same
+  integration result with `A` and `B` read off from the value and derivative at the normalization
   point.
 
 ## References
@@ -52,12 +52,12 @@ variable {ι : Type*} [Fintype ι]
 
 /-- **Integration of the Schwarz--Christoffel differential equation.** A holomorphic function
 `f` with holomorphic, nonvanishing derivative on the upper half-plane has pre-Schwarzian
-`\sum i, e i / (z - a i)` exactly when it is an affine postcomposition, with nonzero slope, of
+`∑ i, e i / (z - a i)` exactly when it is `A * F + B` for a nonzero constant `A`, where `F` is
 the normalized Schwarz--Christoffel primitive for the prevertices `a` and exponents `e`.
 
 No separate regularity assumption is needed for `deriv f`: complex differentiability on an open
 set already implies complex differentiability of the derivative there. -/
-theorem exists_eqOn_affine_schwarzChristoffelPrimitive_iff (a e : ι → ℝ)
+theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {f : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0) :
@@ -72,7 +72,7 @@ theorem exists_eqOn_affine_schwarzChristoffelPrimitive_iff (a e : ι → ℝ)
     intro z hz
     rw [deriv_schwarzChristoffelPrimitive a e z₀ hz]
     exact schwarzChristoffelIntegrand_ne_zero a e hz
-  rw [exists_eqOn_affine_iff_logDeriv_deriv_eqOn isOpen_upperHalfPlaneSet
+  rw [exists_eqOn_const_mul_add_iff_logDeriv_deriv_eqOn isOpen_upperHalfPlaneSet
     (convex_halfSpace_im_gt 0).isPreconnected hf hF hfn hnF]
   constructor
   · intro h z hz
@@ -86,10 +86,10 @@ half-plane
 
 `f z = (f'(z₀) / integrand(z₀)) * primitive(z) + f(z₀)`.
 
-Thus the value and derivative at the primitive's base point determine the two affine constants.
+Thus the value and derivative at the primitive's base point determine the two constants.
 The denominator is nonzero because the Schwarz--Christoffel integrand has no zeros in the upper
 half-plane. -/
-theorem eqOn_affine_schwarzChristoffelPrimitive_of_logDeriv_deriv_eqOn
+theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) {f : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
@@ -99,7 +99,7 @@ theorem eqOn_affine_schwarzChristoffelPrimitive_of_logDeriv_deriv_eqOn
       deriv f z₀ / schwarzChristoffelIntegrand a e z₀ *
         schwarzChristoffelPrimitive a e z₀ z + f z₀) upperHalfPlaneSet := by
   obtain ⟨A, _, B, hEq⟩ :=
-    (exists_eqOn_affine_schwarzChristoffelPrimitive_iff a e z₀ hf hfn).mpr hpre
+    (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff a e z₀ hf hfn).mpr hpre
   have hB : B = f z₀ := by
     simpa using (hEq z₀.im_pos).symm
   have hderiv := hEq.deriv isOpen_upperHalfPlaneSet z₀.im_pos
