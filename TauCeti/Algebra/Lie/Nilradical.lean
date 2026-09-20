@@ -23,7 +23,9 @@ ambient algebra `L` acts nilpotently.  It is contained in the nilradical
 The standard example is the two-dimensional nonabelian Lie algebra spanned by `x` and `y` with
 `⁅x, y⁆ = y`: the span of `y` is an abelian, hence nilpotent, ideal, so it lies in the nilradical,
 while `⁅L, span y⁆ = span y` says that `L` does not act nilpotently on it, and indeed no nonzero
-ideal of that algebra is acted on nilpotently, so its `maxNilpotentIdeal` is `⊥`.
+ideal of that algebra is acted on nilpotently, so its `maxNilpotentIdeal` is `⊥`.  That algebra is
+built in `TauCeti.Algebra.Lie.AffineLine`, where both ideals are computed and the containment is
+witnessed to be strict by `TauCeti.LieAlgebra.AffineLine.maxNilpotentIdeal_lt_nilradical`.
 
 ## Nilpotency of an ideal, read inside the ambient algebra
 
@@ -275,7 +277,7 @@ theorem nilradical_map_equiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
 
 /-- Mathlib's `LieAlgebra.maxNilpotentIdeal` is contained in the nilradical: an ideal on which the
 ambient algebra acts nilpotently is in particular nilpotent as a Lie algebra.  The containment is
-strict in general; see the module docstring. -/
+strict in general: see `TauCeti.LieAlgebra.AffineLine.maxNilpotentIdeal_lt_nilradical`. -/
 theorem maxNilpotentIdeal_le_nilradical :
     LieAlgebra.maxNilpotentIdeal R L ≤ nilradical R L :=
   sSup_le_sSup fun I hI ↦ by
