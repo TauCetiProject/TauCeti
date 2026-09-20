@@ -19,7 +19,7 @@ intersection into a closed ball of the same radius.
 
 ## Main result
 
-* `TauCeti.AddSubgroup.ncard_inter_le_ncard_closedBall_inter`: a set of diameter at most `r`
+* `AddSubgroup.ncard_inter_le_ncard_closedBall_inter`: a set of diameter at most `r`
   carries at most as many points of a discrete additive subgroup as the closed ball of radius `r`
   centred at the origin.
 -/
@@ -28,7 +28,7 @@ public section
 
 open Bornology Metric Set
 
-namespace TauCeti.AddSubgroup
+namespace AddSubgroup
 
 variable {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
 
@@ -48,4 +48,4 @@ theorem ncard_inter_le_ncard_closedBall_inter (L : AddSubgroup E) [DiscreteTopol
   exact ⟨mem_closedBall_zero_iff.2 ((dist_eq_norm x z) ▸ hs x hxs z hzs),
     L.sub_mem hxL hzL⟩
 
-end TauCeti.AddSubgroup
+end AddSubgroup

@@ -147,7 +147,7 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
       _ ≤ ∑ p, (P p ∩ (L : Set E)).ncard := Set.ncard_iUnion_le_of_fintype _
       _ ≤ ∑ _p : Fin n × (Fin d → Fin m), N :=
           Finset.sum_le_sum fun p _ ↦
-            TauCeti.AddSubgroup.ncard_inter_le_ncard_closedBall_inter L (hPdist p)
+            AddSubgroup.ncard_inter_le_ncard_closedBall_inter L (hPdist p)
       _ = n * m ^ d * N := by simp
   -- The number `m ^ d` of subcubes is at most `(C + 2) ^ d * c ^ d`.
   have hmc : (m : ℝ) ≤ c * ((C : ℝ) + 2) := by
