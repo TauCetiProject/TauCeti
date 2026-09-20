@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Abelian
-public import Mathlib.Algebra.Lie.OfAssociative
-public import Mathlib.Algebra.Module.LinearMap.End
+public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.Finiteness.Prod
@@ -42,31 +41,30 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable (R : Type u) [CommRing R]
 variable (L : Type v) [LieRing L] [LieAlgebra R L]
 
+local instance : Module Rᵐᵒᵖ L :=
+  Module.compHom _ ((RingHom.id R).fromOpposite mul_comm)
+
+local instance : IsCentralScalar R L := ⟨fun _ _ ↦ rfl⟩
+
+private def abelianSquareZeroOperatorLinearMap : L →ₗ[R] Module.End R (R × L) :=
+  (Algebra.lmul R (TrivSqZeroExt R L)).toLinearMap.comp (TrivSqZeroExt.inrHom R L)
+
 private def abelianSquareZeroOperator (x : L) : Module.End R (R × L) :=
-  (0 : (R × L) →ₗ[R] R).prod ((LinearMap.fst R R L).smulRight x)
+  abelianSquareZeroOperatorLinearMap R L x
 
 @[simp, grind =]
 private theorem abelianSquareZeroOperator_apply (x : L) (z : R × L) :
     abelianSquareZeroOperator R L x z = (0, z.1 • x) := by
-  simp [abelianSquareZeroOperator]
+  change @Mul.mul (TrivSqZeroExt R L) _ (TrivSqZeroExt.inr x) z = _
+  ext
+  · change 0 * z.1 = 0
+    simp
+  · change (0 : R) • z.2 + (MulOpposite.op z.1) • x = z.1 • x
+    simp
 
 @[simp]
 private theorem abelianSquareZeroOperator_zero : abelianSquareZeroOperator R L 0 = 0 := by
-  ext z <;> simp
-
-private theorem abelianSquareZeroOperator_add (x y : L) :
-    abelianSquareZeroOperator R L (x + y) =
-      abelianSquareZeroOperator R L x + abelianSquareZeroOperator R L y := by
-  ext z <;> simp
-
-private theorem abelianSquareZeroOperator_smul (a : R) (x : L) :
-    abelianSquareZeroOperator R L (a • x) = a • abelianSquareZeroOperator R L x := by
-  ext z <;> simp [smul_smul]
-
-private def abelianSquareZeroOperatorLinearMap : L →ₗ[R] Module.End R (R × L) where
-  toFun := abelianSquareZeroOperator R L
-  map_add' := abelianSquareZeroOperator_add R L
-  map_smul' := abelianSquareZeroOperator_smul R L
+  simp [abelianSquareZeroOperator]
 
 @[simp]
 private theorem abelianSquareZeroOperatorLinearMap_apply (x : L) :
@@ -75,7 +73,9 @@ private theorem abelianSquareZeroOperatorLinearMap_apply (x : L) :
 
 private theorem abelianSquareZeroOperator_mul_eq_zero (x y : L) :
     abelianSquareZeroOperator R L x * abelianSquareZeroOperator R L y = 0 := by
-  ext z <;> simp [Module.End.mul_apply]
+  change Algebra.lmul R (TrivSqZeroExt R L) (TrivSqZeroExt.inr x) *
+      Algebra.lmul R (TrivSqZeroExt R L) (TrivSqZeroExt.inr y) = 0
+  rw [← map_mul, TrivSqZeroExt.inr_mul_inr, map_zero]
 
 /-- The canonical representation of an abelian Lie algebra by square-zero operators on `R × L`.
 The first coordinate records the scalar that the acting element transfers to the second
@@ -99,19 +99,21 @@ theorem abelianSquareZeroRepresentation_apply_apply [IsLieAbelian L] (x : L) (z 
   rw [abelianSquareZeroRepresentation_apply, abelianSquareZeroOperator_apply]
 
 /-- Any two operators in the canonical abelian representation have zero product. -/
+@[simp]
 theorem abelianSquareZeroRepresentation_mul_eq_zero [IsLieAbelian L] (x y : L) :
-    abelianSquareZeroRepresentation R L x * abelianSquareZeroRepresentation R L y = 0 :=
-  abelianSquareZeroOperator_mul_eq_zero R L x y
+    abelianSquareZeroRepresentation R L x * abelianSquareZeroRepresentation R L y = 0 := by
+  rw [abelianSquareZeroRepresentation_apply, abelianSquareZeroRepresentation_apply]
+  exact abelianSquareZeroOperator_mul_eq_zero R L x y
 
 /-- Every operator in the canonical abelian representation is square-zero. -/
 @[simp]
 theorem abelianSquareZeroRepresentation_sq_eq_zero [IsLieAbelian L] (x : L) :
     abelianSquareZeroRepresentation R L x ^ 2 = 0 := by
-  simpa [pow_two] using abelianSquareZeroRepresentation_mul_eq_zero R L x x
+  simp [pow_two]
 
 /-- Every operator in the canonical abelian representation is nilpotent, uniformly with exponent
 two. -/
-theorem abelianSquareZeroRepresentation_isNilpotent [IsLieAbelian L] (x : L) :
+theorem isNilpotent_abelianSquareZeroRepresentation [IsLieAbelian L] (x : L) :
     IsNilpotent (abelianSquareZeroRepresentation R L x) :=
   ⟨2, abelianSquareZeroRepresentation_sq_eq_zero R L x⟩
 
@@ -124,8 +126,8 @@ theorem abelianSquareZeroRepresentation_injective [IsLieAbelian L] :
 
 /-- The carrier of the canonical square-zero representation has dimension one more than the
 abelian Lie algebra. -/
-theorem finrank_abelianSquareZeroRepresentation (K : Type u) [Field K]
-    (A : Type v) [LieRing A] [LieAlgebra K A] [FiniteDimensional K A] :
+theorem finrank_abelianSquareZeroRepresentation (K : Type u) [DivisionRing K]
+    (A : Type v) [AddCommGroup A] [Module K A] [FiniteDimensional K A] :
     Module.finrank K (K × A) = Module.finrank K A + 1 := by
   simp [add_comm]
 
