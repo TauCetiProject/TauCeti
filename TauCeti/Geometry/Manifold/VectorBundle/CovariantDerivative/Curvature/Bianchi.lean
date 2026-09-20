@@ -22,8 +22,6 @@ compatibility of the connection with it is required.
 
 Together with the skew-adjointness of metric curvature, this identity gives the
 pair-interchange symmetry of the Riemann tensor and symmetry of its Ricci contraction.
-The proof uses the Jacobi identity for vector fields and the torsion-free equation
-`∇_X Y - ∇_Y X = [X,Y]`.
 
 The sign convention and identity follow J. M. Lee, *Introduction to Riemannian
 Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 7 (curvature symmetries).
@@ -49,7 +47,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 local notation "tangentNorm" => fun x : M ↦
   (inferInstance : NormedAddCommGroup (TangentSpace I x))
 
-omit [RiemannianBundle (TangentSpace I : M → Type _)] in
 private theorem apply_mlieBracket_of_torsion_eq_zero (ht : cov.torsion = 0)
     {Y Z : Π x : M, TangentSpace I x}
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
@@ -57,9 +54,9 @@ private theorem apply_mlieBracket_of_torsion_eq_zero (ht : cov.torsion = 0)
     cov (mlieBracket I Y Z) x u =
       cov (fun y ↦ cov Z y (Y y)) x u - cov (fun y ↦ cov Y y (Z y)) x u := by
   have hYZ := cov.contMDiff_apply (V := TangentSpace I)
-    hY hZ
+    (fiberNorm := tangentNorm) hY hZ
   have hZY := cov.contMDiff_apply (V := TangentSpace I)
-    hZ hY
+    (fiberNorm := tangentNorm) hZ hY
   have heq : mlieBracket I Y Z =
       (fun y ↦ cov Z y (Y y)) - fun y ↦ cov Y y (Z y) := by
     funext y
@@ -77,9 +74,8 @@ private theorem apply_mlieBracket_of_torsion_eq_zero (ht : cov.torsion = 0)
   exact eq_sub_of_add_eq hd.symm
 
 local notation "curvature" => cov.curvatureOperator (I := I) (M := M) (F := E)
-  (V := TangentSpace I)
+  (V := TangentSpace I) (fiberNorm := tangentNorm)
 
-omit [RiemannianBundle (TangentSpace I : M → Type _)] in
 /-- The first Bianchi identity for smooth vector fields and a torsion-free smooth
 connection on the tangent bundle. -/
 theorem curvatureOperator_cyclic_eq_zero (ht : cov.torsion = 0)
