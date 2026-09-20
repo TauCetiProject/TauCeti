@@ -99,14 +99,6 @@ lemma globalToPrincipalPartsBaseLinear_apply (D : SchemeWeilDivisor X)
 
 variable (hclosed : ∀ x : CodimensionOnePoint X, IsClosed ({(x : X)} : Set X))
 
-private lemma principalPartsSequence_shortExact
-    (hclosed : ∀ x : CodimensionOnePoint X, IsClosed ({(x : X)} : Set X))
-    (D : SchemeWeilDivisor X) :
-    (ShortComplex.mk (sheafι D) (toPrincipalParts D)
-      (sheafι_toPrincipalParts D)).ShortExact := by
-  simpa only [principalPartsShortComplex_eq] using
-    principalPartsShortComplex_shortExact hclosed D
-
 private def globalPrincipalPartsQuotientEquiv (D : SchemeWeilDivisor X) :
     (Γ(principalParts D, ⊤) ⧸ LinearMap.range (globalToPrincipalPartsBaseLinear R D)) ≃ₗ[R]
       (Scheme.Modules.Cohomology (principalParts D) 0 ⧸
@@ -165,7 +157,9 @@ def principalPartsQuotientEquivCohomologyOne (D : SchemeWeilDivisor X) :
       Scheme.Modules.Cohomology (sheaf D) 1 :=
   (globalPrincipalPartsQuotientEquiv R D).trans
     (Scheme.Modules.cohomologyOneLinearEquivOfIsFlasque R
-      (principalPartsSequence_shortExact hclosed D))
+      (S := ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D))
+      (by simpa only [principalPartsShortComplex_eq] using
+        principalPartsShortComplex_shortExact hclosed D))
 
 /-- The connecting map from global principal parts of `D` to `H¹(X, 𝒪_X(D))`.
 
