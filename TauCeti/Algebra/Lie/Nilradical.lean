@@ -312,6 +312,7 @@ theorem nilradical_eq_top_of_isNilpotent [LieRing.IsNilpotent L] : nilradical R 
 
 /-- Over a Noetherian Lie algebra, the nilradical is the whole algebra exactly when the algebra is
 nilpotent. -/
+@[simp]
 theorem nilradical_eq_top_iff [IsNoetherian R L] :
     nilradical R L = ⊤ ↔ LieRing.IsNilpotent L := by
   refine ⟨fun h ↦ ?_, fun _ ↦ nilradical_eq_top_of_isNilpotent R L⟩
