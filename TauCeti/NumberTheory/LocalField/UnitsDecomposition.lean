@@ -37,8 +37,6 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
 * `TauCeti.ker_normalizedValuation` and `TauCeti.continuous_normalizedValuation`: the normalized
   valuation is a continuous homomorphism with kernel `U(K,0)`.
 * `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
-* `TauCeti.toAdd_normalizedValuation_eq_iff_valuation_eq_zpow` and its two one-sided forms: the
-  powers of a uniformizer translate the additive normalization into `ValuativeRel.valuation`.
 * `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
 * `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul`: how the splitting changes with the uniformizer.
 * `TauCeti.rootsOfUnityFieldEquivResidueFieldUnits_unitFiltrationZeroEquivProd_apply_fst`: the
@@ -101,45 +99,6 @@ theorem normalizedValuation_comp_zpowersHom (hϖ : normalizedValuation K ϖ = .o
     (normalizedValuation K).comp (zpowersHom Kˣ ϖ) = .id _ := by
   ext
   simp [hϖ]
-
-/-- A uniformizer has normalized valuation `n` in its `n`-th power. -/
-theorem normalizedValuation_zpow_of_eq_ofAdd_one (hϖ : normalizedValuation K ϖ = .ofAdd 1)
-    (n : ℤ) : normalizedValuation K (ϖ ^ n) = .ofAdd n := by
-  simpa using DFunLike.congr_fun (normalizedValuation_comp_zpowersHom hϖ) (.ofAdd n)
-
-/-- The powers of a uniformizer measure the normalized valuation: `n ≤ v_K(x)` exactly when the
-multiplicative valuation of `x` is at most that of `ϖ ^ n`. -/
-theorem le_toAdd_normalizedValuation_iff_valuation_le_zpow
-    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) (x : Kˣ) :
-    n ≤ (normalizedValuation K x).toAdd ↔ valuation K (x : K) ≤ valuation K (ϖ : K) ^ n :=
-  calc n ≤ (normalizedValuation K x).toAdd
-      ↔ (normalizedValuation K (ϖ ^ n)).toAdd ≤ (normalizedValuation K x).toAdd := by
-        rw [normalizedValuation_zpow_of_eq_ofAdd_one hϖ, toAdd_ofAdd]
-    _ ↔ valuation K (x : K) ≤ valuation K ((ϖ ^ n : Kˣ) : K) :=
-        toAdd_normalizedValuation_le_iff_valuation_le _ _
-    _ ↔ valuation K (x : K) ≤ valuation K (ϖ : K) ^ n := by
-        rw [Units.val_zpow_eq_zpow_val, map_zpow₀]
-
-/-- The powers of a uniformizer measure the normalized valuation, in the other direction. -/
-theorem toAdd_normalizedValuation_le_iff_valuation_zpow_le
-    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) (x : Kˣ) :
-    (normalizedValuation K x).toAdd ≤ n ↔ valuation K (ϖ : K) ^ n ≤ valuation K (x : K) :=
-  calc (normalizedValuation K x).toAdd ≤ n
-      ↔ (normalizedValuation K x).toAdd ≤ (normalizedValuation K (ϖ ^ n)).toAdd := by
-        rw [normalizedValuation_zpow_of_eq_ofAdd_one hϖ, toAdd_ofAdd]
-    _ ↔ valuation K ((ϖ ^ n : Kˣ) : K) ≤ valuation K (x : K) :=
-        toAdd_normalizedValuation_le_iff_valuation_le _ _
-    _ ↔ valuation K (ϖ : K) ^ n ≤ valuation K (x : K) := by
-        rw [Units.val_zpow_eq_zpow_val, map_zpow₀]
-
-/-- The normalized valuation of `x` is `n` exactly when `x` and `ϖ ^ n` have the same
-multiplicative valuation. -/
-theorem toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
-    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) (x : Kˣ) :
-    (normalizedValuation K x).toAdd = n ↔ valuation K (x : K) = valuation K (ϖ : K) ^ n := by
-  rw [le_antisymm_iff, le_antisymm_iff (a := valuation K (x : K)),
-    toAdd_normalizedValuation_le_iff_valuation_zpow_le hϖ,
-    le_toAdd_normalizedValuation_iff_valuation_le_zpow hϖ, and_comm]
 
 /-- The unit part `x ϖ^{-v_K(x)}` of `x : Kˣ` lies in `U(K,0)`. -/
 theorem mul_zpow_neg_mem_unitFiltration_zero (hϖ : normalizedValuation K ϖ = .ofAdd 1)

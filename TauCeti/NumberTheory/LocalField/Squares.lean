@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Henselian
 public import TauCeti.RingTheory.Valuation.ValuationRing
 
+import TauCeti.Algebra.Group.Units.Basic
+
 /-!
 # Deep units are squares, at the sharp depth
 
@@ -36,6 +38,9 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 * `TauCeti.not_unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2)) ⊄ (Kˣ)²`.
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two_iff`: `U(K, n) ⊆ (Kˣ)²` exactly when
   `2 v_K(2) + 1 ≤ n`.
+* `TauCeti.valuation_sub_sq_one_ne_odd` and `TauCeti.not_isSquare_one_add_pow_odd`: below depth
+  `2 v_K(2)`, a square cannot differ from one to exact odd order, so `1 + π^(2k+1)` is not a
+  square when `k < v_K(2)`.
 
 ## References
 
@@ -132,6 +137,91 @@ theorem unitFiltration_le_range_powMonoidHom_two_iff (h2 : (2 : K) ≠ 0) {n : �
   by_contra! hn
   exact not_unitFiltration_le_range_powMonoidHom_two h2
     ((unitFiltration_antitone (Nat.le_of_lt_succ hn)).trans h)
+
+/-- Below twice the valuation of two, a square cannot differ from one to exact odd order. -/
+theorem valuation_sub_sq_one_ne_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
+    (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2) (ξ : K) :
+    valuation K (ξ ^ 2 - 1) ≠ valuation K (π : K) ^ (2 * k + 1) := by
+  intro hξ
+  have hπ0 : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
+  have hπv : valuation K (π : K) ≠ 0 := by simpa using hπ0
+  have hz0 : ξ ^ 2 - 1 ≠ 0 := by
+    intro hz
+    rw [hz, map_zero] at hξ
+    exact (pow_ne_zero _ hπv) hξ.symm
+  have hx0 : ξ - 1 ≠ 0 := by
+    intro hx
+    apply hz0
+    rw [sub_eq_zero.mp hx]
+    simp
+  have hy0 : ξ + 1 ≠ 0 := by
+    intro hy
+    apply hz0
+    have hξneg : ξ = -1 := eq_neg_of_add_eq_zero_left hy
+    rw [hξneg]
+    norm_num
+  let x : Kˣ := Units.mk0 (ξ - 1) hx0
+  let y : Kˣ := Units.mk0 (ξ + 1) hy0
+  let z : Kˣ := Units.mk0 (ξ ^ 2 - 1) hz0
+  have hz : z = x * y := by
+    apply Units.ext
+    simp only [z, x, y, Units.val_mk0, Units.val_mul]
+    ring
+  have hzadd : (normalizedValuation K z).toAdd = ((2 * k + 1 : ℕ) : ℤ) :=
+    (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
+      (normalizedValuation_irreducible hπ) _ z).mpr
+        (by simpa only [z, Units.val_mk0, zpow_natCast] using hξ)
+  rw [hz, map_mul, toAdd_mul] at hzadd
+  have hsmall : (normalizedValuation K x).toAdd < natCastValuation K 2 h2 ∨
+      (normalizedValuation K y).toAdd < natCastValuation K 2 h2 := by
+    omega
+  have htwo : (normalizedValuation K (Units.mk0 (2 : K) h2)).toAdd =
+      (natCastValuation K 2 h2 : ℤ) := toAdd_normalizedValuation_natCast K 2 h2
+  have hvaluation_two_lt (a : Kˣ)
+      (ha : (normalizedValuation K a).toAdd < natCastValuation K 2 h2) :
+      valuation K (2 : K) < valuation K (a : K) := by
+    have hnle : ¬(normalizedValuation K (Units.mk0 (2 : K) h2)).toAdd ≤
+        (normalizedValuation K a).toAdd := by
+      rw [htwo]
+      exact not_le.mpr ha
+    rw [toAdd_normalizedValuation_le_iff_valuation_le] at hnle
+    exact lt_of_not_ge hnle
+  have hadd_of_valuation_eq (a b : Kˣ)
+      (hab : valuation K (b : K) = valuation K (a : K)) :
+      (normalizedValuation K a).toAdd = (normalizedValuation K b).toAdd :=
+    le_antisymm
+      ((toAdd_normalizedValuation_le_iff_valuation_le a b).mpr hab.le)
+      ((toAdd_normalizedValuation_le_iff_valuation_le b a).mpr hab.ge)
+  rcases hsmall with hxsmall | hysmall
+  · have hvlt := hvaluation_two_lt x hxsmall
+    have hxy : valuation K (y : K) = valuation K (x : K) := by
+      simp only [x, y, Units.val_mk0]
+      calc
+        valuation K (ξ + 1) = valuation K ((ξ - 1) + 2) := by congr 1; ring
+        _ = valuation K (ξ - 1) := (valuation K).map_add_eq_of_lt_left (by simpa [x] using hvlt)
+    have hxyadd := hadd_of_valuation_eq x y hxy
+    omega
+  · have hvlt := hvaluation_two_lt y hysmall
+    have hxy : valuation K (x : K) = valuation K (y : K) := by
+      simp only [x, y, Units.val_mk0]
+      calc
+        valuation K (ξ - 1) = valuation K ((ξ + 1) - 2) := by congr 1; ring
+        _ = valuation K (ξ + 1) := (valuation K).map_sub_eq_of_lt_left (by simpa [y] using hvlt)
+    have hxyadd := hadd_of_valuation_eq y x hxy
+    omega
+
+/-- For `k < v_K(2)`, the unit represented by `1 + π^(2k+1)` is not a square. -/
+theorem not_isSquare_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
+    (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2)
+    (hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0) :
+    ¬IsSquare (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0) := by
+  intro hsq
+  obtain ⟨ξ, hξ⟩ := isSquare_units_val_iff.mpr hsq
+  apply valuation_sub_sq_one_ne_odd h2 hπ hk ξ
+  have hξ' : ((Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0 : Kˣ) : K) = ξ ^ 2 := by
+    simpa [pow_two] using hξ
+  rw [← hξ']
+  simp only [Units.val_mk0, add_sub_cancel_left, map_pow]
 
 /-- The square subgroup of a nonarchimedean local field of characteristic different from two
 is open in its unit group, also at dyadic places. -/

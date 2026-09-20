@@ -34,6 +34,8 @@ characteristic is the absolute ramification index of `K`.
 
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
+* `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
+  characteristic equation in the additive and multiplicative valuation conventions.
 * `TauCeti.natCastValuation_eq_zero_iff`: the vanishing criterion, in terms of invertibility in
   `𝒪[K]`.
 * `TauCeti.natCastValuation_eq_zero_iff_not_dvd`: the vanishing criterion read off the residue
@@ -85,6 +87,16 @@ theorem normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
     (mem_integer_iff_toAdd_normalizedValuation_nonneg (Units.mk0 (n : K) hn)).mp
       (by simp)
   rw [natCastValuation, Int.toNat_of_nonneg h, ofAdd_toAdd]
+
+variable (K) in
+/-- The additive normalized valuation of a nonzero natural-number cast is its
+`natCastValuation`. -/
+@[simp]
+theorem toAdd_normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
+    (normalizedValuation K (Units.mk0 (n : K) hn)).toAdd =
+      (natCastValuation K n hn : ℤ) := by
+  rw [← toAdd_ofAdd (natCastValuation K n hn : ℤ)]
+  exact congrArg Multiplicative.toAdd (normalizedValuation_natCast K n hn)
 
 variable (K) in
 /-- The zero-preserving form of the characteristic equation of `natCastValuation`. -/
@@ -206,6 +218,16 @@ theorem span_natCast_eq_maximalIdeal_pow (n : ℕ) (hn : (n : K) ≠ 0) :
       Subring.coe_mul, Subring.coe_pow, Subring.coe_natCast] using hu
   rw [← hu', Ideal.span_singleton_mul_left_unit u.isUnit, hπ.maximalIdeal_eq,
     Ideal.span_singleton_pow]
+
+/-- The multiplicative valuation of a nonzero natural-number cast is the corresponding power of
+the valuation of any uniformizer. -/
+theorem valuation_natCast_eq_pow {π : 𝒪[K]} (hπ : Irreducible π) (n : ℕ)
+    (hn : (n : K) ≠ 0) :
+    valuation K (n : K) = valuation K (π : K) ^ natCastValuation K n hn := by
+  have h := (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
+    (normalizedValuation_irreducible hπ) ((natCastValuation K n hn : ℕ) : ℤ)
+    (Units.mk0 (n : K) hn)).mp (by simp)
+  simpa only [Units.val_mk0, zpow_natCast] using h
 
 variable (K) in
 /-- The normalized absolute value of a natural number is `q ^ (-natCastValuation K n hn)`, where

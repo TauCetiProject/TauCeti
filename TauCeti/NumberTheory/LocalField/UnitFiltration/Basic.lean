@@ -48,6 +48,8 @@ action on a finite extension, and its behaviour under a field embedding.
   `TauCeti.mem_unitFiltration_succ_valuation`: the valuation form of membership, an
   inequality on `x - 1` measured against a uniformizer. At positive depth the inequality alone
   already forces `x` to be a unit of `𝒪[K]`.
+* `TauCeti.mem_maximalIdeal_pow_iff_valuation_le`: membership in a power of the maximal ideal,
+  read against the valuation of a uniformizer.
 * `TauCeti.unitFiltration_zero` and `TauCeti.unitFiltration_one`: the two shallow steps are
   Mathlib's `ValuationSubring.unitGroup` and `ValuationSubring.principalUnitGroup`.
 * `TauCeti.unitFiltrationGradedZeroEquivResidueFieldUnits`: reduction identifies the
@@ -158,6 +160,12 @@ theorem mem_unitFiltration_iff_valuation_le {i : ℕ} {x : Kˣ} {π : 𝒪[K]} (
       (Valuation.integer.integers (valuation K)).isUnit_of_one' hx
     refine ⟨hu.unit, (hmem _).mpr ?_, by rw [hu.unit_spec]⟩
     simpa [hu.unit_spec] using hx1
+
+/-- Membership in a power of the maximal ideal, read in the multiplicative valuation. -/
+theorem mem_maximalIdeal_pow_iff_valuation_le {π : 𝒪[K]} (hπ : Irreducible π)
+    (y : 𝒪[K]) (i : ℕ) :
+    y ∈ 𝓂[K] ^ i ↔ valuation K (y : K) ≤ valuation K (π : K) ^ i :=
+  Set.ext_iff.mp (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) i) y
 
 /-- Membership in the unit filtration at positive depth, valuation form: the inequality on
 `x - 1` already forces `x` to be a unit of `𝒪[K]`, so no further hypothesis is needed. -/
