@@ -73,6 +73,7 @@ theorem radialRetraction_of_le_norm (h : r ≤ ‖x‖) :
   · rw [radialRetraction_def, ← hx, div_zero, min_eq_right zero_le_one]
   · rw [radialRetraction_def, min_eq_right ((div_le_one hx).2 h)]
 
+/-- For nonnegative radius, the radial retraction has norm `min ‖x‖ r`. -/
 @[simp]
 theorem norm_radialRetraction (hr : 0 ≤ r) (x : E) : ‖radialRetraction r x‖ = min ‖x‖ r := by
   rcases le_total ‖x‖ r with h | h
@@ -87,6 +88,12 @@ theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
     radialRetraction r x ∈ closedBall (0 : E) r := by
   rw [mem_closedBall_zero_iff, norm_radialRetraction hr]
   exact min_le_right _ _
+
+/-- The radial retraction is idempotent for nonnegative radius. -/
+@[simp]
+theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
+    radialRetraction r (radialRetraction r x) = radialRetraction r x :=
+  radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 (radialRetraction_mem_closedBall hr x))
 
 theorem mapsTo_radialRetraction (hr : 0 ≤ r) :
     MapsTo (radialRetraction (E := E) r) univ (closedBall 0 r) :=

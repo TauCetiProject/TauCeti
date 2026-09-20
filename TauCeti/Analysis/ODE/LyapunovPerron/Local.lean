@@ -226,6 +226,7 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
     · rw [map_add, apply_localStableGraphMap hs hu hα hr hN hsmall hP hAP, add_zero, hPP]
       exact hv
 
+omit hr in
 /-- **The local stable-manifold theorem, Lipschitz form.** Near a hyperbolic equilibrium the
 initial values of the forward solutions that stay in a fixed small ball form the graph of a
 Lipschitz map over a ball in the stable subspace `range P`. -/
@@ -233,11 +234,12 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image (hr0 : 
     ∃ ρ > 0,
       {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0) ∧ y 0 = x ∧
           MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ} =
-        (fun v ↦ v + localStableGraphMap A P N r hs hu hα hr hN hsmall v) ''
+        (fun v ↦ v + localStableGraphMap A P N r hs hu hα hr0.le hN hsmall v) ''
           (range P ∩ closedBall 0 ρ) := by
   have hC := lyapunovPerronBound_nonneg hα hsmall
   refine ⟨r / ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) + 1), div_pos hr0 (by linarith),
-    setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hα hr hN hsmall hN0 hP hAP ?_⟩
+    setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hα hr0.le hN hsmall hN0 hP
+      hAP ?_⟩
   rw [mul_div_assoc', div_le_iff₀ (by linarith)]
   nlinarith
 
