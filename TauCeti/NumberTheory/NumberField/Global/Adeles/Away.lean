@@ -48,7 +48,6 @@ namespace TauCeti.GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- A finite idele defines an ideal away from `S` exactly when its orders vanish on `S`. -/
-@[simp]
 theorem toFractionalIdeal_mem_idealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : 𝔸ᶠ[(𝓞 K), K]ˣ) :
     toFractionalIdeal x ∈ NumberFieldArithmetic.idealsAway (K := K) S ↔
@@ -87,7 +86,6 @@ theorem toIdealsAway_apply (S : Finset (HeightOneSpectrum (𝓞 K)))
     rfl
 
 /-- The kernel of `toIdealsAway` consists of finite ideles with trivial fractional ideal. -/
-@[simp]
 theorem mem_ker_toIdealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : adicOrdAway S) :
     x ∈ (toIdealsAway S).ker ↔ (x : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈ integralUnits (𝓞 K) K := by
