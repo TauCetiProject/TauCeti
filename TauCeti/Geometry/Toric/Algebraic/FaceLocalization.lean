@@ -78,12 +78,6 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N �
 
 variable {τ υ : PointedCone ℝ V}
 
-/-- The identity linear map sends a face into its ambient cone. -/
-theorem mapsTo_id_of_isFaceOf {τ σ : PointedCone ℝ V} (hτσ : τ.IsFaceOf σ) :
-    Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) := by
-  intro x hx
-  exact hτσ.le hx
-
 /-- A face inclusion `τ ≼ σ` induces the restriction map from the coordinate ring of `σ`
 to the coordinate ring of `τ`. -/
 noncomputable def faceAffineCoordinateRingMap (hi : IsIntegralLattice i)
@@ -127,7 +121,7 @@ theorem faceAffineCoordinateRingMap_comp (hi : IsIntegralLattice i)
 noncomputable def faceAffineToricSchemeMap (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) : affineToricScheme hi τ ⟶ affineToricScheme hi σ :=
   affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
-    (mapsTo_id_of_isFaceOf hτσ)
+    (PointedCone.IsFaceOf.mapsTo_id hτσ)
 
 /-- The morphism attached to a face inclusion is the spectrum of its coordinate-ring
 restriction. -/
@@ -145,7 +139,7 @@ theorem faceAffineToricSchemeMap_as_affineToricSchemeMap (hi : IsIntegralLattice
     (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hτσ =
       affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
-        (mapsTo_id_of_isFaceOf hτσ) := by
+        (PointedCone.IsFaceOf.mapsTo_id hτσ) := by
   rw [faceAffineToricSchemeMap_def, affineToricSchemeMap_def]
   congr 1
 

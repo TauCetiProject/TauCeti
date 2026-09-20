@@ -300,14 +300,6 @@ noncomputable def affineToricChartMap (f : FanHom Φ Ψ) (σ : Φ.cones) :
     Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
     (mapsTo_leastCone f σ)
 
-/-- The affine chart map is the affine toric scheme map induced by the fan morphism. -/
-theorem affineToricChartMap_def (f : FanHom Φ Ψ) (σ : Φ.cones) :
-    f.affineToricChartMap σ =
-      affineToricSchemeMap (σ := σ.1) (τ := f.leastCone σ.2)
-        Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-        (mapsTo_leastCone f σ) :=
-  (rfl)
-
 /-- The affine chart maps induced by a fan morphism commute with face inclusions. -/
 @[reassoc]
 theorem faceAffineToricSchemeMap_comp_affineToricChartMap (f : FanHom Φ Ψ)
