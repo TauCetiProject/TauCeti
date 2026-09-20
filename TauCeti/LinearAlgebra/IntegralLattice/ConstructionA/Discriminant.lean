@@ -66,16 +66,13 @@ theorem relIndex_lattice (C D : AddSubgroup (ι → ZMod m)) :
 
 variable [Fintype ι]
 
-section Standard
-
-variable [DecidableEq ι]
-
-private theorem map_standardLattice_carrier :
+private theorem map_standardLattice_carrier [DecidableEq ι] :
     (IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι) (1 : Matrix ι ι ℤ)
           Matrix.isSymm_one).carrier.map
         ((LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ)
           (NeZero.ne _)).restrictScalars ℤ).toLinearMap =
       lattice m (⊥ : AddSubgroup (ι → ZMod m)) := by
+  classical
   have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
   ext x
   rw [Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
@@ -104,28 +101,30 @@ private theorem map_standardLattice_carrier :
 /-- Multiplying every coordinate by `m` is an isometry from the standard coordinate lattice `ℤ^ι`,
 with its dot product scaled by `m`, onto the Construction A lattice of the zero code.  It exhibits
 the zero-code lattice as `m ℤ^ι` carrying the normalized form. -/
-noncomputable def scaledStandardIsometry :
-    IntegralLattice.Isometry
-      ((m : ℤ) • IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι)
-        (1 : Matrix ι ι ℤ) Matrix.isSymm_one)
-      (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)) where
-  toIsometryEquiv :=
-    { toLinearEquiv := LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ) (NeZero.ne _)
-      map_app' x y := by
-        have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
-        have hrow (i : ι) : ∑ j, (((1 : Matrix ι ι ℤ) i j : ℤ) : ℚ) * y j = y i := by
-          simp [Matrix.one_apply]
-        rw [integralLattice_form, form_apply, IntegralLattice.smul_form,
-          LinearMap.smul_apply, LinearMap.smul_apply,
-          IntegralLattice.form_ofGramMatrix_basisFun_apply]
-        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-          LinearEquiv.smulOfNeZero_apply, hrow, dotProduct, Pi.smul_apply, smul_eq_mul,
-          Int.cast_natCast]
-        rw [div_eq_iff hm, Finset.mul_sum, Finset.sum_mul]
-        exact Finset.sum_congr rfl fun i _ ↦ by ring }
-  map_carrier := by
-    rw [IntegralLattice.smul_carrier, integralLattice_carrier]
-    exact map_standardLattice_carrier m
+noncomputable def scaledStandardIsometry :=
+  letI := Classical.decEq ι
+  ({
+    toIsometryEquiv :=
+      { toLinearEquiv := LinearEquiv.smulOfNeZero ℚ (ι → ℚ) (m : ℚ) (NeZero.ne _)
+        map_app' x y := by
+          have hm : ((m : ℕ) : ℚ) ≠ 0 := NeZero.ne _
+          have hrow (i : ι) : ∑ j, (((1 : Matrix ι ι ℤ) i j : ℤ) : ℚ) * y j = y i := by
+            simp [Matrix.one_apply]
+          rw [integralLattice_form, form_apply, IntegralLattice.smul_form,
+            LinearMap.smul_apply, LinearMap.smul_apply,
+            IntegralLattice.form_ofGramMatrix_basisFun_apply]
+          simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+            LinearEquiv.smulOfNeZero_apply, hrow, dotProduct, Pi.smul_apply, smul_eq_mul,
+            Int.cast_natCast]
+          rw [div_eq_iff hm, Finset.mul_sum, Finset.sum_mul]
+          exact Finset.sum_congr rfl fun i _ ↦ by ring }
+    map_carrier := by
+      rw [IntegralLattice.smul_carrier, integralLattice_carrier]
+      exact map_standardLattice_carrier (m := m)
+  } : IntegralLattice.Isometry
+    ((m : ℤ) • IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι)
+      (1 : Matrix ι ι ℤ) Matrix.isSymm_one)
+    (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)))
 
 /-- The scaled-standard isometry acts by multiplying every coordinate by `m`. -/
 @[simp]
@@ -134,11 +133,9 @@ theorem scaledStandardIsometry_apply (x : ι → ℚ) :
   rw [scaledStandardIsometry]
   rfl
 
-end Standard
-
 /-- The zero-code Construction A lattice has diagonal Gram matrix `m I`, hence discriminant
 `m ^ #ι`. -/
-theorem discriminant_integralLattice_bot :
+theorem integralLattice_discriminant_bot :
     (integralLattice m (⊥ : AddSubgroup (ι → ZMod m))
       (by simp)).discriminant = (m : ℕ) ^ Fintype.card ι := by
   classical
@@ -149,7 +146,7 @@ theorem discriminant_integralLattice_bot :
 
 /-- **The discriminant formula for Construction A, with its divisibility visible:** the
 discriminant times the square of the number of codewords is `m ^ #ι`. -/
-theorem discriminant_mul_natCard_sq (C : AddSubgroup (ι → ZMod m))
+theorem integralLattice_discriminant_mul_natCard_sq (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).discriminant * Nat.card C ^ 2 =
@@ -165,7 +162,7 @@ theorem discriminant_mul_natCard_sq (C : AddSubgroup (ι → ZMod m))
   dsimp only [L₀] at hdisc
   rw [integralLattice_carrier, integralLattice_carrier] at hdisc
   rw [relIndex_lattice, AddSubgroup.relIndex_bot_left] at hdisc
-  rw [← discriminant_integralLattice_bot m]
+  rw [← integralLattice_discriminant_bot m]
   exact hdisc.symm
 
 /-- The square of the number of codewords divides `m ^ #ι`, as required for the Construction A
@@ -175,31 +172,31 @@ theorem natCard_sq_dvd_modulus_pow_card (C : AddSubgroup (ι → ZMod m))
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     Nat.card C ^ 2 ∣ (m : ℕ) ^ Fintype.card ι :=
   ⟨(integralLattice m C hC).discriminant, by
-    simpa [mul_comm] using (discriminant_mul_natCard_sq m C hC).symm⟩
+    simpa [mul_comm] using (integralLattice_discriminant_mul_natCard_sq m C hC).symm⟩
 
 /-- The discriminant of an integral Construction A lattice is the exact natural-number quotient
 `m ^ #ι / (#C)^2`. -/
 @[simp]
-theorem discriminant_integralLattice (C : AddSubgroup (ι → ZMod m))
+theorem integralLattice_discriminant (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
     (integralLattice m C hC).discriminant =
       (m : ℕ) ^ Fintype.card ι / Nat.card C ^ 2 := by
   apply Nat.eq_div_of_mul_eq_right
   · exact pow_ne_zero 2 (Nat.card_pos.ne')
-  · simpa [mul_comm] using discriminant_mul_natCard_sq m C hC
+  · simpa [mul_comm] using integralLattice_discriminant_mul_natCard_sq m C hC
 
 /-- For a self-orthogonal linear code of dimension `k` over the prime field `ZMod p`, the
 Construction A discriminant is `p ^ (n - 2k)`. -/
 @[simp]
-theorem discriminant_integralLattice_of_prime {p : ℕ} [hp : Fact p.Prime]
+theorem integralLattice_discriminant_of_prime {p : ℕ} [hp : Fact p.Prime]
     (C : Submodule (ZMod p) (ι → ZMod p)) (hC : C ≤ C.euclideanDual) :
     (integralLattice ⟨p, hp.out.pos⟩ C.toAddSubgroup hC).discriminant =
       p ^ (Fintype.card ι - 2 * Module.finrank (ZMod p) C) := by
   have hdim := Submodule.two_mul_finrank_le_card_of_le_euclideanDual
     (K := ZMod p) (ι := ι) (C := C) hC
   apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.out.pos (2 * Module.finrank (ZMod p) C))
-  have hdisc := discriminant_mul_natCard_sq ⟨p, hp.out.pos⟩ C.toAddSubgroup hC
+  have hdisc := integralLattice_discriminant_mul_natCard_sq ⟨p, hp.out.pos⟩ C.toAddSubgroup hC
   calc
     (integralLattice ⟨p, hp.out.pos⟩ C.toAddSubgroup hC).discriminant *
           p ^ (2 * Module.finrank (ZMod p) C) =
