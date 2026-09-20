@@ -31,6 +31,9 @@ of any subgroup.
 ## Main results
 
 * `Submodule.contMDiff_lieExpMulLieExp`: the exponential-product map is globally smooth.
+* `Submodule.groupLieAlgebraEquivModelVectorSpace_mfderiv_lieExpMulLieExp_zero_apply`:
+  for arbitrary subspaces, the derivative at zero sends a tangent vector to the coordinate of
+  the sum of its two source components.
 * `Submodule.hasMFDerivAt_lieExpMulLieExp_zero_of_isCompl`: for complementary subspaces, the
   derivative is the canonical addition equivalence in tangent-space coordinates.
 * `Submodule.isLocalDiffeomorphAt_lieExpMulLieExp_zero_of_isCompl`: complementary subspaces give a
@@ -185,24 +188,27 @@ private theorem fderiv_extChartAt_lieExpMulLieExp_zero_apply
 /-- After the canonical source and target coordinate equivalences, the derivative of the
 exponential-product map at the zero pair sends `(X, Y)` to the coordinate of `X + Y`. -/
 theorem groupLieAlgebraEquivModelVectorSpace_mfderiv_lieExpMulLieExp_zero_apply
-    (p q : Submodule ℝ (LeftInvariantDerivation I G)) (z : p × q) :
+    (p q : Submodule ℝ (LeftInvariantDerivation I G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
       finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-    groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)
-        (mfderiv (modelWithCornersSelf ℝ (p × q)) I
-          (lieExpMulLieExp (I := I) (G := G) p q) 0
-          ((NormedSpace.fromTangentSpace (0 : p × q)).symm z)) =
-      leftInvariantDerivationLinearIsometryEquivModelVectorSpace
-        (I := I) (G := G) ((z.1 : LeftInvariantDerivation I G) + z.2) := by
+    ∀ v : TangentSpace (modelWithCornersSelf ℝ (p × q)) (0 : p × q),
+      groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)
+          ((tangentSpaceCast I (1 : G) (lieExpMulLieExp (I := I) (G := G) p q 0)).symm
+            (mfderiv (modelWithCornersSelf ℝ (p × q)) I
+              (lieExpMulLieExp (I := I) (G := G) p q) 0 v)) =
+        leftInvariantDerivationLinearIsometryEquivModelVectorSpace
+          (I := I) (G := G) ((NormedSpace.fromTangentSpace (0 : p × q) v).1 +
+            (NormedSpace.fromTangentSpace (0 : p × q) v).2) := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
   let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   dsimp only
+  intro v
   rw [lieExpMulLieExp_zero]
   have hdiff := (contMDiff_lieExpMulLieExp (I := I) (G := G) p q).mdifferentiableAt
     (x := 0) (by simp)
@@ -218,39 +224,23 @@ theorem groupLieAlgebraEquivModelVectorSpace_mfderiv_lieExpMulLieExp_zero_apply
   -- representative.
   simp only [Function.comp_apply] at hmf
   rw [mfderiv_eq_fderiv] at hmf
-  have happly := DFunLike.congr_fun hmf
-    ((NormedSpace.fromTangentSpace (0 : p × q)).symm z)
-  have hfderiv := fderiv_extChartAt_lieExpMulLieExp_zero_apply (I := I) (G := G) p q z
+  have happly := DFunLike.congr_fun hmf v
+  have hfderiv := fderiv_extChartAt_lieExpMulLieExp_zero_apply (I := I) (G := G) p q
+    (NormedSpace.fromTangentSpace (0 : p × q) v)
   have hresult := happly.symm.trans hfderiv
   rw [lieExpMulLieExp_zero, mfderiv_extChartAt_self] at hresult
   exact hresult
 
-/-- For complementary subspaces, the derivative of the exponential-product map at zero is the
-canonical addition equivalence, transported through the source and target tangent-space coordinates.
--/
-theorem hasMFDerivAt_lieExpMulLieExp_zero_of_isCompl
+/-- The tangent-space derivative equivalence of the complementary exponential-product chart. -/
+noncomputable def lieExpMulLieExpMFDerivEquiv
     (p q : Submodule ℝ (LeftInvariantDerivation I G)) (h : IsCompl p q) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
       finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-    let ht : IsTopCompl p q :=
-      IsCompl.isTopCompl_of_isClosed_of_finiteDimensional h p.closed_of_finiteDimensional
-    let eTarget : E ≃L[ℝ]
-        TangentSpace I (lieExpMulLieExp (I := I) (G := G) p q 0) :=
-      (groupLieAlgebraEquivModelVectorSpace
-          (I := I) (G := G)).symm.toContinuousLinearEquiv.trans
-        (tangentSpaceCast I (1 : G) (lieExpMulLieExp (I := I) (G := G) p q 0))
-    let e₀ : (p × q) ≃L[ℝ] E :=
-      (p.prodEquivOfIsTopCompl q ht).trans
-        (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
-          (I := I) (G := G)).toContinuousLinearEquiv
-    let e : TangentSpace (modelWithCornersSelf ℝ (p × q)) (0 : p × q) ≃L[ℝ]
-        TangentSpace I (lieExpMulLieExp (I := I) (G := G) p q 0) :=
-      (NormedSpace.fromTangentSpace (0 : p × q)).trans (e₀.trans eTarget)
-    HasMFDerivAt (modelWithCornersSelf ℝ (p × q)) I
-      (lieExpMulLieExp (I := I) (G := G) p q) 0 e := by
+    TangentSpace (modelWithCornersSelf ℝ (p × q)) (0 : p × q) ≃L[ℝ]
+      TangentSpace I (lieExpMulLieExp (I := I) (G := G) p q 0) := by
   let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
   let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
@@ -267,40 +257,67 @@ theorem hasMFDerivAt_lieExpMulLieExp_zero_of_isCompl
     (p.prodEquivOfIsTopCompl q ht).trans
       (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
         (I := I) (G := G)).toContinuousLinearEquiv
-  let e : TangentSpace (modelWithCornersSelf ℝ (p × q)) (0 : p × q) ≃L[ℝ]
-      TangentSpace I (lieExpMulLieExp (I := I) (G := G) p q 0) :=
-    (NormedSpace.fromTangentSpace (0 : p × q)).trans (e₀.trans eTarget)
+  exact (NormedSpace.fromTangentSpace (0 : p × q)).trans (e₀.trans eTarget)
+
+/-- The named derivative equivalence evaluates by adding source coordinates and transporting them
+to the target tangent space. -/
+theorem lieExpMulLieExpMFDerivEquiv_apply
+    (p q : Submodule ℝ (LeftInvariantDerivation I G)) (h : IsCompl p q) :
+    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
+    let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+    let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+      finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+    ∀ z : TangentSpace (modelWithCornersSelf ℝ (p × q)) (0 : p × q),
+      lieExpMulLieExpMFDerivEquiv (I := I) (G := G) p q h z =
+        tangentSpaceCast I (1 : G) (lieExpMulLieExp (I := I) (G := G) p q 0)
+          ((groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)).symm
+            (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
+              (I := I) (G := G)
+              ((NormedSpace.fromTangentSpace (0 : p × q) z).1 +
+                (NormedSpace.fromTangentSpace (0 : p × q) z).2))) := by
+  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
+  let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  dsimp only
+  intro z
+  dsimp [lieExpMulLieExpMFDerivEquiv]
+
+/-- For complementary subspaces, the derivative of the exponential-product map at zero is the
+canonical addition equivalence, transported through the source and target tangent-space coordinates.
+-/
+theorem hasMFDerivAt_lieExpMulLieExp_zero_of_isCompl
+    (p q : Submodule ℝ (LeftInvariantDerivation I G)) (h : IsCompl p q) :
+    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
+    let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+    let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+      finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+    HasMFDerivAt (modelWithCornersSelf ℝ (p × q)) I
+      (lieExpMulLieExp (I := I) (G := G) p q) 0
+      (lieExpMulLieExpMFDerivEquiv (I := I) (G := G) p q h) := by
+  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
+  let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   apply ((contMDiff_lieExpMulLieExp (I := I) (G := G) p q).mdifferentiableAt
     (x := 0) (by simp)).hasMFDerivAt.congr_mfderiv
   apply ContinuousLinearMap.ext
   intro z
   have hm := groupLieAlgebraEquivModelVectorSpace_mfderiv_lieExpMulLieExp_zero_apply
     (I := I) (G := G) p q (NormedSpace.fromTangentSpace (0 : p × q) z)
-  dsimp only at hm
-  rw [ContinuousLinearEquiv.symm_apply_apply] at hm
   have hm' := congrArg
     (groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)).symm hm
-  have hm'' := ((groupLieAlgebraEquivModelVectorSpace
-    (I := I) (G := G)).symm_apply_apply
-      (mfderiv (modelWithCornersSelf ℝ (p × q)) I
-        (lieExpMulLieExp (I := I) (G := G) p q) 0 z)).symm.trans hm'
-  change mfderiv (modelWithCornersSelf ℝ (p × q)) I
-      (lieExpMulLieExp (I := I) (G := G) p q) 0 z = e z
-  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
-    Submodule.prodEquivOfIsTopCompl_apply]
-  -- `tangentSpaceCast` deliberately has no application lemma. After rewriting the base-point
-  -- value, this last change removes only its definitional identification of the two equal tangent
-  -- spaces; every algebraic coordinate map above was reduced by its explicit application lemma.
+  rw [LinearEquiv.symm_apply_apply] at hm'
+  have hm'' := congrArg
+    (tangentSpaceCast I (1 : G) (lieExpMulLieExp (I := I) (G := G) p q 0)) hm'
+  rw [ContinuousLinearEquiv.apply_symm_apply] at hm''
+  rw [ContinuousLinearEquiv.coe_coe]
+  rw [lieExpMulLieExpMFDerivEquiv_apply]
   rw [lieExpMulLieExp_zero]
-  change mfderiv (modelWithCornersSelf ℝ (p × q)) I
-      (lieExpMulLieExp (I := I) (G := G) p q) 0 z =
-    (groupLieAlgebraEquivModelVectorSpace (I := I) (G := G)).symm
-      (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
-        (I := I) (G := G)
-        (((NormedSpace.fromTangentSpace (0 : p × q) z).1 :
-            LeftInvariantDerivation I G) +
-          (NormedSpace.fromTangentSpace (0 : p × q) z).2))
   exact hm''
 
 /-- Complementary linear subspaces of the Lie algebra give a local product chart at the group
@@ -320,23 +337,8 @@ theorem isLocalDiffeomorphAt_lieExpMulLieExp_zero_of_isCompl
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   dsimp only
-  let ht : Submodule.IsTopCompl p q :=
-    Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional
-      h p.closed_of_finiteDimensional
-  let e₀ : (p × q) ≃L[ℝ] E :=
-    (p.prodEquivOfIsTopCompl q ht).trans
-      (leftInvariantDerivationLinearIsometryEquivModelVectorSpace
-        (I := I) (G := G)).toContinuousLinearEquiv
-  let eTarget : E ≃L[ℝ]
-      TangentSpace I (lieExpMulLieExp (I := I) (G := G) p q 0) :=
-    (groupLieAlgebraEquivModelVectorSpace
-        (I := I) (G := G)).symm.toContinuousLinearEquiv.trans
-      (tangentSpaceCast I (1 : G) (lieExpMulLieExp (I := I) (G := G) p q 0))
-  let e : TangentSpace (modelWithCornersSelf ℝ (p × q)) (0 : p × q) ≃L[ℝ]
-      TangentSpace I (lieExpMulLieExp (I := I) (G := G) p q 0) :=
-    (NormedSpace.fromTangentSpace (0 : p × q)).trans (e₀.trans eTarget)
   apply TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq
-      (s := Set.univ) (e := e)
+      (s := Set.univ) (e := lieExpMulLieExpMFDerivEquiv (I := I) (G := G) p q h)
       (contMDiff_lieExpMulLieExp (I := I) (G := G) p q).contMDiffOn
       isOpen_univ (Set.mem_univ 0)
       (BoundarylessManifold.isInteriorPoint :
