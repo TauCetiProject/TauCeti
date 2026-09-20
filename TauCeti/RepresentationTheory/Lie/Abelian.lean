@@ -69,10 +69,11 @@ private theorem abelianSquareZeroLeftRegular_apply_apply [IsLieAbelian L] (x : L
 private theorem abelianSquareZeroLeftRegular_mul_eq_zero [IsLieAbelian L] (x y : L) :
     LieHom.leftRegularRep (abelianSquareZeroLieHom R L) x *
       LieHom.leftRegularRep (abelianSquareZeroLieHom R L) y = 0 := by
-  rw [LieHom.leftRegularRep_eq_mulLeft, LieHom.leftRegularRep_eq_mulLeft,
-    Module.End.mul_eq_comp, ← LinearMap.mulLeft_mul, abelianSquareZeroLieHom_apply,
-    abelianSquareZeroLieHom_apply, TrivSqZeroExt.inr_mul_inr,
-    LinearMap.mulLeft_zero_eq_zero]
+  apply LinearMap.ext
+  intro z
+  rw [Module.End.mul_apply, abelianSquareZeroLeftRegular_apply_apply,
+    abelianSquareZeroLeftRegular_apply_apply]
+  simp
 
 /-- The canonical representation of an abelian Lie algebra by square-zero operators on `R × L`.
 The first coordinate records the scalar that the acting element transfers to the second
