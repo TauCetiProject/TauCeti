@@ -68,6 +68,15 @@ def completionPolynomial : (v.adicCompletion K)[X] :=
   (minpoly K (semilocalPowerBasis (K := K) L).gen).map
     (algebraMap K (v.adicCompletion K))
 
+/-- The completed primitive polynomial is the minimal polynomial of the chosen primitive element,
+with its coefficients mapped to `K_v`. -/
+@[simp]
+theorem completionPolynomial_def :
+    completionPolynomial L v =
+      (minpoly K (semilocalPowerBasis (K := K) L).gen).map
+        (algebraMap K (v.adicCompletion K)) := by
+  rw [completionPolynomial]
+
 /-- The normalized irreducible factors over `K_v` of the chosen primitive element's minimal
 polynomial. -/
 abbrev completionFactors :=
@@ -363,6 +372,20 @@ def factorFieldsEquivCompletions :
     (AlgEquiv.piCongrLeft (v.adicCompletion K)
       (fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
         w.1.adicCompletion L) (completionFactorsEquivPlaces L v))
+
+/-- The product equivalence applies the factor-field equivalence at the factor corresponding to
+each place. -/
+@[simp]
+theorem factorFieldsEquivCompletions_apply
+    (x : (q : completionFactors L v) → AdjoinRoot q.1)
+    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    factorFieldsEquivCompletions L v x w =
+      (completionFactorsEquivPlaces L v).apply_symm_apply w ▸
+        factorFieldEquivCompletion L v ((completionFactorsEquivPlaces L v).symm w)
+          (x ((completionFactorsEquivPlaces L v).symm w)) := by
+  rw [factorFieldsEquivCompletions, AlgEquiv.trans_apply, AlgEquiv.piCongrLeft_apply,
+    Equiv.piCongrLeft_apply]
+  rfl
 
 private theorem factorFieldsEquivCompletions_semilocalCrtHom
     (z : v.adicCompletion K ⊗[K] L) :
