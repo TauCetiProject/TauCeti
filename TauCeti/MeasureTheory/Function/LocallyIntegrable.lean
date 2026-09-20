@@ -19,11 +19,13 @@ localized to relatively compact subdomains.
 For an additive Haar measure, local integrability is also preserved by translating a function onto
 any set whose translate stays inside the original domain.
 
-A function locally integrable on a measurable set `s`, vanishing almost everywhere on `s` off a
-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This is the
-step that turns a local hypothesis plus compact support into a global one. `K` is asked to be
-measurable separately from being compact: without a separation axiom on `X` a compact set need not
-be closed.
+A function locally integrable on a null-measurable set `s`, vanishing almost everywhere on `s` off
+a null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
+is the step that turns a local hypothesis plus compact support into a global one. Both sets are
+asked to be null-measurable explicitly because nothing here ties the topology on `X` to its
+measurable space -- there is no `OpensMeasurableSpace` or `BorelSpace` assumption, so neither
+compactness nor closedness of `K` carries any measurability with it. (Absent a separation axiom
+`K` need not even be closed, but that is the lesser obstacle.)
 
 ## Main declarations
 
@@ -32,7 +34,7 @@ be closed.
 * `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
   compact open subdomains.
 * `TauCeti.integrable_indicator_of_isCompact`: extension by zero of a function locally integrable
-  on a measurable set, supported in a measurable compact subset of it, is integrable.
+  on a null-measurable set, supported in a null-measurable compact subset of it, is integrable.
 
 ## Attribution
 
@@ -98,23 +100,25 @@ section ExtendByZero
 variable {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] [PseudoMetrizableSpace ε]
   {f : X → ε} {s K : Set X}
 
-/-- A function locally integrable on a measurable set `s` and vanishing almost everywhere on `s`
-off a measurable compact `K ⊆ s` is, after extension by zero, integrable on the whole space.
+/-- A function locally integrable on a null-measurable set `s` and vanishing almost everywhere on
+`s` off a null-measurable compact `K ⊆ s` is, after extension by zero, integrable on the whole
+space.
 
-`K` is asked to be measurable on top of being compact, since without a separation axiom on `X` a
-compact set need not be closed. -/
-theorem integrable_indicator_of_isCompact (hs : MeasurableSet s) (hK : IsCompact K)
-    (hKmeas : MeasurableSet K) (hKs : K ⊆ s) (hloc : LocallyIntegrableOn f s μ)
+`K` carries its own null-measurability hypothesis rather than inheriting one from compactness:
+no assumption here relates the topology on `X` to its measurable space, so a compact -- or even
+closed -- set need not be measurable at all. -/
+theorem integrable_indicator_of_isCompact (hs : NullMeasurableSet s μ) (hK : IsCompact K)
+    (hKmeas : NullMeasurableSet K μ) (hKs : K ⊆ s) (hloc : LocallyIntegrableOn f s μ)
     (hf : ∀ᵐ x ∂μ.restrict s, x ∉ K → f x = 0) :
     Integrable (s.indicator f) μ := by
   have hae : s.indicator f =ᵐ[μ] K.indicator f := by
-    filter_upwards [(ae_restrict_iff' hs).1 hf] with x hx
+    filter_upwards [(ae_restrict_iff'₀ hs).1 hf] with x hx
     by_cases hxs : x ∈ s
     · by_cases hxK : x ∈ K
       · rw [Set.indicator_of_mem hxs, Set.indicator_of_mem hxK]
       · rw [Set.indicator_of_mem hxs, Set.indicator_of_notMem hxK, hx hxs hxK]
     · rw [Set.indicator_of_notMem hxs, Set.indicator_of_notMem fun hxK => hxs (hKs hxK)]
-  exact ((hloc.integrableOn_compact_subset hKs hK).integrable_indicator hKmeas).congr hae.symm
+  exact ((hloc.integrableOn_compact_subset hKs hK).integrable_indicator₀ hKmeas).congr hae.symm
 
 end ExtendByZero
 

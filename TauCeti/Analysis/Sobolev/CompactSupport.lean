@@ -86,13 +86,16 @@ theorem HasWeakLineDerivOn.indicator_of_isCompact (h : HasWeakLineDerivOn mu Ome
     fderiv_of_notMem_tsupport ℝ fun hx' => hx (hchi_tsupport hx')
   have huO := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hu
   have hu'O := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hu'
+  have hOmega : NullMeasurableSet (Omega : Set E) mu :=
+    Omega.isOpen.measurableSet.nullMeasurableSet
+  have hKnull : NullMeasurableSet K mu := hK.measurableSet.nullMeasurableSet
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨‹CompleteSpace F›,
-    (TauCeti.integrable_indicator_of_isCompact Omega.isOpen.measurableSet hK hK.measurableSet hKO
+    (TauCeti.integrable_indicator_of_isCompact hOmega hK hKnull hKO
         h.locallyIntegrableOn hu)
       |>.locallyIntegrable
       |>.locallyIntegrableOn _,
-    (TauCeti.integrable_indicator_of_isCompact Omega.isOpen.measurableSet hK hK.measurableSet hKO
+    (TauCeti.integrable_indicator_of_isCompact hOmega hK hKnull hKO
         h.locallyIntegrableOn_deriv hu')
       |>.locallyIntegrable
       |>.locallyIntegrableOn _, fun phi => ?_⟩
