@@ -170,24 +170,34 @@ def dualFreeι (i : I) :
 
 /-- The basis sections of the dual sheaf are the dual basis: the `i`-th one evaluates on the
 `i`-th basis section of `free I` to `1`. -/
-@[reassoc (attr := simp)]
+@[reassoc, simp]
 theorem ιFree_tensorHom_dualFreeι_comp_ev (i : I) :
-    (ιFree i ⊗ₘ dualFreeι (R := R) i) ≫
+    ((ιFree i ⊗ₘ dualFreeι (R := R) i) :
+      unit (ringCatSheaf R) ⊗ unit (ringCatSheaf R) ⟶
+        free (R := ringCatSheaf R) I ⊗
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).obj
+          ((ihom (free (R := ringCatSheaf R) I).val).obj (unit (ringCatSheaf R)).val)) ≫
       (ihom.ev (free (R := ringCatSheaf R) I)).app
-        (𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) =
+        (unit (ringCatSheaf R)) =
       (ρ_ (𝟙_ (SheafOfModules.{u} (ringCatSheaf R)))).hom := by
-  rw [dualFreeι, dualFreeIso, tensorHom_ihomUnitIso_inv_comp_ev,
-    ιFree_tensorHom_ιFree_evaluation]
+  simpa only [dualFreeι, dualFreeIso, tensorUnit_eq, SheafOfModules.ihom_obj] using
+    (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree i)).trans
+      (ιFree_tensorHom_ιFree_evaluation (R := R) i)
 
 /-- The basis sections of the dual sheaf are the dual basis: the `j`-th one evaluates on the
 `i`-th basis section of `free I` to `0` when `i ≠ j`. -/
-@[reassoc (attr := simp)]
+@[reassoc, simp]
 theorem ιFree_tensorHom_dualFreeι_comp_ev_of_ne {i j : I} (h : i ≠ j) :
-    (ιFree i ⊗ₘ dualFreeι (R := R) j) ≫
+    ((ιFree i ⊗ₘ dualFreeι (R := R) j) :
+      unit (ringCatSheaf R) ⊗ unit (ringCatSheaf R) ⟶
+        free (R := ringCatSheaf R) I ⊗
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).obj
+          ((ihom (free (R := ringCatSheaf R) I).val).obj (unit (ringCatSheaf R)).val)) ≫
       (ihom.ev (free (R := ringCatSheaf R) I)).app
-        (𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) = 0 := by
-  rw [dualFreeι, dualFreeIso, tensorHom_ihomUnitIso_inv_comp_ev,
-    ιFree_tensorHom_ιFree_evaluation_of_ne h]
+        (unit (ringCatSheaf R)) = 0 := by
+  simpa only [dualFreeι, dualFreeIso, tensorUnit_eq, SheafOfModules.ihom_obj] using
+    (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree j)).trans
+      (ιFree_tensorHom_ιFree_evaluation_of_ne (R := R) h)
 
 end SheafOfModules
 
