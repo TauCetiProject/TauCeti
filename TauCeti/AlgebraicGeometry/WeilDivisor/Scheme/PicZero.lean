@@ -125,12 +125,14 @@ theorem eulerDegreeHom_classGroupAddEquivLineBundleClass
 @[simp]
 lemma classGroupAddEquivLineBundleClass_mem_picZero_iff
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
-    classGroupAddEquivLineBundleClass X c ∈ LineBundleClass.picZero k X ↔
+    LineBundleClass.eulerDegree k (classGroupToLineBundleClass hX.out c) = 0 ↔
       c ∈ (WeilDivisor.OrderSystem.ofScheme X).picZero
         (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
         (isWeightedDegreeZero_residueDegree k hX.out) := by
-  rw [LineBundleClass.picZero_eq_ker, AddMonoidHom.mem_ker,
-    eulerDegreeHom_classGroupAddEquivLineBundleClass, WeilDivisor.OrderSystem.mem_picZero]
+  rw [WeilDivisor.OrderSystem.mem_picZero,
+    ← eulerDegreeHom_classGroupAddEquivLineBundleClass,
+    LineBundleClass.eulerDegreeHom_apply, classGroupAddEquivLineBundleClass_apply,
+    toMul_ofMul]
 
 variable (X) in
 /-- `Cl(X) ≅ Pic X` carries the degree-zero divisor classes onto `Pic⁰ X`. -/
@@ -144,9 +146,15 @@ theorem map_picZero :
   rw [AddSubgroup.mem_map]
   refine ⟨?_, fun ha ↦ ⟨(classGroupAddEquivLineBundleClass X).symm a, ?_, by simp⟩⟩
   · rintro ⟨c, hc, rfl⟩
+    change classGroupAddEquivLineBundleClass X c ∈ LineBundleClass.picZero k X
+    rw [LineBundleClass.mem_picZero_iff, classGroupAddEquivLineBundleClass_apply, toMul_ofMul]
     exact (classGroupAddEquivLineBundleClass_mem_picZero_iff k c).mpr hc
-  · refine (classGroupAddEquivLineBundleClass_mem_picZero_iff k _).mp ?_
-    rwa [AddEquiv.apply_symm_apply]
+  · apply (classGroupAddEquivLineBundleClass_mem_picZero_iff k _).mp
+    have happly := congrArg Additive.toMul
+      ((classGroupAddEquivLineBundleClass X).apply_symm_apply a)
+    rw [classGroupAddEquivLineBundleClass_apply, toMul_ofMul] at happly
+    rw [happly]
+    exact (LineBundleClass.mem_picZero_iff (k := k)).mp ha
 
 variable (X) in
 /-- **`Cl⁰(X) ≅ Pic⁰(X)`.** On a proper integral curve over `k` whose codimension-one local rings
