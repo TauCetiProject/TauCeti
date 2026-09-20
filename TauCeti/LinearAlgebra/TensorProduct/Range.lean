@@ -78,8 +78,8 @@ theorem range_baseChange (f : M →ₗ[R] N) :
       rw [baseChange_comp]
     _ = range ((range f).subtype.baseChange A) := by
       apply range_comp_of_range_eq_top
-      rw [range_eq_top, baseChange_eq_ltensor]
-      exact lTensor_surjective A f.surjective_rangeRestrict
+      rw [range_eq_top]
+      exact baseChange_surjective A f.surjective_rangeRestrict
     _ = (range f).baseChange A := rfl
 
 end Range

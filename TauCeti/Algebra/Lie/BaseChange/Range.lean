@@ -18,7 +18,6 @@ create a solution to such an equation.
 
 ## Main results
 
-* `LieAlgebra.ad_baseChange_one_tmul`: extending `ad x` is `ad (1 ⊗ₜ x)`.
 * `LieAlgebra.exists_eq_lie_of_one_tmul_mem_range_ad`: membership of `1 ⊗ₜ x` in the range of
   the extended adjoint endomorphism descends to an equation `x = ⁅x, y⁆`.
 -/
@@ -36,24 +35,15 @@ variable (R : Type u) (A : Type v) (L : Type w)
 variable [CommRing R] [CommRing A] [Algebra R A]
 variable [LieRing L] [LieAlgebra R L]
 
-/-- The adjoint endomorphism commutes with extension of scalars. -/
-@[simp]
-theorem ad_baseChange_one_tmul (x : L) :
-    (ad R L x).baseChange A = ad A (A ⊗[R] L) ((1 : A) ⊗ₜ[R] x) := by
-  apply LinearMap.ext
-  intro z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
-  | tmul a y => simp [ad_apply, LieAlgebra.ExtendScalars.bracket_tmul]
-  | add y z hy hz => simp [hy, hz]
-
 /-- A bracket equation that becomes solvable after a faithfully flat extension of scalars was
 already solvable over the original coefficient ring. -/
 theorem exists_eq_lie_of_one_tmul_mem_range_ad [Module.FaithfullyFlat R A] (x : L)
     (hx : (1 : A) ⊗ₜ[R] x ∈
       LinearMap.range (ad A (A ⊗[R] L) ((1 : A) ⊗ₜ[R] x))) :
     ∃ y : L, x = ⁅x, y⁆ := by
-  rw [← ad_baseChange_one_tmul] at hx
+  have had : ad A (A ⊗[R] L) ((1 : A) ⊗ₜ[R] x) = (ad R L x).baseChange A :=
+    LieModule.toEnd_baseChange R A L L x
+  rw [had] at hx
   obtain ⟨y, hy⟩ := (LinearMap.one_tmul_mem_range_baseChange_iff (ad R L x) x).mp hx
   exact ⟨y, by simpa only [ad_apply] using hy.symm⟩
 
