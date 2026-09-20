@@ -115,11 +115,25 @@ theorem faceAffineCoordinateRingMap_comp (hi : IsIntegralLattice i)
       LinearMap.id LinearMap.id (fun _ ↦ rfl) (fun _ ↦ rfl)
       (fun _ hx ↦ hυτ.le hx) (fun _ hx ↦ hτσ.le hx)
 
+/-- The real-linear identity sends a face into its ambient cone. -/
+theorem faceAffineToricSchemeMap_mapsTo (hτσ : τ.IsFaceOf σ) :
+    Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) := by
+  intro x hx
+  exact hτσ.le hx
+
 /-- The canonical morphism from the affine toric scheme of a face to that of its ambient cone. -/
-noncomputable def faceAffineToricSchemeMap (hi : IsIntegralLattice i)
+@[expose] noncomputable def faceAffineToricSchemeMap (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) : affineToricScheme hi τ ⟶ affineToricScheme hi σ :=
   affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
-    fun _ hx ↦ hτσ.le hx
+    (faceAffineToricSchemeMap_mapsTo hτσ)
+
+/-- The face morphism is the affine toric morphism for the identity lattice map. -/
+theorem faceAffineToricSchemeMap_eq_affineToricSchemeMap (hi : IsIntegralLattice i)
+    (hτσ : τ.IsFaceOf σ) :
+    faceAffineToricSchemeMap hi hτσ =
+      affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+        (faceAffineToricSchemeMap_mapsTo hτσ) :=
+  rfl
 
 /-- The morphism attached to a face inclusion is the spectrum of its coordinate-ring
 restriction. -/
@@ -145,10 +159,7 @@ theorem faceAffineToricSchemeMap_comp (hi : IsIntegralLattice i)
     (hυτ : υ.IsFaceOf τ) (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hυτ ≫ faceAffineToricSchemeMap hi hτσ =
       faceAffineToricSchemeMap hi (hυτ.trans hτσ) := by
-  simpa [faceAffineToricSchemeMap] using
-    affineToricSchemeMap_comp hi hi hi (AddMonoidHom.id N) (AddMonoidHom.id N)
-      LinearMap.id LinearMap.id (fun _ ↦ rfl) (fun _ ↦ rfl)
-      (fun _ hx ↦ hυτ.le hx) (fun _ hx ↦ hτσ.le hx)
+  simp [faceAffineToricSchemeMap, affineToricSchemeMap_comp]
 
 /-! ### Localizations and open immersions -/
 
