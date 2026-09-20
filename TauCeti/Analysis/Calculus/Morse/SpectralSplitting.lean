@@ -47,8 +47,8 @@ negative-gradient field, supplied by
 * `TauCeti.IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace` and
   `TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`: the same two
   results stated for a nondegenerate critical point, which supplies the Hessian injectivity.
-* `TauCeti.IsNondegenerateCriticalPoint.stableProjection`: the continuous projection onto the
-  stable linear subspace along the unstable linear subspace.
+* `ContDiffAt.stableProjection`: when the Hessian is injective, the continuous projection onto
+  the stable linear subspace along the unstable linear subspace.
 
 ## References
 
@@ -205,6 +205,109 @@ theorem finrank_stableLinearSubspace_add_morseIndex (hf : ContDiffAt ℝ 2 f x)
   exact Submodule.finrank_add_eq_of_isCompl (hf.isCompl_unstableLinearSubspace_stableLinearSubspace
     hker)
 
+/-- When the Hessian is injective, the continuous projection onto the stable linear subspace
+along the unstable linear subspace. -/
+noncomputable def stableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) : E →L[ℝ] E :=
+  hf.stableLinearSubspace.projectionL hf.unstableLinearSubspace
+    (Submodule.IsCompl.isTopCompl_of_isClosed
+      (hf.isCompl_unstableLinearSubspace_stableLinearSubspace hker).symm
+      hf.stableLinearSubspace.closed_of_finiteDimensional
+      hf.unstableLinearSubspace.closed_of_finiteDimensional)
+
+/-- The range of the stable projection is the stable linear subspace. -/
+@[simp]
+theorem range_stableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    (hf.stableProjection hker).range = hf.stableLinearSubspace := by
+  rw [stableProjection, Submodule.range_projectionL]
+
+/-- The kernel of the stable projection is the unstable linear subspace. -/
+@[simp]
+theorem ker_stableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    (hf.stableProjection hker).ker = hf.unstableLinearSubspace := by
+  rw [stableProjection, Submodule.ker_projectionL]
+
+/-- The stable projection is idempotent. -/
+theorem isIdempotentElem_stableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    IsIdempotentElem (hf.stableProjection hker) := by
+  rw [stableProjection]
+  exact Submodule.isIdempotentElem_projectionL _
+
+/-- A vector is killed by the stable projection exactly when it is unstable. -/
+@[simp]
+theorem stableProjection_apply_eq_zero_iff (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E} :
+    hf.stableProjection hker v = 0 ↔ v ∈ hf.unstableLinearSubspace := by
+  rw [stableProjection, Submodule.projectionL_apply_eq_zero_iff]
+
+/-- A vector is fixed by the stable projection exactly when it is stable. -/
+@[simp]
+theorem stableProjection_apply_eq_self_iff (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E} :
+    hf.stableProjection hker v = v ↔ v ∈ hf.stableLinearSubspace := by
+  rw [stableProjection, Submodule.projectionL_eq_self_iff]
+
+/-- The stable projection fixes every vector in the stable linear subspace. -/
+theorem stableProjection_eq_self_of_mem_stable (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E}
+    (hv : v ∈ hf.stableLinearSubspace) : hf.stableProjection hker v = v :=
+  (hf.stableProjection_apply_eq_self_iff hker).2 hv
+
+/-- The stable projection kills every vector in the unstable linear subspace. -/
+theorem stableProjection_apply_eq_zero_of_mem_unstable (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E}
+    (hv : v ∈ hf.unstableLinearSubspace) : hf.stableProjection hker v = 0 :=
+  (hf.stableProjection_apply_eq_zero_iff hker).2 hv
+
+/-- The stable projection takes every vector into the stable linear subspace. -/
+theorem stableProjection_apply_mem (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
+    hf.stableProjection hker v ∈ hf.stableLinearSubspace := by
+  rw [stableProjection]
+  exact Submodule.projectionL_apply_mem _ _
+
+/-- Applying the stable projection twice has the same result as applying it once. -/
+@[simp]
+theorem stableProjection_stableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
+    hf.stableProjection hker (hf.stableProjection hker v) = hf.stableProjection hker v :=
+  hf.stableProjection_eq_self_of_mem_stable hker (hf.stableProjection_apply_mem hker v)
+
+/-- Subtracting the stable projection leaves a vector in the unstable linear subspace. -/
+theorem sub_stableProjection_mem_unstableLinearSubspace (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
+    v - hf.stableProjection hker v ∈ hf.unstableLinearSubspace := by
+  rw [← hf.stableProjection_apply_eq_zero_iff hker, map_sub,
+    hf.stableProjection_stableProjection hker, sub_self]
+
+/-- As a set, the range of the stable projection is the stable linear subspace. -/
+theorem coe_range_stableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    Set.range (hf.stableProjection hker) = (hf.stableLinearSubspace : Set E) := by
+  ext v
+  constructor
+  · rintro ⟨w, rfl⟩
+    exact hf.stableProjection_apply_mem hker w
+  · intro hv
+    exact ⟨v, hf.stableProjection_eq_self_of_mem_stable hker hv⟩
+
+/-- The negative Hessian operator commutes with the projection onto its stable linear subspace. -/
+theorem commute_neg_hessianOperator_stableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    Commute (-hessianOperator f x) (hf.stableProjection hker) := by
+  apply Commute.symm
+  rw [ContinuousLinearMap.IsIdempotentElem.commute_iff
+    (hf.isIdempotentElem_stableProjection hker), hf.range_stableProjection hker,
+    hf.ker_stableProjection hker]
+  constructor
+  · intro v hv
+    exact hf.map_neg_hessianOperator_stableLinearSubspace_le ⟨v, hv, rfl⟩
+  · intro v hv
+    exact hf.map_neg_hessianOperator_unstableLinearSubspace_le ⟨v, hv, rfl⟩
+
 end ContDiffAt
 
 namespace TauCeti
@@ -227,66 +330,6 @@ theorem IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex
     Module.finrank ℝ h.contDiffAt.stableLinearSubspace + morseIndex f x = Module.finrank ℝ E :=
   h.contDiffAt.finrank_stableLinearSubspace_add_morseIndex
     (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
-
-/-- The continuous projection onto the stable linear subspace along the unstable linear subspace
-at a nondegenerate critical point. -/
-noncomputable def IsNondegenerateCriticalPoint.stableProjection
-    (h : IsNondegenerateCriticalPoint f x) : E →L[ℝ] E :=
-  h.contDiffAt.stableLinearSubspace.projectionL h.contDiffAt.unstableLinearSubspace
-    (Submodule.IsCompl.isTopCompl_of_isClosed
-      h.isCompl_unstableLinearSubspace_stableLinearSubspace.symm
-      h.contDiffAt.stableLinearSubspace.closed_of_finiteDimensional
-      h.contDiffAt.unstableLinearSubspace.closed_of_finiteDimensional)
-
-/-- The range of the stable projection is the stable linear subspace. -/
-@[simp]
-theorem IsNondegenerateCriticalPoint.range_stableProjection
-    (h : IsNondegenerateCriticalPoint f x) :
-    h.stableProjection.range = h.contDiffAt.stableLinearSubspace := by
-  rw [stableProjection, Submodule.range_projectionL]
-
-/-- The kernel of the stable projection is the unstable linear subspace. -/
-@[simp]
-theorem IsNondegenerateCriticalPoint.ker_stableProjection
-    (h : IsNondegenerateCriticalPoint f x) :
-    h.stableProjection.ker = h.contDiffAt.unstableLinearSubspace := by
-  rw [stableProjection, Submodule.ker_projectionL]
-
-/-- The stable projection is idempotent. -/
-theorem IsNondegenerateCriticalPoint.isIdempotentElem_stableProjection
-    (h : IsNondegenerateCriticalPoint f x) : IsIdempotentElem h.stableProjection := by
-  rw [stableProjection]
-  exact Submodule.isIdempotentElem_projectionL _
-
-/-- The stable projection fixes every vector in the stable linear subspace. -/
-@[simp]
-theorem IsNondegenerateCriticalPoint.stableProjection_apply_of_mem
-    (h : IsNondegenerateCriticalPoint f x) {v : E}
-    (hv : v ∈ h.contDiffAt.stableLinearSubspace) : h.stableProjection v = v := by
-  rw [stableProjection]
-  exact Submodule.projectionL_eq_self_iff _ _ |>.2 hv
-
-/-- The stable projection kills every vector in the unstable linear subspace. -/
-@[simp]
-theorem IsNondegenerateCriticalPoint.stableProjection_apply_of_mem_unstable
-    (h : IsNondegenerateCriticalPoint f x) {v : E}
-    (hv : v ∈ h.contDiffAt.unstableLinearSubspace) : h.stableProjection v = 0 := by
-  apply LinearMap.mem_ker.mp
-  rw [h.ker_stableProjection]
-  exact hv
-
-/-- The negative Hessian operator commutes with the projection onto its stable linear subspace. -/
-theorem IsNondegenerateCriticalPoint.commute_neg_hessianOperator_stableProjection
-    (h : IsNondegenerateCriticalPoint f x) :
-    Commute (-hessianOperator f x) h.stableProjection := by
-  apply Commute.symm
-  rw [ContinuousLinearMap.IsIdempotentElem.commute_iff
-    h.isIdempotentElem_stableProjection, h.range_stableProjection, h.ker_stableProjection]
-  constructor
-  · intro v hv
-    exact h.contDiffAt.map_neg_hessianOperator_stableLinearSubspace_le ⟨v, hv, rfl⟩
-  · intro v hv
-    exact h.contDiffAt.map_neg_hessianOperator_unstableLinearSubspace_le ⟨v, hv, rfl⟩
 
 end TauCeti
 

@@ -87,70 +87,38 @@ theorem IsNondegenerateCriticalPoint.exists_stableProjection_exponential_bounds
     (h : IsNondegenerateCriticalPoint f x) :
     ∃ (K alpha : ℝ≥0), 0 < K ∧ 0 < alpha ∧
       (∀ t : ℝ, 0 ≤ t → ∀ v : E,
-        ‖NormedSpace.exp (t • (-hessianOperator f x)) (h.stableProjection v)‖ ≤
+        ‖NormedSpace.exp (t • (-hessianOperator f x))
+          (h.contDiffAt.stableProjection
+            (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) v)‖ ≤
           K * Real.exp (-alpha * t) * ‖v‖) ∧
       (∀ t : ℝ, t ≤ 0 → ∀ v : E,
-        ‖NormedSpace.exp (t • (-hessianOperator f x)) (v - h.stableProjection v)‖ ≤
+        ‖NormedSpace.exp (t • (-hessianOperator f x))
+          (v - h.contDiffAt.stableProjection
+            (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) v)‖ ≤
           K * Real.exp (alpha * t) * ‖v‖) := by
-  let P := h.stableProjection
-  let K : ℝ≥0 := ‖P‖₊ + ‖ContinuousLinearMap.id ℝ E - P‖₊ + 1
+  let hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥ :=
+    LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective
+  let P := h.contDiffAt.stableProjection hker
   obtain ⟨alpha, halpha, hs, hu⟩ := h.contDiffAt.exists_linearized_flow_exponential_bounds
-  have hP_le : ‖P‖ ≤ (K : ℝ) := by
-    dsimp only [K]
-    push_cast
-    nlinarith [norm_nonneg (ContinuousLinearMap.id ℝ E - P)]
-  have hPc_le : ‖ContinuousLinearMap.id ℝ E - P‖ ≤ (K : ℝ) := by
-    dsimp only [K]
-    push_cast
-    nlinarith [norm_nonneg P]
-  have hK : 0 < K := by
-    dsimp only [K]
-    positivity
-  refine ⟨K, ⟨alpha, halpha.le⟩, hK, by exact_mod_cast halpha, ?_, ?_⟩
-  · intro t ht v
-    have hPv : P v ∈ h.contDiffAt.stableLinearSubspace := by
-      rw [← h.range_stableProjection]
-      exact ⟨v, rfl⟩
-    have hbound := hs t ht (P v) hPv
-    have hop := P.le_opNorm v
-    rw [linearizedNegativeGradientFlow_apply] at hbound
-    calc
-      ‖NormedSpace.exp (t • (-hessianOperator f x)) (P v)‖ =
-          ‖NormedSpace.exp ((-t) • hessianOperator f x) (P v)‖ := by
-            rw [smul_neg, neg_smul]
-      _ ≤ Real.exp (-alpha * t) * ‖P v‖ := hbound
-      _ ≤ Real.exp (-alpha * t) * (‖P‖ * ‖v‖) :=
-        mul_le_mul_of_nonneg_left hop (Real.exp_nonneg _)
-      _ = Real.exp (-alpha * t) * ‖P‖ * ‖v‖ := by ring
-      _ ≤ Real.exp (-alpha * t) * (K : ℝ) * ‖v‖ := by
-        gcongr
-      _ = (K : ℝ) * Real.exp (-alpha * t) * ‖v‖ := by ring
-      _ = (K : ℝ) * Real.exp (-((⟨alpha, halpha.le⟩ : ℝ≥0) : ℝ) * t) * ‖v‖ := rfl
-  · intro t ht v
-    have hPP : P (P v) = P v := by
-      dsimp only [P]
-      rw [← mul_apply_eq_comp, h.isIdempotentElem_stableProjection]
-    have hvP : v - P v ∈ h.contDiffAt.unstableLinearSubspace := by
-      rw [← h.ker_stableProjection, LinearMap.mem_ker, map_sub]
-      dsimp only [P] at hPP ⊢
-      exact sub_eq_zero.mpr hPP.symm
-    have hbound := hu t ht (v - P v) hvP
-    have hop := (ContinuousLinearMap.id ℝ E - P).le_opNorm v
-    rw [linearizedNegativeGradientFlow_apply] at hbound
-    have hdiff : ‖v - P v‖ ≤ ‖ContinuousLinearMap.id ℝ E - P‖ * ‖v‖ := by
-      simpa using hop
-    calc
-      ‖NormedSpace.exp (t • (-hessianOperator f x)) (v - P v)‖ =
-          ‖NormedSpace.exp ((-t) • hessianOperator f x) (v - P v)‖ := by
-            rw [smul_neg, neg_smul]
-      _ ≤ Real.exp (alpha * t) * ‖v - P v‖ := hbound
-      _ ≤ Real.exp (alpha * t) * (‖ContinuousLinearMap.id ℝ E - P‖ * ‖v‖) :=
-        mul_le_mul_of_nonneg_left hdiff (Real.exp_nonneg _)
-      _ = Real.exp (alpha * t) * ‖ContinuousLinearMap.id ℝ E - P‖ * ‖v‖ := by ring
-      _ ≤ Real.exp (alpha * t) * (K : ℝ) * ‖v‖ := by
-        gcongr
-      _ = (K : ℝ) * Real.exp (alpha * t) * ‖v‖ := by ring
-      _ = (K : ℝ) * Real.exp (((⟨alpha, halpha.le⟩ : ℝ≥0) : ℝ) * t) * ‖v‖ := rfl
+  have hs' : ∀ (t : ℝ), 0 ≤ t → ∀ w ∈ P.range,
+      ‖NormedSpace.exp (t • (-hessianOperator f x)) w‖ ≤
+        Real.exp (-alpha * t) * ‖w‖ := by
+    intro t ht w hw
+    have hw' : w ∈ h.contDiffAt.stableLinearSubspace := by
+      simpa only [P, h.contDiffAt.range_stableProjection hker] using hw
+    rw [smul_neg, ← neg_smul]
+    simpa only [linearizedNegativeGradientFlow_apply] using hs t ht w hw'
+  have hu' : ∀ (t : ℝ), t ≤ 0 → ∀ w ∈ P.ker,
+      ‖NormedSpace.exp (t • (-hessianOperator f x)) w‖ ≤
+        Real.exp (alpha * t) * ‖w‖ := by
+    intro t ht w hw
+    have hw' : w ∈ h.contDiffAt.unstableLinearSubspace := by
+      simpa only [P, h.contDiffAt.ker_stableProjection hker] using hw
+    rw [smul_neg, ← neg_smul]
+    simpa only [linearizedNegativeGradientFlow_apply] using hu t ht w hw'
+  simpa only [P, hker] using
+    ContinuousLinearMap.exists_projection_exponential_bounds
+      (h.contDiffAt.isIdempotentElem_stableProjection hker) halpha hs' hu'
 
 end TauCeti
 
