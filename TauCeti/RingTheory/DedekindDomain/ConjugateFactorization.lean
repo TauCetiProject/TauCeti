@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.UniqueFactorizationDomain.SubsetProduct
 /-!
 # Factoring a product of conjugate primes in a Dedekind domain
 
-Let `R` be a Dedekind domain carrying a ring automorphism `σ`, and let `S` be a finite set of
+Let `R` be a Dedekind domain carrying a ring endomorphism `σ`, and let `S` be a finite set of
 nonzero primes of `R` on which `σ` acts involutively and without fixing any element, so that `S`
 splits into conjugate pairs `{p, σ p}`. This file describes the ideals `A` with
 `A * σ A = ∏ p ∈ S, p`: they are exactly the products over the transversals of `σ` on `S`, one
@@ -49,9 +49,10 @@ namespace TauCeti
 
 open UniqueFactorizationMonoid
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R] {σ : R ≃+* R} {S : Finset (Ideal R)}
+variable {R F : Type*} [CommRing R] [IsDedekindDomain R] [FunLike F R R] [RingHomClass F R R]
+  {σ : F} {S : Finset (Ideal R)}
 
-/-- **The conjugate factorizations of a product of paired primes.** If a ring automorphism `σ`
+/-- **The conjugate factorizations of a product of paired primes.** If a ring endomorphism `σ`
 acts involutively on a finite set `S` of nonzero primes without fixing any of them, then the ideals
 `A` with `A * σ A = ∏ p ∈ S, p` are exactly the products over the transversals of `σ` on `S`. -/
 theorem mul_map_eq_prod_iff (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ S, p ≠ ⊥)
@@ -105,7 +106,7 @@ theorem mul_map_eq_prod_iff (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ 
     rw [hmapprod]
     exact hT.prod_mul_prod_comp (fun p => p) hmaps hinvol
 
-/-- **The conjugate factorization count.** If a ring automorphism `σ` acts involutively and
+/-- **The conjugate factorization count.** If a ring endomorphism `σ` acts involutively and
 without fixed points on a finite set `S` of nonzero primes, then there are exactly `2 ^ (#S / 2)`
 factorizations `A * σ A = ∏ p ∈ S, p`, one for each choice of a prime from each conjugate
 pair. -/

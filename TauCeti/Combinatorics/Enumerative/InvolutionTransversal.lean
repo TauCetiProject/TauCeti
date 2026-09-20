@@ -22,7 +22,7 @@ resulting splitting of a product over `S`, and counts the transversals: there ar
 of them, one binary choice per orbit.
 
 The counting theorem is the combinatorial half of `TauCeti.ncard_setOf_mul_map_eq_prod`, where
-`f` is the action of a ring automorphism, acting involutively on a set of primes of a Dedekind
+`f` is the action of a ring endomorphism, acting involutively on a set of primes of a Dedekind
 domain, and a transversal picks one prime from each conjugate pair.
 
 A fixed-point-free involution of a whole type is a perfect matching in the sense of
