@@ -50,22 +50,22 @@ noncomputable def indFDRepUnit (A : FDRep k S) : A ⟶ resFDRep S (indFDRep A) :
 
 /-- On Mathlib's induced carrier, `indFDRepUnit` is the generator map `a ↦ ⟦1 ⊗ a⟧`. -/
 theorem indFDRepUnit_apply (A : FDRep k S) (a : A) :
-    indFDRepForgetEquiv A (indFDRepUnit A a) =
+    (indFDRepForgetIso A).hom.hom (indFDRepUnit A a) =
       Representation.IndV.mk S.subtype
         ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 a := by
   -- The small induced carrier is sealed, so expose it through its public comparison isomorphism.
-  change indFDRepForgetEquiv A
+  change (indFDRepForgetIso A).hom.hom
       ((indFDRepForgetIso A).inv.hom
         (Representation.IndV.mk S.subtype
           ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 a)) = _
-  rw [indFDRepForgetIso_inv_hom_apply,
-    Representation.Equiv.apply_symm_apply]
+  exact Rep.hom_inv_apply _ _ (indFDRepForgetIso A) _
 
 /-- The unit map from a representation to the restriction of its induction is injective. -/
 theorem indFDRepUnit_injective (A : FDRep k S) : Function.Injective (indFDRepUnit A) := by
   intro a b hab
-  have h : indFDRepForgetEquiv A (indFDRepUnit A a) =
-      indFDRepForgetEquiv A (indFDRepUnit A b) := congrArg (indFDRepForgetEquiv A) hab
+  have h : (indFDRepForgetIso A).hom.hom (indFDRepUnit A a) =
+      (indFDRepForgetIso A).hom.hom (indFDRepUnit A b) :=
+    congrArg (indFDRepForgetIso A).hom.hom hab
   rw [indFDRepUnit_apply, indFDRepUnit_apply] at h
   let _ : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
   have h' := congrArg

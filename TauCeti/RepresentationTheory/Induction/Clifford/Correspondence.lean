@@ -168,7 +168,7 @@ Then the representation of `G` induced from `U` is irreducible.
 theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (inertia V))
     [Simple U] (hU : U.LiesOver (Subgroup.inclusion (le_inertia V)) V) :
     Simple (indFDRep U) := by
-  obtain ⟨f, hf⟩ := (liesOver_iff U (Subgroup.inclusion (le_inertia V)) V).mp hU
+  obtain ⟨f, hf⟩ := hU
   have : NeZero (Nat.card N : k) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
   have hV := FDRep.isIrreducible_of_simple V
   have : Nontrivial V := _root_.Representation.IsIrreducible.nontrivial hV

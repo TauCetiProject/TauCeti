@@ -49,23 +49,19 @@ open TauCeti
 variable {k N H G : Type u} [Field k] [Group N] [Group H] [Group G]
 
 /-- An `H`-representation lies over an `N`-representation along `φ : N →* H` when the
-smaller representation admits a nonzero intertwiner into the restriction of the larger one. -/
-def LiesOver (U : FDRep k H) (φ : N →* H) (V : FDRep k N) : Prop :=
-  ∃ f : V ⟶ (Action.res (FGModuleCat k) φ).obj U, f ≠ 0
+smaller representation admits a nonzero intertwiner into the restriction of the larger one.
 
-/-- The defining characterization of `FDRep.LiesOver`. -/
-theorem liesOver_iff (U : FDRep k H) (φ : N →* H) (V : FDRep k N) :
-    U.LiesOver φ V ↔ ∃ f : V ⟶ (Action.res (FGModuleCat k) φ).obj U, f ≠ 0 :=
-  Iff.rfl
+The body is exposed so that downstream modules can destructure and build `LiesOver` directly. -/
+@[expose] def LiesOver (U : FDRep k H) (φ : N →* H) (V : FDRep k N) : Prop :=
+  ∃ f : V ⟶ (Action.res (FGModuleCat k) φ).obj U, f ≠ 0
 
 /-- **Induction preserves lying over.** If `A` lies over `V` along `φ : N →* S`, then
 `Ind_S^G A` lies over `V` along the composite `N → S → G`. -/
 theorem LiesOver.indFDRep {S : Subgroup G} [S.FiniteIndex] {A : FDRep k S}
     {φ : N →* S} {V : FDRep k N} (h : A.LiesOver φ V) :
     (indFDRep A).LiesOver (S.subtype.comp φ) V := by
-  obtain ⟨f, hf⟩ := (liesOver_iff A φ V).mp h
+  obtain ⟨f, hf⟩ := h
   let η := (Action.res (FGModuleCat k) φ).map (indFDRepUnit A)
-  apply (liesOver_iff (TauCeti.indFDRep A) (S.subtype.comp φ) V).mpr
   refine ⟨f ≫ η, fun hzero => hf ?_⟩
   apply Action.Hom.ext
   ext v
