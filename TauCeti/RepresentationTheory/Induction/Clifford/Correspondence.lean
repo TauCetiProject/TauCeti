@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Inertia
+public import TauCeti.RepresentationTheory.Induction.Clifford.LiesOver
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
 public import TauCeti.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.AsModule
@@ -18,8 +18,8 @@ import TauCeti.RepresentationTheory.Simple.Basic
 Let `N` be a normal subgroup of a finite group `G`, let `V` be an irreducible representation of
 `N`, and let `T = inertia V` be its inertia group.  An irreducible representation `U` of `T`
 **lies over** `V` when `V` occurs in the restriction of `U` to `N`, that is, when there is a
-nonzero intertwiner `V ⟶ Res_N U`.  This file proves the Clifford correspondence's
-irreducibility theorem: for such a `U` the induced representation `Ind_T^G U` is
+nonzero intertwiner `V ⟶ Res_N U` (`FDRep.LiesOver`).  This file proves the Clifford
+correspondence's irreducibility theorem: for such a `U` the induced representation `Ind_T^G U` is
 irreducible (`FDRep.simple_indFDRep_of_inertia`).
 
 The proof reads the Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`.  Two facts
@@ -166,9 +166,9 @@ lying over `V`, that is, with a nonzero intertwiner from `V` to the restriction 
 Then the representation of `G` induced from `U` is irreducible.
 -/
 theorem simple_indFDRep_of_inertia (V : FDRep k N) [Simple V] (U : FDRep k (inertia V))
-    [Simple U] (f : V ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia V))).obj U)
-    (hf : f ≠ 0) :
+    [Simple U] (hU : U.LiesOver (Subgroup.inclusion (le_inertia V)) V) :
     Simple (indFDRep U) := by
+  obtain ⟨f, hf⟩ := (liesOver_iff U (Subgroup.inclusion (le_inertia V)) V).mp hU
   have : NeZero (Nat.card N : k) := ⟨Nat.cast_ne_zero.mpr Nat.card_pos.ne'⟩
   have hV := FDRep.isIrreducible_of_simple V
   have : Nontrivial V := _root_.Representation.IsIrreducible.nontrivial hV

@@ -311,12 +311,13 @@ private theorem indFDRepForgetIso_hom_hom_apply {k G : Type u} [Field k] [Group 
     (Rep.Hom.hom (indFDRepForgetIso A).hom) x = indFDRepForgetEquiv A x :=
   rfl
 
-/-- The inverse of the categorical comparison applies the inverse equivariant equivalence. -/
-private theorem indFDRepForgetIso_inv_hom_apply {k G : Type u} [Field k] [Group G]
+/-- The inverse comparison from Mathlib's induced carrier to the finite-dimensional model applies
+the inverse of `indFDRepForgetEquiv`. -/
+theorem indFDRepForgetIso_inv_hom_apply {k G : Type u} [Field k] [Group G]
     {S : Subgroup G} [S.FiniteIndex] (A : FDRep k S)
     (x : Rep.ind S.subtype ((forget₂ (FDRep k S) (Rep k S)).obj A)) :
     (Rep.Hom.hom (indFDRepForgetIso A).inv) x = (indFDRepForgetEquiv A).symm x :=
-  rfl
+  (rfl)
 
 /-- The conjugated induced intertwiner between the forgotten small-carrier models. -/
 private noncomputable def indFDRepMapUnderlying {k : Type u} {G : Type v} [Field k]
