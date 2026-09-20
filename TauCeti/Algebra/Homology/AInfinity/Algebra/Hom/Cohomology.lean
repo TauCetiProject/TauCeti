@@ -276,20 +276,15 @@ cohomology. -/
 def IsQuasiIso (f : AInfinityHom AA BB) : Prop :=
   Function.Bijective f.cohomologyMap
 
-/-- The defining condition of a quasi-isomorphism, as a reusable `Iff`: this exposes the body of
-the predicate to consumers in other modules. -/
-theorem isQuasiIso_def (f : AInfinityHom AA BB) :
-    f.IsQuasiIso ↔ Function.Bijective f.cohomologyMap := Iff.rfl
-
 /-- The identity `A∞` morphism is a quasi-isomorphism. -/
 theorem isQuasiIso_id (AA : AInfinityAlgebra R A) : (AInfinityHom.id AA).IsQuasiIso := by
-  rw [isQuasiIso_def, cohomologyMap_id]
+  rw [IsQuasiIso, cohomologyMap_id]
   exact Function.bijective_id
 
 /-- Quasi-isomorphisms of `A∞` algebras are closed under composition. -/
 theorem IsQuasiIso.comp {g : AInfinityHom BB CC} {f : AInfinityHom AA BB} (hg : g.IsQuasiIso)
     (hf : f.IsQuasiIso) : (g.comp f).IsQuasiIso := by
-  rw [isQuasiIso_def, cohomologyMap_comp, NonUnitalAlgHom.coe_comp]
+  rw [IsQuasiIso, cohomologyMap_comp, NonUnitalAlgHom.coe_comp]
   exact Function.Bijective.comp hg hf
 
 end AInfinityHom
