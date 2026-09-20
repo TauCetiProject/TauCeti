@@ -27,8 +27,8 @@ instances of it.
 
 * `TauCeti.derivationLieAlgebra R A`: the derivations of `A`, as a Lie subalgebra of
   `Module.End R A`.
-* `TauCeti.innerDerivation`: for an associative algebra, the inner derivation `⁅z, -⁆` at an
-  element `z`, as an element of `Der A`.
+* `TauCeti.innerDerivation`: for an associative algebra, the inner derivations `z ↦ ⁅z, -⁆`, as a
+  homomorphism of Lie algebras `A →ₗ⁅R⁆ Der A`.
 * `TauCeti.derivationLieAlgebraCongr`: an isomorphism of algebras induces an isomorphism of their
   derivation Lie algebras, by conjugation.
 
@@ -185,10 +185,16 @@ theorem ad_mem_derivationLieAlgebra (z : A) :
   simp only [LieAlgebra.ad_apply, Ring.lie_def, sub_mul, mul_sub, mul_assoc]
   abel
 
-/-- **The inner derivation** of an associative algebra `A` at an element `z`: the commutator
-`⁅z, -⁆`, as an element of `Der A`. -/
-def innerDerivation (z : A) : derivationLieAlgebra R A :=
-  ⟨LieAlgebra.ad R A z, ad_mem_derivationLieAlgebra R z⟩
+/-- **The inner derivations** of an associative algebra `A`: the assignment `z ↦ ⁅z, -⁆`, as a
+homomorphism of Lie algebras from `A` under its commutator bracket to `Der A`.  It is the adjoint
+action `LieAlgebra.ad` with its codomain cut down to the derivations. -/
+def innerDerivation : A →ₗ⁅R⁆ derivationLieAlgebra R A where
+  toFun z := ⟨LieAlgebra.ad R A z, ad_mem_derivationLieAlgebra R z⟩
+  map_add' z w := Subtype.ext (map_add (LieAlgebra.ad R A) z w)
+  map_smul' r z := Subtype.ext (map_smul (LieAlgebra.ad R A) r z)
+  map_lie' {z w} := Subtype.ext <| by
+    rw [LieSubalgebra.coe_bracket]
+    exact LieHom.map_lie (LieAlgebra.ad R A) z w
 
 @[simp]
 theorem coe_innerDerivation (z : A) :

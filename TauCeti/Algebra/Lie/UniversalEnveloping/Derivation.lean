@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DualNumber
-public import Mathlib.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.Lie.Derivation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 
 /-!
 # Lifting a Lie derivation to the enveloping algebra
@@ -55,9 +55,12 @@ agree are closed under products and contain the scalars; this is
   `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_ι'` its `simp`-normal form.
 * `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_mul`: **the associative Leibniz rule**
   `Dᵁ (a * b) = Dᵁ a * b + a * Dᵁ b`.
-* `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_inner`: the extension of an inner
-  derivation of `L` is the inner derivation of `U(L)` at the corresponding generator, so the
-  construction is compatible with the adjoint action.
+* `TauCeti.UniversalEnvelopingAlgebra.map_envelopingDerivation`: **naturality**, that a Lie
+  homomorphism `f : L → L'` intertwining `D` with `E` intertwines `Dᵁ` with `Eᵁ`.
+* `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_inner`: the extension of the inner
+  derivation `y ↦ ⁅y, x⁆` of `L` is `-innerDerivation R (ι x)`, the derivation `a ↦ ⁅a, ι x⁆` of
+  `U(L)`; so the construction carries the adjoint action of `L` on itself to the adjoint action of
+  `U(L)` on itself, up to the sign by which the two conventions differ.
 
 ## Implementation notes
 
@@ -82,8 +85,6 @@ form.  The primed variants are the simp-normal ones.
 
 ## References
 
-* [The Ado--Iwasawa roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/AdoIwasawa/README.md),
-  whose derivation-lift targets these are.
 * N. Jacobson, *Lie Algebras* (1962), Chapter V, §4.
 * J. Dixmier, *Enveloping Algebras*, North-Holland (1977), §2.4.
 -/
@@ -98,7 +99,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace UniversalEnvelopingAlgebra
 
-universe u v
+universe u v w
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
@@ -107,6 +108,7 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 /-! ### Uniqueness of an extension -/
 
 /-- **A derivation of `U(L)` is determined by its values on the canonical Lie generators.** -/
+@[ext]
 theorem derivation_ext {D E : derivationLieAlgebra R U}
     (h : ∀ x : L, (D : Module.End R U) (_root_.UniversalEnvelopingAlgebra.ι R x)
       = (E : Module.End R U) (_root_.UniversalEnvelopingAlgebra.ι R x)) : D = E := by
@@ -165,16 +167,20 @@ is the identity and its second is the derivation extending `D`. -/
 private noncomputable def dualAlgHom (D : LieDerivation R L L) : U →ₐ[R] DualNumber U :=
   _root_.UniversalEnvelopingAlgebra.lift R (dualLieHom R L D)
 
+/-- The first component of `dualAlgHom` is the identity: both
+`(TrivSqZeroExt.fstHom R U U).comp (dualAlgHom R L D)` and `AlgHom.id R U` send `ι x` to `ι x`, so
+Mathlib's `UniversalEnvelopingAlgebra.hom_ext` identifies them. -/
 @[simp]
 private theorem fst_dualAlgHom (D : LieDerivation R L L) (a : U) :
     (dualAlgHom R L D a).fst = a := by
-  induction a using induction_ι R L with
-  | ι x =>
+  have h : (TrivSqZeroExt.fstHom R U U).comp (dualAlgHom R L D) = AlgHom.id R U := by
+    apply _root_.UniversalEnvelopingAlgebra.hom_ext
+    refine LieHom.ext fun x => ?_
+    change (dualAlgHom R L D (_root_.UniversalEnvelopingAlgebra.ι R x)).fst
+      = _root_.UniversalEnvelopingAlgebra.ι R x
     rw [dualAlgHom, _root_.UniversalEnvelopingAlgebra.lift_ι_apply]
     exact fst_dualMap R L D x
-  | algebraMap r => rw [AlgHom.commutes]; exact (TrivSqZeroExt.fstHom R U U).commutes r
-  | add a b ha hb => rw [map_add, TrivSqZeroExt.fst_add, ha, hb]
-  | mul a b ha hb => rw [map_mul, TrivSqZeroExt.fst_mul, ha, hb]
+  exact congrArg (fun g : U →ₐ[R] U => g a) h
 
 private theorem snd_dualAlgHom_ι (D : LieDerivation R L L) (x : L) :
     (dualAlgHom R L D (_root_.UniversalEnvelopingAlgebra.ι R x)).snd
@@ -210,13 +216,19 @@ theorem envelopingDerivation_mul (D : LieDerivation R L L) (a b : U) :
         + a * (envelopingDerivation R L D : Module.End R U) b :=
   derivationLieAlgebra.leibniz (envelopingDerivation R L D) a b
 
+-- The underlying linear map of the extension, spelled out so that the lemmas below rewrite with
+-- `dualEnd_apply` rather than relying on `envelopingDerivation` and its subtype coercion to unfold.
+private theorem coe_envelopingDerivation (D : LieDerivation R L L) :
+    (envelopingDerivation R L D : Module.End R U) = dualEnd R L D :=
+  (rfl)
+
 /-- **The extension property**: `Dᵁ` agrees with `D` on the canonical Lie generators. This is what
 pins down which derivation of `U(L)` the extension is, by
 `TauCeti.UniversalEnvelopingAlgebra.derivation_ext`. -/
 theorem envelopingDerivation_ι (D : LieDerivation R L L) (x : L) :
     (envelopingDerivation R L D : Module.End R U) (_root_.UniversalEnvelopingAlgebra.ι R x)
-      = _root_.UniversalEnvelopingAlgebra.ι R (D x) :=
-  snd_dualAlgHom_ι R L D x
+      = _root_.UniversalEnvelopingAlgebra.ι R (D x) := by
+  rw [coe_envelopingDerivation, dualEnd_apply, snd_dualAlgHom_ι]
 
 /-- The `simp`-normal form of `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_ι`, stated
 for the canonical generators as `simp` writes them. -/
@@ -258,22 +270,53 @@ theorem envelopingDerivationHom_apply (D : LieDerivation R L L) :
     envelopingDerivationHom R L D = envelopingDerivation R L D :=
   (rfl)
 
+/-! ### Naturality -/
+
+/-- **Naturality of the extension**: a homomorphism of Lie algebras `f : L → L'` intertwining `D`
+with `E` induces an algebra homomorphism `U(L) → U(L')` intertwining `Dᵁ` with `Eᵁ`.  Both sides are
+additive and multiplicative in the same way, so the identity is read off the extension property on
+the canonical generators. -/
+theorem map_envelopingDerivation {L' : Type w} [LieRing L'] [LieAlgebra R L']
+    (f : L →ₗ⁅R⁆ L') (D : LieDerivation R L L) (E : LieDerivation R L' L')
+    (hf : ∀ x : L, f (D x) = E (f x)) (a : U) :
+    map R f ((envelopingDerivation R L D : Module.End R U) a)
+      = (envelopingDerivation R L' E :
+          Module.End R (_root_.UniversalEnvelopingAlgebra R L')) (map R f a) := by
+  induction a using induction_ι R L with
+  | ι x => rw [envelopingDerivation_ι, map_ι, map_ι, envelopingDerivation_ι, hf]
+  | algebraMap r =>
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, derivationLieAlgebra.apply_one_eq_zero,
+      smul_zero, map_zero, map_smul, map_one, map_smul,
+      derivationLieAlgebra.apply_one_eq_zero, smul_zero]
+  | add a b ha hb => rw [map_add, map_add, map_add, map_add, ha, hb]
+  | mul a b ha hb =>
+    rw [derivationLieAlgebra.leibniz, map_add, map_mul, map_mul, ha, hb, map_mul,
+      derivationLieAlgebra.leibniz]
+
 /-! ### Inner derivations -/
 
 /-- **The extension of an inner derivation is inner**: the derivation of `U(L)` extending
-`y ↦ ⁅y, x⁆` is `a ↦ ⁅a, ι x⁆`, the commutator with the corresponding canonical generator. So the
-adjoint action of `L` on itself is carried to the adjoint action of `U(L)` on itself, and the
-extension is not merely some derivation agreeing with `D` on the generators. -/
-theorem envelopingDerivation_inner (x : L) (a : U) :
+`y ↦ ⁅y, x⁆` is the negative of the inner derivation of `U(L)` at the corresponding canonical
+generator.  The sign is the one by which the two conventions differ: Mathlib's
+`LieDerivation.inner` is the right commutator `⁅-, x⁆` and `TauCeti.innerDerivation` is the left
+commutator `⁅ι x, -⁆`.  So the adjoint action of `L` on itself is carried to the adjoint action of
+`U(L)` on itself, and the extension is not merely some derivation agreeing with `D` on the
+generators. -/
+theorem envelopingDerivation_inner (x : L) :
+    envelopingDerivation R L (LieDerivation.inner R L L x)
+      = -innerDerivation R (_root_.UniversalEnvelopingAlgebra.ι R x) := by
+  refine derivation_ext R L fun y => ?_
+  rw [envelopingDerivation_ι, NegMemClass.coe_neg, LinearMap.neg_apply,
+    coe_innerDerivation, LieAlgebra.ad_apply, LieDerivation.inner_apply_apply, LieHom.map_lie]
+  exact (lie_skew _ _).symm
+
+/-- The pointwise form of `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_inner`: the
+derivation of `U(L)` extending `y ↦ ⁅y, x⁆` is `a ↦ ⁅a, ι x⁆`. -/
+theorem envelopingDerivation_inner_apply (x : L) (a : U) :
     (envelopingDerivation R L (LieDerivation.inner R L L x) : Module.End R U) a
       = ⁅a, _root_.UniversalEnvelopingAlgebra.ι R x⁆ := by
-  have h : envelopingDerivation R L (LieDerivation.inner R L L x)
-      = -innerDerivation R (_root_.UniversalEnvelopingAlgebra.ι R x) := by
-    refine derivation_ext R L fun y => ?_
-    rw [envelopingDerivation_ι, NegMemClass.coe_neg, LinearMap.neg_apply,
-      coe_innerDerivation, LieAlgebra.ad_apply, LieDerivation.inner_apply_apply, LieHom.map_lie]
-    exact (lie_skew _ _).symm
-  rw [h, NegMemClass.coe_neg, LinearMap.neg_apply, coe_innerDerivation, LieAlgebra.ad_apply]
+  rw [envelopingDerivation_inner, NegMemClass.coe_neg, LinearMap.neg_apply, coe_innerDerivation,
+    LieAlgebra.ad_apply]
   exact lie_skew a (_root_.UniversalEnvelopingAlgebra.ι R x)
 
 end UniversalEnvelopingAlgebra
