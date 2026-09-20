@@ -121,7 +121,8 @@ theorem faceAffineCoordinateRingMap_comp (hi : IsIntegralLattice i)
 noncomputable def faceAffineToricSchemeMap (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) : affineToricScheme hi τ ⟶ affineToricScheme hi σ :=
   affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
-    (PointedCone.IsFaceOf.mapsTo_id hτσ)
+    (show Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) from
+      fun _ hx ↦ hτσ.le hx)
 
 /-- The morphism attached to a face inclusion is the spectrum of its coordinate-ring
 restriction. -/
@@ -139,7 +140,8 @@ theorem faceAffineToricSchemeMap_as_affineToricSchemeMap (hi : IsIntegralLattice
     (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hτσ =
       affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
-        (PointedCone.IsFaceOf.mapsTo_id hτσ) := by
+        (show Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) from
+          fun _ hx ↦ hτσ.le hx) := by
   rw [faceAffineToricSchemeMap_def, affineToricSchemeMap_def]
   congr 1
 
