@@ -154,20 +154,6 @@ namespace ContinuousLinearMap
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   {A P : X →L[ℝ] X} {alpha : ℝ}
 
-/-- Combine a flow estimate and an operator-norm estimate, enlarging the operator-norm constant
-to a common constant `K`. This is the shared calculation for the two halves of a projection
-exponential dichotomy. -/
-private theorem norm_exp_le_mul_norm_of_le {t c M K : ℝ} {w v : X}
-    (hflow : ‖exp (t • A) w‖ ≤ c * ‖w‖) (hop : ‖w‖ ≤ M * ‖v‖)
-    (hc : 0 ≤ c) (hMK : M ≤ K) :
-    ‖exp (t • A) w‖ ≤ K * c * ‖v‖ := by
-  calc
-    ‖exp (t • A) w‖ ≤ c * ‖w‖ := hflow
-    _ ≤ c * (M * ‖v‖) := mul_le_mul_of_nonneg_left hop hc
-    _ = c * M * ‖v‖ := by ring
-    _ ≤ c * K * ‖v‖ := by gcongr
-    _ = K * c * ‖v‖ := by ring
-
 /-- If an idempotent operator `P` has exponential flow bounds on its range and kernel, then it
 has the projection-form bounds used by the Lyapunov--Perron construction. The common constant
 absorbs the operator norms of `P` and `1 - P`. -/
@@ -199,7 +185,7 @@ theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) (halpha :
   refine ⟨K, rate, hK, hrate, ?_, ?_⟩
   · intro t ht v
     have hPv : P v ∈ P.range := ⟨v, rfl⟩
-    exact norm_exp_le_mul_norm_of_le (hs t ht (P v) hPv) (P.le_opNorm v)
+    exact norm_exp_smul_apply_le_mul_norm_of_le (hs t ht (P v) hPv) (P.le_opNorm v)
       (Real.exp_nonneg _) hP_le
   · intro t ht v
     have hvP : v - P v ∈ P.ker := by
@@ -207,7 +193,7 @@ theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) (halpha :
       simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, hPP, sub_self]
     have hop : ‖v - P v‖ ≤ ‖ContinuousLinearMap.id ℝ X - P‖ * ‖v‖ := by
       simpa using (ContinuousLinearMap.id ℝ X - P).le_opNorm v
-    exact norm_exp_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop
+    exact norm_exp_smul_apply_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop
       (Real.exp_nonneg _) hPc_le
 
 end ContinuousLinearMap
