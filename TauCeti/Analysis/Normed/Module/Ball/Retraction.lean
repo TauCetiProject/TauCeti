@@ -90,7 +90,6 @@ theorem radialRetraction_mem_closedBall (hr : 0 ≤ r) (x : E) :
   exact min_le_right _ _
 
 /-- The radial retraction is idempotent for nonnegative radius. -/
-@[simp]
 theorem radialRetraction_radialRetraction (hr : 0 ≤ r) (x : E) :
     radialRetraction r (radialRetraction r x) = radialRetraction r x :=
   radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 (radialRetraction_mem_closedBall hr x))
