@@ -176,6 +176,11 @@ def semilocalEquiv :
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L) :=
   AlgEquiv.ofBijective (semilocalHom L v)
+    -- The `show` is load-bearing. `Function.Bijective` is semireducible, so the bare anonymous
+    -- constructor elaborates at the unfolded conjunction instead, and the resulting
+    -- `AlgEquiv.ofBijective` term is then not type-correct at `instances` transparency: `simp`
+    -- refuses to rewrite it with `AlgEquiv.coe_ofBijective`, which is what proves
+    -- `semilocalEquiv_tmul` below.
     (show Function.Bijective (semilocalHom L v) from
       ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩)
 
