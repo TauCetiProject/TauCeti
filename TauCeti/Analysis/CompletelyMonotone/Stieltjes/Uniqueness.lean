@@ -29,7 +29,7 @@ The three pieces of data are separated one at a time.
   `a / t` is exactly the Stieltjes integral of `a • δ₀`.  So once `b` is known, the whole
   representation is the Stieltjes transform of a single measure, and it remains to show that a
   measure is determined by its Stieltjes transform.
-* That determinacy (`TauCeti.Measure.ext_of_forall_integral_inv_add_eq`) reduces to Laplace
+* That determinacy (`TauCeti.Measure.ext_of_integral_inv_add_eventuallyEq`) reduces to Laplace
   determinacy for finite measures.  Differentiating the Stieltjes transform `n` times at `t = 1`
   (`TauCeti.iteratedDeriv_integral_inv_add`) recovers the numbers `∫ (1 + x)^{-1-n} dμ`, which are
   the values at the natural numbers of the Laplace transform of the finite measure obtained by
@@ -41,8 +41,8 @@ The three pieces of data are separated one at a time.
 ## Main declarations
 
 * `TauCeti.tendsto_integral_inv_add_atTop_nhds_zero`: a Stieltjes transform vanishes at `+∞`.
-* `TauCeti.Measure.ext_of_forall_integral_inv_add_eq`: **a measure on `ℝ≥0` with integrable
-  Stieltjes weight is determined by its Stieltjes transform.**
+* `TauCeti.Measure.ext_of_integral_inv_add_eventuallyEq`: **a measure on `ℝ≥0` with integrable
+  Stieltjes weight is determined by the germ of its Stieltjes transform at `1`.**
 * `TauCeti.RepresentsStieltjes.unique` and
   `TauCeti.IsStieltjesFunction.existsUnique_representsStieltjes`: **uniqueness of the Stieltjes
   representation.**
@@ -182,22 +182,18 @@ private lemma laplaceTransform_map_logAddOne_withDensity (n : ℕ) :
   rw [weightDensity_apply, smul_eq_mul, ENNReal.toReal_ofReal (inv_nonneg.mpr h1x.le), hexp,
     hsplit, zpow_add₀ h1x.ne', zpow_neg_one]
 
-/-- **A measure on `ℝ≥0` whose Stieltjes weight is integrable is determined by its Stieltjes
-transform.** -/
-theorem Measure.ext_of_forall_integral_inv_add_eq (hμ : Integrable stieltjesWeight μ)
+/-- **A measure on `ℝ≥0` whose Stieltjes weight is integrable is determined by the germ of its
+Stieltjes transform at `1`.** -/
+theorem Measure.ext_of_integral_inv_add_eventuallyEq (hμ : Integrable stieltjesWeight μ)
     (hν : Integrable stieltjesWeight ν)
-    (h : ∀ t : ℝ, 0 < t → ∫ x : ℝ≥0, (t + (x : ℝ))⁻¹ ∂μ = ∫ x : ℝ≥0, (t + (x : ℝ))⁻¹ ∂ν) :
+    (h : (fun t : ℝ => ∫ x : ℝ≥0, (t + (x : ℝ))⁻¹ ∂μ) =ᶠ[𝓝 (1 : ℝ)]
+      fun t : ℝ => ∫ x : ℝ≥0, (t + (x : ℝ))⁻¹ ∂ν) :
     μ = ν := by
   -- Differentiating at `t = 1` turns the transform into the Stieltjes moments.
   have hmoment : ∀ n : ℕ, ∫ x : ℝ≥0, (1 + (x : ℝ)) ^ (-1 - (n : ℤ)) ∂μ
       = ∫ x : ℝ≥0, (1 + (x : ℝ)) ^ (-1 - (n : ℤ)) ∂ν := by
     intro n
-    have hev : (fun u : ℝ => ∫ x : ℝ≥0, (u + (x : ℝ))⁻¹ ∂μ) =ᶠ[𝓝 (1 : ℝ)]
-        fun u : ℝ => ∫ x : ℝ≥0, (u + (x : ℝ))⁻¹ ∂ν := by
-      have hone : (1 : ℝ) ∈ Ioi 0 := mem_Ioi.mpr one_pos
-      filter_upwards [isOpen_Ioi.mem_nhds hone] with u hu
-      exact h u hu
-    have hderiv := hev.iteratedDeriv_eq n
+    have hderiv := h.iteratedDeriv_eq n
     rw [iteratedDeriv_integral_inv_add hμ n one_pos,
       iteratedDeriv_integral_inv_add hν n one_pos] at hderiv
     have hne : ((-1 : ℝ) ^ n * n.factorial) ≠ 0 :=
@@ -293,7 +289,9 @@ protected theorem RepresentsStieltjes.unique (hf : RepresentsStieltjes μ a b f)
     exact NNReal.coe_injective (by simpa using hlim)
   -- With the constants equal, the two Stieltjes transforms agree, so the measures do.
   have hMN : atomize μ a = atomize ν c := by
-    refine Measure.ext_of_forall_integral_inv_add_eq hM hN fun t ht => ?_
+    refine Measure.ext_of_integral_inv_add_eventuallyEq hM hN ?_
+    have hone : (1 : ℝ) ∈ Ioi 0 := mem_Ioi.mpr one_pos
+    filter_upwards [isOpen_Ioi.mem_nhds hone] with t ht
     have hv := hval t ht
     rw [hbd] at hv
     linarith
