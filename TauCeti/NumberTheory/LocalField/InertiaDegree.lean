@@ -37,6 +37,8 @@ side, and conversely.
 
 * `TauCeti.map_maximalIdeal_eq_maximalIdeal_pow`: the maximal ideal of `𝒪[K]` generates
   `𝓂[L] ^ e(L/K)`.
+* `TauCeti.primesOver_maximalIdeal_eq_singleton`: `𝓂[L]` is the unique prime of `𝒪[L]`
+  above `𝓂[K]`.
 * `TauCeti.ramificationIndex_eq_ramificationIdx` and `TauCeti.inertiaDegree_eq_inertiaDeg`: the
   intrinsic invariants agree with `Ideal.ramificationIdx` and `Ideal.inertiaDeg` of `𝓂[L]`
   over `𝒪[K]`.
@@ -122,12 +124,16 @@ theorem inertiaDegree_eq_inertiaDeg :
   (Ideal.inertiaDeg_eq_of_isMaximal 𝓂[K] 𝓂[L]).symm
 
 variable (K L) in
+/-- The maximal ideal of `𝒪[L]` is the unique prime above the maximal ideal of `𝒪[K]`. -/
+theorem primesOver_maximalIdeal_eq_singleton : Ideal.primesOver 𝓂[K] 𝒪[L] = {𝓂[L]} :=
+  IsLocalRing.primesOver_eq 𝒪[L] (IsDiscreteValuationRing.not_a_field 𝒪[K])
+
+variable (K L) in
 /-- **The fundamental identity** `e(L/K) · f(L/K) = [L : K]` for an extension of nonarchimedean
 local fields with compatible valuations. -/
 theorem ramificationIndex_mul_inertiaDegree :
     ramificationIndex K L * inertiaDegree K L = Module.finrank K L := by
-  have hs : Ideal.primesOver 𝓂[K] 𝒪[L] = {𝓂[L]} :=
-    IsLocalRing.primesOver_eq 𝒪[L] (IsDiscreteValuationRing.not_a_field 𝒪[K])
+  have hs := primesOver_maximalIdeal_eq_singleton K L
   have hmem : 𝓂[L] ∈ Ideal.primesOver 𝓂[K] 𝒪[L] := by rw [hs]; exact Set.mem_singleton _
   -- The sum below is indexed by the primes above `𝓂[K]`, a singleton; any `Fintype` will do.
   let : Fintype ↥(Ideal.primesOver 𝓂[K] 𝒪[L]) := by rw [hs]; infer_instance
