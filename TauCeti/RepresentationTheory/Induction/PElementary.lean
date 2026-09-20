@@ -323,9 +323,12 @@ theorem pSectionCosetCard_self [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
 are the fixed points of the `p`-element `pPart p x` acting by translation on the cosets of the
 `p`-elementary subgroup in the centraliser of `s`, and a `p`-group has as many fixed points as
 points modulo `p`. -/
-theorem pSectionCosetCard_modEq [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x : G}
+theorem pSectionCosetCard_modEq [Finite G] [Fact p.Prime] {x : G}
     (hx : pFreePart p x = s) :
     pSectionCosetCard s P x ≡ pSectionCosetCard s P s [MOD p] := by
+  have hs : ¬ p ∣ orderOf s := by
+    rw [← hx]
+    exact not_dvd_orderOf_pFreePart Fact.out (orderOf_pos x).ne'
   have hu : pPart p x ∈ centralizer ({pFreePart p x} : Set G) :=
     mem_centralizer_singleton_iff.2 (commute_pFreePart_pPart p x).symm.eq
   rw [hx] at hu
@@ -350,13 +353,16 @@ theorem pSectionCosetCard_modEq [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf
   exact (hpg.card_modEq_card_fixedPoints _).symm
 
 /-- **The count is prime to `p` everywhere on the `p`-section of `s`.** -/
-theorem not_dvd_pSectionCosetCard [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x : G}
+theorem not_dvd_pSectionCosetCard [Finite G] [Fact p.Prime] {x : G}
     (hx : pFreePart p x = s) : ¬ p ∣ pSectionCosetCard s P x := by
+  have hs : ¬ p ∣ orderOf s := by
+    rw [← hx]
+    exact not_dvd_orderOf_pFreePart Fact.out (orderOf_pos x).ne'
   intro hdvd
   refine not_dvd_relIndex_pElementaryOfSylow s P ?_
   rw [← pSectionCosetCard_self hs]
   exact Nat.modEq_zero_iff_dvd.1
-    ((pSectionCosetCard_modEq hs hx).symm.trans (Nat.modEq_zero_iff_dvd.2 hdvd))
+    ((pSectionCosetCard_modEq hx).symm.trans (Nat.modEq_zero_iff_dvd.2 hdvd))
 
 /-- **The value of the induced `p`-section indicator at `s`.** -/
 @[simp]
