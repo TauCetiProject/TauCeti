@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.LogDeriv
-public import Mathlib.Analysis.Calculus.MeanValue
-public import Mathlib.Analysis.Complex.CauchyIntegral
+public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
 # Rigidity of the pre-Schwarzian derivative
