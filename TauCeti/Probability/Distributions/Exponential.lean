@@ -48,7 +48,9 @@ evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
-* `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials.
+* `map_min_expMeasure` — the minimum map sends a product of exponential laws to the exponential
+  law whose rate is the sum of the rates;
+* `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials;
 * `hasLaw_min_iid_expMeasure` — minimum of `d` i.i.d. exponentials of rate `r` is exponential of
   rate `d * r`.
 * `nnrealExpMeasure` — the exponential measure transported to `ℝ≥0`.
@@ -358,6 +360,33 @@ theorem memoryless_expMeasure (hr : 0 < r) (hs : 0 ≤ s) (ht : 0 ≤ t) :
   rw [← ENNReal.ofReal_inv_of_pos (exp_pos _), ← ENNReal.ofReal_mul (by positivity),
     ← Real.exp_neg, ← Real.exp_add, hexponent]
 
+/-- **The minimum of independent exponential laws is exponential.** Mapping the product of
+positive-rate exponential laws under the pointwise minimum gives the exponential law whose rate
+is the sum of the input rates. -/
+theorem map_min_expMeasure (hr : 0 < r) (hs : 0 < s) :
+    ((expMeasure r).prod (expMeasure s)).map (fun z => min z.1 z.2) =
+      expMeasure (r + s) := by
+  have _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
+  have _ : IsProbabilityMeasure (expMeasure s) := isProbabilityMeasure_expMeasure hs
+  have _ : IsProbabilityMeasure (expMeasure (r + s)) :=
+    isProbabilityMeasure_expMeasure (add_pos hr hs)
+  apply Measure.eq_of_cdf
+  ext x
+  rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable (by fun_prop) measurableSet_Iic,
+    cdf_expMeasure_eq (add_pos hr hs) x]
+  rw [show (fun z : ℝ × ℝ => min z.1 z.2) ⁻¹' Iic x = (Ioi x ×ˢ Ioi x)ᶜ by
+    ext z
+    simp only [mem_preimage, mem_Iic, mem_compl_iff, mem_prod, mem_Ioi, not_and_or, not_lt,
+      min_le_iff]]
+  rw [measureReal_compl (measurableSet_Ioi.prod measurableSet_Ioi), probReal_univ,
+    measureReal_prod_prod,
+    measureReal_Ioi_expMeasure hr x, measureReal_Ioi_expMeasure hs x]
+  by_cases hx : 0 ≤ x
+  · have hexp : -(r * x) + -(s * x) = -((r + s) * x) := by ring
+    rw [ite_eq_left hx, ite_eq_left hx, ite_eq_left hx, ← exp_add, hexp]
+  · rw [ite_eq_right hx, ite_eq_right hx, ite_eq_right hx]
+    norm_num
+
 /-- The minimum of two independent random variables with exponential laws has an exponential law
 whose rate is the sum of their rates. -/
 theorem hasLaw_min_expMeasure_of_indepFun {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
@@ -365,40 +394,13 @@ theorem hasLaw_min_expMeasure_of_indepFun {Ω : Type*} {mΩ : MeasurableSpace Ω
     (hXY : IndepFun X Y P) (hX : HasLaw X (expMeasure r) P)
     (hY : HasLaw Y (expMeasure s) P) :
     HasLaw (fun ω => min (X ω) (Y ω)) (expMeasure (r + s)) P := by
-  have hmin : AEMeasurable (fun ω => min (X ω) (Y ω)) P :=
-    hX.aemeasurable.min hY.aemeasurable
   have _ : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
-  have _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  have _ : IsProbabilityMeasure (expMeasure (r + s)) :=
-    isProbabilityMeasure_expMeasure (add_pos hr hs)
-  refine ⟨hmin, ?_⟩
-  apply Measure.eq_of_cdf
-  ext x
-  rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmin measurableSet_Iic,
-    cdf_expMeasure_eq (add_pos hr hs) x]
-  have hevent : (fun ω => min (X ω) (Y ω)) ⁻¹' Iic x =
-      (X ⁻¹' Ioi x ∩ Y ⁻¹' Ioi x)ᶜ := by
-    ext ω
-    simp only [mem_preimage, mem_Iic, mem_compl_iff, mem_inter_iff, mem_Ioi,
-      not_and_or, not_lt, min_le_iff]
-  rw [hevent, measureReal_compl₀
-    ((hX.aemeasurable.nullMeasurableSet_preimage measurableSet_Ioi).inter
-      (hY.aemeasurable.nullMeasurableSet_preimage measurableSet_Ioi)), probReal_univ]
-  have hind := hXY.measure_inter_preimage_eq_mul (Ioi x) (Ioi x)
-    measurableSet_Ioi measurableSet_Ioi
-  have hindReal := congr_arg ENNReal.toReal hind
-  simp only [ENNReal.toReal_mul, ← measureReal_def] at hindReal
-  have hXtail : P.real (X ⁻¹' Ioi x) = (expMeasure r).real (Ioi x) :=
-    hX.measureReal_eq measurableSet_Ioi
-  have hYtail : P.real (Y ⁻¹' Ioi x) = (expMeasure s).real (Ioi x) :=
-    hY.measureReal_eq measurableSet_Ioi
-  rw [hindReal, hXtail, hYtail, measureReal_Ioi_expMeasure hr x,
-    measureReal_Ioi_expMeasure hs x]
-  by_cases hx : 0 ≤ x
-  · have hexp : -(r * x) + -(s * x) = -((r + s) * x) := by ring
-    rw [ite_eq_left hx, ite_eq_left hx, ite_eq_left hx, ← exp_add, hexp]
-  · rw [ite_eq_right hx, ite_eq_right hx, ite_eq_right hx]
-    norm_num
+  have _ : IsFiniteMeasure P := hX.isFiniteMeasure
+  have hpair : HasLaw (fun ω => (X ω, Y ω))
+      ((expMeasure r).prod (expMeasure s)) P := hXY.hasLaw_prod hX hY
+  have hmin := (hasLaw_map ((measurable_fst.min measurable_snd).aemeasurable)).comp hpair
+  rw [map_min_expMeasure hr hs] at hmin
+  exact hmin.congr (ae_of_all _ fun _ => rfl)
 
 /-- The minimum of `d` independent exponential variables of a common positive rate `r` is
 exponential of rate `d * r`. This is the `d`-fold form of
