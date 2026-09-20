@@ -626,6 +626,28 @@ private lemma chain_five_form_neg (hcard : 5 < Fintype.card T.Component)
   ring_nf at hneg ⊢
   exact hneg
 
+/-- The intersection form of a numerical type at an integral vector supported on five distinct
+components forming the fork with edges `h - i - j - k` and `j - l` is negative when its first
+entry is nonzero and the fork is a proper subgraph. -/
+private lemma fork_five_form_neg (hcard : 5 < Fintype.card T.Component)
+    {h i j k l : T.Component}
+    (hhi : h ≠ i) (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hij : i ≠ j) (hik : i ≠ k)
+    (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l) (hkl : k ≠ l)
+    (hhj0 : T.intersection h j = 0) (hhk0 : T.intersection h k = 0)
+    (hhl0 : T.intersection h l = 0) (hik0 : T.intersection i k = 0)
+    (hil0 : T.intersection i l = 0) (hkl0 : T.intersection k l = 0)
+    (y₁ y₂ y₃ y₄ y₅ : ℤ) (hy₁ : y₁ ≠ 0) :
+    T.intersection h h * y₁ ^ 2 + T.intersection i i * y₂ ^ 2 + T.intersection j j * y₃ ^ 2 +
+        T.intersection k k * y₄ ^ 2 + T.intersection l l * y₅ ^ 2 +
+      2 * (T.intersection h i * y₁ * y₂ + T.intersection i j * y₂ * y₃ +
+        T.intersection j k * y₃ * y₄ + T.intersection j l * y₃ * y₅) < 0 := by
+  have hneg := T.intersection_five_neg hcard hhi hhj hhk hhl hij hik hil hjk hjl hkl
+    (y₁ := y₁) (y₂ := y₂) (y₃ := y₃) (y₄ := y₄) (y₅ := y₅)
+    (fun hy ↦ hy₁ hy.1)
+  rw [hhj0, hhk0, hhl0, hik0, hil0, hkl0] at hneg
+  ring_nf at hneg ⊢
+  exact hneg
+
 /-- The factor data used to classify a chain of five components. The four-component analysis of
 the two overlapping windows of the chain shows that every intersection number of two
 nonconsecutive components other than that of the two ends vanishes, bounds each of the eight
@@ -857,7 +879,8 @@ theorem intersection_eq_zero_of_star_five (hcard : 5 < Fintype.card T.Component)
   rw [hw, hw₂, hw₃, hw₄, hw₅] at hneg
   linarith
 
-/-- Five components of self-intersection `-2w` forming the fork
+/-- Five components of self-intersection `-2w` in a numerical type with more than five components
+forming the fork
 
 `h - i - j - k`, with a second leaf `l` at `j`,
 
@@ -885,74 +908,65 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
   have hij' : i ≠ j := by rintro rfl; linarith
   have hjk' : j ≠ k := by rintro rfl; linarith
   have hjl' : j ≠ l := by rintro rfl; linarith
-  -- The three-legged star at `j` fixes four weights and its three edges. The two overlapping
-  -- four-chains show that no additional edge can meet `h`.
+  -- The three-legged star at `j` fixes four weights and its three edges. The chain from `h` to `k`
+  -- shows that no additional edge can meet `h` and bounds the divisibility factors of `h - i`.
   obtain ⟨w, hwj, hwi, hwk, hwl, aji, ajk, ajl, zik, zil, zkl⟩ :=
     T.exists_weight_intersection_star_four_eq (by omega) hj hi hk hl hik hil hkl
       (T.intersection_comm i j ▸ hij) hjk hjl
   have aij : T.intersection i j = w := T.intersection_comm j i ▸ aji
-  obtain ⟨zhj, -, zhk⟩ := T.intersection_eq_zero_of_chain_four (by omega) hh hi hj hk
-    hhj hhk hik hhi hij hjk
+  obtain ⟨zhj, -, zhk, p₁, q₁, p₂, q₂, p₃, q₃, hp₁1, hp₁2, hq₁1, hq₁2, -, -, -, -, -, -, -, -,
+      ap₁, aq₁, ap₂, aq₂, ap₃, aq₃, hdet⟩ :=
+    T.chain_four_factors (by omega) hh hi hj hk hhj hhk hik hhi hij hjk
   obtain ⟨-, -, zhl⟩ := T.intersection_eq_zero_of_chain_four (by omega) hh hi hj hl
     hhj hhl hil hhi hij hjl
-  obtain ⟨p₁, q₁, p₂, q₂, p₃, q₃, ap₁, aq₁, ap₂, aq₂, ap₃, aq₃, hm⟩ :=
-    T.exists_intersection_ratio_chain_four_mem (by omega) hh hi hj hk hhj hhk hik hhi hij hjk
-  -- Since the last two edges of this chain are already simply laced, its classification leaves
-  -- only ratio one or two at `h - i`.
-  have hp₁0 : 0 < p₁ := pos_of_mul_pos_right (ap₁ ▸ hhi) (by positivity)
-  have hq₁0 : 0 < q₁ := pos_of_mul_pos_right (aq₁ ▸ hhi) (by positivity)
+  have hw0 : (w : ℤ) ≠ 0 := by positivity
+  have factor_eq_one (a : ℤ) (ha : (w : ℤ) = w * a) : a = 1 := by
+    exact (mul_left_cancel₀ hw0 (by rw [mul_one]; exact ha)).symm
   have hp₂1 : p₂ = 1 := by
     rw [hwi, aij] at ap₂
-    exact (mul_left_cancel₀ (show (w : ℤ) ≠ 0 by positivity) (by simpa using ap₂)).symm
+    exact factor_eq_one p₂ ap₂
   have hq₂1 : q₂ = 1 := by
     rw [hwj, aij] at aq₂
-    exact (mul_left_cancel₀ (show (w : ℤ) ≠ 0 by positivity) (by simpa using aq₂)).symm
+    exact factor_eq_one q₂ aq₂
   have hp₃1 : p₃ = 1 := by
     rw [hwj, ajk] at ap₃
-    exact (mul_left_cancel₀ (show (w : ℤ) ≠ 0 by positivity) (by simpa using ap₃)).symm
+    exact factor_eq_one p₃ ap₃
   have hq₃1 : q₃ = 1 := by
     rw [hwk, ajk] at aq₃
-    exact (mul_left_cancel₀ (show (w : ℤ) ≠ 0 by positivity) (by simpa using aq₃)).symm
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq, hp₂1, hq₂1, hp₃1,
-    hq₃1, mul_one] at hm
-  have hpq : p₁ * q₁ = 1 ∨ p₁ * q₁ = 2 := by
-    rcases hm with hm | hm | hm | hm <;> omega
+    exact factor_eq_one q₃ aq₃
+  have hpqle : p₁ * q₁ ≤ 2 := by
+    rw [hp₂1, hq₂1, hp₃1, hq₃1] at hdet
+    norm_num at hdet
+    omega
   have hpq1 : p₁ * q₁ = 1 := by
-    rcases hpq with hpq | hpq
-    · exact hpq
-    · have hp₁le : p₁ ≤ 2 := by nlinarith [mul_pos hp₁0 hq₁0]
-      have hq₁le : q₁ ≤ 2 := by nlinarith [mul_pos hp₁0 hq₁0]
+    rcases eq_or_lt_of_le hpqle with hpq | hpq
+    · have hp₁_cases : p₁ = 1 ∨ p₁ = 2 := by omega
       have hpq_cases : (p₁ = 1 ∧ q₁ = 2) ∨ (p₁ = 2 ∧ q₁ = 1) := by
-        interval_cases p₁ <;> interval_cases q₁ <;> omega
+        rcases hp₁_cases with rfl | rfl <;> simp_all
       -- The two orientations of ratio two are affine. Their displayed vectors span the kernels
       -- of the corresponding intersection matrices, contradicting negative definiteness.
       rcases hpq_cases with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · have hwh : (T.weight h : ℤ) = 2 * w := by
           rw [hwi] at aq₁
-          norm_num at ap₁ aq₁ ⊢
           omega
         have ahi : T.intersection h i = 2 * w := by
           rw [hwi] at aq₁
-          simpa [mul_comm] using aq₁
-        have hneg := T.intersection_five_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
-          (y₁ := 1) (y₂ := 2) (y₃ := 2) (y₄ := 1) (y₅ := 1) (by omega)
-        rw [hh, hi, hj, hk, hl, hwh, hwi, hwj, hwk, hwl, ahi, zhj, zhk, zhl, aij, zik,
-          zil, ajk, ajl, zkl] at hneg
-        ring_nf at hneg
-        omega
+          rw [mul_comm]
+          exact aq₁
+        linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
+          zhj zhk zhl zik zil zkl 1 2 2 1 1 one_ne_zero]
       · have hwh : 2 * (T.weight h : ℤ) = w := by
           rw [hwi] at aq₁
-          norm_num at ap₁ aq₁ ⊢
           omega
-        have ahi : T.intersection h i = w := by rw [hwi] at aq₁; simpa using aq₁
-        have hneg := T.intersection_five_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
-          (y₁ := 2) (y₂ := 2) (y₃ := 2) (y₄ := 1) (y₅ := 1) (by omega)
-        rw [hh, hi, hj, hk, hl, hwi, hwj, hwk, hwl, ahi, zhj, zhk, zhl, aij, zik, zil,
-          ajk, ajl, zkl] at hneg
-        ring_nf at hneg
-        omega
-  have hp₁le : p₁ ≤ p₁ * q₁ := le_mul_of_one_le_right hp₁0.le hq₁0
-  have hq₁le : q₁ ≤ p₁ * q₁ := le_mul_of_one_le_left hq₁0.le hp₁0
+        have ahi : T.intersection h i = w := by
+          rw [hwi, mul_one] at aq₁
+          exact aq₁
+        linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
+          zhj zhk zhl zik zil zkl 2 2 2 1 1 (by omega)]
+    · have hpqpos : 0 < p₁ * q₁ := mul_pos (by omega) (by omega)
+      omega
+  have hp₁le : p₁ ≤ p₁ * q₁ := le_mul_of_one_le_right (by omega) hq₁1
+  have hq₁le : q₁ ≤ p₁ * q₁ := le_mul_of_one_le_left (by omega) hp₁1
   have hp₁1 : p₁ = 1 := by omega
   have hq₁1 : q₁ = 1 := by omega
   have ahi : T.intersection h i = w := by rw [hwi, hq₁1, mul_one] at aq₁; exact aq₁
