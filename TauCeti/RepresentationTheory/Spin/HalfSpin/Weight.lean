@@ -281,9 +281,12 @@ theorem setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd :
     exact ⟨(spinWeightSpace_ne_bot_iff P b).mpr ⟨s, rfl⟩,
       (spinWeightSpace_le_spinMinus_iff P b s).mpr hs⟩
 
-/-- **`S⁺` carries `2 ^ (l - 1)` weights** on `l` coordinates: half the `2 ^ l` weights of the
-spinor module. Over a field this is the dimension `TauCeti.finrank_spinPlus` of `S⁺`, as it must
-be, each weight space being a line. -/
+/-- **`S⁺` carries `2 ^ (l - 1)` weights** on `l` coordinates: for `l > 0` half the `2 ^ l`
+weights of the spinor module, the other half being those of `S⁻`
+(`TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus`); on no coordinates at all it is no
+half but the one weight the whole spinor module has, the empty sign vector being even, and
+`2 ^ (0 - 1) = 1` counts it. Over a field and on nonempty coordinates this is the dimension
+`TauCeti.finrank_spinPlus` of `S⁺`, as it must be, each weight space being a line. -/
 theorem ncard_setOf_spinWeightSpace_ne_bot_and_le_spinPlus [Finite ι] :
     {χ : ι → K | spinWeightSpace Q P b χ ≠ ⊥ ∧
         spinWeightSpace Q P b χ ≤ spinPlus Q P}.ncard = 2 ^ (Nat.card ι - 1) := by

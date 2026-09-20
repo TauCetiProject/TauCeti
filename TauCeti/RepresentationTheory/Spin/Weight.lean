@@ -90,9 +90,11 @@ rest of the layer this file opens.
 * `TauCeti.range_spinWeight`: for a finite index type the weights are exactly the sign vectors,
   and, when `K` is nontrivial, `TauCeti.ncard_range_spinWeight` counts them: there are `2 ^ l` of
   them on an index type of cardinality `l`.
-* `TauCeti.ncard_image_spinWeight_even` and `TauCeti.ncard_image_spinWeight_odd`: **the two
-  parities of sign vector are equinumerous**, `2 ^ (l - 1)` each. These are the weights of the two
-  half-spin summands; the identification is
+* `TauCeti.ncard_image_spinWeight_even` and `TauCeti.ncard_image_spinWeight_odd`: **on a nonempty
+  index type the two parities of sign vector are equinumerous**, `2 ^ (l - 1)` each. On the empty
+  index type they are not: the only sign vector is the empty one, which is even, so the even count
+  is `2 ^ (0 - 1) = 1` and the odd one is `0`, which is why the odd theorem asks `l > 0`. These
+  are the weights of the two half-spin summands; the identification is
   `TauCeti/RepresentationTheory/Spin/HalfSpin/Weight.lean`.
 
 ## References
@@ -215,9 +217,10 @@ theorem ncard_range_spinWeight [Finite ι] [Nontrivial K] :
     Nat.card_eq_fintype_card, Fintype.card_finset]
 
 /-- **The sign vectors with an even number of `+` signs number `2 ^ (l - 1)`** on an index type of
-cardinality `l`: half of the `2 ^ l` sign vectors of `TauCeti.ncard_range_spinWeight`, the empty
-index type contributing its one empty sign vector to `2 ^ (0 - 1) = 1`. These are the weights of
-the even half-spin summand, by
+cardinality `l`. For `l > 0` that is half of the `2 ^ l` sign vectors of
+`TauCeti.ncard_range_spinWeight`, the odd ones of `TauCeti.ncard_image_spinWeight_odd` being the
+other half; for `l = 0` it is no half but the single empty sign vector, which is even, and
+`2 ^ (0 - 1) = 1` counts it. These are the weights of the even half-spin summand, by
 `TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even`. -/
 theorem ncard_image_spinWeight_even [Finite ι] [Nontrivial K] :
     (spinWeight K '' {s : Finset ι | Even s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
