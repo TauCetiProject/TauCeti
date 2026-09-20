@@ -123,6 +123,18 @@ theorem IsDistinguished.coeff_ne_zero (hf : IsDistinguished c s f) : f.coeff s �
   rw [← hf.norm_coeff_mul_pow_eq, h] at hpos
   simp at hpos
 
+/-- The weighted coefficient norms of a distinguished series are bounded above. -/
+theorem IsDistinguished.hasGaussNorm (hf : IsDistinguished c s f) :
+    f.HasGaussNorm norm c := by
+  let a : ℕ → ℝ := fun n ↦ ‖f.coeff n‖ * c ^ n
+  have hfinite : Set.Finite (a '' {n | n ≤ s}) := (Set.finite_le_nat s).image a
+  obtain ⟨b, hb⟩ := hfinite.bddAbove
+  refine ⟨max b (f.gaussNorm norm c), ?_⟩
+  rintro _ ⟨n, rfl⟩
+  by_cases hn : n ≤ s
+  · exact (hb ⟨n, hn, rfl⟩).trans (le_max_left _ _)
+  · exact (hf.norm_coeff_mul_pow_lt n (Nat.lt_of_not_ge hn)).le.trans (le_max_right _ _)
+
 /-- The distinguished degree is unique: a series cannot be distinguished of two degrees at the
 same radius. -/
 theorem IsDistinguished.unique (hf : IsDistinguished c s f) (hf' : IsDistinguished c t f) :
@@ -178,9 +190,10 @@ product of the two Gauss norms.
 Every other convolution term in that degree has one of its two indices past a distinguished
 degree, hence is strictly smaller, so the nonarchimedean sum cannot lose the dominant term. -/
 theorem IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul (hf : IsDistinguished c i f)
-    (hg : IsDistinguished c j g) (hc : 0 < c) (hbf : f.HasGaussNorm norm c)
-    (hbg : g.HasGaussNorm norm c) :
+    (hg : IsDistinguished c j g) (hc : 0 < c) :
     ‖(f * g).coeff (i + j)‖ * c ^ (i + j) = f.gaussNorm norm c * g.gaussNorm norm c := by
+  have hbf := hf.hasGaussNorm
+  have hbg := hg.hasGaussNorm
   have hfp := hf.gaussNorm_pos
   have hgp := hg.gaussNorm_pos
   have hdom (p : ℕ × ℕ) (hp : p ∈ Finset.antidiagonal (i + j)) (hne : p ≠ (i, j)) :
@@ -227,8 +240,7 @@ theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)
     (hasGaussNorm_of_isRestricted hg).hasMvGaussNorm) ?_
   calc
     f.gaussNorm norm c * g.gaussNorm norm c = ‖(f * g).coeff (i + j)‖ * c ^ (i + j) :=
-      (hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc (hasGaussNorm_of_isRestricted hf)
-        (hasGaussNorm_of_isRestricted hg)).symm
+      (hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc).symm
     _ ≤ (f * g).gaussNorm norm c := PowerSeries.le_gaussNorm norm c (f * g)
       (hasGaussNorm_of_isRestricted (PowerSeries.isRestricted.mul c hf hg)) _
 
@@ -239,10 +251,10 @@ theorem IsDistinguished.mul (hf : IsDistinguished c i f) (hg : IsDistinguished c
     IsDistinguished c (i + j) (f * g) := by
   have hfp := hf.gaussNorm_pos
   have hgp := hg.gaussNorm_pos
-  have hbf := hasGaussNorm_of_isRestricted hfr
-  have hbg := hasGaussNorm_of_isRestricted hgr
+  have hbf := hf.hasGaussNorm
+  have hbg := hg.hasGaussNorm
   have hmul := gaussNorm_mul_of_isRestricted hc hfr hgr
-  refine ⟨(hf.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hg hc hbf hbg).trans hmul.symm,
+  refine ⟨(hf.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hg hc).trans hmul.symm,
     fun m hm ↦ ?_⟩
   rw [PowerSeries.coeff_mul]
   have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m

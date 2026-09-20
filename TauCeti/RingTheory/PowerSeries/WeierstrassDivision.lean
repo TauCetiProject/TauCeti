@@ -82,8 +82,7 @@ theorem IsDistinguished.le_gaussNorm_mul_add (hf : IsDistinguished c s f) (hc : 
   calc q.gaussNorm norm c * f.gaussNorm norm c
       = ‖(q * f + r).coeff (n + s)‖ * c ^ (n + s) := by
         rw [hcoeff]
-        exact (hn.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hf hc
-          (hasGaussNorm_of_isRestricted hq) (hasGaussNorm_of_isRestricted hfr)).symm
+        exact (hn.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hf hc).symm
     _ ≤ (q * f + r).gaussNorm norm c :=
         PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted hsum) _
 
