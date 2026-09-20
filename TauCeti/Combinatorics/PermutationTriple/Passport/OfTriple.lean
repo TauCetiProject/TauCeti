@@ -83,6 +83,7 @@ theorem passportOf_smul (tau : Perm (Fin n)) (t : ConnectedTriple n) :
 /-! ## Admissibility and the characteristic property -/
 
 /-- Every connected triple belongs to the passport it determines. -/
+@[simp]
 theorem hasPassport_passportOf (t : ConnectedTriple n) :
     PassportSpec.HasPassport t t.passportOf := by
   rw [PassportSpec.hasPassport_iff]
@@ -94,6 +95,7 @@ theorem hasPassport_passportOf (t : ConnectedTriple n) :
   exact (passportOf_G t).symm
 
 /-- The passport determined by a connected triple is admissible. -/
+@[simp]
 theorem isAdmissible_passportOf (t : ConnectedTriple n) : t.passportOf.IsAdmissible :=
   PassportSpec.isAdmissible_of_hasPassport t.hasPassport_passportOf
 
