@@ -299,7 +299,7 @@ private theorem pSectionCosetCard_eq_card_fixed {x : G} (hx : pFreePart p x = s)
 centraliser of `s`**, which is prime to `p` by
 `TauCeti.not_dvd_relIndex_pElementaryOfSylow`: the `p`-part of `s` is trivial, so every coset of
 the subgroup in the centraliser contributes. -/
-theorem pSectionCosetCard_self [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
+theorem pSectionCosetCard_self [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
     pSectionCosetCard s P s =
       (pElementaryOfSylow s P).relIndex (centralizer ({s} : Set G)) := by
   have hx : pFreePart p s = s := pFreePart_eq_self Fact.out hs
