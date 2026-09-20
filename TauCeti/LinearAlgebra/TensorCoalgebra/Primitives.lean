@@ -234,9 +234,9 @@ theorem prepend_ofLetter (a b : M) :
   have hz0 : (![a, b] : Fin 2 → M) ⟨0, by omega⟩ = a := by simp
   have hz1 : (![a, b] : Fin 2 → M) ⟨1, by omega⟩ = b := by simp
   have h1 : subword R (![a, b] : Fin 2 → M) 1 1 = ofLetter R M b := by
-    rw [subword_one R M (![a, b] : Fin 2 → M) (show (1 : ℕ) < 2 by omega), hz1]
+    rw [subword_one R M (![a, b] : Fin 2 → M) (by omega), hz1]
   have h2 := prepend_subword (R := R) (N := M) (a := 0) (b := 1) (![a, b] : Fin 2 → M)
-    (show (0 : ℕ) < 2 by omega) Nat.one_pos
+    (by omega) Nat.one_pos
   rw [hz0, h1] at h2
   rw [h2]
   convert (of_tprod_eq_subword R (Nat.succ_pos 1) (![a, b] : Fin 2 → M)).symm using 1

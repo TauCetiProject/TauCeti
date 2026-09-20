@@ -400,7 +400,8 @@ theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) (a b : A) :
   have hs := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension 2 (by omega)
     (fun j : ℕ ↦ if j = 0 then p else q) (fun j : ℕ ↦ if j = 0 then x else y) (by
       intro i hi
-      rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+      have hi' : i = 0 ∨ i = 1 := by omega
+      rcases hi' with rfl | rfl
       · simpa using hx
       · simpa using hy)
   rw [hcons] at hs
