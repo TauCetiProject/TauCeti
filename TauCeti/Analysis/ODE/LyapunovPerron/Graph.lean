@@ -26,10 +26,10 @@ nonlinearity the graph flattens onto the range of `P`. The projection `P` and th
 range of `P`.
 
 When the nonlinearity fixes the origin, the fixed-point set is the set of initial values of
-forward solutions tending to the equilibrium `0`. The graph description is therefore the Lipschitz
-form of the stable-manifold theorem for a globally small nonlinearity; the local theorem at a
-hyperbolic equilibrium follows once the nonlinearity has been cut off outside a small ball, and
-the passage from a Lipschitz graph to a differentiable one is a separate argument.
+forward solutions tending to the equilibrium `0`. The graph description is therefore a Lipschitz
+graph characterization of the global stable set for a globally small nonlinearity. A local
+stable-manifold theorem additionally requires a cutoff, identification of the resulting graph with
+the local stable set, and differentiability and tangency of the graph.
 
 ## Main declarations
 
@@ -87,19 +87,12 @@ def lyapunovPerronGraphMap (ξ : X) : X :=
 
 variable {A P N}
 
-/-- The graph map is the displacement of the initial value of the Lyapunov--Perron solution away
-from `P ξ`. -/
-theorem lyapunovPerronGraphMap_eq_sub (ξ : X) :
-    lyapunovPerronGraphMap A P N hs hu hα hN hsmall ξ =
-      lyapunovPerronSolution A P N hs hu hα hN hsmall ξ 0 - P ξ :=
-  (rfl)
-
 /-- The initial value of a Lyapunov--Perron solution splits as `P ξ` plus the graph
 displacement. -/
 theorem lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap (ξ : X) :
     lyapunovPerronSolution A P N hs hu hα hN hsmall ξ 0 =
       P ξ + lyapunovPerronGraphMap A P N hs hu hα hN hsmall ξ := by
-  rw [lyapunovPerronGraphMap_eq_sub]
+  rw [lyapunovPerronGraphMap]
   abel
 
 /-- The graph displacement is the value at time `0` of the integral terms of the Lyapunov--Perron
@@ -108,7 +101,7 @@ theorem lyapunovPerronGraphMap_eq_lyapunovPerronIntegral (ξ : X) :
     lyapunovPerronGraphMap A P N hs hu hα hN hsmall ξ =
       lyapunovPerronIntegral A P
         (fun s ↦ N (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ s.toNNReal)) 0 := by
-  rw [lyapunovPerronGraphMap_eq_sub, lyapunovPerronSolution_apply, NNReal.coe_zero, zero_smul,
+  rw [lyapunovPerronGraphMap, lyapunovPerronSolution_apply, NNReal.coe_zero, zero_smul,
     exp_zero, one_apply_eq_self, add_sub_cancel_left]
 
 /-- When `P` is idempotent and commutes with `A`, the graph displacement lies in the kernel of
@@ -116,7 +109,7 @@ theorem lyapunovPerronGraphMap_eq_lyapunovPerronIntegral (ξ : X) :
 @[simp]
 theorem apply_lyapunovPerronGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P) (ξ : X) :
     P (lyapunovPerronGraphMap A P N hs hu hα hN hsmall ξ) = 0 := by
-  rw [lyapunovPerronGraphMap_eq_sub, map_sub,
+  rw [lyapunovPerronGraphMap, map_sub,
     apply_lyapunovPerronSolution_zero hs hu hα hN hsmall hP hAP, ← mul_apply_eq_comp P P, hP.eq,
     sub_self]
 
@@ -126,14 +119,14 @@ parameter. -/
 theorem lyapunovPerronGraphMap_map (hP : IsIdempotentElem P) (ξ : X) :
     lyapunovPerronGraphMap A P N hs hu hα hN hsmall (P ξ) =
       lyapunovPerronGraphMap A P N hs hu hα hN hsmall ξ := by
-  rw [lyapunovPerronGraphMap_eq_sub, lyapunovPerronGraphMap_eq_sub,
+  rw [lyapunovPerronGraphMap, lyapunovPerronGraphMap,
     lyapunovPerronSolution_map hs hu hα hN hsmall hP, ← mul_apply_eq_comp P P, hP.eq]
 
 /-- If the nonlinearity vanishes at the origin, so does the graph map. -/
 @[simp]
 theorem lyapunovPerronGraphMap_zero (hN0 : N 0 = 0) :
     lyapunovPerronGraphMap A P N hs hu hα hN hsmall 0 = 0 := by
-  simp [lyapunovPerronGraphMap_eq_sub, lyapunovPerronSolution_zero hs hu hα hN hsmall hN0]
+  simp [lyapunovPerronGraphMap, lyapunovPerronSolution_zero hs hu hα hN hsmall hN0]
 
 /-- **The Lyapunov--Perron graph map is Lipschitz.** Its constant, which equals
 `2 K² ε / (α - 2 K ε)`, tends to `0` with the Lipschitz constant `ε` of the nonlinearity: in the
@@ -242,8 +235,8 @@ theorem setOf_exists_isIntegralCurveOn_bounded_eq_image :
 
 /-- **The stable set of the equilibrium `0` is a graph over the range of `P`.** When the
 nonlinearity fixes the origin, the initial values of the solutions of `y' = A y + N y` on `[0, ∞)`
-that tend to `0` are exactly the points `v + graph map v` with `v` in the range of `P`. This is
-the Lipschitz stable-manifold theorem for a globally small nonlinearity. -/
+that tend to `0` are exactly the points `v + graph map v` with `v` in the range of `P`. Thus the
+global stable set is a Lipschitz graph for a globally small nonlinearity. -/
 theorem setOf_exists_isIntegralCurveOn_tendsto_eq_image (hN0 : N 0 = 0) :
     {x : X | ∃ y : ℝ → X, IsIntegralCurveOn y (fun _ y ↦ A y + N y) (Set.Ici 0) ∧ y 0 = x ∧
         Tendsto y atTop (𝓝 0)} =
