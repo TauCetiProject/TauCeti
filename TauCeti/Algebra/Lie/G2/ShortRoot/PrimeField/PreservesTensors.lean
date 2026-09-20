@@ -35,6 +35,8 @@ of signed two-by-two minors is multiplicative exactly on matrices preserving bot
 
 ## Main results
 
+* `TauCeti.G2ShortRoot.PrimeField.carrierGenericMatrix_def`: the defining equation of the
+  universal point.
 * `TauCeti.G2ShortRoot.PrimeField.preservesG2Cross_of_mem_points` and
   `TauCeti.G2ShortRoot.PrimeField.preservesDualForm_of_mem_points`: every matrix-valued point of
   the carrier preserves both tensors.
@@ -156,7 +158,7 @@ theorem exists_map_genericMatrix_generator_inr :
     TauCeti.GeneralLinear.pointsMulEquiv_apply]
 
 /-- The matrix of the point at parameter `t` of the root subgroup numbered `inl 0`. -/
-theorem coe_rootSubgroupPoints_inl_zero_formula (t : A) :
+theorem coe_rootSubgroupPoints_inl_zero (t : A) :
     ((rootSubgroupPoints (.inl 0) A (Multiplicative.ofAdd t) :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
       1 + t • (raisingMatrix 0).map (Int.cast : ℤ → A) + t ^ 2 • Matrix.single 2 4 1 := by
@@ -165,7 +167,7 @@ theorem coe_rootSubgroupPoints_inl_zero_formula (t : A) :
   fin_cases i <;> fin_cases j <;> simp [raisingMatrix, Matrix.single, mul_comm]
 
 /-- The matrix of the point at parameter `t` of the root subgroup numbered `inl 1`. -/
-theorem coe_rootSubgroupPoints_inl_one_formula (t : A) :
+theorem coe_rootSubgroupPoints_inl_one (t : A) :
     ((rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd t) :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
       1 + t • (raisingMatrix 1).map (Int.cast : ℤ → A) := by
@@ -174,7 +176,7 @@ theorem coe_rootSubgroupPoints_inl_one_formula (t : A) :
   fin_cases i <;> fin_cases j <;> simp [raisingMatrix]
 
 /-- The matrix of the point at parameter `t` of the root subgroup numbered `inr 0`. -/
-theorem coe_rootSubgroupPoints_inr_zero_formula (t : A) :
+theorem coe_rootSubgroupPoints_inr_zero (t : A) :
     ((rootSubgroupPoints (.inr 0) A (Multiplicative.ofAdd t) :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
       1 + t • (loweringMatrix 0).map (Int.cast : ℤ → A) + t ^ 2 • Matrix.single 4 2 1 := by
@@ -183,7 +185,7 @@ theorem coe_rootSubgroupPoints_inr_zero_formula (t : A) :
   fin_cases i <;> fin_cases j <;> simp [loweringMatrix, Matrix.single, mul_comm]
 
 /-- The matrix of the point at parameter `t` of the root subgroup numbered `inr 1`. -/
-theorem coe_rootSubgroupPoints_inr_one_formula (t : A) :
+theorem coe_rootSubgroupPoints_inr_one (t : A) :
     ((rootSubgroupPoints (.inr 1) A (Multiplicative.ofAdd t) :
         _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
       1 + t • (loweringMatrix 1).map (Int.cast : ℤ → A) := by
@@ -198,19 +200,19 @@ private theorem preservesG2Cross_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (t : A
   rcases k with i | i
   · fin_cases i
     · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inl_zero_formula]
+      rw [coe_rootSubgroupPoints_inl_zero]
       exact
         preservesG2Cross_one_add_smul_raisingMatrix_zero_add_sq_smul_single t
     · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inl_one_formula]
+      rw [coe_rootSubgroupPoints_inl_one]
       exact preservesG2Cross_one_add_smul_raisingMatrix_one t
   · fin_cases i
     · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inr_zero_formula]
+      rw [coe_rootSubgroupPoints_inr_zero]
       exact
         preservesG2Cross_one_add_smul_loweringMatrix_zero_add_sq_smul_single t
     · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inr_one_formula]
+      rw [coe_rootSubgroupPoints_inr_one]
       exact preservesG2Cross_one_add_smul_loweringMatrix_one t
 
 private theorem preservesDualForm_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (t : A) :
@@ -221,19 +223,19 @@ private theorem preservesDualForm_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (t : 
   rcases k with i | i
   · fin_cases i
     · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inl_zero_formula]
+      rw [coe_rootSubgroupPoints_inl_zero]
       exact
         one_add_smul_raisingMatrix_zero_add_sq_smul_single_mul_invariantDualForm_mul_transpose t
     · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inl_one_formula]
+      rw [coe_rootSubgroupPoints_inl_one]
       exact one_add_smul_raisingMatrix_one_mul_invariantDualForm_mul_transpose t
   · fin_cases i
     · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inr_zero_formula]
+      rw [coe_rootSubgroupPoints_inr_zero]
       exact
         one_add_smul_loweringMatrix_zero_add_sq_smul_single_mul_invariantDualForm_mul_transpose t
     · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inr_one_formula]
+      rw [coe_rootSubgroupPoints_inr_one]
       exact one_add_smul_loweringMatrix_one_mul_invariantDualForm_mul_transpose t
 
 /-- Every point of the short-root type-`G₂` carrier preserves the invariant cross product. -/
@@ -314,14 +316,23 @@ noncomputable abbrev carrierQuotient :
 
 /-- The universal point of the carrier: the generic matrix of `GL₇` pushed to the carrier's
 coordinate Hopf algebra. -/
+-- `@[expose]` is forced by the module system: `carrierGenericMatrix_def` below is the public
+-- API for unfolding this definition, and an exported theorem may only unfold exposed bodies.
 @[expose] noncomputable def carrierGenericMatrix : Matrix (Fin 7) (Fin 7) carrierAlgebra :=
   (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map carrierQuotient.hom.toAlgHom
+
+/-- The universal point of the carrier is the generic matrix of `GL₇` pushed along
+`carrierQuotient`.  Consumers should unfold `carrierGenericMatrix` through this lemma. -/
+theorem carrierGenericMatrix_def :
+    carrierGenericMatrix =
+      (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map carrierQuotient.hom.toAlgHom :=
+  rfl
 
 private theorem coe_universalPoint :
     ((TauCeti.GeneralLinear.pointToGeneralLinear 7 (toConv carrierQuotient.hom.toAlgHom) :
         _root_.Matrix.GeneralLinearGroup (Fin 7) carrierAlgebra) :
       Matrix (Fin 7) (Fin 7) carrierAlgebra) = carrierGenericMatrix := by
-  rw [carrierGenericMatrix,
+  rw [carrierGenericMatrix_def,
     TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
 
 private theorem universalPoint_mem_points :
