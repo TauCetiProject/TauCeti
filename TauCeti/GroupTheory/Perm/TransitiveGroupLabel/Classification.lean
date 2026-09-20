@@ -380,11 +380,10 @@ theorem exists_sylow_eq_referenceSubgroup_five_zero :
       (P : Subgroup (Perm (Fin 5))) = referenceSubgroup 5 ⟨0, by simp⟩ := by
   have hC := natCard_referenceSubgroup_five_zero
   have hCi : (referenceSubgroup 5 ⟨0, by simp⟩).index = 24 := by
-    have h120 : Nat.card (Perm (Fin 5)) = 120 := by
-      rw [Nat.card_perm, Nat.card_fin]
-      rfl
     have h := (referenceSubgroup 5 ⟨0, by simp⟩).index_mul_card
-    rw [hC, h120] at h
+    rw [hC] at h
+    rw [Nat.card_perm, Nat.card_fin] at h
+    change (referenceSubgroup 5 ⟨0, by simp⟩).index * 5 = 120 at h
     omega
   exact ⟨(IsPGroup.of_card (n := 1) (hC.trans (pow_one 5).symm)).toSylow (hCi ▸ by decide), rfl⟩
 
@@ -553,14 +552,14 @@ private theorem exists_transitiveGroupLabel_five_of_le_of_le {H : Subgroup (Perm
   · -- `H` has index two in `5T3`, so it contains the square `swap 0 3 * swap 1 2` of the
     -- generator `i ↦ 2 i + 1`; with the rotation, this generates `5T2`.
     have hindex : (H.subgroupOf (referenceSubgroup 5 ⟨2, by simp⟩)).index = 2 := by
-      have h120 : Nat.card (Perm (Fin 5)) = 120 := by
-        rw [Nat.card_perm, Nat.card_fin]
-        rfl
       have h := Subgroup.relIndex_mul_index hF
       have hHi := H.index_mul_card
       have hFi := (referenceSubgroup 5 ⟨2, by simp⟩).index_mul_card
-      rw [natCard_referenceSubgroup_five_two, h120] at hFi
-      rw [hH, h120] at hHi
+      rw [natCard_referenceSubgroup_five_two] at hFi
+      rw [hH] at hHi
+      rw [Nat.card_perm, Nat.card_fin] at hFi hHi
+      change (referenceSubgroup 5 ⟨2, by simp⟩).index * 20 = 120 at hFi
+      change H.index * 10 = 120 at hHi
       rw [Subgroup.relIndex] at h
       -- `h` is a product of two indices, so the numerical values of both have to be substituted
       -- before the remaining equation is linear.
@@ -620,11 +619,9 @@ theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
     [IsPretransitive G (Fin 5)] : ∃ j, TransitiveGroupLabel j G := by
   have hmem := natCard_mem_of_natCard_eq_five_of_isPretransitive (by simp) G
   simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
-  have h120 : Nat.card (Perm (Fin 5)) = 120 := by
-    rw [Nat.card_perm, Nat.card_fin]
-    rfl
   have hmul := G.index_mul_card
-  rw [h120] at hmul
+  rw [Nat.card_perm, Nat.card_fin] at hmul
+  change G.index * Nat.card G = 120 at hmul
   rcases hmem with h | h | h | h | h
   · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
   · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
