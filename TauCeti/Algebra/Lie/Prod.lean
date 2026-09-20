@@ -205,7 +205,8 @@ variable {I : Type i} {V : I → Type w₂}
 variable [(j : I) → AddCommGroup (V j)] [(j : I) → Module R (V j)]
 
 /-- The product of a family of Lie representations, acting coordinatewise on the dependent
-function space. For a finite index type this is the usual finite direct sum representation. -/
+function space. For a finite index type, this product representation is canonically equivalent to
+the corresponding finite direct-sum representation. -/
 def piRepresentation (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j)) :
     L →ₗ⁅R⁆ Module.End R ((j : I) → V j) where
   toFun x :=

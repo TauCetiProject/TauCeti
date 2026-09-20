@@ -15,10 +15,9 @@ A family of representations separates a Lie algebra when every nonzero element a
 in at least one member. For a finite-dimensional Lie algebra, pointwise separation already gives a
 single faithful finite-dimensional representation.
 
-The proof chooses a finite-dimensional representation whose kernel has minimal dimension. If that
-kernel contained a nonzero element, a representation detecting that element could be added by the
-product construction. The kernel formula for products would then give a strictly smaller kernel,
-contradicting minimality.
+This criterion lets downstream constructions prove faithfulness by supplying a finite-dimensional
+representation separately for each nonzero element; the detecting carriers and maps need not be
+chosen uniformly.
 
 ## Main result
 
@@ -33,7 +32,7 @@ namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-universe u v
+universe u v w
 
 variable (K : Type u) [Field K]
 variable (L : Type v) [LieRing L] [LieAlgebra K L]
@@ -42,16 +41,16 @@ variable (L : Type v) [LieRing L] [LieAlgebra K L]
 finite-dimensional representation, then one finite-dimensional representation is faithful. -/
 theorem exists_faithfulRepresentation_of_pointSeparating [FiniteDimensional K L]
     (hseparates : ∀ x : L, x ≠ 0 →
-      ∃ (V : Type u) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
+      ∃ (V : Type w) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
         (rho : L →ₗ⁅K⁆ Module.End K V), rho x ≠ 0) :
-    ∃ (V : Type u) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
+    ∃ (V : Type w) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
       (rho : L →ₗ⁅K⁆ Module.End K V), Function.Injective rho := by
-  let kernelRanks : Set ℕ := {n | ∃ (V : Type u) (_ : AddCommGroup V) (_ : Module K V)
+  let kernelRanks : Set ℕ := {n | ∃ (V : Type w) (_ : AddCommGroup V) (_ : Module K V)
     (_ : FiniteDimensional K V) (rho : L →ₗ⁅K⁆ Module.End K V),
       Module.finrank K rho.ker = n}
   have kernelRanks_nonempty : kernelRanks.Nonempty := by
-    refine ⟨Module.finrank K (0 : L →ₗ⁅K⁆ Module.End K K).ker, K, inferInstance,
-      inferInstance, inferInstance, 0, rfl⟩
+    refine ⟨Module.finrank K (0 : L →ₗ⁅K⁆ Module.End K PUnit).ker, PUnit,
+      inferInstance, inferInstance, inferInstance, 0, rfl⟩
   let n := wellFounded_lt.min kernelRanks kernelRanks_nonempty
   have hn : n ∈ kernelRanks := wellFounded_lt.min_mem kernelRanks kernelRanks_nonempty
   rcases hn with ⟨V, _, _, _, rho, hrank⟩
