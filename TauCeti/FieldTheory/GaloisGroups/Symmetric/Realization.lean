@@ -66,7 +66,8 @@ theorem exists_monic_int_polynomial_hasFullSymmetricGaloisGroup (n : ℕ) (hn : 
       (IsPrimitive.Int.irreducible_iff_irreducible_map_cast hf.isPrimitive).mp
         (Monic.irreducible_of_irreducible_map (Int.castRingHom (ZMod 2)) _ hf
           (he2.symm ▸ hi2))
-    refine ⟨f, hf, hd, hi, (hasFullSymmetricGaloisGroup_iff_of_splits ℂ).mpr
+    refine ⟨f, hf, hd, hi,
+      (hasFullSymmetricGaloisGroup_iff_separable_and_surjective_galActionHom ℂ).mpr
       ⟨PerfectField.separable_of_irreducible hi,
         surjective_galActionHom_of_factorDegrees hf hi 3 ?_ 5 ?_ ?_ ?_⟩⟩
     · simpa only [factorDegrees_def, he3, hd] using ht3

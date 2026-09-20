@@ -69,7 +69,8 @@ theorem hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree (hsep
     fun h ↦ ((Gal.galActionHom_injective f _).bijective_of_nat_card_le h.ge).2⟩
 
 /-- Full symmetric Galois group can be checked on the roots in any splitting extension. -/
-theorem hasFullSymmetricGaloisGroup_iff_of_splits (E : Type*) [Field E] [Algebra F E]
+theorem hasFullSymmetricGaloisGroup_iff_separable_and_surjective_galActionHom
+    (E : Type*) [Field E] [Algebra F E]
     [hsplit : Fact ((f.map (algebraMap F E)).Splits)] :
     HasFullSymmetricGaloisGroup f ↔
       f.Separable ∧ Function.Surjective (Gal.galActionHom f E) := by
@@ -93,7 +94,8 @@ theorem HasFullSymmetricGaloisGroup.nonempty_mulEquiv (hf : HasFullSymmetricGalo
 
 /-- A power of a nonunit polynomial with exponent at least two cannot have full symmetric
 Galois group. -/
-theorem not_hasFullSymmetricGaloisGroup_pow (hf : ¬ IsUnit f) (n : ℕ) (hn : 2 ≤ n) :
+theorem not_hasFullSymmetricGaloisGroup_pow_of_not_isUnit
+    (hf : ¬ IsUnit f) (n : ℕ) (hn : 2 ≤ n) :
     ¬ HasFullSymmetricGaloisGroup (f ^ n) := by
   intro h
   have := h.separable.squarefree.eq_zero_or_one_of_pow_of_not_isUnit hf
@@ -104,6 +106,6 @@ distinct roots is surjective: in particular `X ^ n` is excluded for `2 ≤ n`. -
 @[simp]
 theorem not_hasFullSymmetricGaloisGroup_X_pow (n : ℕ) (hn : 2 ≤ n) :
     ¬ HasFullSymmetricGaloisGroup (X ^ n : F[X]) :=
-  not_hasFullSymmetricGaloisGroup_pow not_isUnit_X n hn
+  not_hasFullSymmetricGaloisGroup_pow_of_not_isUnit not_isUnit_X n hn
 
 end TauCeti.Polynomial
