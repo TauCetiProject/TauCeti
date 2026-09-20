@@ -67,6 +67,9 @@ namespace TauCeti.ContCohomology
 
 section FirstVariable
 
+-- These compatibility theorems are deliberately not simp lemmas: their left-hand sides do not
+-- determine the source sequence or the pairings on the middle and sub-object coefficients.
+
 variable {G : Type*} [Group G] [TopologicalSpace G]
   {A' : Type*} [AddCommGroup A'] [TopologicalSpace A'] [DiscreteTopology A']
     [DistribMulAction G A'] [ContinuousSMul G A']
@@ -99,7 +102,6 @@ omit [ContinuousSMul G A''] [IsTopologicalAddGroup B] [ContinuousSMul G B]
 /-- **`δ⁰` passes through the `(0,0)` cup in the first variable.** For an invariant `x` of `A''`
 and an invariant `y` of `B`, the class `δ⁰ (x ⌣ y) ∈ H¹(G, C')` is `δ⁰ x ⌣ y`, the `(1,0)` cup
 against the pairing `μ'` of the sub-objects. -/
-@[simp]
 theorem explicitDelta0_explicitCup00_left (x : H0 G A'') (y : H0 G B) :
     SC.explicitDelta0 (explicitCup00 G A'' B C'' μ'' hequiv'' x y) =
       explicitCup10 G A' B C' μ' hμ' hequiv' (SA.explicitDelta0 x) y := by
@@ -115,7 +117,6 @@ include hμ hequiv hincl hproj in
 omit [ContinuousSMul G A''] in
 /-- **`δ¹` passes through the `(0,1)` cup in the first variable.** For an invariant `x` of `A''`
 and a class `y ∈ H¹(G, B)`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(1,1)` cup `δ⁰ x ⌣ y`. -/
-@[simp]
 theorem explicitDelta1_explicitCup01_left [ContinuousMul G] (x : H0 G A'') (y : H1 G B) :
     SC.explicitDelta1 (explicitCup01 G A'' B C'' μ'' hμ'' hequiv'' x y) =
       explicitCup11 G A' B C' μ' hμ' hequiv' (SA.explicitDelta0 x) y := by
@@ -155,7 +156,6 @@ omit [IsTopologicalAddGroup B] [ContinuousSMul G B] in
 /-- **`δ¹` passes through the `(1,0)` cup in the first variable.** For a class `x ∈ H¹(G, A'')`
 and an invariant `y` of `B`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(2,0)` cup
 `δ¹ x ⌣ y`. -/
-@[simp]
 theorem explicitDelta1_explicitCup10_left [ContinuousMul G] (x : H1 G A'') (y : H0 G B) :
     SC.explicitDelta1 (explicitCup10 G A'' B C'' μ'' hμ'' hequiv'' x y) =
       explicitCup20 G A' B C' μ' hμ' hequiv' (SA.explicitDelta1 x) y := by
@@ -168,6 +168,8 @@ theorem explicitDelta1_explicitCup10_left [ContinuousMul G] (x : H1 G A'') (y : 
 end FirstVariable
 
 section SecondVariable
+
+-- As above, the left-hand sides do not determine the sequence and pairings needed on the right.
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
   {A : Type*} [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
@@ -201,7 +203,6 @@ omit [IsTopologicalAddGroup A] [ContinuousSMul G A] [ContinuousSMul G B'']
 /-- **`δ⁰` passes through the `(0,0)` cup in the second variable.** For an invariant `x` of `A`
 and an invariant `y` of `B''`, the class `δ⁰ (x ⌣ y) ∈ H¹(G, C')` is the `(0,1)` cup
 `x ⌣ δ⁰ y`; the sign `(-1)^p` is `1` because `x` has degree `0`. -/
-@[simp]
 theorem explicitDelta0_explicitCup00_right (x : H0 G A) (y : H0 G B'') :
     SC.explicitDelta0 (explicitCup00 G A B'' C'' μ'' hequiv'' x y) =
       explicitCup01 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta0 y) := by
@@ -218,7 +219,6 @@ omit [IsTopologicalAddGroup A] [ContinuousSMul G A] in
 /-- **`δ¹` passes through the `(0,1)` cup in the second variable.** For an invariant `x` of `A`
 and a class `y ∈ H¹(G, B'')`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(0,2)` cup
 `x ⌣ δ¹ y`. -/
-@[simp]
 theorem explicitDelta1_explicitCup01_right [ContinuousMul G] (x : H0 G A) (y : H1 G B'') :
     SC.explicitDelta1 (explicitCup01 G A B'' C'' μ'' hμ'' hequiv'' x y) =
       explicitCup02 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta1 y) := by
@@ -233,7 +233,6 @@ omit [ContinuousSMul G B''] in
 /-- **`δ¹` passes through the `(1,0)` cup in the second variable, with a sign.** For a class
 `x ∈ H¹(G, A)` and an invariant `y` of `B''`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is
 `-(x ⌣ δ⁰ y)`, the sign `(-1)^p` at `p = 1`. -/
-@[simp]
 theorem explicitDelta1_explicitCup10_right [ContinuousMul G] (x : H1 G A) (y : H0 G B'') :
     SC.explicitDelta1 (explicitCup10 G A B'' C'' μ'' hμ'' hequiv'' x y) =
       -explicitCup11 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta0 y) := by
