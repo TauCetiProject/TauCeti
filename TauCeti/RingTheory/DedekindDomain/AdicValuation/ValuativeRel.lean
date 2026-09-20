@@ -101,9 +101,17 @@ theorem coe_integerEquivAdicCompletionIntegers (x : 𝒪[v.adicCompletion K]) :
     (v.integerEquivAdicCompletionIntegers (K := K) x : v.adicCompletion K) =
       (x : v.adicCompletion K) := (rfl)
 
+/-- The inverse identification of the two rings of integers is the identity on elements of
+`K_v`. -/
+@[simp]
+theorem coe_integerEquivAdicCompletionIntegers_symm (x : v.adicCompletionIntegers K) :
+    ((v.integerEquivAdicCompletionIntegers (K := K)).symm x : v.adicCompletion K) =
+      (x : v.adicCompletion K) := (rfl)
+
 /-- An element of `K_v` lies in `𝒪_v` exactly when the valuation of the valuative relation is at
 most `1`. This is Mathlib's `mem_adicCompletionIntegers`, which is stated for the adic valuation
 `Valued.v`, read through the valuative relation. -/
+@[simp]
 theorem mem_adicCompletionIntegers_iff_valuation_le_one (x : v.adicCompletion K) :
     x ∈ v.adicCompletionIntegers K ↔
       ValuativeRel.valuation (v.adicCompletion K) x ≤ 1 := by

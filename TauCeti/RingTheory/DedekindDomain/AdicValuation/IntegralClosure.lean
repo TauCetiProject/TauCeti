@@ -112,11 +112,7 @@ theorem integerEquivAdicCompletionIntegers_algebraMap (x : 𝒪[v.adicCompletion
       algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)
         (v.integerEquivAdicCompletionIntegers (K := K) x) :=
   Subtype.val_injective <| by
-    -- both sides are the canonical map `K_v → L_w` applied to `x`, read through the two
-    -- coercions into `L_w`
-    rw [coe_integerEquivAdicCompletionIntegers, algebraMap_adicCompletionIntegersExtensionAlgebra,
-      coe_adicCompletionIntegersExtension, coe_integerEquivAdicCompletionIntegers,
-      TauCeti.coe_algebraMap_integerRing, algebraMap_adicCompletionExtensionAlgebra]
+    simp
 
 omit [Finite (R ⧸ v.asIdeal)] [Finite (B ⧸ w.asIdeal)] in
 /-- The naturality square of the previous lemma, in the composed form that
