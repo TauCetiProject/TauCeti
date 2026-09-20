@@ -393,7 +393,6 @@ theorem mapAssociatedGraded_comp (f : LieHom R L M) (g : LieHom R M N) :
 
 /-- The associated-graded map sends a degree-one PBW generator to the generator induced by the
 original Lie homomorphism. -/
-@[simp]
 theorem mapAssociatedGraded_pbwGradedGenerator (f : LieHom R L M) (x : L) :
     mapAssociatedGraded R f (pbwGradedGenerator R L x) =
       pbwGradedGenerator R M (f x) := by
