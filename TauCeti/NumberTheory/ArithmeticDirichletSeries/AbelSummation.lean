@@ -27,8 +27,8 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
 
 * `TauCeti.summatory_mul_eq_sub_sub_integral_mul`: Abel summation between two nonnegative real
   cutoffs for a weight of the form `i ↦ w i * g (N i)`.
-* `TauCeti.summatory_mul_eq_sub_integral_mul_of_two_le`: the form used by a carrier whose indices
-  all have `N`-value at least `2`, where the boundary term at the cutoff `2` cancels.
+* `TauCeti.summatory_mul_eq_sub_integral_mul_of_le`: Abel summation from a natural lower bound
+  for the index, with named specializations at `1` and `2` for ideals and primes.
 * `TauCeti.primeSummatory_mul_eq_sub_integral_mul`: that form for the height-one primes of a
   number field.
 * `TauCeti.integrableOn_mul_summatory`: a summatory function times an integrable factor is
@@ -140,6 +140,40 @@ theorem summatory_mul_eq_sub_sub_integral_mul (w : ι → 𝕜) {g : ℝ → �
     ← summatory_eq_sum_Icc_normFiberSum N w ha, hI] at key
   exact key
 
+/-- Abel summation from a natural cutoff `a` for a carrier all of whose indices have `N`-value at
+least `a`. The boundary term at `a` cancels, because there the twisted weight is `g a` times the
+untwisted one.
+
+The identity holds for every cutoff `b`: below `a` all three terms vanish. -/
+theorem summatory_mul_eq_sub_integral_mul_of_le (a : ℕ) (ha : ∀ i, a ≤ N i) (w : ι → 𝕜)
+    {g : ℝ → 𝕜} (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc (a : ℝ) b, DifferentiableAt ℝ g t)
+    (hg_int : IntegrableOn (deriv g) (Set.Icc (a : ℝ) b)) :
+    summatory N (fun i ↦ w i * g (N i)) b =
+      g b * summatory N w b - ∫ t in Set.Ioc (a : ℝ) b, deriv g t * summatory N w t := by
+  have ha' : ∀ i, (a : ℝ) ≤ (N i : ℝ) := fun i ↦ by exact_mod_cast ha i
+  rcases lt_or_ge b a with hb | hb
+  · rw [summatory_eq_zero_of_lt N ha' hb, summatory_eq_zero_of_lt N ha' hb,
+      Set.Ioc_eq_empty_of_le hb.le]
+    simp
+  · have hcut : summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+      rw [summatory_apply, summatory_apply, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i hi ↦ ?_
+      rw [le_antisymm ((mem_normLE N).mp hi) (ha' i), mul_comm]
+    have key := summatory_mul_eq_sub_sub_integral_mul N w a.cast_nonneg hb hg_diff hg_int
+    rw [hcut] at key
+    linear_combination key
+
+/-- Abel summation from the cutoff `1` for a carrier all of whose indices have `N`-value at least
+`1`, such as the nonzero ideals of a number field. -/
+theorem summatory_mul_eq_sub_integral_mul_of_one_le (h1 : ∀ i, 1 ≤ N i) (w : ι → 𝕜)
+    {g : ℝ → 𝕜} (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc 1 b, DifferentiableAt ℝ g t)
+    (hg_int : IntegrableOn (deriv g) (Set.Icc 1 b)) :
+    summatory N (fun i ↦ w i * g (N i)) b =
+      g b * summatory N w b - ∫ t in Set.Ioc 1 b, deriv g t * summatory N w t :=
+  by
+    simpa using summatory_mul_eq_sub_integral_mul_of_le N 1 h1 w (g := g) b
+      (by simpa using hg_diff) (by simpa using hg_int)
+
 /-- Abel summation from the cutoff `2` for a carrier all of whose indices have `N`-value at least
 `2`, such as the height-one primes of a number field.  The boundary term at `2` cancels, because
 there the twisted weight is `g 2` times the untwisted one.
@@ -149,19 +183,10 @@ theorem summatory_mul_eq_sub_integral_mul_of_two_le (h2 : ∀ i, 2 ≤ N i) (w :
     (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc 2 b, DifferentiableAt ℝ g t)
     (hg_int : IntegrableOn (deriv g) (Set.Icc 2 b)) :
     summatory N (fun i ↦ w i * g (N i)) b =
-      g b * summatory N w b - ∫ t in Set.Ioc 2 b, deriv g t * summatory N w t := by
-  have h2' : ∀ i, (2 : ℝ) ≤ (N i : ℝ) := fun i ↦ by exact_mod_cast h2 i
-  rcases lt_or_ge b 2 with hb | hb
-  · rw [summatory_eq_zero_of_lt N h2' hb, summatory_eq_zero_of_lt N h2' hb,
-      Set.Ioc_eq_empty_of_le hb.le]
-    simp
-  · have hcut : summatory N (fun i ↦ w i * g (N i)) 2 = g 2 * summatory N w 2 := by
-      rw [summatory_apply, summatory_apply, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i hi ↦ ?_
-      rw [le_antisymm ((mem_normLE N).mp hi) (h2' i), mul_comm]
-    have key := summatory_mul_eq_sub_sub_integral_mul N w (by norm_num) hb hg_diff hg_int
-    rw [hcut] at key
-    linear_combination key
+      g b * summatory N w b - ∫ t in Set.Ioc 2 b, deriv g t * summatory N w t :=
+  by
+    simpa using summatory_mul_eq_sub_integral_mul_of_le N 2 h2 w (g := g) b
+      (by simpa using hg_diff) (by simpa using hg_int)
 
 /-- A summatory function, multiplied by a factor integrable on a compact interval of nonnegative
 cutoffs, is integrable there. -/

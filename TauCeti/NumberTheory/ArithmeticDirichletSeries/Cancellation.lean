@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
@@ -44,6 +46,12 @@ shows that cancellation passes to the restriction (`TauCeti.HasCancellation.rest
 propagates to the whole half-plane `Re s > 1 - 1 / d`
 (`TauCeti.continuedLFunctionOfWeight_restrict`).
 
+In number-field degree greater than one, cancellation is also invariant under purely imaginary
+norm twists (`TauCeti.hasCancellation_normTwist_iff`). Abel summation supplies this because the
+cancellation exponent `1 - 1 / [K : ℚ]` is then positive. The degree-one case is deliberately not
+claimed: the defining bound has exponent zero, while the absolute bound for the Abel integral is
+logarithmic.
+
 Cancellation is a hypothesis about the partial sums themselves. It cannot be replaced by
 finiteness of the image of `χ` or of a quotient through which it factors: the values of a weight
 factoring through a finite quotient of the free group on the prime ideals can be prescribed
@@ -70,7 +78,7 @@ public section
 
 namespace TauCeti
 
-open Filter Asymptotics IsDedekindDomain
+open Filter Asymptotics IsDedekindDomain MeasureTheory
 open scoped nonZeroDivisors NumberField Topology
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -138,6 +146,145 @@ theorem hasCancellation_conj_iff {χ : UnitaryIdealWeight K} :
       UnitaryIdealWeight.val_conj, MultiplicativeIdealWeight.conj_apply, ← map_sum,
       Complex.norm_conj]
   simp only [HasCancellation, h]
+
+/-- **Cancellation survives an imaginary norm twist in number-field degree greater than one.**
+If the ideal partial sums of `χ` are `O(x ^ (1 - 1 / [K : ℚ]))`, then multiplying the value
+at an ideal `I` by `N(I) ^ (-z)` for `Re z = 0` preserves the same bound, provided `[K : ℚ] > 1`.
+
+The degree hypothesis is exactly what makes the cancellation exponent positive: Abel summation
+bounds the integral term by a constant times `x ^ (1 - 1 / [K : ℚ])`. -/
+theorem HasCancellation.normTwist {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
+    (z : ℂ) (hz : z.re = 0) (hK : 1 < Module.finrank ℚ K) :
+    HasCancellation (UnitaryIdealWeight.normTwist z hz χ) := by
+  set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
+  have hθ : 0 < θ := by
+    have hK' : (1 : ℝ) < Module.finrank ℚ K := by exact_mod_cast hK
+    exact sub_pos.mpr ((div_lt_one (by linarith)).mpr hK')
+  obtain ⟨C, hC⟩ := hχ
+  refine ⟨max C 0 * (1 + ‖z‖ / θ), fun x hx ↦ ?_⟩
+  let N : (Ideal (𝓞 K))⁰ → ℕ := fun I ↦ Ideal.absNorm (I : Ideal (𝓞 K))
+  let w : (Ideal (𝓞 K))⁰ → ℂ := χ.toIdealArithmeticFunction
+  let g : ℝ → ℂ := fun t ↦ (t : ℂ) ^ (-z)
+  have hN (I : (Ideal (𝓞 K))⁰) : 1 ≤ N I := by
+    exact_mod_cast one_le_absNorm_real_of_nonZeroDivisors I
+  have hz0 : -z ≠ 0 ↔ z ≠ 0 := neg_ne_zero
+  have hg_diff : ∀ t ∈ Set.Icc (1 : ℝ) x, DifferentiableAt ℝ g t := by
+    intro t ht
+    by_cases hz' : z = 0
+    · subst z
+      simp only [g, neg_zero, Complex.cpow_zero]
+      fun_prop
+    · exact differentiableAt_id.ofReal_cpow_const
+        (by simpa only [id_eq] using (show t ≠ 0 by linarith [ht.1])) (hz0.mpr hz')
+  have hderiv (t : ℝ) (ht : 0 < t) :
+      deriv g t = -z * (t : ℂ) ^ (-z - 1) := by
+    by_cases hz' : z = 0
+    · subst z
+      simp [g]
+    · exact Complex.deriv_ofReal_cpow_const ht.ne' (hz0.mpr hz')
+  have hg_int : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) x) := by
+    refine (ContinuousOn.integrableOn_Icc fun t ht ↦ ?_).congr_fun
+      (fun t ht ↦ (hderiv t (by linarith [ht.1])).symm) measurableSet_Icc
+    exact continuousWithinAt_const.mul
+      (Complex.continuousAt_ofReal_cpow_const t (-z - 1)
+        (Or.inr (by linarith [ht.1]))).continuousWithinAt
+  have htwist :
+      (UnitaryIdealWeight.normTwist z hz χ).toIdealArithmeticFunction =
+        fun I ↦ χ.toIdealArithmeticFunction I * g (N I) := by
+    funext I
+    simp [UnitaryIdealWeight.toIdealArithmeticFunction_apply, g, N]
+  -- Abel summation expresses the twisted partial sum using the original partial sums.
+  have hformula : idealSummatory K
+        (UnitaryIdealWeight.normTwist z hz χ).toIdealArithmeticFunction x =
+      g x * idealSummatory K χ.toIdealArithmeticFunction x -
+        ∫ t in Set.Ioc 1 x, deriv g t * idealSummatory K χ.toIdealArithmeticFunction t := by
+    rw [htwist]
+    simpa only [idealSummatory, N, w] using
+      summatory_mul_eq_sub_integral_mul_of_one_le N hN w x hg_diff hg_int
+  have hC' (t : ℝ) (ht : 1 ≤ t) :
+      ‖idealSummatory K χ.toIdealArithmeticFunction t‖ ≤ max C 0 * t ^ θ :=
+    by
+      simpa only [θ] using (hC t ht).trans
+        (mul_le_mul_of_nonneg_right (le_max_left C 0) (Real.rpow_nonneg (by linarith) θ))
+  have hg_norm (t : ℝ) (ht : 0 < t) : ‖g t‖ = 1 := by
+    dsimp only [g]
+    rw [Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.neg_re, hz, neg_zero,
+      Real.rpow_zero]
+  -- The derivative contributes `‖z‖ / t`; integrating it against `C t ^ θ` costs
+  -- at most `(‖z‖ C / θ) x ^ θ`, where positivity of `θ` is essential.
+  have hbound_int :
+      ‖∫ t in Set.Ioc 1 x, deriv g t * idealSummatory K χ.toIdealArithmeticFunction t‖ ≤
+        (‖z‖ * max C 0 / θ) * x ^ θ := by
+    rw [← intervalIntegral.integral_of_le hx]
+    calc
+      ‖∫ t in (1 : ℝ)..x, deriv g t * idealSummatory K χ.toIdealArithmeticFunction t‖
+          ≤ ∫ t in (1 : ℝ)..x, (‖z‖ * max C 0) * t ^ (θ - 1) := by
+            refine intervalIntegral.norm_integral_le_of_norm_le hx ?_
+              ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).const_mul _)
+            filter_upwards with t
+            intro ht
+            have ht0 : 0 < t := by linarith [ht.1]
+            have hinv : 0 ≤ t⁻¹ := inv_nonneg.mpr ht0.le
+            calc
+              ‖deriv g t * idealSummatory K χ.toIdealArithmeticFunction t‖ =
+                  ‖z‖ * t⁻¹ * ‖idealSummatory K χ.toIdealArithmeticFunction t‖ := by
+                    rw [hderiv t ht0]
+                    simp only [norm_mul, norm_neg]
+                    rw [Complex.norm_cpow_eq_rpow_re_of_pos ht0, Complex.sub_re,
+                      Complex.neg_re, Complex.one_re, hz,
+                      show -0 - 1 = (-1 : ℝ) by ring, Real.rpow_neg_one]
+              ‖z‖ * t⁻¹ * ‖idealSummatory K χ.toIdealArithmeticFunction t‖
+                  ≤ ‖z‖ * t⁻¹ * (max C 0 * t ^ θ) :=
+                    mul_le_mul_of_nonneg_left (hC' t ht.1.le)
+                      (mul_nonneg (norm_nonneg _) hinv)
+              _ = ‖z‖ * max C 0 * t ^ (θ - 1) := by
+                rw [show θ - 1 = θ + (-1 : ℝ) by ring, Real.rpow_add ht0,
+                  Real.rpow_neg_one]
+                ring
+      _ = (‖z‖ * max C 0) * ((x ^ θ - 1) / θ) := by
+        rw [intervalIntegral.integral_const_mul,
+          integral_rpow (Or.inl (by linarith)), sub_add_cancel, Real.one_rpow]
+      _ ≤ (‖z‖ * max C 0 / θ) * x ^ θ := by
+        have hzC : 0 ≤ ‖z‖ * max C 0 := mul_nonneg (norm_nonneg _) (le_max_right _ _)
+        calc
+          (‖z‖ * max C 0) * ((x ^ θ - 1) / θ)
+              ≤ (‖z‖ * max C 0) * (x ^ θ / θ) :=
+                mul_le_mul_of_nonneg_left
+                  (div_le_div_of_nonneg_right (sub_le_self _ zero_le_one) hθ.le) hzC
+          _ = (‖z‖ * max C 0 / θ) * x ^ θ := by ring
+  rw [hformula]
+  calc
+    ‖g x * idealSummatory K χ.toIdealArithmeticFunction x -
+        ∫ t in Set.Ioc 1 x, deriv g t * idealSummatory K χ.toIdealArithmeticFunction t‖
+        ≤ ‖g x‖ * ‖idealSummatory K χ.toIdealArithmeticFunction x‖ +
+          ‖∫ t in Set.Ioc 1 x, deriv g t * idealSummatory K χ.toIdealArithmeticFunction t‖ := by
+            simpa only [norm_mul] using
+              (norm_sub_le (g x * idealSummatory K χ.toIdealArithmeticFunction x)
+                (∫ t in Set.Ioc 1 x,
+                  deriv g t * idealSummatory K χ.toIdealArithmeticFunction t))
+    _ ≤ max C 0 * x ^ θ + (‖z‖ * max C 0 / θ) * x ^ θ := by
+      rw [hg_norm x (zero_lt_one.trans_le hx)]
+      exact add_le_add (by simpa using hC' x hx) hbound_int
+    _ = max C 0 * (1 + ‖z‖ / θ) * x ^ θ := by ring
+
+/-- **Cancellation is invariant under imaginary norm twists in degree greater than one.**
+Twisting back by `-z` gives the reverse implication. -/
+@[simp]
+theorem hasCancellation_normTwist_iff {χ : UnitaryIdealWeight K} (z : ℂ) (hz : z.re = 0)
+    (hK : 1 < Module.finrank ℚ K) :
+    HasCancellation (UnitaryIdealWeight.normTwist z hz χ) ↔ HasCancellation χ := by
+  have hnz : (-z).re = 0 := by simp [hz]
+  have hback : UnitaryIdealWeight.normTwist (-z) hnz
+      (UnitaryIdealWeight.normTwist z hz χ) = χ := by
+    apply Subtype.ext
+    rw [UnitaryIdealWeight.val_normTwist, UnitaryIdealWeight.val_normTwist,
+      MultiplicativeIdealWeight.normTwist_normTwist]
+    simp
+  constructor
+  · intro h
+    have := h.normTwist (-z) hnz hK
+    rwa [hback] at this
+  · exact fun h ↦ h.normTwist z hz hK
 
 /-!
 ### Deleting finitely many Euler factors
