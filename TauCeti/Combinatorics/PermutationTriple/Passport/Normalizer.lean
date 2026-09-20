@@ -92,9 +92,11 @@ theorem IsGeneratingTriple.cycleData_eq (ht : P.IsGeneratingTriple t) :
 theorem IsGeneratingTriple.σ0_mem (ht : P.IsGeneratingTriple t) : t.σ0 ∈ P.G :=
   ht.monodromyGroup_eq ▸ t.σ0_mem_monodromyGroup
 
+/-- The `1`-component of a generating triple of `P` lies in the reference subgroup. -/
 theorem IsGeneratingTriple.σ1_mem (ht : P.IsGeneratingTriple t) : t.σ1 ∈ P.G :=
   ht.monodromyGroup_eq ▸ t.σ1_mem_monodromyGroup
 
+/-- The `∞`-component of a generating triple of `P` lies in the reference subgroup. -/
 theorem IsGeneratingTriple.σinf_mem (ht : P.IsGeneratingTriple t) : t.σinf ∈ P.G :=
   ht.monodromyGroup_eq ▸ t.σinf_mem_monodromyGroup
 
@@ -208,11 +210,6 @@ theorem hasPassport_toConnectedTriple (g : P.GeneratingTriple) :
 def toClass (g : P.GeneratingTriple) : ConnectedIsoClass n :=
   ConnectedIsoClass.mk (g.toConnectedTriple hn hG)
 
-/-- The class of a generating triple is the isomorphism class of the underlying connected
-triple. -/
-theorem toClass_eq_mk (g : P.GeneratingTriple) :
-    g.toClass hn hG = ConnectedIsoClass.mk (g.toConnectedTriple hn hG) := (rfl)
-
 /-- The isomorphism class of a generating triple of `P` lies in the passport `P`. -/
 theorem hasPassport_toClass (g : P.GeneratingTriple) : (g.toClass hn hG).HasPassport P :=
   (ConnectedIsoClass.hasPassport_mk _ P).mpr (hasPassport_toConnectedTriple hn hG g)
@@ -223,7 +220,7 @@ class. -/
 theorem toClass_smul (τ : Subgroup.normalizer (P.G : Set (Perm (Fin n))))
     (g : P.GeneratingTriple) :
     (τ • g).toClass hn hG = g.toClass hn hG := by
-  rw [toClass_eq_mk, toClass_eq_mk, ConnectedIsoClass.mk_eq_mk_iff_exists_smul]
+  rw [toClass, toClass, ConnectedIsoClass.mk_eq_mk_iff_exists_smul]
   exact ⟨(τ : Perm (Fin n)), Subtype.ext (by simp)⟩
 
 /-- Two generating triples of a passport have the same isomorphism class exactly when they lie in
@@ -232,7 +229,7 @@ one orbit of the normalizer of the reference subgroup. -/
 theorem toClass_eq_toClass_iff {g g' : P.GeneratingTriple} :
     g.toClass hn hG = g'.toClass hn hG ↔
       orbitRel (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple g g' := by
-  rw [toClass_eq_mk, toClass_eq_mk, ConnectedIsoClass.mk_eq_mk_iff_exists_smul, orbitRel_apply,
+  rw [toClass, toClass, ConnectedIsoClass.mk_eq_mk_iff_exists_smul, orbitRel_apply,
     mem_orbit_iff]
   constructor
   · rintro ⟨τ, hτ⟩
@@ -253,7 +250,7 @@ theorem exists_toClass_eq {c : ConnectedIsoClass n} (hc : c.HasPassport P) :
   obtain ⟨s, rfl⟩ := ConnectedIsoClass.mk_surjective c
   obtain ⟨τ, hτ⟩ := exists_isGeneratingTriple_smul ((ConnectedIsoClass.hasPassport_mk s P).mp hc)
   refine ⟨⟨τ • s.1, hτ⟩, ?_⟩
-  rw [toClass_eq_mk, ConnectedIsoClass.mk_eq_mk_iff_exists_smul]
+  rw [toClass, ConnectedIsoClass.mk_eq_mk_iff_exists_smul]
   exact ⟨τ, Subtype.ext (by simp)⟩
 
 end GeneratingTriple
