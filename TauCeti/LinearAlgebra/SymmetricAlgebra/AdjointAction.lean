@@ -16,8 +16,7 @@ extends uniquely from `L` to a derivation of its symmetric algebra `S(L)`, and t
 preserve brackets. This file specialises `SymmetricAlgebra.derivationOfEnd` to
 `LieAlgebra.ad` and registers the resulting Lie-module structure of `L` on `S(L)`, so that the
 generic Lie-module API applies: `LieModule.toEnd R L S(L)` is the adjoint representation of `L`
-on the underlying module of `S(L)`, and `TauCeti.UniversalEnvelopingAlgebra.representation R L S(L)`
-is its extension to an algebra homomorphism out of `U(L)`.
+on the underlying module of `S(L)`.
 
 On a product of symmetric generators the action differentiates one factor at a time, so it
 preserves each homogeneous degree; and it is natural in `L`. Both facts are inherited from
