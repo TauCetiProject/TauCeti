@@ -65,8 +65,8 @@ theorem chartVolumeDensity_pos (α : M) {x : M}
 @[simp]
 theorem chartVolumeDensity_sq (α x : M) :
     chartVolumeDensity (I := I) α x ^ 2 = (chartGramMatrix (I := I) α x).det := by
-  rw [chartVolumeDensity_def, chartGramMatrix]
-  exact Real.sq_sqrt (Matrix.posSemidef_gram ℝ _).det_nonneg
+  rw [chartVolumeDensity_def]
+  exact Real.sq_sqrt (chartGramMatrix_det_nonneg α x)
 
 /-- A `C^n` metric has a `C^n` volume density in every chart of a `C^(n+1)` manifold. -/
 theorem contMDiffOn_chartVolumeDensity {n : ℕ∞ω} [IsManifold I (n + 1) M]

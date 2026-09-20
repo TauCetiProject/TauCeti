@@ -108,7 +108,7 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 /-- The Gram matrix of `chartLocalFrame α` for the fiber inner product supplied by the
 `RiemannianBundle` instance at `x`. Its entries are the coordinate metric coefficients used in
 do Carmo, *Riemannian Geometry*, Chapter 2. -/
-@[expose] def chartGramMatrix (α : M) (x : M) :
+def chartGramMatrix (α : M) (x : M) :
     Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
   Matrix.gram ℝ fun i ↦ chartLocalFrame (I := I) α i x
 
@@ -126,6 +126,11 @@ theorem posDef_chartGramMatrix (α : M) {x : M}
   Matrix.posDef_gram_of_linearIndependent <|
     ((trivializationAt E (TangentSpace I) α).isLocalFrameOn_localFrame_baseSet
       I 0 (Module.finBasis ℝ E)).linearIndependent hx
+
+/-- The determinant of the chart Gram matrix is nonnegative, including outside the chart domain. -/
+theorem chartGramMatrix_det_nonneg (α x : M) :
+    0 ≤ (chartGramMatrix (I := I) α x).det :=
+  (Matrix.posSemidef_gram ℝ _).det_nonneg
 
 /-- The determinant of the chart Gram matrix is strictly positive on the tangent-trivialization
 base set. -/
