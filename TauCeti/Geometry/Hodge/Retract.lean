@@ -197,15 +197,19 @@ theorem substructureInclusion_comp_substructureRetraction :
   change W.projection P (x : W.WQ) = x
   exact W.projection_apply_of_mem P x.property
 
+/-- The rational retraction followed by the inclusion of the subspace is the orthogonal
+projector. -/
+@[simp]
+theorem subtype_comp_substructureRetractionRat :
+    W.WQ.subtype ∘ₗ substructureRetractionRat X W P = W.projection P := by
+  rw [substructureRetractionRat, LinearMap.subtype_comp_codRestrict]
+
 /-- The orthogonal retraction followed by the inclusion is the Hodge projector on the ambient
 object. -/
-@[simp]
 theorem substructureRetraction_comp_substructureInclusion_toRatLinearMap :
     ((substructureRetraction X W P ≫ substructureInclusion X W).hom.toRatLinearMap) =
       W.projection P := by
-  rw [comp_toRatLinearMap, substructureInclusion_toRatLinearMap,
-    substructureRetraction_toRatLinearMap, substructureRetractionRat,
-    LinearMap.subtype_comp_codRestrict]
+  simp
 
 /-- The inclusion of a rational Hodge substructure into a polarizable Hodge structure is a split
 monomorphism. -/
