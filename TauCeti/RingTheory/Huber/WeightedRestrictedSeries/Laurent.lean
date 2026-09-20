@@ -9,11 +9,14 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Diagonal
 
+import Mathlib.RingTheory.Ideal.Quotient.Operations
+
 /-!
 # The row `0 → A → A⟨ζ⟩ × A⟨η⟩ → A⟨ζ, ζ⁻¹⟩ → 0`
 
-Let `A` be a nonarchimedean commutative ring. Wedhorn's ring of the overlap of a two-piece
-Laurent cover is
+Let `A` be a nonarchimedean commutative ring. For the full short exact row, assume moreover that
+`A` is complete and separated; the individual constructions and injectivity use weaker
+hypotheses. Wedhorn's ring of the overlap of a two-piece Laurent cover is
 
 ```text
 A⟨ζ, ζ⁻¹⟩ = A⟨X, Y⟩ ⧸ (1 - XY),
@@ -49,7 +52,7 @@ through the first.
 
 * `TauCeti.Huber.algebraMap_prod_weightedRestrictedSubring_injective` and
   `TauCeti.Huber.laurentDiff_surjective`: the two ends of the row.
-* `TauCeti.Huber.laurentRow_exact`: exactness in the middle, `ker λ = im ι`.
+* `TauCeti.Huber.exact_algebraMap_laurentDiff`: exactness in the middle, `ker λ = im ι`.
 * `TauCeti.Huber.isUnit_mk_weightedX_zero`: the class of `X` is a unit in `A⟨ζ, ζ⁻¹⟩`.
 * `TauCeti.Huber.laurentIdeal_ne_top`: `A⟨ζ, ζ⁻¹⟩` is not the zero ring when `A` is not. In
   particular `1 - XY`, which is a unit in `A[[X, Y]]`, is not one in `A⟨X, Y⟩`.
@@ -97,6 +100,26 @@ theorem mem_laurentIdeal
         weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1) * w :=
   Ideal.mem_span_singleton.trans dvd_def
 
+/-- In `A⟨ζ, ζ⁻¹⟩`, the class of `Y` is a right inverse to the class of `X`. -/
+@[simp]
+theorem mk_weightedX_zero_mul_mk_weightedX_one :
+    Ideal.Quotient.mk (laurentIdeal A)
+        (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 0) *
+      Ideal.Quotient.mk (laurentIdeal A)
+        (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1) = 1 := by
+  rw [← map_mul, ← map_one (Ideal.Quotient.mk (laurentIdeal A)), Ideal.Quotient.eq,
+    mem_laurentIdeal]
+  exact ⟨-1, by ring⟩
+
+/-- In `A⟨ζ, ζ⁻¹⟩`, the class of `Y` is also a left inverse to the class of `X`. -/
+@[simp]
+theorem mk_weightedX_one_mul_mk_weightedX_zero :
+    Ideal.Quotient.mk (laurentIdeal A)
+        (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1) *
+      Ideal.Quotient.mk (laurentIdeal A)
+        (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 0) = 1 := by
+  rw [mul_comm, mk_weightedX_zero_mul_mk_weightedX_one]
+
 /-- **The class of `X` is a unit in `A⟨ζ, ζ⁻¹⟩`**, with inverse the class of `Y`. This is what
 makes the quotient a ring of Laurent, rather than of ordinary, restricted series. -/
 theorem isUnit_mk_weightedX_zero :
@@ -104,10 +127,8 @@ theorem isUnit_mk_weightedX_zero :
       (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 0)) :=
   IsUnit.of_mul_eq_one
     (Ideal.Quotient.mk (laurentIdeal A)
-      (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1)) <| by
-    rw [← map_mul, ← map_one (Ideal.Quotient.mk (laurentIdeal A)), Ideal.Quotient.eq,
-      mem_laurentIdeal]
-    exact ⟨-1, by ring⟩
+      (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1))
+    (mk_weightedX_zero_mul_mk_weightedX_one A)
 
 /-- **The row is exact at `A`**: Wedhorn's `ι : A → A⟨ζ⟩ × A⟨η⟩`, the constants on both pieces,
 is the structure map of the product algebra, and it is injective because a constant series
@@ -119,18 +140,27 @@ theorem algebraMap_prod_weightedRestrictedSubring_injective :
   -- on the first factor the structure map is `weightedC`, which `weightedC_inj` inverts
   fun _ _ h ↦ by simpa using congrArg Prod.fst h
 
+private noncomputable def weightedRenameAlgHom (e : Fin k ↪ Fin m) {T : Fin k → Set A}
+    {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, T i ⊆ S (e i)) :
+    weightedRestrictedSubring T hT →ₐ[A] weightedRestrictedSubring S hS where
+  __ := weightedRename e hT hS hTS
+  commutes' a := by simp [algebraMap_weightedRestrictedSubring]
+
 /-- **Wedhorn's `λ : A⟨ζ⟩ × A⟨η⟩ → A⟨ζ, ζ⁻¹⟩`**, `(g, h) ↦ g(ζ) - h(ζ⁻¹)`: the difference of the
 classes of `g` read in `X` and of `h` read in `Y`. It is additive but not multiplicative. -/
 noncomputable def laurentDiff :
     ((weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) ×
-        weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) →+
+        weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) →ₗ[A]
       (weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight ⧸
         laurentIdeal A) :=
-  (Ideal.Quotient.mk (laurentIdeal A)).toAddMonoidHom.comp
-    ((weightedRename Fin.castSuccEmb isWeightFamily_one_weight isWeightFamily_one_weight
-          (fun _ ↦ subset_rfl)).toAddMonoidHom.comp (AddMonoidHom.fst _ _) -
-      (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight isWeightFamily_one_weight
-          (fun _ ↦ subset_rfl)).toAddMonoidHom.comp (AddMonoidHom.snd _ _))
+  (Ideal.Quotient.mkₐ A (laurentIdeal A)).toLinearMap.comp
+    ((weightedRenameAlgHom A Fin.castSuccEmb isWeightFamily_one_weight
+          isWeightFamily_one_weight (fun _ ↦ subset_rfl)).toLinearMap.comp
+        (LinearMap.fst A _ _) -
+      (weightedRenameAlgHom A (Fin.succEmb 1) isWeightFamily_one_weight
+          isWeightFamily_one_weight (fun _ ↦ subset_rfl)).toLinearMap.comp
+        (LinearMap.snd A _ _))
 
 @[simp]
 theorem laurentDiff_apply
@@ -151,7 +181,7 @@ variable [TopologicalSpace A] [NonarchimedeanRing A] [T0Space A]
 /-- **The row is exact in the middle**: a pair `(g, h)` with `g(ζ) = h(ζ⁻¹)` in `A⟨ζ, ζ⁻¹⟩` is a
 pair of equal constants, and conversely. This is Wedhorn's `ker λ = im ι` in the proof of
 Lemma 8.33. -/
-theorem laurentRow_exact :
+theorem exact_algebraMap_laurentDiff :
     Function.Exact (algebraMap A
       ((weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) ×
         weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight))
