@@ -28,10 +28,16 @@ and which one is decided by the parity of the number of `+` signs of its weight.
 number, and `S⁺` and `S⁻` are the sums of the corresponding weight lines.
 
 The count that comes with this is the one a half-spin representation should have. On `l`
-coordinates there are `2 ^ l` sign vectors (`TauCeti.ncard_range_spinWeight`), split evenly by
-parity, so each summand carries `2 ^ (l - 1)` weights — exactly its dimension, computed
+coordinates there are `2 ^ l` sign vectors (`TauCeti.ncard_range_spinWeight`), and for `l > 0`
+parity splits them evenly, so each summand carries `2 ^ (l - 1)` weights. On no coordinates at all
+the split is uneven: the one sign vector is the empty one, which is even, so `S⁺` carries that
+single weight and `S⁻` carries none — which is why
+`TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus` asks the coordinates to be nonempty
+and its `S⁺` counterpart does not. Over a field, and for a polarization whose `W` is
+finite-dimensional and nonzero, `2 ^ (l - 1)` is also the dimension of each summand, computed
 independently in `TauCeti/RepresentationTheory/Spin/Dimension.lean` by a Clifford-algebraic
-argument.
+argument (`TauCeti.finrank_spinPlus` and `TauCeti.finrank_spinMinus`, both of which exclude
+`W = ⊥`, the same degenerate case).
 
 Nothing here needs a field, a nondegeneracy hypothesis, a finite dimension, or a polarization
 without a line summand: the parity grading of `⋀·W` and the diagonalization are both available
@@ -70,7 +76,8 @@ each of the two vectors actually lies in is read off `TauCeti.basis_mem_spinPlus
   `TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd`: **the weights
   of a half-spin summand are the sign vectors of the matching parity**, and
   `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinPlus` and
-  `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus` count them, `2 ^ (l - 1)` each.
+  `TauCeti.ncard_setOf_spinWeightSpace_ne_bot_and_le_spinMinus` count them, `2 ^ (l - 1)` each,
+  the `S⁻` count on a nonempty set of coordinates.
 * `TauCeti.basis_mem_spinPlus_iff_basis_erase_mem_spinMinus`: **erasing an occupied coordinate
   flips the summand**, a basis vector lying in `S⁺` exactly when the one obtained from it by
   erasing one of its coordinates lies in `S⁻`. At `s = Finset.univ` these are the two type-`Dₗ`
