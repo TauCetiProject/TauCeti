@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.PowerSeries.Restricted
 
 Let `f` be a power series which is distinguished of degree `s` at the radius `c`: its
 Gauss norm is attained in degree `s`, and every later coefficient is strictly smaller. A
-*Weierstrass division* of a restricted series by `f` is a decomposition
+decomposition with restricted quotient and finite-tail remainder has the form
 
 ```text
 q * f + r,    q restricted,    r vanishing in every degree ≥ s
@@ -45,8 +45,9 @@ it is not carried out here.
 Mathlib's `PowerSeries.IsWeierstrassDivisionAt` is a different division theorem, for a different
 notion of divisor: there the divisor is measured by the order of its image modulo an ideal `I` of an
 `I`-adically complete coefficient ring, and both dividend and quotient range over all of `R⟦X⟧`.
-Here the divisor is measured by a Gauss norm at a radius, and dividend and quotient are restricted
-at that radius. Neither statement implies the other.
+Here the divisor is measured by a Gauss norm at a radius, and the quotient is restricted at that
+radius; the resulting series `q * f + r` need not be restricted. Neither statement implies the
+other.
 -/
 
 public section
