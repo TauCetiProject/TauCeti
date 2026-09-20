@@ -354,6 +354,7 @@ theorem restrict_empty (χ : MultiplicativeIdealWeight K)
 open scoped Classical in
 /-- **Forbidding one more prime.** Restricting away from `insert 𝔭 S` kills the ideals divisible
 by `𝔭` and agrees with the restriction away from `S` on the others. -/
+@[simp]
 theorem restrict_insert_apply (χ : MultiplicativeIdealWeight K)
     {𝔭 : HeightOneSpectrum (𝓞 K)} (hS : S.Finite) (I : Ideal (𝓞 K)) :
     χ.restrict (insert 𝔭 S) (hS.insert 𝔭) I =
