@@ -146,8 +146,8 @@ theorem map_picZero :
   rw [AddSubgroup.mem_map]
   refine ⟨?_, fun ha ↦ ⟨(classGroupAddEquivLineBundleClass X).symm a, ?_, by simp⟩⟩
   · rintro ⟨c, hc, rfl⟩
-    change classGroupAddEquivLineBundleClass X c ∈ LineBundleClass.picZero k X
-    rw [LineBundleClass.mem_picZero_iff, classGroupAddEquivLineBundleClass_apply, toMul_ofMul]
+    rw [LineBundleClass.mem_picZero_iff, AddEquiv.coe_toAddMonoidHom,
+      classGroupAddEquivLineBundleClass_apply, toMul_ofMul]
     exact (classGroupAddEquivLineBundleClass_mem_picZero_iff k c).mpr hc
   · apply (classGroupAddEquivLineBundleClass_mem_picZero_iff k _).mp
     have happly := congrArg Additive.toMul
