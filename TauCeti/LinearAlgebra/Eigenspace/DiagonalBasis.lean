@@ -49,6 +49,23 @@ namespace TauCeti
 
 variable {ι K V : Type*}
 
+/-! ### A vector supported on a single coordinate -/
+
+section SingletonSupport
+
+variable [Semiring K] [AddCommMonoid V] [Module K V]
+
+/-- A vector whose only possibly nonzero coordinate is the `i`-th one is that coordinate times
+the `i`-th basis vector. -/
+private theorem eq_smul_of_support_subset_singleton {b : Module.Basis ι K V} {w : V} {i : ι}
+    (h : (b.repr w).support ⊆ {i}) : w = b.repr w i • b i :=
+  calc w = b.repr.symm (b.repr w) := (b.repr.symm_apply_apply w).symm
+    _ = b.repr.symm (Finsupp.single i (b.repr w i)) :=
+        congrArg _ (Finsupp.support_subset_singleton.1 h)
+    _ = b.repr w i • b i := b.repr_symm_single i _
+
+end SingletonSupport
+
 /-! ### The coordinates are scaled by the eigenvalues -/
 
 section CommSemiring
@@ -68,23 +85,13 @@ theorem _root_.Module.Basis.repr_apply_of_apply_basis (b : Module.Basis ι K V)
     · simp [hf j, hj]
   simpa using LinearMap.congr_fun key w
 
-/-- A vector whose only possibly nonzero coordinate is the `i`-th one is that coordinate times
-the `i`-th basis vector. -/
-private theorem eq_smul_of_support_subset_singleton {b : Module.Basis ι K V} {w : V} {i : ι}
-    (h : (b.repr w).support ⊆ {i}) : w = b.repr w i • b i :=
-  calc w = b.repr.symm (b.repr w) := (b.repr.symm_apply_apply w).symm
-    _ = b.repr.symm (Finsupp.single i (b.repr w i)) :=
-        congrArg _ (Finsupp.support_subset_singleton.1 h)
-    _ = b.repr w i • b i := b.repr_symm_single i _
-
 end CommSemiring
 
 /-! ### Invariant subspaces are spanned by basis vectors -/
 
-section Field
+section CoordinateSubtraction
 
-variable [Field K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
-  {W : Submodule K V}
+variable [CommRing K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
 
 /-- **Clearing a coordinate**: subtracting from `f w` the multiple `a j • w` kills the `j`-th
 coordinate and multiplies the `k`-th one by `a k - a j`. -/
@@ -105,6 +112,13 @@ private theorem support_repr_sub_smul_subset [DecidableEq ι] (b : Module.Basis 
   refine Finset.mem_erase.2 ⟨?_, Finsupp.mem_support_iff.2 (right_ne_zero_of_mul hk0)⟩
   rintro rfl
   exact hk0 (by rw [sub_self, zero_mul])
+
+end CoordinateSubtraction
+
+section Field
+
+variable [Field K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
+  {W : Submodule K V}
 
 private theorem self_mem_aux (b : Module.Basis ι K V) (hf : ∀ i, f (b i) = a i • b i)
     (ha : Function.Injective a) (hW : ∀ v ∈ W, f v ∈ W) :
