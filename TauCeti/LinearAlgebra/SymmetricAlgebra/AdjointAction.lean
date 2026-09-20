@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Lie.OfAssociative
 
 Let `L` be a Lie algebra over a commutative ring `R`. The adjoint endomorphism `y ↦ ⁅x, y⁆`
 extends uniquely from `L` to a derivation of its symmetric algebra `S(L)`, and these extensions
-preserve brackets. This file specialises `TauCeti.SymmetricAlgebra.derivationOfEnd` to
+preserve brackets. This file specialises `SymmetricAlgebra.derivationOfEnd` to
 `LieAlgebra.ad` and registers the resulting Lie-module structure of `L` on `S(L)`, so that the
 generic Lie-module API applies: `LieModule.toEnd R L S(L)` is the adjoint representation of `L`
 on the underlying module of `S(L)`, and `TauCeti.UniversalEnvelopingAlgebra.representation R L S(L)`

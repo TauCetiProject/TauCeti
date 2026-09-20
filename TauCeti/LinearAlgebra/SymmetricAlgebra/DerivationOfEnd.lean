@@ -25,20 +25,20 @@ symmetric algebra; see `TauCeti.LinearAlgebra.SymmetricAlgebra.AdjointAction`.
 
 ## Main definitions and results
 
-* `TauCeti.SymmetricAlgebra.derivationOfEnd`: the Lie algebra homomorphism from `Module.End R M`
+* `SymmetricAlgebra.derivationOfEnd`: the Lie algebra homomorphism from `Module.End R M`
   to derivations of `SymmetricAlgebra R M`.
-* `TauCeti.SymmetricAlgebra.derivationOfEnd_ι`: the induced derivation sends `ι x` to `ι (f x)`.
-* `TauCeti.SymmetricAlgebra.map_apply_derivationOfEnd`: naturality under a linear map intertwining
+* `SymmetricAlgebra.derivationOfEnd_ι`: the induced derivation sends `ι x` to `ι (f x)`.
+* `SymmetricAlgebra.map_apply_derivationOfEnd`: naturality under a linear map intertwining
   two endomorphisms.
-* `TauCeti.SymmetricAlgebra.derivationOfEnd_mem_homogeneousSubmodule`: the induced derivation
+* `SymmetricAlgebra.derivationOfEnd_mem_homogeneousSubmodule`: the induced derivation
   preserves each homogeneous submodule.
 -/
 
 public section
 
-namespace TauCeti.SymmetricAlgebra
+namespace SymmetricAlgebra
 
-open _root_.SymmetricAlgebra
+open TauCeti.SymmetricAlgebra
 
 universe u v w
 
@@ -75,7 +75,7 @@ induced derivations. -/
 theorem map_apply_derivationOfEnd (φ : M →ₗ[R] N) {f : Module.End R M} {g : Module.End R N}
     (h : φ ∘ₗ f = g ∘ₗ φ) (p : SymmetricAlgebra R M) :
     map R φ (derivationOfEnd R M f p) = derivationOfEnd R N g (map R φ p) := by
-  induction p using SymmetricAlgebra.induction with
+  induction p using _root_.SymmetricAlgebra.induction with
   | algebraMap r => simp
   | ι x =>
       have hx : φ (f x) = g (φ x) := LinearMap.congr_fun h x
@@ -92,4 +92,4 @@ theorem derivationOfEnd_mem_homogeneousSubmodule (f : Module.End R M) {n : ℕ}
   derivation_mem_homogeneousSubmodule R M _
     (fun x => by rw [derivationOfEnd_ι]; exact ι_mem_homogeneousSubmodule R M (f x)) hp
 
-end TauCeti.SymmetricAlgebra
+end SymmetricAlgebra
