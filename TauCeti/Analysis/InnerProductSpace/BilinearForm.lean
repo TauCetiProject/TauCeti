@@ -229,6 +229,7 @@ theorem bilinFormTrace_eq_sum_inner {i : Type*} [Fintype i] (B : BilinForm ℝ W
   rw [real_inner_comm, inner_bilinFormToEnd_apply]
 
 /-- The metric trace of the inner product is the real dimension. -/
+@[simp]
 theorem bilinFormTrace_inner : bilinFormTrace (innerₗ W) = Module.finrank ℝ W := by
   rw [bilinFormTrace_apply, bilinFormToEnd_inner, LinearMap.trace_id]
 
