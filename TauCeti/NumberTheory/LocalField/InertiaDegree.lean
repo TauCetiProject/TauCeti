@@ -44,7 +44,7 @@ side, and conversely.
   over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
 * `TauCeti.inertiaDegree_tower`: multiplicativity `f(M/K) = f(L/K) · f(M/L)` in a tower.
-* `TauCeti.card_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
+* `TauCeti.natCard_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
 
 ## References
 
@@ -79,7 +79,7 @@ variable (K L) in
 /-- **The characteristic property of the residue degree**: the residue field of `L` has
 `#𝓀[K] ^ f(L/K)` elements. The residue fields of nonarchimedean local fields are finite, so both
 cardinalities here are genuine. -/
-theorem card_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
+theorem natCard_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
   Module.natCard_eq_pow_finrank
 
 variable (K L) in
