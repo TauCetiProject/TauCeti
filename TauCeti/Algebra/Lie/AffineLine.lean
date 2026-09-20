@@ -46,7 +46,7 @@ namespace LieAlgebra
 affine transformations `t ↦ a * t + b` of the line: the `K`-module `K × K`, whose first coordinate
 is the dilation coordinate and whose second is the translation coordinate, with the bracket
 determined by `⁅x, y⁆ = y` for the basis `x = (1, 0)`, `y = (0, 1)`. -/
-@[expose] def AffineLine (K : Type*) : Type _ := K × K
+@[expose, reducible] def AffineLine (K : Type*) : Type _ := K × K
 
 namespace AffineLine
 
@@ -64,22 +64,6 @@ instance instBracket : Bracket (AffineLine K) (AffineLine K) :=
 
 omit [CommRing K] in
 @[ext] theorem ext {u v : AffineLine K} (h₁ : u.1 = v.1) (h₂ : u.2 = v.2) : u = v := Prod.ext h₁ h₂
-
-@[simp] theorem fst_add (u v : AffineLine K) : (u + v).1 = u.1 + v.1 := rfl
-
-@[simp] theorem snd_add (u v : AffineLine K) : (u + v).2 = u.2 + v.2 := rfl
-
-@[simp] theorem fst_smul (c : K) (u : AffineLine K) : (c • u).1 = c * u.1 := rfl
-
-@[simp] theorem snd_smul (c : K) (u : AffineLine K) : (c • u).2 = c * u.2 := rfl
-
-@[simp] theorem fst_zero : (0 : AffineLine K).1 = 0 := rfl
-
-@[simp] theorem snd_zero : (0 : AffineLine K).2 = 0 := rfl
-
-@[simp] theorem fst_neg (u : AffineLine K) : (-u).1 = -u.1 := rfl
-
-@[simp] theorem snd_neg (u : AffineLine K) : (-u).2 = -u.2 := rfl
 
 @[simp] theorem fst_lie (u v : AffineLine K) : (⁅u, v⁆ : AffineLine K).1 = 0 := rfl
 
@@ -118,13 +102,13 @@ def translationIdeal (K : Type*) [CommRing K] : LieIdeal K (AffineLine K) where
   carrier := {u | u.1 = 0}
   add_mem' {u v} hu hv := by
     simp only [Set.mem_ofPred_eq] at hu hv ⊢
-    rw [fst_add, hu, hv, add_zero]
+    rw [Prod.fst_add, hu, hv, add_zero]
   zero_mem' := by
     simp only [Set.mem_ofPred_eq]
-    exact fst_zero
+    exact Prod.fst_zero
   smul_mem' c u hu := by
     simp only [Set.mem_ofPred_eq] at hu ⊢
-    rw [fst_smul, hu, mul_zero]
+    rw [Prod.smul_fst, smul_eq_mul, hu, mul_zero]
   lie_mem {u v} _ := fst_lie u v
 
 @[simp] theorem mem_translationIdeal {u : AffineLine K} :
