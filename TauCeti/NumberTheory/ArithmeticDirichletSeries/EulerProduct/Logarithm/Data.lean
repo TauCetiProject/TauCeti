@@ -91,29 +91,16 @@ theorem eulerFactor_eq_one_add_tsum {P : HeightOneSpectrum (𝓞 K)}
     simp [D.isMultiplicative.map_one, Ideal.one_eq_top]
   rw [D.eulerFactor_eq_tsum P, hsP.tsum_eq_zero_add, h0]
 
-/-- The pairs of a height-one prime and a positive exponent index distinct prime-power ideals, so
-the prime-power tails of an absolutely convergent ideal-indexed series are jointly summable. -/
-private theorem summable_idealTerm_primeIdealPow_succ
-    (hs : Summable (idealTerm K D.toIdealArithmeticFunction s)) :
-    Summable fun Pe : HeightOneSpectrum (𝓞 K) × ℕ ↦
-      idealTerm K D.toIdealArithmeticFunction s (Pe.1.primeIdealPow (Pe.2 + 1)) := by
-  have hinj : Function.Injective fun Pe : HeightOneSpectrum (𝓞 K) × ℕ ↦
-      Pe.1.primeIdealPow (Pe.2 + 1) := by
-    -- The indexing bijection of `TauCeti.idealPrimePowerEquiv` lands in the prime-power ideals;
-    -- composing with their inclusion into all nonzero ideals gives the injection wanted here.
-    have hfun : (fun Pe : HeightOneSpectrum (𝓞 K) × ℕ ↦ Pe.1.primeIdealPow (Pe.2 + 1)) =
-        fun Pe ↦ ((idealPrimePowerEquiv Pe : IdealPrimePower K) : (Ideal (𝓞 K))⁰) :=
-      funext fun ⟨P, k⟩ ↦ Subtype.ext (by simp)
-    rw [hfun]
-    exact Subtype.val_injective.comp idealPrimePowerEquiv.injective
-  exact hs.comp_injective hinj
-
 /-- **The local Euler factors differ from `1` by a summable error.**  This is the quantitative
 content of absolute convergence at `s`: the deviation of the local factor at `P` from `1` is the
 tail of the local series, and those tails are a subfamily of the ideal-indexed series. -/
 theorem summable_eulerFactor_sub_one (hs : Summable (idealTerm K D.toIdealArithmeticFunction s)) :
-    Summable fun P : HeightOneSpectrum (𝓞 K) ↦ D.eulerFactor P s - 1 :=
-  (D.summable_idealTerm_primeIdealPow_succ hs).prod.congr fun P ↦ by
+    Summable fun P : HeightOneSpectrum (𝓞 K) ↦ D.eulerFactor P s - 1 := by
+  have htails : Summable fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
+      idealTerm K D.toIdealArithmeticFunction s (Pk.1.primeIdealPow (Pk.2 + 1)) :=
+    (summable_comp_idealPrimePowerOf hs).congr fun ⟨P, k⟩ ↦
+      congrArg _ (Subtype.ext (by simp))
+  exact htails.prod.congr fun P ↦ by
     rw [D.eulerFactor_eq_one_add_tsum (hs.comp_injective P.primeIdealPow_injective),
       add_sub_cancel_left]
 

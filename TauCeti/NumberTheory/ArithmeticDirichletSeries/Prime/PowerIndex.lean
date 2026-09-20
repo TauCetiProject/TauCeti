@@ -28,6 +28,8 @@ series indexed by ideals — the shape a von Mangoldt coefficient identity needs
 
 ## Main results
 
+* `TauCeti.summable_comp_idealPrimePowerOf`: a summable family on all nonzero ideals remains
+  summable after restriction to the positive prime powers.
 * `TauCeti.tsum_idealPrimePower_eq`: a summable family on the prime-power ideals has the same sum
   as the iterated sum over primes and exponents.
 * `TauCeti.tsum_eq_tsum_idealPrimePower_of_support_subset`: a summable family on the nonzero
@@ -113,7 +115,16 @@ theorem idealPrimePowerEquiv_symm_apply (A : IdealPrimePower K) :
   (rfl)
 
 variable {α : Type*} [AddCommGroup α] [UniformSpace α] [IsUniformAddGroup α] [CompleteSpace α]
-  [T0Space α] {f : (Ideal (𝓞 K))⁰ → α}
+  {f : (Ideal (𝓞 K))⁰ → α}
+
+/-- Restricting a summable family on the nonzero ideals to the positive prime powers preserves
+summability. -/
+theorem summable_comp_idealPrimePowerOf (hf : Summable f) :
+    Summable fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
+      f (Pk.1.idealPrimePowerOf Pk.2 : (Ideal (𝓞 K))⁰) :=
+  hf.comp_injective (Subtype.val_injective.comp idealPrimePowerEquiv.injective)
+
+variable [T0Space α]
 
 /-- **Summing over prime-power ideals is summing over primes and exponents.**  Stated for an
 arbitrary family on the prime-power ideals, not only for one restricted from the nonzero
