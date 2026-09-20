@@ -19,11 +19,11 @@ torus of the Kostant toral closure of the twenty-six-dimensional module `V(ϖ₄
 attaches that carrier to a validated Ree index of type `F₄`, and supplies the numbered simple
 root subgroups and the two Frobenius endomorphisms the family's construction runs against.
 
-The carrier is taken over `𝔽₂` rather than over `ℤ` because the construction planned for the
-family's Steinberg map lives in characteristic two: carrying an exceptional isogeny from matrices
-to an endomorphism of the carrier needs the defining Hopf ideal to be the largest one killed by
-the generator coordinate maps *over `𝔽₂`*; the base change of the integral toral closure is only
-known to contain the carrier, new equations being possible over a base that is not flat.
+The carrier is taken over `𝔽₂` rather than over `ℤ` because the exceptional isogeny defining the
+family's Steinberg map lives in characteristic two. Realizing that isogeny as an endomorphism of
+the carrier needs the defining Hopf ideal to be the largest one killed by the generator
+coordinate maps *over `𝔽₂`*; the base change of the integral toral closure is only known to contain
+the carrier, new equations being possible over a base that is not flat.
 
 ## The two Frobenius maps
 
@@ -31,12 +31,10 @@ known to contain the carrier, new equations being possible over a base that is n
 the index records, and `TauCeti.ReeF4LieIndex.primeFrobenius` is the `2`-power one; the former is
 the `(2m+1)`-st power of the latter, `frobenius_eq_primeFrobenius_pow`.
 
-Neither is the family's Steinberg endomorphism, which is not a Frobenius at all. In the
-literature it is an odd power of an exceptional isogeny of the carrier, a map available only in
-characteristic two that exchanges the two root lengths (Steinberg, §11). That isogeny is not
-constructed here, no declaration below mentions one, and nothing in this file asserts its
-existence or any relation between it and the two Frobenius maps; building it is the next step on
-this branch. The two maps are named after what they are.
+Neither is the family's Steinberg endomorphism. In the literature that map is an odd power of an
+exceptional isogeny of the carrier, available only in characteristic two and exchanging the two
+root lengths, rather than a Frobenius (Steinberg, §11). The two maps here are named after what they
+are.
 `TauCeti.ReeF4LieIndex.mem_fixedSubgroup_frobenius_iff` describes the group the `q`-power one
 fixes: the points whose matrix entries lie in the field of definition `𝔽_q`.
 
@@ -153,8 +151,8 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
 /-- **The `q`-power Frobenius endomorphism of the ambient group of a Ree index of type `F₄`**, for
 `q = 2^(2m+1)` the field order the index records.
 
-It is not the family's Steinberg endomorphism: that map is not a Frobenius, and it is a later
-step on this branch rather than anything constructed here. -/
+It is not the family's Steinberg endomorphism, which is an odd power of an exceptional isogeny
+rather than a Frobenius. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
   F4ShortRoot.PrimeField.frobenius d.1.fieldExponent d.1.Closure
 
