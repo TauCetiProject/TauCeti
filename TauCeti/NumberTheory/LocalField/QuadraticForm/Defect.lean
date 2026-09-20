@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.NumberTheory.LocalField.FractionalIdeal
-public import TauCeti.NumberTheory.LocalField.Squares
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
+
+import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # The quadratic defect
@@ -35,7 +37,7 @@ defect vanishes exactly on squares, it scales by `c²` when `a` is multiplied by
 an integral element is integral, and the defect of an element of odd valuation `v_K(a)` is
 `a 𝒪[K]`. None of that needs a hypothesis on the residue characteristic.
 
-The file closes with the classification of the defects of the units of `𝒪[K]`, which does. For
+The classification below additionally assumes `(2 : K) ≠ 0`. For
 `e = v_K(2)` and a unit `u` that is not a square, `δ(u)` is `2e` or an odd number below `2e`, so
 `𝔡(u)` runs through the list `0`, `4 𝒪[K] = 𝓂[K]^{2e}`, and `𝓂[K]^{2k+1}` for `0 ≤ k < e`. The
 upper bound is the sharp local square theorem, and the parity is an approximation argument: below
@@ -540,11 +542,15 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
     push_cast at h
     omega
   rcases eq_or_lt_of_le hdle with heq | hlt
-  · exact Or.inl (by rw [← hxd, show d = ((2 * e : ℕ) : ℤ) by push_cast; omega])
+  · left
+    rw [← hxd]
+    exact_mod_cast heq
   · obtain ⟨m, hm⟩ := hodd hlt
     obtain ⟨k, hk⟩ : ∃ k : ℕ, (k : ℤ) = m := ⟨m.toNat, Int.toNat_of_nonneg (by omega)⟩
-    exact Or.inr ⟨k, by omega,
-      by rw [← hxd, show d = ((2 * k + 1 : ℕ) : ℤ) by push_cast; omega]⟩
+    have hd_eq : d = ((2 * k + 1 : ℕ) : ℤ) := by
+      push_cast
+      omega
+    exact Or.inr ⟨k, by omega, by rw [← hxd, hd_eq]⟩
 
 /-- The maximal finite unit defect is attained. This is the defect-theoretic form of the
 sharpness of the local square theorem: a nonsquare in `U(K, 2 v_K(2))` is approximated by `1²`
