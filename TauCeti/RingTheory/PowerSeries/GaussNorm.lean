@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Restricted
+import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Topology.Order.LiminfLimsup
 
 /-!
@@ -23,6 +25,11 @@ The distinguished degree is the datum Weierstrass division and preparation for T
 organised around. No completeness hypothesis is needed for the norm identities here. The radius is
 any positive real number, including the unit radius of the usual Tate algebra.
 
+Completeness enters only at the end of the file, where a family of restricted series with
+summable Gauss norms is summed coefficientwise. This is the convergence statement that
+successive-approximation arguments over a complete nonarchimedean ring run on, and it takes the
+place of completeness of the Tate algebra for the Gauss norm.
+
 ## Main definitions
 
 * `TauCeti.PowerSeries.IsDistinguished`: the Gauss norm is attained in degree `s` and every later
@@ -36,6 +43,10 @@ any positive real number, including the unit radius of the usual Tate algebra.
 * `TauCeti.PowerSeries.IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul`: the dominant
   coefficient of a product of distinguished series.
 * `TauCeti.PowerSeries.gaussNorm_mul_of_isRestricted`: multiplicativity of the Gauss norm.
+* `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
+  `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: over a complete ring, a family of restricted
+  series with summable Gauss norms has summable coefficients, and its coefficientwise sum is
+  again restricted.
 
 ## References
 
@@ -221,6 +232,62 @@ theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
                 (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
                 (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
   exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+section Summation
+
+variable [CompleteSpace R] {a : ℕ → PowerSeries R}
+
+omit [IsUltrametricDist R] in
+/-- Over a complete ring, a family of restricted power series with summable Gauss norms has
+summable coefficients in every degree. -/
+theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted c)
+    (hs : Summable fun k ↦ (a k).gaussNorm norm c) (i : ℕ) :
+    Summable fun k ↦ (a k).coeff i := by
+  refine Summable.of_norm_bounded (hs.mul_right (c ^ i)⁻¹) fun k ↦ ?_
+  rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
+  exact PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted (ha k)) i
+
+/-- **Coefficientwise summation of restricted power series.** Over a complete nonarchimedean
+ring, the degreewise sums of a family of restricted power series with summable Gauss norms
+assemble into a restricted power series.
+
+This is the convergence statement behind successive-approximation arguments such as Weierstrass
+division: it plays the role of completeness of the Tate algebra for the Gauss norm. -/
+theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted c)
+    (hs : Summable fun k ↦ (a k).gaussNorm norm c) :
+    (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
+  have hsum := summable_coeff_of_summable_gaussNorm hc ha hs
+  rw [PowerSeries.isRestricted_iff']
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun i ↦
+    hb.trans_le (by positivity), fun ε hε ↦ ?_⟩
+  obtain ⟨n, hn⟩ := (Filter.eventually_atTop.mp
+    (hs.tendsto_atTop_zero.eventually (gt_mem_nhds (half_pos hε))))
+  have hpartial : ∀ m : ℕ, (∑ k ∈ Finset.range m, a k).IsRestricted c := fun m ↦
+    sum_mem (S := PowerSeries.IsRestricted.addSubgroup c) fun k _ ↦ ha k
+  filter_upwards [((PowerSeries.isRestricted_iff' c
+    (∑ k ∈ Finset.range n, a k)).mp (hpartial n)).eventually
+      (gt_mem_nhds (half_pos hε))] with i hi
+  have hsplit : (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).coeff i =
+      (∑ k ∈ Finset.range n, a k).coeff i + ∑' k, (a (k + n)).coeff i := by
+    rw [PowerSeries.coeff_mk, ← (hsum i).sum_add_tsum_nat_add n, map_sum]
+  have htail : ‖∑' k, (a (k + n)).coeff i‖ * c ^ i ≤ ε / 2 := by
+    rw [← le_div_iff₀ (pow_pos hc i)]
+    refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+      (by positivity) fun k ↦ ?_
+    rw [le_div_iff₀ (pow_pos hc i)]
+    exact (PowerSeries.le_gaussNorm norm c _
+      (hasGaussNorm_of_isRestricted (ha (k + n))) i).trans
+        (hn (k + n) (Nat.le_add_left n k)).le
+  rw [hsplit]
+  calc ‖(∑ k ∈ Finset.range n, a k).coeff i + ∑' k, (a (k + n)).coeff i‖ * c ^ i
+      ≤ max ‖(∑ k ∈ Finset.range n, a k).coeff i‖ ‖∑' k, (a (k + n)).coeff i‖ * c ^ i :=
+        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _)
+          (pow_nonneg hc.le i)
+    _ = max (‖(∑ k ∈ Finset.range n, a k).coeff i‖ * c ^ i)
+          (‖∑' k, (a (k + n)).coeff i‖ * c ^ i) := max_mul_of_nonneg _ _ (pow_nonneg hc.le i)
+    _ < ε := max_lt (hi.trans (half_lt_self hε)) (htail.trans_lt (half_lt_self hε))
+
+end Summation
 
 variable [NormMulClass R]
 
