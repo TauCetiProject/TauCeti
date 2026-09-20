@@ -9,7 +9,6 @@ public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 public import TauCeti.InformationTheory.Coding.WeightDivisibility
 public import TauCeti.InformationTheory.Coding.WeightEnumerator
 public import TauCeti.LinearAlgebra.Matrix.Rank
-public import Mathlib.Algebra.Field.ZMod
 
 /-!
 # The extended ternary Golay code
