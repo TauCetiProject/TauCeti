@@ -54,7 +54,6 @@ private theorem count_toFractionalIdeal_eq_adicOrd (x : 𝔸ᶠ[(𝓞 K), K]ˣ)
   count_coe_toFractionalIdeal x v
 
 /-- A finite idele defines an ideal away from `S` exactly when its orders vanish on `S`. -/
-@[simp]
 theorem toFractionalIdeal_mem_idealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : 𝔸ᶠ[(𝓞 K), K]ˣ) :
     toFractionalIdeal x ∈ NumberFieldArithmetic.idealsAway (K := K) S ↔
