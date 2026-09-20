@@ -157,9 +157,10 @@ theorem sum_finrank_adicCompletion_eq_finrank :
     _ = finrank K L := (IsFractionRing.finrank_eq (𝒪 K) K (𝒪 L) L).symm
 
 attribute [local instance] Fintype.ofFinite in
-/-- **The semi-local map is injective.** Its source and target have the same degree over `K_v`,
-by `sum_finrank_adicCompletion_eq_finrank`, and it is surjective. -/
+/-- **The semi-local map is injective**: an element of `K_v ⊗[K] L` is determined by its images
+in the completions `L_w` at the places `w` of `L` above `v`. -/
 theorem semilocalHom_injective : Function.Injective (semilocalHom L v) := by
+  -- source and target have the same degree over `K_v`, and the map is surjective
   have hdim : finrank (v.adicCompletion K) (v.adicCompletion K ⊗[K] L) =
       finrank (v.adicCompletion K)
         ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
