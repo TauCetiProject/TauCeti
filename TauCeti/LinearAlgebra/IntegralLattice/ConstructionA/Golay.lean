@@ -14,8 +14,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Even
 Construction A applied to the extended binary Golay code produces the rank-`24` lattice of
 integer vectors in `ℚ^(Fin 24)` whose reduction modulo two is a Golay codeword, carrying the
 halved dot product. Because the Golay code is doubly even and Euclidean self-dual, this lattice
-is positive definite, even, and unimodular: every rubric of the general theory is supplied by an
-already-verified property of the code, so no new finite computation is needed here.
+is positive definite, even, and unimodular.
 
 ## References
 
