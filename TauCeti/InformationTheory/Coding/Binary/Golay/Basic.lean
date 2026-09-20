@@ -21,7 +21,8 @@ coordinates recover the message. The generator is also a parity-check matrix.
 This doubly-even self-dual binary code has parameters `[24, 12, 8]`. Its self-duality and
 divisibility of weights by four make it an input to Construction A, which associates an even
 unimodular lattice to such a code. The weight distribution and homogeneous weight enumerator
-describe the numbers of codewords of each weight.
+describe the numbers of codewords of each weight, and every one of the twenty-four coordinates
+is met by a codeword of weight eight, an *octad*.
 
 The matrix convention is that of Huffman and Pless, *Fundamentals of Error-Correcting
 Codes*, §1.9.1 and Chapter 9.
@@ -600,6 +601,53 @@ theorem weightEnumerator_code :
       2576 * MvPolynomial.X 0 ^ 12 * MvPolynomial.X 1 ^ 12 +
       759 * MvPolynomial.X 0 ^ 8 * MvPolynomial.X 1 ^ 16 + MvPolynomial.X 1 ^ 24 := by
   simp [Set.weightEnumerator_def, Finset.sum_range_succ]
+
+/-- Row `i` is a message whose systematic encoding is a codeword of weight eight which is
+nonzero at coordinate `i`. Every row but the first is a standard basis vector, selecting a
+single row of `generator`; coordinate `0` needs the sum of the first two rows. -/
+private def octadMessage : Matrix (Fin 24) (Fin 12) (ZMod 2) :=
+  !![1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0;
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0;
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0;
+     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+     0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+private theorem octadMessage_spec : ∀ i : Fin 24,
+    hammingNorm (octadMessage i ᵥ* generator) = 8 ∧ (octadMessage i ᵥ* generator) i ≠ 0 := by
+  simp only [vecMul_generator]
+  decide +kernel
+
+/-- Every coordinate of the extended binary Golay code is met by an *octad*, a codeword of
+weight eight. -/
+theorem exists_mem_code_hammingNorm_eq_eight_and_apply_ne_zero (i : Fin 24) :
+    ∃ x ∈ code, hammingNorm x = 8 ∧ x i ≠ 0 :=
+  ⟨octadMessage i ᵥ* generator, code_def ▸ Matrix.mem_generatedBy_iff.mpr ⟨_, rfl⟩,
+    octadMessage_spec i⟩
+
+/-- The extended binary Golay code has only even weights, so it lies in the
+single-parity-check code. -/
+theorem code_le_singleParityCheckCode :
+    code ≤ singleParityCheckCode (ZMod 2) (Fin 24) :=
+  BinaryCode.isEven_iff_le_singleParityCheckCode.mp isDoublyEven_code.isEven
 
 /-- The extended binary Golay code has minimum distance eight. -/
 @[simp]
