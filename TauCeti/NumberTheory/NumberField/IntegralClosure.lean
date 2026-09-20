@@ -11,12 +11,14 @@ public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 
 /-!
-# The integral closure of `𝓞 K` in a finite extension of number fields
+# The integral closure of `𝓞 K` in an algebra over a number field
 
-For a finite extension `L` of a number field `K`, the integral closure of `𝓞 K` in `L` is the
-integral closure of `ℤ` in `L`, hence isomorphic to `𝓞 L`. Two consequences transfer along that
-identification and are the finiteness inputs of the Mordell–Weil descent: the class group of the
-integral closure is finite, and its unit group is finitely generated.
+The integral closure of `𝓞 K` in a commutative `K`-algebra `L` is the integral closure of `ℤ` in
+`L`; this is pure transitivity of integrality along `ℤ → 𝓞 K → L` and needs nothing of `L` beyond
+being a commutative ring. When `L` is a finite extension of the number field `K` it identifies that
+integral closure with `𝓞 L`, and two consequences transfer along the identification, both finiteness
+inputs of the Mordell–Weil descent: the class group of the integral closure is finite, and its unit
+group is finitely generated.
 
 Both are stated for `integralClosure (𝓞 K) L` rather than for `𝓞 L`, because that is the ring the
 descent actually produces — `WeierstrassCurve.Affine.ringOfIntegersFactor` is an integral closure
@@ -25,7 +27,7 @@ in a quotient `K[X] ⧸ (p)`, not a ring of integers presented as such.
 ## Main results
 
 * `isIntegralClosure_int_integralClosure` : the integral closure of `𝓞 K` in `L` is the integral
-  closure of `ℤ` in `L`.
+  closure of `ℤ` in `L`, for any commutative `K`-algebra `L`.
 * `NumberField.finite_classGroup_integralClosure` : the **class number theorem** for it.
 * `NumberField.fg_units_integralClosure` : the finite-generation half of **Dirichlet's unit
   theorem** for it.
@@ -42,10 +44,14 @@ public section
 
 open NumberField
 
-variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+variable (K L : Type*) [Field K]
 
-/-- The integral closure of `𝓞 K` in an extension `L` of `K` is the integral closure of `ℤ`
-in `L`. -/
+section CommRing
+
+variable [CommRing L] [Algebra K L]
+
+/-- The integral closure of `𝓞 K` in a commutative `K`-algebra `L` is the integral closure of
+`ℤ` in `L`. -/
 theorem isIntegralClosure_int_integralClosure :
     IsIntegralClosure (integralClosure (𝓞 K) L) ℤ L := by
   refine ⟨Subtype.val_injective, fun {x} ↦ ⟨fun hx ↦ ?_, fun ⟨y, hy⟩ ↦ ?_⟩⟩
@@ -54,7 +60,9 @@ theorem isIntegralClosure_int_integralClosure :
     have := isIntegral_trans (R := ℤ) _ hyint
     rwa [hy] at this
 
-variable [NumberField K] [FiniteDimensional K L]
+end CommRing
+
+variable [Field L] [Algebra K L] [NumberField K] [FiniteDimensional K L]
 
 /-- The **class number theorem** for the integral closure of `𝓞 K` in a finite extension `L`
 of the number field `K`: its class group is finite. -/
