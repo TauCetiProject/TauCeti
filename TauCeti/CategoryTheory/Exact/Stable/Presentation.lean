@@ -89,7 +89,10 @@ theorem projectiveStableFunctor_map_cokernelMap_id (P : E.InjectivePresentation 
     (by simp) (by simp)).trans (E.projectiveStableFunctor.map_id P.K)
 
 /-- In the projective stable category, the morphisms induced on cokernel terms of relative
-injective presentations compose. -/
+injective presentations compose.
+
+This is deliberately not a `simp` lemma: the intermediate presentation `Q` occurs only on the
+right-hand side, so `simp` can never infer it and the `simpNF` linter rejects the attribute. -/
 theorem projectiveStableFunctor_map_cokernelMap_comp (P : E.InjectivePresentation X)
     (Q : E.InjectivePresentation Y) (R : E.InjectivePresentation Z) (hR : E.isProjective R.I)
     (f : X ⟶ Y) (g : Y ⟶ Z) :
