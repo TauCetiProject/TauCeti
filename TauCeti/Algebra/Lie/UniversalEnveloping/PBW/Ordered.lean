@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Functoriality
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.LeadingTerm
 
 /-!
 # Ordered monomials span the PBW filtration

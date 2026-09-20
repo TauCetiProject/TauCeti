@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.LeadingTerm
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 
 /-!
@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 Every homomorphism of Lie algebras induces a filtered homomorphism of their universal enveloping
 algebras: a word of at most `k` canonical generators is sent to a word of at most `k` canonical
 generators. This file states that fact both as preservation of membership and as a map between the
-filtration submodules, and records that induced maps act factorwise on PBW monomials.
+filtration submodules.
 
 The image statements retain information which an inclusion alone would discard. A split
 epimorphism maps each filtration step onto the corresponding target step. For a split
@@ -32,8 +32,9 @@ ordered-monomial stage of PBW.
   `TauCeti.UniversalEnvelopingAlgebra.map_pbwFiltration_le`: induced maps preserve PBW degree.
 * `TauCeti.UniversalEnvelopingAlgebra.mapFiltration`: the induced linear map between filtration
   steps, functorial in the Lie homomorphism.
-* `TauCeti.UniversalEnvelopingAlgebra.map_pbwMonomial`: induced maps act factorwise on PBW
-  monomials.
+* `TauCeti.UniversalEnvelopingAlgebra.map_pbwFiltration_eq_of_surjective` and
+  `TauCeti.UniversalEnvelopingAlgebra.mapFiltration_surjective_of_surjective`: surjective Lie maps
+  induce exact images and surjections between corresponding filtration steps.
 * `TauCeti.UniversalEnvelopingAlgebra.map_pbwFiltration_eq_of_rightInverse`: split epimorphisms map
   each filtration step onto the corresponding target step.
 * `TauCeti.UniversalEnvelopingAlgebra.map_pbwFiltration_eq_inf_range_of_leftInverse`: for a split
@@ -83,18 +84,6 @@ theorem map_mem_pbwFiltration (f : LieHom R L M) {k : ℕ}
     {x : _root_.UniversalEnvelopingAlgebra R L} (hx : x ∈ pbwFiltration R L k) :
     map R f x ∈ pbwFiltration R M k :=
   map_pbwFiltration_le R f k ⟨x, hx, rfl⟩
-
-/-- An induced enveloping-algebra map applies the Lie homomorphism to every factor of a PBW
-monomial. -/
-@[simp]
-theorem map_pbwMonomial (f : LieHom R L M) (e : ι → L) (word : List ι) :
-    map R f (pbwMonomial R L e word) = pbwMonomial R M (fun i ↦ f (e i)) word := by
-  rw [pbwMonomial_def, pbwMonomial_def, map_list_prod]
-  apply congrArg List.prod
-  simp only [List.map_map]
-  apply List.map_congr_left
-  intro i _
-  exact map_ι R f (e i)
 
 /-- Induced enveloping-algebra maps also preserve the step immediately preceding a PBW
 filtration degree. -/
@@ -154,6 +143,32 @@ theorem map_pbwFiltration_eq_of_surjective (f : LieHom R L M) (hf : Function.Sur
     (_root_.UniversalEnvelopingAlgebra.ι R : LieHom R M _).toLinearMap _ k
   ext x
   exact map_ι R f x
+
+/-- A surjective Lie homomorphism also maps the step immediately preceding each PBW degree onto
+the corresponding preceding step. -/
+theorem map_pbwFiltrationPrevious_eq_of_surjective (f : LieHom R L M)
+    (hf : Function.Surjective f) (k : ℕ) :
+    (pbwFiltrationPrevious R L k).map (map R f).toLinearMap =
+      pbwFiltrationPrevious R M k := by
+  cases k with
+  | zero => simp
+  | succ k => simpa using map_pbwFiltration_eq_of_surjective R f hf k
+
+/-- The map between corresponding PBW filtration steps induced by a surjective Lie homomorphism
+is surjective. -/
+theorem mapFiltration_surjective_of_surjective (f : LieHom R L M)
+    (hf : Function.Surjective f) (k : ℕ) :
+    Function.Surjective (mapFiltration R f k) := by
+  let hmaps : Set.MapsTo (map R f) (pbwFiltration R L k) (pbwFiltration R M k) :=
+    fun _ hx ↦ map_mem_pbwFiltration R f hx
+  have hrestrict : (mapFiltration R f k : pbwFiltration R L k → pbwFiltration R M k) =
+      hmaps.restrict (map R f) (pbwFiltration R L k) (pbwFiltration R M k) := by
+    funext x
+    apply Subtype.ext
+    exact mapFiltration_apply R f k x
+  rw [hrestrict, hmaps.restrict_surjective_iff]
+  exact Submodule.surjOn_iff_le_map.mpr
+    (map_pbwFiltration_eq_of_surjective R f hf k).ge
 
 /-- A split epimorphism of Lie algebras maps every PBW filtration step onto the corresponding
 target step. -/

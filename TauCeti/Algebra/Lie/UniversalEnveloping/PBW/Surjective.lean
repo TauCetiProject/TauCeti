@@ -9,21 +9,18 @@ public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Functoriality
 
 /-!
-# PBW filtrations under surjective Lie maps
+# PBW filtrations for Lie quotients
 
-A surjective homomorphism of Lie algebras sends every word in the target generators to the image
-of a word of the same length in the source generators. Consequently the induced homomorphism of
-universal enveloping algebras maps each PBW filtration step *onto* the corresponding target step.
-This strengthens the filtration-preserving inclusion to the equality needed for quotients.
+The quotient map of a Lie algebra by a Lie ideal induces a surjective map between corresponding
+PBW filtration steps. This file records the quotient specializations of the general surjectivity
+results in `PBW.Functoriality`.
 
 ## Main results
 
-* `TauCeti.UniversalEnvelopingAlgebra.map_pbwFiltration_eq_of_surjective`: a surjective Lie map
-  maps every PBW filtration step onto the target step.
-* `TauCeti.UniversalEnvelopingAlgebra.mapFiltration_surjective_of_surjective`: the induced linear
-  map between filtration steps is surjective.
 * `TauCeti.UniversalEnvelopingAlgebra.map_mkQ_pbwFiltration`: specialization to a quotient by a
   Lie ideal.
+* `TauCeti.UniversalEnvelopingAlgebra.mapFiltration_mkQ_surjective`: the induced linear map between
+  quotient filtration steps is surjective.
 
 ## References
 
@@ -35,42 +32,13 @@ public section
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-open TauCeti.Algebra
-
-universe u v w
+universe u v
 
 variable (R : Type u) [CommRing R]
-variable {L : Type v} {M : Type w}
+variable {L : Type v}
 variable [LieRing L] [LieAlgebra R L]
-variable [LieRing M] [LieAlgebra R M]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- A surjective Lie homomorphism also maps the step immediately preceding each PBW degree onto
-the corresponding preceding step. -/
-theorem map_pbwFiltrationPrevious_eq_of_surjective (f : LieHom R L M)
-    (hf : Function.Surjective f) (k : ℕ) :
-    (pbwFiltrationPrevious R L k).map (map R f).toLinearMap =
-      pbwFiltrationPrevious R M k := by
-  cases k with
-  | zero => simp
-  | succ k => simpa using map_pbwFiltration_eq_of_surjective R f hf k
-
-/-- The map between corresponding PBW filtration steps induced by a surjective Lie homomorphism
-is surjective. -/
-theorem mapFiltration_surjective_of_surjective (f : LieHom R L M)
-    (hf : Function.Surjective f) (k : ℕ) :
-    Function.Surjective (mapFiltration R f k) := by
-  let hmaps : Set.MapsTo (map R f) (pbwFiltration R L k) (pbwFiltration R M k) :=
-    fun _ hx ↦ map_mem_pbwFiltration R f hx
-  have hrestrict : (mapFiltration R f k : pbwFiltration R L k → pbwFiltration R M k) =
-      hmaps.restrict (map R f) (pbwFiltration R L k) (pbwFiltration R M k) := by
-    funext x
-    apply Subtype.ext
-    exact mapFiltration_apply R f k x
-  rw [hrestrict, hmaps.restrict_surjective_iff]
-  exact Submodule.surjOn_iff_le_map.mpr
-    (map_pbwFiltration_eq_of_surjective R f hf k).ge
 
 section Quotient
 
