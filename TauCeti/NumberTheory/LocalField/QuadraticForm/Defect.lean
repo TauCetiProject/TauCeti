@@ -38,12 +38,13 @@ defect vanishes exactly on squares, it scales by `c²` when `a` is multiplied by
 an integral element is integral, and the defect of an element of odd valuation `v_K(a)` is
 `a 𝒪[K]`. None of that needs a hypothesis on the residue characteristic.
 
-The classification below additionally assumes `(2 : K) ≠ 0`. For
-`e = v_K(2)` and a unit `u` that is not a square, `δ(u)` is `2e` or an odd number below `2e`, so
-`𝔡(u)` runs through the list `0`, `4 𝒪[K] = 𝓂[K]^{2e}`, and `𝓂[K]^{2k+1}` for `0 ≤ k < e`. The
-upper bound is the sharp local square theorem, and the parity is an approximation argument: below
-depth `2e` the cross term `2 ξ π^k s` is negligible, so an approximation of even order can always
-be improved using that the residue field is perfect of characteristic two. Every listed value is
+The classification below additionally assumes `(2 : K) ≠ 0`. For `e = v_K(2)` and a unit `u`,
+`𝔡(u)` runs through the list `0`, `4 𝒪[K] = 𝓂[K]^{2e}`, and `𝓂[K]^{2k+1}` for `0 ≤ k < e`, with
+the value `0` occurring exactly when `u` is a square. If `u` is not a square, `δ(u)` is `2e` or an
+odd number below `2e`. The upper bound is the sharp local square theorem, and the parity is an
+approximation argument: below depth `2e` the cross term `2 ξ π^k s` is negligible, so an
+approximation of even order can always be improved using that the residue field is perfect of
+characteristic two. Every listed value is
 attained: sharpness supplies the value `2e`, and `1 + π^(2k+1)` has defect exponent `2k+1`.
 
 ## Main definitions
