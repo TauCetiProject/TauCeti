@@ -13,10 +13,11 @@ public import TauCeti.RingTheory.UniqueFactorizationDomain.SubsetProduct
 # Factoring a product of conjugate primes in a Dedekind domain
 
 Let `R` be a Dedekind domain carrying a ring endomorphism `σ`, and let `S` be a finite set of
-nonzero primes of `R` on which `σ` acts involutively and without fixing any element, so that `S`
-splits into conjugate pairs `{p, σ p}`. This file describes the ideals `A` with
-`A * σ A = ∏ p ∈ S, p`: they are exactly the products over the transversals of `σ` on `S`, one
-prime chosen from each conjugate pair, and there are exactly `2 ^ (#S / 2)` of them.
+nonzero primes of `R` on which `σ` acts involutively. This file characterizes the ideals `A` with
+`A * σ A = ∏ p ∈ S, p` as exactly the products over the transversals of `σ` on `S`. When `σ`
+additionally has no fixed points on `S`, so that `S` splits into conjugate pairs `{p, σ p}`, it
+also proves that there are exactly `2 ^ (#S / 2)` such ideals, one for each choice of a prime from
+each conjugate pair. Fixed-point-freeness is needed only for this count.
 
 The count is what makes such factorizations a source of many ideals with a prescribed conjugate
 product: taking `S` to be a set of primes above rational primes that split into conjugate pairs,
@@ -53,8 +54,8 @@ variable {R F : Type*} [CommRing R] [IsDedekindDomain R] [FunLike F R R] [RingHo
   {σ : F} {S : Finset (Ideal R)}
 
 /-- **The conjugate factorizations of a product of paired primes.** If a ring endomorphism `σ`
-acts involutively on a finite set `S` of nonzero primes without fixing any of them, then the ideals
-`A` with `A * σ A = ∏ p ∈ S, p` are exactly the products over the transversals of `σ` on `S`. -/
+acts involutively on a finite set `S` of nonzero primes, then the ideals `A` with
+`A * σ A = ∏ p ∈ S, p` are exactly the products over the transversals of `σ` on `S`. -/
 theorem mul_map_eq_prod_iff (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ S, p ≠ ⊥)
     (hmaps : ∀ p ∈ S, Ideal.map σ p ∈ S) (hinvol : ∀ p ∈ S, Ideal.map σ (Ideal.map σ p) = p)
     {A : Ideal R} :
