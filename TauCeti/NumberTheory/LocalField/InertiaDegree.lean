@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing
+public import TauCeti.NumberTheory.LocalField.RamificationIndex
 
 /-!
 # The residue degree of an extension of local fields, and `e · f = [L : K]`
@@ -35,13 +36,10 @@ side, and conversely.
 
 ## Main results
 
-* `TauCeti.map_maximalIdeal_eq_maximalIdeal_pow`: the maximal ideal of `𝒪[K]` generates
-  `𝓂[L] ^ e(L/K)`.
 * `TauCeti.primesOver_maximalIdeal_eq_singleton`: `𝓂[L]` is the unique prime of `𝒪[L]`
   above `𝓂[K]`.
-* `TauCeti.ramificationIndex_eq_ramificationIdx` and `TauCeti.inertiaDegree_eq_inertiaDeg`: the
-  intrinsic invariants agree with `Ideal.ramificationIdx` and `Ideal.inertiaDeg` of `𝓂[L]`
-  over `𝒪[K]`.
+* `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
+  `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
 * `TauCeti.inertiaDegree_tower`: multiplicativity `f(M/K) = f(L/K) · f(M/L)` in a tower.
 * `TauCeti.natCard_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
@@ -81,41 +79,6 @@ variable (K L) in
 cardinalities here are genuine. -/
 theorem natCard_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
   Module.natCard_eq_pow_finrank
-
-variable (K L) in
-/-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.
-This is the ideal-theoretic form of the characteristic property of the ramification index. -/
-theorem map_maximalIdeal_eq_maximalIdeal_pow :
-    𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] ^ ramificationIndex K L := by
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  have hv : valuation L ((algebraMap 𝒪[K] 𝒪[L] π : 𝒪[L]) : L) =
-      valuation L ((ϖ ^ ramificationIndex K L : 𝒪[L]) : L) := by
-    push_cast
-    rw [valuation_algebraMap_irreducible hπ hϖ, map_pow]
-  have hint := Valuation.integer.integers (valuation L)
-  have hass : Associated (algebraMap 𝒪[K] 𝒪[L] π) (ϖ ^ ramificationIndex K L) :=
-    associated_of_dvd_dvd (hint.dvd_iff_le.2 hv.ge) (hint.dvd_iff_le.2 hv.le)
-  rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer π).1 hπ,
-    (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.map_span,
-    Set.image_singleton, Ideal.span_singleton_pow, Ideal.span_singleton_eq_span_singleton]
-  exact hass
-
-variable (K L) in
-/-- **The intrinsic ramification index is the ideal-theoretic one**: the index of the image of the
-normalized value group is the ramification index of `𝓂[L]` over `𝒪[K]`. -/
-theorem ramificationIndex_eq_ramificationIdx :
-    ramificationIndex K L = 𝓂[L].ramificationIdx 𝒪[K] := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  rw [← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K] 𝓂[L]
-    (IsDiscreteValuationRing.not_a_field 𝒪[K])]
-  refine (Ideal.ramificationIdx'_spec
-    (map_maximalIdeal_eq_maximalIdeal_pow K L).le fun hle ↦ ?_).symm
-  rw [map_maximalIdeal_eq_maximalIdeal_pow K L,
-    (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.span_singleton_pow,
-    Ideal.span_singleton_pow, Ideal.span_singleton_le_span_singleton,
-    pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
-  omega
 
 variable (K L) in
 /-- **The residue degree is the ideal-theoretic inertia degree** of `𝓂[L]` over `𝒪[K]`. -/

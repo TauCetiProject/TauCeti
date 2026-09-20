@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import Mathlib.RingTheory.RamificationInertia.Basic
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # The ramification index of an extension of local fields
@@ -44,6 +46,10 @@ filtration.
 * `TauCeti.normalizedValuation_algebraMap_irreducible` and
   `TauCeti.valuation_algebraMap_irreducible`: a uniformizer of `K` has normalized valuation `e`
   in `L`, that is, its valuation is the `e`-th power of that of a uniformizer of `L`.
+* `TauCeti.map_maximalIdeal_eq_maximalIdeal_pow`: the maximal ideal of `𝒪[K]` generates
+  `𝓂[L] ^ e(L/K)`.
+* `TauCeti.ramificationIndex_eq_ramificationIdx`: the intrinsic ramification index agrees with
+  `Ideal.ramificationIdx` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_tower`: multiplicativity `e(M/K) = e(L/K) · e(M/L)` in a tower.
 
 ## Implementation notes
@@ -244,6 +250,41 @@ theorem valuation_algebraMap_irreducible {πK : 𝒪[K]} (hπK : Irreducible πK
   rw [h₀, toAdd_ofAdd] at h₁
   rw [h₁, map_pow, h₂, ← WithZero.exp_nsmul]
   simp
+
+variable (K L) in
+/-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.
+This is the ideal-theoretic form of the characteristic property of the ramification index. -/
+theorem map_maximalIdeal_eq_maximalIdeal_pow :
+    𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] ^ ramificationIndex K L := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  have hv : valuation L ((algebraMap 𝒪[K] 𝒪[L] π : 𝒪[L]) : L) =
+      valuation L ((ϖ ^ ramificationIndex K L : 𝒪[L]) : L) := by
+    push_cast
+    rw [valuation_algebraMap_irreducible hπ hϖ, map_pow]
+  have hint := Valuation.integer.integers (valuation L)
+  have hass : Associated (algebraMap 𝒪[K] 𝒪[L] π) (ϖ ^ ramificationIndex K L) :=
+    associated_of_dvd_dvd (hint.dvd_iff_le.2 hv.ge) (hint.dvd_iff_le.2 hv.le)
+  rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer π).1 hπ,
+    (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.map_span,
+    Set.image_singleton, Ideal.span_singleton_pow, Ideal.span_singleton_eq_span_singleton]
+  exact hass
+
+variable (K L) in
+/-- **The intrinsic ramification index is the ideal-theoretic one**: the index of the image of the
+normalized value group is the ramification index of `𝓂[L]` over `𝒪[K]`. -/
+theorem ramificationIndex_eq_ramificationIdx :
+    ramificationIndex K L = 𝓂[L].ramificationIdx 𝒪[K] := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  rw [← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K] 𝓂[L]
+    (IsDiscreteValuationRing.not_a_field 𝒪[K])]
+  refine (Ideal.ramificationIdx'_spec
+    (map_maximalIdeal_eq_maximalIdeal_pow K L).le fun hle ↦ ?_).symm
+  rw [map_maximalIdeal_eq_maximalIdeal_pow K L,
+    (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ, Ideal.span_singleton_pow,
+    Ideal.span_singleton_pow, Ideal.span_singleton_le_span_singleton,
+    pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
+  omega
 
 /-- **Multiplicativity of the ramification index in a tower** `M/L/K`:
 `e(M/K) = e(L/K) · e(M/L)`. -/
