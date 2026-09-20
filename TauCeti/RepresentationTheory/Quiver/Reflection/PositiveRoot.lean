@@ -28,10 +28,10 @@ sink-admissible ordering.
 
 * `TauCeti.vertexPreReflection_apply_self_neg_iff_eq_single`: **a positive root is simple exactly
   when the reflection at that vertex makes its coordinate there negative.**
-* `TauCeti.exists_vertexPreReflectionList_take_apply_eq_single`: some number of full passes of the
-  reflection product followed by an initial segment of the word carries a positive root to the
-  simple root at the next vertex of the word, without leaving the nonnegative cone before reaching
-  that root.
+* `TauCeti.exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg`: some number of full
+  passes of the reflection product followed by an initial segment of the word carries a positive
+  root to the simple root at the next vertex of the word, without leaving the nonnegative cone
+  before reaching that root.
 * `TauCeti.titsForm_eq_one_iff_exists_vertexPreReflectionList_single`: consequently the positive
   roots are exactly the nonnegative reflection images of the simple roots.
 
@@ -126,7 +126,7 @@ negative vertex dimension.
 No admissibility property of the word for successive reflected quivers is asserted. Reading the
 word backwards exhibits `d` in the Weyl orbit of a simple root, as recorded by
 `TauCeti.titsForm_eq_one_iff_exists_vertexPreReflectionList_single`. -/
-theorem exists_vertexPreReflectionList_take_apply_eq_single (hpd : (titsForm Q).PosDef)
+theorem exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg (hpd : (titsForm Q).PosDef)
     {l : List Q} (hnd : l.Nodup) (hmem : ∀ i : Q, i ∈ l) {d : Q → ℤ}
     (hd : 0 ≤ d) (hroot : titsForm Q d = 1) :
     ∃ (N m : ℕ) (j : Q), l[m]? = some j ∧
@@ -247,7 +247,7 @@ theorem titsForm_eq_one_iff_exists_vertexPreReflectionList_single (hpd : (titsFo
   constructor
   · intro hroot
     obtain ⟨N, m, j, -, hEq, -, -⟩ :=
-      exists_vertexPreReflectionList_take_apply_eq_single Q hpd hnd hmem hd hroot
+      exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg Q hpd hnd hmem hd hroot
     refine ⟨((List.replicate N l).flatten ++ l.take m).reverse, j, ?_⟩
     have hfwd : vertexPreReflectionList Q ((List.replicate N l).flatten ++ l.take m) d
         = Pi.single j 1 := by
