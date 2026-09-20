@@ -103,23 +103,23 @@ end Cells
 
 section Counting
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
   [MeasurableSpace E] [BorelSpace E] {L : Submodule ℤ E} [DiscreteTopology L]
   {μ : Measure E} [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ] {F X : Set E}
 
-/-- **Counting lattice points by cells.**  Let `F` be a bounded measurable convex set containing
-`0` whose lattice translates `w + F`, for `w` in a discrete `L`, tile `E`.  Then for every bounded
-set `X` the number of lattice points of `X`, weighted by the volume of `F`, differs from the
-volume of `X` by at most the volume of `F` times the number of lattice points in the thickened
-frontier `frontier X + -F`.
+/-- **Counting lattice points by cells.**  Let `F` be a bounded measurable preconnected set
+containing `0` whose lattice translates `w + F`, for `w` in a discrete `L`, tile `E`.  Then for
+every bounded set `X` the number of lattice points of `X`, weighted by the volume of `F`, differs
+from the volume of `X` by at most the volume of `F` times the number of lattice points in the
+thickened frontier `frontier X + -F`.
 
 The hypotheses on `F` say exactly that it is a fundamental domain of the shape a counting argument
 uses: `hFu` and `hFe` are uniqueness and existence of the cell containing a point, `hF₀` puts a
-lattice point in its own cell, and convexity is what makes a cell straddling `X` meet its
+lattice point in its own cell, and preconnectedness is what makes a cell straddling `X` meet its
 frontier.  No regularity is asked of `X`, and none of `frontier X`: the boundary term is
 identified here and estimated by the caller. -/
 theorem abs_ncard_inter_mul_sub_measureReal_le
-    (hF₀ : (0 : E) ∈ F) (hFc : Convex ℝ F) (hFb : IsBounded F) (hFm : MeasurableSet F)
+    (hF₀ : (0 : E) ∈ F) (hFpc : IsPreconnected F) (hFb : IsBounded F) (hFm : MeasurableSet F)
     (hFu : ∀ x : E, ∀ w₁ ∈ (L : Set E), ∀ w₂ ∈ (L : Set E), x - w₁ ∈ F → x - w₂ ∈ F → w₁ = w₂)
     (hFe : ∀ x : E, ∃ w ∈ (L : Set E), x - w ∈ F)
     (hXb : IsBounded X) :
@@ -161,15 +161,9 @@ theorem abs_ncard_inter_mul_sub_measureReal_le
   have hBA : B \ A ⊆ (frontier X + -F) ∩ (L : Set E) := by
     rintro w ⟨⟨hwL, hmeet⟩, hnA⟩
     obtain ⟨z, hzc, hzX⟩ := Set.not_subset.mp fun h ↦ hnA ⟨hwL, h⟩
-    have hconv : Convex ℝ {y : E | y - w ∈ F} := by
-      intro x hx y hy a t ha ht hat
-      have key : a • (x - w) + t • (y - w) = a • x + t • y - w := by
-        rw [smul_sub, smul_sub, sub_add_sub_comm, ← add_smul, hat, one_smul]
-      simp only [Set.mem_ofPred_eq] at hx hy ⊢
-      rw [← key]
-      exact hFc hx hy ha ht hat
     obtain ⟨y, hyc, hyfr⟩ :=
-      hconv.isPreconnected.inter_frontier_nonempty hmeet ⟨z, hzc, hzX⟩
+      ((Homeomorph.subRight w).isPreconnected_preimage.mpr hFpc).inter_frontier_nonempty
+        hmeet ⟨z, hzc, hzX⟩
     exact ⟨⟨y, hyfr, -(y - w), by simpa using hyc, by simp⟩, hwL⟩
   -- assemble: the count is squeezed between the two cell counts, as is the measure
   have hAX : A ⊆ X ∩ (L : Set E) := fun w hw ↦ ⟨hw.2 (hself w), hw.1⟩
@@ -230,7 +224,7 @@ theorem exists_abs_ncard_smul_inter_sub_le {D : Set E} (hDb : IsBounded D)
   have hFb : IsBounded F := ZSpan.fundamentalDomain_isBounded β
   have hFm : MeasurableSet F := ZSpan.fundamentalDomain_measurableSet β
   have hF₀ : (0 : E) ∈ F := by rw [hFdef]; simp [ZSpan.mem_fundamentalDomain]
-  have hFc : Convex ℝ F := ZSpan.convex_fundamentalDomain β
+  have hFpc : IsPreconnected F := (ZSpan.convex_fundamentalDomain β).isPreconnected
   have hcov : ZLattice.covolume L μ = μ.real F :=
     ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ)
   have hκ : 0 < μ.real F := hcov ▸ ZLattice.covolume_pos L μ
@@ -261,7 +255,7 @@ theorem exists_abs_ncard_smul_inter_sub_le {D : Set E} (hDb : IsBounded D)
   have hvol : μ.real (c • D) = c ^ finrank ℝ E * μ.real D := by
     rw [measureReal_def, Measure.addHaar_smul, ENNReal.toReal_mul,
       ENNReal.toReal_ofReal (abs_nonneg _), abs_of_nonneg (by positivity), measureReal_def]
-  have hkey := abs_ncard_inter_mul_sub_measureReal_le (μ := μ) (L := L) hF₀ hFc hFb hFm hFu hFe
+  have hkey := abs_ncard_inter_mul_sub_measureReal_le (μ := μ) (L := L) hF₀ hFpc hFb hFm hFu hFe
     (hDb.smul₀ c)
   rw [hfr, hvol] at hkey
   have hbad : (((c • frontier D + -F) ∩ (L : Set E)).ncard : ℝ) ≤ A * c ^ (finrank ℝ E - 1) :=

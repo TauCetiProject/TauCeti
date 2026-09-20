@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Module.ZLattice.Basic
 # Fundamental domains of integer spans
 
 This file records geometric properties of the standard fundamental domain associated to a basis.
+Its convexity makes lattice cells preconnected, so cells crossing the boundary of a set can be
+detected by their intersection with the frontier in lattice-point counting arguments.
 
 ## Main results
 
