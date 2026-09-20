@@ -230,11 +230,11 @@ theorem ncard_setOf_isInvolutionTransversal (hmaps : ∀ a ∈ S, f a ∈ S)
       rcases Finset.mem_insert.1 hmem with h' | h'
       · exact hab h'.symm
       · exact haS' (h₂.subset h')
+    have hhalf : (S'.card + 2) / 2 = S'.card / 2 + 1 := by omega
     have hfin := finite_setOf_isInvolutionTransversal f S'
     rw [hsplit, Set.ncard_union_eq hdisj (hfin.image _) (hfin.image _),
       (hinsert a haS').ncard_image, (hinsert (f a) hfaS').ncard_image,
-      ih S' hssub hmaps' hinvol' hfree', hcard,
-      show (S'.card + 2) / 2 = S'.card / 2 + 1 by omega, pow_succ]
+      ih S' hssub hmaps' hinvol' hfree', hcard, hhalf, pow_succ]
     omega
 
 end TauCeti
