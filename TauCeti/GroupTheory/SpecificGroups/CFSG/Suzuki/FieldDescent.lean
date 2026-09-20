@@ -19,8 +19,8 @@ that same embedding.
 
 The subgroup `finiteFixedSubgroup` is the exact finite-field preimage of the Steinberg fixed
 points. Scalar extension identifies it with the fixed-point subgroup in the ambient general
-linear group. Identifying this preimage with `Suzuki.suzukiGroup` is the remaining generation
-step; it is not asserted here.
+linear group. Equality with `Suzuki.suzukiGroup` is the finite-field generation theorem that
+identifies the two constructions; it is not asserted here.
 
 ## Main results
 
@@ -65,7 +65,7 @@ theorem mem_range_generatorFieldEmbedding_iff (m : ℕ)
     {x : (of m hvalid).1.Closure} :
     x ∈ RingHom.range (generatorFieldEmbedding m hvalid) ↔
       x ^ (of m hvalid).1.fieldOrder = x := by
-  change x ∈ (generatorFieldEmbedding m hvalid).fieldRange ↔ _
+  rw [RingHom.mem_range, ← RingHom.mem_fieldRange]
   rw [fieldRange_generatorFieldEmbedding]
   exact (of m hvalid).1.mem_fixedField
 
@@ -151,8 +151,8 @@ theorem fixedSubgroup_le_range_generatorEmbedding (m : ℕ)
   exact (of m hvalid).1.mem_fixedField.mp
     ((of m hvalid).coe_mem_fixedField_of_mem_fixedSubgroup_steinberg x hx i j)
 
-/-- The exact finite-field preimage of the Suzuki Steinberg fixed-point subgroup. This is the
-finite matrix group that remains to be identified with `Suzuki.suzukiGroup`. -/
+/-- The exact finite-field preimage of the Suzuki Steinberg fixed-point subgroup. Equality with
+`Suzuki.suzukiGroup` is the associated finite-field generation theorem. -/
 def finiteFixedSubgroup (m : ℕ) (hvalid : (LieTypeIndex.suzuki m).Valid) :
     Subgroup (GL (Fin 4) (GaloisField 2 (2 * m + 1))) :=
   ((fixedSubgroup (of m hvalid).steinberg).map
@@ -171,7 +171,7 @@ theorem mem_finiteFixedSubgroup (m : ℕ) (hvalid : (LieTypeIndex.suzuki m).Vali
   Iff.rfl
 
 /-- The standard generated Suzuki group lies in the exact finite-field preimage of the Steinberg
-fixed points. Equality is precisely the remaining finite-field generation theorem. -/
+fixed points. Equality is the finite-field generation theorem identifying the two constructions. -/
 theorem suzukiGroup_le_finiteFixedSubgroup (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid) :
     suzukiGroup m ≤ finiteFixedSubgroup m hvalid := by
