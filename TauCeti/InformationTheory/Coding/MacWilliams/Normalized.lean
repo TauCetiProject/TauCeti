@@ -20,6 +20,8 @@ this factor into the variables: the enumerator is fixed by
 The statements allow values in arbitrary algebras, so they apply to polynomial variables
 as well as numerical evaluations. The coefficient normalization is over `ℚ`, whereas
 the variable normalization uses `ℝ` to provide the positive square root of `q`.
+The rational identity also holds over a finite commutative ring carrying a primitive
+additive character with values in a characteristic zero domain.
 
 ## References
 
@@ -34,7 +36,31 @@ namespace TauCeti
 
 open _root_.MvPolynomial
 
-variable {ι F : Type*} [Fintype ι] [Field F] [Finite F] [DecidableEq F]
+variable {ι : Type*} [Fintype ι]
+
+/-- The rational normalized MacWilliams identity over a finite commutative ring
+carrying a primitive additive character into a characteristic zero domain, evaluated
+in any commutative `ℚ`-algebra. -/
+theorem aeval_weightEnumerator_euclideanDual_of_isPrimitive
+    {R S : Type*} [CommRing R] [Finite R] [DecidableEq R]
+    [CommRing S] [IsDomain S] [CharZero S] {ψ : AddChar R S}
+    (C : Submodule R (ι → R)) (hψ : ψ.IsPrimitive)
+    {A : Type*} [CommRing A] [Algebra ℚ A] (x y : A) :
+    aeval ![x, y] (Submodule.euclideanDual C : Set (ι → R)).weightEnumerator =
+      (Nat.card C : ℚ)⁻¹ •
+        aeval ![x + (Nat.card R - 1 : A) * y, x - y] (C : Set (ι → R)).weightEnumerator := by
+  have hcard : (Nat.card C : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  rw [eq_inv_smul_iff₀ hcard]
+  have h := congrArg (aeval ![x, y])
+    (Submodule.natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive hψ C)
+  simp only [aeval_eq_bind₁, aeval_bind₁, map_mul, map_natCast] at h
+  convert h using 1
+  · simp [Algebra.smul_def]
+  · congr 1
+    ext i
+    fin_cases i <;> simp
+
+variable {F : Type*} [Field F] [Finite F] [DecidableEq F]
   (C : Submodule F (ι → F))
 
 /-- The rational normalized MacWilliams identity, evaluated in any commutative
@@ -44,16 +70,10 @@ polynomial identity over `ℚ`. -/
     (x y : A) :
     aeval ![x, y] (Submodule.euclideanDual C : Set (ι → F)).weightEnumerator =
       (Nat.card C : ℚ)⁻¹ •
-        aeval ![x + (Nat.card F - 1 : A) * y, x - y] (C : Set (ι → F)).weightEnumerator := by
-  have hcard : (Nat.card C : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
-  rw [eq_inv_smul_iff₀ hcard]
-  have h := congrArg (aeval ![x, y]) (C.natCard_mul_weightEnumerator_euclideanDual)
-  simp only [aeval_eq_bind₁, aeval_bind₁, map_mul, map_natCast] at h
-  convert h using 1
-  · simp [Algebra.smul_def]
-  · congr 1
-    ext i
-    fin_cases i <;> simp
+        aeval ![x + (Nat.card F - 1 : A) * y, x - y] (C : Set (ι → F)).weightEnumerator :=
+  aeval_weightEnumerator_euclideanDual_of_isPrimitive C
+    (AddChar.FiniteField.primitiveChar F ℚ
+      (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim x y
 
 /-- A self-dual code's weight enumerator is fixed by the normalized MacWilliams
 substitution. The variables may lie in any commutative real algebra; in particular
