@@ -108,6 +108,7 @@ namespace SchemeWeilDivisor
 /-- **The degree on the Picard group computes the weighted degree of a divisor class.** Under
 `Cl(X) ≅ Pic X`, the Euler-characteristic degree of the line bundle of a divisor class is the
 residue-degree-weighted degree `Σ_y D(y) [κ(y) : k]` of that class. -/
+@[simp]
 theorem eulerDegreeHom_classGroupAddEquivLineBundleClass
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
     LineBundleClass.eulerDegreeHom k X (classGroupAddEquivLineBundleClass X c) =
@@ -213,7 +214,10 @@ lemma coe_weightedDegreeZeroQuotientAddEquivPicZero_mk
     (weightedDegreeZeroQuotientAddEquivPicZero k X (QuotientAddGroup.mk D) :
         Additive (LineBundleClass X)) =
       Additive.ofMul (toLineBundleClass hX.out (D : SchemeWeilDivisor X)) := by
-  simp [weightedDegreeZeroQuotientAddEquivPicZero]
+  rw [weightedDegreeZeroQuotientAddEquivPicZero, AddEquiv.trans_apply,
+    coe_classGroupAddEquivPicZero_apply,
+    WeilDivisor.OrderSystem.coe_weightedDegreeZeroQuotientEquivPicZero_mk,
+    classGroupAddEquivLineBundleClass_apply, classGroupToLineBundleClass_divisorClass]
 
 section RationalPoint
 
