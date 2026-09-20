@@ -533,6 +533,7 @@ theorem idealSummatory_restrict_insert
       ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun I _ ↦ ?_
     rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.restrict_apply,
       MultiplicativeIdealWeight.restrict_insert_apply χ hS]
     split_ifs <;> simp [hf]
   rw [hsplit, idealSummatory_ite_dvd K P f x]
