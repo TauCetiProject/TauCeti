@@ -85,7 +85,7 @@ intersection form on the vectors supported on a proper subset of the components 
   five `(-2)`-indices are simply laced.
 * `TauCeti.NumericalType.intersection_eq_zero_of_chain_five`: a chain of five `(-2)`-indices does
   not close up into a pentagon.
-* `TauCeti.NumericalType.intersection_eq_zero_of_star_four`: a `(-2)`-index meeting three others
+* `TauCeti.NumericalType.intersection_eq_zero_of_star_five`: a `(-2)`-index meeting three others
   meets no fourth one.
 -/
 
@@ -854,10 +854,10 @@ theorem intersection_eq_zero_of_chain_five (hcard : 5 < Fintype.card T.Component
     hhj0 hhk0 hik0 hil0 hjl0 1 1 1 1 1 one_ne_zero]
 
 /-- A component of self-intersection `-2w` meeting three others of self-intersection `-2w` meets
-no fourth such component, in a numerical type with more than five components. Equivalently, the
+no fourth such component, in a numerical type with more than five components. In particular, the
 four-legged star does not occur as a proper subgraph of `(-2)`-indices
 ([Stacks, Lemma 55.5.6](https://stacks.math.columbia.edu/tag/0C86)). -/
-theorem intersection_eq_zero_of_star_four (hcard : 5 < Fintype.card T.Component)
+theorem intersection_eq_zero_of_star_five (hcard : 5 < Fintype.card T.Component)
     {c₁ c₂ c₃ c₄ c₅ : T.Component}
     (h₁ : T.intersection c₁ c₁ = -(2 * (T.weight c₁ : ℤ)))
     (h₂ : T.intersection c₂ c₂ = -(2 * (T.weight c₂ : ℤ)))
@@ -885,51 +885,11 @@ theorem intersection_eq_zero_of_star_four (hcard : 5 < Fintype.card T.Component)
     T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₄ h₅ h₂₄ h₂₅ h₄₅ e₁₂ e₁₄ e₁₅
   have hww : (w : ℤ) = w' := by omega
   -- The vector taking the value two at the centre and one at each leg is isotropic.
-  let x : T.Component → ℤ := fun c ↦
-    if c = c₁ then 2 else if c = c₂ then 1 else if c = c₃ then 1 else
-      if c = c₄ then 1 else if c = c₅ then 1 else 0
-  have hx₁ : x c₁ = 2 := by simp [x]
-  have hx₂ : x c₂ = 1 := by simp [x, h₁₂.symm]
-  have hx₃ : x c₃ = 1 := by simp [x, h₁₃.symm, h₂₃.symm]
-  have hx₄ : x c₄ = 1 := by simp [x, h₁₄.symm, h₂₄.symm, h₃₄.symm]
-  have hx₅ : x c₅ = 1 := by
-    simp [x, h₁₅.symm, h₂₅.symm, h₃₅.symm, h₄₅.symm]
-  have hsupp : ∀ c ∉ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component), x c = 0 := by
-    intro c hc
-    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hc
-    simp [x, hc.1, hc.2.1, hc.2.2.1, hc.2.2.2.1, hc.2.2.2.2]
-  obtain ⟨m, hm⟩ :
-      (((((Finset.univ.erase c₁).erase c₂).erase c₃).erase c₄).erase c₅).Nonempty := by
-    rw [← Finset.card_pos,
-      Finset.card_erase_of_mem (by simp [h₁₅.symm, h₂₅.symm, h₃₅.symm, h₄₅.symm]),
-      Finset.card_erase_of_mem (by simp [h₁₄.symm, h₂₄.symm, h₃₄.symm]),
-      Finset.card_erase_of_mem (by simp [h₁₃.symm, h₂₃.symm]),
-      Finset.card_erase_of_mem (by simp [h₁₂.symm]),
-      Finset.card_erase_of_mem (Finset.mem_univ c₁), Finset.card_univ]
-    omega
-  simp only [Finset.mem_erase, Finset.mem_univ, and_true] at hm
-  obtain ⟨hmc₅, hmc₄, hmc₃, hmc₂, hmc₁⟩ := hm
-  have hm' : m ∉ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component) := by
-    simp [hmc₁, hmc₂, hmc₃, hmc₄, hmc₅]
-  have hxne : x ≠ 0 := by
-    intro heq
-    have hxzero := congrFun heq c₁
-    rw [hx₁] at hxzero
-    norm_num at hxzero
-  have hneg := T.dotProduct_intersection_mulVec_neg
-    (x := x) hxne (hsupp m hm')
-  rw [T.dotProduct_intersection_mulVec_of_support_subset hsupp] at hneg
-  simp only [Finset.sum_insert (by simp [h₁₂, h₁₃, h₁₄, h₁₅] :
-      c₁ ∉ ({c₂, c₃, c₄, c₅} : Finset T.Component)),
-    Finset.sum_insert (by simp [h₂₃, h₂₄, h₂₅] :
-      c₂ ∉ ({c₃, c₄, c₅} : Finset T.Component)),
-    Finset.sum_insert (by simp [h₃₄, h₃₅] : c₃ ∉ ({c₄, c₅} : Finset T.Component)),
-    Finset.sum_pair h₄₅, hx₁, hx₂, hx₃, hx₄, hx₅, T.intersection_comm c₂ c₁,
-    T.intersection_comm c₃ c₁, T.intersection_comm c₄ c₁, T.intersection_comm c₅ c₁,
-    T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₂, T.intersection_comm c₅ c₂,
-    T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
-    h₁, h₂, h₃, h₄, h₅, a₁₂, a₁₃, a₁₄, a₁₅, z₂₃, z₂₄, z₂₅, z₃₄, z₃₅, z₄₅,
-    hw, hw₂, hw₃, hw₄, hw₅, mul_one] at hneg
+  have hneg := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
+    (y₁ := 2) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (by omega)
+  rw [h₁, h₂, h₃, h₄, h₅, a₁₂, a₁₃, a₁₄, a₁₅, z₂₃, z₂₄, z₂₅, z₃₄, z₃₅, z₄₅] at hneg
+  simp only [one_pow, mul_one] at hneg
+  rw [hw, hw₂, hw₃, hw₄, hw₅] at hneg
   linarith
 
 end NumericalType
