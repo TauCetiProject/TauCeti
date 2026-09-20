@@ -106,7 +106,7 @@ theorem adicOrd_def (x : 𝔸ᶠ[R, K]ˣ) (v : HeightOneSpectrum R) :
   simp only [adicOrd]
 
 /-- The `v`-adic order vanishes exactly at the places where the idele is a local unit. -/
-theorem adicOrd_eq_zero_iff {x : 𝔸ᶠ[R, K]ˣ} {v : HeightOneSpectrum R} :
+@[simp] theorem adicOrd_eq_zero_iff {x : 𝔸ᶠ[R, K]ˣ} {v : HeightOneSpectrum R} :
     adicOrd x v = 0 ↔ Valued.v ((x : 𝔸ᶠ[R, K]) v) = 1 := by
   rw [adicOrd_def, neg_eq_zero]
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, WithZero.log_one]⟩
@@ -173,7 +173,7 @@ fractional ideal of a finite idele is its `v`-adic order. -/
   exact FractionalIdeal.count_finprod K v _ (eventually_adicOrd_eq_zero x)
 
 /-- A finite idele defines the trivial fractional ideal exactly when all its orders vanish. -/
-theorem toFractionalIdeal_eq_one_iff {x : 𝔸ᶠ[R, K]ˣ} :
+@[simp] theorem toFractionalIdeal_eq_one_iff {x : 𝔸ᶠ[R, K]ˣ} :
     toFractionalIdeal x = 1 ↔ ∀ v : HeightOneSpectrum R, adicOrd x v = 0 := by
   refine ⟨fun h v ↦ ?_, fun h ↦ ?_⟩
   · rw [← count_coe_toFractionalIdeal x v, h, Units.val_one, FractionalIdeal.count_one]

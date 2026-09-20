@@ -22,8 +22,8 @@ about it that are not stated in Mathlib:
   finite adeles meet the diagonal copy of `K` in `R`;
 * **strong approximation**: `K` is dense in the finite adele ring.
 
-The second fact is the finite half of the discreteness of a number field in its adele ring.  The
-third says that an element of `K` can be made close to a given finite adele `a` at finitely many
+The third fact is the finite half of the discreteness of a number field in its adele ring.  The
+fourth says that an element of `K` can be made close to a given finite adele `a` at finitely many
 places while differing from `a` by an integral element at every other place.  Since the integral
 finite adeles are open, it implies that `K` and the integral finite adeles together span the finite
 adele ring additively.  For a number field the infinite places are what is omitted here: `K` is
