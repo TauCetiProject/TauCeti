@@ -32,12 +32,6 @@ namespace TauCeti.BinaryGolay
 
 variable (i : Fin 24)
 
-/-- A punctured binary Golay code has length twenty-three: deleting one of the twenty-four
-coordinates leaves twenty-three. -/
-theorem card_compl_singleton : Fintype.card ({i}ᶜ : Set (Fin 24)) = 23 := by
-  rw [Fintype.card_compl_set]
-  simp
-
 /-- A punctured binary Golay code has dimension twelve. -/
 @[simp]
 theorem finrank_punctureAt_code :
