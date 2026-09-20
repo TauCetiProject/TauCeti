@@ -19,12 +19,20 @@ localized to relatively compact subdomains.
 For an additive Haar measure, local integrability is also preserved by translating a function onto
 any set whose translate stays inside the original domain.
 
+A function locally integrable on a measurable set `s`, vanishing almost everywhere on `s` off a
+measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This is the
+step that turns a local hypothesis plus compact support into a global one. `K` is asked to be
+measurable separately from being compact: without a separation axiom on `X` a compact set need not
+be closed.
+
 ## Main declarations
 
 * `MeasureTheory.LocallyIntegrableOn.comp_add_right_of_mapsTo`: translation onto a smaller set
   preserves local integrability.
 * `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
   compact open subdomains.
+* `TauCeti.integrable_indicator_of_isCompact`: extension by zero of a function locally integrable
+  on a measurable set, supported in a measurable compact subset of it, is integrable.
 
 ## Attribution
 
@@ -60,10 +68,12 @@ end MeasureTheory
 
 namespace TauCeti
 
-variable {X ε : Type*} [MeasurableSpace X] [TopologicalSpace X]
-  [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε]
-  [LocallyCompactSpace X] [RegularSpace X]
-  {μ : Measure X} {f : X → ε} {Ω : Opens X}
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
+
+section RelativelyCompactSubdomains
+
+variable {ε : Type*} [TopologicalSpace ε] [ContinuousENorm ε] [PseudoMetrizableSpace ε]
+  [LocallyCompactSpace X] [RegularSpace X] {f : X → ε} {Ω : Opens X}
 
 /-- A function is locally integrable on an open set exactly when it is locally integrable on every
 open subdomain with compact closure contained in that set. -/
@@ -80,5 +90,32 @@ theorem locallyIntegrableOn_iff_forall_isCompact_closure :
     obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ :=
       exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
     exact (h ⟨V, hVo⟩ hVc hVΩ).integrableOn_compact_subset hKV hK
+
+end RelativelyCompactSubdomains
+
+section ExtendByZero
+
+variable {ε : Type*} [TopologicalSpace ε] [ESeminormedAddMonoid ε] [PseudoMetrizableSpace ε]
+  {f : X → ε} {s K : Set X}
+
+/-- A function locally integrable on a measurable set `s` and vanishing almost everywhere on `s`
+off a measurable compact `K ⊆ s` is, after extension by zero, integrable on the whole space.
+
+`K` is asked to be measurable on top of being compact, since without a separation axiom on `X` a
+compact set need not be closed. -/
+theorem integrable_indicator_of_isCompact (hs : MeasurableSet s) (hK : IsCompact K)
+    (hKmeas : MeasurableSet K) (hKs : K ⊆ s) (hloc : LocallyIntegrableOn f s μ)
+    (hf : ∀ᵐ x ∂μ.restrict s, x ∉ K → f x = 0) :
+    Integrable (s.indicator f) μ := by
+  have hae : s.indicator f =ᵐ[μ] K.indicator f := by
+    filter_upwards [(ae_restrict_iff' hs).1 hf] with x hx
+    by_cases hxs : x ∈ s
+    · by_cases hxK : x ∈ K
+      · rw [Set.indicator_of_mem hxs, Set.indicator_of_mem hxK]
+      · rw [Set.indicator_of_mem hxs, Set.indicator_of_notMem hxK, hx hxs hxK]
+    · rw [Set.indicator_of_notMem hxs, Set.indicator_of_notMem fun hxK => hxs (hKs hxK)]
+  exact ((hloc.integrableOn_compact_subset hKs hK).integrable_indicator hKmeas).congr hae.symm
+
+end ExtendByZero
 
 end TauCeti
