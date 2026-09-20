@@ -17,7 +17,7 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
   of itself.
-* `TauCeti.valuation_le_one_of_sub_sq_le_one`: if a unit-valued element differs from a square by
+* `TauCeti.valuation_le_one_of_sub_sq_le_one`: if an integral element differs from a square by
   an integral element, then the square root is integral.
 * `TauCeti.one_add_pow_ne_zero_of_valuation_lt_one`: a positive power of an element of valuation
   less than one cannot equal `-1`.
@@ -54,15 +54,15 @@ instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
 
 variable {K : Type*} [CommRing K] [ValuativeRel K]
 
-/-- If an element of valuation one differs from a square by an element of valuation at most one,
-then the square root also has valuation at most one. -/
-theorem valuation_le_one_of_sub_sq_le_one {u ξ : K} (hu : valuation K u = 1)
+/-- If an element of valuation at most one differs from a square by an element of valuation at
+most one, then the square root also has valuation at most one. -/
+theorem valuation_le_one_of_sub_sq_le_one {u ξ : K} (hu : valuation K u ≤ 1)
     (hξ : valuation K (u - ξ ^ 2) ≤ 1) : valuation K ξ ≤ 1 := by
   rw [← pow_le_one_iff (two_ne_zero), ← map_pow]
   calc
     valuation K (ξ ^ 2) = valuation K (u - (u - ξ ^ 2)) := by rw [sub_sub_cancel]
     _ ≤ max (valuation K u) (valuation K (u - ξ ^ 2)) := (valuation K).map_sub _ _
-    _ ≤ 1 := max_le hu.le hξ
+    _ ≤ 1 := max_le hu hξ
 
 /-- A positive power of an element of valuation less than one cannot equal `-1`. -/
 theorem one_add_pow_ne_zero_of_valuation_lt_one {x : K} (hx : valuation K x < 1)

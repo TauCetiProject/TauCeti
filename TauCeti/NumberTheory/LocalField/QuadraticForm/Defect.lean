@@ -382,12 +382,12 @@ section UnitDefect
 variable {π : 𝒪[K]}
 
 /-- **The improvement step of O'Meara 63:2.** In residue characteristic two, an approximation
-`u - ξ²` of a unit `u` of order exactly `2k` with `k < v_K(2)` is not optimal: writing
-`(u - ξ²)/π^{2k} ≡ s² mod 𝓂[K]`, which is possible because the residue field is perfect of
-characteristic two, the correction `ξ + π^k s` approximates `u` to order at least `2k + 1`.
-The hypothesis `k < v_K(2)` is what makes the cross term `2 ξ π^k s` negligible. -/
+`u - ξ²` of an integral element `u` of `Kˣ` of order exactly `2k` with `k < v_K(2)` is not
+optimal: writing `(u - ξ²)/π^{2k} ≡ s² mod 𝓂[K]`, which is possible because the residue field is
+perfect of characteristic two, the correction `ξ + π^k s` approximates `u` to order at least
+`2k + 1`. The hypothesis `k < v_K(2)` is what makes the cross term `2 ξ π^k s` negligible. -/
 theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
-    (hπ : Irreducible π) {u : Kˣ} (hu : valuation K (u : K) = 1) {ξ : K} {k : ℕ}
+    (hπ : Irreducible π) {u : Kˣ} (hu : valuation K (u : K) ≤ 1) {ξ : K} {k : ℕ}
     (hk : k < natCastValuation K 2 h2)
     (hξ : valuation K ((u : K) - ξ ^ 2) = valuation K (π : K) ^ (2 * k)) :
     ∃ η : K, valuation K ((u : K) - η ^ 2) ≤ valuation K (π : K) ^ (2 * k + 1) := by
@@ -525,7 +525,7 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
         (normalizedValuation_irreducible hπ) ((2 * k : ℕ) : ℤ) x).mp (by push_cast; omega)
       rw [hx] at h
       simpa only [zpow_natCast, Units.val_mk0] using h
-    obtain ⟨η, hη⟩ := exists_valuation_sub_sq_le_of_lt_natCastValuation h2 hπ hu
+    obtain ⟨η, hη⟩ := exists_valuation_sub_sq_le_of_lt_natCastValuation h2 hπ hu.le
       (k := k) (by omega) hξv
     have hle := (valuation_le_valuation_sub_sq_of_eq hsq hxd η).trans hη
     have h := (le_toAdd_normalizedValuation_iff_valuation_le_zpow
