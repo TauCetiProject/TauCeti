@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
+import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 
 /-!
