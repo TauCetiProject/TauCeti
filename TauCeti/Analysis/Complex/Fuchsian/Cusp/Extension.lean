@@ -65,16 +65,18 @@ theorem periodic_comp_ofComplex_inv_smul (D : Γ.CuspDatum) (f : ℍ → ℂ)
   simpa only [Subgroup.smul_def] using
     hf ⟨D.generator, D.generator_mem_stabilizer⟩ (D.scaling⁻¹ • z)
 
+/-- Pulling a holomorphic function back by the inverse cusp scaling is holomorphic. -/
+theorem mdifferentiable_inv_smul (D : Γ.CuspDatum) (f : ℍ → ℂ)
+    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) fun z : ℍ ↦ f (D.scaling⁻¹ • z) :=
+  hhol.comp <|
+    (contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling⁻¹).mdifferentiable (by simp)
+
 /-- The function of the q-variable associated to a function on the upper half-plane and normalized
 cusp data. Away from zero it is obtained by a logarithmic lift in the scaling coordinate; its
 value at zero is Mathlib's `limUnder` extension. -/
 def cuspExtension (D : Γ.CuspDatum) (f : ℍ → ℂ) : ℂ → ℂ :=
   UpperHalfPlane.cuspFunction D.width fun z ↦ f (D.scaling⁻¹ • z)
-
-/-- The cusp extension is Mathlib's periodic cusp function applied after inverse scaling. -/
-theorem cuspExtension_def (D : Γ.CuspDatum) (f : ℍ → ℂ) :
-    cuspExtension D f = UpperHalfPlane.cuspFunction D.width fun z ↦ f (D.scaling⁻¹ • z) :=
-  (rfl)
 
 /-- An invariant function is recovered by evaluating its cusp extension in the normalized
 q-coordinate. -/
@@ -82,7 +84,7 @@ q-coordinate. -/
 theorem cuspExtension_coordinate (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z) (z : ℍ) :
     cuspExtension D f (coordinate D z) = f z := by
-  rw [cuspExtension_def, coordinate_apply]
+  rw [cuspExtension, coordinate_apply]
   simpa using UpperHalfPlane.eq_cuspFunction (D.scaling • z) D.width_pos.ne'
     (periodic_comp_ofComplex_inv_smul D f hf)
 
@@ -119,15 +121,13 @@ theorem differentiableAt_cuspExtension_of_ne_zero (D : Γ.CuspDatum) (f : ℍ �
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) {q : ℂ} (hq : q ≠ 0) (hq_norm : ‖q‖ < 1) :
     DifferentiableAt ℂ (cuspExtension D f) q := by
-  rw [cuspExtension_def, ← Function.Periodic.qParam_right_inv D.width_pos.ne' hq]
+  rw [cuspExtension, ← Function.Periodic.qParam_right_inv D.width_pos.ne' hq]
   apply Function.Periodic.differentiableAt_cuspFunction D.width_pos.ne'
     (periodic_comp_ofComplex_inv_smul D f hf)
-  have hscaled : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) fun z : ℍ ↦ f (D.scaling⁻¹ • z) := hhol.comp <|
-    (contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling⁻¹).mdifferentiable (by simp)
   have him : 0 < (Function.Periodic.invQParam D.width q).im :=
     Function.Periodic.im_invQParam_pos_of_norm_lt_one D.width_pos hq_norm hq
   simpa only using UpperHalfPlane.mdifferentiableAt_iff.mp
-    (hscaled ⟨Function.Periodic.invQParam D.width q, him⟩)
+    (mdifferentiable_inv_smul D f hhol ⟨Function.Periodic.invQParam D.width q, him⟩)
 
 /-- An invariant holomorphic function descends to a holomorphic function on the punctured
 q-disc. -/
@@ -149,11 +149,10 @@ theorem analyticAt_cuspExtension_zero (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
     (hbounded : IsBoundedAtImInfty fun z ↦ f (D.scaling⁻¹ • z)) :
     AnalyticAt ℂ (cuspExtension D f) 0 := by
-  rw [cuspExtension_def]
+  rw [cuspExtension]
   apply UpperHalfPlane.analyticAt_cuspFunction_zero D.width_pos
     (periodic_comp_ofComplex_inv_smul D f hf)
-  · exact hhol.comp <|
-      (contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling⁻¹).mdifferentiable (by simp)
+  · exact mdifferentiable_inv_smul D f hhol
   · exact hbounded
 
 /-- For an invariant holomorphic function bounded at the cusp, the value of its holomorphic
@@ -163,7 +162,7 @@ theorem cuspExtension_zero_eq_valueAtInfty (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
     (hbounded : IsBoundedAtImInfty fun z ↦ f (D.scaling⁻¹ • z)) :
     cuspExtension D f 0 = valueAtInfty (fun z ↦ f (D.scaling⁻¹ • z)) := by
-  rw [cuspExtension_def]
+  rw [cuspExtension]
   exact UpperHalfPlane.cuspFunction_apply_zero D.width_pos
     (analyticAt_cuspExtension_zero D f hf hhol hbounded)
     (periodic_comp_ofComplex_inv_smul D f hf)
@@ -179,8 +178,7 @@ theorem isBigO_sub_cuspExtension_zero (D : Γ.CuspDatum) (f : ℍ → ℂ)
   rw [cuspExtension_zero_eq_valueAtInfty D f hf hhol hbounded]
   apply UpperHalfPlane.exp_decay_sub_atImInfty D.width_pos
     (periodic_comp_ofComplex_inv_smul D f hf)
-  · exact hhol.comp <|
-      (contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling⁻¹).mdifferentiable (by simp)
+  · exact mdifferentiable_inv_smul D f hhol
   · exact hbounded
 
 /-- If a function tends to zero in the normalized scaling coordinate, then the value of its cusp
@@ -189,7 +187,7 @@ extension at `q = 0` is zero. -/
 theorem cuspExtension_zero_eq_zero (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hzero : IsZeroAtImInfty fun z ↦ f (D.scaling⁻¹ • z)) :
     cuspExtension D f 0 = 0 := by
-  rw [cuspExtension_def]
+  rw [cuspExtension]
   exact UpperHalfPlane.IsZeroAtImInfty.cuspFunction_apply_zero hzero D.width_pos
 
 /-- An invariant holomorphic function that tends to zero at the cusp does so at the first
@@ -202,8 +200,7 @@ theorem isBigO_inv_smul_of_isZeroAtImInfty (D : Γ.CuspDatum) (f : ℍ → ℂ)
       fun z ↦ Real.exp (-2 * Real.pi * z.im / D.width) := by
   apply UpperHalfPlane.IsZeroAtImInfty.exp_decay_atImInfty hzero D.width_pos
     (periodic_comp_ofComplex_inv_smul D f hf)
-  · exact hhol.comp <|
-      (contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling⁻¹).mdifferentiable (by simp)
+  · exact mdifferentiable_inv_smul D f hhol
   · exact hzero.isBoundedAtImInfty
 
 end TauCeti.Subgroup.CuspDatum
