@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
+public import TauCeti.GroupTheory.Subgroup.FiniteFiltration
 
 /-!
 # The higher ramification groups of a place
@@ -212,30 +213,9 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
 on** (Stichtenoth, Proposition 3.8.5). -/
 theorem exists_forall_ramificationGroup_eq_bot [Finite (ramificationGroup F P 0)] :
     ∃ N : ℕ, ∀ i, N ≤ i → ramificationGroup F P i = ⊥ := by
-  classical
-  have := Fintype.ofFinite (ramificationGroup F P 0)
-  have key : ∀ g : ramificationGroup F P 0,
-      ∃ n : ℕ, ∀ i, n ≤ i → (g : P.integers.decompositionSubgroup F) ∈
-        ramificationGroup F P i → (g : P.integers.decompositionSubgroup F) = 1 := by
-    intro g
-    by_cases hg : ∀ i : ℕ, (g : P.integers.decompositionSubgroup F) ∈ ramificationGroup F P i
-    · exact ⟨0, fun i _ _ ↦ by
-        have : (g : P.integers.decompositionSubgroup F) ∈
-            (⊥ : Subgroup (P.integers.decompositionSubgroup F)) := by
-          rw [← iInf_ramificationGroup_eq_bot F P]
-          exact Subgroup.mem_iInf.mpr hg
-        rwa [Subgroup.mem_bot] at this⟩
-    · obtain ⟨n, hn⟩ : ∃ n : ℕ, (g : P.integers.decompositionSubgroup F) ∉
-          ramificationGroup F P n := by
-        by_contra h
-        exact hg fun i ↦ not_not.mp fun hi ↦ h ⟨i, hi⟩
-      exact ⟨n, fun i hi hmem ↦ absurd (ramificationGroup_antitone F P hi hmem) hn⟩
-  choose n hn using key
-  refine ⟨Finset.univ.sup n, fun i hi ↦ le_bot_iff.mp fun g hg ↦ ?_⟩
-  rw [Subgroup.mem_bot]
-  let g₀ : ramificationGroup F P 0 :=
-    ⟨g, ramificationGroup_antitone F P (Nat.zero_le i) hg⟩
-  exact hn g₀ i (le_trans (Finset.le_sup (Finset.mem_univ g₀)) hi) hg
+  exact Subgroup.exists_forall_eq_bot_of_antitone_iInf_eq_bot
+    (ramificationGroup F P) (ramificationGroup_antitone F P)
+    (iInf_ramificationGroup_eq_bot F P)
 
 end Defs
 
