@@ -38,6 +38,8 @@ multiplicities of a minimal numerical type.
   the cross-products `mⱼ xᵢ = mᵢ xⱼ` agree, i.e. when `x` is proportional to `m`.
 * `TauCeti.NumericalType.dotProduct_intersection_mulVec_neg`: `xᵀ A x < 0` for a nonzero `x`
   vanishing at some component.
+* `TauCeti.NumericalType.dotProduct_intersection_mulVec_of_support_subset`: `xᵀ A x` is the sum
+  over the principal submatrix carrying the support of `x`.
 * `TauCeti.NumericalType.intersection_sq_lt_intersection_mul_intersection`: `aᵢⱼ² < aᵢᵢ aⱼⱼ` for
   distinct components when there are more than two components.
 * `TauCeti.NumericalType.intersection_det_triple_neg`: the determinant of the principal `3 × 3`
@@ -132,6 +134,17 @@ theorem dotProduct_intersection_mulVec_neg {x : T.Component → ℤ} (hx : x ≠
   rw [hi, mul_zero, mul_eq_zero] at hij
   exact hij.resolve_left (Int.natCast_ne_zero.mpr (T.multiplicity i).ne_zero)
 
+/-- The intersection form evaluated at a vector supported on a finite set of components is the
+corresponding sum over the principal submatrix on that set. -/
+theorem dotProduct_intersection_mulVec_of_support_subset {s : Finset T.Component}
+    {x : T.Component → ℤ} (hx : ∀ i ∉ s, x i = 0) :
+    x ⬝ᵥ T.intersection *ᵥ x = ∑ i ∈ s, ∑ j ∈ s, T.intersection i j * x i * x j := by
+  rw [dotProduct, ← sum_subset (subset_univ s) fun i _ hi ↦ by rw [hx i hi, zero_mul]]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [mulVec, dotProduct, mul_sum,
+    ← sum_subset (subset_univ s) fun j _ hj ↦ by rw [hx j hj, mul_zero, mul_zero]]
+  exact sum_congr rfl fun j _ ↦ by ring
+
 /-! ### Two components -/
 
 /-- The intersection form evaluated at a vector supported on two distinct components. -/
@@ -139,11 +152,9 @@ private lemma dotProduct_intersection_mulVec_of_support_pair {i j : T.Component}
     (x : T.Component → ℤ) (hx : ∀ k, k ≠ i ∧ k ≠ j → x k = 0) :
     x ⬝ᵥ T.intersection *ᵥ x = T.intersection i i * x i ^ 2 +
       2 * T.intersection i j * x i * x j + T.intersection j j * x j ^ 2 := by
-  have hrow (k : T.Component) : (T.intersection *ᵥ x) k =
-      T.intersection k i * x i + T.intersection k j * x j := by
-    rw [mulVec, dotProduct, Fintype.sum_eq_add i j hij fun l hl ↦ by rw [hx l hl, mul_zero]]
-  rw [dotProduct, Fintype.sum_eq_add i j hij fun l hl ↦ by rw [hx l hl, zero_mul], hrow, hrow,
-    T.intersection_comm j i]
+  rw [T.dotProduct_intersection_mulVec_of_support_subset (s := {i, j})
+    fun k hk ↦ hx k (by simpa [not_or] using hk)]
+  simp only [sum_pair hij, T.intersection_comm j i]
   ring
 
 /-- In a numerical type with more than two components, the intersection numbers of two
@@ -173,17 +184,6 @@ theorem intersection_sq_lt_intersection_mul_intersection (hcard : 2 < Fintype.ca
 
 /-! ### Three components -/
 
-/-- A sum over the components of a function vanishing outside three distinct components. -/
-private lemma sum_eq_of_support_triple {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
-    (hjk : j ≠ k) (y : T.Component → ℤ) (hy : ∀ l, l ≠ i → l ≠ j → l ≠ k → y l = 0) :
-    ∑ l, y l = y i + y j + y k := by
-  have hsub : ∑ l ∈ ({i, j, k} : Finset T.Component), y l = ∑ l, y l := by
-    refine sum_subset (subset_univ _) fun l _ hl ↦ ?_
-    simp only [mem_insert, mem_singleton, not_or] at hl
-    exact hy l hl.1 hl.2.1 hl.2.2
-  rw [← hsub, sum_insert (by simp [hij, hik]), sum_insert (by simp [hjk]), sum_singleton]
-  ring
-
 /-- The intersection form evaluated at a vector supported on three distinct components. -/
 private lemma dotProduct_intersection_mulVec_of_support_triple {i j k : T.Component} (hij : i ≠ j)
     (hik : i ≠ k) (hjk : j ≠ k) (x : T.Component → ℤ)
@@ -192,13 +192,10 @@ private lemma dotProduct_intersection_mulVec_of_support_triple {i j k : T.Compon
       T.intersection i i * x i ^ 2 + T.intersection j j * x j ^ 2 +
         T.intersection k k * x k ^ 2 + 2 * T.intersection i j * x i * x j +
         2 * T.intersection i k * x i * x k + 2 * T.intersection j k * x j * x k := by
-  have hrow (l : T.Component) : (T.intersection *ᵥ x) l =
-      T.intersection l i * x i + T.intersection l j * x j + T.intersection l k * x k := by
-    rw [mulVec, dotProduct]
-    exact T.sum_eq_of_support_triple hij hik hjk _ fun m h₁ h₂ h₃ ↦ by
-      rw [hx m h₁ h₂ h₃, mul_zero]
-  rw [dotProduct, T.sum_eq_of_support_triple hij hik hjk _
-    (fun l h₁ h₂ h₃ ↦ by rw [hx l h₁ h₂ h₃, zero_mul]), hrow i, hrow j, hrow k,
+  rw [T.dotProduct_intersection_mulVec_of_support_subset (s := {i, j, k}) fun l hl ↦ by
+    simp only [mem_insert, mem_singleton, not_or] at hl
+    exact hx l hl.1 hl.2.1 hl.2.2]
+  simp only [sum_insert (by simp [hij, hik] : i ∉ ({j, k} : Finset T.Component)), sum_pair hjk,
     T.intersection_comm j i, T.intersection_comm k i, T.intersection_comm k j]
   ring
 
