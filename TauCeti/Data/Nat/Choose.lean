@@ -35,7 +35,7 @@ summation index. The weighted sum is again a single binomial coefficient,
 ## References
 
 * R. L. Graham, D. E. Knuth, O. Patashnik, *Concrete Mathematics*, 2nd ed., Addison-Wesley, 1994,
-  Section 5.1 (the absorption identity) and Section 5.2 (Vandermonde's convolution).
+  Section 5.1 (the absorption identity and Vandermonde's convolution, equation (5.27)).
 -/
 
 public section
@@ -84,8 +84,8 @@ theorem descFactorial_mul_choose {m i : ℕ} (hmi : m ≤ i) (A : ℕ) :
 /-- **Vandermonde's convolution weighted by a falling factorial of the summation index.**
 
 Weighting the `i`th summand of `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` by `(i)ₘ` multiplies
-the value by `(A)ₘ` and lowers both indices by `m`. The cases `m = 1` and `m = 2` are the first
-two factorial moments of a hypergeometric law. -/
+the value by `(A)ₘ` and lowers both indices by `m`. After division by `C(A + B, r)`, the cases
+`m = 1` and `m = 2` give the first two factorial moments of a hypergeometric law. -/
 theorem sum_range_descFactorial_mul_choose_mul_choose {m r : ℕ} (hmr : m ≤ r) (A B : ℕ) :
     ∑ i ∈ range (r + 1), i.descFactorial m * (A.choose i * B.choose (r - i)) =
       A.descFactorial m * (A + B - m).choose (r - m) := by
@@ -101,9 +101,9 @@ theorem sum_range_descFactorial_mul_choose_mul_choose {m r : ℕ} (hmr : m ≤ r
   -- is the unweighted convolution of `A - m` with `B`.
   have key : ∑ i ∈ range (r + 1), i.descFactorial m * (A.choose i * B.choose (r - i)) =
       A.descFactorial m * (A - m + B).choose (r - m) := by
+    have hrange : r + 1 - m = r - m + 1 := by omega
     rw [← Finset.sum_subset hsub hvanish, Finset.sum_Ico_eq_sum_range,
-      show r + 1 - m = r - m + 1 from by omega,
-      Nat.add_choose_eq, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+      hrange, Nat.add_choose_eq, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
         (fun i j ↦ (A - m).choose i * B.choose j) (r - m), Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ => ?_
     have hri : r - (m + i) = r - m - i := by omega
@@ -111,7 +111,8 @@ theorem sum_range_descFactorial_mul_choose_mul_choose {m r : ℕ} (hmr : m ≤ r
       Nat.add_sub_cancel_left, Nat.mul_assoc]
   -- The two ways of subtracting `m` agree unless `A < m`, where `(A)ₘ` is zero anyway.
   rcases le_or_gt m A with hmA | hmA
-  · rwa [show A + B - m = A - m + B from by omega]
+  · have hsub_add : A + B - m = A - m + B := by omega
+    rwa [hsub_add]
   · rw [Nat.descFactorial_eq_zero_iff_lt.2 hmA] at key ⊢
     simpa using key
 
