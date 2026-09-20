@@ -60,17 +60,20 @@ noncomputable def expMonoidHom : Multiplicative R →* R⟦X⟧ where
 
 variable {R}
 
-/- The public lemma below cannot unfold `PowerSeries.expMonoidHom` itself: the module system only
-lets an exported theorem unfold exposed definitions. -/
-private theorem expMonoidHom_apply (a : Multiplicative R) :
+private theorem expMonoidHom_apply_def (a : Multiplicative R) :
     expMonoidHom R a = rescale a.toAdd (exp R) :=
   rfl
 
-/-- `e^{aX}` is the exponential series rescaled by `a`. -/
+/-- The exponential monoid homomorphism sends `a` to the exponential series rescaled by `a`. -/
 @[simp]
+theorem expMonoidHom_apply (a : Multiplicative R) :
+    expMonoidHom R a = rescale a.toAdd (exp R) :=
+  expMonoidHom_apply_def a
+
+/-- `e^{aX}` is the exponential series rescaled by `a`. -/
 theorem expMonoidHom_ofAdd (a : R) :
     expMonoidHom R (Multiplicative.ofAdd a) = rescale a (exp R) := by
-  rw [expMonoidHom_apply, toAdd_ofAdd]
+  simp only [expMonoidHom_apply, toAdd_ofAdd]
 
 end PowerSeries
 
