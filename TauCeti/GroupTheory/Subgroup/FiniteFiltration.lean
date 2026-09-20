@@ -15,13 +15,13 @@ intersection is trivial. This elementary observation is useful for ramification 
 
 ## Main results
 
-* `Subgroup.exists_forall_eq_bot_of_antitone_iInf_eq_bot`: a decreasing filtration with finite
+* `TauCeti.exists_forall_eq_bot_of_antitone_iInf_eq_bot`: a decreasing filtration with finite
   first term and trivial intersection is eventually trivial.
 -/
 
 public section
 
-namespace Subgroup
+namespace TauCeti
 
 variable {G : Type*} [Group G]
 
@@ -49,4 +49,4 @@ theorem exists_forall_eq_bot_of_antitone_iInf_eq_bot (f : ℕ → Subgroup G) (h
   let g₀ : f 0 := ⟨g, hf (Nat.zero_le i) hg⟩
   exact hn g₀ i (le_trans (Finset.le_sup (Finset.mem_univ g₀)) hi) hg
 
-end Subgroup
+end TauCeti

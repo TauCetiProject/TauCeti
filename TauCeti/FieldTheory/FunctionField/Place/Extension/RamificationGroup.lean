@@ -213,7 +213,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
 on** (Stichtenoth, Proposition 3.8.5). -/
 theorem exists_forall_ramificationGroup_eq_bot [Finite (ramificationGroup F P 0)] :
     ∃ N : ℕ, ∀ i, N ≤ i → ramificationGroup F P i = ⊥ := by
-  exact Subgroup.exists_forall_eq_bot_of_antitone_iInf_eq_bot
+  exact TauCeti.exists_forall_eq_bot_of_antitone_iInf_eq_bot
     (ramificationGroup F P) (ramificationGroup_antitone F P)
     (iInf_ramificationGroup_eq_bot F P)
 
