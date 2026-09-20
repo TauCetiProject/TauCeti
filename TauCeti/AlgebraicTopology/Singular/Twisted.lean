@@ -438,7 +438,10 @@ lemma ιTwistedChainComplex_twistedChainComplexConstantIso_hom (M : ModuleCat.{m
 variable (X) in
 /-- In each degree, the inverse of the comparison of the twisted chain complex with the ordinary
 singular chain complex carries the summand of a simplex `σ` onto the twisted summand of `σ`. -/
-@[reassoc (attr := simp)]
+-- No `reassoc` here, unlike for the forward comparison: the coproduct is only definitionally the
+-- degree-`k` term of the singular chain complex, so `Category.assoc` cannot see through the left
+-- hand side and the reassociated lemma would come out unassociated, hence redundant.
+@[simp]
 lemma ι_twistedChainComplexConstantIso_inv (M : ModuleCat.{max v w} R) (k : ℕ)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     Sigma.ι (fun _ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ M) σ ≫
