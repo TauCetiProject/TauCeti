@@ -34,8 +34,11 @@ variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing S]
 over `R`: localizing a local ring at its maximal ideal inverts only units. -/
 theorem isUnramifiedAt_maximalIdeal_iff :
     Algebra.IsUnramifiedAt R (IsLocalRing.maximalIdeal S) ↔ Algebra.FormallyUnramified R S :=
+  have primeCompl_le : (IsLocalRing.maximalIdeal S).primeCompl ≤ IsUnit.submonoid S :=
+    fun x hx ↦ (IsUnit.mem_submonoid_iff x).2
+      (IsLocalRing.notMem_maximalIdeal.1 (Ideal.mem_primeCompl_iff.1 hx))
   (Algebra.FormallyUnramified.iff_of_equiv
     ((IsLocalization.atUnits S (IsLocalRing.maximalIdeal S).primeCompl
-      fun x ↦ by simpa using! fun a ↦ a).restrictScalars R)).symm
+      primeCompl_le).restrictScalars R)).symm
 
 end TauCeti

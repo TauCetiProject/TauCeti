@@ -40,8 +40,8 @@ directions.
 
 * `TauCeti.isUnramified_iff_ramificationIndex_eq_one`: the separability condition is automatic,
   so the predicate is `e(L/K) = 1`.
-* `TauCeti.isUnramified_iff_surjective_normalizedValuation`: `L/K` is unramified exactly when the
-  normalized value group of `K` is carried onto that of `L`.
+* `TauCeti.isUnramified_iff_normalizedValuation_comp_unitsMap_surjective`: `L/K` is unramified
+  exactly when the normalized value group of `K` is carried onto that of `L`.
 * `TauCeti.isUnramified_iff_normalizedValuation_algebraMap`: `L/K` is unramified exactly when the
   normalized valuation of `L` restricts to that of `K`.
 * `TauCeti.isUnramified_iff_map_maximalIdeal_eq`: `L/K` is unramified exactly when `𝓂[K]`
@@ -103,7 +103,7 @@ variable (K L) in
 group of `K` is carried onto the normalized value group of `L`.** This is the form the definition
 takes for a general valued field: the map of value groups is injective in any case, so
 unramifiedness is exactly its surjectivity. -/
-theorem isUnramified_iff_surjective_normalizedValuation :
+theorem isUnramified_iff_normalizedValuation_comp_unitsMap_surjective :
     IsUnramified K L ↔ Function.Surjective
       ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
   rw [isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_def, Subgroup.index_eq_one,
@@ -140,6 +140,7 @@ theorem isUnramified_iff_map_maximalIdeal_eq :
 
 /-- In an unramified extension the maximal ideal of `𝒪[K]` generates the maximal ideal of
 `𝒪[L]`. -/
+@[simp]
 theorem IsUnramified.map_maximalIdeal [IsUnramified K L] :
     𝓂[K].map (algebraMap 𝒪[K] 𝒪[L]) = 𝓂[L] :=
   (isUnramified_iff_map_maximalIdeal_eq K L).1 ‹_›
@@ -162,6 +163,7 @@ theorem isUnramified_iff_inertiaDegree_eq_finrank :
   exact Nat.eq_of_mul_eq_mul_right inertiaDegree_pos (by rw [← h, one_mul])
 
 /-- In an unramified extension the residue degree is the degree of the extension. -/
+@[simp]
 theorem IsUnramified.inertiaDegree_eq_finrank [IsUnramified K L] :
     inertiaDegree K L = Module.finrank K L :=
   (isUnramified_iff_inertiaDegree_eq_finrank K L).1 ‹_›
