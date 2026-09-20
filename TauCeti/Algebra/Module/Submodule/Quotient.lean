@@ -48,6 +48,7 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
 `symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`. -/
+@[simp]
 theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
     p.mapIic.symm N = (N : Submodule R M).comap p.subtype :=
   rfl
@@ -133,6 +134,7 @@ variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMon
 
 /-- An injective linear map carries the trace of `A` in `B` onto the trace of `A.map f` in
 `B.map f`, so it descends to the subquotients. -/
+@[simp]
 theorem map_equivMapOfInjective_comap_subtype (f : M →ₗ[R] N) (hf : Function.Injective f)
     (A B : Submodule R M) :
     Submodule.map ((Submodule.equivMapOfInjective f hf B : ↥B ≃ₗ[R] ↥(B.map f)) :
