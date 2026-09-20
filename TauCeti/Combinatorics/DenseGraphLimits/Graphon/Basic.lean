@@ -45,8 +45,8 @@ homomorphism densities, the cut metric, sampling — integrates against `μ` and
   kernel;
 * `Graphon.nonneg`, `Graphon.le_one` — the pointwise range constraint, in eliminator form;
 * `Graphon.const_apply` — the constant graphon evaluates to its parameter.
-* `Graphon.clampSymm_apply_of_mem` — symmetrizing and clamping leaves a symmetric value already in
-  `[0, 1]` unchanged.
+* `Graphon.clampSymm_apply_of_symm_of_mem` — symmetrizing and clamping leaves a symmetric value
+  already in `[0, 1]` unchanged.
 
 ## References
 
@@ -126,7 +126,6 @@ theorem le_one (W : Graphon Ω μ) (x y : Ω) : W x y ≤ 1 := (W.mem_Icc x y).2
 This is the common strict-representative construction: averaging enforces pointwise symmetry, and
 clamping enforces the graphon range without changing values that were already symmetric and in
 `[0, 1]`. -/
-@[expose]
 noncomputable def clampSymm (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω → Ω → ℝ)
     (hf : Measurable (Function.uncurry f)) : Graphon Ω μ where
   toSymmKernel :=
@@ -143,10 +142,12 @@ noncomputable def clampSymm (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω 
 @[simp]
 theorem clampSymm_apply (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω → Ω → ℝ)
     (hf : Measurable (Function.uncurry f)) (x y : Ω) :
-    clampSymm μ f hf x y = max 0 (min 1 ((f x y + f y x) / 2)) := rfl
+    clampSymm μ f hf x y = max 0 (min 1 ((f x y + f y x) / 2)) := (rfl)
 
 /-- Symmetrizing and clamping does not change a value that is symmetric and already in `[0, 1]`. -/
-theorem clampSymm_apply_of_mem (μ : Measure Ω) [IsProbabilityMeasure μ] (f : Ω → Ω → ℝ)
+@[simp]
+theorem clampSymm_apply_of_symm_of_mem (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (f : Ω → Ω → ℝ)
     (hf : Measurable (Function.uncurry f)) {x y : Ω} (hsymm : f x y = f y x)
     (hmem : f x y ∈ Set.Icc (0 : ℝ) 1) : clampSymm μ f hf x y = f x y := by
   rw [clampSymm_apply, ← hsymm, add_self_div_two, min_eq_right hmem.2,

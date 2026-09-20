@@ -12,8 +12,9 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Prod
 /-!
 # Boolean coordinates for a measurable function on a product
 
-A measurable function `f : α × β → γ` into a standard Borel space depends on only countably many
-measurable sets of each factor, so it factors through a pair of maps into the Cantor space
+A measurable function `f : α × β → γ` into a nonempty standard Borel space depends on only
+countably many measurable sets of each factor, so it factors through a pair of maps into the
+Cantor space
 `ℕ → Bool`: there are measurable `q : α → ℕ → Bool`, `r : β → ℕ → Bool` and a measurable
 `g : (ℕ → Bool) × (ℕ → Bool) → γ` with `f = g ∘ Prod.map q r`
 (`Measurable.exists_eq_measurable_comp_prodMap`). When both factors are the same space one
@@ -101,9 +102,9 @@ theorem exists_measurable_generateFrom_le_comap [MeasurableSpace α] {C : Set (S
     by ext x; simp [MeasurableSpace.mapNatBool]⟩
 
 /-- **A measurable function on a product factors through Boolean coordinates.** A measurable
-`f : α × β → γ` into a standard Borel space is a measurable function of countably many Boolean
-coordinates of each argument: no hypothesis on `α` or `β` is needed, which is what lets a kernel on
-an arbitrary carrier be transported to a standard Borel one. -/
+`f : α × β → γ` into a nonempty standard Borel space is a measurable function of countably many
+Boolean coordinates of each argument: no hypothesis on `α` or `β` is needed, which is what lets a
+kernel on an arbitrary carrier be transported to a standard Borel one. -/
 theorem _root_.Measurable.exists_eq_measurable_comp_prodMap [MeasurableSpace α]
     [MeasurableSpace β] [MeasurableSpace γ]
     [StandardBorelSpace γ] [Nonempty γ] {f : α × β → γ} (hf : Measurable f) :
@@ -117,11 +118,13 @@ theorem _root_.Measurable.exists_eq_measurable_comp_prodMap [MeasurableSpace α]
   have hCmeas : ∀ c ∈ C, MeasurableSet c :=
     fun c hc => hf.comap_le c (hCgen ▸ measurableSet_generateFrom hc)
   -- Each generator uses only countably many measurable rectangles.
+  have hcprod : ∀ c ∈ C, MeasurableSet[generateFrom
+      (image2 (· ×ˢ ·) {s : Set α | MeasurableSet s} {t : Set β | MeasurableSet t})] c := by
+    intro c hc
+    rw [generateFrom_prod]
+    exact hCmeas c hc
   choose D hDrect hDcount hD using fun c (hc : c ∈ C) =>
-    (show MeasurableSet[generateFrom (image2 (· ×ˢ ·) {s : Set α | MeasurableSet s}
-      {t : Set β | MeasurableSet t})] c by
-        rw [generateFrom_prod]
-        exact hCmeas c hc).exists_countable_subset_generateFrom
+    (hcprod c hc).exists_countable_subset_generateFrom
   set R : Set (Set (α × β)) := ⋃ (c : Set (α × β)) (hc : c ∈ C), D c hc
   have hRcount : R.Countable := hCcount.biUnion hDcount
   have hRrect : R ⊆ image2 (· ×ˢ ·) {s : Set α | MeasurableSet s} {t : Set β | MeasurableSet t} :=
@@ -143,18 +146,16 @@ theorem _root_.Measurable.exists_eq_measurable_comp_prodMap [MeasurableSpace α]
   have hprod : MeasurableSpace.comap f (inferInstance : MeasurableSpace γ) ≤
       MeasurableSpace.comap (Prod.map q r)
         (inferInstance : MeasurableSpace ((ℕ → Bool) × (ℕ → Bool))) := by
-    rw [hCgen]
-    change generateFrom C ≤ MeasurableSpace.comap (Prod.map q r)
-      ((inferInstance : MeasurableSpace (ℕ → Bool)).prod inferInstance)
-    rw [MeasurableSpace.comap_prodMap]
+    rw [hCgen, Prod.instMeasurableSpace, MeasurableSpace.comap_prodMap]
     exact hCR.trans (hstep.trans (sup_le_sup (MeasurableSpace.comap_mono hq)
       (MeasurableSpace.comap_mono hr)))
   obtain ⟨g, hgmeas, hgeq⟩ := (measurable_iff_comap_le.2 hprod).exists_eq_measurable_comp
   exact ⟨q, r, g, hqmeas, hrmeas, hgmeas, hgeq⟩
 
-/-- **A measurable function on a square factors through one set of Boolean coordinates.** The
-diagonal form of `Measurable.exists_eq_measurable_comp_prodMap`: a measurable equivalence combines
-the two coordinate maps into one, which is what a symmetric function of two arguments needs. -/
+/-- **A measurable function on a square factors through one set of Boolean coordinates.** For a
+nonempty standard Borel target, the diagonal form of
+`Measurable.exists_eq_measurable_comp_prodMap` uses a measurable equivalence to combine the two
+coordinate maps into one, which is what a symmetric function of two arguments needs. -/
 theorem _root_.Measurable.exists_eq_measurable_comp_prodMap_self [MeasurableSpace α]
     [MeasurableSpace γ]
     [StandardBorelSpace γ] [Nonempty γ] {f : α × α → γ} (hf : Measurable f) :
@@ -170,8 +171,8 @@ theorem _root_.Measurable.exists_eq_measurable_comp_prodMap_self [MeasurableSpac
     hg.comp (e.symm.measurable.fst.prodMap e.symm.measurable.snd), ?_⟩
   rw [hfeq]
   funext z
-  change g (q z.1, r z.2) =
-    g ((e.symm (e (q z.1, r z.1))).1, (e.symm (e (q z.2, r z.2))).2)
+  rcases z with ⟨x, y⟩
+  dsimp only [Function.comp_apply, Prod.map, p]
   rw [e.symm_apply_apply, e.symm_apply_apply]
 
 end MeasureTheory

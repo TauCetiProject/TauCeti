@@ -64,9 +64,9 @@ theorem Graphon.exists_comap_natBool (W : Graphon Ω μ) :
   let V : Graphon (ℕ → Bool) (μ.map q) := Graphon.clampSymm (μ.map q) (fun a b => g (a, b)) hg
   have hVq : ∀ x y, V (q x) (q y) = W x y := by
     intro x y
-    change Graphon.clampSymm (μ.map q) (fun a b => g (a, b)) hg (q x) (q y) = W x y
+    dsimp only [V]
     calc
-      _ = g (q x, q y) := Graphon.clampSymm_apply_of_mem (μ.map q)
+      _ = g (q x, q y) := Graphon.clampSymm_apply_of_symm_of_mem (μ.map q)
         (fun a b => g (a, b)) hg (x := q x) (y := q y)
         (by rw [hgq, hgq, W.symm]) (by rw [hgq]; exact W.mem_Icc x y)
       _ = W x y := hgq x y

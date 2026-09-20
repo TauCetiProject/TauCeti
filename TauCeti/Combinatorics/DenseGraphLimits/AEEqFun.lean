@@ -282,9 +282,10 @@ theorem exists_graphon_repr (f : (Ω × Ω) →ₘ[μ.prod μ] ℝ)
   refine ⟨Graphon.clampSymm μ g hgmeas, ?_⟩
   refine Graphon.toAEEqFun_eq_of_ae ?_
   filter_upwards [hbdd, hsymm] with p hp hps
-  change f p = f (p.2, p.1) at hps
-  exact Graphon.clampSymm_apply_of_mem μ g hgmeas (x := p.1) (y := p.2)
-    (by simpa only [g] using hps) (by simpa only [g] using hp)
+  rcases p with ⟨x, y⟩
+  have hps' : f (x, y) = f (y, x) := by simpa only [Prod.swap_prod_mk] using hps
+  exact Graphon.clampSymm_apply_of_symm_of_mem μ g hgmeas (x := x) (y := y)
+    (by simpa only [g] using hps') (by simpa only [g] using hp)
 
 /-- **The classes that come from graphons are exactly the a.e. `[0, 1]`-valued, a.e. symmetric
 ones.**  The forward direction is the pointwise range and symmetry of a strict graphon read on its
