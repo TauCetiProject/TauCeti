@@ -33,6 +33,10 @@ between any two points; `default` is that morphism. -/
 noncomputable instance instUniqueHom (x y : FundamentalGroupoid X) : Unique (x ⟶ y) :=
   ((simply_connected_iff_unique_homotopic X).mp inferInstance).2 x.as y.as |>.some
 
+end FundamentalGroupoid
+
+namespace CategoryTheory.Functor
+
 variable {D : Type*} [Category D] (F : FundamentalGroupoid X ⥤ D)
 
 /-- A functor out of the fundamental groupoid of a simply connected space sends the unique
@@ -50,4 +54,4 @@ theorem map_default_comp (x y z : FundamentalGroupoid X) :
   rw [← F.map_comp]
   exact congrArg _ (Subsingleton.elim _ _)
 
-end FundamentalGroupoid
+end CategoryTheory.Functor
