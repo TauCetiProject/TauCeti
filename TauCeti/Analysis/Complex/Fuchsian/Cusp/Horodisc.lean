@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Coordinate
--- supplies the discreteness of the conjugate group `σ Γ σ⁻¹`
-import TauCeti.Analysis.Complex.Fuchsian.Covolume
 import TauCeti.Analysis.Complex.Fuchsian.Shimizu
 
 /-!
@@ -32,11 +30,12 @@ The bound `w ≤ A` is exactly Shimizu's lemma
 
 ## Main results
 
-* `TauCeti.Subgroup.CuspDatum.smul_setOf_lt_im_of_mem_stabilizer`: the cusp stabilizer preserves
+* `TauCeti.Subgroup.CuspDatum.smul_horodisc_of_mem_stabilizer`: the cusp stabilizer preserves
   every horodisc.
-* `TauCeti.Subgroup.CuspDatum.mem_stabilizer_of_lt_im_of_lt_im_smul`: precise invariance.
-* `TauCeti.Subgroup.CuspDatum.disjoint_smul_setOf_lt_im` and
-  `TauCeti.Subgroup.CuspDatum.disjoint_smul_setOf_lt_im_self`: the translates of a high horodisc
+* `TauCeti.Subgroup.CuspDatum.mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc`: precise
+  invariance.
+* `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc` and
+  `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc_self`: the translates of a high horodisc
   by two elements lying in different cosets of the cusp stabilizer are disjoint.
 
 ## References
@@ -50,31 +49,49 @@ The bound `w ≤ A` is exactly Shimizu's lemma
 public section
 
 open Matrix.ProjectiveSpecialLinearGroup MulAction OnePoint UpperHalfPlane
-open scoped MatrixGroups Pointwise
+open scoped Complex.UnitDisc MatrixGroups Pointwise
 
 namespace TauCeti.Subgroup.CuspDatum
 
 variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
 
+/-- The horodisc of height `A` at the cusp represented by `D`, in its normalized scaling
+coordinate. -/
+def horodisc (A : ℝ) : Set ℍ := {z | A < (D.scaling • z).im}
+
+/-- Membership in a horodisc is the corresponding lower bound on the scaled imaginary part. -/
+@[simp]
+theorem mem_horodisc {A : ℝ} {z : ℍ} : z ∈ horodisc D A ↔ A < (D.scaling • z).im := Iff.rfl
+
+/-- A horodisc is the inverse image of the corresponding punctured disc under the normalized
+q-coordinate. -/
+theorem norm_qCoordinate_lt_iff_mem_horodisc (A : ℝ) (z : ℍ) :
+    ‖((qCoordinate D z : 𝔻) : ℂ)‖ < Real.exp (-2 * Real.pi * A / D.width) ↔
+      z ∈ horodisc D A := by
+  rw [norm_qCoordinate_lt_iff, mem_horodisc]
+
 /-- In the scaling coordinate the cusp stabilizer acts by translations, so it preserves the
 height above the real axis. -/
+@[simp]
 theorem im_scaling_smul_smul_of_mem_stabilizer {g : Γ} (hg : g ∈ stabilizer Γ D.cusp) (z : ℍ) :
     (D.scaling • (g • z)).im = (D.scaling • z).im := by
   obtain ⟨n, rfl⟩ := D.mem_stabilizer_iff.mp hg
   rw [scaling_smul_generator_zpow, vadd_im]
 
 /-- **The cusp stabilizer preserves every horodisc at its cusp.** -/
-theorem smul_setOf_lt_im_of_mem_stabilizer {g : Γ} (hg : g ∈ stabilizer Γ D.cusp) (A : ℝ) :
-    g • {z : ℍ | A < (D.scaling • z).im} = {z : ℍ | A < (D.scaling • z).im} := by
+@[simp]
+theorem smul_horodisc_of_mem_stabilizer {g : Γ} (hg : g ∈ stabilizer Γ D.cusp) (A : ℝ) :
+    g • horodisc D A = horodisc D A := by
   ext z
-  rw [Set.mem_smul_set_iff_inv_smul_mem, Set.mem_ofPred_eq, Set.mem_ofPred_eq,
+  rw [Set.mem_smul_set_iff_inv_smul_mem, mem_horodisc, mem_horodisc,
     im_scaling_smul_smul_of_mem_stabilizer D (inv_mem hg)]
 
 /-- **Precise invariance of high horodiscs.** Let `D` be a normalized cusp datum of a discrete
 `Γ ≤ PSL(2, ℝ)` and let the height `A` be at least the width of `D`. If an element of `Γ` carries
 a point of the horodisc of height `A` back into that horodisc, then it fixes the cusp. -/
-theorem mem_stabilizer_of_lt_im_of_lt_im_smul [DiscreteTopology Γ] {A : ℝ} (hA : D.width ≤ A)
-    {g : Γ} {z : ℍ} (hz : A < (D.scaling • z).im) (hgz : A < (D.scaling • (g • z)).im) :
+theorem mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc [DiscreteTopology Γ] {A : ℝ}
+    (hA : D.width ≤ A) {g : Γ} {z : ℍ} (hz : z ∈ horodisc D A)
+    (hgz : g • z ∈ horodisc D A) :
     g ∈ stabilizer Γ D.cusp := by
   by_contra hstab
   -- the conjugate group `σ Γ σ⁻¹` is discrete and contains the translation by the width
@@ -101,6 +118,7 @@ theorem mem_stabilizer_of_lt_im_of_lt_im_smul [DiscreteTopology Γ] {A : ℝ} (h
     hginf (D.scaling • z)
   rw [mul_smul, mul_smul, inv_smul_smul, ← _root_.Subgroup.smul_def] at hkey
   have hApos : 0 < A := D.width_pos.trans_le hA
+  rw [mem_horodisc] at hz hgz
   have hprod : A * A < (D.scaling • g • z).im * (D.scaling • z).im :=
     mul_lt_mul'' hgz hz hApos.le hApos.le
   nlinarith [D.width_pos]
@@ -108,21 +126,20 @@ theorem mem_stabilizer_of_lt_im_of_lt_im_smul [DiscreteTopology Γ] {A : ℝ} (h
 /-- **Precise invariance of high horodiscs, disjointness form.** Two elements of `Γ` carrying a
 horodisc of height at least the width to sets that meet differ by an element of the cusp
 stabilizer. -/
-theorem disjoint_smul_setOf_lt_im [DiscreteTopology Γ] {A : ℝ} (hA : D.width ≤ A) {g h : Γ}
+theorem disjoint_smul_horodisc [DiscreteTopology Γ] {A : ℝ} (hA : D.width ≤ A) {g h : Γ}
     (hgh : g⁻¹ * h ∉ stabilizer Γ D.cusp) :
-    Disjoint (g • {z : ℍ | A < (D.scaling • z).im})
-      (h • {z : ℍ | A < (D.scaling • z).im}) := by
+    Disjoint (g • horodisc D A) (h • horodisc D A) := by
   rw [Set.disjoint_left]
   rintro _ ⟨z, hz, rfl⟩ ⟨y, hy, hyz⟩
   replace hyz : h • y = g • z := hyz
-  refine hgh (mem_stabilizer_of_lt_im_of_lt_im_smul D hA hy ?_)
+  refine hgh (mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA hy ?_)
   rwa [mul_smul, hyz, inv_smul_smul]
 
 /-- An element of `Γ` outside the cusp stabilizer moves every horodisc of height at least the
 width off itself. -/
-theorem disjoint_smul_setOf_lt_im_self [DiscreteTopology Γ] {A : ℝ} (hA : D.width ≤ A) {g : Γ}
+theorem disjoint_smul_horodisc_self [DiscreteTopology Γ] {A : ℝ} (hA : D.width ≤ A) {g : Γ}
     (hg : g ∉ stabilizer Γ D.cusp) :
-    Disjoint (g • {z : ℍ | A < (D.scaling • z).im}) {z : ℍ | A < (D.scaling • z).im} := by
-  simpa using disjoint_smul_setOf_lt_im D hA (g := g) (h := 1) (by simpa using hg)
+    Disjoint (g • horodisc D A) (horodisc D A) := by
+  simpa using disjoint_smul_horodisc D hA (g := g) (h := 1) (by simpa using hg)
 
 end TauCeti.Subgroup.CuspDatum
