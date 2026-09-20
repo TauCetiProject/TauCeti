@@ -58,7 +58,15 @@ private theorem lattice_toAddSubgroup (C : AddSubgroup (ι → ZMod m)) :
   ext x
   rw [Submodule.mem_toAddSubgroup, mem_lattice]
   simp only [AddSubgroup.mem_map, AddSubgroup.mem_comap]
-  rfl
+  have hreduction (z : ι → ℤ) : reduction m z = fun i ↦ (z i : ZMod m) := by
+    funext i
+    simp [reduction, LinearMap.compLeft]
+  have hrationalCast (z : ι → ℤ) : rationalCast z = fun i ↦ (z i : ℚ) := by
+    funext i
+    simp [rationalCast, LinearMap.compLeft]
+  constructor <;> rintro ⟨z, hz, hzx⟩ <;>
+    exact ⟨z, by simpa only [hreduction] using hz,
+      by simpa only [hrationalCast] using hzx⟩
 
 /-- The relative index of the zero-code Construction A carrier in the carrier attached to `C` is
 the number of codewords of `C`. -/
@@ -84,22 +92,6 @@ theorem relIndex_lattice_bot (C : AddSubgroup (ι → ZMod m)) :
 
 variable [Fintype ι]
 
-private noncomputable def standardLattice : IntegralLattice (ι → ℚ) := by
-  classical
-  exact IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι) (1 : Matrix ι ι ℤ)
-    Matrix.isSymm_one
-
-private theorem standardLattice_form (x y : ι → ℚ) :
-    (standardLattice (ι := ι)).form x y = dotProduct x y := by
-  classical
-  simp [standardLattice, Matrix.one_apply, dotProduct]
-
-private theorem mem_standardLattice_carrier_iff (x : ι → ℚ) :
-    x ∈ (standardLattice (ι := ι)).carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i := by
-  classical
-  rw [standardLattice]
-  exact IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff 1 Matrix.isSymm_one x
-
 private noncomputable def scaleEquiv : (ι → ℚ) ≃ₗ[ℚ] (ι → ℚ) :=
   LinearEquiv.piCongrRight fun _ ↦
     LinearEquiv.smulOfUnit (M := ℚ) (Units.mk0 (m : ℚ) (NeZero.ne _))
@@ -110,12 +102,15 @@ private theorem scaleEquiv_apply (x : ι → ℚ) (i : ι) : scaleEquiv m x i = 
   rfl
 
 private theorem map_standardLattice_carrier :
-    (standardLattice (ι := ι)).carrier.map
+    let _ := Classical.decEq ι
+    (IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι) (1 : Matrix ι ι ℤ)
+        Matrix.isSymm_one).carrier.map
         ((scaleEquiv m).restrictScalars ℤ).toLinearMap =
       lattice m (⊥ : AddSubgroup (ι → ZMod m)) := by
   classical
   ext x
-  rw [Submodule.mem_map_equiv, mem_standardLattice_carrier_iff, mem_lattice]
+  rw [Submodule.mem_map_equiv,
+    IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff, mem_lattice]
   constructor
   · intro hx
     choose z hz using hx
@@ -140,19 +135,21 @@ private theorem map_standardLattice_carrier :
       rw [hwi]
       simp
     have hsymm : ((scaleEquiv m).restrictScalars ℤ).symm (fun i ↦ (z i : ℚ)) =
-        (scaleEquiv m).symm (fun i ↦ (z i : ℚ)) := rfl
+        (scaleEquiv m).symm (fun i ↦ (z i : ℚ)) := by
+      apply (scaleEquiv m).injective
+      rw [LinearEquiv.apply_symm_apply]
+      change ((scaleEquiv m).restrictScalars ℤ)
+          (((scaleEquiv m).restrictScalars ℤ).symm (fun i ↦ (z i : ℚ))) = _
+      rw [LinearEquiv.apply_symm_apply]
     rw [hsymm, hcast, LinearEquiv.symm_apply_apply]
     exact fun i ↦ ⟨w i, rfl⟩
 
-private theorem bot_selfOrthogonal :
-    AddSubgroup.toZModSubmodule m (⊥ : AddSubgroup (ι → ZMod m)) ≤
-      (AddSubgroup.toZModSubmodule m (⊥ : AddSubgroup (ι → ZMod m))).euclideanDual := by
-  simp
-
 private noncomputable def scaledStandardIsometry :
+    let _ := Classical.decEq ι
     IntegralLattice.Isometry
-      ((m : ℤ) • standardLattice (ι := ι))
-      (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (bot_selfOrthogonal m)) where
+      ((m : ℤ) • IntegralLattice.ofGramMatrix (Pi.basisFun ℚ ι)
+        (1 : Matrix ι ι ℤ) Matrix.isSymm_one)
+      (integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)) where
   toIsometryEquiv :=
     { toLinearEquiv := scaleEquiv m
       map_app' := by
@@ -163,11 +160,10 @@ private noncomputable def scaledStandardIsometry :
           funext (scaleEquiv_apply m y)
         rw [hx, hy]
         rw [integralLattice_form, form_apply, IntegralLattice.smul_form]
-        simp only [LinearMap.smul_apply, Int.cast_natCast, standardLattice_form]
-        simp only [dotProduct]
+        simp only [LinearMap.smul_apply, Int.cast_natCast]
+        simp [Matrix.one_apply, dotProduct]
         field_simp
-        simp only [smul_eq_mul, pow_two]
-        rw [Finset.mul_sum, Finset.mul_sum]
+        rw [Finset.mul_sum]
         apply Finset.sum_congr rfl
         intro i _
         ring }
@@ -178,18 +174,13 @@ private noncomputable def scaledStandardIsometry :
 /-- The zero-code Construction A lattice has diagonal Gram matrix `m I`, hence discriminant
 `m ^ #ι`. -/
 @[simp]
-theorem discriminant_integralLattice_bot
-    (hC : AddSubgroup.toZModSubmodule m (⊥ : AddSubgroup (ι → ZMod m)) ≤
-      (AddSubgroup.toZModSubmodule m (⊥ : AddSubgroup (ι → ZMod m))).euclideanDual) :
+theorem discriminant_integralLattice_bot :
     (integralLattice m (⊥ : AddSubgroup (ι → ZMod m))
-      hC).discriminant = (m : ℕ) ^ Fintype.card ι := by
+      (by simp)).discriminant = (m : ℕ) ^ Fintype.card ι := by
+  classical
   rw [← (scaledStandardIsometry m).discriminant_eq, IntegralLattice.discriminant_smul,
     IntegralLattice.finrank_carrier, Module.finrank_fintype_fun_eq_card]
-  have hstandard : (standardLattice (ι := ι)).discriminant = 1 := by
-    classical
-    rw [standardLattice, IntegralLattice.discriminant_ofGramMatrix, Matrix.det_one]
-    simp
-  rw [hstandard, mul_one]
+  rw [IntegralLattice.discriminant_ofGramMatrix, Matrix.det_one]
   simp
 
 /-- **The discriminant formula for Construction A, with its divisibility visible:** the
@@ -210,7 +201,7 @@ theorem discriminant_mul_natCard_sq (C : AddSubgroup (ι → ZMod m))
   dsimp only [L₀] at hdisc
   rw [integralLattice_carrier, integralLattice_carrier] at hdisc
   rw [relIndex_lattice_bot] at hdisc
-  rw [← discriminant_integralLattice_bot m (by simp)]
+  rw [← discriminant_integralLattice_bot m]
   exact hdisc.symm
 
 /-- The square of the number of codewords divides `m ^ #ι`, as required for the Construction A
