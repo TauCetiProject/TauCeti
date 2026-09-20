@@ -397,6 +397,7 @@ theorem specialIsogeny_weightTorusPoints (s : Fin 2 → Aˣ) :
   exact g2SpecialIsogeny_coe_weightTorusPoints s
 
 /-- The special isogeny commutes with extension of the value algebra. -/
+@[simp]
 theorem pointsMap_specialIsogeny {B : Type w} [CommRing B] [Algebra (ZMod 3) B]
     (f : A →ₐ[ZMod 3] B) (g : points A) :
     pointsMap f (specialIsogeny A g) = specialIsogeny B (pointsMap f g) := by
@@ -577,6 +578,7 @@ private theorem carrierQuotient_comp_specialIsogenyCoordinateMap :
   rw [specialIsogenyCoordinateMap, CommHopfAlgCat.mkQuotient_comp_liftQuotient]
 
 /-- The special isogeny squared is the prime-field Frobenius on the carrier coordinate ring. -/
+@[simp]
 theorem specialIsogenyCoordinateMap_comp_self :
     specialIsogenyCoordinateMap ≫ specialIsogenyCoordinateMap = frobeniusCoordinateMap := by
   let _ : Epi carrierQuotient := ConcreteCategory.epi_of_surjective carrierQuotient
@@ -630,6 +632,7 @@ theorem schemePointsMulEquiv_comp_weightTorus_comp_specialIsogenyHom
   rw [hcoords]
 
 /-- The special isogeny squared is the cubic Frobenius as a carrier morphism. -/
+@[simp]
 theorem specialIsogenyHom_comp_self :
     specialIsogenyHom ≫ specialIsogenyHom = frobeniusHom := by
   rw [specialIsogenyHom_eq_map_specialIsogenyCoordinateMap,
