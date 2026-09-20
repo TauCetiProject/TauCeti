@@ -235,7 +235,7 @@ theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
 
 section Summation
 
-variable [CompleteSpace R] {a : ℕ → PowerSeries R}
+variable [CompleteSpace R] {ι : Type*} {a : ι → PowerSeries R}
 
 omit [IsUltrametricDist R] in
 /-- Over a complete ring, a family of restricted power series with summable Gauss norms has
@@ -256,35 +256,39 @@ division: it plays the role of completeness of the Tate algebra for the Gauss no
 theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted c)
     (hs : Summable fun k ↦ (a k).gaussNorm norm c) :
     (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
+  classical
   have hsum := summable_coeff_of_summable_gaussNorm hc ha hs
   rw [PowerSeries.isRestricted_iff']
   refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun i ↦
     hb.trans_le (by positivity), fun ε hε ↦ ?_⟩
-  obtain ⟨n, hn⟩ := (Filter.eventually_atTop.mp
-    (hs.tendsto_atTop_zero.eventually (gt_mem_nhds (half_pos hε))))
-  have hpartial : ∀ m : ℕ, (∑ k ∈ Finset.range m, a k).IsRestricted c := fun m ↦
+  have hsmall : {k | ¬(a k).gaussNorm norm c < ε / 2}.Finite :=
+    Filter.eventually_cofinite.mp
+      (hs.tendsto_cofinite_zero.eventually (gt_mem_nhds (half_pos hε)))
+  let S := hsmall.toFinset
+  have hpartial : (∑ k ∈ S, a k).IsRestricted c :=
     sum_mem (S := PowerSeries.IsRestricted.addSubgroup c) fun k _ ↦ ha k
   filter_upwards [((PowerSeries.isRestricted_iff' c
-    (∑ k ∈ Finset.range n, a k)).mp (hpartial n)).eventually
+    (∑ k ∈ S, a k)).mp hpartial).eventually
       (gt_mem_nhds (half_pos hε))] with i hi
   have hsplit : (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).coeff i =
-      (∑ k ∈ Finset.range n, a k).coeff i + ∑' k, (a (k + n)).coeff i := by
-    rw [PowerSeries.coeff_mk, ← (hsum i).sum_add_tsum_nat_add n, map_sum]
-  have htail : ‖∑' k, (a (k + n)).coeff i‖ * c ^ i ≤ ε / 2 := by
+      (∑ k ∈ S, a k).coeff i + ∑' k : {k // k ∉ S}, (a k).coeff i := by
+    rw [PowerSeries.coeff_mk, ← (hsum i).sum_add_tsum_subtype_compl S, map_sum]
+  have htail : ‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i ≤ ε / 2 := by
     rw [← le_div_iff₀ (pow_pos hc i)]
     refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
       (by positivity) fun k ↦ ?_
     rw [le_div_iff₀ (pow_pos hc i)]
+    have hk : (a k).gaussNorm norm c < ε / 2 := by simpa [S] using k.property
     exact (PowerSeries.le_gaussNorm norm c _
-      (hasGaussNorm_of_isRestricted (ha (k + n))) i).trans
-        (hn (k + n) (Nat.le_add_left n k)).le
+      (hasGaussNorm_of_isRestricted (ha k)) i).trans hk.le
   rw [hsplit]
-  calc ‖(∑ k ∈ Finset.range n, a k).coeff i + ∑' k, (a (k + n)).coeff i‖ * c ^ i
-      ≤ max ‖(∑ k ∈ Finset.range n, a k).coeff i‖ ‖∑' k, (a (k + n)).coeff i‖ * c ^ i :=
+  calc ‖(∑ k ∈ S, a k).coeff i + ∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i
+      ≤ max ‖(∑ k ∈ S, a k).coeff i‖ ‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i :=
         mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _)
           (pow_nonneg hc.le i)
-    _ = max (‖(∑ k ∈ Finset.range n, a k).coeff i‖ * c ^ i)
-          (‖∑' k, (a (k + n)).coeff i‖ * c ^ i) := max_mul_of_nonneg _ _ (pow_nonneg hc.le i)
+    _ = max (‖(∑ k ∈ S, a k).coeff i‖ * c ^ i)
+          (‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i) :=
+        max_mul_of_nonneg _ _ (pow_nonneg hc.le i)
     _ < ε := max_lt (hi.trans (half_lt_self hε)) (htail.trans_lt (half_lt_self hε))
 
 end Summation
