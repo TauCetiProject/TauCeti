@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Basic
 
@@ -34,6 +35,8 @@ chains and transported to singular chains along singular simplices.
 * `TauCeti.AffineChain.singularChain`: the push-forward of affine chains of `Δᵐ` along a singular
   `m`-simplex, compatible with the boundary, faces, subdivision and continuous maps.
 * `TauCeti.AffineChain.singularChain_subdivision`: pushing forward commutes with subdivision.
+* `TauCeti.AffineChain.singularChain_subdivision_iterate`: pushing forward commutes with iterated
+  subdivision.
 
 ## References
 
@@ -319,6 +322,20 @@ lemma singularChain_subdivision {m : ℕ} (σ : C(StdSimplex ℝ (Fin (m + 1)), 
       ext x : 1
       simp [← StdSimplex.comp_affineMapMk]
     simp [hv, Finset.smul_sum, mul_smul, Units.smul_def, ContinuousMap.comp_assoc]
+
+/-- Pushing an iterated barycentric subdivision of an affine chain forward along a singular
+simplex is the corresponding iterate of the singular subdivision operator. -/
+lemma singularChain_subdivision_iterate {m k n : ℕ}
+    (σ : C(StdSimplex ℝ (Fin (m + 1)), X))
+    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
+    singularChain R σ k ((subdivision _ k)^[n] c) =
+      singularChain R σ k c ≫
+        ((CategoryTheory.End.of (singularSubdivisionChainMap R X)) ^ n).f k := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', singularChain_subdivision, ih, pow_succ']
+    simp [Category.assoc]
 
 /-- Pushing the subdivision of the standard simplex forward along a singular simplex gives the
 barycentric subdivision of that singular simplex. -/

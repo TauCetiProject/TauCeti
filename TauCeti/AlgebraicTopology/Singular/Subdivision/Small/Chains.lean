@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Endomorphism
-public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small
+public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Basic
 
 /-!
 # Singular chains subordinate to an open cover
@@ -99,6 +99,7 @@ lemma smallSingularSubcomplexMap_id :
 variable {μ : Type*} {Z : TopCat.{w}} (W : μ → Set Z)
 
 /-- Restriction of covered maps to small singular subcomplexes respects composition. -/
+@[simp]
 lemma smallSingularSubcomplexMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (r : ι → κ) (s : κ → μ)
     (hf : ∀ i, Set.MapsTo f (U i) (V (r i)))
     (hg : ∀ j, Set.MapsTo g (V j) (W (s j))) :
@@ -152,20 +153,6 @@ theorem exists_singularChain_small_factor {m k : ℕ}
   simp only [f, Preadditive.sum_comp, Preadditive.zsmul_comp,
     SSet.ι_chainComplexMap_f]
   rfl
-
-/-- Pushing an iterated barycentric subdivision of an affine chain forward along a singular
-simplex is the corresponding iterate of the singular subdivision operator. -/
-lemma singularChain_subdivision_iterate {m k n : ℕ}
-    (σ : C(StdSimplex ℝ (Fin (m + 1)), X))
-    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
-    singularChain R σ k ((subdivision _ k)^[n] c) =
-      singularChain R σ k c ≫
-        ((CategoryTheory.End.of (singularSubdivisionChainMap R X)) ^ n).f k := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Function.iterate_succ_apply', singularChain_subdivision, ih, pow_succ']
-    simp [Category.assoc]
 
 end AffineChain
 
