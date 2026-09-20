@@ -162,9 +162,10 @@ end Field
 
 /-! ### Eigenvectors are multiples of basis vectors -/
 
-section Domain
+section CancelMulZero
 
-variable [CommRing K] [IsDomain K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
+variable [CommSemiring K] [IsCancelMulZero K] [AddCommMonoid V] [Module K V] {f : V →ₗ[K] V}
+  {a : ι → K}
 
 /-- **A nonzero eigenvector is a multiple of a single basis vector**, when the endomorphism is
 diagonal in the basis with pairwise distinct eigenvalues, and its eigenvalue is the eigenvalue of
@@ -187,6 +188,6 @@ theorem _root_.Module.Basis.exists_apply_eq_and_mem_span_singleton (b : Module.B
   rw [b.eq_smul_of_repr_support_subset_singleton hsupp]
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
 
-end Domain
+end CancelMulZero
 
 end TauCeti
