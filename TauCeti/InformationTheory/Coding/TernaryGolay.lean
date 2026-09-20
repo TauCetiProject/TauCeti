@@ -225,5 +225,13 @@ theorem weightEnumerator_code :
   rw [Set.weightEnumerator_def]
   simp [Finset.sum_range_succ]
 
+/-- The one-variable weight enumerator of the extended ternary Golay code. -/
+@[simp]
+theorem weightPolynomial_code :
+    (code : Set (Fin 12 → ZMod 3)).weightPolynomial =
+      1 + 264 * Polynomial.X ^ 6 + 440 * Polynomial.X ^ 9 + 24 * Polynomial.X ^ 12 := by
+  rw [← Set.aeval_weightEnumerator, weightEnumerator_code]
+  simp
+
 end TernaryGolay
 end TauCeti
