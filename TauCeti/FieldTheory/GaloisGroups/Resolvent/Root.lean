@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
-public import TauCeti.RingTheory.Polynomial.Roots
+
+import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Roots of a resolvent in the base field
