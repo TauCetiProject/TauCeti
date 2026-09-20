@@ -34,8 +34,10 @@ in a quotient `K[X] ⧸ (p)`, not a ring of integers presented as such.
 
 * [M. Stoll, *EllipticCurves*](https://github.com/MichaelStollBayreuth/EllipticCurves), commit
   `66889eada51a74c2f5dfb7fb5909b0b5a0a2d96e`, `EllipticCurves/Mathlib/Basic.lean`, Apache-2.0.
-  That file collects general-purpose results its author flags as Mathlib candidates; these three
-  are adapted from it essentially verbatim.
+  That file collects general-purpose results its author flags as Mathlib candidates;
+  `NumberField.finite_classGroup_integralClosure` and `NumberField.fg_units_integralClosure` are
+  adapted from it essentially verbatim. The `ℤ → 𝓞 K → L` identification they rest on is
+  `TauCeti.IsIntegralClosure.tower_bot`, credited to Stacks in its own module.
 -/
 
 public section
