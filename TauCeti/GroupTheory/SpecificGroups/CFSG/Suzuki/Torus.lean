@@ -17,9 +17,10 @@ and the antidiagonal Weyl element `w`. This file adds the diagonal torus
 h(κ) = diag (κ, κ^θ / κ, κ / κ^θ, κ⁻¹),      θ = 2^(m+1),
 ```
 
-as a homomorphism `TauCeti.Suzuki.torus` from the multiplicative group of the generator field, and
-proves that its image lies in the generated group. The torus is not a generator, so its membership
-is a computation: the rank-one Bruhat relation
+as a homomorphism `TauCeti.Suzuki.torus` from the multiplicative group of the generator field,
+computes its conjugation action on the unipotent generators, and proves that its image lies in
+the generated group. The torus is not a generator, so its membership is a computation: the
+rank-one Bruhat relation
 
 ```text
 w u(0, b) w = u(b^(1-θ), b⁻¹) · h(b^θ) · w · u(b^(1-θ), 0)      (b ≠ 0)
@@ -37,6 +38,10 @@ fixed points, consume the torus in `TauCeti.GroupTheory.SpecificGroups.CFSG.Suzu
 
 ## Main results
 
+* `TauCeti.Suzuki.torus_mul_unipotent_mul_torus_inv`: the torus normalizes the unipotent
+  generators, `h(κ) u(a, b) h(κ)⁻¹ = u(κ^θ κ⁻² a, κ^(-θ) b)`.
+* `TauCeti.Suzuki.commutatorElement_torus_unipotent`: the commutator of a torus element with a
+  unipotent generator, read off the conjugation formula.
 * `TauCeti.Suzuki.weyl_mul_unipotent_zero_mul_weyl`: the rank-one Bruhat relation.
 * `TauCeti.Suzuki.torus_mem_suzukiGroup`: every torus element is a product of the standard
   generators.
@@ -53,6 +58,7 @@ public section
 noncomputable section
 
 open Matrix
+open scoped commutatorElement
 
 namespace TauCeti
 
@@ -121,6 +127,44 @@ def torus : (GaloisField 2 (2 * m + 1))ˣ →* GL (Fin 4) (GaloisField 2 (2 * m 
 theorem coe_torus (κ : (GaloisField 2 (2 * m + 1))ˣ) :
     (torus m κ : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) = torusMatrix m κ :=
   Matrix.GeneralLinearGroup.val_mk'' _ _
+
+/-! ## The action of the torus on the unipotent generators -/
+
+/-- **The torus normalizes the unipotent generators**:
+`h(κ) u(a, b) h(κ)⁻¹ = u(κ^θ κ⁻² a, κ^(-θ) b)`, with `θ = 2^(m+1)`. -/
+@[simp]
+theorem torus_mul_unipotent_mul_torus_inv (κ : (GaloisField 2 (2 * m + 1))ˣ)
+    (a b : GaloisField 2 (2 * m + 1)) :
+    torus m κ * unipotent m a b * (torus m κ)⁻¹ =
+      unipotent m
+        ((κ : GaloisField 2 (2 * m + 1)) ^ 2 ^ (m + 1) / (κ : GaloisField 2 (2 * m + 1)) ^ 2 * a)
+        (b / (κ : GaloisField 2 (2 * m + 1)) ^ 2 ^ (m + 1)) := by
+  have hκ : (κ : GaloisField 2 (2 * m + 1)) ≠ 0 := κ.ne_zero
+  rw [← map_inv]
+  apply Matrix.GeneralLinearGroup.ext
+  intro i j
+  simp only [Units.val_mul, coe_unipotent, coe_torus]
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, mul_pow, div_pow, inv_pow, torusMatrix_apply, Matrix.diagonal_apply]
+  all_goals field_simp
+  all_goals ring
+
+/-- **The commutator of a torus element with a unipotent generator** is again a unipotent
+generator: writing `λ = κ^θ κ⁻²` and `μ = κ^(-θ)`,
+`[h(κ), u(a, b)] = u((λ + 1) a, (μ + 1) b + (λ + 1) a^(1+θ))`. -/
+@[simp]
+theorem commutatorElement_torus_unipotent (κ : (GaloisField 2 (2 * m + 1))ˣ)
+    (a b : GaloisField 2 (2 * m + 1)) :
+    ⁅torus m κ, unipotent m a b⁆ =
+      unipotent m
+        (((κ : GaloisField 2 (2 * m + 1)) ^ 2 ^ (m + 1) / (κ : GaloisField 2 (2 * m + 1)) ^ 2 + 1)
+          * a)
+        ((((κ : GaloisField 2 (2 * m + 1)) ^ 2 ^ (m + 1))⁻¹ + 1) * b +
+          ((κ : GaloisField 2 (2 * m + 1)) ^ 2 ^ (m + 1) / (κ : GaloisField 2 (2 * m + 1)) ^ 2 + 1)
+            * a * a ^ 2 ^ (m + 1)) := by
+  rw [commutatorElement_def, torus_mul_unipotent_mul_torus_inv, unipotent_inv,
+    unipotent_mul_unipotent]
+  congr 1 <;> ring
 
 /-! ## The rank-one Bruhat relation and the torus -/
 
