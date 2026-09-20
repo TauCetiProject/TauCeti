@@ -93,13 +93,13 @@ def descend (D : Γ.CuspDatum) (f : ℍ → ℂ) : {q : 𝔻 // q ≠ 0} → ℂ
   fun q ↦ cuspExtension D f q
 
 /-- The descended function is the restriction of the cusp extension to the punctured unit disc. -/
-@[simp]
 theorem descend_apply (D : Γ.CuspDatum) (f : ℍ → ℂ) (q : {q : 𝔻 // q ≠ 0}) :
     descend D f q = cuspExtension D f q :=
   (rfl)
 
 /-- An invariant function is recovered by pulling its punctured-disc descent back along the
 normalized q-coordinate. -/
+@[simp]
 theorem descend_qCoordinate (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z) (z : ℍ) :
     descend D f (qCoordinate D z) = f z := by
@@ -198,9 +198,7 @@ theorem isBigO_inv_smul_of_isZeroAtImInfty (D : Γ.CuspDatum) (f : ℍ → ℂ)
     (hzero : IsZeroAtImInfty fun z ↦ f (D.scaling⁻¹ • z)) :
     (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
       fun z ↦ Real.exp (-2 * Real.pi * z.im / D.width) := by
-  apply UpperHalfPlane.IsZeroAtImInfty.exp_decay_atImInfty hzero D.width_pos
-    (periodic_comp_ofComplex_inv_smul D f hf)
-  · exact mdifferentiable_inv_smul D f hhol
-  · exact hzero.isBoundedAtImInfty
+  simpa only [cuspExtension_zero_eq_zero D f hzero, sub_zero] using
+    isBigO_sub_cuspExtension_zero D f hf hhol hzero.isBoundedAtImInfty
 
 end TauCeti.Subgroup.CuspDatum
