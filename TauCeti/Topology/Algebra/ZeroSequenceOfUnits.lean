@@ -107,11 +107,9 @@ by some term of the sequence.
 Stated for an arbitrary such sequence rather than a chosen one, so a caller holding a concrete
 sequence — the powers of a pseudouniformiser, say — gets the conclusion for *that* sequence.
 
-The only topological input is `hc`, and it is needed only at the one `x` the conclusion is about
-and only at `0 : A`: the proof is `uₙ • x → 0 • x = 0`. It is an unbundled hypothesis because
-Mathlib has no class for "continuous in the scalar, vector fixed" — `ContinuousSMul A M` is joint
-continuity, which is strictly more than this argument uses. At `M = A` it is discharged by
-`(continuous_mul_const x).continuousAt` modulo `smul_eq_mul`. -/
+The hypothesis `hc` requires continuity of `a ↦ a • x` at `0 : A`, with `x` fixed. This is
+weaker than the joint continuity required by `ContinuousSMul A M`. When `M = A`,
+`(continuous_mul_const x).continuousAt` supplies this hypothesis modulo `smul_eq_mul`. -/
 theorem exists_smul_mem_of_tendsto_zero (x : M) (h0 : (0 : A) • x = 0)
     (hc : ContinuousAt (fun a : A ↦ a • x) 0)
     {U : Set M} (hU : U ∈ 𝓝 (0 : M)) :
