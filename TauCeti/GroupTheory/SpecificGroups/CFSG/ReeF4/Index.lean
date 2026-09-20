@@ -145,11 +145,12 @@ theorem eight_le_fieldOrder (d : ReeF4LieIndex) : 8 ≤ d.1.fieldOrder := by
     _ ≤ 2 ^ (2 * m + 1) := Nat.pow_le_pow_right (by norm_num) (by omega)
     _ = (of m hvalid).1.fieldOrder := (LieTypeIndex.fieldOrder_reeF4 m).symm
 
+-- This specialization is what a construction on a carrier defined over `𝔽₂` needs: there the
+-- characteristic is the numeral `2` rather than a projection of the index, and the index's own
+-- algebraic closure depends on that projection, so the two cannot be exchanged by rewriting
+-- inside such a statement.
 /-- **The field order of a Ree index of type `F₄` is the recorded power of two.** This is the
-characteristic-two reading of `TauCeti.ValidLieTypeIndex.fieldOrder_eq_characteristic_pow`. It is
-the form a construction on a carrier defined over `𝔽₂` needs: there the characteristic is the
-numeral `2` rather than a projection of the index, and the index's own algebraic closure depends
-on that projection, so the two cannot be exchanged by rewriting inside such a statement. -/
+characteristic-two reading of `TauCeti.ValidLieTypeIndex.fieldOrder_eq_characteristic_pow`. -/
 theorem fieldOrder_eq_two_pow (d : ReeF4LieIndex) : d.1.fieldOrder = 2 ^ d.1.fieldExponent := by
   rw [d.1.fieldOrder_eq_characteristic_pow, d.characteristic_eq_two]
 

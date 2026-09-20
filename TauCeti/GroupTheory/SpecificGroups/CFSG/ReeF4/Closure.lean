@@ -15,8 +15,8 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.ReeF4.Index
 This file records that the algebraic closure attached to a validated Ree index of type `F₄` has
 characteristic two, and equips it with the resulting structure of an algebra over the field of two
 elements. That is the form in which the characteristic reaches a construction on the family's
-carrier, whose defining equations and exceptional isogeny live in characteristic two and whose
-base ring is `ZMod 2` itself.
+carrier, whose defining equations live in characteristic two and whose base ring is `ZMod 2`
+itself.
 
 ## Main results
 

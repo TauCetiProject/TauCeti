@@ -19,10 +19,10 @@ torus of the Kostant toral closure of the twenty-six-dimensional module `V(ϖ₄
 attaches that carrier to a validated Ree index of type `F₄`, and supplies the numbered simple
 root subgroups and the two Frobenius endomorphisms the family's construction runs against.
 
-The carrier is taken over `𝔽₂` rather than over `ℤ` because the exceptional isogeny of
-characteristic two exists only there, and the argument carrying it from matrices to an
-endomorphism of the carrier needs the defining Hopf ideal to be the largest one killed by the
-generator coordinate maps *over `𝔽₂`*; the base change of the integral toral closure is only
+The carrier is taken over `𝔽₂` rather than over `ℤ` because the construction planned for the
+family's Steinberg map lives in characteristic two: carrying an exceptional isogeny from matrices
+to an endomorphism of the carrier needs the defining Hopf ideal to be the largest one killed by
+the generator coordinate maps *over `𝔽₂`*; the base change of the integral toral closure is only
 known to contain the carrier, new equations being possible over a base that is not flat.
 
 ## The two Frobenius maps
@@ -31,18 +31,19 @@ known to contain the carrier, new equations being possible over a base that is n
 the index records, and `TauCeti.ReeF4LieIndex.primeFrobenius` is the `2`-power one; the former is
 the `(2m+1)`-st power of the latter, `frobenius_eq_primeFrobenius_pow`.
 
-Neither is the family's Steinberg endomorphism. That endomorphism is not a Frobenius at all: it
-is the odd power `τ ^ (2m+1)` of the exceptional isogeny `τ` of this carrier in characteristic
-two, which exchanges the two root lengths on the numbered simple root subgroups and squares to the
-prime-field Frobenius. So `primeFrobenius` is the map `τ` squares to and `frobenius` the map that
-odd power squares to, and both are named here after what they are rather than after that use.
+Neither is the family's Steinberg endomorphism, which is not a Frobenius at all. In the
+literature it is an odd power of an exceptional isogeny of the carrier, a map available only in
+characteristic two that exchanges the two root lengths (Steinberg, §11). That isogeny is not
+constructed here, no declaration below mentions one, and nothing in this file asserts its
+existence or any relation between it and the two Frobenius maps; building it is the next step on
+this branch. The two maps are named after what they are.
 `TauCeti.ReeF4LieIndex.mem_fixedSubgroup_frobenius_iff` describes the group the `q`-power one
 fixes: the points whose matrix entries lie in the field of definition `𝔽_q`.
 
 The carrier is numbered by the Bourbaki numbering of the `F₄` diagram that the index itself
 carries: the character by which the carrier's split torus rescales the parameter of its `i`-th
 numbered raising subgroup is `TauCeti.DynkinType.rootGeneratorWeight` at `.inl i`, which
-`TauCeti.DynkinType.rootGeneratorWeight_inl_eq_root_simpleIndex` identifies with the `i`-th simple
+`TauCeti.ReeF4LieIndex.rootGeneratorWeight_eq_root_simpleIndex` identifies with the `i`-th simple
 root of `TauCeti.DynkinType.simplyConnectedRootDatum` at `F₄`. No renumbering adapter is needed,
 and every numbered object below is indexed by `Fin d.1.rank`, the upstream Bourbaki index type of
 the index's own Dynkin type.
@@ -63,6 +64,9 @@ that any group below is finite, perfect, or simple.
 
 ## Main results
 
+* `TauCeti.ReeF4LieIndex.rootGeneratorWeight_eq_root_simpleIndex`: the character by which the
+  carrier's torus rescales the parameter of the `i`-th simple-root subgroup is the `i`-th simple
+  root of the `F₄` root datum, in the same Bourbaki numbering.
 * `TauCeti.ReeF4LieIndex.frobenius_simpleRootSubgroup` and
   `TauCeti.ReeF4LieIndex.primeFrobenius_simpleRootSubgroup`: both Frobenius maps fix the numbering
   of a simple-root subgroup and raise its parameter, `Frob_q (x_i(u)) = x_i(u ^ q)` and
@@ -119,34 +123,46 @@ upstream Bourbaki index type of the index's own Dynkin type. -/
 def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
   F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure
 
+-- Deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and its prime-field counterpart
+-- are the normal forms the equations of this file are stated against, and unfolding to
+-- `TauCeti.F4ShortRoot.PrimeField.rootSubgroupPoints` would keep them from firing.
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding node.
-This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`,
-whose definition itself stays sealed.
-
-It is deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and its prime-field
-counterpart are the normal forms the equations of this file are stated against, and unfolding to
-`TauCeti.F4ShortRoot.PrimeField.rootSubgroupPoints` would keep them from firing. -/
+This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`. -/
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i =
       F4ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_four i)) d.1.Closure :=
   (rfl)
+
+/-- **The simple-root subgroups sit at the simple roots of the `F₄` root datum.** The character by
+which the carrier's split weight torus rescales the parameter of `simpleRootSubgroup i` is the
+`i`-th simple root of `TauCeti.DynkinType.simplyConnectedRootDatum` at `F₄`, in the same Bourbaki
+numbering; `TauCeti.F4ShortRoot.weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex` is the
+carrier-level conjugation equation this character governs. This is the sense in which the carrier
+serves the diagram the index names; it is not a claim that the carrier is the pinned group of that
+diagram, no pinning being constructed for it. -/
+theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
+    DynkinType.F4.rootGeneratorWeight DynkinType.valid_F4 (.inl (finCongr d.rank_eq_four i)) =
+      (DynkinType.F4.simplyConnectedRootDatum DynkinType.valid_F4).root
+        (DynkinType.F4.simpleIndex DynkinType.valid_F4 (finCongr d.rank_eq_four i)) := by
+  simpa only [DynkinType.rank_F4] using
+    DynkinType.F4.rootGeneratorWeight_inl_eq_root_simpleIndex DynkinType.valid_F4
+      (finCongr d.rank_eq_four i)
 
 /-! ## The Frobenius endomorphisms -/
 
 /-- **The `q`-power Frobenius endomorphism of the ambient group of a Ree index of type `F₄`**, for
 `q = 2^(2m+1)` the field order the index records.
 
-It is not the family's Steinberg endomorphism, which is the odd power `τ ^ (2m+1)` of the
-exceptional isogeny of the carrier; it is the map that odd power squares to. -/
+It is not the family's Steinberg endomorphism: that map is not a Frobenius, and it is a later
+step on this branch rather than anything constructed here. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
   F4ShortRoot.PrimeField.frobenius d.1.fieldExponent d.1.Closure
 
+-- Deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and `coe_frobenius_apply` are
+-- the normal forms the equations of this file are stated against, and unfolding to
+-- `TauCeti.F4ShortRoot.PrimeField.frobenius` would keep them from firing.
 /-- The Frobenius of a Ree index of type `F₄` is the carrier's Frobenius at the exponent the index
-records. This is its unfolding lemma; the definition itself stays sealed.
-
-It is deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` and `coe_frobenius_apply`
-are the normal forms the equations of this file are stated against, and unfolding to
-`TauCeti.F4ShortRoot.PrimeField.frobenius` would keep them from firing. -/
+records. -/
 theorem frobenius_def :
     d.frobenius = F4ShortRoot.PrimeField.frobenius d.1.fieldExponent d.1.Closure := (rfl)
 
@@ -161,9 +177,9 @@ theorem coe_frobenius_apply (g : d.AmbientGroup) (r c : Fin 26) :
   exact F4ShortRoot.PrimeField.coe_frobenius_apply _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its
-parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. The length-exchanging
-permutation of this family enters through the exceptional isogeny of its Steinberg map, and not
-through this one. -/
+parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. In particular it does
+not permute the numbered nodes: the length exchange of this family belongs to its Steinberg map,
+which is not built here. -/
 @[simp]
 theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
@@ -172,15 +188,14 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   rw [frobenius_def, simpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, d.fieldOrder_eq_two_pow]
 
+-- As for `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp`
+-- lemma: `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites
+-- its left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF`
+-- linter rejects the annotation.
 /-- **A point of the ambient group is fixed by the `q`-power Frobenius exactly when all of its
 matrix entries lie in the field of definition.** Writing `𝔽_q` for
 `TauCeti.ValidLieTypeIndex.fixedField`, the copy of the field of `q` elements inside the algebraic
-closure, these are the points of the carrier with entries in `𝔽_q`.
-
-As for `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp`
-lemma: `TauCeti.fixedSubgroup` is `MonoidHom.eqLocus` against the identity, so `simp` rewrites its
-left-hand side to `d.frobenius g = g` through `MonoidHom.mem_eqLocus`, and the `simpNF` linter
-rejects the annotation. -/
+closure, these are the points of the carrier with entries in `𝔽_q`. -/
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 26) d.1.Closure) :
@@ -190,17 +205,14 @@ theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     ValidLieTypeIndex.mem_fixedField, d.fieldOrder_eq_two_pow]
 
 /-- **The prime-field Frobenius endomorphism of the ambient group of a Ree index of type `F₄`**,
-squaring each matrix entry.
-
-It is the map the exceptional isogeny `τ` of the carrier squares to, and the `q`-power Frobenius
-is its `(2m+1)`-st power, by `frobenius_eq_primeFrobenius_pow`. -/
+squaring each matrix entry. The `q`-power Frobenius is its `(2m+1)`-st power, by
+`frobenius_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
   F4ShortRoot.PrimeField.frobenius 1 d.1.Closure
 
+-- Deliberately not a `simp` lemma, for the reason `frobenius_def` is not.
 /-- The prime-field Frobenius of a Ree index of type `F₄` is the carrier's Frobenius at exponent
-one. This is its unfolding lemma; the definition itself stays sealed.
-
-It is deliberately not a `simp` lemma, for the reason `frobenius_def` is not. -/
+one. -/
 theorem primeFrobenius_def :
     d.primeFrobenius = F4ShortRoot.PrimeField.frobenius 1 d.1.Closure := (rfl)
 
@@ -222,13 +234,11 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
   rw [primeFrobenius_def, simpleRootSubgroup_def,
     F4ShortRoot.PrimeField.frobenius_rootSubgroupPoints, pow_one]
 
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.F4ShortRoot.PrimeField.frobenius_pow` states the carrier's iteration law in.
 /-- **The `q`-power Frobenius is the `(2m+1)`-st power of the prime-field Frobenius**, the
-exponent being the one the index records. This is the relation an odd power of the exceptional
-isogeny is measured against: squaring that odd power gives `Frob_2 ^ (2m+1)`, which is `Frob_q`.
-
-The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group, there
-being no power operation on `MonoidHom` itself; this is the form
-`TauCeti.F4ShortRoot.PrimeField.frobenius_pow` states the carrier's iteration law in. -/
+exponent being the one the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
     d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, F4ShortRoot.PrimeField.frobenius_pow, Nat.one_mul]
