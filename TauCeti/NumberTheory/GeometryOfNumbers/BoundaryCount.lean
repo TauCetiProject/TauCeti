@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.MulAction
 public import Mathlib.Data.Set.Card.Arithmetic
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
+public import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 public import TauCeti.Topology.MetricSpace.LipschitzParametrizable
 
 /-!
@@ -35,11 +36,6 @@ constant, so the total count is at most a constant times the number `m ^ d` of s
 
 ## Main results
 
-* `AddSubgroup.finite_inter_of_isBounded`: a bounded set meets a discrete subgroup of a proper
-  normed group in a finite set.
-* `AddSubgroup.ncard_inter_le_ncard_closedBall_inter`: a set of diameter at most `r` carries at
-  most as many points of a discrete subgroup as the closed ball of radius `r` centred at the
-  origin.
 * `TauCeti.IsLipschitzParametrizable.finite_smul_add_inter`: a bounded thickening of a dilated
   Lipschitz-parametrizable set meets a discrete subgroup in a finite set.
 * `TauCeti.IsLipschitzParametrizable.exists_ncard_smul_add_inter_le`: the explicit bound
@@ -57,33 +53,6 @@ public section
 open Asymptotics Bornology Filter Metric Set
 open scoped Pointwise Topology
 
-namespace AddSubgroup
-
-variable {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
-
-/-- A bounded subset of a proper normed group meets a discrete subgroup in a finite set. -/
-theorem finite_inter_of_isBounded (L : AddSubgroup E) [DiscreteTopology L] {s : Set E}
-    (hs : IsBounded s) : (s ∩ (L : Set E)).Finite :=
-  Metric.finite_isBounded_inter_isClosed
-    (SetLike.isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L›) hs
-    AddSubgroup.isClosed_of_discrete
-
-/-- A set whose points are pairwise at distance at most `r` carries at most as many points of a
-discrete subgroup as the closed ball of radius `r` centred at the origin does.  Translating a
-point of the intersection to the origin is what makes the bound uniform over all such sets. -/
-theorem ncard_inter_le_ncard_closedBall_inter (L : AddSubgroup E) [DiscreteTopology L]
-    {s : Set E} {r : ℝ} (hs : ∀ x ∈ s, ∀ y ∈ s, dist x y ≤ r) :
-    (s ∩ (L : Set E)).ncard ≤ (closedBall (0 : E) r ∩ (L : Set E)).ncard := by
-  rcases (s ∩ (L : Set E)).eq_empty_or_nonempty with h | ⟨z, hzs, hzL⟩
-  · simp [h]
-  refine Set.ncard_le_ncard_of_injOn (fun x ↦ x - z) ?_ (fun x _ y _ h ↦ by simpa using h)
-    (L.finite_inter_of_isBounded isBounded_closedBall)
-  rintro x ⟨hxs, hxL⟩
-  exact ⟨mem_closedBall_zero_iff.2 ((dist_eq_norm x z) ▸ hs x hxs z hzs),
-    L.sub_mem hxL hzL⟩
-
-end AddSubgroup
-
 namespace TauCeti.IsLipschitzParametrizable
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
@@ -95,7 +64,9 @@ theorem finite_smul_add_inter {d : ℕ} {S : Set E}
     {B : Set E} (hB : IsBounded B) (c : ℝ) :
     ((c • S + B) ∩ (L : Set E)).Finite := by
   obtain ⟨n, C, f, hf, hcov⟩ := isLipschitzParametrizable_iff.1 hS
-  apply L.finite_inter_of_isBounded
+  apply Metric.finite_isBounded_inter_isClosed
+    (SetLike.isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L›) _
+    AddSubgroup.isClosed_of_discrete
   apply isBounded_add
   · exact ((Bornology.isBounded_iUnion.2 fun i ↦
       ((isCompact_Icc.image_of_continuousOn (hf i).continuousOn).isBounded)).subset hcov).smul₀ c
@@ -166,13 +137,17 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
     rw [← Set.ncard_eq_toFinset_card _ hfinite]
     calc ((c • S + B) ∩ (L : Set E)).ncard
         ≤ (⋃ p, P p ∩ (L : Set E)).ncard := by
-          refine Set.ncard_le_ncard ?_ (Set.finite_iUnion fun p ↦ L.finite_inter_of_isBounded
-            (Metric.isBounded_iff.2 ⟨ρ, fun _ hu _ hv ↦ hPdist p _ hu _ hv⟩))
+          refine Set.ncard_le_ncard ?_ (Set.finite_iUnion fun p ↦
+            Metric.finite_isBounded_inter_isClosed
+              (SetLike.isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L›)
+              (Metric.isBounded_iff.2 ⟨ρ, fun _ hu _ hv ↦ hPdist p _ hu _ hv⟩)
+              AddSubgroup.isClosed_of_discrete)
           rw [← Set.iUnion_inter]
           exact Set.inter_subset_inter_left _ hPcov
       _ ≤ ∑ p, (P p ∩ (L : Set E)).ncard := Set.ncard_iUnion_le_of_fintype _
       _ ≤ ∑ _p : Fin n × (Fin d → Fin m), N :=
-          Finset.sum_le_sum fun p _ ↦ L.ncard_inter_le_ncard_closedBall_inter (hPdist p)
+          Finset.sum_le_sum fun p _ ↦
+            TauCeti.AddSubgroup.ncard_inter_le_ncard_closedBall_inter L (hPdist p)
       _ = n * m ^ d * N := by simp
   -- The number `m ^ d` of subcubes is at most `(C + 2) ^ d * c ^ d`.
   have hmc : (m : ℝ) ≤ c * ((C : ℝ) + 2) := by
