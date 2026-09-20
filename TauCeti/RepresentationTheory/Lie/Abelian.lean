@@ -105,9 +105,7 @@ theorem isNilpotent_abelianSquareZeroRepresentation [IsLieAbelian L] (x : L) :
     IsNilpotent (abelianSquareZeroRepresentation R L x) :=
   ⟨2, abelianSquareZeroRepresentation_sq_eq_zero R L x⟩
 
-/-- The canonical square-zero representation of an abelian Lie algebra is faithful, because a
-left-regular representation is faithful exactly when the underlying Lie map is, and `inr` is
-injective. -/
+/-- The canonical square-zero representation of an abelian Lie algebra is injective (faithful). -/
 theorem abelianSquareZeroRepresentation_injective [IsLieAbelian L] :
     Function.Injective (abelianSquareZeroRepresentation R L) :=
   (LieHom.leftRegularRep_injective_iff (abelianSquareZeroLieHom R L)).2 fun _ _ h ↦
