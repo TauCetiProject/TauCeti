@@ -140,7 +140,6 @@ theorem groupEquivSuzukiGroup_symm_apply (g : suzukiGroup m) :
 /-- On underlying matrices the identification is the scalar extension of the generator model: the
 image in the generated Suzuki group of the class of a fixed point is the matrix whose scalar
 extension along the generator embedding is that fixed point. -/
-@[simp]
 theorem generatorEmbedding_groupEquivSuzukiGroup_mk
     (x : ↥(commutator (of m hvalid).FixedPoints)) :
     generatorEmbedding m hvalid (groupEquivSuzukiGroup m hvalid (x : (of m hvalid).Group)) =
