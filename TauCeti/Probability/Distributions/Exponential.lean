@@ -374,10 +374,12 @@ theorem map_min_expMeasure (hr : 0 < r) (hs : 0 < s) :
   ext x
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable (by fun_prop) measurableSet_Iic,
     cdf_expMeasure_eq (add_pos hr hs) x]
-  rw [show (fun z : ℝ × ℝ => min z.1 z.2) ⁻¹' Iic x = (Ioi x ×ˢ Ioi x)ᶜ by
+  have hpreimage : (fun z : ℝ × ℝ => min z.1 z.2) ⁻¹' Iic x =
+      (Ioi x ×ˢ Ioi x)ᶜ := by
     ext z
     simp only [mem_preimage, mem_Iic, mem_compl_iff, mem_prod, mem_Ioi, not_and_or, not_lt,
-      min_le_iff]]
+      min_le_iff]
+  rw [hpreimage]
   rw [measureReal_compl (measurableSet_Ioi.prod measurableSet_Ioi), probReal_univ,
     measureReal_prod_prod,
     measureReal_Ioi_expMeasure hr x, measureReal_Ioi_expMeasure hs x]
