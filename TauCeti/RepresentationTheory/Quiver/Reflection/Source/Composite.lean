@@ -45,7 +45,11 @@ module universes coincide, and therefore carries the same restriction.
 ## References
 
 See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
-*An Introduction to Quiver Representations*, Ch. 2.
+*An Introduction to Quiver Representations*, Ch. 2. The formal template for the admissibility
+predicate, the composite functor, and their proofs is the sink-side development in
+`TauCeti.RepresentationTheory.Quiver.Reflection.Composite`, whose
+`TauCeti.Quiver.IsSinkAdmissible` interface and `TauCeti.reflectionFunctorList` API this file
+mirrors.
 -/
 
 public section
