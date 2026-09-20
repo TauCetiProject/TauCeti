@@ -88,6 +88,13 @@ noncomputable def simplyBlockedSpecializationHom :
       map_add' := map_add _
       map_smul' := fun p c => (simplyBlockedSpecialization R i).map_smulₛₗ p c }
 
+/-- The module morphism acts by coefficientwise specialization. -/
+@[simp]
+theorem simplyBlockedSpecializationHom_apply (c : GridChainMinus R n) :
+    (simplyBlockedSpecializationHom R i).hom c = simplyBlockedSpecialization R i c := by
+  unfold simplyBlockedSpecializationHom
+  rfl
+
 /-- Restriction of scalars makes a source scalar act through the specialization homomorphism. -/
 theorem smul_restrictScalars_gridChainHat (p : MvPolynomial (Fin n) R)
     (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
@@ -102,8 +109,7 @@ theorem X_smul_restrictScalars_gridChainHat_eq_zero
     (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
       (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
     (MvPolynomial.X i : MvPolynomial (Fin n) R) • y = 0 := by
-  rw [smul_restrictScalars_gridChainHat, simplyBlockedRingHom_apply,
-    simplyBlockedRingHom_X_self, zero_smul]
+  rw [smul_restrictScalars_gridChainHat, simplyBlockedRingHom_X_self, zero_smul]
 
 /-- The blocked variable annihilates the specialization map. -/
 @[simp]

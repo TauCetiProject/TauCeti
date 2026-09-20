@@ -94,9 +94,8 @@ theorem simplyBlockedRingHom_apply {n : ℕ} (R : Type*) [CommSemiring R] (i : F
 /-- The blocked variable specializes to zero. -/
 @[simp]
 theorem simplyBlockedRingHom_X_self {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
-    MvPolynomial.killCompl (R := R)
-      (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n)) Subtype.val_injective
-        (MvPolynomial.X i) = 0 := by
+    simplyBlockedRingHom R i (MvPolynomial.X i) = 0 := by
+  rw [simplyBlockedRingHom_apply]
   rw [MvPolynomial.X]
   exact MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range Subtype.val_injective
     (s := Finsupp.single i 1) 1 (a := i) (by simp) (by simp)
