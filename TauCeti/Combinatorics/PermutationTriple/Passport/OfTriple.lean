@@ -135,7 +135,6 @@ theorem hasPassport_iff_exists_conjugate_passportOf (t : ConnectedTriple n)
       (PassportSpec.conjugate_laminf t.passportOf tau).symm⟩
 
 /-- The isomorphism class of a connected triple lies in the class set of its attached passport. -/
-@[simp]
 theorem mk_mem_classSet_passportOf (t : ConnectedTriple n) :
     ConnectedIsoClass.mk t ∈ t.passportOf.classSet := by
   rw [PassportSpec.mem_classSet, ConnectedIsoClass.hasPassport_mk]
