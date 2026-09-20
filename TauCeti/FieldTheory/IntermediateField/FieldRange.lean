@@ -29,8 +29,8 @@ different embeddings `f` induce different structures, so none can be registered 
 
 * `TauCeti.AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
 * `TauCeti.AlgHom.finiteDimensional_of_fieldRange` and
-  `TauCeti.isSeparable_of_fieldRange`: finiteness and separability over the range transfer to the
-  source — the same identification read for a property rather than for a number.
+  `TauCeti.AlgHom.isSeparable_of_fieldRange`: finiteness and separability over the range transfer
+  to the source — the same identification read for a property rather than for a number.
 * `TauCeti.AlgHom.finSepDegree_fieldRange` and `TauCeti.AlgHom.finInsepDegree_fieldRange`: the
   same for the separable and inseparable degrees. These are the `f.fieldRange` cases of the
   general transports in `TauCeti.FieldTheory.SeparableDegree`, which is where a caller holding
@@ -72,12 +72,6 @@ theorem finiteDimensional_of_fieldRange (f : K →ₐ[F] L) [Algebra K L]
     ext z
     simpa [h] using (_root_.AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
 
-end TauCeti.AlgHom
-
-namespace TauCeti
-
-variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
-
 /-- **Separability above the range of a field embedding transfers to its source.** The range
 restriction `f.equivFieldRange` is an isomorphism `K ≃ₐ[F] f.fieldRange` over `L`, and
 separability only depends on the subfield of `L` the scalars land in.
@@ -91,13 +85,6 @@ theorem isSeparable_of_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, 
   Algebra.IsSeparable.of_equiv_equiv f.equivFieldRange.toRingEquiv.symm (RingEquiv.refl L) <| by
     ext z
     simpa [h] using (_root_.AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
-
-end TauCeti
-
-
-namespace TauCeti.AlgHom
-
-variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
 
 /-- **The separable degree above the range of a field embedding equals the one above its
 source.** The `f.fieldRange` case of `Field.finSepDegree_eq_of_surjective`. -/
