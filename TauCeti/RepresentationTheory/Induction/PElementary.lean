@@ -9,8 +9,6 @@ public import TauCeti.GroupTheory.Elementary
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 -- Non-public: the fixed-coset criterion is used only inside proofs.
 import TauCeti.GroupTheory.QuotientGroup.Basic
--- Non-public: the conjugation form of centralizer membership is used only inside proofs.
-import TauCeti.Algebra.Group.Subgroup.Centralizer
 
 /-!
 # The class function induced from a `p`-elementary subgroup
@@ -89,6 +87,7 @@ noncomputable def pSectionIndicator (k : Type u) [Semiring k] (s : G)
 
 open scoped Classical in
 /-- The defining case split of `TauCeti.pSectionIndicator`. -/
+@[simp]
 theorem pSectionIndicator_apply (x : ↥(pElementaryOfSylow s P)) :
     pSectionIndicator k s P x = if pFreePart p (x : G) = s then 1 else 0 :=
   (rfl)
@@ -239,8 +238,9 @@ private theorem out_mk_conj_mem (a : G) {z : ↥(centralizer ({s} : Set G))}
       ((Quotient.out ((z : G) : G ⧸ pElementaryOfSylow s P) : G) :
         G ⧸ pElementaryOfSylow s P) :=
     (QuotientGroup.out_eq' _).symm
-  refine ⟨Subgroup.mem_centralizer_singleton_iff_inv_mul_mul_eq.1
-    (mem_centralizer_of_mk_eq hmk z.2), ?_⟩
+  refine ⟨?_, ?_⟩
+  · rw [mul_assoc, inv_mul_eq_iff_eq_mul, eq_comm]
+    exact mem_centralizer_singleton_iff.1 (mem_centralizer_of_mk_eq hmk z.2)
   rw [← smul_quotientGroup_mk_eq_self_iff, ← hmk, smul_quotientGroup_mk_eq_self_iff]
   exact hz
 
@@ -265,8 +265,10 @@ private theorem card_cosets_eq (a : G) (ha : a ∈ centralizer ({s} : Set G)) :
     rw [← QuotientGroup.out_eq' q₁.1, ← QuotientGroup.out_eq' q₂.1]
     exact QuotientGroup.eq.2 (mem_subgroupOf.2 (by simpa using h'))
   · rintro ⟨t, ht⟩
-    have hZ : Quotient.out t ∈ centralizer ({s} : Set G) :=
-      Subgroup.mem_centralizer_singleton_iff_inv_mul_mul_eq.2 ht.1
+    have hZ : Quotient.out t ∈ centralizer ({s} : Set G) := by
+      rw [mem_centralizer_singleton_iff]
+      have h := ht.1
+      rwa [mul_assoc, inv_mul_eq_iff_eq_mul, eq_comm] at h
     refine ⟨⟨((⟨Quotient.out t, hZ⟩ : ↥(centralizer ({s} : Set G))) :
       ↥(centralizer ({s} : Set G)) ⧸
         (pElementaryOfSylow s P).subgroupOf (centralizer ({s} : Set G))),
@@ -276,14 +278,6 @@ private theorem card_cosets_eq (a : G) (ha : a ∈ centralizer ({s} : Set G)) :
         ↥(centralizer ({s} : Set G)) ⧸
           (pElementaryOfSylow s P).subgroupOf (centralizer ({s} : Set G))))
     exact (QuotientGroup.eq.2 (by simpa using mem_subgroupOf.1 h1)).trans (QuotientGroup.out_eq' t)
-
-/-- The `p`-part of an element commutes with its `p`-free part, so it centralises `s` as soon as
-the `p`-free part is `s`. -/
-private theorem pPart_mem_centralizer {x : G} (hx : pFreePart p x = s) :
-    pPart p x ∈ centralizer ({s} : Set G) := by
-  have h := (commute_pFreePart_pPart p x).symm.eq
-  rw [hx] at h
-  exact mem_centralizer_singleton_iff.2 h
 
 /-- **On the `p`-section of `s` the contributing cosets are the cosets of the `p`-elementary
 subgroup in the centraliser of `s` that the `p`-part of `x` fixes.** -/
@@ -302,10 +296,16 @@ the subgroup in the centraliser contributes. -/
 theorem pSectionCosetCard_self [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
     pSectionCosetCard s P s =
       (pElementaryOfSylow s P).relIndex (centralizer ({s} : Set G)) := by
-  have hx : pFreePart p s = s := pFreePart_eq_self Fact.out hs
-  have hu : pPart p s ∈ centralizer ({s} : Set G) := pPart_mem_centralizer hx
+  have hx : pFreePart p s = s :=
+    (eq_pFreePart Fact.out (Commute.one_right s) (mul_one s) hs (k := 0) (by simp)).symm
+  have hu := pPart_mem_centralizer_pFreePart p s
+  rw [hx] at hu
+  have hpart : pPart p s = 1 := by
+    have h := pFreePart_mul_pPart p s
+    rw [hx] at h
+    exact mul_left_cancel (h.trans (mul_one s).symm)
   have hone : (⟨pPart p s, hu⟩ : ↥(centralizer ({s} : Set G))) = 1 :=
-    Subtype.ext (by simpa using pPart_eq_one Fact.out hs)
+    Subtype.ext hpart
   have hall : ∀ q : ↥(centralizer ({s} : Set G)) ⧸
       (pElementaryOfSylow s P).subgroupOf (centralizer ({s} : Set G)),
       (⟨pPart p s, hu⟩ : ↥(centralizer ({s} : Set G))) • q = q := by
@@ -321,7 +321,8 @@ points modulo `p`. -/
 theorem pSectionCosetCard_modEq [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x : G}
     (hx : pFreePart p x = s) :
     pSectionCosetCard s P x ≡ pSectionCosetCard s P s [MOD p] := by
-  have hu : pPart p x ∈ centralizer ({s} : Set G) := pPart_mem_centralizer hx
+  have hu := pPart_mem_centralizer_pFreePart p x
+  rw [hx] at hu
   have hpg : IsPGroup p (zpowers (⟨pPart p x, hu⟩ : ↥(centralizer ({s} : Set G)))) := by
     refine IsPGroup.of_card_dvd_pow (n := (orderOf x).factorization p) ?_
     rw [Nat.card_zpowers, orderOf_mk, orderOf_pPart Fact.out (orderOf_pos x).ne']
