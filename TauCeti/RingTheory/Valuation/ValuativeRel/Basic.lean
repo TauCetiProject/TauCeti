@@ -52,7 +52,7 @@ namespace TauCeti
 instance valuativeExtension_self (K : Type*) [CommSemiring K] [ValuativeRel K] :
     ValuativeExtension K K := ⟨fun a b ↦ by simp⟩
 
-variable {K : Type*} [Field K] [ValuativeRel K]
+variable {K : Type*} [CommRing K] [ValuativeRel K]
 
 /-- If an element of valuation one differs from a square by an element of valuation at most one,
 then the square root also has valuation at most one. -/

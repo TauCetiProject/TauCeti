@@ -411,11 +411,8 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
     simp [sq, ht]
   have hsv : valuation K (c - (s : K) ^ 2) ≤ valuation K (π : K) := by
     have h := (Set.ext_iff.mp
-      (hπ.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (valuation K) 1)
-      ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2)).mp (by
-        change ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2) ∈ 𝓂[K] ^ 1
-        simpa only [pow_one] using hsmem)
-    rw [pow_one] at h
+      (hπ.maximalIdeal_eq_setOfPred_le_v_coe (valuation K))
+      ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2)).mp hsmem
     convert h using 1
     simp
   -- The corrected approximation.
@@ -592,6 +589,7 @@ theorem defectExponent_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
     Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
   let hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0 :=
     one_add_pow_ne_zero_of_valuation_lt_one hπ1 (by omega)
+  -- Proof irrelevance identifies the nonzero proof in the statement with the named proof `hu0`.
   change defectExponent (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0) = _
   let u : Kˣ := Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0
   have hnsq : ¬IsSquare u := by
@@ -616,7 +614,7 @@ theorem defectExponent_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
       exact not_le.mpr hlt
     rw [toAdd_normalizedValuation_le_iff_valuation_le] at hnle
     have hxlt : valuation K (x : K) < valuation K (p : K) := lt_of_not_ge hnle
-    apply valuation_sub_sq_one_ne_odd h2 hπ hk ξ
+    apply valuation_sq_sub_one_ne_pow_odd h2 hπ hk ξ
     calc
       valuation K (ξ ^ 2 - 1) =
           valuation K (((u : K) - 1) - ((u : K) - ξ ^ 2)) := by congr 1; ring

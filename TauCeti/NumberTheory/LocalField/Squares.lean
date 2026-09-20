@@ -39,7 +39,7 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 * `TauCeti.not_unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2)) ⊄ (Kˣ)²`.
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two_iff`: `U(K, n) ⊆ (Kˣ)²` exactly when
   `2 v_K(2) + 1 ≤ n`.
-* `TauCeti.valuation_sub_sq_one_ne_odd` and `TauCeti.not_isSquare_one_add_pow_odd`: below depth
+* `TauCeti.valuation_sq_sub_one_ne_pow_odd` and `TauCeti.not_isSquare_one_add_pow_odd`: below depth
   `2 v_K(2)`, a square cannot differ from one to exact odd order, so `1 + π^(2k+1)` is not a
   square when `k < v_K(2)`.
 
@@ -140,7 +140,7 @@ theorem unitFiltration_le_range_powMonoidHom_two_iff (h2 : (2 : K) ≠ 0) {n : �
     ((unitFiltration_antitone (Nat.le_of_lt_succ hn)).trans h)
 
 /-- Below twice the valuation of two, a square cannot differ from one to exact odd order. -/
-theorem valuation_sub_sq_one_ne_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
+theorem valuation_sq_sub_one_ne_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
     (hπ : Irreducible π) {k : ℕ} (hk : k < natCastValuation K 2 h2) (ξ : K) :
     valuation K (ξ ^ 2 - 1) ≠ valuation K (π : K) ^ (2 * k + 1) := by
   intro hξ
@@ -219,10 +219,11 @@ theorem not_isSquare_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
         (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ) (by omega))) := by
   let hu0 : 1 + (π : K) ^ (2 * k + 1) ≠ 0 := one_add_pow_ne_zero_of_valuation_lt_one
     (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ) (by omega)
+  -- Proof irrelevance identifies the nonzero proof in the statement with the named proof `hu0`.
   change ¬IsSquare (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0)
   intro hsq
   obtain ⟨ξ, hξ⟩ := isSquare_units_val_iff.mpr hsq
-  apply valuation_sub_sq_one_ne_odd h2 hπ hk ξ
+  apply valuation_sq_sub_one_ne_pow_odd h2 hπ hk ξ
   have hξ' : ((Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0 : Kˣ) : K) = ξ ^ 2 := by
     simpa [pow_two] using hξ
   rw [← hξ']
