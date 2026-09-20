@@ -18,11 +18,6 @@ converse: on a domain -- an open preconnected subset of `ℂ` -- two holomorphic
 nonvanishing derivatives and the same pre-Schwarzian derivative differ by exactly such a
 postcomposition.
 
-Both steps are available in Mathlib. Equality of the logarithmic derivatives of the two first
-derivatives identifies those derivatives up to a nonzero constant (`logDeriv_eqOn_iff`), and two
-functions with equal derivatives on a domain differ by an additive constant
-(`IsOpen.exists_eq_add_of_deriv_eq`).
-
 This is the statement that integrates a pre-Schwarzian differential equation, such as the
 Schwarz--Christoffel equation `f'' / f' = ∑ i, e i / (z - a i)`, back to its solutions.
 
@@ -45,10 +40,7 @@ open Set
 
 /-- **Rigidity of the pre-Schwarzian derivative.** Two holomorphic functions with nonvanishing
 derivatives on a domain have equal pre-Schwarzian derivatives exactly when one is obtained from
-the other by postcomposition with `w ↦ a * w + b` for a nonzero constant `a`.
-
-The additive constant disappears after one differentiation. The multiplicative constant is then
-detected by Mathlib's `logDeriv_eqOn_iff`, applied to the two first derivatives. -/
+the other by postcomposition with `w ↦ a * w + b` for a nonzero constant `a`. -/
 theorem exists_eqOn_const_mul_add_iff_logDeriv_deriv_eqOn {Ω : Set ℂ} (hΩopen : IsOpen Ω)
     (hΩconn : IsPreconnected Ω) {f g : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f Ω) (hg : DifferentiableOn ℂ g Ω)
