@@ -65,9 +65,9 @@ Suzuki generators exactly when the field Frobenius fixes it. -/
 theorem mem_range_generatorFieldEmbedding_iff (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid)
     {x : (of m hvalid).1.Closure} :
-    x ∈ RingHom.range (generatorFieldEmbedding m hvalid) ↔
+    (∃ y, generatorFieldEmbedding m hvalid y = x) ↔
       x ^ (of m hvalid).1.fieldOrder = x := by
-  rw [RingHom.mem_range, ← RingHom.mem_fieldRange]
+  rw [← RingHom.mem_fieldRange]
   rw [fieldRange_generatorFieldEmbedding]
   exact (of m hvalid).1.mem_fixedField
 
@@ -77,8 +77,9 @@ whose entries are fixed by the field Frobenius. -/
 theorem mem_range_generatorEmbedding_iff (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid)
     (g : GL (Fin 4) (of m hvalid).1.Closure) :
-    g ∈ MonoidHom.range (generatorEmbedding m hvalid) ↔
+    (∃ g₀, generatorEmbedding m hvalid g₀ = g) ↔
       ∀ i j, (g i j) ^ (of m hvalid).1.fieldOrder = g i j := by
+  rw [← MonoidHom.mem_range]
   calc
     g ∈ MonoidHom.range (generatorEmbedding m hvalid) ↔
         g ∈ MonoidHom.range
@@ -159,7 +160,7 @@ theorem map_fixedSubgroup_le_range_generatorEmbedding (m : ℕ)
         (SpStd.points 1 (of m hvalid).1.Closure).subtype ≤
       (generatorEmbedding m hvalid).range := by
   rintro g ⟨x, hx, rfl⟩
-  rw [mem_range_generatorEmbedding_iff]
+  rw [MonoidHom.mem_range, mem_range_generatorEmbedding_iff]
   intro i j
   exact (of m hvalid).1.mem_fixedField.mp
     ((of m hvalid).coe_mem_fixedField_of_mem_fixedSubgroup_steinberg x hx i j)
