@@ -29,7 +29,7 @@ established here.
 
 ## Main declaration
 
-* `exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: confined forward
+* `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`: confined forward
   trajectories in coordinates centred at a nondegenerate critical point form a Lipschitz graph
   over the stable Hessian spectral subspace.
 
@@ -64,19 +64,16 @@ displacements of forward solutions of the centred negative-gradient equation tha
 The graph map vanishes at the origin, takes values in the unstable linear subspace (the kernel of
 the stable projection), and depends only on the stable component of its input. The same radius
 `r` also guarantees that every confined solution tends to zero. -/
-theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
+theorem exists_localStableSet_eq_lipschitzGraph
     (h : IsNondegenerateCriticalPoint f x) (C : ℝ≥0) (hC : 0 < C) :
     ∃ r > 0, ∃ rho > 0, ∃ g : E → E,
       LipschitzWith C g ∧ g 0 = 0 ∧
-      (∀ v, h.contDiffAt.stableProjection
-        (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) (g v) = 0) ∧
-      (∀ v, g (h.contDiffAt.stableProjection
-        (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) v) = g v) ∧
+      (∀ v, h.stableProjection (g v) = 0) ∧
+      (∀ v, g (h.stableProjection v) = g v) ∧
       {z : E | ( ∃ y : ℝ → E,
           IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) ∧ y 0 = z ∧
             MapsTo y (Ici 0) (closedBall 0 r)) ∧
-            ‖h.contDiffAt.stableProjection
-              (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) z‖ ≤ rho} =
+            ‖h.stableProjection z‖ ≤ rho} =
         (fun v ↦ v + g v) ''
           ((h.contDiffAt.stableLinearSubspace : Set E) ∩ closedBall 0 rho) ∧
       (∀ y : ℝ → E,
@@ -84,9 +81,10 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
         MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
   let hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥ :=
     LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective
-  let P := h.contDiffAt.stableProjection hker
+  let P := h.stableProjection
   obtain ⟨K, alpha, hK, halpha, hs, hu⟩ :=
     h.contDiffAt.exists_stableProjection_exponential_bounds hker
+  rw [← h.stableProjection_eq_contDiffAt] at hs hu
   let epsilon : ℝ≥0 := alpha * C / (8 * K * (K + C))
   have hepsilon : 0 < epsilon := by
     dsimp only [epsilon]
@@ -118,8 +116,8 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
     ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
       (A := -hessianOperator f x) (P := P) (N := N)
       (K := K) (α := alpha) (ε := epsilon) hs hu hN hsmall hN0
-      (h.contDiffAt.isIdempotentElem_stableProjection hker)
-      (h.contDiffAt.commute_neg_hessianOperator_stableProjection hker) hr
+      h.isIdempotentElem_stableProjection
+      h.commute_neg_hessianOperator_stableProjection hr
   let g : E → E := ContinuousLinearMap.localStableGraphMap
     (-hessianOperator f x) P N r hs hu hr.le hN hsmall
   let C₀ : ℝ≥0 :=
@@ -162,20 +160,21 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
   · exact ContinuousLinearMap.localStableGraphMap_zero hs hu hr.le hN hsmall hN0
   · intro v
     exact ContinuousLinearMap.apply_localStableGraphMap hs hu hr.le hN hsmall
-      (h.contDiffAt.isIdempotentElem_stableProjection hker)
-      (h.contDiffAt.commute_neg_hessianOperator_stableProjection hker) v
+      h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v
   · intro v
     exact ContinuousLinearMap.localStableGraphMap_map hs hu hr.le hN hsmall
-      (h.contDiffAt.isIdempotentElem_stableProjection hker) v
+      h.isIdempotentElem_stableProjection v
   · have hrange : Set.range P = (h.contDiffAt.stableLinearSubspace : Set E) := by
-      exact h.contDiffAt.coe_range_stableProjection hker
+      dsimp only [P]
+      simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
+        congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_stableProjection
     dsimp only [g]
     rw [hfield] at hset
     simpa only [hrange] using hset
   · intro y hy hmaps
     apply ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall
-      hs hu hr.le hN hsmall hN0 (h.contDiffAt.isIdempotentElem_stableProjection hker)
-      (h.contDiffAt.commute_neg_hessianOperator_stableProjection hker)
+      hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
+      h.commute_neg_hessianOperator_stableProjection
     · rw [hfield']
       exact hy
     · exact hmaps

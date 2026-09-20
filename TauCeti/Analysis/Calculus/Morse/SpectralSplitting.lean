@@ -49,6 +49,8 @@ negative-gradient field, supplied by
   results stated for a nondegenerate critical point, which supplies the Hessian injectivity.
 * `ContDiffAt.stableProjection`: when the Hessian is injective, the continuous projection onto
   the stable linear subspace along the unstable linear subspace.
+* `TauCeti.IsNondegenerateCriticalPoint.stableProjection`: the same projection specialized to a
+  nondegenerate critical point, which supplies Hessian injectivity.
 
 ## References
 
@@ -257,17 +259,6 @@ theorem stableProjection_apply_mem (hf : ContDiffAt ℝ 2 f x)
   rw [stableProjection]
   exact Submodule.projectionL_apply_mem _ _
 
-/-- As a set, the range of the stable projection is the stable linear subspace. -/
-theorem coe_range_stableProjection (hf : ContDiffAt ℝ 2 f x)
-    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
-    Set.range (hf.stableProjection hker) = (hf.stableLinearSubspace : Set E) := by
-  ext v
-  constructor
-  · rintro ⟨w, rfl⟩
-    exact hf.stableProjection_apply_mem hker w
-  · intro hv
-    exact ⟨v, (hf.stableProjection_apply_eq_self_iff hker).2 hv⟩
-
 /-- The negative Hessian operator commutes with the projection onto its stable linear subspace. -/
 theorem commute_neg_hessianOperator_stableProjection (hf : ContDiffAt ℝ 2 f x)
     (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
@@ -304,6 +295,52 @@ theorem IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex
     Module.finrank ℝ h.contDiffAt.stableLinearSubspace + morseIndex f x = Module.finrank ℝ E :=
   h.contDiffAt.finrank_stableLinearSubspace_add_morseIndex
     (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+namespace IsNondegenerateCriticalPoint
+
+/-- The continuous projection onto the stable linear subspace at a nondegenerate critical
+point, along the unstable linear subspace. -/
+noncomputable def stableProjection (h : IsNondegenerateCriticalPoint f x) : E →L[ℝ] E :=
+  h.contDiffAt.stableProjection
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+/-- The stable projection at a nondegenerate critical point is the general stable projection
+formed using the Hessian injectivity supplied by nondegeneracy. -/
+theorem stableProjection_eq_contDiffAt (h : IsNondegenerateCriticalPoint f x) :
+    h.stableProjection = h.contDiffAt.stableProjection
+      (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) := by
+  rw [stableProjection]
+
+/-- The range of the stable projection at a nondegenerate critical point is the stable linear
+subspace. -/
+@[simp]
+theorem range_stableProjection (h : IsNondegenerateCriticalPoint f x) :
+    h.stableProjection.range = h.contDiffAt.stableLinearSubspace := by
+  simpa only [stableProjection] using h.contDiffAt.range_stableProjection
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+/-- The kernel of the stable projection at a nondegenerate critical point is the unstable linear
+subspace. -/
+@[simp]
+theorem ker_stableProjection (h : IsNondegenerateCriticalPoint f x) :
+    h.stableProjection.ker = h.contDiffAt.unstableLinearSubspace := by
+  simpa only [stableProjection] using h.contDiffAt.ker_stableProjection
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+/-- The stable projection at a nondegenerate critical point is idempotent. -/
+theorem isIdempotentElem_stableProjection (h : IsNondegenerateCriticalPoint f x) :
+    IsIdempotentElem h.stableProjection := by
+  simpa only [stableProjection] using h.contDiffAt.isIdempotentElem_stableProjection
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+/-- The negative Hessian operator commutes with the stable projection at a nondegenerate critical
+point. -/
+theorem commute_neg_hessianOperator_stableProjection (h : IsNondegenerateCriticalPoint f x) :
+    Commute (-hessianOperator f x) h.stableProjection := by
+  simpa only [stableProjection] using h.contDiffAt.commute_neg_hessianOperator_stableProjection
+    (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+end IsNondegenerateCriticalPoint
 
 end TauCeti
 

@@ -102,7 +102,7 @@ theorem exists_stableProjection_exponential_bounds (hf : ContDiffAt ℝ 2 f x)
       simpa only [hf.ker_stableProjection hker] using hw
     rw [smul_neg, ← neg_smul]
     simpa only [linearizedNegativeGradientFlow_apply] using hu t ht w hw'
-  exact ContinuousLinearMap.exists_projection_exponential_bounds
+  exact ContinuousLinearMap.IsIdempotentElem.exists_projection_exponential_bounds
     (hf.isIdempotentElem_stableProjection hker) halpha hs' hu'
 
 end ContDiffAt

@@ -31,8 +31,8 @@ local stable and unstable manifolds near a hyperbolic equilibrium.
   the backward exponential norm bound on the negative spectral subspace.
 * `LinearMap.IsSymmetric.exists_exponential_bounds_spectralSubspaces`: a symmetric operator has
   a common positive contraction rate on its two strict spectral subspaces.
-* `ContinuousLinearMap.exists_projection_exponential_bounds`: exponential bounds on the range
-  and kernel of an idempotent operator give bounds in projection form.
+* `ContinuousLinearMap.IsIdempotentElem.exists_projection_exponential_bounds`: exponential
+  bounds on the range and kernel of an idempotent operator give bounds in projection form.
 
 ## References
 
@@ -154,6 +154,8 @@ namespace ContinuousLinearMap
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   {A P : X →L[ℝ] X} {alpha : ℝ}
 
+namespace IsIdempotentElem
+
 /-- If an idempotent operator `P` has exponential flow bounds on its range and kernel, then it
 has the projection-form bounds used by the Lyapunov--Perron construction. The common constant
 absorbs the operator norms of `P` and `1 - P`. -/
@@ -195,6 +197,8 @@ theorem exists_projection_exponential_bounds (hP : IsIdempotentElem P) (halpha :
       simpa using (ContinuousLinearMap.id ℝ X - P).le_opNorm v
     exact norm_exp_smul_apply_le_mul_norm_of_le (hu t ht (v - P v) hvP) hop
       (Real.exp_nonneg _) hPc_le
+
+end IsIdempotentElem
 
 end ContinuousLinearMap
 
