@@ -53,27 +53,6 @@ the low-degree model can state.
   `explicitDelta1_explicitCup01_right` and `explicitDelta1_explicitCup10_right`: the three
   second-variable identities, in bidegrees `(0,0)`, `(0,1)` and `(1,0)`, the last with its sign.
 
-## Implementation notes
-
-Five of the six shapes with `p + q ≤ 2` are cups with a degree-`0` class, hence coefficient maps:
-cupping with a fixed invariant `y` is the coefficient map induced by the partial application
-`TauCeti.ContCohomology.pairingRight μ y`, and cupping with a fixed invariant `x` is the one
-induced by `pairingLeft μ x`. Pairing a short exact sequence with a fixed invariant is therefore a
-morphism of short exact sequences, and the four identities in which *both* sides are coefficient
-maps are read off
-`TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_coeffMap` and `explicitDelta1_coeffMap`
-at that morphism. Only the two identities whose right-hand side is the `(1,1)` cup — the one shape
-that is not a coefficient map — are proved on cochains.
-
-Of those two, `explicitDelta1_explicitCup10_right` is the only identity here that fails at
-cochain level: `δ¹` of the `(1,0)` cup cochain is the **flipped** `(1,1)` cup cochain, and the
-identification with the unflipped one is the graded-commutativity homotopy
-`TauCeti.ContCohomology.cup11_add_cup11_flip_eq_d1`, whose sign is the `(-1)^p` of the statement.
-
-Joint continuity of the middle pairing `μ` is a hypothesis only of those two theorems, where a
-continuous lift is paired with a representative of the fixed class; the other four inherit the
-continuity of a coefficient map between discrete modules.
-
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.4.3) and
@@ -120,6 +99,7 @@ omit [ContinuousSMul G A''] [IsTopologicalAddGroup B] [ContinuousSMul G B]
 /-- **`δ⁰` passes through the `(0,0)` cup in the first variable.** For an invariant `x` of `A''`
 and an invariant `y` of `B`, the class `δ⁰ (x ⌣ y) ∈ H¹(G, C')` is `δ⁰ x ⌣ y`, the `(1,0)` cup
 against the pairing `μ'` of the sub-objects. -/
+@[simp]
 theorem explicitDelta0_explicitCup00_left (x : H0 G A'') (y : H0 G B) :
     SC.explicitDelta0 (explicitCup00 G A'' B C'' μ'' hequiv'' x y) =
       explicitCup10 G A' B C' μ' hμ' hequiv' (SA.explicitDelta0 x) y := by
@@ -135,6 +115,7 @@ include hμ hequiv hincl hproj in
 omit [ContinuousSMul G A''] in
 /-- **`δ¹` passes through the `(0,1)` cup in the first variable.** For an invariant `x` of `A''`
 and a class `y ∈ H¹(G, B)`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(1,1)` cup `δ⁰ x ⌣ y`. -/
+@[simp]
 theorem explicitDelta1_explicitCup01_left [ContinuousMul G] (x : H0 G A'') (y : H1 G B) :
     SC.explicitDelta1 (explicitCup01 G A'' B C'' μ'' hμ'' hequiv'' x y) =
       explicitCup11 G A' B C' μ' hμ' hequiv' (SA.explicitDelta0 x) y := by
@@ -174,6 +155,7 @@ omit [IsTopologicalAddGroup B] [ContinuousSMul G B] in
 /-- **`δ¹` passes through the `(1,0)` cup in the first variable.** For a class `x ∈ H¹(G, A'')`
 and an invariant `y` of `B`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(2,0)` cup
 `δ¹ x ⌣ y`. -/
+@[simp]
 theorem explicitDelta1_explicitCup10_left [ContinuousMul G] (x : H1 G A'') (y : H0 G B) :
     SC.explicitDelta1 (explicitCup10 G A'' B C'' μ'' hμ'' hequiv'' x y) =
       explicitCup20 G A' B C' μ' hμ' hequiv' (SA.explicitDelta1 x) y := by
@@ -219,6 +201,7 @@ omit [IsTopologicalAddGroup A] [ContinuousSMul G A] [ContinuousSMul G B'']
 /-- **`δ⁰` passes through the `(0,0)` cup in the second variable.** For an invariant `x` of `A`
 and an invariant `y` of `B''`, the class `δ⁰ (x ⌣ y) ∈ H¹(G, C')` is the `(0,1)` cup
 `x ⌣ δ⁰ y`; the sign `(-1)^p` is `1` because `x` has degree `0`. -/
+@[simp]
 theorem explicitDelta0_explicitCup00_right (x : H0 G A) (y : H0 G B'') :
     SC.explicitDelta0 (explicitCup00 G A B'' C'' μ'' hequiv'' x y) =
       explicitCup01 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta0 y) := by
@@ -235,6 +218,7 @@ omit [IsTopologicalAddGroup A] [ContinuousSMul G A] in
 /-- **`δ¹` passes through the `(0,1)` cup in the second variable.** For an invariant `x` of `A`
 and a class `y ∈ H¹(G, B'')`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is the `(0,2)` cup
 `x ⌣ δ¹ y`. -/
+@[simp]
 theorem explicitDelta1_explicitCup01_right [ContinuousMul G] (x : H0 G A) (y : H1 G B'') :
     SC.explicitDelta1 (explicitCup01 G A B'' C'' μ'' hμ'' hequiv'' x y) =
       explicitCup02 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta1 y) := by
@@ -248,46 +232,22 @@ include hμ hequiv hincl hproj in
 omit [ContinuousSMul G B''] in
 /-- **`δ¹` passes through the `(1,0)` cup in the second variable, with a sign.** For a class
 `x ∈ H¹(G, A)` and an invariant `y` of `B''`, the class `δ¹ (x ⌣ y) ∈ H²(G, C')` is
-`-(x ⌣ δ⁰ y)`, the sign `(-1)^p` at `p = 1`. This is the only one of the six identities that
-fails on cochains: `δ¹` of the `(1,0)` cup cochain is the *flipped* `(1,1)` cup cochain, which
-represents the negative of `x ⌣ δ⁰ y` by
-`TauCeti.ContCohomology.explicitCup11_eq_neg_flip`. -/
+`-(x ⌣ δ⁰ y)`, the sign `(-1)^p` at `p = 1`. -/
+@[simp]
 theorem explicitDelta1_explicitCup10_right [ContinuousMul G] (x : H1 G A) (y : H0 G B'') :
     SC.explicitDelta1 (explicitCup10 G A B'' C'' μ'' hμ'' hequiv'' x y) =
       -explicitCup11 G A B' C' μ' hμ' hequiv' x (SB.explicitDelta0 y) := by
-  induction x using QuotientAddGroup.induction_on with
-  | _ α =>
-    have hy : ∀ g : G, g • (y : B'') = (y : B'') := y.2
-    obtain ⟨b, hb⟩ := SB.proj_surjective (y : B'')
-    have hbmem : SB.proj b ∈ H0 G B'' := hb ▸ y.2
-    obtain ⟨β, -, hβi⟩ :=
-      SB.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b)
-        (DiscreteShortExact.proj_d0_eq_zero hbmem)
-    have hβi' : ∀ g : G, SB.incl (β g) = g • b - b := fun g => (hβi g).trans (d0_apply b g)
-    have hβ : β ∈ Z1 G B' := SB.mem_Z1_of_incl_comp_eq_d0 hβi'
-    have hα1 : groupCohomology.IsCocycle₁ (α : G → A) := (mem_Z1_iff.1 α.2).2
-    have hecont : Continuous fun g : G => μ ((α : G → A) g) b :=
-      hμ.comp ((mem_Z1_iff.1 α.2).1.prodMk continuous_const)
-    -- The flipped `(1,1)` cup cochain of `β` against `α`, and not the unflipped one, is what
-    -- lies over `d¹` of the paired lift `μ ∘ α` at `b`.
-    have hcup : ∀ g h : G, SC.incl (μ'.flip (β g) (g • (α : G → A) h)) =
-        g • μ ((α : G → A) h) b - μ ((α : G → A) (g * h)) b + μ ((α : G → A) g) b := fun g h => by
-      rw [AddMonoidHom.flip_apply, ← hincl, hβi' g, map_sub, hα1 g h, map_add,
-        AddMonoidHom.add_apply, ← hequiv g ((α : G → A) h) b]
-      abel
-    have hcupZ :
-        (fun q : G × G => μ'.flip ((β : G → B') q.1) (q.1 • (α : G → A) q.2)) ∈ Z2 G C' :=
-      cup11_mem_Z2 G B' A C' μ'.flip (continuous_flip μ' hμ') (equivariant_flip μ' hequiv')
-        hβ α.2
-    have he : ∀ g : G, SC.proj (μ ((α : G → A) g) b) = μ'' ((α : G → A) g) (g • (y : B'')) :=
-      fun g => by rw [hy g, ← hproj, hb]
-    have hleft := SC.explicitDelta1_apply
-      (⟨fun g => μ'' ((α : G → A) g) (g • (y : B'')),
-        cup10_mem_Z1 G A B'' C'' μ'' hμ'' hequiv'' α.2 y⟩ : Z1 G C'')
-      hecont he hcupZ hcup
-    have hright := SB.explicitDelta0_apply y hb hβ hβi'
-    simp only [QuotientAddGroup.mk'_apply] at hleft hright
-    rw [explicitCup10_mk, hleft, hright, explicitCup11_eq_neg_flip, neg_neg, explicitCup11_mk]
+  -- A double flip is definitionally the original pairing; only its proof witnesses differ.
+  change SC.explicitDelta1 (explicitCup10 G A B'' C'' μ''.flip.flip _ _ x y) = _
+  rw [← explicitCup01_eq_cup10_flip G B'' A C'' μ''.flip
+    (continuous_flip μ'' hμ'') (equivariant_flip μ'' hequiv''),
+    explicitDelta1_explicitCup01_left SB SC μ.flip μ'.flip μ''.flip
+      (continuous_flip μ hμ) (continuous_flip μ' hμ') (continuous_flip μ'' hμ'')
+      (equivariant_flip μ hequiv) (equivariant_flip μ' hequiv')
+      (equivariant_flip μ'' hequiv'') (fun b a => hincl a b) (fun b a => hproj a b),
+    ← neg_inj, neg_neg, explicitCup11_eq_neg_flip]
+  simp only [neg_neg]
+  congr 1
 
 end SecondVariable
 
