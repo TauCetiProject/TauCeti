@@ -284,7 +284,11 @@ variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v + 1} Q]
 
 /-- **The backtracks at a vertex are linearly independent.** The head backtracks `a a*` of the
 arrows `a` into `v` and the tail backtracks `a* a` of the arrows out of `v` are pairwise distinct
-paths of the doubled quiver, so they are a linearly independent family in its path algebra. -/
+paths of the doubled quiver, so they are a linearly independent family in its path algebra.
+
+The path-basis restriction argument is adapted from
+`TauCeti.DoubledQuiver.linearIndependent_vertexIdempotent_ofArrow_backtrackElem`, with a separate
+indexing argument needed here for the symmetrification of an arbitrary quiver. -/
 theorem linearIndependent_backtrackElem (v : Q) :
     LinearIndependent k
       (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => headBacktrackElem k x.2)

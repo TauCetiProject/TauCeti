@@ -16,8 +16,8 @@ A ring-valued function on the vertices of a quiver *alternates* when it is negat
 multiplied by `(-1)ⁿ` over a path of length `n`, so it is unchanged along a path of even length and
 negated along one of odd length.
 
-This is the arithmetic behind every "a sign colouring exists exactly when there is no odd closed
-walk" argument: a closed walk of odd length forces `c a = -c a`, hence `2 * c a = 0`.
+In particular, a closed walk of odd length forces an alternating function to satisfy
+`c a = -c a`, hence `2 * c a = 0`.
 
 ## Main results
 

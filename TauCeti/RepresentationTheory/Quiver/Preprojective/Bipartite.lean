@@ -26,12 +26,9 @@ a multiple of `s_v`, by `TauCeti.gaugedPreprojectiveRelator_bipartite_vertexCorn
 This file proves the obstruction supplied by an odd closed walk. The backtracks at a fixed vertex
 are distinct basis paths, so the corner equation `e_v ρ_ε e_v = c_v • s_v` reads off the gauge:
 `ε_a` is the scalar `c` at the head of `a`, and `-c` at its tail. Hence `c` changes sign along
-every arrow, is a unit as soon as `ε` is, and a closed walk of odd length in the doubled quiver
-forces `2 = 0` in the coefficient ring. A loop is the smallest such walk.
-
-Over a coefficient ring in which `2 = 0` the sign is invisible: the signless and the preprojective
-local relators are then the same element, the two relation ideals coincide, and the signless
-algebra is the preprojective algebra.
+every arrow and is a unit at each vertex incident to an arrow as soon as the corresponding value
+of `ε` is a unit. A closed walk of odd length in the doubled quiver therefore forces `2 = 0` in
+the coefficient ring. A loop is the smallest such walk.
 
 ## Main results
 
@@ -42,9 +39,6 @@ algebra is the preprojective algebra.
 * `TauCeti.not_exists_forall_vertexCorner_eq_smul_of_odd_length`: **no unit gauge compares the
   preprojective relation cornerwise with the signless one when the doubled quiver carries a closed
   walk of odd length**, unless `2 = 0`.
-* `TauCeti.signlessPreprojectiveIdeal_eq_preprojectiveIdeal_of_two_eq_zero` and
-  `TauCeti.signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero`: **in characteristic two the
-  signless and the preprojective relations agree**, for every finite quiver.
 
 ## References
 
@@ -112,13 +106,12 @@ theorem eq_neg_of_forall_vertexCorner_eq_smul (ε : ∀ ⦃i j : Q⦄, (i ⟶ j)
 /-- **The comparison scalar at the head of an arrow is the gauge of that arrow**, hence a unit
 whenever the gauge is. -/
 theorem isUnit_of_forall_vertexCorner_eq_smul {ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k}
-    (hε : ∀ ⦃i j : Q⦄ (a : i ⟶ j), IsUnit (ε a)) {c : Q → k}
+    {i j : Q} (a : i ⟶ j) (hεa : IsUnit (ε a)) {c : Q → k}
     (hc : ∀ w : Q, doubledVertexIdempotent k w * gaugedPreprojectiveRelator k ε *
         doubledVertexIdempotent k w
-      = c w • signlessPreprojectiveRelator k (Symmetrify.of.obj w))
-    {i j : Q} (a : i ⟶ j) : IsUnit (c j) := by
+      = c w • signlessPreprojectiveRelator k (Symmetrify.of.obj w)) : IsUnit (c j) := by
   rw [← (gauge_eq_of_vertexCorner_eq_smul k ε (hc j)).1 i a]
-  exact hε a
+  exact hεa
 
 end Gauge
 
@@ -152,7 +145,7 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_odd_length {ε : ∀ ⦃i j : 
     | nil => simp at hn
     | cons q e =>
       cases e with
-      | inl a => exact isUnit_of_forall_vertexCorner_eq_smul k hε hc a
+      | inl a => exact isUnit_of_forall_vertexCorner_eq_smul k a (hε a) hc
       | inr a =>
         have hεa : ε a = -c v := (gauge_eq_of_vertexCorner_eq_smul k ε (hc v)).2 _ a
         exact (IsUnit.neg_iff (c v)).1 (hεa ▸ hε a)
@@ -179,69 +172,5 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_loop {ε : ∀ ⦃i j : Q⦄, 
     ⟨0, rfl⟩
 
 end Obstruction
-
-/-! ### Characteristic two -/
-
-section CharTwo
-
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
-  [∀ i j : Q, Fintype (i ⟶ j)]
-
-/-- **In characteristic two the signless relator is the preprojective relator.** The two differ
-only in the sign of the tail backtracks. -/
-@[simp]
-theorem signlessPreprojectiveRelator_eq_localPreprojectiveRelator_of_two_eq_zero
-    (h2 : (2 : k) = 0) (v : Q) :
-    signlessPreprojectiveRelator k (Symmetrify.of.obj v) = localPreprojectiveRelator k v := by
-  have hneg : ∀ z : pathAlgebra k (Symmetrify Q), -z = z := fun z =>
-    neg_eq_of_add_eq_zero_left (by rw [← two_smul k z, h2, zero_smul])
-  rw [signlessPreprojectiveRelator_of, localPreprojectiveRelator_def, sub_eq_add_neg, hneg]
-
-/-- **In characteristic two the signless and the preprojective relation ideals coincide**, for
-every finite quiver, bipartite or not. -/
-@[simp]
-theorem signlessPreprojectiveIdeal_eq_preprojectiveIdeal_of_two_eq_zero (h2 : (2 : k) = 0) :
-    signlessPreprojectiveIdeal k (Symmetrify Q) = preprojectiveIdeal k Q := by
-  rw [signlessPreprojectiveIdeal_eq_span,
-    preprojectiveIdeal_eq_span_range_localPreprojectiveRelator]
-  congr 1
-  ext x
-  simp only [Set.mem_range]
-  constructor
-  · rintro ⟨w, rfl⟩
-    exact ⟨w, (signlessPreprojectiveRelator_eq_localPreprojectiveRelator_of_two_eq_zero
-      (Q := Q) k h2 w).symm⟩
-  · rintro ⟨w, rfl⟩
-    exact ⟨w, signlessPreprojectiveRelator_eq_localPreprojectiveRelator_of_two_eq_zero
-      (Q := Q) k h2 w⟩
-
-/-- **In characteristic two the signless algebra of a doubled quiver is its preprojective
-algebra**, by the identity of the doubled path algebra. -/
-noncomputable def signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero (h2 : (2 : k) = 0) :
-    signlessPreprojectiveAlgebra k (Symmetrify Q) ≃ₐ[k] preprojectiveAlgebra k Q :=
-  Ideal.quotientEquivAlgOfEq k (congrArg TwoSidedIdeal.asIdeal
-    (signlessPreprojectiveIdeal_eq_preprojectiveIdeal_of_two_eq_zero k h2))
-
-/-- The characteristic-two comparison is induced by the identity of the doubled path algebra. -/
-@[simp]
-theorem signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero_signlessPreprojectiveMk
-    (h2 : (2 : k) = 0) (x : pathAlgebra k (Symmetrify Q)) :
-    signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero k h2
-        (signlessPreprojectiveMk k _ x) = preprojectiveMk k Q x := by
-  rw [signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero, signlessPreprojectiveMk_apply,
-    Ideal.quotientEquivAlgOfEq_mk, preprojectiveMk_apply]
-
-/-- The inverse of the characteristic-two comparison is also induced by the identity of the
-doubled path algebra. -/
-@[simp]
-theorem signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero_symm_preprojectiveMk
-    (h2 : (2 : k) = 0) (x : pathAlgebra k (Symmetrify Q)) :
-    (signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero k h2).symm
-        (preprojectiveMk k Q x) = signlessPreprojectiveMk k _ x := by
-  apply (signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero k h2).injective
-  rw [AlgEquiv.apply_symm_apply,
-    signlessPreprojectiveAlgebraEquivPreprojectiveOfTwoEqZero_signlessPreprojectiveMk]
-
-end CharTwo
 
 end TauCeti
