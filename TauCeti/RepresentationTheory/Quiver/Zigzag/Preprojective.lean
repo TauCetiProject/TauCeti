@@ -68,7 +68,6 @@ theorem sourceSinkColor_ne {i j : OrientedQuiver G (Orientation.sourceSink C)} (
   exact C.valid a.1
 
 /-- Every arrow of the source--sink orientation ends at a vertex of colour `true`. -/
-@[simp]
 theorem sourceSinkColor_target_eq_true
     {i j : OrientedQuiver G (Orientation.sourceSink C)} (a : i ⟶ j) :
     sourceSinkColor C j = true := by
