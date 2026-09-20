@@ -14,7 +14,7 @@ This file records measure formulas for finite families of disjoint additive tran
 
 ## Main results
 
-* `TauCeti.Measure.measure_biUnion_sub_mem`: a finite disjoint union of translates has measure
+* `Measure.measure_biUnion_sub_mem`: a finite disjoint union of translates has measure
   equal to the number of translates times the measure of the original set.
 -/
 
@@ -24,13 +24,12 @@ open MeasureTheory Set
 
 namespace TauCeti
 
-namespace Measure
-
 variable {E : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E]
 
 /-- The union of finitely many pairwise disjoint translates of a measurable set has measure equal
 to the number of translates times the measure of the set. -/
-theorem measure_biUnion_sub_mem (mu : Measure E) [mu.IsAddRightInvariant]
+theorem _root_.MeasureTheory.Measure.measure_biUnion_sub_mem
+    (mu : Measure E) [mu.IsAddRightInvariant]
     {G F : Set E} (hFm : MeasurableSet F)
     (hdisj : ∀ w₁ ∈ G, ∀ w₂ ∈ G, w₁ ≠ w₂ →
       Disjoint {y : E | y - w₁ ∈ F} {y : E | y - w₂ ∈ F})
@@ -50,7 +49,5 @@ theorem measure_biUnion_sub_mem (mu : Measure E) [mu.IsAddRightInvariant]
     rw [h, measure_preimage_add_right]
   simp_rw [htranslate]
   simp
-
-end Measure
 
 end TauCeti
