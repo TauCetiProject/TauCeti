@@ -133,8 +133,8 @@ private theorem preimage_pairReindex_eq_of_measurable_arrayTailFamily
       simp [hf]
 
 /-- **Every corner-tail event is fixed by a finitely supported separate relabelling**: permuting
-the two axes independently by finitely supported permutations changes only finitely many entries,
-and a corner-tail event does not read them. -/
+the two axes independently by finitely supported permutations fixes every sufficiently far corner,
+which is all that a corner-tail event reads. -/
 theorem preimage_pairReindex_eq_self_of_measurableSet_arrayTail
     {s : Set (ℕ × ℕ → α)}
     (hs : MeasurableSet[arrayTail (fun p (x : ℕ × ℕ → α) => x p)] s)
