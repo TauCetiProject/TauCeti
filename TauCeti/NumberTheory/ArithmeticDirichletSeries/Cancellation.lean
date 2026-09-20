@@ -34,10 +34,11 @@ on `Re s > 1 - 1 / d` (`TauCeti.differentiableOn_continuedLFunctionOfWeight`); s
 continuation of the L-series of `χ` across the line `Re s = 1`.
 
 Both are stable under deleting finitely many Euler factors, the operation a character family
-needs at the bad primes of its modulus. The partial sums of `χ.restrict S` differ from those of
-`χ` by one rescaled partial sum for each deleted prime
-(`TauCeti.MultiplicativeIdealWeight.idealSummatory_restrict_insert`), so cancellation passes to
-the restriction (`TauCeti.HasCancellation.restrict`); on `Re s > 1` the two continued
+needs at the bad primes of its modulus. A one-prime recurrence relates the partial sums after
+inserting a forbidden prime to two partial sums before the insertion
+(`TauCeti.MultiplicativeIdealWeight.idealSummatory_restrict_insert`). Iterating this recurrence
+shows that cancellation passes to the restriction (`TauCeti.HasCancellation.restrict`); on
+`Re s > 1` the two continued
 `L`-functions differ by the entire factor `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))`
 (`TauCeti.continuedLFunctionOfWeight_restrict_of_one_lt_re`), and under cancellation that identity
 propagates to the whole half-plane `Re s > 1 - 1 / d`
@@ -142,44 +143,6 @@ theorem hasCancellation_conj_iff {χ : UnitaryIdealWeight K} :
 ### Deleting finitely many Euler factors
 -/
 
-/-- **Forbidding one more prime in an ideal partial sum.** For a completely multiplicative weight
-`χ` and a prime `𝔭 ∉ S`, the partial sums of `χ` over the ideals prime to `insert 𝔭 S` are those
-over the ideals prime to `S`, minus `χ(𝔭)` times the same partial sum at the cutoff divided by
-`N(𝔭)`: the ideals prime to `S` and divisible by `𝔭` are `𝔭` times the ideals prime to `S`.
-
-This is the finite identity behind the `L`-series factor `1 - χ(𝔭) N(𝔭) ^ (-s)` of
-`TauCeti.MultiplicativeIdealWeight.LSeries_restrict`. -/
-theorem MultiplicativeIdealWeight.idealSummatory_restrict_insert
-    (χ : MultiplicativeIdealWeight K) {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Finite)
-    {𝔭 : HeightOneSpectrum (𝓞 K)} (hS' : (insert 𝔭 S).Finite) (h𝔭 : 𝔭 ∉ S) (x : ℝ) :
-    idealSummatory K (χ.restrict (insert 𝔭 S) hS').toIdealArithmeticFunction x =
-      idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction x -
-        χ 𝔭.asIdeal * idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction
-          (x / Ideal.absNorm 𝔭.asIdeal) := by
-  classical
-  set f := (χ.restrict S hS).toIdealArithmeticFunction with hf
-  set P : (Ideal (𝓞 K))⁰ := ⟨𝔭.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩ with hPdef
-  -- on the multiples `𝔭 * J` the restricted weight factors, because `𝔭` is prime to `S`
-  have hstep : ∀ J : (Ideal (𝓞 K))⁰, f (P * J) = χ 𝔭.asIdeal * f J := by
-    intro J
-    simp only [hf, MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, Submonoid.coe_mul,
-      hPdef, MultiplicativeIdealWeight.restrict_apply, Ideal.isPrimeTo_mul_iff,
-      Ideal.isPrimeTo_asIdeal_iff, h𝔭, not_false_eq_true, true_and]
-    split_ifs <;> simp [_root_.map_mul]
-  have hsplit : idealSummatory K (χ.restrict (insert 𝔭 S) hS').toIdealArithmeticFunction x =
-      idealSummatory K f x -
-        idealSummatory K (fun I ↦ if 𝔭.asIdeal ∣ (I : Ideal (𝓞 K)) then f I else 0) x := by
-    rw [idealSummatory_apply, idealSummatory_apply, idealSummatory_apply,
-      ← Finset.sum_sub_distrib]
-    refine Finset.sum_congr rfl fun I _ ↦ ?_
-    rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
-      MultiplicativeIdealWeight.restrict_insert_apply χ hS]
-    split_ifs <;> simp [hf]
-  rw [hsplit, idealSummatory_ite_dvd K P f x]
-  congr 1
-  rw [idealSummatory_apply, idealSummatory_apply, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun J _ ↦ hstep J
-
 /-- **Cancellation survives the deletion of finitely many Euler factors.** If the ideal partial
 sums of a unitary weight `χ` are `O(x ^ (1 - 1 / [K : ℚ]))`, so are those of its restriction away
 from a finite set of primes: each prime removed splits the partial sum into two partial sums of
@@ -209,7 +172,7 @@ theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellat
         rw [UnitaryIdealWeight.toIdealArithmeticFunction_def,
           UnitaryIdealWeight.toIdealArithmeticFunction_def, UnitaryIdealWeight.val_restrict,
           UnitaryIdealWeight.val_restrict]
-        exact χ.1.idealSummatory_restrict_insert hT _ h𝔭 x
+        exact χ.1.idealSummatory_restrict_insert hT h𝔭 x
       have hsecond : ‖idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
           (x / Ideal.absNorm 𝔭.asIdeal)‖ ≤ max C 0 * x ^ θ := by
         rcases lt_or_ge (x / (Ideal.absNorm 𝔭.asIdeal : ℝ)) 1 with hy | hy
@@ -332,8 +295,8 @@ theorem continuedLFunctionOfWeight_restrict {χ : UnitaryIdealWeight K}
         hcorr.differentiableOn).analyticOnNhd hUopen)
       (convex_halfSpace_re_gt _).isPreconnected (z₀ := 2) ?_ ?_ hs
   · simpa using (cancellationExponent_lt_one (K := K)).trans one_lt_two
-  · filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds
-      (show (1 : ℝ) < (2 : ℂ).re by norm_num)] with z hz
+  · have htwo : (1 : ℝ) < (2 : ℂ).re := by norm_num
+    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds htwo] with z hz
     exact continuedLFunctionOfWeight_restrict_of_one_lt_re χ S hz
 
 /-!

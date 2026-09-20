@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.LSeries.Twist
@@ -43,6 +44,8 @@ products omit the ramified primes, such as the trivial Galois-character series, 
   of the restriction by the deleted local factors recovers the original `L`-series.
 * `TauCeti.MultiplicativeIdealWeight.LSeries_restrict`: the same for a completely multiplicative
   weight, with the deleted factors in closed form.
+* `TauCeti.MultiplicativeIdealWeight.idealSummatory_restrict_insert`: the one-prime recurrence for
+  partial sums of a restricted completely multiplicative weight.
 * `TauCeti.LSeries_ofBadPrimes`: the `L`-series of the indicator of the ideals prime to `S` is
   `ζ_K(s) * ∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-s))` on `Re s > 1`.
 * `TauCeti.prod_one_sub_absNorm_cpow_neg_ne_zero`: the correction factor has no zero on
@@ -141,6 +144,45 @@ end EulerProductData
 namespace MultiplicativeIdealWeight
 
 variable (χ : MultiplicativeIdealWeight K) {s : ℂ}
+
+/-- **Forbidding one more prime in an ideal partial sum.** For a completely multiplicative weight
+`χ` and a prime `𝔭 ∉ S`, the partial sums of `χ` over the ideals prime to `insert 𝔭 S` are those
+over the ideals prime to `S`, minus `χ(𝔭)` times the same partial sum at the cutoff divided by
+`N(𝔭)`: the ideals prime to `S` and divisible by `𝔭` are `𝔭` times the ideals prime to `S`.
+
+This is the finite identity behind the `L`-series factor `1 - χ(𝔭) N(𝔭) ^ (-s)` of
+`TauCeti.MultiplicativeIdealWeight.LSeries_restrict`. -/
+theorem idealSummatory_restrict_insert
+    {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Finite)
+    {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∉ S) (x : ℝ) :
+    idealSummatory K (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction x -
+        χ 𝔭.asIdeal * idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction
+          (x / Ideal.absNorm 𝔭.asIdeal) := by
+  classical
+  set f := (χ.restrict S hS).toIdealArithmeticFunction with hf
+  set P : (Ideal (𝓞 K))⁰ := ⟨𝔭.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩ with hPdef
+  -- on the multiples `𝔭 * J` the restricted weight factors, because `𝔭` is prime to `S`
+  have hstep : ∀ J : (Ideal (𝓞 K))⁰, f (P * J) = χ 𝔭.asIdeal * f J := by
+    intro J
+    simp only [hf, MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, Submonoid.coe_mul,
+      hPdef, MultiplicativeIdealWeight.restrict_apply, Ideal.isPrimeTo_mul_iff,
+      Ideal.isPrimeTo_asIdeal_iff, h𝔭, not_false_eq_true, true_and]
+    split_ifs <;> simp [_root_.map_mul]
+  have hsplit : idealSummatory K
+      (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K f x -
+        idealSummatory K (fun I ↦ if 𝔭.asIdeal ∣ (I : Ideal (𝓞 K)) then f I else 0) x := by
+    rw [idealSummatory_apply, idealSummatory_apply, idealSummatory_apply,
+      ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun I _ ↦ ?_
+    rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.restrict_insert_apply χ hS]
+    split_ifs <;> simp [hf]
+  rw [hsplit, idealSummatory_ite_dvd K P f x]
+  congr 1
+  rw [idealSummatory_apply, idealSummatory_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun J _ ↦ hstep J
 
 /-- **Deleting finitely many Euler factors of a completely multiplicative weight.** Where the
 ideal-indexed Dirichlet series of `χ` converges absolutely, restricting `χ` away from a finite set
