@@ -65,7 +65,8 @@ theorem scalarCurvature_apply (x : M) :
 theorem scalarCurvature_eq_sum {i : Type*} [Fintype i] (x : M)
     (b : OrthonormalBasis i ℝ (TangentSpace I x)) :
     cov.scalarCurvature x = ∑ j, cov.ricciTensor x (b j) (b j) := by
-  exact TauCeti.bilinFormTrace_eq_sum_inner _ b
+  rw [scalarCurvature_apply]
+  exact TauCeti.bilinFormTrace_eq_sum_apply _ b
 
 /-- In an orthonormal basis, scalar curvature is the double contraction of the curvature
 tensor. The inner sum contracts the curvature output against its first argument; the outer sum

@@ -73,12 +73,6 @@ The two symmetry statements go through Mathlib's flip characterizations
 input is `TauCeti.BilinForm.ofTensor_comm`, that the construction intertwines the flip of the
 tensor square with the flip of a form.
 
-The metric trace takes an explicit bilinear form, so `TauCeti.bilinFormToEnd` and
-`TauCeti.bilinFormTrace` live at the `TauCeti` root rather than in `TauCeti.BilinForm`: a Mathlib
-type namespace nested inside `namespace TauCeti` does not provide dot notation for that type, and
-the repository's dot-notation lint rejects declarations placed there. The root names follow
-`TauCeti.bilinForm_toMatrix_baseChange`.
-
 ## References
 
 This is the linear-algebra half of the invariant-form dictionary that Layer 6b of the
@@ -222,7 +216,7 @@ theorem bilinFormTrace_apply (B : BilinForm ℝ W) :
   (rfl)
 
 /-- In an orthonormal basis, the metric trace is the sum of the diagonal values. -/
-theorem bilinFormTrace_eq_sum_inner {i : Type*} [Fintype i] (B : BilinForm ℝ W)
+theorem bilinFormTrace_eq_sum_apply {i : Type*} [Fintype i] (B : BilinForm ℝ W)
     (b : OrthonormalBasis i ℝ W) : bilinFormTrace B = ∑ j, B (b j) (b j) := by
   rw [bilinFormTrace_apply, LinearMap.trace_eq_sum_inner _ b]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
