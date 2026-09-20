@@ -34,6 +34,8 @@ of the Suzuki group by its generators, so clients need not unfold the subgroup d
 * `TauCeti.Suzuki.unipotent_mul_unipotent` and `TauCeti.Suzuki.unipotent_inv`: the unipotent
   generators multiply by `u(a, b) u(c, d) = u(a + c, b + d + a c^θ)`, with `θ = 2^(n+1)`, and
   invert by `u(a, b)⁻¹ = u(a, b + a^(1+θ))`.
+* `TauCeti.Suzuki.unipotent_inj` and `TauCeti.Suzuki.unipotent_eq_one_iff`: a unipotent
+  generator determines its parameters, and is the identity exactly at `(0, 0)`.
 * `TauCeti.Suzuki.weyl_mul_weyl`: the Weyl generator is an involution.
 * `TauCeti.Suzuki.exists_pow_two_pow_succ_ne_sq`: for `n ≠ 0` the generator field has a unit
   `κ` with `κ^θ ≠ κ^2`, so the torus of the Suzuki group acts nontrivially on its unipotent
@@ -58,14 +60,17 @@ namespace Suzuki
 
 variable (n : ℕ)
 
+/-- The generator field of a Suzuki group has `2 ^ (2n + 1)` elements. -/
+private theorem card_galoisField : Nat.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) :=
+  GaloisField.card 2 (2 * n + 1) (by omega)
+
 /-- Applying `x ↦ x ^ 2 ^ (n + 1)` twice on `𝔽_(2^(2n+1))` is the Frobenius `x ↦ x ^ 2`. -/
 @[simp]
 theorem pow_two_pow_succ_pow_two_pow_succ (x : GaloisField 2 (2 * n + 1)) :
     (x ^ 2 ^ (n + 1)) ^ 2 ^ (n + 1) = x ^ 2 := by
   let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
   have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) := by
-    rw [← Nat.card_eq_fintype_card, GaloisField.card]
-    omega
+    rw [← Nat.card_eq_fintype_card, card_galoisField]
   have hexp : 2 ^ (n + 1) * 2 ^ (n + 1) = 2 ^ (2 * n + 1) * 2 := by
     rw [← pow_add, ← pow_succ]
     congr 1
@@ -79,8 +84,7 @@ theorem exists_pow_two_pow_succ_ne_sq (hn : n ≠ 0) :
       (κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1) ≠ (κ : GaloisField 2 (2 * n + 1)) ^ 2 := by
   let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
   have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) := by
-    rw [← Nat.card_eq_fintype_card, GaloisField.card]
-    omega
+    rw [← Nat.card_eq_fintype_card, card_galoisField]
   have hfour : 4 ≤ 2 ^ (n + 1) := by
     calc 4 = 2 ^ 2 := by norm_num
       _ ≤ 2 ^ (n + 1) := Nat.pow_le_pow_right (by norm_num) (by omega)
@@ -192,7 +196,6 @@ theorem unipotent_mul_unipotent (a b c d : GaloisField 2 (2 * n + 1)) :
   all_goals simp [htwo, hthree]
 
 /-- The inverse of a unipotent generator: `u(a, b)⁻¹ = u(a, b + a^(1+θ))`. -/
-@[simp]
 theorem unipotent_inv (a b : GaloisField 2 (2 * n + 1)) :
     (unipotent n a b)⁻¹ = unipotent n a (b + a * a ^ 2 ^ (n + 1)) := by
   refine inv_eq_of_mul_eq_one_right ?_
@@ -200,6 +203,23 @@ theorem unipotent_inv (a b : GaloisField 2 (2 * n + 1)) :
   congr 1
   linear_combination (b + a * a ^ 2 ^ (n + 1)) *
     (CharTwo.two_eq_zero : (2 : GaloisField 2 (2 * n + 1)) = 0)
+
+/-- The unipotent generators are determined by their parameters. -/
+theorem unipotent_inj {a b c d : GaloisField 2 (2 * n + 1)} :
+    unipotent n a b = unipotent n c d ↔ a = c ∧ b = d := by
+  refine ⟨fun h => ⟨?_, ?_⟩, fun h => by rw [h.1, h.2]⟩
+  · have := congrArg (fun g : GL (Fin 4) (GaloisField 2 (2 * n + 1)) =>
+      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1))) 1 0) h
+    simpa using this
+  · have := congrArg (fun g : GL (Fin 4) (GaloisField 2 (2 * n + 1)) =>
+      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1))) 3 1) h
+    simpa using this
+
+/-- A unipotent generator is the identity exactly at the parameters `(0, 0)`. -/
+@[simp]
+theorem unipotent_eq_one_iff {a b : GaloisField 2 (2 * n + 1)} :
+    unipotent n a b = 1 ↔ a = 0 ∧ b = 0 := by
+  rw [← unipotent_zero_zero n, unipotent_inj]
 
 /-- The Weyl generator is an involution. -/
 @[simp]

@@ -35,10 +35,8 @@ Nothing here concerns the centre of the group, its order, or its simplicity.
 
 ## Main results
 
-* `TauCeti.Suzuki.unipotent_mem_commutator` and `TauCeti.Suzuki.weyl_mem_commutator`: for
-  `n ≠ 0` every standard generator lies in the derived subgroup of `TauCeti.suzukiGroup n`.
-* `TauCeti.Suzuki.commutator_suzukiGroup`: for `n ≠ 0` the Suzuki group is its own derived
-  subgroup.
+* `TauCeti.Suzuki.commutator_suzukiGroup_eq_self`: for `n ≠ 0` the Suzuki group is its own
+  derived subgroup.
 * `TauCeti.Suzuki.isPerfect_suzukiGroup`: for `n ≠ 0` the Suzuki group is perfect.
 
 ## References
@@ -64,7 +62,8 @@ variable {n : ℕ}
 
 /-- For `n ≠ 0` every long-root generator `u(0, b)` lies in the derived subgroup of the Suzuki
 group; it is a commutator of a torus element with another long-root generator. -/
-theorem unipotent_zero_mem_commutator (hn : n ≠ 0) (b : GaloisField 2 (2 * n + 1)) :
+private theorem unipotent_zero_mem_commutator_suzukiGroup (hn : n ≠ 0)
+    (b : GaloisField 2 (2 * n + 1)) :
     unipotent n 0 b ∈ ⁅suzukiGroup n, suzukiGroup n⁆ := by
   obtain ⟨κ, hκ⟩ := exists_pow_two_pow_succ_ne_sq n hn
   have hμ : ((κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1))⁻¹ + 1 ≠ 0 := by
@@ -80,7 +79,8 @@ theorem unipotent_zero_mem_commutator (hn : n ≠ 0) (b : GaloisField 2 (2 * n +
 
 /-- For `n ≠ 0` every unipotent generator `u(a, b)` lies in the derived subgroup of the Suzuki
 group. -/
-theorem unipotent_mem_commutator (hn : n ≠ 0) (a b : GaloisField 2 (2 * n + 1)) :
+private theorem unipotent_mem_commutator_suzukiGroup (hn : n ≠ 0)
+    (a b : GaloisField 2 (2 * n + 1)) :
     unipotent n a b ∈ ⁅suzukiGroup n, suzukiGroup n⁆ := by
   obtain ⟨κ, hκ⟩ := exists_pow_two_pow_succ_ne_sq n hn
   set l : GaloisField 2 (2 * n + 1) :=
@@ -93,17 +93,19 @@ theorem unipotent_mem_commutator (hn : n ≠ 0) (a b : GaloisField 2 (2 * n + 1)
     (unipotent_mem_suzukiGroup (a / l) 0)
   rw [commutatorElement_torus_unipotent, ← hl] at key
   have h2 := mul_mem key
-    (unipotent_zero_mem_commutator hn (b + l * (a / l) * (a / l) ^ 2 ^ (n + 1)))
+    (unipotent_zero_mem_commutator_suzukiGroup hn (b + l * (a / l) * (a / l) ^ 2 ^ (n + 1)))
   rw [unipotent_mul_unipotent] at h2
   convert h2 using 2
   · rw [mul_div_cancel₀ _ hl0, add_zero]
   · simp only [mul_zero, zero_add, zero_pow (pow_ne_zero _ two_ne_zero), add_zero]
-    rw [add_left_comm, CharTwo.add_self_eq_zero, add_zero]
+    linear_combination (-(l * (a / l) * (a / l) ^ 2 ^ (n + 1))) *
+      (CharTwo.two_eq_zero : (2 : GaloisField 2 (2 * n + 1)) = 0)
 
 /-! ## The Weyl generator lies in the derived subgroup -/
 
 /-- For `n ≠ 0` the Weyl generator lies in the derived subgroup of the Suzuki group. -/
-theorem weyl_mem_commutator (hn : n ≠ 0) : weyl n ∈ ⁅suzukiGroup n, suzukiGroup n⁆ := by
+private theorem weyl_mem_commutator_suzukiGroup (hn : n ≠ 0) :
+    weyl n ∈ ⁅suzukiGroup n, suzukiGroup n⁆ := by
   have hrel := weyl_mul_unipotent_zero_mul_weyl n 1 one_ne_zero
   simp only [one_pow, div_one, inv_one, Units.mk0_one, map_one, mul_one] at hrel
   have hconj : weyl n * unipotent n 0 1 * weyl n ∈ ⁅suzukiGroup n, suzukiGroup n⁆ := by
@@ -112,27 +114,28 @@ theorem weyl_mem_commutator (hn : n ≠ 0) : weyl n ∈ ⁅suzukiGroup n, suzuki
       group
     rw [this]
     exact mul_mem (Subgroup.commutator_mem_commutator weyl_mem_suzukiGroup
-      (unipotent_mem_suzukiGroup 0 1)) (unipotent_zero_mem_commutator hn 1)
+      (unipotent_mem_suzukiGroup 0 1)) (unipotent_mem_commutator_suzukiGroup hn 0 1)
   have : weyl n = (unipotent n 1 1)⁻¹ * (weyl n * unipotent n 0 1 * weyl n) *
       (unipotent n 1 0)⁻¹ := by
     rw [hrel]
     group
   rw [this]
-  exact mul_mem (mul_mem (inv_mem (unipotent_mem_commutator hn 1 1)) hconj)
-    (inv_mem (unipotent_mem_commutator hn 1 0))
+  exact mul_mem (mul_mem (inv_mem (unipotent_mem_commutator_suzukiGroup hn 1 1)) hconj)
+    (inv_mem (unipotent_mem_commutator_suzukiGroup hn 1 0))
 
 /-! ## Perfectness -/
 
 /-- **A Suzuki group is its own derived subgroup** for `n ≠ 0`. -/
-theorem commutator_suzukiGroup (hn : n ≠ 0) :
+theorem commutator_suzukiGroup_eq_self (hn : n ≠ 0) :
     ⁅suzukiGroup n, suzukiGroup n⁆ = suzukiGroup n :=
   le_antisymm (suzukiGroup n).commutator_le_self
-    (suzukiGroup_le_iff.2 ⟨unipotent_mem_commutator hn, weyl_mem_commutator hn⟩)
+    (suzukiGroup_le_iff.2
+      ⟨unipotent_mem_commutator_suzukiGroup hn, weyl_mem_commutator_suzukiGroup hn⟩)
 
 /-- **The Suzuki groups are perfect**: for `n ≠ 0`, `TauCeti.suzukiGroup n` equals its
 commutator subgroup. At `n = 0` the group is the solvable `Sz(2)`, and the statement fails. -/
 theorem isPerfect_suzukiGroup (hn : n ≠ 0) : Group.IsPerfect ↥(suzukiGroup n) :=
-  Subgroup.isPerfect_iff.2 (commutator_suzukiGroup hn)
+  Subgroup.isPerfect_iff.2 (commutator_suzukiGroup_eq_self hn)
 
 end Suzuki
 
