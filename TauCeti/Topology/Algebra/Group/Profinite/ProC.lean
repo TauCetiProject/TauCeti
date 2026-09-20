@@ -57,6 +57,8 @@ homomorphisms between them may live in independent universes.
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Sections 2.1 and 3.2.
+* The compactness and universal-property development is adapted from
+  `TauCeti.Topology.Algebra.Group.Profinite.MaximalProP`.
 -/
 
 public section
@@ -402,9 +404,12 @@ representative. -/
 theorem proCCompletion.equivOfIsProC_mk (hG : IsProC C G) (x : G) :
     proCCompletion.equivOfIsProC hG (x : proCCompletion C G) = x :=
   by
-    change ((QuotientGroup.quotientMulEquivOfEq hG.proCKernel_eq_bot).trans
-      QuotientGroup.quotientBot) (QuotientGroup.mk x) = x
-    rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk, quotientBot_mk]
+    calc
+      proCCompletion.equivOfIsProC hG (x : proCCompletion C G) =
+          ((QuotientGroup.quotientMulEquivOfEq hG.proCKernel_eq_bot).trans
+            QuotientGroup.quotientBot) (QuotientGroup.mk x) := rfl
+      _ = x := by
+        rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk, quotientBot_mk]
 
 /-- **Idempotence.** The `C`-kernel of a pro-`C` completion is trivial. -/
 theorem proCKernel_proCCompletion_eq_bot : proCKernel C (proCCompletion C G) = ⊥ :=

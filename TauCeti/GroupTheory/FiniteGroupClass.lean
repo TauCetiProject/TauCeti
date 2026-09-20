@@ -253,6 +253,18 @@ theorem finiteGroupClassP_mem_iff (p : ℕ) (H : Type w) [Group H] [Finite H] :
     (finiteGroupClassP p).mem H ↔ IsPGroup p H :=
   Iff.rfl
 
+/-- A group belongs to `finiteGroupClassP p` exactly when it is finite and a `p`-group. -/
+@[simp]
+theorem finiteGroupClassP_memFinite_iff (p : ℕ) (H : Type v) [Group H] :
+    (finiteGroupClassP.{w} p).MemFinite H ↔ Finite H ∧ IsPGroup p H := by
+  constructor
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    exact ⟨hfinite, hH.of_equiv (Shrink.mulEquiv.{w} (α := H))⟩
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    exact ⟨hfinite, hH.of_equiv (Shrink.mulEquiv.{w} (α := H)).symm⟩
+
 /-- The class of **finite trivial groups**. -/
 def finiteGroupClassTrivial : FiniteGroupClass.{w} where
   mem H := Subsingleton H
@@ -312,6 +324,23 @@ theorem finiteGroupClassSolvable_mem_iff (H : Type w) [Group H] [Finite H] :
     finiteGroupClassSolvable.mem H ↔ Group.IsSolvable H :=
   Iff.rfl
 
+/-- A group belongs to `finiteGroupClassSolvable` exactly when it is finite and solvable. -/
+@[simp]
+theorem finiteGroupClassSolvable_memFinite_iff (H : Type v) [Group H] :
+    finiteGroupClassSolvable.{w}.MemFinite H ↔ Finite H ∧ Group.IsSolvable H := by
+  constructor
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    let _ : Group.IsSolvable (Shrink.{w} H) := hH
+    exact ⟨hfinite, Group.isSolvable_of_surjective
+      (f := (Shrink.mulEquiv.{w} (α := H)).toMonoidHom) (Shrink.mulEquiv.{w} (α := H)).surjective⟩
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    let _ : Group.IsSolvable H := hH
+    exact ⟨hfinite, Group.isSolvable_of_surjective
+      (f := (Shrink.mulEquiv.{w} (α := H)).symm.toMonoidHom)
+      (Shrink.mulEquiv.{w} (α := H)).symm.surjective⟩
+
 /-- The class of **all finite groups**. Its `C`-kernel intersects the open normal subgroups
 whose quotient is finite; for a profinite group these are all the open normal subgroups, so the
 kernel is trivial. -/
@@ -328,5 +357,14 @@ def finiteGroupClassAll : FiniteGroupClass.{w} where
 theorem finiteGroupClassAll_mem (H : Type w) [Group H] [Finite H] :
     finiteGroupClassAll.mem H :=
   trivial
+
+/-- A group belongs to `finiteGroupClassAll` exactly when it is finite. -/
+@[simp]
+theorem finiteGroupClassAll_memFinite_iff (H : Type v) [Group H] :
+    finiteGroupClassAll.{w}.MemFinite H ↔ Finite H := by
+  constructor
+  · exact FiniteGroupClass.MemFinite.finite
+  · intro hfinite
+    exact ⟨hfinite, trivial⟩
 
 end TauCeti
