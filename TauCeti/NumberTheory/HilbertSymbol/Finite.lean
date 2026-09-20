@@ -56,7 +56,6 @@ theorem exists_eq_sq_sub_mul_sq_of_finite {a : K} (ha : a ≠ 0) (b : K) :
     obtain ⟨y, hy⟩ := FiniteField.isSquare_of_char_two hchar (b / a)
     have hb : b = y * y * a := (div_eq_iff ha).mp hy
     have h2 : (2 : K) = 0 := by
-      rw [show (2 : K) = ((2 : ℕ) : K) by norm_num]
       exact (ringChar.spec K 2).mpr (by rw [hchar])
     exact ⟨0, y, by linear_combination hb + a * y ^ 2 * h2⟩
   · have hcard : Fintype.card K % 2 = 1 := by

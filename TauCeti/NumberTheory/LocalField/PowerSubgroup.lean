@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
 # The `n`-th power subgroup of a local field away from the residue characteristic
@@ -152,18 +152,27 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
     exact hz
   · rintro ⟨α, hα⟩
     rw [powMonoidHom_apply] at hα
-    -- Divide by the `n`-th power of the Teichmüller lift of `α` to land in `U(K,1)`.
-    have hres : residue 𝒪[K] ((u * (teichmuller K α ^ n)⁻¹ : 𝒪[K]ˣ) : 𝒪[K]) = 1 := by
-      have hunits : Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K])
-          (u * (teichmuller K α ^ n)⁻¹) = 1 := by
-        simp [← hα]
-      simpa using congrArg Units.val hunits
+    have hp : (α ^ n, (integerUnitsEquivProd u).2) = integerUnitsEquivProd u :=
+      Prod.ext (hα.trans (fst_integerUnitsEquivProd u).symm) rfl
+    have hu : integerUnitsProdHom (α ^ n, (integerUnitsEquivProd u).2) = u := by
+      rw [← integerUnitsEquivProd_symm_apply]
+      exact (congrArg (integerUnitsEquivProd (K := K)).symm hp).trans
+        ((integerUnitsEquivProd (K := K)).symm_apply_apply u)
     obtain ⟨z, hz⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn
-      ((mem_unitFiltration_one_iff_residue_eq_one _).mpr hres)
+      (integerUnitsEquivProd u).2.2
     rw [powMonoidHom_apply] at hz
+    have hpow : teichmuller K α ^ n = teichmuller K (α ^ n) :=
+      (map_pow (teichmuller K) α n).symm
+    have hu' : teichmuller K (α ^ n) *
+        unitFiltrationToIntegerUnits 1 (integerUnitsEquivProd u).2 = u := by
+      calc
+        _ = integerUnitsProdHom (K := K) (α ^ n, (integerUnitsEquivProd u).2) :=
+          (integerUnitsProdHom_apply (K := K) _).symm
+        _ = u := hu
     refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (teichmuller K α) * z, ?_⟩
-    rw [powMonoidHom_apply, mul_pow, hz, ← map_pow, ← map_mul]
-    exact congrArg _ (by rw [mul_comm u, mul_inv_cancel_left])
+    rw [powMonoidHom_apply, mul_pow, hz, ← map_pow,
+      ← unitsMap_subtype_unitFiltrationToIntegerUnits, ← map_mul,
+      hpow, hu']
 
 /-- Away from residue characteristic two, a unit of `𝒪[K]` is a square in `K` exactly when its
 residue is a square in `𝓀[K]`. -/
