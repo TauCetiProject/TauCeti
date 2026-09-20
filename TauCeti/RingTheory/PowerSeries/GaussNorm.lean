@@ -60,17 +60,6 @@ theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
     f.HasGaussNorm norm c :=
   ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
 
-/-- A power series whose coefficients vanish in every degree `≥ n` is restricted at every radius:
-its weighted coefficient norms are eventually zero. Such a series is a polynomial of degree less
-than `n`. -/
-theorem isRestricted_of_forall_coeff_eq_zero {n : ℕ}
-    (hf : ∀ m, n ≤ m → f.coeff m = 0) : f.IsRestricted c := by
-  rw [PowerSeries.isRestricted_iff']
-  have h : ∀ᶠ m in Filter.atTop, (0 : ℝ) = ‖f.coeff m‖ * c ^ m := by
-    filter_upwards [Filter.eventually_ge_atTop n] with m hm
-    simp [hf m hm]
-  exact Filter.Tendsto.congr' h tendsto_const_nhds
-
 section
 
 variable (c) (s) (f)
@@ -179,7 +168,61 @@ theorem exists_isDistinguished (hc : 0 < c) (hf : f.IsRestricted c) (hf0 : f ≠
     exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
   exact (not_le_of_gt hm) (hnmax m hm_mem)
 
-variable [IsUltrametricDist R] [NormMulClass R]
+variable [IsUltrametricDist R]
+
+/-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
+coefficient norms at a nonnegative radius. -/
+theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) : (f + g).HasGaussNorm norm c := by
+  have key (m : ℕ) :
+      ‖(f + g).coeff m‖ * c ^ m ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) := by
+    rw [map_add]
+    calc
+      ‖f.coeff m + g.coeff m‖ * c ^ m ≤ max ‖f.coeff m‖ ‖g.coeff m‖ * c ^ m :=
+        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
+      _ = max (‖f.coeff m‖ * c ^ m) (‖g.coeff m‖ * c ^ m) :=
+        max_mul_of_nonneg _ _ (pow_nonneg hc m)
+      _ ≤ max (f.gaussNorm norm c) (g.gaussNorm norm c) :=
+        max_le_max (PowerSeries.le_gaussNorm norm c _ hf m)
+          (PowerSeries.le_gaussNorm norm c _ hg m)
+  exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+/-- The product of two power series with bounded weighted coefficient norms again has bounded
+weighted coefficient norms at a nonnegative radius. -/
+theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
+    (hg : g.HasGaussNorm norm c) : (f * g).HasGaussNorm norm c := by
+  have key (m : ℕ) :
+      ‖(f * g).coeff m‖ * c ^ m ≤ f.gaussNorm norm c * g.gaussNorm norm c := by
+    rw [PowerSeries.coeff_mul]
+    have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
+    calc
+      ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
+          ≤ (Finset.antidiagonal m).sup' hne
+              (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
+        mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
+          (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
+      _ = (Finset.antidiagonal m).sup' hne
+          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
+        Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
+      _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+        (Finset.sup'_le_iff hne
+          (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m)).2 fun p hp ↦ by
+          have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
+          rw [← hsum, pow_add]
+          calc
+            ‖f.coeff p.1 * g.coeff p.2‖ * (c ^ p.1 * c ^ p.2)
+                ≤ ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) :=
+              mul_le_mul_of_nonneg_right (norm_mul_le _ _)
+                (mul_nonneg (pow_nonneg hc _) (pow_nonneg hc _))
+            _ = (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
+            _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
+              mul_le_mul (PowerSeries.le_gaussNorm norm c f hf p.1)
+                (PowerSeries.le_gaussNorm norm c g hg p.2)
+                (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
+                (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
+  exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+variable [NormMulClass R]
 
 /-- **The dominant coefficient of a product of distinguished series.** If `f` is distinguished of
 degree `i` and `g` of degree `j`, then the coefficient of `f * g` in degree `i + j` realises the
@@ -218,38 +261,6 @@ theorem IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul (hf : IsDistingu
       (Finset.mem_antidiagonal.mpr (rfl : i + j = i + j)) hdom
   rw [hcoeff, norm_mul, pow_add, ← hf.norm_coeff_mul_pow_eq, ← hg.norm_coeff_mul_pow_eq]
   ring
-
-/-- The product of two power series with bounded weighted coefficient norms again has bounded
-weighted coefficient norms at a nonnegative radius. -/
-theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
-    (hg : g.HasGaussNorm norm c) : (f * g).HasGaussNorm norm c := by
-  refine ⟨f.gaussNorm norm c * g.gaussNorm norm c, ?_⟩
-  rintro _ ⟨m, rfl⟩
-  change ‖(f * g).coeff m‖ * c ^ m ≤ _
-  rw [PowerSeries.coeff_mul]
-  have hne := Finset.HasAntidiagonal.nonempty_antidiagonal m
-  calc
-    ‖∑ p ∈ Finset.antidiagonal m, f.coeff p.1 * g.coeff p.2‖ * c ^ m
-        ≤ (Finset.antidiagonal m).sup' hne
-            (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖) * c ^ m :=
-      mul_le_mul_of_nonneg_right (hne.norm_sum_le_sup'_norm
-        (fun p : ℕ × ℕ ↦ f.coeff p.1 * g.coeff p.2)) (pow_nonneg hc m)
-    _ = (Finset.antidiagonal m).sup' hne
-        (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m) :=
-      Finset.sup'_mul₀ (pow_nonneg hc m) _ _ _
-    _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
-      (Finset.sup'_le_iff hne
-        (fun p : ℕ × ℕ ↦ ‖f.coeff p.1 * g.coeff p.2‖ * c ^ m)).2 fun p hp ↦ by
-        have hsum : p.1 + p.2 = m := Finset.mem_antidiagonal.mp hp
-        rw [← hsum, norm_mul, pow_add]
-        calc
-          ‖f.coeff p.1‖ * ‖g.coeff p.2‖ * (c ^ p.1 * c ^ p.2) =
-              (‖f.coeff p.1‖ * c ^ p.1) * (‖g.coeff p.2‖ * c ^ p.2) := by ring
-          _ ≤ f.gaussNorm norm c * g.gaussNorm norm c :=
-            mul_le_mul (PowerSeries.le_gaussNorm norm c f hf p.1)
-              (PowerSeries.le_gaussNorm norm c g hg p.2)
-              (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
-              (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
 
 /-- The Gauss norm is multiplicative on restricted power series at every positive radius. -/
 theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+public import TauCeti.RingTheory.PowerSeries.Restricted
 
 /-!
 # The Weierstrass division estimate for restricted power series
@@ -54,26 +55,7 @@ namespace TauCeti.PowerSeries
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {f q r : PowerSeries R}
 
-variable [IsUltrametricDist R]
-
-/-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
-coefficient norms at a nonnegative radius. -/
-private theorem hasGaussNorm_add (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
-    (hr : r.HasGaussNorm norm c) : (f + r).HasGaussNorm norm c := by
-  refine ⟨max (f.gaussNorm norm c) (r.gaussNorm norm c), ?_⟩
-  rintro _ ⟨m, rfl⟩
-  change ‖(f + r).coeff m‖ * c ^ m ≤ _
-  rw [map_add]
-  calc
-    ‖f.coeff m + r.coeff m‖ * c ^ m ≤ max ‖f.coeff m‖ ‖r.coeff m‖ * c ^ m :=
-      mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
-    _ = max (‖f.coeff m‖ * c ^ m) (‖r.coeff m‖ * c ^ m) :=
-      max_mul_of_nonneg _ _ (pow_nonneg hc m)
-    _ ≤ max (f.gaussNorm norm c) (r.gaussNorm norm c) :=
-      max_le_max (PowerSeries.le_gaussNorm norm c _ hf m)
-        (PowerSeries.le_gaussNorm norm c _ hr m)
-
-variable [NormMulClass R]
+variable [IsUltrametricDist R] [NormMulClass R]
 
 /-- **The Weierstrass lower bound for the quotient.** In a decomposition `q * f + r` by a
 distinguished series `f` of degree `s`, with `r` vanishing in every degree `≥ s`, the Gauss norm of
