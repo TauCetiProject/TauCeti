@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Data.SetLike.Fintype
 public import Mathlib.Order.OrderIsoNat
@@ -44,8 +43,9 @@ theorem exists_forall_eq_iInf_of_antitone (f : ℕ → Subgroup G) (hf : Antiton
     apply le_antisymm
     · intro g hg
       have hg0 : g ∈ f 0 := hf (Nat.zero_le N) hg
-      exact (show (⟨g, hg0⟩ : f 0) ∈ (f i).subgroupOf (f 0) from
-        (hN i hi ▸ hg))
+      have hgN : (⟨g, hg0⟩ : f 0) ∈ (f N).subgroupOf (f 0) :=
+        Subgroup.mem_subgroupOf.mpr hg
+      exact Subgroup.mem_subgroupOf.mp (hN i hi ▸ hgN)
     · exact hf hi
   have hN_iInf : f N = ⨅ j, f j := by
     apply le_antisymm
