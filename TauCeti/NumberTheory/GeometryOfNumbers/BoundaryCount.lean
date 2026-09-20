@@ -64,9 +64,7 @@ theorem finite_smul_add_inter {d : ℕ} {S : Set E}
     {B : Set E} (hB : IsBounded B) (c : ℝ) :
     ((c • S + B) ∩ (L : Set E)).Finite := by
   obtain ⟨n, C, f, hf, hcov⟩ := isLipschitzParametrizable_iff.1 hS
-  apply Metric.finite_isBounded_inter_isClosed
-    (SetLike.isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L›) _
-    AddSubgroup.isClosed_of_discrete
+  apply L.finite_inter
   apply isBounded_add
   · exact ((Bornology.isBounded_iUnion.2 fun i ↦
       ((isCompact_Icc.image_of_continuousOn (hf i).continuousOn).isBounded)).subset hcov).smul₀ c
@@ -138,10 +136,7 @@ theorem exists_ncard_smul_add_inter_le {d : ℕ} {S : Set E}
     calc ((c • S + B) ∩ (L : Set E)).ncard
         ≤ (⋃ p, P p ∩ (L : Set E)).ncard := by
           refine Set.ncard_le_ncard ?_ (Set.finite_iUnion fun p ↦
-            Metric.finite_isBounded_inter_isClosed
-              (SetLike.isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L›)
-              (Metric.isBounded_iff.2 ⟨ρ, fun _ hu _ hv ↦ hPdist p _ hu _ hv⟩)
-              AddSubgroup.isClosed_of_discrete)
+            L.finite_inter (Metric.isBounded_iff.2 ⟨ρ, fun _ hu _ hv ↦ hPdist p _ hu _ hv⟩))
           rw [← Set.iUnion_inter]
           exact Set.inter_subset_inter_left _ hPcov
       _ ≤ ∑ p, (P p ∩ (L : Set E)).ncard := Set.ncard_iUnion_le_of_fintype _
