@@ -52,6 +52,11 @@ The remaining five-component tree has a chain of length three ending in a fork. 
 and all four displayed intersections are equal, and every other intersection vanishes
 ([Stacks, Lemma 55.5.7](https://stacks.math.columbia.edu/tag/0C87)).
 
+On six components, a chain again has equal weights and simple edges except possibly at one end,
+where the endpoint may have twice or half the common interior weight. This is the base case for
+the arbitrary-length chain classification of
+[Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89).
+
 These arguments use only the self-intersections `aᵢᵢ = -2wᵢ`, not the genera. For a pair, negative
 definiteness of the principal `2 × 2` submatrix gives `aᵢⱼ² < 4wᵢwⱼ`, and `lcm(wᵢ, wⱼ) ∣ aᵢⱼ`
 leaves only the three solutions above. For a triple, negative definiteness of the principal
@@ -93,6 +98,10 @@ intersection form on the vectors supported on a proper subset of the components 
   meets no fourth one.
 * `TauCeti.NumericalType.exists_weight_intersection_fork_five_eq`: the five-component fork is
   simply laced, with equal weights and no additional edges.
+* `TauCeti.NumericalType.intersection_eq_zero_of_chain_six`: a chain of six `(-2)`-indices has no
+  intersections outside its five displayed edges.
+* `TauCeti.NumericalType.exists_intersection_ratio_chain_six_mem`: a six-component chain has at
+  most one nonsimple edge, and only at an end.
 -/
 
 public section
@@ -972,6 +981,221 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
   have ahi : T.intersection h i = w := by rw [hwi, hq₁1, mul_one] at aq₁; exact aq₁
   have hwh : (T.weight h : ℤ) = w := by rw [hp₁1, mul_one, ahi] at ap₁; exact ap₁.symm
   exact ⟨w, hwh, hwi, hwj, hwk, hwl, ahi, aij, ajk, ajl, zhj, zhk, zhl, zik, zil, zkl⟩
+
+/-! ### Six components -/
+
+/-- The intersection form at a vector supported on a chain of six distinct components is negative
+when every nonconsecutive intersection vanishes. -/
+private lemma chain_six_form_neg (hcard : 6 < Fintype.card T.Component)
+    {g h i j k l : T.Component}
+    (hgh : g ≠ h) (hgi : g ≠ i) (hgj : g ≠ j) (hgk : g ≠ k) (hgl : g ≠ l)
+    (hhi : h ≠ i) (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l)
+    (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l)
+    (hkl : k ≠ l) (hgi0 : T.intersection g i = 0) (hgj0 : T.intersection g j = 0)
+    (hgk0 : T.intersection g k = 0) (hgl0 : T.intersection g l = 0)
+    (hhj0 : T.intersection h j = 0) (hhk0 : T.intersection h k = 0)
+    (hhl0 : T.intersection h l = 0) (hik0 : T.intersection i k = 0)
+    (hil0 : T.intersection i l = 0) (hjl0 : T.intersection j l = 0)
+    (y₁ y₂ y₃ y₄ y₅ y₆ : ℤ) (hy₁ : y₁ ≠ 0) :
+    T.intersection g g * y₁ ^ 2 + T.intersection h h * y₂ ^ 2 +
+          T.intersection i i * y₃ ^ 2 + T.intersection j j * y₄ ^ 2 +
+        T.intersection k k * y₅ ^ 2 + T.intersection l l * y₆ ^ 2 +
+      2 * (T.intersection g h * y₁ * y₂ + T.intersection h i * y₂ * y₃ +
+        T.intersection i j * y₃ * y₄ + T.intersection j k * y₄ * y₅ +
+        T.intersection k l * y₅ * y₆) < 0 := by
+  have hneg := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik hil
+    hjk hjl hkl (y₁ := y₁) (y₂ := y₂) (y₃ := y₃) (y₄ := y₄) (y₅ := y₅) (y₆ := y₆)
+    (fun hy ↦ hy₁ hy.1)
+  rw [hgi0, hgj0, hgk0, hgl0, hhj0, hhk0, hhl0, hik0, hil0, hjl0] at hneg
+  ring_nf at hneg ⊢
+  exact hneg
+
+/-- The factor data used to classify a chain of six components. -/
+private theorem chain_six_factors (hcard : 6 < Fintype.card T.Component)
+    {g h i j k l : T.Component}
+    (hg : T.intersection g g = -(2 * (T.weight g : ℤ)))
+    (hh : T.intersection h h = -(2 * (T.weight h : ℤ)))
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
+    (hgi : g ≠ i) (hgj : g ≠ j) (hgk : g ≠ k) (hgl : g ≠ l)
+    (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hik : i ≠ k) (hil : i ≠ l)
+    (hjl : j ≠ l) (egh : 0 < T.intersection g h) (ehi : 0 < T.intersection h i)
+    (eij : 0 < T.intersection i j) (ejk : 0 < T.intersection j k)
+    (ekl : 0 < T.intersection k l) :
+    T.intersection g i = 0 ∧ T.intersection g j = 0 ∧ T.intersection g k = 0 ∧
+      T.intersection g l = 0 ∧ T.intersection h j = 0 ∧ T.intersection h k = 0 ∧
+      T.intersection h l = 0 ∧ T.intersection i k = 0 ∧ T.intersection i l = 0 ∧
+      T.intersection j l = 0 ∧
+      ∃ p₁ q₁ p₂ q₂ p₃ q₃ p₄ q₄ p₅ q₅ : ℤ,
+        T.intersection g h = (T.weight g : ℤ) * p₁ ∧
+        T.intersection g h = (T.weight h : ℤ) * q₁ ∧
+        T.intersection h i = (T.weight h : ℤ) * p₂ ∧
+        T.intersection h i = (T.weight i : ℤ) * q₂ ∧
+        T.intersection i j = (T.weight i : ℤ) * p₃ ∧
+        T.intersection i j = (T.weight j : ℤ) * q₃ ∧
+        T.intersection j k = (T.weight j : ℤ) * p₄ ∧
+        T.intersection j k = (T.weight k : ℤ) * q₄ ∧
+        T.intersection k l = (T.weight k : ℤ) * p₅ ∧
+        T.intersection k l = (T.weight l : ℤ) * q₅ ∧
+        (p₁ * q₁, p₂ * q₂, p₃ * q₃, p₄ * q₄, p₅ * q₅) ∈
+          ({(1, 1, 1, 1, 1), (2, 1, 1, 1, 1), (1, 1, 1, 1, 2)} :
+            Set (ℤ × ℤ × ℤ × ℤ × ℤ)) := by
+  have hgh : g ≠ h := by rintro rfl; linarith
+  have hhi : h ≠ i := by rintro rfl; linarith
+  have hij : i ≠ j := by rintro rfl; linarith
+  have hjk : j ≠ k := by rintro rfl; linarith
+  have hkl : k ≠ l := by rintro rfl; linarith
+  obtain ⟨zgi, zgj, zgk, zhj, zhk, zik⟩ :=
+    T.intersection_eq_zero_of_chain_five (by omega) hg hh hi hj hk hgi hgj hgk hhj hhk hik
+      egh ehi eij ejk
+  obtain ⟨zhj', zhk', zhl, zik', zil, zjl⟩ :=
+    T.intersection_eq_zero_of_chain_five (by omega) hh hi hj hk hl hhj hhk hhl hik hil hjl
+      ehi eij ejk ekl
+  have zgl : T.intersection g l = 0 := by
+    by_contra hne
+    have egl : 0 < T.intersection g l := (T.offDiagonal_nonneg g l hgl).lt_of_ne (Ne.symm hne)
+    have elg : 0 < T.intersection l g := T.intersection_comm g l ▸ egl
+    obtain ⟨ahi, wh, aij, wi⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+      hg hh hi hj hk hgi hgj hgk hhj hhk hik egh ehi eij ejk
+    obtain ⟨aij', wi', ajk, wj⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+      hh hi hj hk hl hhj hhk hhl hik hil hjl ehi eij ejk ekl
+    obtain ⟨akl, wk, alg, wl⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+      hj hk hl hg hh hjl hgj.symm hhj.symm hgk.symm hhk.symm hhl.symm ejk ekl elg egh
+    obtain ⟨alg', wl', agh, wg⟩ := T.intersection_eq_weight_of_chain_five (by omega)
+      hk hl hg hh hi hgk.symm hhk.symm hik.symm hhl.symm hil.symm hgi ekl elg egh ehi
+    have agl : T.intersection g l = (T.weight l : ℤ) := T.intersection_comm l g ▸ alg
+    have hform := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
+      hil hjk hjl hkl (y₁ := 1) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (y₆ := 1)
+      (by norm_num)
+    rw [hg, hh, hi, hj, hk, hl, zgi, zgj, zgk, zhj, zhk, zhl, zik, zil, zjl,
+      agh, ahi, aij, ajk, akl, agl] at hform
+    simp only [one_pow, mul_one] at hform
+    linarith
+  obtain ⟨p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, ap₁, aq₁, ap₂, aq₂, ap₃, aq₃,
+      ap₄, aq₄, hm₁⟩ := T.exists_intersection_ratio_chain_five_mem (by omega)
+    hg hh hi hj hk hgi hgj hgk hhj hhk hik egh ehi eij ejk
+  obtain ⟨r₂, s₂, r₃, s₃, r₄, s₄, p₅, q₅, bp₂, bq₂, bp₃, bq₃, bp₄, bq₄,
+      ap₅, aq₅, hm₂⟩ := T.exists_intersection_ratio_chain_five_mem (by omega)
+    hh hi hj hk hl hhj hhk hhl hik hil hjl ehi eij ejk ekl
+  have hp₂ : p₂ = r₂ := mul_left_cancel₀ (by positivity : (T.weight h : ℤ) ≠ 0) (ap₂.symm.trans bp₂)
+  have hq₂ : q₂ = s₂ := mul_left_cancel₀ (by positivity : (T.weight i : ℤ) ≠ 0) (aq₂.symm.trans bq₂)
+  have hp₃ : p₃ = r₃ := mul_left_cancel₀ (by positivity : (T.weight i : ℤ) ≠ 0) (ap₃.symm.trans bp₃)
+  have hq₃ : q₃ = s₃ := mul_left_cancel₀ (by positivity : (T.weight j : ℤ) ≠ 0) (aq₃.symm.trans bq₃)
+  have hp₄ : p₄ = r₄ := mul_left_cancel₀ (by positivity : (T.weight j : ℤ) ≠ 0) (ap₄.symm.trans bp₄)
+  have hq₄ : q₄ = s₄ := mul_left_cancel₀ (by positivity : (T.weight k : ℤ) ≠ 0) (aq₄.symm.trans bq₄)
+  subst r₂; subst s₂; subst r₃; subst s₃; subst r₄; subst s₄
+  have factor_pos {a w e : ℤ} (hw : 0 < w) (he : 0 < e) (ha : e = w * a) : 0 < a :=
+    pos_of_mul_pos_right (ha ▸ he) hw.le
+  have hp₁pos := factor_pos (by simp : (0 : ℤ) < T.weight g) egh ap₁
+  have hq₁pos := factor_pos (by simp : (0 : ℤ) < T.weight h) egh aq₁
+  have hp₂pos := factor_pos (by simp : (0 : ℤ) < T.weight h) ehi ap₂
+  have hq₂pos := factor_pos (by simp : (0 : ℤ) < T.weight i) ehi aq₂
+  have hp₃pos := factor_pos (by simp : (0 : ℤ) < T.weight i) eij ap₃
+  have hq₃pos := factor_pos (by simp : (0 : ℤ) < T.weight j) eij aq₃
+  have hp₄pos := factor_pos (by simp : (0 : ℤ) < T.weight j) ejk ap₄
+  have hq₄pos := factor_pos (by simp : (0 : ℤ) < T.weight k) ejk aq₄
+  have hp₅pos := factor_pos (by simp : (0 : ℤ) < T.weight k) ekl ap₅
+  have hq₅pos := factor_pos (by simp : (0 : ℤ) < T.weight l) ekl aq₅
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hm₁ hm₂ ⊢
+  refine ⟨zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl, p₁, q₁, p₂, q₂, p₃, q₃, p₄,
+    q₄, p₅, q₅, ap₁, aq₁, ap₂, aq₂, ap₃, aq₃, ap₄, aq₄, ap₅, aq₅, ?_⟩
+  by_cases hbad : p₁ * q₁ = 2 ∧ p₅ * q₅ = 2
+  · exfalso
+    have hmids : p₂ * q₂ = 1 ∧ p₃ * q₃ = 1 ∧ p₄ * q₄ = 1 := by
+      rcases hm₁ with h | h | h <;> omega
+    have eq_one_of_mul_eq_one {a b : ℤ} (ha : 0 < a) (hb : 0 < b) (hab : a * b = 1) :
+        a = 1 ∧ b = 1 := by
+      have ha_le : a ≤ a * b := le_mul_of_one_le_right ha.le (by omega)
+      have hb_le : b ≤ a * b := le_mul_of_one_le_left hb.le (by omega)
+      omega
+    obtain ⟨hp₂, hq₂⟩ := eq_one_of_mul_eq_one hp₂pos hq₂pos hmids.1
+    obtain ⟨hp₃, hq₃⟩ := eq_one_of_mul_eq_one hp₃pos hq₃pos hmids.2.1
+    obtain ⟨hp₄, hq₄⟩ := eq_one_of_mul_eq_one hp₄pos hq₄pos hmids.2.2
+    have factors_of_mul_eq_two {a b : ℤ} (ha : 0 < a) (hb : 0 < b) (hab : a * b = 2) :
+        (a = 1 ∧ b = 2) ∨ (a = 2 ∧ b = 1) := by
+      have ha_le : a ≤ a * b := le_mul_of_one_le_right ha.le (by omega)
+      have hb_le : b ≤ a * b := le_mul_of_one_le_left hb.le (by omega)
+      have ha_two : a ≤ 2 := by omega
+      have hb_two : b ≤ 2 := by omega
+      interval_cases a <;> interval_cases b <;> omega
+    have key := T.chain_six_form_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik hil
+      hjk hjl hkl zgi zgj zgk zgl zhj zhk zhl zik zil zjl
+    rcases factors_of_mul_eq_two hp₁pos hq₁pos hbad.1 with
+      ⟨hp₁, hq₁⟩ | ⟨hp₁, hq₁⟩ <;>
+      rcases factors_of_mul_eq_two hp₅pos hq₅pos hbad.2 with
+        ⟨hp₅, hq₅⟩ | ⟨hp₅, hq₅⟩
+    all_goals subst_vars
+    all_goals first
+      | linarith [key 1 2 2 2 2 2 one_ne_zero]
+      | linarith [key 1 2 2 2 2 1 one_ne_zero]
+      | linarith [key 1 1 1 1 1 1 one_ne_zero]
+      | linarith [key 2 2 2 2 2 1 (by norm_num)]
+  · rcases hm₁ with h₁ | h₁ | h₁ <;> rcases hm₂ with h₂ | h₂ | h₂ <;> omega
+
+/-- Six components of self-intersection `-2w` forming a chain in a numerical type with more than
+six components have no additional intersections. This is the graph-shape part of the
+six-component base case for
+[Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89). -/
+theorem intersection_eq_zero_of_chain_six (hcard : 6 < Fintype.card T.Component)
+    {g h i j k l : T.Component}
+    (hg : T.intersection g g = -(2 * (T.weight g : ℤ)))
+    (hh : T.intersection h h = -(2 * (T.weight h : ℤ)))
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
+    (hgi : g ≠ i) (hgj : g ≠ j) (hgk : g ≠ k) (hgl : g ≠ l)
+    (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hik : i ≠ k) (hil : i ≠ l)
+    (hjl : j ≠ l) (egh : 0 < T.intersection g h) (ehi : 0 < T.intersection h i)
+    (eij : 0 < T.intersection i j) (ejk : 0 < T.intersection j k)
+    (ekl : 0 < T.intersection k l) :
+    T.intersection g i = 0 ∧ T.intersection g j = 0 ∧ T.intersection g k = 0 ∧
+      T.intersection g l = 0 ∧ T.intersection h j = 0 ∧ T.intersection h k = 0 ∧
+      T.intersection h l = 0 ∧ T.intersection i k = 0 ∧ T.intersection i l = 0 ∧
+      T.intersection j l = 0 := by
+  obtain ⟨zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl, -⟩ := T.chain_six_factors
+    hcard hg hh hi hj hk hl hgi hgj hgk hgl hhj hhk hhl hik hil hjl egh ehi eij ejk ekl
+  exact ⟨zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl⟩
+
+/-- In a chain of six components of self-intersection `-2w`, all adjacent normalized intersection
+ratios are one except possibly a ratio two at one end. Equivalently, their ratio pattern is
+`(1,1,1,1,1)`, `(2,1,1,1,1)`, or `(1,1,1,1,2)`. This is the numerical classification in the
+six-component base case for
+[Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89). -/
+theorem exists_intersection_ratio_chain_six_mem (hcard : 6 < Fintype.card T.Component)
+    {g h i j k l : T.Component}
+    (hg : T.intersection g g = -(2 * (T.weight g : ℤ)))
+    (hh : T.intersection h h = -(2 * (T.weight h : ℤ)))
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
+    (hgi : g ≠ i) (hgj : g ≠ j) (hgk : g ≠ k) (hgl : g ≠ l)
+    (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hik : i ≠ k) (hil : i ≠ l)
+    (hjl : j ≠ l) (egh : 0 < T.intersection g h) (ehi : 0 < T.intersection h i)
+    (eij : 0 < T.intersection i j) (ejk : 0 < T.intersection j k)
+    (ekl : 0 < T.intersection k l) :
+    ∃ p₁ q₁ p₂ q₂ p₃ q₃ p₄ q₄ p₅ q₅ : ℤ,
+      T.intersection g h = (T.weight g : ℤ) * p₁ ∧
+      T.intersection g h = (T.weight h : ℤ) * q₁ ∧
+      T.intersection h i = (T.weight h : ℤ) * p₂ ∧
+      T.intersection h i = (T.weight i : ℤ) * q₂ ∧
+      T.intersection i j = (T.weight i : ℤ) * p₃ ∧
+      T.intersection i j = (T.weight j : ℤ) * q₃ ∧
+      T.intersection j k = (T.weight j : ℤ) * p₄ ∧
+      T.intersection j k = (T.weight k : ℤ) * q₄ ∧
+      T.intersection k l = (T.weight k : ℤ) * p₅ ∧
+      T.intersection k l = (T.weight l : ℤ) * q₅ ∧
+      (p₁ * q₁, p₂ * q₂, p₃ * q₃, p₄ * q₄, p₅ * q₅) ∈
+        ({(1, 1, 1, 1, 1), (2, 1, 1, 1, 1), (1, 1, 1, 1, 2)} :
+          Set (ℤ × ℤ × ℤ × ℤ × ℤ)) := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, p₅, q₅,
+      ap₁, aq₁, ap₂, aq₂, ap₃, aq₃, ap₄, aq₄, ap₅, aq₅, hm⟩ := T.chain_six_factors
+    hcard hg hh hi hj hk hl hgi hgj hgk hgl hhj hhk hhl hik hil hjl egh ehi eij ejk ekl
+  exact ⟨p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, p₅, q₅, ap₁, aq₁, ap₂, aq₂, ap₃, aq₃, ap₄,
+    aq₄, ap₅, aq₅, hm⟩
 
 end NumericalType
 
