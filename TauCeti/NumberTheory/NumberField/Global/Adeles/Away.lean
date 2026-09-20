@@ -87,11 +87,12 @@ theorem toIdealsAway_apply (S : Finset (HeightOneSpectrum (𝓞 K)))
 @[simp]
 theorem mem_ker_toIdealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : adicOrdAway S) :
-    x ∈ (toIdealsAway S).ker ↔ (x : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈ integralUnits (𝓞 K) K := by
+    toIdealsAway S x = 1 ↔ (x : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈ integralUnits (𝓞 K) K := by
   have hker : (toIdealsAway S).ker =
       ((toFractionalIdeal (R := 𝓞 K) (K := K)).comp (adicOrdAway S).subtype).ker := by
     exact MonoidHom.ker_codRestrict _ _ _
-  rw [hker, ← MonoidHom.comap_ker, ker_toFractionalIdeal, Subgroup.mem_comap]
+  rw [← MonoidHom.mem_ker, hker, ← MonoidHom.comap_ker, ker_toFractionalIdeal,
+    Subgroup.mem_comap]
   simp only [Subgroup.subtype_apply]
 
 /-- The homomorphism from finite ideles with orders vanishing on `S` to ideals away from `S` is
