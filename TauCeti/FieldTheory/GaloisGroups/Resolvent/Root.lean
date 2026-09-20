@@ -90,8 +90,9 @@ private theorem apply_eval₂_rootEnum (e : f.rootSet E ≃ Fin n) (ϕ : E ≃�
       = MvPolynomial.eval₂ (Int.castRingHom E) (rootEnum e) (MvPolynomial.rename
           ⇑(e.permCongrHom (Gal.galActionHom f E (Gal.restrict f E ϕ))) Ψ) := by
   have h := MvPolynomial.hom_eval₂ Ψ (Int.castRingHom E) (ϕ : E →+* E) (rootEnum e)
-  rw [show ((ϕ : E →+* E).comp (Int.castRingHom E)) = Int.castRingHom E from
-    RingHom.ext_int _ _] at h
+  have hcast : (ϕ : E →+* E).comp (Int.castRingHom E) = Int.castRingHom E :=
+    RingHom.ext_int _ _
+  rw [hcast] at h
   rw [MvPolynomial.eval₂_rename, rootEnum_comp_permCongrHom, Function.comp_def]
   exact h
 
