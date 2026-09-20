@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Algebra.Module.ZLattice.Basic
+public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.NumberTheory.GeometryOfNumbers.BoundaryCount
 public import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 import TauCeti.Topology.Frontier
@@ -74,32 +75,6 @@ open Asymptotics Bornology Filter MeasureTheory Module Set Submodule
 open scoped ENNReal Pointwise Topology
 
 namespace TauCeti
-
-section Cells
-
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
-
-/-- A translate of a set has the same measure. -/
-private theorem measure_sub_mem (μ : Measure E) [μ.IsAddRightInvariant] (w : E) (F : Set E) :
-    μ {y : E | y - w ∈ F} = μ F := by
-  have : {y : E | y - w ∈ F} = (fun y : E ↦ y + -w) ⁻¹' F := by
-    ext y; simp [sub_eq_add_neg]
-  rw [this, measure_preimage_add_right]
-
-/-- The translates of `F` by finitely many pairwise distinct lattice points have total measure
-the number of them times the measure of `F`. -/
-private theorem measure_biUnion_sub_mem (μ : Measure E) [μ.IsAddRightInvariant]
-    {G : Set E} {F : Set E} (hFm : MeasurableSet F)
-    (hdisj : ∀ w₁ ∈ G, ∀ w₂ ∈ G, w₁ ≠ w₂ →
-      Disjoint {y : E | y - w₁ ∈ F} {y : E | y - w₂ ∈ F})
-    {T : Finset E} (hT : ↑T ⊆ G) :
-    μ (⋃ w ∈ T, {y : E | y - w ∈ F}) = T.card * μ F := by
-  rw [measure_biUnion_finset (fun w₁ h₁ w₂ h₂ h ↦ hdisj w₁ (hT h₁) w₂ (hT h₂) h)
-    fun w _ ↦ measurableSet_preimage (measurable_id.sub_const w) hFm]
-  simp [measure_sub_mem]
-
-end Cells
-
 
 section Counting
 
@@ -229,20 +204,9 @@ theorem exists_abs_ncard_smul_inter_sub_le {D : Set E} (hDb : IsBounded D)
     ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ)
   have hκ : 0 < μ.real F := hcov ▸ ZLattice.covolume_pos L μ
   have hFu : ∀ x : E, ∀ w₁ ∈ (L : Set E), ∀ w₂ ∈ (L : Set E),
-      x - w₁ ∈ F → x - w₂ ∈ F → w₁ = w₂ := fun x w₁ h₁ w₂ h₂ k₁ k₂ ↦ by
-    have hw₁ : -w₁ ∈ span ℤ (Set.range β) := neg_mem ((hmem w₁).mp h₁)
-    have hw₂ : -w₂ ∈ span ℤ (Set.range β) := neg_mem ((hmem w₂).mp h₂)
-    have subtype_vadd (w : E) (hw : w ∈ span ℤ (Set.range β)) :
-        (⟨w, hw⟩ : span ℤ (Set.range β)) +ᵥ x = w + x := rfl
-    have heq : (⟨-w₁, hw₁⟩ : span ℤ (Set.range β)) = ⟨-w₂, hw₂⟩ :=
-      (ZSpan.exist_unique_vadd_mem_fundamentalDomain β x).unique
-        (by
-          rw [subtype_vadd]
-          simpa only [hFdef, sub_eq_add_neg, add_comm] using k₁)
-        (by
-          rw [subtype_vadd]
-          simpa only [hFdef, sub_eq_add_neg, add_comm] using k₂)
-    exact neg_injective (congrArg Subtype.val heq)
+      x - w₁ ∈ F → x - w₂ ∈ F → w₁ = w₂ := fun x w₁ h₁ w₂ h₂ k₁ k₂ ↦
+    ZSpan.eq_of_sub_mem_fundamentalDomain β ((hmem w₁).mp h₁) ((hmem w₂).mp h₂)
+      (hFdef ▸ k₁) (hFdef ▸ k₂)
   have hFe : ∀ x : E, ∃ w ∈ (L : Set E), x - w ∈ F := fun x ↦
     ⟨(ZSpan.floor β x : E), (hmem _).mpr (ZSpan.floor β x).2,
       ZSpan.fract_mem_fundamentalDomain β x⟩
