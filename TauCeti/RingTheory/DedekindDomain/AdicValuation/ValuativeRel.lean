@@ -111,7 +111,6 @@ theorem coe_integerEquivAdicCompletionIntegers_symm (x : v.adicCompletionInteger
 /-- An element of `K_v` lies in `𝒪_v` exactly when the valuation of the valuative relation is at
 most `1`. This is Mathlib's `mem_adicCompletionIntegers`, which is stated for the adic valuation
 `Valued.v`, read through the valuative relation. -/
-@[simp]
 theorem mem_adicCompletionIntegers_iff_valuation_le_one (x : v.adicCompletion K) :
     x ∈ v.adicCompletionIntegers K ↔
       ValuativeRel.valuation (v.adicCompletion K) x ≤ 1 := by
