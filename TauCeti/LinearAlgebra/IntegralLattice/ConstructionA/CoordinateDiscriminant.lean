@@ -61,7 +61,6 @@ coordinate alphabet in which codes over `ℤ/m` live. -/
 def zeroLattice : IntegralLattice (ι → ℚ) :=
   integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)
 
-@[simp]
 theorem zeroLattice_carrier :
     (zeroLattice m ι).carrier = lattice m (⊥ : AddSubgroup (ι → ZMod m)) := by
   simp [zeroLattice]
