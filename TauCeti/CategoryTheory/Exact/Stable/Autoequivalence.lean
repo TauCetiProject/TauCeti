@@ -127,7 +127,8 @@ theorem projectiveStableFunctor_map_fromSuspensionLoop_comp_connectingMap (X : C
       comm₁₂ := by simp [S, hE.f_comp_connectingMiddleMap hS]
       comm₂₃ := by simp [S, hE.g_comp_connectingMap hS] }
   simpa [φ] using E.projectiveStableFunctor_map_τ₃_eq_of_τ₁_eq
-    (hE.suspensionPresentation _).conflation (hE.isProjective_suspensionInjective _)
+    (hE.suspensionPresentation _).conflation
+    (hE.isProjective_I (hE.suspensionPresentation _))
     (φ := φ) (ψ := 𝟙 _) rfl
 
 /-- The comparison `ΣΩX ≅ X` in the stable category. -/
@@ -174,7 +175,7 @@ theorem projectiveStableFunctor_map_fromSuspensionLoop_naturality {X Y : C} (f :
 deflation `P(ΣX) ⟶ ΣX`. -/
 private noncomputable def loopSuspensionMiddleMap (X : C) :
     hE.suspensionInjective X ⟶ hE.enoughProjectives.loopProjective (hE.suspensionObj X) :=
-  (hE.isProjective_suspensionInjective X).factorThru
+  (hE.isProjective_I (hE.suspensionPresentation X)).factorThru
     (E.isDeflation_g (hE.enoughProjectives.conflation_loopInflation_loopDeflation _))
     (hE.suspensionDeflation X)
 
@@ -183,7 +184,7 @@ private noncomputable def loopSuspensionMiddleMap (X : C) :
 private theorem loopSuspensionMiddleMap_comp_loopDeflation (X : C) :
     loopSuspensionMiddleMap hE X ≫ hE.enoughProjectives.loopDeflation (hE.suspensionObj X) =
       hE.suspensionDeflation X :=
-  (hE.isProjective_suspensionInjective X).factorThru_comp
+  (hE.isProjective_I (hE.suspensionPresentation X)).factorThru_comp
     (E.isDeflation_g (hE.enoughProjectives.conflation_loopInflation_loopDeflation _))
     (hE.suspensionDeflation X)
 
@@ -251,7 +252,7 @@ theorem projectiveStableFunctor_map_toLoopSuspension_comp_fromLoopSuspension (X 
       comm₂₃ := by simp [S] }
   simpa [φ] using E.projectiveStableFunctor_map_τ₁_eq_of_τ₃_eq
     (hE.suspensionPresentation X).conflation
-    (hE.isProjective_suspensionInjective X) (φ := φ) (ψ := 𝟙 _) rfl
+    (hE.isProjective_I (hE.suspensionPresentation X)) (φ := φ) (ψ := 𝟙 _) rfl
 
 /-- In the stable category, `fromLoopSuspension` is a right inverse of `toLoopSuspension`. -/
 theorem projectiveStableFunctor_map_fromLoopSuspension_comp_toLoopSuspension (X : C) :
@@ -309,7 +310,7 @@ theorem projectiveStableFunctor_map_toLoopSuspension_naturality {X Y : C} (f : X
       comm₁₂ := by simp [S, T]
       comm₂₃ := by simp [S, T] }
   exact E.projectiveStableFunctor_map_τ₁_eq_of_τ₃_eq hT
-    (hE.isProjective_suspensionInjective X) (φ := φ) (ψ := ψ) rfl
+    (hE.isProjective_I (hE.suspensionPresentation X)) (φ := φ) (ψ := ψ) rfl
 
 /-! ### The autoequivalence -/
 

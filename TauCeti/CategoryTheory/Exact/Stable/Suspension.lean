@@ -79,15 +79,11 @@ noncomputable abbrev suspensionDeflation (X : C) :
     hE.suspensionInjective X ⟶ hE.suspensionObj X :=
   (hE.suspensionPresentation X).p
 
-/-- The middle term of a chosen suspension presentation is relatively projective. -/
-theorem isProjective_suspensionInjective (X : C) : E.isProjective (hE.suspensionInjective X) :=
-  (hE.projective_iff_injective _).mpr (hE.suspensionPresentation X).isInjective
-
 /-- Suspension from the exact category to its stable quotient, built from the chosen injective
 presentations. -/
 public noncomputable def suspensionToStable : C ⥤ E.ProjectiveStableCategory :=
   E.suspensionToStableOfPresentations hE.suspensionPresentation
-    hE.isProjective_suspensionInjective
+    (fun X ↦ hE.isProjective_I (hE.suspensionPresentation X))
 
 /-- Suspension to the stable quotient sends `X` to the image of `ΣX`. -/
 @[simp]
@@ -181,7 +177,7 @@ there. -/
 noncomputable def projectiveStableIsoSuspensionObj {X : C} (P : E.InjectivePresentation X) :
     E.projectiveStableFunctor.obj P.K ≅ E.projectiveStableFunctor.obj (hE.suspensionObj X) :=
   P.projectiveStableIso (hE.suspensionPresentation X) (hE.isProjective_I P)
-    (hE.isProjective_suspensionInjective X)
+    (hE.isProjective_I (hE.suspensionPresentation X))
 
 /-- The comparison with the suspension is induced by the identity of the presented object. -/
 @[simp]
@@ -189,7 +185,7 @@ theorem projectiveStableIsoSuspensionObj_hom {X : C} (P : E.InjectivePresentatio
     (hE.projectiveStableIsoSuspensionObj P).hom =
       E.projectiveStableFunctor.map (P.cokernelMap (hE.suspensionPresentation X) (𝟙 X)) :=
   P.projectiveStableIso_hom (hE.suspensionPresentation X) (hE.isProjective_I P)
-    (hE.isProjective_suspensionInjective X)
+    (hE.isProjective_I (hE.suspensionPresentation X))
 
 /-- The inverse comparison with the suspension is the one induced in the other direction. -/
 @[simp]
@@ -197,7 +193,7 @@ theorem projectiveStableIsoSuspensionObj_inv {X : C} (P : E.InjectivePresentatio
     (hE.projectiveStableIsoSuspensionObj P).inv =
       E.projectiveStableFunctor.map ((hE.suspensionPresentation X).cokernelMap P (𝟙 X)) :=
   P.projectiveStableIso_inv (hE.suspensionPresentation X) (hE.isProjective_I P)
-    (hE.isProjective_suspensionInjective X)
+    (hE.isProjective_I (hE.suspensionPresentation X))
 
 /-- Representing the suspension by an arbitrary relative injective presentation is natural: it
 carries the morphism induced by `f` on cokernel terms to the suspension of `f`. -/
@@ -211,8 +207,8 @@ theorem projectiveStableIsoSuspensionObj_hom_naturality {X Y : C}
           ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f) :=
   ExactStructure.projectiveStableIso_hom_naturality
     P (hE.suspensionPresentation X) Q (hE.suspensionPresentation Y) (hE.isProjective_I P)
-    (hE.isProjective_suspensionInjective X) (hE.isProjective_I Q)
-    (hE.isProjective_suspensionInjective Y) f
+    (hE.isProjective_I (hE.suspensionPresentation X)) (hE.isProjective_I Q)
+    (hE.isProjective_I (hE.suspensionPresentation Y)) f
 
 end ExactStructure.IsFrobenius
 
