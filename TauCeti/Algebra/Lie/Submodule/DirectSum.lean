@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Lie.DirectSum
 public import TauCeti.LinearAlgebra.Projection
-import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # An internal direct sum of Lie submodules is an external one
