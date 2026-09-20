@@ -113,7 +113,7 @@ theorem SeparatelyExchangeable.ae_separatelyExchangeable_condExpKernel_arrayTail
           (FinitaryPerm.finite_compl_fixedBy_toPerm g.1)
           (FinitaryPerm.finite_compl_fixedBy_toPerm g.2)))
   filter_upwards [ae_all_iff.2 hinv] with x hx
-  refine separatelyExchangeable_of_finitary fun σ τ hσ hτ => ?_
+  refine separatelyExchangeable_of_map_pairReindex_finitary fun σ τ hσ hτ => ?_
   have hστ := hx (FinitaryPerm.ofPerm σ hσ, FinitaryPerm.ofPerm τ hτ)
   rwa [FinitaryPerm.toPerm_ofPerm, FinitaryPerm.toPerm_ofPerm] at hστ
 

@@ -97,15 +97,9 @@ theorem JointlyExchangeable.smulInvariantMeasure {ρ : Measure (ℕ × ℕ → �
   intro g s hs
   simp only [finitaryPerm_smul_array_def]
   rw [← Measure.map_apply (measurable_pairReindex _ _) hs]
-  have hfun : pairReindex (FinitaryPerm.toPerm g)⁻¹ (FinitaryPerm.toPerm g)⁻¹ =
-      fun (x : ℕ × ℕ → α) p =>
-        x ((FinitaryPerm.toPerm g)⁻¹ p.1, (FinitaryPerm.toPerm g)⁻¹ p.2) :=
-    funext fun x => funext fun p => pairReindex_apply _ _ x p
-  rw [hfun]
   have hmap := congrArg (fun m : Measure (ℕ × ℕ → α) => m s)
     (jointlyExchangeable_iff.mp hρ (FinitaryPerm.toPerm g)⁻¹)
-  -- the identity reindexing is `id` by unfolding, which no propositional lemma states
-  rw [show (fun (x : ℕ × ℕ → α) p => x p) = id by rfl, Measure.map_id] at hmap
+  rw [← pairReindex_def, Measure.map_id'] at hmap
   exact hmap
 
 /-! ## Corner-tail events are invariant -/

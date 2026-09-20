@@ -120,6 +120,12 @@ theorem pairReindex_apply (σ τ : Equiv.Perm ℕ) (x : ℕ × ℕ → α) (p : 
     pairReindex σ τ x p = x (σ p.1, τ p.2) :=
   (rfl)
 
+/-- The function form of `pairReindex`. -/
+theorem pairReindex_def (σ τ : Equiv.Perm ℕ) :
+    pairReindex (α := α) σ τ = fun x p => x (σ p.1, τ p.2) := by
+  funext x p
+  exact pairReindex_apply σ τ x p
+
 /-- Reindexing both axes twice composes the corresponding permutations on each axis. -/
 @[simp]
 theorem pairReindex_comp (σ₁ τ₁ σ₂ τ₂ : Equiv.Perm ℕ) :
@@ -281,11 +287,7 @@ theorem SeparatelyExchangeable.measurePreserving_pairReindex
     {ρ : Measure (ℕ × ℕ → α)} (hρ : SeparatelyExchangeable ρ fun p x => x p)
     (σ τ : Equiv.Perm ℕ) : MeasurePreserving (pairReindex σ τ) ρ ρ := by
   refine ⟨measurable_pairReindex σ τ, ?_⟩
-  have hfun : (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x (σ p.1, τ p.2)) = pairReindex σ τ :=
-    funext fun x => funext fun p => (pairReindex_apply σ τ x p).symm
-  have h := hρ σ τ
-  -- the identity reindexing is `id` by unfolding, which no propositional lemma states
-  rwa [hfun, show (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x p) = id from rfl, Measure.map_id] at h
+  simpa only [← pairReindex_def, Measure.map_id'] using hρ σ τ
 
 /-- **Joint exchangeability is a property of the array law**: an array is jointly exchangeable
 exactly when the coordinate array under its law on `ℕ × ℕ → α` is. -/
@@ -296,11 +298,9 @@ theorem jointlyExchangeable_map_iff {μ : Measure Ω} {X : ℕ × ℕ → Ω →
     have hread : (fun ω => pairReindex σ σ fun p => X p ω) = fun ω p => X (σ p.1, σ p.2) ω := by
       funext ω p
       rw [pairReindex_apply]
-    have hfun : (fun (x : ℕ × ℕ → α) (p : ℕ × ℕ) => x (σ p.1, σ p.2)) = pairReindex σ σ := by
-      funext x p
-      rw [pairReindex_apply]
     beta_reduce
-    rw [hfun, map_map_array hX (measurable_pairReindex σ σ), hread, Measure.map_id']
+    rw [← pairReindex_def, map_map_array hX (measurable_pairReindex σ σ), hread,
+      Measure.map_id']
 
 /-- **An array law is the uncurried path law of its row process.** A statement about the law of the
 row process therefore transports to one about the law of the array. -/

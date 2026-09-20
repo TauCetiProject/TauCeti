@@ -9,22 +9,22 @@ public import TauCeti.Probability.Exchangeability.Arrays.ConditionalLaw
 public import TauCeti.Probability.Kernel.Randomization
 
 /-!
-# Uniform mixtures of dissociated array laws
+# Uniform mixtures of jointly dissociated array laws
 
 Every exchangeable probability law on arrays over a standard Borel space is a measurable mixture
-of dissociated ones, with the same array symmetry as the original law and with one uniform
+of jointly dissociated ones, with the same array symmetry as the original law and with one uniform
 variable on the unit interval as the mixing variable. This isolates the global noise in the
-Aldous--Hoover representation: it remains to represent the resulting measurable family of
-dissociated laws by vertex and cell noise.
+Aldous--Hoover representation: it remains to represent the resulting measurable family by vertex
+(row and column) and cell noise.
 
 Both array symmetries are covered. `JointlyExchangeable.exists_dissociated_kernel` and
-`SeparatelyExchangeable.exists_dissociated_kernel` give the mixture as a Markov kernel from the
-unit interval, with its composition against volume equal to the original law;
+`SeparatelyExchangeable.exists_jointlyDissociated_kernel` give the mixture as a Markov kernel from
+the unit interval, with its composition against volume equal to the original law;
 `JointlyExchangeable.exists_dissociated_coding` and
-`SeparatelyExchangeable.exists_dissociated_coding` realize that kernel using a second independent
-uniform variable. Their sections retain both the symmetry and the dissociation, and their joint
-pushforward is the original array law. The second variable samples a whole array; it is not yet
-resolved into vertex and cell variables.
+`SeparatelyExchangeable.exists_jointlyDissociated_coding` realize that kernel using a second
+independent uniform variable. Their sections retain both the symmetry and joint dissociation, and
+their joint pushforward is the original array law. The second variable samples a whole array; it is
+not yet resolved into vertex (row and column) and cell variables.
 
 The components of a separately exchangeable law are asserted to be *jointly* dissociated, which is
 what dropping the global variable of a separate coding asks of them
@@ -87,7 +87,8 @@ theorem exists_kernel_of_ae_condExpKernel_arrayTail
 
 /-- **An array law is sampled by two independent uniform variables**, the first selecting a
 corner-tail conditional law and the second sampling from it. The coding is jointly measurable, and
-one almost-sure set of first variables works for every property of the conditional laws. -/
+one almost-sure set of first variables works for the given property `P` of the conditional laws.
+Taking `P` to be a conjunction gives one set on which all conjuncts hold. -/
 theorem exists_coding_of_ae_condExpKernel_arrayTail
     (hP : ∀ᵐ x ∂ρ, P (condExpKernel ρ (arrayTail fun p (y : ℕ × ℕ → α) => y p) x)) :
     ∃ f : unitInterval → unitInterval → (ℕ × ℕ → α),
@@ -141,11 +142,11 @@ theorem JointlyExchangeable.exists_dissociated_coding
       hρ.ae_jointlyDissociated_condExpKernel_arrayTail)
 
 /-- **A separately exchangeable array law is a uniform mixture of separately exchangeable,
-dissociated probability laws.** The components keep the two-axis symmetry of the original law, so
-this is the reduction of the separate Aldous--Hoover representation to its ergodic form; joint
-dissociation is the hypothesis that the global-variable-free separate coding
+jointly dissociated probability laws.** The components keep the two-axis symmetry of the original
+law, so this is the reduction of the separate Aldous--Hoover representation to its ergodic form;
+joint dissociation is the hypothesis that the global-variable-free separate coding
 (`AldousHoover.exists_map_separateArray_snd_eq_of_jointlyDissociated`) asks of a component. -/
-theorem SeparatelyExchangeable.exists_dissociated_kernel
+theorem SeparatelyExchangeable.exists_jointlyDissociated_kernel
     (hρ : SeparatelyExchangeable ρ fun p x => x p) :
     ∃ κ : ProbabilityTheory.Kernel unitInterval (ℕ × ℕ → α), IsMarkovKernel κ ∧
       (∀ᵐ u ∂(volume : Measure unitInterval),
@@ -159,11 +160,11 @@ theorem SeparatelyExchangeable.exists_dissociated_kernel
       hρ.jointlyExchangeable.ae_jointlyDissociated_condExpKernel_arrayTail)
 
 /-- **A separately exchangeable array can be sampled by two independent uniform variables**: the
-first selects a separately exchangeable, dissociated component law, and the second samples from
-that law. This is the separate-symmetry counterpart of
+first selects a separately exchangeable, jointly dissociated component law, and the second samples
+from that law. This is the separate-symmetry counterpart of
 `JointlyExchangeable.exists_dissociated_coding`; the second variable samples a whole array and is
 not yet resolved into row, column and cell variables. -/
-theorem SeparatelyExchangeable.exists_dissociated_coding
+theorem SeparatelyExchangeable.exists_jointlyDissociated_coding
     (hρ : SeparatelyExchangeable ρ fun p x => x p) :
     ∃ f : unitInterval → unitInterval → (ℕ × ℕ → α),
       Measurable (Function.uncurry f) ∧
