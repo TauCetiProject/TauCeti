@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
--- `Mathlib.MeasureTheory.Measure.Prod` is imported privately: the product measure and Tonelli's
--- theorem appear only inside the proofs below.
-import Mathlib.MeasureTheory.Measure.Prod
+public import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Marcinkiewicz interpolation between two finite exponents
@@ -87,71 +85,6 @@ open scoped ENNReal
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
   {f : α → ℝ≥0∞} {u : β → ℝ≥0∞} {p p₀ p₁ q s c : ℝ} {A₀ A₁ : ℝ≥0∞}
-
-/-- The truncated integral `t ↦ ∫⁻ x in {x | R t x}, g x ∂μ` is measurable when the truncating
-relation is jointly measurable. -/
-private theorem measurable_setLIntegral_of_measurableSet [SFinite μ] {g : α → ℝ≥0∞}
-    {R : ℝ → α → Prop} (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hg : Measurable g) :
-    Measurable fun t => ∫⁻ x in {x | R t x}, g x ∂μ := by
-  have hRx : ∀ t : ℝ, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
-  have hind : ∀ t : ℝ, ∫⁻ x in {x | R t x}, g x ∂μ =
-      ∫⁻ x, {z : ℝ × α | R z.1 z.2}.indicator (fun z => g z.2) (t, x) ∂μ := by
-    intro t
-    rw [← lintegral_indicator (hRx t)]
-    rfl
-  simp_rw [hind]
-  exact ((hg.comp measurable_snd).indicator hR).lintegral_prod_right'
-
-/-- **Tonelli for the double integral of the real interpolation method.** For a jointly measurable
-truncating relation `R`, the weight `t ^ s` pairs with the truncated integrals of `g` in either
-order: integrating first in `x` and then in `t` gives the same value as integrating the weight
-over the `t`-section of `R` and then in `x`. -/
-private theorem lintegral_mul_setLIntegral_eq [SFinite μ] {g : α → ℝ≥0∞} {R : ℝ → α → Prop}
-    (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hg : Measurable g) (s : ℝ) :
-    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) * ∫⁻ x in {x | R t x}, g x ∂μ =
-      ∫⁻ x, (∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) * g x ∂μ := by
-  have hRx : ∀ t : ℝ, MeasurableSet {x | R t x} := fun t => measurable_prodMk_left hR
-  have hRt : ∀ x : α, MeasurableSet {t : ℝ | R t x} := fun x => measurable_prodMk_right hR
-  have hw : Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) :=
-    (measurable_id.pow measurable_const).ennreal_ofReal
-  set G : ℝ × α → ℝ≥0∞ :=
-    {z : ℝ × α | R z.1 z.2}.indicator (fun z => ENNReal.ofReal (z.1 ^ s) * g z.2) with hG
-  have hGmeas : Measurable G :=
-    (((measurable_fst.pow measurable_const).ennreal_ofReal).mul
-      (hg.comp measurable_snd)).indicator hR
-  -- The same cut-off reads as a condition on `x` for a fixed `t`, or as one on `t` for a fixed `x`;
-  -- each `show` names the set whose indicator is being unfolded, which a bare `hx` leaves open.
-  have hGx : ∀ (t : ℝ) (x : α), G (t, x) =
-      ENNReal.ofReal (t ^ s) * {x | R t x}.indicator g x := by
-    intro t x
-    by_cases hx : R t x
-    · rw [hG, Set.indicator_of_mem (show (t, x) ∈ {z : ℝ × α | R z.1 z.2} from hx),
-        Set.indicator_of_mem (show x ∈ {x | R t x} from hx)]
-    · rw [hG, Set.indicator_of_notMem (show (t, x) ∉ {z : ℝ × α | R z.1 z.2} from hx),
-        Set.indicator_of_notMem (show x ∉ {x | R t x} from hx), mul_zero]
-  have hGt : ∀ (t : ℝ) (x : α), G (t, x) =
-      {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t * g x := by
-    intro t x
-    by_cases hx : R t x
-    · rw [hG, Set.indicator_of_mem (show (t, x) ∈ {z : ℝ × α | R z.1 z.2} from hx),
-        Set.indicator_of_mem (show t ∈ {t : ℝ | R t x} from hx)]
-    · rw [hG, Set.indicator_of_notMem (show (t, x) ∉ {z : ℝ × α | R z.1 z.2} from hx),
-        Set.indicator_of_notMem (show t ∉ {t : ℝ | R t x} from hx), zero_mul]
-  have hslice : ∀ t : ℝ, ∫⁻ x, G (t, x) ∂μ =
-      ENNReal.ofReal (t ^ s) * ∫⁻ x in {x | R t x}, g x ∂μ := by
-    intro t
-    rw [← lintegral_indicator (hRx t), ← lintegral_const_mul _ (hg.indicator (hRx t))]
-    exact lintegral_congr fun x => hGx t x
-  have hinner : ∀ x : α, (∫⁻ t in Ioi (0 : ℝ), G (t, x)) =
-      (∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) * g x := by
-    intro x
-    rw [← lintegral_mul_const _ (hw.indicator (hRt x))]
-    exact lintegral_congr fun t => hGt t x
-  refine (lintegral_congr fun t => (hslice t).symm).trans ?_
-  rw [lintegral_lintegral_swap (f := fun t x => G (t, x)) hGmeas.aemeasurable]
-  exact lintegral_congr hinner
 
 /-- **The weighted mass of the part of `f` above the height `c * t`.** For `-1 < s` the weight
 `t ^ s` is integrable at the origin, and the double integral of the upper truncations of `f ^ q`
