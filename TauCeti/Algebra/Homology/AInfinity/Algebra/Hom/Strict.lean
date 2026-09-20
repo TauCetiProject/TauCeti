@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Basic
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Component
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 
 /-!
@@ -361,6 +361,23 @@ theorem linearPart_toAInfinityHom (f : AInfinityStrictHom AA BB) :
   rw [AInfinityHom.linearPart_apply, taylor_toAInfinityHom, LinearMap.comp_apply,
     ReducedTensorWords.letter_ofLetter]
 
+/-- The unsuspended component of a strict morphism in arity other than one is zero. -/
+@[simp]
+theorem component_toAInfinityHom_eq_zero (f : AInfinityStrictHom AA BB) {n : ℕ} (hn : n ≠ 1) :
+    f.toAInfinityHom.component n = 0 := by
+  rcases n with _ | n
+  · exact f.toAInfinityHom.component_zero
+  · apply MultilinearMap.ext
+    intro x
+    rw [AInfinityHom.component_apply _ (n + 1) (by omega), taylor_toAInfinityHom,
+      LinearMap.comp_apply, ReducedTensorWords.letter_apply]
+    have hlength : (⟨n + 1, by omega⟩ : {k : ℕ // 0 < k}) ≠ 1 := by
+      intro h
+      apply hn
+      simpa using congrArg Subtype.val h
+    rw [ReducedTensorWords.component_of_of_ne R A hlength]
+    simp
+
 /-- Passing from strict morphisms to `A∞` morphisms is injective. -/
 theorem toAInfinityHom_injective :
     Function.Injective (toAInfinityHom : AInfinityStrictHom AA BB → AInfinityHom AA BB) := by
@@ -462,7 +479,7 @@ theorem IsStrict.toStrictHom_toLinearMap {f : AInfinityHom AA BB} (hf : f.IsStri
 @[simp]
 theorem IsStrict.toAInfinityHom_toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict) :
     hf.toStrictHom.toAInfinityHom = f := by
-  ext1
+  apply AInfinityHom.ext
   rw [AInfinityStrictHom.taylor_toAInfinityHom, IsStrict.toStrictHom_toLinearMap, hf]
 
 /-- The `A∞` morphism induced by a strict morphism is strict. -/
