@@ -32,11 +32,13 @@ arbitrary outer-measure error. A countable union of these inner compact approxim
 from the analytic set by a null set. For an s-finite measure, apply this construction to each finite
 component and take the union of the resulting measurable subsets.
 
-The theorem is classically stated for Polish ambient spaces, but neither half of that hypothesis is
-used. An analytic set is by definition empty or a continuous image of Baire space, so it carries its
-own separability, and the ambient space is never completed: the argument only needs a metric, to
-extract a convergent subsequence of approximating points and to identify its limit. Accordingly the
-statements below assume just `TopologicalSpace.MetrizableSpace`.
+The theorem is classically stated for Polish ambient spaces, but neither second countability nor
+completeness is used. An analytic set is by definition empty or a continuous image of Baire space,
+so it carries its own separability, and the ambient space is never completed: the argument needs
+only a metric, to extract a convergent subsequence of approximating points and to identify its
+limit. Accordingly the three universal-measurability statements below assume just
+`TopologicalSpace.MetrizableSpace`. `analyticSet_setOf_iInf_lt` keeps `PolishSpace`, which its
+appeal to measurable projection genuinely needs.
 
 ## Main results
 
