@@ -183,6 +183,38 @@ theorem IsFrobenius.isZero_projectiveStableFunctor_obj_iff_isInjective {E : Exac
   (ExactStructure.isZero_projectiveStableFunctor_obj_iff E X).trans
     (hE.projective_iff_injective X)
 
+/-- Two morphisms `φ ψ : S ⟶ T` of short complexes out of a conflation `S`, agreeing on first
+terms, induce the same map on third terms in the projective stable category once the middle term
+of `T` is relatively projective: `φ.τ₃ - ψ.τ₃` factors through `T.X₂`. -/
+theorem projectiveStableFunctor_map_τ₃_eq_of_τ₁_eq {S T : ShortComplex C} (hS : E.Conflation S)
+    (hT : E.isProjective T.X₂) {φ ψ : S ⟶ T} (h : φ.τ₁ = ψ.τ₁) :
+    E.projectiveStableFunctor.map φ.τ₃ = E.projectiveStableFunctor.map ψ.τ₃ := by
+  have hkc := E.isKernelCokernelPair S hS
+  have := hkc.epi_g
+  have hb : S.f ≫ (φ.τ₂ - ψ.τ₂) = 0 := by
+    rw [Preadditive.comp_sub, ← φ.comm₁₂, ← ψ.comm₁₂, h, sub_self]
+  have hdiff : φ.τ₃ - ψ.τ₃ = hkc.desc _ hb ≫ T.g := by
+    rw [← cancel_epi S.g, Preadditive.comp_sub, ← φ.comm₂₃, ← ψ.comm₂₃, ← Preadditive.sub_comp,
+      ← Category.assoc, hkc.g_desc]
+  rw [← sub_eq_zero, ← Functor.map_sub, projectiveStableFunctor_map_eq_zero_iff, hdiff]
+  exact ObjectProperty.factorsThrough_comp E.isProjective hT _ _
+
+/-- Two morphisms `φ ψ : S ⟶ T` of short complexes into a conflation `T`, agreeing on third
+terms, induce the same map on first terms in the projective stable category once the middle term
+of `S` is relatively projective: `φ.τ₁ - ψ.τ₁` factors through `S.X₂`. -/
+theorem projectiveStableFunctor_map_τ₁_eq_of_τ₃_eq {S T : ShortComplex C} (hT : E.Conflation T)
+    (hS : E.isProjective S.X₂) {φ ψ : S ⟶ T} (h : φ.τ₃ = ψ.τ₃) :
+    E.projectiveStableFunctor.map φ.τ₁ = E.projectiveStableFunctor.map ψ.τ₁ := by
+  have hkc := E.isKernelCokernelPair T hT
+  have := hkc.mono_f
+  have hb : (φ.τ₂ - ψ.τ₂) ≫ T.g = 0 := by
+    rw [Preadditive.sub_comp, φ.comm₂₃, ψ.comm₂₃, h, sub_self]
+  have hdiff : φ.τ₁ - ψ.τ₁ = S.f ≫ hkc.lift _ hb := by
+    rw [← cancel_mono T.f, Preadditive.sub_comp, φ.comm₁₂, ψ.comm₁₂, ← Preadditive.comp_sub,
+      Category.assoc, hkc.lift_f]
+  rw [← sub_eq_zero, ← Functor.map_sub, projectiveStableFunctor_map_eq_zero_iff, hdiff]
+  exact ObjectProperty.factorsThrough_comp E.isProjective hS _ _
+
 end ExactStructure
 
 end TauCeti

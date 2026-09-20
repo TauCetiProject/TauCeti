@@ -31,6 +31,7 @@ the exponentials above preserve an integral lattice. The application to the Kost
 
 ## Main results
 
+* `TauCeti.nilpotencyClass_le_of_pow_eq_zero`: a vanishing power bounds the nilpotency class.
 * `TauCeti.exp_smul_eq_sum_smul_dividedPower`: the rescaled expansion `exp (r • x) = ∑ rⁱ • x⁽ⁱ⁾`.
 * `TauCeti.exp_zsmul_eq_sum_zsmul_dividedPower`: the same expansion with integer coefficients.
 * `TauCeti.exp_zsmul_mem`: `exp (t • x)` lies in an additive subgroup holding the divided powers
@@ -53,6 +54,14 @@ public section
 namespace TauCeti
 
 open Finset IsNilpotent
+
+variable {R : Type*} [Zero R] [Pow R ℕ]
+
+/-- Any vanishing power gives an upper bound for the nilpotency class. -/
+theorem nilpotencyClass_le_of_pow_eq_zero {x : R} {n : ℕ} (h : x ^ n = 0) :
+    nilpotencyClass x ≤ n := by
+  rw [nilpotencyClass]
+  exact Nat.sInf_le h
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
 

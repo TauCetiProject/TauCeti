@@ -45,6 +45,8 @@ conjugation action.
   divides the order of the group, so the quotient below is an exact ratio.
 * `ConjClasses.card_div_card_carrier_mul_orderOf_eq_card_centralizer_div_orderOf`: that
   quotient equals the order of the centralizer divided by the order of the member.
+* `TauCeti.ConjClasses.card_carrier_mk_eq_card_filter`: the size of a conjugacy class as the
+  cardinality of a `Finset`, which makes it computable.
 * `TauCeti.ConjClasses.card_carrier_dvd_card`: the size of a conjugacy class divides the order of
   the group, with `TauCeti.ConjClasses.card_carrier_cast_ne_zero` the consequence that the size of
   a class is nonzero in any semiring where the group order is.
@@ -180,6 +182,17 @@ normalized form is `TauCeti.ConjClasses.ncard_carrier_mk`. -/
 theorem card_carrier_mk (g : G) :
     Nat.card (ConjClasses.mk g).carrier = (Subgroup.centralizer {g}).index := by
   rw [Nat.card_coe_set_eq, ncard_carrier_mk]
+
+/-- **The size of a conjugacy class as a `Finset` cardinality**: the members of the class of `g`
+are the elements of the group whose class is that of `g`, so in a finite group with decidable
+equality the class size is a count that can be evaluated. -/
+theorem card_carrier_mk_eq_card_filter [Fintype G] [DecidableEq G] (g : G) :
+    Nat.card (ConjClasses.mk g).carrier =
+      {x ∈ (Finset.univ : Finset G) | ConjClasses.mk x = ConjClasses.mk g}.card := by
+  rw [Nat.card_coe_set_eq, ← Set.ncard_coe_finset]
+  congr 1
+  ext x
+  simp [_root_.ConjClasses.mem_carrier_iff_mk_eq]
 
 /-- **The size of a conjugacy class divides the order of the group**, being the index of a
 centralizer. -/

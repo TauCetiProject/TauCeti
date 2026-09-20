@@ -43,6 +43,8 @@ recurrences — is a separate milestone and is not proved here.
 * `HeckeRing.GL2.coe_heckeSlashGamma1ModularFormEnd`,
   `HeckeRing.GL2.coe_heckeSlashGamma1CuspFormEnd`: both operators are `heckeSlashSum` on
   underlying functions.
+* `HeckeRing.GL2.heckeSlashGamma1ModularFormEnd_coe_cuspForm`: the two operators agree under
+  the coercion from cusp forms to modular forms.
 
 ## References
 
@@ -86,6 +88,17 @@ noncomputable def heckeSlashGamma1CuspFormEnd :
 @[simp] lemma coe_heckeSlashGamma1CuspFormEnd (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     ⇑(heckeSlashGamma1CuspFormEnd k D f) = heckeSlashSum k D f :=
   coe_heckeSlashCuspFormEnd k D (out_mem_glpos_of_delta0 N D) f
+
+/-- The modular-form and cusp-form slash operators attached to the same `Γ₁(N)` double coset
+agree under the coercion `S_k(Γ₁(N)) → M_k(Γ₁(N))`. -/
+@[simp] theorem heckeSlashGamma1ModularFormEnd_coe_cuspForm
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    heckeSlashGamma1ModularFormEnd k D
+        (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      (heckeSlashGamma1CuspFormEnd k D f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  apply DFunLike.coe_injective
+  simp only [coe_heckeSlashGamma1ModularFormEnd, coe_heckeSlashGamma1CuspFormEnd,
+    ModularFormClass.coe_modularForm]
 
 end HeckeRing.GL2
 

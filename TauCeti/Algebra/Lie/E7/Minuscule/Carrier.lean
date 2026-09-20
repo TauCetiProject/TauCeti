@@ -336,8 +336,7 @@ private theorem nilpotencyClass_rep_rootGenerator_le_two (i : Fin 7 ⊕ Fin 7) :
     nilpotencyClass
       (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.serreRootGenerator (CartanMatrix.E 7) i))) ≤ 2 := by
-  rw [nilpotencyClass]
-  exact Nat.sInf_le (pow_two_rep_serreRootGenerator_eq_zero i)
+  exact nilpotencyClass_le_of_pow_eq_zero (pow_two_rep_serreRootGenerator_eq_zero i)
 
 private theorem rep_positiveRootGenerator_latticeBasis_eq_sum (i : Fin 7) (s : Fin 56) :
     rep (_root_.UniversalEnvelopingAlgebra.ι ℚ

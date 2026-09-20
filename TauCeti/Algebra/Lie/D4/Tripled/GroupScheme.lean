@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.AdmissibleLattice
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SerreRootGenerator
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.RootGenerator
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations

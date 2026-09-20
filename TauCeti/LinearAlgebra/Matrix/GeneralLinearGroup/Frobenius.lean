@@ -30,6 +30,14 @@ Hopf-algebra theory is involved; the group-scheme reading of these statements is
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.mem_range_map_val_iff`: an invertible matrix comes from a subalgebra
+  exactly when its entries and those of its inverse lie in it.
+* `Matrix.GeneralLinearGroup.map_eq_self_iff_mem_equalizer` and
+  `Matrix.GeneralLinearGroup.range_map_val_equalizer`: the invertible matrices fixed by an
+  arbitrary entrywise algebra endomorphism are those with entries in, respectively those coming
+  from, its equalizer subalgebra. These are the characteristic-free statements behind the two
+  below, and the ones an algebra over a finite field needs, where `iterateFrobenius` is
+  unavailable because the zero ring has no exponential characteristic `p`.
 * `Matrix.GeneralLinearGroup.map_iterateFrobenius_eq_self_iff`: an invertible matrix is
   fixed by the entrywise Frobenius exactly when all of its entries are.
 * `Matrix.GeneralLinearGroup.fixedSubgroup_map_iterateFrobenius_zero`: the zeroth iterate
@@ -51,6 +59,83 @@ open TauCeti
 namespace Matrix.GeneralLinearGroup
 
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
+
+section Subalgebra
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- **Which invertible matrices come from a subalgebra**: those whose entries, and whose inverse's
+entries, all lie in it. Over a subalgebra invertibility is a condition on the inverse rather than
+a consequence of the determinant being a unit of the ambient algebra, so the second clause cannot
+be dropped. -/
+@[simp]
+theorem mem_range_map_val_iff (S : Subalgebra R A) (g : Matrix.GeneralLinearGroup ι A) :
+    (∃ h, Matrix.GeneralLinearGroup.map (n := ι) (S.val : ↥S →+* A) h = g) ↔
+      (∀ i j, (g : Matrix ι ι A) i j ∈ S) ∧
+        ∀ i j, ((g⁻¹ : Matrix.GeneralLinearGroup ι A) : Matrix ι ι A) i j ∈ S := by
+  constructor
+  · rintro ⟨h, rfl⟩
+    refine ⟨fun i j => ?_, fun i j => ?_⟩
+    · rw [Matrix.GeneralLinearGroup.map_apply]
+      exact ((h : Matrix ι ι ↥S) i j).2
+    · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
+      exact (((h⁻¹ : Matrix.GeneralLinearGroup ι ↥S) : Matrix ι ι ↥S) i j).2
+  · rintro ⟨hg, hg'⟩
+    obtain ⟨M, hM⟩ : ∃ M : Matrix ι ι ↥S, M.map (S.val : ↥S →+* A) = (g : Matrix ι ι A) :=
+      ⟨fun i j => ⟨_, hg i j⟩, rfl⟩
+    obtain ⟨N, hN⟩ : ∃ N : Matrix ι ι ↥S,
+        N.map (S.val : ↥S →+* A) = ((g⁻¹ : Matrix.GeneralLinearGroup ι A) : Matrix ι ι A) :=
+      ⟨fun i j => ⟨_, hg' i j⟩, rfl⟩
+    have hone : (1 : Matrix ι ι ↥S).map (S.val : ↥S →+* A) = 1 :=
+      Matrix.map_one _ (map_zero _) (map_one _)
+    -- `M` and `N` are mutually inverse because they are so after the injective inclusion of `S`.
+    have h₁ : (M * N).map (S.val : ↥S →+* A) = (1 : Matrix ι ι ↥S).map (S.val : ↥S →+* A) := by
+      rw [Matrix.map_mul, hM, hN, hone]
+      exact congrArg Units.val (mul_inv_cancel g)
+    have h₂ : (N * M).map (S.val : ↥S →+* A) = (1 : Matrix ι ι ↥S).map (S.val : ↥S →+* A) := by
+      rw [Matrix.map_mul, hN, hM, hone]
+      exact congrArg Units.val (inv_mul_cancel g)
+    refine ⟨⟨M, N, Matrix.map_injective Subtype.val_injective h₁,
+      Matrix.map_injective Subtype.val_injective h₂⟩,
+      Matrix.GeneralLinearGroup.ext fun i j => ?_⟩
+    rw [Matrix.GeneralLinearGroup.map_apply]
+    exact congrFun (congrFun hM i) j
+
+/-- An invertible matrix is fixed by an entrywise algebra endomorphism exactly when every one of
+its entries lies in the equalizer of that endomorphism with the identity. -/
+@[simp]
+theorem map_eq_self_iff_mem_equalizer (φ : A →ₐ[R] A) (g : Matrix.GeneralLinearGroup ι A) :
+    Matrix.GeneralLinearGroup.map (n := ι) (φ : A →+* A) g = g ↔
+      ∀ i j, (g : Matrix ι ι A) i j ∈ AlgHom.equalizer φ (AlgHom.id R A) := by
+  simp only [AlgHom.mem_equalizer, AlgHom.coe_id, id_eq]
+  constructor
+  · intro hg i j
+    simpa using congrArg (fun M : Matrix.GeneralLinearGroup ι A => (M : Matrix ι ι A) i j) hg
+  · intro hg
+    refine Matrix.GeneralLinearGroup.ext fun i j => ?_
+    rw [Matrix.GeneralLinearGroup.map_apply]
+    simpa using hg i j
+
+/-- **The invertible matrices fixed by an entrywise algebra endomorphism are exactly the ones
+coming from its equalizer subalgebra.** The entries of a fixed matrix are fixed, and so are those
+of its inverse because the entrywise map is a group homomorphism, so a fixed matrix descends.
+
+No characteristic hypothesis is used, so this also covers the `q`-power endomorphism of an
+arbitrary algebra over a finite field, where `iterateFrobenius` is unavailable because the zero
+ring has no exponential characteristic `p`. -/
+theorem range_map_val_equalizer (φ : A →ₐ[R] A) :
+    (Matrix.GeneralLinearGroup.map (n := ι)
+        ((AlgHom.equalizer φ (AlgHom.id R A)).val :
+          ↥(AlgHom.equalizer φ (AlgHom.id R A)) →+* A)).range =
+      fixedSubgroup (Matrix.GeneralLinearGroup.map (n := ι) (φ : A →+* A)) := by
+  ext g
+  simp only [MonoidHom.mem_range]
+  rw [mem_range_map_val_iff, mem_fixedSubgroup, map_eq_self_iff_mem_equalizer]
+  refine ⟨fun h => h.1, fun h => ⟨h, (map_eq_self_iff_mem_equalizer φ g⁻¹).mp ?_⟩⟩
+  rw [map_inv, (map_eq_self_iff_mem_equalizer φ g).mpr h]
+
+end Subalgebra
+
 variable (p : ℕ) {A : Type*} [CommRing A] [ExpChar A p]
 
 /-- An invertible matrix is fixed by the entrywise `p ^ k`-power Frobenius exactly when every one

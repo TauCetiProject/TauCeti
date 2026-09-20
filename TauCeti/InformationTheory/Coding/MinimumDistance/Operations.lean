@@ -12,7 +12,8 @@ public import TauCeti.InformationTheory.Coding.DirectSum
 /-!
 # Minimum distance under coordinate operations
 
-Puncturing can reduce minimum distance by at most the number of deleted coordinates.
+Puncturing can reduce minimum distance by at most the number of deleted coordinates, and
+preserves dimension as long as the minimum distance is at least two.
 Shortening cannot reduce it unless the shortened code is zero. The minimum distance of a
 direct sum of two nonzero codes is the minimum of their distances; a zero summand leaves
 the distance unchanged. The zero-code cases matter because minimum distance is defined as
@@ -100,6 +101,57 @@ theorem hammingMinDist_le_hammingMinDist_punctureAt_add_one [DecidableEq ι] (i 
       hammingMinDist (punctureAt C i : Set (({i}ᶜ : Set ι) → F)) + 1 := by
   simpa only [punctureAt_def, compl_compl, Fintype.card_unique] using
     hammingMinDist_le_hammingMinDist_puncture_add_card_compl C {i}ᶜ
+
+/-- Deleting a nonzero coordinate of a minimum-weight word lowers minimum distance by exactly
+one, provided the original minimum distance is at least two. -/
+theorem hammingMinDist_punctureAt_add_one_eq [DecidableEq ι] (i : ι) {x : ι → F}
+    (hd : 2 ≤ hammingMinDist (C : Set (ι → F))) (hx : x ∈ C)
+    (hxw : hammingNorm x = hammingMinDist (C : Set (ι → F))) (hxi : x i ≠ 0) :
+    hammingMinDist (punctureAt C i : Set (({i}ᶜ : Set ι) → F)) + 1 =
+      hammingMinDist (C : Set (ι → F)) := by
+  set y := ({i}ᶜ : Set ι).domRestrict x with hy
+  set z := (({i}ᶜ : Set ι)ᶜ).domRestrict x with hz
+  have hyC : y ∈ punctureAt C i := by
+    rw [punctureAt_def]
+    exact mem_puncture.mpr ⟨x, hx, fun _ ↦ rfl⟩
+  have hzw : hammingNorm z = 1 := by
+    have hle : hammingNorm z ≤ 1 := by
+      simpa only [hz, compl_compl, Fintype.card_unique] using
+        hammingNorm_le_card_fintype (x := z)
+    have hne : z ≠ 0 := fun h ↦ hxi (congrFun h ⟨i, by simp⟩)
+    have := (hammingNorm_eq_zero (x := z)).not.mpr hne
+    omega
+  have hyw : hammingNorm y + 1 = hammingMinDist (C : Set (ι → F)) := by
+    have hsplit := hammingNorm_eq_domRestrict_add_domRestrict_compl ({i}ᶜ : Set ι) x
+    rw [hxw, ← hy, ← hz, hzw] at hsplit
+    exact hsplit.symm
+  have hy0 : y ≠ 0 := by
+    intro h
+    simp [h] at hyw
+    omega
+  have hupper := hammingMinDist_le_hammingNorm (E := (punctureAt C i).toAddSubgroup) hyC hy0
+  rw [Submodule.coe_toAddSubgroup] at hupper
+  have hlower := hammingMinDist_le_hammingMinDist_punctureAt_add_one C i
+  omega
+
+/-- Deleting one coordinate preserves dimension as soon as the minimum distance is at least
+two, since then no nonzero codeword is supported at the deleted coordinate alone. -/
+theorem finrank_punctureAt_eq (i : ι)
+    (hd : 2 ≤ hammingMinDist (C : Set (ι → F))) :
+    Module.finrank F (punctureAt C i) = Module.finrank F C := by
+  classical
+  rw [punctureAt_def]
+  refine finrank_puncture_eq C _ fun x hx hx0 ↦ ?_
+  by_contra hne
+  have hle := hammingMinDist_le_hammingNorm (E := C.toAddSubgroup) hx hne
+  rw [Submodule.coe_toAddSubgroup] at hle
+  have hzero : ({i}ᶜ : Set ι).domRestrict x = 0 := funext hx0
+  have hone : hammingNorm x ≤ 1 := by
+    rw [hammingNorm_eq_domRestrict_add_domRestrict_compl ({i}ᶜ : Set ι) x, hzero,
+      hammingNorm_zero, zero_add]
+    simpa only [compl_compl, Fintype.card_unique] using
+      hammingNorm_le_card_fintype (x := ({i}ᶜᶜ : Set ι).domRestrict x)
+  omega
 
 /-- Shortening at one coordinate cannot decrease minimum distance if the result is nonzero. -/
 theorem hammingMinDist_le_hammingMinDist_shortenAt [DecidableEq ι] (i : ι)

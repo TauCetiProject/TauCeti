@@ -1279,7 +1279,7 @@ omit [TopologicalSpace A] in
 /-- The weight is monotone in the family. -/
 theorem weightPow_mono {T S : Fin k → Set A} (h : ∀ i, T i ⊆ S i) (ν : Fin k →₀ ℕ) :
     weightPow T ν ⊆ weightPow S ν :=
-  Finset.prod_le_prod' fun i _ ↦ Set.pow_subset_pow_left (h i)
+  Finset.prod_le_prod fun i _ ↦ Set.pow_subset_pow_left (h i)
 
 omit [TopologicalSpace A] [TopologicalSpace B] in
 /-- A ring map carries the weight `Tν` onto the weight of the image family. -/

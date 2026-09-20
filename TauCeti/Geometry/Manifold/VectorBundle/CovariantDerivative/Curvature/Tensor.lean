@@ -41,7 +41,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace ℝ (V x)]
+  [fiberNorm : ∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
   (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
 

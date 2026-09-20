@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Index.Two
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
 public import TauCeti.RepresentationTheory.LinearCharacter
+import Mathlib.GroupTheory.IndexNormal
 
 /-!
 # Inducing a linear character from a normal subgroup
@@ -21,6 +23,12 @@ determined by the scalar it acts by: `FDRep.nonempty_iso_ofLinearCharacter_iff`.
 therefore becomes elementary group theory: `Ind_N^G χ` is irreducible exactly when **no element
 outside `N` stabilizes `χ`**, that is, when for every `s ∉ N` there is an `x ∈ N` with
 `χ (s x s⁻¹) ≠ χ x`.
+
+A subgroup of **index two inverted by conjugation** -- the rotation subgroup of a dihedral or of a
+generalized quaternion group -- makes the condition uniform in `s`: conjugation sends `χ` to `χ⁻¹`
+for every `s ∉ N`, so the criterion collapses to `χ ≠ χ⁻¹`, that some value of `χ` fails to square
+to `1`.  This is `TauCeti.simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv`, and the inversion
+need only be checked on a single element outside `N`.
 
 When `χ` is moreover **faithful** the condition loses all reference to `χ`: `χ (s x s⁻¹) ≠ χ x`
 becomes `s x s⁻¹ ≠ x`, so the induced representation is irreducible exactly when the centralizer
@@ -39,6 +47,8 @@ normal subgroup `A₃` does induce irreducibly.
   conjugates its linear character, as an equality of objects.
 * `TauCeti.simple_indFDRep_ofLinearCharacter_iff`: **the Mackey criterion for an induced linear
   character** -- `Ind_N^G χ` is irreducible exactly when no element outside `N` stabilizes `χ`.
+* `TauCeti.simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv`: for an inverted subgroup of
+  index two, exactly when some value of `χ` is not a square root of `1`.
 * `TauCeti.simple_indFDRep_ofLinearCharacter_iff_centralizer_le`: for a faithful `χ`, exactly when
   `C_G(N) ≤ N`.
 
@@ -112,6 +122,31 @@ theorem simple_indFDRep_ofLinearCharacter_iff (χ : N →* kˣ) :
   -- closed under inversion.
   exact ⟨fun h s hs => by simpa using h s⁻¹ (fun hc => hs (by simpa using inv_mem hc)),
     fun h s hs => by simpa using h s⁻¹ (fun hc => hs (by simpa using inv_mem hc))⟩
+
+omit [N.Normal] in
+/-- **The Mackey criterion for a linear character of an inverted subgroup of index two:** the
+induced representation is irreducible exactly when some value of `χ` is not a square root of `1`.
+Conjugation by any element outside `N` inverts it, by
+`TauCeti.conj_eq_inv_of_notMem_of_index_two`, so `{}^s χ = χ⁻¹` for every such `s` and the
+criterion becomes the single condition `χ ≠ χ⁻¹`.  The inversion hypothesis is asked of the one
+outside element `s` only. -/
+theorem simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv (hindex : N.index = 2) {s : G}
+    (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (χ : N →* kˣ) :
+    Simple (indFDRep (FDRep.ofLinearCharacter χ)) ↔ ∃ x, χ x ^ 2 ≠ 1 := by
+  let _ : N.Normal := Subgroup.normal_of_index_eq_two hindex
+  rw [simple_indFDRep_ofLinearCharacter_iff]
+  -- Conjugation by any `t` outside `N` inverts `χ`, so `χ ({}^t x) ≠ χ x` says exactly that `χ x`
+  -- is not its own inverse; only the existence of such an `x` is left on either side.
+  have key : ∀ {t : G}, t ∉ N → ∀ x : N, (χ (MulAut.conjNormal t x) ≠ χ x ↔ χ x ^ 2 ≠ 1) := by
+    intro t ht x
+    have hconj : MulAut.conjNormal t x = x⁻¹ :=
+      Subtype.ext (by
+        rw [MulAut.conjNormal_apply]
+        simpa using conj_eq_inv_of_notMem_of_index_two hindex hs hinv ht x.2)
+    rw [hconj, map_inv, ne_eq, ne_eq, inv_eq_iff_mul_eq_one, ← sq]
+  refine ⟨fun h => ?_, fun ⟨x, hx⟩ t ht => ⟨x, (key ht x).mpr hx⟩⟩
+  obtain ⟨x, hx⟩ := h s hs
+  exact ⟨x, (key hs x).mp hx⟩
 
 /-- **A faithful linear character of a normal subgroup induces irreducibly exactly when the
 centralizer of that subgroup is no bigger than the subgroup.**  Faithfulness turns the Mackey

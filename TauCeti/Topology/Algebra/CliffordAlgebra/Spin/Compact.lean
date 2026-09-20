@@ -147,20 +147,12 @@ private def realCliffordSpinSpherePair (n : ℕ)
 
 private theorem continuous_realCliffordSpinSpherePair (n : ℕ) :
     Continuous (realCliffordSpinSpherePair n) := by
-  apply continuous_induced_rng.mpr
-  -- Expose the underlying Clifford product to prove continuity in the subtype topology.
-  rw [show Subtype.val ∘ realCliffordSpinSpherePair n =
-      fun p : realCliffordUnitSphere n × realCliffordUnitSphere n =>
-        ι (realCliffordForm n 0) (EuclideanSpace.equiv (Fin n) ℝ p.1) *
-          ι (realCliffordForm n 0) (EuclideanSpace.equiv (Fin n) ℝ p.2) by
-    funext p
-    simp only [Function.comp_apply, realCliffordSpinSpherePair, coe_spinReflectionPair]]
-  exact ((continuous_ι (realCliffordForm n 0)).comp
-      ((EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
-        (continuous_subtype_val.comp continuous_fst))).mul
-    ((continuous_ι (realCliffordForm n 0)).comp
-      ((EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
-        (continuous_subtype_val.comp continuous_snd)))
+  unfold realCliffordSpinSpherePair
+  apply continuous_spinReflectionPair
+  · exact (EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
+      (continuous_subtype_val.comp continuous_fst)
+  · exact (EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
+      (continuous_subtype_val.comp continuous_snd)
 
 private def realCliffordSpinCompactParam (n : ℕ) :
     (Fin (n + 1) → realCliffordUnitSphere n × realCliffordUnitSphere n) →
