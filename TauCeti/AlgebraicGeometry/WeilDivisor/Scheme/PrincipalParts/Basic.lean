@@ -557,16 +557,13 @@ lemma sheafι_toPrincipalParts (D : SchemeWeilDivisor X) :
 
 /-- The sequence `𝒪_X(D) ⟶ 𝒦_X ⟶ principalParts D` of `𝒪_X`-modules. It is exact in the middle
 (`principalPartsShortComplex_exact`), and short exact when the codimension-one points are closed
-(`principalPartsShortComplex_shortExact`). -/
-def principalPartsShortComplex (D : SchemeWeilDivisor X) : ShortComplex X.Modules :=
-  ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D)
+(`principalPartsShortComplex_shortExact`).
 
-/-- The principal-parts short complex has terms `𝒪_X(D)`, `𝒦_X` and
-`𝒦_X / 𝒪_X(D)`, with its defining inclusion and principal-parts maps. -/
-lemma principalPartsShortComplex_eq (D : SchemeWeilDivisor X) :
-    principalPartsShortComplex D =
-      ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D) :=
-  (rfl)
+The body is exposed: it only bundles the two public maps `sheafι D` and `toPrincipalParts D`, and
+downstream files instantiate the generic short-exact-sequence API at this complex, which needs its
+terms and maps to be available definitionally. -/
+@[expose] def principalPartsShortComplex (D : SchemeWeilDivisor X) : ShortComplex X.Modules :=
+  ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D)
 
 /-- The first object of the principal-parts short complex is `𝒪_X(D)`. -/
 @[simp]

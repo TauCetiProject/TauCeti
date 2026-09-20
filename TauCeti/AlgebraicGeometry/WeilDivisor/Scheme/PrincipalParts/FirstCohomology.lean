@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Cohomology
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PrincipalParts.Basic
 
 /-!
 # First cohomology as principal parts modulo rational functions
@@ -78,24 +78,9 @@ lemma globalToPrincipalPartsBaseLinear_apply (D : SchemeWeilDivisor X)
     (f : Γ(Scheme.rationalFunctions X, ⊤)) :
     globalToPrincipalPartsBaseLinear R D f =
       Scheme.Modules.Hom.app (toPrincipalParts D) ⊤ f := by
-  let q := (Scheme.Modules.cohomologyZeroBaseLinearEquiv R X
-    (Scheme.rationalFunctions X)).symm f
-  rw [globalToPrincipalPartsBaseLinear, LinearMap.comp_apply, LinearMap.comp_apply]
-  calc
-    (Scheme.Modules.cohomologyZeroBaseLinearEquiv R X (principalParts D))
-        (Scheme.Modules.cohomologyMapBaseLinear R X (toPrincipalParts D) 0 q) =
-        Scheme.Modules.cohomologyZeroEquiv (principalParts D)
-          (Scheme.Modules.cohomologyMapBaseLinear R X (toPrincipalParts D) 0 q) :=
-      Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply R X (principalParts D) _
-    _ = Scheme.Modules.Hom.app (toPrincipalParts D) ⊤
-        (Scheme.Modules.cohomologyZeroEquiv (Scheme.rationalFunctions X) q) := by
-      rw [Scheme.Modules.cohomologyMapBaseLinear_apply]
-      exact Scheme.Modules.cohomologyZeroEquiv_naturality (toPrincipalParts D) q
-    _ = Scheme.Modules.Hom.app (toPrincipalParts D) ⊤ f := by
-      rw [← Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply R X
-          (Scheme.rationalFunctions X),
-        (Scheme.Modules.cohomologyZeroBaseLinearEquiv R X
-          (Scheme.rationalFunctions X)).apply_symm_apply]
+  rw [globalToPrincipalPartsBaseLinear, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    Scheme.Modules.cohomologyZeroBaseLinearEquiv_naturality, LinearEquiv.apply_symm_apply]
 
 variable (hclosed : ∀ x : CodimensionOnePoint X, IsClosed ({(x : X)} : Set X))
 
@@ -112,40 +97,10 @@ private def globalPrincipalPartsQuotientEquiv (D : SchemeWeilDivisor X) :
       (Scheme.Modules.cohomologyMapBaseLinear R X (toPrincipalParts D) 0).comp
         e₂.symm.toLinearMap := by
     ext f
-    simp only [LinearMap.comp_apply]
     apply e₃.injective
-    calc
-      e₃ (e₃.symm (globalToPrincipalPartsBaseLinear R D f)) =
-          globalToPrincipalPartsBaseLinear R D f := e₃.apply_symm_apply _
-      _ = Scheme.Modules.Hom.app (toPrincipalParts D) ⊤ f :=
-        globalToPrincipalPartsBaseLinear_apply R D f
-      _ = e₃ (Scheme.Modules.cohomologyMapBaseLinear R X
-          (toPrincipalParts D) 0 (e₂.symm f)) := by
-        let q := e₂.symm f
-        have hq : Scheme.Modules.cohomologyZeroEquiv (Scheme.rationalFunctions X) q = f :=
-          (Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply R X
-            (Scheme.rationalFunctions X) q).symm.trans (e₂.apply_symm_apply f)
-        calc
-          Scheme.Modules.Hom.app (toPrincipalParts D) ⊤ f =
-              Scheme.Modules.Hom.app (toPrincipalParts D) ⊤
-                (Scheme.Modules.cohomologyZeroEquiv (Scheme.rationalFunctions X) q) :=
-            congrArg _ hq.symm
-          _ = Scheme.Modules.cohomologyZeroEquiv (principalParts D)
-              (Scheme.Modules.cohomologyMap (toPrincipalParts D) 0 q) :=
-            (Scheme.Modules.cohomologyZeroEquiv_cohomologyMap (toPrincipalParts D) q).symm
-          _ = e₃ (Scheme.Modules.cohomologyMapBaseLinear R X
-              (toPrincipalParts D) 0 q) := by
-            have hmap : Scheme.Modules.cohomologyMapBaseLinear R X
-                (toPrincipalParts D) 0 q =
-                Scheme.Modules.cohomologyMap (toPrincipalParts D) 0 q := by
-              rw [Scheme.Modules.cohomologyMapBaseLinear_apply,
-                Scheme.Modules.cohomologyFunctor_map]
-              rfl
-            have hb := Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply R X
-              (principalParts D)
-              (Scheme.Modules.cohomologyMapBaseLinear R X (toPrincipalParts D) 0 q)
-            exact (congrArg (Scheme.Modules.cohomologyZeroEquiv (principalParts D))
-              hmap.symm).trans (by simpa only [e₃] using hb.symm)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, e₂, e₃,
+      Scheme.Modules.cohomologyZeroBaseLinearEquiv_naturality,
+      globalToPrincipalPartsBaseLinear_apply]
   rw [hcomp]
   exact LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range e₂.symm)
 
@@ -155,11 +110,12 @@ rational functions. -/
 def principalPartsQuotientEquivCohomologyOne (D : SchemeWeilDivisor X) :
     (Γ(principalParts D, ⊤) ⧸ LinearMap.range (globalToPrincipalPartsBaseLinear R D)) ≃ₗ[R]
       Scheme.Modules.Cohomology (sheaf D) 1 :=
+  have : (principalPartsShortComplex D).X₂.presheaf.IsFlasque :=
+    principalPartsShortComplex_X₂ D ▸
+      inferInstanceAs (Scheme.rationalFunctions X).presheaf.IsFlasque
   (globalPrincipalPartsQuotientEquiv R D).trans
     (Scheme.Modules.cohomologyOneLinearEquivOfIsFlasque R
-      (S := ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D))
-      (by simpa only [principalPartsShortComplex_eq] using
-        principalPartsShortComplex_shortExact hclosed D))
+      (principalPartsShortComplex_shortExact hclosed D))
 
 /-- The connecting map from global principal parts of `D` to `H¹(X, 𝒪_X(D))`.
 
