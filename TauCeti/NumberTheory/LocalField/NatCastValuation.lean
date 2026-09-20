@@ -91,7 +91,6 @@ theorem normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
 variable (K) in
 /-- The additive normalized valuation of a nonzero natural-number cast is its
 `natCastValuation`. -/
-@[simp]
 theorem toAdd_normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
     (normalizedValuation K (Units.mk0 (n : K) hn)).toAdd =
       (natCastValuation K n hn : ℤ) := by
