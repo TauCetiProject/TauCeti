@@ -50,6 +50,9 @@ defect ideal they assemble into, and its class in `ClassGroup O` are not defined
   variables, hence an invariant of the curve rather than of the equation.
 * `WeierstrassCurve.hasFiniteMulSupport_pow_localMinimalDiscriminantValuation` and
   `WeierstrassCurve.minimalDiscriminantIdeal_ne_bot`: the defining product is finite and nonzero.
+* `WeierstrassCurve.count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation`: the
+  exponent of `𝔭ᵥ` in `𝔇_{E/K}` is `v (Δ_min,ᵥ)`, which recovers each local exponent from the
+  ideal.
 * `WeierstrassCurve.minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal` and
   `WeierstrassCurve.isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span`: a globally minimal
   equation computes the ideal as `(Δ W)`, and among integral equations that identity holds only
@@ -144,11 +147,10 @@ private theorem hasFiniteMulSupport_pow_asIdeal {I : Ideal O} (hI : I ≠ 0)
     (e : HeightOneSpectrum O → ℕ)
     (he : ∀ v, e v ≤ (Associates.mk v.asIdeal).count (Associates.mk I).factors) :
     Function.HasFiniteMulSupport fun v : HeightOneSpectrum O => v.asIdeal ^ e v := by
-  have hsupp : {v : HeightOneSpectrum O |
-      (Associates.mk v.asIdeal).count (Associates.mk I).factors ≠ 0}.Finite := by
-    simpa using Filter.eventually_cofinite.mp (Associates.finite_factors hI)
-  refine hsupp.subset fun v hv hcount => ?_
-  exact hv ((pow_asIdeal_eq_one_iff v _).2 (Nat.le_zero.1 (hcount ▸ he v)))
+  refine (Ideal.hasFiniteMulSupport hI).subset fun v hv => ?_
+  simp only [Function.mem_mulSupport, ne_eq, IsDedekindDomain.HeightOneSpectrum.maxPowDividing,
+    pow_asIdeal_eq_one_iff] at hv ⊢
+  exact fun hcount => hv (Nat.le_zero.1 (hcount ▸ he v))
 
 variable (O)
 
@@ -195,6 +197,27 @@ theorem minimalDiscriminantIdeal_ne_bot (W : WeierstrassCurve K) [W.IsElliptic] 
     finprod_eq_prod _ (hasFiniteMulSupport_pow_localMinimalDiscriminantValuation O W)]
   exact Finset.prod_ne_zero_iff.2 fun v _ => pow_ne_zero _ v.ne_bot
 
+/-- **The exponent of `𝔭ᵥ` in the minimal discriminant ideal is `v (Δ_min,ᵥ)`.** This reads the
+local minimal exponents back off the ideal, so results about `𝔇_{E/K}` can be proved without
+unfolding the defining product. -/
+@[simp]
+theorem count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation
+    (v : HeightOneSpectrum O) (W : WeierstrassCurve K) [W.IsElliptic] :
+    (Associates.mk v.asIdeal).count (Associates.mk (minimalDiscriminantIdeal O W)).factors =
+      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
+  have hexp : ∀ᶠ w : HeightOneSpectrum O in Filter.cofinite,
+      (W.localMinimalDiscriminantValuation (Localization.AtPrime w.asIdeal) : ℤ) = 0 := by
+    rw [Filter.eventually_cofinite]
+    refine (hasFiniteMulSupport_pow_localMinimalDiscriminantValuation O W).subset fun w hw => ?_
+    simp only [Set.mem_ofPred_eq, Nat.cast_eq_zero, Function.mem_mulSupport, ne_eq,
+      pow_asIdeal_eq_one_iff] at hw ⊢
+    exact hw
+  rw [← Nat.cast_inj (R := ℤ),
+    ← FractionalIdeal.count_coe K v (minimalDiscriminantIdeal_ne_bot O W),
+    minimalDiscriminantIdeal, FractionalIdeal.coeIdeal_finprod (nonZeroDivisors O) K le_rfl]
+  simp_rw [FractionalIdeal.coeIdeal_pow, ← zpow_natCast]
+  exact FractionalIdeal.count_finprod K v _ hexp
+
 variable {O}
 
 /-- **A globally minimal equation computes the minimal discriminant ideal as `(Δ W)`.** -/
@@ -206,49 +229,6 @@ theorem minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal {W : WeierstrassCurv
   rw [minimalDiscriminantIdeal, ← Ideal.finprod_heightOneSpectrum_factorization hspan]
   exact finprod_congr fun v =>
     congrArg _ (count_span_Δ_eq_localMinimalDiscriminantValuation v hd (h.isMinimal v)).symm
-
-/-- If the minimal discriminant ideal of an integral equation is already `(Δ W)`, every local
-exponent agrees with the exponent in `(Δ W)`. Splitting the factorisation of `(Δ W)` as
-`𝔇 · ∏ᵥ 𝔭ᵥ ^ (v (Δ W) − v (Δ_min,ᵥ))` and cancelling `𝔇` leaves the unit ideal, which no proper
-prime power divides. -/
-private theorem count_eq_localMinimalDiscriminantValuation_of_eq_span {W : WeierstrassCurve K}
-    [W.IsElliptic] [IsIntegral O W] {d : O} (hd : algebraMap O K d = W.Δ)
-    (h : minimalDiscriminantIdeal O W = Ideal.span {d}) (v : HeightOneSpectrum O) :
-    (Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors =
-      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
-  set c : HeightOneSpectrum O → ℕ := fun w =>
-    (Associates.mk w.asIdeal).count (Associates.mk (Ideal.span {d})).factors
-  set l : HeightOneSpectrum O → ℕ := fun w =>
-    W.localMinimalDiscriminantValuation (Localization.AtPrime w.asIdeal)
-  have hspan : Ideal.span {d} ≠ 0 :=
-    Submodule.span_singleton_eq_bot.mp.mt (ne_zero_of_algebraMap_eq_Δ hd)
-  have hle : ∀ w, l w ≤ c w := fun w => localMinimalDiscriminantValuation_le_count_span_Δ w hd
-  -- Split the factorisation of `(Δ W)` into `𝔇` and the excess, then cancel `𝔇`.
-  have hsplit : Ideal.span {d} = minimalDiscriminantIdeal O W *
-      ∏ᶠ w : HeightOneSpectrum O, w.asIdeal ^ (c w - l w) := by
-    conv_lhs => rw [← Ideal.finprod_heightOneSpectrum_factorization hspan]
-    rw [minimalDiscriminantIdeal, ← finprod_mul_distrib
-      (hasFiniteMulSupport_pow_asIdeal hspan l hle)
-      (hasFiniteMulSupport_pow_asIdeal hspan _ fun w => Nat.sub_le _ _)]
-    exact finprod_congr fun w => by
-      rw [IsDedekindDomain.HeightOneSpectrum.maxPowDividing, ← pow_add,
-        Nat.add_sub_cancel' (hle w)]
-  have hone : (∏ᶠ w : HeightOneSpectrum O, w.asIdeal ^ (c w - l w)) = 1 :=
-    mul_left_cancel₀ (h ▸ hspan) (by rw [mul_one, ← hsplit, h])
-  -- The unit ideal has no proper prime power as a factor, so the excess vanishes at every prime.
-  refine Nat.le_antisymm (Nat.le_of_sub_eq_zero ?_) (hle v)
-  by_contra hk
-  have hfin : (Function.mulSupport fun w : HeightOneSpectrum O =>
-      w.asIdeal ^ (c w - l w)).Finite :=
-    hasFiniteMulSupport_pow_asIdeal hspan _ fun w => Nat.sub_le (c w) (l w)
-  have hmem : v ∈ hfin.toFinset := by
-    rw [Set.Finite.mem_toFinset, Function.mem_mulSupport]
-    exact fun hv => hk ((pow_asIdeal_eq_one_iff v _).1 hv)
-  have hdvd : v.asIdeal ^ (c v - l v) ∣ (1 : Ideal O) := by
-    rw [← hone, finprod_eq_prod_of_mulSupport_toFinset_subset _ hfin subset_rfl]
-    exact Finset.dvd_prod_of_mem _ hmem
-  exact hk ((pow_asIdeal_eq_one_iff v _).1
-    ((Ideal.isUnit_iff.1 (isUnit_of_dvd_one hdvd)).trans Ideal.one_eq_top.symm))
 
 /-- **Among integral equations, `𝔇_{E/K} = (Δ W)` holds exactly for the globally minimal ones.**
 Integrality is not optional: a non-integral change of variables can fix `Δ` while destroying
@@ -266,8 +246,8 @@ theorem isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span {W : WeierstrassCur
   refine isMinimal_of_valuation_Δ_eq_of_isMinimal_smul _ C⁻¹ hCinv ?_
   rw [v.valuation_maximalIdeal_localizationAtPrime, v.valuation_maximalIdeal_localizationAtPrime,
     valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O v W C hC,
-    valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_inj, neg_inj, Nat.cast_inj]
-  exact count_eq_localMinimalDiscriminantValuation_of_eq_span hd h v
+    valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_inj, neg_inj, Nat.cast_inj, ← h]
+  exact count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation O v W
 
 end WeierstrassCurve
 
