@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
