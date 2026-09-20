@@ -53,6 +53,7 @@ private theorem lattice_toAddSubgroup (C : AddSubgroup (ι → ZMod m)) :
 
 /-- Construction A preserves relative indices: the relative index of the carrier of `C` in the
 carrier of `D` is the relative index of `C` in `D`. -/
+@[simp]
 theorem relIndex_lattice (C D : AddSubgroup (ι → ZMod m)) :
     (lattice m C).toAddSubgroup.relIndex (lattice m D).toAddSubgroup = C.relIndex D := by
   have hinj : Function.Injective ((Int.castAddHom ℚ).compLeft ι) :=
@@ -62,13 +63,6 @@ theorem relIndex_lattice (C D : AddSubgroup (ι → ZMod m)) :
   rw [lattice_toAddSubgroup, lattice_toAddSubgroup,
     AddSubgroup.relIndex_map_map_of_injective _ _ hinj, AddSubgroup.relIndex_comap,
     AddSubgroup.map_comap_eq_self_of_surjective hsurj]
-
-/-- The relative index of the zero-code Construction A carrier in the carrier attached to `C` is
-the number of codewords of `C`. -/
-theorem relIndex_lattice_bot (C : AddSubgroup (ι → ZMod m)) :
-    (lattice m (⊥ : AddSubgroup (ι → ZMod m))).toAddSubgroup.relIndex
-      (lattice m C).toAddSubgroup = Nat.card C := by
-  rw [relIndex_lattice, AddSubgroup.relIndex_bot_left]
 
 variable [Fintype ι]
 
@@ -133,6 +127,13 @@ noncomputable def scaledStandardIsometry :
     rw [IntegralLattice.smul_carrier, integralLattice_carrier]
     exact map_standardLattice_carrier m
 
+/-- The scaled-standard isometry acts by multiplying every coordinate by `m`. -/
+@[simp]
+theorem scaledStandardIsometry_apply (x : ι → ℚ) :
+    scaledStandardIsometry m x = (m : ℚ) • x := by
+  rw [scaledStandardIsometry]
+  rfl
+
 end Standard
 
 /-- The zero-code Construction A lattice has diagonal Gram matrix `m I`, hence discriminant
@@ -164,7 +165,7 @@ theorem discriminant_mul_natCard_sq (C : AddSubgroup (ι → ZMod m))
     hform hcarrier
   dsimp only [L₀] at hdisc
   rw [integralLattice_carrier, integralLattice_carrier] at hdisc
-  rw [relIndex_lattice_bot] at hdisc
+  rw [relIndex_lattice, AddSubgroup.relIndex_bot_left] at hdisc
   rw [← discriminant_integralLattice_bot m]
   exact hdisc.symm
 
