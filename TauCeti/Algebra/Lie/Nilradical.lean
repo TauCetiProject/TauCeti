@@ -29,11 +29,13 @@ ideal of that algebra is acted on nilpotently, so its `maxNilpotentIdeal` is `�
 Nilpotency of an ideal `I` as a Lie algebra is awkward to manipulate through the type `↥I`, so the
 work below is done with Mathlib's `LieIdeal.lcs I L`, the descending series
 `L ≥ ⁅I, L⁆ ≥ ⁅I, ⁅I, L⁆⁆ ≥ ⋯` of ideals of `L`.  The two readings agree:
-`TauCeti.LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` says that `I` is nilpotent as a Lie algebra
-exactly when that series reaches `⊥`, equivalently
-(`TauCeti.LieIdeal.isNilpotent_iff_isNilpotent_ambient`) exactly when `I` acts nilpotently on the
-whole of `L`.  From that description the sum of two nilpotent ideals is nilpotent, which is what
-makes the supremum defining the nilradical well behaved.
+`LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` says that `I` is nilpotent as a Lie algebra exactly
+when that series reaches `⊥`, equivalently (`LieIdeal.isNilpotent_iff_isNilpotent_ambient`) exactly
+when `I` acts nilpotently on the whole of `L`.  From that description the sum of two nilpotent
+ideals is nilpotent, which is what makes the supremum defining the nilradical well behaved.
+
+These ambient readings all take a `LieIdeal` as their receiver, so they live in the root `LieIdeal`
+namespace, where dot notation on that Mathlib type elaborates.
 
 ## Main definitions
 
@@ -41,12 +43,11 @@ makes the supremum defining the nilradical well behaved.
 
 ## Main statements
 
-* `TauCeti.LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` and
-  `TauCeti.LieIdeal.isNilpotent_iff_isNilpotent_ambient`: the two ambient readings of nilpotency
-  of an ideal.
-* `TauCeti.LieIdeal.isNilpotentSup`: a sum of nilpotent ideals is nilpotent.
+* `LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` and `LieIdeal.isNilpotent_iff_isNilpotent_ambient`:
+  the two ambient readings of nilpotency of an ideal.
+* `LieIdeal.isNilpotentSup`: a sum of nilpotent ideals is nilpotent.
 * `TauCeti.LieAlgebra.nilradicalIsNilpotent`: over a Noetherian Lie algebra the nilradical is
-  nilpotent, so `TauCeti.LieIdeal.isNilpotent_iff_le_nilradical` characterises it.
+  nilpotent, so `LieIdeal.isNilpotent_iff_le_nilradical` characterises it.
 * `TauCeti.LieAlgebra.maxNilpotentIdeal_le_nilradical`, `TauCeti.LieAlgebra.center_le_nilradical`
   and `TauCeti.LieAlgebra.nilradical_le_radical`: the standard containments.
 * `TauCeti.LieAlgebra.isNilpotent_ad_of_mem_nilradical`: elements of the nilradical are
@@ -84,6 +85,8 @@ end LieSubmodule
 
 end IdealOperations
 
+end TauCeti
+
 namespace LieIdeal
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
@@ -95,13 +98,13 @@ variable (M : Type*) [AddCommGroup M] [Module R M] [LieRingModule L M]
 /-- The series `M ≥ ⁅I, M⁆ ≥ ⁅I, ⁅I, M⁆⁆ ≥ ⋯` attached to an ideal is antitone. -/
 theorem lcs_antitone (I : LieIdeal R L) : Antitone (I.lcs M) :=
   antitone_nat_of_succ_le fun k ↦ by
-    rw [_root_.LieIdeal.lcs_succ]; exact LieSubmodule.lie_le_right _ _
+    rw [lcs_succ]; exact LieSubmodule.lie_le_right _ _
 
 theorem lcs_mono {I J : LieIdeal R L} (h : I ≤ J) (k : ℕ) : I.lcs M k ≤ J.lcs M k := by
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [_root_.LieIdeal.lcs_succ, _root_.LieIdeal.lcs_succ]
+    rw [lcs_succ, lcs_succ]
     exact LieSubmodule.mono_lie h ih
 
 end Module
@@ -113,12 +116,10 @@ theorem lcs_succ_le_map_lcs (I : LieIdeal R L) (k : ℕ) :
     I.lcs L (k + 1) ≤ LieSubmodule.map (LieSubmodule.incl I) (I.lcs ↥I k) := by
   induction k with
   | zero =>
-    rw [_root_.LieIdeal.lcs_zero, LieSubmodule.map_incl_top, _root_.LieIdeal.lcs_succ,
-      _root_.LieIdeal.lcs_zero]
+    rw [lcs_zero, LieSubmodule.map_incl_top, lcs_succ, lcs_zero]
     exact LieSubmodule.lie_le_left _ _
   | succ k ih =>
-    rw [_root_.LieIdeal.lcs_succ I ↥I k, LieSubmodule.map_bracket_eq,
-      _root_.LieIdeal.lcs_succ I L (k + 1)]
+    rw [lcs_succ I ↥I k, LieSubmodule.map_bracket_eq, lcs_succ I L (k + 1)]
     exact LieSubmodule.mono_lie_right _ ih
 
 /-- The series `⁅I, ⁅I, … ⁅I, M⁆…⁆⁆` of submodules of `M`, read inside the ambient algebra, reaches
@@ -128,10 +129,10 @@ theorem lcs_eq_bot_iff (I : LieIdeal R L) (M : Type*) [AddCommGroup M] [Module R
     I.lcs M k = ⊥ ↔ LieModule.lowerCentralSeries R (↥I) M k = ⊥ := by
   constructor
   · intro h
-    rw [← LieSubmodule.toSubmodule_eq_bot, ← _root_.LieIdeal.coe_lcs_eq, h]
+    rw [← LieSubmodule.toSubmodule_eq_bot, ← coe_lcs_eq, h]
     simp
   · intro h
-    rw [← LieSubmodule.toSubmodule_eq_bot, _root_.LieIdeal.coe_lcs_eq, h]
+    rw [← LieSubmodule.toSubmodule_eq_bot, coe_lcs_eq, h]
     simp
 
 /-- **An ideal is nilpotent as a Lie algebra exactly when the series `⁅I, ⁅I, … ⁅I, L⁆…⁆⁆` of
@@ -169,30 +170,30 @@ instance isNilpotentBot : LieRing.IsNilpotent (⊥ : LieIdeal R L) :=
 
 /-- The series of a supremum of two ideals is caught between the series of the two summands: after
 `n` steps every summand of the bound has spent `i` steps inside `I` and `n - i` steps inside `J`.
-This is the combinatorial heart of `TauCeti.LieIdeal.isNilpotentSup`. -/
+This is the combinatorial heart of `LieIdeal.isNilpotentSup`. -/
 theorem lcs_sup_le_iSup_inf (I J : LieIdeal R L) (n : ℕ) :
     (I ⊔ J).lcs L n ≤ ⨆ i : ℕ, I.lcs L i ⊓ J.lcs L (n - i) := by
   induction n with
   | zero => exact le_iSup_of_le 0 (by simp)
   | succ n ih =>
-    rw [_root_.LieIdeal.lcs_succ]
+    rw [lcs_succ]
     refine (LieSubmodule.mono_lie_right _ ih).trans ?_
-    rw [LieSubmodule.lie_iSup]
+    rw [TauCeti.LieSubmodule.lie_iSup]
     refine iSup_le fun i ↦ ?_
     rw [LieSubmodule.sup_lie]
     refine sup_le ?_ ?_
     · refine le_iSup_of_le (i + 1) (le_inf ?_ ?_)
-      · rw [_root_.LieIdeal.lcs_succ]
+      · rw [lcs_succ]
         exact LieSubmodule.mono_lie_right _ inf_le_left
       · rw [Nat.succ_sub_succ]
         exact (LieSubmodule.lie_le_right _ _).trans inf_le_right
     · refine le_iSup_of_le i (le_inf ((LieSubmodule.lie_le_right _ _).trans inf_le_left) ?_)
       rcases le_or_gt i n with hi | hi
       · have : n + 1 - i = (n - i) + 1 := by omega
-        rw [this, _root_.LieIdeal.lcs_succ]
+        rw [this, lcs_succ]
         exact LieSubmodule.mono_lie_right _ inf_le_right
       · have : n + 1 - i = 0 := by omega
-        rw [this, _root_.LieIdeal.lcs_zero]
+        rw [this, lcs_zero]
         exact le_top
 
 /-- **A supremum of two nilpotent ideals is nilpotent.** -/
@@ -207,6 +208,8 @@ instance isNilpotentSup (I J : LieIdeal R L) [LieRing.IsNilpotent I] [LieRing.Is
   · exact inf_le_right.trans ((lcs_antitone L J (by omega)).trans hl.le)
 
 end LieIdeal
+
+namespace TauCeti
 
 namespace LieAlgebra
 
@@ -226,16 +229,16 @@ instance nilradicalIsNilpotent [IsNoetherian R L] : LieRing.IsNilpotent (nilradi
   have hwf := LieSubmodule.wellFoundedGT_of_noetherian R L L
   rw [← CompleteLattice.isSupClosedCompact_iff_wellFoundedGT] at hwf
   refine hwf { I : LieIdeal R L | LieRing.IsNilpotent I } ⟨⊥, ?_⟩ fun I hI J hJ ↦ ?_
-  · exact TauCeti.LieIdeal.isNilpotentBot
+  · exact LieIdeal.isNilpotentBot
   · rw [Set.mem_ofPred_eq] at hI hJ ⊢
-    exact TauCeti.LieIdeal.isNilpotentSup I J
+    exact LieIdeal.isNilpotentSup I J
 
 /-- Over a Noetherian Lie algebra the nilradical is exactly the ideals nilpotent as Lie algebras.
 
 The `→` direction holds without the Noetherian assumption. -/
-theorem _root_.TauCeti.LieIdeal.isNilpotent_iff_le_nilradical [IsNoetherian R L]
+theorem _root_.LieIdeal.isNilpotent_iff_le_nilradical [IsNoetherian R L]
     (I : LieIdeal R L) : LieRing.IsNilpotent I ↔ I ≤ nilradical R L :=
-  ⟨fun h ↦ le_sSup h, fun h ↦ TauCeti.LieIdeal.isNilpotent_of_le h inferInstance⟩
+  ⟨fun h ↦ le_sSup h, fun h ↦ LieIdeal.isNilpotent_of_le h inferInstance⟩
 
 theorem center_le_nilradical : LieAlgebra.center R L ≤ nilradical R L :=
   le_sSup (show LieRing.IsNilpotent (LieAlgebra.center R L) from inferInstance)
@@ -257,13 +260,13 @@ theorem nilradical_eq_top_of_isNilpotent [LieRing.IsNilpotent L] : nilradical R 
   rw [eq_top_iff]
   refine le_sSup (show LieRing.IsNilpotent (⊤ : LieIdeal R L) from ?_)
   obtain ⟨k, hk⟩ := LieModule.IsNilpotent.nilpotent R L L
-  exact (TauCeti.LieIdeal.isNilpotent_iff_exists_lcs_eq_bot _).2 ⟨k, by rwa [LieIdeal.lcs_top]⟩
+  exact (LieIdeal.isNilpotent_iff_exists_lcs_eq_bot _).2 ⟨k, by rwa [LieIdeal.lcs_top]⟩
 
 theorem nilradical_eq_top_iff [IsNoetherian R L] :
     nilradical R L = ⊤ ↔ LieRing.IsNilpotent L := by
   refine ⟨fun h ↦ ?_, fun _ ↦ nilradical_eq_top_of_isNilpotent R L⟩
   obtain ⟨k, hk⟩ :=
-    (TauCeti.LieIdeal.isNilpotent_iff_exists_lcs_eq_bot (nilradical R L)).1 inferInstance
+    (LieIdeal.isNilpotent_iff_exists_lcs_eq_bot (nilradical R L)).1 inferInstance
   rw [h, LieIdeal.lcs_top] at hk
   exact (LieModule.isNilpotent_iff R L L).2 ⟨k, hk⟩
 
@@ -273,7 +276,7 @@ variable {R L}
 theorem isNilpotent_ad_of_mem_nilradical [IsNoetherian R L] {x : L}
     (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) := by
   obtain ⟨k, hk⟩ :=
-    (TauCeti.LieIdeal.isNilpotent_iff_exists_lcs_eq_bot (nilradical R L)).1 inferInstance
+    (LieIdeal.isNilpotent_iff_exists_lcs_eq_bot (nilradical R L)).1 inferInstance
   have key : ∀ (j : ℕ) (y : L), (LieAlgebra.ad R L x ^ j) y ∈ (nilradical R L).lcs L j := by
     intro j
     induction j with
