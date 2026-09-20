@@ -54,6 +54,15 @@ theorem hammingMinDist_punctureAt_code :
   rw [hammingMinDist_code] at h
   omega
 
+/-- A punctured binary Golay code has parameters `[23, 12, 7]`: length twenty-three,
+dimension twelve, and minimum distance seven. -/
+theorem parameters_punctureAt_code :
+    (Fintype.card ({i}ᶜ : Set (Fin 24)), Module.finrank (ZMod 2) (punctureAt code i),
+      Set.hammingMinDist (punctureAt code i : Set (({i}ᶜ : Set (Fin 24)) → ZMod 2))) =
+        (23, 12, 7) := by
+  rw [Fintype.card_compl_set, finrank_punctureAt_code, hammingMinDist_punctureAt_code]
+  simp
+
 /-- Restoring the parity coordinate to a punctured binary Golay code gives back the extended
 binary Golay code, with the deleted coordinate reinstated at `none`. -/
 @[simp]
