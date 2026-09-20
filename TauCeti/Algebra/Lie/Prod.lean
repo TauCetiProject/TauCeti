@@ -172,24 +172,22 @@ theorem prodRepresentation_apply (rho : L →ₗ⁅R⁆ Module.End R M)
 theorem ker_prodRepresentation (rho : L →ₗ⁅R⁆ Module.End R M)
     (sigma : L →ₗ⁅R⁆ Module.End R N) :
     (rho.prodRepresentation sigma).ker = rho.ker ⊓ sigma.ker := by
-  ext x
-  simp only [LieHom.mem_ker]
-  constructor
-  · intro hx
-    constructor
+  have hprodMap : LinearMap.ker (LinearMap.prodMapAlgHom R M N).toLinearMap = ⊥ := by
+    rw [LinearMap.ker_eq_bot]
+    rintro ⟨f₁, g₁⟩ ⟨f₂, g₂⟩ h
+    congr
     · ext m
-      simpa only [prodRepresentation_apply, LinearMap.zero_apply, Prod.fst_zero,
-        LieHom.coe_toLinearMap] using
-        congrArg Prod.fst (LinearMap.congr_fun hx (m, 0))
+      exact congrArg Prod.fst (LinearMap.congr_fun h (m, 0))
     · ext n
-      simpa only [prodRepresentation_apply, LinearMap.zero_apply, Prod.snd_zero,
-        LieHom.coe_toLinearMap] using
-        congrArg Prod.snd (LinearMap.congr_fun hx (0, n))
-  · rintro ⟨hrho, hsigma⟩
-    apply LinearMap.ext
-    rintro ⟨m, n⟩
-    rw [prodRepresentation_apply, LinearMap.zero_apply]
-    exact Prod.ext (LinearMap.congr_fun hrho m) (LinearMap.congr_fun hsigma n)
+      exact congrArg Prod.snd (LinearMap.congr_fun h (0, n))
+  ext x
+  change x ∈ LinearMap.ker
+      ((LinearMap.prodMapAlgHom R M N).toLinearMap.comp
+        (LinearMap.prod (rho : L →ₗ[R] Module.End R M)
+          (sigma : L →ₗ[R] Module.End R N))) ↔
+    x ∈ LinearMap.ker (rho : L →ₗ[R] Module.End R M) ⊓
+      LinearMap.ker (sigma : L →ₗ[R] Module.End R N)
+  rw [LinearMap.ker_comp_of_ker_eq_bot _ hprodMap, LinearMap.ker_prod]
 
 /-- A product representation is faithful exactly when the kernels of its factors are disjoint. -/
 theorem prodRepresentation_injective_iff (rho : L →ₗ⁅R⁆ Module.End R M)
