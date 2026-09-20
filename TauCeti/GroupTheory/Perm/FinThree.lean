@@ -14,6 +14,7 @@ public import Mathlib.GroupTheory.FixedPointFree
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
+public import TauCeti.GroupTheory.TrivialIntersection
 
 /-!
 # The two subgroups of the symmetric group on three points
@@ -25,7 +26,9 @@ stabilizer -- by membership, as a set, as a cyclic subgroup and by its order -- 
 it is not normal, conjugating its transposition by one that moves `a` off the stabilizer. The
 alternating subgroup `A₃` is the other one, and what is recorded of it here is that it has order
 three and that nothing outside it centralizes it, so that `S₃` is as far from abelian along `A₃`
-as it could be.
+as it could be.  The two sit together as a semidirect decomposition `S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩` whose
+complement acts on `A₃` without nonidentity fixed points, which exhibits the stabilizer as a
+Frobenius complement and `S₃` as the smallest Frobenius group.
 
 All the facts about `Fin 3` that the arguments need are settled by `decide` over the six
 permutations.
@@ -53,6 +56,10 @@ permutations.
   each of the two rotations.
 * `TauCeti.isComplement'_alternatingGroup_stabilizer_perm_fin_three`: the two subgroups are
   complementary, `S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩`.
+* `TauCeti.isTISubgroup_stabilizer_perm_fin_three`: a point stabilizer is a trivial-intersection
+  subgroup.
+* `TauCeti.isFrobeniusComplement_stabilizer_perm_fin_three`: `S₃` is a Frobenius group with
+  complement a point stabilizer.
 -/
 
 public section
@@ -207,5 +214,30 @@ theorem isComplement'_alternatingGroup_stabilizer_perm_fin_three (a : Fin 3) :
   · rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
     decide
   · decide
+
+/-- **A point stabilizer of `S₃` is a trivial-intersection subgroup**, by the fixed-point-free
+action of `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree` on the alternating
+complement. -/
+theorem isTISubgroup_stabilizer_perm_fin_three (a : Fin 3) :
+    IsTISubgroup (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) :=
+  isTISubgroup_of_isComplement'_of_fixedPointFree
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a)
+    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
+
+/-- **`S₃` is a Frobenius group with complement a point stabilizer.**  Properness and
+nontriviality come from the stabilizer not being normal, which `⊥` and `⊤` both are. -/
+theorem isFrobeniusComplement_stabilizer_perm_fin_three (a : Fin 3) :
+    IsFrobeniusComplement (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
+  refine isFrobeniusComplement_of_isComplement'_of_fixedPointFree
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) ?_ ?_
+    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
+  · intro hbot
+    refine not_normal_stabilizer_perm_fin_three a ?_
+    rw [hbot]
+    infer_instance
+  · intro htop
+    refine not_normal_stabilizer_perm_fin_three a ?_
+    rw [htop]
+    infer_instance
 
 end TauCeti

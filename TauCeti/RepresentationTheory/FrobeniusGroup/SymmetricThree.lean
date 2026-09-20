@@ -23,16 +23,14 @@ the extended irreducible characters of the two-element subgroup `⟨(a+1 a+2)⟩
 to `A₃` anywhere in the construction, and it comes out equal to `A₃`
 (`TauCeti.frobeniusKernelSubgroup_stabilizer_perm_fin_three`).
 
-The two group-theoretic facts this consumes -- the complementarity and the fixed-point freeness --
-are settled over the six permutations in `TauCeti/GroupTheory/Perm/FinThree.lean`, as the rest of
-the description of the two subgroups of `S₃` is.  All this file adds is the passage through the
+The group theory this consumes -- the complementarity, the fixed-point freeness, and the
+trivial-intersection property `TauCeti.isTISubgroup_stabilizer_perm_fin_three` they yield -- is
+settled over the six permutations in `TauCeti/GroupTheory/Perm/FinThree.lean`, as the rest of the
+description of the two subgroups of `S₃` is.  All this file adds is the passage through the
 character theory.
 
 ## Main statements
 
-* `TauCeti.isFrobeniusComplement_stabilizer_perm_fin_three`: **`S₃` is a Frobenius group** with
-  complement a point stabilizer, which `TauCeti.isTISubgroup_stabilizer_perm_fin_three` records as
-  a trivial-intersection subgroup.
 * `TauCeti.frobeniusKernelSubgroup_stabilizer_perm_fin_three`: **the Frobenius kernel of a point
   stabilizer of `S₃` is `A₃`**, of order three by
   `TauCeti.card_frobeniusKernelSubgroup_stabilizer_perm_fin_three`.
@@ -41,31 +39,6 @@ character theory.
 public section
 
 namespace TauCeti
-
-/-- **A point stabilizer of `S₃` is a trivial-intersection subgroup**, by the fixed-point-free
-action of `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree` on the alternating
-complement. -/
-theorem isTISubgroup_stabilizer_perm_fin_three (a : Fin 3) :
-    IsTISubgroup (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) :=
-  isTISubgroup_of_isComplement'_of_fixedPointFree
-    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a)
-    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
-
-/-- **`S₃` is a Frobenius group with complement a point stabilizer.**  Properness and
-nontriviality come from the stabilizer not being normal, which `⊥` and `⊤` both are. -/
-theorem isFrobeniusComplement_stabilizer_perm_fin_three (a : Fin 3) :
-    IsFrobeniusComplement (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
-  refine isFrobeniusComplement_of_isComplement'_of_fixedPointFree
-    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) ?_ ?_
-    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
-  · intro hbot
-    refine not_normal_stabilizer_perm_fin_three a ?_
-    rw [hbot]
-    infer_instance
-  · intro htop
-    refine not_normal_stabilizer_perm_fin_three a ?_
-    rw [htop]
-    infer_instance
 
 /-- **The Frobenius kernel of a point stabilizer of `S₃` is the alternating group `A₃`.**  The
 kernel that the exceptional-character correspondence constructs -- as the common kernel of
