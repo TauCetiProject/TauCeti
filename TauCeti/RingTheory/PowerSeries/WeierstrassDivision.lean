@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
-public import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
