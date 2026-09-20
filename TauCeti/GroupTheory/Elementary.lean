@@ -512,6 +512,41 @@ theorem not_dvd_relIndex_pElementaryOfSylow [Fact p.Prime]
     mem_subgroupOf.2 (map_sylow_le_pElementaryOfSylow s P ⟨y, hy, rfl⟩)
   exact fun h => P.not_dvd_index (h.trans (index_dvd_of_le hle))
 
+/-- **An element of the subgroup attached to `s` and `P` factors through the Sylow subgroup.**
+Every element of `TauCeti.pElementaryOfSylow s P` is a power of `s` times an element of the image
+of `P`, and the two factors commute. -/
+theorem exists_mul_eq_of_mem_pElementaryOfSylow {x : G} (hx : x ∈ pElementaryOfSylow s P) :
+    ∃ c ∈ zpowers s, ∃ y ∈ (P : Subgroup (centralizer ({s} : Set G))).map
+      (centralizer ({s} : Set G)).subtype, Commute c y ∧ c * y = x := by
+  set Q := (P : Subgroup (centralizer ({s} : Set G))).map (centralizer ({s} : Set G)).subtype
+    with hQ
+  have hcomm : ∀ c ∈ zpowers s, ∀ y ∈ Q, Commute c y := by
+    rintro c hc - ⟨y, -, rfl⟩
+    obtain ⟨n, rfl⟩ := mem_zpowers_iff.1 hc
+    have hcom : Commute ((y : G)) s := mem_centralizer_singleton_iff.1 (SetLike.coe_mem y)
+    exact hcom.symm.zpow_left n
+  have hnorm : zpowers s ≤ normalizer (Q : Set G) :=
+    le_trans (fun c hc => mem_centralizer_iff.2 fun y hy => (hcomm c hc y hy).symm.eq)
+      (centralizer_le_normalizer _)
+  rw [pElementaryOfSylow, ← hQ, ← SetLike.mem_coe,
+    coe_mul_of_left_le_normalizer_right _ _ hnorm] at hx
+  obtain ⟨c, hc, y, hy, hcy⟩ := hx
+  exact ⟨c, hc, y, hy, hcomm c hc y hy, hcy⟩
+
+/-- **The `p`-part of an element of `TauCeti.pElementaryOfSylow s P` lies in its Sylow factor.**
+The factorisation of `TauCeti.exists_mul_eq_of_mem_pElementaryOfSylow` splits the element into a
+factor of order prime to `p` and a `p`-element, so it is *the* factorisation of
+`TauCeti.eq_pPart`. -/
+theorem pPart_mem_map_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s) {x : G}
+    (hx : x ∈ pElementaryOfSylow s P) :
+    pPart p x ∈ (P : Subgroup (centralizer ({s} : Set G))).map
+      (centralizer ({s} : Set G)).subtype := by
+  obtain ⟨c, hc, y, hy, hcomm, rfl⟩ := exists_mul_eq_of_mem_pElementaryOfSylow s P hx
+  obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨y, hy⟩
+  rw [← eq_pPart Fact.out hcomm rfl
+    (fun hd => hs (hd.trans (orderOf_dvd_of_mem_zpowers hc))) (k := n) (by simpa using hn)]
+  exact hy
+
 end OfSylow
 
 /-! ### Finite-order elements

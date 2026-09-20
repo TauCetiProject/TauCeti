@@ -23,6 +23,8 @@ which is the form every concrete centralizer computation in a matrix group start
 
 * `TauCeti.mem_centralizer_singleton_iff_commute_val`: a unit lies in the centralizer of a unit `g`
   exactly when the two commute as elements of the monoid.
+* `Subgroup.mem_centralizer_singleton_iff_inv_mul_mul_eq`: in a group, centralizing an element is
+  fixing it under conjugation.
 * `Subgroup.eq_of_centralizer_eq_self_of_le_of_isMulCommutative`: a self-centralizing subgroup is
   maximal among commutative subgroups.
 -/
@@ -40,6 +42,13 @@ theorem mem_centralizer_singleton_iff_commute_val {M : Type*} [Monoid M] {g h : 
 end TauCeti
 
 namespace Subgroup
+
+/-- **Centralizing an element of a group is fixing it under conjugation.**  This is the
+conjugation form of `Subgroup.mem_centralizer_singleton_iff`, which states the same membership as
+a commutation. -/
+theorem mem_centralizer_singleton_iff_inv_mul_mul_eq {G : Type*} [Group G] {a g : G} :
+    g ∈ centralizer ({a} : Set G) ↔ g⁻¹ * a * g = a := by
+  rw [mem_centralizer_singleton_iff, mul_assoc, inv_mul_eq_iff_eq_mul, eq_comm]
 
 /-- A self-centralizing subgroup is maximal among commutative subgroups. -/
 theorem eq_of_centralizer_eq_self_of_le_of_isMulCommutative {G : Type*} [Group G]

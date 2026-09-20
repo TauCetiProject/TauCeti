@@ -35,7 +35,10 @@ its `p`-free factor.
   both factors.
 * `TauCeti.orderOf_pFreePart`, `TauCeti.orderOf_pPart`: when `p` is prime and `x` has finite
   order, their orders are `ordCompl[p] (orderOf x)` and `ordProj[p] (orderOf x)`.
-* `TauCeti.eq_pFreePart`, `TauCeti.eq_pPart`: the factorisation is the only one of its kind.
+* `TauCeti.eq_pFreePart`, `TauCeti.eq_pPart`: the factorisation is the only one of its kind, with
+  `TauCeti.pFreePart_eq_self`, `TauCeti.pPart_eq_one`, `TauCeti.pPart_eq_self` and
+  `TauCeti.pFreePart_eq_one` its degenerate cases.
+* `TauCeti.pFreePart_conj`, `TauCeti.pPart_conj`: conjugation transports both factors.
 
 ## References
 
@@ -101,6 +104,20 @@ theorem pFreePart_one (p : ℕ) : pFreePart p (1 : G) = 1 := one_pow _
 
 @[simp]
 theorem pPart_one (p : ℕ) : pPart p (1 : G) = 1 := by rw [pPart, pFreePart_one, inv_one, mul_one]
+
+/-- **Conjugation transports the `p`-free part.**  Both factors are powers of `x` cut out by an
+exponent that only depends on the order of `x`, and conjugation preserves orders. -/
+@[simp]
+theorem pFreePart_conj (p : ℕ) (g x : G) : pFreePart p (g * x * g⁻¹) = g * pFreePart p x * g⁻¹ := by
+  have h : orderOf (g * x * g⁻¹) = orderOf x :=
+    (SemiconjBy.orderOf_eq g (by simp [SemiconjBy])).symm
+  rw [pFreePart, pFreePart, pFreeExponent, pFreeExponent, h, conj_pow]
+
+/-- **Conjugation transports the `p`-part.** -/
+@[simp]
+theorem pPart_conj (p : ℕ) (g x : G) : pPart p (g * x * g⁻¹) = g * pPart p x * g⁻¹ := by
+  rw [pPart, pPart, pFreePart_conj]
+  group
 
 section Order
 
@@ -224,5 +241,23 @@ theorem eq_pPart {s u : G} (hsu : Commute s u) (hmul : s * u = x)
   rw [pPart, ← eq_pFreePart hp hsu hmul hs hu, ← hmul, inv_mul_cancel_left]
 
 end Order
+
+/-- An element whose order is prime to `p` is its own `p`-free part. -/
+theorem pFreePart_eq_self (hp : p.Prime) (hx : ¬ p ∣ orderOf x) : pFreePart p x = x :=
+  (eq_pFreePart hp (Commute.one_right x) (mul_one x) hx (k := 0) (by simp)).symm
+
+/-- An element whose order is a power of `p` is its own `p`-part. -/
+theorem pPart_eq_self (hp : p.Prime) {k : ℕ} (hx : orderOf x = p ^ k) : pPart p x = x :=
+  (eq_pPart hp (Commute.one_left x) (one_mul x) (by simpa using hp.ne_one) hx).symm
+
+/-- An element whose order is prime to `p` has trivial `p`-part. -/
+theorem pPart_eq_one (hp : p.Prime) (hx : ¬ p ∣ orderOf x) : pPart p x = 1 := by
+  have h := pFreePart_mul_pPart p x
+  rw [pFreePart_eq_self hp hx] at h
+  exact mul_left_cancel (h.trans (mul_one x).symm)
+
+/-- An element whose order is a power of `p` has trivial `p`-free part. -/
+theorem pFreePart_eq_one (hp : p.Prime) {k : ℕ} (hx : orderOf x = p ^ k) : pFreePart p x = 1 :=
+  (eq_pFreePart hp (Commute.one_left x) (one_mul x) (by simpa using hp.ne_one) hx).symm
 
 end TauCeti
