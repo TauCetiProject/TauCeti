@@ -69,6 +69,19 @@ theorem chartIteratedFDeriv_apply
       (writtenInExtChartAt I (modelWithCornersSelf 𝕜 F) x f) (extChartAt I x).target y := by
   rfl
 
+/-- In a self-model target chart, the chart jet is the ordinary coordinate derivative. -/
+theorem chartIteratedFDeriv_self_target_apply
+    (f : C^n⟮I, M; modelWithCornersSelf 𝕜 F, F⟯) (x : M) (m : ℕ) (hm : m ≤ n)
+    (y : (extChartAt I x).target) :
+    chartIteratedFDeriv f x m hm y =
+      iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt I x).symm)
+        (extChartAt I x).target y := by
+  have h := chartIteratedFDeriv_apply f x m hm y
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, Function.id_comp] at h
+  convert h using 1
+  rfl
+
 /-- Order zero of the chart jet recovers the map in source coordinates. -/
 @[simp]
 theorem chartIteratedFDeriv_zero_apply
