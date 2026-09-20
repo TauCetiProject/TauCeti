@@ -82,9 +82,11 @@ identification of the carrier with it, once one is proved.
   candidate group of `Cₙ(q)`, its derived central quotient.
 
 * `TauCeti.TypeCLieIndex.primeFrobenius`, with
-  `TauCeti.TypeCLieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeCLieIndex.primeFrobenius_simpleRootSubgroup`,
+  `TauCeti.TypeCLieIndex.primeFrobenius_weightTorusPoints` and
   `TauCeti.TypeCLieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
-  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th power.
+  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, its action on the split weight torus, and the
+  `q`-power Frobenius as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
@@ -264,6 +266,14 @@ exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
     d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, SpStd.frobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius raises every coordinate of the split weight torus to the `p`-th
+power.** -/
+@[simp]
+theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
+    d.primeFrobenius (SpStd.weightTorusPoints d.carrierRank d.1.Closure s) =
+      SpStd.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.characteristic) := by
+  rw [primeFrobenius_def, SpStd.frobenius_weightTorusPoints, pow_one]
 
 /-- **The Frobenius raises every coordinate of the split weight torus to the `q`-th power.** -/
 @[simp]

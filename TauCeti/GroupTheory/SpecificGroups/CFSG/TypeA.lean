@@ -227,6 +227,13 @@ The two agree when the index has prime field order. -/
 noncomputable def primeFrobenius (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientGroup :=
   SlStd.frobenius d.1.rank d.1.characteristic 1 d.1.Closure
 
+/-- The prime-field Frobenius is the standard carrier's Frobenius at exponent one. -/
+-- Not a `simp` lemma: `primeFrobenius_simpleRootSubgroup` is the normal form the equations of
+-- this file are stated against, and unfolding to the carrier's Frobenius would keep it from firing.
+theorem primeFrobenius_def (d : TypeALieIndex) :
+    d.primeFrobenius = SlStd.frobenius d.1.rank d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a positive simple-root subgroup and
 raises its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
@@ -235,8 +242,7 @@ theorem primeFrobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
-  rw [TypeALieIndex.primeFrobenius, simpleRootSubgroup_def, SlStd.frobenius_rootSubgroupPoints,
-    pow_one]
+  rw [primeFrobenius_def, simpleRootSubgroup_def, SlStd.frobenius_rootSubgroupPoints, pow_one]
 
 -- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
 -- there being no power operation on `MonoidHom` itself; this is the form
@@ -245,7 +251,7 @@ theorem primeFrobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
 exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow (d : TypeALieIndex) :
     d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
-  rw [TypeALieIndex.primeFrobenius, TypeALieIndex.frobenius, SlStd.frobenius_pow, Nat.one_mul]
+  rw [primeFrobenius_def, TypeALieIndex.frobenius, SlStd.frobenius_pow, Nat.one_mul]
 
 /-- **The pinned graph automorphism of a validated type-A index.** It realizes on the ambient group
 the diagram permutation `TauCeti.GraphTwistedIndex.diagramPerm` already attached to the index: it is

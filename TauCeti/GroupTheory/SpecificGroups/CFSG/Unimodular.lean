@@ -73,10 +73,11 @@ group is finite, perfect, or simple.
   recorded by `TauCeti.ValidLieTypeIndex.fixedField`.
 
 * `TauCeti.UnimodularExceptionalIndex.primeFrobenius`, with
-  `TauCeti.UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup` and
+  `TauCeti.UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup`,
+  `TauCeti.UnimodularExceptionalIndex.primeFrobenius_geckWeightTorus` and
   `TauCeti.UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius,
-  its action on the numbered root subgroups, and the Steinberg endomorphism as its `e`-th
-  power.
+  its action on the numbered root subgroups and on the weight torus, and the Steinberg
+  endomorphism as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
@@ -242,6 +243,15 @@ theorem steinberg_eq_primeFrobenius_pow :
     d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.1.fieldExponent := by
   rw [primeFrobenius_eq_geckPrimeFrobenius, steinberg_eq_geckFrobenius]
   exact d.1.1.geckFrobenius_eq_geckPrimeFrobenius_pow
+
+/-- **The prime-field Frobenius raises every coordinate of a weight-torus point to the `p`-th
+power.** -/
+@[simp]
+theorem primeFrobenius_geckWeightTorus (s : Fin d.1.1.dynkinType.rank → d.1.1.Closureˣ) :
+    d.primeFrobenius (d.1.1.geckWeightTorus s) =
+      d.1.1.geckWeightTorus (s ^ d.1.1.characteristic) := by
+  rw [primeFrobenius_eq_geckPrimeFrobenius]
+  exact d.1.1.geckPrimeFrobenius_geckWeightTorus s
 
 /-- **The Steinberg map raises every coordinate of a weight-torus point to the `q`-th power.** It
 is the untwisted case of the equation a Steinberg endomorphism satisfies on the second half of the

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.PointsFunctor
 
@@ -132,16 +133,14 @@ theorem frobenius_add (m : ℕ) :
     GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation n A)]
 
 /-- **Frobenius exponents multiply under taking powers**: the `m`-th power of the `p ^ k`-power
-Frobenius of the type-`C_(n+1)` point group, in the endomorphism monoid of its points, is its `p ^
-(k * m)`-power
-Frobenius. -/
+Frobenius of the type-`C_(n+1)` point group, in the endomorphism monoid of its points, is its
+`p ^ (k * m)`-power Frobenius. -/
 -- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
 -- structure before the power is elaborated.
 theorem frobenius_pow (m : ℕ) :
-    (show Monoid.End _ from frobenius n p k A) ^ m = frobenius n p (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, frobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, frobenius_add n p (k * m) A k]; rfl
+    (show Monoid.End _ from frobenius n p k A) ^ m = frobenius n p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius n p j A) (frobenius_zero n p A)
+    (fun a b => frobenius_add n p a A b) k m
 
 /-- A type-`C_(n+1)` carrier point is fixed by Frobenius exactly when all of its matrix entries lie
 in the Frobenius-fixed subring. -/

@@ -66,10 +66,11 @@ connected one, that its weight torus is maximal, or that its point group is fini
   are the weight-torus points all of whose coordinates lie in `𝔽_q`.
 
 * `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius`, with
-  `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius_geckRootSubgroup` and
+  `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius_geckRootSubgroup`,
+  `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius_geckWeightTorus` and
   `TauCeti.ValidLieTypeIndex.geckFrobenius_eq_geckPrimeFrobenius_pow`: the prime-field Frobenius of
-  the Geck point group, its action on the numbered root subgroups, and the `q`-power Frobenius as
-  its `e`-th power.
+  the Geck point group, its action on the numbered root subgroups and on the weight torus, and the
+  `q`-power Frobenius as its `e`-th power.
 ## References
 
 * M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
@@ -282,6 +283,15 @@ exponent the index records. -/
 theorem geckFrobenius_eq_geckPrimeFrobenius_pow :
     d.geckFrobenius = (show Monoid.End _ from d.geckPrimeFrobenius) ^ d.fieldExponent := by
   rw [geckFrobenius_def, geckPrimeFrobenius_def, DynkinType.geckFrobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius raises every coordinate of a weight-torus point to the `p`-th
+power.** -/
+@[simp]
+theorem geckPrimeFrobenius_geckWeightTorus (s : Fin d.rank → d.Closureˣ) :
+    d.geckPrimeFrobenius (d.geckWeightTorus s) = d.geckWeightTorus (s ^ d.characteristic) := by
+  rw [geckPrimeFrobenius_def, geckWeightTorus_def]
+  exact (d.dynkinType.geckFrobenius_geckWeightTorusPoints d.dynkinType_valid d.characteristic 1
+    d.Closure s).trans (by rw [pow_one])
 
 /-- **The Frobenius raises every coordinate of a weight-torus point to the `q`-th power.** -/
 @[simp]

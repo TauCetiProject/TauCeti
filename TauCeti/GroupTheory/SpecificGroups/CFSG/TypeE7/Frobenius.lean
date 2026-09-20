@@ -47,9 +47,11 @@ asserted to be finite, perfect, or simple.
   exactly when its entries lie in the field of definition.
 
 * `TauCeti.TypeE7LieIndex.primeFrobenius`, with
-  `TauCeti.TypeE7LieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeE7LieIndex.primeFrobenius_simpleRootSubgroup`,
+  `TauCeti.TypeE7LieIndex.primeFrobenius_weightTorusPoints` and
   `TauCeti.TypeE7LieIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
-  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the Steinberg endomorphism as its `e`-th power.
+  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, its action on the weight torus, and the Steinberg
+  endomorphism as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 14.
@@ -141,6 +143,14 @@ field exponent the index records. -/
 theorem steinberg_eq_primeFrobenius_pow :
     d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
   rw [primeFrobenius_def, steinberg_def, E7Minuscule.frobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius preserves the weight torus and raises each coordinate to the
+`p`-th power**, that is, `Frob_p (t(s)) = t(s ^ p)`. -/
+@[simp]
+theorem primeFrobenius_weightTorusPoints (s : Fin 7 → d.1.Closureˣ) :
+    d.primeFrobenius (E7Minuscule.weightTorusPoints d.1.Closure s) =
+      E7Minuscule.weightTorusPoints d.1.Closure (s ^ d.1.characteristic) := by
+  rw [primeFrobenius_def, E7Minuscule.frobenius_weightTorusPoints, pow_one]
 
 /-- **The minuscule-carrier Frobenius preserves the weight torus and raises each coordinate to the
 `q`-th power**, that is, `Frob_q (t(s)) = t(s ^ q)`. -/

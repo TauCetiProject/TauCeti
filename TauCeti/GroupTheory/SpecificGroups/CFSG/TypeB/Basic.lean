@@ -82,9 +82,11 @@ once one is proved.
   candidate group of `Bₙ(q)`, its derived central quotient.
 
 * `TauCeti.TypeBLieIndex.primeFrobenius`, with
-  `TauCeti.TypeBLieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeBLieIndex.primeFrobenius_simpleRootSubgroup`,
+  `TauCeti.TypeBLieIndex.primeFrobenius_weightTorusPoints` and
   `TauCeti.TypeBLieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
-  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th power.
+  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, its action on the split spin weight torus, and the
+  `q`-power Frobenius as its `e`-th power.
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II, for the spin representation the
@@ -284,6 +286,14 @@ exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
     d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, TypeBSpinCarrier.frobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius raises every coordinate of the split spin weight torus to the
+`p`-th power.** -/
+@[simp]
+theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
+    d.primeFrobenius (TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure s) =
+      TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.characteristic) := by
+  rw [primeFrobenius_def, TypeBSpinCarrier.frobenius_weightTorusPoints, pow_one]
 
 /-- **The Frobenius raises every coordinate of the split spin weight torus to the `q`-th
 power.** -/
