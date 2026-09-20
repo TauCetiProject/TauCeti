@@ -46,9 +46,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- A chart derivative test. Each tested point must map into the chosen target chart;
 only there is its coordinate derivative used. Compactness and openness are imposed when
 these sets generate the weak Whitney topology. -/
-def chartJetSet [IsManifold I n M] [IsManifold J n N] (x : M) (y : N) (m : ℕ)
+def chartJetSet [hI : IsManifold I n M] [hJ : IsManifold J n N] (x : M) (y : N) (m : ℕ)
     (K : Set (extChartAt I x).target) (V : Set (E [×m]→L[𝕜] F)) :
     Set C^n⟮I, M; J, N⟯ :=
+  let _ := hI
+  let _ := hJ
   {f | ∀ z ∈ K, f ((extChartAt I x).symm z) ∈ (extChartAt J y).source ∧
     iteratedFDerivWithin 𝕜 m (extChartAt J y ∘ f ∘ (extChartAt I x).symm)
       (extChartAt I x).target z ∈ V}
