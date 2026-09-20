@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-public import Mathlib.RingTheory.Finiteness.Prod
+import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # A faithful square-zero representation of an abelian Lie algebra
