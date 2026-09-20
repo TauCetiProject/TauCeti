@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Rename
+public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.Algebra.Ring.CompTypeclasses
-public import TauCeti.Algebra.MvPolynomial.Division
 
 /-!
 # Renaming variables, and discarding the ones outside the range
@@ -39,12 +39,6 @@ namespace MvPolynomial
 
 variable {σ τ R : Type*} [CommSemiring R] {f : σ → τ} (hf : Function.Injective f) {a : τ}
 
-/-- Discarding the variables outside the range of an injective renaming kills a variable in the
-complement of that range. -/
-theorem killCompl_X_of_notMem_range (ha : a ∉ Set.range f) :
-    killCompl (R := R) hf (X a) = 0 := by
-  simp [killCompl, ha]
-
 /-- When the range of an injective renaming is the complement of a single variable `X a`,
 discarding the variables outside the range kills exactly the multiples of `X a`. -/
 theorem killCompl_eq_zero_iff_X_dvd (ha : Set.range f = {a}ᶜ) (p : MvPolynomial τ R) :
@@ -70,7 +64,11 @@ theorem killCompl_eq_zero_iff_X_dvd (ha : Set.range f = {a}ᶜ) (p : MvPolynomia
     · rw [coeff_modMonomial_of_le _ (by rw [Finsupp.single_le_iff]; omega)]
       simp
   · rintro ⟨q, rfl⟩
-    rw [map_mul, killCompl_X_of_notMem_range hf hna, zero_mul]
+    have hX : killCompl (R := R) hf (X a) = 0 := by
+      rw [X]
+      exact killCompl_monomial_eq_zero_of_notMem_range hf (s := Finsupp.single a 1) 1
+        (a := a) (by simp) hna
+    rw [map_mul, hX, zero_mul]
 
 end MvPolynomial
 

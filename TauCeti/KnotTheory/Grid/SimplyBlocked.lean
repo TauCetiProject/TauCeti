@@ -129,7 +129,8 @@ theorem X_smul_gridChainMinus_injective :
     Function.Injective
       fun c : GridChainMinus R n => (MvPolynomial.X i : MvPolynomial (Fin n) R) • c := by
   intro c d h
-  refine Finsupp.ext fun x => MvPolynomial.X_mul_right_injective i ?_
+  refine Finsupp.ext fun x =>
+    (MvPolynomial.isRegular_X (R := R) (n := i)).left ?_
   simpa only [Finsupp.smul_apply, smul_eq_mul] using DFunLike.congr_fun h x
 
 /-- The chains killed by specialization at `V_i = 0` are exactly the multiples of `V_i`:
@@ -158,9 +159,17 @@ theorem exact_X_smul_simplyBlockedSpecialization :
     rw [Finsupp.smul_apply, Finsupp.mapRange_apply, smul_eq_mul, hsplit]
   · rintro ⟨d, rfl⟩
     refine Finsupp.ext fun x => ?_
+    have hX : MvPolynomial.killCompl (R := R)
+        (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+        (Subtype.val_injective : Function.Injective
+          (Subtype.val : {c : Fin n // c ≠ i} → Fin n)) (MvPolynomial.X i) = 0 := by
+      rw [MvPolynomial.X]
+      exact MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range
+        (Subtype.val_injective : Function.Injective
+          (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+        (s := Finsupp.single i 1) 1 (a := i) (by simp) (by simp)
     rw [simplyBlockedSpecialization_apply, Finsupp.smul_apply, smul_eq_mul, map_mul,
-      MvPolynomial.killCompl_X_of_notMem_range Subtype.val_injective (by simp),
-      zero_mul, Finsupp.coe_zero, Pi.zero_apply]
+      hX, zero_mul, Finsupp.coe_zero, Pi.zero_apply]
 
 end Specialization
 

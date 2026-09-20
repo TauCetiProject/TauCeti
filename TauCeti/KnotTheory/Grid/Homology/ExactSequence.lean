@@ -111,7 +111,16 @@ theorem X_smul_restrictScalars_gridChainHat_eq_zero
       (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
     simplyBlockedRingHom R i (MvPolynomial.X i) • y = 0 := by
   have hzero : simplyBlockedRingHom R i (MvPolynomial.X i) = 0 :=
-    MvPolynomial.killCompl_X_of_notMem_range Subtype.val_injective (by simp)
+    by
+      change MvPolynomial.killCompl (R := R)
+        (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+        (Subtype.val_injective : Function.Injective
+          (Subtype.val : {c : Fin n // c ≠ i} → Fin n)) (MvPolynomial.X i) = 0
+      rw [MvPolynomial.X]
+      exact MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range
+        (Subtype.val_injective : Function.Injective
+          (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
+        (s := Finsupp.single i 1) 1 (a := i) (by simp) (by simp)
   have h : simplyBlockedRingHom R i (MvPolynomial.X i) • y = 0 := by rw [hzero, zero_smul]
   -- The restricted action is by definition the action through the specialization.
   exact h
