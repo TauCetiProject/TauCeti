@@ -40,9 +40,6 @@ the modular Chevalley algebra by its short-root ideal needs a later theorem.
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * R. W. Carter, *Simple Groups of Lie Type*, §12.3.
-
-Formal provenance: the declaration order and proof plan are adapted from this project's
-`cfsg/a0-integration-reference` branch at commit `b2a9572a2`.
 -/
 
 public section
