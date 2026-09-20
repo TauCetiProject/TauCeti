@@ -96,10 +96,10 @@ private theorem barMap_of_two (f : AInfinityHom AA BB) (a b : A) :
   · rw [← LinearMap.comp_apply, ← taylor_def, ← taylorTwo_apply, map_add,
       ReducedTensorWords.letter_ofLetter, ReducedTensorWords.letter_of_two, add_zero]
 
-/-- The arity-two component equation on homogeneous inputs: the suspension sign of the first
-letter is the only degree that enters. -/
-private theorem taylorTwo_component_eq (f : AInfinityHom AA BB) {p q : ℤ} {a b : A}
-    (ha : a ∈ AA.grading.piece p) (hb : b ∈ AA.grading.piece q) :
+/-- The arity-two component equation when the first input is homogeneous: its suspension sign is
+the only degree that enters. -/
+private theorem taylorTwo_component_eq (f : AInfinityHom AA BB) {p : ℤ} {a b : A}
+    (ha : a ∈ AA.grading.piece p) :
     BB.m 1 ![f.taylorTwo a b] + negOnePowCast R p • BB.m 2 ![f.linearPart a, f.linearPart b] =
       f.taylorTwo (AA.m 1 ![a]) b + negOnePowCast R p • f.linearPart (AA.m 2 ![a, b])
         - negOnePowCast R p • f.taylorTwo a (AA.m 1 ![b]) := by
@@ -107,11 +107,14 @@ private theorem taylorTwo_component_eq (f : AInfinityHom AA BB) {p q : ℤ} {a b
     (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b]))
   rw [LinearMap.comp_apply, LinearMap.comp_apply, f.barMap_of_two, map_add,
     AInfinityAlgebra.taylor_ofLetter,
-    BB.taylor_of_two (f.linearPart_mem ha) (f.linearPart_mem hb),
-    AA.barDifferential_of_two ha hb] at h
-  simp only [map_sub, map_add, map_smul] at h
+    BB.taylor_of_two (f.linearPart a) (f.linearPart b),
+    AA.barDifferential_of_two a b] at h
+  simp only [map_sub, map_add] at h
   rw [← taylorTwo_apply, ← taylorTwo_apply, ← linearPart_apply] at h
-  exact h
+  simp only [BB.grading.koszulTwist_apply_of_mem (f.linearPart_mem ha),
+    AA.grading.koszulTwist_apply_of_mem ha, ← negOnePowCast_eq_intCast, one_mul,
+    ← AInfinityAlgebra.mul_apply, map_smul, LinearMap.smul_apply] at h
+  simpa only [AInfinityAlgebra.mul_apply] using h
 
 /-- The arity-two component equation for arbitrary inputs: the suspension sign of the first letter
 is carried by the degree-one Koszul twist. -/
@@ -137,7 +140,7 @@ private theorem linearPart_m_two_sub_eq (f : AInfinityHom AA BB) (a b : A) :
       intro y
       simpa [L, Q] using LinearMap.congr_fun h y
     refine AA.grading.linearMap_ext fun q y hy ↦ ?_
-    have h := f.taylorTwo_component_eq hx hy
+    have h := f.taylorTwo_component_eq (b := y) hx
     have h2 : negOnePowCast R p • BB.m 1 ![f.taylorTwo x y]
           + BB.m 2 ![f.linearPart x, f.linearPart y] =
         negOnePowCast R p • f.taylorTwo (AA.m 1 ![x]) y + f.linearPart (AA.m 2 ![x, y])
