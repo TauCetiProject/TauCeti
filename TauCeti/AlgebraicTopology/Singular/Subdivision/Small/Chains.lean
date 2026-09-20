@@ -26,6 +26,8 @@ small-chain equivalence and prove excision.
 * `TopCat.smallSingularSubcomplex`: the subcomplex of singular simplices whose image lies in one
   member of a family of subsets.
 * `TopCat.smallSingularSubcomplexMap`: a covered map restricts to the small subcomplexes.
+* `TauCeti.AffineChain.smallSingularChain`: push affine chains forward along a small simplex
+  with values in the small-chain complex.
 * `TauCeti.AffineChain.exists_singularChain_small_factor`: a pushed-forward affine chain supported
   on small simplices factors through the small-chain complex.
 * `TauCeti.exists_iterate_singularSubdivision_factor_small`: a sufficiently fine subdivision of
@@ -152,6 +154,42 @@ theorem exists_singularChain_small_factor {m k : ℕ}
   simp only [f, Preadditive.sum_comp, Preadditive.zsmul_comp,
     SSet.ι_chainComplexMap_f]
   rfl
+
+/-- Push an affine chain forward along a small singular simplex, with values in the
+small-chain complex. Every resulting simplex has image inside the original simplex. -/
+def smallSingularChain {m : ℕ} (σ : (X.smallSingularSubcomplex U : SSet) _⦋m⦌) (k : ℕ) :
+    ((Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) →ₗ[ℤ]
+      (R ⟶ ((X.smallSingularSubcomplex U : SSet).chainComplex R).X k) :=
+  linearCombination ℤ fun v ↦ (X.smallSingularSubcomplex U : SSet).ιChainComplex
+    ⟨(X.toSSetObjEquiv _).symm
+      ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)), by
+      obtain ⟨i, hi⟩ := σ.property
+      exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk v z, hz⟩⟩⟩
+
+@[simp]
+lemma smallSingularChain_single {m k : ℕ}
+    (σ : (X.smallSingularSubcomplex U : SSet) _⦋m⦌)
+    (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) (a : ℤ) :
+    smallSingularChain R U σ k (single v a) = a •
+      (X.smallSingularSubcomplex U : SSet).ιChainComplex
+        ⟨(X.toSSetObjEquiv _).symm
+          ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)), by
+          obtain ⟨i, hi⟩ := σ.property
+          exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk v z, hz⟩⟩⟩ := by
+  simp [smallSingularChain]
+
+/-- The small-chain push-forward agrees with the ordinary push-forward after inclusion. -/
+@[reassoc (attr := simp)]
+lemma smallSingularChain_ι {m k : ℕ}
+    (σ : (X.smallSingularSubcomplex U : SSet) _⦋m⦌)
+    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) :
+    smallSingularChain R U σ k c ≫
+        (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f k =
+      singularChain R (X.toSSetObjEquiv _ σ.val) k c := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd => simp only [map_add, Preadditive.add_comp, hc, hd]
+  | single v a => simp
 
 end AffineChain
 
