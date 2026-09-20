@@ -22,13 +22,20 @@ are false for a `MonoidWithZero` with an arbitrary topology. `ContinuousSMul A M
 joint continuity, strictly more than these proofs use.
 
 Nothing here is Huber-specific, or even ring-specific. The hypothesis is about `A`, but the
-absorption and covering results act on a space `M` carrying a zero and a zero-preserving
-`A`-action — `[Zero M] [TopologicalSpace M] [MulActionWithZero A M]`, no additive structure on `M`
-required, so `M` is *not* assumed to be a module. That is the form Henkel's theorem needs, since
-his Baire argument covers the *domain* of the map rather than the base ring; taking `M = A`
-recovers the ring statements. The bridge to Huber theory — that the powers of a pseudouniformiser
-are such a sequence, so a Tate ring qualifies — is in
-`TauCeti/RingTheory/Huber/ZeroSequenceOfUnits.lean`.
+results act on a space `M` carrying a zero and a zero-compatible `A`-action — `[Zero M]`,
+`[TopologicalSpace M]`, and a scalar multiplication, with no additive structure on `M` required,
+so `M` is *not* assumed to be a module.
+
+How much scalar multiplication is needed splits the file in two. The two pointwise absorption
+results ask only for `[SMulWithZero A M]`: their proof evaluates the action at the single scalar
+`0`, so `zero_smul` is the whole of what they use and no action law enters. The covering theorem
+dilates by `uₙ⁻¹`, which means the *units* of `A` must act on `M`; that is
+`[MulActionWithZero A M]`. Both are weaker than a module structure.
+
+That is the form Henkel's theorem needs, since his Baire argument covers the *domain* of the map
+rather than the base ring; taking `M = A` recovers the ring statements. The bridge to Huber
+theory — that the powers of a pseudouniformiser are such a sequence, so a Tate ring qualifies —
+is in `TauCeti/RingTheory/Huber/ZeroSequenceOfUnits.lean`.
 
 The covering is the point, and it must be **countable**. Henkel's proof applies a Baire argument
 to the sets `uₙ⁻¹ • U` indexed by `n : ℕ`; a cover indexed by all of `Aˣ` would exhaust `M` just
@@ -46,12 +53,12 @@ All three carry the continuity hypothesis described above; the covering needs it
 the two pointwise results only at their own.
 
 * `TauCeti.exists_smul_mem_of_tendsto_zero`: along any zero sequence of units, some term carries a
-  given element of a space carrying a zero-preserving `A`-action into a given neighbourhood of
-  zero.
+  given element of a space with `[SMulWithZero A M]` into a given neighbourhood of zero.
 * `TauCeti.iUnion_inv_smul_eq_univ_of_tendsto_zero`: its dilates `uₙ⁻¹ • U` cover `M`, indexed
-  by `ℕ`.
+  by `ℕ`. This one needs `[MulActionWithZero A M]`, so that the units act.
 * `TauCeti.HasZeroSequenceOfUnits.exists_unit_smul_mem`: the weaker unit-only form of absorption —
-  it produces some `v : Aˣ`, with no sequence and no term index.
+  it produces some `v : Aˣ`, with no sequence and no term index. Being an absorption result it too
+  needs only `[SMulWithZero A M]`.
 
 ## References
 
@@ -95,8 +102,9 @@ variable {M : Type*} [Zero M] [TopologicalSpace M] [SMulWithZero A M]
 include hu
 
 /-- **Absorption.** Along a zero sequence of units in `A`, every element of a space `M` carrying a
-zero-preserving `A`-action is carried into every neighbourhood of zero by some term of the
-sequence.
+zero-compatible scalar multiplication by `A` is carried into every neighbourhood of zero by some
+term of the sequence. `[SMulWithZero A M]` is all this needs: the proof evaluates the action at
+the single scalar `0`, so no action law enters.
 
 Stated for an arbitrary such sequence rather than a chosen one, so a caller holding a concrete
 sequence — the powers of a pseudouniformiser, say — gets the conclusion for *that* sequence.
