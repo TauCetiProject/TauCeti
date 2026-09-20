@@ -415,8 +415,9 @@ def semilocalCrtEquiv :
 @[simp]
 theorem coe_semilocalCrtEquiv : ⇑(semilocalCrtEquiv L v) = semilocalCrtHom L v := by
   funext z
-  rw [semilocalCrtEquiv, AlgEquiv.trans_apply, coe_semilocalEquiv,
-    AlgEquiv.symm_apply_eq, factorFieldsEquivCompletions_semilocalCrtHom]
+  simp only [semilocalCrtEquiv, AlgEquiv.trans_apply, TauCeti.semilocalEquiv,
+    AlgEquiv.ofBijective_apply]
+  rw [AlgEquiv.symm_apply_eq, factorFieldsEquivCompletions_semilocalCrtHom]
 
 /-- The Chinese remainder equivalence on a pure tensor, evaluated at one factor. -/
 @[simp]

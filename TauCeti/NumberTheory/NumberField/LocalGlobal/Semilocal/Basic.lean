@@ -49,7 +49,6 @@ The places above `v` are indexed by the subtype
   `∏_{w ∣ v} L_w`.
 * `TauCeti.semilocalHom_surjective` and `TauCeti.semilocalHom_injective`: the semi-local map is
   surjective and injective.
-* `TauCeti.coe_semilocalEquiv`: the equivalence has `semilocalHom` as its underlying map.
 * `TauCeti.sum_finrank_adicCompletion_eq_finrank`:
   `∑_{w ∣ v} [L_w : K_v] = [L : K]`.
 
@@ -172,7 +171,7 @@ theorem semilocalHom_injective : Function.Injective (semilocalHom L v) := by
 /-- **The semi-local decomposition** `K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`: completing `L` at the
 finitely many places above a finite place `v` of `K` decomposes the scalar extension of `L` to
 `K_v` into the product of those completions. -/
-def semilocalEquiv :
+@[expose] def semilocalEquiv :
     v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L) :=
@@ -187,11 +186,6 @@ def semilocalEquiv :
 
 variable {L v}
 
-/-- The underlying map of the semi-local equivalence is `semilocalHom`. -/
-@[simp]
-theorem coe_semilocalEquiv : ⇑(semilocalEquiv L v) = semilocalHom L v := by
-  rw [semilocalEquiv, AlgEquiv.coe_ofBijective]
-
 /-- **The semi-local decomposition on a pure tensor**, the formula that determines it. -/
 @[simp]
 theorem semilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
@@ -199,7 +193,7 @@ theorem semilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
     semilocalEquiv L v (a ⊗ₜ x) w =
       algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
         algebraMap L (w.1.adicCompletion L) x := by
-  rw [coe_semilocalEquiv]
+  rw [semilocalEquiv, AlgEquiv.ofBijective_apply]
   exact semilocalHom_tmul a x w
 
 end TauCeti
