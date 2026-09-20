@@ -10,24 +10,25 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 
 /-!
-# The Riemann–Roch theorem for line bundles and divisors on a proper curve
+# The Riemann–Roch theorem for divisors on a proper curve
 
 For a proper integral curve `X` over a field `k` with a `k`-rational point, whose
 codimension-one local rings are discrete valuation rings, and with `H¹(X, 𝒪_X)` of finite
 dimension over `k`, this file proves
 
-`χ(L) = deg L + 1 - g`  and  `χ(𝒪_X(D)) = deg D + 1 - g`,
+`χ(𝒪_X(D)) = deg D + 1 - g`,
 
-where `g = dim_k H¹(X, 𝒪_X)` is the genus, `deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic
-degree of a line bundle, `deg D = Σ_y D(y) [κ(y) : k]` is the residue-degree-weighted degree of a
-Weil divisor, and `χ(M) = dim_k H⁰(X, M) - dim_k H¹(X, M)`.
+where `g = dim_k H¹(X, 𝒪_X)` is the genus, `deg D = Σ_y D(y) [κ(y) : k]` is the
+residue-degree-weighted degree of a Weil divisor, and
+`χ(M) = dim_k H⁰(X, M) - dim_k H¹(X, M)`.
 
 The two inputs are already available: `χ(𝒪_X(D)) = deg D + χ(𝒪_X)`, from the residue sequence of
 a divisor sheaf, and `χ(𝒪_X) = 1 - g`, from the fact that a `k`-rational point on a proper
-integral scheme forces the global functions to be the constants. For a line bundle the degree is
-*defined* as `χ(L) - χ(𝒪_X)`, so the line-bundle form needs only the second input and holds on
-any integral scheme universally closed over `k` with a `k`-rational point; the content of the
-divisor form is that this normalized Euler characteristic is computed by the divisor degree.
+integral scheme forces the global functions to be the constants. This file also records the
+normalization identity `χ(L) = eulerDegree(L) + 1 - g`. It is not itself a Riemann–Roch theorem:
+`eulerDegree(L)` is defined as `χ(L) - χ(𝒪_X)`. The substantive divisor theorem uses the
+independently defined residue-degree sum; the earlier theorem
+`InvertibleSheaf.eulerDegree_eq_relativeDegree` identifies the two degrees when `L ≅ 𝒪_X(D)`.
 
 Dropping the nonnegative `dim_k H¹` gives **Riemann's inequality** `ℓ(D) ≥ deg D + 1 - g` for the
 Riemann–Roch space `ℓ(D) = dim_k Γ(X, 𝒪_X(D))`. Together with the dictionary between nonzero
@@ -48,7 +49,7 @@ cohomological genus used here is available yet.
 
 * `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus` and
   `InvertibleSheaf.finrank_cohomology_zero_sub_one_eq_eulerDegree_add_one_sub_genus`:
-  Riemann–Roch for a line bundle, as an Euler characteristic and as `dim H⁰ - dim H¹`;
+  normalization identities for Euler-characteristic degree;
 * `SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus` and
   `SchemeWeilDivisor.finrank_cohomology_zero_sub_one_sheaf_eq_relativeDegree_add_one_sub_genus`:
   Riemann–Roch for the sheaf of a Weil divisor on a proper curve;
@@ -86,20 +87,21 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsInte
 
 include hs
 
-/-- **Riemann–Roch for a line bundle.** On an integral scheme universally closed over a field `k`
-with a `k`-rational point and with `H¹(X, 𝒪_X)` finite-dimensional,
+/-- **The Euler-degree normalization identity.** On an integral scheme universally closed over a
+field `k` with a `k`-rational point and with `H¹(X, 𝒪_X)` finite-dimensional,
 
 `χ(L) = deg L + 1 - g`
 
 for every line bundle `L`, where `deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and
-`g = dim_k H¹(X, 𝒪_X)` is the genus. On a proper curve the degree on the right is the degree of
-any Weil divisor of `L` (`InvertibleSheaf.eulerDegree_eq_relativeDegree`). -/
+`g = dim_k H¹(X, 𝒪_X)` is the genus. This is a normalization identity, not by itself a
+Riemann–Roch theorem. On a proper curve `InvertibleSheaf.eulerDegree_eq_relativeDegree` identifies
+the degree on the right with the independently defined degree of any Weil divisor of `L`. -/
 theorem eulerCharBelow_eq_eulerDegree_add_one_sub_genus (L : InvertibleSheaf X) :
     Scheme.Modules.eulerCharBelow k X L.obj 2 = L.eulerDegree k + 1 - X.genus k := by
   rw [eulerDegree_def, eulerCharBelow_trivial_eq_one_sub_genus k hs]
   ring
 
-/-- **Riemann–Roch for a line bundle**, as an equality of dimensions:
+/-- The Euler-degree normalization identity as an equality of dimensions:
 `dim H⁰(X, L) - dim H¹(X, L) = deg L + 1 - g`. -/
 theorem finrank_cohomology_zero_sub_one_eq_eulerDegree_add_one_sub_genus (L : InvertibleSheaf X) :
     (finrank k (Scheme.Modules.Cohomology L.obj 0) : ℤ) -
