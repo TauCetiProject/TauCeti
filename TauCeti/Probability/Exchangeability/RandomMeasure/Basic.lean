@@ -44,8 +44,8 @@ one-coordinate pushforwards, not its higher finite-dimensional marginals.
 
 ## Main definitions and results
 
-* `TauCeti.Probability.map_map_permReindex_eq_of_map_eq` -- pointwise reindexing invariance
-  implies invariance of the law of a random path measure;
+* `TauCeti.Probability.map_map_permReindex_eq_of_map_eq` -- invariance in law under reindexing
+  implies invariance under the induced action on random path measures;
 * `TauCeti.Probability.coordinateMarginals` -- the path of one-coordinate marginals of a
   path law;
 * `TauCeti.Probability.coordinateMarginals_map_permReindex` -- equivariance under coordinate
@@ -85,8 +85,8 @@ open TauCeti.MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- Pointwise invariance of a measurable random path measure under reindexing implies invariance
-of its pushforward law under the induced action on probability measures. -/
+/-- Invariance in law of a measurable random path measure under reindexing implies invariance
+under the induced action on probability measures. -/
 theorem map_map_permReindex_eq_of_map_eq
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     {ν : Ω → ProbabilityMeasure (ℕ → α)} (hν : Measurable ν)
