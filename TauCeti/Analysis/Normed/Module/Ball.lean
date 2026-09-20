@@ -14,6 +14,13 @@ import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 
 This file records how the affine map `y ↦ c • y +ᵥ x` pulls metric balls, closed balls, and
 spheres back to their corresponding sets centered at zero.
+
+The scalars carry no algebraic structure at all: `[Norm 𝕜] [SMul 𝕜 E] [NormSMulClass 𝕜 E]` is
+the whole assumption, since `NormSMulClass` is exactly the tie between the action and the two
+norms that these computations run on. Accordingly the scale is constrained by `0 < ‖c‖` rather
+than by `c ≠ 0`, which is not even statable without a zero; over a `NormedDivisionRing` the two
+agree by `norm_pos_iff`, and that lemma is `@[simp]`, so a caller holding `c ≠ 0` discharges the
+side condition automatically.
 -/
 
 public section
@@ -22,37 +29,37 @@ namespace TauCeti
 
 section Preimage
 
-variable {𝕜 E P : Type*} [NormedAddGroup 𝕜] [SeminormedAddCommGroup E]
+variable {𝕜 E P : Type*} [Norm 𝕜] [SeminormedAddCommGroup E]
   [SMul 𝕜 E] [NormSMulClass 𝕜 E] [PseudoMetricSpace P] [NormedAddTorsor E P]
 
 /-- The affine normalization map `y ↦ c • y +ᵥ x` pulls the ball `Metric.ball x (‖c‖ * r)` back
-to `Metric.ball 0 r`, for nonzero scale `c`. -/
+to `Metric.ball 0 r`, for a scale `c` of positive norm. -/
 @[simp]
-theorem preimage_smul_vadd_ball_norm (x : P) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
+theorem preimage_smul_vadd_ball_norm (x : P) {c : 𝕜} (hc : 0 < ‖c‖) (r : ℝ) :
     ((fun y : E ↦ c • y +ᵥ x) ⁻¹' Metric.ball x (‖c‖ * r)) = Metric.ball 0 r := by
   ext y
   simp only [Set.mem_preimage, Metric.mem_ball, dist_vadd_left, dist_zero_right, norm_smul]
-  exact mul_lt_mul_iff_right₀ (norm_pos_iff.2 hc)
+  exact mul_lt_mul_iff_right₀ hc
 
 /-- The affine map `y ↦ c • y +ᵥ x` pulls the closed ball of radius `‖c‖ * r` about `x`
 back to the closed ball of radius `r` about `0`. -/
 @[simp]
-theorem preimage_smul_vadd_closedBall (x : P) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
+theorem preimage_smul_vadd_closedBall (x : P) {c : 𝕜} (hc : 0 < ‖c‖) (r : ℝ) :
     ((fun y : E ↦ c • y +ᵥ x) ⁻¹' Metric.closedBall x (‖c‖ * r)) =
       Metric.closedBall 0 r := by
   ext y
   simp only [Set.mem_preimage, Metric.mem_closedBall, dist_vadd_left, dist_zero_right, norm_smul]
-  exact mul_le_mul_iff_right₀ (norm_pos_iff.2 hc)
+  exact mul_le_mul_iff_right₀ hc
 
 /-- The affine map `y ↦ c • y +ᵥ x` pulls the sphere of radius `‖c‖ * r` about `x`
 back to the sphere of radius `r` about `0`. -/
 @[simp]
-theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
+theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : 0 < ‖c‖) (r : ℝ) :
     ((fun y : E ↦ c • y +ᵥ x) ⁻¹' Metric.sphere x (‖c‖ * r)) = Metric.sphere 0 r := by
   ext y
   simp only [Set.mem_preimage, Metric.mem_sphere, dist_vadd_left, dist_zero_right, norm_smul]
   constructor
-  · exact mul_left_cancel₀ (norm_pos_iff.2 hc).ne'
+  · exact mul_left_cancel₀ hc.ne'
   · exact congrArg ((· * ·) ‖c‖)
 
 end Preimage
