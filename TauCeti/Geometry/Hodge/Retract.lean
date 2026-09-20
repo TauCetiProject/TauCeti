@@ -54,8 +54,9 @@ variable {n : ℤ} (X : PolarizableHodgeStructureCat.{u} n)
 The integral carrier is the inverse image of the rational subspace in the ambient lattice. The
 rational and complex carriers are the corresponding subspaces, with the induced Hodge structure
 and induced polarizability. -/
--- The body remains unexposed; this only lets dependent categorical types infer carrier instances.
-@[implicit_reducible]
+-- Deliberately a `def` rather than an `abbrev`: the carrier and Hodge-structure simp lemmas below
+-- are the interface. Implicit reducibility only lets the dependent categorical types elaborate.
+@[expose, implicit_reducible]
 noncomputable def ofSubstructure (W : RationalHodgeSubstructure X.isBaseChangeRat X.hs) :
     PolarizableHodgeStructureCat.{u} n := by
   let b := Submodule.basisOfPid (Module.Free.chooseBasis ℤ X.intCarrier)
@@ -73,30 +74,26 @@ images lie in the substructure. -/
 @[simp]
 theorem ofSubstructure_intCarrier :
     (ofSubstructure X W).intCarrier = integralSubmodule X.toRat W.WQ :=
-  (rfl)
+  rfl
 
 /-- The rational carrier of the object induced on a rational Hodge substructure is the underlying
 rational subspace. -/
 @[simp]
 theorem ofSubstructure_ratCarrier : (ofSubstructure X W).ratCarrier = W.WQ :=
-  (rfl)
-
-private theorem ofSubstructure_asMixed_ratCarrier :
-    (ofSubstructure X W).asMixed.ratCarrier = W.WQ :=
-  (rfl)
+  rfl
 
 /-- The complex carrier of the induced object is the complexification of its rational subspace. -/
 @[simp]
 theorem ofSubstructure_complexCarrier :
     (ofSubstructure X W).complexCarrier =
       rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ :=
-  (rfl)
+  rfl
 
 /-- The pure Hodge structure on the induced object is the one obtained by restricting the ambient
-filtration. This is a heterogeneous equality because `ofSubstructure` keeps its carrier sealed. -/
+filtration. -/
 @[simp]
-theorem ofSubstructure_hs : HEq (ofSubstructure X W).hs W.hodgeStructure :=
-  (HEq.rfl)
+theorem ofSubstructure_hs : (ofSubstructure X W).hs = W.hodgeStructure :=
+  rfl
 
 /-- The inclusion of an induced rational Hodge substructure into its ambient object. -/
 noncomputable def substructureInclusion : ofSubstructure X W ⟶ X :=
@@ -104,22 +101,18 @@ noncomputable def substructureInclusion : ofSubstructure X W ⟶ X :=
     rw [rationalMapToComplex_subtype]
     exact W.isMorphism_subtype
 
-/-- The rational map underlying the inclusion is the subtype map. The equality is heterogeneous
-because `ofSubstructure` keeps its rational carrier sealed. -/
+/-- The rational map underlying the inclusion is the subtype map. -/
 @[simp]
 theorem substructureInclusion_toRatLinearMap :
-    HEq (substructureInclusion X W).hom.toRatLinearMap W.WQ.subtype :=
-  (by
-    rw [substructureInclusion, Hom.ofIsMorphism_toRatLinearMap])
+    (substructureInclusion X W).hom.toRatLinearMap = W.WQ.subtype := by
+  rw [substructureInclusion, Hom.ofIsMorphism_toRatLinearMap]
 
-/-- The complex map underlying the inclusion is the subtype map. The equality is heterogeneous
-because `ofSubstructure` keeps its complex carrier sealed. -/
+/-- The complex map underlying the inclusion is the subtype map. -/
 @[simp]
 theorem substructureInclusion_toLinearMap :
-    HEq (substructureInclusion X W).hom.toLinearMap
-      (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype :=
-  (by
-    rw [substructureInclusion, Hom.ofIsMorphism_toLinearMap, rationalMapToComplex_subtype])
+    (substructureInclusion X W).hom.toLinearMap =
+      (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype := by
+  rw [substructureInclusion, Hom.ofIsMorphism_toLinearMap, rationalMapToComplex_subtype]
 
 /-- Corestricting the rational map of a Hodge morphism to a rational Hodge substructure
 preserves the morphism property. -/
@@ -206,46 +199,34 @@ noncomputable def substructureRetraction : X ⟶ ofSubstructure X W :=
     (isMorphism_substructureRetractionRat X W P)
 
 /-- The rational map underlying the categorical retraction is the orthogonal projector with its
-codomain restricted to the substructure. The equality is heterogeneous because `ofSubstructure`
-keeps its rational carrier sealed. -/
+codomain restricted to the substructure. -/
 @[simp]
 theorem substructureRetraction_toRatLinearMap :
-    HEq (substructureRetraction X W P).hom.toRatLinearMap
-      (substructureRetractionRat X W P) :=
-  (by
-    rw [substructureRetraction, Hom.ofIsMorphism_toRatLinearMap])
+    (substructureRetraction X W P).hom.toRatLinearMap = substructureRetractionRat X W P := by
+  rw [substructureRetraction, Hom.ofIsMorphism_toRatLinearMap]
 
 /-- The inclusion followed by the orthogonal retraction is the identity on the induced Hodge
 structure. -/
 @[simp]
 theorem substructureInclusion_comp_substructureRetraction :
-  substructureInclusion X W ≫ substructureRetraction X W P = 𝟙 (ofSubstructure X W) :=
-  (by
-    apply Hom.ext
-    rw [comp_toRatLinearMap, id_toRatLinearMap]
-    -- In this defining module, the sealed carrier interface specializes from `HEq` to `Eq`.
-    have hret := eq_of_heq (substructureRetraction_toRatLinearMap X W P)
-    have hinc := eq_of_heq (substructureInclusion_toRatLinearMap X W)
-    rw [hret, hinc]
-    -- Eliminate the sealed carrier equality before checking the projector elementwise.
-    cases ofSubstructure_asMixed_ratCarrier X W
-    ext x
-    -- The remaining coercions hide precisely that the projector fixes the subspace.
-    apply Subtype.ext
-    change W.projection P (W.WQ.subtype x) = W.WQ.subtype x
-    exact W.projection_apply_of_mem P x.property)
+    substructureInclusion X W ≫ substructureRetraction X W P = 𝟙 (ofSubstructure X W) := by
+  apply Hom.ext
+  rw [comp_toRatLinearMap, id_toRatLinearMap, substructureRetraction_toRatLinearMap,
+    substructureInclusion_toRatLinearMap]
+  ext x
+  -- The remaining coercions hide precisely that the projector fixes the subspace.
+  apply Subtype.ext
+  change W.projection P (W.WQ.subtype x) = W.WQ.subtype x
+  exact W.projection_apply_of_mem P x.property
 
 /-- The orthogonal retraction followed by the inclusion is the Hodge projector on the ambient
 object. -/
 theorem substructureRetraction_comp_substructureInclusion_toRatLinearMap :
     ((substructureRetraction X W P ≫ substructureInclusion X W).hom.toRatLinearMap) =
-      W.projection P :=
-  (by
-    rw [comp_toRatLinearMap]
-    -- In this defining module, the sealed carrier interface specializes from `HEq` to `Eq`.
-    have hret := eq_of_heq (substructureRetraction_toRatLinearMap X W P)
-    have hinc := eq_of_heq (substructureInclusion_toRatLinearMap X W)
-    rw [hret, hinc, substructureRetractionRat, LinearMap.subtype_comp_codRestrict])
+      W.projection P := by
+  rw [comp_toRatLinearMap, substructureRetraction_toRatLinearMap,
+    substructureInclusion_toRatLinearMap, substructureRetractionRat,
+    LinearMap.subtype_comp_codRestrict]
 
 /-- The inclusion of a rational Hodge substructure into a polarizable Hodge structure is a split
 monomorphism. -/
