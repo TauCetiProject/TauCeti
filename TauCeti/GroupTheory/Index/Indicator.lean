@@ -144,9 +144,7 @@ noncomputable def _root_.Subgroup.signIndicatorHom (H : Subgroup G)
 theorem _root_.Subgroup.signIndicatorHom_apply (H : Subgroup G) (hindex : H.index ∣ 2)
     (x : G) :
     H.signIndicatorHom hindex x = H.signIndicator x :=
-  by
-    change H.signIndicator x = H.signIndicator x
-    rfl
+  by simp [Subgroup.signIndicatorHom]
 
 /-- The kernel of the sign-indicator homomorphism is the original subgroup. -/
 @[simp]
