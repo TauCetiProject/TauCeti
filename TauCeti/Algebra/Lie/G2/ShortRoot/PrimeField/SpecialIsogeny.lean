@@ -41,8 +41,13 @@ the construction transfers to that group scheme only along such an identificatio
 
 * `TauCeti.G2ShortRoot.PrimeField.specialIsogeny_rootSubgroupPoints` and
   `TauCeti.G2ShortRoot.PrimeField.specialIsogeny_weightTorusPoints`: the pinning equations.
+* `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_specialIsogenyHom` and its Frobenius
+  counterpart: compatibility between the scheme endomorphisms and their named point maps.
+* `TauCeti.G2ShortRoot.PrimeField.schemePointsMulEquiv_comp_rootSubgroup_comp_specialIsogenyHom`
+  and its torus counterpart: the pinning equations for scheme-valued points.
 * `TauCeti.G2ShortRoot.PrimeField.specialIsogenyCoordinateMap_comp_self` and
-  `TauCeti.G2ShortRoot.PrimeField.specialIsogeny_comp_self`: the Frobenius square relations.
+  `TauCeti.G2ShortRoot.PrimeField.specialIsogeny_comp_specialIsogeny`: the Frobenius square
+  relations.
 * `TauCeti.G2ShortRoot.PrimeField.pointsMap_specialIsogeny`: naturality in the value algebra.
 
 ## References
@@ -61,6 +66,7 @@ public section
 
 open AlgebraicGeometry CategoryTheory Matrix WithConv
 open scoped TensorProduct
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.G2ShortRoot.PrimeField
 
@@ -321,6 +327,8 @@ private theorem universalPoint_mem_points :
       points carrierAlgebra := by
   rw [points_eq_hopfIdealPointsSubgroup,
     TauCeti.GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker]
+  -- `carrierQuotient` is an abbreviation for this quotient map; exposing that stable
+  -- presentation lets the quotient-kernel theorem apply without unfolding unrelated coercions.
   simpa only [definingIdeal_def] using
     (show (CommHopfAlgCat.commonKernelHopfIdeal generator).toIdeal ≤
       RingHom.ker carrierQuotient.hom.toAlgHom.toRingHom by
@@ -547,7 +555,9 @@ noncomputable def specialIsogenyCoordinateMap : carrierAlgebra ⟶ carrierAlgebr
   CommHopfAlgCat.liftQuotient (CommHopfAlgCat.commonKernelHopfIdeal generator)
     ambientCoordinateMap commonKernelHopfIdeal_toIdeal_le_ker_ambientCoordinateMap
 
-private theorem groupScheme_eq_commonKernelSpec :
+/-- The carrier is represented by the quotient of the ambient coordinate Hopf algebra by the
+common kernel of its generators. -/
+theorem groupScheme_eq_commonKernelSpec :
     groupScheme = CommHopfAlgCat.quotientSpec
       (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
       (CommHopfAlgCat.commonKernelHopfIdeal generator) := by
@@ -560,6 +570,15 @@ noncomputable def specialIsogenyHom : groupScheme ⟶ groupScheme :=
       commonKernelHopfIdeal_toIdeal_le_ker_ambientCoordinateMap ≫
     eqToHom groupScheme_eq_commonKernelSpec.symm
 
+/-- The comorphism of the carrier special isogeny is `specialIsogenyCoordinateMap`. -/
+theorem specialIsogenyHom_eq_map_specialIsogenyCoordinateMap :
+    specialIsogenyHom =
+      eqToHom groupScheme_eq_commonKernelSpec ≫
+        (hopfSpec (CommRingCat.of (ZMod 3))).map specialIsogenyCoordinateMap.op ≫
+          eqToHom groupScheme_eq_commonKernelSpec.symm := by
+  rw [specialIsogenyHom, CommHopfAlgCat.commonKernelSpecRestrict_def]
+  rfl
+
 /-! ### The endomorphism on points -/
 
 private theorem map_ofConv_genericMatrix (h : _root_.Matrix.GeneralLinearGroup (Fin 7) A) :
@@ -569,6 +588,139 @@ private theorem map_ofConv_genericMatrix (h : _root_.Matrix.GeneralLinearGroup (
   rw [TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
     ← TauCeti.GeneralLinear.pointsMulEquiv_apply, WithConv.toConv_ofConv,
     MulEquiv.apply_symm_apply]
+
+private noncomputable def carrierAlgebraPointsMulEquiv (A : CommAlgCat.{v} (ZMod 3)) :
+    HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra) A ≃* points A :=
+  (TauCeti.GeneralLinear.hopfIdealPointsSubgroupMulEquiv 7
+      (CommHopfAlgCat.commonKernelHopfIdeal generator) A).trans
+    (MulEquiv.subgroupCongr (by
+      simpa only [definingIdeal_def] using points_eq_hopfIdealPointsSubgroup A)).symm
+
+private noncomputable def carrierGroupSchemePointMulEquiv (A : Type) [CommRing A]
+    [Algebra (ZMod 3) A] :
+    WithConv (carrierAlgebra →ₐ[ZMod 3] A) ≃*
+      ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶ groupScheme.X) :=
+  CommHopfAlgCat.mapMulEquivOfPresentation carrierAlgebra A groupScheme_eq_commonKernelSpec
+
+private theorem groupScheme_X_left :
+    groupScheme.X.left = Spec (CommRingCat.of carrierAlgebra) := by
+  rw [groupScheme_eq_commonKernelSpec]
+  exact hopfSpec_obj_X_left (ZMod 3) _
+
+private theorem carrierGroupSchemePointMulEquiv_apply_left
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (q : WithConv (carrierAlgebra →ₐ[ZMod 3] B)) :
+    (carrierGroupSchemePointMulEquiv B q).left =
+      Spec.map (CommRingCat.ofHom q.ofConv) ≫
+        eqToHom groupScheme_X_left.symm := by
+  simpa only [carrierGroupSchemePointMulEquiv] using
+    CommHopfAlgCat.mapMulEquivOfPresentation_apply_left carrierAlgebra B
+      groupScheme_eq_commonKernelSpec groupScheme_X_left q
+
+private theorem carrierGroupSchemePointMulEquiv_comp_carrierι
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) B)) :
+    carrierGroupSchemePointMulEquiv B q ≫ carrierι.hom.hom =
+      TauCeti.GeneralLinear.groupSchemePointMulEquiv 7 B
+        (CommHopfAlgCat.quotientPointsHom
+          (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+          (CommHopfAlgCat.commonKernelHopfIdeal generator)
+          (CommAlgCat.of (ZMod 3) B) q) := by
+  have hpoint := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+      (R := ZMod 3) B (TauCeti.GeneralLinear.groupScheme_def (ZMod 3) 7)
+      groupScheme_eq_commonKernelSpec
+      (TauCeti.GeneralLinear.groupSchemePointMulEquiv 7 B)
+      (carrierGroupSchemePointMulEquiv B)
+      (TauCeti.GeneralLinear.groupSchemePointMulEquiv_apply_left 7 B)
+      (carrierGroupSchemePointMulEquiv_apply_left B)
+      carrierQuotient q
+  have hpresentation :
+      groupScheme_eq_generatedGroupScheme.trans
+        (TauCeti.GeneralLinear.generatedGroupScheme_def 7 generator) =
+          groupScheme_eq_commonKernelSpec := Subsingleton.elim _ _
+  have hι : carrierι =
+      eqToHom groupScheme_eq_commonKernelSpec ≫
+        (hopfSpec (CommRingCat.of (ZMod 3))).map carrierQuotient.op ≫
+          eqToHom (TauCeti.GeneralLinear.groupScheme_def (ZMod 3) 7).symm := by
+    rw [carrierι_def, TauCeti.GeneralLinear.generatedGroupSchemeι_def,
+      CommHopfAlgCat.quotientSpecι_def]
+    rw [← Category.assoc, eqToHom_trans, hpresentation]
+  rw [CommHopfAlgCat.quotientPointsHom, hι]
+  exact hpoint
+
+private theorem schemePointsMulEquiv_carrierGroupSchemePointMulEquiv
+    {B : Type} [CommRing B] [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) B)) :
+    schemePointsMulEquiv B (carrierGroupSchemePointMulEquiv B q) =
+      carrierAlgebraPointsMulEquiv (CommAlgCat.of (ZMod 3) B) q := by
+  apply Subtype.ext
+  rw [← schemePointsMulEquiv_comp_carrierι B,
+    carrierGroupSchemePointMulEquiv_comp_carrierι,
+    TauCeti.GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv]
+  simpa only [carrierAlgebraPointsMulEquiv, MulEquiv.trans_apply,
+    MulEquiv.subgroupCongr_symm_apply] using
+      (TauCeti.GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply 7
+        (CommHopfAlgCat.commonKernelHopfIdeal generator) (CommAlgCat.of (ZMod 3) B) q).symm
+
+private theorem coe_carrierAlgebraPointsMulEquiv
+    {B : Type v} [CommRing B] [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) B)) :
+    (carrierAlgebraPointsMulEquiv (CommAlgCat.of (ZMod 3) B) q :
+        _root_.Matrix.GeneralLinearGroup (Fin 7) B) =
+      TauCeti.GeneralLinear.pointsMulEquiv 7
+        (CommHopfAlgCat.quotientPointsHom
+          (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+          (CommHopfAlgCat.commonKernelHopfIdeal generator)
+          (CommAlgCat.of (ZMod 3) B) q) := by
+  simp only [carrierAlgebraPointsMulEquiv, MulEquiv.trans_apply,
+    MulEquiv.subgroupCongr_symm_apply]
+  exact TauCeti.GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply 7
+    (CommHopfAlgCat.commonKernelHopfIdeal generator) (CommAlgCat.of (ZMod 3) B) q
+
+private theorem coe_carrierAlgebraPointsMulEquiv_eq_map_carrierGenericMatrix
+    {B : Type v} [CommRing B] [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) B)) :
+    ((carrierAlgebraPointsMulEquiv (CommAlgCat.of (ZMod 3) B) q :
+        _root_.Matrix.GeneralLinearGroup (Fin 7) B) : Matrix (Fin 7) (Fin 7) B) =
+      carrierGenericMatrix.map q.ofConv := by
+  rw [coe_carrierAlgebraPointsMulEquiv]
+  let q' := CommHopfAlgCat.quotientPointsHom
+    (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
+    (CommHopfAlgCat.commonKernelHopfIdeal generator)
+    (CommAlgCat.of (ZMod 3) B) q
+  rw [← map_ofConv_genericMatrix
+    (TauCeti.GeneralLinear.pointsMulEquiv 7 q')]
+  simp only [MulEquiv.symm_apply_apply]
+  ext i j
+  rw [carrierGenericMatrix, Matrix.map_map, Matrix.map_apply, Matrix.map_apply,
+    CommHopfAlgCat.quotientPointsHom_apply_apply]
+  rfl
+
+private theorem carrierGroupSchemePointMulEquiv_comp_coordinateMap
+    {B : Type} [CommRing B] [Algebra (ZMod 3) B]
+    (phi : carrierAlgebra ⟶ carrierAlgebra)
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) B)) :
+    carrierGroupSchemePointMulEquiv B q ≫
+        (eqToHom groupScheme_eq_commonKernelSpec ≫
+          (hopfSpec (CommRingCat.of (ZMod 3))).map phi.op ≫
+            eqToHom groupScheme_eq_commonKernelSpec.symm).hom.hom =
+      carrierGroupSchemePointMulEquiv B
+        (AlgHom.mapDomain phi.hom q) := by
+  have h := CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+    (R := ZMod 3) B groupScheme_eq_commonKernelSpec groupScheme_eq_commonKernelSpec
+    (carrierGroupSchemePointMulEquiv B) (carrierGroupSchemePointMulEquiv B)
+    (carrierGroupSchemePointMulEquiv_apply_left B)
+    (carrierGroupSchemePointMulEquiv_apply_left B) phi q
+  have heval :
+      ((CommHopfAlgCat.mapPointsFunctor phi).app (CommAlgCat.of (ZMod 3) B)) q =
+        AlgHom.mapDomain phi.hom q := rfl
+  rw [heval] at h
+  exact h
 
 private theorem coe_generatedPointsEndomorphism
     (g : TauCeti.GeneralLinear.generatedPointsSubgroup 7 generator A) :
@@ -747,6 +899,8 @@ private noncomputable def ambientFrobeniusCoordinateMap :
 private theorem map_genericMatrix_specialIsogenyCoordinateMap :
     carrierGenericMatrix.map specialIsogenyCoordinateMap.hom.toAlgHom =
       g2SpecialIsogeny carrierGenericMatrix := by
+  -- Expand only the named universal matrix so the composition lemma can see the two successive
+  -- coordinate maps; the conversion is definitional because `carrierGenericMatrix` is this map.
   change ((TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map
       carrierQuotient.hom.toAlgHom).map specialIsogenyCoordinateMap.hom.toAlgHom =
     g2SpecialIsogeny ((TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map
@@ -754,6 +908,44 @@ private theorem map_genericMatrix_specialIsogenyCoordinateMap :
   rw [← map_genericMatrix_comp, specialIsogenyCoordinateMap,
     CommHopfAlgCat.mkQuotient_comp_liftQuotient, map_genericMatrix_ambientCoordinateMap]
   rw [carrierGenericMatrix]
+
+private theorem carrierAlgebraPointsMulEquiv_map_specialIsogenyCoordinateMap
+    {B : Type} [CommRing B] [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) B)) :
+    carrierAlgebraPointsMulEquiv (CommAlgCat.of (ZMod 3) B)
+        (AlgHom.mapDomain specialIsogenyCoordinateMap.hom q) =
+      specialIsogeny B (carrierAlgebraPointsMulEquiv (CommAlgCat.of (ZMod 3) B) q) := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_carrierAlgebraPointsMulEquiv_eq_map_carrierGenericMatrix,
+    coe_specialIsogeny, coe_carrierAlgebraPointsMulEquiv_eq_map_carrierGenericMatrix]
+  have h := congrArg (fun M : Matrix (Fin 7) (Fin 7) carrierAlgebra => M.map q.ofConv)
+    map_genericMatrix_specialIsogenyCoordinateMap
+  have hmap :
+      (((AlgHom.mapDomain specialIsogenyCoordinateMap.hom q).ofConv :
+          carrierAlgebra →ₐ[ZMod 3] B) : carrierAlgebra → B) =
+        q.ofConv ∘ specialIsogenyCoordinateMap.hom := by
+    funext x
+    rfl
+  rw [hmap]
+  simpa only [Matrix.map_map, Function.comp_apply, BialgHom.coe_toAlgHom,
+    g2SpecialIsogeny_map] using h
+
+/-- The action induced by `specialIsogenyHom` on scheme-valued carrier points is the named
+matrix-valued special isogeny. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_specialIsogenyHom
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶ groupScheme.X) :
+    schemePointsMulEquiv B (p ≫ specialIsogenyHom.hom.hom) =
+      specialIsogeny B (schemePointsMulEquiv B p) := by
+  obtain ⟨q, rfl⟩ := (carrierGroupSchemePointMulEquiv B).surjective p
+  rw [specialIsogenyHom_eq_map_specialIsogenyCoordinateMap,
+    carrierGroupSchemePointMulEquiv_comp_coordinateMap,
+    schemePointsMulEquiv_carrierGroupSchemePointMulEquiv,
+    schemePointsMulEquiv_carrierGroupSchemePointMulEquiv]
+  exact carrierAlgebraPointsMulEquiv_map_specialIsogenyCoordinateMap q
 
 private theorem map_genericMatrix_ambientCoordinateMap_comp_specialIsogenyCoordinateMap :
     (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map
@@ -805,6 +997,8 @@ private theorem commonKernelHopfIdeal_toIdeal_le_ker_ambientFrobeniusCoordinateM
   have hzero := commonKernelHopfIdeal_toIdeal_le_ker_ambientCoordinateMap hx
   rw [RingHom.mem_ker] at hzero
   simp only [BialgHom.coe_toAlgHom, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hzero
+  -- Composition in `CommHopfAlgCat` evaluates in this order; spelling out the application avoids
+  -- relying on simplification through the bundled morphism and ring-hom coercions.
   change specialIsogenyCoordinateMap.hom (ambientCoordinateMap.hom x) = 0
   rw [hzero, map_zero]
 
@@ -813,6 +1007,18 @@ noncomputable def frobeniusCoordinateMap : carrierAlgebra ⟶ carrierAlgebra :=
   CommHopfAlgCat.liftQuotient (CommHopfAlgCat.commonKernelHopfIdeal generator)
     ambientFrobeniusCoordinateMap
     commonKernelHopfIdeal_toIdeal_le_ker_ambientFrobeniusCoordinateMap
+
+private theorem map_carrierGenericMatrix_frobeniusCoordinateMap :
+    carrierGenericMatrix.map frobeniusCoordinateMap.hom.toAlgHom =
+      carrierGenericMatrix.map (fun x => x ^ 3) := by
+  -- As for the special-isogeny coordinate map above, expand only the named universal matrix so
+  -- the quotient-factorization composition is visible to its explicit rewrite lemma.
+  change ((TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map
+      carrierQuotient.hom.toAlgHom).map frobeniusCoordinateMap.hom.toAlgHom =
+    carrierGenericMatrix.map (fun x => x ^ 3)
+  rw [← map_genericMatrix_comp, frobeniusCoordinateMap,
+    CommHopfAlgCat.mkQuotient_comp_liftQuotient,
+    map_genericMatrix_ambientFrobeniusCoordinateMap]
 
 private theorem carrierQuotient_comp_specialIsogenyCoordinateMap :
     carrierQuotient ≫ specialIsogenyCoordinateMap = ambientCoordinateMap := by
@@ -840,6 +1046,118 @@ noncomputable def frobeniusHom : groupScheme ⟶ groupScheme :=
     CommHopfAlgCat.commonKernelSpecRestrict ambientFrobeniusCoordinateMap
       commonKernelHopfIdeal_toIdeal_le_ker_ambientFrobeniusCoordinateMap ≫
     eqToHom groupScheme_eq_commonKernelSpec.symm
+
+/-- The comorphism of the carrier Frobenius is `frobeniusCoordinateMap`. -/
+theorem frobeniusHom_eq_map_frobeniusCoordinateMap :
+    frobeniusHom =
+      eqToHom groupScheme_eq_commonKernelSpec ≫
+        (hopfSpec (CommRingCat.of (ZMod 3))).map frobeniusCoordinateMap.op ≫
+          eqToHom groupScheme_eq_commonKernelSpec.symm := by
+  rw [frobeniusHom, CommHopfAlgCat.commonKernelSpecRestrict_def]
+  rfl
+
+private theorem carrierAlgebraPointsMulEquiv_map_frobeniusCoordinateMap
+    {B : Type} [CommRing B] [Algebra (ZMod 3) B]
+    (q : HopfAlgebra.points (R := ZMod 3) (H := carrierAlgebra)
+      (CommAlgCat.of (ZMod 3) B)) :
+    carrierAlgebraPointsMulEquiv (CommAlgCat.of (ZMod 3) B)
+        (AlgHom.mapDomain frobeniusCoordinateMap.hom q) =
+      frobenius 1 B (carrierAlgebraPointsMulEquiv (CommAlgCat.of (ZMod 3) B) q) := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_carrierAlgebraPointsMulEquiv_eq_map_carrierGenericMatrix]
+  ext i j
+  rw [coe_frobenius_apply,
+    coe_carrierAlgebraPointsMulEquiv_eq_map_carrierGenericMatrix, Matrix.map_apply]
+  have h := congrArg (fun M : Matrix (Fin 7) (Fin 7) carrierAlgebra => M.map q.ofConv)
+    map_carrierGenericMatrix_frobeniusCoordinateMap
+  have hmap :
+      (((AlgHom.mapDomain frobeniusCoordinateMap.hom q).ofConv :
+          carrierAlgebra →ₐ[ZMod 3] B) : carrierAlgebra → B) =
+        q.ofConv ∘ frobeniusCoordinateMap.hom := by
+    funext x
+    rfl
+  have hij := congrFun (congrFun h i) j
+  rw [hmap]
+  simpa only [Matrix.map_map, Matrix.map_apply, Function.comp_apply, BialgHom.coe_toAlgHom,
+    map_pow, pow_one] using hij
+
+/-- The action induced by `frobeniusHom` on scheme-valued carrier points is the named cubic
+Frobenius. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_frobeniusHom
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶ groupScheme.X) :
+    schemePointsMulEquiv B (p ≫ frobeniusHom.hom.hom) =
+      frobenius 1 B (schemePointsMulEquiv B p) := by
+  obtain ⟨q, rfl⟩ := (carrierGroupSchemePointMulEquiv B).surjective p
+  rw [frobeniusHom_eq_map_frobeniusCoordinateMap,
+    carrierGroupSchemePointMulEquiv_comp_coordinateMap,
+    schemePointsMulEquiv_carrierGroupSchemePointMulEquiv,
+    schemePointsMulEquiv_carrierGroupSchemePointMulEquiv]
+  exact carrierAlgebraPointsMulEquiv_map_frobeniusCoordinateMap q
+
+/-- On scheme-valued points, composing a numbered root subgroup with the carrier special
+isogeny exchanges the root lengths and applies the prescribed parameter exponent. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_rootSubgroup_comp_specialIsogenyHom
+    (k : Fin 2 ⊕ Fin 2) (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
+      (AdditiveGroup.groupScheme (ZMod 3)).X) :
+    schemePointsMulEquiv B
+        ((p ≫ (rootSubgroup k).hom.hom) ≫ specialIsogenyHom.hom.hom) =
+      rootSubgroupPoints (specialIsogenyRootIndex k) B
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv B p) ^
+            specialIsogenyExponent k)) := by
+  rw [schemePointsMulEquiv_comp_specialIsogenyHom,
+    schemePointsMulEquiv_comp_rootSubgroup]
+  obtain ⟨t, ht⟩ : ∃ t : B, Multiplicative.ofAdd t =
+      AdditiveGroup.schemePointsMulEquiv B p :=
+    ⟨Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv B p), rfl⟩
+  rw [← ht, specialIsogeny_rootSubgroupPoints]
+  simp only [toAdd_ofAdd]
+
+/-- On scheme-valued points, composing the weight torus with the carrier special isogeny sends
+`(s₀, s₁)` to `(s₁, s₀³)`. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_weightTorus_comp_specialIsogenyHom
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
+      (SplitTorus.groupScheme (ZMod 3) (Fin 2)).X) :
+    schemePointsMulEquiv B
+        ((p ≫ weightTorus.hom.hom) ≫ specialIsogenyHom.hom.hom) =
+      weightTorusPoints B (specialIsogenyTorusMap (SplitTorus.schemePointsMulEquiv p)) := by
+  rw [schemePointsMulEquiv_comp_specialIsogenyHom,
+    schemePointsMulEquiv_comp_weightTorus, specialIsogeny_weightTorusPoints]
+
+/-- On scheme-valued points, composing a numbered root subgroup with carrier Frobenius cubes its
+parameter. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_rootSubgroup_comp_frobeniusHom
+    (k : Fin 2 ⊕ Fin 2) (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
+      (AdditiveGroup.groupScheme (ZMod 3)).X) :
+    schemePointsMulEquiv B ((p ≫ (rootSubgroup k).hom.hom) ≫ frobeniusHom.hom.hom) =
+      rootSubgroupPoints k B
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv B p) ^ 3)) := by
+  rw [schemePointsMulEquiv_comp_frobeniusHom,
+    schemePointsMulEquiv_comp_rootSubgroup, frobenius_rootSubgroupPoints]
+  norm_num
+
+/-- On scheme-valued points, composing the weight torus with carrier Frobenius cubes every torus
+coordinate. -/
+@[simp]
+theorem schemePointsMulEquiv_comp_weightTorus_comp_frobeniusHom
+    (B : Type) [CommRing B] [Algebra (ZMod 3) B]
+    (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
+      (SplitTorus.groupScheme (ZMod 3) (Fin 2)).X) :
+    schemePointsMulEquiv B ((p ≫ weightTorus.hom.hom) ≫ frobeniusHom.hom.hom) =
+      weightTorusPoints B (SplitTorus.schemePointsMulEquiv p ^ 3) := by
+  rw [schemePointsMulEquiv_comp_frobeniusHom,
+    schemePointsMulEquiv_comp_weightTorus, frobenius_weightTorusPoints]
+  norm_num
 
 /-- The special isogeny squared is the cubic Frobenius as a carrier morphism. -/
 theorem specialIsogenyHom_comp_self :
@@ -909,7 +1227,7 @@ theorem specialIsogeny_specialIsogeny (g : points A) :
   norm_num
 
 /-- The special isogeny squared is the cubic Frobenius on matrix-valued points. -/
-theorem specialIsogeny_comp_self :
+theorem specialIsogeny_comp_specialIsogeny :
     (specialIsogeny A).comp (specialIsogeny A) = frobenius 1 A :=
   MonoidHom.ext fun g => specialIsogeny_specialIsogeny g
 
