@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.SkewAdjoint
-public import TauCeti.Algebra.Lie.Derivation
+public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.Octonion.Basic
 
 /-!
@@ -75,7 +75,7 @@ between multiples of `⟨1, 0, 0, 0⟩` and of `1` — are isolated in a private
 statement here is about entries of a vector matrix.
 
 Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (Octonion R)` of
-`TauCeti/Algebra/Lie/Derivation.lean`, and are applied through the coercion
+`TauCeti/Algebra/Lie/Derivation/Basic.lean`, and are applied through the coercion
 `(D : Module.End R (Octonion R))`, which is the simp-normal form of their action there.
 
 ## References

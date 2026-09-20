@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Lie.NonUnitalNonAssocAlgebra
 public import Mathlib.RingTheory.Derivation.Lie
 
 /-!
-# The derivation Lie algebra of a non-associative algebra
+# Derivations of a non-associative algebra
 
 A **derivation** of an algebra `A` is a linear map `D` obeying the Leibniz rule
 `D (x * y) = D x * y + x * D y`.  Nothing in that rule asks the multiplication to be associative,

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Derivation
+public import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 -- Private: the dual numbers appear only in the construction below, never in a statement.
@@ -66,9 +66,9 @@ agree are closed under products and contain the scalars; this is
 ## Implementation notes
 
 `envelopingDerivation` is valued in the bundled derivation algebra
-`TauCeti.derivationLieAlgebra R (U L)` of `TauCeti/Algebra/Lie/Derivation.lean` rather than in the
-bare `U L →ₗ[R] U L`: that is the noncommutative derivation API this construction is meant to be
-read in (Mathlib's `Derivation` needs a commutative algebra, and `LieDerivation` needs a Lie
+`TauCeti.derivationLieAlgebra R (U L)` of `TauCeti/Algebra/Lie/Derivation/Basic.lean` rather than
+in the bare `U L →ₗ[R] U L`: that is the noncommutative derivation API this construction is meant
+to be read in (Mathlib's `Derivation` needs a commutative algebra, and `LieDerivation` needs a Lie
 bracket, so neither applies to `U(L)`).  The bundling is also what lets `D ↦ Dᵁ` be a `LieHom`,
 since the target is a Lie algebra on the nose.
 
