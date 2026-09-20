@@ -176,6 +176,7 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
 
 /-- Away from residue characteristic two, a unit of `𝒪[K]` is a square in `K` exactly when its
 residue is a square in `𝓀[K]`. -/
+@[simp]
 theorem isSquare_unitsMap_subtype_iff (h2 : IsUnit (2 : 𝒪[K])) (u : 𝒪[K]ˣ) :
     IsSquare (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) ↔
       IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) := by
