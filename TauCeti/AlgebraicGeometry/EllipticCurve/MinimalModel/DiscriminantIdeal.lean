@@ -133,14 +133,6 @@ theorem localMinimalDiscriminantValuation_le_count_span_Δ (v : HeightOneSpectru
     valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_le_exp, neg_le_neg_iff, Nat.cast_le] at hle
   exact hle
 
-omit [IsDedekindDomain O] [IsFractionRing O K] in
-/-- A power of a height-one prime is the unit ideal only in the trivial case. -/
-private theorem pow_asIdeal_eq_one_iff (v : HeightOneSpectrum O) (n : ℕ) :
-    v.asIdeal ^ n = 1 ↔ n = 0 := by
-  refine ⟨fun hn => by_contra fun hn0 => ?_, fun hn => by rw [hn, pow_zero]⟩
-  rw [Ideal.one_eq_top] at hn
-  exact v.isPrime.ne_top (top_le_iff.mp (hn ▸ Ideal.pow_le_self hn0))
-
 omit [IsFractionRing O K] in
 /-- A family of prime powers bounded by the factorisation of a nonzero ideal has finite support. -/
 private theorem hasFiniteMulSupport_pow_asIdeal {I : Ideal O} (hI : I ≠ 0)
@@ -149,7 +141,7 @@ private theorem hasFiniteMulSupport_pow_asIdeal {I : Ideal O} (hI : I ≠ 0)
     Function.HasFiniteMulSupport fun v : HeightOneSpectrum O => v.asIdeal ^ e v := by
   refine (Ideal.hasFiniteMulSupport hI).subset fun v hv => ?_
   simp only [Function.mem_mulSupport, ne_eq, IsDedekindDomain.HeightOneSpectrum.maxPowDividing,
-    pow_asIdeal_eq_one_iff] at hv ⊢
+    Ideal.one_eq_top, Ideal.pow_eq_top_iff, v.isPrime.ne_top, false_or] at hv ⊢
   exact fun hcount => hv (Nat.le_zero.1 (hcount ▸ he v))
 
 variable (O)
@@ -161,11 +153,6 @@ divide no discriminant. -/
 noncomputable def minimalDiscriminantIdeal (W : WeierstrassCurve K) [W.IsElliptic] : Ideal O :=
   ∏ᶠ v : HeightOneSpectrum O,
     v.asIdeal ^ W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal)
-
-/-- The defining product of `minimalDiscriminantIdeal`. -/
-theorem minimalDiscriminantIdeal_def (W : WeierstrassCurve K) [W.IsElliptic] :
-    minimalDiscriminantIdeal O W = ∏ᶠ v : HeightOneSpectrum O,
-      v.asIdeal ^ W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := (rfl)
 
 /-- **The minimal discriminant ideal is invariant under a change of variables**, so it is an
 invariant of the curve and not of the equation presenting it. -/
@@ -210,7 +197,7 @@ theorem count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation
     rw [Filter.eventually_cofinite]
     refine (hasFiniteMulSupport_pow_localMinimalDiscriminantValuation O W).subset fun w hw => ?_
     simp only [Set.mem_ofPred_eq, Nat.cast_eq_zero, Function.mem_mulSupport, ne_eq,
-      pow_asIdeal_eq_one_iff] at hw ⊢
+      Ideal.one_eq_top, Ideal.pow_eq_top_iff, w.isPrime.ne_top, false_or] at hw ⊢
     exact hw
   rw [← Nat.cast_inj (R := ℤ),
     ← FractionalIdeal.count_coe K v (minimalDiscriminantIdeal_ne_bot O W),
