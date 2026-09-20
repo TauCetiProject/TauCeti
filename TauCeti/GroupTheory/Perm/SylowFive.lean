@@ -58,18 +58,15 @@ variable {α : Type*}
 
 local instance sylowFiveFactPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
 
-/-- The symmetric group on a type with five elements has order `120`. -/
-theorem natCard_perm_eq_120 [Finite α] (hα : Nat.card α = 5) : Nat.card (Perm α) = 120 := by
-  rw [Nat.card_perm, hα]
-  rfl
-
 /-- The symmetric group on five points has exactly six Sylow `5`-subgroups. -/
 theorem card_sylow_five_perm (hα : Nat.card α = 5) :
     Nat.card (Sylow 5 (Perm α)) = 6 := by
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
   have := Fintype.ofFinite α
-  have h120 := natCard_perm_eq_120 hα
+  have h120 : Nat.card (Perm α) = 120 := by
+    rw [Nat.card_perm, hα]
+    rfl
   obtain ⟨P⟩ : Nonempty (Sylow 5 (Perm α)) := inferInstance
   have hP : Nat.card P = 5 :=
     P.card_eq_of_dvd_of_not_sq_dvd (by rw [h120]; norm_num) (by rw [h120]; norm_num)
@@ -98,8 +95,11 @@ theorem card_sylow_five_perm (hα : Nat.card α = 5) :
 theorem card_normalizer_sylow_five_perm (hα : Nat.card α = 5) (P : Sylow 5 (Perm α)) :
     Nat.card (normalizer (P : Set (Perm α))) = 20 := by
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
+  have h120 : Nat.card (Perm α) = 120 := by
+    rw [Nat.card_perm, hα]
+    rfl
   have h := (normalizer (P : Set (Perm α))).index_mul_card
-  rw [← P.card_eq_index_normalizer, card_sylow_five_perm hα, natCard_perm_eq_120 hα] at h
+  rw [← P.card_eq_index_normalizer, card_sylow_five_perm hα, h120] at h
   omega
 
 /-- A subgroup of the symmetric group on five points has one or six Sylow `5`-subgroups. -/
@@ -108,7 +108,10 @@ theorem card_sylow_five_eq_one_or_six (hα : Nat.card α = 5)
     Nat.card (Sylow 5 G) = 1 ∨ Nat.card (Sylow 5 G) = 6 := by
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   by_cases h5 : 5 ∣ Nat.card G
-  · have hG : Nat.card G ∣ 120 := natCard_perm_eq_120 hα ▸ G.card_subgroup_dvd_card
+  · have h120 : Nat.card (Perm α) = 120 := by
+      rw [Nat.card_perm, hα]
+      rfl
+    have hG : Nat.card G ∣ 120 := h120 ▸ G.card_subgroup_dvd_card
     obtain ⟨Q⟩ : Nonempty (Sylow 5 G) := inferInstance
     have hQ : Nat.card Q = 5 := Q.card_eq_of_dvd_of_not_sq_dvd h5 fun h => by
       have := h.trans hG
@@ -139,7 +142,9 @@ theorem exists_sylow_le_le_normalizer_of_card_sylow_five_eq_one (hα : Nat.card 
     (G : Subgroup (Perm α)) (h5 : 5 ∣ Nat.card G) (h1 : Nat.card (Sylow 5 G) = 1) :
     ∃ P : Sylow 5 (Perm α), (P : Subgroup (Perm α)) ≤ G ∧ G ≤ normalizer (P : Set (Perm α)) := by
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
-  have h120 := natCard_perm_eq_120 hα
+  have h120 : Nat.card (Perm α) = 120 := by
+    rw [Nat.card_perm, hα]
+    rfl
   have hG : Nat.card G ∣ 120 := h120 ▸ G.card_subgroup_dvd_card
   obtain ⟨Q⟩ : Nonempty (Sylow 5 G) := inferInstance
   have hQ : Nat.card Q = 5 := Q.card_eq_of_dvd_of_not_sq_dvd h5 fun h => by
@@ -170,7 +175,9 @@ theorem eq_alternatingGroup_or_eq_top_of_thirty_dvd_natCard (hα : Nat.card α =
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
   let _ : Fintype α := Fintype.ofFinite α
-  have h120 := natCard_perm_eq_120 hα
+  have h120 : Nat.card (Perm α) = 120 := by
+    rw [Nat.card_perm, hα]
+    rfl
   have hGi := G.index_mul_card
   rw [h120] at hGi
   obtain ⟨k, hk⟩ := h30
@@ -220,7 +227,10 @@ theorem natCard_mem_of_five_dvd_natCard (hα : Nat.card α = 5)
   let _ : Finite α := Nat.finite_of_card_ne_zero (by omega)
   classical
   let _ : Fintype α := Fintype.ofFinite α
-  have hG : Nat.card G ∣ 120 := natCard_perm_eq_120 hα ▸ G.card_subgroup_dvd_card
+  have h120 : Nat.card (Perm α) = 120 := by
+    rw [Nat.card_perm, hα]
+    rfl
+  have hG : Nat.card G ∣ 120 := h120 ▸ G.card_subgroup_dvd_card
   rcases exists_sylow_le_le_normalizer_or_alternatingGroup_le hα G h5 with ⟨P, -, hle⟩ | hA
   · have h20 := card_dvd_of_le hle
     rw [card_normalizer_sylow_five_perm hα] at h20

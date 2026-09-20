@@ -380,8 +380,11 @@ theorem exists_sylow_eq_referenceSubgroup_five_zero :
       (P : Subgroup (Perm (Fin 5))) = referenceSubgroup 5 ⟨0, by simp⟩ := by
   have hC := natCard_referenceSubgroup_five_zero
   have hCi : (referenceSubgroup 5 ⟨0, by simp⟩).index = 24 := by
+    have h120 : Nat.card (Perm (Fin 5)) = 120 := by
+      rw [Nat.card_perm, Nat.card_fin]
+      rfl
     have h := (referenceSubgroup 5 ⟨0, by simp⟩).index_mul_card
-    rw [hC, natCard_perm_eq_120 (by simp)] at h
+    rw [hC, h120] at h
     omega
   exact ⟨(IsPGroup.of_card (n := 1) (hC.trans (pow_one 5).symm)).toSylow (hCi ▸ by decide), rfl⟩
 
@@ -512,7 +515,8 @@ theorem natCard_referenceSubgroup_five_three :
 /-- The reference subgroup of `5T5` has order `120`. -/
 theorem natCard_referenceSubgroup_five_four :
     Nat.card (referenceSubgroup 5 ⟨4, by simp⟩) = 120 := by
-  rw [referenceSubgroup_five_four, Subgroup.card_top, natCard_perm_eq_120 (by simp)]
+  rw [referenceSubgroup_five_four, Subgroup.card_top, Nat.card_perm, Nat.card_fin]
+  norm_num [Nat.factorial]
 
 /-- A subgroup of the symmetric group on five points carries at most one label. -/
 theorem TransitiveGroupLabel.eq_of_five {j k : TransitiveGroupIndex 5}
@@ -549,11 +553,14 @@ private theorem exists_transitiveGroupLabel_five_of_le_of_le {H : Subgroup (Perm
   · -- `H` has index two in `5T3`, so it contains the square `swap 0 3 * swap 1 2` of the
     -- generator `i ↦ 2 i + 1`; with the rotation, this generates `5T2`.
     have hindex : (H.subgroupOf (referenceSubgroup 5 ⟨2, by simp⟩)).index = 2 := by
+      have h120 : Nat.card (Perm (Fin 5)) = 120 := by
+        rw [Nat.card_perm, Nat.card_fin]
+        rfl
       have h := Subgroup.relIndex_mul_index hF
       have hHi := H.index_mul_card
       have hFi := (referenceSubgroup 5 ⟨2, by simp⟩).index_mul_card
-      rw [natCard_referenceSubgroup_five_two, natCard_perm_eq_120 (by simp)] at hFi
-      rw [hH, natCard_perm_eq_120 (by simp)] at hHi
+      rw [natCard_referenceSubgroup_five_two, h120] at hFi
+      rw [hH, h120] at hHi
       rw [Subgroup.relIndex] at h
       -- `h` is a product of two indices, so the numerical values of both have to be substituted
       -- before the remaining equation is linear.
@@ -613,8 +620,11 @@ theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
     [IsPretransitive G (Fin 5)] : ∃ j, TransitiveGroupLabel j G := by
   have hmem := natCard_mem_of_natCard_eq_five_of_isPretransitive (by simp) G
   simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
+  have h120 : Nat.card (Perm (Fin 5)) = 120 := by
+    rw [Nat.card_perm, Nat.card_fin]
+    rfl
   have hmul := G.index_mul_card
-  rw [natCard_perm_eq_120 (by simp)] at hmul
+  rw [h120] at hmul
   rcases hmem with h | h | h | h | h
   · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
   · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
