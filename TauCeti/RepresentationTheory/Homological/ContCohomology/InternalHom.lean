@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.Algebra.GroupWithZero.Action.Hom
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Discrete
+public import TauCeti.Topology.Algebra.GroupAction.Discrete
 
 /-!
 # The internal hom of two discrete modules over a profinite group
@@ -20,7 +20,7 @@ Let a group `G` act on two additive monoids `M` and `N`. The additive homomorphi
 which is the action for which evaluation `(φ, m) ↦ φ m` is equivariant, in the form
 `homAction g φ (g • m) = g • φ m`. This file constructs that action and proves that it is again a
 continuous action on a discrete module when `M` is finite discrete and `N` is discrete: the set of
-group elements fixing a given `φ` is open, and over a profinite `G` it contains an open normal
+group elements fixing a given `φ` is open, and over a compact `G` it contains an open normal
 subgroup.
 
 This implements the internal-hom half of the "Constructions" milestone of Layer 0 of the
@@ -450,17 +450,16 @@ end Action
 
 end InternalHom
 
-section Profinite
+section Compact
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [TotallyDisconnectedSpace G]
   {M : Type*} [AddMonoid M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
   [ContinuousSMul G M] [Finite M]
   {N : Type*} [AddMonoid N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
   [ContinuousSMul G N]
 
-/-- Over a profinite group, a homomorphism from a finite discrete module to a discrete module is
-fixed by an open normal subgroup. This is the form used by the finite-quotient system for
+/-- Over a compact topological group, a homomorphism from a finite discrete module to a discrete
+module is fixed by an open normal subgroup. This is the form used by the finite-quotient system for
 continuous cohomology. It is `exists_openNormalSubgroup_smul_eq_self` for the discrete `G`-module
 `InternalHom G M N`, read back on `M →+ N`. -/
 theorem exists_openNormalSubgroup_homAction_eq_self (φ : M →+ N) :
@@ -468,6 +467,6 @@ theorem exists_openNormalSubgroup_homAction_eq_self (φ : M →+ N) :
   obtain ⟨U, hU⟩ := exists_openNormalSubgroup_smul_eq_self (G := G) (InternalHom.of G φ)
   exact ⟨U, fun u hu => homAction_eq_self_iff.mpr (InternalHom.smul_eq_self_iff.mp (hU u hu))⟩
 
-end Profinite
+end Compact
 
 end TauCeti

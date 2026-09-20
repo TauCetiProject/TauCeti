@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Discrete
+import TauCeti.Topology.Algebra.GroupAction.Discrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 
