@@ -83,7 +83,7 @@ product vanishes. -/
 -- the left-hand side apart into the summed coordinate pairings before this could fire.
 theorem coordinatePower_zmodStandard_pairing_eq_zero_iff (x y : ι → ZMod m) :
     ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).pairing x y = 0 ↔ x ⬝ᵥ y = 0 := by
-  rw [coordinatePower_zmodStandard_pairing, ZMod.toRatAddCircle_eq_zero_iff]
+  rw [coordinatePower_zmodStandard_pairing, ZMod.toRatAddCircle_eq_zero]
 
 /-- The orthogonal complement of an additive code over `ℤ/m` consists of the words with zero dot
 product against every codeword. -/

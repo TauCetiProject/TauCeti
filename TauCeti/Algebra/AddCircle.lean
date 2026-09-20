@@ -60,8 +60,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / n` as a distinguished generator.
 * `AddCircle.isAddTorsion_rat`: a rational circle is a torsion group, so its torsion subgroups
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
-* `ZMod.toRatAddCircle` and `ZMod.toRatAddCircle_range`: the injection of `ℤ/n` onto the
-  `n`-torsion of `ℚ/ℤ`, sending the class of an integer `k` to the class of `k / n`.
+* `ZMod.toRatAddCircle` and `ZMod.toRatAddCircle_range`: the homomorphism from `ℤ/n` to `ℚ/ℤ`
+  sending the class of an integer `k` to the class of `k / n`; for nonzero `n`, it is an
+  injection onto the `n`-torsion.
 
 ## References
 
@@ -340,8 +341,8 @@ namespace ZMod
 
 variable (n : ℕ)
 
-/-- The injection of `ℤ/n` into `ℚ/ℤ` sending the class of an integer `k` to the class of
-`k / n`.  For `n = 0` it is the zero map.
+/-- The homomorphism from `ℤ/n` to `ℚ/ℤ` sending the class of an integer `k` to the class of
+`k / n`. For nonzero `n`, it is an injection onto the `n`-torsion; for `n = 0`, it is the zero map.
 
 Mathlib's `ZMod.toAddCircle` is this map into the real circle `ℝ/ℤ`.  Discriminant forms and
 character modules take rational values, so the rational circle is the target used here. -/
@@ -373,7 +374,7 @@ theorem toRatAddCircle_apply [NeZero n] (x : ZMod n) :
 
 /-- Only the zero residue has integral image in `ℚ/ℤ`. -/
 @[simp]
-theorem toRatAddCircle_eq_zero_iff [NeZero n] {x : ZMod n} : toRatAddCircle n x = 0 ↔ x = 0 := by
+theorem toRatAddCircle_eq_zero [NeZero n] {x : ZMod n} : toRatAddCircle n x = 0 ↔ x = 0 := by
   obtain ⟨k, rfl⟩ := ZMod.intCast_surjective x
   rw [toRatAddCircle_intCast,
     AddCircle.coe_intCast_div_natCast_eq_zero_iff (NeZero.ne n) k,
@@ -382,7 +383,7 @@ theorem toRatAddCircle_eq_zero_iff [NeZero n] {x : ZMod n} : toRatAddCircle n x 
 /-- For a nonzero modulus the rational-circle character of `ℤ/n` is injective. -/
 theorem toRatAddCircle_injective [NeZero n] : Function.Injective (toRatAddCircle n) :=
   (injective_iff_map_eq_zero (toRatAddCircle n)).mpr fun _ h ↦
-    (toRatAddCircle_eq_zero_iff n).mp h
+    (toRatAddCircle_eq_zero n).mp h
 
 /-- For a nonzero modulus, the image of the rational-circle character of `ℤ/n` is exactly the
 `n`-torsion of `ℚ/ℤ`. -/

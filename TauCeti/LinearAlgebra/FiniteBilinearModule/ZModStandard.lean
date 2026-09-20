@@ -99,7 +99,7 @@ theorem zmodStandard_pairing_val (x y : ZMod m) :
 @[simp]
 theorem zmodStandard_pairing_eq_zero_iff (x y : ZMod m) :
     (zmodStandard m).pairing x y = 0 ↔ x * y = 0 := by
-  rw [zmodStandard_pairing, ZMod.toRatAddCircle_eq_zero_iff]
+  rw [zmodStandard_pairing, ZMod.toRatAddCircle_eq_zero]
 
 /-- The standard pairing on `ℤ/m` is nondegenerate: pairing with the generator `1` recovers the
 residue. -/
