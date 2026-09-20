@@ -87,12 +87,18 @@ theorem isIdempotentElem_projection : IsIdempotentElem (projection P W) :=
 theorem projection_apply_of_mem {x : Vℚ} (hx : x ∈ W.WQ) : projection P W x = x :=
   Submodule.projection_apply_of_mem_left _ hx
 
-/-- The Hodge projector annihilates the orthogonal complement it projects along. -/
--- Not a `simp` lemma: `orthogonal_WQ` unfolds the hypothesis to the underlying orthogonality of
--- the polarizing form, so `simp` could never match it in this form.
-theorem projection_apply_of_mem_orthogonal {x : Vℚ} (hx : x ∈ (orthogonal P W).WQ) :
+/-- The Hodge projector annihilates the orthogonal complement it projects along: it kills every
+vector orthogonal to the substructure for the polarizing form. The premise is spelled out because
+it is the simp-normal form of `x ∈ (orthogonal P W).WQ`, which `orthogonal_WQ` and
+`LinearMap.BilinForm.mem_orthogonal_iff` — both `@[simp]` — rewrite to exactly this orthogonality
+statement; stated with the bundled membership instead, the `simp` lemma could never fire. -/
+@[simp]
+theorem projection_apply_of_mem_orthogonal {x : Vℚ}
+    (hx : ∀ y ∈ W.WQ, integralFormBaseChange hℚ P.Qint y x = 0) :
     projection P W x = 0 :=
-  Submodule.projection_apply_of_mem_right _ hx
+  Submodule.projection_apply_of_mem_right _ <| by
+    rw [orthogonal_WQ, LinearMap.BilinForm.mem_orthogonal_iff]
+    exact hx
 
 /-- **The Hodge projector is a morphism of pure Hodge structures.** Its complexification is an
 idempotent whose range is the complexified substructure and whose kernel is the complexified
