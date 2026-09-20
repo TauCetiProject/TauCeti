@@ -74,8 +74,6 @@ namespace IsStrictlyUnital
 variable {f : AInfinityHom AA BB} {eA : A} {eB : B}
   {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB}
 
-attribute [simp] map_unit
-
 /-- A higher component of a strictly unital morphism vanishes when a specified input is the
 source unit. -/
 theorem component_eq_zero_of_eq_unit (hf : f.IsStrictlyUnital hA hB) {n : ℕ} (hn : n ≠ 1)
