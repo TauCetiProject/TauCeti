@@ -78,7 +78,7 @@ private theorem mackey_hom_apply_inclusion {V : FDRep k N}
 /-- **Off-inertia Mackey terms vanish.** If `A` and `B` are irreducible representations of the
 inertia group of `V`, both lying over `V`, then an intertwiner from the relevant restriction of
 `A` to the Mackey conjugate of `B` is zero whenever the representative is outside `inertia V`. -/
-theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [Finite G] [IsAlgClosed k] [CharZero k]
+theorem subsingleton_hom_res_mackeyToH_of_not_mem_inertia [Finite G] [CharZero k]
     (V : FDRep k N) [Simple V] (A B : FDRep k (inertia V)) [Simple A] [Simple B]
     (hA : A.LiesOver (Subgroup.inclusion (le_inertia V)) V)
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V)
