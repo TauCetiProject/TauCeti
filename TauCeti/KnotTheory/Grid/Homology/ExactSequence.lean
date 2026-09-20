@@ -111,7 +111,7 @@ theorem X_smul_restrictScalars_gridChainHat_eq_zero
     (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
       (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
     (MvPolynomial.X i : MvPolynomial (Fin n) R) • y = 0 := by
-  rw [smul_restrictScalars_gridChainHat, simplyBlockedRingHom_X_self, zero_smul]
+  rw [smul_restrictScalars_gridChainHat, simplyBlockedRingHom_X_eq_zero, zero_smul]
 
 /-- The blocked variable annihilates the specialization map. -/
 @[simp]

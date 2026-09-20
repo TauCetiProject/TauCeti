@@ -95,7 +95,7 @@ theorem simplyBlockedRingHom_apply {n : ℕ} (R : Type*) [CommSemiring R] (i : F
 
 Not `@[simp]`: `simplyBlockedRingHom` is an abbreviation, so `simp` first unfolds this left-hand
 side to the corresponding `MvPolynomial.killCompl` expression. -/
-theorem simplyBlockedRingHom_X_self {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
+theorem simplyBlockedRingHom_X_eq_zero {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
     simplyBlockedRingHom R i (MvPolynomial.X i) = 0 := by
   rw [simplyBlockedRingHom_apply]
   rw [MvPolynomial.X]
