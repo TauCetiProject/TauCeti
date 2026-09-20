@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Prod
 public import TauCeti.Algebra.Algebra.Prod
 public import Mathlib.Data.Set.Card
 public import Mathlib.RingTheory.Idempotents
