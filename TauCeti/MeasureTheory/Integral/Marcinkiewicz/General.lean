@@ -148,7 +148,6 @@ The bound is not an equality: where `f` is infinite the left-hand side sees noth
 finite height `c * t` reaches it, while the right-hand side is infinite as soon as
 `0 < q + (s + 1)`. -/
 private theorem lintegral_mul_setLIntegral_le_le_of_measurable [SFinite μ] (hf : Measurable f)
-    (hq : 0 ≤ q)
     (hs : s < -1) (hc : 0 < c) :
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
         ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ ≤
@@ -158,10 +157,12 @@ private theorem lintegral_mul_setLIntegral_le_le_of_measurable [SFinite μ] (hf 
   have hmul : ∀ z : ℝ≥0∞, z ^ (s + 1) * z ^ q ≤ z ^ (q + (s + 1)) := by
     intro z
     rcases eq_or_ne z 0 with rfl | hz0
-    · rcases hq.eq_or_lt with rfl | hq'
-      · simp
-      · rw [ENNReal.zero_rpow_of_pos hq', mul_zero]
+    · by_cases hq : 0 < q
+      · rw [ENNReal.zero_rpow_of_pos hq, mul_zero]
         exact zero_le
+      · have hsum : q + (s + 1) < 0 := by linarith
+        rw [ENNReal.zero_rpow_of_neg hsum]
+        exact le_top
     rcases eq_or_ne z ∞ with rfl | hztop
     · rw [ENNReal.top_rpow_of_neg hs1, zero_mul]
       exact zero_le
@@ -185,8 +186,8 @@ against it is at most a multiple of `∫⁻ f ^ (q + (s + 1))`.
 The bound is not an equality: where `f` is infinite the left-hand side sees nothing, because no
 finite height `c * t` reaches it, while the right-hand side is infinite as soon as
 `0 < q + (s + 1)`. -/
-theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : AEMeasurable f μ) (hq : 0 ≤ q)
-    (hs : s < -1) (hc : 0 < c) :
+theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : AEMeasurable f μ) (hs : s < -1)
+    (hc : 0 < c) :
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
         ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ ≤
       ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) *
@@ -210,7 +211,7 @@ theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : AEMeasurable f μ) (
       exact lintegral_congr fun t => congrArg (ENNReal.ofReal (t ^ s) * ·) (hinner t)
     _ ≤ ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) *
         ∫⁻ x, g x ^ (q + (s + 1)) ∂μ :=
-      lintegral_mul_setLIntegral_le_le_of_measurable hf.measurable_mk hq hs hc
+      lintegral_mul_setLIntegral_le_le_of_measurable hf.measurable_mk hs hc
     _ = ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) *
         ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
       exact congrArg (ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) * ·)
@@ -229,7 +230,6 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
       (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * A₀ +
         ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * A₁) * ∫⁻ x, f x ^ p ∂μ := by
   have hp : (0 : ℝ) < p := hp₀.trans hlt₀
-  have hp₁ : (0 : ℝ) < p₁ := hp.trans hlt₁
   have hR₀ : MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1) < f z.2} :=
     measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd)
   have hR₁ : MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1)} :=
@@ -285,7 +285,7 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
       ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ ≤
       ENNReal.ofReal (c ^ (p₁ - p) / (p₁ - p)) * ∫⁻ x, f x ^ p ∂μ := by
     have hmain := lintegral_mul_setLIntegral_le_le (μ := μ) (f := f) (q := p₁)
-      (s := p - p₁ - 1) (c := c) hf.aemeasurable hp₁.le (by linarith) hc
+      (s := p - p₁ - 1) (c := c) hf.aemeasurable (by linarith) hc
     have hnorm : -(p - p₁ - 1 + 1) = p₁ - p := by ring
     have hexp : p₁ + (p - p₁ - 1 + 1) = p := by ring
     simpa only [hnorm, hexp] using hmain
