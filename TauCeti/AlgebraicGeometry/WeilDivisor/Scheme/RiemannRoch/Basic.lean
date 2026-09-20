@@ -10,54 +10,50 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 
 /-!
-# The Riemann–Roch theorem for divisors on a proper curve
+# The Riemann–Roch theorem for a proper curve
 
-For a proper integral curve `X` over a field `k` with a `k`-rational point, whose
-codimension-one local rings are discrete valuation rings, and with `H¹(X, 𝒪_X)` of finite
-dimension over `k`, this file proves
+Let `X` be a proper integral curve over a field `k` whose codimension-one local rings are
+discrete valuation rings, with a `k`-rational point and with `H¹(X, 𝒪_X)` finite-dimensional.
+For every Weil divisor `D` on `X`,
 
-`χ(𝒪_X(D)) = deg D + 1 - g`,
+`χ(𝒪_X(D)) = dim_k H⁰(X, 𝒪_X(D)) - dim_k H¹(X, 𝒪_X(D)) = deg D + 1 - g`,
 
-where `g = dim_k H¹(X, 𝒪_X)` is the genus, `deg D = Σ_y D(y) [κ(y) : k]` is the
-residue-degree-weighted degree of a Weil divisor, and
-`χ(M) = dim_k H⁰(X, M) - dim_k H¹(X, M)`.
+where `deg D = Σ_y D(y) [κ(y) : k]` is `SchemeWeilDivisor.relativeDegree (X ↘ Spec k)` and
+`g = dim_k H¹(X, 𝒪_X)` is the genus. This is the combination of `χ(𝒪_X(D)) = deg D + χ(𝒪_X)`
+with `χ(𝒪_X) = 1 - g`, the latter being where the rational point enters: it forces the global
+functions to be the constants.
 
-The two inputs are already available: `χ(𝒪_X(D)) = deg D + χ(𝒪_X)`, from the residue sequence of
-a divisor sheaf, and `χ(𝒪_X) = 1 - g`, from the fact that a `k`-rational point on a proper
-integral scheme forces the global functions to be the constants.
+Two consequences are recorded. The first is Riemann's inequality `deg D + 1 - g ≤ dim_k H⁰(𝒪_X(D))`,
+obtained by discarding `H¹`. The second is that a divisor of negative degree has no nonzero global
+sections, so that its `H¹` has dimension exactly `g - 1 - deg D`: a nonzero global section of
+`𝒪_X(D)` is a rational function `f` with `div f + D ≥ 0`, and the degree of that effective divisor
+is `deg D`, because degree is a linear-equivalence invariant.
 
-Dropping the nonnegative `dim_k H¹` gives **Riemann's inequality** `ℓ(D) ≥ deg D + 1 - g` for the
-Riemann–Roch space `ℓ(D) = dim_k Γ(X, 𝒪_X(D))`. Together with the dictionary between nonzero
-global sections of `𝒪_X(D)` and effective divisors in the class of `D`
-(`SchemeWeilDivisor.nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf`), it shows
-that a divisor of degree at least the genus is linearly equivalent to an effective divisor.
-
-The missing half of the classical statement is Serre duality, which identifies `dim_k H¹(L)` with
-`dim_k Γ(X, ω_X ⊗ L⁻¹)`; the dualizing sheaf is not constructed here.
-
-A Riemann–Roch theorem for the divisors of an abstract function field, proved by the
-valuation-theoretic route with the genus defined as `sup_D (deg D - ℓ(D)) + 1`, lives in
-`TauCeti/FieldTheory/FunctionField/RiemannRoch/`; it is a statement about a different object
-(`TauCeti.Divisor`, the free group on the places of a function field), and no comparison with the
-cohomological genus used here is available yet.
+The same description of global sections also identifies nonzero sections of `𝒪_X(D)` with
+effective divisors linearly equivalent to `D`. Consequently, a divisor of degree at least the genus
+is linearly equivalent to an effective divisor.
 
 ## Main declarations
 
 * `SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus` and
-  `SchemeWeilDivisor.finrank_cohomology_zero_sub_one_sheaf_eq_relativeDegree_add_one_sub_genus`:
-  Riemann–Roch for the sheaf of a Weil divisor on a proper curve;
-* `SchemeWeilDivisor.relativeDegree_add_one_sub_genus_le_finrank_globalSections_sheaf`:
+  `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf`: the
+  Riemann–Roch theorem, for the Euler characteristic and in terms of the two dimensions;
+* `InvertibleSheaf.eulerCharBelow_eq_relativeDegree_add_one_sub_genus`: Riemann–Roch for a line
+  bundle presented as `𝒪_X(D)`;
+* `SchemeWeilDivisor.relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf`:
   Riemann's inequality;
-* `SchemeWeilDivisor.nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf`: the
-  complete linear system `|D|` is nonempty exactly when `𝒪_X(D)` has a nonzero global section;
-* `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree`: a divisor of
-  degree at least the genus is linearly equivalent to an effective divisor.
+* `SchemeWeilDivisor.nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf` and
+  `SchemeWeilDivisor.nonempty_completeLinearSystem_of_genus_le_relativeDegree`: the link with
+  complete linear systems and its positive-degree consequence;
+* `SchemeWeilDivisor.sections_top_eq_bot_of_relativeDegree_neg`,
+  `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_eq_zero_of_relativeDegree_neg` and
+  `SchemeWeilDivisor.finrank_cohomology_one_sheaf_eq_of_relativeDegree_neg`: a divisor of
+  negative degree has no global sections, and the resulting value of `dim H¹`.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, IV, Theorem 1.3 (Riemann–Roch).
-* W. Fulton, *Algebraic Curves*, Chapter 8, Section 3 (Riemann's theorem and its consequences
-  for complete linear systems).
+* R. Hartshorne, *Algebraic Geometry*, Chapter IV, Theorem 1.3 and Corollary 1.3.2.
+* Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Chapter 7, Theorem 3.17.
 -/
 
 public section
@@ -140,20 +136,58 @@ section Curve
 variable {X : Scheme.{u}} [IsIntegral X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
-  (hX : ∀ y : X, coheight y ≤ 1)
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
-  {s : Spec (.of k) ⟶ X} (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k)))
+  (hX : ∀ y : X, coheight y ≤ 1) {s : Spec (.of k) ⟶ X}
+  (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k)))
 
-include hX hs
+include hX
 
-/-- **Riemann–Roch on a proper curve.** Let `X` be a proper integral curve over a field `k` whose
+/-- **A divisor of negative degree has no nonzero global sections.** On a proper integral curve
+over a field `k` whose codimension-one local rings are discrete valuation rings, with
+`H¹(X, 𝒪_X)` finite-dimensional, the Riemann–Roch space `Γ(X, 𝒪_X(D))` of a divisor of negative
+degree is zero. -/
+theorem sections_top_eq_bot_of_relativeDegree_neg {D : SchemeWeilDivisor X}
+    (hD : relativeDegree (X ↘ Spec (.of k)) D < 0) :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+    sections D ⊤ = ⊥ := by
+  let _ : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : CompactSpace X := (quasiCompact_iff_compactSpace (X ↘ Spec (.of k))).mp inferInstance
+  have : IsNoetherian X := {}
+  obtain ⟨x⟩ : Nonempty X := inferInstance
+  have : Nonempty (⊤ : X.Opens) := ⟨⟨x, trivial⟩⟩
+  refine (Submodule.eq_bot_iff _).mpr fun s hs ↦ ?_
+  by_contra hs0
+  have hc0 : Scheme.rationalFunctionsEquiv (⊤ : X.Opens) s ≠ 0 := fun h ↦
+    hs0 ((Scheme.rationalFunctionsEquiv (⊤ : X.Opens)).map_eq_zero_iff.mp h)
+  have hord := (mem_sections_iff.mp hs).resolve_left hc0
+  -- `div f + D` is effective, so it has nonnegative degree, while its degree is `deg D`.
+  obtain ⟨f, hordf⟩ : ∃ f : Additive X.functionFieldˣ, ∀ y : CodimensionOnePoint X,
+      orderAt y f = X.ord (Scheme.rationalFunctionsEquiv (⊤ : X.Opens) s) (y : X) :=
+    ⟨Additive.ofMul (Units.mk0 _ hc0), fun y ↦ by
+      rw [orderAt_apply, toMul_ofMul, Units.val_mk0]⟩
+  have heff : WeilDivisor.IsEffective
+      ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor f + D) :=
+    (WeilDivisor.isEffective_iff _).mpr fun y ↦ by
+      have hy := hord y trivial
+      rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
+        WeilDivisor.OrderSystem.ofScheme_ord, hordf y]
+      omega
+  have hnonneg := relativeDegree_nonneg (X ↘ Spec (.of k)) heff
+  rw [map_add, relativeDegree_principalDivisor k hX f, zero_add] at hnonneg
+  omega
+
+include hs
+
+/-- **The Riemann–Roch theorem.** On a proper integral curve over a field `k` whose
 codimension-one local rings are discrete valuation rings, with a `k`-rational point and with
-`H¹(X, 𝒪_X)` finite-dimensional over `k`. Then
+`H¹(X, 𝒪_X)` finite-dimensional, every Weil divisor `D` satisfies
 
-`χ(𝒪_X(D)) = Σ_y D(y) [κ(y) : k] + 1 - g`
+`χ(𝒪_X(D)) = deg D + 1 - g`,
 
-for every Weil divisor `D`, where `g = dim_k H¹(X, 𝒪_X)` is the genus and
-`χ(M) = dim_k H⁰(X, M) - dim_k H¹(X, M)`. -/
+where `χ(M) = dim H⁰(X, M) - dim H¹(X, M)`, `deg D = Σ_y D(y) [κ(y) : k]` and `g` is the
+genus. -/
 theorem eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus (D : SchemeWeilDivisor X) :
     letI : IsLocallyNoetherian X :=
       LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
@@ -165,35 +199,72 @@ theorem eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus (D : SchemeWeil
     eulerCharBelow_trivial_eq_one_sub_genus k hs]
   ring
 
-/-- **Riemann–Roch on a proper curve**, as an equality of dimensions:
-`ℓ(D) - dim H¹(X, 𝒪_X(D)) = deg D + 1 - g`, where `ℓ(D) = dim_k Γ(X, 𝒪_X(D))` is the dimension
-of the Riemann–Roch space. -/
-theorem finrank_cohomology_zero_sub_one_sheaf_eq_relativeDegree_add_one_sub_genus
-    (D : SchemeWeilDivisor X) :
+/-- **The Riemann–Roch theorem, in terms of the two cohomology dimensions.** On a proper integral
+curve over a field `k` whose codimension-one local rings are discrete valuation rings, with a
+`k`-rational point and with `H¹(X, 𝒪_X)` finite-dimensional,
+
+`dim_k H⁰(X, 𝒪_X(D)) - dim_k H¹(X, 𝒪_X(D)) = deg D + 1 - g`. -/
+theorem finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf (D : SchemeWeilDivisor X) :
     letI : IsLocallyNoetherian X :=
       LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-    (finrank k Γ(sheaf D, ⊤) : ℤ) -
+    (finrank k (Scheme.Modules.Cohomology (sheaf D) 0) : ℤ) -
         (finrank k (Scheme.Modules.Cohomology (sheaf D) 1) : ℤ) =
       relativeDegree (X ↘ Spec (.of k)) D + 1 - X.genus k := by
   let _ : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  rw [← Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections,
-    ← Scheme.Modules.eulerCharBelow_two,
+  rw [← Scheme.Modules.eulerCharBelow_two,
     eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus k hX hs D]
 
-/-- **Riemann's inequality.** On a proper curve as above, the Riemann–Roch space of `D` has
-dimension at least `deg D + 1 - g`: Riemann–Roch with the nonnegative term `dim H¹(X, 𝒪_X(D))`
-dropped. -/
-theorem relativeDegree_add_one_sub_genus_le_finrank_globalSections_sheaf
+/-- **Riemann's inequality.** On a proper integral curve over a field `k` whose codimension-one
+local rings are discrete valuation rings, with a `k`-rational point and with `H¹(X, 𝒪_X)`
+finite-dimensional, `dim_k H⁰(X, 𝒪_X(D)) ≥ deg D + 1 - g`. -/
+theorem relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf
     (D : SchemeWeilDivisor X) :
     letI : IsLocallyNoetherian X :=
       LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-    relativeDegree (X ↘ Spec (.of k)) D + 1 - X.genus k ≤ (finrank k Γ(sheaf D, ⊤) : ℤ) := by
+    relativeDegree (X ↘ Spec (.of k)) D + 1 - X.genus k ≤
+      (finrank k (Scheme.Modules.Cohomology (sheaf D) 0) : ℤ) := by
   let _ : IsLocallyNoetherian X :=
     LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have h := finrank_cohomology_zero_sub_one_sheaf_eq_relativeDegree_add_one_sub_genus k hX hs D
-  have h₁ : (0 : ℤ) ≤ (finrank k (Scheme.Modules.Cohomology (sheaf D) 1) : ℤ) :=
-    Int.natCast_nonneg _
+  have h := finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf k hX hs D
+  have := Int.natCast_nonneg (finrank k (Scheme.Modules.Cohomology (sheaf D) 1))
+  omega
+
+omit hs in
+/-- On a proper integral curve over a field `k` whose codimension-one local rings are discrete
+valuation rings, with `H¹(X, 𝒪_X)` finite-dimensional, `H⁰(X, 𝒪_X(D))` vanishes for a divisor
+`D` of negative degree. -/
+theorem finrank_cohomology_zero_sheaf_eq_zero_of_relativeDegree_neg {D : SchemeWeilDivisor X}
+    (hD : relativeDegree (X ↘ Spec (.of k)) D < 0) :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+    finrank k (Scheme.Modules.Cohomology (sheaf D) 0) = 0 := by
+  let _ : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have hbot := sections_top_eq_bot_of_relativeDegree_neg k hX hD
+  -- `Γ(X, 𝒪_X(D))` injects into `𝒦_X` with image `sections D ⊤`, so it too is zero.
+  have : Subsingleton Γ(sheaf D, ⊤) := by
+    refine ⟨fun a b ↦ sheafι_app_injective D ⊤ ?_⟩
+    have ha := sheafι_app_mem D ⊤ a
+    have hb := sheafι_app_mem D ⊤ b
+    rw [hbot, Submodule.mem_bot] at ha hb
+    rw [ha, hb]
+  rw [Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections,
+    Module.finrank_zero_of_subsingleton]
+
+/-- On a proper integral curve over a field `k` whose codimension-one local rings are discrete
+valuation rings, with a `k`-rational point and with `H¹(X, 𝒪_X)` finite-dimensional, a divisor of
+negative degree has `dim_k H¹(X, 𝒪_X(D)) = g - 1 - deg D`. -/
+theorem finrank_cohomology_one_sheaf_eq_of_relativeDegree_neg {D : SchemeWeilDivisor X}
+    (hD : relativeDegree (X ↘ Spec (.of k)) D < 0) :
+    letI : IsLocallyNoetherian X :=
+      LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+    (finrank k (Scheme.Modules.Cohomology (sheaf D) 1) : ℤ) =
+      X.genus k - 1 - relativeDegree (X ↘ Spec (.of k)) D := by
+  let _ : IsLocallyNoetherian X :=
+    LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have h := finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf k hX hs D
+  rw [finrank_cohomology_zero_sheaf_eq_zero_of_relativeDegree_neg k hX hD] at h
   omega
 
 end Curve
@@ -226,13 +297,35 @@ theorem nonempty_completeLinearSystem_of_genus_le_relativeDegree {D : SchemeWeil
       toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
   have := finiteDimensional_globalSections_sheaf k hX D
   rw [nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf,
-    ← Module.finrank_pos_iff_of_free (R := k)]
-  have h := relativeDegree_add_one_sub_genus_le_finrank_globalSections_sheaf k hX hs D
+    ← Module.finrank_pos_iff_of_free (R := k),
+    ← Scheme.Modules.finrank_cohomology_zero_eq_finrank_globalSections]
+  have h := relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf k hX hs D
   omega
 
 end CompleteLinearSystem
 
 end SchemeWeilDivisor
+
+namespace InvertibleSheaf
+
+variable {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+  (k : Type u) [Field k] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+
+/-- **The Riemann–Roch theorem for a line bundle.** On a proper integral curve over a field `k`
+whose codimension-one local rings are discrete valuation rings, with a `k`-rational point and with
+`H¹(X, 𝒪_X)` finite-dimensional, a line bundle `L ≅ 𝒪_X(D)` satisfies
+`χ(L) = deg D + 1 - g`. -/
+theorem eulerCharBelow_eq_relativeDegree_add_one_sub_genus (hX : ∀ y : X, coheight y ≤ 1)
+    {s : Spec (.of k) ⟶ X} (hs : s ≫ X ↘ Spec (.of k) = 𝟙 (Spec (.of k)))
+    {L : InvertibleSheaf X} {D : SchemeWeilDivisor X} (e : L.obj ≅ SchemeWeilDivisor.sheaf D) :
+    Scheme.Modules.eulerCharBelow k X L.obj 2 =
+      SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D + 1 - X.genus k := by
+  rw [Scheme.Modules.eulerCharBelow_congr k e,
+    SchemeWeilDivisor.eulerCharBelow_sheaf_eq_relativeDegree_add_one_sub_genus k hX hs D]
+
+end InvertibleSheaf
 
 end AlgebraicGeometry
 

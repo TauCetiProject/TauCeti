@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Covering
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Map
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Gauge
 
 /-!
@@ -142,6 +143,28 @@ theorem signlessPreprojectiveRelator_mul_vertexIdempotent_of_ne {u v : R} [Finty
 
 end Relator
 
+section RelatorMap
+
+variable (k : Type w) {R : Type u} [CommSemiring k] [Quiver.{v} R] [HasReverse R] [Finite R]
+
+/-- A reversal-preserving prefunctor that is bijective on vertices and on the star at `v` carries
+the signless relator at `v` to the signless relator at its image. -/
+theorem mapAlgHom_signlessPreprojectiveRelator {S : Type*} [Quiver S] [HasReverse S] [Finite S]
+    (φ : R ⥤q S) [φ.MapReverse] (hφobj : Function.Bijective φ.obj)
+    (hφstar : Function.Bijective (φ.star v)) [Fintype (Quiver.Star v)]
+    [Fintype (Quiver.Star (φ.obj v))] :
+    PathAlgebra.mapAlgHom k φ hφobj (signlessPreprojectiveRelator k v) =
+      signlessPreprojectiveRelator k (φ.obj v) := by
+  rw [signlessPreprojectiveRelator_def, map_sum, signlessPreprojectiveRelator_def,
+    ← (Equiv.ofBijective (φ.star v) hφstar).sum_comp]
+  apply Finset.sum_congr rfl
+  intro x _
+  rw [PathAlgebra.mapAlgHom_ofPath, Prefunctor.mapTotalPath_mk, Prefunctor.mapPath_comp,
+    Prefunctor.mapPath_toPath, Prefunctor.mapPath_toPath, Prefunctor.map_reverse]
+  rfl
+
+end RelatorMap
+
 /-! ### The signless algebra -/
 
 section Ideal
@@ -257,7 +280,7 @@ end Lift
 
 section Symmetrify
 
-variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **The signless relator of a symmetrified quiver** at `v` is the sum of the head backtracks
@@ -278,7 +301,7 @@ end Symmetrify
 
 section Bipartite
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)] {c : Q → Bool} (hc : ∀ ⦃i j : Q⦄, (i ⟶ j) → c i ≠ c j)
 include hc
 

@@ -44,7 +44,9 @@ On five components a chain has only three unoriented weight patterns: all five w
 four equal weights together with, at one end of the chain, their double or their half
 ([Stacks, Tag 0C82](https://stacks.math.columbia.edu/tag/0C82)). In particular a double edge can
 occur only at an end, so the two middle edges are simply laced, and again no intersection outside
-the chain is nonzero: five `(-2)`-indices never form a pentagon.
+the chain is nonzero: five `(-2)`-indices never form a pentagon. Likewise, a component meeting
+three other `(-2)`-indices cannot meet a fourth one
+([Stacks, Lemma 55.5.6](https://stacks.math.columbia.edu/tag/0C86)).
 
 These arguments use only the self-intersections `aᵢᵢ = -2wᵢ`, not the genera. For a pair, negative
 definiteness of the principal `2 × 2` submatrix gives `aᵢⱼ² < 4wᵢwⱼ`, and `lcm(wᵢ, wⱼ) ∣ aᵢⱼ`
@@ -83,6 +85,8 @@ intersection form on the vectors supported on a proper subset of the components 
   five `(-2)`-indices are simply laced.
 * `TauCeti.NumericalType.intersection_eq_zero_of_chain_five`: a chain of five `(-2)`-indices does
   not close up into a pentagon.
+* `TauCeti.NumericalType.intersection_eq_zero_of_star_five`: a `(-2)`-index meeting three others
+  meets no fourth one.
 -/
 
 public section
@@ -609,53 +613,12 @@ private lemma chain_five_form_neg (hcard : 5 < Fintype.card T.Component)
       2 * (T.intersection h i * y₁ * y₂ + T.intersection i j * y₂ * y₃ +
         T.intersection j k * y₃ * y₄ + T.intersection k l * y₄ * y₅ +
         T.intersection h l * y₁ * y₅) < 0 := by
-  classical
-  obtain ⟨m, hm⟩ :
-      (((((Finset.univ.erase h).erase i).erase j).erase k).erase l).Nonempty := by
-    rw [← Finset.card_pos,
-      Finset.card_erase_of_mem (by simp [hhl.symm, hil.symm, hjl.symm, hkl.symm]),
-      Finset.card_erase_of_mem (by simp [hhk.symm, hik.symm, hjk.symm]),
-      Finset.card_erase_of_mem (by simp [hhj.symm, hij.symm]),
-      Finset.card_erase_of_mem (by simp [hhi.symm]),
-      Finset.card_erase_of_mem (Finset.mem_univ h), Finset.card_univ]
-    omega
-  simp only [Finset.mem_erase, Finset.mem_univ, and_true] at hm
-  obtain ⟨hml, hmk, hmj, hmi, hmh⟩ := hm
-  -- Spread the five entries over the five components and zero elsewhere.
-  let x : T.Component → ℤ := fun c ↦
-    if c = h then y₁ else if c = i then y₂ else if c = j then y₃ else
-      if c = k then y₄ else if c = l then y₅ else 0
-  have hxh : x h = y₁ := by simp [x]
-  have hxi : x i = y₂ := by simp [x, hhi.symm]
-  have hxj : x j = y₃ := by simp [x, hhj.symm, hij.symm]
-  have hxk : x k = y₄ := by simp [x, hhk.symm, hik.symm, hjk.symm]
-  have hxl : x l = y₅ := by simp [x, hhl.symm, hil.symm, hjl.symm, hkl.symm]
-  have hsupp : ∀ c ∉ ({h, i, j, k, l} : Finset T.Component), x c = 0 := by
-    intro c hc
-    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hc
-    simp [x, hc.1, hc.2.1, hc.2.2.1, hc.2.2.2.1, hc.2.2.2.2]
-  have hne : x ≠ 0 := fun hc ↦ hy₁ (by simpa [hxh] using congrFun hc h)
-  have hxm : x m = 0 := by simp [x, hmh, hmi, hmj, hmk, hml]
-  -- Only the five diagonal entries and the five retained off-diagonal pairs survive.
-  have hform : T.intersection h h * y₁ ^ 2 + T.intersection i i * y₂ ^ 2 +
-        T.intersection j j * y₃ ^ 2 + T.intersection k k * y₄ ^ 2 +
-        T.intersection l l * y₅ ^ 2 +
-      2 * (T.intersection h i * y₁ * y₂ + T.intersection i j * y₂ * y₃ +
-        T.intersection j k * y₃ * y₄ + T.intersection k l * y₄ * y₅ +
-        T.intersection h l * y₁ * y₅) = x ⬝ᵥ T.intersection.mulVec x := by
-    rw [T.dotProduct_intersection_mulVec_of_support_subset hsupp]
-    simp only [Finset.sum_insert (by simp [hhi, hhj, hhk, hhl] :
-        h ∉ ({i, j, k, l} : Finset T.Component)),
-      Finset.sum_insert (by simp [hij, hik, hil] : i ∉ ({j, k, l} : Finset T.Component)),
-      Finset.sum_insert (by simp [hjk, hjl] : j ∉ ({k, l} : Finset T.Component)),
-      Finset.sum_pair hkl, hxh, hxi, hxj, hxk, hxl, T.intersection_comm i h,
-      T.intersection_comm j h, T.intersection_comm k h, T.intersection_comm l h,
-      T.intersection_comm j i, T.intersection_comm k i, T.intersection_comm l i,
-      T.intersection_comm k j, T.intersection_comm l j, T.intersection_comm l k,
-      hhj0, hhk0, hik0, hil0, hjl0]
-    ring
-  rw [hform]
-  exact T.dotProduct_intersection_mulVec_neg hne hxm
+  have hneg := T.intersection_five_neg hcard hhi hhj hhk hhl hij hik hil hjk hjl hkl
+    (y₁ := y₁) (y₂ := y₂) (y₃ := y₃) (y₄ := y₄) (y₅ := y₅)
+    (fun hy ↦ hy₁ hy.1)
+  rw [hhj0, hhk0, hik0, hil0, hjl0] at hneg
+  ring_nf at hneg ⊢
+  exact hneg
 
 /-- The factor data used to classify a chain of five components. The four-component analysis of
 the two overlapping windows of the chain shows that every intersection number of two
@@ -848,6 +811,45 @@ theorem intersection_eq_zero_of_chain_five (hcard : 5 < Fintype.card T.Component
   have hcomm : T.intersection h l = T.intersection l h := T.intersection_comm h l
   linarith [T.chain_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl hkl'
     hhj0 hhk0 hik0 hil0 hjl0 1 1 1 1 1 one_ne_zero]
+
+/-- A component of self-intersection `-2w` meeting three others of self-intersection `-2w` meets
+no fourth such component, in a numerical type with more than five components. In particular, the
+four-legged star does not occur as a proper subgraph of `(-2)`-indices
+([Stacks, Lemma 55.5.6](https://stacks.math.columbia.edu/tag/0C86)). -/
+theorem intersection_eq_zero_of_star_five (hcard : 5 < Fintype.card T.Component)
+    {c₁ c₂ c₃ c₄ c₅ : T.Component}
+    (h₁ : T.intersection c₁ c₁ = -(2 * (T.weight c₁ : ℤ)))
+    (h₂ : T.intersection c₂ c₂ = -(2 * (T.weight c₂ : ℤ)))
+    (h₃ : T.intersection c₃ c₃ = -(2 * (T.weight c₃ : ℤ)))
+    (h₄ : T.intersection c₄ c₄ = -(2 * (T.weight c₄ : ℤ)))
+    (h₅ : T.intersection c₅ c₅ = -(2 * (T.weight c₅ : ℤ)))
+    (h₁₅ : c₁ ≠ c₅) (h₂₃ : c₂ ≠ c₃) (h₂₄ : c₂ ≠ c₄) (h₂₅ : c₂ ≠ c₅) (h₃₄ : c₃ ≠ c₄)
+    (h₃₅ : c₃ ≠ c₅) (h₄₅ : c₄ ≠ c₅) (e₁₂ : 0 < T.intersection c₁ c₂)
+    (e₁₃ : 0 < T.intersection c₁ c₃) (e₁₄ : 0 < T.intersection c₁ c₄) :
+    T.intersection c₁ c₅ = 0 := by
+  classical
+  have h₁₂ : c₁ ≠ c₂ := by rintro rfl; linarith
+  have h₁₃ : c₁ ≠ c₃ := by rintro rfl; linarith
+  have h₁₄ : c₁ ≠ c₄ := by rintro rfl; linarith
+  by_contra hne
+  have e₁₅ : 0 < T.intersection c₁ c₅ :=
+    ((T.offDiagonal_nonneg c₁ c₅ h₁₅).lt_or_eq).resolve_right fun hzero ↦ hne hzero.symm
+  -- Each of the four legs, taken three at a time, is a three-legged star: all weights agree, all
+  -- displayed intersection numbers equal that weight, and the legs are pairwise disjoint.
+  obtain ⟨w, hw, hw₂, hw₃, hw₄, a₁₂, a₁₃, a₁₄, z₂₃, z₂₄, z₃₄⟩ :=
+    T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₃ h₄ h₂₃ h₂₄ h₃₄ e₁₂ e₁₃ e₁₄
+  obtain ⟨w', hw', -, -, hw₅, -, -, a₁₅, -, z₂₅, z₃₅⟩ :=
+    T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₃ h₅ h₂₃ h₂₅ h₃₅ e₁₂ e₁₃ e₁₅
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, z₄₅⟩ :=
+    T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₄ h₅ h₂₄ h₂₅ h₄₅ e₁₂ e₁₄ e₁₅
+  have hww : (w : ℤ) = w' := by omega
+  -- The vector taking the value two at the centre and one at each leg is isotropic.
+  have hneg := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
+    (y₁ := 2) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (by omega)
+  rw [h₁, h₂, h₃, h₄, h₅, a₁₂, a₁₃, a₁₄, a₁₅, z₂₃, z₂₄, z₂₅, z₃₄, z₃₅, z₄₅] at hneg
+  simp only [one_pow, mul_one] at hneg
+  rw [hw, hw₂, hw₃, hw₄, hw₅] at hneg
+  linarith
 
 end NumericalType
 
