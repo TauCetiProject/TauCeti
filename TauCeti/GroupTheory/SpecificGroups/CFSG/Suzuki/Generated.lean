@@ -205,6 +205,7 @@ theorem unipotent_inv (a b : GaloisField 2 (2 * n + 1)) :
     (CharTwo.two_eq_zero : (2 : GaloisField 2 (2 * n + 1)) = 0)
 
 /-- The unipotent generators are determined by their parameters. -/
+@[simp]
 theorem unipotent_inj {a b c d : GaloisField 2 (2 * n + 1)} :
     unipotent n a b = unipotent n c d ↔ a = c ∧ b = d := by
   refine ⟨fun h => ⟨?_, ?_⟩, fun h => by rw [h.1, h.2]⟩
