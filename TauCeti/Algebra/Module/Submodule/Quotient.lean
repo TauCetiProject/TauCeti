@@ -42,7 +42,9 @@ namespace TauCeti
 
 section QuotientInterval
 
-variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+section Order
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
 `symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`. -/
@@ -76,6 +78,12 @@ private theorem coe_iciSubmoduleOrderIsoIcc_symm_apply {p q : Submodule R M}
     (((iciSubmoduleOrderIsoIcc r hr).symm N).1 : Submodule R q) =
       N.1.comap q.subtype :=
   mapIic_symm_apply q ⟨N.1, N.2.2⟩
+
+end Order
+
+section Quotient
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
 
 /-- The interval correspondence for a specified copy `r` of the lower endpoint inside `q`. -/
 def iccOrderIsoQuotientOfMapEq {p q : Submodule R M} (r : Submodule R q)
@@ -112,11 +120,16 @@ theorem mem_iccOrderIsoQuotientOfMapEq_symm_apply_iff {p q : Submodule R M}
     (mk_mem_iccOrderIsoQuotientOfMapEq_iff r hr
       ((iccOrderIsoQuotientOfMapEq r hr).symm Q) x).symm
 
+end Quotient
+
 end QuotientInterval
 
 section Subquotient
 
-variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+section Map
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
 
 /-- An injective linear map carries the trace of `A` in `B` onto the trace of `A.map f` in
 `B.map f`, so it descends to the subquotients. -/
@@ -132,6 +145,12 @@ theorem map_equivMapOfInjective_comap_subtype (f : M →ₗ[R] N) (hf : Function
     LinearMap.ext fun x => Submodule.coe_equivMapOfInjective_apply f hf B x
   rw [← Submodule.map_comp, hcomp, Submodule.map_comp, Submodule.map_comap_subtype,
     Submodule.map_comap_subtype, Submodule.map_inf f hf]
+
+end Map
+
+section Quotient
+
+variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- **An injective linear map identifies subquotients.**  For arbitrary submodules `A`, `B` of `M`
 the subquotient cut out by the images `A.map f`, `B.map f` is the subquotient cut out by `A` and
@@ -202,6 +221,8 @@ theorem comapSubquotientEquivOfSurjective_symm_apply (f : M →ₗ[R] N) (hf : F
         (Submodule.Quotient.mk (f.submoduleComap B x)) = Submodule.Quotient.mk x := by
   rw [← comapSubquotientEquivOfSurjective_apply f hf A B x,
     LinearEquiv.symm_apply_apply]
+
+end Quotient
 
 end Subquotient
 
