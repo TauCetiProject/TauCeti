@@ -25,17 +25,16 @@ class API, without introducing a second notion of an ideal prime to a modulus.
 
 * `TauCeti.GlobalNumberFields.toFractionalIdeal_mem_idealsAway_iff` identifies the
   prime-to condition with vanishing finite-idele orders.
-* `TauCeti.GlobalNumberFields.exists_toFractionalIdeal_eq_integralIdealsAwayHom` realizes
-  every integral ideal away from a finite set by a finite idele.
-* `TauCeti.GlobalNumberFields.exists_adicOrd_eq_count_integralIdealsAway` gives the
+* `TauCeti.GlobalNumberFields.toIdealsAway_surjective` realizes every fractional ideal away from
+  a finite set by a finite idele whose orders vanish on that set.
+* `TauCeti.GlobalNumberFields.exists_forall_adicOrd_eq_count_integralIdealsAway` gives the
   resulting order/count comparison at every finite place.
 * `TauCeti.GlobalNumberFields.toIdealsAway` is the resulting homomorphism on the
   finite-idèle subgroup, with `mem_ker_toIdealsAway_iff` identifying its kernel.
 
-The construction uses the standard idelic description of ideals away from a finite set; no
-formalization is vendored here.  The ideal carriers and their factorization API are supplied by
-`TauCeti.NumberFieldArithmetic`, while the finite-idele factorization is supplied by
-`IsDedekindDomain.FiniteAdeleRing.ClassGroup`.
+The construction uses the standard idelic description of ideals away from a finite set.  The ideal
+carriers and their factorization API are supplied by `TauCeti.NumberFieldArithmetic`, while the
+finite-idele factorization is supplied by `IsDedekindDomain.FiniteAdeleRing.ClassGroup`.
 -/
 
 public section
@@ -90,33 +89,39 @@ theorem toIdealsAway_apply (S : Finset (HeightOneSpectrum (𝓞 K)))
 theorem mem_ker_toIdealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : adicOrdAway S) :
     x ∈ (toIdealsAway S).ker ↔ (x : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈ integralUnits (𝓞 K) K := by
-  rw [show (toIdealsAway S).ker =
-      ((toFractionalIdeal (R := 𝓞 K) (K := K)).comp (adicOrdAway S).subtype).ker by
-    exact MonoidHom.ker_codRestrict _ _ _]
-  rw [← MonoidHom.comap_ker, ker_toFractionalIdeal]
-  rfl
+  have hker : (toIdealsAway S).ker =
+      ((toFractionalIdeal (R := 𝓞 K) (K := K)).comp (adicOrdAway S).subtype).ker := by
+    exact MonoidHom.ker_codRestrict _ _ _
+  rw [hker, ← MonoidHom.comap_ker, ker_toFractionalIdeal, Subgroup.mem_comap]
+  simp only [Subgroup.subtype_apply]
 
-/-- Every nonzero integral ideal away from `S` is the fractional ideal of a finite idele. -/
-theorem exists_toFractionalIdeal_eq_integralIdealsAwayHom
-    (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (I : NumberFieldArithmetic.integralIdealsAway (K := K) S) :
-    ∃ x : 𝔸ᶠ[(𝓞 K), K]ˣ,
-      toFractionalIdeal x = NumberFieldArithmetic.integralIdealsAwayHom S I := by
-  exact toFractionalIdeal_surjective (K := K)
-    (NumberFieldArithmetic.integralIdealsAwayHom S I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+/-- The homomorphism from finite ideles with orders vanishing on `S` to ideals away from `S` is
+surjective. -/
+theorem toIdealsAway_surjective (S : Finset (HeightOneSpectrum (𝓞 K))) :
+    Function.Surjective (toIdealsAway S) := by
+  intro I
+  obtain ⟨x, hx⟩ := toFractionalIdeal_surjective (K := K)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+  have hx_mem : x ∈ adicOrdAway S := by
+    rw [adicOrdAway, Subgroup.mem_comap, hx]
+    exact I.property
+  refine ⟨⟨x, hx_mem⟩, ?_⟩
+  exact Subtype.ext hx
 
 /-- The finite-idele orders of a representative of an integral ideal are its ideal multiplicities.
 
 In particular, these orders are nonnegative everywhere and vanish on the excluded finite set. -/
-theorem exists_adicOrd_eq_count_integralIdealsAway
+theorem exists_forall_adicOrd_eq_count_integralIdealsAway
     (S : Finset (HeightOneSpectrum (𝓞 K)))
     (I : NumberFieldArithmetic.integralIdealsAway (K := K) S) :
     ∃ x : 𝔸ᶠ[(𝓞 K), K]ˣ,
       ∀ v : HeightOneSpectrum (𝓞 K),
         adicOrd x v = FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
-  obtain ⟨x, hx⟩ := exists_toFractionalIdeal_eq_integralIdealsAwayHom S I
+  obtain ⟨x, hx⟩ := toIdealsAway_surjective S
+    (NumberFieldArithmetic.integralIdealsAwayHom S I)
   refine ⟨x, fun v ↦ ?_⟩
-  rw [← count_coe_toFractionalIdeal x v, hx]
+  rw [← count_coe_toFractionalIdeal (x : 𝔸ᶠ[(𝓞 K), K]ˣ) v,
+    ← toIdealsAway_apply S x, hx]
   exact congrArg (FractionalIdeal.count K v) (NumberFieldArithmetic.coe_integralIdealsAwayHom S I)
 
 end TauCeti.GlobalNumberFields
