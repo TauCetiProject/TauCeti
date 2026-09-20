@@ -13,10 +13,14 @@ import Mathlib.Probability.Distributions.Gaussian.Fernique
 /-!
 # Moment-generating functions of Gaussian linear functionals
 
-This file proves that every continuous linear functional of a Gaussian measure has finite
-exponential moments of every real order and computes its moment-generating function. It then
-specializes the general result to inner products against a multivariate Gaussian vector, expressing
-the variance as the covariance-matrix quadratic form.
+This file proves that every almost everywhere measurable continuous linear functional of a
+Gaussian measure has finite exponential moments of every real order and computes its
+moment-generating function. It then specializes the general result to inner products against a
+multivariate Gaussian vector, expressing the variance as the covariance-matrix quadratic form.
+
+The general results require no norm on the source space. Almost everywhere measurability of
+the functional suffices; the default proof handles continuous functionals when open sets are
+measurable, including sigma algebras larger than the Borel sigma algebra.
 
 ## Main results
 
@@ -32,8 +36,6 @@ the variance as the covariance-matrix quadratic form.
 
 * M. L. Eaton, *Multivariate Statistics: A Vector Space Approach*, IMS Lecture Notes--Monograph
   Series 53.
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 3,
-  **Affine maps of Gaussian laws**.
 -/
 
 public section
@@ -46,26 +48,26 @@ namespace ProbabilityTheory
 
 namespace IsGaussian
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] {μ : Measure E} [IsGaussian μ]
+variable {E : Type*} [TopologicalSpace E] [AddCommMonoid E] [Module ℝ E]
+  [MeasurableSpace E] {μ : Measure E} [IsGaussian μ]
 
-/-- A continuous linear functional of a Gaussian measure has finite exponential moments of every
-real order. -/
-theorem integrableExpSet_dual (L : StrongDual ℝ E) : integrableExpSet L μ = Set.univ := by
+/-- An almost everywhere measurable continuous linear functional of a Gaussian measure has finite
+exponential moments of every real order. -/
+theorem integrableExpSet_dual (L : StrongDual ℝ E) (hL : AEMeasurable L μ := by fun_prop) :
+    integrableExpSet L μ = Set.univ := by
   rw [Set.eq_univ_iff_forall]
   intro t
   simp only [integrableExpSet, Set.mem_ofPred_eq]
   refine (integrable_map_measure (f := L) (g := fun x : ℝ ↦ Real.exp (t * x))
-    (by fun_prop) L.continuous.measurable.aemeasurable).mp ?_
+    (by fun_prop) hL).mp ?_
   rw [IsGaussian.map_eq_gaussianReal L]
   exact integrable_exp_mul_gaussianReal t
 
-/-- The moment-generating function of a continuous linear functional of a Gaussian measure is
-determined by its mean and variance. -/
-theorem mgf_dual (L : StrongDual ℝ E) (t : ℝ) :
+/-- The moment-generating function of an almost everywhere measurable continuous linear functional
+of a Gaussian measure is determined by its mean and variance. -/
+theorem mgf_dual (L : StrongDual ℝ E) (t : ℝ) (hL : AEMeasurable L μ := by fun_prop) :
     mgf L μ t = Real.exp (t * μ[L] + t ^ 2 / 2 * Var[L; μ]) := by
-  rw [← mgf_id_map L.continuous.measurable.aemeasurable,
-    IsGaussian.map_eq_gaussianReal L, mgf_id_gaussianReal]
+  rw [← mgf_id_map hL, IsGaussian.map_eq_gaussianReal L, mgf_id_gaussianReal]
   rw [Real.coe_toNNReal _ (variance_nonneg _ _)]
   ring_nf
 
