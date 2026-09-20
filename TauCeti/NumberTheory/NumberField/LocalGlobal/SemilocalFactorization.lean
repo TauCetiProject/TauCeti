@@ -308,7 +308,8 @@ def factorFieldEquivCompletion (q : completionFactors L v) :
       ((IntermediateField.equivOfEq (completionPrimitive_primitive L v w)).trans
         (IntermediateField.topEquiv)))
 
-private theorem factorFieldEquivCompletion_root (q : completionFactors L v) :
+@[simp]
+theorem factorFieldEquivCompletion_root (q : completionFactors L v) :
     factorFieldEquivCompletion L v q (AdjoinRoot.root q.1) =
       algebraMap L ((completionFactorsEquivPlaces L v q).1.adicCompletion L)
         (semilocalPowerBasis (K := K) L).gen := by
@@ -318,6 +319,7 @@ private theorem factorFieldEquivCompletion_root (q : completionFactors L v) :
   rfl
 
 /-- The factor-field/completion equivalence commutes with the canonical maps from `L`. -/
+@[simp]
 theorem factorFieldEquivCompletion_algebraMap (q : completionFactors L v) (x : L) :
     factorFieldEquivCompletion L v q (factorFieldAlgHom L v q x) =
       algebraMap L ((completionFactorsEquivPlaces L v q).1.adicCompletion L) x := by
