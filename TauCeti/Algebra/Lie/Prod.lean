@@ -168,6 +168,7 @@ theorem prodRepresentation_apply (rho : L →ₗ⁅R⁆ Module.End R M)
   (rfl)
 
 /-- The kernel of a product representation is the intersection of the two kernels. -/
+@[simp]
 theorem ker_prodRepresentation (rho : L →ₗ⁅R⁆ Module.End R M)
     (sigma : L →ₗ⁅R⁆ Module.End R N) :
     (rho.prodRepresentation sigma).ker = rho.ker ⊓ sigma.ker := by
@@ -231,6 +232,7 @@ theorem piRepresentation_apply (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (
 
 /-- The kernel of a family product representation is the intersection of the kernels of its
 coordinates. -/
+@[simp]
 theorem ker_piRepresentation (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j)) :
     (piRepresentation rho).ker = ⨅ j, (rho j).ker := by
   classical

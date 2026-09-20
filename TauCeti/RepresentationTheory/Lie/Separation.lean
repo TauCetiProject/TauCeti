@@ -18,8 +18,7 @@ single faithful finite-dimensional representation.
 The proof chooses a finite-dimensional representation whose kernel has minimal dimension. If that
 kernel contained a nonzero element, a representation detecting that element could be added by the
 product construction. The kernel formula for products would then give a strictly smaller kernel,
-contradicting minimality. Thus only finitely many of the point-separating representations are ever
-needed, even when the original family is not indexed by a set.
+contradicting minimality.
 
 ## Main result
 
@@ -40,10 +39,7 @@ variable (K : Type u) [Field K]
 variable (L : Type v) [LieRing L] [LieAlgebra K L]
 
 /-- If every nonzero element of a finite-dimensional Lie algebra acts nontrivially in some
-finite-dimensional representation, then one finite-dimensional representation is faithful.
-
-The detecting representations may have unrelated carriers; the conclusion assembles finitely many
-of them using product representations. -/
+finite-dimensional representation, then one finite-dimensional representation is faithful. -/
 theorem exists_faithfulRepresentation_of_pointSeparating [FiniteDimensional K L]
     (hseparates : ∀ x : L, x ≠ 0 →
       ∃ (V : Type u) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
