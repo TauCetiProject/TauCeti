@@ -42,6 +42,7 @@ thus all derived constructions are universe-independent.
 * `TauCeti.FiniteGroupClass.MemFinite`: membership of a group that is not yet known to be
   finite.
 * `TauCeti.finiteGroupClassP`: the class of finite `p`-groups.
+* `TauCeti.finiteGroupClassTrivial`: the class of finite trivial groups.
 * `TauCeti.finiteGroupClassSolvable`: the class of finite solvable groups.
 * `TauCeti.finiteGroupClassAll`: the class of all finite groups.
 
@@ -181,8 +182,11 @@ theorem MemFinite.extension {N : Subgroup H} [N.Normal] (hN : C.MemFinite N)
     (QuotientGroup.mk'_surjective N).comp e.surjective
   have hker : q.ker = N' := by
     ext x
-    change QuotientGroup.mk (e x) = 1 ↔ e x ∈ N
-    exact QuotientGroup.eq_one_iff _
+    calc
+      x ∈ q.ker ↔ q x = 1 := MonoidHom.mem_ker
+      _ ↔ QuotientGroup.mk (e x) = 1 := Iff.rfl
+      _ ↔ e x ∈ N := QuotientGroup.eq_one_iff _
+      _ ↔ x ∈ N' := Iff.rfl
   let eQ : Shrink.{w} H ⧸ N' ≃* H ⧸ N :=
     (QuotientGroup.quotientMulEquivOfEq hker.symm).trans
       (QuotientGroup.quotientKerEquivOfSurjective q hq)
@@ -249,6 +253,49 @@ theorem finiteGroupClassP_mem_iff (p : ℕ) (H : Type w) [Group H] [Finite H] :
     (finiteGroupClassP p).mem H ↔ IsPGroup p H :=
   Iff.rfl
 
+/-- The class of **finite trivial groups**. -/
+def finiteGroupClassTrivial : FiniteGroupClass.{w} where
+  mem H := Subsingleton H
+  mem_congr e := e.toEquiv.subsingleton_congr
+  mem_trivial := inferInstance
+  mem_subgroup h _ := by
+    let _ := h
+    infer_instance
+  mem_quotient h N _ := by
+    constructor
+    intro a b
+    obtain ⟨a, rfl⟩ := QuotientGroup.mk'_surjective N a
+    obtain ⟨b, rfl⟩ := QuotientGroup.mk'_surjective N b
+    rw [h.elim a b]
+  mem_extension N _ hN hQ := by
+    have hNtop : N = ⊤ := QuotientGroup.subsingleton_iff.mp hQ
+    constructor
+    intro a b
+    have ha : a ∈ N := by rw [hNtop]; trivial
+    have hb : b ∈ N := by rw [hNtop]; trivial
+    exact congrArg Subtype.val (@Subsingleton.elim N hN ⟨a, ha⟩ ⟨b, hb⟩)
+
+/-- Membership in `finiteGroupClassTrivial` is being a trivial group. -/
+@[simp]
+theorem finiteGroupClassTrivial_mem_iff (H : Type w) [Group H] [Finite H] :
+    finiteGroupClassTrivial.mem H ↔ Subsingleton H :=
+  Iff.rfl
+
+/-- A group belongs to `finiteGroupClassTrivial` exactly when it is trivial. -/
+@[simp]
+theorem finiteGroupClassTrivial_memFinite_iff (H : Type v) [Group H] :
+    finiteGroupClassTrivial.{w}.MemFinite H ↔ Subsingleton H := by
+  constructor
+  · intro h
+    exact h.elim fun hfinite hH ↦ by
+      let _ := hfinite
+      let _ : Finite (Shrink.{w} H) :=
+        Finite.of_surjective (equivShrink.{w} H) (equivShrink.{w} H).surjective
+      exact (Shrink.mulEquiv.{w} (α := H)).toEquiv.subsingleton_congr.mp
+        (finiteGroupClassTrivial_mem_iff (Shrink.{w} H) |>.mp hH)
+  · intro _
+    exact FiniteGroupClass.memFinite_of_subsingleton
+
 /-- The class of **finite solvable groups**. -/
 def finiteGroupClassSolvable : FiniteGroupClass.{w} where
   mem H := Group.IsSolvable H
@@ -265,8 +312,9 @@ theorem finiteGroupClassSolvable_mem_iff (H : Type w) [Group H] [Finite H] :
     finiteGroupClassSolvable.mem H ↔ Group.IsSolvable H :=
   Iff.rfl
 
-/-- The class of **all finite groups**. Its `C`-kernel is the intersection of all the open
-normal subgroups, which is trivial for a profinite group. -/
+/-- The class of **all finite groups**. Its `C`-kernel intersects the open normal subgroups
+whose quotient is finite; for a profinite group these are all the open normal subgroups, so the
+kernel is trivial. -/
 def finiteGroupClassAll : FiniteGroupClass.{w} where
   mem _ := True
   mem_congr _ := Iff.rfl

@@ -18,18 +18,14 @@ quotient lies in `C`, and the **pro-`C` completion** is `proCCompletion C G = G 
 For profinite `G` this is the universal pro-`C` group receiving a continuous homomorphism
 from `G`.
 
-This is the uniform version of the construction that
-`TauCeti/Topology/Algebra/Group/Profinite/MaximalProP.lean` performs for the single class of
-finite `p`-groups, and the proofs run along the same lines: the substantial step is that
-`proCCompletion C G` really is pro-`C`, by a compactness argument on the defining family, which
-is downward directed because the normal subgroups with quotient in `C` are closed under binary
-intersection. The universal property needs no compactness, only that the family is stable under
-preimage.
+For a compact group, every open subgroup containing the `C`-kernel contains an open normal
+subgroup whose quotient lies in `C`; consequently the completion is pro-`C`. The completion is
+characterized by its universal property for continuous homomorphisms from `G` to profinite
+pro-`C` groups.
 
-The two constructions are cut out by different index sets, so they are compared by a theorem
-rather than by unfolding: `proCKernel_finiteGroupClassP_eq_proPKernel` identifies the two
-kernels for the class of finite `p`-groups, and `proCCompletion.equivMaximalProPQuotient` is
-the resulting topological isomorphism of completions.
+For the class of finite `p`-groups, `proCKernel_finiteGroupClassP_eq_proPKernel` identifies the
+`C`-kernel with the pro-`p` kernel, and `proCCompletion.equivMaximalProPQuotient` gives the
+corresponding topological isomorphism of completions.
 
 Membership is transported through `Shrink`, so the class, the groups, and the continuous
 homomorphisms between them may live in independent universes.
@@ -114,8 +110,7 @@ end Defs
 variable {C : FiniteGroupClass.{u}} {G : Type v} {H : Type w} [Group G] [TopologicalSpace G]
 variable [Group H] [TopologicalSpace H]
 
-/-- The defining property of `IsProC`, available to modules that only see the declaration and
-not its body. -/
+/-- A group is pro-`C` exactly when its quotients by open normal subgroups lie in `C`. -/
 theorem isProC_iff : IsProC C G ↔ ∀ U : OpenNormalSubgroup G, C.MemFinite (G ⧸ U.toSubgroup) :=
   Iff.rfl
 
@@ -136,6 +131,20 @@ instance isClosed_proCKernel [IsTopologicalGroup G] :
     IsClosed ((proCKernel C G : Subgroup G) : Set G) := by
   rw [proCKernel, Subgroup.coe_iInf]
   exact isClosed_iInter fun U ↦ U.1.toOpenSubgroup.isClosed
+
+/-! ### Trivial completions -/
+
+/-- The `C`-kernel is the whole group exactly when every open normal subgroup with quotient in
+`C` is the whole group. Equivalently, `G` has no nontrivial continuous quotient in `C`. -/
+theorem proCKernel_eq_top_iff : proCKernel C G = ⊤ ↔
+    ∀ U : OpenNormalSubgroup G, C.MemFinite (G ⧸ U.toSubgroup) → U.toSubgroup = ⊤ := by
+  rw [proCKernel, iInf_eq_top]
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+
+/-- The pro-`C` completion is trivial exactly when the `C`-kernel is the whole group. -/
+theorem proCCompletion.subsingleton_iff :
+    Subsingleton (proCCompletion C G) ↔ proCKernel C G = ⊤ :=
+  QuotientGroup.subsingleton_iff
 
 /-! ### Functoriality -/
 
@@ -360,6 +369,13 @@ section Idempotence
 
 variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G] in
+/-- The canonical equivalence `G ⧸ ⊥ ≃* G` sends the class of an element to that element. -/
+private theorem quotientBot_mk (x : G) :
+    QuotientGroup.quotientBot (x : G ⧸ (⊥ : Subgroup G)) = x := by
+  rfl
+
 /-- A profinite group is pro-`C` exactly when its `C`-kernel is trivial. -/
 theorem proCKernel_eq_bot_iff : proCKernel C G = ⊥ ↔ IsProC C G := by
   refine ⟨fun h ↦ isProC_iff.mpr fun U ↦
@@ -385,7 +401,10 @@ representative. -/
 @[simp]
 theorem proCCompletion.equivOfIsProC_mk (hG : IsProC C G) (x : G) :
     proCCompletion.equivOfIsProC hG (x : proCCompletion C G) = x :=
-  (rfl)
+  by
+    change ((QuotientGroup.quotientMulEquivOfEq hG.proCKernel_eq_bot).trans
+      QuotientGroup.quotientBot) (QuotientGroup.mk x) = x
+    rw [MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk, quotientBot_mk]
 
 /-- **Idempotence.** The `C`-kernel of a pro-`C` completion is trivial. -/
 theorem proCKernel_proCCompletion_eq_bot : proCKernel C (proCCompletion C G) = ⊥ :=
@@ -401,11 +420,11 @@ def proCCompletion.idempotentEquiv :
 @[simp]
 theorem proCCompletion.idempotentEquiv_mk (x : proCCompletion C G) :
     proCCompletion.idempotentEquiv (x : proCCompletion C (proCCompletion C G)) = x :=
-  (rfl)
+  proCCompletion.equivOfIsProC_mk isProC_proCCompletion x
 
 end Idempotence
 
-/-! ### The class of finite `p`-groups, and the class of all finite groups -/
+/-! ### Distinguished classes of finite groups -/
 
 section Comparison
 
@@ -448,7 +467,24 @@ theorem proCCompletion.equivMaximalProPQuotient_mk (x : G) :
     proCCompletion.equivMaximalProPQuotient p G
         (x : proCCompletion (finiteGroupClassP.{v} p) G) =
       (x : maximalProPQuotient p G) :=
-  (rfl)
+  by
+    simp only [proCCompletion.equivMaximalProPQuotient, ContinuousMulEquiv.coe_mk,
+      QuotientGroup.quotientMulEquivOfEq_mk]
+
+omit [IsTopologicalGroup G] [CompactSpace G] in
+/-- The `C`-kernel for the class of trivial finite groups is the whole group. -/
+theorem proCKernel_finiteGroupClassTrivial_eq_top :
+    proCKernel finiteGroupClassTrivial.{v} G = ⊤ := by
+  rw [proCKernel_eq_top_iff]
+  intro U hU
+  exact QuotientGroup.subsingleton_iff.mp
+    (finiteGroupClassTrivial_memFinite_iff (G ⧸ U.toSubgroup) |>.mp hU)
+
+omit [IsTopologicalGroup G] [CompactSpace G] in
+/-- The completion for the class of trivial finite groups is trivial. -/
+theorem proCCompletion.subsingleton_finiteGroupClassTrivial :
+    Subsingleton (proCCompletion finiteGroupClassTrivial.{v} G) :=
+  proCCompletion.subsingleton_iff.mpr proCKernel_finiteGroupClassTrivial_eq_top
 
 /-- Every profinite group is pro-`C` for the class of all finite groups, so its `C`-kernel is
 trivial. Its pro-`C` completion is then the group itself, by
