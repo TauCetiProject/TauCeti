@@ -50,7 +50,9 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
   `UniformContinuousConstSMul` instances, so that its separated completion can be formed.
 * `TauCeti.Huber.weightedC` and `TauCeti.Huber.weightedX`: the constant series and the
   variables. `TauCeti.Huber.weightedC_injective`, with its `simp` form
-  `TauCeti.Huber.weightedC_inj`, reads a constant series off its coefficient in degree `0`.
+  `TauCeti.Huber.weightedC_inj`, reads a constant series off its coefficient in degree `0`;
+  `TauCeti.Huber.algebraMap_weightedRestrictedSubring_injective` and its product counterpart
+  state the resulting injectivity for the canonical algebra maps.
 * `TauCeti.Huber.weightedMap`: the morphism `A⟨X⟩_T → B⟨X⟩_S` induced by a continuous ring map
   carrying each weight into the corresponding one; `continuous_weightedMap` makes it a morphism of
   topological rings, and `weightedMap_id` with `weightedMap_comp` are the functor laws.
@@ -754,6 +756,23 @@ noncomputable instance weightedRestrictedSubring.instAlgebra [NonarchimedeanRing
 theorem algebraMap_weightedRestrictedSubring [NonarchimedeanRing A] (T : Fin k → Set A)
     (hT : IsWeightFamily T) : algebraMap A (weightedRestrictedSubring T hT) = weightedC T hT :=
   (rfl)
+
+/-- **The structure map into a weighted restricted-series ring is injective**, since it is the
+constant-series embedding. -/
+theorem algebraMap_weightedRestrictedSubring_injective [NonarchimedeanRing A]
+    (T : Fin k → Set A) (hT : IsWeightFamily T) :
+    Function.Injective (algebraMap A (weightedRestrictedSubring T hT)) := by
+  rw [algebraMap_weightedRestrictedSubring]
+  exact weightedC_injective T hT
+
+/-- **The diagonal structure map into a product of weighted restricted-series rings is
+injective.** -/
+theorem algebraMap_prod_weightedRestrictedSubring_injective [NonarchimedeanRing A] {m : ℕ}
+    (T : Fin k → Set A) (S : Fin m → Set A) (hT : IsWeightFamily T) (hS : IsWeightFamily S) :
+    Function.Injective (algebraMap A
+      (weightedRestrictedSubring T hT × weightedRestrictedSubring S hS)) :=
+  fun _ _ h ↦ algebraMap_weightedRestrictedSubring_injective T hT (by
+    simpa using congrArg Prod.fst h)
 
 
 /-- **Wedhorn's neighbourhood subgroups** `U⟨X⟩`: the series all of whose coefficients — not

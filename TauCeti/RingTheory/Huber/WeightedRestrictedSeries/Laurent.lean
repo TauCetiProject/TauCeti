@@ -111,15 +111,6 @@ theorem mk_weightedX_zero_mul_mk_weightedX_one :
     mem_laurentIdeal]
   exact ⟨-1, by ring⟩
 
-/-- In `A⟨ζ, ζ⁻¹⟩`, the class of `Y` is also a left inverse to the class of `X`. -/
-@[simp]
-theorem mk_weightedX_one_mul_mk_weightedX_zero :
-    Ideal.Quotient.mk (laurentIdeal A)
-        (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1) *
-      Ideal.Quotient.mk (laurentIdeal A)
-        (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 0) = 1 := by
-  rw [mul_comm, mk_weightedX_zero_mul_mk_weightedX_one]
-
 /-- **The class of `X` is a unit in `A⟨ζ, ζ⁻¹⟩`**, with inverse the class of `Y`. This is what
 makes the quotient a ring of Laurent, rather than of ordinary, restricted series. -/
 theorem isUnit_mk_weightedX_zero :
@@ -130,23 +121,6 @@ theorem isUnit_mk_weightedX_zero :
       (weightedX (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight 1))
     (mk_weightedX_zero_mul_mk_weightedX_one A)
 
-/-- **The row is exact at `A`**: Wedhorn's `ι : A → A⟨ζ⟩ × A⟨η⟩`, the constants on both pieces,
-is the structure map of the product algebra, and it is injective because a constant series
-determines its constant. -/
-theorem algebraMap_prod_weightedRestrictedSubring_injective :
-    Function.Injective (algebraMap A
-      ((weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) ×
-        weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight)) :=
-  -- on the first factor the structure map is `weightedC`, which `weightedC_inj` inverts
-  fun _ _ h ↦ by simpa using congrArg Prod.fst h
-
-private noncomputable def weightedRenameAlgHom (e : Fin k ↪ Fin m) {T : Fin k → Set A}
-    {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
-    (hTS : ∀ i, T i ⊆ S (e i)) :
-    weightedRestrictedSubring T hT →ₐ[A] weightedRestrictedSubring S hS where
-  __ := weightedRename e hT hS hTS
-  commutes' a := by simp [algebraMap_weightedRestrictedSubring]
-
 /-- **Wedhorn's `λ : A⟨ζ⟩ × A⟨η⟩ → A⟨ζ, ζ⁻¹⟩`**, `(g, h) ↦ g(ζ) - h(ζ⁻¹)`: the difference of the
 classes of `g` read in `X` and of `h` read in `Y`. It is additive but not multiplicative. -/
 noncomputable def laurentDiff :
@@ -155,10 +129,10 @@ noncomputable def laurentDiff :
       (weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight ⧸
         laurentIdeal A) :=
   (Ideal.Quotient.mkₐ A (laurentIdeal A)).toLinearMap.comp
-    ((weightedRenameAlgHom A Fin.castSuccEmb isWeightFamily_one_weight
+    ((weightedRenameAlgHom Fin.castSuccEmb isWeightFamily_one_weight
           isWeightFamily_one_weight (fun _ ↦ subset_rfl)).toLinearMap.comp
         (LinearMap.fst A _ _) -
-      (weightedRenameAlgHom A (Fin.succEmb 1) isWeightFamily_one_weight
+      (weightedRenameAlgHom (Fin.succEmb 1) isWeightFamily_one_weight
           isWeightFamily_one_weight (fun _ ↦ subset_rfl)).toLinearMap.comp
         (LinearMap.snd A _ _))
 
@@ -170,7 +144,8 @@ theorem laurentDiff_apply
       (weightedRename Fin.castSuccEmb isWeightFamily_one_weight isWeightFamily_one_weight
           (fun _ ↦ subset_rfl) p.1 -
         weightedRename (Fin.succEmb 1) isWeightFamily_one_weight isWeightFamily_one_weight
-          (fun _ ↦ subset_rfl) p.2) := (rfl)
+          (fun _ ↦ subset_rfl) p.2) := by
+  simp [laurentDiff]
 
 end Topological
 

@@ -23,7 +23,8 @@ compare the pieces of a two-piece Laurent cover with their overlap in Wedhorn's 
 ## Main definitions
 
 * `TauCeti.Huber.weightedRename`: the ring homomorphism `A⟨X⟩_T → A⟨X⟩_S` induced by an embedding
-  of the variables; `TauCeti.Huber.coe_weightedRename` says it is `MvPowerSeries.rename`.
+  of the variables; `TauCeti.Huber.weightedRenameAlgHom` is its `A`-algebra-homomorphism form, and
+  `TauCeti.Huber.coe_weightedRename` says it is `MvPowerSeries.rename`.
 
 ## Main results
 
@@ -119,6 +120,25 @@ theorem weightedRename_weightedC [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T
     {S : Fin m → Set A} {hT : IsWeightFamily T} {hS : IsWeightFamily S} (hTS : ∀ i, T i ⊆ S (e i))
     (a : A) : weightedRename e hT hS hTS (weightedC T hT a) = weightedC S hS a :=
   Subtype.ext (by simp)
+
+/-- The `A`-algebra-homomorphism form of `weightedRename`. -/
+@[expose]
+noncomputable def weightedRenameAlgHom [NonarchimedeanRing A] (e : Fin k ↪ Fin m)
+    {T : Fin k → Set A} {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, T i ⊆ S (e i)) :
+    weightedRestrictedSubring T hT →ₐ[A] weightedRestrictedSubring S hS where
+  __ := weightedRename e hT hS hTS
+  commutes' a := by
+    rw [algebraMap_weightedRestrictedSubring, algebraMap_weightedRestrictedSubring]
+    exact weightedRename_weightedC e hTS a
+
+/-- The algebra-homomorphism form has the same underlying function as `weightedRename`. -/
+@[simp]
+theorem weightedRenameAlgHom_apply [NonarchimedeanRing A] (e : Fin k ↪ Fin m)
+    {T : Fin k → Set A} {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, T i ⊆ S (e i)) (f : weightedRestrictedSubring T hT) :
+    weightedRenameAlgHom e hT hS hTS f = weightedRename e hT hS hTS f :=
+  rfl
 
 /-- `weightedRename` sends the variable `Xᵢ` to `X_{e i}`. -/
 @[simp]
