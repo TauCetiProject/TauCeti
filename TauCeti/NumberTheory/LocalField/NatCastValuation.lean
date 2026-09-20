@@ -34,10 +34,14 @@ characteristic is the absolute ramification index of `K`.
 
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
+* `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
+  characteristic equation in the additive and multiplicative valuation conventions.
 * `TauCeti.natCastValuation_eq_zero_iff`: the vanishing criterion, in terms of invertibility in
   `𝒪[K]`.
 * `TauCeti.natCastValuation_eq_zero_iff_not_dvd`: the vanishing criterion read off the residue
   characteristic.
+* `TauCeti.natCastValuation_ne_zero_iff_ringChar_eq`: at a prime, the invariant is nonzero
+  exactly when that prime is the residue characteristic.
 * `TauCeti.natCastValuation_eq_zero_of_ringChar_ne_zero`: in equal characteristic the invariant
   is identically zero.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
@@ -85,6 +89,15 @@ theorem normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
   rw [natCastValuation, Int.toNat_of_nonneg h, ofAdd_toAdd]
 
 variable (K) in
+/-- The additive normalized valuation of a nonzero natural-number cast is its
+`natCastValuation`. -/
+theorem toAdd_normalizedValuation_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
+    (normalizedValuation K (Units.mk0 (n : K) hn)).toAdd =
+      (natCastValuation K n hn : ℤ) := by
+  rw [← toAdd_ofAdd (natCastValuation K n hn : ℤ)]
+  exact congrArg Multiplicative.toAdd (normalizedValuation_natCast K n hn)
+
+variable (K) in
 /-- The zero-preserving form of the characteristic equation of `natCastValuation`. -/
 @[simp]
 theorem normalizedValuationWithZero_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
@@ -117,6 +130,15 @@ theorem natCastValuation_eq_zero_iff_not_dvd (n : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K n hn = 0 ↔ ¬ ringChar 𝓀[K] ∣ n := by
   rw [natCastValuation_eq_zero_iff, ← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast,
     ne_eq, ← ringChar.spec]
+
+variable (K) in
+/-- For a prime `p`, the normalized valuation of `p` is nonzero exactly when `p` is the residue
+characteristic of `K`, that is, exactly when `K` is `p`-adic. -/
+theorem natCastValuation_ne_zero_iff_ringChar_eq {p : ℕ} (hp : p.Prime) (hn : (p : K) ≠ 0) :
+    natCastValuation K p hn ≠ 0 ↔ ringChar 𝓀[K] = p := by
+  rw [ne_eq, natCastValuation_eq_zero_iff_not_dvd, not_not]
+  refine ⟨fun h ↦ (hp.eq_one_or_self_of_dvd _ h).resolve_left ?_, fun h ↦ h ▸ dvd_rfl⟩
+  exact CharP.char_ne_one 𝓀[K] _
 
 variable (K) in
 /-- In equal characteristic the normalized valuation of a nonzero natural-number cast always
@@ -195,6 +217,16 @@ theorem span_natCast_eq_maximalIdeal_pow (n : ℕ) (hn : (n : K) ≠ 0) :
       Subring.coe_mul, Subring.coe_pow, Subring.coe_natCast] using hu
   rw [← hu', Ideal.span_singleton_mul_left_unit u.isUnit, hπ.maximalIdeal_eq,
     Ideal.span_singleton_pow]
+
+/-- The multiplicative valuation of a nonzero natural-number cast is the corresponding power of
+the valuation of any uniformizer. -/
+theorem valuation_natCast_eq_pow {π : 𝒪[K]} (hπ : Irreducible π) (n : ℕ)
+    (hn : (n : K) ≠ 0) :
+    valuation K (n : K) = valuation K (π : K) ^ natCastValuation K n hn := by
+  have h := (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
+    (normalizedValuation_irreducible hπ) ((natCastValuation K n hn : ℕ) : ℤ)
+    (Units.mk0 (n : K) hn)).mp (by simp)
+  simpa only [Units.val_mk0, zpow_natCast] using h
 
 variable (K) in
 /-- The normalized absolute value of a natural number is `q ^ (-natCastValuation K n hn)`, where

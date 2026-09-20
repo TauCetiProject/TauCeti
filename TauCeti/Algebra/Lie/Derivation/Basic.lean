@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Lie.NonUnitalNonAssocAlgebra
+public import Mathlib.Algebra.Lie.Submodule
 public import Mathlib.RingTheory.Derivation.Lie
 
 /-!
-# The derivation Lie algebra of a non-associative algebra
+# Derivations of a non-associative algebra
 
 A **derivation** of an algebra `A` is a linear map `D` obeying the Leibniz rule
 `D (x * y) = D x * y + x * D y`.  Nothing in that rule asks the multiplication to be associative,
@@ -29,6 +30,9 @@ instances of it.
   `Module.End R A`.
 * `TauCeti.innerDerivation`: for an associative algebra, the inner derivations `z ↦ ⁅z, -⁆`, as a
   homomorphism of Lie algebras `A →ₗ⁅R⁆ Der A`.
+* `TauCeti.stableDerivations`: the Lie subalgebra of derivations preserving a fixed submodule.
+* `TauCeti.stableDerivations.lieSubmodule`: that submodule, as a Lie module over the derivations
+  preserving it.
 * `TauCeti.derivationLieAlgebraCongr`: an isomorphism of algebras induces an isomorphism of their
   derivation Lie algebras, by conjugation.
 
@@ -158,6 +162,60 @@ theorem ext {D E : derivationLieAlgebra R A}
 end derivationLieAlgebra
 
 end Defs
+
+section Stabilizer
+
+variable (R : Type u) {A : Type v} [CommRing R] [NonUnitalNonAssocRing A] [Module R A]
+  [SMulCommClass R A A] [IsScalarTower R A A]
+
+/-- The derivations of `A` that preserve the submodule `S`, as a Lie subalgebra of `Der(A)`. -/
+-- Closure under the Lie bracket holds because the commutator of two endomorphisms preserving a
+-- submodule again preserves that submodule.
+def stableDerivations (S : Submodule R A) : LieSubalgebra R (derivationLieAlgebra R A) where
+  carrier := {D | ∀ x ∈ S, (D : Module.End R A) x ∈ S}
+  zero_mem' _ _ := S.zero_mem
+  add_mem' hD hE x hx := S.add_mem (hD x hx) (hE x hx)
+  smul_mem' r D hD x hx := S.smul_mem r (hD x hx)
+  lie_mem' := by
+    intro D E hD hE x hx
+    -- The nested Lie-subalgebra coercions hide that this bracket is the commutator of
+    -- endomorphisms.
+    change (D : Module.End R A) ((E : Module.End R A) x) -
+      (E : Module.End R A) ((D : Module.End R A) x) ∈ S
+    exact S.sub_mem (hD _ (hE x hx)) (hE _ (hD x hx))
+
+/-- Membership in `stableDerivations R S` means pointwise preservation of `S`. -/
+@[simp]
+theorem mem_stableDerivations (S : Submodule R A) (D : derivationLieAlgebra R A) :
+    D ∈ stableDerivations R S ↔ ∀ x ∈ S, (D : Module.End R A) x ∈ S :=
+  Iff.rfl
+
+/-- The submodule `S`, as a Lie submodule of `A` over the derivations preserving it. Through this
+Lie submodule, Mathlib equips the quotient `A ⧸ S` with its action by stable derivations. -/
+-- `@[expose]` is mandated by the compiler, not an optional leak of the body: the quotient type
+-- `A ⧸ lieSubmodule R S` is the type `A ⧸ S` only after the `toSubmodule` field is unfolded, and
+-- an exported statement may unfold only exposed definitions.  Without it, any downstream statement
+-- reading the quotient action as an endomorphism of `A ⧸ S` -- `TauCeti.derivationQuotientHom`,
+-- say -- fails to elaborate.
+@[expose]
+def stableDerivations.lieSubmodule (S : Submodule R A) :
+    LieSubmodule R (stableDerivations R S) A where
+  toSubmodule := S
+  lie_mem {D x} hx := (mem_stableDerivations R S D).mp D.property x hx
+
+/-- The underlying submodule of `stableDerivations.lieSubmodule R S` is `S`. -/
+@[simp]
+theorem stableDerivations.coe_lieSubmodule (S : Submodule R A) :
+    (stableDerivations.lieSubmodule R S : Submodule R A) = S :=
+  rfl
+
+/-- Membership in `stableDerivations.lieSubmodule R S` is membership in `S`. -/
+@[simp]
+theorem stableDerivations.mem_lieSubmodule (S : Submodule R A) (x : A) :
+    x ∈ stableDerivations.lieSubmodule R S ↔ x ∈ S :=
+  Iff.rfl
+
+end Stabilizer
 
 section Unital
 

@@ -64,15 +64,15 @@ agree are closed under products and contain the scalars; this is
   `U(L)` on itself, up to the sign by which the two conventions differ.
 * `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_range_le_iff`: the lifted derivation has
   range in a two-sided ideal exactly when its values on the canonical generators lie there.
-* `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_mapsTo_pow`: under the same generator
-  condition, every power of the ideal is stable under the lifted derivation.
+* `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_mem_stableDerivations_pow`: under the
+  same generator condition, every power of the ideal is stable under the lifted derivation.
 
 ## Implementation notes
 
 `envelopingDerivation` is valued in the bundled derivation algebra
-`TauCeti.derivationLieAlgebra R (U L)` of `TauCeti/Algebra/Lie/Derivation.lean` rather than in the
-bare `U L →ₗ[R] U L`: that is the noncommutative derivation API this construction is meant to be
-read in (Mathlib's `Derivation` needs a commutative algebra, and `LieDerivation` needs a Lie
+`TauCeti.derivationLieAlgebra R (U L)` of `TauCeti/Algebra/Lie/Derivation/Basic.lean` rather than
+in the bare `U L →ₗ[R] U L`: that is the noncommutative derivation API this construction is meant
+to be read in (Mathlib's `Derivation` needs a commutative algebra, and `LieDerivation` needs a Lie
 bracket, so neither applies to `U(L)`).  The bundling is also what lets `D ↦ Dᵁ` be a `LieHom`,
 since the target is a Lie algebra on the nose.
 
@@ -276,12 +276,12 @@ theorem envelopingDerivation_range_le_iff (D : LieDerivation R L L) (I : Ideal U
       exact I.add_mem (I.mul_mem_right b ha) (I.mul_mem_left a hb)
 
 /-- If a two-sided ideal contains the values of a Lie derivation on the canonical enveloping
-generators, every power of that ideal is stable under the lifted derivation. -/
-theorem envelopingDerivation_mapsTo_pow (D : LieDerivation R L L) (I : Ideal U) [I.IsTwoSided]
-    (h : ∀ x : L, _root_.UniversalEnvelopingAlgebra.ι R (D x) ∈ I) (n : ℕ) :
-    Set.MapsTo (envelopingDerivation R L D : Module.End R U)
-      ((I ^ n : Ideal U) : Set U) ((I ^ n : Ideal U) : Set U) :=
-  derivationLieAlgebra.mapsTo_pow_of_range_le (envelopingDerivation R L D) I
+generators, every power of that ideal is stable under the lifted derivation -- so the lift descends
+to each quotient `U(L) ⧸ I ^ n` along `TauCeti.derivationQuotientHom`. -/
+theorem envelopingDerivation_mem_stableDerivations_pow (D : LieDerivation R L L) (I : Ideal U)
+    [I.IsTwoSided] (h : ∀ x : L, _root_.UniversalEnvelopingAlgebra.ι R (D x) ∈ I) (n : ℕ) :
+    envelopingDerivation R L D ∈ stableDerivations R ((I ^ n).restrictScalars R) :=
+  mem_stableDerivations_pow_of_range_le R
     ((envelopingDerivation_range_le_iff R L D I).2 h) n
 
 /-! ### Functoriality in the derivation -/
