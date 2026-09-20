@@ -184,6 +184,7 @@ theorem component_one (f : AInfinityHom AA BB) :
   exact congrArg f.taylor hword
 
 /-- Two `A∞` morphisms are equal when all their unsuspended components agree. -/
+@[ext]
 theorem ext_component {f g : AInfinityHom AA BB}
     (h : ∀ n, f.component n = g.component n) : f = g := by
   apply AInfinityHom.ext
