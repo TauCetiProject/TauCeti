@@ -19,11 +19,10 @@ measures `μᵢ` and a probability measure `μ`, the following are equivalent:
 * there are couplings `πᵢ` of `μᵢ` and `μ` for which
   `‖(x, y) ↦ edist x y‖_{L^∞(πᵢ)} → 0`.
 
-The forward implication uses attainment of the `W_∞` infimum, while the reverse implication is
-the defining infimum bound. The result is stated first for bundled probability measures at the raw
-distance level and then as the convergence criterion for an arbitrary anchored finite-`W_∞`
-component. The latter is the topological form: it characterizes convergence in the component's
-Wasserstein metric by a family of transport plans.
+The result is stated first for bundled probability measures at the raw distance level and then as
+the convergence criterion for an arbitrary anchored finite-`W_∞` component. The latter is the
+topological form: it characterizes convergence in the component's Wasserstein metric by a family
+of transport plans.
 
 ## Main statements
 
@@ -59,9 +58,8 @@ variable {X : Type u} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 measures has `W_∞` distance to `ν` tending to zero if and only if one can choose a coupling at
 each index whose essential-supremum displacement tends to zero.
 
-The selected couplings in the forward direction attain `W_∞` exactly. No bounded-support or
-finite-moment hypothesis is needed: convergence to zero itself eventually supplies finite
-distance, while attainment is valid even when the value at some indices is infinite. -/
+No bounded-support or finite-moment hypothesis is needed, and the individual `W_∞` values are
+allowed to be infinite: only their behaviour along `l` is constrained. -/
 theorem tendsto_wassersteinEDist_top_iff_exists_couplings
     {I : Type v} {l : Filter I} {mus : I → ProbabilityMeasure X}
     {nu : ProbabilityMeasure X} :
