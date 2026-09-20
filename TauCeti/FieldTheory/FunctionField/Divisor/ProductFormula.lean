@@ -30,6 +30,8 @@ strictly stronger than nonconstancy.
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
 * `TauCeti.Divisor.degree_principal` is the product formula.
+* `TauCeti.Divisor.succ_le_dim_nsmul_poles` is the growth estimate for the powers of one
+  transcendental function, `ℓ(l (x)_∞) ≥ l + 1`.
 * `TauCeti.Divisor.degreeClass` descends degree to the divisor class group, with
   `TauCeti.Divisor.ker_degreeClass_eq_picZero` identifying its kernel `Cl⁰(F)` with the abstract
   `Pic⁰`, and `TauCeti.Divisor.degree_eq_of_linearlyEquivalent` records invariance under linear
@@ -131,6 +133,21 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   have hcard := hv.fintype_card_le_finrank
   rw [Divisor.dim_def]
   simpa using hcard
+
+/-- **`ℓ(l (x)_∞) ≥ l + 1`** for a function `x` transcendental over `k`: the Riemann--Roch
+space of `l` times the pole divisor of `x` has dimension at least `l + 1`.  Compared against
+Riemann--Roch in large degree, this is the lower bound behind the product formula and behind
+the vanishing of the genus of a rational function field. -/
+theorem Divisor.succ_le_dim_nsmul_poles (hF : IsFunctionField k F) (x : Fˣ)
+    (hx : Transcendental k (x : F)) (l : ℕ) :
+    l + 1 ≤ Divisor.dim (l • Divisor.poles hF x) := by
+  -- The powers `1, x, …, xˡ` are `k`-linearly independent and have no poles outside those of
+  -- `x`: this is the growth estimate above for the single function `1`.
+  have hone : Divisor.poles hF (1 : Fˣ) = 0 := WeilDivisor.ext fun P ↦ by simp
+  have hc : LinearIndependent k⟮(x : F)⟯ fun _ : Unit ↦ ((1 : Fˣ) : F) :=
+    linearIndependent_unique_iff.mpr (by simp)
+  simpa using Divisor.card_mul_succ_le_dim_nsmul_poles_add hF x hx (fun _ : Unit ↦ (1 : Fˣ)) hc
+    (C := 0) (fun _ ↦ hone.le) l
 
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/

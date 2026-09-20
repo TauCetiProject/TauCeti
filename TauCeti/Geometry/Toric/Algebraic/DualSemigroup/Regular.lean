@@ -32,6 +32,12 @@ generated.
   `TauCeti.Toric.regularDualSemigroupEquiv_snd_apply`,
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inl` and
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inr` computing both directions.
+* `TauCeti.Toric.dualSemigroupCoord`: the coordinate functional of an extending basis, as an
+  element of the dual semigroup, with
+  `TauCeti.Toric.regularDualSemigroupEquiv_fst_dualSemigroupCoord_inl`,
+  `TauCeti.Toric.regularDualSemigroupEquiv_fst_dualSemigroupCoord_inr` and
+  `TauCeti.Toric.regularDualSemigroupEquiv_snd_dualSemigroupCoord` computing the regular
+  coordinates, with respect to one extending basis, of the dual basis characters of another.
 * `TauCeti.Toric.IsRegularCone.nonempty_dualSemigroup_addEquiv`: the dual semigroup of a regular
   cone with `k` rays in a lattice of rank `n` is isomorphic to `ℕ ^ k × ℤ ^ (n - k)`.
 * `TauCeti.Toric.IsRegularCone.fg_dualSemigroup`: the dual semigroup of a regular cone is
@@ -114,6 +120,106 @@ complementary basis vector. -/
 theorem regularDualSemigroupEquiv_symm_apply_inr (p : (ToricRay σ →₀ ℕ) × (ι →₀ ℤ)) (j : ι) :
     ((regularDualSemigroupEquiv hi hσ hb).symm p : N →+ ℤ) (b (Sum.inr j)) = p.2 j := by
   simp [regularDualSemigroupEquiv]
+
+/-! ### The dual basis characters -/
+
+/-- The coordinate functional of a basis extending the primitive ray generators, as an element of
+the dual semigroup of the cone: its values on the basis vectors are `0` and `1`, so it is
+nonnegative on every primitive ray generator. These characters are the monomials whose values on a
+complex point are the regular coordinates of the affine chart of the cone, the ray indices giving
+the coordinates that may vanish. -/
+noncomputable def dualSemigroupCoord (c : ToricRay σ ⊕ ι) : dualSemigroup hi σ :=
+  ⟨(b.coord c).toAddMonoidHom, (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb _).2
+    fun ρ ↦ by
+      rcases eq_or_ne c (Sum.inl ρ) with rfl | hne
+      · simp [Module.Basis.coord_apply]
+      · simp [Module.Basis.coord_apply, Finsupp.single_eq_of_ne hne]⟩
+
+@[simp]
+theorem coe_dualSemigroupCoord (c : ToricRay σ ⊕ ι) :
+    ((dualSemigroupCoord hi hσ hb c : dualSemigroup hi σ) : N →+ ℤ) =
+      (b.coord c).toAddMonoidHom := by
+  simp [dualSemigroupCoord]
+
+/-- A dual basis character takes the value `1` on its own basis vector. -/
+theorem dualSemigroupCoord_apply_basis_self (c : ToricRay σ ⊕ ι) :
+    ((dualSemigroupCoord hi hσ hb c : dualSemigroup hi σ) : N →+ ℤ) (b c) = 1 := by
+  simp [Module.Basis.coord_apply]
+
+/-- A dual basis character vanishes on every other basis vector. -/
+theorem dualSemigroupCoord_apply_basis_of_ne {c c' : ToricRay σ ⊕ ι} (h : c' ≠ c) :
+    ((dualSemigroupCoord hi hσ hb c : dualSemigroup hi σ) : N →+ ℤ) (b c') = 0 := by
+  simp [Module.Basis.coord_apply, Finsupp.single_eq_of_ne (Ne.symm h)]
+
+section
+
+variable {b' : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
+  (hb' : ∀ ρ, IsPrimitiveGenerator i ρ (b' (Sum.inl ρ)))
+
+/-- The ray coordinates of the dual basis character of a ray index of a second extending basis form
+the standard generator at that ray: both bases carry the primitive generator of a ray at the index
+of that ray, so the ray block of the transition matrix is the identity. -/
+@[simp]
+theorem regularDualSemigroupEquiv_fst_dualSemigroupCoord_inl (ρ : ToricRay σ) :
+    (regularDualSemigroupEquiv hi hσ hb (dualSemigroupCoord hi hσ hb' (Sum.inl ρ))).1 =
+      Finsupp.single ρ 1 := by
+  refine Finsupp.ext fun ρ' ↦ Nat.cast_injective (R := ℤ) ?_
+  -- Both bases carry the primitive generator of the ray `ρ'`, and it is unique.
+  rw [coe_regularDualSemigroupEquiv_fst_apply,
+    (hb ρ').unique hi (hσ.salient.anti fun _ hx ↦ ρ'.1.isFaceOf.le hx) (hb' ρ')]
+  rcases eq_or_ne ρ' ρ with rfl | hne
+  · simp
+  · rw [dualSemigroupCoord_apply_basis_of_ne hi hσ hb' (by simpa using hne),
+      Finsupp.single_eq_of_ne hne]
+    simp
+
+/-- The dual basis character of a complementary index of a second extending basis has no ray
+coordinates: it vanishes on every primitive ray generator, since both bases carry the primitive
+generator of a ray at the index of that ray. -/
+@[simp]
+theorem regularDualSemigroupEquiv_fst_dualSemigroupCoord_inr (j : ι) :
+    (regularDualSemigroupEquiv hi hσ hb (dualSemigroupCoord hi hσ hb' (Sum.inr j))).1 = 0 := by
+  refine Finsupp.ext fun ρ ↦ Nat.cast_injective (R := ℤ) ?_
+  -- Both bases carry the primitive generator of the ray `ρ`, and it is unique.
+  rw [coe_regularDualSemigroupEquiv_fst_apply,
+    (hb ρ).unique hi (hσ.salient.anti fun _ hx ↦ ρ.1.isFaceOf.le hx) (hb' ρ),
+    dualSemigroupCoord_apply_basis_of_ne hi hσ hb' (by simp)]
+  simp
+
+/-- The complementary coordinates of the dual basis character of a second extending basis are the
+entries of the transition matrix between the two bases. -/
+theorem regularDualSemigroupEquiv_snd_dualSemigroupCoord (c : ToricRay σ ⊕ ι) (j : ι) :
+    (regularDualSemigroupEquiv hi hσ hb (dualSemigroupCoord hi hσ hb' c)).2 j =
+      b'.toMatrix b c (Sum.inr j) := by
+  simp [Module.Basis.toMatrix_apply, Module.Basis.coord_apply]
+
+end
+
+/-- The character with a single standard ray coordinate is the dual basis character of that ray
+index. -/
+@[simp]
+theorem regularDualSemigroupEquiv_symm_apply_single_zero (ρ : ToricRay σ) :
+    (regularDualSemigroupEquiv hi hσ hb).symm (Finsupp.single ρ 1, 0) =
+      dualSemigroupCoord hi hσ hb (Sum.inl ρ) := by
+  rw [AddEquiv.symm_apply_eq]
+  refine Prod.ext (regularDualSemigroupEquiv_fst_dualSemigroupCoord_inl hi hσ hb hb ρ).symm
+    (Finsupp.ext fun j ↦ ?_)
+  simp
+
+/-- The character with a single standard complementary coordinate is the dual basis character of
+that complementary index. -/
+@[simp]
+theorem regularDualSemigroupEquiv_symm_apply_zero_single (j : ι) :
+    (regularDualSemigroupEquiv hi hσ hb).symm (0, Finsupp.single j 1) =
+      dualSemigroupCoord hi hσ hb (Sum.inr j) := by
+  rw [AddEquiv.symm_apply_eq]
+  refine Prod.ext (regularDualSemigroupEquiv_fst_dualSemigroupCoord_inr hi hσ hb hb j).symm
+    (Finsupp.ext fun j' ↦ ?_)
+  rcases eq_or_ne j' j with rfl | hne
+  · simp
+  · rw [Finsupp.single_eq_of_ne hne, regularDualSemigroupEquiv_snd_apply,
+      dualSemigroupCoord_apply_basis_of_ne hi hσ hb (c := Sum.inr j) (c' := Sum.inr j')
+        (by simpa using hne)]
 
 namespace IsRegularCone
 

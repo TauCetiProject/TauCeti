@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.ResidueField
+public import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
 # Residue fields at closed points are finite over global functions
@@ -23,7 +24,9 @@ degree of a closed point `x` of a curve.
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.finite_Γevaluation_of_isClosed`: the evaluation map
-  `Γ(X, ⊤) ⟶ κ(x)` at a closed point is finite.
+  `Γ(X, ⊤) ⟶ κ(x)` at a closed point is finite;
+* `AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed`: the residue degree
+  `[κ(x) : κ(f x)]` at a closed point is finite, hence nonzero.
 
 The input is Mathlib's `isFinite_iff_locallyOfFiniteType_of_jacobsonSpace` applied to
 `Spec κ(x) ⟶ X ⟶ Y`, as in Mathlib's `AlgebraicGeometry.residueFieldIsoBase`.
@@ -57,6 +60,21 @@ theorem _root_.AlgebraicGeometry.Scheme.finite_Γevaluation_of_isClosed {X Y : S
   rw [Scheme.fromSpecResidueField, Category.assoc, Scheme.fromSpecStalk_toSpecΓ,
     ← Spec.map_comp] at this
   exact (IsFinite.SpecMap_iff _).mp this
+
+/-- At a closed point `x` of a scheme locally of finite type over a Jacobson scheme, the
+residue field extension `κ(f x) ⟶ κ(x)` is finite, so its residue degree is nonzero. For a scheme
+of finite type over a field `k` this says that closed points have finite degree over `k`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.residueDegree_ne_zero_of_isClosed
+    {X Y : Scheme.{u}} [JacobsonSpace Y]
+    (f : X ⟶ Y) [LocallyOfFiniteType f] {x : X} (hx : IsClosed {x}) :
+    f.residueDegree x ≠ 0 := by
+  have := isClosed_singleton_iff_isClosedImmersion.mp hx
+  have : IsFinite (X.fromSpecResidueField x ≫ f) :=
+    isFinite_iff_locallyOfFiniteType_of_jacobsonSpace.mpr inferInstance
+  rw [← Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField] at this
+  have : IsFinite (Spec.map (f.residueFieldMap x)) :=
+    IsFinite.of_comp _ (Y.fromSpecResidueField (f x))
+  exact (residueDegree_ne_zero_iff f x).mpr ((IsFinite.SpecMap_iff _).mp this)
 
 end AlgebraicGeometry
 

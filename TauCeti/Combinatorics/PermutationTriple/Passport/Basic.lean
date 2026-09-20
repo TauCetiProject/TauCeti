@@ -90,6 +90,12 @@ theorem mk_eq_mk_iff {t t' : ConnectedTriple n} :
     mk t = mk t' ↔ MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n) t t' :=
   Quotient.eq''
 
+/-- Two connected triples determine the same isomorphism class exactly when some relabeling
+carries the second onto the first. -/
+theorem mk_eq_mk_iff_exists_smul {t t' : ConnectedTriple n} :
+    mk t = mk t' ↔ ∃ τ : Perm (Fin n), τ • t' = t := by
+  rw [mk_eq_mk_iff, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+
 theorem mk_surjective : Function.Surjective (mk : ConnectedTriple n → ConnectedIsoClass n) :=
   Quotient.mk''_surjective
 

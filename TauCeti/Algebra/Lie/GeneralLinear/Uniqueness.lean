@@ -69,6 +69,9 @@ surjective.
 * `TauCeti.exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan`: **the highest weight line.** A
   vector of weight `μ` in the module a highest weight vector `v` of weight `μ` generates is a
   multiple of `v`.
+* `TauCeti.weightSpace_eq_span_singleton_of_isGlHighestWeightVector_of_lieSpan_eq_top` and
+  `TauCeti.finrank_weightSpace_eq_one_of_isGlHighestWeightVector_of_lieSpan_eq_top`: in a cyclic
+  highest weight module, the top weight space is exactly the generator line and has dimension one.
 * `TauCeti.nonempty_lieModuleEquiv_of_isGlHighestWeightVector`: **the highest weight determines the
   irreducible.** Two irreducible `gl n K`-modules carrying highest weight vectors of the same
   weight are isomorphic, with
@@ -383,6 +386,37 @@ theorem exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan
     rw [hzeq]
     exact sub_mem hsum hcv
   rw [Submodule.disjoint_def.mp disjoint_heightEigenspace_zero z hz0 hz, add_zero]
+
+/-- **The top weight space is the highest weight line.** If a highest weight vector `v` generates
+its `gl n K`-module, then the honest weight space of its weight is exactly `K · v`. -/
+theorem weightSpace_eq_span_singleton_of_isGlHighestWeightVector_of_lieSpan_eq_top
+    (hv : IsGlHighestWeightVector mu v)
+    (hspan : LieSubmodule.lieSpan K (Matrix n n K) {v} = ⊤) :
+    weightSpace M
+        ((glWeightEquiv K n mu : Module.Dual K (diagonalCartan K n)) :
+          diagonalCartan K n → K) = K ∙ v := by
+  apply le_antisymm
+  · intro w hw
+    rw [Submodule.mem_span_singleton]
+    obtain ⟨c, hc⟩ := exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan hv
+      (by simp [hspan]) ((mem_weightSpace_glWeightEquiv_iff mu w).mp hw)
+    exact ⟨c, hc.symm⟩
+  · rw [Submodule.span_le]
+    intro w hw
+    simp only [Set.mem_singleton_iff] at hw
+    subst w
+    exact (mem_weightSpace_glWeightEquiv_iff mu v).mpr hv.lie_single_self_eq_smul
+
+/-- **The top weight has multiplicity one in a cyclic highest weight module.** -/
+theorem finrank_weightSpace_eq_one_of_isGlHighestWeightVector_of_lieSpan_eq_top
+    (hv : IsGlHighestWeightVector mu v)
+    (hspan : LieSubmodule.lieSpan K (Matrix n n K) {v} = ⊤) :
+    finrank K (weightSpace M
+        ((glWeightEquiv K n mu : Module.Dual K (diagonalCartan K n)) :
+          diagonalCartan K n → K)) = 1 := by
+  exact (LinearEquiv.ofEq _ _
+      (weightSpace_eq_span_singleton_of_isGlHighestWeightVector_of_lieSpan_eq_top
+        hv hspan)).finrank_eq.trans (finrank_span_singleton hv.ne_zero)
 
 /-! ### The diagonal argument -/
 

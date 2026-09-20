@@ -41,7 +41,7 @@ distributions and pairwise Hamming distances are invariants of the resulting equ
   corresponding invariants for permutation-equivalent codes.
 
 Invariance of the weight distribution and weight enumerator is in
-`TauCeti.InformationTheory.Coding.WeightEnumerator`.
+`TauCeti.InformationTheory.Coding.Weight.Enumerator`.
 
 ## References
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Wishart.Basic
 
 import TauCeti.MeasureTheory.Measure.ProductKernel
+import TauCeti.Probability.Distributions.Gaussian.Measurability
 
 /-!
 # Parameter measurability of the Gaussian-Gram Wishart family
@@ -54,8 +55,8 @@ private theorem measurable_wishartGramMeasure_fixedDegree (nu : ℕ) :
     fun S => ⟨multivariateGaussian 0 (Matrix.of S), inferInstance⟩
   have hgaussian : Measurable gaussian := by
     apply Measurable.subtype_mk
-    exact measurable_multivariateGaussian.comp
-      (measurable_const.prodMk (Matrix.measurable_of (Fin p) (Fin p) ℝ))
+    exact TauCeti.measurable_multivariateGaussian.comp
+      (measurable_const.prodMk measurable_id)
   -- `ProbabilityMeasure.toMeasure_pi` is a `rfl` lemma, so the product kernel can be stated
   -- directly as the `Measure.pi` appearing in `wishartGramMeasure_eq_map_pi`.
   have hpi : Measurable fun S : Fin p → Fin p → ℝ =>

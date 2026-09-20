@@ -105,7 +105,7 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_measurableSet_invariants
         ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real (B i) ≤ 1 :=
       fun i => measureReal_le_one
     rw [Real.norm_eq_abs, hQdef, abs_of_nonneg (Finset.prod_nonneg fun i _ => h0 i)]
-    exact Finset.prod_le_one (fun i _ => h0 i) fun i _ => h1 i
+    exact Finset.prod_le_one₀ (fun i _ => h0 i) fun i _ => h1 i
   have hP_meas : Measurable P := by
     refine Finset.measurable_prod _ fun i _ => ?_
     exact (stronglyMeasurable_condExp.measurable).mono

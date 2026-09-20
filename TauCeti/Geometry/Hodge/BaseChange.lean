@@ -49,6 +49,8 @@ imposed later as structure data.
 * `TauCeti.Hodge.range_rationalMapToComplex` and `TauCeti.Hodge.ker_rationalMapToComplex`: that
   scalar extension has the complexified range and the complexified kernel as its range and
   kernel.
+* `TauCeti.Hodge.isIdempotentElem_rationalMapToComplex`: that scalar extension preserves
+  idempotents.
 * `TauCeti.Hodge.disjoint_rationalToComplexSubmodule` and
   `TauCeti.Hodge.rationalToComplexSubmodule_inf`: complexification of rational subspaces preserves
   disjointness and meets.
@@ -532,6 +534,19 @@ theorem rationalMapToComplex_comp
         rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f := by
   ext x
   simp [rationalMapToComplex, LinearMap.baseChange_comp]
+
+/-- Extension of scalars along `ℚ → ℂ` preserves idempotents: the complexification of an
+idempotent rational endomorphism is idempotent. -/
+theorem isIdempotentElem_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    {e : Vℚ →ₗ[ℚ] Vℚ} (he : IsIdempotentElem e) :
+    IsIdempotentElem (rationalMapToComplex hℚ hℂ hℚ hℂ e) := by
+  have hcomp : e ∘ₗ e = e := by
+    rw [← Module.End.mul_eq_comp]
+    exact he
+  have hkey : rationalMapToComplex hℚ hℂ hℚ hℂ e * rationalMapToComplex hℚ hℂ hℚ hℂ e =
+      rationalMapToComplex hℚ hℂ hℚ hℂ e := by
+    rw [Module.End.mul_eq_comp, ← rationalMapToComplex_comp hℚ hℂ hℚ hℂ hℚ hℂ e e, hcomp]
+  exact hkey
 
 end Comp
 

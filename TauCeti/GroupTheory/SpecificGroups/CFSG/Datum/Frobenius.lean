@@ -49,8 +49,11 @@ This is the root-datum layer of the `Frob_q` of milestone L1, "ordinary and grap
 of `TauCetiRoadmap/CFSGStatement/README.md`, whose table sets the Steinberg map of the untwisted
 families to `Frob_q`. The field-level half is
 `TauCeti.ValidLieTypeIndex.frobeniusEquiv` in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Frobenius.lean`; the endomorphism of points that L1 asks
-for waits on the carriers of milestone L0.
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Frobenius.lean`. The corresponding endomorphism of points
+is `TauCeti.ValidLieTypeIndex.frobenius` in
+`TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.AmbientGroup`, defined on the explicit family
+carriers. This file does not define a Frobenius of the pinned group scheme itself, since those
+carriers are not identified here with its points.
 
 The conventions follow R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80
 (1968), §11, and R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex

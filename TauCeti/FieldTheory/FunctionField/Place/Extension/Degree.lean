@@ -27,6 +27,8 @@ field of a place of `F' / k'` is a `k'`-algebra, and the `k`-algebra structure n
 * `TauCeti.Place.degree_eq_degree_restrict_mul_relativeDegree`: `deg P' = deg P · f(P' ∣ P)`.
 * `TauCeti.Place.degree_restrict_le`: hence `deg P ≤ deg P'`, the form consumed when a
   finiteness statement about places of `F` is transported to `F'`.
+* `TauCeti.Place.relativeDegree_eq_one_of_isSepClosed`: a separable extension of a separably closed
+  residue field has relative degree `1`.
 
 ## References
 
@@ -61,6 +63,14 @@ theorem degree_eq_degree_restrict_mul_relativeDegree :
     P'.degree = (P'.restrict k F).degree * relativeDegree k F P' := by
   rw [degree_eq_finrank, degree_eq_finrank, relativeDegree_def,
     Module.finrank_mul_finrank k (P'.restrict k F).ResidueField P'.ResidueField]
+
+/-- A separable extension of a separably closed residue field has relative degree `1`. -/
+@[simp]
+theorem relativeDegree_eq_one_of_isSepClosed [IsSepClosed (P'.restrict k F).ResidueField]
+    [Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField] :
+    relativeDegree k F P' = 1 := by
+  rw [relativeDegree_def, Algebra.finrank_eq_one_iff_bijective_algebraMap]
+  exact IsSepClosed.algebraMap_bijective _ _
 
 /-- A place is at least as large as the place below it: `deg P ≤ deg P'`.  Finiteness of the
 extension guards the junk value of the relative degree. -/

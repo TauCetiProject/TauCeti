@@ -34,6 +34,8 @@ before the multiplicativity and prime-power recurrences are developed.
 ## Main results
 
 * `HeckeRing.GL2.coe_heckeTNat`, `HeckeRing.GL2.coe_heckeTCuspNat`: the underlying slash sums.
+* `HeckeRing.GL2.heckeTNat_coe_cuspForm`: `T_n` agrees under the coercion from cusp forms to
+  modular forms.
 * `HeckeRing.GL2.heckeTCuspNat_eq_smul_iff_heckeTNat_eq_smul`: transfer an eigen-relation
   between a cusp form and its underlying modular form.
 * `HeckeRing.GL2.heckeTNat_congr`, `HeckeRing.GL2.heckeTCuspNat_congr`: transport the index
@@ -126,6 +128,14 @@ lemma heckeTCuspNat_congr {n m : ℕ} [NeZero n] [NeZero m] (h : n = m) :
     ⇑(heckeTCuspNat (N := N) k n f) = heckeSlashSum k (diagCosetGamma1 N n) f := by
   rw [heckeTCuspNat_def, coe_heckeSlashGamma1CuspFormEnd]
 
+/-- The modular-form and cusp-form `T_n` operators agree under the coercion
+`S_k(Γ₁(N)) → M_k(Γ₁(N))`. -/
+@[simp] theorem heckeTNat_coe_cuspForm (n : ℕ) [NeZero n]
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    heckeTNat k n (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      (heckeTCuspNat k n f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  rw [heckeTNat_def, heckeTCuspNat_def, heckeSlashGamma1ModularFormEnd_coe_cuspForm]
+
 /-- A cusp form satisfies a `T_n` eigen-relation exactly when its underlying modular form does.
 The two operators are defined by the same slash sum. -/
 theorem heckeTCuspNat_eq_smul_iff_heckeTNat_eq_smul (n : ℕ) [NeZero n]
@@ -133,21 +143,15 @@ theorem heckeTCuspNat_eq_smul_iff_heckeTNat_eq_smul (n : ℕ) [NeZero n]
     heckeTCuspNat (N := N) k n F = c • F ↔
       heckeTNat (N := N) k n (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
         c • (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
-  have hop : ((heckeTNat (N := N) k n
-      (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-        ModularForm ((Gamma1 N).map (mapGL ℝ)) k) : ℍ → ℂ) =
-      ((heckeTCuspNat (N := N) k n F :
-        CuspForm ((Gamma1 N).map (mapGL ℝ)) k) : ℍ → ℂ) := by
-    simp [coe_heckeTNat, coe_heckeTCuspNat]
   constructor
   · intro hT
     refine DFunLike.ext _ _ fun τ ↦ ?_
     have := DFunLike.congr_fun hT τ
-    simpa [hop] using this
+    simpa using this
   · intro hT
     refine CuspForm.toModularFormₗ_injective (DFunLike.ext _ _ fun τ ↦ ?_)
     have := DFunLike.congr_fun hT τ
-    simpa [CuspForm.toModularFormₗ_eq_coe, hop] using this
+    simpa [CuspForm.toModularFormₗ_eq_coe] using this
 
 /-- **The classical `T_p` formula on modular forms, at every prime.** -/
 theorem coe_heckeTNat_prime (hp : p.Prime)

@@ -15,7 +15,7 @@ This file records norm estimates for operations on bounded continuous functions.
 The main estimate, `TauCeti.norm_boundedContinuousFunction_comp_le`, bounds the sup norm of the
 postcomposition `N ∘ f` of a bounded continuous function `f` by an `ε`-Lipschitz map `N` by
 `‖N 0‖ + ε * ‖f‖`. Thus a globally Lipschitz nonlinearity maps bounded continuous functions to
-bounded ones with an explicit affine norm bound. In `TauCeti.Analysis.ODE.LyapunovPerron` it
+bounded ones with an explicit affine norm bound. In `TauCeti.Analysis.ODE.LyapunovPerron.Basic` it
 supplies the uniform bound on the forcing term `s ↦ N (γ s)` that makes the Lyapunov–Perron
 integral converge and defines the Lyapunov–Perron operator on bounded continuous curves.
 -/

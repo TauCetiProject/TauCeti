@@ -100,11 +100,6 @@ theorem normalizedValuation_comp_zpowersHom (hϖ : normalizedValuation K ϖ = .o
   ext
   simp [hϖ]
 
-/-- A uniformizer has normalized valuation `n` in its `n`-th power. -/
-theorem normalizedValuation_zpow_of_eq_ofAdd_one (hϖ : normalizedValuation K ϖ = .ofAdd 1)
-    (n : ℤ) : normalizedValuation K (ϖ ^ n) = .ofAdd n := by
-  simpa using DFunLike.congr_fun (normalizedValuation_comp_zpowersHom hϖ) (.ofAdd n)
-
 /-- The unit part `x ϖ^{-v_K(x)}` of `x : Kˣ` lies in `U(K,0)`. -/
 theorem mul_zpow_neg_mem_unitFiltration_zero (hϖ : normalizedValuation K ϖ = .ofAdd 1)
     (x : Kˣ) :

@@ -13,8 +13,10 @@ public import Mathlib.CategoryTheory.Groupoid.Subgroupoid
 
 This file records basic facts about fundamental groupoids used when comparing the fundamental
 groupoid of a space with those of its subspaces: the functor induced by an injective continuous
-map is injective on objects (as `CategoryTheory.Subgroupoid.im` requires), and membership of a
-path class in a subgroupoid is unchanged by transporting its endpoints along equalities.
+map is injective on objects (as `CategoryTheory.Subgroupoid.im` requires), membership of a
+path class in a subgroupoid is unchanged by transporting its endpoints along equalities, and
+the induced functor of a composite acts on a single morphism as the composite of the induced
+functors.
 
 ## Main declarations
 
@@ -22,6 +24,7 @@ path class in a subgroupoid is unchanged by transporting its endpoints along equ
   induces a functor of fundamental groupoids that is injective on objects.
 * `Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
   subgroupoid of the fundamental groupoid is unchanged by casting its endpoints along equalities.
+* `FundamentalGroupoid.map_comp_map`: the morphism-level form of `FundamentalGroupoid.map_comp`.
 -/
 
 public section
@@ -46,6 +49,18 @@ theorem cast_mem_arrows_iff
   rw [Path.Homotopic.Quotient.cast_rfl_rfl]
 
 end Path.Homotopic.Quotient
+
+namespace FundamentalGroupoid
+
+/-- The morphism-level form of `FundamentalGroupoid.map_comp`. The source and target of the two
+sides agree definitionally, so unlike the equality of functors this form needs no `eqToHom`. -/
+theorem map_comp_map {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) (f : C(X, Y)) {a b : _root_.FundamentalGroupoid X} (p : a ⟶ b) :
+    (map (g.comp f)).map p = (map g).map ((map f).map p) := by
+  rcases p
+  rfl
+
+end FundamentalGroupoid
 
 namespace ContinuousMap
 

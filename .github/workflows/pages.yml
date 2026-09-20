@@ -43,6 +43,10 @@ on:
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
+      - 'scripts/roadmap_progress.py'
+      - 'scripts/roadmap_topics.json'
+      - 'scripts/roadmap_coverage.json'
+      - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'
   schedule:
     - cron: "23 */3 * * *"   # Every three hours (UTC): refresh the charts and API docs
@@ -265,6 +269,30 @@ jobs:
           if [ ! -s web/static_files/pipeline-health.json ]; then
             echo "::warning::pipeline-health.json was not written"
           fi
+
+      # The Progress page's board: one row per roadmap, one segment per layer, from the roadmap
+      # clone above plus the roadmap labels on merged pull requests. It reads the PR snapshot the
+      # statistics step just fetched rather than walking GitHub again; without one it pages the
+      # merged pull requests itself, which is a few dozen requests. As with the charts, a failure
+      # keeps the committed fallback JSON in place rather than sinking the deploy.
+      - name: Regenerate the roadmap progress board into static_files
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          data_arg=()
+          if [ -s "$RUNNER_TEMP/pr-snapshot.json" ]; then
+            data_arg=(--data "$RUNNER_TEMP/pr-snapshot.json")
+          fi
+          python3 scripts/roadmap_progress.py \
+            --roadmap-dir /tmp/roadmap \
+            --repo "${{ github.repository }}" \
+            "${data_arg[@]}" \
+            --out web/static_files/progress.json \
+          || {
+            echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
+            echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+          }
 
       - name: Collect which data assets could not be regenerated
         id: data-failures

@@ -24,6 +24,10 @@ dimension is strictly smaller than the ambient dimension.  The proof compares ad
 measure with Hausdorff measure and uses the fact that Lipschitz maps do not increase Hausdorff
 dimension.
 
+It also records the quantitative form of a single chart: cutting the unit `d`-cube into `m ^ d`
+subcubes of side `1 / m` covers a Lipschitz image of it by `m ^ d` pieces of diameter `C / m`.
+That is what turns a parametrization in a given dimension into a count.
+
 ## Main declarations
 
 * `TauCeti.IsLipschitzParametrizable`: finite Lipschitz parametrizability by a
@@ -32,7 +36,9 @@ dimension.
 * `TauCeti.IsLipschitzParametrizable.union`: closure under binary unions;
 * `TauCeti.IsLipschitzParametrizable.image`: closure under Lipschitz images;
 * `TauCeti.IsLipschitzParametrizable.measure_zero`: a parametrized set has
-  additive Haar measure zero below the ambient dimension.
+  additive Haar measure zero below the ambient dimension;
+* `LipschitzOnWith.exists_cover_image_unitCube`: a Lipschitz image of the unit `d`-cube is
+  covered by `m ^ d` pieces of arbitrarily small diameter.
 
 The definition and its use in the lattice-point estimate follow Lang, *Algebraic Number Theory*,
 Chapter VI, Section 2.
@@ -171,3 +177,66 @@ theorem measure_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 end IsLipschitzParametrizable
 
 end TauCeti
+
+namespace LipschitzOnWith
+
+variable {E : Type*} [PseudoMetricSpace E]
+
+/-- A map that is Lipschitz with constant `C` on the unit cube `Icc 0 1` of `Fin d → ℝ` carries
+that cube into a union of `m ^ d` pieces — one for each subcube of side `1 / m` — each of
+diameter at most `C / m`.
+
+This is the quantitative content of a chart of a Lipschitz parametrization: cutting the cube
+finely enough covers the image by a prescribed number of arbitrarily small pieces, which is what
+bounds the number of lattice cells such an image can meet. -/
+theorem exists_cover_image_unitCube {d : ℕ} {C : NNReal} {f : (Fin d → ℝ) → E}
+    (hf : LipschitzOnWith C f (Icc 0 1)) {m : ℕ} (hm : 0 < m) :
+    ∃ T : (Fin d → Fin m) → Set E,
+      (f '' Icc (0 : Fin d → ℝ) 1 ⊆ ⋃ k, T k) ∧
+        ∀ k, ∀ x ∈ T k, ∀ y ∈ T k, dist x y ≤ C / m := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  -- `Q k` is the subcube of side `1 / m` with lower corner `k / m`.
+  set Q : (Fin d → Fin m) → Set (Fin d → ℝ) :=
+    fun k ↦ {x | ∀ i, x i ∈ Icc (((k i : ℕ) : ℝ) / m) ((((k i : ℕ) : ℝ) + 1) / m)}
+  have hQsub : ∀ k, Q k ⊆ Icc (0 : Fin d → ℝ) 1 := by
+    intro k x hx
+    simp only [Set.mem_Icc, Pi.le_def, Pi.zero_apply, Pi.one_apply]
+    refine ⟨fun i ↦ le_trans (by positivity) (hx i).1, fun i ↦ (hx i).2.trans ?_⟩
+    rw [div_le_one hmR]
+    exact_mod_cast (Nat.succ_le_of_lt (k i).isLt : (k i : ℕ) + 1 ≤ m)
+  have hQcov : Icc (0 : Fin d → ℝ) 1 ⊆ ⋃ k, Q k := by
+    intro x hx
+    simp only [Set.mem_Icc, Pi.le_def, Pi.zero_apply, Pi.one_apply] at hx
+    -- The subcube containing `x` is indexed by the integer parts of the scaled coordinates,
+    -- capped at `m - 1` so that the coordinate `1` lands in the last subcube.
+    refine mem_iUnion.2 ⟨fun i ↦ ⟨min ⌊x i * m⌋₊ (m - 1),
+      lt_of_le_of_lt (min_le_right _ _) (Nat.sub_lt hm Nat.one_pos)⟩, fun i ↦ ?_⟩
+    -- Evaluate the index family just chosen at `i`.
+    dsimp only
+    have hx0 : 0 ≤ x i := hx.1 i
+    have hx1 : x i ≤ 1 := hx.2 i
+    have hfloor : ((min ⌊x i * m⌋₊ (m - 1) : ℕ) : ℝ) ≤ x i * m :=
+      le_trans (by exact_mod_cast min_le_left ⌊x i * m⌋₊ (m - 1))
+        (Nat.floor_le (by positivity))
+    refine ⟨(div_le_iff₀ hmR).2 hfloor, (le_div_iff₀ hmR).2 ?_⟩
+    rcases le_total ⌊x i * m⌋₊ (m - 1) with h | h
+    · rw [min_eq_left h]
+      exact (Nat.lt_floor_add_one _).le
+    · rw [min_eq_right h, Nat.cast_sub hm, Nat.cast_one, sub_add_cancel]
+      nlinarith
+  have hQdist : ∀ k, ∀ x ∈ Q k, ∀ y ∈ Q k, dist x y ≤ 1 / m := by
+    intro k x hx y hy
+    refine (dist_pi_le_iff (by positivity)).2 fun i ↦ ?_
+    refine (Real.dist_le_of_mem_Icc (hx i) (hy i)).trans_eq ?_
+    ring
+  refine ⟨fun k ↦ f '' Q k, ?_, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨k, hk⟩ := mem_iUnion.1 (hQcov hx)
+    exact mem_iUnion.2 ⟨k, x, hk, rfl⟩
+  · rintro k _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    calc dist (f x) (f y) ≤ (C : ℝ) * dist x y :=
+          hf.dist_le_mul x (hQsub k hx) y (hQsub k hy)
+      _ ≤ (C : ℝ) * (1 / m) := by gcongr; exact hQdist k x hx y hy
+      _ = (C : ℝ) / m := by ring
+
+end LipschitzOnWith

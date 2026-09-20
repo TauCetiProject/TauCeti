@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.Data.ZMod.Count
-public import TauCeti.GroupTheory.OrderOfElement
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
 # Counting the elements of a cyclic group by a condition on their order
@@ -282,7 +282,7 @@ theorem le_card_filter_dvd_orderOf {r : ℕ} (hr : 1 ≤ r) (hfr : f ^ r ∣ Fin
   rw [card_filter_dvd_orderOf_eq_mul_prod_primeFactors hf, mul_comm (Fintype.card α : ℚ)]
   refine mul_le_mul_of_nonneg_right ?_ (by positivity)
   rw [← Finset.prod_const]
-  refine Finset.prod_le_prod (fun p _ => ?_) fun p hp => ?_
+  refine Finset.prod_le_prod₀ (fun p _ => ?_) fun p hp => ?_
   · have : (2 : ℚ)⁻¹ ^ r ≤ 1 := pow_le_one₀ (by norm_num) (by norm_num)
     linarith
   · -- the exponent at `p` is at least `r`, and `2 ≤ p`

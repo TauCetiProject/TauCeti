@@ -353,6 +353,13 @@ noncomputable def pentagonCoefficient (C : ColumnCommutationData G) (x y : GridS
     MvPolynomial (Fin n) R :=
   ∑ P ∈ G.pentagons C x y, G.pentagonWeight R C P
 
+/-- The matrix coefficient of the pentagon map is the sum of the weights of its counted
+pentagons. -/
+theorem pentagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+    G.pentagonCoefficient R C x y =
+      ∑ P ∈ G.pentagons C x y, G.pentagonWeight R C P :=
+  (rfl)
+
 /-- The value of the pentagon map on a single grid-state generator. -/
 noncomputable def pentagonMapOnGenerator (C : ColumnCommutationData G) (x : GridState n) :
     GridChainMinus R n :=

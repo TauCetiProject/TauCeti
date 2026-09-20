@@ -362,7 +362,7 @@ theorem finrank_eq_two_mul_finrank_W_add_finrank_line :
 /-- **In even dimension a polarization has no remainder.** The remainder is at most a line and
 carries the parity of `finrank V`, so an even-dimensional space forces it to vanish. This is the
 hypothesis under which the exterior parity of `⋀·W` splits the spin representation, in
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean`. -/
+`TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean`. -/
 theorem line_eq_bot_of_even_finrank (h : Even (finrank K V)) : P.line = ⊥ := by
   obtain ⟨m, hm⟩ := h
   have h₁ := P.finrank_line_le_one

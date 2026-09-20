@@ -127,6 +127,11 @@ theorem posDef_chartGramMatrix (α : M) {x : M}
     ((trivializationAt E (TangentSpace I) α).isLocalFrameOn_localFrame_baseSet
       I 0 (Module.finBasis ℝ E)).linearIndependent hx
 
+/-- The determinant of the chart Gram matrix is nonnegative, including outside the chart domain. -/
+theorem chartGramMatrix_det_nonneg (α x : M) :
+    0 ≤ (chartGramMatrix (I := I) α x).det :=
+  (Matrix.posSemidef_gram ℝ _).det_nonneg
+
 /-- The determinant of the chart Gram matrix is strictly positive on the tangent-trivialization
 base set. -/
 theorem chartGramMatrix_det_pos (α : M) {x : M}
@@ -172,6 +177,12 @@ theorem contMDiffOn_chartGramMatrix_entry
     (E := fun x : M ↦ TangentSpace I x)
     (contMDiffOn_chartLocalFrame (I := I) (n := n) α i)
     (contMDiffOn_chartLocalFrame (I := I) (n := n) α j)
+
+/-- The determinant of the coordinate metric is `C^n` on the tangent-trivialization base set. -/
+theorem contMDiffOn_chartGramMatrix_det (α : M) :
+    ContMDiffOn I 𝓘(ℝ) n (fun x ↦ (chartGramMatrix (I := I) α x).det)
+      (trivializationAt E (TangentSpace I) α).baseSet :=
+  contMDiffOn_matrix_det_of_entries (contMDiffOn_chartGramMatrix_entry α)
 
 /-- Every adjugate entry of the chart Gram matrix is `C^n` on the tangent-trivialization base
 set. -/

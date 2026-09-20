@@ -20,6 +20,11 @@ conditional law is again jointly exchangeable, and it is jointly dissociated. Th
 laws are therefore the ergodic components in the decomposition used by the Aldous--Hoover
 representation. Constructing their vertex and cell noise is a separate step.
 
+A separately exchangeable law keeps its stronger symmetry under the same conditioning, because a
+corner-tail event is fixed by relabelling the two axes independently, and not only by the diagonal
+relabellings. Its conditional laws are therefore separately exchangeable and jointly dissociated,
+which is the pair of properties the global-variable-free separate coding asks for.
+
 We use Mathlib's `condExpKernel` on array path space. Although the conditioning σ-algebra need
 not be standard Borel, the space of arrays is standard Borel when the value space is. Thus no
 regularity assumption is imposed on a sample space carrying an original array process.
@@ -42,6 +47,8 @@ dissociation (`jointlyDissociated_of_indep_blockSigma_finset`).
 
 * `TauCeti.Probability.JointlyExchangeable.ae_jointlyExchangeable_condExpKernel_arrayTail` —
   almost every conditional law given the corner tail is jointly exchangeable;
+* `TauCeti.Probability.SeparatelyExchangeable.ae_separatelyExchangeable_condExpKernel_arrayTail` —
+  almost every conditional law of a separately exchangeable law is separately exchangeable;
 * `TauCeti.Probability.JointlyExchangeable.ae_jointlyDissociated_condExpKernel_arrayTail` —
   almost every conditional law given the corner tail is jointly dissociated.
 
@@ -84,6 +91,31 @@ theorem JointlyExchangeable.ae_jointlyExchangeable_condExpKernel_arrayTail
     intro g s hs
     rw [← Measure.map_apply (measurable_const_smul g) hs, hx g]
   exact jointlyExchangeable_of_smulInvariantMeasure
+
+/-- **Almost every conditional law of a separately exchangeable array, given its corner tail, is
+separately exchangeable.** A corner-tail event is fixed by relabelling the two axes independently,
+not only diagonally, so the stronger symmetry survives the conditioning. The almost-sure set works
+simultaneously for all pairs of coordinate permutations. -/
+theorem SeparatelyExchangeable.ae_separatelyExchangeable_condExpKernel_arrayTail
+    (hρ : SeparatelyExchangeable ρ fun p x => x p) :
+    ∀ᵐ x ∂ρ, SeparatelyExchangeable
+      (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x) (fun p y => y p) := by
+  have hm := arrayTail_le_ambient (X := fun p (y : ℕ × ℕ → α) => y p) 0
+    (fun p _ _ => measurable_pi_apply p)
+  have hinv (g : FinitaryPerm × FinitaryPerm) :
+      ∀ᵐ x ∂ρ,
+        (condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x).map
+            (pairReindex (FinitaryPerm.toPerm g.1) (FinitaryPerm.toPerm g.2)) =
+          condExpKernel ρ (arrayTail (fun p (y : ℕ × ℕ → α) => y p)) x :=
+    map_condExpKernel_ae_eq_of_invariant hm (hρ.measurePreserving_pairReindex _ _)
+      (fun _ hs => Filter.EventuallyEq.of_eq
+        (preimage_pairReindex_eq_self_of_measurableSet_arrayTail hs
+          (FinitaryPerm.finite_compl_fixedBy_toPerm g.1)
+          (FinitaryPerm.finite_compl_fixedBy_toPerm g.2)))
+  filter_upwards [ae_all_iff.2 hinv] with x hx
+  refine separatelyExchangeable_of_map_pairReindex_finitary fun σ τ hσ hτ => ?_
+  have hστ := hx (FinitaryPerm.ofPerm σ hσ, FinitaryPerm.ofPerm τ hτ)
+  rwa [FinitaryPerm.toPerm_ofPerm, FinitaryPerm.toPerm_ofPerm] at hστ
 
 /-- Relabelling the array by a permutation does not change conditional probabilities given the
 corner tail. -/

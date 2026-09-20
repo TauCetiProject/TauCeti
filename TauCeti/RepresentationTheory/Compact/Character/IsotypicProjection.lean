@@ -459,8 +459,7 @@ it. -/
 theorem mem_isotypicComponent_iff_isotypicProjector_apply (hunitary : IsUnitary rho)
     (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
     (hirr : Representation.IsIrreducible sigma.toRepresentation) (v : V) :
-    rho.toRepresentation.asModuleEquiv.symm v ∈
-        isotypicComponent k[G] rho.toRepresentation.asModule sigma.toRepresentation.asModule ↔
+    v ∈ isotypicComponent k[G] rho.toRepresentation.asModule sigma.toRepresentation.asModule ↔
       isotypicProjector rho hrho sigma hsigma v = v := by
   constructor
   · exact isotypicProjector_apply_of_mem_isotypicComponent rho hrho hunitary sigma hsigma hirr v

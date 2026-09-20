@@ -248,10 +248,10 @@ theorem IsLowerTriangular.submatrix_castLE_mul_transpose {p q : ℕ}
   rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.image (Fin.castLE hqp))) hvanish,
     Finset.sum_image fun x _ y _ hxy => Fin.castLE_injective hqp hxy]
 
-/-- A lower-triangular matrix over an ordered field with nonnegative diagonal whose product with
-its transpose is the identity is itself the identity. -/
+/-- A lower-triangular matrix over a linearly ordered commutative ring with nonnegative diagonal
+whose product with its transpose is the identity is itself the identity. -/
 theorem IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one
-    {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K]
     {Q : Matrix n n K} (hQ : Q.IsLowerTriangular) (hQnonneg : ∀ i, 0 ≤ Q i i)
     (hQorth : Q * Qᵀ = 1) : Q = 1 := by
   let _ : Invertible Q := invertibleOfRightInverse Q Qᵀ hQorth

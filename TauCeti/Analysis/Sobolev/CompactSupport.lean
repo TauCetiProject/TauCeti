@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Extending a compactly supported weak derivative across the boundary
@@ -86,12 +86,17 @@ theorem HasWeakLineDerivOn.indicator_of_isCompact (h : HasWeakLineDerivOn mu Ome
     fderiv_of_notMem_tsupport ℝ fun hx' => hx (hchi_tsupport hx')
   have huO := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hu
   have hu'O := (ae_restrict_iff' Omega.isOpen.measurableSet).1 hu'
+  have hOmega : NullMeasurableSet (Omega : Set E) mu :=
+    Omega.isOpen.measurableSet.nullMeasurableSet
+  have hKnull : NullMeasurableSet K mu := hK.measurableSet.nullMeasurableSet
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨‹CompleteSpace F›,
-    (TauCeti.MeasureTheory.integrable_indicator_of_isCompact hK hKO h.locallyIntegrableOn hu)
+    (TauCeti.integrable_indicator_of_isCompact hOmega hK hKnull hKO
+        h.locallyIntegrableOn hu)
       |>.locallyIntegrable
       |>.locallyIntegrableOn _,
-    (TauCeti.MeasureTheory.integrable_indicator_of_isCompact hK hKO h.locallyIntegrableOn_deriv hu')
+    (TauCeti.integrable_indicator_of_isCompact hOmega hK hKnull hKO
+        h.locallyIntegrableOn_deriv hu')
       |>.locallyIntegrable
       |>.locallyIntegrableOn _, fun phi => ?_⟩
   -- `χ φ` is a test function on `Ω`

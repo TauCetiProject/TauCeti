@@ -25,6 +25,7 @@ of a class inside a passport is asserted.
 
 * `TauCeti.PassportSpec.classSet`: the finite set of connected isomorphism classes in a passport.
 * `TauCeti.PassportSpec.passportSize`: the number of those classes.
+* `TauCeti.PassportSpec.passportSize_eq_card_hasPassport`: the passport size as a `Nat.card`.
 * `TauCeti.PassportSpec.cycleData_eq_of_hasPassport`: two triples in one passport have the same
   ordered cycle data.
 * `TauCeti.PassportSpec.genus_eq_of_hasPassport`: a passport determines the genus.
@@ -95,6 +96,12 @@ theorem passportSize_eq_zero_iff (P : PassportSpec n) :
     intro hpos
     obtain ⟨t, ht⟩ := (passportSize_pos_iff P).1 hpos
     exact h t ht
+
+/-- The passport size counts the isomorphism classes having that passport. -/
+theorem passportSize_eq_card_hasPassport (P : PassportSpec n) :
+    P.passportSize = Nat.card {c : ConnectedIsoClass n // c.HasPassport P} := by
+  rw [passportSize_def, ← Nat.card_eq_finsetCard]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ mem_classSet)
 
 /-- A nonempty passport class set supplies admissible passport data. -/
 theorem isAdmissible_of_classSet_nonempty {P : PassportSpec n} (hP : P.classSet.Nonempty) :

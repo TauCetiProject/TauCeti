@@ -54,6 +54,12 @@ good primes; this is the engine behind both
   unit is the trivial weight), `TauCeti.MultiplicativeIdealWeight.restrict`,
   `TauCeti.MultiplicativeIdealWeight.conj` and
   `TauCeti.MultiplicativeIdealWeight.normTwist`: the constructors and operations;
+* `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood` and
+  `TauCeti.MultiplicativeIdealWeight.IsTrivialOnGood`: the weights agreeing with a purely
+  imaginary norm twist, respectively with the trivial weight, on their good ideals, with the
+  structure theorem `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`, its
+  converse `TauCeti.MultiplicativeIdealWeight.isNormTwistOnGood_normTwist_ofBadPrimes`, and the
+  behaviour of the parameter under conjugation, the pointwise product and a further twist;
 * `TauCeti.MultiplicativeIdealWeight.toIdealArithmeticFunction`: passage to the general
   carrier, inverted by `TauCeti.IdealArithmeticFunction.zeroExtend`;
 * `TauCeti.UnitaryIdealWeight`: the unitary subtype, with
@@ -336,6 +342,25 @@ theorem badPrimes_restrict (χ : MultiplicativeIdealWeight K) (hS : S.Finite) :
     (χ.restrict S hS).badPrimes = χ.badPrimes ∪ S := by
   simp [restrict]
 
+/-- Restricting away from no prime at all changes nothing. -/
+@[simp]
+theorem restrict_empty (χ : MultiplicativeIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : χ.restrict ∅ hS = χ := by
+  ext I
+  rcases eq_or_ne I ⊥ with rfl | hI
+  · simp
+  · simp [hI]
+
+open scoped Classical in
+/-- **Forbidding one more prime.** Restricting away from `insert 𝔭 S` kills the ideals divisible
+by `𝔭` and agrees with the restriction away from `S` on the others. -/
+theorem restrict_insert_apply (χ : MultiplicativeIdealWeight K)
+    {𝔭 : HeightOneSpectrum (𝓞 K)} (hS : S.Finite) (I : Ideal (𝓞 K)) :
+    χ.restrict (insert 𝔭 S) (hS.insert 𝔭) I =
+      if 𝔭.asIdeal ∣ I then 0 else χ.restrict S hS I := by
+  rw [restrict_apply, restrict_apply, Ideal.isPrimeTo_insert_iff]
+  by_cases hdvd : 𝔭.asIdeal ∣ I <;> simp [hdvd]
+
 /-- Restricting the trivial weight away from `S` gives the indicator weight of ideals prime to
 every prime in `S`. -/
 @[simp]
@@ -411,6 +436,122 @@ theorem normTwist_normTwist (z w : ℂ) (χ : MultiplicativeIdealWeight K) :
       exact_mod_cast absNorm_ne_zero_of_ne_bot hI
     rw [normTwist_apply, normTwist_apply, normTwist_apply, neg_add, Complex.cpow_add _ _ h]
     ring
+
+/-!
+### Weights that are norm twists on their good locus
+-/
+
+/-- A weight **is a norm twist on its good ideals**, with parameter `u`, when
+`χ I = N(I) ^ (u * I)` at every ideal `I` prime to its bad primes. Away from the bad primes such
+a weight is the purely imaginary norm twist `TauCeti.MultiplicativeIdealWeight.normTwist` of the
+trivial weight, and it is the whole of that twist once the bad primes are taken into account
+(`TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`).
+
+These weights give degenerate examples in families of ideal weights: their `L`-series is a
+Dedekind zeta function with finitely many Euler factors deleted, read after an imaginary
+translation, so it has a pole and no cancellation in its ideal partial sums
+(`TauCeti.not_hasCancellation_of_isNormTwistOnGood`). -/
+def IsNormTwistOnGood (χ : MultiplicativeIdealWeight K) (u : ℝ) : Prop :=
+  ∀ I : Ideal (𝓞 K), χ.IsGood I → χ I = (Ideal.absNorm I : ℂ) ^ ((u : ℂ) * Complex.I)
+
+/-- A weight **is trivial on its good ideals** when it takes the value `1` at every ideal prime
+to its bad primes; equivalently it is a norm twist on its good ideals with parameter `0`
+(`TauCeti.MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff`). -/
+def IsTrivialOnGood (χ : MultiplicativeIdealWeight K) : Prop :=
+  ∀ I : Ideal (𝓞 K), χ.IsGood I → χ I = 1
+
+/-- The norm twists with parameter `0` on the good ideals are the weights that are trivial
+there. -/
+@[simp]
+theorem isNormTwistOnGood_zero_iff (χ : MultiplicativeIdealWeight K) :
+    χ.IsNormTwistOnGood 0 ↔ χ.IsTrivialOnGood := by
+  simp [IsNormTwistOnGood, IsTrivialOnGood]
+
+/-- The trivial weight is trivial on its good ideals, which are all the nonzero ideals. -/
+theorem isTrivialOnGood_one : (1 : MultiplicativeIdealWeight K).IsTrivialOnGood :=
+  fun _ hI ↦ by rw [one_apply]; simp [hI.ne_bot]
+
+/-- The indicator of the ideals prime to a finite set `S` of primes is trivial on its good
+ideals, which are exactly those ideals. -/
+theorem isTrivialOnGood_ofBadPrimes (hS : S.Finite) : (ofBadPrimes S hS).IsTrivialOnGood := by
+  classical
+  intro I hI
+  rw [ofBadPrimes_apply]
+  simp [(isGood_ofBadPrimes_iff hS).mp hI]
+
+/-- **A norm twist on the good ideals is a norm twist of an indicator weight.** A weight that is
+a norm twist with parameter `u` on its good ideals is the twist by `N(I) ^ (u * I)` of the
+indicator of the ideals prime to its bad primes. The bad set is a parameter, so that a caller
+holding it as a `Finset` need not convert. -/
+theorem IsNormTwistOnGood.eq_normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (h : χ.IsNormTwistOnGood u) (hSbad : χ.badPrimes = S) :
+    χ = normTwist (-((u : ℂ) * Complex.I))
+      (ofBadPrimes S (hSbad ▸ χ.finite_badPrimes)) := by
+  classical
+  ext I
+  by_cases hI : χ.IsGood I
+  · have hI' : Ideal.IsPrimeTo I S := hI.mono hSbad.symm.subset
+    rw [h I hI, normTwist_apply, ofBadPrimes_apply, neg_neg]
+    simp [hI']
+  · have hI' : ¬ Ideal.IsPrimeTo I S := fun hc ↦ hI (hc.mono hSbad.subset)
+    rw [(χ.apply_eq_zero_iff_not_isGood I).mpr hI, normTwist_apply, ofBadPrimes_apply]
+    simp [hI']
+
+/-- **A twist adds to the parameter.** Twisting by `N(I) ^ (v * I)` turns a norm twist with
+parameter `u` on the good ideals into one with parameter `u + v`; the good ideals are unchanged.
+-/
+theorem IsNormTwistOnGood.normTwist {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (h : χ.IsNormTwistOnGood u) (v : ℝ) :
+    (MultiplicativeIdealWeight.normTwist (-((v : ℂ) * Complex.I)) χ).IsNormTwistOnGood
+      (u + v) := by
+  intro I hI
+  have hI' : χ.IsGood I := hI.mono (by rw [badPrimes_normTwist])
+  have hN : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
+    exact_mod_cast absNorm_ne_zero_of_ne_bot hI'.ne_bot
+  rw [normTwist_apply, h I hI', neg_neg, ← Complex.cpow_add _ _ hN]
+  congr 1
+  push_cast
+  ring
+
+/-- **Converse of `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`.** The
+twist by `N(I) ^ (u * I)` of the indicator of the ideals prime to a finite set of primes is a
+norm twist with parameter `u` on its good ideals. -/
+theorem isNormTwistOnGood_normTwist_ofBadPrimes (hS : S.Finite) (u : ℝ) :
+    (normTwist (-((u : ℂ) * Complex.I)) (ofBadPrimes S hS)).IsNormTwistOnGood u := by
+  have h0 : (ofBadPrimes S hS).IsNormTwistOnGood 0 :=
+    (isNormTwistOnGood_zero_iff _).mpr (isTrivialOnGood_ofBadPrimes hS)
+  simpa using h0.normTwist u
+
+/-- **Conjugation negates the parameter** of a norm twist on the good ideals. -/
+theorem IsNormTwistOnGood.conj {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (h : χ.IsNormTwistOnGood u) : χ.conj.IsNormTwistOnGood (-u) := by
+  intro I hI
+  have hI' : χ.IsGood I := hI.mono (by rw [badPrimes_conj])
+  have hN : 0 < Ideal.absNorm I :=
+    Nat.pos_of_ne_zero (absNorm_ne_zero_of_ne_bot hI'.ne_bot)
+  have hnorm : ‖((Ideal.absNorm I : ℕ) : ℂ) ^ ((u : ℂ) * Complex.I)‖ = 1 := by
+    rw [Complex.norm_natCast_cpow_of_pos hN]
+    simp
+  rw [conj_apply, h I hI', ← Complex.inv_eq_conj hnorm, ← Complex.cpow_neg]
+  congr 1
+  push_cast
+  ring
+
+/-- **The pointwise product adds the parameters** of two norm twists on the good ideals. Both
+factors are good at every ideal good for the product, since the bad primes of a product are the
+union of those of its factors. -/
+theorem IsNormTwistOnGood.mul {χ ψ : MultiplicativeIdealWeight K} {u v : ℝ}
+    (hχ : χ.IsNormTwistOnGood u) (hψ : ψ.IsNormTwistOnGood v) :
+    (χ * ψ).IsNormTwistOnGood (u + v) := by
+  intro I hI
+  have hχI : χ.IsGood I := hI.mono (by rw [badPrimes_mul]; exact Set.subset_union_left)
+  have hψI : ψ.IsGood I := hI.mono (by rw [badPrimes_mul]; exact Set.subset_union_right)
+  have hN : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
+    exact_mod_cast absNorm_ne_zero_of_ne_bot hχI.ne_bot
+  rw [mul_apply, hχ I hχI, hψ I hψI, ← Complex.cpow_add _ _ hN]
+  congr 1
+  push_cast
+  ring
 
 end Operations
 
@@ -755,6 +896,12 @@ noncomputable def restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectr
 theorem val_restrict (χ : UnitaryIdealWeight K) (S : Set (HeightOneSpectrum (𝓞 K)))
     (hS : S.Finite) : (restrict χ S hS).1 = χ.1.restrict S hS := (rfl)
 
+/-- Restricting a unitary weight away from no prime at all changes nothing. -/
+@[simp]
+theorem restrict_empty (χ : UnitaryIdealWeight K)
+    (hS : (∅ : Set (HeightOneSpectrum (𝓞 K))).Finite) : restrict χ ∅ hS = χ :=
+  Subtype.ext (by rw [val_restrict, MultiplicativeIdealWeight.restrict_empty])
+
 section Transport
 
 variable {L M : Type*} [Field L] [NumberField L] [Field M] [NumberField M]
@@ -848,6 +995,14 @@ def toIdealArithmeticFunction (χ : UnitaryIdealWeight K) : IdealArithmeticFunct
 @[simp]
 theorem toIdealArithmeticFunction_apply (χ : UnitaryIdealWeight K) (I : (Ideal (𝓞 K))⁰) :
     χ.toIdealArithmeticFunction I = χ.1 I := (rfl)
+
+/-- The ideal arithmetic function of a unitary weight agrees with that of its underlying
+multiplicative weight. -/
+theorem toIdealArithmeticFunction_eq_val (χ : UnitaryIdealWeight K) :
+    χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := by
+  funext I
+  rw [toIdealArithmeticFunction_apply,
+    MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
 
 /-- **Regrouping absorbs an imaginary norm twist.** For `z.re = 0`, twisting a unitary weight by
 `N(I) ^ (-z)` multiplies its `n`-th norm coefficient by `n ^ (-z)`. -/

@@ -21,13 +21,11 @@ therefore produces a two-dimensional representation, and this file settles, over
 closed field of characteristic zero, when it is irreducible: exactly when `ψ` is not its own
 inverse.
 
-The criterion is the Mackey irreducibility criterion for a linear character of a normal subgroup
-(`TauCeti.simple_indFDRep_ofLinearCharacter_iff`), which asks that no element `s` outside the
-subgroup stabilize `ψ`. For the dihedral group the conjugation is completely explicit: by
-`TauCeti.conjNormal_eq_inv_of_notMem_dihedralRotations` an element outside the rotation subgroup
-inverts every rotation, so `{}^s ψ = ψ⁻¹` for *every* such `s`, and the criterion collapses to the
-single condition `ψ ≠ ψ⁻¹`, that some value of `ψ` is not a square root of `1`. That condition is
-not only sufficient but necessary, so the result is an `iff`.
+The criterion is the Mackey criterion for a linear character of an inverted subgroup of index two,
+`TauCeti.simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv`: the rotation subgroup is inverted
+by every reflection (`TauCeti.conj_eq_inv_of_notMem_dihedralRotations`), so the condition left is
+the single `ψ ≠ ψ⁻¹`, that some value of `ψ` is not a square root of `1`. That condition is not only
+sufficient but necessary, so the result is an `iff`.
 
 The concrete instance carried out below is `n = 4`: the character sending the rotation `r 1` of
 `D₄` to `i` has `ψ(r 1)² = -1 ≠ 1`, so it induces a two-dimensional irreducible representation
@@ -60,10 +58,10 @@ of unity, is pure group theory and lives with the rotation subgroup in
 representations are here.
 
 The irreducibility criterion is stated over an algebraically closed field of characteristic zero,
-which is what `TauCeti.simple_indFDRep_ofLinearCharacter_iff` asks for, and its coefficient field
-is moreover constrained to `Type` rather than `Type*`, that criterion placing the field and the
-group in a common universe and `DihedralGroup n` living in `Type`. The dimension count asks for
-neither: it holds over any field, in any universe.
+which is what `TauCeti.simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv` asks for, and its
+coefficient field is moreover constrained to `Type` rather than `Type*`, that criterion placing
+the field and the group in a common universe and `DihedralGroup n` living in `Type`. The dimension
+count asks for neither: it holds over any field, in any universe.
 
 ## References
 
@@ -96,22 +94,13 @@ variable {k : Type} [Field k] {n : ℕ} [NeZero n] [IsAlgClosed k] [CharZero k]
 
 /-- **Over an algebraically closed field of characteristic zero, inducing a linear character of the
 rotation subgroup of a dihedral group is irreducible exactly when the character is not its own
-inverse.** Conjugation by any reflection inverts the character, so the Mackey criterion for the
-normal rotation subgroup asks precisely that `ψ⁻¹ ≠ ψ`, which is that some value of `ψ` fails to
-square to `1`. -/
+inverse.** The rotation subgroup has index two and is inverted by every reflection, so this is
+`TauCeti.simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv`. -/
 theorem simple_indFDRep_ofLinearCharacter_dihedralRotations_iff (ψ : dihedralRotations n →* kˣ) :
-    Simple (indFDRep (FDRep.ofLinearCharacter ψ)) ↔ ∃ x, ψ x ^ 2 ≠ 1 := by
-  rw [simple_indFDRep_ofLinearCharacter_iff]
-  -- Conjugation by any `s` outside the rotations inverts `ψ`, so `ψ ({}^s x) ≠ ψ x` says exactly
-  -- that `ψ x` is not its own inverse; only the existence of such an `x` is left on either side.
-  have key : ∀ {s : DihedralGroup n}, s ∉ dihedralRotations n →
-      ∀ x : dihedralRotations n, (ψ (MulAut.conjNormal s x) ≠ ψ x ↔ ψ x ^ 2 ≠ 1) := by
-    intro s hs x
-    rw [conjNormal_eq_inv_of_notMem_dihedralRotations hs, map_inv, ne_eq, ne_eq,
-      inv_eq_iff_mul_eq_one, ← sq]
-  refine ⟨fun h => ?_, fun ⟨x, hx⟩ s hs => ⟨x, (key hs x).mpr hx⟩⟩
-  obtain ⟨x, hx⟩ := h (DihedralGroup.sr 0) (sr_notMem_dihedralRotations 0)
-  exact ⟨x, (key (sr_notMem_dihedralRotations 0) x).mp hx⟩
+    Simple (indFDRep (FDRep.ofLinearCharacter ψ)) ↔ ∃ x, ψ x ^ 2 ≠ 1 :=
+  simple_indFDRep_ofLinearCharacter_iff_of_conj_eq_inv (index_dihedralRotations n)
+    (sr_notMem_dihedralRotations 0)
+    (fun _ hx => conj_eq_inv_of_notMem_dihedralRotations (sr_notMem_dihedralRotations 0) hx) ψ
 
 end Irreducibility
 
