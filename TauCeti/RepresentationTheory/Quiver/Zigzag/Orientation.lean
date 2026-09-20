@@ -25,8 +25,8 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.Orientation`: a choice of one dart from each reversed pair.
 * `TauCeti.DoubledQuiver.Orientation.ofLinearOrder`: orient every edge from its smaller endpoint
   to its larger endpoint.
-* `TauCeti.DoubledQuiver.Orientation.sourceSink`: direct every edge toward the `true` endpoint of
-  a two-colouring.
+* `SimpleGraph.Coloring.sourceSink`: direct every edge toward the `true` endpoint of a
+  two-colouring.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
@@ -104,22 +104,6 @@ target. -/
 @[simp]
 theorem mem_ofLinearOrder_iff [LinearOrder V] (d : G.Dart) :
     d ∈ ofLinearOrder G ↔ d.fst < d.snd :=
-  Iff.rfl
-
-/-- The **source--sink orientation** supplied by a two-colouring: an edge is directed toward its
-endpoint of colour `true`. -/
-def sourceSink {G : SimpleGraph V} (C : G.Coloring Bool) : Orientation G where
-  carrier := {d | C d.snd = true}
-  symm_mem_iff_not_mem d := by
-    -- Unfolding membership exposes the two endpoint colours, which `C.valid` says are unequal.
-    change C d.fst = true ↔ C d.snd ≠ true
-    have h := C.valid d.adj
-    cases hi : C d.fst <;> cases hj : C d.snd <;> simp_all
-
-/-- A dart belongs to the source--sink orientation exactly when its target has colour `true`. -/
-@[simp]
-theorem mem_sourceSink_iff {G : SimpleGraph V} (C : G.Coloring Bool) (d : G.Dart) :
-    d ∈ sourceSink C ↔ C d.snd = true :=
   Iff.rfl
 
 end Orientation
@@ -409,3 +393,27 @@ theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
 
 end DoubledQuiver
 end TauCeti
+
+namespace SimpleGraph.Coloring
+
+open TauCeti.DoubledQuiver
+
+variable {V : Type*} {G : SimpleGraph V}
+
+/-- The **source--sink orientation** supplied by a two-colouring: an edge is directed toward its
+endpoint of colour `true`. -/
+def sourceSink (C : G.Coloring Bool) : Orientation G where
+  carrier := {d | C d.snd = true}
+  symm_mem_iff_not_mem d := by
+    -- Unfolding membership exposes the two endpoint colours, which `C.valid` says are unequal.
+    change C d.fst = true ↔ C d.snd ≠ true
+    have h := C.valid d.adj
+    cases hi : C d.fst <;> cases hj : C d.snd <;> simp_all
+
+/-- A dart belongs to the source--sink orientation exactly when its target has colour `true`. -/
+@[simp]
+theorem mem_sourceSink_iff (C : G.Coloring Bool) (d : G.Dart) :
+    d ∈ C.sourceSink ↔ C d.snd = true :=
+  Iff.rfl
+
+end SimpleGraph.Coloring
