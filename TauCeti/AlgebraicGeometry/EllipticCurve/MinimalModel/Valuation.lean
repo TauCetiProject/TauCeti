@@ -30,6 +30,8 @@ measured.
 
 * `WeierstrassCurve.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul`: any minimal
   equation in the orbit computes the valuation.
+* `WeierstrassCurve.valuation_Δ_eq_exp_neg_of_isMinimal_smul`: the multiplicative valuation of the
+  discriminant of such an equation is `exp (-v (Δ_min))`.
 * `WeierstrassCurve.localMinimalDiscriminant_eq_maximalIdeal_pow`: the local minimal discriminant
   ideal is the corresponding power of the maximal ideal.
 * `WeierstrassCurve.localMinimalDiscriminantValuation_smul`: the valuation is invariant under a
@@ -44,7 +46,7 @@ public section
 
 namespace WeierstrassCurve
 
-open IsDiscreteValuationRing
+open IsDiscreteValuationRing IsDedekindDomain.HeightOneSpectrum
 
 variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
@@ -90,6 +92,19 @@ theorem localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul
   rw [localMinimalDiscriminantValuation_eq_addVal]
   exact (addVal_eq_iff_associated _ _).mpr
     (associated_integralModel_Δ_of_isMinimal_smul R _ hminimal)
+
+/-- **A minimal model has discriminant of valuation `exp (-v (Δ_min))`.** This reads the
+local minimal discriminant valuation off the multiplicative valuation that Mathlib's minimality
+API is phrased in, and is the form in which the exponent is compared with the `v`-adic
+factorisation of a discriminant over a Dedekind domain. -/
+theorem valuation_Δ_eq_exp_neg_of_isMinimal_smul (W : WeierstrassCurve K) [W.IsElliptic]
+    {W' : WeierstrassCurve K} [IsMinimal R W'] (D : VariableChange K) (hD : D • W = W') :
+    valuation K (maximalIdeal R) W'.Δ =
+      WithZero.exp (-(W.localMinimalDiscriminantValuation R : ℤ)) := by
+  have h : (W.localMinimalDiscriminantValuation R : ℕ∞) = addVal R (W'.integralModel R).Δ :=
+    W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul R D hD
+  rw [← integralModel_Δ_eq R W', valuation_of_algebraMap, intValuation_maximalIdeal, ← h,
+    ENat.recTopCoe_natCast, WithZero.exp_neg, WithZero.exp_eq_coe_ofAdd]
 
 /-- **The local minimal discriminant is the indicated power of the maximal ideal.** This
 characterizes `localMinimalDiscriminantValuation` intrinsically at the ideal level and is the form

@@ -33,6 +33,8 @@ transitive-groups table. The reference family is empty outside degrees one throu
 * `TauCeti.isPretransitive_referenceSubgroup`: every reference subgroup is transitive.
 * `Subgroup.transitiveGroupLabel_map_permCongrHom_iff`: the label of a permutation group on an
   arbitrary set of `n` points does not depend on the numbering by `Fin n` used to read it.
+* `TauCeti.TransitiveGroupLabel.exists_le_map_conj_of_le`: inclusion of a reference subgroup in
+  a larger subgroup transports to inclusion of the labelled subgroup in a conjugate.
 * `TauCeti.TransitiveGroupLabel.natCard_eq`, `TauCeti.TransitiveGroupLabel.le_alternatingGroup_iff`,
   `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`:
   a labelled subgroup has the order, parity, primitivity, and solvability of its reference.
@@ -398,6 +400,20 @@ theorem TransitiveGroupLabel.exists_map_permCongrHom_eq {n : ℕ} {j : Transitiv
   refine ⟨τ, hτ ▸ congrArg (Subgroup.map · G) ?_⟩
   ext σ x
   simp [Equiv.permCongr_eq_mul]
+
+/-- If a subgroup carries the label `j` and the reference subgroup for `j` lies in `H`, then the
+subgroup lies in a conjugate of `H`. -/
+theorem TransitiveGroupLabel.exists_le_map_conj_of_le {n : ℕ} {j : TransitiveGroupIndex n}
+    {G H : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G)
+    (hle : referenceSubgroup n j ≤ H) :
+    ∃ τ : Perm (Fin n), G ≤ H.map (MulAut.conj τ).toMonoidHom := by
+  obtain ⟨τ, hτ⟩ := (transitiveGroupLabel_iff _ _).mp h
+  refine ⟨τ⁻¹, ?_⟩
+  have hmap := Subgroup.map_mono (f := (MulAut.conj τ⁻¹).toMonoidHom) (hτ ▸ hle)
+  rw [Subgroup.map_map] at hmap
+  have hcomp : (MulAut.conj τ⁻¹).toMonoidHom.comp (MulAut.conj τ).toMonoidHom =
+      MonoidHom.id (Perm (Fin n)) := by ext; simp
+  rwa [hcomp, Subgroup.map_id] at hmap
 
 /-- Reading a permutation group on `n` points through two numberings by `Fin n` gives the same
 transitive-group labels. -/

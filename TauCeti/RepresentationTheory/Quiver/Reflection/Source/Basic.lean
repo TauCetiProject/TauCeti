@@ -46,6 +46,8 @@ sink-side construction.
 * `TauCeti.sourceReflectionFunctor_map_app_self_mk` computes reflection on morphisms at the
   reflected vertex.
 * `TauCeti.sourceReflectionFunctor_additive` records that source reflection is additive.
+* `TauCeti.outgoingMap_not_injective` shows that the injectivity hypothesis below is not
+  automatic: it fails at the vertex simple.
 * `TauCeti.dimVector_sourceReflectRep` identifies the new dimension vector with the simple
   reflection when the outgoing map is injective.
 * `TauCeti.finiteDimensional_sourceReflectRep_obj` shows that source reflection preserves
@@ -90,6 +92,21 @@ theorem outgoingMap_apply (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q) (y : 
     (e : Σ b : Q, (i ⟶ b)) :
     outgoingMap M i y e = (M.map e.2.toPath).hom y := by
   simp [outgoingMap]
+
+/-- **The map collecting the arrows out of `i` need not be injective.** It fails to be whenever
+every vertex space at the target of an arrow out of `i` vanishes while the space at `i` does not,
+which is what the vertex simple `Sᵢ` does at a source: no arrow out of a source is a loop, so `Sᵢ`
+vanishes at every target of such an arrow. This is why the injectivity hypothesis of
+`TauCeti.dimVector_sourceReflectRep` cannot be dropped. -/
+theorem outgoingMap_not_injective (M : QuiverRep.{u, v, w, max v w x} k Q) (i : Q)
+    (h : ∀ b : Q, (i ⟶ b) → Subsingleton (M.obj b)) (hne : Nontrivial (M.obj i)) :
+    ¬ Function.Injective (outgoingMap M i) := by
+  have := hne
+  have hcod : Subsingleton ((e : Σ b : Q, (i ⟶ b)) → M.obj e.1) :=
+    have : ∀ e : Σ b : Q, (i ⟶ b), Subsingleton (M.obj e.1) := fun e ↦ h e.1 e.2
+    inferInstance
+  intro hinj
+  exact not_subsingleton _ hinj.subsingleton
 
 variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 

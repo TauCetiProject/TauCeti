@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.UniversalEnveloping
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 
 /-!
 # Functoriality of universal enveloping algebras
@@ -33,6 +33,8 @@ In particular, the equivalence construction is available over an arbitrary commu
   homomorphism on the canonical generators.
 * `TauCeti.UniversalEnvelopingAlgebra.map_id` and
   `TauCeti.UniversalEnvelopingAlgebra.map_comp`: enveloping-algebra maps are functorial.
+* `TauCeti.UniversalEnvelopingAlgebra.map_surjective_of_surjective`: surjective Lie maps induce
+  surjective enveloping-algebra maps.
 * `TauCeti.UniversalEnvelopingAlgebra.map_injective_of_leftInverse` and
   `TauCeti.UniversalEnvelopingAlgebra.map_surjective_of_rightInverse`: split morphisms remain split
   after passing to enveloping algebras.
@@ -156,11 +158,34 @@ theorem map_injective_of_leftInverse (f : LieHom R L M) (g : LieHom R M L)
     (h : g.comp f = LieHom.id) : Function.Injective (map R f) :=
   (map_leftInverse R h).injective
 
+/-- A surjective Lie homomorphism induces a surjective homomorphism of universal enveloping
+algebras. -/
+theorem map_surjective_of_surjective (f : LieHom R L M) (hf : Function.Surjective f) :
+    Function.Surjective (map R f) := by
+  intro y
+  induction y using induction_ι R M with
+  | ι y =>
+      obtain ⟨x, rfl⟩ := hf y
+      exact ⟨_root_.UniversalEnvelopingAlgebra.ι R x, map_ι R f x⟩
+  | algebraMap r =>
+      exact ⟨algebraMap R (_root_.UniversalEnvelopingAlgebra R L) r, (map R f).commutes r⟩
+  | add a b ha hb =>
+      obtain ⟨x, rfl⟩ := ha
+      obtain ⟨y, rfl⟩ := hb
+      exact ⟨x + y, map_add (map R f) x y⟩
+  | mul a b ha hb =>
+      obtain ⟨x, rfl⟩ := ha
+      obtain ⟨y, rfl⟩ := hb
+      exact ⟨x * y, map_mul (map R f) x y⟩
+
 /-- A split epimorphism of Lie algebras induces a surjective homomorphism of enveloping
 algebras. -/
 theorem map_surjective_of_rightInverse (f : LieHom R L M) (g : LieHom R M L)
     (h : f.comp g = LieHom.id) : Function.Surjective (map R f) :=
-  (map_rightInverse R h).surjective
+  map_surjective_of_surjective R f fun y ↦
+    ⟨g y, by
+      simpa only [LieHom.comp_apply, LieHom.id_apply] using
+        DFunLike.congr_fun h y⟩
 
 /-- A Lie algebra equivalence induces an algebra equivalence of universal enveloping algebras. -/
 noncomputable def mapEquiv (e : LieEquiv R L M) :

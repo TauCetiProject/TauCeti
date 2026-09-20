@@ -115,12 +115,6 @@ theorem isCofinite_iff_covolume_ne_top [DiscreteTopology Γ] :
     Γ.IsCofinite ↔ covolume Γ ℍ ≠ ∞ :=
   ⟨IsCofinite.covolume_ne_top, fun h ↦ ⟨inferInstance, h⟩⟩
 
-/-- A conjugate `g Γ g⁻¹` of a discrete subgroup of `PSL(2, ℝ)` is discrete. -/
-instance discreteTopology_conjAct_smul [DiscreteTopology Γ] (g : PSL(2, ℝ)) :
-    DiscreteTopology (ConjAct.toConjAct g • Γ : Subgroup PSL(2, ℝ)) :=
-  DiscreteTopology.of_continuous_injective (f := (equivSMul (ConjAct.toConjAct g) Γ).symm)
-    (by fun_prop) (equivSMul (ConjAct.toConjAct g) Γ).symm.injective
-
 /-- **Cofiniteness is a conjugacy invariant**: a conjugate `g Γ g⁻¹` of a subgroup
 `Γ ≤ PSL(2, ℝ)` is cofinite exactly when `Γ` is. -/
 @[simp]

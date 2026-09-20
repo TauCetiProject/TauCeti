@@ -153,6 +153,13 @@ def H0IsoNormQuotient (M : Rep R G) :
       ModuleCat.of R (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
   Zero.homologyIso M ≪≫ Zero.homologyIsoNormQuotient M
 
+/-- Degree-zero Tate cohomology of a finite representation is finite: it is a subquotient of the
+coefficient module. -/
+instance finite_tateCohomology_zero (M : Rep R G) [Finite M] : Finite (tateCohomology M 0) :=
+  have : Finite (M.ρ.invariants ⧸ (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
+    Finite.of_surjective _ (Submodule.mkQ_surjective _)
+  (H0IsoNormQuotient M).toLinearEquiv.toEquiv.finite_iff.mpr this
+
 /-- The cycles in degree zero of the Tate complex are the invariant submodule. -/
 def H0CyclesIso (M : Rep R G) :
     (tateComplex M).cycles 0 ≅ ModuleCat.of R M.ρ.invariants :=
@@ -294,6 +301,15 @@ def HNegOneIsoNormKernelQuotient (M : Rep R G) :
       exact ⟨⟨d₁₀ M y,
         LinearMap.congr_fun (ModuleCat.hom_ext_iff.mp (Rep.comp_eq_zero M)) y⟩,
         ⟨_, rfl⟩, rfl⟩
+
+/-- Degree `-1` Tate cohomology of a finite representation is finite: it is a subquotient of the
+coefficient module. -/
+instance finite_tateCohomology_negOne (M : Rep R G) [Finite M] :
+    Finite (tateCohomology M (-1)) :=
+  have : Finite (ker M.ρ.norm ⧸
+      (Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
+    Finite.of_surjective _ (Submodule.mkQ_surjective _)
+  (HNegOneIsoNormKernelQuotient M).toLinearEquiv.toEquiv.finite_iff.mpr this
 
 /-- The quotient map from norm-zero representatives to degree `-1` Tate cohomology. -/
 def HNegOneπ (M : Rep R G) : ModuleCat.of R (ker M.ρ.norm) ⟶ tateCohomology M (-1) :=

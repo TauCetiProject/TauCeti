@@ -75,6 +75,10 @@ noncomputable abbrev suspensionDeflation (X : C) :
     hE.suspensionInjective X ⟶ hE.suspensionObj X :=
   (hE.suspensionPresentation X).p
 
+/-- The middle term of a chosen suspension presentation is relatively projective. -/
+theorem isProjective_suspensionInjective (X : C) : E.isProjective (hE.suspensionInjective X) :=
+  (hE.projective_iff_injective _).mpr (hE.suspensionPresentation X).isInjective
+
 /-- The middle map between chosen injective presentations extending `f : X ⟶ Y`. -/
 noncomputable def suspensionMiddleMap {X Y : C} (f : X ⟶ Y) :
     hE.suspensionInjective X ⟶ hE.suspensionInjective Y :=

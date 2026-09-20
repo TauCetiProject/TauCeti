@@ -93,6 +93,16 @@ def rationalBase : (t.rationalRootSystem ht).Base :=
   rw [rationalRootSystem, root_rootPairingBaseChange, piAlgebraMap_apply]
   simp
 
+/-- Rational base change preserves and reflects integral root-string relations. -/
+theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n : ℤ) :
+    (t.rationalRootSystem ht).root γ =
+        (t.rationalRootSystem ht).root β + (n : ℚ) • (t.rationalRootSystem ht).root α ↔
+      (t.simplyConnectedRootDatum ht).root γ =
+        (t.simplyConnectedRootDatum ht).root β + n •
+          (t.simplyConnectedRootDatum ht).root α := by
+  simp only [funext_iff, Pi.add_apply, Pi.smul_apply, root_rationalRootSystem,
+    smul_eq_mul, ← Int.cast_mul, ← Int.cast_add, Int.cast_inj]
+
 @[simp] theorem coroot_rationalRootSystem (i : Fin t.numRoots) (k : Fin t.rank) :
     (t.rationalRootSystem ht).coroot i k = ((t.simplyConnectedRootDatum ht).coroot i k : ℚ) := by
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]
@@ -118,6 +128,18 @@ def rationalBase : (t.rationalRootSystem ht).Base :=
 
 instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).IsCrystallographic :=
   isCrystallographic_rootPairingBaseChange ..
+
+/-- Extension to the rationals preserves descending root-string lengths. -/
+@[simp] theorem chainBotCoeff_rationalRootSystem (i j : Fin t.numRoots) :
+    (t.rationalRootSystem ht).chainBotCoeff i j =
+      (t.simplyConnectedRootDatum ht).chainBotCoeff i j := by
+  exact chainBotCoeff_rootPairingBaseChange ..
+
+/-- Extension to the rationals preserves ascending root-string lengths. -/
+@[simp] theorem chainTopCoeff_rationalRootSystem (i j : Fin t.numRoots) :
+    (t.rationalRootSystem ht).chainTopCoeff i j =
+      (t.simplyConnectedRootDatum ht).chainTopCoeff i j := by
+  exact chainTopCoeff_rootPairingBaseChange ..
 
 /-- The Cartan integers of the rational system are those of the integral datum. -/
 @[simp] theorem pairingIn_rationalRootSystem (i j : Fin t.numRoots) :

@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
+public import Mathlib.Algebra.Category.ModuleCat.Kernels
+public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import TauCeti.Geometry.Hodge.Mixed.Category
 public import TauCeti.Geometry.Hodge.Mixed.Quotient
 public import TauCeti.Geometry.Hodge.Mixed.Subobject
@@ -14,11 +15,11 @@ public import TauCeti.Geometry.Hodge.Mixed.Subobject
 # Kernels and cokernels of mixed Hodge structures
 
 The category of mixed Hodge structures has kernels and cokernels, and both are computed on the
-underlying rational vector spaces. The kernel of a morphism `f` is the mixed Hodge structure
-induced on the rational kernel of `f`, and its cokernel is the quotient of the target by the
-rational image of `f`. Both constructions are available because the kernel and the image are
-sub-mixed Hodge structures: this is where the Deligne bigrading, through the functoriality of its
-pieces, enters the categorical structure.
+underlying rational vector spaces; rational realization preserves both constructions. The kernel
+of a morphism `f` is the mixed Hodge structure induced on its rational kernel, and its cokernel
+is the quotient of the target by its rational image. Both constructions are available because
+the kernel and the image are sub-mixed Hodge structures: this is where the Deligne bigrading,
+through the functoriality of its pieces, enters the categorical structure.
 
 Consequently a morphism of mixed Hodge structures is a monomorphism exactly when its rational map
 is injective, and an epimorphism exactly when its rational map is surjective.
@@ -125,6 +126,27 @@ instance : HasKernels MixedHodgeStructureCat.{u} :=
 /-- The category of mixed Hodge structures has cokernels. -/
 instance : HasCokernels MixedHodgeStructureCat.{u} :=
   ⟨fun f ↦ HasColimit.mk ⟨_, cokernelIsColimit f⟩⟩
+
+/-- Rational realization preserves kernels of mixed Hodge morphisms. -/
+noncomputable instance rational_preservesKernel :
+    PreservesLimit (parallelPair f 0) rational := by
+  -- The mapped fork and the module kernel fork have the same carrier and inclusion.
+  apply preservesLimit_of_preserves_limit_cone (kernelIsLimit f)
+  refine ((kernelCone f).isLimitMapConeEquiv rational).symm ?_
+  exact IsLimit.ofIsoLimit (ModuleCat.kernelIsLimit (rational.map f))
+    (Fork.ext (Iso.refl _) (by
+      exact ModuleCat.hom_ext (MixedHodgeStructure.IsSubstructure.inclusion_toRatLinearMap _)))
+
+/-- Rational realization preserves cokernels of mixed Hodge morphisms. -/
+noncomputable instance rational_preservesCokernel :
+    PreservesColimit (parallelPair f 0) rational := by
+  -- The mapped cofork and the module cokernel cofork have the same quotient and projection.
+  apply preservesColimit_of_preserves_colimit_cocone (cokernelIsColimit f)
+  refine ((cokernelCocone f).isColimitMapCoconeEquiv rational).symm ?_
+  exact IsColimit.ofIsoColimit (ModuleCat.cokernelIsColimit (rational.map f))
+    (Cofork.ext (Iso.refl _) (by
+      exact ModuleCat.hom_ext
+        (MixedHodgeStructure.IsSubstructure.projection_toRatLinearMap _).symm))
 
 variable {f}
 

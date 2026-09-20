@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomotopyCofiber
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import TauCeti.Algebra.Homology.OneObject
 
 /-!
 # The mapping cone of a split monomorphism of complexes
@@ -29,10 +30,17 @@ a complex `K` of `A`-modules, split by division by `X - a` and by the constant p
 `TauCeti.Algebra.Homology.PolynomialExtension`). This is how the stabilization invariance of grid
 homology compares a grid complex with the mapping cone of `V₁ - V₂`.
 
+Conversely, a one-object complex (over the shape `ComplexShape.refl Unit`) whose object splits as
+a direct sum `K ⊕ L`, with `L` a subcomplex, is the mapping cone of the component `K ⟶ L` of its
+differential. This is how the unblocked complex of a stabilized grid diagram is presented as a
+mapping cone.
+
 ## Main definitions
 
 * `CategoryTheory.ShortComplex.Splitting.homotopyCofiberHomotopyEquiv`: the homotopy equivalence
   between the mapping cone of `S.f` and `S.X₃` for a split short complex of complexes `S`.
+* `HomologicalComplex.homotopyCofiber.isoOfSplitting`: a one-object complex with a block
+  lower-triangular differential is isomorphic to the mapping cone of its off-diagonal block.
 
 ## Main results
 
@@ -109,3 +117,67 @@ theorem quasiIso_homotopyCofiberDesc [∀ i, (homotopyCofiber S.f).HasHomology i
   σ.homotopyCofiberHomotopyEquiv_hom hc ▸ (σ.homotopyCofiberHomotopyEquiv hc).quasiIso_hom
 
 end CategoryTheory.ShortComplex.Splitting
+
+/-! ### Mapping cones of one-object complexes -/
+
+namespace HomologicalComplex.homotopyCofiber
+
+open Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
+  {K L M : HomologicalComplex C (ComplexShape.refl Unit)} (φ : K ⟶ L)
+  {inr : L.X () ⟶ M.X ()} {fst : M.X () ⟶ K.X ()} {w : inr ≫ fst = 0}
+  (σ : (ShortComplex.mk inr fst w).Splitting)
+  (hs : σ.s ≫ M.d () () = φ.f () ≫ inr - K.d () () ≫ σ.s)
+  (hr : inr ≫ M.d () () = L.d () () ≫ inr)
+
+/-- **A triangular one-object complex is a mapping cone.** Let `M` be a one-object complex whose
+object is split as `M.X () = K.X () ⊕ L.X ()` by `σ`, with `inr` and `σ.s` the inclusions of the
+summands, in such a way that `L.X ()` is a subcomplex (`hr`) and the differential of `M` restricted
+to `K.X ()` is `φ - d_K` in block form (`hs`). Then `M` is the mapping cone of `φ`.
+
+The sign in `hs` is that of Mathlib's `homotopyCofiber`, whose differential is `-d_K` on the
+`K`-summand; over a ring of characteristic two it disappears. -/
+noncomputable def isoOfSplitting : homotopyCofiber φ ≅ M :=
+  Hom.isoOfComponents
+    (fun _ =>
+      { hom := fstX φ () () (ComplexShape.refl_rel ()) ≫ σ.s + sndX φ () ≫ inr
+        inv := fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ ()
+        hom_inv_id := by
+          have hsg : σ.s ≫ fst = 𝟙 _ := σ.s_g
+          have hsr : σ.s ≫ σ.r = 0 := σ.s_r
+          have hfr : inr ≫ σ.r = 𝟙 _ := σ.f_r
+          apply ext_from_X φ () () (ComplexShape.refl_rel ()) <;>
+            simp [reassoc_of% hsg, reassoc_of% hsr, reassoc_of% hfr, reassoc_of% w]
+        inv_hom_id := by
+          simpa [add_comm] using σ.id })
+    (by
+      rintro ⟨⟩ ⟨⟩ -
+      -- The components are those of the map `homotopyCofiber.desc φ inr σ.s`, a chain map.
+      let α : L ⟶ M := { f _ := inr, comm' := fun _ _ _ => hr }
+      let h : Homotopy (φ ≫ α) 0 :=
+        { hom _ _ := σ.s
+          zero _ _ hij := absurd (ComplexShape.refl_rel ()) hij
+          comm _ := by
+            rw [dNext_eq _ (ComplexShape.refl_rel ()), prevD_eq _ (ComplexShape.refl_rel ()), hs]
+            simp [α] }
+      dsimp only
+      rw [← desc_f φ α h () () (ComplexShape.refl_rel ())]
+      exact (desc φ α h).comm () ())
+
+/-- On the cone, `isoOfSplitting` is `σ.s` on the `K`-summand and `inr` on the `L`-summand. -/
+@[simp]
+theorem isoOfSplitting_hom_f :
+    (isoOfSplitting φ σ hs hr).hom.f () =
+      fstX φ () () (ComplexShape.refl_rel ()) ≫ σ.s + sndX φ () ≫ inr :=
+  (rfl)
+
+/-- The inverse of `isoOfSplitting` sends `M` into the cone through `fst` and the retraction
+`σ.r`. -/
+@[simp]
+theorem isoOfSplitting_inv_f :
+    (isoOfSplitting φ σ hs hr).inv.f () =
+      fst ≫ inlX φ () () (ComplexShape.refl_rel ()) + σ.r ≫ inrX φ () :=
+  (rfl)
+
+end HomologicalComplex.homotopyCofiber

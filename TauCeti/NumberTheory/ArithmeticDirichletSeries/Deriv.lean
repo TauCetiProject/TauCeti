@@ -23,6 +23,9 @@ absorb.
 
 * `TauCeti.hasDerivAt_idealTerm`: the derivative in `s` of an ideal term is the term itself,
   weighted by `-log N(I)`.
+* `TauCeti.IdealArithmeticFunction.differentiableOn_LSeries_normCoeff`: absolute convergence of
+  an ideal-indexed series throughout an open set makes its norm-regrouped `L`-series holomorphic
+  there.
 -/
 
 public section
@@ -51,5 +54,30 @@ theorem hasDerivAt_idealTerm (f : IdealArithmeticFunction K) (I : (Ideal (𝓞 K
   have h := LSeries.hasDerivAt_term (fun _ ↦ f I) (Ideal.absNorm (I : Ideal (𝓞 K))) s
   simp only [LSeries.term_of_ne_zero hn, LSeries.logMul] at h
   simpa [idealTerm_def, mul_div_assoc] using h
+
+namespace IdealArithmeticFunction
+
+/-- **Holomorphy after regrouping an ideal-indexed series by norm.** If the ideal-indexed series
+of `f` converges absolutely at every point of an open set `U`, then the `L`-series of its norm
+coefficients is holomorphic on `U`.
+
+At each point, openness supplies a nearby point strictly to its left which remains in `U`.
+Absolute convergence there puts the original point strictly right of the abscissa of absolute
+convergence, where Mathlib's `LSeries` is differentiable. -/
+theorem differentiableOn_LSeries_normCoeff (f : IdealArithmeticFunction K) {U : Set ℂ}
+    (hUo : IsOpen U) (hconv : ∀ s ∈ U, Summable (idealTerm K f s)) :
+    DifferentiableOn ℂ (LSeries (normCoeff K f)) U := by
+  refine (LSeries_differentiableOn _).mono fun s hs ↦ ?_
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hUo s hs
+  have hmem : s - ((ε / 2 : ℝ) : ℂ) ∈ U := by
+    refine hball ?_
+    simp only [Metric.mem_ball, dist_eq_norm, sub_sub_cancel_left, norm_neg,
+      Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith : (0 : ℝ) < ε / 2)]
+    linarith
+  refine ((LSeriesSummable_normCoeff K (hconv _ hmem)).abscissaOfAbsConv_le).trans_lt ?_
+  rw [Complex.sub_re, Complex.ofReal_re, EReal.coe_lt_coe_iff]
+  linarith
+
+end IdealArithmeticFunction
 
 end TauCeti

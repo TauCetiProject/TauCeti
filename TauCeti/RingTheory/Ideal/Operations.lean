@@ -22,6 +22,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   divisor antidiagonal of the unit ideal is a singleton.
 * `Ideal.smul_top_eq_top_of_pi`: an ideal that expands the whole of a product of modules expands
   the whole of every factor.
+* `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
+  taken together with a common element `a`, as soon as every element of `S` is `a` itself or
+  belongs to `S'`.
 -/
 
 public section
@@ -57,6 +60,21 @@ theorem smul_top_eq_top_of_pi (I : Ideal R) (h : I • (⊤ : Submodule R (∀ i
     LinearMap.range_eq_top.mpr (Function.surjective_eval i)] at this
 
 end Pi
+
+section Span
+
+variable {R : Type*} [CommSemiring R] {a : R} {S S' : Set R}
+
+/-- **Replacing one generating set by another**: if every element of `S` is either `a` itself or an
+element of `S'`, then `S'` together with `a` generates the unit ideal as soon as `S` together with
+`a` does. Note that `S'` need not be contained in `S`, and may be larger: the hypothesis constrains
+only where the elements of `S` are found. Both spans contain `a`, so only the rest of `S` has to be
+accounted for. -/
+theorem span_insert_eq_top_of_subset (hsub : S ⊆ insert a S')
+    (hspan : Ideal.span (insert a S) = ⊤) : Ideal.span (insert a S') = ⊤ :=
+  eq_top_mono (Ideal.span_mono <| Set.insert_subset (Set.mem_insert _ _) hsub) hspan
+
+end Span
 
 end Ideal
 

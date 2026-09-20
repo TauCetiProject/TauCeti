@@ -46,6 +46,8 @@ the isogeny itself appears downstream, in
 
 * `Matrix.preservesG2Cross_one` and `Matrix.PreservesG2Cross.mul`: the matrices preserving the
   cross product are closed under multiplication and contain the identity.
+* `Matrix.PreservesG2Cross.map` and `TauCeti.G2ShortRoot.preservesDualForm_map`: both invariance
+  conditions transport along any ring homomorphism.
 * `Matrix.g2CrossMap_mul_mul_transpose`: a matrix preserving the cross product intertwines the
   congruence action on alternating matrices with its tautological action on vectors.
 * `Matrix.g2CrossMap_rankTwo`: contraction of `u vᵀ - v uᵀ` is twice `u × v`.
@@ -333,6 +335,39 @@ theorem _root_.Matrix.PreservesG2Cross.mul {g h : Matrix (Fin 7) (Fin 7) R}
         rw [Matrix.mul_apply, ← Finset.sum_mul, ← Finset.sum_smul]
         exact congrArg (fun c : R => c • (crossOperator b).map (Int.cast : ℤ → R) * (g * h))
           (Finset.sum_congr rfl fun a _ => mul_comm _ _)
+
+/-- Preserving the type-`G₂` cross product is inherited by the image of a matrix under a ring
+homomorphism. -/
+theorem _root_.Matrix.PreservesG2Cross.map {S : Type*} [CommRing S] (f : R →+* S)
+    {g : Matrix (Fin 7) (Fin 7) R} (hg : PreservesG2Cross g) : PreservesG2Cross (g.map f) := by
+  have hcast : ∀ a : Fin 7, ((crossOperator a).map (Int.cast : ℤ → R)).map f =
+      (crossOperator a).map (Int.cast : ℤ → S) := fun a => by
+    rw [Matrix.map_map]
+    exact congrArg _ (funext fun z => map_intCast f z)
+  intro k
+  have h := congrArg (fun N : Matrix (Fin 7) (Fin 7) R => N.map f) (hg k)
+  simp only [Matrix.map_mul, hcast] at h
+  rw [h]
+  congr 1
+  ext i j
+  simp only [Matrix.map_apply, Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul, map_sum,
+    map_mul, map_intCast]
+
+/-- Fixing the invariant dual form by congruence is inherited by the image of a matrix under a
+ring homomorphism. -/
+theorem preservesDualForm_map {S T : Type*} [Ring S] [Ring T] (f : S →+* T)
+    {M : Matrix (Fin 7) (Fin 7) S}
+    (h : M * invariantDualForm.map (Int.cast : ℤ → S) * Mᵀ =
+      invariantDualForm.map (Int.cast : ℤ → S)) :
+    M.map f * invariantDualForm.map (Int.cast : ℤ → T) * (M.map f)ᵀ =
+      invariantDualForm.map (Int.cast : ℤ → T) := by
+  have hform : (invariantDualForm.map (Int.cast : ℤ → S)).map (f : S → T) =
+      invariantDualForm.map (Int.cast : ℤ → T) := by
+    rw [Matrix.map_map]
+    exact congrArg _ (funext fun z => map_intCast f z)
+  have himg := congrArg (fun N : Matrix (Fin 7) (Fin 7) S => N.map (f : S →+* T)) h
+  simp only [Matrix.map_mul, Matrix.transpose_map] at himg
+  rwa [hform] at himg
 
 /-- **The span of the alternating matrices `crossBivector` is stable under congruence.** A matrix
 preserving the cross product and fixing the invariant dual form by congruence permutes them

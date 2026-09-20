@@ -40,6 +40,9 @@ variable (m : ℕ)
 It exchanges the final two basis vectors. -/
 def coordinateSwap : Fin 4 ≃ Fin 4 := Equiv.swap 2 3
 
+/-- The coordinate change is the transposition of the final two basis vectors. -/
+theorem coordinateSwap_def : coordinateSwap = Equiv.swap 2 3 := (rfl)
+
 /-- Simultaneous row and column reindexing from the standard generator coordinates to the
 coordinates used by `SpStd`. -/
 abbrev coordinateEquiv (R : Type*) [CommSemiring R] : GL (Fin 4) R ≃* GL (Fin 4) R :=
@@ -171,7 +174,9 @@ theorem generatorEmbedding_injective (m : ℕ)
   (Units.map_injective (Matrix.map_injective (RingHom.injective _))).comp
     (Suzuki.coordinateEquiv (GaloisField 2 (2 * m + 1))).injective
 
-private theorem coe_generatorEmbedding (m : ℕ)
+/-- The underlying matrix of a scalar-extended generator is the coordinate-changed matrix with
+the field embedding applied entrywise. -/
+theorem coe_generatorEmbedding (m : ℕ)
     (hvalid : (LieTypeIndex.suzuki m).Valid)
     (g : GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
     (generatorEmbedding m hvalid g : Matrix (Fin 4) (Fin 4) (of m hvalid).1.Closure) =

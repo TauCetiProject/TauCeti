@@ -64,6 +64,11 @@ indexed by the permutation `π`: the barycenter of the face spanned by `π k, �
 def vertex (π : Perm (Fin (n + 1))) (k : Fin (n + 1)) : StdSimplex ℝ (Fin (n + 1)) :=
   StdSimplex.subBarycenter ((Finset.Ici k).map π.toEmbedding) Finset.nonempty_Ici.map
 
+lemma vertex_def (π : Perm (Fin (n + 1))) (k : Fin (n + 1)) :
+    vertex π k =
+      StdSimplex.subBarycenter ((Finset.Ici k).map π.toEmbedding) Finset.nonempty_Ici.map :=
+  (rfl)
+
 /-- The vertices of a subdivision simplex other than the barycenter of the simplex are the
 vertices of the subdivision simplex of a facet, pushed forward along the facet inclusion. -/
 lemma vertex_decomposeFin'Symm_succ (j : Fin (n + 2)) (π : Perm (Fin (n + 1)))

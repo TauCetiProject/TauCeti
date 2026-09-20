@@ -379,6 +379,42 @@ theorem mem_range_imprimitiveToPerm_iff {σ : Equiv.Perm (ι × Λ)} :
     · simp [hτ]
     · simp
 
+variable {ι} in
+/-- **Signed permutations.** A permutation of `ι × Bool` comes from the imprimitive action of the
+hyperoctahedral group `Sym(Bool) ≀ Sym(ι)` exactly when it commutes with flipping the `Bool`
+coordinate. -/
+theorem mem_range_imprimitiveToPerm_bool_iff {σ : Equiv.Perm (ι × Bool)} :
+    σ ∈ (imprimitiveToPerm (Equiv.Perm Bool) ι Bool).range ↔
+      ∀ x : ι × Bool, σ (x.1, !x.2) = ((σ x).1, !(σ x).2) := by
+  constructor
+  · rintro ⟨w, rfl⟩ x
+    -- Every permutation of `Bool` commutes with negation.
+    have key (e : Equiv.Perm Bool) (s : Bool) : e (!s) = !(e s) := by
+      have hne := e.injective.ne (Bool.not_ne_self s)
+      revert hne
+      cases e (!s) <;> cases e s <;> simp
+    simp [key]
+  · intro hσ
+    -- The flip-equivariance passes to `σ.symm`, and then both `σ` and `σ.symm` preserve fibres.
+    have hσ' (x : ι × Bool) : σ.symm (x.1, !x.2) = ((σ.symm x).1, !(σ.symm x).2) := by
+      rw [Equiv.symm_apply_eq, hσ, Equiv.apply_symm_apply]
+    have hfib {π : Equiv.Perm (ι × Bool)}
+        (hπ : ∀ x : ι × Bool, π (x.1, !x.2) = ((π x).1, !(π x).2)) (i : ι) (s t : Bool) :
+        (π (i, s)).1 = (π (i, t)).1 := by
+      rcases Bool.eq_or_eq_not s t with rfl | rfl
+      · rfl
+      · simpa using congrArg Prod.fst (hπ (i, t))
+    let τ : Equiv.Perm ι :=
+      { toFun := fun i ↦ (σ (i, false)).1
+        invFun := fun i ↦ (σ.symm (i, false)).1
+        left_inv := fun i ↦ by
+          dsimp only
+          rw [hfib hσ' _ false (σ (i, false)).2, Prod.mk.eta, Equiv.symm_apply_apply]
+        right_inv := fun i ↦ by
+          dsimp only
+          rw [hfib hσ _ false (σ.symm (i, false)).2, Prod.mk.eta, Equiv.apply_symm_apply] }
+    exact mem_range_imprimitiveToPerm_iff.mpr ⟨τ, fun x ↦ hfib hσ x.1 x.2 false⟩
+
 end Imprimitive
 
 section Product

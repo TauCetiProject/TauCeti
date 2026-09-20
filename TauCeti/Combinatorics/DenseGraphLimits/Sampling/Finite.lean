@@ -125,7 +125,7 @@ theorem sampleIntegrand_le_one (x : Fin n → Ω) : sampleIntegrand W G x ≤ 1 
     linarith [edgeFactor_le_one W x e]
   have hle : (∏ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset \ G.edgeFinset,
       (1 - edgeFactor W x e)) ≤ 1 :=
-    Finset.prod_le_one (fun e _ => by linarith [edgeFactor_le_one W x e])
+    Finset.prod_le_one₀ (fun e _ => by linarith [edgeFactor_le_one W x e])
       fun e _ => by linarith [edgeFactor_nonneg W x e]
   calc
     (∏ e ∈ G.edgeFinset, edgeFactor W x e) *

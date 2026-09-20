@@ -23,6 +23,8 @@ place reflection-pair lifts in the identity path component of the compact real S
 
 ## Main results
 
+* `CliffordAlgebra.continuous_spinReflectionPair` shows that continuously varying unit vectors
+  determine continuously varying reflection-pair lifts.
 * `CliffordAlgebra.joined_one_spinReflectionPair_of_joined` maps a path in a unit quadric to a
   path from the identity to its reflection-pair lift.
 * `CliffordAlgebra.joined_one_spinReflectionPair_realCliffordForm_zero` joins every normalized
@@ -39,11 +41,24 @@ namespace CliffordAlgebra
 
 open Metric TauCeti
 
-universe u v
+universe u v w
 
 variable {R : Type u} [CommRing R] [TopologicalSpace R]
   {M : Type v} [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsModuleTopology R M]
   {Q : QuadraticForm R M} [ContinuousMul (CliffordAlgebra Q)]
+
+/-- Two continuous families of unit vectors determine a continuous family of their normalized
+reflection-pair lifts. -/
+theorem continuous_spinReflectionPair {X : Type w} [TopologicalSpace X] (v w : X → M)
+    (hv : ∀ x, Q (v x) = 1) (hw : ∀ x, Q (w x) = 1)
+    (hvc : Continuous v) (hwc : Continuous w) :
+    Continuous (fun x ↦ spinReflectionPair Q (v x) (w x) (hv x) (hw x)) := by
+  apply continuous_induced_rng.mpr
+  have hval : Continuous (fun x ↦ ι Q (v x) * ι Q (w x)) :=
+    ((continuous_ι Q).comp hvc).mul ((continuous_ι Q).comp hwc)
+  convert hval using 1
+  funext x
+  exact coe_spinReflectionPair Q (v x) (w x) (hv x) (hw x)
 
 /-- Mapping a path between unit vectors by Clifford multiplication with the first vector joins the
 identity to their normalized reflection-pair lift. -/
@@ -52,13 +67,9 @@ theorem joined_one_spinReflectionPair_of_joined (v w : M) (hv : Q v = 1) (hw : Q
     Joined (1 : spinGroup Q) (spinReflectionPair Q v w hv hw) := by
   let f : {u : M // Q u = 1} → spinGroup Q :=
     fun u => spinReflectionPair Q v u hv u.2
-  have hf : Continuous f := by
-    apply continuous_induced_rng.mpr
-    have hval : Continuous (fun u : {u : M // Q u = 1} => ι Q v * ι Q u.1) :=
-      continuous_const.mul ((continuous_ι Q).comp continuous_subtype_val)
-    convert hval using 1
-    funext u
-    exact coe_spinReflectionPair _ _ _ _ _
+  have hf : Continuous f :=
+    continuous_spinReflectionPair (fun _ ↦ v) Subtype.val (fun _ ↦ hv) (fun u ↦ u.2)
+      continuous_const continuous_subtype_val
   simpa only [f, spinReflectionPair_self] using h.map hf
 
 /-- In dimension at least two, every normalized reflection-pair lift for the positive-definite real

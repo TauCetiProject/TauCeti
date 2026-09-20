@@ -24,6 +24,16 @@ public section
 
 open CategoryTheory CategoryTheory.Limits
 
+/-- Membership in the relation of the one-object-per-index shape `ComplexShape.refl ι` is
+decidable when equality of indices is. -/
+instance ComplexShape.refl.decidableRel {ι : Type*} [DecidableEq ι] :
+    DecidableRel (ComplexShape.refl ι).Rel :=
+  fun i j => inferInstanceAs (Decidable (i = j))
+
+/-- Every index of `ComplexShape.refl ι` is related to itself. -/
+theorem ComplexShape.refl_rel {ι : Type*} (i : ι) : (ComplexShape.refl ι).Rel i i :=
+  rfl
+
 namespace TauCeti
 
 universe u v

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # The residue degree of a height-one prime over `ℚ`
@@ -40,6 +41,9 @@ objects that description involves and records their elementary theory.
   intermediate number field forces residue degree above one over `ℚ`.
 * `TauCeti.card_filter_rationalPrimeBelow_le_finrank`: at most `[K : ℚ]` height-one primes have
   a given rational prime below them.
+* `IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finrank`: at most `[E : K]`
+  height-one primes of `E` contract to a given height-one prime of an intermediate number field
+  `K`.
 * `IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`: the absolute
   norm of `𝔭` divides `p ^ [K : ℚ]`, so the residue degree is at most the degree of the field.
 * `TauCeti.asIdeal_eq_span_singleton_of_absNorm_eq_pow_finrank`: a prime of full residue degree
@@ -169,6 +173,32 @@ theorem card_filter_rationalPrimeBelow_le_finrank (F : Finset (HeightOneSpectrum
     (fun 𝔮 _ 𝔮' _ h ↦ HeightOneSpectrum.ext h))
     (NumberField.card_primesOverFinset_le_finrank (K := K) hne)
   exact (IsDedekindDomain.mem_primesOverFinset_iff hne (𝓞 K)).mpr ⟨𝔮.isPrime, ⟨(key 𝔮 h𝔮).symm⟩⟩
+
+/-- At most `[E : K]` height-one primes of `E` contract to a given height-one prime of `K`. -/
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finrank
+    {E : Type*} [Field E] [NumberField E] [Algebra K E]
+    (p : HeightOneSpectrum (𝓞 K)) :
+    {P : HeightOneSpectrum (𝓞 E) | P.under (𝓞 K) = p}.encard ≤ Module.finrank K E := by
+  let hdiv : ∀ P : HeightOneSpectrum (𝓞 E),
+      P.under (𝓞 K) = p ↔
+        P.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 E)) p.asIdeal := fun P ↦ by
+    rw [← Ideal.liesOver_iff_dvd_map P.isPrime.ne_top]
+    exact ⟨fun h ↦ ⟨(congrArg HeightOneSpectrum.asIdeal h).symm⟩,
+      fun h ↦ HeightOneSpectrum.ext h.over.symm⟩
+  let e : {P : HeightOneSpectrum (𝓞 E) // P.under (𝓞 K) = p} ≃
+      p.asIdeal.primesOver (𝓞 E) :=
+    (Equiv.subtypeEquivRight hdiv).trans
+      (HeightOneSpectrum.equivPrimesOver (𝓞 E) p.ne_bot)
+  have hfin : (p.asIdeal.primesOver (𝓞 E)).Finite :=
+    Algebra.QuasiFinite.finite_primesOver p.asIdeal
+  calc
+    {P : HeightOneSpectrum (𝓞 E) | P.under (𝓞 K) = p}.encard =
+        (p.asIdeal.primesOver (𝓞 E)).encard := Set.encard_congr e
+    _ = (p.asIdeal.primesOver (𝓞 E)).ncard := hfin.cast_ncard_eq.symm
+    _ ≤ Module.finrank K E := by
+      exact ENat.natCast_le_natCast.mpr <| by
+        simpa only [IsFractionRing.finrank_eq (𝓞 K) K (𝓞 E) E] using
+          TauCeti.RamificationInertia.ncard_primesOver_le_finrank (S := 𝓞 E) p.asIdeal
 
 /-! ### Inert primes -/
 

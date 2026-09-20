@@ -372,6 +372,14 @@ theorem monodromyGroup_smul (τ : Perm (Fin n)) (t : PermutationTriple n) :
   congr 1
   simp [Set.image_insert_eq]
 
+/-- A relabeling normalizes the monodromy group of a triple exactly when it leaves that monodromy
+group unchanged. -/
+theorem mem_normalizer_iff_monodromyGroup_smul_eq {τ : Perm (Fin n)} :
+    τ ∈ Subgroup.normalizer (t.monodromyGroup : Set (Perm (Fin n))) ↔
+      (τ • t).monodromyGroup = t.monodromyGroup := by
+  rw [monodromyGroup_smul]
+  exact Subgroup.mem_normalizer_iff_map_conj_eq
+
 /-! ### Connectedness and automorphisms -/
 
 /-- A triple is connected when it has at least one sheet and its monodromy group is transitive on

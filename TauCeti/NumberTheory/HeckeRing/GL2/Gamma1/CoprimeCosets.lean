@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.UpperTriCosets
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 
 import Mathlib.Algebra.CharP.Invertible
 import TauCeti.Data.ZMod.Divisibility
@@ -61,6 +62,9 @@ Disjointness of the last coset from the others uses only `1 < p` and integrality
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none`:
   `diag(1, p) · !![m p, n; N, 1] = σ · diag(p, 1)` with `!![m p, n; N, 1] ∈ Γ₁(N)` — the reverse
   inclusion for the twisted coset.
+* `HeckeRing.GL2.exists_adjugateGL_natDiagGL_eq`: for an index coprime to the level, the
+  adjugate of `diag(1, n)` factors on either side through `diag(1, n)`, a `Γ₁(N)` element,
+  and a `Γ₀(N)` element whose diamond label is `n⁻¹`.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_primeRep`: for prime `p`, every
   `diag(1, p) · γ` with `γ ∈ Γ₁(N)` lies in one of the `p + 1` right cosets.
 * `HeckeRing.GL2.op_primeRep_smul_injective`: the `p + 1` right cosets are pairwise distinct.
@@ -81,7 +85,7 @@ the coset statement below is what identifies the two, and is proved from the gro
 ## References
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
-  Proposition 5.2.1.
+  Proposition 5.2.1 and §5.5.
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
   §3.4–3.5.
 -/
@@ -95,6 +99,60 @@ open scoped MatrixGroups Pointwise
 namespace HeckeRing.GL2
 
 variable {N p : ℕ} {σ : SL(2, ℤ)}
+
+local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
+
+/-- **The adjugate of `diag(1, n)` is an inverse-diamond translate of its double coset, on
+either side.** The translating matrix `A ∈ Γ₀(N)` has diamond label `⟨n⟩⁻¹` (its lower-right
+entry is `n⁻¹ mod N`), while `B ∈ Γ₁(N)` moves `diag(1, n)` within its double coset. -/
+lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
+    ∃ A : SL(2, ℤ), ∃ hA : A ∈ Gamma0 N,
+      (Gamma0Map N).toHomUnits ⟨A, hA⟩ = (ZMod.unitOfCoprime n hn)⁻¹ ∧
+      ∃ B ∈ Gamma1 N, TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
+  obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
+  let A : SL(2, ℤ) :=
+    ⟨!![(n : ℤ), -v; (N : ℤ), u], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
+  let B : SL(2, ℤ) :=
+    ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
+  have hZ := congrArg (Int.cast : ℤ → ZMod N) huv
+  push_cast at hZ
+  rw [ZMod.natCast_self, mul_zero, add_zero] at hZ
+  have hA : A ∈ Gamma0 N := by rw [Gamma0_mem]; simp [A]
+  have hR := congrArg (Int.cast : ℤ → ℝ) huv
+  push_cast at hR
+  have hAcoe : ((mapGL ℝ A : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![(n : ℝ), -v; (N : ℝ), u] := by
+    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [A]
+  have hBcoe : ((mapGL ℝ B : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![(u : ℝ) * n, v; -(N : ℝ), 1] := by
+    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [B]
+  have hfactor :
+      TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
+    constructor <;>
+      refine Units.ext ?_ <;>
+      rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
+        Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one, hAcoe, hBcoe,
+        Matrix.adjugate_fin_two] <;>
+      ext i j <;>
+      fin_cases i <;> fin_cases j <;>
+      simp [Matrix.mul_apply, Fin.sum_univ_two]
+    all_goals nlinarith [hR]
+  refine ⟨A, hA, ?_, B, ?_, hfactor.1, hfactor.2⟩
+  · rw [eq_inv_iff_mul_eq_one]
+    refine Units.ext ?_
+    simpa [A, Gamma0Map] using hZ
+  · rw [Gamma1_mem]
+    simpa [B] using hZ
 
 /-- **The family of `p + 1` matrices out of which the good-prime `Tₚ` is built.** The `p`
 upper-triangular matrices `!![1, b; 0, p]`, indexed by `some b`, together with the twisted

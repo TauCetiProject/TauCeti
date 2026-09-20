@@ -17,7 +17,8 @@ For `0 < p < ∞` the `Lᵖ` seminorm of `v` is by definition the `p`-th root of
 same statement as `‖v‖_p ≤ c * ‖w‖_p` between the seminorms. This file records the passage from
 the former to the latter, which is the direction an estimate proved by integration produces.
 
-The two functions are allowed to take values in different normed groups, so the statement also
+The two functions are allowed to take values in different spaces, and those spaces need carry
+nothing beyond an extended norm, since that is all `eLpNorm` reads. In particular the statement
 covers comparing a function with its derivative.
 
 ## Main declarations
@@ -80,9 +81,9 @@ theorem eLpNorm_le_of_ae_tendsto_ennreal {α : Type*} [MeasurableSpace α] {μ :
 
 /-- Turn a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals into a bound between the `Lᵖ` seminorms.
 The two functions may have different codomains, which is what lets such a bound compare a
-function with its derivative. -/
+function with its derivative; only an extended norm on each is needed. -/
 theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {G H : Type*} [NormedAddCommGroup G] [NormedAddCommGroup H] {v : α → G} {w : α → H} {c : ℝ}
+    {G H : Type*} [ENorm G] [ENorm H] {v : α → G} {w : α → H} {c : ℝ}
     (hc : 0 ≤ c) {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞)
     (h : ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ ≤
       ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) :

@@ -25,13 +25,14 @@ for `TauCeti.ValidLieTypeIndex`, exactly as `TauCeti.ValidLieTypeIndex.frobenius
 field-level and carrier-level maps are the same recipe on every branch, and the branches differ
 only in which endomorphism of this group is later taken as the Steinberg map.
 
-The names all carry the `geck` prefix, because this carrier is *not* the ambient group of milestone
-L0 of `TauCetiRoadmap/CFSGStatement/README.md`. Geck's module is the adjoint module, so the
-characters occurring in it generate the root lattice and not, in general, the whole character
-lattice of the pinned torus; the identification of the carrier with the pinned simply connected
-Chevalley--Demazure group scheme of `TauCeti.DynkinType.simplyConnectedRootDatum` is Layer 9 work
-of `TauCetiRoadmap/ReductiveGroups/README.md`. The names `TauCeti.ValidLieTypeIndex.AmbientGroup`
-and `TauCeti.ValidLieTypeIndex.simpleRootSubgroup` that L0 asks for are therefore left free, and no
+The names all carry the `geck` prefix because this carrier is not the uniform ambient group.
+Geck's module is the adjoint module, so the characters occurring in it generate the root lattice
+and not, in general, the whole character lattice of the pinned torus. This file does not identify
+the carrier with the pinned simply connected Chevalley--Demazure group scheme of
+`TauCeti.DynkinType.simplyConnectedRootDatum`. The uniform
+`TauCeti.ValidLieTypeIndex.AmbientGroup` and `TauCeti.ValidLieTypeIndex.simpleRootSubgroup` are
+assembled by cases in `TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.AmbientGroup`; this carrier
+serves only the `E₈`, `F₄` and `G₂` branches through `TauCeti.UnimodularExceptionalIndex`. No
 declaration below asserts that this carrier is reductive, that its root datum is the simply
 connected one, that its weight torus is maximal, or that its point group is finite.
 

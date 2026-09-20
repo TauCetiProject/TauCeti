@@ -24,7 +24,9 @@ The main results are:
 * `SchemeWeilDivisor.finite_support_orderAt`: the orders of a nonzero rational function have
   finite support;
 * `WeilDivisor.OrderSystem.ofScheme`: the resulting order system, whose generic
-  `OrderSystem.principalDivisor` is the scheme-theoretic principal divisor.
+  `OrderSystem.principalDivisor` is the scheme-theoretic principal divisor;
+* `SchemeWeilDivisor.isEffective_add_principalDivisor_iff`: the coefficientwise criterion for a
+  divisor plus a principal divisor to be effective.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "principal divisors" in
 "Divisors on a curve". It completes the global step explicitly left open by
@@ -139,6 +141,29 @@ lemma ofScheme_ord {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
   (rfl)
 
 end WeilDivisor.OrderSystem
+
+namespace SchemeWeilDivisor
+
+variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+
+/-- A divisor plus a principal divisor is effective exactly when the corresponding rational
+function has order at least the negative of the divisor coefficient at every codimension-one
+point. -/
+lemma isEffective_add_principalDivisor_iff
+    (D : SchemeWeilDivisor X) (g : Additive X.functionFieldˣ) :
+    WeilDivisor.IsEffective
+        (D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) ↔
+      ∀ x : CodimensionOnePoint X,
+        -WeilDivisor.coeff D x ≤
+          X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) x := by
+  rw [WeilDivisor.isEffective_iff]
+  apply forall_congr'
+  intro x
+  rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
+  omega
+
+end SchemeWeilDivisor
 
 end AlgebraicGeometry
 

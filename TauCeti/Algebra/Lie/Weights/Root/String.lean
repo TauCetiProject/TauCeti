@@ -230,13 +230,26 @@ theorem mul_eq_of_lie_eq_smul {α β : Weight K H L} (hα : α.IsNonZero) (hβ :
 
 /-! ### The root-length ratio -/
 
-private lemma rootSystem_chainCoeffs_eq {a b : Weight K H L}
-    (ha : a.IsNonZero) (hb : b.IsNonZero)
+/-- The root system of a Killing Lie algebra and its Lie weight strings have the same
+ascending and descending chain coefficients. -/
+theorem rootSystem_chainCoeffs_eq {a b : Weight K H L}
     (hab : LinearIndependent K ![(a : Module.Dual K H), (b : Module.Dual K H)]) :
-    (rootSystem H).chainTopCoeff ⟨a, by simpa [LieSubalgebra.root] using ha⟩
-        ⟨b, by simpa [LieSubalgebra.root] using hb⟩ = chainTopCoeff a b ∧
-      (rootSystem H).chainBotCoeff ⟨a, by simpa [LieSubalgebra.root] using ha⟩
-        ⟨b, by simpa [LieSubalgebra.root] using hb⟩ = chainBotCoeff a b := by
+    (rootSystem H).chainTopCoeff
+        ⟨a, by
+          simpa [LieSubalgebra.root, Weight.coe_toLinear_ne_zero_iff] using hab.ne_zero 0⟩
+        ⟨b, by
+          simpa [LieSubalgebra.root, Weight.coe_toLinear_ne_zero_iff] using hab.ne_zero 1⟩ =
+      chainTopCoeff a b ∧
+      (rootSystem H).chainBotCoeff
+        ⟨a, by
+          simpa [LieSubalgebra.root, Weight.coe_toLinear_ne_zero_iff] using hab.ne_zero 0⟩
+        ⟨b, by
+          simpa [LieSubalgebra.root, Weight.coe_toLinear_ne_zero_iff] using hab.ne_zero 1⟩ =
+      chainBotCoeff a b := by
+  have ha : a.IsNonZero :=
+    Weight.coe_toLinear_ne_zero_iff.mp (by simpa using hab.ne_zero 0)
+  have hb : b.IsNonZero :=
+    Weight.coe_toLinear_ne_zero_iff.mp (by simpa using hab.ne_zero 1)
   let P := rootSystem H
   let ia : H.root := ⟨a, by simpa [LieSubalgebra.root] using ha⟩
   let ib : H.root := ⟨b, by simpa [LieSubalgebra.root] using hb⟩
@@ -323,7 +336,7 @@ theorem chainTopCoeff_mul_killingForm_root_neg_eq
     simpa only [P, rootSystem_root_apply, i, j, k, Weight.toLinear_apply,
       LinearMap.add_apply, Pi.add_apply] using congrFun hαβ z
   have hlin := P.linearIndependent_of_add_mem_range_root' ⟨k, hk⟩
-  have hcoeff := rootSystem_chainCoeffs_eq hα hβ (by
+  have hcoeff := rootSystem_chainCoeffs_eq (by
     simpa only [P, rootSystem_root_apply, i, j] using hlin)
   have hlength :=
     RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq

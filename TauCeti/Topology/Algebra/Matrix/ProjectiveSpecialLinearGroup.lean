@@ -5,6 +5,7 @@ Authors: The Tau Ceti authors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
@@ -15,13 +16,14 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 # Topology on `PSL(2, ℝ)`
 
 The quotient topology on the projective special linear group `PSL(2, ℝ)` is Hausdorff
-because the center of `SL(2, ℝ)` is finite, hence closed. The translations
-`Matrix.ProjectiveSpecialLinearGroup.upperRightHom x` depend continuously on `x`.
+because the center of `SL(2, ℝ)` is finite, hence closed. Conjugation preserves discrete
+subgroups, and the translations `Matrix.ProjectiveSpecialLinearGroup.upperRightHom x` depend
+continuously on `x`.
 -/
 
 public section
 
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise
 
 open Matrix.SpecialLinearGroup
 

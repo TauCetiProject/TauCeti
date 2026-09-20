@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra
-public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
+public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoalgHom
 
 /-!
 # Morphisms of A-infinity algebras
@@ -19,6 +19,12 @@ exactly one coalgebra morphism
 (`TauCeti.ReducedTensorWords.coalgHomEquivTaylor`).  This coalgebra morphism is therefore the
 stored datum, and the Taylor components are derived from it.
 
+The bar-differential equation is equivalent to its projection onto single letters, the suspended
+component equation `taylor_B ∘ F = f ∘ b_A` for the Taylor components `f` of `F`
+(`TauCeti.ReducedTensorWords.IsCoalgHom.comp_eq_comp_iff_letter_comp_eq`).  Hence every
+degree-zero family of Taylor components satisfying the component equation is the family of
+exactly one `A∞` morphism, `TauCeti.AInfinityHom.ofTaylor`.
+
 With this definition identities and composites are those of linear maps, so the category laws
 hold on the nose.  The arity-one Taylor component is the linear part `f₁ : A ⟶ B`: it has degree
 zero and is a chain map for the unary operations.
@@ -28,11 +34,15 @@ zero and is a chain map for the unary operations.
 * `TauCeti.AInfinityHom`: a morphism of nonunital `A∞` algebras.
 * `TauCeti.AInfinityHom.taylor`: its suspended Taylor components.
 * `TauCeti.AInfinityHom.linearPart`: its arity-one component `f₁`.
+* `TauCeti.AInfinityHom.ofTaylor`: the `A∞` morphism with prescribed Taylor components satisfying
+  the component equation.
 * `TauCeti.AInfinityHom.id` and `TauCeti.AInfinityHom.comp`: identities and composition.
 
 ## Main results
 
 * `TauCeti.AInfinityHom.ext`: an `A∞` morphism is determined by its Taylor components.
+* `TauCeti.AInfinityHom.taylor_comp_barMap`: the Taylor components satisfy the suspended component
+  equation, and `TauCeti.AInfinityHom.taylor_ofTaylor`: every solution of it arises.
 * `TauCeti.AInfinityHom.comp_assoc`, `TauCeti.AInfinityHom.comp_id`, and
   `TauCeti.AInfinityHom.id_comp`: the category laws.
 * `TauCeti.AInfinityHom.linearPart_m_one`: the linear part is a chain map.
@@ -123,6 +133,51 @@ theorem taylor_injective : Function.Injective (taylor : AInfinityHom AA BB → _
 @[ext]
 theorem ext {f g : AInfinityHom AA BB} (h : f.taylor = g.taylor) : f = g :=
   taylor_injective h
+
+/-! ### The component equation -/
+
+/-- The suspended component equation of an `A∞` morphism: the Taylor map of the target after the
+bar map equals the Taylor components after the bar differential of the source.  On words of length
+`n` this is the arity-`n` relation between the components `fᵢ` and the operations `mⱼ`. -/
+@[simp]
+theorem taylor_comp_barMap (f : AInfinityHom AA BB) :
+    BB.taylor ∘ₗ f.barMap = f.taylor ∘ₗ AA.barDifferential := by
+  rw [← BB.letter_comp_barDifferential, LinearMap.comp_assoc, f.barDifferential_comp_barMap,
+    taylor_def, LinearMap.comp_assoc]
+
+/-- The `A∞` morphism with prescribed suspended Taylor components `f`, of degree zero and
+satisfying the suspended component equation: its bar map is the Taylor expansion of `f`. -/
+noncomputable def ofTaylor (f : ReducedTensorWords R A →ₗ[R] B)
+    (hf : LinearMap.IsHomogeneous f (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
+      (BB.grading.shift 1).piece 0)
+    (h : BB.taylor ∘ₗ ReducedTensorWords.coalgHom R f = f ∘ₗ AA.barDifferential) :
+    AInfinityHom AA BB where
+  barMap := ReducedTensorWords.coalgHom R f
+  isCoalgHom_barMap := ReducedTensorWords.isCoalgHom_coalgHom f
+  isHomogeneous_barMap := ReducedTensorWords.isHomogeneous_coalgHom hf
+  barDifferential_comp_barMap :=
+    (ReducedTensorWords.isCoalgHom_coalgHom f).comp_eq_comp_of_letter_comp_eq
+      (ReducedTensorWords.isHomogeneous_coalgHom hf) AA.isGradedCoderivation_barDifferential
+      BB.isGradedCoderivation_barDifferential <| by
+        rw [← LinearMap.comp_assoc, BB.letter_comp_barDifferential, h, ← LinearMap.comp_assoc,
+          ReducedTensorWords.letter_comp_coalgHom]
+
+@[simp]
+theorem barMap_ofTaylor (f : ReducedTensorWords R A →ₗ[R] B) (hf h) :
+    (ofTaylor (AA := AA) (BB := BB) f hf h).barMap = ReducedTensorWords.coalgHom R f := (rfl)
+
+/-- The `A∞` morphism built from Taylor components has exactly those Taylor components. -/
+@[simp]
+theorem taylor_ofTaylor (f : ReducedTensorWords R A →ₗ[R] B) (hf h) :
+    (ofTaylor (AA := AA) (BB := BB) f hf h).taylor = f := by
+  rw [taylor_def, barMap_ofTaylor, ReducedTensorWords.letter_comp_coalgHom]
+
+/-- Every `A∞` morphism is built from its own Taylor components. -/
+@[simp]
+theorem ofTaylor_taylor (f : AInfinityHom AA BB) :
+    ofTaylor f.taylor f.isHomogeneous_taylor
+      (by rw [← f.barMap_eq_coalgHom]; exact f.taylor_comp_barMap) = f :=
+  ext (taylor_ofTaylor _ _ _)
 
 /-! ### Identities and composition -/
 

@@ -233,6 +233,12 @@ anything about the elements of that module. -/
 
 @[simp] lemma ofDiscreteModule_V : (ofDiscreteModule R G M).V = M := (rfl)
 
+/-- The underlying topological module of `TauCeti.ofDiscreteModule` is discrete. This is
+`TauCeti.ofDiscreteModule_V` read as an instance: the equality holds by definition but not at
+reducible transparency, so instance search cannot find the discreteness of `M` through the
+projection on its own. -/
+instance : DiscreteTopology (ofDiscreteModule R G M).V := inferInstanceAs (DiscreteTopology M)
+
 variable {R G M}
 
 @[simp] lemma ofDiscreteModule_ρ_apply_apply (g : G) (m : M) :

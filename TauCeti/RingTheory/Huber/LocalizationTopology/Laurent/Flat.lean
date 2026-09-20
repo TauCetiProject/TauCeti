@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Inverse
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Quotient
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Presentation
 public import TauCeti.RingTheory.Huber.Restricted.Laurent
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
@@ -51,7 +51,7 @@ in: `s` topologically nilpotent over a strongly noetherian base.
 * `TauCeti.Huber.PairOfDefinition.flat_quotient_laurentRelationIdeal_of_isStronglyNoetherian` :
   flatness for a topologically nilpotent denominator over a strongly noetherian base, the form in
   which the hypotheses are met in practice.
-* `TauCeti.Huber.flat_quotient_laurentInvRelationIdeal` : **Lemma 8.31(2) in the weighted
+* `TauCeti.Huber.flat_quotient_rationalRelationIdeal_one` : **Lemma 8.31(2) in the weighted
   presentation** — `A⟨X⟩ ⧸ (1 - f X)` is a flat `A`-module over a complete noetherian Tate ring.
 * `TauCeti.Huber.PairOfDefinition.flat_restrictionRingHomOfSubset` : **Proposition 8.30's
   elementary case** — the restriction map `A⟨T/s⟩ → A⟨T'/s⟩` is flat when `T'` adds the single
@@ -77,7 +77,8 @@ in: `s` topologically nilpotent over a strongly noetherian base.
   every presentation of a complete separated strongly noetherian Tate ring, with no unit-ideal
   condition on `(T, s)`. After rescaling by a unit, `1` can be adjoined as a numerator without
   changing `A⟨T/s⟩`; the denominator change then goes through `A⟨X⟩ ⧸ (1 - f X) ≃ A⟨{1}/f⟩`
-  (`TauCeti.Huber.PairOfDefinition.laurentInvQuotientRingEquiv`) and Lemma 8.31(2), and the other
+  (`TauCeti.Huber.PairOfDefinition.rationalQuotientRingEquiv` at the single numerator `1`) and
+  Lemma 8.31(2), and the other
   numerators are adjoined by Proposition 8.30.
 
 ## The three chain results, and which to use
@@ -651,25 +652,26 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [Comple
   [IsNoetherianRing A]
 
 /-- **Lemma 8.31(2) in the weighted presentation**: over a complete noetherian Tate ring `A`, the
-quotient `A⟨X⟩ ⧸ (1 - f X)` by `TauCeti.Huber.laurentInvRelationIdeal f` is a flat `A`-module.
-Here `A⟨X⟩` is the weighted restricted series ring with weight `{1}`, the presentation in which
-`TauCeti.Huber.PairOfDefinition.laurentInvQuotientRingEquiv` identifies the quotient with
+quotient `A⟨X⟩ ⧸ (1 - f X)` by `TauCeti.Huber.rationalRelationIdeal` at the single numerator `1`
+over the denominator `f` is a flat `A`-module. Here `A⟨X⟩` is the weighted restricted series ring
+with weight `{1}`, the presentation in which
+`TauCeti.Huber.PairOfDefinition.rationalQuotientRingEquiv` identifies the quotient with
 `A⟨{1}/f⟩`. The hypotheses are those of
 `TauCeti.Huber.flat_quotient_one_sub_algebraMap_mul_restrictedX`, the same statement for the
 restricted power series ring.
 
 Compare `TauCeti.Huber.PairOfDefinition.flat_quotient_laurentRelationIdeal`, the flatness over
 `A⟨T/s⟩` of the quotient by `(t/s - X)`. -/
-theorem flat_quotient_laurentInvRelationIdeal (f : A) : Module.Flat A
+theorem flat_quotient_rationalRelationIdeal_one (f : A) : Module.Flat A
     (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight ⧸
-      laurentInvRelationIdeal f) := by
+      rationalRelationIdeal (fun _ : Fin 1 ↦ (1 : A)) f) := by
   -- the comparison of the two rings, as an equivalence of `A`-algebras
   let e := AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr
     (weightedRestrictedSubring_one_weight (k := 1) (A := A))) subringCongr_one_weight_weightedC
   -- it carries the relation ideal to the ideal of Lemma 8.31(2)
   have hmap : Ideal.span {1 - algebraMap A (restrictedMvPowerSeriesSubring 1 A) f * restrictedX 0} =
-      (laurentInvRelationIdeal f).map (e : _ →+* _) := by
-    simp [e, laurentInvRelationIdeal_def, Ideal.map_span]
+      (rationalRelationIdeal (fun _ : Fin 1 ↦ (1 : A)) f).map (e : _ →+* _) := by
+    simp [e, rationalRelationIdeal_def, Ideal.map_span, Set.range_unique]
   exact (Module.Flat.equiv_iff (Ideal.quotientEquivAlg _ _ e hmap).toLinearEquiv).2
     (flat_quotient_one_sub_algebraMap_mul_restrictedX A f)
 
@@ -679,7 +681,22 @@ namespace PairOfDefinition
 
 section StructureMap
 
-variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+variable {A : Type*} [CommRing A]
+
+-- The hypotheses of `rationalQuotientRingEquiv` for the single numerator `1` of `{1}` over `f`:
+-- `1` lies in `{1}` and is its only element, and `f` and `1` generate the unit ideal.
+private theorem one_mem_singleton_one : ∀ _ : Fin 1, (1 : A) ∈ ({1} : Finset A) :=
+  fun _ ↦ Finset.mem_singleton_self 1
+
+private theorem eq_or_mem_range_one (f : A) :
+    ∀ u ∈ ({1} : Finset A), u = f ∨ u ∈ Set.range fun _ : Fin 1 ↦ (1 : A) := by
+  simp
+
+private theorem span_insert_singleton_one (f : A) :
+    Ideal.span (insert f (({1} : Finset A) : Set A)) = ⊤ := by
+  simp [Ideal.span_insert]
+
+variable [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [CompleteSpace A] [T0Space A] [IsTateRing A] [IsStronglyNoetherian A]
 
 -- `A → A⟨{1}/f⟩` is flat: it is the structure map of `A⟨X⟩ ⧸ (1 - f X)` followed by the
@@ -698,17 +715,19 @@ private theorem flat_toCompletionLoc_singleton_one (P : PairOfDefinition A) (f :
   have _ : (𝓤 (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
       isWeightFamily_one_weight)).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
-  have hcl := isClosed_of_isNoetherian (laurentInvRelationIdeal f)
-  have hcomp : (laurentInvQuotientRingEquiv P f S h1 hcl).toRingHom.comp (algebraMap A _) =
-      toCompletionLoc P {1} f S h1 :=
-    RingHom.ext <| laurentInvQuotientRingEquiv_algebraMap P f S h1 hcl
+  have hcl := isClosed_of_isNoetherian (rationalRelationIdeal (fun _ : Fin 1 ↦ (1 : A)) f)
+  let e := rationalQuotientRingEquiv P {1} f S h1 (fun _ ↦ 1) one_mem_singleton_one
+    (eq_or_mem_range_one f) (span_insert_singleton_one f) hcl
+  have hcomp : e.toRingHom.comp (algebraMap A _) = toCompletionLoc P {1} f S h1 :=
+    RingHom.ext <| rationalQuotientRingEquiv_algebraMap P {1} f S h1 (fun _ ↦ 1)
+      one_mem_singleton_one (eq_or_mem_range_one f) (span_insert_singleton_one f) hcl
   -- `A` is a complete noetherian Tate ring, as Lemma 8.31(2) asks; it is noetherian because
   -- completeness is asked for the right uniformity, which is the ambient one
   have _ : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have _ : IsNoetherianRing A :=
     isNoetherianRing_of_isStronglyNoetherian <| by rwa [IsUniformAddGroup.rightUniformSpace_eq]
-  exact hcomp ▸ (RingHom.flat_algebraMap_iff.mpr (flat_quotient_laurentInvRelationIdeal f)).comp
-    (.of_bijective (laurentInvQuotientRingEquiv P f S h1 hcl).bijective)
+  exact hcomp ▸ (RingHom.flat_algebraMap_iff.mpr (flat_quotient_rationalRelationIdeal_one f)).comp
+    (.of_bijective e.bijective)
 
 -- A presentation with the numerator `1` has a flat structure map: it factors as `A → A⟨{1}/f⟩`
 -- followed by the restriction map of the numerator enlargement `{1} ⊆ U`, flat by Proposition 8.30

@@ -30,6 +30,8 @@ the chart of `σ` away from the monomial of `m`. Finite generation cannot be dro
 ## Main declarations
 
 * `PointedCone.isFaceOf_inf_ker`: a functional nonnegative on `C` cuts out a face of `C`.
+* `PointedCone.inf_ker_add`: the face cut out by a sum of nonnegative functionals is the
+  intersection of the faces they cut out.
 * `PointedCone.inf_ker_eq_of_eq_hull`: a functional nonnegative on a generating set and vanishing
   at exactly the generators in a face `F` cuts out `F`.
 * `PointedCone.FG.exists_nonneg_add_nsmul`: on a finitely generated cone, a functional
@@ -44,6 +46,27 @@ the chart of `σ` away from the monomial of `m`. Finite generation cannot be dro
 public section
 
 namespace PointedCone
+
+section
+
+variable {R M : Type*} [AddCommMonoid M]
+
+/-- If two linear functionals `φ` and `ψ` are nonnegative on a pointed cone `C`, the face cut out
+by `φ + ψ` is the intersection of the faces cut out by `φ` and by `ψ`. -/
+theorem inf_ker_add [Semiring R] [PartialOrder R] [IsOrderedRing R] [Module R M]
+    {C : PointedCone R M} {φ ψ : Module.Dual R M} (hφ : ∀ x ∈ C, 0 ≤ φ x)
+    (hψ : ∀ x ∈ C, 0 ≤ ψ x) :
+    C ⊓ PointedCone.ofSubmodule (LinearMap.ker (φ + ψ)) =
+      (C ⊓ PointedCone.ofSubmodule (LinearMap.ker φ)) ⊓
+        (C ⊓ PointedCone.ofSubmodule (LinearMap.ker ψ)) := by
+  ext x
+  simp only [Submodule.mem_inf, PointedCone.mem_ofSubmodule_iff, LinearMap.mem_ker,
+    LinearMap.add_apply]
+  refine ⟨fun ⟨hx, h⟩ ↦ ?_, fun ⟨⟨hx, h₁⟩, _, h₂⟩ ↦ ⟨hx, by rw [h₁, h₂, add_zero]⟩⟩
+  obtain ⟨h₁, h₂⟩ := (add_eq_zero_iff_of_nonneg (hφ x hx) (hψ x hx)).1 h
+  exact ⟨⟨hx, h₁⟩, hx, h₂⟩
+
+end
 
 section
 

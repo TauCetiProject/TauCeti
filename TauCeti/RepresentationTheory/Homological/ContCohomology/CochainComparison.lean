@@ -18,7 +18,7 @@ with `M`, `C1 G M`, and `C2 G M`. The forward maps are the classical formulas
 `g₀ • m`, `g₀ • c (g₀⁻¹ * g₁)`, and `g₀ • c (g₀⁻¹ * g₁, g₁⁻¹ * g₂)`;
 the inverse maps evaluate at `1`, at `(1, g)`, and at `(1, g, g * h)`.
 The differential compatibilities identify the canonical differentials with `d0`, `d1`, and `d2`,
-including the cocycle condition in degree two.
+including the cocycle conditions in degrees one and two.
 All three comparisons are natural in compatible pairs of group and coefficient maps.
 These are additive equivalences; no identification of the pointwise and compact-open
 topologies is asserted.
@@ -178,6 +178,41 @@ theorem cochainEquiv1_symm_d
   apply (cochainEquiv1 G M).injective
   simpa only [AddEquiv.apply_symm_apply] using d_cochainEquiv0 G M ((cochainEquiv0 G M).symm c)
 
+/-- The differential of the degree-one comparison is the homogeneous form of `d1`. -/
+theorem d_cochainEquiv1_apply (c : C1 G M) (g h k : G) :
+    (((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2).hom
+        (cochainEquiv1 G M c)).val g h k =
+      g • d1 G M c.val (g⁻¹ * h, h⁻¹ * k) := by
+  rw [TopRep.homogeneousCochains.d_apply]
+  simp only [TopRep.hom_d_succ, TopRep.d_zero, TopRep.hom_ofHom,
+    ContIntertwiningMap.sub_apply, ContRepresentation.coind₁ι_toFun,
+    ContRepresentation.coind₁Map_toFun, ContinuousMap.sub_apply,
+    ContinuousMap.const_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
+    cochainEquiv1_apply]
+  rw [← homogeneous2_apply, homogeneous2_d1]
+  exact (sub_sub_eq_add_sub _ _ _).trans (add_sub_right_comm _ _ _)
+
+/-- The degree-one comparison detects precisely the continuous inhomogeneous cocycles. -/
+theorem d_cochainEquiv1_eq_zero_iff (c : C1 G M) :
+    ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2).hom
+        (cochainEquiv1 G M c) = 0 ↔ c.val ∈ Z1 G M := by
+  rw [mem_Z1_iff, and_iff_right (mem_C1_iff.mp c.property), ← d1_apply_eq_zero_iff]
+  constructor
+  · intro hc
+    funext ⟨g, h⟩
+    have e := congrArg (fun z => z.val 1 g (g * h)) hc
+    rw [d_cochainEquiv1_apply] at e
+    -- Normalize the bundled coefficient carrier before simplifying the group coordinates.
+    change (1 : G) • d1 G M c.val (1⁻¹ * g, g⁻¹ * (g * h)) = (0 : M) at e
+    simpa only [inv_one, one_mul, inv_mul_cancel_left, one_smul, Pi.zero_apply] using e
+  · intro hc
+    apply Subtype.ext
+    ext g h k
+    rw [d_cochainEquiv1_apply]
+    -- The right side is the zero continuous map, evaluated in the bundled carrier.
+    change g • d1 G M c.val (g⁻¹ * h, h⁻¹ * k) = (0 : M)
+    rw [hc, Pi.zero_apply, smul_zero]
+
 variable [LocallyCompactSpace G]
 
 /-- Continuous two-cochains as canonical homogeneous cochains. Local compactness supplies
@@ -237,16 +272,8 @@ theorem d_cochainEquiv1 (c : C1 G M) :
       cochainEquiv2 G M ⟨d1 G M c.val,
         mem_C2_iff.mpr (continuous_d1_apply (mem_C1_iff.mp c.property))⟩ := by
   apply Subtype.ext
-  rw [TopRep.homogeneousCochains.d_apply]
   ext g h k
-  simp only [TopRep.hom_d_succ, TopRep.d_zero, TopRep.hom_ofHom,
-    ContIntertwiningMap.sub_apply, ContRepresentation.coind₁ι_toFun,
-    ContRepresentation.coind₁Map_toFun, ContinuousMap.sub_apply,
-    ContinuousMap.const_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk]
-  rw [cochainEquiv1_apply, cochainEquiv1_apply, cochainEquiv1_apply,
-    cochainEquiv2_apply, homogeneous2_d1]
-  exact (sub_sub_eq_add_sub (homogeneous1 c.val h k) (homogeneous1 c.val g k)
-    (homogeneous1 c.val g h)).trans (add_sub_right_comm _ _ _)
+  rw [d_cochainEquiv1_apply, cochainEquiv2_apply, homogeneous2_apply]
 
 /-- The inverse degree-two comparison carries the canonical differential to `d1`. -/
 theorem cochainEquiv2_symm_d
