@@ -87,24 +87,20 @@ theorem isIdempotentElem_projection : IsIdempotentElem (projection P W) :=
 theorem projection_apply_of_mem {x : Vℚ} (hx : x ∈ W.WQ) : projection P W x = x :=
   Submodule.projection_apply_of_mem_left _ hx
 
-/-- The Hodge projector annihilates the orthogonal complement it projects along: it kills every
-vector orthogonal to the substructure for the polarizing form. The premise is spelled out because
-it is the simp-normal form of `x ∈ (orthogonal P W).WQ`, which `orthogonal_WQ` and
-`LinearMap.BilinForm.mem_orthogonal_iff` — both `@[simp]` — rewrite to exactly this orthogonality
-statement; stated with the bundled membership instead, the `simp` lemma could never fire. -/
+/-- The Hodge projector annihilates the orthogonal complement it projects along. -/
 @[simp]
 theorem projection_apply_of_mem_orthogonal {x : Vℚ}
     (hx : ∀ y ∈ W.WQ, integralFormBaseChange hℚ P.Qint y x = 0) :
     projection P W x = 0 :=
+  -- The expanded premise is the simp-normal form of membership in `(orthogonal P W).WQ`.
   Submodule.projection_apply_of_mem_right _ <| by
     rw [orthogonal_WQ, LinearMap.BilinForm.mem_orthogonal_iff]
     exact hx
 
-/-- **The Hodge projector is a morphism of pure Hodge structures.** Its complexification is an
-idempotent whose range is the complexified substructure and whose kernel is the complexified
-orthogonal complement, and both are sub-Hodge structures. -/
+/-- The complexification of the Hodge projector is a morphism of pure Hodge structures. -/
 theorem isMorphism_rationalMapToComplex_projection :
     HodgeStructureOn.IsMorphism hs hs (rationalMapToComplex hℚ hℂ hℚ hℂ (projection P W)) := by
+  -- Apply the idempotent criterion using the projector's range and kernel.
   refine HodgeStructureOn.isMorphism_of_isIdempotentElem
     (isIdempotentElem_rationalMapToComplex hℚ hℂ (isIdempotentElem_projection P W)) ?_ ?_
   · rw [range_rationalMapToComplex, range_projection, ← WC_def]
