@@ -72,8 +72,8 @@ namespace IsStrictlyUnital
 variable {f : AInfinityHom AA BB} {eA : A} {eB : B}
 
 /-- A higher component of a strictly unital morphism vanishes when a specified input is the
-source unit. -/
-@[simp]
+source unit.  This is not a `simp` lemma: neither the units nor the index of the unit input can
+be recovered from the left-hand side. -/
 theorem component_eq_zero_of_eq_unit (hf : f.IsStrictlyUnital eA eB) {n : ℕ} (hn : n ≠ 1)
     (x : Fin n → A) {i : Fin n} (hi : x i = eA) : f.component n x = 0 :=
   hf.component_eq_zero hn x ⟨i, hi⟩
