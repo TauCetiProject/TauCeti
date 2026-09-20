@@ -88,11 +88,13 @@ dimension at least two.**  This is the forward half of the intrinsic characteriz
 `TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim`,
 and it needs no hypothesis on the characteristic. -/
 theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
-    (hF : IsFunctionField k F) (hhyp : IsHyperellipticFunctionField k F) :
+    (hhyp : IsHyperellipticFunctionField k F) :
     ∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A := by
   -- The pole divisor of an index-two generator `x` has degree `[F : k(x)]` by the product
   -- formula, and its Riemann--Roch space contains the two independent functions `1` and `x`.
   obtain ⟨x, hx, hrank, -⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
+  have _ : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos (by omega)
+  have hF : IsFunctionField k F := hx.isFunctionField_adjoin.finite_extension
   have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
   refine ⟨Divisor.poles hF (Units.mk0 x hx0), ?_, ?_⟩
   · rw [Divisor.degree_poles hF (Units.mk0 x hx0) hx, Units.val_mk0, hrank]
@@ -166,7 +168,7 @@ theorem isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_a
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (h2 : (2 : k) ≠ 0) :
     IsHyperellipticFunctionField k F ↔
       2 ≤ genus k F ∧ ∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A := by
-  refine ⟨fun hhyp ↦ ⟨hhyp.two_le_genus, hhyp.exists_degree_eq_two_and_two_le_dim hF⟩, ?_⟩
+  refine ⟨fun hhyp ↦ ⟨hhyp.two_le_genus, hhyp.exists_degree_eq_two_and_two_le_dim⟩, ?_⟩
   rintro ⟨hgen, A, hA, hdim⟩
   obtain ⟨x, hx, hrank⟩ :=
     exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim
