@@ -110,7 +110,6 @@ theorem memFinite_iff_shrink [Finite H] : C.MemFinite H ↔ C.mem (Shrink.{w} H)
   ⟨fun h ↦ h.elim fun _ hH ↦ hH, fun h ↦ ⟨‹_›, h⟩⟩
 
 /-- In the defining universe, membership through `Shrink` agrees with raw membership. -/
-@[simp]
 theorem memFinite_iff {H : Type w} [Group H] [Finite H] : C.MemFinite H ↔ C.mem H :=
   memFinite_iff_shrink.trans (C.mem_congr (Shrink.mulEquiv.{w} (α := H)))
 
@@ -162,7 +161,6 @@ theorem memFinite_congr {K : Type u} [Group K] (e : H ≃* K) : C.MemFinite H �
 
 /-- Membership in a class of finite groups is preserved when a finite group is moved to any
 other universe through `Shrink`. -/
-@[simp]
 theorem memFinite_shrink [Finite H] : C.MemFinite (Shrink.{u} H) ↔ C.MemFinite H :=
   memFinite_congr (Shrink.mulEquiv.{u} (α := H))
 
