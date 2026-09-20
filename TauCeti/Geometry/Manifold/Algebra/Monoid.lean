@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.Monoid
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Smooth monoid morphisms
 
 Identity, composition, and their laws for bundled smooth multiplicative and additive monoid
-morphisms. It also characterizes smooth group homomorphisms by their regularity at the identity.
+morphisms. It also propagates the regularity of multiplicative and additive maps from a group
+at any one point to the whole group.
 -/
 
 public section
@@ -101,30 +102,29 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {G : Type*} [Group G] [TopologicalSpace G] [ChartedSpace H G]
-  {G' : Type*} [MulOneClass G'] [TopologicalSpace G'] [ChartedSpace H' G']
-  {F : Type*} [FunLike F G G'] [MonoidHomClass F G G']
-  {n : ℕ∞ω} [ContMDiffMul I n G] [ContMDiffMul I' n G']
+  {G' : Type*} [Mul G'] [TopologicalSpace G'] [ChartedSpace H' G']
+  {F : Type*} [FunLike F G G'] [MulHomClass F G G']
+  {n : ℕ∞ω} [ContMDiffConstSMul I n G G] [ContMDiffConstSMul I' n G' G']
 
-/-- A group homomorphism that is `C^n` at the identity is `C^n` everywhere.
+/-- A multiplicative map from a group that is `C^n` at one point is `C^n` everywhere.
 
-This is the smooth analogue of Mathlib's `continuous_of_continuousAt_one`.
-
-This only requires smooth multiplication: inverses occur at fixed group elements, so the
-inversion operation itself need not be smooth. -/
+The map need not preserve an identity. Only the individual left translations on the source
+and target must be `C^n`, as expressed by `ContMDiffConstSMul` for multiplication acting on
+itself. In particular, smooth multiplication suffices; smooth inversion is not required. -/
 @[to_additive
-  /-- An additive group homomorphism that is `C^n` at zero is `C^n` everywhere. -/]
-theorem contMDiff_of_contMDiffAt_one (f : F)
-    (hf : ContMDiffAt I I' n f 1) : ContMDiff I I' n f := by
+  /-- An additive map from an additive group that is `C^n` at one point is `C^n` everywhere.
+
+  The map need not preserve a zero. Only the individual left translations on the source
+  and target must be `C^n`, as expressed by `ContMDiffConstVAdd` for addition acting on
+  itself. In particular, smooth addition suffices; smooth negation is not required. -/]
+theorem contMDiff_of_contMDiffAt_mulHom (f : F) {a : G}
+    (hf : ContMDiffAt I I' n f a) : ContMDiff I I' n f := by
   intro x
-  have hcomp : ContMDiffAt I I' n (fun y : G ↦ f (x⁻¹ * y)) x := by
-    -- `comp_of_eq` exposes its composition explicitly, unlike the displayed translated germ.
-    change ContMDiffAt I I' n (f ∘ fun y : G ↦ x⁻¹ * y) x
-    exact hf.comp_of_eq contMDiffAt_mul_left (by simp)
-  have hmul : ContMDiffAt I I' n (fun y : G ↦ f x * f (x⁻¹ * y)) x :=
-    contMDiffAt_const.mul hcomp
+  have hcomp := hf.comp_of_eq ((contMDiff_const_smul (a * x⁻¹)).contMDiffAt (x := x))
+    (by simp [mul_assoc])
+  have hmul := hcomp.const_smul (f (x * a⁻¹))
   convert hmul using 1
   funext y
-  rw [← map_mul]
-  simp
+  simp [Function.comp_def, smul_eq_mul, ← map_mul, mul_assoc]
 
 end TauCeti
