@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Pi
-public import Mathlib.Analysis.Real.Sqrt
+public import TauCeti.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
@@ -81,18 +81,13 @@ real quadratic form gives a vector of quadratic value one. -/
 theorem inv_sqrt_smul_apply {Q : QuadraticForm ℝ M} (hQ : Q.PosDef) (v : M) (hv : v ≠ 0) :
     Q ((Real.sqrt (Q v))⁻¹ • v) = 1 := by
   have hpos : 0 < Q v := hQ v hv
-  have hsqrt : Real.sqrt (Q v) ≠ 0 := Real.sqrt_ne_zero'.mpr hpos
+  have hsquare : (Real.sqrt (Q v))⁻¹ ^ 2 = (Q v)⁻¹ := by
+    simpa using Real.inv_sqrt_mul_sq hpos.le 1
   calc
-    Q ((Real.sqrt (Q v))⁻¹ • v) =
-        (Real.sqrt (Q v))⁻¹ * (Real.sqrt (Q v))⁻¹ * Q v := by
-      rw [QuadraticMap.map_smul]
-      rfl
-    _ = (Real.sqrt (Q v))⁻¹ * (Real.sqrt (Q v))⁻¹ *
-        (Real.sqrt (Q v) * Real.sqrt (Q v)) := by
-      rw [Real.mul_self_sqrt hpos.le]
-    _ = ((Real.sqrt (Q v))⁻¹ * Real.sqrt (Q v)) *
-        ((Real.sqrt (Q v))⁻¹ * Real.sqrt (Q v)) := by ring
-    _ = 1 := by rw [inv_mul_cancel₀ hsqrt, one_mul]
+    Q ((Real.sqrt (Q v))⁻¹ • v) = (Real.sqrt (Q v))⁻¹ ^ 2 * Q v := by
+      simp only [QuadraticMap.map_smul, smul_eq_mul, pow_two]
+    _ = (Q v)⁻¹ * Q v := by rw [hsquare]
+    _ = 1 := inv_mul_cancel₀ hpos.ne'
 
 end Real
 
