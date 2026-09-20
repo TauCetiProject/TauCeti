@@ -147,6 +147,11 @@ def cohomologyClassLinearMap (𝒜 : AInfinityAlgebra R A) : 𝒜.cycles →ₗ[
 def cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) : 𝒜.Cohomology :=
   𝒜.cohomologyClassLinearMap ⟨x, hx⟩
 
+/-- A cohomology class is the quotient class of its cycle representative.  This is the bridge
+through which maps out of cohomology are built by the universal property of the quotient. -/
+theorem cohomologyClass_eq_mk (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyClass hx = Submodule.Quotient.mk ⟨x, hx⟩ := (rfl)
+
 /-- Zero represents zero in cohomology. -/
 @[simp]
 theorem cohomologyClass_zero (𝒜 : AInfinityAlgebra R A) :

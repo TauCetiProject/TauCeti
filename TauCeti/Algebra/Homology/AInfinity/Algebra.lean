@@ -29,6 +29,14 @@ vanish, rather than being unconstrained data hidden from the bar construction.
 * `TauCeti.AInfinityAlgebra.differential`: the unary operation as a linear endomorphism.
 * `TauCeti.AInfinityAlgebra.mul`: the binary operation as a bilinear map.
 
+## Main results
+
+* `TauCeti.AInfinityAlgebra.stasheff`: the unsuspended Stasheff identities, with
+  `stasheff_arity_one` through `stasheff_arity_four` evaluated verbatim.
+* `TauCeti.AInfinityAlgebra.taylor_of_two` and
+  `TauCeti.AInfinityAlgebra.barDifferential_of_two`: the Taylor map and the bar differential on a
+  two-letter word of homogeneous letters.
+
 ## References
 
 * E. Getzler and J. D. S. Jones, *A-infinity algebras and the cyclic bar complex*, Sections 1--2.
@@ -351,6 +359,58 @@ theorem barDifferential_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
   obtain ⟨y, hy⟩ := (ReducedTensorWords.deconcatenation_eq_zero_iff R A).1 hd
   rw [← taylor_ofLetter, ← letter_comp_barDifferential, LinearMap.comp_apply, ← hy,
     ReducedTensorWords.letter_ofLetter]
+
+/-- On a two-letter word of homogeneous letters the Taylor map is the binary operation, carrying
+the suspension sign of the first letter. -/
+theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {a b : A}
+    (ha : a ∈ 𝒜.grading.piece p) (hb : b ∈ 𝒜.grading.piece q) :
+    𝒜.taylor (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+        (PiTensorProduct.tprod R ![a, b])) =
+      negOnePowCast R p • 𝒜.m 2 ![a, b] := by
+  have hcons : (fun i : Fin 2 ↦ if (i : ℕ) = 0 then a else b) = ![a, b] := by
+    funext i
+    fin_cases i <;> simp
+  have hexp : _root_.MultilinearMap.suspExp 2 (fun j : ℕ ↦ if j = 0 then p else q) = p := by
+    simp [_root_.MultilinearMap.suspExp_def, Finset.sum_range_succ]
+  have hs := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension 2 (by omega)
+    (fun j : ℕ ↦ if j = 0 then p else q) (fun j : ℕ ↦ if j = 0 then a else b) (by
+      intro i hi
+      rcases (show i = 0 ∨ i = 1 by omega) with rfl | rfl
+      · simpa using ha
+      · simpa using hb)
+  rw [hcons] at hs
+  rw [hs, AInfinity.evalNat_suspend, MultilinearMap.evalNat_def, hcons, hexp]
+
+/-- The bar differential of a two-letter word of homogeneous letters: the unary operation applied
+to either letter, and the collapse of both letters to the binary operation. -/
+theorem barDifferential_of_two (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {a b : A}
+    (ha : a ∈ 𝒜.grading.piece p) (hb : b ∈ 𝒜.grading.piece q) :
+    𝒜.barDifferential (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+        (PiTensorProduct.tprod R ![a, b])) =
+      ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+          (PiTensorProduct.tprod R ![𝒜.m 1 ![a], b])
+        + ReducedTensorWords.ofLetter R A (negOnePowCast R p • 𝒜.m 2 ![a, b])
+        - negOnePowCast R p • ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+            (PiTensorProduct.tprod R ![a, 𝒜.m 1 ![b]]) := by
+  have hshift : a ∈ (𝒜.grading.shift 1).piece (p - 1) := by
+    rwa [InternalGrading.shift_piece, sub_add_cancel]
+  have hkos : (𝒜.grading.shift 1).koszulTwist 1 a = -(negOnePowCast R p • a) := by
+    have hadd := negOnePowCast_add (R := R) (p - 1) 1
+    rw [sub_add_cancel, negOnePowCast_one] at hadd
+    rw [InternalGrading.koszulTwist_apply_of_mem _ hshift, ← negOnePowCast_eq_intCast, one_mul,
+      hadd, mul_neg, mul_one, neg_smul, neg_neg]
+  refine ReducedTensorWords.eq_of_deconcatenation_eq_of_letter_eq R A ?_ ?_
+  · rw [𝒜.isGradedCoderivation_barDifferential.deconcatenation_apply,
+      ReducedTensorWords.deconcatenation_of_two, map_sub, map_add,
+      ReducedTensorWords.deconcatenation_of_two, ReducedTensorWords.deconcatenation_ofLetter,
+      map_smul, ReducedTensorWords.deconcatenation_of_two]
+    simp only [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul, ReducedTensorWords.map_ofLetter,
+      barDifferential_ofLetter]
+    rw [hkos, map_neg, map_smul, TensorProduct.neg_tmul, TensorProduct.smul_tmul', add_zero]
+    abel
+  · rw [← LinearMap.comp_apply, letter_comp_barDifferential, taylor_of_two 𝒜 ha hb, map_sub,
+      map_add, ReducedTensorWords.letter_of_two, ReducedTensorWords.letter_ofLetter, map_smul,
+      ReducedTensorWords.letter_of_two, smul_zero, zero_add, sub_zero]
 
 /-- The unary operation squares to zero. -/
 @[simp]
