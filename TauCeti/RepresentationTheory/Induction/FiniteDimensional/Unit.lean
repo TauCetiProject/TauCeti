@@ -72,17 +72,21 @@ theorem indFDRepUnit_naturality {A B : FDRep k S} (f : A ⟶ B) :
     indFDRepUnit A ≫ (Action.res (FGModuleCat k) S.subtype).map (indFDRepMap f) =
       f ≫ indFDRepUnit B := by
   apply (forget₂ (FDRep k S) (Rep k S)).map_injective
-  rw [Functor.map_comp, Functor.map_comp, forget₂_map_indFDRepUnit, forget₂_map_indFDRepUnit]
-  -- `resFDRep` is an abbreviation for `Action.res`, so forgetting finite-dimensionality turns its
-  -- action on intertwiners into that of `Rep.resFunctor` definitionally.
-  change _ ≫ (Rep.resFunctor S.subtype).map
-    ((forget₂ (FDRep k G) (Rep k G)).map (indFDRepMap f)) = _
-  rw [forget₂_map_indFDRepMap, Functor.map_comp, Functor.map_comp, Category.assoc,
-    Iso.map_inv_hom_id_assoc, Adjunction.unit_naturality_assoc]
-  -- Both sides are now the same composite; they differ only in the `Semiring k` instance path
-  -- (`Field` on the `resFDRep` side, `CommRing` on the `Rep.resFunctor` side), which `rw`'s
-  -- reducible `rfl` does not see through.
-  rfl
+  rw [Functor.map_comp, Functor.map_comp, forget₂_map_actionRes]
+  change (forget₂ (FDRep k S) (Rep k S)).map (indFDRepUnit A) ≫
+      (Rep.resFunctor S.subtype).map
+        ((forget₂ (FDRep k G) (Rep k G)).map (indFDRepMap f)) =
+    (forget₂ (FDRep k S) (Rep k S)).map f ≫
+      (forget₂ (FDRep k S) (Rep k S)).map (indFDRepUnit B)
+  rw [forget₂_map_indFDRepUnit, forget₂_map_indFDRepUnit, forget₂_map_indFDRepMap,
+    Functor.map_comp, Functor.map_comp]
+  change _ ≫ (Rep.resFunctor S.subtype).map (indFDRepForgetIso A).hom ≫
+      (Rep.resFunctor S.subtype).map
+        ((Rep.indFunctor k S.subtype).map
+          ((forget₂ (FDRep k S) (Rep k S)).map f)) ≫
+        (Rep.resFunctor S.subtype).map (indFDRepForgetIso B).inv = _
+  rw [Category.assoc, Iso.map_inv_hom_id_assoc]
+  erw [Adjunction.unit_naturality_assoc]
 
 /-- On Mathlib's induced carrier, `indFDRepUnit` is the generator map `a ↦ ⟦1 ⊗ a⟧`. -/
 theorem indFDRepUnit_apply (A : FDRep k S) (a : A) :

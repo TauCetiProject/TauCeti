@@ -62,7 +62,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 variable {k : Type u} {G : Type v} [Group G]
 
@@ -208,6 +208,13 @@ particular `(Action.res (FGModuleCat k) S.subtype).map f : resFDRep S B ⟶ resF
 restricts an intertwiner, and is functorial by `Functor.map_id` and `Functor.map_comp`. -/
 abbrev resFDRep (S : Subgroup G) (B : FDRep k G) : FDRep k S :=
   (Action.res (FGModuleCat k) S.subtype).obj B
+
+/-- Restriction of an intertwiner commutes with forgetting finite-dimensionality. -/
+theorem forget₂_map_actionRes {H : Type v} {K : Type w} [Monoid H] [Monoid K]
+    (f : H →* K) {A B : FDRep k K} (g : A ⟶ B) :
+    (forget₂ (FDRep k H) (Rep k H)).map ((Action.res (FGModuleCat k) f).map g) =
+      (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
+  rfl
 
 /-- Restriction commutes with forgetting finite-dimensionality: after forgetting, `resFDRep` is
 Mathlib's `Rep.res`, on the nose rather than up to isomorphism. -/
