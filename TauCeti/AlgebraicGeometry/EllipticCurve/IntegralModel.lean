@@ -28,7 +28,7 @@ integrality is inherited by a larger ring of a tower.
   `K` (`IsIntegrallyClosedIn R K`), if `D • W₁ = W₂` with `W₁` and `W₂` integral over `R` and `D.u`
   the image of a unit of `R`, then `D = C₀.baseChange K` for some `C₀ : VariableChange R`.
 * `WeierstrassCurve.exists_smul_isIntegral`: every equation over `K` has an integral model over a
-  domain `R` with fraction field `K`.
+  ring `R` with fraction field `K`.
 * `WeierstrassCurve.IsIntegral.of_isScalarTower`: integrality passes to a larger ring of the
   tower.
 
@@ -192,14 +192,15 @@ end Descent
 
 end VariableChange
 
-/-- **Every Weierstrass equation over the fraction field of a domain `R` has an integral model
+/-- **Every Weierstrass equation over the fraction field of a ring `R` has an integral model
 over `R`.** The change of variables `(u, 0, 0, 0)` multiplies `aᵢ` by `u⁻ⁱ`, so a single common
 denominator of the five coefficients clears all of them at once. Mathlib's `exists_isIntegral`
 proves the same over a valuation ring, where one coefficient dominates the others; over an
-arbitrary domain the denominators are cleared together instead. -/
-theorem exists_smul_isIntegral (R : Type*) [CommRing R] [IsDomain R] {K : Type*} [Field K]
+arbitrary base ring the denominators are cleared together instead. -/
+theorem exists_smul_isIntegral (R : Type*) [CommRing R] {K : Type*} [Field K]
     [Algebra R K] [IsFractionRing R K] (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, IsIntegral R (C • W) := by
+  let _ := (IsFractionRing.injective R K).isDomain
   obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R)
     ![W.a₁, W.a₂, W.a₃, W.a₄, W.a₆]
   have hb₀ : algebraMap R K (b : R) ≠ 0 :=
