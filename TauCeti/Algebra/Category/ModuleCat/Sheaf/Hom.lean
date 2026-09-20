@@ -100,7 +100,12 @@ def linearHom : Sheaf J (Type (max u v w')) where
   property := isSheaf_linearHomSubfunctor M N
 
 /-- Sections of the linear Hom sheaf over an object are precisely morphisms between the
-restricted sheaves of modules. -/
+restricted sheaves of modules.
+
+Evaluate a section `s` on a slice object `V` using
+`((linearHomObjEquiv M N U s).val.app (op V)) m`. Construct a section from a morphism
+with `(linearHomObjEquiv M N U).symm`; its evaluation simplifies by
+`Equiv.apply_symm_apply`, without unfolding the sheaf construction. -/
 def linearHomObjEquiv (U : C) :
     (linearHom M N).obj.obj (op U) ≃ (M.over U ⟶ N.over U) where
   toFun φ := ⟨PresheafOfModules.homMk φ.val (fun V => φ.property V.unop)⟩
