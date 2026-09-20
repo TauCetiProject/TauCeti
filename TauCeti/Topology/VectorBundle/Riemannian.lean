@@ -26,7 +26,7 @@ trivialization, the fiber norm and the model norm are comparable by
 ## Main results
 
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
-  Riemannian bundle is continuous, with `continuous_norm_bundle` its tautological case.
+  Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
   subset of the total space.
 -/
@@ -54,12 +54,16 @@ theorem Continuous.norm_bundle (hv : Continuous fun x ↦ (v x : TotalSpace F E)
   simp only [norm_eq_sqrt_real_inner]
   exact (hv.inner_bundle hv).sqrt
 
+namespace TauCeti
+
 variable (F E) in
 /-- In a continuous Riemannian bundle, the fiber norm is a continuous function on the total
 space. -/
 theorem continuous_norm_bundle : Continuous fun z : TotalSpace F E ↦ ‖z.2‖ :=
   Continuous.norm_bundle (b := TotalSpace.proj) (v := fun z ↦ z.2)
     (continuous_id.congr fun z ↦ (TotalSpace.eta z).symm)
+
+end TauCeti
 
 end Norm
 
@@ -91,7 +95,7 @@ private theorem isCompact_norm_le_bundle_of_subset_baseSet [T2Space B] {x : B} {
   set e := trivializationAt F E x
   have hclosed : IsClosed {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} :=
     (hK.isClosed.preimage (FiberBundle.continuous_proj F E)).inter
-      (isClosed_le (continuous_norm_bundle F E) continuous_const)
+      (isClosed_le (TauCeti.continuous_norm_bundle F E) continuous_const)
   have hprod : IsCompact ((K ×ˢ Metric.closedBall (0 : F) (C * r))) :=
     hK.prod (isCompact_closedBall (0 : F) (C * r))
   have hsubset : K ×ˢ Metric.closedBall (0 : F) (C * r) ⊆ e.baseSet ×ˢ (univ : Set F) :=
