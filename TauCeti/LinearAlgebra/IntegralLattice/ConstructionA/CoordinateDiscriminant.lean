@@ -76,6 +76,7 @@ instance : (zeroLattice m ι).IsNondegenerate := by
 
 /-- **The carrier of the zero-code lattice is `m ℤ^ι`**: an integer vector lies in it exactly
 when `m` divides each of its coordinates. -/
+@[simp]
 theorem intCast_mem_zeroLattice_carrier_iff (z : ι → ℤ) :
     (fun i ↦ (z i : ℚ)) ∈ (zeroLattice m ι).carrier ↔ ∀ i, ((m : ℕ) : ℤ) ∣ z i := by
   rw [zeroLattice_carrier, intCast_mem_lattice]
