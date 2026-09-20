@@ -76,7 +76,6 @@ instance : (zeroLattice m ι).IsNondegenerate := by
 
 /-- **The carrier of the zero-code lattice is `m ℤ^ι`**: an integer vector lies in it exactly
 when `m` divides each of its coordinates. -/
-@[simp]
 theorem intCast_mem_zeroLattice_carrier_iff (z : ι → ℤ) :
     (fun i ↦ (z i : ℚ)) ∈ (zeroLattice m ι).carrier ↔ ∀ i, ((m : ℕ) : ℤ) ∣ z i := by
   rw [zeroLattice_carrier, intCast_mem_lattice]
@@ -96,7 +95,6 @@ theorem zeroLattice_dualCarrier :
 
 /-- **A rational vector is dual to the zero-code lattice exactly when it has integer
 coordinates.** -/
-@[simp]
 theorem mem_zeroLattice_dualCarrier_iff {x : ι → ℚ} :
     x ∈ (zeroLattice m ι).dualCarrier ↔ ∃ z : ι → ℤ, (fun i ↦ (z i : ℚ)) = x := by
   rw [zeroLattice_dualCarrier, mem_lattice]
@@ -179,7 +177,6 @@ theorem discriminantEquiv_symm_intCast (z : ι → ℤ) :
 
 /-- **The discriminant pairing of the zero-code lattice is the normalized dot product of integer
 lifts**, `(∑ i, zᵢ wᵢ) / m` modulo `ℤ`. -/
-@[simp]
 theorem zeroLattice_discriminantPairing_mk_intCast (z w : ι → ℤ) :
     (zeroLattice m ι).discriminantPairing
         (Submodule.Quotient.mk (dualCarrierIntEquiv m ι z))
@@ -227,7 +224,6 @@ theorem isEven_zeroLattice (hm : Even (m : ℕ)) : (zeroLattice m ι).IsEven := 
 
 /-- **The discriminant quadratic value of the zero-code lattice is the normalized sum of squares
 of an integer lift**, `(∑ i, zᵢ²) / (2m)` modulo `ℤ`. -/
-@[simp]
 theorem zeroLattice_discriminantQuadraticMap_mk_intCast (hm : Even (m : ℕ)) (z : ι → ℤ) :
     (zeroLattice m ι).discriminantQuadraticMap (isEven_zeroLattice m ι hm)
         (Submodule.Quotient.mk (dualCarrierIntEquiv m ι z)) =
