@@ -14,13 +14,13 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 A *normal domain* at a point `p` of a Riemannian manifold is an open star-shaped neighbourhood
 `U` of the origin of `T_p M`, inside the natural domain of the exponential map, on which `exp_p`
 restricts to a diffeomorphism onto its image.  The image `exp_p '' U` is the associated *normal
-neighbourhood* of `p`; when `U` is a ball it is a geodesic ball around `p`.
+neighbourhood* of `p`.
 
 Since the differential of `exp_p` at the origin is the identity, the inverse function theorem
-produces a normal ball of some positive radius at every point.  On a normal neighbourhood the
-restricted exponential map has an inverse, the Riemannian logarithm `log_p`, which is again
-smooth; it is the chart underlying normal coordinates, and it turns a point of the normal
-neighbourhood into the initial velocity of the radial geodesic reaching it.
+produces a ball of some positive radius that is a normal domain at every point.  On a normal
+neighbourhood the restricted exponential map has an inverse, the Riemannian logarithm `log_p`,
+which is again smooth; it is the chart underlying normal coordinates, and it turns a point of the
+normal neighbourhood into the initial velocity of the radial geodesic reaching it.
 
 The logarithm is defined as a total function taking a junk value outside the normal
 neighbourhood, so each theorem about its value carries the corresponding membership hypothesis.
@@ -141,7 +141,7 @@ end IsNormalDomain
 /-! ### Existence of normal balls -/
 
 /-- **Normal balls exist.**  Every ball of small enough radius around the origin of `T_p M` is a
-normal domain at `p`; its image is a geodesic ball around `p`. -/
+normal domain at `p`; its image is a normal neighbourhood of `p`. -/
 theorem exists_isNormalDomain_ball [T2Space (TangentBundle I M)] (p : M) :
     ∃ r : ℝ, 0 < r ∧ IsNormalDomain I M p (Metric.ball 0 r) := by
   have hd := isLocalDiffeomorphAt_riemannianExp_zero (I := I) p
