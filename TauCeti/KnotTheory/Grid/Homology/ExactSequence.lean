@@ -60,8 +60,9 @@ state the two exactness assertions that involve that action using it.
   `TauCeti.GridDiagram.exact_simplyBlockedHomologyδ_X_smul`: exactness of the long exact sequence
   at its three spots.
 * The corresponding theorems in `TauCeti.GridDiagram.IsKnot` express the outer maps using the
-  `R[U]`-action on knot-grid unblocked homology. Exactness at the middle spot mentions no scalar
-  action, so it needs no knot-facing restatement.
+  `R[U]`-action on knot-grid unblocked homology. Exactness at the simply blocked homology
+  (`exact_simplyBlockedHomologyMap_δ`) mentions no scalar action, so it needs no knot-facing
+  restatement.
 
 ## References
 
@@ -101,13 +102,6 @@ theorem simplyBlockedSpecializationHom_apply (c : GridChainMinus R n) :
   unfold simplyBlockedSpecializationHom
   rfl
 
-/-- Restriction of scalars makes a source scalar act through the specialization homomorphism. -/
-theorem smul_restrictScalars_gridChainHat (p : MvPolynomial (Fin n) R)
-    (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
-      (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
-    p • y = simplyBlockedRingHom R i p • y :=
-  rfl
-
 /-- The blocked variable annihilates the specialized chain module: it acts through the
 specialization, which sends it to zero. -/
 @[simp]
@@ -115,7 +109,8 @@ theorem X_smul_restrictScalars_gridChainHat_eq_zero
     (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
       (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
     (MvPolynomial.X i : MvPolynomial (Fin n) R) • y = 0 := by
-  rw [smul_restrictScalars_gridChainHat, simplyBlockedRingHom_X_eq_zero, zero_smul]
+  rw [ModuleCat.restrictScalars.smul_def, simplyBlockedRingHom_X_eq_zero]
+  exact zero_smul _ y
 
 /-- The blocked variable annihilates the specialization map. -/
 @[simp]

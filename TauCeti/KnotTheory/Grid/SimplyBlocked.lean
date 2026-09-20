@@ -91,16 +91,12 @@ theorem simplyBlockedRingHom_apply {n : ℕ} (R : Type*) [CommSemiring R] (i : F
     unfold simplyBlockedRingHom
     rfl
 
-/-- The blocked variable specializes to zero.
-
-Not `@[simp]`: `simplyBlockedRingHom` is an abbreviation, so `simp` first unfolds this left-hand
-side to the corresponding `MvPolynomial.killCompl` expression. -/
+/-- The blocked variable specializes to zero. -/
+@[simp]
 theorem simplyBlockedRingHom_X_eq_zero {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
     simplyBlockedRingHom R i (MvPolynomial.X i) = 0 := by
   rw [simplyBlockedRingHom_apply]
-  rw [MvPolynomial.X]
-  exact MvPolynomial.killCompl_monomial_eq_zero_of_notMem_range Subtype.val_injective
-    (s := Finsupp.single i 1) 1 (a := i) (by simp) (by simp)
+  exact MvPolynomial.killCompl_X_of_notMem_range Subtype.val_injective (by simp)
 
 /-- Coefficientwise specialization of an unblocked grid chain at `V_i = 0`.
 

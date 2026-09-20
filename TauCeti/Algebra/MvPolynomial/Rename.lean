@@ -29,6 +29,8 @@ it kills are exactly the multiples of `X a`.
 
 ## Main results
 
+* `MvPolynomial.killCompl_X_of_notMem_range`: a variable outside the range of an injective
+  renaming is killed by `killCompl`.
 * `MvPolynomial.killCompl_eq_zero_iff_X_dvd`: when the range of the renaming is the complement of
   a single variable `X a`, discarding that variable kills exactly the multiples of `X a`.
 -/
@@ -38,6 +40,14 @@ public section
 namespace MvPolynomial
 
 variable {σ τ R : Type*} [CommSemiring R] {f : σ → τ} (hf : Function.Injective f) {a : τ}
+
+/-- A variable outside the range of an injective renaming is killed by `killCompl`. -/
+@[simp]
+theorem killCompl_X_of_notMem_range (ha : a ∉ Set.range f) :
+    killCompl (R := R) hf (X a) = 0 := by
+  rw [X]
+  exact killCompl_monomial_eq_zero_of_notMem_range hf (s := Finsupp.single a 1) 1
+    (a := a) (by simp) ha
 
 /-- When the range of an injective renaming is the complement of a single variable `X a`,
 discarding the variables outside the range kills exactly the multiples of `X a`. -/
@@ -64,11 +74,7 @@ theorem killCompl_eq_zero_iff_X_dvd (ha : Set.range f = {a}ᶜ) (p : MvPolynomia
     · rw [coeff_modMonomial_of_le _ (by rw [Finsupp.single_le_iff]; omega)]
       simp
   · rintro ⟨q, rfl⟩
-    have hX : killCompl (R := R) hf (X a) = 0 := by
-      rw [X]
-      exact killCompl_monomial_eq_zero_of_notMem_range hf (s := Finsupp.single a 1) 1
-        (a := a) (by simp) hna
-    rw [map_mul, hX, zero_mul]
+    rw [map_mul, killCompl_X_of_notMem_range hf hna, zero_mul]
 
 end MvPolynomial
 
