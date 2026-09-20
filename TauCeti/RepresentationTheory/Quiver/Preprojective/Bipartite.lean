@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.LastArrow
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 
 /-!
@@ -34,12 +35,11 @@ algebra is the preprojective algebra.
 
 ## Main results
 
-* `TauCeti.linearIndependent_backtrackElem`: the head backtracks of the arrows into a vertex and
-  the tail backtracks of the arrows out of it are linearly independent.
-* `TauCeti.gaugedPreprojectiveRelator_vertexCorner`: the corner of the gauged relator at a vertex.
+* `TauCeti.gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum`: the corner of the gauged
+  relator at a vertex.
 * `TauCeti.gauge_eq_of_vertexCorner_eq_smul`: a cornerwise comparison with the signless relator
   reads off the gauge at every arrow meeting that vertex.
-* `TauCeti.neg_eq_of_forall_vertexCorner_eq_smul`: the comparison scalars change sign along every
+* `TauCeti.eq_neg_of_forall_vertexCorner_eq_smul`: the comparison scalars change sign along every
   arrow.
 * `TauCeti.not_exists_forall_vertexCorner_eq_smul_of_odd_length`: **no unit gauge compares the
   preprojective relation cornerwise with the signless one when the doubled quiver carries a closed
@@ -65,62 +65,6 @@ open _root_.Quiver PathAlgebra
 
 universe u v w
 
-/-! ### The backtracks at a vertex -/
-
-section Independence
-
-variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v + 1} Q]
-
-/-- **The backtracks at a vertex are linearly independent.** The head backtracks `a a*` of the
-arrows `a` into `v` and the tail backtracks `a* a` of the arrows out of `v` are pairwise distinct
-paths of the doubled quiver, so they are a linearly independent family in its path algebra. -/
-theorem linearIndependent_backtrackElem (v : Q) :
-    LinearIndependent k
-      (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => headBacktrackElem k x.2)
-        (fun x : Σ j : Q, (v ⟶ j) => tailBacktrackElem k x.2)) := by
-  classical
-  set F : ((Σ i : Q, (i ⟶ v)) ⊕ (Σ j : Q, (v ⟶ j))) → Quiver.TotalPath (Symmetrify Q) :=
-    Sum.elim
-      (fun x : Σ i : Q, (i ⟶ v) => ⟨Symmetrify.of.obj v, Symmetrify.of.obj v,
-        (Quiver.Hom.toPath (Sum.inr x.2 :
-            Symmetrify.of.obj v ⟶ Symmetrify.of.obj x.1)).cons
-          (Sum.inl x.2 : Symmetrify.of.obj x.1 ⟶ Symmetrify.of.obj v)⟩)
-      (fun x : Σ j : Q, (v ⟶ j) => ⟨Symmetrify.of.obj v, Symmetrify.of.obj v,
-        (Quiver.Hom.toPath (Sum.inl x.2 :
-            Symmetrify.of.obj v ⟶ Symmetrify.of.obj x.1)).cons
-          (Sum.inr x.2 : Symmetrify.of.obj x.1 ⟶ Symmetrify.of.obj v)⟩)
-    with hF
-  have hinj : Function.Injective F := by
-    rintro (⟨i, a⟩ | ⟨i, a⟩) (⟨j, b⟩ | ⟨j, b⟩) hab <;>
-      simp only [hF, Sum.elim_inl, Sum.elim_inr, Sigma.mk.injEq, heq_eq_eq, true_and] at hab <;>
-      injection hab with hobj _ _ harr <;> subst hobj <;> replace harr := eq_of_heq harr
-    · -- Two head backtracks end in the arrow itself.
-      rw [Sum.inl.inj harr]
-      rfl
-    · -- A head and a tail backtrack end in arrows of opposite direction.
-      simp at harr
-    · simp at harr
-    · -- Two tail backtracks end in the formal reverse of the arrow.
-      rw [Sum.inr.inj harr]
-      rfl
-  have hfam : (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => headBacktrackElem k x.2)
-      (fun x : Σ j : Q, (v ⟶ j) => tailBacktrackElem k x.2))
-      = fun x => (pathAlgebraBasis k (Symmetrify Q)) (F x) := by
-    funext x
-    cases x with
-    -- The formal reverse of `Sum.inl a` in the doubled quiver is `Sum.inr a`, since the reversal
-    -- of `Quiver.Symmetrify` is `Sum.swap`.
-    | inl x =>
-      simp only [hF, Sum.elim_inl, coe_pathAlgebraBasis]
-      exact (ofPath_headBacktrack_eq_headBacktrackElem k x.2).symm
-    | inr x =>
-      simp only [hF, Sum.elim_inr, coe_pathAlgebraBasis]
-      exact (ofPath_tailBacktrack_eq_tailBacktrackElem k x.2).symm
-  rw [hfam]
-  exact (pathAlgebraBasis k (Symmetrify Q)).linearIndependent.comp F hinj
-
-end Independence
-
 /-! ### The corner of the gauged relator -/
 
 section Corner
@@ -132,7 +76,8 @@ variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
 idempotent at `v` keeps the weighted head backtracks of the arrows into `v` and the weighted tail
 backtracks of the arrows out of `v`. For the constant gauge this is
 `TauCeti.preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator`. -/
-theorem gaugedPreprojectiveRelator_vertexCorner (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) (v : Q) :
+theorem gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum
+    (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) (v : Q) :
     doubledVertexIdempotent k v * gaugedPreprojectiveRelator k ε *
         doubledVertexIdempotent k v
       = (∑ i : Q, ∑ a : (i ⟶ v), ε a • headBacktrackElem k a) -
@@ -193,7 +138,7 @@ theorem gauge_eq_of_vertexCorner_eq_smul (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → 
       ∑ j : Q, ∑ a : (v ⟶ j), tailBacktrackElem k a
       = signlessPreprojectiveRelator k (Symmetrify.of.obj v) :=
     (signlessPreprojectiveRelator_of k v).symm
-  rw [gaugedPreprojectiveRelator_vertexCorner, ← hsum, smul_add] at hv
+  rw [gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum, ← hsum, smul_add] at hv
   have hzero := (Fintype.linearIndependent_iff.1 (linearIndependent_backtrackElem k v))
     (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => ε x.2 - c)
       (fun x : Σ j : Q, (v ⟶ j) => -ε x.2 - c)) ?_
@@ -211,7 +156,7 @@ theorem gauge_eq_of_vertexCorner_eq_smul (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → 
 /-- **The comparison scalars change sign along every arrow.** If the corner of the gauged relator
 at every vertex is the corresponding multiple of the signless relator, then the scalars `c` of that
 comparison satisfy `c j = -c i` for every arrow `a : i ⟶ j`. -/
-theorem neg_eq_of_forall_vertexCorner_eq_smul (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) {c : Q → k}
+theorem eq_neg_of_forall_vertexCorner_eq_smul (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) {c : Q → k}
     (hc : ∀ w : Q, doubledVertexIdempotent k w * gaugedPreprojectiveRelator k ε *
         doubledVertexIdempotent k w
       = c w • signlessPreprojectiveRelator k (Symmetrify.of.obj w))
@@ -232,41 +177,10 @@ theorem isUnit_of_forall_vertexCorner_eq_smul {ε : ∀ ⦃i j : Q⦄, (i ⟶ j)
 
 end Gauge
 
-/-! ### Closed walks of odd length -/
-
-section OddWalk
-
-variable (k : Type w) {R : Type u} [Ring k] [Quiver.{v} R]
-
-/-- **A sign-changing vertex function changes by `(-1)ⁿ` along a walk.** If `c` negates along every
-arrow of a quiver, then it is multiplied by `(-1)ⁿ` along every path of length `n`. -/
-theorem eq_neg_one_pow_mul_of_path {c : R → k} (hc : ∀ ⦃i j : R⦄, (i ⟶ j) → c j = -c i) {u w : R}
-    (p : Quiver.Path u w) : c w = (-1) ^ p.length * c u := by
-  induction p with
-  | nil => simp
-  | cons p e ih =>
-    rw [Quiver.Path.length_cons, hc e, ih, pow_succ, mul_assoc, neg_one_mul, mul_neg]
-
-end OddWalk
-
 section Obstruction
 
 variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
-
-/-- **A bipartite quiver admits the comparison.** The colour signs give a gauge whose corner at
-every vertex is a multiple of the signless relator there; this restates
-`TauCeti.gaugedPreprojectiveRelator_bipartite_vertexCorner_eq_smul` in the form negated below. -/
-theorem exists_forall_vertexCorner_eq_smul_of_forall_ne {c : Q → Bool}
-    (hc : ∀ ⦃i j : Q⦄, (i ⟶ j) → c i ≠ c j) :
-    ∃ d : Q → k, ∀ w : Q,
-      doubledVertexIdempotent k w *
-          gaugedPreprojectiveRelator k (fun _ j _ => if c j then (1 : k) else -1) *
-          doubledVertexIdempotent k w
-        = d w • signlessPreprojectiveRelator k (Symmetrify.of.obj w) := by
-  refine ⟨fun w => if c w then (1 : k) else -1, fun w => ?_⟩
-  rw [doubledVertexIdempotent_def]
-  exact gaugedPreprojectiveRelator_bipartite_vertexCorner_eq_smul k hc w
 
 /-- **A closed walk of odd length obstructs the signless comparison.** If the doubled quiver has a
 closed walk of odd length at some vertex — that is, if `Q` is not bipartite — then over a
@@ -284,8 +198,8 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_odd_length {ε : ∀ ⦃i j : 
   have hsym : ∀ ⦃i j : Symmetrify Q⦄, (i ⟶ j) → c j = -c i := by
     intro i j e
     cases e with
-    | inl a => exact neg_eq_of_forall_vertexCorner_eq_smul k ε hc a
-    | inr a => rw [neg_eq_of_forall_vertexCorner_eq_smul k ε hc a, neg_neg]
+    | inl a => exact eq_neg_of_forall_vertexCorner_eq_smul k ε hc a
+    | inr a => rw [eq_neg_of_forall_vertexCorner_eq_smul k ε hc a, neg_neg]
   -- The walk has length at least one, so `v` meets an arrow of `Q` and `c v` is a unit.
   have hunit : IsUnit (c v) := by
     obtain ⟨n, hn⟩ := hp

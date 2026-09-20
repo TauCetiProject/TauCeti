@@ -26,6 +26,8 @@ recursion for the number of paths out of a fixed vertex.
 
 * `TauCeti.card_path_eq_ite_add_sum_lastArrow`: the path count `#(i → b)` equals
   `∑ₐ #(i → a) · #(a ⟶ b)`, plus `1` when `i = b` for the trivial path.
+* `TauCeti.eq_neg_one_pow_mul_of_path`: a function which changes sign along every arrow changes
+  by `(-1)ⁿ` along a path of length `n`.
 
 ## Implementation notes
 
@@ -121,5 +123,16 @@ theorem card_path_eq_ite_add_sum_lastArrow [DecidableEq V] [Fintype V] (i : V)
       exact Nat.card_of_isEmpty
   rw [Nat.card_congr (pathLastArrowEquiv i b), Nat.card_sum, hcard, Nat.card_sigma]
   exact congrArg _ (Finset.sum_congr rfl fun a _ ↦ Nat.card_prod _ _)
+
+variable (k : Type*) [Ring k]
+
+/-- **A sign-changing vertex function changes by `(-1)ⁿ` along a path.** If `c` negates along
+every arrow of a quiver, then it is multiplied by `(-1)ⁿ` along every path of length `n`. -/
+theorem eq_neg_one_pow_mul_of_path {c : V → k} (hc : ∀ ⦃i j : V⦄, (i ⟶ j) → c j = -c i)
+    {a b : V} (p : Quiver.Path a b) : c b = (-1) ^ p.length * c a := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [Quiver.Path.length_cons, hc e, ih, pow_succ, mul_assoc, neg_one_mul, mul_neg]
 
 end TauCeti
