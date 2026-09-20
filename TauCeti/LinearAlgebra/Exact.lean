@@ -12,9 +12,10 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 This file records two elementary consequences of exactness at the middle term: finite-dimensional
 outer vector spaces (over a division ring) force the middle vector space to be finite-dimensional,
-and trivial outer types force the middle type to be trivial. The second needs no algebraic
-structure beyond a distinguished zero in each of the three types, which is already what
-`Function.Exact` and the hypothesis `f 0 = 0` refer to.
+and trivial outer types force the middle type to be trivial. The second carries no algebraic
+structure at all beyond the zero of the target `P`, which is the one `Function.Exact` itself
+refers to: exactness sends every element of `N` into the range of `f`, and a trivial `M` makes
+that range trivial.
 -/
 
 public section
@@ -35,11 +36,12 @@ theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGr
     (fun x ↦ by rw [← h x, ← Subtype.coe_inj]; simp) g.surjective_rangeRestrict
 
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are trivial, then so is `N`. -/
-theorem subsingleton_of_exact {M N P : Type*} [Zero M] [Zero N] [Zero P] {f : M → N}
-    {g : N → P} (h : Function.Exact f g) (hf : f 0 = 0) [Subsingleton M] [Subsingleton P] :
-    Subsingleton N := by
-  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-  obtain ⟨y, rfl⟩ := (h x).1 (Subsingleton.elim _ _)
-  rw [Subsingleton.elim y 0, hf]
+theorem subsingleton_of_exact {M N P : Type*} [Zero P] {f : M → N} {g : N → P}
+    (h : Function.Exact f g) [Subsingleton M] [Subsingleton P] : Subsingleton N :=
+  ⟨fun x y ↦ by
+    -- `P` is trivial, so both `x` and `y` are hit by `f`; `M` is trivial, so by the same element.
+    obtain ⟨a, rfl⟩ := (h x).1 (Subsingleton.elim _ _)
+    obtain ⟨b, rfl⟩ := (h y).1 (Subsingleton.elim _ _)
+    rw [Subsingleton.elim a b]⟩
 
 end TauCeti
