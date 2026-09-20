@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ZMod.Two
 public import TauCeti.InformationTheory.Coding.Binary.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
@@ -201,11 +202,6 @@ theorem isIsotropic_coordinatePower_zmodStandard_quadratic_iff
       (Nat.mul_ne_zero (by norm_num) (NeZero.ne m))]
   exact Int.natCast_dvd_natCast
 
-private theorem zmod_two_val_eq_indicator (a : ZMod 2) :
-    a.val = if a ≠ 0 then 1 else 0 := by
-  revert a
-  decide
-
 /-- The quadratic value of a binary word is a quarter of its Hamming weight. -/
 theorem coordinatePower_zmodStandard_two_quadratic (x : ι → ZMod 2) :
     ((FiniteQuadraticModule.zmodStandard 2 even_two).coordinatePower ι).quadratic x =
@@ -214,7 +210,7 @@ theorem coordinatePower_zmodStandard_two_quadratic (x : ι → ZMod 2) :
   have hval : ∀ a : ZMod 2, ((a.val : ℚ)) ^ 2 = if a ≠ 0 then (1 : ℚ) else 0 := by
     intro a
     -- a binary residue has representative `0` or `1`, and both are their own squares
-    rw [zmod_two_val_eq_indicator]
+    rw [ZMod.val_eq_ite_mod_two]
     split <;> norm_num
   have : ∑ i, ((x i).val : ℚ) ^ 2 = (hammingNorm x : ℚ) := by
     simp only [hval, Finset.sum_boole, hammingNorm]
@@ -231,7 +227,7 @@ theorem isIsotropic_coordinatePower_zmodStandard_two_iff (C : AdditiveCode (ZMod
   refine forall₂_congr fun x _ ↦ ?_
   have hval : ∀ a : ZMod 2, a.val ^ 2 = if a ≠ 0 then 1 else 0 := by
     intro a
-    rw [zmod_two_val_eq_indicator]
+    rw [ZMod.val_eq_ite_mod_two]
     split <;> norm_num
   simp only [hval, Finset.sum_boole, hammingNorm]
   norm_num
