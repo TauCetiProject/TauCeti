@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.WeylCharacter
 public import TauCeti.LinearAlgebra.RootSystem.KostantPartition.Multiplicity
 
@@ -40,8 +39,12 @@ group being `w ⬝ x = w(x + ρ) - ρ`.
   of a highest weight module are the Kostant multiplicities.
 * `TauCeti.finrank_weightSpace_eq_kostantMultiplicity`: **Kostant's multiplicity formula**, the
   same statement read as the dimension of a weight space.
-* `TauCeti.finrank_weightSpace_irreducibleQuotient_eq_kostantMultiplicity`: the formula at the
-  named carrier `L(lam)` of a dominant integral weight.
+
+The roadmap's final named-carrier statement for `L(lam)` additionally needs the canonical Verma
+generator to be nonzero for every dominant integral `lam`. That is the still-missing injective half
+of Poincaré--Birkhoff--Witt, so it is deliberately not replaced here by an extra hypothesis. This
+file supplies the coefficient-extraction step once an actual finite-dimensional highest weight
+module is given.
 
 ## References
 
@@ -87,23 +90,5 @@ theorem finrank_weightSpace_eq_kostantMultiplicity (mu : Dual K H) :
       = kostantMultiplicity (IsKilling.rootSystem H) b lam mu := by
   rw [← formalCharacter_coeff_eq_finrank_weightSpace,
     coeff_formalCharacter_eq_kostantMultiplicity hv hgen]
-
-omit hv hgen in
-/-- **Kostant's multiplicity formula at `L(lam)`.** For a dominant integral weight `lam` whose
-Verma module is nonzero, the multiplicity of `mu` in the irreducible highest weight module
-`L(lam)` is `∑_{w ∈ W} sgn(w) P(w(lam + ρ) - (mu + ρ))`.
-
-The hypothesis on the Verma generator cannot be dropped: it is what makes `L(lam)` a highest
-weight module of weight `lam` rather than the zero module, and it holds as soon as some module
-carries a highest weight vector of weight `lam`
-(`TauCeti.vermaGenerator_ne_zero_of_isHighestWeightVector`). -/
-theorem finrank_weightSpace_irreducibleQuotient_eq_kostantMultiplicity
-    (hlam : IsDominantIntegral b lam) (hne : vermaGenerator b lam ≠ 0) (mu : Dual K H) :
-    (finrank K (weightSpace (irreducibleQuotient b lam) (mu : H → K)) : ℤ)
-      = kostantMultiplicity (IsKilling.rootSystem H) b lam mu :=
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hlam
-  finrank_weightSpace_eq_kostantMultiplicity
-    (isHighestWeightVector_irreducibleQuotientGenerator b lam hne)
-    (lieSpan_irreducibleQuotientGenerator_eq_top b lam) mu
 
 end TauCeti
