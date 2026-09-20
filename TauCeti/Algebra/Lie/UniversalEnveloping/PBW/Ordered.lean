@@ -120,7 +120,7 @@ ordered monomials in its image family. This statement does not require the Lie m
 to be surjective. -/
 @[simp]
 theorem image_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
-    (map R f).toLinearMap '' orderedPBWMonomials R L e k =
+    map R f '' orderedPBWMonomials R L e k =
       orderedPBWMonomials R M (fun i ↦ f (e i)) k := by
   ext a
   constructor
@@ -140,7 +140,9 @@ onto the span of the corresponding ordered monomials in its image family. -/
 theorem map_span_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
     (Submodule.span R (orderedPBWMonomials R L e k)).map (map R f).toLinearMap =
       Submodule.span R (orderedPBWMonomials R M (fun i ↦ f (e i)) k) := by
-  rw [Submodule.map_span, image_orderedPBWMonomials R L f e k]
+  rw [Submodule.map_span]
+  change Submodule.span R (map R f '' orderedPBWMonomials R L e k) = _
+  rw [image_orderedPBWMonomials R L f e k]
 
 end Map
 
