@@ -31,8 +31,8 @@ quadratic equality. The staircase majorization criterion then identifies every c
 
 * `TauCeti.IsGlHighestWeightVector.eq_glHalfStaircase`: every CAR highest-weight vector has the
   half-shifted staircase weight.
-* `TauCeti.exists_isGlHighestWeightVector_glHalfStaircase_car`: every nonzero CAR submodule
-  contains a highest-weight vector of that weight.
+* `TauCeti.car_simple_highestWeight`: every nonzero CAR submodule contains a highest-weight vector
+  of that weight.
 * `TauCeti.isIsotypicOfType_glIrreducible_car`: the left-regular CAR module is isotypic of the
   simple module with that highest weight.
 
@@ -161,7 +161,7 @@ end IsGlHighestWeightVector
 of half-shifted staircase weight.
 
 In particular, this identifies the highest weight occurring in every simple CAR submodule. -/
-theorem exists_isGlHighestWeightVector_glHalfStaircase_car
+theorem car_simple_highestWeight
     (K : Type*) [Field K] [CharZero K] [IsAlgClosed K] (N : ℕ)
     (S : LieSubmodule K (Matrix (Fin N) (Fin N) K)
       (CliffordAlgebra (traceQuadraticForm K (Fin N)))) (hS : S ≠ ⊥) :
