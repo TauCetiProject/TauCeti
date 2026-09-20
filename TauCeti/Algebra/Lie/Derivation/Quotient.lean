@@ -80,7 +80,13 @@ theorem mem_stableDerivations (S : Submodule R A) (D : derivationLieAlgebra R A)
 
 /-- The submodule `S`, as a Lie submodule of `A` over the derivations preserving it. Through this
 Lie submodule, Mathlib equips the quotient `A ⧸ S` with its action by stable derivations. -/
-@[expose] def stableDerivations.lieSubmodule (S : Submodule R A) :
+-- `@[expose]` is mandated by the compiler, not an optional leak of the body: the quotient type
+-- `A ⧸ lieSubmodule R S` is the type `A ⧸ S` only after the `toSubmodule` field is unfolded, and
+-- an exported statement may unfold only exposed definitions. Without it,
+-- `actionAsEndoMap_mem_derivationLieAlgebra` below, and equally any downstream statement reading
+-- the quotient action as an endomorphism of `A ⧸ S`, fails to elaborate.
+@[expose]
+def stableDerivations.lieSubmodule (S : Submodule R A) :
     LieSubmodule R (stableDerivations R S) A where
   toSubmodule := S
   lie_mem {D x} hx := (mem_stableDerivations R S D).mp D.property x hx
