@@ -180,6 +180,7 @@ theorem natCard_sq_dvd_modulus_pow_card (C : AddSubgroup (ι → ZMod m))
 
 /-- The discriminant of an integral Construction A lattice is the exact natural-number quotient
 `m ^ #ι / (#C)^2`. -/
+@[simp]
 theorem discriminant_integralLattice (C : AddSubgroup (ι → ZMod m))
     (hC : AddSubgroup.toZModSubmodule m C ≤
       (AddSubgroup.toZModSubmodule m C).euclideanDual) :
@@ -191,6 +192,7 @@ theorem discriminant_integralLattice (C : AddSubgroup (ι → ZMod m))
 
 /-- For a self-orthogonal linear code of dimension `k` over the prime field `ZMod p`, the
 Construction A discriminant is `p ^ (n - 2k)`. -/
+@[simp]
 theorem discriminant_integralLattice_of_prime {p : ℕ} [hp : Fact p.Prime]
     (C : Submodule (ZMod p) (ι → ZMod p)) (hC : C ≤ C.euclideanDual) :
     (integralLattice ⟨p, hp.out.pos⟩ C.toAddSubgroup hC).discriminant =
