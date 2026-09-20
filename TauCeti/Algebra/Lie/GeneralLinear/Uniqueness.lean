@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.Data.Fintype.Sort
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
 /-!
 # The highest weight of a `gl n`-module determines it
