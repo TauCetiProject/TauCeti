@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Hodge.Category
 public import TauCeti.Geometry.Hodge.Projection
 public import TauCeti.Geometry.Hodge.Mixed.Limits
-public import Mathlib.CategoryTheory.Balanced
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.CategoryTheory.Functor.ReflectsIso.Balanced
 
 /-!
 # Detecting monomorphisms and epimorphisms of polarizable Hodge structures
@@ -136,8 +137,7 @@ instance : (rational (n := n)).ReflectsIsomorphisms where
 
 /-- A morphism of polarizable rational Hodge structures which is both monic and epic is an
 isomorphism. -/
-instance : Balanced (PolarizableHodgeStructureCat.{u} n) where
-  isIso_of_mono_of_epi f hm he :=
-    (isIso_iff_bijective f).2 ⟨(mono_iff_injective f).1 hm, (epi_iff_surjective f).1 he⟩
+instance : Balanced (PolarizableHodgeStructureCat.{u} n) :=
+  Functor.balanced_of_preserves (rational (n := n))
 
 end TauCeti.Hodge.PolarizableHodgeStructureCat
