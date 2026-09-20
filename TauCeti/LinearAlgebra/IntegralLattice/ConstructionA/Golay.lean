@@ -40,24 +40,6 @@ theorem toZModSubmodule_code_eq_euclideanDual :
 noncomputable def constructionALattice : IntegralLattice (Fin 24 → ℚ) :=
   ConstructionA.integralLattice 2 code.toAddSubgroup toZModSubmodule_code_eq_euclideanDual.le
 
-/-- The carrier of the Golay Construction A lattice is the Construction A carrier of the code. -/
-@[simp]
-theorem constructionALattice_carrier :
-    constructionALattice.carrier = ConstructionA.lattice 2 code.toAddSubgroup :=
-  ConstructionA.integralLattice_carrier 2 code.toAddSubgroup
-    toZModSubmodule_code_eq_euclideanDual.le
-
-/-- The form of the Golay Construction A lattice is the halved dot product. -/
-@[simp]
-theorem constructionALattice_form : constructionALattice.form = ConstructionA.form 2 :=
-  ConstructionA.integralLattice_form 2 code.toAddSubgroup
-    toZModSubmodule_code_eq_euclideanDual.le
-
-/-- The Golay Construction A lattice is nondegenerate. -/
-instance : constructionALattice.IsNondegenerate :=
-  ConstructionA.isNondegenerate_integralLattice 2 code.toAddSubgroup
-    toZModSubmodule_code_eq_euclideanDual.le
-
 /-- The Golay Construction A lattice has rank `24`. -/
 theorem finrank_constructionALattice : Module.finrank ℤ constructionALattice = 24 := by
   rw [IntegralLattice.finrank_carrier]
@@ -68,13 +50,12 @@ theorem isPosDef_constructionALattice : constructionALattice.IsPosDef :=
   ConstructionA.isPosDef_integralLattice 2 code.toAddSubgroup
     toZModSubmodule_code_eq_euclideanDual.le
 
-/-- **The Golay Construction A lattice is even**, because the Golay code is doubly even. -/
+/-- **The Golay Construction A lattice is even.** -/
 theorem isEven_constructionALattice : constructionALattice.IsEven :=
   (ConstructionA.isEven_integralLattice_two_iff_isDoublyEven code
     toZModSubmodule_code_eq_euclideanDual.le).mpr isDoublyEven_code
 
-/-- **The Golay Construction A lattice is unimodular**, because the Golay code is Euclidean
-self-dual. -/
+/-- **The Golay Construction A lattice is unimodular.** -/
 theorem isUnimodular_constructionALattice : constructionALattice.IsUnimodular :=
   (ConstructionA.isUnimodular_integralLattice_iff 2 code.toAddSubgroup
     toZModSubmodule_code_eq_euclideanDual.le).mpr toZModSubmodule_code_eq_euclideanDual

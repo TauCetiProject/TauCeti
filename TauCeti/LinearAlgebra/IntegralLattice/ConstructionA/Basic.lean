@@ -134,8 +134,7 @@ theorem form_nondegenerate : (form m (ι := ι)).Nondegenerate := by
     (IsRegular.of_ne_zero (inv_ne_zero (NeZero.ne (m : ℚ))))]
   exact (dotProductBilin_isPerfPair ℚ ι).nondegenerate
 
-/-- The Construction A form is positive definite: the dot product of a nonzero rational vector
-with itself is positive, and dividing by the modulus preserves that. -/
+/-- The normalized Construction A form is positive definite. -/
 theorem form_posDef : (form m (ι := ι)).toQuadraticMap.PosDef := by
   intro x hx
   rw [LinearMap.BilinMap.toQuadraticMap_apply, form_apply]
