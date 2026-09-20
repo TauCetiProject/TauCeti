@@ -19,10 +19,11 @@ to its linearization. This file bridges the two by **cutting the nonlinearity of
 closed ball of radius `r`, using the radial retraction of
 `TauCeti/Analysis/Normed/Module/Ball/Retraction.lean`.
 
-Cutting off replaces `N` by `N ∘ radialRetraction r`, which agrees with `N` on the ball, fixes the
-origin, and is globally Lipschitz with twice the constant that `N` has on the ball. Feeding it to
-the Lyapunov--Perron machinery produces `ContinuousLinearMap.localStableGraphMap`, a Lipschitz map
-into the kernel of `P`. Under the stated bound on `ρ`, the local stable set truncated by
+Cutting off replaces `N` by `N ∘ radialRetraction r`, which agrees with `N` on the ball, preserves
+the value of `N` at the origin, and is globally Lipschitz with twice the constant that `N` has on
+the ball. Feeding it to the Lyapunov--Perron machinery produces
+`ContinuousLinearMap.localStableGraphMap`, a Lipschitz map into the kernel of `P`. Under the stated
+bound on `ρ`, the local stable set truncated by
 `‖P x‖ ≤ ρ` is its graph over `range P ∩ closedBall 0 ρ`: these are the initial values of the
 forward solutions of `y' = A y + N y` that never leave the ball of radius `r`. Confinement already
 forces such a solution to tend to `0`, so the set deserves its name.
@@ -131,14 +132,17 @@ theorem norm_localStableGraphMap_le (hN0 : N 0 = 0) (ξ : X) :
   norm_lyapunovPerronGraphMap_le hs hu hα (hN.comp_radialRetraction hr) hsmall (by simp [hN0]) ξ
 
 omit [CompleteSpace X] in
-/-- **Cutting off is invisible to a confined solution.** A forward solution of `y' = A y + N y`
-that never leaves the closed ball of radius `r` solves the cut-off equation as well. -/
-theorem isIntegralCurveOn_comp_radialRetraction {y : ℝ → X}
-    (hy : IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0))
+/-- **Cutting off is invisible to a confined solution.** A forward curve that never leaves the
+closed ball of radius `r` solves the original equation exactly when it solves the cut-off
+equation. -/
+theorem isIntegralCurveOn_comp_radialRetraction_iff {y : ℝ → X}
     (hmaps : MapsTo y (Ici 0) (closedBall 0 r)) :
-    IsIntegralCurveOn y (fun _ z ↦ A z + (N ∘ TauCeti.radialRetraction r) z) (Ici 0) :=
-  fun t ht ↦ by
-    simpa only [Function.comp_apply,
+    IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0) ↔
+      IsIntegralCurveOn y (fun _ z ↦ A z + (N ∘ TauCeti.radialRetraction r) z) (Ici 0) := by
+  constructor <;> intro hy t ht
+  · simpa only [Function.comp_apply,
+      TauCeti.radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 (hmaps ht))] using hy t ht
+  · simpa only [Function.comp_apply,
       TauCeti.radialRetraction_of_norm_le (mem_closedBall_zero_iff.1 (hmaps ht))] using hy t ht
 
 section LocalStable
@@ -159,7 +163,7 @@ theorem tendsto_of_isIntegralCurveOn_mapsTo_closedBall {y : ℝ → X}
   refine (tendsto_lyapunovPerronSolution hs hu hα hMlip hsmall (by simp [hN0]) (y 0)).congr' ?_
   filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
   exact (eqOn_lyapunovPerronSolution_of_isIntegralCurveOn hs hu hα hMlip hsmall hP hAP
-    (isIntegralCurveOn_comp_radialRetraction hy hmaps)
+    ((isIntegralCurveOn_comp_radialRetraction_iff hmaps).1 hy)
     (fun u hu' ↦ mem_closedBall_zero_iff.1 (hmaps hu')) (mem_Ici.2 ht)).symm
 
 /-- **The local stable set at a hyperbolic equilibrium is a Lipschitz graph.** The initial values
@@ -194,7 +198,7 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
   constructor
   · rintro ⟨⟨y, hy, rfl, hmaps⟩, hPx⟩
     have hfix := (exists_isIntegralCurveOn_bounded_iff hs hu hα hMlip hsmall hP hAP (y 0)).1
-      ⟨y, isIntegralCurveOn_comp_radialRetraction hy hmaps, rfl, r,
+      ⟨y, (isIntegralCurveOn_comp_radialRetraction_iff hmaps).1 hy, rfl, r,
         fun t ht ↦ mem_closedBall_zero_iff.1 (hmaps ht)⟩
     exact ⟨P (y 0), ⟨⟨y 0, rfl⟩, hPx⟩,
       (invOn_add_lyapunovPerronGraphMap hs hu hα hMlip hsmall hP hAP).1 hfix⟩
@@ -211,12 +215,9 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
         _ ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ :=
             mul_le_mul_of_nonneg_left hv (lyapunovPerronBound_nonneg hα hsmall)
         _ ≤ r := hρ
-    refine ⟨⟨fun t : ℝ ↦ γ t.toNNReal, fun t ht ↦ ?_, by simpa using hγ0, hmaps⟩, ?_⟩
-    · refine (isIntegralCurveOn_lyapunovPerronSolution hs hu hα hMlip hsmall (P w) t
-        ht).congr_deriv ?_
-      exact congrArg (A (γ t.toNNReal) + ·)
-        (congrArg N (TauCeti.radialRetraction_of_norm_le
-          (mem_closedBall_zero_iff.1 (hmaps ht))))
+    refine ⟨⟨fun t : ℝ ↦ γ t.toNNReal, ?_, by simpa using hγ0, hmaps⟩, ?_⟩
+    · exact (isIntegralCurveOn_comp_radialRetraction_iff hmaps).2 fun t ht ↦
+        isIntegralCurveOn_lyapunovPerronSolution hs hu hα hMlip hsmall (P w) t ht
     · rw [map_add, apply_localStableGraphMap hs hu hα hr hN hsmall hP hAP, add_zero, hPP]
       exact hv
 
