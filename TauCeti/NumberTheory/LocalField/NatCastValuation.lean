@@ -38,6 +38,8 @@ characteristic is the absolute ramification index of `K`.
   `𝒪[K]`.
 * `TauCeti.natCastValuation_eq_zero_iff_not_dvd`: the vanishing criterion read off the residue
   characteristic.
+* `TauCeti.natCastValuation_ne_zero_iff_ringChar_eq`: at a prime, the invariant is nonzero
+  exactly when that prime is the residue characteristic.
 * `TauCeti.natCastValuation_eq_zero_of_ringChar_ne_zero`: in equal characteristic the invariant
   is identically zero.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
@@ -117,6 +119,15 @@ theorem natCastValuation_eq_zero_iff_not_dvd (n : ℕ) (hn : (n : K) ≠ 0) :
     natCastValuation K n hn = 0 ↔ ¬ ringChar 𝓀[K] ∣ n := by
   rw [natCastValuation_eq_zero_iff, ← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast,
     ne_eq, ← ringChar.spec]
+
+variable (K) in
+/-- For a prime `p`, the normalized valuation of `p` is nonzero exactly when `p` is the residue
+characteristic of `K`, that is, exactly when `K` is `p`-adic. -/
+theorem natCastValuation_ne_zero_iff_ringChar_eq {p : ℕ} (hp : p.Prime) (hn : (p : K) ≠ 0) :
+    natCastValuation K p hn ≠ 0 ↔ ringChar 𝓀[K] = p := by
+  rw [ne_eq, natCastValuation_eq_zero_iff_not_dvd, not_not]
+  refine ⟨fun h ↦ (hp.eq_one_or_self_of_dvd _ h).resolve_left ?_, fun h ↦ h ▸ dvd_rfl⟩
+  exact CharP.char_ne_one 𝓀[K] _
 
 variable (K) in
 /-- In equal characteristic the normalized valuation of a nonzero natural-number cast always
