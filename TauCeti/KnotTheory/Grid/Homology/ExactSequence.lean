@@ -19,14 +19,14 @@ chains this is the coefficientwise specialization `TauCeti.simplyBlockedSpeciali
 surjective with kernel the multiples of `V_i`, and multiplication by `V_i` is injective on `GC⁻`.
 So
 
-`0 ⟶ GC⁻(G) ⟶ GC⁻(G) ⟶ GĈ_i(G) ⟶ 0`,
+`0 ⟶ GC⁻(G) ⟶ GC⁻(G) ⟶ GC^_i(G) ⟶ 0`,
 
 with first map multiplication by `V_i` and second map specialization, is a short exact sequence
 of complexes of `R[V₀, …, V_{n-1}]`-modules, once the specialized complex is regarded over that
 ring by restricting scalars along the specialization. Mathlib's homology sequence then gives the
 three-periodic long exact sequence
 
-`⋯ ⟶ GH⁻(G) --V_i--> GH⁻(G) ⟶ GĤ_i(G) --δ--> GH⁻(G) --V_i--> ⋯`
+`⋯ ⟶ GH⁻(G) --V_i--> GH⁻(G) ⟶ G-hat_i(G) --δ--> GH⁻(G) --V_i--> ⋯`
 
 relating unblocked grid homology to the homology of the specialized complex, which for a knot
 grid is the simply blocked grid homology `TauCeti.GridDiagram.IsKnot.simplyBlockedHomology`. It
@@ -62,7 +62,7 @@ which in turn surjects onto the kernel of that action. On a knot grid the action
 
 ## References
 
-The exact sequence relating `GH⁻` and `GĤ` is Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
+The exact sequence relating `GH⁻` and `G-hat` is Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
 and Links*, Section 4.6.
 -/
 
