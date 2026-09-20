@@ -75,7 +75,7 @@ open CategoryTheory MvPolynomial
 /-- Setting the blocked variable `V_i` to zero, as a ring homomorphism
 `R[V₀, …, V_{n-1}] → R[V_c | c ≠ i]`. It is the homomorphism over which
 `TauCeti.simplyBlockedSpecialization` is semilinear. -/
-noncomputable abbrev simplyBlockedRingHom {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
+noncomputable def simplyBlockedRingHom {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
     MvPolynomial (Fin n) R →+* MvPolynomial {c : Fin n // c ≠ i} R :=
   (MvPolynomial.killCompl (R := R) (f := (Subtype.val : {c : Fin n // c ≠ i} → Fin n))
     Subtype.val_injective).toRingHom
@@ -109,7 +109,7 @@ specialization, which sends it to zero. -/
 theorem X_smul_restrictScalars_gridChainHat_eq_zero
     (y : (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
       (ModuleCat.of (MvPolynomial {c : Fin n // c ≠ i} R) (GridChainHat R n i))) :
-    (MvPolynomial.X i : MvPolynomial (Fin n) R) • y = 0 := by
+    simplyBlockedRingHom R i (MvPolynomial.X i) • y = 0 := by
   have hzero : simplyBlockedRingHom R i (MvPolynomial.X i) = 0 :=
     MvPolynomial.killCompl_X_of_notMem_range Subtype.val_injective (by simp)
   have h : simplyBlockedRingHom R i (MvPolynomial.X i) • y = 0 := by rw [hzero, zero_smul]
@@ -121,8 +121,11 @@ theorem X_smul_restrictScalars_gridChainHat_eq_zero
 theorem X_smul_simplyBlockedSpecializationHom :
     (MvPolynomial.X i : MvPolynomial (Fin n) R) • simplyBlockedSpecializationHom R i = 0 :=
   ModuleCat.hom_ext (LinearMap.ext fun c => by
-    rw [ModuleCat.hom_smul, LinearMap.smul_apply, X_smul_restrictScalars_gridChainHat_eq_zero,
-      ModuleCat.hom_zero, LinearMap.zero_apply])
+    rw [ModuleCat.hom_smul, LinearMap.smul_apply]
+    change simplyBlockedRingHom R i (MvPolynomial.X i) •
+      (simplyBlockedSpecializationHom R i).hom c = _
+    rw [X_smul_restrictScalars_gridChainHat_eq_zero, ModuleCat.hom_zero,
+      LinearMap.zero_apply])
 
 end Modules
 
