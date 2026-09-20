@@ -383,7 +383,7 @@ theorem exists_sylow_eq_referenceSubgroup_five_zero :
     have h := (referenceSubgroup 5 ⟨0, by simp⟩).index_mul_card
     rw [hC] at h
     rw [Nat.card_perm, Nat.card_fin] at h
-    change (referenceSubgroup 5 ⟨0, by simp⟩).index * 5 = 120 at h
+    simp only [Nat.factorial] at h
     omega
   exact ⟨(IsPGroup.of_card (n := 1) (hC.trans (pow_one 5).symm)).toSylow (hCi ▸ by decide), rfl⟩
 
@@ -558,8 +558,7 @@ private theorem exists_transitiveGroupLabel_five_of_le_of_le {H : Subgroup (Perm
       rw [natCard_referenceSubgroup_five_two] at hFi
       rw [hH] at hHi
       rw [Nat.card_perm, Nat.card_fin] at hFi hHi
-      change (referenceSubgroup 5 ⟨2, by simp⟩).index * 20 = 120 at hFi
-      change H.index * 10 = 120 at hHi
+      simp only [Nat.factorial] at hFi hHi
       rw [Subgroup.relIndex] at h
       -- `h` is a product of two indices, so the numerical values of both have to be substituted
       -- before the remaining equation is linear.
@@ -621,7 +620,7 @@ theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
   simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
   have hmul := G.index_mul_card
   rw [Nat.card_perm, Nat.card_fin] at hmul
-  change G.index * Nat.card G = 120 at hmul
+  simp only [Nat.factorial] at hmul
   rcases hmem with h | h | h | h | h
   · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
   · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
