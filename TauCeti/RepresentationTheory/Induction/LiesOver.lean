@@ -63,7 +63,7 @@ theorem liesOver_iff :
   Iff.rfl
 
 /-- Lying over is invariant under isomorphism of the larger representation. -/
-theorem LiesOver.of_iso_left {U' : FDRep k H} (e : U ≅ U') (h : U.LiesOver φ V) :
+theorem LiesOver.of_iso_left {U' : FDRep k H} (h : U.LiesOver φ V) (e : U ≅ U') :
     U'.LiesOver φ V := by
   obtain ⟨f, hf⟩ := h
   refine ⟨f ≫ ((Action.res (FGModuleCat k) φ).mapIso e).hom, ?_⟩
@@ -72,7 +72,7 @@ theorem LiesOver.of_iso_left {U' : FDRep k H} (e : U ≅ U') (h : U.LiesOver φ 
     (hzero.trans Limits.zero_comp.symm))
 
 /-- Lying over is invariant under isomorphism of the smaller representation. -/
-theorem LiesOver.of_iso_right {V' : FDRep k N} (e : V ≅ V') (h : U.LiesOver φ V) :
+theorem LiesOver.of_iso_right {V' : FDRep k N} (h : U.LiesOver φ V) (e : V ≅ V') :
     U.LiesOver φ V' := by
   obtain ⟨f, hf⟩ := h
   refine ⟨e.inv ≫ f, ?_⟩

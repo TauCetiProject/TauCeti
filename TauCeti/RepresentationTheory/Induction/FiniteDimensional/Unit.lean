@@ -72,7 +72,8 @@ theorem indFDRepUnit_naturality {A B : FDRep k S} (f : A ⟶ B) :
     indFDRepUnit A ≫ (Action.res (FGModuleCat k) S.subtype).map (indFDRepMap f) =
       f ≫ indFDRepUnit B := by
   apply (forget₂ (FDRep k S) (Rep k S)).map_injective
-  rw [Functor.map_comp, Functor.map_comp, forget₂_map_actionRes, forget₂_map_indFDRepUnit,
+  rw [Functor.map_comp, Functor.map_comp, MonoidHom.forget₂_map_actionRes,
+    forget₂_map_indFDRepUnit,
     forget₂_map_indFDRepUnit, forget₂_map_indFDRepMap, Functor.map_comp, Functor.map_comp]
   -- `forget₂_map_indFDRepUnit` puts Mathlib's adjunction unit into the goal, and its domain and
   -- codomain are `(𝟭 (Rep k S)).obj ((forget₂ (FDRep k S) (Rep k S)).obj A)` and
