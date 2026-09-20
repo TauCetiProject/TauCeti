@@ -39,18 +39,6 @@ instance : T2Space PSL(2, ℝ) := by
 
 end TauCeti
 
-namespace Subgroup
-
-/-- A conjugate `g Γ g⁻¹` of a discrete subgroup of `PSL(2, ℝ)` is discrete. -/
-instance discreteTopology_conjAct_smul {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
-    (g : PSL(2, ℝ)) :
-    DiscreteTopology (ConjAct.toConjAct g • Γ : Subgroup PSL(2, ℝ)) :=
-  DiscreteTopology.of_continuous_injective
-    (f := (equivSMul (ConjAct.toConjAct g) Γ).symm) (by fun_prop)
-    (equivSMul (ConjAct.toConjAct g) Γ).symm.injective
-
-end Subgroup
-
 namespace Matrix.ProjectiveSpecialLinearGroup
 
 /-- The translation `upperRightHom x ∈ PSL(2, R)` depends continuously on `x`. -/
