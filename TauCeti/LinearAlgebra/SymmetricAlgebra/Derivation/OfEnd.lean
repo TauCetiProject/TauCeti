@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 public import Mathlib.RingTheory.Derivation.Lie

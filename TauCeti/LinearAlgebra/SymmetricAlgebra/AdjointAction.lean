@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.DerivationOfEnd
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.OfEnd
 public import Mathlib.Algebra.Lie.OfAssociative
 
 /-!
@@ -31,14 +31,17 @@ preserves each homogeneous degree; and it is natural in `L`. Both facts are inhe
 * `TauCeti.SymmetricAlgebra.instLieRingModule`, `TauCeti.SymmetricAlgebra.instLieModule`: `S(L)`
   is a Lie module over `L` through the adjoint derivations, with
   `TauCeti.SymmetricAlgebra.lie_eq_adjointDerivation` identifying the bracket.
+* `TauCeti.SymmetricAlgebra.lie_ι`, `TauCeti.SymmetricAlgebra.lie_mul`,
+  `TauCeti.SymmetricAlgebra.lie_mem_homogeneousSubmodule`: the bracket on a generator, its Leibniz
+  rule, and its preservation of homogeneous degree, stated for the Lie-module bracket itself.
 * `TauCeti.SymmetricAlgebra.map_apply_adjointDerivation`: naturality under Lie homomorphisms.
 * `TauCeti.SymmetricAlgebra.adjointDerivation_mem_homogeneousSubmodule`: the action preserves
   each homogeneous degree.
 
 ## References
 
-* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter V, §17.
-* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter I, §2.7.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §23.3, where `L`
+  acts on `S(L)` by the derivations extending `ad` and symmetrization is shown `L`-equivariant.
 -/
 
 public section
@@ -83,6 +86,15 @@ noncomputable instance instLieModule : LieModule R L S :=
 theorem lie_eq_adjointDerivation (x : L) (p : S) : ⁅x, p⁆ = adjointDerivation R L x p :=
   (rfl)
 
+/-- The bracket of `x : L` with a symmetric generator `ι y` is the generator `ι ⁅x, y⁆`. -/
+theorem lie_ι (x y : L) : ⁅x, ι R L y⁆ = ι R L ⁅x, y⁆ := by
+  simp
+
+/-- The adjoint action satisfies the Leibniz rule for the multiplication of the symmetric
+algebra. -/
+theorem lie_mul (x : L) (p q : S) : ⁅x, p * q⁆ = p * ⁅x, q⁆ + q * ⁅x, p⁆ := by
+  simp [Derivation.leibniz]
+
 section Naturality
 
 variable {L} {L' : Type w} [LieRing L'] [LieAlgebra R L']
@@ -102,5 +114,10 @@ theorem adjointDerivation_mem_homogeneousSubmodule (x : L) {n : ℕ} {p : S}
     adjointDerivation R L x p ∈ homogeneousSubmodule R L n := by
   rw [adjointDerivation_apply]
   exact derivationOfEnd_mem_homogeneousSubmodule R L (LieAlgebra.ad R L x) hp
+
+/-- The adjoint action preserves each homogeneous submodule of the symmetric algebra. -/
+theorem lie_mem_homogeneousSubmodule (x : L) {n : ℕ} {p : S}
+    (hp : p ∈ homogeneousSubmodule R L n) : ⁅x, p⁆ ∈ homogeneousSubmodule R L n :=
+  adjointDerivation_mem_homogeneousSubmodule R L x hp
 
 end TauCeti.SymmetricAlgebra

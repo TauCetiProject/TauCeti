@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 
