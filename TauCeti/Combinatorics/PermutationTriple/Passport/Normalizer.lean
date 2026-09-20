@@ -29,7 +29,6 @@ an element normalizing `P.G`, and inner conjugation is in general a proper subgr
 
 ## Main declarations
 
-* `TauCeti.PassportSpec.normalizer`: the normalizer of the reference subgroup of a passport.
 * `TauCeti.PassportSpec.IsGeneratingTriple` and `TauCeti.PassportSpec.GeneratingTriple`: the
   generating triples of a passport, and the type they form.
 * `TauCeti.PassportSpec.exists_isGeneratingTriple_smul` and
@@ -57,20 +56,6 @@ namespace TauCeti
 namespace PassportSpec
 
 variable {n : ℕ} {P : PassportSpec n} {t : PermutationTriple n}
-
-/-! ## The normalizer of the reference subgroup -/
-
-/-- The normalizer `N_{S_n}(P.G)` of the reference subgroup of a passport, inside the full
-symmetric group on the sheets. This is the group that acts on the generating triples of the
-passport below, with the isomorphism classes of the passport as its orbits. -/
-def normalizer (P : PassportSpec n) : Subgroup (Perm (Fin n)) :=
-  Subgroup.normalizer (P.G : Set (Perm (Fin n)))
-
-/-- A permutation normalizes the reference subgroup exactly when conjugating by it fixes that
-subgroup. -/
-theorem mem_normalizer_iff {τ : Perm (Fin n)} :
-    τ ∈ P.normalizer ↔ P.G.map (MulAut.conj τ).toMonoidHom = P.G := by
-  simp [normalizer, Subgroup.mem_normalizer_iff_map_conj_eq]
 
 /-! ## Generating triples of a passport -/
 
@@ -141,11 +126,12 @@ theorem exists_isGeneratingTriple_smul {s : ConnectedTriple n} (hs : HasPassport
 
 /-- Conjugating a generating triple of `P` by an element normalizing the reference subgroup gives
 another generating triple of `P`. -/
-theorem IsGeneratingTriple.smul {τ : Perm (Fin n)} (hτ : τ ∈ P.normalizer)
+theorem IsGeneratingTriple.smul {τ : Perm (Fin n)}
+    (hτ : τ ∈ Subgroup.normalizer (P.G : Set (Perm (Fin n))))
     (ht : P.IsGeneratingTriple t) : P.IsGeneratingTriple (τ • t) := by
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [PermutationTriple.monodromyGroup_smul, ht.monodromyGroup_eq]
-    exact mem_normalizer_iff.mp hτ
+    exact Subgroup.mem_normalizer_iff_map_conj_eq.mp hτ
   all_goals rw [PermutationTriple.cycleData_smul]
   exacts [ht.2.1, ht.2.2.1, ht.2.2.2]
 
@@ -153,10 +139,11 @@ theorem IsGeneratingTriple.smul {τ : Perm (Fin n)} (hτ : τ ∈ P.normalizer)
 subgroup: this is the exact residual freedom left after pinning the monodromy subgroup down to
 `P.G` itself. -/
 theorem mem_normalizer_of_smul {τ : Perm (Fin n)} (ht : P.IsGeneratingTriple t)
-    (hτt : P.IsGeneratingTriple (τ • t)) : τ ∈ P.normalizer := by
+    (hτt : P.IsGeneratingTriple (τ • t)) :
+    τ ∈ Subgroup.normalizer (P.G : Set (Perm (Fin n))) := by
   have h := hτt.monodromyGroup_eq
   rw [PermutationTriple.monodromyGroup_smul, ht.monodromyGroup_eq] at h
-  exact mem_normalizer_iff.mpr h
+  exact Subgroup.mem_normalizer_iff_map_conj_eq.mpr h
 
 /-- The generating triples of a passport: the set on which the normalizer of the reference
 subgroup acts with the isomorphism classes of the passport as orbits. -/
@@ -167,16 +154,17 @@ namespace GeneratingTriple
 
 /-- Simultaneous conjugation by an element normalizing the reference subgroup, acting on the
 generating triples of a passport. -/
-instance : SMul P.normalizer P.GeneratingTriple where
+instance : SMul (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple where
   smul τ g := ⟨(τ : Perm (Fin n)) • g.1, g.2.smul τ.2⟩
 
 /-- Conjugation by a normalizing element acts on the underlying permutation triple. -/
 @[simp]
-theorem coe_smul (τ : P.normalizer) (g : P.GeneratingTriple) :
+theorem coe_smul (τ : Subgroup.normalizer (P.G : Set (Perm (Fin n))))
+    (g : P.GeneratingTriple) :
     ((τ • g : P.GeneratingTriple) : PermutationTriple n) = (τ : Perm (Fin n)) • g.1 :=
   (rfl)
 
-instance : MulAction P.normalizer P.GeneratingTriple where
+instance : MulAction (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple where
   one_smul g := Subtype.ext (by simp)
   mul_smul τ υ g := Subtype.ext (by simp [mul_smul])
 
@@ -215,7 +203,8 @@ theorem hasPassport_toClass (g : P.GeneratingTriple) : (g.toClass hn hG).HasPass
 /-- Conjugating a generating triple by a normalizing element does not change its isomorphism
 class. -/
 @[simp]
-theorem toClass_smul (τ : P.normalizer) (g : P.GeneratingTriple) :
+theorem toClass_smul (τ : Subgroup.normalizer (P.G : Set (Perm (Fin n))))
+    (g : P.GeneratingTriple) :
     (τ • g).toClass hn hG = g.toClass hn hG := by
   rw [toClass_eq_mk, toClass_eq_mk, ConnectedIsoClass.mk_eq_mk_iff, orbitRel_apply, mem_orbit_iff]
   exact ⟨(τ : Perm (Fin n)), Subtype.ext (rfl)⟩
@@ -224,13 +213,13 @@ theorem toClass_smul (τ : P.normalizer) (g : P.GeneratingTriple) :
 one orbit of the normalizer of the reference subgroup. -/
 theorem toClass_eq_toClass_iff {g g' : P.GeneratingTriple} :
     g.toClass hn hG = g'.toClass hn hG ↔
-      orbitRel P.normalizer P.GeneratingTriple g g' := by
+      orbitRel (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple g g' := by
   rw [toClass_eq_mk, toClass_eq_mk, ConnectedIsoClass.mk_eq_mk_iff, orbitRel_apply,
     orbitRel_apply, mem_orbit_iff, mem_orbit_iff]
   constructor
   · rintro ⟨τ, hτ⟩
     have hτ' : τ • g'.1 = g.1 := congrArg Subtype.val hτ
-    have hmem : τ ∈ P.normalizer :=
+    have hmem : τ ∈ Subgroup.normalizer (P.G : Set (Perm (Fin n))) :=
       mem_normalizer_of_smul g'.2 (by rw [hτ']; exact g.2)
     exact ⟨⟨τ, hmem⟩, Subtype.ext hτ'⟩
   · rintro ⟨τ, hτ⟩
@@ -260,7 +249,7 @@ include hn hG
 exactly the orbits of the normalizer of the reference subgroup acting by simultaneous conjugation
 on the generating triples of that passport. -/
 noncomputable def generatingTripleOrbitsEquivClasses :
-    orbitRel.Quotient P.normalizer P.GeneratingTriple ≃
+    orbitRel.Quotient (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple ≃
       {c : ConnectedIsoClass n // c.HasPassport P} :=
   Equiv.ofBijective
     (Quotient.lift
@@ -287,8 +276,8 @@ theorem generatingTripleOrbitsEquivClasses_apply_mk (g : P.GeneratingTriple) :
 /-- The size of a passport is the number of orbits of the normalizer of its reference subgroup on
 its generating triples. -/
 theorem passportSize_eq_card_generatingTripleOrbits :
-    P.passportSize =
-      Nat.card (orbitRel.Quotient P.normalizer P.GeneratingTriple) := by
+    P.passportSize = Nat.card (orbitRel.Quotient
+      (Subgroup.normalizer (P.G : Set (Perm (Fin n)))) P.GeneratingTriple) := by
   rw [passportSize_eq_card_hasPassport,
     Nat.card_congr (generatingTripleOrbitsEquivClasses hn hG).symm]
 
