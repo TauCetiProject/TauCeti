@@ -76,7 +76,7 @@ private noncomputable def taylorTwo (f : AInfinityHom AA BB) : A →ₗ[R] A →
 
 private theorem taylorTwo_apply (f : AInfinityHom AA BB) (a b : A) :
     f.taylorTwo a b =
-      f.taylor (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+      f.taylor (ReducedTensorWords.of R A (2 : ℕ+)
         (PiTensorProduct.tprod R ![a, b])) := by
   rw [taylorTwo, LinearMap.compl₂_apply, LinearMap.compr₂_apply,
     ReducedTensorWords.prepend_ofLetter]
@@ -84,9 +84,9 @@ private theorem taylorTwo_apply (f : AInfinityHom AA BB) (a b : A) :
 /-- The bar map of an `A∞` morphism on a two-letter word: the two letters are either both kept,
 or collapsed by the arity-two component. -/
 private theorem barMap_of_two (f : AInfinityHom AA BB) (a b : A) :
-    f.barMap (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩ (PiTensorProduct.tprod R ![a, b])) =
+    f.barMap (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
       ReducedTensorWords.ofLetter R B (f.taylorTwo a b) +
-        ReducedTensorWords.of R B ⟨2, Nat.succ_pos 1⟩
+        ReducedTensorWords.of R B (2 : ℕ+)
           (PiTensorProduct.tprod R ![f.linearPart a, f.linearPart b]) := by
   refine ReducedTensorWords.eq_of_deconcatenation_eq_of_letter_eq R B ?_ ?_
   · rw [f.isCoalgHom_barMap.deconcatenation_apply, ReducedTensorWords.deconcatenation_of_two,
@@ -104,7 +104,7 @@ private theorem taylorTwo_component_eq (f : AInfinityHom AA BB) {p q : ℤ} {a b
       f.taylorTwo (AA.m 1 ![a]) b + negOnePowCast R p • f.linearPart (AA.m 2 ![a, b])
         - negOnePowCast R p • f.taylorTwo a (AA.m 1 ![b]) := by
   have h := LinearMap.congr_fun f.taylor_comp_barMap
-    (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩ (PiTensorProduct.tprod R ![a, b]))
+    (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b]))
   rw [LinearMap.comp_apply, LinearMap.comp_apply, f.barMap_of_two, map_add,
     AInfinityAlgebra.taylor_ofLetter,
     BB.taylor_of_two (f.linearPart_mem ha) (f.linearPart_mem hb),

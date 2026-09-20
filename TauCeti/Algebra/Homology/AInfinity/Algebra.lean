@@ -364,9 +364,11 @@ theorem barDifferential_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
 the suspension sign of the first letter. -/
 theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {a b : A}
     (ha : a ∈ 𝒜.grading.piece p) (hb : b ∈ 𝒜.grading.piece q) :
-    𝒜.taylor (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+    𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
         (PiTensorProduct.tprod R ![a, b])) =
       negOnePowCast R p • 𝒜.m 2 ![a, b] := by
+  change 𝒜.taylor (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+    (PiTensorProduct.tprod R ![a, b])) = negOnePowCast R p • 𝒜.m 2 ![a, b]
   have hcons : (fun i : Fin 2 ↦ if (i : ℕ) = 0 then a else b) = ![a, b] := by
     funext i
     fin_cases i <;> simp
@@ -385,12 +387,12 @@ theorem taylor_of_two (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {a b : A}
 to either letter, and the collapse of both letters to the binary operation. -/
 theorem barDifferential_of_two (𝒜 : AInfinityAlgebra R A) {p q : ℤ} {a b : A}
     (ha : a ∈ 𝒜.grading.piece p) (hb : b ∈ 𝒜.grading.piece q) :
-    𝒜.barDifferential (ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+    𝒜.barDifferential (ReducedTensorWords.of R A (2 : ℕ+)
         (PiTensorProduct.tprod R ![a, b])) =
-      ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+      ReducedTensorWords.of R A (2 : ℕ+)
           (PiTensorProduct.tprod R ![𝒜.m 1 ![a], b])
         + ReducedTensorWords.ofLetter R A (negOnePowCast R p • 𝒜.m 2 ![a, b])
-        - negOnePowCast R p • ReducedTensorWords.of R A ⟨2, Nat.succ_pos 1⟩
+        - negOnePowCast R p • ReducedTensorWords.of R A (2 : ℕ+)
             (PiTensorProduct.tprod R ![a, 𝒜.m 1 ![b]]) := by
   have hshift : a ∈ (𝒜.grading.shift 1).piece (p - 1) := by
     rwa [InternalGrading.shift_piece, sub_add_cancel]

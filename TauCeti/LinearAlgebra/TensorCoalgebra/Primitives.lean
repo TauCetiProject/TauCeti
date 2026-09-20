@@ -230,7 +230,9 @@ theorem deconcatenation_prepend (a : M) (w : ReducedTensorWords R M) :
 /-- Prepending a letter to a single letter is the two-letter word. -/
 theorem prepend_ofLetter (a b : M) :
     prepend R M a (ofLetter R M b) =
-      of R M ⟨2, Nat.succ_pos 1⟩ (PiTensorProduct.tprod R ![a, b]) := by
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b]) := by
+  change prepend R M a (ofLetter R M b) =
+    of R M ⟨2, Nat.succ_pos 1⟩ (PiTensorProduct.tprod R ![a, b])
   have hz0 : (![a, b] : Fin 2 → M) ⟨0, by omega⟩ = a := by simp
   have hz1 : (![a, b] : Fin 2 → M) ⟨1, by omega⟩ = b := by simp
   have h1 : subword R (![a, b] : Fin 2 → M) 1 1 = ofLetter R M b := by
@@ -242,14 +244,14 @@ theorem prepend_ofLetter (a b : M) :
 
 /-- The only cut of a two-letter word separates its two letters. -/
 theorem deconcatenation_of_two (a b : M) :
-    deconcatenation R M (of R M ⟨2, Nat.succ_pos 1⟩ (PiTensorProduct.tprod R ![a, b])) =
+    deconcatenation R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
       ofLetter R M a ⊗ₜ[R] ofLetter R M b := by
   rw [← prepend_ofLetter, deconcatenation_prepend, deconcatenation_ofLetter, map_zero, add_zero]
 
 /-- A two-letter word has no letter component. -/
 @[simp]
 theorem letter_of_two (a b : M) :
-    letter R M (of R M ⟨2, Nat.succ_pos 1⟩ (PiTensorProduct.tprod R ![a, b])) = 0 := by
+    letter R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) = 0 := by
   rw [← prepend_ofLetter, letter_prepend]
 
 end Prepend
