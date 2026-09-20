@@ -25,9 +25,7 @@ particular every proper principal submatrix of `A` is negative definite. Written
 `aᵢⱼ² < aᵢᵢ aⱼⱼ` for two distinct components `i` and `j` of a numerical type with more than two
 components, a negative determinant for the `3 × 3` submatrix on three distinct components of a
 numerical type with more than three components, and a positive determinant for the `4 × 4`
-submatrix on four distinct components of a numerical type with more than four components. On five
-components the determinant is not the convenient form: what the classification uses there is the
-value of the form itself at an explicit vector.
+submatrix on four distinct components of a numerical type with more than four components.
 
 These are the inputs of the classification of configurations of `(-2)`-indices in
 [Stacks, Section 0C7L](https://stacks.math.columbia.edu/tag/0C7L), which in turn bounds the
@@ -40,16 +38,14 @@ multiplicities of a minimal numerical type.
   the cross-products `mⱼ xᵢ = mᵢ xⱼ` agree, i.e. when `x` is proportional to `m`.
 * `TauCeti.NumericalType.dotProduct_intersection_mulVec_neg`: `xᵀ A x < 0` for a nonzero `x`
   vanishing at some component.
-* `TauCeti.NumericalType.sum_sum_intersection_mul_neg`: the same statement for a vector supported
-  on a finite set of components which is not all of them.
+* `TauCeti.NumericalType.dotProduct_intersection_mulVec_of_support_subset`: `xᵀ A x` is the sum
+  over the principal submatrix carrying the support of `x`.
 * `TauCeti.NumericalType.intersection_sq_lt_intersection_mul_intersection`: `aᵢⱼ² < aᵢᵢ aⱼⱼ` for
   distinct components when there are more than two components.
 * `TauCeti.NumericalType.intersection_det_triple_neg`: the determinant of the principal `3 × 3`
   submatrix on three distinct components is negative when there are more than three components.
 * `TauCeti.NumericalType.intersection_det_four_pos`: the determinant of the principal `4 × 4`
   submatrix on four distinct components is positive when there are more than four components.
-* `TauCeti.NumericalType.intersection_five_neg`: the intersection form at a vector supported on
-  five distinct components, written out, is negative when there are more than five components.
 -/
 
 public section
@@ -138,38 +134,16 @@ theorem dotProduct_intersection_mulVec_neg {x : T.Component → ℤ} (hx : x ≠
   rw [hi, mul_zero, mul_eq_zero] at hij
   exact hij.resolve_left (Int.natCast_ne_zero.mpr (T.multiplicity i).ne_zero)
 
-/-- The intersection form evaluated at a vector supported in a finite set of components. -/
-private lemma dotProduct_intersection_mulVec_eq_sum {s : Finset T.Component}
+/-- The intersection form evaluated at a vector supported on a finite set of components is the
+corresponding sum over the principal submatrix on that set. -/
+theorem dotProduct_intersection_mulVec_of_support_subset {s : Finset T.Component}
     {x : T.Component → ℤ} (hx : ∀ i ∉ s, x i = 0) :
     x ⬝ᵥ T.intersection *ᵥ x = ∑ i ∈ s, ∑ j ∈ s, T.intersection i j * x i * x j := by
-  have hrow (i : T.Component) : (T.intersection *ᵥ x) i = ∑ j ∈ s, T.intersection i j * x j := by
-    rw [mulVec, dotProduct]
-    exact (sum_subset (subset_univ s) fun j _ hj ↦ by rw [hx j hj, mul_zero]).symm
   rw [dotProduct, ← sum_subset (subset_univ s) fun i _ hi ↦ by rw [hx i hi, zero_mul]]
-  exact sum_congr rfl fun i _ ↦ by
-    rw [hrow i, mul_sum]
-    exact sum_congr rfl fun j _ ↦ by ring
-
-/-- The intersection form of a numerical type is negative definite on the vectors supported on a
-proper subset of the components: if `s` is a finite set of components which is not all of them
-and `y` does not vanish identically on `s`, then `∑_{i, j ∈ s} aᵢⱼ yᵢ yⱼ < 0`. -/
-theorem sum_sum_intersection_mul_neg {s : Finset T.Component} (hs : s ≠ univ)
-    {y : T.Component → ℤ} (hy : ∃ i ∈ s, y i ≠ 0) :
-    ∑ i ∈ s, ∑ j ∈ s, T.intersection i j * y i * y j < 0 := by
-  classical
-  obtain ⟨m, hm⟩ : ∃ m, m ∉ s := by
-    by_contra h
-    exact hs (eq_univ_of_forall (by simpa using h))
-  set x : T.Component → ℤ := fun i ↦ if i ∈ s then y i else 0 with hxdef
-  have hx : ∀ i ∉ s, x i = 0 := fun i hi ↦ by simp [hxdef, hi]
-  have hxne : x ≠ 0 := by
-    obtain ⟨i, hi, hyi⟩ := hy
-    exact fun h ↦ hyi (by simpa [hxdef, hi] using congrFun h i)
-  have heq : ∑ i ∈ s, ∑ j ∈ s, T.intersection i j * x i * x j =
-      ∑ i ∈ s, ∑ j ∈ s, T.intersection i j * y i * y j :=
-    sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦ by simp [hxdef, hi, hj]
-  have hneg := T.dotProduct_intersection_mulVec_neg hxne (hx m hm)
-  rwa [T.dotProduct_intersection_mulVec_eq_sum hx, heq] at hneg
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [mulVec, dotProduct, mul_sum,
+    ← sum_subset (subset_univ s) fun j _ hj ↦ by rw [hx j hj, mul_zero, mul_zero]]
+  exact sum_congr rfl fun j _ ↦ by ring
 
 /-! ### Two components -/
 
@@ -178,11 +152,9 @@ private lemma dotProduct_intersection_mulVec_of_support_pair {i j : T.Component}
     (x : T.Component → ℤ) (hx : ∀ k, k ≠ i ∧ k ≠ j → x k = 0) :
     x ⬝ᵥ T.intersection *ᵥ x = T.intersection i i * x i ^ 2 +
       2 * T.intersection i j * x i * x j + T.intersection j j * x j ^ 2 := by
-  have hrow (k : T.Component) : (T.intersection *ᵥ x) k =
-      T.intersection k i * x i + T.intersection k j * x j := by
-    rw [mulVec, dotProduct, Fintype.sum_eq_add i j hij fun l hl ↦ by rw [hx l hl, mul_zero]]
-  rw [dotProduct, Fintype.sum_eq_add i j hij fun l hl ↦ by rw [hx l hl, zero_mul], hrow, hrow,
-    T.intersection_comm j i]
+  rw [T.dotProduct_intersection_mulVec_of_support_subset (s := {i, j})
+    fun k hk ↦ hx k (by simpa [not_or] using hk)]
+  simp only [sum_pair hij, T.intersection_comm j i]
   ring
 
 /-- In a numerical type with more than two components, the intersection numbers of two
@@ -212,17 +184,6 @@ theorem intersection_sq_lt_intersection_mul_intersection (hcard : 2 < Fintype.ca
 
 /-! ### Three components -/
 
-/-- A sum over the components of a function vanishing outside three distinct components. -/
-private lemma sum_eq_of_support_triple {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
-    (hjk : j ≠ k) (y : T.Component → ℤ) (hy : ∀ l, l ≠ i → l ≠ j → l ≠ k → y l = 0) :
-    ∑ l, y l = y i + y j + y k := by
-  have hsub : ∑ l ∈ ({i, j, k} : Finset T.Component), y l = ∑ l, y l := by
-    refine sum_subset (subset_univ _) fun l _ hl ↦ ?_
-    simp only [mem_insert, mem_singleton, not_or] at hl
-    exact hy l hl.1 hl.2.1 hl.2.2
-  rw [← hsub, sum_insert (by simp [hij, hik]), sum_insert (by simp [hjk]), sum_singleton]
-  ring
-
 /-- The intersection form evaluated at a vector supported on three distinct components. -/
 private lemma dotProduct_intersection_mulVec_of_support_triple {i j k : T.Component} (hij : i ≠ j)
     (hik : i ≠ k) (hjk : j ≠ k) (x : T.Component → ℤ)
@@ -231,13 +192,10 @@ private lemma dotProduct_intersection_mulVec_of_support_triple {i j k : T.Compon
       T.intersection i i * x i ^ 2 + T.intersection j j * x j ^ 2 +
         T.intersection k k * x k ^ 2 + 2 * T.intersection i j * x i * x j +
         2 * T.intersection i k * x i * x k + 2 * T.intersection j k * x j * x k := by
-  have hrow (l : T.Component) : (T.intersection *ᵥ x) l =
-      T.intersection l i * x i + T.intersection l j * x j + T.intersection l k * x k := by
-    rw [mulVec, dotProduct]
-    exact T.sum_eq_of_support_triple hij hik hjk _ fun m h₁ h₂ h₃ ↦ by
-      rw [hx m h₁ h₂ h₃, mul_zero]
-  rw [dotProduct, T.sum_eq_of_support_triple hij hik hjk _
-    (fun l h₁ h₂ h₃ ↦ by rw [hx l h₁ h₂ h₃, zero_mul]), hrow i, hrow j, hrow k,
+  rw [T.dotProduct_intersection_mulVec_of_support_subset (s := {i, j, k}) fun l hl ↦ by
+    simp only [mem_insert, mem_singleton, not_or] at hl
+    exact hx l hl.1 hl.2.1 hl.2.2]
+  simp only [sum_insert (by simp [hij, hik] : i ∉ ({j, k} : Finset T.Component)), sum_pair hjk,
     T.intersection_comm j i, T.intersection_comm k i, T.intersection_comm k j]
   ring
 
@@ -463,75 +421,6 @@ theorem intersection_det_four_pos (hcard : 4 < Fintype.card T.Component)
   rw [hform] at hneg
   have hd : 0 < d := by nlinarith
   simpa only [d] using hd
-
-/-! ### Five components -/
-
-/-- In a numerical type with more than five components, the intersection form is negative definite
-on the vectors supported on five distinct components `c₁, …, c₅`: its value at the vector taking
-the values `y₁, …, y₅` there and vanishing elsewhere, written out below, is negative unless all
-five values vanish. -/
-theorem intersection_five_neg (hcard : 5 < Fintype.card T.Component)
-    {c₁ c₂ c₃ c₄ c₅ : T.Component}
-    (h₁₂ : c₁ ≠ c₂) (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₅ : c₁ ≠ c₅)
-    (h₂₃ : c₂ ≠ c₃) (h₂₄ : c₂ ≠ c₄) (h₂₅ : c₂ ≠ c₅)
-    (h₃₄ : c₃ ≠ c₄) (h₃₅ : c₃ ≠ c₅) (h₄₅ : c₄ ≠ c₅)
-    {y₁ y₂ y₃ y₄ y₅ : ℤ} (hy : ¬(y₁ = 0 ∧ y₂ = 0 ∧ y₃ = 0 ∧ y₄ = 0 ∧ y₅ = 0)) :
-    T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
-          T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
-        T.intersection c₅ c₅ * y₅ ^ 2 +
-      2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
-        T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
-        T.intersection c₂ c₃ * y₂ * y₃ + T.intersection c₂ c₄ * y₂ * y₄ +
-        T.intersection c₂ c₅ * y₂ * y₅ + T.intersection c₃ c₄ * y₃ * y₄ +
-        T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₄ c₅ * y₄ * y₅) < 0 := by
-  classical
-  let y : T.Component → ℤ := fun m ↦
-    if m = c₁ then y₁ else if m = c₂ then y₂ else if m = c₃ then y₃
-      else if m = c₄ then y₄ else if m = c₅ then y₅ else 0
-  have e₁ : y c₁ = y₁ := by simp [y]
-  have e₂ : y c₂ = y₂ := by simp [y, h₁₂.symm]
-  have e₃ : y c₃ = y₃ := by simp [y, h₁₃.symm, h₂₃.symm]
-  have e₄ : y c₄ = y₄ := by simp [y, h₁₄.symm, h₂₄.symm, h₃₄.symm]
-  have e₅ : y c₅ = y₅ := by simp [y, h₁₅.symm, h₂₅.symm, h₃₅.symm, h₄₅.symm]
-  have hmem : ∃ i ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component), y i ≠ 0 := by
-    rcases (by omega : y₁ ≠ 0 ∨ y₂ ≠ 0 ∨ y₃ ≠ 0 ∨ y₄ ≠ 0 ∨ y₅ ≠ 0) with h | h | h | h | h
-    · exact ⟨c₁, by simp, by rw [e₁]; exact h⟩
-    · exact ⟨c₂, by simp, by rw [e₂]; exact h⟩
-    · exact ⟨c₃, by simp, by rw [e₃]; exact h⟩
-    · exact ⟨c₄, by simp, by rw [e₄]; exact h⟩
-    · exact ⟨c₅, by simp, by rw [e₅]; exact h⟩
-  have hsu : ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component) ≠ univ := by
-    intro h
-    have k₁ := card_insert_le c₁ ({c₂, c₃, c₄, c₅} : Finset T.Component)
-    have k₂ := card_insert_le c₂ ({c₃, c₄, c₅} : Finset T.Component)
-    have k₃ := card_insert_le c₃ ({c₄, c₅} : Finset T.Component)
-    have k₄ := card_insert_le c₄ ({c₅} : Finset T.Component)
-    have k₅ : ({c₅} : Finset T.Component).card = 1 := card_singleton _
-    have k₆ : ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component).card = Fintype.card T.Component := by
-      rw [h, card_univ]
-    omega
-  have hval : ∑ i ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component),
-      ∑ j ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component), T.intersection i j * y i * y j =
-      T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
-            T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
-          T.intersection c₅ c₅ * y₅ ^ 2 +
-        2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
-          T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
-          T.intersection c₂ c₃ * y₂ * y₃ + T.intersection c₂ c₄ * y₂ * y₄ +
-          T.intersection c₂ c₅ * y₂ * y₅ + T.intersection c₃ c₄ * y₃ * y₄ +
-          T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₄ c₅ * y₄ * y₅) := by
-    have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅} : Finset T.Component) := by simp [h₁₂, h₁₃, h₁₄, h₁₅]
-    have n₂ : c₂ ∉ ({c₃, c₄, c₅} : Finset T.Component) := by simp [h₂₃, h₂₄, h₂₅]
-    have n₃ : c₃ ∉ ({c₄, c₅} : Finset T.Component) := by simp [h₃₄, h₃₅]
-    have n₄ : c₄ ∉ ({c₅} : Finset T.Component) := by simp [h₄₅]
-    simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄, sum_singleton,
-      e₁, e₂, e₃, e₄, e₅, T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
-      T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁, T.intersection_comm c₄ c₂,
-      T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
-      T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄]
-    ring
-  rw [← hval]
-  exact T.sum_sum_intersection_mul_neg hsu hmem
 
 end NumericalType
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.IntersectionForm
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
@@ -23,8 +22,8 @@ what bounds the multiplicities along chains of `(-2)`-indices in a minimal numer
 hence its Picard group.
 
 This file classifies the configurations on two, three, four, and five components. If a numerical
-type has more than two components and two `(-2)`-indices `i` and `j` meet, then up to swapping `i`
-and `j`,
+type has
+more than two components and two `(-2)`-indices `i` and `j` meet, then up to swapping `i` and `j`,
 
 `(wᵢ, wⱼ, aᵢⱼ) = (w, w, w)`, `(w, 2w, 2w)` or `(w, 3w, 3w)`
 
@@ -41,6 +40,14 @@ On four components, a chain has four possible unoriented weight patterns, and a 
 three others has the simply-laced star pattern. In both cases all intersections not displayed in
 the graph vanish ([Stacks, Tags 0C7V and 0C80](https://stacks.math.columbia.edu/tag/0C7V)).
 
+On five components a chain has only three unoriented weight patterns: all five weights equal, or
+four equal weights together with, at one end of the chain, their double or their half
+([Stacks, Tag 0C82](https://stacks.math.columbia.edu/tag/0C82)). In particular a double edge can
+occur only at an end, so the two middle edges are simply laced, and again no intersection outside
+the chain is nonzero: five `(-2)`-indices never form a pentagon. Likewise, a component meeting
+three other `(-2)`-indices cannot meet a fourth one
+([Stacks, Lemma 55.5.6](https://stacks.math.columbia.edu/tag/0C86)).
+
 These arguments use only the self-intersections `aᵢᵢ = -2wᵢ`, not the genera. For a pair, negative
 definiteness of the principal `2 × 2` submatrix gives `aᵢⱼ² < 4wᵢwⱼ`, and `lcm(wᵢ, wⱼ) ∣ aᵢⱼ`
 leaves only the three solutions above. For a triple, negative definiteness of the principal
@@ -54,13 +61,11 @@ are positive, so the last two vanish; in particular `aᵢₖ = 0` and `p₁q₁ 
 `aᵢⱼ mⱼ ≤ 2wᵢ mᵢ` and `aᵢⱼ mᵢ ≤ 2wⱼ mⱼ` on the multiplicities listed alongside the Stacks
 statements are instances of `TauCeti.NumericalType.multiplicity_mul_intersection_le`.
 
-On five components, two configurations are ruled out outright: a chain of five never closes up
-into a pentagon, and no component meets four `(-2)`-indices
-([Stacks, Lemmas 55.5.5 and 55.5.6](https://stacks.math.columbia.edu/tag/0C82)). Both are affine
-configurations, of types `Ã₄` and `D̃₄`: the classification on fewer components pins the weights
-and intersection numbers down completely, and the resulting intersection form is then seen to
-vanish at an explicit positive vector, which negative definiteness on a proper subset of the
-components forbids.
+Beyond four components the principal determinants become unwieldy, and the five-component
+classification instead evaluates the intersection form at an explicit positive integral vector.
+Each ratio pattern excluded there is the diagram of an affine generalized Cartan matrix, so the
+form vanishes at the vector spanning its kernel; this is what negative definiteness of the
+intersection form on the vectors supported on a proper subset of the components forbids.
 
 ## Main results
 
@@ -74,10 +79,14 @@ components forbids.
   of four `(-2)`-indices by its normalized adjacent intersection ratios.
 * `TauCeti.NumericalType.exists_weight_intersection_star_four_eq`: the classification of the
   four-component star.
-* `TauCeti.NumericalType.intersection_eq_zero_of_chain_five`: the two ends of a chain of five
-  `(-2)`-indices do not meet.
-* `TauCeti.NumericalType.intersection_eq_zero_of_star_four`: a `(-2)`-index meeting three
-  others meets no fourth one.
+* `TauCeti.NumericalType.exists_intersection_ratio_chain_five_mem`: the classification of a chain
+  of five `(-2)`-indices by its normalized adjacent intersection ratios.
+* `TauCeti.NumericalType.intersection_eq_weight_of_chain_five`: the two middle edges of a chain of
+  five `(-2)`-indices are simply laced.
+* `TauCeti.NumericalType.intersection_eq_zero_of_chain_five`: a chain of five `(-2)`-indices does
+  not close up into a pentagon.
+* `TauCeti.NumericalType.intersection_eq_zero_of_star_four`: a `(-2)`-index meeting three others
+  meets no fourth one.
 -/
 
 public section
@@ -586,178 +595,263 @@ theorem exists_weight_intersection_star_four_eq (hcard : 4 < Fintype.card T.Comp
 
 /-! ### Five components -/
 
-/-- The classification of a chain of four components of self-intersection `-2w`, restated in terms
-of the normalized ratio `rₜ` of an edge, the integer with `aᵤᵥ² = rₜwᵤwᵥ`. -/
-private lemma exists_ratio_chain_four (hcard : 4 < Fintype.card T.Component)
-    {i j k l : T.Component}
+/-- The intersection form of a numerical type at an integral vector supported on five distinct
+components `h`, `i`, `j`, `k`, `l` whose intersection numbers vanish on all nonconsecutive pairs
+of the chain `h - i - j - k - l` except possibly the pair of ends. Retaining the intersection
+number of the two ends lets the statement cover a chain that closes up into a pentagon. The form
+is negative as soon as the first entry is nonzero, since the vector is then nonzero and vanishes
+at a sixth component. -/
+private lemma chain_five_form_neg (hcard : 5 < Fintype.card T.Component)
+    {h i j k l : T.Component}
+    (hhi : h ≠ i) (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hij : i ≠ j) (hik : i ≠ k)
+    (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l) (hkl : k ≠ l)
+    (hhj0 : T.intersection h j = 0) (hhk0 : T.intersection h k = 0)
+    (hik0 : T.intersection i k = 0) (hil0 : T.intersection i l = 0)
+    (hjl0 : T.intersection j l = 0) (y₁ y₂ y₃ y₄ y₅ : ℤ) (hy₁ : y₁ ≠ 0) :
+    T.intersection h h * y₁ ^ 2 + T.intersection i i * y₂ ^ 2 + T.intersection j j * y₃ ^ 2 +
+        T.intersection k k * y₄ ^ 2 + T.intersection l l * y₅ ^ 2 +
+      2 * (T.intersection h i * y₁ * y₂ + T.intersection i j * y₂ * y₃ +
+        T.intersection j k * y₃ * y₄ + T.intersection k l * y₄ * y₅ +
+        T.intersection h l * y₁ * y₅) < 0 := by
+  classical
+  obtain ⟨m, hm⟩ :
+      (((((Finset.univ.erase h).erase i).erase j).erase k).erase l).Nonempty := by
+    rw [← Finset.card_pos,
+      Finset.card_erase_of_mem (by simp [hhl.symm, hil.symm, hjl.symm, hkl.symm]),
+      Finset.card_erase_of_mem (by simp [hhk.symm, hik.symm, hjk.symm]),
+      Finset.card_erase_of_mem (by simp [hhj.symm, hij.symm]),
+      Finset.card_erase_of_mem (by simp [hhi.symm]),
+      Finset.card_erase_of_mem (Finset.mem_univ h), Finset.card_univ]
+    omega
+  simp only [Finset.mem_erase, Finset.mem_univ, and_true] at hm
+  obtain ⟨hml, hmk, hmj, hmi, hmh⟩ := hm
+  -- Spread the five entries over the five components and zero elsewhere.
+  let x : T.Component → ℤ := fun c ↦
+    if c = h then y₁ else if c = i then y₂ else if c = j then y₃ else
+      if c = k then y₄ else if c = l then y₅ else 0
+  have hxh : x h = y₁ := by simp [x]
+  have hxi : x i = y₂ := by simp [x, hhi.symm]
+  have hxj : x j = y₃ := by simp [x, hhj.symm, hij.symm]
+  have hxk : x k = y₄ := by simp [x, hhk.symm, hik.symm, hjk.symm]
+  have hxl : x l = y₅ := by simp [x, hhl.symm, hil.symm, hjl.symm, hkl.symm]
+  have hsupp : ∀ c ∉ ({h, i, j, k, l} : Finset T.Component), x c = 0 := by
+    intro c hc
+    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hc
+    simp [x, hc.1, hc.2.1, hc.2.2.1, hc.2.2.2.1, hc.2.2.2.2]
+  have hne : x ≠ 0 := fun hc ↦ hy₁ (by simpa [hxh] using congrFun hc h)
+  have hxm : x m = 0 := by simp [x, hmh, hmi, hmj, hmk, hml]
+  -- Only the five diagonal entries and the five retained off-diagonal pairs survive.
+  have hform : T.intersection h h * y₁ ^ 2 + T.intersection i i * y₂ ^ 2 +
+        T.intersection j j * y₃ ^ 2 + T.intersection k k * y₄ ^ 2 +
+        T.intersection l l * y₅ ^ 2 +
+      2 * (T.intersection h i * y₁ * y₂ + T.intersection i j * y₂ * y₃ +
+        T.intersection j k * y₃ * y₄ + T.intersection k l * y₄ * y₅ +
+        T.intersection h l * y₁ * y₅) = x ⬝ᵥ T.intersection.mulVec x := by
+    rw [T.dotProduct_intersection_mulVec_of_support_subset hsupp]
+    simp only [Finset.sum_insert (by simp [hhi, hhj, hhk, hhl] :
+        h ∉ ({i, j, k, l} : Finset T.Component)),
+      Finset.sum_insert (by simp [hij, hik, hil] : i ∉ ({j, k, l} : Finset T.Component)),
+      Finset.sum_insert (by simp [hjk, hjl] : j ∉ ({k, l} : Finset T.Component)),
+      Finset.sum_pair hkl, hxh, hxi, hxj, hxk, hxl, T.intersection_comm i h,
+      T.intersection_comm j h, T.intersection_comm k h, T.intersection_comm l h,
+      T.intersection_comm j i, T.intersection_comm k i, T.intersection_comm l i,
+      T.intersection_comm k j, T.intersection_comm l j, T.intersection_comm l k,
+      hhj0, hhk0, hik0, hil0, hjl0]
+    ring
+  rw [hform]
+  exact T.dotProduct_intersection_mulVec_neg hne hxm
+
+/-- The factor data used to classify a chain of five components. The four-component analysis of
+the two overlapping windows of the chain shows that every intersection number of two
+nonconsecutive components other than that of the two ends vanishes, bounds each of the eight
+divisibility factors of the four edges by two, and supplies the two determinant inequalities. -/
+private lemma chain_five_factors (hcard : 5 < Fintype.card T.Component)
+    {h i j k l : T.Component}
+    (hh : T.intersection h h = -(2 * (T.weight h : ℤ)))
     (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
     (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
     (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
-    (hik : i ≠ k) (hil : i ≠ l) (hjl : j ≠ l)
-    (hij : 0 < T.intersection i j) (hjk : 0 < T.intersection j k)
-    (hkl : 0 < T.intersection k l) :
-    ∃ r₁ r₂ r₃ : ℤ,
-      T.intersection i j ^ 2 = r₁ * ((T.weight i : ℤ) * T.weight j) ∧
-      T.intersection j k ^ 2 = r₂ * ((T.weight j : ℤ) * T.weight k) ∧
-      T.intersection k l ^ 2 = r₃ * ((T.weight k : ℤ) * T.weight l) ∧
-      1 ≤ r₁ ∧ r₁ ≤ 2 ∧ 1 ≤ r₂ ∧ r₂ ≤ 2 ∧ 1 ≤ r₃ ∧ r₃ ≤ 2 ∧ r₁ + r₂ + r₃ ≤ 4 := by
-  obtain ⟨p₁, q₁, p₂, q₂, p₃, q₃, hp₁, hq₁, hp₂, hq₂, hp₃, hq₃, hmem⟩ :=
-    T.exists_intersection_ratio_chain_four_mem hcard hi hj hk hl hik hil hjl hij hjk hkl
-  have hsq₁ : T.intersection i j ^ 2 = (T.weight i : ℤ) * p₁ * ((T.weight j : ℤ) * q₁) := by
-    rw [← hp₁, ← hq₁, sq]
-  have hsq₂ : T.intersection j k ^ 2 = (T.weight j : ℤ) * p₂ * ((T.weight k : ℤ) * q₂) := by
-    rw [← hp₂, ← hq₂, sq]
-  have hsq₃ : T.intersection k l ^ 2 = (T.weight k : ℤ) * p₃ * ((T.weight l : ℤ) * q₃) := by
-    rw [← hp₃, ← hq₃, sq]
-  refine ⟨p₁ * q₁, p₂ * q₂, p₃ * q₃, by rw [hsq₁]; ring, by rw [hsq₂]; ring,
-    by rw [hsq₃]; ring, ?_⟩
+    (hhj : h ≠ j) (hhk : h ≠ k) (hik : i ≠ k) (hil : i ≠ l) (hjl : j ≠ l)
+    (hhi : 0 < T.intersection h i) (hij : 0 < T.intersection i j)
+    (hjk : 0 < T.intersection j k) (hkl : 0 < T.intersection k l) :
+    T.intersection h j = 0 ∧ T.intersection h k = 0 ∧ T.intersection i k = 0 ∧
+      T.intersection i l = 0 ∧ T.intersection j l = 0 ∧
+      ∃ p₁ q₁ p₂ q₂ p₃ q₃ p₄ q₄ : ℤ,
+        1 ≤ p₁ ∧ p₁ ≤ 2 ∧ 1 ≤ q₁ ∧ q₁ ≤ 2 ∧
+        1 ≤ p₂ ∧ p₂ ≤ 2 ∧ 1 ≤ q₂ ∧ q₂ ≤ 2 ∧
+        1 ≤ p₃ ∧ p₃ ≤ 2 ∧ 1 ≤ q₃ ∧ q₃ ≤ 2 ∧
+        1 ≤ p₄ ∧ p₄ ≤ 2 ∧ 1 ≤ q₄ ∧ q₄ ≤ 2 ∧
+        T.intersection h i = (T.weight h : ℤ) * p₁ ∧
+        T.intersection h i = (T.weight i : ℤ) * q₁ ∧
+        T.intersection i j = (T.weight i : ℤ) * p₂ ∧
+        T.intersection i j = (T.weight j : ℤ) * q₂ ∧
+        T.intersection j k = (T.weight j : ℤ) * p₃ ∧
+        T.intersection j k = (T.weight k : ℤ) * q₃ ∧
+        T.intersection k l = (T.weight k : ℤ) * p₄ ∧
+        T.intersection k l = (T.weight l : ℤ) * q₄ ∧
+        4 * (p₁ * q₁ + p₂ * q₂ + p₃ * q₃) < 16 + p₁ * q₁ * p₃ * q₃ ∧
+        4 * (p₂ * q₂ + p₃ * q₃ + p₄ * q₄) < 16 + p₂ * q₂ * p₄ * q₄ := by
+  obtain ⟨hhj0, hik0, hhk0, p₁, q₁, p₂, q₂, p₃, q₃, hp₁1, hp₁2, hq₁1, hq₁2, hp₂1, hp₂2,
+      hq₂1, hq₂2, hp₃1, hp₃2, hq₃1, hq₃2, hp₁, hq₁, hp₂, hq₂, hp₃, hq₃, hdet₁⟩ :=
+    T.chain_four_factors (by omega) hh hi hj hk hhj hhk hik hhi hij hjk
+  obtain ⟨-, hjl0, hil0, p₂', q₂', p₃', q₃', p₄, q₄, -, -, -, -, -, -, -, -,
+      hp₄1, hp₄2, hq₄1, hq₄2, hp₂', hq₂', hp₃', hq₃', hp₄, hq₄, hdet₂⟩ :=
+    T.chain_four_factors (by omega) hi hj hk hl hik hil hjl hij hjk hkl
+  have hwi : (0 : ℤ) < T.weight i := by simp
+  have hwj : (0 : ℤ) < T.weight j := by simp
+  have hwk : (0 : ℤ) < T.weight k := by simp
+  -- The two windows factor the two shared edges by the same weights, hence identically.
+  have e₂p : p₂' = p₂ := mul_left_cancel₀ hwi.ne' (hp₂'.symm.trans hp₂)
+  have e₂q : q₂' = q₂ := mul_left_cancel₀ hwj.ne' (hq₂'.symm.trans hq₂)
+  have e₃p : p₃' = p₃ := mul_left_cancel₀ hwj.ne' (hp₃'.symm.trans hp₃)
+  have e₃q : q₃' = q₃ := mul_left_cancel₀ hwk.ne' (hq₃'.symm.trans hq₃)
+  rw [e₂p, e₂q, e₃p, e₃q] at hdet₂
+  exact ⟨hhj0, hhk0, hik0, hil0, hjl0, p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, hp₁1, hp₁2, hq₁1, hq₁2,
+    hp₂1, hp₂2, hq₂1, hq₂2, hp₃1, hp₃2, hq₃1, hq₃2, hp₄1, hp₄2, hq₄1, hq₄2, hp₁, hq₁, hp₂, hq₂,
+    hp₃, hq₃, hp₄, hq₄, hdet₁, hdet₂⟩
+
+/-- For five components in a chain, all of self-intersection `-2w`, the four normalized adjacent
+intersection ratios are `(1, 1, 1, 1)`, `(1, 1, 1, 2)` or `(2, 1, 1, 1)`: a double edge occurs
+only at one of the two ends of the chain, and a triple edge not at all. The factors in the
+statement express `aᵢⱼ²/(wᵢwⱼ)` without division, and together with the divisibility of each row
+by its weight they give the weight patterns of
+[Stacks, Lemma 55.5.5](https://stacks.math.columbia.edu/tag/0C82): all five weights equal, or
+four equal weights together with, at one end, their double or their half.
+
+The two windows of four consecutive components leave three further ratio patterns, carrying a
+double edge in the middle of the chain or double edges at both of its ends. Each is ruled out by
+an explicit positive vector at which the intersection form vanishes, which negative definiteness
+on the vectors supported on a proper subset of the components forbids. -/
+theorem exists_intersection_ratio_chain_five_mem (hcard : 5 < Fintype.card T.Component)
+    {h i j k l : T.Component}
+    (hh : T.intersection h h = -(2 * (T.weight h : ℤ)))
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
+    (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hik : i ≠ k) (hil : i ≠ l) (hjl : j ≠ l)
+    (hhi : 0 < T.intersection h i) (hij : 0 < T.intersection i j)
+    (hjk : 0 < T.intersection j k) (hkl : 0 < T.intersection k l) :
+    ∃ p₁ q₁ p₂ q₂ p₃ q₃ p₄ q₄ : ℤ,
+      T.intersection h i = (T.weight h : ℤ) * p₁ ∧
+      T.intersection h i = (T.weight i : ℤ) * q₁ ∧
+      T.intersection i j = (T.weight i : ℤ) * p₂ ∧
+      T.intersection i j = (T.weight j : ℤ) * q₂ ∧
+      T.intersection j k = (T.weight j : ℤ) * p₃ ∧
+      T.intersection j k = (T.weight k : ℤ) * q₃ ∧
+      T.intersection k l = (T.weight k : ℤ) * p₄ ∧
+      T.intersection k l = (T.weight l : ℤ) * q₄ ∧
+      (p₁ * q₁, p₂ * q₂, p₃ * q₃, p₄ * q₄) ∈
+        ({(1, 1, 1, 1), (1, 1, 1, 2), (2, 1, 1, 1)} : Set (ℤ × ℤ × ℤ × ℤ)) := by
+  obtain ⟨hhj0, hhk0, hik0, hil0, hjl0, p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, hp₁1, hp₁2, hq₁1, hq₁2,
+      hp₂1, hp₂2, hq₂1, hq₂2, hp₃1, hp₃2, hq₃1, hq₃2, hp₄1, hp₄2, hq₄1, hq₄2, hp₁, hq₁, hp₂, hq₂,
+      hp₃, hq₃, hp₄, hq₄, hdet₁, hdet₂⟩ :=
+    T.chain_five_factors hcard hh hi hj hk hl hhj hhk hik hil hjl hhi hij hjk hkl
+  refine ⟨p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, hp₁, hq₁, hp₂, hq₂, hp₃, hq₃, hp₄, hq₄, ?_⟩
+  have hhi' : h ≠ i := by rintro rfl; linarith
+  have hij' : i ≠ j := by rintro rfl; linarith
+  have hjk' : j ≠ k := by rintro rfl; linarith
+  have hkl' : k ≠ l := by rintro rfl; linarith
+  have hhl0 : 0 ≤ T.intersection h l := T.offDiagonal_nonneg h l hhl
+  have key := T.chain_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl hkl'
+    hhj0 hhk0 hik0 hil0 hjl0
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq]
+  -- The eight remaining orientations of the three excluded ratio patterns are affine; the seven
+  -- vectors below span the kernels of their Cartan matrices, so the form vanishes there.
+  interval_cases p₁ <;> interval_cases q₁ <;> interval_cases p₂ <;> interval_cases q₂ <;>
+    interval_cases p₃ <;> interval_cases q₃ <;> interval_cases p₄ <;> interval_cases q₄ <;>
+    first
+      | omega
+      | (exfalso; linarith [key 1 2 3 4 2 one_ne_zero])
+      | (exfalso; linarith [key 1 2 3 2 1 one_ne_zero])
+      | (exfalso; linarith [key 2 4 3 2 1 (by norm_num)])
+      | (exfalso; linarith [key 1 1 1 1 1 one_ne_zero])
+      | (exfalso; linarith [key 1 2 2 2 1 one_ne_zero])
+      | (exfalso; linarith [key 2 2 2 2 1 (by norm_num)])
+      | (exfalso; linarith [key 1 2 2 2 2 one_ne_zero])
+
+/-- In a chain of five components of self-intersection `-2w`, the two middle edges are simply
+laced: the three middle components share a weight, and it is the intersection number of both
+middle pairs. This is the part of
+[Stacks, Lemma 55.5.5](https://stacks.math.columbia.edu/tag/0C82) common to its three cases, in
+all of which a double edge can only occur at one of the two ends of the chain. -/
+theorem intersection_eq_weight_of_chain_five (hcard : 5 < Fintype.card T.Component)
+    {h i j k l : T.Component}
+    (hh : T.intersection h h = -(2 * (T.weight h : ℤ)))
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
+    (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hik : i ≠ k) (hil : i ≠ l) (hjl : j ≠ l)
+    (hhi : 0 < T.intersection h i) (hij : 0 < T.intersection i j)
+    (hjk : 0 < T.intersection j k) (hkl : 0 < T.intersection k l) :
+    T.intersection i j = (T.weight i : ℤ) ∧ T.intersection i j = (T.weight j : ℤ) ∧
+      T.intersection j k = (T.weight j : ℤ) ∧ T.intersection j k = (T.weight k : ℤ) := by
+  obtain ⟨p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, -, -, hp₂, hq₂, hp₃, hq₃, -, -, hmem⟩ :=
+    T.exists_intersection_ratio_chain_five_mem hcard hh hi hj hk hl hhj hhk hhl hik hil hjl
+      hhi hij hjk hkl
+  have hwi : (0 : ℤ) < T.weight i := by simp
+  have hwj : (0 : ℤ) < T.weight j := by simp
+  have hwk : (0 : ℤ) < T.weight k := by simp
+  have hp₂0 : 0 < p₂ := pos_of_mul_pos_right (hp₂ ▸ hij) hwi.le
+  have hq₂0 : 0 < q₂ := pos_of_mul_pos_right (hq₂ ▸ hij) hwj.le
+  have hp₃0 : 0 < p₃ := pos_of_mul_pos_right (hp₃ ▸ hjk) hwj.le
+  have hq₃0 : 0 < q₃ := pos_of_mul_pos_right (hq₃ ▸ hjk) hwk.le
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hmem
-  omega
+  -- In each of the three patterns the two middle ratios are one.
+  obtain ⟨h₂, h₃⟩ : p₂ * q₂ = 1 ∧ p₃ * q₃ = 1 := by
+    rcases hmem with hm | hm | hm <;> exact ⟨hm.2.1, hm.2.2.1⟩
+  have hp₂le : p₂ ≤ p₂ * q₂ := le_mul_of_one_le_right hp₂0.le hq₂0
+  have hq₂le : q₂ ≤ p₂ * q₂ := le_mul_of_one_le_left hq₂0.le hp₂0
+  have hp₃le : p₃ ≤ p₃ * q₃ := le_mul_of_one_le_right hp₃0.le hq₃0
+  have hq₃le : q₃ ≤ p₃ * q₃ := le_mul_of_one_le_left hq₃0.le hp₃0
+  have hp₂1 : p₂ = 1 := by linarith
+  have hq₂1 : q₂ = 1 := by linarith
+  have hp₃1 : p₃ = 1 := by linarith
+  have hq₃1 : q₃ = 1 := by linarith
+  rw [hp₂1, mul_one] at hp₂
+  rw [hq₂1, mul_one] at hq₂
+  rw [hp₃1, mul_one] at hp₃
+  rw [hq₃1, mul_one] at hq₃
+  exact ⟨hp₂, hq₂, hp₃, hq₃⟩
 
-/-- The normalized ratio of an edge is determined by the edge. -/
-private lemma ratio_eq {u v : T.Component} {r r' : ℤ}
-    (h : T.intersection u v ^ 2 = r * ((T.weight u : ℤ) * T.weight v))
-    (h' : T.intersection u v ^ 2 = r' * ((T.weight u : ℤ) * T.weight v)) : r = r' :=
-  mul_right_cancel₀ (mul_pos (by simp : (0 : ℤ) < T.weight u)
-    (by simp : (0 : ℤ) < T.weight v)).ne' (h.symm.trans h')
-
-/-- An edge of normalized ratio one joins two components of equal weight, and its intersection
-number is that common weight. -/
-private lemma weight_eq_of_ratio_one {u v : T.Component} (huv : 0 < T.intersection u v)
-    (h : T.intersection u v ^ 2 = 1 * ((T.weight u : ℤ) * T.weight v)) :
-    (T.weight u : ℤ) = T.weight v ∧ T.intersection u v = (T.weight u : ℤ) := by
-  have hwu : (0 : ℤ) < T.weight u := by simp
-  have hwv : (0 : ℤ) < T.weight v := by simp
-  obtain ⟨p, hp⟩ := T.weight_dvd u v
-  obtain ⟨q, hq⟩ : (T.weight v : ℤ) ∣ T.intersection u v :=
-    T.intersection_comm v u ▸ T.weight_dvd v u
-  have hp1 : 1 ≤ p := by have := pos_of_mul_pos_right (hp ▸ huv) hwu.le; omega
-  have hq1 : 1 ≤ q := by have := pos_of_mul_pos_right (hq ▸ huv) hwv.le; omega
-  have hsq : T.intersection u v ^ 2 = (T.weight u : ℤ) * p * ((T.weight v : ℤ) * q) := by
-    rw [← hp, ← hq, sq]
-  rw [hsq] at h
-  have hpq : p * q = 1 :=
-    mul_left_cancel₀ (mul_pos hwu hwv).ne' (by linear_combination h)
-  have hkey : 0 ≤ p * q - p - q + 1 := by
-    nlinarith [mul_nonneg (show (0 : ℤ) ≤ p - 1 by omega) (show (0 : ℤ) ≤ q - 1 by omega)]
-  rw [hpq] at hkey
-  have hp' : p = 1 := by omega
-  have hq' : q = 1 := by omega
-  rw [hp', mul_one] at hp
-  rw [hq', mul_one] at hq
-  exact ⟨by omega, hp⟩
-
-/-- An edge joining two components of equal weight cannot have normalized ratio two. -/
-private lemma not_ratio_two_of_weight_eq {u v : T.Component} (huv : 0 < T.intersection u v)
-    (h : T.intersection u v ^ 2 = 2 * ((T.weight u : ℤ) * T.weight v))
-    (hw : (T.weight u : ℤ) = T.weight v) : False := by
-  have hwu : (0 : ℤ) < T.weight u := by simp
-  obtain ⟨p, hp⟩ := T.weight_dvd u v
-  have hp1 : 1 ≤ p := by have := pos_of_mul_pos_right (hp ▸ huv) hwu.le; omega
-  have hsq : T.intersection u v ^ 2 = ((T.weight u : ℤ) * p) ^ 2 := by rw [← hp]
-  rw [hsq, ← hw] at h
-  have hp2 : p ^ 2 = 2 :=
-    mul_left_cancel₀ (pow_ne_zero 2 hwu.ne') (by linear_combination h)
-  have hp3 : p < 2 := by nlinarith [sq_nonneg (p - 2)]
-  have hp4 : p = 1 := by omega
-  rw [hp4] at hp2
-  norm_num at hp2
-
-/-- Five components of self-intersection `-2w` in a chain, in a numerical type with more than five
-components, do not close up into a pentagon: the two ends of the chain do not meet. This is the
-graph-shape part of [Stacks, Lemma 55.5.5](https://stacks.math.columbia.edu/tag/0C82); the proof
-here is the affine `Ã₄` obstruction rather than the determinant computation of the source. -/
+/-- In a chain of five components of self-intersection `-2w`, every nonconsecutive intersection
+vanishes: in particular the chain does not close up into a pentagon. This is the graph-shape part
+of [Stacks, Lemma 55.5.5](https://stacks.math.columbia.edu/tag/0C82). -/
 theorem intersection_eq_zero_of_chain_five (hcard : 5 < Fintype.card T.Component)
-    {c₁ c₂ c₃ c₄ c₅ : T.Component}
-    (h₁ : T.intersection c₁ c₁ = -(2 * (T.weight c₁ : ℤ)))
-    (h₂ : T.intersection c₂ c₂ = -(2 * (T.weight c₂ : ℤ)))
-    (h₃ : T.intersection c₃ c₃ = -(2 * (T.weight c₃ : ℤ)))
-    (h₄ : T.intersection c₄ c₄ = -(2 * (T.weight c₄ : ℤ)))
-    (h₅ : T.intersection c₅ c₅ = -(2 * (T.weight c₅ : ℤ)))
-    (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₅ : c₁ ≠ c₅) (h₂₄ : c₂ ≠ c₄) (h₂₅ : c₂ ≠ c₅)
-    (h₃₅ : c₃ ≠ c₅) (e₁₂ : 0 < T.intersection c₁ c₂) (e₂₃ : 0 < T.intersection c₂ c₃)
-    (e₃₄ : 0 < T.intersection c₃ c₄) (e₄₅ : 0 < T.intersection c₄ c₅) :
-    T.intersection c₁ c₅ = 0 := by
-  have hw₁ : (0 : ℤ) < T.weight c₁ := by simp
-  have hw₂ : (0 : ℤ) < T.weight c₂ := by simp
-  have hw₃ : (0 : ℤ) < T.weight c₃ := by simp
-  have hw₄ : (0 : ℤ) < T.weight c₄ := by simp
-  have hw₅ : (0 : ℤ) < T.weight c₅ := by simp
-  have h₁₂ : c₁ ≠ c₂ := by rintro rfl; linarith
-  have h₂₃ : c₂ ≠ c₃ := by rintro rfl; linarith
-  have h₃₄ : c₃ ≠ c₄ := by rintro rfl; linarith
-  have h₄₅ : c₄ ≠ c₅ := by rintro rfl; linarith
-  -- The nonconsecutive pairs other than the two ends vanish by the four-component case.
-  obtain ⟨z₁₃, z₂₄, z₁₄⟩ :=
-    T.intersection_eq_zero_of_chain_four (by omega) h₁ h₂ h₃ h₄ h₁₃ h₁₄ h₂₄ e₁₂ e₂₃ e₃₄
-  obtain ⟨-, z₃₅, z₂₅⟩ :=
-    T.intersection_eq_zero_of_chain_four (by omega) h₂ h₃ h₄ h₅ h₂₄ h₂₅ h₃₅ e₂₃ e₃₄ e₄₅
+    {h i j k l : T.Component}
+    (hh : T.intersection h h = -(2 * (T.weight h : ℤ)))
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ)))
+    (hl : T.intersection l l = -(2 * (T.weight l : ℤ)))
+    (hhj : h ≠ j) (hhk : h ≠ k) (hhl : h ≠ l) (hik : i ≠ k) (hil : i ≠ l) (hjl : j ≠ l)
+    (hhi : 0 < T.intersection h i) (hij : 0 < T.intersection i j)
+    (hjk : 0 < T.intersection j k) (hkl : 0 < T.intersection k l) :
+    T.intersection h j = 0 ∧ T.intersection h k = 0 ∧ T.intersection h l = 0 ∧
+      T.intersection i k = 0 ∧ T.intersection i l = 0 ∧ T.intersection j l = 0 := by
+  obtain ⟨hhj0, hhk0, hik0, hil0, hjl0, -⟩ :=
+    T.chain_five_factors hcard hh hi hj hk hl hhj hhk hik hil hjl hhi hij hjk hkl
+  refine ⟨hhj0, hhk0, ?_, hik0, hil0, hjl0⟩
   by_contra hne
-  have e₅₁ : 0 < T.intersection c₅ c₁ := by
-    rcases (T.offDiagonal_nonneg c₁ c₅ h₁₅).lt_or_eq with hpos | hzero
-    · rw [T.intersection_comm c₅ c₁]; exact hpos
-    · exact absurd hzero.symm hne
-  -- Every three consecutive edges of the pentagon form a chain of four components.
-  obtain ⟨r₁, r₂, r₃, s₁, s₂, s₃, lo₁, hi₁, lo₂, hi₂, lo₃, hi₃, t₁⟩ :=
-    T.exists_ratio_chain_four (by omega) h₁ h₂ h₃ h₄ h₁₃ h₁₄ h₂₄ e₁₂ e₂₃ e₃₄
-  obtain ⟨r₂', r₃', r₄, s₂', s₃', s₄, -, -, -, -, lo₄, hi₄, t₂⟩ :=
-    T.exists_ratio_chain_four (by omega) h₂ h₃ h₄ h₅ h₂₄ h₂₅ h₃₅ e₂₃ e₃₄ e₄₅
-  obtain ⟨r₃'', r₄', r₅, s₃'', s₄', s₅, -, -, -, -, lo₅, hi₅, t₃⟩ :=
-    T.exists_ratio_chain_four (by omega) h₃ h₄ h₅ h₁ h₃₅ h₁₃.symm h₁₄.symm e₃₄ e₄₅ e₅₁
-  obtain ⟨r₄'', r₅', r₁', s₄'', s₅', s₁', -, -, -, -, -, -, t₄⟩ :=
-    T.exists_ratio_chain_four (by omega) h₄ h₅ h₁ h₂ h₁₄.symm h₂₄.symm h₂₅.symm e₄₅ e₅₁ e₁₂
-  obtain ⟨r₅'', r₁'', r₂'', s₅'', s₁'', s₂'', -, -, -, -, -, -, t₅⟩ :=
-    T.exists_ratio_chain_four (by omega) h₅ h₁ h₂ h₃ h₂₅.symm h₃₅.symm h₁₃ e₅₁ e₁₂ e₂₃
-  rw [T.ratio_eq s₂' s₂, T.ratio_eq s₃' s₃] at t₂
-  rw [T.ratio_eq s₃'' s₃, T.ratio_eq s₄' s₄] at t₃
-  rw [T.ratio_eq s₄'' s₄, T.ratio_eq s₅' s₅, T.ratio_eq s₁' s₁] at t₄
-  rw [T.ratio_eq s₅'' s₅, T.ratio_eq s₁'' s₁, T.ratio_eq s₂'' s₂] at t₅
-  -- Summing the five window bounds gives `3(r₁ + ⋯ + r₅) ≤ 20`, so at most one edge has
-  -- ratio two.
-  have hcases : (r₁ = 1 ∧ r₂ = 1 ∧ r₃ = 1 ∧ r₄ = 1 ∧ r₅ = 1) ∨
-      (r₁ = 2 ∧ r₂ = 1 ∧ r₃ = 1 ∧ r₄ = 1 ∧ r₅ = 1) ∨
-      (r₁ = 1 ∧ r₂ = 2 ∧ r₃ = 1 ∧ r₄ = 1 ∧ r₅ = 1) ∨
-      (r₁ = 1 ∧ r₂ = 1 ∧ r₃ = 2 ∧ r₄ = 1 ∧ r₅ = 1) ∨
-      (r₁ = 1 ∧ r₂ = 1 ∧ r₃ = 1 ∧ r₄ = 2 ∧ r₅ = 1) ∨
-      (r₁ = 1 ∧ r₂ = 1 ∧ r₃ = 1 ∧ r₄ = 1 ∧ r₅ = 2) := by omega
-  -- An edge of ratio one joins components of equal weight.
-  have key : ∀ {u v : T.Component} {r : ℤ}, 0 < T.intersection u v →
-      T.intersection u v ^ 2 = r * ((T.weight u : ℤ) * T.weight v) → r = 1 →
-      (T.weight u : ℤ) = T.weight v :=
-    fun huv hs hr ↦ (T.weight_eq_of_ratio_one huv (by rw [hs, hr])).1
-  -- A single edge of ratio two is impossible: the other four force its two ends to have the
-  -- same weight, and then its ratio is a square.
-  rcases hcases with ⟨o₁, o₂, o₃, o₄, o₅⟩ | ⟨o₁, o₂, o₃, o₄, o₅⟩ | ⟨o₁, o₂, o₃, o₄, o₅⟩ |
-    ⟨o₁, o₂, o₃, o₄, o₅⟩ | ⟨o₁, o₂, o₃, o₄, o₅⟩ | ⟨o₁, o₂, o₃, o₄, o₅⟩
-  · -- All five edges have ratio one, so the pentagon is the affine configuration `Ã₄` and the
-    -- all-ones vector is isotropic for the intersection form.
-    obtain ⟨w₁₂, a₁₂⟩ := T.weight_eq_of_ratio_one e₁₂ (by rw [s₁, o₁])
-    obtain ⟨w₂₃, a₂₃⟩ := T.weight_eq_of_ratio_one e₂₃ (by rw [s₂, o₂])
-    obtain ⟨w₃₄, a₃₄⟩ := T.weight_eq_of_ratio_one e₃₄ (by rw [s₃, o₃])
-    obtain ⟨w₄₅, a₄₅⟩ := T.weight_eq_of_ratio_one e₄₅ (by rw [s₄, o₄])
-    obtain ⟨w₅₁, a₅₁⟩ := T.weight_eq_of_ratio_one e₅₁ (by rw [s₅, o₅])
-    have a₁₅ : T.intersection c₁ c₅ = (T.weight c₅ : ℤ) := T.intersection_comm c₁ c₅ ▸ a₅₁
-    have hlt := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
-      (y₁ := 1) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (by omega)
-    rw [h₁, h₂, h₃, h₄, h₅, a₁₂, a₂₃, a₃₄, a₄₅, a₁₅, z₁₃, z₁₄, z₂₄, z₂₅, z₃₅] at hlt
-    simp only [one_pow, mul_one] at hlt
-    linarith
-  · exact T.not_ratio_two_of_weight_eq e₁₂ (by rw [s₁, o₁])
-      (by have := key e₂₃ s₂ o₂; have := key e₃₄ s₃ o₃; have := key e₄₅ s₄ o₄
-          have := key e₅₁ s₅ o₅; omega)
-  · exact T.not_ratio_two_of_weight_eq e₂₃ (by rw [s₂, o₂])
-      (by have := key e₁₂ s₁ o₁; have := key e₃₄ s₃ o₃; have := key e₄₅ s₄ o₄
-          have := key e₅₁ s₅ o₅; omega)
-  · exact T.not_ratio_two_of_weight_eq e₃₄ (by rw [s₃, o₃])
-      (by have := key e₁₂ s₁ o₁; have := key e₂₃ s₂ o₂; have := key e₄₅ s₄ o₄
-          have := key e₅₁ s₅ o₅; omega)
-  · exact T.not_ratio_two_of_weight_eq e₄₅ (by rw [s₄, o₄])
-      (by have := key e₁₂ s₁ o₁; have := key e₂₃ s₂ o₂; have := key e₃₄ s₃ o₃
-          have := key e₅₁ s₅ o₅; omega)
-  · exact T.not_ratio_two_of_weight_eq e₅₁ (by rw [s₅, o₅])
-      (by have := key e₁₂ s₁ o₁; have := key e₂₃ s₂ o₂; have := key e₃₄ s₃ o₃
-          have := key e₄₅ s₄ o₄; omega)
+  have hhl0 : 0 < T.intersection h l := (T.offDiagonal_nonneg h l hhl).lt_of_ne (Ne.symm hne)
+  have hlh0 : 0 < T.intersection l h := T.intersection_comm h l ▸ hhl0
+  have hhi' : h ≠ i := by rintro rfl; linarith
+  have hij' : i ≠ j := by rintro rfl; linarith
+  have hjk' : j ≠ k := by rintro rfl; linarith
+  have hkl' : k ≠ l := by rintro rfl; linarith
+  -- The chain now closes up into a pentagon. Reading the simply-laced middle of three rotations
+  -- of it shows that all five weights agree and that each of its five edges has that weight.
+  obtain ⟨e₂i, e₂j, e₃j, e₃k⟩ := T.intersection_eq_weight_of_chain_five hcard hh hi hj hk hl
+    hhj hhk hhl hik hil hjl hhi hij hjk hkl
+  obtain ⟨e₄k, e₄l, e₅l, e₅h⟩ := T.intersection_eq_weight_of_chain_five hcard hj hk hl hh hi
+    hjl hhj.symm hij'.symm hhk.symm hik.symm hil.symm hjk hkl hlh0 hhi
+  obtain ⟨e₁h, e₁i, -, -⟩ := T.intersection_eq_weight_of_chain_five hcard hl hh hi hj hk
+    hil.symm hjl.symm hkl'.symm hhj hhk hik hlh0 hhi hij hjk
+  have hcomm : T.intersection h l = T.intersection l h := T.intersection_comm h l
+  linarith [T.chain_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl hkl'
+    hhj0 hhk0 hik0 hil0 hjl0 1 1 1 1 1 one_ne_zero]
 
 /-- A component of self-intersection `-2w` meeting three others of self-intersection `-2w` meets
 no fourth such component, in a numerical type with more than five components. Equivalently, the
@@ -774,7 +868,7 @@ theorem intersection_eq_zero_of_star_four (hcard : 5 < Fintype.card T.Component)
     (h₃₅ : c₃ ≠ c₅) (h₄₅ : c₄ ≠ c₅) (e₁₂ : 0 < T.intersection c₁ c₂)
     (e₁₃ : 0 < T.intersection c₁ c₃) (e₁₄ : 0 < T.intersection c₁ c₄) :
     T.intersection c₁ c₅ = 0 := by
-  have hw₁ : (0 : ℤ) < T.weight c₁ := by simp
+  classical
   have h₁₂ : c₁ ≠ c₂ := by rintro rfl; linarith
   have h₁₃ : c₁ ≠ c₃ := by rintro rfl; linarith
   have h₁₄ : c₁ ≠ c₄ := by rintro rfl; linarith
@@ -791,11 +885,51 @@ theorem intersection_eq_zero_of_star_four (hcard : 5 < Fintype.card T.Component)
     T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₄ h₅ h₂₄ h₂₅ h₄₅ e₁₂ e₁₄ e₁₅
   have hww : (w : ℤ) = w' := by omega
   -- The vector taking the value two at the centre and one at each leg is isotropic.
-  have hlt := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
-    (y₁ := 2) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (by omega)
-  rw [h₁, h₂, h₃, h₄, h₅, a₁₂, a₁₃, a₁₄, a₁₅, z₂₃, z₂₄, z₂₅, z₃₄, z₃₅, z₄₅] at hlt
-  simp only [one_pow, mul_one] at hlt
-  rw [hw, hw₂, hw₃, hw₄, hw₅] at hlt
+  let x : T.Component → ℤ := fun c ↦
+    if c = c₁ then 2 else if c = c₂ then 1 else if c = c₃ then 1 else
+      if c = c₄ then 1 else if c = c₅ then 1 else 0
+  have hx₁ : x c₁ = 2 := by simp [x]
+  have hx₂ : x c₂ = 1 := by simp [x, h₁₂.symm]
+  have hx₃ : x c₃ = 1 := by simp [x, h₁₃.symm, h₂₃.symm]
+  have hx₄ : x c₄ = 1 := by simp [x, h₁₄.symm, h₂₄.symm, h₃₄.symm]
+  have hx₅ : x c₅ = 1 := by
+    simp [x, h₁₅.symm, h₂₅.symm, h₃₅.symm, h₄₅.symm]
+  have hsupp : ∀ c ∉ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component), x c = 0 := by
+    intro c hc
+    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hc
+    simp [x, hc.1, hc.2.1, hc.2.2.1, hc.2.2.2.1, hc.2.2.2.2]
+  obtain ⟨m, hm⟩ :
+      (((((Finset.univ.erase c₁).erase c₂).erase c₃).erase c₄).erase c₅).Nonempty := by
+    rw [← Finset.card_pos,
+      Finset.card_erase_of_mem (by simp [h₁₅.symm, h₂₅.symm, h₃₅.symm, h₄₅.symm]),
+      Finset.card_erase_of_mem (by simp [h₁₄.symm, h₂₄.symm, h₃₄.symm]),
+      Finset.card_erase_of_mem (by simp [h₁₃.symm, h₂₃.symm]),
+      Finset.card_erase_of_mem (by simp [h₁₂.symm]),
+      Finset.card_erase_of_mem (Finset.mem_univ c₁), Finset.card_univ]
+    omega
+  simp only [Finset.mem_erase, Finset.mem_univ, and_true] at hm
+  obtain ⟨hmc₅, hmc₄, hmc₃, hmc₂, hmc₁⟩ := hm
+  have hm' : m ∉ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component) := by
+    simp [hmc₁, hmc₂, hmc₃, hmc₄, hmc₅]
+  have hxne : x ≠ 0 := by
+    intro heq
+    have hxzero := congrFun heq c₁
+    rw [hx₁] at hxzero
+    norm_num at hxzero
+  have hneg := T.dotProduct_intersection_mulVec_neg
+    (x := x) hxne (hsupp m hm')
+  rw [T.dotProduct_intersection_mulVec_of_support_subset hsupp] at hneg
+  simp only [Finset.sum_insert (by simp [h₁₂, h₁₃, h₁₄, h₁₅] :
+      c₁ ∉ ({c₂, c₃, c₄, c₅} : Finset T.Component)),
+    Finset.sum_insert (by simp [h₂₃, h₂₄, h₂₅] :
+      c₂ ∉ ({c₃, c₄, c₅} : Finset T.Component)),
+    Finset.sum_insert (by simp [h₃₄, h₃₅] : c₃ ∉ ({c₄, c₅} : Finset T.Component)),
+    Finset.sum_pair h₄₅, hx₁, hx₂, hx₃, hx₄, hx₅, T.intersection_comm c₂ c₁,
+    T.intersection_comm c₃ c₁, T.intersection_comm c₄ c₁, T.intersection_comm c₅ c₁,
+    T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₂, T.intersection_comm c₅ c₂,
+    T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
+    h₁, h₂, h₃, h₄, h₅, a₁₂, a₁₃, a₁₄, a₁₅, z₂₃, z₂₄, z₂₅, z₃₄, z₃₅, z₄₅,
+    hw, hw₂, hw₃, hw₄, hw₅, mul_one] at hneg
   linarith
 
 end NumericalType
