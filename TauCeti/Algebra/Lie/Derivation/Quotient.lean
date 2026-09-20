@@ -75,9 +75,9 @@ theorem coe_stableInnerDerivation (z : A) :
     (stableInnerDerivation R I z : derivationLieAlgebra R A) = innerDerivation R z :=
   (rfl)
 
-/-- **The action of a stable derivation on the quotient is a derivation**: the Leibniz rule
-holds on `A ⧸ I` because it holds on representatives. -/
-theorem actionAsEndoMap_mem_derivationLieAlgebra
+/-- The action of a stable derivation on the quotient is a derivation. -/
+-- The Leibniz rule on `A ⧸ I` is checked on representatives.
+private theorem actionAsEndoMap_mem_derivationLieAlgebra
     (D : stableDerivations R (I.restrictScalars R)) :
     (LieSubmodule.Quotient.actionAsEndoMap
         (stableDerivations.lieSubmodule R (I.restrictScalars R)) D : Module.End R (A ⧸ I)) ∈
@@ -93,9 +93,10 @@ theorem actionAsEndoMap_mem_derivationLieAlgebra
   rw [derivationLieAlgebra.leibniz, map_add, map_mul, map_mul]
 
 /-- **Stable derivations descend to the quotient.** The assignment sending a derivation of `A`
-that preserves the two-sided ideal `I` to its induced derivation of `A ⧸ I` is a homomorphism of
-Lie algebras: Mathlib's action of `Der(A, I)` on the quotient of the Lie module `A` by the stable
-Lie submodule `I`, with its codomain cut down to the derivations. -/
+that preserves the two-sided ideal `I` to its induced derivation of `A ⧸ I`, as a homomorphism of
+Lie algebras. -/
+-- Mathlib's action of `Der(A, I)` on the quotient of the Lie module `A` by the stable Lie
+-- submodule `I`, with its codomain cut down to the derivations.
 def derivationQuotientHom :
     stableDerivations R (I.restrictScalars R) →ₗ⁅R⁆ derivationLieAlgebra R (A ⧸ I) :=
   { (LieSubmodule.Quotient.actionAsEndoMap

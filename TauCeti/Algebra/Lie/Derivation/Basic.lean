@@ -168,10 +168,9 @@ section Stabilizer
 variable (R : Type u) {A : Type v} [CommRing R] [NonUnitalNonAssocRing A] [Module R A]
   [SMulCommClass R A A] [IsScalarTower R A A]
 
-/-- The derivations of `A` that preserve the submodule `S`, as a Lie subalgebra of `Der(A)`.
-
-Closure under the Lie bracket follows because the commutator of two endomorphisms preserving a
-submodule again preserves that submodule. -/
+/-- The derivations of `A` that preserve the submodule `S`, as a Lie subalgebra of `Der(A)`. -/
+-- Closure under the Lie bracket holds because the commutator of two endomorphisms preserving a
+-- submodule again preserves that submodule.
 def stableDerivations (S : Submodule R A) : LieSubalgebra R (derivationLieAlgebra R A) where
   carrier := {D | ∀ x ∈ S, (D : Module.End R A) x ∈ S}
   zero_mem' _ _ := S.zero_mem
