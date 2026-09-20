@@ -125,7 +125,7 @@ theorem nonempty_interior_closure_image_of_tendsto_zero [BaireSpace N] {F : Type
   calc ⋃ n, ((u n)⁻¹ : Aˣ) • f '' U
       = f '' ⋃ n, ((u n)⁻¹ : Aˣ) • U := by
         rw [Set.image_iUnion]; exact Set.iUnion_congr fun n ↦ himg _
-    _ = f '' Set.univ := by rw [iUnion_inv_smul_eq_univ_of_tendsto_zero hu hc hU]
+    _ = f '' Set.univ := by rw [iUnion_inv_smul_eq_univ_of_tendsto_zero hu (zero_smul A) hc hU]
     _ = Set.univ := by rw [Set.image_univ, hf.range_eq]
 
 /-- **The Baire step under the class hypothesis.** The same conclusion as
