@@ -13,6 +13,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Degree
 `TauCeti.Polynomial.HasFullSymmetricGaloisGroup f` requires separability and surjectivity of
 the Galois action on the roots in the splitting field. Separability ensures that this is the
 symmetric group on `f.natDegree` points, rather than on a smaller set of distinct roots.
+With `open TauCeti`, the predicate is also available as `f.HasFullSymmetricGaloisGroup`.
 
 The property can be checked in any field where `f` splits, or by checking that the Galois
 group has order `f.natDegree!`. A numbering of the roots gives an explicit group isomorphism
