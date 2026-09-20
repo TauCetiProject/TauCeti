@@ -26,7 +26,7 @@ what turns four such computations into an identity of class functions.
 
 ## Main results
 
-* `TauCeti.ClassFunction.eq_of_forall_gl2NormalForm`: two class functions on `GL₂(F)` agreeing on
+* `TauCeti.ClassFunction.ext_gl2NormalForm`: two class functions on `GL₂(F)` agreeing on
   the four normal forms are equal.
 -/
 
@@ -44,7 +44,7 @@ variable {F : Type*} [Field F] [Finite F] {k : Type*} [Semiring k]
 finite field and `E/F` a supplied degree-`2` extension, which is what makes the elliptic family
 available; the four hypotheses are read at the representatives of
 `TauCeti.exists_isConj_normalForm`. -/
-theorem eq_of_forall_gl2NormalForm (E : Type*) [Field E] [Algebra F E]
+theorem ext_gl2NormalForm (E : Type*) [Field E] [Algebra F E]
     (hE : Module.finrank F E = 2) {f₁ f₂ : ClassFunction k (GL (Fin 2) F)}
     (hscalar : ∀ a : Fˣ, f₁.1 (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       f₂.1 (Matrix.GeneralLinearGroup.scalar (Fin 2) a))

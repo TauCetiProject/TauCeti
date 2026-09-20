@@ -71,6 +71,8 @@ scalars its elements have no eigenvalue in `F`
   `TauCeti.GL2NonSplitTorus.indClassFun_jordanGL` and
   `TauCeti.GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom`: **the four values**, on the central,
   split semisimple, non-semisimple and elliptic normal forms.
+* `TauCeti.GL2NonSplitTorusRep_def` and `TauCeti.GL2EllipticInduction_def`: the defining
+  equations of the two representations.
 * `TauCeti.finrank_GL2EllipticInduction`: the induced representation has dimension `q (q - 1)`.
 * `TauCeti.character_GL2EllipticInduction_scalar`,
   `TauCeti.character_GL2EllipticInduction_diagGL`,
@@ -327,6 +329,13 @@ variable (F : Type*) [Field F] (E : Type*) [Field E] [Algebra F E]
 noncomputable def GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) : FDRep ℂ (GL2NonSplitTorus F E hE) :=
   FDRep.ofLinearCharacter (θ.comp (GL2NonSplitTorus.unitsEquiv hE).symm.toMonoidHom)
 
+/-- The defining equation of the torus line: it is the line of the linear character `θ` read
+through `TauCeti.GL2NonSplitTorus.unitsEquiv`. -/
+theorem GL2NonSplitTorusRep_def (θ : Eˣ →* ℂˣ) :
+    GL2NonSplitTorusRep F E hE θ =
+      FDRep.ofLinearCharacter (θ.comp (GL2NonSplitTorus.unitsEquiv hE).symm.toMonoidHom) :=
+  (rfl)
+
 /-- The torus line is one-dimensional. -/
 @[simp]
 theorem finrank_GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) :
@@ -348,18 +357,18 @@ non-split torus by a character `θ` of `Eˣ`. -/
 noncomputable def GL2EllipticInduction (θ : Eˣ →* ℂˣ) : FDRep ℂ (GL (Fin 2) F) :=
   indFDRep (GL2NonSplitTorusRep F E hE θ)
 
+/-- The defining equation of the elliptic induction: it is induced from the non-split torus by
+the torus line of `θ`. -/
+theorem GL2EllipticInduction_def (θ : Eˣ →* ℂˣ) :
+    GL2EllipticInduction F E hE θ = indFDRep (GL2NonSplitTorusRep F E hE θ) :=
+  (rfl)
+
 /-- The elliptic induction has dimension `q (q - 1)`, the index of the torus. -/
 @[simp]
 theorem finrank_GL2EllipticInduction (θ : Eˣ →* ℂˣ) :
     Module.finrank ℂ (GL2EllipticInduction F E hE θ) = Nat.card F * (Nat.card F - 1) := by
   rw [GL2EllipticInduction, GL2NonSplitTorusRep, finrank_indFDRep_ofLinearCharacter,
     GL2NonSplitTorus.index_eq]
-
-private theorem character_GL2EllipticInduction_eq_indClassFun (θ : Eˣ →* ℂˣ)
-    (g : GL (Fin 2) F) :
-    (GL2EllipticInduction F E hE θ).character g =
-      indClassFun (GL2NonSplitTorus F E hE) (GL2NonSplitTorusRep F E hE θ).character g := by
-  rw [GL2EllipticInduction, ← indClassFun_ofFDRep_character]
 
 /-- **The elliptic induced character at a scalar matrix** is `q (q - 1) θ(a)`: every coset
 contributes the value of `θ` at the unchanged scalar, which comes from `a : Fˣ`. -/
@@ -368,7 +377,7 @@ theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
     (GL2EllipticInduction F E hE θ).character (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
       (Nat.card F : ℂ) * ((Nat.card F : ℂ) - 1) *
         θ (Units.map (algebraMap F E : F →* E) a) := by
-  rw [character_GL2EllipticInduction_eq_indClassFun,
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
     GL2NonSplitTorus.indClassFun_scalar hE _ a, character_GL2NonSplitTorusRep,
     GL2NonSplitTorus.unitsEquiv_symm_scalar, GL2NonSplitTorus.index_eq, nsmul_eq_mul, Nat.cast_mul,
     Nat.cast_sub Nat.card_pos]
@@ -378,14 +387,14 @@ theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
 @[simp]
 theorem character_GL2EllipticInduction_diagGL (θ : Eˣ →* ℂˣ) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
     (GL2EllipticInduction F E hE θ).character (diagGL t) = 0 := by
-  rw [character_GL2EllipticInduction_eq_indClassFun]
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
   exact GL2NonSplitTorus.indClassFun_diagGL hE _ ht
 
 /-- **The elliptic induced character vanishes on the non-semisimple classes.** -/
 @[simp]
 theorem character_GL2EllipticInduction_jordanGL (θ : Eˣ →* ℂˣ) (a : Fˣ) {b : F} (hb : b ≠ 0) :
     (GL2EllipticInduction F E hE θ).character (jordanGL a b) = 0 := by
-  rw [character_GL2EllipticInduction_eq_indClassFun]
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
   exact GL2NonSplitTorus.indClassFun_jordanGL hE _ a hb
 
 /-- **The elliptic induced character at an elliptic element** is `θ(u) + θ(u^q)`: the two
@@ -395,7 +404,7 @@ theorem character_GL2EllipticInduction_gl2NonSplitTorusHom (θ : Eˣ →* ℂˣ)
     (hu : (u : E) ∉ Set.range (algebraMap F E)) :
     (GL2EllipticInduction F E hE θ).character (GL2NonSplitTorusHom F E hE u) =
       (θ u : ℂ) + θ (u ^ Nat.card F) := by
-  rw [character_GL2EllipticInduction_eq_indClassFun,
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
     GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom hE _ hu, character_GL2NonSplitTorusRep,
     character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
 

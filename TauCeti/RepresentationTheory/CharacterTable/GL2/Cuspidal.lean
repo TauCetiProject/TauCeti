@@ -9,7 +9,7 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.EllipticInduction
 -- `TauCeti.GL2ScalarUnipotentInduction` is the minuend of the construction below.
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.ScalarUnipotentInduction
--- `TauCeti.ClassFunction.eq_of_forall_gl2NormalForm` proves the two symmetries below.
+-- `TauCeti.ClassFunction.ext_gl2NormalForm` proves the two symmetries below.
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.ClassFunction
 -- `TauCeti.virtualCharacters` occurs in the statement that the difference is a virtual character.
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
@@ -42,8 +42,8 @@ the cuspidal (discrete series) representation attached to `θ`.  That identifica
 here, and neither the construction of the representation nor the norm computation showing the
 difference to be `±` an irreducible character is carried out: what is established below is that the
 difference is a virtual character (`TauCeti.GL2CuspidalVirtualCharacter_mem_virtualCharacters`)
-with those four values and degree `q - 1`, together with the two symmetries the parametrization
-rests on.
+with those four values and degree `q - 1`, together with the two symmetries the classical
+parametrization rests on.
 
 ## The two symmetries
 
@@ -52,11 +52,13 @@ character was used to build it: the `q - 1` summands of the Gelfand-Graev term a
 are the values of `ψ` on `Fˣ`, and those sum to `-1` whatever nontrivial `ψ` is.  Nor does it
 change when `θ` is replaced by `θ^q`: the `q`-power map fixes `Fˣ`, so the central and Jordan
 values are unchanged, and on the elliptic classes it exchanges the two summands `θ(u)` and
-`θ(u^q)`.  It is this second symmetry that makes the cuspidal series parametrized by the orbits
-`{θ, θ^q}` rather than by the characters themselves.
+`θ(u^q)`.  So the construction is constant on the orbits `{θ, θ^q}` of the `q`-power map.
+Classically it is this constancy that lets the cuspidal series be indexed by those orbits rather
+than by the characters themselves; that distinct orbits give distinct characters, which is the
+other half of such an indexing, is not proved here.
 
 Both are proved by evaluating at the four normal forms, which is enough by
-`TauCeti.ClassFunction.eq_of_forall_gl2NormalForm`.
+`TauCeti.ClassFunction.ext_gl2NormalForm`.
 
 ## Main definitions
 
@@ -211,7 +213,7 @@ to build its Gelfand-Graev term: the four values do not mention `ψ`. -/
 theorem GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one (θ : Eˣ →* ℂˣ) {ψ ψ' : AddChar F ℂ}
     (hψ : ψ ≠ 1) (hψ' : ψ' ≠ 1) :
     GL2CuspidalVirtualCharacter F E hE θ ψ = GL2CuspidalVirtualCharacter F E hE θ ψ' := by
-  refine ClassFunction.eq_of_forall_gl2NormalForm E hE (fun a => ?_) (fun a b hab => ?_)
+  refine ClassFunction.ext_gl2NormalForm E hE (fun a => ?_) (fun a b hab => ?_)
     (fun a => ?_) (fun x hx => ?_)
   · rw [GL2CuspidalVirtualCharacter_apply_scalar, GL2CuspidalVirtualCharacter_apply_scalar]
   · rw [GL2CuspidalVirtualCharacter_apply_diagGL _ _ _ (by simpa using hab),
@@ -223,7 +225,8 @@ theorem GL2CuspidalVirtualCharacter_eq_of_addChar_ne_one (θ : Eˣ →* ℂˣ) {
 
 /-- **The cuspidal virtual character of `θ^q` is that of `θ`**: the `q`-power map fixes `Fˣ`, so
 the central and Jordan values are unchanged, and it is an involution on `Eˣ` exchanging the two
-elliptic summands.  So the cuspidal series is parametrized by the orbits `{θ, θ^q}`. -/
+elliptic summands.  So the construction is constant on the orbits `{θ, θ^q}` of the `q`-power map;
+that distinct orbits give distinct virtual characters is not proved here. -/
 theorem GL2CuspidalVirtualCharacter_comp_powMonoidHom (θ : Eˣ →* ℂˣ) (ψ : AddChar F ℂ) :
     GL2CuspidalVirtualCharacter F E hE (θ.comp (powMonoidHom (Fintype.card F))) ψ =
       GL2CuspidalVirtualCharacter F E hE θ ψ := by
@@ -233,7 +236,7 @@ theorem GL2CuspidalVirtualCharacter_comp_powMonoidHom (θ : Eˣ →* ℂˣ) (ψ 
     MonoidHom.ext fun a => by
       rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.comp_apply, powMonoidHom_apply,
         ← Nat.card_eq_fintype_card, FiniteField.units_map_algebraMap_pow_natCard]
-  refine ClassFunction.eq_of_forall_gl2NormalForm E hE (fun a => ?_) (fun a b hab => ?_)
+  refine ClassFunction.ext_gl2NormalForm E hE (fun a => ?_) (fun a b hab => ?_)
     (fun a => ?_) (fun x hx => ?_)
   · rw [GL2CuspidalVirtualCharacter_apply, GL2CuspidalVirtualCharacter_apply, hcomp,
       character_GL2EllipticInduction_scalar, character_GL2EllipticInduction_scalar,
