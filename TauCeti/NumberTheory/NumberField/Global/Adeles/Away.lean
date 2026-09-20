@@ -80,12 +80,11 @@ theorem toIdealsAway_apply (S : Finset (HeightOneSpectrum (𝓞 K)))
     (toIdealsAway S x : (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
       toFractionalIdeal (x : 𝔸ᶠ[(𝓞 K), K]ˣ) :=
   by
-    -- Unfold the restricted homomorphism to expose its underlying finite idele.
-    change toFractionalIdeal ((adicOrdAway S).subtype x) =
-      toFractionalIdeal (x : 𝔸ᶠ[(𝓞 K), K]ˣ)
+    dsimp [toIdealsAway, MonoidHom.codRestrict, MonoidHom.comp, Subgroup.subtype]
     rfl
 
 /-- The kernel of `toIdealsAway` consists of finite ideles with trivial fractional ideal. -/
+@[simp]
 theorem mem_ker_toIdealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : adicOrdAway S) :
     x ∈ (toIdealsAway S).ker ↔ (x : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈ integralUnits (𝓞 K) K := by
@@ -117,11 +116,10 @@ theorem exists_forall_adicOrd_eq_count_integralIdealsAway
     ∃ x : 𝔸ᶠ[(𝓞 K), K]ˣ,
       ∀ v : HeightOneSpectrum (𝓞 K),
         adicOrd x v = FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
-  obtain ⟨x, hx⟩ := toIdealsAway_surjective S
-    (NumberFieldArithmetic.integralIdealsAwayHom S I)
+  obtain ⟨x, hx⟩ := exists_forall_adicOrd_eq_count
+    (R := 𝓞 K) (K := K) (NumberFieldArithmetic.integralIdealsAwayHom S I)
   refine ⟨x, fun v ↦ ?_⟩
-  rw [← count_coe_toFractionalIdeal (x : 𝔸ᶠ[(𝓞 K), K]ˣ) v,
-    ← toIdealsAway_apply S x, hx]
-  exact congrArg (FractionalIdeal.count K v) (NumberFieldArithmetic.coe_integralIdealsAwayHom S I)
+  exact (hx v).trans (congrArg (FractionalIdeal.count K v)
+    (NumberFieldArithmetic.coe_integralIdealsAwayHom S I))
 
 end TauCeti.GlobalNumberFields
