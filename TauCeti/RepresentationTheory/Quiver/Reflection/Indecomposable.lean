@@ -29,12 +29,12 @@ besides `0` and the identity (`TauCeti.idempotent_eq_zero_or_id_of_indecomposabl
 `π` itself is `0` or the identity. Applied to the projection onto the range of the incoming sum
 along a complement, this says the range is all of `Mᵢ` unless `M` vanishes away from `i`; applied
 to the projection onto a line, it says a representation concentrated at `i` is a line there, hence
-is `Sᵢ`.
+is `Sᵢ`, provided `i` carries no nontrivial closed path.
 
 `TauCeti.vertexEnd` is stated at a vertex, not at a sink: naturality needs only that no path from
 elsewhere into `i` sees `π` before it, that no path from `i` to elsewhere sees `π` after it, and
-that the only closed path at `i` is the trivial one. At a sink the second condition is vacuous,
-and the dual construction at a source, in
+that `π` commutes with the maps of closed paths at `i`. At a sink the second condition is vacuous
+and all closed paths are trivial; the dual construction at a source, in
 `TauCeti.RepresentationTheory.Quiver.Reflection.Source.Indecomposable`, is the same theorem with
 the first condition vacuous instead.
 
@@ -52,7 +52,8 @@ the first condition vacuous instead.
   hypothesis reads "`π` fixes the image of every arrow into `i`".
 * `TauCeti.exists_ne_zero_span_eq_top_of_forall_subsingleton` and
   `TauCeti.nonempty_iso_simpleRep_of_forall_subsingleton`: an indecomposable representation
-  concentrated at one vertex is a line there, hence isomorphic to the vertex simple.
+  concentrated at a vertex with no nontrivial closed path is a line there, hence isomorphic to the
+  vertex simple.
 * `TauCeti.incomingSum_surjective_of_indecomposable`: **the sum of the arrows into a sink is onto
   for every indecomposable representation not isomorphic to the vertex simple there.**
 * `TauCeti.dimVector_reflectRep_of_indecomposable`: consequently the reflection at a sink acts on
@@ -149,15 +150,16 @@ private theorem vertexEndApp_naturality
       π ((M.map p).hom z) = (M.map p).hom z)
     (hout : ∀ (b : Q) (p : Quiver.Path i b), b ≠ i → ∀ y : M.obj i,
       (M.map p).hom (π y) = (M.map p).hom y)
-    (hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
+    (hcomm : ∀ p : Quiver.Path i i,
+      M.map p ≫ ModuleCat.ofHom π = ModuleCat.ofHom π ≫ M.map p)
     {a b : Q} (p : Quiver.Path a b) :
     M.map p ≫ vertexEndApp M π b = vertexEndApp M π a ≫ M.map p := by
   -- each `rcases` below substitutes the distinguished vertex away, so the four squares are read
   -- in the names the substitution leaves behind
   rcases eq_or_ne a i with rfl | ha
   · rcases eq_or_ne b a with rfl | hb
-    · -- a closed path at the distinguished vertex is trivial, and both sides are `π` there
-      rw [hloop p, QuiverRep.map_nil, Category.id_comp, Category.comp_id]
+    · rw [vertexEndApp_self]
+      exact hcomm p
     · rw [vertexEndApp_of_ne hb, vertexEndApp_self, Category.comp_id]
       exact ModuleCat.hom_ext (LinearMap.ext fun y ↦ (hout b p hb y).symm)
   · rw [vertexEndApp_of_ne ha, Category.id_comp]
@@ -168,10 +170,9 @@ private theorem vertexEndApp_naturality
 
 variable (M) in
 /-- **The endomorphism of `M` given by an endomorphism at one vertex.** For a linear endomorphism
-`π` of `Mᵢ` that no path into `i` from elsewhere sees before it (`hin`) and that no path out of `i`
-to elsewhere sees after it (`hout`), at a vertex carrying no closed path but the trivial one
-(`hloop`), this is the endomorphism of `M` acting by `π` at `i` and by the identity at every other
-vertex.
+`π` of `Mᵢ` that no path into `i` from elsewhere sees before it (`hin`), that no path out of `i`
+to elsewhere sees after it (`hout`), and that commutes with every closed-path map at `i` (`hcomm`),
+this is the endomorphism of `M` acting by `π` at `i` and by the identity at every other vertex.
 
 The three hypotheses hold at a sink and, dually, at a source; they are what naturality asks for,
 one case of the square for each of the four positions of `i` relative to the ends of a path. -/
@@ -180,29 +181,31 @@ noncomputable def vertexEnd (π : M.obj i →ₗ[k] M.obj i)
       π ((M.map p).hom z) = (M.map p).hom z)
     (hout : ∀ (b : Q) (p : Quiver.Path i b), b ≠ i → ∀ y : M.obj i,
       (M.map p).hom (π y) = (M.map p).hom y)
-    (hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil) : M ⟶ M where
+    (hcomm : ∀ p : Quiver.Path i i,
+      M.map p ≫ ModuleCat.ofHom π = ModuleCat.ofHom π ≫ M.map p) : M ⟶ M where
   app a := vertexEndApp M π a
-  naturality _ _ p := vertexEndApp_naturality hin hout hloop p
+  naturality _ _ p := vertexEndApp_naturality hin hout hcomm p
 
 variable
   {hin : ∀ (a : Q) (p : Quiver.Path a i), a ≠ i → ∀ z : M.obj a,
     π ((M.map p).hom z) = (M.map p).hom z}
   {hout : ∀ (b : Q) (p : Quiver.Path i b), b ≠ i → ∀ y : M.obj i,
     (M.map p).hom (π y) = (M.map p).hom y}
-  {hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil}
+  {hcomm : ∀ p : Quiver.Path i i,
+    M.map p ≫ ModuleCat.ofHom π = ModuleCat.ofHom π ≫ M.map p}
 
 private theorem vertexEnd_app (a : Q) :
-    (vertexEnd M π hin hout hloop).app a = vertexEndApp M π a := rfl
+    (vertexEnd M π hin hout hcomm).app a = vertexEndApp M π a := rfl
 
 /-- At its vertex, `TauCeti.vertexEnd` acts by the given endomorphism. -/
 @[simp]
-theorem vertexEnd_app_self : (vertexEnd M π hin hout hloop).app i = ModuleCat.ofHom π :=
+theorem vertexEnd_app_self : (vertexEnd M π hin hout hcomm).app i = ModuleCat.ofHom π :=
   (vertexEnd_app i).trans vertexEndApp_self
 
 /-- Away from its vertex, `TauCeti.vertexEnd` acts by the identity. -/
 @[simp]
 theorem vertexEnd_app_of_ne {a : Q} (ha : a ≠ i) :
-    (vertexEnd M π hin hout hloop).app a = 𝟙 (M.obj a) :=
+    (vertexEnd M π hin hout hcomm).app a = 𝟙 (M.obj a) :=
   (vertexEnd_app a).trans (vertexEndApp_of_ne ha)
 
 private theorem vertexEndApp_comp_self (hidem : IsIdempotentElem π) (a : Q) :
@@ -230,14 +233,14 @@ private theorem vertexEndApp_eq_zero (hzero : π = 0)
 
 /-- `TauCeti.vertexEnd` is idempotent as soon as the endomorphism it is built from is. -/
 theorem vertexEnd_comp_self (hidem : IsIdempotentElem π) :
-    vertexEnd M π hin hout hloop ≫ vertexEnd M π hin hout hloop = vertexEnd M π hin hout hloop :=
+    vertexEnd M π hin hout hcomm ≫ vertexEnd M π hin hout hcomm = vertexEnd M π hin hout hcomm :=
   NatTrans.ext (funext fun a ↦ vertexEndApp_comp_self hidem a)
 
 /-- `TauCeti.vertexEnd` is the identity exactly when the endomorphism it is built from is. -/
 @[simp]
-theorem vertexEnd_eq_id_iff : vertexEnd M π hin hout hloop = 𝟙 M ↔ π = LinearMap.id := by
+theorem vertexEnd_eq_id_iff : vertexEnd M π hin hout hcomm = 𝟙 M ↔ π = LinearMap.id := by
   refine ⟨fun h ↦ ?_, fun h ↦ NatTrans.ext (funext fun a ↦ vertexEndApp_eq_id h a)⟩
-  have happ : (vertexEnd M π hin hout hloop).app i = 𝟙 (M.obj i) := by rw [h]; rfl
+  have happ : (vertexEnd M π hin hout hcomm).app i = 𝟙 (M.obj i) := by rw [h]; rfl
   rw [vertexEnd_app_self] at happ
   exact congrArg ModuleCat.Hom.hom happ
 
@@ -246,13 +249,13 @@ representation is concentrated at its vertex: elsewhere it acts by the identity,
 on a vanishing vertex space. -/
 @[simp]
 theorem vertexEnd_eq_zero_iff :
-    vertexEnd M π hin hout hloop = 0 ↔ π = 0 ∧ ∀ a : Q, a ≠ i → Subsingleton (M.obj a) := by
+    vertexEnd M π hin hout hcomm = 0 ↔ π = 0 ∧ ∀ a : Q, a ≠ i → Subsingleton (M.obj a) := by
   refine ⟨fun h ↦ ⟨?_, fun a ha ↦ ?_⟩,
     fun ⟨hzero, hsub⟩ ↦ NatTrans.ext (funext fun a ↦ vertexEndApp_eq_zero hzero hsub a)⟩
-  · have happ : (vertexEnd M π hin hout hloop).app i = 0 := by rw [h]; rfl
+  · have happ : (vertexEnd M π hin hout hcomm).app i = 0 := by rw [h]; rfl
     rw [vertexEnd_app_self] at happ
     exact congrArg ModuleCat.Hom.hom happ
-  · have happ : (vertexEnd M π hin hout hloop).app a = 0 := by rw [h]; rfl
+  · have happ : (vertexEnd M π hin hout hcomm).app a = 0 := by rw [h]; rfl
     rw [vertexEnd_app_of_ne ha] at happ
     exact ModuleCat.subsingleton_of_isZero ((Limits.IsZero.iff_id_eq_zero _).mpr happ)
 
@@ -267,8 +270,8 @@ private theorem isZero_of_forall_subsingleton (hall : ∀ a : Q, Subsingleton (M
   Functor.isZero _ fun a ↦ @ModuleCat.isZero_of_subsingleton k _ (M.obj a) (hall a)
 
 /-- **An idempotent at a vertex of an indecomposable representation is trivial.** Let `M` be an
-indecomposable representation and `i` a vertex carrying no closed path but the trivial one. An
-idempotent endomorphism of `Mᵢ` invisible to the paths through `i`, in the sense of
+indecomposable representation. An idempotent endomorphism of `Mᵢ` invisible to the paths through
+`i`, in the sense of
 `TauCeti.vertexEnd`, is either the identity, or zero — and in the second case `M` vanishes away
 from `i`. -/
 theorem vertexIdempotent_eq_id_or_eq_zero_of_indecomposable
@@ -277,13 +280,14 @@ theorem vertexIdempotent_eq_id_or_eq_zero_of_indecomposable
       π ((M.map p).hom z) = (M.map p).hom z)
     (hout : ∀ (b : Q) (p : Quiver.Path i b), b ≠ i → ∀ y : M.obj i,
       (M.map p).hom (π y) = (M.map p).hom y)
-    (hloop : ∀ p : Quiver.Path i i, p = Quiver.Path.nil)
+    (hcomm : ∀ p : Quiver.Path i i,
+      M.map p ≫ ModuleCat.ofHom π = ModuleCat.ofHom π ≫ M.map p)
     (hidem : IsIdempotentElem π) :
     π = LinearMap.id ∨ π = 0 ∧ ∀ a : Q, a ≠ i → Subsingleton (M.obj a) := by
   rcases idempotent_eq_zero_or_id_of_indecomposable hM
-      (vertexEnd_comp_self (hin := hin) (hout := hout) (hloop := hloop) hidem) with h | h
-  · exact Or.inr ((vertexEnd_eq_zero_iff (hin := hin) (hout := hout) (hloop := hloop)).mp h)
-  · exact Or.inl ((vertexEnd_eq_id_iff (hin := hin) (hout := hout) (hloop := hloop)).mp h)
+      (vertexEnd_comp_self (hin := hin) (hout := hout) (hcomm := hcomm) hidem) with h | h
+  · exact Or.inr ((vertexEnd_eq_zero_iff (hin := hin) (hout := hout) (hcomm := hcomm)).mp h)
+  · exact Or.inl ((vertexEnd_eq_id_iff (hin := hin) (hout := hout) (hcomm := hcomm)).mp h)
 
 /-- **An idempotent at a sink of an indecomposable representation is trivial.** Let `i` be a sink
 of `Q` and `M` an indecomposable representation. An idempotent endomorphism of `Mᵢ` fixing the
@@ -297,7 +301,9 @@ theorem sinkIdempotent_eq_id_or_eq_zero_of_indecomposable (hi : IsSink i)
     π = LinearMap.id ∨ π = 0 ∧ ∀ a : Q, a ≠ i → Subsingleton (M.obj a) :=
   vertexIdempotent_eq_id_or_eq_zero_of_indecomposable hM π
     (fun _ p ha z ↦ map_path_fixed hπ ha p z)
-    (fun _ p hb ↦ absurd (hi.eq_of_path p).symm hb) hi.path_self_eq_nil hidem
+    (fun _ p hb ↦ absurd (hi.eq_of_path p).symm hb)
+    (fun p ↦ by rw [hi.path_self_eq_nil p, QuiverRep.map_nil, Category.id_comp, Category.comp_id])
+    hidem
 
 /-- **An indecomposable representation concentrated at one vertex is a line there**: if `M`
 vanishes away from a vertex `i` carrying no closed path but the trivial one, its vertex space at
@@ -335,7 +341,11 @@ theorem exists_ne_zero_span_eq_top_of_forall_subsingleton
     intro b p hb z
     have : Subsingleton (M.obj b) := h b hb
     exact Subsingleton.elim _ _
-  rcases vertexIdempotent_eq_id_or_eq_zero_of_indecomposable hM _ hin hout hloop hidem with
+  have hcomm : ∀ p : Quiver.Path i i,
+      M.map p ≫ ModuleCat.ofHom ((Submodule.span k {y}).projection U hU) =
+        ModuleCat.ofHom ((Submodule.span k {y}).projection U hU) ≫ M.map p := fun p ↦ by
+    rw [hloop p, QuiverRep.map_nil, Category.id_comp, Category.comp_id]
+  rcases vertexIdempotent_eq_id_or_eq_zero_of_indecomposable hM _ hin hout hcomm hidem with
     hid | ⟨hz, -⟩
   · exact hproj.submodule_eq_top_iff.mpr hid
   · -- the projection onto the line through `y` does not vanish

@@ -106,8 +106,7 @@ theorem outgoingMap_not_injective (M : QuiverRep.{u, v, w, max v w x} k Q) (i : 
     have : ∀ e : Σ b : Q, (i ⟶ b), Subsingleton (M.obj e.1) := fun e ↦ h e.1 e.2
     inferInstance
   intro hinj
-  obtain ⟨y, hy⟩ := exists_ne (0 : M.obj i)
-  exact hy (hinj (Subsingleton.elim _ _))
+  exact not_subsingleton _ hinj.subsingleton
 
 variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 

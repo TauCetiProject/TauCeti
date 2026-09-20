@@ -108,7 +108,9 @@ theorem sourceIdempotent_eq_id_or_eq_zero_of_indecomposable (hi : IsSource i)
     π = LinearMap.id ∨ π = 0 ∧ ∀ a : Q, a ≠ i → Subsingleton (M.obj a) :=
   vertexIdempotent_eq_id_or_eq_zero_of_indecomposable hM π
     (fun _ p ha ↦ absurd (hi.eq_of_path p) ha)
-    (fun _ p hb y ↦ map_path_out_fixed hi hπ p hb y) hi.path_self_eq_nil hidem
+    (fun _ p hb y ↦ map_path_out_fixed hi hπ p hb y)
+    (fun p ↦ by rw [hi.path_self_eq_nil p, QuiverRep.map_nil, Category.id_comp, Category.comp_id])
+    hidem
 
 /-! ### The injectivity of the outgoing map -/
 
