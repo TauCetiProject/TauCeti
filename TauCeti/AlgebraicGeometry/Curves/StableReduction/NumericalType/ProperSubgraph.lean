@@ -1087,6 +1087,7 @@ private theorem chain_six_factors (hcard : 6 < Fintype.card T.Component)
     obtain ⟨hp₂, hq₂⟩ := eq_one_of_mul_eq_one hp₂pos hq₂pos hmids.1
     obtain ⟨hp₃, hq₃⟩ := eq_one_of_mul_eq_one hp₃pos hq₃pos hmids.2.1
     obtain ⟨hp₄, hq₄⟩ := eq_one_of_mul_eq_one hp₄pos hq₄pos hmids.2.2
+    subst p₂; subst q₂; subst p₃; subst q₃; subst p₄; subst q₄
     have factors_of_mul_eq_two {a b : ℤ} (ha : 0 < a) (hb : 0 < b) (hab : a * b = 2) :
         (a = 1 ∧ b = 2) ∨ (a = 2 ∧ b = 1) := by
       have ha_le : a ≤ a * b := le_mul_of_one_le_right ha.le (by omega)
@@ -1094,36 +1095,32 @@ private theorem chain_six_factors (hcard : 6 < Fintype.card T.Component)
       have ha_two : a ≤ 2 := by omega
       have hb_two : b ≤ 2 := by omega
       interval_cases a <;> interval_cases b <;> omega
-    rcases factors_of_mul_eq_two hp₁pos hq₁pos hbad.1 with
-      ⟨hp₁, hq₁⟩ | ⟨hp₁, hq₁⟩ <;>
-      rcases factors_of_mul_eq_two hp₅pos hq₅pos hbad.2 with
-        ⟨hp₅, hq₅⟩ | ⟨hp₅, hq₅⟩
-    all_goals subst_vars
-    all_goals first
-      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
-          hil hjk hjl hkl (y₁ := 1) (y₂ := 2) (y₃ := 2) (y₄ := 2) (y₅ := 2) (y₆ := 2)
-          (by norm_num)
-        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
-        ring_nf at key
-        linarith
-      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
-          hil hjk hjl hkl (y₁ := 1) (y₂ := 2) (y₃ := 2) (y₄ := 2) (y₅ := 2) (y₆ := 1)
-          (by norm_num)
-        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
-        ring_nf at key
-        linarith
-      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
-          hil hjk hjl hkl (y₁ := 1) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (y₆ := 1)
-          (by norm_num)
-        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
-        ring_nf at key
-        linarith
-      | have key := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
-          hil hjk hjl hkl (y₁ := 2) (y₂ := 2) (y₃ := 2) (y₄ := 2) (y₅ := 2) (y₆ := 1)
-          (by norm_num)
-        rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at key
-        ring_nf at key
-        linarith
+    have chain_form_neg (y₁ y₂ y₃ y₄ y₅ y₆ : ℤ)
+        (hy : ¬(y₁ = 0 ∧ y₂ = 0 ∧ y₃ = 0 ∧ y₄ = 0 ∧ y₅ = 0 ∧ y₆ = 0)) :
+        T.intersection g g * y₁ ^ 2 + T.intersection h h * y₂ ^ 2 +
+              T.intersection i i * y₃ ^ 2 + T.intersection j j * y₄ ^ 2 +
+            T.intersection k k * y₅ ^ 2 + T.intersection l l * y₆ ^ 2 +
+          2 * (T.intersection g h * y₁ * y₂ + T.intersection h i * y₂ * y₃ +
+            T.intersection i j * y₃ * y₄ + T.intersection j k * y₄ * y₅ +
+            T.intersection k l * y₅ * y₆) < 0 := by
+      have hneg := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
+        hil hjk hjl hkl hy
+      rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at hneg
+      ring_nf at hneg ⊢
+      exact hneg
+    have hpq₁ := factors_of_mul_eq_two hp₁pos hq₁pos hbad.1
+    have hpq₅ := factors_of_mul_eq_two hp₅pos hq₅pos hbad.2
+    rcases hpq₁ with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rcases hpq₅ with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · -- The orientations `g ⇒ h` and `k ⇒ l` have kernel vector `(1, 2, 2, 2, 2, 2)`.
+        linarith [chain_form_neg 1 2 2 2 2 2 (by norm_num)]
+      · -- The orientations `g ⇒ h` and `l ⇒ k` have kernel vector `(1, 2, 2, 2, 2, 1)`.
+        linarith [chain_form_neg 1 2 2 2 2 1 (by norm_num)]
+    · rcases hpq₅ with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · -- The orientations `h ⇒ g` and `k ⇒ l` have kernel vector `(1, 1, 1, 1, 1, 1)`.
+        linarith [chain_form_neg 1 1 1 1 1 1 (by norm_num)]
+      · -- The orientations `h ⇒ g` and `l ⇒ k` have kernel vector `(2, 2, 2, 2, 2, 1)`.
+        linarith [chain_form_neg 2 2 2 2 2 1 (by norm_num)]
   · rcases hm₁ with h₁ | h₁ | h₁ <;> rcases hm₂ with h₂ | h₂ | h₂ <;> omega
 
 /-- Six components of self-intersection `-2w` forming a chain in a numerical type with more than
