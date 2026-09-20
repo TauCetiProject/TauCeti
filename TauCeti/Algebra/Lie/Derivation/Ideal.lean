@@ -43,9 +43,7 @@ universe u v
 
 variable (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A]
 
-/-- **A derivation preserving two ideals preserves their product.** The Leibniz rule splits the
-derivative of a product of generators into two summands, each with one factor still in its own
-ideal and the other moved by the derivation inside that same ideal. -/
+/-- **A derivation preserving two ideals preserves their product.** -/
 theorem mem_stableDerivations_mul {D : derivationLieAlgebra R A} {I J : Ideal A}
     (hI : D ∈ stableDerivations R (I.restrictScalars R))
     (hJ : D ∈ stableDerivations R (J.restrictScalars R)) :
