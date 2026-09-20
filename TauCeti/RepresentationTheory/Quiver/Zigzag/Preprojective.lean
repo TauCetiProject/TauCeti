@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
 # The signless algebra of a bipartite graph
@@ -52,26 +50,6 @@ namespace DoubledQuiver
 
 variable {V : Type u} {G : SimpleGraph V}
 
-namespace Orientation
-
-/-- The **source--sink orientation** supplied by a two-colouring: an edge is directed toward its
-endpoint of colour `true`. -/
-def sourceSink (C : G.Coloring Bool) : Orientation G where
-  carrier := {d | C d.snd = true}
-  symm_mem_iff_not_mem d := by
-    -- Unfolding membership exposes the two endpoint colours, which `C.valid` says are unequal.
-    change C d.fst = true ↔ C d.snd ≠ true
-    have h := C.valid d.adj
-    cases hi : C d.fst <;> cases hj : C d.snd <;> simp_all
-
-/-- A dart belongs to the source--sink orientation exactly when its target has colour `true`. -/
-@[simp]
-theorem mem_sourceSink_iff (C : G.Coloring Bool) (d : G.Dart) :
-    d ∈ sourceSink C ↔ C d.snd = true :=
-  Iff.rfl
-
-end Orientation
-
 variable (C : G.Coloring Bool)
 
 /-- The colour of a vertex of the oriented quiver, transported from the graph. -/
@@ -93,11 +71,12 @@ theorem sourceSinkColor_ne {i j : OrientedQuiver G (Orientation.sourceSink C)} (
 theorem sourceSinkColor_target_eq_true
     {i j : OrientedQuiver G (Orientation.sourceSink C)} (a : i ⟶ j) :
     sourceSinkColor C j = true := by
-  exact a.2
+  rw [sourceSinkColor]
+  exact (Orientation.mem_sourceSink_iff C _).mp a.2
 
 variable (k : Type w) [CommRing k] [Finite V]
 
-/-- The path-algebra isomorphism which forgets the source--sink orientation of a bipartite graph.
+/-- The path-algebra isomorphism which restores the source--sink orientation of a bipartite graph.
 It sends every doubled arrow to the corresponding positive or negative arrow in the
 symmetrification. -/
 noncomputable def sourceSinkPathAlgebraEquiv :
@@ -138,7 +117,16 @@ theorem sourceSinkPathAlgebraEquiv_symm_apply
           (unsymmetrifyMap_comp_symmetrifyMap G (Orientation.sourceSink C))) x := by
   rw [sourceSinkPathAlgebraEquiv, PathAlgebra.mapAlgEquiv_symm_apply]
 
-/-- Forgetting the source--sink orientation carries each signless graph relator to the signless
+/-- The inverse path-algebra comparison sends a basis path to the path obtained by forgetting the
+chosen orientation of each arrow. -/
+@[simp]
+theorem sourceSinkPathAlgebraEquiv_symm_ofPath
+    (x : Quiver.TotalPath (Symmetrify (OrientedQuiver G (Orientation.sourceSink C)))) :
+    (sourceSinkPathAlgebraEquiv C k).symm (ofPath x) =
+      ofPath ((symmetrifyMap G (Orientation.sourceSink C)).mapTotalPath x) := by
+  rw [sourceSinkPathAlgebraEquiv_symm_apply, PathAlgebra.mapAlgHom_ofPath]
+
+/-- Restoring the source--sink orientation carries each signless graph relator to the signless
 relator at the corresponding vertex of the symmetrified oriented quiver. -/
 @[simp]
 theorem sourceSinkPathAlgebraEquiv_signlessPreprojectiveRelator
@@ -148,7 +136,7 @@ theorem sourceSinkPathAlgebraEquiv_signlessPreprojectiveRelator
         ((unsymmetrifyMap G (Orientation.sourceSink C)).obj i) := by
   rw [sourceSinkPathAlgebraEquiv_apply,
     mapAlgHom_signlessPreprojectiveRelator k _ _
-      ((unsymmetrifyMapIsCovering G (Orientation.sourceSink C)).star_bijective i)]
+      ((unsymmetrifyMap_isCovering G (Orientation.sourceSink C)).star_bijective i)]
 
 /-- The inverse path-algebra comparison also carries signless relators to signless relators. -/
 @[simp]
@@ -159,83 +147,65 @@ theorem sourceSinkPathAlgebraEquiv_symm_signlessPreprojectiveRelator
         ((symmetrifyMap G (Orientation.sourceSink C)).obj i) := by
   rw [sourceSinkPathAlgebraEquiv_symm_apply,
     mapAlgHom_signlessPreprojectiveRelator k _ _
-      ((symmetrifyMapIsCovering G (Orientation.sourceSink C)).star_bijective i)]
+      ((symmetrifyMap_isCovering G (Orientation.sourceSink C)).star_bijective i)]
 
 /-! ### Transporting the signless quotient -/
 
-/-- The forward map between the signless quotients. It is kept private because the algebra
-equivalence below is the canonical public comparison. -/
-private noncomputable def sourceSinkSignlessPreprojectiveHom :
-    signlessPreprojectiveAlgebra k (DoubledQuiver G) →ₐ[k]
-      signlessPreprojectiveAlgebra k
-        (Symmetrify (OrientedQuiver G (Orientation.sourceSink C))) :=
-  signlessPreprojectiveLift
-    ((signlessPreprojectiveMk k _).comp (sourceSinkPathAlgebraEquiv C k).toAlgHom) fun i => by
-      rw [AlgHom.comp_apply]
-      calc
-        signlessPreprojectiveMk k _
-            ((sourceSinkPathAlgebraEquiv C k) (signlessPreprojectiveRelator k i)) =
-          signlessPreprojectiveMk k _
-            (signlessPreprojectiveRelator k
-              ((unsymmetrifyMap G (Orientation.sourceSink C)).obj i)) :=
-          congrArg (signlessPreprojectiveMk k _)
-            (sourceSinkPathAlgebraEquiv_signlessPreprojectiveRelator C k i)
-        _ = 0 := signlessPreprojectiveMk_signlessPreprojectiveRelator k _
+/-- The path-algebra comparison maps the doubled graph's signless ideal onto the signless ideal of
+the symmetrified source--sink orientation. -/
+private theorem sourceSinkSignlessPreprojectiveIdeal_map_eq :
+    (signlessPreprojectiveIdeal k
+        (Symmetrify (OrientedQuiver G (Orientation.sourceSink C)))).asIdeal =
+      (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal.map
+        (sourceSinkPathAlgebraEquiv C k : _ →+* _) := by
+  have hforward : signlessPreprojectiveIdeal k (DoubledQuiver G) ≤
+      (signlessPreprojectiveIdeal k
+        (Symmetrify (OrientedQuiver G (Orientation.sourceSink C)))).comap
+          (sourceSinkPathAlgebraEquiv C k).toRingHom := by
+    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
+    rintro _ ⟨i, rfl⟩
+    apply (TwoSidedIdeal.mem_comap (sourceSinkPathAlgebraEquiv C k).toRingHom).mpr
+    -- Expose the algebra equivalence hidden by the underlying ring-hom coercion.
+    change sourceSinkPathAlgebraEquiv C k (signlessPreprojectiveRelator k i) ∈ _
+    rw [sourceSinkPathAlgebraEquiv_signlessPreprojectiveRelator]
+    exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
+  have hbackward :
+      signlessPreprojectiveIdeal k
+          (Symmetrify (OrientedQuiver G (Orientation.sourceSink C))) ≤
+        (signlessPreprojectiveIdeal k (DoubledQuiver G)).comap
+          (sourceSinkPathAlgebraEquiv C k).symm.toRingHom := by
+    rw [signlessPreprojectiveIdeal_eq_span, TwoSidedIdeal.span_le]
+    rintro _ ⟨i, rfl⟩
+    apply (TwoSidedIdeal.mem_comap
+      (sourceSinkPathAlgebraEquiv C k).symm.toRingHom).mpr
+    -- Expose the algebra equivalence hidden by the underlying ring-hom coercion.
+    change (sourceSinkPathAlgebraEquiv C k).symm (signlessPreprojectiveRelator k i) ∈ _
+    rw [sourceSinkPathAlgebraEquiv_symm_signlessPreprojectiveRelator]
+    exact signlessPreprojectiveRelator_mem_signlessPreprojectiveIdeal k _
+  ext y
+  constructor
+  · intro hy
+    apply (Ideal.mem_map_of_equiv (sourceSinkPathAlgebraEquiv C k) y).mpr
+    exact ⟨(sourceSinkPathAlgebraEquiv C k).symm y,
+      (TwoSidedIdeal.mem_comap
+        (sourceSinkPathAlgebraEquiv C k).symm.toRingHom).mp (hbackward hy),
+      (sourceSinkPathAlgebraEquiv C k).apply_symm_apply y⟩
+  · intro hy
+    obtain ⟨z, hz, rfl⟩ :=
+      (Ideal.mem_map_of_equiv (sourceSinkPathAlgebraEquiv C k) y).mp hy
+    exact (TwoSidedIdeal.mem_comap
+      (sourceSinkPathAlgebraEquiv C k).toRingHom).mp (hforward hz)
 
-/-- The forward quotient map sends a representative to the class of its image under the
-source--sink path-algebra comparison. -/
-private theorem sourceSinkSignlessPreprojectiveHom_signlessPreprojectiveMk
-    (x : pathAlgebra k (DoubledQuiver G)) :
-    sourceSinkSignlessPreprojectiveHom C k (signlessPreprojectiveMk k _ x) =
-      signlessPreprojectiveMk k _ (sourceSinkPathAlgebraEquiv C k x) :=
-  signlessPreprojectiveLift_signlessPreprojectiveMk _ _ x
-
-/-- The inverse map between the signless quotients. -/
-private noncomputable def sourceSinkSignlessPreprojectiveHomInv :
-    signlessPreprojectiveAlgebra k
-        (Symmetrify (OrientedQuiver G (Orientation.sourceSink C))) →ₐ[k]
-      signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
-  signlessPreprojectiveLift
-    ((signlessPreprojectiveMk k _).comp (sourceSinkPathAlgebraEquiv C k).symm.toAlgHom) fun i => by
-      rw [AlgHom.comp_apply]
-      calc
-        signlessPreprojectiveMk k _
-            ((sourceSinkPathAlgebraEquiv C k).symm (signlessPreprojectiveRelator k i)) =
-          signlessPreprojectiveMk k _
-            (signlessPreprojectiveRelator k
-              ((symmetrifyMap G (Orientation.sourceSink C)).obj i)) :=
-          congrArg (signlessPreprojectiveMk k _)
-            (sourceSinkPathAlgebraEquiv_symm_signlessPreprojectiveRelator C k i)
-        _ = 0 := signlessPreprojectiveMk_signlessPreprojectiveRelator k _
-
-/-- The inverse quotient map sends a representative to the class of its image under the inverse
-path-algebra comparison. -/
-private theorem sourceSinkSignlessPreprojectiveHomInv_signlessPreprojectiveMk
-    (x : pathAlgebra k (Symmetrify (OrientedQuiver G (Orientation.sourceSink C)))) :
-    sourceSinkSignlessPreprojectiveHomInv C k (signlessPreprojectiveMk k _ x) =
-      signlessPreprojectiveMk k _ ((sourceSinkPathAlgebraEquiv C k).symm x) :=
-  signlessPreprojectiveLift_signlessPreprojectiveMk _ _ x
-
-/-- Forgetting a source--sink orientation identifies the signless algebra of the doubled graph
+/-- Restoring a source--sink orientation identifies the signless algebra of the doubled graph
 with the signless algebra of the symmetrified oriented quiver. -/
 private noncomputable def sourceSinkSignlessQuotientEquiv :
     signlessPreprojectiveAlgebra k (DoubledQuiver G) ≃ₐ[k]
       signlessPreprojectiveAlgebra k
         (Symmetrify (OrientedQuiver G (Orientation.sourceSink C))) :=
-  AlgEquiv.ofAlgHom (sourceSinkSignlessPreprojectiveHom C k)
-    (sourceSinkSignlessPreprojectiveHomInv C k)
-    (Ideal.Quotient.algHom_ext k (AlgHom.ext fun x => by
-      simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-        ← signlessPreprojectiveMk_apply,
-        sourceSinkSignlessPreprojectiveHom_signlessPreprojectiveMk,
-        sourceSinkSignlessPreprojectiveHomInv_signlessPreprojectiveMk,
-        AlgEquiv.apply_symm_apply, AlgHom.id_apply]))
-    (Ideal.Quotient.algHom_ext k (AlgHom.ext fun x => by
-      simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
-        ← signlessPreprojectiveMk_apply,
-        sourceSinkSignlessPreprojectiveHom_signlessPreprojectiveMk,
-        sourceSinkSignlessPreprojectiveHomInv_signlessPreprojectiveMk,
-        AlgEquiv.symm_apply_apply, AlgHom.id_apply]))
+  Ideal.quotientEquivAlg (signlessPreprojectiveIdeal k (DoubledQuiver G)).asIdeal
+    (signlessPreprojectiveIdeal k
+      (Symmetrify (OrientedQuiver G (Orientation.sourceSink C)))).asIdeal
+    (sourceSinkPathAlgebraEquiv C k) (sourceSinkSignlessPreprojectiveIdeal_map_eq C k)
 
 /-- The signless-quotient comparison is induced by the path-algebra comparison. -/
 @[simp]
@@ -243,8 +213,8 @@ private theorem sourceSinkSignlessQuotientEquiv_signlessPreprojectiveMk
     (x : pathAlgebra k (DoubledQuiver G)) :
     sourceSinkSignlessQuotientEquiv C k (signlessPreprojectiveMk k _ x) =
       signlessPreprojectiveMk k _ (sourceSinkPathAlgebraEquiv C k x) := by
-  rw [sourceSinkSignlessQuotientEquiv, AlgEquiv.ofAlgHom_apply,
-    sourceSinkSignlessPreprojectiveHom_signlessPreprojectiveMk]
+  rw [signlessPreprojectiveMk_apply, signlessPreprojectiveMk_apply,
+    sourceSinkSignlessQuotientEquiv, Ideal.quotientEquivAlg_mk]
 
 /-! ### The preprojective comparison -/
 
@@ -272,6 +242,20 @@ theorem sourceSinkSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk
     symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk_of_forall_head
       k (c := sourceSinkColor C) (fun {_ _} a => sourceSinkColor_ne (G := G) C a)
         (fun {_ _} a => sourceSinkColor_target_eq_true (G := G) C a)]
+
+/-- The inverse bipartite comparison sends a preprojective representative through the inverse
+source--sink path-algebra identification. -/
+@[simp]
+theorem sourceSinkSignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk
+    (x : pathAlgebra k (Symmetrify (OrientedQuiver G (Orientation.sourceSink C)))) :
+    (sourceSinkSignlessPreprojectiveAlgebraEquiv C k).symm
+        (preprojectiveMk k (OrientedQuiver G (Orientation.sourceSink C)) x) =
+      signlessPreprojectiveMk k (DoubledQuiver G)
+        ((sourceSinkPathAlgebraEquiv C k).symm x) := by
+  apply (sourceSinkSignlessPreprojectiveAlgebraEquiv C k).injective
+  rw [AlgEquiv.apply_symm_apply,
+    sourceSinkSignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+    AlgEquiv.apply_symm_apply]
 
 end DoubledQuiver
 

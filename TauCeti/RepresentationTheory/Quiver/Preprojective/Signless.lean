@@ -140,11 +140,8 @@ section RelatorMap
 
 variable (k : Type w) {R : Type u} [CommSemiring k] [Quiver.{v} R] [HasReverse R] [Finite R]
 
-/-- A reversal-preserving quiver covering carries a signless relator to the signless relator at
-the image vertex.
-
-This is not a `simp` lemma: the hypothesis `Function.Bijective (φ.star v)` is not in simp-normal
-form, and simp has no way to discharge it. -/
+/-- A reversal-preserving prefunctor that is bijective on vertices and on the star at `v` carries
+the signless relator at `v` to the signless relator at its image. -/
 theorem mapAlgHom_signlessPreprojectiveRelator {S : Type*} [Quiver S] [HasReverse S] [Finite S]
     (φ : R ⥤q S) [φ.MapReverse] (hφobj : Function.Bijective φ.obj)
     (hφstar : Function.Bijective (φ.star v)) [Fintype (Quiver.Star v)]

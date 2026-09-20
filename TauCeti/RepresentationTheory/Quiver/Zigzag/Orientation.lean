@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 
 /-!
@@ -24,6 +25,8 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.Orientation`: a choice of one dart from each reversed pair.
 * `TauCeti.DoubledQuiver.Orientation.ofLinearOrder`: orient every edge from its smaller endpoint
   to its larger endpoint.
+* `TauCeti.DoubledQuiver.Orientation.sourceSink`: direct every edge toward the `true` endpoint of
+  a two-colouring.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
@@ -101,6 +104,22 @@ target. -/
 @[simp]
 theorem mem_ofLinearOrder_iff [LinearOrder V] (d : G.Dart) :
     d ∈ ofLinearOrder G ↔ d.fst < d.snd :=
+  Iff.rfl
+
+/-- The **source--sink orientation** supplied by a two-colouring: an edge is directed toward its
+endpoint of colour `true`. -/
+def sourceSink {G : SimpleGraph V} (C : G.Coloring Bool) : Orientation G where
+  carrier := {d | C d.snd = true}
+  symm_mem_iff_not_mem d := by
+    -- Unfolding membership exposes the two endpoint colours, which `C.valid` says are unequal.
+    change C d.fst = true ↔ C d.snd ≠ true
+    have h := C.valid d.adj
+    cases hi : C d.fst <;> cases hj : C d.snd <;> simp_all
+
+/-- A dart belongs to the source--sink orientation exactly when its target has colour `true`. -/
+@[simp]
+theorem mem_sourceSink_iff {G : SimpleGraph V} (C : G.Coloring Bool) (d : G.Dart) :
+    d ∈ sourceSink C ↔ C d.snd = true :=
   Iff.rfl
 
 end Orientation
@@ -347,7 +366,7 @@ instance unsymmetrifyMapMapReverse : Prefunctor.MapReverse (unsymmetrifyMap G o)
 /-- The comparison from a doubled graph to a symmetrified orientation is a quiver covering. In
 fact it is an isomorphism of quivers, but the covering interface is the part needed to transport
 sums over the arrows incident to a vertex. -/
-theorem unsymmetrifyMapIsCovering : (unsymmetrifyMap G o).IsCovering := by
+theorem unsymmetrifyMap_isCovering : (unsymmetrifyMap G o).IsCovering := by
   apply Prefunctor.isCovering_of_bijective_star
   intro i
   let φ := unsymmetrifyMap G o
@@ -377,10 +396,10 @@ theorem unsymmetrifyMapIsCovering : (unsymmetrifyMap G o).IsCovering := by
 
 /-- The inverse comparison from a symmetrified orientation to the doubled graph is also a quiver
 covering. -/
-theorem symmetrifyMapIsCovering : (symmetrifyMap G o).IsCovering := by
+theorem symmetrifyMap_isCovering : (symmetrifyMap G o).IsCovering := by
   let φ := unsymmetrifyMap G o
   let ψ := symmetrifyMap G o
-  have hφ : φ.IsCovering := unsymmetrifyMapIsCovering G o
+  have hφ : φ.IsCovering := unsymmetrifyMap_isCovering G o
   have hcomp : (φ ⋙q ψ).IsCovering := by
     rw [unsymmetrifyMap_comp_symmetrifyMap G o]
     exact ⟨fun _ => Function.bijective_id, fun _ => Function.bijective_id⟩
