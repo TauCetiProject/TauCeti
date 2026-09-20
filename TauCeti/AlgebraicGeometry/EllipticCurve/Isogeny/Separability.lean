@@ -151,7 +151,7 @@ theorem isSeparable_functionField (φ : Isogeny W₁ W₂)
     (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     Algebra.IsSeparable W₂.FunctionField W₁.FunctionField :=
-  TauCeti.AlgHom.isSeparable_of_fieldRange φ.fieldPullback h
+  TauCeti.isSeparable_of_fieldRange φ.fieldPullback h
 
 /-- **The degree factors as separable times inseparable.** This is the field-theoretic
 factorisation transported to isogenies; it is what makes "the inseparable part is a Frobenius

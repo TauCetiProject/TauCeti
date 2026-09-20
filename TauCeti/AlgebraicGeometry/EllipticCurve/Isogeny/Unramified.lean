@@ -114,7 +114,6 @@ variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsE
   [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
 
 /-- **The different divisor of a separable isogeny vanishes.** -/
-@[simp]
 theorem different_eq_zero :
     haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
     haveI := φ.finiteDimensional_functionField h
@@ -137,7 +136,6 @@ theorem different_eq_zero :
 include φ h in
 /-- **A separable isogeny is unramified**: every place of `F(W₁)` has ramification index `1` over
 the place of `F(W₂)` below it (Silverman III.4.10(c)). -/
-@[simp]
 theorem ramificationIdx_eq_one (P' : Place F W₁.FunctionField) :
     Place.ramificationIdx W₂.FunctionField P' = 1 := by
   have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
@@ -192,7 +190,6 @@ theorem isSplitCompletely [IsSepClosed F] (P : Place F W₂.FunctionField) :
 /-- **A separable isogeny over a separably closed field of constants has exactly `deg φ`
 places above every place**, the count form of `Isogeny.isSplitCompletely` read against the degree
 of the isogeny rather than against the degree of the field extension. -/
-@[simp]
 theorem ncard_setOf_restrict_eq_degree [IsSepClosed F] (P : Place F W₂.FunctionField) :
     haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
     haveI := φ.finiteDimensional_functionField h
