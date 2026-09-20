@@ -86,7 +86,8 @@ theorem eulerFactor_eq_one_add_tsum {P : HeightOneSpectrum (𝓞 K)}
     D.eulerFactor P s =
       1 + ∑' e : ℕ, idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow (e + 1)) := by
   have h0 : idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow 0) = 1 := by
-    rw [show P.primeIdealPow 0 = 1 from Subtype.ext (by simp), idealTerm_def]
+    have hpow : P.primeIdealPow 0 = 1 := Subtype.ext (by simp)
+    rw [hpow, idealTerm_def]
     simp [D.isMultiplicative.map_one, Ideal.one_eq_top]
   rw [D.eulerFactor_eq_tsum P, hsP.tsum_eq_zero_add, h0]
 
@@ -159,13 +160,7 @@ theorem LSeries_eq_zero_of_eulerFactor_eq_zero
     (hs : Summable (idealTerm K D.toIdealArithmeticFunction s))
     {P : HeightOneSpectrum (𝓞 K)} (hP : D.eulerFactor P s = 0) :
     LSeries (normCoeff K D.toIdealArithmeticFunction) s = 0 := by
-  have hprod := D.hasProd_eulerFactor hs
-  -- `HasProd` is convergence of the net of finite partial products; unfolding it is the only way
-  -- to reach that net, as Mathlib exposes no lemma naming the limit for the unconditional filter.
-  rw [HasProd, SummationFilter.unconditional_filter] at hprod
-  refine tendsto_nhds_unique hprod (Filter.Tendsto.congr' ?_ tendsto_const_nhds)
-  filter_upwards [Filter.eventually_ge_atTop ({P} : Finset (HeightOneSpectrum (𝓞 K)))] with t ht
-  exact (Finset.prod_eq_zero (Finset.singleton_subset_iff.mp ht) hP).symm
+  exact (D.hasProd_eulerFactor hs).unique (hasProd_zero_of_exists_eq_zero ⟨P, hP⟩)
 
 /-- **The Euler product of nonvanishing local factors does not vanish.**  Absolute convergence
 makes the local factors `1` up to a summable error, and such a product vanishes only if one of its
@@ -199,7 +194,7 @@ hypothesis is needed: `Complex.log 0 = 0`, and the finitely many vanishing facto
 theorem summable_log_eulerFactor (hs : Summable (idealTerm K D.toIdealArithmeticFunction s)) :
     Summable fun P : HeightOneSpectrum (𝓞 K) ↦ log (D.eulerFactor P s) :=
   (D.summable_eulerFactor_sub_one hs).neg.clog_one_sub.congr fun P ↦ by
-    rw [show (1 : ℂ) - -(D.eulerFactor P s - 1) = D.eulerFactor P s by ring]
+    (congr 1; ring)
 
 /-- **The Euler product in exponential form.**  Where the ideal-indexed Dirichlet series converges
 absolutely and no local Euler factor vanishes, the `L`-series of the norm coefficients is the
@@ -212,9 +207,8 @@ theorem exp_tsum_log_eulerFactor_eq_LSeries
     (hP : ∀ P : HeightOneSpectrum (𝓞 K), D.eulerFactor P s ≠ 0) :
     exp (∑' P : HeightOneSpectrum (𝓞 K), log (D.eulerFactor P s)) =
       LSeries (normCoeff K D.toIdealArithmeticFunction) s := by
-  have H := (D.summable_log_eulerFactor hs).hasSum.cexp.tprod_eq
-  simp only [Function.comp_apply, exp_log (hP _)] at H
-  exact H.symm.trans (D.tprod_eulerFactor hs)
+  rw [← D.tprod_eulerFactor hs]
+  exact Complex.cexp_tsum_eq_tprod hP (D.summable_log_eulerFactor hs)
 
 end Pointwise
 
