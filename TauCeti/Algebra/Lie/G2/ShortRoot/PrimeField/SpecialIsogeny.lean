@@ -5,21 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Endomorphism
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Generated.Preserves
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.MultiplicativeMatrix
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Endomorphism
-public import TauCeti.Algebra.CharP.Frobenius.Bialgebra
-public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Generators
-public import TauCeti.Algebra.Lie.G2.ShortRoot.IsogenyMultiplicative
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Frobenius
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PreservesTensors
 
 /-!
 # The special isogeny of the short-root type-G2 carrier
 
 The matrix `Matrix.g2SpecialIsogeny` of signed two-by-two minors is multiplicative on matrices
-preserving the type-`G₂` cross product and its invariant dual form.  The generators of the
-short-root carrier over `𝔽₃` preserve both tensors, so the formula determines an endomorphism of
+preserving the type-`G₂` cross product and its invariant dual form.  The universal point of the
+short-root carrier over `𝔽₃` preserves both tensors, so the formula determines an endomorphism of
 the carrier.  Its action exchanges the two numbered simple roots, cubes the parameter at the
 short root, and sends a torus point `(s₀, s₁)` to `(s₁, s₀³)`.
 
@@ -78,274 +71,6 @@ attribute [local instance high] Algebra.toModule
 universe v w
 
 variable {A : Type v} [CommRing A] [Algebra (ZMod 3) A]
-
-private noncomputable def crossOperatorPrime : Fin 7 → Matrix (Fin 7) (Fin 7) (ZMod 3) :=
-  fun a => (crossOperator a).map (Int.cast : ℤ → ZMod 3)
-
-private noncomputable def invariantDualFormPrime : Matrix (Fin 7) (Fin 7) (ZMod 3) :=
-  invariantDualForm.map (Int.cast : ℤ → ZMod 3)
-
-private theorem map_algebraMap_crossOperatorPrime (a : Fin 7) :
-    (crossOperatorPrime a).map (algebraMap (ZMod 3) A) =
-      (crossOperator a).map (Int.cast : ℤ → A) := by
-  rw [crossOperatorPrime, Matrix.map_map]
-  exact congrArg _ (funext fun z => map_intCast (algebraMap (ZMod 3) A) z)
-
-private theorem map_algebraMap_invariantDualFormPrime :
-    invariantDualFormPrime.map (algebraMap (ZMod 3) A) =
-      invariantDualForm.map (Int.cast : ℤ → A) := by
-  rw [invariantDualFormPrime, Matrix.map_map]
-  exact congrArg _ (funext fun z => map_intCast (algebraMap (ZMod 3) A) z)
-
-private theorem preserves_crossOperatorPrime_iff (g : Matrix (Fin 7) (Fin 7) A) :
-    ConstantMultiplication.Preserves (ZMod 3) 7 crossOperatorPrime g ↔ PreservesG2Cross g := by
-  constructor
-  · intro h
-    rw [ConstantMultiplication.preserves_def] at h
-    rw [preservesG2Cross_def]
-    intro k
-    simpa only [ConstantMultiplication.imageStructureMatrix_def,
-      map_algebraMap_crossOperatorPrime] using h k
-  · intro h
-    rw [preservesG2Cross_def] at h
-    rw [ConstantMultiplication.preserves_def]
-    intro k
-    simpa only [ConstantMultiplication.imageStructureMatrix_def,
-      map_algebraMap_crossOperatorPrime] using h k
-
-private theorem exists_map_genericMatrix_generator_inl (k : Fin 2 ⊕ Fin 2) :
-    ∃ u : Multiplicative (AdditiveGroup.coordinateHopfAlgebra (ZMod 3)),
-      (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map
-          (generator (.inl k)).hom.toAlgHom =
-        ((rootSubgroupPoints k
-          (AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) u :
-          _root_.Matrix.GeneralLinearGroup (Fin 7)
-            (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) :
-          Matrix (Fin 7) (Fin 7) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) := by
-  set B : CommAlgCat (ZMod 3) :=
-    CommAlgCat.of (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) with hB
-  set q : HopfAlgebra.points (R := ZMod 3)
-      (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) B :=
-    toConv (AlgHom.id (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) with hq
-  have hid : (CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app B q =
-      toConv (generator (.inl k)).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, hq, WithConv.ofConv_toConv, AlgHom.id_comp]
-  refine ⟨AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q, ?_⟩
-  rw [coe_rootSubgroupPoints_gaPointsMulEquiv, hid,
-    TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
-    TauCeti.GeneralLinear.pointsMulEquiv_apply]
-
-private theorem exists_map_genericMatrix_generator_inr :
-    ∃ s : Fin 2 → ((DiagonalizableGroup.coordinateRing (ZMod 3)
-      (SplitTorus.characterGroup (Fin 2))).obj)ˣ,
-      (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map
-          (generator (.inr ())).hom.toAlgHom =
-        ((weightTorusPoints
-          ((DiagonalizableGroup.coordinateRing (ZMod 3)
-            (SplitTorus.characterGroup (Fin 2))).obj) s :
-          _root_.Matrix.GeneralLinearGroup (Fin 7)
-            ((DiagonalizableGroup.coordinateRing (ZMod 3)
-              (SplitTorus.characterGroup (Fin 2))).obj)) :
-          Matrix (Fin 7) (Fin 7) ((DiagonalizableGroup.coordinateRing (ZMod 3)
-            (SplitTorus.characterGroup (Fin 2))).obj)) := by
-  set B : CommAlgCat (ZMod 3) :=
-    CommAlgCat.of (ZMod 3) ((DiagonalizableGroup.coordinateRing (ZMod 3)
-      (SplitTorus.characterGroup (Fin 2))).obj) with hB
-  set q : HopfAlgebra.points (R := ZMod 3)
-      (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
-        (SplitTorus.characterGroup (Fin 2))).obj) B :=
-    toConv (AlgHom.id (ZMod 3) ((DiagonalizableGroup.coordinateRing (ZMod 3)
-      (SplitTorus.characterGroup (Fin 2))).obj)) with hq
-  have hid : (CommHopfAlgCat.mapPointsFunctor (generator (.inr ()))).app B q =
-      toConv (generator (.inr ())).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, hq, WithConv.ofConv_toConv, AlgHom.id_comp]
-  refine ⟨SplitTorus.pointsMulEquiv q, ?_⟩
-  rw [coe_weightTorusPoints_pointsMulEquiv, hid,
-    TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
-    TauCeti.GeneralLinear.pointsMulEquiv_apply]
-
-private theorem coe_rootSubgroupPoints_inl_zero_formula (t : A) :
-    ((rootSubgroupPoints (.inl 0) A (Multiplicative.ofAdd t) :
-        _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      1 + t • (raisingMatrix 0).map (Int.cast : ℤ → A) + t ^ 2 • Matrix.single 2 4 1 := by
-  rw [coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints_inl_zero]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [raisingMatrix, Matrix.single, mul_comm]
-
-private theorem coe_rootSubgroupPoints_inl_one_formula (t : A) :
-    ((rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd t) :
-        _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      1 + t • (raisingMatrix 1).map (Int.cast : ℤ → A) := by
-  rw [coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints_inl_one]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [raisingMatrix]
-
-private theorem coe_rootSubgroupPoints_inr_zero_formula (t : A) :
-    ((rootSubgroupPoints (.inr 0) A (Multiplicative.ofAdd t) :
-        _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      1 + t • (loweringMatrix 0).map (Int.cast : ℤ → A) + t ^ 2 • Matrix.single 4 2 1 := by
-  rw [coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints_inr_zero]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [loweringMatrix, Matrix.single, mul_comm]
-
-private theorem coe_rootSubgroupPoints_inr_one_formula (t : A) :
-    ((rootSubgroupPoints (.inr 1) A (Multiplicative.ofAdd t) :
-        _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
-      1 + t • (loweringMatrix 1).map (Int.cast : ℤ → A) := by
-  rw [coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints_inr_one]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [loweringMatrix]
-
-private theorem preservesG2Cross_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (t : A) :
-    PreservesG2Cross
-      (((rootSubgroupPoints k A (Multiplicative.ofAdd t) :
-        _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A)) := by
-  rcases k with i | i
-  · fin_cases i
-    · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inl_zero_formula]
-      exact
-        preservesG2Cross_one_add_smul_raisingMatrix_zero_add_sq_smul_single t
-    · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inl_one_formula]
-      exact preservesG2Cross_one_add_smul_raisingMatrix_one t
-  · fin_cases i
-    · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inr_zero_formula]
-      exact
-        preservesG2Cross_one_add_smul_loweringMatrix_zero_add_sq_smul_single t
-    · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inr_one_formula]
-      exact preservesG2Cross_one_add_smul_loweringMatrix_one t
-
-private theorem preservesDualForm_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (t : A) :
-    let g := ((rootSubgroupPoints k A (Multiplicative.ofAdd t) :
-      _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A)
-    g * invariantDualForm.map (Int.cast : ℤ → A) * gᵀ =
-      invariantDualForm.map (Int.cast : ℤ → A) := by
-  rcases k with i | i
-  · fin_cases i
-    · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inl_zero_formula]
-      exact
-        one_add_smul_raisingMatrix_zero_add_sq_smul_single_mul_invariantDualForm_mul_transpose t
-    · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inl_one_formula]
-      exact one_add_smul_raisingMatrix_one_mul_invariantDualForm_mul_transpose t
-  · fin_cases i
-    · simp only [Fin.isValue, Fin.zero_eta]
-      rw [coe_rootSubgroupPoints_inr_zero_formula]
-      exact
-        one_add_smul_loweringMatrix_zero_add_sq_smul_single_mul_invariantDualForm_mul_transpose t
-    · simp only [Fin.isValue, Fin.mk_one]
-      rw [coe_rootSubgroupPoints_inr_one_formula]
-      exact one_add_smul_loweringMatrix_one_mul_invariantDualForm_mul_transpose t
-
-/-- Every point of the short-root type-`G₂` carrier preserves the invariant cross product. -/
-theorem preservesG2Cross_of_mem_points {g : _root_.Matrix.GeneralLinearGroup (Fin 7) A}
-    (hg : g ∈ points A) :
-    PreservesG2Cross ((g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) :
-      Matrix (Fin 7) (Fin 7) A) := by
-  rw [← preserves_crossOperatorPrime_iff]
-  refine TauCeti.GeneralLinear.preserves_of_mem_generatedPointsSubgroup 7 generator
-    crossOperatorPrime (fun j => ?_) A (points_def A ▸ hg)
-  rcases j with k | ⟨⟩
-  · obtain ⟨u, hu⟩ := exists_map_genericMatrix_generator_inl k
-    obtain ⟨t, rfl⟩ : ∃ t, Multiplicative.ofAdd t = u := ⟨Multiplicative.toAdd u, rfl⟩
-    rw [hu, preserves_crossOperatorPrime_iff]
-    exact preservesG2Cross_rootSubgroupPoints k t
-  · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
-    rw [hs, preserves_crossOperatorPrime_iff,
-      coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal]
-    exact preservesG2Cross_diagonal_torusCharacter s
-
-/-- Every point of the short-root type-`G₂` carrier fixes the invariant dual form by
-congruence. -/
-theorem preservesDualForm_of_mem_points {g : _root_.Matrix.GeneralLinearGroup (Fin 7) A}
-    (hg : g ∈ points A) :
-    ((g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) *
-        invariantDualForm.map (Int.cast : ℤ → A) *
-        ((g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A)ᵀ =
-      invariantDualForm.map (Int.cast : ℤ → A) := by
-  have key := TauCeti.GeneralLinear.mul_mul_transpose_of_mem_generatedPointsSubgroup 7 generator
-    invariantDualFormPrime (fun j => ?_) A (points_def A ▸ hg)
-  · rwa [map_algebraMap_invariantDualFormPrime] at key
-  · rcases j with k | ⟨⟩
-    · obtain ⟨u, hu⟩ := exists_map_genericMatrix_generator_inl k
-      obtain ⟨t, rfl⟩ : ∃ t, Multiplicative.ofAdd t = u := ⟨Multiplicative.toAdd u, rfl⟩
-      rw [hu, map_algebraMap_invariantDualFormPrime]
-      exact preservesDualForm_rootSubgroupPoints k t
-    · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
-      rw [hs, map_algebraMap_invariantDualFormPrime,
-        coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal]
-      exact diagonal_torusCharacter_mul_invariantDualForm_mul_transpose s
-
-private theorem preservesG2Cross_map {S T : Type*} [CommRing S] [CommRing T]
-    [Algebra (ZMod 3) S] [Algebra (ZMod 3) T] (f : S →ₐ[ZMod 3] T)
-    {M : Matrix (Fin 7) (Fin 7) S} (h : PreservesG2Cross M) :
-    PreservesG2Cross (M.map f) := by
-  rw [← preserves_crossOperatorPrime_iff] at h ⊢
-  exact ConstantMultiplication.Preserves.map (ZMod 3) 7 crossOperatorPrime h f
-
-private theorem preservesDualForm_map {S T : Type*} [CommRing S] [CommRing T]
-    [Algebra (ZMod 3) S] [Algebra (ZMod 3) T] (f : S →ₐ[ZMod 3] T)
-    {M : Matrix (Fin 7) (Fin 7) S}
-    (h : M * invariantDualForm.map (Int.cast : ℤ → S) * Mᵀ =
-      invariantDualForm.map (Int.cast : ℤ → S)) :
-    M.map f * invariantDualForm.map (Int.cast : ℤ → T) * (M.map f)ᵀ =
-      invariantDualForm.map (Int.cast : ℤ → T) := by
-  have hform : (invariantDualForm.map (Int.cast : ℤ → S)).map (f : S → T) =
-      invariantDualForm.map (Int.cast : ℤ → T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun z => map_intCast f z)
-  have himg := congrArg (fun N : Matrix (Fin 7) (Fin 7) S => N.map (f : S →+* T)) h
-  simp only [Matrix.map_mul, Matrix.transpose_map, AlgHom.coe_toRingHom] at himg
-  rwa [hform] at himg
-
-/-- The coordinate Hopf algebra of the short-root type-`G₂` carrier over `𝔽₃`. -/
-noncomputable abbrev carrierAlgebra : CommHopfAlgCat (ZMod 3) :=
-  CommHopfAlgCat.quotient (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-    (CommHopfAlgCat.commonKernelHopfIdeal generator)
-
-private noncomputable abbrev carrierQuotient :
-    TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7 ⟶ carrierAlgebra :=
-  CommHopfAlgCat.mkQuotient (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-    (CommHopfAlgCat.commonKernelHopfIdeal generator)
-
-private noncomputable def carrierGenericMatrix : Matrix (Fin 7) (Fin 7) carrierAlgebra :=
-  (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map carrierQuotient.hom.toAlgHom
-
-private theorem coe_universalPoint :
-    ((TauCeti.GeneralLinear.pointToGeneralLinear 7 (toConv carrierQuotient.hom.toAlgHom) :
-        _root_.Matrix.GeneralLinearGroup (Fin 7) carrierAlgebra) :
-      Matrix (Fin 7) (Fin 7) carrierAlgebra) = carrierGenericMatrix := by
-  rw [carrierGenericMatrix,
-    TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
-
-private theorem universalPoint_mem_points :
-    TauCeti.GeneralLinear.pointToGeneralLinear 7 (toConv carrierQuotient.hom.toAlgHom) ∈
-      points carrierAlgebra := by
-  rw [points_eq_hopfIdealPointsSubgroup,
-    TauCeti.GeneralLinear.pointToGeneralLinear_mem_hopfIdealPointsSubgroup_iff_toIdeal_le_ker]
-  -- `carrierQuotient` is an abbreviation for this quotient map; exposing that stable
-  -- presentation lets the quotient-kernel theorem apply without unfolding unrelated coercions.
-  simpa only [definingIdeal_def] using
-    (show (CommHopfAlgCat.commonKernelHopfIdeal generator).toIdeal ≤
-      RingHom.ker carrierQuotient.hom.toAlgHom.toRingHom by
-      rw [show carrierQuotient = CommHopfAlgCat.mkQuotient
-        (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
-        (CommHopfAlgCat.commonKernelHopfIdeal generator) from rfl,
-        CommHopfAlgCat.mkQuotient_ker])
-
-private theorem preservesG2Cross_carrierGenericMatrix : PreservesG2Cross carrierGenericMatrix := by
-  rw [← coe_universalPoint]
-  exact preservesG2Cross_of_mem_points universalPoint_mem_points
-
-private theorem preservesDualForm_carrierGenericMatrix :
-    carrierGenericMatrix * invariantDualForm.map (Int.cast : ℤ → carrierAlgebra) *
-        carrierGenericMatrixᵀ = invariantDualForm.map (Int.cast : ℤ → carrierAlgebra) := by
-  rw [← coe_universalPoint]
-  exact preservesDualForm_of_mem_points universalPoint_mem_points
 
 private theorem comul_g2SpecialIsogeny_carrierGenericMatrix :
     (g2SpecialIsogeny carrierGenericMatrix).map
@@ -1105,12 +830,12 @@ theorem schemePointsMulEquiv_comp_rootSubgroup_comp_specialIsogenyHom
     (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
       (AdditiveGroup.groupScheme (ZMod 3)).X) :
     schemePointsMulEquiv B
-        ((p ≫ (rootSubgroup k).hom.hom) ≫ specialIsogenyHom.hom.hom) =
+        (p ≫ (rootSubgroup k).hom.hom ≫ specialIsogenyHom.hom.hom) =
       rootSubgroupPoints (specialIsogenyRootIndex k) B
         (Multiplicative.ofAdd
           (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv B p) ^
             specialIsogenyExponent k)) := by
-  rw [schemePointsMulEquiv_comp_specialIsogenyHom,
+  rw [← Category.assoc, schemePointsMulEquiv_comp_specialIsogenyHom,
     schemePointsMulEquiv_comp_rootSubgroup]
   obtain ⟨t, ht⟩ : ∃ t : B, Multiplicative.ofAdd t =
       AdditiveGroup.schemePointsMulEquiv B p :=
@@ -1126,9 +851,9 @@ theorem schemePointsMulEquiv_comp_weightTorus_comp_specialIsogenyHom
     (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
       (SplitTorus.groupScheme (ZMod 3) (Fin 2)).X) :
     schemePointsMulEquiv B
-        ((p ≫ weightTorus.hom.hom) ≫ specialIsogenyHom.hom.hom) =
+        (p ≫ weightTorus.hom.hom ≫ specialIsogenyHom.hom.hom) =
       weightTorusPoints B (specialIsogenyTorusMap (SplitTorus.schemePointsMulEquiv p)) := by
-  rw [schemePointsMulEquiv_comp_specialIsogenyHom,
+  rw [← Category.assoc, schemePointsMulEquiv_comp_specialIsogenyHom,
     schemePointsMulEquiv_comp_weightTorus, specialIsogeny_weightTorusPoints]
 
 /-- On scheme-valued points, composing a numbered root subgroup with carrier Frobenius cubes its
@@ -1138,11 +863,11 @@ theorem schemePointsMulEquiv_comp_rootSubgroup_comp_frobeniusHom
     (k : Fin 2 ⊕ Fin 2) (B : Type) [CommRing B] [Algebra (ZMod 3) B]
     (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
       (AdditiveGroup.groupScheme (ZMod 3)).X) :
-    schemePointsMulEquiv B ((p ≫ (rootSubgroup k).hom.hom) ≫ frobeniusHom.hom.hom) =
+    schemePointsMulEquiv B (p ≫ (rootSubgroup k).hom.hom ≫ frobeniusHom.hom.hom) =
       rootSubgroupPoints k B
         (Multiplicative.ofAdd
           (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv B p) ^ 3)) := by
-  rw [schemePointsMulEquiv_comp_frobeniusHom,
+  rw [← Category.assoc, schemePointsMulEquiv_comp_frobeniusHom,
     schemePointsMulEquiv_comp_rootSubgroup, frobenius_rootSubgroupPoints]
   norm_num
 
@@ -1153,9 +878,9 @@ theorem schemePointsMulEquiv_comp_weightTorus_comp_frobeniusHom
     (B : Type) [CommRing B] [Algebra (ZMod 3) B]
     (p : (Spec (CommRingCat.of B)).asOver (Spec (CommRingCat.of (ZMod 3))) ⟶
       (SplitTorus.groupScheme (ZMod 3) (Fin 2)).X) :
-    schemePointsMulEquiv B ((p ≫ weightTorus.hom.hom) ≫ frobeniusHom.hom.hom) =
+    schemePointsMulEquiv B (p ≫ weightTorus.hom.hom ≫ frobeniusHom.hom.hom) =
       weightTorusPoints B (SplitTorus.schemePointsMulEquiv p ^ 3) := by
-  rw [schemePointsMulEquiv_comp_frobeniusHom,
+  rw [← Category.assoc, schemePointsMulEquiv_comp_frobeniusHom,
     schemePointsMulEquiv_comp_weightTorus, frobenius_weightTorusPoints]
   norm_num
 
