@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import TauCeti.Algebra.Lie.OfAssociative
 import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
@@ -46,69 +47,56 @@ private local instance moduleMulOpposite : Module Rᵐᵒᵖ L :=
 
 private local instance isCentralScalar : IsCentralScalar R L := ⟨fun _ _ ↦ rfl⟩
 
-private def abelianSquareZeroOperatorLinearMap : L →ₗ[R] Module.End R (R × L) :=
-  (Algebra.lmul R (TrivSqZeroExt R L)).toLinearMap.comp (TrivSqZeroExt.inrHom R L)
-
-private def abelianSquareZeroOperator (x : L) : Module.End R (R × L) :=
-  abelianSquareZeroOperatorLinearMap R L x
+private def abelianSquareZeroLieHom [IsLieAbelian L] :
+    LieHom R L (TrivSqZeroExt R L) :=
+  { TrivSqZeroExt.inrHom R L with
+    map_lie' := by
+      intro x y
+      simp [trivial_lie_zero, LieRing.of_associative_ring_bracket] }
 
 @[simp]
-private theorem abelianSquareZeroOperator_apply (x : L) (z : R × L) :
-    abelianSquareZeroOperator R L x z = (0, z.1 • x) := by
-  -- `TrivSqZeroExt R L` is defined as `R × L`, but Mathlib provides no named equivalence
-  -- exposing that implementation. These transports connect its multiplication to the public
-  -- product carrier; the coordinate goals then use only the documented multiplication formula.
-  change @Mul.mul (TrivSqZeroExt R L) _ (TrivSqZeroExt.inr x) z = _
+private theorem abelianSquareZeroLieHom_apply [IsLieAbelian L] (x : L) :
+    abelianSquareZeroLieHom R L x = TrivSqZeroExt.inr x :=
+  (rfl)
+
+private theorem abelianSquareZeroLeftRegular_apply_apply [IsLieAbelian L] (x : L)
+    (z : TrivSqZeroExt R L) :
+    LieHom.leftRegularRep (abelianSquareZeroLieHom R L) x z = (0, z.1 • x) := by
+  rw [LieHom.leftRegularRep_apply, abelianSquareZeroLieHom_apply]
   ext
   · change 0 * z.1 = 0
     simp
   · change (0 : R) • z.2 + (MulOpposite.op z.1) • x = z.1 • x
     simp
 
-@[simp]
-private theorem abelianSquareZeroOperator_zero : abelianSquareZeroOperator R L 0 = 0 := by
-  simp [abelianSquareZeroOperator]
-
-@[simp]
-private theorem abelianSquareZeroOperatorLinearMap_apply (x : L) :
-    abelianSquareZeroOperatorLinearMap R L x = abelianSquareZeroOperator R L x :=
-  (rfl)
-
-private theorem abelianSquareZeroOperator_mul_eq_zero (x y : L) :
-    abelianSquareZeroOperator R L x * abelianSquareZeroOperator R L y = 0 := by
+private theorem abelianSquareZeroLeftRegular_mul_eq_zero [IsLieAbelian L] (x y : L) :
+    LieHom.leftRegularRep (abelianSquareZeroLieHom R L) x *
+      LieHom.leftRegularRep (abelianSquareZeroLieHom R L) y = 0 := by
   apply LinearMap.ext
   intro z
-  rw [Module.End.mul_apply, abelianSquareZeroOperator_apply,
-    abelianSquareZeroOperator_apply]
-  simp
+  rw [Module.End.mul_apply, LieHom.leftRegularRep_apply, LieHom.leftRegularRep_apply,
+    abelianSquareZeroLieHom_apply, abelianSquareZeroLieHom_apply, ← mul_assoc,
+    TrivSqZeroExt.inr_mul_inr, zero_mul]
+  rfl
 
 /-- The canonical representation of an abelian Lie algebra by square-zero operators on `R × L`.
 The first coordinate records the scalar that the acting element transfers to the second
 coordinate. -/
 def abelianSquareZeroRepresentation [IsLieAbelian L] :
     L →ₗ⁅R⁆ Module.End R (R × L) :=
-  { abelianSquareZeroOperatorLinearMap R L with
-    map_lie' := by
-      intro x y
-      simp [trivial_lie_zero, LieRing.of_associative_ring_bracket,
-        abelianSquareZeroOperator_mul_eq_zero] }
-
-private theorem abelianSquareZeroRepresentation_apply [IsLieAbelian L] (x : L) :
-    abelianSquareZeroRepresentation R L x = abelianSquareZeroOperator R L x :=
-  (rfl)
+  LieHom.leftRegularRep (abelianSquareZeroLieHom R L)
 
 /-- The canonical representation acts by the square-zero operator construction. -/
 @[simp, grind =]
 theorem abelianSquareZeroRepresentation_apply_apply [IsLieAbelian L] (x : L) (z : R × L) :
     abelianSquareZeroRepresentation R L x z = (0, z.1 • x) := by
-  rw [abelianSquareZeroRepresentation_apply, abelianSquareZeroOperator_apply]
+  exact abelianSquareZeroLeftRegular_apply_apply R L x z
 
 /-- Any two operators in the canonical abelian representation have zero product. -/
 @[simp]
 theorem abelianSquareZeroRepresentation_mul_eq_zero [IsLieAbelian L] (x y : L) :
     abelianSquareZeroRepresentation R L x * abelianSquareZeroRepresentation R L y = 0 := by
-  rw [abelianSquareZeroRepresentation_apply, abelianSquareZeroRepresentation_apply]
-  exact abelianSquareZeroOperator_mul_eq_zero R L x y
+  exact abelianSquareZeroLeftRegular_mul_eq_zero R L x y
 
 /-- Every operator in the canonical abelian representation is square-zero. -/
 @[simp]
