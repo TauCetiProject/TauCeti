@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.Data.Matrix.Diagonal
 
 /-!
 # Matrices with at most one nonzero entry in each column
@@ -28,11 +27,13 @@ property. Since each entry of such a product is a single product of table lookup
 sum over an index type, identities between explicitly tabulated step matrices reduce to finitely
 many entrywise identities that need no summation.
 
+The property is stated as the conjunction of the value at the target of each column and the
+vanishing of that column elsewhere, so that it needs no decidable equality on the rows; the
+entrywise description by a table lookup is recovered as `Matrix.isStep_iff` over rows that do
+have decidable equality.
+
 The target of a column with coefficient zero is unconstrained, so the pair `(t, c)` is not
 determined by the matrix; every statement below takes the witnessing pair as data.
-
-This API is adapted from the unmerged
-[Tau Ceti PR #6711](https://github.com/TauCetiProject/TauCeti/pull/6711).
 
 ## Main definitions
 
@@ -40,9 +41,11 @@ This API is adapted from the unmerged
 
 ## Main results
 
-* `Matrix.isStep_iff`, `Matrix.isStep_of_apply` and `Matrix.IsStep.apply`: the characterization
-  of the property and its introduction and elimination forms, through which the definition is
-  used; its body is not exposed.
+* `Matrix.IsStep.apply_target`, `Matrix.IsStep.apply_of_ne` and
+  `Matrix.isStep_of_apply_target_of_apply_of_ne`: the elimination and introduction forms through
+  which the definition is used; its body is not exposed.
+* `Matrix.isStep_iff`, `Matrix.isStep_of_apply` and `Matrix.IsStep.apply`: the entrywise table
+  lookup description, over rows with decidable equality.
 * `Matrix.IsStep.mul`: a product of step matrices is a step matrix.
 * `Matrix.isStep_one`, `Matrix.isStep_diagonal`: the identity and the diagonal matrices.
 * `Matrix.IsStep.map`: entrywise application of a zero-preserving map.
@@ -56,35 +59,48 @@ variable {l m n R S : Type*}
 
 /-- A matrix is a *step matrix* for a target function `t` and a coefficient function `c` when
 its `b`th column is `c b` times the `t b`th coordinate vector. -/
-def IsStep [DecidableEq m] [Zero R] (M : Matrix m n R) (t : n → m) (c : n → R) : Prop :=
-  ∀ a b, M a b = if a = t b then c b else 0
+def IsStep [Zero R] (M : Matrix m n R) (t : n → m) (c : n → R) : Prop :=
+  (∀ b, M (t b) b = c b) ∧ ∀ a b, a ≠ t b → M a b = 0
 
 section Zero
 
-variable [DecidableEq m] [Zero R] {M : Matrix m n R} {t : n → m} {c : n → R}
+variable [Zero R] {M : Matrix m n R} {t : n → m} {c : n → R}
 
-/-- **The defining entrywise description of a step matrix.** -/
-theorem isStep_iff : M.IsStep t c ↔ ∀ a b, M a b = if a = t b then c b else 0 :=
-  Iff.rfl
+/-- The entry of a step matrix at the target of its column is the coefficient of that column. -/
+theorem IsStep.apply_target (h : M.IsStep t c) (b : n) : M (t b) b = c b :=
+  h.1 b
+
+/-- The entry of a step matrix at a row other than the target of its column is zero. -/
+theorem IsStep.apply_of_ne (h : M.IsStep t c) {a : m} {b : n} (hab : a ≠ t b) : M a b = 0 :=
+  h.2 a b hab
+
+/-- **The introduction form**: a matrix that takes the prescribed coefficient at the target of
+each column and vanishes elsewhere in that column is a step matrix. -/
+theorem isStep_of_apply_target_of_apply_of_ne (ht : ∀ b, M (t b) b = c b)
+    (h0 : ∀ a b, a ≠ t b → M a b = 0) : M.IsStep t c :=
+  ⟨ht, h0⟩
+
+variable [DecidableEq m]
+
+/-- **The entrywise description of a step matrix** by a table lookup. -/
+theorem isStep_iff : M.IsStep t c ↔ ∀ a b, M a b = if a = t b then c b else 0 := by
+  constructor
+  · intro h a b
+    split_ifs with hab
+    · rw [hab, h.apply_target]
+    · exact h.apply_of_ne hab
+  · intro h
+    exact isStep_of_apply_target_of_apply_of_ne (fun b => by simpa using h (t b) b)
+      fun a b hab => by simpa [hab] using h a b
 
 /-- **The introduction form**: a matrix whose entries are the table lookups is a step matrix. -/
 theorem isStep_of_apply (h : ∀ a b, M a b = if a = t b then c b else 0) : M.IsStep t c :=
-  h
+  isStep_iff.mpr h
 
 /-- **The elimination form**: every entry of a step matrix is a table lookup. -/
 theorem IsStep.apply (h : M.IsStep t c) (a : m) (b : n) :
     M a b = if a = t b then c b else 0 :=
-  h a b
-
-/-- The entry of a step matrix at a row other than the target of its column is zero. -/
-theorem IsStep.apply_of_ne (h : M.IsStep t c) {a : m} {b : n} (hab : a ≠ t b) : M a b = 0 := by
-  rw [h.apply a b]
-  exact ite_eq_right_iff.mpr fun hc => absurd hc hab
-
-/-- The entry of a step matrix at the target of its column is the coefficient of that column. -/
-theorem IsStep.apply_target (h : M.IsStep t c) (b : n) : M (t b) b = c b := by
-  rw [h.apply (t b) b]
-  simp
+  isStep_iff.mp h a b
 
 end Zero
 
@@ -103,31 +119,32 @@ theorem isStep_one [DecidableEq n] [Zero R] [One R] : (1 : Matrix n n R).IsStep 
 
 /-- **A product of step matrices is a step matrix**, with the composite target function and with
 each coefficient the product of the two coefficients met along the way. -/
-theorem IsStep.mul [DecidableEq l] [DecidableEq m] [Fintype m] [NonUnitalNonAssocSemiring R]
+theorem IsStep.mul [Fintype m] [NonUnitalNonAssocSemiring R]
     {M : Matrix l m R} {N : Matrix m n R} {t : m → l} {t' : n → m} {c : m → R} {c' : n → R}
     (hM : M.IsStep t c) (hN : N.IsStep t' c') :
     (M * N).IsStep (t ∘ t') fun b => c (t' b) * c' b := by
-  refine isStep_of_apply fun a b => ?_
-  rw [mul_apply, Finset.sum_eq_single (t' b)]
-  · rw [hM.apply a (t' b), hN.apply_target b, Function.comp_apply]
-    split_ifs
-    · rfl
-    · rw [zero_mul]
-  · intro i _ hi
-    rw [hN.apply_of_ne hi, mul_zero]
-  · intro hb
-    exact absurd (Finset.mem_univ (t' b)) hb
+  refine isStep_of_apply_target_of_apply_of_ne (fun b => ?_) fun a b hab => ?_
+  · rw [mul_apply, Finset.sum_eq_single (t' b)]
+    · rw [Function.comp_apply, hM.apply_target, hN.apply_target]
+    · intro i _ hi
+      rw [hN.apply_of_ne hi, mul_zero]
+    · intro hb
+      exact absurd (Finset.mem_univ (t' b)) hb
+  · have hab' : a ≠ t (t' b) := hab
+    rw [mul_apply, Finset.sum_eq_single (t' b)]
+    · rw [hM.apply_of_ne hab', zero_mul]
+    · intro i _ hi
+      rw [hN.apply_of_ne hi, mul_zero]
+    · intro hb
+      exact absurd (Finset.mem_univ (t' b)) hb
 
 /-- Entrywise application of a zero-preserving map to a step matrix gives the step matrix of the
 same target and the transformed coefficients. Only the value at zero is used, so no additive or
 multiplicative structure is required of the map. -/
-theorem IsStep.map [DecidableEq m] [Zero R] [Zero S] {M : Matrix m n R} {t : n → m} {c : n → R}
+theorem IsStep.map [Zero R] [Zero S] {M : Matrix m n R} {t : n → m} {c : n → R}
     (h : M.IsStep t c) (f : R → S) (hf : f 0 = 0) :
-    (M.map f).IsStep t fun b => f (c b) := by
-  refine isStep_of_apply fun a b => ?_
-  rw [map_apply, h.apply a b]
-  split_ifs
-  · rfl
-  · exact hf
+    (M.map f).IsStep t fun b => f (c b) :=
+  isStep_of_apply_target_of_apply_of_ne (fun b => by rw [map_apply, h.apply_target])
+    fun a b hab => by rw [map_apply, h.apply_of_ne hab, hf]
 
 end Matrix
