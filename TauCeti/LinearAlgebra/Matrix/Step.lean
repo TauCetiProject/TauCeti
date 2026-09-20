@@ -136,9 +136,9 @@ theorem IsStep.mul [Fintype m] [NonUnitalNonAssocSemiring R]
       rw [hN.apply_of_ne hi, mul_zero]
     · intro hb
       exact absurd (Finset.mem_univ (t' b)) hb
-  · have hab' : a ≠ t (t' b) := hab
+  · rw [Function.comp_apply] at hab
     rw [mul_apply, Finset.sum_eq_single (t' b)]
-    · rw [hM.apply_of_ne hab', zero_mul]
+    · rw [hM.apply_of_ne hab, zero_mul]
     · intro i _ hi
       rw [hN.apply_of_ne hi, mul_zero]
     · intro hb
