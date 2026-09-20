@@ -238,16 +238,16 @@ theorem exists_abs_ncard_smul_inter_sub_le {D : Set E} (hDb : IsBounded D)
       x - w₁ ∈ F → x - w₂ ∈ F → w₁ = w₂ := fun x w₁ h₁ w₂ h₂ k₁ k₂ ↦ by
     have hw₁ : -w₁ ∈ span ℤ (Set.range β) := neg_mem ((hmem w₁).mp h₁)
     have hw₂ : -w₂ ∈ span ℤ (Set.range β) := neg_mem ((hmem w₂).mp h₂)
+    have subtype_vadd (w : E) (hw : w ∈ span ℤ (Set.range β)) :
+        (⟨w, hw⟩ : span ℤ (Set.range β)) +ᵥ x = w + x := rfl
     have heq : (⟨-w₁, hw₁⟩ : span ℤ (Set.range β)) = ⟨-w₂, hw₂⟩ :=
       (ZSpan.exist_unique_vadd_mem_fundamentalDomain β x).unique
         (by
-          change -w₁ + x ∈ ZSpan.fundamentalDomain β
-          rw [add_comm, ← sub_eq_add_neg, ← hFdef]
-          exact k₁)
+          rw [subtype_vadd]
+          simpa only [hFdef, sub_eq_add_neg, add_comm] using k₁)
         (by
-          change -w₂ + x ∈ ZSpan.fundamentalDomain β
-          rw [add_comm, ← sub_eq_add_neg, ← hFdef]
-          exact k₂)
+          rw [subtype_vadd]
+          simpa only [hFdef, sub_eq_add_neg, add_comm] using k₂)
     exact neg_injective (congrArg Subtype.val heq)
   have hFe : ∀ x : E, ∃ w ∈ (L : Set E), x - w ∈ F := fun x ↦
     ⟨(ZSpan.floor β x : E), (hmem _).mpr (ZSpan.floor β x).2,
