@@ -94,17 +94,10 @@ theorem appr_natCast_modEq (k n : ℕ) : ((k : ℤ_[p])).appr n ≡ k [MOD p ^ n
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 
-/-- Two truncations congruent modulo `p ^ n` give the same power of an element killed by
-`p ^ n`. -/
-theorem pow_eq_pow_of_modEq_pow (hg : g ^ p ^ n = 1) {j k : ℕ} (h : j ≡ k [MOD p ^ n]) :
-    g ^ j = g ^ k :=
-  (isOfFinOrder_iff_pow_eq_one.mpr ⟨p ^ n, pow_pos hp.out.pos n, hg⟩).pow_eq_pow_iff_modEq.mpr
-    (h.of_dvd (orderOf_dvd_of_pow_eq_one hg))
-
 /-- Raising an element killed by `p ^ m` to the exponent `x.appr n` gives the same value for
 every truncation level `n ≥ m`. This is what makes the `p`-adic power well defined. -/
 theorem pow_appr_eq_pow_appr (x : ℤ_[p]) {m : ℕ} (hg : g ^ p ^ m = 1) (hmn : m ≤ n) :
     g ^ x.appr n = g ^ x.appr m :=
-  pow_eq_pow_of_modEq_pow hg (x.appr_modEq hmn)
+  pow_eq_pow_of_modEq (x.appr_modEq hmn) hg
 
 end PadicInt

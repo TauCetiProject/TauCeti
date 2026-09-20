@@ -36,8 +36,6 @@ abelian pro-`p` groups is stated.
 
 ## Main results
 
-* `TauCeti.IsProP.exists_forall_pow_pow_eq_one`: each finite quotient of a pro-`p` group is
-  killed by a power of `p`, which is what the truncated powers are read against.
 * `TauCeti.IsProP.mk_padicPow`: the defining description of the power in each finite quotient.
 * `TauCeti.IsProP.padicPow_natCast`, `TauCeti.IsProP.padicPow_intCast`: the power extends the
   natural and integer powers.
@@ -67,16 +65,11 @@ section Group
 variable {p : ℕ} [hp : Fact p.Prime] {A : Type u} [Group A] [TopologicalSpace A]
   [IsTopologicalGroup A] [CompactSpace A]
 
-/-- Each finite quotient of a pro-`p` group is killed by a power of `p`. -/
-theorem exists_forall_pow_pow_eq_one (hA : IsProP p A) (U : OpenNormalSubgroup A) :
-    ∃ n : ℕ, ∀ g : A ⧸ U.toSubgroup, g ^ p ^ n = 1 := by
-  obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp (isProP_iff.mp hA U)
-  exact ⟨n, fun g ↦ hn ▸ pow_card_eq_one'⟩
-
 /-- The truncation level at which the `p`-adic power is computed in the quotient by `U`. -/
 private noncomputable def padicPowIdx (hA : IsProP p A) (U : OpenNormalSubgroup A) : ℕ :=
   (hA.exists_forall_pow_pow_eq_one U).choose
 
+omit hp in
 private theorem pow_pow_padicPowIdx_eq_one (hA : IsProP p A) (U : OpenNormalSubgroup A)
     (g : A ⧸ U.toSubgroup) : g ^ p ^ hA.padicPowIdx U = 1 :=
   (hA.exists_forall_pow_pow_eq_one U).choose_spec g
@@ -143,7 +136,7 @@ theorem padicPow_natCast (hA : IsProP p A) (a : A) (k : ℕ) :
   refine eq_of_forall_mk_eq fun U ↦ ?_
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
   rw [hA.mk_padicPow a _ hn, QuotientGroup.mk_pow]
-  exact PadicInt.pow_eq_pow_of_modEq_pow (hn _) (PadicInt.appr_natCast_modEq k n)
+  exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq k n) (hn _)
 
 /-- The `p`-adic power by `0` is trivial. -/
 @[simp]
@@ -162,7 +155,7 @@ theorem padicPow_add (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
   rw [QuotientGroup.mk_mul, hA.mk_padicPow a (l + l') hn, hA.mk_padicPow a l hn,
     hA.mk_padicPow a l' hn, ← pow_add]
-  exact PadicInt.pow_eq_pow_of_modEq_pow (hn _) (PadicInt.appr_add_modEq l l' n)
+  exact pow_eq_pow_of_modEq (PadicInt.appr_add_modEq l l' n) (hn _)
 
 /-- Iterating the `p`-adic power multiplies the exponents. -/
 theorem padicPow_mul (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
@@ -171,7 +164,7 @@ theorem padicPow_mul (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
   rw [hA.mk_padicPow a (l * l') hn, hA.mk_padicPow (hA.padicPow a l) l' hn,
     hA.mk_padicPow a l hn, ← pow_mul]
-  exact PadicInt.pow_eq_pow_of_modEq_pow (hn _) (PadicInt.appr_mul_modEq l l' n)
+  exact pow_eq_pow_of_modEq (PadicInt.appr_mul_modEq l l' n) (hn _)
 
 /-- Every `p`-adic power of `1` is `1`. -/
 @[simp]
@@ -251,6 +244,7 @@ noncomputable def module (hA : IsProP p A) : Module ℤ_[p] (Additive A) where
   zero_smul x := congrArg Additive.ofMul (hA.padicPow_zero x.toMul)
 
 /-- The scalar action underlying `TauCeti.IsProP.module` is the `p`-adic power. -/
+@[simp]
 theorem module_smul (hA : IsProP p A) (l : ℤ_[p]) (x : Additive A) :
     letI := hA.module
     l • x = Additive.ofMul (hA.padicPow x.toMul l) :=
