@@ -144,8 +144,8 @@ theorem sum_frobeniusPsi_le_frobeniusPsi (C : ConjClasses (M ≃ₐ[K] M))
 
 open scoped Classical in
 /-- **The classes over `C` account for its Frobenius `ψ` up to the ramified primes.** The prime
-powers counted by `frobeniusPsi K M C` and by no class of `Gal(L/K)` over `C` are exactly those
-based at a prime of `ramifiedPrimes K L`, so the defect is at most `ψ` of that finite set. -/
+powers counted by `frobeniusPsi K M C` and by no class of `Gal(L/K)` over `C` can only be based at
+a prime of `ramifiedPrimes K L`, so the resulting defect is at most `ψ` of that finite set. -/
 theorem frobeniusPsi_sub_sum_frobeniusPsi_le_primePsi (C : ConjClasses (M ≃ₐ[K] M)) (x : ℝ) :
     frobeniusPsi K M C x - ∑ D ∈ {D : ConjClasses (L ≃ₐ[K] L) |
         ConjClasses.map (AlgEquiv.restrictNormalHom M) D = C}, frobeniusPsi K L D x ≤
