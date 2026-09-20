@@ -31,8 +31,8 @@ forces such a solution to tend to `0`, so the set deserves its name.
 The two descriptions match exactly where the cutoff is invisible. A confined forward solution of
 the original equation solves the cut-off equation as well, so it always lies on the graph; and
 conversely a point of the graph whose `P`-component `v` is small enough that the uniform bound
-`‖y t‖ ≤ K / (1 - 2 K ε / α) ‖v‖` on Lyapunov--Perron solutions keeps `y` inside the ball carries a
-confined solution. This is the Lipschitz half of the local stable-manifold theorem; the
+`‖y t‖ ≤ K / (1 - 2 K (2 ε) / α) ‖v‖` on Lyapunov--Perron solutions keeps `y` inside the ball
+carries a confined solution. This is the Lipschitz half of the local stable-manifold theorem; the
 differentiability of the graph map and its tangency to the range of `P` are not established here.
 
 ## Main declarations
@@ -69,11 +69,16 @@ namespace ContinuousLinearMap
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 variable {K α ε : ℝ≥0} {N : X → X} {r : ℝ}
 
-/-- The constant `K / (1 - 2 K ε / α)` bounding a Lyapunov--Perron solution in terms of its input
-parameter is nonnegative. -/
-private theorem lyapunovPerronBound_nonneg (hα : 0 < α) (hsmall : 2 * K * (ε * 2) < α) :
+/-- The smallness hypothesis on the Lipschitz constant of the cut-off nonlinearity already forces
+the decay rate `α` to be positive. -/
+private theorem pos_of_two_mul_mul_lt (hsmall : 2 * K * (ε * 2) < α) : 0 < α :=
+  lt_of_le_of_lt zero_le hsmall
+
+/-- The constant `K / (1 - 2 K (2 ε) / α)` bounding a Lyapunov--Perron solution in terms of its
+input parameter is nonnegative. -/
+private theorem lyapunovPerronBound_nonneg (hsmall : 2 * K * (ε * 2) < α) :
     0 ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) := by
-  have hαR : (0 : ℝ) < α := hα
+  have hαR : (0 : ℝ) < α := pos_of_two_mul_mul_lt hsmall
   have hsmallR : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmall
   have := (div_lt_one hαR).2 hsmallR
   exact div_nonneg K.coe_nonneg (by linarith)
@@ -81,7 +86,7 @@ private theorem lyapunovPerronBound_nonneg (hα : 0 < α) (hsmall : 2 * K * (ε 
 variable (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
   (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
   (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
-  (hα : 0 < α) (hr : 0 ≤ r) (hN : LipschitzOnWith ε N (closedBall 0 r))
+  (hr : 0 ≤ r) (hN : LipschitzOnWith ε N (closedBall 0 r))
   (hsmall : 2 * K * (ε * 2) < α)
 
 /-- The **local stable graph map**: the Lyapunov--Perron graph map of the nonlinearity `N` cut off
@@ -92,8 +97,8 @@ Under the bound on `ρ` in
 `range P ∩ closedBall 0 ρ` is the local stable set of the equilibrium `0` of `y' = A y + N y`
 truncated by `‖P x‖ ≤ ρ`. -/
 def localStableGraphMap : X → X :=
-  lyapunovPerronGraphMap A P (N ∘ TauCeti.radialRetraction r) hs hu hα
-    (hN.comp_radialRetraction hr) hsmall
+  lyapunovPerronGraphMap A P (N ∘ TauCeti.radialRetraction r) hs hu
+    (pos_of_two_mul_mul_lt hsmall) (hN.comp_radialRetraction hr) hsmall
 
 variable {A P N r}
 
@@ -101,35 +106,40 @@ variable {A P N r}
 `P` really is a graph. -/
 @[simp]
 theorem apply_localStableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P) (ξ : X) :
-    P (localStableGraphMap A P N r hs hu hα hr hN hsmall ξ) = 0 :=
-  apply_lyapunovPerronGraphMap hs hu hα (hN.comp_radialRetraction hr) hsmall hP hAP ξ
+    P (localStableGraphMap A P N r hs hu hr hN hsmall ξ) = 0 :=
+  apply_lyapunovPerronGraphMap hs hu (pos_of_two_mul_mul_lt hsmall)
+    (hN.comp_radialRetraction hr) hsmall hP hAP ξ
 
 /-- The local stable graph map depends only on the `P`-component of its argument. -/
 @[simp]
 theorem localStableGraphMap_map (hP : IsIdempotentElem P) (ξ : X) :
-    localStableGraphMap A P N r hs hu hα hr hN hsmall (P ξ) =
-      localStableGraphMap A P N r hs hu hα hr hN hsmall ξ :=
-  lyapunovPerronGraphMap_map hs hu hα (hN.comp_radialRetraction hr) hsmall hP ξ
+    localStableGraphMap A P N r hs hu hr hN hsmall (P ξ) =
+      localStableGraphMap A P N r hs hu hr hN hsmall ξ :=
+  lyapunovPerronGraphMap_map hs hu (pos_of_two_mul_mul_lt hsmall)
+    (hN.comp_radialRetraction hr) hsmall hP ξ
 
 /-- If the nonlinearity fixes the equilibrium, so does the local stable graph map. -/
 @[simp]
 theorem localStableGraphMap_zero (hN0 : N 0 = 0) :
-    localStableGraphMap A P N r hs hu hα hr hN hsmall 0 = 0 :=
-  lyapunovPerronGraphMap_zero hs hu hα (hN.comp_radialRetraction hr) hsmall (by simp [hN0])
+    localStableGraphMap A P N r hs hu hr hN hsmall 0 = 0 :=
+  lyapunovPerronGraphMap_zero hs hu (pos_of_two_mul_mul_lt hsmall)
+    (hN.comp_radialRetraction hr) hsmall (by simp [hN0])
 
 /-- **The local stable graph map is Lipschitz**, with a constant that tends to `0` with the
 Lipschitz constant of the nonlinearity on the ball of confinement. -/
 theorem lipschitzWith_localStableGraphMap :
     LipschitzWith (2 * K * (ε * 2) / α * (K / (1 - 2 * K * (ε * 2) / α)))
-      (localStableGraphMap A P N r hs hu hα hr hN hsmall) :=
-  lipschitzWith_lyapunovPerronGraphMap hs hu hα (hN.comp_radialRetraction hr) hsmall
+      (localStableGraphMap A P N r hs hu hr hN hsmall) :=
+  lipschitzWith_lyapunovPerronGraphMap hs hu (pos_of_two_mul_mul_lt hsmall)
+    (hN.comp_radialRetraction hr) hsmall
 
 /-- If the nonlinearity fixes the equilibrium, the local stable set lies in a cone around the
 range of `P` whose opening tends to `0` with the Lipschitz constant of the nonlinearity. -/
 theorem norm_localStableGraphMap_le (hN0 : N 0 = 0) (ξ : X) :
-    ‖localStableGraphMap A P N r hs hu hα hr hN hsmall ξ‖ ≤
+    ‖localStableGraphMap A P N r hs hu hr hN hsmall ξ‖ ≤
       ((2 * K * (ε * 2) / α * (K / (1 - 2 * K * (ε * 2) / α)) : ℝ≥0) : ℝ) * ‖ξ‖ :=
-  norm_lyapunovPerronGraphMap_le hs hu hα (hN.comp_radialRetraction hr) hsmall (by simp [hN0]) ξ
+  norm_lyapunovPerronGraphMap_le hs hu (pos_of_two_mul_mul_lt hsmall)
+    (hN.comp_radialRetraction hr) hsmall (by simp [hN0]) ξ
 
 omit [CompleteSpace X] in
 /-- **Cutting off is invisible to a confined solution.** A forward curve that never leaves the
@@ -149,7 +159,7 @@ section LocalStable
 
 variable (hN0 : N 0 = 0) (hP : IsIdempotentElem P) (hAP : Commute A P)
 
-include hs hu hα hr hN hsmall hN0 hP hAP
+include hs hu hr hN hsmall hN0 hP hAP
 
 /-- **A confined forward solution tends to the equilibrium.** The ball of confinement is where the
 nonlinearity is small, so a solution that never leaves it is a Lyapunov--Perron solution of the
@@ -158,6 +168,7 @@ theorem tendsto_of_isIntegralCurveOn_mapsTo_closedBall {y : ℝ → X}
     (hy : IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0))
     (hmaps : MapsTo y (Ici 0) (closedBall 0 r)) :
     Tendsto y atTop (𝓝 0) := by
+  have hα : 0 < α := pos_of_two_mul_mul_lt hsmall
   have hMlip : LipschitzWith (ε * 2) (N ∘ TauCeti.radialRetraction r) :=
     hN.comp_radialRetraction hr
   refine (tendsto_lyapunovPerronSolution hs hu hα hMlip hsmall (by simp [hN0]) (y 0)).congr' ?_
@@ -173,15 +184,16 @@ restricted to those whose `P`-component has norm at most `ρ`, are exactly the p
 automatically tend to the equilibrium, by
 `ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall`.
 
-The hypothesis on `ρ` is that the uniform bound `K / (1 - 2 K ε / α)` for Lyapunov--Perron
+The hypothesis on `ρ` is that the uniform bound `K / (1 - 2 K (2 ε) / α)` for Lyapunov--Perron
 solutions carries the ball of radius `ρ` into the ball of radius `r`; it is what makes the cutoff
 invisible to the solutions concerned. -/
 theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
     (hρ : (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ ≤ r) :
     {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0) ∧ y 0 = x ∧
         MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ} =
-      (fun v ↦ v + localStableGraphMap A P N r hs hu hα hr hN hsmall v) ''
+      (fun v ↦ v + localStableGraphMap A P N r hs hu hr hN hsmall v) ''
         (range P ∩ closedBall 0 ρ) := by
+  have hα : 0 < α := pos_of_two_mul_mul_lt hsmall
   have hMlip : LipschitzWith (ε * 2) (N ∘ TauCeti.radialRetraction r) :=
     hN.comp_radialRetraction hr
   have hM0 : (N ∘ TauCeti.radialRetraction r) 0 = 0 := by simp [hN0]
@@ -206,19 +218,19 @@ theorem setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image {ρ : ℝ}
     have hPP : P (P w) = P w := by rw [← mul_apply_eq_comp P P, hP.eq]
     set γ := lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall
       (P w) with hγ
-    have hγ0 : γ 0 = P w + localStableGraphMap A P N r hs hu hα hr hN hsmall (P w) := by
+    have hγ0 : γ 0 = P w + localStableGraphMap A P N r hs hu hr hN hsmall (P w) := by
       rw [hγ, lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap hs hu hα hMlip hsmall,
         hPP, localStableGraphMap]
     have hmaps : MapsTo (fun t : ℝ ↦ γ t.toNNReal) (Ici 0) (closedBall 0 r) := fun t _ ↦ by
       rw [mem_closedBall_zero_iff]
       calc ‖γ t.toNNReal‖ ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖P w‖ := hbound _ _
         _ ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ :=
-            mul_le_mul_of_nonneg_left hv (lyapunovPerronBound_nonneg hα hsmall)
+            mul_le_mul_of_nonneg_left hv (lyapunovPerronBound_nonneg hsmall)
         _ ≤ r := hρ
     refine ⟨⟨fun t : ℝ ↦ γ t.toNNReal, ?_, by simpa using hγ0, hmaps⟩, ?_⟩
     · exact (isIntegralCurveOn_comp_radialRetraction_iff hmaps).2 fun t ht ↦
         isIntegralCurveOn_lyapunovPerronSolution hs hu hα hMlip hsmall (P w) t ht
-    · rw [map_add, apply_localStableGraphMap hs hu hα hr hN hsmall hP hAP, add_zero, hPP]
+    · rw [map_add, apply_localStableGraphMap hs hu hr hN hsmall hP hAP, add_zero, hPP]
       exact hv
 
 omit hr in
@@ -229,11 +241,11 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image (hr0 : 
     ∃ ρ > 0,
       {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Ici 0) ∧ y 0 = x ∧
           MapsTo y (Ici 0) (closedBall 0 r)) ∧ ‖P x‖ ≤ ρ} =
-        (fun v ↦ v + localStableGraphMap A P N r hs hu hα hr0.le hN hsmall v) ''
+        (fun v ↦ v + localStableGraphMap A P N r hs hu hr0.le hN hsmall v) ''
           (range P ∩ closedBall 0 ρ) := by
-  have hC := lyapunovPerronBound_nonneg hα hsmall
+  have hC := lyapunovPerronBound_nonneg hsmall
   refine ⟨r / ((K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) + 1), div_pos hr0 (by linarith),
-    setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hα hr0.le hN hsmall hN0 hP
+    setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image hs hu hr0.le hN hsmall hN0 hP
       hAP ?_⟩
   rw [mul_div_assoc', div_le_iff₀ (by linarith)]
   nlinarith
