@@ -19,7 +19,7 @@ divisor of the product is the product of a subset of `S`.
 These are the facts that turn a divisibility statement about a product of distinct primes into a
 statement about subsets of the set of factors. The hypothesis on the units is what makes the
 conclusions equalities rather than statements up to associates; the motivating example is the
-monoid of nonzero ideals of a Dedekind domain.
+multiplicative monoid of ideals of a Dedekind domain.
 -/
 
 public section
@@ -32,12 +32,14 @@ variable {α : Type*} [CommMonoidWithZero α] [UniqueFactorizationMonoid α]
   [StrongNormalizationMonoid α] [Subsingleton αˣ] {S T : Finset α}
 
 /-- The normalized factors of the product of a finite set of primes are that set. -/
+@[simp]
 theorem normalizedFactors_finset_prod_of_prime (hS : ∀ p ∈ S, Prime p) :
     normalizedFactors (∏ p ∈ S, p) = S.val := by
   rw [Finset.prod_eq_multiset_prod, Multiset.map_id']
   exact normalizedFactors_prod_of_prime (by simpa using hS)
 
 /-- A finite set of primes is determined by its product. -/
+@[simp]
 theorem finset_prod_eq_iff_of_prime (hS : ∀ p ∈ S, Prime p) (hT : ∀ p ∈ T, Prime p) :
     ∏ p ∈ S, p = ∏ p ∈ T, p ↔ S = T := by
   refine ⟨fun h => Finset.val_inj.1 ?_, fun h => by rw [h]⟩

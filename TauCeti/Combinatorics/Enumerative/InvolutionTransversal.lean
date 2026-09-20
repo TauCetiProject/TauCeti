@@ -22,8 +22,8 @@ resulting splitting of a product over `S`, and counts the transversals: there ar
 of them, one binary choice per orbit.
 
 The counting theorem is the combinatorial half of `TauCeti.ncard_setOf_mul_map_eq_prod`, where
-`f` is the action of a ring involution on a set of primes of a Dedekind domain and a transversal
-picks one prime from each conjugate pair.
+`f` is the action of a ring automorphism, acting involutively on a set of primes of a Dedekind
+domain, and a transversal picks one prime from each conjugate pair.
 
 A fixed-point-free involution of a whole type is a perfect matching in the sense of
 `TauCeti.IsPerfectMatching`; the notion here is its relative form, carried by a `Finset` rather
@@ -65,11 +65,13 @@ structure IsInvolutionTransversal (f : α → α) (S T : Finset α) : Prop where
 namespace IsInvolutionTransversal
 
 /-- A transversal omits the partner of each of its elements. -/
-theorem apply_notMem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ S) (haT : a ∈ T) :
+theorem map_notMem_of_mem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ S)
+    (haT : a ∈ T) :
     f a ∉ T := (hT.mem_iff_notMem a ha).1 haT
 
 /-- A transversal contains the partner of each element of `S` it omits. -/
-theorem apply_mem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ S) (haT : a ∉ T) :
+theorem map_mem_of_notMem (hT : IsInvolutionTransversal f S T) {a : α} (ha : a ∈ S)
+    (haT : a ∉ T) :
     f a ∈ T := by
   by_contra h
   exact haT ((hT.mem_iff_notMem a ha).2 h)
@@ -105,10 +107,11 @@ theorem IsInvolutionTransversal.prod_mul_prod_comp (hT : IsInvolutionTransversal
       exact hmaps b (hT.subset hb)
     · by_cases haT : a ∈ T
       · exact Finset.mem_union_left _ haT
-      · exact Finset.mem_union_right _ (Finset.mem_image.2 ⟨f a, hT.apply_mem ha haT, hinvol a ha⟩)
+      · exact Finset.mem_union_right _
+          (Finset.mem_image.2 ⟨f a, hT.map_mem_of_notMem ha haT, hinvol a ha⟩)
   · refine Finset.disjoint_left.2 fun a haT ha => ?_
     obtain ⟨b, hb, rfl⟩ := Finset.mem_image.1 ha
-    exact hT.apply_notMem (hT.subset hb) hb haT
+    exact hT.map_notMem_of_mem (hT.subset hb) hb haT
 
 /-- There are only finitely many transversals, since each is a subset of `S`. -/
 theorem finite_setOf_isInvolutionTransversal (f : α → α) (S : Finset α) :
@@ -199,13 +202,13 @@ theorem ncard_setOf_isInvolutionTransversal (hmaps : ∀ a ∈ S, f a ∈ S)
       constructor
       · intro hT
         by_cases haT : a ∈ T
-        · have hfaT : f a ∉ T := hT.apply_notMem ha haT
+        · have hfaT : f a ∉ T := hT.map_notMem_of_mem ha haT
           have herase : T \ {a, f a} = T.erase a := by
             ext x
             simp only [Finset.mem_sdiff, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton]
             grind
           exact Or.inl ⟨_, hrestrict T hT, by rw [herase]; exact Finset.insert_erase haT⟩
-        · have hfaT : f a ∈ T := hT.apply_mem ha haT
+        · have hfaT : f a ∈ T := hT.map_mem_of_notMem ha haT
           have herase : T \ {a, f a} = T.erase (f a) := by
             ext x
             simp only [Finset.mem_sdiff, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton]

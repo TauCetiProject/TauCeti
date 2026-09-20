@@ -12,9 +12,9 @@ public import TauCeti.RingTheory.UniqueFactorizationDomain.SubsetProduct
 /-!
 # Factoring a product of conjugate primes in a Dedekind domain
 
-Let `R` be a Dedekind domain carrying a ring involution `σ`, and let `S` be a finite set of
-nonzero primes of `R` which `σ` permutes, involutively and without fixing any of them, so that
-`S` splits into conjugate pairs `{p, σ p}`. This file describes the ideals `A` with
+Let `R` be a Dedekind domain carrying a ring automorphism `σ`, and let `S` be a finite set of
+nonzero primes of `R` on which `σ` acts involutively and without fixing any element, so that `S`
+splits into conjugate pairs `{p, σ p}`. This file describes the ideals `A` with
 `A * σ A = ∏ p ∈ S, p`: they are exactly the products over the transversals of `σ` on `S`, one
 prime chosen from each conjugate pair, and there are exactly `2 ^ (#S / 2)` of them.
 
@@ -51,9 +51,9 @@ open UniqueFactorizationMonoid
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] {σ : R ≃+* R} {S : Finset (Ideal R)}
 
-/-- **The conjugate factorizations of a product of paired primes.** If a ring involution `σ`
-permutes a finite set `S` of nonzero primes without fixing any of them, then the ideals `A` with
-`A * σ A = ∏ p ∈ S, p` are exactly the products over the transversals of `σ` on `S`. -/
+/-- **The conjugate factorizations of a product of paired primes.** If a ring automorphism `σ`
+acts involutively on a finite set `S` of nonzero primes without fixing any of them, then the ideals
+`A` with `A * σ A = ∏ p ∈ S, p` are exactly the products over the transversals of `σ` on `S`. -/
 theorem mul_map_eq_prod_iff (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ S, p ≠ ⊥)
     (hmaps : ∀ p ∈ S, Ideal.map σ p ∈ S) (hinvol : ∀ p ∈ S, Ideal.map σ (Ideal.map σ p) = p)
     {A : Ideal R} :
@@ -105,9 +105,10 @@ theorem mul_map_eq_prod_iff (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ 
     rw [hmapprod]
     exact hT.prod_mul_prod_comp (fun p => p) hmaps hinvol
 
-/-- **The conjugate factorization count.** A finite set `S` of nonzero primes permuted by a ring
-involution `σ` without fixed points admits exactly `2 ^ (#S / 2)` factorizations
-`A * σ A = ∏ p ∈ S, p`: one for each choice of a prime from each conjugate pair. -/
+/-- **The conjugate factorization count.** If a ring automorphism `σ` acts involutively and
+without fixed points on a finite set `S` of nonzero primes, then there are exactly `2 ^ (#S / 2)`
+factorizations `A * σ A = ∏ p ∈ S, p`, one for each choice of a prime from each conjugate
+pair. -/
 theorem ncard_setOf_mul_map_eq_prod (hprime : ∀ p ∈ S, p.IsPrime) (hbot : ∀ p ∈ S, p ≠ ⊥)
     (hmaps : ∀ p ∈ S, Ideal.map σ p ∈ S) (hinvol : ∀ p ∈ S, Ideal.map σ (Ideal.map σ p) = p)
     (hfree : ∀ p ∈ S, Ideal.map σ p ≠ p) :
