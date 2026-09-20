@@ -10,9 +10,8 @@ module
 public import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.Ergodic
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.ZeroOne
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
--- Non-public: laws are determined by finite-dimensional marginals; shift-invariant events are
--- exchangeable events; exchangeable path laws are shift-preserving.
-import Mathlib.Probability.Process.FiniteDimensionalLaws
+-- Non-public: shift-invariant events are exchangeable events; exchangeable path laws are
+-- shift-preserving.
 import TauCeti.Probability.Exchangeability.PathSpace.Invariant.Tail
 import TauCeti.Probability.Exchangeability.PathSpace.Exchangeable.ToContractable
 
@@ -24,15 +23,12 @@ the i.i.d. product laws. The main theorem `exchangeable_extreme_iff_iid` states 
 `Set.extremePoints` for the natural `ℝ≥0∞`-module structure on measures.
 
 The exchangeable probability laws are the probability laws invariant under the action of the
-finitely supported permutations of `ℕ`: invariance under the finitary permutations already gives
-invariance under every permutation, since a law is determined by its finite-dimensional marginals
-and on finitely many indices any permutation agrees with a finitely supported one
-(`exchangeableLaw_of_smulInvariantMeasure`). Extremality among them is therefore ergodicity of
-that action, by the general characterisation `ErgodicSMul.iff_mem_extremePoints` for a countable
-group; ergodicity is triviality of the exchangeable σ-algebra
-(`exchangeableSigma_trivial_iff_ergodicSMul`); and, for a standard Borel state space, triviality
-is the i.i.d. property (`exchangeableSigma_trivial_iff_iid`). The forward direction, that an
-i.i.d. law is extreme, needs no standard Borel hypothesis.
+finitely supported permutations of `ℕ` (`exchangeableLaw_iff_smulInvariantMeasure`). Extremality
+among them is therefore ergodicity of that action, by the general characterisation
+`ErgodicSMul.iff_mem_extremePoints` for a countable group; ergodicity is triviality of the
+exchangeable σ-algebra (`exchangeableSigma_trivial_iff_ergodicSMul`); and, for a standard Borel
+state space, triviality is the i.i.d. property (`exchangeableSigma_trivial_iff_iid`). The forward
+direction, that an i.i.d. law is extreme, needs no standard Borel hypothesis.
 
 The one-sided shift ergodicity of an i.i.d. law, `ergodic_shift_infinitePi_const`, is recorded
 here as well: shift-invariant events are exchangeable events, so the Hewitt–Savage zero-one law
@@ -40,8 +36,8 @@ applies.
 
 ## Main results
 
-* `exchangeableLaw_of_smulInvariantMeasure`, `exchangeableProbabilityMeasures_eq` — the
-  exchangeable probability laws are the invariant probability laws of the finitary action.
+* `exchangeableProbabilityMeasures_eq` — the exchangeable probability laws are the invariant
+  probability laws of the finitary action.
 * `ergodic_shift_infinitePi_const` — an i.i.d. product law is ergodic for the one-sided shift.
 * `infinitePi_mem_extremePoints_exchangeable` — an i.i.d. product law is an extreme exchangeable
   law, over an arbitrary measurable space.
@@ -70,40 +66,6 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- A finite law on `ℕ → α` invariant under the finitary permutation action is exchangeable:
-invariant under the relabelling by every permutation of `ℕ`. -/
-theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ]
-    [SMulInvariantMeasure FinitaryPerm (ℕ → α) ρ] : ExchangeableLaw ρ := by
-  rw [exchangeableLaw_iff]
-  intro σ
-  have hmeas : ∀ π : Equiv.Perm ℕ,
-      AEMeasurable (fun x : ℕ → α => fun n => permReindex (α := α) π x n) ρ :=
-    fun π => (measurable_reindex (α := α) π).aemeasurable
-  have hmeasid : AEMeasurable (fun x : ℕ → α => fun n => x n) ρ := measurable_id.aemeasurable
-  have key : ∀ π : Equiv.Perm ℕ,
-      ((ρ.map fun x : ℕ → α => fun n => permReindex (α := α) π x n)
-        = ρ.map fun x : ℕ → α => fun n => x n) ↔
-      ∀ F : Finset ℕ, (ρ.map fun x : ℕ → α => F.restrict fun n => permReindex (α := α) π x n)
-        = (ρ.map fun x : ℕ → α => F.restrict fun n => x n) :=
-    fun π => ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq (hmeas π) hmeasid
-  change (ρ.map fun x : ℕ → α => fun n => permReindex (α := α) σ x n) = ρ
-  conv_rhs => rw [← Measure.map_id' (μ := ρ)]
-  refine (key σ).mpr fun F => ?_
-  obtain ⟨π, hπfin, hπ⟩ := Equiv.Perm.exists_finite_compl_fixedBy_apply_eq_on_finset σ F
-  have hπ' : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
-    simpa only [MulAction.fixedBy_inv ℕ] using hπfin
-  have hinv : (ρ.map fun x : ℕ → α => fun n => permReindex (α := α) π x n)
-      = ρ.map fun x : ℕ → α => fun n => x n := by
-    have h := (measurePreserving_smul (FinitaryPerm.ofPerm π⁻¹ hπ') ρ).map_eq
-    rw [Measure.map_id']
-    simpa only [finitaryPerm_smul_path_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using h
-  have hres := (key π).mp hinv F
-  have heq : (fun x : ℕ → α => F.restrict fun n => permReindex (α := α) π x n) =
-      fun x : ℕ → α => F.restrict fun n => permReindex (α := α) σ x n := by
-    funext x ⟨n, hn⟩
-    simp only [Finset.restrict_def, permReindex_apply, hπ n hn]
-  rwa [heq] at hres
-
 /-- The exchangeable probability laws are the invariant measures of total mass one of the finitary
 permutation action. -/
 theorem exchangeableProbabilityMeasures_eq :
@@ -115,7 +77,7 @@ theorem exchangeableProbabilityMeasures_eq :
   · rintro ⟨hν, hp⟩; exact ⟨hν.smulInvariantMeasure, hp.measure_univ⟩
   · rintro ⟨hν, hp⟩
     have : IsProbabilityMeasure ν := ⟨hp⟩
-    exact ⟨exchangeableLaw_of_smulInvariantMeasure, inferInstance⟩
+    exact ⟨exchangeableLaw_iff_smulInvariantMeasure.2 hν, inferInstance⟩
 
 /-- An i.i.d. infinite product law is ergodic for the one-sided shift.
 
