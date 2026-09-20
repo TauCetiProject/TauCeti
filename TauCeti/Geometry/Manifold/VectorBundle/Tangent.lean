@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
-public import Mathlib.LinearAlgebra.Matrix.Basis
+public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -424,28 +423,26 @@ theorem tangentCoordChange_toMatrix {ι : Type*} [Fintype ι] [DecidableEq ι] (
     LinearMap.toMatrix b b (tangentCoordChange I α β x).toLinearMap =
       ((trivializationAt E (TangentSpace I) β).basisAt b hβ).toMatrix
         ((trivializationAt E (TangentSpace I) α).basisAt b hα) := by
-  ext i j
-  rw [LinearMap.toMatrix_apply, Module.Basis.toMatrix_apply]
-  rw [Bundle.Trivialization.basisAt, Bundle.Trivialization.basisAt]
-  simp only [Module.Basis.map_repr, Module.Basis.map_apply]
+  rw [← coordChangeL_toMatrix b hα hβ]
+  congr 1
+  ext v
+  change tangentCoordChange I α β x v =
+    (trivializationAt E (TangentSpace I) α).coordChangeL 𝕜
+      (trivializationAt E (TangentSpace I) β) x v
+  rw [Bundle.Trivialization.coe_coordChangeL
+    (trivializationAt E (TangentSpace I) α)
+    (trivializationAt E (TangentSpace I) β) ⟨hα, hβ⟩]
+  simp only [LinearEquiv.trans_apply, Bundle.Trivialization.linearEquivAt_apply,
+    Bundle.Trivialization.linearEquivAt_symm_apply]
+  symm
   have hread := continuousLinearMapAt_symmL_coordChange
     (I := I) (x := α) (x₀ := β) (y := x)
     (by simpa only [TangentBundle.trivializationAt_baseSet] using hα)
-    (by simpa only [TangentBundle.trivializationAt_baseSet] using hβ)
-    (b j)
+    (by simpa only [TangentBundle.trivializationAt_baseSet] using hβ) v
   rw [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem
       (R := 𝕜) (e := trivializationAt E (TangentSpace I) β) hβ,
     Bundle.Trivialization.symmL_apply
       (R := 𝕜) (e := trivializationAt E (TangentSpace I) α) hα] at hread
-  apply congrArg (fun v : E ↦ b.repr v i)
-  symm
-  rw [LinearEquiv.symm_symm]
-  -- `basisAt` uses `linearEquivAt`, while the coordinate-change lemma uses the propositionally
-  -- equal continuous maps; their coercions have no rewriting lemma in this direction.
-  change
-    ((trivializationAt E (TangentSpace I) β)
-      ⟨x, (trivializationAt E (TangentSpace I) α).symm x (b j)⟩).2 =
-        tangentCoordChange I α β x (b j)
   exact hread
 
 end TangentReading
