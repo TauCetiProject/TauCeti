@@ -93,6 +93,11 @@ any group mentioned is finite, perfect, or simple.
   `TauCeti.TypeTwistedE6LieIndex.steinberg_eq_frobenius_comp_graphAut`: the Steinberg map is the
   composite of its two factors, in either order.
 
+* `TauCeti.TypeTwistedE6LieIndex.primeFrobenius`, with
+  `TauCeti.TypeTwistedE6LieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeTwistedE6LieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its
+  pinned equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th
+  power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§12.2 and 13, for the graph automorphism of `E₆` and
@@ -248,6 +253,37 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, E6DoubledMinuscule.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the doubled minuscule carrier**, the `p`-power map for `p` the
+defining characteristic. The `q`-power Frobenius is its `e`-th power, for `e` the field exponent
+the index records, by `frobenius_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  E6DoubledMinuscule.frobenius d.1.characteristic 1 d.1.Closure
+
+-- Not `@[simp]`, for the reason `frobenius_def` is not.
+/-- The prime-field Frobenius is the doubled minuscule carrier's Frobenius at exponent one. -/
+theorem primeFrobenius_def :
+    d.primeFrobenius = E6DoubledMinuscule.frobenius d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def,
+    E6DoubledMinuscule.frobenius_rootSubgroupPoints, pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.E6DoubledMinuscule.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, E6DoubledMinuscule.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when every entry of its
 `54 × 54` matrix lies in the field of definition.** Writing `𝔽_q` for

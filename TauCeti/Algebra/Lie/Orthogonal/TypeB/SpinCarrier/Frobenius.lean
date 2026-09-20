@@ -40,6 +40,8 @@ fixed-point group is finite or simple.
 * `TauCeti.TypeBSpinCarrier.frobenius_rootSubgroupPoints` and
   `TauCeti.TypeBSpinCarrier.frobenius_weightTorusPoints`: the equations on the numbered root
   subgroups and split weight torus.
+* `TauCeti.TypeBSpinCarrier.frobenius_zero`, `TauCeti.TypeBSpinCarrier.frobenius_add` and
+  `TauCeti.TypeBSpinCarrier.frobenius_pow`: the iteration laws.
 * `TauCeti.TypeBSpinCarrier.frobenius_eq_self_iff`: the coefficientwise fixed-point criterion.
 * `TauCeti.TypeBSpinCarrier.map_subtype_fixedSubgroup_frobenius_eq`: the fixed points are the
   carrier's points over the Frobenius-fixed subring.
@@ -119,6 +121,18 @@ theorem frobenius_add (m : ℕ) :
     frobenius n p (k + m) A = (frobenius n p k A).comp (frobenius n p m A) := by
   rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
     GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation n A)]
+
+/-- **Frobenius exponents multiply under taking powers**: the `m`-th power of the `p ^ k`-power
+Frobenius of the type-`B_(n+1)` spin carrier's point group, in the endomorphism monoid of its
+points, is its `p ^ (k * m)`-power
+Frobenius. -/
+-- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
+-- structure before the power is elaborated.
+theorem frobenius_pow (m : ℕ) :
+    (show Monoid.End _ from frobenius n p k A) ^ m = frobenius n p (k * m) A := by
+  induction m with
+  | zero => rw [pow_zero, Nat.mul_zero, frobenius_zero]; rfl
+  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, frobenius_add n p (k * m) A k]; rfl
 
 /-- A type-`Bₙ₊₁` spin-carrier point is fixed by Frobenius exactly when all of its matrix
 entries lie in the Frobenius-fixed subring. -/

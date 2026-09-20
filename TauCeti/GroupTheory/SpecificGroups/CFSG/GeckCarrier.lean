@@ -65,6 +65,11 @@ connected one, that its weight torus is maximal, or that its point group is fini
 * `TauCeti.ValidLieTypeIndex.geckWeightTorus_mem_fixedSubgroup_geckFrobenius`: among those points
   are the weight-torus points all of whose coordinates lie in `𝔽_q`.
 
+* `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius`, with
+  `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius_geckRootSubgroup` and
+  `TauCeti.ValidLieTypeIndex.geckFrobenius_eq_geckPrimeFrobenius_pow`: the prime-field Frobenius of
+  the Geck point group, its action on the numbered root subgroups, and the `q`-power Frobenius as
+  its `e`-th power.
 ## References
 
 * M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
@@ -242,6 +247,41 @@ theorem geckFrobenius_geckRootSubgroup (i : Fin d.dynkinType.rank ⊕ Fin d.dynk
   rw [d.fieldOrder_eq_characteristic_pow]
   exact d.dynkinType.geckFrobenius_geckRootSubgroupPoints d.dynkinType_valid
     d.characteristic d.fieldExponent d.Closure i u
+
+/-- **The prime-field Frobenius endomorphism of the Geck point group**, the `p`-power map for `p`
+the defining characteristic. The `q`-power Frobenius `TauCeti.ValidLieTypeIndex.geckFrobenius` is
+its `e`-th power, for `e` the field exponent the index records, by
+`geckFrobenius_eq_geckPrimeFrobenius_pow`, so the two agree on an index of prime field
+order. -/
+def geckPrimeFrobenius : GeckGroup d →* GeckGroup d :=
+  d.dynkinType.geckFrobenius d.dynkinType_valid d.characteristic 1 d.Closure
+
+/-- The prime-field Frobenius is that of the pinned Geck carrier at exponent one. This is its
+unfolding lemma; the definition itself stays sealed. -/
+theorem geckPrimeFrobenius_def : d.geckPrimeFrobenius =
+    d.dynkinType.geckFrobenius d.dynkinType_valid d.characteristic 1 d.Closure := by
+  rw [geckPrimeFrobenius]
+
+/-- **The prime-field Frobenius raises the parameter of every numbered root subgroup to the `p`-th
+power.** On a simple root subgroup this reads `Frob_p (x_α(t)) = x_α(t ^ p)`. -/
+@[simp]
+theorem geckPrimeFrobenius_geckRootSubgroup
+    (i : Fin d.dynkinType.rank ⊕ Fin d.dynkinType.rank) (u : Multiplicative d.Closure) :
+    d.geckPrimeFrobenius (d.geckRootSubgroup i u) =
+      d.geckRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.characteristic)) := by
+  have h := d.dynkinType.geckFrobenius_geckRootSubgroupPoints d.dynkinType_valid
+    d.characteristic 1 d.Closure i u
+  rw [pow_one] at h
+  exact h
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the Geck point group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.DynkinType.geckFrobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem geckFrobenius_eq_geckPrimeFrobenius_pow :
+    d.geckFrobenius = (show Monoid.End _ from d.geckPrimeFrobenius) ^ d.fieldExponent := by
+  rw [geckFrobenius_def, geckPrimeFrobenius_def, DynkinType.geckFrobenius_pow, Nat.one_mul]
 
 /-- **The Frobenius raises every coordinate of a weight-torus point to the `q`-th power.** -/
 @[simp]

@@ -81,6 +81,10 @@ identification of the carrier with it, once one is proved.
 * `TauCeti.TypeCLieIndex.FixedPoints` and `TauCeti.TypeCLieIndex.Group`: that fixed group and the
   candidate group of `Cₙ(q)`, its derived central quotient.
 
+* `TauCeti.TypeCLieIndex.primeFrobenius`, with
+  `TauCeti.TypeCLieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeCLieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
+  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
@@ -230,6 +234,36 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the standard symplectic carrier attached to a validated type-`C`
+index**, the `p`-power map for `p` the defining characteristic. The `q`-power Frobenius is its
+`e`-th power, for `e` the field exponent the index records, by
+`frobenius_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  SpStd.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the standard carrier's Frobenius at exponent one. -/
+theorem primeFrobenius_def :
+    d.primeFrobenius = SpStd.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- **The prime-field Frobenius fixes the numbering of a simple-root subgroup and raises its
+parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.SpStd.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, SpStd.frobenius_pow, Nat.one_mul]
 
 /-- **The Frobenius raises every coordinate of the split weight torus to the `q`-th power.** -/
 @[simp]

@@ -114,6 +114,11 @@ or simple.
 * `TauCeti.TypeTwistedDLieIndex.FixedPoints` and `TauCeti.TypeTwistedDLieIndex.Group`: the fixed
   subgroup of that Steinberg map, and the candidate group of `²Dₙ(q)`.
 
+* `TauCeti.TypeDDiagramLieIndex.primeFrobenius`, with
+  `TauCeti.TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its
+  pinned equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th
+  power.
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II, for the spin representation the
@@ -244,6 +249,38 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the spin carrier of an index on a type-`D` diagram**, the
+`p`-power map for `p` the defining characteristic. The `q`-power Frobenius is its `e`-th power, for
+`e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the spin carrier's Frobenius at exponent one. -/
+-- Not a `simp` lemma, for the reason `frobenius_def` is not.
+theorem primeFrobenius_def :
+    d.primeFrobenius =
+      TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
+    pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.TypeDSpinCarrier.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, TypeDSpinCarrier.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
 lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy

@@ -72,6 +72,11 @@ group is finite, perfect, or simple.
   map are the points of the carrier whose matrix entries lie in the field of definition `𝔽_q`
   recorded by `TauCeti.ValidLieTypeIndex.fixedField`.
 
+* `TauCeti.UnimodularExceptionalIndex.primeFrobenius`, with
+  `TauCeti.UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup` and
+  `TauCeti.UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius,
+  its action on the numbered root subgroups, and the Steinberg endomorphism as its `e`-th
+  power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
@@ -206,6 +211,37 @@ theorem steinberg_geckRootSubgroup (i : Fin d.1.1.dynkinType.rank ⊕ Fin d.1.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.1.fieldOrder)) := by
   rw [steinberg_eq_geckFrobenius]
   exact d.1.1.geckFrobenius_geckRootSubgroup i u
+
+/-- **The prime-field Frobenius of the Geck point group**, the `p`-power map for `p` the defining
+characteristic. The Steinberg endomorphism of the family, which is its `q`-power Frobenius, is the
+`e`-th power of this map, for `e` the field exponent the index records, by
+`steinberg_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  d.1.1.geckPrimeFrobenius
+
+/-- The prime-field Frobenius of an untwisted unimodular exceptional index is the prime-field
+Frobenius of its Geck point group. -/
+-- Not a `simp` lemma, for the reason `steinberg_eq_geckFrobenius` is not.
+theorem primeFrobenius_eq_geckPrimeFrobenius : d.primeFrobenius = d.1.1.geckPrimeFrobenius := by
+  rw [primeFrobenius]
+
+/-- **The prime-field Frobenius raises the parameter of every numbered root subgroup to the `p`-th
+power.** On a simple root subgroup this is `Frob_p (x_α(t)) = x_α(t ^ p)`. -/
+@[simp]
+theorem primeFrobenius_geckRootSubgroup (i : Fin d.1.1.dynkinType.rank ⊕ Fin d.1.1.dynkinType.rank)
+    (u : Multiplicative d.1.1.Closure) :
+    d.primeFrobenius (d.1.1.geckRootSubgroup i u) =
+      d.1.1.geckRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.1.characteristic)) := by
+  rw [primeFrobenius_eq_geckPrimeFrobenius]
+  exact d.1.1.geckPrimeFrobenius_geckRootSubgroup i u
+
+/-- **The Steinberg endomorphism is the `e`-th power of the prime-field Frobenius**, for `e` the
+field exponent the index records. -/
+theorem steinberg_eq_primeFrobenius_pow :
+    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.1.fieldExponent := by
+  rw [primeFrobenius_eq_geckPrimeFrobenius, steinberg_eq_geckFrobenius]
+  exact d.1.1.geckFrobenius_eq_geckPrimeFrobenius_pow
 
 /-- **The Steinberg map raises every coordinate of a weight-torus point to the `q`-th power.** It
 is the untwisted case of the equation a Steinberg endomorphism satisfies on the second half of the
