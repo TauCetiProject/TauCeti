@@ -29,10 +29,8 @@ Each exponent is invariant under a change of variables, so the ideal depends onl
 `K`-isomorphism class of the curve and not on the equation presenting it. Against an equation that
 is already integral over `O` it is comparable with the actual discriminant: the local exponents
 never exceed those of `Δ W`, with equality at `v` exactly when `W` is minimal there, so
-`𝔇_{E/K} = (Δ W)` characterises global minimality among integral equations. Integrality is not
-optional in that characterisation — translating a globally minimal equation by `r = 1 / 2` leaves
-`Δ` alone and destroys integrality, so the ideal identity would hold for an equation that is
-neither minimal nor integral.
+`𝔇_{E/K} = (Δ W)` characterises global minimality among integral equations. Accordingly, this
+characterisation is stated only for equations integral over `O`.
 
 The obstruction exponents `(v (Δ W) − v (Δ_min,ᵥ)) / 12` of an integral equation, the integral
 defect ideal they assemble into, and its class in `ClassGroup O` are not defined here.
@@ -104,8 +102,8 @@ private theorem valuation_Δ_eq_exp_neg_count (v : HeightOneSpectrum O) {W : Wei
   rw [← hd, valuation_of_algebraMap, v.intValuation_if_neg (ne_zero_of_algebraMap_eq_Δ hd)]
 
 /-- **At a prime where the equation is minimal, the exponent of `𝔭ᵥ` in the discriminant is
-`v (Δ_min,ᵥ)`.** Here `d` is the integral representative of `Δ W`, which exists because a minimal
-equation is integral. -/
+`v (Δ_min,ᵥ)`.** Here `d` is a global integral representative of `Δ W`, supplied separately by
+the hypothesis `hd`; minimality at `v` supplies only integrality over the localisation. -/
 theorem count_span_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
     {W : WeierstrassCurve K} [W.IsElliptic] {d : O} (hd : algebraMap O K d = W.Δ)
     (hv : IsMinimal (Localization.AtPrime v.asIdeal) W) :
