@@ -6,15 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
-public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.LinearAlgebra.TensorProduct.Symmetric
 
 /-!
-# Bilinear forms on inner product spaces
-
-This file develops two constructions relating bilinear forms to the inner product: the form of a
-tensor and the metric trace of a form.
+# The bilinear form of a tensor on an inner product space
 
 On an inner product space the inner product turns a tensor `t : V ⊗[𝕜] V` into a bilinear form on
 `V`,
@@ -31,11 +27,6 @@ The construction carries the flip `x ⊗ y ↦ y ⊗ x` to the exchange of the t
 so the **symmetric tensors** `TauCeti.symmetricTensors` become the **symmetric** forms and the
 **antisymmetric tensors** `TauCeti.antisymmetricTensors` the **alternating** ones.
 
-In finite-dimensional real inner product spaces, `TauCeti.bilinFormToEnd` raises one index of a
-bilinear form and `TauCeti.bilinFormTrace` contracts it against the metric. This basis-independent
-operation is the linear-algebraic contraction used, for example, to pass from Ricci curvature to
-scalar curvature.
-
 Nothing here needs a group or a representation: this is the purely bilinear half of the dictionary
 that `TauCeti/RepresentationTheory/Continuous/Square/BilinearForm.lean` makes equivariant for a
 unitary representation.
@@ -45,9 +36,6 @@ unitary representation.
 * `TauCeti.BilinForm.ofTensor`: the bilinear form `B_t (v, w) = ⟪t, v ⊗ₜ w⟫` of a tensor.
 * `TauCeti.BilinForm.ofTensorEquiv`: in finite dimensions, that construction as a conjugate-linear
   equivalence of the tensor square with the bilinear forms.
-* `TauCeti.bilinFormToEnd`: the endomorphism obtained by raising the second covariant index of a
-  real bilinear form.
-* `TauCeti.bilinFormTrace`: the metric trace of a real bilinear form.
 
 ## Main statements
 
@@ -175,57 +163,5 @@ theorem ofTensor_surjective [FiniteDimensional 𝕜 V] :
   ⟨ofTensorEquiv.symm B, by rw [← ofTensorEquiv_apply, LinearEquiv.apply_symm_apply]⟩
 
 end BilinForm
-
-section Trace
-
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
-
-/-- Raise the second covariant index of a bilinear form using the inner product. Thus
-`bilinFormToEnd B u` is the unique vector whose inner product with `v` is `B u v`.
-
-This is an equivalence: lowering the output index recovers the bilinear form. -/
-noncomputable def bilinFormToEnd : BilinForm ℝ W ≃ₗ[ℝ] Module.End ℝ W := by
-  letI := FiniteDimensional.complete ℝ W
-  exact LinearEquiv.congrRight
-    ((LinearMap.toContinuousLinearMap : (W →ₗ[ℝ] ℝ) ≃ₗ[ℝ] W →L[ℝ] ℝ).trans
-      (InnerProductSpace.toDual ℝ W).symm.toLinearEquiv)
-
-/-- The endomorphism associated to `B` represents `B` through the inner product. -/
-@[simp]
-theorem inner_bilinFormToEnd_apply (B : BilinForm ℝ W) (u v : W) :
-    inner ℝ (bilinFormToEnd B u) v = B u v := by
-  let _ := FiniteDimensional.complete ℝ W
-  simp [bilinFormToEnd, InnerProductSpace.toDual_symm_apply]
-
-/-- Raising an index of the inner product gives the identity endomorphism. -/
-@[simp]
-theorem bilinFormToEnd_inner : bilinFormToEnd (innerₗ W) = LinearMap.id := by
-  apply LinearMap.ext
-  intro u
-  exact ext_inner_right ℝ fun v ↦ by simp
-
-/-- The metric trace of a bilinear form, obtained by raising an index and taking the ordinary
-endomorphism trace. -/
-noncomputable def bilinFormTrace : BilinForm ℝ W →ₗ[ℝ] ℝ :=
-  (LinearMap.trace ℝ W).comp bilinFormToEnd.toLinearMap
-
-/-- The metric trace is the ordinary trace of the associated endomorphism. -/
-@[simp]
-theorem bilinFormTrace_apply (B : BilinForm ℝ W) :
-    bilinFormTrace B = LinearMap.trace ℝ W (bilinFormToEnd B) :=
-  (rfl)
-
-/-- In an orthonormal basis, the metric trace is the sum of the diagonal values. -/
-theorem bilinFormTrace_eq_sum_apply {i : Type*} [Fintype i] (B : BilinForm ℝ W)
-    (b : OrthonormalBasis i ℝ W) : bilinFormTrace B = ∑ j, B (b j) (b j) := by
-  rw [bilinFormTrace_apply, LinearMap.trace_eq_sum_inner _ b]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [real_inner_comm, inner_bilinFormToEnd_apply]
-
-/-- The metric trace of the inner product is the real dimension. -/
-theorem bilinFormTrace_inner : bilinFormTrace (innerₗ W) = Module.finrank ℝ W := by
-  rw [bilinFormTrace_apply, bilinFormToEnd_inner, LinearMap.trace_id]
-
-end Trace
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.BilinearForm
+public import TauCeti.Analysis.InnerProductSpace.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
 
 /-!
@@ -56,7 +56,6 @@ def scalarCurvature (x : M) : ℝ :=
   TauCeti.bilinFormTrace (cov.ricciTensor x)
 
 /-- Scalar curvature is the metric trace of Ricci curvature. -/
-@[simp]
 theorem scalarCurvature_apply (x : M) :
     cov.scalarCurvature x = TauCeti.bilinFormTrace (cov.ricciTensor x) :=
   (rfl)
@@ -66,12 +65,12 @@ theorem scalarCurvature_eq_sum {i : Type*} [Fintype i] (x : M)
     (b : OrthonormalBasis i ℝ (TangentSpace I x)) :
     cov.scalarCurvature x = ∑ j, cov.ricciTensor x (b j) (b j) := by
   rw [scalarCurvature_apply]
-  exact TauCeti.bilinFormTrace_eq_sum_apply _ b
+  exact TauCeti.bilinFormTrace_eq_sum _ b
 
 /-- In an orthonormal basis, scalar curvature is the double contraction of the curvature
 tensor. The inner sum contracts the curvature output against its first argument; the outer sum
 contracts the two Ricci arguments. -/
-theorem scalarCurvature_eq_sum_inner_curvature {i : Type*} [Fintype i] (x : M)
+theorem scalarCurvature_eq_sum_inner_curvatureTensor {i : Type*} [Fintype i] (x : M)
     (b : OrthonormalBasis i ℝ (TangentSpace I x)) :
     cov.scalarCurvature x =
       ∑ j, ∑ k, inner ℝ (b k) (curvature x (b k) (b j) (b j)) := by
@@ -112,7 +111,7 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_sub (x : M)
 
 /-- The scalar curvature of the constant-curvature model
 `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)` is `n (n - 1) κ`. -/
-theorem scalarCurvature_eq_of_curvatureTensor_eq_const (x : M) (k : ℝ)
+theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
     (h : ∀ w u v, curvature x w u v =
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.scalarCurvature x = (Module.finrank ℝ (TangentSpace I x) : ℝ) *
