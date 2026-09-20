@@ -53,6 +53,7 @@ of the rotation group `5T1`.
 * `TauCeti.natCard_referenceSubgroup_three_zero`, …, `TauCeti.natCard_referenceSubgroup_five_four`:
   the orders `3, 6`, `4, 4, 8, 12, 24` and `5, 10, 20, 60, 120` of the reference subgroups in
   degrees three, four and five.
+* `TauCeti.index_referenceSubgroup_five_two`: the reference subgroup of `5T3` has index six.
 * `TauCeti.referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero`: the reference
   subgroup of `5T3` is the normalizer of that of `5T1`.
 * `TauCeti.referenceSubgroup_three_zero_le_alternatingGroup`,
@@ -467,6 +468,14 @@ theorem referenceSubgroup_five_one_le_referenceSubgroup_five_two :
   · exact Subgroup.subset_closure (by simp)
   · rw [← formPerm_five_sq_eq_doubleSwap]
     exact pow_mem (Subgroup.subset_closure (by simp)) _
+
+/-- The reference subgroup of `5T3` has index `6`. -/
+theorem index_referenceSubgroup_five_two :
+    (referenceSubgroup 5 ⟨2, by simp⟩).index = 6 := by
+  have h := (referenceSubgroup 5 ⟨2, by simp⟩).index_mul_card
+  rw [natCard_referenceSubgroup_five_two, Nat.card_perm, Nat.card_fin] at h
+  simp only [Nat.factorial] at h
+  omega
 
 /-- The reference subgroup of `5T2` consists of even permutations. -/
 theorem referenceSubgroup_five_one_le_alternatingGroup :
