@@ -48,18 +48,13 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-private theorem count_toFractionalIdeal_eq_adicOrd (x : 𝔸ᶠ[(𝓞 K), K]ˣ)
-    (v : HeightOneSpectrum (𝓞 K)) :
-    FractionalIdeal.count K v (toFractionalIdeal x : FractionalIdeal (𝓞 K)⁰ K) = adicOrd x v :=
-  count_coe_toFractionalIdeal x v
-
 /-- A finite idele defines an ideal away from `S` exactly when its orders vanish on `S`. -/
 theorem toFractionalIdeal_mem_idealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : 𝔸ᶠ[(𝓞 K), K]ˣ) :
     toFractionalIdeal x ∈ NumberFieldArithmetic.idealsAway (K := K) S ↔
       ∀ v ∈ S, adicOrd x v = 0 := by
   rw [NumberFieldArithmetic.mem_idealsAway_iff]
-  simp only [count_toFractionalIdeal_eq_adicOrd]
+  simp only [count_coe_toFractionalIdeal]
 
 /-- The finite ideles whose orders vanish on `S`, viewed as a subgroup. -/
 noncomputable def adicOrdAway (S : Finset (HeightOneSpectrum (𝓞 K))) :
@@ -95,22 +90,11 @@ theorem toIdealsAway_apply (S : Finset (HeightOneSpectrum (𝓞 K)))
 theorem mem_ker_toIdealsAway_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
     (x : adicOrdAway S) :
     x ∈ (toIdealsAway S).ker ↔ (x : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈ integralUnits (𝓞 K) K := by
-  rw [MonoidHom.mem_ker]
-  constructor
-  · intro h
-    rw [← ker_toFractionalIdeal, MonoidHom.mem_ker]
-    have h' := congrArg (fun y : NumberFieldArithmetic.idealsAway (K := K) S =>
-      (y : (FractionalIdeal (𝓞 K)⁰ K)ˣ)) h
-    simpa [toIdealsAway_apply] using h'
-  · intro h
-    have hxker : (x : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈
-        (toFractionalIdeal (R := 𝓞 K) (K := K)).ker := by
-      rw [ker_toFractionalIdeal]
-      exact h
-    have h' : toFractionalIdeal (x : 𝔸ᶠ[(𝓞 K), K]ˣ) = 1 :=
-      MonoidHom.mem_ker.mp hxker
-    apply Subtype.ext
-    simpa [toIdealsAway_apply] using h'
+  rw [show (toIdealsAway S).ker =
+      ((toFractionalIdeal (R := 𝓞 K) (K := K)).comp (adicOrdAway S).subtype).ker by
+    exact MonoidHom.ker_codRestrict _ _ _]
+  rw [← MonoidHom.comap_ker, ker_toFractionalIdeal]
+  rfl
 
 /-- Every nonzero integral ideal away from `S` is the fractional ideal of a finite idele. -/
 theorem exists_toFractionalIdeal_eq_integralIdealsAwayHom
@@ -132,7 +116,7 @@ theorem exists_adicOrd_eq_count_integralIdealsAway
         adicOrd x v = FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
   obtain ⟨x, hx⟩ := exists_toFractionalIdeal_eq_integralIdealsAwayHom S I
   refine ⟨x, fun v ↦ ?_⟩
-  rw [← count_toFractionalIdeal_eq_adicOrd x v, hx]
+  rw [← count_coe_toFractionalIdeal x v, hx]
   exact congrArg (FractionalIdeal.count K v) (NumberFieldArithmetic.coe_integralIdealsAwayHom S I)
 
 end TauCeti.GlobalNumberFields
