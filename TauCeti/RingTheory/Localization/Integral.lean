@@ -56,9 +56,9 @@ theorem isLocalization_algebraMapSubmonoid_of_isIntegralClosure :
       (isIntegral_algebraMap (A := L) (x := z))
     apply isUnit_iff_exists_inv.mpr
     refine ⟨s, IsIntegralClosure.algebraMap_injective Sₘ Rₘ L ?_⟩
-    rw [map_mul, ← IsScalarTower.algebraMap_apply S Sₘ L,
-      ← IsScalarTower.algebraMap_apply R S L, hs,
-      IsScalarTower.algebraMap_apply R Rₘ L, ← map_mul, hz, map_one, map_one]
+    simpa only [map_mul, map_one, ← IsScalarTower.algebraMap_apply S Sₘ L,
+      ← IsScalarTower.algebraMap_apply R S L, ← IsScalarTower.algebraMap_apply R Rₘ L, hs]
+      using congrArg (algebraMap Rₘ L) hz
   · intro y
     obtain ⟨m, hm⟩ := IsIntegral.exists_multiple_integral_of_isLocalization
       (R := R) (Rₘ := Rₘ) M (algebraMap Sₘ L y)
