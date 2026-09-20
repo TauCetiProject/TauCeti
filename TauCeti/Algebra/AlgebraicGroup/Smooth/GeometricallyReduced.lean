@@ -40,8 +40,7 @@ reducedness nor smoothness is built into the category of commutative Hopf algebr
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 1.26 and Corollary 1.27.
 
-This advances Layer 2, "Smoothness and dimension tools via `Lie(G)`", of the ReductiveGroups
-roadmap. The forward implication uses Mathlib's `AlgebraicGeometry.smooth_of_grpObj`; the reverse
+The forward implication uses Mathlib's `AlgebraicGeometry.smooth_of_grpObj`; the reverse
 uses `TauCeti.isReduced_of_smooth` after arbitrary field extension.
 -/
 
