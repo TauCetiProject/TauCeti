@@ -61,15 +61,20 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (D Y : C) [ExactPairing D Y]
 
-/-- The evaluation of an exact pairing transported across an isomorphism in its left argument. -/
-@[reassoc (attr := simp)]
+/-- The evaluation of an exact pairing transported across an isomorphism in its left argument.
+
+This is not a `simp` lemma: `CategoryTheory.exactPairingCongrLeft` is how a transported pairing
+is *built*, so rewriting with it would unfold the evaluation of every such pairing and rob the
+transported instance of its own normal form. -/
+@[reassoc]
 theorem exactPairingCongrLeft_evaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
     @ExactPairing.evaluation C _ _ X Y (exactPairingCongrLeft i) = Y ◁ i.hom ≫ ε_ X' Y :=
   rfl
 
 /-- The coevaluation of an exact pairing transported across an isomorphism in its left
-argument. -/
-@[reassoc (attr := simp)]
+argument. Not a `simp` lemma, for the reason given on
+`TauCeti.exactPairingCongrLeft_evaluation`. -/
+@[reassoc]
 theorem exactPairingCongrLeft_coevaluation {X X' Y : C} [ExactPairing X' Y] (i : X ≅ X') :
     @ExactPairing.coevaluation C _ _ X Y (exactPairingCongrLeft i) = η_ X' Y ≫ i.inv ▷ Y :=
   rfl
