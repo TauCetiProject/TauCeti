@@ -268,6 +268,24 @@ theorem primeFrobenius_def :
     d.primeFrobenius = TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure :=
   (rfl)
 
+/-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
+`p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (TypeBSpinCarrier.dimension d.carrierRank)) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ^
+            d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using TypeBSpinCarrier.coe_frobenius_apply d.carrierRank
+    d.1.characteristic 1 d.1.Closure g r c
+
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]

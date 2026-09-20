@@ -263,6 +263,21 @@ theorem geckPrimeFrobenius_def : d.geckPrimeFrobenius =
     d.dynkinType.geckFrobenius d.dynkinType_valid d.characteristic 1 d.Closure := by
   rw [geckPrimeFrobenius]
 
+/-- The prime-field Frobenius acts on the Geck point group by raising every matrix entry to the
+`p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_geckPrimeFrobenius_apply (g : GeckGroup d)
+    (r c : Fin (d.dynkinType.geckDim d.dynkinType_valid)) :
+    ((d.geckPrimeFrobenius g : Matrix.GeneralLinearGroup
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) :
+        Matrix _ _ d.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) :
+        Matrix _ _ d.Closure) r c ^ d.characteristic := by
+  rw [geckPrimeFrobenius_def]
+  simpa only [pow_one] using d.dynkinType.coe_geckFrobenius_apply d.dynkinType_valid
+    d.characteristic 1 d.Closure g r c
+
 /-- **The prime-field Frobenius raises the parameter of every numbered root subgroup to the `p`-th
 power.** On a simple root subgroup this reads `Frob_p (x_α(t)) = x_α(t ^ p)`. -/
 @[simp]

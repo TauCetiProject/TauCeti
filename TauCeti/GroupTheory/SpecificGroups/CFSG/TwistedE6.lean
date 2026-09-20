@@ -266,6 +266,18 @@ theorem primeFrobenius_def :
     d.primeFrobenius = E6DoubledMinuscule.frobenius d.1.characteristic 1 d.1.Closure :=
   (rfl)
 
+/-- The prime-field Frobenius acts on the ambient group by raising every entry of its `54 × 54`
+matrix to the `p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 54) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 54) d.1.Closure) :
+        Matrix (Fin 54) (Fin 54) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 54) d.1.Closure) :
+        Matrix (Fin 54) (Fin 54) d.1.Closure) r c ^ d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using E6DoubledMinuscule.coe_frobenius_apply d.1.characteristic 1
+    d.1.Closure g r c
+
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
