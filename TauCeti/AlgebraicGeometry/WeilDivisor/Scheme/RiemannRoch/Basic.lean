@@ -29,9 +29,9 @@ sections, so that its `H¹` has dimension exactly `g - 1 - deg D`: a nonzero glo
 `𝒪_X(D)` is a rational function `f` with `div f + D ≥ 0`, and the degree of that effective divisor
 is `deg D`, because degree is a linear-equivalence invariant.
 
-The same description of global sections also identifies nonzero sections of `𝒪_X(D)` with
-effective divisors linearly equivalent to `D`. Consequently, a divisor of degree at least the genus
-is linearly equivalent to an effective divisor.
+A nonzero global section of `𝒪_X(D)` exists exactly when the complete linear system of `D` is
+nonempty. Consequently, a divisor of degree at least the genus is linearly equivalent to an
+effective divisor.
 
 ## Main declarations
 
@@ -73,26 +73,13 @@ section LinearSystem
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 
-private lemma isEffective_add_principalDivisor_iff
-    (D : SchemeWeilDivisor X) (g : Additive X.functionFieldˣ) :
-    WeilDivisor.IsEffective
-        (D + (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) ↔
-      ∀ x : CodimensionOnePoint X,
-        -WeilDivisor.coeff D x ≤
-          X.ord ((Additive.toMul g : X.functionFieldˣ) : X.functionField) x := by
-  rw [WeilDivisor.isEffective_iff]
-  apply forall_congr'
-  intro x
-  rw [WeilDivisor.coeff_add, WeilDivisor.OrderSystem.coeff_principalDivisor,
-    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
-  omega
-
 variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
 /-- **The complete linear system of `D` is nonempty exactly when `𝒪_X(D)` has a nonzero global
 section.** On a Noetherian integral scheme whose codimension-one local rings are discrete
 valuation rings, a global section of `𝒪_X(D)` is a rational function `f` with `D + div f ≥ 0`, so
 a nonzero one names an effective divisor linearly equivalent to `D`, and conversely. -/
+@[simp]
 theorem nonempty_completeLinearSystem_iff_nontrivial_globalSections_sheaf
     (D : SchemeWeilDivisor X) :
     ((WeilDivisor.OrderSystem.ofScheme X).completeLinearSystem D).Nonempty ↔
