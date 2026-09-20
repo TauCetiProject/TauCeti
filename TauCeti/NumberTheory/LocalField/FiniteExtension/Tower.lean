@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # Compatibility of local-field structures in towers
@@ -49,9 +50,7 @@ theorem finiteExtensionValuativeRel_tower :
   have := Module.Finite.of_restrictScalars_finite K L M
   let _ := finiteExtensionValuativeRel L M
   have := finiteExtension_valuativeExtension L M
-  have : ValuativeExtension K M := ⟨fun a b => by
-    rw [IsScalarTower.algebraMap_apply K L M a, IsScalarTower.algebraMap_apply K L M b,
-      ValuativeExtension.vle_iff_vle, ValuativeExtension.vle_iff_vle]⟩
+  have := ValuativeExtension.trans K L M
   exact finiteExtensionValuativeRel_eq K M
 
 /-- The spectral-norm topology on a finite extension is unchanged when constructed through

@@ -292,9 +292,7 @@ theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [Topologi
     [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     [ValuativeExtension L M] :
     ramificationIndex K M = ramificationIndex K L * ramificationIndex L M := by
-  -- The compatibility of `M/K` follows from that of the two steps.
-  have : ValuativeExtension K M := ⟨fun a b ↦ by
-    simp only [IsScalarTower.algebraMap_apply K L M, ValuativeExtension.vle_iff_vle]⟩
+  have := ValuativeExtension.trans K L M
   refine ramificationIndex_eq_iff.2 fun x ↦ ?_
   have hx : Units.map (algebraMap K M : K →* M) x =
       Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by

@@ -21,6 +21,7 @@ residue fields, to be used directly from a `ValuativeExtension` hypothesis.
 
 ## Main results
 
+* `TauCeti.ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
 * `ValuativeExtension.valuationHasExtension`: the canonical valuation on `B` extends the
   canonical valuation on `A`.
 * `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
@@ -47,6 +48,14 @@ instance valuationHasExtension :
 end ValuativeExtension
 
 namespace TauCeti
+
+/-- Compatibility of valuative relations composes along an algebra tower. -/
+theorem ValuativeExtension.trans (A B C : Type*) [CommSemiring A] [CommSemiring B] [Semiring C]
+    [ValuativeRel A] [ValuativeRel B] [ValuativeRel C]
+    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+    [ValuativeExtension A B] [ValuativeExtension B C] : ValuativeExtension A C where
+  vle_iff_vle a b := by
+    simp only [IsScalarTower.algebraMap_apply A B C, ValuativeExtension.vle_iff_vle]
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
   [Algebra K L] [ValuativeExtension K L]
