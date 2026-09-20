@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Extension
-public import TauCeti.Analysis.Sobolev.W1p.Restriction
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.MeasureTheory.Group.Integral
 
 /-!
@@ -71,10 +70,6 @@ estimate give the fixed-bounded-support and translation inputs for Fréchet--Kol
   zero extensions of a gradient-bounded family have uniformly small translation increments.
 * `TauCeti.W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le`:
   zero extensions of a norm-bounded family have uniformly small translation increments.
-* `TauCeti.W1p.translate`: local translation from `W^{1,p}(Ω)` to `W^{1,p}(V)` when
-  `V + h ⊆ Ω`.
-* `TauCeti.W1p.differenceQuotient`: the local Sobolev difference quotient, whose value and weak
-  gradient are characterized by `_ae` lemmas.
 * `TauCeti.Sobolev1JetLp.translateLp_mem_w1pSubmodule`: translation preserves `W^{1,p}(ℝⁿ)`,
   since on the whole space the weak-derivative identities are translation invariant.
 
@@ -245,88 +240,6 @@ theorem W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_no
   intro u hu
   exact (W1p.norm_gradient_le (u : W1p mu Omega p)).trans (hS u hu)
 
-/-! ### Local translation and difference quotients -/
-
-/-- **Local translation of a Sobolev function.** If `x + h ∈ Ω` for every `x ∈ V`, this is the
-element of `W^{1,p}(V)` represented by `x ↦ u (x + h)`. Its weak gradient is represented by
-`x ↦ ∇u (x + h)`; see `W1p.value_translate_ae` and `W1p.gradient_translate_ae`.
-
-Unlike extension by zero, local translation needs no boundary condition: the explicit inclusion
-`V + h ⊆ Ω` ensures that only values inside the original domain are used. -/
-def W1p.translate {Omega V : Opens E} {h : E} (hVO : MapsTo (· + h) V Omega)
-    (u : W1p mu Omega p) : W1p mu V p := by
-  let hv : MemLp (fun x => W1p.value u (x + h)) p (mu.restrict V) :=
-    MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo (Lp.memLp (W1p.value u)) hVO
-  let hg : MemLp (fun x => W1p.gradient u (x + h)) p (mu.restrict V) :=
-    MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo (Lp.memLp (W1p.gradient u)) hVO
-  let value := hv.toLp (fun x => W1p.value u (x + h))
-  let gradient := hg.toLp (fun x => W1p.gradient u (x + h))
-  refine W1p.mk value gradient ?_
-  have hweak := (W1p.hasWeakFDerivOn u).comp_add_right hVO
-  refine hweak.congr_ae hv.coeFn_toLp.symm |>.congr_ae_deriv ?_
-  filter_upwards [hg.coeFn_toLp] with x hx
-  rw [hx]
-
-/-- Local translation is represented almost everywhere by precomposition with `x ↦ x + h`. -/
-theorem W1p.value_translate_ae {Omega V : Opens E} {h : E}
-    (hVO : MapsTo (· + h) V Omega) (u : W1p mu Omega p) :
-    W1p.value (W1p.translate hVO u) =ᵐ[mu.restrict V] fun x => W1p.value u (x + h) := by
-  simp only [W1p.translate, W1p.value_mk]
-  exact MemLp.coeFn_toLp _
-
-/-- The weak gradient of a local translation is represented almost everywhere by the translated
-weak gradient. -/
-theorem W1p.gradient_translate_ae {Omega V : Opens E} {h : E}
-    (hVO : MapsTo (· + h) V Omega) (u : W1p mu Omega p) :
-    W1p.gradient (W1p.translate hVO u) =ᵐ[mu.restrict V]
-      fun x => W1p.gradient u (x + h) := by
-  simp only [W1p.translate, W1p.gradient_mk]
-  exact MemLp.coeFn_toLp _
-
-/-- **The local Sobolev difference quotient.** For `V ⊆ Ω` and `V + t • w ⊆ Ω`, this is the
-element of `W^{1,p}(V)` represented by `x ↦ t⁻¹ (u (x + t • w) - u x)`.
-
-No assumption `t ≠ 0` is needed for the definition: at `t = 0` both the value and gradient are
-zero. Applications approximating a derivative impose `t ≠ 0` through their estimates. -/
-def W1p.differenceQuotient {Omega V : Opens E} (hV : V ≤ Omega) (w : E) (t : ℝ)
-    (hVO : MapsTo (· + t • w) V Omega) (u : W1p mu Omega p) : W1p mu V p :=
-  t⁻¹ • (W1p.translate hVO u - W1p.restrictL hV u)
-
-/-- The value of the local Sobolev difference quotient has the expected representative. -/
-theorem W1p.value_differenceQuotient_ae {Omega V : Opens E} (hV : V ≤ Omega) (w : E) (t : ℝ)
-    (hVO : MapsTo (· + t • w) V Omega) (u : W1p mu Omega p) :
-    W1p.value (W1p.differenceQuotient hV w t hVO u) =ᵐ[mu.restrict V]
-      fun x => t⁻¹ * (W1p.value u (x + t • w) - W1p.value u x) := by
-  have hvalue : W1p.value (W1p.differenceQuotient hV w t hVO u) =
-      t⁻¹ • (W1p.value (W1p.translate hVO u) - W1p.value (W1p.restrictL hV u)) := by
-    rw [← W1p.valueL_apply, W1p.differenceQuotient, map_smul, map_sub,
-      W1p.valueL_apply, W1p.valueL_apply]
-  rw [hvalue]
-  filter_upwards [W1p.value_translate_ae hVO u, W1p.value_restrictL_ae hV u,
-    Lp.coeFn_sub (W1p.value (W1p.translate hVO u))
-      (W1p.value (W1p.restrictL hV u)),
-    Lp.coeFn_smul t⁻¹ (W1p.value (W1p.translate hVO u) -
-      W1p.value (W1p.restrictL hV u))] with x htrans hres hsub hsmul
-  rw [hsmul, Pi.smul_apply, hsub, Pi.sub_apply, htrans, hres, smul_eq_mul]
-
-/-- The weak gradient of the local Sobolev difference quotient is the corresponding difference
-quotient of the weak gradient. -/
-theorem W1p.gradient_differenceQuotient_ae {Omega V : Opens E} (hV : V ≤ Omega) (w : E)
-    (t : ℝ) (hVO : MapsTo (· + t • w) V Omega) (u : W1p mu Omega p) :
-    W1p.gradient (W1p.differenceQuotient hV w t hVO u) =ᵐ[mu.restrict V]
-      fun x => t⁻¹ • (W1p.gradient u (x + t • w) - W1p.gradient u x) := by
-  have hgradient : W1p.gradient (W1p.differenceQuotient hV w t hVO u) =
-      t⁻¹ • (W1p.gradient (W1p.translate hVO u) - W1p.gradient (W1p.restrictL hV u)) := by
-    rw [← W1p.gradientL_apply, W1p.differenceQuotient, map_smul, map_sub,
-      W1p.gradientL_apply, W1p.gradientL_apply]
-  rw [hgradient]
-  filter_upwards [W1p.gradient_translate_ae hVO u, W1p.gradient_restrictL_ae hV u,
-    Lp.coeFn_sub (W1p.gradient (W1p.translate hVO u))
-      (W1p.gradient (W1p.restrictL hV u)),
-    Lp.coeFn_smul t⁻¹ (W1p.gradient (W1p.translate hVO u) -
-      W1p.gradient (W1p.restrictL hV u))] with x htrans hres hsub hsmul
-  rw [hsmul, Pi.smul_apply, hsub, Pi.sub_apply, htrans, hres]
-
 /-! ### Translation preserves `W^{1,p}(ℝⁿ)` -/
 
 section TranslateJet
@@ -335,23 +248,6 @@ section TranslateJet
 local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
   rw [Opens.coe_top, Measure.restrict_univ]
   infer_instance
-
-/-- The translate `y ↦ φ (y + h)` of a whole-space test function. -/
-private def translateTestFunction (phi : 𝓓((⊤ : Opens E), ℝ)) (h : E) :
-    𝓓((⊤ : Opens E), ℝ) :=
-  ⟨fun y => phi (y + h), phi.contDiff.comp (contDiff_id.add contDiff_const),
-    phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight h), subset_univ _⟩
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private theorem translateTestFunction_apply (phi : 𝓓((⊤ : Opens E), ℝ)) (h y : E) :
-    translateTestFunction phi h y = phi (y + h) :=
-  rfl
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private theorem lineDeriv_translateTestFunction (phi : 𝓓((⊤ : Opens E), ℝ)) (h y v : E) :
-    lineDeriv ℝ (translateTestFunction phi h : E → ℝ) y v =
-      lineDeriv ℝ (phi : E → ℝ) (y + h) v := by
-  simp only [lineDeriv, translateTestFunction_apply, add_right_comm y _ h]
 
 omit [FiniteDimensional ℝ E] in
 /-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities
@@ -363,9 +259,10 @@ theorem Sobolev1JetLp.translateLp_mem_w1pSubmodule (h : E) {J : Sobolev1JetLp mu
   set nu := mu.restrict ((⊤ : Opens E) : Set E)
   rw [mem_w1pSubmodule_iff] at hJ ⊢
   intro phi v
+  have htop : MapsTo (· + h) (⊤ : Opens E) (⊤ : Opens E) := fun _ _ => by simp
   let f : E → ℝ := fun y =>
-    lineDeriv ℝ (translateTestFunction phi (-h) : E → ℝ) y v * Sobolev1JetLp.value J y +
-      translateTestFunction phi (-h) y * Sobolev1JetLp.candidateWeakFDeriv J y v
+    lineDeriv ℝ (translateTestFunction htop phi : E → ℝ) y v * Sobolev1JetLp.value J y +
+      translateTestFunction htop phi y * Sobolev1JetLp.candidateWeakFDeriv J y v
   have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
     (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
   calc
@@ -380,10 +277,10 @@ theorem Sobolev1JetLp.translateLp_mem_w1pSubmodule (h : E) {J : Sobolev1JetLp mu
         hq.eventually (Sobolev1JetLp.value_apply_ae J),
         hq.eventually (Sobolev1JetLp.gradient_apply_ae J)] with x hvK hgK hK hvJ hgJ
       simp only [f, Sobolev1JetLp.candidateWeakFDeriv_apply, lineDeriv_translateTestFunction,
-        translateTestFunction_apply, add_neg_cancel_right, hvK, hgK, hK, Function.comp_apply,
+        translateTestFunction_apply, add_sub_cancel_right, hvK, hgK, hK, Function.comp_apply,
         hvJ, hgJ]
     _ = ∫ x in (⊤ : Opens E), f x ∂mu := integral_add_right_eq_self f h
-    _ = 0 := hJ (translateTestFunction phi (-h)) v
+    _ = 0 := hJ (translateTestFunction htop phi) v
 
 end TranslateJet
 

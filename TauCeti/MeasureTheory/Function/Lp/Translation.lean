@@ -64,7 +64,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set TopologicalSpace
+open MeasureTheory Set
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
@@ -163,11 +163,11 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
 /-- An `Lᵖ` function remains `Lᵖ` after translation on any set whose translate lies in the
 original domain. This is the restricted-domain counterpart of precomposition by
 `MeasureTheory.Measure.translateLp`. -/
-theorem MemLp.comp_add_right_restrict_of_mapsTo {Omega V : Opens E} {h : E} {f : E → F}
+theorem MemLp.comp_add_right_restrict_of_mapsTo {Omega V : Set E} {h : E} {f : E → F}
     (hf : MemLp f p (mu.restrict Omega)) (hVO : MapsTo (· + h) V Omega) :
     MemLp (fun x => f (x + h)) p (mu.restrict V) := by
-  have hpre : (V : Set E) ⊆ (· + h) ⁻¹' (Omega : Set E) := hVO
-  have hcomp : MemLp (f ∘ (· + h)) p (mu.restrict ((· + h) ⁻¹' (Omega : Set E))) :=
+  have hpre : V ⊆ (· + h) ⁻¹' Omega := hVO
+  have hcomp : MemLp (f ∘ (· + h)) p (mu.restrict ((· + h) ⁻¹' Omega)) :=
     hf.comp_measurePreserving ((measurePreserving_add_right mu h).restrict_preimage_emb
       (Homeomorph.addRight h).measurableEmbedding Omega)
   simpa only [Function.comp_def] using

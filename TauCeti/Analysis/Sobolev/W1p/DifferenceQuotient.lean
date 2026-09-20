@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Sobolev.WeakDeriv.Translation
 
 /-!
 # Difference quotients of `W^{1,p}(Ω)` functions
@@ -34,6 +36,10 @@ space; neither operation changes `u` or its gradient near the segments.
 
 ## Main declarations
 
+* `TauCeti.W1p.translate`: local translation from `W^{1,p}(Ω)` to `W^{1,p}(V)` when
+  `V + h ⊆ Ω`.
+* `TauCeti.W1p.differenceQuotient`: the local Sobolev difference quotient, whose value and weak
+  gradient are characterized by `_ae` lemmas.
 * `TauCeti.W1p.eLpNorm_value_comp_add_sub_le`: the local translation estimate on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient bound.
 * `TauCeti.W1p.eventually_eLpNorm_inv_mul_value_comp_add_smul_sub_le`: the difference-quotient
@@ -58,6 +64,90 @@ open scoped Distributions ENNReal Gradient InnerProductSpace
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-! ### Local translation and difference quotients -/
+
+/-- **Local translation of a Sobolev function.** If `x + h ∈ Ω` for every `x ∈ V`, this is the
+element of `W^{1,p}(V)` represented by `x ↦ u (x + h)`. Its weak gradient is represented by
+`x ↦ ∇u (x + h)`; see `W1p.value_translate_ae` and `W1p.gradient_translate_ae`.
+
+Unlike extension by zero, local translation needs no boundary condition: the explicit inclusion
+`V + h ⊆ Ω` ensures that only values inside the original domain are used. -/
+def W1p.translate {Omega V : Opens E} {h : E} (hVO : MapsTo (· + h) V Omega)
+    (u : W1p mu Omega p) : W1p mu V p := by
+  let hv : MemLp (fun x => W1p.value u (x + h)) p (mu.restrict V) :=
+    MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo (Lp.memLp (W1p.value u)) hVO
+  let hg : MemLp (fun x => W1p.gradient u (x + h)) p (mu.restrict V) :=
+    MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo (Lp.memLp (W1p.gradient u)) hVO
+  let value := hv.toLp (fun x => W1p.value u (x + h))
+  let gradient := hg.toLp (fun x => W1p.gradient u (x + h))
+  refine W1p.mk value gradient ?_
+  have hweak := (W1p.hasWeakFDerivOn u).comp_add_right hVO
+  refine hweak.congr_ae hv.coeFn_toLp.symm |>.congr_ae_deriv ?_
+  filter_upwards [hg.coeFn_toLp] with x hx
+  rw [hx]
+
+/-- Local translation is represented almost everywhere by precomposition with `x ↦ x + h`. -/
+theorem W1p.value_translate_ae {Omega V : Opens E} {h : E}
+    (hVO : MapsTo (· + h) V Omega) (u : W1p mu Omega p) :
+    W1p.value (W1p.translate hVO u) =ᵐ[mu.restrict V] fun x => W1p.value u (x + h) := by
+  simp only [W1p.translate, W1p.value_mk]
+  exact MemLp.coeFn_toLp _
+
+/-- The weak gradient of a local translation is represented almost everywhere by the translated
+weak gradient. -/
+theorem W1p.gradient_translate_ae {Omega V : Opens E} {h : E}
+    (hVO : MapsTo (· + h) V Omega) (u : W1p mu Omega p) :
+    W1p.gradient (W1p.translate hVO u) =ᵐ[mu.restrict V]
+      fun x => W1p.gradient u (x + h) := by
+  simp only [W1p.translate, W1p.gradient_mk]
+  exact MemLp.coeFn_toLp _
+
+/-- **The local Sobolev difference quotient.** For `V ⊆ Ω` and `V + t • w ⊆ Ω`, this is the
+element of `W^{1,p}(V)` represented by `x ↦ t⁻¹ (u (x + t • w) - u x)`.
+
+No assumption `t ≠ 0` is needed for the definition: at `t = 0` both the value and gradient are
+zero. Applications approximating a derivative impose `t ≠ 0` through their estimates. -/
+def W1p.differenceQuotient {Omega V : Opens E} (hV : V ≤ Omega) (w : E) (t : ℝ)
+    (hVO : MapsTo (· + t • w) V Omega) (u : W1p mu Omega p) : W1p mu V p :=
+  t⁻¹ • (W1p.translate hVO u - W1p.restrictL hV u)
+
+/-- The value of the local Sobolev difference quotient has the expected representative. -/
+theorem W1p.value_differenceQuotient_ae {Omega V : Opens E} (hV : V ≤ Omega) (w : E) (t : ℝ)
+    (hVO : MapsTo (· + t • w) V Omega) (u : W1p mu Omega p) :
+    W1p.value (W1p.differenceQuotient hV w t hVO u) =ᵐ[mu.restrict V]
+      fun x => t⁻¹ * (W1p.value u (x + t • w) - W1p.value u x) := by
+  have hvalue : W1p.value (W1p.differenceQuotient hV w t hVO u) =
+      t⁻¹ • (W1p.value (W1p.translate hVO u) - W1p.value (W1p.restrictL hV u)) := by
+    rw [← W1p.valueL_apply, W1p.differenceQuotient, map_smul, map_sub,
+      W1p.valueL_apply, W1p.valueL_apply]
+  rw [hvalue]
+  filter_upwards [W1p.value_translate_ae hVO u, W1p.value_restrictL_ae hV u,
+    Lp.coeFn_sub (W1p.value (W1p.translate hVO u))
+      (W1p.value (W1p.restrictL hV u)),
+    Lp.coeFn_smul t⁻¹ (W1p.value (W1p.translate hVO u) -
+      W1p.value (W1p.restrictL hV u))] with x htrans hres hsub hsmul
+  rw [hsmul, Pi.smul_apply, hsub, Pi.sub_apply, htrans, hres, smul_eq_mul]
+
+/-- The weak gradient of the local Sobolev difference quotient is the corresponding difference
+quotient of the weak gradient. -/
+theorem W1p.gradient_differenceQuotient_ae {Omega V : Opens E} (hV : V ≤ Omega) (w : E)
+    (t : ℝ) (hVO : MapsTo (· + t • w) V Omega) (u : W1p mu Omega p) :
+    W1p.gradient (W1p.differenceQuotient hV w t hVO u) =ᵐ[mu.restrict V]
+      fun x => t⁻¹ • (W1p.gradient u (x + t • w) - W1p.gradient u x) := by
+  have hgradient : W1p.gradient (W1p.differenceQuotient hV w t hVO u) =
+      t⁻¹ • (W1p.gradient (W1p.translate hVO u) - W1p.gradient (W1p.restrictL hV u)) := by
+    rw [← W1p.gradientL_apply, W1p.differenceQuotient, map_smul, map_sub,
+      W1p.gradientL_apply, W1p.gradientL_apply]
+  rw [hgradient]
+  filter_upwards [W1p.gradient_translate_ae hVO u, W1p.gradient_restrictL_ae hV u,
+    Lp.coeFn_sub (W1p.gradient (W1p.translate hVO u))
+      (W1p.gradient (W1p.restrictL hV u)),
+    Lp.coeFn_smul t⁻¹ (W1p.gradient (W1p.translate hVO u) -
+      W1p.gradient (W1p.restrictL hV u))] with x htrans hres hsub hsmul
+  rw [hsmul, Pi.smul_apply, hsub, Pi.sub_apply, htrans, hres]
+
+/-! ### Difference-quotient estimates -/
 
 /-- **The local translation estimate on `W^{1,p}(ℝⁿ)`.** If `T` is measurable and every segment
 `[x, x + h]` with `x ∈ K` lies in `T`, then

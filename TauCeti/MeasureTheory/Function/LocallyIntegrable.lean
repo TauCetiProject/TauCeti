@@ -6,14 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.Topology.Separation.Regular
 
 /-!
-# Local integrability on relatively compact open subdomains
+# Local integrability
 
 Local integrability on an open set is equivalent to local integrability on every open subdomain
 whose closure is compact and contained in the original set. This form is useful when a proof can be
 localized to relatively compact subdomains.
+
+For an additive Haar measure, local integrability is also preserved by translating a function onto
+any set whose translate stays inside the original domain.
+
+## Main declarations
+
+* `MeasureTheory.LocallyIntegrableOn.comp_add_right_of_mapsTo`: translation onto a smaller set
+  preserves local integrability.
+* `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
+  compact open subdomains.
 
 ## Attribution
 
@@ -25,6 +36,27 @@ The characterization adapts Mathlib's `locallyIntegrableOn_iff` and
 public section
 
 open MeasureTheory Set TopologicalSpace
+
+namespace MeasureTheory
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
+  [NormedAddCommGroup F] {mu : Measure E} [mu.IsAddHaarMeasure] {Omega V : Set E}
+  {u : E → F} {h : E}
+
+/-- Local integrability is preserved by a translation whose image stays in the original
+domain. -/
+theorem LocallyIntegrableOn.comp_add_right_of_mapsTo
+    (hu : LocallyIntegrableOn u Omega mu) (hVO : MapsTo (· + h) V Omega) :
+    LocallyIntegrableOn (fun x => u (x + h)) V mu := by
+  intro x hx
+  obtain ⟨s, hs, hus⟩ := hu (x + h) (hVO hx)
+  refine ⟨(· + h) ⁻¹' s, ?_, ?_⟩
+  · exact ((continuous_id.add continuous_const).continuousWithinAt.tendsto_nhdsWithin hVO) hs
+  · simpa only [Function.comp_def] using
+      ((measurePreserving_add_right mu h).integrableOn_comp_preimage
+        (Homeomorph.addRight h).measurableEmbedding).2 hus
+
+end MeasureTheory
 
 namespace TauCeti
 

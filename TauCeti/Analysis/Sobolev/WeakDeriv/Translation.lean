@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Translation
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Group.Integral
 
 /-!
@@ -44,75 +46,12 @@ noncomputable section
 open MeasureTheory Set TopologicalSpace Filter
 open scoped Distributions
 
-namespace MeasureTheory
-
-variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
-  [NormedAddCommGroup F] {mu : Measure E} [mu.IsAddHaarMeasure] {Omega V : Opens E}
-  {u : E → F} {h : E}
-
-/-- Local integrability is preserved by a translation whose image stays in the original
-domain. -/
-theorem LocallyIntegrableOn.comp_add_right_of_mapsTo
-    (hu : LocallyIntegrableOn u Omega mu) (hVO : MapsTo (· + h) V Omega) :
-    LocallyIntegrableOn (fun x => u (x + h)) V mu := by
-  intro x hx
-  obtain ⟨s, hs, hus⟩ := hu (x + h) (hVO hx)
-  refine ⟨(· + h) ⁻¹' s, ?_, ?_⟩
-  · exact ((continuous_id.add continuous_const).continuousWithinAt.tendsto_nhdsWithin hVO) hs
-  · simpa only [Function.comp_def] using
-      ((measurePreserving_add_right mu h).integrableOn_comp_preimage
-        (Homeomorph.addRight h).measurableEmbedding).2 hus
-
-end MeasureTheory
-
 namespace TauCeti
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega V : Opens E}
   {u u' : E → F} {U : E → E →L[ℝ] F} {v h : E}
-
-/-- Translate a test function in the opposite direction, regarding it as a test function on the
-original domain. -/
-private def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, ℝ)) :
-    𝓓(Omega, ℝ) :=
-  ⟨fun y => phi (y - h),
-    phi.contDiff.comp (contDiff_id.sub contDiff_const),
-    by
-      simpa [sub_eq_add_neg, Function.comp_def, Homeomorph.addRight] using
-        phi.hasCompactSupport.comp_homeomorph (Homeomorph.addRight (-h)),
-    by
-      intro y hy
-      have hy' : y + -h ∈ tsupport (phi : E → ℝ) := by
-        have hfun : (fun z => phi (z - h)) =
-            (phi : E → ℝ) ∘ (Homeomorph.addRight (-h) : E → E) := by
-          funext z
-          simp only [Function.comp_apply, sub_eq_add_neg]
-          apply congrArg phi
-          rfl
-        have hycomp : y ∈ tsupport
-            ((phi : E → ℝ) ∘ (Homeomorph.addRight (-h) : E → E)) := by
-          rw [← hfun]
-          exact hy
-        rw [tsupport_comp_eq_preimage] at hycomp
-        exact hycomp
-      simpa only [sub_eq_add_neg, neg_add_cancel_right] using hVO (phi.tsupport_subset hy')⟩
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem translateTestFunction_apply (hVO : MapsTo (· + h) V Omega)
-    (phi : 𝓓(V, ℝ)) (y : E) : translateTestFunction hVO phi y = phi (y - h) :=
-  rfl
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem lineDeriv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
-    (phi : 𝓓(V, ℝ)) (y w : E) :
-    lineDeriv ℝ (translateTestFunction hVO phi : E → ℝ) y w =
-      lineDeriv ℝ (phi : E → ℝ) (y - h) w := by
-  simp only [lineDeriv, translateTestFunction_apply, sub_eq_add_neg]
-  congr 1
-  funext t
-  congr 1
-  abel
 
 /-- A translated function has the translated weak directional derivative on every open set whose
 translate lies in the original domain. -/
