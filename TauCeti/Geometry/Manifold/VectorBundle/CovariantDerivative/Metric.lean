@@ -11,7 +11,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 /-!
 # Higher metric product rules
 
-This module records the iterated product rule for a metric-compatible covariant derivative.
+This module records the twice-differentiated product rule for a metric-compatible covariant
+derivative. It supplies the second-derivative calculation used to establish curvature
+skew-adjointness and can be reused in other calculations with metric-compatible connections.
 -/
 
 public section

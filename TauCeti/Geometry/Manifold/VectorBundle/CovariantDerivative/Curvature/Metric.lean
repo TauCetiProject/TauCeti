@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -15,14 +14,16 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 # Curvature of a metric-compatible connection
 
 The curvature endomorphisms of a metric-compatible connection are skew-adjoint:
-`⟪R(X,Y)σ, τ⟫ = -⟪σ, R(X,Y)τ⟫`. We prove this first for smooth fields and sections,
-then for the pointwise curvature tensor on arbitrary fibre vectors.
+`⟪R(X,Y)σ, τ⟫ = -⟪σ, R(X,Y)τ⟫`. The first theorem applies to `C^n` fields and
+`C^(n + 1)` sections for `1 ≤ n`, under the corresponding finite regularity hypotheses;
+the second specializes it to the smooth pointwise curvature tensor on arbitrary fibre vectors.
 
-On the tangent bundle this is antisymmetry in the last two arguments of the
+Under these hypotheses this is antisymmetry in the last two arguments of the
 metric-lowered Riemann tensor. Together with antisymmetry in the first two arguments,
 it makes the sectional-curvature numerator transform by the square of the determinant
 under a change of basis of a tangent plane. No torsion-free hypothesis is required:
-the result holds for any metric-compatible connection on a finite-rank real bundle.
+the result holds for any metric-compatible connection on a finite-rank real bundle satisfying
+the stated manifold, bundle, metric, and base-model assumptions.
 
 The metric and curvature conventions are those of J. M. Lee, *Introduction to Riemannian
 Manifolds*, 2nd ed., Springer GTM 176 (2018), equation (5.1) and Chapter 7, pp. 196–198:
@@ -49,15 +50,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 `C^(n + 1)` sections, for `1 ≤ n`. The base model may be infinite-dimensional, provided it is
 complete. -/
 theorem IsMetricCompatible.inner_curvatureOperator_eq_neg [CompleteSpace E]
-    {n : ℕ∞ω} [IsManifold I 1 M] [IsManifold I (n + 1) M]
-    [ContMDiffVectorBundle 1 F V I] [IsContMDiffRiemannianBundle I 1 F V]
-    [IsContMDiffRiemannianBundle I 2 F V] [ContMDiffCovariantDerivative cov n]
+    {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [ContMDiffVectorBundle 1 F V I]
+    (hn : 1 ≤ n)
+    [hmetric : let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) (by simp)
+      IsContMDiffRiemannianBundle I 2 F V]
+    [hreg : let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) (by simp)
+      ContMDiffCovariantDerivative cov n]
     (hcov : cov.IsMetricCompatible)
     {X Y : Π x : M, TangentSpace I x} {σ τ : Π x : M, V x}
-    (hn : 1 ≤ n) (hX : CMDiff n (T% X)) (hY : CMDiff n (T% Y))
+    (hX : let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) (by simp)
+      CMDiff n (T% X))
+    (hY : let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) (by simp)
+      CMDiff n (T% Y))
     (hσ : CMDiff (n + 1) (T% σ)) (hτ : CMDiff (n + 1) (T% τ)) (x : M) :
     inner ℝ (cov.curvatureOperator X Y σ x) (τ x) =
       -inner ℝ (σ x) (cov.curvatureOperator X Y τ x) := by
+  let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) (by simp)
+  change IsContMDiffRiemannianBundle I 2 F V at hmetric
+  change ContMDiffCovariantDerivative cov n at hreg
+  change CMDiff n (T% X) at hX
+  change CMDiff n (T% Y) at hY
+  let _ : IsContMDiffRiemannianBundle I 2 F V := hmetric
+  let _ : ContMDiffCovariantDerivative cov n := hreg
   have h2 : (2 : ℕ∞ω) ≤ n + 1 := by
     calc
       2 = 1 + 1 := by norm_num
