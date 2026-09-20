@@ -154,6 +154,11 @@ theorem pathLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) :
     pathLaw μ X = μ.map (fun ω i => X i ω) :=
   rfl
 
+/-- The path law of the coordinate process on path space is the law itself. -/
+@[simp]
+theorem pathLaw_coord (ρ : Measure (ℕ → α)) : pathLaw ρ (fun i (x : ℕ → α) => x i) = ρ :=
+  Measure.map_id'
+
 omit [MeasurableSpace α] in
 @[simp]
 theorem prefixProj_apply (n : ℕ) (x : ℕ → α) (i : Fin n) :

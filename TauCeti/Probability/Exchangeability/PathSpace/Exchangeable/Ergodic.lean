@@ -118,7 +118,6 @@ theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsF
     [SMulInvariantMeasure FinitaryPerm (ℕ → α) ρ] : ExchangeableLaw ρ := by
   have hmeas : ∀ i : ℕ, AEMeasurable (fun x : ℕ → α => x i) ρ :=
     fun i => (measurable_pi_apply i).aemeasurable
-  have hpath : pathLaw ρ (fun i (x : ℕ → α) => x i) = ρ := Measure.map_id'
   have hexch : Exchangeable ρ fun i (x : ℕ → α) => x i := by
     intro n σ
     -- a finitely supported permutation of `ℕ` acting as `σ` on `Fin n`
@@ -137,8 +136,7 @@ theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsF
     funext x i
     simpa only [Function.comp_apply, permReindex_apply, Fin.valEmbedding_apply,
       Function.Embedding.trans_apply, Equiv.coe_toEmbedding] using (congrArg x (hπ i)).symm
-  have := (exchangeable_iff_exchangeableLaw_pathLaw hmeas).1 hexch
-  rwa [hpath] at this
+  simpa only [pathLaw_coord] using (exchangeable_iff_exchangeableLaw_pathLaw hmeas).1 hexch
 
 /-- A finite law on `ℕ → α` is exchangeable if and only if it is invariant under the finitary
 permutation action. -/
