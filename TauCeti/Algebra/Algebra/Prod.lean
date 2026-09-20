@@ -61,12 +61,11 @@ def prodFirst (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) : A →ₐ[F] B w
 theorem prodFirst_apply (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) (a : A) :
     prodFirst φ hu a = φ (a, 0) := (rfl)
 
-/-- **The second coordinate unit is killed**, once `φ (1, 0) = 1`: it is annihilated by `(1, 0)`
-inside the product, so `φ (0, 1) = 1 * φ (0, 1) = φ ((1, 0) * (0, 1)) = φ 0 = 0`. No additive
-cancellation is involved.
-
-Not a `@[simp]` lemma: `AlgHom.map_eq_map_fst` below already rewrites `φ (0, 1)` to `φ (0, 0)`,
-which `map_zero` finishes, so tagging this one as well would only duplicate that path. -/
+/-- **The second coordinate unit is killed**, once `φ (1, 0) = 1`. The two coordinate units
+annihilate each other in the product, so this holds over an arbitrary semiring and needs no
+additive cancellation. -/
+-- Deliberately not `@[simp]`: with `map_eq_map_fst` below tagged, `simpNF` rejects this one as
+-- redundant, since that lemma already rewrites `φ (0, 1)` to `φ (0, 0)` for `map_zero` to finish.
 theorem map_zero_one_eq_zero (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) : φ (0, 1) = 0 := by
   have hmul : ((1, 0) * (0, 1) : A × C) = 0 := by simp [Prod.ext_iff]
   have := congrArg φ hmul
