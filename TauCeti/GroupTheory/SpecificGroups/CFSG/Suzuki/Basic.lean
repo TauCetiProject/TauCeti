@@ -317,8 +317,11 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
   rw [hpow, SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex]
-  exact iterate_two_mul_add_one_apply_ofAdd_pow d.halfFrobenius_simpleRootSubgroup hsq
-    (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex) i u
+  exact iterate_two_mul_add_one_apply_pow
+    (x := fun j a => d.toRankTwoBLieIndex.simpleRootSubgroup j (Multiplicative.ofAdd a))
+    (fun j a => d.halfFrobenius_simpleRootSubgroup j (Multiplicative.ofAdd a))
+    (fun j a => hsq j (Multiplicative.ofAdd a))
+    (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex) i (Multiplicative.toAdd u)
 
 /-! ## The finite-group candidate -/
 

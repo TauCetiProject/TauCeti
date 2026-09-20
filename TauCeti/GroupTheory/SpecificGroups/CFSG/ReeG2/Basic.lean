@@ -140,8 +140,11 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.AmbientGroup) :
         3 ^ d.toSuzukiReeIndex.halfExponent * d.toSuzukiReeIndex.exponent i := by
     rw [characteristic_eq_three]
   rw [hexp, hpow, d.toSuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one]
-  exact iterate_two_mul_add_one_apply_ofAdd_pow d.halfFrobenius_simpleRootSubgroup hsq
-    d.toSuzukiReeIndex.halfExponent i u
+  exact iterate_two_mul_add_one_apply_pow
+    (x := fun j a => d.simpleRootSubgroup j (Multiplicative.ofAdd a))
+    (fun j a => d.halfFrobenius_simpleRootSubgroup j (Multiplicative.ofAdd a))
+    (fun j a => hsq j (Multiplicative.ofAdd a)) d.toSuzukiReeIndex.halfExponent i
+    (Multiplicative.toAdd u)
 
 /-- The fixed subgroup of the Ree G2 Steinberg endomorphism. -/
 abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)
