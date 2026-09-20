@@ -153,6 +153,11 @@ finite set of bad primes have been deleted. -/
 theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellation χ)
     (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) :
     HasCancellation (χ.restrict S hS) := by
+  have htoIdeal (ψ : UnitaryIdealWeight K) :
+      ψ.toIdealArithmeticFunction = ψ.1.toIdealArithmeticFunction := by
+    funext I
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
   set θ : ℝ := 1 - 1 / (Module.finrank ℚ K : ℝ)
   have hθ : 0 ≤ θ := by
     have hd : (1 : ℝ) ≤ Module.finrank ℚ K := by exact_mod_cast Module.finrank_pos
@@ -169,8 +174,7 @@ theorem HasCancellation.restrict {χ : UnitaryIdealWeight K} (hχ : HasCancellat
           idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction x -
             χ.1 𝔭.asIdeal * idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
               (x / Ideal.absNorm 𝔭.asIdeal) := by
-        rw [UnitaryIdealWeight.toIdealArithmeticFunction_def,
-          UnitaryIdealWeight.toIdealArithmeticFunction_def, UnitaryIdealWeight.val_restrict,
+        rw [htoIdeal, htoIdeal, UnitaryIdealWeight.val_restrict,
           UnitaryIdealWeight.val_restrict]
         exact χ.1.idealSummatory_restrict_insert hT h𝔭 x
       have hsecond : ‖idealSummatory K (χ.restrict T hT).toIdealArithmeticFunction
@@ -259,11 +263,15 @@ theorem continuedLFunctionOfWeight_restrict_of_one_lt_re (χ : UnitaryIdealWeigh
         (χ.restrict (S : Set (HeightOneSpectrum (𝓞 K))) S.finite_toSet) s =
       continuedLFunctionOfWeight χ s *
         ∏ 𝔭 ∈ S, (1 - χ.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
+  have htoIdeal (ψ : UnitaryIdealWeight K) :
+      ψ.toIdealArithmeticFunction = ψ.1.toIdealArithmeticFunction := by
+    funext I
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
   rw [continuedLFunctionOfWeight_eq_LSeries _ hs, continuedLFunctionOfWeight_eq_LSeries _ hs,
-    UnitaryIdealWeight.toIdealArithmeticFunction_def,
-    UnitaryIdealWeight.toIdealArithmeticFunction_def, UnitaryIdealWeight.val_restrict]
+    htoIdeal, htoIdeal, UnitaryIdealWeight.val_restrict]
   exact χ.1.LSeries_restrict S (by
-    rw [← UnitaryIdealWeight.toIdealArithmeticFunction_def]
+    rw [← htoIdeal]
     exact summable_idealTerm_of_unitary_of_one_lt_re χ hs)
 
 /-- **Deleting finitely many Euler factors, across the line `Re s = 1`.** Under cancellation both
@@ -317,7 +325,10 @@ theorem not_hasCancellation_of_isNormTwistOnGood {χ : UnitaryIdealWeight K} {u 
   obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)),
       χ.1.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
     ⟨χ.1.finite_badPrimes.toFinset, χ.1.finite_badPrimes.coe_toFinset.symm⟩
-  have hfun := UnitaryIdealWeight.toIdealArithmeticFunction_def χ
+  have hfun : χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := by
+    funext I
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
   -- cancellation makes the continued `L`-function continuous at `1 + u * I`, so multiplying it
   -- by `t - 1` kills it as `t → 1⁺` along the horizontal ray through that point
   have hcontAt : ContinuousAt (continuedLFunctionOfWeight χ) (1 + (u : ℂ) * Complex.I) := by

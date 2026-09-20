@@ -357,9 +357,9 @@ by `𝔭` and agrees with the restriction away from `S` on the others. -/
 @[simp]
 theorem restrict_insert_apply (χ : MultiplicativeIdealWeight K)
     {𝔭 : HeightOneSpectrum (𝓞 K)} (hS : S.Finite) (I : Ideal (𝓞 K)) :
-    (if I.IsPrimeTo (insert 𝔭 S) then χ I else 0) =
+    χ.restrict (insert 𝔭 S) (hS.insert 𝔭) I =
       if 𝔭.asIdeal ∣ I then 0 else χ.restrict S hS I := by
-  rw [restrict_apply, Ideal.isPrimeTo_insert_iff]
+  rw [restrict_apply, restrict_apply, Ideal.isPrimeTo_insert_iff]
   by_cases hdvd : 𝔭.asIdeal ∣ I <;> simp [hdvd]
 
 /-- Restricting the trivial weight away from `S` gives the indicator weight of ideals prime to
@@ -996,11 +996,6 @@ def toIdealArithmeticFunction (χ : UnitaryIdealWeight K) : IdealArithmeticFunct
 @[simp]
 theorem toIdealArithmeticFunction_apply (χ : UnitaryIdealWeight K) (I : (Ideal (𝓞 K))⁰) :
     χ.toIdealArithmeticFunction I = χ.1 I := (rfl)
-
-/-- Defining equation of `TauCeti.UnitaryIdealWeight.toIdealArithmeticFunction`; its body is not
-exposed. -/
-theorem toIdealArithmeticFunction_def (χ : UnitaryIdealWeight K) :
-    χ.toIdealArithmeticFunction = χ.1.toIdealArithmeticFunction := (rfl)
 
 /-- **Regrouping absorbs an imaginary norm twist.** For `z.re = 0`, twisting a unitary weight by
 `N(I) ^ (-z)` multiplies its `n`-th norm coefficient by `n ^ (-z)`. -/
