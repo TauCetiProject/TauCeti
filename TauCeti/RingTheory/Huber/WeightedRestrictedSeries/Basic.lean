@@ -48,7 +48,9 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
 * `TauCeti.Huber.weightedTopology`: the ring topology they generate. `A⟨X⟩_T` also carries the
   group uniformity of that topology, with its `IsUniformAddGroup` and
   `UniformContinuousConstSMul` instances, so that its separated completion can be formed.
-* `TauCeti.Huber.weightedC` and `TauCeti.Huber.weightedX`: the constant series and the variables.
+* `TauCeti.Huber.weightedC` and `TauCeti.Huber.weightedX`: the constant series and the
+  variables. `TauCeti.Huber.weightedC_injective`, with its `simp` form
+  `TauCeti.Huber.weightedC_inj`, reads a constant series off its coefficient in degree `0`.
 * `TauCeti.Huber.weightedMap`: the morphism `A⟨X⟩_T → B⟨X⟩_S` induced by a continuous ring map
   carrying each weight into the corresponding one; `continuous_weightedMap` makes it a morphism of
   topological rings, and `weightedMap_id` with `weightedMap_comp` are the functor laws.
@@ -718,6 +720,19 @@ noncomputable def weightedC [NonarchimedeanRing A] (T : Fin k → Set A) (hT : I
 theorem coe_weightedC [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} (a : A) :
     (weightedC T hT a : MvPowerSeries (Fin k) A) = MvPowerSeries.C a := (rfl)
 
+/-- **The constant-series embedding is injective**: a constant series is read off as its
+coefficient in degree `0`. -/
+theorem weightedC_injective [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T) :
+    Function.Injective (weightedC T hT) := fun _ _ h ↦ by
+  simpa using congrArg Subtype.val h
+
+/-- **Equality of constant series is equality of constants**: the `iff` form of
+`TauCeti.Huber.weightedC_injective`. -/
+@[simp]
+theorem weightedC_inj [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
+    {a b : A} : weightedC T hT a = weightedC T hT b ↔ a = b :=
+  (weightedC_injective T hT).eq_iff
+
 /-- The variable `Xᵢ`, as an element of `A⟨X⟩_T`. -/
 noncomputable def weightedX [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T)
     (i : Fin k) :
@@ -734,11 +749,12 @@ noncomputable instance weightedRestrictedSubring.instAlgebra [NonarchimedeanRing
     (T : Fin k → Set A) (hT : IsWeightFamily T) : Algebra A (weightedRestrictedSubring T hT) :=
   (weightedC T hT).toAlgebra
 
+/-- The structure map of the `A`-algebra `A⟨X⟩_T` is the constant-series embedding. -/
 @[simp]
-theorem coe_algebraMap_weightedRestrictedSubring [NonarchimedeanRing A] {T : Fin k → Set A}
-    {hT : IsWeightFamily T} (a : A) :
-    ((algebraMap A (weightedRestrictedSubring T hT) a : weightedRestrictedSubring T hT) :
-      MvPowerSeries (Fin k) A) = MvPowerSeries.C a := (rfl)
+theorem algebraMap_weightedRestrictedSubring [NonarchimedeanRing A] (T : Fin k → Set A)
+    (hT : IsWeightFamily T) : algebraMap A (weightedRestrictedSubring T hT) = weightedC T hT :=
+  (rfl)
+
 
 /-- **Wedhorn's neighbourhood subgroups** `U⟨X⟩`: the series all of whose coefficients — not
 merely almost all — satisfy the `U` bound. These are the fundamental system of neighbourhoods of
