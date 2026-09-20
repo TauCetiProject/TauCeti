@@ -99,7 +99,6 @@ lemma smallSingularSubcomplexMap_id :
 variable {μ : Type*} {Z : TopCat.{w}} (W : μ → Set Z)
 
 /-- Restriction of covered maps to small singular subcomplexes respects composition. -/
-@[simp]
 lemma smallSingularSubcomplexMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (r : ι → κ) (s : κ → μ)
     (hf : ∀ i, Set.MapsTo f (U i) (V (r i)))
     (hg : ∀ j, Set.MapsTo g (V j) (W (s j))) :
