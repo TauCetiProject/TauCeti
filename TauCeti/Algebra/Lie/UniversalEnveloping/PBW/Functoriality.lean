@@ -260,10 +260,9 @@ private theorem mapWordFiltration_id (k : ℕ) :
 private theorem mapWordFiltration_comp (f : LieHom R L M) (g : LieHom R M N) (k : ℕ) :
     mapWordFiltration R (g.comp f) k =
       (mapWordFiltration R g k).comp (mapWordFiltration R f k) := by
-  apply LinearMap.ext
-  intro x
-  apply Subtype.ext
-  simp [mapWordFiltration]
+  unfold mapWordFiltration
+  simpa only [map_comp, AlgHom.comp_toLinearMap] using
+    (LinearMap.restrict_comp (f := (map R f).toLinearMap) (g := (map R g).toLinearMap) _ _)
 
 /-- The linear map on the degree-`k` PBW graded pieces induced by a Lie homomorphism. -/
 noncomputable def mapGradedPiece (f : LieHom R L M) (k : ℕ) :
