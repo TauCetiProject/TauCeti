@@ -53,19 +53,19 @@ local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
 /-- The scalar curvature of a smooth connection on the tangent bundle, defined as the metric
 trace of its Ricci tensor. -/
 def scalarCurvature (x : M) : ℝ :=
-  TauCeti.BilinForm.trace (cov.ricciTensor x)
+  TauCeti.bilinFormTrace (cov.ricciTensor x)
 
 /-- Scalar curvature is the metric trace of Ricci curvature. -/
 @[simp]
 theorem scalarCurvature_apply (x : M) :
-    cov.scalarCurvature x = TauCeti.BilinForm.trace (cov.ricciTensor x) :=
+    cov.scalarCurvature x = TauCeti.bilinFormTrace (cov.ricciTensor x) :=
   (rfl)
 
 /-- In an orthonormal basis, scalar curvature is the sum of the diagonal Ricci curvatures. -/
 theorem scalarCurvature_eq_sum {i : Type*} [Fintype i] (x : M)
     (b : OrthonormalBasis i ℝ (TangentSpace I x)) :
     cov.scalarCurvature x = ∑ j, cov.ricciTensor x (b j) (b j) := by
-  exact TauCeti.BilinForm.trace_eq_sum_inner _ b
+  exact TauCeti.bilinFormTrace_eq_sum_inner _ b
 
 /-- In an orthonormal basis, scalar curvature is the double contraction of the curvature
 tensor. The inner sum contracts the curvature output against its first argument; the outer sum
@@ -84,7 +84,6 @@ theorem scalarCurvature_eq_zero_of_ricciTensor_eq_zero (x : M)
   rw [scalarCurvature_apply, h, map_zero]
 
 /-- A point with zero curvature tensor has zero scalar curvature. -/
-@[simp]
 theorem scalarCurvature_eq_zero_of_curvatureTensor_eq_zero (x : M)
     (h : curvature x = 0) : cov.scalarCurvature x = 0 :=
   scalarCurvature_eq_zero_of_ricciTensor_eq_zero cov x
@@ -95,7 +94,7 @@ the real dimension. -/
 theorem scalarCurvature_eq_of_ricciTensor_eq_smul_inner (x : M) (c : ℝ)
     (h : cov.ricciTensor x = c • innerₗ (TangentSpace I x)) :
     cov.scalarCurvature x = (Module.finrank ℝ (TangentSpace I x) : ℝ) * c := by
-  rw [scalarCurvature_apply, h, map_smul, TauCeti.BilinForm.trace_inner]
+  rw [scalarCurvature_apply, h, map_smul, TauCeti.bilinFormTrace_inner]
   simp only [smul_eq_mul]
   ring
 
@@ -105,7 +104,7 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_smul_sub (x : M)
     (B : TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] ℝ)
     (h : ∀ w u v, curvature x w u v = B u v • w - B w v • u) :
     cov.scalarCurvature x =
-      (Module.finrank ℝ (TangentSpace I x) - 1 : ℝ) * TauCeti.BilinForm.trace B := by
+      (Module.finrank ℝ (TangentSpace I x) - 1 : ℝ) * TauCeti.bilinFormTrace B := by
   rw [scalarCurvature_apply, ricciTensor_eq_of_curvatureTensor_eq_smul_sub cov x B h,
     map_smul]
   simp only [smul_eq_mul]
@@ -125,7 +124,7 @@ theorem scalarCurvature_eq_of_curvatureTensor_eq_const (x : M) (k : ℝ)
     simp only [LinearMap.smul_apply, innerₗ_apply_apply, smul_sub, smul_smul, smul_eq_mul]
   rw [scalarCurvature_eq_of_curvatureTensor_eq_smul_sub cov x
     (k • innerₗ (TangentSpace I x)) hmodel, map_smul,
-    TauCeti.BilinForm.trace_inner]
+    TauCeti.bilinFormTrace_inner]
   simp only [smul_eq_mul]
   ring
 
