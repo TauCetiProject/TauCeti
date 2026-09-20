@@ -48,8 +48,8 @@ The places above `v` are indexed by the subtype
   the map.
 * `TauCeti.denseRange_algebraMap_pi_liesOver`: `L` is dense in
   `∏_{w ∣ v} L_w`.
-* `TauCeti.semilocalHom_surjective`, `TauCeti.semilocalHom_injective` and
-  `TauCeti.semilocalHom_bijective`: the semi-local map is surjective, injective, and so bijective.
+* `TauCeti.semilocalHom_surjective` and `TauCeti.semilocalHom_injective`: the semi-local map is
+  surjective and injective.
 * `TauCeti.sum_finrank_adicCompletion_eq_finrank`:
   `∑_{w ∣ v} [L_w : K_v] = [L : K]`.
 
@@ -168,10 +168,6 @@ theorem semilocalHom_injective : Function.Injective (semilocalHom L v) := by
   exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim
     (f := (semilocalHom L v).toLinearMap)).2 (semilocalHom_surjective L v)
 
-/-- **The semi-local map is bijective.** -/
-theorem semilocalHom_bijective : Function.Bijective (semilocalHom L v) :=
-  ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩
-
 /-- **The semi-local decomposition** `K_v ⊗[K] L ≃ₐ[K_v] ∏_{w ∣ v} L_w`: completing `L` at the
 finitely many places above a finite place `v` of `K` decomposes the scalar extension of `L` to
 `K_v` into the product of those completions. -/
@@ -179,7 +175,9 @@ def semilocalEquiv :
     v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletion L) :=
-  AlgEquiv.ofBijective (semilocalHom L v) (semilocalHom_bijective L v)
+  AlgEquiv.ofBijective (semilocalHom L v)
+    (show Function.Bijective (semilocalHom L v) from
+      ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩)
 
 variable {L v}
 
