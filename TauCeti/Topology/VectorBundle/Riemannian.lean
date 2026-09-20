@@ -18,8 +18,9 @@ subset of the base form a compact subset of the total space.
 
 This is the properness statement that turns a bound on the speed of a curve in the base together
 with relative compactness of its image into relative compactness of its velocity lift.  The
-fibers of a bundle over a noncompact base are themselves noncompact, so the norm bound is what
-makes the statement true, and the proof is local: over a compact set inside the base set of one
+part of the bundle lying over a compact set need not be compact on its own: the fibers of a
+bundle with a positive-dimensional model fiber are noncompact, so the norm bound is what makes
+the statement true, and the proof is local: over a compact set inside the base set of one
 trivialization, the fiber norm and the model norm are comparable by
 `eventually_norm_trivializationAt_lt`, and the general case follows by a finite cover.
 

@@ -46,8 +46,6 @@ space.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 6, Thm. 6.19.
 -/
 
--- Roadmap: HopfRinow
-
 public section
 
 open Bundle Filter Manifold MeasureTheory Set
