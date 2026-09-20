@@ -380,7 +380,7 @@ theorem factorFieldsEquivCompletions_apply
 
 private theorem factorFieldsEquivCompletions_semilocalCrtHom
     (z : v.adicCompletion K ⊗[K] L) :
-    factorFieldsEquivCompletions L v (semilocalCrtHom L v z) = semilocalHom L v z := by
+    factorFieldsEquivCompletions L v (semilocalCrtHom L v z) = semilocalEquiv L v z := by
   induction z using TensorProduct.induction_on with
   | zero => simp
   | tmul a x =>
@@ -389,7 +389,7 @@ private theorem factorFieldsEquivCompletions_semilocalCrtHom
       simp only [factorFieldsEquivCompletions, AlgEquiv.trans_apply,
         AlgEquiv.piCongrLeft_apply, Equiv.piCongrLeft_apply_apply,
         AlgEquiv.piCongrRight_apply, semilocalCrtHom, AlgHom.pi_apply,
-        semilocalFactorHom, Algebra.TensorProduct.lift_tmul, semilocalHom_tmul]
+        semilocalFactorHom, Algebra.TensorProduct.lift_tmul, semilocalEquiv_tmul]
       rw [map_mul, Algebra.ofId_apply, (factorFieldEquivCompletion L v _).commutes,
         factorFieldEquivCompletion_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
@@ -408,12 +408,6 @@ theorem coe_semilocalCrtEquiv : ⇑(semilocalCrtEquiv L v) = semilocalCrtHom L v
   funext z
   simp only [semilocalCrtEquiv, AlgEquiv.trans_apply]
   rw [AlgEquiv.symm_apply_eq, factorFieldsEquivCompletions_semilocalCrtHom]
-  induction z using TensorProduct.induction_on with
-  | zero => simp
-  | tmul a x =>
-      ext w
-      rw [semilocalEquiv_tmul, semilocalHom_tmul]
-  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The Chinese remainder equivalence on a pure tensor, evaluated at one factor. -/
 @[simp]
