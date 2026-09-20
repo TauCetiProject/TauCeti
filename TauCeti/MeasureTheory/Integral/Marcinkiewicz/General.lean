@@ -89,7 +89,8 @@ variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure
 /-- **The weighted mass of the part of `f` above the height `c * t`.** For `-1 < s` the weight
 `t ^ s` is integrable at the origin, and the double integral of the upper truncations of `f ^ q`
 against it is exactly a multiple of `∫⁻ f ^ (q + (s + 1))`. -/
-private theorem lintegral_mul_setLIntegral_lt [SFinite μ] (hf : Measurable f) (hq : 0 ≤ q)
+private theorem lintegral_mul_setLIntegral_lt_of_measurable [SFinite μ] (hf : Measurable f)
+    (hq : 0 ≤ q)
     (hs : -1 < s) (hc : 0 < c) :
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
         ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
@@ -99,12 +100,45 @@ private theorem lintegral_mul_setLIntegral_lt [SFinite μ] (hf : Measurable f) (
     measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd)
   rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
       (w := fun t : ℝ => ENNReal.ofReal (t ^ s))
-      (R := fun t x => ENNReal.ofReal (c * t) < f x) hR (hf.pow_const q)
-      ((measurable_id.pow measurable_const).ennreal_ofReal),
+      (R := fun t x => ENNReal.ofReal (c * t) < f x) hR (hf.pow_const q).aemeasurable
+      ((measurable_id.pow measurable_const).ennreal_ofReal.aemeasurable),
     ← lintegral_const_mul _ (hf.pow_const _)]
   refine lintegral_congr fun x => ?_
   rw [lintegral_indicator_ofReal_rpow_Ioi hs hc (f x), ENNReal.rpow_add_of_nonneg q (s + 1) hq hs1]
   ring
+
+/-- **The weighted mass of the part of `f` above the height `c * t`.** For `-1 < s` the weight
+`t ^ s` is integrable at the origin, and the double integral of the upper truncations of `f ^ q`
+against it is exactly a multiple of `∫⁻ f ^ (q + (s + 1))`. -/
+theorem lintegral_mul_setLIntegral_lt [SFinite μ] (hf : AEMeasurable f μ) (hq : 0 ≤ q)
+    (hs : -1 < s) (hc : 0 < c) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
+      ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) * ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
+  let g := hf.mk f
+  have hfg : f =ᵐ[μ] g := hf.ae_eq_mk
+  have hinner : ∀ t : ℝ,
+      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
+        ∫⁻ x in {x | ENNReal.ofReal (c * t) < g x}, g x ^ q ∂μ := by
+    intro t
+    have hset : {x | ENNReal.ofReal (c * t) < f x} =ᵐ[μ]
+        {x | ENNReal.ofReal (c * t) < g x} :=
+      hfg.mono fun _ hx => by simp only [Set.mem_ofPred_eq]; rw [hx]
+    rw [Measure.restrict_congr_set hset]
+    exact lintegral_congr_ae (ae_restrict_of_ae (hfg.fun_comp fun z => z ^ q))
+  calc
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ =
+        ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+          ∫⁻ x in {x | ENNReal.ofReal (c * t) < g x}, g x ^ q ∂μ := by
+      exact lintegral_congr fun t => congrArg (ENNReal.ofReal (t ^ s) * ·) (hinner t)
+    _ = ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) *
+        ∫⁻ x, g x ^ (q + (s + 1)) ∂μ :=
+      lintegral_mul_setLIntegral_lt_of_measurable hf.measurable_mk hq hs hc
+    _ = ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) *
+        ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
+      exact congrArg (ENNReal.ofReal (c ^ (-(s + 1)) / (s + 1)) * ·)
+        (lintegral_congr_ae (hfg.fun_comp fun z => z ^ (q + (s + 1)))).symm
 
 /-- **The weighted mass of the part of `f` below the height `c * t`.** For `s < -1` the weight
 `t ^ s` is integrable at infinity, and the double integral of the lower truncations of `f ^ q`
@@ -113,7 +147,8 @@ against it is at most a multiple of `∫⁻ f ^ (q + (s + 1))`.
 The bound is not an equality: where `f` is infinite the left-hand side sees nothing, because no
 finite height `c * t` reaches it, while the right-hand side is infinite as soon as
 `0 < q + (s + 1)`. -/
-private theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : Measurable f) (hq : 0 ≤ q)
+private theorem lintegral_mul_setLIntegral_le_le_of_measurable [SFinite μ] (hf : Measurable f)
+    (hq : 0 ≤ q)
     (hs : s < -1) (hc : 0 < c) :
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
         ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ ≤
@@ -136,12 +171,50 @@ private theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : Measurable f
     measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal)
   rw [lintegral_mul_setLIntegral_eq (κ := volume.restrict (Ioi (0 : ℝ)))
       (w := fun t : ℝ => ENNReal.ofReal (t ^ s))
-      (R := fun t x => f x ≤ ENNReal.ofReal (c * t)) hR (hf.pow_const q)
-      ((measurable_id.pow measurable_const).ennreal_ofReal),
+      (R := fun t x => f x ≤ ENNReal.ofReal (c * t)) hR (hf.pow_const q).aemeasurable
+      ((measurable_id.pow measurable_const).ennreal_ofReal.aemeasurable),
     ← lintegral_const_mul _ (hf.pow_const _)]
   refine lintegral_mono fun x => ?_
   rw [lintegral_indicator_le_ofReal_rpow_Ioi hs hc (f x), mul_assoc]
   exact mul_le_mul_right (hmul (f x)) _
+
+/-- **The weighted mass of the part of `f` below the height `c * t`.** For `s < -1` the weight
+`t ^ s` is integrable at infinity, and the double integral of the lower truncations of `f ^ q`
+against it is at most a multiple of `∫⁻ f ^ (q + (s + 1))`.
+
+The bound is not an equality: where `f` is infinite the left-hand side sees nothing, because no
+finite height `c * t` reaches it, while the right-hand side is infinite as soon as
+`0 < q + (s + 1)`. -/
+theorem lintegral_mul_setLIntegral_le_le [SFinite μ] (hf : AEMeasurable f μ) (hq : 0 ≤ q)
+    (hs : s < -1) (hc : 0 < c) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ ≤
+      ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) *
+        ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
+  let g := hf.mk f
+  have hfg : f =ᵐ[μ] g := hf.ae_eq_mk
+  have hinner : ∀ t : ℝ,
+      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ =
+        ∫⁻ x in {x | g x ≤ ENNReal.ofReal (c * t)}, g x ^ q ∂μ := by
+    intro t
+    have hset : {x | f x ≤ ENNReal.ofReal (c * t)} =ᵐ[μ]
+        {x | g x ≤ ENNReal.ofReal (c * t)} :=
+      hfg.mono fun _ hx => by simp only [Set.mem_ofPred_eq]; rw [hx]
+    rw [Measure.restrict_congr_set hset]
+    exact lintegral_congr_ae (ae_restrict_of_ae (hfg.fun_comp fun z => z ^ q))
+  calc
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ =
+        ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+          ∫⁻ x in {x | g x ≤ ENNReal.ofReal (c * t)}, g x ^ q ∂μ := by
+      exact lintegral_congr fun t => congrArg (ENNReal.ofReal (t ^ s) * ·) (hinner t)
+    _ ≤ ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) *
+        ∫⁻ x, g x ^ (q + (s + 1)) ∂μ :=
+      lintegral_mul_setLIntegral_le_le_of_measurable hf.measurable_mk hq hs hc
+    _ = ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) *
+        ∫⁻ x, f x ^ (q + (s + 1)) ∂μ := by
+      exact congrArg (ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) * ·)
+        (lintegral_congr_ae (hfg.fun_comp fun z => z ^ (q + (s + 1)))).symm
 
 /-- The interpolation estimate for a measurable `f` and an s-finite `μ`, which is the generality
 in which Tonelli's theorem is available; both hypotheses are removed below. -/
@@ -163,10 +236,10 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
     measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal)
   have hI₀ : Measurable fun t => ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ :=
     measurable_setLIntegral_of_measurableSet (R := fun t x => ENNReal.ofReal (c * t) < f x) hR₀
-      (hf.pow_const p₀)
+      (hf.pow_const p₀).aemeasurable
   have hI₁ : Measurable fun t => ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ :=
     measurable_setLIntegral_of_measurableSet (R := fun t x => f x ≤ ENNReal.ofReal (c * t)) hR₁
-      (hf.pow_const p₁)
+      (hf.pow_const p₁).aemeasurable
   have hw₀ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₀ - 1)) :=
     (measurable_id.pow measurable_const).ennreal_ofReal
   have hw₁ : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (p - p₁ - 1)) :=
@@ -203,7 +276,7 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
       ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ p₀ ∂μ ≤
       ENNReal.ofReal (c ^ (p₀ - p) / (p - p₀)) * ∫⁻ x, f x ^ p ∂μ := by
     have hmain := (lintegral_mul_setLIntegral_lt (μ := μ) (f := f) (q := p₀)
-      (s := p - p₀ - 1) (c := c) hf hp₀.le (by linarith) hc).le
+      (s := p - p₀ - 1) (c := c) hf.aemeasurable hp₀.le (by linarith) hc).le
     have hneg : -(p - p₀) = p₀ - p := by ring
     have hden : p - p₀ - 1 + 1 = p - p₀ := by ring
     have hexp : p₀ + (p - p₀) = p := by ring
@@ -212,7 +285,7 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable_of_sFinite 
       ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ ≤
       ENNReal.ofReal (c ^ (p₁ - p) / (p₁ - p)) * ∫⁻ x, f x ^ p ∂μ := by
     have hmain := lintegral_mul_setLIntegral_le_le (μ := μ) (f := f) (q := p₁)
-      (s := p - p₁ - 1) (c := c) hf hp₁.le (by linarith) hc
+      (s := p - p₁ - 1) (c := c) hf.aemeasurable hp₁.le (by linarith) hc
     have hnorm : -(p - p₁ - 1 + 1) = p₁ - p := by ring
     have hexp : p₁ + (p - p₁ - 1 + 1) = p := by ring
     simpa only [hnorm, hexp] using hmain
@@ -294,7 +367,7 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable
     exact le_top
   -- `μ` restricted to `{f > 0}` is σ-finite, so in particular s-finite.
   have hσ : SigmaFinite (μ.restrict {x | 0 < f x}) :=
-    sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hf hp htop
+    sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hf.aemeasurable hp htop
   have hpos : MeasurableSet {x | 0 < f x} := measurableSet_lt measurable_const hf
   -- A positive power of `f` vanishes off `{f > 0}`, so no truncated integral sees the complement.
   have key : ∀ r : ℝ, 0 < r → ∀ S : Set α,

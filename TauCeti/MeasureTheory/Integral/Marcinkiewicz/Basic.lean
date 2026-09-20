@@ -199,7 +199,7 @@ private theorem lintegral_rpow_le_of_mul_meas_ofReal_lt_le_of_measurable
     exact le_top
   -- `μ` restricted to `{f > 0}` is σ-finite, so in particular s-finite.
   have hσ : SigmaFinite (μ.restrict {x | 0 < f x}) :=
-    sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hf hp0 htop
+    sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hf.aemeasurable hp0 htop
   -- The truncated integrals of the hypothesis do not see the complement of `{f > 0}`.
   have hsub : ∀ t : ℝ, 0 < t → {x | ENNReal.ofReal (c * t) < f x} ⊆ {x | 0 < f x} := by
     intro t _ x hx
