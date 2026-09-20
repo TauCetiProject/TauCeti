@@ -99,33 +99,22 @@ theorem mem_range_generatorEmbedding_iff (m : ℕ)
     _ ↔ ∀ i j, (g i j) ^ (of m hvalid).1.fieldOrder = g i j := by
       let f := generatorFieldEmbedding m hvalid
       -- Both finite-field embeddings identify their source with the same fixed subfield.
-      let eRange : f.fieldRange ≃+* (of m hvalid).1.fixedField :=
-        { toFun x := ⟨x, by
-            rw [← fieldRange_generatorFieldEmbedding m hvalid]
-            exact x.property⟩
-          invFun x := ⟨x, by
-            rw [fieldRange_generatorFieldEmbedding m hvalid]
-            exact x.property⟩
-          left_inv _ := Subtype.ext rfl
-          right_inv _ := Subtype.ext rfl
-          map_mul' _ _ := rfl
-          map_add' _ _ := rfl }
       let eFixed : GaloisField 2 (2 * m + 1) ≃+* (of m hvalid).1.fixedField :=
-        f.rangeRestrictFieldEquiv.trans eRange
+        f.rangeRestrictFieldEquiv.trans
+          (RingEquiv.subfieldCongr (fieldRange_generatorFieldEmbedding m hvalid))
       let e : GaloisField 2 (2 * m + 1) ≃+*
           GaloisField (of m hvalid).1.characteristic (of m hvalid).1.fieldExponent :=
         eFixed.trans (of m hvalid).1.galoisFieldEquivFixedField.symm
       have hcomp : (of m hvalid).1.galoisFieldEmbedding.comp e.toRingHom = f := by
         ext x
-        rw [RingHom.comp_apply, ValidLieTypeIndex.galoisFieldEmbedding_apply]
-        change (((of m hvalid).1.galoisFieldEquivFixedField
-          (e x) :
-            (of m hvalid).1.fixedField) : (of m hvalid).1.Closure) = f x
-        change (((of m hvalid).1.galoisFieldEquivFixedField
-          ((of m hvalid).1.galoisFieldEquivFixedField.symm (eFixed x)) :
-            (of m hvalid).1.fixedField) : (of m hvalid).1.Closure) = f x
-        rw [RingEquiv.apply_symm_apply]
-        rfl
+        -- `RingEquiv.subfieldCongr` has no coercion lemma in Mathlib; by definition it is the
+        -- identity on underlying elements of the closure.
+        have hcongr (y : f.fieldRange) :
+            ((RingEquiv.subfieldCongr (fieldRange_generatorFieldEmbedding m hvalid) y :
+              (of m hvalid).1.fixedField) : (of m hvalid).1.Closure) = y := rfl
+        simp only [RingHom.comp_apply, ValidLieTypeIndex.galoisFieldEmbedding_apply,
+          RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, e, RingEquiv.trans_apply,
+          RingEquiv.apply_symm_apply, eFixed, hcongr, RingHom.rangeRestrictFieldEquiv_apply_coe]
       have hrange : MonoidHom.range (Matrix.GeneralLinearGroup.map (n := Fin 4) f) =
           MonoidHom.range
             (Matrix.GeneralLinearGroup.map (n := Fin 4)
