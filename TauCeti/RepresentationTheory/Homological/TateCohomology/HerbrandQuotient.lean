@@ -41,6 +41,8 @@ finite outer term has the same quotient at the two remaining terms, and therefor
 finite kernel and cokernel, factored through its image, leaves the quotient unchanged. Invariance
 is what lets an arithmetic computation of a Herbrand quotient replace a module by a commensurable
 one, such as a unit group by a lattice on which the group acts freely.
+This invariance construction follows E. Artin and J. Tate, *Class Field Theory*, Chapter IX,
+section 4.
 
 The proofs are adapted to Mathlib's current Tate complex from the corresponding calculations in
 `ClassFieldTheory/Cohomology/FiniteCyclic/HerbrandQuotient/{Defs,Finite,Trivial}.lean` in
