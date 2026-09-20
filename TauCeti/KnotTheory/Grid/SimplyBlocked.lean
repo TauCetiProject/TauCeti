@@ -91,8 +91,10 @@ theorem simplyBlockedRingHom_apply {n : ℕ} (R : Type*) [CommSemiring R] (i : F
     unfold simplyBlockedRingHom
     rfl
 
-/-- The blocked variable specializes to zero. -/
-@[simp]
+/-- The blocked variable specializes to zero.
+
+Not `@[simp]`: `simplyBlockedRingHom` is an abbreviation, so `simp` first unfolds this left-hand
+side to the corresponding `MvPolynomial.killCompl` expression. -/
 theorem simplyBlockedRingHom_X_self {n : ℕ} (R : Type*) [CommSemiring R] (i : Fin n) :
     simplyBlockedRingHom R i (MvPolynomial.X i) = 0 := by
   rw [simplyBlockedRingHom_apply]

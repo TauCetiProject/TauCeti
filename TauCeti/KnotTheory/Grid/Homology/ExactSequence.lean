@@ -88,8 +88,10 @@ noncomputable def simplyBlockedSpecializationHom :
       map_add' := map_add _
       map_smul' := fun p c => (simplyBlockedSpecialization R i).map_smulₛₗ p c }
 
-/-- The module morphism acts by coefficientwise specialization. -/
-@[simp]
+/-- The module morphism acts by coefficientwise specialization.
+
+Not `@[simp]`: the target of `simplyBlockedSpecializationHom` restricts scalars along the
+abbreviation `simplyBlockedRingHom`, which `simp` unfolds while normalizing the left-hand side. -/
 theorem simplyBlockedSpecializationHom_apply (c : GridChainMinus R n) :
     (simplyBlockedSpecializationHom R i).hom c = simplyBlockedSpecialization R i c := by
   unfold simplyBlockedSpecializationHom
