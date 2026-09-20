@@ -202,16 +202,9 @@ variable {N N' : Type u} {V V' : Type*} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V'] {i : N →+ V}
   {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'}
 
-/-- The real-linear map of a fan morphism sends a source cone into its least target cone. -/
-theorem affineToricChartMap_mapsTo (f : FanHom Φ Ψ) (σ : Φ.cones) :
-    Set.MapsTo f.realMap (σ.1 : Set V) (f.leastCone σ.2 : Set V') := by
-  intro x hx
-  apply f.map_le_leastCone σ.2
-  exact ⟨x, hx, rfl⟩
-
 /-- The affine morphism from a source chart to the chart of the least target cone containing its
 image. -/
-@[expose] noncomputable def affineToricChartMap (f : FanHom Φ Ψ) (σ : Φ.cones) :
+noncomputable def affineToricChartMap (f : FanHom Φ Ψ) (σ : Φ.cones) :
     Φ.affineToricChart σ ⟶
       Ψ.affineToricChart ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ :=
   by
@@ -220,16 +213,9 @@ image. -/
       affineToricScheme Ψ.lattice (f.leastCone σ.2)
     exact affineToricSchemeMap (σ := σ.1) (τ := f.leastCone σ.2)
       Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-        (affineToricChartMap_mapsTo f σ)
-
-/-- The chart map is the affine toric morphism determined by the lattice map and its cone
-containment proof. -/
-theorem affineToricChartMap_def (f : FanHom Φ Ψ) (σ : Φ.cones) :
-    f.affineToricChartMap σ =
-      affineToricSchemeMap (σ := σ.1) (τ := f.leastCone σ.2)
-        Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-        (affineToricChartMap_mapsTo f σ) :=
-  rfl
+        (show Set.MapsTo f.realMap (σ.1 : Set V) (f.leastCone σ.2 : Set V') from by
+          intro x hx
+          exact f.map_le_leastCone σ.2 ⟨x, hx, rfl⟩)
 
 /-- The affine chart maps induced by a fan morphism commute with face inclusions. -/
 @[reassoc]
@@ -239,15 +225,16 @@ theorem faceAffineToricSchemeMap_comp_affineToricChartMap (f : FanHom Φ Ψ)
       f.affineToricChartMap τ ≫ faceAffineToricSchemeMap Ψ.lattice
         (Ψ.isFaceOf_of_le (f.leastCone_mem σ.2) (f.leastCone_mem τ.2)
           (f.leastCone_mono h.le)) := by
-  rw [affineToricChartMap_def, affineToricChartMap_def]
+  rw [affineToricChartMap, affineToricChartMap]
   rw [faceAffineToricSchemeMap_eq_affineToricSchemeMap,
     faceAffineToricSchemeMap_eq_affineToricSchemeMap]
+  simp only [id_eq]
   rw [affineToricSchemeMap_comp, affineToricSchemeMap_comp]
   simp
 
 /-- The compatible cocone from the affine charts of the source fan to the algebraic realization
 of the target fan. -/
-@[expose] noncomputable def algebraicMapCocone (f : FanHom Φ Ψ) (hΨ : Ψ.IsRegular) :
+private noncomputable def algebraicMapCocone (f : FanHom Φ Ψ) (hΨ : Ψ.IsRegular) :
     Cocone Φ.affineToricDiagram where
   pt := Ψ.algebraicRealization hΨ
   ι :=
