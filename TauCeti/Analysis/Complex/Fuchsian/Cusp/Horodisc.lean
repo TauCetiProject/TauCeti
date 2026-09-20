@@ -114,7 +114,7 @@ theorem mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc [DiscreteTopology Γ
     exact hstab (mem_stabilizer_iff.mpr ((MulAction.injective D.scaling)
       (h.trans D.scaling_smul_cusp.symm)))
   -- Shimizu's lemma bounds the product of the two heights by the squared width
-  have hkey := _root_.Subgroup.im_smul_mul_im_le_sq_of_upperRightHom_mem D.width_pos hT hgΔ
+  have hkey := _root_.Subgroup.im_smul_mul_im_le_sq_of_upperRightHom_mem D.width_pos.ne' hT hgΔ
     hginf (D.scaling • z)
   rw [mul_smul, mul_smul, inv_smul_smul, ← _root_.Subgroup.smul_def] at hkey
   have hApos : 0 < A := D.width_pos.trans_le hA

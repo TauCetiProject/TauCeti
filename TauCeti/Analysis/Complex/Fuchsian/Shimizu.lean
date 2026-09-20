@@ -14,9 +14,9 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 /-!
 # Shimizu's lemma
 
-Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup containing the translation `z ↦ z + w` with `w > 0`.
+Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup containing the translation `z ↦ z + w` with `w ≠ 0`.
 Shimizu's lemma says that the lower-left entry `c` of any element of `Γ` satisfies `c = 0` or
-`|c| ≥ w⁻¹`: the elements of `Γ` that do not fix `∞` are bounded away from the parabolic ones.
+`|c| ≥ |w|⁻¹`: the elements of `Γ` that do not fix `∞` are bounded away from the parabolic ones.
 Equivalently, in geometric form, an element of `Γ` that does not fix `∞` satisfies
 `(g • z).im * z.im ≤ w ^ 2` for every `z` in the upper half-plane, so it cannot map a point high
 above the real axis to another such point. This is what makes sufficiently high horodiscs at a
@@ -213,11 +213,8 @@ private theorem tendsto_jorgensen (hw : 0 < w) (hlt : w * |A 1 0| < 1) :
 
 /-! ### Shimizu's lemma -/
 
-/-- **Shimizu's lemma.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup containing the translation
-`z ↦ z + w` with `w > 0`, and let `A ∈ SL(2, ℝ)` lift an element of `Γ`. If the lower-left entry
-of `A` does not vanish, that is, if the element does not fix `∞`, then that entry has absolute
-value at least `w⁻¹`. Both lifts of the element give the same absolute value. -/
-theorem inv_le_abs_apply_one_zero_of_upperRightHom_mem [DiscreteTopology Γ] (hw : 0 < w)
+private theorem inv_le_abs_apply_one_zero_of_upperRightHom_mem_of_pos [DiscreteTopology Γ]
+    (hw : 0 < w)
     (hT : upperRightHom w ∈ Γ) (hA : (A : PSL(2, ℝ)) ∈ Γ) (hA0 : A 1 0 ≠ 0) :
     w⁻¹ ≤ |A 1 0| := by
   rw [inv_le_iff_one_le_mul₀ hw, mul_comm]
@@ -242,11 +239,27 @@ theorem inv_le_abs_apply_one_zero_of_upperRightHom_mem [DiscreteTopology Γ] (hw
   rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
     SpecialLinearGroup.coe_GL_coe_matrix] at hinfty
 
+/-- **Shimizu's lemma.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup containing the translation
+`z ↦ z + w` with `w ≠ 0`, and let `A ∈ SL(2, ℝ)` lift an element of `Γ`. If the lower-left entry
+of `A` does not vanish, that is, if the element does not fix `∞`, then that entry has absolute
+value at least `|w|⁻¹`. Both lifts of the element give the same absolute value. -/
+theorem inv_le_abs_apply_one_zero_of_upperRightHom_mem [DiscreteTopology Γ] (hw : w ≠ 0)
+    (hT : upperRightHom w ∈ Γ) (hA : (A : PSL(2, ℝ)) ∈ Γ) (hA0 : A 1 0 ≠ 0) :
+    |w|⁻¹ ≤ |A 1 0| := by
+  rcases lt_or_gt_of_ne hw with hwneg | hwpos
+  · have hTneg : upperRightHom (-w) ∈ Γ := by
+      rw [AddChar.map_neg_eq_inv]
+      exact Γ.inv_mem hT
+    simpa [abs_of_neg hwneg] using
+      inv_le_abs_apply_one_zero_of_upperRightHom_mem_of_pos (neg_pos.mpr hwneg) hTneg hA hA0
+  · simpa [abs_of_pos hwpos] using
+      inv_le_abs_apply_one_zero_of_upperRightHom_mem_of_pos hwpos hT hA hA0
+
 /-- **Shimizu's lemma, geometric form.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup containing
-the translation `z ↦ z + w` with `w > 0`. An element of `Γ` that does not fix `∞` moves every
+the translation `z ↦ z + w` with `w ≠ 0`. An element of `Γ` that does not fix `∞` moves every
 point `z` of the upper half-plane to a point with `(g • z).im * z.im ≤ w ^ 2`; in particular it
-cannot keep a point of imaginary part greater than `w` that high. -/
-theorem im_smul_mul_im_le_sq_of_upperRightHom_mem [DiscreteTopology Γ] (hw : 0 < w)
+cannot keep a point of imaginary part greater than `|w|` that high. -/
+theorem im_smul_mul_im_le_sq_of_upperRightHom_mem [DiscreteTopology Γ] (hw : w ≠ 0)
     (hT : upperRightHom w ∈ Γ) {g : PSL(2, ℝ)} (hg : g ∈ Γ)
     (hginf : g • (∞ : OnePoint ℝ) ≠ ∞) (z : ℍ) :
     (g • z).im * z.im ≤ w ^ 2 := by
@@ -257,10 +270,11 @@ theorem im_smul_mul_im_le_sq_of_upperRightHom_mem [DiscreteTopology Γ] (hw : 0 
     exact h)
   have hbound := inv_le_abs_apply_one_zero_of_upperRightHom_mem hw hT hg hA0
   have hone : 1 ≤ w ^ 2 * A 1 0 ^ 2 := by
-    have h1 : w⁻¹ ^ 2 ≤ A 1 0 ^ 2 := by
+    have h1 : |w|⁻¹ ^ 2 ≤ A 1 0 ^ 2 := by
       rw [← sq_abs (A 1 0)]
       exact pow_le_pow_left₀ (by positivity) hbound 2
-    calc (1 : ℝ) = w ^ 2 * w⁻¹ ^ 2 := by field_simp
+    calc (1 : ℝ) = |w| ^ 2 * |w|⁻¹ ^ 2 := by field_simp
+      _ = w ^ 2 * |w|⁻¹ ^ 2 := by rw [sq_abs]
       _ ≤ w ^ 2 * A 1 0 ^ 2 := mul_le_mul_of_nonneg_left h1 (sq_nonneg w)
   -- the imaginary part of `g • z` is `z.im` divided by the squared automorphy factor
   have hdenom : (A 1 0 * z.im) ^ 2 ≤ Complex.normSq (denom (mapGL ℝ A) z) := by
