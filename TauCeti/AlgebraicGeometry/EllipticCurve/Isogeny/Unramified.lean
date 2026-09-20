@@ -1,0 +1,161 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Genus
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Separability
+public import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Splitting
+
+/-!
+# A separable isogeny is unramified
+
+A separable isogeny `φ : W₁ → W₂` of elliptic curves makes `F(W₁)` a finite separable extension of
+the pulled-back function field `F(W₂)`, and both fields have genus one.  The Hurwitz genus formula
+
+`2g₁ - 2 = n · (2g₂ - 2) + deg Diff(F(W₁)/F(W₂))`
+
+therefore reads `0 = 0 + deg Diff`.  The different divisor is effective, so a vanishing degree
+forces it to vanish, and a vanishing different exponent forces the ramification index to be `1`:
+**every** place of `F(W₁)` is unramified over `F(W₂)`, with no exceptional locus.
+
+Ramification is what separates the fundamental identity `∑_{P' ∣ P} e(P' ∣ P) · f(P' ∣ P) = deg φ`
+from a count of the fibre of `P`.  With `e ≡ 1` the identity becomes `∑_{P' ∣ P} f(P' ∣ P) = deg φ`
+at every place, and over an algebraically closed field of constants, where every place is rational
+and so every `f(P' ∣ P)` is `1`, it becomes the statement that `P` has exactly `deg φ` places above
+it.
+
+## Main results
+
+* `TauCeti.Isogeny.different_eq_zero`: the different divisor of a separable isogeny vanishes.
+* `TauCeti.Isogeny.ramificationIdx_eq_one`: **a separable isogeny is unramified** — `e(P' ∣ P) = 1`
+  at every place `P'` of `F(W₁)`.
+* `TauCeti.Isogeny.sum_relativeDegree_eq_degree`: the fundamental identity with the ramification
+  indices removed, `∑_{P' ∣ P} f(P' ∣ P) = deg φ`.
+* `TauCeti.Isogeny.isSplitCompletely` and `TauCeti.Isogeny.ncard_setOf_restrict_eq_degree`: over
+  an algebraically closed field of constants every place splits completely, so it has exactly
+  `deg φ` places above it.
+
+## Provenance
+
+Not ported.  Silverman proves unramifiedness from translation invariance of the ramification
+locus; the route taken here is the genus one, which the general function-field theory of
+`TauCeti/FieldTheory/FunctionField/` already supports in full.
+
+## References
+
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.5.9 and III.4.10.
+* [H. Stichtenoth, *Algebraic Function Fields and Codes*][stichtenoth2009], Theorem 3.1.11,
+  Remark 3.4.4 and Theorem 3.4.13.
+-/
+
+public section
+
+namespace TauCeti.Isogeny
+
+open AlgebraicGeometry WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+  (φ : Isogeny W₁ W₂) [Algebra W₂.FunctionField W₁.FunctionField]
+  (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
+  [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
+
+/-- **The different divisor of a separable isogeny vanishes.**
+
+Both function fields have genus one, so the Hurwitz genus formula leaves `deg Diff(F(W₁)/F(W₂))`
+alone on one side of a vanishing identity; the different divisor is effective, and an effective
+divisor of degree zero is zero. -/
+theorem different_eq_zero :
+    haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+    haveI := φ.finiteDimensional_functionField h
+    haveI := φ.isSeparable_functionField h
+    Divisor.different F W₁.FunctionField W₂.isFunctionField = 0 := by
+  have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+  have := φ.finiteDimensional_functionField h
+  have := φ.isSeparable_functionField h
+  have hzero : Divisor.degree (Divisor.different F W₁.FunctionField W₂.isFunctionField) = 0 := by
+    have hg := hurwitz_genus_formula_geometricDegree (k := F) (k' := F)
+      W₂.isFunctionField W₁.isFunctionField (isIntegrallyClosedIn_functionField W₂)
+      (isIntegrallyClosedIn_functionField W₁)
+    rw [genus_functionField, genus_functionField] at hg
+    norm_num at hg
+    omega
+  exact (Divisor.eq_of_le_of_degree_eq W₁.isFunctionField
+    (Divisor.zero_le_different F W₁.FunctionField W₂.isFunctionField)
+    (by rw [map_zero, hzero])).symm
+
+include φ h in
+/-- **A separable isogeny is unramified**: every place of `F(W₁)` has ramification index `1` over
+the place of `F(W₂)` below it (Silverman III.4.10(c)).
+
+The different exponent vanishes because the different divisor does, and Dedekind's different
+theorem `e(P' ∣ P) ≤ d(P' ∣ P) + 1` then pins the ramification index between `1` and `1`. -/
+theorem ramificationIdx_eq_one (P' : Place F W₁.FunctionField) :
+    Place.ramificationIdx W₂.FunctionField P' = 1 := by
+  have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+  have := φ.finiteDimensional_functionField h
+  have := φ.isSeparable_functionField h
+  have hd := (Divisor.different_eq_zero_iff F W₁.FunctionField W₂.isFunctionField).mp
+    (different_eq_zero φ h) P'
+  have hle := Place.ramificationIdx_le_differentExponent_add_one F W₂.FunctionField P'
+  have hpos := Place.ramificationIdx_pos W₂.FunctionField P'
+  omega
+
+/-- **The fundamental identity for a separable isogeny**: the relative degrees of the places above
+a place `P` of `F(W₂)` sum to `deg φ`, the ramification indices of `∑ e · f = deg φ` having all
+been removed by `ramificationIdx_eq_one`.
+
+The fibre of `P` is its finite set of places, `TauCeti.Place.finite_setOf_restrict_eq`. -/
+theorem sum_relativeDegree_eq_degree (P : Place F W₂.FunctionField) :
+    haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+    haveI := φ.finiteDimensional_functionField h
+    ∑ P' ∈ (Place.finite_setOf_restrict_eq (k' := F) (F' := W₁.FunctionField) F
+      W₂.FunctionField P).toFinset, Place.relativeDegree F W₂.FunctionField P' = φ.degree := by
+  have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+  have := φ.finiteDimensional_functionField h
+  have := φ.isSeparable_functionField h
+  rw [φ.degree_eq_finrank h,
+    ← Place.sum_ramificationIdx_mul_relativeDegree_eq_finrank_of_isSeparable F W₂.FunctionField P
+      fun P' ↦ (Place.finite_setOf_restrict_eq (k' := F) (F' := W₁.FunctionField) F
+        W₂.FunctionField P).mem_toFinset]
+  exact Finset.sum_congr rfl fun P' _ ↦ by rw [ramificationIdx_eq_one φ h P', one_mul]
+
+include φ h in
+/-- **Over an algebraically closed field of constants every place splits completely in a separable
+isogeny** (Silverman III.4.10(a) in its place-theoretic form): `P` has `deg φ` distinct places
+above it, each with trivial ramification and residue extension.
+
+Complete splitting is trivial ramification together with a trivial residue extension at every
+place of the fibre; the first is `ramificationIdx_eq_one` and the second holds because every place
+is rational over an algebraically closed field of constants. -/
+theorem isSplitCompletely [IsAlgClosed F] (P : Place F W₂.FunctionField) :
+    haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+    haveI := φ.finiteDimensional_functionField h
+    P.IsSplitCompletely (k' := F) (F' := W₁.FunctionField) := by
+  have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+  have := φ.finiteDimensional_functionField h
+  have := φ.isSeparable_functionField h
+  rw [Place.isSplitCompletely_iff_forall_ramificationIdx_eq_one_and_relativeDegree_eq_one]
+  intro P' _
+  have := P'.finiteDimensional_residueField W₁.isFunctionField
+  exact ⟨ramificationIdx_eq_one φ h P',
+    Place.relativeDegree_eq_one_of_isAlgClosed F W₂.FunctionField P'⟩
+
+/-- **A separable isogeny over an algebraically closed field of constants has exactly `deg φ`
+places above every place**, the count form of `Isogeny.isSplitCompletely` read against the degree
+of the isogeny rather than against the degree of the field extension. -/
+theorem ncard_setOf_restrict_eq_degree [IsAlgClosed F] (P : Place F W₂.FunctionField) :
+    haveI := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+    haveI := φ.finiteDimensional_functionField h
+    {P' : Place F W₁.FunctionField | P'.restrict F W₂.FunctionField = P}.ncard = φ.degree := by
+  have := isScalarTower_of_algebraMap_eq_fieldPullback φ h
+  have := φ.finiteDimensional_functionField h
+  rw [φ.degree_eq_finrank h, ← Place.isSplitCompletely_def]
+  exact isSplitCompletely φ h P
+
+end TauCeti.Isogeny

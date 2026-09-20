@@ -27,6 +27,9 @@ field of a place of `F' / k'` is a `k'`-algebra, and the `k`-algebra structure n
 * `TauCeti.Place.degree_eq_degree_restrict_mul_relativeDegree`: `deg P' = deg P · f(P' ∣ P)`.
 * `TauCeti.Place.degree_restrict_le`: hence `deg P ≤ deg P'`, the form consumed when a
   finiteness statement about places of `F` is transported to `F'`.
+* `TauCeti.Place.relativeDegree_eq_one_of_isAlgClosed`: over an algebraically closed field of
+  constants the relative degree is `1`, so the fundamental identity counts the fibre of a place by
+  its ramification indices alone.
 
 ## References
 
@@ -61,6 +64,19 @@ theorem degree_eq_degree_restrict_mul_relativeDegree :
     P'.degree = (P'.restrict k F).degree * relativeDegree k F P' := by
   rw [degree_eq_finrank, degree_eq_finrank, relativeDegree_def,
     Module.finrank_mul_finrank k (P'.restrict k F).ResidueField P'.ResidueField]
+
+/-- **Over an algebraically closed field of constants the relative degree is `1`.** A place whose
+residue field is algebraic over such a field is rational (Stichtenoth, Remark 1.1.17) — which is
+automatic for a place of an algebraic function field — so `deg P' = deg P · f(P' ∣ P)` reads
+`1 = 1 · f(P' ∣ P)`.
+
+This is what reduces the fundamental identity `∑ e · f = [F' : F]` to a count of ramification
+indices, and with it a sum over the fibre of `P` to a count of the fibre. -/
+theorem relativeDegree_eq_one_of_isAlgClosed [IsAlgClosed k]
+    [Algebra.IsIntegral k P'.ResidueField] : relativeDegree k F P' = 1 :=
+  Nat.eq_one_of_mul_eq_one_left <| by
+    rw [← degree_eq_degree_restrict_mul_relativeDegree k F P',
+      P'.degree_eq_one_of_isAlgClosed_of_isIntegral]
 
 /-- A place is at least as large as the place below it: `deg P ≤ deg P'`.  Finiteness of the
 extension guards the junk value of the relative degree. -/
