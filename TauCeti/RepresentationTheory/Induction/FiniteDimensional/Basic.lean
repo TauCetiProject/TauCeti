@@ -366,7 +366,11 @@ theorem forget₂_map_indFDRepMap {k G : Type u} [Field k] [Group G] {S : Subgro
     Representation.IntertwiningMap.comp_toLinearMap, LinearMap.coe_comp,
     Representation.IntertwiningMap.coe_toLinearMap, Function.comp_apply,
     forget₂_map_indFDRepMap_apply, Rep.indFunctor_map]
-  rfl
+  -- `Rep.mkIso_hom_hom_apply` and `Rep.mkIso_inv_hom_apply` state the two remaining steps, but
+  -- `rw`/`simp` cannot match them: as in `indFDRepMapUnderlying_hom_apply`, the goal's `Semiring k`
+  -- comes from `Field` while the lemmas' comes from `CommRing`, so `erw` matches up to instances.
+  unfold indFDRepForgetIso
+  erw [Rep.mkIso_hom_hom_apply, Rep.mkIso_inv_hom_apply]
 
 /-- **Induction of intertwiners from a finite-index subgroup is additive**,
 `indFDRepMap (f + g) = indFDRepMap f + indFDRepMap g`.  This is what makes `indFDRepFunctor` an

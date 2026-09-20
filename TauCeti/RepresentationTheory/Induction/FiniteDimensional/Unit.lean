@@ -13,21 +13,29 @@ public import TauCeti.RepresentationTheory.Induction.Restriction
 
 For a finite-index subgroup `S` of a group `G`, every finite-dimensional representation `A` of
 `S` maps naturally into the restriction of `Ind_S^G A`.  On Mathlib's induced carrier this is the
-map `a ↦ ⟦1 ⊗ a⟧`; this file transports it to the small carrier used by
-`TauCeti.indFDRep`.
+map `a ↦ ⟦1 ⊗ a⟧`; this file transports the unit of Mathlib's adjunction `Rep.indResAdjunction`
+to the small carrier used by `TauCeti.indFDRep`.
 
-The map is injective.  This is the representation-theoretic statement that the identity coset
-supplies a distinguished copy of `A` inside the restriction of its induced representation.  It is
-used in Clifford theory to show that induction preserves the property of lying over a constituent.
+The map is natural in `A` and injective.  Injectivity is the representation-theoretic statement
+that the identity coset supplies a distinguished copy of `A` inside the restriction of its induced
+representation.  It is used in Clifford theory to show that induction preserves the property of
+lying over a constituent.
+
+The scalar field and the group share one universe: `Rep.indResAdjunction` relates functors on a
+single `Rep` carrier universe, so its unit at the forgotten `A` lives in the same universe as `G`,
+exactly as for `TauCeti.indFDRepForgetIso` and `TauCeti.finrank_hom_indFDRep`.
 
 ## Main definitions
 
-* `TauCeti.indFDRepUnit`: the canonical map `A ⟶ Res_S (Ind_S^G A)`.
+* `FDRep.indFDRepUnit`: the canonical map `A ⟶ Res_S (Ind_S^G A)`.
 
 ## Main statements
 
-* `TauCeti.indFDRepUnit_apply`: the map on the induced-representation model.
-* `TauCeti.indFDRepUnit_injective`: the unit map is injective.
+* `FDRep.forget₂_map_indFDRepUnit`: after forgetting finite-dimensionality, the unit is Mathlib's
+  adjunction unit followed by the small-carrier comparison.
+* `FDRep.indFDRepUnit_naturality`: the unit commutes with induction of intertwiners.
+* `FDRep.indFDRepUnit_apply`: the map on the induced-representation model.
+* `FDRep.indFDRepUnit_injective`: the unit map is injective.
 -/
 
 public section
@@ -36,29 +44,61 @@ open CategoryTheory
 
 universe u
 
-namespace TauCeti
+namespace FDRep
+
+open TauCeti
 
 variable {k G : Type u} [Field k] [Group G] {S : Subgroup G} [S.FiniteIndex]
 
-/-- The unit of induction--restriction on finite-dimensional representations.  Under the
-comparison with Mathlib's induced carrier it sends `a` to the generator `⟦1 ⊗ a⟧`. -/
+/-- The unit of induction--restriction on finite-dimensional representations: the unit of
+Mathlib's adjunction `Rep.indResAdjunction`, transported to the small carrier of `indFDRep`
+along `indFDRepForgetIso`.  Under that comparison it sends `a` to the generator `⟦1 ⊗ a⟧`. -/
 noncomputable def indFDRepUnit (A : FDRep k S) : A ⟶ resFDRep S (indFDRep A) :=
-  FDRep.forget₂HomLinearEquiv A (resFDRep S (indFDRep A)) <|
-    (Rep.indResAdjunction k S.subtype).unit.app
-      ((forget₂ (FDRep k S) (Rep k S)).obj A) ≫
-    (Rep.resFunctor S.subtype).map (indFDRepForgetIso A).inv
+  (forget₂ (FDRep k S) (Rep k S)).preimage <|
+    (Rep.indResAdjunction k S.subtype).unit.app ((forget₂ (FDRep k S) (Rep k S)).obj A) ≫
+      (Rep.resFunctor S.subtype).map (indFDRepForgetIso A).inv
+
+/-- After forgetting finite-dimensionality, `indFDRepUnit` is Mathlib's adjunction unit followed
+by the restricted small-carrier comparison. -/
+theorem forget₂_map_indFDRepUnit (A : FDRep k S) :
+    (forget₂ (FDRep k S) (Rep k S)).map (indFDRepUnit A) =
+      (Rep.indResAdjunction k S.subtype).unit.app ((forget₂ (FDRep k S) (Rep k S)).obj A) ≫
+        (Rep.resFunctor S.subtype).map (indFDRepForgetIso A).inv :=
+  Functor.map_preimage _ _
+
+/-- **Naturality of the unit**: for an intertwiner `f : A ⟶ B`, following `indFDRepUnit A` by the
+restriction of `indFDRepMap f` is the same as following `f` by `indFDRepUnit B`. -/
+theorem indFDRepUnit_naturality {A B : FDRep k S} (f : A ⟶ B) :
+    indFDRepUnit A ≫ (Action.res (FGModuleCat k) S.subtype).map (indFDRepMap f) =
+      f ≫ indFDRepUnit B := by
+  apply (forget₂ (FDRep k S) (Rep k S)).map_injective
+  rw [Functor.map_comp, Functor.map_comp, forget₂_map_indFDRepUnit, forget₂_map_indFDRepUnit]
+  -- `resFDRep` is an abbreviation for `Action.res`, so forgetting finite-dimensionality turns its
+  -- action on intertwiners into that of `Rep.resFunctor` definitionally.
+  change _ ≫ (Rep.resFunctor S.subtype).map
+    ((forget₂ (FDRep k G) (Rep k G)).map (indFDRepMap f)) = _
+  rw [forget₂_map_indFDRepMap, Functor.map_comp, Functor.map_comp, Category.assoc,
+    Iso.map_inv_hom_id_assoc, Adjunction.unit_naturality_assoc]
+  -- Both sides are now the same composite; they differ only in the `Semiring k` instance path
+  -- (`Field` on the `resFDRep` side, `CommRing` on the `Rep.resFunctor` side), which `rw`'s
+  -- reducible `rfl` does not see through.
+  rfl
 
 /-- On Mathlib's induced carrier, `indFDRepUnit` is the generator map `a ↦ ⟦1 ⊗ a⟧`. -/
 theorem indFDRepUnit_apply (A : FDRep k S) (a : A) :
     (indFDRepForgetIso A).hom.hom (indFDRepUnit A a) =
       Representation.IndV.mk S.subtype
         ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 a := by
-  -- The small induced carrier is sealed, so expose it through its public comparison isomorphism.
+  -- Applying an `FDRep` morphism to an element is applying its forgotten intertwiner, so the goal
+  -- can be restated through `forget₂_map_indFDRepUnit`.
   change (indFDRepForgetIso A).hom.hom
-      ((indFDRepForgetIso A).inv.hom
-        (Representation.IndV.mk S.subtype
-          ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 a)) = _
-  exact Rep.hom_inv_apply _ _ (indFDRepForgetIso A) _
+    (((forget₂ (FDRep k S) (Rep k S)).map (indFDRepUnit A)).hom a) = _
+  rw [forget₂_map_indFDRepUnit]
+  -- The composite's codomain is `Rep.resFunctor`'s restriction while the goal's is `resFDRep`'s,
+  -- so the `Semiring k` instance paths differ and `rw` cannot match these lemmas; `erw` can.
+  erw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply S.subtype,
+    Rep.hom_inv_apply]
+  simp [Rep.indResAdjunction, Rep.indResHomEquiv]
 
 /-- The unit map from a representation to the restriction of its induction is injective. -/
 theorem indFDRepUnit_injective (A : FDRep k S) : Function.Injective (indFDRepUnit A) := by
@@ -95,4 +135,4 @@ theorem indFDRepUnit_injective (A : FDRep k S) : Function.Injective (indFDRepUni
     exact Rep.indToCoindAux_self 1 x
   exact (heval a).symm.trans (h'.trans (heval b))
 
-end TauCeti
+end FDRep
