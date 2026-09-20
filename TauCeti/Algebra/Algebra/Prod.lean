@@ -22,6 +22,7 @@ This is why there is no `AlgHom.inl` upstream to compose with, and what
 ## Main declarations
 
 * `AlgHom.prodFirst`: the first-coordinate algebra map attached to `φ` with `φ (1, 0) = 1`.
+* `AlgHom.map_zero_one_eq_zero`: such a `φ` kills the second coordinate unit.
 * `AlgHom.map_eq_map_fst`: such a `φ` ignores its second argument.
 * `AlgHom.prodFirst_comp_fst`: the coordinate map is a factorisation -- precomposing with the first
   projection returns `φ`.
@@ -47,42 +48,38 @@ def prodFirst (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) : A →ₐ[F] B w
   __ := φ.toNonUnitalAlgHom.comp (NonUnitalAlgHom.inl F A C)
   map_one' := hu
   commutes' r := by
+    -- The inherited non-unital hom is `a ↦ φ (a, 0)`; naming that equation keeps the
+    -- definitional step visible rather than leaving it to elaboration.
+    have happ : ∀ a : A,
+        (φ.toNonUnitalAlgHom.comp (NonUnitalAlgHom.inl F A C)).toFun a = φ (a, 0) := fun _ => rfl
     have hr : ((algebraMap F A r : A), (0 : C)) = algebraMap F (A × C) r * (1, 0) := by
       simp [Prod.algebraMap_apply]
-    change φ (algebraMap F A r, 0) = _
-    rw [hr, map_mul, AlgHom.commutes, hu, mul_one]
+    rw [happ, hr, map_mul, AlgHom.commutes, hu, mul_one]
 
 /-- The first coordinate map is what its name says: `a ↦ φ (a, 0)`. -/
 @[simp]
 theorem prodFirst_apply (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) (a : A) :
     prodFirst φ hu a = φ (a, 0) := (rfl)
 
-end Semiring
+/-- **The second coordinate unit is killed**, once `φ (1, 0) = 1`: it is annihilated by `(1, 0)`
+inside the product, so `φ (0, 1) = 1 * φ (0, 1) = φ ((1, 0) * (0, 1)) = φ 0 = 0`. No additive
+cancellation is involved.
 
-section CancelAdd
-
-variable {F A C B : Type*} [CommSemiring F] [Semiring A] [Algebra F A] [Semiring C] [Algebra F C]
-  [Semiring B] [IsLeftCancelAdd B] [Algebra F B]
-
-/-- If the image of `(1, 0)` is the unit then the first coordinate map is surjective as soon as `φ`
-is: the image of `(0, 1)` is then complementary to `1`, so it vanishes, and with it the whole
-second coordinate.
-
-Unlike the construction itself this needs `B` additively left-cancellative, to pass from
-`1 + φ (0, 1) = 1 + 0` to `φ (0, 1) = 0`. That is all it needs -- a cancellative semiring will do,
-without subtraction. -/
-theorem map_snd_eq_zero (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) : φ (0, 1) = 0 := by
-  have hsum : φ (1, 0) + φ (0, 1) = 1 := by
-    rw [← map_add, show ((1, 0) + (0, 1) : A × C) = 1 by simp [Prod.ext_iff], map_one]
-  rw [hu] at hsum
-  exact add_left_cancel (b := φ (0, 1)) (c := 0) (by rw [hsum, add_zero])
+Not a `@[simp]` lemma: `AlgHom.map_eq_map_fst` below already rewrites `φ (0, 1)` to `φ (0, 0)`,
+which `map_zero` finishes, so tagging this one as well would only duplicate that path. -/
+theorem map_zero_one_eq_zero (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) : φ (0, 1) = 0 := by
+  have hmul : ((1, 0) * (0, 1) : A × C) = 0 := by simp [Prod.ext_iff]
+  have := congrArg φ hmul
+  rwa [map_mul, hu, one_mul, map_zero] at this
 
 /-- **`φ` ignores its second argument**, once `φ (1, 0) = 1`: the second coordinate is a multiple
 of `(0, 1)`, which `φ` kills. -/
+@[simp]
 theorem map_eq_map_fst (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) (p : A × C) :
     φ p = φ (p.1, 0) := by
-  conv_lhs => rw [show p = (p.1, 0) + (0, p.2) * (0, 1) by simp]
-  rw [map_add, map_mul, map_snd_eq_zero φ hu, mul_zero, add_zero]
+  have hsplit : p = (p.1, 0) + (0, p.2) * (0, 1) := by simp
+  conv_lhs => rw [hsplit]
+  rw [map_add, map_mul, map_zero_one_eq_zero φ hu, mul_zero, add_zero]
 
 /-- **The first coordinate map really is a factorisation of `φ`**: precomposing it with the first
 projection returns `φ`. -/
@@ -91,12 +88,12 @@ theorem prodFirst_comp_fst (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1) :
     (prodFirst φ hu).comp (AlgHom.fst F A C) = φ :=
   AlgHom.ext fun p => (map_eq_map_fst φ hu p).symm
 
+/-- **The first coordinate map inherits surjectivity from `φ`**, since `φ` factors through it. -/
 theorem prodFirst_surjective (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1)
     (hφ : Function.Surjective φ) : Function.Surjective (prodFirst φ hu) := by
-  intro b
-  obtain ⟨p, rfl⟩ := hφ b
-  exact ⟨p.1, (map_eq_map_fst φ hu p).symm⟩
+  rw [← prodFirst_comp_fst φ hu, AlgHom.coe_comp] at hφ
+  exact hφ.of_comp
 
-end CancelAdd
+end Semiring
 
 end AlgHom

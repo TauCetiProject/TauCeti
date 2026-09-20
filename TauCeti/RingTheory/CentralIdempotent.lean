@@ -232,8 +232,8 @@ theorem exists_algHom_surjective_of_prod [IsSimpleRing B] (φ : (A × A) →ₐ[
   rcases hpair with h | h
   · -- `φ (1, 0) = 0`, so `φ (0, 1) = 1` and the *second* coordinate is the surjective one.
     have hw : φ (0, 1) = 1 := by
-      have hsum : φ (1, 0) + φ (0, 1) = 1 := by
-        rw [← map_add, show ((1, 0) + (0, 1) : A × A) = 1 by simp [Prod.ext_iff], map_one]
+      have hone : ((1, 0) + (0, 1) : A × A) = 1 := by simp [Prod.ext_iff]
+      have hsum : φ (1, 0) + φ (0, 1) = 1 := by rw [← map_add, hone, map_one]
       rwa [h, zero_add] at hsum
     have hswapone : swap (1, 0) = ((0 : A), (1 : A)) := by simp [hswap]
     have hu : (φ.comp swap) (1, 0) = 1 := by
