@@ -67,6 +67,10 @@ theorem IsMetricCompatible.inner_curvatureOperator_eq_neg [CompleteSpace E]
     inner ℝ (cov.curvatureOperator X Y σ x) (τ x) =
       -inner ℝ (σ x) (cov.curvatureOperator X Y τ x) := by
   let _ : IsManifold I 1 M := IsManifold.of_le (n := n + 1) (by simp)
+  -- These hypotheses package their propositions with the order-1 manifold instance derived
+  -- from `n + 1`. After installing that instance locally, the existing metric and regularity
+  -- APIs require the underlying propositions with this same instance. No conversion lemma is
+  -- available for these instance-dependent types, so `change` performs the needed unfolding.
   change IsContMDiffRiemannianBundle I 2 F V at hmetric
   change ContMDiffCovariantDerivative cov n at hreg
   change CMDiff n (T% X) at hX
