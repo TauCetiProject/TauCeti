@@ -20,7 +20,7 @@ relator are differences of sums of degree-two elements. Consequently the preproj
 ideal is homogeneous.
 
 Because the relation ideal is homogeneous, the generic descent
-`TauCeti.GradedAlgebra.gradeQuot` applies to it: the preprojective algebra `Pi_k(Q)` carries the
+`TauCeti.GradedAlgebra.quotientPiece` applies to it: the preprojective algebra `Pi_k(Q)` carries the
 induced path-length grading `TauCeti.preprojectiveGrade`, in which the vertex idempotents have
 degree `0`, the doubled arrows degree `1`, and the relator degree `2`. This file packages the
 graded-algebra structure and computes the concrete pieces.
@@ -152,19 +152,19 @@ variable (Q)
 
 /-- **The induced path-length grading on the preprojective algebra**: the degree-`n` piece is the
 image of the degree-`n` piece of the doubled path algebra under the quotient map. Multiplication
-adds degrees for any relation ideal (`TauCeti.GradedAlgebra.mul_mem_gradeQuot`); because the
+adds degrees for any relation ideal (`TauCeti.GradedAlgebra.mul_mem_quotientPiece`); because the
 relation ideal is homogeneous (`TauCeti.isHomogeneous_preprojectiveIdeal`),
 `TauCeti.isInternal_preprojectiveGrade` also holds, comparing the direct sum of the pieces with
 the preprojective algebra itself rather than with a separate graded copy. -/
 noncomputable def preprojectiveGrade (n : ℕ) : Submodule k (preprojectiveAlgebra k Q) :=
-  TauCeti.GradedAlgebra.gradeQuot (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal n
+  TauCeti.GradedAlgebra.quotientPiece (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal n
 
 /-- A homogeneous element lands in the piece its degree names. -/
 theorem preprojectiveMk_mem_preprojectiveGrade {n : ℕ} {y : pathAlgebra k (Symmetrify Q)}
     (hy : y ∈ grade k (Symmetrify Q) n) :
     preprojectiveMk k Q y ∈ preprojectiveGrade k Q n := by
   rw [preprojectiveGrade, preprojectiveMk_apply k Q]
-  exact TauCeti.GradedAlgebra.mk_mem_gradeQuot _ _ hy
+  exact TauCeti.GradedAlgebra.mk_mem_quotientPiece _ _ hy
 
 /-- Membership in the induced degree-`n` piece is being the class of a degree-`n` element of the
 doubled path algebra. -/
@@ -172,7 +172,7 @@ doubled path algebra. -/
 theorem mem_preprojectiveGrade_iff {n : ℕ} {x : preprojectiveAlgebra k Q} :
     x ∈ preprojectiveGrade k Q n ↔
       ∃ y ∈ grade k (Symmetrify Q) n, preprojectiveMk k Q y = x := by
-  rw [preprojectiveGrade, TauCeti.GradedAlgebra.mem_gradeQuot_iff]
+  rw [preprojectiveGrade, TauCeti.GradedAlgebra.mem_quotientPiece_iff]
   constructor
   · rintro ⟨y, hy, rfl⟩
     exact ⟨y, hy, preprojectiveMk_apply k Q y⟩
@@ -184,7 +184,7 @@ comparison of the direct-sum graded algebra with the ungraded quotient asked for
 in the internal sense in which the pieces are submodules of the algebra itself. -/
 theorem isInternal_preprojectiveGrade :
     DirectSum.IsInternal (preprojectiveGrade k Q) :=
-  TauCeti.GradedAlgebra.isInternal_gradeQuot (grade k (Symmetrify Q))
+  TauCeti.GradedAlgebra.isInternal_quotientPiece (grade k (Symmetrify Q))
     (preprojectiveIdeal k Q).asIdeal (isHomogeneous_preprojectiveIdeal k Q)
 
 /-- Multiplication adds degrees in the induced grading: the product of a degree-`m` class and a
@@ -192,14 +192,14 @@ degree-`n` class lies in degree `m + n`. -/
 theorem mul_mem_preprojectiveGrade {m n : ℕ} {x y : preprojectiveAlgebra k Q}
     (hx : x ∈ preprojectiveGrade k Q m) (hy : y ∈ preprojectiveGrade k Q n) :
     x * y ∈ preprojectiveGrade k Q (m + n) :=
-  TauCeti.GradedAlgebra.mul_mem_gradeQuot _ _ hx hy
+  TauCeti.GradedAlgebra.mul_mem_quotientPiece _ _ hx hy
 
 /-- **The preprojective algebra is a graded algebra** for the induced path-length grading. This
 is kept as a definition rather than an instance so that callers choose when to introduce it
-locally; see `TauCeti.GradedAlgebra.gradedAlgebraGradeQuot`. -/
+locally; see `TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece`. -/
 @[instance_reducible]
 noncomputable def preprojectiveGradedAlgebra : GradedAlgebra (preprojectiveGrade k Q) :=
-  TauCeti.GradedAlgebra.gradedAlgebraGradeQuot (grade k (Symmetrify Q))
+  TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece (grade k (Symmetrify Q))
     (preprojectiveIdeal k Q).asIdeal (isHomogeneous_preprojectiveIdeal k Q)
 
 /-! ### The concrete pieces -/
@@ -213,7 +213,7 @@ theorem preprojectiveGrade_zero_eq_span_range_vertexIdempotent :
         preprojectiveMk k Q (vertexIdempotent k v)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_gradeQuot
+    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := 0)
       (PathAlgebra.grade_zero_eq_span_range_vertexIdempotent k (Symmetrify Q)) ?_ hw
     rintro z ⟨v, rfl⟩
@@ -232,7 +232,7 @@ theorem preprojectiveGrade_one_eq_span_range_ofArrow :
         preprojectiveMk k Q (PathAlgebra.ofArrow e.2.2)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_gradeQuot
+    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := 1)
       PathAlgebra.grade_one_eq_span_range_ofArrow ?_ hw
     rintro z ⟨⟨a, b, e⟩, rfl⟩
@@ -253,7 +253,7 @@ theorem preprojectiveGrade_eq_span_range_ofPath (n : ℕ) :
           preprojectiveMk k Q (PathAlgebra.ofPath x.1)) := by
   refine le_antisymm ?_ ?_
   · intro w hw
-    refine TauCeti.GradedAlgebra.mem_span_of_mem_gradeQuot
+    refine TauCeti.GradedAlgebra.mem_span_of_mem_quotientPiece
       (grade k (Symmetrify Q)) (preprojectiveIdeal k Q).asIdeal (i := n)
       (PathAlgebra.grade_eq_span_range k (Symmetrify Q) n) ?_ hw
     rintro z ⟨x, rfl⟩
