@@ -7,8 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Tactic.LinearCombination
--- Only `Matrix.submatrix_one_mul_mul_submatrix_one`, inside the proof of a private theorem, so
--- this stays a private import rather than re-exporting Congruence to every downstream module.
 import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
@@ -111,8 +109,9 @@ private theorem mul_inclCastSucc {m : Type*} (A : Matrix m (Fin (n + 1)) R) :
   simpa [inclCastSucc] using h
 
 private theorem projCastSucc_mul_mul_inclCastSucc (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc :=
-  Matrix.submatrix_one_mul_mul_submatrix_one Fin.castSucc A
+    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc := by
+  simpa only [projCastSucc, inclCastSucc] using
+    Matrix.submatrix_one_mul_mul_submatrix_one Fin.castSucc A
 
 end NonAssocSemiring
 
