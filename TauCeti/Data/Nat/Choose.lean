@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
-public import Mathlib.Data.Nat.Choose.Vandermonde
+public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
@@ -28,7 +29,6 @@ summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
   `(i)ₘ * C(A, i) = (A)ₘ * C(A - m, i - m)`.
-* `Nat.add_choose_eq_sum_range`: Vandermonde's convolution, summed over a range.
 * `Nat.sum_range_descFactorial_mul_choose_mul_choose`: Vandermonde's convolution weighted by a
   falling factorial of the summation index.
 
@@ -81,14 +81,6 @@ theorem descFactorial_mul_choose {m i : ℕ} (hmi : m ≤ i) (A : ℕ) :
   rw [descFactorial_eq_factorial_mul_choose, descFactorial_eq_factorial_mul_choose,
     Nat.mul_assoc, Nat.mul_assoc, Nat.mul_comm (i.choose m) (A.choose i), choose_mul hmi]
 
-/-- **Vandermonde's convolution, summed over a range.** This is `Nat.add_choose_eq` with the
-antidiagonal of `r` presented as `Finset.range (r + 1)`. -/
-theorem add_choose_eq_sum_range (A B r : ℕ) :
-    (A + B).choose r = ∑ i ∈ range (r + 1), A.choose i * B.choose (r - i) := by
-  rw [Nat.add_choose_eq]
-  simpa using Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-    (fun i j => A.choose i * B.choose j) r
-
 /-- **Vandermonde's convolution weighted by a falling factorial of the summation index.**
 
 Weighting the `i`th summand of `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` by `(i)ₘ` multiplies
@@ -110,7 +102,9 @@ theorem sum_range_descFactorial_mul_choose_mul_choose {m r : ℕ} (hmr : m ≤ r
   have key : ∑ i ∈ range (r + 1), i.descFactorial m * (A.choose i * B.choose (r - i)) =
       A.descFactorial m * (A - m + B).choose (r - m) := by
     rw [← Finset.sum_subset hsub hvanish, Finset.sum_Ico_eq_sum_range,
-      show r + 1 - m = r - m + 1 from by omega, Nat.add_choose_eq_sum_range, Finset.mul_sum]
+      show r + 1 - m = r - m + 1 from by omega,
+      Nat.add_choose_eq, Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+        (fun i j ↦ (A - m).choose i * B.choose j) (r - m), Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ => ?_
     have hri : r - (m + i) = r - m - i := by omega
     rw [hri, ← Nat.mul_assoc, Nat.descFactorial_mul_choose (Nat.le_add_right m i) A,

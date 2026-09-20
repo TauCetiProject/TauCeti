@@ -114,7 +114,9 @@ theorem hypergeometricMeasure_eq_sum_dirac {N K n : ℕ} (hK : K ≤ N) (hn : n 
 
 private theorem sum_choose_mul_choose {N K n : ℕ} (hK : K ≤ N) :
     ∑ k ∈ Finset.range (n + 1), K.choose k * (N - K).choose (n - k) = N.choose n := by
-  rw [← Nat.add_choose_eq_sum_range, Nat.add_sub_of_le hK]
+  rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+      (fun i j ↦ K.choose i * (N - K).choose j) n,
+    ← Nat.add_choose_eq, Nat.add_sub_of_le hK]
 
 /-- The hypergeometric weights sum to one in the valid parameter range. -/
 theorem sum_hypergeometricWeight (hK : K ≤ N) (hn : n ≤ N) :
