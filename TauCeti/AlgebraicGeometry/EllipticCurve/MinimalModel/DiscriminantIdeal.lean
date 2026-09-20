@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.Factorization
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
 # The minimal discriminant ideal of an elliptic curve over a Dedekind domain
@@ -135,17 +136,6 @@ theorem localMinimalDiscriminantValuation_le_count_span_Δ (v : HeightOneSpectru
     valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_le_exp, neg_le_neg_iff, Nat.cast_le] at hle
   exact hle
 
-omit [IsFractionRing O K] in
-/-- A family of prime powers bounded by the factorisation of a nonzero ideal has finite support. -/
-private theorem hasFiniteMulSupport_pow_asIdeal {I : Ideal O} (hI : I ≠ 0)
-    (e : HeightOneSpectrum O → ℕ)
-    (he : ∀ v, e v ≤ (Associates.mk v.asIdeal).count (Associates.mk I).factors) :
-    Function.HasFiniteMulSupport fun v : HeightOneSpectrum O => v.asIdeal ^ e v := by
-  refine (Ideal.hasFiniteMulSupport hI).subset fun v hv => ?_
-  simp only [Function.mem_mulSupport, ne_eq, IsDedekindDomain.HeightOneSpectrum.maxPowDividing,
-    Ideal.one_eq_top, Ideal.pow_eq_top_iff, v.isPrime.ne_top, false_or] at hv ⊢
-  exact fun hcount => hv (Nat.le_zero.1 (hcount ▸ he v))
-
 variable (O)
 
 /-- **The minimal discriminant ideal** `𝔇_{E/K} = ∏ᵥ 𝔭ᵥ ^ v (Δ_min,ᵥ)`: the product over the
@@ -174,7 +164,7 @@ theorem hasFiniteMulSupport_pow_localMinimalDiscriminantValuation (W : Weierstra
   obtain ⟨C, hC⟩ := exists_smul_isIntegral O W
   have := hC -- the integral model of `W` supplied by the change of variables `C`
   obtain ⟨d, hd⟩ := Δ_integral_of_isIntegral O (C • W)
-  refine hasFiniteMulSupport_pow_asIdeal
+  refine Ideal.hasFiniteMulSupport_asIdeal_pow_of_le_count
     (Submodule.span_singleton_eq_bot.mp.mt (ne_zero_of_algebraMap_eq_Δ hd)) _ fun v => ?_
   rw [← localMinimalDiscriminantValuation_smul _ C W]
   exact localMinimalDiscriminantValuation_le_count_span_Δ v hd

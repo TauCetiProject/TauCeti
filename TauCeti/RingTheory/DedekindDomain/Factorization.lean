@@ -39,6 +39,12 @@ with unit-level factorization of invertible fractional ideals.
   principal fractional ideal of a nonzero rational function `u : Kˣ` is
   `-WithZero.log (v.valuation K u)`. This is the passage between the two ways this library measures
   a principal ideal at a height one prime — Mathlib's `count` and the adic valuation.
+* `Ideal.hasFiniteMulSupport_asIdeal_pow_of_le_count`: a family of prime powers whose exponents
+  are bounded by the multiplicities of a fixed nonzero ideal has finite multiplicative support.
+  Mathlib's `Ideal.hasFiniteMulSupport` is the case of the multiplicities themselves; a consumer
+  defining an ideal as `∏ᵥ 𝔭ᵥ ^ e v` for exponents it only knows to be dominated by an actual
+  factorisation — as the minimal discriminant ideal of an elliptic curve is dominated by the
+  discriminant of any integral model — needs the bounded form to see that the product is finite.
 * `IsDedekindDomain.HeightOneSpectrum.unitOfPrime`: a height-one prime regarded as an invertible
   fractional ideal.
 * `FractionalIdeal.hasFiniteMulSupport_zpow_count`: a family of powers indexed by the height one
@@ -97,6 +103,29 @@ theorem le_count_associates_iff_le_pow {A : Type*} [CommRing A] [IsDedekindDomai
     ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd, Ideal.dvd_iff_le]
 
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace Ideal
+
+-- `Ideal.IsDedekindDomain` also exists, so the root namespace has to be named explicitly.
+open _root_.IsDedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- **A family of prime powers whose exponents are bounded by the multiplicities of a nonzero
+ideal has finite multiplicative support.** Only finitely many primes divide `I`, so all but
+finitely many of the bounding multiplicities, and hence of the exponents, vanish.
+`Ideal.hasFiniteMulSupport` is the case `e v = (Associates.mk v.asIdeal).count
+(Associates.mk I).factors` of the multiplicities themselves. -/
+theorem hasFiniteMulSupport_asIdeal_pow_of_le_count {I : Ideal R} (hI : I ≠ 0)
+    (e : HeightOneSpectrum R → ℕ)
+    (he : ∀ v, e v ≤ (Associates.mk v.asIdeal).count (Associates.mk I).factors) :
+    Function.HasFiniteMulSupport fun v : HeightOneSpectrum R => v.asIdeal ^ e v := by
+  refine (Ideal.hasFiniteMulSupport hI).subset fun v hv => ?_
+  simp only [Function.mem_mulSupport, ne_eq, IsDedekindDomain.HeightOneSpectrum.maxPowDividing,
+    Ideal.one_eq_top, Ideal.pow_eq_top_iff, v.isPrime.ne_top, false_or] at hv ⊢
+  exact fun hcount => hv (Nat.le_zero.1 (hcount ▸ he v))
+
+end Ideal
 
 namespace FractionalIdeal
 
