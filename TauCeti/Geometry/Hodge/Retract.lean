@@ -54,7 +54,9 @@ variable {n : ℤ} (X : PolarizableHodgeStructureCat.{u} n)
 The integral carrier is the inverse image of the rational subspace in the ambient lattice. The
 rational and complex carriers are the corresponding subspaces, with the induced Hodge structure
 and induced polarizability. -/
-noncomputable abbrev ofSubstructure (W : RationalHodgeSubstructure X.isBaseChangeRat X.hs) :
+-- The body remains unexposed; this only lets dependent categorical types infer carrier instances.
+@[implicit_reducible]
+noncomputable def ofSubstructure (W : RationalHodgeSubstructure X.isBaseChangeRat X.hs) :
     PolarizableHodgeStructureCat.{u} n := by
   let b := Submodule.basisOfPid (Module.Free.chooseBasis ℤ X.intCarrier)
     (integralSubmodule X.toRat W.WQ)
@@ -71,26 +73,30 @@ images lie in the substructure. -/
 @[simp]
 theorem ofSubstructure_intCarrier :
     (ofSubstructure X W).intCarrier = integralSubmodule X.toRat W.WQ :=
-  rfl
+  (rfl)
 
 /-- The rational carrier of the object induced on a rational Hodge substructure is the underlying
 rational subspace. -/
 @[simp]
 theorem ofSubstructure_ratCarrier : (ofSubstructure X W).ratCarrier = W.WQ :=
-  rfl
+  (rfl)
+
+private theorem ofSubstructure_asMixed_ratCarrier :
+    (ofSubstructure X W).asMixed.ratCarrier = W.WQ :=
+  (rfl)
 
 /-- The complex carrier of the induced object is the complexification of its rational subspace. -/
 @[simp]
 theorem ofSubstructure_complexCarrier :
     (ofSubstructure X W).complexCarrier =
       rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ :=
-  rfl
+  (rfl)
 
 /-- The pure Hodge structure on the induced object is the one obtained by restricting the ambient
-filtration. -/
+filtration. This is a heterogeneous equality because `ofSubstructure` keeps its carrier sealed. -/
 @[simp]
-theorem ofSubstructure_hs : (ofSubstructure X W).hs = W.hodgeStructure :=
-  rfl
+theorem ofSubstructure_hs : HEq (ofSubstructure X W).hs W.hodgeStructure :=
+  (HEq.rfl)
 
 /-- The inclusion of an induced rational Hodge substructure into its ambient object. -/
 noncomputable def substructureInclusion : ofSubstructure X W ⟶ X :=
@@ -98,18 +104,79 @@ noncomputable def substructureInclusion : ofSubstructure X W ⟶ X :=
     rw [rationalMapToComplex_subtype]
     exact W.isMorphism_subtype
 
-/-- The rational map underlying the inclusion is the subtype map. -/
+/-- The rational map underlying the inclusion is the subtype map. The equality is heterogeneous
+because `ofSubstructure` keeps its rational carrier sealed. -/
 @[simp]
 theorem substructureInclusion_toRatLinearMap :
-    (substructureInclusion X W).hom.toRatLinearMap = W.WQ.subtype := by
-  rw [substructureInclusion, Hom.ofIsMorphism_toRatLinearMap]
+    HEq (substructureInclusion X W).hom.toRatLinearMap W.WQ.subtype :=
+  (by
+    rw [substructureInclusion, Hom.ofIsMorphism_toRatLinearMap])
 
-/-- The complex map underlying the inclusion is the subtype map. -/
+/-- The complex map underlying the inclusion is the subtype map. The equality is heterogeneous
+because `ofSubstructure` keeps its complex carrier sealed. -/
 @[simp]
 theorem substructureInclusion_toLinearMap :
-    (substructureInclusion X W).hom.toLinearMap =
-      (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype := by
-  rw [substructureInclusion, Hom.ofIsMorphism_toLinearMap, rationalMapToComplex_subtype]
+    HEq (substructureInclusion X W).hom.toLinearMap
+      (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype :=
+  (by
+    rw [substructureInclusion, Hom.ofIsMorphism_toLinearMap, rationalMapToComplex_subtype])
+
+/-- Corestricting the rational map of a Hodge morphism to a rational Hodge substructure
+preserves the morphism property. -/
+theorem isMorphism_codRestrict
+    {X Y : PolarizableHodgeStructureCat.{u} n}
+    (W : RationalHodgeSubstructure Y.isBaseChangeRat Y.hs)
+    (f : X.ratCarrier →ₗ[ℚ] Y.ratCarrier)
+    (hf : HodgeStructureOn.IsMorphism X.hs Y.hs
+      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        Y.isBaseChangeRat Y.isBaseChangeComplex f))
+    (hfw : ∀ x, f x ∈ W.WQ) :
+    HodgeStructureOn.IsMorphism X.hs W.hodgeStructure
+      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        (isBaseChange_integralSubmoduleToRational Y.isBaseChangeRat W.WQ)
+        (isBaseChange_integralSubmoduleToComplex Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ)
+        (f.codRestrict W.WQ hfw)) := by
+  let g := rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+    (isBaseChange_integralSubmoduleToRational Y.isBaseChangeRat W.WQ)
+    (isBaseChange_integralSubmoduleToComplex Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ)
+    (f.codRestrict W.WQ hfw)
+  have hcomp : (rationalToComplexSubmodule Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ).subtype
+      ∘ₗ g = rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        Y.isBaseChangeRat Y.isBaseChangeComplex f := by
+    rw [← rationalMapToComplex_subtype Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ,
+      ← rationalMapToComplex_comp, LinearMap.subtype_comp_codRestrict]
+  refine {
+    commutes_conj := fun x ↦ Subtype.ext ?_
+    map_F_le := ?_ }
+  -- Equality in the induced complex carrier is checked after its injective ambient inclusion.
+  · change (rationalToComplexSubmodule Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ).subtype
+        (g ((latticeConjugation X.isBaseChangeComplex).toEquiv x)) =
+      (rationalToComplexSubmodule Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ).subtype
+        ((latticeConjugation
+          (isBaseChange_integralSubmoduleToComplex Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ)
+            ).toEquiv (g x))
+    calc
+      _ = rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+          Y.isBaseChangeRat Y.isBaseChangeComplex f
+          ((latticeConjugation X.isBaseChangeComplex).toEquiv x) :=
+        LinearMap.congr_fun hcomp _
+      _ = (latticeConjugation Y.isBaseChangeComplex).toEquiv
+          (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+            Y.isBaseChangeRat Y.isBaseChangeComplex f x) :=
+        hf.commutes_conj _
+      _ = (latticeConjugation Y.isBaseChangeComplex).toEquiv
+          ((rationalToComplexSubmodule Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ).subtype
+            (g x)) := by
+        exact congrArg (latticeConjugation Y.isBaseChangeComplex).toEquiv
+          (LinearMap.congr_fun hcomp x).symm
+      _ = (rationalToComplexSubmodule Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ).subtype
+          ((latticeConjugation
+            (isBaseChange_integralSubmoduleToComplex Y.isBaseChangeRat Y.isBaseChangeComplex W.WQ)
+              ).toEquiv (g x)) := (W.isMorphism_subtype.commutes_conj _).symm
+  · intro p y hy
+    obtain ⟨x, hx, rfl⟩ := hy
+    rw [W.hodgeStructure_F, Submodule.mem_comap, ← LinearMap.comp_apply, hcomp]
+    exact hf.map_F_le p ⟨x, hx, rfl⟩
 
 variable (P : Polarization X.isBaseChangeComplex X.hs)
 
@@ -126,50 +193,11 @@ theorem isMorphism_substructureRetractionRat :
       (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
         (isBaseChange_integralSubmoduleToRational X.isBaseChangeRat W.WQ)
         (isBaseChange_integralSubmoduleToComplex X.isBaseChangeRat X.isBaseChangeComplex W.WQ)
-        (substructureRetractionRat X W P)) := by
-  let g := rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
-    (isBaseChange_integralSubmoduleToRational X.isBaseChangeRat W.WQ)
-    (isBaseChange_integralSubmoduleToComplex X.isBaseChangeRat X.isBaseChangeComplex W.WQ)
-    (substructureRetractionRat X W P)
-  have hcomp : (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype
-      ∘ₗ g = rationalMapToComplex X.isBaseChangeRat
-      X.isBaseChangeComplex X.isBaseChangeRat X.isBaseChangeComplex (W.projection P) := by
-    rw [← rationalMapToComplex_subtype X.isBaseChangeRat X.isBaseChangeComplex W.WQ,
-      ← rationalMapToComplex_comp, substructureRetractionRat,
-      LinearMap.subtype_comp_codRestrict]
-  have hproj := W.isMorphism_rationalMapToComplex_projection P
-  refine {
-    commutes_conj := fun x ↦ Subtype.ext ?_
-    map_F_le := ?_ }
-  -- Equality in the induced complex carrier is checked after its injective ambient inclusion.
-  · change (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype
-        (g ((latticeConjugation X.isBaseChangeComplex).toEquiv x)) =
-      (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype
-        ((latticeConjugation
-          (isBaseChange_integralSubmoduleToComplex X.isBaseChangeRat X.isBaseChangeComplex W.WQ)
-            ).toEquiv (g x))
-    calc
-      _ = rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex X.isBaseChangeRat
-          X.isBaseChangeComplex (W.projection P)
-          ((latticeConjugation X.isBaseChangeComplex).toEquiv x) :=
-        LinearMap.congr_fun hcomp _
-      _ = (latticeConjugation X.isBaseChangeComplex).toEquiv
-          (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex X.isBaseChangeRat
-            X.isBaseChangeComplex (W.projection P) x) :=
-        hproj.commutes_conj _
-      _ = (latticeConjugation X.isBaseChangeComplex).toEquiv
-          ((rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype
-            (g x)) := by
-        exact congrArg (latticeConjugation X.isBaseChangeComplex).toEquiv
-          (LinearMap.congr_fun hcomp x).symm
-      _ = (rationalToComplexSubmodule X.isBaseChangeRat X.isBaseChangeComplex W.WQ).subtype
-          ((latticeConjugation
-            (isBaseChange_integralSubmoduleToComplex X.isBaseChangeRat X.isBaseChangeComplex W.WQ)
-              ).toEquiv (g x)) := (W.isMorphism_subtype.commutes_conj _).symm
-  · intro p y hy
-    obtain ⟨x, hx, rfl⟩ := hy
-    rw [W.hodgeStructure_F, Submodule.mem_comap, ← LinearMap.comp_apply, hcomp]
-    exact hproj.map_F_le p ⟨x, hx, rfl⟩
+        (substructureRetractionRat X W P)) :=
+  isMorphism_codRestrict W (W.projection P)
+    (W.isMorphism_rationalMapToComplex_projection P) (fun x ↦ by
+    rw [← W.range_projection P]
+    exact LinearMap.mem_range_self (W.projection P) x)
 
 /-- The categorical retraction of a rational Hodge substructure inclusion supplied by a chosen
 polarization. -/
@@ -178,38 +206,46 @@ noncomputable def substructureRetraction : X ⟶ ofSubstructure X W :=
     (isMorphism_substructureRetractionRat X W P)
 
 /-- The rational map underlying the categorical retraction is the orthogonal projector with its
-codomain restricted to the substructure. -/
+codomain restricted to the substructure. The equality is heterogeneous because `ofSubstructure`
+keeps its rational carrier sealed. -/
 @[simp]
 theorem substructureRetraction_toRatLinearMap :
-    (substructureRetraction X W P).hom.toRatLinearMap = substructureRetractionRat X W P := by
-  rw [substructureRetraction, Hom.ofIsMorphism_toRatLinearMap]
+    HEq (substructureRetraction X W P).hom.toRatLinearMap
+      (substructureRetractionRat X W P) :=
+  (by
+    rw [substructureRetraction, Hom.ofIsMorphism_toRatLinearMap])
 
 /-- The inclusion followed by the orthogonal retraction is the identity on the induced Hodge
 structure. -/
 @[simp]
 theorem substructureInclusion_comp_substructureRetraction :
-    substructureInclusion X W ≫ substructureRetraction X W P = 𝟙 (ofSubstructure X W) := by
-  apply Hom.ext
-  rw [comp_toRatLinearMap, substructureRetraction_toRatLinearMap,
-    substructureInclusion_toRatLinearMap, id_toRatLinearMap]
-  ext x
-  -- The remaining coercions hide precisely that the projector fixes the subspace.
-  change W.projection P (x : W.WQ) = x
-  exact W.projection_apply_of_mem P x.property
-
-/-- The rational retraction followed by the inclusion of the subspace is the orthogonal
-projector. -/
-@[simp]
-theorem subtype_comp_substructureRetractionRat :
-    W.WQ.subtype ∘ₗ substructureRetractionRat X W P = W.projection P := by
-  rw [substructureRetractionRat, LinearMap.subtype_comp_codRestrict]
+  substructureInclusion X W ≫ substructureRetraction X W P = 𝟙 (ofSubstructure X W) :=
+  (by
+    apply Hom.ext
+    rw [comp_toRatLinearMap, id_toRatLinearMap]
+    -- In this defining module, the sealed carrier interface specializes from `HEq` to `Eq`.
+    have hret := eq_of_heq (substructureRetraction_toRatLinearMap X W P)
+    have hinc := eq_of_heq (substructureInclusion_toRatLinearMap X W)
+    rw [hret, hinc]
+    -- Eliminate the sealed carrier equality before checking the projector elementwise.
+    cases ofSubstructure_asMixed_ratCarrier X W
+    ext x
+    -- The remaining coercions hide precisely that the projector fixes the subspace.
+    apply Subtype.ext
+    change W.projection P (W.WQ.subtype x) = W.WQ.subtype x
+    exact W.projection_apply_of_mem P x.property)
 
 /-- The orthogonal retraction followed by the inclusion is the Hodge projector on the ambient
 object. -/
 theorem substructureRetraction_comp_substructureInclusion_toRatLinearMap :
     ((substructureRetraction X W P ≫ substructureInclusion X W).hom.toRatLinearMap) =
-      W.projection P := by
-  simp
+      W.projection P :=
+  (by
+    rw [comp_toRatLinearMap]
+    -- In this defining module, the sealed carrier interface specializes from `HEq` to `Eq`.
+    have hret := eq_of_heq (substructureRetraction_toRatLinearMap X W P)
+    have hinc := eq_of_heq (substructureInclusion_toRatLinearMap X W)
+    rw [hret, hinc, substructureRetractionRat, LinearMap.subtype_comp_codRestrict])
 
 /-- The inclusion of a rational Hodge substructure into a polarizable Hodge structure is a split
 monomorphism. -/
