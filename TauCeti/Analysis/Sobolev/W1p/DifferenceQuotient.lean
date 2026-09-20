@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+public import TauCeti.Analysis.Sobolev.W1p.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.Analysis.Sobolev.W1p.Restriction
-import TauCeti.Analysis.Sobolev.WeakDeriv.Translation
 
 /-!
 # Difference quotients of `W^{1,p}(Ω)` functions
@@ -36,8 +36,6 @@ space; neither operation changes `u` or its gradient near the segments.
 
 ## Main declarations
 
-* `TauCeti.W1p.translate`: local translation from `W^{1,p}(Ω)` to `W^{1,p}(V)` when
-  `V + h ⊆ Ω`.
 * `TauCeti.W1p.differenceQuotient`: the local Sobolev difference quotient, whose value and weak
   gradient are characterized by `_ae` lemmas.
 * `TauCeti.W1p.eLpNorm_value_comp_add_sub_le`: the local translation estimate on `W^{1,p}(Ω)`.
@@ -65,43 +63,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-! ### Local translation and difference quotients -/
-
-/-- **Local translation of a Sobolev function.** If `x + h ∈ Ω` for every `x ∈ V`, this is the
-element of `W^{1,p}(V)` represented by `x ↦ u (x + h)`. Its weak gradient is represented by
-`x ↦ ∇u (x + h)`; see `W1p.value_translate_ae` and `W1p.gradient_translate_ae`.
-
-Unlike extension by zero, local translation needs no boundary condition: the explicit inclusion
-`V + h ⊆ Ω` ensures that only values inside the original domain are used. -/
-def W1p.translate {Omega V : Opens E} {h : E} (hVO : MapsTo (· + h) V Omega)
-    (u : W1p mu Omega p) : W1p mu V p := by
-  let hv : MemLp (fun x => W1p.value u (x + h)) p (mu.restrict V) :=
-    MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo (Lp.memLp (W1p.value u)) hVO
-  let hg : MemLp (fun x => W1p.gradient u (x + h)) p (mu.restrict V) :=
-    MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo (Lp.memLp (W1p.gradient u)) hVO
-  let value := hv.toLp (fun x => W1p.value u (x + h))
-  let gradient := hg.toLp (fun x => W1p.gradient u (x + h))
-  refine W1p.mk value gradient ?_
-  have hweak := (W1p.hasWeakFDerivOn u).comp_add_right hVO
-  refine hweak.congr_ae hv.coeFn_toLp.symm |>.congr_ae_deriv ?_
-  filter_upwards [hg.coeFn_toLp] with x hx
-  rw [hx]
-
-/-- Local translation is represented almost everywhere by precomposition with `x ↦ x + h`. -/
-theorem W1p.value_translate_ae {Omega V : Opens E} {h : E}
-    (hVO : MapsTo (· + h) V Omega) (u : W1p mu Omega p) :
-    W1p.value (W1p.translate hVO u) =ᵐ[mu.restrict V] fun x => W1p.value u (x + h) := by
-  simp only [W1p.translate, W1p.value_mk]
-  exact MemLp.coeFn_toLp _
-
-/-- The weak gradient of a local translation is represented almost everywhere by the translated
-weak gradient. -/
-theorem W1p.gradient_translate_ae {Omega V : Opens E} {h : E}
-    (hVO : MapsTo (· + h) V Omega) (u : W1p mu Omega p) :
-    W1p.gradient (W1p.translate hVO u) =ᵐ[mu.restrict V]
-      fun x => W1p.gradient u (x + h) := by
-  simp only [W1p.translate, W1p.gradient_mk]
-  exact MemLp.coeFn_toLp _
+/-! ### Local difference quotients -/
 
 /-- **The local Sobolev difference quotient.** For `V ⊆ Ω` and `V + t • w ⊆ Ω`, this is the
 element of `W^{1,p}(V)` represented by `x ↦ t⁻¹ (u (x + t • w) - u x)`.

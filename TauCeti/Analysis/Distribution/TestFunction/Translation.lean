@@ -60,12 +60,14 @@ def translateTestFunction (hVO : MapsTo (· + h) V Omega) (phi : 𝓓(V, ℝ)) :
       simpa only [sub_eq_add_neg, neg_add_cancel_right] using hVO (phi.tsupport_subset hy')⟩
 
 /-- Translating a test function evaluates it at the oppositely translated point. -/
+@[simp]
 theorem translateTestFunction_apply (hVO : MapsTo (· + h) V Omega)
     (phi : 𝓓(V, ℝ)) (y : E) : translateTestFunction hVO phi y = phi (y - h) :=
   (rfl)
 
 /-- The directional derivative of a translated test function is the translated directional
 derivative. -/
+@[simp]
 theorem lineDeriv_translateTestFunction (hVO : MapsTo (· + h) V Omega)
     (phi : 𝓓(V, ℝ)) (y w : E) :
     lineDeriv ℝ (translateTestFunction hVO phi : E → ℝ) y w =
