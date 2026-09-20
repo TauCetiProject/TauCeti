@@ -39,6 +39,8 @@ isotropic-subgroup and gluing constructions for lattices.
   Chapter 7, §§8–9, for codes in discriminant-glue coordinates.
 * W. Ebeling, *Lattices and Codes*, §§1.3 and 3.3.
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
+* `TauCeti.IntegralLattice.rankOne`, the formal rank-one analogue adapted here to coordinate
+  powers with the Construction A normalization.
 -/
 
 public section
@@ -46,13 +48,6 @@ public section
 namespace TauCeti.ConstructionA
 
 open Matrix
-
-/-- Coordinatewise integer cast, as a `ℤ`-linear map into the rational coordinate space. -/
-private def intCastPi (ι : Type*) : (ι → ℤ) →ₗ[ℤ] (ι → ℚ) :=
-  (Int.castAddHom ℚ).toIntLinearMap.compLeft ι
-
-private theorem intCastPi_injective (ι : Type*) : Function.Injective (intCastPi ι) :=
-  Function.Injective.piMap fun _ ↦ Int.cast_injective
 
 variable (m : ℕ+) (ι : Type*) [Fintype ι]
 
@@ -66,10 +61,6 @@ coordinate alphabet in which codes over `ℤ/m` live. -/
 def zeroLattice : IntegralLattice (ι → ℚ) :=
   integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp)
 
-/-- The zero-code lattice is Construction A applied to the zero code. -/
-theorem zeroLattice_def :
-    zeroLattice m ι = integralLattice m (⊥ : AddSubgroup (ι → ZMod m)) (by simp) := (rfl)
-
 @[simp]
 theorem zeroLattice_carrier :
     (zeroLattice m ι).carrier = lattice m (⊥ : AddSubgroup (ι → ZMod m)) := by
@@ -80,11 +71,12 @@ theorem zeroLattice_form : (zeroLattice m ι).form = form m := by
   simp [zeroLattice]
 
 instance : (zeroLattice m ι).IsNondegenerate := by
-  rw [zeroLattice_def]
+  rw [zeroLattice]
   infer_instance
 
 /-- **The carrier of the zero-code lattice is `m ℤ^ι`**: an integer vector lies in it exactly
 when `m` divides each of its coordinates. -/
+@[simp]
 theorem intCast_mem_zeroLattice_carrier_iff (z : ι → ℤ) :
     (fun i ↦ (z i : ℚ)) ∈ (zeroLattice m ι).carrier ↔ ∀ i, ((m : ℕ) : ℤ) ∣ z i := by
   rw [zeroLattice_carrier, intCast_mem_lattice]
@@ -104,21 +96,24 @@ theorem zeroLattice_dualCarrier :
 
 /-- **A rational vector is dual to the zero-code lattice exactly when it has integer
 coordinates.** -/
+@[simp]
 theorem mem_zeroLattice_dualCarrier_iff {x : ι → ℚ} :
     x ∈ (zeroLattice m ι).dualCarrier ↔ ∃ z : ι → ℤ, (fun i ↦ (z i : ℚ)) = x := by
   rw [zeroLattice_dualCarrier, mem_lattice]
   simp
 
 private theorem intCastPi_mem_dualCarrier (z : ι → ℤ) :
-    intCastPi ι z ∈ (zeroLattice m ι).dualCarrier :=
+    (Int.castAddHom ℚ).toIntLinearMap.compLeft ι z ∈ (zeroLattice m ι).dualCarrier :=
   (mem_zeroLattice_dualCarrier_iff m ι).mpr ⟨z, rfl⟩
 
 /-- **The dual carrier of the zero-code lattice is the integer coordinate lattice**, presented as
 a `ℤ`-linear equivalence with `ℤ^ι` given by the coordinatewise integer cast. -/
 noncomputable def dualCarrierIntEquiv : (ι → ℤ) ≃ₗ[ℤ] (zeroLattice m ι).dualCarrier :=
   LinearEquiv.ofBijective
-    ((intCastPi ι).codRestrict _ (intCastPi_mem_dualCarrier m ι))
-    ⟨fun _ _ h ↦ intCastPi_injective ι (congrArg Subtype.val h), fun x ↦ by
+    (((Int.castAddHom ℚ).toIntLinearMap.compLeft ι).codRestrict _
+      (intCastPi_mem_dualCarrier m ι))
+    ⟨fun _ _ h ↦ (Function.Injective.piMap fun _ ↦ Int.cast_injective)
+        (congrArg Subtype.val h), fun x ↦ by
       obtain ⟨z, hz⟩ := (mem_zeroLattice_dualCarrier_iff m ι).mp x.2
       exact ⟨z, Subtype.ext hz⟩⟩
 
@@ -184,6 +179,7 @@ theorem discriminantEquiv_symm_intCast (z : ι → ℤ) :
 
 /-- **The discriminant pairing of the zero-code lattice is the normalized dot product of integer
 lifts**, `(∑ i, zᵢ wᵢ) / m` modulo `ℤ`. -/
+@[simp]
 theorem zeroLattice_discriminantPairing_mk_intCast (z w : ι → ℤ) :
     (zeroLattice m ι).discriminantPairing
         (Submodule.Quotient.mk (dualCarrierIntEquiv m ι z))
@@ -224,13 +220,14 @@ theorem discriminantIsometry_apply (x : (zeroLattice m ι).DiscriminantGroup) :
 /-- **Over an even modulus the zero-code lattice is even**: the code `⊥` is quadratically
 isotropic for the coordinate alphabet. -/
 theorem isEven_zeroLattice (hm : Even (m : ℕ)) : (zeroLattice m ι).IsEven := by
-  rw [zeroLattice_def, isEven_integralLattice_iff m hm]
+  rw [zeroLattice, isEven_integralLattice_iff m hm]
   intro x hx
   rw [AddSubgroup.mem_bot.mp hx]
   simp
 
 /-- **The discriminant quadratic value of the zero-code lattice is the normalized sum of squares
 of an integer lift**, `(∑ i, zᵢ²) / (2m)` modulo `ℤ`. -/
+@[simp]
 theorem zeroLattice_discriminantQuadraticMap_mk_intCast (hm : Even (m : ℕ)) (z : ι → ℤ) :
     (zeroLattice m ι).discriminantQuadraticMap (isEven_zeroLattice m ι hm)
         (Submodule.Quotient.mk (dualCarrierIntEquiv m ι z)) =
@@ -269,6 +266,7 @@ theorem discriminantQuadraticIsometry_apply (hm : Even (m : ℕ))
 
 /-- Forgetting the quadratic map from the even-modulus isometry recovers the bilinear
 identification of the discriminant module with the coordinate alphabet. -/
+@[simp]
 theorem discriminantQuadraticIsometry_toFiniteBilinearModule (hm : Even (m : ℕ)) :
     (discriminantQuadraticIsometry m ι hm).toFiniteBilinearModule =
       discriminantIsometry m ι := by
