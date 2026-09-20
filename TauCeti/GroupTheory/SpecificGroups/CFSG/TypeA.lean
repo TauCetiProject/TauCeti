@@ -67,9 +67,10 @@ lemma `simpleRootSubgroup_def` plays this role for the root subgroups.
 
 The definitions in this file are specific to `TypeALieIndex`. Their uniform
 `ValidLieTypeIndex.AmbientGroup` and `ValidLieTypeIndex.frobenius` counterparts are assembled from
-the family constructions in `TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.AmbientGroup`. This
-file does not define `GraphTwistedIndex.graphAut`, and nothing here asserts that a constructed
-group is finite or simple.
+the family constructions in `TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.AmbientGroup`. The
+uniform `GraphTwistedIndex.graphAut` is assembled from the family graph automorphisms in
+`TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.GraphTwisted`. Nothing here asserts that a
+constructed group is finite or simple.
 
 ## Main declarations
 
