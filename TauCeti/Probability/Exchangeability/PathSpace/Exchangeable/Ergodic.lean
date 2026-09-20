@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Probability.Exchangeability.PathSpace.HewittSavage
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
-import Mathlib.Logic.Equiv.Fintype
+import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 
 /-!
 # Exchangeable laws and ergodicity of the finitely supported permutation action
@@ -121,12 +121,9 @@ theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsF
   have hpath : pathLaw ρ (fun i (x : ℕ → α) => x i) = ρ := Measure.map_id'
   have hexch : Exchangeable ρ fun i (x : ℕ → α) => x i := by
     intro n σ
-    -- extend `σ` along `Fin n ↪ ℕ` to a permutation of `ℕ` fixing everything outside `Fin n`
-    let π : Equiv.Perm ℕ := σ.viaFintypeEmbedding (Fin.valEmbedding)
-    have hπfin : (MulAction.fixedBy ℕ π)ᶜ.Finite := by
-      refine (Set.finite_range (Fin.valEmbedding : Fin n ↪ ℕ)).subset fun m hm => ?_
-      by_contra h
-      exact hm (Equiv.Perm.viaFintypeEmbedding_apply_notMem_range σ Fin.valEmbedding h)
+    -- a finitely supported permutation of `ℕ` acting as `σ` on `Fin n`
+    obtain ⟨π, hπfin, hπ⟩ := Equiv.Perm.exists_finite_compl_fixedBy_apply_eq
+      Fin.valEmbedding (σ.toEmbedding.trans Fin.valEmbedding)
     have hinv : ρ.map (permReindex (α := α) π) = ρ := by
       have hπ' : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
         simpa only [MulAction.fixedBy_inv ℕ] using hπfin
@@ -138,8 +135,8 @@ theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsF
     rw [Measure.map_map (Measurable.of_eval fun i => measurable_pi_apply _) hπm]
     congr 1
     funext x i
-    simpa only [Function.comp_apply, permReindex_apply, Fin.valEmbedding_apply] using
-      (congrArg x (Equiv.Perm.viaFintypeEmbedding_apply_image σ Fin.valEmbedding i)).symm
+    simpa only [Function.comp_apply, permReindex_apply, Fin.valEmbedding_apply,
+      Function.Embedding.trans_apply, Equiv.coe_toEmbedding] using (congrArg x (hπ i)).symm
   have := (exchangeable_iff_exchangeableLaw_pathLaw hmeas).1 hexch
   rwa [hpath] at this
 
