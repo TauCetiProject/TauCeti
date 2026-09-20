@@ -16,9 +16,9 @@ places its two summands in the product by differentiating one factor at a time. 
 derivation preserving an ideal preserves every power of that ideal.
 
 The stronger condition that the whole range of a derivation lies in an ideal automatically gives
-the required stability. This is useful for finite algebra quotients: once a derivation takes values
-in an ideal `I`, it preserves the chosen power `I ^ n` and therefore descends to the quotient by
-that power along `TauCeti.derivationQuotientHom`.
+the required stability: a derivation taking values in an ideal `I` preserves every power `I ^ n`.
+An ideal here is a left ideal; when `I` is moreover two-sided, so is each `I ^ n`, and the
+derivation then descends to the quotient by that power along `TauCeti.derivationQuotientHom`.
 
 ## Main results
 
