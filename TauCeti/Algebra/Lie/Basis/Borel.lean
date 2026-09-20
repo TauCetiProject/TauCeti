@@ -40,25 +40,11 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 section
 
-variable {ι : Type*} [Finite ι]
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] in
-/-- The underlying submodule of the upper Borel's nilpotent part is the Lie span of the raising
-operators. -/
-theorem borelUpper_toSubmodule (b : LieAlgebra.Basis ι H) :
-    b.borelUpper.toSubmodule =
-      (LieSubalgebra.lieSpan K L (Set.range b.e)).toSubmodule :=
-  rfl
-
-end
-
-section
-
 variable {ι : Type*} [Fintype ι]
 
 /-- A positive root for the base associated to a Lie algebra basis is a nonzero natural-number
 combination of the basis's simple roots. -/
-theorem exists_ne_zero_eq_sum_baseSupp_of_mem_posRoots
+theorem exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots
     (b : LieAlgebra.Basis ι H) :
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
@@ -108,7 +94,7 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
   apply le_antisymm
   · rw [TauCeti.positiveNilradical_le_iff]
     intro α hα x hx
-    obtain ⟨n, hn, hsum⟩ := b.exists_ne_zero_eq_sum_baseSupp_of_mem_posRoots hα
+    obtain ⟨n, hn, hsum⟩ := b.exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots hα
     have hle : rootSpace H (∑ i, n i • (b.baseSupp i : H → K)) ≤
         ⨆ (m : ι → ℕ) (_ : m ≠ 0),
           rootSpace H (∑ i, m i • (b.baseSupp i : H → K)) :=
@@ -120,7 +106,8 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
     have hx' : x ∈ b.borelUpper := by
       rw [b.borelUpper_eq]
       exact hle hx
-    rw [← LieSubalgebra.mem_toSubmodule, ← b.borelUpper_toSubmodule]
+    rw [← LieSubalgebra.mem_toSubmodule]
+    change x ∈ b.borelUpper
     exact hx'
   · rw [LieSubalgebra.lieSpan_le, Set.range_subset_iff]
     intro i
