@@ -47,6 +47,8 @@ namespace, where dot notation on that Mathlib type elaborates.
 * `LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` and `LieIdeal.isNilpotent_iff_isNilpotent_ambient`:
   the two ambient readings of nilpotency of an ideal.
 * `LieIdeal.isNilpotentSup`: a sum of nilpotent ideals is nilpotent.
+* `LieIdeal.le_nilradical`: a nilpotent ideal is contained in the nilradical, with no Noetherian
+  assumption.
 * `TauCeti.LieAlgebra.nilradicalIsNilpotent`: over a Noetherian Lie algebra the nilradical is
   nilpotent, so `LieIdeal.isNilpotent_iff_le_nilradical` characterises it.
 * `TauCeti.LieAlgebra.maxNilpotentIdeal_le_nilradical`, `TauCeti.LieAlgebra.center_le_nilradical`
@@ -239,16 +241,22 @@ instance nilradicalIsNilpotent [IsNoetherian R L] : LieRing.IsNilpotent (nilradi
   · rw [Set.mem_ofPred_eq] at hI hJ ⊢
     exact LieIdeal.isNilpotentSup I J
 
+/-- An ideal that is nilpotent as a Lie algebra is contained in the nilradical.  This is the `→`
+direction of `LieIdeal.isNilpotent_iff_le_nilradical`, which needs no Noetherian assumption. -/
+theorem _root_.LieIdeal.le_nilradical (I : LieIdeal R L) (h : LieRing.IsNilpotent I) :
+    I ≤ nilradical R L :=
+  le_sSup h
+
 /-- Over a Noetherian Lie algebra the nilradical is exactly the ideals nilpotent as Lie algebras.
 
-The `→` direction holds without the Noetherian assumption. -/
+The `→` direction holds without the Noetherian assumption; it is `LieIdeal.le_nilradical`. -/
 theorem _root_.LieIdeal.isNilpotent_iff_le_nilradical [IsNoetherian R L]
     (I : LieIdeal R L) : LieRing.IsNilpotent I ↔ I ≤ nilradical R L :=
-  ⟨fun h ↦ le_sSup h, fun h ↦ LieIdeal.isNilpotent_of_le h inferInstance⟩
+  ⟨LieIdeal.le_nilradical R L I, fun h ↦ LieIdeal.isNilpotent_of_le h inferInstance⟩
 
 /-- The centre is contained in the nilradical. -/
 theorem center_le_nilradical : LieAlgebra.center R L ≤ nilradical R L :=
-  le_sSup (by simp only [Set.mem_ofPred_eq]; infer_instance)
+  LieIdeal.le_nilradical R L (LieAlgebra.center R L) inferInstance
 
 /-- A Lie algebra equivalence carries the nilradical onto the nilradical. In particular, every
 Lie algebra automorphism preserves the nilradical. -/
