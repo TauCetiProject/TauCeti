@@ -21,13 +21,12 @@ completion map `completionAlgHom v w`. Together these give the semi-local map
 semilocalHom v : K_v ⊗[K] L →ₐ[K_v] ∏_{w ∣ v} L_w,    a ⊗ x ↦ (a · x)_w .
 ```
 
-This file constructs that map and shows that it is an isomorphism `semilocalEquiv v`: the
-semi-local decomposition of Neukirch II (8.3). Surjectivity is weak approximation above `v`
-together with the closedness of a finite-dimensional subspace. Injectivity is then a count of
-degrees, because the source has degree `[L : K]` over `K_v` and the target has degree
-`∑_{w ∣ v} [L_w : K_v]`, which is `∑_{w ∣ v} e(w ∣ v) · f(w ∣ v) = [L : K]` by the fundamental
-identity. The counterpart at the infinite places is Mathlib's
-`NumberField.InfinitePlace.sum_inertiaDeg_eq_finrank`.
+This map is an isomorphism of `K_v`-algebras, `semilocalEquiv v`: the semi-local decomposition of
+Neukirch II (8.3). It identifies the scalar extension of `L` to `K_v` with the product of the
+completions of `L` at the places above `v`, so a question about `L` over `K` at `v` becomes the
+same question for the finitely many local extensions `L_w/K_v`. Comparing the degrees of its two
+sides gives the local–global degree identity `∑_{w ∣ v} [L_w : K_v] = [L : K]`, whose counterpart
+at the infinite places is Mathlib's `NumberField.InfinitePlace.sum_inertiaDeg_eq_finrank`.
 
 The places above `v` are indexed by the subtype
 `{w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}`, which is finite

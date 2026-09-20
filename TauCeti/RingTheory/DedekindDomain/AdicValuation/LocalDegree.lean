@@ -13,18 +13,16 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 # The local degree of a completion is `e · f`
 
 Let `R ⊆ B` be Dedekind domains with fraction fields `K ⊆ L`, and let `w` be a height-one prime of
-`B` lying over the height-one prime `v` of `R`, with `w` of finite residue field; the residue field
-of `v` embeds in that of `w`, so it is finite too. The completions `K_v` and `L_w` are then
-nonarchimedean local fields, and the canonical map `K_v → L_w` makes `L_w` a
-valuative extension of `K_v`, so the fundamental identity `e · f = [L_w : K_v]` of
-`TauCeti.ramificationIndex_mul_inertiaDegree` applies to it. Combining it with the two comparisons
-`IsDedekindDomain.HeightOneSpectrum.ramificationIndex_adicCompletion` and
-`IsDedekindDomain.HeightOneSpectrum.finrank_residueField_adicCompletion` expresses the local
-degree through the two global invariants of `w` over `v`:
+`B` lying over the height-one prime `v` of `R`, with `w` of finite residue field. The completions
+`K_v` and `L_w` are then nonarchimedean local fields for the canonical algebra structure of the
+`AdicCompletionExtension` scope, and the degree of the second over the first is
 
-`[L_w : K_v] = e(w ∣ v) · f(w ∣ v)`.
+`[L_w : K_v] = e(w ∣ v) · f(w ∣ v)`,
 
-This is the form in which the local degrees are summed over the primes above `v`.
+the product of the ramification index and the inertia degree of `w` over `R`. Both factors on the
+right are global invariants of the extension `R ⊆ B`, so this formula turns a sum of local degrees
+over the primes `w` above `v` into `∑_{w ∣ v} e(w ∣ v) · f(w ∣ v)`, which the fundamental identity
+of Dedekind domains evaluates as the global degree `[L : K]`.
 
 ## Main results
 

@@ -33,6 +33,8 @@ choosing a primitive element.
 
 ## Main results
 
+* `TauCeti.completionPolynomial_eq_prod`: the completed minimal polynomial is the product of the
+  factors attached to the places above `v`.
 * `TauCeti.factorFieldEquivCompletion_algebraMap`: the factor-field equivalence is compatible
   with the canonical map from `L`.
 * `TauCeti.semilocalEquiv_eq_crt`: the factor/CRT assembly is `semilocalEquiv`.
@@ -200,7 +202,10 @@ private theorem completionPolynomial_monic : (completionPolynomial L v).Monic :=
     (semilocalPowerBasis (K := K) L).gen)).map _
 
 attribute [local instance] Fintype.ofFinite in
-private theorem completionPolynomial_eq_prod :
+/-- **The factorization of the completed primitive polynomial.** Over `K_v`, the minimal
+polynomial of the chosen primitive element of `L/K` is the product of the completion factors of
+the places of `L` above `v`. -/
+theorem completionPolynomial_eq_prod :
     completionPolynomial L v =
       ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         completionFactor L v w := by
@@ -262,12 +267,15 @@ theorem completionFactorsEquivPlaces_symm_apply_val
     rw [completionFactorsEquivPlaces, Equiv.symm_symm, Equiv.ofBijective_apply]
     rfl
 
-private theorem completionFactor_eq
-    (q : completionFactors L v) :
-    q.1 = completionFactor L v (completionFactorsEquivPlaces L v q) := by
+/-- The completion factor of the place corresponding to a factor under
+`completionFactorsEquivPlaces` is that factor. -/
+@[simp]
+theorem completionFactor_completionFactorsEquivPlaces (q : completionFactors L v) :
+    completionFactor L v (completionFactorsEquivPlaces L v q) = q.1 := by
   have h := completionFactorsEquivPlaces_symm_apply_val L v
     (completionFactorsEquivPlaces L v q)
-  rwa [Equiv.symm_apply_apply] at h
+  rw [Equiv.symm_apply_apply] at h
+  exact h.symm
 
 private theorem completionPrimitive_primitive
     (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
@@ -300,7 +308,7 @@ def factorFieldEquivCompletion (q : completionFactors L v) :
   (AdjoinRoot.algEquivOfEq (v.adicCompletion K) q.1
       (minpoly (v.adicCompletion K)
         (algebraMap L (w.1.adicCompletion L) (semilocalPowerBasis (K := K) L).gen))
-      (by simpa [completionFactor] using completionFactor_eq L v q)).trans
+      (completionFactor_completionFactorsEquivPlaces L v q).symm).trans
     ((IntermediateField.adjoinRootEquivAdjoin (v.adicCompletion K)
       (IsIntegral.of_finite (v.adicCompletion K)
         (algebraMap L (w.1.adicCompletion L) (semilocalPowerBasis (K := K) L).gen))).trans
@@ -372,28 +380,20 @@ private theorem factorFieldsEquivCompletions_semilocalCrtHom
         factorFieldEquivCompletion_algebraMap]
   | add x y hx hy => simp [map_add, hx, hy]
 
-private theorem semilocalCrtHom_bijective : Function.Bijective (semilocalCrtHom L v) := by
-  constructor
-  · intro x y hxy
-    apply semilocalHom_injective L v
-    rw [← factorFieldsEquivCompletions_semilocalCrtHom L v x,
-      ← factorFieldsEquivCompletions_semilocalCrtHom L v y, hxy]
-  · intro y
-    obtain ⟨x, hx⟩ := semilocalHom_surjective L v (factorFieldsEquivCompletions L v y)
-    refine ⟨x, (factorFieldsEquivCompletions L v).injective ?_⟩
-    rw [factorFieldsEquivCompletions_semilocalCrtHom, hx]
-
 /-- **The Chinese remainder assembly.** The scalar extension `K_v ⊗[K] L` is the product of
-the quotient fields of the irreducible factors of the completed primitive polynomial. -/
+the quotient fields of the irreducible factors of the completed primitive polynomial: the
+semi-local decomposition, read through the factor fields. -/
 def semilocalCrtEquiv :
     v.adicCompletion K ⊗[K] L ≃ₐ[v.adicCompletion K]
       ((q : completionFactors L v) → AdjoinRoot q.1) :=
-  AlgEquiv.ofBijective (semilocalCrtHom L v) (semilocalCrtHom_bijective L v)
+  (semilocalEquiv L v).trans (factorFieldsEquivCompletions L v).symm
 
 /-- The underlying map of the Chinese remainder equivalence is `semilocalCrtHom`. -/
 @[simp]
 theorem coe_semilocalCrtEquiv : ⇑(semilocalCrtEquiv L v) = semilocalCrtHom L v := by
-  rw [semilocalCrtEquiv, AlgEquiv.coe_ofBijective]
+  funext z
+  rw [semilocalCrtEquiv, AlgEquiv.trans_apply, coe_semilocalEquiv,
+    AlgEquiv.symm_apply_eq, factorFieldsEquivCompletions_semilocalCrtHom]
 
 /-- The Chinese remainder equivalence on a pure tensor, evaluated at one factor. -/
 @[simp]
@@ -409,10 +409,9 @@ with its corresponding completion and reindexing factors by places, `semilocalCr
 with `semilocalEquiv`. -/
 theorem semilocalEquiv_eq_crt :
     semilocalEquiv L v =
-      (semilocalCrtEquiv L v).trans (factorFieldsEquivCompletions L v) := by
-  apply AlgEquiv.ext
-  intro z
-  rw [AlgEquiv.trans_apply, coe_semilocalCrtEquiv, coe_semilocalEquiv]
-  exact (factorFieldsEquivCompletions_semilocalCrtHom L v z).symm
+      (semilocalCrtEquiv L v).trans (factorFieldsEquivCompletions L v) :=
+  AlgEquiv.ext fun z ↦ by
+    rw [AlgEquiv.trans_apply, semilocalCrtEquiv, AlgEquiv.trans_apply,
+      AlgEquiv.apply_symm_apply]
 
 end TauCeti
