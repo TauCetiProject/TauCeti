@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularSet
-public import Mathlib.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 
 /-!

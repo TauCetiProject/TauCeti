@@ -528,6 +528,7 @@ variable {Y Z : TopCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
 
 /-- The identity map induces on twisted chains the map coming from the identification of a
 coefficient system with its pullback along the identity. -/
+@[simp]
 lemma twistedChainsMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
     twistedChainsMap (𝟙 X) L = twistedChainsCoefficientMap ((pullbackIdIso X).hom.app L) := by
   refine NatTrans.ext (funext fun n ↦ twistedChains_hom_ext _ fun σ ↦ ?_)
@@ -539,6 +540,7 @@ lemma twistedChainsMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
 
 /-- A composite of continuous maps induces on twisted chains the composite of the two induced
 maps, after the identification of the pullback along the composite with the iterated pullback. -/
+@[simp, reassoc]
 lemma twistedChainsMap_comp (L : LocalCoefficientSystem.{u, v, max v w} R Z) :
     twistedChainsMap (f ≫ g) L =
       twistedChainsCoefficientMap ((pullbackCompIso f.hom g.hom).hom.app L) ≫
@@ -554,6 +556,7 @@ lemma twistedChainsMap_comp (L : LocalCoefficientSystem.{u, v, max v w} R Z) :
     (ιTwistedChains_twistedChainsMap g L n ((TopCat.toSSet.map f).app n σ))).symm
 
 /-- The chain-complex form of `twistedChainsMap_id`. -/
+@[simp]
 lemma twistedChainComplexMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
     twistedChainComplexMap (𝟙 X) L =
       twistedChainComplexCoefficientMap ((pullbackIdIso X).hom.app L) :=
@@ -561,6 +564,7 @@ lemma twistedChainComplexMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X)
     (twistedChainsMap_id L)
 
 /-- The chain-complex form of `twistedChainsMap_comp`. -/
+@[simp, reassoc]
 lemma twistedChainComplexMap_comp (L : LocalCoefficientSystem.{u, v, max v w} R Z) :
     twistedChainComplexMap (f ≫ g) L =
       twistedChainComplexCoefficientMap ((pullbackCompIso f.hom g.hom).hom.app L) ≫
@@ -570,6 +574,7 @@ lemma twistedChainComplexMap_comp (L : LocalCoefficientSystem.{u, v, max v w} R 
     (by rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_comp]; rfl)
 
 /-- The homology form of `twistedChainsMap_id`. -/
+@[simp]
 lemma twistedHomologyMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) (k : ℕ) :
     twistedHomologyMap (𝟙 X) L k =
       twistedHomologyCoefficientMap ((pullbackIdIso X).hom.app L) k :=
@@ -577,6 +582,7 @@ lemma twistedHomologyMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) (k 
     (twistedChainComplexMap_id L)
 
 /-- The homology form of `twistedChainsMap_comp`. -/
+@[simp, reassoc]
 lemma twistedHomologyMap_comp (L : LocalCoefficientSystem.{u, v, max v w} R Z) (k : ℕ) :
     twistedHomologyMap (f ≫ g) L k =
       twistedHomologyCoefficientMap ((pullbackCompIso f.hom g.hom).hom.app L) k ≫
