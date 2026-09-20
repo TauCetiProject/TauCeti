@@ -72,20 +72,25 @@ theorem indFDRepUnit_naturality {A B : FDRep k S} (f : A ⟶ B) :
     indFDRepUnit A ≫ (Action.res (FGModuleCat k) S.subtype).map (indFDRepMap f) =
       f ≫ indFDRepUnit B := by
   apply (forget₂ (FDRep k S) (Rep k S)).map_injective
-  rw [Functor.map_comp, Functor.map_comp, forget₂_map_actionRes]
-  change (forget₂ (FDRep k S) (Rep k S)).map (indFDRepUnit A) ≫
-      (Rep.resFunctor S.subtype).map
-        ((forget₂ (FDRep k G) (Rep k G)).map (indFDRepMap f)) =
-    (forget₂ (FDRep k S) (Rep k S)).map f ≫
-      (forget₂ (FDRep k S) (Rep k S)).map (indFDRepUnit B)
-  rw [forget₂_map_indFDRepUnit, forget₂_map_indFDRepUnit, forget₂_map_indFDRepMap,
-    Functor.map_comp, Functor.map_comp]
+  rw [Functor.map_comp, Functor.map_comp, forget₂_map_actionRes, forget₂_map_indFDRepUnit,
+    forget₂_map_indFDRepUnit, forget₂_map_indFDRepMap, Functor.map_comp, Functor.map_comp]
+  -- `forget₂_map_indFDRepUnit` puts Mathlib's adjunction unit into the goal, and its domain and
+  -- codomain are `(𝟭 (Rep k S)).obj ((forget₂ (FDRep k S) (Rep k S)).obj A)` and
+  -- `(Rep.resFunctor S.subtype).obj ((forget₂ (FDRep k G) (Rep k G)).obj (indFDRep A))`, which
+  -- match the goal's `(forget₂ (FDRep k S) (Rep k S)).obj A` and its `resFDRep S (indFDRep A)`
+  -- counterpart only definitionally.  The rewritten composite is therefore not type-correct at
+  -- `implicit` transparency, so `rw [Category.assoc]` fails to find `(?f ≫ ?g) ≫ ?h` in it; no
+  -- rewrite can repair a wrapper mismatch in the *type* of a morphism, and restating the goal
+  -- re-elaborates the composite with the functor applications the remaining rewrites match on.
   change _ ≫ (Rep.resFunctor S.subtype).map (indFDRepForgetIso A).hom ≫
       (Rep.resFunctor S.subtype).map
         ((Rep.indFunctor k S.subtype).map
           ((forget₂ (FDRep k S) (Rep k S)).map f)) ≫
         (Rep.resFunctor S.subtype).map (indFDRepForgetIso B).inv = _
   rw [Category.assoc, Iso.map_inv_hom_id_assoc]
+  -- `rw` performs this last rewrite as well, but the two sides then still differ in the instance
+  -- paths behind the `resFDRep` and `Rep.resFunctor` wrappers, which its closing reducible `rfl`
+  -- does not see; `erw` finishes up to those.
   erw [Adjunction.unit_naturality_assoc]
 
 /-- On Mathlib's induced carrier, `indFDRepUnit` is the generator map `a ↦ ⟦1 ⊗ a⟧`. -/
