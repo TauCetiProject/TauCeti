@@ -60,7 +60,9 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
 
 The statements follow Stichtenoth, *Algebraic Function Fields and Codes*, second edition:
 Corollary 1.1.16 for the finiteness of the field of constants, the standing hypothesis of
-Section 1.4 for its exactness, and Proposition 1.2.1(d) for the rational function field.
+Section 1.4 for its exactness, and Proposition 1.2.1(d) for the rational function field. The
+constant-field comparison uses Mathlib's
+`algebraicClosure.eq_restrictScalars_of_isAlgebraic`.
 -/
 
 public section
@@ -212,14 +214,6 @@ variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 section IsAlgebraic
 
 variable [Algebra.IsAlgebraic F F']
-
-/-- **The base field of an extension of function fields is algebraic over the base field below**
-(Stichtenoth, Definition 3.1.1 and the remark following it): in the tower of an extension
-`F' / k'` of `F / k` with `F' / F` algebraic, the algebraicity of `k' / k` is not an assumption
-but a theorem. -/
-theorem IsFunctionField.isAlgebraic_baseExtension (hF : IsFunctionField k F)
-    (hF' : IsFunctionField k' F') : Algebra.IsAlgebraic k k' :=
-  isAlgebraic_of_trdeg_eq_one (hF.trdeg_eq_one_of_isAlgebraic (E := F')) hF'.trdeg_eq_one
 
 /-- **The field of constants of `F' / k'` cuts down along `F ⊆ F'` to the field of constants of
 `F / k`**: a function of `F` is algebraic over `k'` exactly when it is algebraic over `k`.  The

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.FinTrdeg
 public import Mathlib.NumberTheory.FunctionField
+public import TauCeti.FieldTheory.TranscendenceDegree
 
 /-!
 # Algebraic function fields of one variable
@@ -26,7 +26,8 @@ Fields and Codes*, second edition, Definition 1.1.1 and Remark 1.1.2.
 
 The proof of independence of the parameter adapts Mathlib's
 `FunctionField.finiteDimensional_of_adjoin_transcendental` to the intrinsic predicate defined
-here. No code from external formalizations is used.
+here. The base-change proofs use Mathlib's transcendence-degree tower formula
+`lift_trdeg_add_eq`. No code from external formalizations is used.
 -/
 
 public section
@@ -231,19 +232,6 @@ section BaseChange
 
 variable {k' : Type*} [Field k'] [Algebra k k'] [Algebra k' F] [IsScalarTower k k' F]
 
-/-- If `F` has transcendence degree one over both `k` and an intermediate field `k'`, then `k'`
-is algebraic over `k`: transcendence degree one leaves no room for a transcendental constant. -/
-theorem isAlgebraic_of_trdeg_eq_one (h : Algebra.trdeg k F = 1) (h' : Algebra.trdeg k' F = 1) :
-    Algebra.IsAlgebraic k k' := by
-  rw [← trdeg_eq_zero_iff]
-  have hadd := lift_trdeg_add_eq k k' F
-  rw [h, h'] at hadd
-  simp only [Cardinal.lift_one] at hadd
-  rcases Cardinal.add_eq_right_iff.mp hadd with hle | hzero
-  -- the first alternative would force `ℵ₀ ≤ 1`
-  · exact absurd ((le_max_left _ _).trans hle) (by simp)
-  · simpa using hzero
-
 /-- An intermediate field `k'` between `k` and an algebraic function field `F / k` over which `F`
 is again an algebraic function field is algebraic over `k`. -/
 theorem IsFunctionField.isAlgebraic_base (hF : IsFunctionField k F)
@@ -283,5 +271,23 @@ theorem isFunctionField_base_iff_isAlgebraic (hF : IsFunctionField k F) :
   ⟨hF.isAlgebraic_base, fun h ↦ have := h; hF.of_isAlgebraic⟩
 
 end BaseChange
+
+/-! ### Extensions of function fields -/
+
+section Extension
+
+variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra F F']
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Algebra.IsAlgebraic F F']
+
+/-- **The base field of an extension of function fields is algebraic over the base field below**
+(Stichtenoth, Definition 3.1.1 and the remark following it): in the tower of an extension
+`F' / k'` of `F / k` with `F' / F` algebraic, the algebraicity of `k' / k` is not an assumption
+but a theorem. -/
+theorem IsFunctionField.isAlgebraic_baseExtension (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F') : Algebra.IsAlgebraic k k' :=
+  isAlgebraic_of_trdeg_eq_one (hF.trdeg_eq_one_of_isAlgebraic (E := F')) hF'.trdeg_eq_one
+
+end Extension
 
 end TauCeti
