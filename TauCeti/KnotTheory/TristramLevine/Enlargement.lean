@@ -20,6 +20,9 @@ knot-concordance invariance at roots of the Alexander polynomial.
 
 The calculation follows W. B. R. Lickorish, *An Introduction to Knot Theory*, GTM 175,
 Chapter 8, Theorem 8.9.
+
+Formal source: `TauCeti.KnotTheory.signature_enlargeColumn` in
+`TauCeti.KnotTheory.Signature`.
 -/
 
 public section
@@ -33,6 +36,7 @@ variable {ι : Type*}
 
 /-- The Tristram--Levine form of a column enlargement: the original form is bordered by
 one weighted enlargement vector and a two-dimensional Hermitian zero-diagonal block. -/
+@[simp]
 theorem tristramLevineForm_enlargeColumn (V : Matrix ι ι ℝ) (ξ : ι → ℝ) (ω : ℂ) :
     tristramLevineForm (enlargeColumn V ξ) ω =
       fromBlocks (tristramLevineForm V ω)
