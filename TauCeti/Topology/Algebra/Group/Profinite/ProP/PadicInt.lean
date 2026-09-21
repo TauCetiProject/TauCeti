@@ -59,7 +59,10 @@ theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
       apply (PadicInt.norm_le_pow_iff_mem_span_pow x.toAdd n).mpr
       rw [← PadicInt.ker_toZModPow]
       have hxzero : PadicInt.toZModPow n x.toAdd = 0 := by
-        have hf_apply : (f x).toAdd = PadicInt.toZModPow n x.toAdd := rfl
+        have hf_apply : (f x).toAdd = PadicInt.toZModPow n x.toAdd := by
+          simp only [f, AddMonoidHom.coe_toMultiplicative, Function.comp_apply, toAdd_ofAdd]
+          exact DFunLike.congr_fun
+            (RingHom.toAddMonoidHom_eq_coe (PadicInt.toZModPow n)) x.toAdd
         rw [← hf_apply, MonoidHom.mem_ker.mp hx, toAdd_one]
       exact RingHom.mem_ker.mpr hxzero
     simpa [dist_zero_right] using hxnorm
