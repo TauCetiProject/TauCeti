@@ -149,7 +149,7 @@ private theorem map_mem_locSubring_completionLocalization
     rw [completionLocalization_ringOfDefinition, mem_completionRingOfDefinition_iff,
       localizationUniform_ringOfDefinition, toCompletionLoc_apply]
     exact subset_closure ⟨_, algebraMap_mem_locSubring P T s S ha, rfl⟩
-  · rw [Subring.mem_comap, IsLocalization.Away.map, divBy_def, IsLocalization.map_mk', ← divBy_def]
+  · rw [Subring.mem_comap, RingHom.awayMap_divBy]
     exact divBy_mem_locSubring _ _ _ _ (hTB t ht)
 
 include hden'' in
@@ -183,7 +183,7 @@ theorem hasDenominatorPower_completionLocalization
   refine (hasDenominatorPower_iff _ _ _ _).mpr ⟨N, fun b hb ↦
     completionLocalization_idealOfDefinition_pow_le P T s S hden N K (fun a ha x hx ↦ ?_) hb⟩
   have h := map_mem_locSubring_completionLocalization P T s S hden T'' s'' S'' SB TB hTB (hN a ha)
-  rwa [divBy_def, IsLocalization.Away.map, IsLocalization.map_mk', ← divBy_def, ← hx] at h
+  rwa [RingHom.awayMap_divBy, ← hx] at h
 
 variable
   (hTB : letI := locUniformSpace P T s S hden

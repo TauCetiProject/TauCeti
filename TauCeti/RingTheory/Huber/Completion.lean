@@ -531,9 +531,7 @@ pseudouniformiser being one. -/
 instance IsTateRing.completion [IsTateRing A] : IsTateRing (Completion A) where
   exists_isPseudoUniformizer := by
     obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-    exact ⟨(a : Completion A), isPseudoUniformizer_iff.mpr
-      ⟨ha.isUnit.map Completion.coeRingHom,
-        ha.isTopologicallyNilpotent.map Completion.continuous_coeRingHom⟩⟩
+    exact ⟨Completion.coeRingHom a, ha.map Completion.continuous_coeRingHom⟩
 
 /-- **The closure in `Â` of the image of a subring of `A⁰` lies in `Â⁰`**: the image lies in `Â⁰`
 by `isPowerBounded_completion_coe_of_isPowerBounded`, and `Â⁰` is open, hence closed. -/

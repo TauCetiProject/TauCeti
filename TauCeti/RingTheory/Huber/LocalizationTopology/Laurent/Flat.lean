@@ -841,8 +841,8 @@ private theorem isTateRing_completion_locTopology_of_isTateRing [IsTateRing A]
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   exact { toIsHuberRing := isHuberRing_completion_locTopology P T s S hden
-          exists_isPseudoUniformizer := ⟨_, isPseudoUniformizer_iff.mpr ⟨hϖ.isUnit.map _,
-            hϖ.isTopologicallyNilpotent.map (continuous_toCompletionLoc P T s S hden)⟩⟩ }
+          exists_isPseudoUniformizer :=
+            ⟨_, hϖ.map (continuous_toCompletionLoc P T s S hden)⟩ }
 
 /-- **Wedhorn's Proposition 8.30 for a refinement, asking everything of `A⟨T/s⟩`.** The restriction
 map `A⟨T/s⟩ → A⟨T''/s''⟩` of a refinement is flat as soon as `B = A⟨T/s⟩` is Tate and strongly
