@@ -42,6 +42,8 @@ after restriction is multiplication by the relative degree `[E : F]` in every de
   zero, restriction is the ground-level inclusion read on norm quotients.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_tateRes`: `cor ∘ res = [E : F]` in every
   degree.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_of_nonneg`: Tate restriction is
+  functorial along towers in every nonnegative degree.
 
 ## References
 
@@ -139,6 +141,48 @@ theorem tateHZeroEquivNormQuotient_tateRes_H0π (T : LayerRestriction small big)
   rw [NormalLayer.groundLevelEquiv_apply_coe, groundInclusion_apply_coe,
     NormalLayer.groundLevelEquiv_apply_coe]
   exact T.repIso_inv_apply_coe F _
+
+/-- **In degree zero, restriction is the ground-level inclusion on representatives.** The
+representative of a class in the larger layer is read in the smaller ground level without changing
+its underlying coefficient. -/
+theorem tateRes_zero_H0π (T : LayerRestriction small big) (F : Formation G)
+    (x : (big.rep F).ρ.invariants) :
+    T.tateRes F 0 (TateCohomology.H0π (big.rep F) x) =
+      TateCohomology.H0π (small.rep F)
+        ((small.groundLevelEquiv F).symm (T.groundInclusion F (big.groundLevelEquiv F x))) := by
+  apply (small.tateHZeroEquivNormQuotient F).injective
+  rw [tateHZeroEquivNormQuotient_tateRes_H0π,
+    NormalLayer.tateHZeroEquivNormQuotient_H0π, LinearEquiv.apply_symm_apply]
+
+/-! ### Towers -/
+
+section Towers
+
+variable {a b c : NormalLayer G}
+
+/-- **Tate restriction is functorial along a tower in every nonnegative degree.** Restricting
+from `K/F` to `K/E` and then to `K/E'` agrees with direct restriction from `K/F` to `K/E'`.
+Degree zero is the tower law for ground-level inclusions; positive degrees use ordinary
+cohomological restriction. -/
+theorem tateRes_trans_of_nonneg (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (r : ℤ) (hr : 0 ≤ r) :
+    (T.trans T').tateRes F r = T'.tateRes F r ≫ T.tateRes F r := by
+  obtain rfl | ⟨n, rfl⟩ : r = 0 ∨ ∃ n : ℕ, r = n + 1 := by
+    rcases r with (_ | n) | (_ | n)
+    · exact .inl rfl
+    · exact .inr ⟨n, rfl⟩
+    · omega
+    · omega
+  · ext x
+    induction x using TauCeti.TateCohomology.H0_induction_on with
+    | h y =>
+      rw [ModuleCat.comp_apply, tateRes_zero_H0π, tateRes_zero_H0π, tateRes_zero_H0π,
+        LinearEquiv.apply_symm_apply, groundInclusion_trans T T', LinearMap.comp_apply]
+  · rw [tateRes_ofNat_succ, tateRes_ofNat_succ, tateRes_ofNat_succ,
+      cohomologyRes_trans T T']
+    simp only [Category.assoc, Iso.inv_hom_id_assoc]
+
+end Towers
 
 /-- **Corestriction after restriction is multiplication by the relative degree** `[E : F]`, in
 every Tate degree. -/
