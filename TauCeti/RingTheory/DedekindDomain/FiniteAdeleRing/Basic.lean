@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
+public import Mathlib.Topology.Algebra.Algebra
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 
 /-!
@@ -85,13 +86,19 @@ variable {R K}
 @[simp] theorem mul_apply (a b : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
     (a * b) v = a v * b v := rfl
 
-/-- The product of the local integer rings embedded in the finite adele ring. Its range is the set
-of finite adeles integral at every finite place. -/
+/-- The product of the local integer rings embedded continuously in the finite adele ring. Its
+range is the set of finite adeles integral at every finite place. -/
 noncomputable def integralEmbedding :
-    (∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K) → FiniteAdeleRing R K :=
-  RestrictedProduct.structureMap
+    (∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K) →A[ℤ] FiniteAdeleRing R K where
+  toFun := RestrictedProduct.structureMap
     (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
     (fun v ↦ (v.adicCompletionIntegers K : Set (v.adicCompletion K))) Filter.cofinite
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+  cont := RestrictedProduct.isEmbedding_structureMap.continuous
 
 /-- The integral embedding is evaluated place by place. -/
 @[simp]
@@ -109,7 +116,7 @@ theorem isEmbedding_integralEmbedding :
 @[continuity, fun_prop]
 theorem continuous_integralEmbedding :
     Continuous (integralEmbedding (R := R) (K := K)) :=
-  (isEmbedding_integralEmbedding (R := R) (K := K)).continuous
+  map_continuous (integralEmbedding (R := R) (K := K))
 
 /-- The range of the integral embedding is the set of finite adeles integral at every place. -/
 theorem range_integralEmbedding :
