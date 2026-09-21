@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Spin.HalfSpin
+public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
 -- Private: `CliffordAlgebra.finrank_evenOdd_zero` is used only inside proofs; it is not named by
 -- an exported statement.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
@@ -37,8 +37,8 @@ both in even dimension `2l`, the type `Dₗ` case, where the remainder of the po
 (`TauCeti.SpinPolarizationData.line_eq_bot_of_even_finrank`) so that the two halves are
 subrepresentations of dimension `2 ^ (l - 1)`, and in odd dimension `2l + 1`, the type `Bₗ` case,
 where the remainder is a line, the splitting is not one of representations (see
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean`) and the spin module of dimension `2 ^ l` is the
-one that matters.
+`TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean`) and the spin module of dimension `2 ^ l`
+is the one that matters.
 
 ## Main results
 

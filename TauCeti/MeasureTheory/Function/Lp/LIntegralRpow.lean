@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
@@ -16,11 +17,16 @@ For `0 < p < ∞` the `Lᵖ` seminorm of `v` is by definition the `p`-th root of
 same statement as `‖v‖_p ≤ c * ‖w‖_p` between the seminorms. This file records the passage from
 the former to the latter, which is the direction an estimate proved by integration produces.
 
-The two functions are allowed to take values in different normed groups, so the statement also
+The two functions are allowed to take values in different spaces, and those spaces need carry
+nothing beyond an extended norm, since that is all `eLpNorm` reads. In particular the statement
 covers comparing a function with its derivative.
 
 ## Main declarations
 
+* `TauCeti.eLpNorm_rpow_eq_lintegral`: for an `ℝ≥0∞`-valued function, the `p`-th power of the
+  `Lᵖ` seminorm is the integral `∫⁻ f ^ p`.
+* `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal`: an `ℝ≥0∞`-valued Fatou lemma for the `Lᵖ`
+  seminorm.
 * `TauCeti.eLpNorm_le_eLpNorm_of_lintegral_rpow_le`: from
   `∫⁻ ‖v‖ₑ ^ p ≤ c ^ p * ∫⁻ ‖w‖ₑ ^ p` conclude `‖v‖_p ≤ c * ‖w‖_p`.
 * `TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`: Hölder's extended-valued integral inequality
@@ -32,14 +38,52 @@ public section
 
 namespace TauCeti
 
+open Filter
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal Topology
+
+/-- For a finite nonzero exponent, the `p`-th power of the `Lᵖ` seminorm of an `ℝ≥0∞`-valued
+function is the integral of the `p`-th power of that function. This is
+`MeasureTheory.lintegral_rpow_enorm_eq_rpow_eLpNorm'` read at an `ℝ≥0∞`-valued exponent and at a
+function whose enorm is the identity, which is the shape the extended-valued estimates use. -/
+theorem eLpNorm_rpow_eq_lintegral {α : Type*} [MeasurableSpace α]
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (f : α → ℝ≥0∞) (μ : Measure α) :
+    eLpNorm f p μ ^ p.toReal = ∫⁻ a, f a ^ p.toReal ∂μ := by
+  rw [eLpNorm_eq_eLpNorm' hp0 hp,
+    ← lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
+  simp
+
+/-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions.** For a finite nonzero
+exponent, an almost everywhere pointwise limit of functions whose `Lᵖ` seminorms are bounded by
+`c` also has `Lᵖ` seminorm at most `c`. -/
+theorem eLpNorm_le_of_ae_tendsto_ennreal {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : ℕ → α → ℝ≥0∞} {g : α → ℝ≥0∞}
+    {c : ℝ≥0∞} (hf : ∀ n, AEMeasurable (f n) μ)
+    (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ f n x) atTop (𝓝 (g x)))
+    (hle : ∀ n, eLpNorm (f n) p μ ≤ c) :
+    eLpNorm g p μ ≤ c := by
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have key : eLpNorm g p μ ^ p.toReal ≤ c ^ p.toReal := by
+    rw [eLpNorm_rpow_eq_lintegral hp0 hp]
+    calc ∫⁻ x, g x ^ p.toReal ∂μ
+        = ∫⁻ x, atTop.liminf (fun n ↦ f n x ^ p.toReal) ∂μ := by
+          refine lintegral_congr_ae ?_
+          filter_upwards [hlim] with x hx
+          exact (Tendsto.liminf_eq
+            (((ENNReal.continuous_rpow_const (y := p.toReal)).tendsto (g x)).comp hx)).symm
+      _ ≤ atTop.liminf fun n ↦ ∫⁻ x, f n x ^ p.toReal ∂μ :=
+          lintegral_liminf_le' fun n ↦ (hf n).pow_const _
+      _ ≤ c ^ p.toReal := by
+          refine liminf_le_of_frequently_le' (.of_forall fun n ↦ ?_)
+          rw [← eLpNorm_rpow_eq_lintegral hp0 hp]
+          exact ENNReal.rpow_le_rpow (hle n) hr.le
+  exact (ENNReal.rpow_le_rpow_iff hr).1 key
 
 /-- Turn a bound between the `∫⁻ ‖·‖ₑ ^ p` integrals into a bound between the `Lᵖ` seminorms.
 The two functions may have different codomains, which is what lets such a bound compare a
-function with its derivative. -/
+function with its derivative; only an extended norm on each is needed. -/
 theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {G H : Type*} [NormedAddCommGroup G] [NormedAddCommGroup H] {v : α → G} {w : α → H} {c : ℝ}
+    {G H : Type*} [ENorm G] [ENorm H] {v : α → G} {w : α → H} {c : ℝ}
     (hc : 0 ≤ c) {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞)
     (h : ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ ≤
       ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) :

@@ -24,15 +24,14 @@ fibre to regularity on every fibre.
 
 ## Main declaration
 
-* `TauCeti.IsCoveringMap.isRegular_iff_normal_range`: a connected covering is regular exactly
+* `IsCoveringMap.isRegular_iff_normal_range`: a connected covering is regular exactly
   when its recovered subgroup of the fundamental group is normal.
 
 ## References
 
-This is the regular-cover criterion in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
-item 8: a cover attached to `H` is regular (normal/Galois) exactly when `H` is normal. It uses
-Mathlib's covering-space lifting criterion, due to Junyan Xu, through Tau Ceti's pointed-cover
-classification; no external proof is copied or adapted here.
+This is the regular-cover criterion: a cover attached to `H` is regular (normal/Galois) exactly
+when `H` is normal. It uses Mathlib's covering-space lifting criterion, due to Junyan Xu, through
+Tau Ceti's pointed-cover classification.
 -/
 
 public section
@@ -47,24 +46,24 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 locally path-connected total space and path-connected base. For any chosen lift `e` of `x`, the
 deck action is regular exactly when the recovered subgroup
 `p_* π₁(E, e) ≤ π₁(X, x)` is normal. -/
-theorem IsCoveringMap.isRegular_iff_normal_range
+theorem _root_.IsCoveringMap.isRegular_iff_normal_range
     [PathConnectedSpace E] [LocallyPathConnectedSpace E] [PathConnectedSpace X]
     (hp : _root_.IsCoveringMap p) (e : p ⁻¹' {x}) :
     Deck.IsRegular p ↔
       (mapOfEq ⟨p, hp.continuous⟩ e.2).range.Normal := by
   rw [Deck.isRegular_iff_fiber_isPretransitive hp e,
-    TauCeti.IsCoveringMap.normal_range_iff hp e]
+    IsCoveringMap.normal_range_iff hp e]
   constructor
   · intro htrans e'
     let := htrans
-    obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
+    obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (deck p) e e'
     have hhome : ∃ h : E ≃ₜ E, h e = e' ∧ p ∘ h = p := by
       refine ⟨φ.1, ?_, ?_⟩
-      · simpa only [Deck.fiber_smul_coe] using congrArg Subtype.val hφ
+      · simpa only [deck.fiber_smul_coe] using congrArg Subtype.val hφ
       · funext z
-        exact Deck.map_proj φ z
+        exact deck.proj_smul φ z
     have hrange :=
-      (TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
+      (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
         hp hp e.2 e'.2).mp hhome
     simpa only using hrange.symm
   · intro hrange
@@ -75,11 +74,11 @@ theorem IsCoveringMap.isRegular_iff_normal_range
           (mapOfEq ⟨p, hp.continuous⟩ e₁.2).range :=
       (hrange e₀).trans (hrange e₁).symm
     obtain ⟨h, he, hcomp⟩ :=
-      TauCeti.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq
+      IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq
         hp hp e₀.2 e₁.2 h₀₁
-    let φ : Deck p := ⟨h, fun z ↦ congrFun hcomp z⟩
+    let φ : deck p := ⟨h, hcomp⟩
     refine ⟨φ, ?_⟩
     apply Subtype.ext
-    simpa only [Deck.fiber_smul_coe] using he
+    simpa only [deck.fiber_smul_coe] using he
 
 end TauCeti

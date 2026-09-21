@@ -99,6 +99,22 @@ theorem infiniteCompletionNormalizedAbsValue_eq_zero_iff
     infiniteCompletionNormalizedAbsValue w x = 0 ↔ x = 0 := by
   simp [infiniteCompletionNormalizedAbsValue, InfinitePlace.mult_ne_zero]
 
+/-- Every nonnegative real number is the normalized absolute value of an element of the completion
+at an infinite place. -/
+theorem exists_infiniteCompletionNormalizedAbsValue_eq (w : InfinitePlace K) {t : ℝ} (ht : 0 ≤ t) :
+    ∃ x : w.Completion, infiniteCompletionNormalizedAbsValue w x = t := by
+  rcases w.isReal_or_isComplex with hw | hw
+  · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbeddingOfIsReal hw t
+    refine ⟨x, ?_⟩
+    rw [infiniteCompletionNormalizedAbsValue_of_isReal w hw,
+      ← (Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero (map_zero _), hx,
+      Real.norm_of_nonneg ht]
+  · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbedding_of_isComplex hw (√t : ℂ)
+    refine ⟨x, ?_⟩
+    rw [infiniteCompletionNormalizedAbsValue_of_isComplex w hw,
+      ← (Completion.isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _), hx,
+      Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg t), Real.sq_sqrt ht]
+
 end Infinite
 
 end TauCeti.GlobalNumberFields

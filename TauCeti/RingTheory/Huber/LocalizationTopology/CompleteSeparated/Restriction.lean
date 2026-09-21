@@ -77,6 +77,16 @@ noncomputable def restrictionObjHom :
     (restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT)
     (continuous_restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT)
 
+/-- The restriction morphism is the comparison morphism of the restriction ring homomorphism. The
+body of `restrictionObjHom` is not exported, so this is how a consumer compares it with other
+comparison morphisms through `completionLocObjHom_eq_comp` and `completionLocObjHom_eq_id`. -/
+theorem restrictionObjHom_eq_completionLocObjHom :
+    restrictionObjHom P T s S hden T'' s'' S'' hden'' r hs'' hT =
+      completionLocObjHom P T s S hden T'' s'' S'' hden''
+        (restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT)
+        (continuous_restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT) :=
+  (rfl)
+
 /-- **The morphism does not depend on the cofactor.** Two cofactors witnessing the same refinement
 give the same morphism, because the underlying ring homomorphism is determined by continuity and
 compatibility with the structure maps from `A`. -/

@@ -7,9 +7,9 @@ module
 
 import Mathlib.RingTheory.Coalgebra.CoassocSimps
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.HopfAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 import TauCeti.Algebra.HopfAlgebra.Basic
 
 /-!
@@ -35,6 +35,8 @@ faithful-representation criterion identifies with a closed immersion into `GLₙ
 * `TauCeti.Comodule.coordinateBialgHom`: the induced morphism `O(GLₙ) ⟶ H`.
 * `TauCeti.Comodule.coordinateBialgHom_X`: the coordinate morphism sends the generic entry
   `Xᵢⱼ` to the corresponding coefficient-matrix entry.
+* `AlgHom.pointsMulEquiv_comp_coordinateBialgHom`: evaluating the coordinate morphism
+  gives the coefficient matrix mapped through the evaluating algebra morphism.
 * `TauCeti.Comodule.coordinateBialgHom_antipode_X`: its value on the antipode generators.
 * `TauCeti.Comodule.coordinateBialgHom_corestrict`: its compatibility with corestriction.
 * `TauCeti.Comodule.coordinateBialgHom_eq_unit_comp_counit_of_coact_eq_tmul_one`: its value for
@@ -117,6 +119,21 @@ theorem coordinateBialgHom_X (b : Basis (Fin n) R M) (i j : Fin n) :
           (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))) =
       coefficientMatrix (C := H) b i j := by
   simp only [coordinateBialgHom, BialgHom.ofAlgHom_apply, coordinateAlgHom_X]
+
+/-- Evaluating a representation's coordinate morphism through an algebra morphism gives its
+coefficient matrix mapped through that morphism. -/
+theorem _root_.AlgHom.pointsMulEquiv_comp_coordinateBialgHom
+    {K : Type x} [CommRing K] [Algebra R K]
+    (f : H →ₐ[R] K) (b : Module.Basis (Fin n) R M) :
+    (GeneralLinear.pointsMulEquiv n
+        (WithConv.toConv (f.comp (coordinateBialgHom (H := H) b).toAlgHom)) :
+      Matrix (Fin n) (Fin n) K) =
+      (coefficientMatrix (C := H) b).map f := by
+  ext i j
+  rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply,
+    WithConv.ofConv_toConv, AlgHom.comp_apply]
+  erw [coordinateBialgHom_X]
+  rw [Matrix.map_apply]
 
 /-- The coordinate Hopf-algebra morphism sends an antipode generator of `O(GLₙ)` — an entry of
 the inverse of the localized generic matrix — to the antipode of the corresponding

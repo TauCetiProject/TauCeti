@@ -167,7 +167,7 @@ theorem exists_unit_forall_vlt {X : Set (Spv A)} (hXcont : X ⊆ cont A) (hX : I
     ∃ ϖ : Aˣ, ∀ v ∈ X, v.toValuativeRel.vlt (ϖ : A) f := by
   obtain ⟨I, hI, hIf⟩ := exists_mem_nhds_zero_forall_vlt hXcont hX hf
   have hc : ContinuousAt (fun a : A ↦ a • (1 : A)) 0 := by fun_prop
-  obtain ⟨ϖ, hϖ⟩ := HasZeroSequenceOfUnits.exists_unit_smul_mem (M := A) 1 hc hI
+  obtain ⟨ϖ, hϖ⟩ := HasZeroSequenceOfUnits.exists_unit_smul_mem (M := A) 1 (zero_smul A 1) hc hI
   exact ⟨ϖ, hIf _ (by simpa using hϖ)⟩
 
 end

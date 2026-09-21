@@ -91,7 +91,7 @@ universe u v w
 
 section Relator
 
-variable (k : Type w) {Q : Type u} [Ring k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [Ring k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **The gauged relator is a sum over the oriented edges of the doubled quiver.** For a labelling
@@ -114,7 +114,7 @@ end Relator
 
 section Gauge
 
-variable (k : Type w) {Q : Type u} [Quiver.{v + 1} Q]
+variable (k : Type w) {Q : Type u} [Quiver.{v} Q]
 
 section Labelling
 
@@ -234,7 +234,7 @@ end Gauge
 
 section Independence
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **Gauge independence of the preprojective algebra.** Two labellings of the arrows of `Q` which
@@ -319,6 +319,14 @@ theorem preprojectiveAlgebraEquivGaugedOne_preprojectiveMk
       = gaugedPreprojectiveMk k (fun _ _ _ => 1) x := by
   rw [preprojectiveAlgebraEquivGaugedOne, preprojectiveMk_apply,
     gaugedPreprojectiveMk_apply, Ideal.quotientEquivAlgOfEq_mk]
+
+/-- The inverse constant-gauge identification preserves the quotient generators. -/
+@[simp]
+theorem preprojectiveAlgebraEquivGaugedOne_symm_gaugedPreprojectiveMk
+    (x : pathAlgebra k (Symmetrify Q)) :
+    (preprojectiveAlgebraEquivGaugedOne (Q := Q) k).symm
+        (gaugedPreprojectiveMk k (fun _ _ _ => 1) x) = preprojectiveMk k Q x := by
+  rw [AlgEquiv.symm_apply_eq, preprojectiveAlgebraEquivGaugedOne_preprojectiveMk]
 
 /-- **Every unit-valued gauge presents the preprojective algebra.** In particular a labelling of
 the arrows of `Q` by signs presents `Π_k(Q)` for every choice of signs. -/

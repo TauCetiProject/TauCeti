@@ -25,8 +25,8 @@ target carries no measurable structure of its own.
 The strata of the critical set are handled in the neighbouring files, and this one supplies the
 outermost stratum, where the derivative is nonzero but not surjective, together with the assembly
 of all the strata into the theorem itself. The two earlier slices,
-`TauCeti.Differentiable.addHaar_image_criticalPoints_eq_zero` (equal dimensions),
-`TauCeti.Differentiable.addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank`
+`Differentiable.addHaar_image_criticalPoints_eq_zero` (equal dimensions),
+`Differentiable.addHaar_image_not_surjective_fderiv_eq_zero_of_finrank_lt_finrank`
 (smaller source), are both subsumed by the statement proved here, which needs no relation between
 the two dimensions.
 
@@ -345,8 +345,8 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (n : ℕ) :
       measure_prod_null_of_ae_null (hPcomp.image eF.continuous).isClosed.measurableSet
         (Filter.Eventually.of_forall hslicenull)
     have hnull : ν (f '' ({x | ¬ Surjective (fderiv ℝ f x)} ∩ K)) = 0 := by
-      have := (ContinuousLinearEquiv.quasiMeasurePreserving_addHaar ν
-        ((volume : Measure ℝ).prod (addHaar : Measure ↥Fk)) eF).preimage_null hprod
+      have := (ContinuousLinearEquiv.quasiMeasurePreserving_addHaar eF ν
+        ((volume : Measure ℝ).prod (addHaar : Measure ↥Fk))).preimage_null hprod
       rwa [Set.preimage_image_eq _ eF.injective] at this
     refine ⟨(U ∩ {x | ¬ Surjective (fderiv ℝ f x)} ∩ {x | fderiv ℝ f x ≠ 0}) ∩
       Metric.ball a (r / 2), inter_mem_nhdsWithin _

@@ -1,0 +1,491 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.Eigenspace.Separation
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalizer
+public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Operator
+
+/-!
+# The normalized Atkin–Lehner operators `𝒲_Q`
+
+The raw Atkin–Lehner slash `W_Q` of
+`TauCeti/NumberTheory/ModularForms/AtkinLehner/Operator.lean` squares to `Q ^ (k - 2)`, so it is
+not an involution. Multiplying it by `atkinLehnerNormalizer Q k = (√Q) ^ (2 - k)` removes that
+scalar exactly, and the resulting **normalized** operator
+
+`𝒲_Q f = (√Q) ^ (2 - k) • (f ∣[k] W)`
+
+is an involution of `M_k(Γ₀(N))` and of `S_k(Γ₀(N))` — at **every** weight, with no parity
+hypothesis, because `-I` lies in `Γ₀(N)` and absorbs the sign that the Fricke operator on the
+`Γ₁(N)` carrier is left with.
+
+Every later Atkin–Lehner statement — the signs `𝒲_Q f = ε_Q f` on a newform, and the sign
+`i ^ k · ε_N` of the functional equation of `L(s, f)` — is a statement about `𝒲_Q`, not about the
+raw slash, with which they would all acquire a stray power of `Q`.
+
+## The composition law
+
+The exact divisors of `N` form a Boolean group under symmetric difference of the corresponding
+subsets of `N.primeFactors`, and the normalized operators **act** through it: for exact divisors
+`Q` and `R`,
+
+`𝒲_Q ∘ 𝒲_R = 𝒲_{Q R / gcd (Q, R) ²}`,
+
+the divisor on the right being the symmetric difference of `Q` and `R`
+(`TauCeti.Nat.IsExactDivisor.mul_div_gcd_sq`). It is proved from two special cases: at **coprime**
+`Q` and `R` the product of an Atkin–Lehner matrix for `Q` and one for `R` is one for `Q * R`
+(`TauCeti.IsAtkinLehnerMatrix.mul`) and the normalizers multiply
+(`TauCeti.atkinLehnerNormalizer_mul`), so `𝒲_Q ∘ 𝒲_R = 𝒲_{Q R}`; and at `Q = R` the operator is
+an involution. Writing `g = gcd (Q, R)`, `Q = g · q` and `R = g · r` with `g`, `q`, `r` pairwise
+coprime exact divisors, the two cases give
+
+`𝒲_Q 𝒲_R = 𝒲_g 𝒲_q 𝒲_g 𝒲_r = 𝒲_g 𝒲_g 𝒲_q 𝒲_r = 𝒲_q 𝒲_r = 𝒲_{q r}`.
+
+In particular all of them **commute**. Bundling an exact divisor as
+`TauCeti.Nat.ExactDivisor N` gives this Boolean group explicitly, and
+`normalizedAtkinLehnerRepresentation` and its cusp-form counterpart are its representations on
+the two form spaces. The group is abstractly `(ℤ/2) ^ ω(N)`:
+`TauCeti.Nat.ExactDivisor.primeFactorsEquiv` identifies it with the subsets of `N.primeFactors`,
+on which multiplication is symmetric difference and every element is its own inverse, and
+`TauCeti.Nat.IsExactDivisor.prodPrimePow_primeFactors` recovers an exact divisor as the product of
+the maximal prime powers `p ^ v_p(N)` it contains — the prime-power generators. The action may
+have a kernel: nothing here claims it is injective.
+
+## Main definitions
+
+* `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperator`,
+  `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperatorCusp`: `𝒲_Q` on `M_k(Γ₀(N))` and on
+  `S_k(Γ₀(N))`.
+* `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperatorEquiv`,
+  `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperatorCuspEquiv`: `𝒲_Q` bundled as a linear
+  automorphism, its own inverse.
+* `TauCeti.Nat.ExactDivisor.normalizedAtkinLehnerRepresentation`,
+  `TauCeti.Nat.ExactDivisor.normalizedAtkinLehnerCuspRepresentation`: the action of the
+  exact-divisor group on modular and cusp forms.
+
+## Main results
+
+* `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperator_involutive` and its cusp-form
+  counterpart: **`𝒲_Q` is an involution**, at every weight.
+* `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator` and
+  its cusp-form counterpart: **the composition law** `𝒲_Q ∘ 𝒲_R = 𝒲_{Q R / gcd (Q, R) ²}`.
+* `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperator_comm` and its cusp-form counterpart:
+  consequently the family is commutative.
+* `TauCeti.Nat.IsExactDivisor.normalizedAtkinLehnerOperator_one`: `𝒲_1` is the identity, and
+  `TauCeti.Nat.IsExactDivisor.coe_normalizedAtkinLehnerOperator_self`: `𝒲_N` is the normalized
+  Fricke slash, so the two endpoints of the family are the expected ones.
+* `TauCeti.Nat.IsExactDivisor.isCompl_eigenspace_normalizedAtkinLehnerOperator` and its cusp-form
+  counterpart: the `±1` eigenspaces of `𝒲_Q` are complementary — the Atkin–Lehner sign
+  decomposition of the space, whose labels are the Atkin–Lehner signs `ε_Q`. For a general exact
+  divisor `Q` that label is the Atkin–Lehner eigenvalue and nothing more; it is only at the
+  Fricke member `Q = N`, and only on a newform, that it becomes a sign of the functional equation
+  of `L(s, f)`.
+
+## References
+
+* [F. Diamond and J. Shurman, *A First Course in Modular Forms*][diamondshurman2005], §5.10.
+* Miyake, *Modular forms*, Section 4.6.
+* A. O. L. Atkin and J. Lehner, *Hecke operators on `Γ₀(m)`*, Math. Ann. 185 (1970), 134–160.
+-/
+
+public section
+
+open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup UpperHalfPlane
+
+open scoped MatrixGroups ModularForm TauCeti.ExactDivisor
+
+namespace TauCeti
+
+variable {N Q R : ℕ} {k : ℤ}
+
+namespace Nat.IsExactDivisor
+
+/-! ### The operator -/
+
+/-- **The normalized Atkin–Lehner operator `𝒲_Q` on `M_k(Γ₀(N))`**, for an exact divisor `Q` of
+`N`: the raw slash `W_Q` scaled by `atkinLehnerNormalizer Q k`. Unlike `W_Q` it is an
+involution. -/
+noncomputable def normalizedAtkinLehnerOperator (h : Q ∥ N) (k : ℤ) :
+    ModularForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ]
+      ModularForm ((Gamma0 N).map (mapGL ℝ)) k :=
+  atkinLehnerNormalizer Q k • h.atkinLehnerOperator k
+
+/-- Defining equation for `normalizedAtkinLehnerOperator`: it is the raw operator `W_Q` scaled
+by `atkinLehnerNormalizer Q k`. -/
+theorem normalizedAtkinLehnerOperator_def (h : Q ∥ N) (k : ℤ) :
+    h.normalizedAtkinLehnerOperator k = atkinLehnerNormalizer Q k • h.atkinLehnerOperator k :=
+  (rfl)
+
+/-- On underlying functions `𝒲_Q` is `(√Q) ^ (2 - k) • (⇑f ∣[k] W)`. -/
+@[simp]
+theorem coe_normalizedAtkinLehnerOperator (h : Q ∥ N) (k : ℤ)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (⇑(h.normalizedAtkinLehnerOperator k f) : ℍ → ℂ) = atkinLehnerNormalizer Q k •
+      (⇑f ∣[k] atkinLehnerGL h.pos (isAtkinLehnerMatrix_atkinLehnerMatrix h)) := by
+  rw [h.normalizedAtkinLehnerOperator_def]
+  ext z
+  simp
+
+/-- **The normalized Atkin–Lehner operator on cusp forms** `S_k(Γ₀(N))`. -/
+noncomputable def normalizedAtkinLehnerOperatorCusp (h : Q ∥ N) (k : ℤ) :
+    CuspForm ((Gamma0 N).map (mapGL ℝ)) k →ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k :=
+  atkinLehnerNormalizer Q k • h.atkinLehnerOperatorCusp k
+
+/-- Defining equation for `normalizedAtkinLehnerOperatorCusp`: it is the raw cusp-form operator
+`W_Q` scaled by `atkinLehnerNormalizer Q k`. -/
+theorem normalizedAtkinLehnerOperatorCusp_def (h : Q ∥ N) (k : ℤ) :
+    h.normalizedAtkinLehnerOperatorCusp k =
+      atkinLehnerNormalizer Q k • h.atkinLehnerOperatorCusp k := (rfl)
+
+/-- On underlying functions the cusp-form `𝒲_Q` is `(√Q) ^ (2 - k) • (⇑f ∣[k] W)`. -/
+@[simp]
+theorem coe_normalizedAtkinLehnerOperatorCusp (h : Q ∥ N) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (⇑(h.normalizedAtkinLehnerOperatorCusp k f) : ℍ → ℂ) = atkinLehnerNormalizer Q k •
+      (⇑f ∣[k] atkinLehnerGL h.pos (isAtkinLehnerMatrix_atkinLehnerMatrix h)) := by
+  rw [h.normalizedAtkinLehnerOperatorCusp_def]
+  ext z
+  simp
+
+/-- **The two normalized operators agree under the coercion** `S_k(Γ₀(N)) → M_k(Γ₀(N))`, since
+the raw ones do and the scalar is the same. -/
+@[simp]
+theorem normalizedAtkinLehnerOperator_coe_cuspForm (h : Q ∥ N) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperator k (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) =
+      (h.normalizedAtkinLehnerOperatorCusp k f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) := by
+  refine DFunLike.coe_injective ?_
+  rw [h.coe_normalizedAtkinLehnerOperator, ModularFormClass.coe_modularForm,
+    ModularFormClass.coe_modularForm, h.coe_normalizedAtkinLehnerOperatorCusp]
+
+/-- **The operator depends on the divisor only through its value.** Two proofs that the same
+natural number is an exact divisor give the same operator, so an identity between divisors
+transports the operators along it. -/
+theorem normalizedAtkinLehnerOperator_congr {Q Q' : ℕ} (h : Q ∥ N)
+    (h' : Q' ∥ N) (hQQ' : Q = Q') (k : ℤ) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperator k f = h'.normalizedAtkinLehnerOperator k f := by
+  subst hQQ'; rfl
+
+/-- **The cusp-form operator depends on the divisor only through its value.** -/
+theorem normalizedAtkinLehnerOperatorCusp_congr {Q Q' : ℕ} (h : Q ∥ N)
+    (h' : Q' ∥ N) (hQQ' : Q = Q') (k : ℤ) (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperatorCusp k f = h'.normalizedAtkinLehnerOperatorCusp k f := by
+  subst hQQ'; rfl
+
+/-! ### The involution -/
+
+/-- **`𝒲_Q (𝒲_Q f) = f` on `M_k(Γ₀(N))`.** The raw operator squares to `Q ^ (k - 2)` and the
+square of the normalizer is `Q ^ (2 - k)`; no parity hypothesis on the weight is needed, since on
+the `Γ₀(N)` carrier the matrix `-I` acts trivially. -/
+@[simp]
+theorem normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_self
+    (h : Q ∥ N) (k : ℤ) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperator k (h.normalizedAtkinLehnerOperator k f) = f := by
+  rw [h.normalizedAtkinLehnerOperator_def, LinearMap.smul_apply, LinearMap.smul_apply, map_smul,
+    smul_smul, h.atkinLehnerOperator_atkinLehnerOperator, smul_smul, ← pow_two,
+    atkinLehnerNormalizer_sq_mul h.ne_zero, one_smul]
+
+/-- **`𝒲_Q (𝒲_Q f) = f` on `S_k(Γ₀(N))`.** -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp_self
+    (h : Q ∥ N) (k : ℤ) (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperatorCusp k (h.normalizedAtkinLehnerOperatorCusp k f) = f := by
+  rw [h.normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply, LinearMap.smul_apply,
+    map_smul, smul_smul, h.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp, smul_smul, ← pow_two,
+    atkinLehnerNormalizer_sq_mul h.ne_zero, one_smul]
+
+/-- **`𝒲_Q` is an involution of `M_k(Γ₀(N))`** — the property the raw slash lacks and the whole
+normalization exists to supply. -/
+theorem normalizedAtkinLehnerOperator_involutive (h : Q ∥ N) (k : ℤ) :
+    Function.Involutive (h.normalizedAtkinLehnerOperator k) :=
+  h.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_self k
+
+/-- **`𝒲_Q` is an involution of `S_k(Γ₀(N))`.** -/
+theorem normalizedAtkinLehnerOperatorCusp_involutive (h : Q ∥ N) (k : ℤ) :
+    Function.Involutive (h.normalizedAtkinLehnerOperatorCusp k) :=
+  h.normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp_self k
+
+/-! ### The bundled automorphism -/
+
+/-- **`𝒲_Q` as a linear automorphism of `M_k(Γ₀(N))`**, its own inverse. -/
+noncomputable def normalizedAtkinLehnerOperatorEquiv (h : Q ∥ N) (k : ℤ) :
+    ModularForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ] ModularForm ((Gamma0 N).map (mapGL ℝ)) k :=
+  LinearEquiv.ofInvolutive (h.normalizedAtkinLehnerOperator k)
+    (h.normalizedAtkinLehnerOperator_involutive k)
+
+/-- The bundled automorphism acts as `𝒲_Q`. -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorEquiv_apply (h : Q ∥ N) (k : ℤ)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperatorEquiv k f = h.normalizedAtkinLehnerOperator k f := (rfl)
+
+/-- The bundled automorphism is its own inverse. -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorEquiv_symm_apply (h : Q ∥ N) (k : ℤ)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (h.normalizedAtkinLehnerOperatorEquiv k).symm f = h.normalizedAtkinLehnerOperator k f := (rfl)
+
+/-- **`𝒲_Q` as a linear automorphism of `S_k(Γ₀(N))`**, its own inverse. -/
+noncomputable def normalizedAtkinLehnerOperatorCuspEquiv (h : Q ∥ N) (k : ℤ) :
+    CuspForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k :=
+  LinearEquiv.ofInvolutive (h.normalizedAtkinLehnerOperatorCusp k)
+    (h.normalizedAtkinLehnerOperatorCusp_involutive k)
+
+/-- The bundled cusp-form automorphism acts as `𝒲_Q`. -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorCuspEquiv_apply (h : Q ∥ N) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperatorCuspEquiv k f = h.normalizedAtkinLehnerOperatorCusp k f :=
+  (rfl)
+
+/-- The bundled cusp-form automorphism is its own inverse. -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorCuspEquiv_symm_apply (h : Q ∥ N) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    (h.normalizedAtkinLehnerOperatorCuspEquiv k).symm f =
+      h.normalizedAtkinLehnerOperatorCusp k f := (rfl)
+
+/-! ### The endpoints `Q = 1` and `Q = N` -/
+
+/-- **`𝒲_1` is the identity** on `M_k(Γ₀(N))`: the raw operator is, and the normalizer at `Q = 1`
+is `1`. -/
+@[simp]
+theorem normalizedAtkinLehnerOperator_one (h : 1 ∥ N) (k : ℤ)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperator k f = f := by
+  rw [h.normalizedAtkinLehnerOperator_def, LinearMap.smul_apply, h.atkinLehnerOperator_one,
+    atkinLehnerNormalizer_one, one_smul]
+
+/-- **`𝒲_1` is the identity** on `S_k(Γ₀(N))`. -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorCusp_one (h : 1 ∥ N) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    h.normalizedAtkinLehnerOperatorCusp k f = f := by
+  rw [h.normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply,
+    h.atkinLehnerOperatorCusp_one, atkinLehnerNormalizer_one, one_smul]
+
+/-- **`𝒲_N` is the normalized Fricke slash** on `M_k(Γ₀(N))`: on underlying functions it is
+`(√N) ^ (2 - k) • (⇑f ∣[k] W)` for the Fricke matrix `W`, which is what
+`TauCeti.normalizedFrickeOperator` performs on the `Γ₁(N)` carrier. The two operators have
+different carriers, so this function-level identity is the comparison between them. -/
+theorem coe_normalizedAtkinLehnerOperator_self (h : N ∥ N) (k : ℤ)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    haveI : NeZero N := ⟨h.ne_zero⟩
+    (⇑(h.normalizedAtkinLehnerOperator k f) : ℍ → ℂ) =
+      atkinLehnerNormalizer N k • (⇑f ∣[k] frickeGL ℝ N) := by
+  have : NeZero N := ⟨h.ne_zero⟩
+  rw [h.normalizedAtkinLehnerOperator_def, LinearMap.smul_apply, FunLike.coe_smul,
+    h.coe_atkinLehnerOperator_self]
+
+/-- **`𝒲_N` is the normalized Fricke slash** on `S_k(Γ₀(N))`. -/
+theorem coe_normalizedAtkinLehnerOperatorCusp_self (h : N ∥ N) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    haveI : NeZero N := ⟨h.ne_zero⟩
+    (⇑(h.normalizedAtkinLehnerOperatorCusp k f) : ℍ → ℂ) =
+      atkinLehnerNormalizer N k • (⇑f ∣[k] frickeGL ℝ N) := by
+  have : NeZero N := ⟨h.ne_zero⟩
+  rw [h.normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply, FunLike.coe_smul,
+    h.coe_atkinLehnerOperatorCusp_self]
+
+/-! ### The composition law -/
+
+/-- **`𝒲_R ∘ 𝒲_Q = 𝒲_{Q R}` at coprime exact divisors**, on `M_k(Γ₀(N))`. The raw operators
+compose this way because the matrices multiply, and the normalizers multiply as well. -/
+theorem normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_of_coprime
+    (hQ : Q ∥ N) (hR : R ∥ N) (hQR : Nat.Coprime Q R) (k : ℤ)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hR.normalizedAtkinLehnerOperator k (hQ.normalizedAtkinLehnerOperator k f) =
+      (hQ.mul hR hQR).normalizedAtkinLehnerOperator k f := by
+  rw [hQ.normalizedAtkinLehnerOperator_def, hR.normalizedAtkinLehnerOperator_def,
+    (hQ.mul hR hQR).normalizedAtkinLehnerOperator_def, LinearMap.smul_apply, LinearMap.smul_apply,
+    LinearMap.smul_apply, map_smul, smul_smul,
+    hQ.atkinLehnerOperator_atkinLehnerOperator_of_coprime hR hQR, atkinLehnerNormalizer_mul,
+    mul_comm (atkinLehnerNormalizer Q k)]
+
+/-- **`𝒲_R ∘ 𝒲_Q = 𝒲_{Q R}` at coprime exact divisors**, on `S_k(Γ₀(N))`. -/
+theorem normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp_of_coprime
+    (hQ : Q ∥ N) (hR : R ∥ N) (hQR : Nat.Coprime Q R) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hR.normalizedAtkinLehnerOperatorCusp k (hQ.normalizedAtkinLehnerOperatorCusp k f) =
+      (hQ.mul hR hQR).normalizedAtkinLehnerOperatorCusp k f := by
+  rw [hQ.normalizedAtkinLehnerOperatorCusp_def, hR.normalizedAtkinLehnerOperatorCusp_def,
+    (hQ.mul hR hQR).normalizedAtkinLehnerOperatorCusp_def, LinearMap.smul_apply,
+    LinearMap.smul_apply, LinearMap.smul_apply, map_smul, smul_smul,
+    hQ.atkinLehnerOperatorCusp_atkinLehnerOperatorCusp_of_coprime hR hQR,
+    atkinLehnerNormalizer_mul, mul_comm (atkinLehnerNormalizer Q k)]
+
+/-- **The composition law** `𝒲_Q ∘ 𝒲_R = 𝒲_{Q R / gcd (Q, R) ²}` on `M_k(Γ₀(N))`, for arbitrary
+exact divisors `Q` and `R` of `N`. The divisor on the right is the symmetric difference of `Q`
+and `R` under the identification of exact divisors with subsets of `N.primeFactors`. -/
+@[simp]
+theorem normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator (hQ : Q ∥ N) (hR : R ∥ N)
+    (k : ℤ) (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hQ.normalizedAtkinLehnerOperator k (hR.normalizedAtkinLehnerOperator k f) =
+      (hQ.mul_div_gcd_sq hR).normalizedAtkinLehnerOperator k f := by
+  -- Write `g = gcd (Q, R)`, `q = Q / g` and `r = R / g`: three pairwise coprime exact divisors.
+  -- The coprime case turns both sides into words in `𝒲_g`, `𝒲_q` and `𝒲_r`, and the involution
+  -- cancels the two copies of `𝒲_g`.
+  have hg : Nat.gcd Q R ∥ N := hQ.gcd hR
+  have hq : Q / Nat.gcd Q R ∥ N := hQ.div_gcd hR
+  have hr : R / Nat.gcd Q R ∥ N := by rw [Nat.gcd_comm]; exact hR.div_gcd hQ
+  have hqR : Nat.Coprime (Q / Nat.gcd Q R) R := hQ.coprime_div_gcd hR
+  have hrQ : Nat.Coprime (R / Nat.gcd Q R) Q := by rw [Nat.gcd_comm]; exact hR.coprime_div_gcd hQ
+  have hgq : Nat.Coprime (Nat.gcd Q R) (Q / Nat.gcd Q R) :=
+    (hqR.coprime_dvd_right (Nat.gcd_dvd_right Q R)).symm
+  have hgr : Nat.Coprime (Nat.gcd Q R) (R / Nat.gcd Q R) :=
+    (hrQ.coprime_dvd_right (Nat.gcd_dvd_left Q R)).symm
+  have hrq : Nat.Coprime (R / Nat.gcd Q R) (Q / Nat.gcd Q R) :=
+    hrQ.coprime_dvd_right (Nat.div_dvd_of_dvd (Nat.gcd_dvd_left Q R))
+  -- `𝒲_Q` and `𝒲_R` factor through `𝒲_g`.
+  have hQex : ∀ x, hq.normalizedAtkinLehnerOperator k (hg.normalizedAtkinLehnerOperator k x) =
+      hQ.normalizedAtkinLehnerOperator k x := fun x ↦ by
+    rw [hg.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_of_coprime hq hgq]
+    exact normalizedAtkinLehnerOperator_congr _ hQ
+      (Nat.mul_div_cancel' (Nat.gcd_dvd_left Q R)) k x
+  have hRex : ∀ x, hr.normalizedAtkinLehnerOperator k (hg.normalizedAtkinLehnerOperator k x) =
+      hR.normalizedAtkinLehnerOperator k x := fun x ↦ by
+    rw [hg.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_of_coprime hr hgr]
+    exact normalizedAtkinLehnerOperator_congr _ hR
+      (Nat.mul_div_cancel' (Nat.gcd_dvd_right Q R)) k x
+  -- `𝒲_g` and `𝒲_r` commute, being coprime.
+  have hswap : ∀ y, hg.normalizedAtkinLehnerOperator k (hr.normalizedAtkinLehnerOperator k y) =
+      hr.normalizedAtkinLehnerOperator k (hg.normalizedAtkinLehnerOperator k y) := fun y ↦ by
+    rw [hr.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_of_coprime hg hgr.symm,
+      hg.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_of_coprime hr hgr]
+    exact normalizedAtkinLehnerOperator_congr _ _ (Nat.mul_comm _ _) k y
+  rw [← hRex f, ← hQex (hr.normalizedAtkinLehnerOperator k
+      (hg.normalizedAtkinLehnerOperator k f)), hswap,
+    hg.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_self,
+    hr.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator_of_coprime hq hrq]
+  refine normalizedAtkinLehnerOperator_congr _ _ ?_ k f
+  rw [sq, ← Nat.div_mul_div_comm (Nat.gcd_dvd_left Q R) (Nat.gcd_dvd_right Q R)]
+  exact Nat.mul_comm _ _
+
+/-- **The composition law** `𝒲_Q ∘ 𝒲_R = 𝒲_{Q R / gcd (Q, R) ²}` on `S_k(Γ₀(N))`. -/
+@[simp]
+theorem normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp (hQ : Q ∥ N)
+    (hR : R ∥ N) (k : ℤ) (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hQ.normalizedAtkinLehnerOperatorCusp k (hR.normalizedAtkinLehnerOperatorCusp k f) =
+      (hQ.mul_div_gcd_sq hR).normalizedAtkinLehnerOperatorCusp k f := by
+  apply CuspForm.ext
+  intro z
+  have h := hQ.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator hR k
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k)
+  rw [hR.normalizedAtkinLehnerOperator_coe_cuspForm] at h
+  rw [hQ.normalizedAtkinLehnerOperator_coe_cuspForm,
+    (hQ.mul_div_gcd_sq hR).normalizedAtkinLehnerOperator_coe_cuspForm] at h
+  exact DFunLike.congr_fun h z
+
+end Nat.IsExactDivisor
+
+namespace Nat.ExactDivisor
+
+/-! ### The exact-divisor group action -/
+
+/-- **The representation of the exact-divisor group on `M_k(Γ₀(N))`.** An exact divisor acts
+by its normalized Atkin–Lehner automorphism. Multiplicativity is precisely the symmetric-difference
+composition law. -/
+noncomputable def normalizedAtkinLehnerRepresentation (N : ℕ) (k : ℤ) :
+    Nat.ExactDivisor N →* (ModularForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ]
+      ModularForm ((Gamma0 N).map (mapGL ℝ)) k) where
+  toFun Q := Q.property.normalizedAtkinLehnerOperatorEquiv k
+  map_one' := by
+    apply LinearEquiv.ext
+    intro f
+    exact Nat.isExactDivisor_one.normalizedAtkinLehnerOperator_one k f
+  map_mul' Q R := by
+    apply LinearEquiv.ext
+    intro f
+    exact (Q * R).property.normalizedAtkinLehnerOperator_congr
+      (Q.property.mul_div_gcd_sq R.property) rfl k f |>.trans
+        (Q.property.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator
+          R.property k f).symm
+
+/-- The exact-divisor representation acts by the normalized Atkin–Lehner operator. -/
+@[simp]
+theorem normalizedAtkinLehnerRepresentation_apply (N : ℕ) (k : ℤ) (Q : Nat.ExactDivisor N)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    normalizedAtkinLehnerRepresentation N k Q f =
+      Q.property.normalizedAtkinLehnerOperator k f := by
+  simp only [normalizedAtkinLehnerRepresentation, MonoidHom.coe_mk, OneHom.coe_mk,
+    Nat.IsExactDivisor.normalizedAtkinLehnerOperatorEquiv_apply]
+
+/-- **The representation of the exact-divisor group on `S_k(Γ₀(N))`.** An exact divisor acts
+by its normalized Atkin–Lehner automorphism on cusp forms. -/
+noncomputable def normalizedAtkinLehnerCuspRepresentation (N : ℕ) (k : ℤ) :
+    Nat.ExactDivisor N →* (CuspForm ((Gamma0 N).map (mapGL ℝ)) k ≃ₗ[ℂ]
+      CuspForm ((Gamma0 N).map (mapGL ℝ)) k) where
+  toFun Q := Q.property.normalizedAtkinLehnerOperatorCuspEquiv k
+  map_one' := by
+    apply LinearEquiv.ext
+    intro f
+    exact Nat.isExactDivisor_one.normalizedAtkinLehnerOperatorCusp_one k f
+  map_mul' Q R := by
+    apply LinearEquiv.ext
+    intro f
+    exact (Q * R).property.normalizedAtkinLehnerOperatorCusp_congr
+      (Q.property.mul_div_gcd_sq R.property) rfl k f |>.trans
+        (Q.property.normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp
+          R.property k f).symm
+
+/-- The cusp-form exact-divisor representation acts by the normalized Atkin–Lehner operator. -/
+@[simp]
+theorem normalizedAtkinLehnerCuspRepresentation_apply (N : ℕ) (k : ℤ)
+    (Q : Nat.ExactDivisor N) (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    normalizedAtkinLehnerCuspRepresentation N k Q f =
+      Q.property.normalizedAtkinLehnerOperatorCusp k f := by
+  simp only [normalizedAtkinLehnerCuspRepresentation, MonoidHom.coe_mk, OneHom.coe_mk,
+    Nat.IsExactDivisor.normalizedAtkinLehnerOperatorCuspEquiv_apply]
+
+end Nat.ExactDivisor
+
+namespace Nat.IsExactDivisor
+
+/-- **The normalized Atkin–Lehner operators commute** on `M_k(Γ₀(N))`: the divisor
+`Q R / gcd (Q, R) ²` they compose to is symmetric in `Q` and `R`. -/
+theorem normalizedAtkinLehnerOperator_comm (hQ : Q ∥ N) (hR : R ∥ N) (k : ℤ)
+    (f : ModularForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hQ.normalizedAtkinLehnerOperator k (hR.normalizedAtkinLehnerOperator k f) =
+      hR.normalizedAtkinLehnerOperator k (hQ.normalizedAtkinLehnerOperator k f) := by
+  rw [hQ.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator hR,
+    hR.normalizedAtkinLehnerOperator_normalizedAtkinLehnerOperator hQ]
+  exact normalizedAtkinLehnerOperator_congr _ _ (by rw [Nat.mul_comm, Nat.gcd_comm]) k f
+
+/-- **The normalized Atkin–Lehner operators commute** on `S_k(Γ₀(N))`. -/
+theorem normalizedAtkinLehnerOperatorCusp_comm (hQ : Q ∥ N) (hR : R ∥ N) (k : ℤ)
+    (f : CuspForm ((Gamma0 N).map (mapGL ℝ)) k) :
+    hQ.normalizedAtkinLehnerOperatorCusp k (hR.normalizedAtkinLehnerOperatorCusp k f) =
+      hR.normalizedAtkinLehnerOperatorCusp k (hQ.normalizedAtkinLehnerOperatorCusp k f) := by
+  rw [hQ.normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp hR,
+    hR.normalizedAtkinLehnerOperatorCusp_normalizedAtkinLehnerOperatorCusp hQ]
+  exact normalizedAtkinLehnerOperatorCusp_congr _ _ (by rw [Nat.mul_comm, Nat.gcd_comm]) k f
+
+/-! ### The eigenspace splitting -/
+
+/-- **The `±1` eigenspaces of `𝒲_Q` are complementary in `M_k(Γ₀(N))`.** This is the Atkin–Lehner
+sign decomposition of the space: on the `+1` eigenspace `𝒲_Q f = f`, on the `-1` eigenspace
+`𝒲_Q f = -f`, and every modular form for `Γ₀(N)` is uniquely a sum of one of each. The label of a
+newform under this splitting is its Atkin–Lehner sign `ε_Q`, and for a general exact divisor that
+is all it is; only at the Fricke member `Q = N` is it the sign appearing in the functional
+equation of `L(s, f)` (as `i ^ k · ε_N`). Unlike the Fricke statement on the `Γ₁(N)` carrier, no
+parity hypothesis on the weight is needed. -/
+theorem isCompl_eigenspace_normalizedAtkinLehnerOperator (h : Q ∥ N) (k : ℤ) :
+    IsCompl (Module.End.eigenspace (h.normalizedAtkinLehnerOperator k) 1)
+      (Module.End.eigenspace (h.normalizedAtkinLehnerOperator k) (-1)) :=
+  isCompl_eigenspace_one_neg_one (isUnit_iff_ne_zero.mpr two_ne_zero)
+    (h.normalizedAtkinLehnerOperator_involutive k)
+
+/-- **The `±1` eigenspaces of `𝒲_Q` are complementary in `S_k(Γ₀(N))`.** -/
+theorem isCompl_eigenspace_normalizedAtkinLehnerOperatorCusp (h : Q ∥ N) (k : ℤ) :
+    IsCompl (Module.End.eigenspace (h.normalizedAtkinLehnerOperatorCusp k) 1)
+      (Module.End.eigenspace (h.normalizedAtkinLehnerOperatorCusp k) (-1)) :=
+  isCompl_eigenspace_one_neg_one (isUnit_iff_ne_zero.mpr two_ne_zero)
+    (h.normalizedAtkinLehnerOperatorCusp_involutive k)
+
+end Nat.IsExactDivisor
+
+end TauCeti

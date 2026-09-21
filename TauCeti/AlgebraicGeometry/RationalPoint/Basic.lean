@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
@@ -30,6 +31,10 @@ of an arbitrary morphism of schemes `f : X ⟶ S`, the hypothesis being `s ≫ f
   `X.descResidueField (Scheme.stalkClosedPointTo s)`. The section hypothesis makes that map
   bijective (`descResidueField_bijective_of_section`), which is what lets a `K`-rational point
   transport `K`-structures to the fibre data at the point.
+* `appTop_bijective_of_section`: if moreover `X` is integral and universally closed over `Spec K`,
+  a `K`-rational point forces the global functions of `X` to be the constants, that is,
+  `f.appTop : Γ(Spec K, ⊤) ⟶ Γ(X, ⊤)` is bijective. Mathlib's `isField_of_universallyClosed`
+  makes `Γ(X, ⊤)` a field, and evaluation at the point is a retraction of `f.appTop`.
 
 The divisor-level consequences live in `TauCeti.AlgebraicGeometry.RationalPoint.Degree`, which
 keeps the results here independent of Weil divisor theory. They are the geometric source of the
@@ -229,6 +234,22 @@ lemma residueFieldRingEquivOfSection_apply (hs : s ≫ f = 𝟙 (Spec (.of K)))
     residueFieldRingEquivOfSection hs z =
       X.descResidueField (Scheme.stalkClosedPointTo s) z :=
   (rfl)
+
+/-- **Global functions on a proper integral scheme with a rational point are constant.** If `X`
+is integral and universally closed over `Spec K` and has a `K`-rational point, then pulling back
+along the structure morphism identifies the global functions on `Spec K` with those on `X`. -/
+theorem appTop_bijective_of_section [IsIntegral X] [UniversallyClosed f]
+    (hs : s ≫ f = 𝟙 (Spec (.of K))) : Function.Bijective f.appTop := by
+  -- Evaluation at the point is left inverse to `f.appTop`, and injective since `Γ(X, ⊤)` is a
+  -- field.
+  have hsf (a : Γ(Spec (.of K), ⊤)) : s.appTop (f.appTop a) = a := by
+    simpa only [Scheme.Hom.comp_appTop, Scheme.Hom.id_appTop, CommRingCat.comp_apply,
+      CommRingCat.id_apply] using
+      ConcreteCategory.congr_hom (congrArg (fun g : Spec (.of K) ⟶ Spec (.of K) ↦
+        g.appTop) hs) a
+  let := (isField_of_universallyClosed K f).toField
+  have hinj : Function.Injective s.appTop := s.appTop.hom.injective
+  exact ⟨Function.LeftInverse.injective hsf, fun a ↦ ⟨s.appTop a, hinj (hsf _)⟩⟩
 
 end OverField
 

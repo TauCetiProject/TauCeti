@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Classical
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
 
@@ -49,6 +50,7 @@ lattice to the model.
 * `TauCeti.IntegralLattice.form_typeASimpleRoot_typeASimpleRoot`: its simple-root Gram matrix is
   `CartanMatrix.A n`.
 * `TauCeti.IntegralLattice.isEven_typeARootLattice`: it is even.
+* `TauCeti.IntegralLattice.isPosDef_typeARootLattice`: it is positive definite.
 * `TauCeti.IntegralLattice.determinant_typeARootLattice`: its determinant is `n + 1`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeight`: the first fundamental weight `ω₁`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeightClass`: its class in the discriminant group.
@@ -96,6 +98,11 @@ variable (n : ℕ)
 Gram matrix in the standard basis of simple roots is `CartanMatrix.A n`. -/
 noncomputable def typeARootLattice : IntegralLattice (Fin n → ℚ) :=
   ofGramMatrix (Pi.basisFun ℚ (Fin n)) (CartanMatrix.A n) (CartanMatrix.A_isSymm n)
+
+/-- **The type `Aₙ` root lattice is positive definite**, its Gram matrix being the positive
+definite Cartan matrix of the type. -/
+theorem isPosDef_typeARootLattice : (typeARootLattice n).IsPosDef :=
+  (isPosDef_ofGramMatrix_iff _ _ _).mpr (posDef_map_intCast_cartanMatrix_A n)
 
 /-- The `i`-th simple root of the type `Aₙ` root lattice, as a vector of the ambient space.
 

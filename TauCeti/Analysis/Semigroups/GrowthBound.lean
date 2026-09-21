@@ -227,7 +227,7 @@ theorem StronglyContinuousSemigroup.tendsto_realOperator_apply {ι : Type*} {l :
     have hfw : Filter.Tendsto f l (𝓝[Set.Ici 0] r) :=
       tendsto_nhdsWithin_iff.mpr ⟨hf, hf0⟩
     simpa [Function.comp_def] using (S.realOperator_continuousWithinAt z r hr).tendsto.comp hfw
-  exact TauCeti.ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound h2 hg
+  exact ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound h2 hg
 
 /-- The `ContinuousOn` form of joint strong continuity: a continuous nonnegative time
 reparametrization applied to a continuous vector-valued map gives a continuous orbit. -/

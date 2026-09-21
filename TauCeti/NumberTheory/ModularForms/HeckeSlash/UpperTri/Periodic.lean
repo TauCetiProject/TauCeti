@@ -166,7 +166,7 @@ variable {d : ℕ}
 /-- **The commutation of `scaleRep d = diag(d, 1)` past an upper-triangular representative.**
 Both sides are `!![d, d b; 0, p]`: on the right, `d b = q p + r` is split so that the
 representative index `r` is again in range, at the cost of the shift `T ^ q`. -/
-private lemma scaleRep_mul_upperTriRep (hd : 0 < d) (b : Fin p) {q r : ℕ} (hr : r < p)
+lemma scaleRep_mul_upperTriRep (hd : 0 < d) (b : Fin p) {q r : ℕ} (hr : r < p)
     (hqr : d * (b : ℕ) = q * p + r) :
     scaleRep d * upperTriRep p b =
       mapGL ℚ (ModularGroup.T ^ q) * (upperTriRep p ⟨r, hr⟩ * scaleRep d) := by
@@ -179,23 +179,6 @@ private lemma scaleRep_mul_upperTriRep (hd : 0 < d) (b : Fin p) {q r : ℕ} (hr 
   -- change in the simp set fails here rather than silently redirecting `linarith`.
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
   · linarith
-
-/-- Multiplication by `d` modulo `p` permutes `Fin p` when `d` and `p` are coprime. It *is*
-multiplication by the unit `ZMod.unitOfCoprime d hdp` of `ZMod p`, read through
-`ZMod.finEquiv`, so the permutation property is the unit's and nothing is proved here. -/
-private noncomputable def mulModEquiv (hp : 0 < p) (hdp : Nat.Coprime d p) : Fin p ≃ Fin p :=
-  haveI : NeZero p := ⟨hp.ne'⟩
-  (ZMod.finEquiv p).toEquiv.trans <|
-    (Units.mulLeft (ZMod.unitOfCoprime d hdp)).trans (ZMod.finEquiv p).toEquiv.symm
-
-/-- The index the permutation sends `b` to, as a natural number. This is what
-`ZMod.finEquiv_symm_apply_val` is for: the `Fin p` representative of a residue has that
-residue's `val`. -/
-@[simp]
-private lemma coe_mulModEquiv (hp : 0 < p) (hdp : Nat.Coprime d p) (b : Fin p) :
-    (mulModEquiv p hp hdp b : ℕ) = d * (b : ℕ) % p := by
-  have : NeZero p := ⟨hp.ne'⟩
-  simp [mulModEquiv, ZMod.coe_unitOfCoprime, ← Nat.cast_mul, ZMod.val_natCast]
 
 /-- **The upper-triangular slash sum commutes with the slash by `scaleRep d = diag(d, 1)`**, for
 `d` coprime to `p` and any `T`-invariant function. This is the level-raising half of
@@ -216,12 +199,13 @@ theorem heckeSlashUpperTri_slash_scaleRep_comm (hd : 0 < d) (hp : 0 < p)
     rw [ModularForm.rat_slash_mapGL, map_pow, ← zpow_natCast]
     exact slash_zpow_eq_self_of_slash_eq k f (by rwa [ModularForm.rat_slash_mapGL] at hT) q
   rw [heckeSlashUpperTri_def, heckeSlashUpperTri_def, SlashAction.sum_slash]
-  rw [← Equiv.sum_comp (mulModEquiv p hp hdp) fun b ↦ (f ∣[k] upperTriRep p b) ∣[k]
+  have : NeZero p := ⟨hp.ne'⟩
+  rw [← Equiv.sum_comp (TauCeti.mulModEquiv p hdp) fun b ↦ (f ∣[k] upperTriRep p b) ∣[k]
     (scaleRep d : GL (Fin 2) ℚ)]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
-  -- the reindexed representative is `d b mod p`, by the defining lemma of `mulModEquiv`
-  have hb : mulModEquiv p hp hdp b = ⟨d * (b : ℕ) % p, Nat.mod_lt _ hp⟩ :=
-    Fin.ext (coe_mulModEquiv p hp hdp b)
+  -- the reindexed representative is `d b mod p`, by the defining lemma of `TauCeti.mulModEquiv`
+  have hb : TauCeti.mulModEquiv p hdp b = ⟨d * (b : ℕ) % p, Nat.mod_lt _ hp⟩ :=
+    Fin.ext (TauCeti.mulModEquiv_apply_val p hdp b)
   rw [← SlashAction.slash_mul,
     scaleRep_mul_upperTriRep p hd b (Nat.mod_lt _ hp) (Nat.div_add_mod' (d * (b : ℕ)) p).symm,
     SlashAction.slash_mul, hTpow, SlashAction.slash_mul, hb]

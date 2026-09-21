@@ -26,7 +26,7 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   multiplicative on them; `glPosToPSL2R` is its projectivization.
 
 The actions of these groups on the upper half-plane, and the compatibility of these maps
-with them, are in `TauCeti/Analysis/Complex/UpperHalfPlane/PSLAction.lean`.
+with them, are in `TauCeti/Analysis/Complex/UpperHalfPlane/PSL/Action.lean`.
 
 Split out of the AINTLIB `LeanModularForms` port
 (`LeanModularForms/Modularforms/PSL2Action.lean`,
@@ -154,7 +154,6 @@ def glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ) where
   map_mul' g h := by
     apply Subtype.ext
     have hg_pos : 0 < ((g : GL (Fin 2) ℝ).det.val : ℝ) := g.property
-    have hh_pos : 0 < ((h : GL (Fin 2) ℝ).det.val : ℝ) := h.property
     have h_det : ((g * h : GL(2, ℝ)⁺) : GL (Fin 2) ℝ).det.val =
         (g : GL (Fin 2) ℝ).det.val * (h : GL (Fin 2) ℝ).det.val := by
       simp [Units.val_mul]

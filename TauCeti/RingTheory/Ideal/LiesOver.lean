@@ -5,38 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Span
 
 /-!
-# Membership of integers in an ideal lying over `(a)`
+# Integers and an ideal lying over `(a)`
 
-For an ideal `Q` of a `ℤ`-algebra lying over the integer ideal `(a)`
-(`Ideal.LiesOver`), an integer `m` maps into `Q` exactly when `a ∣ m`. This unfolds
-`Ideal.mem_of_liesOver` through `Ideal.mem_span_singleton` once, so that arithmetic arguments
-can move between divisibility in `ℤ` and membership in `Q` without repeating the two-step
-translation.
+For an ideal `Q` of a `ℤ`-algebra lying over the integer ideal `(a)` (`Ideal.LiesOver`), two
+translations recur. An integer `m` maps into `Q` exactly when `a ∣ m`, which unfolds
+`Ideal.mem_of_liesOver` through `Ideal.mem_span_singleton` once; and the base residue ring
+`ℤ ⧸ Q ∩ ℤ` is `ℤ ⧸ (a)`, so for `a` a natural prime `p` it has exactly `p` elements.
 
-It is the shared translation step of the multiquadratic Layer 1 arguments: the splitting law
-and the Frobenius computations each convert congruences modulo a prime `Q` over `p` into
-divisibility by `p`.
+Together they let arithmetic arguments move between divisibility in `ℤ` and membership in `Q`,
+and pin the residue cardinality that `AlgHom.IsArithFrobAt` exponentiates by, without repeating
+the translation at each use site.
 
-## Main result
+## Main results
 
-* `TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver`: `algebraMap ℤ S m ∈ Q ↔ a ∣ m`.
+* `Ideal.algebraMap_int_mem_iff_dvd_of_liesOver`: `algebraMap ℤ S m ∈ Q ↔ a ∣ m`.
+* `Ideal.natCard_quotient_under_of_liesOver`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = p` for `Q` over `(p)`.
 -/
 
 public section
 
 open Ideal
 
-namespace TauCeti
+namespace Ideal
 
 /-- An ideal of a `ℤ`-algebra lying over the integer ideal `(a)` meets `ℤ` exactly in the
 multiples of `a`: `algebraMap ℤ S m ∈ Q ↔ a ∣ m`. -/
-theorem algebraMap_int_mem_iff_dvd_of_liesOver {S : Type*} [CommRing S] {a : ℤ}
+theorem algebraMap_int_mem_iff_dvd_of_liesOver {S : Type*} [Ring S] {a : ℤ}
     (Q : Ideal S) [Q.LiesOver (span {a})] (m : ℤ) :
     algebraMap ℤ S m ∈ Q ↔ a ∣ m :=
   (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
 
-end TauCeti
+/-- The base residue ring of an ideal lying over a rational prime has `p` elements:
+`Nat.card (ℤ ⧸ Q ∩ ℤ) = p` for `Q` over `(p)`.
+
+This is the cardinality that `AlgHom.IsArithFrobAt` raises to over the base `ℤ`, so it is what
+turns an abstract Frobenius congruence into the congruence `φ y ≡ y ^ p`. -/
+theorem natCard_quotient_under_of_liesOver {S : Type*} [Ring S] {p : ℕ}
+    (Q : Ideal S) [Q.LiesOver (span {(p : ℤ)})] :
+    Nat.card (ℤ ⧸ Q.under ℤ) = p := by
+  rw [← Ideal.LiesOver.over (P := Q) (p := span {(p : ℤ)})]
+  exact Int.card_ideal_quot p
+
+end Ideal
+
+end

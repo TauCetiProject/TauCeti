@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 /-!
 # Integral and even overlattices via isotropic subgroups
@@ -33,7 +34,9 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
   carrier.
 * `TauCeti.IntegralLattice.IntermediateCarrier.IsEven`: evenness of an intermediate carrier.
 * `TauCeti.IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice`: an integral
-  intermediate carrier, as an integral lattice for the same ambient form.
+  intermediate carrier, as an integral lattice for the same ambient form. It inherits
+  nondegeneracy and positive definiteness from the lattice it lies over; evenness is not
+  inherited, and is instead supplied by `IsEven` of the carrier itself.
 * `TauCeti.IntegralLattice.IntermediateCarrier.isIntegral_iff_forall_discriminantPairing_eq_zero`:
   integral carriers are cut out by vanishing of the discriminant pairing.
 * `TauCeti.IntegralLattice.IntermediateCarrier.isEven_iff_forall_discriminantQuadraticMap_eq_zero`:
@@ -45,6 +48,10 @@ carriers of an even lattice correspond to quadratic-isotropic subgroups.
   of the intermediate-carrier order isomorphism to integral carriers.
 * `TauCeti.IntegralLattice.evenIntermediateCarrierOrderIsoIsotropicSubgroup`: the restriction of
   the intermediate-carrier order isomorphism to even carriers of an even lattice.
+* `TauCeti.IntegralLattice.ofIsotropicSubgroup`: the even overlattice glued along a
+  quadratic-isotropic subgroup of the discriminant group, as an integral lattice. It keeps the
+  ambient form, so it inherits nondegeneracy and positive definiteness, and the isotropy
+  hypothesis makes it even.
 
 ## References
 
@@ -171,6 +178,12 @@ theorem IsEven.isEven_toIntegralLattice (hM : IsEven M) :
     exact x.2
   obtain ⟨n, hn⟩ := isEven_def.mp hM (x : V) hx
   exact ⟨n, by rw [norm_apply, IsIntegral.toIntegralLattice_form, ← norm_apply]; exact hn⟩
+
+/-- An integral overlattice is positive definite exactly when the lattice it lies over is: the
+two carry the same ambient form. -/
+theorem IsIntegral.isPosDef_toIntegralLattice_iff (hM : IsIntegral M) :
+    hM.toIntegralLattice.IsPosDef ↔ L.IsPosDef := by
+  rw [isPosDef_iff, isPosDef_iff, hM.toIntegralLattice_form]
 
 end IsLattice
 
@@ -357,6 +370,81 @@ theorem evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe (hL : L.
       L.intermediateCarrierOfDiscriminantSubgroup H.1 := by
   simp only [evenIntermediateCarrierOrderIsoIsotropicSubgroup, restrictOrderIso,
     OrderIso.symm_mk, RelIso.coe_fn_mk, Equiv.coe_fn_symm_mk]
+
+/-- **The even overlattice glued along a quadratic-isotropic subgroup of the discriminant
+group.** This names the composite the gluing correspondence produces: the inverse-image carrier
+of `H`, which is even because `H` is quadratic-isotropic, regarded as an integral lattice for the
+same ambient form. It is the gluing operation in the form its consumers use, where the datum in
+hand is the subgroup rather than the carrier. -/
+noncomputable def ofIsotropicSubgroup (hL : L.IsEven) (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) : IntegralLattice V :=
+  IntermediateCarrier.IsIntegral.toIntegralLattice
+    ((L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).mpr hH).isIntegral
+
+/-- The glued lattice is carried by the inverse image of `H` in the dual. -/
+@[simp]
+theorem ofIsotropicSubgroup_carrier (hL : L.IsEven) (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    (L.ofIsotropicSubgroup hL H hH).carrier =
+      (L.intermediateCarrierOfDiscriminantSubgroup H : Submodule ℤ V) :=
+  IntermediateCarrier.IsIntegral.toIntegralLattice_carrier _
+
+/-- Gluing keeps the ambient rational form. -/
+@[simp]
+theorem ofIsotropicSubgroup_form (hL : L.IsEven) (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    (L.ofIsotropicSubgroup hL H hH).form = L.form :=
+  IntermediateCarrier.IsIntegral.toIntegralLattice_form _
+
+/-- The glued lattice is even, which is what the quadratic-isotropy hypothesis buys. -/
+theorem isEven_ofIsotropicSubgroup (hL : L.IsEven) (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    (L.ofIsotropicSubgroup hL H hH).IsEven :=
+  IntermediateCarrier.IsEven.isEven_toIntegralLattice
+    ((L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).mpr hH)
+
+/-- A lattice glued over a nondegenerate lattice is nondegenerate: it carries the same ambient
+form. Stated for `ofIsotropicSubgroup` itself, since instance search does not unfold it. -/
+instance instIsNondegenerateOfIsotropicSubgroup (hL : L.IsEven)
+    (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    (L.ofIsotropicSubgroup hL H hH).IsNondegenerate :=
+  IntermediateCarrier.IsIntegral.instIsNondegenerate
+    ((L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).mpr hH).isIntegral
+
+/-- A glued lattice is positive definite exactly when the lattice it lies over is. -/
+theorem isPosDef_ofIsotropicSubgroup_iff (hL : L.IsEven) (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    (L.ofIsotropicSubgroup hL H hH).IsPosDef ↔ L.IsPosDef :=
+  IntermediateCarrier.IsIntegral.isPosDef_toIntegralLattice_iff
+    ((L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).mpr hH).isIntegral
+
+/-- Gluing along the trivial subgroup returns the lattice. The isotropy hypothesis is supplied
+here rather than asked of the caller, since the trivial subgroup is unconditionally isotropic. -/
+@[simp]
+theorem ofIsotropicSubgroup_bot (hL : L.IsEven) :
+    L.ofIsotropicSubgroup hL ⊥
+        (FiniteQuadraticModule.isIsotropic_bot (L.discriminantQuadraticModule hL)) = L := by
+  refine IntegralLattice.ext ?_ (L.ofIsotropicSubgroup_form hL ⊥
+    (FiniteQuadraticModule.isIsotropic_bot (L.discriminantQuadraticModule hL)))
+  rw [L.ofIsotropicSubgroup_carrier hL ⊥
+      (FiniteQuadraticModule.isIsotropic_bot (L.discriminantQuadraticModule hL)),
+    L.intermediateCarrierOfDiscriminantSubgroup_bot, Set.Icc.coe_bot]
+
+/-- Gluing agrees with the even gluing correspondence: `ofIsotropicSubgroup` is the lattice
+carried by the correspondence's inverse image. -/
+theorem ofIsotropicSubgroup_eq_toIntegralLattice (hL : L.IsEven)
+    (H : {H : AddSubgroup L.DiscriminantGroup //
+      (L.discriminantQuadraticModule hL).IsIsotropic H}) :
+    L.ofIsotropicSubgroup hL H.1 H.2 =
+      IntermediateCarrier.IsIntegral.toIntegralLattice
+        (((L.evenIntermediateCarrierOrderIsoIsotropicSubgroup hL).symm H).2).isIntegral := by
+  refine IntegralLattice.ext ?_ (by
+    rw [L.ofIsotropicSubgroup_form hL H.1 H.2,
+      IntermediateCarrier.IsIntegral.toIntegralLattice_form])
+  rw [L.ofIsotropicSubgroup_carrier hL H.1 H.2,
+    IntermediateCarrier.IsIntegral.toIntegralLattice_carrier,
+    L.evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe hL H]
 
 end IntegralLattice
 

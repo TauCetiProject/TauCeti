@@ -326,7 +326,7 @@ theorem IsExtBoundedBy.of_shortExact₂ (hS : S.ShortExact) {X : C} {N₁ N₃ :
     IsExtBoundedBy.{w} X S.X₂ (max N₁ N₃) :=
   ⟨fun n hn ↦ haveI := h₁.subsingleton ((le_max_left N₁ N₃).trans hn)
     haveI := h₃.subsingleton ((le_max_right N₁ N₃).trans hn)
-    subsingleton_of_exact (exact_postcomp hS X n) (map_zero _)⟩
+    subsingleton_of_exact (exact_postcomp hS X n)⟩
 
 /-- **Extension closure in the first variable** for eventual `Ext`-vanishing. -/
 theorem IsExtBoundedBy.of_shortExact₂' (hS : S.ShortExact) {Y : C} {N₁ N₃ : ℕ}
@@ -334,7 +334,7 @@ theorem IsExtBoundedBy.of_shortExact₂' (hS : S.ShortExact) {Y : C} {N₁ N₃ 
     IsExtBoundedBy.{w} S.X₂ Y (max N₁ N₃) :=
   ⟨fun n hn ↦ haveI := h₁.subsingleton ((le_max_left N₁ N₃).trans hn)
     haveI := h₃.subsingleton ((le_max_right N₁ N₃).trans hn)
-    subsingleton_of_exact (exact_precomp hS Y n) (map_zero _)⟩
+    subsingleton_of_exact (exact_precomp hS Y n)⟩
 
 /-- **Euler-admissibility is closed under extensions in the second variable.** -/
 theorem IsEulerAdmissible.of_shortExact₂ (hS : S.ShortExact) {X : C}

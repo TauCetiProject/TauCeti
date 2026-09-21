@@ -21,8 +21,8 @@ alternative for compact operators to a statement about Fredholm operators.
 
 Compactness enters the three arguments in different forms: the kernel argument uses the existing
 finite-dimensional eigenspace theorem, the range argument extracts a convergent subsequence with
-`TauCeti.IsCompactOperator.exists_subseq_tendsto`, and the cokernel argument uses the separation
-consequence `TauCeti.IsCompactOperator.exists_dist_lt_of_norm_le`.
+`IsCompactOperator.exists_subseq_tendsto`, and the cokernel argument uses the separation
+consequence `IsCompactOperator.exists_dist_lt_of_norm_le`.
 
 * The kernel is the `1`-eigenspace of `K`, already known to be finite dimensional.
 * For the range, split off a closed complement `M` of `ker A`, which exists because `ker A` is
@@ -37,13 +37,13 @@ consequence `TauCeti.IsCompactOperator.exists_dist_lt_of_norm_le`.
 
 ## Main declarations
 
-* `TauCeti.IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker`: `1 - K` is bounded below on
+* `IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker`: `1 - K` is bounded below on
   any closed subspace meeting its kernel trivially.
-* `TauCeti.IsCompactOperator.finiteDimensional_ker_one_sub`: `ker (1 - K)` is finite dimensional.
-* `TauCeti.IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed.
-* `TauCeti.IsCompactOperator.isCompactOperator_one_sub_pow`: `1 - (1 - K) ^ n` is compact, so
+* `IsCompactOperator.finiteDimensional_ker_one_sub`: `ker (1 - K)` is finite dimensional.
+* `IsCompactOperator.isClosed_range_one_sub`: `range (1 - K)` is closed.
+* `IsCompactOperator.isCompactOperator_one_sub_pow`: `1 - (1 - K) ^ n` is compact, so
   every power of `1 - K` is again a compact perturbation of the identity.
-* `TauCeti.IsCompactOperator.finiteDimensional_quotient_range_one_sub`: `X ⧸ range (1 - K)` is
+* `IsCompactOperator.finiteDimensional_quotient_range_one_sub`: `X ⧸ range (1 - K)` is
   finite dimensional.
 
 The argument is the classical Riesz theory of compact operators; see, for example, Conway,
@@ -76,12 +76,13 @@ namespace IsCompactOperator
 
 /-- **A bounded sequence whose `(1 - K)`-images vanish in the limit has a subsequence converging
 to a point of `ker (1 - K)`.** The bound `R` on the sequence is arbitrary. -/
-private theorem exists_subseq_tendsto_mem_ker (hK : IsCompactOperator K) {R : ℝ} {v : ℕ → X}
+private theorem _root_.IsCompactOperator.exists_subseq_tendsto_mem_ker (hK : IsCompactOperator K)
+    {R : ℝ} {v : ℕ → X}
     (hvle : ∀ n, ‖v n‖ ≤ R)
     (hAtendsto : Tendsto (fun n => (1 - K : X →L[𝕜] X) (v n)) atTop (𝓝 0)) :
     ∃ (y : X) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun k => v (ψ k)) atTop (𝓝 y) ∧
       y ∈ LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) := by
-  obtain ⟨y, ψ, hψ, hψy⟩ := exists_subseq_tendsto hK hvle
+  obtain ⟨y, ψ, hψ, hψy⟩ := IsCompactOperator.exists_subseq_tendsto hK hvle
   have hvsub : Tendsto (fun k => v (ψ k)) atTop (𝓝 y) := by
     -- `v = (1 - K) v + K v`, and both summands converge along the subsequence.
     have hsum : ∀ k, (1 - K : X →L[𝕜] X) (v (ψ k)) + K (v (ψ k)) = v (ψ k) := by
@@ -104,7 +105,8 @@ below.
 
 Were it not, a sequence of vectors in a fixed norm shell whose images tend to `0` would, along a
 subsequence on which `K` converges, converge to a nonzero vector of `ker (1 - K) ⊓ M`. -/
-theorem exists_pos_mul_norm_le_of_disjoint_ker (hK : IsCompactOperator K) {M : Submodule 𝕜 X}
+theorem _root_.IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker (hK : IsCompactOperator K)
+    {M : Submodule 𝕜 X}
     (hM : IsClosed (M : Set X))
     (hdisj : Disjoint (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) M) :
     ∃ c : ℝ, 0 < c ∧ ∀ x ∈ M, c * ‖x‖ ≤ ‖(1 - K : X →L[𝕜] X) x‖ := by
@@ -139,7 +141,8 @@ theorem exists_pos_mul_norm_le_of_disjoint_ker (hK : IsCompactOperator K) {M : S
       _ ≤ 1 / (n + 1) := hstep
   have hAtendsto : Tendsto (fun n => (1 - K : X →L[𝕜] X) (v n)) atTop (𝓝 0) :=
     squeeze_zero_norm hAv tendsto_one_div_add_atTop_nhds_zero_nat
-  obtain ⟨y, ψ, -, hvsub, hyker⟩ := exists_subseq_tendsto_mem_ker hK hvle hAtendsto
+  obtain ⟨y, ψ, -, hvsub, hyker⟩ := IsCompactOperator.exists_subseq_tendsto_mem_ker hK hvle
+    hAtendsto
   have hyM : y ∈ M := hM.mem_of_tendsto hvsub (Eventually.of_forall fun k => hvM (ψ k))
   have hy0 : y = 0 := by simpa using hdisj.le_bot ⟨hyker, hyM⟩
   have hyge : ‖c‖⁻¹ ≤ ‖y‖ := ge_of_tendsto' hvsub.norm fun k => hvge (ψ k)
@@ -148,7 +151,7 @@ theorem exists_pos_mul_norm_le_of_disjoint_ker (hK : IsCompactOperator K) {M : S
 
 /-- Every power of a compact perturbation of the identity is again a compact perturbation of the
 identity. -/
-theorem isCompactOperator_one_sub_pow (hK : IsCompactOperator K) (n : ℕ) :
+theorem _root_.IsCompactOperator.isCompactOperator_one_sub_pow (hK : IsCompactOperator K) (n : ℕ) :
     IsCompactOperator ⇑((1 : X →L[𝕜] X) - (1 - K) ^ n) := by
   induction n with
   | zero =>
@@ -181,7 +184,8 @@ private theorem exists_riesz {P Q : Submodule 𝕜 X} (hPQ : P ≤ Q) (hP : IsCl
 /-- A decreasing chain of closed subspaces stable under `1 - K`, in the sense that `1 - K` carries
 the `n`-th one into the `(n + 1)`-st, cannot be strictly decreasing: Riesz's lemma would otherwise
 produce a bounded sequence whose images under `K` stay `1` apart. -/
-private theorem exists_eq_succ_of_chain (hK : IsCompactOperator K) {V : ℕ → Submodule 𝕜 X}
+private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompactOperator K)
+    {V : ℕ → Submodule 𝕜 X}
     (hmono : ∀ n, V (n + 1) ≤ V n) (hclosed : ∀ n, IsClosed ((V n : Set X)))
     (hstep : ∀ n, ∀ x ∈ V n, x - K x ∈ V (n + 1)) :
     ∃ p, V (p + 1) = V p := by
@@ -204,7 +208,7 @@ private theorem exists_eq_succ_of_chain (hK : IsCompactOperator K) {V : ℕ → 
     have hrw : K (f m) - K (f n) = f m - ((f m - K (f m)) + f n - (f n - K (f n))) := by abel
     rw [hrw]
     exact hfsep m _ hy
-  obtain ⟨m, n, hmn, hlt⟩ := exists_dist_lt_of_norm_le hK hfnorm one_pos
+  obtain ⟨m, n, hmn, hlt⟩ := IsCompactOperator.exists_dist_lt_of_norm_le hK hfnorm one_pos
   rw [dist_eq_norm] at hlt
   rcases lt_or_gt_of_ne hmn with h | h
   · exact absurd hlt (not_lt.mpr (key m n h))
@@ -216,23 +220,24 @@ end Chain
 variable [CompleteSpace 𝕜]
 
 /-- The kernel of a compact perturbation of the identity is finite dimensional. -/
-theorem finiteDimensional_ker_one_sub (hK : IsCompactOperator K) :
+theorem _root_.IsCompactOperator.finiteDimensional_ker_one_sub (hK : IsCompactOperator K) :
     FiniteDimensional 𝕜 (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) := by
   rw [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one,
     TauCeti.ker_one_sub]
-  exact finiteDimensional_eigenspace hK one_ne_zero
+  exact IsCompactOperator.finiteDimensional_eigenspace hK one_ne_zero
 
 variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 
 /-- The range of a compact perturbation of the identity is closed. -/
-theorem isClosed_range_one_sub (hK : IsCompactOperator K) :
+theorem _root_.IsCompactOperator.isClosed_range_one_sub (hK : IsCompactOperator K) :
     IsClosed (LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) : Set X) := by
   have hfin : FiniteDimensional 𝕜 (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) :=
-    finiteDimensional_ker_one_sub hK
+    IsCompactOperator.finiteDimensional_ker_one_sub hK
   obtain ⟨M, hMclosed, hMcompl⟩ :=
     (Submodule.ClosedComplemented.of_finiteDimensional
       (LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X))).exists_isClosed_isCompl
-  obtain ⟨c, hcpos, hc⟩ := exists_pos_mul_norm_le_of_disjoint_ker hK hMclosed hMcompl.disjoint
+  obtain ⟨c, hcpos, hc⟩ := IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker hK hMclosed
+    hMcompl.disjoint
   -- Every value of `1 - K` is already attained on `M`.
   have hrange : (LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) : Set X)
       = Set.range ((1 - K : X →L[𝕜] X).comp M.subtypeL) := by
@@ -292,7 +297,8 @@ private lemma mkQ_comp_ker_subtype_surjective {T : X →ₗ[𝕜] X} {n : ℕ}
   exact hsup
 
 /-- The cokernel of a compact perturbation of the identity is finite dimensional. -/
-theorem finiteDimensional_quotient_range_one_sub (hK : IsCompactOperator K) :
+theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub (hK : IsCompactOperator K)
+    :
     FiniteDimensional 𝕜 (X ⧸ LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) := by
   set A : X →L[𝕜] X := 1 - K with hA
   -- `V` is Mathlib's chain object, so one step of the chain and its antitonicity are library
@@ -307,11 +313,12 @@ theorem finiteDimensional_quotient_range_one_sub (hK : IsCompactOperator K) :
     fun n => (A : X →ₗ[𝕜] X).iterateRange.monotone (Nat.le_succ n)
   have hVclosed : ∀ n, IsClosed ((V n : Set X)) := by
     intro n
-    have h := isClosed_range_one_sub (isCompactOperator_one_sub_pow hK n)
+    have h := IsCompactOperator.isClosed_range_one_sub
+      (IsCompactOperator.isCompactOperator_one_sub_pow hK n)
     rw [sub_sub_cancel, ← hA] at h
     rw [hViter]
     exact h
-  obtain ⟨p, hp⟩ := exists_eq_succ_of_chain hK hVmono hVclosed (by
+  obtain ⟨p, hp⟩ := IsCompactOperator.exists_eq_succ_of_chain hK hVmono hVclosed (by
     intro n x hx
     have : x - K x = A x := rfl
     rw [this]
@@ -324,7 +331,8 @@ theorem finiteDimensional_quotient_range_one_sub (hK : IsCompactOperator K) :
   -- The kernel of `A ^ (p + 1)` surjects onto the cokernel of `A`.
   have hkerfin : FiniteDimensional 𝕜
       (LinearMap.ker (((A : X →ₗ[𝕜] X)) ^ (p + 1))) := by
-    have h := finiteDimensional_ker_one_sub (isCompactOperator_one_sub_pow hK (p + 1))
+    have h := IsCompactOperator.finiteDimensional_ker_one_sub
+      (IsCompactOperator.isCompactOperator_one_sub_pow hK (p + 1))
     rw [sub_sub_cancel, ← hA, ContinuousLinearMap.toLinearMap_pow] at h
     exact h
   refine FiniteDimensional.of_surjective _

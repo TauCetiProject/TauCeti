@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.CentralPoint
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.CommonKernel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
@@ -46,10 +46,17 @@ along `h ↦ 1 ⊗ h`.
   change reflects containment of Hopf ideals.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_injective`: faithfully flat base change reflects
   equality of Hopf ideals.
+* `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_comapOfIso`: base change commutes with pulling a
+  Hopf ideal back along an ambient isomorphism.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le`: the subgroup generated
   by a base-changed family sits inside the base change of the subgroup it generates.
 * `TauCeti.CommHopfAlgCat.quotientBaseChangeIso`: the identification
   `(K ⊗[k] H) ⧸ J_K ≅ K ⊗[k] (H ⧸ J)`.
+* `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_quotientIso`: an ambient base-change
+  isomorphism carries a base-changed Hopf ideal onto a target ideal presented as the kernel of
+  the base change of the quotient morphism.
+* `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective`: the specialization to kernels
+  of surjective morphisms matched by base change.
 * `TauCeti.CommHopfAlgCat.quotientBaseChangeIsoOfMapEq`: transport of this identification
   across an ambient base-change isomorphism carrying the base-changed ideal to a target ideal.
 * `TauCeti.CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIso_hom`: the identification is
@@ -146,6 +153,53 @@ theorem baseChangeHopfIdeal_mono {J J' : HopfIdeal k H} (hJ : J ≤ J') :
     baseChangeHopfIdeal (K := K) J ≤ baseChangeHopfIdeal (K := K) J' := by
   rw [← HopfIdeal.toIdeal_le_toIdeal, baseChangeHopfIdeal_toIdeal, baseChangeHopfIdeal_toIdeal]
   exact Ideal.map_mono (HopfIdeal.toIdeal_le_toIdeal.mpr hJ)
+
+/-- Base change commutes with pulling a Hopf ideal back along an ambient Hopf-algebra
+isomorphism. -/
+@[simp]
+theorem baseChangeHopfIdeal_comapOfIso (J : HopfIdeal k L) (e : H ≅ L) :
+    baseChangeHopfIdeal (K := K)
+        (J.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2) =
+      (baseChangeHopfIdeal (K := K) J).comapOfSurjective
+        (baseChangeMap (K := K) e.hom).hom
+        (ConcreteCategory.bijective_of_isIso
+          ((baseChangeFunctor (K := K)).mapIso e).hom).2 := by
+  let qIso := quotientIsoOfIso e J
+  let qIsoK := (baseChangeFunctor (K := K)).mapIso qIso
+  have hcomm :
+      baseChangeMap (K := K) (mkQuotient H
+          (J.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2)) ≫
+          qIsoK.hom =
+        baseChangeMap (K := K) e.hom ≫
+          baseChangeMap (K := K) (mkQuotient L J) := by
+    -- `baseChangeMap` is the map field of the `baseChangeFunctor` abbreviation. Unfolding
+    -- that wrapper here exposes both composites in the form required by `Functor.map_comp`.
+    change (baseChangeFunctor (K := K)).map (mkQuotient H
+          (J.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2)) ≫
+        (baseChangeFunctor (K := K)).map qIso.hom =
+      (baseChangeFunctor (K := K)).map e.hom ≫
+        (baseChangeFunctor (K := K)).map (mkQuotient L J)
+    rw [← Functor.map_comp, ← Functor.map_comp]
+    exact congrArg (fun f ↦ (baseChangeFunctor (K := K)).map f)
+      (mkQuotient_comp_quotientIsoOfIso_hom e J)
+  ext x
+  rw [mem_baseChangeHopfIdeal_iff, HopfIdeal.mem_comapOfSurjective,
+    mem_baseChangeHopfIdeal_iff]
+  have hpoint : qIsoK.hom.hom
+        ((baseChangeMap (K := K) (mkQuotient H
+          (J.comapOfSurjective e.hom.hom
+            (ConcreteCategory.bijective_of_isIso e.hom).2))).hom x) =
+      (baseChangeMap (K := K) (mkQuotient L J)).hom
+        ((baseChangeMap (K := K) e.hom).hom x) :=
+    congrArg
+      (fun f : baseChange (K := K) H ⟶ baseChange (K := K) (quotient L J) ↦ f.hom x) hcomm
+  constructor
+  · intro hx
+    rw [hx, map_zero] at hpoint
+    exact hpoint.symm
+  · intro hx
+    apply (ConcreteCategory.bijective_of_isIso qIsoK.hom).1
+    rw [map_zero, hpoint, hx]
 
 /-- Along an injective scalar map, base change reflects containment of Hopf ideals when the
 quotient by the larger ideal is flat over the base. In particular, this applies to every field
@@ -354,6 +408,63 @@ theorem map_baseChangeHopfIdeal_of_toIdeal_eq_span
   simpa only [Algebra.TensorProduct.includeRight_apply, BialgHom.coe_toAlgHom,
     AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using
     Iff.of_eq (congrArg (fun T => x ∈ Ideal.span T) h)
+
+/-- An ambient base-change isomorphism carries a base-changed Hopf ideal onto a target Hopf
+ideal, when both are presented as vanishing ideals of morphisms matched by base change: `J` is
+the kernel of `f`, which factors through the quotient by `J` via the isomorphism `q`, and `f'`
+is the base change of `f` read through `e` and `t`.
+
+This is the kernel-presented companion of
+`TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_of_toIdeal_eq_span`, for ideals that come with a
+quotient presentation rather than with generating sets. -/
+theorem map_baseChangeHopfIdeal_of_quotientIso
+    {T : _root_.CommHopfAlgCat.{v} k} {H' T' : _root_.CommHopfAlgCat.{max w v} K}
+    (J : HopfIdeal k H) (J' : HopfIdeal K H')
+    (e : baseChange (K := K) H ≅ H') (t : baseChange (K := K) T ≅ T')
+    (q : quotient H J ≅ T) {f : H ⟶ T} {f' : H' ⟶ T'}
+    (hq : mkQuotient H J ≫ q.hom = f)
+    (hf' : e.inv ≫ baseChangeMap (K := K) f ≫ t.hom = f')
+    (hJ' : ∀ x, x ∈ J' ↔ f'.hom x = 0) :
+    (baseChangeHopfIdeal (K := K) J).map e.hom.hom = J' := by
+  have he : Function.Bijective e.hom.hom := ConcreteCategory.bijective_of_isIso e.hom
+  have hcomm : baseChangeMap (K := K) (mkQuotient H J) ≫
+      (baseChangeMap (K := K) q.hom ≫ t.hom) = e.hom ≫ f' := by
+    rw [← Category.assoc, ← (baseChangeFunctor (K := K)).map_comp, hq, ← hf']
+    simp
+  have hr : Function.Injective (baseChangeMap (K := K) q.hom ≫ t.hom).hom :=
+    (ConcreteCategory.bijective_of_isIso
+      ((baseChangeFunctor (K := K)).mapIso q ≪≫ t).hom).1
+  have hzero (y : baseChange (K := K) H) :
+      (baseChangeMap (K := K) (mkQuotient H J)).hom y = 0 ↔ f'.hom (e.hom.hom y) = 0 := by
+    have hy := congrArg (fun g ↦ g.hom y) hcomm
+    simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at hy
+    rw [← hy]
+    exact ⟨fun hy0 ↦ by rw [hy0]; simp, fun hy0 ↦ hr (by simpa using hy0)⟩
+  ext x
+  rw [HopfIdeal.mem_map_iff_of_surjective he.2, hJ' x]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact (hzero y).mp ((mem_baseChangeHopfIdeal_iff J y).mp hy)
+  · intro hx
+    refine ⟨e.inv.hom x, ?_, _root_.CommHopfAlgCat.hom_inv_apply e x⟩
+    rw [mem_baseChangeHopfIdeal_iff]
+    apply (hzero _).mpr
+    rwa [_root_.CommHopfAlgCat.hom_inv_apply]
+
+/-- An ambient base-change isomorphism carries the base change of the kernel of a surjective
+morphism `f` onto the kernel of a surjective morphism `f'`, when `f'` is the base change of `f`
+read through `e` and `t`. -/
+theorem map_baseChangeHopfIdeal_kerOfSurjective
+    {T : _root_.CommHopfAlgCat.{v} k} {H' T' : _root_.CommHopfAlgCat.{max w v} K}
+    (e : baseChange (K := K) H ≅ H') (t : baseChange (K := K) T ≅ T')
+    {f : H ⟶ T} (hf : Function.Surjective f.hom) {f' : H' ⟶ T'}
+    (hf' : Function.Surjective f'.hom)
+    (hbase : e.inv ≫ baseChangeMap (K := K) f ≫ t.hom = f') :
+    (baseChangeHopfIdeal (K := K) (HopfIdeal.kerOfSurjective f.hom hf)).map e.hom.hom =
+      HopfIdeal.kerOfSurjective f'.hom hf' :=
+  map_baseChangeHopfIdeal_of_quotientIso _ _ e t (quotientKerOfSurjectiveIso f hf)
+    (mkQuotient_comp_quotientKerOfSurjectiveIso_hom f hf) hbase
+    (fun _ ↦ HopfIdeal.mem_kerOfSurjective _ _)
 
 /-- Pulling a target Hopf ideal back along an ambient isomorphism which is its image recovers
 the original ideal. -/

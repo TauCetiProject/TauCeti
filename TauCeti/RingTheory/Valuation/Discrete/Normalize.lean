@@ -114,6 +114,16 @@ theorem ordIndex_dvd_ord (f : F) : (ordIndex v : ℤ) ∣ ord v f := by
     (f := f / t ^ (ord v f / (ordIndex v : ℤ))) (by rw [hord]; omega)
   omega
 
+/-- **A nontrivial valuation has nonzero order index.** This is the hypothesis
+`Valuation.normalization_surjective` asks for, so it is what lets a nontrivial valuation be
+normalized. -/
+theorem ordIndex_ne_zero_of_isNontrivial [v.IsNontrivial] : ordIndex v ≠ 0 := by
+  obtain ⟨x, hx0, hx1⟩ := ‹v.IsNontrivial›.exists_val_nontrivial
+  have hxne : x ≠ 0 := fun h ↦ hx0 (by simp [h])
+  refine fun h ↦ hx1 ?_
+  have hord := (ordIndex_eq_zero_iff v).mp h x
+  rwa [ord_eq_iff_valuation_eq_exp_neg v hxne, neg_zero, WithZero.exp_zero] at hord
+
 end OrdIndex
 
 section Normalization
@@ -213,6 +223,25 @@ theorem isEquiv_normalization : (normalization v).IsEquiv v := by
 theorem valuationSubring_normalization :
     (normalization v).valuationSubring = v.valuationSubring :=
   (isEquiv_iff_valuationSubring _ _).mp (isEquiv_normalization v)
+
+/-- **A surjective valuation has index `1`**: it already attains the order `1`, and the index
+divides every order attained. -/
+@[simp]
+theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
+  obtain ⟨f, hf⟩ := ord_surjective v hv 1
+  have hdvd := ordIndex_dvd_ord v f
+  rw [hf] at hdvd
+  exact Nat.dvd_one.mp (Int.natCast_dvd_natCast.mp (by simpa using hdvd))
+
+/-- **A surjective valuation is its own normalization**: normalizing divides every order by the
+index, which is `1`. -/
+@[simp]
+theorem normalization_eq_self_of_surjective (hv : Function.Surjective v) : normalization v = v := by
+  ext f
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  · rw [normalization_apply v hf, ordIndex_eq_one_of_surjective v hv, Nat.cast_one, Int.ediv_one,
+      ← valuation_eq_exp_neg_ord v hf]
 
 /-- The normalization of a nontrivial valuation is surjective: its value group is all of
 `ℤᵐ⁰`. -/

@@ -193,26 +193,26 @@ section Congr
 
 /-- Conjugation by `e` carries `Aut(M, B)` onto `Aut(M', B ∘ e⁻¹)`. -/
 private theorem map_isometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M') :
-    (isometryGroup B).map (LinearEquiv.congrAut e : _ →* _)
+    (isometryGroup B).map (LinearEquiv.autCongr e : _ →* _)
       = isometryGroup (LinearMap.BilinForm.congr e B) := by
   ext g
   simp only [Subgroup.mem_map, MonoidHom.coe_coe, mem_isometryGroup_iff]
   constructor
   · rintro ⟨a, ha, rfl⟩ x y
-    simp only [LinearEquiv.congrAut_apply, LinearMap.BilinForm.congr_apply,
+    simp only [LinearEquiv.autCongr_apply_apply, LinearMap.BilinForm.congr_apply,
       LinearEquiv.symm_apply_apply]
     exact ha _ _
-  · refine fun hg => ⟨(LinearEquiv.congrAut e).symm g, fun x y => ?_,
-      (LinearEquiv.congrAut e).apply_symm_apply g⟩
+  · refine fun hg => ⟨(LinearEquiv.autCongr e).symm g, fun x y => ?_,
+      (LinearEquiv.autCongr e).apply_symm_apply g⟩
     have := hg (e x) (e y)
-    simpa only [LinearEquiv.congrAut_symm_apply, LinearMap.BilinForm.congr_apply,
+    simpa only [LinearEquiv.autCongr_symm_apply_apply, LinearMap.BilinForm.congr_apply,
       LinearEquiv.symm_apply_apply] using this
 
 /-- Transporting a bilinear form along a linear equivalence transports its isometry group:
 conjugation by `e : M ≃ₗ[R] M'` carries `Aut(M, B)` onto `Aut(M', B ∘ e⁻¹)`. -/
 def isometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     isometryGroup B ≃* isometryGroup (LinearMap.BilinForm.congr e B) :=
-  ((LinearEquiv.congrAut e).subgroupMap _).trans
+  ((LinearEquiv.autCongr e).subgroupMap _).trans
     (MulEquiv.subgroupCongr (map_isometryGroup B e))
 
 @[simp]

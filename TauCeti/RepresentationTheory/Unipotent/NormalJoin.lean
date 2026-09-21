@@ -145,8 +145,7 @@ private theorem _root_.Representation.isNilpotent_sub_one_of_normal_isUnipotent
           rw [← ha, map_smul, hfixed]
         have hp (z : G) : p ≤ p.comap (rho z) := by
           intro y hy
-          rw [Submodule.mem_comap]
-          rw [hp_fixed z ⟨y, hy⟩]
+          rw [Submodule.mem_comap, hp_fixed z ⟨y, hy⟩]
           exact hy
         let q : Representation K G (V ⧸ p) := rho.quotient p hp
         have quotient_sub_one_eq_mapQ (z : G)

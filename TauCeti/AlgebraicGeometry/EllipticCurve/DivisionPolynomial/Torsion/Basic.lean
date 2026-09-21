@@ -92,9 +92,10 @@ splits `ψ₄ = preΨ₄ * ψ₂` and reads off `leadingCoeff preΨ₄ = 2`, and
 `leadingCoeff (preΨ n) = n / 2` runs it verbatim at every even index; the source's own index is
 kept as `isInteger_x_of_order_four_of_squarefree`), `den_dvd_of_order_two` →
 `den_dvd_four_of_order_two`, `two_nsmul_eq_zero_of_ψ₂_eq_zero` →
-`two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`, restated for the Jacobian point so that the even-index
-theorem needs no `[DecidableEq K]`; that one carries no integrality content and lives in
-`DivisionPolynomial/ZSMul.lean`, which this file consumes.
+`zsmul_eq_zero_of_evalEval_ψ_eq_zero` at `n = 2`: a vanishing `ψₙ` annihilates the point at every
+index, and two-torsion is the case `n = 2`. It is stated for the Jacobian point, so the even-index
+theorem needs no `[DecidableEq K]`, and it carries no integrality content, so it lives in
+`DivisionPolynomial/ZSMul.lean`.
 -/
 
 public section
@@ -103,7 +104,7 @@ open Polynomial
 
 namespace WeierstrassCurve
 
-open TauCeti.WeierstrassCurve
+open WeierstrassCurve
 
 
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
@@ -172,7 +173,8 @@ theorem isInteger_x_of_even_torsion_of_squarefree {x y : K}
       rw [W.leadingCoeff_preΨ hn, ite_eq_left heven]
       exact hsf
     exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ hsf_lc
-  · exact absurd (two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero (W.baseChange K) hns hψ₂) h2ne
+  · exact absurd (zsmul_eq_zero_of_evalEval_ψ_eq_zero (W.baseChange K) hns 2
+      (by rwa [WeierstrassCurve.ψ_two])) h2ne
 
 omit [DecidableEq K] in
 /-- **An order-four point is integral when `(2 : R)` is squarefree.** The index-four case of

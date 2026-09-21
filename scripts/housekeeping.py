@@ -19,6 +19,18 @@ either merged or closed — never stranded:
            body marker) as an older open one. Keep the lowest PR number.
   stale    Close a PR whose latest review scoreboard still has a blocking rubric and which has had no
            activity for STALE_DAYS (default 7): a request for changes nobody acted on, under budget.
+  red      Close a PR that has carried `ci-failed` continuously for CI_FAILED_DAYS (default 7). Every
+           job above reads the review scoreboard, so all of them are blind to a PR that never reached
+           review: failing CI keeps it out of `awaiting-review`, no reviewer ever posts a scoreboard,
+           and `blocking_rubrics` therefore has nothing to report. Such a PR was immortal. #1556 sat
+           red for four weeks with zero scoreboards, and nothing in this file could see it.
+
+           The clock is the current `ci-failed` spell, not `updatedAt`. `updatedAt` bumps on any
+           comment or label, so the conflict bot noticing a corpse counted as the corpse moving --
+           on #1556 it reset the stale timer three weeks after the last human touch. The spell is read
+           from the label timeline, and every CI cycle unlabels and relabels, so a PR whose build is
+           being re-run, or that goes green and fails again, starts over. Seven days therefore means
+           no completed CI cycle and no state change at all, which is abandonment rather than effort.
 
 The one override is a `keep` label (also `hold`/`wip`/`human`/`do-not-close`): a PR with one of those
 is never auto-closed. By design these jobs do NOT spare human-touched PRs — anyone who wants a PR held
@@ -31,7 +43,7 @@ same account, so trust is by association, not by "not the author": an external a
 repo-associated comment that makes housekeeping close a PR.
 
 Env: GH_TOKEN (a token that can close PRs), REPO (owner/name), optional DRY_RUN=1, REVIEW_BUDGET,
-BUDGET_LABEL, STALE_DAYS, EMPTY_QUIET_MINUTES.
+BUDGET_LABEL, STALE_DAYS, EMPTY_QUIET_MINUTES, CI_FAILED_DAYS.
 """
 import datetime
 import json
@@ -60,6 +72,10 @@ REVIEW_BUDGET = int(os.environ.get("REVIEW_BUDGET", "10"))
 BUDGET_LABEL = os.environ.get("BUDGET_LABEL", "review-budget-spent")
 # How long a blocked PR may sit untouched (under budget) before the stale job retires it.
 STALE_DAYS = int(os.environ.get("STALE_DAYS", "7"))
+# How long a PR may carry `ci-failed` without interruption before the red job retires it. Measured
+# over the current label spell rather than `updatedAt`: see the `red` entry in the module docstring.
+CI_FAILED_DAYS = int(os.environ.get("CI_FAILED_DAYS", "7"))
+CI_FAILED_LABEL = "ci-failed"
 # How long an empty-diff roadmap PR must be QUIET before the empty job closes it — long enough that an
 # actively-pushing worker (which would bump updatedAt) is never raced into a wrong close.
 EMPTY_QUIET_MINUTES = int(os.environ.get("EMPTY_QUIET_MINUTES", "30"))
@@ -85,6 +101,11 @@ STALE_COMMENT = (
     "has sat untouched for over {days} days, so the queue housekeeping is retiring it to keep things "
     "moving. The branch is kept, so nothing is lost. It is completely fine to open a fresh PR once the "
     "findings are addressed. Add the `keep` label if you would rather it stay open.")
+CI_FAILED_COMMENT = (
+    "Closing automatically: this PR's build has been failing for over {days} days, with no CI run "
+    "since, so the queue housekeeping is retiring it to keep things moving. The branch is kept, so "
+    "nothing is lost. It is completely fine to reopen or to open a fresh PR once the build is fixed. "
+    "Add the `keep` label if you would rather it stay open.")
 EMPTY_COMMENT = (
     "Closing automatically: this PR's diff against `main` is empty — all of its changes are already in "
     "`main` (typically a sibling attempt at the same roadmap target merged first), so there is nothing "
@@ -134,6 +155,44 @@ def latest_scoreboard_meta(pr: int):
 def blocking_rubrics(meta: dict) -> list:
     """The rubrics whose state is blocking (not green or stale) in the scoreboard ledger."""
     return sorted(k for k, v in (meta.get("states") or {}).items() if v not in NONBLOCKING_STATES)
+
+
+def label_spell_start(events: list, label: str):
+    """When the PR's CURRENT unbroken spell carrying `label` began, or None if it is not carrying it.
+
+    Walking the timeline rather than taking the newest `labeled` event, because a PR that was
+    labelled, unlabelled and never relabelled still has that `labeled` event sitting in its history.
+    Reading it as the start of a live spell would close a PR whose build has since gone green.
+    """
+    started = None
+    for event in events:
+        if (event.get("label") or {}).get("name") != label:
+            continue
+        if event.get("event") == "labeled":
+            started = parse_ts(event.get("created_at", ""))
+        elif event.get("event") == "unlabeled":
+            started = None
+    return started
+
+
+def gh_jsonl(args):
+    """`gh --paginate` with a non-array --jq emits one object per line, concatenated across pages.
+
+    A bare --paginate would concatenate per-page ARRAYS into invalid JSON, and --slurp cannot be
+    combined with --jq, so JSONL is the shape that survives more than one page. The same pattern is
+    used in pr_status and in the review runner's sweep.
+    """
+    r = subprocess.run(["gh", *args], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"gh {' '.join(args)} failed: {r.stderr.strip()}")
+    return [json.loads(line) for line in r.stdout.splitlines() if line.strip()]
+
+
+def ci_failed_since(pr: int):
+    """When this PR's current `ci-failed` spell began, or None if it is not currently failing."""
+    events = gh_jsonl(["api", "--paginate", f"/repos/{REPO}/issues/{pr}/events?per_page=100",
+                       "--jq", '.[] | {event, created_at, label: {name: .label.name}}'])
+    return label_spell_start(events, CI_FAILED_LABEL)
 
 
 def close(pr: int, comment: str) -> bool:
@@ -268,6 +327,31 @@ def main() -> int:
             continue
         print(f"stale: #{p['number']} (blocking {', '.join(blk)}, untouched >{STALE_DAYS}d)")
         failures += not close(p["number"], STALE_COMMENT.format(blocking=", ".join(blk), days=STALE_DAYS))
+
+    # red: a PR whose build has been failing, uninterrupted, for CI_FAILED_DAYS. Deliberately does
+    # NOT consult the scoreboard: this is the one job that has to work when there is no scoreboard
+    # at all, because a PR that never went green never reached review and never got one.
+    red_cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=CI_FAILED_DAYS)
+    # isDraft must be explicitly False, matching stale above: an unknown draft state is never closed.
+    red_candidates = [p for p in open_prs
+                      if p.get("isDraft") is False and not has_keep_label(p)
+                      and has_label(p, CI_FAILED_LABEL)]
+    print(f"red: {len(red_candidates)} open PR(s) carrying {CI_FAILED_LABEL} to check{suffix}")
+    for p in red_candidates:
+        since = ci_failed_since(p["number"])
+        if since is None:
+            # The label list and the timeline disagree; fail closed rather than guess which is right.
+            print(f"red: #{p['number']} carries {CI_FAILED_LABEL} but its timeline shows no live "
+                  "spell; leaving it")
+            continue
+        if since >= red_cutoff:
+            continue
+        days = (datetime.datetime.now(datetime.timezone.utc) - since).days
+        if keep_label_live(p["number"]):
+            print(f"red: #{p['number']} gained a keep label since listing; leaving it")
+            continue
+        print(f"red: #{p['number']} (failing since {since:%Y-%m-%d}, {days}d)")
+        failures += not close(p["number"], CI_FAILED_COMMENT.format(days=CI_FAILED_DAYS))
 
     if failures:
         print(f"housekeeping: {failures} close(s) failed", file=sys.stderr)

@@ -28,8 +28,9 @@ different embeddings `f` induce different structures, so none can be registered 
 ## Main results
 
 * `TauCeti.AlgHom.finrank_fieldRange`: `[L : f.fieldRange] = [L : K]`.
-* `TauCeti.AlgHom.finiteDimensional_of_fieldRange`: finiteness over the range transfers to the
-  source — the same identification read for the property rather than the number.
+* `TauCeti.AlgHom.finiteDimensional_of_fieldRange` and `AlgHom.isSeparable_of_fieldRange`:
+  finiteness and separability over the range transfer to the source — the same identification
+  read for a property rather than for a number.
 * `TauCeti.AlgHom.finSepDegree_fieldRange` and `TauCeti.AlgHom.finInsepDegree_fieldRange`: the
   same for the separable and inseparable degrees. These are the `f.fieldRange` cases of the
   general transports in `TauCeti.FieldTheory.SeparableDegree`, which is where a caller holding
@@ -98,3 +99,23 @@ theorem finInsepDegree_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, 
       rw [RingHom.algebraMap_toAlgebra]; exact f.equivFieldRange.apply_symm_apply r⟩
 
 end TauCeti.AlgHom
+
+namespace AlgHom
+
+variable {F K L : Type*} [Field F] [Field K] [Field L] [Algebra F K] [Algebra F L]
+
+/-- **Separability above the range of a field embedding transfers to its source.** The range
+restriction `f.equivFieldRange` is an isomorphism `K ≃ₐ[F] f.fieldRange` over `L`, and
+separability only depends on the subfield of `L` the scalars land in.
+
+The counterpart of `TauCeti.AlgHom.finiteDimensional_of_fieldRange` for separability: a caller
+who knows only that `L` is separable over the *range* — the form in which an intermediate field
+usually arrives — gets separability over `K` itself, which is what the theorems stated for an
+abstract extension take as an instance. -/
+theorem isSeparable_of_fieldRange (f : K →ₐ[F] L) [Algebra K L] (h : ∀ z, algebraMap K L z = f z)
+    [Algebra.IsSeparable f.fieldRange L] : Algebra.IsSeparable K L :=
+  Algebra.IsSeparable.of_equiv_equiv f.equivFieldRange.toRingEquiv.symm (RingEquiv.refl L) <| by
+    ext z
+    simpa [h] using (AlgHom.equivFieldRange_apply_coe f (f.equivFieldRange.symm z)).symm
+
+end AlgHom

@@ -14,6 +14,8 @@ This file provides operations on an existing group extension.
 
 ## Main definitions and results
 
+* `GroupExtension.card_fiber_rightHom`: every fiber of the projection has the cardinality of the
+  kernel term.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
 
 The construction is mirrored for additive groups by `to_additive`.
@@ -26,6 +28,19 @@ universe u v w
 namespace GroupExtension
 
 variable {N : Type u} {E : Type v} {G : Type w} [Group N] [Group E] [Group G]
+
+/-- Every fiber of the projection in a group extension has the cardinality of its kernel term. -/
+@[to_additive
+  /-- Every fiber of the projection in an additive group extension has the cardinality of its
+  kernel term. -/]
+theorem card_fiber_rightHom (S : GroupExtension N E G) (g : G) :
+    Nat.card (S.rightHom ⁻¹' {g}) = Nat.card N := by
+  calc
+    Nat.card (S.rightHom ⁻¹' {g}) = Nat.card S.rightHom.ker :=
+      Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective S.rightHom_surjective g)
+    _ = Nat.card S.inl.range := by rw [S.range_inl_eq_ker_rightHom]
+    _ = Nat.card N :=
+      (Nat.card_congr (Equiv.ofInjective S.inl S.inl_injective)).symm
 
 /-- Relabel the kernel term of a group extension along a multiplicative equivalence. -/
 @[to_additive /-- Relabel the kernel term of an additive group extension along an additive

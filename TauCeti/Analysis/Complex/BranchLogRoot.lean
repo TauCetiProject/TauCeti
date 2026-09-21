@@ -8,8 +8,9 @@ module
 public import Mathlib.Analysis.Complex.BranchLogRoot
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Analytic.Order
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
@@ -86,6 +87,8 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
 * `TauCeti.exists_differentiableOn_pow_eq` — a holomorphic branch of `ⁿ√g`.
 * `TauCeti.exists_eventuallyEq_pow_iff_dvd` — a holomorphic germ has a holomorphic `n`-th root iff
   `n` divides its order of vanishing.
+* `TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp` — the derivative of a branch of the logarithm is the
+  logarithmic derivative, and so does not depend on which branch was chosen.
 -/
 
 public section
@@ -231,5 +234,19 @@ theorem exists_eventuallyEq_pow_iff_dvd {A : ℂ → ℂ} {z₀ : ℂ} {n : ℕ}
       refine ⟨fun z => (z - z₀) ^ k * h z, ((analyticAt_id.sub analyticAt_const).pow k).mul hh, ?_⟩
       filter_upwards [hgeq, hheq] with z hz hz'
       rw [hz, smul_eq_mul, ← hz', mul_pow, ← pow_mul, mul_comm k n]
+
+/-- **The derivative of a branch is the logarithmic derivative.**  Wherever a holomorphic `f`
+satisfies `exp ∘ f = g` on an open set, `f' = g' / g` there.  This is what makes a branch of the
+logarithm useful even though `exp` determines it only up to `2πi ℤ`: the ambiguity is a locally
+constant additive one, so it disappears on differentiating. -/
+theorem deriv_eq_logDeriv_of_eqOn_exp_comp {U : Set ℂ} (hUo : IsOpen U) {f g : ℂ → ℂ}
+    (hf : DifferentiableOn ℂ f U) (h : EqOn (Complex.exp ∘ f) g U) {z : ℂ} (hz : z ∈ U) :
+    deriv f z = logDeriv g z := by
+  have hfz : DifferentiableAt ℂ f z := (hf z hz).differentiableAt (hUo.mem_nhds hz)
+  have heq : (Complex.exp ∘ f) =ᶠ[nhds z] g :=
+    Filter.eventuallyEq_of_mem (hUo.mem_nhds hz) fun w hw ↦ h hw
+  rw [← (logDeriv_congr_nhds heq).eq_of_nhds, logDeriv_comp Complex.differentiableAt_exp hfz,
+    Complex.logDeriv_exp]
+  simp
 
 end TauCeti

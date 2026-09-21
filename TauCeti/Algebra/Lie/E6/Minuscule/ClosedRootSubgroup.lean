@@ -51,6 +51,9 @@ open scoped Matrix
 
 namespace TauCeti.E6Minuscule
 
+local notation "Λ" => TauCeti.coordinateLattice (Fin 27)
+local notation "𝓑" => TauCeti.coordinateLatticeBasis (Fin 27)
+
 noncomputable section
 
 /-! ## A unit-coefficient edge at every simple root -/
@@ -61,8 +64,10 @@ private noncomputable def negativeWeightIndex (i : Fin 6) : Fin 27 :=
   (DynkinType.exists_e6MinusculeWeight_apply_eq_neg_one i).choose
 
 private theorem e6MinusculeWeight_negativeWeightIndex (i : Fin 6) :
-    DynkinType.e6MinusculeWeight (negativeWeightIndex i) i = -1 :=
-  (DynkinType.exists_e6MinusculeWeight_apply_eq_neg_one i).choose_spec
+    weightTable.weight (negativeWeightIndex i) i = -1 :=
+  by
+    rw [weightTable_weight]
+    exact (DynkinType.exists_e6MinusculeWeight_apply_eq_neg_one i).choose_spec
 
 /-- The source coordinate of the selected edge for a raising or lowering root generator. -/
 private def rootSource : Fin 6 ⊕ Fin 6 → Fin 27
@@ -75,36 +80,40 @@ private def rootTarget : Fin 6 ⊕ Fin 6 → Fin 27
   | .inr i => negativeWeightIndex i
 
 private theorem rep_serreRootGenerator_latticeBasis (k : Fin 6 ⊕ Fin 6) :
-    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ k))
-        ((latticeBasis (rootSource k) : lattice) : Fin 27 → ℚ) =
-      (1 : ℤ) • ((latticeBasis (rootTarget k) : lattice) : Fin 27 → ℚ) := by
+    weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix k))
+        ((𝓑 (rootSource k) : Λ) : Fin 27 → ℚ) =
+      (1 : ℤ) • ((𝓑 (rootTarget k) : Λ) : Fin 27 → ℚ) := by
   cases k with
   | inl i =>
-      rw [TauCeti.serreRootGenerator_inl, rep_ι_apply,
-        rationalSerreRepresentation_serreE, coe_latticeBasis, coe_latticeBasis,
+      have hi := e6MinusculeWeight_negativeWeightIndex i
+      rw [weightTable_weight] at hi
+      rw [TauCeti.serreRootGenerator_inl, weightTable.rep_ι_apply,
+        weightTable.rationalSerreRepresentation_serreE,
+        TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply,
         Matrix.mulVec_single_one, one_smul]
       ext a
-      simp [rootSource, rootTarget, raisingMatrixQ_apply, Pi.single_apply,
-        e6MinusculeWeight_negativeWeightIndex]
+      simp [rootSource, rootTarget, Pi.single_apply, hi]
   | inr i =>
-      rw [TauCeti.serreRootGenerator_inr, rep_ι_apply,
-        rationalSerreRepresentation_serreF, coe_latticeBasis, coe_latticeBasis,
+      have hi := e6MinusculeWeight_negativeWeightIndex i
+      rw [weightTable_weight] at hi
+      rw [TauCeti.serreRootGenerator_inr, weightTable.rep_ι_apply,
+        weightTable.rationalSerreRepresentation_serreF,
+        TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply,
         Matrix.mulVec_single_one, one_smul]
       ext a
-      simp [rootSource, rootTarget, loweringMatrixQ_apply, Pi.single_apply,
-        e6MinusculeWeight_negativeWeightIndex]
+      simp [rootSource, rootTarget, weightTable_weight, Pi.single_apply, hi]
 
-private theorem rep_serreRootGenerator_sq_apply_latticeBasis (k : Fin 6 ⊕ Fin 6) :
-    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ k))
-      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-          (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ k))
-        ((latticeBasis (rootSource k) : lattice) : Fin 27 → ℚ)) = 0 := by
+private theorem rep_serreRootGenerator_pow_two_apply_latticeBasis (k : Fin 6 ⊕ Fin 6) :
+    weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix k))
+      (weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+          (TauCeti.serreRootGenerator weightTable.cartanMatrix k))
+        ((𝓑 (rootSource k) : Λ) : Fin 27 → ℚ)) = 0 := by
   have h := congrArg
     (fun f : Module.End ℚ (Fin 27 → ℚ) =>
-      f ((latticeBasis (rootSource k) : lattice) : Fin 27 → ℚ))
-    (rep_serreRootGenerator_sq k)
+      f ((𝓑 (rootSource k) : Λ) : Fin 27 → ℚ))
+    (weightTable.rep_serreRootGenerator_pow_two k)
   simpa only [pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
 
 /-! ## Closed root-subgroup morphisms -/
@@ -115,21 +124,21 @@ recovers the additive parameter. -/
 theorem rootSubgroupCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
     Function.Surjective
       (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
-        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
-        (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-        (fun _ hu _ hv => rep_serreKostantForm_mem_lattice (by
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+        (fun _ hu _ hv => weightTable.rep_serreKostantForm_mem_lattice (by
           rw [TauCeti.serreKostantForm_def]
           exact hu) hv)
-        isNilpotent_rep_serreRootGenerator latticeBasis DynkinType.e6MinusculeWeight k).hom :=
+        weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight k).hom :=
   TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective
-    (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
-    (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-    (fun _ hu _ hv => rep_serreKostantForm_mem_lattice (by
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+    (fun _ hu _ hv => weightTable.rep_serreKostantForm_mem_lattice (by
       rw [TauCeti.serreKostantForm_def]
       exact hu) hv)
-    k isNilpotent_rep_serreRootGenerator latticeBasis DynkinType.e6MinusculeWeight
+    k weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight
     isUnit_one (rep_serreRootGenerator_latticeBasis k)
-    (rep_serreRootGenerator_sq_apply_latticeBasis k)
+    (rep_serreRootGenerator_pow_two_apply_latticeBasis k)
 
 /-- **Every numbered root-subgroup map into the type-`E₆` minuscule carrier is a closed
 immersion.** Thus its scheme-theoretic image is a closed copy of `𝔾ₐ`, as required of the root
@@ -138,14 +147,14 @@ instance isClosedImmersion_rootSubgroup (k : Fin 6 ⊕ Fin 6) :
     IsClosedImmersion (rootSubgroup k).hom.hom.left := by
   rw [rootSubgroup_def]
   exact TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantRootSubgroupToToral
-    (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
-    (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-    (fun _ hu _ hv => rep_serreKostantForm_mem_lattice (by
+    (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+    (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+    (fun _ hu _ hv => weightTable.rep_serreKostantForm_mem_lattice (by
       rw [TauCeti.serreKostantForm_def]
       exact hu) hv)
-    k isNilpotent_rep_serreRootGenerator latticeBasis DynkinType.e6MinusculeWeight
+    k weightTable.isNilpotent_rep_serreRootGenerator 𝓑 weightTable.weight
     isUnit_one (rep_serreRootGenerator_latticeBasis k)
-    (rep_serreRootGenerator_sq_apply_latticeBasis k)
+    (rep_serreRootGenerator_pow_two_apply_latticeBasis k)
 
 /-- Every numbered root-subgroup map into the type-`E₆` minuscule carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 6 ⊕ Fin 6) : Mono (rootSubgroup k) :=

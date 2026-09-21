@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ScalarExtension
 public import TauCeti.LinearAlgebra.JordanChevalley.Functoriality
-import TauCeti.LinearAlgebra.GeneralLinearGroup.Intertwining
+public import TauCeti.LinearAlgebra.JordanChevalley.ScalarExtension
 
 /-!
 # Semisimple points of a Hopf algebra
@@ -37,6 +37,8 @@ invariant under conjugation.
   inversion, commuting products, and integer powers.
 * `TauCeti.HopfAlgebra.IsSemisimplePoint.mapDomain`: precomposition by a bialgebra morphism
   preserves semisimple points.
+* `TauCeti.HopfAlgebra.IsSemisimplePoint.mapValue`: postcomposition into a larger field preserves
+  semisimple points when the source field is perfect.
 * `TauCeti.HopfAlgebra.isSemisimplePoint_mapDomain_iff`: invariance of point semisimplicity under
   bialgebra isomorphisms.
 * `TauCeti.HopfAlgebra.isSemisimplePoint_pointsMulEquiv_iff`: over a perfect field, a point of a
@@ -120,6 +122,44 @@ theorem isSemisimplePoint_mapDomain_iff
     exact hg.mapDomain (e : H₁ →ₐc[k] H₂)
 
 end MapDomain
+
+section MapValue
+
+variable {L : Type w} [Field L] [Algebra k L] [PerfectField K]
+
+/-- A semisimple point remains semisimple after postcomposition with a morphism out of a perfect
+value field. -/
+theorem IsSemisimplePoint.mapValue {g : WithConv (H →ₐ[k] K)}
+    (hg : IsSemisimplePoint g) (f : K →ₐ[k] L) :
+    IsSemisimplePoint (AlgHom.mapValue (H := H) f g) := by
+  rw [isSemisimplePoint_def] at hg ⊢
+  intro M
+  have haction :
+      LinearMap.GeneralLinearGroup.ofLinearEquiv
+          (Comodule.pointsAction M (AlgHom.mapValue (H := H) f g)) =
+        Module.End.mapValueGL f
+          (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)) := by
+    apply Units.ext
+    calc
+      (LinearMap.GeneralLinearGroup.ofLinearEquiv
+          (Comodule.pointsAction M (AlgHom.mapValue (H := H) f g)) :
+            Module.End L (L ⊗[k] M)) =
+          Comodule.endOfPoint M (AlgHom.mapValue (H := H) f g).ofConv :=
+        Comodule.pointsAction_toLinearMap M _
+      _ = Module.End.mapValue f (Comodule.endOfPoint M g.ofConv) := by
+        apply Module.End.eq_mapValue
+        simpa only [AlgHom.mapValue_apply, WithConv.ofConv_toConv] using
+          (Comodule.rTensor_comp_endOfPoint (M : Type u) f g.ofConv).symm
+      _ = (Module.End.mapValueGL f
+          (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)) :
+            Module.End L (L ⊗[k] M)) := by
+        rw [Module.End.mapValueGL_coe]
+        congr 1
+        exact (Comodule.pointsAction_toLinearMap M g).symm
+  rw [haction]
+  exact (hg M).mapValue (R := k) (V := (M : Type u)) f
+
+end MapValue
 
 private theorem isSemisimple_pointAction_iff_endOfPoint
     (g : WithConv (H →ₐ[k] K)) (M : FGComoduleCat.{u, v, u} k H) :

@@ -28,10 +28,12 @@ theorem**: it is Stichtenoth's `(1.45)` for `x = 1`, and it holds over an arbitr
 with no analysis and before any residue map has been constructed.
 
 This is Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Definitions 1.7.1,
-Proposition 1.7.2 and the divisor-free half of Proposition 1.7.3(a).  The remaining statements of
-Section I.7 — that no local component of a nonzero Weil differential vanishes, that `v_P (ω)` is
-the largest bound its local component respects, and the explicit generator of `Ω_{k(x)}` — need
-the divisor of a Weil differential, and are not proved here.
+Proposition 1.7.2 and the divisor-free half of Proposition 1.7.3(a).  For a function field with
+exact constants, the nonvanishing of every local component of a nonzero differential, and hence
+the fact that one local component determines the differential, are proved in
+`TauCeti.FieldTheory.FunctionField.Differential.LocalNonvanishing`.  The remaining statements of
+Section I.7 — that `v_P (ω)` is the largest bound its local component respects and the explicit
+generator of `Ω_{k(x)}` — need the divisor of a Weil differential.
 
 The repartitions `ι_P x` themselves are built in
 `TauCeti.FieldTheory.FunctionField.Repartition.Basic`, next to the repartition space and its
@@ -46,6 +48,8 @@ filtration, which are all they depend on.
 
 * `TauCeti.repartitionDualComponent_apply_eq_zero_of_le`: the local component at `P` of a Weil
   differential bounded by `D` vanishes on the functions whose pole at `P` is bounded by `D`.
+* `TauCeti.repartitionDualComponent_repartitionDualMul_algebraMap`: scaling a linear form by a
+  constant scales each of its local components.
 * `TauCeti.finite_support_repartitionDualComponent_apply` and
   `TauCeti.apply_eq_finsum_repartitionDualComponent`: **`ω a = ∑_P ω_P (a P)`, with cofinite
   vanishing** (Stichtenoth, Proposition 1.7.2).
@@ -98,6 +102,15 @@ theorem repartitionDualComponent_repartitionDualMul (hF : IsFunctionField k F) (
     repartitionDualComponent (repartitionDualMul hF f ω) P x =
       repartitionDualComponent ω P (f * x) := by
   simp
+
+/-- The local components of a constant multiple of a linear form: `(c · ω)_P x = c • ω_P x`.  This
+is the case of `TauCeti.repartitionDualComponent_repartitionDualMul` in which the scalar is a
+constant, where the multiplication can be pulled out of the linear form. -/
+theorem repartitionDualComponent_repartitionDualMul_algebraMap (hF : IsFunctionField k F) (c : k)
+    (ω : Module.Dual k ↥(repartitionSpace k F)) (P : Place k F) (x : F) :
+    repartitionDualComponent (repartitionDualMul hF (algebraMap k F c) ω) P x =
+      c • repartitionDualComponent ω P x := by
+  rw [repartitionDualComponent_repartitionDualMul, ← Algebra.smul_def, map_smul]
 
 /-- **The local component at `P` of a Weil differential bounded by `D` kills the functions whose
 pole at `P` is bounded by `D`**: such an `x` has `ι_P x ∈ A_F(D)`, which `ω` kills. -/

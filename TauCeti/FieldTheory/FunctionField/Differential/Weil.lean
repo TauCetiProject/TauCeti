@@ -34,6 +34,9 @@ specialty, and are proved in `TauCeti/FieldTheory/FunctionField/Differential/Dim
   multiplication of repartitions by a function (Definition 1.5.8).
 * `TauCeti.weilDifferentialSpaceMul` and `TauCeti.weilDifferentialSpaceModule`: its restriction
   to `Ω_F`, and the resulting `F`-vector space structure.
+* `TauCeti.repartitionDualMulRight`: that action with the linear form frozen, as the `k`-linear
+  map `F → Module.Dual k A_F`, `x ↦ x · ω`.  It restricts to a map `F → Ω_F` when `ω` is a Weil
+  differential, by `TauCeti.repartitionDualMul_mem_weilDifferentialSpace`.
 
 ## Main results
 
@@ -45,8 +48,15 @@ specialty, and are proved in `TauCeti/FieldTheory/FunctionField/Differential/Dim
 * `TauCeti.weilDifferentialFiltration_antitone` and `TauCeti.mem_weilDifferentialSpace_iff`: the
   filtration is antitone and directed, so a `k`-linear form is a Weil differential exactly when
   some single divisor bounds it.
+* `TauCeti.weilDifferentialFiltration_sup`: the exact supremum rule
+  `Ω_F(D ⊔ E) = Ω_F(D) ∩ Ω_F(E)`.
 * `TauCeti.weilDifferentialFiltration_eq_bot_iff`: `Ω_F(D) = 0` exactly when every repartition
   differs from a constant by one bounded by `D`.
+* `TauCeti.repartitionDualMul_inv_repartitionDualMul`: multiplying by a unit and then by its
+  inverse restores the form, so the action of a nonzero function is invertible.
+* `TauCeti.repartitionDualMulRight_injective` and `TauCeti.repartitionDualMul_ne_zero`: for a
+  nonzero linear form `ω`, the map `x ↦ x · ω` is injective, so `z · ω` is again nonzero for
+  `z ≠ 0`.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`: for `z ∈ Fˣ`, a linear form
   lies in `Ω_F(D)` exactly when `z · ω` lies in `Ω_F(D + div z)`, so `Ω_F` is stable under the
   action (`TauCeti.repartitionDualMul_mem_weilDifferentialSpace`).
@@ -145,6 +155,43 @@ theorem weilDifferentialFiltration_antitone :
       Submodule k (Module.Dual k ↥(repartitionSpace k F))) := fun _ _ h ↦
   Submodule.dualAnnihilator_anti (submoduleOfAdeleFiltrationSupDiagonalRepartitions_mono h)
 
+/-- **The filtration turns suprema of divisors into intersections of spaces of Weil
+differentials**: `Ω_F(D ⊔ E) = Ω_F(D) ∩ Ω_F(E)`. -/
+@[simp]
+theorem weilDifferentialFiltration_sup (D E : Divisor k F) :
+    weilDifferentialFiltration (D ⊔ E) =
+      weilDifferentialFiltration D ⊓ weilDifferentialFiltration E := by
+  have hsub : submoduleOfAdeleFiltrationSupDiagonalRepartitions (D ⊔ E) =
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions D ⊔
+        submoduleOfAdeleFiltrationSupDiagonalRepartitions E := by
+    have htrace (X : Submodule k (Place k F → F))
+        (hX : X ≤ repartitionSpace k F) :
+        (X ⊔ diagonalRepartitions k F).submoduleOf (repartitionSpace k F) =
+          X.submoduleOf (repartitionSpace k F) ⊔
+            (diagonalRepartitions k F).submoduleOf (repartitionSpace k F) := by
+      apply Submodule.map_injective_of_injective (repartitionSpace k F).subtype_injective
+      simp only [Submodule.submoduleOf, Submodule.map_comap_eq, Submodule.map_sup,
+        Submodule.range_subtype]
+      rw [inf_comm (repartitionSpace k F) (X ⊔ diagonalRepartitions k F),
+        inf_comm (repartitionSpace k F) X,
+        inf_comm (repartitionSpace k F) (diagonalRepartitions k F),
+        sup_inf_assoc_of_le _ hX, inf_eq_left.mpr hX]
+    rw [submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf,
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf,
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf,
+      TauCeti.adeleFiltration_sup]
+    rw [htrace (adeleFiltration D ⊔ adeleFiltration E)
+        (sup_le (adeleFiltration_le_repartitionSpace D)
+          (adeleFiltration_le_repartitionSpace E)),
+      Submodule.submoduleOf_sup_of_le (adeleFiltration_le_repartitionSpace D)
+        (adeleFiltration_le_repartitionSpace E),
+      htrace (adeleFiltration D) (adeleFiltration_le_repartitionSpace D),
+      htrace (adeleFiltration E) (adeleFiltration_le_repartitionSpace E)]
+    ac_rfl
+  rw [weilDifferentialFiltration_eq_dualAnnihilator,
+    weilDifferentialFiltration_eq_dualAnnihilator,
+    weilDifferentialFiltration_eq_dualAnnihilator, hsub, Submodule.dualAnnihilator_sup_eq]
+
 /-- **`Ω_F(D)` vanishes exactly when `A_F(D) + F` is everything**: the only `k`-linear form on
 `A_F` vanishing on `A_F(D) + F` is `0` precisely when every repartition already differs from a
 constant by one whose poles are bounded by `D`. -/
@@ -211,6 +258,54 @@ theorem repartitionDualMul_repartitionDualMul (hF : IsFunctionField k F) (f g : 
     repartitionDualMul hF f (repartitionDualMul hF g ω) = repartitionDualMul hF (f * g) ω := by
   rw [← Module.End.mul_apply, ← map_mul]
 
+/-- **Multiplying by a nonzero function and then by its inverse restores the linear form**, so
+multiplication by a nonzero function is invertible on `Ω_F`. -/
+@[simp]
+theorem repartitionDualMul_inv_repartitionDualMul (hF : IsFunctionField k F) {x : F} (hx : x ≠ 0)
+    (ω : Module.Dual k ↥(repartitionSpace k F)) :
+    repartitionDualMul hF x⁻¹ (repartitionDualMul hF x ω) = ω := by
+  rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel₀ hx, map_one, Module.End.one_apply]
+
+/-- **Multiplication of a fixed linear form by a varying function**, as a `k`-linear map
+`F → Module.Dual k A_F`: the map `x ↦ x · ω` obtained by freezing the second argument of
+`TauCeti.repartitionDualMul`.  Here `ω` is an arbitrary `k`-linear form on `A_F`; when it is a
+Weil differential the map lands in `Ω_F`, by
+`TauCeti.repartitionDualMul_mem_weilDifferentialSpace`.  For `ω ≠ 0` it is injective
+(`TauCeti.repartitionDualMulRight_injective`), and Riemann–Roch is the computation of its image
+on a Riemann–Roch space. -/
+noncomputable def repartitionDualMulRight (hF : IsFunctionField k F)
+    (ω : Module.Dual k ↥(repartitionSpace k F)) :
+    F →ₗ[k] Module.Dual k ↥(repartitionSpace k F) :=
+  (repartitionDualMul hF).toLinearMap.flip ω
+
+@[simp]
+theorem repartitionDualMulRight_apply (hF : IsFunctionField k F)
+    (ω : Module.Dual k ↥(repartitionSpace k F)) (x : F) :
+    repartitionDualMulRight hF ω x = repartitionDualMul hF x ω :=
+  (rfl)
+
+/-- **Multiplication by a nonzero linear form is injective**: a function `x` with `x · ω = 0`
+is itself zero. -/
+theorem repartitionDualMulRight_injective (hF : IsFunctionField k F)
+    {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) :
+    Function.Injective (repartitionDualMulRight hF ω) := by
+  -- A function in the kernel is either zero or a unit, and a unit can be cancelled by
+  -- `repartitionDualMul_inv_repartitionDualMul`, forcing `ω = 0`.
+  rw [injective_iff_map_eq_zero]
+  intro x hx
+  by_contra hx0
+  obtain ⟨z, rfl⟩ : ∃ z : Fˣ, (z : F) = x := ⟨Units.mk0 x hx0, rfl⟩
+  refine hω ?_
+  rw [← repartitionDualMul_inv_repartitionDualMul hF (Units.ne_zero z) ω,
+    ← repartitionDualMulRight_apply hF ω (z : F), hx, map_zero]
+
+/-- **A nonzero function times a nonzero linear form is nonzero.** -/
+theorem repartitionDualMul_ne_zero (hF : IsFunctionField k F) {z : F} (hz : z ≠ 0)
+    {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) :
+    repartitionDualMul hF z ω ≠ 0 := fun h ↦ hz <|
+  (injective_iff_map_eq_zero _).mp (repartitionDualMulRight_injective hF hω) z
+    (by rw [repartitionDualMulRight_apply, h])
+
 /-- **Multiplication translates the filtration by a principal divisor**: for a nonzero function
 `z`, a linear form is bounded by `D` exactly when `z · ω` is bounded by `D + div z`, exactly as
 multiplication by `z` carries `A_F(D + div z)` into `A_F(D)`. -/
@@ -234,8 +329,7 @@ theorem repartitionDualMul_mem_weilDifferentialFiltration_iff (hF : IsFunctionFi
       exact smul_mem_diagonalRepartitions (y : F) ha
   refine ⟨fun h ↦ ?_, key z D ω⟩
   have hzz : repartitionDualMul hF ((z⁻¹ : Fˣ) : F) (repartitionDualMul hF (z : F) ω) = ω := by
-    rw [← Module.End.mul_apply, ← map_mul, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-      map_one, Module.End.one_apply]
+    simp
   have hD : D + Divisor.principal hF z + Divisor.principal hF z⁻¹ = D := by
     rw [Divisor.principal_inv, add_neg_cancel_right]
   have h' := key z⁻¹ _ _ h
