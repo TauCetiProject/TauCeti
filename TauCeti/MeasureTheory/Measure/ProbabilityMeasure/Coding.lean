@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.SetAlgebra
+import Mathlib.MeasureTheory.Function.FactorsThrough
+import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Measurable coding of probability measures
@@ -25,7 +27,9 @@ This code lets probability arguments use a standard Borel target without imposin
 * `TauCeti.MeasureTheory.ProbabilityMeasureCodeIndex` -- the countable generating set algebra;
 * `TauCeti.MeasureTheory.probabilityMeasureCode` -- evaluation on every member of that algebra;
 * `TauCeti.MeasureTheory.measurable_probabilityMeasureCode` -- measurability of the code;
-* `TauCeti.MeasureTheory.probabilityMeasureCode_injective` -- the code determines the measure.
+* `TauCeti.MeasureTheory.probabilityMeasureCode_injective` -- the code determines the measure;
+* `TauCeti.MeasureTheory.probabilityMeasureCodeMap` -- the measurable action of pushforward on
+  codes.
 -/
 
 public section
@@ -88,6 +92,72 @@ theorem probabilityMeasureCode_injective :
     isSetAlgebra_generateSetAlgebra.isSetRing.isSetSemiring.isPiSystem
     (fun s hs => congrFun hPQ ⟨s, hs⟩) ?_
   exact hP.measure_univ.trans Q.2.measure_univ.symm
+
+/-- The Giry measurable space on probability measures is induced by the evaluation code. -/
+theorem measurableSpace_probabilityMeasure_eq_comap_probabilityMeasureCode :
+    (inferInstance : MeasurableSpace (ProbabilityMeasure α)) =
+      (inferInstance : MeasurableSpace
+        (ProbabilityMeasureCodeIndex α → ℝ≥0∞)).comap probabilityMeasureCode := by
+  apply le_antisymm
+  · let m : MeasurableSpace (ProbabilityMeasure α) :=
+      (inferInstance : MeasurableSpace
+        (ProbabilityMeasureCodeIndex α → ℝ≥0∞)).comap probabilityMeasureCode
+    let : MeasurableSpace (ProbabilityMeasure α) := m
+    have hcode : Measurable (probabilityMeasureCode (α := α)) :=
+      Measurable.of_comap_le le_rfl
+    have hmeasure : Measurable ((↑) : ProbabilityMeasure α → Measure α) := by
+      apply Measurable.measure_of_isPiSystem_of_isProbabilityMeasure
+        (μ := fun P : ProbabilityMeasure α => (P : Measure α))
+        (generateFrom_generateSetAlgebra_eq.trans generateFrom_countableGeneratingSet).symm
+        isSetAlgebra_generateSetAlgebra.isSetRing.isSetSemiring.isPiSystem
+      intro s hs
+      simpa only [probabilityMeasureCode, Function.comp_def] using
+        (measurable_pi_apply (⟨s, hs⟩ : ProbabilityMeasureCodeIndex α)).comp hcode
+    exact hmeasure.comap_le
+  · exact measurable_probabilityMeasureCode.comap_le
+
+variable {β : Type*} [MeasurableSpace β] [CountablyGenerated β]
+
+private theorem exists_probabilityMeasureCodeMap (f : α → β) (hf : Measurable f) :
+    ∃ g : (ProbabilityMeasureCodeIndex α → ℝ≥0∞) →
+        (ProbabilityMeasureCodeIndex β → ℝ≥0∞),
+      Measurable g ∧ ∀ P : ProbabilityMeasure α,
+        g (probabilityMeasureCode P) = probabilityMeasureCode (P.map f) := by
+  have hmap : Measurable fun P : ProbabilityMeasure α =>
+      probabilityMeasureCode ((P.map f) : ProbabilityMeasure β) :=
+    measurable_probabilityMeasureCode.comp (measurable_probabilityMeasure_map hf)
+  have hmap' : Measurable[(inferInstance : MeasurableSpace
+      (ProbabilityMeasureCodeIndex α → ℝ≥0∞)).comap probabilityMeasureCode]
+      (fun P : ProbabilityMeasure α =>
+        probabilityMeasureCode ((P.map f) : ProbabilityMeasure β)) := by
+    rw [← measurableSpace_probabilityMeasure_eq_comap_probabilityMeasureCode]
+    exact hmap
+  obtain ⟨g, hg, heq⟩ := hmap'.exists_eq_measurable_comp
+  exact ⟨g, hg, fun P => (congrFun heq P).symm⟩
+
+/-- The action on probability-measure codes induced by pushforward along a measurable map.
+
+Although the code records a measure only on a chosen generating algebra, every measurable
+evaluation is a measurable function of that code. Thus pushforward descends to a measurable map
+on the whole ambient code space; away from codes of probability measures its values are
+irrelevant. -/
+noncomputable def probabilityMeasureCodeMap (f : α → β) (hf : Measurable f) :
+    (ProbabilityMeasureCodeIndex α → ℝ≥0∞) →
+      (ProbabilityMeasureCodeIndex β → ℝ≥0∞) :=
+  (exists_probabilityMeasureCodeMap f hf).choose
+
+/-- Pushforward on probability-measure codes is measurable. -/
+theorem measurable_probabilityMeasureCodeMap (f : α → β) (hf : Measurable f) :
+    Measurable (probabilityMeasureCodeMap f hf) :=
+  (exists_probabilityMeasureCodeMap f hf).choose_spec.1
+
+/-- On the code of a probability measure, the induced code map is pushforward. -/
+@[simp]
+theorem probabilityMeasureCodeMap_apply (f : α → β) (hf : Measurable f)
+    (P : ProbabilityMeasure α) :
+    probabilityMeasureCodeMap f hf (probabilityMeasureCode P) =
+      probabilityMeasureCode (P.map f) :=
+  (exists_probabilityMeasureCodeMap f hf).choose_spec.2 P
 
 end MeasureTheory
 

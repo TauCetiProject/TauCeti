@@ -7,8 +7,9 @@ module
 
 -- Public: the row directing measure and its invariant law occur in the conclusion and proof.
 public import TauCeti.Probability.Exchangeability.Arrays.DeFinetti
--- Public: the coded marginal process and its conditional factorization occur in the conclusion.
-public import TauCeti.Probability.Exchangeability.RandomMeasure.Block
+-- Public: the coded marginal processes, their conditional factorizations, and their compatibility
+-- occur in the conclusions.
+public import TauCeti.Probability.Exchangeability.RandomMeasure.Block.Compatibility
 
 /-!
 # Coded coordinate marginals of an invariant random row law
@@ -25,8 +26,8 @@ global random law, the coded coordinate marginals are i.i.d. This retains every 
 marginal of the random row law.
 
 The one-coordinate marginals do not in general recover the row law, since they omit its higher
-finite-dimensional marginals. `RandomMeasure.Block` supplies the corresponding factorization for
-every positive block width.
+finite-dimensional marginals. `RandomMeasure.Block.Basic` supplies the corresponding
+factorization for every positive block width.
 
 ## Main result
 
@@ -35,6 +36,9 @@ every positive block width.
 * `TauCeti.Probability.SeparatelyExchangeable.exists_directing_arrayRow_codedBlockMarginals`
   -- the same row directing measure gives a conditional factorization at every positive block
   width.
+* `TauCeti.Probability.SeparatelyExchangeable.exists_directing_arrayRow_compatibleBlockMarginals`
+  -- at two divisible widths, the block directing measures commute almost surely with every
+  consecutive subblock restriction.
 
 ## References
 
@@ -51,10 +55,13 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
 namespace Probability
+
+open TauCeti.MeasureTheory
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
@@ -90,6 +97,34 @@ theorem SeparatelyExchangeable.exists_directing_arrayRow_codedBlockMarginals
   obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
   have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing hinv
   exact ⟨ν, hν, fun m => conditionallyIID_codedBlockMarginals_of_invariant (μ.map ν) m hinv'⟩
+
+/-- **The directing measures for block marginals of a row directing measure are compatible.**
+A separately exchangeable array has a row directing measure `ν` such that, for any positive
+widths `m` and `q * m`, the conditional directing measures of its coded block marginals may be
+chosen compatibly. On one set of full `(μ.map ν)`-measure, restricting the large directing measure
+to any of its `q` consecutive width-`m` subblocks gives the small directing measure. -/
+theorem SeparatelyExchangeable.exists_directing_arrayRow_compatibleBlockMarginals
+    [StandardBorelSpace α] [Nonempty α]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : ℕ × ℕ → Ω → α}
+    (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ)
+    (m q : ℕ) [NeZero m] [NeZero q] :
+    ∃ ν : Ω → ProbabilityMeasure (ℕ → α),
+      ConditionallyIIDWith μ (arrayRow X) ν ∧
+      ∃ ξLarge : ProbabilityMeasure (ℕ → α) → ProbabilityMeasure
+          (ProbabilityMeasureCodeIndex (Fin (q * m) → α) → ℝ≥0∞),
+        ∃ ξSmall : ProbabilityMeasure (ℕ → α) → ProbabilityMeasure
+            (ProbabilityMeasureCodeIndex (Fin m → α) → ℝ≥0∞),
+          ConditionallyIIDWith (μ.map ν)
+              (fun i P => P.codedBlockMarginals (q * m) i) ξLarge ∧
+          ConditionallyIIDWith (μ.map ν)
+              (fun i P => P.codedBlockMarginals m i) ξSmall ∧
+          ∀ᵐ P ∂(μ.map ν), ∀ r : Fin q,
+            (ξLarge P).map (codedBlockRestriction m q r) = ξSmall P := by
+  obtain ⟨ν, hν, hinv⟩ := h.exists_directing_arrayRow_mixingLaw_invariant hX
+  have hinv' := map_map_permReindex_eq_of_map_eq hν.measurable_directing hinv
+  obtain ⟨ξLarge, ξSmall, hLarge, hSmall, hcompat⟩ :=
+    exists_compatible_directing_codedBlockMarginals_of_invariant (μ.map ν) m q hinv'
+  exact ⟨ν, hν, ξLarge, ξSmall, hLarge, hSmall, hcompat⟩
 
 end Probability
 
