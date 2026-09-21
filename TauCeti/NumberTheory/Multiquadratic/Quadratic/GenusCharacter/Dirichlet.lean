@@ -58,6 +58,8 @@ including integers not coprime to the level. -/
     have hu : IsUnit (n : ZMod (∏ P ∈ s, P).natAbs) :=
       (ZMod.coe_int_isUnit_iff_isCoprime _ _).mpr hn'.symm
     rw [genusChar_def, genusCharFun_def]
+    -- Evaluation preserves the empty product only at units: the trivial character
+    -- vanishes at nonunits. Pass through unit homomorphisms to use `map_prod`.
     let ev := (Units.coeHom ℤ).comp
       ((MonoidHom.eval hu.unit).comp MulChar.mulEquivToUnitHom.toMonoidHom)
     have heval := map_prod ev (fun P : s ↦ changeLevel
