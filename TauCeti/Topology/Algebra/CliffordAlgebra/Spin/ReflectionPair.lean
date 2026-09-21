@@ -49,6 +49,7 @@ variable {R : Type u} [CommRing R] [TopologicalSpace R]
 
 /-- Two continuous families of unit vectors determine a continuous family of their normalized
 reflection-pair lifts. -/
+@[fun_prop]
 theorem continuous_spinReflectionPair {X : Type w} [TopologicalSpace X] (v w : X → M)
     (hv : ∀ x, Q (v x) = 1) (hw : ∀ x, Q (w x) = 1)
     (hvc : Continuous v) (hwc : Continuous w) :
