@@ -25,8 +25,6 @@ residue extension.
 
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion_stabilizerHom`: reduction
   intertwines the global decomposition action with the action on the completed residue field.
-* `IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt`: global
-  unramifiedness at `w` gives unramifiedness of `L_w/K_v`.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_eq_frobeniusAlgEquiv`: a global
   arithmetic Frobenius maps to the local Frobenius.
 
@@ -77,17 +75,6 @@ theorem residueFieldEquivAdicCompletion_stabilizerHom
   rw [IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L)]
   rw [decompositionHom_algebraMap]
   rfl
-
-/-- **An unramified global place gives an unramified completed extension.** -/
-theorem isUnramified_adicCompletion_of_isUnramifiedAt
-    [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal] :
-    TauCeti.IsUnramified (v.adicCompletion K) (w.adicCompletion L) := by
-  rw [TauCeti.isUnramified_iff_ramificationIndex_eq_one,
-    ramificationIndex_adicCompletion v w,
-    Ideal.ramificationIdx_eq_one w.asIdeal (𝒪 K)]
-
-scoped[AdicCompletionExtension] attribute [instance]
-  IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt
 
 /-- **The decomposition-group map carries global arithmetic Frobenius to local Frobenius.**
 If `w` is unramified over `v`, the continuous extension to `L_w` of an arithmetic Frobenius at
