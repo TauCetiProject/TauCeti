@@ -42,6 +42,7 @@ variable {K : Type*} [Field K] [NumberField K]
 attribute [local instance] Fintype.ofFinite in
 /-- The product of the normalized absolute values of the images of `x ∈ K_v` in all the
 completions above `v` is `‖x‖ ^ [L : K]`. This includes `x = 0`. -/
+@[simp↓]
 theorem prod_norm_adicCompletionExtension_eq_norm_pow
     (L : Type*) [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝓞 K)) (x : v.adicCompletion K) :
