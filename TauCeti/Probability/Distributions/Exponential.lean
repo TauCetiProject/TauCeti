@@ -10,8 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalProbability
-import TauCeti.Probability.Distributions.PDFInstances
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
@@ -30,13 +29,14 @@ property and computes the law of the minimum of independent exponentials.
 `∫ x ^ n ∂(expMeasure r) = n ! / r ^ n`, and the mean and second moment are its `n = 1` and `n = 2`
 specializations.
 
-**The engine is `TauCeti.MeasureTheory.Integral.ExpDecay`.** `integral_pow_mul_exp_neg_mul_Ioi`
-evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
-`integrableOn_pow_mul_exp_neg_mul_Ioi` supplies the matching integrability, and
-`integrableOn_exp_mul_Ioi_iff` identifies the exact exponential-integrability domain.
+**The exponential law is the shape-one Gamma law.** Mathlib defines `expMeasure r` as
+`gammaMeasure 1 r`, so the moments, the exponential-integrability domain, and the transforms are
+the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gamma.Basic` and
+`TauCeti.Probability.Distributions.Gamma.CharFun`, rewritten into their exponential closed forms.
 
 ## Main results
 
+* `expMeasure_eq_gammaMeasure` — the exponential law is the shape-one Gamma law;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
@@ -58,8 +58,8 @@ evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
 ## References
 
 * [mathlib4#35504](https://github.com/leanprover-community/mathlib4/pull/35504) by Joakim
-  Björnander (Apache 2.0): the names, the theorem shapes, and the real-integral proof pattern of
-  the mgf, moment and memorylessness results below are adapted from it.
+  Björnander (Apache 2.0): the names and theorem shapes of the mgf, moment and memorylessness
+  results below, and the proof of memorylessness, are adapted from it.
 -/
 
 public section
@@ -75,106 +75,19 @@ namespace Probability
 
 variable {a r s t : ℝ} {n : ℕ}
 
-/-- The exponential density in closed form. Kept private: it only unfolds Mathlib's definition
-through `gammaPDFReal 1`, so it is a proof convenience rather than API. -/
-private theorem exponentialPDFReal_apply (x : ℝ) :
-    exponentialPDFReal r x = if 0 ≤ x then r * exp (-(r * x)) else 0 := by
-  rw [exponentialPDFReal, gammaPDFReal]
-  split_ifs with hx
-  · rw [Real.rpow_one, Real.Gamma_one, sub_self, Real.rpow_zero]
-    ring
-  · rfl
-
-/-- The `ℝ≥0∞` density at rate `r`, read as a real number, is `exponentialPDFReal`. -/
-private theorem toReal_gammaPDF_one (hr : 0 < r) (x : ℝ) :
-    (gammaPDF 1 r x).toReal = exponentialPDFReal r x := by
-  unfold gammaPDF exponentialPDFReal
-  rw [ENNReal.toReal_ofReal (gammaPDFReal_nonneg one_pos hr x)]
+/-- `expMeasure r` is the shape-one Gamma law of rate `r`. Every moment and transform below is the
+`a = 1` case of the corresponding Gamma result. -/
+theorem expMeasure_eq_gammaMeasure (r : ℝ) : expMeasure r = gammaMeasure 1 r := rfl
 
 /-- `expMeasure r` is the Lebesgue measure weighted by its exponential density. -/
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
-/-- A positive-rate exponential law on `ℝ` is nonnegative almost surely. -/
-theorem ae_nonneg_expMeasure {r : ℝ} (hr : 0 < r) :
-    ∀ᵐ x ∂expMeasure r, 0 ≤ x := by
-  let _ := isProbabilityMeasure_expMeasure hr
-  have hIic : expMeasure r (Iic (0 : ℝ)) = 0 := by
-    rw [← ProbabilityTheory.ofReal_cdf]
-    simp [cdf_expMeasure_eq hr]
-  have hIio : expMeasure r (Iio (0 : ℝ)) = 0 :=
-    measure_mono_null Iio_subset_Iic_self hIic
-  filter_upwards [measure_eq_zero_iff_ae_notMem.mp hIio] with x hx
-  exact not_lt.mp hx
-
-/-- `expMeasure r` is the Lebesgue measure weighted by the Gamma density of shape `1`.
-
-`rfl` closes this because both steps it crosses are definitional unfoldings: `expMeasure r` is
-`gammaMeasure 1 r`, which is `volume.withDensity (gammaPDF 1 r)`. The density is left in its
-`gammaPDF` spelling, the one `measurable_gammaPDF` and `toReal_gammaPDF_one` are stated in. -/
-private lemma expMeasure_eq_withDensity_gammaPDF (r : ℝ) :
-    expMeasure r = volume.withDensity (gammaPDF 1 r) := rfl
-
-/-- The density weight against `exp (t * x)`. This one identity is the integrand algebra behind
-both the moment-generating function and the exact integrability domain below. -/
-private lemma density_mul_exp (r t x : ℝ) :
-    r * exp (-(r * x)) * exp (t * x) = r * exp ((t - r) * x) := by
-  have hexponent : -(r * x) + t * x = (t - r) * x := by ring
-  rw [mul_assoc, ← exp_add, hexponent]
-
-/-- Every integral against `expMeasure r` is the half-line integral of the integrand weighted by
-the exponential density. This is the single reduction used by the moment and transform
-computations below. -/
-private lemma integral_expMeasure_Ioi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (hr : 0 < r) (f : ℝ → E) :
-    ∫ x, f x ∂(expMeasure r) = ∫ x in Ioi 0, (r * exp (-(r * x))) • f x := by
-  rw [expMeasure_eq_withDensity_gammaPDF,
-    integral_withDensity_eq_integral_toReal_smul (measurable_gammaPDF 1 r)
-      (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
-  have hIci :
-      ∫ x, (gammaPDF 1 r x).toReal • f x =
-        ∫ x in Ici 0, (gammaPDF 1 r x).toReal • f x :=
-    (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-      rw [toReal_gammaPDF_one hr, exponentialPDFReal_apply,
-        ite_eq_right (by simpa [mem_Ici] using hx), zero_smul]).symm
-  have hdens :
-      ∫ x in Ici 0, (gammaPDF 1 r x).toReal • f x =
-        ∫ x in Ici 0, (r * exp (-(r * x))) • f x :=
-    setIntegral_congr_fun measurableSet_Ici fun x hx => by
-      rw [toReal_gammaPDF_one hr, exponentialPDFReal_apply, ite_eq_left (mem_Ici.mp hx)]
-  rw [hIci, hdens, integral_Ici_eq_integral_Ioi]
-
-/-- The moment integrand is the Gamma integrand supported on `Ioi 0`. This is used to prove
-integrability; `integral_expMeasure_Ioi` only identifies integral values. This needs `n ≠ 0`:
-at `n = 0` the left side is the density itself, which does not vanish at the origin. -/
-private theorem integrand_eq_indicator (hn : n ≠ 0) :
-    (fun x => exponentialPDFReal r x * x ^ n)
-      = (Ioi (0:ℝ)).indicator (fun x => r * (x ^ n * exp (-(r * x)))) := by
-  funext x
-  by_cases hx : (0:ℝ) < x
-  · rw [Set.indicator_of_mem (mem_Ioi.mpr hx), exponentialPDFReal_apply]
-    split_ifs with h
-    · ring
-    · exact absurd hx.le h
-  · rw [Set.indicator_of_notMem (by simpa using hx), exponentialPDFReal_apply]
-    have hx' : x ≤ 0 := not_lt.mp hx
-    split_ifs with h
-    · have hx0 : x = 0 := le_antisymm hx' h
-      rw [hx0, zero_pow hn, mul_zero]
-    · ring
-
-/-- Integrability against `expMeasure` is integrability of the density product against `volume`. -/
-private theorem integrable_expMeasure_iff (hr : 0 < r) (g : ℝ → ℝ) :
-    Integrable g (expMeasure r)
-      ↔ Integrable (fun x => exponentialPDFReal r x * g x) volume := by
-  have htoReal : ∀ x : ℝ, g x * (gammaPDF 1 r x).toReal = exponentialPDFReal r x * g x := by
-    intro x
-    rw [toReal_gammaPDF_one hr]
-    ring
-  rw [expMeasure_eq_withDensity_gammaPDF,
-    integrable_withDensity_iff (measurable_gammaPDF 1 r)
-      (ae_of_all _ fun _ => ENNReal.ofReal_lt_top),
-    funext htoReal]
+/-- An exponential law on `ℝ` is nonnegative almost surely, for every rate. -/
+theorem ae_nonneg_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 ≤ x := by
+  rw [expMeasure_eq_gammaMeasure]
+  filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
+  exact hx.le
 
 /-- **Every moment of the exponential law is integrable.** This is not implied by the moment
 formula below: Lean's integral is defined for non-integrable functions too, so an integral equality
@@ -182,12 +95,8 @@ alone says nothing about finiteness. -/
 @[simp]
 theorem integrable_pow_expMeasure (hr : 0 < r) (n : ℕ) :
     Integrable (fun x => x ^ n) (expMeasure r) := by
-  have hprob : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  rw [integrable_expMeasure_iff hr, integrand_eq_indicator hn,
-    integrable_indicator_iff measurableSet_Ioi]
-  exact (integrableOn_pow_mul_exp_neg_mul_Ioi n hr).const_mul r
+  rw [expMeasure_eq_gammaMeasure]
+  exact integrable_pow_gammaMeasure one_pos hr n
 
 /-- **The moments of the exponential law.** `∫ x ^ n ∂(expMeasure r) = n ! / r ^ n`, for every `n`.
 
@@ -196,15 +105,8 @@ second moment below are the `n = 1` and `n = 2` cases. -/
 @[simp]
 theorem integral_pow_expMeasure (hr : 0 < r) (n : ℕ) :
     ∫ x, x ^ n ∂(expMeasure r) = (Nat.factorial n : ℝ) / r ^ n := by
-  have hr0 : r ≠ 0 := hr.ne'
-  have hint : ∀ x : ℝ, (r * exp (-(r * x))) • x ^ n = r * (x ^ n * exp (-(r * x))) := by
-    intro x
-    rw [smul_eq_mul]
-    ring
-  rw [integral_expMeasure_Ioi hr]
-  simp only [hint]
-  rw [integral_const_mul, integral_pow_mul_exp_neg_mul_Ioi n hr, pow_succ]
-  field_simp
+  rw [expMeasure_eq_gammaMeasure, integral_pow_gammaMeasure one_pos hr, add_comm,
+    Real.Gamma_nat_eq_factorial, Real.Gamma_one, one_mul]
 
 /-- **The mean of the exponential law** with rate `r` is `r⁻¹`. -/
 @[simp]
@@ -218,82 +120,46 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 /-- **The variance of the exponential law** with rate `r` is `(r ^ 2)⁻¹`. -/
 @[simp]
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
-  have : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
-  have h₂ : Integrable (fun x => id x ^ 2) (expMeasure r) :=
-    integrable_pow_expMeasure hr 2
-  have hLp : MemLp id 2 (expMeasure r) :=
-    (memLp_two_iff_integrable_sq measurable_id.aestronglyMeasurable).2 h₂
-  rw [variance_eq_sub hLp]
-  simp only [Pi.pow_apply, id_eq]
-  rw [integral_sq_expMeasure hr, integral_id_expMeasure hr]
-  field_simp
-  ring
+  rw [expMeasure_eq_gammaMeasure, variance_id_gammaMeasure one_pos hr, one_div]
 
 /-- **The exact exponential-integrability threshold.** The integrand `exp (t * x)` is integrable
 against an exponential law with positive rate `r` exactly when `t < r`. -/
 @[simp]
 lemma integrable_exp_mul_expMeasure_iff (hr : 0 < r) :
     Integrable (fun x => exp (t * x)) (expMeasure r) ↔ t < r := by
-  rw [integrable_expMeasure_iff hr]
-  have hfun : (fun x : ℝ => exponentialPDFReal r x * exp (t * x)) =
-      (Set.Ici (0 : ℝ)).indicator (fun x => r * exp ((t - r) * x)) := by
-    funext x
-    rw [exponentialPDFReal_apply]
-    by_cases hx : (0 : ℝ) ≤ x
-    · have hxmem : x ∈ Ici 0 := hx
-      rw [Set.indicator_of_mem hxmem, ite_eq_left hx, density_mul_exp]
-    · have hxmem : x ∉ Ici 0 := hx
-      rw [Set.indicator_of_notMem hxmem, ite_eq_right hx, zero_mul]
-  -- `integrable_const_mul_iff` is an `Integrable` lemma; the `have` bridges it to `IntegrableOn`,
-  -- which is that statement for the restricted measure, without unfolding the goal.
-  have hconst : IntegrableOn (fun x : ℝ => r * exp ((t - r) * x)) (Ioi 0) ↔
-      IntegrableOn (fun x : ℝ => exp ((t - r) * x)) (Ioi 0) :=
-    integrable_const_mul_iff (isUnit_iff_ne_zero.mpr hr.ne') _
-  rw [hfun, integrable_indicator_iff measurableSet_Ici,
-    integrableOn_Ici_iff_integrableOn_Ioi, hconst,
-    TauCeti.integrableOn_exp_mul_Ioi_iff, sub_lt_zero]
+  rw [expMeasure_eq_gammaMeasure]
+  exact ⟨fun h => not_le.mp fun hrt => not_integrable_exp_mul_id_gammaMeasure one_pos hr hrt h,
+    integrable_exp_mul_id_gammaMeasure one_pos hr⟩
 
 /-- **The exact exponential-integrability domain** of an exponential law with positive rate is
-`(-∞, r)`. This is the `fun x => x` spelling of the identity, in which the computation is done;
-`integrableExpSet_id_expMeasure` is the same statement with `id`. -/
-@[simp]
-theorem integrableExpSet_fun_id_expMeasure (hr : 0 < r) :
-    integrableExpSet (fun x : ℝ => x) (expMeasure r) = Set.Iio r := by
-  ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, mem_Iio]
-  exact integrable_exp_mul_expMeasure_iff (r := r) (t := t) hr
-
-/-- **The exact exponential-integrability domain** of an exponential law with positive rate is
-`(-∞, r)`. This is the `id` spelling, the form a `HasLaw` consumer meets and the one the roadmap
-names; use `integrableExpSet_fun_id_expMeasure` for goals in which the identity is eta-expanded. -/
+`(-∞, r)`. This is the `id` spelling, the form a `HasLaw` consumer meets; use
+`integrableExpSet_fun_id_expMeasure` for goals in which the identity is eta-expanded. -/
 @[simp]
 theorem integrableExpSet_id_expMeasure (hr : 0 < r) :
-    integrableExpSet id (expMeasure r) = Set.Iio r :=
-  integrableExpSet_fun_id_expMeasure hr
+    integrableExpSet id (expMeasure r) = Set.Iio r := by
+  rw [expMeasure_eq_gammaMeasure, integrableExpSet_id_gammaMeasure one_pos hr]
+
+/-- **The exact exponential-integrability domain** of an exponential law with positive rate is
+`(-∞, r)`. This is the `fun x => x` spelling of `integrableExpSet_id_expMeasure`. -/
+@[simp]
+theorem integrableExpSet_fun_id_expMeasure (hr : 0 < r) :
+    integrableExpSet (fun x : ℝ => x) (expMeasure r) = Set.Iio r :=
+  integrableExpSet_id_expMeasure hr
 
 /-- **The moment-generating function of an exponential law** with positive rate, on its finiteness
-domain `t < r`. This is the `fun x => x` spelling, in which the computation is done;
-`mgf_id_expMeasure` is the same statement with `id`. -/
-theorem mgf_fun_id_expMeasure (hr : 0 < r) (ht : t < r) :
-    mgf (fun x : ℝ => x) (expMeasure r) t = r / (r - t) := by
-  have h : ∫ x : ℝ, exp (t * x) ∂(expMeasure r) = r / (r - t) := by
-    have hint : ∀ x : ℝ, (r * exp (-(r * x))) • exp (t * x) = r * exp ((t - r) * x) := by
-      intro x
-      rw [smul_eq_mul, density_mul_exp]
-    rw [integral_expMeasure_Ioi hr]
-    simp only [hint]
-    have hsub : t - r = -(r - t) := by ring
-    rw [integral_const_mul, integral_exp_mul_Ioi (sub_neg.mpr ht) 0, mul_zero, exp_zero,
-      hsub, neg_div_neg_eq, mul_one_div]
-  simpa [mgf] using h
-
-/-- **The moment-generating function of an exponential law** with positive rate, on its finiteness
-domain `t < r`. This is the `id` spelling of `mgf_fun_id_expMeasure`, and is the form the `cgf`
-below and a `HasLaw` consumer meet. -/
+domain `t < r`. This is the `id` spelling, the form the `cgf` below and a `HasLaw` consumer meet;
+`mgf_fun_id_expMeasure` is the same statement with `fun x => x`. -/
 @[simp]
 theorem mgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
-    mgf id (expMeasure r) t = r / (r - t) :=
-  mgf_fun_id_expMeasure hr ht
+    mgf id (expMeasure r) t = r / (r - t) := by
+  rw [expMeasure_eq_gammaMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
+    one_sub_div hr.ne', inv_div]
+
+/-- **The moment-generating function of an exponential law** with positive rate, on its finiteness
+domain `t < r`. This is the `fun x => x` spelling of `mgf_id_expMeasure`. -/
+theorem mgf_fun_id_expMeasure (hr : 0 < r) (ht : t < r) :
+    mgf (fun x : ℝ => x) (expMeasure r) t = r / (r - t) :=
+  mgf_id_expMeasure hr ht
 
 /-- The cumulant-generating function of an exponential law with positive rate. -/
 @[simp]
@@ -305,23 +171,8 @@ theorem cgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
 @[simp]
 theorem charFun_expMeasure (hr : 0 < r) (t : ℝ) :
     charFun (expMeasure r) t = (r : ℂ) / (r - Complex.I * t) := by
-  have hint : ∀ x : ℝ, (r * exp (-(r * x))) • Complex.exp (t * x * Complex.I) =
-      (r : ℂ) * Complex.exp ((-(r : ℂ) + (t : ℂ) * Complex.I) * (x : ℂ)) := by
-    intro x
-    have hexp : (-(r : ℂ) + (t : ℂ) * Complex.I) * (x : ℂ)
-        = ((-(r * x) : ℝ) : ℂ) + (t : ℝ) * (x : ℝ) * Complex.I := by
-      push_cast
-      ring
-    rw [hexp, Complex.exp_add, ← Complex.ofReal_exp, Complex.real_smul]
-    push_cast
-    ring
-  rw [charFun_apply_real, integral_expMeasure_Ioi hr]
-  simp only [hint]
-  have hsub : (-(r : ℂ) + (t : ℂ) * Complex.I) =
-      -((r : ℂ) - Complex.I * (t : ℂ)) := by ring
-  rw [integral_const_mul,
-    integral_exp_mul_complex_Ioi (by simpa using neg_lt_zero.mpr hr) 0,
-    Complex.ofReal_zero, mul_zero, Complex.exp_zero, hsub, neg_div_neg_eq, mul_one_div]
+  rw [expMeasure_eq_gammaMeasure, charFun_gammaMeasure one_pos hr, Complex.ofReal_one,
+    Complex.cpow_neg_one, one_sub_div (Complex.ofReal_ne_zero.mpr hr.ne'), inv_div]
 
 /-- The real-valued tail probability of a positive-rate exponential law. -/
 @[simp]

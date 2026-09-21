@@ -57,7 +57,7 @@ theorem laplaceTransform_nnrealExpMeasure {r t : ℝ} (hr : 0 < r) (ht : -r < t)
     ∫ x : ℝ, exp (-(t * ((Real.toNNReal x : ℝ≥0) : ℝ))) ∂expMeasure r =
         ∫ x : ℝ, exp (-(t * x)) ∂expMeasure r := by
       apply integral_congr_ae
-      filter_upwards [Probability.ae_nonneg_expMeasure hr] with x hx
+      filter_upwards [Probability.ae_nonneg_expMeasure r] with x hx
       rw [Real.coe_toNNReal x hx]
     _ = mgf (fun x : ℝ => x) (expMeasure r) (-t) := by
       simp only [mgf, neg_mul]
