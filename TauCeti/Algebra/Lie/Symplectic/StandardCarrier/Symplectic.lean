@@ -204,11 +204,88 @@ private noncomputable abbrev baseChangePresentationι :
   GeneralLinear.hopfIdealInclusion k ((n + 1) + (n + 1))
     (baseChangeDefiningIdeal n k)
 
-/-- The ambient closed immersion of the base-changed integral type-C carrier, expressed through
-its transported quotient presentation. -/
+/-- The canonical identification of the base change of the integral ambient general linear group
+with the general linear group over `k`. -/
+private noncomputable def generalLinearBaseChangeIso :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.obj
+        (GeneralLinear.groupScheme ℤ ((n + 1) + (n + 1))) ≅
+      GeneralLinear.groupScheme k ((n + 1) + (n + 1)) :=
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.mapIso
+      (eqToIso (GeneralLinear.groupScheme_def ℤ ((n + 1) + (n + 1)))) ≪≫
+    AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
+      (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) ≪≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).mapIso
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ k
+        ((n + 1) + (n + 1))).symm.op ≪≫
+    eqToIso (GeneralLinear.groupScheme_def k ((n + 1) + (n + 1))).symm
+
+/-- The ambient closed immersion obtained by base-changing the canonical integral carrier
+immersion and identifying the base-changed ambient group with `GL_(2n+2)/k`. -/
 noncomputable def baseChangeι :
     baseChangeGroupScheme n k ⟶ GeneralLinear.groupScheme k ((n + 1) + (n + 1)) :=
-  (baseChangePresentationIso n k).hom ≫ baseChangePresentationι n k
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.map (carrierι n) ≫
+    (generalLinearBaseChangeIso n k).hom
+
+/-- The canonical base-changed carrier immersion agrees with its transported quotient
+presentation. -/
+private theorem baseChangeι_eq_presentation :
+    baseChangeι n k =
+      (baseChangePresentationIso n k).hom ≫ baseChangePresentationι n k := by
+  have quotientSpecι_transport
+      {I J : HopfIdeal ℤ
+        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))}
+      (h : I = J) :
+      eqToHom (congrArg (CommHopfAlgCat.quotientSpec
+          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))) h) ≫
+        CommHopfAlgCat.quotientSpecι
+          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) J =
+        CommHopfAlgCat.quotientSpecι
+          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))) I := by
+    subst J
+    simp
+  have hgroup : groupScheme_def n =
+      congrArg (CommHopfAlgCat.quotientSpec
+        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1))))
+          (definingIdeal_def n).symm := by
+    rfl
+  have hcarrier : carrierι n =
+      eqToHom (groupScheme_def n) ≫
+        GeneralLinear.hopfIdealInclusion ℤ ((n + 1) + (n + 1)) (definingIdeal n) := by
+    rw [carrierι_def,
+      TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
+      GeneralLinear.hopfIdealInclusion_def]
+    rw [hgroup, ← Category.assoc, quotientSpecι_transport]
+    · rfl
+    · exact (definingIdeal_def n).symm
+  have hcarrier' : carrierι n ≫
+      (eqToIso (GeneralLinear.groupScheme_def ℤ ((n + 1) + (n + 1)))).hom =
+      eqToHom (groupScheme_def n) ≫
+        CommHopfAlgCat.quotientSpecι
+          (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
+          (definingIdeal n) := by
+    rw [hcarrier, GeneralLinear.hopfIdealInclusion_def, Category.assoc]
+    simp
+  rw [baseChangeι, baseChangePresentationIso, baseChangePresentationι,
+    generalLinearBaseChangeIso]
+  simp only [Iso.trans_hom, Functor.mapIso_hom]
+  rw [← Category.assoc, ← Functor.map_comp, hcarrier']
+  simp only [Functor.map_comp, Category.assoc]
+  rw [show (eqToIso (groupScheme_def n)).hom =
+    eqToHom (groupScheme_def n) from rfl]
+  rw [cancel_epi]
+  rw [CommHopfAlgCat.quotientSpecι_def, ← Category.assoc,
+    AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_hom_naturality]
+  simp only [Category.assoc]
+  rw [cancel_epi]
+  rw [GeneralLinear.hopfIdealInclusion_def, CommHopfAlgCat.quotientSpecι_def]
+  rw [← Category.assoc, ← Functor.map_comp]
+  conv_rhs => rw [← Category.assoc, ← Functor.map_comp]
+  congr 1
+  apply congrArg (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map
+  simp only [Iso.op_hom, Iso.symm_hom]
+  rw [← op_comp, ← op_comp]
+  exact congrArg Quiver.Hom.op
+    (mkQuotient_comp_baseChangeCoordinateIso_hom n k).symm
 
 private theorem baseChangePresentationSymplecticIso_hom_comp_inclusion :
     (baseChangePresentationSymplecticIso n k).hom ≫ Symplectic.inclusion k (n + 1) =
@@ -247,7 +324,7 @@ theorem baseChangeSymplecticIso_hom_comp_inclusion :
       baseChangeι n k := by
   rw [baseChangeSymplecticIso, Iso.trans_hom, Category.assoc,
     baseChangePresentationSymplecticIso_hom_comp_inclusion]
-  rfl
+  exact (baseChangeι_eq_presentation n k).symm
 
 end GroupScheme
 
