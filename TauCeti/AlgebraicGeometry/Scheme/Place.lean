@@ -16,13 +16,9 @@ valuation ring, its normalized valuation on the function field of `X` is a place
 `X.functionField / k`. This file constructs that place and identifies its valuation ring, residue
 field, and degree with the scheme-theoretic local ring, residue field, and residue degree at `x`.
 
-The construction uses the canonical `k`-algebra structures on the function field and the stalks
-of a scheme over `Spec k`, recorded in `TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra`. The place
-is then `TauCeti.Place.ofPrime` for the maximal ideal of the discrete valuation ring at `x`, so
-its valuation, residue field and degree are read off from `TauCeti.Place.valuation_ofPrime`,
-`TauCeti.Place.quotientAlgEquivResidueFieldOfPrime` and `TauCeti.Place.degree_ofPrime`, together
-with Mathlib's `IsDiscreteValuationRing.equivValuationSubring`. No external formalization is
-vendored.
+This is the geometric half of the dictionary between the points of a curve and the places of its
+function field: it lets local data at a point of a scheme — integrality, residues, degrees — be
+computed with the valuation-theoretic API for places, and conversely.
 
 ## Main definitions and results
 
@@ -32,6 +28,13 @@ vendored.
   field of its place.
 * `Scheme.toPlace_degree_eq_residueDegree`: the degree of the place is the scheme-theoretic
   residue degree of `x`.
+
+## References
+
+* R. Hartshorne, *Algebraic Geometry*, Chapter I, Section 6.
+* Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Chapter 7.
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Appendix B.
 -/
 
 public section
@@ -65,21 +68,6 @@ lemma _root_.AlgebraicGeometry.Scheme.toPlace_valuation (X : Scheme.{u}) [IsInte
       (IsDiscreteValuationRing.maximalIdeal (X.presheaf.stalk x)).valuation X.functionField :=
   Place.valuation_ofPrime k X.functionField _
 
-/-- A rational function is integral at the place attached to `x` exactly when it comes from the
-stalk `𝒪_{X,x}`. Thus the valuation ring of `X.toPlace x` is the image of the local ring in the
-function field. -/
-theorem _root_.AlgebraicGeometry.Scheme.mem_toPlace_integers_iff_exists_stalk (X : Scheme.{u})
-    [IsIntegral X] [X.Over (Spec (.of k))] (x : X)
-    [IsDiscreteValuationRing (X.presheaf.stalk x)] (f : X.functionField) :
-    f ∈ (X.toPlace (k := k) x).integers ↔
-      ∃ a : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField a = f := by
-  rw [Place.mem_integers_iff, Scheme.toPlace_valuation]
-  constructor
-  · exact IsDiscreteValuationRing.exists_lift_of_le_one
-  · rintro ⟨a, rfl⟩
-    exact (IsDiscreteValuationRing.maximalIdeal
-      (X.presheaf.stalk (x : X))).valuation_le_one a
-
 /-- The canonical inclusion of the stalk into the function field lands in the valuation ring of
 the place attached to the point. -/
 theorem _root_.AlgebraicGeometry.Scheme.algebraMap_stalk_mem_toPlace_integers (X : Scheme.{u})
@@ -100,6 +88,20 @@ theorem _root_.AlgebraicGeometry.Scheme.toPlace_integers (X : Scheme.{u}) [IsInt
         (X.presheaf.stalk x)).valuation X.functionField).valuationSubring := by
   ext f
   rw [Place.mem_integers_iff, Scheme.toPlace_valuation, Valuation.mem_valuationSubring_iff]
+
+/-- A rational function is integral at the place attached to `x` exactly when it comes from the
+stalk `𝒪_{X,x}`. Thus the valuation ring of `X.toPlace x` is the image of the local ring in the
+function field. -/
+theorem _root_.AlgebraicGeometry.Scheme.mem_toPlace_integers_iff_exists_stalk (X : Scheme.{u})
+    [IsIntegral X] [X.Over (Spec (.of k))] (x : X)
+    [IsDiscreteValuationRing (X.presheaf.stalk x)] (f : X.functionField) :
+    f ∈ (X.toPlace (k := k) x).integers ↔
+      ∃ a : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField a = f := by
+  rw [Scheme.toPlace_integers (k := k), ← ValuationSubring.mem_toSubring,
+    ← IsDiscreteValuationRing.map_algebraMap_eq_valuationSubring
+      (A := X.presheaf.stalk x) (K := X.functionField),
+    Subring.mem_map]
+  simp
 
 /-- The stalk at a point with discrete valuation ring stalk is canonically the valuation ring of
 its associated place. -/

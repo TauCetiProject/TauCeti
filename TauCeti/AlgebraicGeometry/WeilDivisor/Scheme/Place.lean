@@ -19,17 +19,19 @@ function on rational functions and as an additive homomorphism on `Additive X.fu
 This is the local bridge used to transport divisor and differential constructions between
 scheme-theoretic codimension-one points and abstract function-field places.
 
-The comparison reuses Mathlib's `AlgebraicGeometry.Scheme.ord` and its description
-`Ring.ordFrac_eq_valuation_inv` through `AlgebraicGeometry.Scheme.ordHom`, together with
-`AlgebraicGeometry.Scheme.toPlace_valuation` and
-`TauCeti.AlgebraicGeometry.SchemeWeilDivisor.orderAt`. No external formalization is vendored.
-
 ## Main results
 
 * `CodimensionOnePoint.toPlace_ord`: the order at the place is the scheme-theoretic order of
   vanishing.
 * `CodimensionOnePoint.toPlace_ordAddMonoidHom`: the corresponding additive order homomorphisms
   agree.
+
+## References
+
+* R. Hartshorne, *Algebraic Geometry*, Chapter I, Section 6, and Chapter II, Section 6.
+* Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Chapter 7.
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Appendix B.
 -/
 
 public section
