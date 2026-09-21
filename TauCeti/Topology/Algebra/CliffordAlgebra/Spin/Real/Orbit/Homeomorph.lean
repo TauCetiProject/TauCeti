@@ -32,9 +32,9 @@ noncomputable section
 private theorem continuous_realCliffordSpinOrbitMap_action (n : ℕ)
     (x : realCliffordUnitLevel n) :
     Continuous (fun s : realCliffordSpinGroupZero n => s • x) := by
-  apply Continuous.congr (realCliffordSpinOrbitMap n x).continuous
-  intro s
-  exact realCliffordSpinOrbitMap_apply n x s
+  convert (realCliffordSpinOrbitMap n x).continuous using 1
+  funext s
+  exact (realCliffordSpinOrbitMap_apply n x s).symm
 
 /-- The compact Spin orbit identifies the quotient by a unit-level stabilizer with that level. -/
 noncomputable def realCliffordSpinOrbitHomeomorph (n : ℕ) (hn : 2 ≤ n)
