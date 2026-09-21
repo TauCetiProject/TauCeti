@@ -234,24 +234,19 @@ variable {F E}
 
 /-! ### The Galois correspondence -/
 
-/-- `IntermediateField.map_fixingSubgroup` for the separable closure, phrased with
-`IntermediateField.lift`. The two sides are definitionally equal — `lift M` is `M.map (val _)` —
-but `rw` does not see through `IntermediateField.lift`, so the rewrites below need this form. -/
-private theorem fixingSubgroup_lift (M : IntermediateField F (separableClosure F E)) :
-    (IntermediateField.lift M).fixingSubgroup =
-      M.fixingSubgroup.comap (AlgEquiv.restrictNormalHom (separableClosure F E)) :=
-  IntermediateField.map_fixingSubgroup (E' := E) M
-
 /-- **The fixing subgroup of an intermediate field of a normal extension is closed.** This is
 `InfiniteGalois.fixingSubgroup_isClosed` with the separability hypothesis on `E/F` removed: the
 fixing subgroup of `L` is the preimage, under restriction to the separable closure, of the fixing
 subgroup of the part of `L` lying there. -/
 theorem _root_.IntermediateField.isClosed_fixingSubgroup (L : IntermediateField F E) :
     IsClosed (L.fixingSubgroup : Set Gal(E/F)) := by
+  have hle : L ⊓ separableClosure F E ≤ separableClosure F E := inf_le_right
+  -- `IntermediateField.lift N` is `N.map (val _)`, so the equation below is Mathlib's
+  -- `IntermediateField.map_fixingSubgroup`; naming it lets `rw` see through `lift`.
+  have hcomap : (IntermediateField.lift (IntermediateField.restrict hle)).fixingSubgroup = _ :=
+    IntermediateField.map_fixingSubgroup (E' := E) _
   rw [← IntermediateField.fixingSubgroup_inf_separableClosure L,
-    ← IntermediateField.lift_restrict
-      (inf_le_right : L ⊓ separableClosure F E ≤ separableClosure F E),
-    fixingSubgroup_lift, Subgroup.coe_comap]
+    ← IntermediateField.lift_restrict hle, hcomap, Subgroup.coe_comap]
   exact (InfiniteGalois.fixingSubgroup_isClosed _).preimage
     (InfiniteGalois.restrictNormalHom_continuous _)
 
@@ -262,7 +257,9 @@ theorem fixedField_fixingSubgroup_lift_inf_separableClosure
     (M : IntermediateField F (separableClosure F E)) :
     IntermediateField.fixedField (IntermediateField.lift M).fixingSubgroup ⊓
         separableClosure F E = IntermediateField.lift M := by
-  rw [InfiniteGalois.restrict_fixedField, fixingSubgroup_lift,
+  have hcomap : (IntermediateField.lift M).fixingSubgroup = _ :=
+    IntermediateField.map_fixingSubgroup (E' := E) M
+  rw [InfiniteGalois.restrict_fixedField, hcomap,
     Subgroup.map_comap_eq_self_of_surjective (AlgEquiv.restrictNormalHom_surjective E),
     InfiniteGalois.fixedField_fixingSubgroup]
 
@@ -271,12 +268,15 @@ normal. -/
 theorem fixingSubgroup_fixedField {H : Subgroup Gal(E/F)}
     (hH : IsClosed (H : Set Gal(E/F))) :
     (IntermediateField.fixedField H).fixingSubgroup = H := by
-  have hmap : IsClosed ((H.map (AlgEquiv.restrictNormalHom (separableClosure F E)) :
-      Subgroup Gal(separableClosure F E/F)) : Set Gal(separableClosure F E/F)) := by
-    rw [Subgroup.coe_map]
+  set H' := H.map (AlgEquiv.restrictNormalHom (separableClosure F E)) with hH'
+  have hmap : IsClosed ((H' : Subgroup Gal(separableClosure F E/F)) :
+      Set Gal(separableClosure F E/F)) := by
+    rw [hH', Subgroup.coe_map]
     exact (separableClosureRestrictEquiv F E).toHomeomorph.isClosedMap _ hH
+  have hcomap : (IntermediateField.lift (IntermediateField.fixedField H')).fixingSubgroup = _ :=
+    IntermediateField.map_fixingSubgroup (E' := E) _
   rw [← IntermediateField.fixingSubgroup_inf_separableClosure,
-    InfiniteGalois.restrict_fixedField, fixingSubgroup_lift,
+    InfiniteGalois.restrict_fixedField, hcomap,
     InfiniteGalois.fixingSubgroup_fixedField ⟨_, hmap⟩,
     Subgroup.comap_map_eq_self_of_injective
       (AlgEquiv.restrictNormalHom_separableClosure_injective F E)]
