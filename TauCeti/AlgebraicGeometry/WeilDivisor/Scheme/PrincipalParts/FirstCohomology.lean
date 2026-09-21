@@ -144,6 +144,9 @@ lemma principalPartsBoundary_apply (D : SchemeWeilDivisor X)
   let _ : (principalPartsShortComplex D).X₂.presheaf.IsFlasque :=
     principalPartsShortComplex_X₂ D ▸
       inferInstanceAs (Scheme.rationalFunctions X).presheaf.IsFlasque
+  -- These two reductions expose only the application forms of the two definitions immediately
+  -- above. Rewriting cannot cross their dependent sheaf/complex coercions at implicit transparency;
+  -- keeping the reductions explicit also avoids unfolding the generic cohomology construction.
   change principalPartsQuotientEquivCohomologyOne R hclosed D
       (Submodule.Quotient.mk p) = _
   change Scheme.Modules.cohomologyOneLinearEquivOfIsFlasque R
