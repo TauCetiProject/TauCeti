@@ -61,8 +61,10 @@ complex. -/
 @[expose] noncomputable def trivialF2 : TopRep ℤ G :=
   TopRep.of (ContRepresentation.trivial ℤ G (ULift.{u} (ZMod 2)))
 
-/-- The carrier of `trivialF2 G` is the universe lift of `ZMod 2`. -/
-@[simp]
+/-- The carrier of `trivialF2 G` is the universe lift of `ZMod 2`.
+
+This is not a `simp` lemma: rewriting the carrier inside a type argument would take the
+statements below out of `simp` normal form. -/
 theorem trivialF2_V : (trivialF2 G).V = ULift.{u} (ZMod 2) :=
   rfl
 
