@@ -12,8 +12,9 @@ public import Mathlib.Topology.FiberBundle.Trivialization
 # Local trivializations of quotient maps
 
 A continuous local section of the quotient by a subgroup determines a local trivialization of
-the quotient map.  The fiber coordinate of an element `g` is `s([g])⁻¹ * g`; its membership in
-the subgroup follows from the section property.
+the quotient map.  On the source `mk ⁻¹' U`, the fiber coordinate of an element `g` is
+`s([g])⁻¹ * g`; its membership in the subgroup follows from the section property.  On the target
+`U ×ˢ univ`, the inverse chart reconstructs `g` as `s(q) * h`.
 
 This is the standard local product chart for a homogeneous space; see, for example, Husemoller's
 *Fibre Bundles*, Chapter 4.
@@ -41,13 +42,15 @@ private theorem mk_mul_eq_of_localSection (H : Subgroup G) (U : Set (G ⧸ H))
 
 /-- A continuous local section of a subgroup quotient defines the standard local product chart.
 
-On the target `U ×ˢ univ`, the chart sends `g` to `([g], s([g])⁻¹ * g)` and its inverse sends
-`(q, h)` to `s(q) * h`; outside that target the inverse uses the canonical value `1`.
+On the source `mk ⁻¹' U`, the chart sends `g` to `([g], s([g])⁻¹ * g)`. On the target
+`U ×ˢ univ`, its inverse sends `(q, h)` to `s(q) * h`; outside that target the inverse uses the
+canonical value `1`.
 -/
 @[to_additive
   /-- A continuous local section of an additive-subgroup quotient defines the standard local
-  product chart. On the target `U ×ˢ univ`, the chart sends `g` to `([g], -s([g]) + g)` and its
-  inverse sends `(q, h)` to `s(q) + h`; outside that target the inverse uses `0`. -/,
+  product chart. On the source `mk ⁻¹' U`, the chart sends `g` to `([g], -s([g]) + g)`. On the
+  target `U ×ˢ univ`, its inverse sends `(q, h)` to `s(q) + h`; outside that target the inverse
+  uses `0`. -/,
   expose]
 def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
     (H : Subgroup G) (U : Set (G ⧸ H)) (hU : IsOpen U)
