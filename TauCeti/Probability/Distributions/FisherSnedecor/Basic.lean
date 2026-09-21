@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Beta.Cdf
 import TauCeti.Analysis.Calculus.RealCharts
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Fisher's F distribution
@@ -462,49 +463,19 @@ theorem fisherSnedecorMeasure_eq_withDensity (m n : ℝ) :
     fisherSnedecorMeasure m n = volume.withDensity (fisherSnedecorPDF m n) := by
   by_cases h : 0 < m ∧ 0 < n
   · obtain ⟨hm, hn⟩ := h
-    ext s hs
-    let u : Set ℝ := Ioo 0 1 ∩ fisherSnedecorMap m n ⁻¹' s
-    have hu : MeasurableSet u := measurableSet_Ioo.inter (measurable_fisherSnedecorMap m n hs)
-    have himage : fisherSnedecorMap m n '' u = Ioi 0 ∩ s := by
-      simp only [u, image_inter_preimage, fisherSnedecorMap_image_Ioo hm hn]
-    have hindicator :
-        (Ioo (0 : ℝ) 1).indicator (betaPDF (m / 2) (n / 2)) =
-          betaPDF (m / 2) (n / 2) := by
-      ext z
-      by_cases hz : z ∈ Ioo (0 : ℝ) 1
-      · rw [Set.indicator_of_mem hz]
-      · rw [Set.indicator_of_notMem hz]
-        simp only [mem_Ioo, not_and_or] at hz
-        rcases hz with hz | hz
-        · exact (betaPDF_eq_zero_of_nonpos (not_lt.mp hz)).symm
-        · exact (betaPDF_eq_zero_of_one_le (not_lt.mp hz)).symm
-    calc
-      fisherSnedecorMeasure m n s =
-          ∫⁻ z in fisherSnedecorMap m n ⁻¹' s, betaPDF (m / 2) (n / 2) z := by
-            rw [fisherSnedecorMeasure_eq_map hm hn,
-              Measure.map_apply (measurable_fisherSnedecorMap m n) hs, betaMeasure,
-              withDensity_apply _ (measurable_fisherSnedecorMap m n hs)]
-      _ = ∫⁻ z in u, betaPDF (m / 2) (n / 2) z := by
-            calc
-              ∫⁻ z in fisherSnedecorMap m n ⁻¹' s, betaPDF (m / 2) (n / 2) z =
-                  ∫⁻ z in fisherSnedecorMap m n ⁻¹' s,
-                    (Ioo 0 1).indicator (betaPDF (m / 2) (n / 2)) z := by rw [hindicator]
-              _ = ∫⁻ z in u, betaPDF (m / 2) (n / 2) z := by
-                    rw [setLIntegral_indicator measurableSet_Ioo]
-      _ = ∫⁻ z in u,
-            ENNReal.ofReal |(n / m) * ((1 - z) ^ 2)⁻¹| *
-              fisherSnedecorPDF m n (fisherSnedecorMap m n z) := by
-            refine setLIntegral_congr_fun hu fun z hz ↦ ?_
-            exact (ofReal_abs_deriv_mul_fisherSnedecorPDF hm hn hz.1).symm
-      _ = ∫⁻ y in Ioi 0 ∩ s, fisherSnedecorPDF m n y := by
-            rw [← himage]
-            exact (lintegral_image_eq_lintegral_abs_deriv_mul hu
-              (fun z hz ↦ (hasDerivAt_fisherSnedecorMap m n (ne_of_lt hz.1.2)).hasDerivWithinAt)
-              ((fisherSnedecorMap_strictMonoOn hm hn).injOn.mono fun _ hz ↦ hz.1.2)
-              (fisherSnedecorPDF m n)).symm
-      _ = volume.withDensity (fisherSnedecorPDF m n) s := by
-            rw [withDensity_apply _ hs, ← setLIntegral_indicator measurableSet_Ioi,
-              indicator_Ioi_fisherSnedecorPDF]
+    have hweight : betaPDF (m / 2) (n / 2) =ᵐ[volume.restrict (Ioo 0 1)] fun u ↦
+        ENNReal.ofReal |(n / m) * ((1 - u) ^ 2)⁻¹| *
+          fisherSnedecorPDF m n (fisherSnedecorMap m n u) := by
+      filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
+      exact (ofReal_abs_deriv_mul_fisherSnedecorPDF hm hn hu).symm
+    rw [fisherSnedecorMeasure_eq_map hm hn, betaMeasure_eq_withDensity_restrict_Ioo,
+      withDensity_congr_ae hweight,
+      MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo
+        (measurable_fisherSnedecorMap m n)
+        (fun u hu ↦ (hasDerivAt_fisherSnedecorMap m n hu.2.ne).hasDerivWithinAt)
+        ((fisherSnedecorMap_strictMonoOn hm hn).injOn.mono fun _ hu ↦ hu.2),
+      fisherSnedecorMap_image_Ioo hm hn, ← withDensity_indicator measurableSet_Ioi,
+      indicator_Ioi_fisherSnedecorPDF]
   · rw [fisherSnedecorMeasure_of_not_pos h]
     ext s hs
     simp [withDensity_apply, hs, fisherSnedecorPDF_of_not_pos h]

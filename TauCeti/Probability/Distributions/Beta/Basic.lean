@@ -25,6 +25,8 @@ moment exists.
 * `TauCeti.betaPDFReal_nonneg` — nonnegativity of the density;
 * `TauCeti.integrable_betaMeasure_iff` and `TauCeti.integral_betaMeasure_eq` — integrability and
   integration against the beta law, transferred to the real density;
+* `TauCeti.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against Lebesgue
+  measure on the open unit interval;
 * `TauCeti.integral_pow_betaMeasure` — the natural raw moments as a quotient of Gamma values;
 * `TauCeti.integral_id_betaMeasure` — the mean is `α / (α + β)`;
 * `TauCeti.variance_id_betaMeasure` — the variance is
@@ -100,6 +102,13 @@ theorem ae_mem_Ioo_betaMeasure (α β : ℝ) :
     exact hpdf (betaPDF_eq_zero_of_nonpos (le_of_not_gt hx))
   · by_contra hx
     exact hpdf (betaPDF_eq_zero_of_one_le (le_of_not_gt hx))
+
+/-- The beta law is its density against Lebesgue measure on the open unit interval: the density
+vanishes off the closed interval, and the two endpoints are null. -/
+theorem betaMeasure_eq_withDensity_restrict_Ioo (α β : ℝ) :
+    betaMeasure α β = (volume.restrict (Ioo (0 : ℝ) 1)).withDensity (betaPDF α β) := by
+  rw [← restrict_withDensity measurableSet_Ioo, ← betaMeasure,
+    Measure.restrict_eq_self_of_ae_mem (ae_mem_Ioo_betaMeasure α β)]
 
 /-- The beta distribution is carried by the unit interval. -/
 theorem ae_mem_Icc_betaMeasure (α β : ℝ) :
