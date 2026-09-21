@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantIdeal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 
@@ -83,7 +84,8 @@ theorem ord_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
     rw [← hD, variableChange_Δ]
     exact mul_ne_zero (pow_ne_zero _ D.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero
   apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ hΔ).2
-  exact valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v D hD
+  rw [← v.valuation_maximalIdeal_localizationAtPrime W'.Δ]
+  exact W.valuation_Δ_eq_exp_neg_of_isMinimal_smul _ D hD
 
 /-- **The difference between the discriminant valuation of an equation and the local minimal
 valuation is divisible by twelve.** An admissible change of variables scales the discriminant by
@@ -147,9 +149,10 @@ theorem localMinimalDiscriminantValuation_le_ord_Δ (v : HeightOneSpectrum O)
     rw [← hC, inv_smul_smul]
   have hle := valuation_Δ_le_of_isMinimal_smul
     (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
-  simp only [v.valuation_maximalIdeal_localizationAtPrime] at hle
-  rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero,
-    valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC,
+  have hmin := W.valuation_Δ_eq_exp_neg_of_isMinimal_smul
+    (Localization.AtPrime v.asIdeal) C hC
+  simp only [v.valuation_maximalIdeal_localizationAtPrime] at hle hmin
+  rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin,
     WithZero.exp_le_exp] at hle
   omega
 
@@ -168,9 +171,11 @@ theorem ord_Δ_eq_localMinimalDiscriminantValuation_iff_isMinimal (v : HeightOne
       rw [← hC, inv_smul_smul]
     apply isMinimal_of_valuation_Δ_eq_of_isMinimal_smul
       (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
+    have hmin := W.valuation_Δ_eq_exp_neg_of_isMinimal_smul
+      (Localization.AtPrime v.asIdeal) C hC
+    simp only [v.valuation_maximalIdeal_localizationAtPrime] at hmin
     simp only [v.valuation_maximalIdeal_localizationAtPrime]
-    rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero,
-      valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC, WithZero.exp_inj]
+    rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin, WithZero.exp_inj]
     exact congrArg Neg.neg h
   · intro hmin
     have := hmin -- expose minimality to instance synthesis for the ord-level comparison
