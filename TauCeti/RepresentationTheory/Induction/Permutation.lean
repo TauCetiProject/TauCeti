@@ -180,9 +180,20 @@ theorem indTrivialEquiv_symm_apply_single (x : G) (r : k) :
 
 /-- **The permutation representation**, in `Rep k G`: inducing the trivial representation of a
 subgroup `H ≤ G` gives the permutation representation on the left cosets `G ⧸ H`. -/
-@[expose] noncomputable def indTrivialIso :
+noncomputable def indTrivialIso :
     Rep.ind H.subtype (Rep.trivial k H k) ≅ Rep.ofMulAction k G (G ⧸ H) :=
   Rep.mkIso (indTrivialEquiv k H)
+
+/-- The generator computation rule for `TauCeti.indTrivialIso`. This is the characterizing
+statement for the bundled isomorphism in `Rep k G`, which downstream files use instead of its
+construction; the underlying rule for the bare equivalence is
+`TauCeti.indTrivialEquiv_apply_mk`. Not a `simp` lemma: `simp` unfolds the reducible
+`Representation.IndV.mk`, so the left-hand side is not in `simp`-normal form. -/
+theorem indTrivialIso_hom_hom_apply_mk (x : G) (a : k) :
+    (indTrivialIso k H).hom.hom (IndV.mk H.subtype (Representation.trivial k H k) x a) =
+      MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a := by
+  rw [indTrivialIso, Rep.mkIso_hom_hom_apply]
+  exact indTrivialEquiv_apply_mk k H x a
 
 /-- `Ind_H^G (trivial)` is a finite module whenever `H` has finite index, by transport along
 `TauCeti.indTrivialEquiv`; over a field this is the `FiniteDimensional` instance that lets one
@@ -212,12 +223,7 @@ noncomputable def indResProjection :
 theorem indResProjection_hom_hom_apply (x : G) (y : Y) :
     (indResProjection Y).hom.hom (IndV.mk H.subtype (Rep.res H.subtype Y).ρ x y)
       = MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) (1 : k) ⊗ₜ[k] Y.ρ x⁻¹ y := by
-  have hmk : (indTrivialIso k H).hom.hom
-      (IndV.mk H.subtype (Representation.trivial k H k) x (1 : k)) =
-        MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) (1 : k) := by
-    rw [indTrivialIso, Rep.mkIso_hom_hom_apply]
-    exact indTrivialEquiv_apply_mk k H x 1
-  refine Eq.trans ?_ (congrArg (· ⊗ₜ[k] Y.ρ x⁻¹ y) hmk)
+  refine Eq.trans ?_ (congrArg (· ⊗ₜ[k] Y.ρ x⁻¹ y) (indTrivialIso_hom_hom_apply_mk k H x 1))
   refine Eq.trans ?_ (congrArg (Rep.Hom.hom (indTrivialIso k H ⊗ᵢ Iso.refl Y).hom)
     (indProjection_hom_hom_apply H.subtype (𝟙_ (Rep k H)) Y x 1 y))
   simp [indResProjection, Rep.indMap]
