@@ -76,13 +76,20 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
 /-- **Weight-space dimensions are additive over an internal decomposition.** If a finite family of
 `L`-submodules is an internal direct sum of `M`, then the dimension of the `χ`-weight space for any
 Lie subalgebra `H` is the sum of the dimensions of the summands' `χ`-weight spaces. -/
-theorem finrank_weightSpace_eq_sum [FiniteDimensional K M]
-    [Fintype ι] {dec_ι : DecidableEq ι}
+theorem finrank_weightSpace_eq_sum [Fintype ι] {dec_ι : DecidableEq ι}
     (h : @DirectSum.IsInternal ι M (Submodule K M) dec_ι _ _ _
-      fun i ↦ (N i).toSubmodule) (χ : H → K) :
+      fun i ↦ (N i).toSubmodule) (χ : H → K)
+    [∀ i, FiniteDimensional K (weightSpace ↥(N i) χ)] :
     finrank K (weightSpace M χ) = ∑ i, finrank K (weightSpace ↥(N i) χ) := by
   let _ := dec_ι
   classical
+  have hfinite : ∀ i, FiniteDimensional K
+      ((weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule : Submodule K M) := fun i ↦ by
+    rw [← LieSubmodule.toSubmodule_map_weightSpace_incl (N i) χ]
+    exact Module.Finite.equiv
+      (LieSubmodule.equivMapOfInjective
+        (f := (N i).incl.restrictLie H) (weightSpace ↥(N i) χ)
+        (LieSubmodule.injective_incl (N i))).toLinearEquiv
   have hindep : iSupIndep fun i ↦
       ((weightSpace M χ).toSubmodule ⊓ (N i).toSubmodule) :=
     h.submodule_iSupIndep.mono fun i ↦ inf_le_right
@@ -96,7 +103,7 @@ theorem finrank_weightSpace_eq_sum [FiniteDimensional K M]
       ⟨m, hm, h.lieModuleProjection_apply i m⟩
   rw [← TauCeti.finrank_toSubmodule,
     ← h.iSup_inf_eq_of_component_mem (weightSpace M χ).toSubmodule hcomponent,
-    TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hindep]
+    @TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep K M ι _ _ _ _ _ hfinite hindep]
   exact Finset.sum_congr rfl fun i _ ↦ (N i).finrank_inf_weightSpace χ
 
 end DirectSum.IsInternal
