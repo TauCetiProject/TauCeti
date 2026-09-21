@@ -23,7 +23,7 @@ The assembly is the obvious one: the candidate Hessian is
 recombining the components of the `i`th directional derivative
 (`TauCeti.W1p.hasWeakLineDerivOn_gradient_of_forall_inner`). Weak differentiability in every
 direction then follows from the basis directions by
-`TauCeti.hasWeakFDerivOn_of_forall_basis`.
+`Module.Basis.hasWeakFDerivOn_of_forall`.
 
 No boundedness or boundary regularity of `Ω` is used.
 
@@ -103,7 +103,7 @@ theorem W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn {ι : Type*} [Fint
   refine ⟨Wkp.mk 0 u (hmem.toLp D) ?_, Wkp.lowerOrder_mk 0 _ _ _⟩
   rw [Wkp.iteratedGradient_zero]
   refine HasWeakFDerivOn.congr_ae_deriv ?_ hmem.coeFn_toLp.symm
-  refine hasWeakFDerivOn_of_forall_basis b.toBasis (W1p.locallyIntegrableOn_gradient u) fun i => ?_
+  refine b.toBasis.hasWeakFDerivOn_of_forall (W1p.locallyIntegrableOn_gradient u) fun i => ?_
   rw [OrthonormalBasis.coe_toBasis]
   exact (W1p.hasWeakLineDerivOn_gradient_of_forall_inner u b (b i) (G i)
     (hG i)).congr_ae_deriv (Filter.Eventually.of_forall fun x => (hDb i x).symm)

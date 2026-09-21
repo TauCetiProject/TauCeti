@@ -17,7 +17,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 -- below, together with the Riesz correspondence `innerSL` in which that statement is phrased.
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 -- This import is public: `Module.Basis` appears in the hypothesis of
--- `TauCeti.hasWeakFDerivOn_of_forall_basis`.
+-- `Module.Basis.hasWeakFDerivOn_of_forall`.
 public import Mathlib.LinearAlgebra.Basis.Defs
 
 /-!
@@ -143,7 +143,7 @@ weaken them for no gain.
 * `TauCeti.HasWeakLineDerivOn.add_direction`, `.smul_direction`, `.sum_direction` and
   `TauCeti.hasWeakLineDerivOn_zero_direction`: linearity in the direction, which is what makes
   the `TauCeti.HasWeakFDerivOn` packaging the right one.
-* `TauCeti.hasWeakFDerivOn_of_forall_basis`: a candidate weak derivative need only be checked in
+* `Module.Basis.hasWeakFDerivOn_of_forall`: a candidate weak derivative need only be checked in
   the directions of a basis.
 * `TauCeti.hasWeakLineDerivOn_of_hasLineDerivAt` and
   `TauCeti.hasWeakFDerivOn_of_differentiableOn`: classical derivatives that are locally integrable
@@ -586,7 +586,7 @@ variable [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} {u : E �
 weak derivative of `u` in every direction, since every vector is a finite linear combination
 of basis vectors. Local integrability of `u` is a separate hypothesis because it is not implied
 by the basis directions when `E` is trivial. -/
-theorem hasWeakFDerivOn_of_forall_basis {ι : Type*} [CompleteSpace F]
+theorem _root_.Module.Basis.hasWeakFDerivOn_of_forall {ι : Type*} [CompleteSpace F]
     (b : Module.Basis ι ℝ E) {U : E → E →L[ℝ] F} (hu : LocallyIntegrableOn u Ω μ)
     (h : ∀ i, HasWeakLineDerivOn μ Ω u (fun x => U x (b i)) (b i)) :
     HasWeakFDerivOn μ Ω u U := by
