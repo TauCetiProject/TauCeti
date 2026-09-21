@@ -52,9 +52,7 @@ theorem mem_principalSubgroup_iff (x : IdeleGroup R K) :
         subst y
         exact x.ne_zero (by simpa using hy.symm)
       refine ⟨Units.mk0 y hy0, Units.ext ?_⟩
-      rw [coe_unitEmbedding]
-      change algebraMap K (AdeleRing R K) y = x
-      exact hy
+      simpa only [coe_unitEmbedding, Units.val_mk0] using hy
     · have _ : Subsingleton (AdeleRing R K) := not_nontrivial_iff_subsingleton.mp hA
       exact ⟨1, Units.ext (Subsingleton.elim _ _)⟩
 
