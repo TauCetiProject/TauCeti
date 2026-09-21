@@ -179,6 +179,25 @@ theorem smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedSpace K}
   convert smul_mem_rayFundamentalDomain h (inv_ne_zero hc)
   rw [eq_inv_smul_iff₀ hc]
 
+/-- Multiplication by a root of unity preserves membership in the ray fundamental domain. -/
+@[simp]
+theorem torsion_smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedSpace K}
+    {ζ : (𝓞 K)ˣ} (hζ : ζ ∈ NumberField.Units.torsion K) :
+    ζ • x ∈ rayFundamentalDomain 𝔪 ↔ x ∈ rayFundamentalDomain 𝔪 := by
+  have mem_of_mem {y : mixedSpace K} (hy : y ∈ rayFundamentalDomain 𝔪)
+      {η : (𝓞 K)ˣ} (hη : η ∈ NumberField.Units.torsion K) :
+      η • y ∈ rayFundamentalDomain 𝔪 := by
+    obtain ⟨q, hq⟩ := mem_rayFundamentalDomain_iff.mp hy
+    refine mem_rayFundamentalDomain_iff.mpr ⟨q, ?_⟩
+    have heq : (rayUnitRepresentative 𝔪 q)⁻¹ • (η • y) =
+        η • ((rayUnitRepresentative 𝔪 q)⁻¹ • y) := by
+      rw [← mul_smul, ← mul_smul, mul_comm]
+    rw [heq]
+    exact fundamentalCone.torsion_smul_mem_of_mem hq hη
+  refine ⟨fun h ↦ ?_, fun h ↦ mem_of_mem h hζ⟩
+  have h := mem_of_mem h ((NumberField.Units.torsion K).inv_mem hζ)
+  rwa [inv_smul_smul] at h
+
 /-- Every point of nonzero mixed norm can be moved into the ray fundamental domain by a unit
 congruent to one modulo `𝔪`. -/
 theorem exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain (𝔪 : Modulus K)
