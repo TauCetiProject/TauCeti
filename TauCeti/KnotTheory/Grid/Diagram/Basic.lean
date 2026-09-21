@@ -116,7 +116,6 @@ def subdiagonal (n : ℕ) : GridState n :=
   ⟨(finRotate n)⁻¹⟩
 
 /-- The permutation underlying the subdiagonal state is the inverse cyclic shift. -/
-@[simp]
 theorem subdiagonal_toPerm (n : ℕ) : (subdiagonal n).toPerm = (finRotate n)⁻¹ :=
   (rfl)
 
