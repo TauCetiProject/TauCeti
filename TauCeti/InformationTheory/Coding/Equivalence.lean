@@ -138,11 +138,15 @@ end Fintype
 
 end Monomial
 
+end TauCeti
+
 /-! ### Coordinate relabellings -/
+
+namespace Equiv
 
 section Relabelling
 
-variable [Semiring R]
+variable {ι κ R : Type*} [Semiring R]
 
 /-- A relabelling of finite coordinate spaces preserves Hamming weight. -/
 @[simp]
@@ -159,6 +163,10 @@ theorem hammingDist_funLeft [DecidableEq R] [Fintype ι] [Fintype κ]
   Equiv.hammingDist_comp e x y
 
 end Relabelling
+
+end Equiv
+
+namespace TauCeti
 
 /-! ### Permutation equivalence of linear codes -/
 
@@ -494,14 +502,14 @@ theorem hammingNorm_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x : ι → R) :
     hammingNorm (f x) = hammingNorm x := by
   obtain ⟨e, rfl⟩ := hf
-  exact hammingNorm_funLeft e.symm x
+  exact Equiv.hammingNorm_funLeft e.symm x
 
 /-- A permutation-group element preserves Hamming distance. -/
 theorem hammingDist_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x y : ι → R) :
     hammingDist (f x) (f y) = hammingDist x y := by
   obtain ⟨e, rfl⟩ := hf
-  exact hammingDist_funLeft e.symm x y
+  exact Equiv.hammingDist_funLeft e.symm x y
 
 variable (C : Submodule R (ι → R))
 

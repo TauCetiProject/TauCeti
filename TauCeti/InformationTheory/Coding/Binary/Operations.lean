@@ -68,6 +68,16 @@ theorem IsEven.of_isMonomialEquivalent (hC : IsEven C) (h : IsMonomialEquivalent
     IsEven D :=
   (isEven_iff_of_isMonomialEquivalent h).mp hC
 
+/-- Evenness of binary codes is invariant under permutation equivalence. -/
+theorem isEven_iff_of_isPermutationEquivalent (h : IsPermutationEquivalent C D) :
+    IsEven C ↔ IsEven D :=
+  isEven_iff_of_isMonomialEquivalent h.isMonomialEquivalent
+
+/-- Permutation equivalence preserves evenness of binary codes. -/
+theorem IsEven.of_isPermutationEquivalent (hC : IsEven C) (h : IsPermutationEquivalent C D) :
+    IsEven D :=
+  hC.of_isMonomialEquivalent h.isMonomialEquivalent
+
 /-- Double evenness of binary codes is invariant under monomial equivalence. -/
 theorem isDoublyEven_iff_of_isMonomialEquivalent (h : IsMonomialEquivalent C D) :
     IsDoublyEven C ↔ IsDoublyEven D := by
@@ -78,6 +88,16 @@ theorem isDoublyEven_iff_of_isMonomialEquivalent (h : IsMonomialEquivalent C D) 
 theorem IsDoublyEven.of_isMonomialEquivalent (hC : IsDoublyEven C)
     (h : IsMonomialEquivalent C D) : IsDoublyEven D :=
   (isDoublyEven_iff_of_isMonomialEquivalent h).mp hC
+
+/-- Double evenness of binary codes is invariant under permutation equivalence. -/
+theorem isDoublyEven_iff_of_isPermutationEquivalent (h : IsPermutationEquivalent C D) :
+    IsDoublyEven C ↔ IsDoublyEven D :=
+  isDoublyEven_iff_of_isMonomialEquivalent h.isMonomialEquivalent
+
+/-- Permutation equivalence preserves double evenness of binary codes. -/
+theorem IsDoublyEven.of_isPermutationEquivalent (hC : IsDoublyEven C)
+    (h : IsPermutationEquivalent C D) : IsDoublyEven D :=
+  hC.of_isMonomialEquivalent h.isMonomialEquivalent
 
 end BinaryCode
 
