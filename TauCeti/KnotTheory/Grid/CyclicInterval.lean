@@ -631,6 +631,42 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
 
+/-- Swapping two cyclically consecutive points preserves membership in a half-open cyclic
+interval when the second point is not an endpoint. -/
+theorem mem_cIco_swap_finRotate_iff_of_ne {a b c x : Fin n}
+    (ha : a ≠ finRotate n c) (hb : b ≠ finRotate n c) :
+    Equiv.swap c (finRotate n c) x ∈ cIco a b ↔ x ∈ cIco a b := by
+  have hadj : finRotate n c ∈ cIco a b ↔ c ∈ cIco a b := by
+    rw [mem_cIco, mem_cIco]
+    cases n with
+    | zero => exact c.elim0
+    | succ n =>
+      have hc := c.isLt
+      have ha' := a.isLt
+      have hb' := b.isLt
+      have haVal : a.val ≠ (finRotate (n + 1) c).val := fun h => ha (Fin.ext h)
+      have hbVal : b.val ≠ (finRotate (n + 1) c).val := fun h => hb (Fin.ext h)
+      by_cases hlast : c = Fin.last n
+      · have hrot : (finRotate (n + 1) c).val = 0 := by
+          rw [coe_finRotate]
+          simp [hlast]
+        have hlastVal : c.val = n := by
+          rw [hlast, Fin.val_last]
+        rw [hrot] at haVal hbVal ⊢
+        split_ifs <;> omega
+      · have hrot : (finRotate (n + 1) c).val = c.val + 1 := by
+          rw [coe_finRotate]
+          simp [hlast]
+        rw [hrot] at haVal hbVal ⊢
+        split_ifs <;> omega
+  by_cases hxc : x = c
+  · subst x
+    simpa only [Equiv.swap_apply_left] using hadj
+  · by_cases hx : x = finRotate n c
+    · subst x
+      simpa only [Equiv.swap_apply_right] using hadj.symm
+    · rw [Equiv.swap_apply_of_ne_of_ne hxc hx]
+
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
   cases n with

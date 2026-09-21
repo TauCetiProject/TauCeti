@@ -227,6 +227,12 @@ and the Heegaard Floer weight `V₀^{O₀(r)} ⋯ V_{n-1}^{O_{n-1}(r)}` reduces 
 noncomputable def OMonomial (r : GridRectangle n) : MvPolynomial (Fin n) R :=
   ∏ c ∈ G.OColumns r, MvPolynomial.X c
 
+/-- The rectangle monomial is the product of the variables indexed by its covered
+`O`-columns. -/
+theorem OMonomial_def (r : GridRectangle n) :
+    G.OMonomial R r = ∏ c ∈ G.OColumns r, MvPolynomial.X c :=
+  (rfl)
+
 /-- The weight of a rectangle covering no `O`-marking is `1`. -/
 theorem OMonomial_eq_one_of_disjoint {r : GridRectangle n}
     (h : Disjoint r.coveredSquares G.OSet) :
