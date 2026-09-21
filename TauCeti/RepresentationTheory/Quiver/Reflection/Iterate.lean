@@ -27,6 +27,8 @@ the arrows of `Reflect V i`, by `TauCeti.Quiver.hom_reflectAt_eq_hom_reflect` �
 
 * `TauCeti.Quiver.reflectAt_reflectAt`: reflecting twice at the same vertex returns the quiver
   structure it started from.
+* `TauCeti.Quiver.reflectList_reverse`: reflecting along a list and then along its reverse returns
+  the original quiver structure.
 * `TauCeti.Quiver.hom_reflectList` and `TauCeti.Quiver.hom_reflectList_of_not_iff`: reflecting
   along a repetition-free list reverses exactly the arrows joining a vertex of the list to a
   vertex outside it.
@@ -116,6 +118,15 @@ ordering is split into an already reflected initial segment and the entries stil
 theorem reflectList_append (q : _root_.Quiver.{v} V) (l₁ l₂ : List V) :
     reflectList q (l₁ ++ l₂) = reflectList (reflectList q l₁) l₂ :=
   (List.foldl_append)
+
+/-- Reflecting along a list and then along its reverse returns the original quiver structure. -/
+@[simp]
+theorem reflectList_reverse (q : _root_.Quiver.{v} V) :
+    ∀ l : List V, reflectList (reflectList q l) l.reverse = q
+  | [] => by simp
+  | i :: l => by
+      rw [reflectList_cons, List.reverse_cons, reflectList_append, reflectList_reverse,
+        reflectList_cons, reflectList_nil, reflectAt_reflectAt]
 
 /-! ### Reflecting along a repetition-free list -/
 

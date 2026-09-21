@@ -21,35 +21,23 @@ The reverse of a sink-admissible list is source-admissible for the quiver obtain
 reflections. This is the direction needed to reconstruct a quiver representation from a simple
 representation in the reflection induction for Gabriel's theorem.
 
-## Main definitions
+## Main definition
 
-* `TauCeti.Quiver.IsSourceAdmissible`: each entry of a list is a source after its predecessors
-  have been reflected.
 * `TauCeti.sourceReflectionFunctorList`: the composite of source reflection functors along a
   source-admissible list.
 
 ## Main results
 
-* `TauCeti.Quiver.IsSinkAdmissible.reverse`: reversing a sink-admissible list gives a
-  source-admissible list for the fully reflected quiver.
 * `TauCeti.indecomposable_and_dimVector_sourceReflectionFunctorList`: if all successive reflected
   dimension vectors are nonnegative, the composite preserves indecomposability and realizes the
   corresponding product of simple reflections on dimension vectors.
 
-## Implementation notes
-
-The functor and its finite-dimensionality theorem are universe-polymorphic. The indecomposability
-theorem uses the existing vertex-simple comparison API, whose field, vertex, arrow, and auxiliary
-module universes coincide, and therefore carries the same restriction.
-
 ## References
 
 See Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman,
-*An Introduction to Quiver Representations*, Ch. 2. The formal template for the admissibility
-predicate, the composite functor, and their proofs is the sink-side development in
-`TauCeti.RepresentationTheory.Quiver.Reflection.Composite`, whose
-`TauCeti.Quiver.IsSinkAdmissible` interface and `TauCeti.reflectionFunctorList` API this file
-mirrors.
+*An Introduction to Quiver Representations*, Ch. 2. The source-reflection construction here is
+dual to the sink-reflection composite `TauCeti.reflectionFunctorList` in
+`TauCeti.RepresentationTheory.Quiver.Reflection.Composite`.
 -/
 
 public section
@@ -60,91 +48,6 @@ open CategoryTheory
 open _root_.TauCeti.Quiver
 
 universe u v w x
-
-namespace Quiver
-
-variable {V : Type v}
-
-/-! ### Source-admissible lists -/
-
-/-- A list of vertices is **source-admissible** when each entry is a source in the quiver obtained
-by reflecting at all preceding entries. -/
-def IsSourceAdmissible (q : _root_.Quiver.{w} V) (l : List V) : Prop :=
-  ∀ t u : List V, ∀ i : V, l = t ++ i :: u → @IsSource V (reflectList q t) i
-
-/-- The defining condition for a source-admissible list. -/
-theorem isSourceAdmissible_def (q : _root_.Quiver.{w} V) (l : List V) :
-    IsSourceAdmissible q l ↔
-      ∀ t u : List V, ∀ i : V, l = t ++ i :: u → @IsSource V (reflectList q t) i :=
-  Iff.rfl
-
-@[simp]
-theorem isSourceAdmissible_nil (q : _root_.Quiver.{w} V) : IsSourceAdmissible q [] := by
-  rw [isSourceAdmissible_def]
-  intro t u i h
-  simp at h
-
-/-- A list is source-admissible exactly when its head is a source and its tail is
-source-admissible after reflecting at the head. -/
-@[simp]
-theorem isSourceAdmissible_cons {q : _root_.Quiver.{w} V} {i : V} {l : List V} :
-    IsSourceAdmissible q (i :: l) ↔
-      @IsSource V q i ∧ IsSourceAdmissible (reflectAt q i) l := by
-  simp only [isSourceAdmissible_def]
-  constructor
-  · intro h
-    refine ⟨?_, fun t u j ht ↦ ?_⟩
-    · have := h [] l i rfl
-      rwa [reflectList_nil] at this
-    · have := h (i :: t) u j (by rw [List.cons_append, ht])
-      rwa [reflectList_cons] at this
-  · rintro ⟨hi, h⟩ t u j hj
-    rcases t with _ | ⟨a, t⟩
-    · rw [List.nil_append, List.cons.injEq] at hj
-      rw [reflectList_nil, ← hj.1]
-      exact hi
-    · rw [List.cons_append, List.cons.injEq] at hj
-      rw [← hj.1, reflectList_cons]
-      exact h t u j hj.2
-
-/-- Reflecting along a list and then along its reverse returns the original quiver structure. -/
-@[simp]
-theorem reflectList_reverse (q : _root_.Quiver.{w} V) :
-    ∀ l : List V, reflectList (reflectList q l) l.reverse = q
-  | [] => by simp
-  | i :: l => by
-      rw [reflectList_cons, List.reverse_cons, reflectList_append, reflectList_reverse,
-        reflectList_cons, reflectList_nil, reflectAt_reflectAt]
-
-/-- Appending a final source to a source-admissible list preserves source-admissibility. -/
-theorem IsSourceAdmissible.append_singleton {q : _root_.Quiver.{w} V} {l : List V} {i : V}
-    (hl : IsSourceAdmissible q l) (hi : @IsSource V (reflectList q l) i) :
-    IsSourceAdmissible q (l ++ [i]) := by
-  induction l generalizing q with
-  | nil =>
-      rw [List.nil_append, isSourceAdmissible_cons]
-      rw [reflectList_nil] at hi
-      exact ⟨hi, isSourceAdmissible_nil _⟩
-  | cons j l ih =>
-      rw [List.cons_append, isSourceAdmissible_cons]
-      rw [isSourceAdmissible_cons] at hl
-      rw [reflectList_cons] at hi
-      exact ⟨hl.1, ih hl.2 hi⟩
-
-/-- **A reversed sink-admissible list is source-admissible.** After all sink reflections have
-been performed, undoing them in reverse order always reflects at a source. -/
-theorem IsSinkAdmissible.reverse {q : _root_.Quiver.{w} V} {l : List V}
-    (hl : IsSinkAdmissible q l) : IsSourceAdmissible (reflectList q l) l.reverse := by
-  induction l generalizing q with
-  | nil => simp
-  | cons i l ih =>
-      obtain ⟨hi, hl⟩ := isSinkAdmissible_cons.mp hl
-      rw [reflectList_cons, List.reverse_cons]
-      refine (ih hl).append_singleton ?_
-      rw [reflectList_reverse]
-      exact hi.isSource_reflect
-
-end Quiver
 
 /-! ### The composite along a source-admissible list -/
 
@@ -234,9 +137,7 @@ theorem isFinDim_sourceReflectionFunctorList_obj :
 
 /-! ### Indecomposability and dimension vectors -/
 
-section EqualUniverse
-
-variable {K W : Type u} [fldK : Field K] [fW : Fintype W]
+variable {K : Type u} {W : Type v} [fldK : Field K] [fW : Fintype W]
 
 /-- **A source-reflection composite reconstructs an indecomposable along a nonnegative reflection
 word.** If `M` is indecomposable and the image of its dimension vector after every nonempty prefix
@@ -245,10 +146,10 @@ vertex simple.
 The final representation is indecomposable, and its dimension vector is the product of the simple
 reflections along the word applied to `dimVector M`. -/
 theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W] :
-    ∀ (l : List W) (q : _root_.Quiver.{u} W)
+    ∀ (l : List W) (q : _root_.Quiver.{w} W)
       (hq : ∀ a b : W, Fintype (@_root_.Quiver.Hom W q a b))
       (hl : Quiver.IsSourceAdmissible q l)
-      (M : @QuiverRep.{u, u, u, u} K W fldK q),
+      (M : @QuiverRep.{u, v, w, max v w x} K W fldK q),
       Indecomposable M →
       (∀ a : W, FiniteDimensional K (M.obj a)) →
       (∀ r < l.length, 0 ≤ @vertexPreReflectionList W q fW hq _ (l.take (r + 1))
@@ -262,7 +163,7 @@ theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W]
       rw [sourceReflectionFunctorList_nil, vertexPreReflectionList_nil]
       exact ⟨hM, rfl⟩
   | i :: l, q, hq, hl, M, hM, hfd, hnonneg => by
-      let : _root_.Quiver.{u} W := q
+      let : _root_.Quiver.{w} W := q
       let : ∀ a b : W, Fintype (@_root_.Quiver.Hom W q a b) := hq
       obtain ⟨hi, hl'⟩ := Quiver.isSourceAdmissible_cons.mp hl
       -- Nonnegativity after the first reflection rules out the exceptional vertex simple.
@@ -270,15 +171,34 @@ theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W]
           (fun j : W ↦ (@dimVector K W fldK q M j : ℤ)) := by
         simpa [vertexPreReflectionList_apply_cons] using hnonneg 0 (by simp)
       have hloop : IsEmpty (@_root_.Quiver.Hom W q i i) := hi.isEmpty_hom_self
-      have hne : ¬ Nonempty (M ≅ simpleRep K W i) :=
-        not_nonempty_iso_simpleRep_of_vertexPreReflection_nonneg hloop hnext
+      have hinj : Function.Injective (outgoingMap M i) := by
+        rcases outgoingMap_injective_or_forall_subsingleton hi hM with hinj | hsub
+        · exact hinj
+        · obtain ⟨y, hy, hspan⟩ :=
+            exists_ne_zero_span_eq_top_of_forall_subsingleton hi.path_self_eq_nil hM hsub
+          have hone : @dimVector K W fldK q M i = 1 := by
+            rw [dimVector_apply]
+            exact (finrank_eq_one_iff_of_nonzero (K := K) y hy).mpr hspan
+          have hzero : ∀ j : W, j ≠ i → @dimVector K W fldK q M j = 0 := by
+            intro j hj
+            let : Subsingleton (M.obj ((Paths.of W).obj j)) := hsub j hj
+            rw [dimVector_apply]
+            exact Module.finrank_zero_of_subsingleton (R := K)
+          have hdim : (fun j : W ↦ (@dimVector K W fldK q M j : ℤ)) = Pi.single i 1 := by
+            funext j
+            rcases eq_or_ne j i with rfl | hj
+            · rw [Pi.single_eq_same, hone, Nat.cast_one]
+            · rw [Pi.single_eq_of_ne hj, hzero j hj, Nat.cast_zero]
+          rw [hdim, vertexPreReflection_single_self W hloop] at hnext
+          have hfalse : ¬(0 : ℤ) ≤ -1 := by norm_num
+          exact (hfalse (by simpa using Pi.le_def.mp hnext i)).elim
       have hM' : Indecomposable (sourceReflectRep M hi) :=
-        indecomposable_sourceReflectRep_of_not_nonempty_iso_simpleRep hi hM hne
+        indecomposable_sourceReflectRep hi hM hinj
       have hdim : (fun j : W ↦
             (@dimVector K W fldK (Quiver.reflectAt q i) (sourceReflectRep M hi) j : ℤ)) =
           @vertexPreReflection W q fW hq _ i
             (fun j : W ↦ (@dimVector K W fldK q M j : ℤ)) :=
-        dimVector_sourceReflectRep_of_indecomposable hi hM hne (fun e ↦ hfd e.1)
+        dimVector_sourceReflectRep M hi (fun e ↦ hfd e.1) hinj
       have hfd' : ∀ a : W, FiniteDimensional K ((sourceReflectRep M hi).obj a) :=
         finiteDimensional_sourceReflectRep_obj M hi hfd
       -- Prefixes of the tail are precisely nonempty prefixes of the original word after its head.
@@ -313,7 +233,5 @@ theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W]
         _ = @vertexPreReflectionList W q fW hq _ (i :: l)
               (fun j : W ↦ (@dimVector K W fldK q M j : ℤ)) :=
               (vertexPreReflectionList_apply_cons W i l _).symm
-
-end EqualUniverse
 
 end TauCeti
