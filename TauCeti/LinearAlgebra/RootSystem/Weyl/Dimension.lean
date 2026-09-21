@@ -35,8 +35,9 @@ closed field supplies `g = ch L(0)` from the character formula itself. The concl
 Apply the exponential specialization `θ_μ = AddMonoidAlgebra.expAlgHom (B μ)` along the
 invariant form, `e^ν ↦ e^{⟨μ, ν⟩ X}`, which is a ring homomorphism `ℤ[M] → R⟦X⟧`.
 
-* `θ_μ(Δ) = ∏_{α>0} (1 - e^{-⟨μ, α⟩ X})` is a product of `|Φ⁺|` series of order one, so any
-  multiple `h · θ_μ(Δ)` has coefficient `h(0) · ∏_{α>0} ⟨μ, α⟩` in degree `|Φ⁺|`
+* `θ_μ(Δ) = ∏_{α>0} (1 - e^{-⟨μ, α⟩ X})` is a product of `|Φ⁺|` series with zero
+  constant coefficient and linear coefficient `⟨μ, α⟩`, so any multiple `h · θ_μ(Δ)` has coefficient
+  `h(0) · ∏_{α>0} ⟨μ, α⟩` in degree `|Φ⁺|`
   (`TauCeti.coeff_card_mul_expAlgHom_weylDenominator`).
 * `e^{⟨μ, ρ⟩ X} θ_μ(N(λ)) = ∑_w sgn(w) e^{⟨μ, w(λ+ρ)⟩ X}` is symmetric in `μ` and `λ + ρ`, by the
   Weyl invariance of the form and the reindexing `w ↦ w⁻¹`
@@ -89,8 +90,8 @@ theorem expAlgHom_weylDenominator (φ : M →+ R) :
   simp only [map_sub, map_one, expAlgHom_single, map_neg, one_mul]
 
 /-- **The lowest coefficient of a multiple of the specialized Weyl denominator.** Each factor
-`1 - e^{-φ(α) X}` has order one and linear coefficient `φ(α)`, so `h · θ_φ(Δ)` has coefficient
-`h(0) ∏_{α>0} φ(α)` in degree `|Φ⁺|`. -/
+`1 - e^{-φ(α) X}` has zero constant coefficient and linear coefficient `φ(α)`, so `h · θ_φ(Δ)` has
+coefficient `h(0) ∏_{α>0} φ(α)` in degree `|Φ⁺|`. -/
 theorem coeff_card_mul_expAlgHom_weylDenominator (φ : M →+ R) (h : R⟦X⟧) :
     PowerSeries.coeff (posRootsFinset P b).card (h * expAlgHom (k := ℤ) φ (weylDenominator P b))
       = constantCoeff h * ∏ i ∈ posRootsFinset P b, φ (P.root i) := by
