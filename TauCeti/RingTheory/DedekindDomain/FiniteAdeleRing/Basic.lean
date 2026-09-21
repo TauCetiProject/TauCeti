@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.Topology.Algebra.Algebra
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
 # The finite adele ring: separation, integral elements, and strong approximation
@@ -18,6 +19,7 @@ Mathlib's `IsDedekindDomain.FiniteAdeleRing R K` is the restricted product of th
 about it that are not stated in Mathlib:
 
 * the finite adele ring is Hausdorff, since each completion is;
+* a finite adele ring with finite residue fields is locally compact;
 * subtraction, multiplication, and the multiplicative unit are computed place by place;
 * the product of the local integer rings embeds continuously as the integral finite adeles;
 * an element of `K` is integral at every finite place exactly when it lies in `R`, so the integral
@@ -69,6 +71,20 @@ instance : T2Space (FiniteAdeleRing R K) :=
   inferInstanceAs <| T2Space <|
     RestrictedProduct (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
       (fun v ↦ v.adicCompletionIntegers K) Filter.cofinite
+
+/-- A finite adele ring whose residue fields are finite is locally compact.  Each finite
+completion is a nonarchimedean local field, its ring of integers is compact and open, and the
+restricted product of these local additive groups is therefore locally compact. -/
+noncomputable instance instLocallyCompactSpace
+    [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
+    LocallyCompactSpace (FiniteAdeleRing R K) := by
+  let _ : Fact (∀ v : HeightOneSpectrum R,
+      IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
+    ⟨fun _ => Valued.isOpen_valuationSubring _⟩
+  apply RestrictedProduct.locallyCompactSpace_of_addGroup
+  exact Filter.Eventually.of_forall fun v =>
+    isCompact_iff_compactSpace.mpr
+      (HeightOneSpectrum.compactSpace_adicCompletionIntegers v)
 
 variable {R K}
 
