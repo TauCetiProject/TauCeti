@@ -79,14 +79,14 @@ theorem steinbergToMatrix_apply (a : K) (q : ℍ[K,a,0,1 - a]) :
 
 /-- The first quaternion generator maps to the standard Steinberg matrix. -/
 @[simp]
-theorem steinbergToMatrix_i (a : K) :
+theorem steinbergToMatrix_apply_i (a : K) :
     steinbergToMatrix a { re := 0, imI := 1, imJ := 0, imK := 0 } = !![0, a; 1, 0] := by
   rw [steinbergToMatrix_apply]
   simp
 
 /-- The second quaternion generator maps to the standard Steinberg matrix. -/
 @[simp]
-theorem steinbergToMatrix_j (a : K) :
+theorem steinbergToMatrix_apply_j (a : K) :
     steinbergToMatrix a { re := 0, imI := 0, imJ := 1, imK := 0 } = !![1, -a; 1, -1] := by
   rw [steinbergToMatrix_apply]
   simp
@@ -135,13 +135,6 @@ theorem steinbergEquivMatrix_toAlgHom :
     (steinbergEquivMatrix a).toAlgHom = steinbergToMatrix a := by
   rfl
 
-/-- The entrywise formula for the forward direction of the Steinberg equivalence. -/
-theorem steinbergEquivMatrix_apply (q : ℍ[K,a,0,1 - a]) :
-    steinbergEquivMatrix a q =
-      !![q.re + q.imJ + a * q.imK, a * (q.imI - q.imJ - q.imK);
-        q.imI + q.imJ + q.imK, q.re - q.imJ - a * q.imK] :=
-  steinbergToMatrix_apply a q
-
 /-- The entrywise formula for the inverse of the Steinberg equivalence. -/
 @[simp]
 theorem steinbergEquivMatrix_symm_apply (M : Matrix (Fin 2) (Fin 2) K) :
@@ -152,22 +145,6 @@ theorem steinbergEquivMatrix_symm_apply (M : Matrix (Fin 2) (Fin 2) K) :
       let z := ⅟(1 - a) * (s - (M 0 0 - r))
       ⟨r, x, s - z, z⟩ := by
   rfl
-
-/-- The first quaternion generator maps to the standard Steinberg matrix. -/
-@[simp]
-theorem steinbergEquivMatrix_i :
-    steinbergEquivMatrix a
-        { re := 0, imI := 1, imJ := 0, imK := 0 } = !![0, a; 1, 0] := by
-  rw [steinbergEquivMatrix_apply]
-  simp
-
-/-- The second quaternion generator maps to the standard Steinberg matrix. -/
-@[simp]
-theorem steinbergEquivMatrix_j :
-    steinbergEquivMatrix a
-        { re := 0, imI := 0, imJ := 1, imK := 0 } = !![1, -a; 1, -1] := by
-  rw [steinbergEquivMatrix_apply]
-  simp
 
 end QuaternionAlgebra
 
