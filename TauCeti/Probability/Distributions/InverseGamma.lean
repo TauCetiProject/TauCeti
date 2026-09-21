@@ -309,7 +309,7 @@ theorem integrable_pow_inverseGammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (n : â„
   rw [inverseGammaMeasure_of_pos ha hr,
     integrable_map_measure (by fun_prop) measurable_inv.aemeasurable]
   simpa only [Function.comp_def, inv_pow] using
-    TauCeti.integrable_inv_pow_gammaMeasure_iff ha hr n
+    TauCeti.Probability.integrable_inv_pow_gammaMeasure_iff ha hr n
 
 /-- **Natural moments of a valid inverse-gamma law.**  The `n`th moment exists for `n < a` and
 equals `r ^ n * Gamma (a - n) / Gamma a`. -/
@@ -321,7 +321,7 @@ theorem integral_pow_inverseGammaMeasure (hr : 0 < r) (n : â„•)
   have ha : 0 < a := lt_of_le_of_lt (Nat.cast_nonneg n) hn
   rw [inverseGammaMeasure_of_pos ha hr,
     integral_map measurable_inv.aemeasurable (by fun_prop)]
-  simpa only [inv_pow] using TauCeti.integral_inv_pow_gammaMeasure hr n hn
+  simpa only [inv_pow] using TauCeti.Probability.integral_inv_pow_gammaMeasure hr n hn
 
 /-- The mean of an inverse-gamma law is `r / (a - 1)` when `1 < a`. -/
 @[simp]

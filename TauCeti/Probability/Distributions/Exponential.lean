@@ -71,9 +71,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set Real
 open scoped ENNReal NNReal Topology
 
-namespace TauCeti
-
-namespace Probability
+namespace TauCeti.Probability
 
 variable {a r s t : ℝ} {n : ℕ}
 
@@ -310,8 +308,6 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
     ring
   · rw [ite_eq_right hx, ite_eq_right hx, sub_zero, one_pow, sub_self]
 
-end Probability
-
 /-- The exponential measure of rate `r` on `ℝ≥0`, obtained by transporting the usual exponential
 law on `ℝ` along `Real.toNNReal`.
 
@@ -346,4 +342,4 @@ theorem isProbabilityMeasure_nnrealExpMeasure {r : ℝ} (hr : 0 < r) :
   rw [nnrealExpMeasure_def]
   infer_instance
 
-end TauCeti
+end TauCeti.Probability

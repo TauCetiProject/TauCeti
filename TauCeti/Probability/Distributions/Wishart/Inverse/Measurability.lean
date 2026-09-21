@@ -10,7 +10,8 @@ public import TauCeti.Probability.Distributions.Wishart.Inverse.Basic
 /-!
 # Parameter measurability of the inverse-Wishart family
 
-This file proves that `TauCeti.inverseWishartMeasure` is measurable jointly in its real degree
+This file proves that `TauCeti.Probability.inverseWishartMeasure` is measurable jointly in its real
+degree
 and scale matrix.
 The scale is first presented by all its coordinates,
 as required for a matrix-parameterized probability kernel.
@@ -22,9 +23,11 @@ models.
 
 ## Main results
 
-* `TauCeti.measurable_inverseWishartMeasure` gives joint measurability in the degree and all
+* `TauCeti.Probability.measurable_inverseWishartMeasure` gives joint measurability in the degree and
+  all
   coordinates of the scale matrix.
-* `TauCeti.measurable_inverseWishartMeasure_selfAdjoint` gives the corresponding result when the
+* `TauCeti.Probability.measurable_inverseWishartMeasure_selfAdjoint` gives the corresponding result
+  when the
   scale ranges over the symmetric-matrix carrier.
 -/
 
@@ -36,7 +39,7 @@ open MeasureTheory
 
 open scoped Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ}
 
@@ -69,4 +72,4 @@ theorem measurable_inverseWishartMeasure_selfAdjoint :
   measurable_inverseWishartMeasure.comp
     (measurable_fst.prodMk (measurable_subtype_coe.comp measurable_snd))
 
-end TauCeti
+end TauCeti.Probability

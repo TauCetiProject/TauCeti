@@ -24,13 +24,16 @@ Gamma-distributed, and the two are independent.
 
 ## Main result
 
-* `TauCeti.map_div_add_prod_gammaMeasure` identifies the joint pushforward with the product of a
+* `TauCeti.Probability.map_div_add_prod_gammaMeasure` identifies the joint pushforward with the
+  product of a
   Beta law and a Gamma law.
-* `TauCeti.map_div_add_gammaMeasure` gives the Beta marginal.
-* `TauCeti.indepFun_div_add_gammaMeasure` proves independence under the product Gamma law.
-* `TauCeti.hasLaw_div_add_prod_gammaMeasure_of_indepFun`,
-  `TauCeti.hasLaw_div_add_gammaMeasure_of_indepFun`, and
-  `TauCeti.indepFun_div_add_of_hasLaw_gammaMeasure` transfer the conclusions to independent
+* `TauCeti.Probability.map_div_add_gammaMeasure` gives the Beta marginal.
+* `TauCeti.Probability.indepFun_div_add_gammaMeasure` proves independence under the product Gamma
+  law.
+* `TauCeti.Probability.hasLaw_div_add_prod_gammaMeasure_of_indepFun`,
+  `TauCeti.Probability.hasLaw_div_add_gammaMeasure_of_indepFun`, and
+  `TauCeti.Probability.indepFun_div_add_of_hasLaw_gammaMeasure` transfer the conclusions to
+  independent
   random variables.
 
 ## References
@@ -46,7 +49,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Real Set
 open scoped ENNReal
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 /-! ### The Gamma--Beta coordinate change -/
 
@@ -406,4 +409,4 @@ theorem indepFun_div_add_of_hasLaw_gammaMeasure
     simpa only [Function.comp_def] using hsnd.fun_comp hjoint
   exact (indepFun_iff_hasLaw_prodMk_prod hratio hsum).2 hjoint
 
-end TauCeti
+end TauCeti.Probability

@@ -38,13 +38,17 @@ statement.
 
 ## Main results
 
-* `TauCeti.ae_pos_pi_gammaMeasure` gives coordinatewise positivity in a finite Gamma product.
-* `TauCeti.ae_pos_sum_pi_gammaMeasure` gives positivity of the coordinate sum for a nonempty
+* `TauCeti.Probability.ae_pos_pi_gammaMeasure` gives coordinatewise positivity in a finite Gamma
+  product.
+* `TauCeti.Probability.ae_pos_sum_pi_gammaMeasure` gives positivity of the coordinate sum for a
+  nonempty
   finite Gamma product.
-* `TauCeti.pi_gammaMeasure_eq_withDensity` presents a finite Gamma product as Lebesgue measure
+* `TauCeti.Probability.pi_gammaMeasure_eq_withDensity` presents a finite Gamma product as Lebesgue
+  measure
   weighted by the product of the coordinate densities.
-* `TauCeti.map_sum_pi_gammaMeasure` identifies the law of the total of the coordinates.
-* `TauCeti.map_funOnFinite_map_pi_gammaMeasure` identifies the joint law of the fibre sums of
+* `TauCeti.Probability.map_sum_pi_gammaMeasure` identifies the law of the total of the coordinates.
+* `TauCeti.Probability.map_funOnFinite_map_pi_gammaMeasure` identifies the joint law of the fibre
+  sums of
   the coordinates along a surjection of index types.
 
 ## References
@@ -59,7 +63,7 @@ public section
 
 open MeasureTheory ProbabilityTheory
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι]
 
@@ -161,4 +165,4 @@ theorem map_funOnFinite_map_pi_gammaMeasure {f : ι → κ} (hf : Function.Surje
   rw [hcomp] at hmp
   exact hmp.map_eq
 
-end TauCeti
+end TauCeti.Probability

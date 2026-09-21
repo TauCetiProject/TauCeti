@@ -51,23 +51,27 @@ parent law.
 
 ## Main results
 
-* `TauCeti.hasDerivAt_arctan_div_pi` — the derivative underlying the cdf formula;
-* `TauCeti.integral_Iic_cauchyPDFReal` — the integral of the Cauchy density over a left
+* `TauCeti.Probability.hasDerivAt_arctan_div_pi` — the derivative underlying the cdf formula;
+* `TauCeti.Probability.integral_Iic_cauchyPDFReal` — the integral of the Cauchy density over a left
   half-line;
-* `TauCeti.cdf_cauchyMeasure_of_scale_ne_zero` — the Cauchy cdf at nonzero scale;
-* `TauCeti.cdf_cauchyMeasure_zero_scale` — the cdf of the zero-scale Dirac law;
-* `TauCeti.not_integrable_id_cauchyMeasure` — a nondegenerate Cauchy law has no first moment;
-* `TauCeti.integrableExpSet_id_cauchyMeasure` — its exponential-integrability domain is `{0}`;
-* `TauCeti.integral_id_cauchyMeasure_zero_scale` and
-  `TauCeti.variance_id_cauchyMeasure_zero_scale` — its mean and variance;
-* `TauCeti.integrableExpSet_id_cauchyMeasure_zero_scale`,
-  `TauCeti.mgf_id_cauchyMeasure_zero_scale`, and
-  `TauCeti.cgf_id_cauchyMeasure_zero_scale` — its exponential moments;
-* `TauCeti.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
-  `TauCeti.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the transform;
-* `TauCeti.cauchyMeasure_map_add_const` — translation changes the location parameter;
-* `TauCeti.charFun_cauchyMeasure` — the characteristic function of `cauchyMeasure x₀ γ`;
-* `TauCeti.hasLaw_average_of_iIndepFun_cauchyMeasure` — stability of the family under averaging.
+* `TauCeti.Probability.cdf_cauchyMeasure_of_scale_ne_zero` — the Cauchy cdf at nonzero scale;
+* `TauCeti.Probability.cdf_cauchyMeasure_zero_scale` — the cdf of the zero-scale Dirac law;
+* `TauCeti.Probability.not_integrable_id_cauchyMeasure` — a nondegenerate Cauchy law has no first
+  moment;
+* `TauCeti.Probability.integrableExpSet_id_cauchyMeasure` — its exponential-integrability domain is
+  `{0}`;
+* `TauCeti.Probability.integral_id_cauchyMeasure_zero_scale` and
+  `TauCeti.Probability.variance_id_cauchyMeasure_zero_scale` — its mean and variance;
+* `TauCeti.Probability.integrableExpSet_id_cauchyMeasure_zero_scale`,
+  `TauCeti.Probability.mgf_id_cauchyMeasure_zero_scale`, and
+  `TauCeti.Probability.cgf_id_cauchyMeasure_zero_scale` — its exponential moments;
+* `TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` and
+  `TauCeti.Probability.integral_exp_mul_I_mul_cauchyPDFReal_zero_loc` — the Fourier pair behind the
+  transform;
+* `TauCeti.Probability.cauchyMeasure_map_add_const` — translation changes the location parameter;
+* `TauCeti.Probability.charFun_cauchyMeasure` — the characteristic function of `cauchyMeasure x₀ γ`;
+* `TauCeti.Probability.hasLaw_average_of_iIndepFun_cauchyMeasure` — stability of the family under
+  averaging.
 
 ## References
 
@@ -81,7 +85,7 @@ public section
 open Filter MeasureTheory ProbabilityTheory Set
 open scoped ENNReal NNReal ProbabilityTheory
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 /-- The scaled arctangent has the Cauchy density as its derivative. -/
 theorem hasDerivAt_arctan_div_pi (x₀ : ℝ) (γ : ℝ≥0) (y : ℝ) :
@@ -342,7 +346,8 @@ theorem fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc (hγ : γ ≠ 0) (ξ :
   ring
 
 /-- **The oscillatory integral of the centred Cauchy density.** Fourier inversion turns
-`TauCeti.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` around: pairing the Cauchy density of
+`TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc` around: pairing the Cauchy
+density of
 scale `γ` against `exp (i t x)` returns the two-sided exponential `exp (-(γ * |t|))`. -/
 theorem integral_exp_mul_I_mul_cauchyPDFReal_zero_loc (hγ : γ ≠ 0) (t : ℝ) :
     (∫ x : ℝ, Complex.exp ((t : ℂ) * x * Complex.I) * (cauchyPDFReal 0 γ x : ℂ))
@@ -430,4 +435,4 @@ theorem hasLaw_average_of_iIndepFun_cauchyMeasure {Ω : Type*} [MeasurableSpace 
 
 end CharFun
 
-end TauCeti
+end TauCeti.Probability

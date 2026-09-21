@@ -22,16 +22,19 @@ moment exists.
 
 ## Main results
 
-* `TauCeti.betaPDFReal_nonneg` — nonnegativity of the density;
-* `TauCeti.integrable_betaMeasure_iff` and `TauCeti.integral_betaMeasure_eq` — integrability and
+* `TauCeti.Probability.betaPDFReal_nonneg` — nonnegativity of the density;
+* `TauCeti.Probability.integrable_betaMeasure_iff` and `TauCeti.Probability.integral_betaMeasure_eq`
+  — integrability and
   integration against the beta law, transferred to the real density;
-* `TauCeti.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against Lebesgue
+* `TauCeti.Probability.betaMeasure_eq_withDensity_restrict_Ioo` — the law is its density against
+  Lebesgue
   measure on the open unit interval;
-* `TauCeti.integral_pow_betaMeasure` — the natural raw moments as a quotient of Gamma values;
-* `TauCeti.integral_id_betaMeasure` — the mean is `α / (α + β)`;
-* `TauCeti.variance_id_betaMeasure` — the variance is
+* `TauCeti.Probability.integral_pow_betaMeasure` — the natural raw moments as a quotient of Gamma
+  values;
+* `TauCeti.Probability.integral_id_betaMeasure` — the mean is `α / (α + β)`;
+* `TauCeti.Probability.variance_id_betaMeasure` — the variance is
   `α * β / ((α + β) ^ 2 * (α + β + 1))`;
-* `TauCeti.integrableExpSet_id_betaMeasure` — every exponential moment exists.
+* `TauCeti.Probability.integrableExpSet_id_betaMeasure` — every exponential moment exists.
 
 The moment calculation rewrites the density integral as Euler's beta integral — the real-valued
 `TauCeti.integral_rpow_mul_one_sub_rpow`, proved in
@@ -46,7 +49,7 @@ The moment calculation rewrites the density integral as Euler's beta integral �
 
 public section
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 open MeasureTheory ProbabilityTheory Set
 open scoped ENNReal NNReal ProbabilityTheory
@@ -208,4 +211,4 @@ theorem integrableExpSet_id_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < 
   exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
     (ae_mem_Icc_betaMeasure α β)
 
-end TauCeti
+end TauCeti.Probability

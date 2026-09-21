@@ -33,12 +33,14 @@ the matrix is not integrable when `p - 1 < n ≤ p + 1`.
 
 ## Main results
 
-* `TauCeti.map_coe_apply_inverseWishartMeasure_one` identifies each diagonal marginal.
-* `TauCeti.integrable_id_inverseWishartMeasure` gives integrability above the threshold.
-* `TauCeti.integral_id_inverseWishartMeasure` computes the mean above the threshold.
-* `TauCeti.not_integrable_id_inverseWishartMeasure` proves sharpness in positive dimension.
-* `TauCeti.integrable_id_inverseWishartMeasure_zero` covers integrability in dimension zero.
-* `TauCeti.integral_id_inverseWishartMeasure_zero` computes the mean in dimension zero.
+* `TauCeti.Probability.map_coe_apply_inverseWishartMeasure_one` identifies each diagonal marginal.
+* `TauCeti.Probability.integrable_id_inverseWishartMeasure` gives integrability above the threshold.
+* `TauCeti.Probability.integral_id_inverseWishartMeasure` computes the mean above the threshold.
+* `TauCeti.Probability.not_integrable_id_inverseWishartMeasure` proves sharpness in positive
+  dimension.
+* `TauCeti.Probability.integrable_id_inverseWishartMeasure_zero` covers integrability in dimension
+  zero.
+* `TauCeti.Probability.integral_id_inverseWishartMeasure_zero` computes the mean in dimension zero.
 
 ## References
 
@@ -54,7 +56,7 @@ open MeasureTheory
 
 open scoped ENNReal Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
@@ -438,4 +440,4 @@ theorem integral_id_inverseWishartMeasure_zero {n : ℝ} (hn : -1 < n)
     ∫ B, B ∂inverseWishartMeasure n S = 0 := by
   rw [inverseWishartMeasure_zero hn, integral_dirac]
 
-end TauCeti
+end TauCeti.Probability

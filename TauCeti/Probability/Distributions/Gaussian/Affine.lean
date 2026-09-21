@@ -19,7 +19,8 @@ allowed, so the result applies both to embeddings and to possibly singular proje
 
 ## Main result
 
-* `TauCeti.map_affine_multivariateGaussian`: the affine pushforward formula for a multivariate
+* `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
+  multivariate
   Gaussian measure.
 
 ## References
@@ -36,7 +37,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 open scoped MatrixOrder RealInnerProductSpace
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
@@ -125,4 +126,4 @@ theorem map_affine_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix 
     · fun_prop
   · exact covarianceBilin_map_affine_multivariateGaussian m hS L c
 
-end TauCeti
+end TauCeti.Probability

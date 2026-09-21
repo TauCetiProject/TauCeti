@@ -12,8 +12,10 @@ public import TauCeti.Probability.Distributions.Wishart.Congruence
 /-!
 # The inverse-Wishart density and measure
 
-The inverse-Wishart law `TauCeti.inverseWishartMeasure n S` is the image of the Wishart law of the
-inverted scale, `TauCeti.nonsingularWishartMeasure n S⁻¹`, under matrix inversion. Inversion is
+The inverse-Wishart law `TauCeti.Probability.inverseWishartMeasure n S` is the image of the Wishart
+law of the
+inverted scale, `TauCeti.Probability.nonsingularWishartMeasure n S⁻¹`, under matrix inversion.
+Inversion is
 totalized to zero on singular matrices, which is harmless: the source law lives on the
 positive-definite cone, where inversion is a bijection.
 
@@ -29,25 +31,33 @@ definite, or a degree at most `p - 1` — so is the inverse-Wishart law, and pos
 
 ## Main definitions
 
-* `TauCeti.inverseWishartPDFReal` and `TauCeti.inverseWishartPDF` — the inverse-Wishart density,
+* `TauCeti.Probability.inverseWishartPDFReal` and `TauCeti.Probability.inverseWishartPDF` — the
+  inverse-Wishart density,
   real- and `ℝ≥0∞`-valued.
-* `TauCeti.inverseWishartMeasure` — the inverse-Wishart law.
+* `TauCeti.Probability.inverseWishartMeasure` — the inverse-Wishart law.
 
 ## Main results
 
-* `TauCeti.inverseWishartMeasure_of_posDef` — at a valid degree and scale the law is the density
-  against `TauCeti.symmetricLebesgue`, while `TauCeti.inverseWishartMeasure_of_not_posDef` and
-  `TauCeti.inverseWishartMeasure_of_le` describe the two invalid branches.
-* `TauCeti.isProbabilityMeasure_inverseWishartMeasure` — at those parameters the law has total
+* `TauCeti.Probability.inverseWishartMeasure_of_posDef` — at a valid degree and scale the law is the
+  density
+  against `TauCeti.symmetricLebesgue`, while
+  `TauCeti.Probability.inverseWishartMeasure_of_not_posDef` and
+  `TauCeti.Probability.inverseWishartMeasure_of_le` describe the two invalid branches.
+* `TauCeti.Probability.isProbabilityMeasure_inverseWishartMeasure` — at those parameters the law has
+  total
   mass one.
-* `TauCeti.hasPDF_of_hasLaw_inverseWishartMeasure` and `TauCeti.rnDeriv_inverseWishartMeasure` —
+* `TauCeti.Probability.hasPDF_of_hasLaw_inverseWishartMeasure` and
+  `TauCeti.Probability.rnDeriv_inverseWishartMeasure` —
   an inverse-Wishart random matrix has a density against `TauCeti.symmetricLebesgue`, and at
-  those parameters the law's Radon–Nikodym derivative is `TauCeti.inverseWishartPDF`.
-* `TauCeti.ae_posDef_inverseWishartMeasure` — the sampled matrix is positive definite almost
+  those parameters the law's Radon–Nikodym derivative is `TauCeti.Probability.inverseWishartPDF`.
+* `TauCeti.Probability.ae_posDef_inverseWishartMeasure` — the sampled matrix is positive definite
+  almost
   everywhere.
-* `TauCeti.map_symmetricCongruence_inverseWishartMeasure` — congruence by an invertible matrix
+* `TauCeti.Probability.map_symmetricCongruence_inverseWishartMeasure` — congruence by an invertible
+  matrix
   carries the law of scale `S` to the law of scale `C * S * Cᵀ`.
-* `TauCeti.inverseWishartMeasure_zero` — in dimension zero the law is the Dirac mass at the unique
+* `TauCeti.Probability.inverseWishartMeasure_zero` — in dimension zero the law is the Dirac mass at
+  the unique
   symmetric matrix, hence a probability measure.
 
 ## References
@@ -63,7 +73,7 @@ open MeasureTheory
 
 open scoped ENNReal Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
@@ -211,7 +221,7 @@ private theorem measurable_inverseWishartPDFReal_comp {γ : Type*} [MeasurableSp
   have hinv : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ)⁻¹ :=
     measurable_matrix_inv.comp hg'
   -- Matrix multiplication has no `MeasurableMul₂` instance here, so read the trace entrywise, as
-  -- `TauCeti.measurable_nonsingularWishartPDFReal` does.
+  -- `TauCeti.Probability.measurable_nonsingularWishartPDFReal` does.
   have htrace : Measurable fun c =>
       Matrix.trace (T c * (g c : Matrix (Fin p) (Fin p) ℝ)⁻¹) := by
     simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply]
@@ -440,7 +450,7 @@ theorem hasPDF_of_hasLaw_inverseWishartMeasure (hX : HasLaw X (inverseWishartMea
     rwa [withDensity_zero, ← inverseWishartMeasure_of_not_posDef n hS]
 
 /-- The density against `TauCeti.symmetricLebesgue` of a random symmetric matrix with an
-inverse-Wishart law is `TauCeti.inverseWishartPDF`. -/
+inverse-Wishart law is `TauCeti.Probability.inverseWishartPDF`. -/
 theorem pdf_eq_inverseWishartPDF_of_hasLaw_inverseWishartMeasure (hS : S.PosDef)
     (hn : (p : ℝ) - 1 < n) (hX : HasLaw X (inverseWishartMeasure n S) P) :
     pdf X P (symmetricLebesgue p) =ᵐ[symmetricLebesgue p] inverseWishartPDF n S :=
@@ -534,4 +544,4 @@ theorem isProbabilityMeasure_inverseWishartMeasure_zero {n : ℝ} (hn : -1 < n)
   rw [inverseWishartMeasure_zero hn]
   infer_instance
 
-end TauCeti
+end TauCeti.Probability

@@ -48,20 +48,25 @@ two normalizing constants is the determinant power; where it is not, the cone in
 
 ## Main results
 
-* `TauCeti.mem_integrableExpSet_trace_mul_wishartGramMeasure_iff` — at a positive degree, the
+* `TauCeti.Probability.mem_integrableExpSet_trace_mul_wishartGramMeasure_iff` — at a positive
+  degree, the
   exact exponential-integrability domain of the trace statistic;
-* `TauCeti.mgf_trace_mul_wishartGramMeasure_sqrt` and
-  `TauCeti.mgf_trace_mul_wishartGramMeasure` — its moment-generating function on that domain, in
+* `TauCeti.Probability.mgf_trace_mul_wishartGramMeasure_sqrt` and
+  `TauCeti.Probability.mgf_trace_mul_wishartGramMeasure` — its moment-generating function on that
+  domain, in
   terms of the sandwich `√S * Θ * √S` and, for positive-semidefinite `S`, of `Θ * S`;
-* `TauCeti.cgf_trace_mul_wishartGramMeasure_sqrt` and
-  `TauCeti.cgf_trace_mul_wishartGramMeasure` — the matching cumulant-generating functions;
-* `TauCeti.integral_exp_neg_trace_mul_wishartGramMeasure` — the Laplace transform over the
+* `TauCeti.Probability.cgf_trace_mul_wishartGramMeasure_sqrt` and
+  `TauCeti.Probability.cgf_trace_mul_wishartGramMeasure` — the matching cumulant-generating
+  functions;
+* `TauCeti.Probability.integral_exp_neg_trace_mul_wishartGramMeasure` — the Laplace transform over
+  the
   positive-semidefinite cone, the specialization of the moment-generating function to `t = -1`;
-* `TauCeti.mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff`,
-  `TauCeti.mgf_trace_mul_nonsingularWishartMeasure` with its sandwich form
-  `TauCeti.mgf_trace_mul_nonsingularWishartMeasure_sqrt`,
-  `TauCeti.cgf_trace_mul_nonsingularWishartMeasure` and
-  `TauCeti.integral_exp_neg_trace_mul_nonsingularWishartMeasure` — the same four results for the
+* `TauCeti.Probability.mem_integrableExpSet_trace_mul_nonsingularWishartMeasure_iff`,
+  `TauCeti.Probability.mgf_trace_mul_nonsingularWishartMeasure` with its sandwich form
+  `TauCeti.Probability.mgf_trace_mul_nonsingularWishartMeasure_sqrt`,
+  `TauCeti.Probability.cgf_trace_mul_nonsingularWishartMeasure` and
+  `TauCeti.Probability.integral_exp_neg_trace_mul_nonsingularWishartMeasure` — the same four results
+  for the
   nonsingular density family, with its real degree in place of the natural one.
 
 ## References
@@ -77,7 +82,7 @@ open MeasureTheory ProbabilityTheory
 
 open scoped RealInnerProductSpace Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
   {Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)} {t : ℝ}
@@ -459,4 +464,4 @@ theorem integral_exp_neg_trace_mul_nonsingularWishartMeasure (hS : S.PosDef)
   rw [← hpencil, ← mgf_trace_mul_nonsingularWishartMeasure hS hn ht, mgf]
   exact integral_congr_ae (Filter.Eventually.of_forall fun A => by simp only [neg_one_mul])
 
-end TauCeti
+end TauCeti.Probability

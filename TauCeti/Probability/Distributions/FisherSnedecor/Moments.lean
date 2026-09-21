@@ -280,7 +280,7 @@ private theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
   have hn : 0 < n := lt_of_le_of_lt (mul_nonneg (by norm_num) (Nat.cast_nonneg q)) hq
   rw [fisherSnedecorMeasure_eq_map hm hn,
     integral_map (measurable_fisherSnedecorMap m n).aemeasurable (by fun_prop),
-    TauCeti.integral_betaMeasure_eq (by linarith) (by linarith)]
+    TauCeti.Probability.integral_betaMeasure_eq (by linarith) (by linarith)]
   simp_rw [smul_eq_mul]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioo (0 : ℝ) 1)]
   · rw [setIntegral_congr_fun measurableSet_Ioo

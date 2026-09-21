@@ -40,25 +40,34 @@ the inverse-moment threshold `n < a`.
 
 ## Main results
 
-* `TauCeti.integrable_gammaMeasure_iff` and `TauCeti.integral_gammaMeasure_eq` — integrability
+* `TauCeti.Probability.integrable_gammaMeasure_iff` and
+  `TauCeti.Probability.integral_gammaMeasure_eq` — integrability
   and integration against the gamma law, transferred to the real density;
-* `TauCeti.integral_pow_gammaMeasure` — the natural raw moments, `Γ (a + n) / (Γ a * r ^ n)`, with
-  `TauCeti.integral_id_gammaMeasure` and `TauCeti.integral_sq_gammaMeasure` as the first two cases;
-* `TauCeti.integrable_inv_pow_gammaMeasure_iff` — the `n`th inverse power is integrable exactly
-  below the shape, `n < a`, and `TauCeti.integral_inv_pow_gammaMeasure` — that inverse moment is
+* `TauCeti.Probability.integral_pow_gammaMeasure` — the natural raw moments,
+  `Γ (a + n) / (Γ a * r ^ n)`, with
+  `TauCeti.Probability.integral_id_gammaMeasure` and `TauCeti.Probability.integral_sq_gammaMeasure`
+  as the first two cases;
+* `TauCeti.Probability.integrable_inv_pow_gammaMeasure_iff` — the `n`th inverse power is integrable
+  exactly
+  below the shape, `n < a`, and `TauCeti.Probability.integral_inv_pow_gammaMeasure` — that inverse
+  moment is
   `r ^ n * Γ (a - n) / Γ a`;
-* `TauCeti.variance_id_gammaMeasure` — the variance is `a / r ^ 2`;
-* `TauCeti.integrable_exp_mul_id_gammaMeasure` and
-  `TauCeti.not_integrable_exp_mul_id_gammaMeasure` —
+* `TauCeti.Probability.variance_id_gammaMeasure` — the variance is `a / r ^ 2`;
+* `TauCeti.Probability.integrable_exp_mul_id_gammaMeasure` and
+  `TauCeti.Probability.not_integrable_exp_mul_id_gammaMeasure` —
   the exponential moment of rate `t` exists exactly when `t < r`, recorded as an equality of sets
-  in `TauCeti.integrableExpSet_id_gammaMeasure`;
-* `TauCeti.mgf_id_gammaMeasure` — the moment-generating function is `(1 - t / r) ^ (-a)` there;
-* `TauCeti.cgf_id_gammaMeasure` — the cumulant-generating function is `-a * log (1 - t / r)`
+  in `TauCeti.Probability.integrableExpSet_id_gammaMeasure`;
+* `TauCeti.Probability.mgf_id_gammaMeasure` — the moment-generating function is `(1 - t / r) ^ (-a)`
+  there;
+* `TauCeti.Probability.cgf_id_gammaMeasure` — the cumulant-generating function is
+  `-a * log (1 - t / r)`
   there, the real logarithm of the previous formula;
-* `TauCeti.gammaMeasure_conv_gammaMeasure` — convolution at a common rate adds the shape
+* `TauCeti.Probability.gammaMeasure_conv_gammaMeasure` — convolution at a common rate adds the shape
   parameters;
-* `TauCeti.gammaMeasure_map_const_mul` — scaling by `c > 0` sends the rate `r` to `r / c`;
-* `TauCeti.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against Lebesgue
+* `TauCeti.Probability.gammaMeasure_map_const_mul` — scaling by `c > 0` sends the rate `r` to
+  `r / c`;
+* `TauCeti.Probability.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against
+  Lebesgue
   measure on `Ioi 0`;
 
 The cumulative distribution function is computed in
@@ -73,7 +82,7 @@ The cumulative distribution function is computed in
 
 public section
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 open MeasureTheory ProbabilityTheory Real Set
 open scoped MeasureTheory Topology
@@ -432,7 +441,8 @@ theorem mgf_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :
   field_simp
 
 /-- The cumulant-generating function of a gamma law on the half-line where its exponential moment
-is integrable, namely `t < r`. It is the real logarithm of `TauCeti.mgf_id_gammaMeasure`. -/
+is integrable, namely `t < r`. It is the real logarithm of
+`TauCeti.Probability.mgf_id_gammaMeasure`. -/
 @[simp]
 theorem cgf_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :
     cgf id (gammaMeasure a r) t = -a * Real.log (1 - t / r) := by
@@ -516,4 +526,4 @@ theorem gammaMeasure_map_const_mul (ha : 0 < a) (hr : 0 < r) {c : ℝ} (hc : 0 <
           ← ENNReal.ofReal_mul hc.le, abs_of_pos (inv_pos.mpr hc), mul_inv_cancel₀ hc.ne',
           ENNReal.ofReal_one, one_mul]
 
-end TauCeti
+end TauCeti.Probability

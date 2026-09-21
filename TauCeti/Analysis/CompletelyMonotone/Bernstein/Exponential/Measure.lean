@@ -42,7 +42,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set Real
+open MeasureTheory TauCeti.Probability ProbabilityTheory Set Real
 open scoped ENNReal NNReal
 
 namespace TauCeti
