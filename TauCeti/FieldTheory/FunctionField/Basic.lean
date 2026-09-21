@@ -54,7 +54,10 @@ theorem exists_transcendental (hF : IsFunctionField k F) : ∃ x : F, Transcende
   hF.imp fun _ hx ↦ hx.1
 
 /-- Every transcendental element of an algebraic function field is a rational parameter: the
-field is finite over the intermediate field it generates. -/
+field is finite over the intermediate field it generates.
+
+The proof adapts Mathlib's `FunctionField.finiteDimensional_of_adjoin_transcendental` to the
+intrinsic predicate defined here. -/
 theorem finiteDimensional_adjoin (hF : IsFunctionField k F) {y : F}
     (hy : Transcendental k y) : FiniteDimensional k⟮y⟯ F := by
   obtain ⟨x, hx, hfinite⟩ := hF
