@@ -395,7 +395,7 @@ theorem not_dvd_pSectionCosetCard [Finite G] [Fact p.Prime] {x : G}
 
 /-- **The count is a class function of `x`**: left multiplication by the conjugating element
 gives a bijection between the corresponding sets of contributing cosets. -/
-theorem pSectionCosetCard_conj [Finite G] (c x : G) :
+theorem pSectionCosetCard_conj (c x : G) :
     pSectionCosetCard s P (c * x * c⁻¹) = pSectionCosetCard s P x := by
   rw [pSectionCosetCard, pSectionCosetCard]
   let e : (G ⧸ pElementaryOfSylow s P) ≃ (G ⧸ pElementaryOfSylow s P) :=
