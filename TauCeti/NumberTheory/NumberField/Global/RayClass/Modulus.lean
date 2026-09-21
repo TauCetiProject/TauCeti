@@ -65,6 +65,8 @@ away from a finite set of primes.
   with unit finite part and every real place is total positivity.
 * `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_narrowModulus`: the units congruent to one
   modulo the narrow modulus are the totally positive integer units.
+* `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_of_dvd_span_singleton`: a divisor of a principal
+  ideal whose generator is a unit at the finite part is prime to the modulus.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_iff_sup_eq_top`: being prime to the support is
   comaximality with the finite part.
 
@@ -450,6 +452,23 @@ def Modulus.IsCoprimeTo (𝔪 : Modulus K) (I : Ideal (𝓞 K)) : Prop :=
 
 theorem Modulus.isCoprimeTo_iff {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ ∀ v ∈ 𝔪.support, ¬ v.asIdeal ∣ I := Ideal.isPrimeTo_iff
+
+/-- **A divisor of a principal ideal with a generator prime to the modulus is prime to the
+modulus.** -/
+theorem Modulus.isCoprimeTo_of_dvd_span_singleton {m : Modulus K} {J : Ideal (𝓞 K)}
+    {a : 𝓞 K} {x : Kˣ} (hxa : (x : K) = a) (hx : x ∈ primeToSubgroup m)
+    (hdvd : J ∣ Ideal.span {a}) : m.IsCoprimeTo J := by
+  have hJ : J ≠ ⊥ := by
+    rintro rfl
+    obtain ⟨I, hI⟩ := hdvd
+    rw [Ideal.bot_mul] at hI
+    exact x.ne_zero (by rw [hxa, Ideal.span_singleton_eq_bot.mp hI]; simp)
+  refine Modulus.isCoprimeTo_iff.mpr ⟨hJ, fun v hv hvJ ↦ ?_⟩
+  have hmem : a ∈ v.asIdeal := Ideal.dvd_span_singleton.mp (hvJ.trans hdvd)
+  have hlt : v.valuation K (x : K) < 1 := by
+    rw [hxa]
+    exact (valuation_lt_one_iff_mem (K := K) v a).mpr hmem
+  exact absurd (mem_primeToSubgroup.mp hx v ((Modulus.mem_support_iff m v).mp hv)) hlt.ne
 
 /-- **Being prime to the modulus is comaximality with its finite part.**  A prime dividing both `I`
 and the finite part is exactly a prime of the support dividing `I`, and such a prime exists as soon

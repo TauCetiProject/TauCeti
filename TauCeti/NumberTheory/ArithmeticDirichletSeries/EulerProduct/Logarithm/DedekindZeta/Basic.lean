@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
@@ -56,13 +57,8 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- For `1 ≤ s`, the local ratio `N(𝔭) ^ (-s)` of a height-one prime is at most `1/2`, because
 `N(𝔭) ≥ 2`. -/
 theorem absNorm_rpow_neg_le_half (P : HeightOneSpectrum (𝓞 K)) {s : ℝ} (hs : 1 ≤ s) :
-    (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ 1 / 2 := by
-  have h2 := TauCeti.two_le_absNorm_asIdeal_real P
-  calc (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ (Ideal.absNorm P.asIdeal : ℝ) ^ (-1 : ℝ) :=
-        Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-    _ ≤ 1 / 2 := by
-        rw [Real.rpow_neg_one, one_div]
-        exact inv_anti₀ (by norm_num) h2
+    (Ideal.absNorm P.asIdeal : ℝ) ^ (-s) ≤ 1 / 2 :=
+  Real.rpow_neg_le_half (TauCeti.two_le_absNorm_asIdeal_real P) hs
 
 end IsDedekindDomain.HeightOneSpectrum
 

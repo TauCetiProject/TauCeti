@@ -81,6 +81,12 @@ once one is proved.
 * `TauCeti.TypeBLieIndex.FixedPoints` and `TauCeti.TypeBLieIndex.Group`: that fixed group and the
   candidate group of `Bₙ(q)`, its derived central quotient.
 
+* `TauCeti.TypeBLieIndex.primeFrobenius`, with
+  `TauCeti.TypeBLieIndex.primeFrobenius_simpleRootSubgroup`,
+  `TauCeti.TypeBLieIndex.primeFrobenius_weightTorusPoints` and
+  `TauCeti.TypeBLieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
+  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, its action on the split spin weight torus, and the
+  `q`-power Frobenius as its `e`-th power.
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II, for the spin representation the
@@ -249,6 +255,63 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the spin carrier attached to a validated type-`B` index**, the
+`p`-power map for `p` the defining characteristic. The `q`-power Frobenius is its `e`-th power, for
+`e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the spin carrier's Frobenius at exponent one. -/
+-- Not a `simp` lemma, for the reason `frobenius_def` is not.
+theorem primeFrobenius_def :
+    d.primeFrobenius = TypeBSpinCarrier.frobenius d.carrierRank d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
+`p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (TypeBSpinCarrier.dimension d.carrierRank)) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) :
+        Matrix (Fin (TypeBSpinCarrier.dimension d.carrierRank))
+          (Fin (TypeBSpinCarrier.dimension d.carrierRank)) d.1.Closure) r c ^
+            d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using TypeBSpinCarrier.coe_frobenius_apply d.carrierRank
+    d.1.characteristic 1 d.1.Closure g r c
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, TypeBSpinCarrier.frobenius_rootSubgroupPoints,
+    pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.TypeBSpinCarrier.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, TypeBSpinCarrier.frobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius raises every coordinate of the split spin weight torus to the
+`p`-th power.** -/
+@[simp]
+theorem primeFrobenius_weightTorusPoints (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
+    d.primeFrobenius (TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure s) =
+      TypeBSpinCarrier.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.characteristic) := by
+  rw [primeFrobenius_def, TypeBSpinCarrier.frobenius_weightTorusPoints, pow_one]
 
 /-- **The Frobenius raises every coordinate of the split spin weight torus to the `q`-th
 power.** -/

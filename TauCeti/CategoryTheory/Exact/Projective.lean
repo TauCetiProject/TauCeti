@@ -291,6 +291,41 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughProjectives A] (X : A) :
     HEq (abelian X).p (Projective.π X) := (HEq.rfl)
 
+section Comparison
+
+variable {X Y : C}
+
+/- The comparison maps in this section are dual to those for injective presentations in
+`TauCeti.CategoryTheory.Exact.Injective`. -/
+
+/-- The lift of `f : X ⟶ Y` to the projective middle terms of relative projective
+presentations `P` of `X` and `Q` of `Y`, chosen by relative projectivity of `P.P`. -/
+noncomputable def middleMap (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.P ⟶ Q.P :=
+  P.isProjective.factorThru (E.isDeflation_g Q.conflation) (P.p ≫ f)
+
+/-- The chosen middle-term map lifts `f` across the two deflations. -/
+@[reassoc (attr := simp)]
+theorem middleMap_comp_p (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.middleMap Q f ≫ Q.p = P.p ≫ f :=
+  P.isProjective.factorThru_comp (E.isDeflation_g Q.conflation) (P.p ≫ f)
+
+/-- The morphism induced by `f : X ⟶ Y` on the kernel terms of relative projective
+presentations, through the chosen lift `TauCeti.ExactStructure.ProjectivePresentation.middleMap`
+of the projective middle terms. -/
+noncomputable def kernelMap (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.K ⟶ Q.K :=
+  (E.isKernelCokernelPair _ Q.conflation).lift (P.i ≫ P.middleMap Q f) (by
+    rw [Category.assoc, P.middleMap_comp_p, ← Category.assoc, P.zero, zero_comp])
+
+/-- The induced morphism on kernel terms makes the square on the two inflations commute. -/
+@[reassoc (attr := simp)]
+theorem kernelMap_comp_i (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.kernelMap Q f ≫ Q.i = P.i ≫ P.middleMap Q f :=
+  (E.isKernelCokernelPair _ Q.conflation).lift_f _ _
+
+end Comparison
+
 end ProjectivePresentation
 
 /-- The split exact structure has enough relative projectives. -/

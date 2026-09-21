@@ -558,7 +558,7 @@ lemma sheafι_toPrincipalParts (D : SchemeWeilDivisor X) :
 /-- The sequence `𝒪_X(D) ⟶ 𝒦_X ⟶ principalParts D` of `𝒪_X`-modules. It is exact in the middle
 (`principalPartsShortComplex_exact`), and short exact when the codimension-one points are closed
 (`principalPartsShortComplex_shortExact`). -/
-def principalPartsShortComplex (D : SchemeWeilDivisor X) : ShortComplex X.Modules :=
+@[expose] def principalPartsShortComplex (D : SchemeWeilDivisor X) : ShortComplex X.Modules :=
   ShortComplex.mk (sheafι D) (toPrincipalParts D) (sheafι_toPrincipalParts D)
 
 /-- The first object of the principal-parts short complex is `𝒪_X(D)`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.PointsFunctor
 
@@ -44,7 +45,8 @@ or simple.
   Frobenius endomorphism of the value ring.
 * `TauCeti.SlStd.frobenius_rootSubgroupPoints` and `TauCeti.SlStd.frobenius_weightTorusPoints`: the
   equations on the pinned generating root subgroups and split torus.
-* `TauCeti.SlStd.frobenius_zero` and `TauCeti.SlStd.frobenius_add`: the iteration laws.
+* `TauCeti.SlStd.frobenius_zero`, `TauCeti.SlStd.frobenius_add` and
+  `TauCeti.SlStd.frobenius_pow`: the iteration laws.
 * `TauCeti.SlStd.map_subtype_fixedSubgroup_frobenius_eq`: the Frobenius-fixed points are the points
   over the Frobenius-fixed subring.
 
@@ -128,6 +130,16 @@ theorem frobenius_add (m : ℕ) :
     frobenius r p (k + m) A = (frobenius r p k A).comp (frobenius r p m A) := by
   rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
     GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation r A)]
+
+/-- **Frobenius exponents multiply under taking powers**: the `m`-th power of the `p ^ k`-power
+Frobenius of the type-`A_r` point group, in the endomorphism monoid of its points, is its
+`p ^ (k * m)`-power Frobenius. -/
+-- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
+-- structure before the power is elaborated.
+theorem frobenius_pow (m : ℕ) :
+    (show Monoid.End _ from frobenius r p k A) ^ m = frobenius r p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius r p j A) (frobenius_zero r p A)
+    (fun a b => frobenius_add r p a A b) k m
 
 /-- A type-`A_r` carrier point is fixed by Frobenius exactly when all of its matrix entries lie in
 the Frobenius-fixed subring. -/
