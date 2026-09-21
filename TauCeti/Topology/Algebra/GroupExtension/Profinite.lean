@@ -22,8 +22,8 @@ extension is the twisted product of `G` by `M` built from a continuous factor se
   (`TauCeti.GroupExtension.exists_continuous_section`);
 * the factor set that section measures is continuous
   (`TauCeti.GroupExtension.continuous_factorSet`);
-* the comparison map from the twisted product back to `E` is an isomorphism of topological groups
-  (`TauCeti.GroupExtension.factorSetContinuousMulEquiv`), assembled into
+* the comparison map from the twisted product back to `E` is a multiplicative equivalence and a
+  homeomorphism (`TauCeti.GroupExtension.factorSetContinuousMulEquiv`), assembled into
   `TauCeti.GroupExtension.exists_continuous_factorSet`.
 
 In the other direction `TauCeti.GroupExtension.factorSet_canonicalSection` reads a factor set back
@@ -40,10 +40,13 @@ infinite `G`.
 ## Main definitions
 
 * `TauCeti.GroupExtension.continuousMulEquivOfEquiv`: an equivalence of extensions with compact
-  total group is an isomorphism of topological groups as soon as it is continuous, and
-  `TauCeti.GroupExtension.continuousMulEquivOfMonoidHom` is its form for a bare morphism.
-* `TauCeti.GroupExtension.factorSetContinuousMulEquiv`: the extension, as a topological group, is
-  the twisted product built from the factor set of a continuous normalized section.
+  total group is a homeomorphism as soon as it is continuous, hence a `ContinuousMulEquiv`, and
+  `TauCeti.GroupExtension.continuousMulEquivOfMonoidHom` is its form for a bare morphism. Neither
+  assumes the group operations continuous, so neither is stated as an isomorphism of topological
+  groups.
+* `TauCeti.GroupExtension.factorSetContinuousMulEquiv`: the extension is the twisted product built
+  from the factor set of a continuous normalized section, by a multiplicative equivalence that is a
+  homeomorphism.
 
 ## Main results
 
@@ -78,9 +81,11 @@ section Morphism
 variable [Group M] {E' : Type*} [Group E'] [TopologicalSpace E'] [CompactSpace E] [T2Space E']
   {S : GroupExtension M E G} {S' : GroupExtension M E' G}
 
-/-- **A continuous equivalence of extensions with compact total group is an isomorphism of
-topological groups.** Only continuity in one direction has to be checked: a continuous bijection
-from a compact space onto a Hausdorff space is a homeomorphism. -/
+/-- **A continuous equivalence of extensions with compact total group is a homeomorphism**, so it
+is a multiplicative equivalence that is a homeomorphism. Only continuity in one direction has to be
+checked: a continuous bijection from a compact space onto a Hausdorff space is a homeomorphism. No
+compatibility between the group operations and the topologies is assumed, so the conclusion is a
+`ContinuousMulEquiv` and not, on its own, an isomorphism of topological groups. -/
 noncomputable def continuousMulEquivOfEquiv (e : S.Equiv S') (he : Continuous e) : E ≃ₜ* E' :=
   let h : E ≃ₜ E' := Continuous.homeoOfEquivCompactToT2 (f := e.toMulEquiv.toEquiv) he
   { toMulEquiv := e.toMulEquiv
@@ -93,12 +98,22 @@ theorem continuousMulEquivOfEquiv_apply (e : S.Equiv S') (he : Continuous e) (x 
     continuousMulEquivOfEquiv e he x = e x :=
   (rfl)
 
-/-- **Every continuous morphism between extensions with compact total group is an isomorphism of
-topological groups.** Algebraically this is the five lemma, `GroupExtension.Equiv.ofMonoidHom`. -/
+/-- **Every continuous morphism between extensions with compact total group is a multiplicative
+equivalence and a homeomorphism.** Algebraically this is the five lemma,
+`GroupExtension.Equiv.ofMonoidHom`; as in
+`TauCeti.GroupExtension.continuousMulEquivOfEquiv`, nothing ties the group operations to the
+topologies, so the conclusion is a `ContinuousMulEquiv`. -/
 noncomputable def continuousMulEquivOfMonoidHom (f : E →* E') (hf : Continuous f)
     (comp_inl : f.comp S.inl = S'.inl) (rightHom_comp : S'.rightHom.comp f = S.rightHom) :
     E ≃ₜ* E' :=
   continuousMulEquivOfEquiv (GroupExtension.Equiv.ofMonoidHom f comp_inl rightHom_comp) hf
+
+omit [TopologicalSpace G] in
+@[simp]
+theorem continuousMulEquivOfMonoidHom_apply (f : E →* E') (hf : Continuous f)
+    (comp_inl : f.comp S.inl = S'.inl) (rightHom_comp : S'.rightHom.comp f = S.rightHom) (x : E) :
+    continuousMulEquivOfMonoidHom f hf comp_inl rightHom_comp x = f x :=
+  (rfl)
 
 end Morphism
 
@@ -191,8 +206,9 @@ theorem continuous_factorSetToGroupExtensionEquiv (hinl : Continuous S.inl) {σ 
     (hσc.comp FactorSet.Extension.continuous_right)
 
 /-- **A profinite extension with compact kernel is the twisted product built from the factor set of
-a continuous normalized section**, as a topological group: the comparison map of
-`TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` is a homeomorphism. -/
+a continuous normalized section**: the comparison map of
+`TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` is a multiplicative equivalence and a
+homeomorphism. -/
 noncomputable def factorSetContinuousMulEquiv (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
     (hact : InducesAction S) : (factorSet σ hσ hact).Extension ≃ₜ* E :=
@@ -200,10 +216,17 @@ noncomputable def factorSetContinuousMulEquiv (hinl : Continuous S.inl)
   continuousMulEquivOfEquiv (factorSetToGroupExtensionEquiv σ hσ hact)
     (continuous_factorSetToGroupExtensionEquiv hinl hσc hσ hact)
 
+@[simp]
+theorem factorSetContinuousMulEquiv_apply (hinl : Continuous S.inl)
+    (hrh : Continuous S.rightHom) {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
+    (hact : InducesAction S) (x : (factorSet σ hσ hact).Extension) :
+    factorSetContinuousMulEquiv hinl hrh hσc hσ hact x = S.inl x.left * σ x.right :=
+  factorSetToGroupExtensionEquiv_apply σ hσ hact x
+
 /-- **A profinite extension with compact kernel is the twisted product of a continuous factor
-set**, by an equivalence of extensions that is continuous, hence an isomorphism of topological
-groups through `TauCeti.GroupExtension.continuousMulEquivOfEquiv`. This is the direction of the
-extension dictionary that reads a cocycle off an extension;
+set**, by an equivalence of extensions that is continuous, hence a homeomorphism through
+`TauCeti.GroupExtension.continuousMulEquivOfEquiv`. This is the direction of the extension
+dictionary that reads a cocycle off an extension;
 `TauCeti.GroupExtension.factorSet_canonicalSection` is the other one. -/
 theorem exists_continuous_factorSet [T2Space G] [ContinuousMul G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hact : InducesAction S) :

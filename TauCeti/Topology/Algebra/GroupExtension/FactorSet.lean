@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.Homeomorph.TransferInstance
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
@@ -22,9 +23,9 @@ profinite group and `M` a finite discrete module this exhibits `E_α` as a profi
 the extension attached to a continuous `2`-cocycle.
 
 The topology is put on `TauCeti.FactorSet.Extension` unconditionally, as the product topology
-transported along `TauCeti.FactorSet.Extension.homeomorphProd`; it is the group structure, not the
-topology, that needs `α` to be continuous, and the separation, compactness and disconnectedness
-instances below hold for every factor set.
+transported along the coordinate equivalence `TauCeti.FactorSet.Extension.equivProd`; it is the
+group structure, not the topology, that needs `α` to be continuous, and the separation, compactness
+and disconnectedness instances below hold for every factor set.
 
 Continuity of a factor set is membership of the explicit complex of continuous cochains:
 `TauCeti.FactorSet.ofMul_mem_Z2_iff` says that `α` is continuous exactly when it is a continuous
@@ -34,7 +35,8 @@ continuous `2`-cocycle, so the two descriptions of the data are interchangeable.
 
 ## Main definitions
 
-* `TauCeti.FactorSet.Extension.instTopologicalSpace`: the product topology on the twisted product.
+* `TauCeti.FactorSet.Extension.equivProd`: the twisted product is `M × G` as a type, and
+  `TauCeti.FactorSet.Extension.instTopologicalSpace` transports the product topology along it.
 * `TauCeti.FactorSet.Extension.homeomorphProd`: the twisted product is `M × G` as a space.
 * `TauCeti.FactorSet.ofMemZ2`: the factor set named by a normalized continuous `2`-cocycle.
 
@@ -70,38 +72,37 @@ variable {G : Type u} {M : Type v} [Group G] [CommGroup M] [MulDistribMulAction 
 
 namespace Extension
 
-/-- The twisted product carries the product topology of `M × G`; see
-`TauCeti.FactorSet.Extension.homeomorphProd`. -/
-instance instTopologicalSpace (α : FactorSet G M) : TopologicalSpace α.Extension :=
-  .induced (fun x => (x.left, x.right)) inferInstance
-
-variable {α : FactorSet G M}
-
-/-- The defining property of the topology on the twisted product: it is induced from `M × G`.
-The definition of `TauCeti.FactorSet.Extension.instTopologicalSpace` is not exposed, so this is
-the lemma every continuity argument about the twisted product goes through. -/
-theorem isInducing_leftRight :
-    Topology.IsInducing fun x : α.Extension => (x.left, x.right) :=
-  ⟨rfl⟩
-
-theorem continuous_left : Continuous (Extension.left : α.Extension → M) :=
-  continuous_fst.comp isInducing_leftRight.continuous
-
-theorem continuous_right : Continuous (Extension.right : α.Extension → G) :=
-  continuous_snd.comp isInducing_leftRight.continuous
-
-theorem continuous_mk : Continuous fun p : M × G => (⟨p.1, p.2⟩ : α.Extension) :=
-  isInducing_leftRight.continuous_iff.2 (continuous_fst.prodMk continuous_snd)
-
-/-- **The twisted product is `M × G` as a topological space.** The multiplication is twisted by the
-factor set, the topology is not. -/
-def homeomorphProd (α : FactorSet G M) : α.Extension ≃ₜ M × G where
+/-- **The twisted product is `M × G` as a type.** It is the multiplication that the factor set
+twists, not the underlying set, so this is the equivalence along which the topology is
+transported. -/
+def equivProd (α : FactorSet G M) : α.Extension ≃ M × G where
   toFun x := (x.left, x.right)
   invFun p := ⟨p.1, p.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := isInducing_leftRight.continuous
-  continuous_invFun := continuous_mk
+
+omit [TopologicalSpace G] [TopologicalSpace M] in
+@[simp]
+theorem equivProd_apply {α : FactorSet G M} (x : α.Extension) :
+    equivProd α x = (x.left, x.right) :=
+  (rfl)
+
+omit [TopologicalSpace G] [TopologicalSpace M] in
+@[simp]
+theorem equivProd_symm_apply {α : FactorSet G M} (p : M × G) :
+    (equivProd α).symm p = ⟨p.1, p.2⟩ :=
+  (rfl)
+
+/-- The twisted product carries the product topology of `M × G`, transported along
+`TauCeti.FactorSet.Extension.equivProd`; see `TauCeti.FactorSet.Extension.homeomorphProd`. -/
+instance instTopologicalSpace (α : FactorSet G M) : TopologicalSpace α.Extension :=
+  (equivProd α).topologicalSpace
+
+variable {α : FactorSet G M}
+
+/-- **The twisted product is `M × G` as a topological space.** The multiplication is twisted by the
+factor set, the topology is not. -/
+def homeomorphProd (α : FactorSet G M) : α.Extension ≃ₜ M × G := (equivProd α).homeomorph
 
 @[simp]
 theorem homeomorphProd_apply (x : α.Extension) : homeomorphProd α x = (x.left, x.right) := (rfl)
@@ -110,6 +111,18 @@ theorem homeomorphProd_apply (x : α.Extension) : homeomorphProd α x = (x.left,
 theorem homeomorphProd_symm_apply (p : M × G) :
     (homeomorphProd α).symm p = ⟨p.1, p.2⟩ :=
   (rfl)
+
+/-- The defining property of the topology on the twisted product: it is induced from `M × G`.
+This is the lemma every continuity argument about the twisted product goes through. -/
+theorem isInducing_leftRight :
+    Topology.IsInducing fun x : α.Extension => (x.left, x.right) :=
+  (homeomorphProd α).isInducing
+
+theorem continuous_left : Continuous (Extension.left : α.Extension → M) :=
+  continuous_fst.comp isInducing_leftRight.continuous
+
+theorem continuous_right : Continuous (Extension.right : α.Extension → G) :=
+  continuous_snd.comp isInducing_leftRight.continuous
 
 instance [T2Space M] [T2Space G] : T2Space α.Extension :=
   (homeomorphProd α).isEmbedding.t2Space
@@ -191,10 +204,24 @@ theorem continuous_canonicalSection : Continuous ⇑α.canonicalSection := by
   exact continuous_const.prodMk continuous_id
 
 /-- The copy of `M` inside the twisted product is a closed subgroup, and carries the topology of
-`M`. -/
-theorem isClosedEmbedding_inl [T2Space M] [T2Space G] [CompactSpace M] :
-    Topology.IsClosedEmbedding (inl α) :=
-  (continuous_inl α).isClosedEmbedding (inl_injective α)
+`M`. Only `G` needs a separation assumption: under `TauCeti.FactorSet.Extension.homeomorphProd`
+the inclusion is `a ↦ (a, 1)`, whose range is the preimage of `{1}` under the projection to `G`. -/
+theorem isClosedEmbedding_inl [T1Space G] : Topology.IsClosedEmbedding (inl α) := by
+  have hcomp : (fun x : α.Extension => (x.left, x.right)) ∘ ⇑(inl α) = fun a : M => (a, (1 : G)) :=
+    funext fun a => by simp
+  have hrange : Set.range (inl α) = (Extension.right : α.Extension → G) ⁻¹' {1} := by
+    ext x
+    refine ⟨?_, fun hx => ⟨x.left, ?_⟩⟩
+    · rintro ⟨a, rfl⟩
+      simp
+    · simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx
+      ext <;> simp [hx]
+  refine ⟨⟨Topology.IsInducing.of_comp (continuous_inl α)
+    Extension.isInducing_leftRight.continuous ?_, inl_injective α⟩, ?_⟩
+  · rw [hcomp]
+    exact isInducing_prodMkLeft 1
+  · rw [hrange]
+    exact isClosed_singleton.preimage Extension.continuous_right
 
 /-- The projection of the twisted product onto `G` is open: under
 `TauCeti.FactorSet.Extension.homeomorphProd` it is the projection `M × G → G`. -/
