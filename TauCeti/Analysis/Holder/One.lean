@@ -34,7 +34,7 @@ lemma shared by the higher-order constructions.
 * `TauCeti.C1HolderSpace.valueL`: the continuous linear map forgetting the derivative.
 * `TauCeti.C1HolderSpace.fderivL`: the continuous linear map returning the Hölder derivative.
 * `TauCeti.C1HolderSpace.instCompleteSpace`: the Banach-space structure.
-* `TauCeti.HolderSpace.isClosed_setOf_hasFDerivAt`: closedness of the bounded-continuous
+* `TauCeti.isClosed_setOf_hasFDerivAt`: closedness of the bounded-continuous
   derivative graph.
 
 ## References
@@ -58,8 +58,6 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-namespace HolderSpace
-
 /-- The set of bounded continuous fields satisfying the Fréchet derivative identity is closed. -/
 theorem isClosed_setOf_hasFDerivAt {E : Type u} {Y : Type v}
     [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -78,8 +76,6 @@ theorem isClosed_setOf_hasFDerivAt {E : Type u} {Y : Type v}
   · intro y
     exact ((BoundedContinuousFunction.evalCLM ℝ y).continuous.tendsto j.1).comp
       (continuous_fst.tendsto j |>.comp hjlim)
-
-end HolderSpace
 
 namespace C1HolderSpace
 
@@ -354,7 +350,7 @@ private theorem isClosed_c1HolderSpace :
       HolderSpace.toBoundedContinuousFunctionCLM_apply,
       HolderSpace.toBoundedContinuousFunction_apply]
   rw [hset]
-  exact (HolderSpace.isClosed_setOf_hasFDerivAt (E := E) (Y := F)).preimage hcontinuous
+  exact (isClosed_setOf_hasFDerivAt (E := E) (Y := F)).preimage hcontinuous
 
 /-- Bounded `C^{1,α}` maps into a Banach space form a Banach space. -/
 noncomputable instance instCompleteSpace [CompleteSpace F] :

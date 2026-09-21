@@ -115,19 +115,36 @@ def toBoundedContinuousFunction (f : C2HolderSpace α E F) : E →ᵇ F := f.1.1
 instance : CoeFun (C2HolderSpace α E F) fun _ ↦ E → F :=
   ⟨fun f ↦ f.toBoundedContinuousFunction⟩
 
+/-- The first derivative field, retaining its `C^{1,α}` structure. -/
+def fderivC1 (f : C2HolderSpace α E F) : C1HolderSpace α E (E →L[ℝ] F) := f.1.2
+
 /-- The first derivative as a bounded continuous field. -/
 def fderiv (f : C2HolderSpace α E F) : E →ᵇ (E →L[ℝ] F) :=
-  C1HolderSpace.valueL f.1.2
+  C1HolderSpace.valueL f.fderivC1
 
 /-- The second derivative as a bounded globally Hölder field. -/
 def secondFDeriv (f : C2HolderSpace α E F) :
-    HolderSpace α E (E →L[ℝ] E →L[ℝ] F) := C1HolderSpace.fderivL f.1.2
+    HolderSpace α E (E →L[ℝ] E →L[ℝ] F) := C1HolderSpace.fderivL f.fderivC1
+
+@[simp]
+theorem toBoundedContinuousFunction_fderivC1 (f : C2HolderSpace α E F) :
+    C1HolderSpace.toBoundedContinuousFunction f.fderivC1 = f.fderiv := by
+  rw [fderiv, C1HolderSpace.valueL_apply]
+
+@[simp]
+theorem fderiv_fderivC1 (f : C2HolderSpace α E F) :
+    C1HolderSpace.fderiv f.fderivC1 = f.secondFDeriv := by
+  rw [secondFDeriv, C1HolderSpace.fderivL_apply]
+
+@[simp]
+theorem toBoundedContinuousFunction_apply (f : C2HolderSpace α E F) (x : E) :
+    f.toBoundedContinuousFunction x = f x := rfl
 
 private theorem toBoundedContinuousFunction_eq_fst (f : C2HolderSpace α E F) :
     f.toBoundedContinuousFunction = (toJet f).1 := rfl
 
 private theorem fderivC1_eq_snd (f : C2HolderSpace α E F) :
-    f.1.2 = (toJet f).2 := rfl
+    f.fderivC1 = (toJet f).2 := rfl
 
 /-- Construct a bounded `C^{2,α}` map from a function and two compatible derivative fields. -/
 def mk (f : E →ᵇ F) (f' : E →ᵇ (E →L[ℝ] F))
@@ -147,17 +164,23 @@ theorem toBoundedContinuousFunction_mk (f : E →ᵇ F) (f' : E →ᵇ (E →L[�
   rw [toBoundedContinuousFunction, mk]
 
 @[simp]
+theorem fderivC1_mk (f : E →ᵇ F) (f' : E →ᵇ (E →L[ℝ] F))
+    (f'' : HolderSpace α E (E →L[ℝ] E →L[ℝ] F)) (hf) (hf') :
+    fderivC1 (mk f f' f'' hf hf') = C1HolderSpace.mk f' f'' hf' := by
+  rw [fderivC1, mk]
+
+@[simp]
 theorem fderiv_mk (f : E →ᵇ F) (f' : E →ᵇ (E →L[ℝ] F))
     (f'' : HolderSpace α E (E →L[ℝ] E →L[ℝ] F)) (hf) (hf') :
     fderiv (mk f f' f'' hf hf') = f' := by
-  rw [fderiv, mk, C1HolderSpace.valueL_apply,
+  rw [fderiv, fderivC1_mk, C1HolderSpace.valueL_apply,
     C1HolderSpace.toBoundedContinuousFunction_mk]
 
 @[simp]
 theorem secondFDeriv_mk (f : E →ᵇ F) (f' : E →ᵇ (E →L[ℝ] F))
     (f'' : HolderSpace α E (E →L[ℝ] E →L[ℝ] F)) (hf) (hf') :
     secondFDeriv (mk f f' f'' hf hf') = f'' := by
-  rw [secondFDeriv, mk, C1HolderSpace.fderivL_apply, C1HolderSpace.fderiv_mk]
+  rw [secondFDeriv, fderivC1_mk, C1HolderSpace.fderivL_apply, C1HolderSpace.fderiv_mk]
 
 /-- The constant map as a bounded `C^{2,α}` map. -/
 def const (c : F) : C2HolderSpace α E F :=
@@ -199,8 +222,8 @@ theorem fderiv_eq (f : C2HolderSpace α E F) (x : E) :
     _root_.fderiv ℝ (f : E → F) x = f.fderiv x :=
   (hasFDerivAt f x).fderiv
 
-/-- The pointwise Fréchet derivative agrees with the recorded derivative field. -/
-theorem fderiv_funext (f : C2HolderSpace α E F) :
+/-- The Fréchet derivative agrees with the recorded derivative field. -/
+theorem fderiv_eq_fderiv (f : C2HolderSpace α E F) :
     _root_.fderiv ℝ (f : E → F) = (f.fderiv : E → E →L[ℝ] F) :=
   funext f.fderiv_eq
 
@@ -209,20 +232,16 @@ theorem differentiable (f : C2HolderSpace α E F) : Differentiable ℝ (f : E �
   fun x ↦ (hasFDerivAt f x).differentiableAt
 
 private theorem fderiv_eq_fderivC1_coe (f : C2HolderSpace α E F) :
-    (f.fderiv : E → E →L[ℝ] F) = (f.1.2 : E → E →L[ℝ] F) := by
+    (f.fderiv : E → E →L[ℝ] F) = (f.fderivC1 : E → E →L[ℝ] F) := by
   funext x
   rw [fderiv, C1HolderSpace.valueL_apply,
     C1HolderSpace.toBoundedContinuousFunction_apply]
 
-private theorem secondFDeriv_eq_fderivC1_fderiv (f : C2HolderSpace α E F) :
-    f.secondFDeriv = C1HolderSpace.fderiv f.1.2 := by
-  rw [secondFDeriv, C1HolderSpace.fderivL_apply]
-
 /-- The recorded second derivative is the Fréchet derivative of the first derivative field. -/
 theorem hasFDerivAt_fderiv (f : C2HolderSpace α E F) (x : E) :
     HasFDerivAt (f.fderiv : E → E →L[ℝ] F) (f.secondFDeriv x) x := by
-  rw [f.fderiv_eq_fderivC1_coe, f.secondFDeriv_eq_fderivC1_fderiv]
-  exact C1HolderSpace.hasFDerivAt f.1.2 x
+  rw [f.fderiv_eq_fderivC1_coe, ← f.fderiv_fderivC1]
+  exact C1HolderSpace.hasFDerivAt f.fderivC1 x
 
 /-- The second derivative accessor agrees with the Fréchet derivative of the first derivative
 field. -/
@@ -235,33 +254,36 @@ theorem fderiv_fderiv_eq (f : C2HolderSpace α E F) (x : E) :
 theorem contDiff_two (f : C2HolderSpace α E F) : ContDiff ℝ 2 (f : E → F) := by
   rw [← one_add_one_eq_two, contDiff_succ_iff_fderiv]
   refine ⟨f.differentiable, by simp, ?_⟩
-  rw [f.fderiv_funext]
+  rw [f.fderiv_eq_fderiv]
   rw [f.fderiv_eq_fderivC1_coe]
-  exact C1HolderSpace.contDiff_one f.1.2
+  exact C1HolderSpace.contDiff_one f.fderivC1
 
 /-- The second Fréchet derivative of the underlying function is globally `α`-Hölder. -/
 theorem memHolder_secondFDeriv (f : C2HolderSpace α E F) :
     MemHolder α (fun x ↦ _root_.fderiv ℝ
       (_root_.fderiv ℝ (f : E → F)) x) := by
-  rw [f.fderiv_funext]
+  rw [f.fderiv_eq_fderiv]
   rw [f.fderiv_eq_fderivC1_coe]
-  exact C1HolderSpace.memHolder_fderiv f.1.2
+  exact C1HolderSpace.memHolder_fderiv f.fderivC1
 
 private noncomputable def secondIteratedEquiv :
     (E →L[ℝ] E →L[ℝ] F) ≃ₗᵢ[ℝ] E [×2]→L[ℝ] F :=
   (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F)).symm.trans
     (continuousMultilinearCurryRightEquiv' ℝ 1 E F).symm
 
+private theorem iteratedFDeriv_two_eq (f : C2HolderSpace α E F) :
+    iteratedFDeriv ℝ 2 (f : E → F) =
+      (secondIteratedEquiv (E := E) (F := F) : _ → _) ∘
+        _root_.fderiv ℝ (_root_.fderiv ℝ (f : E → F)) := by
+  funext x
+  ext m
+  simp [secondIteratedEquiv, iteratedFDeriv_succ_apply_right, Fin.init,
+    f.fderiv_eq_fderiv, f.fderiv_fderiv_eq]
+
 /-- The canonical second iterated Fréchet derivative is globally `α`-Hölder. -/
 theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
     MemHolder α (iteratedFDeriv ℝ 2 (f : E → F)) := by
-  rw [show iteratedFDeriv ℝ 2 (f : E → F) =
-      (secondIteratedEquiv (E := E) (F := F) : _ → _) ∘
-        _root_.fderiv ℝ (_root_.fderiv ℝ (f : E → F)) by
-    funext x
-    ext m
-    simp [secondIteratedEquiv, iteratedFDeriv_succ_apply_right, Fin.init,
-      f.fderiv_funext, f.fderiv_fderiv_eq]]
+  rw [f.iteratedFDeriv_two_eq]
   simpa using f.memHolder_secondFDeriv.comp
     (secondIteratedEquiv (E := E) (F := F)).lipschitz.holderWith.memHolder
 
@@ -280,7 +302,7 @@ theorem ext {f g : C2HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
         congr 1
         exact congrArg DFunLike.coe hvalue
       _ = g.fderiv x := g.fderiv_eq x
-  have hderivative : f.1.2 = g.1.2 := by
+  have hderivative : f.fderivC1 = g.fderivC1 := by
     apply C1HolderSpace.ext
     intro x
     rw [← f.fderiv_eq_fderivC1_coe, ← g.fderiv_eq_fderivC1_coe]
@@ -295,7 +317,7 @@ def fderivC1L : C2HolderSpace α E F →L[ℝ] C1HolderSpace α E (E →L[ℝ] F
     exact Submodule.subtypeL _)
 
 @[simp]
-theorem fderivC1L_apply (f : C2HolderSpace α E F) : fderivC1L f = f.1.2 := by
+theorem fderivC1L_apply (f : C2HolderSpace α E F) : fderivC1L f = f.fderivC1 := by
   rw [fderivC1L]
   rfl
 
@@ -320,7 +342,7 @@ theorem fderivL_apply (f : C2HolderSpace α E F) : fderivL f = f.fderiv := by
   simp only [fderivL, ContinuousLinearMap.comp_apply, fderivC1L_apply,
     C1HolderSpace.valueL_apply]
   rw [fderiv]
-  exact (C1HolderSpace.valueL_apply f.1.2).symm
+  exact (C1HolderSpace.valueL_apply f.fderivC1).symm
 
 /-- Returning the second derivative defines a continuous linear map to its Hölder space. -/
 def secondFDerivL : C2HolderSpace α E F →L[ℝ]
@@ -333,7 +355,7 @@ theorem secondFDerivL_apply (f : C2HolderSpace α E F) :
   simp only [secondFDerivL, ContinuousLinearMap.comp_apply, fderivC1L_apply,
     C1HolderSpace.fderivL_apply]
   rw [secondFDeriv]
-  exact (C1HolderSpace.fderivL_apply f.1.2).symm
+  exact (C1HolderSpace.fderivL_apply f.fderivC1).symm
 
 @[simp]
 theorem toBoundedContinuousFunction_zero :
@@ -371,6 +393,23 @@ theorem toBoundedContinuousFunction_smul (c : ℝ) (f : C2HolderSpace α E F) :
   simpa only [valueL_apply] using (valueL (α := α) (E := E) (F := F)).map_smul c f
 
 @[simp]
+theorem zero_apply (x : E) : (0 : C2HolderSpace α E F) x = 0 := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_zero]
+  rfl
+
+@[simp]
+theorem add_apply (f g : C2HolderSpace α E F) (x : E) :
+    (f + g) x = f x + g x := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add]
+  rfl
+
+@[simp]
+theorem smul_apply (c : ℝ) (f : C2HolderSpace α E F) (x : E) :
+    (c • f) x = c • f x := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul]
+  rfl
+
+@[simp]
 theorem fderiv_smul (c : ℝ) (f : C2HolderSpace α E F) :
     fderiv (c • f) = c • f.fderiv := by
   simpa only [fderivL_apply] using (fderivL (α := α) (E := E) (F := F)).map_smul c f
@@ -387,7 +426,7 @@ theorem norm_eq_max (f : C2HolderSpace α E F) :
     ‖f‖ = max ‖f.toBoundedContinuousFunction‖
       (max ‖f.fderiv‖ ‖f.secondFDeriv‖) := by
   rw [← norm_toJet f, Prod.norm_def, C1HolderSpace.norm_eq_max]
-  rw [toBoundedContinuousFunction_eq_fst, fderivC1_eq_snd]
+  rw [toBoundedContinuousFunction_eq_fst, ← fderivC1_eq_snd]
   rw [fderiv, secondFDeriv, C1HolderSpace.valueL_apply,
     C1HolderSpace.fderivL_apply]
 
@@ -416,7 +455,7 @@ private theorem isClosed_c2HolderSpace :
     fun J ↦ (J.1, C1HolderSpace.valueL J.2)
   have hcontinuous : Continuous forgetDerivative :=
     continuous_fst.prodMk (C1HolderSpace.valueL.continuous.comp continuous_snd)
-  exact (HolderSpace.isClosed_setOf_hasFDerivAt (E := E) (Y := F)).preimage hcontinuous
+  exact (isClosed_setOf_hasFDerivAt (E := E) (Y := F)).preimage hcontinuous
 
 /-- Bounded `C^{2,α}` maps into a Banach space form a Banach space. -/
 noncomputable instance instCompleteSpace [CompleteSpace F] :
