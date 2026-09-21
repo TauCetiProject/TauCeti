@@ -163,12 +163,10 @@ theorem isCompact_forall_mem_of_eventually_subset (U V : ∀ i, Subgroup (G i))
 theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hU : ∀ i, IsOpen (U i : Set (G i))) :
     IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  rw [show (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) =
-      {x : Πʳ i, [G i, (U i : Set (G i))] |
-        ∀ i, (x i : G i) ∈ (U i : Set (G i))} by
-    ext x
-    simp]
-  exact RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU
+  convert RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU using 1
+  ext x
+  simp
+  rfl
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
