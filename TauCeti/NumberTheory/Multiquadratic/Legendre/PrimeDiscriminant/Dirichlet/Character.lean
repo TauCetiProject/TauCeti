@@ -86,12 +86,6 @@ noncomputable def primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
   apply (ZMod.intCast_eq_intCast_iff' _ _ _).mp
   exact_mod_cast ZMod.natCast_zmod_val (n : ZMod P.natAbs)
 
-/-- The bundled character vanishes exactly on integers not coprime to its level. -/
-@[simp] theorem primeDiscriminantChar_apply_eq_zero_iff (P : ℤ)
-    (hP : IsPrimeDiscriminant P) (n : ℤ) :
-    primeDiscriminantChar P hP n = 0 ↔ ¬ IsCoprime n P := by
-  rw [primeDiscriminantChar_apply_int, primeDiscriminantCharFun_eq_zero_iff hP]
-
 /-- The character attached to a prime discriminant is nontrivial. -/
 theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
     primeDiscriminantChar P hP ≠ 1 := by
