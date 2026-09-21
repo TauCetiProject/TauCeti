@@ -189,6 +189,20 @@ theorem finrank_intermediateRing_eq_degree (φ : Isogeny W₁ W₂)
   exact (IsFractionRing.finrank_eq W₂.CoordinateRing W₂.FunctionField φ.intermediateRing
     W₁.FunctionField).symm
 
+/-- **The identity isogeny's intermediate ring has rank one** over the coordinate ring: this is
+`finrank_intermediateRing_eq_degree` at the identity, whose degree is one. The algebra structure
+is the source corestriction, which for the identity is the pullback corestriction. -/
+theorem finrank_intermediateRing_id_eq_one (W : WeierstrassCurve.Affine F) :
+    letI := (id W).toIntermediateRing.toAlgebra
+    Module.finrank W.CoordinateRing (id W).intermediateRing = 1 := by
+  let _ := (id W).toIntermediateRing.toAlgebra
+  have h : ∀ x, algebraMap W.CoordinateRing W.FunctionField x = (id W).pullback x := fun x ↦ by
+    rw [id_pullback, CoordinatePullback.id_apply]
+  have : IsScalarTower W.CoordinateRing (id W).intermediateRing W.FunctionField :=
+    (id W).isScalarTower_intermediateRing
+      (congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)).symm h
+  rw [(id W).finrank_intermediateRing_eq_degree h, degree_id]
+
 /-- **The intermediate ring is projective, hence locally free, over the Dedekind target coordinate
 ring.** Once the function-field algebra structures and scalar towers required by
 `finrank_intermediateRing_eq_degree` are also present, its rank is `φ.degree`. This is the form in

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Dedekind
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Rank
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Finite
 public import TauCeti.RingTheory.ClassGroup.ExtendedRelNorm
 -- Public: `isDedekindDomain_coordinateRing_of_isIntegrallyClosed` turns target normality into the
@@ -32,6 +33,8 @@ of class groups.
   the class of an integral ideal is the relative norm of its extension.
 * `TauCeti.Isogeny.pushClass_apply`: the additive form is the multiplicative one transported
   along `Additive`.
+* `TauCeti.Isogeny.pushClassMonoidHom_id` and `TauCeti.Isogeny.pushClass_id`: the identity
+  isogeny induces the identity on class groups.
 
 ## Design
 
@@ -194,6 +197,50 @@ noncomputable def pushClass :
 theorem pushClass_apply (x : Additive (ClassGroup W₁.CoordinateRing)) :
     φ.pushClass x = Additive.ofMul (φ.pushClassMonoidHom x.toMul) :=
   (rfl)
+
+/-- **The identity isogeny induces the identity on class groups.** Its intermediate ring is the
+coordinate ring itself, so extending an ideal into it and norming it back down leaves the ideal's
+class unchanged: the norm of an extension is the `Module.finrank`-th power, and that rank is
+one. -/
+@[simp]
+theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
+    [IsIntegrallyClosed W.CoordinateRing] :
+    (Isogeny.id W).pushClassMonoidHom = MonoidHom.id (ClassGroup W.CoordinateRing) := by
+  have := _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed W
+  -- extend and norm along the single map `toIntermediateRing`; the definition norms along
+  -- `pullbackToIntermediateRing`, which `id_pullbackToIntermediateRing` says is the same map
+  let _ := (Isogeny.id W).toIntermediateRing.toAlgebra
+  have h : ∀ x, algebraMap W.CoordinateRing W.FunctionField x = (Isogeny.id W).pullback x :=
+    fun x ↦ by rw [Isogeny.id_pullback, CoordinatePullback.id_apply]
+  have : IsScalarTower W.CoordinateRing (Isogeny.id W).intermediateRing W.FunctionField :=
+    (Isogeny.id W).isScalarTower_intermediateRing
+      (congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)).symm h
+  have : IsDedekindDomain (Isogeny.id W).intermediateRing :=
+    (Isogeny.id W).isDedekindDomain_intermediateRing h
+  have : Module.Finite W.CoordinateRing (Isogeny.id W).intermediateRing :=
+    (Isogeny.id W).moduleFinite_intermediateRing h
+  have : Module.IsTorsionFree W.CoordinateRing (Isogeny.id W).intermediateRing :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr (toIntermediateRing_injective _)
+  have key := Ideal.relNorm0_extendedIdeal (R := W.CoordinateRing)
+    (S := (Isogeny.id W).intermediateRing)
+  rw [finrank_intermediateRing_id_eq_one] at key
+  simp only [pow_one] at key
+  refine MonoidHom.ext fun c ↦ ?_
+  obtain ⟨I, rfl⟩ := ClassGroup.mk0_surjective c
+  rw [pushClassMonoidHom_mk0, MonoidHom.id_apply]
+  -- `key` norms along `toIntermediateRing`, the goal along `pullbackToIntermediateRing`; the two
+  -- sides agree once those algebra structures are identified, which is the single goal `convert`
+  -- leaves behind (`rw` cannot do it: the norm's scalar-tower argument depends on the structure)
+  convert congrArg ClassGroup.mk0 (key I) using 4
+  exact congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)
+
+/-- **The identity isogeny induces the identity**, additively. -/
+@[simp]
+theorem pushClass_id (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed W.CoordinateRing] :
+    (Isogeny.id W).pushClass = AddMonoidHom.id (Additive (ClassGroup W.CoordinateRing)) := by
+  refine AddMonoidHom.ext fun c ↦ ?_
+  rw [pushClass_apply, pushClassMonoidHom_id, MonoidHom.id_apply, AddMonoidHom.id_apply]
+  rfl
 
 end PushClass
 

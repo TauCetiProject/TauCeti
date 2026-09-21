@@ -38,7 +38,9 @@ because `mapsInfinity` is precisely the assertion that it lands there.
 * `TauCeti.Isogeny.isScalarTower_intermediateRing`: the corestricted pullback puts it in a scalar
   tower under `W₂.CoordinateRing`, which is the other half of a consumer's setup.
 * `TauCeti.Isogeny.id_intermediateRing`: an identity isogeny's intermediate ring is the
-  coordinate ring itself, sitting inside its own fraction field.
+  coordinate ring itself, sitting inside its own fraction field, and
+  `TauCeti.Isogeny.id_pullbackToIntermediateRing`: its two corestrictions into that ring
+  coincide.
 
 ## Design
 
@@ -269,6 +271,16 @@ theorem id_intermediateRing (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed 
     exact Algebra.mem_bot.1 hbot
   · rintro ⟨x, rfl⟩
     exact isIntegral_algebraMap
+
+/-- **The identity isogeny corestricts both coordinate rings the same way.** Its pullback is the
+coordinate ring's own embedding in its fraction field, so the map along which ideals are extended
+and the map along which the relative norm is taken are one and the same. -/
+@[simp]
+theorem id_pullbackToIntermediateRing (W : WeierstrassCurve.Affine F) :
+    (id W).pullbackToIntermediateRing = (id W).toIntermediateRing := by
+  refine RingHom.ext fun x ↦ Subtype.ext ?_
+  rw [coe_pullbackToIntermediateRing, coe_toIntermediateRing, id_pullback,
+    CoordinatePullback.id_apply]
 
 end Isogeny
 
