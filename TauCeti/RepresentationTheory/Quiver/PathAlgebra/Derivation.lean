@@ -54,7 +54,7 @@ differential graded algebra.
   the arrows** and its vanishing on the vertex idempotents.
 * `TauCeti.PathAlgebra.liftDerivation_mem_gradeBy`: the derivation shifts the grading by an
   arbitrary arrow weight by a fixed amount, provided the assignment does.
-* `TauCeti.PathAlgebra.liftDerivation_liftDerivation`: the square of the derivation vanishes as soon
+* `TauCeti.PathAlgebra.liftDerivation_sq_zero`: the square of the derivation vanishes as soon
   as it vanishes on the arrows.
 * `TauCeti.PathAlgebra.isDGAlgebra_liftDerivation`: **the resulting differential graded algebra**.
 
@@ -292,8 +292,8 @@ variable (hf : ∀ {a b : Q} (e : a ⟶ b), f e ∈ gradeBy k wt (wt e + 1))
 include hfl hfr hf hsq in
 /-- The square of the derivation is an ordinary, unsigned derivation: the two signs of the graded
 Leibniz rule cancel.  This is the induction step of
-`TauCeti.PathAlgebra.liftDerivation_liftDerivation`. -/
-private theorem liftDerivation_liftDerivation_ofArrow_mul {b c : Q} (e : b ⟶ c)
+`TauCeti.PathAlgebra.liftDerivation_sq_zero`. -/
+private theorem liftDerivation_sq_zero_ofArrow_mul {b c : Q} (e : b ⟶ c)
     (z : pathAlgebra k Q) :
     liftDerivation k wt f (liftDerivation k wt f (ofArrow e * z)) =
       ofArrow e * liftDerivation k wt f (liftDerivation k wt f z) := by
@@ -304,7 +304,7 @@ private theorem liftDerivation_liftDerivation_ofArrow_mul {b c : Q} (e : b ⟶ c
 
 include hfl hfr hf hsq in
 /-- **The square of the derivation vanishes** as soon as it vanishes on the arrows. -/
-theorem liftDerivation_liftDerivation (z : pathAlgebra k Q) :
+theorem liftDerivation_sq_zero (z : pathAlgebra k Q) :
     liftDerivation k wt f (liftDerivation k wt f z) = 0 := by
   have hpath : ∀ x : Quiver.TotalPath Q,
       liftDerivation k wt f (liftDerivation k wt f (ofPath x)) = 0 := by
@@ -313,7 +313,7 @@ theorem liftDerivation_liftDerivation (z : pathAlgebra k Q) :
     | nil => rw [← vertexIdempotent_eq_ofPath, liftDerivation_vertexIdempotent, map_zero]
     | cons p e ih =>
         rw [← ofArrow_mul_ofPath,
-          liftDerivation_liftDerivation_ofArrow_mul k wt f hfl hfr hf hsq, ih, mul_zero]
+          liftDerivation_sq_zero_ofArrow_mul k wt f hfl hfr hf hsq, ih, mul_zero]
   induction z using induction_linear with
   | zero => simp
   | add z₁ z₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂, add_zero]
@@ -325,7 +325,7 @@ differential `TauCeti.PathAlgebra.liftDerivation`. -/
 theorem isDGAlgebra_liftDerivation :
     IsDGAlgebra (gradeBy k wt) (liftDerivation k wt f) where
   map_mem hx := liftDerivation_mem_gradeBy k wt f wt 1 hf hx
-  sq_zero := liftDerivation_liftDerivation k wt f hfl hfr hf hsq
+  sq_zero := liftDerivation_sq_zero k wt f hfl hfr hf hsq
   leibniz hx y := liftDerivation_mul k wt f hfl hfr hx y
 
 end Lift

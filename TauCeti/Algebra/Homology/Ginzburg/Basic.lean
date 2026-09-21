@@ -46,7 +46,7 @@ degree.
   the whole doubled path algebra consists of cycles.
 * `TauCeti.isDGAlgebra_ginzburgTwoDifferential`: **the two-dimensional Ginzburg differential graded
   algebra**, for the cohomological grading, with `TauCeti.ginzburgTwoDifferential_mul` and
-  `TauCeti.ginzburgTwoDifferential_ginzburgTwoDifferential` its Leibniz rule and vanishing square.
+  `TauCeti.ginzburgTwoDifferential_sq_zero` its Leibniz rule and vanishing square.
 * `TauCeti.ginzburgTwoDifferential_mem_gradeBy_ginzburgTwoAdamsDegree`: **the differential preserves
   the Adams grading**, so that together with the previous result it has bidegree `(1, 0)`.
 
@@ -101,10 +101,6 @@ theorem ginzburgOf_map {i j : Symmetrify Q} (a : i ⟶ j) :
 @[simp]
 theorem ginzburgOf_obj (v : Symmetrify Q) : ginzburgOf.obj v = v := rfl
 
-/-- The doubled-quiver inclusion is the identity on the image of a vertex of `Q`.  Not a `simp`
-lemma: `TauCeti.ginzburgOf_obj` already rewrites the left-hand side. -/
-private theorem ginzburgOf_obj_of (v : Q) : ginzburgOf.obj (Symmetrify.of.obj v) = v := rfl
-
 /-- The inclusion of the doubled quiver in the Ginzburg quiver is bijective on vertices. -/
 theorem ginzburgOf_obj_bijective : Function.Bijective (ginzburgOf (Q := Q)).obj :=
   Function.bijective_id
@@ -141,6 +137,20 @@ theorem ginzburgTwoAdamsDegree_double {i j : Q}
 theorem ginzburgTwoAdamsDegree_loop (i : Q) : ginzburgTwoAdamsDegree (GinzburgHom.loop i) = 2 := by
   simp [ginzburgTwoAdamsDegree]
 
+/-- The cohomological degree pulled back along `TauCeti.ginzburgOf` is the constant weight `0`.
+This is `TauCeti.ginzburgTwoDegree_double` for an arrow of `Quiver.Symmetrify Q`, whose type is
+only definitionally the sum type that lemma is stated for. -/
+private theorem ginzburgTwoDegree_ginzburgOf_map {a b : Symmetrify Q} (e : a ⟶ b) :
+    ginzburgTwoDegree (ginzburgOf.map e) = 0 :=
+  ginzburgTwoDegree_double e
+
+/-- The Adams degree pulled back along `TauCeti.ginzburgOf` is the constant weight `1`.  This is
+`TauCeti.ginzburgTwoAdamsDegree_double` for an arrow of `Quiver.Symmetrify Q`, whose type is only
+definitionally the sum type that lemma is stated for. -/
+private theorem ginzburgTwoAdamsDegree_ginzburgOf_map {a b : Symmetrify Q} (e : a ⟶ b) :
+    ginzburgTwoAdamsDegree (ginzburgOf.map e) = 1 :=
+  ginzburgTwoAdamsDegree_double e
+
 section Map
 
 variable (k : Type w) [CommSemiring k] [Finite Q]
@@ -151,18 +161,12 @@ noncomputable def ginzburgMap :
     pathAlgebra k (Symmetrify Q) →ₐ[k] pathAlgebra k (GinzburgQuiver Q) :=
   mapAlgHom k ginzburgOf ginzburgOf_obj_bijective
 
-/-- The induced map carries a doubled arrow to the corresponding arrow of the Ginzburg quiver.
-Deliberately not a `simp` lemma: `TauCeti.PathAlgebra.ofArrow_eq_ofPath` already normalizes its
-left-hand side. -/
-theorem ginzburgMap_ofArrow {i j : Symmetrify Q} (a : i ⟶ j) :
-    ginzburgMap k (ofArrow a) = ofArrow (ginzburgOf.map a) :=
-  mapAlgHom_ofArrow k _ _ a
-
 @[simp]
 theorem ginzburgMap_doubledVertexIdempotent (v : Q) :
     ginzburgMap k (doubledVertexIdempotent k v) =
       vertexIdempotent (Q := GinzburgQuiver Q) k v := by
-  rw [doubledVertexIdempotent_def, ginzburgMap, mapAlgHom_vertexIdempotent, ginzburgOf_obj_of]
+  rw [doubledVertexIdempotent_def, ginzburgMap, mapAlgHom_vertexIdempotent, ginzburgOf_obj,
+    symmetrify_of_obj]
 
 /-! ### The doubled path algebra mapped to the Ginzburg path algebra -/
 
@@ -176,17 +180,17 @@ theorem ginzburgMap_mem_gradeBy_ginzburgTwoDegree (x : pathAlgebra k (Symmetrify
   | add x y hx hy => exact add_mem hx hy
   | single y c =>
       obtain ⟨a, b, p⟩ := y
-      exact single_mem_gradeBy_of_addWeight (by
-        change p.addWeight (fun _ => (0 : ℤ)) = 0
-        simp) c
+      exact single_mem_gradeBy_of_addWeight
+        (by simp only [ginzburgTwoDegree_ginzburgOf_map, _root_.Quiver.Path.addWeight_const,
+          smul_zero]) c
 
 /-- **The doubled path algebra keeps its length grading as the Adams grading.** -/
 theorem ginzburgMap_mem_gradeBy_ginzburgTwoAdamsDegree {n : ℕ}
     {x : pathAlgebra k (Symmetrify Q)} (hx : x ∈ PathAlgebra.grade k (Symmetrify Q) n) :
     ginzburgMap k x ∈ gradeBy k ginzburgTwoAdamsDegree n := by
   apply mapAlgHom_mem_gradeBy k ginzburgOf ginzburgOf_obj_bijective ginzburgTwoAdamsDegree
-  change x ∈ gradeBy k (fun _ => (1 : ℕ)) n
-  rwa [gradeBy_const_one]
+  simp only [ginzburgTwoAdamsDegree_ginzburgOf_map, gradeBy_const_one]
+  exact hx
 
 end Map
 
@@ -343,8 +347,7 @@ theorem ginzburgTwoDifferential_mul {m : ℤ} {x : pathAlgebra k (GinzburgQuiver
 
 /-- **The square of the Ginzburg differential vanishes.** -/
 @[simp]
-theorem ginzburgTwoDifferential_ginzburgTwoDifferential
-    (x : pathAlgebra k (GinzburgQuiver Q)) :
+theorem ginzburgTwoDifferential_sq_zero (x : pathAlgebra k (GinzburgQuiver Q)) :
     ginzburgTwoDifferential k (ginzburgTwoDifferential k x) = 0 :=
   (isDGAlgebra_ginzburgTwoDifferential k).sq_zero x
 
