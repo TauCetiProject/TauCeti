@@ -55,16 +55,16 @@ what it is: `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrie
 points whose matrix entries lie in the field of definition `𝔽_q`.
 
 The Suzuki branch's Steinberg endomorphism and candidate group are stated on this carrier in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. The carrier is not identified with
-the pinned simply connected group scheme of the diagram, and constructions on it transfer to that
-pinned group only along such an identification, once one is proved.
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. Its identification with the pinned
+simply connected group scheme is supplied separately in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Agreement.lean`.
 
-Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
-the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
-the carrier is not claimed to be *the* simply connected Chevalley--Demazure group scheme of type
-`B₂`: no pinning datum is constructed for it here or in the files it imports, which say so
-themselves. The identification with the `B₂` diagram proved below is the one on numbered root
-characters stated in `rootGeneratorWeight_carrierNode_eq_root_simpleIndex`.
+Nothing here asserts that the carrier is reductive, that its weight torus is maximal, or that any
+group below is finite, perfect, or simple. This foundational module does not construct a pinning or
+identify the carrier with the simply connected Chevalley--Demazure group scheme of type `B₂`;
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Agreement.lean` proves that later comparison.
+The identification with the `B₂` diagram proved below is the one on numbered root characters stated
+in `rootGeneratorWeight_carrierNode_eq_root_simpleIndex`.
 
 The same carrier-and-Frobenius material on the branches already assembled is in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean`,

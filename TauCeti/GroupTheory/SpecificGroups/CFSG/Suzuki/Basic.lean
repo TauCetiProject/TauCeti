@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Group.IterateOneParameter
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Basic
 
 /-!
 # The Steinberg endomorphism and candidate group of the Suzuki family
