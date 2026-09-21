@@ -7,18 +7,19 @@ module
 
 public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Analysis.Normed.Module.Basic
+import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Exhausting a bounded convex open set from inside
+# Exhausting a convex open set from inside
 
-A bounded convex open subset `Ω` of a *proper* real normed space — a finite-dimensional one,
-say — is the increasing union of convex open subsets whose closures are compact subsets of `Ω`.
-The subsets are the homothetic copies `c + t • (Ω - c)` of `Ω` about a point `c ∈ Ω`, for
-`0 < t < 1`: convexity is what keeps their closures inside `Ω`, and boundedness together with
-properness of the ambient space is what makes those closures compact.  Properness cannot be
-dropped: in an infinite-dimensional normed space a bounded closed set need not be compact, and
-the unit ball is then exhausted by no sequence of relatively compact open subsets.
+A convex open subset `Ω` of a *proper* real normed space — a finite-dimensional one, say — is the
+increasing union of convex open subsets whose closures are compact subsets of `Ω`.  Intersecting
+the homothetic copies `c + t • (Ω - c)` about a point `c ∈ Ω`, for `0 < t < 1`, with expanding
+balls gives the subsets: convexity keeps their closures inside `Ω`, the balls make them bounded,
+and properness makes their closures compact.  Properness cannot be dropped: in an
+infinite-dimensional normed space the unit ball is exhausted by no sequence of relatively compact
+open subsets.
 
 Convexity of the pieces is the point of the construction.  A general open set is exhausted by the
 relatively compact open sets `{x | dist x Ωᶜ > 1 / n} ∩ ball 0 n`, but those are not convex, and an
@@ -38,12 +39,11 @@ open Filter Set Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] {Ω : Set E}
 
-/-- **A bounded convex open set is exhausted from inside by convex open sets.**  In a proper
-real normed space, if `Ω` is open, convex and bounded, there is an increasing sequence of convex
-open sets `U n` whose closures are compact subsets of `Ω` and whose union is `Ω`.  Properness is
-what turns the bounded closures into compact ones. -/
+/-- **A convex open set is exhausted from inside by convex open sets.**  In a proper real normed
+space, if `Ω` is open and convex, there is an increasing sequence of convex open sets `U n` whose
+closures are compact subsets of `Ω` and whose union is `Ω`. -/
 theorem exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq
-    (hΩ : IsOpen Ω) (hconv : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) :
+    (hΩ : IsOpen Ω) (hconv : Convex ℝ Ω) :
     ∃ U : ℕ → Set E, Monotone U ∧ (∀ n, IsOpen (U n)) ∧ (∀ n, Convex ℝ (U n)) ∧
       (∀ n, IsCompact (closure (U n))) ∧ (∀ n, closure (U n) ⊆ Ω) ∧ ⋃ n, U n = Ω := by
   rcases eq_empty_or_nonempty Ω with rfl | ⟨c, hc⟩
@@ -51,7 +51,8 @@ theorem exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq
       by simp, by simp, by simp⟩
   -- Fix `c ∈ Ω`.  The shrunken copy `V s` of `Ω` is cut out as the preimage of `Ω` under the
   -- homothety `h s` of ratio `s⁻¹` about `c`, so that openness and convexity are inherited from
-  -- `Ω` for free.  The exhausting sequence is `V (t n)` for ratios `t n` increasing to `1`.
+  -- `Ω` for free.  The exhausting sequence intersects `V (t n)`, for ratios `t n` increasing to
+  -- `1`, with balls of radius `n` about `c`.
   set h : ℝ → E → E := fun s x => s⁻¹ • (x - c) + c with hh
   set V : ℝ → Set E := fun s => h s ⁻¹' Ω with hV
   have hcont : ∀ s : ℝ, Continuous (h s) := by fun_prop
@@ -111,16 +112,22 @@ theorem exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq
     have h2 : Tendsto t atTop (𝓝 1) := by
       simpa [ht] using tendsto_const_nhds.sub h1
     simpa using h2.inv₀ one_ne_zero
-  refine ⟨fun n => V (t n), fun m n hmn => hV_mono (ht_pos m) (ht_mono hmn),
-    fun n => hV_open _, fun n => hV_convex _,
-    fun n => (hb.subset (hV_subset (ht_pos n) (ht_lt n).le)).isCompact_closure,
-    fun n => hV_closure (ht_pos n) (ht_lt n), ?_⟩
-  refine subset_antisymm (iUnion_subset fun n => hV_subset (ht_pos n) (ht_lt n).le) fun x hx => ?_
+  refine ⟨fun n => V (t n) ∩ Metric.ball c n, fun m n hmn => inter_subset_inter
+      (hV_mono (ht_pos m) (ht_mono hmn)) (Metric.ball_subset_ball (by exact_mod_cast hmn)),
+    fun n => (hV_open _).inter Metric.isOpen_ball,
+    fun n => (hV_convex _).inter (convex_ball c n),
+    fun n => (Metric.isBounded_ball.subset inter_subset_right).isCompact_closure,
+    fun n => (closure_mono inter_subset_left).trans (hV_closure (ht_pos n) (ht_lt n)), ?_⟩
+  refine subset_antisymm (iUnion_subset fun n => inter_subset_left.trans
+    (hV_subset (ht_pos n) (ht_lt n).le)) fun x hx => ?_
   -- For `x ∈ Ω` the ray parameter `1` lies in the open set of ratios keeping `x` inside `Ω`.
   have hopen : IsOpen {r : ℝ | r • (x - c) + c ∈ Ω} :=
     hΩ.preimage (by fun_prop)
   have hone : (1 : ℝ) ∈ {r : ℝ | r • (x - c) + c ∈ Ω} := by simpa using hx
   obtain ⟨n, hn⟩ := (ht_tendsto.eventually (hopen.mem_nhds hone)).exists
-  exact mem_iUnion.2 ⟨n, hn⟩
+  obtain ⟨m : ℕ, hm⟩ := exists_nat_gt (dist x c)
+  refine mem_iUnion.2 ⟨max n m, hV_mono (ht_pos n) (ht_mono (Nat.le_max_left n m)) hn, ?_⟩
+  rw [Metric.mem_ball]
+  exact hm.trans_le (by exact_mod_cast Nat.le_max_right n m)
 
 end TauCeti
