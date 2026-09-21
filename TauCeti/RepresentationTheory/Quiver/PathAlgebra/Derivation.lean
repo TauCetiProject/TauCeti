@@ -147,7 +147,7 @@ theorem liftDerivation_ofArrow {a b : Q} (e : a ⟶ b) :
 
 include hfl in
 /-- **A vertex idempotent passes through the derivation**: it is a cycle of degree `0`. -/
-theorem liftDerivation_vertexIdempotent_mul (v : Q) (z : pathAlgebra k Q) :
+private theorem liftDerivation_vertexIdempotent_mul (v : Q) (z : pathAlgebra k Q) :
     liftDerivation k wt f (vertexIdempotent k v * z) =
       vertexIdempotent k v * liftDerivation k wt f z := by
   induction z using induction_linear with
@@ -189,7 +189,7 @@ theorem liftDerivation_ofArrow_mul {b c : Q} (e : b ⟶ c) (z : pathAlgebra k Q)
 
 include hfl hfr in
 /-- **The Leibniz rule against a basis path**, with the sign given by the weight of the path. -/
-theorem liftDerivation_ofPath_mul (x : Quiver.TotalPath Q) (y : pathAlgebra k Q) :
+private theorem liftDerivation_ofPath_mul (x : Quiver.TotalPath Q) (y : pathAlgebra k Q) :
     liftDerivation k wt f (ofPath x * y) =
       liftDerivation k wt f (ofPath x) * y +
         (x.2.2.addWeight wt).negOnePow • (ofPath x * liftDerivation k wt f y) := by

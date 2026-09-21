@@ -956,8 +956,7 @@ theorem adjoin_vertexIdempotents_union_arrows :
             exact Algebra.subset_adjoin
               (Set.mem_union_left _ ⟨a, rfl⟩)
         | @cons b c p e ih =>
-            rw [← _root_.Quiver.Path.comp_toPath_eq_cons,
-              ← ofPath_mul_ofPath_of_comp e.toPath p]
+            rw [← ofArrow_mul_ofPath]
             exact Subalgebra.mul_mem _
               (Algebra.subset_adjoin (Set.mem_union_right _
                 ⟨⟨b, c, e⟩, rfl⟩)) ih
