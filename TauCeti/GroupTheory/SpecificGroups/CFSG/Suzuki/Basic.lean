@@ -168,6 +168,8 @@ theorem halfFrobenius_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
         (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) d.1.Closure g := by
   refine (d.toSuzukiReeIndex.apply_pow_fieldExponent d.halfFrobenius_halfFrobenius g).trans ?_
   rw [RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_pow, Nat.one_mul]
+  -- `toRankTwoBLieIndex` is an abbreviation preserving `d.1`; reduce it here rather than
+  -- duplicating that equality in a private wrapper lemma.
   rfl
 
 /-- The final node of the two-node carrier is the numeral one. -/
