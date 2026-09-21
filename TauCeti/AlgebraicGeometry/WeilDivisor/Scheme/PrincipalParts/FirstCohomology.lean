@@ -136,7 +136,6 @@ lemma principalPartsQuotientEquivCohomologyOne_mk (D : SchemeWeilDivisor X)
 
 /-- The principal-parts boundary is the connecting map of the principal-parts short exact
 sequence, after identifying zeroth cohomology with global sections. -/
-@[simp]
 lemma principalPartsBoundary_apply (D : SchemeWeilDivisor X)
     (p : Γ(principalParts D, ⊤)) :
     principalPartsBoundary R hclosed D p =
@@ -168,6 +167,7 @@ lemma principalPartsBoundary_surjective (D : SchemeWeilDivisor X) :
 
 /-- A family of global principal parts has zero boundary exactly when it is the family of
 principal parts of a global rational function. -/
+@[simp]
 lemma principalPartsBoundary_eq_zero_iff (D : SchemeWeilDivisor X)
     (p : Γ(principalParts D, ⊤)) :
     principalPartsBoundary R hclosed D p = 0 ↔
