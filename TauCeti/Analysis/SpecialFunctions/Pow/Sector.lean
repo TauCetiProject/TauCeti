@@ -70,7 +70,8 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
 `β` recovers the original point.  The endpoint rays are included. -/
 @[simp] theorem cpow_inv_cpow_eq_of_arg_mem_closed_sector {z : ℂ} {β : ℝ} (hβ : 0 < β)
     (harg : z.arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
-    (z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = z := by
+    (z ^ (β : ℂ)⁻¹) ^ (β : ℂ) = z := by
+  rw [← ofReal_inv]
   have hangle := mul_inv_mem_Icc_of_mem_closed_sector hβ harg
   rw [← cpow_mul]
   · rw [← ofReal_mul, inv_mul_cancel₀ hβ.ne', ofReal_one, cpow_one]

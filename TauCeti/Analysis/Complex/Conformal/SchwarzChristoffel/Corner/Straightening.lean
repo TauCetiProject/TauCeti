@@ -123,7 +123,8 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
       ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := by
     rcases eq_or_ne z (x : ℂ) with rfl | hzx
     · simp [hfx, hβ.1.ne']
-    · exact Complex.cpow_inv_cpow_eq_of_arg_mem_closed_sector hβ.1 (hsector_closed hz)
+    · simpa only [ofReal_inv] using
+        Complex.cpow_inv_cpow_eq_of_arg_mem_closed_sector hβ.1 (hsector_closed hz)
   have hgcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz
     have hbase : 0 ≤ (f z - w).re ∨ (f z - w).im ≠ 0 := by
