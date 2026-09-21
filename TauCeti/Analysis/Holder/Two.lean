@@ -434,6 +434,13 @@ private theorem isClosed_c2HolderSpace :
     fun J ↦ (J.1, C1HolderSpace.valueL J.2)
   have hcontinuous : Continuous forgetDerivative :=
     continuous_fst.prodMk (C1HolderSpace.valueL.continuous.comp continuous_snd)
+  have hset : {J : C2HolderJet α E F |
+        ∀ x, HasFDerivAt (J.1 : E → F) (C1HolderSpace.valueL J.2 x) x} =
+      forgetDerivative ⁻¹' {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x} := by
+    ext J
+    simp only [forgetDerivative, Set.mem_ofPred_eq, Set.mem_preimage,
+      C1HolderSpace.valueL_apply, C1HolderSpace.toBoundedContinuousFunction_apply]
+  rw [hset]
   exact (isClosed_setOf_hasFDerivAt (E := E) (Y := F)).preimage hcontinuous
 
 /-- Bounded `C^{2,α}` maps into a Banach space form a Banach space. -/
