@@ -746,11 +746,12 @@ def W1p.posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega
   W1p.posPartAboveOfMemLp hp k u (W1p.memLp_posPartAbove hk u)
 
 /-- At a nonnegative level, the general `Lᵖ` truncation constructor agrees with
-`W1p.posPartAbove`, independently of the supplied proofs. -/
-theorem W1p.posPartAboveOfMemLp_eq_posPartAbove (hp hp' : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
+`W1p.posPartAbove`, independently of the supplied `MemLp` proof. -/
+@[simp]
+theorem W1p.posPartAboveOfMemLp_eq_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
     (u : W1p mu Omega p)
     (hmem : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
-    W1p.posPartAboveOfMemLp hp k u hmem = W1p.posPartAbove hp' hk u := by
+    W1p.posPartAboveOfMemLp hp k u hmem = W1p.posPartAbove hp hk u := by
   rfl
 
 /-- The value of `W1p.posPartAbove hp hk u` is `(u - k)⁺` almost everywhere. -/

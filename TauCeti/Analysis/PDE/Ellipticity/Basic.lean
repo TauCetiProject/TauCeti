@@ -182,16 +182,13 @@ theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add {A : Matrix n n ℝ} {lam L
     simp only [map_add, map_smul, _root_.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
     ring
   have hcross : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖ := hupper
-  -- Young's inequality `2 X Y ≤ (λ/2) X² + (2/λ) Y²` for `X = |z| ‖g‖` and `Y = Λ |w| ‖q‖`.
+  -- Weighted Young inequality `2 X Y ≤ (λ/2) X² + (2/λ) Y²` for `X = |z| ‖g‖` and
+  -- `Y = Λ |w| ‖q‖`: Mathlib's `two_mul_le_add_mul_sq` at weight `ε = λ/2`.
   have hyoung : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
       lam / 2 * (|z| * ‖g‖) ^ 2 + 2 / lam * (Lam * |w| * ‖q‖) ^ 2 := by
-    have hsq := sq_nonneg (lam / 2 * (|z| * ‖g‖) - Lam * |w| * ‖q‖)
-    have h2 : 2 / lam * (lam / 2 * (|z| * ‖g‖) - Lam * |w| * ‖q‖) ^ 2 =
-        lam / 2 * (|z| * ‖g‖) ^ 2 + 2 / lam * (Lam * |w| * ‖q‖) ^ 2
-          - 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by
-      field_simp
-      ring
-    nlinarith [mul_nonneg (div_nonneg zero_le_two hlam.le) hsq]
+    have h := two_mul_le_add_mul_sq (a := |z| * ‖g‖) (b := Lam * |w| * ‖q‖)
+      (ε := lam / 2) (by linarith)
+    rwa [inv_div] at h
   have hzw : |2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))| ≤ 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by
     rw [abs_mul, abs_mul, abs_mul, abs_two]
     calc 2 * (|z| * |w|) * |q ⬝ᵥ (A *ᵥ g)| ≤ 2 * (|z| * |w|) * (Lam * ‖q‖ * ‖g‖) := by

@@ -140,20 +140,15 @@ lemma energyIntegrand_one_zero_mass_self (c : ℝ) (U : ℝ × EuclideanSpace �
 variable {lam Lam beta gamma : ℝ}
 
 /-- Weighted Young inequality in the form used to absorb the first-order drift term into
-half of the ellipticity floor. -/
+half of the ellipticity floor: Mathlib's `two_mul_le_add_mul_sq` at weight `ε = λ/2`. -/
 private lemma mul_norm_abs_le_half_mul_sq_add (hlam : 0 < lam) (beta u : ℝ) (r : ℝ) :
     beta * r * |u| ≤ lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 := by
-  have hkey := two_mul_le_add_sq (lam * r) (beta * |u|)
-  rw [mul_pow, mul_pow, sq_abs] at hkey
-  have h2lam : (0 : ℝ) < 2 * lam := mul_pos two_pos hlam
-  rw [← sub_nonneg]
-  have expand : lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 - beta * r * |u|
-      = (lam ^ 2 * r ^ 2 + beta ^ 2 * u ^ 2 - 2 * lam * beta * r * |u|)
-          / (2 * lam) := by
-    field_simp
-  rw [expand]
-  apply div_nonneg _ h2lam.le
-  nlinarith [hkey]
+  calc beta * r * |u| = 2 * r * (beta * |u| / 2) := by ring
+    _ ≤ lam / 2 * r ^ 2 + (lam / 2)⁻¹ * (beta * |u| / 2) ^ 2 :=
+        two_mul_le_add_mul_sq (by linarith)
+    _ = lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 := by
+        rw [inv_div, div_pow, mul_pow, sq_abs]
+        field_simp
 
 private lemma abs_dotProduct_one_mulVec_le (η ξ : EuclideanSpace ℝ n) :
     |η ⬝ᵥ ((1 : Matrix n n ℝ) *ᵥ ξ)| ≤ 1 * ‖η‖ * ‖ξ‖ := by

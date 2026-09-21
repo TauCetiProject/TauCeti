@@ -179,7 +179,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le
         + 2 / lam * ∫ x in Omega, ψ x ^ 2 * f x * W1p.value w x ∂mu := by
   have hgeneral := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha hu
     (W1p.memLp_posPartAbove hk u) hψ hcpt hts
-  rw [W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) (by norm_num) hk u
+  rw [W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) hk u
     (W1p.memLp_posPartAbove hk u)] at hgeneral
   exact hgeneral
 
