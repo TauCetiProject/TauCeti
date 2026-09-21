@@ -149,14 +149,8 @@ instance isIntegrallyClosedIn_algebraicClosure :
 This is the device that lets a statement needing an exact field of constants be applied to an
 arbitrary function field. -/
 theorem IsFunctionField.algebraicClosure (hF : IsFunctionField k F) :
-    IsFunctionField (_root_.algebraicClosure k F) F := by
-  have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have : Algebra.EssFiniteType (_root_.algebraicClosure k F) F :=
-    Algebra.EssFiniteType.of_comp k (_root_.algebraicClosure k F) F
-  rw [isFunctionField_iff_trdeg_eq_one]
-  have h := lift_trdeg_add_eq k (_root_.algebraicClosure k F) F
-  rw [trdeg_eq_zero_iff.2 inferInstance, hF.trdeg_eq_one] at h
-  simpa using h
+    IsFunctionField (_root_.algebraicClosure k F) F :=
+  hF.of_isAlgebraic
 
 /-- The normalization device: every algebraic function field is, over a finite extension of its
 base field, an algebraic function field with an exact field of constants. Results stated under
@@ -194,13 +188,8 @@ element of `F` is algebraic over `k` exactly when it is one of the constants `k'
 theorem IsFunctionField.isAlgebraic_iff_mem_range_algebraMap (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F) (hex : IsIntegrallyClosedIn k' F) {x : F} :
     IsAlgebraic k x ↔ x ∈ Set.range (algebraMap k' F) := by
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · have hmem : x ∈ _root_.algebraicClosure k F := mem_algebraicClosure_iff.2 hx
-    rw [hF.algebraicClosure_eq_restrictScalars_bot hF' hex] at hmem
-    simpa [IntermediateField.mem_bot] using hmem
-  · rintro ⟨c, rfl⟩
-    have := hF.isAlgebraic_base hF'
-    exact (Algebra.IsAlgebraic.isAlgebraic c).algebraMap
+  rw [← mem_algebraicClosure_iff, hF.algebraicClosure_eq_restrictScalars_bot hF' hex,
+    IntermediateField.mem_restrictScalars, IntermediateField.mem_bot]
 
 end IntermediateBase
 
