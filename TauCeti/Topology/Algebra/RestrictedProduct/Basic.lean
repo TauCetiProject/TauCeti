@@ -1,4 +1,6 @@
-import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+module
+
+public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 
 /-!
 # Integral subgroups of restricted products
@@ -10,6 +12,8 @@ represented without changing the ambient restricted product.  The resulting open
 compactness statements are the point-set input for maps and decompositions of restricted
 products.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -133,6 +137,7 @@ theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
 /-- A family of compact open subgroups, one in each factor. -/
 structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] where
+  /-- The compact open subgroup chosen in each factor. -/
   subgroup : ∀ i, Subgroup (G i)
   isOpen_subgroup : ∀ i, IsOpen (subgroup i : Set (G i))
   isCompact_subgroup : ∀ i, IsCompact (subgroup i : Set (G i))
