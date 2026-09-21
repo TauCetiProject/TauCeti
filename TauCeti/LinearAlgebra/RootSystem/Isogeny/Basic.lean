@@ -226,6 +226,10 @@ def smulId [Module.Free ℤ M] [Module.Finite ℤ M] [Module.Free ℤ N] [Module
     (smulId P c).exponent i = c := by
   rw [smulId]
 
+-- Forgetting scalar compatibility commutes definitionally with composition.
+private theorem toAddMonoidHom_comp (g : M₂ →ₗ[R] M₃) (f : M →ₗ[R] M₂) :
+    (g ∘ₗ f).toAddMonoidHom = g.toAddMonoidHom.comp f.toAddMonoidHom := rfl
+
 /-- The composite of two isogenies, whose exponent at an index is the product of the exponent of
 the first at that index and the exponent of the second at its image. -/
 def comp (g : RootPairingIsogeny Q S) (f : RootPairingIsogeny P Q) :
@@ -242,17 +246,17 @@ def comp (g : RootPairingIsogeny Q S) (f : RootPairingIsogeny P Q) :
       simpa only [LinearMap.range_toAddSubgroup] using f.weightMap_finiteIndex
     have : g.weightMap.toAddMonoidHom.range.FiniteIndex := by
       simpa only [LinearMap.range_toAddSubgroup] using g.weightMap_finiteIndex
-    convert AddMonoidHom.finiteIndex_range_comp f.weightMap.toAddMonoidHom
-      g.weightMap.toAddMonoidHom using 1
-    congr 1
+    simpa only [LinearMap.range_toAddSubgroup, toAddMonoidHom_comp] using
+      AddMonoidHom.finiteIndex_range_comp f.weightMap.toAddMonoidHom
+        g.weightMap.toAddMonoidHom
   coweightMap_finiteIndex := by
     have : g.coweightMap.toAddMonoidHom.range.FiniteIndex := by
       simpa only [LinearMap.range_toAddSubgroup] using g.coweightMap_finiteIndex
     have : f.coweightMap.toAddMonoidHom.range.FiniteIndex := by
       simpa only [LinearMap.range_toAddSubgroup] using f.coweightMap_finiteIndex
-    convert AddMonoidHom.finiteIndex_range_comp g.coweightMap.toAddMonoidHom
-      f.coweightMap.toAddMonoidHom using 1
-    congr 1
+    simpa only [LinearMap.range_toAddSubgroup, toAddMonoidHom_comp] using
+      AddMonoidHom.finiteIndex_range_comp g.coweightMap.toAddMonoidHom
+        f.coweightMap.toAddMonoidHom
   weight_coweight_transpose x y := by
     rw [LinearMap.comp_apply, LinearMap.comp_apply, g.weight_coweight_transpose,
       f.weight_coweight_transpose]
