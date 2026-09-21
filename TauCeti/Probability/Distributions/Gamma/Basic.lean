@@ -121,6 +121,11 @@ theorem gammaPDFReal_of_nonneg {x : ℝ} (hx : 0 ≤ x) :
     gammaPDFReal a r x = r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) := by
   rw [gammaPDFReal, ite_eq_left hx]
 
+/-- The gamma law presented by its real-valued density. -/
+theorem gammaMeasure_eq_withDensity_ofReal (a r : ℝ) :
+    gammaMeasure a r = volume.withDensity fun x ↦ ENNReal.ofReal (gammaPDFReal a r x) :=
+  (rfl)
+
 /-- An integral against the gamma law is the set integral of the weighted integrand over
 `(0, ∞)`. -/
 theorem integral_gammaMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -130,9 +135,9 @@ theorem integral_gammaMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace
   have hcompl : ∀ x ∉ Ici (0 : ℝ), gammaPDFReal a r x • f x = 0 := by
     intro x hx
     rw [gammaPDFReal, ite_eq_right (by simpa using hx), zero_smul]
-  rw [gammaMeasure, integral_withDensity_eq_integral_toReal_smul
-    (Probability.measurable_gammaPDF a r) (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) f]
-  simp_rw [gammaPDF, ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr _)]
+  rw [gammaMeasure_eq_withDensity_ofReal, Probability.integral_withDensity_ofReal
+    (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
+    (ae_of_all _ (gammaPDFReal_nonneg ha hr)) f]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hcompl, integral_Ici_eq_integral_Ioi]
   exact setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by rw [gammaPDFReal_of_nonneg hx.le]
 
@@ -148,9 +153,12 @@ private lemma integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (f : ℝ →
   have hneg : IntegrableOn (fun x ↦ f x * gammaPDFReal a r x) (Iio 0) := by
     refine integrableOn_zero.congr_fun (fun x hx ↦ ?_) measurableSet_Iio
     rw [gammaPDFReal, ite_eq_right (not_le.mpr hx), mul_zero]
-  rw [gammaMeasure, integrable_withDensity_iff
-    (Probability.measurable_gammaPDF a r) (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
-  simp_rw [gammaPDF, ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr _)]
+  rw [gammaMeasure_eq_withDensity_ofReal,
+    Probability.integrable_withDensity_ofReal_iff
+      (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
+      (ae_of_all _ (gammaPDFReal_nonneg ha hr))]
+  simp_rw [smul_eq_mul]
+  rw [integrable_congr (.of_forall fun x ↦ mul_comm (gammaPDFReal a r x) (f x))]
   rw [← integrableOn_univ, ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union,
     integrableOn_Ici_iff_integrableOn_Ioi]
   exact ⟨fun h ↦ h.2.congr_fun hpos measurableSet_Ioi,

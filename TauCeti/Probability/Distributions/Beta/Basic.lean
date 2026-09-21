@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Probability.Density
 
 /-!
 # Elementary theory of the beta distribution
@@ -22,6 +23,8 @@ moment exists.
 ## Main results
 
 * `TauCeti.betaPDFReal_nonneg` — nonnegativity of the density;
+* `TauCeti.integrable_betaMeasure_iff` and `TauCeti.integral_betaMeasure_eq` — integrability and
+  integration against the beta law, transferred to the real density;
 * `TauCeti.integral_pow_betaMeasure` — the natural raw moments as a quotient of Gamma values;
 * `TauCeti.integral_id_betaMeasure` — the mean is `α / (α + β)`;
 * `TauCeti.variance_id_betaMeasure` — the variance is
@@ -57,9 +60,32 @@ theorem betaPDFReal_nonneg {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (x : ℝ)
       (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
   · exact le_rfl
 
-private lemma toReal_betaPDF {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (x : ℝ) :
-    (ENNReal.ofReal (betaPDFReal α β x)).toReal = betaPDFReal α β x :=
-  ENNReal.toReal_ofReal (betaPDFReal_nonneg hα hβ x)
+/-- The beta law presented by its real-valued density. -/
+theorem betaMeasure_eq_withDensity_ofReal (α β : ℝ) :
+    betaMeasure α β = volume.withDensity fun x ↦ ENNReal.ofReal (betaPDFReal α β x) :=
+  (rfl)
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against a beta law with positive shape
+parameters exactly when its density-weighted version is Lebesgue integrable. -/
+theorem integrable_betaMeasure_iff {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) {g : ℝ → E} :
+    Integrable g (betaMeasure α β) ↔ Integrable fun x ↦ betaPDFReal α β x • g x := by
+  rw [betaMeasure_eq_withDensity_ofReal]
+  exact Probability.integrable_withDensity_ofReal_iff (measurable_betaPDFReal α β).aemeasurable
+    (ae_of_all _ (betaPDFReal_nonneg hα hβ))
+
+/-- **Integral transfer.** An integral against a beta law with positive shape parameters is the
+density-weighted Lebesgue integral. -/
+theorem integral_betaMeasure_eq {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (g : ℝ → E) :
+    ∫ x, g x ∂betaMeasure α β = ∫ x, betaPDFReal α β x • g x := by
+  rw [betaMeasure_eq_withDensity_ofReal]
+  exact Probability.integral_withDensity_ofReal (measurable_betaPDFReal α β).aemeasurable
+    (ae_of_all _ (betaPDFReal_nonneg hα hβ)) g
+
+end Transfer
 
 /-- A beta measure lies almost everywhere in the open unit interval, for all parameter values. -/
 theorem ae_mem_Ioo_betaMeasure (α β : ℝ) :
@@ -88,11 +114,8 @@ theorem integral_pow_betaMeasure {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) (n 
       Real.Gamma (α + n) * Real.Gamma (α + β) /
         (Real.Gamma α * Real.Gamma (α + β + n)) := by
   have hαn : 0 < α + (n : ℝ) := add_pos_of_pos_of_nonneg hα (Nat.cast_nonneg n)
-  have hpdf : betaPDF α β = ENNReal.ofReal ∘ betaPDFReal α β := rfl
-  rw [betaMeasure, hpdf, integral_withDensity_eq_integral_toReal_smul
-    (ENNReal.measurable_ofReal.comp (measurable_betaPDFReal α β))
-    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) (fun x ↦ x ^ n)]
-  simp_rw [Function.comp_apply, toReal_betaPDF hα hβ, smul_eq_mul]
+  rw [integral_betaMeasure_eq hα hβ]
+  simp_rw [smul_eq_mul]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Set.Ioo (0 : ℝ) 1)]
   · calc
       ∫ x in Set.Ioo 0 1, betaPDFReal α β x * x ^ n =
