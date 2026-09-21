@@ -73,11 +73,12 @@ group is finite, perfect, or simple.
   recorded by `TauCeti.ValidLieTypeIndex.fixedField`.
 
 * `TauCeti.UnimodularExceptionalIndex.primeFrobenius`, with
+  `TauCeti.UnimodularExceptionalIndex.coe_primeFrobenius_apply`,
   `TauCeti.UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup`,
   `TauCeti.UnimodularExceptionalIndex.primeFrobenius_geckWeightTorus` and
   `TauCeti.UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius,
-  its action on the numbered root subgroups and on the weight torus, and the Steinberg
-  endomorphism as its `e`-th power.
+  its entrywise action, its action on the numbered root subgroups and on the weight torus, and the
+  Steinberg endomorphism as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
@@ -225,6 +226,20 @@ Frobenius of its Geck point group. -/
 -- Not a `simp` lemma, for the reason `steinberg_eq_geckFrobenius` is not.
 theorem primeFrobenius_eq_geckPrimeFrobenius : d.primeFrobenius = d.1.1.geckPrimeFrobenius := by
   rw [primeFrobenius]
+
+/-- The prime-field Frobenius acts on the Geck point group by raising every matrix entry to the
+`p`-th power. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup
+          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
+        Matrix _ _ d.1.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
+        Matrix _ _ d.1.1.Closure) r c ^ d.1.1.characteristic := by
+  rw [primeFrobenius_eq_geckPrimeFrobenius]
+  exact d.1.1.coe_geckPrimeFrobenius_apply g r c
 
 /-- **The prime-field Frobenius raises the parameter of every numbered root subgroup to the `p`-th
 power.** On a simple root subgroup this is `Frob_p (x_α(t)) = x_α(t ^ p)`. -/

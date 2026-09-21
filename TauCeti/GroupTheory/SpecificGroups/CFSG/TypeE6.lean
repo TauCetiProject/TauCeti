@@ -58,9 +58,10 @@ identification of numbered root characters,
 * `TauCeti.TypeE6LieIndex.Group`: the classification candidate `[H_d, H_d] / Z([H_d, H_d])`.
 
 * `TauCeti.TypeE6LieIndex.primeFrobenius`, with
+  `TauCeti.TypeE6LieIndex.coe_primeFrobenius_apply`,
   `TauCeti.TypeE6LieIndex.primeFrobenius_simpleRootSubgroup` and
   `TauCeti.TypeE6LieIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
-  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the Steinberg endomorphism as its `e`-th power.
+  entrywise and simple-root-subgroup equations, and the Steinberg endomorphism as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 14.
@@ -196,6 +197,17 @@ def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
 theorem primeFrobenius_def :
     d.primeFrobenius = E6Minuscule.frobenius d.1.characteristic 1 d.1.Closure :=
   (rfl)
+
+/-- The prime-field Frobenius raises every matrix entry to the `p`-th power. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 27) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
+        Matrix (Fin 27) (Fin 27) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
+        Matrix (Fin 27) (Fin 27) d.1.Closure) r c ^ d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using
+    E6Minuscule.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/

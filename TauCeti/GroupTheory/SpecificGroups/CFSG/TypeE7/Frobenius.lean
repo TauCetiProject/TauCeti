@@ -47,10 +47,11 @@ asserted to be finite, perfect, or simple.
   exactly when its entries lie in the field of definition.
 
 * `TauCeti.TypeE7LieIndex.primeFrobenius`, with
+  `TauCeti.TypeE7LieIndex.coe_primeFrobenius_apply`,
   `TauCeti.TypeE7LieIndex.primeFrobenius_simpleRootSubgroup`,
   `TauCeti.TypeE7LieIndex.primeFrobenius_weightTorusPoints` and
-  `TauCeti.TypeE7LieIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
-  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, its action on the weight torus, and the Steinberg
+  `TauCeti.TypeE7LieIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius, its entrywise
+  and pinned simple-root-subgroup equations, its action on the weight torus, and the Steinberg
   endomorphism as its `e`-th power.
 ## References
 
@@ -124,6 +125,17 @@ def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
 theorem primeFrobenius_def :
     d.primeFrobenius = E7Minuscule.frobenius d.1.characteristic 1 d.1.Closure :=
   (rfl)
+
+/-- The prime-field Frobenius raises every matrix entry to the `p`-th power. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 56) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
+        Matrix (Fin 56) (Fin 56) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
+        Matrix (Fin 56) (Fin 56) d.1.Closure) r c ^ d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using
+    E7Minuscule.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
