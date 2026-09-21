@@ -232,16 +232,16 @@ private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) (hz0 : z �
     Real.rpow_neg_one]
 
 /-- **An imaginary-power Abel bound.** Suppose every index has `N`-value at least `1`, and the
-partial sums of `w` are bounded by `C * t ^ θ` for a positive exponent `θ`. Twisting the weight
-by `(N i) ^ (-z)` with `Re z = 0` preserves that exponent, at the cost of the explicit factor
-`1 + ‖z‖ / θ`. -/
+partial sums of `w` are bounded by `C * t ^ θ` on `[1, x]` for a positive exponent `θ`. Twisting
+the weight by `(N i) ^ (-z)` with `Re z = 0` preserves that exponent, at the cost of the explicit
+factor `1 + ‖z‖ / θ`. -/
 theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ)) (w : ι → ℂ)
     {C θ x : ℝ} (hx : 1 ≤ x) (hθ : 0 < θ) (z : ℂ) (hz : z.re = 0)
-    (hC : ∀ t, 1 ≤ t → ‖summatory N w t‖ ≤ C * t ^ θ) :
+    (hC : ∀ t ∈ Set.Icc 1 x, ‖summatory N w t‖ ≤ C * t ^ θ) :
     ‖summatory N (fun i ↦ w i * (N i : ℂ) ^ (-z)) x‖ ≤
       C * (1 + ‖z‖ / θ) * x ^ θ := by
   rcases eq_or_ne z 0 with rfl | hz0
-  · simpa using hC x hx
+  · simpa using hC x ⟨hx, le_rfl⟩
   let g : ℝ → ℂ := fun t ↦ (t : ℂ) ^ (-z)
   have hg_diff : ∀ t ∈ Set.Icc (1 : ℝ) x, DifferentiableAt ℝ g t :=
     fun t ht ↦ differentiableAt_ofReal_cpow_neg z hz0 (by linarith [ht.1])
@@ -253,7 +253,7 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
     simpa only [g, hcast] using
       summatory_mul_eq_sub_integral_mul_of_one_le N hN w x hg_diff hg_int
   have hC0 : 0 ≤ C :=
-    (norm_nonneg (summatory N w 1)).trans (by simpa using hC 1 le_rfl)
+    (norm_nonneg (summatory N w 1)).trans (by simpa using hC 1 ⟨le_rfl, hx⟩)
   have hbound_int :
       ‖∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖ ≤
         (‖z‖ * C / θ) * x ^ θ := by
@@ -272,7 +272,7 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
                   ‖z‖ * t⁻¹ * ‖summatory N w t‖ := by
                     rw [norm_mul, norm_deriv_ofReal_cpow_neg z hz hz0 ht0]
               _ ≤ ‖z‖ * t⁻¹ * (C * t ^ θ) :=
-                    mul_le_mul_of_nonneg_left (hC t ht.1.le)
+                    mul_le_mul_of_nonneg_left (hC t (Set.Ioc_subset_Icc_self ht))
                       (mul_nonneg (norm_nonneg _) hinv)
               _ = ‖z‖ * C * t ^ (θ - 1) := by
                 rw [sub_eq_add_neg, Real.rpow_add ht0, Real.rpow_neg_one]
@@ -298,7 +298,7 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
     _ ≤ C * x ^ θ + (‖z‖ * C / θ) * x ^ θ := by
       have hg_norm : ‖g x‖ = 1 := norm_ofReal_cpow_neg z hz (zero_lt_one.trans_le hx)
       rw [hg_norm, one_mul]
-      exact add_le_add (hC x hx) hbound_int
+      exact add_le_add (hC x ⟨hx, le_rfl⟩) hbound_int
     _ = C * (1 + ‖z‖ / θ) * x ^ θ := by ring
 
 /-! ### One-sided bounds for twisted sums -/
@@ -367,7 +367,7 @@ nonzero ideals of a number field. -/
 theorem norm_idealSummatory_mul_cpow_le_of_summatory_le
     (w : (Ideal (𝓞 K))⁰ → ℂ) {C θ x : ℝ} (hx : 1 ≤ x) (hθ : 0 < θ)
     (z : ℂ) (hz : z.re = 0)
-    (hC : ∀ t, 1 ≤ t → ‖idealSummatory K w t‖ ≤ C * t ^ θ) :
+    (hC : ∀ t ∈ Set.Icc 1 x, ‖idealSummatory K w t‖ ≤ C * t ^ θ) :
     ‖idealSummatory K
       (fun I ↦ w I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z)) x‖ ≤
         C * (1 + ‖z‖ / θ) * x ^ θ := by

@@ -175,7 +175,8 @@ theorem HasCancellation.normTwist {χ : UnitaryIdealWeight K} (hχ : HasCancella
       MultiplicativeIdealWeight.normTwist_apply]
   rw [htwist]
   simpa only [θ] using
-    norm_idealSummatory_mul_cpow_le_of_summatory_le K χ.toIdealArithmeticFunction hx hθ z hz hC'
+    norm_idealSummatory_mul_cpow_le_of_summatory_le K χ.toIdealArithmeticFunction hx hθ z hz
+      fun t ht ↦ hC' t ht.1
 
 /-- **Cancellation is invariant under imaginary norm twists in degree greater than one.**
 Cancellation may be transported freely across an imaginary norm twist in either direction, so a
