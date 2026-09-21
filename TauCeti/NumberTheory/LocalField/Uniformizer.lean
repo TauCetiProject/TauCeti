@@ -10,10 +10,10 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 /-!
 # Uniformizers of a nonarchimedean local field
 
-This file records the uniformizer predicate used by the local quadratic-form invariants.  It is
-formulated on `Kˣ`, where the normalized valuation is defined.  The characterization below
-connects it with the irreducible elements of the ring of integers, the convention used by the
-local-fields infrastructure.
+This file records the uniformizer predicate for a nonarchimedean local field.  It is formulated
+on `Kˣ`, where the normalized valuation is defined.  The characterization below connects it with
+the irreducible elements of the ring of integers, the convention used by the local-fields
+infrastructure.
 -/
 
 public section
@@ -28,9 +28,14 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 variable (K) in
-/-- A uniformizer is a unit whose normalized valuation is one. -/
+/-- A uniformizer is a nonzero field element whose normalized valuation is one. -/
 def IsUniformizer (π : Kˣ) : Prop :=
   normalizedValuation K π = Multiplicative.ofAdd 1
+
+@[simp]
+theorem isUniformizer_def (π : Kˣ) :
+    IsUniformizer (K := K) π ↔ normalizedValuation K π = Multiplicative.ofAdd 1 := by
+  rfl
 
 variable (K) in
 /-- A uniformizer has the same order of vanishing as an irreducible element of the ring of
@@ -52,31 +57,24 @@ theorem isUniformizer_iff_exists_irreducible (π : Kˣ) :
       have huassoc : Associated ϖ ϖ' := ⟨u⁻¹, by simp [ϖ', mul_comm]⟩
       exact huassoc.irreducible hϖ
     refine ⟨ϖ', hϖ', ?_⟩
-    -- The associated element is defined in the integer ring, so expose its field coercion.
+    have hu_cancel :
+        ((↑(u⁻¹) : 𝒪[K]) : K) * ((u : K) * (π : K)) = (π : K) := by
+      rw [← mul_assoc]
+      change (((↑(u⁻¹) : 𝒪[K]) * (u : 𝒪[K]) : 𝒪[K]) : K) * (π : K) = (π : K)
+      simp
     change ((↑(u⁻¹) : 𝒪[K]) : K) * (ϖ : K) = (π : K)
-    rw [← hu]
-    -- Expose the scalar action of the integer-ring unit before cancelling it in `K`.
-    change ((↑(u⁻¹) : 𝒪[K]) : K) * ((u : K) • (π : K)) = (π : K)
-    rw [smul_eq_mul]
-    have huO : (↑(u⁻¹) : 𝒪[K]) * (u : 𝒪[K]) = 1 := by simp
-    calc
-      ((↑(u⁻¹) : 𝒪[K]) : K) * ((u : K) * (π : K)) =
-          (((↑(u⁻¹) : 𝒪[K]) * (u : 𝒪[K]) : 𝒪[K]) : K) * (π : K) := by
-            rw [← mul_assoc]
-            rfl
-      _ = (π : K) := by rw [huO]; simp
+    rw [← hu, Units.smul_def]
+    exact hu_cancel
   · rintro ⟨ϖ, hϖ, hϖπ⟩
     have hπϖ : π = Units.mk0 (ϖ : K) (fun h => hϖ.ne_zero (Subtype.ext h)) := by
       apply Units.ext
       exact hϖπ.symm
-    -- Unfold the predicate only after transporting the chosen representative to `π`.
-    change normalizedValuation K π = Multiplicative.ofAdd 1
-    rw [hπϖ, normalizedValuation_irreducible hϖ]
+    rw [isUniformizer_def, hπϖ, normalizedValuation_irreducible hϖ]
 
 /-- Uniformizers exist in every nonarchimedean local field. -/
 theorem exists_isUniformizer : ∃ π : Kˣ, IsUniformizer (K := K) π := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (𝒪[K])
   refine ⟨Units.mk0 (ϖ : K) (fun h => hϖ.ne_zero (Subtype.ext h)), ?_⟩
-  exact normalizedValuation_irreducible hϖ
+  exact (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖ, hϖ, rfl⟩
 
 end TauCeti
