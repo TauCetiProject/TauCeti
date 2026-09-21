@@ -33,15 +33,17 @@ that the elements of a normal `E/F` fixed by every `F`-automorphism are exactly 
 inseparable over `F`. So for an imperfect `F` the fixed field of `Field.absoluteGaloisGroup F` is
 the purely inseparable closure of `F` and not `F` itself, while over the separable closure
 `InfiniteGalois.mem_range_algebraMap_iff_fixed` gives the fixed field `F` that a Galois descent
-argument needs. The two groups are nonetheless the same topological group, which is what makes it
-legitimate to state a theorem for one and use it for the other.
+argument needs. The two groups are nonetheless the same topological group, which is what lets a
+property of the group and its topology alone be read off for one from the other.
 
-Everything Mathlib proves for a Galois extension therefore transports. Compactness does, so
-`Gal(E/F)` is profinite for `E/F` merely normal, and so does the fundamental theorem: the closed
-subgroups of `Gal(E/F)` are the fixing subgroups, and they correspond to the intermediate fields of
-`separableClosure F E / F`. Intermediate fields of `E` outside the separable closure are not seen
-by any fixing subgroup, by `IntermediateField.fixingSubgroup_inf_separableClosure`, which is why
-the correspondence is indexed by the separable closure.
+Only such properties transport along the isomorphism as they stand; a statement mentioning the
+extension, its intermediate fields or the action on `E` has to be translated first. Both happen
+here. Compactness of a Galois group is transported unchanged, so `Gal(E/F)` is profinite for `E/F`
+merely normal. The fundamental theorem is translated: the closed subgroups of `Gal(E/F)` are the
+fixing subgroups, and they correspond to the intermediate fields of `separableClosure F E / F`.
+Intermediate fields of `E` outside the separable closure are not seen by any fixing subgroup, by
+`IntermediateField.fixingSubgroup_inf_separableClosure`, which is why the correspondence is
+indexed by the separable closure.
 
 ## Main definitions and results
 
@@ -280,13 +282,6 @@ theorem intermediateFieldEquivClosedSubgroup_symm_apply (H : ClosedSubgroup Gal(
       IntermediateField.restrict
         (inf_le_right : IntermediateField.fixedField H.1 ⊓ _ ≤ separableClosure F E) :=
   (rfl)
-
-/-- The inverse of the correspondence, read back inside `E`: the lift of the restricted fixed
-field is the part of the fixed field that lies in the separable closure. -/
-theorem lift_intermediateFieldEquivClosedSubgroup_symm_apply (H : ClosedSubgroup Gal(E/F)) :
-    IntermediateField.lift ((intermediateFieldEquivClosedSubgroup (F := F) (E := E)).symm H) =
-      IntermediateField.fixedField H.1 ⊓ separableClosure F E :=
-  IntermediateField.lift_restrict _
 
 /-! ### The fixed field of a normal extension -/
 
