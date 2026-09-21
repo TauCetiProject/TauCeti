@@ -105,7 +105,7 @@ theorem blockRestrict_map_eq (σ : Equiv.Perm ℕ) (I : Finset ℕ) :
   simp [blockRestrict, blockReindex, pairReindex_apply]
 
 /-- Block independence transports along a diagonal relabelling preserving the law. -/
-theorem indepFun_blockRestrict_map {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
+theorem indepFun_blockRestrict_map {ρ : Measure (ℕ × ℕ → α)}
     (σ : Equiv.Perm ℕ) (hρ : ρ.map (pairReindex σ σ) = ρ) {I J : Finset ℕ}
     (h : IndepFun (blockRestrict I) (blockRestrict J) ρ) :
     IndepFun (blockRestrict (I.map σ.toEmbedding)) (blockRestrict (J.map σ.toEmbedding)) ρ := by

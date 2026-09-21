@@ -38,12 +38,14 @@ by placing `false` on the diagonal; the finite graphs on `Fin n` are read on the
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.graphArray`, `arrayGraph` — the adjacency array of a graph and the
-  graph of an array, measurable, mutually inverse on the symmetric `false`-diagonal arrays, and
-  intertwining relabelling with the diagonal relabelling of arrays (`graphArray_comap`).
-* `TauCeti.DenseGraphLimits.arrayLaw`, `graphLawOfArray` — the law-level adapter with its two
-  pushforward identities; `arrayLaw_mem` places the array law among the jointly exchangeable laws
-  carried by the symmetric arrays.
+* `SimpleGraph.graphArray`, `TauCeti.DenseGraphLimits.arrayGraph` — the adjacency array of a
+  graph and the graph of an array, measurable, mutually inverse on the symmetric `false`-diagonal
+  arrays, and intertwining relabelling with the diagonal relabelling of arrays
+  (`graphArray_comap`, `arrayGraph_pairReindex`).
+* `TauCeti.DenseGraphLimits.arrayLaw`, `graphLawOfArray`, `graphLawOf` — the law-level adapter
+  with its two pushforward identities, and `graphLawArrayLawEquiv`, the bundled equivalence
+  between exchangeable laws on infinite graphs and the jointly exchangeable probability laws
+  carried by the symmetric `false`-diagonal arrays.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_jointlyDissociated` — dissociation compatibility.
 * `TauCeti.DenseGraphLimits.arrayLaw_smul_add_smul` — convex-mixture compatibility.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_arrayLaw_mem_extremePoints` — dissociation of a
@@ -71,15 +73,15 @@ noncomputable def edgeCoordToArray (f : EdgeIndex → Bool) : ℕ × ℕ → Boo
   if h : s(p.1, p.2).IsDiag then false else f ⟨s(p.1, p.2), h⟩
 
 /-- The adjacency array of a graph on `ℕ`, through its edge coordinates. -/
-noncomputable def graphArray (G : SimpleGraph ℕ) : ℕ × ℕ → Bool :=
+noncomputable def _root_.SimpleGraph.graphArray (G : SimpleGraph ℕ) : ℕ × ℕ → Bool :=
   edgeCoordToArray (graphCoordEquiv G)
 
 open Classical in
 /-- The adjacency array is `true` exactly on edges. -/
 @[simp]
-theorem graphArray_apply (G : SimpleGraph ℕ) (i j : ℕ) :
-    graphArray G (i, j) = decide (G.Adj i j) := by
-  simp only [graphArray, edgeCoordToArray]
+theorem _root_.SimpleGraph.graphArray_apply (G : SimpleGraph ℕ) (i j : ℕ) :
+    G.graphArray (i, j) = decide (G.Adj i j) := by
+  simp only [SimpleGraph.graphArray, edgeCoordToArray]
   by_cases h : s(i, j).IsDiag
   · have : i = j := Sym2.mk_isDiag_iff.mp h
     subst this; simp [h]
@@ -89,7 +91,7 @@ theorem graphArray_apply (G : SimpleGraph ℕ) (i j : ℕ) :
 
 open Classical in
 /-- Reading a graph as an array is measurable. -/
-theorem measurable_graphArray : Measurable graphArray := by
+theorem measurable_graphArray : Measurable SimpleGraph.graphArray := by
   refine Measurable.of_eval fun p => ?_
   obtain ⟨i, j⟩ := p
   simp only [graphArray_apply]
@@ -99,34 +101,34 @@ theorem measurable_graphArray : Measurable graphArray := by
 /-- The array law of an exchangeable law on infinite graphs: the pushforward of the law along
 the adjacency array. -/
 noncomputable def arrayLaw (L : InfiniteExchangeableGraphLaw) : Measure (ℕ × ℕ → Bool) :=
-  L.law.map graphArray
+  L.law.map SimpleGraph.graphArray
 
 instance (L : InfiniteExchangeableGraphLaw) : IsProbabilityMeasure (arrayLaw L) := by
   unfold arrayLaw; infer_instance
 
 open Classical in
 /-- A graph on `Fin n` read on the block `[k, k + n)²`. -/
-noncomputable def finGraphBlockAt (k n : ℕ) (H : SimpleGraph (Fin n)) :
+private noncomputable def finGraphBlockAt (k n : ℕ) (H : SimpleGraph (Fin n)) :
     (↑(Finset.Ico k (k + n)) ×ˢ ↑(Finset.Ico k (k + n)) : Set (ℕ × ℕ)) → Bool :=
   fun p => decide (H.Adj ⟨p.1.1 - k, by have := p.2.1; simp at this; omega⟩
     ⟨p.1.2 - k, by have := p.2.2; simp at this; omega⟩)
 
 /-- Reading a finite graph on a block is injective. -/
-theorem finGraphBlockAt_injective (k n : ℕ) : Function.Injective (finGraphBlockAt k n) := by
+private theorem finGraphBlockAt_injective (k n : ℕ) : Function.Injective (finGraphBlockAt k n) := by
   intro H H' h; ext a b
   have := congrFun h ⟨(k + a, k + b), by simp⟩
   simpa [finGraphBlockAt] using this
 
 open Classical in
 /-- Reading a finite graph on a block is measurable. -/
-theorem measurable_finGraphBlockAt (k n : ℕ) : Measurable (finGraphBlockAt k n) :=
+private theorem measurable_finGraphBlockAt (k n : ℕ) : Measurable (finGraphBlockAt k n) :=
   Measurable.of_eval fun _ =>
     (measurable_of_countable (fun q : Prop => decide q)).comp
       (measurable_iff_adj.1 measurable_id _ _)
 
 /-- Reading a finite graph on a block is a measurable embedding: the graphs on `Fin n` are
 countable with measurable singletons. -/
-theorem measurableEmbedding_finGraphBlockAt (k n : ℕ) :
+private theorem measurableEmbedding_finGraphBlockAt (k n : ℕ) :
     MeasurableEmbedding (finGraphBlockAt k n) where
   injective := finGraphBlockAt_injective k n
   measurable := measurable_finGraphBlockAt k n
@@ -134,8 +136,8 @@ theorem measurableEmbedding_finGraphBlockAt (k n : ℕ) :
 
 /-- The block restriction of the array of `G` on `[k, k + n)²` is the window of `G` at offset
 `k`. -/
-theorem blockRestrict_graphArray (k n : ℕ) (G : SimpleGraph ℕ) :
-    blockRestrict (Finset.Ico k (k + n)) (graphArray G)
+private theorem blockRestrict_graphArray (k n : ℕ) (G : SimpleGraph ℕ) :
+    blockRestrict (Finset.Ico k (k + n)) (SimpleGraph.graphArray G)
       = finGraphBlockAt k n (SimpleGraph.comap (fun i : Fin n => k + (i : ℕ)) G) := by
   funext ⟨⟨a, b⟩, hab⟩
   simp only [blockRestrict_apply, finGraphBlockAt, graphArray_apply, SimpleGraph.comap_adj]
@@ -144,13 +146,13 @@ theorem blockRestrict_graphArray (k n : ℕ) (G : SimpleGraph ℕ) :
   congr 1; simp [Nat.add_sub_cancel' ha, Nat.add_sub_cancel' hb]
 
 /-- The first of two consecutive windows of a window. -/
-theorem comap_castAdd_restrictFin (G : SimpleGraph ℕ) (k l : ℕ) :
+private theorem comap_castAdd_restrictFin (G : SimpleGraph ℕ) (k l : ℕ) :
     SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l))
       = SimpleGraph.comap (fun i : Fin k => 0 + (i : ℕ)) G := by
   ext a b; simp [restrictFin_adj]
 
 /-- The second of two consecutive windows of a window. -/
-theorem comap_natAdd_restrictFin (G : SimpleGraph ℕ) (k l : ℕ) :
+private theorem comap_natAdd_restrictFin (G : SimpleGraph ℕ) (k l : ℕ) :
     SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))
       = SimpleGraph.comap (fun i : Fin l => k + (i : ℕ)) G := by
   ext a b; simp [restrictFin_adj]
@@ -173,17 +175,17 @@ theorem isDissociated_iff_forall_indepFun_blockRestrict (L : InfiniteExchangeabl
     Measure.map_map (measurable_blockRestrict _) measurable_graphArray]
   have e1 : (fun x => (blockRestrict (Finset.Ico 0 (0 + k)) x,
       blockRestrict (Finset.Ico k (k + l)) x))
-      ∘ graphArray = (Prod.map (finGraphBlockAt 0 k) (finGraphBlockAt k l))
+      ∘ SimpleGraph.graphArray = (Prod.map (finGraphBlockAt 0 k) (finGraphBlockAt k l))
         ∘ (fun G : SimpleGraph ℕ => (SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)),
             SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l)))) := by
     funext G
     simp only [Function.comp, Prod.map, comap_castAdd_restrictFin, comap_natAdd_restrictFin,
       blockRestrict_graphArray]
-  have e2 : blockRestrict (Finset.Ico 0 (0 + k)) ∘ graphArray
+  have e2 : blockRestrict (Finset.Ico 0 (0 + k)) ∘ SimpleGraph.graphArray
       = finGraphBlockAt 0 k ∘ (fun G : SimpleGraph ℕ =>
           SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l))) := by
     funext G; simp only [Function.comp, comap_castAdd_restrictFin, blockRestrict_graphArray]
-  have e3 : blockRestrict (Finset.Ico k (k + l)) ∘ graphArray
+  have e3 : blockRestrict (Finset.Ico k (k + l)) ∘ SimpleGraph.graphArray
       = finGraphBlockAt k l ∘ (fun G : SimpleGraph ℕ =>
           SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))) := by
     funext G; simp only [Function.comp, comap_natAdd_restrictFin, blockRestrict_graphArray]
@@ -266,23 +268,26 @@ theorem measurable_arrayGraph : Measurable arrayGraph :=
 
 /-- The graph of the array of a graph is the graph. -/
 @[simp]
-theorem arrayGraph_graphArray (G : SimpleGraph ℕ) : arrayGraph (graphArray G) = G := by
-  simp [arrayGraph, graphArray, arrayToEdgeCoord_edgeCoordToArray]
+theorem _root_.SimpleGraph.arrayGraph_graphArray (G : SimpleGraph ℕ) :
+    arrayGraph G.graphArray = G := by
+  simp [arrayGraph, SimpleGraph.graphArray, arrayToEdgeCoord_edgeCoordToArray]
 
 /-- The array of the graph of a symmetric `false`-diagonal array is the array. -/
+@[simp]
 theorem graphArray_arrayGraph {x : ℕ × ℕ → Bool} (hx : x ∈ symmetricArraysWithDiag Bool false) :
-    graphArray (arrayGraph x) = x := by
-  simp [arrayGraph, graphArray, edgeCoordToArray_arrayToEdgeCoord hx]
+    SimpleGraph.graphArray (arrayGraph x) = x := by
+  simp [arrayGraph, SimpleGraph.graphArray, edgeCoordToArray_arrayToEdgeCoord hx]
 
 /-- The array of a graph is symmetric with `false` diagonal. -/
-theorem graphArray_mem (G : SimpleGraph ℕ) : graphArray G ∈ symmetricArraysWithDiag Bool false :=
+theorem _root_.SimpleGraph.graphArray_mem (G : SimpleGraph ℕ) :
+    G.graphArray ∈ symmetricArraysWithDiag Bool false :=
   edgeCoordToArray_mem _
 
 /-- Relabelling the graph is relabelling both axes of its array. -/
 theorem graphArray_comap (σ : Equiv.Perm ℕ) (G : SimpleGraph ℕ) :
-    graphArray (SimpleGraph.comap ⇑σ G) = pairReindex σ σ (graphArray G) := by
+    (SimpleGraph.comap ⇑σ G).graphArray = pairReindex σ σ G.graphArray := by
   funext ⟨i, j⟩
-  simp only [graphArray, edgeCoordToArray, pairReindex_apply]
+  simp only [SimpleGraph.graphArray, edgeCoordToArray, pairReindex_apply]
   by_cases h : s(i, j).IsDiag
   · have h' : s(σ i, σ j).IsDiag := by
       simpa [Sym2.mk_isDiag_iff] using congrArg σ (Sym2.mk_isDiag_iff.mp h)
@@ -299,7 +304,7 @@ theorem arrayLaw_compl_symmetric (L : InfiniteExchangeableGraphLaw) :
     arrayLaw L (symmetricArraysWithDiag Bool false)ᶜ = 0 := by
   rw [arrayLaw,
     Measure.map_apply measurable_graphArray (measurableSet_symmetricArraysWithDiag _).compl]
-  have : graphArray ⁻¹' (symmetricArraysWithDiag Bool false)ᶜ = ∅ := by
+  have : SimpleGraph.graphArray ⁻¹' (symmetricArraysWithDiag Bool false)ᶜ = ∅ := by
     ext G; simp only [Set.mem_preimage, Set.mem_compl_iff, Set.mem_empty_iff_false, iff_false,
       not_not]; exact graphArray_mem G
   simp [this]
@@ -313,8 +318,8 @@ theorem jointlyExchangeable_arrayLaw (L : InfiniteExchangeableGraphLaw) :
   simp only [arrayLaw]
   rw [Measure.map_map (by fun_prop) measurable_graphArray,
     Measure.map_map (by fun_prop) measurable_graphArray]
-  have : ((fun x : ℕ × ℕ → Bool => fun p => x (σ p.1, σ p.2)) ∘ graphArray)
-      = graphArray ∘ SimpleGraph.comap ⇑σ := by
+  have : ((fun x : ℕ × ℕ → Bool => fun p => x (σ p.1, σ p.2)) ∘ SimpleGraph.graphArray)
+      = SimpleGraph.graphArray ∘ SimpleGraph.comap ⇑σ := by
     funext G; simp only [Function.comp, graphArray_comap, pairReindex_def]
   rw [this, ← Measure.map_map measurable_graphArray (SimpleGraph.measurable_comap _),
     L.exchangeable σ]
@@ -337,14 +342,15 @@ theorem graphLawOfArray_arrayLaw (L : InfiniteExchangeableGraphLaw) :
     graphLawOfArray (arrayLaw L) = L.law := by
   simp only [graphLawOfArray, arrayLaw]
   rw [Measure.map_map measurable_arrayGraph measurable_graphArray]
-  have : arrayGraph ∘ graphArray = id := funext arrayGraph_graphArray
+  have : arrayGraph ∘ SimpleGraph.graphArray = id := funext arrayGraph_graphArray
   rw [this, Measure.map_id]
 
 /-- The array law of the graph law of an array law carried by the symmetric arrays is the array
 law. -/
+@[simp]
 theorem arrayLaw_graphLawOfArray {ρ : Measure (ℕ × ℕ → Bool)}
     (hρ : ρ (symmetricArraysWithDiag Bool false)ᶜ = 0) :
-    (graphLawOfArray ρ).map graphArray = ρ := by
+    (graphLawOfArray ρ).map SimpleGraph.graphArray = ρ := by
   simp only [graphLawOfArray]
   rw [Measure.map_map measurable_graphArray measurable_arrayGraph]
   refine (Measure.map_congr ?_).trans Measure.map_id
@@ -375,13 +381,83 @@ theorem isDissociated_iff_arrayLaw_mem_extremePoints (L : InfiniteExchangeableGr
         (jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false) := by
   rw [isDissociated_iff_jointlyDissociated,
     jointlyDissociated_iff_mem_extremePoints_on (jointlyExchangeable_arrayLaw L)
-      (arrayLaw_compl_symmetric L),
-    jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_eq]
+      (arrayLaw_compl_symmetric L)]
+  -- the symmetric carried-law set is the carried-law set at the symmetric carrier
+  exact Iff.of_eq (congrArg (arrayLaw L ∈ extremePoints ℝ≥0∞ ·) (Set.ext fun _ =>
+    mem_jointlyExchangeableProbabilityMeasuresOn_iff.trans
+      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.symm))
+
+/-- The graph law of an array law carried by the symmetric arrays is exchangeable: the graph of a
+relabelled array is the relabelled graph on the carrier. -/
+theorem arrayGraph_pairReindex {x : ℕ × ℕ → Bool} (hx : x ∈ symmetricArraysWithDiag Bool false)
+    (σ : Equiv.Perm ℕ) : arrayGraph (pairReindex σ σ x) = SimpleGraph.comap ⇑σ (arrayGraph x) := by
+  have hx' : pairReindex σ σ x ∈ symmetricArraysWithDiag Bool false := by
+    have := preimage_pairReindex_symmetricArraysWithDiag σ (false : Bool)
+    rw [← this] at hx; exact hx
+  apply_fun SimpleGraph.graphArray using fun G G' h => by
+    simpa using congrArg arrayGraph h
+  rw [graphArray_arrayGraph hx', graphArray_comap, graphArray_arrayGraph hx]
+
+/-- The exchangeable law on infinite graphs of a jointly exchangeable probability law carried by
+the symmetric `false`-diagonal arrays. -/
+noncomputable def graphLawOf
+    (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
+      ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
+    InfiniteExchangeableGraphLaw where
+  law := graphLawOfArray ρ.1
+  prob := by
+    obtain ⟨hmem, -⟩ :=
+      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.2
+    obtain ⟨-, hp⟩ := mem_jointlyExchangeableProbabilityMeasures_iff.1 hmem
+    unfold graphLawOfArray; infer_instance
+  exchangeable := by
+    intro σ
+    obtain ⟨hmem, hsym⟩ :=
+      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.2
+    obtain ⟨hexch, -⟩ := mem_jointlyExchangeableProbabilityMeasures_iff.1 hmem
+    have hσ : ρ.1.map (pairReindex σ σ) = ρ.1 := by
+      have := (jointlyExchangeable_iff.mp hexch) σ
+      simpa only [← pairReindex_def, Measure.map_id'] using this
+    have hm : Measurable (pairReindex (α := Bool) σ σ) := by
+      rw [pairReindex_def]; exact Measurable.of_eval fun _ => measurable_pi_apply _
+    simp only [graphLawOfArray]
+    rw [Measure.map_map (SimpleGraph.measurable_comap _) measurable_arrayGraph]
+    conv_rhs => rw [← hσ]
+    rw [Measure.map_map measurable_arrayGraph hm]
+    refine Measure.map_congr ?_
+    have hae : ∀ᵐ x ∂ρ.1, x ∈ symmetricArraysWithDiag Bool false := by rw [ae_iff]; exact hsym
+    exact hae.mono fun x hx => by simp [Function.comp, arrayGraph_pairReindex hx]
+
+/-- **Exchangeable graph laws are the jointly exchangeable array laws carried by the symmetric
+`false`-diagonal arrays.** The bundled law-level adapter. -/
+noncomputable def graphLawArrayLawEquiv :
+    InfiniteExchangeableGraphLaw ≃
+      {ρ : Measure (ℕ × ℕ → Bool) //
+        ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false} where
+  toFun L := ⟨arrayLaw L, arrayLaw_mem L⟩
+  invFun := graphLawOf
+  left_inv L := InfiniteExchangeableGraphLaw.ext (graphLawOfArray_arrayLaw L)
+  right_inv ρ := Subtype.ext (arrayLaw_graphLawOfArray
+    (mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.2).2)
+
+/-- The forward direction of the adapter is the array law. -/
+@[simp]
+theorem graphLawArrayLawEquiv_apply_coe (L : InfiniteExchangeableGraphLaw) :
+    (graphLawArrayLawEquiv L : Measure (ℕ × ℕ → Bool)) = arrayLaw L :=
+  (rfl)
+
+/-- The inverse direction of the adapter is the graph law of the array law. -/
+@[simp]
+theorem graphLawArrayLawEquiv_symm_apply_law
+    (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
+      ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
+    (graphLawArrayLawEquiv.symm ρ).law = graphLawOfArray ρ.1 :=
+  (rfl)
 
 /-- **Convex-mixture compatibility**: the pushforward along the adjacency array is linear on the
 underlying measures. -/
 theorem arrayLaw_smul_add_smul (L₁ L₂ : InfiniteExchangeableGraphLaw) (a b : ℝ≥0∞) :
-    (a • L₁.law + b • L₂.law).map graphArray = a • arrayLaw L₁ + b • arrayLaw L₂ := by
+    (a • L₁.law + b • L₂.law).map SimpleGraph.graphArray = a • arrayLaw L₁ + b • arrayLaw L₂ := by
   simp only [arrayLaw]
   rw [Measure.map_add _ _ measurable_graphArray,
     Measure.map_smul a measurable_graphArray.aemeasurable,
