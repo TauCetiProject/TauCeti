@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import TauCeti.Algebra.Bialgebra.TensorProduct
+public import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # Comultiplication as a convolution product
@@ -25,6 +26,9 @@ law. This file proves that for an **algebra map**
 (`AlgHom.toConv_toLinearMap_comp_mul'`); the Leibniz-rule counterpart for counit-valued
 derivations is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
 
+The dual-number coefficient rule `TauCeti.snd_comp_convMul` computes the first-order
+coefficient of a convolution product; it is used to differentiate the adjoint action.
+
 ## Main declarations
 
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
@@ -40,6 +44,21 @@ derivations is in `TauCeti/Algebra/AlgebraicGroup/Tangent/Basic.lean`.
 -/
 
 public section
+
+/-- The infinitesimal coefficient of a convolution product of dual-number-valued maps
+satisfies the product rule. No counit or coassociativity assumption is needed. -/
+theorem TauCeti.snd_comp_convMul
+    {R C B : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C]
+    [CoalgebraStruct R C] [Semiring B] [Algebra R B]
+    (f g : WithConv (C →ₗ[R] DualNumber B)) :
+    (TrivSqZeroExt.sndHom B B).restrictScalars R ∘ₗ (f * g).ofConv =
+      (WithConv.toConv ((TrivSqZeroExt.fstHom R B B).toLinearMap ∘ₗ f.ofConv) *
+        WithConv.toConv ((TrivSqZeroExt.sndHom B B).restrictScalars R ∘ₗ g.ofConv) +
+      WithConv.toConv ((TrivSqZeroExt.sndHom B B).restrictScalars R ∘ₗ f.ofConv) *
+        WithConv.toConv ((TrivSqZeroExt.fstHom R B B).toLinearMap ∘ₗ g.ofConv)).ofConv := by
+  ext c
+  simp [Coalgebra.Repr.convMul_apply (Coalgebra.Repr.arbitrary R c),
+    Finset.sum_add_distrib]
 
 open TensorProduct WithConv
 
