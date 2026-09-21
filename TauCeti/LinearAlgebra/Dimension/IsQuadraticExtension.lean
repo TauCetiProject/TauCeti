@@ -11,11 +11,12 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 # Generators of a quadratic extension
 
 Mathlib's `Algebra.IsQuadraticExtension K L` records that `L/K` has degree two but says nothing
-about the elements realising that degree. This file supplies the facts a consumer needs in
-order to *choose* and *change* a generator:
+about the elements realising that degree. This file first supplies a non-scalar element, then
+shows how to *choose* and *change* a generator when the base is a field:
 
-`Algebra.IsQuadraticExtension.exists_notMem_range_algebraMap`: a generator exists at all, so a
-construction over `L/K` may pick one.
+`Algebra.IsQuadraticExtension.exists_notMem_range_algebraMap`: an element outside the image of
+the base exists. Over a field base, the coordinate theorem below makes any such element a
+generator.
 `Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul`: every element is `b + aθ`
 for a fixed generator `θ`, the coordinate presentation over the basis `1, θ` (used by the
 quadratic field-norm computation).
@@ -51,12 +52,12 @@ section GeneratorExistence
 
 variable (K L : Type*) [CommSemiring K] [StrongRankCondition K]
 
-/-- A quadratic algebra has a generator: some element lies outside the base ring. Were every
-element in the image of `algebraMap` the algebra would have rank one, contradicting
-`finrank = 2`. This is what lets a construction over `L/K` *choose* a generator. The base `K`
-needs to be a commutative semiring with the strong rank condition, and `L` a semiring. The strong
-rank condition forces `K` to be nontrivial; the quadratic-extension hypothesis makes `L` free of
-rank `2`, and the faithful scalar action makes `algebraMap` injective. -/
+/-- A quadratic algebra contains an element outside the image of the base ring. Were every
+element in the image of `algebraMap`, the algebra would have rank one, contradicting
+`finrank = 2`. The base `K` needs to be a commutative semiring with the strong rank condition,
+and `L` a semiring. The strong rank condition forces `K` to be nontrivial; the quadratic-extension
+hypothesis makes `L` free of rank `2`, and the faithful scalar action makes `algebraMap`
+injective. -/
 theorem Algebra.IsQuadraticExtension.exists_notMem_range_algebraMap [Semiring L] [Algebra K L]
     [Algebra.IsQuadraticExtension K L] : ∃ θ : L, θ ∉ Set.range (algebraMap K L) := by
   have : Nontrivial K := by
