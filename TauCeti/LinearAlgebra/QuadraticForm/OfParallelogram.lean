@@ -12,7 +12,8 @@ import Mathlib.Tactic.Module
 /-!
 # A function satisfying the parallelogram law is a quadratic form
 
-Let `M` and `N` be additive commutative groups and `f : M → N` satisfy the **parallelogram law**
+Let `M` and `N` be additive commutative groups, suppose doubling is injective on `N`,
+and let `f : M → N` satisfy the **parallelogram law**
 
 ```
 f (x + y) + f (x - y) = 2 • f x + 2 • f y.
@@ -30,7 +31,11 @@ but nothing in the other direction from the parallelogram law alone. Its `parall
 construction in `Analysis/InnerProductSpace/OfNorm.lean` recovers an inner product from a *norm* on
 a real or complex space, using continuity. Neither applies to a function on a bare abelian group.
 
-## The hypothesis is exactly the absence of `2`-torsion
+The elementary helpers need less: evenness holds without any condition on doubling, and
+integer quadratic scaling holds for an arbitrary additive group `M` and additive commutative
+group `N`, provided `f 0 = 0`. Thus scaling also applies to targets with `2`-torsion.
+
+## The quadratic-map construction requires absence of `2`-torsion
 
 `htwo : IsSMulRegular N 2` says that doubling is injective on `N`. It is sharp in both directions.
 
@@ -40,21 +45,24 @@ conclusion holds: `IsSMulRegular (ZMod 3) 2` is true even though `ZMod 3` has `3
 Nor can it be weakened away. With `M = N = ZMod 2` *every* function satisfies the parallelogram
 law, because `x - y = x + y` and `2 • z = 0` there; the constant function `1` is then one that
 satisfies it while failing even `f 0 = 0`, which every quadratic form obeys — and correspondingly
-`¬ IsSMulRegular (ZMod 2) 2`.
+`¬ IsSMulRegular (ZMod 2) 2`. Even assuming `f 0 = 0` is insufficient for biadditivity:
+on `(ZMod 2)³`, the function `f(x) = x₁x₂x₃` satisfies the law and preserves zero, but violates
+the three-variable identity at the three standard basis vectors.
 
 For a torsion-free codomain it is one term: `smul_right_injective N two_ne_zero` supplies it for
 `N = ℝ`, the canonical height's target, and for `N = ℤ`, the degree form's.
 
 ## Main results
 
-* `TauCeti.QuadraticMap.map_zero_of_parallelogram`: `f 0 = 0`.
+* `TauCeti.QuadraticMap.map_zero_of_parallelogram`: `f 0 = 0` when doubling is injective.
 * `TauCeti.QuadraticMap.map_neg_of_parallelogram`: `f (-x) = f x`.
 * `TauCeti.QuadraticMap.map_add_add_add_map_of_parallelogram`: the three-variable identity
   `f (x + y + z) + (f x + f y + f z) = f (x + y) + f (y + z) + f (z + x)`, stated exactly as
   `QuadraticMap.map_add_add_add_map`.
 * `TauCeti.QuadraticMap.polar_add_left_of_parallelogram` and
   `polar_zsmul_left_of_parallelogram`: the polarisation is additive and `ℤ`-linear on the left.
-* `TauCeti.QuadraticMap.map_zsmul_of_parallelogram`: `f (n • x) = n ^ 2 • f x` for `n : ℤ`.
+* `TauCeti.QuadraticMap.map_zsmul_of_parallelogram`: `f (n • x) = n ^ 2 • f x` for `n : ℤ`,
+  assuming `f 0 = 0`, without commutativity of `M` or injectivity of doubling on `N`.
 * `TauCeti.QuadraticMap.ofParallelogram`: `f` as a `QuadraticMap ℤ M N`, with the polarisation as
   its companion bilinear map.
 
@@ -88,12 +96,13 @@ namespace QuadraticMap
 
 open _root_.QuadraticMap
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] {f : M → N}
+section MapZero
+
+variable {M N : Type*} [SubNegZeroMonoid M] [AddCommGroup N] {f : M → N}
   (htwo : IsSMulRegular N (2 : ℕ))
   (hf : ∀ x y : M, f (x + y) + f (x - y) = 2 • f x + 2 • f y)
 
-include htwo hf
-
+include htwo hf in
 -- The parallelogram law at `x = y = 0`.
 /-- **A parallelogram-law function preserves zero.** -/
 theorem map_zero_of_parallelogram : f 0 = 0 := by
@@ -102,12 +111,61 @@ theorem map_zero_of_parallelogram : f 0 = 0 := by
   apply htwo
   linear_combination (norm := module) -h
 
--- The parallelogram law at `x = 0`.
+include hf in
+-- Combine the parallelogram law at `(0, x)` and `(0, 0)`; no cancellation of doubling.
 /-- **A parallelogram-law function is even.** -/
 theorem map_neg_of_parallelogram (x : M) : f (-x) = f x := by
   have h := hf 0 x
-  rw [zero_add, zero_sub, map_zero_of_parallelogram htwo hf] at h
-  linear_combination (norm := module) h
+  have h₀ := hf 0 0
+  simp only [zero_add, zero_sub] at h
+  simp only [add_zero, sub_zero] at h₀
+  linear_combination (norm := module) h - h₀
+
+end MapZero
+
+section IntSmul
+
+variable {M N : Type*} [AddGroup M] [AddCommGroup N] {f : M → N}
+  (hzero : f 0 = 0)
+  (hf : ∀ x y : M, f (x + y) + f (x - y) = 2 • f x + 2 • f y)
+
+include hzero hf
+
+-- The scalar on the right is an **integer** so that the induction step is a `ring` identity in
+-- `ℤ`; over `ℕ` it would read `(n + 2) ^ 2 = 2 (n + 1) ^ 2 + 2 - n ^ 2`, and truncated
+-- subtraction is not a ring.
+/-- Quadraticity for a natural multiple: `f (n • x) = n ^ 2 • f x`. -/
+private theorem map_nsmul_of_parallelogram (n : ℕ) (x : M) :
+    f (n • x) = ((n : ℤ) * n) • f x := by
+  induction n using Nat.twoStepInduction with
+  | zero => simpa using hzero
+  | one => simp
+  | more n ih ih' =>
+    -- the parallelogram law at `((n + 1) • x, x)` expresses the value at `(n + 2) • x`
+    have h := hf ((n + 1) • x) x
+    -- again the arguments of `f`, not the ambient expression, are what must be reshaped
+    rw [← succ_nsmul x (n + 1), show (n + 1) • x - x = n • x by
+      rw [succ_nsmul, add_sub_cancel_right], ih, ih'] at h
+    push_cast at h ⊢
+    linear_combination (norm := module) h
+
+-- Written `(n * n) • f x` rather than `n ^ 2 • f x` to match the `toFun_smul` field of
+-- `QuadraticMap` syntactically. The negative case composes the natural one with evenness.
+/-- **Quadraticity**: a parallelogram-law function that preserves zero satisfies
+`f (n • x) = n ^ 2 • f x` for an integer `n`, even on a noncommutative additive group. -/
+theorem map_zsmul_of_parallelogram (n : ℤ) (x : M) : f (n • x) = (n * n) • f x := by
+  obtain ⟨m, rfl | rfl⟩ := n.eq_nat_or_neg
+  · rw [natCast_zsmul, map_nsmul_of_parallelogram hzero hf]
+  · rw [neg_zsmul, natCast_zsmul, map_neg_of_parallelogram hf,
+      map_nsmul_of_parallelogram hzero hf, neg_mul_neg]
+
+end IntSmul
+
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] {f : M → N}
+  (htwo : IsSMulRegular N (2 : ℕ))
+  (hf : ∀ x y : M, f (x + y) + f (x - y) = 2 • f x + 2 • f y)
+
+include htwo hf
 
 -- This is the substantive step: biadditivity of the polarisation below is a rearrangement of it.
 -- Stated exactly as `QuadraticMap.map_add_add_add_map`, the same identity read off a quadratic
@@ -151,40 +209,13 @@ theorem polar_zsmul_left_of_parallelogram (a : ℤ) (x y : M) :
   AddMonoidHom.map_zsmul
     (AddMonoidHom.mk' (polar f · y) fun p q ↦ polar_add_left_of_parallelogram htwo hf p q y) a x
 
--- The scalar on the right is an **integer** so that the induction step is a `ring` identity in
--- `ℤ`; over `ℕ` it would read `(n + 2) ^ 2 = 2 (n + 1) ^ 2 + 2 - n ^ 2`, and truncated
--- subtraction is not a ring.
-/-- Quadraticity for a natural multiple: `f (n • x) = n ^ 2 • f x`. -/
-private theorem map_nsmul_of_parallelogram (n : ℕ) (x : M) :
-    f (n • x) = ((n : ℤ) * n) • f x := by
-  induction n using Nat.twoStepInduction with
-  | zero => simpa using map_zero_of_parallelogram htwo hf
-  | one => simp
-  | more n ih ih' =>
-    -- the parallelogram law at `((n + 1) • x, x)` expresses the value at `(n + 2) • x`
-    have h := hf ((n + 1) • x) x
-    -- again the arguments of `f`, not the ambient expression, are what must be reshaped
-    rw [← succ_nsmul x (n + 1), show (n + 1) • x - x = n • x by
-      rw [succ_nsmul, add_sub_cancel_right], ih, ih'] at h
-    push_cast at h ⊢
-    linear_combination (norm := module) h
-
--- Written `(n * n) • f x` rather than `n ^ 2 • f x` to match the `toFun_smul` field of
--- `QuadraticMap` syntactically. The negative case composes the natural one with evenness.
-/-- **Quadraticity**: `f (n • x) = n ^ 2 • f x` for an integer `n`. -/
-theorem map_zsmul_of_parallelogram (n : ℤ) (x : M) : f (n • x) = (n * n) • f x := by
-  obtain ⟨m, rfl | rfl⟩ := n.eq_nat_or_neg
-  · rw [natCast_zsmul, map_nsmul_of_parallelogram htwo hf]
-  · rw [neg_zsmul, natCast_zsmul, map_neg_of_parallelogram htwo hf,
-      map_nsmul_of_parallelogram htwo hf, neg_mul_neg]
-
 -- Built with `QuadraticMap.ofPolar`, which asks for exactly the three facts above and assembles
 -- the companion bilinear map itself, so no bilinear map is defined here.
 /-- **A function satisfying the parallelogram law is a quadratic form.** Its companion bilinear
 map is `QuadraticMap.polarBilin` of it, which is the polarisation. -/
 def ofParallelogram : _root_.QuadraticMap ℤ M N :=
-  .ofPolar f (map_zsmul_of_parallelogram htwo hf) (polar_add_left_of_parallelogram htwo hf)
-    (polar_zsmul_left_of_parallelogram htwo hf)
+  .ofPolar f (map_zsmul_of_parallelogram (map_zero_of_parallelogram htwo hf) hf)
+    (polar_add_left_of_parallelogram htwo hf) (polar_zsmul_left_of_parallelogram htwo hf)
 
 -- Stated at the level of functions rather than only pointwise because `QuadraticMap.polar` takes
 -- the function as its argument: this is the form that rewrites `polar ⇑(ofParallelogram htwo hf)`
