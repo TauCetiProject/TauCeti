@@ -32,24 +32,25 @@ variable {Ω Ω' β γ : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] [Meas
 theorem indepFun_map_iff_comp {m : Ω → Ω'} (hm : Measurable m) {f : Ω' → β} {g : Ω' → γ}
     (hf : Measurable f) (hg : Measurable g) :
     IndepFun f g (μ.map m) ↔ IndepFun (f ∘ m) (g ∘ m) μ := by
+  -- the defining identity for the pushforward is the defining identity for the composites
+  have key : ∀ s₁ s₂, MeasurableSet s₁ → MeasurableSet s₂ →
+      ((μ.map m) (f ⁻¹' s₁ ∩ g ⁻¹' s₂) = (μ.map m) (f ⁻¹' s₁) * (μ.map m) (g ⁻¹' s₂) ↔
+        μ ((f ∘ m) ⁻¹' s₁ ∩ (g ∘ m) ⁻¹' s₂) = μ ((f ∘ m) ⁻¹' s₁) * μ ((g ∘ m) ⁻¹' s₂)) := by
+    intro s₁ s₂ hs₁ hs₂
+    rw [Measure.map_apply hm (hf hs₁), Measure.map_apply hm (hg hs₂),
+      Measure.map_apply hm ((hf hs₁).inter (hg hs₂)), Set.preimage_inter, Set.preimage_comp,
+      Set.preimage_comp]
   rw [IndepFun_iff, IndepFun_iff]
   constructor
-  · intro h t1 t2 ht1 ht2
-    obtain ⟨s1, hs1, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht1
-    obtain ⟨s2, hs2, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht2
-    have := h (f ⁻¹' s1) (g ⁻¹' s2) (MeasurableSpace.measurableSet_comap.2 ⟨s1, hs1, rfl⟩)
-      (MeasurableSpace.measurableSet_comap.2 ⟨s2, hs2, rfl⟩)
-    rw [Measure.map_apply hm (hf hs1), Measure.map_apply hm (hg hs2),
-      Measure.map_apply hm ((hf hs1).inter (hg hs2)), Set.preimage_inter] at this
-    simpa only [Set.preimage_comp] using this
-  · intro h t1 t2 ht1 ht2
-    obtain ⟨s1, hs1, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht1
-    obtain ⟨s2, hs2, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht2
-    have := h ((f ∘ m) ⁻¹' s1) ((g ∘ m) ⁻¹' s2)
-      (MeasurableSpace.measurableSet_comap.2 ⟨s1, hs1, rfl⟩)
-      (MeasurableSpace.measurableSet_comap.2 ⟨s2, hs2, rfl⟩)
-    rw [Measure.map_apply hm (hf hs1), Measure.map_apply hm (hg hs2),
-      Measure.map_apply hm ((hf hs1).inter (hg hs2)), Set.preimage_inter]
-    simpa only [Set.preimage_comp] using this
+  · intro h t₁ t₂ ht₁ ht₂
+    obtain ⟨s₁, hs₁, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₁
+    obtain ⟨s₂, hs₂, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₂
+    exact (key s₁ s₂ hs₁ hs₂).1 (h _ _ (MeasurableSpace.measurableSet_comap.2 ⟨s₁, hs₁, rfl⟩)
+      (MeasurableSpace.measurableSet_comap.2 ⟨s₂, hs₂, rfl⟩))
+  · intro h t₁ t₂ ht₁ ht₂
+    obtain ⟨s₁, hs₁, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₁
+    obtain ⟨s₂, hs₂, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₂
+    exact (key s₁ s₂ hs₁ hs₂).2 (h _ _ (MeasurableSpace.measurableSet_comap.2 ⟨s₁, hs₁, rfl⟩)
+      (MeasurableSpace.measurableSet_comap.2 ⟨s₂, hs₂, rfl⟩))
 
 end ProbabilityTheory

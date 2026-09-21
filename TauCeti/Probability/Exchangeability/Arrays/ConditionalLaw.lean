@@ -11,6 +11,7 @@ import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Exchangeability.PermutationExtension
 import TauCeti.Probability.Kernel.Invariant
 import TauCeti.Probability.Martingale.Convergence
+import TauCeti.Probability.Exchangeability.Arrays.Windows
 
 /-!
 # Conditional array laws given the corner tail
@@ -227,17 +228,6 @@ theorem JointlyExchangeable.ae_jointlyDissociated_condExpKernel_arrayTail
     simp only [ae_all_iff, Filter.eventually_imp_distrib_left]
     exact hfin
   filter_upwards [hall] with x hx
-  -- the finite square blocks are read by the restrictions
-  have hle : ∀ I : Finset ℕ, blockSigma (fun p (y : ℕ × ℕ → α) => y p) (↑I ×ˢ ↑I) ≤
-      MeasurableSpace.comap (fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y) inferInstance := by
-    refine fun I ↦ blockSigma_le_iff.mpr fun p hp ↦ ?_
-    have hp' : p ∈ I ×ˢ I := by rwa [← Finset.mem_coe, Finset.coe_product]
-    exact (measurable_pi_apply (⟨p, hp'⟩ : ↥(I ×ˢ I))).comp
-      (comap_measurable fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y)
-  refine jointlyDissociated_of_indep_blockSigma_finset (fun p ↦ measurable_pi_apply p)
-    fun I J hIJ ↦ ?_
-  have h := hx I J hIJ
-  rw [IndepFun_iff_Indep] at h
-  exact indep_of_indep_of_le h (hle I) (hle J)
+  exact (jointlyDissociated_coord_iff_indepFun_restrict _).2 hx
 
 end TauCeti.Probability
