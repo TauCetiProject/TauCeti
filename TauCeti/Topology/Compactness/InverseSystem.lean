@@ -9,7 +9,6 @@ public import Mathlib.Order.DirectedInverseSystem
 public import Mathlib.Topology.Separation.Hausdorff
 -- Non-public: the functors out of the index category that the unbundled data assemble into, and
 -- Mathlib's limit theorems for them, occur only inside the proofs.
-import Mathlib.CategoryTheory.CofilteredSystem
 import Mathlib.CategoryTheory.Functor.OfSequence
 import Mathlib.Topology.Category.TopCat.Limits.Konig
 
@@ -23,12 +22,11 @@ that such a family exists as soon as the index is directed and every `X i` is no
 compact Hausdorff, and specialize that to the finite systems for which it is Kőnig's lemma.
 
 The data stay unbundled: a family of transition maps and the two laws of `InverseSystem`, with
-no functor and no category instance on the index, which is what the consumers have. The
-mathematics is Mathlib's and is not reproved here: each proof packages the unbundled data into
-a functor out of the index category and appeals to
-`TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system` for the compact Hausdorff statement,
-and to `nonempty_sections_of_finite_inverse_system` along `CategoryTheory.Functor.ofOpSequence`
-for the sequential one; the remaining forms are specializations of these.
+no functor and no category instance on the index. That is the shape such a system has when it
+arises — the finite quotients of a profinite group and the maps between them, or the sets of
+Sylow subgroups of those quotients — and a compatible family is then exactly a point of the
+inverse limit, so these are the statements a construction of such a point applies directly. The
+mathematics is Mathlib's Kőnig lemma for cofiltered systems and is not reproved here.
 
 ## Main statements
 
@@ -131,20 +129,22 @@ maps `β k : S (k + 1) → S k` has a compatible family: some `s : ∀ k, S k` s
 `β k (s (k + 1)) = s k` for every `k`. -/
 theorem exists_forall_map_succ_eq_of_finite [∀ k, Finite (S k)] [∀ k, Nonempty (S k)] :
     ∃ s : ∀ k, S k, ∀ k, β k (s (k + 1)) = s k := by
-  -- The one-step maps already assemble into a functor `ℕᵒᵖ ⥤ Type _`, so the composites along
-  -- `i ≤ j` need not be built by hand; `ℕ` is directed, so Mathlib's Kőnig lemma applies.
-  have : ∀ j : ℕᵒᵖ, Finite ((Functor.ofOpSequence fun k ↦ ↾(β k)).obj j) :=
-    fun j ↦ inferInstanceAs (Finite (S j.unop))
-  have : ∀ j : ℕᵒᵖ, Nonempty ((Functor.ofOpSequence fun k ↦ ↾(β k)).obj j) :=
-    fun j ↦ inferInstanceAs (Nonempty (S j.unop))
-  obtain ⟨s, hs⟩ :=
-    nonempty_sections_of_finite_inverse_system (Functor.ofOpSequence fun k ↦ ↾(β k))
-  refine ⟨fun k ↦ s (Opposite.op k), fun k ↦ ?_⟩
-  have h := hs (homOfLE (Nat.le_add_right k 1)).op
-  rw [Functor.ofOpSequence_map_homOfLE_succ] at h
-  -- Both the object part of the functor and `↾` are definitional wrappers; see
-  -- `CategoryTheory.Functor.ofOpSequence_obj` and `TypeCat.ofHom_apply`.
-  exact h
+  -- The one-step maps already assemble into a functor `F : ℕᵒᵖ ⥤ Type _`, so the transition maps
+  -- along `i ≤ j` need not be built by hand: they are `F` on morphisms, and the two laws of an
+  -- inverse system are its functoriality, `F.map_id_apply` and `F.map_comp_apply`. The index `ℕ`
+  -- is directed, so the finite statement above applies to them.
+  let F := Functor.ofOpSequence fun k ↦ ↾(β k)
+  let f : ∀ ⦃i j : ℕ⦄, i ≤ j → S j → S i := fun _ _ h x ↦ F.map (homOfLE h).op x
+  have : InverseSystem f :=
+    { map_self := fun i x ↦ F.map_id_apply (Opposite.op i) x
+      map_map := fun _ _ _ hkj hji x ↦
+        (F.map_comp_apply (homOfLE hji).op (homOfLE hkj).op x).symm }
+  obtain ⟨s, hs⟩ := exists_forall_map_eq_of_finite f
+  refine ⟨s, fun k ↦ ?_⟩
+  -- Along `k ≤ k + 1` the transition map is `β k` itself.
+  rw [← TypeCat.ofHom_apply (β k) (s (k + 1)),
+    ← Functor.ofOpSequence_map_homOfLE_succ (fun k ↦ ↾(β k)) k]
+  exact hs (Nat.le_add_right k 1)
 
 end Sequence
 
