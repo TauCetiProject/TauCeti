@@ -162,6 +162,9 @@ theorem localSectionTrivialization_symm_apply [TopologicalSpace G] [ContinuousMu
     rw [localSectionTrivialization_fiberCoordinate H U hU s hs hsec g hgU]
     rw [hgq]
     simp [g]
+  -- `e` is a local abbreviation for the public chart; this definitional equality
+  -- exposes its inverse map so the generic inverse-law theorem can be applied
+  -- without unfolding the implementation of `localSectionTrivialization`.
   change e.toOpenPartialHomeomorph.symm (q, h) = s q * h
   rw [← hgq, ← hgfiber]
   calc
