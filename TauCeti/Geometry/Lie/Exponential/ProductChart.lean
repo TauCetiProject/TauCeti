@@ -70,6 +70,7 @@ def lieExpMulLieExp (p q : Submodule ℝ (LeftInvariantDerivation I G)) (z : p �
     lieExp (I := I) (G := G) (z.2 : LeftInvariantDerivation I G)
 
 /-- The exponential-product map evaluates by exponentiating its two coordinates in order. -/
+@[simp]
 theorem lieExpMulLieExp_apply (p q : Submodule ℝ (LeftInvariantDerivation I G)) (z : p × q) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
@@ -263,6 +264,7 @@ noncomputable def lieExpMulLieExpMFDerivEquiv
 
 /-- The named derivative equivalence evaluates by adding source coordinates and transporting them
 to the target tangent space. -/
+@[simp]
 theorem lieExpMulLieExpMFDerivEquiv_apply
     (p q : Submodule ℝ (LeftInvariantDerivation I G)) (h : IsCompl p q) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
@@ -285,7 +287,12 @@ theorem lieExpMulLieExpMFDerivEquiv_apply
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   dsimp only
   intro z
-  dsimp [lieExpMulLieExpMFDerivEquiv]
+  dsimp only [lieExpMulLieExpMFDerivEquiv]
+  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply,
+    Submodule.prodEquivOfIsTopCompl_apply,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearEquiv.coe_toContinuousLinearEquiv']
 
 /-- For complementary subspaces, the derivative of the exponential-product map at zero is the
 canonical addition equivalence, transported through the source and target tangent-space coordinates.
