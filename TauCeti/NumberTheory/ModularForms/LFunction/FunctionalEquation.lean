@@ -186,9 +186,7 @@ noncomputable def frickeCompletedL (f : CuspForm Γ k) (N : ℕ+) (s : ℂ) : �
       mellin (fun t : ℝ ↦ resToImagAxis (f : ℍ → ℂ) (t / Real.sqrt (N : ℕ))) s :=
   (rfl)
 
-/-- The level-`N` completed L-function is linear in the form: `Λ_N(s, c • f) = c Λ_N(s, f)`.
-
-Not a `simp` lemma: `frickeCompletedL_apply` already rewrites both sides to Mellin transforms. -/
+/-- The level-`N` completed L-function is linear in the form: `Λ_N(s, c • f) = c Λ_N(s, f)`. -/
 theorem frickeCompletedL_smul [Γ.HasDetOne] (c : ℂ) (f : CuspForm Γ k) (N : ℕ+) (s : ℂ) :
     frickeCompletedL (c • f) N s = c * frickeCompletedL f N s := by
   simp only [frickeCompletedL_apply, FunLike.coe_smul, resToImagAxis_smul, Pi.smul_apply]

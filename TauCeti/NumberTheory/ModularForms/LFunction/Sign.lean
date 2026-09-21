@@ -92,10 +92,12 @@ theorem Λ_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
   rw [frickeCompletedL_eq_cpow_mul_Λ f (N.toPNat (NeZero.pos N)) hk,
     frickeCompletedL_eq_cpow_mul_Λ f (N.toPNat (NeZero.pos N)) hk,
     show ((N.toPNat (NeZero.pos N) : ℕ+) : ℕ) = N from rfl] at h
+  have hexponent : ((k : ℂ) - s) / 2 + (s - (k : ℂ) / 2) = s / 2 := by ring
+  have hcpow : (N : ℂ) ^ (s / 2) =
+      (N : ℂ) ^ (((k : ℂ) - s) / 2) * (N : ℂ) ^ (s - (k : ℂ) / 2) := by
+    rw [← Complex.cpow_add _ _ hN, hexponent]
   refine mul_left_cancel₀ hA (h.trans ?_)
-  rw [show (N : ℂ) ^ (s / 2) =
-      (N : ℂ) ^ (((k : ℂ) - s) / 2) * (N : ℂ) ^ (s - (k : ℂ) / 2) by
-    rw [← Complex.cpow_add _ _ hN, show ((k : ℂ) - s) / 2 + (s - (k : ℂ) / 2) = s / 2 by ring]]
+  rw [hcpow]
   ring
 
 /-! ### Vanishing at the central point -/
@@ -107,7 +109,8 @@ theorem frickeCompletedL_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0
     (hε : normalizedFrickeOperatorCusp k f = ε • f) (hsign : Complex.I ^ k * ε ≠ 1) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) / 2) = 0 := by
   have h := frickeCompletedL_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f hk hε ((k : ℂ) / 2)
-  rw [show (k : ℂ) - (k : ℂ) / 2 = (k : ℂ) / 2 by ring] at h
+  have hcenter : (k : ℂ) - (k : ℂ) / 2 = (k : ℂ) / 2 := by ring
+  rw [hcenter] at h
   exact (mul_left_eq_self₀.mp h.symm).resolve_left hsign
 
 /-- **Mathlib's completed L-function vanishes at the central point** when the sign of the
@@ -117,8 +120,8 @@ theorem Λ_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
     (hε : normalizedFrickeOperatorCusp k f = ε • f) (hsign : Complex.I ^ k * ε ≠ 1) :
     ModularForm.Λ hk f ((k : ℂ) / 2) = 0 := by
   have h := Λ_sub_eq_of_normalizedFrickeOperatorCusp_eq_smul f hk hε ((k : ℂ) / 2)
-  rw [show (k : ℂ) - (k : ℂ) / 2 = (k : ℂ) / 2 by ring, sub_self, Complex.cpow_zero,
-    mul_one] at h
+  have hcenter : (k : ℂ) - (k : ℂ) / 2 = (k : ℂ) / 2 := by ring
+  rw [hcenter, sub_self, Complex.cpow_zero, mul_one] at h
   exact (mul_left_eq_self₀.mp h.symm).resolve_left hsign
 
 /-- **The central value of the L-function vanishes** when the sign of the functional equation is
@@ -156,7 +159,7 @@ theorem I_zpow_mul_frickeSign_eq_one_or_neg_one (f : Newform N k) (hχ : f.χ = 
     Complex.I ^ k * f.frickeSign hχ = 1 ∨ Complex.I ^ k * f.frickeSign hχ = -1 := by
   obtain ⟨m, hm⟩ := even_of_mem_cuspFormCharSpace_one (hχ ▸ f.mem_charSpace) f.ne_zero
   have hI : Complex.I ^ k = (-1 : ℂ) ^ m := by
-    rw [hm, show m + m = 2 * m by ring, zpow_mul, zpow_two, Complex.I_mul_I]
+    rw [hm, ← two_mul m, zpow_mul, zpow_two, Complex.I_mul_I]
   rcases f.frickeSign_eq_one_or_neg_one hχ with hε | hε <;>
     rcases Int.even_or_odd m with hpar | hpar <;>
     simp [hI, hε, hpar.neg_one_zpow]
