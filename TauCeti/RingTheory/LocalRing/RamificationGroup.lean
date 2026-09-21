@@ -264,9 +264,10 @@ theorem exists_forall_ramificationGroup_eq_ker [Finite (ramificationGroup G S 0)
   have : Finite ((fun n : ℕ ↦ ramificationGroup G S (n : ℤ)) 0) := h0 ▸ ‹_›
   obtain ⟨N, hN⟩ := TauCeti.Subgroup.exists_forall_eq_iInf_of_antitone _ hanti
   refine ⟨(N : ℤ), fun i hi ↦ ?_⟩
+  have hi0 : (0 : ℤ) ≤ i := (Int.natCast_nonneg N).trans hi
+  have hcast : (i.toNat : ℤ) = i := Int.toNat_of_nonneg hi0
   have hiN : N ≤ i.toNat := by omega
-  rw [show i = ((i.toNat : ℤ)) by omega, hN i.toNat hiN, iInf_natCast_ramificationGroup,
-    iInf_ramificationGroup_eq_ker]
+  rw [← hcast, hN i.toNat hiN, iInf_natCast_ramificationGroup, iInf_ramificationGroup_eq_ker]
 
 /-- For a faithful action whose zeroth ramification group is finite, the ramification groups over
 a Noetherian local ring vanish from some index on. -/
