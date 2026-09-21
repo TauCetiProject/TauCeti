@@ -88,7 +88,7 @@ namespace TauCeti
 namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
-  [mu.IsAddHaarMeasure] {A : Matrix ι ι ℝ} {lam Lam : ℝ}
+  [mu.IsAddHaarMeasure] {A : Matrix ι ι ℝ} {lam : ℝ}
 
 omit [DecidableEq ι] in
 /-- **Translation moves across the constant-coefficient energy form.** For opposite vectors
@@ -185,24 +185,37 @@ difference-quotient criterion turns into a second weak derivative.
 On the whole space `H¹₀(ℝⁿ) = H¹(ℝⁿ)`, so the hypothesis imposes no boundary condition; it is
 exactly the weak equation tested against every `H¹(ℝⁿ)` function. -/
 theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le
-    (hA : UniformlyEllipticOn ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
-      (fun _ => A) lam Lam)
+    (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u)
     (w : EuclideanSpace ℝ ι) (t : ℝ) :
     ‖W1p.gradient (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _)
       (u : W1p mu ⊤ 2))‖ ≤ ‖w‖ * ‖f‖ / lam := by
-  have hlam := hA.pos
   -- The discrete integration-by-parts identity, before naming the difference quotients.
   have hDQ := energyFormH1_differenceQuotient_eq_neg A w t (u : W1p mu ⊤ 2)
     (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) (u : W1p mu ⊤ 2))
   set g := W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) (u : W1p mu ⊤ 2)
   set v := W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) g
   -- Ellipticity bounds the Dirichlet energy of the difference quotient from below.
-  have hlow : lam * ‖W1p.gradient g‖ ^ 2 ≤ energyFormH1 (fun _ => A) 0 0 g g :=
-    mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (gamma := 0) hA
-      aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => rfl)
-      (fun _ _ => by simp) (fun _ _ => le_rfl) g
+  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => A) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+    simpa using memLp_top_const (α := EuclideanSpace ℝ ι)
+      (μ := mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
+      (energyIntegrand A 0 0)
+  have hlow : lam * ‖W1p.gradient g‖ ^ 2 ≤ energyFormH1 (fun _ => A) 0 0 g g := by
+    have key := integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
+      (μ := mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
+      (a := fun _ => A) (c := fun _ => 0) (U := jetField g)
+      (Filter.Eventually.of_forall fun _ ξ => by
+        simpa [Matrix.toQuadraticForm'_apply] using hA ξ)
+      (by simp) ((integrable_norm_jetField_snd_sq g).const_mul lam)
+      (TauCeti.PDE.integrable_energyIntegrand_jetField hcoeff g g)
+    rw [← integral_norm_jetField_snd_sq_eq_norm_gradient_sq g, ← integral_const_mul,
+      energyFormH1_def]
+    rw [energyFormIntegral_def] at key
+    exact key
   -- The weak equation, tested against the reverse difference quotient of `Dᵗ u`.
   have hv0 : v ∈ w1p0Submodule mu ⊤ 2 := W1p.mem_w1p0Submodule_top (by norm_num) v
   have hsol : energyFormH1 (fun _ => A) 0 0 (u : W1p mu ⊤ 2) v = ⟪f, W1p.value v⟫_ℝ := by
@@ -232,8 +245,8 @@ derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every dir
 This is the `H²` estimate in quantitative, direction-by-direction form; `λ` is the ellipticity
 constant and no other feature of `A` enters the bound. -/
 theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
-    (hA : UniformlyEllipticOn ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
-      (fun _ => A) lam Lam)
+    (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u)
     (y w : EuclideanSpace ℝ ι) :
@@ -241,7 +254,6 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
       ‖G‖ ≤ ‖y‖ * (‖w‖ * ‖f‖ / lam) ∧
         HasWeakLineDerivOn mu ⊤
           (fun x => ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ) G w := by
-  have hlam := hA.pos
   have hloc : LocallyIntegrableOn
       (fun x => ⟪W1p.gradient (u : W1p mu ⊤ 2) x, y⟫_ℝ)
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) mu := by
@@ -278,7 +290,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
           rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _)]
       _ ≤ ‖y‖ₑ * ENNReal.ofReal (‖w‖ * ‖f‖ / lam) := by
           gcongr
-          exact hA.norm_gradient_differenceQuotient_le hu w t
+          exact UniformlyEllipticOn.norm_gradient_differenceQuotient_le hlam hA hu w t
       _ = ENNReal.ofReal (‖y‖ * (‖w‖ * ‖f‖ / lam)) := by
           rw [← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg y)]
   refine exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le hloc w
@@ -292,14 +304,15 @@ element of `W^{2,2}(ℝⁿ)`: its weak gradient is again weakly differentiable, 
 The quantitative form of the statement, with the ellipticity constant made explicit, is
 `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient`. -/
 theorem UniformlyEllipticOn.exists_lowerOrder_eq
-    (hA : UniformlyEllipticOn ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
-      (fun _ => A) lam Lam)
+    (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) :
     ∃ U : Wkp mu ⊤ 2 2, Wkp.lowerOrder 1 U = (u : W1p mu ⊤ 2) :=
   W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
     fun i j => by
-      obtain ⟨G, -, hG⟩ := hA.exists_norm_le_hasWeakLineDerivOn_gradient hu
+      obtain ⟨G, -, hG⟩ := UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
+        hlam hA hu
         (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
       exact ⟨G, hG⟩
 
