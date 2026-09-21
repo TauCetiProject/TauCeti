@@ -67,17 +67,10 @@ noncomputable instance compactSpace_quotient_principalSubgroup :
   let (v : HeightOneSpectrum (𝓞 K)) :
       IsNonarchimedeanLocalField (v.adicCompletion K) :=
     v.isNonarchimedeanLocalField_adicCompletion
-  let (v : HeightOneSpectrum (𝓞 K)) : CompactSpace (v.adicCompletionIntegers K) := by
-    let f : Valuation.integer (ValuativeRel.valuation (v.adicCompletion K)) ≃ₜ
-        v.adicCompletionIntegers K := {
-      toEquiv := (v.integerEquivAdicCompletionIntegers (K := K)).toEquiv
-      continuous_toFun := continuous_induced_rng.mpr <|
-        continuous_subtype_val.congr fun x ↦
-          (v.coe_integerEquivAdicCompletionIntegers (K := K) x).symm
-      continuous_invFun := continuous_induced_rng.mpr <|
-        continuous_subtype_val.congr fun x ↦
-          (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
-    exact f.compactSpace
+  let (v : HeightOneSpectrum (𝓞 K)) :
+      CompactSpace ↥(v.adicCompletionIntegers K).toSubring := by
+    rw [← v.integer_eq_adicCompletionIntegers (K := K)]
+    infer_instance
   have hι : Continuous ι :=
     (RestrictedProduct.isOpenEmbedding_structureMap
       (fun v ↦ Valued.isOpen_valuationSubring (v.adicCompletion K))).continuous
@@ -156,9 +149,7 @@ noncomputable instance compactSpace_quotient_principalSubgroup :
           a'.2 - algebraMap K 𝔸ᶠ[K] (x + algebraMap (𝓞 K) K y))
       exact Prod.ext hfst hsnd
     rw [hd_eq]
-    change QuotientAddGroup.mk' (AdeleRing.principalSubgroup (𝓞 K) K)
-        (a - algebraMap K 𝔸[K] (x + algebraMap (𝓞 K) K y)) =
-      QuotientAddGroup.mk' (AdeleRing.principalSubgroup (𝓞 K) K) a
+    dsimp only [q]
     rw [map_sub]
     have hprincipal : algebraMap K 𝔸[K] (x + algebraMap (𝓞 K) K y) ∈
         AdeleRing.principalSubgroup (𝓞 K) K :=
