@@ -103,11 +103,12 @@ theorem unitsLocalBCH_map_unitsLieAlgebraEquiv :
             LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ↦
           (unitsLieAlgebraEquiv p.1, unitsLieAlgebraEquiv p.2))
         (tendsto_unitsLieAlgebraCoordinates R) := by
-  rw [unitsLocalBCH_def, Germ.map_coe, NormedSpace.localBCH_def,
-    Germ.coe_compTendsto]
-  rw [Germ.coe_eq]
-  filter_upwards with p
-  simp
+  rw [unitsLocalBCH, Germ.map_map]
+  rw [show (unitsLieAlgebraEquiv (R := R)) ∘
+      (unitsLieAlgebraEquiv (R := R)).symm = id by
+    funext x
+    exact (unitsLieAlgebraEquiv (R := R)).apply_symm_apply x, Germ.map_id]
+  rfl
 
 /-- The local Baker--Campbell--Hausdorff germ on the Lie algebra of `Rˣ` takes the value zero at
 the origin. -/
