@@ -169,7 +169,7 @@ theorem exists_isGlHighestWeightVector_glHalfStaircase_car
   exists_isGlHighestWeightVector_submodule_of_forall
     (M := CliffordAlgebra (traceQuadraticForm K (Fin N)))
     (mu := glHalfStaircase K N)
-    (fun _μ _v hv => hv.eq_glHalfStaircase) S hS
+    S hS (fun _μ _v hv => (isGlHighestWeightVector_coe_iff.mpr hv).eq_glHalfStaircase)
 
 /-- Over an algebraically closed field of characteristic zero, the left-regular CAR module is
 isotypic of the simple `gl_N`-module with half-shifted staircase highest weight. -/
