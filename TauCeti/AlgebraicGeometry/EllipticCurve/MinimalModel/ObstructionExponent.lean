@@ -111,14 +111,6 @@ noncomputable def obstructionExponentAt (v : HeightOneSpectrum O)
   ((v.valuation K).ord W.Δ -
     W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal)) / 12
 
-/-- The defining quotient for the local obstruction exponent. The reconstruction theorem below
-is usually a more convenient interface because the numerator is known to be divisible by twelve. -/
-theorem obstructionExponentAt_def (v : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) [W.IsElliptic] :
-    obstructionExponentAt O v W = ((v.valuation K).ord W.Δ -
-      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal)) / 12 :=
-  (rfl)
-
 /-- **Twelve times the local obstruction exponent is the discriminant defect.** This is the
 characteristic elimination lemma for `obstructionExponentAt`; consumers need not reason about
 integer division. -/
@@ -127,7 +119,7 @@ theorem twelve_mul_obstructionExponentAt (v : HeightOneSpectrum O)
     (W : WeierstrassCurve K) [W.IsElliptic] :
     12 * obstructionExponentAt O v W = (v.valuation K).ord W.Δ -
       W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
-  rw [obstructionExponentAt_def, mul_comm]
+  rw [obstructionExponentAt, mul_comm]
   exact Int.ediv_mul_cancel
     (twelve_dvd_ord_Δ_sub_localMinimalDiscriminantValuation O v W)
 
@@ -229,17 +221,6 @@ def IsSharpSemiGlobalMinimalAt (v₀ : HeightOneSpectrum O)
       IsMinimal (Localization.AtPrime v.asIdeal) W) ∧
     obstructionExponentAt O v₀ W = 1
 
-/-- Sharp semi-global minimality, unfolded. -/
-@[simp]
-theorem isSharpSemiGlobalMinimalAt_iff (v₀ : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) [W.IsElliptic] :
-    IsSharpSemiGlobalMinimalAt O v₀ W ↔
-      IsIntegral (Localization.AtPrime v₀.asIdeal) W ∧
-        (∀ v : HeightOneSpectrum O, v ≠ v₀ →
-          IsMinimal (Localization.AtPrime v.asIdeal) W) ∧
-        obstructionExponentAt O v₀ W = 1 :=
-  (Iff.rfl)
-
 variable {O} in
 /-- A sharply semi-global model is integral at its exceptional prime. -/
 theorem IsSharpSemiGlobalMinimalAt.isIntegral {v₀ : HeightOneSpectrum O}
@@ -267,7 +248,7 @@ theorem IsSharpSemiGlobalMinimalAt.obstructionExponentAt_eq_one {v₀ : HeightOn
 variable {O} in
 /-- An equation integral at `v₀`, minimal away from `v₀`, and with obstruction exponent one at
 `v₀` is sharply semi-global there. -/
-theorem IsSharpSemiGlobalMinimalAt.of_isIntegral_of_isMinimal
+theorem IsSharpSemiGlobalMinimalAt.of_isIntegral_of_isMinimal_of_obstructionExponentAt_eq_one
     {v₀ : HeightOneSpectrum O} {W : WeierstrassCurve K} [W.IsElliptic]
     (h₀ : IsIntegral (Localization.AtPrime v₀.asIdeal) W)
     (hmin : ∀ v : HeightOneSpectrum O, v ≠ v₀ →
