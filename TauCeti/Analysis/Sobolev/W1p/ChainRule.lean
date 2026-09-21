@@ -16,14 +16,15 @@ import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
-# The chain rule and the positive part in `W^{1,p}(Ω)`
+# The chain rule and the positive part in `W^{1,p}(Ω)` for `p < ∞`
 
-`W^{1,p}(Ω)` is stable under composition with a Lipschitz `C¹` function `F` vanishing at `0`,
-and the weak gradient obeys the classical chain rule
+For `1 ≤ p < ∞`, `W^{1,p}(Ω)` is stable under composition with a Lipschitz `C¹` function `F`
+vanishing at `0`, and the weak gradient obeys the classical chain rule
 
 `∇(F ∘ u) = F'(u) ∇u`.
 
-Its limiting case is the **truncation** property: `u⁺ ∈ W^{1,p}(Ω)`, with
+In the same exponent range, its limiting case is the **truncation** property:
+`u⁺ ∈ W^{1,p}(Ω)`, with
 
 `∇(u⁺) = 1_{u > 0} ∇u`,
 
@@ -109,7 +110,7 @@ private theorem hasWeakFDerivOn_comp_testFunction {F : ℝ → ℝ} (hF : ContDi
   · exact (hcd.continuous.locallyIntegrable).locallyIntegrableOn _
   · exact ((hcd.continuous_fderiv one_ne_zero).locallyIntegrable).locallyIntegrableOn _
 
-/-! ### The chain rule in `W^{1,p}(Ω)` -/
+/-! ### The chain rule in `W^{1,p}(Ω)` for `p < ∞` -/
 
 section ChainRule
 
@@ -332,10 +333,10 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     (fun v => (locallyIntegrableOn_deriv_smul_gradient hF hM u v).mono_set hVsub)
     hchain hconv1 hconv2
 
-/-- **The chain rule in `W^{1,p}(Ω)`.**  If `F` is `C¹` with derivative bounded by `M` and
-`F 0 = 0`, then `F ∘ u` has the weak gradient `F'(u) ∇u` on `Ω`.  No boundary regularity of `Ω`
-is needed: the statement is local, and the approximation happens on subdomains relatively
-compact in `Ω`. -/
+/-- **The chain rule in `W^{1,p}(Ω)` for `1 ≤ p < ∞`.**  If `F` is `C¹` with derivative bounded
+by `M` and `F 0 = 0`, then `F ∘ u` has the weak gradient `F'(u) ∇u` on `Ω`.  No boundary
+regularity of `Ω` is needed: the statement is local, and the approximation happens on subdomains
+relatively compact in `Ω`. -/
 theorem W1p.hasWeakFDerivOn_comp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
     (hM : ∀ t, ‖deriv F t‖₊ ≤ M) (hF0 : F 0 = 0) (u : W1p mu Omega p) :
     HasWeakFDerivOn mu Omega (fun x => F (W1p.value u x))
@@ -343,9 +344,9 @@ theorem W1p.hasWeakFDerivOn_comp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
   hasWeakFDerivOn_iff_forall_isCompact_closure.2 fun _ hVc hVO =>
     hasWeakFDerivOn_comp_aux hp hF hM hF0 u hVc hVO
 
-/-- **`W^{1,p}(Ω)` is stable under composition with a Lipschitz `C¹` function vanishing at `0`.**
-Its value and weak gradient are `F ∘ u` and `F'(u) ∇u`, by `TauCeti.W1p.value_contDiffComp_ae`
-and `TauCeti.W1p.gradient_contDiffComp_ae`. -/
+/-- **For `1 ≤ p < ∞`, `W^{1,p}(Ω)` is stable under composition with a Lipschitz `C¹` function
+vanishing at `0`.**  Its value and weak gradient are `F ∘ u` and `F'(u) ∇u`, by
+`TauCeti.W1p.value_contDiffComp_ae` and `TauCeti.W1p.gradient_contDiffComp_ae`. -/
 def W1p.contDiffComp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F) (hM : ∀ t, ‖deriv F t‖₊ ≤ M)
     (hF0 : F 0 = 0) (u : W1p mu Omega p) : W1p mu Omega p :=
   W1p.mk
@@ -529,8 +530,8 @@ private theorem memLp_posPartGradient (u : W1p mu Omega p) :
   MemLp.of_le (Lp.memLp (W1p.gradient u)) (aestronglyMeasurable_posPartGradient u)
     (Filter.Eventually.of_forall (norm_posPartGradient_le u))
 
-/-- **The positive part of a Sobolev function is weakly differentiable**, with weak gradient
-`1_{u > 0} ∇u`. -/
+/-- **For `1 ≤ p < ∞`, the positive part of a Sobolev function is weakly differentiable**, with
+weak gradient `1_{u > 0} ∇u`. -/
 theorem W1p.hasWeakFDerivOn_posPart (hp : p ≠ ∞) (u : W1p mu Omega p) :
     HasWeakFDerivOn mu Omega (fun x => max (W1p.value u x) 0)
       fun x => innerSL ℝ ({x | 0 < W1p.value u x}.indicator (⇑(W1p.gradient u)) x) := by
@@ -639,9 +640,9 @@ theorem W1p.hasWeakFDerivOn_posPart (hp : p ≠ ∞) (u : W1p mu Omega p) :
   exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (hvalLoc.mono_set hVsub)
     (fun v => (hgradLoc v).mono_set hVsub) (fun n => (hchain n).mono hVΩ) hconv1 hconv2
 
-/-- **The positive part `u⁺` of a Sobolev function**, again in `W^{1,p}(Ω)`.  Its value is
-Mathlib's `MeasureTheory.Lp.posPart` of the value of `u`, and its weak gradient is
-`1_{u > 0} ∇u` (`TauCeti.W1p.gradient_posPart_ae`). -/
+/-- **For `1 ≤ p < ∞`, the positive part `u⁺` of a Sobolev function is again in
+`W^{1,p}(Ω)`.**  Its value is Mathlib's `MeasureTheory.Lp.posPart` of the value of `u`, and its
+weak gradient is `1_{u > 0} ∇u` (`TauCeti.W1p.gradient_posPart_ae`). -/
 def W1p.posPart (hp : p ≠ ∞) (u : W1p mu Omega p) : W1p mu Omega p :=
   W1p.mk (Lp.posPart (W1p.value u)) ((memLp_posPartGradient u).toLp _)
     (((W1p.hasWeakFDerivOn_posPart hp u).congr_ae (Lp.coeFn_posPart _).symm).congr_ae_deriv (by
