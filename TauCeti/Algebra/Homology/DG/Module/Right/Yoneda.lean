@@ -163,13 +163,20 @@ variable {R : Type uR} {A : Type uA} {M : Type (max uA uM)}
 module is the underlying cochain complex of `M`. -/
 def dgYonedaIso (hM : IsDGRightModule h ℳ dM) :
     dgRightModuleHomComplex h.isDGRightModule hM ≅
-      gradedCochainComplex ℳ dM hM.isHomogeneous hM.sq_zero :=
+      gradedCochainComplex ℳ dM hM.isHomogeneous (fun _ x ↦ hM.sq_zero x) :=
   HomologicalComplex.Hom.isoOfComponents
-    (fun p ↦ (dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).toModuleIso) <| by
+    (fun p ↦ (dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).toModuleIso ≪≫
+      (eqToIso (gradedCochainComplex_X (hdeg := hM.isHomogeneous)
+        (hsq := fun _ x ↦ hM.sq_zero x) p)).symm) <| by
       rintro i j (rfl : i + 1 = j)
-      simp only [dgRightModuleHomComplex_X, LinearEquiv.toModuleIso_hom,
-        dgRightModuleHomComplex_d, gradedCochainComplex_d]
+      simp only [dgRightModuleHomComplex_X, Iso.trans_hom, LinearEquiv.toModuleIso_hom,
+        Iso.symm_hom, eqToIso.inv, dgRightModuleHomComplex_d, Category.assoc]
+      apply (cancel_mono (eqToHom (gradedCochainComplex_X (hdeg := hM.isHomogeneous)
+        (hsq := fun _ x ↦ hM.sq_zero x) (i + 1)))).1
+      simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
       refine ModuleCat.hom_ext (LinearMap.ext fun f ↦ Subtype.ext ?_)
+      simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
+      rw [gradedCochainComplex_d_apply]
       -- Both composites evaluate the cochain at `1`.  The Hom-complex differential is opaque, so
       -- the goal is first written in the form its public application lemma rewrites; the extra
       -- term it produces carries `d 1`, which vanishes.
@@ -182,13 +189,17 @@ def dgYonedaIso (hM : IsDGRightModule h ℳ dM) :
 @[simp]
 theorem dgYonedaIso_hom_f (hM : IsDGRightModule h ℳ dM) (p : ℤ) :
     (dgYonedaIso hM).hom.f p =
-      (dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).toModuleIso.hom :=
+      (dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).toModuleIso.hom ≫
+        eqToHom (gradedCochainComplex_X (hdeg := hM.isHomogeneous)
+          (hsq := fun _ x ↦ hM.sq_zero x) p).symm :=
   (rfl)
 
 @[simp]
 theorem dgYonedaIso_inv_f (hM : IsDGRightModule h ℳ dM) (p : ℤ) :
     (dgYonedaIso hM).inv.f p =
-      (dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).toModuleIso.inv :=
+      eqToHom (gradedCochainComplex_X (hdeg := hM.isHomogeneous)
+        (hsq := fun _ x ↦ hM.sq_zero x) p) ≫
+          (dgYonedaCochainEquiv (𝒜 := 𝒜) (ℳ := ℳ) p).toModuleIso.inv :=
   (rfl)
 
 end Complex

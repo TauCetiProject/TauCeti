@@ -62,16 +62,6 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
 
-/-- Right multiplication makes a graded algebra a graded right module over itself: the degrees of
-the two factors add, in the order fixed by the opposite grading. -/
-instance instGradedSMulOppositeSelf (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] :
-    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒜 where
-  smul_mem := by
-    intro i j a b ha hb
-    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece 𝒜] at ha
-    rw [← op_unop a, op_smul_eq_mul, vadd_eq_add, add_comm i j]
-    exact SetLike.mul_mem_graded hb ha
-
 /-- A **differential graded right module** over the differential graded algebra `(𝒜, d)`.  The
 right action by `a : A` is written `op a • x`.  The differential raises degree by one, squares to
 zero, and obeys the right graded Leibniz rule on homogeneous module elements. -/
