@@ -492,14 +492,11 @@ theorem pElementaryOfSylow_le_centralizer :
   (pElementaryOfSylow_le_iff s P).2
     ⟨mem_centralizer_singleton_iff.2 rfl, map_subtype_le _⟩
 
-/-- Every element of the cyclic factor `⟨s⟩` of `TauCeti.pElementaryOfSylow s P` commutes with
-every element of its Sylow factor, the latter centralising `s`. -/
-theorem commute_of_mem_zpowers_of_mem_map_sylow {c y : G} (hc : c ∈ zpowers s)
-    (hy : y ∈ (P : Subgroup (centralizer ({s} : Set G))).map (centralizer ({s} : Set G)).subtype) :
-    Commute c y := by
-  obtain ⟨y, -, rfl⟩ := hy
+/-- Every element of `⟨s⟩` commutes with every element centralising `s`. -/
+theorem commute_of_mem_zpowers_of_mem_centralizer {c y : G} (hc : c ∈ zpowers s)
+    (hy : y ∈ centralizer ({s} : Set G)) : Commute c y := by
   obtain ⟨n, rfl⟩ := mem_zpowers_iff.1 hc
-  have hcom : Commute ((y : G)) s := mem_centralizer_singleton_iff.1 (SetLike.coe_mem y)
+  have hcom : Commute y s := mem_centralizer_singleton_iff.1 hy
   exact hcom.symm.zpow_left n
 
 /-- The subgroup attached to a `p`-regular element and a Sylow `p`-subgroup of its centraliser is
@@ -512,7 +509,7 @@ theorem isPElementary_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ orderOf s
   have hCp : ¬ p ∣ Nat.card (zpowers s) := by rwa [Nat.card_zpowers]
   exact isPElementary_sup_of_commute inferInstance hCp hQ
     (disjoint_of_not_dvd_natCard_of_isPGroup hCp hQ)
-    fun c hc y hy => commute_of_mem_zpowers_of_mem_map_sylow s P hc hy
+    fun c hc y hy => commute_of_mem_zpowers_of_mem_centralizer s hc (map_subtype_le _ hy)
 
 /-- The subgroup attached to a `p`-regular element `s` and a Sylow `p`-subgroup `P` of finite index
 in its centraliser has index prime to `p` inside that centraliser: it contains a full Sylow
@@ -534,7 +531,7 @@ theorem exists_mul_eq_of_mem_pElementaryOfSylow {x : G} (hx : x ∈ pElementaryO
   set Q := (P : Subgroup (centralizer ({s} : Set G))).map (centralizer ({s} : Set G)).subtype
     with hQ
   have hcomm : ∀ c ∈ zpowers s, ∀ y ∈ Q, Commute c y :=
-    fun c hc y hy => commute_of_mem_zpowers_of_mem_map_sylow s P hc hy
+    fun c hc y hy => commute_of_mem_zpowers_of_mem_centralizer s hc (map_subtype_le _ (hQ ▸ hy))
   have hnorm : zpowers s ≤ normalizer (Q : Set G) :=
     le_trans (fun c hc => mem_centralizer_iff.2 fun y hy => (hcomm c hc y hy).symm.eq)
       (centralizer_le_normalizer _)
@@ -581,13 +578,14 @@ theorem pFreePart_mul_of_mem_pElementaryOfSylow [Fact p.Prime] (hs : ¬ p ∣ or
   have hpy := pPart_mem_map_sylow_of_mem_pElementaryOfSylow s P hs hy
   obtain ⟨n, hn⟩ := (IsPGroup.iff_orderOf (p := p)).1 (P.2.map _) ⟨_, mul_mem hpx hpy⟩
   refine (eq_pFreePart Fact.out
-    (commute_of_mem_zpowers_of_mem_map_sylow s P (mul_mem hfx hfy) (mul_mem hpx hpy)) ?_
+    (commute_of_mem_zpowers_of_mem_centralizer s (mul_mem hfx hfy)
+      (map_subtype_le _ (mul_mem hpx hpy))) ?_
     (fun hd => hs (hd.trans (orderOf_dvd_of_mem_zpowers (mul_mem hfx hfy)))) (k := n)
     (by simpa using hn)).symm
   calc pFreePart p x * pFreePart p y * (pPart p x * pPart p y)
       = pFreePart p x * (pFreePart p y * pPart p x) * pPart p y := by group
     _ = pFreePart p x * (pPart p x * pFreePart p y) * pPart p y := by
-        rw [(commute_of_mem_zpowers_of_mem_map_sylow s P hfy hpx).eq]
+        rw [(commute_of_mem_zpowers_of_mem_centralizer s hfy (map_subtype_le _ hpx)).eq]
     _ = pFreePart p x * pPart p x * (pFreePart p y * pPart p y) := by group
     _ = x * y := by rw [pFreePart_mul_pPart, pFreePart_mul_pPart]
 

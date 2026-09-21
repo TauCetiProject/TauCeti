@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Values
 public import TauCeti.RepresentationTheory.Induction.Ideal
 public import TauCeti.RepresentationTheory.Induction.PElementary
 
@@ -95,7 +94,7 @@ end Pullback
 /-! ### The scaled section indicator as a combination of characters -/
 
 variable [Field k]
-variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
+variable [Finite G] [IsAlgClosed k] [Invertible (orderOf s : k)]
 
 /-- **The `p`-section indicator, scaled by the order of `s`, is an `A`-combination of characters
 of the `p`-elementary subgroup**, for every subring `A` of `k` containing the roots of unity of
@@ -108,7 +107,7 @@ theorem orderOf_nsmul_pSectionIndicator_mem_span_virtualCharacters (A : Subring 
       Submodule.span A (virtualCharacters k ↥(pElementaryOfSylow s P) : Set _) := by
   classical
   let _ : Invertible (Nat.card ↥(zpowers s) : k) := invertibleOfNonzero
-    (ne_zero_of_dvd_ne_zero (Invertible.ne_zero _) (Nat.cast_dvd_cast (card_subgroup_dvd_card _)))
+    (by simpa only [Nat.card_zpowers] using Invertible.ne_zero (orderOf s : k))
   have h1 : Nat.card ↥(zpowers s) • Pi.single (⟨s, mem_zpowers s⟩ : zpowers s) (1 : k) ∈
       Submodule.span A (irreducibleCharacters k ↥(zpowers s)) := by
     refine natCard_nsmul_mem_span_irreducibleCharacters A
@@ -194,9 +193,12 @@ theorem exists_mem_span_indVirtualCharacters_isPElementary_not_dvd (p : ℕ) [Fa
       rw [Pi.smul_apply, nsmul_eq_mul, Nat.cast_mul,
         indPSectionIndicator_eq_pSectionCosetCard (hT C hC)]
     rw [hcast]
-    refine Submodule.sum_mem _ fun C hC =>
-      orderOf_nsmul_indPSectionIndicator_mem_span_indVirtualCharacters A (fun x hx => hA x ?_)
-        (hT C hC)
+    refine Submodule.sum_mem _ fun C hC => ?_
+    let _ : Invertible (orderOf (rep C) : k) := invertibleOfNonzero
+      (ne_zero_of_dvd_ne_zero (Invertible.ne_zero (Nat.card G : k))
+        (Nat.cast_dvd_cast (orderOf_dvd_natCard (rep C))))
+    refine orderOf_nsmul_indPSectionIndicator_mem_span_indVirtualCharacters A
+      (fun x hx => hA x ?_) (hT C hC)
     obtain ⟨m, hm⟩ := orderOf_dvd_natCard (rep C)
     rw [hm, pow_mul, hx, one_pow]
 
