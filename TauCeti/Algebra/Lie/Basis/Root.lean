@@ -23,7 +23,7 @@ used by the nilradical and Borel bridges.
 
 * `LieAlgebra.Basis.isTriangularizable`: the Cartan action associated to a Lie-algebra basis is
   triangularizable over the ground field.
-* `LieAlgebra.Basis.exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots`: every positive root is
+* `LieAlgebra.Basis.exists_root_eq_sum_nat_baseSupp_of_mem_posRoots`: every positive root is
   a nonzero natural-number combination of the basis's simple roots.
 * `TauCeti.lieBasis_e_mem_rootSpace` and `TauCeti.lieBasis_f_mem_rootSpace`: the simple raising
   and lowering generators lie in their expected root spaces.
@@ -91,7 +91,7 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 /-- A positive root for the base associated to a Lie algebra basis is a nonzero natural-number
 combination of the basis's simple roots. -/
-theorem exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots
+theorem exists_root_eq_sum_nat_baseSupp_of_mem_posRoots
     (b : LieAlgebra.Basis ι H) :
     letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra

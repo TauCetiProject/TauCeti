@@ -70,7 +70,7 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
   apply le_antisymm
   · rw [TauCeti.positiveNilradical_le_iff]
     intro α hα x hx
-    obtain ⟨n, hn, hsum⟩ := b.exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots hα
+    obtain ⟨n, hn, hsum⟩ := b.exists_root_eq_sum_nat_baseSupp_of_mem_posRoots hα
     have hle : rootSpace H (∑ i, n i • (b.baseSupp i : H → K)) ≤
         ⨆ (m : ι → ℕ) (_ : m ≠ 0),
           rootSpace H (∑ i, m i • (b.baseSupp i : H → K)) :=
