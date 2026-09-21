@@ -161,7 +161,6 @@ private theorem blockIndex_mul (m n : ℕ) [NeZero m] [NeZero n]
 /-- **A large block is the joint law of its consecutive smaller blocks.** Splitting the `i`-th
 block of width `n * m` gives the `n` consecutive width-`m` blocks numbered
 `i * n, ..., i * n + n - 1`, with their dependence retained. -/
-@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSplitEquiv
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n] (i : ℕ) :
     (P.blockMarginals (n * m) i).map (blockSplitEquiv α m n) =
@@ -177,7 +176,6 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSpli
 
 /-- **Restriction compatibility for block marginals.** The `r`-th width-`m` subblock of the
 `i`-th width-`n * m` block is the width-`m` block numbered `i * n + r`. -/
-@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockRestriction
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n]
     (i : ℕ) (r : Fin n) :
