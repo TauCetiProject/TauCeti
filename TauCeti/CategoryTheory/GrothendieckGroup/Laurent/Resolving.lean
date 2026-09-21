@@ -107,24 +107,14 @@ private lemma resolutionAddEquiv_apply (x : LaurentK0 (E.fullSubcategory P hP hs
       exact congrArg _ (ObjectProperty.ι_obj P (X := X)).symm
   exact DFunLike.congr_fun key y
 
-private lemma resolutionMap_bijective :
-    Function.Bijective (LaurentK0.map (GradedConflationExact.ι E P hP hshift)) := by
-  constructor
-  · intro x y hxy
-    apply (resolutionAddEquiv E P hshift).injective
-    rw [resolutionAddEquiv_apply E P hshift, resolutionAddEquiv_apply E P hshift, hxy]
-  · intro y
-    obtain ⟨x, rfl⟩ := (resolutionAddEquiv E P hshift).surjective y
-    exact ⟨x, (resolutionAddEquiv_apply E P hshift x).symm⟩
-
 /-- **The graded resolution theorem for a resolving subcategory.** If `P` is resolving for the
 underlying exact structure and stable under the grading shift, then inclusion induces an
 isomorphism of graded Grothendieck groups as `ℤ[q,q⁻¹]`-modules. Its inverse is computed by the
 Euler class of any finite `P`-resolution. -/
 noncomputable def laurentResolutionEquiv :
     LaurentK0 (E.fullSubcategory P hP hshift) ≃ₗ[LaurentPolynomial ℤ] LaurentK0 E :=
-  LinearEquiv.ofBijective (LaurentK0.map (GradedConflationExact.ι E P hP hshift))
-    (resolutionMap_bijective E P hshift)
+  (resolutionAddEquiv E P hshift).toLinearEquiv fun c x => by
+    simp only [resolutionAddEquiv_apply, map_smul]
 
 /-- The forward map of the graded resolution theorem is induced by the graded conflation-exact
 inclusion of the resolving subcategory. -/
@@ -133,7 +123,7 @@ theorem laurentResolutionEquiv_toLinearMap :
     (laurentResolutionEquiv E P hshift).toLinearMap =
       LaurentK0.map (GradedConflationExact.ι E P hP hshift) := by
   ext x
-  simp [laurentResolutionEquiv]
+  simp [laurentResolutionEquiv, resolutionAddEquiv_apply]
 
 /-- The graded resolution equivalence sends the class of a resolving object to its ambient
 class. -/
@@ -142,7 +132,8 @@ theorem laurentResolutionEquiv_of (X : P.FullSubcategory) :
     laurentResolutionEquiv E P hshift
         (LaurentK0.of (E.fullSubcategory P hP hshift) X) =
       LaurentK0.of E X.obj := by
-  rw [laurentResolutionEquiv, LinearEquiv.ofBijective_apply, LaurentK0.map_of]
+  rw [laurentResolutionEquiv, AddEquiv.coe_toLinearEquiv, resolutionAddEquiv_apply,
+    LaurentK0.map_of]
   exact congrArg _ (ObjectProperty.ι_obj P (X := X))
 
 /-- **The inverse of the graded resolution equivalence is the Euler class.** It sends the class
@@ -158,8 +149,7 @@ theorem laurentResolutionEquiv_symm_of {X : C}
       (E := E.toExactStructure) (P := P) (ExactStructure.IsResolving.finiteResolution X) r,
     ← ExactStructure.IsResolving.resolutionEquiv_symm_of
       (E := E.toExactStructure) (P := P) X,
-    LinearEquiv.symm_apply_eq, laurentResolutionEquiv, LinearEquiv.ofBijective_apply,
-    ← resolutionAddEquiv_apply E P hshift]
+    LinearEquiv.symm_apply_eq, laurentResolutionEquiv, AddEquiv.coe_toLinearEquiv]
   simp only [resolutionAddEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply,
     AddEquiv.apply_symm_apply, LaurentK0.ofExactK0_exactK0_of]
 

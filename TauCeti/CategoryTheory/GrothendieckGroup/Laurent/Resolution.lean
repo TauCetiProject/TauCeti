@@ -115,20 +115,6 @@ private lemma resolutionAddEquiv_apply (x : LaurentK0 (E.fullSubcategory P hP hs
       exact congrArg _ (ObjectProperty.FullSubcategory.ext (ObjectProperty.ιOfLE_obj_obj _ X).symm)
   exact DFunLike.congr_fun key y
 
-private lemma resolutionMap_bijective :
-    Function.Bijective
-      (LaurentK0.map
-        (GradedConflationExact.ιOfLE E P hP hR hshift hRshift
-          (E.le_admitsFiniteResolution P))) := by
-  constructor
-  · intro x y hxy
-    apply (E.resolutionAddEquiv hproj hshift).injective
-    rw [E.resolutionAddEquiv_apply hproj hshift,
-      E.resolutionAddEquiv_apply hproj hshift, hxy]
-  · intro y
-    obtain ⟨x, rfl⟩ := (E.resolutionAddEquiv hproj hshift).surjective y
-    exact ⟨x, (E.resolutionAddEquiv_apply hproj hshift x).symm⟩
-
 /-- **The graded resolution theorem.** Let `P` be a class of `E`-projectives containing a zero
 object, closed under binary biproducts, and stable under the grading shift. Then the inclusion of
 `P` into the objects of finite `P`-dimension induces an isomorphism of graded Grothendieck groups
@@ -137,10 +123,8 @@ as `ℤ[q,q⁻¹]`-modules. Its inverse sends the class of an object to its Eule
 noncomputable def laurentResolutionEquiv :
     LaurentK0 (E.fullSubcategory P hP hshift) ≃ₗ[LaurentPolynomial ℤ]
       LaurentK0 (E.fullSubcategory (E.admitsFiniteResolution P) hR hRshift) :=
-  LinearEquiv.ofBijective
-    (LaurentK0.map
-      (GradedConflationExact.ιOfLE E P hP hR hshift hRshift (E.le_admitsFiniteResolution P)))
-    (E.resolutionMap_bijective hproj hshift)
+  (E.resolutionAddEquiv hproj hshift).toLinearEquiv fun c x => by
+    simp only [resolutionAddEquiv_apply, map_smul]
 
 /-- The forward map of the graded resolution isomorphism is the map induced by the graded
 conflation-exact inclusion of `P` into the objects of finite `P`-dimension. -/
@@ -150,7 +134,7 @@ theorem laurentResolutionEquiv_toLinearMap :
       LaurentK0.map (GradedConflationExact.ιOfLE E P hP hR hshift hRshift
         (E.le_admitsFiniteResolution P)) := by
   ext x
-  simp [laurentResolutionEquiv]
+  simp [laurentResolutionEquiv, resolutionAddEquiv_apply]
 
 /-- The graded resolution isomorphism sends the class of a `P`-object to its class among the
 objects of finite `P`-dimension. -/
@@ -158,7 +142,8 @@ objects of finite `P`-dimension. -/
 theorem laurentResolutionEquiv_of (X : P.FullSubcategory) :
     E.laurentResolutionEquiv hproj hshift (LaurentK0.of _ X) =
       LaurentK0.of _ ⟨X.obj, E.le_admitsFiniteResolution P X.obj X.property⟩ := by
-  rw [laurentResolutionEquiv, LinearEquiv.ofBijective_apply, LaurentK0.map_of]
+  rw [laurentResolutionEquiv, AddEquiv.coe_toLinearEquiv, resolutionAddEquiv_apply,
+    LaurentK0.map_of]
   exact congrArg _ (ObjectProperty.FullSubcategory.ext (ObjectProperty.ιOfLE_obj_obj _ X))
 
 /-- **The inverse of the graded resolution isomorphism is the Euler class**: it sends the class
@@ -170,8 +155,7 @@ theorem laurentResolutionEquiv_symm_of {X : C} (hX : E.admitsFiniteResolution P 
       r.foldAlternating fun Z hZ => LaurentK0.of (E.fullSubcategory P hP hshift) ⟨Z, hZ⟩ := by
   rw [← ofExactK0_toUngraded_symm_eulerClassFullSubcategory, ← E.eulerClassOf_eq hproj hX r,
     ← ExactStructure.resolutionEquiv_symm_of hproj hX, LinearEquiv.symm_apply_eq,
-    laurentResolutionEquiv, LinearEquiv.ofBijective_apply,
-    ← E.resolutionAddEquiv_apply hproj hshift]
+    laurentResolutionEquiv, AddEquiv.coe_toLinearEquiv]
   simp only [resolutionAddEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply,
     AddEquiv.apply_symm_apply, toUngraded_symm_of, LaurentK0.ofExactK0_exactK0_of]
 
