@@ -51,8 +51,7 @@ theorem mem_codeInZeroLatticeDiscriminantBilinearModule_iff (C : AdditiveCode (Z
 theorem map_codeInZeroLatticeDiscriminantBilinearModule (C : AdditiveCode (ZMod m) ι) :
     (codeInZeroLatticeDiscriminantBilinearModule m ι C).map
       (discriminantIsometry m ι).toAddEquiv = C := by
-  change AddSubgroup.map (discriminantIsometry m ι).toAddEquiv.toAddMonoidHom
-      (C.comap (discriminantIsometry m ι).toAddEquiv.toAddMonoidHom) = C
+  rw [codeInZeroLatticeDiscriminantBilinearModule]
   exact AddSubgroup.map_comap_eq_self_of_surjective
     (f := (discriminantIsometry m ι).toAddEquiv.toAddMonoidHom)
     (discriminantIsometry m ι).toAddEquiv.surjective C
@@ -111,6 +110,15 @@ theorem mem_codeInZeroLatticeDiscriminantGroup_iff_discriminantIsometry
     x ∈ codeInZeroLatticeDiscriminantGroup m ι C ↔ discriminantIsometry m ι x ∈ C := by
   rw [mem_codeInZeroLatticeDiscriminantGroup_iff, discriminantIsometry_apply]
 
+/-- Reduction maps the transported discriminant subgroup back to the original code. -/
+@[simp]
+theorem map_codeInZeroLatticeDiscriminantGroup (C : AdditiveCode (ZMod m) ι) :
+    (codeInZeroLatticeDiscriminantGroup m ι C).map (discriminantEquiv m ι).toAddEquiv = C := by
+  rw [codeInZeroLatticeDiscriminantGroup]
+  exact AddSubgroup.map_comap_eq_self_of_surjective
+    (f := (discriminantEquiv m ι).toAddEquiv.toAddMonoidHom)
+    (discriminantEquiv m ι).toAddEquiv.surjective C
+
 private theorem mem_intermediateCarrier_codeInZeroLatticeDiscriminantGroup_iff
     (C : AdditiveCode (ZMod m) ι) (x : ι → ℚ) :
     x ∈ ((zeroLattice m ι).intermediateCarrierOfDiscriminantSubgroup
@@ -137,6 +145,7 @@ private theorem mem_intermediateCarrier_codeInZeroLatticeDiscriminantGroup_iff
     exact hz
 
 /-- The inverse-image carrier of a transported code is its Construction A carrier. -/
+@[simp]
 theorem coe_intermediateCarrierOfDiscriminantSubgroup_codeInZeroLatticeDiscriminantGroup
     (C : AdditiveCode (ZMod m) ι) :
     ((zeroLattice m ι).intermediateCarrierOfDiscriminantSubgroup
