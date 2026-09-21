@@ -105,7 +105,8 @@ theorem infinitePi_mem_extremePoints_exchangeable (P : ProbabilityMeasure α) :
     (Measure.infinitePi fun _ : ℕ => (P : Measure α)) ∈ extremePoints ℝ≥0∞
       {ν : Measure (ℕ → α) | ExchangeableLaw ν ∧ IsProbabilityMeasure ν} := by
   rw [exchangeableProbabilityMeasures_eq]
-  have := ergodicSMul_infinitePi_const P
+  let : ErgodicSMul FinitaryPerm (ℕ → α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
+    ergodicSMul_infinitePi_const P
   exact ErgodicSMul.mem_extremePoints
 
 /-- **The extreme exchangeable laws are exactly the i.i.d. laws.** For a standard Borel

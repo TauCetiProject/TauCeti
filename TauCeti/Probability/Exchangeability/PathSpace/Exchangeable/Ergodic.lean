@@ -7,8 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import TauCeti.Probability.Exchangeability.PathSpace.HewittSavage
-import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
-import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 
 /-!
 # Exchangeable laws and ergodicity of the finitely supported permutation action
