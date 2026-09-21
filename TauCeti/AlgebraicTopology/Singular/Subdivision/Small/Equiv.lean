@@ -339,7 +339,7 @@ theorem mem_smallSingularChains_ιChainComplex_comp_singularSmallApprox {n : ℕ
 
 /-! ### The retraction onto the chains subordinate to the cover -/
 
-theorem exists_comp_eq_ιChainComplex_comp_singularSmallApprox {n : ℕ}
+private theorem exists_comp_eq_ιChainComplex_comp_singularSmallApprox {n : ℕ}
     (σ : TopCat.toSSet.obj X _⦋n⦌) :
     ∃ g : R ⟶ ((X.smallSingularSubcomplex U : SSet).chainComplex R).X n,
       g ≫ (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n =
@@ -349,20 +349,20 @@ theorem exists_comp_eq_ιChainComplex_comp_singularSmallApprox {n : ℕ}
 
 /-- The degreewise factorisation of the small-chain approximation through the chains subordinate
 to `U`, obtained by choosing a factorisation on each summand. -/
-def smallSingularRetractionX (n : ℕ) :
+private def smallSingularRetractionX (n : ℕ) :
     ((TopCat.toSSet.obj X).chainComplex R).X n ⟶
       ((X.smallSingularSubcomplex U : SSet).chainComplex R).X n :=
   Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan R n) fun σ ↦
     (exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ).choose
 
 @[reassoc]
-lemma ιChainComplex_smallSingularRetractionX {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
+private lemma ιChainComplex_smallSingularRetractionX {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) :
     (TopCat.toSSet.obj X).ιChainComplex σ ≫ smallSingularRetractionX R U hU hcov n =
       (exists_comp_eq_ιChainComplex_comp_singularSmallApprox R U hU hcov σ).choose :=
   Cofan.IsColimit.fac _ _ σ
 
 @[reassoc (attr := simp)]
-lemma smallSingularRetractionX_comp_ι (n : ℕ) :
+private lemma smallSingularRetractionX_comp_ι (n : ℕ) :
     smallSingularRetractionX R U hU hcov n ≫
         (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n =
       (singularSmallApprox R U).f n := by
@@ -382,7 +382,7 @@ def smallSingularRetraction :
       HomologicalComplex.Hom.comm]
 
 @[simp]
-lemma smallSingularRetraction_f (n : ℕ) :
+private lemma smallSingularRetraction_f (n : ℕ) :
     (smallSingularRetraction R U hU hcov).f n = smallSingularRetractionX R U hU hcov n := (rfl)
 
 @[reassoc (attr := simp)]
@@ -429,6 +429,22 @@ def smallSingularHomologyIso [CategoryWithHomology C] (n : ℕ) :
 lemma smallSingularHomologyIso_hom [CategoryWithHomology C] (n : ℕ) :
     (smallSingularHomologyIso R U hU hcov n).hom = HomologicalComplex.homologyMap
       (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n := (rfl)
+
+/-- The small-chain homology isomorphism is natural under maps carrying members of one cover
+into members of another. -/
+lemma smallSingularHomologyIso_naturality [CategoryWithHomology C]
+    {κ : Type*} {Y : TopCat.{w}} (V : κ → Set Y) (f : X ⟶ Y) (r : ι → κ)
+    (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) (hV : ∀ j, IsOpen (V j))
+    (hcovV : ⋃ j, V j = Set.univ) (n : ℕ) :
+    (smallSingularHomologyIso R U hU hcov n).hom ≫
+        HomologicalComplex.homologyMap
+          (SSet.chainComplexMap (TopCat.toSSet.map f) R) n =
+      HomologicalComplex.homologyMap
+          (SSet.chainComplexMap (X.smallSingularSubcomplexMap U V f r hf) R) n ≫
+        (smallSingularHomologyIso R V hV hcovV n).hom := by
+  rw [smallSingularHomologyIso_hom, smallSingularHomologyIso_hom,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+    ← Functor.map_comp, ← Functor.map_comp, TopCat.smallSingularSubcomplexMap_ι]
 
 /-- The inclusion of the chains subordinate to an open cover induces an isomorphism on homology
 in every degree. -/
