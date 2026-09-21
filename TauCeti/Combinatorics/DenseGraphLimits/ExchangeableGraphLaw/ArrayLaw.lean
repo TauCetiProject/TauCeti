@@ -242,22 +242,26 @@ private theorem measurableEmbedding_finGraphBlockAt (k n m : ℕ) (hm : k + n = 
       simpa [finGraphBlockAt] using this)
 
 /-- The block restriction of the adjacency array on `[k, k + n)²` is the window at offset `k`. -/
-private theorem restrict_adjArray (k n : ℕ) (G : SimpleGraph ℕ) :
-    (Finset.Ico k (k + n) ×ˢ Finset.Ico k (k + n)).restrict G.adjArray
-      = finGraphBlockAt k n (k + n) rfl (SimpleGraph.comap (fun i : Fin n => k + (i : ℕ)) G) := by
+private theorem restrict_adjArray (k n m : ℕ) (hm : k + n = m) (G : SimpleGraph ℕ) :
+    (Finset.Ico k m ×ˢ Finset.Ico k m).restrict G.adjArray
+      = finGraphBlockAt k n m hm (SimpleGraph.comap (fun i : Fin n => k + (i : ℕ)) G) := by
   funext ⟨⟨a, b⟩, hab⟩
   simp only [Finset.restrict, finGraphBlockAt, SimpleGraph.adjArray_apply, SimpleGraph.comap_adj]
   have ha : k ≤ a := by have := (Finset.mem_product.1 hab).1; simp at this; omega
   have hb : k ≤ b := by have := (Finset.mem_product.1 hab).2; simp at this; omega
   congr 1; simp [Nat.add_sub_cancel' ha, Nat.add_sub_cancel' hb]
 
-/-- The block restriction of the adjacency array on `[0, n)²` is the window of length `n`. -/
+/-- The window at offset `0` is the initial window. -/
+private theorem comap_zero_add (n : ℕ) (G : SimpleGraph ℕ) :
+    SimpleGraph.comap (fun i : Fin n => 0 + (i : ℕ)) G = G.restrictFin n := by
+  ext a b; simp [restrictFin_adj]
+
+/-- The block restriction of the adjacency array on `[0, n)²` is the window of length `n`: the
+general lemma at offset `0`. -/
 private theorem restrict_adjArray_zero (n : ℕ) (G : SimpleGraph ℕ) :
     (Finset.Ico 0 n ×ˢ Finset.Ico 0 n).restrict G.adjArray
       = finGraphBlockAt 0 n n (Nat.zero_add n) (G.restrictFin n) := by
-  -- the general lemma at offset `0` reads the window `[0, 0 + n)`; the block is `[0, n)`
-  funext ⟨⟨a, b⟩, hab⟩
-  simp [Finset.restrict, finGraphBlockAt, SimpleGraph.adjArray_apply, restrictFin_adj]
+  rw [restrict_adjArray 0 n n (Nat.zero_add n), comap_zero_add]
 
 /-- The dissociation identity of the finite law at `(k, l)` is block independence of the array
 law at the windows `[0, k)²` and `[k, k + l)²`. -/
@@ -291,7 +295,7 @@ theorem isDissociated_iff_forall_indepFun_restrict (L : InfiniteExchangeableGrap
             SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))) := by
     funext G
     simp only [Function.comp, Prod.map, restrictFin_comap_castAdd, restrictFin_comap_natAdd,
-      restrict_adjArray_zero, restrict_adjArray]
+      restrict_adjArray_zero, restrict_adjArray k l (k + l) rfl]
   have e2 : (fun x : ℕ × ℕ → Bool => (Finset.Ico 0 k ×ˢ Finset.Ico 0 k).restrict x)
         ∘ SimpleGraph.adjArray
       = finGraphBlockAt 0 k k (Nat.zero_add k) ∘ fun G : SimpleGraph ℕ =>
@@ -301,7 +305,8 @@ theorem isDissociated_iff_forall_indepFun_restrict (L : InfiniteExchangeableGrap
         ∘ SimpleGraph.adjArray
       = finGraphBlockAt k l (k + l) rfl ∘ fun G : SimpleGraph ℕ =>
           SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l)) := by
-    funext G; simp only [Function.comp, restrictFin_comap_natAdd, restrict_adjArray]
+    funext G
+    simp only [Function.comp, restrictFin_comap_natAdd, restrict_adjArray k l (k + l) rfl]
   have hemb : MeasurableEmbedding
       (Prod.map (finGraphBlockAt 0 k k (Nat.zero_add k)) (finGraphBlockAt k l (k + l) rfl)) :=
     (measurableEmbedding_finGraphBlockAt 0 k k (Nat.zero_add k)).prodMap
