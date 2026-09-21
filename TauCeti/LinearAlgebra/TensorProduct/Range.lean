@@ -77,17 +77,14 @@ variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 @[simp]
 theorem range_baseChange (f : M →ₗ[R] N) :
     range (f.baseChange A) = (range f).baseChange A := by
-  calc
-    range (f.baseChange A) =
-        range (((range f).subtype.comp f.rangeRestrict).baseChange A) := by
-      rw [f.subtype_comp_rangeRestrict]
-    _ = range ((range f).subtype.baseChange A ∘ₗ f.rangeRestrict.baseChange A) := by
-      rw [baseChange_comp]
-    _ = range ((range f).subtype.baseChange A) := by
-      apply range_comp_of_range_eq_top
-      rw [range_eq_top]
-      exact baseChange_surjective A f.surjective_rangeRestrict
-    _ = (range f).baseChange A := by rw [Submodule.baseChange]
+  rw [Submodule.baseChange]
+  ext z
+  change (∃ x, f.baseChange A x = z) ↔
+    ∃ x, (range f).subtype.baseChange A x = z
+  have h := SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) z
+  change (∃ x, f.lTensor A x = z) ↔
+    ∃ x, (range f).subtype.lTensor A x = z at h
+  simpa only [baseChange_eq_ltensor] using h
 
 end Range
 
