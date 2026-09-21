@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.Hamming
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Hamming data under coordinate decompositions and reindexing
@@ -106,5 +107,25 @@ theorem hammingNorm_comp [Zero α] (e : κ ≃ ι) (x : ι → α) :
     hammingNorm (x ∘ e) = hammingNorm x := by
   simp only [hammingNorm, Function.comp_apply]
   exact Finset.card_equiv e (by simp)
+
+section Relabelling
+
+variable {R : Type*} [Semiring R]
+
+/-- Relabelling a word along an equivalence of finite coordinate types preserves its Hamming
+weight, when the relabelling is expressed as a linear map between function spaces. -/
+@[simp]
+theorem hammingNorm_funLeft [DecidableEq R] (e : κ ≃ ι) (x : ι → R) :
+    hammingNorm (LinearMap.funLeft R R e x) = hammingNorm x :=
+  Equiv.hammingNorm_comp e x
+
+/-- Relabelling two words along an equivalence of finite coordinate types preserves their Hamming
+distance, when the relabelling is expressed as a linear map between function spaces. -/
+@[simp]
+theorem hammingDist_funLeft [DecidableEq R] (e : κ ≃ ι) (x y : ι → R) :
+    hammingDist (LinearMap.funLeft R R e x) (LinearMap.funLeft R R e y) = hammingDist x y :=
+  Equiv.hammingDist_comp e x y
+
+end Relabelling
 
 end Equiv

@@ -34,6 +34,13 @@ consists of projectives and compares it with the full subcategory of objects of 
 `P`-dimension. Here `P` is resolving, so every ambient object has a finite `P`-resolution, and the
 comparison is with the whole category.
 
+A conflation-exact functor `F` into an ungraded exact category with `{1} ⋙ F ≅ F`, carrying `P`
+into a resolving property of the target, forgets the grading on both sides of this isomorphism;
+the resulting square commutes, so the specialization at `q = 1` of the graded resolution class of
+an object is the resolution class of its image. The termwise form of that statement, for an
+arbitrary finite resolution rather than the resolution theorem, is
+`TauCeti.GradedExactStructure.forgetGrading_foldAlternating`.
+
 ## Main definitions
 
 * `TauCeti.GradedExactStructure.IsResolving.laurentResolutionEquiv`: the graded resolution theorem
@@ -48,6 +55,11 @@ comparison is with the whole category.
   classes, with the inverse computed by any finite resolution.
 * `TauCeti.GradedExactStructure.IsResolving.foldAlternating_shift_eq_T_one_smul`: shifting a
   resolved object multiplies its resolution Euler class by `q`.
+* `TauCeti.GradedExactStructure.IsResolving.forgetGrading_laurentResolutionEquiv` and
+  `TauCeti.GradedExactStructure.IsResolving.forgetGrading_laurentResolutionEquiv_symm`: forgetting
+  the grading along a conflation-exact functor into an ungraded exact category intertwines the
+  graded and the ungraded resolution theorems, so that at `q = 1` the graded resolution class of an
+  object is the ungraded resolution class of its image.
 
 ## References
 
@@ -65,7 +77,7 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 open LaurentPolynomial hiding C
 
-universe w v u
+universe w w' v v' u u'
 
 namespace GradedExactStructure.IsResolving
 
@@ -170,6 +182,60 @@ theorem foldAlternating_shift_eq_T_one_smul {X : C}
   · exact laurentResolutionEquiv_symm_of E P hshift r
   · exact laurentResolutionEquiv_symm_of E P hshift s
   · exact (LaurentK0.T_one_smul_of E X).symm
+
+section ForgetGrading
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] [EssentiallySmall.{w'} D]
+  {E' : ExactStructure D} {Q : ObjectProperty D} [E'.IsResolving Q]
+  {F : C ⥤ D} [F.Additive] (hF : E.toExactStructure.IsConflationExact E' F)
+  (comm : E.shift.functor ⋙ F ≅ F) (hPQ : ∀ Y : P.FullSubcategory, Q (F.obj Y.obj))
+
+local instance : ObjectProperty.EssentiallySmall.{w'} Q :=
+  ObjectProperty.EssentiallySmall.of_le (Q := ⊤) le_top
+
+/-- The extension closure of the resolving property of the target. -/
+local notation "hQ" =>
+  (ExactStructure.IsResolving.isExtensionClosed (E := E') (P := Q))
+
+/-- **Forgetting the grading commutes with the resolution theorems.** A conflation-exact functor
+`F` into an ungraded exact category, with `{1} ⋙ F ≅ F` and carrying the resolving property `P`
+into the resolving property `Q`, makes the square formed by the graded resolution theorem, the
+ungraded resolution theorem and the two maps forgetting the grading commute. -/
+theorem forgetGrading_laurentResolutionEquiv
+    (x : LaurentK0 (E.fullSubcategory P hP hshift)) :
+    LaurentK0.forgetGrading hF comm
+        (LaurentSpecialization.mk 1 (laurentResolutionEquiv E P hshift x)) =
+      ExactStructure.IsResolving.resolutionEquiv E' Q
+        (LaurentK0.forgetGrading (E.isConflationExact_lift P hP hshift hPQ hQ hF)
+          (E.liftCommShift P hP hshift hPQ comm) (LaurentSpecialization.mk 1 x)) := by
+  obtain ⟨y, rfl⟩ := (LaurentK0.ofExactK0 (E.fullSubcategory P hP hshift)).surjective x
+  induction y using ExactK0.induction_on with
+  | zero => simp
+  | of Y =>
+    rw [LaurentK0.ofExactK0_exactK0_of, laurentResolutionEquiv_of,
+      LaurentK0.forgetGrading_mk_of, LaurentK0.forgetGrading_mk_of,
+      ExactStructure.IsResolving.resolutionEquiv_of]
+    -- `Q.lift (P.ι ⋙ F) hPQ` sends `Y` to `⟨F.obj Y.obj, _⟩` by definition.
+    rfl
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | neg a ha => simp only [map_neg, ha]
+
+/-- **Forgetting the grading of the graded resolution class.** The graded Euler class of an
+object, specialized at `q = 1`, is the Euler class of its image: the two inverse resolution
+comparisons agree after forgetting the grading. -/
+theorem forgetGrading_laurentResolutionEquiv_symm (X : C) :
+    LaurentK0.forgetGrading (E.isConflationExact_lift P hP hshift hPQ hQ hF)
+        (E.liftCommShift P hP hshift hPQ comm)
+        (LaurentSpecialization.mk 1
+          ((laurentResolutionEquiv E P hshift).symm (LaurentK0.of E X))) =
+      E'.eulerClassOf hQ (ExactStructure.IsResolving.finiteResolution (F.obj X)) := by
+  apply (ExactStructure.IsResolving.resolutionEquiv E' Q).injective
+  rw [← forgetGrading_laurentResolutionEquiv E P hshift hF comm hPQ, LinearEquiv.apply_symm_apply,
+    LaurentK0.forgetGrading_mk_of, ← ExactStructure.IsResolving.resolutionEquiv_symm_of
+      (E := E') (P := Q) (F.obj X), AddEquiv.apply_symm_apply]
+
+end ForgetGrading
 
 end GradedExactStructure.IsResolving
 

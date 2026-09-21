@@ -14,9 +14,8 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 Mathlib's `NumberField.InfiniteAdeleRing K` is the finite product of the completions of `K` at its
 infinite places, and `NumberField.AdeleRing R K` is the product of the infinite adele ring with the
 finite adele ring of `R`.  Both are defined as type synonyms, so the Hausdorff property of the
-underlying products is not found by instance search.  This file records Hausdorffness and local
-compactness, so that closedness of discrete subgroups and the standard topological properties of
-idele groups and their quotients apply to the adele ring.
+underlying products is not found by instance search.  This file records it, so that closedness of
+discrete subgroups and separation of quotients apply to the adele ring.
 
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
 mixed space to a homeomorphism.  Each local factor is isometric to `ℝ` or `ℂ`, so the product
@@ -119,19 +118,5 @@ theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
 /-- The adele ring is Hausdorff, as the product of the infinite and the finite adele rings. -/
 instance AdeleRing.instT2Space : T2Space (AdeleRing R K) :=
   inferInstanceAs <| T2Space (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
-
-/-- The adele ring of a number field is nontrivial. -/
-noncomputable instance AdeleRing.instNontrivial [NumberField K] :
-    Nontrivial (AdeleRing R K) :=
-  inferInstanceAs <| Nontrivial
-    (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
-
-/-- The adele ring of a number field is locally compact, as the product of its locally compact
-infinite and finite adele rings. -/
-noncomputable instance AdeleRing.instLocallyCompactSpace [NumberField K]
-    [LocallyCompactSpace (IsDedekindDomain.FiniteAdeleRing R K)] :
-    LocallyCompactSpace (AdeleRing R K) :=
-  inferInstanceAs <| LocallyCompactSpace
-    (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
 
 end NumberField

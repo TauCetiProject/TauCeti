@@ -9,26 +9,32 @@ public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 
 import Mathlib.RingTheory.Valuation.LocalSubring
+import TauCeti.FieldTheory.FunctionField.ConstantField
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 
 /-!
 # Existence of extensions of places
 
 Every place of an algebraic function field extends across an integral field extension. More
-generally, the field of constants may also grow by an integral extension: a valuation trivial on
-the smaller constant field is automatically trivial on the larger one. The same argument shows
-that the places above a place `P` see the whole integral closure of its valuation ring: an element
-regular at all of them is integral over `𝒪_P`.
+generally, the base field may also grow by an integral extension: a valuation trivial on the
+smaller base field is automatically trivial on the larger one. For an extension of algebraic
+function fields with `F' / F` finite, both integrality hypotheses are automatic, the one on the
+base fields because the base extension is then finite. The same argument shows that the places
+above a place `P` see the whole integral closure of its valuation ring: an element regular at
+all of them is integral over `𝒪_P`.
 
 The proof dominates the local valuation ring of the original place by a valuation subring of the
 larger function field. Locality ensures that the resulting valuation subring is proper. Since
-valuation subrings are integrally closed, it contains the enlarged constant field, so it defines a
+valuation subrings are integrally closed, it contains the enlarged base field, so it defines a
 place whose restriction is the original place.
 
 ## Main results
 
 * `TauCeti.Place.restrict_surjective`: every place downstairs is the restriction of a place
   upstairs (Stichtenoth, Proposition 3.1.7).
+* `TauCeti.Place.restrict_surjective_of_finiteDimensional`: the same statement for an extension
+  of algebraic function fields, where both integrality hypotheses are theorems rather than
+  hypotheses.
 * `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`: the integral closure of the
   valuation ring `𝒪_P` in the larger field is the intersection of the valuation rings of the
   places above `P` (Stichtenoth, Section III.2).
@@ -51,10 +57,12 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+section Integral
+
 variable [Algebra.IsIntegral k k'] [Algebra.IsIntegral F F']
 
 /-- **Existence of extensions of places** (Stichtenoth, Proposition 3.1.7): if both the field
-extension and the extension of constants are integral, every place of `F / k` is the restriction
+extension and the base-field extension are integral, every place of `F / k` is the restriction
 of a place of `F' / k'`. -/
 theorem restrict_surjective (hF' : IsFunctionField k' F') :
     Function.Surjective (fun P' : Place k' F' ↦ restrict k F P') := by
@@ -108,8 +116,8 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 `P` of `F / k` exactly when it is regular at every place of `F' / k'` lying over `P`.
 
 An element outside the integral closure is separated from it by a valuation subring of `F'`; that
-subring contains the constants `k'`, which are integral over `k`, and it contains `𝒪_P`, so it is
-the valuation ring of a place lying over `P`. -/
+subring contains the base field `k'`, whose elements are integral over `k`, and it contains
+`𝒪_P`, so it is the valuation ring of a place lying over `P`. -/
 theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k' F')
     (P : Place k F) {x : F'} :
     IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
@@ -129,6 +137,24 @@ theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k'
     rw [integers_ofValuationSubring]
     exact hBV (isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers)))
   exact hxV (integers_ofValuationSubring hF' hk'V hV ▸ h _ hP')
+end Integral
+
+/-- **Existence of extensions of places for an extension of function fields** (Stichtenoth,
+Proposition 3.1.7): every place of `F / k` is the restriction of a place of `F' / k'`.
+
+This is a convenience corollary of `TauCeti.Place.restrict_surjective`, which replaces both
+explicit integrality hypotheses by the function-field hypotheses together with finiteness of
+`F' / F`: it asks nothing of the base extension, since `k' / k` is then finite by
+`TauCeti.IsFunctionField.finiteDimensional_baseExtension`.  The general statement
+`TauCeti.Place.restrict_surjective` stays available for an infinite algebraic extension
+`F' / F`. -/
+theorem restrict_surjective_of_finiteDimensional [FiniteDimensional F F']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') :
+    Function.Surjective (fun P' : Place k' F' ↦ restrict k F P') :=
+  have := hF.finiteDimensional_baseExtension hF'
+  have := Algebra.IsIntegral.of_finite k k'
+  have := Algebra.IsIntegral.of_finite F F'
+  restrict_surjective hF'
 
 end Place
 

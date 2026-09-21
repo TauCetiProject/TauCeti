@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.Topology.Algebra.Algebra
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
 # The finite adele ring: separation, integral elements, and strong approximation
@@ -19,20 +18,18 @@ Mathlib's `IsDedekindDomain.FiniteAdeleRing R K` is the restricted product of th
 about it that are not stated in Mathlib:
 
 * the finite adele ring is Hausdorff, since each completion is;
-* a finite adele ring with finite residue fields is locally compact;
 * subtraction, multiplication, and the multiplicative unit are computed place by place;
 * the product of the local integer rings embeds continuously as the integral finite adeles;
 * an element of `K` is integral at every finite place exactly when it lies in `R`, so the integral
   finite adeles meet the diagonal copy of `K` in `R`;
 * **strong approximation**: `K` is dense in the finite adele ring.
 
-The characterization of elements integral at every finite place is the finite half of the
-discreteness of a number field in its adele ring.  Strong approximation says that an element of
-`K` can be made close to a given finite adele `a` at finitely many places while differing from `a`
-by an integral element at every other place.  Since the integral finite adeles are open, it
-implies that `K` and the integral finite adeles together span the finite adele ring additively.
-For a number field the infinite places are what is omitted here: `K` is discrete, not dense, in
-the full adele ring.
+The third fact is the finite half of the discreteness of a number field in its adele ring.  The
+fourth says that an element of `K` can be made close to a given finite adele `a` at finitely many
+places while differing from `a` by an integral element at every other place.  Since the integral
+finite adeles are open, it implies that `K` and the integral finite adeles together span the finite
+adele ring additively.  For a number field the infinite places are what is omitted here: `K` is
+discrete, not dense, in the full adele ring.
 
 The proof clears denominators: a finite adele `a` has a common denominator `d ∈ R`, and the
 integral adele `a * d` is approximated by an element `r ∈ R` at finitely many places by the Chinese
@@ -72,20 +69,6 @@ instance : T2Space (FiniteAdeleRing R K) :=
   inferInstanceAs <| T2Space <|
     RestrictedProduct (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
       (fun v ↦ v.adicCompletionIntegers K) Filter.cofinite
-
-/-- A finite adele ring whose residue fields are finite is locally compact.  Each finite
-completion is a nonarchimedean local field, its ring of integers is compact and open, and the
-restricted product of these local additive groups is therefore locally compact. -/
-noncomputable instance instLocallyCompactSpace
-    [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
-    LocallyCompactSpace (FiniteAdeleRing R K) := by
-  let _ : Fact (∀ v : HeightOneSpectrum R,
-      IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
-    ⟨fun _ => Valued.isOpen_valuationSubring _⟩
-  apply RestrictedProduct.locallyCompactSpace_of_addGroup
-  exact Filter.Eventually.of_forall fun v =>
-    isCompact_iff_compactSpace.mpr
-      (HeightOneSpectrum.compactSpace_adicCompletionIntegers v)
 
 variable {R K}
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.RingTheory.Henselian
 public import TauCeti.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 

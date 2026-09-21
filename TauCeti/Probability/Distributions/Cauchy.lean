@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Fourier.Inversion
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
@@ -314,13 +314,6 @@ open scoped FourierTransform
 
 variable {γ : ℝ≥0}
 
-private theorem cauchyMeasure_apply_eq_integral (x₀ : ℝ) (hγ : γ ≠ 0)
-    {s : Set ℝ} (hs : MeasurableSet s) :
-    cauchyMeasure x₀ γ s = ENNReal.ofReal (∫ x in s, cauchyPDFReal x₀ γ x) := by
-  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ), withDensity_apply _ hs,
-    ← ofReal_integral_eq_lintegral_ofReal (integrable_cauchyPDFReal x₀).integrableOn
-      (.of_forall fun x ↦ (cauchyPDF_pos x₀ hγ x).le)]
-
 /-- Translating a Cauchy distribution changes its location parameter by the same amount. -/
 @[simp]
 theorem cauchyMeasure_map_add_const (x₀ y : ℝ) (γ : ℝ≥0) :
@@ -328,21 +321,10 @@ theorem cauchyMeasure_map_add_const (x₀ y : ℝ) (γ : ℝ≥0) :
   by_cases hγ : γ = 0
   · subst γ
     simp [cauchyMeasure_zero_scale]
-  let e : ℝ ≃ᵐ ℝ := (Homeomorph.addRight y).symm.toMeasurableEquiv
-  have he' : ∀ x, HasDerivAt e ((fun _ ↦ 1) x) x := fun x ↦ (hasDerivAt_id x).sub_const y
-  -- By construction, `e.symm` is the translation `fun x ↦ x + y`.
-  change (cauchyMeasure x₀ γ).map e.symm = cauchyMeasure (x₀ + y) γ
-  ext s hs
-  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ),
-    e.withDensity_ofReal_map_symm_apply_eq_integral_abs_deriv_mul' hs he'
-      (.of_forall fun x ↦ (cauchyPDF_pos x₀ hγ x).le) (integrable_cauchyPDFReal x₀),
-    cauchyMeasure_apply_eq_integral (x₀ + y) hγ hs]
-  simp only [abs_one, one_mul]
-  congr 2 with x
-  dsimp [e, Homeomorph.addRight]
-  rw [cauchyPDFReal_def, cauchyPDFReal_def]
-  congr 3
-  ring
+  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, cauchyMeasure_of_scale_ne_zero (x₀ + y) hγ,
+    Measure.map_add_right_withDensity]
+  congr with x
+  simp only [cauchyPDF_def, cauchyPDFReal_def, sub_sub, add_comm y]
 
 /-- The Fourier transform of the two-sided exponential of rate `2 π γ` is the Cauchy density of
 scale `γ` centred at the origin. This is `TauCeti.fourier_exp_neg_mul_abs` at the rate that makes
