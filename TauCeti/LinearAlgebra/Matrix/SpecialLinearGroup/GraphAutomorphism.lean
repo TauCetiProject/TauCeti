@@ -21,6 +21,8 @@ standard type-A pinning sign-free.
   `SL_{r+1}`.
 * `Matrix.SpecialLinearGroup.toGL_typeAGraphAutomorphism`: compatibility with the ambient
   automorphism of `GL_{r+1}`.
+* `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_typeAGraphAutomorphism` and
+  `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_mul_self`: the involution equations.
 
 ## References
 
@@ -73,10 +75,6 @@ private theorem toGL_typeAGraphAutomorphismToSL
       TauCeti.typeAGraphAutomorphism r A (Matrix.SpecialLinearGroup.toGL g) := by
   apply Matrix.GeneralLinearGroup.ext
   intro i j
-  change ((TauCeti.typeAGraphAutomorphism r A
-    (Matrix.SpecialLinearGroup.toGL g) :
-      Matrix.GeneralLinearGroup (Fin (r + 1)) A) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) A) i j = _
   rfl
 
 /-- **The signed reverse-inverse-transpose automorphism of `SL_{r+1}`.** This is the restriction
@@ -113,5 +111,20 @@ theorem toGL_typeAGraphAutomorphism
     Matrix.SpecialLinearGroup.toGL (typeAGraphAutomorphism r A g) =
       TauCeti.typeAGraphAutomorphism r A (Matrix.SpecialLinearGroup.toGL g) :=
   toGL_typeAGraphAutomorphismToSL r A g
+
+/-- Applying the special-linear type-`A` graph automorphism twice is the identity. -/
+@[simp]
+theorem typeAGraphAutomorphism_typeAGraphAutomorphism
+    (g : Matrix.SpecialLinearGroup (Fin (r + 1)) A) :
+    typeAGraphAutomorphism r A (typeAGraphAutomorphism r A g) = g :=
+  (typeAGraphAutomorphism r A).left_inv g
+
+/-- The special-linear type-`A` graph automorphism has order dividing two. -/
+@[simp]
+theorem typeAGraphAutomorphism_mul_self :
+    typeAGraphAutomorphism r A * typeAGraphAutomorphism r A = 1 := by
+  apply DFunLike.ext _ _
+  intro g
+  exact typeAGraphAutomorphism_typeAGraphAutomorphism r A g
 
 end Matrix.SpecialLinearGroup

@@ -75,7 +75,6 @@ theorem specialLinearMulEquiv_toGL (g : points r K) :
     Matrix.SpecialLinearGroup.toGL (specialLinearMulEquiv r g) = g := by
   apply Matrix.GeneralLinearGroup.ext
   intro i j
-  change g.1.1 i j = g.1.1 i j
   rfl
 
 /-- The inverse carrier equivalence preserves the underlying general-linear matrix. -/
@@ -86,7 +85,6 @@ theorem specialLinearMulEquiv_symm_coe
       Matrix.SpecialLinearGroup.toGL g := by
   apply Matrix.GeneralLinearGroup.ext
   intro i j
-  change g.1 i j = g.1 i j
   rfl
 
 /-- **The carrier equivalence identifies a numbered root subgroup with the corresponding

@@ -34,6 +34,8 @@ carrier Steinberg map agrees with the independently defined pinned scheme-point 
 * `TauCeti.TypeALieIndex.specialLinearFrobenius`,
   `TauCeti.TypeALieIndex.specialLinearGraphAut`, and
   `TauCeti.TypeALieIndex.specialLinearSteinberg`: the standard matrix maps.
+* `TauCeti.TypeALieIndex.specialLinearGraphAut_ofA` and
+  `TauCeti.TypeALieIndex.specialLinearGraphAut_ofTwistedA`: the graph-factor branch equations.
 * `TauCeti.TypeALieIndex.specialLinearSteinberg_eq_graphAut_comp_frobenius`: the factorization of
   the standard matrix Steinberg map.
 * `TauCeti.TypeALieIndex.pinnedSimpleRootSubgroup`, `TauCeti.TypeALieIndex.pinnedFrobenius`,
@@ -103,6 +105,21 @@ noncomputable def specialLinearGraphAut (d : TypeALieIndex) : MulAut d.StandardG
   | .twistedE6 _ | .trialityD4 _ | .suzuki _ | .reeG2 _ | .reeF4 _ | .tits =>
       absurd d.2 (by rw [LieTypeIndex.isTypeA_iff, h]; exact not_false)
 
+/-- On `A_r(q)`, the standard special-linear graph factor is trivial. -/
+theorem specialLinearGraphAut_ofA (rank : ℕ) (q : PrimePower)
+    (hvalid : (LieTypeIndex.A rank q).Valid) :
+    (ofA rank q hvalid).specialLinearGraphAut = 1 := by
+  simp only [specialLinearGraphAut]
+
+/-- On `²A_r(q)`, the standard special-linear graph factor is signed reverse inverse
+transpose. -/
+theorem specialLinearGraphAut_ofTwistedA (rank : ℕ) (q : PrimePower)
+    (hvalid : (LieTypeIndex.twistedA rank q).Valid) :
+    (ofTwistedA rank q hvalid).specialLinearGraphAut =
+      Matrix.SpecialLinearGroup.typeAGraphAutomorphism
+        (ofTwistedA rank q hvalid).1.rank (ofTwistedA rank q hvalid).1.Closure := by
+  simp only [specialLinearGraphAut]
+
 /-- **The standard matrix Steinberg map**: the graph factor composed with entrywise `q`-power
 Frobenius. -/
 noncomputable def specialLinearSteinberg (d : TypeALieIndex) :
@@ -161,6 +178,8 @@ theorem pinnedEquivSpecialLinear_pinnedSimpleRootSubgroup (d : TypeALieIndex)
       Matrix.SpecialLinearGroup.transvection
         (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))
         (Multiplicative.toAdd u) := by
+  -- Expose the `toFun` of the bundled `pinnedSimpleRootSubgroup` homomorphism so that the
+  -- scheme-point root-subgroup equation can recognize the displayed composition.
   change SpecialLinear.schemePointsMulEquiv (d.1.rank + 1) d.1.Closure
       ((AdditiveGroup.schemePointsMulEquiv d.1.Closure).symm u ≫
         (SpecialLinear.rootSubgroup
@@ -252,9 +271,9 @@ theorem carrierEquivSpecialLinear_graphAut (d : TypeALieIndex)
       d.specialLinearGraphAut (d.carrierEquivSpecialLinear g) := by
   rcases d.exists_eq_ofA_or_exists_eq_ofTwistedA with
     ⟨rank, q, hvalid, rfl⟩ | ⟨rank, q, hvalid, rfl⟩
-  · rw [graphAut_ofA, carrierEquivSpecialLinear, specialLinearGraphAut,
+  · rw [graphAut_ofA, carrierEquivSpecialLinear, specialLinearGraphAut_ofA,
       MulAut.one_apply, MulAut.one_apply]
-  · rw [graphAut_ofTwistedA, carrierEquivSpecialLinear, specialLinearGraphAut,
+  · rw [graphAut_ofTwistedA, carrierEquivSpecialLinear, specialLinearGraphAut_ofTwistedA,
       SlStd.specialLinearMulEquiv_graphAutomorphismPoints]
 
 /-- The carrier-to-pinned equivalence intertwines the graph factors. -/
