@@ -12,9 +12,9 @@ public import Mathlib.Algebra.GroupWithZero.Units.Basic
 # Collapsing an iterated product of powers into a single product of powers
 
 `Finset.prod_pow_eq_pow_sum` collapses a product of natural powers of one fixed element into a
-single power. This file records the analogue for integral powers of an invertible element of a
-commutative group with zero, and the three substitution rules that follow from it: substituting a
-family of monomials into a monomial multiplies the two exponent matrices.
+single power. This file records the analogue for integral powers, in a commutative group and in a
+commutative group with zero at an invertible element, and the three substitution rules that follow
+from it: substituting a family of monomials into a monomial multiplies the two exponent matrices.
 
 These are the bookkeeping rules behind composing monomial maps in coordinates, where the exponent
 matrices may carry natural or integral entries depending on whether the coordinate they act on is
@@ -22,7 +22,9 @@ allowed to vanish.
 
 ## Main results
 
-* `Finset.prod_zpow_eq_zpow_sum`: `∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i` for `y ≠ 0`.
+* `Finset.prod_zpow_eq_zpow_sum` and `Finset.prod_zpow_eq_zpow_sum₀`:
+  `∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i`, in a commutative group and, for `y ≠ 0`, in a commutative
+  group with zero.
 * `Finset.prod_prod_pow`, `Finset.prod_prod_zpow` and `Finset.prod_prod_zpow_pow`: substituting
   monomials into a monomial multiplies the exponent matrices, for the three combinations of
   natural and integral exponents that make sense.
@@ -32,11 +34,20 @@ public section
 
 namespace Finset
 
-variable {ι κ M G₀ : Type*}
+variable {ι κ M G G₀ : Type*}
 
-/-- A product of integral powers of one fixed invertible element collapses to a single power.
-This is the integral-exponent analogue of `Finset.prod_pow_eq_pow_sum`. -/
-theorem prod_zpow_eq_zpow_sum [CommGroupWithZero G₀] (s : Finset ι) {y : G₀} (hy : y ≠ 0)
+/-- A product of integral powers of one fixed element of a commutative group collapses to a single
+power. This is the integral-exponent analogue of `Finset.prod_pow_eq_pow_sum`. -/
+theorem prod_zpow_eq_zpow_sum [CommGroup G] (s : Finset ι) (y : G) (e : ι → ℤ) :
+    ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
+  classical
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => rw [prod_cons, sum_cons, ih, zpow_add]
+
+/-- A product of integral powers of one fixed invertible element of a commutative group with zero
+collapses to a single power. -/
+theorem prod_zpow_eq_zpow_sum₀ [CommGroupWithZero G₀] (s : Finset ι) {y : G₀} (hy : y ≠ 0)
     (e : ι → ℤ) : ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
   classical
   induction s using Finset.cons_induction with
@@ -68,7 +79,7 @@ theorem prod_prod_zpow [CommGroupWithZero G₀] (s : Finset ι) (t : Finset κ) 
           rw [← Finset.prod_zpow]
           exact prod_congr rfl fun b _ ↦ by rw [← zpow_mul, mul_comm]
     _ = ∏ b ∈ t, y b ^ ∑ a ∈ s, g a * e a b :=
-        prod_congr rfl fun b hb ↦ prod_zpow_eq_zpow_sum _ (hy b hb) _
+        prod_congr rfl fun b hb ↦ prod_zpow_eq_zpow_sum₀ _ (hy b hb) _
 
 /-- The mixed case of `Finset.prod_prod_zpow`: monomials with integral exponents in invertible
 coordinates, substituted into a monomial with natural exponents `g`. -/
