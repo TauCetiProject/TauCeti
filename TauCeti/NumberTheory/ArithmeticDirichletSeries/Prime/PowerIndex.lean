@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
 
 /-!
 # Indexing the prime-power ideals by a prime and an exponent
@@ -30,6 +32,8 @@ series indexed by ideals — the shape a von Mangoldt coefficient identity needs
 
 * `TauCeti.summable_comp_idealPrimePowerOf`: a summable family on all nonzero ideals remains
   summable after restriction to the positive prime powers.
+* `TauCeti.summable_tsum_norm_idealTerm_primeIdealPow_succ`: the prime-power tails of an
+  absolutely convergent ideal-indexed series are summable over the primes.
 * `TauCeti.tsum_idealPrimePower_eq`: a summable family on the prime-power ideals has the same sum
   as the iterated sum over primes and exponents.
 * `TauCeti.tsum_eq_tsum_idealPrimePower_of_support_subset`: a summable family on the nonzero
@@ -123,6 +127,19 @@ theorem summable_comp_idealPrimePowerOf (hf : Summable f) :
     Summable fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
       f (Pk.1.idealPrimePowerOf Pk.2 : (Ideal (𝓞 K))⁰) :=
   hf.comp_injective (Subtype.val_injective.comp idealPrimePowerEquiv.injective)
+
+/-- **The prime-power tails of an absolutely convergent ideal-indexed series are summable over the
+primes.**  This is the norm-valued refinement obtained by restricting the ideal-indexed series to
+pairs `(P, e)` and then summing out the exponent. -/
+theorem summable_tsum_norm_idealTerm_primeIdealPow_succ {f : IdealArithmeticFunction K} {s : ℂ}
+    (hs : Summable (idealTerm K f s)) :
+    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
+      ∑' e : ℕ, ‖idealTerm K f s (P.primeIdealPow (e + 1))‖ := by
+  have htails : Summable fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
+      ‖idealTerm K f s (Pk.1.primeIdealPow (Pk.2 + 1))‖ :=
+    summable_norm_iff.mpr <| (summable_comp_idealPrimePowerOf hs).congr
+      fun ⟨_, _⟩ ↦ congrArg _ (Subtype.ext (by simp))
+  exact htails.prod
 
 variable [T0Space α]
 

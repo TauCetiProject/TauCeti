@@ -43,17 +43,12 @@ nonvanishing of the `L`-series, and for a completely multiplicative weight it is
 
 ## Main results
 
-* `TauCeti.summable_tsum_norm_idealTerm_primeIdealPow_succ`: the prime-power tails of an absolutely
-  convergent ideal-indexed series are summable over the primes.
-* `TauCeti.EulerProductData.differentiableAt_eulerFactor`: a local Euler factor is holomorphic
-  strictly to the right of the ideal-indexed abscissa of absolute convergence.
-* `TauCeti.EulerProductData.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le`: the uniform bound on
-  the deviation of a local factor from `1` to the right of a point of absolute convergence.
 * `TauCeti.EulerProductData.hasSum_logDeriv_eulerFactor` and
   `TauCeti.EulerProductData.logDeriv_LSeries_eq_tsum_logDeriv_eulerFactor`: the logarithmic
   derivative of the `L`-series is the sum of the local logarithmic derivatives.
-* `TauCeti.MultiplicativeIdealWeight.hasSum_logDeriv_eulerFactor`: the same for a completely
-  multiplicative weight, where absolute convergence alone supplies the nonvanishing.
+* `TauCeti.MultiplicativeIdealWeight.hasSum_logDeriv_eulerFactor` and
+  `TauCeti.MultiplicativeIdealWeight.logDeriv_LSeries_eq_tsum_logDeriv_eulerFactor`: the same for a
+  completely multiplicative weight, where absolute convergence alone supplies the nonvanishing.
 
 ## References
 
@@ -71,62 +66,11 @@ open scoped nonZeroDivisors NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **The prime-power tails of an absolutely convergent ideal-indexed series are summable over the
-primes.**  This is the norm-valued refinement of
-`TauCeti.EulerProductData.summable_eulerFactor_sub_one`: the tails are a subfamily of the
-ideal-indexed series, indexed by pairs `(P, e)`, and summing out the exponent leaves a summable
-function of the prime. -/
-theorem summable_tsum_norm_idealTerm_primeIdealPow_succ {f : IdealArithmeticFunction K} {s : ℂ}
-    (hs : Summable (idealTerm K f s)) :
-    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
-      ∑' e : ℕ, ‖idealTerm K f s (P.primeIdealPow (e + 1))‖ := by
-  have htails : Summable fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
-      ‖idealTerm K f s (Pk.1.primeIdealPow (Pk.2 + 1))‖ :=
-    summable_norm_iff.mpr <| (summable_comp_idealPrimePowerOf hs).congr
-      fun ⟨_, _⟩ ↦ congrArg _ (Subtype.ext (by simp))
-  exact htails.prod
-
 namespace EulerProductData
 
 open IdealArithmeticFunction
 
 variable (D : EulerProductData K)
-
-/-- **A local Euler factor is holomorphic to the right of the ideal-indexed abscissa.**  The local
-factor is the `L`-series of the local arithmetic factor, whose own abscissa of absolute convergence
-is at most the ideal-indexed one. -/
-theorem differentiableAt_eulerFactor (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < s.re) :
-    DifferentiableAt ℂ (D.eulerFactor P) s := by
-  obtain ⟨σ, hσabs, hσs⟩ := EReal.exists_between_coe_real hs
-  have hσconv : Summable (idealTerm K D.toIdealArithmeticFunction (σ : ℂ)) :=
-    summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K (by simpa using hσabs)
-  have habs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < (s.re : EReal) :=
-    lt_of_le_of_lt
-      (by simpa using (D.LSeriesSummable_localArithmeticFactor hσconv P).abscissaOfAbsConv_le) hσs
-  have hfun : D.eulerFactor P = LSeries (D.localArithmeticFactor P) :=
-    funext (D.eulerFactor_def P)
-  rw [hfun]
-  exact (LSeries_hasDerivAt habs).differentiableAt
-
-/-- **The local Euler factors approach `1` uniformly on a half-plane of absolute convergence.**
-To the right of a point `w` of absolute convergence, the deviation of the local factor at `P` from
-`1` is bounded, independently of the point, by the prime-power tail at `P` computed at `w`. -/
-theorem norm_eulerFactor_sub_one_le_tsum_norm_of_re_le {w z : ℂ}
-    (hw : Summable (idealTerm K D.toIdealArithmeticFunction w)) (hz : w.re ≤ z.re)
-    (P : HeightOneSpectrum (𝓞 K)) :
-    ‖D.eulerFactor P z - 1‖ ≤ ∑' e : ℕ,
-      ‖idealTerm K D.toIdealArithmeticFunction w (P.primeIdealPow (e + 1))‖ := by
-  have hzP : Summable fun e : ℕ ↦
-      idealTerm K D.toIdealArithmeticFunction z (P.primeIdealPow e) :=
-    (summable_idealTerm_of_re_le_re K hz hw).comp_injective P.primeIdealPow_injective
-  have hwP : Summable fun e : ℕ ↦
-      idealTerm K D.toIdealArithmeticFunction w (P.primeIdealPow e) :=
-    hw.comp_injective P.primeIdealPow_injective
-  refine (D.norm_eulerFactor_sub_one_le hzP).trans (Summable.tsum_le_tsum
-    (fun e ↦ norm_idealTerm_le_of_re_le_re K _ hz _)
-    (summable_norm_iff.mpr ((summable_nat_add_iff 1).mpr hzP))
-    (summable_norm_iff.mpr ((summable_nat_add_iff 1).mpr hwP)))
 
 /-- **The logarithmic derivative of an ideal Euler product is the sum of the local logarithmic
 derivatives.**  Strictly to the right of the ideal-indexed abscissa of absolute convergence, and at
@@ -277,6 +221,16 @@ theorem hasSum_logDeriv_eulerFactor (χ : MultiplicativeIdealWeight K) {s : ℂ}
   simpa only [hcoe] using
     (EulerProductData.ofMultiplicativeIdealWeight χ).hasSum_logDeriv_eulerFactor
       (by simpa only [hcoe] using hs) hne
+
+/-- **The logarithmic derivative of a completely multiplicative Euler product, as a sum over the
+primes.**  The `tsum` form of
+`TauCeti.MultiplicativeIdealWeight.hasSum_logDeriv_eulerFactor`. -/
+theorem logDeriv_LSeries_eq_tsum_logDeriv_eulerFactor (χ : MultiplicativeIdealWeight K) {s : ℂ}
+    (hs : idealAbscissaOfAbsConv K χ.toIdealArithmeticFunction < s.re) :
+    logDeriv (LSeries (normCoeff K χ.toIdealArithmeticFunction)) s =
+      ∑' P : HeightOneSpectrum (𝓞 K),
+        logDeriv ((EulerProductData.ofMultiplicativeIdealWeight χ).eulerFactor P) s :=
+  (χ.hasSum_logDeriv_eulerFactor hs).tsum_eq.symm
 
 end MultiplicativeIdealWeight
 

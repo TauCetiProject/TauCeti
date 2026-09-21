@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.NumberTheory.LSeries.Deriv
 
 /-!
 # The analytic Euler product of an ideal arithmetic function
@@ -35,6 +36,8 @@ product of the Dedekind zeta function.
 
 * `TauCeti.EulerProductData.hasProd_eulerFactor`: the **analytic Euler product**, when the
   ideal-indexed Dirichlet series converges absolutely at `s`.
+* `TauCeti.EulerProductData.differentiableAt_eulerFactor`: a local Euler factor is holomorphic
+  strictly to the right of the ideal-indexed abscissa of absolute convergence.
 * `TauCeti.MultiplicativeIdealWeight.hasProd_eulerFactor`: the same product, with the local factors
   in the closed geometric form available for a completely multiplicative weight.
 * `TauCeti.MultiplicativeIdealWeight.LSeries_ne_zero_of_summable_idealTerm`: the `L`-series is
@@ -217,6 +220,23 @@ theorem LSeriesSummable_localArithmeticFactor
     LSeriesSummable (D.localArithmeticFactor P) s := by
   rw [D.localArithmeticFactor_eq]
   exact IdealArithmeticFunction.LSeriesSummable_localArithmeticFactor hs P
+
+/-- **A local Euler factor is holomorphic to the right of the ideal-indexed abscissa.**  The local
+factor is the `L`-series of the local arithmetic factor, whose own abscissa of absolute convergence
+is at most the ideal-indexed one. -/
+theorem differentiableAt_eulerFactor (P : HeightOneSpectrum (𝓞 K)) {z : ℂ}
+    (hz : idealAbscissaOfAbsConv K D.toIdealArithmeticFunction < z.re) :
+    DifferentiableAt ℂ (D.eulerFactor P) z := by
+  obtain ⟨σ, hσabs, hσz⟩ := EReal.exists_between_coe_real hz
+  have hσconv : Summable (idealTerm K D.toIdealArithmeticFunction (σ : ℂ)) :=
+    summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K (by simpa using hσabs)
+  have habs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < (z.re : EReal) :=
+    lt_of_le_of_lt
+      (by simpa using (D.LSeriesSummable_localArithmeticFactor hσconv P).abscissaOfAbsConv_le) hσz
+  have hfun : D.eulerFactor P = LSeries (D.localArithmeticFactor P) :=
+    funext (D.eulerFactor_def P)
+  rw [hfun]
+  exact (LSeries_hasDerivAt habs).differentiableAt
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set
 `S` of primes are absolutely convergent `LSeries`, so are the norm coefficients of the restriction
