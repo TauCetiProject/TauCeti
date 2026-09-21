@@ -68,7 +68,8 @@ replaced by passing to a finer filter.
   weak convergence supplies tightness and the stability theorems need no tightness hypothesis;
 * `TauCeti.transportCost_le_liminf_transportCost_of_lowerSemicontinuous` — the fixed-cost
   corollary: on Polish spaces the optimal transport cost of a lower semicontinuous cost is weakly
-  lower semicontinuous in the pair of marginals.
+  lower semicontinuous in the pair of marginals, with `TauCeti.lowerSemicontinuous_transportCost`
+  its topological form on `ProbabilityMeasure X × ProbabilityMeasure Y`.
 
 ## References
 
@@ -431,6 +432,20 @@ theorem transportCost_le_liminf_transportCost_of_lowerSemicontinuous (hc : Lower
     (isCostLiminfStable_const (μs := μs) (νs := νs) hc)
     (exists_isTightMeasureSet_image (isTightMeasureSet_range_of_tendsto hμ) mem_range_self)
     (exists_isTightMeasureSet_image (isTightMeasureSet_range_of_tendsto hν) mem_range_self) hμ hν
+
+/-- **The optimal transport cost of a lower semicontinuous cost is a lower semicontinuous function
+of the pair of marginals**, for the weak topology on `ProbabilityMeasure X × ProbabilityMeasure Y`.
+This is the topological form of
+`TauCeti.transportCost_le_liminf_transportCost_of_lowerSemicontinuous`. -/
+theorem lowerSemicontinuous_transportCost (hc : LowerSemicontinuous c) :
+    LowerSemicontinuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      transportCost c q.1.toMeasure q.2.toMeasure := by
+  -- The weak topologies are metrizable, so closedness of sublevel sets is sequential.
+  refine lowerSemicontinuous_iff_isClosed_preimage.2 fun a ↦ IsSeqClosed.isClosed ?_
+  intro qs q hqs hq
+  exact (transportCost_le_liminf_transportCost_of_lowerSemicontinuous hc
+    ((continuous_fst.tendsto q).comp hq) ((continuous_snd.tendsto q).comp hq)).trans
+    (liminf_le_of_frequently_le' (Frequently.of_forall hqs))
 
 end Polish
 

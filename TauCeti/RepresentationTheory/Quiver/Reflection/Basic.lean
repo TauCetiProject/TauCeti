@@ -31,9 +31,10 @@ and sources in finite acyclic quivers are proved in
 * `TauCeti.Quiver.reflectHom`: the arrow types of the quiver obtained by reversing every arrow
   incident to a given vertex.
 * `TauCeti.Quiver.Reflect`: that quiver, on the same vertex type.
-* `TauCeti.Quiver.reflectArrow` and `TauCeti.Quiver.reflectArrowOfNeOfNe`: an arrow of `V` into `i`,
-  respectively an arrow of `V` between two vertices other than `i`, read as an arrow of the
-  reflected quiver.
+* `TauCeti.Quiver.reflectArrow` and `TauCeti.Quiver.reflectArrowSource`: an arrow into,
+  respectively out of, `i`, read in the opposite direction in the reflected quiver.
+* `TauCeti.Quiver.reflectArrowOfNeOfNe`: an arrow of `V` between two vertices other than `i`, read
+  as an arrow of the reflected quiver.
 
 ## Main results
 
@@ -99,6 +100,11 @@ theorem IsSource.isEmpty_hom_self {i : V} (h : IsSource i) : IsEmpty (i ⟶ i) :
 
 /-- An arrow into a sink starts somewhere else, since a sink carries no loop. -/
 theorem IsSink.ne_of_hom {i b : V} (h : IsSink i) (e : b ⟶ i) : b ≠ i := by
+  rintro rfl
+  exact h.isEmpty_hom_self.elim e
+
+/-- An arrow out of a source ends somewhere else, since a source carries no loop. -/
+theorem IsSource.ne_of_hom {i b : V} (h : IsSource i) (e : i ⟶ b) : b ≠ i := by
   rintro rfl
   exact h.isEmpty_hom_self.elim e
 
@@ -213,6 +219,12 @@ def reflectArrow (i : V) {b : V} (e : b ⟶ i) :
     @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) i b :=
   cast ((hom_reflect i i b).trans (reflectHom_left i b)).symm e
 
+/-- An arrow `i ⟶ b` of `V`, read as the reversed arrow `b ⟶ i` of the reflected quiver. This is
+the source-side counterpart of `TauCeti.Quiver.reflectArrow`. -/
+def reflectArrowSource (i : V) {b : V} (e : i ⟶ b) :
+    @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) b i :=
+  cast ((hom_reflect i b i).trans (reflectHom_right i b)).symm e
+
 /-- An arrow `a ⟶ b` of `V` between two vertices other than `i`, read as an arrow of the reflected
 quiver, where it is untouched. -/
 def reflectArrowOfNeOfNe {i a b : V} (ha : a ≠ i) (hb : b ≠ i) (e : a ⟶ b) :
@@ -225,6 +237,13 @@ proof of the type equality, since the definition of a reflected representation p
 theorem cast_reflectArrow (i : V) {b : V} (e : b ⟶ i)
     (h : @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) i b = (b ⟶ i)) :
     cast h (reflectArrow i e) = e :=
+  (cast_cast _ _ _).trans (cast_eq _ _)
+
+/-- Casting a source-side reversed arrow back to `V` recovers the arrow it came from. -/
+@[simp]
+theorem cast_reflectArrowSource (i : V) {b : V} (e : i ⟶ b)
+    (h : @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) b i = (i ⟶ b)) :
+    cast h (reflectArrowSource i e) = e :=
   (cast_cast _ _ _).trans (cast_eq _ _)
 
 /-- Casting an arrow away from `i` back to `V` recovers the arrow it came from. -/
@@ -243,6 +262,14 @@ theorem reflectArrow_cast (i : V) {b : V}
     (e : @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) i b)
     (h : @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) i b = (b ⟶ i)) :
     reflectArrow i (cast h e) = e :=
+  (cast_cast _ _ _).trans (cast_eq _ _)
+
+/-- **Every arrow into `i` in the reflected quiver is a source-side reversed arrow.** -/
+@[simp]
+theorem reflectArrowSource_cast (i : V) {b : V}
+    (e : @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) b i)
+    (h : @_root_.Quiver.Hom (Reflect V i) (reflectQuiver i) b i = (i ⟶ b)) :
+    reflectArrowSource i (cast h e) = e :=
   (cast_cast _ _ _).trans (cast_eq _ _)
 
 /-- **Every arrow of the reflected quiver away from `i` is an untouched arrow.** Reading such an

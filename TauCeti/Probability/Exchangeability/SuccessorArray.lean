@@ -29,6 +29,8 @@ representation of the joint law of `(x 0, successorArray x)` back to the law of 
 
 * `TauCeti.Probability.successorProcess`: the successor array of a process, as an array indexed by
   state and visit number.
+* `TauCeti.Probability.visitedSuccessorProcess`: the same array with the rows of the states the
+  process never visits reset to constants.
 
 ## Main results
 
@@ -199,13 +201,32 @@ theorem measurable_successorArray_apply (a : α) (k : ℕ)
     (f := fun x : ℕ → α => visitTime x a k + 1)
     measurable_id (Measurable.of_discrete.comp (measurable_visitTime a k ha))
 
+/-- Each entry of the visited successor array is a measurable function of the path: whether the
+path visits the row is a countable union of coordinate events. -/
+theorem measurable_visitedSuccessorArray_apply (a : α) (k : ℕ)
+    (ha : MeasurableSet ({a} : Set α)) :
+    Measurable fun x : ℕ → α => visitedSuccessorArray x a k := by
+  classical
+  simp only [visitedSuccessorArray_def]
+  have hvis : MeasurableSet {x : ℕ → α | ∃ n, x n = a} := by
+    simp only [Set.ofPred_exists]
+    exact MeasurableSet.iUnion fun n => measurableSet_apply_eq a n ha
+  exact Measurable.ite hvis (measurable_successorArray_apply a k ha) measurable_const
+
 variable [MeasurableSingletonClass α]
 
 /-- **The successor array of a path is a measurable function of the path.** -/
 theorem measurable_successorArray :
     Measurable fun x : ℕ → α => successorArray x :=
-  measurable_pi_lambda _ fun a =>
-    measurable_pi_lambda _ fun k => measurable_successorArray_apply a k (measurableSet_singleton a)
+  Measurable.of_eval fun a =>
+    Measurable.of_eval fun k => measurable_successorArray_apply a k (measurableSet_singleton a)
+
+/-- **The visited successor array of a path is a measurable function of the path.** -/
+theorem measurable_visitedSuccessorArray :
+    Measurable fun x : ℕ → α => visitedSuccessorArray x :=
+  Measurable.of_eval fun a =>
+    Measurable.of_eval fun k =>
+      measurable_visitedSuccessorArray_apply a k (measurableSet_singleton a)
 
 section SuccessorProcess
 
@@ -229,7 +250,39 @@ everywhere measurable. -/
 theorem aemeasurable_successorProcess {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) (p : α × ℕ) : AEMeasurable (successorProcess X p) μ :=
   (measurable_successorArray_apply p.1 p.2 (measurableSet_singleton p.1)).comp_aemeasurable
-    (aemeasurable_pi_lambda _ hX)
+    (AEMeasurable.of_eval hX)
+
+/-- The visited successor array of a process, as an array indexed by state and visit number.
+Genuine visit indices record the value following the visit. Other indices in a visited row retain
+the totalized junk behavior of `TauCeti.successorArray`, while a wholly unvisited row is constant
+at its index `a`. -/
+def visitedSuccessorProcess (X : ℕ → Ω → α) : α × ℕ → Ω → α :=
+  fun p ω => visitedSuccessorArray (fun n => X n ω) p.1 p.2
+
+-- The parentheses in `(rfl)` opt out of the exported-theorem exposure check, so that this, the
+-- complete computational API of `visitedSuccessorProcess`, can be stated without exposing its
+-- body.
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+@[simp]
+theorem visitedSuccessorProcess_apply (X : ℕ → Ω → α) (p : α × ℕ) (ω : Ω) :
+    visitedSuccessorProcess X p ω = visitedSuccessorArray (fun n => X n ω) p.1 p.2 :=
+  (rfl)
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- At every cell consumed by a sample path, its visited successor process records the next
+value. -/
+theorem visitedSuccessorProcess_visitCell (X : ℕ → Ω → α) (n : ℕ) (ω : Ω) :
+    visitedSuccessorProcess X (visitCell (fun j => X j ω) n) ω = X (n + 1) ω := by
+  rw [visitedSuccessorProcess_apply]
+  exact visitedSuccessorArray_visitCell _ _
+
+/-- Every entry of the visited successor array of an almost everywhere measurable process is
+almost everywhere measurable. -/
+theorem aemeasurable_visitedSuccessorProcess {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX : ∀ i, AEMeasurable (X i) μ) (p : α × ℕ) :
+    AEMeasurable (visitedSuccessorProcess X p) μ :=
+  (measurable_visitedSuccessorArray_apply p.1 p.2 (measurableSet_singleton p.1)).comp_aemeasurable
+    (AEMeasurable.of_eval hX)
 
 end SuccessorProcess
 
@@ -253,7 +306,7 @@ private theorem measurable_pathOfSuccessors_apply (n : ℕ) :
           pathOfSuccessors q.1 q.2 n := ih n (Nat.lt_succ_self n)
       have hcounts : Measurable fun q : α × (α → ℕ → α) =>
           fun a => visitCount (pathOfSuccessors q.1 q.2) a n :=
-        measurable_pi_lambda _ fun a =>
+        Measurable.of_eval fun a =>
           measurable_visitCount_comp a n (measurableSet_singleton a) fun i hi =>
             ih i (hi.trans (Nat.lt_succ_self n))
       have hstate : Measurable fun q : α × (α → ℕ → α) =>
@@ -304,7 +357,7 @@ theorem pathLaw_eq_map_pathOfSuccessors {μ : Measure Ω} {X : ℕ → Ω → α
     pathLaw μ X =
       ((μ.map fun ω => (X 0 ω, successorArray fun n => X n ω)).map
         fun q => pathOfSuccessors q.1 q.2) := by
-  have hY : AEMeasurable (fun ω i => X i ω) μ := aemeasurable_pi_lambda _ hX
+  have hY : AEMeasurable (fun ω i => X i ω) μ := AEMeasurable.of_eval hX
   have hmap : (μ.map fun ω => (X 0 ω, successorArray fun n => X n ω)) =
       (pathLaw μ X).map fun x => (x 0, successorArray x) := by
     rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable

@@ -83,6 +83,18 @@ theorem colLen_diagramOf_indiscrete_le_one (n : ℕ) :
     YoungDiagram.mem_iff_lt_colLen.mpr hlt
   exact absurd (YoungDiagram.mem_iff_lt_rowLen.mp hmem) (by omega)
 
+/-- The second row of the Young diagram of the partition `(n+1, 1)` is a single cell. -/
+theorem rowLen_diagramOf_singletonSecondRow_one (n : ℕ) :
+    (diagramOf (Nat.Partition.singletonSecondRow n)).rowLen 1 = 1 := by
+  rw [rowLen_diagramOf, Nat.Partition.sort_parts_singletonSecondRow]
+  rfl
+
+/-- The Young diagram of the partition `(n+1, 1)` has no third row. -/
+theorem rowLen_diagramOf_singletonSecondRow_two (n : ℕ) :
+    (diagramOf (Nat.Partition.singletonSecondRow n)).rowLen 2 = 0 := by
+  rw [rowLen_diagramOf, Nat.Partition.sort_parts_singletonSecondRow]
+  rfl
+
 /-- **The Young diagram of a partition has one row per part**: its rows are the parts, so the
 length of its first column counts them. -/
 @[simp]

@@ -19,7 +19,8 @@ together with its induction principle `Ideal.IsPrimeTo.induction_on` and its tra
 `Ideal.isPrimeTo_comap_iff` along a ring isomorphism.
 
 The predicate is closed under products (`Ideal.isPrimeTo_mul_iff`, its finite form
-`Ideal.isPrimeTo_prod_iff`) and powers (`Ideal.isPrimeTo_pow_iff`). Complementing a set of primes
+`Ideal.isPrimeTo_prod_iff`) and powers (`Ideal.isPrimeTo_pow_iff`), and forbidding one more
+prime is `Ideal.isPrimeTo_insert_iff`. Complementing a set of primes
 turns it into a *support* condition: `IsPrimeTo I Sᶜ` says that every prime factor of `I` lies in
 `S`. The two extreme cases are `Ideal.isPrimeTo_univ_iff` (no prime factor at all, so `I = ⊤`) and
 `Ideal.isPrimeTo_compl_singleton_iff` (a single allowed prime, so `I` is a prime power), and
@@ -28,7 +29,7 @@ the prime-power factorization `Ideal.exists_eq_prod_pow` of an arbitrary nonzero
 with the uniqueness statement `Ideal.eq_and_eq_of_pow_mul_eq_pow_mul` and the relative primality
 `Ideal.IsPrimeTo.isRelPrime` of ideals supported on complementary sets, these are what turn a
 finite set of primes into a finite Euler product in
-`TauCeti/NumberTheory/ArithmeticDirichletSeries/EulerProduct.lean`.
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/EulerProduct/Basic.lean`.
 
 It also collects how an isomorphism `e : R ≃+* R'` moves ideals: `Ideal.map e` preserves
 divisibility (`Ideal.map_dvd_map_iff_of_ringEquiv`, `Ideal.map_pow_dvd_map_iff_of_ringEquiv`,
@@ -140,6 +141,24 @@ theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} (hp : Pr
   exact le_antisymm ((key _).mp le_rfl) ((key _).mpr le_rfl)
 
 end RingEquivDedekind
+
+section Multiplicity
+
+variable {B : Type*} [CommRing B] [IsDedekindDomain B]
+
+/-- **Distinct nonzero primes have zero multiplicity in one another.** In a Dedekind domain a
+nonzero prime is maximal, so `Q ∣ P` would force `Q = P`.
+
+This is the coefficient-level form of "a prime power is supported at one prime": in a weighted
+sum over the primes above a fixed ideal, every term but the matching one vanishes. -/
+theorem multiplicity_eq_zero_of_isPrime_ne {P Q : Ideal B} (hP0 : P ≠ ⊥) [P.IsPrime]
+    [Q.IsPrime] (hne : Q ≠ P) : multiplicity Q P = 0 := by
+  refine multiplicity_eq_zero.mpr fun hdvd => hne ?_
+  -- `Q ∣ P` means `P ≤ Q`; `P` is maximal and `Q ≠ ⊤`, so the two agree.
+  exact (Ideal.IsMaximal.eq_of_le (‹P.IsPrime›.isMaximal hP0) (Ideal.IsPrime.ne_top ‹Q.IsPrime›)
+    (Ideal.dvd_iff_le.mp hdvd)).symm
+
+end Multiplicity
 
 section Injective
 
@@ -276,6 +295,15 @@ theorem isPrimeTo_top : IsPrimeTo (⊤ : Ideal R) S := by
 omit [IsDedekindDomain R] in
 theorem IsPrimeTo.mono (hST : S ⊆ T) (h : IsPrimeTo I T) : IsPrimeTo I S :=
   ⟨h.ne_bot, fun _𝔭 h𝔭 ↦ h.not_dvd (hST h𝔭)⟩
+
+omit [IsDedekindDomain R] in
+/-- **Enlarging the set of forbidden primes by one.** An ideal is prime to `insert 𝔭 S` exactly
+when it is prime to `S` and not divisible by `𝔭`. -/
+@[simp]
+theorem isPrimeTo_insert_iff {𝔭 : HeightOneSpectrum R} :
+    IsPrimeTo I (insert 𝔭 S) ↔ IsPrimeTo I S ∧ ¬ 𝔭.asIdeal ∣ I := by
+  simp only [isPrimeTo_iff, Set.forall_mem_insert]
+  tauto
 
 /-- **Being prime to `S` is multiplicative.** A product of ideals is prime to `S` exactly when
 both factors are: neither factor may vanish, and a prime of `S` divides the product exactly when

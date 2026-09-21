@@ -7,8 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
 
-public section
-
 /-!
 # Height and integral relations among roots
 
@@ -26,6 +24,8 @@ coordinates in the simple-root basis.
 
 ## Main results
 
+* `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
+  on the simple roots takes the value `ht(α) • c` on every root.
 * `TauCeti.sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero` says that height respects integral
   relations among roots.
 * `TauCeti.sum_mul_height_eq_of_sum_zsmul_root_eq` compares the heights of two integral
@@ -38,13 +38,26 @@ This supports “Simple-root lowering” in Layer 1 of
 *Lie Groups and Lie Algebras*, Chapters 4--6.
 -/
 
+public section
+
 namespace TauCeti
 
-universe u v w x
+universe u v w x y
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N)
+
+/-- **A map constant on the simple roots is the height acting on that constant.** Expanding a
+root in the simple roots and applying the map termwise turns the value `c` on every simple root
+into the value `ht(α) • c` on every root. Only additivity is used, so the target is an arbitrary
+additive group. -/
+theorem apply_root_eq_height_zsmul [CharZero R] {A : Type y} [AddCommGroup A] (b : P.Base)
+    (g : M →+ A) {c : A} (hg : ∀ j ∈ b.support, g (P.root j) = c) (i : ι) :
+    g (P.root i) = b.height i • c := by
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
+  rw [hf, map_sum, b.height_eq_sum hf, Finset.sum_smul]
+  exact Finset.sum_congr rfl fun j hj ↦ by rw [map_zsmul, hg j hj]
 
 section HeightLinearMap
 
@@ -72,13 +85,9 @@ theorem heightLinearMap_simpleRoot (b : P.Base) (i : b.support) :
 @[simp]
 theorem heightLinearMap_root [CharZero R] (b : P.Base) (i : ι) :
     heightLinearMap P b (P.root i) = (b.height i : R) := by
-  classical
-  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
-  rw [hf, map_sum, b.height_eq_sum hf, Int.cast_sum]
-  apply Finset.sum_congr rfl
-  intro j hj
-  rw [map_zsmul, heightLinearMap_simpleRoot P b ⟨j, hj⟩]
-  simp only [zsmul_one]
+  have hval := apply_root_eq_height_zsmul P b (heightLinearMap P b).toAddMonoidHom (c := 1)
+    (fun j hj ↦ heightLinearMap_simpleRoot P b ⟨j, hj⟩) i
+  rwa [LinearMap.toAddMonoidHom_coe, Int.smul_one_eq_cast] at hval
 
 end HeightLinearMap
 

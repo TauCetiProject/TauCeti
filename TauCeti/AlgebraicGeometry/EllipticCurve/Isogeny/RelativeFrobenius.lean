@@ -89,7 +89,7 @@ W^{(p)}` with its function-field pullback". Base-change compatibility, the facto
   Accordingly only the containment `F(W)ᵖ ⊆ φ* F(W⁽ᵖ⁾)` is proved here, as
   `TauCeti.Isogeny.pow_mem_fieldRange_relativeFrobeniusIsogeny`, which is all pure
   inseparability needs. Over a finite, hence perfect, base there is no gap, and
-  `Isogeny/Frobenius.lean` identifies the pullback with the `q`-power map outright
+  `Isogeny/Frobenius/Basic.lean` identifies the pullback with the `q`-power map outright
   (`fieldPullback_frobeniusIsogeny`).
 
 ## Provenance

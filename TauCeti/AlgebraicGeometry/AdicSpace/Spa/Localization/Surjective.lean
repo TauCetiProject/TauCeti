@@ -11,11 +11,7 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Valuation
 /-!
 # The adic spectrum of a rational localisation covers the rational subset
 
-Roadmap Layer 3.1 asks, for a rational subset `U = R(T/s)` of `X = Spa(A, A⁺)`, for a natural
-homeomorphism between `U` and the adic spectrum of the rational localisation. `Localization.Basic`
-supplies the map and shows it lands in `U`, and closes by saying that the map back — extending a
-point of `U` to the coordinate ring — is "the remaining half of the roadmap's homeomorphism".
-This file supplies that half **before completion**: it shows that the continuous map
+For a rational subset `R(T/s)` of `Spa(A, A⁺)`, this file shows that the continuous map
 
 ```text
 Spa (Aₛ, Aₛ⁺) → Spa (A, A⁺)
@@ -36,20 +32,15 @@ structure map.
 
 * `TauCeti.ValuationSpectrum.exists_mem_spa_comap_algebraMap_eq`: **every point of `R(T/s)` is
   the pullback of a point of `Spa (Aₛ, Aₛ⁺)`.**
+* `TauCeti.ValuationSpectrum.image_comap_algebraMap_spa_subset_rationalSubset`: pullback sends
+  every point of `Spa (Aₛ, Aₛ⁺)` into `R(T/s)`.
 * `TauCeti.ValuationSpectrum.image_comap_algebraMap_spa_eq_rationalSubset`: the image of
   `Spa (Aₛ, Aₛ⁺)` in `Spa (A, A⁺)` **is** `R(T/s)`.
 
-## What remains for the roadmap's homeomorphism
+## Scope: the uncompleted localisation
 
-Three things, none of them claimed here.
-
-* **Injectivity**, and then that the resulting continuous bijection onto `R(T/s)` is a
-  homeomorphism.
-* **The passage to the completion.** The roadmap's `A_U` is the *completed* localisation
-  `A⟨T/s⟩`, and every statement below is about `Aₛ` with `locTopology`. Identifying the two adic
-  spectra is a separate theorem about extending continuous valuations along a completion, and it
-  is neither used nor assumed here.
-* **Identification of the rational subsets** on the two sides.
+Every statement below is about `Aₛ` carrying `locTopology`, not the completed localisation
+`A⟨T/s⟩`.
 
 ## The hypothesis `P.ringOfDefinition ≤ A⁺`
 
@@ -95,14 +86,34 @@ theorem valuation_ne_zero_of_mem_rationalSubset {Aplus : Subring A} {T : Finset 
 
 variable [IsTopologicalRing A]
 
+/-- The canonical valuation of a point in `R(T/s)` extends continuously to the algebraic
+localisation with `locTopology`, provided the ring of definition lies in `Aplus`. -/
+theorem isContinuous_extendToLocalization_of_mem_rationalSubset (P : PairOfDefinition A)
+    (Aplus : Subring A) (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {v : Spv A} (hv : v ∈ rationalSubset Aplus T s) :
+    letI := locTopology P T s S hden
+    (v.valuation.extendToLocalization
+      (Valuation.powers_le_supp_primeCompl (valuation_ne_zero_of_mem_rationalSubset hv))
+      S).IsContinuous := by
+  let _ := locTopology P T s S hden
+  have hspa := rationalSubset_subset_spa Aplus T s hv
+  have hA₀ : ∀ a ∈ P.ringOfDefinition, v.valuation a ≤ 1 := fun a ha ↦ by
+    rw [← map_one v.valuation, valuation_le_iff]
+    exact ((mem_spa_iff Aplus v).mp hspa).2 a (hP ha)
+  have hT : ∀ t ∈ T, v.valuation t ≤ v.valuation s := fun t ht ↦
+    (valuation_le_iff v t s).mpr (((mem_rationalSubset_iff Aplus T s v).mp hv).2.1 t ht)
+  exact isContinuous_extendToLocalization S P T s hden
+    ((isContinuous_def v).mp ((mem_spa_iff Aplus v).mp hspa).1)
+    (valuation_ne_zero_of_mem_rationalSubset hv) hA₀ hT
+
 /-- **Every point of `R(T/s)` is the pullback of a point of the adic spectrum of the rational
 localisation.** The canonical valuation of the point is continuous, dominates every numerator by
 the denominator, and is `≤ 1` on `A⁺`; extending it along `A → Aₛ` therefore gives a continuous
 valuation on `Aₛ` that is `≤ 1` on the integral closure of `A⁺[T/s]`, and restricting it back
 along the structure map returns the point.
 
-Here `Aₛ` carries `locTopology`, not the topology of the completion; see the module docstring for
-what that leaves open. -/
+Here `Aₛ` carries `locTopology`, not the topology of the completion. -/
 theorem exists_mem_spa_comap_algebraMap_eq (P : PairOfDefinition A) (Aplus : Subring A)
     (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
@@ -123,9 +134,7 @@ theorem exists_mem_spa_comap_algebraMap_eq (P : PairOfDefinition A) (Aplus : Sub
     (v.valuation.extendToLocalization (Valuation.powers_le_supp_primeCompl hs) S), ?_, ?_⟩
   · rw [mem_spa_iff]
     refine ⟨(isContinuous_ofValuation_iff _).mpr ?_, fun x hx ↦ ?_⟩
-    · exact isContinuous_extendToLocalization S P T s hden
-        ((isContinuous_def v).mp ((mem_spa_iff Aplus v).mp hspa).1) hs
-        (fun a ha ↦ hplus a (hP ha)) hT
+    · exact isContinuous_extendToLocalization_of_mem_rationalSubset P Aplus hP T s S hden hv
     · rw [vle_ofValuation, map_one]
       exact extendToLocalization_le_one_of_mem_integralClosure_adjoin_plus S T s Aplus hs
         hplus hT hx
@@ -134,13 +143,32 @@ theorem exists_mem_spa_comap_algebraMap_eq (P : PairOfDefinition A) (Aplus : Sub
     exact Valuation.extendToLocalization_apply_map_apply _
       (Valuation.powers_le_supp_primeCompl hs) S a
 
-/-- **The image of the adic spectrum of the rational localisation is exactly `R(T/s)`.** The
-inclusion `⊆` holds because the structure map inverts `s` and sends each `t/s` into the plus ring
-of `Aₛ`; the inclusion `⊇` is `exists_mem_spa_comap_algebraMap_eq`.
+/-- Pullback from the adic spectrum of the rational localisation lands in `R(T/s)`. The structure
+map inverts `s` and sends each `t/s` into the plus ring of the localisation. -/
+theorem image_comap_algebraMap_spa_subset_rationalSubset (P : PairOfDefinition A)
+    (Aplus : Subring A) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locTopology P T s S hden
+    comap (algebraMap A S) '' spa (integralClosure ↥(Algebra.adjoin Aplus
+        (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring ⊆
+      rationalSubset Aplus T s := by
+  let _ := locTopology P T s S hden
+  rintro _ ⟨w, hw, rfl⟩
+  exact comap_mem_rationalSubset (continuous_algebraMap_locTopology P T s S hden)
+    (fun a ha ↦ Subalgebra.algebraMap_mem (integralClosure _ S)
+      (⟨_, Subalgebra.algebraMap_mem _ (⟨a, ha⟩ : Aplus)⟩ :
+        ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S))))) T s
+    (IsLocalization.Away.mul_invSelf s)
+    (fun t ht ↦ by
+      rw [algebraMap_mul_invSelf]
+      exact Subalgebra.algebraMap_mem (integralClosure _ S)
+        (⟨_, Algebra.subset_adjoin ⟨⟨t, ht⟩, rfl⟩⟩ :
+          ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S))))) hw
 
-This is the roadmap's homeomorphism `Spa (A_U, A_U⁺) ≃ U` at the level of underlying sets and
-before completion; injectivity, the topological comparison and the passage from `Aₛ` to `A⟨T/s⟩`
-are not part of the statement. -/
+/-- **The image of the adic spectrum of the rational localisation is exactly `R(T/s)`.** The
+inclusion `⊆` is `image_comap_algebraMap_spa_subset_rationalSubset`; the inclusion `⊇` is
+`exists_mem_spa_comap_algebraMap_eq`. -/
 theorem image_comap_algebraMap_spa_eq_rationalSubset (P : PairOfDefinition A) (Aplus : Subring A)
     (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
@@ -150,22 +178,10 @@ theorem image_comap_algebraMap_spa_eq_rationalSubset (P : PairOfDefinition A) (A
         (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring =
       rationalSubset Aplus T s := by
   let _ := locTopology P T s S hden
-  -- Every element of the generating subalgebra is integral over it, hence in the plus ring.
-  have hmem : ∀ x ∈ Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S)),
-      x ∈ (integralClosure ↥(Algebra.adjoin Aplus
-        (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring := fun x hx ↦
-    isIntegral_algebraMap (x := (⟨x, hx⟩ :
-      ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S)))))
-  refine Set.Subset.antisymm ?_ fun v hv ↦ ?_
-  · rintro _ ⟨w, hw, rfl⟩
-    exact comap_mem_rationalSubset (continuous_algebraMap_locTopology P T s S hden)
-      (fun a ha ↦ hmem _ (Subalgebra.algebraMap_mem _ (⟨a, ha⟩ : Aplus))) T s
-      (IsLocalization.Away.mul_invSelf s)
-      (fun t ht ↦ by
-        rw [algebraMap_mul_invSelf]
-        exact hmem _ (Algebra.subset_adjoin ⟨⟨t, ht⟩, rfl⟩)) hw
-  · obtain ⟨w, hw, rfl⟩ := exists_mem_spa_comap_algebraMap_eq P Aplus hP T s S hden hv
-    exact ⟨w, hw, rfl⟩
+  refine Set.Subset.antisymm
+    (image_comap_algebraMap_spa_subset_rationalSubset P Aplus T s S hden) fun v hv ↦ ?_
+  obtain ⟨w, hw, rfl⟩ := exists_mem_spa_comap_algebraMap_eq P Aplus hP T s S hden hv
+  exact ⟨w, hw, rfl⟩
 
 end TauCeti.ValuationSpectrum
 

@@ -26,9 +26,10 @@ torus contributes a diagonal matrix whose entries at a coordinate and at its sym
 inverse characters, because the standard weights come in the pairs `ε_a` and `-ε_a`, and a diagonal
 matrix preserves `J` exactly when each such pair multiplies to one.
 
-The reverse inclusion is not proved: identifying the carrier with `Sp_(2n+2)` needs a generation
-theorem, as in the type-`A` case, and none is asserted here. Nothing below claims that the carrier
-is reductive, that its weight torus is maximal, or that any group in sight is finite or simple.
+Only the group-scheme containment is proved here. On points over a field, the reverse inclusion is
+`TauCeti.SpStd.points_eq_GLSymplecticFin` in `Generation.lean`, which uses the symplectic generation
+theorem. Nothing below claims that the carrier is reductive, that its weight torus is maximal, or
+that the two group schemes agree; nor does it claim that any group in sight is finite or simple.
 
 ## Main definitions
 
@@ -251,7 +252,7 @@ theorem rootIntMatrix_map_mul_self_eq_zero {A : Type*} [CommRing A]
   exact h2
 
 open TauCeti.UniversalEnvelopingAlgebra
-  (exists_map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul) in
+  (map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul) in
 private theorem rootCoordinateMap_symplectic (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
         (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
@@ -267,8 +268,8 @@ private theorem rootCoordinateMap_symplectic (k : Fin (n + 1) ⊕ Fin (n + 1)) :
             (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom.toAlgHom)ᵀ =
       (TauCeti.JFin (n + 1) ℤ).map
         (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) := by
-  obtain ⟨t, ht⟩ :=
-    exists_map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
+  have ht :=
+    map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
       (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
       (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
       (isNilpotent_rep_rootGenerator n k) (latticeBasis n) (rootIntMatrix n k)

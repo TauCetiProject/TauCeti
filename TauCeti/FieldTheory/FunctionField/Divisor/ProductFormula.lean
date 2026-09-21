@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystem.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Place
+public import TauCeti.AlgebraicGeometry.WeilDivisor.PicZeroQuotient
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
 
@@ -29,17 +30,23 @@ strictly stronger than nonconstancy.
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
 * `TauCeti.Divisor.degree_principal` is the product formula.
+* `TauCeti.Divisor.succ_le_dim_nsmul_poles` is the growth estimate for the powers of one
+  transcendental function, `ℓ(l (x)_∞) ≥ l + 1`.
 * `TauCeti.Divisor.degreeClass` descends degree to the divisor class group, with
   `TauCeti.Divisor.ker_degreeClass_eq_picZero` identifying its kernel `Cl⁰(F)` with the abstract
   `Pic⁰`, and `TauCeti.Divisor.degree_eq_of_linearlyEquivalent` records invariance under linear
   equivalence.
 * `TauCeti.riemannRochSpace_eq_bot_of_degree_neg` and
-  `TauCeti.Divisor.dim_eq_zero_of_degree_neg` are the negative-degree consequence.
+  `TauCeti.Divisor.dim_eq_zero_of_degree_neg` are the negative-degree consequence, and
+  `TauCeti.Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot` bounds `ℓ(D)` by
+  `deg D + [algebraicClosure k F : k]` whenever `L(D)` is nonzero, and
+  `TauCeti.Divisor.exists_mem_dim_sub_ofPoint_lt` shows that such an `L(D)` drops when some place
+  of a set of sufficiently large total degree is removed.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Theorem 1.4.11 and Corollary 1.4.12.
+  Proposition 1.4.9, Theorem 1.4.11, and Corollary 1.4.12.
 -/
 
 public section
@@ -126,6 +133,21 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   have hcard := hv.fintype_card_le_finrank
   rw [Divisor.dim_def]
   simpa using hcard
+
+/-- **`ℓ(l (x)_∞) ≥ l + 1`** for a function `x` transcendental over `k`: the Riemann--Roch
+space of `l` times the pole divisor of `x` has dimension at least `l + 1`.  Compared against
+Riemann--Roch in large degree, this is the lower bound behind the product formula and behind
+the vanishing of the genus of a rational function field. -/
+theorem Divisor.succ_le_dim_nsmul_poles (hF : IsFunctionField k F) (x : Fˣ)
+    (hx : Transcendental k (x : F)) (l : ℕ) :
+    l + 1 ≤ Divisor.dim (l • Divisor.poles hF x) := by
+  -- The powers `1, x, …, xˡ` are `k`-linearly independent and have no poles outside those of
+  -- `x`: this is the growth estimate above for the single function `1`.
+  have hone : Divisor.poles hF (1 : Fˣ) = 0 := WeilDivisor.ext fun P ↦ by simp
+  have hc : LinearIndependent k⟮(x : F)⟯ fun _ : Unit ↦ ((1 : Fˣ) : F) :=
+    linearIndependent_unique_iff.mpr (by simp)
+  simpa using Divisor.card_mul_succ_le_dim_nsmul_poles_add hF x hx (fun _ : Unit ↦ (1 : Fˣ)) hc
+    (C := 0) (fun _ ↦ hone.le) l
 
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/
@@ -279,6 +301,40 @@ theorem ker_degreeClass_eq_picZero (hF : IsFunctionField k F) :
     (degreeClass hF).ker = (Place.orderSystem hF).picZero (fun P ↦ (P.degree : ℤ))
       (Place.isWeightedDegreeZero_orderSystem hF) := (rfl)
 
+/-- **The degree-zero divisors map onto `Cl⁰(F)`**, a divisor going to its class. This is the
+order system's `weightedDegreeZeroClassHom` at the residue-degree weights, precomposed with the
+identification of the two degree-zero subgroups; no divisor-class reasoning is redone here. -/
+noncomputable def degreeZeroClassHom (hF : IsFunctionField k F) :
+    (degree (k := k) (F := F)).ker →+ (degreeClass hF).ker :=
+  ((Place.orderSystem hF).weightedDegreeZeroClassHom (fun P ↦ (P.degree : ℤ))
+      (Place.isWeightedDegreeZero_orderSystem hF)).comp
+    (AddSubgroup.inclusion ker_degree_eq_weightedDegreeZeroSubgroup.le)
+
+/-- The class of a degree-zero divisor is its divisor class, read in the full class group. -/
+@[simp]
+theorem coe_degreeZeroClassHom_apply (hF : IsFunctionField k F)
+    (D : (degree (k := k) (F := F)).ker) :
+    (degreeZeroClassHom hF D : (Place.orderSystem hF).ClassGroup) =
+      (Place.orderSystem hF).divisorClass (D : Divisor k F) := (rfl)
+
+/-- **Every degree-zero class is the class of a degree-zero divisor.** The surjectivity is the
+order system's, transported along the identification of the two degree-zero subgroups. -/
+theorem degreeZeroClassHom_surjective (hF : IsFunctionField k F) :
+    Function.Surjective (degreeZeroClassHom hF) := fun c ↦ by
+  obtain ⟨D, hD⟩ := (Place.orderSystem hF).weightedDegreeZeroClassHom_surjective
+    (Place.isWeightedDegreeZero_orderSystem hF) c
+  refine ⟨⟨D, ker_degree_eq_weightedDegreeZeroSubgroup.ge D.2⟩, Subtype.ext ?_⟩
+  rw [coe_degreeZeroClassHom_apply, ← hD,
+    (Place.orderSystem hF).coe_weightedDegreeZeroClassHom_apply]
+
+/-- **A degree-zero divisor has trivial class exactly when it is principal.** -/
+@[simp]
+theorem degreeZeroClassHom_eq_zero_iff (hF : IsFunctionField k F)
+    {D : (degree (k := k) (F := F)).ker} :
+    degreeZeroClassHom hF D = 0 ↔ ∃ z : Fˣ, principal hF z = (D : Divisor k F) := by
+  rw [Subtype.ext_iff, coe_degreeZeroClassHom_apply, ZeroMemClass.coe_zero,
+    divisorClass_eq_zero_iff hF]
+
 /-- Linearly equivalent divisors have the same degree (Stichtenoth, Corollary 1.4.12(a)). -/
 theorem degree_eq_of_linearlyEquivalent (hF : IsFunctionField k F) {A B : Divisor k F}
     (h : (Place.orderSystem hF).LinearlyEquivalent A B) : degree A = degree B := by
@@ -309,5 +365,42 @@ theorem Divisor.dim_eq_zero_of_degree_neg (hF : IsFunctionField k F) {D : Diviso
     (hD : Divisor.degree D < 0) : Divisor.dim D = 0 := by
   exact (Divisor.dim_eq_zero_iff_riemannRochSpace_eq_bot hF D).mpr
     (riemannRochSpace_eq_bot_of_degree_neg hF hD)
+
+/-- A divisor with a nonzero Riemann–Roch space satisfies
+`ℓ(D) ≤ deg D + [algebraicClosure k F : k]` (Stichtenoth, Proposition 1.4.9 with
+Corollary 1.4.12(a)). -/
+theorem Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot (hF : IsFunctionField k F)
+    {D : Divisor k F} (hD : riemannRochSpace D ≠ ⊥) :
+    (Divisor.dim D : ℤ) ≤ Divisor.degree D + Module.finrank k (algebraicClosure k F) := by
+  obtain ⟨D', hD', hlin⟩ := (riemannRochSpace_ne_bot_iff hF).mp hD
+  rw [Divisor.dim_eq_of_linearlyEquivalent hF hlin,
+    Divisor.degree_eq_of_linearlyEquivalent hF hlin]
+  simpa only [posPart_eq_self.mpr hD'] using Divisor.dim_le_degree_posPart_add_finrank hF D'
+
+/-- **A nonzero Riemann–Roch space drops along a set of large degree.**  If `ℓ(D) > 0` and the
+places of a finite set `T` have total degree exceeding `deg D + [algebraicClosure k F : k] - ℓ(D)`,
+then removing some place of `T` strictly shrinks `L(D)`.  Over an exact constant field the
+threshold is `deg D + 1 - ℓ(D)`. -/
+theorem Divisor.exists_mem_dim_sub_ofPoint_lt (hF : IsFunctionField k F) {D : Divisor k F}
+    {T : Finset (Place k F)} (hD : 0 < Divisor.dim D)
+    (hdeg : Divisor.degree D + Module.finrank k (algebraicClosure k F) <
+      Divisor.dim D + ∑ P ∈ T, (P.degree : ℤ)) :
+    ∃ P ∈ T, Divisor.dim (D - WeilDivisor.ofPoint P) < Divisor.dim D := by
+  by_contra! h
+  have := finiteDimensional_riemannRochSpace hF D
+  have heq : riemannRochSpace (D - WeilDivisor.ofFinset T) = riemannRochSpace D :=
+    riemannRochSpace_sub_ofFinset_eq fun P hP ↦
+      Submodule.eq_of_le_of_finrank_le
+        (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.isEffective_iff_zero_le.mp
+          (WeilDivisor.isEffective_ofPoint P))))
+        (by rw [← Divisor.dim_def, ← Divisor.dim_def]; exact h P hP)
+  have hne : riemannRochSpace (D - WeilDivisor.ofFinset T) ≠ ⊥ := by
+    rw [heq, ← Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF]
+    exact hD
+  have hle := Divisor.dim_le_degree_add_finrank_of_riemannRochSpace_ne_bot hF hne
+  rw [Divisor.dim_def, heq, ← Divisor.dim_def, Divisor.degree_sub,
+    Divisor.degree_eq_weightedDegree (WeilDivisor.ofFinset T),
+    WeilDivisor.weightedDegree_ofFinset] at hle
+  omega
 
 end TauCeti

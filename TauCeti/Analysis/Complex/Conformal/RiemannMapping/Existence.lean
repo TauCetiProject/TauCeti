@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Koebe
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-import TauCeti.Analysis.Complex.Conformal.InverseFunction
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
 # The Riemann mapping theorem
@@ -89,7 +89,7 @@ theorem exists_bijOn_ball_differentiableOn_invFunOn {Ω : Set ℂ} (hΩo : IsOpe
   obtain ⟨f, hbij, hfd, -⟩ := riemannMapping hΩo hΩc hΩ
   refine ⟨f, hbij, hfd, ?_, hbij.injOn.leftInvOn_invFunOn, hbij.surjOn.rightInvOn_invFunOn⟩
   -- Dot notation would resolve to `Function.invFunOn`; name the lemma explicitly.
-  have hinv := TauCeti.DifferentiableOn.invFunOn hfd hΩo hbij.injOn
+  have hinv := DifferentiableOn.invFunOn hfd hΩo hbij.injOn
   rwa [hbij.image_eq] at hinv
 
 end TauCeti

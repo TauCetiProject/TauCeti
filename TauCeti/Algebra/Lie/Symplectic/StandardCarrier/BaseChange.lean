@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 
 /-!
@@ -22,6 +22,10 @@ Hopf algebra. The transported numbered root-subgroup maps and weight-torus map f
 that quotient. Thus the explicit integral carrier and its pinned generators base-change together;
 none of the data is chosen anew over `A`.
 
+On points the transported equations cut out exactly the integral carrier's matrices: for a
+commutative `A`-algebra `B`, a point of `GL_(2n+2)` over `B` satisfies them precisely when its
+matrix lies in the integral carrier's matrix points over `B`.
+
 The defining ideal transported from `ℤ` is contained in the common kernel of the transported
 generators. Equality is not asserted over an arbitrary, possibly non-flat, base: additional
 equations can appear after specialization. Nor does this file assert that the carrier is
@@ -33,6 +37,8 @@ constructed symplectic group scheme.
 * `TauCeti.SpStd.baseChangeDefiningIdeal`: the transported defining ideal in `O(GL_(2n+2)/A)`.
 * `TauCeti.SpStd.baseChangeCoordinateIso`: its quotient is the scalar extension of the integral
   carrier coordinate Hopf algebra.
+* `TauCeti.SpStd.baseChangePointsMulEquiv`: the points of that quotient over a commutative
+  `A`-algebra are the integral carrier's matrix points over the same algebra.
 * `TauCeti.SpStd.rootSubgroupToBaseChangeCoordinateMap`: the transported numbered root subgroup
   factored through the specialized carrier.
 * `TauCeti.SpStd.weightTorusToBaseChangeCoordinateMap`: the transported weight torus factored
@@ -42,6 +48,9 @@ constructed symplectic group scheme.
 
 * `TauCeti.SpStd.mkQuotient_comp_baseChangeCoordinateIso_hom`: the coordinate isomorphism is
   compatible with the two quotient presentations.
+* `TauCeti.SpStd.mem_baseChangeDefiningPointsSubgroup_iff_mem_points`: a point of `GL_(2n+2)`
+  satisfies the transported defining equations exactly when its matrix is an integral carrier
+  point.
 * `TauCeti.SpStd.baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap` and
   `TauCeti.SpStd.baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap`: each factored
   generator is the scalar extension of its integral coordinate map.
@@ -82,7 +91,7 @@ open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.SpStd
 
-universe v
+universe v w
 
 open LieAlgebra.Symplectic
 
@@ -169,6 +178,53 @@ theorem mkQuotient_comp_baseChangeCoordinateIso_hom :
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
     (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
     (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) A (definingIdeal_def n)
+
+/-! ## Points of the base-changed carrier -/
+
+/-- The points of the base-changed type-`C_(n+1)` carrier over a commutative `A`-algebra are its
+matrix-valued carrier points over that algebra. -/
+noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
+    HopfAlgebra.points (R := A)
+        (H := CommHopfAlgCat.quotient
+          (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+          (baseChangeDefiningIdeal n A)) B ≃*
+      points n B :=
+  (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso n A) B).trans
+    (pointsPresentation n
+      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
+
+/-- The base-change points equivalence preserves the ambient invertible matrix. -/
+@[simp]
+theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
+    (q : HopfAlgebra.points (R := A)
+      (H := CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n A)) B) :
+    (baseChangePointsMulEquiv n A B q :
+        Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) B) =
+      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+          (baseChangeDefiningIdeal n A) B q) := by
+  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply,
+    GeneralLinear.IntegralPointsPresentation.coe_mulEquiv_apply]
+  exact GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv
+    ((n + 1) + (n + 1)) (definingIdeal n) (baseChangeDefiningIdeal n A)
+    (baseChangeCoordinateIso n A) (mkQuotient_comp_baseChangeCoordinateIso_hom n A) B q
+
+/-- A point over any value algebra satisfies the transported defining equations of the
+type `C_(n+1)` carrier exactly when its underlying matrix is an integral carrier point. -/
+@[simp]
+theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points (B : CommAlgCat.{w} A)
+    (g : HopfAlgebra.points (R := A)
+      (H := GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1))) B) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup
+        (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n A) B ↔
+      GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g ∈ points n B := by
+  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+    ((n + 1) + (n + 1)) (baseChangeDefiningIdeal n A) B (points n B)
+      (baseChangePointsMulEquiv n A B) (coe_baseChangePointsMulEquiv_apply n A B) g
 
 /-! ## The transported root subgroups -/
 

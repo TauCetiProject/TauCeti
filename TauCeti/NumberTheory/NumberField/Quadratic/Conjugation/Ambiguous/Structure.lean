@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm
+public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Ambiguous.Basic

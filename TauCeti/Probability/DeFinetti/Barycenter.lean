@@ -7,7 +7,6 @@ module
 
 -- Public: the barycenter is a `Measure.bind` against the measurable countable-power kernel, and
 -- its values are exchangeable path laws.
-public import TauCeti.MeasureTheory.Measure.ProductKernel
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.Basic
 -- Public: `ExchangeableLaw.existsUnique_mixingLaw` is the path-law form of `deFinetti_mixture`.
 public import TauCeti.Probability.DeFinetti.Representation
@@ -161,7 +160,7 @@ theorem map_pi_deFinettiBarycenter {β : Type*} [MeasurableSpace β]
   have hmap : Measurable fun P : ProbabilityMeasure α => P.map f :=
     TauCeti.MeasureTheory.measurable_probabilityMeasure_map hf
   have hpi : Measurable fun x : ℕ → α => fun i => f (x i) :=
-    measurable_pi_lambda _ fun i => hf.comp (measurable_pi_apply i)
+    Measurable.of_eval fun i => hf.comp (measurable_pi_apply i)
   calc (deFinettiBarycenter π).map (fun x i => f (x i))
       = π.bind fun P => (Measure.infinitePi fun _ : ℕ => (P : Measure α)).map
           fun x i => f (x i) :=

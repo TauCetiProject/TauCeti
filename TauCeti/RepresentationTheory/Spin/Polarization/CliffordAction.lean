@@ -48,7 +48,7 @@ no invertibility of `2` is used.
 Surjectivity of `TauCeti.spinAction` onto `Module.End K S` when `P.W` is finite free, and its
 restriction to `pinGroup Q` and `spinGroup Q`, are in
 `TauCeti/RepresentationTheory/Spin/Representation.lean`; the half-spin summands are in
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean`.
+`TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean`.
 
 ## Main definitions
 

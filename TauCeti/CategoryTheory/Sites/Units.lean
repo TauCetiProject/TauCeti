@@ -21,6 +21,9 @@ The construction is pointwise: the units functor is a right adjoint and therefor
 limits in the sheaf condition. Thus a sheaf of commutative rings `F` gives a sheaf whose sections
 over `U` are `Additive (F(U)ˣ)`.
 
+The sections and the restriction maps of the resulting sheaf are computed by
+`additiveUnitsFunctor_obj_obj` and `additiveUnitsFunctor_obj_map_apply`.
+
 This is the categorical input for the Cartier-divisor sheaf
 `𝒦_X^× / 𝒪_X^×` in `TauCeti/AlgebraicGeometry/CartierDivisor/Basic.lean`. No formalization is
 vendored; the construction composes Mathlib's `CommMonCat.units`, the multiplicative-to-additive
@@ -66,6 +69,18 @@ lemma additiveUnitsFunctor_map_app_apply {F G : Sheaf J CommRingCat.{u}} (f : F 
       (AddCommGrpCat.of (Additive ((G.obj.obj U : CommRingCat.{u})ˣ)))
       (((additiveUnitsFunctor J).map f).hom.app U)) x =
       Additive.ofMul (Units.map (f.hom.app U).hom.toMonoidHom (Additive.toMul x)) :=
+  rfl
+
+/-- Restricting a section of the additive units sheaf applies the restriction map of the
+underlying sheaf of rings to the underlying unit. -/
+@[simp]
+lemma additiveUnitsFunctor_obj_map_apply (F : Sheaf J CommRingCat.{u}) {U V : Cᵒᵖ} (i : U ⟶ V)
+    (x : Additive ((F.obj.obj U : CommRingCat.{u})ˣ)) :
+    (@AddCommGrpCat.Hom.hom
+      (AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{u})ˣ)))
+      (AddCommGrpCat.of (Additive ((F.obj.obj V : CommRingCat.{u})ˣ)))
+      (((additiveUnitsFunctor J).obj F).obj.map i)) x =
+      Additive.ofMul (Units.map (F.obj.map i).hom.toMonoidHom (Additive.toMul x)) :=
   rfl
 
 end CategoryTheory.Sheaf

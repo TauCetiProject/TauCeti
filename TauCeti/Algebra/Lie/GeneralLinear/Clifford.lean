@@ -21,6 +21,7 @@ corresponding Clifford algebra.
 
 * `TauCeti.glCliffordHom`: the normal-ordered Lie homomorphism from matrices to the Clifford
   algebra of their trace quadratic form.
+* `TauCeti.glCliffordHom_one`: its scalar value on the identity matrix.
 * `TauCeti.glCliffordHom_lie_ι`: its commutator action on Clifford generators.
 * `TauCeti.glCliffordHom_single`: its formula on matrix units.
 * `TauCeti.glCliffordHom_normalOrdering`: its decomposition into bivectors and the central
@@ -94,6 +95,31 @@ theorem glCliffordHom_apply (X : Matrix n n K) :
   -- Expose the two private summands used to assemble the public homomorphism.
   change traceQuadraticLift X + scalarTrace X = _
   rfl
+
+/-- On a central matrix the lift is its normal-ordering constant alone: the adjoint action the
+quadratic part lifts already vanishes there. -/
+private theorem glCliffordHom_eq_algebraMap_of_commute {X : Matrix n n K}
+    (hX : ∀ Y : Matrix n n K, Commute Y X) :
+    glCliffordHom (K := K) (n := n) X =
+      algebraMap K (CliffordAlgebra (traceQuadraticForm K n))
+        ((Fintype.card n / 2 : K) * X.trace) := by
+  have hzero : traceAdjointSO K n X = 0 := by
+    refine Subtype.ext (LinearMap.ext fun Y => ?_)
+    rw [coe_traceAdjointSO, _root_.LieAlgebra.ad_apply, Ring.lie_def, (hX Y).eq, sub_self]
+    rfl
+  rw [glCliffordHom_apply, CliffordAlgebra.quadraticLift_apply, hzero, map_zero,
+    ZeroMemClass.coe_zero, zero_add]
+
+/-- The normal-ordered lift sends the identity matrix to the scalar
+`(Fintype.card n : K) ^ 2 / 2`. -/
+@[simp]
+theorem glCliffordHom_one :
+    glCliffordHom (K := K) (n := n) 1 =
+      algebraMap K (CliffordAlgebra (traceQuadraticForm K n))
+        ((Fintype.card n : K) ^ 2 / 2) := by
+  rw [glCliffordHom_eq_algebraMap_of_commute fun Y ↦ Commute.one_right Y, Matrix.trace_one]
+  congr 1
+  ring
 
 /-- The normal-ordered lift acts on Clifford generators by the matrix commutator. -/
 @[simp, grind =]
@@ -204,13 +230,15 @@ private theorem matrixUnit_ι_mul_eq_bivector_add (i j k : n) :
   · simp [eq_comm, h]
 
 /-- On a matrix unit, the lift is the normal-ordered quadratic sum
-`Eᵢⱼ ↦ 1/2 ∑ₖ dᵢₖ dₖⱼ`. -/
+`Eᵢⱼ ↦ 1/2 ∑ₖ dᵢₖ dₖⱼ`. The decidable equality is explicit so the equation uses the consumer's
+matrix units rather than a noncanonical internal choice. -/
 @[simp, grind =]
-theorem glCliffordHom_single (i j : n) :
+theorem glCliffordHom_single [decEq : DecidableEq n] (i j : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)) =
       (2⁻¹ : K) • ∑ k : n,
-        ι (traceQuadraticForm K n) (Matrix.single i k 1) *
+          ι (traceQuadraticForm K n) (Matrix.single i k 1) *
           ι (traceQuadraticForm K n) (Matrix.single k j 1) := by
+  cases Subsingleton.elim decEq (Classical.decEq n)
   rw [glCliffordHom_normalOrdering]
   simp_rw [matrixUnit_ι_mul_eq_bivector_add]
   by_cases h : i = j
@@ -239,20 +267,6 @@ private theorem commute_of_glCliffordHom_eq_zero {X : Matrix n n K}
   have hXY : ⁅X, Y⁆ = 0 := by rwa [ι_eq_zero_iff] at h
   rw [Ring.lie_def, sub_eq_zero] at hXY
   exact hXY.symm
-
-/-- On a central matrix the lift is its normal-ordering constant alone: the adjoint action the
-quadratic part lifts already vanishes there. -/
-private theorem glCliffordHom_eq_algebraMap_of_commute {X : Matrix n n K}
-    (hX : ∀ Y : Matrix n n K, Commute Y X) :
-    glCliffordHom (K := K) (n := n) X =
-      algebraMap K (CliffordAlgebra (traceQuadraticForm K n))
-        ((Fintype.card n / 2 : K) * X.trace) := by
-  have hzero : traceAdjointSO K n X = 0 := by
-    refine Subtype.ext (LinearMap.ext fun Y => ?_)
-    rw [coe_traceAdjointSO, _root_.LieAlgebra.ad_apply, Ring.lie_def, (hX Y).eq, sub_self]
-    rfl
-  rw [glCliffordHom_apply, CliffordAlgebra.quadraticLift_apply, hzero, map_zero,
-    ZeroMemClass.coe_zero, zero_add]
 
 /-- **The normal-ordered lift is injective as soon as `Fintype.card n` is invertible in `K`.**
 The adjoint action of `gl n K` is not faithful — its kernel is the centre, the scalar matrices

@@ -18,7 +18,7 @@ identifying the sheafification of the underlying presheaf of a sheaf of modules 
 
 * `SheafOfModules.ringCatSheaf` forgets commutativity in a sheaf of commutative rings;
 * `SheafOfModules.sheafificationIso` identifies a sheaf of modules with the sheafification of its
-  underlying presheaf.
+  underlying presheaf, naturally (`SheafOfModules.sheafificationIso_inv_naturality`).
 
 This supports `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
 scheme; the Picard group `Pic X` under `⊗`".
@@ -58,6 +58,16 @@ theorem sheafificationIso_hom (R : Sheaf J RingCat.{u}) (M : SheafOfModules.{v} 
       (PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).counit.app M := by
   simp only [sheafificationIso]
   rfl
+
+/-- `sheafificationIso` is natural: its inverse intertwines a morphism of sheaves of modules with
+the sheafification of the underlying morphism of presheaves of modules. -/
+@[reassoc]
+theorem sheafificationIso_inv_naturality {R : Sheaf J RingCat.{u}} {M N : SheafOfModules.{v} R}
+    (f : M ⟶ N) :
+    f ≫ (sheafificationIso R N).inv =
+      (sheafificationIso R M).inv ≫ (PresheafOfModules.sheafification (𝟙 R.obj)).map f.val := by
+  rw [Iso.comp_inv_eq, assoc, Iso.eq_inv_comp, sheafificationIso_hom, sheafificationIso_hom]
+  exact ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).counit.naturality f).symm
 
 end SheafOfModules
 

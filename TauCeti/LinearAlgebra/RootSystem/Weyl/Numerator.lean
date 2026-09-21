@@ -10,8 +10,6 @@ public import Mathlib.Data.Int.Order.Units
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.DotAction
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Sign
 
-public section
-
 /-!
 # The Weyl numerator
 
@@ -63,7 +61,7 @@ are what makes the numerator *alternating*, which is the content of
 
 `TauCeti.weylNumerator` sums over `Finset.univ` and so carries `[Fintype P.weylGroup]` rather than
 `[Finite P.weylGroup]`. The Weyl group of a finite root system is finite
-(`TauCeti.RootPairing.finite_weylGroup`), and a consumer holding only that instance
+(`RootPairing.finite_weylGroup`), and a consumer holding only that instance
 supplies the `Fintype` with `Fintype.ofFinite`; the value of the sum does not depend on which one,
 since `Fintype` is a subsingleton.
 
@@ -84,6 +82,8 @@ specialization rather than a rebuild.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.
 * J.-P. Serre, *Complex Semisimple Lie Algebras*, Ch. VII.
 -/
+
+public section
 
 namespace TauCeti
 

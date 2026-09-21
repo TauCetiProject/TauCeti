@@ -53,6 +53,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.realPointsLift_injective`, `TauCeti.realPointsLift_surjective` and
   `TauCeti.realPointsEquiv`: **a complex vector space is the complexification of the real points of
   any conjugation on it.**
+* `TauCeti.span_realPoints_eq_top`: the real points of an involutive conjugation span `V` over
+  `ℂ`, so an identity between `ℂ`-linear or `ℂ`-bilinear maps may be checked on real vectors
+  alone.
 * `TauCeti.finrank_realPoints`: the real points have the `ℝ`-dimension that `V` has over `ℂ`.
 * `TauCeti.exists_one_tmul_add_I_tmul`: every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ w₁ + I ⊗ₜ w₂`; this
   is what makes the lift injective.
@@ -186,6 +189,17 @@ theorem conjRealPart_add_I_smul_conjImaginaryPart (v : V) :
   rw [conjRealPart_def, conjImaginaryPart_def, smul_comm Complex.I ((2⁻¹ : ℝ)), hI, ← smul_add,
     hsum, smul_smul]
   norm_num
+
+/-- **The real points of a conjugation span the whole space over `ℂ`.**  Every vector is a
+complex combination of the two real points it decomposes into, so an identity between `ℂ`-linear
+or `ℂ`-bilinear maps may be checked on real vectors alone. -/
+theorem span_realPoints_eq_top (hK : Function.Involutive K) :
+    Submodule.span ℂ (realPoints K : Set V) = ⊤ := by
+  rw [eq_top_iff]
+  intro v _
+  rw [← conjRealPart_add_I_smul_conjImaginaryPart (K := K) v]
+  exact Submodule.add_mem _ (Submodule.subset_span (conjRealPart_mem hK v))
+    (Submodule.smul_mem _ _ (Submodule.subset_span (conjImaginaryPart_mem hK v)))
 
 /-! ### A complexification splits along `1` and `I` -/
 

@@ -11,8 +11,8 @@ public import Mathlib.LinearAlgebra.SModEq.Basic
 /-!
 # Conjugation of Deligne's bigrading
 
-For a mixed Hodge structure, complex conjugation exchanges the Deligne bigrading pieces only up
-to terms of lower weight. This file proves the first, weight-filtered form of that triangularity:
+For a mixed Hodge structure, complex conjugation exchanges the Deligne bigrading pieces up to
+strictly lower bidegrees. This file first proves the coarser weight-filtered form
 
 `conj I^{p,q} + W_{p+q-2} = I^{q,p} + W_{p+q-2}`.
 
@@ -23,8 +23,13 @@ intervening graded piece, however, their difference lies in the opposed steps `F
 `conj F^p` of a pure Hodge
 structure of weight `p+q-1`, so it vanishes and the difference drops one step further.
 
-The full Deligne relation refines the error term from `W_{p+q-2}` to the sum of the pieces
-`I^{r,s}` with `r < q` and `s < p`.
+The full relation then refines the error term to the sum of the pieces `I^{r,s}` with `r < q`
+and `s < p`. The Hodge-filtration recovery theorem identifies every intersection `F^a ∩ W_b`
+as the sum of the Deligne components satisfying both bounds. It follows that the tail in
+Deligne's formula, after adjoining its leading filtration step, is precisely saturation by the
+lower-bidegree components. Induction on total degree gives the same statement for the conjugate
+tail. The two closed formulas then agree modulo the lower-bidegree sum by the modular law for
+subspaces.
 
 ## Main declarations
 
@@ -34,12 +39,17 @@ The full Deligne relation refines the error term from `W_{p+q-2}` to the sum of 
   equality modulo `W_{p+q-2}`.
 * `TauCeti.Hodge.MixedHodgeStructure.exists_mem_deligneSplitting_smodEq_latticeConj`: the
   elementwise modular-congruence form.
+* `TauCeti.Hodge.MixedHodgeStructure.map_latticeConj_deligneSplitting_sup_below`: the full
+  Deligne relation, with the error supported in strictly lower bidegrees.
+* `TauCeti.Hodge.MixedHodgeStructure.map_deligneSplittingBelow`: conjugation exchanges the
+  corresponding lower-bidegree sums.
+* `TauCeti.Hodge.MixedHodgeStructure.exists_mem_deligneSplitting_smodEq_latticeConj_below`:
+  the elementwise form of the full relation.
 
 ## References
 
 Deligne, *Théorie de Hodge II*, 1.2.10; Peters--Steenbrink, *Mixed Hodge Structures*,
-Lemma-Definition 3.4. This is the first conjugation comparison in Layer L2 of the Hodge structures
-roadmap.
+Lemma-Definition 3.4.
 -/
 
 public section
@@ -56,6 +66,39 @@ variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
 namespace MixedHodgeStructure
 
 variable (mhs : MixedHodgeStructure hℚ hℂ)
+
+/-- The part of Deligne's formula below its leading conjugate-filtration term. -/
+private noncomputable def hodgeTail (p q : ℤ) : Submodule ℂ Vℂ :=
+  ⨆ j : ℕ, mhs.F (q - (j : ℤ) - 1) ⊓ mhs.WC (p + q - (j : ℤ) - 2)
+
+/-- The Hodge-filtration tail in Deligne's formula, after adjoining its leading filtration step,
+is exactly saturation by the lower-bidegree components. -/
+private theorem inf_sup_hodgeTail_eq_inf_sup_deligneSplittingBelow (p q : ℤ) :
+    (mhs.F q ⊓ mhs.WC (p + q)) ⊔ mhs.hodgeTail p q =
+      (mhs.F q ⊓ mhs.WC (p + q)) ⊔ mhs.deligneSplittingBelow q p := by
+  apply le_antisymm
+  · refine sup_le le_sup_left (iSup_le fun j ↦ ?_)
+    rw [mhs.F_inf_WC_eq_iSup_deligneSplitting
+      (q - (j : ℤ) - 1) (p + q - (j : ℤ) - 2)]
+    refine iSup₂_le fun rs hrs ↦ ?_
+    by_cases hr : q ≤ rs.1
+    · exact le_sup_of_le_left (le_inf
+        ((mhs.deligneSplitting_le_F rs.1 rs.2).trans (mhs.F_antitone hr))
+        ((mhs.deligneSplitting_le_WC rs.1 rs.2).trans (mhs.WC_monotone (by omega))))
+    · exact le_sup_of_le_right
+        (mhs.deligneSplitting_le_deligneSplittingBelow (by omega) (by omega))
+  · refine sup_le le_sup_left (mhs.deligneSplittingBelow_le_iff.2 fun r hr s hs ↦ ?_)
+    let j : ℕ := (q - r - 1).toNat
+    have hj : (j : ℤ) = q - r - 1 := by
+      rw [Int.toNat_of_nonneg]
+      omega
+    refine le_sup_of_le_right (le_iSup_of_le j ?_)
+    rw [hj]
+    have hFIndex : q - (q - r - 1) - 1 = r := by omega
+    have hWIndex : p + q - (q - r - 1) - 2 = p + r - 1 := by omega
+    rw [hFIndex, hWIndex]
+    exact le_inf (mhs.deligneSplitting_le_F r s)
+      ((mhs.deligneSplitting_le_WC r s).trans (mhs.WC_monotone (by omega)))
 
 /-- An element of a weight step lying in opposed filtration steps modulo the preceding weight step
 already lies in that preceding step. -/
@@ -224,6 +267,150 @@ theorem exists_mem_deligneSplitting_smodEq_latticeConj (p q : ℤ) {x : Vℂ}
     Submodule.mem_map_of_mem hx
   obtain ⟨y, hy, z, hz, hyz⟩ :=
     Submodule.mem_sup.1 (mhs.map_latticeConj_deligneSplitting_le_sup_WC p q hxMap)
+  refine ⟨y, hy, SModEq.sub_mem.2 ?_⟩
+  have hdiff : latticeConj hℂ x - y = z := by rw [← hyz]; abel
+  rwa [hdiff]
+
+/-! ### The fine lower-bidegree relation -/
+
+private abbrev FineConjugationAt (p q : ℤ) : Prop :=
+  (mhs.deligneSplitting p q).map (latticeConj hℂ) ⊔
+      mhs.deligneSplittingBelow q p =
+    mhs.deligneSplitting q p ⊔ mhs.deligneSplittingBelow q p
+
+/-- Conjugating the Hodge-filtration tail in Deligne's formula replaces `F` by `conj F`. -/
+private theorem map_hodgeTail (p q : ℤ) :
+    (mhs.hodgeTail p q).map (latticeConj hℂ) =
+      ⨆ j : ℕ, mhs.conjF (q - (j : ℤ) - 1) ⊓
+        mhs.WC (p + q - (j : ℤ) - 2) := by
+  have hinj : Function.Injective (latticeConj hℂ) := (latticeConj_involutive hℂ).injective
+  simp only [hodgeTail, Submodule.map_iSup, Submodule.map_inf _ hinj, ← conjF_def, WC_conj]
+
+/-- If the fine conjugation relation is known in every smaller total degree, conjugation exchanges
+the corresponding lower-bidegree sums. -/
+private theorem map_deligneSplittingBelow_eq_of_fine (p q : ℤ)
+    (ih : ∀ r s : ℤ, r + s < p + q → mhs.FineConjugationAt r s) :
+    (mhs.deligneSplittingBelow p q).map (latticeConj hℂ) =
+      mhs.deligneSplittingBelow q p := by
+  have hforward : ∀ a b : ℤ, a + b = p + q →
+      (mhs.deligneSplittingBelow a b).map (latticeConj hℂ) ≤
+        mhs.deligneSplittingBelow b a := by
+    intro a b hab
+    rw [Submodule.map_le_iff_le_comap]
+    refine mhs.deligneSplittingBelow_le_iff.2 fun r hr s hs ↦ ?_
+    rw [← Submodule.map_le_iff_le_comap]
+    calc
+      (mhs.deligneSplitting r s).map (latticeConj hℂ) ≤
+          (mhs.deligneSplitting r s).map (latticeConj hℂ) ⊔
+            mhs.deligneSplittingBelow s r := le_sup_left
+      _ = mhs.deligneSplitting s r ⊔
+            mhs.deligneSplittingBelow s r := ih r s (by omega)
+      _ ≤ mhs.deligneSplittingBelow b a := sup_le
+        (mhs.deligneSplitting_le_deligneSplittingBelow hs hr)
+        (mhs.deligneSplittingBelow_mono hs.le hr.le)
+  refine le_antisymm (hforward p q rfl) ?_
+  have hmap :
+      ((mhs.deligneSplittingBelow q p).map (latticeConj hℂ)).map (latticeConj hℂ) ≤
+        (mhs.deligneSplittingBelow p q).map (latticeConj hℂ) :=
+    Submodule.map_mono (hforward q p (by omega))
+  simpa only [← latticeConjugation_toLinearMap, Conjugation.map_map_eq_self] using hmap
+
+/-- Under the fine relation in smaller total degree, the conjugate-filtration tail is saturated by
+the same lower-bidegree sum as the Hodge-filtration tail. -/
+private theorem inf_sup_conjTail_eq_inf_sup_deligneSplittingBelow (p q : ℤ)
+    (ih : ∀ r s : ℤ, r + s < p + q → mhs.FineConjugationAt r s) :
+    (mhs.conjF p ⊓ mhs.WC (p + q)) ⊔
+        (⨆ j : ℕ, mhs.conjF (p - (j : ℤ) - 1) ⊓
+          mhs.WC (p + q - (j : ℤ) - 2)) =
+      (mhs.conjF p ⊓ mhs.WC (p + q)) ⊔ mhs.deligneSplittingBelow q p := by
+  have hinj : Function.Injective (latticeConj hℂ) := (latticeConj_involutive hℂ).injective
+  have h := congrArg (Submodule.map (latticeConj hℂ))
+    (mhs.inf_sup_hodgeTail_eq_inf_sup_deligneSplittingBelow q p)
+  have hbelow := mhs.map_deligneSplittingBelow_eq_of_fine p q ih
+  simpa only [Submodule.map_sup, Submodule.map_inf _ hinj, ← conjF_def, WC_conj,
+    mhs.map_hodgeTail, add_comm p q, hbelow] using h
+
+/-- The fine conjugation relation in a given bidegree follows from the relation in all smaller
+total degrees. Deligne's two tails become the same lower-bidegree sum, and the remaining equality
+is the modular law for subspaces. -/
+private theorem map_latticeConj_deligneSplitting_sup_below_of_lower (p q : ℤ)
+    (ih : ∀ r s : ℤ, r + s < p + q → mhs.FineConjugationAt r s) :
+    mhs.FineConjugationAt p q := by
+  unfold FineConjugationAt
+  rw [mhs.map_latticeConj_deligneSplitting p q, mhs.deligneSplitting_def q p]
+  rw [add_comm q p]
+  -- Fold the explicit first tail back to `hodgeTail`; the two saturation lemmas are stated
+  -- against that name, while the second tail deliberately remains visible for its conjugate form.
+  change
+    ((mhs.conjF p ⊓ mhs.WC (p + q)) ⊓
+        ((mhs.F q ⊓ mhs.WC (p + q)) ⊔ mhs.hodgeTail p q)) ⊔
+          mhs.deligneSplittingBelow q p =
+      ((mhs.F q ⊓ mhs.WC (p + q)) ⊓
+        ((mhs.conjF p ⊓ mhs.WC (p + q)) ⊔
+          (⨆ j : ℕ, mhs.conjF (p - (j : ℤ) - 1) ⊓
+            mhs.WC (p + q - (j : ℤ) - 2)))) ⊔ mhs.deligneSplittingBelow q p
+  rw [mhs.inf_sup_hodgeTail_eq_inf_sup_deligneSplittingBelow p q,
+    mhs.inf_sup_conjTail_eq_inf_sup_deligneSplittingBelow p q ih]
+  let C := mhs.conjF p ⊓ mhs.WC (p + q)
+  let F := mhs.F q ⊓ mhs.WC (p + q)
+  let E := mhs.deligneSplittingBelow q p
+  -- Fold the three abbreviations into the goal, so that what remains is the purely
+  -- lattice-theoretic identity `(C ⊓ (F ⊔ E)) ⊔ E = (F ⊓ (C ⊔ E)) ⊔ E` proved below.
+  change (C ⊓ (F ⊔ E)) ⊔ E = (F ⊓ (C ⊔ E)) ⊔ E
+  calc
+    (C ⊓ (F ⊔ E)) ⊔ E = E ⊔ (C ⊓ (F ⊔ E)) := sup_comm _ _
+    _ = (E ⊔ C) ⊓ (F ⊔ E) := (sup_inf_assoc_of_le C le_sup_right).symm
+    _ = (E ⊔ F) ⊓ (C ⊔ E) := by ac_rfl
+    _ = E ⊔ (F ⊓ (C ⊔ E)) := sup_inf_assoc_of_le F le_sup_right
+    _ = (F ⊓ (C ⊔ E)) ⊔ E := sup_comm _ _
+
+/-- **Deligne's fine conjugation relation.** Conjugation exchanges `I^{p,q}` and `I^{q,p}`
+modulo the sum of the components `I^{r,s}` with `r < q` and `s < p`. -/
+theorem map_latticeConj_deligneSplitting_sup_below (p q : ℤ) :
+    (mhs.deligneSplitting p q).map (latticeConj hℂ) ⊔
+        mhs.deligneSplittingBelow q p =
+      mhs.deligneSplitting q p ⊔ mhs.deligneSplittingBelow q p := by
+  obtain ⟨k₀, hk₀⟩ := mhs.WC_bot
+  have key : ∀ k : ℤ, k₀ ≤ k → ∀ p q : ℤ, p + q ≤ k →
+      mhs.FineConjugationAt p q := by
+    refine Int.leInduction ?_ ?_
+    · intro p q hpq
+      unfold FineConjugationAt
+      have hpq' : q + p ≤ k₀ := by omega
+      have hI := mhs.deligneSplitting_eq_bot_of_WC_eq_bot hk₀ hpq
+      have hIswap := mhs.deligneSplitting_eq_bot_of_WC_eq_bot hk₀ hpq'
+      have hbelow : mhs.deligneSplittingBelow q p = ⊥ := le_bot_iff.1
+        ((mhs.deligneSplittingBelow_le_WC q p).trans
+          ((mhs.WC_monotone (by omega)).trans_eq hk₀))
+      simp only [hI, hIswap, hbelow, Submodule.map_bot, sup_bot_eq]
+    · intro k hk₀k ih p q hpq
+      rcases lt_or_eq_of_le hpq with hpq' | hpq'
+      · exact ih p q (by omega)
+      · exact mhs.map_latticeConj_deligneSplitting_sup_below_of_lower p q
+          (fun r s hrs ↦ ih r s (by omega))
+  exact key (max k₀ (p + q)) (le_max_left _ _) p q (le_max_right _ _)
+
+/-- Conjugation exchanges the sums of Deligne components below transposed bidegrees. -/
+@[simp]
+theorem map_deligneSplittingBelow (p q : ℤ) :
+    (mhs.deligneSplittingBelow p q).map (latticeConj hℂ) =
+      mhs.deligneSplittingBelow q p :=
+  mhs.map_deligneSplittingBelow_eq_of_fine p q fun r s _ ↦
+    mhs.map_latticeConj_deligneSplitting_sup_below r s
+
+/-- Elementwise form of Deligne's fine conjugation relation. -/
+theorem exists_mem_deligneSplitting_smodEq_latticeConj_below (p q : ℤ) {x : Vℂ}
+    (hx : x ∈ mhs.deligneSplitting p q) :
+    ∃ y ∈ mhs.deligneSplitting q p,
+      latticeConj hℂ x ≡ y [SMOD (mhs.deligneSplittingBelow q p)] := by
+  have hxMap : latticeConj hℂ x ∈
+      (mhs.deligneSplitting p q).map (latticeConj hℂ) := Submodule.mem_map_of_mem hx
+  have hxSup : latticeConj hℂ x ∈
+      mhs.deligneSplitting q p ⊔ mhs.deligneSplittingBelow q p := by
+    rw [← mhs.map_latticeConj_deligneSplitting_sup_below p q]
+    exact Submodule.mem_sup_left hxMap
+  obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.1
+    hxSup
   refine ⟨y, hy, SModEq.sub_mem.2 ?_⟩
   have hdiff : latticeConj hℂ x - y = z := by rw [← hyz]; abel
   rwa [hdiff]

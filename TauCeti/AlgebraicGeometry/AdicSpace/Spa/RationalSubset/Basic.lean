@@ -8,6 +8,7 @@ module
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
 
 /-!
 # Rational subsets of the adic spectrum
@@ -64,11 +65,17 @@ layer deferred above.
   in the adic spectrum.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_subset` : the rational
   subset is antitone in its numerator set.
+* `TauCeti.ValuationSpectrum.rationalSubset_mul_subset_rationalSubset` : refining a
+  presentation by a cofactor shrinks the rational subset.
+* `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_le` : refinement of bundled
+  presentations shrinks the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_of_forall_vle` : a numerator already
   dominated by the denominator throughout `R(T/s)` may be adjoined to `T` without changing the
   subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_self` : the denominator may be inserted
   among the numerators.
+* `TauCeti.ValuationSpectrum.rationalSubset_image_mul_right` : multiplying every numerator and
+  the denominator by the same unit does not change the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` : the whole spectrum is the
   rational subset `R({1}/1)` — Wedhorn's "`Spa (A, A⁺)` itself is rational".
 * `TauCeti.ValuationSpectrum.val_preimage_rationalSubset` : on the subtype `spa A⁺`, a
@@ -91,9 +98,6 @@ layer deferred above.
   Corollary 7.53.
 * `TauCeti.ValuationSpectrum.span_eq_top_iff_forall_mem_spa_exists_not_vle_zero` : Corollary 7.53
   in pointwise form — `T` generates the unit ideal exactly when no point vanishes on all of it.
-* `TauCeti.ValuationSpectrum.span_eq_top_iff_spa_eq_biUnion_rationalSubset` : Corollary 7.53 as
-  the roadmap states it — generating the unit ideal is equivalent to the standard family being a
-  cover. Only the `←` directions need the maximal ideals of `A` to be open.
 
 ## References
 
@@ -185,6 +189,30 @@ theorem rationalSubset_subset_rationalSubset_of_subset (Aplus : Subring A) {T T'
   rw [mem_rationalSubset_iff] at hv ⊢
   exact ⟨hv.1, fun t ht ↦ hv.2.1 t (h ht), hv.2.2⟩
 
+/-- **Refining a presentation shrinks the rational subset.** If a cofactor `r` carries every
+numerator of `T` into `T'`, then `R(T'/(s · r)) ⊆ R(T/s)`: at a point of the smaller subset `r` is
+off the support, so it cancels from `v(t · r) ≤ v(s · r)`. This is the containment behind a
+refinement of presentations, whose restriction map goes from `A⟨T/s⟩` to `A⟨T'/(s · r)⟩`. -/
+theorem rationalSubset_mul_subset_rationalSubset (Aplus : Subring A) {T T' : Finset A} {s r : A}
+    (hT : ∀ t ∈ T, t * r ∈ T') :
+    rationalSubset Aplus T' (s * r) ⊆ rationalSubset Aplus T s := fun v hv ↦ by
+  rw [mem_rationalSubset_iff] at hv ⊢
+  have h {t : A} (ht : v.toValuativeRel.vle (t * r) (s * r)) : v ∈ basicOpen t s :=
+    basicOpen_mul_subset r t s <| by
+      rw [mem_basicOpen_iff, mul_comm r t, mul_comm r s]
+      exact ⟨ht, hv.2.2⟩
+  exact ⟨hv.1, fun t ht ↦ ((mem_basicOpen_iff _ _ _).mp (h (hv.2.1 _ (hT t ht)))).1,
+    ((mem_basicOpen_iff _ _ _).mp (h (v.toValuativeRel.vle_refl _))).2⟩
+
+/-- **A refinement of presentations shrinks the rational subset**: if `q` refines `p`, then
+`R(q) ⊆ R(p)`. -/
+theorem rationalSubset_subset_rationalSubset_of_le {P : TauCeti.Huber.PairOfDefinition A}
+    (Aplus : Subring A) {p q : P.Presentation} (h : p ≤ q) :
+    rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den := by
+  obtain ⟨r, hr, hT⟩ := TauCeti.Huber.PairOfDefinition.Presentation.le_def.mp h
+  rw [hr]
+  exact rationalSubset_mul_subset_rationalSubset Aplus hT
+
 open scoped Classical in
 /-- Inserting the denominator among the numerators changes nothing — Wedhorn's "one may
 replace `T` by `T ∪ {s}`" (Definition 7.29). -/
@@ -213,6 +241,17 @@ theorem rationalSubset_insert_of_forall_vle (Aplus : Subring A) (T : Finset A) (
   rcases Finset.mem_insert.mp ht with rfl | ht
   · exact hu v hv
   · exact hv'.2.1 t ht
+
+open scoped Classical in
+/-- **Multiplying a presentation by a unit changes nothing.** If `u` is a unit, then multiplying
+every numerator and the denominator of `R(T/s)` by `u` gives the same rational subset.
+
+No injectivity of `t ↦ t * u` is needed. -/
+@[simp]
+theorem rationalSubset_image_mul_right (Aplus : Subring A) (T : Finset A) (s u : A)
+    (hu : IsUnit u) :
+    rationalSubset Aplus (T.image fun t ↦ t * u) (s * u) = rationalSubset Aplus T s := by
+  rw [rationalSubset_def, rationalSubset_def, basicOpenFinset_image_mul_right T s u hu]
 
 /-- The whole adic spectrum is the rational subset `R({1}/1)` — Wedhorn's observation that
 `Spa (A, A⁺)` itself is rational. The single condition `v(1) ≤ v(1) ≠ 0` holds at every
@@ -254,13 +293,23 @@ theorem mem_spaBasicOpen {Aplus : Subring A} {T : Finset A} {s : A} {v : ↥(spa
     v ∈ spaBasicOpen Aplus T s ↔ (v : Spv A) ∈ rationalSubset Aplus T s :=
   Iff.rfl
 
+/-- **Containment of basic opens** is containment of the underlying rational subsets, since every
+rational subset already lies in `spa A⁺`. -/
+theorem spaBasicOpen_le_spaBasicOpen_iff {Aplus : Subring A} {T T' : Finset A} {s s' : A} :
+    spaBasicOpen Aplus T' s' ≤ spaBasicOpen Aplus T s ↔
+      rationalSubset Aplus T' s' ⊆ rationalSubset Aplus T s :=
+  ⟨fun h v hv ↦ mem_spaBasicOpen.mp <|
+    h ((mem_spaBasicOpen (v := ⟨v, rationalSubset_subset_spa Aplus T' s' hv⟩)).mpr hv),
+    fun h _ hv ↦ mem_spaBasicOpen.mpr (h (mem_spaBasicOpen.mp hv))⟩
+
 open scoped Classical Pointwise in
 /-- **The set-level half of Wedhorn Remark 7.30(5)**: writing `Uᵢ = insert sᵢ Tᵢ` for each
 numerator set augmented by its own denominator,
 `R(T₁/s₁) ∩ R(T₂/s₂) = R(U₁U₂ / s₁s₂)`. The augmentation costs nothing
 (`rationalSubset_insert_self`) and is essential — with the bare products the identity fails
 for `T₂ = ∅`. Wedhorn's full Remark 7.30(5) additionally says the right-hand pair is again
-admissible; that lives with the deferred open-ideal layer. This identity is the form Theorem
+admissible; that is `TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`, which needs
+the open-ideal criterion and so lives downstream of this file. This identity is the form Theorem
 7.35's own proof consumes. -/
 @[simp]
 theorem rationalSubset_inter (Aplus : Subring A) (T₁ T₂ : Finset A) (s₁ s₂ : A) :
@@ -369,20 +418,6 @@ theorem span_eq_top_iff_forall_mem_spa_exists_not_vle_zero (Aplus : Subring A)
   refine ⟨fun hT v hv ↦ ?_,
     fun h ↦ span_eq_top_of_forall_mem_spa_exists_not_vle_zero Aplus hmax (T := (T : Set A)) h⟩
   obtain ⟨s, hs, hmem⟩ := mem_rationalSubset_of_span_eq_top_of_mem_spa Aplus hT hv
-  exact ⟨s, hs, ((mem_rationalSubset_iff Aplus T s v).mp hmem).2.2⟩
-
-/-- **Wedhorn Corollary 7.53, in the form the roadmap states it.** A finite set `T` generates the
-unit ideal exactly when the standard family `(R(T/t))_{t ∈ T}` covers `Spa(A, A⁺)`.
-
-The `→` direction is `spa_eq_biUnion_rationalSubset_of_span_eq_top` and needs no hypothesis on
-`A`; only `←` uses `hmax`, so a consumer who already has `Ideal.span T = ⊤` should take the cover
-from that lemma directly rather than through this iff. -/
-theorem span_eq_top_iff_spa_eq_biUnion_rationalSubset (Aplus : Subring A)
-    (hmax : ∀ (𝔪 : Ideal A), 𝔪.IsMaximal → IsOpen (𝔪 : Set A)) {T : Finset A} :
-    Ideal.span (T : Set A) = ⊤ ↔ spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t := by
-  refine ⟨spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus, fun hcov ↦ ?_⟩
-  refine (span_eq_top_iff_forall_mem_spa_exists_not_vle_zero Aplus hmax).mpr fun v hv ↦ ?_
-  obtain ⟨s, hs, hmem⟩ := Set.mem_iUnion₂.mp (hcov ▸ hv)
   exact ⟨s, hs, ((mem_rationalSubset_iff Aplus T s v).mp hmem).2.2⟩
 
 end TauCeti.ValuationSpectrum

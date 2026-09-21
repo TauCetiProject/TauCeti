@@ -25,10 +25,12 @@ when its sign vector has even parity. Restriction of scalars then gives
 
 `Gal(candidateGenusField hd / candidateGenusFieldBase hd) ≃* Multiplicative U`.
 
-This is the relative Galois-group side of the genus-field construction. The Layer 3 target will
-identify this relative group, after proving the required ramification statement, with the maximal
-elementary-2 quotient `Cl(ℚ(√d)) / Cl(ℚ(√d))²`. When `d` is nonsquare, its order is already the
-predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime discriminants.
+This is the relative Galois-group side of the genus-field construction; the sign subspace found
+here is matched with the genus characters of `ℚ(√d)`, hence with the maximal elementary-2 quotient
+`Cl⁺(ℚ(√d)) / Cl⁺(ℚ(√d))²`, in
+`TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter`. When `d` is
+nonsquare, its order is the predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime
+discriminants.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.
@@ -106,19 +108,6 @@ noncomputable def candidateGenusFieldRelativeSignSubmodule {d : ℤ} (hd : Squar
     (v : {P // P ∈ genusPrimeDiscriminants hd} → ZMod 2) :
     v ∈ candidateGenusFieldRelativeSignSubmodule hd ↔ ∑ P, v P = 0 := by
   simp [candidateGenusFieldRelativeSignSubmodule, Fintype.linearCombination_apply]
-
-private theorem candidateGenusFieldGen_ne_zero {d : ℤ} (hd : Squarefree d)
-    (P : {P // P ∈ genusPrimeDiscriminants hd}) : candidateGenusFieldGen hd P ≠ 0 := by
-  have hrad : primeDiscriminantRadicand P.val ≠ 0 :=
-    primeDiscriminantRadicand_ne_zero ((genusPrimeDiscriminants_spec hd).1 P.val P.property)
-  have hq : (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) ≠ 0 := by
-    exact_mod_cast hrad
-  have hmap : algebraMap ℚ (candidateGenusField hd)
-      (((primeDiscriminantRadicand P.val : ℤ) : ℚ)) ≠ 0 :=
-    by simpa using (algebraMap ℚ (candidateGenusField hd)).injective.ne hq
-  intro hzero
-  apply hmap
-  simpa [hzero] using (candidateGenusFieldGen_sq hd P).symm
 
 private theorem candidateGenusFieldProdRoot_ne_zero {d : ℤ} (hd : Squarefree d) :
     candidateGenusFieldProdRoot hd ≠ 0 := by
