@@ -54,10 +54,12 @@ theorem tendsto_unitsLieAlgebraCoordinates :
         (unitsLieAlgebraEquiv p.1, unitsLieAlgebraEquiv p.2))
       (nhds (0, 0)) (nhds (0, 0)) := by
   let e := unitsLieAlgebraEquiv (R := R)
-  simpa only [Function.comp_apply, LinearEquiv.coe_toContinuousLinearEquiv'] using
-    ((e.toContinuousLinearEquiv.continuous.comp continuous_fst).prodMk
-      (e.toContinuousLinearEquiv.continuous.comp continuous_snd)).tendsto'
-        (0, 0) (0, 0) (by simp)
+  change Tendsto (Prod.map e e) (nhds (0, 0)) (nhds (0, 0))
+  simpa only [Prod.map, Prod.map_apply, Function.comp_apply,
+    LinearEquiv.coe_toContinuousLinearEquiv',
+    map_zero] using
+    (e.toContinuousLinearEquiv.continuous.tendsto 0).prodMap_nhds
+      (e.toContinuousLinearEquiv.continuous.tendsto 0)
 
 /-- The local Baker--Campbell--Hausdorff germ on the Lie algebra of `Rˣ`, obtained by
 transporting the canonical algebra-valued germ through `unitsLieAlgebraEquiv`. -/
@@ -239,10 +241,12 @@ theorem eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq
           e.toContinuousLinearEquiv.continuous.tendsto 0
       have hc : Tendsto (fun p : R × R ↦ (e.symm p.1, e.symm p.2))
           (nhds (0, 0)) (nhds (0, 0)) := by
-        simpa only [Function.comp_apply, LinearEquiv.coe_toContinuousLinearEquiv'] using
-          ((e.symm.toContinuousLinearEquiv.continuous.comp continuous_fst).prodMk
-            (e.symm.toContinuousLinearEquiv.continuous.comp continuous_snd)).tendsto'
-              (0, 0) (0, 0) (by simp)
+        change Tendsto (Prod.map e.symm e.symm) (nhds (0, 0)) (nhds (0, 0))
+        simpa only [Prod.map, Prod.map_apply, Function.comp_apply,
+          LinearEquiv.coe_toContinuousLinearEquiv',
+          map_zero] using
+          (e.symm.toContinuousLinearEquiv.continuous.tendsto 0).prodMap_nhds
+            (e.symm.toContinuousLinearEquiv.continuous.tendsto 0)
       let gR : R × R → R := fun p ↦ e (g (e.symm p.1, e.symm p.2))
       have hgR : Tendsto gR (nhds (0, 0)) (nhds 0) := he.comp (hf.comp hc)
       have hmap' :
