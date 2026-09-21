@@ -159,18 +159,6 @@ theorem steinberg_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
   rw [d.toRankTwoBLieIndex.frobenius_eq_primeFrobenius_pow]
   exact d.toSuzukiReeIndex.pow_fieldExponent_pow_fieldExponent d.halfFrobenius_halfFrobenius g
 
-/-- The rank-two reading of a Suzuki index carries its original valid index. -/
-private theorem toRankTwoBLieIndex_fst : d.toRankTwoBLieIndex.1 = d.1 := rfl
-
-/-- Consequently, the rank-two reading uses the same characteristic, closure, and Frobenius. -/
-private theorem toRankTwoBLieIndex_frobenius (k : ℕ)
-    (g : d.toRankTwoBLieIndex.AmbientGroup) :
-    SpStd.frobenius 1 d.toRankTwoBLieIndex.1.characteristic k
-        d.toRankTwoBLieIndex.1.Closure g =
-      SpStd.frobenius 1 d.1.characteristic k d.1.Closure g := by
-  cases d.toRankTwoBLieIndex_fst
-  rfl
-
 /-- Applying the half-Frobenius after the Suzuki Steinberg map gives the
 `2^(m+1)`-power Frobenius. -/
 @[simp]
@@ -180,7 +168,7 @@ theorem halfFrobenius_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
         (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) d.1.Closure g := by
   refine (d.toSuzukiReeIndex.apply_pow_fieldExponent d.halfFrobenius_halfFrobenius g).trans ?_
   rw [RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_pow, Nat.one_mul]
-  exact d.toRankTwoBLieIndex_frobenius _ g
+  rfl
 
 /-- The final node of the two-node carrier is the numeral one. -/
 private theorem one_eq_last : (1 : Fin 2) = Fin.last 1 := rfl
