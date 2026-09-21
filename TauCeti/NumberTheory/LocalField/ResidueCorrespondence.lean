@@ -45,6 +45,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [FiniteDimensional K L] [IsGalois K L]
 
+/-- The finite residue field of the base, equipped with a local `Fintype` instance. -/
 local instance residueFieldFintype : Fintype 𝓀[K] := Fintype.ofFinite 𝓀[K]
 
 omit [IsGalois K L] in
@@ -113,14 +114,14 @@ theorem residueFieldAutEquiv_apply [IsUnramified K L] (σ : L ≃ₐ[K] L) :
       MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L] σ :=
   MulEquiv.ofBijective_apply _ _ σ
 
-/-- The inverse residue correspondence is characterized by inducing the given residue-field
-automorphism. -/
+/-- The inverse residue correspondence induces the given residue-field automorphism. -/
 @[simp]
-theorem residueField_toAlgAut_residueFieldAutEquiv_symm_apply [IsUnramified K L]
+theorem residueField_toAlgEquiv_residueFieldAutEquiv_symm_apply [IsUnramified K L]
     (τ : 𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L]) :
-    MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]
-        ((residueFieldAutEquiv (K := K) (L := L)).symm τ) = τ := by
-  rw [← residueFieldAutEquiv_apply]
+    MulSemiringAction.toAlgEquiv 𝓀[K] 𝓀[L]
+      ((residueFieldAutEquiv (K := K) (L := L)).symm τ) = τ := by
+  change residueFieldAutEquiv (K := K) (L := L)
+    ((residueFieldAutEquiv (K := K) (L := L)).symm τ) = τ
   exact (residueFieldAutEquiv (K := K) (L := L)).apply_symm_apply τ
 
 /-- The Frobenius automorphism of an unramified local extension is the unique lift of the
@@ -129,10 +130,11 @@ noncomputable def frobeniusAlgEquiv [IsUnramified K L] : L ≃ₐ[K] L := by
   exact (residueFieldAutEquiv (K := K) (L := L)).symm
     (FiniteField.frobeniusAlgEquivOfAlgebraic 𝓀[K] 𝓀[L])
 
-/-- The residue correspondence sends local Frobenius to finite-field Frobenius. -/
+/-- The residue-field action sends local Frobenius to finite-field Frobenius. -/
 @[simp]
-theorem residueFieldAutEquiv_frobeniusAlgEquiv [IsUnramified K L] :
-    residueFieldAutEquiv (frobeniusAlgEquiv (K := K) (L := L)) =
+theorem residueField_toAlgEquiv_frobeniusAlgEquiv [IsUnramified K L] :
+    MulSemiringAction.toAlgEquiv 𝓀[K] 𝓀[L]
+        (frobeniusAlgEquiv (K := K) (L := L)) =
       FiniteField.frobeniusAlgEquivOfAlgebraic 𝓀[K] 𝓀[L] := by
   exact (residueFieldAutEquiv (K := K) (L := L)).apply_symm_apply _
 
@@ -140,7 +142,8 @@ theorem residueFieldAutEquiv_frobeniusAlgEquiv [IsUnramified K L] :
 theorem orderOf_frobeniusAlgEquiv [IsUnramified K L] :
     orderOf (frobeniusAlgEquiv (K := K) (L := L)) = inertiaDegree K L := by
   rw [← (residueFieldAutEquiv (K := K) (L := L)).orderOf_eq,
-    residueFieldAutEquiv_frobeniusAlgEquiv,
+    residueFieldAutEquiv_apply, MulSemiringAction.toAlgAut_apply,
+    residueField_toAlgEquiv_frobeniusAlgEquiv,
     FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic, inertiaDegree_def]
 
 /-- Frobenius generates the Galois group of an unramified local extension. -/
@@ -177,7 +180,8 @@ theorem valuation_frobeniusAlgEquiv_sub_pow [IsUnramified K L] (y : 𝒪[L]) :
             rw [residueFieldAutEquiv_apply, residueField_toAlgAut_apply]
       _ = FiniteField.frobeniusAlgEquivOfAlgebraic 𝓀[K] 𝓀[L]
           (IsLocalRing.residue 𝒪[L] y) := by
-            rw [residueFieldAutEquiv_frobeniusAlgEquiv]
+            rw [residueFieldAutEquiv_apply, MulSemiringAction.toAlgAut_apply,
+              residueField_toAlgEquiv_frobeniusAlgEquiv]
       _ = (IsLocalRing.residue 𝒪[L] y) ^ Nat.card 𝓀[K] := by
         rw [FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
           Fintype.card_eq_nat_card]
@@ -190,7 +194,7 @@ theorem valuation_frobeniusAlgEquiv_sub_pow [IsUnramified K L] (y : 𝒪[L]) :
   change valuation L
     ((((frobeniusAlgEquiv (K := K) (L := L)).integerRingAlgEquiv y : 𝒪[L]) : L) -
       (y : L) ^ Nat.card 𝓀[K]) < 1 at hv
-  rw [AlgEquiv.coe_integerRingAlgEquiv] at hv
+  rw [AlgEquiv.integerRingAlgEquiv_apply, AlgEquiv.coe_smul_integerRing] at hv
   exact hv
 
 end TauCeti

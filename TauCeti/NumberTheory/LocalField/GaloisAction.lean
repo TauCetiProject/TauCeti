@@ -104,10 +104,10 @@ theorem integerRingAlgEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
   (rfl)
 
 omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
-/-- Coercing the induced integer-ring automorphism to `L` recovers the field automorphism. -/
+/-- Coercing the action on the integer ring to `L` recovers the field automorphism. -/
 @[simp]
-theorem coe_integerRingAlgEquiv (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
-    ((σ.integerRingAlgEquiv x : 𝒪[L]) : L) = σ (x : L) :=
+theorem coe_smul_integerRing (σ : L ≃ₐ[K] L) (x : 𝒪[L]) :
+    ((σ • x : 𝒪[L]) : L) = σ (x : L) :=
   (rfl)
 
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
