@@ -68,6 +68,12 @@ noncomputable def localLogSeries (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) : PowerSeries ℂ :=
   PowerSeries.logOf (D.localPowerSeries P)
 
+/-- The local logarithm is the formal logarithm of the local power series. -/
+theorem localLogSeries_def (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    D.localLogSeries P = PowerSeries.logOf (D.localPowerSeries P) := by
+  rw [localLogSeries]
+
 /-- The local **formal logarithmic-derivative series** `X F_P'(X) / F_P(X)`. The factor `X`
 aligns degree `e` with the prime power `P ^ e`; after substituting `X = N(P) ^ (-s)`, these are
 the coefficients of the negative analytic logarithmic derivative before multiplication by
@@ -75,6 +81,14 @@ the coefficients of the negative analytic logarithmic derivative before multipli
 noncomputable def localLogDerivSeries (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) : PowerSeries ℂ :=
   PowerSeries.X * PowerSeries.logDeriv (D.localPowerSeries P)
+
+/-- The local logarithmic-derivative series is `X` times the formal logarithmic derivative of
+the local power series. -/
+theorem localLogDerivSeries_def (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    D.localLogDerivSeries P =
+      PowerSeries.X * PowerSeries.logDeriv (D.localPowerSeries P) := by
+  rw [localLogDerivSeries]
 
 /-- The formal local logarithm has zero constant coefficient. -/
 @[simp]
@@ -132,6 +146,7 @@ theorem sum_antidiagonal_coeff_localLogDerivSeries_eq (D : EulerProductData K)
       simpa [Nat.cast_add, Nat.cast_one, mul_comm] using h
 
 /-- The first local logarithmic-derivative coefficient is the coefficient at `P`. -/
+@[simp]
 theorem coeff_one_localLogDerivSeries (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) :
     PowerSeries.coeff 1 (D.localLogDerivSeries P) = D (P.primeIdealPow 1) := by
@@ -141,13 +156,13 @@ theorem coeff_one_localLogDerivSeries (D : EulerProductData K)
 
 /-- The second local logarithmic-derivative coefficient records the first genuinely independent
 prime-power datum: it is `2 D(P ^ 2) - D(P) ^ 2`. -/
+@[simp]
 theorem coeff_two_localLogDerivSeries (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) :
     PowerSeries.coeff 2 (D.localLogDerivSeries P) =
       2 * D (P.primeIdealPow 2) - D (P.primeIdealPow 1) ^ 2 := by
   have h := D.sum_antidiagonal_coeff_localLogDerivSeries_eq P 2
   norm_num [Finset.antidiagonal] at h ⊢
-  rw [D.coeff_one_localLogDerivSeries P] at h
   linear_combination h
 
 /-- The local power series of completely multiplicative data is the geometric series with
@@ -158,10 +173,11 @@ theorem localPowerSeries_ofMultiplicativeIdealWeight (χ : MultiplicativeIdealWe
       PowerSeries.mk fun n ↦ χ P.asIdeal ^ n := by
   ext n
   rw [coeff_localPowerSeries, PowerSeries.coeff_mk, ofMultiplicativeIdealWeight_apply]
-  rw [show P.primeIdealPow n =
-      (⟨P.asIdeal, mem_nonZeroDivisors_of_ne_zero P.ne_bot⟩ : (Ideal (𝓞 K))⁰) ^ n by
+  have hpow : P.primeIdealPow n =
+      (⟨P.asIdeal, mem_nonZeroDivisors_of_ne_zero P.ne_bot⟩ : (Ideal (𝓞 K))⁰) ^ n := by
     apply Subtype.ext
-    simp [HeightOneSpectrum.coe_primeIdealPow]]
+    simp [HeightOneSpectrum.coe_primeIdealPow]
+  rw [hpow]
   simp
 
 /-- For completely multiplicative data, the local formal logarithmic derivative is the geometric
@@ -205,6 +221,7 @@ theorem localLogDerivSeries_ofMultiplicativeIdealWeight
 
 /-- The degree-`n` local logarithmic-derivative coefficient of a completely multiplicative
 weight is `χ(P) ^ n` for `n > 0`, and zero in degree zero. -/
+@[simp]
 theorem coeff_localLogDerivSeries_ofMultiplicativeIdealWeight
     (χ : MultiplicativeIdealWeight K) (P : HeightOneSpectrum (𝓞 K)) (n : ℕ) :
     PowerSeries.coeff n ((ofMultiplicativeIdealWeight χ).localLogDerivSeries P) =

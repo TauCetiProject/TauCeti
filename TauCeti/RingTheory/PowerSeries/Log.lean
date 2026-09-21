@@ -40,6 +40,11 @@ variable {A : Type*} [CommRing A] [Algebra ℚ A]
 noncomputable def logDeriv (f : A⟦X⟧) : A⟦X⟧ :=
   d⁄dX A (logOf f)
 
+/-- The formal logarithmic derivative is the derivative of the formal logarithm. -/
+theorem logDeriv_def (f : A⟦X⟧) :
+    logDeriv f = d⁄dX A (logOf f) := by
+  rw [logDeriv]
+
 /-- Coefficients of the formal logarithmic derivative are the shifted coefficients of the formal
 logarithm, multiplied by their positive degree. -/
 theorem coeff_logDeriv (f : A⟦X⟧) (n : ℕ) :
