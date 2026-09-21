@@ -23,8 +23,6 @@ Humphreys, *Introduction to Lie Algebras and Representation Theory*, §10.
 
 * `LieAlgebra.Basis.positiveNilradical_eq_lieSpan_e` identifies the positive nilradical with the
   Lie span of the raising operators.
-* `LieAlgebra.Basis.mem_borelUpper_iff_mem_lieSpan_e` characterizes membership in the upper Borel as
-  membership in that Lie span.
 * `LieAlgebra.Basis.borelSubalgebra_eq_sup_lieSpan_e` gives the corresponding Borel.
 -/
 
@@ -40,12 +38,6 @@ section Carrier
 
 variable {K : Type u} {L : Type v} [CommRing K] [LieRing L] [LieAlgebra K L]
   {H : LieSubalgebra K L} {ι : Type*} [Finite ι]
-
-/-- Membership in the upper Borel's nilpotent part is equivalent to membership in the Lie span of
-the raising operators. -/
-@[simp] theorem mem_borelUpper_iff_mem_lieSpan_e (b : LieAlgebra.Basis ι H) {x : L} :
-    x ∈ b.borelUpper ↔ x ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := by
-  simp only [borelUpper, LieSubmodule.mem_mk_iff', LieSubalgebra.mem_toSubmodule]
 
 end Carrier
 
@@ -83,7 +75,7 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
       rw [b.borelUpper_eq]
       exact hle hx
     rw [← LieSubalgebra.mem_toSubmodule]
-    exact b.mem_borelUpper_iff_mem_lieSpan_e.mp hx'
+    simpa [LieAlgebra.Basis.borelUpper] using hx'
   · rw [LieSubalgebra.lieSpan_le, Set.range_subset_iff]
     intro i
     exact TauCeti.mem_positiveNilradical_of_mem_rootSpace H b.base
