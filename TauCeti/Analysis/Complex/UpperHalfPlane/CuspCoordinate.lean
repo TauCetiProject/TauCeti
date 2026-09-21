@@ -135,6 +135,30 @@ theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
   exact (Function.Periodic.qParam_tendsto hw).comp
     (tendsto_comap_iff.mpr tendsto_comap)
 
+/-- Multiplying by the `n`th power of the q-parameter makes a function of exponential growth
+at most `2πn / w` bounded at `i∞`. This is the analytic estimate behind the assertion that
+such a function has a pole of order at most `n` in the q-coordinate. -/
+theorem isBoundedAtImInfty_qParam_pow_mul_of_isBigO (w : ℝ) (n : ℕ) {f : ℍ → ℂ}
+    (hf : f =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * n * z.im / w)) :
+    IsBoundedAtImInfty fun z ↦ Function.Periodic.qParam w z ^ n * f z := by
+  have hq : (fun z : ℍ ↦ Function.Periodic.qParam w z ^ n) =O[atImInfty]
+      fun z ↦ Real.exp (-2 * Real.pi * n * z.im / w) := by
+    apply Asymptotics.isBigO_of_le
+    intro z
+    simp only [norm_pow, Function.Periodic.norm_qParam, Real.norm_eq_abs,
+      abs_of_pos (Real.exp_pos _)]
+    rw [← Real.exp_nat_mul]
+    apply le_of_eq
+    congr 1
+    simp only [UpperHalfPlane.coe_im]
+    ring
+  rw [IsBoundedAtImInfty, BoundedAtFilter]
+  refine (hq.mul hf).congr_right fun z ↦ ?_
+  simp only [Pi.one_apply, ← Real.exp_add]
+  convert Real.exp_zero using 1
+  ring_nf
+
 /-- Two points of the upper half-plane have the same width-`w` q-parameter exactly when one is
 an integral-width translate of the other. -/
 theorem qParamPuncturedUnitDisc_eq_iff (w : ℝ) (hw : 0 < w) (z z' : ℍ) :
