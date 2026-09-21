@@ -15,10 +15,10 @@ units on the mixed space.
 
 ## Main results
 
-* `TauCeti.NumberField.mixedEmbedding.unitSMul_comm`: two unit actions commute;
-* `TauCeti.NumberField.mixedEmbedding.unitSMul_real_smul`: the unit action commutes with real
+* `TauCeti.NumberField.Units.unitSMul_comm`: two unit actions commute;
+* `TauCeti.NumberField.Units.unitSMul_real_smul`: the unit action commutes with real
   scalar multiplication;
-* `TauCeti.NumberField.mixedEmbedding.measurable_unitSMul`: the action of a fixed unit is
+* `TauCeti.NumberField.Units.measurable_unitSMul`: the action of a fixed unit is
   measurable.
 -/
 
@@ -26,7 +26,7 @@ public section
 
 open NumberField
 
-namespace TauCeti.NumberField.mixedEmbedding
+namespace TauCeti.NumberField.Units
 
 variable {K : Type*} [Field K]
 
@@ -48,4 +48,4 @@ theorem measurable_unitSMul [NumberField K] (u : (𝓞 K)ˣ) :
   simpa only [mixedEmbedding.unitSMul_smul] using
     (continuous_const_mul (mixedEmbedding K (u : K))).measurable
 
-end TauCeti.NumberField.mixedEmbedding
+end TauCeti.NumberField.Units

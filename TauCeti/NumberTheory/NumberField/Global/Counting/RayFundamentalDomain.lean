@@ -67,7 +67,7 @@ S. Lang, *Algebraic Number Theory*, Chapter VI, Section 2.
 public section
 
 open NumberField NumberField.mixedEmbedding
-open TauCeti.NumberField.mixedEmbedding
+open TauCeti.NumberField.Units
 
 open scoped Pointwise
 
