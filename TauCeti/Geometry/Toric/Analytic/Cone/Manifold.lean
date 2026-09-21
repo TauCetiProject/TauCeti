@@ -83,34 +83,6 @@ noncomputable def coneChartedSpace (g : AddGeneratingFamily (dualSemigroup hi σ
   let h := isOpenEmbedding_coneChartAmbient hi hσ hB κ g
   exact h.singletonChartedSpace
 
-/-- The source of the cone chart is the whole affine complex-point space. -/
-theorem coneChartedSpace_chartAt_source
-    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
-    (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
-    (@chartAt ((Fin k → ℂ) × (Fin l → ℂ)) inferInstance
-      (AffineSemigroupComplexPoint (dualSemigroup hi σ)) (affinePointTopology g)
-      (coneChartedSpace hi hσ hB κ g) x).source = Set.univ := by
-  rfl
-
-/-- The chart map of the cone charted-space structure is the ambient mixed-coordinate chart. -/
-theorem coneChartedSpace_chartAt_apply
-    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
-    (x y : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
-    @chartAt ((Fin k → ℂ) × (Fin l → ℂ)) inferInstance
-      (AffineSemigroupComplexPoint (dualSemigroup hi σ)) (affinePointTopology g)
-      (coneChartedSpace hi hσ hB κ g) x y = coneChartAmbient hi hσ hB κ y := by
-  rfl
-
-/-- The chart map of the cone charted-space structure, as a function, is the ambient cone chart. -/
-theorem coe_coneChartedSpace_chartAt
-    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
-    (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
-    ⇑(@chartAt ((Fin k → ℂ) × (Fin l → ℂ)) inferInstance
-      (AffineSemigroupComplexPoint (dualSemigroup hi σ)) (affinePointTopology g)
-      (coneChartedSpace hi hσ hB κ g) x) = coneChartAmbient hi hσ hB κ := by
-  funext y
-  exact coneChartedSpace_chartAt_apply hi hσ hB κ g x y
-
 /-- The target of every chart in the cone charted-space structure is the mixed-coordinate locus. -/
 theorem coneChartedSpace_chartAt_target
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
@@ -172,11 +144,20 @@ theorem contMDiff_id_coneChartedSpace
   · rw [affinePointTopology_eq g g']
     exact @continuous_id _ (affinePointTopology g')
   · intro x y
+    have hsource :
+        (@chartAt ((Fin k → ℂ) × (Fin l → ℂ)) inferInstance
+          (AffineSemigroupComplexPoint (dualSemigroup hi σ)) (affinePointTopology g')
+          (coneChartedSpace hi hσ hB' κ g') y).source = Set.univ := by
+      let _ := affinePointTopology g'
+      exact OpenPartialHomeomorph.singletonChartedSpace_chartAt_source
+        ((isOpenEmbedding_coneChartAmbient hi hσ hB' κ g').toOpenPartialHomeomorph
+          (coneChartAmbient hi hσ hB' κ))
+        (Topology.IsOpenEmbedding.toOpenPartialHomeomorph_source _ _)
     simp only [extChartAt, OpenPartialHomeomorph.extend_source,
       OpenPartialHomeomorph.extend_target', OpenPartialHomeomorph.extend_coe,
       OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, image_id, coneChartedSpace_chartAt_source,
-      coneChartedSpace_chartAt_target, coe_coneChartedSpace_chartAt, id_comp, comp_id,
+      modelWithCornersSelf_coe_symm, image_id, hsource, coneChartedSpace_chartAt_target,
+      Topology.IsOpenEmbedding.singletonChartedSpace_chartAt_eq, id_comp, comp_id,
       preimage_univ, inter_univ]
     let C : Matrix (Fin k) (Fin l) ℤ :=
       Matrix.of fun a c ↦ B'.toMatrix B (Sum.inl (κ.symm a)) (Sum.inr c)
@@ -198,7 +179,7 @@ theorem contMDiff_id_coneChartedSpace
       exact hz
     rw [← basisChangeOpenPartialHomeomorph_coneChartAmbient hi hσ hB hB' κ (e.symm z)]
     congr 1
-    rw [← coe_coneChartedSpace_chartAt hi hσ hB κ g x]
+    rw [← (isOpenEmbedding_coneChartAmbient hi hσ hB κ g).singletonChartedSpace_chartAt_eq]
     exact e.right_inv hz'
 
 end TauCeti.Toric
