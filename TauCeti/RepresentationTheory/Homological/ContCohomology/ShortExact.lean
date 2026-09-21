@@ -68,7 +68,8 @@ sequence and has to name the same two coefficient maps.
   turns a cochain produced by a diagram chase back into a cocycle on `A`.
 * `TauCeti.ContCohomology.DiscreteShortExact.exists_mem_Z1_incl_comp_eq_d0` and
   `exists_mem_Z2_incl_comp_eq_d1`: the cochains on `A` that the two connecting maps are computed
-  from exist. These are the existence statements dual to the two `_apply` theorems below.
+  from exist. These are the existence counterparts to the two `_apply` theorems below, producing
+  the cocycles those theorems take as hypotheses.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply` and
   `explicitDelta1_apply`: the two connecting maps evaluated on representatives, in the shape of
   Mathlib's discrete `groupCohomology.δ₀_apply` and `δ₁_apply`. They hold for an *arbitrary*
@@ -491,12 +492,13 @@ theorem mem_Z1_of_incl_comp_eq_d0 {b : B} {a : G → A}
 omit [ContinuousSMul G A] in
 variable (S) in
 /-- **A preimage of an invariant carries a continuous `1`-cocycle on `A`.** This is the existence
-statement dual to `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply`, which
-describes `δ⁰` once such a cochain is in hand; only the existence is used, the choice being
-immaterial. -/
+counterpart to `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_apply`, which describes
+`δ⁰` once such a cochain is in hand: the cocycle produced here supplies that theorem's hypotheses
+`ha` and `hab`. Only the existence is used, the choice being immaterial. -/
 theorem exists_mem_Z1_incl_comp_eq_d0 {b : B} (hb : S.proj b ∈ H0 G C) :
     ∃ v ∈ Z1 G A, ∀ g : G, S.incl (v g) = g • b - b := by
-  choose v hv using fun g : G => S.exists_incl_eq (proj_d0_eq_zero hb g)
+  obtain ⟨v, -, hv⟩ :=
+    S.exists_continuous_incl_comp_eq (continuous_d0_apply (G := G) b) (proj_d0_eq_zero hb)
   have hvd : ∀ g : G, S.incl (v g) = g • b - b := fun g => (hv g).trans (d0_apply b g)
   exact ⟨v, S.mem_Z1_of_incl_comp_eq_d0 hvd, hvd⟩
 
@@ -643,13 +645,15 @@ theorem mem_Z2_of_incl_comp_eq_d1 {e : G → B} (hc : Continuous e) {a : G × G 
 omit [ContinuousSMul G A] in
 variable (S) in
 /-- **A continuous lift of a continuous `1`-cocycle carries a continuous `2`-cocycle on `A`.**
-This is the existence statement dual to
+This is the existence counterpart to
 `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta1_apply`, which describes `δ¹` once such
-a cochain is in hand. -/
+a cochain is in hand: the cocycle produced here supplies that theorem's hypotheses `ha` and
+`hae`. -/
 theorem exists_mem_Z2_incl_comp_eq_d1 {e : G → B} (hc : Continuous e)
     (he : groupCohomology.IsCocycle₁ fun g => S.proj (e g)) :
     ∃ w ∈ Z2 G A, ∀ g h : G, S.incl (w (g, h)) = g • e h - e (g * h) + e g := by
-  choose w hw using fun q : G × G => S.exists_incl_eq (proj_d1_eq_zero (fun _ => rfl) he q)
+  obtain ⟨w, -, hw⟩ :=
+    S.exists_continuous_incl_comp_eq (continuous_d1_apply hc) (proj_d1_eq_zero (fun _ => rfl) he)
   have hwd : ∀ g h : G, S.incl (w (g, h)) = g • e h - e (g * h) + e g := fun g h =>
     (hw (g, h)).trans (d1_apply e g h)
   exact ⟨w, S.mem_Z2_of_incl_comp_eq_d1 hc hwd, hwd⟩

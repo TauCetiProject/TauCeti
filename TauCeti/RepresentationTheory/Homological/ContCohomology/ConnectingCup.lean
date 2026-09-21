@@ -60,23 +60,6 @@ continuity of a pairing is *not* carried as data: every module in sight is discr
 `continuous_of_discreteTopology`, which is what the cup products of
 `TauCeti/RepresentationTheory/Homological/ContCohomology/CupProduct.lean` are fed here.
 
-Every proof runs on representatives. A class in `H⁰(G, A'')` is lifted to an element of `A`, a
-class in `H¹(G, A'')` to a *continuous* cochain into `A` — which exists because `A''` is discrete,
-by `TauCeti.ContCohomology.exists_continuous_lift` — and the pairing of that lift with a
-representative of the second factor is then a lift of the cup cochain. Its differential, retracted
-to the subobject by `TauCeti.ContCohomology.DiscreteShortExact.exists_mem_Z1_incl_comp_eq_d0` or
-`exists_mem_Z2_incl_comp_eq_d1`, is on the nose the cup of the connecting cochain with the second
-factor. Since `explicitDelta0_apply` and `explicitDelta1_apply` hold for whatever lift a
-computation has in hand, no comparison of choices is ever needed.
-
-The one place a sign appears is `ShortExactPairingSnd.explicitDelta1_explicitCup10`, where the
-`1`-cocycle identity for the first factor cancels all but one term of the differential and leaves
-`-(a ⌣ δ b'')`. In the `𝔽₂`-valued arithmetic applications that sign is `1`.
-
-This implements the "connecting maps, as typed diagrams" milestone of Layer 8 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, whose two theorems are
-the two families below, with the six instances that layer lists as required downstream.
-
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (1.4.3) and
