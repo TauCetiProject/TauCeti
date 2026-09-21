@@ -48,10 +48,10 @@ Frob_q (x_i(u)) = x_i(u ^ q).
 The Frobenius is the Steinberg endomorphism on the nine untwisted families only. On the four
 graph-twisted families the Steinberg endomorphism is a graph automorphism composed with it, and on
 the four half-Frobenius families it is the odd power of an exceptional isogeny whose square is the
-prime-field Frobenius. That isogeny is constructed on the Suzuki and Ree `G₂` families only
-(`TauCeti.SuzukiLieIndex.halfFrobenius` and `TauCeti.ReeG2LieIndex.halfFrobenius`); the Ree `F₄`
-and Tits families so far carry only their Frobenius maps, pending a carrier-level exceptional
-isogeny. The uniform Steinberg endomorphism is not assembled here.
+prime-field Frobenius. The Suzuki and Ree `G₂` family APIs expose such isogenies as
+`TauCeti.SuzukiLieIndex.halfFrobenius` and `TauCeti.ReeG2LieIndex.halfFrobenius`; exceptional
+isogenies remain separate from this Frobenius assembly. The uniform Steinberg endomorphism is not
+assembled here.
 
 Beside it the assembly carries the prime-field Frobenius
 `TauCeti.ValidLieTypeIndex.primeFrobenius`, the `p`-power map for `p` the defining characteristic,
@@ -172,8 +172,8 @@ simple root subgroups is `frobenius_simpleRootSubgroup`.
 It is the Steinberg endomorphism of the nine untwisted families only. On the four graph-twisted
 families the Steinberg endomorphism composes a graph automorphism with it, and on the four
 half-Frobenius families the Steinberg endomorphism is an odd power of an exceptional isogeny whose
-square is the prime-field Frobenius `primeFrobenius`, an isogeny the Suzuki and Ree `G₂` family
-APIs construct and the Ree `F₄` and Tits ones do not yet. -/
+square is the prime-field Frobenius `primeFrobenius`. The Frobenius defined here is distinct from
+those exceptional isogenies, which belong to the family APIs. -/
 def frobenius : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.A _ _, hv⟩ | ⟨.twistedA _ _, hv⟩ | ⟨.B _ _, hv⟩ | ⟨.C _ _, hv⟩ | ⟨.D _ _, hv⟩
   | ⟨.twistedD _ _, hv⟩ | ⟨.E6 _, hv⟩ | ⟨.E7 _, hv⟩ | ⟨.E8 _, hv⟩ | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩
@@ -192,8 +192,8 @@ its siblings; its action on the simple root subgroups is `primeFrobenius_simpleR
 The `q`-power Frobenius is its `e`-th power, for `e` the field exponent the index records, by
 `frobenius_eq_primeFrobenius_pow`, so the two agree on an index of prime field order. On the
 Suzuki and Ree `G₂` constructors it is the map that the family's exceptional isogeny
-(`TauCeti.SuzukiLieIndex.halfFrobenius`, `TauCeti.ReeG2LieIndex.halfFrobenius`) squares to; the
-Ree `F₄` and Tits families have no such isogeny yet. -/
+(`TauCeti.SuzukiLieIndex.halfFrobenius`, `TauCeti.ReeG2LieIndex.halfFrobenius`) squares to.
+Exceptional isogenies are not part of this uniform API. -/
 def primeFrobenius : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.A _ _, hv⟩ | ⟨.twistedA _ _, hv⟩ | ⟨.B _ _, hv⟩ | ⟨.C _ _, hv⟩ | ⟨.D _ _, hv⟩
   | ⟨.twistedD _ _, hv⟩ | ⟨.E6 _, hv⟩ | ⟨.E7 _, hv⟩ | ⟨.E8 _, hv⟩ | ⟨.F4 _, hv⟩ | ⟨.G2 _, hv⟩
