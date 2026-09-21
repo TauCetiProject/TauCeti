@@ -33,7 +33,7 @@ characters.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.RayClassCharacter.ext_onIdeals`: a ray class character is
+* `TauCeti.GlobalNumberFields.RayClassCharacter.ext`: a ray class character is
   determined by its values on integral ideals;
 * `TauCeti.GlobalNumberFields.RayClassCharacter.induced_injective`: increasing the modulus does
   not identify distinct characters;
@@ -77,7 +77,7 @@ theorem onIdeals_apply (χ : RayClassCharacter 𝔪) (I : integralIdealsPrimeTo 
 
 /-- A ray class character is determined by its values on integral ideals prime to the modulus. -/
 @[ext]
-theorem ext_onIdeals {χ ψ : RayClassCharacter 𝔪}
+theorem ext {χ ψ : RayClassCharacter 𝔪}
     (h : ∀ I : integralIdealsPrimeTo 𝔪, χ.onIdeals I = ψ.onIdeals I) : χ = ψ := by
   apply MonoidHom.ext
   intro c
@@ -116,6 +116,22 @@ theorem induced_one (h : 𝔪 ∣ 𝔫) : (1 : RayClassCharacter 𝔪).induced h
   intro c
   simp
 
+/-- Pullback of ray class characters preserves multiplication. -/
+@[simp]
+theorem induced_mul (h : 𝔪 ∣ 𝔫) (χ ψ : RayClassCharacter 𝔪) :
+    (χ * ψ).induced h = χ.induced h * ψ.induced h := by
+  apply MonoidHom.ext
+  intro c
+  simp
+
+/-- Pullback of ray class characters preserves inverses. -/
+@[simp]
+theorem induced_inv (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
+    χ⁻¹.induced h = (χ.induced h)⁻¹ := by
+  apply MonoidHom.ext
+  intro c
+  simp
+
 /-- Increasing the modulus does not identify distinct ray class characters. -/
 theorem induced_injective (h : 𝔪 ∣ 𝔫) :
     Function.Injective (induced h : RayClassCharacter 𝔪 → RayClassCharacter 𝔫) := by
@@ -138,13 +154,9 @@ theorem induced_eq_one_iff (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
   · rintro rfl
     exact induced_one h
 
-/-- A nontrivial character remains nontrivial when induced to a larger modulus. -/
-theorem induced_ne_one (h : 𝔪 ∣ 𝔫) {χ : RayClassCharacter 𝔪} (hχ : χ ≠ 1) :
-    χ.induced h ≠ 1 := by
-  exact fun h' ↦ hχ ((induced_eq_one_iff h χ).mp h')
-
 /-- Change of modulus commutes with evaluation on integral ideals: the induced character at an
 ideal prime to `𝔫` is the original character at the same ideal viewed as prime to `𝔪`. -/
+@[simp]
 theorem onIdeals_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
     (I : integralIdealsPrimeTo 𝔫) :
     (χ.induced h).onIdeals I = χ.onIdeals (integralIdealsPrimeToInclusion h I) := by
