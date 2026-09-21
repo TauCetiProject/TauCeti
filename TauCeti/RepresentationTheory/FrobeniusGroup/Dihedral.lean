@@ -20,10 +20,12 @@ in no conjugate of the complement, together with the identity, form a subgroup
 It is the rotation subgroup, of order `n`. The identification is immediate from
 `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`, because the semidirect decomposition
 `DihedralGroup n = C_n ⋊ C₂` is already available; the content is that the character-theoretic
-construction, which never mentions rotations, lands on them. Compare the degree-`3` case in
-`TauCeti/RepresentationTheory/FrobeniusGroup/SymmetricThree.lean`, which is the degree-`3` member
-of this family seen through the isomorphism `DihedralGroup 3 ≅ S₃` rather than through the
-dihedral presentation.
+construction, which never mentions rotations, lands on them. Compare
+`TauCeti/RepresentationTheory/FrobeniusGroup/SymmetricThree.lean`, which settles the degree-`3`
+member of this family in the permutation presentation of the same abstract group: it works
+directly with `Equiv.Perm (Fin 3)`, a point stabilizer and the alternating subgroup, in place of
+`DihedralGroup 3`, a reflection subgroup and the rotations, and no isomorphism between the two
+presentations is used.
 
 Reading the count off in this family also checks the general divisibility
 `|H| ∣ |N| - 1` of `TauCeti.card_dvd_card_frobeniusKernelSubgroup_sub_one`: it says `2 ∣ n - 1`,
@@ -32,9 +34,8 @@ which is oddness again.
 ## Main results
 
 * `TauCeti.frobeniusKernelSubgroup_zpowers_sr`: **the Frobenius kernel of a reflection subgroup of
-  an odd dihedral group is the rotation subgroup**, with
-  `TauCeti.coe_frobeniusKernelSubgroup_zpowers_sr` the same statement about the underlying set of
-  elements lying in no conjugate of the complement.
+  an odd dihedral group is the rotation subgroup**, with `TauCeti.frobeniusKernel_zpowers_sr` the
+  same statement about the underlying set of elements lying in no conjugate of the complement.
 * `TauCeti.card_frobeniusKernelSubgroup_zpowers_sr`: that kernel has `n` elements.
 
 ## References
@@ -58,14 +59,14 @@ property alone, and the rotation subgroup is a normal complement, so the two agr
 theorem frobeniusKernelSubgroup_zpowers_sr (hn : Odd n) (i : ZMod n) :
     frobeniusKernelSubgroup (isTISubgroup_zpowers_sr hn i) = dihedralRotations n :=
   frobeniusKernelSubgroup_eq_of_isComplement' _
-    (isComplement'_dihedralRotations_zpowers_sr hn i)
+    (isComplement'_dihedralRotations_zpowers_sr i)
 
 /-- **The elements of an odd dihedral group lying in no conjugate of a reflection subgroup are,
 together with the identity, exactly the rotations.** This is
 `TauCeti.frobeniusKernelSubgroup_zpowers_sr` read on the underlying set, where the Frobenius
 kernel is defined. -/
 @[simp]
-theorem coe_frobeniusKernelSubgroup_zpowers_sr (hn : Odd n) (i : ZMod n) :
+theorem frobeniusKernel_zpowers_sr (hn : Odd n) (i : ZMod n) :
     frobeniusKernel (Subgroup.zpowers (DihedralGroup.sr i)) = (dihedralRotations n : Set _) := by
   rw [← coe_frobeniusKernelSubgroup (isTISubgroup_zpowers_sr hn i),
     frobeniusKernelSubgroup_zpowers_sr hn i]
