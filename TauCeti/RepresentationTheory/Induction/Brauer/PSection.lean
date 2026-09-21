@@ -17,8 +17,9 @@ invertible.
 Brauer's induction theorem, which writes every character of `G` as an integral combination of
 characters induced from elementary subgroups, is proved one prime at a time: for each `p` one
 needs a function on `G` with natural-number values, none divisible by `p`, that is a combination
-of characters induced from `p`-elementary subgroups. The coefficients of that combination are not
-integers but lie in a ring `A` of cyclotomic integers, and the descent from `A` to `ℤ` is a
+of characters induced from `p`-elementary subgroups. The coefficients of that combination need not
+be integers; they lie in any subring `A ≤ k` containing the required roots of unity. The intended
+later specialization takes `A` to be a ring of cyclotomic integers, from which descent to `ℤ` is a
 separate step. This file constructs that function.
 
 The building block is the `p`-section indicator of a `p`-regular element `s`
@@ -68,13 +69,17 @@ open _root_.Subgroup
 
 universe u v
 
-variable {k : Type u} {G : Type v} [Field k] [Group G]
+variable {k : Type u} {G : Type v} [Group G]
 
 section Section
 
 variable {p : ℕ} [Fact p.Prime] {s : G} {P : Sylow p (centralizer ({s} : Set G))}
 
 /-! ### The section indicator as a pullback -/
+
+section Pullback
+
+variable [Zero k] [One k]
 
 open scoped Classical in
 /-- **The `p`-section indicator is a pullback.** It is the indicator of `s` in the cyclic group
@@ -85,8 +90,11 @@ theorem pSectionIndicator_eq_comp_pFreePartHom (hs : ¬ p ∣ orderOf s) :
   funext x
   simp [Pi.single_apply, Subtype.ext_iff]
 
+end Pullback
+
 /-! ### The scaled section indicator as a combination of characters -/
 
+variable [Field k]
 variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 /-- **The `p`-section indicator, scaled by the order of `s`, is an `A`-combination of characters
@@ -123,7 +131,7 @@ theorem orderOf_nsmul_indPSectionIndicator_mem_span_indVirtualCharacters (A : Su
     orderOf s • indPSectionIndicator k s P ∈
       Submodule.span A
         (ClassFunction.indVirtualCharacters k G (fun S => IsPElementary p S) : Set (G → k)) := by
-  rw [indPSectionIndicator_def, ← indClassFunAddHom_apply, ← map_nsmul, indClassFunAddHom_apply]
+  rw [indPSectionIndicator, ← indClassFunAddHom_apply, ← map_nsmul, indClassFunAddHom_apply]
   exact ClassFunction.indClassFun_mem_span_indVirtualCharacters A
     (isPElementary_pElementaryOfSylow s P hs)
     (orderOf_nsmul_pSectionIndicator_mem_span_virtualCharacters A hA hs)
@@ -132,6 +140,7 @@ end Section
 
 /-! ### A function prime to `p` everywhere -/
 
+variable [Field k]
 variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 variable (k) in
@@ -172,7 +181,7 @@ theorem exists_mem_span_indVirtualCharacters_isPElementary_not_dvd (p : ℕ) [Fa
     · intro h
       rcases (Nat.Prime.dvd_mul Fact.out).1 h with h | h
       · exact hT _ hmem h
-      · exact not_dvd_pSectionCosetCard_of_isConj (hT _ hmem) hC₀ h
+      · exact not_dvd_pSectionCosetCard_of_isConj hC₀ h
     · intro C _ hC
       rw [pSectionCosetCard_eq_zero_of_not_isConj fun h => hC ((hrep C _).1 h).symm, mul_zero]
     · exact fun h => absurd hmem h

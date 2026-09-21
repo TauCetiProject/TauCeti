@@ -605,6 +605,21 @@ theorem coe_pFreePartHom_apply [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
     (x : ↥(pElementaryOfSylow s P)) : (pFreePartHom s P hs x : G) = pFreePart p (x : G) :=
   (rfl)
 
+/-- The `p`-free-part projection is the identity on the cyclic factor. -/
+@[simp]
+theorem pFreePartHom_inclusion_apply [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
+    (c : ↥(zpowers s)) :
+    pFreePartHom s P hs (Subgroup.inclusion (zpowers_le_pElementaryOfSylow s P) c) = c := by
+  apply Subtype.ext
+  exact (eq_pFreePart Fact.out (Commute.one_right (c : G)) (mul_one (c : G))
+    (fun h => hs (h.trans (orderOf_dvd_of_mem_zpowers c.2))) (k := 0) (by simp)).symm
+
+/-- The `p`-free-part projection maps onto the cyclic factor. -/
+theorem pFreePartHom_surjective [Fact p.Prime] (hs : ¬ p ∣ orderOf s) :
+    Function.Surjective (pFreePartHom s P hs) := fun c =>
+  ⟨Subgroup.inclusion (zpowers_le_pElementaryOfSylow s P) c,
+    pFreePartHom_inclusion_apply s P hs c⟩
+
 end OfSylow
 
 /-! ### Finite-order elements

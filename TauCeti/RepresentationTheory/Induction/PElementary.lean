@@ -126,14 +126,9 @@ theorem pSectionIndicator_mem_classFunction :
 
 /-- **The class function of `G` induced from the `p`-section indicator.**  Its values are computed
 by `TauCeti.indPSectionIndicator_eq_pSectionCosetCard`. -/
-noncomputable def indPSectionIndicator (k : Type u) [Semiring k] [Finite G] (s : G)
+@[expose] noncomputable def indPSectionIndicator (k : Type u) [Semiring k] [Finite G] (s : G)
     (P : Sylow p (centralizer ({s} : Set G))) : G → k :=
   indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P)
-
-/-- The induced `p`-section indicator is the induction of the `p`-section indicator. -/
-theorem indPSectionIndicator_def [Finite G] :
-    indPSectionIndicator k s P = indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P) :=
-  (rfl)
 
 /-- The induced `p`-section indicator is a class function of `G`. -/
 theorem indPSectionIndicator_mem_classFunction [Finite G] :
@@ -152,6 +147,32 @@ noncomputable def pSectionCosetCard (s : G)
   Nat.card {t : G ⧸ pElementaryOfSylow s P //
     (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t = s ∧
       (Quotient.out t)⁻¹ * pPart p x * Quotient.out t ∈ pElementaryOfSylow s P}
+
+/-- Whether a coset contributes to `TauCeti.pSectionCosetCard` is independent of its chosen
+representative. -/
+private theorem pSectionCosetCondition_iff_of_mk_eq {a b g g' : G}
+    (hgg : (g : G ⧸ pElementaryOfSylow s P) = (g' : G ⧸ pElementaryOfSylow s P)) :
+    (g⁻¹ * a * g = s ∧ g⁻¹ * b * g ∈ pElementaryOfSylow s P) ↔
+      (g'⁻¹ * a * g' = s ∧ g'⁻¹ * b * g' ∈ pElementaryOfSylow s P) := by
+  have key : ∀ {u v : G},
+      (u : G ⧸ pElementaryOfSylow s P) = (v : G ⧸ pElementaryOfSylow s P) →
+      u⁻¹ * a * u = s ∧ u⁻¹ * b * u ∈ pElementaryOfSylow s P →
+      v⁻¹ * a * v = s ∧ v⁻¹ * b * v ∈ pElementaryOfSylow s P := by
+    intro u v huv h
+    have hd : u⁻¹ * v ∈ pElementaryOfSylow s P := QuotientGroup.eq.1 huv
+    have hv : u * (u⁻¹ * v) = v := by group
+    have hcomm : (u⁻¹ * v) * s = s * (u⁻¹ * v) :=
+      mem_centralizer_singleton_iff.1 (pElementaryOfSylow_le_centralizer s P hd)
+    refine ⟨?_, ?_⟩
+    · calc
+        v⁻¹ * a * v = (u⁻¹ * v)⁻¹ * (u⁻¹ * a * u) * (u⁻¹ * v) := by rw [← hv]; group
+        _ = (u⁻¹ * v)⁻¹ * s * (u⁻¹ * v) := by rw [h.1]
+        _ = s := by rw [mul_assoc, ← hcomm, inv_mul_cancel_left]
+    · have heq : v⁻¹ * b * v =
+          (u⁻¹ * v)⁻¹ * (u⁻¹ * b * u) * (u⁻¹ * v) := by rw [← hv]; group
+      rw [heq]
+      exact mul_mem (mul_mem (inv_mem hd) h.2) hd
+  exact ⟨key hgg, key hgg.symm⟩
 
 /-- **A conjugate of `x` lies in the `p`-section of `s`** exactly when the conjugating element
 carries the `p`-free part of `x` to `s` and the `p`-part of `x` into the subgroup.  The two
@@ -372,20 +393,54 @@ theorem not_dvd_pSectionCosetCard [Finite G] [Fact p.Prime] {x : G}
   exact Nat.modEq_zero_iff_dvd.1
     ((pSectionCosetCard_modEq hx).symm.trans (Nat.modEq_zero_iff_dvd.2 hdvd))
 
-/-- **The count is a class function of `x`**: it is the induced `p`-section indicator read with
-natural-number coefficients, and induced class functions are class functions. -/
-theorem pSectionCosetCard_conj [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s) (c x : G) :
+/-- **The count is a class function of `x`**: left multiplication by the conjugating element
+gives a bijection between the corresponding sets of contributing cosets. -/
+theorem pSectionCosetCard_conj [Finite G] (c x : G) :
     pSectionCosetCard s P (c * x * c⁻¹) = pSectionCosetCard s P x := by
-  have h := ClassFunction.mem_iff.1
-    (indPSectionIndicator_mem_classFunction (k := ℕ) (s := s) (P := P)) x c
-  simpa only [indPSectionIndicator_eq_pSectionCosetCard hs, Nat.cast_id] using h
+  rw [pSectionCosetCard, pSectionCosetCard]
+  let e : (G ⧸ pElementaryOfSylow s P) ≃ (G ⧸ pElementaryOfSylow s P) :=
+    MulAction.toPerm c
+  refine Nat.card_congr (Equiv.subtypeEquiv e (fun t => ?_)).symm
+  have hmk : ((c * Quotient.out t : G) : G ⧸ pElementaryOfSylow s P) =
+      ((e t).out : G ⧸ pElementaryOfSylow s P) := by
+    rw [← smul_eq_mul, MulAction.Quotient.mk_smul_out, QuotientGroup.out_eq']
+    rfl
+  constructor
+  · intro h
+    apply (pSectionCosetCondition_iff_of_mk_eq (s := s) (P := P) hmk).1
+    constructor
+    · rw [pFreePart_conj]
+      calc
+        (c * Quotient.out t)⁻¹ * (c * pFreePart p x * c⁻¹) * (c * Quotient.out t) =
+            (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t := by group
+        _ = s := h.1
+    · rw [pPart_conj]
+      have heq : (c * Quotient.out t)⁻¹ * (c * pPart p x * c⁻¹) *
+          (c * Quotient.out t) = (Quotient.out t)⁻¹ * pPart p x * Quotient.out t := by group
+      rw [heq]
+      exact h.2
+  · intro h
+    have h' := (pSectionCosetCondition_iff_of_mk_eq (s := s) (P := P) hmk).2 h
+    constructor
+    · rw [pFreePart_conj] at h'
+      calc
+        (Quotient.out t)⁻¹ * pFreePart p x * Quotient.out t =
+            (c * Quotient.out t)⁻¹ * (c * pFreePart p x * c⁻¹) *
+              (c * Quotient.out t) := by group
+        _ = s := h'.1
+    · rw [pPart_conj] at h'
+      have heq : (Quotient.out t)⁻¹ * pPart p x * Quotient.out t =
+          (c * Quotient.out t)⁻¹ * (c * pPart p x * c⁻¹) *
+            (c * Quotient.out t) := by group
+      rw [heq]
+      exact h'.2
 
 /-- **The count is prime to `p` on every conjugate of the `p`-section of `s`**: the class-function
 form of `TauCeti.not_dvd_pSectionCosetCard`. -/
-theorem not_dvd_pSectionCosetCard_of_isConj [Finite G] [Fact p.Prime] (hs : ¬ p ∣ orderOf s)
+theorem not_dvd_pSectionCosetCard_of_isConj [Finite G] [Fact p.Prime]
     {x : G} (hx : IsConj (pFreePart p x) s) : ¬ p ∣ pSectionCosetCard s P x := by
   obtain ⟨c, hc⟩ := isConj_iff.1 hx
-  rw [← pSectionCosetCard_conj hs c x]
+  rw [← pSectionCosetCard_conj c x]
   exact not_dvd_pSectionCosetCard (by rw [pFreePart_conj, hc])
 
 /-- **The value of the induced `p`-section indicator at `s`.** -/
