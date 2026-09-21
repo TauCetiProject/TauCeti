@@ -38,8 +38,8 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
 
 ## Main declarations
 
-* `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm`: the pointwise absorption estimate
-  shared by the solution and subsolution forms of Caccioppoli's inequality.
+* `TauCeti.PDE.W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise`: the common
+  integration and absorption step for Caccioppoli inequalities.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
 
@@ -68,52 +68,66 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
-/-- The pointwise absorption estimate behind Caccioppoli's inequality. For a matrix with
-quadratic form bounded below by `λ > 0` and bilinear form bounded by `Λ`, a scalar `z`
-(the cutoff), a scalar `w` (the function), and vectors `g` and `q`, the cross term in
-`A(g, z²g + 2zwq)` is absorbed by half of the elliptic term and a multiple of `w²‖q‖²`.
-
-This algebraic form is used both for weak solutions and for positive truncations of weak
-subsolutions. -/
-theorem mul_sq_mul_norm_sq_le_matrixBilinearForm {A : Matrix ι ι ℝ} (hlam : 0 < lam)
-    (hlower : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hupper : ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (z w : ℝ) (g q : EuclideanSpace ℝ ι) :
-    lam * (z ^ 2 * ‖g‖ ^ 2) ≤
-      matrixBilinearForm A (z • (z • g + w • q) + (z * w) • q) g
-        + lam / 2 * (z ^ 2 * ‖g‖ ^ 2) + 2 * Lam ^ 2 / lam * (‖q‖ ^ 2 * w ^ 2) := by
-  have hexp : matrixBilinearForm A (z • (z • g + w • q) + (z * w) • q) g =
-      z ^ 2 * A.toQuadraticForm' g + 2 * (z * w) * (q ⬝ᵥ (A *ᵥ g)) := by
-    rw [← matrixBilinearForm_self, ← matrixBilinearForm_apply]
-    simp only [map_add, map_smul, _root_.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
-    ring
-  have hq := hlower g
-  have hcross : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖ := hupper q g
-  -- Young's inequality `2 X Y ≤ (λ/2) X² + (2/λ) Y²` for `X = |z| ‖g‖` and `Y = Λ |w| ‖q‖`.
-  have hyoung : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
-      lam / 2 * (|z| * ‖g‖) ^ 2 + 2 / lam * (Lam * |w| * ‖q‖) ^ 2 := by
-    have hsq := sq_nonneg (lam / 2 * (|z| * ‖g‖) - Lam * |w| * ‖q‖)
-    have h2 : 2 / lam * (lam / 2 * (|z| * ‖g‖) - Lam * |w| * ‖q‖) ^ 2 =
-        lam / 2 * (|z| * ‖g‖) ^ 2 + 2 / lam * (Lam * |w| * ‖q‖) ^ 2
-          - 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by
+omit [DecidableEq ι] in
+/-- Integrate a pointwise Caccioppoli estimate and absorb half of its energy term. This is
+the common measure-theoretic step for the solution and subsolution forms of the inequality;
+the caller supplies the energy density and its comparison with the forcing term. -/
+theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
+    (w : W1p mu Omega 2) {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ}
+    (hψM : ∀ x, |ψ x| ≤ M) (hgradM : ∀ x, ‖∇ ψ x‖ ≤ M)
+    {e force : EuclideanSpace ℝ ι → ℝ} (he : Integrable e (mu.restrict Omega))
+    (hpointwise : ∀ᵐ x ∂mu.restrict Omega,
+      lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ≤
+        e x + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
+          + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2))
+    (hforce : ∫ x in Omega, e x ∂mu ≤ ∫ x in Omega, force x ∂mu) :
+    ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+      (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
+        + 2 / lam * ∫ x in Omega, force x ∂mu := by
+  have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
+    (hψ.continuous.pow 2).aestronglyMeasurable
+  have hgrad2 : AEStronglyMeasurable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) :=
+    ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable
+  have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
+    (W1p.integrable_norm_gradient_sq w).bdd_mul hψ2 (c := M ^ 2) (Filter.Eventually.of_forall
+      fun x => by
+        rw [Real.norm_eq_abs, abs_pow]
+        exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2)
+  have hI2 : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
+    (W1p.integrable_value_sq w).bdd_mul hgrad2 (c := M ^ 2) (Filter.Eventually.of_forall
+      fun x => by
+        rw [Real.norm_eq_abs, abs_pow, abs_norm]
+        exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)
+  have hint : ∫ x in Omega, lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ∂mu ≤
+      ∫ x in Omega, (e x + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
+        + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2)) ∂mu :=
+    integral_mono_ae (hI1.const_mul lam) ((he.add (hI1.const_mul _)).add (hI2.const_mul _))
+      hpointwise
+  rw [integral_const_mul, integral_add, integral_add, integral_const_mul,
+    integral_const_mul] at hint
+  rotate_left
+  · exact he
+  · exact hI1.const_mul _
+  · exact he.add (hI1.const_mul _)
+  · exact hI2.const_mul _
+  set X := ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
+  set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
+  set F := ∫ x in Omega, force x ∂mu
+  have hmain : lam * X ≤ F + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
+    calc
+      lam * X ≤ (∫ x in Omega, e x ∂mu) + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
+        simpa [X, Y] using hint
+      _ ≤ F + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
+        gcongr
+  have hX : X = 2 / lam * (lam / 2 * X) := by field_simp
+  rw [hX]
+  calc
+    2 / lam * (lam / 2 * X) ≤ 2 / lam * (F + 2 * Lam ^ 2 / lam * Y) := by
+      gcongr
+      linarith
+    _ = (2 * Lam / lam) ^ 2 * Y + 2 / lam * F := by
       field_simp
       ring
-    nlinarith [mul_nonneg (div_nonneg zero_le_two hlam.le) hsq]
-  have hzw : |2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))| ≤ 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by
-    rw [abs_mul, abs_mul, abs_mul, abs_two]
-    calc 2 * (|z| * |w|) * |q ⬝ᵥ (A *ᵥ g)| ≤ 2 * (|z| * |w|) * (Lam * ‖q‖ * ‖g‖) := by
-          gcongr
-      _ = 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by ring
-  have hsqz : |z| ^ 2 = z ^ 2 := sq_abs z
-  have hsqw : |w| ^ 2 = w ^ 2 := sq_abs w
-  have hyoung' : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
-      lam / 2 * (z ^ 2 * ‖g‖ ^ 2) + 2 * Lam ^ 2 / lam * (‖q‖ ^ 2 * w ^ 2) := by
-    refine hyoung.trans_eq ?_
-    rw [mul_pow, mul_pow, mul_pow, hsqz, hsqw]
-    ring
-  rw [hexp]
-  nlinarith [neg_abs_le (2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))), sq_nonneg z,
-    mul_le_mul_of_nonneg_left hq (sq_nonneg z)]
 
 /-- **The Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on `Ω` with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, in
@@ -149,21 +163,6 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
   simp only at heq
   have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
     ae_restrict_mem Omega.isOpen.measurableSet
-  -- The two nonnegative integrands, and the energy density, are integrable.
-  have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
-    (hψ.continuous.pow 2).aestronglyMeasurable
-  have hgrad2 : AEStronglyMeasurable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) :=
-    ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable
-  have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_sq u).bdd_mul hψ2 (c := M ^ 2) (Filter.Eventually.of_forall
-      fun x => by
-        rw [Real.norm_eq_abs, abs_pow]
-        exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2)
-  have hI2 : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq u).bdd_mul hgrad2 (c := M ^ 2) (Filter.Eventually.of_forall
-      fun x => by
-        rw [Real.norm_eq_abs, abs_pow, abs_norm]
-        exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)
   have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
     ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u v
@@ -177,25 +176,12 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
     filter_upwards [hmem, W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
       W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' u,
       W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' u] with x hx hgv hgw hvw
-    have key := mul_sq_mul_norm_sq_le_matrixBilinearForm hlam (h.lower_bound hx)
-      (h.upper_bound hx) (ψ x)
+    have key := mul_sq_mul_norm_sq_le_matrixBilinearForm_add hlam (ψ x)
       (W1p.value u x) (W1p.gradient u x) (∇ ψ x)
+      (h.lower_bound hx (W1p.gradient u x))
+      (h.upper_bound hx (∇ ψ x) (W1p.gradient u x))
     rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgw, hvw]
     simpa [driftForm_apply, massForm_apply, smul_eq_mul] using key
-  -- Integrate the pointwise estimate.
-  have hint : ∫ x in Omega, lam * (ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2) ∂mu ≤
-      ∫ x in Omega, (energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField v x)
-          + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2)
-          + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2)) ∂mu :=
-    integral_mono_ae (hI1.const_mul lam) ((hE.add (hI1.const_mul _)).add (hI2.const_mul _)) hpt
-  rw [integral_const_mul, integral_add, integral_add, integral_const_mul,
-    integral_const_mul] at hint
-  rotate_left
-  · exact hE
-  · exact hI1.const_mul _
-  · exact hE.add (hI1.const_mul _)
-  · exact hI2.const_mul _
   -- The energy integral is `∫_Ω ψ² f u`, by the weak equation.
   have hF : ∫ x in Omega, energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
         ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField v x) ∂mu =
@@ -206,19 +192,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
       W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' u] with x hvv hvw
     rw [hvv, hvw, smul_eq_mul, smul_eq_mul]
     ring
-  rw [hF] at hint
-  -- Absorb half of the left-hand side.
-  set X := ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient u x‖ ^ 2 ∂mu
-  set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ 2 ∂mu
-  set F := ∫ x in Omega, ψ x ^ 2 * f x * W1p.value u x ∂mu
-  have hX : X = 2 / lam * (lam / 2 * X) := by field_simp
-  rw [hX]
-  calc 2 / lam * (lam / 2 * X) ≤ 2 / lam * (F + 2 * Lam ^ 2 / lam * Y) := by
-        gcongr
-        linarith
-    _ = (2 * Lam / lam) ^ 2 * Y + 2 / lam * F := by
-        field_simp
-        ring
+  exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam u hψ hψM hgradM hE hpt hF.le
 
 end PDE
 

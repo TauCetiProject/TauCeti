@@ -46,6 +46,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
+* `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
+  estimate used in Caccioppoli inequalities.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
   the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
@@ -162,6 +164,49 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
+
+/-- A pointwise absorption estimate for matrix bilinear forms. If the quadratic form is
+bounded below at `g` by `λ ‖g‖²` and the bilinear form at `(q, g)` is bounded by
+`Λ ‖q‖ ‖g‖`, then the cross term in `A(g, z²g + 2zwq)` is absorbed by half of the
+elliptic term and a multiple of `w²‖q‖²`. -/
+theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add {A : Matrix n n ℝ} {lam Lam : ℝ}
+    (hlam : 0 < lam) (z w : ℝ) (g q : EuclideanSpace ℝ n)
+    (hlower : lam * ‖g‖ ^ 2 ≤ A.toQuadraticForm' g)
+    (hupper : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖) :
+    lam * (z ^ 2 * ‖g‖ ^ 2) ≤
+      matrixBilinearForm A (z • (z • g + w • q) + (z * w) • q) g
+        + lam / 2 * (z ^ 2 * ‖g‖ ^ 2) + 2 * Lam ^ 2 / lam * (‖q‖ ^ 2 * w ^ 2) := by
+  have hexp : matrixBilinearForm A (z • (z • g + w • q) + (z * w) • q) g =
+      z ^ 2 * A.toQuadraticForm' g + 2 * (z * w) * (q ⬝ᵥ (A *ᵥ g)) := by
+    rw [← matrixBilinearForm_self, ← matrixBilinearForm_apply]
+    simp only [map_add, map_smul, _root_.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
+    ring
+  have hcross : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖ := hupper
+  -- Young's inequality `2 X Y ≤ (λ/2) X² + (2/λ) Y²` for `X = |z| ‖g‖` and `Y = Λ |w| ‖q‖`.
+  have hyoung : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
+      lam / 2 * (|z| * ‖g‖) ^ 2 + 2 / lam * (Lam * |w| * ‖q‖) ^ 2 := by
+    have hsq := sq_nonneg (lam / 2 * (|z| * ‖g‖) - Lam * |w| * ‖q‖)
+    have h2 : 2 / lam * (lam / 2 * (|z| * ‖g‖) - Lam * |w| * ‖q‖) ^ 2 =
+        lam / 2 * (|z| * ‖g‖) ^ 2 + 2 / lam * (Lam * |w| * ‖q‖) ^ 2
+          - 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by
+      field_simp
+      ring
+    nlinarith [mul_nonneg (div_nonneg zero_le_two hlam.le) hsq]
+  have hzw : |2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))| ≤ 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by
+    rw [abs_mul, abs_mul, abs_mul, abs_two]
+    calc 2 * (|z| * |w|) * |q ⬝ᵥ (A *ᵥ g)| ≤ 2 * (|z| * |w|) * (Lam * ‖q‖ * ‖g‖) := by
+          gcongr
+      _ = 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) := by ring
+  have hsqz : |z| ^ 2 = z ^ 2 := sq_abs z
+  have hsqw : |w| ^ 2 = w ^ 2 := sq_abs w
+  have hyoung' : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
+      lam / 2 * (z ^ 2 * ‖g‖ ^ 2) + 2 * Lam ^ 2 / lam * (‖q‖ ^ 2 * w ^ 2) := by
+    refine hyoung.trans_eq ?_
+    rw [mul_pow, mul_pow, mul_pow, hsqz, hsqw]
+    ring
+  rw [hexp]
+  nlinarith [neg_abs_le (2 * (z * w) * (q ⬝ᵥ (A *ᵥ g))), sq_nonneg z,
+    mul_le_mul_of_nonneg_left hlower (sq_nonneg z)]
 
 omit [DecidableEq n] in
 /-- The principal coefficient matrix-to-bilinear-form map as a continuous linear map. -/
