@@ -32,8 +32,10 @@ construction in `Analysis/InnerProductSpace/OfNorm.lean` recovers an inner produ
 a real or complex space, using continuity. Neither applies to a function on a bare abelian group.
 
 The elementary helpers need less: evenness holds without any condition on doubling, and
-natural and integer quadratic scaling hold for arbitrary additive groups `M` and `N`,
-provided `f 0 = 0`. Thus scaling also applies to targets with `2`-torsion.
+zero and evenness need only a left-cancellative additive monoid as target. Natural quadratic
+scaling needs only a right-cancellative additive monoid as target, while integer scaling needs
+an additive group. Both scaling results allow arbitrary additive groups as sources and assume
+`f 0 = 0`. Thus scaling also applies to targets with `2`-torsion.
 
 ## The quadratic-map construction requires absence of `2`-torsion
 
@@ -62,7 +64,7 @@ For a torsion-free codomain it is one term: `smul_right_injective N two_ne_zero`
 * `TauCeti.QuadraticMap.polar_add_left_of_parallelogram` and
   `polar_zsmul_left_of_parallelogram`: the polarisation is additive and `ℤ`-linear on the left.
 * `TauCeti.QuadraticMap.map_nsmul_of_parallelogram`: `f (n • x) = n ^ 2 • f x` for `n : ℕ`,
-  assuming `f 0 = 0`, for arbitrary additive groups `M` and `N`.
+  assuming `f 0 = 0`, for an additive group `M` and right-cancellative additive monoid `N`.
 * `TauCeti.QuadraticMap.map_zsmul_of_parallelogram`: `f (n • x) = n ^ 2 • f x` for `n : ℤ`,
   assuming `f 0 = 0`, without commutativity of either group or injectivity of doubling on `N`.
 * `TauCeti.QuadraticMap.ofParallelogram`: `f` as a `QuadraticMap ℤ M N`, with the polarisation as
@@ -100,7 +102,7 @@ open _root_.QuadraticMap
 
 section MapZero
 
-variable {M N : Type*} [SubNegZeroMonoid M] [AddGroup N] {f : M → N}
+variable {M N : Type*} [SubNegZeroMonoid M] [AddLeftCancelMonoid N] {f : M → N}
   (htwo : IsSMulRegular N (2 : ℕ))
   (hf : ∀ x y : M, f (x + y) + f (x - y) = 2 • f x + 2 • f y)
 
@@ -124,16 +126,17 @@ theorem map_neg_of_parallelogram (x : M) : f (-x) = f x := by
 
 end MapZero
 
-section IntSmul
+section NatSmul
 
-variable {M N : Type*} [AddGroup M] [AddGroup N] {f : M → N}
+variable {M N : Type*} [AddGroup M] [AddRightCancelMonoid N] {f : M → N}
   (hzero : f 0 = 0)
   (hf : ∀ x y : M, f (x + y) + f (x - y) = 2 • f x + 2 • f y)
 
 include hzero hf
 
 /-- **Quadraticity**: a parallelogram-law function that preserves zero satisfies
-`f (n • x) = n ^ 2 • f x` for a natural number `n`, even for noncommutative additive groups. -/
+`f (n • x) = n ^ 2 • f x` for a natural number `n`, with an additive group source and a
+right-cancellative additive monoid target. -/
 theorem map_nsmul_of_parallelogram (n : ℕ) (x : M) :
     f (n • x) = (n * n) • f x := by
   induction n using Nat.twoStepInduction with
@@ -153,6 +156,16 @@ theorem map_nsmul_of_parallelogram (n : ℕ) (x : M) :
         rw [smul_smul, ← add_nsmul, ← add_nsmul]
         congr 1
         ring
+
+end NatSmul
+
+section IntSmul
+
+variable {M N : Type*} [AddGroup M] [AddGroup N] {f : M → N}
+  (hzero : f 0 = 0)
+  (hf : ∀ x y : M, f (x + y) + f (x - y) = 2 • f x + 2 • f y)
+
+include hzero hf
 
 -- Written `(n * n) • f x` rather than `n ^ 2 • f x` to match the `toFun_smul` field of
 -- `QuadraticMap` syntactically. The negative case composes the natural one with evenness.
