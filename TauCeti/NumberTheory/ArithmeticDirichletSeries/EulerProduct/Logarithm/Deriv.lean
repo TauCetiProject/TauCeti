@@ -42,9 +42,9 @@ prime-power series the derivative is equal to.
 ## Main results
 
 * `TauCeti.EulerProductData.hasDerivAt_eulerFactor`: a general local Euler factor differentiates
-  termwise into its log-weighted prime-power series.
+  termwise into the negative of its log-weighted prime-power series.
 * `TauCeti.EulerProductData.logDeriv_eulerFactor_eq`: the local factor's logarithmic derivative is
-  the quotient of that prime-power series by the local factor.
+  the negative quotient of that prime-power series by the local factor.
 * `TauCeti.MultiplicativeIdealWeight.hasDerivAt_tsum_prime_pow`: the prime-power expansion
   differentiates termwise, strictly right of the abscissa of absolute convergence.
 * `TauCeti.MultiplicativeIdealWeight.logDeriv_LSeries_eq_tsum_prime_pow`: that derivative **is**
@@ -104,8 +104,7 @@ theorem summable_log_absNorm_mul_idealTerm_primeIdealPow
   have hsum' := hsum.comp_injective <|
     Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
   refine hsum'.congr fun e ↦ ?_
-  change LSeries.term (LSeries.logMul (D.localArithmeticFactor P)) s
-    (Ideal.absNorm P.asIdeal ^ e) = _
+  simp only [Function.comp_apply]
   rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
       (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)), LSeries.logMul,
     D.localArithmeticFactor_apply_pow, idealTerm_def, P.absNorm_primeIdealPow]
@@ -125,7 +124,8 @@ theorem hasDerivAt_eulerFactor (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
   exact hderiv.congr_of_eventuallyEq <| Filter.Eventually.of_forall fun z ↦
     D.eulerFactor_def P z
 
-/-- The derivative of a general local Euler factor is its log-weighted prime-power series. -/
+/-- The derivative of a general local Euler factor is the negative of its log-weighted
+prime-power series. -/
 theorem deriv_eulerFactor (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
     (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re) :
     deriv (D.eulerFactor P) s =
@@ -133,7 +133,7 @@ theorem deriv_eulerFactor (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
         idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e) :=
   (D.hasDerivAt_eulerFactor P hs).deriv
 
-/-- The logarithmic derivative of a local factor is the quotient of its log-weighted
+/-- The logarithmic derivative of a local factor is the negative quotient of its log-weighted
 prime-power series by the factor itself. -/
 theorem logDeriv_eulerFactor_eq (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
     (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re) :
