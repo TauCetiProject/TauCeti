@@ -49,7 +49,8 @@ theorem isInternal_quotientPiece (hI : I.IsHomogeneous 𝒜) :
     QuotientAddGroup.map I.toAddSubgroup I.toAddSubgroup (GradedRing.proj 𝒜 i)
       (fun x hx => hI.mem_iff.mp hx i)
   have hp_mk (i : ι) (a : A) :
-      p i (Ideal.Quotient.mk I a) = Ideal.Quotient.mk I (GradedRing.proj 𝒜 i a) := rfl
+      p i (Ideal.Quotient.mk I a) = Ideal.Quotient.mk I (GradedRing.proj 𝒜 i a) :=
+    QuotientAddGroup.map_mk I.toAddSubgroup I.toAddSubgroup (GradedRing.proj 𝒜 i) _ a
   have hp (i j : ι) (x : quotientPiece 𝒜 I j) :
       p i x = if i = j then (x : A ⧸ I) else 0 := by
     obtain ⟨a, ha, hqa⟩ := (mem_quotientPiece_iff 𝒜 I).mp x.property

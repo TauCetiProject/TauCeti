@@ -43,6 +43,10 @@ a grading. When it is a grading and `I` is homogeneous, these images grade the q
 noncomputable def quotientPiece (i : ι) : Submodule R (A ⧸ I) :=
   (𝒜 i).map (Ideal.Quotient.mkₐ R I).toLinearMap
 
+/-- A quotient piece is the image of its original submodule under the quotient map. -/
+theorem quotientPiece_def (i : ι) :
+    quotientPiece 𝒜 I i = (𝒜 i).map (Ideal.Quotient.mkₐ R I).toLinearMap := (rfl)
+
 /-- Membership in the descended piece is being the class of an element of the original piece. -/
 @[simp]
 theorem mem_quotientPiece_iff {i : ι} {x : A ⧸ I} :
@@ -58,8 +62,8 @@ theorem mk_mem_quotientPiece {i : ι} {y : A} (hy : y ∈ 𝒜 i) :
 original piece: descending commutes with spanning. -/
 theorem quotientPiece_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s) :
     quotientPiece 𝒜 I i = Submodule.span R ((Ideal.Quotient.mk I) '' s) := by
-  rw [quotientPiece, hs, Submodule.map_span]
-  rfl
+  rw [quotientPiece_def, hs, Submodule.map_span]
+  simp only [AlgHom.coe_toLinearMap, Ideal.Quotient.mkₐ_eq_mk]
 
 /-- A member of a descended piece lies in the span of `t` if the images of a spanning family of
 the original piece lie in that span. -/
