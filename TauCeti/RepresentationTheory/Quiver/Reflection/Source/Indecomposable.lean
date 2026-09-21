@@ -141,6 +141,45 @@ theorem outgoingMap_injective_or_forall_subsingleton (hi : IsSource i) (hM : Ind
 
 end General
 
+/-! ### Injectivity from a nonnegative reflected dimension vector -/
+
+section Nonnegative
+
+variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
+variable {M : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
+variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
+
+/-- **A nonnegative reflected dimension vector forces the outgoing map to be injective.** For an
+indecomposable representation, failure of injectivity at a source forces the representation to be
+concentrated on a one-dimensional space there, whose reflected dimension vector has value `-1` at
+that source. -/
+theorem outgoingMap_injective_of_vertexPreReflection_nonneg [DecidableEq Q]
+    (hi : IsSource i) (hM : Indecomposable M)
+    (h : 0 ≤ vertexPreReflection Q i fun j ↦ (dimVector M j : ℤ)) :
+    Function.Injective (outgoingMap M i) := by
+  rcases outgoingMap_injective_or_forall_subsingleton hi hM with hinj | hsub
+  · exact hinj
+  · obtain ⟨y, hy, hspan⟩ :=
+      exists_ne_zero_span_eq_top_of_forall_subsingleton hi.path_self_eq_nil hM hsub
+    have hone : dimVector M i = 1 := by
+      rw [dimVector_apply]
+      exact (finrank_eq_one_iff_of_nonzero (K := k) y hy).mpr hspan
+    have hzero : ∀ j : Q, j ≠ i → dimVector M j = 0 := by
+      intro j hj
+      let : Subsingleton (M.obj ((Paths.of Q).obj j)) := hsub j hj
+      rw [dimVector_apply]
+      exact Module.finrank_zero_of_subsingleton (R := k)
+    have hdim : (fun j : Q ↦ (dimVector M j : ℤ)) = Pi.single i 1 := by
+      funext j
+      rcases eq_or_ne j i with rfl | hj
+      · rw [Pi.single_eq_same, hone, Nat.cast_one]
+      · rw [Pi.single_eq_of_ne hj, hzero j hj, Nat.cast_zero]
+    rw [hdim, vertexPreReflection_single_self Q hi.isEmpty_hom_self] at h
+    have hfalse : ¬(0 : ℤ) ≤ -1 := by norm_num
+    exact (hfalse (by simpa using Pi.le_def.mp h i)).elim
+
+end Nonnegative
+
 /-! ### The vertex simple as the exceptional case -/
 
 section VertexSimple

@@ -92,6 +92,32 @@ theorem sourceReflectionFunctorList_cons (i : V) (l : List V)
   rw [sourceReflectionFunctorList]
   congr
 
+/-- The composite of source reflection functors is additive. -/
+noncomputable instance sourceReflectionFunctorList_additive (l : List V)
+    (q : _root_.Quiver.{w} V)
+    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
+    (hl : Quiver.IsSourceAdmissible q l) :
+    (sourceReflectionFunctorList.{u, v, w, x} k l q hq hl).Additive := by
+  induction l generalizing q with
+  | nil =>
+      let : _root_.Quiver.{w} V := q
+      rw [sourceReflectionFunctorList_nil]
+      change (𝟭 (@QuiverRep.{u, v, w, max v w x} k V fld q)).Additive
+      exact Functor.instAdditiveId
+  | cons i l ih =>
+      let : _root_.Quiver.{w} V := q
+      let : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b) := hq
+      rw [sourceReflectionFunctorList_cons]
+      exact @Functor.instAdditiveComp _ _ _ _ _ _
+        (sourceReflectionFunctor i (Quiver.isSourceAdmissible_cons.mp hl).1)
+        (sourceReflectionFunctor_additive i (Quiver.isSourceAdmissible_cons.mp hl).1)
+        _ _ _
+        (sourceReflectionFunctorList k l (Quiver.reflectAt q i)
+          (@Quiver.instFintypeReflectHom V q hq i)
+          (Quiver.isSourceAdmissible_cons.mp hl).2)
+        (ih (Quiver.reflectAt q i) (@Quiver.instFintypeReflectHom V q hq i)
+          (Quiver.isSourceAdmissible_cons.mp hl).2)
+
 /-- The composite along a nonempty source-admissible list first source-reflects at its head. -/
 theorem sourceReflectionFunctorList_cons_obj (i : V) (l : List V)
     (q : _root_.Quiver.{w} V)
@@ -170,28 +196,8 @@ theorem indecomposable_and_dimVector_sourceReflectionFunctorList [DecidableEq W]
       have hnext : 0 ≤ @vertexPreReflection W q fW hq _ i
           (fun j : W ↦ (@dimVector K W fldK q M j : ℤ)) := by
         simpa [vertexPreReflectionList_apply_cons] using hnonneg 0 (by simp)
-      have hloop : IsEmpty (@_root_.Quiver.Hom W q i i) := hi.isEmpty_hom_self
-      have hinj : Function.Injective (outgoingMap M i) := by
-        rcases outgoingMap_injective_or_forall_subsingleton hi hM with hinj | hsub
-        · exact hinj
-        · obtain ⟨y, hy, hspan⟩ :=
-            exists_ne_zero_span_eq_top_of_forall_subsingleton hi.path_self_eq_nil hM hsub
-          have hone : @dimVector K W fldK q M i = 1 := by
-            rw [dimVector_apply]
-            exact (finrank_eq_one_iff_of_nonzero (K := K) y hy).mpr hspan
-          have hzero : ∀ j : W, j ≠ i → @dimVector K W fldK q M j = 0 := by
-            intro j hj
-            let : Subsingleton (M.obj ((Paths.of W).obj j)) := hsub j hj
-            rw [dimVector_apply]
-            exact Module.finrank_zero_of_subsingleton (R := K)
-          have hdim : (fun j : W ↦ (@dimVector K W fldK q M j : ℤ)) = Pi.single i 1 := by
-            funext j
-            rcases eq_or_ne j i with rfl | hj
-            · rw [Pi.single_eq_same, hone, Nat.cast_one]
-            · rw [Pi.single_eq_of_ne hj, hzero j hj, Nat.cast_zero]
-          rw [hdim, vertexPreReflection_single_self W hloop] at hnext
-          have hfalse : ¬(0 : ℤ) ≤ -1 := by norm_num
-          exact (hfalse (by simpa using Pi.le_def.mp hnext i)).elim
+      have hinj : Function.Injective (outgoingMap M i) :=
+        outgoingMap_injective_of_vertexPreReflection_nonneg hi hM hnext
       have hM' : Indecomposable (sourceReflectRep M hi) :=
         indecomposable_sourceReflectRep hi hM hinj
       have hdim : (fun j : W ↦
