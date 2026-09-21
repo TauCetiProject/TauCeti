@@ -169,13 +169,13 @@ noncomputable def coneConnectingMap (f : X ⟶ Y) : hE.coneObj f ⟶ hE.suspensi
 
 /-- The connecting map of the cone restricts on the injective object to the chosen suspension
 deflation. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem coneInjectiveMap_comp_coneConnectingMap (f : X ⟶ Y) :
     hE.coneInjectiveMap f ≫ hE.coneConnectingMap f = hE.suspensionDeflation X :=
   (hE.isPushout_cone f).inl_desc _ _ _
 
 /-- The composite `Y ⟶ cone f ⟶ ΣX` of the cone sequence vanishes. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem coneInclusion_comp_coneConnectingMap (f : X ⟶ Y) :
     hE.coneInclusion f ≫ hE.coneConnectingMap f = 0 :=
   (hE.isPushout_cone f).inr_desc _ _ _
@@ -263,7 +263,7 @@ noncomputable def coneMap (a : X ⟶ X') (b : Y ⟶ Y') (w : f ≫ b = a ≫ f')
 
 /-- The cone map restricts on the injective objects to the map induced by `a` on the chosen
 injective presentations. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem coneInjectiveMap_comp_coneMap (a : X ⟶ X') (b : Y ⟶ Y') (w : f ≫ b = a ≫ f') :
     hE.coneInjectiveMap f ≫ hE.coneMap a b w =
       (hE.suspensionPresentation X).middleMap (hE.suspensionPresentation X') a ≫
@@ -271,7 +271,7 @@ theorem coneInjectiveMap_comp_coneMap (a : X ⟶ X') (b : Y ⟶ Y') (w : f ≫ b
   (hE.isPushout_cone f).inl_desc _ _ _
 
 /-- The cone map commutes with the cone inclusions. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem coneInclusion_comp_coneMap (a : X ⟶ X') (b : Y ⟶ Y') (w : f ≫ b = a ≫ f') :
     hE.coneInclusion f ≫ hE.coneMap a b w = b ≫ hE.coneInclusion f' :=
   (hE.isPushout_cone f).inr_desc _ _ _
@@ -336,7 +336,7 @@ theorem projectiveStableFunctor_map_coneMap_comp (a : X ⟶ X') (b : Y ⟶ Y')
 
 /-- The cone map commutes with the connecting maps and the map induced by `a` on the cokernel
 terms of the chosen injective presentations. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem coneMap_comp_coneConnectingMap (a : X ⟶ X') (b : Y ⟶ Y') (w : f ≫ b = a ≫ f') :
     hE.coneMap a b w ≫ hE.coneConnectingMap f' =
       hE.coneConnectingMap f ≫
@@ -357,13 +357,13 @@ noncomputable def coneComparison (S : ShortComplex C) : hE.coneObj S.f ⟶ S.X�
   (hE.isPushout_cone S.f).desc 0 S.g (by simp [S.zero])
 
 /-- The comparison kills the injective object of the cone. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem coneInjectiveMap_comp_coneComparison (S : ShortComplex C) :
     hE.coneInjectiveMap S.f ≫ hE.coneComparison S = 0 :=
   (hE.isPushout_cone S.f).inl_desc _ _ _
 
 /-- The comparison carries the cone inclusion to the second map of the short complex. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem coneInclusion_comp_coneComparison (S : ShortComplex C) :
     hE.coneInclusion S.f ≫ hE.coneComparison S = S.g :=
   (hE.isPushout_cone S.f).inr_desc _ _ _
