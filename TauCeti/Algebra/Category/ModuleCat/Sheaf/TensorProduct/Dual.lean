@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Biproduct
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Closed
 
 /-!
 # Finite free sheaves of modules are self-dual
@@ -25,6 +26,11 @@ self-dual.
 Finite free sheaves are the local models of finite locally free sheaves, so this is the local
 input for showing that finite locally free sheaves are dualizable.
 
+Combining the pairing with the closed structure of sheaves of modules identifies the internal Hom
+out of `free I` with tensoring by `free I`, and in particular the dual sheaf
+`𝓗om(free I, 𝒪)` with `free I` itself. Its basis sections are the dual basis: paired against the
+basis sections of `free I` they give `δᵢⱼ`.
+
 ## Main declarations
 
 * `TauCeti.SheafOfModules.biproductIsoFree`: the free sheaf on a finite type is the biproduct of
@@ -32,7 +38,12 @@ input for showing that finite locally free sheaves are dualizable.
 * `TauCeti.SheafOfModules.exactPairingFree`: the exact pairing between `free I` and itself;
 * `TauCeti.SheafOfModules.ιFree_tensorHom_ιFree_evaluation`,
   `TauCeti.SheafOfModules.ιFree_tensorHom_ιFree_evaluation_of_ne` and
-  `TauCeti.SheafOfModules.coevaluation_free`: its evaluation and coevaluation on basis sections.
+  `TauCeti.SheafOfModules.coevaluation_free`: its evaluation and coevaluation on basis sections;
+* `TauCeti.SheafOfModules.ihomFreeIso` and `TauCeti.SheafOfModules.dualFreeIso`: the internal Hom
+  out of `free I`, and the dual sheaf of `free I`;
+* `TauCeti.SheafOfModules.dualFreeι`: the basis sections of the dual sheaf;
+* `TauCeti.SheafOfModules.ιFree_tensorHom_dualFreeι_comp_ev` and its `_of_ne` variant: the
+  dual basis.
 -/
 
 public section
@@ -130,6 +141,70 @@ theorem coevaluation_free [Fintype I] :
   rw [coevaluation_free_eq, ExactPairing.biproduct_coevaluation, Preadditive.sum_comp]
   simp only [ExactPairing.unit_coevaluation, Category.assoc, tensorHom_comp_tensorHom]
   simp only [tensorUnit_eq, biproduct_ι_biproductIsoFree_hom]
+
+variable (I)
+
+/-- The internal Hom out of a finite free sheaf of modules is tensoring with that sheaf, since
+the free sheaf is its own dual. -/
+def ihomFreeIso (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (ihom (free (R := ringCatSheaf R) I)).obj M ≅ free (R := ringCatSheaf R) I ⊗ M :=
+  (ihomIsoTensorLeft (free I) (free I)).app M
+
+/-- The dual of a finite free sheaf of modules, that is, the internal Hom into the structure
+sheaf, is free on the same index type. It is `TauCeti.SheafOfModules.ihomFreeIso` at the
+structure sheaf, followed by the right unitor. -/
+def dualFreeIso :
+    (ihom (free (R := ringCatSheaf R) I)).obj (𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) ≅
+      free (R := ringCatSheaf R) I :=
+  ihomUnitIso (free I) (free I)
+
+variable {I}
+
+/-- The `i`-th basis section of the dual of `free I`, obtained by transporting the corresponding
+basis section along `TauCeti.SheafOfModules.dualFreeIso`. -/
+def dualFreeι (i : I) :
+    𝟙_ (SheafOfModules.{u} (ringCatSheaf R)) ⟶
+      (ihom (free (R := ringCatSheaf R) I)).obj
+        (𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) :=
+  ιFree i ≫ (dualFreeIso (R := R) I).inv
+
+/-- Transporting a dual basis section back along `TauCeti.SheafOfModules.dualFreeIso` recovers
+the corresponding basis section of the free sheaf. -/
+@[reassoc (attr := simp)]
+theorem dualFreeι_comp_dualFreeIso_hom (i : I) :
+    dualFreeι (R := R) i ≫ (dualFreeIso (R := R) I).hom = ιFree i := by
+  rw [dualFreeι, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+
+/-- The basis sections of the dual sheaf are the dual basis: the `i`-th one evaluates on the
+`i`-th basis section of `free I` to `1`. -/
+@[reassoc, simp]
+theorem ιFree_tensorHom_dualFreeι_comp_ev (i : I) :
+    ((ιFree i ⊗ₘ dualFreeι (R := R) i) :
+      unit (ringCatSheaf R) ⊗ unit (ringCatSheaf R) ⟶
+        free (R := ringCatSheaf R) I ⊗
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).obj
+          ((ihom (free (R := ringCatSheaf R) I).val).obj (unit (ringCatSheaf R)).val)) ≫
+      (ihom.ev (free (R := ringCatSheaf R) I)).app
+        (unit (ringCatSheaf R)) =
+      (ρ_ (𝟙_ (SheafOfModules.{u} (ringCatSheaf R)))).hom := by
+  simpa only [dualFreeι, dualFreeIso, tensorUnit_eq, SheafOfModules.ihom_obj] using
+    (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree i)).trans
+      (ιFree_tensorHom_ιFree_evaluation (R := R) i)
+
+/-- The basis sections of the dual sheaf are the dual basis: the `j`-th one evaluates on the
+`i`-th basis section of `free I` to `0` when `i ≠ j`. -/
+@[reassoc, simp]
+theorem ιFree_tensorHom_dualFreeι_comp_ev_of_ne {i j : I} (h : i ≠ j) :
+    ((ιFree i ⊗ₘ dualFreeι (R := R) j) :
+      unit (ringCatSheaf R) ⊗ unit (ringCatSheaf R) ⟶
+        free (R := ringCatSheaf R) I ⊗
+        (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).obj
+          ((ihom (free (R := ringCatSheaf R) I).val).obj (unit (ringCatSheaf R)).val)) ≫
+      (ihom.ev (free (R := ringCatSheaf R) I)).app
+        (unit (ringCatSheaf R)) = 0 := by
+  simpa only [dualFreeι, dualFreeIso, tensorUnit_eq, SheafOfModules.ihom_obj] using
+    (tensorHom_ihomUnitIso_inv_comp_ev (D := free I) (Y := free I) (ιFree i) (ιFree j)).trans
+      (ιFree_tensorHom_ιFree_evaluation_of_ne (R := R) h)
 
 end SheafOfModules
 

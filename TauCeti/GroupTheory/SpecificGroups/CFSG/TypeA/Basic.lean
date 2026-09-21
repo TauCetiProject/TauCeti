@@ -83,8 +83,9 @@ constructed group is finite or simple.
   `TauCeti.TypeALieIndex.steinberg_ofTwistedA`: Frobenius on `A_r(q)` and graph-twisted Frobenius
   on `²A_r(q)`.
 * `TauCeti.TypeALieIndex.steinberg_simpleRootSubgroup`: the pinned simple-root-subgroup equation.
-* `TauCeti.TypeALieIndex.frobenius` and `TauCeti.TypeALieIndex.frobenius_simpleRootSubgroup`: the
-  `q`-power Frobenius factor and its pinned equation.
+* `TauCeti.TypeALieIndex.frobenius` and
+  `TauCeti.TypeALieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius factor and its
+  pinned equation.
 * `TauCeti.TypeALieIndex.graphAut`, with `TauCeti.TypeALieIndex.graphAut_ofA` and
   `TauCeti.TypeALieIndex.graphAut_ofTwistedA`: the pinned graph automorphism factor.
 * `TauCeti.TypeALieIndex.graphAut_simpleRootSubgroup`: its pinned simple-root-subgroup equation
@@ -98,6 +99,10 @@ constructed group is finite or simple.
 * `TauCeti.TypeALieIndex.FixedPoints` and `TauCeti.TypeALieIndex.Group`: the fixed group and its
   derived central quotient.
 
+* `TauCeti.TypeALieIndex.primeFrobenius`, with
+  `TauCeti.TypeALieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeALieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
+  equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, Chapters 2 and 14.
@@ -206,6 +211,17 @@ map composes with this one. -/
 noncomputable def frobenius (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientGroup :=
   SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure
 
+/-- The type-A Frobenius is the standard carrier's Frobenius at the characteristic and field
+exponent recorded by the index. -/
+-- The body of `frobenius` is not exposed, so downstream modules cannot unfold the definition
+-- itself; this equation is how they reach the standard carrier's Frobenius. As in
+-- `TauCeti.TypeBLieIndex.frobenius_def`, it is deliberately not a `simp` lemma: unfolding to
+-- `TauCeti.SlStd.frobenius` would keep `frobenius_simpleRootSubgroup` from firing.
+theorem frobenius_def (d : TypeALieIndex) :
+    d.frobenius =
+      SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure :=
+  (rfl)
+
 /-- **The Frobenius fixes the Bourbaki numbering of a positive simple-root subgroup and raises its
 parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
 @[simp]
@@ -215,6 +231,39 @@ theorem frobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
       d.simpleRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [TypeALieIndex.frobenius, simpleRootSubgroup_def, SlStd.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius endomorphism of a type-A ambient group**, the `p`-power map for `p`
+the defining characteristic. The `q`-power Frobenius `TauCeti.TypeALieIndex.frobenius` is its
+`e`-th power, for `e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`.
+The two agree when the index has prime field order. -/
+noncomputable def primeFrobenius (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientGroup :=
+  SlStd.frobenius d.1.rank d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the standard carrier's Frobenius at exponent one. -/
+-- Not a `simp` lemma: `primeFrobenius_simpleRootSubgroup` is the normal form the equations of
+-- this file are stated against, and unfolding to the carrier's Frobenius would keep it from firing.
+theorem primeFrobenius_def (d : TypeALieIndex) :
+    d.primeFrobenius = SlStd.frobenius d.1.rank d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a positive simple-root subgroup and
+raises its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, SlStd.frobenius_rootSubgroupPoints, pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.SlStd.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow (d : TypeALieIndex) :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, TypeALieIndex.frobenius, SlStd.frobenius_pow, Nat.one_mul]
 
 /-- **The pinned graph automorphism of a validated type-A index.** It realizes on the ambient group
 the diagram permutation `TauCeti.GraphTwistedIndex.diagramPerm` already attached to the index: it is

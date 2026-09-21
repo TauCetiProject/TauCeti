@@ -12,14 +12,15 @@ public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.RingHom
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
+import TauCeti.RingTheory.Huber.LocalizationTopology.Iterated
 import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.StronglyNoetherian
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
-# Flatness of the Laurent quotient, and of a numerator enlargement
+# Flatness of the Laurent quotient, and of rational restriction maps
 
-Restriction maps between the rings of a Laurent presentation are flat, at the ring level. The
-statements below run in increasing generality:
+Restriction maps between rational localisations are flat, at the ring level. For a fixed
+denominator the statements below run in increasing generality:
 
 * the Laurent quotient `A⟨T/s⟩⟨X⟩ ⧸ (t/s - X)` is a flat `A⟨T/s⟩`-module when that base is a
   complete noetherian Tate ring;
@@ -33,11 +34,15 @@ statements below run in increasing generality:
 * the same conclusion asking strong noetherianity only at `T`, the per-intermediate hypothesis
   being derived rather than assumed;
 * the same conclusion asking strong noetherianity of `A` alone, for a presentation whose
-  numerators generate the unit ideal together with `s` — Wedhorn's Proposition 8.30 in full.
+  numerators generate the unit ideal together with `s` — Wedhorn's Proposition 8.30 for a numerator
+  enlargement.
 
-A different case of Proposition 8.30 changes the denominator as well: the structure map
-`A → A⟨T/s⟩` of any presentation over a complete separated strongly noetherian Tate ring is flat,
-which is the case where the larger rational subset is all of `Spa A`.
+Two further cases of Proposition 8.30 change the denominator. The structure map `A → A⟨T/s⟩` of
+any presentation over a complete separated strongly noetherian Tate ring is flat, which is the case
+where the larger rational subset is all of `Spa A`. And over a strongly noetherian Tate ring the
+restriction map `A⟨T/s⟩ → A⟨T''/s''⟩` of any refinement — `s'' = s * r`, with each `t * r` a
+numerator of `T''` — is flat when `T` together with `s` generates the unit ideal. By Remark 8.4 it
+is a structure map over `A⟨T/s⟩`, to which the previous case applies.
 
 Changing the localisation that carries a presentation is flat with no hypotheses at all.
 
@@ -70,9 +75,9 @@ in: `s` topologically nilpotent over a strongly noetherian base.
   the same conclusion asking strong noetherianity only at `T`, the family hypothesis above being
   derived from it rather than assumed.
 * `PairOfDefinition.flat_restrictionRingHomOfSubset_of_span_eq_top` : **Wedhorn's Proposition
-  8.30**. Strong noetherianity is asked of `A`, as Wedhorn asks it, and the unit-ideal condition on
-  `(T, s)` is the algebraic form of rationality over a Tate ring. No condition is imposed on the
-  denominator itself.
+  8.30 for a numerator enlargement**. Strong noetherianity is asked of `A`, as Wedhorn asks it, and
+  the unit-ideal condition on `(T, s)` is the algebraic form of rationality over a Tate ring. No
+  condition is imposed on the denominator itself.
 * `TauCeti.Huber.PairOfDefinition.flat_toCompletionLoc` : the structure map `A → A⟨T/s⟩` is flat for
   every presentation of a complete separated strongly noetherian Tate ring, with no unit-ideal
   condition on `(T, s)`. After rescaling by a unit, `1` can be adjoined as a numerator without
@@ -80,6 +85,15 @@ in: `s` topologically nilpotent over a strongly noetherian base.
   (`TauCeti.Huber.PairOfDefinition.rationalQuotientRingEquiv` at the single numerator `1`) and
   Lemma 8.31(2), and the other
   numerators are adjoined by Proposition 8.30.
+* `TauCeti.Huber.PairOfDefinition.flat_restrictionRingHom_of_isStronglyNoetherian_base` : the same
+  statement asking the Tate condition and strong noetherianity of `A⟨T/s⟩` rather than of `A`, and
+  no unit-ideal condition. It is the general form; the next item is its corollary.
+* `TauCeti.Huber.PairOfDefinition.flat_restrictionRingHom` : **Wedhorn's Proposition 8.30 for a
+  refinement**, whose denominator may change — the restriction map `A⟨T/s⟩ → A⟨T''/s''⟩` is flat
+  over a strongly noetherian Tate ring when `T` together with `s` generates the unit ideal. It is
+  the structure map of a rational localisation of `A⟨T/s⟩`
+  (`TauCeti.Huber.PairOfDefinition.iteratedLocalizationRingEquiv`), so the previous item applies
+  over `A⟨T/s⟩`.
 
 ## The three chain results, and which to use
 
@@ -114,10 +128,18 @@ the nonarchimedean structure it carries.
 The elementary case is unaffected: it needs strong noetherianity only at its own base, which is
 where Lemma 8.31 needs it too.
 
+The refinement results are the same distinction one layer up.
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHom_of_isStronglyNoetherian_base` asks the Tate
+condition and strong noetherianity of `A⟨T/s⟩`, and nothing of `A` or of `(T, s)`;
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHom` asks it of `A` together with the
+unit-ideal condition, and derives the other by
+`TauCeti.Huber.PairOfDefinition.isStronglyNoetherian_completion`. Use the first when only the
+localisation is known to be strongly noetherian, the second for Wedhorn's own hypotheses.
+
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.31 and
-  Proposition 8.30.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Lemma 8.31, Proposition 8.30
+  and Remark 8.4.
 -/
 public section
 
@@ -799,6 +821,115 @@ theorem flat_toCompletionLoc (P : PairOfDefinition A) (T : Finset A) (s : A) (S 
     (by rwa [hVT, ← u.inv_mul, divBy_mul_mul_left]), hVT]
 
 end StructureMap
+
+section Refinement
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+
+-- Over a Tate ring the localisation `A⟨T/s⟩` is Tate, because the image of a pseudouniformiser of
+-- `A` is one.
+private theorem isTateRing_completion_locTopology_of_isTateRing [IsTateRing A]
+    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_locUniformSpace P T s S hden
+    IsTateRing (UniformSpace.Completion S) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  exact { toIsHuberRing := isHuberRing_completion_locTopology P T s S hden
+          exists_isPseudoUniformizer := ⟨_, isPseudoUniformizer_iff.mpr ⟨hϖ.isUnit.map _,
+            hϖ.isTopologicallyNilpotent.map (continuous_toCompletionLoc P T s S hden)⟩⟩ }
+
+/-- **Wedhorn's Proposition 8.30 for a refinement, asking everything of `A⟨T/s⟩`.** The restriction
+map `A⟨T/s⟩ → A⟨T''/s''⟩` of a refinement is flat as soon as `B = A⟨T/s⟩` is Tate and strongly
+noetherian: up to an isomorphism it is the structure map of a rational localisation of `B`.
+
+Nothing is asked of `A` beyond the standing hypotheses — in particular `A` need not be Tate, so
+this covers a Tate localisation of a non-Tate base. This is the form to use when the localisation,
+rather than `A`, is what is known.
+When `A` itself is strongly noetherian and `T` together with `s` generates the unit ideal, use
+`TauCeti.Huber.PairOfDefinition.flat_restrictionRingHom`, which derives `hSN` from those. The pair
+mirrors `…OfSubset_of_isStronglyNoetherian_base` and `…OfSubset_of_span_eq_top` for a numerator
+enlargement. -/
+theorem flat_restrictionRingHom_of_isStronglyNoetherian_base
+    (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) (T'' : Finset A) (s'' : A)
+    (S'' : Type*) [CommRing S''] [Algebra A S''] [IsLocalization.Away s'' S'']
+    (hden'' : HasDenominatorPower P T'' s'' S'') (r : A) (hs'' : s'' = s * r)
+    (hT : ∀ t ∈ T, t * r ∈ T'')
+    (hTate : letI := locUniformSpace P T s S hden
+      letI := isUniformAddGroup_locUniformSpace P T s S hden
+      letI := isTopologicalRing_locUniformSpace P T s S hden
+      letI := isHuberRing_locUniformSpace P T s S hden
+      IsTateRing (UniformSpace.Completion S))
+    (hSN : letI := locUniformSpace P T s S hden
+      letI := isUniformAddGroup_locUniformSpace P T s S hden
+      letI := isTopologicalRing_locUniformSpace P T s S hden
+      letI := isHuberRing_locUniformSpace P T s S hden
+      IsStronglyNoetherian (UniformSpace.Completion S)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    (restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT).Flat := by
+  classical
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P T'' s'' S'' hden''
+  have _ := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+  have _ := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+  -- `B` is a complete separated strongly noetherian Tate ring
+  have _ := hTate
+  -- the restriction map is the structure map of `B⟨ρ(T'')/ρ(s'')⟩` followed by an isomorphism, and
+  -- that structure map is flat over `B`
+  let SB := Localization.Away (toCompletionLoc P T s S hden s'')
+  let TB := T''.image (toCompletionLoc P T s S hden)
+  have hB := hasDenominatorPower_completionLocalization_of_coe_eq_image P T s S hden T'' s'' S''
+    hden'' SB TB Finset.coe_image
+  let _ := locUniformSpace (completionLocalization P T s S hden) _ _ SB hB
+  have _ := isUniformAddGroup_locUniformSpace (completionLocalization P T s S hden) _ _ SB hB
+  have _ := isTopologicalRing_locUniformSpace (completionLocalization P T s S hden) _ _ SB hB
+  exact iteratedLocalizationRingEquiv_symm_coe_comp_toCompletionLoc P T s S hden T'' s'' S''
+    hden'' SB TB Finset.coe_image r hs'' hT ▸
+      (flat_toCompletionLoc _ _ _ SB hB).comp (.of_bijective (RingEquiv.bijective _))
+
+/-- **Wedhorn's Proposition 8.30 for a refinement.** Over a strongly noetherian Tate ring `A`, the
+restriction map `A⟨T/s⟩ → A⟨T''/s''⟩` is flat whenever `(T'', s'')` refines `(T, s)` — that is,
+`s'' = s * r` and every `t * r`, for `t ∈ T`, lies in `T''` — and `T` together with `s` generates
+the unit ideal. The denominator may change, and nothing is asked of `(T'', s'')` beyond the
+standing hypothesis.
+
+When the denominator is unchanged, use
+`PairOfDefinition.flat_restrictionRingHomOfSubset_of_span_eq_top` instead: it is stated for
+`TauCeti.Huber.PairOfDefinition.restrictionRingHomOfSubset`, and asks the Tate condition, strong
+noetherianity and the unit-ideal condition only of a proper numerator enlargement. The restriction
+from all of `Spa A` is `TauCeti.Huber.PairOfDefinition.flat_toCompletionLoc`. -/
+theorem flat_restrictionRingHom [IsTateRing A] [IsStronglyNoetherian A] (P : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (T'' : Finset A) (s'' : A) (S'' : Type*) [CommRing S'']
+    [Algebra A S''] [IsLocalization.Away s'' S''] (hden'' : HasDenominatorPower P T'' s'' S'')
+    (r : A) (hs'' : s'' = s * r) (hT : ∀ t ∈ T, t * r ∈ T'')
+    (hspan : Ideal.span (insert s (T : Set A)) = ⊤) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    (restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT).Flat :=
+  -- `A⟨T/s⟩` is strongly noetherian, as a rational localisation of a strongly noetherian Tate ring
+  flat_restrictionRingHom_of_isStronglyNoetherian_base P T s S hden T'' s'' S'' hden'' r hs'' hT
+    (isTateRing_completion_locTopology_of_isTateRing P T s S hden)
+    (isStronglyNoetherian_completion P T s S hden hspan)
+
+end Refinement
 
 end PairOfDefinition
 

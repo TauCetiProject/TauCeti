@@ -197,7 +197,7 @@ theorem isUnipotentPoint
     (g : WithConv (A →ₐ[k] L)) : HopfAlgebra.IsUnipotentPoint g := by
   have hA' := (smoothUnipotentCommHopfAlgProperty_iff k A).mp hA
   let _ : Algebra.Smooth k A := hA'.1
-  let _ : IsReduced A := isReduced_of_smooth_of_field k A
+  let _ : IsReduced A := isReduced_of_smooth k A
   have hgeom : geometricallyUnipotentPointsCommHopfAlgProperty k A.obj := by
     rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff]
     exact hA'.2
@@ -217,7 +217,7 @@ theorem iff_smooth_and_forall_isUnipotentPoint
     exact ⟨hA'.1, fun g ↦ isUnipotentPoint hA g⟩
   · rintro ⟨hsm, hL⟩
     let _ : Algebra.Smooth k A := hsm
-    let _ : IsReduced A := isReduced_of_smooth_of_field k A
+    let _ : IsReduced A := isReduced_of_smooth k A
     rw [smoothUnipotentCommHopfAlgProperty_iff]
     refine ⟨hsm, ?_⟩
     exact (geometricallyUnipotentPointsCommHopfAlgProperty_iff k A.obj).mp

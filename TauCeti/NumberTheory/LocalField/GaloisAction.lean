@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Action.Invariant
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-public import TauCeti.NumberTheory.LocalField.FiniteExtension
+public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!

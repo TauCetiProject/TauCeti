@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TrialityD4
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD
@@ -46,6 +46,11 @@ subgroups and the Frobenius, say which one. The four Suzuki--Ree and Tits constr
 indices of the subtype, and their branches are closed by that hypothesis rather than by a chosen
 value.
 
+Beside the `q`-power Frobenius the assembly carries the prime-field Frobenius
+`TauCeti.GraphTwistedIndex.primeFrobenius`, the `p`-power map for `p` the defining characteristic,
+of which the `q`-power map is the `e`-th power, for `e` the field exponent the index records. The
+two agree on an index of prime field order.
+
 The two factors of the Steinberg endomorphism are assembled separately as well: its Frobenius
 factor is `TauCeti.GraphTwistedIndex.frobenius` and its graph factor is
 `TauCeti.GraphTwistedIndex.graphAut`, the automorphism of the ambient group realizing the diagram
@@ -82,6 +87,8 @@ or simple.
 * `TauCeti.GraphTwistedIndex.simpleRootSubgroup`: its Bourbaki-numbered positive simple root
   subgroups.
 * `TauCeti.GraphTwistedIndex.frobenius`: its `q`-power Frobenius endomorphism.
+* `TauCeti.GraphTwistedIndex.primeFrobenius`: its prime-field Frobenius endomorphism, the `p`-power
+  map for `p` the defining characteristic, of which the `q`-power map is the `e`-th power.
 * `TauCeti.GraphTwistedIndex.graphAut`: its graph automorphism, the other factor.
 * `TauCeti.GraphTwistedIndex.steinberg`: its Steinberg endomorphism.
 * `TauCeti.GraphTwistedIndex.FixedPoints` and `TauCeti.GraphTwistedIndex.Group`: the fixed points of
@@ -89,10 +96,13 @@ or simple.
 
 ## Main results
 
-* `TauCeti.GraphTwistedIndex.frobenius_simpleRootSubgroup` and
-  `TauCeti.GraphTwistedIndex.steinberg_simpleRootSubgroup`: the pinned equations of the Frobenius
-  and of the Steinberg endomorphism on every simple root subgroup, uniformly in the thirteen
-  families.
+* `TauCeti.GraphTwistedIndex.frobenius_simpleRootSubgroup`,
+  `TauCeti.GraphTwistedIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.GraphTwistedIndex.steinberg_simpleRootSubgroup`: the pinned equations of the two
+  Frobenius maps and of the Steinberg endomorphism on every simple root subgroup, uniformly in the
+  thirteen families.
+* `TauCeti.GraphTwistedIndex.frobenius_eq_primeFrobenius_pow`: the `q`-power Frobenius is the
+  `e`-th power of the prime-field one, for `e` the field exponent the index records.
 * `TauCeti.GraphTwistedIndex.graphAut_simpleRootSubgroup`,
   `TauCeti.GraphTwistedIndex.graphAut_pow_twistOrder` and
   `TauCeti.GraphTwistedIndex.graphAut_comp_frobenius`: the graph automorphism sends `x_i(u)` to
@@ -217,6 +227,28 @@ def frobenius : (d : GraphTwistedIndex) → d.AmbientGroup →* d.AmbientGroup
       UnimodularExceptionalIndex.steinberg ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
   | ⟨⟨.twistedE6 _, hv⟩, _⟩ => TypeTwistedE6LieIndex.frobenius ⟨⟨_, hv⟩, by simp⟩
   | ⟨⟨.trialityD4 _, hv⟩, _⟩ => TypeTrialityD4LieIndex.frobenius ⟨⟨_, hv⟩, by simp⟩
+  | ⟨⟨.suzuki _, _⟩, hh⟩ | ⟨⟨.reeG2 _, _⟩, hh⟩ | ⟨⟨.reeF4 _, _⟩, hh⟩ | ⟨⟨.tits, _⟩, hh⟩ =>
+      absurd ((usesHalfFrobenius_iff _).mpr trivial) hh
+
+/-- **The prime-field Frobenius endomorphism of an ordinary or graph-twisted index**, the `p`-power
+map for `p` the defining characteristic. On each constructor it is the prime-field Frobenius of the
+family, by `primeFrobenius_A` and its siblings. The `q`-power Frobenius is its `e`-th power, for
+`e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`, so the two agree
+on an index of prime field order. Its action on the simple root subgroups is
+`primeFrobenius_simpleRootSubgroup`. -/
+def primeFrobenius : (d : GraphTwistedIndex) → d.AmbientGroup →* d.AmbientGroup
+  | ⟨⟨.A _ _, hv⟩, _⟩ | ⟨⟨.twistedA _ _, hv⟩, _⟩ =>
+      TypeALieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩
+  | ⟨⟨.B _ _, hv⟩, _⟩ => TypeBLieIndex.primeFrobenius ⟨⟨_, hv⟩, trivial⟩
+  | ⟨⟨.C _ _, hv⟩, _⟩ => TypeCLieIndex.primeFrobenius ⟨⟨_, hv⟩, trivial⟩
+  | ⟨⟨.D _ _, hv⟩, _⟩ | ⟨⟨.twistedD _ _, hv⟩, _⟩ =>
+      TypeDDiagramLieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩
+  | ⟨⟨.E6 _, hv⟩, _⟩ => TypeE6LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩
+  | ⟨⟨.E7 _, hv⟩, _⟩ => TypeE7LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩
+  | ⟨⟨.E8 _, hv⟩, h⟩ | ⟨⟨.F4 _, hv⟩, h⟩ | ⟨⟨.G2 _, hv⟩, h⟩ =>
+      UnimodularExceptionalIndex.primeFrobenius ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
+  | ⟨⟨.twistedE6 _, hv⟩, _⟩ => TypeTwistedE6LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩
+  | ⟨⟨.trialityD4 _, hv⟩, _⟩ => TypeTrialityD4LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩
   | ⟨⟨.suzuki _, _⟩, hh⟩ | ⟨⟨.reeG2 _, _⟩, hh⟩ | ⟨⟨.reeF4 _, _⟩, hh⟩ | ⟨⟨.tits, _⟩, hh⟩ =>
       absurd ((usesHalfFrobenius_iff _).mpr trivial) hh
 
@@ -488,6 +520,87 @@ theorem frobenius_trialityD4 (hv : (LieTypeIndex.trialityD4 q).Valid) :
       TypeTrialityD4LieIndex.frobenius ⟨⟨_, hv⟩, by simp⟩ :=
   (rfl)
 
+/-- On `Aₙ(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_A (hv : (LieTypeIndex.A n q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeALieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²Aₙ(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_twistedA (hv : (LieTypeIndex.twistedA n q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeALieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `Bₙ(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_B (hv : (LieTypeIndex.B n q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeBLieIndex.primeFrobenius ⟨⟨_, hv⟩, trivial⟩ :=
+  (rfl)
+
+/-- On `Cₙ(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_C (hv : (LieTypeIndex.C n q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeCLieIndex.primeFrobenius ⟨⟨_, hv⟩, trivial⟩ :=
+  (rfl)
+
+/-- On `Dₙ(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_D (hv : (LieTypeIndex.D n q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeDDiagramLieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `²Dₙ(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_twistedD (hv : (LieTypeIndex.twistedD n q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeDDiagramLieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `E₆(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_E6 (hv : (LieTypeIndex.E6 q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeE6LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `E₇(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_E7 (hv : (LieTypeIndex.E7 q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeE7LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `E₈(q)` the prime-field Frobenius is that of the Geck carrier family. -/
+theorem primeFrobenius_E8 (hv : (LieTypeIndex.E8 q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      UnimodularExceptionalIndex.primeFrobenius
+        ⟨⟨⟨_, hv⟩, by simp⟩, by simp [usesHalfFrobenius_iff]⟩ :=
+  (rfl)
+
+/-- On `F₄(q)` the prime-field Frobenius is that of the Geck carrier family. -/
+theorem primeFrobenius_F4 (hv : (LieTypeIndex.F4 q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      UnimodularExceptionalIndex.primeFrobenius
+        ⟨⟨⟨_, hv⟩, by simp⟩, by simp [usesHalfFrobenius_iff]⟩ :=
+  (rfl)
+
+/-- On `G₂(q)` the prime-field Frobenius is that of the Geck carrier family. -/
+theorem primeFrobenius_G2 (hv : (LieTypeIndex.G2 q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      UnimodularExceptionalIndex.primeFrobenius
+        ⟨⟨⟨_, hv⟩, by simp⟩, by simp [usesHalfFrobenius_iff]⟩ :=
+  (rfl)
+
+/-- On `²E₆(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_twistedE6 (hv : (LieTypeIndex.twistedE6 q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeTwistedE6LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
+/-- On `³D₄(q)` the prime-field Frobenius is that of the family. -/
+theorem primeFrobenius_trialityD4 (hv : (LieTypeIndex.trialityD4 q).Valid) :
+    primeFrobenius ⟨⟨_, hv⟩, by simp [usesHalfFrobenius_iff]⟩ =
+      TypeTrialityD4LieIndex.primeFrobenius ⟨⟨_, hv⟩, by simp⟩ :=
+  (rfl)
+
 end Branches
 
 /-! ### The pinned equations -/
@@ -529,6 +642,86 @@ theorem frobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
     exact TypeTwistedE6LieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
   · rw [frobenius_trialityD4, simpleRootSubgroup_trialityD4]
     exact TypeTrialityD4LieIndex.frobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
+
+/-- **The prime-field Frobenius has the pinned action on every simple root subgroup.** It sends
+`x_i(u)` to `x_i(u ^ p)`, where `p` is the defining characteristic. This is the defining equation
+of the prime-field Frobenius, stated once for all thirteen families. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (d : GraphTwistedIndex) (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  -- As for `frobenius_simpleRootSubgroup`: the branch equations turn the uniform maps into the
+  -- family ones, whose pinned prime-field Frobenius equation closes the goal.
+  obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
+  · rw [primeFrobenius_A, simpleRootSubgroup_A]
+    exact TypeALieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  · rw [primeFrobenius_twistedA, simpleRootSubgroup_twistedA]
+    exact TypeALieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  · rw [primeFrobenius_B, simpleRootSubgroup_B]
+    exact TypeBLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
+  · rw [primeFrobenius_C, simpleRootSubgroup_C]
+    exact TypeCLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, trivial⟩ i u
+  · rw [primeFrobenius_D, simpleRootSubgroup_D]
+    exact TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  · rw [primeFrobenius_twistedD, simpleRootSubgroup_twistedD]
+    exact TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  · rw [primeFrobenius_E6, simpleRootSubgroup_E6]
+    exact TypeE6LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  · rw [primeFrobenius_E7, simpleRootSubgroup_E7]
+    exact TypeE7LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  · rw [primeFrobenius_E8, simpleRootSubgroup_E8]
+    exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
+      ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+  · rw [primeFrobenius_F4, simpleRootSubgroup_F4]
+    exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
+      ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+  · rw [primeFrobenius_G2, simpleRootSubgroup_G2]
+    exact UnimodularExceptionalIndex.primeFrobenius_geckRootSubgroup
+      ⟨⟨⟨_, hv⟩, by simp⟩, h⟩ (.inl i) u
+  · rw [primeFrobenius_twistedE6, simpleRootSubgroup_twistedE6]
+    exact TypeTwistedE6LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  · rw [primeFrobenius_trialityD4, simpleRootSubgroup_trialityD4]
+    exact TypeTrialityD4LieIndex.primeFrobenius_simpleRootSubgroup ⟨⟨_, hv⟩, by simp⟩ i u
+  all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form the families state their
+-- carriers' iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records, stated once for all thirteen families. On an index of prime field
+order the exponent is one and the two maps agree. -/
+theorem frobenius_eq_primeFrobenius_pow (d : GraphTwistedIndex) :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  obtain ⟨⟨_ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _, hv⟩, h⟩ := d
+  · rw [frobenius_A, primeFrobenius_A]
+    exact TypeALieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+  · rw [frobenius_twistedA, primeFrobenius_twistedA]
+    exact TypeALieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+  · rw [frobenius_B, primeFrobenius_B]
+    exact TypeBLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, trivial⟩
+  · rw [frobenius_C, primeFrobenius_C]
+    exact TypeCLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, trivial⟩
+  · rw [frobenius_D, primeFrobenius_D]
+    exact TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+  · rw [frobenius_twistedD, primeFrobenius_twistedD]
+    exact TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+  · rw [frobenius_E6, primeFrobenius_E6]
+    exact TypeE6LieIndex.steinberg_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+  · rw [frobenius_E7, primeFrobenius_E7]
+    exact TypeE7LieIndex.steinberg_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+  · rw [frobenius_E8, primeFrobenius_E8]
+    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
+  · rw [frobenius_F4, primeFrobenius_F4]
+    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
+  · rw [frobenius_G2, primeFrobenius_G2]
+    exact UnimodularExceptionalIndex.steinberg_eq_primeFrobenius_pow ⟨⟨⟨_, hv⟩, by simp⟩, h⟩
+  · rw [frobenius_twistedE6, primeFrobenius_twistedE6]
+    exact TypeTwistedE6LieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
+  · rw [frobenius_trialityD4, primeFrobenius_trialityD4]
+    exact TypeTrialityD4LieIndex.frobenius_eq_primeFrobenius_pow ⟨⟨_, hv⟩, by simp⟩
   all_goals exact absurd ((usesHalfFrobenius_iff _).mpr trivial) h
 
 /-- **The Steinberg endomorphism has the pinned action on every simple root subgroup.** It sends

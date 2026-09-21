@@ -41,7 +41,9 @@ functoriality needed for the overlap and cocycle maps in fan gluing.
   face is an open subscheme of the affine toric scheme of `σ`.
 * `TauCeti.Toric.faceAffineCoordinateRingMap` and
   `TauCeti.Toric.faceAffineToricSchemeMap`: the canonical restriction map and affine-scheme
-  morphism attached to a face inclusion, with identity and composition laws.
+  morphism attached to a face inclusion, with identity and composition laws; and
+  `TauCeti.Toric.faceAffineToricSchemeMap_eq_affineToricSchemeMap`: the affine-scheme
+  characterization of the canonical face morphism.
 * `TauCeti.Toric.IsRegularCone.exists_isLocalization_away_faceAffineCoordinateRingMap` and
   `TauCeti.Toric.IsRegularCone.isOpenImmersion_faceAffineToricSchemeMap`: for a face `τ` of a
   regular cone `σ`, the coordinate ring of `τ` is the localization of that of `σ` away from a
@@ -119,7 +121,9 @@ theorem faceAffineCoordinateRingMap_comp (hi : IsIntegralLattice i)
 noncomputable def faceAffineToricSchemeMap (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) : affineToricScheme hi τ ⟶ affineToricScheme hi σ :=
   affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
-    fun _ hx ↦ hτσ.le hx
+    -- Pin the cone coercions to the ambient vector space at this polymorphic argument.
+    (show Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) from
+      fun _ hx ↦ hτσ.le hx)
 
 /-- The morphism attached to a face inclusion is the spectrum of its coordinate-ring
 restriction. -/
@@ -130,6 +134,18 @@ theorem faceAffineToricSchemeMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFa
     rw [faceAffineToricSchemeMap, faceAffineCoordinateRingMap]
     exact affineToricSchemeMap_def hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
       (fun _ hx ↦ hτσ.le hx)
+
+/-- The canonical face morphism is the affine toric scheme map induced by the identity on the
+  lattice and real vector space. -/
+theorem faceAffineToricSchemeMap_eq_affineToricSchemeMap (hi : IsIntegralLattice i)
+    (hτσ : τ.IsFaceOf σ) :
+    faceAffineToricSchemeMap hi hτσ =
+      affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+        -- Pin the cone coercions to the ambient vector space at this polymorphic argument.
+        (show Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) from
+          fun _ hx ↦ hτσ.le hx) := by
+  rw [faceAffineToricSchemeMap_def, affineToricSchemeMap_def]
+  congr 1
 
 /-- The morphism of a cone viewed as its own face is the identity morphism. -/
 @[simp]
@@ -145,10 +161,10 @@ theorem faceAffineToricSchemeMap_comp (hi : IsIntegralLattice i)
     (hυτ : υ.IsFaceOf τ) (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hυτ ≫ faceAffineToricSchemeMap hi hτσ =
       faceAffineToricSchemeMap hi (hυτ.trans hτσ) := by
-  simpa [faceAffineToricSchemeMap] using
-    affineToricSchemeMap_comp hi hi hi (AddMonoidHom.id N) (AddMonoidHom.id N)
-      LinearMap.id LinearMap.id (fun _ ↦ rfl) (fun _ ↦ rfl)
-      (fun _ hx ↦ hυτ.le hx) (fun _ hx ↦ hτσ.le hx)
+  simp only [faceAffineToricSchemeMap]
+  exact affineToricSchemeMap_comp hi hi hi (AddMonoidHom.id N) (AddMonoidHom.id N)
+    LinearMap.id LinearMap.id (fun _ ↦ rfl) (fun _ ↦ rfl)
+    (fun _ hx ↦ hυτ.le hx) (fun _ hx ↦ hτσ.le hx)
 
 /-! ### Localizations and open immersions -/
 

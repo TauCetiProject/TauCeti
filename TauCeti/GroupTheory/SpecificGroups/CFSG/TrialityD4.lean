@@ -77,6 +77,11 @@ along such an identification, once one is proved.
 * `TauCeti.TypeTrialityD4LieIndex.FixedPoints` and `TauCeti.TypeTrialityD4LieIndex.Group`: the
   fixed group and its derived central quotient.
 
+* `TauCeti.TypeTrialityD4LieIndex.primeFrobenius`, with
+  `TauCeti.TypeTrialityD4LieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeTrialityD4LieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its
+  pinned equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th
+  power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§12.2 and 14, for triality and the family it
@@ -197,6 +202,47 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, D4Tripled.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the tripled `D₄` carrier**, the `p`-power map for `p` the
+defining characteristic. The `q`-power Frobenius is its `e`-th power, for `e` the field exponent
+the index records, by `frobenius_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  D4Tripled.frobenius d.1.characteristic 1 d.1.Closure
+
+-- Not `@[simp]`, for the reason `frobenius_def` is not.
+/-- The prime-field Frobenius is the tripled carrier's Frobenius at exponent one. -/
+theorem primeFrobenius_def :
+    d.primeFrobenius = D4Tripled.frobenius d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- The prime-field Frobenius acts on the ambient group by raising every entry of its `24 × 24`
+matrix to the `p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 24) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
+        Matrix (Fin 24) (Fin 24) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 24) d.1.Closure) :
+        Matrix (Fin 24) (Fin 24) d.1.Closure) r c ^ d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using D4Tripled.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, D4Tripled.frobenius_rootSubgroupPoints, pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.D4Tripled.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, D4Tripled.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when every entry of its
 `24 × 24` matrix lies in the field of definition.** Writing `𝔽_q` for

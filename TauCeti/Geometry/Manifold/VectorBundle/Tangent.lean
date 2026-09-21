@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -44,6 +44,8 @@ identification.
   tangent bundle of the tangent bundle.
 * `TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange`: reading a tangent vector through the
   preferred trivializations of two charts is the tangent coordinate change between them.
+* `TauCeti.Manifold.tangentCoordChange_toMatrix`: in a finite basis, this coordinate change is the
+  change-of-basis matrix between the corresponding chart-local frames.
 * `TauCeti.Manifold.tangentSpaceOpenEquiv`: the canonical continuous linear equivalence between
   the tangent space of an open submanifold and the ambient tangent space.
 * `TauCeti.Manifold.mfderiv_subtype_val`: the differential of the inclusion is the canonical
@@ -411,6 +413,21 @@ theorem continuousLinearMapAt_symmL_coordChange {x x₀ y : M}
   have hy3 : y ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hyx₀
   exact tangentCoordChange_comp (I := I) (w := x) (x := y) (y := x₀) (z := y) (v := u)
     ⟨⟨hy1, hy2⟩, hy3⟩
+
+/-- The matrix of a tangent coordinate change in a finite basis of the model space is the
+change-of-basis matrix between the corresponding chart-local frames. -/
+theorem tangentCoordChange_toMatrix {ι : Type*} [Fintype ι] [DecidableEq ι] (α β : M)
+    (b : Basis ι 𝕜 E) {x : M}
+    (hα : x ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (hβ : x ∈ (trivializationAt E (TangentSpace I) β).baseSet) :
+    LinearMap.toMatrix b b (tangentCoordChange I α β x).toLinearMap =
+      ((trivializationAt E (TangentSpace I) β).basisAt b hβ).toMatrix
+        ((trivializationAt E (TangentSpace I) α).basisAt b hα) := by
+  rw [← coordChangeL_toMatrix b hα hβ]
+  congr 1
+  ext v
+  exact (VectorBundleCore.trivializationAt_coordChange_eq
+    (Z := tangentBundleCore I M) ⟨hα, hβ⟩ v).symm
 
 end TangentReading
 

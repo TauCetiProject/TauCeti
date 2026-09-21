@@ -38,7 +38,7 @@ of a split conflation is zero.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_eq`: any map
   induced by an extension to `I(X)` agrees with `connectingMap` in the stable category.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_g_comp_connectingMap` and
-  `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_comp_suspensionMap`:
+  `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_comp_cokernelMap`:
   consecutive composites of the standard triangle vanish in the stable category.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_naturality`:
   naturality with respect to morphisms of conflations.
@@ -136,33 +136,40 @@ theorem projectiveStableFunctor_map_g_comp_connectingMap :
 
 /-- The composite `Z ⟶ ΣX ⟶ ΣY` of the standard triangle vanishes in the stable category. -/
 @[simp]
-theorem projectiveStableFunctor_map_connectingMap_comp_suspensionMap :
+theorem projectiveStableFunctor_map_connectingMap_comp_cokernelMap :
     E.projectiveStableFunctor.map (hE.connectingMap hS) ≫
-      E.projectiveStableFunctor.map (hE.suspensionMap S.f) = 0 := by
+      E.projectiveStableFunctor.map
+        ((hE.suspensionPresentation S.X₁).cokernelMap
+          (hE.suspensionPresentation S.X₂) S.f) = 0 := by
   rw [← Functor.map_comp]
   refine hE.projectiveStableFunctor_map_eq_zero_of_g_comp_eq hS
-    (b := hE.connectingMiddleMap hS ≫ hE.suspensionMiddleMap S.f - hE.suspensionInflation S.X₂)
-    ?_ ?_
+    (b := hE.connectingMiddleMap hS ≫
+      (hE.suspensionPresentation S.X₁).middleMap (hE.suspensionPresentation S.X₂) S.f -
+        hE.suspensionInflation S.X₂) ?_ ?_
   · rw [Preadditive.comp_sub, hE.f_comp_connectingMiddleMap_assoc,
-      suspensionInflation_comp_suspensionMiddleMap, sub_self]
+      InjectivePresentation.i_comp_middleMap, sub_self]
   · rw [Preadditive.sub_comp, (hE.suspensionPresentation S.X₂).zero, sub_zero,
-      g_comp_connectingMap_assoc, suspensionDeflation_comp_suspensionMap, Category.assoc]
+      g_comp_connectingMap_assoc, InjectivePresentation.p_comp_cokernelMap, Category.assoc]
 
 /-- The connecting map is natural in morphisms of conflations, in the stable category: for
 `φ : S ⟶ T`, the square with `φ.τ₃` and the suspension of `φ.τ₁` commutes. -/
 theorem projectiveStableFunctor_map_connectingMap_naturality {T : ShortComplex C}
     (hT : E.Conflation T) (φ : S ⟶ T) :
     E.projectiveStableFunctor.map (φ.τ₃ ≫ hE.connectingMap hT) =
-      E.projectiveStableFunctor.map (hE.connectingMap hS ≫ hE.suspensionMap φ.τ₁) := by
+      E.projectiveStableFunctor.map (hE.connectingMap hS ≫
+        (hE.suspensionPresentation S.X₁).cokernelMap
+          (hE.suspensionPresentation T.X₁) φ.τ₁) := by
   rw [← sub_eq_zero, ← Functor.map_sub]
   refine hE.projectiveStableFunctor_map_eq_zero_of_g_comp_eq hS
     (b := φ.τ₂ ≫ hE.connectingMiddleMap hT -
-      hE.connectingMiddleMap hS ≫ hE.suspensionMiddleMap φ.τ₁) ?_ ?_
+      hE.connectingMiddleMap hS ≫
+        (hE.suspensionPresentation S.X₁).middleMap
+          (hE.suspensionPresentation T.X₁) φ.τ₁) ?_ ?_
   · rw [Preadditive.comp_sub, ← φ.comm₁₂_assoc, f_comp_connectingMiddleMap,
-      hE.f_comp_connectingMiddleMap_assoc, suspensionInflation_comp_suspensionMiddleMap,
+      hE.f_comp_connectingMiddleMap_assoc, InjectivePresentation.i_comp_middleMap,
       sub_self]
   · rw [Preadditive.comp_sub, Preadditive.sub_comp, ← φ.comm₂₃_assoc, g_comp_connectingMap,
-      g_comp_connectingMap_assoc, suspensionDeflation_comp_suspensionMap, Category.assoc,
+      g_comp_connectingMap_assoc, InjectivePresentation.p_comp_cokernelMap, Category.assoc,
       Category.assoc]
 
 /-- For the chosen suspension presentation `X ⟶ I(X) ⟶ ΣX` itself, the connecting map is the

@@ -226,6 +226,16 @@ theorem mdifferentiable_qCoordinate :
   exact (mdifferentiable_qParamPuncturedUnitDisc D.width D.width_pos).comp
     ((contMDiff_const_smul (I := 𝓘(ℂ, ℂ)) (n := ∞) D.scaling).mdifferentiable (by simp))
 
+/-- The normalized q-coordinate, regarded as a complex-valued function, is holomorphic. -/
+theorem mdifferentiable_coordinate :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (coordinate D) := by
+  have hcoordinate : coordinate D =
+      (fun q : {q : 𝔻 // q ≠ 0} ↦ ((q : 𝔻) : ℂ)) ∘ qCoordinate D :=
+    funext fun z ↦ (coe_qCoordinate D z).symm
+  rw [hcoordinate]
+  exact TauCeti.Complex.UnitDisc.mdifferentiable_coe_punctured.comp
+    (mdifferentiable_qCoordinate D)
+
 /-- A scaled horodisc is exactly the inverse image of a punctured disc under the
 q-coordinate. -/
 theorem norm_qCoordinate_lt_iff (A : ℝ) (z : ℍ) :

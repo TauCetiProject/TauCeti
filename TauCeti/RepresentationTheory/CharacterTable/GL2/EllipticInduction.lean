@@ -7,6 +7,8 @@ module
 
 -- `TauCeti.indClassFun` is the object computed here.
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
+-- `FDRep.ofLinearCharacter` and `TauCeti.indFDRep` are the bodies of the constructions below.
+public import TauCeti.RepresentationTheory.Induction.LinearCharacter
 -- `TauCeti.GL2NonSplitTorus`, `TauCeti.diagGL` and `TauCeti.jordanGL` occur in the statements
 -- below, and the centralizer of an elliptic element is what pins the two contributing cosets.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Centralizer
@@ -29,10 +31,13 @@ conjugacy classes of `GL₂(F)`: at a central scalar `a` it is `[GL₂(F) : T] =
 `f(a)`, it vanishes on the split semisimple and the non-semisimple families, and at an elliptic
 element coming from `u : Eˣ` outside `F` it is `f(u) + f(u^q)`.
 
-Applied to a character `θ` of `Eˣ` this is the character of `Ind_{Eˣ}^{GL₂(F)} θ`, one of the two
-induced characters whose difference is the cuspidal (discrete series) character attached to a
-character of `Eˣ` in general position; the other is induced from the product of the centre with the
-unipotent radical. Its degree is the difference of the two inducing indices,
+It then specialises those four values to the inducing datum the character table needs. A character
+`θ` of `Eˣ` is a linear character of the torus, and the representation it induces,
+`TauCeti.GL2EllipticInduction`, has dimension `q (q - 1)` and the four character values
+`q (q - 1) θ(a)`, `0`, `0` and `θ(u) + θ(u^q)`. This is one of the two induced characters whose
+difference is the cuspidal (discrete series) character attached to a character of `Eˣ` in general
+position; the other is induced from the product of the centre with the unipotent radical. The
+difference has degree the difference of the two inducing indices,
 `[GL₂(F) : Z·U] - [GL₂(F) : Eˣ] = (q² - 1) - q (q - 1) = q - 1`.
 
 ## The geometry behind the four values
@@ -51,6 +56,12 @@ scalars its elements have no eigenvalue in `F`
   (`TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`). The centralizer of an elliptic
   element being `T` itself, those two points contribute one coset each.
 
+## Main definitions
+
+* `TauCeti.GL2NonSplitTorusRep`: the line of a character `θ` of `Eˣ`, as a representation of the
+  non-split torus.
+* `TauCeti.GL2EllipticInduction`: the representation it induces to `GL₂(F)`.
+
 ## Main results
 
 * `TauCeti.GL2NonSplitTorus.indClassFun_eq_zero_of_det_sub_algebraMap_eq_zero`: the induced class
@@ -60,13 +71,23 @@ scalars its elements have no eigenvalue in `F`
   `TauCeti.GL2NonSplitTorus.indClassFun_jordanGL` and
   `TauCeti.GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom`: **the four values**, on the central,
   split semisimple, non-semisimple and elliptic normal forms.
+* `TauCeti.GL2NonSplitTorusRep_def` and `TauCeti.GL2EllipticInduction_def`: the defining
+  equations of the two representations.
+* `TauCeti.finrank_GL2EllipticInduction`: the induced representation has dimension `q (q - 1)`.
+* `TauCeti.character_GL2EllipticInduction_scalar`,
+  `TauCeti.character_GL2EllipticInduction_diagGL`,
+  `TauCeti.character_GL2EllipticInduction_jordanGL` and
+  `TauCeti.character_GL2EllipticInduction_gl2NonSplitTorusHom`: its four character values.
 
 That the four normal forms exhaust the conjugacy classes is
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ConjugacyClasses`; as in
 `TauCeti/RepresentationTheory/CharacterTable/GL2/CharacterValues.lean`, the values below are
 stated at the normal forms themselves rather than assembled into a single case distinction. None
-of the four is a `simp` lemma: they evaluate a class function at a normal form, and neither side
-is a normal form for `simp`.
+of the four class-function values is a `simp` lemma: they evaluate `indClassFun` of an arbitrary
+function at a normal form, and the right-hand side, a value of that function, is no normal form for
+`simp` either. The four character values they specialise to are `simp` lemmas: there the left-hand
+side is the character of `TauCeti.GL2EllipticInduction` at a normal form and the right-hand side is
+the closed form it reduces to.
 
 ## References
 
@@ -295,5 +316,98 @@ theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E hE → k)
 end Elliptic
 
 end GL2NonSplitTorus
+
+/-! ### The induced representation -/
+
+section Representation
+
+variable (F : Type*) [Field F] (E : Type*) [Field E] [Algebra F E]
+  (hE : Module.finrank F E = 2)
+
+/-- **The line of a character of `Eˣ`, as a representation of the non-split torus**: transport
+`θ` along `TauCeti.GL2NonSplitTorus.unitsEquiv`. -/
+noncomputable def GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) : FDRep ℂ (GL2NonSplitTorus F E hE) :=
+  FDRep.ofLinearCharacter (θ.comp (GL2NonSplitTorus.unitsEquiv hE).symm.toMonoidHom)
+
+/-- The defining equation of the torus line: it is the line of the linear character `θ` read
+through `TauCeti.GL2NonSplitTorus.unitsEquiv`. -/
+theorem GL2NonSplitTorusRep_def (θ : Eˣ →* ℂˣ) :
+    GL2NonSplitTorusRep F E hE θ =
+      FDRep.ofLinearCharacter (θ.comp (GL2NonSplitTorus.unitsEquiv hE).symm.toMonoidHom) :=
+  (rfl)
+
+/-- The torus line is one-dimensional. -/
+@[simp]
+theorem finrank_GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) :
+    Module.finrank ℂ (GL2NonSplitTorusRep F E hE θ) = 1 := by
+  rw [GL2NonSplitTorusRep, FDRep.finrank_ofLinearCharacter]
+
+/-- The character of the torus line is `θ`, read through
+`TauCeti.GL2NonSplitTorus.unitsEquiv`. -/
+@[simp]
+theorem character_GL2NonSplitTorusRep (θ : Eˣ →* ℂˣ) (g : GL2NonSplitTorus F E hE) :
+    (GL2NonSplitTorusRep F E hE θ).character g =
+      (θ ((GL2NonSplitTorus.unitsEquiv hE).symm g) : ℂ) :=
+  FDRep.char_ofLinearCharacter _ g
+
+variable [Finite F]
+
+/-- **The elliptic induction** `Ind_{Eˣ}^{GL₂(F)} θ`, the representation induced from the
+non-split torus by a character `θ` of `Eˣ`. -/
+noncomputable def GL2EllipticInduction (θ : Eˣ →* ℂˣ) : FDRep ℂ (GL (Fin 2) F) :=
+  indFDRep (GL2NonSplitTorusRep F E hE θ)
+
+/-- The defining equation of the elliptic induction: it is induced from the non-split torus by
+the torus line of `θ`. -/
+theorem GL2EllipticInduction_def (θ : Eˣ →* ℂˣ) :
+    GL2EllipticInduction F E hE θ = indFDRep (GL2NonSplitTorusRep F E hE θ) :=
+  (rfl)
+
+/-- The elliptic induction has dimension `q (q - 1)`, the index of the torus. -/
+@[simp]
+theorem finrank_GL2EllipticInduction (θ : Eˣ →* ℂˣ) :
+    Module.finrank ℂ (GL2EllipticInduction F E hE θ) = Nat.card F * (Nat.card F - 1) := by
+  rw [GL2EllipticInduction, GL2NonSplitTorusRep, finrank_indFDRep_ofLinearCharacter,
+    GL2NonSplitTorus.index_eq]
+
+/-- **The elliptic induced character at a scalar matrix** is `q (q - 1) θ(a)`: every coset
+contributes the value of `θ` at the unchanged scalar, which comes from `a : Fˣ`. -/
+@[simp]
+theorem character_GL2EllipticInduction_scalar (θ : Eˣ →* ℂˣ) (a : Fˣ) :
+    (GL2EllipticInduction F E hE θ).character (Matrix.GeneralLinearGroup.scalar (Fin 2) a) =
+      (Nat.card F : ℂ) * ((Nat.card F : ℂ) - 1) *
+        θ (Units.map (algebraMap F E : F →* E) a) := by
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
+    GL2NonSplitTorus.indClassFun_scalar hE _ a, character_GL2NonSplitTorusRep,
+    GL2NonSplitTorus.unitsEquiv_symm_scalar, GL2NonSplitTorus.index_eq, nsmul_eq_mul, Nat.cast_mul,
+    Nat.cast_sub Nat.card_pos]
+  ring
+
+/-- **The elliptic induced character vanishes on split regular semisimple elements.** -/
+@[simp]
+theorem character_GL2EllipticInduction_diagGL (θ : Eˣ →* ℂˣ) {t : Fin 2 → Fˣ} (ht : t 0 ≠ t 1) :
+    (GL2EllipticInduction F E hE θ).character (diagGL t) = 0 := by
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
+  exact GL2NonSplitTorus.indClassFun_diagGL hE _ ht
+
+/-- **The elliptic induced character vanishes on the non-semisimple classes.** -/
+@[simp]
+theorem character_GL2EllipticInduction_jordanGL (θ : Eˣ →* ℂˣ) (a : Fˣ) {b : F} (hb : b ≠ 0) :
+    (GL2EllipticInduction F E hE θ).character (jordanGL a b) = 0 := by
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character]
+  exact GL2NonSplitTorus.indClassFun_jordanGL hE _ a hb
+
+/-- **The elliptic induced character at an elliptic element** is `θ(u) + θ(u^q)`: the two
+contributing cosets carry the two torus elements conjugate to it. -/
+@[simp]
+theorem character_GL2EllipticInduction_gl2NonSplitTorusHom (θ : Eˣ →* ℂˣ) {u : Eˣ}
+    (hu : (u : E) ∉ Set.range (algebraMap F E)) :
+    (GL2EllipticInduction F E hE θ).character (GL2NonSplitTorusHom F E hE u) =
+      (θ u : ℂ) + θ (u ^ Nat.card F) := by
+  rw [GL2EllipticInduction_def, ← indClassFun_ofFDRep_character,
+    GL2NonSplitTorus.indClassFun_gl2NonSplitTorusHom hE _ hu, character_GL2NonSplitTorusRep,
+    character_GL2NonSplitTorusRep, MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
+
+end Representation
 
 end TauCeti

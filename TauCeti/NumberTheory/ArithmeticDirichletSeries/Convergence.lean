@@ -72,9 +72,6 @@ variable {K : Type*} [Field K] [NumberField K]
 
 namespace TauCeti
 
--- Source: Layer 7.1 of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, which builds the
--- Dirichlet-density calculus directly on `NumberField.Set.primeIdealZetaSum`, and whose
--- Chebotarev consumer is Layer 3 of `TauCetiRoadmap/Chebotarev/README.md`.
 
 /-! ### The ideal-indexed series, as a real Dirichlet series -/
 

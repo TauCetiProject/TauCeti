@@ -36,6 +36,11 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
   those criteria that the valuation theory needs — if a finite set `T` spans an open ideal, then
   a basic neighbourhood of zero consists of `T`-combinations whose *coefficients* lie in the
   image of the ideal of definition, hence are topologically nilpotent.
+* `TauCeti.Huber.exists_finset_subset_isOpen_span`: every neighbourhood of zero of a Huber ring
+  contains a finite set generating an open ideal.
+* `TauCeti.Huber.exists_isOpen_span_forall_sub_mem_of_denseRange`: along a continuous map with
+  dense image out of a Huber ring, a finite set and a denominator downstairs are approximated, to
+  within a neighbourhood of zero, by the image of a finite set that spans an open ideal.
 * `TauCeti.Huber.IsTateRing.isOpen_iff_eq_top`: an ideal of a Tate ring is open exactly when it is
   the whole ring.
 
@@ -205,6 +210,55 @@ theorem exists_forall_mem_idealImage_exists_sum_eq (P : PairOfDefinition A) (T :
       _ = (y : A) := by rw [hsum]
 
 end PairOfDefinition
+
+section IsHuberRing
+
+open Topology
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- **Every neighbourhood of zero of a Huber ring contains a finite set generating an open
+ideal.** Unlike an open ideal itself, such a set can be chosen inside an arbitrarily small
+neighbourhood of zero. -/
+theorem exists_finset_subset_isOpen_span [IsHuberRing A] {V : Set A} (hV : V ∈ 𝓝 (0 : A)) :
+    ∃ G : Finset A, (G : Set A) ⊆ V ∧ IsOpen (Ideal.span (G : Set A) : Set A) := by
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp hV
+  -- `(I · A)ⁿ` is finitely generated and spanned by the image of `Iⁿ`, which lies in `V`, so a
+  -- finite part of that image already spans it.
+  obtain ⟨G, hG, hspan⟩ := (Submodule.fg_span_iff_fg_span_finset_subset _).mp
+    (P.extendedIdealOfDefinition_pow n ▸ P.fg_extendedIdealOfDefinition.pow)
+  exact ⟨G, hG.trans hn, (P.isOpen_iff_exists_pow_le _).mpr
+    ⟨n, (P.extendedIdealOfDefinition_pow n).trans_le hspan.le⟩⟩
+
+open scoped Classical in
+/-- **A finite set and a denominator descend along a dense map, up to a neighbourhood of zero.**
+Along a continuous `φ : A → B` with dense image out of a Huber ring `A`, a finite set `T ∋ 0` of
+`B` is approximated within a neighbourhood `V` of zero, in both directions, by the image of a
+finite set of `A` that generates an open ideal, and an element `s` of `B` by the image of an
+element of `A`. The open-ideal condition is what makes the approximating data a presentation of a
+rational subset of `Spa(A, A⁺)`, rather than merely a finite set and a denominator. -/
+theorem exists_isOpen_span_forall_sub_mem_of_denseRange {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing A] {φ : A →+* B}
+    (hφc : Continuous φ) (hφ : DenseRange φ) {V : Set B} (hV : V ∈ 𝓝 0) {T : Finset B}
+    (hT : 0 ∈ T) (s : B) :
+    ∃ (T' : Finset A) (s' : A), IsOpen (Ideal.span (T' : Set A) : Set A) ∧
+      (∀ t ∈ T, ∃ u ∈ T'.image φ, t - u ∈ V) ∧ (∀ u ∈ T'.image φ, ∃ t ∈ T, u - t ∈ V) ∧
+      s - φ s' ∈ V := by
+  -- `G ⊆ φ⁻¹(V)` generates an open ideal, and `φ (a b)` lies within `V ∩ -V` of each `b : B`
+  obtain ⟨G, hGV, hGopen⟩ := exists_finset_subset_isOpen_span (V := φ ⁻¹' V)
+    (hφc.continuousAt.preimage_mem_nhds (by rwa [map_zero]))
+  have happrox : ∀ b : B, ∃ x : A, φ x - b ∈ V ∧ b - φ x ∈ V := fun b ↦ by
+    simpa using mem_closure_iff_nhds_zero.mp (hφ b) _ (Filter.inter_mem hV (neg_mem_nhds_zero B hV))
+  choose a ha ha' using happrox
+  refine ⟨T.image a ∪ G, a s, Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (by simp)) hGopen,
+    fun t ht ↦ ⟨φ (a t), by grind, ha' t⟩, fun u hu ↦ ?_, ha' s⟩
+  simp only [Finset.mem_image, Finset.mem_union] at hu
+  -- the elements of `φ(G)` lie in `V`, so they are close to `0 ∈ T`
+  obtain ⟨x, ⟨t, ht, rfl⟩ | hx, rfl⟩ := hu
+  exacts [⟨t, ht, ha t⟩, ⟨0, hT, by simpa using hGV hx⟩]
+
+end IsHuberRing
 
 section Tate
 

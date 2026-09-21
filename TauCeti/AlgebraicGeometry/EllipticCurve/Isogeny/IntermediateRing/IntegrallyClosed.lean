@@ -22,8 +22,7 @@ closure is integral over `W₂.CoordinateRing`, hence already in it. Since `W₁
 field, being integrally closed *in* it upgrades to `IsIntegrallyClosed`
 (`IsIntegrallyClosed.of_isIntegrallyClosedIn`). In particular this holds for **inseparable**
 isogenies, Frobenius included, and asks for no separability at all, as does the finiteness
-sibling `Isogeny.moduleFinite_intermediateRing_of_isDedekindDomain`; only
-`Isogeny.moduleFinite_intermediateRing` needs it.
+sibling `Isogeny.moduleFinite_intermediateRing`.
 
 ## Main results
 
@@ -87,9 +86,7 @@ No hypotheses beyond the isogeny: the algebra structures the proof runs through 
 pullback ones, installed locally rather than asked of the caller.
 
 No finiteness and no separability either, so this covers inseparable isogenies, Frobenius
-included, and asks nothing of the source curve. The finiteness sibling
-`Isogeny.moduleFinite_intermediateRing_of_isDedekindDomain` also drops separability, but pays
-for it with a Dedekind source coordinate ring. -/
+included, and asks nothing of the source curve. -/
 theorem isIntegrallyClosed_intermediateRing (φ : Isogeny W₁ W₂) :
     IsIntegrallyClosed φ.intermediateRing := by
   let _ := φ.pullback.toRingHom.toAlgebra
