@@ -40,6 +40,7 @@ In positive dimension the matrix is not integrable when `p - 1 < n ≤ p + 1`.
 
 ## References
 
+* R. J. Muirhead, *Aspects of Multivariate Statistical Theory*, Wiley, 1982, chapter 3.
 * M. L. Eaton, *Multivariate Statistics: A Vector Space Approach*, IMS Lecture Notes 53, chapter 8.
 -/
 
