@@ -78,13 +78,13 @@ open _root_.Quiver MulOpposite PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
+variable (k : Type w) {V : Type u} (G : SimpleGraph V)
 
 /-! ### The coordinates of a signless relator -/
 
 section Coordinates
 
-variable [∀ v : V, Fintype (G.neighborSet v)]
+variable [Semiring k] [∀ v : V, Fintype (G.neighborSet v)]
 
 /-- **The signless relator at `v` is supported on the backtracks based at `v`**: its coordinate on
 any other path vanishes. -/
@@ -164,6 +164,8 @@ theorem repr_signlessPreprojectiveRelator_backtrackPath_congr (v : V) {i j j' : 
       repr_signlessPreprojectiveRelator_backtrackPath_of_ne k G v h' hvi]
 
 end Coordinates
+
+variable [CommRing k]
 
 /-! ### The quadratic relation space -/
 
