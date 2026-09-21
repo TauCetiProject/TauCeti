@@ -10,8 +10,8 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 /-!
 # Factoring a Dirichlet character through a divisor
 
-Two facts about when a Dirichlet character `χ` mod `N` factors through a divisor of `N`, both
-stated for characters valued in any `CommMonoidWithZero`, which is the generality of
+Facts about when a Dirichlet character `χ` mod `N` factors through a divisor of `N`, stated for
+characters valued in any `CommMonoidWithZero`, which is the generality of
 `DirichletCharacter.factorsThrough_iff_ker_unitsMap` and of the conductor.
 
 If `χ` does not factor through `d ∣ N`, then knowing a unit's reduction modulo `d` does not
@@ -34,6 +34,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   specialisation, from `L N / p` to `N / p`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
   `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
+* `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
+  `DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five`: small-level primitivity
+  criteria obtained by comparing values on congruent units.
 
 ## Provenance
 
@@ -60,6 +63,57 @@ divides `gcd (N, L N / p) = N / p` — stated once for characters valued in any
 public section
 
 namespace DirichletCharacter
+
+/-- A character which factors through `d` takes the same value on level-units congruent modulo
+`d`. -/
+theorem eq_apply_of_factorsThrough {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
+    (chi : DirichletCharacter R N) (hfac : chi.FactorsThrough d) {a b : ℤ}
+    (ha : IsCoprime a N) (hb : IsCoprime b N) (hab : a % d = b % d) :
+    chi a = chi b := by
+  obtain ⟨hd, psi, rfl⟩ := hfac
+  rw [changeLevel_eq_cast_of_dvd' psi hd ha, changeLevel_eq_cast_of_dvd' psi hd hb]
+  exact congrArg psi ((ZMod.intCast_eq_intCast_iff' a b d).2 hab)
+
+/-- A character of level four which distinguishes `1` and `3` is primitive. -/
+theorem conductor_eq_four_of_apply_one_ne_apply_three {R : Type*} [CommMonoidWithZero R]
+    (chi : DirichletCharacter R 4) (hdist : chi (1 : ℤ) ≠ chi (3 : ℤ)) :
+    chi.conductor = 4 := by
+  have hone : IsCoprime (1 : ℤ) 4 := isCoprime_one_left
+  have hthree : IsCoprime (3 : ℤ) 4 := ⟨-1, 1, by norm_num⟩
+  have hdiv : chi.conductor ∣ 2 ^ 2 := by
+    norm_num at ⊢
+    exact conductor_dvd_level chi
+  obtain ⟨k, hk, hc⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp hdiv
+  interval_cases k
+  · have hfac := factorsThrough_conductor chi
+    have hmod : (1 : ℤ) % chi.conductor = 3 % chi.conductor := by simp [hc]
+    exact (hdist (eq_apply_of_factorsThrough _ hfac hone hthree hmod)).elim
+  · have hfac := factorsThrough_conductor chi
+    have hmod : (1 : ℤ) % chi.conductor = 3 % chi.conductor := by simp [hc]
+    exact (hdist (eq_apply_of_factorsThrough _ hfac hone hthree hmod)).elim
+  · simpa using hc
+
+/-- A character of level eight which distinguishes `1` and `5` is primitive. -/
+theorem conductor_eq_eight_of_apply_one_ne_apply_five {R : Type*} [CommMonoidWithZero R]
+    (chi : DirichletCharacter R 8) (hdist : chi (1 : ℤ) ≠ chi (5 : ℤ)) :
+    chi.conductor = 8 := by
+  have hone : IsCoprime (1 : ℤ) 8 := isCoprime_one_left
+  have hfive : IsCoprime (5 : ℤ) 8 := ⟨5, -3, by norm_num⟩
+  have hdiv : chi.conductor ∣ 2 ^ 3 := by
+    norm_num at ⊢
+    exact conductor_dvd_level chi
+  obtain ⟨k, hk, hc⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp hdiv
+  interval_cases k
+  · have hfac := factorsThrough_conductor chi
+    have hmod : (1 : ℤ) % chi.conductor = 5 % chi.conductor := by simp [hc]
+    exact (hdist (eq_apply_of_factorsThrough _ hfac hone hfive hmod)).elim
+  · have hfac := factorsThrough_conductor chi
+    have hmod : (1 : ℤ) % chi.conductor = 5 % chi.conductor := by simp [hc]
+    exact (hdist (eq_apply_of_factorsThrough _ hfac hone hfive hmod)).elim
+  · have hfac := factorsThrough_conductor chi
+    have hmod : (1 : ℤ) % chi.conductor = 5 % chi.conductor := by simp [hc]
+    exact (hdist (eq_apply_of_factorsThrough _ hfac hone hfive hmod)).elim
+  · simpa using hc
 
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —

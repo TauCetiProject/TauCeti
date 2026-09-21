@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Character
-public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Primitive Dirichlet characters of prime discriminants
@@ -34,7 +34,7 @@ Number Theory*, Chapter 6.
   attached to the prime discriminant `P`.
 * `TauCeti.Multiquadratic.primeDiscriminantChar_apply_int`: its value on an integer is
   `primeDiscriminantCharFun P`.
-* `TauCeti.Multiquadratic.primeDiscriminantChar_isPrimitive`: its conductor is `|P|`.
+* `TauCeti.Multiquadratic.isPrimitive_primeDiscriminantChar`: its conductor is `|P|`.
 -/
 
 public section
@@ -87,60 +87,10 @@ noncomputable def primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
   exact_mod_cast ZMod.natCast_zmod_val (n : ZMod P.natAbs)
 
 /-- The bundled character vanishes exactly on integers not coprime to its level. -/
-theorem primeDiscriminantChar_apply_eq_zero_iff (P : ℤ)
+@[simp] theorem primeDiscriminantChar_apply_eq_zero_iff (P : ℤ)
     (hP : IsPrimeDiscriminant P) (n : ℤ) :
     primeDiscriminantChar P hP n = 0 ↔ ¬ IsCoprime n P := by
   rw [primeDiscriminantChar_apply_int, primeDiscriminantCharFun_eq_zero_iff hP]
-
-/-- A character which factors through `d` takes the same value on level-units congruent modulo
-`d`. This is the small descent test used to rule out the proper divisors of `4` and `8`. -/
-private theorem eq_apply_of_factorsThrough {N d : ℕ}
-    (chi : DirichletCharacter ℤ N) (hfac : chi.FactorsThrough d) {a b : ℤ}
-    (ha : IsCoprime a N) (hb : IsCoprime b N) (hab : a % d = b % d) :
-    chi a = chi b := by
-  obtain ⟨hd, psi, rfl⟩ := hfac
-  rw [DirichletCharacter.changeLevel_eq_cast_of_dvd' psi hd ha,
-    DirichletCharacter.changeLevel_eq_cast_of_dvd' psi hd hb]
-  exact congrArg psi ((ZMod.intCast_eq_intCast_iff' a b d).2 hab)
-
-/-- A nontrivial character of level four which distinguishes `1` and `3` is primitive. -/
-private theorem conductor_eq_four_of_apply_one_ne_apply_three
-    (chi : DirichletCharacter ℤ 4) (hne_one : chi.conductor ≠ 1)
-    (hdist : chi (1 : ℤ) ≠ chi (3 : ℤ)) : chi.conductor = 4 := by
-  have hdiv : chi.conductor ∣ 2 ^ 2 := by
-    norm_num at ⊢
-    exact DirichletCharacter.conductor_dvd_level chi
-  obtain ⟨k, hk, hc⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp hdiv
-  interval_cases k
-  · exact (hne_one (by simpa using hc)).elim
-  · have hfac := DirichletCharacter.factorsThrough_conductor chi
-    have hmod : (1 : ℤ) % chi.conductor = 3 % chi.conductor := by simp [hc]
-    exact (hdist (eq_apply_of_factorsThrough _ hfac
-      (by norm_num [Int.isCoprime_iff_nat_coprime])
-      (by norm_num [Int.isCoprime_iff_nat_coprime]) hmod)).elim
-  · simpa using hc
-
-/-- A nontrivial character of level eight which distinguishes `1` and `5` is primitive. -/
-private theorem conductor_eq_eight_of_apply_one_ne_apply_five
-    (chi : DirichletCharacter ℤ 8) (hne_one : chi.conductor ≠ 1)
-    (hdist : chi (1 : ℤ) ≠ chi (5 : ℤ)) : chi.conductor = 8 := by
-  have hdiv : chi.conductor ∣ 2 ^ 3 := by
-    norm_num at ⊢
-    exact DirichletCharacter.conductor_dvd_level chi
-  obtain ⟨k, hk, hc⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp hdiv
-  interval_cases k
-  · exact (hne_one (by simpa using hc)).elim
-  · have hfac := DirichletCharacter.factorsThrough_conductor chi
-    have hmod : (1 : ℤ) % chi.conductor = 5 % chi.conductor := by simp [hc]
-    exact (hdist (eq_apply_of_factorsThrough _ hfac
-      (by norm_num [Int.isCoprime_iff_nat_coprime])
-      (by norm_num [Int.isCoprime_iff_nat_coprime]) hmod)).elim
-  · have hfac := DirichletCharacter.factorsThrough_conductor chi
-    have hmod : (1 : ℤ) % chi.conductor = 5 % chi.conductor := by simp [hc]
-    exact (hdist (eq_apply_of_factorsThrough _ hfac
-      (by norm_num [Int.isCoprime_iff_nat_coprime])
-      (by norm_num [Int.isCoprime_iff_nat_coprime]) hmod)).elim
-  · simpa using hc
 
 /-- The character attached to a prime discriminant is nontrivial. -/
 theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
@@ -161,7 +111,7 @@ theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
 
 /-- **The Dirichlet character of a prime discriminant is primitive.** Its conductor is exactly
 the absolute value of the prime discriminant. -/
-theorem primeDiscriminantChar_isPrimitive (P : ℤ) (hP : IsPrimeDiscriminant P) :
+theorem isPrimitive_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
     DirichletCharacter.IsPrimitive (primeDiscriminantChar P hP) := by
   let _ : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
   rw [DirichletCharacter.isPrimitive_def]
@@ -171,12 +121,12 @@ theorem primeDiscriminantChar_isPrimitive (P : ℤ) (hP : IsPrimeDiscriminant P)
       ((DirichletCharacter.eq_one_iff_conductor_eq_one).2 h)
   rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, hp, hodd, hP⟩
   · rcases hP with rfl | rfl | rfl
-    · exact conductor_eq_four_of_apply_one_ne_apply_three _
-        (by simpa using hne_one) (by simp [primeDiscriminantChar])
-    · exact conductor_eq_eight_of_apply_one_ne_apply_five _
-        (by simpa using hne_one) (by simp [primeDiscriminantChar])
-    · exact conductor_eq_eight_of_apply_one_ne_apply_five _
-        (by simpa using hne_one) (by simp [primeDiscriminantChar])
+    · exact DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three _
+        (by simp [primeDiscriminantChar])
+    · exact DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five _
+        (by simp [primeDiscriminantChar])
+    · exact DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five _
+        (by simp [primeDiscriminantChar])
   · subst P
     have hdiv : (primeDiscriminantChar (oddPrimeDiscriminant p) hP).conductor ∣ p := by
       simpa only [oddPrimeDiscriminant_natAbs] using DirichletCharacter.conductor_dvd_level
