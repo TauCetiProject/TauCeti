@@ -41,7 +41,6 @@ specializations of the negative-binomial ones.
 
 ## References
 
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, Geometric.
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed.,
   Wiley, 2005, Chapter 5.
 -/
