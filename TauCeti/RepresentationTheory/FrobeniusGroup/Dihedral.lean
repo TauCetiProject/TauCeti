@@ -20,10 +20,9 @@ in no conjugate of the complement, together with the identity, form a subgroup
 It is the rotation subgroup, of order `n`. The identification is immediate from
 `TauCeti.frobeniusKernelSubgroup_eq_of_isComplement'`, because the semidirect decomposition
 `DihedralGroup n = C_n ⋊ C₂` is already available; the content is that the character-theoretic
-construction, which never mentions rotations, lands on them. The odd dihedral groups are therefore
-the second worked family of Frobenius groups in the library, after
-`TauCeti/RepresentationTheory/FrobeniusGroup/SymmetricThree.lean` -- which is the degree-`3` member
-of this family, seen through the isomorphism `DihedralGroup 3 ≅ S₃` rather than through the
+construction, which never mentions rotations, lands on them. Compare the degree-`3` case in
+`TauCeti/RepresentationTheory/FrobeniusGroup/SymmetricThree.lean`, which is the degree-`3` member
+of this family seen through the isomorphism `DihedralGroup 3 ≅ S₃` rather than through the
 dihedral presentation.
 
 Reading the count off in this family also checks the general divisibility
@@ -37,8 +36,6 @@ which is oddness again.
   `TauCeti.coe_frobeniusKernelSubgroup_zpowers_sr` the same statement about the underlying set of
   elements lying in no conjugate of the complement.
 * `TauCeti.card_frobeniusKernelSubgroup_zpowers_sr`: that kernel has `n` elements.
-* `TauCeti.card_frobeniusKernelSubgroup_zpowers_sr_dihedralGroup_three`: the degree-`3`
-  instance, where the kernel is the alternating group of order three.
 
 ## References
 
@@ -57,6 +54,7 @@ variable {n : ℕ} [NeZero n]
 /-- **The Frobenius kernel of a reflection subgroup of an odd dihedral group is the rotation
 subgroup.** Frobenius's theorem builds a normal complement out of the trivial-intersection
 property alone, and the rotation subgroup is a normal complement, so the two agree. -/
+@[simp]
 theorem frobeniusKernelSubgroup_zpowers_sr (hn : Odd n) (i : ZMod n) :
     frobeniusKernelSubgroup (isTISubgroup_zpowers_sr hn i) = dihedralRotations n :=
   frobeniusKernelSubgroup_eq_of_isComplement' _
@@ -84,14 +82,5 @@ example (hn : Odd n) (i : ZMod n) : 2 ∣ n - 1 := by
   have h := card_dvd_card_frobeniusKernelSubgroup_sub_one (isTISubgroup_zpowers_sr hn i)
   rwa [Nat.card_zpowers, DihedralGroup.orderOf_sr,
     card_frobeniusKernelSubgroup_zpowers_sr hn i] at h
-
-/-- **The degree-`3` instance**: the Frobenius kernel of a reflection subgroup of
-`DihedralGroup 3` has three elements. Through `DihedralGroup 3 ≅ S₃` this is the alternating
-group, as `TauCeti/RepresentationTheory/FrobeniusGroup/SymmetricThree.lean` computes it from the
-permutation side. -/
-theorem card_frobeniusKernelSubgroup_zpowers_sr_dihedralGroup_three (i : ZMod 3) :
-    Nat.card (frobeniusKernelSubgroup
-      (isTISubgroup_zpowers_sr (n := 3) (Nat.odd_iff.mpr rfl) i)) = 3 :=
-  card_frobeniusKernelSubgroup_zpowers_sr (Nat.odd_iff.mpr rfl) i
 
 end TauCeti
