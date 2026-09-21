@@ -32,7 +32,7 @@ variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F] {μ : Measur
 
 /-- **The deviation from a constant, as a distance in `Lᵖ`.**  The `Lᵖ` seminorm of
 `fun x => f x - a` is the distance from `f` to the constant class `a`. -/
-theorem eLpNorm_sub_const_eq_enorm (f : Lp F p μ) (a : F) :
+theorem eLpNorm_sub_const_eq_enorm (a : F) (f : Lp F p μ) :
     eLpNorm (fun x => f x - a) p μ = ‖f - Lp.const p μ a‖ₑ := by
   rw [Lp.enorm_def]
   refine (eLpNorm_congr_ae ?_).symm
