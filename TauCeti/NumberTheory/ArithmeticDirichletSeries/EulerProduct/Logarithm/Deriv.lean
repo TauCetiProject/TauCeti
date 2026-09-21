@@ -12,7 +12,17 @@ import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Complex.BranchLogRoot
 
 /-!
-# The derivative of the prime-power logarithmic expansion
+# Derivatives of ideal Euler factors and logarithmic expansions
+
+For general `TauCeti.EulerProductData`, this file first differentiates each local Euler factor.
+The derivative at a prime `P` is the exact prime-power series
+
+`-∑ e, log N(P ^ e) · D(P ^ e) / N(P ^ e) ^ s`.
+
+This is the local analytic input for expressing the logarithmic derivative of a general ideal
+Euler product in terms of its prime-power data. The second part of the file specializes to a
+completely multiplicative weight, where the logarithm itself has a geometric Taylor expansion and
+can be differentiated after summing over all primes and exponents.
 
 `TauCeti.MultiplicativeIdealWeight.tsum_prime_pow_eq_tsum_neg_log_one_sub` expands the sum of local
 logarithms over the prime powers `(P, e)`.  This file differentiates that expansion in `s`, term by
@@ -31,6 +41,10 @@ prime-power series the derivative is equal to.
 
 ## Main results
 
+* `TauCeti.EulerProductData.hasDerivAt_eulerFactor`: a general local Euler factor differentiates
+  termwise into its log-weighted prime-power series.
+* `TauCeti.EulerProductData.logDeriv_eulerFactor_eq`: the local factor's logarithmic derivative is
+  the quotient of that prime-power series by the local factor.
 * `TauCeti.MultiplicativeIdealWeight.hasDerivAt_tsum_prime_pow`: the prime-power expansion
   differentiates termwise, strictly right of the abscissa of absolute convergence.
 * `TauCeti.MultiplicativeIdealWeight.logDeriv_LSeries_eq_tsum_prime_pow`: that derivative **is**
@@ -44,6 +58,92 @@ namespace TauCeti
 open Complex IsDedekindDomain
 
 open scoped nonZeroDivisors NumberField
+
+namespace EulerProductData
+
+open IdealArithmeticFunction
+
+variable {K : Type*} [Field K] [NumberField K] (D : EulerProductData K)
+
+/-! ### Derivative of a general local Euler factor -/
+
+/-- The `L`-series of the logarithmically weighted local arithmetic factor is the corresponding
+prime-power series. This is an unconditional identity of totalized sums; its useful applications
+are on the half-plane where the local series converges. -/
+theorem LSeries_logMul_localArithmeticFactor_eq_tsum
+    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
+    LSeries (LSeries.logMul (D.localArithmeticFactor P)) s =
+      ∑' e : ℕ, Complex.log (Ideal.absNorm (P.primeIdealPow e : Ideal (𝓞 K)) : ℂ) *
+        idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e) := by
+  have hsupp : Function.support
+      (fun n : ℕ ↦ (LSeries.logMul (D.localArithmeticFactor P) n : ℂ) / (n : ℂ) ^ s) ⊆
+      Set.range fun e : ℕ ↦ Ideal.absNorm P.asIdeal ^ e := by
+    intro n hn
+    simp only [Function.mem_support, ne_eq, div_eq_zero_iff, not_or] at hn
+    by_contra hpow
+    exact hn.1 (by simp [LSeries.logMul,
+      D.localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq P hpow])
+  rw [LSeries_def₀ (by simp), ← (Nat.pow_right_injective
+    (NumberField.HeightOneSpectrum.one_lt_absNorm P)).tsum_eq hsupp]
+  refine tsum_congr fun e ↦ ?_
+  rw [LSeries.logMul, D.localArithmeticFactor_apply_pow, idealTerm_def,
+    P.absNorm_primeIdealPow]
+  push_cast
+  ring
+
+/-- The log-weighted prime-power series for a local Euler factor is summable on its half-plane of
+absolute convergence. -/
+theorem summable_log_absNorm_mul_idealTerm_primeIdealPow
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re) :
+    Summable fun e : ℕ ↦
+      Complex.log (Ideal.absNorm (P.primeIdealPow e : Ideal (𝓞 K)) : ℂ) *
+        idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e) := by
+  have hsum := LSeriesSummable_logMul_of_lt_re hs
+  rw [LSeriesSummable] at hsum
+  have hsum' := hsum.comp_injective <|
+    Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
+  refine hsum'.congr fun e ↦ ?_
+  change LSeries.term (LSeries.logMul (D.localArithmeticFactor P)) s
+    (Ideal.absNorm P.asIdeal ^ e) = _
+  rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
+      (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)), LSeries.logMul,
+    D.localArithmeticFactor_apply_pow, idealTerm_def, P.absNorm_primeIdealPow]
+  push_cast
+  ring
+
+/-- **A general local Euler factor differentiates termwise.** Strictly to the right of its
+abscissa of absolute convergence, the derivative of the factor at `P` is the negative of the
+log-weighted series over the powers of `P`. -/
+theorem hasDerivAt_eulerFactor (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re) :
+    HasDerivAt (D.eulerFactor P)
+      (-∑' e : ℕ, Complex.log (Ideal.absNorm (P.primeIdealPow e : Ideal (𝓞 K)) : ℂ) *
+        idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e)) s := by
+  have hderiv := LSeries_hasDerivAt hs
+  rw [D.LSeries_logMul_localArithmeticFactor_eq_tsum P s] at hderiv
+  exact hderiv.congr_of_eventuallyEq <| Filter.Eventually.of_forall fun z ↦
+    D.eulerFactor_def P z
+
+/-- The derivative of a general local Euler factor is its log-weighted prime-power series. -/
+theorem deriv_eulerFactor (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re) :
+    deriv (D.eulerFactor P) s =
+      -∑' e : ℕ, Complex.log (Ideal.absNorm (P.primeIdealPow e : Ideal (𝓞 K)) : ℂ) *
+        idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e) :=
+  (D.hasDerivAt_eulerFactor P hs).deriv
+
+/-- The logarithmic derivative of a local factor is the quotient of its log-weighted
+prime-power series by the factor itself. -/
+theorem logDeriv_eulerFactor_eq (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re) :
+    logDeriv (D.eulerFactor P) s =
+      -(∑' e : ℕ, Complex.log (Ideal.absNorm (P.primeIdealPow e : Ideal (𝓞 K)) : ℂ) *
+        idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e)) /
+          D.eulerFactor P s := by
+  rw [logDeriv_apply, D.deriv_eulerFactor P hs, neg_div]
+
+end EulerProductData
 
 namespace MultiplicativeIdealWeight
 

@@ -218,6 +218,15 @@ theorem LSeriesSummable_localArithmeticFactor
   rw [D.localArithmeticFactor_eq]
   exact IdealArithmeticFunction.LSeriesSummable_localArithmeticFactor hs P
 
+/-- The abscissa of absolute convergence of a local Euler factor is at most the abscissa of the
+ideal-indexed series. -/
+theorem abscissaOfAbsConv_localArithmeticFactor_le (P : HeightOneSpectrum (𝓞 K)) :
+    LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) ≤
+      idealAbscissaOfAbsConv K D.toIdealArithmeticFunction := by
+  rw [LSeries.abscissaOfAbsConv, idealAbscissaOfAbsConv_def]
+  exact sInf_le_sInf <| Set.image_mono fun _ hx ↦
+    D.LSeriesSummable_localArithmeticFactor hx P
+
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set
 `S` of primes are absolutely convergent `LSeries`, so are the norm coefficients of the restriction
 of `D` to `S`. -/
