@@ -177,7 +177,7 @@ noncomputable instance galoisGroupIsCyclic [IsUnramified K L] : IsCyclic (L ≃�
   (residueFieldAutEquiv (K := K) (L := L)).isCyclic.mpr inferInstance
 
 /-- Frobenius satisfies its characteristic congruence modulo the maximal ideal. -/
-theorem valuation_frobeniusAlgEquiv_sub_pow [IsUnramified K L] (y : 𝒪[L]) :
+theorem valuation_frobeniusAlgEquiv_sub_pow_lt_one [IsUnramified K L] (y : 𝒪[L]) :
     valuation L (frobeniusAlgEquiv (K := K) (L := L) (y : L) -
       (y : L) ^ Nat.card 𝓀[K]) < 1 := by
   let z : 𝒪[L] :=
