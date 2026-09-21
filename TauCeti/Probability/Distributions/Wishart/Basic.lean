@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Probability.HasLaw
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
 public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 
@@ -21,8 +23,9 @@ import TauCeti.Analysis.Matrix.Sqrt
 The Gaussian-Gram Wishart law `TauCeti.wishartGramMeasure ν S` is the law of the Gram sum
 `∑ r, X r * (X r)ᵀ` of `ν` independent centred multivariate Gaussian vectors with covariance
 matrix `S`, carried by the symmetric-matrix subspace of
-`TauCeti.MeasureTheory.Measure.SymmetricMatrix`.  It is defined for every natural degree `ν` and
-every square matrix `S`, with no branch on `S`: Mathlib totalizes `multivariateGaussian 0 S` to
+`TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic`.
+It is defined for every natural degree `ν` and every square matrix `S`, with no branch on `S`:
+Mathlib totalizes `multivariateGaussian 0 S` to
 `Measure.dirac 0` when `S` is not positive semidefinite, and the Gram law inherits that
 totalization.  That is what lets this family carry the legitimately singular Wishart laws, which
 a density definition cannot.

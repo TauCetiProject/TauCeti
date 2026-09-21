@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.SpecialFunctions.MultivariateGamma.Basic
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
+public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import TauCeti.Probability.Distributions.ChiSquared
 import Mathlib.Algebra.Order.Star.Real
+import Mathlib.Analysis.Matrix.PosDef
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.Gamma.Basic
 
