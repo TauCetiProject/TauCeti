@@ -142,7 +142,7 @@ theorem hasGaloisLabel_four_three_iff :
     (h.isSquare_discr_iff_four hf hchar).2 (by simp), fun hr => ?_⟩, ?_⟩
   · simpa using (h.exists_isRoot_specialize_quarticD4Spec_iff hf).1 hr
   · rintro ⟨hirr, hdeg, hsq, hroot⟩
-    have hsep := hf.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
+    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
     obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_four hsep hirr hdeg
     have hpar := (hk.isSquare_discr_iff_four hf hchar).1 hsq
     have hgt : ¬ ((k : ℕ) ≤ 2) :=
@@ -165,7 +165,7 @@ theorem hasGaloisLabel_four_one_iff :
     (h.isSquare_discr_iff_four hf hchar).2 (by simp),
     (h.exists_isRoot_specialize_quarticD4Spec_iff hf).2 (by simp)⟩, ?_⟩
   rintro ⟨hirr, hdeg, hsq, hroot⟩
-  have hsep := hf.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
+  have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
   obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_four hsep hirr hdeg
   have hpar := (hk.isSquare_discr_iff_four hf hchar).1 hsq
   have hrt := (hk.exists_isRoot_specialize_quarticD4Spec_iff hf).1 hroot
@@ -240,7 +240,7 @@ theorem hasGaloisLabel_four_one_iff_splits_resolvent :
   constructor
   · intro h
     obtain ⟨hirr, hdeg, hsq, a, ha⟩ := (hasGaloisLabel_four_one_iff hchar hf).1 h
-    have hsep := hf.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
+    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
     have hressep := (separable_quarticD4Spec_specialize_iff hf hdeg).2 hsep
     refine ⟨hirr, hdeg, ?_⟩
     apply (splits_iff_isSquare_discr_of_isRoot_of_monic_cubic
@@ -248,7 +248,7 @@ theorem hasGaloisLabel_four_one_iff_splits_resolvent :
       hchar hressep ha).2
     rwa [← discr_quarticD4Spec_specialize hf hdeg]
   · rintro ⟨hirr, hdeg, hsplit⟩
-    have hsep := hf.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
+    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
     have hressep := (separable_quarticD4Spec_specialize_iff hf hdeg).2 hsep
     have hresdeg := Polynomial.natDegree_specialize_quarticD4Spec f
     obtain ⟨a, ha⟩ := hsplit.exists_eval_eq_zero
@@ -273,7 +273,7 @@ theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
   constructor
   · intro h
     obtain ⟨hirr, hdeg, hsq, a, ha⟩ := (hasGaloisLabel_four_zero_or_two_iff hchar hf).1 h
-    have hsep := hf.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
+    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
     have hressep := (separable_quarticD4Spec_specialize_iff hf hdeg).2 hsep
     refine ⟨hirr, hdeg, a, ha, ?_⟩
     intro x hx
@@ -287,7 +287,7 @@ theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
     rw [discr_quarticD4Spec_specialize hf hdeg]
     exact hressq
   · rintro ⟨hirr, hdeg, a, ha, huniq⟩
-    have hsep := hf.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
+    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
     have hressep := (separable_quarticD4Spec_specialize_iff hf hdeg).2 hsep
     have hresdeg := Polynomial.natDegree_specialize_quarticD4Spec f
     have hsq : ¬ IsSquare f.discr := by

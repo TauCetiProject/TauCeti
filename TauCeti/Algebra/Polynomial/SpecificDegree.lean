@@ -17,7 +17,7 @@ separability criterion for irreducible quartics away from characteristic two.
 
 ## Main results
 
-* `Polynomial.Monic.separable_of_irreducible_of_natDegree_eq_four`
+* `Polynomial.separable_of_irreducible_of_natDegree_eq_four`
 * `Polynomial.splits_iff_isSquare_discr_of_isRoot_of_monic_cubic`
 * `Polynomial.Splits.of_natDegree_eq_three_of_two_isRoot`
 * `Polynomial.Monic.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three`
@@ -31,17 +31,17 @@ namespace Polynomial
 
 variable {F : Type*} [Field F]
 
-/-- An irreducible monic quartic is separable away from characteristic two. -/
-theorem Monic.separable_of_irreducible_of_natDegree_eq_four {f : F[X]} (hf : f.Monic)
-    (hchar : ringChar F ≠ 2) (hirr : Irreducible f) (hdeg : f.natDegree = 4) : f.Separable := by
+/-- An irreducible quartic is separable away from characteristic two. -/
+theorem separable_of_irreducible_of_natDegree_eq_four {f : F[X]} (hchar : ringChar F ≠ 2)
+    (hirr : Irreducible f) (hdeg : f.natDegree = 4) : f.Separable := by
   rw [separable_iff_derivative_ne_zero hirr]
   intro hder
   have hcoeff := congrArg (fun p : F[X] => p.coeff 3) hder
   rw [coeff_derivative, coeff_zero] at hcoeff
   norm_num at hcoeff
-  rw [← hdeg, hf.coeff_natDegree] at hcoeff
+  rw [← hdeg, coeff_natDegree] at hcoeff
   rcases hcoeff with h | h
-  · exact one_ne_zero h
+  · exact (leadingCoeff_ne_zero.mpr hirr.ne_zero) h
   · have htwo : (2 : F) ≠ 0 := Ring.two_ne_zero hchar
     have hfour : (4 : F) ≠ 0 := by
       rw [show (4 : F) = 2 * 2 by norm_num]
