@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation
--- Public: the Lie module structure of `gl n R` on the column space is what
--- `TauCeti.isFaithful_heisenberg` is stated about.
-public import Mathlib.Algebra.Lie.Matrix
 -- Private: `fin_cases` is used only inside proofs.
 import Mathlib.Tactic.FinCases
 
@@ -26,15 +23,19 @@ whose only nonzero bracket is `⁅x, y⁆ = z`. Everything below comes out of on
 `TauCeti.lie_eq_smul_heisenbergZ`: the bracket of two strictly upper triangular `3 × 3` matrices
 is a multiple of the corner `z`, with the `2 × 2` determinant of their two superdiagonal entries as
 its coefficient. Every iterated bracket `⁅⁅A, B⁆, C⁆` vanishes, so `z` is central and the algebra
-is nilpotent of class two, with `⁅L, L⁆` and the centre both equal to the line `R ∙ z`.
+is nilpotent of class at most two — of class exactly two over a nontrivial ring, where
+`⁅x, y⁆ = z ≠ 0` (`TauCeti.heisenbergZ_ne_zero`) — with `⁅L, L⁆` and the centre both equal to the
+line `R ∙ z`.
 
-This is the standard two-step nilpotent Lie algebra, and the smallest one that separates the two
-faithfulness questions. Its centre is nonzero, so the adjoint representation is *not* faithful
-(`TauCeti.not_isFaithful_heisenberg`); a faithful finite-dimensional representation of it must
-therefore come from somewhere else, and the defining action on `R³` supplies one
-(`TauCeti.isFaithful_heisenberg`). It also pins down the indexing of the powers of the augmentation
-ideal `U⁺(L)` of `TauCeti/Algebra/Lie/UniversalEnveloping/Augmentation.lean`: the central generator
-`z` is a single bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itself
+This is the standard two-step nilpotent Lie algebra, and it separates the two faithfulness
+questions. Its centre is nonzero, so the adjoint representation is *not* faithful
+(`TauCeti.not_isFaithful_self_heisenberg`); a faithful finite-dimensional representation of it must
+therefore come from somewhere else, and the defining action on `R³` supplies one, which needs no
+statement here: `LieModule.IsFaithful R (heisenberg R) (Fin 3 → R)` is an instance for every
+Lie subalgebra of `gl 3 R`, from `Mathlib/Algebra/Lie/Matrix.lean`. The Heisenberg Lie algebra also
+pins down the indexing of the powers of the augmentation ideal `U⁺(L)` of
+`TauCeti/Algebra/Lie/UniversalEnveloping/Augmentation.lean`: the central generator `z` is a single
+bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itself
 (`TauCeti.ι_heisenbergZ_mem_augmentation_toIdeal_sq`).
 
 ## Main definitions
@@ -46,7 +47,8 @@ ideal `U⁺(L)` of `TauCeti/Algebra/Lie/UniversalEnveloping/Augmentation.lean`: 
 * `TauCeti.heisenbergEquivFun` and `TauCeti.heisenbergBasis`: the coordinate isomorphism
   `heisenberg R ≃ₗ[R] (Fin 3 → R)` reading off the three superdiagonal and corner entries, and the
   basis `(x, y, z)` it produces, whose three vectors are `TauCeti.heisenbergBasis_zero`,
-  `TauCeti.heisenbergBasis_one` and `TauCeti.heisenbergBasis_two`.
+  `TauCeti.heisenbergBasis_one` and `TauCeti.heisenbergBasis_two`, and whose coordinates are those
+  three entries again (`TauCeti.heisenbergBasis_equivFun`).
 
 ## Main results
 
@@ -54,17 +56,19 @@ ideal `U⁺(L)` of `TauCeti/Algebra/Lie/UniversalEnveloping/Augmentation.lean`: 
   explicit coefficient. The defining relation `TauCeti.lie_heisenbergX_heisenbergY` and the
   centrality `TauCeti.heisenbergZ_lie`, `TauCeti.lie_heisenbergZ` of `z` — which together are the
   whole bracket table — are its special cases.
-* `TauCeti.lie_lie_heisenberg_eq_zero` and `TauCeti.lie_mem_center_heisenberg`: **an iterated
+* `TauCeti.lie_lie_heisenberg_eq_zero`, its simp-normal companion
+  `TauCeti.lie_lie_heisenberg_eq_zero'` and `TauCeti.lie_mem_center_heisenberg`: **an iterated
   bracket vanishes**, so every bracket is central.
 * `TauCeti.heisenbergBasis`: **the Heisenberg Lie algebra is a free module of rank three**, and
   `TauCeti.finrank_heisenberg` reads `finrank R (heisenberg R) = 3` off that basis over a ring
   satisfying the strong rank condition.
-* `TauCeti.center_heisenberg_toSubmodule` and
-  `TauCeti.lowerCentralSeries_heisenberg_one_toSubmodule`: **the centre and the derived subalgebra
-  are both the line `R ∙ z`**, and `TauCeti.lowerCentralSeries_heisenberg_two` is the vanishing of
-  the next term, which makes the Heisenberg Lie algebra nilpotent of class two.
-* `TauCeti.not_isFaithful_heisenberg` and `TauCeti.isFaithful_heisenberg`: **the adjoint
-  representation is not faithful**, in contrast with the defining action on `R³`, which is.
+* `TauCeti.center_heisenberg_toSubmodule_eq_span_heisenbergZ` and
+  `TauCeti.lowerCentralSeries_heisenberg_one_toSubmodule_eq_span_heisenbergZ`: **the centre and the
+  derived subalgebra are both the line `R ∙ z`**, and `TauCeti.lowerCentralSeries_heisenberg_two`
+  is the vanishing of the next term, which makes the Heisenberg Lie algebra nilpotent of class at
+  most two, and of class exactly two over a nontrivial ring.
+* `TauCeti.not_isFaithful_self_heisenberg`: **the adjoint representation is not faithful**, in
+  contrast with the defining action on `R³`, which is faithful by instance inference.
 * `TauCeti.ι_heisenbergZ_mem_augmentation_toIdeal_sq`: **the central generator lies in the square of
   the augmentation ideal** of `U(L)`.
 
@@ -76,6 +80,13 @@ a Lie subalgebra, spanned by the raising matrix units, closed under the associat
 meant to apply to it unchanged. What this file adds is the three-dimensional arithmetic, which the
 general `n` does not have: for `n = 3`, and only there, a bracket is a multiple of a single fixed
 matrix unit.
+
+The `Module.Free` and `Module.Finite` instances are not proved here. The strict upper triangle is
+free on the raising matrix units for every finite ordered index type, so
+`TauCeti/Algebra/Lie/GeneralLinear/Borel.lean` carries both instances at general `n`, exactly as
+`TauCeti/Algebra/Lie/Sl2/Basic.lean` takes its instances from
+`TauCeti/Algebra/Lie/GeneralLinear/Finrank.lean`; `TauCeti.heisenbergBasis` is here to name the
+three generators and to count them.
 
 Everything is stated over an arbitrary commutative ring. `[Nontrivial R]` appears only where a
 generator is claimed to be nonzero, and `[StrongRankCondition R]` only for the rank computation, as
@@ -176,6 +187,12 @@ theorem lie_heisenbergX_heisenbergY : ⁅heisenbergX R, heisenbergY R⁆ = heise
   rw [lie_eq_smul_heisenbergZ]
   simp
 
+/-- **The defining relation of the Heisenberg Lie algebra**, in the opposite order:
+`⁅y, x⁆ = -z`. -/
+@[simp]
+theorem lie_heisenbergY_heisenbergX : ⁅heisenbergY R, heisenbergX R⁆ = -heisenbergZ R := by
+  rw [← lie_skew, lie_heisenbergX_heisenbergY]
+
 /-- **The central generator commutes with everything.** -/
 @[simp]
 theorem heisenbergZ_lie (A : heisenberg R) : ⁅heisenbergZ R, A⁆ = 0 := by
@@ -188,13 +205,20 @@ theorem lie_heisenbergZ (A : heisenberg R) : ⁅A, heisenbergZ R⁆ = 0 := by
   rw [← lie_skew, heisenbergZ_lie, neg_zero]
 
 /-- **An iterated bracket of length three vanishes**: the Heisenberg Lie algebra is nilpotent of
-class two.
+class at most two.
 
 This is deliberately not a `@[simp]` lemma: Mathlib's `lie_lie` is itself `@[simp]` and rewrites
 `⁅⁅A, B⁆, C⁆` into `⁅A, ⁅B, C⁆⁆ - ⁅B, ⁅A, C⁆⁆`, so the left-hand side here is not in simp-normal
-form and the `simpNF` linter rejects the tag. -/
+form and the `simpNF` linter rejects the tag. The simp-normal form of the statement is
+`TauCeti.lie_lie_heisenberg_eq_zero'`, which is what closes such a goal by `simp`. -/
 theorem lie_lie_heisenberg_eq_zero (A B C : heisenberg R) : ⁅⁅A, B⁆, C⁆ = 0 := by
   rw [lie_eq_smul_heisenbergZ A B, smul_lie, heisenbergZ_lie, smul_zero]
+
+/-- **An iterated bracket of length three vanishes**, in the right-nested simp-normal form that
+Mathlib's `lie_lie` rewrites `⁅⁅A, B⁆, C⁆` into. -/
+@[simp]
+theorem lie_lie_heisenberg_eq_zero' (A B C : heisenberg R) : ⁅A, ⁅B, C⁆⁆ = 0 := by
+  rw [lie_eq_smul_heisenbergZ B C, lie_smul, lie_heisenbergZ, smul_zero]
 
 /-- A bracket lies in the centre of the Heisenberg Lie algebra. -/
 theorem lie_mem_center_heisenberg (A B : heisenberg R) :
@@ -261,9 +285,11 @@ theorem heisenbergBasis_one : heisenbergBasis R 1 = heisenbergY R := heisenbergB
 @[simp]
 theorem heisenbergBasis_two : heisenbergBasis R 2 = heisenbergZ R := heisenbergBasis_apply 2
 
-instance : Module.Free R (heisenberg R) := Module.Free.of_basis (heisenbergBasis R)
-
-instance : Module.Finite R (heisenberg R) := Module.Finite.of_basis (heisenbergBasis R)
+/-- The coordinates of the standard basis are the three entries read off by
+`TauCeti.heisenbergEquivFun`. -/
+@[simp]
+theorem heisenbergBasis_equivFun : (heisenbergBasis R).equivFun = heisenbergEquivFun R :=
+  Basis.equivFun_ofEquivFun _
 
 /-- **The Heisenberg Lie algebra has rank three**: `finrank R (heisenberg R) = 3`, over a
 commutative ring satisfying the strong rank condition, which is what counting the three basis
@@ -275,7 +301,7 @@ theorem finrank_heisenberg [StrongRankCondition R] : finrank R (heisenberg R) = 
 /-! ### The centre and the lower central series -/
 
 /-- **The centre of the Heisenberg Lie algebra is the line spanned by its central generator.** -/
-theorem center_heisenberg_toSubmodule :
+theorem center_heisenberg_toSubmodule_eq_span_heisenbergZ :
     (center R (heisenberg R)).toSubmodule = R ∙ heisenbergZ R := by
   refine le_antisymm (fun A hA => ?_) ?_
   · rw [LieSubmodule.mem_toSubmodule, LieModule.mem_maxTrivSubmodule] at hA
@@ -297,7 +323,7 @@ theorem center_heisenberg_toSubmodule :
 
 /-- **The derived subalgebra of the Heisenberg Lie algebra is the line spanned by its central
 generator**, and so coincides with its centre. -/
-theorem lowerCentralSeries_heisenberg_one_toSubmodule :
+theorem lowerCentralSeries_heisenberg_one_toSubmodule_eq_span_heisenbergZ :
     (lowerCentralSeries R (heisenberg R) (heisenberg R) 1).toSubmodule = R ∙ heisenbergZ R := by
   refine le_antisymm ?_ ?_
   · rw [LieModule.lowerCentralSeries_succ, LieSubmodule.lieIdeal_oper_eq_linear_span',
@@ -308,13 +334,17 @@ theorem lowerCentralSeries_heisenberg_one_toSubmodule :
       ← lie_heisenbergX_heisenbergY, LieModule.lowerCentralSeries_succ]
     exact LieSubmodule.lie_mem_lie trivial trivial
 
-/-- **The Heisenberg Lie algebra is nilpotent of class two**: the second term of its lower central
-series vanishes. -/
+/-- **The Heisenberg Lie algebra is nilpotent of class at most two**: the second term of its lower
+central series vanishes. Over a nontrivial ring the class is exactly two, the first term being the
+nonzero line `R ∙ z`
+(`TauCeti.lowerCentralSeries_heisenberg_one_toSubmodule_eq_span_heisenbergZ`,
+`TauCeti.heisenbergZ_ne_zero`). -/
 theorem lowerCentralSeries_heisenberg_two :
     lowerCentralSeries R (heisenberg R) (heisenberg R) 2 = ⊥ := by
   rw [LieModule.lowerCentralSeries_succ, LieSubmodule.lie_eq_bot_iff]
   intro A _ B hB
-  rw [← LieSubmodule.mem_toSubmodule, lowerCentralSeries_heisenberg_one_toSubmodule,
+  rw [← LieSubmodule.mem_toSubmodule,
+    lowerCentralSeries_heisenberg_one_toSubmodule_eq_span_heisenbergZ,
     Submodule.mem_span_singleton] at hB
   obtain ⟨c, rfl⟩ := hB
   rw [lie_smul, lie_heisenbergZ, smul_zero]
@@ -330,9 +360,11 @@ theorem not_isLieAbelian_heisenberg [Nontrivial R] : ¬ IsLieAbelian (heisenberg
   exact heisenbergZ_ne_zero (R := R) (lie_heisenbergX_heisenbergY.symm.trans (h.trivial _ _))
 
 /-- **The adjoint representation of the Heisenberg Lie algebra is not faithful**: it kills the
-central generator. The defining action on `R³` is faithful, so this is a property of the adjoint
-representation and not of the algebra. -/
-theorem not_isFaithful_heisenberg [Nontrivial R] :
+central generator. The defining action on `R³` is faithful — `LieModule.IsFaithful R (heisenberg R)
+(Fin 3 → R)` is an instance for every Lie subalgebra of `gl 3 R`, from
+`Mathlib/Algebra/Lie/Matrix.lean` — so this is a property of the adjoint representation and not of
+the algebra. -/
+theorem not_isFaithful_self_heisenberg [Nontrivial R] :
     ¬ LieModule.IsFaithful R (heisenberg R) (heisenberg R) := by
   rw [isFaithful_self_iff]
   intro h
@@ -342,12 +374,6 @@ theorem not_isFaithful_heisenberg [Nontrivial R] :
     exact lie_mem_center_heisenberg _ _
   rw [h] at this
   simpa using this
-
-/-- **The defining action of the Heisenberg Lie algebra on `R³` is faithful**, a Lie subalgebra of
-`gl 3 R` acting faithfully on the column space. Together with
-`TauCeti.not_isFaithful_heisenberg` this says that unfaithfulness is a property of the adjoint
-representation and not of the algebra. -/
-theorem isFaithful_heisenberg : LieModule.IsFaithful R (heisenberg R) (Fin 3 → R) := inferInstance
 
 /-! ### The augmentation ideal -/
 
