@@ -288,6 +288,7 @@ variable {ι : V →ₗ[ℤ] V_A} {ι' : V' →ₗ[ℤ] V'_A}
 
 /-- The scalar extension of a block-diagonal integral form is the block-diagonal form of the
 scalar extensions of its two blocks. -/
+@[simp]
 theorem integralFormBaseChange_prod (h : IsBaseChange A ι) (h' : IsBaseChange A ι')
     (Q : LinearMap.BilinForm ℤ V) (Q' : LinearMap.BilinForm ℤ V') :
     integralFormBaseChange (IsBaseChange.prodMap ι ι' h h') (Q.prod Q') =

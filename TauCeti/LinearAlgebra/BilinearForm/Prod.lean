@@ -35,7 +35,6 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCom
 
 /-- The block-diagonal bilinear form on a product module: the two factors keep their own forms
 and pair to zero with each other. -/
-@[expose]
 def prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
     LinearMap.BilinForm R (M × N) :=
   B.comp (LinearMap.fst R M N) (LinearMap.fst R M N) +
@@ -47,6 +46,7 @@ theorem prod_apply (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) (
   (rfl)
 
 /-- A product of bilinear forms is nondegenerate exactly when both factors are. -/
+@[simp]
 theorem nondegenerate_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N} :
     (B.prod C).Nondegenerate ↔ B.Nondegenerate ∧ C.Nondegenerate := by
   constructor
