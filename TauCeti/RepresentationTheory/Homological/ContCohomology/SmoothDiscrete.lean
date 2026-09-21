@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Action.Continuous
 public import Mathlib.Data.ZMod.Basic
+public import Mathlib.RepresentationTheory.Continuous.TopRep
 public import Mathlib.Topology.Algebra.MulAction
-public import TauCeti.RepresentationTheory.Continuous.Restriction
 
 /-!
 # Smooth discrete topological representations

@@ -33,6 +33,7 @@ trivial representation of the source monoid, on the nose.
 
 For groups, `TopRep.res` is a reducible abbreviation for the left-hand side, so this lemma also
 proves the corresponding equality stated with `TopRep.res` verbatim. -/
+@[simp]
 lemma res_trivial {H : Type*} [Monoid H] (f : H →* G) :
     TopRep.of ((ContRepresentation.trivial R G M).restrict f) =
       TopRep.of (ContRepresentation.trivial R H M) := (rfl)

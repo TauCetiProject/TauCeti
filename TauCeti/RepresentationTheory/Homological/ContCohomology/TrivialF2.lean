@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.ZMod
+public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
@@ -92,6 +93,7 @@ section Group
 variable (G : Type u) [Group G]
 
 /-- Restriction preserves the trivial `𝔽₂` coefficient object on the nose. -/
+@[simp]
 theorem res_trivialF2 (S : Subgroup G) :
     TopRep.res (S.subtype : S →* G) (trivialF2 G) = trivialF2 S :=
   res_trivial ℤ G (ULift.{u} (ZMod 2)) S.subtype
@@ -106,6 +108,12 @@ noncomputable def trivialF2ResMap (S : Subgroup G) (n : ℕ) :
     continuousCohomology n (trivialF2 G) ⟶ continuousCohomology n (trivialF2 S) :=
   ContinuousCohomology.res S (trivialF2 G) n ≫
     eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S))
+
+/-- The defining equation of restriction with trivial `𝔽₂` coefficients. -/
+theorem trivialF2ResMap_def (S : Subgroup G) (n : ℕ) :
+    trivialF2ResMap G S n = ContinuousCohomology.res S (trivialF2 G) n ≫
+      eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S)) :=
+  (rfl)
 
 end Group
 
