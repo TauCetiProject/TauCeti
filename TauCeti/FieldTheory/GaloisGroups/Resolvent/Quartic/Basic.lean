@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CubicDiscriminant
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
@@ -53,7 +54,7 @@ stabilizers and the same resolvent.
   coefficients of degree at most three.
 * `TauCeti.quarticD4Spec_specialize_depressed`: the resolvent of a depressed quartic is
   `resolventCubic p q r`.
-* `TauCeti.Polynomial.natDegree_specialize_quarticD4Spec`: the resolvent of a quartic is a cubic.
+* `Polynomial.natDegree_specialize_quarticD4Spec`: the resolvent of a quartic is a cubic.
 
 ## References
 
@@ -237,6 +238,15 @@ theorem quarticD4Spec_specialize (R : Type*) [CommRing R] (f : R[X]) :
     Nat.reduceAdd, Nat.reduceSub]
   ring
 
+/-- The specialization of the quartic resolvent specification, expressed as a `Cubic`. -/
+theorem quarticD4Spec_specialize_eq_toPoly (R : Type*) [CommRing R] (f : R[X]) :
+    quarticD4Spec.specialize R f =
+      Cubic.toPoly ⟨1, -f.coeff 2, f.coeff 3 * f.coeff 1 - 4 * f.coeff 0,
+        -(f.coeff 3 ^ 2 * f.coeff 0 + f.coeff 1 ^ 2 - 4 * f.coeff 2 * f.coeff 0)⟩ := by
+  rw [quarticD4Spec_specialize]
+  simp only [Cubic.toPoly, C_neg, C_1, one_mul]
+  ring
+
 /-- The **resolvent cubic** `X³ - pX² - 4rX + (4pr - q²)` of the depressed quartic
 `X⁴ + pX² + qX + r`: the specialization of the quartic resolvent specification at the
 depressed quartic (`TauCeti.quarticD4Spec_specialize_depressed`). -/
@@ -263,6 +273,8 @@ theorem monic_resolventCubic {R : Type*} [CommRing R] (p q r : R) :
   rw [← quarticD4Spec_specialize_depressed]
   exact quarticD4Spec.monic_specialize R _
 
+end TauCeti
+
 namespace Polynomial
 
 /-- The resolvent of the quartic specification is a cubic over every nonzero ring, since the
@@ -271,11 +283,13 @@ orbit of the `D₄`-invariant has three elements.
 This is not a `simp` lemma: `TauCeti.ResolventSpec.natDegree_specialize` already rewrites the
 left-hand side, to the index of the subgroup of the specification. -/
 theorem natDegree_specialize_quarticD4Spec {R : Type*} [CommRing R] [Nontrivial R] (f : R[X]) :
-    (quarticD4Spec.specialize R f).natDegree = 3 := by
-  rw [ResolventSpec.natDegree_specialize, ← ResolventSpec.card_renameOrbit, quarticD4Spec_Φ,
-    card_renameOrbit_quarticD4Invariant]
+    (TauCeti.quarticD4Spec.specialize R f).natDegree = 3 := by
+  rw [TauCeti.ResolventSpec.natDegree_specialize, ← TauCeti.ResolventSpec.card_renameOrbit,
+    TauCeti.quarticD4Spec_Φ, TauCeti.card_renameOrbit_quarticD4Invariant]
 
 end Polynomial
+
+namespace TauCeti
 
 /-- The resolvent cubic has degree `3` over every nonzero ring. -/
 @[simp]
