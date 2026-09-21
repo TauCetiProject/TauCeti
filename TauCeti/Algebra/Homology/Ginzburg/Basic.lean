@@ -161,6 +161,19 @@ noncomputable def ginzburgMap :
     pathAlgebra k (Symmetrify Q) →ₐ[k] pathAlgebra k (GinzburgQuiver Q) :=
   mapAlgHom k ginzburgOf ginzburgOf_obj_bijective
 
+/-- The induced homomorphism sends a doubled-quiver arrow to the corresponding doubled arrow of
+the Ginzburg quiver. -/
+theorem ginzburgMap_ofArrow {i j : Symmetrify Q} (a : i ⟶ j) :
+    ginzburgMap k (ofArrow a) = ofArrow (GinzburgHom.double a) := by
+  rw [ginzburgMap, mapAlgHom_ofArrow, ginzburgOf_map]
+  rfl
+
+/-- The induced homomorphism sends a doubled-quiver path to its image in the Ginzburg quiver. -/
+@[simp]
+theorem ginzburgMap_ofPath (x : Quiver.TotalPath (Symmetrify Q)) :
+    ginzburgMap k (ofPath x) = ofPath (ginzburgOf.mapTotalPath x) := by
+  rw [ginzburgMap, mapAlgHom_ofPath]
+
 @[simp]
 theorem ginzburgMap_doubledVertexIdempotent (v : Q) :
     ginzburgMap k (doubledVertexIdempotent k v) =
