@@ -50,8 +50,7 @@ canonical value `1`.
   /-- A continuous local section of an additive-subgroup quotient defines the standard local
   product chart. On the source `mk ⁻¹' U`, the chart sends `g` to `([g], -s([g]) + g)`. On the
   target `U ×ˢ univ`, its inverse sends `(q, h)` to `s(q) + h`; outside that target the inverse
-  uses `0`. -/,
-  expose]
+  uses `0`. -/]
 def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
     (H : Subgroup G) (U : Set (G ⧸ H)) (hU : IsOpen U)
     (s : G ⧸ H → G) (hs : ContinuousOn s U)
@@ -127,7 +126,7 @@ theorem localSectionTrivialization_baseSet [TopologicalSpace G] [ContinuousMul G
     (H : Subgroup G) (U : Set (G ⧸ H))
     (hU : IsOpen U) (s : G ⧸ H → G) (hs : ContinuousOn s U)
     (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) :
-    (localSectionTrivialization H U hU s hs hsec).baseSet = U := rfl
+    (localSectionTrivialization H U hU s hs hsec).baseSet = U := (rfl)
 
 /-- On the chart source, the fiber coordinate is `s([g])⁻¹ * g`. -/
 @[to_additive, simp]
@@ -150,7 +149,27 @@ theorem localSectionTrivialization_symm_apply [TopologicalSpace G] [ContinuousMu
     (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) (q : G ⧸ H) (hq : q ∈ U) (h : H) :
     (localSectionTrivialization H U hU s hs hsec).toOpenPartialHomeomorph.symm (q, h) =
       s q * h := by
-  simp [localSectionTrivialization, hq]
+  let e := localSectionTrivialization H U hU s hs hsec
+  let g : G := s q * h
+  have hgq : (g : G ⧸ H) = q := mk_mul_eq_of_localSection H U s hsec q hq h
+  have hgU : (g : G ⧸ H) ∈ U := hgq.symm ▸ hq
+  have hgsource : g ∈ e.source := by
+    apply e.mem_source.mpr
+    rw [localSectionTrivialization_baseSet]
+    exact hgU
+  have hgfiber : (e g).2 = h := by
+    apply Subtype.ext
+    rw [localSectionTrivialization_fiberCoordinate H U hU s hs hsec g hgU]
+    rw [hgq]
+    simp [g]
+  change e.toOpenPartialHomeomorph.symm (q, h) = s q * h
+  rw [← hgq, ← hgfiber]
+  calc
+    e.toOpenPartialHomeomorph.symm ((g : G ⧸ H), (e g).2) = g :=
+      e.symm_apply_mk_proj hgsource
+    _ = s q * h := by rfl
+    _ = s (g : G ⧸ H) * h := by rw [hgq]
+    _ = s (g : G ⧸ H) * (e g).2 := by rw [hgfiber]
 
 end
 
