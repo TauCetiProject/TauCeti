@@ -32,7 +32,6 @@ trivial coefficient object for that subgroup.
 
 * `TauCeti.trivialF2_V`: the carrier is `ULift (ZMod 2)`.
 * `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift.
-* `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.trivialF2_isSmoothDiscrete`: the coefficient object is smooth discrete.
 -/
@@ -79,12 +78,6 @@ theorem trivialF2Equiv_symm_apply (x : ZMod 2) :
 /-- The lifted carrier of `trivialF2 G` has the discrete topology. -/
 instance : DiscreteTopology (trivialF2 G).V :=
   inferInstanceAs (DiscreteTopology (ULift.{u} (ZMod 2)))
-
-/-- Every monoid element acts trivially on `trivialF2 G`. -/
-@[simp]
-theorem trivialF2_ρ_apply_apply (g : G) (x : (trivialF2 G).V) :
-    (trivialF2 G).ρ g x = x :=
-  ContRepresentation.trivial_apply g x
 
 variable [TopologicalSpace G]
 
