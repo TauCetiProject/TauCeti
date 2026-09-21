@@ -187,7 +187,10 @@ theorem dgDifferential_dgComp {X Y Z : C} {p q n : ℤ} (f : DGHom R p X Y) (g :
         p.negOnePow • dgComp R f (dgDifferential R q g) (by omega) := by
   have key := LinearMap.congr_fun
     (congrArg ModuleCat.Hom.hom (dgCompMap_comp_d R X Y Z p q n h)) (f ⊗ₜ g)
-  simpa using key
+  simpa only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, dgCompMap_tmul,
+    ModuleCat.hom_add, ModuleCat.hom_smul, LinearMap.add_apply,
+    ModuleCat.MonoidalCategory.whiskerRight_apply, LinearMap.smul_apply,
+    ModuleCat.MonoidalCategory.whiskerLeft_apply] using key
 
 /-! ### Associativity -/
 
@@ -256,7 +259,10 @@ theorem dgId_dgComp {X Y : C} {q : ℤ} (g : DGHom R q X Y) :
     HomologicalComplex.leftUnitor'_inv, Category.assoc, Category.assoc,
     ι_whiskerRight_assoc, HomologicalComplex.id_f] at h
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) g
-  simpa [dgId, dgComp, dgCompMap] using key
+  simpa only [dgComp, dgCompMap, ModuleCat.hom_comp, dgId, LinearMap.coe_comp,
+    Function.comp_apply, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.whiskerRight_apply, ModuleCat.hom_id, LinearMap.id_coe,
+    id_eq] using key
 
 /-- The identity is a right unit for composition. -/
 @[simp]
@@ -268,6 +274,9 @@ theorem dgComp_dgId {X Y : C} {p : ℤ} (f : DGHom R p X Y) :
     HomologicalComplex.rightUnitor'_inv, Category.assoc, Category.assoc,
     ι_whiskerLeft_assoc, HomologicalComplex.id_f] at h
   have key := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) f
-  simpa [dgId, dgComp, dgCompMap] using key
+  simpa only [dgComp, dgCompMap, ModuleCat.hom_comp, dgId, LinearMap.coe_comp,
+    Function.comp_apply, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
+    ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.hom_id, LinearMap.id_coe,
+    id_eq] using key
 
 end TauCeti

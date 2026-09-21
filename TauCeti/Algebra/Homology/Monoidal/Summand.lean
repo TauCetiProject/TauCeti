@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
+public import Mathlib.Algebra.Homology.Monoidal
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 
 /-!
 # The monoidal structure of cochain complexes of modules on homogeneous summands
@@ -37,6 +40,29 @@ public section
 open CategoryTheory MonoidalCategory
 
 universe v
+
+namespace TauCeti
+
+variable (R : Type v) [CommRing R]
+
+/-- Left whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the identity and
+the given morphism.  Mathlib defines the monoidal structure on homological complexes through
+`HomologicalComplex.mapBifunctorMap`, but states no component lemma for `◁`. -/
+lemma whiskerLeft_eq_mapBifunctorMap (X : CochainComplex (ModuleCat.{v} R) ℤ)
+    {Y Z : CochainComplex (ModuleCat.{v} R) ℤ} (g : Y ⟶ Z) :
+    X ◁ g = HomologicalComplex.mapBifunctorMap (𝟙 X) g
+      (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
+  rfl
+
+/-- Right whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the given
+morphism and the identity; the counterpart of `TauCeti.whiskerLeft_eq_mapBifunctorMap`. -/
+lemma whiskerRight_eq_mapBifunctorMap {X Y : CochainComplex (ModuleCat.{v} R) ℤ} (f : X ⟶ Y)
+    (Z : CochainComplex (ModuleCat.{v} R) ℤ) :
+    f ▷ Z = HomologicalComplex.mapBifunctorMap f (𝟙 Z)
+      (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
+  rfl
+
+end TauCeti
 
 namespace HomologicalComplex
 
