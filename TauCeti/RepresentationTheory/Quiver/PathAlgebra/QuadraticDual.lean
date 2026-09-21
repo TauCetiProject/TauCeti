@@ -100,12 +100,12 @@ namespace PathAlgebra
 
 section Pairing
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
 
 /-- The pairing of the path algebra with itself for which the paths of `Q` are an orthonormal
 family: `⟨f, g⟩` is the sum over the paths `x` of the product of the coordinates of `f` and `g` on
-`x`. It is the pairing which identifies the degree-two part of the path algebra with its own dual
-space, and so computes the relations of a quadratic dual. -/
+`x`. It realizes the finite-support dual-basis pairing on the degree-two part of the path algebra,
+and so computes the relations of a quadratic dual. -/
 noncomputable def pathPairing : pathAlgebra k Q →ₗ[k] Module.Dual k (pathAlgebra k Q) :=
   letI : DecidableEq (Quiver.TotalPath Q) := Classical.decEq _
   (pathAlgebraBasis k Q).toDual
@@ -135,7 +135,7 @@ end Pairing
 
 section Orthogonal
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
+variable (k : Type w) (Q : Type u) [CommSemiring k] [Quiver.{v} Q]
 
 /-- The **orthogonal complement of a space of quadratic relations**: the degree-two elements of the
 path algebra pairing to zero with every element of `R`. It is the relation space of the quadratic

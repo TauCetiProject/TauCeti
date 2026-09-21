@@ -231,6 +231,19 @@ noncomputable def quadraticZigzagPresentationEquivZigzagQuotient (hconn : G.Conn
     (congrArg TwoSidedIdeal.asIdeal
       (twoSidedIdeal_span_quadraticZigzagRelations_eq_zigzagIdeal k G hconn hcard))
 
+/-- The quadratic presentation equivalence sends the class of a path-algebra element to its
+class in the zigzag quotient. -/
+@[simp]
+theorem quadraticZigzagPresentationEquivZigzagQuotient_mk (hconn : G.Connected)
+    (hcard : 3 ≤ Nat.card V) (x : pathAlgebra k (DoubledQuiver G)) :
+    quadraticZigzagPresentationEquivZigzagQuotient k G hconn hcard
+        (Ideal.Quotient.mk
+          (TwoSidedIdeal.span
+            (quadraticZigzagRelations k G : Set (pathAlgebra k (DoubledQuiver G)))).asIdeal x) =
+      zigzagMk k G x := by
+  rw [quadraticZigzagPresentationEquivZigzagQuotient,
+    Ideal.quotientEquivAlgOfEq_mk, zigzagMk_apply]
+
 /-! ### The orthogonal complement -/
 
 section Orthogonal
@@ -423,6 +436,20 @@ theorem quadraticDualQuadraticZigzagEquivSignless_quadraticDualMk
         ((reverseOpAlgEquiv k (DoubledQuiver G)).symm x) := by
   rw [quadraticDualQuadraticZigzagEquivSignless, AlgEquiv.ofAlgHom_apply,
     quadraticDualLift_quadraticDualMk, signlessOfOp_apply]
+
+/-- The inverse identification sends the class of a path-algebra element to the quadratic-dual
+class obtained by path reversal. -/
+@[simp]
+theorem quadraticDualQuadraticZigzagEquivSignless_symm_signlessPreprojectiveMk
+    (x : pathAlgebra k (DoubledQuiver G)) :
+    (quadraticDualQuadraticZigzagEquivSignless k G).symm
+        (signlessPreprojectiveMk k (DoubledQuiver G) x) =
+      quadraticDualMk k (DoubledQuiver G) (quadraticZigzagRelations k G)
+        (reverseOpAlgEquiv k (DoubledQuiver G) x) := by
+  apply (quadraticDualQuadraticZigzagEquivSignless k G).injective
+  rw [AlgEquiv.apply_symm_apply,
+    quadraticDualQuadraticZigzagEquivSignless_quadraticDualMk,
+    AlgEquiv.symm_apply_apply]
 
 end Algebra
 
