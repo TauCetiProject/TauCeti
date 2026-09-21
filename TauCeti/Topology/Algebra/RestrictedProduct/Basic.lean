@@ -91,6 +91,8 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     constructor
     · intro hx i hi
       have hi' : U i = V i := hi.1
+      -- The preimage is stated using the ambient function coercion; `x i` is the
+      -- restricted-product coordinate, and the two are definitionally equal.
       change x i ∈ V i
       rw [← hi']
       exact hx i hi.1
@@ -98,6 +100,8 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
       by_cases hiT : i ∈ T
       · exact x.2 hiT
       · have hi' : U i = V i := hi
+        -- As above, this `change` exposes the restricted-product coordinate
+        -- hidden by the ambient function coercion in the preimage.
         change x i ∈ U i
         rw [hi']
         exact hx i ⟨hi, hiT⟩
