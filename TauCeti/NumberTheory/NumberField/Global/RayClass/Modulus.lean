@@ -54,6 +54,8 @@ away from a finite set of primes.
   `TauCeti.GlobalNumberFields.Modulus.mem_finitePart_of_forall_mem_pow_exponent`: the prime power
   prescribed by the exponent divides the finite part, and membership in the finite part is
   detected by those prime powers.
+* `TauCeti.GlobalNumberFields.Modulus.valued_eq_one_of_valued_sub_one_le`: an element of the
+  `v`-adic completion congruent to one at a divisor of the finite part is a unit there.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
@@ -202,6 +204,18 @@ theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOne
     𝔪.exponent v ≤ 𝔫.exponent v :=
   Associates.count_le_count_of_le (Associates.mk_ne_zero.mpr 𝔫.finitePart_ne_zero)
     (Associates.irreducible_mk.mpr v.irreducible) (Associates.mk_le_mk_of_dvd (dvd_iff.mp h).1)
+
+/-- **A congruent coordinate is a local unit.**  At a prime dividing the finite part of `𝔪` the
+prescribed exponent is positive, so an element of the `v`-adic completion congruent to one to that
+level has valuation one. -/
+theorem valued_eq_one_of_valued_sub_one_le (𝔪 : Modulus K) {v : HeightOneSpectrum (𝓞 K)}
+    (hv : v.asIdeal ∣ 𝔪.finitePart) {y : v.adicCompletion K}
+    (hy : Valued.v (y - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) :
+    Valued.v y = 1 := by
+  have h : Valued.v (y - 1) < 1 :=
+    hy.trans_lt (WithZero.exp_lt_one_iff.mpr (by
+      simpa using exponent_pos_of_mem_support ((mem_support_iff 𝔪 v).mpr hv)))
+  simpa using Valuation.map_one_add_of_lt Valued.v h
 
 /-- The **trivial modulus**: unit finite part and no real places.  It imposes no condition, so its
 ray class group is the ordinary class group. -/

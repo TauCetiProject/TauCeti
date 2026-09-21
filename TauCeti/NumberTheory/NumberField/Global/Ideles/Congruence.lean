@@ -41,8 +41,6 @@ and that the family is antitone: a larger modulus imposes stronger conditions.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.Modulus.valued_eq_one_of_valued_sub_one_le`: a coordinate
-  congruent to one at a divisor of the finite part is a local unit there.
 * `TauCeti.GlobalNumberFields.mem_ideleCongruenceSubgroup_iff`: the defining placewise
   conditions.
 * `TauCeti.GlobalNumberFields.ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one`: an idele
@@ -72,18 +70,6 @@ open scoped NumberField NumberField.AdeleRing
 namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- **A congruent coordinate is a local unit.**  At a prime dividing the finite part of `𝔪` the
-prescribed exponent is positive, so an element of the `v`-adic completion congruent to one to that
-level has valuation one. -/
-theorem Modulus.valued_eq_one_of_valued_sub_one_le (𝔪 : Modulus K)
-    {v : HeightOneSpectrum (𝓞 K)} (hv : v.asIdeal ∣ 𝔪.finitePart) {y : v.adicCompletion K}
-    (hy : Valued.v (y - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) :
-    Valued.v y = 1 := by
-  have h : Valued.v (y - 1) < 1 :=
-    hy.trans_lt (WithZero.exp_lt_one_iff.mpr (by
-      simpa using Modulus.exponent_pos_of_mem_support ((Modulus.mem_support_iff 𝔪 v).mpr hv)))
-  simpa using Valuation.map_one_add_of_lt Valued.v h
 
 /-- **The idele congruence subgroup of a modulus**: the ideles that are principal units of the
 prescribed level at the finite divisors of `𝔪`, units of the valuation ring at the remaining
