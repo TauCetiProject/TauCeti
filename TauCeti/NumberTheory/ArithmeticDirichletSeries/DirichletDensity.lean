@@ -45,27 +45,7 @@ the denominator.
   `NumberField.Set.hasDirichletDensity_univ` and `NumberField.Set.HasDirichletDensity.compl`:
   the additivity laws.
 
-## Implementation notes
-
-`NumberField.Set.HasDirichletDensity S δ` is by definition the statement that the density ratio
-tends to `δ` along `𝓝[>] 1`, but Mathlib neither exposes that body nor records an unfolding lemma
-for it, so downstream modules cannot see through the definition. This file therefore takes the
-Mathlib module a second time as a private `import all`, which makes the body visible to proofs
-without making this file's public interface depend on it, and states the unfolding once as
-`NumberField.Set.hasDirichletDensity_iff_tendsto`. Every proof below goes through that lemma into
-the `Filter.Tendsto` API rather than through definitional unfolding. The two bound predicates
-defined here are opaque downstream for the same reason, so each comes with a characteristic
-`_iff` lemma restating its defining eventual inequality. Those two are `@[simp]`, as the
-predicates they characterize are introduced here; `NumberField.Set.hasDirichletDensity_iff_tendsto`
-deliberately is not, because `NumberField.Set.HasDirichletDensity` is Mathlib's and Mathlib's own
-API for it (`NumberField.Set.hasDirichletDensity_empty`,
-`NumberField.Set.HasDirichletDensity.nonneg`,
-`NumberField.Set.HasDirichletDensity.dirichletDensity_eq`) treats it as an atom, so a global simp
-lemma unfolding it would put those lemmas out of reach of `simp`.
-
-The partial sums are unfolded with Mathlib's `NumberField.Set.primeIdealZetaSum_def`, and the
-general `tsum` lemmas are then handed the summand `fun 𝔭 ↦ N(𝔭) ^ (-s)` explicitly, sparing them
-the higher-order matching they would otherwise need.
+## Notes
 
 The one-sided bounds are deliberately *bounds*: every `δ' ≤ δ` is again a lower bound
 (`NumberField.Set.IsLowerDirichletDensityBound.weaken`), every `δ' ≥ δ` again an upper bound
@@ -74,22 +54,8 @@ The one-sided bounds are deliberately *bounds*: every `δ' ≤ δ` is again a lo
 `limsup` of the ratio, are unique, and are not defined here.
 
 Every statement about the partial sums carries the hypothesis `1 < s`, without which the family is
-not summable and `tsum` returns its junk value `0`. The density laws need it only on a
-right neighbourhood of `1`, where it is automatic.
-
-Two natural companions are deliberately absent, because both need the all-prime normalization
-`primeIdealZetaSum univ s = log (1/(s-1)) + O(1)`, hence the Euler product and the higher
-prime-power estimate: that a finite set of primes has density zero, and that the density is
-unchanged by a finite symmetric difference. They are the next step of the layer.
-
-## Roadmap role
-
-This is Layer **7.1** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, together with the
-part of Layer **7.3** that does not depend on the normalization of Layer 7.2. The pinned Mathlib
-already contains `Mathlib/NumberTheory/NumberField/DirichletDensity.lean`, so the layer's opening
-task — adopting `NumberField.Set.primeIdealZetaSum`, `NumberField.Set.HasDirichletDensity` and
-`NumberField.Set.dirichletDensity` rather than redefining them — is discharged by consuming that
-file directly; every declaration below extends it in its own namespace.
+not summable and `tsum` returns its junk value `0`. The density laws need it only on a right
+neighbourhood of `1`, where it is automatic.
 
 ## References
 
@@ -124,12 +90,6 @@ namespace NumberField.Set
 variable {K : Type*} [Field K] [NumberField K]
 variable {S T U : Set (HeightOneSpectrum (𝓞 K))} {s δ : ℝ}
 
-private theorem absNorm_rpow_neg_pos (𝔭 : HeightOneSpectrum (𝓞 K)) (s : ℝ) :
-    0 < (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) := by
-  have h : (Ideal.absNorm 𝔭.asIdeal : ℝ) ≠ 0 := by
-    simpa [Ideal.absNorm_eq_zero_iff] using 𝔭.ne_bot
-  exact Real.rpow_pos_of_pos ((Nat.cast_nonneg _).lt_of_ne' h) _
-
 /-- Every subfamily of the prime-ideal zeta series converges absolutely at a real `s > 1`. -/
 theorem summable_absNorm_rpow_neg (S : Set (HeightOneSpectrum (𝓞 K))) {s : ℝ} (hs : 1 < s) :
     Summable fun 𝔭 : S ↦ (Ideal.absNorm (𝔭 : HeightOneSpectrum (𝓞 K)).asIdeal : ℝ) ^ (-s) :=
@@ -144,7 +104,7 @@ theorem primeIdealZetaSum_mono (hST : S ⊆ T) (hs : 1 < s) :
   rw [primeIdealZetaSum_def, primeIdealZetaSum_def]
   exact Summable.tsum_le_tsum_of_inj (fun 𝔭 : S ↦ (⟨𝔭.1, hST 𝔭.2⟩ : T))
     (fun _ _ h ↦ Subtype.ext (by simpa [Subtype.ext_iff] using h))
-    (fun _ _ ↦ (absNorm_rpow_neg_pos _ s).le) (fun _ ↦ le_rfl)
+    (fun _ _ ↦ by positivity) (fun _ ↦ le_rfl)
     (S.summable_absNorm_rpow_neg hs) (T.summable_absNorm_rpow_neg hs)
 
 /-- The partial sums of the prime-ideal zeta series are additive over a disjoint union of sets of
@@ -173,10 +133,13 @@ one nonzero prime ideal, and every summand is positive. -/
 theorem primeIdealZetaSum_univ_pos (hs : 1 < s) :
     0 < primeIdealZetaSum (univ : Set (HeightOneSpectrum (𝓞 K))) s := by
   obtain ⟨𝔭⟩ : Nonempty (HeightOneSpectrum (𝓞 K)) := inferInstance
+  have h𝔭 : (0 : ℝ) < Ideal.absNorm 𝔭.asIdeal := by
+    exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors
+      (⟨𝔭.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩ : (Ideal (𝓞 K))⁰)
   rw [primeIdealZetaSum_def,
     tsum_univ fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)]
   exact (_root_.NumberField.summable_absNorm_rpow_neg hs).tsum_pos
-    (fun 𝔮 ↦ (absNorm_rpow_neg_pos 𝔮 s).le) 𝔭 (absNorm_rpow_neg_pos 𝔭 s)
+    (fun _ ↦ by positivity) 𝔭 (Real.rpow_pos_of_pos h𝔭 _)
 
 /-! ### One-sided density bounds -/
 
@@ -254,13 +217,6 @@ theorem hasDirichletDensity_of_upperBound_of_lowerBound (hup : S.IsUpperDirichle
   filter_upwards [hlo ε hε, hup ε hε] with s h₁ h₂
   rw [Real.dist_eq, abs_lt]
   constructor <;> linarith
-
-/-- Having Dirichlet density `δ` is exactly having `δ` as both an upper and a lower bound. -/
-theorem hasDirichletDensity_iff_upperBound_and_lowerBound :
-    S.HasDirichletDensity δ ↔
-      S.IsUpperDirichletDensityBound δ ∧ S.IsLowerDirichletDensityBound δ :=
-  ⟨fun h ↦ ⟨h.isUpperDirichletDensityBound, h.isLowerDirichletDensityBound⟩,
-    fun h ↦ hasDirichletDensity_of_upperBound_of_lowerBound h.1 h.2⟩
 
 /-- The density ratio is monotone in the set of primes, on a right neighbourhood of `1`. -/
 private theorem eventually_ratio_le (hST : S ⊆ T) :

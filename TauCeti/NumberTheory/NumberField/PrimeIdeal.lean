@@ -41,9 +41,11 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- A number field has at least one nonzero prime ideal: its ring of integers is nontrivial, so it
 has a maximal ideal, which is nonzero because the ring of integers is not a field. -/
-instance : Nonempty (IsDedekindDomain.HeightOneSpectrum (𝓞 K)) := by
-  obtain ⟨M, hM⟩ := Ideal.exists_maximal (𝓞 K)
-  exact ⟨⟨M, hM.isPrime, by simpa using NeZero.ne M⟩⟩
+instance : Nonempty (IsDedekindDomain.HeightOneSpectrum (𝓞 K)) :=
+  Nonempty.map
+    (IsDedekindDomain.HeightOneSpectrum.equivMaximalSpectrum
+      (RingOfIntegers.not_isField K)).symm
+    inferInstance
 
 /-- An ideal lying over a rational prime is a non-zero-divisor in the ideal monoid, so it can be
 passed to `ClassGroup.mk0`. -/
