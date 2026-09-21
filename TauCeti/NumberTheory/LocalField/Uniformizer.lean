@@ -75,6 +75,7 @@ theorem isUniformizer_iff_exists_irreducible (π : Kˣ) :
       exact hϖπ.symm
     rw [isUniformizer_def, hπϖ, normalizedValuation_irreducible hϖ]
 
+variable (K) in
 /-- Uniformizers exist in every nonarchimedean local field. -/
 theorem exists_isUniformizer : ∃ π : Kˣ, IsUniformizer (K := K) π := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (𝒪[K])
