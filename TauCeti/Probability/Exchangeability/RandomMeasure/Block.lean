@@ -182,7 +182,6 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSpli
 
 /-- **Restriction compatibility for block marginals.** The `r`-th width-`m` subblock of the
 `i`-th width-`n * m` block is the width-`m` block numbered `i * n + r`. -/
-@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockRestriction
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n]
     (i : ℕ) (r : Fin n) :
@@ -251,7 +250,6 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_apply
 /-- **Restriction compatibility in the canonical probability-measure code.** Coding the
 `r`-th small-block marginal extracted from a large block gives the already-defined code of the
 corresponding width-`m` block. -/
-@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_mul_map_blockRestriction
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n]
     [MeasurableSpace.CountablyGenerated (Fin m → α)]
