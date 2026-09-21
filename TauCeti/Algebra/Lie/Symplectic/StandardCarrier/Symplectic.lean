@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.BaseChange
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Generation
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.BaseChange.Coordinate
 
 /-!
 # The type C carrier over a field
@@ -25,9 +26,15 @@ ideals over every field:
 ```
 
 The resulting quotient isomorphism identifies the base-changed explicit carrier with the coordinate
-Hopf algebra of `Sp_(2n+2)`. Only the equality needs a field: the containment of the symplectic
-ideal in the transported carrier ideal, equivalently the statement that every carrier point
-preserves the standard alternating form, holds over every commutative ring.
+Hopf algebra of `Sp_(2n+2)`. It is also promoted to an isomorphism from the scheme-theoretic base
+change of the integral carrier to the symplectic group scheme. The isomorphism commutes with the
+closed immersions into `GL_(2n+2)`, and its action on algebra-valued points preserves the underlying
+matrix. Thus the comparison carries the already constructed integral pinning rather than merely
+matching abstract groups of field-valued points.
+
+Only the equality of ideals needs a field: the containment of the symplectic ideal in the
+transported carrier ideal, equivalently the statement that every carrier point preserves the
+standard alternating form, holds over every commutative ring.
 
 ## Main declarations
 
@@ -37,6 +44,10 @@ preserves the standard alternating form, holds over every commutative ring.
   transported carrier and symplectic defining ideals agree.
 * `TauCeti.SpStd.baseChangeCoordinateSymplecticIso`: the induced coordinate Hopf-algebra
   isomorphism with `Sp_(2n+2)`.
+* `TauCeti.SpStd.baseChangeSymplecticIso`: the induced group-scheme isomorphism from the base
+  change of the integral carrier to `Sp_(2n+2)`.
+* `TauCeti.SpStd.baseChangeSymplecticPointsMulEquiv`: the corresponding equivalence on
+  algebra-valued points.
 
 ## References
 
@@ -46,7 +57,7 @@ preserves the standard alternating form, holds over every commutative ring.
 
 public section
 
-open CategoryTheory Matrix WithConv
+open AlgebraicGeometry CategoryTheory Matrix WithConv
 open TauCeti.UniversalEnvelopingAlgebra
 open scoped TensorProduct
 
@@ -132,6 +143,196 @@ theorem mkQuotient_comp_baseChangeCoordinateSymplecticIso_hom
   rw [Symplectic.coordinateMap_def]
   exact CommHopfAlgCat.mkQuotient_comp_eqToHom
     (baseChangeDefiningIdeal_eq_symplecticDefiningHopfIdeal n k).symm
+
+/-! ## The pinned carrier after base change -/
+
+section GroupScheme
+
+variable (k : Type) [Field k]
+
+/-- The scheme-theoretic base change to `k` of the integral full-weight type-`C_(n+1)` carrier.
+
+The same-universe restriction is inherited from the current affine-group-scheme base-change
+comparison. It includes the algebraic closures of finite prime fields used by finite groups of
+Lie type. -/
+noncomputable abbrev baseChangeGroupScheme :
+    Grp (Over (Spec (CommRingCat.of k))) :=
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.obj
+    (groupScheme n)
+
+/-- The quotient-spectrum presentation of the base-changed carrier. -/
+private noncomputable abbrev baseChangePresentationGroupScheme :
+    Grp (Over (Spec (CommRingCat.of k))) :=
+  CommHopfAlgCat.quotientSpec
+    (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+    (baseChangeDefiningIdeal n k)
+
+/-- The transported quotient presentation is isomorphic to the symplectic group scheme. -/
+private noncomputable def baseChangePresentationSymplecticIso :
+    baseChangePresentationGroupScheme n k ≅ Symplectic.groupScheme k (n + 1) :=
+  (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).mapIso
+    (baseChangeCoordinateSymplecticIso n k).symm.op
+
+/-- The scheme-theoretic base change of the integral carrier is represented by its transported
+quotient presentation. -/
+private noncomputable def baseChangePresentationIso :
+    baseChangeGroupScheme n k ≅ baseChangePresentationGroupScheme n k :=
+  (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap ℤ k)))).mapGrp.mapIso
+      (eqToIso (groupScheme_def n)) ≪≫
+    AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
+      (CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
+        (definingIdeal n)) ≪≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).mapIso
+      (baseChangeCoordinateIso n k).op
+
+/-- **The base-changed full-weight type-`C_(n+1)` Chevalley carrier is the symplectic group
+scheme.**
+
+This starts from the scheme-theoretic base change of the integral Kostant carrier, passes through
+the transported quotient presentation, and then uses the equality of its defining Hopf ideal with
+the symplectic ideal. -/
+noncomputable def baseChangeSymplecticIso :
+    baseChangeGroupScheme n k ≅ Symplectic.groupScheme k (n + 1) :=
+  baseChangePresentationIso n k ≪≫ baseChangePresentationSymplecticIso n k
+
+/-- The closed immersion of the quotient presentation of the base-changed carrier into the
+ambient general linear group scheme. -/
+private noncomputable abbrev baseChangePresentationι :
+    baseChangePresentationGroupScheme n k ⟶
+      GeneralLinear.groupScheme k ((n + 1) + (n + 1)) :=
+  GeneralLinear.hopfIdealInclusion k ((n + 1) + (n + 1))
+    (baseChangeDefiningIdeal n k)
+
+/-- The ambient closed immersion of the base-changed integral type-C carrier, expressed through
+its transported quotient presentation. -/
+noncomputable def baseChangeι :
+    baseChangeGroupScheme n k ⟶ GeneralLinear.groupScheme k ((n + 1) + (n + 1)) :=
+  (baseChangePresentationIso n k).hom ≫ baseChangePresentationι n k
+
+private theorem baseChangePresentationSymplecticIso_hom_comp_inclusion :
+    (baseChangePresentationSymplecticIso n k).hom ≫ Symplectic.inclusion k (n + 1) =
+      baseChangePresentationι n k := by
+  simp only [baseChangePresentationSymplecticIso, baseChangePresentationι,
+    Functor.mapIso_hom, Iso.op_hom, Iso.symm_hom, Symplectic.inclusion_def,
+    GeneralLinear.hopfIdealInclusion_def, CommHopfAlgCat.quotientSpecι_def]
+  rw [← Category.assoc]
+  congr 1
+  change (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map
+      (baseChangeCoordinateSymplecticIso n k).inv.op ≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).map
+          (CommHopfAlgCat.mkQuotient
+            (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+            (Symplectic.definingHopfIdeal k (n + 1))).op = _
+  rw [← Functor.map_comp, ← op_comp]
+  have h : CommHopfAlgCat.mkQuotient
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (Symplectic.definingHopfIdeal k (n + 1)) ≫
+        (baseChangeCoordinateSymplecticIso n k).inv =
+      CommHopfAlgCat.mkQuotient
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n k) := by
+    rw [← Symplectic.coordinateMap_def,
+      ← mkQuotient_comp_baseChangeCoordinateSymplecticIso_hom,
+      Category.assoc, Iso.hom_inv_id, Category.comp_id]
+  rw [h]
+
+/-- **The carrier--symplectic group-scheme isomorphism preserves the ambient matrix.**
+
+In particular, every transported root subgroup and torus map can be compared after composing
+with the same closed immersion into `GL_(2n+2)`. -/
+@[reassoc]
+theorem baseChangeSymplecticIso_hom_comp_inclusion :
+    (baseChangeSymplecticIso n k).hom ≫ Symplectic.inclusion k (n + 1) =
+      baseChangeι n k := by
+  rw [baseChangeSymplecticIso, Iso.trans_hom, Category.assoc,
+    baseChangePresentationSymplecticIso_hom_comp_inclusion]
+  rfl
+
+end GroupScheme
+
+/-! ## Algebra-valued points -/
+
+section PointsComparison
+
+variable (k : Type u) [Field k]
+
+/-- The coordinate isomorphism identifies points of the transported type-C carrier with points of
+the symplectic coordinate Hopf algebra, naturally in the value algebra. -/
+noncomputable def baseChangeSymplecticPointsMulEquiv
+    (A : Type v) [CommRing A] [Algebra k A] :
+    HopfAlgebra.points
+        (H := CommHopfAlgCat.quotient
+          (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+          (baseChangeDefiningIdeal n k)) (CommAlgCat.of k A) ≃*
+      HopfAlgebra.points (H := Symplectic.coordinateHopfAlgebra k (n + 1))
+        (CommAlgCat.of k A) :=
+  (((CommHopfAlgCat.pointsFunctor (R := k)).mapIso
+    (baseChangeCoordinateSymplecticIso n k).symm.op).app
+      (CommAlgCat.of k A)).groupIsoToMulEquiv
+
+/-- The point equivalence is precomposition with the inverse coordinate isomorphism. -/
+@[simp]
+theorem baseChangeSymplecticPointsMulEquiv_apply
+    (A : Type v) [CommRing A] [Algebra k A]
+    (q : HopfAlgebra.points
+      (H := CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n k)) (CommAlgCat.of k A)) :
+    baseChangeSymplecticPointsMulEquiv n k A q =
+      (CommHopfAlgCat.mapPointsFunctor
+        (baseChangeCoordinateSymplecticIso n k).inv).app (CommAlgCat.of k A) q :=
+  by
+    rw [baseChangeSymplecticPointsMulEquiv]
+    rfl
+
+/-- **The carrier--symplectic point equivalence preserves the underlying invertible matrix.** -/
+theorem baseChangeSymplecticPointsMulEquiv_coe
+    (A : Type v) [CommRing A] [Algebra k A]
+    (q : HopfAlgebra.points
+      (H := CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n k)) (CommAlgCat.of k A)) :
+    GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1))
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+          (baseChangeDefiningIdeal n k) (CommAlgCat.of k A) q) =
+      (Symplectic.pointsMulEquiv (A := A) k (n + 1)
+        (baseChangeSymplecticPointsMulEquiv n k A q) :
+          GL (Fin ((n + 1) + (n + 1))) A) := by
+  rw [← Symplectic.pointsMulEquiv_coe, baseChangeSymplecticPointsMulEquiv_apply]
+  apply congrArg (GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)))
+  have h : Symplectic.coordinateMap k (n + 1) ≫
+        (baseChangeCoordinateSymplecticIso n k).inv =
+      CommHopfAlgCat.mkQuotient
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n k) := by
+    rw [← mkQuotient_comp_baseChangeCoordinateSymplecticIso_hom,
+      Category.assoc, Iso.hom_inv_id, Category.comp_id]
+  have h' : CommHopfAlgCat.mkQuotient
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (Symplectic.definingHopfIdeal k (n + 1)) ≫
+        (baseChangeCoordinateSymplecticIso n k).inv =
+      CommHopfAlgCat.mkQuotient
+        (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+        (baseChangeDefiningIdeal n k) := by
+    rw [← Symplectic.coordinateMap_def]
+    exact h
+  simp only [CommHopfAlgCat.quotientPointsHom]
+  have hpoints : CommHopfAlgCat.mapPointsFunctor
+        (CommHopfAlgCat.mkQuotient
+          (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+          (baseChangeDefiningIdeal n k)) =
+      CommHopfAlgCat.mapPointsFunctor (baseChangeCoordinateSymplecticIso n k).inv ≫
+        CommHopfAlgCat.mapPointsFunctor
+          (CommHopfAlgCat.mkQuotient
+            (GeneralLinear.coordinateHopfAlgebra k ((n + 1) + (n + 1)))
+            (Symplectic.definingHopfIdeal k (n + 1))) := by
+    rw [← CommHopfAlgCat.mapPointsFunctor_comp, h']
+  have happ := congrArg (fun α => α.app (CommAlgCat.of k A)) hpoints
+  exact ConcreteCategory.congr_hom happ q
+
+end PointsComparison
 
 end
 
