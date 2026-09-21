@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 
 /-!
-# Tensor products of locally free sheaves of modules
+# Locally free sheaves of modules
 
 Let `R` be a sheaf of commutative rings on a small site with pullbacks. If `M` and `N` are locally
 free sheaves of `R`-modules, then so is `M ⊗ N`: on a common refinement of covers on which `M`
@@ -29,9 +29,9 @@ closed under direct sums, hence under finite products, so they form an additive 
 Local freeness is also shown to be invariant under isomorphism, by transporting local bases along
 an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`).
 
-Finally, local freeness is local for the topology: local bases chosen after restricting to every
-member of a covering family can be combined into local bases on the original site. The
-construction follows the one proposed in
+Finally, local freeness descends along a covering family: local bases chosen after restricting to
+every member of a covering family can be combined into local bases on the original site. The
+construction follows the one proposed in Brian Nugent's
 [Mathlib PR #39553](https://github.com/leanprover-community/mathlib4/pull/39553).
 
 ## Main declarations
@@ -46,9 +46,9 @@ construction follows the one proposed in
   presented, and `TauCeti.SheafOfModules.isMonoidal_isFiniteLocallyFree`: it is an
   `ObjectProperty.IsMonoidal`;
 * `TauCeti.SheafOfModules.iteratedSliceEquivalence` compares sheaves of modules on an iterated
-  slice with those on the slice over the composite,
-  `TauCeti.SheafOfModules.LocalGeneratorsData.bind` combines local-generator atlases over a cover,
-  and `TauCeti.SheafOfModules.IsLocallyFree.of_coversTop` shows that local freeness descends from a
+  slice with those on the slice over `Y.left`,
+  `SheafOfModules.LocalGeneratorsData.bind` combines local-generator atlases over a cover,
+  and `SheafOfModules.IsLocallyFree.of_coversTop` shows that local freeness descends from a
   cover;
 * `TauCeti.SheafOfModules.containsZero_isFiniteLocallyFree` and
   `TauCeti.SheafOfModules.isClosedUnderFiniteProducts_isFiniteLocallyFree`: finite locally free
@@ -153,98 +153,55 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}}
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
-  [∀ X Y, HasSheafify ((J.over X).over Y) AddCommGrpCat.{u}]
+  [∀ X Y, HasWeakSheafify ((J.over X).over Y) AddCommGrpCat.{u}]
   [∀ X Y, ((J.over X).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M : SheafOfModules.{u} R}
-
-variable (R) in
-/-- Restriction along `Over.iteratedSliceEquiv Y`, as an equivalence between sheaves of modules on
-the slice over `Y.left` and sheaves of modules on the iterated slice over `Y`. -/
-@[expose]
-noncomputable def iteratedSliceEquivalence {Z : C} (Y : Over Z) :
-    SheafOfModules.{u} (R.over Y.left) ≌ SheafOfModules.{u} ((R.over Z).over Y) :=
-  pushforwardPushforwardEquivalence (Over.iteratedSliceEquiv Y)
-    (S := (R.over Z).over Y) (R := R.over Y.left) (𝟙 _) (𝟙 _)
-    (by ext : 2; exact R.1.map_id _) (by ext : 2; exact R.1.map_id _)
-
-/-- Generating sections of the twice-restricted sheaf `(M.over Z).over Y`, read along
-`iteratedSliceEquivalence` as generating sections of the restriction of `M` to `Y.left`. -/
-noncomputable def overIteratedSliceGenerators {Z : C} {Y : Over Z}
-    (σ : ((M.over Z).over Y).GeneratingSections) : (M.over Y.left).GeneratingSections :=
-  (σ.map (iteratedSliceEquivalence R Y).inverse (.refl _)).ofEpi
-    ((iteratedSliceEquivalence R Y).fullyFaithfulFunctor.preimageIso
-      (by exact (iteratedSliceEquivalence R Y).counitIso.app ((M.over Z).over Y))).hom
-
-/-- Reading a local basis through `iteratedSliceEquivalence` again gives a local basis. -/
-instance isIso_overIteratedSliceGenerators_π {Z : C} {Y : Over Z}
-    (σ : ((M.over Z).over Y).GeneratingSections) [IsIso σ.π] :
-    IsIso (overIteratedSliceGenerators σ).π := by
-  let η : _root_.SheafOfModules.unit (R.over Y.left) ≅
-      (iteratedSliceEquivalence R Y).inverse.obj
-        (_root_.SheafOfModules.unit ((R.over Z).over Y)) := .refl _
-  have h : IsIso (σ.map (iteratedSliceEquivalence R Y).inverse η).π := by
-    rw [GeneratingSections.map_π_eq]
-    exact IsIso.comp_isIso' (mapFreeIso _ _ _).isIso_hom (Functor.map_isIso _ _)
-  exact GeneratingSections.isIso_ofEpi_π _ _ h
 
 /-- Combine local-generator atlases on the restrictions of `M` to a covering family.
 
 The resulting atlas is indexed by a covering object and then by a member of the atlas chosen on
 its slice, and its generators are the chosen ones, read through
 `iteratedSliceEquivalence`. -/
-noncomputable def LocalGeneratorsData.bind {I : Type*}
+@[expose, simps I X generators]
+noncomputable def _root_.SheafOfModules.LocalGeneratorsData.bind {I : Type*}
     (X : I → C) (hX : J.CoversTop X)
     (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
     M.LocalGeneratorsData where
   I := (i : I) × (D i).I
   X ij := ((D ij.1).X ij.2).left
   coversTop := hX.over fun i ↦ (D i).coversTop
-  generators i := overIteratedSliceGenerators ((D i.1).generators i.2)
-
-/-- Combining local-generator atlases indexes the cover by a covering object and a member of the
-atlas chosen on its slice. -/
-@[simp]
-theorem LocalGeneratorsData.bind_I {I : Type*} (X : I → C) (hX : J.CoversTop X)
-    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
-    (LocalGeneratorsData.bind X hX D).I = ((i : I) × (D i).I) := (rfl)
-
-/-- The covering objects of a combined atlas are the underlying objects of the chosen slices. -/
-@[simp]
-theorem LocalGeneratorsData.bind_X {I : Type*} (X : I → C) (hX : J.CoversTop X)
-    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
-    (LocalGeneratorsData.bind X hX D).X = fun i ↦
-      ((D ((LocalGeneratorsData.bind_I X hX D).mp i).1).X
-        ((LocalGeneratorsData.bind_I X hX D).mp i).2).left := (rfl)
-
-/-- The complete description of a combined atlas: it is indexed by pairs of a covering object and
-a member of the atlas chosen on its slice, and its generators are the chosen ones read through
-`iteratedSliceEquivalence`. This is the elimination principle for `LocalGeneratorsData.bind`,
-whose body is not exposed. -/
-theorem LocalGeneratorsData.bind_eq {I : Type*} (X : I → C) (hX : J.CoversTop X)
-    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
-    LocalGeneratorsData.bind X hX D =
-      { I := (i : I) × (D i).I
-        X := fun ij ↦ ((D ij.1).X ij.2).left
-        coversTop := hX.over fun i ↦ (D i).coversTop
-        generators := fun ij ↦ overIteratedSliceGenerators ((D ij.1).generators ij.2) } := (rfl)
+  generators i := ((D i.1).generators i.2).overIteratedSlice
 
 /-- Combining locally free atlases over a cover produces locally free data on the original site. -/
-instance LocalGeneratorsData.isLocallyFreeData_bind {I : Type*}
+instance _root_.SheafOfModules.LocalGeneratorsData.isLocallyFreeData_bind {I : Type*}
     (X : I → C) (hX : J.CoversTop X)
     (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i)))
     [∀ i, (D i).IsLocallyFreeData] : (LocalGeneratorsData.bind X hX D).IsLocallyFreeData where
-  isIso i := isIso_overIteratedSliceGenerators_π ((D i.1).generators i.2)
+  isIso i := GeneratingSections.isIso_overIteratedSlice_π ((D i.1).generators i.2)
+
+/-- Combining finite-type local-generator atlases over a cover preserves finite type. -/
+instance _root_.SheafOfModules.LocalGeneratorsData.isFiniteType_bind {I : Type*}
+    (X : I → C) (hX : J.CoversTop X)
+    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i)))
+    [∀ i, (D i).IsFiniteType] : (LocalGeneratorsData.bind X hX D).IsFiniteType where
+  isFiniteType i := by
+    change ((D i.1).generators i.2).overIteratedSlice.IsFiniteType
+    have hfinite : Finite ((D i.1).generators i.2).overIteratedSlice.I := by
+      rw [GeneratingSections.overIteratedSlice_I]
+      let _ := LocalGeneratorsData.IsFiniteType.isFiniteType (p := D i.1) i.2
+      infer_instance
+    exact ⟨hfinite⟩
 
 /-- If a sheaf of modules is locally free after restriction to every member of a covering family,
 then it is locally free. -/
-theorem IsLocallyFree.of_coversTop {I : Type*} (X : I → C)
+theorem _root_.SheafOfModules.IsLocallyFree.of_coversTop {I : Type*} (X : I → C)
     (hX : J.CoversTop X) [∀ i, (M.over (X i)).IsLocallyFree] : M.IsLocallyFree := by
-  let D (i : I) : _root_.SheafOfModules.LocalGeneratorsData (M.over (X i)) :=
-    (show (M.over (X i)).IsLocallyFree from inferInstance).exists_isLocallyFreeData.choose
-  have := fun i ↦
-    (show (M.over (X i)).IsLocallyFree from inferInstance).exists_isLocallyFreeData.choose_spec
-  have := LocalGeneratorsData.isLocallyFreeData_bind X hX D
-  exact (LocalGeneratorsData.bind (M := M) X hX D).isLocallyFree
+  have h : ∀ i, ∃ D : _root_.SheafOfModules.LocalGeneratorsData (M.over (X i)),
+      D.IsLocallyFreeData := fun (i : I) ↦
+    (inferInstance : (M.over (X i)).IsLocallyFree).exists_isLocallyFreeData
+  choose D hD using h
+  let _ : ∀ i, (D i).IsLocallyFreeData := hD
+  exact (LocalGeneratorsData.bind X hX D).isLocallyFree
 
 end Locality
 

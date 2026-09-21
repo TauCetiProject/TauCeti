@@ -33,6 +33,8 @@ the ingredients are Mathlib's `PresheafOfModules.sheafificationAdjunction`,
 * `SheafOfModules.pushforwardSheafificationIso` is the sheafification-pushforward comparison for
   a continuous and cocontinuous functor;
 * `SheafOfModules.overSheafificationIso` is its specialization to a slice site;
+* `TauCeti.SheafOfModules.iteratedSliceEquivalence` identifies restriction to an iterated slice
+  with restriction to the underlying object;
 * `SheafOfModules.pushforward` and `SheafOfModules.overFunctor` are additive.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
@@ -52,8 +54,40 @@ noncomputable section
 
 namespace SheafOfModules
 
+open _root_.SheafOfModules
+
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
 variable [HasWeakSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
+
+omit [HasWeakSheafify J AddCommGrpCat.{v}]
+  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
+variable (R : Sheaf J RingCat.{u}) in
+/-- Restriction along `Over.iteratedSliceEquiv Y`, as an equivalence between sheaves of modules on
+the slice over `Y.left` and sheaves of modules on the iterated slice over `Y`. -/
+noncomputable def iteratedSliceEquivalence {Z : C} (Y : Over Z) :
+    SheafOfModules.{v} (R.over Y.left) ≌ SheafOfModules.{v} ((R.over Z).over Y) :=
+  pushforwardPushforwardEquivalence (Over.iteratedSliceEquiv Y)
+    (S := (R.over Z).over Y) (R := R.over Y.left) (𝟙 _) (𝟙 _)
+    (by ext : 2; exact R.1.map_id _) (by ext : 2; exact R.1.map_id _)
+
+omit [HasWeakSheafify J AddCommGrpCat.{v}]
+  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
+/-- The unit sheaf comparison used when transporting generating sections from an iterated slice.
+The two unit sheaves are definitionally equal after restriction along the inverse equivalence. -/
+noncomputable def iteratedSliceEquivalenceUnitIso (R : Sheaf J RingCat.{u}) {Z : C} (Y : Over Z) :
+    _root_.SheafOfModules.unit (R.over Y.left) ≅
+      (iteratedSliceEquivalence R Y).inverse.obj
+        (_root_.SheafOfModules.unit ((R.over Z).over Y)) :=
+  .refl _
+
+omit [HasWeakSheafify J AddCommGrpCat.{v}]
+  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
+/-- The unit isomorphism of `iteratedSliceEquivalence`, specialized to the two restrictions of a
+sheaf of modules. -/
+noncomputable def iteratedSliceEquivalenceObjIso (R : Sheaf J RingCat.{u}) {Z : C} (Y : Over Z)
+    (M : SheafOfModules.{v} R) :
+    (iteratedSliceEquivalence R Y).inverse.obj ((M.over Z).over Y) ≅ M.over Y.left :=
+  (iteratedSliceEquivalence R Y).unitIso.symm.app (M.over Y.left)
 
 section Additive
 
