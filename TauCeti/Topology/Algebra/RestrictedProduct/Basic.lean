@@ -136,25 +136,15 @@ theorem isCompact_forall_mem_of_eventually_subset (U V : ∀ i, Subgroup (G i))
 theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hU : ∀ i, IsOpen (U i : Set (G i))) :
     IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  -- The explicit coercions expose the carrier predicate in Mathlib's normal form.
-  convert (RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU) using 1
-  ext x
-  exact mem_integralSubgroup U x
+  simpa [integralSubgroup] using
+    isOpen_forall_mem_of_eventually_eq U U hU hU (.of_forall fun _ ↦ rfl)
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hK : ∀ i, IsCompact (U i : Set (G i))) :
     IsCompact (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  have hU : IsCompact (Set.univ : Set (∀ i, U i)) := by
-    rw [← Set.pi_univ Set.univ]
-    exact isCompact_univ_pi fun i ↦ isCompact_iff_compactSpace.mp (hK i) |>.isCompact_univ
-  have hrange := hU.image (RestrictedProduct.isEmbedding_structureMap
-    (R := fun i ↦ G i) (A := fun i ↦ (U i : Set (G i))) (𝓕 := cofinite)).continuous
-  rw [Set.image_univ, RestrictedProduct.range_structureMap] at hrange
-  -- The image of the structure map is exactly the everywhere-integral carrier.
-  convert hrange using 1
-  ext x
-  exact mem_integralSubgroup U x
+  simpa [integralSubgroup] using
+    isCompact_forall_mem_of_eventually_subset U U hK (.of_forall fun _ ↦ subset_rfl)
 
 /-- A family of compact open subgroups, one in each factor. -/
 structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
