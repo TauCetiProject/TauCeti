@@ -48,7 +48,7 @@ converse of each row.
 
 * `TauCeti.existsUnique_hasGaloisLabel_five`: an irreducible separable quintic carries exactly one
   label.
-* `TauCeti.HasGaloisLabel.isSolvable_gal_iff_five`: the Galois group of a quintic is solvable
+* `TauCeti.HasGaloisLabel.isSolvable_iff_five`: the Galois group of a quintic is solvable
   exactly for the labels `5T1`, `5T2` and `5T3`.
 * `TauCeti.HasGaloisLabel.isSquare_discr_iff_five`: **the discriminant reads the parity of the
   label**, and `TauCeti.HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_iff`: **a root of
@@ -91,7 +91,7 @@ theorem existsUnique_hasGaloisLabel_five (hsep : f.Separable) (hirr : Irreducibl
 /-- **Solvability and the quintic labels.** The Galois group of a quintic with a label is solvable
 exactly for the labels `5T1`, `5T2` and `5T3`, the cyclic, dihedral and Frobenius groups. This is a
 statement about the group, not about `solvableByRad`. -/
-theorem HasGaloisLabel.isSolvable_gal_iff_five (h : HasGaloisLabel f j) :
+theorem HasGaloisLabel.isSolvable_iff_five (h : HasGaloisLabel f j) :
     Group.IsSolvable f.Gal ↔ (j : ℕ) < 3 := by
   rw [h.isSolvable_iff, isSolvable_referenceSubgroup_five_iff]
 
@@ -111,7 +111,7 @@ theorem HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_of_lt_three
     (h : HasGaloisLabel f j) (hf : f.Monic) (hj : (j : ℕ) < 3) :
     ∃ a : F, (quinticF20Spec.specialize F f).IsRoot a :=
   exists_isRoot_specialize_quinticF20Spec_of_isSolvable hf h.separable h.irreducible
-    h.natDegree_eq (h.isSolvable_gal_iff_five.mpr hj)
+    h.natDegree_eq (h.isSolvable_iff_five.mpr hj)
 
 /-- **A root of the separable resolvent sextic reads solvability of the label.** For a monic
 quintic with a label and a separable specialized `F₂₀` resolvent, that resolvent has a root in the
@@ -120,7 +120,7 @@ theorem HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_iff (h : HasGaloi
     (hf : f.Monic) (hres : (quinticF20Spec.specialize F f).Separable) :
     (∃ a : F, (quinticF20Spec.specialize F f).IsRoot a) ↔ (j : ℕ) < 3 := by
   rw [← isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec hf h.separable h.irreducible
-    h.natDegree_eq hres, h.isSolvable_gal_iff_five]
+    h.natDegree_eq hres, h.isSolvable_iff_five]
 
 /-- **The first row of the quintic table: `5T5`.** Away from characteristic `2`, an irreducible
 monic quintic whose discriminant is not a square and whose `F₂₀` resolvent has no root in the base
