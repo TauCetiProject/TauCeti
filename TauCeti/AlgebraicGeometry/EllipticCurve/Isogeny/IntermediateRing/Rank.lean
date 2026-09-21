@@ -62,8 +62,8 @@ about the module structure of the intermediate ring has to be known in advance. 
 does spend is the finiteness of the *function-field* extension, which every isogeny has
 (`Isogeny.finiteDimensional_functionField`) — purely inseparable ones, Frobenius among them,
 included. So `finrank_intermediateRing_eq_degree` is
-available exactly where `Isogeny.degree` is, and in particular it is not blocked by the
-separability limitation that `IntermediateRing/Finite.lean` records for its own conclusion.
+available exactly where `Isogeny.degree` is, and in particular independent of whichever
+hypotheses a caller uses to obtain module-finiteness.
 
 **Why not `IsIntegralClosure.rank`.** Mathlib states the same comparison for an integral closure,
 but only over a *principal ideal* base (`Mathlib/RingTheory/DedekindDomain/IntegralClosure.lean`),
@@ -77,10 +77,9 @@ fact.** The three statements below that do need it take
 `[Module.Finite W₂.CoordinateRing φ.intermediateRing]` rather than
 `[Algebra.IsSeparable W₂.FunctionField W₁.FunctionField]` and a call to
 `Isogeny.moduleFinite_intermediateRing`. Separability is not what these conclusions are about; it is
-what the only currently available route to finiteness happens to need, and
-`IntermediateRing/Finite.lean` says so in its own header. Taking the finiteness directly means the
-statements apply unchanged the day a trace-free route lands, and a caller in the separable case
-supplies it in one line from the sibling.
+not needed by the general finite-normalization route in `IntermediateRing/Finite.lean`. Taking the
+finiteness as a hypothesis rather than deriving it keeps these statements independent of how it
+is obtained; a caller can supply it in one line from `moduleFinite_intermediateRing`.
 
 **Flatness follows automatically in the Dedekind application.** The fundamental identity is
 stated under its natural finite-flat hypotheses. Over a Dedekind domain a torsion-free module is
@@ -228,9 +227,9 @@ above the affine point of `W₂` that `p` names and the identity counts that fib
 for a singular `W₁` the integral closure is a normalization instead, whose primes need not be points
 of `W₁`. Neither hypothesis is taken here.
 
-Module-finiteness is taken directly rather than through separability of the function-field
-extension; the module docstring says why. In the separable case
-`Isogeny.moduleFinite_intermediateRing` supplies it. The `Fintype` binder is what the sum ranges
+Module-finiteness is taken directly rather than derived inside this theorem;
+`Isogeny.moduleFinite_intermediateRing` supplies it without separability. The `Fintype` binder is
+what the sum ranges
 over, so it belongs to the statement rather than to the proof: finiteness of the module gives
 only `Finite` (`Algebra.QuasiFinite.finite_primesOver`), which no `∑ q : _` elaborates against.
 Mathlib's `Ideal.sum_ramification_inertia_eq_finrank` takes the binder the same way, under the

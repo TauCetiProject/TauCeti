@@ -9,6 +9,9 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
+-- Private: `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` are used only
+-- inside proofs.
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The weights of the spinor module
@@ -75,6 +78,10 @@ rest of the layer this file opens.
   commute.**
 * `TauCeti.SpinPolarizationData.spinAction_diagonalBivector_basis`: **the diagonal bivectors act
   diagonally on the exterior basis**, by `⅟2` or `-⅟2`.
+* `TauCeti.SpinPolarizationData.spinAction_two_smul_diagonalBivector_basis` and
+  `TauCeti.SpinPolarizationData.spinAction_diagonalBivector_sub_diagonalBivector_basis`: twice a
+  diagonal bivector acts by `±1`, and a difference of two of them by a difference of two weights.
+  These are the two combinations that a coroot of an orthogonal Lie algebra realizes.
 * `TauCeti.spinWeightSpace_spinWeight`: **each weight space is the line spanned by its exterior
   basis vector.**
 * `TauCeti.spinWeightSpace_eq_bot_of_notMem_range` and `TauCeti.spinWeightSpace_ne_bot_iff`: no
@@ -83,6 +90,12 @@ rest of the layer this file opens.
 * `TauCeti.range_spinWeight`: for a finite index type the weights are exactly the sign vectors,
   and, when `K` is nontrivial, `TauCeti.ncard_range_spinWeight` counts them: there are `2 ^ l` of
   them on an index type of cardinality `l`.
+* `TauCeti.ncard_image_spinWeight_even` and `TauCeti.ncard_image_spinWeight_odd`: **on a nonempty
+  index type the two parities of sign vector are equinumerous**, `2 ^ (l - 1)` each. On the empty
+  index type they are not: the only sign vector is the empty one, which is even, so the even count
+  is `2 ^ (0 - 1) = 1` and the odd one is `0`, which is why the odd theorem asks `l > 0`. These
+  are the weights of the two half-spin summands; the identification is
+  `TauCeti/RepresentationTheory/Spin/HalfSpin/Weight.lean`.
 
 ## References
 
@@ -203,6 +216,26 @@ theorem ncard_range_spinWeight [Finite ι] [Nontrivial K] :
   rw [Set.ncard_range_of_injective spinWeight_injective, Nat.card_eq_fintype_card,
     Nat.card_eq_fintype_card, Fintype.card_finset]
 
+/-- **The sign vectors with an even number of `+` signs number `2 ^ (l - 1)`** on an index type of
+cardinality `l`. For `l > 0` that is half of the `2 ^ l` sign vectors of
+`TauCeti.ncard_range_spinWeight`, the odd ones of `TauCeti.ncard_image_spinWeight_odd` being the
+other half; for `l = 0` it is no half but the single empty sign vector, which is even, and
+`2 ^ (0 - 1) = 1` counts it. These are the weights of the even half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinPlus_eq_image_spinWeight_even`. -/
+theorem ncard_image_spinWeight_even [Finite ι] [Nontrivial K] :
+    (spinWeight K '' {s : Finset ι | Even s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
+  rw [Set.ncard_image_of_injective _ spinWeight_injective]
+  exact card_even_card_finset
+
+/-- **The sign vectors with an odd number of `+` signs number `2 ^ (l - 1)`**, the other half of
+`TauCeti.ncard_image_spinWeight_even`, on a nonempty index type: the empty index type has no sign
+vector of odd parity. These are the weights of the odd half-spin summand, by
+`TauCeti.setOf_spinWeightSpace_ne_bot_and_le_spinMinus_eq_image_spinWeight_odd`. -/
+theorem ncard_image_spinWeight_odd [Finite ι] [Nonempty ι] [Nontrivial K] :
+    (spinWeight K '' {s : Finset ι | Odd s.card}).ncard = 2 ^ (Nat.card ι - 1) := by
+  rw [Set.ncard_image_of_injective _ spinWeight_injective]
+  exact card_odd_card_finset
+
 end Weight
 
 namespace SpinPolarizationData
@@ -297,6 +330,25 @@ theorem spinAction_diagonalBivector_basis (i : ι) (s : Finset ι) :
     simp [h]
   · rw [spinWeight_of_notMem h]
     simp [h]
+
+/-- **Twice a diagonal bivector acts on the exterior basis by `±1`**, according to whether its
+coordinate is occupied: the spin weights are half-integral, so their doubles are units. This is
+the combination realized by the short coroot of an odd orthogonal Lie algebra. -/
+theorem spinAction_two_smul_diagonalBivector_basis (i : ι) (s : Finset ι) :
+    spinAction Q P ((2 : K) • P.diagonalBivector b i) (b.ExteriorAlgebra s) =
+      (if i ∈ s then (1 : K) else -1) • b.ExteriorAlgebra s := by
+  rw [map_smul, LinearMap.smul_apply, P.spinAction_diagonalBivector_basis b i s, smul_smul]
+  by_cases hi : i ∈ s <;> simp [hi, spinWeight_of_mem, spinWeight_of_notMem]
+
+/-- **A difference of two diagonal bivectors acts on the exterior basis by the difference of the
+two spin weights**, which is `0` or `±1`. This is the combination realized by the long coroot of
+an orthogonal Lie algebra. -/
+theorem spinAction_diagonalBivector_sub_diagonalBivector_basis (i j : ι) (s : Finset ι) :
+    spinAction Q P (P.diagonalBivector b i - P.diagonalBivector b j) (b.ExteriorAlgebra s) =
+      (spinWeight K s i - spinWeight K s j) • b.ExteriorAlgebra s := by
+  rw [map_sub, LinearMap.sub_apply, P.spinAction_diagonalBivector_basis b i s,
+    P.spinAction_diagonalBivector_basis b j s]
+  simp [sub_smul]
 
 end SpinPolarizationData
 

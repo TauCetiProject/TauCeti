@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Instances.Real.Lemmas
+public import TauCeti.Dynamics.Flow.Conjugacy
 
 /-!
 # Stable and unstable sets of a flow
@@ -29,6 +30,15 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   point of a trajectory is fixed.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
+* `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
+  transports stable and unstable sets.
+
+## References
+
+The stable and unstable set viewpoint follows M. Audin and M. Damian, *Morse Theory and Floer
+Homology*, Springer Universitext (2014), Chapter 2, §2.1.d.  The conjugacy and coordinate-transport
+perspective is used throughout D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic
+Topology*, 2nd ed., AMS (2012), Chapters 2–4 and 10, with analytic background in Appendices A–C.
 -/
 
 public section
@@ -156,5 +166,73 @@ theorem unstableSet_id [T1Space α] (x : α) :
     unstableSet (_root_.Flow.id ℝ α) x = {x} := by
   ext y
   simp [unstableSet]
+
+section Conjugacy
+
+variable {β : Type*} [TopologicalSpace β]
+  {φ : _root_.Flow ℝ α} {ψ : _root_.Flow ℝ β}
+
+/-- An inducing semiconjugacy carries membership in a stable set to membership in the
+corresponding stable set. -/
+theorem _root_.Topology.IsInducing.map_mem_stableSet_iff {f : α → β} (hf : IsInducing f)
+    (hconj : _root_.Flow.IsSemiconjugacy f φ ψ) {x y : α} :
+    f y ∈ stableSet ψ (f x) ↔ y ∈ stableSet φ x := by
+  rw [mem_stableSet, mem_stableSet]
+  exact hf.tendsto_flow_iff hconj
+
+/-- A topological conjugacy carries membership in a stable set to membership in the
+corresponding stable set. This is stated as an explicit rewrite lemma because
+`Flow.mem_stableSet` already puts its left-hand side in simp-normal form. -/
+theorem _root_.Homeomorph.map_mem_stableSet_iff
+    (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
+    e y ∈ stableSet ψ (e x) ↔ y ∈ stableSet φ x := by
+  exact e.isInducing.map_mem_stableSet_iff hconj
+
+/-- A topological conjugacy carries a stable set to the corresponding stable set. -/
+/- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
+side when this equality is used as a global simp rule. -/
+theorem _root_.Homeomorph.image_stableSet_eq
+    (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (x : α) :
+    e '' stableSet φ x = stableSet ψ (e x) := by
+  ext y
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact (e.map_mem_stableSet_iff hconj).2 hz
+  · intro hy
+    refine ⟨e.symm y, (e.map_mem_stableSet_iff hconj).1 ?_, e.apply_symm_apply y⟩
+    simpa only [e.apply_symm_apply] using hy
+
+/-- An inducing semiconjugacy carries membership in an unstable set to membership in the
+corresponding unstable set. This is stated as an explicit rewrite lemma because
+`Flow.mem_unstableSet` already puts its left-hand side in simp-normal form. -/
+theorem _root_.Topology.IsInducing.map_mem_unstableSet_iff {f : α → β} (hf : IsInducing f)
+    (hconj : _root_.Flow.IsSemiconjugacy f φ ψ) {x y : α} :
+    f y ∈ unstableSet ψ (f x) ↔ y ∈ unstableSet φ x := by
+  rw [mem_unstableSet, mem_unstableSet]
+  exact hf.tendsto_flow_iff hconj
+
+/-- A topological conjugacy carries membership in an unstable set to membership in the
+corresponding unstable set. This is stated as an explicit rewrite lemma because
+`Flow.mem_unstableSet` already puts its left-hand side in simp-normal form. -/
+theorem _root_.Homeomorph.map_mem_unstableSet_iff
+    (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {x : α} {y : α} :
+    e y ∈ unstableSet ψ (e x) ↔ y ∈ unstableSet φ x := by
+  exact e.isInducing.map_mem_unstableSet_iff hconj
+
+/-- A topological conjugacy carries an unstable set to the corresponding unstable set. -/
+/- This is an explicit rewrite lemma: the target flow is not determined by the left-hand
+side when this equality is used as a global simp rule. -/
+theorem _root_.Homeomorph.image_unstableSet_eq
+    (e : α ≃ₜ β) (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (x : α) :
+    e '' unstableSet φ x = unstableSet ψ (e x) := by
+  ext y
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact (e.map_mem_unstableSet_iff hconj).2 hz
+  · intro hy
+    refine ⟨e.symm y, (e.map_mem_unstableSet_iff hconj).1 ?_, e.apply_symm_apply y⟩
+    simpa only [e.apply_symm_apply] using hy
+
+end Conjugacy
 
 end Flow

@@ -43,12 +43,15 @@ sits *inside* the derived ideal and the two are not complementary.
   the spanning core shared by the derived-ideal computation below and by the ideal-generation
   argument of `TauCeti/Algebra/Lie/GeneralLinear/Radical.lean`.
 * `TauCeti.mem_center_matrix_iff`: an element of `gl n R` is central exactly when it is a scalar
-  matrix, and `TauCeti.center_matrix_toSubmodule_eq_span_one` records the centre as the span of `1`.
+  matrix; `TauCeti.one_mem_center_matrix` records that the identity is central, and
+  `TauCeti.center_matrix_toSubmodule_eq_span_one` records the centre as the span of `1`.
 * `TauCeti.derivedSeries_one_eq_slIdeal`: the derived ideal of `gl n R` is `TauCeti.slIdeal R n`, so
   by `TauCeti.mem_slIdeal_iff` it consists of the trace-zero matrices, and
   `TauCeti.derivedSeries_one_toLieSubalgebra_eq_sl` reads this as `LieAlgebra.SpecialLinear.sl n R`.
 * `TauCeti.isCompl_center_derivedSeries_one_matrix`: when `Fintype.card n` is invertible in `R`,
   the centre and the derived ideal are complementary submodules of `gl n R`.
+* `TauCeti.exists_sl_add_smul_one_eq`: every matrix is a trace-zero matrix plus a scalar matrix
+  when the cardinality is a unit, with the empty case included.
 * `TauCeti.derivedSeries_one_matrix_ne_top`: for nonempty `n` over a nontrivial `R`, `gl n R` is
   not perfect.
 * `TauCeti.not_hasTrivialRadical_matrix`: for nonempty `n` over a nontrivial `R`, `gl n R` is not
@@ -57,8 +60,9 @@ sits *inside* the derived ideal and the two are not complementary.
 ## Implementation notes
 
 Every result about `gl n R` is stated over an arbitrary commutative ring `R`; no field,
-characteristic, or algebraic closure hypothesis is used, and the invertibility of `Fintype.card n`
-is carried as an `Invertible` hypothesis only on the one result that needs it. Two groups of
+characteristic, or algebraic closure hypothesis is used. The bundled complement carries
+invertibility of `Fintype.card n` as an `Invertible` hypothesis, while its elementwise consequence
+asks only that the cardinality be a unit when the index type is nonempty. Two groups of
 declarations ask for less: the matrix-unit bracket identities and the spanning theorem for
 trace-zero matrices need only a ring, and the decomposition of a trace-zero matrix into matrix units
 needs only an additive commutative group, no multiplication at all.
@@ -151,6 +155,29 @@ theorem mem_of_trace_eq_zero_of_single_mem {N : Submodule R (Matrix n n R)}
 
 /-! ### Matrix units as commutators -/
 
+/-- The commutator of two single-entry matrices is the difference of the two possible
+composites. -/
+@[simp]
+theorem lie_single_single (a b i j : n) (c d : R) :
+    ⁅single a b c, single i j d⁆ =
+      (if b = i then single a j (c * d) else 0) -
+        if j = a then single i b (d * c) else 0 := by
+  rw [LieRing.of_associative_ring_bracket]
+  by_cases hbi : b = i
+  · subst i
+    by_cases hja : j = a
+    · subst j
+      rw [single_mul_single_same, single_mul_single_same]
+      simp
+    · rw [single_mul_single_same, single_mul_single_of_ne (h := hja)]
+      simp [hja]
+  · by_cases hja : j = a
+    · subst j
+      rw [single_mul_single_of_ne (h := hbi), single_mul_single_same]
+      simp [hbi]
+    · rw [single_mul_single_of_ne (h := hbi), single_mul_single_of_ne (h := hja)]
+      simp [hbi, hja]
+
 /-- An off-diagonal matrix unit is a commutator: `Eᵢⱼ = ⁅Eᵢᵢ, Eᵢⱼ⁆` when `i ≠ j`. -/
 theorem lie_single_self_single_of_ne {i j : n} (hij : i ≠ j) (c : R) :
     ⁅single i i (1 : R), single i j c⁆ = single i j c := by
@@ -185,6 +212,12 @@ theorem mem_center_matrix_iff {A : Matrix n n R} :
     exact ⟨r, by rw [Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]⟩
   · rintro ⟨r, rfl⟩
     exact ⟨r, by rw [Matrix.scalar_apply, Matrix.smul_one_eq_diagonal]⟩
+
+variable (R n) in
+/-- The identity matrix is central in `gl n R`. -/
+theorem one_mem_center_matrix :
+    (1 : Matrix n n R) ∈ LieAlgebra.center R (Matrix n n R) :=
+  mem_center_matrix_iff.mpr ⟨1, (one_smul R _).symm⟩
 
 variable (R n) in
 /-- The centre of `gl n R` is the `R`-span of the identity matrix. -/
@@ -291,6 +324,28 @@ theorem isCompl_center_derivedSeries_one_matrix [Invertible (Fintype.card n : R)
     rw [derivedSeries_one_eq_slIdeal R n, LieSubmodule.mem_toSubmodule, mem_slIdeal_iff,
       Matrix.trace_sub, htr, sub_self]
 
+/-- Every square matrix is the sum of a trace-zero matrix and a scalar matrix, as soon as the rank
+is a unit in `R`. This is the elementwise form of
+`TauCeti.isCompl_center_derivedSeries_one_matrix`; the separate rank-zero branch is why the
+hypothesis is an implication rather than a global invertibility assumption. -/
+theorem exists_sl_add_smul_one_eq
+    (hn : Nonempty n → IsUnit (Fintype.card n : R)) (A : Matrix n n R) :
+    ∃ (X : LieAlgebra.SpecialLinear.sl n R) (r : R), (X : Matrix n n R) + r • 1 = A := by
+  cases isEmpty_or_nonempty n with
+  | inl h =>
+      let _ := h
+      exact ⟨0, 0, Subsingleton.elim _ _⟩
+  | inr h =>
+      let _ := h
+      let _ : Invertible (Fintype.card n : R) := (hn h).invertible
+      obtain ⟨Z, X, hZ, hX, hZX⟩ := Submodule.codisjoint_iff_exists_add_eq.mp
+        (isCompl_center_derivedSeries_one_matrix R n).codisjoint A
+      obtain ⟨r, rfl⟩ := mem_center_matrix_iff.mp hZ
+      have hXsl : X ∈ LieAlgebra.SpecialLinear.sl n R := by
+        rw [← derivedSeries_one_toLieSubalgebra_eq_sl R n]
+        exact hX
+      exact ⟨⟨X, hXsl⟩, r, (add_comm X (r • 1)).trans hZX⟩
+
 variable (R n) in
 /-- `gl n R` is not perfect: for nonempty `n` over a nontrivial ring its derived ideal misses the
 diagonal matrix unit `Eᵢᵢ`, whose trace is `1`. -/
@@ -312,7 +367,7 @@ theorem center_matrix_ne_bot [Nonempty n] [Nontrivial R] :
   intro h
   have h1 : (1 : Matrix n n R) = 0 := by
     rw [← LieSubmodule.mem_bot (R := R) (L := Matrix n n R), ← h]
-    exact mem_center_matrix_iff.mpr ⟨1, (one_smul R _).symm⟩
+    exact one_mem_center_matrix R n
   exact one_ne_zero h1
 
 variable (R n) in

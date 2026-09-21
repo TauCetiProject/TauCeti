@@ -7,8 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Dihedral
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Dihedral
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.IntegerChecker
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Basic
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Solver
 
 /-!
 # The rational Dixon computation for the dihedral group of order eight
@@ -26,8 +25,8 @@ five elements.  Equality follows from those two facts.  The entries lie strictly
 `-5 / 2` and `5 / 2`, so `ZMod.valMinAbs` reconstructs the displayed integral rows without any
 cyclotomic ambiguity.  Dividing by the class sizes and multiplying by the degrees gives the usual
 displayed ordinary table of the dihedral group of order eight. This file checks its degree identity,
-degree-square sum, and weighted row orthogonality, but does not identify it with
-`TauCeti.characterTable` or prove `TauCeti.IsCharacterTableSpec`.
+degree-square sum, and weighted row orthogonality, and proves that the assembled rational solver
+succeeds on the resulting exact certificate.
 
 ## Main definitions
 
@@ -45,6 +44,8 @@ degree-square sum, and weighted row orthogonality, but does not identify it with
   the central-character table to the ordinary character table.
 * `TauCeti.isIntegerCharacterTableSpec_dihedralGroupFour`: the exact tables pass the executable
   checker and hence satisfy the complex character-table specification.
+* `TauCeti.isSome_dixonRationalCharacterTable_dihedralGroupFour`: the assembled rational solver
+  succeeds on the certified prime.
 
 ## References
 
@@ -121,7 +122,7 @@ theorem isModularEigenrow_dihedralGroupFourCentralCharacterTable_zmod
 /-- The explicit set of modular rows has five elements. -/
 @[simp]
 theorem card_dihedralGroupFourModularCentralRows :
-    ((dihedralClassData 4).modularCentralRows 5
+    ((dihedralClassData 4).rowsOfMap (fun x : ℤ => (x : ZMod 5))
       dihedralGroupFourCentralCharacterTable).card = (dihedralClassData 4).numClasses := by
   decide
 
@@ -130,14 +131,19 @@ five reductions in `TauCeti.dihedralGroupFourCentralCharacterTable`.** -/
 theorem dihedralGroupFour_centralCharacterSearch :
     (dihedralClassData 4).centralCharacterSearch
         (F := ZMod dihedralGroupFourDixonPrimeData.p) =
-      (dihedralClassData 4).modularCentralRows dihedralGroupFourDixonPrimeData.p
+      (dihedralClassData 4).rowsOfMap
+        (fun x : ℤ => (x : ZMod dihedralGroupFourDixonPrimeData.p))
         dihedralGroupFourCentralCharacterTable :=
-  (dihedralClassData 4).centralCharacterSearch_eq_modularCentralRows_of_isGoodDixonPrime
-    dihedralGroupFourDixonPrimeData.isGoodDixonPrime dihedralGroupFourCentralCharacterTable
+  (dihedralClassData 4).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
+    dihedralGroupFourDixonPrimeData.isGoodDixonPrime
+    (fun x : ℤ => (x : ZMod dihedralGroupFourDixonPrimeData.p))
+    dihedralGroupFourCentralCharacterTable
     (by intro i; fin_cases i <;> decide)
     isModularEigenrow_dihedralGroupFourCentralCharacterTable_zmod
-    (by simpa only [dihedralGroupFourDixonPrimeData_p] using
-      card_dihedralGroupFourModularCentralRows)
+    (by
+      have hcard := card_dihedralGroupFourModularCentralRows
+      rw [← dihedralGroupFourDixonPrimeData_p] at hcard
+      exact hcard)
 
 /-- **The rational lift of the modular search is exactly the displayed integral central-character
 table, up to the irrelevant order of its rows.** -/
@@ -243,6 +249,18 @@ theorem integerCharacterTableChecker_dihedralGroupFour :
       dihedralGroupFourCharacterDegrees = true := by
   rw [(dihedralClassData 4).integerCharacterTableChecker_eq_true_iff]
   exact isIntegerCharacterTableSpec_dihedralGroupFour
+
+/-- **The assembled rational Dixon--Schneider solver succeeds on the certified prime for
+`DihedralGroup 4`.** -/
+theorem isSome_dixonRationalCharacterTable_dihedralGroupFour :
+    ((dihedralClassData 4).dixonRationalCharacterTable?
+      dihedralGroupFourDixonPrimeData.p).isSome = true := by
+  rw [(dihedralClassData 4).isSome_dixonRationalCharacterTable_iff]
+  refine ⟨⟨dihedralGroupFourCentralCharacterTable, dihedralGroupFourCharacterTable,
+    dihedralGroupFourCharacterDegrees⟩, ?_, isIntegerCharacterTableSpec_dihedralGroupFour⟩
+  intro i
+  rw [dihedralGroupFour_liftedCentralRows]
+  exact Finset.mem_image.mpr ⟨i, Finset.mem_univ i, rfl⟩
 
 /-- **The exact rational Dixon output for `DihedralGroup 4`, cast to `ℂ`, satisfies the character
 table specification.** Consequently it is the ordinary complex character table up to a row

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.SpinWeight
 
 /-!
 # The graph automorphism of the pinned type `Dₙ` root datum
@@ -29,6 +28,8 @@ permutation `TauCeti.graphPermD` used by the graph-twisted finite groups of Lie 
 * `TauCeti.DynkinType.typeDGraphAut`: the resulting automorphism of the pinned simply connected
   root datum.
 * `TauCeti.DynkinType.typeDGraphAut_sq`: the automorphism has square one.
+* `TauCeti.DynkinType.typeDGraphAut_weightMap_typeDSpinWeight`: its weight map toggles the final
+  sign in the spin-weight indexing.
 * `TauCeti.DynkinType.image_typeDGraphAut_indexEquiv_typeDSimplyConnectedBase_support`: the
   pinned base support is preserved.
 
@@ -187,20 +188,12 @@ private lemma typeDGraphLatticeEquiv_apply (hn : 4 ≤ n) (x : Fin n → ℤ) (i
     typeDGraphLatticeEquiv n hn x i = x (graphPermD n (by omega) i) := by
   rw [typeDGraphLatticeEquiv, LinearEquiv.piCongrLeft'_apply, graphPermD_symm]
 
-private lemma graphPermD_apply_apply' (hn : 4 ≤ n) (i : Fin n) :
-    graphPermD n (by omega) (graphPermD n (by omega) i) = i := by
-  have hi := congrArg (fun e : Equiv.Perm (Fin n) => e i) (graphPermD_sq n (by omega))
-  simp only [pow_two, Equiv.Perm.mul_apply] at hi
-  -- The right side remains written as the identity permutation applied to `i`.
-  change graphPermD n (by omega) (graphPermD n (by omega) i) = i at hi
-  exact hi
-
 private lemma typeDGraphLatticeEquiv_involutive (hn : 4 ≤ n) :
     Involutive (typeDGraphLatticeEquiv n hn : (Fin n → ℤ) → Fin n → ℤ) := by
   intro x
   funext i
   rw [typeDGraphLatticeEquiv_apply, typeDGraphLatticeEquiv_apply]
-  rw [graphPermD_apply_apply' hn]
+  rw [graphPermD_apply_apply n (by omega)]
 
 private lemma typeDGraphLatticeEquiv_root (hn : 4 ≤ n)
     (i : Fin (2 * n * (n - 1))) :
@@ -214,7 +207,7 @@ private lemma typeDGraphLatticeEquiv_root (hn : 4 ≤ n)
   rw [← typeDLastSign_dotProduct (typeDRootEquiv n hn i).1
     (typeDSimpleRoot n hn (graphPermD n (by omega) j)),
     typeDLastSign_typeDSimpleRoot]
-  rw [graphPermD_apply_apply' hn]
+  rw [graphPermD_apply_apply n (by omega)]
 
 private lemma typeDGraphLatticeEquiv_coordinates (hn : 4 ≤ n) (x : TypeDRoot n) :
     typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n hn x) =
@@ -234,7 +227,7 @@ private lemma typeDGraphLatticeEquiv_coordinates (hn : 4 ≤ n) (x : TypeDRoot n
     -- Unfold the local coefficient family only at the reindexed summand.
     change _ = typeDGraphLatticeEquiv n hn (typeDSimpleRootCoordinates n hn x)
       (graphPermD n (by omega) i) • typeDSimpleRoot n hn (graphPermD n (by omega) i)
-    rw [typeDGraphLatticeEquiv_apply, graphPermD_apply_apply' hn]
+    rw [typeDGraphLatticeEquiv_apply, graphPermD_apply_apply n (by omega)]
   have hsum : ∑ i : Fin n, c i • typeDSimpleRoot n hn i =
       (typeDClassicalGraphEquiv n x).1 := by
     rw [typeDClassicalGraphEquiv_val]
@@ -285,7 +278,7 @@ noncomputable def typeDGraphAut (n : ℕ) (hn : 4 ≤ n) :
     simp only [dotProduct, typeDGraphLatticeEquiv_apply, Pi.single_apply]
     apply Fintype.sum_equiv (graphPermD n (by omega))
     intro i
-    rw [graphPermD_apply_apply' hn]
+    rw [graphPermD_apply_apply n (by omega)]
   root_weightMap := by
     funext i
     exact typeDGraphLatticeEquiv_root hn i
@@ -320,6 +313,17 @@ node coordinates. -/
 @[simp] theorem coweightMap_typeDGraphAut_apply (hn : 4 ≤ n) (x : Fin n → ℤ) (i : Fin n) :
     (typeDGraphAut n hn).coweightMap x i = x (graphPermD n (by omega) i) :=
   typeDGraphLatticeEquiv_apply hn x i
+
+/-- **The type-`D` root-datum graph automorphism permutes the full spin-weight family** by
+toggling the final sign. This is the weight-basis compatibility needed to lift the symmetry to the
+full-weight spin carrier. -/
+@[simp]
+theorem typeDGraphAut_weightMap_typeDSpinWeight (hn : 4 ≤ n) (s : Finset (Fin n)) :
+    (typeDGraphAut n hn).weightMap (typeDSpinWeight s) =
+      typeDSpinWeight (typeDSpinGraphPerm n (by omega) s) := by
+  funext i
+  rw [weightMap_typeDGraphAut_apply]
+  exact (typeDSpinWeight_typeDSpinGraphPerm_apply (by omega) s i).symm
 
 /-- The root-index action of the type-`D` graph automorphism restricts to the fork swap on the
 pinned simple roots. -/
@@ -384,7 +388,7 @@ theorem typeDGraphAut_ne_one (n : ℕ) (hn : 4 ≤ n) : typeDGraphAut n hn ≠ 1
     refine ⟨typeDSimpleIndex n hn (graphPermD n (by omega) a), ?_, ?_⟩
     · rw [mem_typeDSimplyConnectedBase_support, typeDSimpleIndex_val]
       exact (graphPermD n (by omega) a).isLt
-    · rw [indexEquiv_typeDGraphAut_typeDSimpleIndex, graphPermD_apply_apply' hn]
+    · rw [indexEquiv_typeDGraphAut_typeDSimpleIndex, graphPermD_apply_apply n (by omega)]
       apply Fin.ext
       rw [typeDSimpleIndex_val]
 

@@ -17,28 +17,30 @@ side columns. That is exactly the effect of swapping the two side columns of `x`
 state is the column transposition `x.swapColumns R.left R.right`.
 
 This file makes that identification precise and draws the point-set consequences: the two
-states share all but two of their occupied squares, and each occupied square they do not share
-is one of the four corners of the rectangle. The shared squares are exactly the intersection of
-the two point sets, which has `n - 2` elements. These are the bookkeeping facts a Maslov or
-Alexander grading-change computation across a rectangle rests on, and they let later
+states share all but two of their occupied grid points, and each occupied grid point they do not
+share is one of the four corners of the rectangle. The shared grid points are exactly the
+intersection of the two point sets, which has `n - 2` elements. These are the bookkeeping facts
+a Maslov or Alexander grading-change computation across a rectangle rests on, and they let later
 `∂² = 0`-style arguments reason about `x` and `y` through a single transposition.
 
 ## Main results
 
 * `TauCeti.GridRectangleBetween.target_eq_swapColumns`: the target state of a rectangle is the
   source state with the two side columns swapped.
+* `TauCeti.GridRectangleBetween.target_eq_swapRows`: equivalently, the source state with the two
+  rows those columns occupy swapped.
 * `TauCeti.GridRectangleBetween.nonempty_all_iff`: oriented rectangles between `x` and `y` exist
   exactly when `y` is a column transposition of `x`.
 * `TauCeti.GridRectangleBetween.source_eq_swapColumns`: the symmetric statement recovering the
   source from the target.
-* `TauCeti.GridRectangleBetween.mem_pointSet_inter_iff`: a square is shared by the two states
+* `TauCeti.GridRectangleBetween.mem_pointSet_inter_iff`: a grid point is shared by the two states
   exactly when it belongs to the source and avoids the two side columns -- the rectangle
   specialization of `GridState.mem_pointSet_inter_swapColumns_iff` from `Diagram.lean`.
 * `TauCeti.GridRectangleBetween.source_pointSet_eq`,
   `TauCeti.GridRectangleBetween.target_pointSet_eq`: each state's point set is the shared part
   together with its own two corners.
 * `TauCeti.GridRectangleBetween.card_pointSet_inter`: the two states share exactly `n - 2`
-  squares.
+  grid points.
 
 ## References
 
@@ -77,6 +79,12 @@ theorem target_eq_swapColumns : y = x.swapColumns R.left R.right := by
   refine GridState.ext fun c => ?_
   rw [GridState.swapColumns_apply]
   exact target_apply R c
+
+/-- The target state of an oriented rectangle is also the source state with the two rows occupied
+by its side columns swapped: a grid state is a bijection from columns to rows, so exchanging the
+two side columns exchanges exactly the two rows they occupy. -/
+theorem target_eq_swapRows : y = x.swapRows (x R.left) (x R.right) :=
+  R.target_eq_swapColumns.trans (GridState.swapColumns_eq_swapRows _ _ _)
 
 /-- The oriented rectangle associated to an equality expressing the target as a nontrivial
 column swap of the source. -/
@@ -157,15 +165,15 @@ theorem target_toPerm_eq :
   rw [Equiv.trans_apply]
   exact target_apply R c
 
-/-- A square lies in the target state exactly when its column-transposed square lies in the
-source state. -/
+/-- A grid point lies in the target state exactly when its column-transposed grid point lies in
+the source state. -/
 theorem mem_target_pointSet_iff (p : Fin n × Fin n) :
     p ∈ y.pointSet ↔ (Equiv.swap R.left R.right p.1, p.2) ∈ x.pointSet := by
   rw [GridState.mem_pointSet, GridState.mk_mem_pointSet, target_apply R p.1]
 
-/-- The two side columns carry the four corners of a rectangle, so a square that the two states
+/-- The two side columns carry the four corners of a rectangle, so a grid point that the two states
 share must avoid both side columns. Conversely, away from the side columns the two states agree,
-so every source square off the side columns is shared. -/
+so every source grid point off the side columns is shared. -/
 theorem mem_pointSet_inter_iff (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ y.pointSet ↔
       p ∈ x.pointSet ∧ p.1 ≠ R.left ∧ p.1 ≠ R.right := by
@@ -212,8 +220,8 @@ theorem target_pointSet_eq :
     GridState.swapColumns_pointSet_eq_insert_insert_inter x R.left_ne_right
 
 include R in
-/-- The source and target states share exactly `n - 2` squares: all of the source's `n` squares
-except its two corners. -/
+/-- The source and target states share exactly `n - 2` grid points: all of the source's `n` grid
+points except its two corners. -/
 theorem card_pointSet_inter : (x.pointSet ∩ y.pointSet).card = n - 2 := by
   simpa [target_eq_swapColumns R] using
     GridState.card_pointSet_inter_swapColumns x R.left_ne_right

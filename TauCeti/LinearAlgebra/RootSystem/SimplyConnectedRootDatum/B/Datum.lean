@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Model
 
-public section
-
 /-!
 # The simply connected root datum of type `Bₙ`
 
@@ -64,6 +62,8 @@ The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Alge
 12.1. This is the `Bₙ` branch of the target "a named datum per valid type" in Layer 6 of
 `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
 -/
+
+public section
 
 namespace TauCeti.DynkinType
 
@@ -511,7 +511,8 @@ private lemma typeBSimpleRoot_dotProduct_typeBDualVec (i j : Fin n) :
 private lemma linearIndependent_typeBSimpleRoot (n : ℕ) :
     LinearIndependent ℤ fun i : Fin n => weight n (i : ℕ) - weight n ((i : ℕ) + 1) :=
   linearIndependent_of_dotProduct_diagonal (c := fun _ => 2)
-    (w := fun j : Fin n => typeBDualVec n (j : ℕ)) (fun _ => by norm_num)
+    (w := fun j : Fin n => typeBDualVec n (j : ℕ))
+    (fun _ => (IsRegular.of_ne_zero (by norm_num)).right)
     (fun i => by rw [typeBSimpleRoot_dotProduct_typeBDualVec]; simp)
     (fun i j hij => by rw [typeBSimpleRoot_dotProduct_typeBDualVec]; simp [hij])
 

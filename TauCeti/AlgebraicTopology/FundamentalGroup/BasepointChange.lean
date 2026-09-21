@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
+import Mathlib.Tactic.Group
 
 /-!
 # Basepoint change for fundamental-group subgroups
@@ -29,6 +30,8 @@ subgroup and normalizer-quotient bookkeeping needed by the universal-covers road
   `basepointChangeSubgroup`.
 * `TauCeti.FundamentalGroup.basepointChangeNormalizerQuotientEquiv`: the corresponding
   isomorphism `N(H) / H ≃* N(γ₊H) / γ₊H`.
+* `FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj`: basepoint change along a loop is
+  conjugation by its class.
 * `TauCeti.FundamentalGroup.mem_basepointChangeSubgroup` and the representative `[simp]`
   lemmas for membership and quotient calculations under these domain-specific names.
 
@@ -44,6 +47,57 @@ public section
 namespace TauCeti
 
 namespace FundamentalGroup
+
+open CategoryTheory in
+/-- The inverse basepoint-change equivalence is represented by conjugation with the reverse path.
+This path-quotient formula is the interface for computations with the equivalence. -/
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply
+    {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
+    (γ : Path x₀ x₁) (g : _root_.FundamentalGroup X x₁) :
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g =
+      Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk γ)
+        (Path.Homotopic.Quotient.trans g (Path.Homotopic.Quotient.mk γ).symm) := by
+  let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
+  let α : FundamentalGroupoid.mk x₀ ≅ FundamentalGroupoid.mk x₁ :=
+    (Groupoid.isoEquivHom _ _).symm γq
+  have hα_hom : α.hom = γq := by
+    exact (Groupoid.isoEquivHom (FundamentalGroupoid.mk x₀)
+      (FundamentalGroupoid.mk x₁)).apply_symm_apply γq
+  have hα_inv : α.inv = γq.symm := by
+    apply (cancel_mono γq).1
+    calc
+      α.inv ≫ γq = α.inv ≫ α.hom := by rw [hα_hom]
+      _ = 𝟙 (FundamentalGroupoid.mk x₁) := α.inv_hom_id
+      _ = γq.symm ≫ γq := by
+        rw [FundamentalGroupoid.id_eq_path_refl]
+        exact (Path.Homotopic.Quotient.symm_trans γq).symm
+  rw [MulEquiv.symm_apply_eq]
+  have hconj : Path.Homotopic.Quotient.trans γq
+      (Path.Homotopic.Quotient.trans g γq.symm) = α.symm.conj g := by
+    rw [CategoryTheory.Iso.conj_apply, CategoryTheory.Iso.symm_inv,
+      CategoryTheory.Iso.symm_hom, hα_hom, hα_inv]
+    simp only [FundamentalGroupoid.comp_eq]
+  rw [hconj]
+  exact (α.self_symm_conj g).symm
+
+/-- **Basepoint change along a loop is an inner automorphism.** For a loop `γ` at `x`, changing
+basepoint along `γ` is conjugation by the class of `γ` in `π₁(X, x)`. In particular it is invisible
+to any homomorphism from `π₁(X, x)` to a commutative group. -/
+lemma _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj {X : Type*}
+    [TopologicalSpace X] {x : X} (γ : Path x x) :
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ =
+      MulAut.conj (_root_.FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) := by
+  ext g
+  rw [MulAut.conj_apply, ← MulEquiv.eq_symm_apply,
+    _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply]
+  -- In `π₁(X, x)` concatenation is multiplication in the reverse order and reversal is inversion
+  -- (`FundamentalGroup.mul_def`, `FundamentalGroup.inv_def`); restate the path formula as a word.
+  have htrans (a b : _root_.FundamentalGroup X x) : a.trans b = b * a :=
+    (_root_.FundamentalGroup.mul_def).symm
+  have hsymm (a : _root_.FundamentalGroup X x) : Path.Homotopic.Quotient.symm a = a⁻¹ :=
+    (_root_.FundamentalGroup.inv_def).symm
+  rw [hsymm, htrans, htrans]
+  group
 
 variable {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
 

@@ -8,14 +8,17 @@ module
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+public import TauCeti.RingTheory.Huber.Continuous.Coarsen
+import TauCeti.RingTheory.Huber.Continuous.PowerBounded
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.OpenIdeal
+public import TauCeti.RingTheory.Valuation.Microbial
 
 /-!
 # Analytic points and the analytic locus of `Spa(A, A⁺)`
 
-**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(3), and
-Proposition 7.49.**
+**Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(2), (3), (5),
+Remark 7.42(2), and Proposition 7.49.**
 
 This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 
@@ -34,6 +37,13 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_spa_of_isTateRing` : **Wedhorn Remark 7.40(3)**,
   for a Tate ring `A`, the analytic locus is the entire adic spectrum.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
+* `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
+  the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
+* `TauCeti.ValuationSpectrum.IsAnalyticPoint.isMicrobial` : **Wedhorn Remark 7.40(5)**, every
+  continuous analytic point of a Huber ring is microbial.
+* `TauCeti.ValuationSpectrum.IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic` :
+  **Wedhorn Remark 7.42(2)**, an analytic point has a height-one vertical generization in every
+  adic spectrum containing it.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_biUnion_rationalSubset` : generators of an ideal of
   definition give a finite rational cover of the analytic locus.
 * `TauCeti.ValuationSpectrum.isTateRing_completion_locTopology_of_mem_generators` : the completed
@@ -41,8 +51,8 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(3), and
-  Proposition 7.49.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(2), (3), (5),
+  Remark 7.42(2), and Proposition 7.49.
 -/
 
 public section
@@ -104,6 +114,87 @@ theorem isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp
     (inferInstance : v.supp.IsPrime).isRadical.radical
   rw [hsupp]
   exact Set.not_subset
+
+/-- An analytic point supplies an element of an ideal of definition which is outside its
+support. Unlike an arbitrary element of the extended ideal, this witness is topologically
+nilpotent because it comes from the ring of definition itself. -/
+theorem IsAnalyticPoint.exists_mem_idealOfDefinition_notMem_supp
+    (P : PairOfDefinition A) {v : Spv A} (hv : IsAnalyticPoint v) :
+    ∃ b : P.ringOfDefinition, b ∈ P.idealOfDefinition ∧ (b : A) ∉ v.supp := by
+  obtain ⟨a, haI, ha⟩ :=
+    (isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P v).mp hv
+  by_contra! h
+  apply ha
+  have hsupp : P.extendedIdealOfDefinition ≤ v.supp := by
+    rw [P.extendedIdealOfDefinition_def, Ideal.map_le_iff_le_comap]
+    exact fun b hb ↦ h b hb
+  exact hsupp haI
+
+/-- **Wedhorn Remark 7.40(5).** Every continuous analytic point of a Huber ring is microbial. -/
+theorem IsAnalyticPoint.isMicrobial [IsHuberRing A] {v : Spv A} (hana : IsAnalyticPoint v)
+    (hcont : v.IsContinuous) : v.valuation.IsMicrobial := by
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  obtain ⟨b, hbI, hbSupp⟩ := hana.exists_mem_idealOfDefinition_notMem_supp P
+  have hb0 : v.valuation (b : A) ≠ 0 := by
+    intro hb0
+    exact hbSupp (v.supp_eq_valuation_supp ▸ (v.valuation.mem_supp_iff _).mpr hb0)
+  exact Valuation.isMicrobial_of_cofinalValue hb0
+    (((isContinuous_def v).mp hcont).cofinalValue_of_isTopologicallyNilpotent
+      (P.isTopologicallyNilpotent_of_mem_idealOfDefinition hbI))
+
+/-- **Wedhorn Remark 7.42(2).** A continuous analytic point has a height-one vertical
+generization in `Spa(A, A⁺)` whenever `A⁺` consists of power-bounded elements; in particular,
+this applies to every ring of integral elements. -/
+theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
+    {v : Spv A} (hana : IsAnalyticPoint v) (Aplus : Subring A)
+    (hAplus : Aplus ≤ powerBoundedSubring A) (hcont : v.IsContinuous) :
+    ∃ H : TauCeti.ConvexSubgroup
+        (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ,
+      Nontrivial
+          ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) ∧
+        MulArchimedean
+          ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) ∧
+        ofValuation (v.valuation.restrict.coarsenByUnits H) ∈ spaAnalytic Aplus ∧
+        (ofValuation (v.valuation.restrict.coarsenByUnits H)).supp = v.supp := by
+  obtain ⟨H, hHnontrivial, hHarch⟩ := Valuation.isMicrobial_iff.mp (hana.isMicrobial hcont)
+  have hH : H ≠ ⊤ := by
+    intro htop
+    apply QuotientGroup.nontrivial_iff.mp hHnontrivial
+    simpa only [TauCeti.ConvexSubgroup.top_toSubgroup] using
+      TauCeti.ConvexSubgroup.toSubgroup_inj.mpr htop
+  let w := v.valuation.restrict.coarsenByUnits H
+  have hwcont : w.IsContinuous :=
+    ((isContinuous_def v).mp hcont).coarsenByUnits_restrict hH
+  have hsupp : (ofValuation w).supp = v.supp := by
+    rw [supp_ofValuation]
+    dsimp [w]
+    rw [Valuation.coarsenByUnits_supp]
+    ext a
+    rw [v.supp_eq_valuation_supp]
+    simp only [Valuation.mem_supp_iff, Valuation.restrict_eq_zero_iff]
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  obtain ⟨b, hbI, hbSupp⟩ := hana.exists_mem_idealOfDefinition_notMem_supp P
+  have hwb0 : w (b : A) ≠ 0 := by
+    intro hwb0
+    apply hbSupp
+    rw [← hsupp, supp_ofValuation, Valuation.mem_supp_iff]
+    exact hwb0
+  let _ : MulArchimedean
+      ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) := hHarch
+  let _ : MulArchimedean (MonoidWithZeroHom.ValueGroup₀ (.ofClass w)) :=
+    MulArchimedean.comap MonoidWithZeroHom.ValueGroup₀.embedding.toMonoidHom
+      MonoidWithZeroHom.ValueGroup₀.embedding_strictMono
+  refine ⟨H, hHnontrivial, hHarch, ?_, hsupp⟩
+  rw [mem_spaAnalytic_iff]
+  refine ⟨(mem_spa_iff Aplus (ofValuation w)).mpr ⟨?_, ?_⟩, ?_⟩
+  · exact (isContinuous_ofValuation_iff w).mpr hwcont
+  · intro a ha
+    rw [vle_ofValuation, map_one]
+    exact hwcont.le_one_of_isPowerBounded
+      (P.isTopologicallyNilpotent_of_mem_idealOfDefinition hbI) hwb0
+      (mem_powerBoundedSubring.mp (hAplus ha))
+  · rw [isAnalyticPoint_def, hsupp]
+    exact hana
 
 /-- The analytic locus is open in the adic spectrum. It is the union, over the extended ideal of
 definition, of the loci on which an element does not vanish. -/
@@ -231,6 +322,26 @@ theorem isTateRing_completion_locTopology_of_mem_generators (P : PairOfDefinitio
   exact isTateRing_completion_locTopology_of_isTopologicallyNilpotent P _ (g : A) S hden
     (P.isTopologicallyNilpotent_of_mem_idealOfDefinition
       (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg)))
+
+/-- **Wedhorn Remark 7.40(2).** The analytic locus is quasi-compact. A finite generating set of
+the extended ideal of definition gives a finite rational cover of it, and each rational subset in
+that cover is quasi-compact, so their union is. Together with `isOpen_val_preimage_spaAnalytic`
+this is the whole of 7.40(2): the analytic locus is an open quasi-compact subset of `Spa(A, A⁺)`.
+
+Stated for the preimage in `spa Aplus` rather than for `spaAnalytic Aplus : Set (Spv A)`, matching
+`isOpen_val_preimage_spaAnalytic`, because quasi-compactness of a rational subset is available in
+that form. -/
+theorem isCompact_val_preimage_spaAnalytic (P : PairOfDefinition A) (Aplus : Subring A) :
+    IsCompact (Subtype.val ⁻¹' spaAnalytic Aplus : Set (spa Aplus)) := by
+  obtain ⟨T, hT⟩ := P.fg_extendedIdealOfDefinition
+  have hopen : IsOpen (Ideal.span (T : Set A) : Set A) := by
+    rw [hT]
+    exact (P.isOpen_iff_exists_pow_le _).mpr ⟨1, by simp⟩
+  rw [spaAnalytic_eq_biUnion_rationalSubset_of_span_eq_extendedIdealOfDefinition P Aplus T hT,
+    Set.preimage_iUnion₂]
+  exact T.isCompact_biUnion fun t _ ↦
+    isCompact_of_mem_spaRationalFamily_of_pairOfDefinition P
+      (mem_spaRationalFamily_iff.mpr ⟨T, t, hopen, rfl⟩)
 
 end TopologicalRing
 

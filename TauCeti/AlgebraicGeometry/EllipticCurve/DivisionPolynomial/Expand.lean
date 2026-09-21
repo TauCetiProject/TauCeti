@@ -23,9 +23,9 @@ field or to a universal polynomial ring.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.Φ_two_mem_range_expand`, `ΨSq_two_mem_range_expand`: characteristic
+* `WeierstrassCurve.Φ_two_mem_range_expand`, `ΨSq_two_mem_range_expand`: characteristic
   two.
-* `TauCeti.WeierstrassCurve.Ψ₃_mem_range_expand`, `ΨSq_three_mem_range_expand`,
+* `WeierstrassCurve.Ψ₃_mem_range_expand`, `ΨSq_three_mem_range_expand`,
   `Φ_three_mem_range_expand`: characteristic three.
 
 ## Provenance
@@ -52,14 +52,15 @@ open Polynomial
 
 namespace TauCeti
 
-namespace WeierstrassCurve
+section
 
 variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R)
 
 /-- In characteristic two, `Φ₂` is a polynomial in `X²`.
 
 `Φ₂ = X⁴ − b₄X² − 2b₆X − b₈`, and the `2b₆X` term vanishes. -/
-theorem Φ_two_mem_range_expand [CharP R 2] : W.Φ 2 ∈ Set.range (⇑(expand R 2)) := by
+theorem _root_.WeierstrassCurve.Φ_two_mem_range_expand
+    [CharP R 2] : W.Φ 2 ∈ Set.range (⇑(expand R 2)) := by
   refine ⟨X ^ 2 - C W.b₄ * X - C W.b₈, ?_⟩
   simp only [W.Φ_two, map_sub, map_mul, map_pow, expand_C, expand_X, C_ofNat]
   linear_combination (X * C W.b₆) * CharP.cast_eq_zero R[X] 2
@@ -67,7 +68,8 @@ theorem Φ_two_mem_range_expand [CharP R 2] : W.Φ 2 ∈ Set.range (⇑(expand R
 /-- In characteristic two, `ΨSq₂` is a polynomial in `X²`.
 
 `ΨSq₂ = Ψ₂Sq = 4X³ + b₂X² + 2b₄X + b₆`, and the `4X³` and `2b₄X` terms vanish. -/
-theorem ΨSq_two_mem_range_expand [CharP R 2] : W.ΨSq 2 ∈ Set.range (⇑(expand R 2)) := by
+theorem _root_.WeierstrassCurve.ΨSq_two_mem_range_expand
+    [CharP R 2] : W.ΨSq 2 ∈ Set.range (⇑(expand R 2)) := by
   refine ⟨C W.b₂ * X + C W.b₆, ?_⟩
   simp only [W.ΨSq_two, _root_.WeierstrassCurve.Ψ₂Sq, map_add, map_mul, expand_C, expand_X,
     C_ofNat]
@@ -76,15 +78,17 @@ theorem ΨSq_two_mem_range_expand [CharP R 2] : W.ΨSq 2 ∈ Set.range (⇑(expa
 /-- In characteristic three, `Ψ₃` is a polynomial in `X³`.
 
 `Ψ₃ = 3X⁴ + b₂X³ + 3b₄X² + 3b₆X + b₈`, and every term with a factor of `3` vanishes. -/
-theorem Ψ₃_mem_range_expand [CharP R 3] : W.Ψ₃ ∈ Set.range (⇑(expand R 3)) := by
+theorem _root_.WeierstrassCurve.Ψ₃_mem_range_expand
+    [CharP R 3] : W.Ψ₃ ∈ Set.range (⇑(expand R 3)) := by
   refine ⟨C W.b₂ * X + C W.b₈, ?_⟩
   simp only [_root_.WeierstrassCurve.Ψ₃, map_add, map_mul, expand_C, expand_X]
   linear_combination -(X ^ 4 + C W.b₄ * X ^ 2 + C W.b₆ * X) * CharP.cast_eq_zero R[X] 3
 
 /-- In characteristic three, `ΨSq₃` is a polynomial in `X³`, since it is `Ψ₃²` and `expand` is
 multiplicative. -/
-theorem ΨSq_three_mem_range_expand [CharP R 3] : W.ΨSq 3 ∈ Set.range (⇑(expand R 3)) := by
-  obtain ⟨g, hg⟩ := Ψ₃_mem_range_expand W
+theorem _root_.WeierstrassCurve.ΨSq_three_mem_range_expand
+    [CharP R 3] : W.ΨSq 3 ∈ Set.range (⇑(expand R 3)) := by
+  obtain ⟨g, hg⟩ := WeierstrassCurve.Ψ₃_mem_range_expand W
   exact ⟨g ^ 2, by rw [W.ΨSq_three, ← hg, map_pow]⟩
 
 /-- In characteristic three, `Φ₃` is a polynomial in `X³`: explicitly, `Φ₃ = expand 3 g` for the
@@ -94,7 +98,8 @@ The difference `expand 3 g − Φ₃` is `3·M + N·(b₂b₆ − b₄² − b�
 (computed symbolically over `ℤ`, entering through `linear_combination`), so it vanishes by
 `CharP.cast_eq_zero` and the characteristic-three `b`-relation
 `WeierstrassCurve.b_relation_of_char_three`. -/
-theorem Φ_three_mem_range_expand [CharP R 3] : W.Φ 3 ∈ Set.range (⇑(expand R 3)) := by
+theorem _root_.WeierstrassCurve.Φ_three_mem_range_expand
+    [CharP R 3] : W.Φ 3 ∈ Set.range (⇑(expand R 3)) := by
   have h3 : (3 : R[X]) = 0 := by exact_mod_cast CharP.cast_eq_zero R[X] 3
   have hbC : C W.b₈ = C W.b₂ * C W.b₆ - C W.b₄ ^ 2 := by
     rw [W.b_relation_of_char_three, map_sub, map_mul, map_pow]
@@ -116,6 +121,6 @@ theorem Φ_three_mem_range_expand [CharP R 3] : W.Φ 3 ∈ Set.range (⇑(expand
       (3 * C W.b₂ * C W.b₄ + 4 * C W.b₆) * X ^ 2 + (3 * C W.b₄ ^ 2 - C W.b₈) * X +
       C W.b₄ * C W.b₆) * hbC
 
-end WeierstrassCurve
+end
 
 end TauCeti

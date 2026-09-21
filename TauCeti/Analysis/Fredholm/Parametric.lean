@@ -42,8 +42,8 @@ Together these are the linear engine of the parametric transversality theorem (M
 projection to the Sard--Smale theorem of `TauCeti.Analysis.Fredholm.SardSmale`; besides a smooth
 chart on the universal zero set, its residual-set conclusion requires real scalars, second
 countability of the domain, and the stated `C^k` threshold. At a regular parameter,
-`TauCeti.Analysis.Fredholm.LevelSet` supplies a chart modelled on a finite-dimensional space whose
-dimension is the index of `D₁`. This file supplies only the linear half of that chain.
+`TauCeti.Analysis.Fredholm.LevelSet.Basic` supplies a chart modelled on a finite-dimensional
+space whose dimension is the index of `D₁`. This file supplies only the linear half of that chain.
 
 ## The exact sequence
 
@@ -69,7 +69,7 @@ cokernel of `D₁` (`TauCeti.quotientRangeParameterProjEquiv`), and the surjecti
 the degenerate case of that identification.
 
 The index statement needs neither completeness nor the Fredholm property, because
-`TauCeti.ContinuousLinearMap.index` is a difference of two `Module.finrank`s and the sequence
+`ContinuousLinearMap.index` is a difference of two `Module.finrank`s and the sequence
 matches both of them. The Fredholm statement additionally assumes that `D₁` is Fredholm and asks
 for Banach spaces, then certifies the two dimensions finite through
 `ContinuousLinearMap.IsFredholm.of_finite_ker_coker`.
@@ -418,8 +418,8 @@ theorem finiteDimensional_quotient_range_parameterProj
 
 /-- **The parameter projection of a surjective total linearization has the same index as `D₁`.**
 
-Under the hypotheses needed to apply `TauCeti.Analysis.Fredholm.LevelSet`, this equality gives the
-dimension of the finite-dimensional model space for a regular fibre.
+Under the hypotheses needed to apply `TauCeti.Analysis.Fredholm.LevelSet.Basic`, this equality
+gives the dimension of the finite-dimensional model space for a regular fibre.
 
 Neither operator is assumed Fredholm: both sides are differences of `Module.finrank`s, and the
 exact sequence matches the four dimensions in pairs, junk values included. -/

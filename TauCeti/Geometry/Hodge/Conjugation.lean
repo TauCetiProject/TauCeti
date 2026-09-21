@@ -6,25 +6,36 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Map
-public import Mathlib.Data.Complex.Basic
+public import Mathlib.Basic.Complex.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Map
-public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
-# Conjugation and maps on complexifications of integral modules
+# Conjugation and maps on complexifications
 
 This file packages a conjugation on a complex vector space as a conjugate-linear involution and
-constructs the canonical conjugation on any abstract complexification of an integral module.
-The construction uses Mathlib's `IsBaseChange` interface: it transports coordinatewise conjugation
-on `ℂ ⊗[ℤ] V` to an arbitrary complex base-change model and is uniquely characterized by fixing the
-image of `V`. The same interface canonically complexifies integral linear maps between abstract
-complexification models.
+bundles the canonical conjugation on the tensor complexification of a real vector space. It also
+constructs the canonical conjugation on any abstract complexification of an integral module using
+Mathlib's `IsBaseChange` interface: it transports coordinatewise conjugation on `ℂ ⊗[ℤ] V` to an
+arbitrary complex base-change model and is uniquely characterized by fixing the image of `V`. The
+same interface canonically complexifies integral linear maps between abstract complexification
+models.
 
 ## Main declarations
 
 * `TauCeti.Hodge.Conjugation`: a conjugate-linear involution of a complex vector space.
+* `TauCeti.Hodge.complexificationConjugation`: the canonical conjugation on the complexification
+  of a real vector space, bundled as a Hodge conjugation.
+* `LinearMap.map_eigenspace_baseChange`: canonical conjugation carries each eigenspace of a
+  complexified real-linear endomorphism to the eigenspace of the conjugate eigenvalue.
+* `TauCeti.Hodge.Conjugation.tensorProduct`: the tensor product of two conjugations.
+* `TauCeti.Hodge.Conjugation.tensorProduct_toEquiv_tmul`: its action on pure tensors.
+* `TauCeti.Hodge.Conjugation.internalHom`: conjugation on the space of complex-linear maps,
+  acting by conjugating the input and output.
 * `TauCeti.Hodge.Conjugation.conjFiltration`: the conjugate of a complex filtration.
 * `TauCeti.Hodge.concreteLatticeConj`: conjugation on the tensor model `ℂ ⊗[ℤ] V`.
 * `TauCeti.Hodge.latticeConj`: conjugation on an abstract complex base-change model.
@@ -44,10 +55,10 @@ complexification models.
 * `TauCeti.Hodge.integralMapToComplex`: complexification of an integral linear map between abstract
   complexification models.
 
-The base-change design follows the Hodge structures roadmap and the discussion by Johan Commelin,
-Andrew Yang, Kevin Buzzard, and Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a
-view towards Hodge theory*. The opposed-filtration formulation that consumes this conjugation is
-Deligne's, *Théorie de Hodge II*, §1.2.1.
+The base-change design follows the discussion by Johan Commelin, Andrew Yang, Kevin Buzzard, and
+Joël Riou in the `#mathlib4` Zulip thread *Complexifications with a view towards Hodge theory*. The
+opposed-filtration formulation that consumes this conjugation is Deligne's, *Théorie de Hodge II*,
+§1.2.1.
 -/
 
 public section
@@ -66,6 +77,72 @@ structure Conjugation (W : Type u) [AddCommGroup W] [Module ℂ W] where
   /-- Applying the conjugation twice is the identity. -/
   involutive : Function.Involutive toEquiv
 
+variable (V : Type u) [AddCommGroup V] [Module ℝ V]
+
+/-- The canonical conjugation on the complexification of a real vector space, bundled as a
+conjugate-linear involution. -/
+noncomputable def complexificationConjugation : Conjugation (ℂ ⊗[ℝ] V) where
+  toEquiv := LinearEquiv.ofInvolutive (tmulConj V) (tmulConj_involutive V)
+  involutive := tmulConj_involutive V
+
+/-- The bundled canonical conjugation agrees with tensor conjugation on every vector. -/
+@[simp]
+theorem complexificationConjugation_toEquiv_apply (x : ℂ ⊗[ℝ] V) :
+    (complexificationConjugation V).toEquiv x = tmulConj V x :=
+  by simp [complexificationConjugation]
+
+/-- Canonical conjugation on a complexification conjugates the complex coefficient of a pure
+tensor and fixes its real factor. -/
+theorem complexificationConjugation_toEquiv_tmul (z : ℂ) (v : V) :
+    (complexificationConjugation V).toEquiv (z ⊗ₜ[ℝ] v) =
+      (starRingEnd ℂ) z ⊗ₜ[ℝ] v := by
+  rw [complexificationConjugation_toEquiv_apply, tmulConj_tmul]
+
+end TauCeti.Hodge
+
+namespace LinearMap
+
+open TauCeti
+open scoped TensorProduct
+
+universe u
+
+variable {V : Type u} [AddCommGroup V] [Module ℝ V]
+
+/-- Canonical conjugation carries the `z`-eigenspace of a complexified real-linear endomorphism
+to its conjugate-eigenvalue eigenspace. -/
+@[simp]
+theorem map_eigenspace_baseChange (f : V →ₗ[ℝ] V) (z : ℂ) :
+    (Module.End.eigenspace (f.baseChange ℂ) z).map
+        (Hodge.complexificationConjugation V).toEquiv.toLinearMap =
+      Module.End.eigenspace (f.baseChange ℂ) ((starRingEnd ℂ) z) := by
+  apply le_antisymm
+  · rintro _ ⟨x, hx, rfl⟩
+    apply Module.End.mem_eigenspace_iff.mpr
+    have hx' := Module.End.mem_eigenspace_iff.mp hx
+    rw [LinearEquiv.coe_toLinearMap, Hodge.complexificationConjugation_toEquiv_apply]
+    calc
+      f.baseChange ℂ (tmulConj V x) =
+          tmulConj V (f.baseChange ℂ x) := (tmulConj_baseChange f x).symm
+      _ = tmulConj V (z • x) := congrArg (tmulConj V) hx'
+      _ = (starRingEnd ℂ) z • tmulConj V x := by simp
+  · intro x hx
+    refine ⟨(Hodge.complexificationConjugation V).toEquiv x, ?_, by simp⟩
+    apply Module.End.mem_eigenspace_iff.mpr
+    have hx' := Module.End.mem_eigenspace_iff.mp hx
+    rw [Hodge.complexificationConjugation_toEquiv_apply]
+    calc
+      f.baseChange ℂ (tmulConj V x) =
+          tmulConj V (f.baseChange ℂ x) := (tmulConj_baseChange f x).symm
+      _ = tmulConj V ((starRingEnd ℂ) z • x) := congrArg (tmulConj V) hx'
+      _ = z • tmulConj V x := by simp
+
+end LinearMap
+
+namespace TauCeti.Hodge
+
+open scoped TensorProduct
+
 namespace Conjugation
 
 variable {W : Type u} [AddCommGroup W] [Module ℂ W]
@@ -81,6 +158,74 @@ theorem toEquiv_symm (ω : Conjugation W) : ω.toEquiv.symm = ω.toEquiv := by
 @[simp]
 theorem apply_apply (ω : Conjugation W) (x : W) : ω.toEquiv (ω.toEquiv x) = x :=
   ω.involutive x
+
+section TensorProduct
+
+variable {W₁ : Type u} {W₂ : Type v} [AddCommGroup W₁] [Module ℂ W₁]
+  [AddCommGroup W₂] [Module ℂ W₂]
+
+private def tensorMap (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂) :
+    W₁ ⊗[ℂ] W₂ →ₛₗ[starRingEnd ℂ] W₁ ⊗[ℂ] W₂ :=
+  TensorProduct.map ω₁.toEquiv ω₂.toEquiv
+
+private theorem tensorMap_involutive (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂) :
+    Function.Involutive (tensorMap ω₁ ω₂) := by
+  intro x
+  simp only [tensorMap, TensorProduct.map_map]
+  rw [show ω₁.toEquiv.toLinearMap ∘ₛₗ ω₁.toEquiv.toLinearMap = LinearMap.id by
+    ext y
+    simp [Conjugation.apply_apply]]
+  rw [show ω₂.toEquiv.toLinearMap ∘ₛₗ ω₂.toEquiv.toLinearMap = LinearMap.id by
+    ext y
+    simp [Conjugation.apply_apply], TensorProduct.map_id]
+  rfl
+
+/-- The tensor product of two conjugate-linear involutions. -/
+def tensorProduct (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂) :
+    Conjugation (W₁ ⊗[ℂ] W₂) where
+  toEquiv :=
+    { toFun := tensorMap ω₁ ω₂
+      invFun := tensorMap ω₁ ω₂
+      left_inv := tensorMap_involutive ω₁ ω₂
+      right_inv := tensorMap_involutive ω₁ ω₂
+      map_add' := by simp [tensorMap]
+      map_smul' := by simp [tensorMap] }
+  involutive := tensorMap_involutive ω₁ ω₂
+
+/-- Tensor-product conjugation acts componentwise on pure tensors. -/
+@[simp]
+theorem tensorProduct_toEquiv_tmul (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂)
+    (x : W₁) (y : W₂) :
+    (ω₁.tensorProduct ω₂).toEquiv (x ⊗ₜ[ℂ] y) = ω₁.toEquiv x ⊗ₜ[ℂ] ω₂.toEquiv y :=
+  by
+    -- Expose the private map so Mathlib's pure-tensor computation lemma can fire.
+    change tensorMap ω₁ ω₂ (x ⊗ₜ[ℂ] y) = _
+    simp [tensorMap]
+
+end TensorProduct
+
+section InternalHom
+
+variable {W₁ : Type u} {W₂ : Type v} [AddCommGroup W₁] [Module ℂ W₁]
+  [AddCommGroup W₂] [Module ℂ W₂]
+
+/-- The conjugation on the internal hom of two complex vector spaces with conjugation. It sends
+`f : W₁ →ₗ[ℂ] W₂` to `x ↦ ω₂ (f (ω₁ x))`. -/
+def internalHom (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂) :
+    Conjugation (W₁ →ₗ[ℂ] W₂) where
+  toEquiv := ω₁.toEquiv.arrowCongr ω₂.toEquiv
+  involutive := fun f ↦ by
+    ext x
+    simp [ω₁.toEquiv_symm]
+
+/-- Conjugation on an internal hom conjugates the input and output. -/
+@[simp]
+theorem internalHom_toEquiv_apply_apply (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂)
+    (f : W₁ →ₗ[ℂ] W₂) (x : W₁) :
+    (ω₁.internalHom ω₂).toEquiv f x = ω₂.toEquiv (f (ω₁.toEquiv x)) :=
+  by simp [internalHom, ω₁.toEquiv_symm]
+
+end InternalHom
 
 /-- Mapping a complex subspace twice by a conjugation returns the original subspace. -/
 @[simp]
@@ -559,5 +704,36 @@ theorem integralMapToComplex_commutes_conj (h₁ : IsBaseChange ℂ ι₁)
   | add x y hx hy => simp [hx, hy]
 
 end IntegralMaps
+
+section Prod
+
+variable {V : Type u} {Vℂ : Type v} [AddCommGroup V]
+variable [AddCommGroup Vℂ] [Module ℂ Vℂ] {ιℂ : V →ₗ[ℤ] Vℂ}
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V']
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ} (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+
+/-- Lattice conjugation acts componentwise on a product of complexifications. -/
+@[simp]
+theorem latticeConj_prodMap (x : Vℂ × V'ℂ) :
+    latticeConj (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) x =
+      (latticeConj hℂ x.1, latticeConj h'ℂ x.2) := by
+  induction x using (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ).inductionOn with
+  | zero => simp only [map_zero, Prod.fst_zero, Prod.snd_zero]; rfl
+  | tmul x => rw [latticeConj_ι]; simp
+  | smul z x hx => simp [hx]
+  | add x y hx hy => simp [hx, hy]
+
+/-- Conjugation of a product subspace is the product of the conjugate subspaces. -/
+@[simp]
+theorem map_latticeConj_prod (U : Submodule ℂ Vℂ) (U' : Submodule ℂ V'ℂ) :
+    (U.prod U').map (latticeConj (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ)) =
+      (U.map (latticeConj hℂ)).prod (U'.map (latticeConj h'ℂ)) := by
+  apply SetLike.coe_injective
+  simpa only [Submodule.map_coe, Submodule.prod_coe, Prod.map_def,
+    funext (latticeConj_prodMap hℂ h'ℂ)] using
+    Set.prodMap_image_prod (latticeConj hℂ) (latticeConj h'ℂ) (U : Set Vℂ) (U' : Set V'ℂ)
+
+end Prod
 
 end TauCeti.Hodge

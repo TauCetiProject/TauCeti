@@ -352,8 +352,7 @@ private theorem finrank_indecProjRep_obj_src :
       (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))) = 1 := by
   have h := dimVector_indecProjRep (k := k) Quiver.Kronecker.src
     (Quiver.Kronecker.src : Quiver.Kronecker A)
-  rw [dimVector_apply] at h
-  rw [Paths.of_obj] at h
+  rw [dimVector_apply, Paths.of_obj] at h
   rw [h, Nat.card_unique]
 
 /-- The projective `P₁` of the `A₂` quiver is a line at the target: its single arrow is the only
@@ -363,8 +362,7 @@ private theorem finrank_indecProjRep_obj_tgt :
       (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A))) = 1 := by
   have h := dimVector_indecProjRep (k := k) Quiver.Kronecker.src
     (Quiver.Kronecker.tgt : Quiver.Kronecker A)
-  rw [dimVector_apply] at h
-  rw [Paths.of_obj] at h
+  rw [dimVector_apply, Paths.of_obj] at h
   rw [h, Nat.card_congr Quiver.Kronecker.pathEquivArrow, Nat.card_unique]
 
 /-- **Every indecomposable representation of the `A₂` quiver is one of the three**: the two vertex

@@ -308,8 +308,9 @@ open Polynomial (CC)
 /-- The `a₁` coefficient of `pointedCurve` is the image of the indeterminate `A₁` in the universal
 field, and likewise for `pointedCurve_a₂` through `pointedCurve_a₆`.
 
-None of the five is `@[simp]`: `simp` already rewrites `pointedCurve.a₁` with Mathlib's
-`Affine.baseChange_a₁`, to `algebraMap _ _ curve.a₁`, so tagging these would put a non-normal-form
+None of the five is `@[simp]`: `pointedCurve` is `curve.baseChange Universal.Field`, which unfolds
+to `curve.map (algebraMap _ _)`, so `simp` already rewrites `pointedCurve.a₁` with Mathlib's
+`WeierstrassCurve.map_a₁`, to `algebraMap _ _ curve.a₁`; tagging these would put a non-normal-form
 left-hand side in the simp set. They are the `polyToField` reading of the same coefficients, for
 use by name. -/
 lemma pointedCurve_a₁ : pointedCurve.a₁ = polyToField (CC curve.a₁) := (rfl)

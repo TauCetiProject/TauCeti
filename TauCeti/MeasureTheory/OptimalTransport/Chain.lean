@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.IonescuTulcea.Traj
+public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
@@ -19,6 +20,11 @@ The construction uses Mathlib's Ionescu--Tulcea trajectory measure. At step `n`,
 kernel of the prescribed `(n, n + 1)`-plan is pulled back along evaluation at the last point of the
 current finite trajectory. The main result is `TauCeti.Measure.map_adjacent_chainMeasure`.
 
+For a chain of couplings on a fixed space,
+`TauCeti.Measure.map_adjacent_chainMeasure_of_isCoupling` packages the matching-marginal
+hypothesis, while `TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure` extracts a
+measurable pathwise limit when almost every trajectory is Cauchy.
+
 The finite-prefix results project this path law to any initial segment of the supplied countable
 chain; see `TauCeti.Measure.map_adjacent_prefixChainMeasure`. This is the iteration of the two-plan
 gluing lemma needed by optimal transport, without rebuilding Mathlib's trajectory-measure
@@ -27,7 +33,7 @@ construction.
 
 public section
 
-open Finset MeasurableSpace MeasureTheory Preorder ProbabilityTheory
+open Filter Finset MeasurableSpace MeasureTheory Preorder ProbabilityTheory
 open scoped ENNReal MeasureTheory ProbabilityTheory
 
 namespace TauCeti
@@ -77,10 +83,9 @@ private theorem map_zero_chainMeasure
     funext x
     rfl
   have hprefix : (chainMeasure pi).map (frestrictLe 0) = (pi 0).fst.map e.symm := by
-    rw [chainMeasure, Kernel.trajMeasure, MeasureTheory.Measure.map_comp,
+    rw [chainMeasure, Kernel.trajMeasure,
+      MeasureTheory.Measure.map_comp _ _ (measurable_frestrictLe 0),
       Kernel.traj_map_frestrictLe, Kernel.partialTraj_self, MeasureTheory.Measure.id_comp]
-    · rfl
-    · exact measurable_frestrictLe 0
   calc
     (chainMeasure pi).map (fun x ↦ x 0)
         = ((chainMeasure pi).map (frestrictLe 0)).map e := by
@@ -144,7 +149,7 @@ instance prefixChainMeasure.instIsProbabilityMeasure
     (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsProbabilityMeasure (pi n)] (N : ℕ) :
     IsProbabilityMeasure (prefixChainMeasure pi N) := by
   rw [prefixChainMeasure]
-  exact Measure.isProbabilityMeasure_map (measurable_frestrictLe N).aemeasurable
+  infer_instance
 
 /-- Projecting a finite prefix further gives the corresponding shorter prefix. -/
 theorem map_frestrictLe₂_prefixChainMeasure
@@ -175,6 +180,47 @@ theorem map_adjacent_prefixChainMeasure
     _ = pi n := map_adjacent_chainMeasure pi hpi n
 
 end Chain
+
+section CouplingChain
+
+variable {Y : Type u} [MeasurableSpace Y]
+
+/-- Along the countable gluing `chainMeasure pi` of couplings `pi n` of consecutive laws, the
+`n`th and `(n + 1)`st coordinates have joint law `pi n`. -/
+theorem map_adjacent_chainMeasure_of_isCoupling [StandardBorelSpace Y] [Nonempty Y]
+    {mu : ℕ → Measure Y} {pi : ℕ → Measure (Y × Y)}
+    [∀ n, IsProbabilityMeasure (pi n)]
+    (hpi : ∀ n, IsCoupling (pi n) (mu n) (mu (n + 1))) (n : ℕ) :
+    (chainMeasure (X := fun _ ↦ Y) pi).map (fun x ↦ (x n, x (n + 1))) = pi n :=
+  map_adjacent_chainMeasure pi
+    (fun n ↦ by rw [(hpi n).snd_eq, (hpi (n + 1)).fst_eq]) n
+
+/-- **The pathwise limit of a glued chain.** If couplings `pi n` of consecutive probability laws
+are glued by `chainMeasure` and almost every path is Cauchy, then some measurable `Z` is the
+almost-sure limit of the coordinates, and the joint law of the `n`th coordinate and `Z` couples
+`mu n` with the law of `Z`. -/
+theorem exists_measurable_isCoupling_map_chainMeasure [PseudoMetricSpace Y] [BorelSpace Y]
+    [CompleteSpace Y] [StandardBorelSpace Y] [Nonempty Y] {mu : ℕ → Measure Y}
+    {pi : ℕ → Measure (Y × Y)} [∀ n, IsProbabilityMeasure (pi n)]
+    (hpi : ∀ n, IsCoupling (pi n) (mu n) (mu (n + 1)))
+    (hcauchy : ∀ᵐ x ∂chainMeasure (X := fun _ ↦ Y) pi, CauchySeq fun n ↦ x n) :
+    ∃ Z : (ℕ → Y) → Y, Measurable Z ∧
+      (∀ᵐ x ∂chainMeasure (X := fun _ ↦ Y) pi,
+        Tendsto (fun n ↦ x n) atTop (nhds (Z x))) ∧
+      ∀ n, IsCoupling ((chainMeasure (X := fun _ ↦ Y) pi).map fun x ↦ (x n, Z x))
+        (mu n) ((chainMeasure (X := fun _ ↦ Y) pi).map Z) := by
+  set P : Measure (ℕ → Y) := chainMeasure (X := fun _ ↦ Y) pi
+  have hev : ∀ n, Measurable fun x : ℕ → Y ↦ x n := fun n ↦ measurable_pi_apply n
+  obtain ⟨Z, hZ, hZtendsto⟩ := measurable_limit_of_tendsto_metrizable_ae
+    (fun n ↦ (hev n).aemeasurable) (hcauchy.mono fun _ hx ↦ cauchySeq_tendsto_of_complete hx)
+  refine ⟨Z, hZ, hZtendsto, fun n ↦ ⟨?_, ?_⟩⟩
+  · rw [Measure.fst, Measure.map_map measurable_fst ((hev n).prodMk hZ), ← (hpi n).fst_eq]
+    exact map_eval_chainMeasure pi
+      (fun n ↦ by rw [(hpi n).snd_eq, (hpi (n + 1)).fst_eq]) n
+  · rw [Measure.snd, Measure.map_map measurable_snd ((hev n).prodMk hZ)]
+    rfl
+
+end CouplingChain
 
 end Measure
 

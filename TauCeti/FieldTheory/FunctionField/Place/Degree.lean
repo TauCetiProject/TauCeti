@@ -132,7 +132,7 @@ private theorem linearIndependent_over_adjoin_of_linearIndependent_residue_of_or
   have hpzero : ∀ i, p i = 0 ↔ g i = 0 := by
     intro i
     rw [← hinj.eq_iff, map_zero, hp i, ZeroMemClass.coe_eq_zero]
-  obtain ⟨m, q, hfactor, j, hjs, hqj⟩ := Polynomial.exists_common_X_pow_factor s p
+  obtain ⟨m, q, hfactor, j, hjs, hqj⟩ := Polynomial.exists_common_X_pow_factor (s : Set ι) p
     ⟨i₀, hi₀, fun h ↦ hg0 ((hpzero i₀).mp h)⟩
   -- The relation, with the common factor `x ^ m` removed, lives in `𝒪_P`.
   have hsumF : ∑ i ∈ s, aeval x (q i) * (z i : F) = 0 := by

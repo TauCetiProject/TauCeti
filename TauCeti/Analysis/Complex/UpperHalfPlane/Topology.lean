@@ -8,24 +8,61 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
-# Periodicity through `ofComplex`
+# Topology of the upper half-plane
+
+Every real point lies in the closure of the open upper half-plane, so limits taken along the
+half-plane at a real point are well posed.  The half-plane is also unbounded, so the filter along
+which it approaches infinity is nontrivial and limits taken along it are unique.
 
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
 
 ## Main declarations
 
+* `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
+* `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 
 ## References
 
 * [Mathlib PR #39083](https://github.com/leanprover-community/mathlib4/pull/39083)
-  (Chris Birkbeck) — the upstream draft this file ports onto the current Mathlib pin.
+  (Chris Birkbeck) — the upstream draft the periodicity criterion ports onto the current
+  Mathlib pin.
 -/
 
 public section
 
-open UpperHalfPlane
+open Bornology Filter Topology UpperHalfPlane
+
+namespace Real
+
+/-- Every real point is in the closure of the open upper half-plane, so limits along the
+half-plane at a real point are well posed. -/
+theorem nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
+    (𝓝[upperHalfPlaneSet] ((x : ℂ))).NeBot :=
+  mem_closure_iff_nhdsWithin_neBot.mp (by simp [upperHalfPlaneSet])
+
+end Real
+
+namespace TauCeti
+
+/-- The upper half-plane is unbounded, so the filter along which it approaches infinity is
+nontrivial and limits taken along it are unique. -/
+instance cobounded_inf_principal_upperHalfPlaneSet_neBot :
+    (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet).NeBot := by
+  -- The imaginary axis runs off to infinity inside the half-plane, so the filter it pushes
+  -- forward from `atTop` is below both factors.
+  have hcob : Tendsto (fun t : ℝ => (t : ℂ) * Complex.I) atTop (cobounded ℂ) := by
+    rw [← tendsto_norm_atTop_iff_cobounded]
+    simpa using tendsto_abs_atTop_atTop
+  refine Filter.neBot_of_le (f := map (fun t : ℝ => (t : ℂ) * Complex.I) atTop)
+    (le_inf hcob ?_)
+  rw [le_principal_iff, mem_map]
+  filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
+  simp only [Set.mem_preimage, upperHalfPlaneSet, Set.mem_ofPred_eq]
+  simpa using ht
+
+end TauCeti
 
 namespace TauCeti.UpperHalfPlane
 

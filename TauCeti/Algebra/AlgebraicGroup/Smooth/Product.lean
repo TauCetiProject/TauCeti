@@ -20,8 +20,12 @@ a finite-type ambient affine group.
 
 ## Main declarations
 
+* `TauCeti.smoothCommHopfAlgProperty.tensorProduct`: a direct product of smooth affine groups is
+  smooth.
 * `TauCeti.smoothCommHopfAlgProperty.semidirectProduct`: a semidirect product of smooth affine
   groups is smooth.
+* `TauCeti.smoothCommHopfAlgProperty.normalSemidirectProduct`: the conjugation semidirect-product
+  source associated to two smooth closed subgroups is smooth.
 * `TauCeti.smoothCommHopfAlgProperty.productOfNormal`: the multiplication image of a normal
   smooth subgroup and another smooth subgroup is smooth in a finite-type ambient affine group.
 
@@ -36,7 +40,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v
 
 noncomputable section
 
@@ -44,19 +48,43 @@ namespace smoothCommHopfAlgProperty
 
 variable {R : Type u} [CommRing R]
 
+/-- The tensor product of two smooth coordinate Hopf algebras is smooth. Contravariantly, direct
+products of smooth affine groups are smooth. -/
+theorem tensorProduct (H K : CommHopfAlgCat.{v} R)
+    (hH : smoothCommHopfAlgProperty R H)
+    (hK : smoothCommHopfAlgProperty R K) :
+    smoothCommHopfAlgProperty R (CommHopfAlgCat.of R (H ⊗[R] K)) := by
+  rw [smoothCommHopfAlgProperty_iff] at hH hK ⊢
+  let _ : Algebra.Smooth R H := hH
+  let _ : Algebra.Smooth R K := hK
+  let _ : Algebra.Smooth H (H ⊗[R] K) := Algebra.Smooth.baseChange R K H
+  exact Algebra.Smooth.comp R H _
+
 /-- The semidirect product associated to an action of smooth affine groups is smooth. -/
 theorem semidirectProduct (H K : CommHopfAlgCat.{u} R)
     (A : GrpObj.Action (CommHopfAlgCat.grpObj K) (CommHopfAlgCat.grpObj H))
     (hH : smoothCommHopfAlgProperty R H)
     (hK : smoothCommHopfAlgProperty R K) :
     smoothCommHopfAlgProperty R A.coordinateHopfAlgebra := by
-  rw [smoothCommHopfAlgProperty_iff] at hH hK ⊢
-  let _ : Algebra.Smooth R H := hH
-  let _ : Algebra.Smooth R K := hK
-  let _ : Algebra.Smooth H (H ⊗[R] K) := Algebra.Smooth.baseChange R K H
-  let _ : Algebra.Smooth R (H ⊗[R] K) := Algebra.Smooth.comp R H _
+  have h := tensorProduct H K hH hK
+  rw [smoothCommHopfAlgProperty_iff] at h ⊢
+  let _ : Algebra.Smooth R (H ⊗[R] K) := h
   -- Transport the inferred tensor-product smoothness across the coordinate-algebra equivalence.
   exact Algebra.Smooth.of_equiv A.coordinateAlgEquiv.symm
+
+/-- The conjugation semidirect-product source associated to a normal smooth closed subgroup and
+another smooth closed subgroup is smooth. -/
+theorem normalSemidirectProduct (H : CommHopfAlgCat.{u} R)
+    (I J : HopfIdeal R H) (hI : I.IsNormal)
+    (hIs : smoothCommHopfAlgProperty R (CommHopfAlgCat.quotient H I))
+    (hJs : smoothCommHopfAlgProperty R (CommHopfAlgCat.quotient H J)) :
+    smoothCommHopfAlgProperty R
+      (CommHopfAlgCat.normalSemidirectProduct H I J hI) := by
+  let A := CommHopfAlgCat.quotientNormalConjugation H I J hI
+  exact (smoothCommHopfAlgProperty R).prop_of_iso
+    (CommHopfAlgCat.normalSemidirectProductIso H I J hI).symm
+    (semidirectProduct (CommHopfAlgCat.quotient H I)
+      (CommHopfAlgCat.quotient H J) A hIs hJs)
 
 variable {k : Type u} [Field k]
 
@@ -67,12 +95,8 @@ theorem productOfNormal (H : CommHopfAlgCat.{u} k) [Algebra.FiniteType k H]
     (hIs : smoothCommHopfAlgProperty k (CommHopfAlgCat.quotient H I))
     (hJs : smoothCommHopfAlgProperty k (CommHopfAlgCat.quotient H J)) :
     smoothCommHopfAlgProperty k (CommHopfAlgCat.productOfNormal H I J hI) := by
-  let A := CommHopfAlgCat.quotientNormalConjugation H I J hI
   apply image (CommHopfAlgCat.productMapOfNormal H I J hI)
-  exact (smoothCommHopfAlgProperty k).prop_of_iso
-    (CommHopfAlgCat.normalSemidirectProductIso H I J hI).symm
-    (semidirectProduct (CommHopfAlgCat.quotient H I)
-      (CommHopfAlgCat.quotient H J) A hIs hJs)
+  exact normalSemidirectProduct H I J hI hIs hJs
 
 end smoothCommHopfAlgProperty
 

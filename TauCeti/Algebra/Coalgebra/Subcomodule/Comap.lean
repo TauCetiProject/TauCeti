@@ -18,10 +18,9 @@ This file adds inverse images of subcomodules under comodule morphisms. If
 coaction follows by applying tensor-product right exactness to the quotient map
 `N → N / B`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target on comodules:
-subobjects of representations need both images and inverse images before kernels,
-finite-subcomodule constructions, and the representation/comodule dictionary can be used
-comfortably.
+Subobjects of representations need both images and inverse images: kernels,
+finite-subcomodule constructions and the dictionary between representations and comodules
+are built from them.
 
 ## Main declarations
 
@@ -139,20 +138,12 @@ private theorem coact_mem_range_comap_toLinearMap (f : Comodule.Hom R C M N) (B 
   exact
     (LinearMap.mem_range_self (LinearMap.rTensor C B.carrier.subtype) t)
 
-private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
-    {m : M} (hm : m ∈ B.toSubmodule.comap f.toLinearMap) :
-    Comodule.coact (R := R) (C := C) (M := M) m ∈
-      LinearMap.range
-        (TensorProduct.map (B.toSubmodule.comap f.toLinearMap).subtype
-          (LinearMap.id : C →ₗ[R] C)) :=
-  coact_mem_range_comap_toLinearMap f B hm
-
 /-- The inverse image of a subcomodule under a comodule morphism. -/
 @[expose] def comap (B : Subcomodule R C N) (f : Comodule.Hom R C M N) : Subcomodule R C M where
   carrier := B.toSubmodule.comap f.toLinearMap
   coact_mem' := by
     intro m hm
-    exact comap_coact_mem f B hm
+    exact coact_mem_range_comap_toLinearMap f B hm
 
 /-- The underlying submodule of an inverse-image subcomodule is the inverse image of the
 underlying submodule. -/

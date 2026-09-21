@@ -38,6 +38,12 @@ the failure being exactly that its structure map is not surjective.
   simple algebras**. A finite-dimensional central simple `K`-algebra `A` is
   `Matrix (Fin n) (Fin n) D` for a finite-dimensional **central** division `K`-algebra `D`, and
   `finrank K A = n ^ 2 * finrank K D`.
+* `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_forall_nonempty_algEquiv`: over a field whose
+  finite-dimensional central division algebras are all the field itself, every
+  finite-dimensional central simple algebra is a full matrix algebra over that field. It is the
+  criterion behind `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite` below and
+  `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed` in
+  `TauCeti/Algebra/CentralSimple/SeparablyClosed.lean`.
 * `TauCeti.baseFieldAlgEquivOfFinite`: a finite central division algebra over a field is the base
   field.
 * `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite`: a central simple algebra over a
@@ -99,6 +105,24 @@ theorem exists_algEquiv_matrix_centralDivisionRing [Algebra.IsCentral K A] [IsSi
   rw [e.toLinearEquiv.finrank_eq, Module.finrank_matrix, Fintype.card_fin]
   ring
 
+/-- **A field whose central division algebras are all itself splits every central simple
+algebra.** Given the Wedderburn presentation `A ≃ₐ Mₙ(D)`, the hypothesis collapses `D` to `K`.
+
+The hypothesis says that `K` admits no finite-dimensional central division algebra other than
+itself, equivalently that its Brauer group is trivial. It holds over a finite field, by little
+Wedderburn, and over a separably closed field, where Jacobson--Noether would otherwise produce a
+separable element outside the base field. -/
+theorem exists_algEquiv_matrix_of_forall_nonempty_algEquiv [Algebra.IsCentral K A]
+    [IsSimpleRing A] [FiniteDimensional K A]
+    (h : ∀ (D : Type u) [DivisionRing D] [Algebra K D] [Algebra.IsCentral K D]
+      [FiniteDimensional K D], Nonempty (D ≃ₐ[K] K)) :
+    ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
+      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) := by
+  obtain ⟨n, hn, D, _, _, _, _, hrank, ⟨e⟩⟩ := exists_algEquiv_matrix_centralDivisionRing K A
+  obtain ⟨d⟩ := h D
+  refine ⟨n, hn, ?_, ⟨e.trans (AlgEquiv.mapMatrix d)⟩⟩
+  rw [hrank, d.toLinearEquiv.finrank_eq, Module.finrank_self, mul_one]
+
 end IsSimpleRing
 
 /-! ### Finite central division algebras and finite base fields -/
@@ -150,11 +174,10 @@ This is the finite-field analogue of Mathlib's
 suffice, since `A` could be a proper field extension of `K`. -/
 theorem exists_algEquiv_matrix_of_finite :
     ∃ (n : ℕ) (_ : NeZero n), Module.finrank K A = n ^ 2 ∧
-      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) := by
-  obtain ⟨n, hn, D, _, _, _, _, hrank, ⟨e⟩⟩ := exists_algEquiv_matrix_centralDivisionRing K A
-  have : Finite D := Module.finite_of_finite K
-  refine ⟨n, hn, ?_, ⟨e.trans (AlgEquiv.mapMatrix (baseFieldAlgEquivOfFinite K D))⟩⟩
-  rw [hrank, finrank_eq_one_of_finite K D, mul_one]
+      Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) :=
+  exists_algEquiv_matrix_of_forall_nonempty_algEquiv K A fun D ↦
+    have : Finite D := Module.finite_of_finite K
+    ⟨baseFieldAlgEquivOfFinite K D⟩
 
 end IsSimpleRing
 

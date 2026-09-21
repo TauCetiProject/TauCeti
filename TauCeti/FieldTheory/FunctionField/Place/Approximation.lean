@@ -38,6 +38,8 @@ maps of finitely many distinct places are simultaneously surjective
 ## Main results
 
 * `TauCeti.Place.exists_forall_ord_sub_eq`: **weak approximation** (Stichtenoth, Theorem 1.3.1).
+* `TauCeti.Place.exists_forall_mem_valuation_sub_le`: weak approximation along a finite set of
+  places, as the bound `v_P (g - f P) ≤ exp (r P)`.
 * `TauCeti.Place.exists_forall_ord_eq` and `TauCeti.Place.exists_ne_zero_forall_ord_eq`:
   prescribed orders at finitely many distinct places, by an arbitrary and by a nonzero function.
 * `TauCeti.Place.exists_ord_eq_one_and_forall_mem_ord_eq_zero`: a function with a simple zero at
@@ -121,6 +123,18 @@ theorem exists_forall_mem_ord_sub_eq (s : Finset (Place k F)) (f : Place k F →
     exists_forall_ord_sub_eq (P := fun P : {P // P ∈ s} ↦ (P : Place k F)) Subtype.val_injective
       (fun P ↦ f P) (fun P ↦ r P)
   exact ⟨g, fun P hP ↦ hg ⟨P, hP⟩⟩
+
+/-- Weak approximation along a finite set of places, in the multiplicative inequality form in
+which the repartition filtrations meet it: some `g : F` satisfies
+`v_P (g - f P) ≤ exp (r P)`, that is `ord_P (g - f P) ≥ -r P` or `g = f P`, at every `P ∈ s`. -/
+theorem exists_forall_mem_valuation_sub_le (s : Finset (Place k F)) (f : Place k F → F)
+    (r : Place k F → ℤ) :
+    ∃ g : F, ∀ P ∈ s, P.valuation (g - f P) ≤ WithZero.exp (r P) := by
+  obtain ⟨g, hg⟩ := exists_forall_mem_ord_sub_eq s f fun P ↦ -r P
+  refine ⟨g, fun P hP ↦ ?_⟩
+  rcases eq_or_ne (g - f P) 0 with h | h
+  · simp [h]
+  · rw [P.valuation_eq_exp_neg_ord h, hg P hP, neg_neg]
 
 /-- Prescribed orders along a finite set of places. -/
 theorem exists_forall_mem_ord_eq (s : Finset (Place k F)) (r : Place k F → ℤ) :

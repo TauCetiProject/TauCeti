@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 
 /-!
 # Isogenies of Weierstrass curves
@@ -27,6 +27,20 @@ a typeclass diamond.
 * `TauCeti.Isogeny`: a coordinate pullback satisfying `MapsInfinity`.
 * `TauCeti.Isogeny.id`: the identity isogeny.
 
+## Main results
+
+* `TauCeti.CoordinatePullback.mapsInfinity_iff`: pointedness says exactly that the source
+  coordinate ring is integral over the target acting through the pullback.
+* `TauCeti.CoordinatePullback.mapsInfinity_id`: the integrality witness for the identity pullback,
+  which with `mapsInfinity_iff` is what makes `TauCeti.Isogeny.id` an isogeny.
+
+The coordinate-ring universal property used to build and move pullbacks is stated at its natural
+generality in `Affine/Eval.lean`, as `WeierstrassCurve.Affine.CoordinateRing.algHom_ext`.
+`Isogeny/MulByInt/Basic.lean` makes `[n]` from the
+division-polynomial point, and `Isogeny/BaseChange.lean` carries a pullback along a change of base
+field by carrying its point. The identity and Frobenius pullbacks instead come directly from their
+underlying ring maps.
+
 This is the opening milestone of Layer 1 of the elliptic-curves roadmap. The definition is the
 coordinate-ring form of D. Angdinata's function-field definition of an isogeny. The geometric
 interpretation follows Silverman, *The Arithmetic of Elliptic Curves*, II.2.4. No ellipticity or
@@ -35,9 +49,13 @@ normality assumption is needed to state the data.
 
 public section
 
+open Polynomial
+
+open scoped Polynomial.Bivariate
+
 namespace TauCeti
 
-open WeierstrassCurve.Affine
+open _root_.WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F]
 

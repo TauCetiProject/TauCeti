@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Surjective
 
+import TauCeti.Order.Chain
+
 /-!
 # Injectivity of the barycentric-subdivision realization map
 
@@ -21,8 +23,8 @@ belongs to no smaller face in the chain; evaluating there recovers its coefficie
 greatest face and inducting proves uniqueness of all the coefficients.
 
 This is the second bijectivity step in the subdivision-realization milestone in Layer 11 of the
-GeometricTopology roadmap. Continuity of the inverse remains to package the resulting bijection as
-a homeomorphism.
+GeometricTopology roadmap. `Subdivision.Homeomorph` proves continuity of the inverse and packages
+the resulting bijection as a homeomorphism.
 
 The argument follows the standard uniqueness proof for barycentric subdivision in
 Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2, "Derived Subdivisions".
@@ -46,17 +48,6 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
-
-/-- A finite nonempty chain in a partial order has a greatest element. -/
-private theorem exists_greatest_of_isChain {α : Type*} [PartialOrder α] (s : Finset α)
-    (hs : s.Nonempty) (hchain : IsChain (· ≤ ·) (s : Set α)) :
-    ∃ a ∈ s, ∀ b ∈ s, b ≤ a := by
-  classical
-  obtain ⟨a, hmax⟩ := s.exists_maximal hs
-  refine ⟨a, hmax.prop, fun b hb => ?_⟩
-  rcases hchain.total hb hmax.prop with hba | hab
-  · exact hba
-  · exact hmax.le_of_ge hb hab
 
 /-- A face is nonempty, so the reciprocal of its cardinality is positive. -/
 private theorem inv_card_pos (K : AbstractSimplicialComplex ι) (σ : Face K) :
@@ -96,8 +87,8 @@ private theorem barycentricSubdivisionLinearMap_ne_zero (K : AbstractSimplicialC
     {a : Face K →₀ ℝ} (ha : ∀ σ, 0 ≤ a σ)
     (hchain : IsChain (· ≤ ·) (a.support : Set (Face K))) (ha0 : a ≠ 0) :
     barycentricSubdivisionLinearMap K a ≠ 0 := by
-  obtain ⟨σ, hσ, hσmax⟩ := exists_greatest_of_isChain a.support
-    (Finsupp.support_nonempty_iff.mpr ha0) hchain
+  obtain ⟨σ, hσ, hσmax⟩ :=
+    hchain.exists_isGreatest a.support.finite_toSet (Finsupp.support_nonempty_iff.mpr ha0)
   intro hzero
   have hne := K.isRelLowerSet_faces.prop_of_mem σ.2
   rw [← support_barycentricSubdivisionLinearMap_eq_greatest K ha hσ hσmax, hzero,
@@ -109,8 +100,8 @@ private theorem exists_mem_greatest_not_mem_of_ne_face (K : AbstractSimplicialCo
     {σ : Face K} (hmax : ∀ τ ∈ a.support, τ ≤ σ) :
     ∃ v ∈ σ.1, ∀ τ ∈ a.support, v ∈ τ.1 → τ = σ := by
   by_cases herase : (a.support.erase σ).Nonempty
-  · obtain ⟨τ, hτerase, hτmax⟩ := exists_greatest_of_isChain (a.support.erase σ) herase
-      (hchain.mono (by simp))
+  · obtain ⟨τ, hτerase, hτmax⟩ := (hchain.mono (by simp)).exists_isGreatest
+      (a.support.erase σ).finite_toSet herase
     have hτa : τ ∈ a.support := Finset.mem_of_mem_erase hτerase
     have hτσ : τ.1 ⊂ σ.1 := (Finset.ssubset_iff_subset_ne).2
       ⟨hmax τ hτa, fun h => Finset.ne_of_mem_erase hτerase (Subtype.ext h)⟩
@@ -118,7 +109,7 @@ private theorem exists_mem_greatest_not_mem_of_ne_face (K : AbstractSimplicialCo
     refine ⟨v, hvσ, fun ρ hρa hvρ => ?_⟩
     by_contra hρσ
     have hρerase : ρ ∈ a.support.erase σ := Finset.mem_erase.2 ⟨hρσ, hρa⟩
-    exact hvτ (hτmax ρ hρerase hvρ)
+    exact hvτ (hτmax hρerase hvρ)
   · obtain ⟨v, hvσ⟩ := K.isRelLowerSet_faces.prop_of_mem σ.2
     refine ⟨v, hvσ, fun τ hτ _ => ?_⟩
     by_contra hτσ
@@ -157,10 +148,10 @@ private theorem barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain
         · subst b
           exact absurd (by simpa using hab)
             (barycentricSubdivisionLinearMap_ne_zero K ha hca ha0)
-        · obtain ⟨σ, hσa, hσmaxa⟩ := exists_greatest_of_isChain a.support
-            (Finsupp.support_nonempty_iff.mpr ha0) hca
-          obtain ⟨τ, hτb, hτmaxb⟩ := exists_greatest_of_isChain b.support
-            (Finsupp.support_nonempty_iff.mpr hb0) hcb
+        · obtain ⟨σ, hσa, hσmaxa⟩ := hca.exists_isGreatest a.support.finite_toSet
+            (Finsupp.support_nonempty_iff.mpr ha0)
+          obtain ⟨τ, hτb, hτmaxb⟩ := hcb.exists_isGreatest b.support.finite_toSet
+            (Finsupp.support_nonempty_iff.mpr hb0)
           -- The common image support identifies the greatest face in the two chains.
           have hsuppa := support_barycentricSubdivisionLinearMap_eq_greatest K ha hσa hσmaxa
           have hsuppb := support_barycentricSubdivisionLinearMap_eq_greatest K hb hτb hτmaxb

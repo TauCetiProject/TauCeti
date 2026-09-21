@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Basic
+public import TauCeti.RingTheory.Idempotents.Corner
 
 /-!
 # The graded Cartan matrix of a zigzag algebra
@@ -27,9 +28,10 @@ at `(i, i)`.  Everything else vanishes, so
 C_G(q) = (1 + q²) I + q A_G,
 ```
 
-with `A_G` the adjacency matrix of the graph.  At `q = 1` this is the ungraded Cartan matrix
-`2I + A_G`, whose column sums are the dimensions of the vertex projectives; at `q = -1` it is the
-generalized Cartan matrix `2I - A_G` of the graph.
+with `A_G` the adjacency matrix of the graph.  At `q = 0` it is the identity, so its polynomial
+determinant is nonzero.  At `q = 1` it is the ungraded Cartan matrix `2I + A_G`, whose column sums
+are the dimensions of the vertex projectives; at `q = -1` it is the generalized Cartan matrix
+`2I - A_G` of the graph.
 
 ## Main definitions
 
@@ -49,6 +51,9 @@ generalized Cartan matrix `2I - A_G` of the graph.
 * `TauCeti.zigzagGradedCartanMatrix_apply`: **the entrywise graded Cartan formula.**
 * `TauCeti.zigzagGradedCartanMatrix_eq`: the same formula in matrix notation,
   `C_G(q) = (1 + q²) I + q A_G`.
+* `TauCeti.zigzagGradedCartanMatrix_map_eval_zero` and
+  `TauCeti.det_zigzagGradedCartanMatrix_ne_zero`: the specialization at `q = 0` is the identity,
+  so the determinant is a nonzero polynomial.
 * `TauCeti.zigzagGradedCartanMatrix_map_eval_one` and
   `TauCeti.zigzagGradedCartanMatrix_map_eval_neg_one`: the two specializations `2I + A_G` and
   `2I - A_G`.
@@ -93,27 +98,28 @@ variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 multiplying it by `e_i` on the left and by `e_j` on the right. -/
 noncomputable def zigzagCornerMap (i j : V) :
     nonisolatedZigzagQuotient k G →ₗ[k] nonisolatedZigzagQuotient k G :=
-  (LinearMap.mulLeft k (zigzagVertexIdempotent k G i)).comp
-    (LinearMap.mulRight k (zigzagVertexIdempotent k G j))
+  cornerMap k (zigzagVertexIdempotent k G i) (zigzagVertexIdempotent k G j)
 
 @[simp]
 theorem zigzagCornerMap_apply (i j : V) (x : nonisolatedZigzagQuotient k G) :
     zigzagCornerMap k G i j x =
       zigzagVertexIdempotent k G i * x * zigzagVertexIdempotent k G j :=
-  (mul_assoc _ _ _).symm
+  cornerMap_apply k _ _ x
 
 /-- **The corner `e_i Z e_j` of a zigzag algebra**, as a `k`-submodule of the relation quotient:
 the elements which `e_i` fixes on the left and `e_j` fixes on the right. -/
-noncomputable def zigzagCorner (i j : V) : Submodule k (nonisolatedZigzagQuotient k G) :=
-  LinearMap.eqLocus (zigzagCornerMap k G i j) LinearMap.id
+noncomputable def zigzagCorner (i j : V) :
+    Submodule k (nonisolatedZigzagQuotient k G) :=
+  cornerSubmodule k (zigzagVertexIdempotent k G i) (zigzagVertexIdempotent k G j)
 
 /-- Membership in the corner `e_i Z e_j`: an element belongs to it exactly when multiplying it by
 `e_i` on the left and by `e_j` on the right fixes it. -/
 @[simp]
 theorem mem_zigzagCorner_iff {i j : V} {x : nonisolatedZigzagQuotient k G} :
     x ∈ zigzagCorner k G i j ↔
-      zigzagVertexIdempotent k G i * x * zigzagVertexIdempotent k G j = x := by
-  simp only [zigzagCorner, LinearMap.mem_eqLocus, zigzagCornerMap_apply, LinearMap.id_coe, id_eq]
+      zigzagVertexIdempotent k G i * x * zigzagVertexIdempotent k G j = x :=
+  mem_cornerSubmodule_iff k (zigzagMk_vertexIdempotent_mul_self k G i)
+    (zigzagMk_vertexIdempotent_mul_self k G j)
 
 /-- The corner `e_i Z e_j` sits inside the vertex projective `Z e_j`. -/
 theorem mem_zigzagProjective_of_mem_zigzagCorner {i j : V}
@@ -206,6 +212,11 @@ is homogeneous of that degree. -/
 theorem mem_zigzagGradedCorner_iff {i j : V} {n : ℕ} {x : nonisolatedZigzagQuotient k G} :
     x ∈ zigzagGradedCorner k G i j n ↔ x ∈ zigzagCorner k G i j ∧ x ∈ zigzagGrade k G n :=
   Iff.rfl
+
+/-- A graded corner sits inside the corner it grades. -/
+theorem zigzagGradedCorner_le_zigzagCorner (i j : V) (n : ℕ) :
+    zigzagGradedCorner k G i j n ≤ zigzagCorner k G i j :=
+  fun _ hx => ((mem_zigzagGradedCorner_iff k G).1 hx).1
 
 /-- An element of a graded corner is cut out by the corner map from a spanning family of its
 degree.  This is the shape in which each of the three degrees below is computed: it reduces the
@@ -443,6 +454,44 @@ theorem isSymm_zigzagGradedCartanMatrix : (zigzagGradedCartanMatrix k G).IsSymm 
     · rw [zigzagGradedCartanMatrix_apply_of_ne_of_not_adj k G (Ne.symm hne)
         fun hji => h hji.symm,
         zigzagGradedCartanMatrix_apply_of_ne_of_not_adj k G hne h]
+
+section EvaluationAtZero
+
+variable [DecidableEq V]
+
+/-- **At `q = 0` the graded Cartan matrix is the identity matrix.** Only the degree-zero vertex
+idempotents survive this specialization. -/
+@[simp]
+theorem zigzagGradedCartanMatrix_map_eval_zero :
+    (zigzagGradedCartanMatrix k G).map (eval 0) = 1 := by
+  ext i j
+  rw [Matrix.map_apply, zigzagGradedCartanMatrix_apply_eq_sum, Matrix.one_apply]
+  rcases eq_or_ne i j with rfl | hij
+  · rw [finrank_zigzagGradedCorner_zero_self]
+    simp
+  · rw [finrank_zigzagGradedCorner_zero_of_ne k G hij]
+    simp [hij]
+
+variable [Fintype V]
+
+/-- **The determinant of a finite zigzag graded Cartan matrix is a nonzero polynomial.** Its
+value at `q = 0` is the determinant of the identity matrix, hence `1`. -/
+theorem det_zigzagGradedCartanMatrix_ne_zero :
+    (zigzagGradedCartanMatrix k G).det ≠ 0 := by
+  intro hzero
+  have heval : eval 0 (zigzagGradedCartanMatrix k G).det = 0 := by
+    simp [hzero]
+  have hone : eval 0 (zigzagGradedCartanMatrix k G).det = 1 := by
+    -- `RingHom.map_det` uses the bundled evaluation homomorphism; this only replaces its
+    -- underlying function `eval 0` by that bundle.
+    change evalRingHom 0 (zigzagGradedCartanMatrix k G).det = 1
+    rw [RingHom.map_det]
+    -- `RingHom.mapMatrix` and `Matrix.map` have the same entries but expose different wrappers.
+    change ((zigzagGradedCartanMatrix k G).map (eval 0)).det = 1
+    rw [zigzagGradedCartanMatrix_map_eval_zero, Matrix.det_one]
+  exact one_ne_zero (hone.symm.trans heval)
+
+end EvaluationAtZero
 
 section Nonisolated
 

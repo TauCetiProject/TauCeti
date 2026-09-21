@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
 
-public section
-
 /-!
 # The longest element of a finite Weyl group
 
@@ -55,7 +53,7 @@ available here, so length is spelled throughout as `(inversions P b w).ncard`.
 ## Implementation notes
 
 `TauCeti.longestElement` is defined for a root system, where
-`TauCeti.RootPairing.finite_weylGroup` supplies the finiteness of the Weyl group. The existence
+`RootPairing.finite_weylGroup` supplies the finiteness of the Weyl group. The existence
 theorem behind it is proved one level more generally, for a crystallographic reduced pairing with
 finitely many roots whose Weyl group happens to be finite; that is the shape used in
 `TauCeti/LinearAlgebra/RootSystem/Chamber.lean` as well.
@@ -71,6 +69,8 @@ statements proved here in the inversion spelling become that item's clauses by r
 identity once it lands. The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras
 and Representation Theory*, GTM 9, Ch. III, §10.3.
 -/
+
+public section
 
 namespace TauCeti
 

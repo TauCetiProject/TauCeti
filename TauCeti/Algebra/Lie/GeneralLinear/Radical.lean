@@ -10,7 +10,7 @@ import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import Mathlib.Tactic.NoncommRing
 
 /-!
-# `gl n K` is reductive: its radical is its centre
+# The radicals of `gl n K` and `sl n K`
 
 `TauCeti/Algebra/Lie/GeneralLinear/Basic.lean` identifies the centre of `gl n R` (the scalar
 matrices) and its derived ideal (`sl n R`), and shows that the two are complementary submodules as
@@ -19,6 +19,10 @@ Mathlib's `LieAlgebra.HasCentralRadical`: over a field in which `2 ≠ 0`, the s
 `gl n K` **is** its centre. That is the third clause of the concrete `gl n` structure statement of
 the highest-weight roadmap, and it is what makes the reductive vocabulary applicable to `gl n`,
 whose Killing form is degenerate.
+
+The same structure shows that `sl n K` has trivial radical when `2` and the nonempty matrix size
+are nonzero. In characteristic zero this is registered as an instance, so Cartan's criterion makes
+the Killing-form API available by typeclass synthesis.
 
 The proof is the structure of the Lie ideals of `gl n K`. The centre is always an abelian, hence
 solvable, ideal, so it is contained in the radical. For the other inclusion, every solvable ideal
@@ -52,6 +56,8 @@ bracket again, all the remaining units.
   nontrivial and there are at least two indices.
 * `TauCeti.radical_matrix_eq_center` and `TauCeti.hasCentralRadical_matrix`: **`gl n K` is
   reductive**, its radical being its centre.
+* `TauCeti.hasTrivialRadical_sl`: **`sl n K` has trivial radical** when `2` and the nonempty
+  matrix size are nonzero; the characteristic-zero case is a named instance.
 
 ## Implementation notes
 
@@ -406,5 +412,89 @@ instance [CharZero K] : LieAlgebra.HasCentralRadical K (Matrix n n K) :=
   hasCentralRadical_matrix two_ne_zero
 
 end Radical
+
+/-! ### Semisimplicity of the special linear Lie algebra -/
+
+section SpecialLinear
+
+variable (K : Type*) [Field K]
+variable (n : Type*) [Fintype n] [DecidableEq n]
+
+/-- The inclusion of an ideal of `sl n` into `gl n` has ideal range. Scalar matrices commute with
+the image, while the `sl n` summand preserves the ideal. -/
+private theorem slIncl_isIdealMorphism
+    (hn : Nonempty n → (Fintype.card n : K) ≠ 0) (J : LieIdeal K (SpecialLinear.sl n K)) :
+    ((SpecialLinear.sl n K).incl.comp J.incl).IsIdealMorphism := by
+  rw [LieHom.isIdealMorphism_iff]
+  intro A y
+  cases isEmpty_or_nonempty n with
+  | inl hn' =>
+      let _ := hn'
+      exact ⟨0, Subsingleton.elim _ _⟩
+  | inr hn' =>
+      let _ := hn'
+      let _ : Invertible (Fintype.card n : K) := invertibleOfNonzero (hn hn')
+      obtain ⟨X, Z, hX, hZ, hXZ⟩ := Submodule.codisjoint_iff_exists_add_eq.mp
+        (isCompl_center_derivedSeries_one_matrix K n).codisjoint A
+      have hZsl : Z ∈ SpecialLinear.sl n K := by
+        rw [← derivedSeries_one_toLieSubalgebra_eq_sl K n]
+        exact hZ
+      have hXzero : ⁅X, ((SpecialLinear.sl n K).incl.comp J.incl) y⁆ = 0 := by
+        rw [← lie_skew, (LieModule.mem_maxTrivSubmodule K _ _ X).1 hX, neg_zero]
+      let z : J := ⟨⁅⟨Z, hZsl⟩, (y : SpecialLinear.sl n K)⁆, J.lie_mem y.property⟩
+      refine ⟨z, ?_⟩
+      rw [← hXZ, add_lie, hXzero, zero_add]
+      simp only [z, LieHom.coe_comp, Function.comp_apply, LieSubalgebra.coe_incl,
+        LieIdeal.incl_apply, LieSubalgebra.coe_bracket]
+
+/-- **The special linear Lie algebra has trivial radical.** If `2` and, for nonempty `n`, the
+cardinality of `n` are nonzero, a solvable ideal of `sl n` maps to a solvable ideal of `gl n`,
+hence lies in the scalar matrices. Its image also lies in the complementary derived ideal `sl n`,
+so the original ideal vanishes. -/
+theorem hasTrivialRadical_sl (htwo : (2 : K) ≠ 0)
+    (hn : Nonempty n → (Fintype.card n : K) ≠ 0) :
+    LieAlgebra.HasTrivialRadical K (SpecialLinear.sl n K) := by
+  rw [LieAlgebra.hasTrivialRadical_iff_no_solvable_ideals]
+  intro J hJ
+  rw [eq_bot_iff]
+  intro x hx
+  let f : J →ₗ⁅K⁆ Matrix n n K := (SpecialLinear.sl n K).incl.comp J.incl
+  have hf : f.IsIdealMorphism := slIncl_isIdealMorphism K n hn J
+  have hsolvRange : LieAlgebra.IsSolvable f.range := by
+    let _ : LieAlgebra.IsSolvable J := hJ
+    infer_instance
+  have hsolv : LieAlgebra.IsSolvable f.idealRange := by
+    let e : (f.idealRange : LieSubalgebra K (Matrix n n K)) ≃ₗ⁅K⁆ f.range :=
+      LieEquiv.ofEq _ _ (congrArg (fun S : LieSubalgebra K (Matrix n n K) ↦
+        (S : Set (Matrix n n K))) hf.eq)
+    exact (LieAlgebra.solvable_iff_equiv_solvable e).mpr hsolvRange
+  have hcenter : f ⟨x, hx⟩ ∈ LieAlgebra.center K (Matrix n n K) := by
+    rw [← radical_matrix_eq_center htwo]
+    exact (LieIdeal.solvable_iff_le_radical K _ f.idealRange).mp hsolv
+      (f.mem_idealRange ⟨x, hx⟩)
+  cases isEmpty_or_nonempty n with
+  | inl hn' =>
+      let _ := hn'
+      exact Subsingleton.elim _ _
+  | inr hn' =>
+      let _ := hn'
+      let _ : Invertible (Fintype.card n : K) := invertibleOfNonzero (hn hn')
+      have hderived : f ⟨x, hx⟩ ∈ (derivedSeries K (Matrix n n K) 1).toSubmodule := by
+        rw [derivedSeries_one_eq_slIdeal K n, LieSubmodule.mem_toSubmodule, mem_slIdeal_iff]
+        exact x.property
+      have hzero : f ⟨x, hx⟩ = 0 :=
+        (isCompl_center_derivedSeries_one_matrix K n).disjoint.le_bot ⟨hcenter, hderived⟩
+      apply Subtype.ext
+      simpa only [f, LieHom.coe_comp, Function.comp_apply, LieSubalgebra.coe_incl,
+        LieIdeal.incl_apply, ZeroMemClass.coe_zero] using hzero
+
+/-- In characteristic zero, `sl n` has trivial radical. -/
+instance instHasTrivialRadicalSl [CharZero K] :
+    LieAlgebra.HasTrivialRadical K (SpecialLinear.sl n K) :=
+  hasTrivialRadical_sl K n two_ne_zero fun h ↦ by
+    let _ := h
+    exact Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+
+end SpecialLinear
 
 end TauCeti

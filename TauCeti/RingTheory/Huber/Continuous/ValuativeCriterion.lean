@@ -47,6 +47,13 @@ continuous in three moves:
    Continuity is then `isContinuous_of_forall_le_of_cofinalValue`, and the bounds at `B` and at
    `x` are `restrictToConvex_mul_inv_le_one` and `one_lt_restrictToConvex_mul_inv`.
 
+Moves 2 and 3 together are
+`PairOfDefinition.exists_continuous_coarsened_extension_of_valuation` below. They are stated for a
+valuation of the ring of definition, and record how the resulting point compares with any
+ambient valuation extending it. Nothing in them uses the fraction field, and `Spv R` already
+hides the value group, so the convex subgroup and the extension can be built inside and never
+surface. The assembly is then move 1, the two pullbacks, and a case split.
+
 The degenerate branch — every generator having value `0` — needs none of this: the comap is
 then already continuous, because a vanishing value is cofinal for free.
 
@@ -66,6 +73,9 @@ the quotient topology.
 
 ## Main results
 
+* `TauCeti.Huber.PairOfDefinition.exists_continuous_coarsened_extension_of_valuation` : coarsen a
+  bounded valuation of a ring of definition along a dominating nonzero generator and extend it
+  to a continuous point of the ambient Huber ring.
 * `TauCeti.Huber.exists_continuous_valuation_of_not_isIntegral` : the refuting valuation, for
   any open subring of any Huber ring.
 * `TauCeti.Huber.isIntegral_of_forall_continuous_valuation_le_one` : Wedhorn Proposition
@@ -191,6 +201,135 @@ private theorem exists_spv_of_isContinuous {Γ₀ : Type*} [LinearOrderedCommGro
     fun b hb ↦ (vle_ofValuation w b 1).mpr (by simpa using hBw b hb),
     fun h ↦ absurd ((vle_ofValuation w x 1).mp h) (by simpa using not_le.mpr hxw)⟩
 
+/-! ### Coarsening and extension -/
+
+/-- **A continuous coarsened extension of a bounded valuation of a ring of definition.** Suppose
+`t₀` belongs to the ideal of definition, has nonzero value strictly below `1`, and dominates a
+spanning set of that ideal. Then convex restriction along its value and extension to the ambient
+ring give a continuous point of `Spv R` whose support does not contain `t₀`.
+
+If `w₀` is any valuation of `R` restricting to the given valuation on the ring of definition,
+the new point has value at most `1` exactly where `w₀` does. -/
+theorem PairOfDefinition.exists_continuous_coarsened_extension_of_valuation
+    (P : PairOfDefinition R) {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+    (v₀ : Valuation P.ringOfDefinition Γ₀)
+    (hA₀le : ∀ a : P.ringOfDefinition, v₀ a ≤ 1)
+    {s : Set P.ringOfDefinition} {t₀ : P.ringOfDefinition}
+    (hS : Ideal.span s = P.idealOfDefinition) (ht₀I : t₀ ∈ P.idealOfDefinition)
+    (hle : ∀ t ∈ s, v₀ t ≤ v₀ t₀) (hlt : v₀ t₀ < 1) (hne : v₀ t₀ ≠ 0) :
+    ∃ v : Spv R, v.IsContinuous ∧ (t₀ : R) ∉ v.supp ∧
+      ∀ (w₀ : Valuation R Γ₀), (∀ a : P.ringOfDefinition, w₀ (a : R) = v₀ a) →
+        ∀ y : R, (v.toValuativeRel.vle y 1 ↔ w₀ y ≤ 1) := by
+  classical
+  set u : Γ₀ˣ := Units.mk0 (v₀ t₀) hne with hu
+  set H : ConvexSubgroup Γ₀ˣ := ConvexSubgroup.closure {u} with hH
+  have humem : u ∈ H := ConvexSubgroup.subset_closure _ rfl
+  have habs : ∀ a : P.ringOfDefinition, ∀ ha : v₀ a ≠ 0, 1 ≤ v₀ a →
+      Units.mk0 (v₀ a) ha ∈ H := Valuation.mk0_mem_of_forall_le_one v₀ hA₀le H
+  set vr : Valuation P.ringOfDefinition (WithZero H.toSubgroup) :=
+    v₀.restrictToConvex H habs with hvr
+  have hvrt₀ne : vr t₀ ≠ 0 := by
+    rw [hvr, restrictToConvex_apply_of_mem v₀ H habs hne humem]
+    exact WithZero.coe_ne_zero
+  have hsA₀ : (t₀ : R) ∈ P.ringOfDefinition := t₀.2
+  have hst₀ : (⟨(t₀ : R), hsA₀⟩ : P.ringOfDefinition) = t₀ := Subtype.coe_eta t₀ hsA₀
+  have hsnil : IsTopologicallyNilpotent ((t₀ : P.ringOfDefinition) : R) :=
+    P.isTopologicallyNilpotent_of_mem_idealOfDefinition ht₀I
+  have hvrsne : vr ⟨(t₀ : R), hsA₀⟩ ≠ 0 := by
+    rw [hst₀]
+    exact hvrt₀ne
+  set vext : Valuation R (WithZero H.toSubgroup) :=
+    P.extendValuation vr hsA₀ hsnil hvrsne with hvext
+  have hpowne : ∀ k : ℕ, v₀ (t₀ ^ k) ≠ 0 := fun k ↦ by
+    rw [map_pow]
+    exact pow_ne_zero k hne
+  have hpowmem : ∀ k : ℕ, Units.mk0 (v₀ (t₀ ^ k)) (hpowne k) ∈ H := fun k ↦ by
+    have heq : Units.mk0 (v₀ (t₀ ^ k)) (hpowne k) = u ^ k := by
+      ext
+      simp [map_pow, hu]
+    rw [heq]
+    exact pow_mem humem k
+  have hinvpow : ∀ k : ℕ, (vr ⟨(t₀ : R), hsA₀⟩)⁻¹ ^ k = (vr (t₀ ^ k))⁻¹ := fun k ↦ by
+    rw [inv_pow, hst₀, ← map_pow]
+  have hextcont : vext.IsContinuous := by
+    refine P.isContinuous_of_forall_le_of_cofinalValue vext (s := s) (t₀ := t₀) hS
+      (fun t ht ↦ ?_) (fun a _ ↦ ?_) ?_
+    · rw [hvext, P.extendValuation_coe vr hsA₀ hsnil hvrsne t,
+        P.extendValuation_coe vr hsA₀ hsnil hvrsne t₀, hvr, restrictToConvex_le_iff]
+      exact Or.inr ⟨hvr ▸ hvrt₀ne, hle t ht⟩
+    · rw [hvext, P.extendValuation_coe vr hsA₀ hsnil hvrsne a, hvr]
+      simpa using (restrictToConvex_le_iff v₀ H habs a 1).mpr
+        (Or.inr ⟨by simp, by simpa using hA₀le a⟩)
+    · refine cofinalValue_of_forall_pow_lt vext fun γ hγ ↦ ?_
+      have hval : vext ((t₀ : P.ringOfDefinition) : R) =
+          ((⟨u, humem⟩ : H.toSubgroup) : WithZero H.toSubgroup) := by
+        rw [hvext, P.extendValuation_coe vr hsA₀ hsnil hvrsne t₀, hvr,
+          restrictToConvex_apply_of_mem v₀ H habs hne humem]
+      rw [hval]
+      exact exists_pow_lt_of_isCofinalElement humem
+        ((isCofinalElement_iff_subset_closure
+          (Units.val_lt_val.mp (by simpa [hu] using hlt))).mpr (by simp [hH])) hγ
+  refine ⟨ofValuation vext, (isContinuous_ofValuation_iff vext).mpr hextcont, ?_, ?_⟩
+  · rw [supp_ofValuation, Valuation.mem_supp_iff, hvext,
+      P.extendValuation_coe vr hsA₀ hsnil hvrsne t₀]
+    exact hvrt₀ne
+  · intro w₀ hw₀ y
+    rw [vle_ofValuation, map_one]
+    obtain ⟨k, hk⟩ := P.exists_pow_mul_mem hsnil y
+    rw [hvext, P.extendValuation_apply vr hsA₀ hsnil hvrsne y hk, hinvpow k]
+    have hvals : v₀ (t₀ ^ k) = w₀ ((t₀ : P.ringOfDefinition) : R) ^ k := by
+      rw [map_pow, ← hw₀]
+    have hsplit : v₀ ⟨(t₀ : R) ^ k * y, hk⟩ =
+        w₀ ((t₀ : P.ringOfDefinition) : R) ^ k * w₀ y := by
+      rw [← hw₀]
+      simp only [map_mul, map_pow]
+    constructor
+    · intro hvle
+      by_contra hwy
+      have hygt : 1 < w₀ y := lt_of_not_ge hwy
+      have hpos : (0 : Γ₀) < w₀ ((t₀ : P.ringOfDefinition) : R) ^ k :=
+        pow_pos (zero_lt_iff.mpr ((hw₀ t₀).symm ▸ hne)) k
+      have hlt' : v₀ (t₀ ^ k) < v₀ ⟨(t₀ : R) ^ k * y, hk⟩ := by
+        rw [hvals, hsplit]
+        exact lt_mul_of_one_lt_right hpos hygt
+      exact (not_lt_of_ge hvle)
+        (one_lt_restrictToConvex_mul_inv v₀ H habs (hpowne k) (hpowmem k) hlt')
+    · intro hwy
+      refine restrictToConvex_mul_inv_le_one v₀ H habs (hpowne k) (hpowmem k) ?_
+      calc v₀ ⟨(t₀ : R) ^ k * y, hk⟩
+          = w₀ ((t₀ : P.ringOfDefinition) : R) ^ k * w₀ y := hsplit
+        _ ≤ w₀ ((t₀ : P.ringOfDefinition) : R) ^ k * 1 := mul_le_mul' le_rfl hwy
+        _ = v₀ (t₀ ^ k) := by rw [mul_one, hvals]
+
+/-- **Coarsening along a dominating generator, and extending.** Let `w₀` be a valuation of `R`
+that is `≤ 1` on a subring `B` containing the ring of definition and `> 1` at `x`. Let `s` span
+the ideal of definition and let `t₀` be a member of that ideal whose value dominates `s` and is
+`< 1` and nonzero. Then there is a **continuous** valuation of `R` that is still `≤ 1` on `B` and
+`> 1` at `x`. -/
+private theorem exists_continuous_valuation_of_forall_le (P : PairOfDefinition R)
+    {B : Subring R} (hA₀B : (P.ringOfDefinition : Set R) ⊆ B) {Γ₀ : Type*}
+    [LinearOrderedCommGroupWithZero Γ₀] (w₀ : Valuation R Γ₀) (hBle : ∀ b ∈ B, w₀ b ≤ 1)
+    {x : R} (hxgt : 1 < w₀ x) {s : Set P.ringOfDefinition} {t₀ : P.ringOfDefinition}
+    (hS : Ideal.span s = P.idealOfDefinition) (ht₀I : t₀ ∈ P.idealOfDefinition)
+    (hle : ∀ t ∈ s, w₀ ((t : P.ringOfDefinition) : R) ≤ w₀ ((t₀ : P.ringOfDefinition) : R))
+    (hlt : w₀ ((t₀ : P.ringOfDefinition) : R) < 1)
+    (hne : w₀ ((t₀ : P.ringOfDefinition) : R) ≠ 0) :
+    ∃ v : Spv R, v.IsContinuous ∧ (∀ b ∈ B, v.toValuativeRel.vle b 1) ∧
+      ¬ v.toValuativeRel.vle x 1 := by
+  classical
+  set v₀ : Valuation P.ringOfDefinition Γ₀ :=
+    w₀.comap P.ringOfDefinition.subtype with hv₀
+  have hA₀le : ∀ a : P.ringOfDefinition, v₀ a ≤ 1 := fun a ↦ hBle _ (hA₀B a.2)
+  have hw₀app : ∀ a : P.ringOfDefinition, w₀ (a : R) = v₀ a := fun a ↦ by
+    simp only [hv₀, Valuation.comap_apply, Subring.coe_subtype]
+  have hv₀t₀ne : v₀ t₀ ≠ 0 := hw₀app t₀ ▸ hne
+  have hglt : v₀ t₀ < 1 := hw₀app t₀ ▸ hlt
+  obtain ⟨v, hvcont, -, hvle⟩ :=
+    P.exists_continuous_coarsened_extension_of_valuation v₀ hA₀le hS ht₀I
+      (fun t ht ↦ by rw [← hw₀app, ← hw₀app]; exact hle t ht) hglt hv₀t₀ne
+  refine ⟨v, hvcont, fun b hb ↦ (hvle w₀ hw₀app b).mpr (hBle b hb), ?_⟩
+  exact fun hx ↦ (not_le.mpr hxgt) ((hvle w₀ hw₀app x).mp hx)
+
 /-! ### The construction, for a domain -/
 
 /-- **A continuous valuation refuting integrality, for a domain.** If `x` is not integral over
@@ -234,100 +373,17 @@ private theorem exists_continuous_valuation_of_not_isIntegral_of_isDomain [IsDom
     refine P.isContinuous_of_forall_cofinalValue w₀ hS (fun a _ ↦ hA₀le a) fun t ht ↦ ?_
     exact cofinalValue_of_forall_pow_lt w₀ fun γ hγ ↦
       ⟨1, by rw [pow_one, hw₀app, hzero t ht]; exact hγ⟩
-  · -- **Main branch.** Some generator has nonvanishing value, so the largest of them does.
+  · -- **Main branch.** Some generator has nonvanishing value, so the largest of them does;
+    -- maximising here is what lets the coarsening lemma take the generator as a hypothesis.
     push Not at hzero
     obtain ⟨t₁, ht₁S, ht₁ne⟩ := hzero
-    have hSne : S.Nonempty := ⟨t₁, ht₁S⟩
-    set g : V.ValueGroup := S.sup' hSne (fun t ↦ v₀ t) with hg
-    have hglt : g < 1 := (Finset.sup'_lt_iff hSne).mpr hgenlt
-    have hgne : g ≠ 0 :=
-      ne_of_gt (lt_of_lt_of_le (zero_lt_iff.mpr ht₁ne) (Finset.le_sup' _ ht₁S))
-    obtain ⟨t₀, ht₀S, ht₀⟩ := Finset.exists_mem_eq_sup' hSne (fun t ↦ v₀ t)
-    have hv₀t₀ : v₀ t₀ = g := ht₀.symm
-    have hv₀t₀ne : v₀ t₀ ≠ 0 := hv₀t₀ ▸ hgne
-    -- The convex subgroup generated by that value; every attained value `≥ 1` is `1`, so the
-    -- absorption hypothesis of `restrictToConvex` is vacuous.
-    set u : V.ValueGroupˣ := Units.mk0 g hgne with hu
-    set H : ConvexSubgroup V.ValueGroupˣ := ConvexSubgroup.closure {u} with hH
-    have humem : u ∈ H := ConvexSubgroup.subset_closure _ rfl
-    have habs : ∀ a : P.ringOfDefinition, ∀ ha : v₀ a ≠ 0, 1 ≤ v₀ a →
-        Units.mk0 (v₀ a) ha ∈ H := fun a ha h1 ↦ by
-      have heq : Units.mk0 (v₀ a) ha = 1 := Units.ext (le_antisymm (hA₀le a) h1)
-      rw [heq]; exact one_mem H
-    set vr : Valuation P.ringOfDefinition (WithZero H.toSubgroup) :=
-      v₀.restrictToConvex H habs with hvr
-    have hmemt₀ : Units.mk0 (v₀ t₀) hv₀t₀ne ∈ H := by
-      have heq : Units.mk0 (v₀ t₀) hv₀t₀ne = u := Units.ext hv₀t₀
-      rw [heq]; exact humem
-    have hvrt₀ne : vr t₀ ≠ 0 := by
-      rw [hvr, restrictToConvex_apply_of_mem v₀ H habs hv₀t₀ne hmemt₀]
-      exact WithZero.coe_ne_zero
-    -- **Step 3.** Extend the coarsened valuation from the ring of definition back to `R`.
-    have hsA₀ : (t₀ : R) ∈ P.ringOfDefinition := t₀.2
-    have hst₀ : (⟨(t₀ : R), hsA₀⟩ : P.ringOfDefinition) = t₀ := rfl
-    have hsnil : IsTopologicallyNilpotent ((t₀ : P.ringOfDefinition) : R) :=
-      P.isTopologicallyNilpotent_of_mem_idealOfDefinition (hgenmem t₀ ht₀S)
-    have hvrsne : vr ⟨(t₀ : R), hsA₀⟩ ≠ 0 := hvrt₀ne
-    set vext : Valuation R (WithZero H.toSubgroup) :=
-      P.extendValuation vr hsA₀ hsnil hvrsne with hvext
-    have hpowne : ∀ k : ℕ, v₀ (t₀ ^ k) ≠ 0 := fun k ↦ by
-      rw [map_pow]; exact pow_ne_zero k hv₀t₀ne
-    have hpowmem : ∀ k : ℕ, Units.mk0 (v₀ (t₀ ^ k)) (hpowne k) ∈ H := fun k ↦ by
-      have heq : Units.mk0 (v₀ (t₀ ^ k)) (hpowne k) = u ^ k := by
-        ext; simp [map_pow, hv₀t₀, hu]
-      rw [heq]; exact pow_mem humem k
-    have hinvpow : ∀ k : ℕ, (vr ⟨(t₀ : R), hsA₀⟩)⁻¹ ^ k = (vr (t₀ ^ k))⁻¹ := fun k ↦ by
-      rw [inv_pow, hst₀, ← map_pow]
-    have hvals : ∀ k : ℕ, v₀ (t₀ ^ k) = V.valuation (ι (t₀ : R)) ^ k := fun k ↦ by
-      rw [map_pow, hv₀app]
-    -- The bound on `B`, and the strict lower bound at `x`, are the two division lemmas.
-    have hextB : ∀ b ∈ B, vext b ≤ 1 := by
-      intro b hb
-      obtain ⟨k, hk⟩ := P.exists_pow_mul_mem hsnil b
-      rw [hvext, P.extendValuation_apply vr hsA₀ hsnil hvrsne b hk, hinvpow k]
-      refine restrictToConvex_mul_inv_le_one v₀ H habs (hpowne k) (hpowmem k) ?_
-      calc v₀ ⟨(t₀ : R) ^ k * b, hk⟩
-          = V.valuation (ι (t₀ : R)) ^ k * V.valuation (ι b) := by
-            rw [hv₀app]; simp only [map_mul, map_pow]
-        _ ≤ V.valuation (ι (t₀ : R)) ^ k * 1 := mul_le_mul' le_rfl (hBle b hb)
-        _ = v₀ (t₀ ^ k) := by rw [mul_one, hvals]
-    have hextx : 1 < vext x := by
-      obtain ⟨k, hk⟩ := P.exists_pow_mul_mem hsnil x
-      rw [hvext, P.extendValuation_apply vr hsA₀ hsnil hvrsne x hk, hinvpow k]
-      refine one_lt_restrictToConvex_mul_inv v₀ H habs (hpowne k) (hpowmem k) ?_
-      have hxgt' : (1 : V.ValueGroup) < V.valuation (ι x) := hxgt
-      have hpos : (0 : V.ValueGroup) < V.valuation (ι (t₀ : R)) ^ k :=
-        pow_pos (zero_lt_iff.mpr (hv₀app t₀ ▸ hv₀t₀ne)) k
-      calc v₀ (t₀ ^ k) = V.valuation (ι (t₀ : R)) ^ k := hvals k
-        _ < V.valuation (ι (t₀ : R)) ^ k * V.valuation (ι x) :=
-            lt_mul_of_one_lt_right hpos hxgt'
-        _ = v₀ ⟨(t₀ : R) ^ k * x, hk⟩ := by
-            rw [hv₀app]; simp only [map_mul, map_pow]
-    -- Continuity: the generator dominates its fellows and its value is cofinal after
-    -- coarsening, which is exactly what the engine on `main` consumes.
-    have hextcont : vext.IsContinuous := by
-      refine P.isContinuous_of_forall_le_of_cofinalValue vext
-        (s := (S : Set P.ringOfDefinition)) (t₀ := t₀) hS (fun t ht ↦ ?_) (fun a _ ↦ ?_) ?_
-      · rw [hvext, P.extendValuation_coe vr hsA₀ hsnil hvrsne t,
-          P.extendValuation_coe vr hsA₀ hsnil hvrsne t₀, hvr, restrictToConvex_le_iff]
-        exact Or.inr ⟨hvr ▸ hvrt₀ne, hv₀t₀ ▸ Finset.le_sup' _ (Finset.mem_coe.mp ht)⟩
-      · rw [hvext, P.extendValuation_coe vr hsA₀ hsnil hvrsne a, hvr]
-        simpa using (restrictToConvex_le_iff v₀ H habs a 1).mpr
-          (Or.inr ⟨by simp, by simpa using hA₀le a⟩)
-      · refine cofinalValue_of_forall_pow_lt vext fun γ hγ ↦ ?_
-        have hval : vext ((t₀ : P.ringOfDefinition) : R) =
-            ((⟨u, humem⟩ : H.toSubgroup) : WithZero H.toSubgroup) := by
-          rw [hvext, P.extendValuation_coe vr hsA₀ hsnil hvrsne t₀, hvr,
-            restrictToConvex_apply_of_mem v₀ H habs hv₀t₀ne hmemt₀]
-          exact congrArg _ (Subtype.ext (Units.ext hv₀t₀))
-        rw [hval]
-        -- `u < 1` is cofinal for the convex subgroup it generates: Wedhorn Remark 1.19 at
-        -- `H = closure {u}`, where the containment it asks for is the identity.
-        have hcof : IsCofinalElement H.toSubgroup u :=
-          (isCofinalElement_iff_subset_closure
-            (Units.val_lt_val.mp (by simpa [hu] using hglt))).mpr (by simp [hH])
-        exact exists_pow_lt_of_isCofinalElement humem hcof hγ
-    exact exists_spv_of_isContinuous vext hextcont hextB hextx
+    obtain ⟨t₀, ht₀S, ht₀max⟩ :=
+      S.exists_max_image (fun t ↦ w₀ ((t : P.ringOfDefinition) : R)) ⟨t₁, ht₁S⟩
+    have ht₀ne : w₀ ((t₀ : P.ringOfDefinition) : R) ≠ 0 :=
+      ne_of_gt (lt_of_lt_of_le (zero_lt_iff.mpr ((hw₀app t₁).symm ▸ ht₁ne)) (ht₀max t₁ ht₁S))
+    exact exists_continuous_valuation_of_forall_le P hA₀B w₀ hBle hxgt hS (hgenmem t₀ ht₀S)
+      (fun t ht ↦ ht₀max t (Finset.mem_coe.mp ht))
+      ((hw₀app t₀).symm ▸ hgenlt t₀ ht₀S) ht₀ne
 
 /-! ### Arbitrary Huber rings -/
 

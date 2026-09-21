@@ -34,8 +34,9 @@ every vertex without repetition and the polarized Tits form has trivial radical,
 whenever the Tits form is anisotropic, and so for a quiver of ADE type, where the Tits form is
 positive definite and `QuadraticMap.PosDef.anisotropic` applies. This is the engine of the
 Bernstein-Gelfand-Ponomarev proof of Gabriel's theorem that forbids a nonzero dimension vector from
-being carried to itself after a full pass of the Coxeter functor. The separate positive-root height
-argument supplies the descent to a vertex simple.
+being carried to itself after a full pass of the Coxeter functor. The finite-orbit argument in
+`TauCeti.exists_vertexPreReflectionList_pow_apply_neg` supplies the descent to a vertex simple
+without first passing through root-system combinatorics.
 
 ## Main definitions and results
 
@@ -45,6 +46,8 @@ argument supplies the descent to a vertex simple.
 * `TauCeti.vertexReflectionList`: the same map as a linear automorphism, over a word in loopless
   vertices, with `TauCeti.vertexReflectionList_symm` identifying its inverse as the automorphism
   along the reversed word.
+* `TauCeti.vertexPreReflectionList_flatten_replicate`: repeating a word raises its reflection
+  product to the corresponding power, so a run of Coxeter passes is itself a reflection product.
 * `TauCeti.titsForm_vertexPreReflectionList` and
   `TauCeti.bijOn_vertexPreReflectionList`: along a word in loopless vertices, the composite
   preserves the Tits form, and hence permutes each of its level sets, in particular the roots
@@ -122,6 +125,15 @@ theorem vertexPreReflectionList_append (l₁ l₂ : List Q) :
       = vertexPreReflectionList Q l₂ * vertexPreReflectionList Q l₁ := by
   simp [vertexPreReflectionList, List.map_append, List.prod_append]
 
+/-- Repeating a word `N` times raises its reflection product to the `N`-th power. -/
+@[simp]
+theorem vertexPreReflectionList_flatten_replicate (l : List Q) (N : ℕ) :
+    vertexPreReflectionList Q (List.replicate N l).flatten = vertexPreReflectionList Q l ^ N := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [List.replicate_succ, List.flatten_cons, vertexPreReflectionList_append, ih, pow_succ]
+
 /-- Off the word, the reflection product changes no coordinate: each simple reflection in the
 composite alters only the coordinate at its own vertex. -/
 @[simp]
@@ -170,8 +182,7 @@ private theorem map_vertexReflection_toLinearMap {l : List Q}
     (l.attach.map fun i : {i // i ∈ l} ↦ vertexReflection Q (hl i.1 i.2)).map
         (fun e ↦ e.toLinearMap)
       = l.map (vertexPreReflection Q) := by
-  rw [List.map_map]
-  rw [← List.attach_map_val (f := vertexPreReflection Q)]
+  rw [List.map_map, ← List.attach_map_val (f := vertexPreReflection Q)]
   apply List.map_congr_left
   intro i hi
   apply LinearMap.coe_injective
@@ -318,9 +329,10 @@ only the zero vector**, as soon as the word of vertices it is taken along is rep
 exhausts the vertices.
 
 This fixed-point obstruction is one input to the reflection induction behind Gabriel's theorem: no
-nonzero dimension vector survives a full pass of the Coxeter functor unchanged. The descent itself
-requires a separate positive-root height argument. An anisotropic Tits form has trivial radical,
-which is the form the hypothesis takes in
+nonzero dimension vector survives a full pass of the Coxeter functor unchanged. For a positive
+definite Tits form, `TauCeti.exists_vertexPreReflectionList_pow_apply_neg` combines this obstruction
+with a finite-orbit argument to supply the descent without a separate root-height argument. An
+anisotropic Tits form has trivial radical, which is the form the hypothesis takes in
 `TauCeti.vertexPreReflectionList_eq_self_iff_of_anisotropic`. -/
 theorem vertexPreReflectionList_eq_self_iff
     (hsep : LinearMap.SeparatingRight (titsPolarForm Q)) {l : List Q} (hnd : l.Nodup)

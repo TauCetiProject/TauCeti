@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.IsTensorProduct
-public import Mathlib.RingTheory.TensorProduct.Finite
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
 # The dimension of a base change
 
 A module specified as a base change of a finite module is finite. If the module being extended is
-free and both rings satisfy the strong rank condition, then the two modules have the same rank.
+free and both semirings satisfy the strong rank condition, then the two modules have the same
+natural-number rank (`Module.finrank`), including when their rank is infinite and `finrank` is zero.
 Both statements are about Mathlib's `IsBaseChange` predicate rather than about the concrete tensor
 product `S ⊗[R] M`, so they apply to a model of the base change that is not literally a tensor
 product — the situation the `IsBaseChange` interface exists to serve.
@@ -25,23 +27,23 @@ and the `Module.Finite` instance on `S ⊗[R] M`); transporting them along
 
 public section
 
-namespace TauCeti
+namespace IsBaseChange
 
 open scoped TensorProduct
 
-variable {R S M N : Type*} [CommRing R] [CommRing S] [Algebra R S]
-variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module S N]
+variable {R S M N : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [Module S N]
 variable [IsScalarTower R S N] {f : M →ₗ[R] N}
 
 /-- A base change of a finite module is a finite module. -/
-theorem finite_of_isBaseChange (hf : IsBaseChange S f) [Module.Finite R M] : Module.Finite S N :=
+theorem finite (hf : IsBaseChange S f) [Module.Finite R M] : Module.Finite S N :=
   Module.Finite.equiv hf.equiv
 
-/-- A base change of a free module has the same rank as the module it extends when the source and
-target rings satisfy the strong rank condition. -/
-theorem finrank_of_isBaseChange (hf : IsBaseChange S f) [StrongRankCondition R]
+/-- A base change of a free module preserves `Module.finrank` when the source and target semirings
+satisfy the strong rank condition. No finite-generation assumption is needed. -/
+theorem finrank_eq_of_free (hf : IsBaseChange S f) [StrongRankCondition R]
     [StrongRankCondition S] [Module.Free R M] :
     Module.finrank S N = Module.finrank R M := by
   rw [← hf.equiv.finrank_eq, Module.finrank_baseChange]
 
-end TauCeti
+end IsBaseChange

@@ -1,0 +1,477 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+public import TauCeti.RingTheory.AdjoinRoot.Factors
+public import TauCeti.RingTheory.DedekindDomain.Ideal
+public import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero
+
+/-!
+# Extension of adic completions along an extension of Dedekind domains
+
+Let `R` be a Dedekind domain with fraction field `K`, let `L/K` be an extension and `B` a
+Dedekind domain with fraction field `L` extending `R`, and let `w` be a height-one prime of `B`
+lying over the height-one prime `v` of `R`. Completing at `v` and at `w` gives fields `K_v` and
+`L_w`, and the inclusion `K → L` extends continuously to a ring homomorphism `K_v →+* L_w`.
+
+This file constructs that homomorphism, `adicCompletionExtension`, records that the valuation of
+`L_w` restricted along it is the valuation of `K_v` raised to the ramification index, restricts it
+to the rings of integers as `adicCompletionIntegersExtension`, and shows that the maximal ideal
+contracts to the maximal ideal. It also provides the induced algebra structure in the
+`AdicCompletionExtension` scope, and identifies the valuation attached to the maximal ideal of
+`𝒪_v` — a discrete valuation ring — with the valuation of the completion itself, which is what
+lets a statement about height-one primes of `𝒪_v` be read as a statement about `K_v`.
+
+This is the local-to-global bridge of the explicit `2`-descent: comparing a square class of a
+global étale algebra with its images in the completions passes through exactly these maps.
+
+## Main definitions
+
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension`: the induced ring homomorphism
+  `K_v →+* L_w`.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionAlgebra`: the algebra structure
+  induced by that map, available in the `AdicCompletionExtension` scope.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersExtension`: its restriction
+  `𝒪_v →+* 𝒪_w` to the rings of integers.
+
+## Main results
+
+* `IsDedekindDomain.HeightOneSpectrum.valuation_maximalIdeal_adicCompletionIntegers`: the
+  valuation attached to the maximal ideal of `𝒪_v` is the valuation of `K_v`.
+* `IsDedekindDomain.HeightOneSpectrum.valuation_adicCompletionIntegers`: the same identification
+  at an arbitrary height-one prime of `𝒪_v`, for every element of `K_v`.
+* `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero_maximalIdeal_adicCompletionIntegers` and
+  `IsDedekindDomain.HeightOneSpectrum.valuation_adicCompletion_algebraMap`: the two restrictions
+  of it the square-class conditions of the `2`-descent are stated in — on units of `K`, and on the
+  image of `K`.
+* `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletionIntegers_ne_two`: at a
+  place not dividing `2`, the residue field of `𝒪_v` has odd characteristic.
+* `IsDedekindDomain.HeightOneSpectrum.exists_unit_not_isSquare`: at such a place, with finite
+  residue field, `𝒪_v` carries a unit that is not a square in `K_v`. This is the input the
+  local image count at a good odd place needs.
+* `IsDedekindDomain.HeightOneSpectrum.valued_adicCompletionExtension`: along the extension the
+  valuation is raised to the ramification index.
+* `IsDedekindDomain.HeightOneSpectrum.comap_maximalIdeal_adicCompletionIntegersExtension`: the
+  maximal ideal of `𝒪_w` contracts to the maximal ideal of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.continuous_adicCompletionExtension` and
+  `IsDedekindDomain.HeightOneSpectrum.eq_adicCompletionExtension_of_continuous`: the extension is
+  continuous, and is the only continuous ring homomorphism `K_v →+* L_w` extending `K → L`. Together
+  these are its universal property, usable without unfolding the definition.
+
+## Motivation
+
+Every result here is consumed by a semilocal comparison in explicit `2`-descent: matching the
+unramifiedness of a square class at the primes of the field factors with unramifiedness over the
+valuation ring of `K_v`. Nothing in this file mentions a curve — each statement is about a
+Dedekind domain and one of its completions.
+
+## Provenance
+
+Adapted, with the authors' proofs, from Michael Stoll's `EllipticCurves` project
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
+`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+`EllipticCurves/Mathlib/AdicCompletionExtension.lean`.
+
+That file in turn credits the FLT project
+(`github.com/ImperialCollegeLondon/FLT`, `FLT/DedekindDomain/Completion/BaseChange.lean`, by
+Kevin Buzzard, Andrew Yang and Matthew Jasper) for the completion-extension material, rebased
+there onto Mathlib's `valuation_liesOver` and `uniformContinuous_algebraMap_liesOver`; the same
+rebasing is used here, so both are credited.
+
+`span_singleton_eq_maximalIdeal_pow` comes from that same Stoll file, restated here against this
+repository's `HeightOneSpectrum` interface.
+
+`exists_unit_not_isSquare` comes from the same source file (`:183`). Two deliberate departures from
+its proof: the source contracts the maximal ideal with its own
+`comap_maximalIdeal_adicCompletionIntegers`, which this repository states as
+`under_maximalIdeal_adicCompletionIntegers` (`Ideal.under R I` is by definition
+`I.comap (algebraMap R S)`); and where the source derives `v d = 1` from a square by manipulating
+`WithZero.log`, this uses Mathlib's `mul_self_le_one_iff` and `one_le_mul_self_iff`, which say the
+same thing about the ordered value monoid in one line. The odd-residue-characteristic step is split
+out as `ringChar_residueField_adicCompletionIntegers_ne_two`, which the source keeps inline.
+
+The Henselian and completeness chain from that same Stoll file lives in
+`TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion`, with the single-completion
+valuation and residue-field results it rests on — among them
+`residueFieldEquivAdicCompletionIntegers`, which this file uses.
+
+## Implementation notes
+
+Every Mathlib module this file needs arrives through
+`TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion`, which is imported for the
+single-completion results and publicly re-exports them.
+-/
+
+public section
+
+open IsDedekindDomain WithZero
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (v : HeightOneSpectrum R)
+
+/-- The valuation associated to the maximal ideal of the ring of integers of an adic completion is
+the valuation of the completion.
+
+This is what lets a condition stated at the height-one primes of `𝒪_v` be read as a condition on
+`K_v`: `𝒪_v` is a discrete valuation ring, so it has exactly one, and it induces `Valued.v`.
+
+Not `@[simp]`: this is the special case `P = IsDiscreteValuationRing.maximalIdeal _` of
+`valuation_adicCompletionIntegers`, which carries the annotation instead. With both marked, the
+`simpNF` linter rejects this one — "simp can prove this" — because the general form subsumes it. -/
+theorem valuation_maximalIdeal_adicCompletionIntegers (x : v.adicCompletion K) :
+    (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation
+      (v.adicCompletion K) x = Valued.v x := by
+  -- reduce to elements of the ring of integers
+  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := v.adicCompletionIntegers K) x
+  rw [map_div₀, map_div₀]
+  suffices h : ∀ y : v.adicCompletionIntegers K,
+      (IsDiscreteValuationRing.maximalIdeal (v.adicCompletionIntegers K)).valuation
+        (v.adicCompletion K) (algebraMap _ _ y) = Valued.v (algebraMap _ _ y) by
+    rw [h, h]
+  intro y
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  -- decompose `y` as a unit times a power of a uniformizer
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hy hπ
+  rw [valuation_of_algebraMap]
+  have hu1 : (IsDiscreteValuationRing.maximalIdeal
+      (v.adicCompletionIntegers K)).intValuation (u : v.adicCompletionIntegers K) = 1 := by
+    simp [IsDiscreteValuationRing.maximalIdeal]
+  have hu2 : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
+      (u : v.adicCompletionIntegers K)) = 1 :=
+    (adicCompletionIntegers.integers K v).valuation_unit u
+  have hπ1 : (IsDiscreteValuationRing.maximalIdeal
+      (v.adicCompletionIntegers K)).intValuation π = exp (-1) :=
+    (IsDiscreteValuationRing.maximalIdeal _).intValuation_singleton hπ.ne_zero
+      hπ.maximalIdeal_eq
+  have hπ2 : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) π) =
+      exp (-1) := v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ
+  simp only [map_mul, map_pow]
+  rw [hu1, hu2, hπ1, hπ2]
+
+/-- The valuation of the height-one prime of `𝒪_v` at the image of a unit of `K` is the `v`-adic
+valuation of that unit. This is the form the square-class conditions of the `2`-descent are
+stated in. -/
+theorem valuationOfNeZero_maximalIdeal_adicCompletionIntegers (u : Kˣ) :
+    (IsDiscreteValuationRing.maximalIdeal
+        (v.adicCompletionIntegers K)).valuationOfNeZero
+      (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom u) =
+      v.valuationOfNeZero u := by
+  rw [valuationOfNeZero_eq_iff, valuationOfNeZero_eq,
+    valuation_maximalIdeal_adicCompletionIntegers]
+  exact v.valuedAdicCompletion_eq_valuation' _
+
+/-- Any height-one prime `P` of the valuation ring `𝒪_v` — necessarily its maximal ideal —
+induces on `K_v` the valuation of the completion. -/
+@[simp]
+theorem valuation_adicCompletionIntegers (P : HeightOneSpectrum (v.adicCompletionIntegers K))
+    (x : v.adicCompletion K) :
+    P.valuation (v.adicCompletion K) x = Valued.v x := by
+  rw [P.eq_maximalIdeal, valuation_maximalIdeal_adicCompletionIntegers]
+
+/-- Any height-one prime `P` of the valuation ring `𝒪_v` — necessarily its maximal ideal —
+induces on `K` the valuation `v` itself: the restriction to `K` of
+`valuation_adicCompletionIntegers`. -/
+theorem valuation_adicCompletion_algebraMap (P : HeightOneSpectrum (v.adicCompletionIntegers K))
+    (z : K) :
+    P.valuation (v.adicCompletion K) (algebraMap K (v.adicCompletion K) z) = v.valuation K z := by
+  rw [valuation_adicCompletionIntegers]
+  exact v.valuedAdicCompletion_eq_valuation' z
+
+/-- An element of the ring of integers of a completion of valuation `exp (-e)` generates the
+`e`-th power of the maximal ideal. -/
+theorem span_singleton_eq_maximalIdeal_pow {x : v.adicCompletionIntegers K} {e : ℕ}
+    (hx : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) x) =
+      exp (-(e : ℤ))) :
+    Ideal.span {x} = IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ e := by
+  have hx0 : x ≠ 0 := by
+    rintro rfl
+    rw [map_zero, map_zero] at hx
+    exact absurd hx.symm exp_ne_zero
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx0 hπ
+  have hu : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
+      (u : v.adicCompletionIntegers K)) = 1 :=
+    (adicCompletionIntegers.integers K v).valuation_unit u
+  have hval : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
+      (↑u * π ^ n)) = exp (-(n : ℤ)) := by
+    rw [map_mul, map_mul, hu, one_mul, map_pow, map_pow,
+      v.valued_algebraMap_eq_exp_neg_one_of_irreducible hπ, ← exp_nsmul]
+    simp
+  rw [hval, exp_inj, neg_inj, Int.natCast_inj] at hx
+  subst hx
+  rw [Ideal.span_singleton_eq_span_singleton.mpr (associated_unit_mul_left _ _ u.isUnit),
+    ← Ideal.span_singleton_pow, hπ.maximalIdeal_eq]
+
+/-- **At a place not dividing `2`, the residue characteristic is odd.** The residue field of `𝒪_v`
+is the residue field of `v` by `residueFieldEquivAdicCompletionIntegers`, so this is the hypothesis
+`2 ∉ v` transported along that equivalence — stated as a statement about `ringChar` because that is
+the form `FiniteField.exists_nonsquare` consumes. -/
+theorem ringChar_residueField_adicCompletionIntegers_ne_two (hv2 : (2 : R) ∉ v.asIdeal) :
+    ringChar (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) ≠ 2 := by
+  -- first, `2` is not in the maximal ideal of `𝒪_v`: it contracts to `v`
+  have h2 : IsLocalRing.residue (v.adicCompletionIntegers K) 2 ≠ 0 := by
+    intro h0
+    refine hv2 ?_
+    rw [← v.under_maximalIdeal_adicCompletionIntegers (K := K), Ideal.under_def, Ideal.mem_comap,
+      map_ofNat]
+    exact Ideal.Quotient.eq_zero_iff_mem.mp h0
+  -- characteristic `2` would make the residue of `2` vanish
+  intro h
+  refine h2 ?_
+  rw [map_ofNat, ← Nat.cast_ofNat, ← h]
+  exact ringChar.Nat.cast_ringChar
+
+/-- **At a place of odd residue characteristic and finite residue field, `𝒪_v` has a unit that is
+not a square in `K_v`.** Any lift of a non-square of the residue field works: a square root in
+`K_v` would have valuation `1`, hence lie in `𝒪_v`, and would reduce to a square root of the
+non-square. -/
+theorem exists_unit_not_isSquare [Finite (R ⧸ v.asIdeal)] (hv2 : (2 : R) ∉ v.asIdeal) :
+    ∃ c : (v.adicCompletionIntegers K)ˣ,
+      ¬ IsSquare (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
+        (c : v.adicCompletionIntegers K)) := by
+  have hfin : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
+    Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
+  -- `𝒪_v` is the ring of integers of the valuation of `K_v`; that supplies both the
+  -- injectivity of `𝒪_v → K_v` and the characterization of its units by valuation `1`
+  have hint := adicCompletionIntegers.integers K v
+  obtain ⟨a, ha⟩ := FiniteField.exists_nonsquare
+    (v.ringChar_residueField_adicCompletionIntegers_ne_two (K := K) hv2)
+  have ha0 : a ≠ 0 := fun h ↦ ha (h ▸ IsSquare.zero)
+  -- lift the non-square to a unit of `𝒪_v`
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := v.adicCompletionIntegers K) a
+  have hxu : IsUnit x := (IsLocalRing.residue_ne_zero_iff_isUnit x).mp ha0
+  refine ⟨hxu.unit, fun ⟨d, hd⟩ ↦ ?_⟩
+  rw [IsUnit.unit_spec] at hd
+  -- a square root of a unit has valuation `1`, because the value group is torsion-free
+  have hx1 : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) x) = 1 :=
+    hint.isUnit_iff_valuation_eq_one.mp hxu
+  rw [hd, map_mul] at hx1
+  have hd1 : Valued.v d = 1 :=
+    le_antisymm (mul_self_le_one_iff.mp hx1.le) (one_le_mul_self_iff.mp hx1.ge)
+  -- hence it lies in `𝒪_v` and reduces to a square root of the non-square
+  have hdmem : d ∈ v.adicCompletionIntegers K := (mem_adicCompletionIntegers R K v).mpr hd1.le
+  have hx_eq : x = (⟨d, hdmem⟩ : v.adicCompletionIntegers K) * ⟨d, hdmem⟩ :=
+    hint.hom_inj (by rw [map_mul]; exact hd)
+  exact ha ⟨IsLocalRing.residue _ ⟨d, hdmem⟩, by rw [hx_eq, map_mul]⟩
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+section Extension
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+  {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra R B]
+  {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
+  [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
+  (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
+
+variable (K L)
+
+/-- The extension of adic completions along `w ∣ v`: the ring homomorphism `K_v →+* L_w`
+continuously extending `K → L`. -/
+noncomputable def adicCompletionExtension : v.adicCompletion K →+* w.adicCompletion L :=
+  haveI : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  (adicCompletion.equiv L w).symm.toRingHom.comp <|
+    (UniformSpace.Completion.mapRingHom
+      (algebraMap (WithVal (v.valuation K)) (WithVal (w.valuation L)))
+      (uniformContinuous_algebraMap_liesOver (K := K) (L := L) v w).continuous).comp
+      (adicCompletion.equiv K v).toRingHom
+
+/-- The algebra structure on `L_w` over `K_v` induced by `adicCompletionExtension`, available in
+the `AdicCompletionExtension` scope. -/
+@[reducible]
+noncomputable def adicCompletionExtensionAlgebra :
+    Algebra (v.adicCompletion K) (w.adicCompletion L) :=
+  (adicCompletionExtension K L v w).toAlgebra
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionAlgebra
+
+open scoped AdicCompletionExtension
+
+/-- The algebra map of `adicCompletionExtensionAlgebra` is `adicCompletionExtension`. -/
+@[simp]
+theorem algebraMap_adicCompletionExtensionAlgebra :
+    algebraMap (v.adicCompletion K) (w.adicCompletion L) =
+      adicCompletionExtension K L v w :=
+  RingHom.algebraMap_toAlgebra _
+
+/-- Under `toCompletion`, the image of `x` is `UniformSpace.Completion.map` of the algebra map
+applied to `x.toCompletion`. -/
+@[simp]
+lemma toCompletion_adicCompletionExtension (x : v.adicCompletion K) :
+    (adicCompletionExtension K L v w x).toCompletion =
+      UniformSpace.Completion.map
+        (algebraMap (WithVal (v.valuation K)) (WithVal (w.valuation L))) x.toCompletion :=
+  (rfl)
+
+/-- The square with sides `K → K_v → L_w` and `K → L → L_w` commutes. -/
+-- Not `@[simp]`: the `simpNF` linter rejects it, because `simp` rewrites the left-hand side
+-- further through `WithVal.equiv_symm_apply`, so this is not in simp normal form.
+lemma adicCompletionExtension_coe (x : K) :
+    adicCompletionExtension K L v w (x : v.adicCompletion K) =
+      (algebraMap K L x : w.adicCompletion L) := by
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  apply adicCompletion.ext
+  rw [toCompletion_adicCompletionExtension, adicCompletion.coe_toCompletion,
+    UniformSpace.Completion.map_coe
+      (uniformContinuous_algebraMap_liesOver (K := K) (L := L) v w)]
+  -- `WithVal` is a type synonym, so `algebraMap (WithVal _) (WithVal _)` is `algebraMap K L`
+  -- transported along it; these two rewrites name that identification rather than leaving it to
+  -- a bare `rfl`.
+  rw [WithVal.algebraMap_left_apply, WithVal.algebraMap_right_apply]
+  rfl
+
+/-- The square with sides `R → K_v → L_w` and `R → B → L_w` commutes. -/
+@[simp]
+lemma adicCompletionExtension_algebraMap (a : R) :
+    adicCompletionExtension K L v w (algebraMap R (v.adicCompletion K) a) =
+      algebraMap B (w.adicCompletion L) (algebraMap R B a) := by
+  rw [IsScalarTower.algebraMap_apply R K (v.adicCompletion K)]
+  simp only [algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self,
+    RingHom.id_apply, adicCompletionExtension_coe, ← IsScalarTower.algebraMap_apply R K L,
+    ← IsScalarTower.algebraMap_apply R B L]
+
+/-- `adicCompletionExtension` is continuous. -/
+theorem continuous_adicCompletionExtension :
+    Continuous (adicCompletionExtension K L v w) := by
+  have h : (adicCompletionExtension K L v w : v.adicCompletion K → w.adicCompletion L) =
+      adicCompletion.ofCompletion ∘ UniformSpace.Completion.map
+        (algebraMap (WithVal (v.valuation K)) (WithVal (w.valuation L))) ∘
+        adicCompletion.toCompletion := by
+    funext x
+    rw [Function.comp_apply, Function.comp_apply, ← toCompletion_adicCompletionExtension,
+      adicCompletion.ofCompletion_toCompletion]
+  rw [h]
+  exact (adicCompletion.continuous_ofCompletion L w).comp
+    (UniformSpace.Completion.continuous_map.comp (adicCompletion.continuous_toCompletion K v))
+
+/-- `adicCompletionExtension` is the *only* continuous ring homomorphism `K_v →+* L_w` extending
+`K → L`: `K` is dense in `K_v`, so a continuous map out of it is pinned by its values there.
+
+This is the universal property, available without unfolding the definition. -/
+theorem eq_adicCompletionExtension_of_continuous {f : v.adicCompletion K →+* w.adicCompletion L}
+    (hf : Continuous f)
+    (hfK : ∀ x : K, f (x : v.adicCompletion K) = (algebraMap K L x : w.adicCompletion L)) :
+    f = adicCompletionExtension K L v w :=
+  DFunLike.coe_injective <| (v.denseRange_algebraMap K).equalizer hf
+    (continuous_adicCompletionExtension K L v w)
+    (funext fun x ↦ by
+      simp only [Function.comp_apply, algebraMap_adicCompletion, Algebra.algebraMap_self_apply]
+      rw [hfK x, adicCompletionExtension_coe])
+
+open WithZeroTopology in
+/-- The valuation on `L_w` restricted along `K_v → L_w` is the valuation on `K_v` raised to the
+ramification index of `w` over `v`. -/
+@[simp]
+lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
+    Valued.v (adicCompletionExtension K L v w x) =
+      Valued.v x ^ v.asIdeal.ramificationIdx' w.asIdeal := by
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  rw [← adicCompletion.valued_toCompletion L w (adicCompletionExtension K L v w x),
+    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion K v x]
+  have hsurjK : Function.Surjective (⇑(Valued.v : Valuation (v.valuation K).Completion ℤᵐ⁰)) :=
+    Valued.valuedCompletion_surjective_iff.mpr <| .of_comp (v.valuation_surjective K)
+  have hsurjL : Function.Surjective (⇑(Valued.v : Valuation (w.valuation L).Completion ℤᵐ⁰)) :=
+    Valued.valuedCompletion_surjective_iff.mpr <| .of_comp (w.valuation_surjective L)
+  generalize x.toCompletion = y
+  revert y
+  apply funext_iff.mp
+  symm
+  apply UniformSpace.Completion.ext
+  · exact (Valued.continuous_valuation_of_surjective hsurjK).pow _
+  · exact (Valued.continuous_valuation_of_surjective hsurjL).comp
+      UniformSpace.Completion.continuous_map
+  intro a
+  rw [UniformSpace.Completion.map_coe
+      (uniformContinuous_algebraMap_liesOver (K := K) (L := L) v w),
+    Valued.valuedCompletion_apply, Valued.valuedCompletion_apply]
+  exact valuation_liesOver (K := K) L v w (WithVal.equiv (v.valuation K) a)
+
+/-- The extension maps the ring of integers of `K_v` into the ring of integers of `L_w`. -/
+@[simp]
+lemma adicCompletionExtension_mem_adicCompletionIntegers (x : v.adicCompletionIntegers K) :
+    adicCompletionExtension K L v w (x : v.adicCompletion K) ∈ w.adicCompletionIntegers L := by
+  rw [mem_adicCompletionIntegers, valued_adicCompletionExtension]
+  exact pow_le_one' ((mem_adicCompletionIntegers ..).mp x.2) _
+
+/-- The restriction of `adicCompletionExtension` to the rings of integers. -/
+noncomputable def adicCompletionIntegersExtension :
+    v.adicCompletionIntegers K →+* w.adicCompletionIntegers L :=
+  ((adicCompletionExtension K L v w).comp
+    (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K))).codRestrict
+      (w.adicCompletionIntegers L).toSubring
+      fun x ↦ adicCompletionExtension_mem_adicCompletionIntegers K L v w x
+
+/-- `adicCompletionIntegersExtension` agrees with `adicCompletionExtension` on the integers. -/
+@[simp]
+lemma coe_adicCompletionIntegersExtension (x : v.adicCompletionIntegers K) :
+    (adicCompletionIntegersExtension K L v w x : w.adicCompletion L) =
+      adicCompletionExtension K L v w (x : v.adicCompletion K) :=
+  (rfl)
+
+/-- The maximal ideal of the ring of integers of `L_w` contracts to the maximal ideal of the ring
+of integers of `K_v`.
+
+Stated with `Ideal.comap` of the explicit ring homomorphism, not `Ideal.under`: `Ideal.under A` is
+`Ideal.comap (algebraMap A B)` and so needs an `Algebra (v.adicCompletionIntegers K)
+(w.adicCompletionIntegers L)` instance, which is only installed in the `AdicCompletionExtension`
+scope. The `Ideal.LiesOver` form for that scoped algebra is
+`maximalIdeal_adicCompletionIntegers_liesOver`. -/
+@[simp]
+lemma comap_maximalIdeal_adicCompletionIntegersExtension :
+    (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L)).comap
+        (adicCompletionIntegersExtension K L v w) =
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) := by
+  ext x
+  rw [Ideal.mem_comap]
+  refine (Valuation.mem_maximalIdeal_iff (v := (Valued.v : Valuation (w.adicCompletion L)
+    (WithZero (Multiplicative ℤ))))).trans <| Iff.trans ?_
+      (Valuation.mem_maximalIdeal_iff (v := (Valued.v : Valuation (v.adicCompletion K)
+        (WithZero (Multiplicative ℤ))))).symm
+  rw [coe_adicCompletionIntegersExtension K L v w, valued_adicCompletionExtension]
+  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
+  exact pow_lt_one_iff
+    (Ideal.IsDedekindDomain.ramificationIdx'_ne_zero_of_liesOver w.asIdeal v.ne_bot)
+
+end Extension
+
+end IsDedekindDomain.HeightOneSpectrum
+
+open Polynomial
+
+namespace AdjoinRoot
+
+/-- The base-change map `K[X] ⧸ (p) →+* K_v[X] ⧸ (q)` of `AdjoinRoot`s at a completion is
+compatible with the algebra maps from the underlying Dedekind domain `R` and from the ring of
+integers of the completion. -/
+-- Lives here rather than beside `AdjoinRoot.map` in `TauCeti.RingTheory.AdjoinRoot.Factors`
+-- because it is not a fact about `AdjoinRoot` alone: it names `adicCompletion` and
+-- `adicCompletionIntegers`, and this module is where those two developments first meet.
+lemma map_comp_algebraMap {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*}
+    [Field K] [Algebra R K] [IsFractionRing R K] (v : HeightOneSpectrum R) {p : K[X]}
+    {q : (v.adicCompletion K)[X]} (hq : q ∣ p.map (algebraMap K (v.adicCompletion K))) :
+    (AdjoinRoot.map (algebraMap K (v.adicCompletion K)) p q hq).comp
+        (algebraMap R (AdjoinRoot p)) =
+      (algebraMap (v.adicCompletionIntegers K) (AdjoinRoot q)).comp
+        (algebraMap R (v.adicCompletionIntegers K)) := by
+  ext c
+  simp only [RingHom.comp_apply]
+  rw [IsScalarTower.algebraMap_apply R K (AdjoinRoot p), AdjoinRoot.algebraMap_eq, map_of,
+    IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (v.adicCompletion K)
+      (AdjoinRoot q), AdjoinRoot.algebraMap_eq]
+  rfl
+
+end AdjoinRoot
+
+end

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Exact.BaseChange
 public import TauCeti.CategoryTheory.Exact.Biproduct
+public import TauCeti.CategoryTheory.Exact.Functor
 public import TauCeti.CategoryTheory.Exact.Split
 public import TauCeti.CategoryTheory.ObjectProperty
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
@@ -35,6 +37,9 @@ property, before any projectivity hypothesis is available.
 
 * `TauCeti.ExactStructure.FiniteResolution E P X`: a finite `P`-resolution of `X`, as data.
 * `TauCeti.ExactStructure.FiniteResolution.length`: the number of conflations in the chain.
+* `TauCeti.ExactStructure.FiniteResolution.foldAlternating`: the alternating fold of a function on
+  the objects satisfying `P` along a resolution, the common shape of the Euler-type invariants of
+  a resolution.
 * `TauCeti.ExactStructure.FiniteResolution.syzygy` and
   `TauCeti.ExactStructure.FiniteResolution.truncate`: the `n`-th syzygy of a resolution, and the
   resolution of it obtained by discarding the first `n` conflations.
@@ -45,6 +50,8 @@ property, before any projectivity hypothesis is available.
   conflations `0 ↪ Kₙ ↠ Kₙ` at its far end.
 * `TauCeti.ExactStructure.FiniteResolution.biprod`: the componentwise direct sum of two
   resolutions.
+* `TauCeti.ExactStructure.FiniteResolution.map`: the image of a resolution under a
+  conflation-exact functor carrying `P` into `P'`, a finite `P'`-resolution of the image.
 * `TauCeti.ExactStructure.admitsFiniteResolution`: the object property of admitting some finite
   `P`-resolution, the object-property presentation of the above data.
 
@@ -62,9 +69,17 @@ property, before any projectivity hypothesis is available.
   resolution of length at most `n + 1` yields a first conflation `K ↪ Q ↠ X` together with a
   resolution of `K` of length at most `n`; this is how an induction on the length peels off one
   step.
+* `TauCeti.ExactStructure.exists_conflation_prop_X₂_admitsFiniteResolution_X₁`: an object admitting
+  a finite resolution has a conflation whose middle term satisfies `P` and whose kernel still
+  admits a finite resolution.
+* `TauCeti.ExactStructure.exists_finiteResolution_X₁_length_le_of_prop_X₃`: kernel closure for `P`
+  preserves the resolution-length bound along a deflation onto an object satisfying `P`.
 * `TauCeti.ExactStructure.admitsFiniteResolution_induction`: the object property of admitting a
   finite `P`-resolution is the smallest one containing `P` and closed under passing from the
   subobject of a conflation with resolving middle term to its quotient.
+* `TauCeti.ExactStructure.admitsFiniteResolution_le_inverseImage`: a conflation-exact functor
+  carrying `P` into `P'` carries objects of finite `P`-dimension to objects of finite
+  `P'`-dimension.
 
 ## Implementation notes
 
@@ -105,7 +120,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe v u
+universe v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 
@@ -144,6 +159,25 @@ def length : ∀ {X : C}, FiniteResolution E P X → ℕ
 @[simp] theorem length_step {K Q X : C} (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X) (zero : i ≫ p = 0)
     (hp : E.Conflation (ShortComplex.mk i p zero)) (r : FiniteResolution E P K) :
     (step hQ i p zero hp r).length = r.length + 1 := (rfl)
+
+/-- The alternating fold of `f` along a resolution: `f Q₀ - f Q₁ + ⋯ + (-1)ⁿ f Kₙ`, where `f`
+assigns an element of an additive group to every object satisfying `P`.
+
+This is the common shape of the Euler-type invariants of a finite resolution;
+`TauCeti.ExactStructure.FiniteResolution.homEuler` is the alternating Hom dimension obtained
+from it. -/
+def foldAlternating {A : Type*} [AddGroup A] (f : ∀ Z : C, P Z → A) :
+    ∀ {X : C}, FiniteResolution E P X → A
+  | _, .base hX => f _ hX
+  | _, .step (Q := Q) hQ _ _ _ _ r => f Q hQ - foldAlternating f r
+
+@[simp] theorem foldAlternating_base {A : Type*} [AddGroup A] (f : ∀ Z : C, P Z → A) {X : C}
+    (hX : P X) : (base (E := E) hX).foldAlternating f = f X hX := (rfl)
+
+@[simp] theorem foldAlternating_step {A : Type*} [AddGroup A] (f : ∀ Z : C, P Z → A) {K Q X : C}
+    (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X) (zero : i ≫ p = 0)
+    (hp : E.Conflation (ShortComplex.mk i p zero)) (r : FiniteResolution E P K) :
+    (step hQ i p zero hp r).foldAlternating f = f Q hQ - r.foldAlternating f := (rfl)
 
 /-- The `n`-th syzygy of a resolution of `X`: the object resolved by what is left after
 discarding the first `n` conflations. It is `X` itself for `n = 0`, and it stabilises at the
@@ -434,6 +468,41 @@ noncomputable def biprod :
 
 end Biprod
 
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+  {E' : ExactStructure D} {P' : ObjectProperty D} {F : C ⥤ D} [F.Additive]
+
+/-- The image of a finite `P`-resolution under a conflation-exact functor `F` carrying `P` into
+`P'`: applying `F` to every conflation of the chain gives a finite `P'`-resolution of `F X`. -/
+def map (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+    ∀ {X : C}, FiniteResolution E P X → FiniteResolution E' P' (F.obj X)
+  | _, .base hX => .base ((P'.prop_inverseImage_iff F _).mp (hPP' _ hX))
+  | _, .step hQ i p zero hp r =>
+      .step ((P'.prop_inverseImage_iff F _).mp (hPP' _ hQ)) (F.map i) (F.map p)
+        (by rw [← F.map_comp, zero, F.map_zero]) (hF.map_conflation hp) (r.map hF hPP')
+
+@[simp] theorem map_base (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) {X : C}
+    (hX : P X) :
+    (base (E := E) hX).map hF hPP' = base ((P'.prop_inverseImage_iff F _).mp (hPP' _ hX)) := by
+  simp [map]
+
+@[simp] theorem map_step (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F)
+    {K Q X : C} (hQ : P Q) (i : K ⟶ Q) (p : Q ⟶ X) (zero : i ≫ p = 0)
+    (hp : E.Conflation (ShortComplex.mk i p zero)) (r : FiniteResolution E P K) :
+    (step hQ i p zero hp r).map hF hPP' =
+      step ((P'.prop_inverseImage_iff F _).mp (hPP' _ hQ)) (F.map i) (F.map p)
+        (by rw [← F.map_comp, zero, F.map_zero]) (hF.map_conflation hp) (r.map hF hPP') := by
+  simp [map]
+
+@[simp] theorem length_map (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F)
+    {X : C} (r : FiniteResolution E P X) : (r.map hF hPP').length = r.length := by
+  induction r with
+  | base hX => simp
+  | step hQ i p zero hp r ih => simp [ih]
+
+end Map
+
 end FiniteResolution
 
 /-- The first step of a finite `P`-resolution of length at most `n + 1`: a conflation
@@ -459,6 +528,52 @@ def admitsFiniteResolution : ObjectProperty C := fun X => Nonempty (FiniteResolu
 
 @[simp] theorem admitsFiniteResolution_iff {X : C} :
     E.admitsFiniteResolution P X ↔ Nonempty (FiniteResolution E P X) := Iff.rfl
+
+section ResolutionCover
+
+variable {E P} [P.IsClosedUnderIsomorphisms] [P.ContainsZero]
+
+/-- An object admitting a finite `P`-resolution is the quotient of a conflation `K ↪ Q ↠ X`
+whose middle term satisfies `P` and whose kernel again admits a finite `P`-resolution. -/
+theorem exists_conflation_prop_X₂_admitsFiniteResolution_X₁ (X : C)
+    (hX : E.admitsFiniteResolution P X) :
+    ∃ (K Q : C) (i : K ⟶ Q) (p : Q ⟶ X) (hip : i ≫ p = 0), P Q ∧
+      E.Conflation (ShortComplex.mk i p hip) ∧ E.admitsFiniteResolution P K := by
+  obtain ⟨r⟩ := (E.admitsFiniteResolution_iff P).mp hX
+  obtain ⟨K, Q, i, p, hip, hQ, hc, s, -⟩ :=
+    E.exists_conflation_of_exists_finiteResolution_length_le_succ (n := r.length) ⟨r, by omega⟩
+  exact ⟨K, Q, i, p, hip, hQ, hc, (E.admitsFiniteResolution_iff P).mpr ⟨s⟩⟩
+
+end ResolutionCover
+
+section KernelResolution
+
+variable {E P} [P.IsClosedUnderIsomorphisms]
+
+/-- For a replete property closed under kernels of deflations between its objects, the kernel of a
+deflation from an object of `P`-dimension at most `n` onto an object of `P` has `P`-dimension at
+most `n`. -/
+theorem exists_finiteResolution_X₁_length_le_of_prop_X₃ {n : ℕ}
+    (hkernel : ∀ {T : ShortComplex C}, E.Conflation T → P T.X₂ → P T.X₃ → P T.X₁)
+    {S : ShortComplex C} (hS : E.Conflation S) (h₃ : P S.X₃)
+    (h₂ : ∃ r : E.FiniteResolution P S.X₂, r.length ≤ n) :
+    ∃ r : E.FiniteResolution P S.X₁, r.length ≤ n := by
+  let _ : P.ContainsZero := ⟨(0 : C), isZero_zero C,
+    hkernel (E.conflation_zero_id S.X₃) h₃ h₃⟩
+  cases n with
+  | zero =>
+      obtain ⟨r, hr⟩ := h₂
+      have hX₂ : P S.X₂ := by simpa using r.prop_syzygy hr
+      exact ⟨.base (hkernel hS hX₂ h₃), by simp⟩
+  | succ n =>
+      obtain ⟨K, Q, i, a, hia, hQ, hc, s, hs⟩ :=
+        E.exists_conflation_of_exists_finiteResolution_length_le_succ h₂
+      -- The kernel `L` of the composite deflation `Q ↠ X₂ ↠ X₃` satisfies `P`, and `K ↪ L ↠ X₁`.
+      obtain ⟨L, c, α, β, hc', hβ, hL, hKL, -, -⟩ := E.exists_conflation_comp' hS hc
+      exact ⟨.step (hkernel (T := ShortComplex.mk c (a ≫ S.g) hc') hL hQ h₃)
+        β α hβ hKL s, by simpa using hs⟩
+
+end KernelResolution
 
 /-- An object satisfying `P` admits a finite `P`-resolution, namely the empty chain. -/
 theorem le_admitsFiniteResolution : P ≤ E.admitsFiniteResolution P :=
@@ -501,6 +616,14 @@ instance [P.IsClosedUnderIsomorphisms] [P.IsClosedUnderBinaryProducts] :
     (E.admitsFiniteResolution P).IsClosedUnderBinaryProducts :=
   ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod (E.admitsFiniteResolution P)
     fun _ _ hX hY => E.admitsFiniteResolution_biprod P hX hY
+
+/-- A conflation-exact functor carrying `P` into `P'` carries objects of finite `P`-dimension to
+objects of finite `P'`-dimension, by `TauCeti.ExactStructure.FiniteResolution.map`. -/
+theorem admitsFiniteResolution_le_inverseImage {D : Type u'} [Category.{v'} D] [Preadditive D]
+    [HasZeroObject D] [HasBinaryBiproducts D] {E' : ExactStructure D} {P' : ObjectProperty D}
+    {F : C ⥤ D} [F.Additive] (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F) :
+    E.admitsFiniteResolution P ≤ (E'.admitsFiniteResolution P').inverseImage F :=
+  fun _ hX => ⟨hX.some.map hF hPP'⟩
 
 end ExactStructure
 

@@ -116,21 +116,15 @@ noncomputable def inclusionPointsMap :
 points. -/
 noncomputable def coordinateMap :
     GeneralLinear.coordinateHopfAlgebra R n ⟶ coordinateHopfAlgebra R (Fin n) :=
-  ((CommHopfAlgCat.pointsFunctor.{u, u, u} (R := R) :
-      (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}).preimage
-    (inclusionPointsMap.{u, u} (R := R) n)).unop
+  CommHopfAlgCat.homOfPointsMap (inclusionPointsMap.{u, u} (R := R) n)
 
 /-- Precomposition by `coordinateMap` is the upper-unitriangular inclusion on points. -/
 theorem mapPointsFunctor_coordinateMap :
     (CommHopfAlgCat.mapPointsFunctor.{u, u, u} (coordinateMap R n) :
       HopfAlgebra.pointsFunctor (R := R) (H := coordinateHopfAlgebra R (Fin n)) ⟶
         HopfAlgebra.pointsFunctor (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)) =
-      inclusionPointsMap.{u, u} (R := R) n := by
-  unfold coordinateMap
-  rw [← CommHopfAlgCat.pointsFunctor_map]
-  exact Functor.map_preimage
-    (CommHopfAlgCat.pointsFunctor.{u, u, u} (R := R) :
-      (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}) _
+      inclusionPointsMap.{u, u} (R := R) n :=
+  CommHopfAlgCat.mapPointsFunctor_homOfPointsMap _
 
 /-- On every same-universe value algebra, `coordinateMap` induces the ordinary inclusion of
 upper-unitriangular matrices. -/
@@ -319,7 +313,7 @@ noncomputable def groupSchemePointMulEquiv :
 theorem groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     (groupSchemePointMulEquiv m A f).left =
-      AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      AlgebraicGeometry.Spec.map (CommRingCat.ofHom f.ofConv) ≫
         eqToHom (groupScheme_X_left R m).symm := by
   simpa only [groupSchemePointMulEquiv] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
