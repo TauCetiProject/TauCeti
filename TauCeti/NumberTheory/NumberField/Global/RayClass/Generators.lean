@@ -24,15 +24,16 @@ the elements of
 counted up to multiplication by the units of `𝓞 K` congruent to one modulo `𝔪`.  The two
 directions of that correspondence are `idealClass_eq_iff_exists_mem_rayGenerators` and
 `existsUnique_mul_eq_span_singleton_of_mem_rayGenerators`, and its fibres are identified by
-`span_singleton_eq_span_singleton_iff_exists_unitsCongruenceSubgroup`.  Together they replace the
-ideals of a fixed ray class by the algebraic integers of `𝔞` subject to a congruence, which is the
-description a geometry-of-numbers count of those ideals starts from: the congruence at the finite
-part of `𝔪` is what `congruenceLattice 𝔪` describes, the conditions at the real places of `𝔪` are
-conditions on the signs, and the units congruent to one are what a fundamental domain for the
-resulting count divides out.
+`span_singleton_eq_span_singleton_iff_exists_mem_unitsCongruenceSubgroup`.
+Together they replace the ideals of a fixed ray class by the algebraic integers of `𝔞` subject to
+a congruence, which is the description a geometry-of-numbers count of those ideals starts from:
+the congruence at the finite part of `𝔪` is what `congruenceLattice 𝔪` describes, the conditions
+at the real places of `𝔪` are conditions on the signs, and the units congruent to one are what a
+fundamental domain for the resulting count divides out.
 
-The auxiliary ideal cannot be dispensed with: the ideals of a nontrivial ray class are not
-principal, so they have no generators of their own.  One always exists, by the moving lemma
+The auxiliary ideal cannot be dispensed with: an arbitrary ideal in a nontrivial ray class need
+not be principal.  Multiplying by the auxiliary inverse-class ideal makes the product principal
+with a generator congruent to one.  Such an auxiliary ideal always exists, by the moving lemma
 `idealClass_surjective` together with `exists_idealClass_mul_eq_one`.
 
 ## Main definitions
@@ -51,7 +52,7 @@ principal, so they have no generators of their own.  One always exists, by the m
   the ideals whose class inverts that of `𝔞` are exactly the complements of the generators.
 * `TauCeti.GlobalNumberFields.existsUnique_mul_eq_span_singleton_of_mem_rayGenerators`: each
   generator has exactly one complementary ideal, and it is prime to `𝔪`.
-* `TauCeti.GlobalNumberFields.span_singleton_eq_span_singleton_iff_exists_unitsCongruenceSubgroup`:
+* `span_singleton_eq_span_singleton_iff_exists_mem_unitsCongruenceSubgroup`:
   two elements congruent to one span the same ideal exactly when they differ by a unit congruent
   to one.
 
@@ -90,7 +91,7 @@ theorem ne_zero_of_mem_rayGenerators {𝔪 : Modulus K} {𝔞 : Ideal (𝓞 K)} 
 
 /-- **An ideal prime to the modulus has a generator-candidate.**  This is
 `exists_mem_isCongrOne` in the language of `rayGenerators`, and it is what makes the count of
-`rayGenerators 𝔪 𝔞` a count in a nonempty coset. -/
+`rayGenerators 𝔪 𝔞` a count in a nonempty congruence-and-sign locus. -/
 theorem rayGenerators_nonempty {𝔪 : Modulus K} {𝔞 : Ideal (𝓞 K)}
     (h𝔞 : 𝔞 ∈ integralIdealsPrimeTo 𝔪) : (rayGenerators 𝔪 𝔞).Nonempty := by
   obtain ⟨hbot, hsup⟩ :=
@@ -100,7 +101,7 @@ theorem rayGenerators_nonempty {𝔪 : Modulus K} {𝔞 : Ideal (𝓞 K)}
 
 /-- **The units congruent to one act on the generators.**  This is the action whose orbits the
 correspondence with ideals collapses; see
-`span_singleton_eq_span_singleton_iff_exists_unitsCongruenceSubgroup`. -/
+`span_singleton_eq_span_singleton_iff_exists_mem_unitsCongruenceSubgroup`. -/
 theorem mul_mem_rayGenerators {𝔪 : Modulus K} {𝔞 : Ideal (𝓞 K)} {a : 𝓞 K} {u : (𝓞 K)ˣ}
     (hu : u ∈ unitsCongruenceSubgroup 𝔪) (ha : a ∈ rayGenerators 𝔪 𝔞) :
     (u : 𝓞 K) * a ∈ rayGenerators 𝔪 𝔞 := by
@@ -118,17 +119,14 @@ theorem mul_mem_rayGenerators {𝔪 : Modulus K} {𝔞 : Ideal (𝓞 K)} {a : �
 has exactly one integral ideal `J` with `𝔞 · J = (a)`, and that ideal is again prime to `𝔪`:
 `a` is a unit at every prime dividing the finite part, so no such prime divides `J`. -/
 theorem existsUnique_mul_eq_span_singleton_of_mem_rayGenerators {𝔪 : Modulus K}
-    {𝔞 : Ideal (𝓞 K)} (h𝔞 : 𝔞 ≠ ⊥) {a : 𝓞 K} (ha : a ∈ rayGenerators 𝔪 𝔞) :
+    {𝔞 : Ideal (𝓞 K)} {a : 𝓞 K} (ha : a ∈ rayGenerators 𝔪 𝔞) :
     ∃! J : integralIdealsPrimeTo 𝔪, 𝔞 * (J : Ideal (𝓞 K)) = Ideal.span {a} := by
+  have h𝔞 : 𝔞 ≠ ⊥ := fun h ↦
+    ne_zero_of_mem_rayGenerators ha (by simpa [h] using ha.1)
   obtain ⟨ha𝔞, x, hxa, hx⟩ := ha
   obtain ⟨J, hJ⟩ := Ideal.dvd_iff_le.mpr ((Ideal.span_singleton_le_iff_mem (I := 𝔞)).mpr ha𝔞)
-  have ha0 : a ≠ 0 := ne_zero_of_mem_rayGenerators ⟨ha𝔞, x, hxa, hx⟩
-  have hJbot : J ≠ ⊥ := by
-    rintro rfl
-    rw [Ideal.mul_bot] at hJ
-    exact ha0 (Ideal.span_singleton_eq_bot.mp hJ)
   refine ⟨⟨J, Modulus.mem_integralIdealsPrimeTo.mpr (Modulus.isCoprimeTo_of_dvd_span_singleton
-    hJbot hxa hx ⟨𝔞, by rw [hJ, mul_comm]⟩)⟩, hJ.symm, fun J' hJ' ↦ ?_⟩
+    hxa hx ⟨𝔞, by rw [hJ, mul_comm]⟩)⟩, hJ.symm, fun J' hJ' ↦ ?_⟩
   exact Subtype.ext (mul_left_cancel₀ h𝔞 (hJ'.trans hJ))
 
 /-- **The ideals inverting the class of `𝔞` are the complements of its generators.**  One
@@ -166,7 +164,7 @@ one modulo `𝔪` because the two generators are: its image in `Kˣ` is `y * x�
 
 Applied to two elements of `rayGenerators 𝔪 𝔞`, this identifies the fibres of the correspondence
 of `idealClass_eq_iff_exists_mem_rayGenerators` with the orbits of `unitsCongruenceSubgroup 𝔪`. -/
-theorem span_singleton_eq_span_singleton_iff_exists_unitsCongruenceSubgroup {𝔪 : Modulus K}
+theorem span_singleton_eq_span_singleton_iff_exists_mem_unitsCongruenceSubgroup {𝔪 : Modulus K}
     {a b : 𝓞 K} {x y : Kˣ} (hxa : (x : K) = a) (hx : IsCongrOne 𝔪 x) (hyb : (y : K) = b)
     (hy : IsCongrOne 𝔪 y) :
     (Ideal.span {a} : Ideal (𝓞 K)) = Ideal.span {b} ↔
@@ -176,11 +174,12 @@ theorem span_singleton_eq_span_singleton_iff_exists_unitsCongruenceSubgroup {�
   · obtain ⟨u, hu⟩ := Ideal.span_singleton_eq_span_singleton.mp h
     have hab : ((b : 𝓞 K) : K) = ((a : 𝓞 K) : K) * ((u : 𝓞 K) : K) := by
       rw [← hu]; push_cast; ring
-    have hval : Units.map (algebraMap (𝓞 K) K).toMonoidHom u = y * x⁻¹ := by
-      refine Units.ext ?_
-      rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Units.val_mul,
-        Units.val_inv_eq_inv_val, hxa, hyb, hab]
+    have hfield : algebraMap (𝓞 K) K (u : 𝓞 K) = (y : K) * (x : K)⁻¹ := by
+      rw [hxa, hyb, hab]
       field_simp
+    have hval : Units.map (algebraMap (𝓞 K) K).toMonoidHom u = y * x⁻¹ := by
+      apply Units.ext
+      simpa using hfield
     refine ⟨u, mem_unitsCongruenceSubgroup.mpr ?_, by rw [← hu]; ring⟩
     rw [hval]
     exact mem_congruenceSubgroup.mp ((congruenceSubgroup 𝔪).mul_mem
