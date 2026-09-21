@@ -40,20 +40,27 @@ theorem conductor_mul_eq_mul_of_coprime {R : Type*} [CommMonoidWithZero R] {N : 
       rw [mul_inv_cancel_right, conductor_inv, mul_comm ψ χ] at h
       exact h
 
-/-- The conductor of a finite product is the product of the pairwise coprime conductors. -/
+/-- The conductor of a finite product is the product of the pairwise coprime conductors,
+provided the product is nonempty or the level is nonzero. -/
 theorem conductor_prod_eq_prod_of_pairwise_coprime {R ι : Type*} [CommMonoidWithZero R]
-    {N : ℕ} [NeZero N] {s : Finset ι} {χ : ι → DirichletCharacter R N}
-    (hcop : (s : Set ι).Pairwise fun i j ↦ (χ i).conductor.Coprime (χ j).conductor) :
+    {N : ℕ} {s : Finset ι} {χ : ι → DirichletCharacter R N}
+    (hcop : (s : Set ι).Pairwise fun i j ↦ (χ i).conductor.Coprime (χ j).conductor)
+    (hlevel : s.Nonempty ∨ N ≠ 0) :
     (∏ i ∈ s, χ i).conductor = ∏ i ∈ s, (χ i).conductor := by
   classical
   induction s using Finset.induction_on with
-  | empty => simp [conductor_one]
+  | empty =>
+    have : NeZero N := ⟨hlevel.resolve_left (by simp)⟩
+    simp [conductor_one]
   | @insert i s hi ih =>
+    rcases s.eq_empty_or_nonempty with rfl | hsne
+    · simp
     have hs := hcop.mono (by simp : (s : Set ι) ⊆ ↑(insert i s))
     have hc : (χ i).conductor.Coprime (∏ j ∈ s, (χ j).conductor) :=
       Nat.Coprime.prod_right fun j hj ↦ hcop (by simp) (by simp [hj])
         (by rintro rfl; exact hi hj)
-    rw [Finset.prod_insert hi, conductor_mul_eq_mul_of_coprime (by rwa [ih hs]),
-      ih hs, Finset.prod_insert hi]
+    rw [Finset.prod_insert hi,
+      conductor_mul_eq_mul_of_coprime (by rwa [ih hs (Or.inl hsne)]),
+      ih hs (Or.inl hsne), Finset.prod_insert hi]
 
 end TauCeti

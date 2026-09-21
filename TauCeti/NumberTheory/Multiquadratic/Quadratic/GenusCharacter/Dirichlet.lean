@@ -93,5 +93,6 @@ theorem isPrimitive_genusChar {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscrim
       (isCoprime_primeDiscriminant_of_ne_of_not_both_even (hs P P.property) (hs Q Q.property)
         (fun h ↦ hPQ (Subtype.ext h))
         (fun h ↦ hPQ (Subtype.ext (heven P P.property Q Q.property h.1 h.2))))
+  · exact Or.inr (NeZero.ne _)
 
 end TauCeti.Multiquadratic
