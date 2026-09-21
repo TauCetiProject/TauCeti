@@ -45,7 +45,9 @@ construction follows the one proposed in
 * `SheafOfModules.isFiniteLocallyFree`: the property of being locally free and finitely
   presented, and `TauCeti.SheafOfModules.isMonoidal_isFiniteLocallyFree`: it is an
   `ObjectProperty.IsMonoidal`;
-* `TauCeti.SheafOfModules.LocalGeneratorsData.bind` combines local-generator atlases over a cover,
+* `TauCeti.SheafOfModules.iteratedSliceEquivalence` compares sheaves of modules on an iterated
+  slice with those on the slice over the composite,
+  `TauCeti.SheafOfModules.LocalGeneratorsData.bind` combines local-generator atlases over a cover,
   and `TauCeti.SheafOfModules.IsLocallyFree.of_coversTop` shows that local freeness descends from a
   cover;
 * `TauCeti.SheafOfModules.containsZero_isFiniteLocallyFree` and
@@ -155,12 +157,41 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   [∀ X Y, ((J.over X).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M : SheafOfModules.{u} R}
 
+variable (R) in
+/-- Restriction along `Over.iteratedSliceEquiv Y`, as an equivalence between sheaves of modules on
+the slice over `Y.left` and sheaves of modules on the iterated slice over `Y`. -/
+@[expose]
+noncomputable def iteratedSliceEquivalence {Z : C} (Y : Over Z) :
+    SheafOfModules.{u} (R.over Y.left) ≌ SheafOfModules.{u} ((R.over Z).over Y) :=
+  pushforwardPushforwardEquivalence (Over.iteratedSliceEquiv Y)
+    (S := (R.over Z).over Y) (R := R.over Y.left) (𝟙 _) (𝟙 _)
+    (by ext : 2; exact R.1.map_id _) (by ext : 2; exact R.1.map_id _)
+
+/-- Generating sections of the twice-restricted sheaf `(M.over Z).over Y`, read along
+`iteratedSliceEquivalence` as generating sections of the restriction of `M` to `Y.left`. -/
+noncomputable def overIteratedSliceGenerators {Z : C} {Y : Over Z}
+    (σ : ((M.over Z).over Y).GeneratingSections) : (M.over Y.left).GeneratingSections :=
+  (σ.map (iteratedSliceEquivalence R Y).inverse (.refl _)).ofEpi
+    ((iteratedSliceEquivalence R Y).fullyFaithfulFunctor.preimageIso
+      (by exact (iteratedSliceEquivalence R Y).counitIso.app ((M.over Z).over Y))).hom
+
+/-- Reading a local basis through `iteratedSliceEquivalence` again gives a local basis. -/
+instance isIso_overIteratedSliceGenerators_π {Z : C} {Y : Over Z}
+    (σ : ((M.over Z).over Y).GeneratingSections) [IsIso σ.π] :
+    IsIso (overIteratedSliceGenerators σ).π := by
+  let η : _root_.SheafOfModules.unit (R.over Y.left) ≅
+      (iteratedSliceEquivalence R Y).inverse.obj
+        (_root_.SheafOfModules.unit ((R.over Z).over Y)) := .refl _
+  have h : IsIso (σ.map (iteratedSliceEquivalence R Y).inverse η).π := by
+    rw [GeneratingSections.map_π_eq]
+    exact IsIso.comp_isIso' (mapFreeIso _ _ _).isIso_hom (Functor.map_isIso _ _)
+  exact GeneratingSections.isIso_ofEpi_π _ _ h
+
 /-- Combine local-generator atlases on the restrictions of `M` to a covering family.
 
 The resulting atlas is indexed by a covering object and then by a member of the atlas chosen on
-its slice. The equivalence between the iterated slice and the slice over the composite identifies
-the twice-restricted sheaf with the corresponding restriction of `M`. -/
-@[expose, simps I X generators]
+its slice, and its generators are the chosen ones, read through
+`iteratedSliceEquivalence`. -/
 noncomputable def LocalGeneratorsData.bind {I : Type*}
     (X : I → C) (hX : J.CoversTop X)
     (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
@@ -168,46 +199,41 @@ noncomputable def LocalGeneratorsData.bind {I : Type*}
   I := (i : I) × (D i).I
   X ij := ((D ij.1).X ij.2).left
   coversTop := hX.over fun i ↦ (D i).coversTop
-  generators i :=
-    letI e := pushforwardPushforwardEquivalence
-      (Over.iteratedSliceEquiv ((D i.1).X i.2))
-      (S := (R.over _).over _) (R := R.over _) (𝟙 _) (𝟙 _)
-      (by ext : 2; exact R.1.map_id _) (by ext : 2; exact R.1.map_id _)
-    (((D i.1).generators i.2).map e.inverse (.refl _)).ofEpi
-      (e.fullyFaithfulFunctor.preimageIso
-        (by exact e.counitIso.app ((M.over (X i.1)).over ((D i.1).X i.2)))).hom
+  generators i := overIteratedSliceGenerators ((D i.1).generators i.2)
+
+/-- Combining local-generator atlases indexes the cover by a covering object and a member of the
+atlas chosen on its slice. -/
+@[simp]
+theorem LocalGeneratorsData.bind_I {I : Type*} (X : I → C) (hX : J.CoversTop X)
+    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
+    (LocalGeneratorsData.bind X hX D).I = ((i : I) × (D i).I) := (rfl)
+
+/-- The covering objects of a combined atlas are the underlying objects of the chosen slices. -/
+@[simp]
+theorem LocalGeneratorsData.bind_X {I : Type*} (X : I → C) (hX : J.CoversTop X)
+    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
+    (LocalGeneratorsData.bind X hX D).X = fun i ↦
+      ((D ((LocalGeneratorsData.bind_I X hX D).mp i).1).X
+        ((LocalGeneratorsData.bind_I X hX D).mp i).2).left := (rfl)
+
+/-- The complete description of a combined atlas: it is indexed by pairs of a covering object and
+a member of the atlas chosen on its slice, and its generators are the chosen ones read through
+`iteratedSliceEquivalence`. This is the elimination principle for `LocalGeneratorsData.bind`,
+whose body is not exposed. -/
+theorem LocalGeneratorsData.bind_eq {I : Type*} (X : I → C) (hX : J.CoversTop X)
+    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
+    LocalGeneratorsData.bind X hX D =
+      { I := (i : I) × (D i).I
+        X := fun ij ↦ ((D ij.1).X ij.2).left
+        coversTop := hX.over fun i ↦ (D i).coversTop
+        generators := fun ij ↦ overIteratedSliceGenerators ((D ij.1).generators ij.2) } := (rfl)
 
 /-- Combining locally free atlases over a cover produces locally free data on the original site. -/
 instance LocalGeneratorsData.isLocallyFreeData_bind {I : Type*}
     (X : I → C) (hX : J.CoversTop X)
     (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i)))
     [∀ i, (D i).IsLocallyFreeData] : (LocalGeneratorsData.bind X hX D).IsLocallyFreeData where
-  isIso := by
-    rintro ⟨i, j⟩
-    rw [LocalGeneratorsData.bind_generators]
-    have hsheaf : HasSheafify (J.over ((D i).X j).left) AddCommGrpCat.{u} :=
-      (inferInstance : ∀ Z, HasSheafify (J.over Z) AddCommGrpCat.{u}) _
-    have heq : (J.over ((D i).X j).left).WEqualsLocallyBijective AddCommGrpCat.{u} :=
-      (inferInstance : ∀ Z, (J.over Z).WEqualsLocallyBijective AddCommGrpCat.{u}) _
-    let e := pushforwardPushforwardEquivalence
-      (Over.iteratedSliceEquiv ((D i).X j))
-      (S := (R.over _).over _) (R := R.over _) (𝟙 _) (𝟙 _)
-      (by ext : 2; exact R.1.map_id _) (by ext : 2; exact R.1.map_id _)
-    let unitIso : _root_.SheafOfModules.unit (R.over ((D i).X j).left) ≅
-        e.inverse.obj (_root_.SheafOfModules.unit ((R.over (X i)).over ((D i).X j))) := .refl _
-    let targetIso := e.fullyFaithfulFunctor.preimageIso
-      (X := e.inverse.obj ((M.over (X i)).over ((D i).X j)))
-      (Y := M.over ((D i).X j).left)
-      (by exact e.counitIso.app ((M.over (X i)).over ((D i).X j)))
-    let _ := hsheaf
-    let _ := heq
-    have hmap : IsIso (((D i).generators j).map e.inverse unitIso).π := by
-      rw [GeneratingSections.map_π_eq]
-      exact IsIso.comp_isIso' (mapFreeIso _ _ _).isIso_hom (Functor.map_isIso _ _)
-    with_unfolding_all
-      change IsIso
-        (((((D i).generators j).map e.inverse unitIso).ofEpi targetIso.hom).π)
-    exact (((D i).generators j).map e.inverse unitIso).isIso_ofEpi_π targetIso.hom hmap
+  isIso i := isIso_overIteratedSliceGenerators_π ((D i.1).generators i.2)
 
 /-- If a sheaf of modules is locally free after restriction to every member of a covering family,
 then it is locally free. -/
