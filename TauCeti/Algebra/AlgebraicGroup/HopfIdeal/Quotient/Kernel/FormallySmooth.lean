@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.FormallySmooth
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.FormallySmooth
 import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
@@ -43,10 +43,8 @@ theorem finrank_kernelLie_add_finrank_lie_of_formallySmooth
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) =
         Module.finrank k (Derivation k K (Bialgebra.CounitAlgebra k K k)) := by
   let df := (derivationCompLieHom (B := k) f.hom).toLinearMap
-  have hdf : Function.Surjective df := by
-    intro d
-    obtain ⟨e, he⟩ := derivationComp_surjective_of_formallySmooth (B := k) f.hom hf d
-    exact ⟨e, (derivationCompLieHom_apply f.hom e).trans he⟩
+  have hdf : Function.Surjective df :=
+    derivationCompLieHom_surjective_of_formallySmooth f.hom hf
   have hrank := df.finrank_range_add_finrank_ker
   rw [LinearMap.range_eq_top.mpr hdf, finrank_top] at hrank
   rw [finrank_kernelLie, ← finrank_toSubmodule, LieHom.ker_toSubmodule, add_comm]

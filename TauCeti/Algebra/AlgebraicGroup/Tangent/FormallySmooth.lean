@@ -14,8 +14,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 
 A formally smooth morphism of affine monoid schemes induces a surjection on tangent spaces
 at the identity, with values in any commutative coefficient algebra. No finite presentation,
-field, or smoothness assumption on either monoid is needed. The proof lifts dual-number
-points using `Algebra.FormallySmooth.liftOfSurjective`.
+field, or smoothness assumption on either monoid is needed.
 
 For affine groups, this supplies the surjectivity term of the tangent sequence of a smooth
 morphism, and hence the dimension formula for its scheme-theoretic kernel.
