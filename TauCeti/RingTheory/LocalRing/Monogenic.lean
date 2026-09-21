@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Lifts
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.Algebra.Algebra.Subalgebra.Lattice
