@@ -45,8 +45,8 @@ open scoped MatrixGroups
 namespace TauCeti.ModularGroup
 
 /-- The standard open modular domain is a fundamental domain for the image of `PSL(2, ℤ)` in
-`PSL(2, ℝ)`. The group equivalence is induced by the injective homomorphism
-`psl2zToPSL2R`; its action compatibility is `UpperHalfPlane.psl2zToPSL2R_smul`. -/
+`PSL(2, ℝ)`. It presents the effective level-one quotient and supplies the finite-area domain
+used to prove that the projective image is cofinite. -/
 theorem isFundamentalDomain_fdo_psl2zToPSL2RRange :
     IsFundamentalDomain psl2zToPSL2R.range (_root_.ModularGroup.fdo : Set ℍ) volume := by
   simpa only [Set.preimage_id] using

@@ -47,9 +47,8 @@ instance : T2Space PSL(2, ℝ) := by
 
 /-- The natural injection `PSL(2, ℤ) → PSL(2, ℝ)` is a topological embedding.
 
-This is the map induced on central quotients by the closed embedding
-`SL(2, ℤ) → SL(2, ℝ)`. The image of the latter contains the full center `{ ±I }` of
-`SL(2, ℝ)`, so passing to the two quotient topologies preserves the embedding. -/
+Thus `PSL(2, ℤ)` has the topology induced from `PSL(2, ℝ)` on its image; in particular, the
+projective integral image is a discrete subgroup. -/
 theorem isEmbedding_psl2zToPSL2R :
     Topology.IsEmbedding (psl2zToPSL2R : PSL(2, ℤ) → PSL(2, ℝ)) := by
   let f : SL(2, ℤ) → SL(2, ℝ) :=
