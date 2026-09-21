@@ -21,6 +21,8 @@ standard type-A pinning sign-free.
   `SL_{r+1}`.
 * `Matrix.SpecialLinearGroup.toGL_typeAGraphAutomorphism`: compatibility with the ambient
   automorphism of `GL_{r+1}`.
+* `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_transvection_of_ne`: its action on every
+  root subgroup.
 * `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_typeAGraphAutomorphism` and
   `Matrix.SpecialLinearGroup.typeAGraphAutomorphism_mul_self`: the involution equations.
 
@@ -111,6 +113,41 @@ theorem toGL_typeAGraphAutomorphism
     Matrix.SpecialLinearGroup.toGL (typeAGraphAutomorphism r A g) =
       TauCeti.typeAGraphAutomorphism r A (Matrix.SpecialLinearGroup.toGL g) :=
   toGL_typeAGraphAutomorphismToSL r A g
+
+/-- The special-linear graph automorphism sends the transvection at `ε_i - ε_j` to the
+transvection at `ε_{rev j} - ε_{rev i}`, with the sign from the signed conjugator. -/
+@[simp]
+theorem typeAGraphAutomorphism_transvection_of_ne {i j : Fin (r + 1)}
+    (hij : i ≠ j) (c : A) :
+    typeAGraphAutomorphism r A (transvection hij c) =
+      transvection (Fin.rev_injective.ne hij.symm)
+        ((-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * c) := by
+  apply Matrix.SpecialLinearGroup.toGL_injective
+  rw [toGL_typeAGraphAutomorphism, TauCeti.toGL_transvection_eq_transvectionUnit,
+    TauCeti.typeAGraphAutomorphism_transvectionUnit_of_ne,
+    TauCeti.toGL_transvection_eq_transvectionUnit]
+
+/-- The special-linear graph automorphism reverses the positive simple-root transvections without
+changing their parameters. -/
+theorem typeAGraphAutomorphism_transvection (i : Fin r) (c : A) :
+    typeAGraphAutomorphism r A
+        (transvection (Fin.castSucc_lt_succ (i := i)).ne c) =
+      transvection (Fin.castSucc_lt_succ (i := i.rev)).ne c := by
+  apply Matrix.SpecialLinearGroup.toGL_injective
+  rw [toGL_typeAGraphAutomorphism, TauCeti.toGL_transvection_eq_transvectionUnit,
+    TauCeti.toGL_transvection_eq_transvectionUnit]
+  exact TauCeti.typeAGraphAutomorphism_transvectionUnit r i c
+
+/-- The special-linear graph automorphism reverses the negative simple-root transvections without
+changing their parameters. -/
+theorem typeAGraphAutomorphism_transvection_lower (i : Fin r) (c : A) :
+    typeAGraphAutomorphism r A
+        (transvection (Fin.castSucc_lt_succ (i := i)).ne' c) =
+      transvection (Fin.castSucc_lt_succ (i := i.rev)).ne' c := by
+  apply Matrix.SpecialLinearGroup.toGL_injective
+  rw [toGL_typeAGraphAutomorphism, TauCeti.toGL_transvection_eq_transvectionUnit,
+    TauCeti.toGL_transvection_eq_transvectionUnit]
+  exact TauCeti.typeAGraphAutomorphism_transvectionUnit_lower r i c
 
 /-- Applying the special-linear type-`A` graph automorphism twice is the identity. -/
 @[simp]

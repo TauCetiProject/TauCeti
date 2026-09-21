@@ -36,8 +36,6 @@ carrier Steinberg map agrees with the independently defined pinned scheme-point 
   `TauCeti.TypeALieIndex.specialLinearSteinberg`: the standard matrix maps.
 * `TauCeti.TypeALieIndex.specialLinearGraphAut_ofA` and
   `TauCeti.TypeALieIndex.specialLinearGraphAut_ofTwistedA`: the graph-factor branch equations.
-* `TauCeti.TypeALieIndex.specialLinearSteinberg_eq_graphAut_comp_frobenius`: the factorization of
-  the standard matrix Steinberg map.
 * `TauCeti.TypeALieIndex.pinnedSimpleRootSubgroup`, `TauCeti.TypeALieIndex.pinnedFrobenius`,
   `TauCeti.TypeALieIndex.pinnedGraphAut`, and `TauCeti.TypeALieIndex.pinnedSteinberg`: the pinning
   and Steinberg data on the pinned scheme points.
@@ -126,12 +124,6 @@ noncomputable def specialLinearSteinberg (d : TypeALieIndex) :
     d.StandardGroup →* d.StandardGroup :=
   d.specialLinearGraphAut.toMonoidHom.comp d.specialLinearFrobenius
 
-/-- The standard matrix Steinberg map is the graph factor composed with entrywise Frobenius. -/
-theorem specialLinearSteinberg_eq_graphAut_comp_frobenius (d : TypeALieIndex) :
-    d.specialLinearSteinberg =
-      d.specialLinearGraphAut.toMonoidHom.comp d.specialLinearFrobenius :=
-  by rw [specialLinearSteinberg]
-
 /-- The positive simple-root subgroup of the pinned special linear group scheme. -/
 noncomputable def pinnedSimpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank) :
     Multiplicative d.1.Closure →* d.PinnedGroup :=
@@ -163,11 +155,6 @@ the pinned graph factor composed with entrywise Frobenius. -/
 noncomputable def pinnedSteinberg (d : TypeALieIndex) :
     d.PinnedGroup →* d.PinnedGroup :=
   d.pinnedGraphAut.toMonoidHom.comp d.pinnedFrobenius
-
-/-- The pinned Steinberg map is the pinned graph factor composed with pinned Frobenius. -/
-theorem pinnedSteinberg_eq_graphAut_comp_frobenius (d : TypeALieIndex) :
-    d.pinnedSteinberg = d.pinnedGraphAut.toMonoidHom.comp d.pinnedFrobenius := by
-  rw [pinnedSteinberg]
 
 /-- Under the canonical matrix realization, a pinned simple-root element is its elementary
 transvection. -/
@@ -208,8 +195,8 @@ theorem pinnedEquivSpecialLinear_pinnedGraphAut (d : TypeALieIndex) (g : d.Pinne
 theorem pinnedEquivSpecialLinear_pinnedSteinberg (d : TypeALieIndex) (g : d.PinnedGroup) :
     d.pinnedEquivSpecialLinear (d.pinnedSteinberg g) =
       d.specialLinearSteinberg (d.pinnedEquivSpecialLinear g) := by
-  rw [pinnedSteinberg_eq_graphAut_comp_frobenius, MonoidHom.comp_apply,
-    specialLinearSteinberg_eq_graphAut_comp_frobenius, MonoidHom.comp_apply,
+  rw [pinnedSteinberg, MonoidHom.comp_apply,
+    specialLinearSteinberg, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, pinnedEquivSpecialLinear_pinnedGraphAut,
     pinnedEquivSpecialLinear_pinnedFrobenius]
   rfl
@@ -292,7 +279,7 @@ theorem carrierEquivSpecialLinear_steinberg (d : TypeALieIndex)
     d.carrierEquivSpecialLinear (d.steinberg g) =
       d.specialLinearSteinberg (d.carrierEquivSpecialLinear g) := by
   rw [steinberg_eq_graphAut_comp_frobenius, MonoidHom.comp_apply,
-    specialLinearSteinberg_eq_graphAut_comp_frobenius, MonoidHom.comp_apply,
+    specialLinearSteinberg, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom,
     carrierEquivSpecialLinear_graphAut, carrierEquivSpecialLinear_frobenius]
   rfl
@@ -304,7 +291,7 @@ theorem carrierEquivPinned_steinberg (d : TypeALieIndex) (g : d.AmbientGroup) :
     d.carrierEquivPinned (d.steinberg g) =
       d.pinnedSteinberg (d.carrierEquivPinned g) := by
   rw [steinberg_eq_graphAut_comp_frobenius, MonoidHom.comp_apply,
-    pinnedSteinberg_eq_graphAut_comp_frobenius, MonoidHom.comp_apply,
+    pinnedSteinberg, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, carrierEquivPinned_graphAut,
     carrierEquivPinned_frobenius]
   rfl
