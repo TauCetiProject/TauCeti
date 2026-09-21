@@ -23,6 +23,9 @@ namespace TauCeti
 theorem toAddSubgroup_topologicalClosure {G : Type*} [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] (S : Subgroup G) :
     S.topologicalClosure.toAddSubgroup = S.toAddSubgroup.topologicalClosure :=
+  -- `Additive G` inherits the topology of `G`, and both subgroup closures use the
+  -- set-theoretic closure of the same carrier. The definitional reduction is confined
+  -- to this bridge so consumers can rewrite without unfolding these representations.
   (rfl)
 
 end TauCeti
