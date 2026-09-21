@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import TauCeti.RingTheory.Valuation.Center
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -17,11 +18,9 @@ give inequivalent valuations. This file proves the converse: a normalized valuat
 valuation ring contains `R` *is* `𝔭.valuation K` for a unique height one prime `𝔭` of `R`, namely
 the centre of the valuation on `R`.
 
-## Main definitions
-
-* `Valuation.centerIdeal`: the centre `{r : R | w r < 1}` on `R` of a valuation `w` of `K` whose
-  valuation ring contains `R`.
-* `Valuation.heightOneSpectrum`: that centre, bundled as a height one prime of `R`.
+The general centre construction and its membership lemmas are in
+`TauCeti.RingTheory.Valuation.Center`. There, `Valuation.heightOneSpectrum` bundles a nonzero
+prime ideal as `HeightOneSpectrum R`; the Dedekind assumption here makes it a height one prime.
 
 ## Main results
 
@@ -41,15 +40,9 @@ Mathlib's `IsDedekindDomain.HeightOneSpectrum.exists_primeCompl_mul_eq_or_mul_eq
 arbitrary element of `K` as a fraction with denominator outside `𝔭`, in one of the two possible
 directions.
 
-Bundling the centre as a height one prime needs `w` to be nontrivial, and nothing more; the
-normalization theorems need the stronger `Function.Surjective w`, from which the nontriviality
-instance is installed on the spot through `Valuation.isNontrivial_of_surjective`, so that
-surjectivity is their only valuation hypothesis.
-
-`Valuation.centerIdeal` and `Valuation.heightOneSpectrum` keep their bodies unexposed; the
-characterization lemmas `Valuation.mem_centerIdeal` and `Valuation.asIdeal_heightOneSpectrum` are
-the interface. The latter's definitional proof is parenthesized (`(rfl)`) so that it is not inferred
-to be `@[defeq]`, which would require the body to be exposed.
+The comparison theorems assume `R` is Dedekind and `w` is surjective. Surjectivity supplies
+nontriviality through `Valuation.isNontrivial_of_surjective`, allowing the nonzero prime centre
+to be bundled using the general construction.
 -/
 
 public section
@@ -62,60 +55,6 @@ namespace Valuation
 
 variable {R : Type*} [CommRing R] {K : Type*} [Field K] [Algebra R K]
   {w : _root_.Valuation K ℤᵐ⁰}
-
-section CenterIdeal
-
-variable (R) in
-/-- The **centre** on `R` of a valuation `w` of `K` whose valuation ring contains `R`: the ideal
-of elements of `R` of positive valuation. It is prime (`Valuation.isPrime_centerIdeal`), and it is
-nonzero as soon as `w` is nontrivial and `K` is the fraction field of `R`
-(`Valuation.centerIdeal_ne_bot`). -/
-def centerIdeal (w : _root_.Valuation K ℤᵐ⁰) (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) :
-    Ideal R :=
-  (IsLocalRing.maximalIdeal w.valuationSubring).comap
-    ((algebraMap R K).codRestrict w.valuationSubring fun r ↦
-      (w.mem_valuationSubring_iff _).mpr (hR r))
-
-/-- An element belongs to the centre ideal exactly when its valuation is strictly below `1`. -/
-@[simp]
-theorem mem_centerIdeal {r : R} {hR : ∀ r : R, w (algebraMap R K r) ≤ 1} :
-    r ∈ centerIdeal R w hR ↔ w (algebraMap R K r) < 1 := by
-  rw [centerIdeal, Ideal.mem_comap, w.mem_maximalIdeal_iff]
-  rfl
-
-/-- Off its centre, a valuation bounded by `1` on `R` takes the value `1`. -/
-theorem eq_one_of_notMem_centerIdeal {r : R} (hR : ∀ r : R, w (algebraMap R K r) ≤ 1)
-    (hr : r ∉ centerIdeal R w hR) : w (algebraMap R K r) = 1 :=
-  le_antisymm (hR r) (not_lt.mp (mt mem_centerIdeal.mpr hr))
-
-/-- The centre of a valuation bounded by `1` on `R` is a prime ideal of `R`. -/
-theorem isPrime_centerIdeal (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) :
-    (centerIdeal R w hR).IsPrime :=
-  (IsLocalRing.maximalIdeal w.valuationSubring).comap_isPrime _
-
-/-- The centre of a nontrivial valuation of the fraction field `K` of `R` is a nonzero ideal of
-`R`: an element of `K` of value below `1` is a fraction `a / b` whose numerator `a` is a nonzero
-element of the centre. -/
-theorem centerIdeal_ne_bot [IsFractionRing R K] [w.IsNontrivial]
-    (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) : centerIdeal R w hR ≠ ⊥ := by
-  have : Nontrivial R := (algebraMap R K).domain_nontrivial
-  obtain ⟨y, hy0, hy1⟩ := Valuation.IsNontrivial.exists_lt_one (v := w)
-  obtain ⟨ab, hab⟩ := IsLocalization.surj (nonZeroDivisors R) y
-  have hb : algebraMap R K (ab.2 : R) ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors ab.2.2
-  have ha0 : ab.1 ≠ 0 := by
-    intro h
-    rw [h, map_zero] at hab
-    exact (mul_eq_zero.mp hab).elim hy0 hb
-  have hmem : ab.1 ∈ centerIdeal R w hR := by
-    rw [mem_centerIdeal]
-    calc w (algebraMap R K ab.1) = w (y * algebraMap R K (ab.2 : R)) := by rw [hab]
-      _ = w y * w (algebraMap R K (ab.2 : R)) := w.map_mul _ _
-      _ ≤ w y * 1 := mul_le_mul_right (hR ab.2) _
-      _ < 1 := by simpa using hy1
-  exact fun h ↦ ha0 (by simpa [h] using hmem)
-
-end CenterIdeal
 
 section Comparison
 
@@ -160,23 +99,6 @@ theorem eq_valuation_of_forall_mem_asIdeal_iff [IsDedekindDomain R] {𝔭 : Heig
     have hd : 𝔭.valuation K (algebraMap R K (d : R)) = 1 :=
       𝔭.valuation_eq_one_iff_notMem.mpr d.2
     rw [key _ (𝔭.valuation_le_one n) hd, key _ (hR n) ((hone (d : R)).mp hd), hone n]
-
-variable (R) in
-/-- The nonzero prime centre of a nontrivial valuation of `K` bounded by `1` on `R`, bundled
-as a `HeightOneSpectrum R`. When `R` is Dedekind and `w` is normalized, its adic valuation is `w`
-(`Valuation.valuation_heightOneSpectrum`) and it is the only height one prime with that property
-(`Valuation.eq_heightOneSpectrum`). -/
-def heightOneSpectrum (w : _root_.Valuation K ℤᵐ⁰) [w.IsNontrivial]
-    (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) : HeightOneSpectrum R where
-  asIdeal := centerIdeal R w hR
-  isPrime := isPrime_centerIdeal hR
-  ne_bot := centerIdeal_ne_bot hR
-
-/-- The underlying ideal of `heightOneSpectrum` is the centre ideal. -/
-@[simp]
-theorem asIdeal_heightOneSpectrum [w.IsNontrivial]
-    (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) :
-    (heightOneSpectrum R w hR).asIdeal = centerIdeal R w hR := (rfl)
 
 /-- **The adic valuation of the centre of `w` on `R` is `w` itself**: a normalized valuation of the
 fraction field of a Dedekind domain whose valuation ring contains that domain is adic. -/

@@ -119,6 +119,7 @@ private theorem ord_algebraMap_pos_iff (x : F) :
   rw [ord_algebraMap_restrict k F P' x]
   exact mul_pos_iff_of_pos_left he
 
+omit [IsDedekindDomain R] [IsDedekindDomain S] in
 /-- **The centre on `S` of a place of `F' / k'` finite on `S` lies over the centre on `R` of its
 restriction to `F`** (Stichtenoth, Proposition 3.1.4 at the level of the models): a function of `R`
 vanishes at the restriction exactly when its image in `S` vanishes at the place. -/
@@ -241,7 +242,7 @@ private theorem center_restrict_eq {P' : Place k' F'} (h : P'.restrict k F = ofP
       (algebraMap_mem_integers_of_restrict_eq_ofPrime (S := S) k F 𝔭 h)) = 𝔭 :=
   ((P'.restrict k F).eq_center _ (by rw [h, valuation_ofPrime])).symm
 
-omit [Algebra k' S] [IsScalarTower k' S F'] in
+omit [IsDedekindDomain S] [Algebra k' S] [IsScalarTower k' S F'] in
 /-- The centre on `S` of a place of `F' / k'` restricting to the place of `𝔭` lies over `𝔭`. -/
 private theorem center_liesOver_of_restrict_eq_ofPrime {P' : Place k' F'}
     (h : P'.restrict k F = ofPrime k F 𝔭) :

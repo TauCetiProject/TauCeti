@@ -216,6 +216,7 @@ omit [IsDedekindDomain R] [IsFractionRing R F] in
 theorem residueHom_apply (r : R) :
     P.residueHom hR r = IsLocalRing.residue P.integers ⟨algebraMap R F r, hR r⟩ := (rfl)
 
+omit [IsDedekindDomain R] in
 /-- **The kernel of evaluation at `P` is the centre of `P` on the model**: this is the
 evaluation-map form of `TauCeti.Place.mem_center_asIdeal`, which says the same thing about the
 valuation of `P`. -/

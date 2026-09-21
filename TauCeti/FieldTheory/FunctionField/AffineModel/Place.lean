@@ -104,13 +104,15 @@ height one primes. -/
 theorem valuation_center : (P.center hR).valuation F = P.valuation :=
   Valuation.valuation_heightOneSpectrum P.valuation_surjective _
 
+omit [IsDedekindDomain R] in
 /-- The centre of `P` on `R` consists of the elements of `R` at which the valuation of `P` is
 `< 1`. -/
 @[simp]
 theorem mem_center_asIdeal {r : R} :
     r ∈ (P.center hR).asIdeal ↔ P.valuation (algebraMap R F r) < 1 := by
-  rw [← HeightOneSpectrum.valuation_lt_one_iff_mem (K := F), P.valuation_center hR]
+  rw [center, Valuation.asIdeal_heightOneSpectrum, Valuation.mem_centerIdeal]
 
+omit [IsDedekindDomain R] in
 /-- The additive form of `TauCeti.Place.mem_center_asIdeal`: the centre of `P` on `R` consists of
 the elements of `R` with a zero at `P`. The hypothesis `r ≠ 0` guards the junk value
 `ord_P 0 = 0`. -/
