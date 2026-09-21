@@ -26,12 +26,13 @@ choice of representatives.
 
 Consequently the domain is fundamental *modulo torsion*, in exactly the sense in which Mathlib's
 cone is fundamental for the full unit group. It is measurable and stable under positive real
-scalars — negative ones reverse the prescribed signs — every point of `posRegion 𝔪` of nonzero
-mixed norm is carried into it by a unit congruent to one modulo `𝔪`, and a congruence unit carries
-a point of the domain back into the domain exactly when that unit is a root of unity. So the
-domain meets each congruence-unit orbit inside `posRegion 𝔪` in one point, modulo the congruence
-units that are roots of unity. For the trivial modulus, whose infinite part is empty and whose
-congruence units are all of `(𝓞 K)ˣ`, the domain *is* Mathlib's fundamental cone.
+scalars — negative ones may violate nonempty prescribed sign conditions — every point of
+`posRegion 𝔪` of nonzero mixed norm is carried into it by a unit congruent to one modulo `𝔪`, and
+a congruence unit carries a point of the domain back into the domain exactly when that unit is a
+root of unity. So the domain meets each congruence-unit orbit inside `posRegion 𝔪` in one point,
+modulo the congruence units that are roots of unity. For the trivial modulus, whose infinite part
+is empty and whose congruence units are all of `(𝓞 K)ˣ`, the domain *is* Mathlib's fundamental
+cone.
 
 Boundary regularity — Lipschitz parametrizability of the frontier of the norm-one section — is
 developed separately; it is what upgrades the orbit description below to a count of the algebraic
@@ -81,16 +82,9 @@ unity.
 Mathlib's fundamental cone is a fundamental domain for the unit action only modulo torsion, so
 this join, rather than `unitsCongruenceSubgroup 𝔪` itself, is the subgroup whose cosets index the
 translates of the cone below. -/
+@[expose]
 def unitsCongruenceSubgroupSupTorsion (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
   unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K
-
-/-- `unitsCongruenceSubgroupSupTorsion 𝔪` is the join of the congruence units with the torsion.
-Membership and coset equality in the indexing group are obtained from this together with
-`Subgroup.mem_sup`, `le_sup_left` and `le_sup_right`. -/
-theorem unitsCongruenceSubgroupSupTorsion_def (𝔪 : Modulus K) :
-    unitsCongruenceSubgroupSupTorsion 𝔪 =
-      unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K := by
-  rfl
 
 instance unitsCongruenceSubgroupSupTorsion_finiteIndex (𝔪 : Modulus K) :
     (unitsCongruenceSubgroupSupTorsion 𝔪).FiniteIndex :=
@@ -252,7 +246,8 @@ theorem norm_pos_of_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace 
   simpa only [norm_unit_smul] using fundamentalCone.norm_pos_of_mem hq
 
 /-- The ray fundamental domain is stable under multiplication by a positive real scalar. Negative
-scalars are excluded: they reverse the signs prescribed by the infinite part of `𝔪`. -/
+scalars are excluded because they may violate nonempty sign conditions prescribed by the infinite
+part of `𝔪`. -/
 theorem smul_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}
     (hx : x ∈ rayFundamentalDomain 𝔪) {c : ℝ} (hc : 0 < c) :
     c • x ∈ rayFundamentalDomain 𝔪 := by
