@@ -19,7 +19,8 @@ configurations that a set of `(-2)`-indices can form inside a numerical type wit
 components are of Dynkin-diagram shape, and
 `TauCeti/AlgebraicGeometry/Curves/StableReduction/NumericalType/ProperSubgraph.lean` classifies
 those on at most six components. This file treats the one infinite family, a chain
-`i₁ - i₂ - ⋯ - i_t` of any length, packaged as `TauCeti.NumericalType.IsMinusTwoChain`.
+`i₁ - i₂ - ⋯ - i_t` of any length, packaged as
+`TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain`.
 
 The underlying adjacency graph of such a chain in a numerical type with more components is a
 path: no two of its components meet except along the chain, so in particular the chain never
@@ -33,13 +34,14 @@ restricted to more than five components because the five-component case is its L
 
 ## Main results
 
-* `TauCeti.NumericalType.IsMinusTwoChain`: the predicate recording a chain of components of
-  self-intersection `-2w`.
-* `TauCeti.NumericalType.IsMinusTwoChain.intersection_eq_zero`: two components of such a chain
-  which are not consecutive do not meet, provided the numerical type has more components than
-  the chain has length.
-* `TauCeti.NumericalType.IsMinusTwoChain.exists_weight_eq_except_one_end`: the weights along such
-  a chain of at least five components are constant except possibly at one end.
+* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain`: the predicate recording a chain of
+  components of self-intersection `-2w`.
+* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.intersection_eq_zero`: two components of
+  such a chain which are not consecutive do not meet, provided the numerical type has more
+  components than the chain has length.
+* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end`: the
+  weights along such a chain of at least five components are constant except possibly at one
+  end.
 -/
 
 public section
@@ -54,8 +56,9 @@ universe u
 
 variable (T : NumericalType.{u})
 
-/-- `T.IsMinusTwoChain t c` says that `c 0, …, c (t - 1)` are `t` distinct components of the
-numerical type `T`, each of self-intersection `aᵢᵢ = -2wᵢ`, in which consecutive components meet.
+/-- `T.IsSelfIntersectionMinusTwoChain t c` says that `c 0, …, c (t - 1)` are `t` distinct
+components of the numerical type `T`, each of self-intersection `aᵢᵢ = -2wᵢ`, in which
+consecutive components meet.
 Positions are indexed by `ℕ`, with only the values below `t` constrained, so that a block of
 consecutive positions is again a chain for the shifted index function.
 
@@ -63,7 +66,7 @@ This is weaker than asking each `c i` to be a `TauCeti.NumericalType.IsMinusTwoI
 also requires `gᵢ = 0`: the genus plays no role in the classification of the configurations that
 `(-2)`-indices form, exactly as in the fixed-length classifications of
 [Stacks, Section 0C7L](https://stacks.math.columbia.edu/tag/0C7L) already available. -/
-structure IsMinusTwoChain (t : ℕ) (c : ℕ → T.Component) : Prop where
+structure IsSelfIntersectionMinusTwoChain (t : ℕ) (c : ℕ → T.Component) : Prop where
   /-- The components of the chain are pairwise distinct. -/
   injOn : ∀ i < t, ∀ j < t, c i = c j → i = j
   /-- Every component of the chain has self-intersection `-2w`. -/
@@ -73,37 +76,38 @@ structure IsMinusTwoChain (t : ℕ) (c : ℕ → T.Component) : Prop where
 
 variable {T}
 
-namespace IsMinusTwoChain
+namespace IsSelfIntersectionMinusTwoChain
 
 variable {t : ℕ} {c : ℕ → T.Component}
 
 /-- Distinct positions of a chain carry distinct components. -/
-lemma ne (hc : T.IsMinusTwoChain t c) {i j : ℕ} (hi : i < t) (hj : j < t) (hij : i ≠ j) :
-    c i ≠ c j := fun h ↦ hij (hc.injOn i hi j hj h)
+lemma ne (hc : T.IsSelfIntersectionMinusTwoChain t c) {i j : ℕ} (hi : i < t) (hj : j < t)
+    (hij : i ≠ j) : c i ≠ c j := fun h ↦ hij (hc.injOn i hi j hj h)
 
 /-- Consecutive components of a chain meet, in the form in which the successor position is
 given by an equation rather than syntactically. -/
-lemma intersection_pos (hc : T.IsMinusTwoChain t c) {i j : ℕ} (hij : j = i + 1) (hj : j < t) :
-    0 < T.intersection (c i) (c j) := by
+lemma intersection_pos (hc : T.IsSelfIntersectionMinusTwoChain t c) {i j : ℕ} (hij : j = i + 1)
+    (hj : j < t) : 0 < T.intersection (c i) (c j) := by
   subst hij
   exact hc.intersection_succ_pos i hj
 
 /-- An initial block of a chain is again a chain. -/
-lemma mono (hc : T.IsMinusTwoChain t c) {s : ℕ} (hs : s ≤ t) : T.IsMinusTwoChain s c where
+lemma mono (hc : T.IsSelfIntersectionMinusTwoChain t c) {s : ℕ} (hs : s ≤ t) :
+    T.IsSelfIntersectionMinusTwoChain s c where
   injOn i hi j hj h := hc.injOn i (by omega) j (by omega) h
   intersection_self i hi := hc.intersection_self i (by omega)
   intersection_succ_pos i hi := hc.intersection_succ_pos i (by omega)
 
 /-- Any block of consecutive positions of a chain is again a chain. -/
-lemma shift (hc : T.IsMinusTwoChain t c) {r s : ℕ} (hrs : r + s ≤ t) :
-    T.IsMinusTwoChain s fun k ↦ c (r + k) where
+lemma shift (hc : T.IsSelfIntersectionMinusTwoChain t c) {r s : ℕ} (hrs : r + s ≤ t) :
+    T.IsSelfIntersectionMinusTwoChain s fun k ↦ c (r + k) where
   injOn i hi j hj h := by
     have := hc.injOn (r + i) (by omega) (r + j) (by omega) h
     omega
   intersection_self i hi := hc.intersection_self (r + i) (by omega)
   intersection_succ_pos i hi := hc.intersection_succ_pos (r + i) (by omega)
 
-end IsMinusTwoChain
+end IsSelfIntersectionMinusTwoChain
 
 /-- If two meeting components of a numerical type have intersection number `aᵢⱼ = wᵢp = wⱼq`
 with `pq = 1`, then they have equal weights. -/
@@ -149,8 +153,8 @@ private lemma weight_eq_of_ratio_eq_two {i j : T.Component} {p q : ℤ}
 /-- The two ends of a chain of components of self-intersection `-2w` do not meet, as soon as the
 numerical type has more components than the chain has length. -/
 private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
-    ∀ c : ℕ → T.Component, T.IsMinusTwoChain t c → t < Fintype.card T.Component → 2 < t →
-      T.intersection (c 0) (c (t - 1)) = 0 := by
+    ∀ c : ℕ → T.Component, T.IsSelfIntersectionMinusTwoChain t c →
+      t < Fintype.card T.Component → 2 < t → T.intersection (c 0) (c (t - 1)) = 0 := by
   induction t using Nat.strong_induction_on with
   | _ t IH =>
   intro c hc hcard ht
@@ -322,8 +326,8 @@ length. In particular such a chain is never a cycle and has no chords: its under
 graph is a path.
 This is the graph-shape half of
 [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89). -/
-theorem IsMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
-    (hc : T.IsMinusTwoChain t c) (hcard : t < Fintype.card T.Component) {p q : ℕ}
+theorem IsSelfIntersectionMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component) {p q : ℕ}
     (hp : p < t) (hq : q < t) (hpq : p ≠ q) (hpq₁ : p + 1 ≠ q) (hqp₁ : q + 1 ≠ p) :
     T.intersection (c p) (c q) = 0 := by
   -- The two ends of the subchain joining the two positions do not meet.
@@ -341,7 +345,8 @@ theorem IsMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
 
 /-- The weight classification of a chain of components of self-intersection `-2w`. -/
 private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : ℕ) :
-    ∀ c : ℕ → T.Component, T.IsMinusTwoChain t c → t < Fintype.card T.Component → 4 < t →
+    ∀ c : ℕ → T.Component, T.IsSelfIntersectionMinusTwoChain t c →
+      t < Fintype.card T.Component → 4 < t →
       ∃ W : ℤ, 0 < W ∧ (∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = W) ∧
         ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c 0) : ℤ) = 2 * W ∨
           2 * (T.weight (c 0) : ℤ) = W) ∧
@@ -528,12 +533,13 @@ private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : �
 /-- The weights along a chain of components of self-intersection `-2w` in a numerical type with
 more components than the chain has length are constant except possibly at one end, where the
 weight may be twice or half the common interior weight. Together with
-`TauCeti.NumericalType.IsMinusTwoChain.intersection_eq_zero` and
+`TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.intersection_eq_zero` and
 `TauCeti.NumericalType.intersection_eq_max_weight`, which turn these weights into the
 intersection numbers, this is
 [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89). -/
-theorem IsMinusTwoChain.exists_weight_eq_except_one_end {t : ℕ} {c : ℕ → T.Component}
-    (hc : T.IsMinusTwoChain t c) (hcard : t < Fintype.card T.Component) (ht : 4 < t) :
+theorem IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end {t : ℕ}
+    {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : t < Fintype.card T.Component) (ht : 4 < t) :
     ∃ W : ℤ, 0 < W ∧ (∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = W) ∧
       ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c 0) : ℤ) = 2 * W ∨
         2 * (T.weight (c 0) : ℤ) = W) ∧
