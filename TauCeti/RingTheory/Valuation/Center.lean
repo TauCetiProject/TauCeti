@@ -7,14 +7,15 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Localization.FractionRing
-public import Mathlib.RingTheory.Valuation.Discrete.Basic
+public import Mathlib.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Centres of valuations on subrings
 
 A valuation of a field `K` that is bounded by `1` on a commutative ring `R` determines a prime
 ideal of `R`: the elements whose images have value strictly below `1`. When `K` is the fraction
-field of `R` and the valuation is nontrivial, this centre is nonzero.
+field of `R` and the valuation is nontrivial, this centre is nonzero. The value group may be any
+linearly ordered commutative group with zero.
 
 ## Main definitions and results
 
@@ -24,25 +25,16 @@ field of `R` and the valuation is nontrivial, this centre is nonzero.
 * `Valuation.heightOneSpectrum`: the nonzero prime centre bundled as `HeightOneSpectrum R`.
   This structure records a nonzero prime ideal; it is a height one prime when `R` is Dedekind.
 * `Valuation.asIdeal_heightOneSpectrum`: the underlying ideal is the centre ideal.
-
-## Implementation notes
-
-The definitions keep their bodies unexposed. The characterization lemmas `Valuation.mem_centerIdeal`
-and `Valuation.asIdeal_heightOneSpectrum` provide the interface. The latter's definitional proof
-is parenthesized (`(rfl)`) so that it is not inferred to be `@[defeq]`, which would require the body
-to be exposed.
 -/
 
 public section
-
-open scoped WithZero
 
 open IsDedekindDomain
 
 namespace Valuation
 
 variable {R : Type*} [CommRing R] {K : Type*} [Field K] [Algebra R K]
-  {w : _root_.Valuation K ℤᵐ⁰}
+  {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] {w : _root_.Valuation K Γ₀}
 
 section CenterIdeal
 
@@ -51,7 +43,7 @@ variable (R) in
 of elements of `R` of positive valuation. It is prime (`Valuation.isPrime_centerIdeal`), and it is
 nonzero as soon as `w` is nontrivial and `K` is the fraction field of `R`
 (`Valuation.centerIdeal_ne_bot`). -/
-def centerIdeal (w : _root_.Valuation K ℤᵐ⁰) (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) :
+def centerIdeal (w : _root_.Valuation K Γ₀) (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) :
     Ideal R :=
   (IsLocalRing.maximalIdeal w.valuationSubring).comap
     ((algebraMap R K).codRestrict w.valuationSubring fun r ↦
@@ -103,12 +95,13 @@ variable [IsFractionRing R K]
 variable (R) in
 /-- The nonzero prime centre of a nontrivial valuation of `K` bounded by `1` on `R`, bundled
 as a `HeightOneSpectrum R`. This is a height one prime when `R` is a Dedekind domain. -/
-def heightOneSpectrum (w : _root_.Valuation K ℤᵐ⁰) [w.IsNontrivial]
+def heightOneSpectrum (w : _root_.Valuation K Γ₀) [w.IsNontrivial]
     (hR : ∀ r : R, w (algebraMap R K r) ≤ 1) : HeightOneSpectrum R where
   asIdeal := centerIdeal R w hR
   isPrime := isPrime_centerIdeal hR
   ne_bot := centerIdeal_ne_bot hR
 
+-- Parenthesize `rfl` to avoid inferred `@[defeq]`, which would require exposing the definition.
 /-- The underlying ideal of `heightOneSpectrum` is the centre ideal. -/
 @[simp]
 theorem asIdeal_heightOneSpectrum [w.IsNontrivial]
