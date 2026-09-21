@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Orbit
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Orbit.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 import TauCeti.Topology.Algebra.GroupAction.Transitive
 
