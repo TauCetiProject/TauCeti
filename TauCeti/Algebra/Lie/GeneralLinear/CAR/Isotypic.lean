@@ -166,7 +166,7 @@ theorem exists_isGlHighestWeightVector_glHalfStaircase_car
     (S : LieSubmodule K (Matrix (Fin N) (Fin N) K)
       (CliffordAlgebra (traceQuadraticForm K (Fin N)))) (hS : S ≠ ⊥) :
     ∃ v : S, IsGlHighestWeightVector (glHalfStaircase K N) v :=
-  exists_submodule_isGlHighestWeightVector_of_forall
+  exists_isGlHighestWeightVector_submodule_of_forall
     (M := CliffordAlgebra (traceQuadraticForm K (Fin N)))
     (mu := glHalfStaircase K N)
     (fun _μ _v hv => hv.eq_glHalfStaircase) S hS
