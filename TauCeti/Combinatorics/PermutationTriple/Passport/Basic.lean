@@ -308,6 +308,10 @@ theorem isAdmissible_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
 
 end PassportSpec
 
+/-- An ordered passport is an admissible specification with the branch points still ordered.
+The reference subgroup is retained as data; passport membership compares it up to conjugacy. -/
+abbrev OrderedPassport (n : ℕ) := {P : PassportSpec n // P.IsAdmissible}
+
 namespace ConnectedIsoClass
 
 variable {n : ℕ}

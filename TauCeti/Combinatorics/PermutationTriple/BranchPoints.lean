@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
-public import TauCeti.Combinatorics.PermutationTriple.Passport.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import TauCeti.GroupTheory.Perm.FinThree
 import Mathlib.Tactic.FinCases
@@ -676,20 +675,5 @@ theorem equivalent_reindexBranchPoints_reindexBranchPoints (ρ ρ' : Perm (Fin 3
     ← IsoClass.op_smul_mk, _root_.op_smul_op_smul]
 
 end PermutationTriple
-
-namespace ConnectedTriple
-
-variable {n : ℕ}
-
-/-- Reorder the branch points of a connected triple. -/
-def reindexBranchPoints (t : ConnectedTriple n) (ρ : Perm (Fin 3)) : ConnectedTriple n :=
-  ⟨t.1.reindexBranchPoints ρ,
-    (PermutationTriple.isConnected_reindexBranchPoints_iff t.1 ρ).2 t.2⟩
-
-@[simp]
-theorem coe_reindexBranchPoints (t : ConnectedTriple n) (ρ : Perm (Fin 3)) :
-    (t.reindexBranchPoints ρ).1 = t.1.reindexBranchPoints ρ := (rfl)
-
-end ConnectedTriple
 
 end TauCeti
