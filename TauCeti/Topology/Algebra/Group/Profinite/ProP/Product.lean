@@ -19,9 +19,9 @@ groups be assembled from known factors without re-examining their open normal su
 result is stated both for binary products `G × H` and for indexed products `∀ i, G i`, the two
 product forms used in practice.
 
-The index type of `IsProP.pi` need not be finite: an open normal subgroup of the product already
-contains a basic box, which constrains only finitely many coordinates, so only that finite set of
-factors is ever used. The infinite case is what makes the product usable for inverse limits.
+The index type of `IsProP.pi` is arbitrary, so the closure covers infinite products as well as
+finite ones. That generality is what makes it applicable to inverse limits, which are carved out
+of a product over an index category that need not be finite.
 
 ## Main results
 

@@ -12,16 +12,15 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 /-!
 # Inverse limits of pro-p groups
 
-The class of pro-`p` groups is stable under inverse limits. Mathlib builds the limit of a
-diagram of profinite groups as the subgroup `ProfiniteGrp.limitConePtAux` of the product of its
-objects, so this is the composite of stability under products (`IsProP.pi`, which is why that
-lemma may not assume a finite index type) with stability under subgroups (`IsProP.subgroup`).
+The class of pro-`p` groups is stable under inverse limits: a limit of a diagram of pro-`p`
+profinite groups, formed in `ProfiniteGrp`, is again pro-`p`. With stability under subgroups,
+quotients and products this completes the closure API for `IsProP`.
 
-Together with the covariant half of the API this gives the inverse-limit description of pro-`p`
-groups: a profinite group is pro-`p` exactly when it is topologically isomorphic to a limit of
-finite `p`-groups. One direction is the stability result, and the other realises a profinite
-group as the limit of its own quotients by open normal subgroups, which are `p`-groups precisely
-by the definition of `IsProP`.
+Stability under limits also gives the inverse-limit description of pro-`p` groups: a profinite
+group is pro-`p` exactly when it is topologically isomorphic to an inverse limit of finite
+`p`-groups. That is the usual working characterisation, and lets a pro-`p` group be presented
+by, and analysed through, an explicit diagram of finite `p`-groups instead of its lattice of
+open normal subgroups.
 
 ## Main results
 
@@ -44,15 +43,13 @@ universe u v
 
 variable {p : ℕ}
 
-/-- An inverse limit of pro-`p` profinite groups is pro-`p`: the limit is a subgroup of the
-product of the objects of the diagram. -/
+/-- An inverse limit of pro-`p` profinite groups is pro-`p`. -/
 theorem IsProP.limit {J : Type v} [SmallCategory J] (F : J ⥤ ProfiniteGrp.{max v u})
     (hF : ∀ j, IsProP p (F.obj j)) : IsProP p (ProfiniteGrp.limit F) :=
   (IsProP.pi hF).subgroup (ProfiniteGrp.limitConePtAux F)
 
 /-- A profinite group is pro-`p` exactly when it is topologically isomorphic to an inverse limit
-of finite `p`-groups. The forward direction realises `G` as the limit of its own quotients by
-open normal subgroups. -/
+of finite `p`-groups. -/
 theorem isProP_iff_exists_continuousMulEquiv_limit {G : Type u} [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] :
     IsProP p G ↔ ∃ (J : Type u) (_ : SmallCategory J) (F : J ⥤ FiniteGrp.{u}),
