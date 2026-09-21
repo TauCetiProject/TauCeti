@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Descent
-public import TauCeti.LinearAlgebra.BilinearMap.NumericalQuotient.Basic
+public import TauCeti.LinearAlgebra.SesquilinearForm.NumericalQuotient.Basic
 
 /-!
 # Numerical quotients of the Ext-Euler pairing

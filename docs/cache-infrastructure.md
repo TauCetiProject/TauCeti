@@ -35,20 +35,26 @@ incompatible, bump `mathlib-ltar-v1` once in
 `gh cache delete <key> --repo TauCetiProject/TauCeti`. A failed fetch also retries once with
 `lake exe cache get!`, which forces every linked file to be downloaded and unpacked again.
 
-Which endpoint serves those downloads is a repository variable. Every workflow that runs
-`lake exe cache get` (`ci.yml`, `pr-build.yml`, `pr-profile.yml`, `nightly-verify.yml`,
-`pages.yml`) exports `MATHLIB_CACHE_GET_URL` from `vars.MATHLIB_CACHE_GET_URL`. The cache
-tool treats an empty value as unset, so clearing the variable returns reads to the tool's
-default endpoints on the next run, with no code change. For local and radar runs,
-`scripts/bench/build/run` sets a default for the same variable; a value defined beforehand
-(even an empty one) wins over the default.
+Downloads go to the cache tool's default read endpoint. The escape hatch is a repository
+variable. Every workflow that runs `lake exe cache get` (`ci.yml`, `pr-build.yml`,
+`pr-profile.yml`, `nightly-verify.yml`, `pages.yml`) exports
+`MATHLIB_CACHE_DEBUG_USE_LEGACY` from `vars.MATHLIB_CACHE_DEBUG_USE_LEGACY`. An operator
+sets the variable to `1` to send reads back to the legacy storage endpoint, and clears it
+to return to the default endpoint. Both changes apply on the next run, with no code
+change: the tool treats unset, empty, `0`, and `false` alike as off. Local and radar runs
+need no wiring; the cache tool reads the variable from the caller's environment.
+
+The flag is temporary. It exists only for an easy rollback during the transition to the
+default endpoint that leanprover-community/mathlib4@03616a12 introduced, and upstream
+plans to retire it together with direct reads from the storage account. Remove this
+wiring when the pinned cache tool drops the flag.
 
 ## Cloudflare account
 
-This table records the required destination. During the 2026 account migration,
-the live cache and repository variables remain on the older personal account
-until the destination copy has passed verification and the upload key is
-rotated in the same cutover.
+The 2026 account migration is complete. The live bucket, zone, custom domain,
+repository variables, and publisher credential are all in the dedicated
+TauCeti account. The source bucket in the personal account was deleted after
+anonymous reads and an exact trusted publication succeeded.
 
 | | |
 |---|---|
@@ -79,6 +85,20 @@ to sign them, so the read host must be public; only uploads use a key.
 Lake service names: `tauceti-public` for reads, `tauceti-r2` for uploads. Object keys are
 `artifacts/TauCetiProject/TauCeti/<hash>.art`, so the endpoint variables hold only the prefix and
 Lake appends the scope.
+
+## Publisher credential
+
+The GitHub Actions secret `LAKE_CACHE_KEY` contains the S3 access-key pair for
+the non-expiring Cloudflare token named **TauCeti Lake cache R2 publisher**.
+The token belongs to the `tauceti` account and is restricted to object
+read/write/list access in `tauceti-cache`; it has no bucket-administration,
+Worker, DNS, Registrar, or billing authority.
+
+When rotating it, create the replacement in the `tauceti` account, install the
+new `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` pair as `LAKE_CACHE_KEY`, and let an
+isolated `publish-lake-cache` job publish an exact revision before revoking the
+old token. Do not put the token value in a repository variable or expose it to
+the build job.
 
 ## Contributors
 
@@ -115,7 +135,7 @@ so it can rewrite `$HOME/.elan/bin/lake`, prepend a directory to every later ste
 `$GITHUB_PATH`, or set `LD_PRELOAD` or `BASH_ENV` for every later step through `$GITHUB_ENV`.
 Hardening the individual commands that touch the key does not help: any secret placed in a later
 step of that job is a secret placed in reach of code that landed on main. (This is not reachable
-from an unmerged PR, which compiles only under landrun in `pr-build.yml`, with writes confined to
+from an unmerged PR, which compiles only under bwrap in `pr-build.yml`, with writes confined to
 `base/.lake` and no secret in the sandbox's `--env` allowlist.)
 
 So `build` runs `lake cache stage`, which needs no credential and touches no network, and hands
@@ -251,8 +271,9 @@ Analytics says how much of the 27M is still reaching the bucket.
 
 ## Related
 
-- `pr-build.yml` retries a partial fetch and discards the cache rather than handing it to the
-  offline sandbox. See the comment at that step for when part of it can be simplified.
+- `scripts/lake-cache-get.sh` keeps hash-verified artifacts while retrying only
+  missing downloads. If all three attempts remain incomplete, it discards the
+  partial cache rather than handing it to the offline sandbox.
 - https://github.com/leanprover/lean4/issues/14670, open: Lake fails a build over a cache miss it
   has already recovered from.
 - https://github.com/leanprover/lean4/pull/14651, merged: `lake cache get` exit status was

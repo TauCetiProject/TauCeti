@@ -29,10 +29,10 @@ the descent step is not a theorem of this repository.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.monic_Φ_sub_C_mul_ΨSq`: `Φₙ − C c * ΨSqₙ` is monic, unconditionally.
-* `TauCeti.WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero`: the coordinate identity says exactly
+* `WeierstrassCurve.monic_Φ_sub_C_mul_ΨSq`: `Φₙ − C c * ΨSqₙ` is monic, unconditionally.
+* `WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero`: the coordinate identity says exactly
   that `x` is a root of that polynomial.
-* `TauCeti.WeierstrassCurve.isInteger_of_mul_eval_ΨSq_eq_eval_Φ`: in any `R`-algebra in which `R`
+* `WeierstrassCurve.isInteger_of_mul_eval_ΨSq_eq_eval_Φ`: in any `R`-algebra in which `R`
   is integrally closed, if `x' * ΨSqₙ(x) = Φₙ(x)` with `x'` coming from `R`, then so does `x` — a
   statement about two elements satisfying that identity, not about a point and its multiple.
 
@@ -61,7 +61,7 @@ open Polynomial
 
 namespace TauCeti
 
-namespace WeierstrassCurve
+section
 
 variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R)
 
@@ -72,7 +72,8 @@ variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R)
 coefficient survives. At `n = 0` the second polynomial vanishes (`ΨSq_zero`) and the first is `1`
 (`Φ_zero`). No hypothesis is needed: the degree bound `natDegree_ΨSq_le` is unconditional, and
 over a subsingleton every polynomial is monic. -/
-theorem monic_Φ_sub_C_mul_ΨSq (n : ℤ) (c : R) : (W.Φ n - C c * W.ΨSq n).Monic := by
+theorem _root_.WeierstrassCurve.monic_Φ_sub_C_mul_ΨSq
+    (n : ℤ) (c : R) : (W.Φ n - C c * W.ΨSq n).Monic := by
   nontriviality R
   rcases eq_or_ne n 0 with rfl | hn0
   · simp [_root_.WeierstrassCurve.Φ_zero]
@@ -92,7 +93,7 @@ polynomial `Φₙ − C c * ΨSqₙ` over `R`.
 
 Kept separate from the integrality theorem so that the passage between `W.baseChange A` and the
 `R`-coefficient polynomials lives in one place. -/
-theorem aeval_Φ_sub_C_mul_ΨSq_eq_zero {n : ℤ} {x : A} {c : R}
+theorem _root_.WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero {n : ℤ} {x : A} {c : R}
     (hid : algebraMap R A c * ((W.baseChange A).ΨSq n).eval x = ((W.baseChange A).Φ n).eval x) :
     aeval x (W.Φ n - C c * W.ΨSq n) = 0 := by
   simp only [_root_.WeierstrassCurve.baseChange, _root_.WeierstrassCurve.map_Φ,
@@ -108,16 +109,18 @@ If `x' * ΨSqₙ(x) = Φₙ(x)` and `x'` comes from `R`, then so does `x`: it is
 That identity is the relation the `x`-coordinates of `P` and `n • P` would satisfy, which is why
 this is the algebraic half of the Nagell–Lutz descent step — but that reading is motivation only:
 no point, and no multiple, occurs in this statement. -/
-theorem isInteger_of_mul_eval_ΨSq_eq_eval_Φ [IsIntegrallyClosedIn R A] (n : ℤ)
+theorem _root_.WeierstrassCurve.isInteger_of_mul_eval_ΨSq_eq_eval_Φ
+    [IsIntegrallyClosedIn R A] (n : ℤ)
     {x x' : A} (hx' : IsLocalization.IsInteger R x')
     (hid : x' * ((W.baseChange A).ΨSq n).eval x = ((W.baseChange A).Φ n).eval x) :
     IsLocalization.IsInteger R x := by
   obtain ⟨c, hc⟩ := hx'
   exact RingHom.mem_rangeS.mpr (IsIntegrallyClosedIn.isIntegral_iff.mp
-    ⟨_, monic_Φ_sub_C_mul_ΨSq W n c, aeval_Φ_sub_C_mul_ΨSq_eq_zero W (hc ▸ hid)⟩)
+    ⟨_, WeierstrassCurve.monic_Φ_sub_C_mul_ΨSq W n c,
+        WeierstrassCurve.aeval_Φ_sub_C_mul_ΨSq_eq_zero W (hc ▸ hid)⟩)
 
 end Root
 
-end WeierstrassCurve
+end
 
 end TauCeti

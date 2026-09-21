@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 import Mathlib.LinearAlgebra.FreeModule.PID
-import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Torsion
 import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
+import TauCeti.Algebra.MonoidAlgebra.Torsion
 
 /-!
 # Characterization of tori among groups of multiplicative type
@@ -19,8 +19,10 @@ and geometrically reduced. After passing to an algebraic closure, its coordinate
 algebra. Reducedness and connectedness force the character group to be torsion-free, while finite
 generation then identifies it with a finite-rank free abelian group.
 
-## Main declaration
+## Main declarations
 
+* `TauCeti.splitTorusCommHopfAlgProperty_coordinateRing`: the coordinate Hopf algebra of a
+  finitely generated torsion-free commutative group is a split torus.
 * `iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced`: a finite-type
   commutative Hopf algebra over a field is a torus exactly when it is of multiplicative type,
   geometrically connected, and geometrically reduced.
@@ -57,14 +59,13 @@ private theorem exists_mulEquiv_finsupp_int
     b.repr.toAddEquiv.trans (Finsupp.domCongr eι)
   exact ⟨_, ⟨AddEquiv.toMultiplicative e⟩⟩
 
-/-- **A finitely generated torsion-free commutative group has the coordinate ring of a split
-torus.** For such a `G` there is a rank `n` and an isomorphism of diagonalizable coordinate rings
-between the character group of `ULift (Fin n)` and `G`. -/
-private theorem exists_iso_coordinateRing_characterGroup (K : Type u) [CommRing K]
+/-- **The coordinate Hopf algebra of a finitely generated torsion-free commutative group is a
+split torus.** Such a `G` is free of some finite rank `n`, which is then the rank of the split
+torus. -/
+theorem splitTorusCommHopfAlgProperty_coordinateRing (K : Type u) [CommRing K]
     (G : FGCommGrpCat.{u}) [IsMulTorsionFree G] :
-    ∃ n : ℕ, Nonempty (DiagonalizableGroup.coordinateRing K
-        (SplitTorus.characterGroup (ULift.{u} (Fin n))) ≅
-      DiagonalizableGroup.coordinateRing K G) := by
+    splitTorusCommHopfAlgProperty K (DiagonalizableGroup.coordinateRing K G) := by
+  rw [splitTorusCommHopfAlgProperty_iff]
   obtain ⟨n, ⟨e⟩⟩ := exists_mulEquiv_finsupp_int G
   exact ⟨n, ⟨ObjectProperty.isoMk _ <| _root_.CommHopfAlgCat.isoMk
     (MonoidAlgebra.domCongrBialgEquiv K K
@@ -108,7 +109,9 @@ theorem iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduc
     let _ : IsMulTorsionFree G :=
       isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace
         (AlgebraicClosure k) G
-    obtain ⟨n, ⟨j⟩⟩ := exists_iso_coordinateRing_characterGroup (AlgebraicClosure k) G
+    obtain ⟨n, ⟨j⟩⟩ :=
+      (splitTorusCommHopfAlgProperty_iff (AlgebraicClosure k) _).1
+        (splitTorusCommHopfAlgProperty_coordinateRing (AlgebraicClosure k) G)
     rw [torusCommHopfAlgProperty_iff]
     exact ⟨n, ⟨j ≪≫ i⟩⟩
 

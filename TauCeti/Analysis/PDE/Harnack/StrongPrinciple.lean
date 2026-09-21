@@ -28,8 +28,6 @@ Section 2.2.
 
 * `TauCeti.eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero`: a nonnegative harmonic function
   on a preconnected set that vanishes at an interior point vanishes everywhere on the set.
-* `TauCeti.eq_zero_on_or_pos_on_of_harmonicOnNhd_of_nonneg`: the usual dichotomy between
-  vanishing identically and being strictly positive on an open preconnected domain.
 * `TauCeti.eqOn_of_harmonicOnNhd_of_le_of_eq`: the strong comparison principle for planar
   harmonic functions.
 * `TauCeti.eqOn_const_of_harmonicOnNhd_of_isLocalMax`: the local strong maximum principle.
@@ -41,8 +39,11 @@ Section 2.2.
 * `TauCeti.eqOn_const_of_harmonicOnNhd_of_isMaxOn`: the strong maximum principle.
 * `TauCeti.eqOn_const_of_harmonicOnNhd_of_isMinOn`: the strong minimum principle.
 
-For direct use on open domains, each interior-point theorem also has an `_of_isOpen` consumer
-form accepting `IsOpen Ω` and `a ∈ Ω` in place of the more general hypothesis `Ω ∈ 𝓝 a`.
+For direct use on open domains, each local-extremum theorem also has an `_of_isOpen` consumer
+form accepting `IsOpen Ω` and `a ∈ Ω` in place of the more general hypothesis `Ω ∈ 𝓝 a`. The
+open-domain forms of the vanishing, comparison and global-extremum theorems hold in every
+finite-dimensional real inner product space, and are proved from Hopf's lemma in
+`TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple`.
 -/
 
 public section
@@ -75,28 +76,6 @@ theorem eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero
   filter_upwards [ball_mem_nhds a hr] with z hz
   exact hzero hz
 
-/-- Open-domain form of `eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero`. -/
-theorem eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero_of_isOpen
-    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
-    (hf : HarmonicOnNhd f Ω) (hnonneg : ∀ z ∈ Ω, 0 ≤ f z) (hfa : f a = 0) :
-    EqOn f 0 Ω :=
-  eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero (hΩopen.mem_nhds ha) hΩconn hf
-    hnonneg hfa
-
-/-- A nonnegative harmonic function on an open preconnected planar domain either vanishes
-identically or is strictly positive everywhere on the domain. -/
-theorem eq_zero_on_or_pos_on_of_harmonicOnNhd_of_nonneg
-    (hΩopen : IsOpen Ω) (hΩconn : IsPreconnected Ω) (hf : HarmonicOnNhd f Ω)
-    (hnonneg : ∀ z ∈ Ω, 0 ≤ f z) :
-    EqOn f 0 Ω ∨ ∀ z ∈ Ω, 0 < f z := by
-  by_cases hzero : ∃ a ∈ Ω, f a = 0
-  · obtain ⟨a, ha, hfa⟩ := hzero
-    exact Or.inl <| eq_zero_on_of_harmonicOnNhd_of_nonneg_of_eq_zero_of_isOpen
-      hΩopen ha hΩconn hf hnonneg hfa
-  · right
-    intro z hz
-    exact lt_of_le_of_ne (hnonneg z hz) fun h ↦ hzero ⟨z, hz, h.symm⟩
-
 /-- **Strong comparison principle for planar harmonic functions.**
 
 Let `f` and `g` be harmonic on a preconnected set that is a neighborhood of `a`.  If `f ≤ g`
@@ -117,13 +96,6 @@ theorem eqOn_of_harmonicOnNhd_of_le_of_eq
   intro z hz
   have hz_zero := hzero hz
   exact (sub_eq_zero.mp (by simpa only [Pi.sub_apply, Pi.zero_apply] using hz_zero)).symm
-
-/-- Open-domain form of `eqOn_of_harmonicOnNhd_of_le_of_eq`. -/
-theorem eqOn_of_harmonicOnNhd_of_le_of_eq_of_isOpen
-    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
-    (hf : HarmonicOnNhd f Ω) (hg : HarmonicOnNhd g Ω)
-    (hfg : ∀ z ∈ Ω, f z ≤ g z) (hfg_a : f a = g a) : EqOn f g Ω :=
-  eqOn_of_harmonicOnNhd_of_le_of_eq (hΩopen.mem_nhds ha) hΩconn hf hg hfg hfg_a
 
 /-- **Local strong maximum principle for planar harmonic functions.**
 
@@ -212,13 +184,6 @@ theorem eqOn_const_of_harmonicOnNhd_of_isMaxOn
   exact eqOn_const_of_harmonicOnNhd_of_isLocalMax hΩa hΩconn hf
     (hmax.isLocalMax hΩa)
 
-/-- Open-domain form of `eqOn_const_of_harmonicOnNhd_of_isMaxOn`. -/
-theorem eqOn_const_of_harmonicOnNhd_of_isMaxOn_of_isOpen
-    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
-    (hf : HarmonicOnNhd f Ω) (hmax : IsMaxOn f Ω a) :
-    EqOn f (const ℂ (f a)) Ω :=
-  eqOn_const_of_harmonicOnNhd_of_isMaxOn (hΩopen.mem_nhds ha) hΩconn hf hmax
-
 /-- **Strong minimum principle for planar harmonic functions, global-extremum form.**
 
 A real-valued harmonic function on a preconnected planar set that contains a neighborhood of an
@@ -228,13 +193,6 @@ theorem eqOn_const_of_harmonicOnNhd_of_isMinOn
     (hmin : IsMinOn f Ω a) : EqOn f (const ℂ (f a)) Ω := by
   exact eqOn_const_of_harmonicOnNhd_of_isLocalMin hΩa hΩconn hf
     (hmin.isLocalMin hΩa)
-
-/-- Open-domain form of `eqOn_const_of_harmonicOnNhd_of_isMinOn`. -/
-theorem eqOn_const_of_harmonicOnNhd_of_isMinOn_of_isOpen
-    (hΩopen : IsOpen Ω) (ha : a ∈ Ω) (hΩconn : IsPreconnected Ω)
-    (hf : HarmonicOnNhd f Ω) (hmin : IsMinOn f Ω a) :
-    EqOn f (const ℂ (f a)) Ω :=
-  eqOn_const_of_harmonicOnNhd_of_isMinOn (hΩopen.mem_nhds ha) hΩconn hf hmin
 
 end TauCeti
 

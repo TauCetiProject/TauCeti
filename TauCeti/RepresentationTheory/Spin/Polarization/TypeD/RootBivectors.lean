@@ -323,7 +323,7 @@ theorem typeDSimpleCorootBivector_eq_diagonalBivector (hn : 2 ≤ n) (i : Fin n)
     match_scalars
     · rfl
     · calc
-        ⅟ (2 : K) * 1 + ⅟ (2 : K) * 1 - 1 = ⅟ (2 : K) * 2 - 1 := by ring
+        ⅟ (2 : K) + ⅟ (2 : K) - 1 = ⅟ (2 : K) * 2 - 1 := by ring
         _ = 0 := by rw [invOf_mul_self]; ring
     · rfl
 

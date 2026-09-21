@@ -40,6 +40,30 @@ namespace TauCeti
 
 universe u v
 
+namespace Subcoalgebra
+
+section CoalgebraStruct
+
+variable {R : Type u} {C : Type v}
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
+
+/-- The comultiplication of any element lies in the tensor square of the top submodule,
+because the inclusion of `⊤` is surjective.
+
+Only the comultiplication map is involved, not the coalgebra axioms, so this is stated over
+`CoalgebraStruct`; it is what makes `⊤` a subcoalgebra. -/
+theorem comul_mem_tensorSquare_top (c : C) :
+    Coalgebra.comul (R := R) c ∈
+      LinearMap.range (TensorProduct.map (⊤ : Submodule R C).subtype
+        (⊤ : Submodule R C).subtype) :=
+  LinearMap.mem_range.mpr
+    (TensorProduct.map_surjective (fun c ↦ ⟨⟨c, Submodule.mem_top⟩, rfl⟩)
+      (fun c ↦ ⟨⟨c, Submodule.mem_top⟩, rfl⟩) _)
+
+end CoalgebraStruct
+
+end Subcoalgebra
+
 variable (R : Type u) (C : Type v)
 variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
@@ -131,16 +155,6 @@ theorem ofSubmodule_carrier (D : Submodule R C) (hD) :
 theorem mem_ofSubmodule {D : Submodule R C} {hD} {c : C} :
     c ∈ ofSubmodule (R := R) (C := C) D hD ↔ c ∈ D :=
   Iff.rfl
-
-/-- The comultiplication of any element lies in the tensor square of the top submodule,
-because the inclusion of `⊤` is surjective. -/
-theorem comul_mem_tensorSquare_top (c : C) :
-    Coalgebra.comul (R := R) c ∈
-      LinearMap.range (TensorProduct.map (⊤ : Submodule R C).subtype
-        (⊤ : Submodule R C).subtype) :=
-  LinearMap.mem_range.mpr
-    (TensorProduct.map_surjective (fun c ↦ ⟨⟨c, Submodule.mem_top⟩, rfl⟩)
-      (fun c ↦ ⟨⟨c, Submodule.mem_top⟩, rfl⟩) _)
 
 /-- The full coalgebra as a subcoalgebra. -/
 instance instTop : Top (Subcoalgebra R C) where

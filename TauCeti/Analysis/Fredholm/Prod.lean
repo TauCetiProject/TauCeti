@@ -23,7 +23,7 @@ individual kernels and ranges, and counts the cokernel with `Submodule.finrank_q
 ## Main declarations
 
 * `ContinuousLinearMap.IsFredholm.prodMap`: a product of Fredholm operators is Fredholm.
-* `TauCeti.ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
+* `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
 -/
 
 public section
@@ -75,17 +75,18 @@ lemma _root_.ContinuousLinearMap.IsFredholm.prodMap
         Prod.map_apply, Submodule.subtypeL_apply, Submodule.subtypeL_apply, hPT ⟨x, hx⟩,
         hPS ⟨y, hy⟩]
 
-namespace ContinuousLinearMap
 
 /-- The index is additive under Cartesian products when both kernels and cokernels are finite
 dimensional. -/
-private lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
+private lemma _root_.ContinuousLinearMap.index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁)
+    (S : E₂ →L[K] F₂)
     [FiniteDimensional K (LinearMap.ker (T : E₁ →ₗ[K] F₁))]
     [FiniteDimensional K (LinearMap.ker (S : E₂ →ₗ[K] F₂))]
     [FiniteDimensional K (F₁ ⧸ LinearMap.range (T : E₁ →ₗ[K] F₁))]
     [FiniteDimensional K (F₂ ⧸ LinearMap.range (S : E₂ →ₗ[K] F₂))] :
-    index (T.prodMap S) = index T + index S := by
-  simp only [index_eq_finrank_sub]
+    ContinuousLinearMap.index (T.prodMap S) = ContinuousLinearMap.index T +
+      ContinuousLinearMap.index S := by
+  simp only [ContinuousLinearMap.index_eq_finrank_sub]
   rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.ker_prodMap, LinearMap.range_prodMap]
   simp only [(Submodule.prodEquiv _ _).finrank_eq,
     Submodule.finrank_quotient_prod, finrank_prod]
@@ -93,15 +94,15 @@ private lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E�
 
 /-- The Fredholm index is additive under Cartesian products of Fredholm operators. -/
 @[simp]
-lemma index_prodMap (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
+lemma _root_.ContinuousLinearMap.index_prodMap (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
     (hT : ContinuousLinearMap.IsFredholm T) (hS : ContinuousLinearMap.IsFredholm S) :
-    index (T.prodMap S) = index T + index S := by
+    ContinuousLinearMap.index (T.prodMap S) = ContinuousLinearMap.index T +
+      ContinuousLinearMap.index S := by
   let := hT.finite_ker
   let := hS.finite_ker
   let := hT.finite_coker
   let := hS.finite_coker
-  exact index_prodMap_of_finiteDimensional T S
+  exact ContinuousLinearMap.index_prodMap_of_finiteDimensional T S
 
-end ContinuousLinearMap
 
 end TauCeti

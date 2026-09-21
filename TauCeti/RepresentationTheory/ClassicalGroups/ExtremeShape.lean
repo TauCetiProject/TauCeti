@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Nat.Factorial.NatCast
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
 public import TauCeti.RepresentationTheory.Intertwining
 
 /-!

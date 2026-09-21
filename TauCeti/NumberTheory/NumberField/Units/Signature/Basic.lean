@@ -87,6 +87,14 @@ image of `u` under the real embedding `w` composed with `(𝓞 K) → K`. -/
   simp only [unitSignature, MonoidHom.comp_apply, fieldUnitSignature_apply]
 
 omit [NumberField K] in
+/-- The signature of an integer unit is the field-unit signature of its image in `Kˣ`. -/
+theorem unitSignature_eq_fieldUnitSignature (u : (RingOfIntegers K)ˣ) :
+    unitSignature u =
+      fieldUnitSignature (Units.map (algebraMap (RingOfIntegers K) K).toMonoidHom u) := by
+  funext w
+  rw [unitSignature_apply, fieldUnitSignature_apply]
+
+omit [NumberField K] in
 /-- An integer unit has trivial signature exactly when its image in `K` is totally positive. -/
 @[simp] theorem unitSignature_eq_one_iff {u : (𝓞 K)ˣ} :
     unitSignature u = 1 ↔ IsTotallyPositive (algebraMap (𝓞 K) K (u : 𝓞 K)) := by

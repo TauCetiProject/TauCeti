@@ -1,0 +1,202 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.Matrix.Notation
+public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
+public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+
+/-!
+# The signature of a square matrix over a linearly ordered field
+
+The *signature* of a square matrix `A` over a linearly ordered field is the difference between
+the two indices of inertia of the quadratic form `x ↦ x ⬝ᵥ A *ᵥ x`, that is Mathlib's
+`sigPos A.toQuadraticForm' - sigNeg A.toQuadraticForm'`. Only the symmetric part of `A` is
+visible to that form, so the signature of `A` agrees with the signature of `A + Aᵀ`.
+
+The three properties that make the signature computable are proved here: it is invariant under
+congruence `A ↦ P * A * Pᵀ` by a matrix with unit determinant, it is additive along a block
+diagonal, and on a diagonal matrix it counts the positive entries against the negative ones.
+Together these evaluate the signature of any matrix diagonalised by an explicit congruence.
+
+For an integral symmetric bilinear form presented as a lattice,
+`TauCeti.IntegralLattice.signature` records the finer triple `(n₊, n₀, n₋)`; the definition
+here is the basis-level matrix counterpart, which is what a congruence class of matrices — such
+as the S-equivalence class of a Seifert matrix — offers.
+
+## Main definitions
+
+* `Matrix.signature`: the difference of the two indices of inertia.
+
+## Main results
+
+* `Matrix.signature_congr`: invariance under congruence by a matrix with unit determinant.
+* `Matrix.signature_submatrix_equiv_self`: invariance under an equivalence of the coordinate type.
+* `Matrix.signature_fromBlocks_zero`: additivity along a block diagonal.
+* `Matrix.signature_diagonal`: the signature of a diagonal matrix as a sum of signs.
+* `Matrix.signature_hyperbolicGram`: the hyperbolic plane has signature zero.
+* `Matrix.signature_eq_of_congr_diagonal`: the signature read off an explicit diagonalising
+  congruence.
+* `Matrix.signature_add_transpose`: the signature of `A + Aᵀ` is the signature of `A`.
+* `Matrix.signature_smul_of_pos`: positive scaling does not change the signature.
+
+## References
+
+* W. Ebeling, *Lattices and Codes*, Chapter 1.
+-/
+
+public section
+
+open Finset QuadraticMap
+
+namespace Matrix
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+
+/-- The signature of a square matrix over a linearly ordered field: the positive index of
+inertia of the quadratic form `x ↦ x ⬝ᵥ A *ᵥ x` minus its negative index.
+
+Only the symmetric part of `A` contributes, by `Matrix.signature_add_transpose`.
+
+The quadratic form of a matrix does not depend on the decidability of equality on the index
+type, so the local decider here is invisible: `Matrix.signature_def` identifies the definition
+with the one read off any `DecidableEq ι` instance. Keeping it local leaves `DecidableEq` out
+of the statements that do not mention `Matrix.toQuadraticForm'`, `Matrix.diagonal` or
+`Matrix.det` themselves. -/
+noncomputable def signature (A : Matrix ι ι 𝕜) : ℤ :=
+  letI := Classical.decEq ι
+  (_root_.sigPos A.toQuadraticForm' : ℤ) - (_root_.sigNeg A.toQuadraticForm' : ℤ)
+
+theorem signature_def [DecidableEq ι] (A : Matrix ι ι 𝕜) :
+    signature A =
+      (_root_.sigPos A.toQuadraticForm' : ℤ) - (_root_.sigNeg A.toQuadraticForm' : ℤ) := by
+  rw [signature, Subsingleton.elim (Classical.decEq ι) ‹DecidableEq ι›]
+
+/-- Isometric quadratic forms have the same signature, so the signature only depends on the
+isometry class of the form of a matrix. -/
+theorem signature_eq_of_equivalent [DecidableEq ι] [DecidableEq κ] {A : Matrix ι ι 𝕜}
+    {B : Matrix κ κ 𝕜} (h : A.toQuadraticForm'.Equivalent B.toQuadraticForm') :
+    signature A = signature B := by
+  rw [signature_def, signature_def, h.sigPos_eq, h.sigNeg_eq]
+
+/-- **Congruence invariance of the signature.** Replacing `A` by `P * A * Pᵀ` for a matrix `P`
+with unit determinant does not change the signature. -/
+theorem signature_congr [DecidableEq ι] {P : Matrix ι ι 𝕜} (hP : IsUnit P.det)
+    (A : Matrix ι ι 𝕜) : signature (P * A * Pᵀ) = signature A :=
+  signature_eq_of_equivalent ⟨isometryEquivCongr hP A⟩
+
+/-- Reindexing both coordinates of a matrix along an equivalence does not change its signature. -/
+@[simp]
+theorem signature_submatrix_equiv_self (e : ι ≃ κ) (A : Matrix ι ι 𝕜) :
+    signature (A.submatrix e.symm e.symm) = signature A := by
+  classical
+  exact signature_eq_of_equivalent ⟨isometryEquivReindex e A⟩
+
+/-- Transposing a matrix does not change its signature. -/
+@[simp]
+theorem signature_transpose (A : Matrix ι ι 𝕜) : signature Aᵀ = signature A := by
+  classical
+  rw [signature_def, signature_def, toQuadraticForm'_transpose]
+
+/-- Negating a matrix negates its signature. -/
+@[simp]
+theorem signature_neg (A : Matrix ι ι 𝕜) : signature (-A) = -signature A := by
+  classical
+  rw [signature_def, signature_def, toQuadraticForm'_neg, sigPos_neg, sigNeg_neg]
+  ring
+
+/-- The zero matrix has signature zero. -/
+@[simp]
+theorem signature_zero : signature (0 : Matrix ι ι 𝕜) = 0 := by
+  have h := signature_neg (0 : Matrix ι ι 𝕜)
+  simp only [neg_zero] at h
+  omega
+
+/-- A matrix indexed by an empty type has signature zero. -/
+@[simp]
+theorem signature_of_isEmpty [IsEmpty ι] (A : Matrix ι ι 𝕜) : signature A = 0 := by
+  classical
+  have h : Module.finrank 𝕜 (ι → 𝕜) = 0 := by simp
+  have hpos := _root_.sigPos_le_finrank A.toQuadraticForm'
+  have hneg := _root_.sigPos_le_finrank (-A.toQuadraticForm')
+  rw [h] at hpos hneg
+  rw [signature_def, ← sigPos_neg]
+  omega
+
+section StrictOrdered
+
+variable [IsStrictOrderedRing 𝕜]
+
+/-- The signature of a matrix is the signature of its symmetrisation `A + Aᵀ`. -/
+@[simp]
+theorem signature_add_transpose (A : Matrix ι ι 𝕜) : signature (A + Aᵀ) = signature A := by
+  classical
+  rw [signature_def, signature_def, toQuadraticForm'_add_transpose,
+    QuadraticForm.sigPos_smul_of_pos _ two_pos, QuadraticForm.sigNeg_smul_of_pos _ two_pos]
+
+/-- Scaling a matrix by a positive scalar does not change its signature. -/
+@[simp]
+theorem signature_smul_of_pos {c : 𝕜} (hc : 0 < c) (A : Matrix ι ι 𝕜) :
+    signature (c • A) = signature A := by
+  classical
+  rw [signature_def, signature_def, toQuadraticForm'_smul,
+    QuadraticForm.sigPos_smul_of_pos _ hc, QuadraticForm.sigNeg_smul_of_pos _ hc]
+
+/-- **Additivity of the signature along a block diagonal.** -/
+@[simp]
+theorem signature_fromBlocks_zero (A : Matrix ι ι 𝕜) (B : Matrix κ κ 𝕜) :
+    signature (fromBlocks A 0 0 B) = signature A + signature B := by
+  classical
+  have h : (fromBlocks A 0 0 B).toQuadraticForm'.Equivalent
+      (A.toQuadraticForm'.prod B.toQuadraticForm') := ⟨isometryEquivFromBlocks A B⟩
+  rw [signature_def, h.sigPos_eq, h.sigNeg_eq,
+    QuadraticForm.sigPos_prod, QuadraticForm.sigNeg_prod, signature_def, signature_def]
+  push_cast
+  ring
+
+/-- **The signature of a diagonal matrix** counts its positive entries against its negative
+ones. -/
+@[simp]
+theorem signature_diagonal [DecidableEq ι] (d : ι → 𝕜) :
+    signature (diagonal d) = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+  classical
+  rw [signature_def, toQuadraticForm'_diagonal, QuadraticForm.sigPos_weightedSumSquares,
+    QuadraticForm.sigNeg_weightedSumSquares, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred,
+    Finset.card_filter, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter,
+    Nat.cast_sum, Nat.cast_sum, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rcases lt_trichotomy (d i) 0 with h | h | h
+  · simp [h, asymm h]
+  · simp [h]
+  · simp [h, h.not_gt]
+
+/-- **The signature from an explicit diagonalising congruence.** -/
+theorem signature_eq_of_congr_diagonal [DecidableEq ι] {P A : Matrix ι ι 𝕜} (hP : IsUnit P.det)
+    {d : ι → 𝕜} (h : P * A * Pᵀ = diagonal d) :
+    signature A = ∑ i, if 0 < d i then (1 : ℤ) else if d i < 0 then -1 else 0 := by
+  rw [← signature_congr hP A, h, signature_diagonal]
+
+/-- The Gram matrix of a hyperbolic plane has signature zero: it is congruent to
+`diagonal ![2, -2]`. -/
+@[simp]
+theorem signature_hyperbolicGram :
+    signature (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) 𝕜) = 0 := by
+  have hP : IsUnit (!![(1 : 𝕜), 1; 1, -1]).det := by
+    rw [det_fin_two_of, isUnit_iff_ne_zero]
+    norm_num
+  have hd : !![(1 : 𝕜), 1; 1, -1] * !![0, 1; 1, 0] * (!![(1 : 𝕜), 1; 1, -1])ᵀ
+      = diagonal ![2, -2] := by
+    rw [diagonal_fin_two]
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [mul_apply, Fin.sum_univ_two, transpose_apply] <;> ring
+  rw [signature_eq_of_congr_diagonal hP hd, Fin.sum_univ_two]
+  norm_num
+
+end StrictOrdered
+
+end Matrix

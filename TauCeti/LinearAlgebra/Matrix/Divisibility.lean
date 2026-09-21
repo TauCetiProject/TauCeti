@@ -8,6 +8,8 @@ module
 -- `Matrix.mul_apply` expands a product entry as a sum; it also re-exports
 -- `Mathlib.Data.Matrix.Diagonal`, which supplies `Matrix.diagonal_apply_eq`.
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import Mathlib.RingTheory.Coprime.Basic
 
 /-!
 # Divisibility of matrix entries under multiplication
@@ -17,9 +19,12 @@ entry of `P * A * Q` is an `S`-combination of entries of `A`, so anything dividi
 those divides all of these.
 
 Nothing here needs invertibility, a square shape, or a diagonal target — only that the
-products are conformable — so the statements are at `CommSemiring` and rectangular. The
-Smith-normal-form theory consumes both, but neither has a Smith-normal-form hypothesis and
-neither should require importing that theory to reach.
+products are conformable — so the statements are at `NonUnitalCommSemiring` and rectangular.
+No multiplicative identity is involved; multiplication is used both associatively and
+commutatively.
+
+The Smith-normal-form theory consumes both, but neither has a Smith-normal-form hypothesis
+and neither should require importing that theory to reach.
 
 ## Main results
 
@@ -27,13 +32,16 @@ neither should require importing that theory to reach.
   `P * A * Q`.
 * `Matrix.dvd_diag_of_dvd_entries`: if `L * A * R` is `Matrix.diagonal d`, then a common
   divisor of the entries of `A` divides every `d k`.
+* `Matrix.forall_dvd_apply_iff_of_mul_eq_mul`: if `W * B = A * W`, then an element coprime to
+  `det W` divides every entry of `A` exactly when it divides every entry of `B` — `A` and `B`
+  are conjugate after inverting `det W`.
 -/
 
 public section
 
 namespace Matrix
 
-variable {l m n o S : Type*} [CommSemiring S]
+variable {l m n o S : Type*} [NonUnitalCommSemiring S]
 
 /-- **A common divisor of the entries survives two-sided multiplication.** If `c` divides
 every entry of `A`, then it divides every entry of `P * A * Q`, since each entry of the
@@ -54,5 +62,22 @@ theorem dvd_diag_of_dvd_entries [Fintype m] [Fintype n] [DecidableEq o] (A : Mat
   have hkk := congr_fun₂ h k k
   rw [Matrix.diagonal_apply_eq] at hkk
   exact hkk ▸ dvd_mul_mul_apply hc L R k k
+
+/-- **Conjugation by a matrix of determinant coprime to `e` preserves divisibility by `e`.** If
+`W * B = A * W`, then `adjugate W * A * W = det W • B` and `W * B * adjugate W = det W • A`, so an
+`e` coprime to `det W` divides every entry of `A` exactly when it divides every entry of `B`. -/
+theorem forall_dvd_apply_iff_of_mul_eq_mul {R : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+    {A B W : Matrix n n R} (h : W * B = A * W) {e : R} (he : IsCoprime e W.det) :
+    (∀ i j, e ∣ A i j) ↔ ∀ i j, e ∣ B i j := by
+  constructor
+  · intro hA i j
+    have hij := dvd_mul_mul_apply hA W.adjugate W i j
+    rw [mul_assoc, ← h, ← mul_assoc, adjugate_mul, smul_mul, one_mul, smul_apply,
+      smul_eq_mul] at hij
+    exact he.dvd_of_dvd_mul_left hij
+  · intro hB i j
+    have hij := dvd_mul_mul_apply hB W W.adjugate i j
+    rw [h, mul_assoc, mul_adjugate, Matrix.mul_smul, mul_one, smul_apply, smul_eq_mul] at hij
+    exact he.dvd_of_dvd_mul_left hij
 
 end Matrix

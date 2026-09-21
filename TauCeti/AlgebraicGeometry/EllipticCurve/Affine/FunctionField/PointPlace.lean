@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Place
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
+-- Proof-only: `Valuation.algebraMap_coordinateRing_le_one`, the integrality of the coordinate ring
+-- at a valuation with no pole at `x`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.CoordinateRingIntegral
 
 /-!
 # Rational points as degree-one places of an elliptic function field
@@ -42,6 +45,8 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   exactly when `x` has no pole there.
 * `TauCeti.Place.eq_infinity_or_existsUnique_eq_ofPrime`: every place is either the place at
   infinity or the place of a unique height-one prime of the coordinate ring.
+* `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
+  coordinate ring exactly when it is the place at infinity.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
 
 ## Roadmap
@@ -147,18 +152,7 @@ theorem exists_eq_ofPrime_iff_valuation_X_le_one [IsDedekindDomain W.CoordinateR
     simpa only [IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField] using
       P.mem_integers_iff.mp (hR (algebraMap F[X] W.CoordinateRing Polynomial.X))
   · intro hx r
-    apply P.mem_integers_of_isIntegral
-      (R := F[X]) (fun p ↦ ?_) ((Algebra.IsIntegral.isIntegral r).map
-        (IsScalarTower.toAlgHom F[X] W.CoordinateRing W.FunctionField))
-    apply P.adjoin_le_integers_iff.mpr (P.mem_integers_iff.mpr hx)
-    rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range]
-    have heval :
-        (Polynomial.aeval (algebraMap F[X] W.FunctionField Polynomial.X) :
-            F[X] →ₐ[F] W.FunctionField) =
-          IsScalarTower.toAlgHom F F[X] W.FunctionField := by
-      apply Polynomial.algHom_ext
-      rw [Polynomial.aeval_X, IsScalarTower.toAlgHom_apply]
-    exact ⟨p, congrArg (fun f : F[X] →ₐ[F] W.FunctionField ↦ f p) heval⟩
+    exact P.mem_integers_iff.mpr (P.valuation.algebraMap_coordinateRing_le_one hx r)
 
 /-- If the coordinate ring is Dedekind, every normalized place of a Weierstrass function field is
 either the place at infinity or the place of a unique height-one prime of the coordinate ring. -/
@@ -173,6 +167,29 @@ theorem eq_infinity_or_existsUnique_eq_ofPrime [IsDedekindDomain W.CoordinateRin
     obtain ⟨𝔭, h𝔭⟩ := (exists_eq_ofPrime_iff_valuation_X_le_one P).mpr hx
     refine ⟨𝔭, h𝔭, fun 𝔮 h𝔮 ↦ ?_⟩
     exact ofPrime_injective F W.FunctionField (h𝔮.trans h𝔭.symm)
+
+/-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
+-- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
+-- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
+-- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
+-- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
+@[simp]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+    (Q : Place F W.FunctionField) :
+    (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
+      Q = infinity W := by
+  constructor
+  · rintro ⟨r, hr⟩
+    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
+    · exact h
+    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
+        (by simpa using hr)
+  · rintro rfl
+    refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
+    rw [valuation_infinity,
+      ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField]
+    exact W.one_lt_infinityPlace_X
 
 /-- The place at infinity is rational: its residue field has degree one over the base field. -/
 @[simp]
@@ -296,12 +313,13 @@ end TauCeti
 
 namespace WeierstrassCurve.Affine
 
-open TauCeti TauCeti.WeierstrassCurve.Affine
+open TauCeti WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve.Affine F) [W.IsElliptic]
 
 local instance : IsDedekindDomain W.CoordinateRing :=
-  isDedekindDomain_coordinateRing W
+  have := isIntegrallyClosed_coordinateRing W
+  W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
 /-- **The point--place dictionary for an elliptic curve**: rational points correspond to the
 degree-one normalized places of the function field.  The point at infinity goes to

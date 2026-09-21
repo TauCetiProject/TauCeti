@@ -36,7 +36,7 @@ that Mathlib does not provide directly, used across the multiquadratic developme
   factorization monoid; the integer statement here records a nonzero square factor and puts the
   factors in the orientation used by the rational square-class argument.
 * `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree`: squarefreeness of *every* prime
-  divisor of an `n > 2`, read in a commutative ring, yields the single branch that Mathlib's
+  divisor of an `n > 2`, read in any ring, yields the single branch that Mathlib's
   `Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt` splits into. This is the bridge from a
   uniform hypothesis, which a caller can usually establish without knowing `n`, to the sharp
   branch-dependent one that a proof consumes.
@@ -113,8 +113,12 @@ this adds is carrying the squarefreeness through it. The point of stating it is 
 hypotheses differ in usability: the uniform one can be established with no knowledge of `n` — over
 `ℤ` it is free, since every rational prime is squarefree — while the branch-dependent one is what a
 proof consumes. Anything proved from the sharp form is therefore available from the uniform form
-through this lemma. -/
-theorem four_dvd_or_exists_odd_prime_and_dvd_of_squarefree {R : Type*} [CommRing R] {n : ℕ}
+through this lemma.
+
+The ambient ring may be noncommutative. `Squarefree` is a `Monoid` notion and the integer casts
+need `AddGroupWithOne`; `Ring` is the bundled class supplying both with a single `1`, which is
+the unit `IsUnit` refers to inside `Squarefree`. -/
+theorem four_dvd_or_exists_odd_prime_and_dvd_of_squarefree {R : Type*} [Ring R] {n : ℕ}
     (hn : 2 < n) (hsf : ∀ p : ℕ, p.Prime → p ∣ n → Squarefree ((p : ℤ) : R)) :
     (4 ∣ n ∧ Squarefree (2 : R)) ∨
       ∃ p : ℕ, p.Prime ∧ p ≠ 2 ∧ p ∣ n ∧ Squarefree ((p : ℤ) : R) := by

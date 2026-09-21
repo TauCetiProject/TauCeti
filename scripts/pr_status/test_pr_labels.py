@@ -17,6 +17,137 @@ import core  # noqa: E402
 import labels  # noqa: E402
 
 
+# Real `gh api` stderr: the API message, then the status gh appends.
+SECONDARY_403 = ("gh: You have exceeded a secondary rate limit and have been "
+                 "temporarily blocked from content creation. (HTTP 403)")
+ABUSE_403 = ("gh: You have triggered an abuse detection mechanism. "
+             "Please wait a few minutes before you try again. (HTTP 403)")
+PRIMARY_403 = "gh: API rate limit exceeded for installation. (HTTP 403)"
+TOO_MANY_429 = "gh: Too Many Requests (HTTP 429)"
+NOT_FOUND_404 = "gh: Not Found (HTTP 404)"
+# The finding this pins: wording alone must not trigger a retry.
+NOT_FOUND_MENTIONING_RATE = ("gh: No workflow named 'rate limit dashboard' "
+                             "was found. (HTTP 404)")
+
+
+class RateLimitClassification(unittest.TestCase):
+    """Status first, wording second: `gh` reports rate limits as 403 or 429."""
+
+    def test_recognises_the_real_limit_responses(self):
+        for stderr in (SECONDARY_403, ABUSE_403, PRIMARY_403, TOO_MANY_429):
+            with self.subTest(stderr=stderr[:40]):
+                self.assertTrue(core._rate_limited(stderr))
+
+    def test_a_404_is_never_a_rate_limit_however_it_is_worded(self):
+        self.assertFalse(core._rate_limited(NOT_FOUND_404))
+        self.assertFalse(core._rate_limited(NOT_FOUND_MENTIONING_RATE))
+
+    def test_a_403_that_is_merely_forbidden_is_not_retried(self):
+        self.assertFalse(core._rate_limited("gh: Resource not accessible by "
+                                            "integration (HTTP 403)"))
+
+    def test_stderr_with_no_status_is_not_retried(self):
+        self.assertFalse(core._rate_limited("gh: connection reset"))
+
+
+class RateLimitBackoff(unittest.TestCase):
+    """`gh` does not retry a rate limit, and a burst can spend the budget."""
+
+    def setUp(self):
+        core._BLOCKED_UNTIL = 0.0
+        self.addCleanup(setattr, core, "_BLOCKED_UNTIL", 0.0)
+
+    def result(self, code, err):
+        return mock.Mock(returncode=code, stderr=err, stdout="ok")
+
+    def call(self, results, quota=None, waits=None):
+        """Run gh_api over canned subprocess results. `quota` is what the quota
+        probe reports: None = secondary limit, an int = seconds to reset."""
+        record = waits.append if waits is not None else (lambda s: None)
+        state = ((core.QUOTA_EXHAUSTED, quota) if isinstance(quota, int)
+                 else (quota or core.QUOTA_OK, None))
+        with (mock.patch.object(core.subprocess, "run") as run,
+              mock.patch.object(core.time, "sleep", record),
+              mock.patch.object(core, "_quota_state", lambda: state)):
+            run.side_effect = results
+            return core.gh_api("/x"), run
+
+    def test_retries_through_a_secondary_limit(self):
+        out, run = self.call([self.result(1, SECONDARY_403), self.result(0, "")])
+        self.assertEqual((out, run.call_count), ("ok", 2))
+
+    def test_a_normal_failure_is_not_retried(self):
+        with self.assertRaises(RuntimeError) as caught:
+            self.call([self.result(1, NOT_FOUND_404)])
+        self.assertNotIsInstance(caught.exception, core.RateLimited)
+
+    def test_waits_at_least_a_minute_before_retrying(self):
+        # GitHub asks for 60s minimum on a secondary limit; a faster schedule can
+        # prolong the block.
+        waits = []
+        self.call([self.result(1, SECONDARY_403), self.result(1, ABUSE_403),
+                   self.result(0, "")], waits=waits)
+        self.assertEqual(waits, [core.SECONDARY_BACKOFF_SECONDS,
+                                 core.SECONDARY_BACKOFF_SECONDS * 2])
+
+    def test_an_exhausted_quota_fails_fast_rather_than_sleeping_it_out(self):
+        # The hourly quota clears only at its reset, which no workflow step can
+        # wait for.
+        waits = []
+        with self.assertRaises(core.RateLimited) as caught:
+            self.call([self.result(1, PRIMARY_403)], quota=1800, waits=waits)
+        self.assertEqual(waits, [])
+        self.assertIn("1800s", str(caught.exception))
+
+    def test_a_bare_429_with_no_message_is_still_a_rate_limit(self):
+        # `gh` renders a response with no JSON message as "gh: HTTP 429".
+        self.assertTrue(core._rate_limited("gh: HTTP 429"))
+
+    def test_a_failed_quota_probe_is_not_read_as_room_to_spare(self):
+        # /rate_limit does not cost primary quota but can cost secondary, so the
+        # probe can itself be refused; reading that as "budget is fine" would keep
+        # us issuing requests while limited.
+        waits = []
+        self.call([self.result(1, SECONDARY_403), self.result(0, "")],
+                  quota=core.QUOTA_UNKNOWN, waits=waits)
+        self.assertEqual(waits, [core.SECONDARY_BACKOFF_SECONDS])
+
+    def test_the_breaker_holds_for_the_next_interval_not_the_first(self):
+        # Releasing after 60s would let a looping caller restart the whole
+        # schedule, which is what the breaker exists to prevent.
+        before = core.time.time()
+        with self.assertRaises(core.RateLimited):
+            self.call([self.result(1, SECONDARY_403)] * core.RATE_LIMIT_ATTEMPTS)
+        held = core._BLOCKED_UNTIL - before
+        self.assertGreaterEqual(
+            held, core.SECONDARY_BACKOFF_SECONDS * 2 ** (core.RATE_LIMIT_ATTEMPTS - 1))
+
+    def test_a_short_block_never_shortens_a_long_one(self):
+        core._BLOCKED_UNTIL = core.time.time() + 3600
+        core._block_for(1)
+        self.assertGreater(core._BLOCKED_UNTIL - core.time.time(), 3000)
+
+    def test_a_quota_resetting_soon_is_waited_for(self):
+        waits = []
+        out, _ = self.call([self.result(1, PRIMARY_403), self.result(0, "")],
+                           quota=20, waits=waits)
+        self.assertEqual((out, waits), ("ok", [20]))
+
+    def test_exhausting_the_attempts_raises_rate_limited(self):
+        with self.assertRaises(core.RateLimited):
+            self.call([self.result(1, SECONDARY_403)] * core.RATE_LIMIT_ATTEMPTS)
+
+    def test_a_later_read_fails_fast_instead_of_waiting_again(self):
+        # stuck_alerts runs ten detectors catching failures individually; without
+        # this each would start the whole wait over and blow the job timeout.
+        with self.assertRaises(core.RateLimited):
+            self.call([self.result(1, SECONDARY_403)] * core.RATE_LIMIT_ATTEMPTS)
+        with mock.patch.object(core.subprocess, "run") as run:
+            with self.assertRaises(core.RateLimited):
+                core.gh_api("/y")
+            run.assert_not_called()
+
+
 class ReviewState(unittest.TestCase):
     HEAD = "abc123"
 
@@ -184,52 +315,6 @@ class InProgress(unittest.TestCase):
         self.assertFalse(core.inprogress_from([{"body": "just a comment"}], self.HEAD, self.NOW))
 
 
-class DerivedLabel(unittest.TestCase):
-    def label(self, lifecycle="open", ci=None, review="none", inprogress=False):
-        return labels.derived_label(
-            {"lifecycle": lifecycle, "ci": ci, "review": review,
-             "review_inprogress": inprogress, "head": "h", "title": "t"})
-
-    def test_merged_and_closed_have_no_label(self):
-        self.assertIsNone(self.label(lifecycle="merged"))
-        self.assertIsNone(self.label(lifecycle="closed"))
-
-    def test_ci_not_reported_or_running_is_awaiting_ci(self):
-        self.assertEqual(self.label(ci=None), "awaiting-CI")
-        self.assertEqual(self.label(ci="running"), "awaiting-CI")
-
-    def test_ci_failure_is_ci_failed(self):
-        self.assertEqual(self.label(ci="failure"), "ci-failed")
-
-    def test_green_changes_is_awaiting_author(self):
-        self.assertEqual(self.label(ci="success", review="changes"), "awaiting-author")
-
-    def test_a_red_build_outranks_the_review_verdict(self):
-        # Both states want the author, but they are told apart on purpose: a red build is read in the
-        # build log and a changes request in the review threads. A PR that is red AND has a changes
-        # request shows ci-failed, because nothing about the review can be trusted until it builds.
-        self.assertEqual(self.label(ci="failure", review="changes"), "ci-failed")
-        self.assertEqual(self.label(ci="failure", review="approved"), "ci-failed")
-
-    def test_green_approved_is_ready(self):
-        self.assertEqual(self.label(ci="success", review="approved"), "ready-to-merge")
-
-    def test_green_pending_no_marker_is_awaiting_review(self):
-        self.assertEqual(self.label(ci="success", review="none"), "awaiting-review")
-        self.assertEqual(self.label(ci="success", review="running"), "awaiting-review")
-
-    def test_green_pending_with_marker_is_review_in_progress(self):
-        self.assertEqual(self.label(ci="success", review="none", inprogress=True), "review-in-progress")
-        self.assertEqual(self.label(ci="success", review="running", inprogress=True), "review-in-progress")
-
-    def test_marker_only_overlays_the_awaiting_review_slot(self):
-        # A live marker never overrides a more important state.
-        self.assertEqual(self.label(ci="running", inprogress=True), "awaiting-CI")
-        self.assertEqual(self.label(ci="failure", inprogress=True), "ci-failed")
-        self.assertEqual(self.label(ci="success", review="changes", inprogress=True), "awaiting-author")
-        self.assertEqual(self.label(ci="success", review="approved", inprogress=True), "ready-to-merge")
-
-
 class Derive(unittest.TestCase):
     """core.derive glues pr_state/ci_status/issue_comments together; stub them."""
 
@@ -296,28 +381,30 @@ class Reconcile(unittest.TestCase):
     """labels.reconcile drives the label set to exactly {desired}; stub derive and the writes."""
 
     def setUp(self):
-        self._d = labels.core.derive
+        self._d = labels.readiness.assess
         self._c = labels.current_status_labels
         self._a = labels.add_label
         self._r = labels.remove_label
+        self._e = labels.ensure_label
+        labels.ensure_label = lambda name: None
         self.added, self.removed = [], []
         labels.add_label = lambda pr, name: self.added.append(name)
         labels.remove_label = lambda pr, name: self.removed.append(name)
 
     def tearDown(self):
-        labels.core.derive = self._d
+        labels.readiness.assess = self._d
         labels.current_status_labels = self._c
         labels.add_label = self._a
         labels.remove_label = self._r
+        labels.ensure_label = self._e
 
     def run_with(self, status, present):
-        labels.core.derive = lambda pr, ci=None: status
+        labels.readiness.assess = lambda pr, ci=None: status
         labels.current_status_labels = lambda pr: present
 
     def test_switches_to_the_single_desired_label(self):
         self.run_with(
-            {"lifecycle": "open", "ci": "success", "review": "approved", "review_inprogress": False,
-             "head": "h", "title": "t"},
+            {"category": "ready-to-merge", "head": "h", "reason": "gate accepted"},
             present=["awaiting-review"])
         labels.reconcile("1")
         self.assertEqual(self.added, ["ready-to-merge"])
@@ -325,8 +412,7 @@ class Reconcile(unittest.TestCase):
 
     def test_idempotent_when_already_correct(self):
         self.run_with(
-            {"lifecycle": "open", "ci": None, "review": "none", "review_inprogress": False,
-             "head": "h", "title": "t"},
+            {"category": "awaiting-CI", "head": "h", "reason": "build missing"},
             present=["awaiting-CI"])
         labels.reconcile("1")
         self.assertEqual(self.added, [])
@@ -334,12 +420,31 @@ class Reconcile(unittest.TestCase):
 
     def test_terminal_strips_all(self):
         self.run_with(
-            {"lifecycle": "merged", "ci": None, "review": None, "review_inprogress": False,
-             "head": "h", "title": "t"},
+            {"category": None, "head": "h", "reason": "closed"},
             present=["ready-to-merge", "review-in-progress"])
         labels.reconcile("1")
         self.assertEqual(self.added, [])
         self.assertEqual(sorted(self.removed), ["ready-to-merge", "review-in-progress"])
+
+
+class Backfill(unittest.TestCase):
+    def run_backfill(self, errors):
+        with mock.patch.object(labels.readiness, "engine"), \
+             mock.patch.object(labels.core, "gh_api", return_value="1\n2\n3"), \
+             mock.patch.object(labels, "ensure_label") as ensure, \
+             mock.patch.object(labels, "reconcile", side_effect=errors) as reconcile:
+            status = labels.reconcile_all()
+        self.assertEqual(ensure.call_count, len(labels.LABELS))
+        return status, reconcile.call_count
+
+    def test_individual_failure_does_not_starve_later_prs(self):
+        self.assertEqual(self.run_backfill([None, RuntimeError("unavailable"), None]), (1, 3))
+
+    def test_rate_limit_stops_remaining_reads(self):
+        self.assertEqual(self.run_backfill([core.RateLimited("quota"), None, None]), (1, 1))
+
+    def test_successful_backfill(self):
+        self.assertEqual(self.run_backfill([None, None, None]), (0, 3))
 
 
 class EnsureLabel(unittest.TestCase):

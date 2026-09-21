@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CupProduct
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
 
 /-!
 # The projection formula for the explicit low-degree cup products

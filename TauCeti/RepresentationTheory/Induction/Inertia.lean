@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Conjugate
+public import TauCeti.RepresentationTheory.Simple.Basic
+import TauCeti.RepresentationTheory.AsModule
 
 /-!
 # The inertia group of a representation of a normal subgroup
@@ -31,9 +33,10 @@ itself is an inner twist: `A.ρ n` intertwines `{}^n A` with `A`
 Mathlib's `Subgroup.normal_subgroupOf` instance supplies for any subgroup of `G`, this is what makes
 the quotient `inertia A / N` — where the Clifford-theory obstruction lives — available.
 
-Nothing here needs `A` to be irreducible: the inertia group is defined for every
-finite-dimensional representation of `N`, and irreducibility only enters later, when Clifford's
-theorem identifies the constituents of a restriction with a single `G`-orbit.
+The inertia group and its basic properties need no irreducibility hypothesis.  Irreducibility
+enters only in `Representation.IntertwiningMap.mem_inertia`, where Schur's lemma turns a nonzero
+intertwiner into an isomorphism, and later when Clifford's theorem identifies the constituents of a
+restriction with a single `G`-orbit.
 
 ## Main definitions
 
@@ -43,6 +46,8 @@ theorem identifies the constituents of a restriction with a single `G`-orbit.
 
 * `TauCeti.mem_inertia_iff`: membership in the inertia group is the existence of an isomorphism
   `{}^g A ≅ A`.
+* `Representation.IntertwiningMap.mem_inertia`: a nonzero intertwiner from an irreducible
+  representation to one of its conjugates puts the conjugating element in the inertia group.
 * `TauCeti.le_inertia`: the inertia group contains `N`.
 * `TauCeti.inertia_congr`: isomorphic representations have the same inertia group, so the inertia
   group is an invariant of the isomorphism class.
@@ -134,3 +139,26 @@ theorem char_conj_eq_of_mem_inertia {A : FDRep k N} {g : G} (hg : g ∈ inertia 
 end Field
 
 end TauCeti
+
+namespace Representation.IntertwiningMap
+
+open CategoryTheory TauCeti
+
+variable {k G : Type*} [Field k] [Group G] {N : Subgroup G} [N.Normal]
+
+/-- **A nonzero intertwiner into a conjugate puts the conjugating element in the inertia group.**
+If `V` is irreducible and some intertwiner from `V` to `{}^g V` is nonzero, then Schur's lemma makes
+it an isomorphism, so `g ∈ inertia V`. -/
+theorem mem_inertia {V : FDRep k N} [Simple V] {g : G}
+    (q : IntertwiningMap V.ρ (conjNormalFDRep g V).ρ) (hq : q ≠ 0) : g ∈ inertia V := by
+  have := FDRep.isIrreducible_of_simple V
+  have : Simple (conjNormalFDRep g V) := by
+    rw [conjNormalFDRep, ← conjNormalFDRepEquiv_functor]
+    exact CategoryTheory.simple_obj _ V
+  have := FDRep.isIrreducible_of_simple (conjNormalFDRep g V)
+  obtain ⟨i⟩ := nonempty_fdRepIso_iff.mpr
+    ⟨IntertwiningMap.ofBijective q
+      ((_root_.Representation.IsIrreducible.bijective_or_eq_zero q).resolve_right hq)⟩
+  exact mem_inertia_iff.mpr ⟨i.symm⟩
+
+end Representation.IntertwiningMap

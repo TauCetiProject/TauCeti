@@ -69,8 +69,8 @@ which ranks are well behaved, and each asks for it as `StrongRankCondition` and 
   `x * x = trace x • x - norm x • 1`.
 * `TauCeti.Octonion.finrank_imaginary`: the imaginary octonions, the trace-zero subspace, are
   `7`-dimensional. The derivation algebra `Der 𝕆` is `TauCeti.derivationLieAlgebra R (Octonion R)`
-  (`TauCeti/Algebra/Lie/Derivation.lean`); identifying the imaginary octonions with the fundamental
-  representation of `G₂ = Der 𝕆` still waits on the count `finrank (Der 𝕆) = 14` and the
+  (`TauCeti/Algebra/Lie/Derivation/Basic.lean`); identifying the imaginary octonions with the
+  fundamental representation of `G₂ = Der 𝕆` still waits on the count `finrank (Der 𝕆) = 14` and the
   isomorphism with `LieAlgebra.g₂`, neither of which is proved here.
 
 ## Implementation notes
@@ -96,7 +96,7 @@ The norm is available both as the bare map `Octonion R → R` the roadmap pins a
 `TauCeti.Octonion.normQuadraticForm`, as a `QuadraticForm R (Octonion R)`; the bundled form is what
 gives its polarization Mathlib's bilinearity and symmetry API for free. The derivation algebra
 `Der 𝕆` is
-`TauCeti.derivationLieAlgebra R (Octonion R)`, built in `TauCeti/Algebra/Lie/Derivation.lean`.
+`TauCeti.derivationLieAlgebra R (Octonion R)`, built in `TauCeti/Algebra/Lie/Derivation/Basic.lean`.
 
 ## References
 

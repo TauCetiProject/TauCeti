@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Basic
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 

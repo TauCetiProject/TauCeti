@@ -169,23 +169,23 @@ private theorem eqOn_left_exciseCrossings_cons (W : CircularCapWindow)
 private theorem eqOn_window_exciseCrossings_cons (W : CircularCapWindow)
     {windows : List CircularCapWindow}
     (hordered : (W :: windows).Pairwise fun U V => U.upper < V.lower)
-    (hlu : W.lower < W.upper) :
+    (hlu : W.lower ≤ W.upper) :
     EqOn (W.cap s) (exciseCrossings γ s (W :: windows)) (uIoo W.lower W.upper) := by
   have hpw : (W :: windows).Pairwise fun U V => Disjoint U.interval V.interval :=
     pairwise_disjoint_interval_of_pairwise_upper_lt_lower hordered
   intro t ht
-  rw [uIoo_of_le hlu.le] at ht
+  rw [uIoo_of_le hlu] at ht
   exact (exciseCrossings_eqOn_window hpw List.mem_cons_self (by
     rw [CircularCapWindow.mem_interval_iff]
     exact ⟨ht.1.le, ht.2.le⟩)).symm
 
 /-- After the first window, simultaneous excision agrees with excision by the tail. -/
 private theorem eqOn_tail_exciseCrossings_cons (W : CircularCapWindow)
-    (windows : List CircularCapWindow) (hWb : W.upper < b) :
+    (windows : List CircularCapWindow) (hWb : W.upper ≤ b) :
     EqOn (exciseCrossings γ s windows) (exciseCrossings γ s (W :: windows))
       (uIoo W.upper b) := by
   intro t ht
-  rw [uIoo_of_le hWb.le] at ht
+  rw [uIoo_of_le hWb] at ht
   rw [exciseCrossings_cons]
   apply exciseCrossings_apply_congr
   exact (W.excise_of_notMem fun htW =>
@@ -203,8 +203,8 @@ private theorem eqOn_pieces_exciseCrossings_cons (W : CircularCapWindow)
           (uIoo W.upper b) := by
   rw [List.pairwise_cons] at hordered
   exact ⟨eqOn_left_exciseCrossings_cons W hordered.1 hW.1 hW.2.1,
-    eqOn_window_exciseCrossings_cons W (List.pairwise_cons.mpr hordered) hW.2.1,
-    eqOn_tail_exciseCrossings_cons W windows hW.2.2⟩
+    eqOn_window_exciseCrossings_cons W (List.pairwise_cons.mpr hordered) hW.2.1.le,
+    eqOn_tail_exciseCrossings_cons W windows hW.2.2.le⟩
 
 /-- The Cauchy-kernel principal value exists after gluing finitely many ordered crossing windows
 to the point-avoiding pieces between them. -/
@@ -260,7 +260,6 @@ private theorem cauchyPVExistsAt_exciseCrossings_of_ordered_windows
       have hinsideTail := inside_tail_of_ordered_windows W hordered.1 hinside
       have havoidTail := avoid_tail_of_ordered_windows W hW havoid
       have hpvTail := ih htail (by linarith [hW.2.2]) hordered.2 hinsideTail havoidTail
-      let excised := exciseCrossings γ s (W :: windows)
       obtain ⟨heqLeft, heqWindow, heqTail⟩ :=
         eqOn_pieces_exciseCrossings_cons W windows
           (List.pairwise_cons.mpr ⟨hordered.1, hordered.2⟩) hW

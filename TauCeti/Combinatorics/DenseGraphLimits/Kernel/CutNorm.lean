@@ -215,6 +215,18 @@ theorem cutNorm_le_integral_abs (K : SymmKernel Ω μ) :
     cutNorm μ K ≤ ∫ p, |K p.1 p.2| ∂(μ.prod μ) :=
   cutNorm_le μ fun S _ T _ => K.abs_rectIntegral_le_integral_abs μ S T
 
+/-- A pointwise bound on a kernel bounds its cut norm, on a probability carrier.
+
+The rectangle integrals defining the cut norm are integrals over subsets of a probability space, so
+no factor for the total mass appears. -/
+theorem cutNorm_le_of_forall_abs_le [IsProbabilityMeasure μ] (K : SymmKernel Ω μ) {C : ℝ}
+    (hK : ∀ x y, |K x y| ≤ C) : cutNorm μ K ≤ C := by
+  refine (cutNorm_le_integral_abs μ K).trans ?_
+  calc
+    ∫ p, |K p.1 p.2| ∂(μ.prod μ) ≤ ∫ _p : Ω × Ω, C ∂(μ.prod μ) :=
+      integral_mono K.integrable_uncurry.abs (integrable_const C) fun p => hK p.1 p.2
+    _ = C := by simp
+
 /-- The zero kernel has cut norm zero. -/
 @[simp]
 theorem cutNorm_zero : cutNorm μ (0 : SymmKernel Ω μ) = 0 := by

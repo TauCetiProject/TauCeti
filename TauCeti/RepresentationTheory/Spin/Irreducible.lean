@@ -34,7 +34,7 @@ those two pieces and nothing finer:
 
 The proof of that structure theorem does not count dimensions a second time. Surjectivity onto the
 *product* comes from the full structure theorem `TauCeti.spinAction_bijective` together with the
-parity bookkeeping of `TauCeti/RepresentationTheory/Spin/HalfSpin.lean`. This file records its
+parity bookkeeping of `TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean`. This file records its
 representation-theoretic consequences: each half-spin summand has no proper nonzero invariant
 subspace because its factor is a full endomorphism algebra, and the two even-Clifford actions are
 **inequivalent**
@@ -52,9 +52,9 @@ irreducible, that the odd half is irreducible when `P.W ≠ ⊥`, and that the t
 
 The actions themselves — `TauCeti.spinPlusAction`, `TauCeti.spinMinusAction` and their pair
 `TauCeti.evenSpinActionProd` — are defined in
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean`, beside the bundling of the same two summands as
-subrepresentations of `spinRep` that the same invariance gives; this file only proves theorems
-about them.
+`TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean`, beside the bundling of the same two
+summands as subrepresentations of `spinRep` that the same invariance gives; this file only proves
+theorems about them.
 
 The hypothesis `P.line = ⊥` is the even-dimensional case, and it is exactly what makes the parity
 splitting a splitting of modules at all;
@@ -171,7 +171,7 @@ private theorem spinGroupRepresentation_apply {K : Type u} [Field K]
     spinGroupRepresentation F g = F (spinGroupToEven Q g) := rfl
 
 /-- The same, with the even element spelled out in the coordinates the half-spin lemmas of
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean` are stated in. Only the coercion lemma
+`TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean` are stated in. Only the coercion lemma
 `TauCeti.coe_spinGroupToEven_apply` is used, not the definition of the inclusion. -/
 private theorem spinGroupRepresentation_apply_mk {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}

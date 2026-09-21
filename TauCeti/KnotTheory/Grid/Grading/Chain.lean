@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Finsupp
 public import Mathlib.LinearAlgebra.Dimension.Constructions
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.KnotTheory.Grid.Chain.Basic
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.StateCardinality
 
@@ -28,6 +28,8 @@ sigma-currying equivalences; no second direct-sum or graded-module framework is 
   bidegree.
 * `TauCeti.OddComponentGridDiagram.bigradedChainEquiv`: the grid chain module as the direct sum of
   its homogeneous pieces.
+* `TauCeti.OddComponentGridDiagram.bigradedChainInclusion` and
+  `TauCeti.OddComponentGridDiagram.bigradedChainProjection`: inclusion and projection of a piece.
 
 ## Main results
 
@@ -123,6 +125,61 @@ theorem bigradedChainEquiv_single (R : Type*) [Semiring R] (x : GridState n) (r 
     sigmaFiberLinearEquiv_apply]
   simpa only [DirectSum.lof_eq_of] using
     (DirectSum.sigmaFiberAddEquiv_of (β := fun _ : GridState n => R) G.bidegree x r)
+
+/-- Include a homogeneous grid-chain piece into the total grid chain module. -/
+noncomputable def bigradedChainInclusion (R : Type*) [Semiring R] (g : ℤ × ℤ) :
+    G.BigradedChainPiece R g →ₗ[R] GridChain R n :=
+  (G.bigradedChainEquiv R).symm.toLinearMap.comp
+    (DirectSum.lof R (ℤ × ℤ) (G.BigradedChainPiece R) g)
+
+/-- Project a grid chain onto one homogeneous piece. -/
+noncomputable def bigradedChainProjection (R : Type*) [Semiring R] (g : ℤ × ℤ) :
+    GridChain R n →ₗ[R] G.BigradedChainPiece R g :=
+  (DirectSum.component R (ℤ × ℤ) (G.BigradedChainPiece R) g).comp
+    (G.bigradedChainEquiv R).toLinearMap
+
+/-- Homogeneous projection retains the coefficients of states of the specified bidegree. -/
+@[simp]
+theorem bigradedChainProjection_apply (R : Type*) [Semiring R] (g : ℤ × ℤ)
+    (c : GridChain R n) (x : {x : GridState n // G.bidegree x = g}) :
+    G.bigradedChainProjection R g c x = c x := by
+  simp [bigradedChainProjection, ← DirectSum.apply_eq_component]
+
+/-- Inclusion extends the coefficients of a homogeneous chain by zero. -/
+@[simp]
+theorem bigradedChainInclusion_apply (R : Type*) [Semiring R] (g : ℤ × ℤ)
+    (c : G.BigradedChainPiece R g) (x : GridState n) :
+    G.bigradedChainInclusion R g c x =
+      if h : G.bidegree x = g then c ⟨x, h⟩ else 0 := by
+  classical
+  simp only [bigradedChainInclusion, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    bigradedChainEquiv_symm_apply_apply, DirectSum.lof_eq_of]
+  split_ifs with h
+  · subst g
+    rw [DirectSum.of_eq_same]
+  · rw [DirectSum.of_eq_of_ne _ _ _ h]
+    rfl
+
+/-- Projection is a left inverse to the inclusion of the same homogeneous piece. -/
+@[simp]
+theorem bigradedChainProjection_bigradedChainInclusion (R : Type*) [Semiring R] (g : ℤ × ℤ)
+    (c : G.BigradedChainPiece R g) :
+    G.bigradedChainProjection R g (G.bigradedChainInclusion R g c) = c := by
+  ext x
+  simp [bigradedChainInclusion_apply, x.property]
+
+/-- Projection onto a different bidegree annihilates a homogeneous inclusion. -/
+@[simp]
+theorem bigradedChainProjection_bigradedChainInclusion_of_ne (R : Type*) [Semiring R]
+    {g g' : ℤ × ℤ} (h : g ≠ g') (c : G.BigradedChainPiece R g') :
+    G.bigradedChainProjection R g (G.bigradedChainInclusion R g' c) = 0 := by
+  ext x
+  simp [bigradedChainInclusion_apply, x.property, h]
+
+/-- Inclusion of a homogeneous piece is injective. -/
+theorem bigradedChainInclusion_injective (R : Type*) [Semiring R] (g : ℤ × ℤ) :
+    Function.Injective (G.bigradedChainInclusion R g) :=
+  Function.LeftInverse.injective (G.bigradedChainProjection_bigradedChainInclusion R g)
 
 /-- The rank of a homogeneous grid-chain piece is the number of states in its bidegree. -/
 theorem finrank_bigradedChainPiece (R : Type*) [Semiring R] [StrongRankCondition R]

@@ -250,7 +250,7 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
     exact (Set.finite_singleton _).isBounded
   set T : Finset ℝ := (h_imm.finite_crossings (z₀ := s)).toFinset with hT_def
   have hT_mem : ∀ {t : ℝ}, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s := fun {_} => by
-    rw [hT_def, h_imm.mem_toFinset_finite_crossings, uIcc_of_le hab.le]
+    rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab.le]
   have h_complete : ∀ t ∈ Icc a b, γ t = s → t ∈ T := fun t ht h_eq => hT_mem.mpr ⟨ht, h_eq⟩
   have h_Ioo : ∀ t ∈ T, t ∈ Ioo a b := fun t ht =>
     h_interior t (hT_mem.mp ht).1 (hT_mem.mp ht).2
@@ -267,7 +267,7 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
   -- The window value: the explicit log-norm-plus-argument limit at each crossing.
   choose! R hR_pos L_R L_L _ _ _ _ h_spec using
     fun t₀ (ht₀ : t₀ ∈ T) =>
-      exists_radius_perWindow_tendsto_log_norm_add_arg h_imm hab (h_Ioo t₀ ht₀)
+      exists_radius_perWindow_tendsto_log_norm_add_arg h_imm (h_Ioo t₀ ht₀)
         (hT_mem.mp ht₀).2
   -- The crossing regularity: a one-sided Lipschitz-derivative window on each side of each
   -- crossing (possibly a corner, so the two sides may disagree).

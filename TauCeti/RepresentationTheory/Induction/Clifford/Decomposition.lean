@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 public import TauCeti.RepresentationTheory.Induction.Clifford.Multiplicity
 public import TauCeti.RepresentationTheory.Induction.Clifford.Orbit.Index
-import TauCeti.GroupTheory.Index
+import TauCeti.GroupTheory.Index.Basic
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Simple.Basic
 

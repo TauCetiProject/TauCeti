@@ -10,8 +10,6 @@ public import TauCeti.LinearAlgebra.RootSystem.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
 
-public section
-
 /-!
 # The Cartan-Killing classification in rank at most two
 
@@ -68,6 +66,8 @@ statement `existsUnique_dynkinType` these theorems specialize. See Bourbaki, *Li
 Algebras, Chapters 4-6*, Ch. VI §4, and Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, §11.1, where the rank-two diagrams are enumerated first for exactly this reason.
 -/
+
+public section
 
 open scoped Matrix
 
@@ -347,7 +347,7 @@ the given base.
 
 The bridge is root length. A pair of roots pairing to `-3` has its transposed pairing `-1`, so the
 two differ in squared length by the factor `3`; every root has the length of a simple root
-(`TauCeti.RootPairing.RootPositiveForm.exists_mem_support_rootLength_eq`), so two of the simple
+(`RootPairing.RootPositiveForm.exists_mem_support_rootLength_eq`), so two of the simple
 roots already differ by that factor, and reading the ratio back off the Cartan matrix makes their
 two off-diagonal entries `-3` and `-1`. Since the base has two elements, these entries and the
 diagonal entries `2` identify its Cartan matrix with the standard matrix of `G₂`. -/

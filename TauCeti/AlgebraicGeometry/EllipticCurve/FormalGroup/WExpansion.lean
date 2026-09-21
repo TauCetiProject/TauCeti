@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.SelfConvolution
 
@@ -50,6 +50,10 @@ equation at the substituted parameter rather than at `z`.
   a sibling of `eq_of_wEquation` and not a generalisation of it: filtering by total degree needs
   subtraction, so this one asks for `[CommRing S]` on the *coefficient algebra*. The curve's base
   ring `R` is a `CommSemiring` for both.
+* `WeierstrassCurve.algebraMap_wEquationRHS`: the equation's right-hand side commutes with an
+  algebra map, so a solution over a ring is a solution over any algebra over it.
+* `WeierstrassCurve.wEquation_of_equation`: the `w`-equation is the Weierstrass equation in the
+  coordinates `z = -x / y`, `w = -1 / y`.
 * `WeierstrassCurve.subst_wEquationRHS` and `WeierstrassCurve.subst_formalW_wEquation`:
   substituting a series `q` into the equation gives the equation at `q`, so `w(q)` solves it
   there. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
@@ -270,6 +274,38 @@ theorem wEquationRHS_def {A : Type*} [CommSemiring A] [Algebra R A] (W : Weierst
         algebraMap R A W.a₃ * v ^ 2 + algebraMap R A W.a₄ * q * v ^ 2 +
         algebraMap R A W.a₆ * v ^ 3 :=
   (rfl)
+
+/-- The right-hand side of the `w`-equation commutes with an algebra map, both the parameter and
+the unknown being carried along. This is the element-level companion of `map_wEquationRHS`, which
+transports series along a ring homomorphism; here the coefficients stay put and only the two
+arguments move up the tower. -/
+@[simp]
+theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
+    [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
+    algebraMap A B (wEquationRHS W q v) =
+      wEquationRHS W (algebraMap A B q) (algebraMap A B v) := by
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, ← IsScalarTower.algebraMap_apply]
+
+section Equation
+
+variable {O : Type*} [CommRing O] {K : Type*} [Field K] [Algebra O K]
+
+/-- **The `w`-equation is the Weierstrass equation read in the coordinates `z = -x / y`,
+`w = -1 / y`.** Clearing the denominators of `y ^ 2 + a₁ x y + a₃ y = x ^ 3 + a₂ x ^ 2 + a₄ x + a₆`
+at `x = z / w`, `y = -1 / w` is what produces that equation in the first place; this is the
+converse reading, from a point of the curve to a solution of the equation.
+
+The hypothesis is `Equation`, not `Nonsingular`: nothing here needs the point to be smooth. -/
+theorem wEquation_of_equation (W : WeierstrassCurve O) {x y : K}
+    (hxy : (W.baseChange K).toAffine.Equation x y) (hy : y ≠ 0) :
+    -y⁻¹ = wEquationRHS W (-(x / y)) (-y⁻¹) := by
+  rw [WeierstrassCurve.Affine.equation_iff] at hxy
+  simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hxy
+  rw [wEquationRHS_def]
+  field_simp
+  linear_combination -hxy
+
+end Equation
 
 /-- The `w`-equation in `R⟦z⟧` itself, where the structure map is `PowerSeries.C`. This is the
 spelling the coefficient lemmas below match against. -/

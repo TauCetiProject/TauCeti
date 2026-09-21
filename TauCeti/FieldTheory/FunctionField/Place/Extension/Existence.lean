@@ -16,7 +16,9 @@ import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 
 Every place of an algebraic function field extends across an integral field extension. More
 generally, the field of constants may also grow by an integral extension: a valuation trivial on
-the smaller constant field is automatically trivial on the larger one.
+the smaller constant field is automatically trivial on the larger one. The same argument shows
+that the places above a place `P` see the whole integral closure of its valuation ring: an element
+regular at all of them is integral over `𝒪_P`.
 
 The proof dominates the local valuation ring of the original place by a valuation subring of the
 larger function field. Locality ensures that the resulting valuation subring is proper. Since
@@ -27,11 +29,14 @@ place whose restriction is the original place.
 
 * `TauCeti.Place.restrict_surjective`: every place downstairs is the restriction of a place
   upstairs (Stichtenoth, Proposition 3.1.7).
+* `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`: the integral closure of the
+  valuation ring `𝒪_P` in the larger field is the intersection of the valuation rings of the
+  places above `P` (Stichtenoth, Section III.2).
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Proposition 3.1.7.
+  Proposition 3.1.7 and Section III.2.
 -/
 
 public section
@@ -95,6 +100,35 @@ theorem restrict_surjective (hF' : IsFunctionField k' F') :
   have hAx := hA ⟨x, hx⟩
   simpa only [f, RingHom.coe_comp, Function.comp_apply, ValuationSubring.coe_subtype,
     ValuationSubring.mem_toSubring] using hAx
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- **The integral closure of `𝒪_P` is the intersection of the valuation rings above `P`**
+(Stichtenoth, Section III.2): an element of `F'` is integral over the valuation ring of a place
+`P` of `F / k` exactly when it is regular at every place of `F' / k'` lying over `P`.
+
+An element outside the integral closure is separated from it by a valuation subring of `F'`; that
+subring contains the constants `k'`, which are integral over `k`, and it contains `𝒪_P`, so it is
+the valuation ring of a place lying over `P`. -/
+theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k' F')
+    (P : Place k F) {x : F'} :
+    IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
+  refine ⟨fun hx P' hP' ↦ P'.mem_integers_of_isIntegral (fun a ↦ ?_) hx, fun h ↦ ?_⟩
+  · subst hP'
+    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2
+  by_contra hx
+  have hxB : x ∉ (integralClosure P.integers F').toSubring := hx
+  obtain ⟨V, hBV, hxV⟩ := Subring.exists_le_valuationSubring_of_isIntegrallyClosedIn hxB
+  have : IsScalarTower k P.integers F' :=
+    .of_algebraMap_eq fun c ↦ IsScalarTower.algebraMap_apply k F F' c
+  have hk'V : ∀ c : k', algebraMap k' F' c ∈ V := fun c ↦ hBV
+    ((Algebra.IsIntegral.isIntegral (R := k) c).map (IsScalarTower.toAlgHom k k' F')).tower_top
+  have hV : V ≠ ⊤ := fun hV ↦ hxV (hV ▸ ValuationSubring.mem_top _)
+  have hP' : (ofValuationSubring hF' hk'V hV).restrict k F = P := by
+    refine (restrict_eq_iff_integers_le k F _ P).mpr fun f hf ↦ ?_
+    rw [integers_ofValuationSubring]
+    exact hBV (isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers)))
+  exact hxV (integers_ofValuationSubring hF' hk'V hV ▸ h _ hP')
 
 end Place
 

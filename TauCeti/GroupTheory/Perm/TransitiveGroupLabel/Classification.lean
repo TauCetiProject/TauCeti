@@ -1,0 +1,661 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
+public import Mathlib.GroupTheory.Sylow
+public import TauCeti.GroupTheory.Perm.SylowFive
+
+/-!
+# Transitive subgroups of `S₃`, `S₄` and `S₅`
+
+This file classifies the transitive subgroups of the symmetric groups on three, four and five
+points up to conjugacy: each of them is conjugate to exactly one of the reference subgroups of
+`TauCeti.referenceSubgroup`, so it carries exactly one of the labels `3T1`, `3T2`, respectively
+`4T1`, …, `4T5`, respectively `5T1`, …, `5T5`.
+
+The existence half runs through the order of the subgroup. A transitive subgroup of
+`Equiv.Perm (Fin n)` has order divisible by `n`, by the orbit-stabilizer theorem, and dividing
+`n !`.
+
+* In degree three the order is `3` or `6`. Order `6` is the whole group, and order `3` is index
+  two, so it is the alternating group, which is the reference subgroup of `3T1`.
+* In degree four the order is `4`, `8`, `12` or `24`. Order `24` is the whole group and order
+  `12` is the alternating group, as in degree three. Order `8` is a Sylow `2`-subgroup, and so is
+  the reference subgroup of `4T3`, so the two are conjugate by Sylow's theorem. Order `4` acts
+  regularly: if the subgroup contains an element of order four, that element is a four-cycle,
+  it generates the subgroup, and conjugating it onto `finRotate 4` gives `4T1`; otherwise every
+  nontrivial element is a fixed-point-free involution, that is a double transposition, and the
+  subgroup is the Klein four-group of `4T2`.
+* In degree five the order is `5`, `10`, `20`, `60` or `120`
+  (`TauCeti.natCard_mem_of_natCard_eq_five_of_isPretransitive`). Orders `120` and `60` are the
+  whole group and the alternating group. A subgroup of order dividing `20` has a unique Sylow
+  `5`-subgroup, so it lies in the normalizer of that subgroup; conjugating the Sylow subgroup
+  onto the rotation group `5T1` carries the subgroup between `5T1` and its normalizer, the
+  Frobenius group `5T3` of affine maps of `ℤ/5`. A subgroup of order `10` in between has index
+  two in `5T3`, so it contains the square of every element of `5T3`, and in particular the
+  square `i ↦ 3 - i` of `i ↦ 2 i + 1`, which generates `5T2` together with the rotation.
+
+The uniqueness half compares invariants: the orders of the reference subgroups in each degree
+are pairwise distinct, except for `4T1` and `4T2`, which have order four and are told apart by
+parity, since `4T1` contains the odd permutation `finRotate 4`.
+
+On the way, the orders of the reference subgroups of degrees three, four and five are computed,
+the reference subgroup of `3T1` is identified with the alternating group, that of `4T3` with the
+centralizer of the double transposition `finRotate 4 ^ 2`, and that of `5T3` with the normalizer
+of the rotation group `5T1`.
+
+## Main results
+
+* `TauCeti.natCard_referenceSubgroup_three_zero`, …, `TauCeti.natCard_referenceSubgroup_five_four`:
+  the orders `3, 6`, `4, 4, 8, 12, 24` and `5, 10, 20, 60, 120` of the reference subgroups in
+  degrees three, four and five.
+* `TauCeti.index_referenceSubgroup_five_two`: the reference subgroup of `5T3` has index six.
+* `TauCeti.referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero`: the reference
+  subgroup of `5T3` is the normalizer of that of `5T1`.
+* `TauCeti.referenceSubgroup_three_zero_le_alternatingGroup`,
+  `TauCeti.not_referenceSubgroup_three_one_le_alternatingGroup`: the parities of `3T1` and `3T2`.
+* `TauCeti.TransitiveGroupLabel.eq_of_three`, `TauCeti.TransitiveGroupLabel.eq_of_four`,
+  `TauCeti.TransitiveGroupLabel.eq_of_five`: in degrees three, four and five a subgroup carries
+  at most one label.
+* `TauCeti.existsUnique_transitiveGroupLabel_three`,
+  `TauCeti.existsUnique_transitiveGroupLabel_four`,
+  `TauCeti.existsUnique_transitiveGroupLabel_five`: a transitive subgroup of the symmetric group
+  on three, four, respectively five, points carries exactly one label.
+* `TauCeti.exists_transitiveGroupLabel_three_iff`, `TauCeti.exists_transitiveGroupLabel_four_iff`,
+  `TauCeti.exists_transitiveGroupLabel_five_iff`: a subgroup carries a label exactly when it is
+  transitive.
+
+## References
+
+* J. D. Dixon and B. Mortimer, *Permutation Groups*, GTM 163, Springer, 1996, §2 and
+  Appendix B.
+* LMFDB, *Transitive groups*, entries of degrees three, four and five.
+-/
+
+public section
+
+namespace TauCeti
+
+open Equiv Equiv.Perm MulAction
+
+/-! ### Preliminaries -/
+
+/-- A subgroup equal to a reference subgroup carries its label. -/
+private theorem transitiveGroupLabel_of_eq {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : G = referenceSubgroup n j) : TransitiveGroupLabel j G :=
+  h ▸ transitiveGroupLabel_referenceSubgroup n j
+
+/-! ### Degree three -/
+
+/-- The reference subgroup of `3T1`, generated by the rotation of three points, is the
+alternating group. -/
+theorem closure_finRotate_three_eq_alternatingGroup :
+    Subgroup.closure {finRotate 3} = alternatingGroup (Fin 3) := by
+  have hle : Subgroup.closure {finRotate 3} ≤ alternatingGroup (Fin 3) :=
+    (Subgroup.closure_le _).2 (by simp [mem_alternatingGroup, sign_finRotate])
+  refine Subgroup.eq_of_le_of_card_ge hle ?_
+  rw [← Subgroup.zpowers_eq_closure, Nat.card_zpowers,
+    orderOf_eq_prime (p := 3) (by decide) (by decide), nat_card_alternatingGroup]
+  simp [Nat.factorial]
+
+/-- The reference subgroup of `3T1` has order `3`. -/
+theorem natCard_referenceSubgroup_three_zero :
+    Nat.card (referenceSubgroup 3 ⟨0, by simp⟩) = 3 := by
+  rw [referenceSubgroup_three_zero, closure_finRotate_three_eq_alternatingGroup,
+    nat_card_alternatingGroup]
+  simp [Nat.factorial]
+
+/-- The reference subgroup of `3T2` has order `6`. -/
+theorem natCard_referenceSubgroup_three_one :
+    Nat.card (referenceSubgroup 3 ⟨1, by simp⟩) = 6 := by
+  rw [referenceSubgroup_three_one, Subgroup.card_top, Nat.card_perm]
+  simp [Nat.factorial]
+
+/-- The reference subgroup of `3T1` consists of even permutations. -/
+theorem referenceSubgroup_three_zero_le_alternatingGroup :
+    referenceSubgroup 3 ⟨0, by simp⟩ ≤ alternatingGroup (Fin 3) := by
+  rw [referenceSubgroup_three_zero, closure_finRotate_three_eq_alternatingGroup]
+
+/-- The reference subgroup of `3T2` is not contained in the alternating group: it contains the
+odd permutation `swap 0 1`. -/
+theorem not_referenceSubgroup_three_one_le_alternatingGroup :
+    ¬ referenceSubgroup 3 ⟨1, by simp⟩ ≤ alternatingGroup (Fin 3) := by
+  rw [referenceSubgroup_three_one]
+  exact fun h => by simpa [mem_alternatingGroup] using h (Subgroup.mem_top (swap 0 1))
+
+/-- Every transitive subgroup of the symmetric group on three points carries a label. -/
+theorem exists_transitiveGroupLabel_three (G : Subgroup (Perm (Fin 3)))
+    [IsPretransitive G (Fin 3)] : ∃ j, TransitiveGroupLabel j G := by
+  have hG := card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive G
+  rw [Fintype.card_fin] at hG
+  obtain ⟨⟨k, hk⟩, h6⟩ := hG
+  have h6 : 3 * k ∣ 3 * 2 := by simpa [hk, Nat.factorial] using h6
+  rcases (Nat.dvd_prime Nat.prime_two).1 (Nat.dvd_of_mul_dvd_mul_left (by decide) h6) with
+    rfl | rfl
+  · refine ⟨⟨0, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    rw [referenceSubgroup_three_zero, closure_finRotate_three_eq_alternatingGroup]
+    refine eq_alternatingGroup_of_index_eq_two ?_
+    have := G.index_mul_card
+    rw [hk, Nat.card_perm, Nat.card_fin] at this
+    simp only [Nat.factorial] at this
+    omega
+  · refine ⟨⟨1, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    rw [referenceSubgroup_three_one]
+    exact Subgroup.eq_top_of_card_eq _ (by rw [hk, Nat.card_perm]; simp [Nat.factorial])
+
+/-- A subgroup of the symmetric group on three points carries at most one label. -/
+theorem TransitiveGroupLabel.eq_of_three {j k : TransitiveGroupIndex 3}
+    {G : Subgroup (Perm (Fin 3))} (hj : TransitiveGroupLabel j G)
+    (hk : TransitiveGroupLabel k G) : j = k := by
+  have h := hj.natCard_eq.symm.trans hk.natCard_eq
+  obtain ⟨a, ha⟩ := j
+  obtain ⟨b, hb⟩ := k
+  rw [numTransitiveGroups_three] at ha hb
+  interval_cases a <;> interval_cases b <;> first
+    | rfl
+    | simp only [natCard_referenceSubgroup_three_zero, natCard_referenceSubgroup_three_one] at h
+      omega
+
+/-- A transitive subgroup of the symmetric group on three points carries exactly one label, `3T1`
+or `3T2`. -/
+theorem existsUnique_transitiveGroupLabel_three (G : Subgroup (Perm (Fin 3)))
+    [IsPretransitive G (Fin 3)] : ∃! j, TransitiveGroupLabel j G :=
+  (exists_transitiveGroupLabel_three G).elim fun j hj =>
+    ⟨j, hj, fun _ hk => hk.eq_of_three hj⟩
+
+/-- A subgroup of the symmetric group on three points carries a label exactly when it is
+transitive. -/
+theorem exists_transitiveGroupLabel_three_iff (G : Subgroup (Perm (Fin 3))) :
+    (∃ j, TransitiveGroupLabel j G) ↔ IsPretransitive G (Fin 3) :=
+  ⟨fun ⟨_, hj⟩ => hj.isPretransitive, fun _ => exists_transitiveGroupLabel_three G⟩
+
+/-! ### Degree four -/
+
+/-- The reference subgroup of `4T3`, generated by the rotation of four points and the
+transposition of two opposite points, is the centralizer of the double transposition
+`finRotate 4 ^ 2`. -/
+theorem closure_finRotate_four_swap_eq_centralizer :
+    Subgroup.closure {finRotate 4, swap 0 2} = Subgroup.centralizer {finRotate 4 ^ 2} := by
+  refine le_antisymm ((Subgroup.closure_le _).2 ?_) fun σ hσ => ?_
+  · rintro σ (rfl | rfl) <;> rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff] <;>
+      decide
+  · -- Each of the eight elements of the centralizer is a word in the two generators.
+    have hword : ∀ σ : Perm (Fin 4), σ * finRotate 4 ^ 2 = finRotate 4 ^ 2 * σ →
+        ∃ i : Fin 4, ∃ j : Fin 2, σ = finRotate 4 ^ (i : ℕ) * swap 0 2 ^ (j : ℕ) := by
+      decide +kernel
+    obtain ⟨i, j, rfl⟩ := hword σ (Subgroup.mem_centralizer_singleton_iff.1 hσ)
+    exact mul_mem (pow_mem (Subgroup.subset_closure (by simp)) _)
+      (pow_mem (Subgroup.subset_closure (by simp)) _)
+
+/-- The reference subgroup of `4T1` has order `4`. -/
+theorem natCard_referenceSubgroup_four_zero :
+    Nat.card (referenceSubgroup 4 ⟨0, by simp⟩) = 4 := by
+  rw [referenceSubgroup_four_zero, ← Subgroup.zpowers_eq_closure, Nat.card_zpowers,
+    orderOf_eq_prime_pow (p := 2) (n := 1) (by decide) (by decide)]
+  norm_num
+
+/-- The reference subgroup of `4T2` has order `4`. -/
+theorem natCard_referenceSubgroup_four_one :
+    Nat.card (referenceSubgroup 4 ⟨1, by simp⟩) = 4 := by
+  rw [referenceSubgroup_four_one, Subgroup.card_map_of_injective (Subgroup.subtype_injective _),
+    alternatingGroup.kleinFour_card_of_card_eq_four (by simp)]
+
+/-- The reference subgroup of `4T3` has order `8`. -/
+theorem natCard_referenceSubgroup_four_two :
+    Nat.card (referenceSubgroup 4 ⟨2, by simp⟩) = 8 := by
+  simp only [referenceSubgroup_four_two, closure_finRotate_four_swap_eq_centralizer,
+    Nat.card_eq_fintype_card, Fintype.card_subtype, Subgroup.mem_centralizer_singleton_iff]
+  decide
+
+/-- The reference subgroup of `4T4` has order `12`. -/
+theorem natCard_referenceSubgroup_four_three :
+    Nat.card (referenceSubgroup 4 ⟨3, by simp⟩) = 12 := by
+  rw [referenceSubgroup_four_three, alternatingGroup.card_of_card_eq_four (by simp)]
+
+/-- The reference subgroup of `4T5` has order `24`. -/
+theorem natCard_referenceSubgroup_four_four :
+    Nat.card (referenceSubgroup 4 ⟨4, by simp⟩) = 24 := by
+  rw [referenceSubgroup_four_four, Subgroup.card_top, Nat.card_perm]
+  simp [Nat.factorial]
+
+/-- The reference subgroup of `4T1` is not contained in the alternating group: it contains the
+odd permutation `finRotate 4`. -/
+theorem not_referenceSubgroup_four_zero_le_alternatingGroup :
+    ¬ referenceSubgroup 4 ⟨0, by simp⟩ ≤ alternatingGroup (Fin 4) := by
+  simp only [referenceSubgroup_four_zero, Subgroup.closure_le, Set.singleton_subset_iff,
+    SetLike.mem_coe, mem_alternatingGroup, sign_finRotate]
+  decide
+
+/-- The reference subgroup of `4T2` consists of even permutations. -/
+theorem referenceSubgroup_four_one_le_alternatingGroup :
+    referenceSubgroup 4 ⟨1, by simp⟩ ≤ alternatingGroup (Fin 4) := by
+  rw [referenceSubgroup_four_one]
+  exact Subgroup.map_subtype_le _
+
+/-- A subgroup of the symmetric group on four points carries at most one label. -/
+theorem TransitiveGroupLabel.eq_of_four {j k : TransitiveGroupIndex 4}
+    {G : Subgroup (Perm (Fin 4))} (hj : TransitiveGroupLabel j G)
+    (hk : TransitiveGroupLabel k G) : j = k := by
+  have hcard := hj.natCard_eq.symm.trans hk.natCard_eq
+  have hsign := hj.le_alternatingGroup_iff.symm.trans hk.le_alternatingGroup_iff
+  obtain ⟨a, ha⟩ := j
+  obtain ⟨b, hb⟩ := k
+  rw [numTransitiveGroups_four] at ha hb
+  -- The orders of the reference subgroups separate all labels but `4T1` and `4T2`, and parity
+  -- separates those two.
+  interval_cases a <;> interval_cases b <;> first
+    | rfl
+    | exact (not_referenceSubgroup_four_zero_le_alternatingGroup
+        (hsign.2 referenceSubgroup_four_one_le_alternatingGroup)).elim
+    | exact (not_referenceSubgroup_four_zero_le_alternatingGroup
+        (hsign.1 referenceSubgroup_four_one_le_alternatingGroup)).elim
+    | simp only [natCard_referenceSubgroup_four_zero, natCard_referenceSubgroup_four_one,
+        natCard_referenceSubgroup_four_two, natCard_referenceSubgroup_four_three,
+        natCard_referenceSubgroup_four_four] at hcard
+      omega
+
+/-- A transitive subgroup of order four of the symmetric group on four points carries a label,
+`4T1` if it is cyclic and `4T2` otherwise. -/
+private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgroup (Perm (Fin 4)))
+    [IsPretransitive G (Fin 4)] (hG : Nat.card G = 4) : ∃ j, TransitiveGroupLabel j G := by
+  -- Either `G` contains an element of order four, which generates it, or every element of `G`
+  -- is an involution.
+  by_cases hcyc : ∃ g ∈ G, g ^ 2 ≠ 1
+  · obtain ⟨g, hg, hg2⟩ := hcyc
+    have hg4 : g ^ 4 = 1 := by
+      simpa [hG] using congrArg Subtype.val (pow_card_eq_one' (x := (⟨g, hg⟩ : G)))
+    have horder : orderOf g = 4 := orderOf_eq_prime_pow (p := 2) (n := 1) hg2 hg4
+    have hGz : Subgroup.zpowers g = G :=
+      Subgroup.eq_of_le_of_card_ge (Subgroup.zpowers_le.2 hg)
+        (by rw [hG, Nat.card_zpowers, horder])
+    -- In `Equiv.Perm (Fin 4)` an element of order four is a four-cycle, hence conjugate to
+    -- `finRotate 4`.
+    have hconj : ∀ σ : Perm (Fin 4), σ ^ 2 ≠ 1 → σ ^ 4 = 1 →
+        ∃ τ : Perm (Fin 4), τ * σ * τ⁻¹ = finRotate 4 := by
+      decide +kernel
+    obtain ⟨τ, hτ⟩ := hconj g hg2 hg4
+    refine ⟨⟨0, by simp⟩, (transitiveGroupLabel_iff _ _).2 ⟨τ, ?_⟩⟩
+    rw [← hGz, referenceSubgroup_four_zero, ← Subgroup.zpowers_eq_closure, MonoidHom.map_zpowers,
+      MulEquiv.coe_toMonoidHom, MulAut.conj_apply, hτ]
+  · push Not at hcyc
+    -- The action is regular, so a nontrivial element of `G` fixes no point.
+    have hfree : ∀ g ∈ G, g ≠ 1 → ∀ x, g x ≠ x := by
+      intro g hg hg1 x hx
+      have hstab : Nat.card (stabilizer G x) = 1 := by
+        have h := (stabilizer G x).index_mul_card
+        rw [index_stabilizer_of_transitive, hG, Nat.card_fin] at h
+        omega
+      have hmem : (⟨g, hg⟩ : G) ∈ stabilizer G x := hx
+      rw [Subgroup.eq_bot_of_card_eq _ hstab, Subgroup.mem_bot] at hmem
+      exact hg1 (congrArg Subtype.val hmem)
+    -- A fixed-point-free involution of four points is a double transposition.
+    have hklein : ∀ σ : Perm (Fin 4), σ ^ 2 = 1 → (∀ x, σ x ≠ x) →
+        sign σ = 1 ∧ σ.cycleType = {2, 2} := by
+      decide +kernel
+    refine ⟨⟨1, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    refine Subgroup.eq_of_le_of_card_ge (fun g hg => ?_)
+      (by rw [hG, natCard_referenceSubgroup_four_one])
+    rw [referenceSubgroup_four_one]
+    by_cases hg1 : g = 1
+    · exact hg1 ▸ Subgroup.one_mem _
+    obtain ⟨hA, hcycle⟩ := hklein g (hcyc g hg) (hfree g hg hg1)
+    refine ⟨⟨g, mem_alternatingGroup.2 hA⟩, ?_, rfl⟩
+    exact (Set.ext_iff.1 (alternatingGroup.coe_kleinFour_of_card_eq_four (by simp)) _).2
+      (Or.inr hcycle)
+
+/-- Every transitive subgroup of the symmetric group on four points carries a label. -/
+theorem exists_transitiveGroupLabel_four (G : Subgroup (Perm (Fin 4)))
+    [IsPretransitive G (Fin 4)] : ∃ j, TransitiveGroupLabel j G := by
+  have hG := card_dvd_natCard_and_natCard_dvd_factorial_of_isPretransitive G
+  rw [Fintype.card_fin] at hG
+  obtain ⟨⟨k, hk⟩, h24⟩ := hG
+  have h24 : 4 * k ∣ 4 * 6 := by simpa [hk, Nat.factorial] using h24
+  have hk6 : k ∣ 6 := Nat.dvd_of_mul_dvd_mul_left (by decide) h24
+  have hmul : G.index * (4 * k) = 24 := by
+    simpa [hk, Fintype.card_perm, Nat.factorial] using G.index_mul_card
+  have hk' : k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 6 := by
+    have := Nat.le_of_dvd (by decide) hk6
+    interval_cases k <;> simp_all
+  rcases hk' with rfl | rfl | rfl | rfl
+  · exact exists_transitiveGroupLabel_four_of_natCard_eq_four G hk
+  · -- Order eight: `G` and the reference subgroup of `4T3` are Sylow `2`-subgroups.
+    have hindex : G.index = 3 := by omega
+    let P : Sylow 2 (Perm (Fin 4)) :=
+      (IsPGroup.of_card (n := 3) hk).toSylow (by rw [hindex]; decide)
+    have hQ : (referenceSubgroup 4 ⟨2, by simp⟩).index = 3 := by
+      have h := (referenceSubgroup 4 ⟨2, by simp⟩).index_mul_card
+      rw [natCard_referenceSubgroup_four_two, Nat.card_perm, Nat.card_fin] at h
+      simp only [Nat.factorial] at h
+      omega
+    let Q : Sylow 2 (Perm (Fin 4)) :=
+      (IsPGroup.of_card (n := 3) natCard_referenceSubgroup_four_two).toSylow
+        (by rw [hQ]; decide)
+    obtain ⟨τ, hτ⟩ := exists_smul_eq (Perm (Fin 4)) P Q
+    exact ⟨⟨2, by simp⟩, (transitiveGroupLabel_iff _ _).2 ⟨τ, congrArg Sylow.toSubgroup hτ⟩⟩
+  · refine ⟨⟨3, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    rw [referenceSubgroup_four_three]
+    exact eq_alternatingGroup_of_index_eq_two (by omega)
+  · refine ⟨⟨4, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    rw [referenceSubgroup_four_four]
+    exact Subgroup.index_eq_one.1 (by omega)
+
+/-- A transitive subgroup of the symmetric group on four points carries exactly one label, one of
+`4T1`, …, `4T5`. -/
+theorem existsUnique_transitiveGroupLabel_four (G : Subgroup (Perm (Fin 4)))
+    [IsPretransitive G (Fin 4)] : ∃! j, TransitiveGroupLabel j G :=
+  (exists_transitiveGroupLabel_four G).elim fun j hj =>
+    ⟨j, hj, fun _ hk => hk.eq_of_four hj⟩
+
+/-- A subgroup of the symmetric group on four points carries a label exactly when it is
+transitive. -/
+theorem exists_transitiveGroupLabel_four_iff (G : Subgroup (Perm (Fin 4))) :
+    (∃ j, TransitiveGroupLabel j G) ↔ IsPretransitive G (Fin 4) :=
+  ⟨fun ⟨_, hj⟩ => hj.isPretransitive, fun _ => exists_transitiveGroupLabel_four G⟩
+
+/-! ### Degree five -/
+
+section DegreeFive
+
+local instance transitiveGroupLabelFactPrimeFive : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+
+/-- The reference subgroup of `5T1` is the cyclic group generated by the rotation of five
+points. -/
+private theorem referenceSubgroup_five_zero_eq_zpowers :
+    referenceSubgroup 5 ⟨0, by simp⟩ = Subgroup.zpowers (finRotate 5) := by
+  rw [referenceSubgroup_five_zero, Subgroup.zpowers_eq_closure]
+
+/-- The reference subgroup of `5T1` has order `5`. -/
+theorem natCard_referenceSubgroup_five_zero :
+    Nat.card (referenceSubgroup 5 ⟨0, by simp⟩) = 5 := by
+  rw [referenceSubgroup_five_zero_eq_zpowers, Nat.card_zpowers,
+    orderOf_eq_prime (p := 5) (by decide) (by decide)]
+
+/-- The reference subgroup of `5T1` is a Sylow `5`-subgroup of the symmetric group on five
+points. -/
+theorem exists_sylow_eq_referenceSubgroup_five_zero :
+    ∃ P : Sylow 5 (Perm (Fin 5)),
+      (P : Subgroup (Perm (Fin 5))) = referenceSubgroup 5 ⟨0, by simp⟩ := by
+  have hC := natCard_referenceSubgroup_five_zero
+  have hCi : (referenceSubgroup 5 ⟨0, by simp⟩).index = 24 := by
+    have h := (referenceSubgroup 5 ⟨0, by simp⟩).index_mul_card
+    rw [hC] at h
+    rw [Nat.card_perm, Nat.card_fin] at h
+    simp only [Nat.factorial] at h
+    omega
+  exact ⟨(IsPGroup.of_card (n := 1) (hC.trans (pow_one 5).symm)).toSylow (hCi ▸ by decide), rfl⟩
+
+/-- The reference subgroup of `5T1` lies in that of `5T2`. -/
+theorem referenceSubgroup_five_zero_le_referenceSubgroup_five_one :
+    referenceSubgroup 5 ⟨0, by simp⟩ ≤ referenceSubgroup 5 ⟨1, by simp⟩ := by
+  rw [referenceSubgroup_five_zero, referenceSubgroup_five_one]
+  exact Subgroup.closure_mono (by simp)
+
+/-- The reference subgroup of `5T1` lies in that of `5T3`. -/
+theorem referenceSubgroup_five_zero_le_referenceSubgroup_five_two :
+    referenceSubgroup 5 ⟨0, by simp⟩ ≤ referenceSubgroup 5 ⟨2, by simp⟩ := by
+  rw [referenceSubgroup_five_zero, referenceSubgroup_five_two]
+  exact Subgroup.closure_mono (by simp)
+
+/-- The reference subgroup of `5T3`, generated by the rotation `i ↦ i + 1` and the affine map
+`i ↦ 2 i + 1` of `ℤ/5`, is the normalizer of the reference subgroup of `5T1`. -/
+theorem referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero :
+    referenceSubgroup 5 ⟨2, by simp⟩ =
+      Subgroup.normalizer (referenceSubgroup 5 ⟨0, by simp⟩ : Set (Perm (Fin 5))) := by
+  obtain ⟨P, hP⟩ := exists_sylow_eq_referenceSubgroup_five_zero
+  have hN : Nat.card (Subgroup.normalizer
+      ((P : Subgroup (Perm (Fin 5))) : Set (Perm (Fin 5)))) = 20 :=
+    card_normalizer_sylow_five_perm (by simp) P
+  rw [hP] at hN
+  have hle : referenceSubgroup 5 ⟨2, by simp⟩ ≤
+      Subgroup.normalizer (referenceSubgroup 5 ⟨0, by simp⟩ : Set (Perm (Fin 5))) := by
+    rw [referenceSubgroup_five_two, Subgroup.closure_le]
+    rintro σ (rfl | rfl)
+    · exact Subgroup.le_normalizer (by
+        rw [referenceSubgroup_five_zero_eq_zpowers]
+        exact Subgroup.mem_zpowers _)
+    · rw [SetLike.mem_coe, Subgroup.mem_normalizer_iff_map_conj_eq,
+        referenceSubgroup_five_zero_eq_zpowers, MonoidHom.map_zpowers]
+      -- Conjugating by `i ↦ 2 i + 1` squares the rotation, which generates the same subgroup.
+      have hconj : ([0, 1, 3, 2].formPerm : Perm (Fin 5)) * finRotate 5 *
+          ([0, 1, 3, 2].formPerm : Perm (Fin 5))⁻¹ = finRotate 5 ^ 2 := by decide
+      have hconj' : ((MulAut.conj ([0, 1, 3, 2].formPerm : Perm (Fin 5)) :
+          Perm (Fin 5) →* Perm (Fin 5))) (finRotate 5) = finRotate 5 ^ 2 := by
+        simpa only [MonoidHom.coe_coe, MulAut.conj_apply] using hconj
+      rw [hconj']
+      refine Subgroup.eq_of_le_of_card_ge
+        (Subgroup.zpowers_le.2 (pow_mem (Subgroup.mem_zpowers _) _)) ?_
+      have h1 : orderOf (finRotate 5) = 5 :=
+        orderOf_eq_prime (p := 5) (by decide) (by decide)
+      have h2 : orderOf (finRotate 5 ^ 2) = 5 :=
+        orderOf_eq_prime (p := 5) (by decide) (by decide)
+      rw [Nat.card_zpowers, Nat.card_zpowers, h1, h2]
+  refine Subgroup.eq_of_le_of_card_ge hle ?_
+  -- The order of `5T3` is divisible by `5`, the order of `5T1`, and by `4`, the order of the
+  -- generator `i ↦ 2 i + 1`.
+  have h5 := Subgroup.card_dvd_of_le referenceSubgroup_five_zero_le_referenceSubgroup_five_two
+  rw [natCard_referenceSubgroup_five_zero] at h5
+  have h4 : orderOf ([0, 1, 3, 2].formPerm : Perm (Fin 5)) ∣
+      Nat.card (referenceSubgroup 5 ⟨2, by simp⟩) :=
+    Subgroup.orderOf_dvd_natCard _ (by
+      rw [referenceSubgroup_five_two]
+      exact Subgroup.subset_closure (by simp))
+  rw [orderOf_eq_prime_pow (p := 2) (n := 1) (by decide) (by decide)] at h4
+  rw [hN]
+  exact Nat.le_of_dvd Nat.card_pos
+    (Nat.Coprime.mul_dvd_of_dvd_of_dvd (by decide : Nat.Coprime 5 4) h5 h4)
+
+/-- The reference subgroup of `5T3` has order `20`. -/
+theorem natCard_referenceSubgroup_five_two :
+    Nat.card (referenceSubgroup 5 ⟨2, by simp⟩) = 20 := by
+  obtain ⟨P, hP⟩ := exists_sylow_eq_referenceSubgroup_five_zero
+  rw [referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero, ← hP]
+  exact card_normalizer_sylow_five_perm (by simp) P
+
+private theorem formPerm_five_sq_eq_doubleSwap :
+    ([0, 1, 3, 2].formPerm : Perm (Fin 5)) ^ 2 = swap 0 3 * swap 1 2 := by
+  decide
+
+/-- The reference subgroup of `5T2` lies in that of `5T3`: the double transposition
+`i ↦ 3 - i` generating it with the rotation is the square of `i ↦ 2 i + 1`. -/
+theorem referenceSubgroup_five_one_le_referenceSubgroup_five_two :
+    referenceSubgroup 5 ⟨1, by simp⟩ ≤ referenceSubgroup 5 ⟨2, by simp⟩ := by
+  rw [referenceSubgroup_five_one, referenceSubgroup_five_two, Subgroup.closure_le]
+  rintro σ (rfl | rfl)
+  · exact Subgroup.subset_closure (by simp)
+  · rw [← formPerm_five_sq_eq_doubleSwap]
+    exact pow_mem (Subgroup.subset_closure (by simp)) _
+
+/-- The reference subgroup of `5T3` has index `6`. -/
+theorem index_referenceSubgroup_five_two :
+    (referenceSubgroup 5 ⟨2, by simp⟩).index = 6 := by
+  have h := (referenceSubgroup 5 ⟨2, by simp⟩).index_mul_card
+  rw [natCard_referenceSubgroup_five_two, Nat.card_perm, Nat.card_fin] at h
+  simp only [Nat.factorial] at h
+  omega
+
+/-- The reference subgroup of `5T2` consists of even permutations. -/
+theorem referenceSubgroup_five_one_le_alternatingGroup :
+    referenceSubgroup 5 ⟨1, by simp⟩ ≤ alternatingGroup (Fin 5) := by
+  rw [referenceSubgroup_five_one, Subgroup.closure_le]
+  rintro σ (rfl | rfl) <;> rw [SetLike.mem_coe, mem_alternatingGroup] <;> decide
+
+/-- The reference subgroup of `5T3` is not contained in the alternating group: it contains the
+odd permutation `i ↦ 2 i + 1`, a four-cycle. -/
+theorem not_referenceSubgroup_five_two_le_alternatingGroup :
+    ¬ referenceSubgroup 5 ⟨2, by simp⟩ ≤ alternatingGroup (Fin 5) := by
+  rw [referenceSubgroup_five_two, Subgroup.closure_le]
+  intro h
+  exact absurd (mem_alternatingGroup.1 (h (by simp : ([0, 1, 3, 2].formPerm : Perm (Fin 5)) ∈ _)))
+    (by decide)
+
+/-- The reference subgroup of `5T2` has order `10`. -/
+theorem natCard_referenceSubgroup_five_one :
+    Nat.card (referenceSubgroup 5 ⟨1, by simp⟩) = 10 := by
+  have h20 := Subgroup.card_dvd_of_le referenceSubgroup_five_one_le_referenceSubgroup_five_two
+  rw [natCard_referenceSubgroup_five_two] at h20
+  have h5 : 5 ∣ Nat.card (referenceSubgroup 5 ⟨1, by simp⟩) := by
+    have h := Subgroup.card_dvd_of_le referenceSubgroup_five_zero_le_referenceSubgroup_five_one
+    rwa [natCard_referenceSubgroup_five_zero] at h
+  have h2 : 2 ∣ Nat.card (referenceSubgroup 5 ⟨1, by simp⟩) := by
+    rw [← orderOf_eq_prime (p := 2) (x := swap (0 : Fin 5) 3 * swap 1 2) (by decide) (by decide)]
+    exact Subgroup.orderOf_dvd_natCard _ (by
+      rw [referenceSubgroup_five_one]; exact Subgroup.subset_closure (by simp))
+  -- The order is a multiple of `10` dividing `20`, and it is not `20` since `5T3` is not even.
+  have hne : Nat.card (referenceSubgroup 5 ⟨1, by simp⟩) ≠ 20 := fun h =>
+    not_referenceSubgroup_five_two_le_alternatingGroup <|
+      (Subgroup.eq_of_le_of_card_ge referenceSubgroup_five_one_le_referenceSubgroup_five_two
+        (by rw [h, natCard_referenceSubgroup_five_two])) ▸
+        referenceSubgroup_five_one_le_alternatingGroup
+  generalize Nat.card (referenceSubgroup 5 ⟨1, by simp⟩) = g at h20 h5 h2 hne ⊢
+  have : g ≤ 20 := Nat.le_of_dvd (by decide) h20
+  interval_cases g <;> omega
+
+/-- The reference subgroup of `5T4` has order `60`. -/
+theorem natCard_referenceSubgroup_five_three :
+    Nat.card (referenceSubgroup 5 ⟨3, by simp⟩) = 60 := by
+  rw [referenceSubgroup_five_three, nat_card_alternatingGroup]
+  simp [Nat.factorial]
+
+/-- The reference subgroup of `5T5` has order `120`. -/
+theorem natCard_referenceSubgroup_five_four :
+    Nat.card (referenceSubgroup 5 ⟨4, by simp⟩) = 120 := by
+  rw [referenceSubgroup_five_four, Subgroup.card_top, Nat.card_perm, Nat.card_fin]
+  norm_num [Nat.factorial]
+
+/-- A subgroup of the symmetric group on five points carries at most one label. -/
+theorem TransitiveGroupLabel.eq_of_five {j k : TransitiveGroupIndex 5}
+    {G : Subgroup (Perm (Fin 5))} (hj : TransitiveGroupLabel j G)
+    (hk : TransitiveGroupLabel k G) : j = k := by
+  have h := hj.natCard_eq.symm.trans hk.natCard_eq
+  obtain ⟨a, ha⟩ := j
+  obtain ⟨b, hb⟩ := k
+  rw [numTransitiveGroups_five] at ha hb
+  -- The orders `5, 10, 20, 60, 120` of the reference subgroups are pairwise distinct.
+  interval_cases a <;> interval_cases b <;> first
+    | rfl
+    | simp only [natCard_referenceSubgroup_five_zero, natCard_referenceSubgroup_five_one,
+        natCard_referenceSubgroup_five_two, natCard_referenceSubgroup_five_three,
+        natCard_referenceSubgroup_five_four] at h
+      omega
+
+/-- A subgroup of the symmetric group on five points lying between the reference subgroups of
+`5T1` and `5T3` carries a label. -/
+private theorem exists_transitiveGroupLabel_five_of_le_of_le {H : Subgroup (Perm (Fin 5))}
+    (hC : referenceSubgroup 5 ⟨0, by simp⟩ ≤ H) (hF : H ≤ referenceSubgroup 5 ⟨2, by simp⟩) :
+    ∃ j, TransitiveGroupLabel j H := by
+  have h5 := Subgroup.card_dvd_of_le hC
+  have h20 := Subgroup.card_dvd_of_le hF
+  rw [natCard_referenceSubgroup_five_zero] at h5
+  rw [natCard_referenceSubgroup_five_two] at h20
+  have hH : Nat.card H = 5 ∨ Nat.card H = 10 ∨ Nat.card H = 20 := by
+    generalize Nat.card H = g at h5 h20
+    have : g ≤ 20 := Nat.le_of_dvd (by decide) h20
+    interval_cases g <;> omega
+  rcases hH with hH | hH | hH
+  · exact ⟨⟨0, by simp⟩, transitiveGroupLabel_of_eq
+      (Subgroup.eq_of_le_of_card_ge hC (by rw [hH, natCard_referenceSubgroup_five_zero])).symm⟩
+  · -- `H` has index two in `5T3`, so it contains the square `swap 0 3 * swap 1 2` of the
+    -- generator `i ↦ 2 i + 1`; with the rotation, this generates `5T2`.
+    have hindex : (H.subgroupOf (referenceSubgroup 5 ⟨2, by simp⟩)).index = 2 := by
+      have h := Subgroup.relIndex_mul_index hF
+      have hHi := H.index_mul_card
+      have hFi := (referenceSubgroup 5 ⟨2, by simp⟩).index_mul_card
+      rw [natCard_referenceSubgroup_five_two] at hFi
+      rw [hH] at hHi
+      rw [Nat.card_perm, Nat.card_fin] at hFi hHi
+      simp only [Nat.factorial] at hFi hHi
+      rw [Subgroup.relIndex] at h
+      -- `h` is a product of two indices, so the numerical values of both have to be substituted
+      -- before the remaining equation is linear.
+      have hFindex : (referenceSubgroup 5 ⟨2, by simp⟩).index = 6 := by omega
+      have hHindex : H.index = 12 := by omega
+      rw [hFindex, hHindex] at h
+      omega
+    have hf : ([0, 1, 3, 2].formPerm : Perm (Fin 5)) ∈ referenceSubgroup 5 ⟨2, by simp⟩ := by
+      rw [referenceSubgroup_five_two]
+      exact Subgroup.subset_closure (by simp)
+    have hsq : swap (0 : Fin 5) 3 * swap 1 2 ∈ H := by
+      have h := Subgroup.sq_mem_of_index_two hindex ⟨_, hf⟩
+      rwa [Subgroup.mem_subgroupOf, Subgroup.coe_pow, Subgroup.coe_mk,
+        formPerm_five_sq_eq_doubleSwap] at h
+    have hD : referenceSubgroup 5 ⟨1, by simp⟩ ≤ H := by
+      rw [referenceSubgroup_five_one, Subgroup.closure_le]
+      rintro σ (rfl | rfl)
+      · exact hC (by rw [referenceSubgroup_five_zero]; exact Subgroup.subset_closure (by simp))
+      · exact hsq
+    exact ⟨⟨1, by simp⟩, transitiveGroupLabel_of_eq
+      (Subgroup.eq_of_le_of_card_ge hD (by rw [hH, natCard_referenceSubgroup_five_one])).symm⟩
+  · exact ⟨⟨2, by simp⟩, transitiveGroupLabel_of_eq
+      (Subgroup.eq_of_le_of_card_ge hF (by rw [hH, natCard_referenceSubgroup_five_two]))⟩
+
+/-- A subgroup of the symmetric group on five points of order `5`, `10` or `20` carries a
+label. -/
+private theorem exists_transitiveGroupLabel_five_of_natCard_dvd_twenty
+    (G : Subgroup (Perm (Fin 5))) (h5 : 5 ∣ Nat.card G) (h20 : Nat.card G ∣ 20) :
+    ∃ j, TransitiveGroupLabel j G := by
+  let _ : Fintype (Fin 5) := Fintype.ofFinite (Fin 5)
+  let _ : DecidableEq (Fin 5) := Classical.decEq (Fin 5)
+  rcases exists_sylow_le_le_normalizer_or_alternatingGroup_le
+      (α := Fin 5) (Nat.card_fin 5) G h5 with ⟨P, hPG, hGN⟩ | hA
+  · -- Conjugating the Sylow subgroup onto `5T1` carries `G` into its normalizer, `5T3`.
+    obtain ⟨Q, hQ⟩ := exists_sylow_eq_referenceSubgroup_five_zero
+    obtain ⟨τ, hτ⟩ := exists_smul_eq (Perm (Fin 5)) P Q
+    have hPQ : (P : Subgroup (Perm (Fin 5))).map (MulAut.conj τ).toMonoidHom =
+        referenceSubgroup 5 ⟨0, by simp⟩ := by
+      rw [← hQ, ← hτ, Sylow.coe_subgroup_smul, Subgroup.pointwise_smul_def]
+      ext
+      simp
+    obtain ⟨j, hj⟩ := exists_transitiveGroupLabel_five_of_le_of_le
+      (H := G.map (MulAut.conj τ).toMonoidHom) (hPQ ▸ Subgroup.map_mono hPG) (by
+        rw [referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero, ← hPQ,
+          ← Subgroup.map_equiv_normalizer_eq]
+        exact Subgroup.map_mono hGN)
+    exact ⟨j, (transitiveGroupLabel_map_conj_iff G τ).1 hj⟩
+  · have h60 := Subgroup.card_dvd_of_le hA
+    rw [nat_card_alternatingGroup, Nat.card_fin] at h60
+    norm_num [Nat.factorial] at h60
+    have := Nat.le_of_dvd (Nat.card_pos (α := G)) h60
+    have := Nat.le_of_dvd (by decide) h20
+    omega
+
+/-- Every transitive subgroup of the symmetric group on five points carries a label. -/
+theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
+    [IsPretransitive G (Fin 5)] : ∃ j, TransitiveGroupLabel j G := by
+  have hmem := natCard_mem_of_natCard_eq_five_of_isPretransitive (by simp) G
+  simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
+  have hmul := G.index_mul_card
+  rw [Nat.card_perm, Nat.card_fin] at hmul
+  simp only [Nat.factorial] at hmul
+  rcases hmem with h | h | h | h | h
+  · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
+  · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
+  · exact exists_transitiveGroupLabel_five_of_natCard_dvd_twenty G (by simp [h]) (by simp [h])
+  · rw [h] at hmul
+    refine ⟨⟨3, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    rw [referenceSubgroup_five_three]
+    exact eq_alternatingGroup_of_index_eq_two (by omega)
+  · rw [h] at hmul
+    refine ⟨⟨4, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
+    rw [referenceSubgroup_five_four]
+    exact Subgroup.index_eq_one.1 (by omega)
+
+/-- A transitive subgroup of the symmetric group on five points carries exactly one label, one of
+`5T1`, …, `5T5`. -/
+theorem existsUnique_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
+    [IsPretransitive G (Fin 5)] : ∃! j, TransitiveGroupLabel j G :=
+  (exists_transitiveGroupLabel_five G).elim fun j hj =>
+    ⟨j, hj, fun _ hk => hk.eq_of_five hj⟩
+
+/-- A subgroup of the symmetric group on five points carries a label exactly when it is
+transitive. -/
+theorem exists_transitiveGroupLabel_five_iff (G : Subgroup (Perm (Fin 5))) :
+    (∃ j, TransitiveGroupLabel j G) ↔ IsPretransitive G (Fin 5) :=
+  ⟨fun ⟨_, hj⟩ => hj.isPretransitive, fun _ => exists_transitiveGroupLabel_five G⟩
+
+end DegreeFive
+
+end TauCeti

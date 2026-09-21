@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.QuasiIso
-public import Mathlib.Data.Int.Interval
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
 /-!
@@ -27,13 +26,19 @@ objects of `K`. The argument is carried out for an arbitrary additive invariant,
 smallness hypothesis on `A`; specializing it to the tautological invariant `X ↦ [X]` gives the
 statement in `TauCeti.AbelianK0 A`, which is the form the rest of the theory consumes.
 
-The finiteness is carried by data, not inferred: the summation range is an explicit `Finset ℤ`,
-and boundedness is Mathlib's `CochainComplex.IsStrictlyGE`/`CochainComplex.IsStrictlyLE`. Nothing
-here is a `finsum`, so every value is a truncation to an explicitly given finite range of degrees;
-what boundedness buys is that all large enough ranges give the same answer, so a complex with
-infinite support is assigned no canonical, range-independent Euler characteristic rather than a
-junk one. The comparison with the totalized `HomologicalComplex.eulerChar` of Mathlib is left to
-the finite-dimensionality layer that gives it a `ℤ`-valued additive invariant.
+The finiteness is carried by data, not inferred: the summation range is an explicit `Finset ℤ`.
+Nothing here is a `finsum`, so every value is a truncation to an explicitly given finite range of
+degrees, and what boundedness buys is that all large enough ranges give the same answer.
+
+Which boundedness is needed depends on what is being summed. The alternating class of the *terms*,
+and with it Euler–Poincaré, needs the terms to vanish outside a finite range, which is Mathlib's
+`CochainComplex.IsStrictlyGE`/`CochainComplex.IsStrictlyLE`. The alternating class of the
+*cohomology* needs only the cohomology to vanish there, which is `IsGE`/`IsLE`; so a complex whose
+terms are nonzero in every degree, such as an unbounded resolution, still has a range-independent
+`homologyEulerChar`, while having no canonical `eulerChar`. A complex outside both regimes is
+assigned no canonical value rather than a junk one. The comparison with the totalized
+`HomologicalComplex.eulerChar` of Mathlib is left to the finite-dimensionality layer that gives it
+a `ℤ`-valued additive invariant.
 
 ## Main definitions
 
@@ -52,6 +57,9 @@ the finite-dimensionality layer that gives it a `ℤ`-valued additive invariant.
   and from its cohomology, for every invariant additive on short exact sequences.
 * `TauCeti.AbelianK0.of_kernel_add_of_kernel` and
   `TauCeti.AbelianK0.eulerChar_eq_homologyEulerChar`: the two statements above in abelian `K₀`.
+* `TauCeti.AbelianK0.homologyEulerChar_eq_homologyEulerChar`: the alternating class of the
+  cohomology does not depend on the summation range as soon as the cohomology is bounded; the
+  terms of the complex need not be.
 * `TauCeti.AbelianK0.eulerChar_eq_of_quasiIso`: the Euler characteristic of a bounded complex
   depends only on its image in the derived category.
 
@@ -76,20 +84,6 @@ variable {A : Type u} [Category.{v} A] [Abelian A]
 private theorem isZero_kernel_of_isZero {X Y : A} (f : X ⟶ Y) (hX : IsZero X) :
     IsZero (kernel f) :=
   IsZero.of_iso hX (kernelIsoOfEq (hX.eq_of_src f 0) ≪≫ kernelZeroIsoSource)
-
-private theorem isZero_X_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.X n) := by
-  rw [Finset.mem_Icc] at hn
-  rcases lt_or_ge n a with h | h
-  · exact K.isZero_of_isStrictlyGE a n h
-  · exact K.isZero_of_isStrictlyLE b n (by omega)
-
-private theorem isZero_homology_of_notMem_Icc (K : CochainComplex A ℤ) (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] {n : ℤ} (hn : n ∉ Finset.Icc a b) : IsZero (K.homology n) := by
-  rw [Finset.mem_Icc] at hn
-  rcases lt_or_ge n a with h | h
-  · exact K.isZero_of_isGE a n h
-  · exact K.isZero_of_isLE b n (by omega)
 
 namespace AbelianK0
 
@@ -210,11 +204,13 @@ theorem sum_negOnePow_obj_X_eq_sum_negOnePow_obj_homology (a b : ℤ) [K.IsStric
   have hX : ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n)
       = ∑ n ∈ Finset.Icc a b, ((n.negOnePow : ℤ)) • v.obj (K.X n) :=
     (Finset.sum_subset hs fun x _ hx => by
-      rw [obj_eq_zero_of_isZero v (isZero_X_of_notMem_Icc K a b hx), smul_zero]).symm
+      rw [obj_eq_zero_of_isZero v
+        (K.isZero_X_of_notMem_Icc a b hx), smul_zero]).symm
   have hH : ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.homology n)
       = ∑ n ∈ Finset.Icc a b, ((n.negOnePow : ℤ)) • v.obj (K.homology n) :=
     (Finset.sum_subset hs fun x _ hx => by
-      rw [obj_eq_zero_of_isZero v (isZero_homology_of_notMem_Icc K a b hx), smul_zero]).symm
+      rw [obj_eq_zero_of_isZero v
+        (K.isZero_homology_of_notMem_Icc a b hx), smul_zero]).symm
   rw [hX, hH]
   rcases le_or_gt a b with hab | hab
   · rw [sum_negOnePow_obj_Icc_aux v K a b hab,
@@ -273,6 +269,31 @@ noncomputable def homologyEulerChar (s : Finset ℤ) : AbelianK0 A :=
       = ((n.negOnePow : ℤ)) • of (K.homology n) + homologyEulerChar K s :=
   Finset.sum_insert hn
 
+section CohomologyBounded
+
+variable (a b : ℤ) [K.IsGE a] [K.IsLE b]
+
+/-- Enlarging the range of degrees beyond the support of the cohomology does not change the
+alternating class of that cohomology.
+
+Only the cohomology has to be bounded: `K.IsGE a` and `K.IsLE b` say that the cohomology of `K`
+vanishes outside `[a, b]`. The terms `K.X n` may be nonzero in every degree, as they are for an
+unbounded resolution. -/
+theorem homologyEulerChar_eq_homologyEulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
+    homologyEulerChar K s = homologyEulerChar K (Finset.Icc a b) :=
+  (Finset.sum_subset hs fun x _ hx => by
+    rw [of_eq_zero_of_isZero
+      (K.isZero_homology_of_notMem_Icc a b hx), smul_zero]).symm
+
+/-- The alternating class of the cohomology of a complex with bounded cohomology does not depend
+on the finite range of degrees over which it is summed. -/
+theorem homologyEulerChar_eq_homologyEulerChar {s t : Finset ℤ} (hs : Finset.Icc a b ⊆ s)
+    (ht : Finset.Icc a b ⊆ t) : homologyEulerChar K s = homologyEulerChar K t := by
+  rw [homologyEulerChar_eq_homologyEulerChar_Icc K a b hs,
+    homologyEulerChar_eq_homologyEulerChar_Icc K a b ht]
+
+end CohomologyBounded
+
 section Bounded
 
 variable (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b]
@@ -282,27 +303,14 @@ Euler characteristic. -/
 theorem eulerChar_eq_eulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
     eulerChar K s = eulerChar K (Finset.Icc a b) :=
   (Finset.sum_subset hs fun x _ hx => by
-    rw [of_eq_zero_of_isZero (isZero_X_of_notMem_Icc K a b hx), smul_zero]).symm
-
-/-- Enlarging the range of degrees beyond the support of a bounded complex does not change the
-alternating class of its cohomology. -/
-theorem homologyEulerChar_eq_homologyEulerChar_Icc {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
-    homologyEulerChar K s = homologyEulerChar K (Finset.Icc a b) :=
-  (Finset.sum_subset hs fun x _ hx => by
-    rw [of_eq_zero_of_isZero (isZero_homology_of_notMem_Icc K a b hx), smul_zero]).symm
+    rw [of_eq_zero_of_isZero
+      (K.isZero_X_of_notMem_Icc a b hx), smul_zero]).symm
 
 /-- The Euler characteristic of a bounded complex does not depend on the finite range of degrees
 over which it is summed, as long as that range contains the support. -/
 theorem eulerChar_eq_eulerChar {s t : Finset ℤ} (hs : Finset.Icc a b ⊆ s)
     (ht : Finset.Icc a b ⊆ t) : eulerChar K s = eulerChar K t := by
   rw [eulerChar_eq_eulerChar_Icc K a b hs, eulerChar_eq_eulerChar_Icc K a b ht]
-
-/-- The alternating class of the cohomology of a bounded complex does not depend on the finite
-range of degrees over which it is summed. -/
-theorem homologyEulerChar_eq_homologyEulerChar {s t : Finset ℤ} (hs : Finset.Icc a b ⊆ s)
-    (ht : Finset.Icc a b ⊆ t) : homologyEulerChar K s = homologyEulerChar K t := by
-  rw [homologyEulerChar_eq_homologyEulerChar_Icc K a b hs,
-    homologyEulerChar_eq_homologyEulerChar_Icc K a b ht]
 
 /-- **The Euler–Poincaré theorem in abelian `K₀`.** For a cochain complex that is strictly
 supported in degrees `a` to `b`, and any finite range of degrees containing `[a, b]`, the

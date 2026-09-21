@@ -1,13 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Coupling
+public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Pullback
-public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.CutNorm
 public import TauCeti.MeasureTheory.Integral.Pi
 
 /-!
@@ -27,6 +26,15 @@ reads both as graphons on `(Ω₁ × Ω₂, π)`; their difference there is the 
 `homDensity_comap` says the two densities are unchanged by that reading, so the same-carrier
 statement transfers verbatim: `counting_lemma_coupling`. This is the cross-carrier engine of the
 separation layer, and the form in which the counting lemma meets the coupling-primary `cutDist`.
+
+Since that bound holds along *every* coupling, taking the infimum over couplings replaces the
+overlaid cut norm by the cut distance itself:
+
+`|t(F, U) - t(F, W)| ≤ e(F) · δ□(U, W)`,
+
+the cut-distance form `abs_homDensity_sub_le_cutDist`. It needs no standard-Borel, atomlessness, or
+common-carrier assumption, and it is what makes each `t(F, ·)` Lipschitz — hence continuous — for
+the cut metric.
 
 **The proof is a telescope over the edges.** Swap the edges of `F` from `W` to `U` one at a time.
 Each swap changes the integrand at a single edge `e₀ = s(a, b)`, weighted by the product of edge
@@ -49,18 +57,18 @@ no loss of constant. The outer integral is over a probability measure, so the bo
   `|t(F, U) - t(F, W)| ≤ e(F) · ‖U - W‖□`;
 * `TauCeti.DenseGraphLimits.counting_lemma_coupling` — its cross-carrier coupling form, bounding the
   density gap of two graphons on different carriers by the cut norm of the overlaid difference along
-  any coupling of the carriers.
+  any coupling of the carriers;
+* `TauCeti.DenseGraphLimits.abs_homDensity_sub_le_cutDist` — its cut-distance form
+  `|t(F,U) − t(F,W)| ≤ e(F) · δ□(U, W)`, obtained by taking the infimum over couplings.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the forward counting lemma and its
-  cross-carrier coupling form; the signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`. The descent `homDensityOnSpace` to
-  `GraphonSpace`, weak regularity and total boundedness are separate targets and are not built
-  here.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Lemma 10.23.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 7.2.
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the counting lemma and its
+  coupling and cut-distance forms. The signatures follow
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section
@@ -311,6 +319,32 @@ theorem counting_lemma_coupling (F : SimpleGraph V) [DecidableRel F.Adj] (U : Gr
     (W.comap Prod.snd measurable_snd π)
   rw [hU, hW, hker] at h
   exact h
+
+omit [DecidableEq V] in
+/-- **Homomorphism density is Lipschitz for the cross-carrier cut distance.** For a finite graph
+`F`, the density gap between graphons on arbitrary probability carriers is at most the number of
+edges of `F` times their coupling cut distance.
+
+This is the coupling form of the counting lemma with the infimum over couplings taken. -/
+theorem abs_homDensity_sub_le_cutDist (F : SimpleGraph V) [DecidableRel F.Adj]
+    (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) :
+    |homDensity F U - homDensity F W| ≤ (F.edgeFinset.card : ℝ) * cutDist U W := by
+  classical
+  by_cases hF : F.edgeFinset.card = 0
+  · have h := counting_lemma_coupling F U W (TauCeti.MeasureTheory.isCoupling_prod μ₁ μ₂)
+    simpa [hF] using h
+  · have hcard : 0 < (F.edgeFinset.card : ℝ) := by positivity
+    have hdiv : |homDensity F U - homDensity F W| / (F.edgeFinset.card : ℝ) ≤ cutDist U W :=
+      le_cutDist U W fun π hπ => by
+        rw [div_le_iff₀ hcard]
+        simpa only [mul_comm] using counting_lemma_coupling F U W hπ
+    calc
+      |homDensity F U - homDensity F W|
+          = (F.edgeFinset.card : ℝ)
+              * (|homDensity F U - homDensity F W| / (F.edgeFinset.card : ℝ)) := by
+                field_simp
+      _ ≤ (F.edgeFinset.card : ℝ) * cutDist U W :=
+        mul_le_mul_of_nonneg_left hdiv (Nat.cast_nonneg _)
 
 end CrossCarrier
 

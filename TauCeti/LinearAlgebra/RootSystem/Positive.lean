@@ -9,8 +9,6 @@ public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import TauCeti.LinearAlgebra.RootSystem.Height
 
-public section
-
 /-!
 # Positive and negative roots
 
@@ -50,9 +48,10 @@ positive root is a nonnegative integer combination of the simple coroots.
   over those roots.
 * `TauCeti.mem_support_iff_isPos_and_forall_ne_add` says the simple roots are exactly the
   indecomposable positive roots: those that are not the sum of two positive roots.
-* `TauCeti.RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
+* `RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
   coroot is positive for that base, and `TauCeti.posRoots_flip` restates it for the sets.
-* `TauCeti.root_mem_posRootCone_of_mem_posRoots` says the positive roots lie in `Q⁺`,
+* `TauCeti.mem_posRoots_iff_root_mem_posRootCone` says the positive roots are exactly the roots
+  lying in `Q⁺`,
   `TauCeti.isPointed_posRootCone` says `Q⁺` is pointed,
   `TauCeti.eq_zero_of_add_eq_zero_of_mem_posRootCone` is the same fact as a cancellation rule,
   `TauCeti.root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone` specializes that to a positive root
@@ -71,7 +70,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
-  nonnegative integer combination of the simple coroots.
+  nonnegative integer combination of the simple coroots, and
+  `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
 
 ## Implementation notes
 
@@ -91,6 +91,8 @@ GTM 9, Ch. III, §10. The decomposition half of `TauCeti.mem_support_iff_isPos_a
 the step that Mathlib currently performs only inside the proof of
 `RootPairing.Base.IsPos.induction_on_add`, isolated here as a statement of its own.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -291,6 +293,16 @@ theorem root_mem_posRootCone_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) 
     P.root i ∈ posRootCone P b :=
   let ⟨f, _, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b hi
   (mem_posRootCone P b).mpr ⟨f, hf⟩
+
+/-- **A root is positive exactly when it lies in the positive root cone.** -/
+theorem mem_posRoots_iff_root_mem_posRootCone {i : ι} :
+    i ∈ posRoots P b ↔ P.root i ∈ posRootCone P b := by
+  refine ⟨root_mem_posRootCone_of_mem_posRoots P b, fun hi => ?_⟩
+  obtain ⟨f, hf⟩ := (mem_posRootCone P b).mp hi
+  have hroot : P.root i = ∑ j ∈ b.support, (f j : ℤ) • P.root j := by
+    simp only [hf, natCast_zsmul]
+  rw [mem_posRoots, RootPairing.Base.isPos_iff', b.height_eq_sum hroot]
+  exact Finset.sum_nonneg fun j _ => Int.natCast_nonneg (f j)
 
 omit [CharZero R] in
 /-- **The height of a nonnegative integer combination of the simple roots** is the total number of
@@ -609,11 +621,11 @@ lemma sum_posRootsFinset_erase_comp_reflectionPerm [DecidableEq ι] {A : Type*} 
   Finset.sum_equiv (P.reflectionPerm i)
     (fun j ↦ (reflectionPerm_mem_posRootsFinset_erase_iff P b hi j).symm) fun _ _ ↦ rfl
 
-namespace RootPairing.Base
+section
 
 /-- A simple reflection preserves and reflects positivity of every root other than its own simple
 root and the negative of that simple root. -/
-lemma isPos_reflectionPerm_iff {i j : ι} (hj : j ∈ b.support) (hij : i ≠ j)
+lemma _root_.RootPairing.Base.isPos_reflectionPerm_iff {i j : ι} (hj : j ∈ b.support) (hij : i ≠ j)
     (hij' : i ≠ P.reflectionPerm j j) :
     b.IsPos (P.reflectionPerm j i) ↔ b.IsPos i := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.reflectionPerm hj hij⟩
@@ -622,7 +634,8 @@ lemma isPos_reflectionPerm_iff {i j : ι} (hj : j ∈ b.support) (hij : i ≠ j)
 
 /-- **A root is positive for a base exactly when its coroot is positive for that base.** -/
 @[simp]
-theorem isPos_flip_iff [P.flip.IsReduced] (i : ι) : b.flip.IsPos i ↔ b.IsPos i := by
+theorem _root_.RootPairing.Base.isPos_flip_iff
+    [P.flip.IsReduced] (i : ι) : b.flip.IsPos i ↔ b.IsPos i := by
   -- Both sides hold for a simple root, both are exchanged by root negation, and away from a
   -- simple root and its negative both are preserved by the corresponding simple reflection, so
   -- the positive-root induction propagates the equivalence over the whole index type.
@@ -643,11 +656,12 @@ theorem isPos_flip_iff [P.flip.IsReduced] (i : ι) : b.flip.IsPos i ↔ b.IsPos 
   rcases eq_or_ne j (P.reflectionPerm k k) with rfl | hjk'
   · rw [P.reflectionPerm_self k k]
     exact hsimple k hk
-  · rw [isPos_reflectionPerm_iff P b hk hjk hjk', ← hflip k j,
-      isPos_reflectionPerm_iff P.flip b.flip (by simpa using hk) hjk (by rwa [hflip k k])]
+  · rw [RootPairing.Base.isPos_reflectionPerm_iff P b hk hjk hjk', ← hflip k j,
+      RootPairing.Base.isPos_reflectionPerm_iff P.flip b.flip (by simpa using hk) hjk
+        (by rwa [hflip k k])]
     exact hj
 
-end RootPairing.Base
+end
 
 variable [P.flip.IsReduced]
 
@@ -670,5 +684,24 @@ theorem exists_coroot_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P
   obtain ⟨f, hf, hsum⟩ := exists_root_eq_sum_nat_of_mem_posRoots P.flip b.flip
     (by rw [posRoots_flip]; exact hi)
   exact ⟨f, by simpa using hf, by simpa using hsum⟩
+
+/-- A positive coroot functional is a nonnegative integer combination of the simple coroot
+functionals, with at least one simple coroot genuinely occurring. -/
+theorem exists_coroot'_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
+    ∃ f : ι → ℕ, (∃ j ∈ b.support, f j ≠ 0) ∧
+      P.coroot' i = ∑ j ∈ b.support, (f j : R) • P.coroot' j := by
+  obtain ⟨f, -, hsum⟩ := exists_coroot_eq_sum_nat_of_mem_posRoots P b hi
+  refine ⟨f, ?_, ?_⟩
+  · by_contra hcon
+    push Not at hcon
+    have : NeZero (2 : R) := ⟨by exact_mod_cast (by norm_num : (2 : ℕ) ≠ 0)⟩
+    refine P.ne_zero' i ?_
+    rw [hsum]
+    exact Finset.sum_eq_zero fun j hj ↦ by simp [hcon j hj]
+  · -- `RootPairing.coroot'` is an abbreviation for the transpose of `P.toLinearMap` applied to a
+    -- coroot, so unfolding it is what carries the expansion of `P.coroot i` to the dual side.
+    simp only [_root_.RootPairing.coroot']
+    rw [hsum, map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by simp [Nat.cast_smul_eq_nsmul]
 
 end TauCeti

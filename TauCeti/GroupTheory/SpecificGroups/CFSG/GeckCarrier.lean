@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Frobenius
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.RootDatum
 
 /-!
 # The Geck carrier of a Lie-type index
@@ -24,13 +25,14 @@ for `TauCeti.ValidLieTypeIndex`, exactly as `TauCeti.ValidLieTypeIndex.frobenius
 field-level and carrier-level maps are the same recipe on every branch, and the branches differ
 only in which endomorphism of this group is later taken as the Steinberg map.
 
-The names all carry the `geck` prefix, because this carrier is *not* the ambient group of milestone
-L0 of `TauCetiRoadmap/CFSGStatement/README.md`. Geck's module is the adjoint module, so the
-characters occurring in it generate the root lattice and not, in general, the whole character
-lattice of the pinned torus; the identification of the carrier with the pinned simply connected
-Chevalley--Demazure group scheme of `TauCeti.DynkinType.simplyConnectedRootDatum` is Layer 9 work
-of `TauCetiRoadmap/ReductiveGroups/README.md`. The names `TauCeti.ValidLieTypeIndex.AmbientGroup`
-and `TauCeti.ValidLieTypeIndex.simpleRootSubgroup` that L0 asks for are therefore left free, and no
+The names all carry the `geck` prefix because this carrier is not the uniform ambient group.
+Geck's module is the adjoint module, so the characters occurring in it generate the root lattice
+and not, in general, the whole character lattice of the pinned torus. This file does not identify
+the carrier with the pinned simply connected Chevalley--Demazure group scheme of
+`TauCeti.DynkinType.simplyConnectedRootDatum`. The uniform
+`TauCeti.ValidLieTypeIndex.AmbientGroup` and `TauCeti.ValidLieTypeIndex.simpleRootSubgroup` are
+assembled by cases in `TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.AmbientGroup`; this carrier
+serves only the `E₈`, `F₄` and `G₂` branches through `TauCeti.UnimodularExceptionalIndex`. No
 declaration below asserts that this carrier is reductive, that its root datum is the simply
 connected one, that its weight torus is maximal, or that its point group is finite.
 
@@ -40,19 +42,35 @@ connected one, that its weight torus is maximal, or that its point group is fini
   the Geck carrier of the underlying Dynkin type over the algebraic closure of the prime field, as
   a subgroup of `GLₙ` and as a type.
 * `TauCeti.ValidLieTypeIndex.geckRootSubgroup`: its Bourbaki-numbered root subgroups.
+* `TauCeti.ValidLieTypeIndex.geckWeightTorus`: the split weight torus of the same carrier, of rank
+  the rank of the index.
 * `TauCeti.ValidLieTypeIndex.geckFrobenius`: its `q`-power Frobenius, for `q` the field order
   recorded by the index.
 
 ## Main results
 
+* `TauCeti.ValidLieTypeIndex.geckWeightTorus_conj_geckRootSubgroup_root_simpleIndex` and its
+  negative-root counterpart: conjugation by a weight-torus point rescales the parameter of the
+  numbered root subgroup at node `i` by the simple root `α_i` of the root datum
+  `TauCeti.DynkinType.simplyConnectedRootDatum` of the Dynkin type the index names, in the same
+  Bourbaki numbering.
 * `TauCeti.ValidLieTypeIndex.coe_geckFrobenius_apply`: the Frobenius raises every matrix entry to
   the `q`-th power.
-* `TauCeti.ValidLieTypeIndex.geckFrobenius_geckRootSubgroup`: it raises the parameter of every
-  numbered root subgroup to the `q`-th power.
+* `TauCeti.ValidLieTypeIndex.geckFrobenius_geckRootSubgroup` and
+  `TauCeti.ValidLieTypeIndex.geckFrobenius_geckWeightTorus`: it raises the parameter of every
+  numbered root subgroup, and every coordinate of a weight-torus point, to the `q`-th power.
 * `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_iff`: its fixed points are the points
   whose matrix entries lie in the field of definition `𝔽_q` of
   `TauCeti.ValidLieTypeIndex.fixedField`.
+* `TauCeti.ValidLieTypeIndex.geckWeightTorus_mem_fixedSubgroup_geckFrobenius`: among those points
+  are the weight-torus points all of whose coordinates lie in `𝔽_q`.
 
+* `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius`, with
+  `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius_geckRootSubgroup`,
+  `TauCeti.ValidLieTypeIndex.geckPrimeFrobenius_geckWeightTorus` and
+  `TauCeti.ValidLieTypeIndex.geckFrobenius_eq_geckPrimeFrobenius_pow`: the prime-field Frobenius of
+  the Geck point group, its action on the numbered root subgroups and on the weight torus, and the
+  `q`-power Frobenius as its `e`-th power.
 ## References
 
 * M. Geck, *On the construction of semisimple Lie algebras and Chevalley groups*,
@@ -122,6 +140,72 @@ theorem coe_geckRootSubgroup (i : Fin d.dynkinType.rank ⊕ Fin d.dynkinType.ran
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := d.Closure)).symm u) :=
   d.dynkinType.coe_geckRootSubgroupPoints d.dynkinType_valid i d.Closure u
 
+/-! ## The pinned weight torus -/
+
+/-- **The split weight torus of the Geck point group of a valid Lie-type index**, of rank the rank
+of the index: the diagonal points through which the Geck coordinate weights act. Together with
+`TauCeti.ValidLieTypeIndex.geckRootSubgroup` it is the pinned data of the carrier that the
+conjugation equations below are stated against.
+
+As for the point group itself, no maximality statement is attached to it, and it is not claimed to
+be the split maximal torus of a pinned simply connected Chevalley--Demazure group. -/
+def geckWeightTorus : (Fin d.rank → d.Closureˣ) →* GeckGroup d :=
+  d.dynkinType.geckWeightTorusPoints d.dynkinType_valid d.Closure
+
+/-- The weight torus of an index is the represented weight torus of the pinned Geck carrier of the
+Dynkin type it names, over the algebraic closure of the prime field of the index. -/
+theorem geckWeightTorus_def : d.geckWeightTorus =
+    d.dynkinType.geckWeightTorusPoints d.dynkinType_valid d.Closure := by
+  rw [geckWeightTorus]
+
+/-- The general linear matrix underlying a weight-torus point is the diagonal matrix of the Geck
+weight characters at that point. -/
+@[simp]
+theorem coe_geckWeightTorus (s : Fin d.rank → d.Closureˣ) :
+    (d.geckWeightTorus s : Matrix.GeneralLinearGroup
+        (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) =
+      d.dynkinType.geckTorusMatrix d.dynkinType_valid s := by
+  rw [geckWeightTorus_def]
+  exact d.dynkinType.coe_geckWeightTorusPoints d.dynkinType_valid d.Closure s
+
+/-- **The pinning equation of the Geck carrier of an index, at a named simple root.** Conjugating
+the numbered raising subgroup at Bourbaki node `i` by a weight-torus point `s` rescales its
+parameter by `α_i(s)`, where `α_i` is the simple root of the pinned simply connected root datum of
+the Dynkin type the index names, at the same node.
+
+The character is read in that root datum rather than as a row of the Cartan matrix: the datum is
+the one attached to `TauCeti.ValidLieTypeIndex.dynkinType`, so it carries the Bourbaki node
+numbering that numbers the root subgroups here, and node `i` on either side is the same node. -/
+@[simp]
+theorem geckWeightTorus_conj_geckRootSubgroup_root_simpleIndex (i : Fin d.rank)
+    (s : Fin d.rank → d.Closureˣ) (u : Multiplicative d.Closure) :
+    d.geckWeightTorus s * d.geckRootSubgroup (.inl i) u * (d.geckWeightTorus s)⁻¹ =
+      d.geckRootSubgroup (.inl i)
+        (Multiplicative.ofAdd
+          ((torusCharacter s
+              ((d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid).root
+                (d.dynkinType.simpleIndex d.dynkinType_valid i)) : d.Closure) *
+            Multiplicative.toAdd u)) := by
+  rw [geckWeightTorus_def]
+  exact d.dynkinType.geckWeightTorusPoints_conj_geckRootSubgroupPoints_root_simpleIndex
+    d.dynkinType_valid i d.Closure s u
+
+/-- **The pinning equation of the Geck carrier of an index, at the negative of a named simple
+root.** -/
+@[simp]
+theorem geckWeightTorus_conj_geckRootSubgroup_neg_root_simpleIndex (i : Fin d.rank)
+    (s : Fin d.rank → d.Closureˣ) (u : Multiplicative d.Closure) :
+    d.geckWeightTorus s * d.geckRootSubgroup (.inr i) u * (d.geckWeightTorus s)⁻¹ =
+      d.geckRootSubgroup (.inr i)
+        (Multiplicative.ofAdd
+          ((torusCharacter s
+              (-(d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid).root
+                (d.dynkinType.simpleIndex d.dynkinType_valid i)) : d.Closure) *
+            Multiplicative.toAdd u)) := by
+  rw [geckWeightTorus_def]
+  exact d.dynkinType.geckWeightTorusPoints_conj_geckRootSubgroupPoints_neg_root_simpleIndex
+    d.dynkinType_valid i d.Closure s u
+
 /-! ## The Frobenius endomorphism -/
 
 /-- **The `q`-power Frobenius endomorphism of the Geck point group**, for `q` the field order
@@ -164,6 +248,85 @@ theorem geckFrobenius_geckRootSubgroup (i : Fin d.dynkinType.rank ⊕ Fin d.dynk
   rw [d.fieldOrder_eq_characteristic_pow]
   exact d.dynkinType.geckFrobenius_geckRootSubgroupPoints d.dynkinType_valid
     d.characteristic d.fieldExponent d.Closure i u
+
+/-- **The prime-field Frobenius endomorphism of the Geck point group**, the `p`-power map for `p`
+the defining characteristic. The `q`-power Frobenius `TauCeti.ValidLieTypeIndex.geckFrobenius` is
+its `e`-th power, for `e` the field exponent the index records, by
+`geckFrobenius_eq_geckPrimeFrobenius_pow`, so the two agree on an index of prime field
+order. -/
+def geckPrimeFrobenius : GeckGroup d →* GeckGroup d :=
+  d.dynkinType.geckFrobenius d.dynkinType_valid d.characteristic 1 d.Closure
+
+/-- The prime-field Frobenius is that of the pinned Geck carrier at exponent one. This is its
+unfolding lemma; the definition itself stays sealed. -/
+theorem geckPrimeFrobenius_def : d.geckPrimeFrobenius =
+    d.dynkinType.geckFrobenius d.dynkinType_valid d.characteristic 1 d.Closure := by
+  rw [geckPrimeFrobenius]
+
+/-- The prime-field Frobenius acts on the Geck point group by raising every matrix entry to the
+`p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_geckPrimeFrobenius_apply (g : GeckGroup d)
+    (r c : Fin (d.dynkinType.geckDim d.dynkinType_valid)) :
+    ((d.geckPrimeFrobenius g : Matrix.GeneralLinearGroup
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) :
+        Matrix _ _ d.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) :
+        Matrix _ _ d.Closure) r c ^ d.characteristic := by
+  rw [geckPrimeFrobenius_def]
+  simpa only [pow_one] using d.dynkinType.coe_geckFrobenius_apply d.dynkinType_valid
+    d.characteristic 1 d.Closure g r c
+
+/-- **The prime-field Frobenius raises the parameter of every numbered root subgroup to the `p`-th
+power.** On a simple root subgroup this reads `Frob_p (x_α(t)) = x_α(t ^ p)`. -/
+@[simp]
+theorem geckPrimeFrobenius_geckRootSubgroup
+    (i : Fin d.dynkinType.rank ⊕ Fin d.dynkinType.rank) (u : Multiplicative d.Closure) :
+    d.geckPrimeFrobenius (d.geckRootSubgroup i u) =
+      d.geckRootSubgroup i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.characteristic)) := by
+  have h := d.dynkinType.geckFrobenius_geckRootSubgroupPoints d.dynkinType_valid
+    d.characteristic 1 d.Closure i u
+  rw [pow_one] at h
+  exact h
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the Geck point group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.DynkinType.geckFrobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem geckFrobenius_eq_geckPrimeFrobenius_pow :
+    d.geckFrobenius = (show Monoid.End _ from d.geckPrimeFrobenius) ^ d.fieldExponent := by
+  rw [geckFrobenius_def, geckPrimeFrobenius_def, DynkinType.geckFrobenius_pow, Nat.one_mul]
+
+/-- **The prime-field Frobenius raises every coordinate of a weight-torus point to the `p`-th
+power.** -/
+@[simp]
+theorem geckPrimeFrobenius_geckWeightTorus (s : Fin d.rank → d.Closureˣ) :
+    d.geckPrimeFrobenius (d.geckWeightTorus s) = d.geckWeightTorus (s ^ d.characteristic) := by
+  rw [geckPrimeFrobenius_def, geckWeightTorus_def]
+  exact (d.dynkinType.geckFrobenius_geckWeightTorusPoints d.dynkinType_valid d.characteristic 1
+    d.Closure s).trans (by rw [pow_one])
+
+/-- **The Frobenius raises every coordinate of a weight-torus point to the `q`-th power.** -/
+@[simp]
+theorem geckFrobenius_geckWeightTorus (s : Fin d.rank → d.Closureˣ) :
+    d.geckFrobenius (d.geckWeightTorus s) = d.geckWeightTorus (s ^ d.fieldOrder) := by
+  rw [d.fieldOrder_eq_characteristic_pow, geckFrobenius_def, geckWeightTorus_def]
+  exact d.dynkinType.geckFrobenius_geckWeightTorusPoints d.dynkinType_valid
+    d.characteristic d.fieldExponent d.Closure s
+
+/-- **A weight-torus point whose coordinates lie in the field of definition is fixed by the
+Frobenius.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, these are the weight-torus
+points with coordinates in `𝔽_q`; that they exhaust the weight-torus points of the Frobenius-fixed
+group, or that they form a maximal torus of it, is not claimed. -/
+theorem geckWeightTorus_mem_fixedSubgroup_geckFrobenius (s : Fin d.rank → d.Closureˣ)
+    (hs : ∀ k, (s k : d.Closure) ∈ d.fixedField) :
+    d.geckWeightTorus s ∈ fixedSubgroup d.geckFrobenius := by
+  rw [mem_fixedSubgroup, geckFrobenius_geckWeightTorus]
+  refine congrArg _ (funext fun k => Units.ext ?_)
+  rw [Pi.pow_apply, Units.val_pow_eq_pow_val]
+  exact (d.mem_fixedField).1 (hs k)
 
 /-- **A point of the Geck point group is fixed by the Frobenius exactly when all of its matrix
 entries lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`,

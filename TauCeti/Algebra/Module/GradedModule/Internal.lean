@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.Ring.NegOnePow
+public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
 
 /-!
@@ -30,17 +32,31 @@ the letterwise tuple operation that applies it on a half-open index interval.
 ## Main definitions
 
 * `InternalGrading`: an internal `ℤ`-grading of a module.
+* `InternalGrading.ofDecomposition`: the internal grading carried by a family of submodules with a
+  `DirectSum.Decomposition`, as graded algebras store it.
+* `InternalGrading.map`: transport an internal grading across a linear equivalence.
 * `InternalGrading.koszulTwist`: the operator scaling degree-`e` elements by `(-1)^(q * e)`.
+* `InternalGrading.quadraticTwist`: multiplication of degree `p` by
+  `(-1)^(p choose 2)`.
 * `InternalGrading.twistedTuple`: a tuple with a consecutive block of letters Koszul-twisted.
 
 ## Main results
 
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
+* `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
+  elements.
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
   each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
+* `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
+* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
+  linear equivalence is homogeneous.
+* `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: a homogeneous linear map commutes with
+  Koszul twists up to the sign determined by its degree.
+* `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
+  twisting a block of a tuple.
 
 This is the first graded-module target in Layer 0 of the `DGAInfinity` roadmap.  Later files use
 Mathlib's decomposition API to define maps of nonzero degree, shifts, tensor-product gradings, and
@@ -83,6 +99,155 @@ theorem ext : ∀ {G H : InternalGrading R M}, (∀ p, G.piece p = H.piece p) �
 noncomputable instance (G : InternalGrading R M) : DirectSum.Decomposition G.piece :=
   G.isInternal.chooseDecomposition
 
+/-- The internal grading carried by a family of submodules with a `DirectSum.Decomposition`.  This
+is the bridge from Mathlib's decomposition typeclass, under which graded algebras are stated, to
+the bundled internal grading of this file. -/
+noncomputable def ofDecomposition (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ] :
+    InternalGrading R M :=
+  ⟨ℳ, DirectSum.Decomposition.isInternal ℳ⟩
+
+@[simp]
+theorem ofDecomposition_piece (ℳ : ℤ → Submodule R M) [DirectSum.Decomposition ℳ] :
+    (ofDecomposition ℳ).piece = ℳ := (rfl)
+
+/-- Two linear maps on an internally graded module agree if they agree on homogeneous elements. -/
+theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
+    (G : InternalGrading R M) {f g : M →ₗ[R] N}
+    (h : ∀ (p : ℤ) (x : M), x ∈ G.piece p → f x = g x) : f = g := by
+  apply (Submodule.linearMap_eq_iff_of_span_eq_top f g ?_).2
+  · rintro ⟨x, hx⟩
+    obtain ⟨p, hp⟩ := Set.mem_iUnion.mp hx
+    exact h p x hp
+  · rw [← Submodule.iSup_eq_span]
+    exact G.isInternal.submodule_iSup_eq_top
+
+section Map
+
+variable {N : Type w} [AddCommMonoid N] [Module R N]
+
+private noncomputable def mapPiecesEquiv (G : InternalGrading R M) (e : M ≃ₗ[R] N) :
+    (⨁ p : ℤ, G.piece p) ≃ₗ[R] (⨁ p : ℤ, (G.piece p).map e.toLinearMap) :=
+  DirectSum.congrLinearEquiv fun p ↦
+    Submodule.equivMapOfInjective e.toLinearMap e.injective (G.piece p)
+
+private theorem mapPiecesEquiv_lof (G : InternalGrading R M) (e : M ≃ₗ[R] N)
+    (p : ℤ) (x : G.piece p) :
+    mapPiecesEquiv G e (DirectSum.lof R ℤ (fun i ↦ G.piece i) p x) =
+      DirectSum.lof R ℤ (fun i ↦ (G.piece i).map e.toLinearMap) p
+        ((Submodule.equivMapOfInjective e.toLinearMap e.injective (G.piece p)).toLinearMap x) := by
+  -- Expose the bundled linear map so the direct-sum application lemma can rewrite it.
+  change (mapPiecesEquiv G e).toLinearMap
+    (DirectSum.lof R ℤ (fun i ↦ G.piece i) p x) = _
+  rw [mapPiecesEquiv, DirectSum.congrLinearEquiv_toLinearMap, DirectSum.lmap_lof]
+
+private theorem coeLinearMap_comp_mapPiecesEquiv (G : InternalGrading R M)
+    (e : M ≃ₗ[R] N) :
+    (DirectSum.coeLinearMap fun p : ℤ ↦ (G.piece p).map e.toLinearMap) ∘ₗ
+        (mapPiecesEquiv G e).toLinearMap =
+      e.toLinearMap ∘ₗ DirectSum.coeLinearMap G.piece := by
+  apply DirectSum.linearMap_ext R
+  intro p
+  apply LinearMap.ext
+  intro x
+  simp only [LinearMap.comp_apply]
+  calc
+    (DirectSum.coeLinearMap fun p : ℤ ↦ (G.piece p).map e.toLinearMap)
+        ((mapPiecesEquiv G e).toLinearMap
+          (DirectSum.lof R ℤ (fun i ↦ G.piece i) p x)) =
+        (DirectSum.coeLinearMap fun p : ℤ ↦ (G.piece p).map e.toLinearMap)
+          (DirectSum.lof R ℤ (fun i ↦ (G.piece i).map e.toLinearMap) p
+            ((Submodule.equivMapOfInjective e.toLinearMap e.injective
+              (G.piece p)).toLinearMap x)) :=
+      congrArg _ (mapPiecesEquiv_lof G e p x)
+    _ = e x := by
+      rw [DirectSum.coeLinearMap_lof]
+      exact Submodule.coe_equivMapOfInjective_apply e.toLinearMap e.injective (G.piece p) x
+    _ = e.toLinearMap (DirectSum.coeLinearMap G.piece
+        (DirectSum.lof R ℤ (fun i ↦ G.piece i) p x)) := by
+      rw [DirectSum.coeLinearMap_lof]
+      rfl
+
+/-- Transport an internal grading across a linear equivalence. The degree-`p` piece of the target
+is the image of the degree-`p` piece of the source. -/
+noncomputable def map (G : InternalGrading R M) (e : M ≃ₗ[R] N) : InternalGrading R N where
+  piece p := (G.piece p).map e.toLinearMap
+  isInternal := by
+    -- Expose `coeLinearMap` rather than its definitionally equal additive coercion so it can be
+    -- composed with `mapPiecesEquiv` below.
+    change Function.Bijective
+      (DirectSum.coeLinearMap fun p : ℤ ↦ (G.piece p).map e.toLinearMap)
+    let E := mapPiecesEquiv G e
+    have hcomp : Function.Bijective
+        ((DirectSum.coeLinearMap fun p : ℤ ↦ (G.piece p).map e.toLinearMap) ∘ₗ E.toLinearMap) := by
+      rw [coeLinearMap_comp_mapPiecesEquiv]
+      exact e.bijective.comp G.isInternal
+    constructor
+    · intro x y hxy
+      obtain ⟨x', rfl⟩ := E.surjective x
+      obtain ⟨y', rfl⟩ := E.surjective y
+      exact congrArg E (hcomp.injective (by
+        simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] using hxy))
+    · intro y
+      obtain ⟨x, hx⟩ := hcomp.surjective y
+      exact ⟨E x, by
+        simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] using hx⟩
+
+/-- The degree-`p` piece of a transported grading is the image of the original piece. -/
+@[simp]
+theorem map_piece (G : InternalGrading R M) (e : M ≃ₗ[R] N) (p : ℤ) :
+    (G.map e).piece p = (G.piece p).map e.toLinearMap :=
+  (rfl)
+
+/-- Membership in a transported piece can be checked after applying the inverse equivalence.
+
+This is not a `simp` lemma: `map_piece` already rewrites the left-hand side to a `Submodule.map`,
+on which the `simp` set fires `Submodule.mem_map_equiv` to reach the same right-hand side. -/
+theorem mem_map_piece_iff (G : InternalGrading R M) (e : M ≃ₗ[R] N) (p : ℤ) (y : N) :
+    y ∈ (G.map e).piece p ↔ e.symm y ∈ G.piece p := by
+  exact Submodule.mem_map_equiv (p := G.piece p) (e := e)
+
+/-- A linear equivalence maps a homogeneous element into the transported piece of the same
+degree. This is the special case of `mem_map_piece_iff` that `simp` already reaches. -/
+theorem apply_mem_map_piece_iff (G : InternalGrading R M) (e : M ≃ₗ[R] N) (p : ℤ) (x : M) :
+    e x ∈ (G.map e).piece p ↔ x ∈ G.piece p := by
+  simp
+
+/-- The equivalence used to transport a grading is homogeneous of degree zero. -/
+theorem isHomogeneous_map (G : InternalGrading R M) (e : M ≃ₗ[R] N) :
+    TauCeti.LinearMap.IsHomogeneous e.toLinearMap G.piece (G.map e).piece 0 := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  simpa using hx
+
+/-- The inverse of an equivalence used to transport a grading is homogeneous of degree zero. -/
+theorem isHomogeneous_map_symm (G : InternalGrading R M) (e : M ≃ₗ[R] N) :
+    TauCeti.LinearMap.IsHomogeneous e.symm.toLinearMap (G.map e).piece G.piece 0 := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p y hy
+  simpa using hy
+
+/-- Transport along the identity equivalence leaves an internal grading unchanged. -/
+@[simp]
+theorem map_refl (G : InternalGrading R M) : G.map (LinearEquiv.refl R M) = G := by
+  apply InternalGrading.ext
+  intro p
+  apply Submodule.ext
+  intro x
+  simp
+
+/-- Successive transport agrees with transport along the composite equivalence. -/
+@[simp]
+theorem map_trans {P : Type*} [AddCommMonoid P] [Module R P]
+    (G : InternalGrading R M) (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) :
+    (G.map e).map f = G.map (e.trans f) := by
+  apply InternalGrading.ext
+  intro p
+  apply Submodule.ext
+  intro x
+  simp
+
+end Map
+
 /-- An additive map that vanishes on every homogeneous piece except degree `i` sees only the
 degree-`i` component of each argument. -/
 theorem map_eq_map_decompose {N : Type w} [AddCommMonoid N] (G : InternalGrading R M)
@@ -97,6 +262,46 @@ theorem map_eq_map_decompose {N : Type w} [AddCommMonoid N] (G : InternalGrading
   · rw [DFinsupp.notMem_support_iff.mp hi, Submodule.coe_zero, map_zero]
 
 end InternalGrading
+
+namespace LinearMap.IsHomogeneous
+
+variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
+  [AddCommMonoid M] [Module R M] [Module S M] [AddCommMonoid N] [Module R N] [Module S N]
+
+/-- The inverse of a degree-zero homogeneous linear equivalence of internally graded modules is
+again homogeneous of degree zero. The equivalence may be linear over a ring `S` other than the
+ring `R` over which the homogeneous pieces are submodules. -/
+theorem linearEquiv_symm {G : InternalGrading R M} {H : InternalGrading R N} {e : M ≃ₗ[S] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) :
+    IsHomogeneous e.symm.toLinearMap H.piece G.piece 0 := by
+  -- The restrictions `ep p : G.piece p → H.piece p` assemble to a map of direct sums lying over
+  -- `e`; it is surjective because `e` and both decompositions are, hence so is each `ep p`.
+  let ep : (p : ℤ) → G.piece p →+ H.piece p := fun p ↦
+    { toFun := fun x ↦ ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem x.2⟩
+      map_zero' := Subtype.ext (map_zero e.toLinearMap)
+      map_add' := fun x y ↦ Subtype.ext (map_add e.toLinearMap (x : M) (y : M)) }
+  have hcomm : (DirectSum.coeAddMonoidHom H.piece).comp (DirectSum.map ep) =
+      e.toAddEquiv.toAddMonoidHom.comp (DirectSum.coeAddMonoidHom G.piece) := by
+    apply DirectSum.addHom_ext
+    intro p x
+    simp [ep]
+  have hmap_surj : Function.Surjective (DirectSum.map ep) := by
+    intro y
+    obtain ⟨x, hx⟩ := G.isInternal.surjective (e.symm (DirectSum.coeAddMonoidHom H.piece y))
+    refine ⟨x, H.isInternal.injective ?_⟩
+    have hc := DFunLike.congr_fun hcomm x
+    rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, hx] at hc
+    exact hc.trans (e.apply_symm_apply _)
+  -- A degree-`p` element `y` is `e x` for some `x` of degree `p`, so `e.symm y = x`.
+  rw [LinearMap.isHomogeneous_def]
+  intro p y hy
+  obtain ⟨x, hx⟩ := (DirectSum.map_surjective ep).mp hmap_surj p ⟨y, hy⟩
+  have hxy : e.symm y = x := by
+    rw [← e.symm_apply_apply (x : M)]
+    exact congrArg e.symm (congrArg Subtype.val hx).symm
+  simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+
+end LinearMap.IsHomogeneous
 
 section FiniteSupport
 
@@ -216,6 +421,33 @@ theorem InternalGrading.koszulTwist_comp_self (G : InternalGrading R M) (q : ℤ
     simp
   simpa [LinearMap.comp_apply] using this
 
+namespace LinearMap.IsHomogeneous
+
+variable {N : Type w} [AddCommMonoid N] [Module R N]
+
+/-- A homogeneous linear map of degree `r` commutes with the Koszul twist of parameter `q` up to
+the scalar `(-1)^(q * r)`. This is the operator form of the sign acquired by moving a degree-`r`
+map past a homogeneous input. -/
+theorem koszulTwist_comp {G : InternalGrading R M} {H : InternalGrading R N}
+    {f : M →ₗ[R] N} {r : ℤ} (hf : LinearMap.IsHomogeneous f G.piece H.piece r) (q : ℤ) :
+    H.koszulTwist q ∘ₗ f =
+      ((((q * r).negOnePow : ℤ) : R) • (f ∘ₗ G.koszulTwist q)) := by
+  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p ↦ ?_
+  ext x
+  have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
+  have hfx : f (x : M) ∈ H.piece (p + r) := hf.map_mem hx
+  have hcalc : H.koszulTwist q (f (x : M)) =
+      (((q * r).negOnePow : ℤ) : R) • f (G.koszulTwist q (x : M)) := by
+    rw [H.koszulTwist_apply_of_mem hfx q, G.koszulTwist_apply_of_mem hx q, map_smul,
+      smul_smul]
+    congr 1
+    rw [← Int.cast_mul, ← Units.val_mul, ← Int.negOnePow_add]
+    congr 2
+    ring_nf
+  simpa only [LinearMap.comp_apply, LinearMap.smul_apply, Submodule.coe_subtype] using hcalc
+
+end LinearMap.IsHomogeneous
+
 /-- Evaluation of `twistedTuple` on an index inside the twisted interval `[a, a + p)`. -/
 @[simp]
 theorem InternalGrading.twistedTuple_apply_of_mem_Ico (G : InternalGrading R M) (q : ℤ)
@@ -240,6 +472,20 @@ theorem InternalGrading.twistedTuple_apply (G : InternalGrading R M) (q : ℤ) {
   · exact twistedTuple_apply_of_mem_Ico G q x a p i h
   · exact twistedTuple_apply_of_not_mem_Ico G q x a p i h
 
+/-- A degree-zero homogeneous linear map commutes with twisting a consecutive block of a tuple. -/
+theorem LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] [Module R N]
+    {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) (q : ℤ) {n : ℕ}
+    (x : Fin n → M) (a p : ℕ) :
+    H.twistedTuple q (fun i ↦ f (x i)) a p = fun i ↦ f (G.twistedTuple q x a p i) := by
+  have hcomm := hf.koszulTwist_comp q
+  funext i
+  simp only [InternalGrading.twistedTuple_apply]
+  split_ifs with h
+  · have hi := LinearMap.congr_fun hcomm (x i)
+    simpa [LinearMap.comp_apply] using hi
+  · rfl
+
 /-- Twisting an empty interval leaves the tuple unchanged. -/
 @[simp]
 theorem InternalGrading.twistedTuple_zero_length (G : InternalGrading R M) (q : ℤ) {n : ℕ}
@@ -255,5 +501,99 @@ theorem InternalGrading.twistedTuple_zero_twist (G : InternalGrading R M) {n : �
   simp [twistedTuple]
 
 end KoszulTwistLemmas
+
+namespace InternalGrading
+
+section QuadraticTwist
+
+variable {R : Type u} {M : Type v}
+  [CommRing R] [AddCommMonoid M] [Module R M]
+
+/-- The quadratic sign exponent attached to degree `p`, namely the generalized binomial
+coefficient `p choose 2`. -/
+def quadraticExponent (p : ℤ) : ℤ := Ring.choose p 2
+
+/-- The quadratic exponent vanishes in degree zero. -/
+@[simp]
+theorem quadraticExponent_zero : quadraticExponent 0 = 0 := by
+  norm_num [quadraticExponent]
+
+/-- The quadratic exponent turns addition into addition plus the bilinear cross term. -/
+theorem quadraticExponent_add (p q : ℤ) :
+    quadraticExponent (p + q) = quadraticExponent p + quadraticExponent q + p * q := by
+  rw [quadraticExponent, quadraticExponent, quadraticExponent,
+    Ring.add_choose_eq 2 (Commute.all _ _)]
+  norm_num [Finset.antidiagonal]
+  ring
+
+/-- The signs associated to the quadratic exponent differ under addition by the Koszul sign. -/
+theorem negOnePow_quadraticExponent_add (p q : ℤ) :
+    (quadraticExponent (p + q)).negOnePow =
+      (p * q).negOnePow * (quadraticExponent p).negOnePow *
+        (quadraticExponent q).negOnePow := by
+  rw [quadraticExponent_add, Int.negOnePow_add, Int.negOnePow_add]
+  ac_rfl
+
+/-- The quadratic twist multiplies the degree-`p` component by `(-1) ^ (p choose 2)`.
+
+Transporting the ordinary opposite multiplication through this involution produces the
+Koszul-signed opposite multiplication. -/
+noncomputable def quadraticTwist (G : InternalGrading R M) : M →ₗ[R] M :=
+  DirectSum.coeLinearMap (fun p => G.piece p) ∘ₗ
+    DirectSum.toModule R ℤ (⨁ p : ℤ, G.piece p)
+      (fun p => (((quadraticExponent p).negOnePow : ℤ) : R) •
+        DirectSum.lof R ℤ (fun p => G.piece p) p) ∘ₗ
+    (DirectSum.decomposeLinearEquiv (ℳ := G.piece)).toLinearMap
+
+/-- On a homogeneous element of degree `p`, the quadratic twist is multiplication by
+`(-1) ^ (p choose 2)`. -/
+theorem quadraticTwist_apply_of_mem (G : InternalGrading R M) {x : M} {p : ℤ}
+    (hx : x ∈ G.piece p) :
+    G.quadraticTwist x = (((quadraticExponent p).negOnePow : ℤ) : R) • x := by
+  rw [quadraticTwist]
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    DirectSum.decomposeLinearEquiv_apply]
+  rw [DirectSum.decompose_of_mem (ℳ := G.piece) hx,
+    ← DirectSum.lof_eq_of R ℤ (fun i : ℤ => G.piece i)]
+  simp [DirectSum.toModule_lof]
+
+/-- The quadratic twist preserves every homogeneous piece. -/
+theorem quadraticTwist_mem_piece (G : InternalGrading R M) {x : M} {p : ℤ}
+    (hx : x ∈ G.piece p) : G.quadraticTwist x ∈ G.piece p := by
+  rw [G.quadraticTwist_apply_of_mem hx]
+  exact Submodule.smul_mem _ _ hx
+
+/-- Applying the quadratic twist twice is the identity. -/
+theorem quadraticTwist_involutive (G : InternalGrading R M) :
+    Function.Involutive G.quadraticTwist :=
+  fun x => by
+    have hmaps : G.quadraticTwist ∘ₗ G.quadraticTwist = LinearMap.id := by
+      apply G.linearMap_ext
+      intro p y hy
+      simp only [LinearMap.comp_apply, LinearMap.id_apply]
+      rw [G.quadraticTwist_apply_of_mem hy, map_smul, G.quadraticTwist_apply_of_mem hy,
+        smul_smul]
+      rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
+      simp
+    exact LinearMap.congr_fun hmaps x
+
+/-- The quadratic twist as a linear involution. -/
+noncomputable def quadraticTwistEquiv (G : InternalGrading R M) : M ≃ₗ[R] M :=
+  LinearEquiv.ofInvolutive G.quadraticTwist G.quadraticTwist_involutive
+
+@[simp]
+theorem quadraticTwistEquiv_apply (G : InternalGrading R M) (x : M) :
+    G.quadraticTwistEquiv x = G.quadraticTwist x := by
+  exact congr_fun (LinearEquiv.coe_ofInvolutive G.quadraticTwist
+    G.quadraticTwist_involutive) x
+
+@[simp]
+theorem quadraticTwistEquiv_symm_apply (G : InternalGrading R M) (x : M) :
+    G.quadraticTwistEquiv.symm x = G.quadraticTwist x := by
+  rfl
+
+end QuadraticTwist
+
+end InternalGrading
 
 end TauCeti

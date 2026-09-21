@@ -63,11 +63,6 @@ theorem exchangeableSigma_le :
   intro s hs
   exact (mem_exchangeableSigma_iff.mp hs).1
 
-/-- An `exchangeableSigma`-measurable set is ambient-measurable. -/
-theorem MeasurableSet.ambient_of_exchangeableSigma {s : Set (ℕ → α)}
-    (hs : MeasurableSet[exchangeableSigma α] s) : MeasurableSet s :=
-  exchangeableSigma_le s hs
-
 /-- An ambient-measurable event fixed by every finitely supported time permutation is measurable
 for the exchangeable σ-algebra. -/
 theorem measurableSet_exchangeableSigma_of_forall_permReindex {s : Set (ℕ → α)}
@@ -167,11 +162,6 @@ theorem pathTail_le_exchangeableSigma :
     rcases TauCeti.finite_compl_fixedBy_eventually_eq_self hπ with ⟨N, hN⟩
     exact preimage_permReindex_eq_of_measurable_tailFamily
       ((pathTail_le_tailFamily (α := α) N) s hs) hN
-
-/-- The path-space tail σ-algebra is contained in the exchangeable σ-algebra. -/
-theorem tail_le_exchangeableSigma :
-    pathTail α ≤ exchangeableSigma α :=
-  pathTail_le_exchangeableSigma
 
 end Probability
 

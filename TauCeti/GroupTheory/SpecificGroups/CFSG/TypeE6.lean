@@ -57,6 +57,11 @@ identification of numbered root characters,
   `TauCeti.TypeE6LieIndex.mem_fixedSubgroup_steinberg_iff` of the group `H_d` it fixes.
 * `TauCeti.TypeE6LieIndex.Group`: the classification candidate `[H_d, H_d] / Z([H_d, H_d])`.
 
+* `TauCeti.TypeE6LieIndex.primeFrobenius`, with
+  `TauCeti.TypeE6LieIndex.coe_primeFrobenius_apply`,
+  `TauCeti.TypeE6LieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeE6LieIndex.steinberg_eq_primeFrobenius_pow`: the prime-field Frobenius, its pinned
+  entrywise and simple-root-subgroup equations, and the Steinberg endomorphism as its `e`-th power.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 14.
@@ -179,6 +184,49 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [steinberg_def, simpleRootSubgroup_def, E6Minuscule.frobenius_rootSubgroupPoints,
     d.1.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the minuscule `E₆` carrier**, the `p`-power map for `p` the
+defining characteristic. The Steinberg endomorphism of the family, which is its `q`-power
+Frobenius, is the `e`-th power of this map, for `e` the field exponent the index records, by
+`steinberg_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  E6Minuscule.frobenius d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the carrier's Frobenius at exponent one. -/
+-- Not a `simp` lemma, for the reason `steinberg_def` is not.
+theorem primeFrobenius_def :
+    d.primeFrobenius = E6Minuscule.frobenius d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- The prime-field Frobenius raises every matrix entry to the `p`-th power. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 27) :
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
+        Matrix (Fin 27) (Fin 27) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 27) d.1.Closure) :
+        Matrix (Fin 27) (Fin 27) d.1.Closure) r c ^ d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using
+    E6Minuscule.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, E6Minuscule.frobenius_rootSubgroupPoints,
+    pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.E6Minuscule.frobenius_pow` states the carrier's iteration law in.
+/-- **The Steinberg endomorphism is the `e`-th power of the prime-field Frobenius**, for `e` the
+field exponent the index records. -/
+theorem steinberg_eq_primeFrobenius_pow :
+    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, steinberg_def, E6Minuscule.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
 entries lie in the field of definition.** Writing `𝔽_q` for

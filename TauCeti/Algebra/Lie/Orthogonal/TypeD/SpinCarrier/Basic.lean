@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeD.RootGenerators
-public import TauCeti.RepresentationTheory.Spin.Polarization.SplitEven
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.RootGenerator
+public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.KostantLattice
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -53,9 +53,6 @@ the pinned Chevalley--Demazure construction.
 
 ## Main results
 
-* `TauCeti.TypeDSpinCarrier.lie_serreH_rootGenerator`: each numbered Serre root generator is a
-  Cartan weight vector, with weight the corresponding row of the type-`D` Cartan matrix for a
-  raising generator and its negative for a lowering generator.
 * `TauCeti.TypeDSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints` and
   `TauCeti.TypeDSpinCarrier.weightTorus_conj_rootSubgroup`: conjugation by the weight torus
   rescales the parameter of each numbered root subgroup through that character, on matrix-valued
@@ -256,6 +253,18 @@ noncomputable def carrierι (hn : 4 ≤ n) :
       (rep_kostantForm_mem_lattice n hn)
       (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n)
 
+/-- The canonical inclusion is the generic Kostant toral-closure inclusion, read across the
+carrier's presentation as that closure. -/
+theorem carrierι_def :
+    carrierι n hn =
+      eqToHom (groupScheme_eq_kostantToralGroupScheme n hn) ≫
+        kostantToralGroupSchemeι
+          (TauCeti.serreRootGenerator (CartanMatrix.D n))
+          (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
+          (rep_kostantForm_mem_lattice n hn)
+          (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) := by
+  rw [carrierι]
+
 /-- The type-`Dₙ` spin carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n hn).hom.hom.left := by
   rw [carrierι]
@@ -429,25 +438,6 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin n → Aˣ) :
       kostantTorusMatrix (lattice n).toAddSubgroup (latticeBasis n) (basisWeight n) s := by
   exact coe_kostantToralWeightTorusPoints _ _ _ _ _ _ _ _ A s
 
-/-! ## The Cartan action on the numbered root generators -/
-
-/-- The numbered Serre root generators of the type-`Dₙ` presentation are weight vectors for its
-Cartan generators, with the integral weight `TauCeti.TypeDStd.rootGeneratorWeight` already attached
-to the numbering by the split orthogonal Lie algebra. The type-`D` Cartan matrix is symmetric, so
-its row and column readings of that weight agree. -/
-theorem lie_serreH_rootGenerator (k : Fin n ⊕ Fin n) (j : Fin n) :
-    ⁅TauCeti.serreH ℚ (CartanMatrix.D n) j,
-        TauCeti.serreRootGenerator (CartanMatrix.D n) k⁆ =
-      ((TypeDStd.rootGeneratorWeight n k j : ℤ) : ℚ) •
-        TauCeti.serreRootGenerator (CartanMatrix.D n) k := by
-  cases k with
-  | inl i =>
-      rw [TauCeti.lie_serreH_serreRootGenerator_inl,
-        (CartanMatrix.D_isSymm n).apply i j, TypeDStd.rootGeneratorWeight_inl]
-  | inr i =>
-      rw [TauCeti.lie_serreH_serreRootGenerator_inr,
-        (CartanMatrix.D_isSymm n).apply i j, TypeDStd.rootGeneratorWeight_inr]
-
 /-! ## The pinning equation -/
 
 /-- **Conjugation by the spin weight torus acts on each numbered root subgroup through its
@@ -467,7 +457,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin n ⊕ Fin n) (A : Typ
     (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
     (rep_kostantForm_mem_lattice n hn) (isNilpotent_rep_rootGenerator n hn)
     (latticeBasis n) (basisWeight n) (isCartanWeightVector_latticeBasis n hn)
-    (lie_serreH_rootGenerator n k) A s u
+    (TypeDStd.lie_serreH_serreRootGenerator n k) A s u
 
 /-- **Conjugation by the spin weight torus acts on each numbered root subgroup through its
 positive or negative simple-root character.** -/
@@ -490,7 +480,7 @@ theorem weightTorus_conj_rootSubgroup (k : Fin n ⊕ Fin n) (A : Type) [CommRing
   rw [weightTorus, rootSubgroup]
   exact kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
     _ _ _ _ _ _ _ (isCartanWeightVector_latticeBasis n hn)
-    (isNilpotent_rep_rootGenerator n hn) A (lie_serreH_rootGenerator n k) s u
+    (isNilpotent_rep_rootGenerator n hn) A (TypeDStd.lie_serreH_serreRootGenerator n k) s u
 
 /-! ## The numbered root subgroups sit at the named simple roots
 

@@ -211,6 +211,16 @@ lemma algebraMap_apply (a : A) :
   change ((Algebra.ofId R B).comp (counitAlgHom R A)) a = _
   simp [Algebra.ofId_apply]
 
+/-- The coordinate algebra acts on the coefficient ring through the counit. -/
+lemma algEquivSelf_smul (a : A)
+    (z : Bialgebra.CounitAlgebra R A B) :
+    algEquivSelf R A B (a • z) =
+      algebraMap R B (counit a) *
+        algEquivSelf R A B z := by
+  rw [Algebra.smul_def, map_mul, algebraMap_apply,
+    algEquivSelf_apply]
+  congr 1
+
 end Bialgebra.CounitAlgebra
 
 end BialgebraPointScalar

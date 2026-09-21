@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.Basic
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
+public import TauCeti.RepresentationTheory.Quiver.Reflection.EulerForm
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -22,12 +23,17 @@ boundary of Gabriel's theorem lies: writing `n` for the number of arrows,
   `(d src - d tgt) ^ 2`, whose radical is the line spanned by the constant vector `(1, 1)` -- the
   null root of the affine root system `Ã₁`.
 
+Since reflecting a quiver changes its orientation but not its underlying graph, the quiver
+reflected at `tgt` has the same Tits form, and hence the same thresholds.
+
 ## Main results
 
 * `TauCeti.Quiver.Kronecker.eulerForm_apply` and `TauCeti.Quiver.Kronecker.titsForm_apply`: the
   Euler and Tits forms in coordinates.
 * `TauCeti.Quiver.Kronecker.titsForm_posDef_iff` and
   `TauCeti.Quiver.Kronecker.titsForm_nonneg_iff`: the two thresholds `n ≤ 1` and `n ≤ 2`.
+* `TauCeti.Quiver.Kronecker.titsForm_reflect_posDef`: the quiver reflected at `tgt` has positive
+  definite Tits form under the same threshold `n ≤ 1`.
 * `TauCeti.Quiver.Kronecker.titsForm_eq_zero_iff_exists_smul` and
   `TauCeti.Quiver.Kronecker.titsForm_eq_one_iff`: for the Kronecker quiver the radical of the Tits
   form is the line spanned by `(1, 1)`, and the vectors of Tits norm one are those whose two
@@ -78,7 +84,7 @@ theorem titsForm_apply (d : Kronecker A → ℤ) :
 
 /-- The Tits form on the constant dimension vector `(1, 1)` is `2 - n`. This single value decides
 both thresholds below. -/
-private theorem titsForm_one : titsForm (Kronecker A) 1 = 2 - (Fintype.card A : ℤ) := by
+theorem titsForm_one : titsForm (Kronecker A) 1 = 2 - (Fintype.card A : ℤ) := by
   rw [titsForm_apply, Pi.one_apply, Pi.one_apply]
   ring
 
@@ -141,6 +147,15 @@ theorem titsForm_posDef_iff : (titsForm (Kronecker A)).PosDef ↔ Fintype.card A
     h 1 fun hc => one_ne_zero (congrFun hc src)
   rw [titsForm_one] at h1
   omega
+
+/-- With at most one arrow the quiver reflected at `tgt` has positive definite Tits form:
+reflecting changes the orientation of a quiver, not its underlying graph, and
+`TauCeti.Quiver.Kronecker.titsForm_posDef` covers the underlying graph. -/
+theorem titsForm_reflect_posDef (h : Fintype.card A ≤ 1) :
+    (titsForm (Reflect (Kronecker A) tgt)).PosDef := by
+  intro d hd
+  exact lt_of_lt_of_eq (titsForm_posDef (A := A) h d hd)
+    (titsForm_reflect (V := Kronecker A) tgt d).symm
 
 /-! ### The Kronecker quiver itself -/
 

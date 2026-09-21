@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 
 /-!
-# Transporting a nonarchimedean topology along an open homomorphism
+# Transporting a nonarchimedean topology to a quotient or a subobject
 
 `NonarchimedeanGroup G` asks that every neighbourhood of `1` contain an *open subgroup*. That
 property passes to the target of any open homomorphism that is continuous at `1`: the image of an
@@ -26,10 +26,20 @@ which additionally requires `[IsTopologicalGroup H]` — not for the argument, b
 conclusion. Consumers wanting the instance use the second; consumers wanting the property under
 minimal hypotheses use the first.
 
+The file also records the *sub*object direction, which is the opposite transport and needs no
+openness at all: a subgroup or subring carries the subspace topology, and an open subgroup of the
+ambient group meets it in an open subgroup. Mathlib has neither of these two instances, and its
+`NonarchimedeanGroup.nonarchimedean_of_emb` does not give them, since it asks the inclusion to be
+an *open* embedding, which a subgroup's need not be.
+
 ## Main results
 
 * `NonarchimedeanGroup.exists_openSubgroup_subset_of_isOpenMap`, and its additive form
   `NonarchimedeanAddGroup.exists_openAddSubgroup_subset_of_isOpenMap`.
+* `Subgroup.instNonarchimedeanGroup` and `Subring.instNonarchimedeanRing`: a subgroup of a
+  nonarchimedean group, and a subring of a nonarchimedean ring, are nonarchimedean in the subspace
+  topology. These are what put a nonarchimedean structure on the ring of definition of a rational
+  localisation.
 * `NonarchimedeanGroup.nonarchimedean_of_isOpenMap`, and its additive form
   `NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap`.
 -/
@@ -88,3 +98,27 @@ theorem nonarchimedean_of_isOpenMap {G H : Type*} [Group G] [TopologicalSpace G]
   is_nonarchimedean _ hU := exists_openSubgroup_subset_of_isOpenMap f hf hopen hU
 
 end NonarchimedeanGroup
+
+/-- **A subgroup of a nonarchimedean group is nonarchimedean** in the subspace topology: the
+traces of the ambient open subgroups are open subgroups of it, and they remain a basis. -/
+@[to_additive /-- **A subgroup of a nonarchimedean additive group is nonarchimedean** in the
+subspace topology: the traces of the ambient open subgroups are open subgroups of it, and they
+remain a basis. -/]
+instance Subgroup.instNonarchimedeanGroup {G : Type*} [Group G] [TopologicalSpace G]
+    [NonarchimedeanGroup G] (H : Subgroup G) : NonarchimedeanGroup H where
+  is_nonarchimedean U hU := by
+    obtain ⟨W, hW, hWU⟩ := (mem_nhds_subtype _ _ _).mp (by simpa using hU)
+    obtain ⟨V, hV⟩ := NonarchimedeanGroup.is_nonarchimedean W hW
+    exact ⟨V.comap H.subtype continuous_subtype_val, fun _ hx ↦ hWU (hV hx)⟩
+
+/-- **A subring of a nonarchimedean ring is nonarchimedean** in the subspace topology.
+
+Nothing is proved here that `AddSubgroup.instNonarchimedeanAddGroup` does not already prove at
+`S.toAddSubgroup`: a nonarchimedean ring is a nonarchimedean additive group, the two carriers
+agree, and the neighbourhood condition is the additive one verbatim. What the instance adds is
+the keying — typeclass search reaching for `NonarchimedeanRing ↥S` does not unfold `Subring` to
+`AddSubgroup` on its own. -/
+instance Subring.instNonarchimedeanRing {R : Type*} [Ring R] [TopologicalSpace R]
+    [NonarchimedeanRing R] (S : Subring R) : NonarchimedeanRing S where
+  is_nonarchimedean :=
+    (inferInstance : NonarchimedeanAddGroup ↥S.toAddSubgroup).is_nonarchimedean

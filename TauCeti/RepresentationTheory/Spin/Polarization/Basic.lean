@@ -362,7 +362,7 @@ theorem finrank_eq_two_mul_finrank_W_add_finrank_line :
 /-- **In even dimension a polarization has no remainder.** The remainder is at most a line and
 carries the parity of `finrank V`, so an even-dimensional space forces it to vanish. This is the
 hypothesis under which the exterior parity of `⋀·W` splits the spin representation, in
-`TauCeti/RepresentationTheory/Spin/HalfSpin.lean`. -/
+`TauCeti/RepresentationTheory/Spin/HalfSpin/Basic.lean`. -/
 theorem line_eq_bot_of_even_finrank (h : Even (finrank K V)) : P.line = ⊥ := by
   obtain ⟨m, hm⟩ := h
   have h₁ := P.finrank_line_le_one
@@ -408,6 +408,15 @@ theorem finrank_line_eq_one_of_finrank_eq_two_mul_add_one {l : ℕ} (hV : finran
   have h₁ := P.finrank_line_le_one
   have h₂ := P.finrank_eq_two_mul_finrank_W_add_finrank_line
   omega
+
+/-- In odd dimension, the coordinate map from the one-dimensional orthogonal remainder to the
+base field is surjective. -/
+theorem lineCoordinate_surjective_of_finrank_eq_two_mul_add_one {l : ℕ}
+    (hV : finrank K V = 2 * l + 1) : Function.Surjective P.lineCoordinate := by
+  apply (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).mp
+    P.lineCoordinate_injective
+  rw [P.finrank_line_eq_one_of_finrank_eq_two_mul_add_one hV]
+  simp
 
 end Dimension
 

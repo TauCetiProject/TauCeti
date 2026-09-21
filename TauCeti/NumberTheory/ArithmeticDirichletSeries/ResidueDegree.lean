@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.PSeries
-public import Mathlib.Analysis.Real.Pi.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.NumberTheory.NumberField.DirichletDensity
-public import Mathlib.NumberTheory.ZetaValues
+public import TauCeti.Analysis.PSeries
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.NumberField.ResidueDegree
 
@@ -44,16 +43,24 @@ bound on the partial Dirichlet series that is *uniform* on `s ≥ 1`.
   `TauCeti.primeCount_higherDegreePrimes_isLittleO` its `O(√x)` and `o(x / log x)` forms.
 * `TauCeti.summable_absNorm_rpow_higherDegreePrimes`: `∑ N(𝔭) ^ (-s)` over the degree-above-one
   primes converges for every `s > 1/2`, in particular at `s = 1`.
+* `TauCeti.primeTheta_higherDegreePrimes_isLittleO`: those primes carry weight `o(x)` in `ϑ_K`.
 * `TauCeti.primeIdealZetaSum_higherDegreePrimes_le`: that sum, in Mathlib's
   `NumberField.Set.primeIdealZetaSum` vocabulary, is at most `2 [K : ℚ]` for every `s ≥ 1`.
+* `TauCeti.sum_absNorm_rpow_le_finrank_mul_tsum` and
+  `TauCeti.tsum_absNorm_rpow_le_finrank_mul_tsum`: the same fibring over *all* height-one primes,
+  in finite and infinite form, for every `s > 1`.
+* `TauCeti.tsum_absNorm_rpow_neg_two_le`: at `s = 2` that becomes the explicit
+  `∑_𝔭 N(𝔭) ^ (-2) ≤ 2 [K : ℚ]`.
 
-No density-zero statement is proved here, and none is claimed.  What this file supplies is the
-numerator half of one: `NumberField.Set.HasDirichletDensity (higherDegreePrimes K) 0` asks for
+No density-zero statement is proved here.  What this file supplies is the numerator half of
+one: `NumberField.Set.HasDirichletDensity (higherDegreePrimes K) 0` asks for
 `primeIdealZetaSum (higherDegreePrimes K) s / primeIdealZetaSum univ s → 0` as `s → 1⁺`, and the
-bound below controls only the numerator; the divergence of the denominator is a separate result,
-not available here.  Likewise `primeCount K (higherDegreePrimes K) =o[atTop] primeCount K univ`
+bound below controls only the numerator.  Together with the divergence of the denominator it gives
+`TauCeti.hasDirichletDensity_higherDegreePrimes` in
+`TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible`.  By contrast
+`primeCount K (higherDegreePrimes K) =o[atTop] primeCount K univ`
 would need a lower bound on the full prime count, which the prime ideal theorem supplies and
-which is also not available here; the `o(x / log x)` statement below is against the explicit
+which is not available here; the `o(x / log x)` statement below is against the explicit
 function `x / log x`, not against `π_K`.
 
 ## Implementation notes
@@ -61,20 +68,6 @@ function `x / log x`, not against `π_K`.
 The set `TauCeti.higherDegreePrimes` and the map `TauCeti.rationalPrimeBelow` the estimates fibre
 over, together with their elementary norm and inertia theory, are algebraic rather than analytic
 and live in `TauCeti.NumberTheory.NumberField.ResidueDegree`.
-
-## Roadmap role
-
-This advances Layer **5.3** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`,
-"Degree-above-one primes", which asks for "the standard convergence and density-zero statements
-for residue degree greater than one".  It delivers the convergence statements and the explicit
-counting bounds; the density-zero statements themselves are *not* proved here and Layer 5.3 is
-not complete, because both need input this repository does not yet have — the divergence of the
-all-prime Dirichlet sum for the Dirichlet density, and the prime ideal theorem for the natural
-one.  Layer 7.2 uses the convergence statement to replace the all-prime Dirichlet sum by the sum
-over rational primes when proving `P_all(s) = log (1 / (s - 1)) + O(1)`, and once that is
-available the bound below turns into the Dirichlet-density-zero statement.  The roadmap records
-`Chebotarev` as the consumer that needs these estimates when moving between a field and a fixed
-subfield.
 
 ## References
 
@@ -120,7 +113,7 @@ theorem primeCount_higherDegreePrimes_le (x : ℝ) :
     rw [hF, Finset.mem_filter, mem_normLE] at h𝔭
     refine Finset.mem_Icc.mpr ⟨(prime_rationalPrimeBelow 𝔭).two_le, Nat.le_floor ?_⟩
     have hsq : ((rationalPrimeBelow 𝔭 : ℝ)) ^ 2 ≤ x :=
-      le_trans (mod_cast sq_rationalPrimeBelow_le_absNorm h𝔭.2) h𝔭.1
+      le_trans (mod_cast rationalPrimeBelow_pow_le_absNorm (mem_higherDegreePrimes.mp h𝔭.2)) h𝔭.1
     exact (Real.le_sqrt (Nat.cast_nonneg _) (le_trans (by positivity) hsq)).mpr hsq
   have hcount : primeCount K (higherDegreePrimes K) x = ∑ _𝔭 ∈ F, (1 : ℝ) := by
     rw [primeCount_eq_card, hF, Finset.sum_const, nsmul_eq_mul, mul_one]
@@ -165,25 +158,20 @@ theorem primeCount_higherDegreePrimes_isLittleO :
     primeCount K (higherDegreePrimes K) =o[atTop] fun x ↦ x / Real.log x :=
   primeCount_higherDegreePrimes_isBigO.trans_isLittleO sqrt_isLittleO_div_log
 
+/-- **The primes of residue degree above one carry a negligible weight.** Their contribution to
+`ϑ_K` is `o(x)`.
+
+This is the count `o(x / log x)` above, weighted by Chebyshev's `log x` per prime. It is the
+estimate a contraction between two number fields discards: the norms satisfy
+`𝔑_{E/ℚ}𝔓 = (𝔑_{K/ℚ}𝔭)^{f(𝔓/𝔭)}`, so a term of `ϑ` moves to a different value of `n` unless the
+relative residue degree is one, and `f(𝔓/𝔭) ≥ 2` forces `f(𝔓/p) ≥ 2`, which is what this absolute
+statement covers. -/
+theorem primeTheta_higherDegreePrimes_isLittleO (K : Type*) [Field K] [NumberField K] :
+    primeTheta K (higherDegreePrimes K) =o[atTop] fun x : ℝ ↦ x :=
+  primeTheta_isLittleO_of_primeCount_isLittleO primeCount_higherDegreePrimes_isLittleO
+
 /-! ### Convergence of the prime Dirichlet series over the degree-above-one primes -/
 
-private theorem tsum_nat_rpow_neg_le_two {t : ℝ} (ht : 2 ≤ t) :
-    ∑' m : ℕ, (m : ℝ) ^ (-t) ≤ 2 := by
-  have hsum : ∀ u : ℝ, 1 < u → Summable fun m : ℕ ↦ (m : ℝ) ^ (-u) := fun u hu ↦
-    Real.summable_nat_rpow.mpr (by linarith)
-  have hfun : (fun m : ℕ ↦ (m : ℝ) ^ (-(2 : ℝ))) = fun m : ℕ ↦ (1 : ℝ) / (m : ℝ) ^ 2 := by
-    funext m
-    rw [Real.rpow_neg (Nat.cast_nonneg m), Real.rpow_two, one_div]
-  have hzeta : ∑' m : ℕ, (m : ℝ) ^ (-(2 : ℝ)) = Real.pi ^ 2 / 6 := by
-    rw [hfun]
-    exact hasSum_zeta_two.tsum_eq
-  refine le_trans (Summable.tsum_le_tsum (fun m ↦ ?_) (hsum t (by linarith))
-    (hsum 2 one_lt_two)) ?_
-  · rcases Nat.eq_zero_or_pos m with rfl | hm
-    · rw [Nat.cast_zero, Real.zero_rpow (by linarith), Real.zero_rpow (by norm_num)]
-    · exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hm) (by linarith)
-  · rw [hzeta]
-    nlinarith [Real.pi_lt_d2, Real.pi_pos]
 
 /-- The key comparison: a finite sum of `N(𝔭) ^ (-s)` over primes of residue degree above one is
 bounded by `[K : ℚ]` times the full sum of `m ^ (-2s)` over the natural numbers. -/
@@ -201,7 +189,8 @@ theorem sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum {s : ℝ} (hs : 
     set a : ℝ := (rationalPrimeBelow 𝔭 : ℝ) with ha
     have ha1 : (1 : ℝ) ≤ a := by rw [ha]; exact_mod_cast (prime_rationalPrimeBelow 𝔭).one_lt.le
     have hle : a ^ (2 : ℕ) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) := by
-      rw [ha]; exact_mod_cast sq_rationalPrimeBelow_le_absNorm (hF 𝔭 h𝔭)
+      rw [ha]
+      exact_mod_cast rationalPrimeBelow_pow_le_absNorm (mem_higherDegreePrimes.mp (hF 𝔭 h𝔭))
     have hpow : a ^ (-(2 * s)) = (a ^ (2 : ℕ)) ^ (-s) := by
       rw [← Real.rpow_natCast a 2, ← Real.rpow_mul (by linarith)]
       congr 1
@@ -233,7 +222,7 @@ theorem summable_absNorm_rpow_higherDegreePrimes {s : ℝ} (hs : 1 / 2 < s) :
 /-- Uniformly in `s ≥ 1`, the partial Dirichlet sum over the primes of residue degree above one is
 at most `2 [K : ℚ]`.  This bounds the numerator of `NumberField.Set.HasDirichletDensity` as
 `s → 1⁺`; it is one half of Dirichlet density zero, the other half being the divergence of the
-all-prime denominator, which is not proved here. -/
+all-prime denominator. -/
 theorem primeIdealZetaSum_higherDegreePrimes_le {s : ℝ} (hs : 1 ≤ s) :
     (higherDegreePrimes K).primeIdealZetaSum s ≤ 2 * Module.finrank ℚ K := by
   classical
@@ -249,5 +238,51 @@ theorem primeIdealZetaSum_higherDegreePrimes_le {s : ℝ} (hs : 1 ≤ s) :
   rw [mul_comm (2 : ℝ) (Module.finrank ℚ K : ℝ)]
   exact mul_le_mul_of_nonneg_left (tsum_nat_rpow_neg_le_two (t := 2 * s) (by linarith))
     (Nat.cast_nonneg _)
+
+/-! ### All height-one primes -/
+
+/-- **A finite norm sum is at most `[K : ℚ]` times the sum of `m ^ (-s)` over `ℕ`.** Fibring a
+finite sum of `N(𝔭) ^ (-s)` over the rational primes below costs a factor `[K : ℚ]`. Without a
+residue-degree hypothesis only `p ≤ N(𝔭)` is available, so the exponent stays `-s` and the
+argument needs `1 < s`; the degree-above-one analogue
+`TauCeti.sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum` gains the exponent `-2s` and so
+reaches down to `s > 1/2`. -/
+theorem sum_absNorm_rpow_le_finrank_mul_tsum {s : ℝ} (hs : 1 < s)
+    (F : Finset (HeightOneSpectrum (𝓞 K))) :
+    ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤ Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
+  calc ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)
+      ≤ ∑ 𝔭 ∈ F, (rationalPrimeBelow 𝔭 : ℝ) ^ (-s) :=
+        Finset.sum_le_sum fun 𝔭 _ ↦ by
+          have hpN : rationalPrimeBelow 𝔭 ≤ Ideal.absNorm 𝔭.asIdeal := by
+            simpa using rationalPrimeBelow_pow_le_absNorm (𝔭.asIdeal.inertiaDeg_pos ℤ)
+          exact Real.rpow_le_rpow_of_nonpos (mod_cast (prime_rationalPrimeBelow 𝔭).pos)
+            (mod_cast hpN) (by linarith)
+    _ ≤ Module.finrank ℚ K * ∑ m ∈ F.image rationalPrimeBelow, (m : ℝ) ^ (-s) :=
+        sum_comp_rationalPrimeBelow_le (fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _)
+          fun _ ↦ Finset.mem_image_of_mem rationalPrimeBelow
+    _ ≤ Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
+        mul_le_mul_of_nonneg_left ((Real.summable_nat_rpow.mpr (by linarith)).sum_le_tsum _
+          fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _) (Nat.cast_nonneg _)
+
+/-- **The prime ideal zeta sum is at most `[K : ℚ]` times the sum of `m ^ (-s)` over `ℕ`.** The
+finite-sum comparison passes to the limit on the whole range `1 < s` where both sides converge.
+Specializing the exponent is what buys an explicit constant, as in
+`TauCeti.tsum_absNorm_rpow_neg_two_le`. -/
+theorem tsum_absNorm_rpow_le_finrank_mul_tsum {s : ℝ} (hs : 1 < s) :
+    ∑' 𝔭 : HeightOneSpectrum (𝓞 K), (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤
+      Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
+  Real.tsum_le_of_sum_le (fun _ ↦ Real.rpow_nonneg (Nat.cast_nonneg _) _)
+    (sum_absNorm_rpow_le_finrank_mul_tsum hs)
+
+/-- **The prime ideal zeta sum over all height-one primes at `s = 2` is at most `2 [K : ℚ]`.**
+At most `[K : ℚ]` primes lie over each rational prime, and `ζ (2) < 2`.  The same constant bounds
+the degree-above-one primes for every `s ≥ 1`: `TauCeti.primeIdealZetaSum_higherDegreePrimes_le`.
+The constant is available only from `s = 2` upwards: at `s` just above `1` the sum over `ℕ` is
+already larger than `2`, so only the `s`-dependent bound above survives there. -/
+theorem tsum_absNorm_rpow_neg_two_le :
+    ∑' 𝔭 : HeightOneSpectrum (𝓞 K), (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) ≤
+      2 * Module.finrank ℚ K :=
+  ((tsum_absNorm_rpow_le_finrank_mul_tsum one_lt_two).trans <| mul_le_mul_of_nonneg_left
+    (tsum_nat_rpow_neg_le_two le_rfl) (Nat.cast_nonneg _)).trans_eq (mul_comm _ _)
 
 end TauCeti

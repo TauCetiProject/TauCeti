@@ -138,18 +138,6 @@ open TauCeti _root_.Coalgebra TensorProduct
 variable {R A B : Type*} [CommRing R] [CommRing A] [Bialgebra R A]
   [CommRing B] [Algebra R B]
 
-private lemma algEquivSelf_smul (a : A)
-    (z : Bialgebra.CounitAlgebra R A B) :
-    Bialgebra.CounitAlgebra.algEquivSelf R A B (a • z) =
-      algebraMap R B (counit a) *
-        Bialgebra.CounitAlgebra.algEquivSelf R A B z := by
-  rw [Algebra.smul_def, map_mul, Bialgebra.CounitAlgebra.algebraMap_apply,
-    Bialgebra.CounitAlgebra.algEquivSelf_apply]
-  congr 1
-  exact Bialgebra.CounitAlgebra.algEquivSelf_apply
-    (R := R) (A := A) (B := B)
-    (algebraMap R B (counit a) : Bialgebra.CounitAlgebra R A B)
-
 /-- Construct a counit-valued derivation from a linear map out of the cotangent space. -/
 private noncomputable def ofCotangentLinearMap
     (f : Bialgebra.CotangentSpace R A →ₗ[R] B) :
@@ -162,8 +150,10 @@ private noncomputable def ofCotangentLinearMap
       rw [Bialgebra.cotangentMap_mul, map_add, _root_.map_smul, _root_.map_smul]
       apply (Bialgebra.CounitAlgebra.algEquivSelf R A B).injective
       simp only [AlgEquiv.toLinearMap_apply]
-      rw [AlgEquiv.apply_symm_apply, map_add, algEquivSelf_smul,
-        algEquivSelf_smul, AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
+      rw [AlgEquiv.apply_symm_apply, map_add,
+        Bialgebra.CounitAlgebra.algEquivSelf_smul,
+        Bialgebra.CounitAlgebra.algEquivSelf_smul,
+        AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
       simp only [Algebra.smul_def]
 
 private lemma algEquivSelf_ofCotangentLinearMap_apply

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Basic
+public import TauCeti.Algebra.Lie.Matrix.IntegralCast
+import TauCeti.LinearAlgebra.Matrix.MulVec
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
 
@@ -56,33 +58,20 @@ attribute [local instance 100] LieRing.ofAssociativeRing LieRing.instLieAlgebra
 
 /-! ## The rational representation -/
 
-/-- Entrywise coercion from integral to rational doubled minuscule matrices. -/
-private noncomputable def castMatrixLieHom :
-    Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℤ →ₗ⁅ℤ⁆
-      Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℚ :=
-  ((Int.castRingHom ℚ).mapMatrix.toIntAlgHom).toLieHom
-
-@[simp]
-private theorem castMatrixLieHom_apply
-    (M : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℤ)
-    (a b : Fin 27 ⊕ Fin 27) : castMatrixLieHom M a b = (M a b : ℚ) := by
-  simp only [castMatrixLieHom, AlgHom.toLieHom_apply, RingHom.toIntAlgHom_apply,
-    RingHom.mapMatrix_apply, Matrix.map_apply, Int.coe_castRingHom]
-
 /-- The rational raising matrices of the doubled minuscule representation. -/
 noncomputable def raisingMatrixQ (i : Fin 6) :
     Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℚ :=
-  castMatrixLieHom (raisingMatrix i)
+  matrixIntCastLieHom ℚ (raisingMatrix i)
 
 /-- The rational lowering matrices of the doubled minuscule representation. -/
 noncomputable def loweringMatrixQ (i : Fin 6) :
     Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℚ :=
-  castMatrixLieHom (loweringMatrix i)
+  matrixIntCastLieHom ℚ (loweringMatrix i)
 
 /-- The rational Cartan generators of the doubled minuscule representation. -/
 noncomputable def cartanGeneratorMatrixQ (i : Fin 6) :
     Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℚ :=
-  castMatrixLieHom (cartanGeneratorMatrix i)
+  matrixIntCastLieHom ℚ (cartanGeneratorMatrix i)
 
 /-- Entry formula for a rational raising matrix. -/
 @[simp]
@@ -90,7 +79,7 @@ theorem raisingMatrixQ_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
     raisingMatrixQ i a b =
       if e6DoubledMinusculeWeight b i = -1 ∧ a = reflection i b
       then (summandSign b : ℚ) else 0 := by
-  rw [raisingMatrixQ, castMatrixLieHom_apply, raisingMatrix_apply]
+  rw [raisingMatrixQ, matrixIntCastLieHom_apply, raisingMatrix_apply]
   split_ifs <;> norm_num
 
 /-- Entry formula for a rational lowering matrix. -/
@@ -99,7 +88,7 @@ theorem loweringMatrixQ_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
     loweringMatrixQ i a b =
       if e6DoubledMinusculeWeight b i = 1 ∧ a = reflection i b
       then (summandSign b : ℚ) else 0 := by
-  rw [loweringMatrixQ, castMatrixLieHom_apply, loweringMatrix_apply]
+  rw [loweringMatrixQ, matrixIntCastLieHom_apply, loweringMatrix_apply]
   split_ifs <;> norm_num
 
 /-- A rational Cartan generator is diagonal with the doubled minuscule weights on its diagonal. -/
@@ -107,36 +96,21 @@ theorem loweringMatrixQ_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
 theorem cartanGeneratorMatrixQ_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :
     cartanGeneratorMatrixQ i a b =
       if a = b then (e6DoubledMinusculeWeight b i : ℚ) else 0 := by
-  rw [cartanGeneratorMatrixQ, castMatrixLieHom_apply, cartanGeneratorMatrix_apply]
+  rw [cartanGeneratorMatrixQ, matrixIntCastLieHom_apply, cartanGeneratorMatrix_apply]
   split_ifs <;> norm_num
-
-private theorem ad_int_apply_eq_rat
-    (x y : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℚ) :
-    (LieAlgebra.ad ℤ _ x) y = (LieAlgebra.ad ℚ _ x) y := by
-  simp only [LieAlgebra.ad_apply]
-
-private theorem ad_pow_int_eq_rat
-    (x y : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℚ) (n : ℕ) :
-    (LieAlgebra.ad ℤ _ x ^ n) y = (LieAlgebra.ad ℚ _ x ^ n) y := by
-  induction n generalizing y with
-  | zero => simp
-  | succ n ih =>
-      rw [pow_succ, pow_succ, Module.End.mul_apply, Module.End.mul_apply,
-        ad_int_apply_eq_rat]
-      exact ih ((LieAlgebra.ad ℚ _ x) y)
 
 /-- The rational doubled minuscule matrices satisfy the type-`E₆` Serre relations. -/
 theorem isSerreSystemQ :
     TauCeti.IsSerreSystem ℚ (CartanMatrix.E 6)ᵀ cartanGeneratorMatrixQ raisingMatrixQ
       loweringMatrixQ := by
-  have h := isSerreSystem.map castMatrixLieHom
-  have hH : castMatrixLieHom ∘ cartanGeneratorMatrix = cartanGeneratorMatrixQ := by
+  have h := isSerreSystem.map (matrixIntCastLieHom ℚ)
+  have hH : matrixIntCastLieHom ℚ ∘ cartanGeneratorMatrix = cartanGeneratorMatrixQ := by
     funext i
     rfl
-  have hE : castMatrixLieHom ∘ raisingMatrix = raisingMatrixQ := by
+  have hE : matrixIntCastLieHom ℚ ∘ raisingMatrix = raisingMatrixQ := by
     funext i
     rfl
-  have hF : castMatrixLieHom ∘ loweringMatrix = loweringMatrixQ := by
+  have hF : matrixIntCastLieHom ℚ ∘ loweringMatrix = loweringMatrixQ := by
     funext i
     rfl
   rw [hH, hE, hF] at h
@@ -144,10 +118,10 @@ theorem isSerreSystemQ :
     ad_pow_lie_E_E := ?_
     ad_pow_lie_F_F := ?_ }
   · intro i j
-    rw [← ad_pow_int_eq_rat]
+    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
     exact h.ad_pow_lie_E_E i j
   · intro i j
-    rw [← ad_pow_int_eq_rat]
+    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
     exact h.ad_pow_lie_F_F i j
 
 /-- The rational `54`-dimensional doubled minuscule representation. -/
@@ -194,25 +168,14 @@ theorem rep_ι_apply (x : Matrix.ToLieAlgebra ℚ (CartanMatrix.E 6)ᵀ)
 /-- Every rational raising matrix is square-zero. -/
 @[simp]
 theorem raisingMatrixQ_sq (i : Fin 6) : raisingMatrixQ i ^ 2 = 0 := by
-  ext a b
-  simp only [pow_two, Matrix.mul_apply, raisingMatrixQ_apply, Matrix.zero_apply]
-  by_cases hb : e6DoubledMinusculeWeight b i = -1
-  · simp [hb, e6DoubledMinusculeWeight_reflection_apply_self]
-  · simp [hb]
+  rw [raisingMatrixQ, pow_two, ← matrixIntCastLieHom_mul, ← pow_two, raisingMatrix_pow_two,
+    map_zero]
 
 /-- Every rational lowering matrix is square-zero. -/
 @[simp]
 theorem loweringMatrixQ_sq (i : Fin 6) : loweringMatrixQ i ^ 2 = 0 := by
-  ext a b
-  simp only [pow_two, Matrix.mul_apply, loweringMatrixQ_apply, Matrix.zero_apply]
-  by_cases hb : e6DoubledMinusculeWeight b i = 1
-  · simp [hb, e6DoubledMinusculeWeight_reflection_apply_self]
-  · simp [hb]
-
-private theorem mulVec_sq_eq_zero
-    (M : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℚ) (hM : M ^ 2 = 0)
-    (v : (Fin 27 ⊕ Fin 27) → ℚ) : M *ᵥ M *ᵥ v = 0 := by
-  rw [Matrix.mulVec_mulVec, ← pow_two, hM, Matrix.zero_mulVec]
+  rw [loweringMatrixQ, pow_two, ← matrixIntCastLieHom_mul, ← pow_two, loweringMatrix_pow_two,
+    map_zero]
 
 /-- Every represented positive or negative Serre root generator is square-zero. -/
 theorem rep_serreRootGenerator_sq (k : Fin 6 ⊕ Fin 6) :
@@ -225,11 +188,11 @@ theorem rep_serreRootGenerator_sq (k : Fin 6 ⊕ Fin 6) :
   | inl i =>
       simpa only [TauCeti.serreRootGenerator_inl, rep_ι_apply,
         rationalSerreRepresentation_serreE, LinearMap.zero_apply] using
-        mulVec_sq_eq_zero (raisingMatrixQ i) (raisingMatrixQ_sq i) v
+        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (raisingMatrixQ_sq i) v
   | inr i =>
       simpa only [TauCeti.serreRootGenerator_inr, rep_ι_apply,
         rationalSerreRepresentation_serreF, LinearMap.zero_apply] using
-        mulVec_sq_eq_zero (loweringMatrixQ i) (loweringMatrixQ_sq i) v
+        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (loweringMatrixQ_sq i) v
 
 /-- Every represented Serre root generator acts nilpotently. -/
 theorem isNilpotent_rep_serreRootGenerator (k : Fin 6 ⊕ Fin 6) :
@@ -265,17 +228,6 @@ theorem coe_latticeBasis (a : Fin 27 ⊕ Fin 27) :
   rw [← Pi.basisFun_apply, latticeBasis]
   exact TauCeti.coe_coordinateLatticeBasis (Fin 27 ⊕ Fin 27) a
 
-private theorem castMatrix_mulVec_mem_lattice
-    (M : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) ℤ)
-    {v : (Fin 27 ⊕ Fin 27) → ℚ} (hv : v ∈ lattice) :
-    castMatrixLieHom M *ᵥ v ∈ lattice := by
-  rw [mem_lattice_iff] at hv ⊢
-  choose z hz using hv
-  intro a
-  refine ⟨∑ b, M a b * z b, ?_⟩
-  simp only [Int.cast_sum, Int.cast_mul, hz, Matrix.mulVec, dotProduct,
-    castMatrixLieHom_apply]
-
 /-- Every represented Serre root generator preserves the doubled minuscule lattice. -/
 theorem rep_serreRootGenerator_mem_lattice (k : Fin 6 ⊕ Fin 6)
     {v : (Fin 27 ⊕ Fin 27) → ℚ} (hv : v ∈ lattice) :
@@ -285,10 +237,10 @@ theorem rep_serreRootGenerator_mem_lattice (k : Fin 6 ⊕ Fin 6)
   cases k with
   | inl i =>
       rw [TauCeti.serreRootGenerator_inl, rationalSerreRepresentation_serreE, raisingMatrixQ]
-      exact castMatrix_mulVec_mem_lattice (raisingMatrix i) hv
+      exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (raisingMatrix i) hv
   | inr i =>
       rw [TauCeti.serreRootGenerator_inr, rationalSerreRepresentation_serreF, loweringMatrixQ]
-      exact castMatrix_mulVec_mem_lattice (loweringMatrix i) hv
+      exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (loweringMatrix i) hv
 
 /-- Every standard coordinate vector has its named doubled minuscule weight. -/
 theorem isCartanWeightVector_single (a : Fin 27 ⊕ Fin 27) :

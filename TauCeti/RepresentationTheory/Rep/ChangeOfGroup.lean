@@ -1,0 +1,160 @@
+/-
+Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Claude
+-/
+module
+
+public import Mathlib.RepresentationTheory.Rep.Res
+
+/-!
+# Intertwining maps along a homomorphism of monoids
+
+Mathlib's `Representation.IsIntertwiningMap` compares two representations of one and the same
+monoid. For a homomorphism `f : G →* H`, a linear map intertwining `ρ : Representation R G V` with
+`σ.comp f`, for `σ : Representation R H W`, is the same datum as a morphism of `G`-representations
+`M ⟶ Res(f)(N)`, and, when `f` is an isomorphism, also as a morphism `Res(f⁻¹)(M) ⟶ N` of
+`H`-representations. This file supplies those two adapters, the identity, composition and
+inversion lemmas for intertwining maps along a homomorphism of monoids, and the compatibility of
+such a map with the norm `∑ g, ρ g` of a finite group.
+
+These are the general representation-theoretic inputs of a change-of-group map in group homology
+and cohomology: `groupHomology.chainsMap` consumes the first adapter and
+`groupCohomology.cochainsMap` the second.
+
+## Main definitions
+
+* `Representation.IsIntertwiningMap.toRes`: an intertwining map along `f : G →* H` read as
+  a morphism `M ⟶ Res(f)(N)` of `G`-representations.
+* `Representation.IsIntertwiningMap.ofRes`: an intertwining map along an isomorphism
+  `e : G ≃* H` read as a morphism `Res(e⁻¹)(M) ⟶ N` of `H`-representations.
+
+## Main results
+
+* `Representation.IsIntertwiningMap.trans` and `Representation.IsIntertwiningMap.symm`:
+  intertwining maps along homomorphisms of monoids compose, and invert along an isomorphism when
+  their linear part is an equivalence.
+* `Representation.IsIntertwiningMap.comp_norm`: an intertwining map along an isomorphism of
+  finite groups intertwines the two norms.
+* `Rep.isIntertwiningMap_id` and `Rep.isIntertwiningMap_res`: the identity
+  map is intertwining along the identity isomorphism of the monoid, and along `f` between a
+  restricted representation and the representation it restricts.
+-/
+
+public noncomputable section
+
+universe u uG uH uK uV uW uU
+
+namespace Representation
+
+section Monoid
+
+variable {R : Type u} {G : Type uG} {H : Type uH} {K : Type uK}
+  {V : Type uV} {W : Type uW} {U : Type uU}
+  [Semiring R] [Monoid G] [Monoid H] [Monoid K]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W] [AddCommMonoid U] [Module R U]
+
+namespace IsIntertwiningMap
+
+variable {ρ : Representation R G V} {σ : Representation R H W} {τ : Representation R K U}
+  {f : G →* H} {e : G ≃* H} {φ : V →ₗ[R] W}
+
+/-- **Intertwining maps along homomorphisms of monoids compose.** -/
+theorem trans (hφ : ρ.IsIntertwiningMap (σ.comp f) φ)
+    {g : H →* K} {ψ : W →ₗ[R] U}
+    (hψ : σ.IsIntertwiningMap (τ.comp g) ψ) :
+    ρ.IsIntertwiningMap (τ.comp (g.comp f)) (ψ ∘ₗ φ) :=
+  ⟨fun x v ↦ by
+    have hφ' : φ (ρ x v) = σ (f x) (φ v) := by
+      simpa using hφ.isIntertwining x v
+    have hψ' : ψ (σ (f x) (φ v)) = τ (g (f x)) (ψ (φ v)) := by
+      simpa using hψ.isIntertwining (f x) (φ v)
+    simp only [LinearMap.comp_apply, MonoidHom.coe_comp, Function.comp_apply,
+      hφ', hψ']⟩
+
+/-- **The inverse of an intertwining map along an isomorphism of monoids is intertwining**, when
+its linear part is an equivalence. -/
+theorem symm {e' : V ≃ₗ[R] W}
+    (he : ρ.IsIntertwiningMap (σ.comp (e : G →* H)) (e' : V →ₗ[R] W)) :
+    σ.IsIntertwiningMap (ρ.comp (e.symm : H →* G)) (e'.symm : W →ₗ[R] V) :=
+  ⟨fun h v ↦ by
+    have he' : ∀ g, (e' : V →ₗ[R] W) ∘ₗ ρ g = σ (e g) ∘ₗ (e' : V →ₗ[R] W) :=
+      fun g ↦ by ext x; exact he.isIntertwining g x
+    simpa using congr($(e'.isIntertwining_symm_isIntertwining
+      (σ := σ.comp (e : G →* H)) he' (e.symm h)) v)⟩
+
+end IsIntertwiningMap
+
+end Monoid
+
+section Norm
+
+variable {R : Type u} {G : Type uG} {H : Type uH} {V : Type uV} {W : Type uW}
+  [Semiring R] [Group G] [Group H] [Fintype G] [Fintype H]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
+
+/-- **An intertwining map along an isomorphism of finite groups intertwines the two norms.** The
+group isomorphism permutes the summands of `∑ g, ρ g`. -/
+theorem IsIntertwiningMap.comp_norm {ρ : Representation R G V} {σ : Representation R H W}
+    {e : G ≃* H} {φ : V →ₗ[R] W} (hφ : ρ.IsIntertwiningMap (σ.comp (e : G →* H)) φ) :
+    φ ∘ₗ ρ.norm = σ.norm ∘ₗ φ := by
+  ext x
+  simpa [Representation.norm] using
+    Fintype.sum_equiv e.toEquiv (fun g ↦ φ (ρ g x)) (fun h ↦ σ h (φ x))
+      fun g ↦ hφ.isIntertwining g x
+
+end Norm
+
+end Representation
+
+section RepMorphisms
+
+variable {R : Type u} {G : Type uG} {H : Type uH} [Semiring R] [Monoid G] [Monoid H]
+
+namespace Rep
+
+/-- The identity map of a representation is intertwining along the identity isomorphism of its
+monoid. -/
+theorem isIntertwiningMap_id (M : Rep.{uV} R G) :
+    M.ρ.IsIntertwiningMap (M.ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+      (LinearMap.id : M.V →ₗ[R] M.V) := ⟨fun g v ↦ by simp⟩
+
+/-- Restricting the coefficients along `f` and comparing back by the identity is an intertwining
+map along `f`. -/
+theorem isIntertwiningMap_res (N : Rep.{uV} R H) (f : G →* H) :
+    (Rep.res f N).ρ.IsIntertwiningMap (N.ρ.comp f)
+      ((LinearEquiv.refl R N.V : N.V →ₗ[R] N.V) : (Rep.res f N).V →ₗ[R] N.V) :=
+  ⟨fun g v ↦ by simp⟩
+
+end Rep
+
+variable {M : Rep.{uV} R G} {N : Rep.{uV} R H} {φ : M.V →ₗ[R] N.V}
+
+namespace Representation
+
+namespace IsIntertwiningMap
+
+/-- An intertwining map along `f : G →* H` read as a morphism `M ⟶ Res(f)(N)` of
+`G`-representations. This is the datum that `groupHomology.chainsMap` consumes. -/
+def toRes {f : G →* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp f) φ) : M ⟶ Rep.res f N :=
+  Rep.ofHom ⟨φ, fun g ↦ by ext v; exact hφ.isIntertwining g v⟩
+
+/-- An intertwining map along an isomorphism `e : G ≃* H` read as a morphism `Res(e⁻¹)(M) ⟶ N` of
+`H`-representations. This is the datum that `groupCohomology.cochainsMap` consumes. -/
+def ofRes {e : G ≃* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    Rep.res (e.symm : H →* G) M ⟶ N :=
+  Rep.ofHom ⟨φ, fun h ↦ by ext v; simpa using hφ.isIntertwining (e.symm h) v⟩
+
+@[simp] theorem toRes_hom_toLinearMap {f : G →* H}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp f) φ) :
+    (toRes hφ).hom.toLinearMap = φ := by simp [toRes]
+
+@[simp] theorem ofRes_hom_toLinearMap {e : G ≃* H}
+    (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
+    (ofRes hφ).hom.toLinearMap = φ := by simp [ofRes]
+
+end IsIntertwiningMap
+
+end Representation
+
+end RepMorphisms
