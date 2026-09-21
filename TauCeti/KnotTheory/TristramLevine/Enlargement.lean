@@ -49,6 +49,24 @@ theorem tristramLevineForm_enlargeColumn (V : Matrix ι ι ℝ) (ξ : ι → ℝ
   · fin_cases i <;> simp [Matrix.conjTranspose_apply]
   · fin_cases i <;> fin_cases j <;> simp
 
+/-- The Tristram--Levine form of a row enlargement: the transpose-symmetric counterpart of the
+column enlargement equation. -/
+@[simp]
+theorem tristramLevineForm_enlargeRow (V : Matrix ι ι ℝ) (η : ι → ℝ) (ω : ℂ) :
+    tristramLevineForm (enlargeRow V η) ω =
+      fromBlocks (tristramLevineForm V ω)
+        ((1 - conj ω) • (enlargeBlock η).map ((↑) : ℝ → ℂ))
+        (((1 - conj ω) • (enlargeBlock η).map ((↑) : ℝ → ℂ))ᴴ)
+        !![0, 1 - conj ω; 1 - ω, 0] := by
+  have hrow : enlargeRow V η = (enlargeColumn Vᵀ η)ᵀ := by
+    ext (i | i) (j | j)
+    · simp [Matrix.transpose_apply]
+    · fin_cases j <;> simp [Matrix.transpose_apply]
+    · fin_cases i <;> simp [Matrix.transpose_apply]
+    · fin_cases i <;> fin_cases j <;> simp [Matrix.transpose_apply]
+  rw [hrow, tristramLevineForm_transpose, tristramLevineForm_enlargeColumn]
+  simp [Function.comp_def]
+
 variable [Fintype ι]
 
 /-- A column enlargement preserves the Tristram--Levine signature at every complex parameter. -/
