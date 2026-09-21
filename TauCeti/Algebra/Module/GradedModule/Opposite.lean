@@ -198,7 +198,7 @@ end InternalGrading
 section RightSelfAction
 
 variable {R : Type u} {A : Type v}
-  [CommRing R] [Ring A] [Algebra R A]
+  [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- Right multiplication makes a graded algebra a graded right module over itself: the degrees of
 the two factors add, in the order fixed by the opposite grading. -/
