@@ -73,8 +73,11 @@ unrestricted construction is larger than the smooth discrete subcategory.
   underlying map, which is how statements phrased with it are specialised.
 * `TauCeti.res_ofDiscreteModule`: the dictionary commutes with restriction to a subgroup, on the
   nose.
+* `TauCeti.res_trivial`: restriction of a trivial representation is trivial on the nose.
 * `TauCeti.IsSmoothDiscrete.res`: smoothness is inherited by restriction along a continuous
   homomorphism.
+* `TauCeti.trivial_isSmoothDiscrete`: a trivial representation on a discrete module is smooth
+  discrete.
 * `TauCeti.discreteRepEquivSmoothTopRep`: the two translations are an equivalence of categories
   between `TauCeti.DiscreteRep R G` and `TauCeti.SmoothDiscreteTopRep R G`.
 * `TauCeti.not_isSmoothDiscrete_ofDiscreteModule_units_zmod`: a discrete object that is not
@@ -246,6 +249,20 @@ variable {R G M}
 
 end OfDiscreteModule
 
+section Trivial
+
+variable (R : Type u) [Ring R] [TopologicalSpace R] (G : Type v) [Monoid G]
+  (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousSMul R M]
+
+/-- Restriction of a trivial representation along a monoid homomorphism is the corresponding
+trivial representation of the source monoid, on the nose. -/
+lemma res_trivial {H : Type*} [Monoid H] (f : H →* G) :
+    TopRep.of ((ContRepresentation.trivial R G M).restrict f) =
+      TopRep.of (ContRepresentation.trivial R H M) := (rfl)
+
+end Trivial
+
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-! ### Smooth discrete objects -/
@@ -264,6 +281,18 @@ structure IsSmoothDiscrete (X : TopRep R G) : Prop where
   discreteTopology : DiscreteTopology X.V
   /-- every point stabilizer is open -/
   stabilizer_isOpen (x : X.V) : IsOpen {g : G | X.ρ g x = x}
+
+/-- A trivial representation on a discrete module is smooth discrete: every point stabilizer is
+the whole monoid. -/
+lemma trivial_isSmoothDiscrete (M : Type w) [AddCommGroup M] [Module R M]
+    [TopologicalSpace M] [DiscreteTopology M] [IsTopologicalAddGroup M] [ContinuousSMul R M] :
+    IsSmoothDiscrete R (TopRep.of (ContRepresentation.trivial R G M)) := by
+  refine ⟨inferInstance, fun x ↦ ?_⟩
+  have hstabilizer :
+      {g : G | (TopRep.of (ContRepresentation.trivial R G M)).ρ g x = x} = Set.univ :=
+    Set.eq_univ_of_forall fun g ↦ ContRepresentation.trivial_apply g x
+  rw [hstabilizer]
+  exact isOpen_univ
 
 variable {R}
 
