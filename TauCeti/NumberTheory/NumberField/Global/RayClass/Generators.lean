@@ -26,10 +26,11 @@ directions of that correspondence are `idealClass_eq_iff_exists_mem_rayGenerator
 `existsUnique_mul_eq_span_singleton_of_mem_rayGenerators`, and its fibres are identified by
 `span_singleton_eq_span_singleton_iff_exists_mem_unitsCongruenceSubgroup`.
 Together they replace the ideals of a fixed ray class by the algebraic integers of `𝔞` subject to
-a congruence, which is the description a geometry-of-numbers count of those ideals starts from:
-the congruence at the finite part of `𝔪` is what `congruenceLattice 𝔪` describes, the conditions
-at the real places of `𝔪` are conditions on the signs, and the units congruent to one are what a
-fundamental domain for the resulting count divides out.
+a congruence.  Taking `𝔞 = ⊤` recovers the integral triviality criterion
+`idealClass_eq_one_iff_exists_isCongrOne_span_eq`, so what is proved here is that criterion with
+the trivial class replaced by an arbitrary one; every statement stays in the language of moduli,
+`idealClass` and `unitsCongruenceSubgroup`.  A count of the ideals of a fixed ray class is the
+intended consumer.
 
 The auxiliary ideal cannot be dispensed with: an arbitrary ideal in a nontrivial ray class need
 not be principal.  Multiplying by the auxiliary inverse-class ideal makes the product principal
