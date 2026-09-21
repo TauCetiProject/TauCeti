@@ -90,6 +90,14 @@ the differential squares to zero (`fullyBlockedBoundaries_le_cycles`). -/
 noncomputable def fullyBlockedBoundariesInCycles : Submodule (ZMod 2) G.fullyBlockedCycles :=
   G.fullyBlockedBoundaries.submoduleOf G.fullyBlockedCycles
 
+/-- The boundaries viewed inside the cycles are the preimage of the boundaries under the
+inclusion of the cycles, restated so that downstream files can rewrite with it without unfolding
+`Submodule.submoduleOf`. -/
+theorem fullyBlockedBoundariesInCycles_eq_comap :
+    G.fullyBlockedBoundariesInCycles =
+      G.fullyBlockedBoundaries.comap G.fullyBlockedCycles.subtype :=
+  (rfl)
+
 /-- A cycle lies in `fullyBlockedBoundariesInCycles` exactly when it is a fully blocked boundary,
 letting membership be established without unfolding `submoduleOf`. -/
 @[simp]
