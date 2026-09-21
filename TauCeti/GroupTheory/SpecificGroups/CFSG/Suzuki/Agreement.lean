@@ -160,7 +160,6 @@ theorem carrierEquivPinned_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
 
 /-- **The square of the special isogeny on the standard symplectic matrix group is the prime-field
 Frobenius**, that is `τ ^ 2 = Frob_p` at the defining characteristic `p = 2`. -/
-@[simp]
 theorem symplecticHalfFrobenius_symplecticHalfFrobenius (g : d.toRankTwoBLieIndex.StandardGroup) :
     TauCeti.specialIsogeny (TauCeti.specialIsogeny g) =
       d.toRankTwoBLieIndex.symplecticPrimeFrobenius g := by
