@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Scheme
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.Equivalence
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 
@@ -115,13 +115,18 @@ theorem specialLinearSteinberg_eq_graphAut_comp_frobenius (d : TypeALieIndex) :
       d.specialLinearGraphAut.toMonoidHom.comp d.specialLinearFrobenius :=
   by rw [specialLinearSteinberg]
 
-/-- The positive simple-root subgroup of the pinned scheme points, obtained from the canonical
-elementary transvection in their standard matrix realization. -/
+/-- The positive simple-root subgroup of the pinned special linear group scheme. -/
 noncomputable def pinnedSimpleRootSubgroup (d : TypeALieIndex) (i : Fin d.1.rank) :
     Multiplicative d.1.Closure →* d.PinnedGroup :=
-  d.pinnedEquivSpecialLinear.symm.toMonoidHom.comp
-    (Matrix.SpecialLinearGroup.transvectionHom
-      (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i)))
+  { toFun := fun u =>
+      (AdditiveGroup.schemePointsMulEquiv d.1.Closure).symm u ≫
+        (SpecialLinear.rootSubgroup
+          (R := ℤ) (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))).hom.hom
+    map_one' := by simp
+    map_mul' := by
+      intro u v
+      rw [map_mul]
+      apply MonObj.mul_comp }
 
 /-- Entrywise `q`-power Frobenius on the pinned special linear scheme points. This is defined from
 the canonical matrix realization, independently of the explicit carrier. -/
@@ -156,8 +161,11 @@ theorem pinnedEquivSpecialLinear_pinnedSimpleRootSubgroup (d : TypeALieIndex)
       Matrix.SpecialLinearGroup.transvection
         (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))
         (Multiplicative.toAdd u) := by
-  rw [pinnedSimpleRootSubgroup, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.apply_symm_apply, Matrix.SpecialLinearGroup.transvectionHom_apply]
+  change SpecialLinear.schemePointsMulEquiv (d.1.rank + 1) d.1.Closure
+      ((AdditiveGroup.schemePointsMulEquiv d.1.Closure).symm u ≫
+        (SpecialLinear.rootSubgroup
+          (R := ℤ) (SlStd.rootTarget_ne_rootSource d.1.rank (.inl i))).hom.hom) = _
+  rw [SpecialLinear.schemePointsMulEquiv_rootSubgroup, MulEquiv.apply_symm_apply]
 
 /-- The canonical matrix realization intertwines pinned and matrix Frobenius. -/
 @[simp]
@@ -207,9 +215,8 @@ theorem carrierEquivPinned_simpleRootSubgroup (d : TypeALieIndex)
       d.pinnedSimpleRootSubgroup i u := by
   apply d.pinnedEquivSpecialLinear.injective
   rw [carrierEquivPinned, MulEquiv.trans_apply, MulEquiv.apply_symm_apply,
-    pinnedSimpleRootSubgroup, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.apply_symm_apply, carrierEquivSpecialLinear_simpleRootSubgroup,
-    Matrix.SpecialLinearGroup.transvectionHom_apply]
+    carrierEquivSpecialLinear_simpleRootSubgroup,
+    pinnedEquivSpecialLinear_pinnedSimpleRootSubgroup]
 
 /-- **The carrier equivalence intertwines the two entrywise Frobenius maps.** -/
 @[simp]
