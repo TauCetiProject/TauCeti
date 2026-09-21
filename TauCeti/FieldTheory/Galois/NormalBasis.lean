@@ -15,6 +15,11 @@ Let `L/K` be a finite Galois extension with Galois group `Gal(L/K)`. The normal 
 identifies the additive representation on `L` with the representation induced from the trivial
 subgroup, and over `K` with the left regular representation.
 
+The identification with the induced representation follows `Rep.iso_ind₁` in
+`ClassFieldTheory/Cohomology/IndCoind/Finite.lean` of `kbuzzard/ClassFieldTheory`, commit
+`ccc3323c6750abca25b49b35106f54eb3a398509`; the Tate vanishing statements it feeds were ported
+from the neighbouring `IndCoind/TrivialCohomology.lean` in the same commit.
+
 ## Main definitions
 
 * `TauCeti.galoisAddRep`: the additive representation of `Gal(L/K)` on `L`.
