@@ -148,7 +148,8 @@ theorem _root_.SheafOfModules.GeneratingSections.ofIteratedSlice_I {Z : C} {Y : 
         (iteratedSliceEquivalenceInverseObjIso R Y M))
 
 /-- The generating morphism after transport off an iterated slice is the mapped generating
-morphism followed by the comparison with restriction to `Y.left`. -/
+morphism followed by the comparison with restriction to `Y.left`, read along the identification
+`ofIteratedSlice_I` of the index types. -/
 @[simp]
 theorem _root_.SheafOfModules.GeneratingSections.ofIteratedSlice_π {Z : C} {Y : Over Z}
     [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
@@ -156,7 +157,8 @@ theorem _root_.SheafOfModules.GeneratingSections.ofIteratedSlice_π {Z : C} {Y :
     [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
     [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
     (σ : ((M.over Z).over Y).GeneratingSections) :
-    cast (by rw [GeneratingSections.ofIteratedSlice_I]) σ.ofIteratedSlice.π =
+    eqToHom (congrArg free (GeneratingSections.ofIteratedSlice_I σ).symm) ≫
+        σ.ofIteratedSlice.π =
       ((mapFreeIso (iteratedSliceEquivalence R Y).inverse σ.I
           (iteratedSliceEquivalenceUnitSheafIso R Y)).hom ≫
         (iteratedSliceEquivalence R Y).inverse.map σ.π) ≫
@@ -234,11 +236,12 @@ theorem _root_.SheafOfModules.GeneratingSections.restrict_I {M : SheafOfModules.
   GeneratingSections.mapIso_I _ _ _ _
 
 /-- The generating morphism of restricted generating sections is obtained by mapping the original
-generating morphism and then applying the comparison with restriction to `Y`. -/
+generating morphism and then applying the comparison with restriction to `Y`, read along the
+identification `restrict_I` of the index types. -/
 @[simp]
 theorem _root_.SheafOfModules.GeneratingSections.restrict_π {M : SheafOfModules.{u} R} {X Y : C}
     (G : (M.over X).GeneratingSections) (f : Y ⟶ X) :
-    cast (by rw [GeneratingSections.restrict_I]) (G.restrict f).π =
+    eqToHom (congrArg free (GeneratingSections.restrict_I G f).symm) ≫ (G.restrict f).π =
       ((mapFreeIso (overMap R f) G.I (overMapUnitIso f).symm).hom ≫
         (overMap R f).map G.π) ≫ ((overFunctorMap R f).app M).hom :=
   GeneratingSections.mapIso_π _ _ _ _

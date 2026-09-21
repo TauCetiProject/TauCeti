@@ -91,16 +91,18 @@ theorem _root_.SheafOfModules.GeneratingSections.mapIso_I : (σ.mapIso F η e).I
   (rfl)
 
 /-- The generating morphism of carried generating sections is the mapped generating morphism
-followed by the isomorphism. -/
+followed by the isomorphism, read along the identification `mapIso_I` of the index types. -/
 @[simp]
 theorem _root_.SheafOfModules.GeneratingSections.mapIso_π :
-    cast (by rw [GeneratingSections.mapIso_I]) (σ.mapIso F η e).π =
+    eqToHom (congrArg (free (R := S)) (GeneratingSections.mapIso_I σ F η e).symm) ≫
+        (σ.mapIso F η e).π =
       ((mapFreeIso F σ.I η).hom ≫ F.map σ.π) ≫ e.hom :=
-  (by
+  -- The identification of the index types is `rfl`, so the `eqToHom` is the identity.
+  ((Category.id_comp (σ.mapIso F η e).π).trans (by
     simp only [GeneratingSections.mapIso, GeneratingSections.equivOfIso_apply_π,
       GeneratingSections.map_π_eq]
     -- The two sides differ only in the `PreservesColimitsOfSize` instance recorded by `mapFreeIso`.
-    rfl)
+    rfl))
 
 /-- Carrying generating sections along a functor and an isomorphism preserves an invertible
 generating morphism. -/
