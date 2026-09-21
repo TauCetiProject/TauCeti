@@ -93,13 +93,35 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual_of_mul_self
         (C : Set (ι → F)).weightEnumerator =
       aeval ![x, y] (C : Set (ι → F)).weightEnumerator := by
   have hpow : s ^ Fintype.card ι = (Nat.card C : A) := by
-    rw [← Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC, pow_mul, pow_two, hs,
-      Module.natCard_eq_pow_finrank (K := F) (V := C), Nat.cast_pow]
+    calc
+      s ^ Fintype.card ι = (s * s) ^ Module.finrank F C := by
+        rw [← Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC, pow_mul, pow_two]
+      _ = (Nat.card F : A) ^ Module.finrank F C := by rw [hs]
+      _ = (Nat.card C : A) := by
+        rw [Module.natCard_eq_pow_finrank (K := F) (V := C), Nat.cast_pow]
+  have hscale :
+      aeval ![t * (x + (Nat.card F - 1 : A) * y), t * (x - y)]
+          (C : Set (ι → F)).weightEnumerator =
+        t ^ Fintype.card ι *
+          aeval ![x + (Nat.card F - 1 : A) * y, x - y]
+            (C : Set (ι → F)).weightEnumerator := by
+    simpa only [Matrix.smul_vec2, smul_eq_mul] using
+      aeval_smul_of_isHomogeneous (C : Set (ι → F)).isHomogeneous_weightEnumerator
+        ![x + (Nat.card F - 1 : A) * y, x - y] t
   have hmac := aeval_macWilliams_identity
     (natCard_mul_weightEnumerator_of_eq_euclideanDual C hC) x y
-  rw [← smul_eq_mul t, ← smul_eq_mul t, ← Matrix.smul_vec2,
-    aeval_smul_of_isHomogeneous (C : Set (ι → F)).isHomogeneous_weightEnumerator,
-    ← hmac, smul_eq_mul, ← mul_assoc, ← hpow, ← mul_pow, hst, one_pow, one_mul]
+  have hcancel : t ^ Fintype.card ι * (Nat.card C : A) = 1 := by
+    calc
+      t ^ Fintype.card ι * (Nat.card C : A) = (t * s) ^ Fintype.card ι := by
+        rw [← hpow, mul_pow]
+      _ = 1 := by simp [hst]
+  calc
+    _ = t ^ Fintype.card ι *
+        aeval ![x + (Nat.card F - 1 : A) * y, x - y]
+          (C : Set (ι → F)).weightEnumerator := hscale
+    _ = (t ^ Fintype.card ι * (Nat.card C : A)) *
+        aeval ![x, y] (C : Set (ι → F)).weightEnumerator := by rw [← hmac, mul_assoc]
+    _ = _ := by rw [hcancel, one_mul]
 
 /-- A self-dual code's weight enumerator is fixed by the normalized MacWilliams
 substitution. The variables may lie in any commutative real algebra; in particular

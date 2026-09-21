@@ -40,6 +40,8 @@ to `AddChar.FiniteField.primitiveChar`.
   identity over a finite commutative ring with a primitive additive character.
 * `Submodule.natCard_mul_weightEnumerator_euclideanDual`: the MacWilliams identity over a finite
   field.
+* `TauCeti.natCard_mul_weightEnumerator_of_eq_euclideanDual`: the division-free MacWilliams
+  identity for a self-dual code.
 
 ## References
 
