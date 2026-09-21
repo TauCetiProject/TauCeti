@@ -39,7 +39,8 @@ to the normal form of its own signature.
   inertia agree.
 * `QuadraticForm.equivalent_iff_sigPos_eq_and_sigNeg_eq`: two nondegenerate real quadratic forms
   are isometric exactly when their signatures agree.
-* `QuadraticForm.realSignatureForm`: the normal form of signature `(p, q)`.
+* `QuadraticForm.realSignatureForm` and `QuadraticForm.realSignatureForm_def`: the normal
+  form of signature `(p, q)`, and its defining diagonalization.
 * `QuadraticForm.sigPos_realSignatureForm`, `QuadraticForm.sigNeg_realSignatureForm` and
   `QuadraticForm.nondegenerate_realSignatureForm`: every signature is realized by a regular form.
 * `QuadraticForm.equivalent_realSignatureForm`: a regular real quadratic form is isometric to the
@@ -165,6 +166,12 @@ theorem equivalent_iff_sigPos_eq_and_sigNeg_eq {Q : _root_.QuadraticForm ℝ M}
 copies of `⟨-1⟩`. -/
 def realSignatureForm (p q : ℕ) : _root_.QuadraticForm ℝ (Fin p ⊕ Fin q → ℝ) :=
   weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1)
+
+/-- The normal form of signature `(p, q)` is the weighted sum of squares whose weights are `1` on
+the `Fin p` summand and `-1` on the `Fin q` summand. -/
+theorem realSignatureForm_def (p q : ℕ) :
+    realSignatureForm p q = weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) := by
+  rw [realSignatureForm]
 
 @[simp]
 theorem realSignatureForm_apply (p q : ℕ) (x : Fin p ⊕ Fin q → ℝ) :

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Complex
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
-public import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 public import TauCeti.NumberTheory.QuadraticForm.Global.Signature
 
@@ -31,18 +30,23 @@ diagonalization of a form is `(-1)^(q(q-1)/2)` for its negative index `q` at tha
 the archimedean factor of the product over all places of the Hasse signs of a global form.
 
 Through a complex embedding the only invariant is the rank, and the normal form is the standard
-sum of squares; this is the reason complex places carry no clause in the local-global predicates.
+sum of squares.  For regular forms this is what makes the complex clause of the local-global
+predicates automatic; the degenerate cases need the finite-place clauses instead, as
+`TauCeti/NumberTheory/QuadraticForm/Global/ComplexPlaces.lean` shows.
 
 ## Main results
 
 * `QuadraticForm.equivalent_atRealPlace_iff_realSignature_eq`: at a real place regular forms are
   classified by their signature.
-* `QuadraticForm.equivalent_atRealPlace_realSignatureForm_iff`: the normal form realizing a
-  prescribed signature at a real place.
-* `QuadraticForm.prod_hilbertSymbol_atRealPlace`: the archimedean Hasse sign of a
-  diagonalization.
+* `QuadraticForm.equivalent_atRealPlace_iff_realPositiveIndex_eq`: at a fixed global rank the
+  positive index alone classifies them.
+* `QuadraticForm.equivalent_atRealPlace_realSignatureForm_iff`: the localization is the normal
+  form `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature.
+* `TauCeti.prod_hilbertSymbol_atRealPlace`: the archimedean Hasse sign of a diagonalization.
 * `QuadraticForm.equivalent_atComplexEmbedding_iff_finrank_eq`: through a complex embedding
   regular forms are classified by their rank.
+* `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one`: through a complex
+  embedding the normal form is the standard sum of squares.
 
 ## References
 
@@ -72,9 +76,9 @@ theorem equivalent_atRealPlace_iff_realSignature_eq (hQ : Q.Nondegenerate) (hR :
     (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Equivalent (R.atRealPlace w) ↔ Q.realSignature w = R.realSignature w := by
   rw [equivalent_iff_sigPos_eq_and_sigNeg_eq (Nondegenerate.atRealPlace hQ w)
-      (Nondegenerate.atRealPlace hR w), Prod.ext_iff, realSignature_fst, realSignature_fst,
-    realSignature_snd, realSignature_snd, realPositiveIndex_eq_sigPos, realPositiveIndex_eq_sigPos,
-    realNegativeIndex_eq_sigNeg, realNegativeIndex_eq_sigNeg]
+    (Nondegenerate.atRealPlace hR w)]
+  simp only [Prod.ext_iff, realSignature_fst, realSignature_snd, realPositiveIndex_eq_sigPos,
+    realNegativeIndex_eq_sigNeg]
 
 /-- At a real place the positive index is already a complete invariant of regular forms of equal
 global rank, because the negative index is the rank minus the positive index. -/
@@ -85,8 +89,8 @@ theorem equivalent_atRealPlace_iff_realPositiveIndex_eq (hQ : Q.Nondegenerate)
       Q.realPositiveIndex w = R.realPositiveIndex w := by
   have hQsum := realPositiveIndex_add_realNegativeIndex_eq_finrank hQ w
   have hRsum := realPositiveIndex_add_realNegativeIndex_eq_finrank hR w
-  rw [equivalent_atRealPlace_iff_realSignature_eq hQ hR w, Prod.ext_iff, realSignature_fst,
-    realSignature_fst, realSignature_snd, realSignature_snd]
+  rw [equivalent_atRealPlace_iff_realSignature_eq hQ hR w]
+  simp only [Prod.ext_iff, realSignature_fst, realSignature_snd]
   omega
 
 /-- A regular quadratic form is isometric at a real place to the normal form `p⟨1⟩ ⊥ q⟨-1⟩`
@@ -99,33 +103,18 @@ theorem equivalent_atRealPlace_realSignatureForm_iff (hQ : Q.Nondegenerate)
     Prod.ext_iff, realSignature_fst, realSignature_snd, realPositiveIndex_eq_sigPos,
     realNegativeIndex_eq_sigNeg]
 
-/-- Every regular quadratic form is isometric at a real place to the normal form of its signature
-there. -/
-theorem equivalent_atRealPlace_realSignatureForm (hQ : Q.Nondegenerate)
-    (w : {w : InfinitePlace K // w.IsReal}) :
-    (Q.atRealPlace w).Equivalent
-      (realSignatureForm (Q.realPositiveIndex w) (Q.realNegativeIndex w)) :=
-  (equivalent_atRealPlace_realSignatureForm_iff hQ w _ _).mpr <| by
-    rw [← realSignature_fst Q w, ← realSignature_snd Q w]
-
 omit [FiniteDimensional K V] in
 /-- **The archimedean Hasse sign.** For a diagonalization `Q ≃ ⟨a₁, …, aₙ⟩` by global units, the
 product of the real Hilbert symbols of the localized coefficients over the ordered pairs `i < j`
 is `(-1)^(q(q-1)/2)`, where `q` is the negative index of `Q` at the real place.  In particular
 the product depends on `Q` and the place alone, not on the chosen diagonalization. -/
-theorem prod_hilbertSymbol_atRealPlace {ι : Type*} [Fintype ι] [LinearOrder ι] {a : ι → Kˣ}
-    (h : Q.Equivalent (weightedSumSquares K fun i ↦ (a i : K)))
+theorem _root_.TauCeti.prod_hilbertSymbol_atRealPlace {ι : Type*} [Fintype ι] [LinearOrder ι]
+    {a : ι → Kˣ} (h : Q.Equivalent (weightedSumSquares K fun i ↦ (a i : K)))
     (w : {w : InfinitePlace K // w.IsReal}) :
     ∏ ij ∈ univ.filter (fun ij : ι × ι => ij.1 < ij.2),
         TauCeti.hilbertSymbol (TauCeti.unitAtRealPlace w (a ij.1))
           (TauCeti.unitAtRealPlace w (a ij.2)) =
       (-1) ^ (Q.realNegativeIndex w).choose 2 := by
-  let _ : CharZero K := RingHom.charZero w.1.embedding
-  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let _ : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  have hbase : (Q.atRealPlace w).Equivalent
-      (atRealPlace (weightedSumSquares K fun i ↦ (a i : K)) w) := by
-    simpa only [atRealPlace_def] using h.baseChange ℝ
   have hcoe : (fun i ↦ ((TauCeti.unitAtRealPlace w (a i) : ℝˣ) : ℝ)) =
       fun i ↦ embedding_of_isReal w.2 (a i : K) := by
     funext i
@@ -133,7 +122,7 @@ theorem prod_hilbertSymbol_atRealPlace {ι : Type*} [Fintype ι] [LinearOrder ι
   have hloc : (Q.atRealPlace w).Equivalent
       (weightedSumSquares ℝ fun i ↦ ((TauCeti.unitAtRealPlace w (a i) : ℝˣ) : ℝ)) := by
     rw [hcoe]
-    exact hbase.trans ⟨atRealPlaceWeightedSumSquares w fun i ↦ (a i : K)⟩
+    exact (h.atRealPlace w).trans ⟨atRealPlaceWeightedSumSquares w fun i ↦ (a i : K)⟩
   rw [TauCeti.prod_hilbertSymbol_real_of_equiv_weightedSumSquares hloc,
     realNegativeIndex_eq_sigNeg]
 
@@ -167,7 +156,7 @@ theorem equivalent_atComplexEmbedding_weightedSumSquares_one (hQ : Q.Nondegenera
   have hsep : (associated (Q.atComplexEmbedding w)).SeparatingLeft :=
     (nondegenerate_associated_iff.mpr (Nondegenerate.atComplexEmbedding hQ w)).1
   rw [← hrank]
-  exact equivalent_weightedSumSquares_of_isSepClosed (Q.atComplexEmbedding w) hsep
+  exact equivalent_weightedSumSquares_of_isAlgClosed (Q.atComplexEmbedding w) hsep
 
 end ComplexEmbedding
 

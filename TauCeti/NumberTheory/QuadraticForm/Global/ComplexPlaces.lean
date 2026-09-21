@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Complex
+public import TauCeti.NumberTheory.QuadraticForm.Global.ArchimedeanClassification
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 
 /-!
@@ -103,11 +104,7 @@ theorem LocallyEquivalent.equivalent_atComplexEmbedding [FiniteDimensional K V]
     [FiniteDimensional K W] {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
     (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) (h : Q.LocallyEquivalent R)
     (w : InfinitePlace K) :
-    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) := by
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  rw [atComplexEmbedding_def, atComplexEmbedding_def]
-  exact _root_.QuadraticForm.equivalent_of_finrank_eq_of_isAlgClosed _ _
-    (Nondegenerate.baseChange hQ) (Nondegenerate.baseChange hR)
-    (by rw [Module.finrank_baseChange, Module.finrank_baseChange, h.finrank_eq])
+    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) :=
+  (equivalent_atComplexEmbedding_iff_finrank_eq hQ hR w).mpr h.finrank_eq
 
 end QuadraticForm

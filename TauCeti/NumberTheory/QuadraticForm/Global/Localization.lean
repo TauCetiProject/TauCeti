@@ -16,9 +16,10 @@ finite completions and to the real or complex field selected by an infinite plac
 definitions use `QuadraticForm.baseChange`; in particular, their underlying spaces are genuine
 tensor products over the global field rather than independently chosen local spaces.
 
-The evaluation, nondegeneracy, localization of diagonal forms, and algebraic-compatibility
-lemmas make the local forms usable without unfolding the localization definitions. They are the
-common input for local isotropy, representation, and invariant comparisons over number fields.
+The evaluation, nondegeneracy, isometry-transport, localization of diagonal forms, and
+algebraic-compatibility lemmas make the local forms usable without unfolding the localization
+definitions. They are the common input for local isotropy, representation, and invariant
+comparisons over number fields.
 
 -/
 
@@ -30,7 +31,7 @@ noncomputable section
 open IsDedekindDomain NumberField NumberField.InfinitePlace
 open scoped TensorProduct
 
-universe u v
+universe u v v'
 
 namespace IsDedekindDomain.HeightOneSpectrum
 
@@ -154,6 +155,16 @@ theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
   let : Algebra K ℂ := w.embedding.toAlgebra
   rw [atComplexEmbedding_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+
+/-- A global isometry of quadratic forms localizes to an isometry at every real place. -/
+theorem _root_.QuadraticMap.Equivalent.atRealPlace {W : Type v'} [AddCommGroup W] [Module K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W} (h : Q.Equivalent R)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Equivalent (R.atRealPlace w) := by
+  let : CharZero K := RingHom.charZero w.1.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  simpa only [atRealPlace_def] using h.baseChange ℝ
 
 section Diagonal
 

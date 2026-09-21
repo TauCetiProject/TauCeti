@@ -158,10 +158,7 @@ theorem LocallyEquivalent.of_equivalent {Q : _root_.QuadraticForm K V}
   · intro v
     rw [QuadraticForm.atFinitePlace_def, QuadraticForm.atFinitePlace_def]
     exact h.baseChange (v.adicCompletion K)
-  · intro w
-    let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-    rw [QuadraticForm.atRealPlace_def, QuadraticForm.atRealPlace_def]
-    exact h.baseChange ℝ
+  · exact fun w ↦ h.atRealPlace w
 
 /-- Local equivalence is reflexive. -/
 @[refl]

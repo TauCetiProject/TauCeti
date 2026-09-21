@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
-public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 
 /-!
@@ -22,7 +22,8 @@ where `q` is the number of negative coefficients.
 
 By Sylvester's law of inertia that count is the negative index of the form the family
 diagonalizes, so the product is an invariant of the isometry class and is the archimedean
-counterpart of the Hasse invariant of a form over a nonarchimedean local field.
+counterpart of the Hasse invariant of a form over a nonarchimedean local field.  Evaluating it on
+the normal form `p⟨1⟩ ⊥ q⟨-1⟩` gives the archimedean Hasse sign `(-1)^(q(q-1)/2)` of that form.
 
 ## Main results
 
@@ -36,6 +37,8 @@ counterpart of the Hasse invariant of a form over a nonarchimedean local field.
 * `TauCeti.prod_hilbertSymbol_real_of_equiv_weightedSumSquares`: that product is `(-1)^(q(q-1)/2)`
   for the negative index `q` of any real form the family diagonalizes, so it depends only on the
   isometry class.
+* `TauCeti.prod_hilbertSymbol_realSignatureForm`: the archimedean Hasse sign of the normal form
+  `QuadraticForm.realSignatureForm p q` is `(-1)^(q(q-1)/2)`.
 
 ## References
 
@@ -142,6 +145,27 @@ theorem prod_hilbertSymbol_real_of_equiv_weightedSumSquares {M : Type*} [AddComm
   classical
   rw [prod_hilbertSymbol_real, _root_.QuadraticForm.sigNeg_of_equiv_weightedSumSquares h,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+
+/-- **The archimedean Hasse sign of the normal form.**  Listing the weights of
+`QuadraticForm.realSignatureForm p q` as `fun i : Fin (p + q) ↦ if i < p then 1 else -1`, the
+product of the real Hilbert symbols over the ordered pairs `i < j` is `(-1)^(q(q-1)/2)`. -/
+theorem prod_hilbertSymbol_realSignatureForm (p q : ℕ) :
+    ∏ ij ∈ univ.filter (fun ij : Fin (p + q) × Fin (p + q) => ij.1 < ij.2),
+        hilbertSymbol (if (ij.1 : ℕ) < p then (1 : ℝˣ) else -1)
+          (if (ij.2 : ℕ) < p then (1 : ℝˣ) else -1) =
+      (-1) ^ q.choose 2 := by
+  have hweight : (fun i : Fin (p + q) ↦ ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) ∘
+      finSumFinEquiv = Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
+    funext x
+    cases x <;> simp
+  have hdiag : (_root_.QuadraticForm.realSignatureForm p q).Equivalent
+      (QuadraticMap.weightedSumSquares ℝ fun i : Fin (p + q) ↦
+        ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) := by
+    rw [_root_.QuadraticForm.realSignatureForm_def]
+    exact ⟨((_root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (R := ℝ) _
+      finSumFinEquiv).trans (_root_.QuadraticForm.weightedSumSquaresCongr hweight)).symm⟩
+  rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares hdiag,
+    _root_.QuadraticForm.sigNeg_realSignatureForm]
 
 end Real
 

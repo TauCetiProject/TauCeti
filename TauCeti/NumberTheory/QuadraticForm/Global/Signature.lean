@@ -111,11 +111,7 @@ variable {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
 theorem _root_.QuadraticMap.Equivalent.realSignature_eq (h : Q.Equivalent R)
     (w : {w : InfinitePlace K // w.IsReal}) :
     Q.realSignature w = R.realSignature w := by
-  let : CharZero K := RingHom.charZero w.1.embedding
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  have hlocal : (Q.atRealPlace w).Equivalent (R.atRealPlace w) := by
-    simpa only [atRealPlace_def] using h.baseChange ℝ
+  have hlocal := h.atRealPlace w
   apply Prod.ext
   · simpa only [realSignature_fst, realPositiveIndex_eq_sigPos] using hlocal.sigPos_eq
   · simpa only [realSignature_snd, realNegativeIndex_eq_sigNeg] using hlocal.sigNeg_eq
