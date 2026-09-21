@@ -33,6 +33,7 @@ variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (f : A →ₐ[k] k)
 
 /-- The dimension of the augmentation cotangent space over the ground field equals the
 embedding dimension at its rational point, computed over the native residue field. -/
+@[simp]
 theorem finrank_kernelCotangent_eq_finrank_residueFieldCotangent :
     Module.finrank k (RingHom.ker (f : A →+* k)).Cotangent =
       Module.finrank

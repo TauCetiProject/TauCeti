@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 public import TauCeti.AlgebraicGeometry.TangentSpace.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Translation
-import Mathlib.RingTheory.Jacobson.Ring
+import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
 # Krull dimension and Lie dimension of an affine group
@@ -44,13 +44,10 @@ theorem ringKrullDim_eq_height_augmentation :
   · apply (ringKrullDim_le_iff_isMaximal_height_le _).mpr
     intro m hm
     let _ := hm
-    let _ : Field (H ⧸ m) := Ideal.Quotient.field m
-    let _ : Module.Finite k (H ⧸ m) := finite_of_finite_type_of_isJacobsonRing k (H ⧸ m)
-    let ι : H ⧸ m →ₐ[k] k := IsAlgClosed.lift
-    let g : H →ₐ[k] k := ι.comp (Ideal.Quotient.mkₐ k m)
+    obtain ⟨g, hmg, -⟩ := exists_algHom_apply_ne_zero_of_notMem_radical
+      (k := k) (K := k) m (x := 1) (by simpa only [hm.isPrime.radical] using m.one_notMem)
     have hker : RingHom.ker (g : H →+* k) = m := by
-      exact (RingHom.ker_comp_of_injective (Ideal.Quotient.mk m)
-        (f := ι.toRingHom) ι.injective).trans (Ideal.mk_ker)
+      exact (hm.eq_of_le (RingHom.ker_ne_top g.toRingHom) hmg).symm
     rw [← hker, height_kernel_eq_height_augmentation]
   · exact Ideal.height_le_ringKrullDim_of_isPrime
 
