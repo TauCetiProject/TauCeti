@@ -347,14 +347,13 @@ lemma differentiableOn_conj_conj (hf : DifferentiableOn ℂ f S) :
         (starRingEnd ℂ)))
       (Function.Involutive.rightInverse (starRingEnd_self_apply : Function.Involutive
         (starRingEnd ℂ)))).mp hz
-  rcases (hf ((starRingEnd ℂ) z) hzS) with ⟨f', hf'⟩
   have hmaps : MapsTo (starL ℂ).toContinuousLinearMap ((starRingEnd ℂ) '' S) S := by
     rintro w ⟨v, hv, rfl⟩
     simpa using hv
   simpa [Function.comp_def] using
-    (HasFDerivWithinAt.comp_semilinear
+    DifferentiableWithinAt.comp_semilinear₂
       (starL ℂ).toContinuousLinearMap (starL ℂ).toContinuousLinearMap
-      (x := z) hf' hmaps).differentiableWithinAt
+      (x := z) (hf ((starRingEnd ℂ) z) hzS) hmaps
 
 /--
 On any subset of the closed upper half-plane, the explicit Schwarz-reflection extension is
