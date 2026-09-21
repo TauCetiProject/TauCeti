@@ -26,7 +26,7 @@ the source stable category.
 * `TauCeti.StableConflationExact.mapSuspensionPresentation`: the image of the chosen suspension
   presentation under a stable conflation-exact functor.
 * `TauCeti.StableConflationExact.stableSuspensionCompStableFunctorIso`: the natural isomorphism
-  `Σ ⋙ F̅ ≅ F̅ ⋙ Σ` on stable categories.
+  comparing suspension composed with the induced stable functor to the opposite composite.
 
 ## References
 
