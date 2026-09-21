@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
@@ -35,6 +36,10 @@ roadmap and supplies the grading used by tensor products of DG objects.
 * `TauCeti.InternalGrading.tensorProduct_piece_eq_iSup`: the degree-`n` piece is the sum over
   `G.piece p ⊗ H.piece (n - p)`.
 * `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
+* `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
+  when they agree on pure tensors of homogeneous elements.
+* `TauCeti.InternalGrading.multilinearMap_ext`: multilinear maps agree when they agree on tuples
+  of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
 
 The proof reuses Tau Ceti's two-factor internal decomposition theorem
@@ -50,6 +55,43 @@ namespace TauCeti
 universe u v w v' w'
 
 namespace InternalGrading
+
+section PiTensorProduct
+
+variable {R : Type u} [CommSemiring R]
+variable {M : Type v} [AddCommMonoid M] [Module R M]
+variable {N : Type w} [AddCommMonoid N] [Module R N]
+
+/-- Two linear maps from a finite tensor product of an internally graded module agree if they
+agree on pure tensors of homogeneous elements. -/
+theorem piTensorProduct_ext (G : InternalGrading R M) {n : ℕ}
+    {f g : PiTensorProduct R (fun _ : Fin n ↦ M) →ₗ[R] N}
+    (h : ∀ q : ∀ _ : Fin n, Σ d : ℤ, G.piece d,
+      f (PiTensorProduct.tprod R fun i ↦ (q i).2) =
+        g (PiTensorProduct.tprod R fun i ↦ (q i).2)) : f = g := by
+  apply PiTensorProduct.ext_of_span_eq_top
+    (g := fun _ (q : Σ d : ℤ, G.piece d) ↦ (q.2 : M))
+  · intro i
+    apply top_unique
+    rw [← G.isInternal.submodule_iSup_eq_top]
+    refine iSup_le fun d ↦ ?_
+    intro a ha
+    exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
+  · exact h
+
+/-- Two multilinear maps on an internally graded module agree if they agree on tuples of
+homogeneous elements. -/
+theorem multilinearMap_ext (G : InternalGrading R M) {n : ℕ}
+    {f g : MultilinearMap R (fun _ : Fin n ↦ M) N}
+    (h : ∀ (d : Fin n → ℤ) (x : Fin n → M), (∀ i, x i ∈ G.piece (d i)) → f x = g x) :
+    f = g := by
+  apply PiTensorProduct.lift.injective
+  apply G.piTensorProduct_ext
+  intro q
+  simpa only [PiTensorProduct.lift.tprod] using
+    h (fun i ↦ (q i).1) (fun i ↦ (q i).2) (fun i ↦ (q i).2.property)
+
+end PiTensorProduct
 
 section Pieces
 

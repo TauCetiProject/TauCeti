@@ -1,0 +1,370 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Group.PUnit
+public import Mathlib.Algebra.Group.Shrink
+public import Mathlib.GroupTheory.PGroup
+public import Mathlib.GroupTheory.Solvable
+import TauCeti.GroupTheory.PGroup
+
+/-!
+# Classes of finite groups
+
+A **class of finite groups** in the sense of profinite group theory is a collection `C` of
+finite groups that is closed under isomorphism, subgroups, quotients and extensions, and
+contains the trivial group. Finite `p`-groups, finite solvable groups and all finite groups are
+the examples of record. Such a class is exactly the data needed to speak of a pro-`C` group and
+of the universal pro-`C` quotient of a topological group, so it is bundled here as a structure
+rather than left as a loose predicate.
+
+Closure under finite products is a *consequence* of the four closure properties, through the
+extension `1 → H → H × K → K → 1`, and so is a theorem here rather than a field.
+
+The membership predicate of a class carries the typeclass assumptions `[Group H] [Finite H]`,
+which is awkward for a group that is not yet known to be finite. `FiniteGroupClass.MemFinite`
+packages the two together: `C.MemFinite H` says that `H` is finite and belongs to `C`. All the
+closure properties below are stated in that form, because the groups they are applied to —
+quotients of a topological group by open normal subgroups — are finite for a reason that is
+not visible in the statement.
+
+The raw membership predicate speaks about groups in one universe. For a finite group in any
+other universe, `FiniteGroupClass.MemFinite` transports its group structure through `Shrink`;
+thus all derived constructions are universe-independent.
+
+## Main definitions
+
+* `TauCeti.FiniteGroupClass`: a class of finite groups, as the data of its membership
+  predicate together with its closure properties.
+* `TauCeti.FiniteGroupClass.MemFinite`: membership of a group that is not yet known to be
+  finite.
+* `TauCeti.finiteGroupClassP`: the class of finite `p`-groups.
+* `TauCeti.finiteGroupClassTrivial`: the class of finite trivial groups.
+* `TauCeti.finiteGroupClassSolvable`: the class of finite solvable groups.
+* `TauCeti.finiteGroupClassAll`: the class of all finite groups.
+
+## Main results
+
+* `TauCeti.FiniteGroupClass.MemFinite.prod`: a class of finite groups is closed under binary
+  products.
+* `TauCeti.FiniteGroupClass.MemFinite.quotient_inf`: the normal subgroups with quotient in the
+  class are closed under binary intersection.
+* `TauCeti.FiniteGroupClass.MemFinite.quotient_comap`: they are preserved by preimage along a
+  group homomorphism.
+
+## References
+
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.1.
+-/
+
+public section
+
+namespace TauCeti
+
+universe u v w
+
+/-- A **class of finite groups**: a collection of finite groups containing the trivial group
+and closed under isomorphism, subgroups, quotients and extensions. This is the data a pro-`C`
+completion is built from. -/
+@[ext]
+structure FiniteGroupClass where
+  /-- Membership of a finite group in the class. -/
+  mem : ∀ (H : Type w) [Group H] [Finite H], Prop
+  /-- Membership depends only on the isomorphism class. -/
+  mem_congr : ∀ {H K : Type w} [Group H] [Finite H] [Group K] [Finite K],
+    (H ≃* K) → (mem H ↔ mem K)
+  /-- The trivial group is in the class. -/
+  mem_trivial : mem PUnit
+  /-- The class is closed under subgroups. -/
+  mem_subgroup : ∀ {H : Type w} [Group H] [Finite H], mem H → ∀ K : Subgroup H, mem K
+  /-- The class is closed under quotients. -/
+  mem_quotient : ∀ {H : Type w} [Group H] [Finite H], mem H →
+    ∀ (N : Subgroup H) [N.Normal], mem (H ⧸ N)
+  /-- The class is closed under extensions. -/
+  mem_extension : ∀ {H : Type w} [Group H] [Finite H] (N : Subgroup H) [N.Normal],
+    mem N → mem (H ⧸ N) → mem H
+
+namespace FiniteGroupClass
+
+variable {C : FiniteGroupClass.{w}} {G : Type u} {H : Type v} [Group G] [Group H]
+
+noncomputable local instance shrinkFinite [Finite H] : Finite (Shrink.{w} H) :=
+  Finite.of_surjective (equivShrink.{w} H) (equivShrink.{w} H).surjective
+
+/-- `C.MemFinite H` says that the group `H` is finite and lies in the class `C`. The group is
+transported through `Shrink` before applying the raw membership predicate, so `H` may live in
+any universe. This is the form used for groups whose finiteness is not part of the ambient
+context, such as quotients by open normal subgroups. -/
+def MemFinite (C : FiniteGroupClass.{w}) (H : Type v) [Group H] : Prop :=
+  ∃ _ : Finite H, C.mem (Shrink.{w} H)
+
+/-- A group that lies in a class of finite groups is finite. -/
+theorem MemFinite.finite (h : C.MemFinite H) : Finite H :=
+  h.elim fun hH _ ↦ hH
+
+/-- For a group already known to be finite, `MemFinite` is membership of its shrink. -/
+@[simp]
+theorem memFinite_iff_shrink [Finite H] : C.MemFinite H ↔ C.mem (Shrink.{w} H) :=
+  ⟨fun h ↦ h.elim fun _ hH ↦ hH, fun h ↦ ⟨‹_›, h⟩⟩
+
+/-- In the defining universe, membership through `Shrink` agrees with raw membership. -/
+theorem memFinite_iff {H : Type w} [Group H] [Finite H] : C.MemFinite H ↔ C.mem H :=
+  memFinite_iff_shrink.trans (C.mem_congr (Shrink.mulEquiv.{w} (α := H)))
+
+/-- A class of finite groups contains every trivial group. -/
+theorem memFinite_of_subsingleton [Subsingleton H] : C.MemFinite H := by
+  have : Finite H := Finite.of_subsingleton
+  have : Subsingleton (Shrink.{w} H) := (equivShrink.{w} H).subsingleton_congr.mp inferInstance
+  have : Unique (Shrink.{w} H) := uniqueOfSubsingleton 1
+  exact memFinite_iff_shrink.mpr
+    ((C.mem_congr (MulEquiv.ofUnique (M := PUnit) (N := Shrink.{w} H))).mp C.mem_trivial)
+
+/-- A class of finite groups is closed under surjective images: a quotient of a member is a
+member. -/
+theorem MemFinite.of_surjective {K : Type u} [Group K] (hH : C.MemFinite H) (f : H →* K)
+    (hf : Function.Surjective f) :
+    C.MemFinite K := by
+  let _ := hH.finite
+  have : Finite K := Finite.of_surjective f hf
+  let f' : Shrink.{w} H →* Shrink.{w} K :=
+    (Shrink.mulEquiv.{w} (α := K)).symm.toMonoidHom.comp
+      (f.comp (Shrink.mulEquiv.{w} (α := H)).toMonoidHom)
+  have hf' : Function.Surjective f' :=
+    (Shrink.mulEquiv.{w} (α := K)).symm.surjective.comp
+      (hf.comp (Shrink.mulEquiv.{w} (α := H)).surjective)
+  exact memFinite_iff_shrink.mpr
+    ((C.mem_congr (QuotientGroup.quotientKerEquivOfSurjective f' hf')).mp
+      (C.mem_quotient (memFinite_iff_shrink.mp hH) f'.ker))
+
+/-- A class of finite groups is closed under subobjects: a group that embeds in a member is a
+member. -/
+theorem MemFinite.of_injective {K : Type u} [Group K] (hK : C.MemFinite K) (f : H →* K)
+    (hf : Function.Injective f) :
+    C.MemFinite H := by
+  let _ := hK.finite
+  have : Finite H := Finite.of_injective f hf
+  let f' : Shrink.{w} H →* Shrink.{w} K :=
+    (Shrink.mulEquiv.{w} (α := K)).symm.toMonoidHom.comp
+      (f.comp (Shrink.mulEquiv.{w} (α := H)).toMonoidHom)
+  have hf' : Function.Injective f' :=
+    (Shrink.mulEquiv.{w} (α := K)).symm.injective.comp
+      (hf.comp (Shrink.mulEquiv.{w} (α := H)).injective)
+  exact memFinite_iff_shrink.mpr ((C.mem_congr (MonoidHom.ofInjective hf')).mpr
+    (C.mem_subgroup (memFinite_iff_shrink.mp hK) f'.range))
+
+/-- Membership in a class of finite groups is invariant under isomorphism. -/
+theorem memFinite_congr {K : Type u} [Group K] (e : H ≃* K) : C.MemFinite H ↔ C.MemFinite K :=
+  ⟨fun h ↦ h.of_surjective e.toMonoidHom e.surjective,
+    fun h ↦ h.of_surjective e.symm.toMonoidHom e.symm.surjective⟩
+
+/-- Membership in a class of finite groups is preserved when a finite group is moved to any
+other universe through `Shrink`. -/
+theorem memFinite_shrink [Finite H] : C.MemFinite (Shrink.{u} H) ↔ C.MemFinite H :=
+  memFinite_congr (Shrink.mulEquiv.{u} (α := H))
+
+/-- A class of finite groups is closed under extensions. -/
+theorem MemFinite.extension {N : Subgroup H} [N.Normal] (hN : C.MemFinite N)
+    (hQ : C.MemFinite (H ⧸ N)) : C.MemFinite H := by
+  let _ := hN.finite
+  let _ := hQ.finite
+  have : Finite H := Finite.of_equiv _ (Subgroup.groupEquivQuotientProdSubgroup (s := N)).symm
+  let e : Shrink.{w} H ≃* H := Shrink.mulEquiv.{w} (α := H)
+  let N' : Subgroup (Shrink.{w} H) := N.comap e.toMonoidHom
+  let hNnormal : N.Normal := inferInstance
+  let _ : N'.Normal := hNnormal.comap e.toMonoidHom
+  have hN' : C.MemFinite N' := hN.of_injective (e.toMonoidHom.subgroupComap N) fun x y h ↦
+    Subtype.ext (e.injective (congrArg Subtype.val h))
+  let q : Shrink.{w} H →* H ⧸ N := (QuotientGroup.mk' N).comp e.toMonoidHom
+  have hq : Function.Surjective q :=
+    (QuotientGroup.mk'_surjective N).comp e.surjective
+  have hker : q.ker = N' := by
+    ext x
+    calc
+      x ∈ q.ker ↔ q x = 1 := MonoidHom.mem_ker
+      _ ↔ QuotientGroup.mk (e x) = 1 := Iff.rfl
+      _ ↔ e x ∈ N := QuotientGroup.eq_one_iff _
+      _ ↔ x ∈ N' := Iff.rfl
+  let eQ : Shrink.{w} H ⧸ N' ≃* H ⧸ N :=
+    (QuotientGroup.quotientMulEquivOfEq hker.symm).trans
+      (QuotientGroup.quotientKerEquivOfSurjective q hq)
+  have hQ' : C.MemFinite (Shrink.{w} H ⧸ N') := (memFinite_congr eQ).mpr hQ
+  exact memFinite_iff_shrink.mpr
+    (C.mem_extension N' (memFinite_iff.mp hN') (memFinite_iff.mp hQ'))
+
+/-- **A class of finite groups is closed under binary products.** This is the closure property
+that is not a field of the structure: it follows from closure under extensions, applied to
+`1 → H → H × K → K → 1`. -/
+theorem MemFinite.prod {K : Type u} [Group K] (hH : C.MemFinite H) (hK : C.MemFinite K) :
+    C.MemFinite (H × K) := by
+  refine MemFinite.extension (N := (MonoidHom.snd H K).ker) ?_ ?_
+  · refine hH.of_surjective ((MonoidHom.inl H K).codRestrict _ fun h ↦ ?_) ?_
+    · simp [Subgroup.mem_prod]
+    · rintro ⟨⟨h, k⟩, hk⟩
+      rw [MonoidHom.mem_ker, MonoidHom.coe_snd] at hk
+      exact ⟨h, Subtype.ext (Prod.ext rfl hk.symm)⟩
+  · exact (memFinite_congr
+      (QuotientGroup.quotientKerEquivOfSurjective (MonoidHom.snd H K)
+        fun k ↦ ⟨(1, k), rfl⟩)).mpr hK
+
+/-- **The normal subgroups with quotient in `C` are closed under binary intersection**, because
+`G ⧸ (M ⊓ N)` embeds in `(G ⧸ M) × (G ⧸ N)`. This is what makes that family downward directed.
+-/
+theorem MemFinite.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]
+    (hM : C.MemFinite (G ⧸ M)) (hN : C.MemFinite (G ⧸ N)) : C.MemFinite (G ⧸ (M ⊓ N)) := by
+  have hker : M ⊓ N = ((QuotientGroup.mk' M).prod (QuotientGroup.mk' N)).ker := by
+    rw [MonoidHom.ker_prod, QuotientGroup.ker_mk', QuotientGroup.ker_mk']
+  refine (hM.prod hN).of_injective ((QuotientGroup.kerLift _).comp
+    (QuotientGroup.quotientMulEquivOfEq hker).toMonoidHom) ?_
+  rw [MonoidHom.coe_comp]
+  exact (QuotientGroup.kerLift_injective _).comp
+    (QuotientGroup.quotientMulEquivOfEq hker).injective
+
+/-- **The normal subgroups with quotient in `C` are preserved by preimage**, because
+`G ⧸ N.comap f` embeds in `H ⧸ N`. -/
+theorem MemFinite.quotient_comap {N : Subgroup H} [N.Normal] (hN : C.MemFinite (H ⧸ N))
+    (f : G →* H) : C.MemFinite (G ⧸ N.comap f) := by
+  have hker : N.comap f = ((QuotientGroup.mk' N).comp f).ker := by
+    simpa using MonoidHom.comap_ker (QuotientGroup.mk' N) f
+  refine hN.of_injective ((QuotientGroup.kerLift _).comp
+    (QuotientGroup.quotientMulEquivOfEq hker).toMonoidHom) ?_
+  rw [MonoidHom.coe_comp]
+  exact (QuotientGroup.kerLift_injective _).comp
+    (QuotientGroup.quotientMulEquivOfEq hker).injective
+
+end FiniteGroupClass
+
+/-! ### The examples of record -/
+
+/-- The class of **finite `p`-groups**, the class that pro-`p` theory is about. -/
+def finiteGroupClassP (p : ℕ) : FiniteGroupClass.{w} where
+  mem H := IsPGroup p H
+  mem_congr e := ⟨fun h ↦ h.of_equiv e, fun h ↦ h.of_equiv e.symm⟩
+  mem_trivial := IsPGroup.of_subsingleton p PUnit
+  mem_subgroup h K := h.to_subgroup K
+  mem_quotient h N := h.to_quotient N
+  mem_extension _ _ hN hQ := hN.of_subgroup_of_quotient hQ
+
+/-- Membership in `finiteGroupClassP p` is being a `p`-group. -/
+@[simp]
+theorem finiteGroupClassP_mem_iff (p : ℕ) (H : Type w) [Group H] [Finite H] :
+    (finiteGroupClassP p).mem H ↔ IsPGroup p H :=
+  Iff.rfl
+
+/-- A group belongs to `finiteGroupClassP p` exactly when it is finite and a `p`-group. -/
+@[simp]
+theorem finiteGroupClassP_memFinite_iff (p : ℕ) (H : Type v) [Group H] :
+    (finiteGroupClassP.{w} p).MemFinite H ↔ Finite H ∧ IsPGroup p H := by
+  constructor
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    exact ⟨hfinite, hH.of_equiv (Shrink.mulEquiv.{w} (α := H))⟩
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    exact ⟨hfinite, hH.of_equiv (Shrink.mulEquiv.{w} (α := H)).symm⟩
+
+/-- The class of **finite trivial groups**. -/
+def finiteGroupClassTrivial : FiniteGroupClass.{w} where
+  mem H := Subsingleton H
+  mem_congr e := e.toEquiv.subsingleton_congr
+  mem_trivial := inferInstance
+  mem_subgroup h _ := by
+    let _ := h
+    infer_instance
+  mem_quotient h N _ := by
+    constructor
+    intro a b
+    obtain ⟨a, rfl⟩ := QuotientGroup.mk'_surjective N a
+    obtain ⟨b, rfl⟩ := QuotientGroup.mk'_surjective N b
+    rw [h.elim a b]
+  mem_extension N _ hN hQ := by
+    have hNtop : N = ⊤ := QuotientGroup.subsingleton_iff.mp hQ
+    constructor
+    intro a b
+    have ha : a ∈ N := by rw [hNtop]; trivial
+    have hb : b ∈ N := by rw [hNtop]; trivial
+    exact congrArg Subtype.val (@Subsingleton.elim N hN ⟨a, ha⟩ ⟨b, hb⟩)
+
+/-- Membership in `finiteGroupClassTrivial` is being a trivial group. -/
+@[simp]
+theorem finiteGroupClassTrivial_mem_iff (H : Type w) [Group H] [Finite H] :
+    finiteGroupClassTrivial.mem H ↔ Subsingleton H :=
+  Iff.rfl
+
+/-- A group belongs to `finiteGroupClassTrivial` exactly when it is trivial. -/
+@[simp]
+theorem finiteGroupClassTrivial_memFinite_iff (H : Type v) [Group H] :
+    finiteGroupClassTrivial.{w}.MemFinite H ↔ Subsingleton H := by
+  constructor
+  · intro h
+    exact h.elim fun hfinite hH ↦ by
+      let _ := hfinite
+      let _ : Finite (Shrink.{w} H) :=
+        Finite.of_surjective (equivShrink.{w} H) (equivShrink.{w} H).surjective
+      exact (Shrink.mulEquiv.{w} (α := H)).toEquiv.subsingleton_congr.mp
+        (finiteGroupClassTrivial_mem_iff (Shrink.{w} H) |>.mp hH)
+  · intro _
+    exact FiniteGroupClass.memFinite_of_subsingleton
+
+/-- The class of **finite solvable groups**. -/
+def finiteGroupClassSolvable : FiniteGroupClass.{w} where
+  mem H := Group.IsSolvable H
+  mem_congr e := ⟨fun _h ↦ Group.isSolvable_of_surjective (f := e.toMonoidHom) e.surjective,
+    fun _h ↦ Group.isSolvable_of_surjective (f := e.symm.toMonoidHom) e.symm.surjective⟩
+  mem_trivial := inferInstance
+  mem_subgroup _h _K := inferInstance
+  mem_quotient _h _N := inferInstance
+  mem_extension N _ hN hQ := (Group.isSolvable_iff_subgroup_quotient N).mpr ⟨hN, hQ⟩
+
+/-- Membership in `finiteGroupClassSolvable` is solvability. -/
+@[simp]
+theorem finiteGroupClassSolvable_mem_iff (H : Type w) [Group H] [Finite H] :
+    finiteGroupClassSolvable.mem H ↔ Group.IsSolvable H :=
+  Iff.rfl
+
+/-- A group belongs to `finiteGroupClassSolvable` exactly when it is finite and solvable. -/
+@[simp]
+theorem finiteGroupClassSolvable_memFinite_iff (H : Type v) [Group H] :
+    finiteGroupClassSolvable.{w}.MemFinite H ↔ Finite H ∧ Group.IsSolvable H := by
+  constructor
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    let _ : Group.IsSolvable (Shrink.{w} H) := hH
+    exact ⟨hfinite, Group.isSolvable_of_surjective
+      (f := (Shrink.mulEquiv.{w} (α := H)).toMonoidHom) (Shrink.mulEquiv.{w} (α := H)).surjective⟩
+  · rintro ⟨hfinite, hH⟩
+    let _ := hfinite
+    let _ : Group.IsSolvable H := hH
+    exact ⟨hfinite, Group.isSolvable_of_surjective
+      (f := (Shrink.mulEquiv.{w} (α := H)).symm.toMonoidHom)
+      (Shrink.mulEquiv.{w} (α := H)).symm.surjective⟩
+
+/-- The class of **all finite groups**. Its `C`-kernel intersects the open normal subgroups
+whose quotient is finite; for a profinite group these are all the open normal subgroups, so the
+kernel is trivial. -/
+def finiteGroupClassAll : FiniteGroupClass.{w} where
+  mem _ := True
+  mem_congr _ := Iff.rfl
+  mem_trivial := trivial
+  mem_subgroup _ _ := trivial
+  mem_quotient _ _ := trivial
+  mem_extension _ _ _ _ := trivial
+
+/-- Every finite group is a member of `finiteGroupClassAll`. -/
+@[simp]
+theorem finiteGroupClassAll_mem (H : Type w) [Group H] [Finite H] :
+    finiteGroupClassAll.mem H :=
+  trivial
+
+/-- A group belongs to `finiteGroupClassAll` exactly when it is finite. -/
+@[simp]
+theorem finiteGroupClassAll_memFinite_iff (H : Type v) [Group H] :
+    finiteGroupClassAll.{w}.MemFinite H ↔ Finite H := by
+  constructor
+  · exact FiniteGroupClass.MemFinite.finite
+  · intro hfinite
+    exact ⟨hfinite, trivial⟩
+
+end TauCeti

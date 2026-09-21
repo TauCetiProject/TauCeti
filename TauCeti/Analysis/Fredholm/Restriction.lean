@@ -21,7 +21,7 @@ after discarding finitely many modes.
 
 ## Main declarations
 
-* `TauCeti.ContinuousLinearMap.index_restrict`: the index formula for the restriction of a
+* `ContinuousLinearMap.index_restrict`: the index formula for the restriction of a
   continuous linear map to closed finite-codimensional subspaces.
 
 The finite-codimension reduction and index convention follow McDuff--Salamon,
@@ -40,34 +40,33 @@ variable [NormedAddCommGroup E] [NormedSpace K E]
 variable [NormedAddCommGroup F] [NormedSpace K F]
 variable {T : E →L[K] F} {E₁ : Submodule K E} {F₁ : Submodule K F}
 
-namespace ContinuousLinearMap
 
 /-- The index of the restriction of a continuous linear map from `E` to `F` to closed
 finite-codimensional subspaces `E₁` and `F₁` is the index of the full operator minus `codim E₁`
 plus `codim F₁`. -/
 @[simp]
-theorem index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
+theorem _root_.ContinuousLinearMap.index_restrict (hE₁ : IsClosed (E₁ : Set E)) [E₁.CoFG]
     (hF₁ : IsClosed (F₁ : Set F)) [F₁.CoFG] (hT : Set.MapsTo T E₁ F₁)
     (hT₁ : ContinuousLinearMap.IsFredholm (T.restrict hT)) :
-    index (T.restrict hT) = index T - (finrank K (E ⧸ E₁) : ℤ) + finrank K (F ⧸ F₁) := by
+    ContinuousLinearMap.index (T.restrict hT) = ContinuousLinearMap.index T -
+      (finrank K (E ⧸ E₁) : ℤ) + finrank K (F ⧸ F₁) := by
   have hTfull := ContinuousLinearMap.IsFredholm.of_restrict hE₁ hF₁ hT hT₁
   have hιE := Submodule.isFredholm_subtypeL hE₁
   have hιF := Submodule.isFredholm_subtypeL hF₁
   have hfactor : T.comp E₁.subtypeL = F₁.subtypeL.comp (T.restrict hT) := by
     ext x
     exact (congrArg Subtype.val (ContinuousLinearMap.restrict_apply hT x)).symm
-  have hdom := index_comp T E₁.subtypeL hTfull hιE
-  have hcod := index_comp F₁.subtypeL (T.restrict hT) hιF hT₁
-  have hEindex : index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
-    rw [index_of_injective E₁.subtypeL Subtype.val_injective,
+  have hdom := ContinuousLinearMap.index_comp T E₁.subtypeL hTfull hιE
+  have hcod := ContinuousLinearMap.index_comp F₁.subtypeL (T.restrict hT) hιF hT₁
+  have hEindex : ContinuousLinearMap.index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
+    rw [ContinuousLinearMap.index_of_injective E₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
-  have hFindex : index F₁.subtypeL = -(finrank K (F ⧸ F₁) : ℤ) := by
-    rw [index_of_injective F₁.subtypeL Subtype.val_injective,
+  have hFindex : ContinuousLinearMap.index F₁.subtypeL = -(finrank K (F ⧸ F₁) : ℤ) := by
+    rw [ContinuousLinearMap.index_of_injective F₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
   rw [hfactor, hcod, hEindex, hFindex] at hdom
   omega
 
-end ContinuousLinearMap
 
 end TauCeti
 

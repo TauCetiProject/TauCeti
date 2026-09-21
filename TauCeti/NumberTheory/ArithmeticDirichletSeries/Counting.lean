@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.IsPrimePow
+public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+import Mathlib.NumberTheory.Padics.HeightOneSpectrum
+import Mathlib.Order.Filter.AtTopBot.Finset
+import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import TauCeti.Order.Northcott
 
 /-!
@@ -43,12 +48,17 @@ exponent is `1` exactly on the primes themselves, which is `TauCeti.primePowerEx
 prime-power carrier, and `TauCeti.primePowerSummatory_eq_primeSummatory` uses it to read a
 prime-power sum concentrated on the exponent-one part as a sum over primes.
 
+`TauCeti.idealsLE_filter_dvd` identifies the ideals below a cutoff divisible by a fixed nonzero
+ideal `P` with the multiples of `P`, and `TauCeti.idealSummatory_ite_dvd` reads the corresponding
+part of a summatory function at the rescaled cutoff `x / N(P)`.
+
 Two lemmas move a summatory function between the three carriers.
 `TauCeti.idealSummatory_eq_primePowerSummatory` reads an ideal weight vanishing off the prime
 powers as a prime-power weight, and `TauCeti.idealSummatory_eq_sum_range_normFiber` regroups an
 ideal summatory function into the partial sum, over `n ≤ ⌊x⌋₊`, of the total mass on the norm
-fibre at `n`.  Together they present a sum over prime powers as a partial sum of an
-`ArithmeticFunction`, which is the shape a Tauberian theorem consumes.
+fibre at `n`; `TauCeti.idealSummatory_eq_sum_Icc_normCoeff` writes the same regrouping as a
+partial sum of `TauCeti.normCoeff`.  Together they present a sum over prime powers as a partial
+sum of an `ArithmeticFunction`, which is the shape a Tauberian theorem consumes.
 
 For `0 ≤ x`, a real cutoff and its floor select the same indices, so
 `TauCeti.normLE_eq_normLE_natFloor` and `TauCeti.summatory_eq_summatory_natFloor` convert between
@@ -60,7 +70,11 @@ prime carrier below `2`.
 Modifying a weight on a finite set, or a prime set on a finite symmetric difference, changes a
 summatory function by a quantity that is eventually the *constant* total discrepancy; this is
 `TauCeti.eventually_summatory_sub_eq` and its two prime specializations. Layer 7 uses these to
-show that finite changes do not affect a density.
+show that finite changes do not affect a density. In the same spirit,
+`TauCeti.primeTheta_isLittleO_of_finite` records that a finite set of primes contributes an
+eventually constant amount to `ϑ_K`, hence `o(x)`: an exceptional set can be discarded from a
+counting argument outright, not merely from a density. Its `ψ` companion is
+`TauCeti.primePsi_isLittleO_of_finite`.
 
 ## Roadmap role
 
@@ -81,18 +95,22 @@ public section
 
 namespace TauCeti
 
+open Filter
 open scoped nonZeroDivisors NumberField
 open IsDedekindDomain
 
 /-! ### Ideals and height-one primes of bounded absolute norm -/
 
-/-- The absolute norm on nonzero ideals of a Dedekind domain finite and free over `ℤ` is Northcott,
-by `Ideal.finite_setOfPred_absNorm_le₀`. Mathlib already supplies the corresponding instance on
-height-one primes. -/
+/-- The absolute norm on nonzero ideals of an infinite Dedekind domain with finite quotients is
+Northcott, by `Ring.HasFiniteQuotients.finite_absNorm_le`. Mathlib already supplies the
+corresponding instance on height-one primes. -/
 instance instNorthcottAbsNormNonZeroDivisors {R : Type*} [CommRing R] [IsDedekindDomain R]
-    [Module.Free ℤ R] [Module.Finite ℤ R] :
-    Northcott (fun I : (Ideal R)⁰ ↦ Ideal.absNorm (I : Ideal R)) :=
-  ⟨fun B ↦ Ideal.finite_setOfPred_absNorm_le₀ B⟩
+    [Infinite R] [Ring.HasFiniteQuotients R] :
+    Northcott (fun I : (Ideal R)⁰ ↦ Ideal.absNorm (I : Ideal R)) := by
+  constructor
+  intro B
+  exact (Ring.HasFiniteQuotients.finite_absNorm_le (S := R) B).preimage
+    Subtype.val_injective.injOn
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -317,6 +335,34 @@ theorem idealsLE_one : idealsLE K 1 = {1} := by
       fun hI ↦ by simp [hI]⟩
   rw [h, normFiber_one]
 
+open Classical in
+/-- **The multiples of a nonzero ideal below a cutoff.** The nonzero integral ideals of absolute
+norm at most `x` divisible by `P` are exactly the products `P * J`, for `J` a nonzero integral
+ideal of absolute norm at most `x / N(P)`. -/
+theorem idealsLE_filter_dvd (P : (Ideal (𝓞 K))⁰) (x : ℝ) :
+    (idealsLE K x).filter (fun I : (Ideal (𝓞 K))⁰ ↦ (P : Ideal (𝓞 K)) ∣ (I : Ideal (𝓞 K))) =
+      (idealsLE K (x / Ideal.absNorm (P : Ideal (𝓞 K)))).image (fun J ↦ P * J) := by
+  have hP : (0 : ℝ) < Ideal.absNorm (P : Ideal (𝓞 K)) := by
+    exact_mod_cast Ideal.absNorm_pos_of_nonZeroDivisors P
+  ext I
+  simp only [Finset.mem_filter, Finset.mem_image, mem_normLE]
+  constructor
+  · rintro ⟨hle, J, hJ⟩
+    have hJ0 : J ≠ 0 := by
+      rintro rfl
+      exact mem_nonZeroDivisors_iff_ne_zero.mp I.2 (by simpa using hJ)
+    refine ⟨⟨J, mem_nonZeroDivisors_of_ne_zero hJ0⟩, ?_, Subtype.ext hJ.symm⟩
+    rw [le_div_iff₀ hP]
+    calc (Ideal.absNorm J : ℝ) * Ideal.absNorm (P : Ideal (𝓞 K))
+        = (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) := by rw [hJ, map_mul]; push_cast; ring
+      _ ≤ x := hle
+  · rintro ⟨J, hJ, rfl⟩
+    refine ⟨?_, by rw [Submonoid.coe_mul]; exact dvd_mul_right _ _⟩
+    rw [Submonoid.coe_mul, map_mul]
+    rw [le_div_iff₀ hP] at hJ
+    push_cast
+    linarith
+
 /-- Below the cutoff `2` there is no height-one prime to count. -/
 theorem primesLE_eq_empty_of_lt_two {x : ℝ} (hx : x < 2) : primesLE K x = ∅ :=
   normLE_eq_empty_of_lt _ two_le_absNorm_asIdeal_real hx
@@ -345,6 +391,15 @@ theorem card_primesLE_le_card_idealsLE (x : ℝ) : (primesLE K x).card ≤ (idea
 variable (K)
 
 /-! ### Summatory functions over ideals and over primes -/
+
+/-- At a uniform lower-bound cutoff, twisting a weight by a function of its `N`-value multiplies
+the summatory function by the value of the twist at that cutoff. -/
+theorem summatory_mul_eq_mul_summatory_of_le {ι 𝕜 : Type*} (N : ι → ℕ) [Northcott N]
+    [NonUnitalCommSemiring 𝕜] {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → 𝕜) (g : ℝ → 𝕜) :
+    summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+  rw [summatory_apply, summatory_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [le_antisymm ((mem_normLE N).mp hi) (ha i), mul_comm]
 
 /-- The inclusive summatory function of a weight on the nonzero integral ideals of `𝓞 K`. -/
 noncomputable abbrev idealSummatory {M : Type*} [AddCommMonoid M]
@@ -440,6 +495,65 @@ theorem idealSummatory_one {M : Type*} [AddCommMonoid M] (w : (Ideal (𝓞 K))�
   rw [idealSummatory_apply, idealsLE_one, Finset.sum_singleton]
 
 open Classical in
+/-- **Restricting an ideal summatory function to the multiples of a nonzero ideal `P`.** Summing a
+weight over the nonzero ideals below `x` divisible by `P` is summing the weight of `P * J` over
+the nonzero ideals `J` below `x / N(P)`, because the absolute norm is multiplicative. -/
+theorem idealSummatory_ite_dvd {M : Type*} [AddCommMonoid M] (P : (Ideal (𝓞 K))⁰)
+    (w : (Ideal (𝓞 K))⁰ → M) (x : ℝ) :
+    idealSummatory K (fun I ↦ if (P : Ideal (𝓞 K)) ∣ (I : Ideal (𝓞 K)) then w I else 0) x =
+      idealSummatory K (fun J ↦ w (P * J)) (x / Ideal.absNorm (P : Ideal (𝓞 K))) := by
+  rw [idealSummatory_apply, ← Finset.sum_filter, idealsLE_filter_dvd, idealSummatory_apply,
+    Finset.sum_image fun a _ b _ h ↦
+      Subtype.ext (mul_left_cancel₀ (mem_nonZeroDivisors_iff_ne_zero.mp P.2)
+        (by simpa using congrArg (fun I : (Ideal (𝓞 K))⁰ ↦ (I : Ideal (𝓞 K))) h))]
+
+variable {K}
+
+namespace MultiplicativeIdealWeight
+
+variable (χ : MultiplicativeIdealWeight K)
+
+/-- **Forbidding one more prime in an ideal partial sum.** For a completely multiplicative weight
+`χ` and a prime `𝔭 ∉ S`, the partial sums of `χ` over the ideals prime to `insert 𝔭 S` are those
+over the ideals prime to `S`, minus `χ(𝔭)` times the same partial sum at the cutoff divided by
+`N(𝔭)`: the ideals prime to `S` and divisible by `𝔭` are `𝔭` times the ideals prime to `S`. -/
+theorem idealSummatory_restrict_insert
+    {S : Set (HeightOneSpectrum (𝓞 K))} (hS : S.Finite)
+    {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∉ S) (x : ℝ) :
+    idealSummatory K (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction x -
+        χ 𝔭.asIdeal * idealSummatory K (χ.restrict S hS).toIdealArithmeticFunction
+          (x / Ideal.absNorm 𝔭.asIdeal) := by
+  classical
+  set f := (χ.restrict S hS).toIdealArithmeticFunction with hf
+  set P : (Ideal (𝓞 K))⁰ := ⟨𝔭.asIdeal, mem_nonZeroDivisors_of_ne_zero 𝔭.ne_bot⟩ with hPdef
+  -- on the multiples `𝔭 * J` the restricted weight factors, because `𝔭` is prime to `S`
+  have hstep : ∀ J : (Ideal (𝓞 K))⁰, f (P * J) = χ 𝔭.asIdeal * f J := by
+    intro J
+    simp only [hf, MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, Submonoid.coe_mul,
+      hPdef, MultiplicativeIdealWeight.restrict_apply, Ideal.isPrimeTo_mul_iff,
+      Ideal.isPrimeTo_asIdeal_iff, h𝔭, not_false_eq_true, true_and]
+    split_ifs <;> simp [_root_.map_mul]
+  have hsplit : idealSummatory K
+      (χ.restrict (insert 𝔭 S) (hS.insert 𝔭)).toIdealArithmeticFunction x =
+      idealSummatory K f x -
+        idealSummatory K (fun I ↦ if 𝔭.asIdeal ∣ (I : Ideal (𝓞 K)) then f I else 0) x := by
+    rw [idealSummatory_apply, idealSummatory_apply, idealSummatory_apply,
+      ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun I _ ↦ ?_
+    rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
+      MultiplicativeIdealWeight.restrict_insert_apply χ hS]
+    split_ifs <;> simp [hf]
+  rw [hsplit, idealSummatory_ite_dvd K P f x]
+  congr 1
+  rw [idealSummatory_apply, idealSummatory_apply, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun J _ ↦ hstep J
+
+end MultiplicativeIdealWeight
+
+variable (K)
+
+open Classical in
 /-- The ideals of absolute norm at most `x` and of absolute norm exactly `n` are the whole norm
 fibre at `n`, as soon as `n` is at most `⌊x⌋₊`. -/
 private theorem idealsLE_filter_absNorm_eq {n : ℕ} {x : ℝ} (hn : n ≤ ⌊x⌋₊) (hx : 0 ≤ x) :
@@ -471,6 +585,16 @@ theorem idealSummatory_eq_sum_range_normFiber {M : Type*} [AddCommMonoid M]
         (fun I hI ↦ Finset.mem_range_succ_iff.mpr (Nat.le_floor (by simpa using hI))) w]
     exact Finset.sum_congr rfl fun n hn ↦ by
       rw [idealsLE_filter_absNorm_eq K (Finset.mem_range_succ_iff.mp hn) (zero_le_one.trans hx)]
+
+/-- **An ideal summatory function is a partial sum of norm coefficients.** The inclusive sum of
+`f` over the nonzero integral ideals of absolute norm at most `x` is `∑_{n=1}^{⌊x⌋₊}` of the norm
+coefficients of `f`, in the `Finset.Icc 1` form of Mathlib's `LSeries_eq_mul_integral`. -/
+theorem idealSummatory_eq_sum_Icc_normCoeff (f : IdealArithmeticFunction K) (x : ℝ) :
+    idealSummatory K f x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, normCoeff K f n := by
+  rw [idealSummatory_eq_sum_range_normFiber, Nat.range_succ_eq_Icc_zero,
+    ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le _), Finset.sum_insert (by simp),
+    normFiber_zero, Finset.sum_empty, zero_add, zero_add]
+  exact Finset.sum_congr rfl fun n _ ↦ (normCoeff_eq_sum_normFiber K f n).symm
 
 /-- **An ideal weight concentrated on the prime powers, read as a prime-power weight.** An ideal
 weight vanishing off the prime-power ideals has the same summatory function as its restriction to
@@ -529,6 +653,49 @@ theorem primeCount_eq_card (S : Set (HeightOneSpectrum (𝓞 K))) [DecidablePred
   rw [primeCount_apply]
   simp [Set.indicator_apply, Finset.sum_boole]
 
+/-- The number of all height-one primes of a number field below the inclusive real cutoff tends
+to infinity.
+
+This count is the normalizing denominator of a density ratio, so its divergence is what makes such
+a ratio usable: the denominator is eventually positive, and a finite discrepancy between two
+numerators vanishes in the limit. -/
+theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
+    Tendsto (primeCount K Set.univ) atTop atTop := by
+  -- The arithmetic input is lying over for the integral extension `ℤ → 𝓞 K`: contraction from the
+  -- height-one spectrum of `𝓞 K` onto that of `ℤ` is surjective. The latter spectrum is equivalent
+  -- to the infinite type of natural primes. The rest is the generic fact that cardinality tends to
+  -- infinity along the directed set of finite subsets.
+  let _ : Infinite (HeightOneSpectrum ℤ) :=
+    Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
+      Rat.HeightOneSpectrum.primesEquiv.surjective
+  have hsurj : Function.Surjective (HeightOneSpectrum.under ℤ :
+      HeightOneSpectrum (𝓞 K) → HeightOneSpectrum ℤ) := by
+    intro p
+    let Q := Classical.choice (Ideal.nonempty_primesOver (S := 𝓞 K) p.asIdeal)
+    refine ⟨⟨Q.1, Q.2.1, Ideal.ne_bot_of_mem_primesOver p.ne_bot Q.2⟩,
+      HeightOneSpectrum.ext ?_⟩
+    exact Q.2.2.over.symm
+  let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
+    Infinite.of_surjective (HeightOneSpectrum.under ℤ) hsurj
+  have hcarrier : Tendsto (primesLE K) atTop atTop := by
+    rw [Filter.tendsto_atTop]
+    intro s
+    filter_upwards [Filter.eventually_ge_atTop
+        ((s.sup fun p => Ideal.absNorm p.asIdeal : ℕ) : ℝ)] with x hx
+    intro p hp
+    rw [mem_normLE]
+    have hle : (Ideal.absNorm p.asIdeal : ℝ) ≤
+        (s.sup fun p => Ideal.absNorm p.asIdeal : ℕ) := by
+      exact_mod_cast Finset.le_sup (f := fun p => Ideal.absNorm p.asIdeal) hp
+    exact hle.trans hx
+  have hcard : Tendsto (fun x => (primesLE K x).card) atTop atTop :=
+    Filter.tendsto_card_atTop_atTop.comp hcarrier
+  have hcast : Tendsto (fun x => ((primesLE K x).card : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.comp hcard
+  refine hcast.congr' (Filter.Eventually.of_forall fun x => ?_)
+  rw [primeCount_eq_card]
+  simp
+
 @[simp]
 theorem primeTheta_empty (x : ℝ) : primeTheta K (∅ : Set (HeightOneSpectrum (𝓞 K))) x = 0 := by
   simp [primeTheta_apply]
@@ -551,6 +718,42 @@ theorem log_absNorm_asIdeal_pos (v : HeightOneSpectrum (𝓞 K)) :
 theorem log_absNorm_asIdeal_nonneg (v : HeightOneSpectrum (𝓞 K)) :
     0 ≤ Real.log (Ideal.absNorm v.asIdeal : ℝ) :=
   (log_absNorm_asIdeal_pos v).le
+
+/-- **A fixed prime base contributes at most `log x`.** For a finset `F` of prime powers all of
+base `v` and of absolute norm at most `x`, the total weight `#F · log N(v)` is at most `log x`:
+distinct members of `F` have distinct exponents, and every exponent is at most
+`log x / log N(v)`.
+
+This is the counting core shared by the two weighted estimates over a prime fibre, which differ
+only in which prime powers they collect: `TauCeti.higherPrimePowerTheta_le_card_primesLE_mul_log`
+takes the exponents `k ≥ 2`, `TauCeti.primePsi_le_ncard_mul_log` all `k ≥ 1`. Only `1 ≤ x` and a
+common base are needed. -/
+theorem card_mul_log_absNorm_le_of_pow_le_of_base_eq (hx : 1 ≤ x) {v : HeightOneSpectrum (𝓞 K)}
+    {F : Finset (IdealPrimePower K)}
+    (hF : ∀ A ∈ F, ((Ideal.absNorm v.asIdeal : ℝ)) ^ primePowerExponent A ≤ x)
+    (hbase : ∀ A ∈ F, primePowerBase A = v) :
+    (F.card : ℝ) * Real.log (Ideal.absNorm v.asIdeal) ≤ Real.log x := by
+  classical
+  have hLpos : 0 < Real.log (Ideal.absNorm v.asIdeal) := log_absNorm_asIdeal_pos v
+  have hexpbound : ∀ A ∈ F,
+      primePowerExponent A ∈ Finset.Icc 1 ⌊Real.log x / Real.log (Ideal.absNorm v.asIdeal)⌋₊ := by
+    intro A hA
+    have hlog : (primePowerExponent A : ℝ) * Real.log (Ideal.absNorm v.asIdeal) ≤ Real.log x :=
+      Real.le_log_of_pow_le (by linarith [two_le_absNorm_asIdeal_real v]) (hF A hA)
+    exact Finset.mem_Icc.mpr
+      ⟨primePowerExponent_pos A, Nat.le_floor ((le_div_iff₀ hLpos).mpr hlog)⟩
+  have hcard : F.card ≤ ⌊Real.log x / Real.log (Ideal.absNorm v.asIdeal)⌋₊ := by
+    refine le_trans (Finset.card_le_card_of_injOn primePowerExponent hexpbound ?_) ?_
+    · exact fun A hA B hB h ↦
+        idealPrimePower_eq_of_base_eq_of_exponent_eq ((hbase A hA).trans (hbase B hB).symm) h
+    · rw [Nat.card_Icc]; omega
+  calc (F.card : ℝ) * Real.log (Ideal.absNorm v.asIdeal)
+      ≤ (⌊Real.log x / Real.log (Ideal.absNorm v.asIdeal)⌋₊ : ℝ)
+        * Real.log (Ideal.absNorm v.asIdeal) :=
+        mul_le_mul_of_nonneg_right (by exact_mod_cast hcard) hLpos.le
+    _ ≤ Real.log x := by
+        rw [← le_div_iff₀ hLpos]
+        exact Nat.floor_le (div_nonneg (Real.log_nonneg hx) hLpos.le)
 
 /-- The logarithmically weighted prime count is nonnegative. -/
 theorem primeTheta_nonneg (S : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) : 0 ≤ primeTheta K S x :=
@@ -649,6 +852,45 @@ theorem eventually_primeCount_eq_card (hS : S.Finite) :
     Finset.sum_congr rfl fun v hv ↦
     Set.indicator_of_mem (hS.mem_toFinset.mp hv) _, Set.ncard_eq_toFinset_card S hS]
   simp
+
+open Asymptotics Filter in
+/-- **Primes counted below the prime-ideal-theorem order carry negligible weight.** Chebyshev's
+comparison spends one factor of `log x` per counted prime, so a count of `o(x / log x)` gives a
+weighted sum of `o(x)`.
+
+Stated for an arbitrary prime set, since the argument uses nothing about which primes are counted;
+`TauCeti.primeTheta_higherDegreePrimes_isLittleO` is the residue-degree instance. -/
+theorem primeTheta_isLittleO_of_primeCount_isLittleO
+    (h : primeCount K S =o[atTop] fun x : ℝ ↦ x / Real.log x) :
+    primeTheta K S =o[atTop] fun x : ℝ ↦ x := by
+  have hlog : ∀ᶠ x : ℝ in atTop, Real.log x ≠ 0 :=
+    (eventually_gt_atTop (1 : ℝ)).mono fun _ hx ↦ (Real.log_pos hx).ne'
+  have hmul : (fun x : ℝ ↦ primeCount K S x * Real.log x) =o[atTop] fun x : ℝ ↦ x := by
+    simpa [mul_comm] using (isLittleO_mul_iff_isLittleO_div hlog).2 h
+  refine IsBigO.trans_isLittleO (IsBigO.of_bound 1 (.of_forall fun x ↦ ?_)) hmul
+  rw [one_mul, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (primeTheta_nonneg _ _)]
+  exact (primeTheta_le_primeCount_mul_log _ x).trans (le_abs_self _)
+
+open Asymptotics Filter in
+/-- **A finite set of primes carries a negligible weight**, because its contribution to `ϑ_K` is
+eventually *constant*: past the largest norm in the set every member is already counted, so the
+sum stops growing. A constant is `o(x)`.
+
+This is what lets a counting argument discard an exceptional set outright — the ramified primes of
+an extension, say — rather than only from a density. -/
+theorem primeTheta_isLittleO_of_finite (hS : S.Finite) :
+    primeTheta K S =o[atTop] fun x : ℝ ↦ x := by
+  refine (isLittleO_const_id_atTop
+      (∑ v ∈ hS.toFinset, S.indicator (fun v ↦ Real.log (Ideal.absNorm v.asIdeal : ℝ)) v)).congr'
+    ?_ EventuallyEq.rfl
+  filter_upwards [eventually_summatory_eq_sum
+      (fun v : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm v.asIdeal)
+      (S.indicator fun v ↦ Real.log (Ideal.absNorm v.asIdeal : ℝ)) hS.toFinset
+      fun v hv ↦ Set.indicator_of_notMem (by simpa using hv) _] with x hx
+  -- `primeTheta` is `primeSummatory` of the indicator weight, and that is `summatory` along the
+  -- absolute norm; naming both keeps the step independent of how the wrappers are defined.
+  simp only [primeTheta, primeSummatory]
+  exact hx.symm
 
 /-- If two prime sets have finite symmetric difference, their logarithmically weighted counts
 differ eventually by the fixed total discrepancy on that symmetric difference. -/

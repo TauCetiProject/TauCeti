@@ -94,6 +94,11 @@ private theorem liftBialgHomAlg_comul_mk (f : H →ₐc[R] K)
 
 variable [(J.restrictScalars R).IsCoideal]
 
+/-- The algebra homomorphism underlying the quotient bialgebra morphism is the quotient map. -/
+@[simp]
+theorem mkBialgHom_toAlgHom :
+    (mkBialgHom (R := R) J).toAlgHom = Ideal.Quotient.mkₐ R J := rfl
+
 /-- A bialgebra morphism out of `H` which kills a two-sided coideal `J` factors through the
 quotient bialgebra `H ⧸ J`. -/
 noncomputable def liftBialgHom (f : H →ₐc[R] K)

@@ -169,7 +169,7 @@ theorem finiteFiberActionFunctor_map_hom_hom {p q : FiniteCoveringSpace X} (f : 
     cast (finiteFiberActionFunctor_obj_obj_V x₀ q)
         (((finiteFiberActionFunctor x₀).map f).hom.hom
           (cast (finiteFiberActionFunctor_obj_obj_V x₀ p).symm e)) =
-      (↾(IsCoveringMap.fiberMap f.hom.left.hom
+      (↾(Function.fiberMap f.hom.left.hom
         (CoveringSpace.proj_hom_comp_hom_left_hom ((forget X).map f)) x₀)) e := by
   exact (cast_apply_of_heq
     (finiteFiberActionFunctor_obj_obj_V x₀ p)
@@ -244,7 +244,9 @@ theorem fiberActionFintypeCatEquivalence_functor :
       FiniteAction.equivalenceActionFintypeCat_functor]
 
 /-- The fibre of a finite covering space over `x₀`, as a functor to finite sets. -/
-def fiberFunctor : FiniteCoveringSpace X ⥤ FintypeCat.{u} :=
+-- Expose the body so actions transported through the classification equivalence act
+-- definitionally on the values of this functor.
+@[expose] def fiberFunctor : FiniteCoveringSpace X ⥤ FintypeCat.{u} :=
   (fiberActionFintypeCatEquivalence x₀).functor ⋙ Action.forget FintypeCat _
 
 theorem fiberFunctor_eq :
@@ -266,7 +268,7 @@ theorem fiberFunctor_obj (p : FiniteCoveringSpace X) :
 
 private theorem fiberFunctor_map_hom_heq {p q : FiniteCoveringSpace X} (f : p ⟶ q) :
     HEq (fun x => ((fiberFunctor x₀).map f) x)
-      (fun x => ConcreteCategory.hom (↾(IsCoveringMap.fiberMap f.hom.left.hom
+      (fun x => ConcreteCategory.hom (↾(Function.fiberMap f.hom.left.hom
         (CoveringSpace.proj_hom_comp_hom_left_hom ((forget X).map f)) x₀)) x) := by
   have h₁ : HEq (fun x => ((fiberFunctor x₀).map f) x)
       (fun x => ConcreteCategory.hom
@@ -290,7 +292,7 @@ private theorem fiberFunctor_map_hom_heq {p q : FiniteCoveringSpace X} (f : p �
   have h₄ : HEq
       (fun x => ConcreteCategory.hom
         ((CoveringSpace.fiberActionFunctor x₀).map ((forget X).map f)).hom x)
-      (fun x => ConcreteCategory.hom (↾(IsCoveringMap.fiberMap f.hom.left.hom
+      (fun x => ConcreteCategory.hom (↾(Function.fiberMap f.hom.left.hom
         (CoveringSpace.proj_hom_comp_hom_left_hom ((forget X).map f)) x₀)) x) :=
     heq_of_eq (congrArg (fun k :
         ((CoveringSpace.fiberActionFunctor x₀).obj ((forget X).obj p)).V ⟶
@@ -305,7 +307,7 @@ theorem fiberFunctor_map_hom {p q : FiniteCoveringSpace X} (f : p ⟶ q)
     (e : ⇑p.proj ⁻¹' {x₀}) :
     cast (fiberFunctor_obj x₀ q)
         (((fiberFunctor x₀).map f) (cast (fiberFunctor_obj x₀ p).symm e)) =
-      (↾(IsCoveringMap.fiberMap f.hom.left.hom
+      (↾(Function.fiberMap f.hom.left.hom
         (CoveringSpace.proj_hom_comp_hom_left_hom ((forget X).map f)) x₀)) e := by
   exact cast_apply_of_heq (fiberFunctor_obj x₀ p) (fiberFunctor_obj x₀ q)
     (fiberFunctor_map_hom_heq x₀ f) e

@@ -9,11 +9,14 @@ public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.AddCircle
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Basic
+public import TauCeti.Topology.Circle.AddCircle
 
 /-!
-# The fundamental group of the circle is `ℤ`
+# Fundamental groups of additive and complex circles
 
 The covering `(↑) : ℝ → AddCircle p` is the universal cover of the circle: its total space
 `ℝ` is contractible, hence simply connected, and the cover is regular with deck group
@@ -28,10 +31,14 @@ commutative), giving
 for any nonzero real period `p`. Specialising to the unit circle `UnitAddCircle = ℝ ⧸ ℤ`
 yields the classical `π₁(S¹) ≅ ℤ`.
 
+For a nonzero real period `T`, `AddCircle.homeomorphCircle` identifies `AddCircle T` with
+Mathlib's complex unit circle `Circle`. Transporting the additive-circle computation across this
+homeomorphism gives `FundamentalGroup Circle x ≃* Multiplicative ℤ` at every basepoint.
+
 The regularity input is elementary and holds for an arbitrary topological additive group:
 two points of `𝕜` with the same image under `(↑) : 𝕜 → AddCircle p` differ by an element of
 the period subgroup `zmultiples p`, and translation by that element is a deck
-transformation, so `Deck ((↑) : 𝕜 → AddCircle p)` acts transitively on every fibre.
+transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on every fibre.
 
 ## Main declarations
 
@@ -45,14 +52,15 @@ transformation, so `Deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `AddCircle.fundamentalGroupMulEquivZero`: the basepoint-`0` specialisation, using the lift
   `0 : ℝ`.
 * `UnitAddCircle.fundamentalGroupMulEquiv`: `π₁(S¹) ≅ ℤ` for the unit circle.
+* `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
+* `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
+  going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
 
 ## References
 
-This advances the Tau Ceti universal-covers roadmap, Stage 4 target 12 (`π₁(S¹) ≅ ℤ`,
-"built from `AddCircle.isCoveringMap_coe` (`ℝ → S¹`) and deck transformations";
-`TauCetiRoadmap/UniversalCovers/README.md`). It consumes Mathlib's `AddCircle` covering map
-(`AddCircle.isCoveringMap_coe`, Junyan Xu) and the contractibility of a real topological
-vector space, together with the Tau Ceti deck-transformation theory of Stages 0.4 and 1.
+It consumes Mathlib's `AddCircle` covering map (`AddCircle.isCoveringMap_coe`, Junyan Xu) and
+the contractibility of a real topological vector space, together with Tau Ceti's
+deck-transformation theory.
 -/
 
 public section
@@ -85,7 +93,7 @@ lemma fundamentalGroupMulEquivZMultiples_apply_eq_iff (hcov : IsCoveringMap ((�
       (hcov.monodromy γ e : 𝕜) = (e : 𝕜) + (n.toAdd : 𝕜) := by
   rw [fundamentalGroupMulEquivZMultiples, MulEquiv.trans_apply, MulEquiv.symm_apply_eq,
     Deck.IsRegular.fundamentalGroupDeckEquiv_apply_eq_iff]
-  simp only [Deck.smul_eq_apply, Deck.addCircleMulEquiv_apply,
+  simp only [deck.smul_eq_apply, Deck.addCircleMulEquiv_apply,
     Deck.addRightZMultiples_apply, eq_comm]
 
 /-- The inverse of the period-subgroup equivalence sends `n` to the loop class whose monodromy
@@ -268,3 +276,95 @@ lemma fundamentalGroupMulEquiv_eq_one_iff (γ : FundamentalGroup UnitAddCircle 0
     AddCircle.fundamentalGroupMulEquivZero_eq_one_iff 1 one_ne_zero γ
 
 end UnitAddCircle
+
+noncomputable section
+
+namespace Circle
+
+/-- The fundamental group of the complex unit circle `Circle = {z : ℂ | ‖z‖ = 1}`, based at
+`x`, is `Multiplicative ℤ`: `π₁(S¹, x) ≅ ℤ`. It is obtained by changing the basepoint to
+`1 : Circle`, then transporting the additive-circle computation at `0` across
+`AddCircle.homeomorphCircle : AddCircle (2 * π) ≃ₜ Circle`. -/
+def fundamentalGroupMulEquiv (x : Circle) : FundamentalGroup Circle x ≃* Multiplicative ℤ :=
+  (FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x 1).trans
+    ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+          (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
+          (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne')).trans
+      (AddCircle.fundamentalGroupMulEquivZero (2 * Real.pi) Real.two_pi_pos.ne'))
+
+/-- `fundamentalGroupMulEquiv` factors as Mathlib's basepoint-change isomorphism
+`FundamentalGroup Circle x ≃* FundamentalGroup Circle 1`, followed by the canonical-basepoint
+computation transported from `AddCircle (2 * π)` along `AddCircle.homeomorphCircle`. -/
+theorem fundamentalGroupMulEquiv_def (x : Circle) :
+    fundamentalGroupMulEquiv x =
+      (FundamentalGroup.fundamentalGroupMulEquivOfPathConnected x 1).trans
+        ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+          (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
+            (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne')).trans
+          (AddCircle.fundamentalGroupMulEquivZero (2 * Real.pi) Real.two_pi_pos.ne')) :=
+  (rfl)
+
+/-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
+def expLoop : Path (1 : Circle) 1 where
+  toFun t := Circle.exp (2 * Real.pi * t)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simp
+
+@[simp]
+theorem expLoop_apply (t : unitInterval) : expLoop t = Circle.exp (2 * Real.pi * t) :=
+  (rfl)
+
+/-- **The counterclockwise loop generates `π₁(S¹)` positively.** The isomorphism
+`π₁(Circle, 1) ≃* Multiplicative ℤ` sends the class of `t ↦ exp(2πit)` to `ofAdd 1`. -/
+@[simp]
+theorem fundamentalGroupMulEquiv_expLoop :
+    fundamentalGroupMulEquiv 1
+      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
+      Multiplicative.ofAdd 1 := by
+  have map_conj (e : FundamentalGroup Circle 1 ≃* Multiplicative ℤ)
+      (a x : FundamentalGroup Circle 1) : e (a * x * a⁻¹) = e x := by
+    simp only [map_mul, map_inv]
+    rw [mul_comm (e a) (e x)]
+    simp
+  -- The basepoint change at `1` is along a loop, hence an inner automorphism, which the
+  -- commutative target does not see.
+  rw [fundamentalGroupMulEquiv_def, MulEquiv.trans_apply,
+    FundamentalGroup.fundamentalGroupMulEquivOfPathConnected,
+    FundamentalGroup.fundamentalGroupMulEquivOfPath_eq_conj, MulAut.conj_apply,
+    map_conj, MulEquiv.trans_apply, AddCircle.fundamentalGroupMulEquivZero_apply_eq_iff]
+  -- On `AddCircle (2π)` the loop lifts to `t ↦ 2πt` in `ℝ`, which ends at `1 • 2π`.
+  have hlift : (AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy
+      ((TauCeti.FundamentalGroup.homeomorphMulEquivOfEq
+        (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
+          (AddCircle.homeomorphCircle_symm_one Real.two_pi_pos.ne'))
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop))) ⟨0, by simp⟩ =
+      ⟨2 * Real.pi, by simp⟩ := by
+    refine (AddCircle.isCoveringMap_coe (2 * Real.pi)).monodromy_eq_of_map_eq
+      (Path.Homotopic.Quotient.mk
+        { toFun := fun t => 2 * Real.pi * (t : ℝ)
+          continuous_toFun := by fun_prop
+          source' := by simp
+          target' := by simp }) ?_
+    rw [TauCeti.FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
+      ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_map,
+      ← Path.Homotopic.Quotient.mk_cast]
+    congr 1
+    ext t
+    have ht : ((2 * Real.pi * t : ℝ) : AddCircle (2 * Real.pi)) =
+        (AddCircle.homeomorphCircle Real.two_pi_pos.ne').symm
+          (Circle.exp (2 * Real.pi * t)) := by
+      rw [Homeomorph.eq_symm_apply, AddCircle.homeomorphCircle_apply,
+        AddCircle.toCircle_apply_mk]
+      congr 1
+      field_simp
+    -- `Path.cast` does not change the underlying function. It is unfolded by `exact` rather than
+    -- by `Path.cast_coe`, because the endpoint proofs supplied by `monodromy_eq_of_map_eq` are
+    -- fibre memberships, which `simp` cannot see as the endpoint equations `Path.cast` expects.
+    exact ht
+  rw [hlift]
+  simp
+
+end Circle
+
+end

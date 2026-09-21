@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.PiTensorProduct.GeneralLinear
+public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 public import TauCeti.RepresentationTheory.Symmetric.TensorAction.Basic
 public import TauCeti.RepresentationTheory.Tensor.Power
@@ -14,15 +16,18 @@ public import TauCeti.RepresentationTheory.Tensor.Power
 
 This file specializes the diagonal tensor-power construction to the standard representation of
 the general linear group. It supplies the tensor powers that underpin the Weyl construction for
-polynomial representations.
+polynomial representations, together with the description of their monoid-algebra image over an
+infinite field.
 
-## Main definitions
+## Main results
 
 * `TauCeti.tensorPowerRep` is the `d`-fold tensor power of `stdRep`.
 * `TauCeti.tensorPowerFDRep` is its bundled finite-dimensional form.
 * `TauCeti.commute_permTensorAction_tensorPowerRep` proves that the general-linear and
   symmetric-group actions commute, and `TauCeti.commute_permTensorActionAlgHom_tensorPowerRep`
   extends that to the whole group algebra `k[S_d]`.
+* `TauCeti.toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const` identifies the
+  image of `k[GLₙ]` with the span of all diagonal tensor operators over an infinite field.
 
 ## References
 
@@ -33,6 +38,8 @@ public section
 
 open Matrix
 open scoped TensorProduct
+
+open PiTensorProduct
 
 universe u
 
@@ -73,6 +80,46 @@ theorem commute_permTensorActionAlgHom_tensorPowerRep
     (stdRep k n g)
 
 end CommRing
+
+section InfiniteField
+
+variable [Field k] [Infinite k]
+
+/-- **The general linear group spans the same operators on `(kⁿ)^{⊗d}` as the whole endomorphism
+algebra of `kⁿ`**: the span of the diagonal operators `g^{⊗d}` for `g` invertible is the span of all
+the diagonal operators `f^{⊗d}`. This is the Zariski density of the invertible endomorphisms of
+`kⁿ`, and it needs the field to be infinite. -/
+theorem span_range_tensorPowerRep_eq_span_range_map_const :
+    Submodule.span k (Set.range (tensorPowerRep k n d)) =
+      Submodule.span k (Set.range fun f : (Fin n → k) →ₗ[k] (Fin n → k) =>
+        PiTensorProduct.map fun _ : Fin d => f) := by
+  have hrange : Set.range (tensorPowerRep k n d) =
+      Set.range fun u : ((Fin n → k) →ₗ[k] Fin n → k)ˣ =>
+        PiTensorProduct.map fun _ : Fin d => (u : (Fin n → k) →ₗ[k] Fin n → k) := by
+    ext x
+    constructor
+    · rintro ⟨g, rfl⟩
+      refine ⟨Matrix.GeneralLinearGroup.toLin g, ?_⟩
+      rw [tensorPowerRep, Representation.tensorPower_apply, stdRep_apply]
+      simp [Matrix.GeneralLinearGroup.coe_toLin]
+    · rintro ⟨u, rfl⟩
+      obtain ⟨g, rfl⟩ := Matrix.GeneralLinearGroup.toLin.surjective u
+      refine ⟨g, ?_⟩
+      rw [tensorPowerRep, Representation.tensorPower_apply, stdRep_apply]
+      simp [Matrix.GeneralLinearGroup.coe_toLin]
+  rw [hrange, PiTensorProduct.span_range_map_const_units_eq_span_range_map_const]
+
+/-- **The image of the monoid algebra `k[GLₙ]` in `End ((kⁿ)^{⊗d})` is the span of all the
+diagonal operators `f^{⊗d}`**, with `f` ranging over every endomorphism of `kⁿ` and not only the
+invertible ones. -/
+theorem toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const :
+    Subalgebra.toSubmodule (tensorPowerRep k n d).asAlgebraHom.range =
+      Submodule.span k (Set.range fun f : (Fin n → k) →ₗ[k] (Fin n → k) =>
+        PiTensorProduct.map fun _ : Fin d => f) := by
+  rw [Representation.toSubmodule_range_asAlgebraHom,
+    span_range_tensorPowerRep_eq_span_range_map_const]
+
+end InfiniteField
 
 section Field
 

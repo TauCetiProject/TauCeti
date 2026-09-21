@@ -85,7 +85,7 @@ theorem pointsMulEquiv_conjugate_weightCocharacter (w : Fin N → ℤ)
     pointsMulEquiv N (Cocharacter.conjugate A (weightCocharacter (R := R) w) g) =
       diagGL (weightDiagonalUnits w (MultiplicativeGroup.genericUnit A)) *
         Matrix.GeneralLinearGroup.map
-          (IsScalarTower.toAlgHom R A (LaurentPolynomial A)).toRingHom
+          (IsScalarTower.toAlgHom R A (LaurentPolynomial A) : A →+* LaurentPolynomial A)
           (pointsMulEquiv N g) *
         (diagGL (weightDiagonalUnits w (MultiplicativeGroup.genericUnit A)))⁻¹ := by
   rw [Cocharacter.conjugate_apply, map_mul, map_mul, map_inv,
@@ -172,7 +172,7 @@ private theorem det_weightPolynomialMatrix (w : Fin N → ℤ)
     pointsMulEquiv_conjugate_weightCocharacter, Units.val_mul, Units.val_mul,
     Matrix.det_units_conj]
   exact (RingHom.map_det
-    (IsScalarTower.toAlgHom R A (LaurentPolynomial A)).toRingHom
+    (IsScalarTower.toAlgHom R A (LaurentPolynomial A) : A →+* LaurentPolynomial A)
     (pointsMulEquiv N g : Matrix (Fin N) (Fin N) A)).symm
 
 /-- The polynomial-valued general-linear point extending weight conjugation. -/

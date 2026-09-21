@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
-public import TauCeti.GroupTheory.IndexNSmul
+public import TauCeti.GroupTheory.Index.NSmul
 
 /-!
 # The 2-Selmer group, and the Mordell–Weil rank bound it gives
@@ -44,7 +44,7 @@ computation of the resulting bound.
 ## Implementation notes
 
 `card_range_μ` is where the rank enters, through
-`AddSubgroup.index_range_nsmul_of_fg` (`TauCeti/GroupTheory/IndexNSmul.lean`): the index of
+`AddSubgroup.index_range_nsmul_of_fg` (`TauCeti/GroupTheory/Index/NSmul.lean`): the index of
 `2 • W(K)` in `W(K)` is `2 ^ rank * #W(K)[2]` for a finitely generated group. Mathlib's
 `AddSubgroup.index_range_nsmul` is the free case only, and the torsion factor is exactly what
 the rank bound has to carry, so the free case cannot be substituted here.

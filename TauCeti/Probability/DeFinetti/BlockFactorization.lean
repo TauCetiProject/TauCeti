@@ -58,7 +58,7 @@ finite-block rectangle identity for `directingProbabilityMeasure μ X`, exactly 
   explicitly.
 * `mixedIID_of_contractable` — the existential form, for a contractable process on an
   arbitrary measurable sample space (state space still standard Borel).
-* `mixedIID_of_exchangeable` — the exchangeable form (via `contractable_of_exchangeable`).
+* `mixedIID_of_exchangeable` — the exchangeable form (via `Exchangeable.contractable`).
 
 The `..._of_iCondIndepFun_tailProcess` theorems expose the intermediate reduction (de Finetti given
 tail conditional independence of the coordinates). All of the rectangle-mixture staging lemmas and
@@ -303,7 +303,7 @@ theorem mixedIID_of_exchangeable {Ω α : Type*} [MeasurableSpace Ω] [Measurabl
     {X : ℕ → Ω → α} (hX : Exchangeable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     MixedIID μ X :=
   mixedIID_of_contractable
-    (contractable_of_exchangeable hX fun i => (hX_meas i).aemeasurable) hX_meas
+    (hX.contractable fun i => (hX_meas i).aemeasurable) hX_meas
 
 end Probability
 

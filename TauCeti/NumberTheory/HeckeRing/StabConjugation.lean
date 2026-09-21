@@ -94,3 +94,20 @@ lemma decompQuotientEquivMulLeftRight_mk (Γ₁ Γ₂ : Subgroup G) (g : G)
   (rfl)
 
 end DoubleCoset
+
+namespace TauCeti
+
+open DoubleCoset
+
+/-- Finiteness of the right-coset decomposition is independent of the representative
+chosen in a double coset. -/
+theorem finite_decompQuotient_inv_of_mem_doubleCoset {G : Type*} [Group G]
+    {H K : Subgroup G} {g δ : G} [Finite (DecompQuotient K H g⁻¹)]
+    (hδ : δ ∈ doubleCoset g H K) : Finite (DecompQuotient K H δ⁻¹) := by
+  obtain ⟨h, hh, k, hk, rfl⟩ := mem_doubleCoset.mp hδ
+  rw [mul_inv_rev, mul_inv_rev, ← mul_assoc]
+  exact (decompQuotientEquivMulLeftRight K H g⁻¹
+    ⟨k⁻¹, Subgroup.le_normalizer (K.inv_mem hk)⟩
+    (Subgroup.le_normalizer (H.inv_mem hh))).finite_iff.mpr inferInstance
+
+end TauCeti

@@ -99,6 +99,36 @@ theorem coe_hopfIdealPointsSubgroupMulEquiv_apply (A : CommAlgCat.{w} R)
   rw [hopfIdealPointsSubgroupMulEquiv_apply_eq, Subgroup.coe_congrOfMapEq_apply,
     CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply]
 
+/-- An equivalence from quotient points to a matrix subgroup identifies membership in the
+quotient-point subgroup whenever it preserves the ambient invertible matrix. -/
+theorem mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+    (B : CommAlgCat.{w} R) (P : Subgroup (Matrix.GeneralLinearGroup (Fin n) B))
+    (E : HopfAlgebra.points (R := R)
+        (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) B ≃* P)
+    (hE : ∀ q,
+      (E q : Matrix.GeneralLinearGroup (Fin n) B) =
+        pointsMulEquiv n
+          (CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R n) I B q))
+    (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) B) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R n) I B ↔
+      pointsMulEquiv n g ∈ P := by
+  constructor
+  · intro hg
+    let q := CommHopfAlgCat.liftQuotientPoint (coordinateHopfAlgebra R n) I B g
+      ((CommHopfAlgCat.mem_quotientPointsSubgroup_iff
+        (coordinateHopfAlgebra R n) I B g).mp hg)
+    have hq := hE q
+    rw [CommHopfAlgCat.quotientPointsHom_liftQuotientPoint] at hq
+    exact hq ▸ (E q).property
+  · intro hg
+    let p : P := ⟨pointsMulEquiv n g, hg⟩
+    let q := E.symm p
+    have hq : CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R n) I B q = g := by
+      apply (pointsMulEquiv n).injective
+      rw [← hE q, MulEquiv.apply_symm_apply]
+    rw [← hq]
+    exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup _ _ _ _
+
 /-- Including the ambient Hopf-algebra point underlying the inverse matrix-subgroup equivalence
 recovers the point corresponding to the underlying matrix. -/
 @[simp]

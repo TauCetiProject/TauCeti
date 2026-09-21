@@ -89,6 +89,16 @@ theorem unitsLeftMulMatrix_apply (x : Sˣ) (i j : ι) :
 theorem unitsLeftMulMatrix_injective : Function.Injective (unitsLeftMulMatrix b) := fun _ _ h =>
   Units.ext (Algebra.leftMulMatrix_injective b (congrArg Units.val h))
 
+-- Not a `simp` lemma: `simp` rewrites the left-hand side through `AlgHom.commutes` first, into
+-- `algebraMap R (Matrix ι ι R) r`, so this lemma would never fire.
+/-- Left multiplication by an element of the base ring is the corresponding scalar matrix. -/
+theorem leftMulMatrix_algebraMap (r : R) :
+    Algebra.leftMulMatrix b (algebraMap R S r) = Matrix.scalar ι r := by
+  rw [(Algebra.leftMulMatrix b).commutes r]
+  ext i j
+  rw [Matrix.algebraMap_matrix_apply, Matrix.scalar_apply, Matrix.diagonal_apply]
+  simp
+
 /-- A unit of the base ring is sent to the corresponding scalar matrix. -/
 @[simp, grind =]
 theorem unitsLeftMulMatrix_map_algebraMap (r : Rˣ) :
@@ -96,11 +106,7 @@ theorem unitsLeftMulMatrix_map_algebraMap (r : Rˣ) :
       Matrix.GeneralLinearGroup.scalar ι r := by
   refine Units.ext ?_
   have hr : ((Units.map (algebraMap R S : R →* S) r : Sˣ) : S) = algebraMap R S (r : R) := rfl
-  rw [coe_unitsLeftMulMatrix, Matrix.GeneralLinearGroup.coe_scalar, hr,
-    (Algebra.leftMulMatrix b).commutes (r : R)]
-  ext i j
-  rw [Matrix.algebraMap_matrix_apply, Matrix.scalar_apply, Matrix.diagonal_apply]
-  simp
+  rw [coe_unitsLeftMulMatrix, Matrix.GeneralLinearGroup.coe_scalar, hr, leftMulMatrix_algebraMap]
 
 end Semiring
 

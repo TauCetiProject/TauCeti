@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
-import Mathlib.Data.Matrix.Basis
 
 /-!
 # The normalizer of the diagonal torus
@@ -24,6 +23,8 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 ## Main declarations
 
 * `TauCeti.permutationGL`: the permutation-matrix embedding in `GL`.
+* `TauCeti.exists_eq_diagGL_mul_permutationGL_of_forall_ne`: an invertible matrix whose
+  conjugation keeps a coordinate-separating family of diagonal matrices diagonal is monomial.
 * `TauCeti.mem_normalizer_diagonalTorus_iff_exists`: normalizing matrices are precisely products
   of a diagonal matrix and a permutation matrix.
 * `TauCeti.diagonalNormalizerPerm`: the permutation homomorphism from the normalizer.
@@ -111,206 +112,79 @@ section Field
 variable [Field k] [Nontrivial kˣ]
 
 omit [Nontrivial kˣ] in
-private theorem mul_single_one_mul_apply
-    (A B : Matrix (Fin n) (Fin n) k) (i j l : Fin n) :
-    (A * (Matrix.single j j 1 : Matrix (Fin n) (Fin n) k) * B) i l =
-      A i j * B j l := by
-  classical
-  let E : Matrix (Fin n) (Fin n) k := Matrix.single j j 1
-  -- Naming the coordinate idempotent fixes the matrix multiplication instance during rewriting.
-  change (A * E * B) i l = A i j * B j l
-  rw [Matrix.mul_assoc, Matrix.mul_apply]
-  calc
-    ∑ r, A i r * (E * B) r l = A i j * (E * B) j l := by
-      apply Finset.sum_eq_single j
-      · intro r _ hr
-        simp [E, hr]
-      · simp
-    _ = A i j * B j l := by simp [E]
-
-private theorem conjugate_single_isDiag {g : GL (Fin n) k}
-    (hg : g ∈ Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)))
-    (j : Fin n) :
-    ((g : Matrix (Fin n) (Fin n) k) * Matrix.single j j 1 *
-      ((g⁻¹ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k)).IsDiag := by
-  classical
-  obtain ⟨u, hu⟩ : ∃ u : kˣ, u ≠ 1 := exists_ne 1
-  let d : Fin n → kˣ := fun i ↦ if i = j then u else 1
-  have hd : diagGL d ∈ diagonalTorus k n :=
-    mem_diagonalTorus_iff_exists_diagGL.mpr ⟨d, rfl⟩
-  have hconj : g * diagGL d * g⁻¹ ∈ diagonalTorus k n :=
-    (Subgroup.mem_normalizer_iff.mp hg (diagGL d)).mp hd
-  have hdiag : ((g * diagGL d * g⁻¹ : GL (Fin n) k) :
-      Matrix (Fin n) (Fin n) k).IsDiag := mem_diagonalTorus_iff.mp hconj
-  intro i l hil
-  let G : Matrix (Fin n) (Fin n) k := g
-  let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
-  let E : Matrix (Fin n) (Fin n) k := Matrix.single j j 1
-  have hzero : (G * (diagGL d : Matrix (Fin n) (Fin n) k) * Ginv) i l = 0 := by
-    simpa only [G, Ginv, Units.val_mul] using hdiag hil
-  have hunit : (u : k) - 1 ≠ 0 := sub_ne_zero.mpr fun h ↦ hu (Units.ext h)
-  have hdmat : (diagGL d : Matrix (Fin n) (Fin n) k) =
-      1 + ((u : k) - 1) • Matrix.single j j 1 := by
-    have hdval : (fun i ↦ (d i : k)) =
-        (fun _ ↦ (1 : k)) + Pi.single j ((u : k) - 1) := by
-      funext a
-      by_cases haj : a = j
-      · subst a
-        simp [d]
-      · simp [d, haj]
-    rw [diagGL_coe, hdval]
-    -- Expose the function addition so `diagonal_add` identifies the coordinate summand.
-    change Matrix.diagonal (fun i : Fin n ↦
-      (1 : k) + (Pi.single j ((u : k) - 1) : Fin n → k) i) = _
-    rw [← Matrix.diagonal_add, Matrix.diagonal_one,
-      Matrix.diagonal_single, Matrix.smul_single, smul_eq_mul, mul_one]
-  have hentry :
-      (G * E * Ginv) i l = 0 := by
-    rw [hdmat] at hzero
-    have hmatrix : G * (1 + ((u : k) - 1) • E) * Ginv =
-        G * Ginv + ((u : k) - 1) • (G * E * Ginv) := by
-      rw [Matrix.mul_add, Matrix.add_mul, Matrix.mul_one,
-        Matrix.mul_smul, Matrix.smul_mul]
-    have hGG : G * Ginv = 1 := by
-      simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.val_inv
-    have hcalc :
-        (G * (1 + ((u : k) - 1) • E) * Ginv) i l =
-          ((u : k) - 1) * ((G * E * Ginv) i l) := by
-      rw [hmatrix, hGG, Matrix.add_apply, Matrix.one_apply_ne hil,
-        Matrix.smul_apply, zero_add, smul_eq_mul]
-    rw [hcalc] at hzero
-    exact (mul_eq_zero.mp hzero).resolve_left hunit
-  simpa only [G, Ginv, E] using hentry
-
-private theorem existsUnique_ne_zero_column {g : GL (Fin n) k}
-    (hg : g ∈ Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)))
-    (j : Fin n) : ∃! i, (g : Matrix (Fin n) (Fin n) k) i j ≠ 0 := by
-  classical
-  let G : Matrix (Fin n) (Fin n) k := g
-  let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
-  have hleft : Ginv * G = 1 := by
-    simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.inv_val
-  have hcol : ∃ i, G i j ≠ 0 := by
-    by_contra h
-    simp only [not_exists, not_ne_iff] at h
-    have hjj := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M j j) hleft
-    simp only [Matrix.mul_apply, Matrix.one_apply_eq] at hjj
-    simp only [h, mul_zero, Finset.sum_const_zero] at hjj
-    exact zero_ne_one hjj
-  obtain ⟨i, hi⟩ := hcol
-  refine ⟨i, hi, ?_⟩
-  intro l hl
-  have hdiag := conjugate_single_isDiag hg j
-  have hinv_zero (r : Fin n) (hri : r ≠ i) : Ginv j r = 0 := by
-    have hoff :
-        (((g : Matrix (Fin n) (Fin n) k) * Matrix.single j j 1 *
-          ((g⁻¹ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k)) :
-            Matrix (Fin n) (Fin n) k) i r = 0 :=
-      hdiag hri.symm
-    have hmul : G i j * Ginv j r = 0 := by
-      simpa only [G, Ginv, mul_single_one_mul_apply] using hoff
-    exact (mul_eq_zero.mp hmul).resolve_left hi
-  have hsum : ∑ r, Ginv j r * G r j = 1 := by
-    have hjj := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M j j) hleft
-    simpa only [Matrix.mul_apply, Matrix.one_apply_eq] using hjj
-  have hsingle : ∑ r, Ginv j r * G r j = Ginv j i * G i j := by
-    apply Finset.sum_eq_single i
-    · intro r _ hri
-      rw [hinv_zero r hri, zero_mul]
-    · simp
-  have hinv : Ginv j i ≠ 0 := by
-    intro h
-    rw [hsingle, h, zero_mul] at hsum
-    exact zero_ne_one hsum
-  by_contra hil
-  have hoff :
-      (((g : Matrix (Fin n) (Fin n) k) * Matrix.single j j 1 *
-        ((g⁻¹ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k)) :
-          Matrix (Fin n) (Fin n) k) l i = 0 :=
-    hdiag hil
-  have hmul : G l j * Ginv j i = 0 := by
-    simpa only [G, Ginv, mul_single_one_mul_apply] using hoff
-  exact hinv ((mul_eq_zero.mp hmul).resolve_left (by simpa only [G] using hl))
-
-/-- The row containing the unique nonzero entry in a column of a normalizer element. -/
-private noncomputable def diagonalNormalizerRow
-    (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))) (j : Fin n) : Fin n :=
-  Classical.choose (existsUnique_ne_zero_column g.property j)
-
-private theorem diagonalNormalizerRow_ne_zero
-    (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))) (j : Fin n) :
-    ((g : GL (Fin n) k) : Matrix (Fin n) (Fin n) k) (diagonalNormalizerRow g j) j ≠ 0 :=
-  (Classical.choose_spec (existsUnique_ne_zero_column g.property j)).1
-
-private theorem eq_diagonalNormalizerRow_of_ne_zero
-    (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)))
-    {i j : Fin n}
-    (hij : ((g : GL (Fin n) k) : Matrix (Fin n) (Fin n) k) i j ≠ 0) :
-    i = diagonalNormalizerRow g j :=
-  (Classical.choose_spec (existsUnique_ne_zero_column g.property j)).2 i hij
+/-- If conjugation by `g` sends the diagonal matrix `t` to a diagonal matrix, then `t` takes the
+same value at any two columns in which a row of `g` is nonzero. -/
+private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t : Fin n → kˣ}
+    (ht : g * diagGL t * g⁻¹ ∈ diagonalTorus k n) {i j l : Fin n}
+    (hj : (g : Matrix (Fin n) (Fin n) k) i j ≠ 0) (hl : (g : Matrix (Fin n) (Fin n) k) i l ≠ 0) :
+    t j = t l := by
+  -- Writing `g t g⁻¹ = s`, the entries of `g t = s g` read `g_{im} t_m = s_i g_{im}`.
+  obtain ⟨s, hs⟩ := mem_diagonalTorus_iff_exists_diagGL.mp ht
+  have heq : g * diagGL t = diagGL s * g := by
+    rw [hs]
+    group
+  have hentry (m : Fin n) :
+      (g : Matrix (Fin n) (Fin n) k) i m * t m = s i * (g : Matrix (Fin n) (Fin n) k) i m := by
+    simpa [Matrix.mul_diagonal, Matrix.diagonal_mul] using
+      congrArg (fun x : GL (Fin n) k ↦ (x : Matrix (Fin n) (Fin n) k) i m) heq
+  have hj' : (t j : k) = s i := mul_left_cancel₀ hj (by rw [hentry j, mul_comm])
+  have hl' : (t l : k) = s i := mul_left_cancel₀ hl (by rw [hentry l, mul_comm])
+  exact Units.ext (hj'.trans hl'.symm)
 
 omit [Nontrivial kˣ] in
-private theorem mul_apply_eq_single_of_column_support
-    (A B : Matrix (Fin n) (Fin n) k) (i j l : Fin n)
-    (huniq : ∀ r, A r l ≠ 0 → r = i) :
-    (B * A) j l = B j i * A i l := by
+/-- An invertible matrix is monomial, a diagonal matrix followed by a permutation matrix, as soon
+as conjugation by it keeps enough diagonal matrices diagonal to tell every two coordinates
+apart. -/
+theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
+    (hsep : ∀ i j, i ≠ j → ∃ t : Fin n → kˣ,
+      g * diagGL t * g⁻¹ ∈ diagonalTorus k n ∧ t i ≠ t j) :
+    ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
+      g = diagGL d * permutationGL (k := k) σ := by
   classical
-  rw [Matrix.mul_apply]
-  apply Finset.sum_eq_single i
-  · intro r _ hri
-    have hz : A r l = 0 := by
-      by_contra hr
-      exact hri (huniq r hr)
-    rw [hz, mul_zero]
-  · simp
-
-private theorem diagonalNormalizerRow_injective
-    (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))) :
-    Function.Injective (diagonalNormalizerRow g) := by
-  intro j l hjl
-  by_contra hjl'
-  let G : Matrix (Fin n) (Fin n) k := (g : GL (Fin n) k)
-  let Ginv : Matrix (Fin n) (Fin n) k := ((g : GL (Fin n) k)⁻¹ : GL (Fin n) k)
-  have hleft : Ginv * G = 1 := by
-    simpa only [G, Ginv, ← Units.inv_eq_val_inv] using (g : GL (Fin n) k).inv_val
-  have hj := diagonalNormalizerRow_ne_zero g j
-  have hl := diagonalNormalizerRow_ne_zero g l
-  have hjuniq : ∀ r, G r j ≠ 0 → r = diagonalNormalizerRow g j := by
-    intro r hr
-    exact eq_diagonalNormalizerRow_of_ne_zero g (by simpa only [G] using hr)
-  have hluniq : ∀ r, G r l ≠ 0 → r = diagonalNormalizerRow g l := by
-    intro r hr
-    exact eq_diagonalNormalizerRow_of_ne_zero g (by simpa only [G] using hr)
-  have hprod_one : Ginv j (diagonalNormalizerRow g j) *
-      G (diagonalNormalizerRow g j) j = 1 := by
-    rw [← mul_apply_eq_single_of_column_support G Ginv _ _ _
-      hjuniq, hleft, Matrix.one_apply_eq]
-  have hprod_zero : Ginv j (diagonalNormalizerRow g l) *
-      G (diagonalNormalizerRow g l) l = 0 := by
-    rw [← mul_apply_eq_single_of_column_support G Ginv _ _ _
-      hluniq, hleft, Matrix.one_apply_ne hjl']
-  rw [← hjl] at hprod_zero
-  have hinv : Ginv j (diagonalNormalizerRow g j) ≠ 0 := by
-    intro hz
-    rw [hz, zero_mul] at hprod_one
-    exact zero_ne_one hprod_one
-  have hl' : G (diagonalNormalizerRow g j) l ≠ 0 := by
-    rw [hjl]
-    simpa only [G] using hl
-  exact hinv ((mul_eq_zero.mp hprod_zero).resolve_right hl')
-
-/-- The permutation of rows selected by the columns of a normalizer element. -/
-private noncomputable def diagonalNormalizerEquiv
-    (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))) :
-    Equiv.Perm (Fin n) :=
-  Equiv.ofBijective (diagonalNormalizerRow g)
-    (diagonalNormalizerRow_injective g).bijective_of_finite
-
-@[simp]
-private theorem diagonalNormalizerEquiv_apply
-    (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))) (j : Fin n) :
-    diagonalNormalizerEquiv g j = diagonalNormalizerRow g j :=
-  rfl
+  let G : Matrix (Fin n) (Fin n) k := g
+  let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
+  have hrow (i j l : Fin n) (hj : G i j ≠ 0) (hl : G i l ≠ 0) : j = l := by
+    by_contra hjl
+    obtain ⟨t, ht, htjl⟩ := hsep j l hjl
+    exact htjl (apply_eq_apply_of_conj_mem_diagonalTorus ht hj hl)
+  have hGGinv : G * Ginv = 1 := by
+    simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.mul_inv
+  have hGinvG : Ginv * G = 1 := by
+    simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.inv_mul
+  -- Every row of an invertible matrix has a nonzero entry.
+  have hex : ∀ i, ∃ j, G i j ≠ 0 := by
+    intro i
+    by_contra h
+    push Not at h
+    have hii := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M i i) hGGinv
+    simp [Matrix.mul_apply, h] at hii
+  choose f hf using hex
+  have hf_iff (i j : Fin n) : G i j ≠ 0 ↔ j = f i :=
+    ⟨fun h ↦ hrow i j (f i) h (hf i), by rintro rfl; exact hf i⟩
+  -- A column missed by `f` would vanish, which is impossible for an invertible matrix.
+  have hsurj : Function.Surjective f := by
+    intro l
+    by_contra h
+    push Not at h
+    have hcol (r : Fin n) : G r l = 0 := by
+      by_contra hne
+      exact h r ((hf_iff r l).mp hne).symm
+    have hll := congrArg (fun M : Matrix (Fin n) (Fin n) k ↦ M l l) hGinvG
+    simp [Matrix.mul_apply, hcol] at hll
+  let e : Equiv.Perm (Fin n) :=
+    Equiv.ofBijective f ⟨Finite.injective_iff_surjective.mpr hsurj, hsurj⟩
+  have he (i : Fin n) : e i = f i := Equiv.ofBijective_apply _ _ i
+  refine ⟨fun i ↦ Units.mk0 (G i (f i)) (hf i), e.symm, ?_⟩
+  apply Units.ext
+  ext i j
+  simp only [Units.val_mul, diagGL_coe, permutationGL_coe, Matrix.diagonal_mul, Units.val_mk0]
+  by_cases hj : j = f i
+  · subst j
+    simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, G]
+  · have hzero : G i j = 0 := by
+      by_contra h
+      exact hj ((hf_iff i j).mp h)
+    simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, Ne.symm hj, G] using hzero
 
 /-- An invertible matrix normalizes the diagonal torus exactly when it is a diagonal matrix
 followed by a permutation matrix. -/
@@ -321,30 +195,11 @@ theorem mem_normalizer_diagonalTorus_iff_exists {g : GL (Fin n) k} :
   classical
   constructor
   · intro hg
-    let gn : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)) := ⟨g, hg⟩
-    let e : Equiv.Perm (Fin n) := diagonalNormalizerEquiv gn
-    have hcoeff (i : Fin n) :
-        (g : Matrix (Fin n) (Fin n) k) i (e.symm i) ≠ 0 := by
-      have h := diagonalNormalizerRow_ne_zero gn (e.symm i)
-      simpa only [gn, e, ← diagonalNormalizerEquiv_apply,
-        Equiv.apply_symm_apply] using h
-    let d : Fin n → kˣ := fun i ↦
-      Units.mk0 ((g : Matrix (Fin n) (Fin n) k) i (e.symm i)) (hcoeff i)
-    refine ⟨d, e, ?_⟩
-    apply Units.ext
-    ext i j
-    simp only [Units.val_mul, diagGL_coe, permutationGL_coe]
-    rw [Matrix.diagonal_mul]
-    by_cases hij : i = e j
-    · subst i
-      simp [d]
-    · have hzero : (g : Matrix (Fin n) (Fin n) k) i j = 0 := by
-        by_contra h
-        exact hij (by
-          simpa only [e, diagonalNormalizerEquiv_apply] using
-            eq_diagonalNormalizerRow_of_ne_zero gn h)
-      rw [hzero]
-      simp [Equiv.Perm.permMatrix, Equiv.symm_apply_eq, hij]
+    refine exists_eq_diagGL_mul_permutationGL_of_forall_ne fun i j hij ↦ ?_
+    obtain ⟨u, hu⟩ : ∃ u : kˣ, u ≠ 1 := exists_ne 1
+    refine ⟨Pi.mulSingle i u, (Subgroup.mem_normalizer_iff.mp hg _).mp
+      (mem_diagonalTorus_iff_exists_diagGL.mpr ⟨_, rfl⟩), ?_⟩
+    simpa [Pi.mulSingle_eq_of_ne hij.symm] using hu
   · rintro ⟨d, σ, rfl⟩
     exact (Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))).mul_mem
       (Subgroup.le_normalizer (by

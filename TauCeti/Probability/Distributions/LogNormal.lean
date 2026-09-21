@@ -11,6 +11,8 @@ public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Distributions.Measurability
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # The log-normal distribution
@@ -346,11 +348,9 @@ theorem variance_id_logNormalMeasure (m : ℝ) (v : ℝ≥0) :
 /-- For nonpositive `t` the moment-generating integrand of a log-normal law is bounded by `1` on
 the support, hence integrable. -/
 theorem integrable_exp_mul_logNormalMeasure (m : ℝ) (v : ℝ≥0) (ht : t ≤ 0) :
-    Integrable (fun x => Real.exp (t * x)) (logNormalMeasure m v) := by
-  refine Integrable.mono' (integrable_const 1) (by fun_prop) ?_
-  filter_upwards [ae_pos_logNormalMeasure m v] with x hx
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_one_iff]
-  nlinarith [hx.le]
+    Integrable (fun x => Real.exp (t * x)) (logNormalMeasure m v) :=
+  integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+    ((ae_pos_logNormalMeasure m v).mono fun _ hx ↦ hx.le)
 
 /-- The growth statement behind the failure of the positive exponential moments: against the
 Gaussian exponent `-(x - m) ^ 2 / (2 * v)`, the term `t * exp x` wins for every `t > 0`. -/
@@ -385,8 +385,7 @@ theorem not_integrable_exp_mul_logNormalMeasure (m : ℝ) (hv : v ≠ 0) (ht : 0
     gaussianReal_of_var_ne_zero m hv,
     integrable_withDensity_iff (measurable_gaussianPDF m v) (ae_of_all _ fun _ => by
       simp [gaussianPDF])]
-  intro hint
-  simp only [Function.comp_def] at hint
+  simp only [Function.comp_def]
   -- The integrand is eventually at least `1`, on a half-line of infinite Lebesgue measure.
   have hpos : 0 < √(2 * π * (v : ℝ)) := Real.sqrt_pos.mpr (by positivity)
   have hev : ∀ᶠ x in atTop,
@@ -408,14 +407,7 @@ theorem not_integrable_exp_mul_logNormalMeasure (m : ℝ) (hv : v ≠ 0) (ht : 0
           mul_le_mul_of_nonneg_left key (by positivity)
       _ = Real.exp (t * Real.exp x)
             * ((√(2 * π * (v : ℝ)))⁻¹ * Real.exp (-(x - m) ^ 2 / (2 * (v : ℝ)))) := by ring
-  obtain ⟨a, ha⟩ := eventually_atTop.mp hev
-  have hone : IntegrableOn (fun _ : ℝ => (1 : ℝ)) (Ioi a) volume := by
-    refine Integrable.mono' hint.integrableOn (by fun_prop) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
-    rw [Real.norm_eq_abs, abs_one]
-    exact ha x hx.le
-  rw [integrableOn_const_iff] at hone
-  simp [Real.volume_Ioi] at hone
+  exact MeasureTheory.not_integrable_of_eventually_le_atTop one_pos hev
 
 /-- **The exponential-integrability domain of a log-normal law with nonzero log-variance is the
 nonpositive half-line.** -/

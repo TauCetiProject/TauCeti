@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Complex.Basic
+public import Mathlib.Basic.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 public import TauCeti.RepresentationTheory.LinearCharacter
-public import TauCeti.RepresentationTheory.Induction.FiniteDimensional
+public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 
 /-!
 # The principal series of `GL₂(𝔽_q)`

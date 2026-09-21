@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Equiv
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.KnotTheory.Grid.BasicCycles
 public import TauCeti.KnotTheory.Grid.Differential.Symmetry
 
@@ -31,6 +31,8 @@ marking-swapped counterpart. These chain-level symmetry equivalences need no squ
 * `TauCeti.GridDiagram.fullyBlockedCycles_swapMarkings`,
   `TauCeti.GridDiagram.fullyBlockedBoundaries_swapMarkings`: swapping the `O` and `X` markings
   leaves the cycle and boundary submodules unchanged.
+* `LinearEquiv.map_ker_of_intertwine`: the reusable kernel transport lemma used by the
+  cycle-symmetry equivalences.
 * `TauCeti.GridDiagram.fullyBlockedCyclesTransposeEquiv`,
   `TauCeti.GridDiagram.fullyBlockedBoundariesTransposeEquiv`: the same statements packaged as
   linear equivalences of submodules, each characterized on elements by an `_apply` lemma
@@ -47,42 +49,6 @@ Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 public section
 
 namespace TauCeti
-
-namespace GridChain
-
-variable {M : Type*} [AddCommGroup M] [Module (ZMod 2) M]
-
-/-- If a linear automorphism `e` intertwines two endomorphisms `f` and `g` pointwise
-(`g (e d) = e (f d)`), it carries the kernel of `f` onto the kernel of `g`. This is the general
-shape behind the cycle-symmetry statements for the fully blocked grid differential. -/
-private theorem map_ker_of_intertwine (e : M ≃ₗ[ZMod 2] M) (f g : M →ₗ[ZMod 2] M)
-    (h : ∀ d, g (e d) = e (f d)) :
-    Submodule.map (e : M →ₗ[ZMod 2] M) (LinearMap.ker f) = LinearMap.ker g := by
-  ext c
-  simp only [Submodule.mem_map, LinearMap.mem_ker, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨d, hd, rfl⟩
-    rw [h d, hd, map_zero]
-  · intro hc
-    refine ⟨e.symm c, ?_, e.apply_symm_apply c⟩
-    have : e (f (e.symm c)) = 0 := by rw [← h, e.apply_symm_apply, hc]
-    exact e.map_eq_zero_iff.mp this
-
-/-- If a linear automorphism `e` intertwines two endomorphisms `f` and `g` pointwise
-(`g (e d) = e (f d)`), it carries the range of `f` onto the range of `g`. This is the general
-shape behind the boundary-symmetry statements for the fully blocked grid differential. -/
-private theorem map_range_of_intertwine (e : M ≃ₗ[ZMod 2] M) (f g : M →ₗ[ZMod 2] M)
-    (h : ∀ d, g (e d) = e (f d)) :
-    Submodule.map (e : M →ₗ[ZMod 2] M) (LinearMap.range f) = LinearMap.range g := by
-  ext c
-  simp only [Submodule.mem_map, LinearMap.mem_range, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨d, ⟨b, rfl⟩, rfl⟩
-    exact ⟨e b, h b⟩
-  · rintro ⟨b, rfl⟩
-    exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
-
-end GridChain
 
 namespace GridDiagram
 
@@ -102,7 +68,7 @@ theorem fullyBlockedCycles_transpose :
     Submodule.map (GridChain.transposeEquiv (ZMod 2) n : _ →ₗ[ZMod 2] _) G.fullyBlockedCycles =
       G.transpose.fullyBlockedCycles := by
   rw [G.fullyBlockedCycles_eq_ker, G.transpose.fullyBlockedCycles_eq_ker]
-  exact GridChain.map_ker_of_intertwine _ _ _ G.fullyBlockedDifferential_transpose_apply
+  exact LinearEquiv.map_ker_of_intertwine _ _ _ G.fullyBlockedDifferential_transpose_apply
 
 /-- The transpose chain relabeling carries the fully blocked boundaries of `G` onto those of
 `G.transpose`. -/
@@ -110,7 +76,7 @@ theorem fullyBlockedBoundaries_transpose :
     Submodule.map (GridChain.transposeEquiv (ZMod 2) n : _ →ₗ[ZMod 2] _) G.fullyBlockedBoundaries =
       G.transpose.fullyBlockedBoundaries := by
   rw [G.fullyBlockedBoundaries_eq_range, G.transpose.fullyBlockedBoundaries_eq_range]
-  exact GridChain.map_range_of_intertwine _ _ _ G.fullyBlockedDifferential_transpose_apply
+  exact LinearEquiv.map_range_of_intertwine _ _ _ G.fullyBlockedDifferential_transpose_apply
 
 /-- Swapping the `O` and `X` markings leaves the fully blocked cycle submodule unchanged, since
 it fixes the differential. -/

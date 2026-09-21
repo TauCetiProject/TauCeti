@@ -14,8 +14,7 @@ public import TauCeti.Topology.Covering.Clopen
 
 The universal-cover development assumes that the base is path connected, so that the endpoint
 projection is surjective. Dropping that assumption, based paths out of `x₀` still only see the
-path component of `x₀`, and the roadmap's standing hypotheses accordingly allow building the
-cover of `pathComponent x₀` instead. This file does that.
+path component of `x₀`, so this file builds the cover of `pathComponent x₀` instead.
 
 For `X` locally path connected and semilocally simply connected — but *not* assumed path
 connected — the path component of `x₀` is path connected, is open and therefore locally path
@@ -46,11 +45,9 @@ component with that of `X` at the same point. Thus the deck group of the path-co
 
 ## References
 
-This is the "or one builds the cover of `pathComponent x₀`" clause of the standing hypotheses of
-`TauCetiRoadmap/UniversalCovers/README.md`, the one case its Stage 0 hypotheses exclude rather
-than handle. It consumes the based-path universal cover adapted from Kim Morrison's
-[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) and the deck group
-adapted from Kim Morrison's
+It consumes the based-path universal cover adapted from Kim Morrison's
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) and Mathlib's deck
+group `deck`, from Kim Morrison's
 [mathlib4#40135](https://github.com/leanprover-community/mathlib4/pull/40135).
 -/
 
@@ -97,8 +94,8 @@ omit [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] in
 /-- Postcomposing the endpoint projection with the path-component inclusion does not change its
 deck group. -/
 theorem deck_pathComponentCoverProj :
-    Deck (pathComponentCoverProj x₀) =
-      Deck (UniversalCover.proj : PathComponentCover x₀ → (pathComponent x₀ : Set X)) :=
+    deck (pathComponentCoverProj x₀) =
+      deck (UniversalCover.proj : PathComponentCover x₀ → (pathComponent x₀ : Set X)) :=
   deck_comp_of_injective Subtype.val_injective _
 
 /-- **The deck group of the path-component cover is the opposite fundamental group of `X`.**
@@ -106,7 +103,7 @@ The inclusion leaves the deck group unchanged, the universal cover of the compon
 group the opposite of its fundamental group, and
 `FundamentalGroup.pathComponentMulEquiv` identifies that group with `π₁(X, x₀)`. -/
 noncomputable def deckPathComponentFundamentalGroupEquiv :
-    Deck (pathComponentCoverProj x₀) ≃* (FundamentalGroup X x₀)ᵐᵒᵖ :=
+    deck (pathComponentCoverProj x₀) ≃* (FundamentalGroup X x₀)ᵐᵒᵖ :=
   (MulEquiv.subgroupCongr (deck_pathComponentCoverProj x₀)).trans <|
     (UniversalCover.deckFundamentalGroupEquiv (pathComponentSelf x₀)).trans <|
       MulEquiv.op (FundamentalGroup.pathComponentMulEquiv x₀ (pathComponentSelf x₀))

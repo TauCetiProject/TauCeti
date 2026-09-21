@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
-public import TauCeti.NumberTheory.NumberField.SplitsCompletely
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
@@ -58,7 +58,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   have hdiff : algebraMap ℤ (𝓞 K) a - R ∈ Q := Ideal.Quotient.eq.mp hc
   -- `(algebraMap a - R)(algebraMap a + R) = algebraMap (a² - d i) ∈ Q`, so `p ∣ a² - d i`.
   have hpd : (p : ℤ) ∣ a ^ 2 - d i := by
-    rw [← TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver Q]
+    rw [← Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q]
     have hfac : algebraMap ℤ (𝓞 K) (a ^ 2 - d i) =
         (algebraMap ℤ (𝓞 K) a - R) * (algebraMap ℤ (𝓞 K) a + R) := by
       rw [map_sub, map_pow, ← integralSqrt_sq (hr i)]; ring
@@ -125,7 +125,7 @@ private theorem map_ne_neg_of_legendreSym_eq_one (d : ℤ) (r : K) (hr : r ^ 2 =
     rw [h1, integralSqrt_sq hr, hAsq, ← map_sub]
   have hfacQ : (R - A) * (R + A) ∈ Q := by
     rw [heq]
-    exact (TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
+    exact (Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
   -- `σ` sends `R ↦ -R` and fixes the integer `A`.
   have hsR : σ • R = - R := by
     apply FaithfulSMul.algebraMap_injective (𝓞 K) K
@@ -146,7 +146,7 @@ private theorem map_ne_neg_of_legendreSym_eq_one (d : ℤ) (r : K) (hr : r ^ 2 =
     exact h2A
   have hpint : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   rcases hpint.dvd_mul.mp
-      ((TauCeti.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2a) with h2 | ha
+      ((Ideal.algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2a) with h2 | ha
   · exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast h2))
   · exact hpa' ha
 

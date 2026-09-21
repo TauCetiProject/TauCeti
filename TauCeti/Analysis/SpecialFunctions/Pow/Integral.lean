@@ -34,6 +34,13 @@ real interpolation method uses: the integral over `(0, ∞)` of `t ^ s` cut off 
 `c * t` reaches a threshold `a : ℝ≥0∞`, which is the finite antiderivative when `a` is finite and
 `∞` when it is not.
 
+`TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi` is the companion over the complementary region,
+where `c * t` has already passed the threshold. There the roles of the two endpoints are
+exchanged: the integral converges at infinity and diverges at the origin, so the exponent range is
+`s < -1` and the value is `∞` exactly when the threshold is `0`. The two together are what the
+real interpolation method between two finite exponents integrates against, the first for the part
+of a function above a height and the second for the part below it.
+
 The layer cake formula `∫⁻ u ^ p = p * ∫⁻ t in (0, ∞), ν {u > t} * t ^ (p - 1)` is in Mathlib as
 `MeasureTheory.lintegral_rpow_eq_lintegral_meas_lt_mul`, but only for a nonnegative *real-valued*
 `u`. Analysis in `ℝ≥0∞` — where the operators of interpolation theory naturally land, since a
@@ -56,8 +63,16 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 * `TauCeti.lintegral_ofReal_rpow_Ioi`: `∫⁻ t in (0, ∞), t ^ s = ∞`, for every `s`.
 * `TauCeti.lintegral_indicator_ofReal_rpow_Ioi`: the same integral truncated at the height where
   `c * t` reaches `a : ℝ≥0∞`, evaluated to `c ^ (-(s + 1)) / (s + 1) * a ^ (s + 1)`.
+* `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`: the integral over the complementary region,
+  where `c * t` is at least `a`, evaluated to `c ^ (-(s + 1)) / (-(s + 1)) * a ^ (s + 1)` for
+  `s < -1`.
+* `TauCeti.setLIntegral_Ioc_ite_rpow_le`: an upper-tail bound for a negative power restricted by
+  a linear threshold.
+* `TauCeti.setLIntegral_Ioc_rpow_mul_ite_le`: the same bound with constant and linear weights.
 * `TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul`: the layer cake formula for an
   `ℝ≥0∞`-valued function.
+* `TauCeti.sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top`: a function with finite positive
+  power integral is carried by a σ-finite part of the measure.
 
 ## References
 
@@ -103,6 +118,70 @@ theorem lintegral_ofReal_rpow_Ioi (s : ℝ) :
     exact Real.rpow_nonneg (le_of_lt ht) s
   exact not_integrableOn_Ioi_rpow s
     ⟨hmeas.aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal hnn).2 (lt_top_iff_ne_top.2 hne)⟩
+
+/-- The tail integral `∫_{r / D}^∞ t ^ (-n - 1) dt = D ^ n r ^ (-n) / n` bounds the integral of
+`t ^ (-n - 1)` over those `t ∈ (0, 1]` with `r ≤ t * D`. -/
+theorem setLIntegral_Ioc_ite_rpow_le {n : ℕ} (hn : 0 < n) {r D : ℝ} (hr : 0 < r) :
+    ∫⁻ t in Ioc (0 : ℝ) 1, (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) ≤
+      ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
+  rcases le_or_gt D 0 with hD | hD
+  · have hzero : ∀ t ∈ Ioc (0 : ℝ) 1,
+        (if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0) = 0 := fun t ht =>
+      ite_eq_right (by nlinarith [ht.1])
+    rw [setLIntegral_congr_fun measurableSet_Ioc hzero]
+    simp
+  have hc : 0 < r / D := div_pos hr hD
+  have hn' : -(n : ℝ) - 1 < -1 := by
+    have : (0 : ℝ) < n := by exact_mod_cast hn
+    linarith
+  calc
+    _ ≤ ∫⁻ t, (Ici (r / D)).indicator (fun t => ENNReal.ofReal (t ^ (-(n : ℝ) - 1))) t := by
+      refine (setLIntegral_le_lintegral _ _).trans (lintegral_mono fun t => ?_)
+      split_ifs with h
+      · have hmem : t ∈ Ici (r / D) := mem_Ici.2 ((div_le_iff₀ hD).2 h)
+        rw [indicator_of_mem hmem]
+      · exact bot_le
+    _ = ∫⁻ t in Ioi (r / D), ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) := by
+      rw [lintegral_indicator measurableSet_Ici, setLIntegral_congr Ioi_ae_eq_Ici]
+    _ = ENNReal.ofReal (∫ t in Ioi (r / D), t ^ (-(n : ℝ) - 1)) := by
+      rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hn' hc)]
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+      exact Real.rpow_nonneg (hc.trans ht).le _
+    _ = ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ))) := by
+      rw [integral_Ioi_rpow_of_lt hn' hc, ← ENNReal.ofReal_mul (by positivity)]
+      congr 1
+      have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
+      have hexp : -(n : ℝ) - 1 + 1 = -(n : ℝ) := by ring
+      rw [hexp, Real.div_rpow hr.le hD.le, Real.rpow_neg hD.le, Real.rpow_natCast]
+      field_simp
+
+/-- The bound of `setLIntegral_Ioc_ite_rpow_le`, multiplied by the length `r` of a segment and by
+a weight `a`, gives the kernel `r ^ (1 - n)`. -/
+theorem setLIntegral_Ioc_rpow_mul_ite_le {n : ℕ} (hn : 0 < n) (a : ℝ≥0∞) {r : ℝ}
+    (hr : 0 ≤ r) (D : ℝ) :
+    ∫⁻ t in Ioc (0 : ℝ) 1, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
+        (a * if r ≤ t * D then ENNReal.ofReal r else 0) ≤
+      ENNReal.ofReal (D ^ n / n) * (a * ENNReal.ofReal r ^ (1 - (n : ℝ))) := by
+  have hL : ∀ t : ℝ, ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) *
+      (a * if r ≤ t * D then ENNReal.ofReal r else 0) = a * ENNReal.ofReal r *
+        if r ≤ t * D then ENNReal.ofReal (t ^ (-(n : ℝ) - 1)) else 0 := by
+    intro t
+    split_ifs <;> ring
+  simp_rw [hL]
+  rw [lintegral_const_mul _ (Measurable.ite (measurableSet_le measurable_const (by fun_prop))
+    (by fun_prop) measurable_const)]
+  rcases hr.eq_or_lt with rfl | hr
+  · simp
+  calc
+    _ ≤ a * ENNReal.ofReal r *
+        (ENNReal.ofReal (D ^ n / n) * ENNReal.ofReal (r ^ (-(n : ℝ)))) := by
+      gcongr
+      exact setLIntegral_Ioc_ite_rpow_le hn hr
+    _ = _ := by
+      have hexp : (1 : ℝ) - n = 1 + -(n : ℝ) := by ring
+      rw [ENNReal.ofReal_rpow_of_pos hr, hexp, Real.rpow_add hr, Real.rpow_one,
+        ENNReal.ofReal_mul hr.le]
+      ring
 
 /-- **A finite threshold on `c * t` cuts `(0, ∞)` down to a bounded interval.** For `0 < c` and
 `a ≠ ∞`, the indicator of `{t | ENNReal.ofReal (c * t) < a}` agrees at every positive `t` with the
@@ -162,6 +241,123 @@ theorem lintegral_indicator_ofReal_rpow_Ioi (hs : -1 < s) {c : ℝ} (hc : 0 < c)
     Set.inter_eq_self_of_subset_left Ioo_subset_Ioi_self,
     lintegral_ofReal_rpow_Ioo hs (by positivity), hab,
     ENNReal.ofReal_rpow_of_nonneg hb0.le hs1.le, ← ENNReal.ofReal_mul hconst.le, hreal]
+
+/-- **A threshold already passed by `c * t` cuts `(0, ∞)` down to a half-line.** For `0 < c` and
+`a ≠ ∞`, the indicator of `{t | a ≤ ENNReal.ofReal (c * t)}` agrees at every positive `t` with the
+indicator of `[a.toReal / c, ∞)`, whatever the integrand. -/
+private theorem indicator_le_ofReal_mul_eq_indicator_Ici {a : ℝ≥0∞} (ha : a ≠ ∞) {c : ℝ}
+    (hc : 0 < c) (f : ℝ → ℝ≥0∞) {t : ℝ} (ht : t ∈ Ioi (0 : ℝ)) :
+    {t : ℝ | a ≤ ENNReal.ofReal (c * t)}.indicator f t =
+      (Ici (a.toReal / c)).indicator f t := by
+  have ht' : (0 : ℝ) < t := ht
+  have hiff : t ∈ {t : ℝ | a ≤ ENNReal.ofReal (c * t)} ↔ t ∈ Ici (a.toReal / c) := by
+    rw [Set.mem_ofPred, Set.mem_Ici,
+      ENNReal.le_ofReal_iff_toReal_le ha (by positivity), div_le_iff₀ hc, mul_comm c t]
+  by_cases hmem : t ∈ Ici (a.toReal / c)
+  · rw [Set.indicator_of_mem (hiff.2 hmem), Set.indicator_of_mem hmem]
+  · rw [Set.indicator_of_notMem fun h => hmem (hiff.1 h), Set.indicator_of_notMem hmem]
+
+/-- The lower integral of `t ^ s` over `(0, ∞)`, restricted to the heights at which `c * t` has
+already reached a threshold `a : ℝ≥0∞`: for `s < -1` and `0 < c`,
+
+`∫⁻ t in (0, ∞), [a ≤ c * t] * t ^ s = c ^ (-(s + 1)) / (-(s + 1)) * a ^ (s + 1)`.
+
+For a nonzero `a` this is the convergent tail integral over `[a / c, ∞)`; for `a = 0` the
+restriction is vacuous and both sides are `∞`, by `TauCeti.lintegral_ofReal_rpow_Ioi`, while for
+`a = ∞` the region is empty and both sides vanish. This is the inner integral that the real
+interpolation method pairs with the part of a function *below* the height `c * t`, the exponent
+range `s < -1` being the one in which the power is integrable at infinity; the complementary
+region is `TauCeti.lintegral_indicator_ofReal_rpow_Ioi`. -/
+theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 < c) (a : ℝ≥0∞) :
+    ∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | a ≤ ENNReal.ofReal (c * t)}.indicator (fun t => ENNReal.ofReal (t ^ s)) t =
+      ENNReal.ofReal (c ^ (-(s + 1)) / (-(s + 1))) * a ^ (s + 1) := by
+  have hs1 : s + 1 < 0 := by linarith
+  have hs1' : (0 : ℝ) < -(s + 1) := by linarith
+  have hconst : (0 : ℝ) < c ^ (-(s + 1)) / (-(s + 1)) := by positivity
+  rcases eq_or_ne a ∞ with rfl | ha
+  · -- No positive `t` reaches the threshold, and `∞ ^ (s + 1) = 0`.
+    have hempty : ∀ t : ℝ, t ∉ {t : ℝ | (∞ : ℝ≥0∞) ≤ ENNReal.ofReal (c * t)} := fun t ht =>
+      absurd (top_le_iff.1 ht) ENNReal.ofReal_ne_top
+    rw [setLIntegral_congr_fun measurableSet_Ioi
+      (fun t _ => Set.indicator_of_notMem (hempty t) _)]
+    simp [ENNReal.top_rpow_of_neg hs1]
+  rcases eq_or_ne a 0 with rfl | ha0
+  · -- Every positive `t` reaches the threshold, and the integral diverges at the origin.
+    have hall : ∀ t : ℝ, t ∈ {t : ℝ | (0 : ℝ≥0∞) ≤ ENNReal.ofReal (c * t)} := fun _ =>
+      Set.mem_ofPred.2 zero_le
+    rw [setLIntegral_congr_fun measurableSet_Ioi (fun t _ => Set.indicator_of_mem (hall t) _),
+      lintegral_ofReal_rpow_Ioi, ENNReal.zero_rpow_of_neg hs1,
+      ENNReal.mul_top (ENNReal.ofReal_pos.2 hconst).ne']
+  rw [setLIntegral_congr_fun measurableSet_Ioi
+    (fun t ht => indicator_le_ofReal_mul_eq_indicator_Ici ha hc _ ht)]
+  -- abbreviate only now: `set` folds `a.toReal`, which the cut-off lemma above spells out
+  set b : ℝ := a.toReal
+  have hb0 : 0 < b := ENNReal.toReal_pos ha0 ha
+  have hbc : 0 < b / c := by positivity
+  have hab : a = ENNReal.ofReal b := (ENNReal.ofReal_toReal ha).symm
+  have hnn : 0 ≤ᵐ[volume.restrict (Ioi (b / c))] fun t : ℝ => t ^ s := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    exact Real.rpow_nonneg (hbc.trans ht).le s
+  -- The elementary real identity behind the constant `c ^ (-(s + 1))`.
+  have hreal : -(b / c) ^ (s + 1) / (s + 1) = c ^ (-(s + 1)) / (-(s + 1)) * b ^ (s + 1) := by
+    have hcp : c ^ (s + 1) ≠ 0 := (Real.rpow_pos_of_pos hc _).ne'
+    rw [Real.div_rpow hb0.le hc.le, Real.rpow_neg hc.le]
+    field_simp
+  rw [lintegral_indicator measurableSet_Ici, Measure.restrict_restrict measurableSet_Ici,
+    Set.inter_eq_self_of_subset_left (Set.Ici_subset_Ioi.2 hbc),
+    ← setLIntegral_congr Ioi_ae_eq_Ici,
+    ← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hs hbc) hnn,
+    integral_Ioi_rpow_of_lt hs hbc, hreal, hab, ENNReal.ofReal_rpow_of_pos hb0,
+    ← ENNReal.ofReal_mul hconst.le]
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ≥0∞} {p : ℝ}
+
+/-- A function with a finite `L^p` norm is carried by a σ-finite part of the measure: the level
+sets `{f ≥ 1 / (n + 1)}` have finite measure by Chebyshev's inequality applied to `f ^ p`, and they
+exhaust `{f > 0}`. -/
+theorem sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top (hf : AEMeasurable f μ)
+    (hp : 0 < p) (htop : ∫⁻ x, f x ^ p ∂μ ≠ ∞) : SigmaFinite (μ.restrict {x | 0 < f x}) := by
+  let g := hf.mk f
+  have hfg : f =ᵐ[μ] g := hf.ae_eq_mk
+  have htopg : ∫⁻ x, g x ^ p ∂μ ≠ ∞ := by
+    have heq : ∫⁻ x, f x ^ p ∂μ = ∫⁻ x, g x ^ p ∂μ :=
+      lintegral_congr_ae (hfg.fun_comp fun z => z ^ p)
+    rwa [← heq]
+  have hsigma : SigmaFinite (μ.restrict {x | 0 < g x}) := by
+    have hg : Measurable g := hf.measurable_mk
+    have hsmeas : MeasurableSet {x | 0 < g x} := measurableSet_lt measurable_const hg
+    have hlevel : ∀ n : ℕ, μ {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ g x} ≠ ∞ := by
+      intro n
+      have hne : ((n : ℝ≥0∞) + 1)⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (by simp)
+      have hpos : (0 : ℝ≥0∞) < ((n : ℝ≥0∞) + 1)⁻¹ :=
+        ENNReal.inv_pos.2 (by simp [ENNReal.natCast_ne_top])
+      have hεpos : (0 : ℝ≥0∞) < ((n : ℝ≥0∞) + 1)⁻¹ ^ p := ENNReal.rpow_pos hpos hne
+      have hset : {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ g x} =
+          {x | ((n : ℝ≥0∞) + 1)⁻¹ ^ p ≤ g x ^ p} :=
+        Set.ext fun x => (ENNReal.rpow_le_rpow_iff hp).symm
+      rw [hset]
+      refine ne_top_of_le_ne_top (ENNReal.div_lt_top htopg hεpos.ne').ne
+        (meas_ge_le_lintegral_div (hg.pow_const p).aemeasurable hεpos.ne'
+          (ENNReal.rpow_ne_top_of_nonneg hp.le hne))
+    refine ⟨⟨⟨fun n => {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ g x} ∪ {x | 0 < g x}ᶜ,
+      fun _ => trivial, ?_, ?_⟩⟩⟩
+    · intro n
+      have hcompl : μ.restrict {x | 0 < g x} {x | 0 < g x}ᶜ = 0 := by
+        rw [Measure.restrict_apply hsmeas.compl, Set.compl_inter_self, measure_empty]
+      refine lt_of_le_of_lt (measure_union_le _ _) ?_
+      rw [hcompl, add_zero]
+      exact lt_of_le_of_lt (Measure.restrict_apply_le _ _) (lt_top_iff_ne_top.2 (hlevel n))
+    · refine Set.eq_univ_of_forall fun x => ?_
+      rcases eq_or_ne (g x) 0 with hx | hx
+      · exact Set.mem_iUnion.2 ⟨0, Set.mem_union_right _ (by simp [hx])⟩
+      · obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hx
+        exact Set.mem_iUnion.2
+          ⟨n, Set.mem_union_left _ ((ENNReal.inv_le_inv' le_self_add).trans hn.le)⟩
+  have hpos : {x | 0 < f x} =ᵐ[μ] {x | 0 < g x} :=
+    hfg.mono fun _ hx => by simp only [Set.mem_ofPred_eq]; rw [hx]
+  rw [Measure.restrict_congr_set hpos]
+  exact hsigma
 
 variable {β : Type*} [MeasurableSpace β]
 

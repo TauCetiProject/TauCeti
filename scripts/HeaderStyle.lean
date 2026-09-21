@@ -22,6 +22,28 @@ open Mathlib.Linter
 /-- Mathlib's default required license line, also used by Tau Ceti. -/
 def expectedLicense := Mathlib.Linter.linter.style.header.license.defValue
 
+/-- Read the portion inspected by Mathlib's copyright checker.
+
+The checker normalizes comma-continued lines before splitting at a newline followed by a comment
+terminator. A newline after a comma therefore does not end the header. Keep one line after the closing delimiter too: the
+checker inspects the following character, and an immediately adjacent second delimiter makes
+that intervening segment empty. If no such delimiter exists, retain the full input.
+
+Reading just this prefix avoids running the checker's string replacements over every file body.
+Mathlib still performs all validation and constructs the diagnostics. -/
+def readCopyrightHeader (path : System.FilePath) : IO String :=
+  IO.FS.withFile path .read fun handle => do
+    let mut text := ""
+    let mut previous := ""
+    repeat
+      let line ← handle.getLine
+      if line.isEmpty then return text
+      let closes := !text.isEmpty && line.startsWith "-/" && !previous.endsWith ",\n"
+      text := text ++ line
+      if closes then return text ++ (← handle.getLine)
+      previous := line
+    return text
+
 /-- Audit every supplied source with Mathlib's copyright-header checker. Returns a nonzero exit
 code when the source list is empty or at least one file has a malformed header. -/
 unsafe def main (args : List String) : IO UInt32 := do
@@ -30,9 +52,7 @@ unsafe def main (args : List String) : IO UInt32 := do
     return 1
   let mut failures : UInt32 := 0
   for path in args do
-    -- `copyrightHeaderChecks` stops at the end of the first copyright block, so passing the whole
-    -- source is equivalent to Mathlib's leading-trivia call while avoiding elaborator state.
-    let errors := copyrightHeaderChecks (← IO.FS.readFile path) expectedLicense
+    let errors := copyrightHeaderChecks (← readCopyrightHeader path) expectedLicense
     unless errors.isEmpty do
       failures := failures + 1
       for (_, message) in errors do

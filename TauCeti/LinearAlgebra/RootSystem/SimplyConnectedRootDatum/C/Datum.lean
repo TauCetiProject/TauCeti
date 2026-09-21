@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Model
 
-public section
-
 /-!
 # The simply connected root datum of type `Cₙ`
 
@@ -73,6 +71,8 @@ The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Alge
 12.1. This is the `Cₙ` branch of the target "a named datum per valid type" in Layer 6 of
 `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -654,7 +654,8 @@ private lemma typeCSimpleRoot_dotProduct_typeCDualVec (i j : Fin n) :
 private lemma linearIndependent_typeCSimpleRoot (n : ℕ) :
     LinearIndependent ℤ (typeCSimpleRoot (n := n)) :=
   linearIndependent_of_dotProduct_diagonal (c := fun i => if (i : ℕ) + 1 = n then 2 else 1)
-    (w := fun j : Fin n => typeCDualVec n (j : ℕ)) (fun _ => by split_ifs <;> norm_num)
+    (w := fun j : Fin n => typeCDualVec n (j : ℕ))
+    (fun _ => (IsRegular.of_ne_zero (by split_ifs <;> norm_num)).right)
     (fun i => by simp [typeCSimpleRoot_dotProduct_typeCDualVec])
     (fun i j hij => by simp [typeCSimpleRoot_dotProduct_typeCDualVec, hij])
 

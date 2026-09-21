@@ -44,6 +44,8 @@ complexification with intersections is needed.
   filtration**, `im f ∩ W'_k = f(W_k)`, rationally.
 * `TauCeti.Hodge.MixedHodgeStructure.Hom.range_inf_WC_eq_map_WC`: the complexification of the
   latter.
+* `TauCeti.Hodge.MixedHodgeStructure.Hom.invOfBijective`: consequently, a morphism with bijective
+  rational map has an inverse morphism.
 
 ## References
 
@@ -131,15 +133,69 @@ inclusion `(A ∩ B)_ℂ ≤ A_ℂ ∩ B_ℂ` is used, which is monotonicity. -/
   refine le_antisymm ?_ (le_inf LinearMap.map_le_range (f.map_WQ_le k))
   rw [← rationalToComplexSubmodule_le_iff h'ℚ h'ℂ]
   have hrange : rationalToComplexSubmodule h'ℚ h'ℂ (LinearMap.range f.toRatLinearMap) =
-      LinearMap.range f.toLinearMap := by
-    rw [← Submodule.map_top f.toRatLinearMap, ← map_rationalToComplexSubmodule hℚ hℂ h'ℚ h'ℂ,
-      rationalToComplexSubmodule_top, Submodule.map_top, toLinearMap_def]
+      LinearMap.range f.toLinearMap := f.range_toLinearMap.symm
   have hmap : rationalToComplexSubmodule h'ℚ h'ℂ ((source.WQ k).map f.toRatLinearMap) =
       (source.WC k).map f.toLinearMap := by
     rw [← map_rationalToComplexSubmodule hℚ hℂ h'ℚ h'ℂ, WC_def, toLinearMap_def]
   rw [hmap, ← f.range_inf_WC_eq_map_WC k, WC_def, ← hrange]
   exact le_inf (rationalToComplexSubmodule_mono h'ℚ h'ℂ inf_le_left)
     (rationalToComplexSubmodule_mono h'ℚ h'ℂ inf_le_right)
+
+/-! ### Inverses of bijective morphisms -/
+
+/-- **A bijective morphism of mixed Hodge structures has an inverse morphism.** The inverse of the
+underlying rational map preserves both filtrations: by strictness, a vector of a filtration step
+of the target is the image of a vector of the same step of the source. -/
+noncomputable def invOfBijective (f : Hom source target)
+    (hf : Function.Bijective f.toRatLinearMap) : Hom target source where
+  toRatLinearMap := (LinearEquiv.ofBijective f.toRatLinearMap hf).symm.toLinearMap
+  map_mem_WQ k y hy := by
+    have hy' : y ∈ (source.WQ k).map f.toRatLinearMap := by
+      rw [← f.range_inf_WQ_eq_map_WQ]
+      exact ⟨hf.2 y, hy⟩
+    obtain ⟨x, hx, rfl⟩ := hy'
+    simpa using hx
+  map_mem_F p y hy := by
+    set g := (LinearEquiv.ofBijective f.toRatLinearMap hf).symm.toLinearMap
+    have hfg : f.toRatLinearMap ∘ₗ g = LinearMap.id := by
+      ext y
+      simp [g]
+    have hgf : g ∘ₗ f.toRatLinearMap = LinearMap.id := by
+      ext x
+      simp [g]
+    -- Complexification is functorial, so the complexified maps are again mutually inverse.
+    have hfgC : f.toLinearMap ∘ₗ rationalMapToComplex h'ℚ h'ℂ hℚ hℂ g = LinearMap.id := by
+      rw [toLinearMap_def, ← rationalMapToComplex_comp, hfg, rationalMapToComplex_id]
+    have hgfC : rationalMapToComplex h'ℚ h'ℂ hℚ hℂ g ∘ₗ f.toLinearMap = LinearMap.id := by
+      rw [toLinearMap_def, ← rationalMapToComplex_comp, hgf, rationalMapToComplex_id]
+    have hy' : y ∈ (source.F p).map f.toLinearMap := by
+      rw [← f.range_inf_F_eq_map_F]
+      exact ⟨⟨rationalMapToComplex h'ℚ h'ℂ hℚ hℂ g y, LinearMap.congr_fun hfgC y⟩, hy⟩
+    obtain ⟨x, hx, rfl⟩ := hy'
+    rw [← LinearMap.comp_apply, hgfC, LinearMap.id_apply]
+    exact hx
+
+/-- The rational map underlying the inverse of a bijective morphism is the inverse linear map. -/
+@[simp]
+theorem invOfBijective_toRatLinearMap (f : Hom source target)
+    (hf : Function.Bijective f.toRatLinearMap) :
+    (f.invOfBijective hf).toRatLinearMap =
+      (LinearEquiv.ofBijective f.toRatLinearMap hf).symm.toLinearMap := by
+  rw [invOfBijective]
+
+/-- The inverse of a bijective morphism is a left inverse. -/
+@[simp]
+theorem invOfBijective_comp (f : Hom source target) (hf : Function.Bijective f.toRatLinearMap) :
+    (f.invOfBijective hf).comp f = Hom.id source := by
+  ext x
+  simp
+
+/-- The inverse of a bijective morphism is a right inverse. -/
+@[simp]
+theorem comp_invOfBijective (f : Hom source target) (hf : Function.Bijective f.toRatLinearMap) :
+    f.comp (f.invOfBijective hf) = Hom.id target := by
+  ext y
+  simp
 
 end MixedHodgeStructure.Hom
 

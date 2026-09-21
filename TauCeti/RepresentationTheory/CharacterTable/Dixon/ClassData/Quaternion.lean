@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.Quaternion
+public import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 
 /-!

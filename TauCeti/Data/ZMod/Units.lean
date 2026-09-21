@@ -1,29 +1,53 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, Claude
 -/
 module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
-import Mathlib.Data.ZMod.Units
+public import Mathlib.Data.ZMod.Units
 
 /-!
-# Coprime lifting from `ZMod d`
+# Units and coprimality over `ZMod d`
 
-Coprime residues modulo `d` lift to coprime integers (`IsCoprime.exists_int_lifts`).
+Results connecting unit and coprimality data over `ZMod d`, independent of one another:
 
-Ported from the AINTLIB `LeanModularForms` project
-(`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); the consumer is the
-strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
-`TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+* `Int.isUnit_intCast_iff_gcd_eq_one` — an integer is a *unit* mod `d` exactly when it is
+  coprime to `d`. Its consumers are the Atkin-Lehner and bad-prime double-coset arguments in
+  `TauCeti/NumberTheory/HeckeRing/GL2/Gamma0/`, which need the `Int.gcd` form of the unit
+  condition carried by membership of `Δ₀(N)`, and `Int.exists_nonneg_lt_and_dvd_mul_sub` in
+  `TauCeti/Data/Int/LinearCongruence.lean`, which needs the other direction.
+* `IsCoprime.exists_int_lifts` — a *pair* of coprime residues mod `d` lifts to a coprime pair
+  of integers. Ported from the AINTLIB `LeanModularForms` project
+  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
+  strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
+  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+* `TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
+  stays lowered after restricting to a multiple of its modulus.
+* `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
+  number coprime to `d`, so a statement about all units may be checked on those.
+* `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
+* `TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
+  one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
+  modulus. Its consumers are the descent arguments of
+  `TauCeti/NumberTheory/ModularForms/Newforms/Descent/`, which carry a nebentypus lowered modulo
+  `M / p` along a chain of divisibilities.
 -/
 
 public section
 
 variable {d : ℕ}
+
+/-- **An integer is a unit mod `d` exactly when it is coprime to `d`.** The `Int.gcd` form is
+what consumers of `Nat.Coprime` want; `ZMod.coe_int_isUnit_iff_isCoprime` states the same
+equivalence with `IsCoprime` over `ℤ` on the right, in the opposite argument order. -/
+theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
+    IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
+  (ZMod.coe_int_isUnit_iff_isCoprime _ _).trans
+    (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
     (hac : IsCoprime (a₁ : ZMod d) (c₁ : ZMod d)) :
@@ -32,6 +56,35 @@ private lemma isCoprime_emod {a₁ c₁ : ℤ}
   rw [h]
   push_cast
   exact hac.symm.add_mul_left_right _
+
+/-- **A lowered unit homomorphism is determined at the smaller modulus.** If `χM` is pulled back
+from `χ₀` modulo `M / p`, and `χ'` modulo `N'` agrees with `χM` after restriction to the units
+modulo a common multiple `M'`, then `χ'` is itself pulled back from `χ₀`, along `N' / p`.
+`ZMod.unitsMap` is surjective onto the units of a divisor, so the restriction can be cancelled. -/
+theorem TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq {G : Type*} [MulOne G] {p M M' N' : ℕ}
+    [NeZero M'] (hpM : p ∣ M) (hMN' : M ∣ N') (hN'M' : N' ∣ M')
+    {χM : (ZMod M)ˣ →* G} {χ₀ : (ZMod (M / p))ˣ →* G}
+    (hcomp : χM = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpM))) {χ' : (ZMod N')ˣ →* G}
+    (h : χ'.comp (ZMod.unitsMap hN'M') = χM.comp (ZMod.unitsMap (hMN'.trans hN'M'))) :
+    χ' = (χ₀.comp (ZMod.unitsMap
+        ((Nat.div_dvd_div_iff_right hpM (hpM.trans hMN')).mpr hMN'))).comp
+      (ZMod.unitsMap (Nat.div_dvd_of_dvd (hpM.trans hMN'))) := by
+  rw [hcomp, MonoidHom.comp_assoc, ZMod.unitsMap_comp] at h
+  refine (MonoidHom.cancel_right (ZMod.unitsMap_surjective hN'M')).mp (h.trans ?_)
+  rw [MonoidHom.comp_assoc, MonoidHom.comp_assoc, ZMod.unitsMap_comp, ZMod.unitsMap_comp]
+
+/-- **A lowered unit homomorphism stays lowered after restricting to a multiple.** If `χ` modulo
+`N` is pulled back from `χ₀` modulo `N / p`, then restricting `χ` to the units modulo `N * L` is
+again a pull-back of `χ₀`, now along `N * L / p`. Both sides collapse to one `ZMod.unitsMap` by
+`ZMod.unitsMap_comp`. -/
+theorem TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left {G : Type*} [MulOne G]
+    {p N L : ℕ} (hpN : p ∣ N) {χ : (ZMod N)ˣ →* G} {χ₀ : (ZMod (N / p))ˣ →* G}
+    (hcomp : χ = χ₀.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hpN))) :
+    χ.comp (ZMod.unitsMap (dvd_mul_left N L)) =
+      (χ₀.comp (ZMod.unitsMap (Nat.mul_div_assoc L hpN ▸ dvd_mul_left (N / p) L))).comp
+        (ZMod.unitsMap (Nat.div_dvd_of_dvd (dvd_mul_of_dvd_right hpN L))) := by
+  rw [hcomp, MonoidHom.comp_assoc, ZMod.unitsMap_comp, MonoidHom.comp_assoc, ZMod.unitsMap_comp]
+
 
 /-- Coprime residues modulo `d` lift to coprime integers: if `a` and `c` are coprime in
 `ZMod d`, there are integers `a₀`, `c₀` reducing to `a`, `c` with `IsCoprime a₀ c₀`. -/
@@ -68,3 +121,18 @@ theorem IsCoprime.exists_int_lifts {a c : ZMod d}
     conv_rhs => rw [← Int.emod_add_ediv_mul a₁ c₁]
     push_cast
     rw [hr₀, hc₀]
+
+/-- **Every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural number coprime to `d`.**
+A property of all units may therefore be checked on the units of this shape. -/
+theorem ZMod.exists_unitOfCoprime_eq [NeZero d] (u : (ZMod d)ˣ) :
+    ∃ (m : ℕ) (hm : Nat.Coprime m d), ZMod.unitOfCoprime m hm = u :=
+  ⟨(u : ZMod d).val, ZMod.val_coe_unit_coprime u, ZMod.unitsEquivCoprime.symm_apply_apply u⟩
+
+-- Deliberately not `@[simp]`: the right-hand side needs coprimality proofs for `m` and `n`
+-- separately, which `simp` cannot synthesise from the left-hand side, so Mathlib's `simpNF`
+-- linter reports that the lemma would never apply.
+/-- **`ZMod.unitOfCoprime` is multiplicative in its numerator.** -/
+theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Coprime n d) :
+    ZMod.unitOfCoprime (m * n) (Nat.coprime_mul_iff_left.mpr ⟨hm, hn⟩)
+      = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
+  Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)

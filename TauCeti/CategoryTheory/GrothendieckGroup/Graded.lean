@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.Graded
+public import TauCeti.CategoryTheory.Exact.Graded.Basic
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 public import TauCeti.CategoryTheory.GrothendieckGroup.Exact
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
@@ -476,11 +476,9 @@ commutes with the grading shift induces a homomorphism of exact Grothendieck gro
 class of `M{1}` and the class of `M` to the same element, that is, one invariant under the
 grading shift.
 
-That invariance is the whole content of the statement: no factorization through a quotient of
-`ExactK0` is constructed here.  Building one would be of limited use, since the map from the
-graded group to the ungraded one is not an isomorphism in general; the extra hypotheses which
-make it one are a matter for the Laurent-coefficient layer downstream, and shift compatibility
-alone does not supply them. -/
+The factorization of this map through the specialization of graded `K₀` at `q = 1`, and
+sufficient hypotheses for the factored map to be an isomorphism, are
+`TauCeti.LaurentK0.forgetGrading` and `TauCeti.LaurentK0.forgetGradingEquiv`. -/
 theorem map_shiftEquiv_of_commShift {E' : ExactStructure D}
     (hU : E.toExactStructure.IsConflationExact E' F) (comm : E.shift.functor ⋙ F ≅ F)
     (x : ExactK0 E.toExactStructure) :

@@ -11,13 +11,7 @@ public import TauCeti.RingTheory.Huber.RingOfDefinition
 /-!
 # The trivial presentation: `A⟨T/1⟩` is the completion of `A`
 
-The rational subset `R(T/1)` of `Spa (A, A⁺)` is the whole adic spectrum whenever the numerators
-are sub-unit — in particular `R({1}/1) = Spa (A, A⁺)`, which is
-`TauCeti.ValuationSpectrum.rationalSubset_singleton_one`. Its coordinate ring is therefore the
-value the adic structure presheaf takes on *global sections*. The Tau Ceti AdicSpaces roadmap's
-Layer 3.5 target identifies this value with `A` for a complete Hausdorff pair.
-
-This file proves that, at the level of the localisation construction the presheaf is built from.
+This file identifies the completed localisation `A⟨T/1⟩` with the Hausdorff completion of `A`.
 Everything rests on one computation: for numerators lying in the ring of definition, the
 localisation topology at the denominator `1` is the topology `A` already carries.
 
@@ -54,15 +48,16 @@ identification with `A` likewise does not change `P`.
   `TauCeti.Huber.PairOfDefinition.locUniformSpace_denom_one` says the same of the uniformity, so
   `A⟨T/1⟩` is the Hausdorff completion of `A`.
 * `TauCeti.Huber.PairOfDefinition.toCompletionLoc_denom_one_bijective` and
-  `TauCeti.Huber.PairOfDefinition.toCompletionLocEquivDenomOne`: **`𝒪_X(X) ≅ A`.** For `A`
-  complete and Hausdorff the structure map `A → A⟨T/1⟩` is a ring isomorphism, and
+  `TauCeti.Huber.PairOfDefinition.toCompletionLocEquivDenomOne`: **`A ≃+* A⟨T/1⟩`.** For `A`
+  complete and Hausdorff the structure map `A → A⟨T/1⟩` is a ring isomorphism, for every
+  localisation of `A` away from `1`. Its inverse is continuous
+  (`TauCeti.Huber.PairOfDefinition.continuous_toCompletionLocEquivDenomOne_symm`), and
   `TauCeti.Huber.PairOfDefinition.toCompletionLocHomeomorphDenomOne` upgrades it to a
   homeomorphism, so the isomorphism is one of topological rings.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition and Definition 5.51
-  for `A⟨T/s⟩` itself, and §8.1 for the structure presheaf whose global sections this computes.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Proposition and Definition 5.51.
 -/
 
 open Filter Pointwise Topology
@@ -234,6 +229,7 @@ section CompleteSeparated
 
 variable [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A]
   (P : PairOfDefinition A) (T : Finset A) (hTpb : ∀ t ∈ T, IsPowerBounded t)
+  (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away (1 : A) S]
 
 include hTpb
 
@@ -243,17 +239,17 @@ completed localisation: this is the universal property of `A⟨T/s⟩` at `s = 1
 
 Only its existence is recorded; `toCompletionLocEquivDenomOne` is what a consumer uses. -/
 private theorem exists_retraction_denom_one :
-    letI := isUniformAddGroup_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-    letI := isTopologicalRing_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-    ∃ g : @UniformSpace.Completion A
-        (locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)) →+* A,
+    letI := isUniformAddGroup_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    letI := isTopologicalRing_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    ∃ g : @UniformSpace.Completion S
+        (locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)) →+* A,
       Continuous g ∧
-        g.comp (toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)) = RingHom.id A := by
+        g.comp (toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)) = RingHom.id A := by
   have := P.toNonarchimedeanRing
   have hs : IsUnit ((RingHom.id A) 1) := by simp
   have hunit : ((hs.unit⁻¹ : Aˣ) : A) = 1 := by simp
-  obtain ⟨g, hg, -⟩ := existsUnique_continuous_ringHom_completion_locTopology P T 1 A
-    (hasDenominatorPower_denom_one P T A) (φ := RingHom.id A)
+  obtain ⟨g, hg, -⟩ := existsUnique_continuous_ringHom_completion_locTopology P T 1 S
+    (hasDenominatorPower_denom_one P T S) (φ := RingHom.id A)
     (by simpa using continuousAt_id (x := (0 : A))) hs fun t ht ↦ by
       rw [hunit, mul_one]
       exact hTpb t ht
@@ -262,84 +258,91 @@ private theorem exists_retraction_denom_one :
 /-- The retraction is a left inverse of the structure map: that is the equation the universal
 property produced. -/
 private theorem retraction_toCompletionLoc_denom_one (a : A) :
-    (exists_retraction_denom_one P T hTpb).choose
-      (toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A) a) = a :=
-  congrArg (fun k : A →+* A ↦ k a) (exists_retraction_denom_one P T hTpb).choose_spec.2
+    (exists_retraction_denom_one P T hTpb S).choose
+      (toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S) a) = a :=
+  congrArg (fun k : A →+* A ↦ k a) (exists_retraction_denom_one P T hTpb S).choose_spec.2
 
 /-- The retraction is a right inverse as well: the composite in the other order is a continuous
 endomorphism of `A⟨T/1⟩` fixing the structure map, and `eq_id_of_comp_toCompletionLoc_eq_self`
 says the identity is the only one. -/
 private theorem toCompletionLoc_retraction_denom_one
-    (x : @UniformSpace.Completion A
-      (locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A))) :
-    toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)
-      ((exists_retraction_denom_one P T hTpb).choose x) = x := by
-  have hspec := (exists_retraction_denom_one P T hTpb).choose_spec
-  have hcomp : ((toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)).comp
-        (exists_retraction_denom_one P T hTpb).choose).comp
-      (toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)) =
-      toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A) := by
+    (x : @UniformSpace.Completion S
+      (locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S))) :
+    toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)
+      ((exists_retraction_denom_one P T hTpb S).choose x) = x := by
+  have hspec := (exists_retraction_denom_one P T hTpb S).choose_spec
+  have hcomp : ((toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)).comp
+        (exists_retraction_denom_one P T hTpb S).choose).comp
+      (toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)) =
+      toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S) := by
     rw [RingHom.comp_assoc, hspec.2, RingHom.comp_id]
-  have hid := eq_id_of_comp_toCompletionLoc_eq_self P T 1 A
-    (hasDenominatorPower_denom_one P T A) _
-    ((continuous_toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)).comp
+  have hid := eq_id_of_comp_toCompletionLoc_eq_self P T 1 S
+    (hasDenominatorPower_denom_one P T S) _
+    ((continuous_toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)).comp
       hspec.1) hcomp
   exact congrArg (fun k ↦ k x) hid
 
 /-- **The structure map of the trivial presentation is bijective.** -/
 theorem toCompletionLoc_denom_one_bijective :
-    Function.Bijective (toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)) :=
-  ⟨Function.LeftInverse.injective (retraction_toCompletionLoc_denom_one P T hTpb),
-    fun x ↦ ⟨_, toCompletionLoc_retraction_denom_one P T hTpb x⟩⟩
+    Function.Bijective (toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)) :=
+  ⟨Function.LeftInverse.injective (retraction_toCompletionLoc_denom_one P T hTpb S),
+    fun x ↦ ⟨_, toCompletionLoc_retraction_denom_one P T hTpb S x⟩⟩
 
-/-- **`𝒪_X(X) ≅ A`.** For a complete Hausdorff `A` the structure map `A → A⟨T/1⟩` of the trivial
-presentation is a ring isomorphism, giving the global-sections identification targeted by Layer
-3.5 of the Tau Ceti AdicSpaces roadmap.
+/-- **`A ≃+* A⟨T/1⟩`.** For a complete Hausdorff `A` the structure map `A → A⟨T/1⟩` is a ring
+isomorphism.
 
 The proof is the universal property, not the topology computation above. `A` is itself a complete
 Hausdorff target through which the identity factors, and `A⟨T/1⟩` admits at most one continuous
 endomorphism over `A`, so the retraction obtained is a two-sided inverse of the structure map. -/
 noncomputable def toCompletionLocEquivDenomOne :
-    letI := isUniformAddGroup_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-    letI := isTopologicalRing_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-    A ≃+* @UniformSpace.Completion A
-      (locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)) :=
-  letI := isUniformAddGroup_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-  letI := isTopologicalRing_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-  { toFun := toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)
-    invFun := (exists_retraction_denom_one P T hTpb).choose
-    left_inv := retraction_toCompletionLoc_denom_one P T hTpb
-    right_inv := toCompletionLoc_retraction_denom_one P T hTpb
+    letI := isUniformAddGroup_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    letI := isTopologicalRing_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    A ≃+* @UniformSpace.Completion S
+      (locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)) :=
+  letI := isUniformAddGroup_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+  letI := isTopologicalRing_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+  { toFun := toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)
+    invFun := (exists_retraction_denom_one P T hTpb S).choose
+    left_inv := retraction_toCompletionLoc_denom_one P T hTpb S
+    right_inv := toCompletionLoc_retraction_denom_one P T hTpb S
     map_mul' := map_mul _
     map_add' := map_add _ }
 
 /-- The isomorphism is the structure map. -/
 @[simp]
 theorem toCompletionLocEquivDenomOne_apply (a : A) :
-    letI := isUniformAddGroup_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-    letI := isTopologicalRing_locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)
-    toCompletionLocEquivDenomOne P T hTpb a =
-      toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A) a := (rfl)
+    letI := isUniformAddGroup_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    letI := isTopologicalRing_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    toCompletionLocEquivDenomOne P T hTpb S a =
+      toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S) a := (rfl)
 
-/-- **`𝒪_X(X) ≅ A` as topological rings.** The ring isomorphism of
+/-- The inverse of `toCompletionLocEquivDenomOne` is continuous: it is the retraction, which the
+universal property produced continuous. -/
+theorem continuous_toCompletionLocEquivDenomOne_symm :
+    letI := isUniformAddGroup_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    letI := isTopologicalRing_locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)
+    Continuous (toCompletionLocEquivDenomOne P T hTpb S).symm :=
+  (exists_retraction_denom_one P T hTpb S).choose_spec.1
+
+/-- **`A ≃ₜ A⟨T/1⟩`.** The ring isomorphism of
 `toCompletionLocEquivDenomOne` is a homeomorphism for `A`'s own topology: the structure map is
 continuous by `continuous_toCompletionLoc`, and its inverse is the retraction, which the universal
 property produced continuous. -/
 noncomputable def toCompletionLocHomeomorphDenomOne :
-    A ≃ₜ @UniformSpace.Completion A
-      (locUniformSpace P T 1 A (hasDenominatorPower_denom_one P T A)) where
-  toFun := toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)
-  invFun := (exists_retraction_denom_one P T hTpb).choose
-  left_inv := retraction_toCompletionLoc_denom_one P T hTpb
-  right_inv := toCompletionLoc_retraction_denom_one P T hTpb
-  continuous_toFun := continuous_toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A)
-  continuous_invFun := (exists_retraction_denom_one P T hTpb).choose_spec.1
+    A ≃ₜ @UniformSpace.Completion S
+      (locUniformSpace P T 1 S (hasDenominatorPower_denom_one P T S)) where
+  toFun := toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)
+  invFun := (exists_retraction_denom_one P T hTpb S).choose
+  left_inv := retraction_toCompletionLoc_denom_one P T hTpb S
+  right_inv := toCompletionLoc_retraction_denom_one P T hTpb S
+  continuous_toFun := continuous_toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S)
+  continuous_invFun := (exists_retraction_denom_one P T hTpb S).choose_spec.1
 
 /-- The homeomorphism is the structure map. -/
 @[simp]
 theorem toCompletionLocHomeomorphDenomOne_apply (a : A) :
-    toCompletionLocHomeomorphDenomOne P T hTpb a =
-      toCompletionLoc P T 1 A (hasDenominatorPower_denom_one P T A) a := (rfl)
+    toCompletionLocHomeomorphDenomOne P T hTpb S a =
+      toCompletionLoc P T 1 S (hasDenominatorPower_denom_one P T S) a := (rfl)
 
 end CompleteSeparated
 

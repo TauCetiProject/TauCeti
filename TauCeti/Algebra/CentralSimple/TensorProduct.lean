@@ -15,17 +15,18 @@ module
 public import TauCeti.Algebra.Central.TensorProduct
 public import Mathlib.RingTheory.SimpleRing.Basic
 -- Non-public: none of these appears in the type of an exported declaration. `Basis.ofVectorSpace`,
--- the `A`-basis `Algebra.TensorProduct.basis` of `A ⊗[K] B`, flatness, `TwoSidedIdeal.comap`,
--- `Algebra.TensorProduct.comm` and the transport of simplicity along a ring isomorphism are used
--- only inside proofs (the sole declaration stating a coordinate of that basis is `private`), and
--- the matrix algebras only by the worked examples at the end of the file, so downstream importers
--- of this module do not pay for any of them.
+-- flatness, `TwoSidedIdeal.comap`, `Algebra.TensorProduct.comm`, the transport of simplicity along
+-- a ring isomorphism and the two `a ⊗ₜ 1` multiplication formulas of
+-- `TauCeti.Algebra.TensorProduct.Mul` are used only inside proofs, and the matrix algebras only by
+-- the worked examples at the end of the file, so downstream importers of this module do not pay
+-- for any of them. The `A`-basis `Algebra.TensorProduct.basis` of `A ⊗[K] B` now arrives with
+-- `Mul`, which publicly imports `Mathlib.RingTheory.TensorProduct.Free`.
+import TauCeti.Algebra.TensorProduct.Mul
 import Mathlib.Algebra.Central.Matrix
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
-import Mathlib.RingTheory.TensorProduct.Free
 import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.RingTheory.TwoSidedIdeal.Operations
 
@@ -76,11 +77,12 @@ that expression. Multiplying by `a ⊗ₜ 1` on one side multiplies every coordi
 which is what makes the coordinatewise bookkeeping of that argument -- the two-sided ideal of
 `i₀`-th coordinates, and the support of an additive commutator -- available. On the left this is
 just the generic scalar-action API: `(a ⊗ₜ 1) * x` is the module action `a • x` by Mathlib's
-`smul_one_mul` (packaged as the private `tmul_one_mul_eq_smul`), and
-`(Algebra.TensorProduct.basis A 𝓑).repr` is `A`-linear. The right-hand
-version is a statement in its own right, the private `basis_repr_mul_tmul_one`, and it is where it
-matters that the coordinates are taken with respect to a basis of `B` over the *base* field: that
-is what lets the scalars pass through `a`.
+`smul_one_mul` (packaged as `Algebra.TensorProduct.tmul_one_mul_eq_smul`), and
+`(Algebra.TensorProduct.basis A 𝓑).repr` is `A`-linear. The right-hand version is a statement in
+its own right, `Algebra.TensorProduct.basis_repr_mul_tmul_one`, and it is where it matters that the
+coordinates are taken with respect to a basis of `B` over the *base* field: that is what lets the
+scalars pass through `a`. Both are general facts about `A ⊗[K] B` and live in
+`TauCeti/Algebra/TensorProduct/Mul.lean`.
 
 Simplicity is then the classical minimal-length argument: given a nonzero two-sided ideal
 `I`, pick a nonzero `y ∈ I` with as few nonzero coordinates as possible; after rescaling one
@@ -114,54 +116,6 @@ open Module
 open scoped TensorProduct
 
 namespace TauCeti
-
-namespace Algebra.TensorProduct
-
-section Coordinates
-
-variable {K A B ι : Type*} [CommSemiring K] [Semiring A] [Semiring B] [Algebra K A]
-  [Algebra K B]
-
-/-- Left multiplication by `a ⊗ₜ 1` on `A ⊗[K] B` is the left `A`-module action, the one that
-`Algebra.TensorProduct.basis` is a basis for.
-
-This is Mathlib's `smul_one_mul`, available because `Algebra.TensorProduct.isScalarTower_right`
-makes `A ⊗[K] B` a scalar tower over `A`; all this adds is the identification of `a • 1` with
-`a ⊗ₜ 1`. (`Algebra.smul_def` is not available here: `A` is not assumed commutative, so there is no
-`Algebra A (A ⊗[K] B)` instance.)
-
-`private`: it has no use outside the simplicity proof in this file. With it in the simp set, the
-coordinates of `(a ⊗ₜ 1) * x` are already normalized by the generic scalar-action lemmas
-(`map_smul`, `Finsupp.smul_apply`, `smul_eq_mul`), so no left-handed coordinate lemma is needed. -/
-@[simp]
-private theorem tmul_one_mul_eq_smul (a : A) (x : A ⊗[K] B) : (a ⊗ₜ[K] (1 : B)) * x = a • x := by
-  rw [← smul_one_mul a x, Algebra.TensorProduct.one_def, TensorProduct.smul_tmul', smul_eq_mul,
-    mul_one]
-
-variable (𝓑 : Basis ι K B)
-
-/-- Multiplying by `a ⊗ₜ 1` on the right multiplies each coordinate of `x` by `a` on the right.
-
-`private`: like `tmul_one_mul_eq_smul` it serves only the simplicity proof in this file. Unlike the
-left-handed statement it is not an instance of the generic scalar-action API, since right
-multiplication is not the module action `Algebra.TensorProduct.basis` is a basis for. -/
-@[simp]
-private theorem basis_repr_mul_tmul_one (a : A) (x : A ⊗[K] B) (j : ι) :
-    (Algebra.TensorProduct.basis A 𝓑).repr (x * (a ⊗ₜ[K] (1 : B))) j =
-      (Algebra.TensorProduct.basis A 𝓑).repr x j * a := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | tmul a' b =>
-    rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.TensorProduct.basis_repr_tmul,
-      Algebra.TensorProduct.basis_repr_tmul]
-    simp only [Finsupp.smul_apply, Finsupp.mapRange_apply, smul_eq_mul]
-    rw [mul_assoc, mul_assoc, Algebra.commutes]
-  | add x y hx hy => rw [add_mul, map_add, Finsupp.add_apply, hx, hy, map_add, Finsupp.add_apply,
-      add_mul]
-
-end Coordinates
-
-end Algebra.TensorProduct
 
 namespace IsSimpleRing
 

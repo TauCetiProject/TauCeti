@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.Algebra.Coalgebra.GroupLike.Map
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Basic
+public import Mathlib.LinearAlgebra.Basis.Basic
 
 import Mathlib.LinearAlgebra.Span.Basic
 
@@ -20,7 +21,8 @@ singleton span, a finite-generation theorem for finite sets of group-like elemen
 
 The subcoalgebra spanned by all group-like elements is the full subcoalgebra exactly when the
 group-like elements span the carrier as a module, a condition invariant under coalgebra
-equivalence.
+equivalence. Over a domain the group-like elements are linearly independent, so they then form a
+basis, `groupLikeBasis`.
 
 ## References
 
@@ -192,6 +194,26 @@ instance groupLikeSpan_finite (g : GroupLike R C) :
     Module.Finite R (groupLikeSpan (R := R) (C := C) g).toSubmodule := by
   rw [groupLikeSpan]
   exact groupLikeSetSpan_finite (R := R) (C := C) {g} (Set.finite_singleton g)
+
+section Domain
+
+variable {S : Type u} {D : Type v} [CommRing S] [IsDomain S] [AddCommGroup D] [Module S D]
+variable [Module.IsTorsionFree S D] [Coalgebra S D]
+
+/-- Over a domain, the group-like elements of a torsion-free coalgebra that they span form a
+basis of it. -/
+noncomputable def groupLikeBasis (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤) :
+    Module.Basis (GroupLike S D) S D :=
+  Module.Basis.mk linearIndep_groupLikeVal
+    ((groupLikeSetSpan_eq_top_iff_span_eq_top (R := S) (C := D)).mp h).ge
+
+/-- The basis vector of `groupLikeBasis` indexed by a group-like element is that element. -/
+@[simp]
+theorem groupLikeBasis_apply (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤)
+    (g : GroupLike S D) : groupLikeBasis h g = g.val :=
+  Module.Basis.mk_apply _ _ g
+
+end Domain
 
 end Subcoalgebra
 

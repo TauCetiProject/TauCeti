@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+import TauCeti.Analysis.Distribution.TestFunction.Translation
+import Mathlib.MeasureTheory.Group.Integral
 
 /-!
 # The `Lᵖ` translation estimate on `W^{1,p}_0`
@@ -68,6 +70,8 @@ estimate give the fixed-bounded-support and translation inputs for Fréchet--Kol
   zero extensions of a gradient-bounded family have uniformly small translation increments.
 * `TauCeti.W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_norm_le`:
   zero extensions of a norm-bounded family have uniformly small translation increments.
+* `TauCeti.Sobolev1JetLp.translateLp_mem_w1pSubmodule`: translation preserves `W^{1,p}(ℝⁿ)`,
+  since on the whole space the weak-derivative identities are translation invariant.
 
 ## References
 
@@ -91,39 +95,6 @@ section Sobolev
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)]
-
-/-- Translation of an `Lᵖ` class on the whole space, as a linear isometry.  It is used only to
-see the translation increment as a *continuous* function of the class, which is what makes the
-translation estimate a closed condition. -/
-private def translateLp (mu : Measure E) [mu.IsAddHaarMeasure] (p : ENNReal) [Fact (1 ≤ p)]
-    (h : E) :
-    Lp ℝ p (mu.restrict ((⊤ : Opens E) : Set E)) →ₗᵢ[ℝ]
-      Lp ℝ p (mu.restrict ((⊤ : Opens E) : Set E)) :=
-  Lp.compMeasurePreservingₗᵢ ℝ (· + h) <| by
-    rw [Opens.coe_top, Measure.restrict_univ]
-    exact measurePreserving_add_right mu h
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- The `Lᵖ` seminorm of a translation increment, computed on the ambient measure. -/
-private theorem enorm_translateLp_sub (h : E)
-    (f : Lp ℝ p (mu.restrict ((⊤ : Opens E) : Set E))) :
-    ‖translateLp mu p h f - f‖ₑ = eLpNorm (fun x => f (x + h) - f x) p mu := by
-  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  have hmp : MeasurePreserving (· + h) (mu.restrict ((⊤ : Opens E) : Set E))
-      (mu.restrict ((⊤ : Opens E) : Set E)) := by
-    rw [htop]
-    exact measurePreserving_add_right mu h
-  have htr : ⇑(translateLp mu p h f) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-      ⇑f ∘ (· + h) :=
-    Lp.coeFn_compMeasurePreserving f hmp
-  have hae : ⇑(translateLp mu p h f - f) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-      fun x => f (x + h) - f x := by
-    filter_upwards [Lp.coeFn_sub (translateLp mu p h f) f, htr] with x hx hy
-    rw [hx, Pi.sub_apply, hy]
-    rfl
-  rw [Lp.enorm_def, eLpNorm_congr_ae hae]
-  exact congrArg (fun nu : Measure E => eLpNorm (fun x => f (x + h) - f x) p nu) htop
 
 /-- The translation estimate for a single test function, in the shape the jets of `W^{1,p}(ℝⁿ)`
 present it. -/
@@ -164,16 +135,25 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (hp : p ≠ �
     (hu : u ∈ w1p0Submodule mu ⊤ p) :
     eLpNorm (fun x => W1p.value u (x + h) - W1p.value u x) p mu
       ≤ ‖h‖ₑ * ‖W1p.gradient u‖ₑ := by
+  have htop : mu.restrict ((⊤ : Opens E) : Set E) = mu := by
+    rw [Opens.coe_top, Measure.restrict_univ]
+  let _ : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      (inferInstance : mu.IsAddHaarMeasure)
   have hrw : ∀ v : W1p mu (⊤ : Opens E) p,
       eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p mu
-        = ‖translateLp mu p h (W1p.valueL v) - W1p.valueL v‖ₑ := fun v => by
-    rw [enorm_translateLp_sub, W1p.valueL_apply]
+        = ‖(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h (W1p.valueL v) -
+          W1p.valueL v‖ₑ := fun v => by
+    rw [Measure.enorm_translateLp_sub, W1p.valueL_apply]
+    exact (congrArg (fun nu : Measure E =>
+      eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p nu) htop).symm
   have hclosed : IsClosed {v : W1p mu ⊤ p |
       eLpNorm (fun x => W1p.value v (x + h) - W1p.value v x) p mu
         ≤ ‖h‖ₑ * ‖W1p.gradient v‖ₑ} := by
     simp only [hrw, ← W1p.gradientL_apply]
     exact isClosed_le
-      ((((translateLp mu p h).toContinuousLinearMap.comp W1p.valueL) -
+      (((((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h).toLinearIsometry
+        |>.toContinuousLinearMap.comp W1p.valueL) -
         W1p.valueL).continuous.enorm)
       ((ENNReal.continuous_const_mul (by finiteness)).comp
         W1p.gradientL.continuous.enorm)
@@ -259,6 +239,50 @@ theorem W1p0.exists_pos_forall_eLpNorm_value_extendByZeroL_comp_add_sub_le_of_no
     (C := C) (epsilon := epsilon) ?_ hepsilon
   intro u hu
   exact (W1p.norm_gradient_le (u : W1p mu Omega p)).trans (hS u hu)
+
+/-! ### Translation preserves `W^{1,p}(ℝⁿ)` -/
+
+section TranslateJet
+
+/-- The whole-space restriction of an additive Haar measure is the measure itself. -/
+local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+  rw [Opens.coe_top, Measure.restrict_univ]
+  infer_instance
+
+omit [FiniteDimensional ℝ E] in
+/-- **Translation preserves `W^{1,p}(ℝⁿ)`.**  On the whole space the weak-derivative identities
+are invariant under translation: testing the translated jet against `φ` is testing the original
+jet against the translate of `φ`. -/
+theorem Sobolev1JetLp.translateLp_mem_w1pSubmodule (h : E) {J : Sobolev1JetLp mu ⊤ p}
+    (hJ : J ∈ w1pSubmodule mu ⊤ p) :
+    (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h J ∈ w1pSubmodule mu ⊤ p := by
+  set nu := mu.restrict ((⊤ : Opens E) : Set E)
+  rw [mem_w1pSubmodule_iff] at hJ ⊢
+  intro phi v
+  have htop : MapsTo (· + h) (⊤ : Opens E) (⊤ : Opens E) := fun _ _ => by simp
+  let f : E → ℝ := fun y =>
+    lineDeriv ℝ (translateTestFunction htop phi : E → ℝ) y v * Sobolev1JetLp.value J y +
+      translateTestFunction htop phi y * Sobolev1JetLp.candidateWeakFDeriv J y v
+  have hq : Filter.Tendsto (· + h) (ae nu) (ae nu) :=
+    (measurePreserving_add_right nu h).quasiMeasurePreserving.tendsto_ae
+  calc
+    ∫ x in (⊤ : Opens E), (lineDeriv ℝ (phi : E → ℝ) x v *
+        Sobolev1JetLp.value (nu.translateLp p h J) x +
+        phi x * Sobolev1JetLp.candidateWeakFDeriv (nu.translateLp p h J) x v) ∂mu
+        = ∫ x in (⊤ : Opens E), f (x + h) ∂mu := by
+      apply integral_congr_ae
+      filter_upwards [Sobolev1JetLp.value_apply_ae (nu.translateLp p h J),
+        Sobolev1JetLp.gradient_apply_ae (nu.translateLp p h J),
+        Measure.coeFn_translateLp (mu := nu) h J,
+        hq.eventually (Sobolev1JetLp.value_apply_ae J),
+        hq.eventually (Sobolev1JetLp.gradient_apply_ae J)] with x hvK hgK hK hvJ hgJ
+      simp only [f, Sobolev1JetLp.candidateWeakFDeriv_apply, lineDeriv_translateTestFunction,
+        translateTestFunction_apply, add_sub_cancel_right, hvK, hgK, hK, Function.comp_apply,
+        hvJ, hgJ]
+    _ = ∫ x in (⊤ : Opens E), f x ∂mu := integral_add_right_eq_self f h
+    _ = 0 := hJ (translateTestFunction htop phi) v
+
+end TranslateJet
 
 end Sobolev
 

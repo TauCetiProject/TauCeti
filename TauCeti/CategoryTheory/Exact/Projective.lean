@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.Resolution
+public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
 /-!
 # Relative projectives in an exact category, and the horseshoe lemma
@@ -51,6 +52,9 @@ by the projectives themselves.
   morphism along a deflation.
 * `TauCeti.ExactStructure.splittingOfProjective`: the splitting of a conflation whose third term
   is projective.
+* `TauCeti.ExactStructure.ProjectivePresentation` and
+  `TauCeti.ExactStructure.EnoughProjectives`: relative projective presentations and the condition
+  that every object admits one.
 
 ## Main results
 
@@ -58,6 +62,9 @@ by the projectives themselves.
   `TauCeti.ExactStructure.abelian_isProjective_iff`: the two calibrating computations. Every
   object is projective for the split exact structure, and for the canonical exact structure of
   an abelian category the notion is Mathlib's `CategoryTheory.Projective`.
+* `TauCeti.ExactStructure.split_enoughProjectives` and
+  `TauCeti.ExactStructure.abelian_enoughProjectives`: the corresponding enough-projective
+  calibrations.
 * `TauCeti.ExactStructure.nonempty_iso_biprod_of_projective`: **Schanuel's lemma**, that two
   conflations over the same object with projective middle terms have stably isomorphic kernels.
 * `TauCeti.ExactStructure.exists_conflation_biprod_of_conflation_of_projective`: **the horseshoe
@@ -146,9 +153,10 @@ theorem factorThru_comp {Q : C} (hQ : E.isProjective Q) {X Y : C} {p : X ⟶ Y}
 
 end isProjective
 
-/-- Projectivity is invariant under isomorphism: transport the lift along the isomorphism. -/
-instance : (E.isProjective).IsClosedUnderIsomorphisms where
-  of_iso e hQ _ _ _ hp f := ⟨e.inv ≫ hQ.factorThru hp (e.hom ≫ f), by simp⟩
+/-- Relative projectives are closed under retracts. -/
+instance : (E.isProjective).IsStableUnderRetracts where
+  of_retract r hQ _ _ _ hp f :=
+    ⟨r.i ≫ hQ.factorThru hp (r.r ≫ f), by simp⟩
 
 /-- A zero object is projective: every morphism out of it is zero. -/
 instance : (E.isProjective).ContainsZero where
@@ -210,6 +218,134 @@ theorem abelian_isProjective_iff {A : Type u} [Category.{v} A] [Abelian A] (X : 
   · intro h Y Z p hp f
     have : Epi p := (abelian_isDeflation_iff p).mp hp
     exact h.factors f p
+
+/-- A projective presentation of `X` relative to `E` is a conflation `K → P → X` whose
+middle term is `E`-projective. -/
+structure ProjectivePresentation (E : ExactStructure C) (X : C) where
+  /-- The kernel term of the presentation. -/
+  K : C
+  /-- The relatively projective middle term. -/
+  P : C
+  /-- The inflation into the projective term. -/
+  i : K ⟶ P
+  /-- The deflation onto the presented object. -/
+  p : P ⟶ X
+  /-- The two presentation maps form a short complex. -/
+  zero : i ≫ p = 0
+  /-- The presentation is a conflation of `E`. -/
+  conflation : E.Conflation (ShortComplex.mk i p zero)
+  /-- The middle term is projective relative to `E`. -/
+  isProjective : E.isProjective P
+
+/-- An exact structure has enough projectives if every object admits a relative projective
+presentation. -/
+structure EnoughProjectives (E : ExactStructure C) : Prop where
+  presentation : ∀ X : C, Nonempty (E.ProjectivePresentation X)
+
+namespace ProjectivePresentation
+
+/-- The tautological projective presentation in the split exact structure. -/
+noncomputable def split (X : C) : (ExactStructure.split C).ProjectivePresentation X where
+  K := 0
+  P := X
+  i := 0
+  p := 𝟙 X
+  zero := by simp
+  conflation := (ExactStructure.split C).conflation_zero_id X
+  isProjective := split_isProjective X
+
+@[simp] theorem split_K (X : C) : (split X).K = 0 := (rfl)
+
+@[simp] theorem split_P (X : C) : (split X).P = X := (rfl)
+
+@[simp] theorem split_i (X : C) : HEq (split X).i (0 : (0 : C) ⟶ X) := (HEq.rfl)
+
+@[simp] theorem split_p (X : C) : HEq (split X).p (𝟙 X) := (HEq.rfl)
+
+/-- Mathlib's projective presentation gives a relative projective presentation for the canonical
+exact structure of an abelian category. -/
+noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughProjectives A] (X : A) :
+    (ExactStructure.abelian A).ProjectivePresentation X where
+  K := kernel (Projective.π X)
+  P := Projective.over X
+  i := kernel.ι (Projective.π X)
+  p := Projective.π X
+  zero := kernel.condition _
+  conflation := abelian_conflation_of_epi _
+  isProjective := (abelian_isProjective_iff _).mpr inferInstance
+
+@[simp] theorem abelian_K {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughProjectives A] (X : A) :
+    (abelian X).K = kernel (Projective.π X) := (rfl)
+
+@[simp] theorem abelian_P {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughProjectives A] (X : A) :
+    (abelian X).P = Projective.over X := (rfl)
+
+@[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughProjectives A] (X : A) :
+    HEq (abelian X).i (kernel.ι (Projective.π X)) := (HEq.rfl)
+
+@[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughProjectives A] (X : A) :
+    HEq (abelian X).p (Projective.π X) := (HEq.rfl)
+
+section Comparison
+
+variable {X Y : C}
+
+/- The comparison maps in this section are dual to those for injective presentations in
+`TauCeti.CategoryTheory.Exact.Injective`. -/
+
+/-- The lift of `f : X ⟶ Y` to the projective middle terms of relative projective
+presentations `P` of `X` and `Q` of `Y`, chosen by relative projectivity of `P.P`. -/
+noncomputable def middleMap (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.P ⟶ Q.P :=
+  P.isProjective.factorThru (E.isDeflation_g Q.conflation) (P.p ≫ f)
+
+/-- The chosen middle-term map lifts `f` across the two deflations. -/
+@[reassoc (attr := simp)]
+theorem middleMap_comp_p (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.middleMap Q f ≫ Q.p = P.p ≫ f :=
+  P.isProjective.factorThru_comp (E.isDeflation_g Q.conflation) (P.p ≫ f)
+
+/-- The morphism induced by `f : X ⟶ Y` on the kernel terms of relative projective
+presentations, through the chosen lift `TauCeti.ExactStructure.ProjectivePresentation.middleMap`
+of the projective middle terms. -/
+noncomputable def kernelMap (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.K ⟶ Q.K :=
+  (E.isKernelCokernelPair _ Q.conflation).lift (P.i ≫ P.middleMap Q f) (by
+    rw [Category.assoc, P.middleMap_comp_p, ← Category.assoc, P.zero, zero_comp])
+
+/-- The induced morphism on kernel terms makes the square on the two inflations commute. -/
+@[reassoc (attr := simp)]
+theorem kernelMap_comp_i (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)
+    (f : X ⟶ Y) : P.kernelMap Q f ≫ Q.i = P.i ≫ P.middleMap Q f :=
+  (E.isKernelCokernelPair _ Q.conflation).lift_f _ _
+
+end Comparison
+
+end ProjectivePresentation
+
+/-- The split exact structure has enough relative projectives. -/
+theorem split_enoughProjectives : (ExactStructure.split C).EnoughProjectives :=
+  ⟨fun X ↦ ⟨ProjectivePresentation.split X⟩⟩
+
+/-- Enough ordinary projectives give enough relative projectives for the canonical exact
+structure on an abelian category. -/
+theorem abelian_enoughProjectives {A : Type u} [Category.{v} A] [Abelian A]
+    [CategoryTheory.EnoughProjectives A] : (ExactStructure.abelian A).EnoughProjectives :=
+  ⟨fun X ↦ ⟨ProjectivePresentation.abelian X⟩⟩
+
+namespace EnoughProjectives
+
+/-- Choose a relative projective presentation from enough relative projectives. -/
+noncomputable def projectivePresentation (h : E.EnoughProjectives) (X : C) :
+    E.ProjectivePresentation X :=
+  (h.presentation X).some
+
+end EnoughProjectives
 
 /-- **Schanuel's lemma.** Two conflations `K ↪ Q ↠ X` and `K' ↪ Q' ↠ X` with projective middle
 terms have stably isomorphic kernels: `K ⊞ Q' ≅ K' ⊞ Q`.
