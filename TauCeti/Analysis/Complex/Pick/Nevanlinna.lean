@@ -31,7 +31,7 @@ Nevanlinna kernel `(1 + x * z) / (x - z)`.
   non-atomic-at-`1` part of a circle measure.
 * `TauCeti.integral_circle_eq_atom_add_integral_cayleyPushforward`: decomposition of an integral
   over the circle into its atom at `1` and its real-line part.
-* `TauCeti.im_nevanlinnaKernel`, `TauCeti.norm_nevanlinnaKernel_le` and
+* `TauCeti.nevanlinnaKernel_im`, `TauCeti.norm_nevanlinnaKernel_le` and
   `TauCeti.integrable_nevanlinnaKernel`: the imaginary part of the kernel, its boundedness on the
   real line, and the resulting integrability against a finite measure.
 * `TauCeti.I_mul_herglotzTransform_cayley_eq`: the resulting Nevanlinna-kernel formula for the
@@ -295,7 +295,7 @@ theorem I_mul_herglotzKernel_cayley (z : ℂ) (x : ℝ)
 weight `1 + x ^ 2` appearing in the numerator is what turns a Nevanlinna measure into the measure
 of the Stieltjes--Perron inversion formula. -/
 @[simp]
-theorem im_nevanlinnaKernel (z : ℂ) (x : ℝ) :
+theorem nevanlinnaKernel_im (z : ℂ) (x : ℝ) :
     (nevanlinnaKernel z x).im = z.im * (1 + x ^ 2) / normSq ((x : ℂ) - z) := by
   simp only [nevanlinnaKernel, div_im, normSq_apply, add_re, add_im, one_re, one_im, mul_re,
     mul_im, ofReal_re, ofReal_im, sub_re, sub_im]
@@ -336,22 +336,21 @@ theorem norm_nevanlinnaKernel_le {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfP
   nlinarith [mul_le_mul_of_nonneg_right hnum (by nlinarith : (0 : ℝ) ≤ D - E),
     mul_le_mul_of_nonneg_left hden (by nlinarith : (0 : ℝ) ≤ D + E)]
 
-/-- The Nevanlinna kernel at a point of the upper half-plane is continuous in the real variable. -/
+/-- The Nevanlinna kernel at a nonreal point is continuous in the real variable. -/
 @[fun_prop]
-theorem continuous_nevanlinnaKernel {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) :
+theorem continuous_nevanlinnaKernel {z : ℂ} (hz : z.im ≠ 0) :
     Continuous (nevanlinnaKernel z) := by
-  have hzim : 0 < z.im := hz
   unfold nevanlinnaKernel
   refine Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ ?_
   have := congrArg im h
   simp only [sub_im, ofReal_im, zero_sub, zero_im, neg_eq_zero] at this
-  linarith
+  exact hz this
 
 /-- The Nevanlinna kernel at a point of the upper half-plane is integrable against every finite
 measure on the real line, so the Nevanlinna representation is an honest Bochner integral. -/
 theorem integrable_nevanlinnaKernel {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet)
     (mu : Measure ℝ) [IsFiniteMeasure mu] : Integrable (nevanlinnaKernel z) mu :=
-  .of_bound (continuous_nevanlinnaKernel hz).aestronglyMeasurable _
+  .of_bound (continuous_nevanlinnaKernel (ne_of_gt hz)).aestronglyMeasurable _
     (.of_forall (norm_nevanlinnaKernel_le hz))
 
 private theorem I_mul_one_add_cayley_div_one_sub (z : ℂ)

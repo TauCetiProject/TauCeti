@@ -75,7 +75,7 @@ theorem measureReal_Icc_le_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu] (hbet
   have hint : Integrable (nevanlinnaKernel z) mu := integrable_nevanlinnaKernel hzmem mu
   have hintim : Integrable (fun x ↦ (nevanlinnaKernel z x).im) mu := hint.im
   have hnonneg : ∀ x : ℝ, 0 ≤ (nevanlinnaKernel z x).im := fun x ↦ by
-    rw [im_nevanlinnaKernel, hzim]
+    rw [nevanlinnaKernel_im, hzim]
     exact div_nonneg (mul_nonneg hv.le (by positivity)) (normSq_nonneg _)
   have hswap : (∫ x, nevanlinnaKernel z x ∂mu).im = ∫ x, (nevanlinnaKernel z x).im ∂mu := by
     simpa using (Complex.imCLM.integral_comp_comm hint).symm
@@ -93,7 +93,7 @@ theorem measureReal_Icc_le_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu] (hbet
     have hNle : (x - u) ^ 2 + v ^ 2 ≤ 2 * v ^ 2 := by
       nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ v - (x - u))
         (by linarith : (0 : ℝ) ≤ v + (x - u))]
-    rw [im_nevanlinnaKernel, hzim, hN, inv_eq_one_div,
+    rw [nevanlinnaKernel_im, hzim, hN, inv_eq_one_div,
       div_le_div_iff₀ (by positivity) (by positivity)]
     nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ 2 * v ^ 2) (sq_nonneg x)]
   have hsub : ∫ x in Icc (u - v) (u + v), (nevanlinnaKernel z x).im ∂mu ≤
@@ -206,22 +206,33 @@ interval over which the represented function is continuous up to the real axis a
 boundary values there.  Continuity is asked for on the closed rectangle of unit height over the
 interval; any positive height would do, and a function holomorphic near the interval supplies it.
 -/
-theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
+theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu]
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = (beta : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂mu + c)
     {a b : ℝ} (hab : a < b) (hcont : ContinuousOn F (Icc a b ×ℂ Icc 0 1))
     (hzero : ∀ u ∈ Icc a b, (F (u : ℂ)).im = 0) :
     mu (Icc a b) = 0 := by
+  let G : ℂ → ℂ := fun z ↦ F z - (beta : ℂ) * z
+  have hrepG : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      G z = (0 : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂mu + c := by
+    intro z hz
+    rw [show G z = F z - (beta : ℂ) * z from rfl, hrep z hz]
+    ring
+  have hcontG : ContinuousOn G (Icc a b ×ℂ Icc 0 1) :=
+    hcont.sub ((continuous_const.mul continuous_id).continuousOn)
+  have hzeroG : ∀ u ∈ Icc a b, (G (u : ℂ)).im = 0 := by
+    intro u hu
+    simp [G, hzero u hu]
   have hK : IsCompact ((Icc a b : Set ℝ) ×ℂ (Icc 0 1 : Set ℝ)) :=
     isCompact_Icc.reProdIm isCompact_Icc
   have huc := hK.uniformContinuousOn_of_continuous
-    (Complex.continuous_im.comp_continuousOn hcont)
+    (Complex.continuous_im.comp_continuousOn hcontG)
   -- Uniform continuity on the closed rectangle turns the vanishing boundary values into a
   -- bound on `Im F` that is uniform in the base point, which the covering estimate consumes.
   have hsmall : ∀ eps : ℝ, 0 < eps → mu.real (Icc a b) ≤ (b - a) * eps := by
     intro eps heps
     obtain ⟨delta, hdelta, hd⟩ := Metric.uniformContinuousOn_iff.mp huc eps heps
-    refine measureReal_Icc_le_mul hbeta hrep hab hdelta fun u hu v hv hvd hv1 ↦ ?_
+    refine measureReal_Icc_le_mul (le_refl 0) hrepG hab hdelta fun u hu v hv hvd hv1 ↦ ?_
     have hmem1 : ((u : ℂ) + (v : ℂ) * I) ∈ (Icc a b ×ℂ Icc 0 1 : Set ℂ) := by
       refine ⟨?_, ?_⟩ <;> simp [hu, hv.le, hv1]
     have hmem2 : ((u : ℂ)) ∈ (Icc a b ×ℂ Icc 0 1 : Set ℂ) := by
@@ -229,7 +240,7 @@ theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu] (hbe
     have hdist : dist ((u : ℂ) + (v : ℂ) * I) (u : ℂ) < delta := by
       simpa [Complex.dist_eq, abs_of_pos hv] using hvd
     have hlt := hd _ hmem1 _ hmem2 hdist
-    simp only [Function.comp_apply, Real.dist_eq, hzero u hu, sub_zero] at hlt
+    simp only [Function.comp_apply, Real.dist_eq, hzeroG u hu, sub_zero] at hlt
     exact (le_abs_self _).trans_lt hlt
   rw [← measureReal_eq_zero_iff (measure_ne_top _ _)]
   by_contra hne
@@ -290,7 +301,7 @@ theorem exists_isFiniteMeasure_eq_nevanlinnaKernel_add_of_im_eq_zero {F : ℂ �
   have hrect : (Icc a b ×ℂ Icc 0 1 : Set ℂ) ⊆ Complex.slitPlane := by
     rintro z ⟨hz1, hz2⟩
     exact Complex.mem_slitPlane_iff.2 (Or.inl (lt_of_lt_of_le hapos hz1.1))
-  refine measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add hbeta hrep hab
+  refine measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add hrep hab
     ((hF.mono hrect).continuousOn) fun u hu ↦ hzero u (lt_of_lt_of_le hapos hu.1)
 
 end TauCeti
