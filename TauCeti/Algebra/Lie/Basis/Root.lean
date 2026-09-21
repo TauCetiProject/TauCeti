@@ -15,12 +15,16 @@ This file relates a `LieAlgebra.Basis` to the root-space decomposition of its Ca
 The raising and lowering generators lie in the expected simple-root spaces. Moreover, the
 three-part Cartan/lower-Borel/upper-Borel decomposition already constructed by Mathlib lies in
 generalized weight spaces. It follows that the Cartan action is triangularizable over the ground
-field, without passing to an algebraic closure.
+field, without passing to an algebraic closure. Positive roots are also expressed as nonzero
+natural combinations of the simple roots supplied by the basis, providing the coordinate form
+used by the nilradical and Borel bridges.
 
 ## Main results
 
 * `LieAlgebra.Basis.isTriangularizable`: the Cartan action associated to a Lie-algebra basis is
   triangularizable over the ground field.
+* `LieAlgebra.Basis.exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots`: every positive root is
+  a nonzero natural-number combination of the basis's simple roots.
 * `TauCeti.lieBasis_e_mem_rootSpace` and `TauCeti.lieBasis_f_mem_rootSpace`: the simple raising
   and lowering generators lie in their expected root spaces.
 

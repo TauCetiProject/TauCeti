@@ -23,8 +23,8 @@ Humphreys, *Introduction to Lie Algebras and Representation Theory*, §10.
 
 * `LieAlgebra.Basis.positiveNilradical_eq_lieSpan_e` identifies the positive nilradical with the
   Lie span of the raising operators.
-* `LieAlgebra.Basis.mem_borelUpper_iff_mem_lieSpan` exposes the carrier bridge between Mathlib's
-  upper Borel and that Lie span.
+* `LieAlgebra.Basis.mem_borelUpper_iff_mem_lieSpan` characterizes membership in the upper Borel as
+  membership in that Lie span.
 * `LieAlgebra.Basis.borelSubalgebra_eq_sup_lieSpan_e` gives the corresponding Borel.
 -/
 
@@ -36,6 +36,19 @@ namespace LieAlgebra.Basis
 
 universe u v
 
+section Carrier
+
+variable {K : Type u} {L : Type v} [CommRing K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L} {ι : Type*} [Finite ι]
+
+/-- Membership in the upper Borel's nilpotent part is equivalent to membership in the Lie span of
+the raising operators. -/
+@[simp] theorem mem_borelUpper_iff_mem_lieSpan (b : LieAlgebra.Basis ι H) {x : L} :
+    x ∈ b.borelUpper ↔ x ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := by
+  simp only [borelUpper, LieSubmodule.mem_mk_iff', LieSubalgebra.mem_toSubmodule]
+
+end Carrier
+
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L}
@@ -43,29 +56,6 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 section
 
 variable {ι : Type*} [Finite ι]
-
-omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] in
-/-- Membership in the upper Borel's nilpotent part is membership in the Lie span of its raising
-operators. The carrier conversion is isolated here through the public `toSubmodule` membership
-lemmas, so consumers do not depend on the implementation of `Basis.borelUpper`. -/
-theorem mem_borelUpper_iff_mem_lieSpan (b : LieAlgebra.Basis ι H) {x : L} :
-    x ∈ b.borelUpper ↔ x ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := by
-  constructor
-  · intro hx
-    have hx' : x ∈ (b.borelUpper : Submodule K L) :=
-      (LieSubmodule.mem_toSubmodule b.borelUpper).mpr hx
-    -- `borelUpper` deliberately stores this Lie-subalgebra span as its carrier;
-    -- make that representation boundary explicit before using the span API.
-    change x ∈ (LieSubalgebra.lieSpan K L (Set.range b.e) : Submodule K L) at hx'
-    have hx'' : x ∈ LieSubalgebra.lieSpan K L (Set.range b.e) :=
-      (LieSubalgebra.mem_toSubmodule _).mp hx'
-    exact hx''
-  · intro hx
-    have hx' : x ∈ (LieSubalgebra.lieSpan K L (Set.range b.e) : Submodule K L) :=
-      (LieSubalgebra.mem_toSubmodule _).mpr hx
-    -- Repackage the span membership through the named carrier bridge above.
-    change x ∈ (b.borelUpper : Submodule K L) at hx'
-    exact (LieSubmodule.mem_toSubmodule b.borelUpper).mp hx'
 
 /-- The positive nilradical associated to a Lie algebra basis is the Lie span of its raising
 operators. -/
