@@ -53,8 +53,7 @@ private theorem extendTangentLinear_tmul
       a * Bialgebra.CounitAlgebra.algEquivSelf R H K (d h) := by
   simp only [extendTangentLinear, LinearMap.comp_apply, AlgebraTensorModule.lift_tmul,
     LinearMap.toSpanSingleton_apply, LinearMap.smul_apply, AlgEquiv.toLinearMap_apply,
-    AlgEquiv.apply_symm_apply]
-  rfl
+    AlgEquiv.apply_symm_apply, smul_eq_mul, Derivation.coeFn_coe]
 
 /-- Extend a counit-valued derivation to the base-changed coordinate algebra. -/
 private def extendTangent (d : Derivation R H (Bialgebra.CounitAlgebra R H K)) :
@@ -78,8 +77,9 @@ private def extendTangent (d : Derivation R H (Bialgebra.CounitAlgebra R H K)) :
 private theorem extendTangent_tmul
     (d : Derivation R H (Bialgebra.CounitAlgebra R H K)) (a : K) (h : H) :
     Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K
-      (extendTangent d (a ⊗ₜ[R] h)) = a * Bialgebra.CounitAlgebra.algEquivSelf R H K (d h) :=
-  extendTangentLinear_tmul d a h
+      (extendTangent d (a ⊗ₜ[R] h)) = a * Bialgebra.CounitAlgebra.algEquivSelf R H K (d h) := by
+  rw [extendTangent, Derivation.coe_mk']
+  exact extendTangentLinear_tmul d a h
 
 /-- Restrict a tangent vector along the inclusion of the original coordinate algebra. -/
 private def restrictTangent
@@ -197,6 +197,7 @@ theorem tangentBaseChangeLieEquiv_tmul
         (a * Bialgebra.CounitAlgebra.algEquivSelf R H K (d h)) := by
   apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
   rw [AlgEquiv.apply_symm_apply]
+  unfold tangentBaseChangeLieEquiv tangentBaseChangeLinearEquiv
   exact extendTangent_tmul d a h
 
 /-- The inverse Lie comparison restricts along `h ↦ 1 ⊗ h`. -/
@@ -208,6 +209,7 @@ theorem tangentBaseChangeLieEquiv_symm_apply
         (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K (d (1 ⊗ₜ[R] h))) := by
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H K).injective
   rw [AlgEquiv.apply_symm_apply]
+  unfold tangentBaseChangeLieEquiv tangentBaseChangeLinearEquiv
   exact restrictTangent_apply d h
 
 end
