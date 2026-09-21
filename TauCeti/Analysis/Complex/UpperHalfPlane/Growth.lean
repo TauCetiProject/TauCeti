@@ -17,6 +17,12 @@ used when exponential decay in a cusp coordinate is converted into vanishing at 
 
 -/
 
+/- Formal source: the argument is the one proving
+`UpperHalfPlane.IsZeroAtImInfty.of_exp_decay` in
+`Mathlib/NumberTheory/ModularForms/Petersson.lean`. That statement bundles the decay rate into
+an existential and lives behind the modular-forms import, so the unbundled form is restated
+here for use with a cusp coordinate. -/
+
 public section
 
 open Asymptotics Filter UpperHalfPlane
