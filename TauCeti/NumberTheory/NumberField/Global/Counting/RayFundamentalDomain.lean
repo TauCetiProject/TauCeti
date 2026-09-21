@@ -72,22 +72,6 @@ this is the subgroup whose cosets index the translates of the cone below. -/
 def unitsCongruenceTorsionSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
   unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K
 
-/-- Membership in `unitsCongruenceTorsionSubgroup`: a congruence unit times a root of unity. -/
-theorem mem_unitsCongruenceTorsionSubgroup {𝔪 : Modulus K} {u : (𝓞 K)ˣ} :
-    u ∈ unitsCongruenceTorsionSubgroup 𝔪 ↔
-      ∃ v ∈ unitsCongruenceSubgroup 𝔪, ∃ ζ ∈ NumberField.Units.torsion K, v * ζ = u :=
-  Subgroup.mem_sup
-
-/-- A congruence unit lies in `unitsCongruenceTorsionSubgroup`. -/
-theorem mem_unitsCongruenceTorsionSubgroup_of_mem_unitsCongruenceSubgroup {𝔪 : Modulus K}
-    {u : (𝓞 K)ˣ} (hu : u ∈ unitsCongruenceSubgroup 𝔪) : u ∈ unitsCongruenceTorsionSubgroup 𝔪 :=
-  Subgroup.mem_sup_left hu
-
-/-- A root of unity lies in `unitsCongruenceTorsionSubgroup`. -/
-theorem mem_unitsCongruenceTorsionSubgroup_of_mem_torsion {𝔪 : Modulus K} {ζ : (𝓞 K)ˣ}
-    (hζ : ζ ∈ NumberField.Units.torsion K) : ζ ∈ unitsCongruenceTorsionSubgroup 𝔪 :=
-  Subgroup.mem_sup_right hζ
-
 instance unitsCongruenceTorsionSubgroup_finiteIndex (𝔪 : Modulus K) :
     (unitsCongruenceTorsionSubgroup 𝔪).FiniteIndex :=
   Subgroup.finiteIndex_of_le (H := unitsCongruenceSubgroup 𝔪) le_sup_left
@@ -205,7 +189,7 @@ theorem exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain (𝔪 : Mod
   set r : (𝓞 K)ˣ := rayUnitRepresentative 𝔪 q with hr
   have hmem : r⁻¹ * u⁻¹ ∈ unitsCongruenceTorsionSubgroup 𝔪 :=
     QuotientGroup.eq.mp (by rw [hr, rayUnitRepresentative_mk, hq])
-  obtain ⟨v, hv, ζ, hζ, hvζ⟩ := mem_unitsCongruenceTorsionSubgroup.mp hmem
+  obtain ⟨v, hv, ζ, hζ, hvζ⟩ := Subgroup.mem_sup.mp hmem
   refine ⟨v⁻¹, (unitsCongruenceSubgroup 𝔪).inv_mem hv, mem_rayFundamentalDomain_iff.mpr ⟨q, ?_⟩⟩
   have hrinv : r⁻¹ = v * ζ * u := by rw [hvζ]; group
   have heq : r⁻¹ • (v⁻¹ • x) = ζ • (u • x) := by
@@ -265,8 +249,7 @@ theorem unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff {𝔪 : Modulu
           = ((rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q)⁻¹ * u := by
         simp [mul_comm, mul_left_comm]
       rw [hsplit]
-      exact mul_mem (inv_mem (mem_unitsCongruenceTorsionSubgroup_of_mem_torsion htor))
-        (mem_unitsCongruenceTorsionSubgroup_of_mem_unitsCongruenceSubgroup hu)
+      exact mul_mem (inv_mem (Subgroup.mem_sup_right htor)) (Subgroup.mem_sup_left hu)
     subst hqq
     have : (rayUnitRepresentative 𝔪 q)⁻¹ * u * rayUnitRepresentative 𝔪 q = u := by
       simp [mul_comm, mul_left_comm]
