@@ -65,8 +65,8 @@ theorem hasFullSymmetricGaloisGroup_iff_natCard_gal_eq_factorial_natDegree (hsep
     rw [Nat.card_perm, Nat.card_eq_fintype_card,
       card_rootSet_eq_natDegree hsep (IsSplittingField.splits f.SplittingField f)]
   rw [HasFullSymmetricGaloisGroup, and_iff_right hsep, ← hcard]
-  exact ⟨fun h ↦ Nat.card_eq_of_bijective _ ⟨Gal.galActionHom_injective f _, h⟩,
-    fun h ↦ ((Gal.galActionHom_injective f _).bijective_of_nat_card_le h.ge).2⟩
+  simpa only [Function.Bijective, Gal.galActionHom_injective, true_and] using
+    Nat.bijective_iff_injective_and_card (Gal.galActionHom f f.SplittingField)
 
 /-- Full symmetric Galois group can be checked on the roots in any splitting extension. -/
 theorem hasFullSymmetricGaloisGroup_iff_separable_and_surjective_galActionHom
@@ -80,8 +80,8 @@ theorem hasFullSymmetricGaloisGroup_iff_separable_and_surjective_galActionHom
     have hcard : Nat.card (Equiv.Perm (f.rootSet E)) = f.natDegree.factorial := by
       rw [Nat.card_perm, Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep hsplit.out]
     rw [← hcard]
-    exact ⟨fun h ↦ ((Gal.galActionHom_injective f E).bijective_of_nat_card_le h.ge).2,
-      fun h ↦ Nat.card_eq_of_bijective _ ⟨Gal.galActionHom_injective f E, h⟩⟩
+    simpa only [Function.Bijective, Gal.galActionHom_injective, true_and] using
+      (Nat.bijective_iff_injective_and_card (Gal.galActionHom f E)).symm
   · simp [HasFullSymmetricGaloisGroup, hsep]
 
 /-- A polynomial with full symmetric Galois group realizes the symmetric group on as many
