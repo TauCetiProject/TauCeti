@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Basis.Base
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 
 /-!
 # Root vectors of a Lie algebra basis
@@ -75,6 +76,59 @@ theorem isTriangularizable (b : LieAlgebra.Basis ι H) :
           rw [LieSubmodule.mem_toSubmodule, LieModule.mem_genWeightSpaceOf,
             Module.End.mem_maxGenEigenspace]
         _ ≤ ⨆ a : K, (LieModule.toEnd K H L z).maxGenEigenspace a := le_iSup _ _
+
+section PositiveRoots
+
+universe u v
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} {ι : Type*} [Finite ι]
+
+/-- A positive root for the base associated to a Lie algebra basis is a nonzero natural-number
+combination of the basis's simple roots. -/
+theorem exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots
+    (b : LieAlgebra.Basis ι H) :
+    letI : Fintype ι := Fintype.ofFinite ι
+    letI := b.isCartanSubalgebra
+    letI := b.isTriangularizable
+    ∀ {α : H.root}, α ∈ TauCeti.posRoots (IsKilling.rootSystem H) b.base →
+      ∃ n : ι → ℕ, n ≠ 0 ∧
+        (α : H → K) = ∑ i, n i • (b.baseSupp i : H → K) := by
+  let _ : Fintype ι := Fintype.ofFinite ι
+  let _ := b.isCartanSubalgebra
+  let _ := b.isTriangularizable
+  intro α hα
+  let _ : Fintype b.base.support := Fintype.ofEquiv ι b.baseSupportEquiv
+  obtain ⟨f, _, hroot⟩ :=
+    TauCeti.exists_root_eq_sum_nat_of_mem_posRoots (IsKilling.rootSystem H) b.base hα
+  let n : ι → ℕ := fun i => f (b.baseSupportEquiv i)
+  have hsum : (α : H → K) = ∑ i, n i • (b.baseSupp i : H → K) := by
+    funext z
+    have hz := DFunLike.congr_fun hroot z
+    simp only [LinearMap.coe_sum, Finset.sum_apply] at hz ⊢
+    calc
+      _ = ∑ j ∈ b.base.support,
+          (f j • (IsKilling.rootSystem H).root j) z := hz
+      _ = ∑ j : b.base.support,
+          (f (j : H.root) • (IsKilling.rootSystem H).root (j : H.root)) z := by
+        simpa using Finset.sum_subtype
+          (p := fun j : H.root => j ∈ b.base.support) b.base.support
+          (fun _ => Iff.rfl)
+          (fun j => (f j • (IsKilling.rootSystem H).root j) z)
+      _ = ∑ i : ι, (f (b.baseSupportEquiv i : H.root) •
+          (IsKilling.rootSystem H).root (b.baseSupportEquiv i : H.root)) z := by
+        exact (b.baseSupportEquiv.sum_comp fun j =>
+          (f (j : H.root) • (IsKilling.rootSystem H).root (j : H.root)) z).symm
+      _ = _ := by
+        simp [n, coe_baseSupportEquiv_apply, IsKilling.rootSystem_root_apply,
+          Pi.smul_apply]
+  refine ⟨n, ?_, hsum⟩
+  intro hn
+  have hzero : (α : H → K) = 0 := by simp [hsum, hn]
+  exact H.isNonZero_coe_root α hzero
+
+end PositiveRoots
 
 end LieAlgebra.Basis
 

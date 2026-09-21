@@ -30,7 +30,7 @@ namespace LieAlgebra.Basis
 
 universe u v w
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*} [Finite ι]
   {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L}
@@ -42,10 +42,12 @@ variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
 weight vector annihilated by every raising operator. -/
 theorem isHighestWeightVector_iff_forall_e (b : LieAlgebra.Basis ι H)
     {lam : Module.Dual K H} {v : M} :
+    letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
     TauCeti.IsHighestWeightVector b.base lam v ↔
       v ≠ 0 ∧ (∀ x : H, ⁅(x : L), v⁆ = lam x • v) ∧ ∀ i, ⁅b.e i, v⁆ = 0 := by
+  let _ : Fintype ι := Fintype.ofFinite ι
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   rw [TauCeti.isHighestWeightVector_iff, b.positiveNilradical_eq_lieSpan_e]

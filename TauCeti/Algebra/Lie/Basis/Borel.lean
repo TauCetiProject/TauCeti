@@ -40,55 +40,16 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 section
 
-variable {ι : Type*} [Fintype ι]
-
-/-- A positive root for the base associated to a Lie algebra basis is a nonzero natural-number
-combination of the basis's simple roots. -/
-theorem exists_ne_zero_and_eq_sum_nat_baseSupp_of_mem_posRoots
-    (b : LieAlgebra.Basis ι H) :
-    letI := b.isCartanSubalgebra
-    letI := b.isTriangularizable
-    ∀ {α : H.root}, α ∈ TauCeti.posRoots (IsKilling.rootSystem H) b.base →
-      ∃ n : ι → ℕ, n ≠ 0 ∧
-        (α : H → K) = ∑ i, n i • (b.baseSupp i : H → K) := by
-  let _ := b.isCartanSubalgebra
-  let _ := b.isTriangularizable
-  intro α hα
-  let _ : Fintype b.base.support := Fintype.ofEquiv ι b.baseSupportEquiv
-  obtain ⟨f, _, hroot⟩ :=
-    TauCeti.exists_root_eq_sum_nat_of_mem_posRoots (IsKilling.rootSystem H) b.base hα
-  let n : ι → ℕ := fun i => f (b.baseSupportEquiv i)
-  have hsum : (α : H → K) = ∑ i, n i • (b.baseSupp i : H → K) := by
-    funext z
-    have hz := DFunLike.congr_fun hroot z
-    simp only [LinearMap.coe_sum, Finset.sum_apply] at hz ⊢
-    calc
-      _ = ∑ j ∈ b.base.support,
-          (f j • (IsKilling.rootSystem H).root j) z := hz
-      _ = ∑ j : b.base.support,
-          (f (j : H.root) • (IsKilling.rootSystem H).root (j : H.root)) z := by
-        simpa using Finset.sum_subtype
-          (p := fun j : H.root => j ∈ b.base.support) b.base.support
-          (fun _ => Iff.rfl)
-          (fun j => (f j • (IsKilling.rootSystem H).root j) z)
-      _ = ∑ i : ι, (f (b.baseSupportEquiv i : H.root) •
-          (IsKilling.rootSystem H).root (b.baseSupportEquiv i : H.root)) z := by
-        exact (b.baseSupportEquiv.sum_comp fun j =>
-          (f (j : H.root) • (IsKilling.rootSystem H).root (j : H.root)) z).symm
-      _ = _ := by
-        simp [n, coe_baseSupportEquiv_apply, IsKilling.rootSystem_root_apply,
-          Pi.smul_apply]
-  refine ⟨n, ?_, hsum⟩
-  intro hn
-  have hzero : (α : H → K) = 0 := by simp [hsum, hn]
-  exact H.isNonZero_coe_root α hzero
+variable {ι : Type*} [Finite ι]
 
 /-- The positive nilradical associated to a Lie algebra basis is the Lie span of its raising
 operators. -/
 theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
+    letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
     TauCeti.positiveNilradical H b.base = LieSubalgebra.lieSpan K L (Set.range b.e) := by
+  let _ : Fintype ι := Fintype.ofFinite ι
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   apply le_antisymm
@@ -109,11 +70,19 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
     have h_borelUpper :
         (b.borelUpper : Submodule K L) =
           (LieSubalgebra.lieSpan K L (Set.range b.e) : Submodule K L) := by
-      -- Mathlib's `borelUpper` definition inherits the `LieSubmodule.lieSpan`
-      -- carrier, whose coercion here is definitionally the carrier of the
-      -- corresponding `LieSubalgebra.lieSpan`; name that transport explicitly
-      -- instead of hiding it in the membership proof below.
-      rfl
+      apply le_antisymm
+      · intro y hy
+        have hy' : y ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := by
+          simpa only [LieAlgebra.Basis.borelUpper, LieSubalgebra.mem_toSubmodule] using hy
+        apply LieSubalgebra.mem_lieSpan.mpr
+        intro S hS
+        exact LieSubalgebra.mem_lieSpan.mp hy' S hS
+      · intro y hy
+        have hy' : y ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := hy
+        have : y ∈ LieSubalgebra.lieSpan K L (Set.range b.e) :=
+          LieSubalgebra.mem_lieSpan.mpr fun S hS =>
+            LieSubalgebra.mem_lieSpan.mp hy' S hS
+        simpa only [LieAlgebra.Basis.borelUpper, LieSubalgebra.mem_toSubmodule] using this
     rw [← LieSubalgebra.mem_toSubmodule]
     rw [← h_borelUpper]
     exact (LieSubmodule.mem_toSubmodule b.borelUpper).mpr hx'
@@ -127,9 +96,11 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
 /-- The Borel associated to a Lie algebra basis is its Cartan subalgebra together with the Lie
 span of its raising operators. -/
 theorem borelSubalgebra_eq_sup_lieSpan_e (b : LieAlgebra.Basis ι H) :
+    letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
     TauCeti.borelSubalgebra H b.base = H ⊔ LieSubalgebra.lieSpan K L (Set.range b.e) := by
+  let _ : Fintype ι := Fintype.ofFinite ι
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   rw [TauCeti.borelSubalgebra_eq_sup, b.positiveNilradical_eq_lieSpan_e]
