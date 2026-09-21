@@ -83,6 +83,7 @@ noncomputable def coneChartedSpace (g : AddGeneratingFamily (dualSemigroup hi σ
   exact h.singletonChartedSpace
 
 /-- The target of every chart in the cone charted-space structure is the mixed-coordinate locus. -/
+@[simp]
 theorem coneChartedSpace_chartAt_target
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
