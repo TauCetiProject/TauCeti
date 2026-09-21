@@ -49,8 +49,8 @@ choice: replacing `s` by `h₁ s h₂` with `h₁ ∈ H` and `h₂ ∈ K` leaves
   identity double coset split off.
 * `TauCeti.finrank_hom_indFDRep_mackey_erase`: the same split for intertwining-space dimensions,
   whose identity-coset term is `dim End_H A`.
-* `TauCeti.finrank_hom_res_mackeyToH_one`: the Mackey term at the identity representative is the
-  ordinary intertwining space over `H`.
+* `TauCeti.finrank_hom_res_mackeyToH_one`: the Mackey term at the identity representative has
+  the same dimension as the ordinary intertwining space over `H`.
 * `TauCeti.finrank_hom_res_mackeyToH_of_normal`: for normal `H`, a Mackey term has the same
   dimension as the ordinary intertwining space from `A` to `{}^s A`.
 * `TauCeti.finrank_hom_res_mackeyToH_mul_left_mul_right`: a term of the formula does not depend
@@ -306,8 +306,8 @@ theorem finrank_hom_indFDRep_mackey_erase [Finite G] [CharZero k] (A : FDRep k H
     isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   exact_mod_cast natCast_finrank_hom_indFDRep_mackey_erase hG A
 
-/-- At the identity representative, the Mackey intertwining space is the ordinary intertwining
-space over the subgroup. -/
+/-- At the identity representative, the Mackey intertwining space has the same dimension as the
+ordinary intertwining space over the subgroup. -/
 theorem finrank_hom_res_mackeyToH_one (A B : FDRep k H) :
     Module.finrank k
         (resFDRep ((mackeySubgroup 1 H H).subgroupOf H) A ⟶
