@@ -14,7 +14,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 
 The rational function field `k(x)` is the base case of the theory of algebraic function fields,
 and this file computes its principal divisors: the divisor of an irreducible polynomial, its
-special case the divisor of `x`, and the degree of the pole divisor of an arbitrary rational
+special case the divisor of `x`, and the degree of the pole divisor of a nonzero rational
 function.  It continues the rational-function-field thread begun in
 `TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic`, where the places of `k(x)` are
 classified, and its Riemann–Roch consequences are
@@ -29,7 +29,7 @@ poles.
 
 * `TauCeti.Divisor.principal_irreducible`: `div p = P_(p) - (deg p) · P_∞` for `p` irreducible,
   and its special case `TauCeti.Divisor.principal_X`: `div x = P_(X) - P_∞`.
-* `TauCeti.Divisor.degree_poles_eq_max_natDegree`: the pole divisor of `z ∈ k(x)` has degree
+* `TauCeti.Divisor.degree_poles_eq_max_natDegree`: the pole divisor of `z ∈ k(x)ˣ` has degree
   `max (deg z.num) (deg z.denom)`, which for nonconstant `z` is the degree of `k(x) / k(z)`.
 
 ## References
@@ -88,11 +88,11 @@ theorem Divisor.principal_X :
 
 /-! ### The degree of a rational map -/
 
-/-- **Stichtenoth, Theorem 1.4.11 on `ℙ¹`**: the pole divisor of a rational function `z` has
-degree `max (deg z.num) (deg z.denom)`.  For nonconstant `z` this is `[k(x) : k(z)]`, the degree
-of the covering `ℙ¹ → ℙ¹` that `z` defines; a constant `z = c` is a unit at every place, and both
-sides are `0`.  A rational function is transcendental over `k` exactly when it is not a constant,
-by `RatFunc.transcendental_of_ne_C`. -/
+/-- **Stichtenoth, Theorem 1.4.11 on `ℙ¹`**: the pole divisor of a nonzero rational function
+`z ∈ k(x)ˣ` has degree `max (deg z.num) (deg z.denom)`.  For nonconstant `z` this is
+`[k(x) : k(z)]`, the degree of the covering `ℙ¹ → ℙ¹` that `z` defines; a constant `z = c` is a
+unit at every place, and both sides are `0`.  A rational function is transcendental over `k`
+exactly when it is not a constant, by `RatFunc.transcendental_of_ne_C`. -/
 theorem Divisor.degree_poles_eq_max_natDegree (z : (RatFunc k)ˣ) :
     Divisor.degree (Divisor.poles (IsFunctionField.ratFunc k) z) =
       max (z : RatFunc k).num.natDegree (z : RatFunc k).denom.natDegree := by
