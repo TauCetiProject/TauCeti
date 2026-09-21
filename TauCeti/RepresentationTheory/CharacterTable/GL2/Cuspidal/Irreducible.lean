@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.GL2.Cuspidal.Basic
+public import Mathlib.NumberTheory.LegendreSymbol.Complex
 import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
-import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 import TauCeti.RepresentationTheory.Simple.Basic
 
@@ -30,8 +30,8 @@ the negative sign.  The resulting representation is the cuspidal representation 
   norm `1` for `θ^q ≠ θ` and a nontrivial additive character.
 * `TauCeti.GL2CuspidalVirtualCharacter_mem_irreducibleCharacters`: the virtual character is an
   irreducible character.
-* `TauCeti.GL2Cuspidal`: the corresponding irreducible representation, independent at the
-  character level of the auxiliary nontrivial additive character.
+* `TauCeti.GL2Cuspidal`: the corresponding irreducible representation, using Mathlib's canonical
+  primitive additive character internally.
 
 ## References
 
@@ -94,7 +94,8 @@ theorem characterPairing_GL2ScalarUnipotentInduction_self (mu : Fˣ →* ℂˣ)
     rw [← GL2ScalarUnipotentInduction_def]
     split_ifs with ht
     · subst t
-      rw [inv_one, show Multiplicative.toAdd (1 : Multiplicative F) = 0 from rfl, mul_zero,
+      have ht_one : Multiplicative.toAdd (1 : Multiplicative F) = 0 := rfl
+      rw [inv_one, ht_one, mul_zero,
         jordanGL_zero,
         character_GL2ScalarUnipotentInduction_scalar]
       simp only [map_one, map_inv, Units.val_inv_eq_inv_val]
@@ -145,33 +146,6 @@ theorem characterPairing_GL2ScalarUnipotentInduction_self (mu : Fˣ →* ℂˣ)
     exact sub_ne_zero.mpr (by exact_mod_cast Fintype.one_lt_card.ne')
   field_simp [hq, hq1]
 
-omit [Finite F] [Fintype F] [DecidableEq F] in
-private theorem unit_mem_range_algebraMap_iff (u : Eˣ) :
-    (u : E) ∈ Set.range (algebraMap F E) ↔
-      ∃ a : Fˣ, Units.map (algebraMap F E : F →* E) a = u := by
-  constructor
-  · rintro ⟨a, ha⟩
-    have ha0 : a ≠ 0 := by
-      intro ha'
-      subst a
-      simp only [map_zero] at ha
-      exact u.ne_zero ha.symm
-    refine ⟨Units.mk0 a ha0, Units.ext ?_⟩
-    exact ha
-  · rintro ⟨a, rfl⟩
-    exact ⟨a, rfl⟩
-
-omit [Finite F] [Fintype F] [DecidableEq F] in
-private theorem unit_inv_mem_range_algebraMap_iff (u : Eˣ) :
-    ((u⁻¹ : Eˣ) : E) ∈ Set.range (algebraMap F E) ↔
-      (u : E) ∈ Set.range (algebraMap F E) := by
-  rw [unit_mem_range_algebraMap_iff, unit_mem_range_algebraMap_iff]
-  constructor <;> rintro ⟨a, ha⟩
-  · refine ⟨a⁻¹, ?_⟩
-    rw [map_inv, ha, inv_inv]
-  · refine ⟨a⁻¹, ?_⟩
-    rw [map_inv, ha]
-
 /-- **The elliptic induction has character norm `q - 1`** when `θ` is not fixed by the
 `q`-power map. -/
 theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
@@ -209,14 +183,14 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       exact GL2NonSplitTorus.coe_unitsEquiv_apply hE u⁻¹
     rw [hinv, ← GL2EllipticInduction_def]
     split_ifs with hu
-    · obtain ⟨a, rfl⟩ := (unit_mem_range_algebraMap_iff _).mp hu
+    · obtain ⟨a, rfl⟩ := (Units.coe_mem_range_algebraMap_iff _).mp hu
       rw [map_inv, GL2NonSplitTorus.gl2NonSplitTorusHom_map_algebraMap,
         ← map_inv, character_GL2EllipticInduction_scalar]
       simp only [map_inv, Units.val_inv_eq_inv_val]
       field_simp
       rw [Nat.card_eq_fintype_card]
     · have huinv : ((u⁻¹ : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
-        simpa only [unit_inv_mem_range_algebraMap_iff] using hu
+        simpa only [Units.coe_inv_mem_range_algebraMap_iff] using hu
       rw [character_GL2EllipticInduction_gl2NonSplitTorusHom _ _ _ _ huinv]
       simp [mul_add, inv_pow]
   rw [← (GL2NonSplitTorus.unitsEquiv hE).toEquiv.sum_comp]
@@ -248,7 +222,7 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       have hab' := congrArg (fun u : {u : Eˣ // p u} => ((u : Eˣ) : E)) hab
       exact (algebraMap F E).injective hab'
     · rintro ⟨u, hu⟩
-      obtain ⟨a, ha⟩ := (unit_mem_range_algebraMap_iff u).mp hu
+      obtain ⟨a, ha⟩ := (Units.coe_mem_range_algebraMap_iff u).mp hu
       exact ⟨a, Subtype.ext ha⟩
   let e : Fˣ ≃ {u : Eˣ // p u} := Equiv.ofBijective f hf
   have hcardBase : (Finset.univ.filter p).card = Fintype.card F - 1 := by
@@ -266,11 +240,11 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
       have hdelta_one : delta u = 1 := by
         dsimp only [delta]
         rw [MonoidHom.mul_apply, MonoidHom.inv_apply, mul_inv_eq_one]
-        change theta u = theta (u ^ Nat.card F)
-        rw [Nat.card_eq_fintype_card, hpow]
+        rw [MonoidHom.comp_apply, powMonoidHom_apply, Nat.card_eq_fintype_card, hpow]
       rw [hdelta_one]
       norm_num
     · ring
+  -- Unfold the pairing after naming its summand predicate and character quotient above.
   change (Nat.card (GL2NonSplitTorus F E hE) : ℂ)⁻¹ *
     (∑ u : Eˣ, if p u then (Fintype.card F : ℂ) * ((Fintype.card F : ℂ) - 1)
       else 1 + (delta u : ℂ)) = _
@@ -292,8 +266,9 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
     rw [Fintype.card_congr (nonSplitTorusBasis F E hE).equivFun.toEquiv, Fintype.card_fun,
       Fintype.card_fin]
   rw [Fintype.card_units, hcardE]
-  push_cast [Fintype.one_lt_card.le,
-    show 1 ≤ Fintype.card F ^ 2 by nlinarith [Fintype.one_lt_card (α := F)]]
+  have hq2 : 1 ≤ Fintype.card F ^ 2 := by
+    nlinarith [Fintype.one_lt_card (α := F)]
+  push_cast [Fintype.one_lt_card.le, hq2]
   have hq1 : (Fintype.card F : ℂ) - 1 ≠ 0 := by
     exact sub_ne_zero.mpr (by exact_mod_cast Fintype.one_lt_card.ne')
   have hqplus : (Fintype.card F : ℂ) + 1 ≠ 0 := by
@@ -302,9 +277,11 @@ theorem characterPairing_GL2EllipticInduction_self (theta : Eˣ →* ℂˣ)
     norm_num at hr
     have hrpos : 0 < (Fintype.card F : ℝ) + 1 := by positivity
     linarith
+  have hfactor : -1 + (Fintype.card F : ℂ) ^ 2 =
+      ((Fintype.card F : ℂ) - 1) * ((Fintype.card F : ℂ) + 1) := by
+    ring
   have hdenom : -1 + (Fintype.card F : ℂ) ^ 2 ≠ 0 := by
-    rw [show -1 + (Fintype.card F : ℂ) ^ 2 =
-      ((Fintype.card F : ℂ) - 1) * ((Fintype.card F : ℂ) + 1) by ring]
+    rw [hfactor]
     exact mul_ne_zero hq1 hqplus
   have hdenom' : (Fintype.card F : ℂ) ^ 2 - 1 ≠ 0 := by
     simpa [sub_eq_add_neg, add_comm] using hdenom
@@ -349,7 +326,8 @@ theorem characterPairing_GL2ScalarUnipotentInduction_GL2EllipticInduction
     rw [hinv, GL2ScalarUnipotent.coe_mulEquiv_apply_eq_jordanGL]
     split_ifs with ht
     · subst t
-      rw [inv_one, show Multiplicative.toAdd (1 : Multiplicative F) = 0 from rfl, mul_zero,
+      have ht_one : Multiplicative.toAdd (1 : Multiplicative F) = 0 := rfl
+      rw [inv_one, ht_one, mul_zero,
         jordanGL_zero, character_GL2EllipticInduction_scalar]
       simp only [MonoidHom.comp_apply, map_one, map_inv, Units.val_inv_eq_inv_val]
       have htheta : (theta ((Units.map (algebraMap F E : F →* E)) a) : ℂ) ≠ 0 :=
@@ -458,33 +436,52 @@ private theorem gl2CuspidalRepresentation_spec (theta : Eˣ →* ℂˣ) (psi : A
         (GL2CuspidalVirtualCharacter F E hE theta psi).1 :=
   (exists_gl2Cuspidal hE theta psi hpsi htheta).choose_spec.choose_spec
 
+omit [Fintype F] [DecidableEq F] in
+/-- Mathlib's primitive complex additive character on a finite field is nontrivial. -/
+private theorem primitiveChar_to_Complex_ne_one :
+    AddChar.FiniteField.primitiveChar_to_Complex F ≠ 1 := by
+  have hprimitive := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F
+  simpa only [AddChar.mulShift_one] using hprimitive (one_ne_zero : (1 : F) ≠ 0)
+
+omit [DecidableEq F] in
+/-- Passing the chosen cuspidal representation through `FDRep.of` preserves its character. -/
+private theorem character_fdRepOf_gl2CuspidalRepresentation (theta : Eˣ →* ℂˣ)
+    (psi : AddChar F ℂ) (hpsi : psi ≠ 1)
+    (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
+    (FDRep.of (gl2CuspidalRepresentation hE theta psi hpsi htheta)).character =
+      (GL2CuspidalVirtualCharacter F E hE theta psi).1 := by
+  exact (gl2CuspidalRepresentation_spec hE theta psi hpsi htheta).2
+
 omit [DecidableEq F] in
 /-- **The cuspidal representation of `GL₂(𝔽_q)` attached to a general-position character
-`θ : Eˣ → ℂˣ`.** Its auxiliary nontrivial additive character affects the chosen model, but not
-its character. -/
-noncomputable def GL2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ) (hpsi : psi ≠ 1)
+`θ : Eˣ → ℂˣ`.** The auxiliary additive character is Mathlib's canonical primitive complex
+character of `F`, so it does not appear in the public cuspidal datum. -/
+noncomputable def GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) : FDRep ℂ (GL (Fin 2) F) :=
-  FDRep.of (gl2CuspidalRepresentation hE theta psi hpsi htheta)
+  FDRep.of (gl2CuspidalRepresentation hE theta
+    (AddChar.FiniteField.primitiveChar_to_Complex F)
+    (primitiveChar_to_Complex_ne_one (F := F)) htheta)
 
 omit [DecidableEq F] in
 /-- The character of `TauCeti.GL2Cuspidal` is the cuspidal virtual character from which it was
 constructed. -/
 @[simp]
-theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ) (hpsi : psi ≠ 1)
+theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
-    (GL2Cuspidal hE theta psi hpsi htheta).character =
-      (GL2CuspidalVirtualCharacter F E hE theta psi).1 := by
-  funext g
-  change (gl2CuspidalRepresentation hE theta psi hpsi htheta).character g = _
-  exact congrFun (gl2CuspidalRepresentation_spec hE theta psi hpsi htheta).2 g
+    (GL2Cuspidal hE theta htheta).character =
+      (GL2CuspidalVirtualCharacter F E hE theta
+        (AddChar.FiniteField.primitiveChar_to_Complex F)).1 := by
+  exact character_fdRepOf_gl2CuspidalRepresentation hE theta
+    (AddChar.FiniteField.primitiveChar_to_Complex F)
+    (primitiveChar_to_Complex_ne_one (F := F)) htheta
 
 omit [DecidableEq F] in
 /-- The cuspidal representation has degree `q - 1`. -/
 @[simp]
-theorem finrank_GL2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ) (hpsi : psi ≠ 1)
+theorem finrank_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
-    Module.finrank ℂ (GL2Cuspidal hE theta psi hpsi htheta) = Fintype.card F - 1 := by
-  have hchar := congrFun (character_GL2Cuspidal hE theta psi hpsi htheta)
+    Module.finrank ℂ (GL2Cuspidal hE theta htheta) = Fintype.card F - 1 := by
+  have hchar := congrFun (character_GL2Cuspidal hE theta htheta)
     (1 : GL (Fin 2) F)
   rw [FDRep.char_one, GL2CuspidalVirtualCharacter_apply_one] at hchar
   apply Nat.cast_injective (R := ℂ)
@@ -493,24 +490,21 @@ theorem finrank_GL2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ) (hpsi
 
 omit [DecidableEq F] in
 /-- The character of the cuspidal representation has value `q - 1` at the identity. -/
-theorem character_one_GL2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ) (hpsi : psi ≠ 1)
+theorem character_one_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
-    (GL2Cuspidal hE theta psi hpsi htheta).character 1 = (Fintype.card F : ℂ) - 1 := by
+    (GL2Cuspidal hE theta htheta).character 1 = (Fintype.card F : ℂ) - 1 := by
   rw [character_GL2Cuspidal, GL2CuspidalVirtualCharacter_apply_one]
 
 omit [DecidableEq F] in
 /-- The cuspidal representation attached to a general-position character is simple. -/
-theorem simple_GL2Cuspidal (theta : Eˣ →* ℂˣ) (psi : AddChar F ℂ) (hpsi : psi ≠ 1)
+theorem simple_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
-    CategoryTheory.Simple (GL2Cuspidal hE theta psi hpsi htheta) := by
-  let _ : Representation.IsIrreducible
-      (gl2CuspidalRepresentation hE theta psi hpsi htheta) :=
-    (gl2CuspidalRepresentation_spec hE theta psi hpsi htheta).1
-  let _ : Representation.IsIrreducible
-      (FDRep.of (gl2CuspidalRepresentation hE theta psi hpsi htheta)).ρ := by
-    rw [FDRep.of_ρ']
-    infer_instance
-  change CategoryTheory.Simple (FDRep.of (gl2CuspidalRepresentation hE theta psi hpsi htheta))
+    CategoryTheory.Simple (GL2Cuspidal hE theta htheta) := by
+  let _ : Representation.IsIrreducible (GL2Cuspidal hE theta htheta).ρ := by
+    rw [GL2Cuspidal, FDRep.of_ρ']
+    exact (gl2CuspidalRepresentation_spec hE theta
+      (AddChar.FiniteField.primitiveChar_to_Complex F)
+      (primitiveChar_to_Complex_ne_one (F := F)) htheta).1
   exact FDRep.simple_of_isIrreducible _
 
 end TauCeti
