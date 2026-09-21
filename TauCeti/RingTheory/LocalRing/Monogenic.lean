@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.FieldTheory.PrimitiveElement
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.Etale
+-- for `UniqueFactorizationMonoid.instIsIntegrallyClosed`, which `PowerBasis.ofAdjoinEqTop'` needs
 public import Mathlib.RingTheory.Polynomial.RationalRoot
 
 /-!
