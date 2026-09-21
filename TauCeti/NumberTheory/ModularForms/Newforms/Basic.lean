@@ -27,9 +27,13 @@ The old subspace is stable under the diamond operators, because `V_d` intertwine
 (`TauCeti.CuspForm.diamondOpCusp_levelRaise`). This is the lemma behind the fixed-nebentypus
 refinement `S_k(N, χ)ⁿᵉʷ = S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)` of Layer 3 of the ModularForms roadmap,
 which additionally needs the diamond operators to be Petersson-unitary and is carried out in
-`TauCeti/NumberTheory/ModularForms/Newforms/Nebentypus.lean`. The stability of the new subspace
-under the Hecke operators is still missing: the Hecke action on forms is Layer 2 of that
-roadmap, and does not yet exist.
+`TauCeti/NumberTheory/ModularForms/Newforms/Nebentypus.lean`.
+
+The old subspace is likewise stable under the Hecke operators at primes `p` coprime to the level
+(`TauCeti.heckeTCuspNat_mem_cuspFormsOld`, in
+`TauCeti/NumberTheory/ModularForms/Newforms/HeckeStability.lean`), for the Hecke action
+`TauCeti.HeckeRing.GL2.heckeTCuspNat` on cusp forms. The corresponding stability of the *new*
+subspace is still missing.
 
 ## Main definitions
 
@@ -56,6 +60,10 @@ roadmap, and does not yet exist.
 * `TauCeti.disjoint_cuspFormsOld_cuspFormsNew`: the two subspaces meet only in `0`.
 * `TauCeti.sup_cuspFormsOld_cuspFormsNew_eq_top`: the old and new subspaces span the full
   cusp-form space.
+* `TauCeti.isCompl_cuspFormsOld_cuspFormsNew`: the two subspaces are complements, so every cusp
+  form splits uniquely as an oldform plus a newform. The splitting map is Mathlib's
+  `Submodule.projection` at this witness, which carries the reconstruction equation and the
+  characterisations of its fixed points and kernel.
 * `TauCeti.CuspForm.diamondOpCusp_levelRaise`: `V_d` intertwines the diamond operators, whence
   `TauCeti.diamondOpCusp_mem_cuspFormsOld`, the diamond stability of the old subspace.
 * `TauCeti.cuspFormsOld_one`, `TauCeti.cuspFormsNew_one`: at level one there are no oldforms,
@@ -67,7 +75,11 @@ roadmap, and does not yet exist.
   Section 5.6.
 * Miyake, *Modular forms*, Section 4.6.
 * AINTLIB's [`LeanModularForms/HeckeRIngs/GL2/Newforms/Basic.lean`](https://github.com/CBirkbeck/AINTLIB/blob/dev/leanmodularforms/projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/Newforms/Basic.lean),
-  by the LeanModularForms contributors, for the `cuspFormsOld` and `cuspFormsNew` API.
+  by the LeanModularForms contributors (Apache-2.0), pinned at commit
+  `2baa76f742bdb4fb8ee323fabba41203bd390e08`, for the `cuspFormsOld` and `cuspFormsNew` API and
+  for the `IsCompl` statement of the old/new decomposition at lines 293-400. The `IsCompl` proof
+  is not adapted from there — that source derives it through a real bilinear form, whereas here
+  it is assembled from `CuspForm.isCompl_peterssonOrthogonal`.
 -/
 
 public noncomputable section
@@ -82,16 +94,6 @@ open _root_.CuspForm
 
 variable {k : ℤ}
 
-/-! ### Level transport at a divisor -/
-
-/-- A factor of a divisor of a nonzero number is nonzero. -/
-private lemma neZero_of_mul_dvd_left {d M N : ℕ} [NeZero N] (h : d * M ∣ N) : NeZero d :=
-  ⟨fun hd ↦ NeZero.ne N (by simpa [hd] using h)⟩
-
-/-- A factor of a divisor of a nonzero number is nonzero. -/
-private lemma neZero_of_mul_dvd_right {d M N : ℕ} [NeZero N] (h : d * M ∣ N) : NeZero M :=
-  ⟨fun hM ↦ NeZero.ne N (by simpa [hM] using h)⟩
-
 /-! ### The old subspace -/
 
 /-- The **old subspace** `S_k(Γ₁(N))ᵒˡᵈ`: the subspace of `S_k(Γ₁(N))` spanned by the images of
@@ -101,7 +103,7 @@ condition `M ≠ N` removes exactly the identity operator at level `N`. -/
 def cuspFormsOld (N : ℕ) [NeZero N] (k : ℤ) :
     Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
   ⨆ (M : ℕ) (d : ℕ) (h : d * M ∣ N ∧ M ≠ N),
-    have : NeZero d := neZero_of_mul_dvd_left h.1
+    have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
     LinearMap.range (CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd h.1))
 
 variable {M d N : ℕ}
@@ -110,9 +112,9 @@ variable {M d N : ℕ}
 is old. -/
 theorem levelRaise_mem_cuspFormsOld [NeZero N] (h : d * M ∣ N) (hM : M ≠ N)
     (k : ℤ) (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
-    haveI : NeZero d := ⟨fun hd ↦ NeZero.ne N (by simpa [hd] using h)⟩
+    haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
     CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f ∈ cuspFormsOld N k :=
-  let _ := neZero_of_mul_dvd_left h
+  let _ := NeZero.of_dvd (dvd_of_mul_right_dvd h)
   Submodule.mem_iSup_of_mem M (Submodule.mem_iSup_of_mem d
     (Submodule.mem_iSup_of_mem ⟨h, hM⟩ ⟨f, CuspForm.levelRaiseₗ_apply d _ f⟩))
 
@@ -121,11 +123,11 @@ proper divisor level contains the whole old subspace. -/
 theorem cuspFormsOld_le [NeZero N] {V : Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k)}
     (hV : ∀ (M d : ℕ) (h : d * M ∣ N), M ≠ N →
       ∀ f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k,
-        haveI : NeZero d := ⟨fun hd ↦ NeZero.ne N (by simpa [hd] using h)⟩
+        haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
         CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) f ∈ V) :
     cuspFormsOld N k ≤ V := by
   refine iSup_le fun M ↦ iSup_le fun d ↦ iSup_le fun h ↦ ?_
-  have := neZero_of_mul_dvd_left h.1
+  have := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
   rintro _ ⟨f, rfl⟩
   rw [CuspForm.levelRaiseₗ_apply]
   exact hV M d h.1 h.2 f
@@ -164,7 +166,7 @@ theorem cuspFormsOld_le_of_prime [NeZero N]
           rcases hd with rfl | rfl
           · exact ⟨p, by rw [← hpL]; ring⟩
           · exact ⟨1, by rw [← hpL, mul_one]⟩
-        haveI : NeZero d := ⟨fun hd ↦ NeZero.ne N (by simpa [hd] using hdvd)⟩
+        haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hdvd)
         CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) g ∈ V) :
     cuspFormsOld N k ≤ V := by
   refine cuspFormsOld_le fun M d hdvd hM f ↦ ?_
@@ -172,29 +174,24 @@ theorem cuspFormsOld_le_of_prime [NeZero N]
   · -- `V₁` from a proper divisor level `M`: split off a prime factor `p` of `N / M`
     obtain ⟨m, hm⟩ : M ∣ N := by rwa [one_mul] at hdvd
     have hm1 : m ≠ 1 := fun h ↦ hM (by rw [hm, h, mul_one])
-    obtain ⟨p, hp, t, ht⟩ : ∃ p, p.Prime ∧ ∃ t, m = p * t := by
-      obtain ⟨p, hp, q, hq⟩ := Nat.exists_prime_and_dvd hm1
-      exact ⟨p, hp, q, hq⟩
-    have hpL : p * (M * t) = N := by rw [hm, ht]; ring
-    have : NeZero (M * t) := ⟨fun h ↦ NeZero.ne N (by rw [← hpL, h, mul_zero])⟩
+    obtain ⟨p, hp, t, rfl⟩ := Nat.exists_prime_and_dvd hm1
+    have hpL : p * (M * t) = N := by rw [hm]; ring
+    have : NeZero (M * t) := NeZero.of_dvd (Dvd.intro_left p hpL)
     have h1M : 1 * M ∣ M * t := ⟨t, by rw [one_mul]⟩
     have hmem := hV p (M * t) hp hpL 1 (Or.inl rfl)
       (CuspForm.levelRaise 1 (Gamma1_map_le_conjAct_scaleGL_of_dvd h1M) f)
     simpa only [CuspForm.levelRaise_levelRaise, one_mul] using hmem
   · -- `V_d` with `d ≠ 1`: split off a prime factor `q` of `d`
-    obtain ⟨q, hq, e, he⟩ : ∃ q, q.Prime ∧ ∃ e, d = q * e := by
-      obtain ⟨q, hq, e, hqe⟩ := Nat.exists_prime_and_dvd hd1
-      exact ⟨q, hq, e, hqe⟩
+    obtain ⟨q, hq, e, rfl⟩ := Nat.exists_prime_and_dvd hd1
     obtain ⟨s, hs⟩ := id hdvd
-    have : NeZero q := ⟨hq.ne_zero⟩
-    have : NeZero e := ⟨fun h ↦ NeZero.ne N (by rw [hs, he, h]; simp)⟩
-    have hqL : q * (e * M * s) = N := by rw [hs, he]; ring
-    have : NeZero (e * M * s) := ⟨fun h ↦ NeZero.ne N (by rw [← hqL, h, mul_zero])⟩
+    have hqL : q * (e * M * s) = N := by rw [hs]; ring
+    have heN : e ∣ N := ⟨q * M * s, by rw [← hqL]; ring⟩
+    have : NeZero e := NeZero.of_dvd heN
+    have : NeZero (e * M * s) := NeZero.of_dvd (Dvd.intro_left q hqL)
     have heM : e * M ∣ e * M * s := ⟨s, rfl⟩
     have hmem := hV q (e * M * s) hq hqL q (Or.inr rfl)
       (CuspForm.levelRaise e (Gamma1_map_le_conjAct_scaleGL_of_dvd heM) f)
-    have levelRaise_index : e * q = d := by rw [he, Nat.mul_comm]
-    simpa only [CuspForm.levelRaise_levelRaise, levelRaise_index] using hmem
+    simpa only [CuspForm.levelRaise_levelRaise, Nat.mul_comm e q] using hmem
 
 /-! ### The new subspace -/
 
@@ -215,7 +212,7 @@ is Petersson-orthogonal to `V_d g` for every cusp form `g` of proper divisor lev
 theorem mem_cuspFormsNew_iff [NeZero N] {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} :
     f ∈ cuspFormsNew N k ↔ ∀ (M d : ℕ) (h : d * M ∣ N), M ≠ N →
       ∀ g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k,
-        haveI : NeZero d := ⟨fun hd ↦ NeZero.ne N (by simpa [hd] using h)⟩
+        haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
         peterssonInnerCosets
           (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g) f = 0 := by
   rw [cuspFormsNew]
@@ -243,6 +240,14 @@ theorem sup_cuspFormsOld_cuspFormsNew_eq_top (N : ℕ) [NeZero N] (k : ℤ) :
 theorem cuspFormsNew_one (k : ℤ) : cuspFormsNew 1 k = ⊤ := by
   rw [cuspFormsNew, cuspFormsOld_one, CuspForm.peterssonOrthogonal_bot]
 
+/-! ### The old/new decomposition -/
+
+/-- **The old and new subspaces are complements.** Diamond–Shurman (5.20):
+`S_k(Γ₁(N)) = S_k(Γ₁(N))ᵒˡᵈ ⊕ S_k(Γ₁(N))ⁿᵉʷ`. -/
+theorem isCompl_cuspFormsOld_cuspFormsNew (N : ℕ) [NeZero N] (k : ℤ) :
+    IsCompl (cuspFormsOld N k) (cuspFormsNew N k) :=
+  cuspFormsNew_def N k ▸ CuspForm.isCompl_peterssonOrthogonal (cuspFormsOld N k)
+
 /-! ### The old subspace generated by newforms at prescribed levels -/
 
 /-- The part of the old subspace generated by the **new** forms at proper divisor levels that are
@@ -260,8 +265,8 @@ for. -/
 def cuspFormsOldMultiples (N : ℕ) [NeZero N] (k : ℤ) (m : ℕ) :
     Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
   ⨆ (M : ℕ) (d : ℕ) (h : d * M ∣ N ∧ M ≠ N ∧ m ∣ M),
-    have : NeZero d := neZero_of_mul_dvd_left h.1
-    have : NeZero M := neZero_of_mul_dvd_right h.1
+    have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
+    have : NeZero M := NeZero.of_dvd (dvd_of_mul_left_dvd h.1)
     (cuspFormsNew M k).map
       (CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd h.1))
 
@@ -269,13 +274,13 @@ def cuspFormsOldMultiples (N : ℕ) [NeZero N] (k : ℤ) (m : ℕ) :
 lies in `cuspFormsOldMultiples`. -/
 theorem levelRaise_mem_cuspFormsOldMultiples [NeZero N] {m : ℕ} (h : d * M ∣ N) (hM : M ≠ N)
     (hm : m ∣ M) (k : ℤ) (g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k)
-    (hg : haveI : NeZero M := ⟨fun hM ↦ NeZero.ne N (by simpa [hM] using h)⟩
+    (hg : haveI : NeZero M := NeZero.of_dvd (dvd_of_mul_left_dvd h)
       g ∈ cuspFormsNew M k) :
-    haveI : NeZero d := ⟨fun hd ↦ NeZero.ne N (by simpa [hd] using h)⟩
+    haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
     CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g ∈
       cuspFormsOldMultiples N k m :=
-  let _ := neZero_of_mul_dvd_left h
-  let _ := neZero_of_mul_dvd_right h
+  let _ := NeZero.of_dvd (dvd_of_mul_right_dvd h)
+  let _ := NeZero.of_dvd (dvd_of_mul_left_dvd h)
   Submodule.mem_iSup_of_mem M (Submodule.mem_iSup_of_mem d
     (Submodule.mem_iSup_of_mem ⟨h, hM, hm⟩ (Submodule.mem_map_of_mem hg)))
 
@@ -287,7 +292,7 @@ theorem cuspFormsOldMultiples_le_cuspFormsOld (N : ℕ) [NeZero N] (k : ℤ) (m 
     cuspFormsOldMultiples N k m ≤ cuspFormsOld N k := by
   refine iSup_le fun M ↦ iSup_le fun d ↦ iSup_le fun h ↦ ?_
   rintro x ⟨f, -, rfl⟩
-  have : NeZero d := neZero_of_mul_dvd_left h.1
+  have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
   -- the generator is a `levelRaiseₗ` application; `levelRaiseₗ_apply` is the bridge to the
   -- bare `levelRaise` that the old subspace's introduction rule is stated with
   simpa only [CuspForm.levelRaiseₗ_apply] using levelRaise_mem_cuspFormsOld h.1 h.2.1 k f
@@ -301,14 +306,14 @@ theorem cuspFormsOldMultiples_le [NeZero N] {m : ℕ}
     {V : Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k)}
     (hV : ∀ (M d : ℕ) (h : d * M ∣ N), M ≠ N → m ∣ M →
       ∀ g : CuspForm ((Gamma1 M).map (mapGL ℝ)) k,
-        haveI : NeZero M := ⟨fun hM ↦ NeZero.ne N (by simpa [hM] using h)⟩
+        haveI : NeZero M := NeZero.of_dvd (dvd_of_mul_left_dvd h)
         g ∈ cuspFormsNew M k →
-        haveI : NeZero d := ⟨fun hd ↦ NeZero.ne N (by simpa [hd] using h)⟩
+        haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd h)
         CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g ∈ V) :
     cuspFormsOldMultiples N k m ≤ V := by
   refine iSup_le fun M ↦ iSup_le fun d ↦ iSup_le fun h ↦ ?_
-  have := neZero_of_mul_dvd_left h.1
-  have := neZero_of_mul_dvd_right h.1
+  have := NeZero.of_dvd (dvd_of_mul_right_dvd h.1)
+  have := NeZero.of_dvd (dvd_of_mul_left_dvd h.1)
   rintro _ ⟨g, hg, rfl⟩
   -- Why consumers want this rule rather than the lattice lemmas: a bare `iSup_le` against a
   -- `Submodule.comap` leaves the `CompleteLattice` instance stuck on a metavariable, whereas an
@@ -332,7 +337,7 @@ theorem diamondOpCusp_mem_cuspFormsOld [NeZero N] (u : (ZMod N)ˣ)
     diamondOpCusp k u f ∈ cuspFormsOld N k := by
   refine cuspFormsOld_le (V := (cuspFormsOld N k).comap (diamondOpCusp k u)) ?_ hf
   intro M d hdvd hM g
-  have := neZero_of_mul_dvd_right hdvd
+  have := NeZero.of_dvd (dvd_of_mul_left_dvd hdvd)
   rw [Submodule.mem_comap, CuspForm.diamondOpCusp_levelRaise hdvd]
   exact levelRaise_mem_cuspFormsOld hdvd hM k _
 

@@ -163,7 +163,7 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
     · rintro rfl; exact hbase he
     · rintro rfl; exact hbase (hclosed.trans he)
   choose! R hR_pos L_R L_L hL_R hL_L h_tend_R h_tend_L h_spec using
-    fun t₀ (ht₀ : t₀ ∈ T) => exists_radius_perWindow_tendsto_log_norm_add_arg h_imm hab'
+    fun t₀ (ht₀ : t₀ ∈ T) => exists_radius_perWindow_tendsto_log_norm_add_arg h_imm
       (h_Ioo t₀ ht₀) ((hT t₀).mp ht₀).2
   obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R⟩ := exists_common_window_radius_le h_Ioo R hR_pos
   obtain ⟨m, hm_pos, hm⟩ := exists_complement_windows_dist_lower_bound hγ_cont h_complete
@@ -320,7 +320,7 @@ theorem IsPwC1ImmersionOn.exists_int_windingNumber_eq_add_sum_crossingAngle_toFi
       = k + ((∑ t ∈ (h_imm.finite_crossings (z₀ := s)).toFinset, crossingAngle γ t : ℝ) : ℂ)
           / (2 * (Real.pi : ℂ)) :=
   h_imm.exists_int_windingNumber_eq_add_sum_crossingAngle hab hclosed hbase fun t => by
-    rw [h_imm.mem_toFinset_finite_crossings, uIcc_of_le hab]
+    rw [h_imm.mem_toFinset_finite_crossings_of_le hab]
 
 /-- **Every smooth crossing contributes `½`.** A crossing where the two one-sided tangents agree
 has angle `π` (`TauCeti.Contour.crossingAngle_eq_pi`), hence winding weight `π / 2π = ½`. So a

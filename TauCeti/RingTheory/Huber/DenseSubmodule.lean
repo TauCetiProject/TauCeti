@@ -36,7 +36,7 @@ definition nor a pseudouniformiser has to be chosen.
 
 ## References
 
-* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch_guntzer_remmert], §3.7.2/1.
+* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §3.7.2/1.
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Propositions 6.17–6.18.
 
 Adapted from the AINTLIB development (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), branch

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.Lp.Translation
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -16,9 +16,6 @@ import Mathlib.MeasureTheory.Group.Integral
 -- `Mathlib.MeasureTheory.Measure.Prod` is imported privately: Tonelli's theorem
 -- appears only inside the proof of `TauCeti.eLpNorm_ballAverage_sub_le`.
 import Mathlib.MeasureTheory.Measure.Prod
--- Continuity of composition by measure-preserving maps is used only to prove that ball averages
--- of `Lᵖ` functions are continuous.
-import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 
 /-!
 # The ball average of an `Lᵖ` function
@@ -318,35 +315,6 @@ theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
     rwa [← ofReal_norm, ENNReal.ofReal_le_ofReal_iff (by linarith)] at hb2
   rw [dist_eq_norm, ← norm_neg, neg_sub]
   linarith
-
-omit [NormedSpace ℝ F] [CompleteSpace F] in
-/-- Translation is continuous in `Lᵖ` for every `Lᵖ` function. This private form is the input that
-turns the increment estimate into continuity of the ball average. -/
-private theorem tendsto_eLpNorm_comp_add_sub_of_memLp (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (hf : MemLp f p mu) :
-    Filter.Tendsto (fun e : E => eLpNorm (fun y => f (y + e) - f y) p mu) (nhds 0) (nhds 0) := by
-  let _ : Fact (1 ≤ p) := ⟨hp⟩
-  let T : E → C(E, E) := fun e => ⟨fun y => y + e, continuous_id.add continuous_const⟩
-  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T (by
-    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
-    fun_prop)
-  have hpres : ∀ e, MeasurePreserving (T e) mu mu := fun e => measurePreserving_add_right mu e
-  have hcomp : Continuous (fun e => Lp.compMeasurePreserving (T e) (hpres e) (hf.toLp f)) :=
-    continuous_const.compMeasurePreservingLp hT hpres hp'
-  have hcompzero : Lp.compMeasurePreserving (T 0) (hpres 0) (hf.toLp f) = hf.toLp f := by
-    apply Lp.ext
-    exact (Lp.coeFn_compMeasurePreserving (hf.toLp f) (hpres 0)).mono fun y hy => by
-      simpa only [T, ContinuousMap.coe_mk, Function.comp_apply, add_zero] using hy
-  have hLp : Filter.Tendsto
-      (fun e => Lp.compMeasurePreserving (T e) (hpres e) (hf.toLp f)) (nhds 0)
-      (nhds (hf.toLp f)) := by
-    simpa only [hcompzero] using hcomp.tendsto 0
-  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hLp
-  apply hLp.congr'
-  filter_upwards with e
-  apply eLpNorm_congr_ae
-  exact ((Lp.coeFn_compMeasurePreserving (hf.toLp f) (hpres e)).trans
-    ((hpres e).quasiMeasurePreserving.ae_eq_comp hf.coeFn_toLp)).sub hf.coeFn_toLp
 
 omit [CompleteSpace F] in
 /-- At every positive scale, the ball average of an `Lᵖ` function is continuous. -/

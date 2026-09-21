@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
-public section
-
 /-!
 # The dominant chamber of a base
 
@@ -69,7 +67,7 @@ The maximization argument is proved as `exists_mem_dominantChamber_of_finite_wey
 asks for no root-system assumption: on top of the standing `Finite ι`, `P.IsCrystallographic` and
 `P.IsReduced` hypotheses that the positive-root permutation step needs, it assumes only
 `Finite P.weylGroup`. The roadmap-signature `exists_mem_dominantChamber` is the root-system case,
-where that finiteness comes from `TauCeti.RootPairing.finite_weylGroup`.
+where that finiteness comes from `RootPairing.finite_weylGroup`.
 
 Regularity quantifies over *all* root indices, not just the positive ones. The two are equivalent,
 since the coroot functional of a negated root is the negative of the original, and quantifying
@@ -90,6 +88,8 @@ that roadmap's `Suggested.lean`. Uniqueness of the dominant representative is no
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §10.3.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -295,35 +295,14 @@ section PosRoots
 
 variable [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
 
-/-- A positive coroot functional is a nonnegative integer combination of the simple coroot
-functionals, with at least one simple coroot genuinely occurring. -/
-private lemma exists_coroot'_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
-    ∃ f : ι → ℕ, (∃ j ∈ b.support, f j ≠ 0) ∧
-      ∀ x : M, P.coroot' i x = ∑ j ∈ b.support, (f j : R) * P.coroot' j x := by
-  obtain ⟨f, -, hsum⟩ := exists_coroot_eq_sum_nat_of_mem_posRoots P b hi
-  refine ⟨f, ?_, fun x ↦ ?_⟩
-  · by_contra hcon
-    push Not at hcon
-    have : NeZero (2 : R) := ⟨by exact_mod_cast (by norm_num : (2 : ℕ) ≠ 0)⟩
-    refine P.ne_zero' i ?_
-    rw [hsum]
-    exact Finset.sum_eq_zero fun j hj ↦ by simp [hcon j hj]
-  · -- `RootPairing.coroot'` is an abbreviation for the transpose of `P.toLinearMap` applied to a
-    -- coroot, so unfolding it is what carries the expansion of `P.coroot i` to the dual side.
-    have hcoroot' : P.coroot' i = ∑ j ∈ b.support, (f j : R) • P.coroot' j := by
-      simp only [_root_.RootPairing.coroot']
-      rw [hsum, map_sum]
-      exact Finset.sum_congr rfl fun j _ ↦ by simp [Nat.cast_smul_eq_nsmul]
-    rw [hcoroot', LinearMap.sum_apply]
-    exact Finset.sum_congr rfl fun j _ ↦ by simp
-
 variable {x : M}
 
 /-- Every positive coroot functional is nonnegative on the closed dominant chamber. -/
 theorem coroot'_nonneg_of_mem_posRoots (hx : x ∈ dominantChamber P b) {i : ι}
     (hi : i ∈ posRoots P b) : 0 ≤ P.coroot' i x := by
   obtain ⟨f, -, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
-  rw [hsum x]
+  rw [hsum, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply, smul_eq_mul]
   exact Finset.sum_nonneg fun j hj ↦
     mul_nonneg (by positivity) ((mem_dominantChamber P b x).mp hx j hj)
 
@@ -341,7 +320,8 @@ theorem coroot'_pos_of_mem_posRoots (hx : x ∈ openDominantChamber P b) {i : ι
   -- Some simple coroot really occurs in the expansion, because a coroot is never zero.
   obtain ⟨f, ⟨j, hj, hfj⟩, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
   have hx' := (mem_openDominantChamber P b x).mp hx
-  rw [hsum x]
+  rw [hsum, LinearMap.sum_apply]
+  simp only [LinearMap.smul_apply, smul_eq_mul]
   refine Finset.sum_pos' (fun k hk ↦ mul_nonneg (by positivity) (hx' k hk).le) ⟨j, hj, ?_⟩
   exact mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hfj) (hx' j hj)
 

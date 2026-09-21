@@ -173,13 +173,13 @@ section Complex
 variable {G : Type v} [Group G] [Finite G]
 
 /-- **Over `ℂ`, inverting the argument conjugates the value of a virtual character** of a finite
-group: `conj (f g) = f g⁻¹`. This holds for genuine characters (`TauCeti.FDRep.conj_char`), and
+group: `conj (f g) = f g⁻¹`. This holds for genuine characters (`FDRep.conj_char`), and
 both sides are additive in `f`.
 
 This is not a `simp` lemma: `TauCeti.character_mem_virtualCharacters` and
 `TauCeti.irreducibleCharacter_mem_virtualCharacters` discharge its hypothesis, so as a conditional
 `simp` lemma it fires on the characters themselves and makes the more specific
-`TauCeti.FDRep.conj_char` and `TauCeti.conj_irreducibleCharacter` redundant, which the `simpNF`
+`FDRep.conj_char` and `TauCeti.conj_irreducibleCharacter` redundant, which the `simpNF`
 linter rejects. -/
 theorem conj_apply_of_mem_virtualCharacters {f : G → ℂ} (hf : f ∈ virtualCharacters ℂ G) (g : G) :
     (starRingEnd ℂ) (f g) = f g⁻¹ := by

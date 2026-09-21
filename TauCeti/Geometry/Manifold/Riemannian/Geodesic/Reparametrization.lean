@@ -98,23 +98,24 @@ theorem IsGeodesicCurveOn.comp_affine (h : IsGeodesicCurveOn I γ s) (a b : ℝ)
       filter_upwards [self_mem_nhdsWithin] with r hr
       exact hvelocity r hr
     have hreparam :
-        alongCurveWithin (leviCivita I M) (γ ∘ φ)
+        alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
             (fun r ↦ curveVelocityWithin I γ s (φ r)) u t =
-          a • alongCurveWithin (leviCivita I M) γ (curveVelocityWithin I γ s) s (φ t) := by
-      rw [alongCurveWithin_comp (leviCivita I M) γ (curveVelocityWithin I γ s) φ
+          a • alongCurveWithin (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) s
+            (φ t) := by
+      rw [alongCurveWithin_comp (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) φ
         (hφ t).differentiableWithinAt hmaps hchart hsection, (hφ t).derivWithin (hu t ht)]
     calc
-      alongCurveWithin (leviCivita I M) (γ ∘ φ)
+      alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
           (curveVelocityWithin I (γ ∘ φ) u) u t =
-          alongCurveWithin (leviCivita I M) (γ ∘ φ)
+          alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
             (fun r ↦ a • curveVelocityWithin I γ s (φ r)) u t :=
-        alongCurveWithin_congr (leviCivita I M) (γ ∘ φ) _ hvelocity_eventually
+        alongCurveWithin_congr (leviCivitaConnection I M) (γ ∘ φ) _ hvelocity_eventually
           (hvelocity t ht)
-      _ = a • alongCurveWithin (leviCivita I M) (γ ∘ φ)
+      _ = a • alongCurveWithin (leviCivitaConnection I M) (γ ∘ φ)
           (fun r ↦ curveVelocityWithin I γ s (φ r)) u t :=
-        alongCurveWithin_const_smul (leviCivita I M) (γ ∘ φ)
+        alongCurveWithin_const_smul (leviCivitaConnection I M) (γ ∘ φ)
           (fun r ↦ curveVelocityWithin I γ s (φ r)) a u t
-      _ = a • (a • alongCurveWithin (leviCivita I M) γ
+      _ = a • (a • alongCurveWithin (leviCivitaConnection I M) γ
           (curveVelocityWithin I γ s) s (φ t)) := by rw [hreparam]
       _ = 0 := by rw [h.alongCurveWithin_curveVelocityWithin_eq_zero (φ t) (hmaps ht)]; simp
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Operators
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.QExpansion
 
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+
 /-!
 # The Hecke operators at an index supported on the level
 
@@ -59,6 +61,8 @@ the function-level recurrence in `UpperTri/QExpansion.lean`.
   cusp-form counterpart: the operator preserves `M_k(N, χ)` and `S_k(N, χ)`.
 * `HeckeRing.GL2.qExpansion_coeff_heckeTNat_of_primeFactors_subset` and its cusp-form
   counterpart: `aₘ(T_n f) = a_{n m}(f)`.
+* `HeckeRing.GL2.heckeTNat_eq_smul_iff_forall_qExpansion_coeff_mul_of_primeFactors_subset` and
+  its cusp-form counterpart characterize the eigen-relation by `a_{nm}(f) = c a_m(f)`.
 
 ## Provenance
 
@@ -197,21 +201,19 @@ at a prime `p ∣ N`, leaving `T_{p^{r+1}} = T_p T_{p^r}`. In that case, read th
 `heckeUNat_eq_heckeTNat`, the statement is `T_{p^r} = U_p ^ r`; there is no second operator. -/
 theorem heckeTNat_pow_of_dvd (hpN : p ∣ N) (r : ℕ) :
     heckeTNat (N := N) k (p ^ r)
-        (_hn := ⟨pow_ne_zero r fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩)
+        (_hn := haveI := NeZero.of_dvd hpN; NeZero.pow)
       = heckeTNat (N := N) k p
-          (_hn := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩) ^ r :=
-  let _ : NeZero p :=
-    ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩
+          (_hn := NeZero.of_dvd hpN) ^ r :=
+  let _ : NeZero p := NeZero.of_dvd hpN
   heckeTNat_pow_of_primeFactors_subset k (Nat.primeFactors_mono hpN (NeZero.ne N)) r
 
 /-- **`T_{p^r} = T_p ^ r` at a divisor `p ∣ N`**, on `S_k(Γ₁(N))`. -/
 theorem heckeTCuspNat_pow_of_dvd (hpN : p ∣ N) (r : ℕ) :
     heckeTCuspNat (N := N) k (p ^ r)
-        (_hn := ⟨pow_ne_zero r fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩)
+        (_hn := haveI := NeZero.of_dvd hpN; NeZero.pow)
       = heckeTCuspNat (N := N) k p
-          (_hn := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩) ^ r :=
-  let _ : NeZero p :=
-    ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩
+          (_hn := NeZero.of_dvd hpN) ^ r :=
+  let _ : NeZero p := NeZero.of_dvd hpN
   heckeTCuspNat_pow_of_primeFactors_subset k (Nat.primeFactors_mono hpN (NeZero.ne N)) r
 
 section Nebentypus
@@ -256,7 +258,7 @@ theorem qExpansion_coeff_heckeTNat_of_primeFactors_subset (n : ℕ) [NeZero n]
     (qExpansion 1 (heckeTNat (N := N) k n f)).coeff m = (qExpansion 1 f).coeff (n * m) := by
   rw [coe_heckeTNat_of_primeFactors_subset k n hn f]
   exact qExpansion_coeff_heckeSlashUpperTri' k n
-    (by simp [CongruenceSubgroup.strictPeriods_Gamma1]) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
+    (TauCeti.one_mem_strictPeriods_Gamma1_map _) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
 
 /-- **The `q`-expansion recurrence on cusp forms**: `aₘ(T_n f) = a_{n m}(f)` at an index
 supported on the level. -/
@@ -266,7 +268,48 @@ theorem qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset (n : ℕ) [NeZero 
     (qExpansion 1 (heckeTCuspNat (N := N) k n f)).coeff m = (qExpansion 1 f).coeff (n * m) := by
   rw [coe_heckeTCuspNat_of_primeFactors_subset k n hn f]
   exact qExpansion_coeff_heckeSlashUpperTri' k n
-    (by simp [CongruenceSubgroup.strictPeriods_Gamma1]) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
+    (TauCeti.one_mem_strictPeriods_Gamma1_map _) (Nat.pos_of_ne_zero (NeZero.ne n)) f m
+
+/-- **The coefficient characterization of an eigen-relation at a level-supported index**, on
+modular forms. If every prime factor of `n` divides `N`, then `T_n F = c • F` if and only if
+`a_{nm}(F) = c a_m(F)` for every `m`.
+
+No nonvanishing hypothesis on `F` is needed: this characterizes an equation rather than the
+property of being an eigenvector. -/
+theorem heckeTNat_eq_smul_iff_forall_qExpansion_coeff_mul_of_primeFactors_subset {n : ℕ}
+    [NeZero n] (hn : n.primeFactors ⊆ N.primeFactors)
+    {F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k} (c : ℂ) :
+    heckeTNat (N := N) k n F = c • F ↔
+      ∀ m : ℕ, (qExpansion 1 F).coeff (n * m) = c * (qExpansion 1 F).coeff m := by
+  have hT : ∀ m : ℕ, (qExpansion 1 (heckeTNat (N := N) k n F)).coeff m =
+      (qExpansion 1 F).coeff (n * m) :=
+    qExpansion_coeff_heckeTNat_of_primeFactors_subset k n hn F
+  have hsmul : ∀ m : ℕ,
+      (qExpansion 1 (c • F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff m =
+        c * (qExpansion 1 F).coeff m := fun m ↦ by
+    rw [FunLike.coe_smul,
+      ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _),
+      map_smul, smul_eq_mul]
+  constructor
+  · intro heig m
+    rw [← hT m, heig, hsmul m]
+  · intro hcoeff
+    refine (ModularForm.qExpansion_inj one_pos
+      (TauCeti.one_mem_strictPeriods_Gamma1_map _)).1 (PowerSeries.ext fun m ↦ ?_)
+    rw [hT m, hsmul m, hcoeff m]
+
+/-- **The coefficient characterization of an eigen-relation at a level-supported index**, on
+cusp forms. If every prime factor of `n` divides `N`, then `T_n F = c • F` if and only if
+`a_{nm}(F) = c a_m(F)` for every `m`. -/
+theorem heckeTCuspNat_eq_smul_iff_forall_qExpansion_coeff_mul_of_primeFactors_subset {n : ℕ}
+    [NeZero n] (hn : n.primeFactors ⊆ N.primeFactors)
+    {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (c : ℂ) :
+    heckeTCuspNat (N := N) k n F = c • F ↔
+      ∀ m : ℕ, (qExpansion 1 F).coeff (n * m) = c * (qExpansion 1 F).coeff m := by
+  rw [heckeTCuspNat_eq_smul_iff_heckeTNat_eq_smul]
+  simpa only [ModularFormClass.coe_modularForm] using
+    heckeTNat_eq_smul_iff_forall_qExpansion_coeff_mul_of_primeFactors_subset k hn
+      (F := (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) c
 
 end HeckeRing.GL2
 

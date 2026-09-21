@@ -39,12 +39,19 @@ and both are natural in conflation-exact functors.
 * `TauCeti.ExactK0 E`: exact `K₀`, with class map `TauCeti.ExactK0.of`.
 * `TauCeti.ExactK0.AdditiveInvariant E G`: an isomorphism-invariant, conflation-additive function
   on objects, and `TauCeti.ExactK0.lift` the homomorphism it induces.
+* `TauCeti.ExactK0.RightAdditiveInvariant C E' G`: an object-level invariant additive on
+  conflations in its second variable, and `TauCeti.ExactK0.RightAdditiveInvariant.rightLift` its
+  one-sided descent.
+* `TauCeti.ExactK0.BiadditiveInvariant E E' G`: a right-additive invariant which is also additive
+  on conflations in its first variable, and `TauCeti.ExactK0.BiadditiveInvariant.bilift` its
+  descent to both exact Grothendieck groups.
 * `TauCeti.ExactK0.map` and `TauCeti.ExactK0.mapEquiv`: functoriality for conflation-exact
   functors and invariance under exact equivalences, with `TauCeti.ExactK0.transportEquiv` the
   instance of the latter for a transported exact structure.
 * `TauCeti.ExactK0.ofLE` and `TauCeti.ExactK0.fromSplit`: the comparison induced by the identity
   functor towards an exact structure with more conflations, and its instance out of the split
-  Grothendieck group.
+  Grothendieck group; `TauCeti.ExactK0.ofLEEquiv` is the comparison isomorphism between exact
+  structures with the same conflations.
 
 ## Main results
 
@@ -52,9 +59,17 @@ and both are natural in conflation-exact functors.
   `TauCeti.ExactK0.of_eq_zero_of_isZero` its biproduct and zero-object consequences.
 * `TauCeti.ExactK0.liftEquiv`: the universal property. Conflation-additive invariants with values
   in `G` correspond bijectively to homomorphisms `ExactK0 E →+ G`.
+* `TauCeti.ExactK0.RightAdditiveInvariant.rightLift_of` and
+  `TauCeti.ExactK0.RightAdditiveInvariant.rightLift_unique`: evaluation and uniqueness of the
+  one-sided descent.
+* `TauCeti.ExactK0.BiadditiveInvariant.bilift_of_of` and
+  `TauCeti.ExactK0.BiadditiveInvariant.bilift_unique`: evaluation and uniqueness of the
+  two-variable descent.
 * `TauCeti.ExactK0.ofLE_unique` and `TauCeti.ExactK0.ofLE_surjective`: the comparison map is the
   unique homomorphism preserving object classes, and it is surjective, so exact `K₀` is a
   quotient of the exact `K₀` of any smaller exact structure.
+* `TauCeti.ExactK0.fromSplitEquiv`: if every conflation splits, the canonical comparison from
+  split `K₀` is an equivalence.
 * `TauCeti.ExactK0.map_comp_ofLE`: naturality of the comparison in a conflation-exact functor.
 
 ## References
@@ -313,6 +328,99 @@ lemma liftEquiv_apply (a : AdditiveInvariant E G) : liftEquiv a = lift a := (rfl
 lemma liftEquiv_symm_apply_obj (f : ExactK0 E →+ G) (X : C) :
     ((liftEquiv (E := E) (G := G)).symm f).obj X = f (of X) := (rfl)
 
+/-! ### Biadditive invariants -/
+
+/-- An object-level invariant on an indexing category and an exact category which is invariant
+under isomorphisms in both variables and additive on conflations in the second variable. -/
+@[ext]
+structure RightAdditiveInvariant (C : Type u) [Category.{v} C] (E' : ExactStructure D)
+    (G : Type*) [AddCommGroup G] where
+  /-- The value of the invariant on a pair of objects. -/
+  obj : C → D → G
+  /-- Isomorphic objects in the first variable receive equal values. -/
+  map_iso₁ : ∀ {X X' : C}, (X ≅ X') → ∀ Y : D, obj X Y = obj X' Y
+  /-- Isomorphic objects in the second variable receive equal values. -/
+  map_iso₂ : ∀ (X : C) {Y Y' : D}, (Y ≅ Y') → obj X Y = obj X Y'
+  /-- The invariant is additive on conflations in the second variable. -/
+  map_conflation₂ : ∀ (X : C) {S : ShortComplex D}, E'.Conflation S →
+    obj X S.X₂ = obj X S.X₁ + obj X S.X₃
+
+namespace RightAdditiveInvariant
+
+variable (a : RightAdditiveInvariant C E' G)
+
+private noncomputable def additiveInvariant (X : C) : AdditiveInvariant E' G where
+  obj := a.obj X
+  map_iso := fun {_ _} i ↦ a.map_iso₂ X i
+  map_conflation := fun {_} hS ↦ a.map_conflation₂ X hS
+
+/-- A right-additive invariant with its first argument fixed, descended through the exact
+Grothendieck group in its second variable. -/
+noncomputable def rightLift (X : C) : ExactK0 E' →+ G :=
+  lift (a.additiveInvariant X)
+
+omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C] in
+/-- Evaluation of the one-sided descent on an object class. -/
+@[simp]
+lemma rightLift_of (X : C) (Y : D) : a.rightLift X (of Y) = a.obj X Y :=
+  lift_of _ Y
+
+omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C] in
+/-- Any homomorphism agreeing with the invariant on the object classes of the second variable is
+its one-sided descent. -/
+theorem rightLift_unique (X : C) (f : ExactK0 E' →+ G) (hf : ∀ Y : D, f (of Y) = a.obj X Y) :
+    f = a.rightLift X :=
+  hom_ext fun Y ↦ by rw [hf, a.rightLift_of]
+
+omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C] in
+/-- Isomorphic indexing objects induce the same one-sided descent. -/
+theorem rightLift_congr {X X' : C} (i : X ≅ X') : a.rightLift X = a.rightLift X' := by
+  refine hom_ext fun Y ↦ ?_
+  rw [a.rightLift_of, a.rightLift_of]
+  exact a.map_iso₁ i Y
+
+end RightAdditiveInvariant
+
+/-- An object-level invariant on two exact categories which is invariant under isomorphisms and
+additive on conflations in each variable. -/
+@[ext]
+structure BiadditiveInvariant (E : ExactStructure C) (E' : ExactStructure D)
+    (G : Type*) [AddCommGroup G] extends RightAdditiveInvariant C E' G where
+  /-- The invariant is additive on conflations in the first variable. -/
+  map_conflation₁ : ∀ {S : ShortComplex C}, E.Conflation S → ∀ Y : D,
+    obj S.X₂ Y = obj S.X₁ Y + obj S.X₃ Y
+
+namespace BiadditiveInvariant
+
+variable (a : BiadditiveInvariant E E' G)
+
+private noncomputable def leftInvariant : AdditiveInvariant E (ExactK0 E' →+ G) where
+  obj := a.toRightAdditiveInvariant.rightLift
+  map_iso := fun {_ _} i ↦ a.toRightAdditiveInvariant.rightLift_congr i
+  map_conflation := by
+    intro S hS
+    refine hom_ext fun Y ↦ ?_
+    simp only [RightAdditiveInvariant.rightLift_of, AddMonoidHom.add_apply]
+    exact a.map_conflation₁ hS Y
+
+/-- Descend an object-level biadditive invariant through both exact Grothendieck groups. -/
+noncomputable def bilift : ExactK0 E →+ ExactK0 E' →+ G :=
+  lift a.leftInvariant
+
+/-- The two-variable descent evaluates on object classes as the original invariant. -/
+@[simp]
+lemma bilift_of_of (X : C) (Y : D) : a.bilift (of X) (of Y) = a.obj X Y := by
+  rw [bilift, lift_of, leftInvariant, RightAdditiveInvariant.rightLift_of]
+
+/-- The two-variable descent is the unique biadditive map with the prescribed values on pairs of
+object classes. -/
+theorem bilift_unique (b : ExactK0 E →+ ExactK0 E' →+ G)
+    (hb : ∀ (X : C) (Y : D), b (of X) (of Y) = a.obj X Y) : b = a.bilift := by
+  refine hom_ext fun X ↦ hom_ext fun Y ↦ ?_
+  rw [hb, bilift_of_of]
+
+end BiadditiveInvariant
+
 section Functoriality
 
 variable (F : C ⥤ D) [F.Additive]
@@ -404,6 +512,23 @@ lemma ofLE_of (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflation S) 
     ofLE h (of X) = (of X : ExactK0 E'') :=
   PresentedK0.ofLE_of _ X
 
+/-- **The comparison isomorphism** between two exact structures with the same conflations: the
+comparison maps `TauCeti.ExactK0.ofLE` in both directions are mutually inverse. -/
+noncomputable def ofLEEquiv (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) :
+    ExactK0 E ≃+ ExactK0 E'' :=
+  AddMonoidHom.toAddEquiv (ofLE fun S => (h S).mp) (ofLE fun S => (h S).mpr)
+    (hom_ext fun X => by simp) (hom_ext fun X => by simp)
+
+@[simp]
+lemma ofLEEquiv_of (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) (X : C) :
+    ofLEEquiv h (of X) = (of X : ExactK0 E'') :=
+  ofLE_of _ X
+
+@[simp]
+lemma ofLEEquiv_symm_of (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) (X : C) :
+    (ofLEEquiv h).symm (of X) = (of X : ExactK0 E) :=
+  ofLE_of _ X
+
 /-- **The universal characterization of the comparison map**: it is the unique homomorphism
 preserving the classes of objects. -/
 theorem ofLE_unique (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflation S)
@@ -483,6 +608,43 @@ theorem fromSplit_surjective : Function.Surjective (fromSplit E) := by
   | neg a ha =>
     obtain ⟨a', rfl⟩ := ha
     exact ⟨-a', map_neg _ _⟩
+
+/-- The canonical comparison from split `K₀` to exact `K₀` is an equivalence when every
+conflation splits. -/
+noncomputable def fromSplitEquiv
+    (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) :
+    SplitK0 C ≃+ ExactK0 E := by
+  let a : AdditiveInvariant E (SplitK0 C) :=
+    { obj := SplitK0.of
+      map_iso := fun _ _ e ↦ SplitK0.of_congr e
+      map_conflation := fun {S} hS ↦ by
+        obtain ⟨s⟩ := h hS
+        rw [SplitK0.of_congr s.isoBinaryBiproduct, SplitK0.of_biprod] }
+  apply AddEquiv.ofBijective (fromSplit E)
+  constructor
+  · intro x y hxy
+    have hleft : (lift a).comp (fromSplit E) = AddMonoidHom.id (SplitK0 C) := by
+      apply SplitK0.hom_ext
+      intro X
+      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply]
+    apply_fun lift a at hxy
+    simpa only [← AddMonoidHom.comp_apply, hleft, AddMonoidHom.id_apply] using hxy
+  · exact fromSplit_surjective
+
+/-- The split-to-exact equivalence acts by the canonical comparison homomorphism. -/
+@[simp]
+lemma fromSplitEquiv_apply
+    (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (x : SplitK0 C) :
+    fromSplitEquiv h x = fromSplit E x :=
+  AddEquiv.ofBijective_apply _ _ _
+
+/-- The inverse split-to-exact equivalence sends an object class to its split class. -/
+@[simp]
+lemma fromSplitEquiv_symm_of
+    (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (X : C) :
+    (fromSplitEquiv h).symm (of X) = SplitK0.of X := by
+  apply (fromSplitEquiv h).injective
+  simp
 
 /-- The canonical comparison out of split `K₀` is natural in a conflation-exact functor: every
 additive functor is conflation-exact for the split exact structures. -/

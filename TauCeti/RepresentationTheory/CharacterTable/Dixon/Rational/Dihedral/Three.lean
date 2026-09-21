@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Dihedral
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Dihedral
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Basic
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Solver
 
 /-!
 # The rational Dixon computation for the dihedral group of order six
@@ -24,9 +24,10 @@ The simultaneous eigenvector search is carried out over `ZMod 7`, using
 bundled by `TauCeti.dihedralGroupThreeDixonPrimeData`. Its three output rows are proved to be
 exactly the reductions of the displayed integral central-character table. Applying `ZMod.valMinAbs`
 recovers those rows over the integers. The displayed degrees and ordinary table are checked against
-this output by the degree identity, degree-square sum, and weighted row orthogonality. This file
-does not identify the displayed rows with `TauCeti.characterTable` or prove
-`TauCeti.IsCharacterTableSpec`.
+this output by the degree identity, degree-square sum, and weighted row orthogonality. These finite
+checks are assembled into `TauCeti.ClassData.IsIntegerCharacterTableSpec`; its general soundness
+theorem then identifies the complex image of the displayed table with the character table, up to
+the unavoidable permutation of irreducible rows.
 
 Completeness is proved without evaluating the whole search: the displayed rows satisfy the
 class-algebra equations, and the good-prime structure theorem says that the search has exactly
@@ -46,14 +47,16 @@ three outputs.
   integral central-character rows.
 * `TauCeti.dihedralGroupThree_degree_mul_centralCharacterTable`: the division-free conversion to
   the ordinary character table.
+* `TauCeti.isIntegerCharacterTableSpec_dihedralGroupThree`: the exact tables satisfy the integral
+  character-table specification.
+* `TauCeti.integerCharacterTableChecker_dihedralGroupThree`: the executable exact checker accepts
+  them.
+* `TauCeti.isSome_dixonRationalCharacterTable_dihedralGroupThree`: the assembled rational solver
+  succeeds on the certified prime.
+* `TauCeti.isCharacterTableSpec_dihedralGroupThree`: their complex image satisfies the character
+  table specification.
 
 ## References
-
-This implements the `S₃ ≅ DihedralGroup 3` computation in "Rational tables (first executable
-milestone)" in Layer 6 of the [character theory roadmap][roadmap]. Connecting the exact output to
-the general table checker remains part of the assembled solver target.
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
@@ -111,7 +114,7 @@ theorem isModularEigenrow_dihedralGroupThreeCentralCharacterTable_zmod
 /-- The explicit set of modular rows has three elements. -/
 @[simp]
 theorem card_dihedralGroupThreeModularCentralRows :
-    ((dihedralClassData 3).modularCentralRows 7
+    ((dihedralClassData 3).rowsOfMap (fun x : ℤ => (x : ZMod 7))
       dihedralGroupThreeCentralCharacterTable).card = (dihedralClassData 3).numClasses := by
   decide
 
@@ -120,14 +123,19 @@ theorem card_dihedralGroupThreeModularCentralRows :
 theorem dihedralGroupThree_centralCharacterSearch :
     (dihedralClassData 3).centralCharacterSearch
         (F := ZMod dihedralGroupThreeDixonPrimeData.p) =
-      (dihedralClassData 3).modularCentralRows dihedralGroupThreeDixonPrimeData.p
+      (dihedralClassData 3).rowsOfMap
+        (fun x : ℤ => (x : ZMod dihedralGroupThreeDixonPrimeData.p))
         dihedralGroupThreeCentralCharacterTable :=
-  (dihedralClassData 3).centralCharacterSearch_eq_modularCentralRows_of_isGoodDixonPrime
-    dihedralGroupThreeDixonPrimeData.isGoodDixonPrime dihedralGroupThreeCentralCharacterTable
+  (dihedralClassData 3).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
+    dihedralGroupThreeDixonPrimeData.isGoodDixonPrime
+    (fun x : ℤ => (x : ZMod dihedralGroupThreeDixonPrimeData.p))
+    dihedralGroupThreeCentralCharacterTable
     (by intro i; fin_cases i <;> decide)
     isModularEigenrow_dihedralGroupThreeCentralCharacterTable_zmod
-    (by simpa only [dihedralGroupThreeDixonPrimeData_p] using
-      card_dihedralGroupThreeModularCentralRows)
+    (by
+      have hcard := card_dihedralGroupThreeModularCentralRows
+      rw [← dihedralGroupThreeDixonPrimeData_p] at hcard
+      exact hcard)
 
 /-- **The rational lift of the modular search is exactly the displayed integral
 central-character table, up to row order.** -/
@@ -198,5 +206,54 @@ theorem dihedralGroupThree_characterTable_orthogonal (i j : DihedralGroupThreeCl
       if i = j then Nat.card (DihedralGroup 3) else 0 := by
   rw [DihedralGroup.nat_card]
   fin_cases i <;> fin_cases j <;> decide
+
+/-- **The rational Dixon output for the dihedral group of order six has an exact character-table
+certificate.** Every condition is a finite equality or inequality over `ℕ` or `ℤ`; in particular,
+this theorem can be checked by kernel evaluation through
+`TauCeti.ClassData.integerCharacterTableChecker`. -/
+theorem isIntegerCharacterTableSpec_dihedralGroupThree :
+    (dihedralClassData 3).IsIntegerCharacterTableSpec
+      dihedralGroupThreeCentralCharacterTable dihedralGroupThreeCharacterTable
+      dihedralGroupThreeCharacterDegrees where
+  central_one i := by fin_cases i <;> decide
+  central_eigen := isModularEigenrow_dihedralGroupThreeCentralCharacterTable_int
+  degree_pos i := (dihedralGroupThree_characterDegrees_pos_and_dvd i).1
+  degree_dvd i := by
+    simpa only [Nat.card_eq_fintype_card] using
+      (dihedralGroupThree_characterDegrees_pos_and_dvd i).2
+  sum_degree_sq := by
+    simpa only [Nat.card_eq_fintype_card] using dihedralGroupThree_sum_characterDegrees_sq
+  degree_mul_central := dihedralGroupThree_degree_mul_centralCharacterTable
+  row_orthogonal i j := by
+    simpa only [Nat.card_eq_fintype_card, Nat.cast_ite, Nat.cast_zero] using
+      dihedralGroupThree_characterTable_orthogonal i j
+
+/-- The executable exact checker accepts the rational Dixon output for `DihedralGroup 3`. -/
+theorem integerCharacterTableChecker_dihedralGroupThree :
+    (dihedralClassData 3).integerCharacterTableChecker
+      dihedralGroupThreeCentralCharacterTable dihedralGroupThreeCharacterTable
+      dihedralGroupThreeCharacterDegrees = true := by
+  rw [(dihedralClassData 3).integerCharacterTableChecker_eq_true_iff]
+  exact isIntegerCharacterTableSpec_dihedralGroupThree
+
+/-- **The assembled rational Dixon--Schneider solver succeeds on the certified prime for
+`DihedralGroup 3`.** -/
+theorem isSome_dixonRationalCharacterTable_dihedralGroupThree :
+    ((dihedralClassData 3).dixonRationalCharacterTable?
+      dihedralGroupThreeDixonPrimeData.p).isSome = true := by
+  rw [(dihedralClassData 3).isSome_dixonRationalCharacterTable_iff]
+  refine ⟨⟨dihedralGroupThreeCentralCharacterTable, dihedralGroupThreeCharacterTable,
+    dihedralGroupThreeCharacterDegrees⟩, ?_, isIntegerCharacterTableSpec_dihedralGroupThree⟩
+  intro i
+  rw [dihedralGroupThree_liftedCentralRows]
+  exact Finset.mem_image.mpr ⟨i, Finset.mem_univ i, rfl⟩
+
+/-- **The exact rational Dixon output for `DihedralGroup 3`, cast to `ℂ`, satisfies the character
+table specification.** Consequently it is the ordinary complex character table up to a row
+permutation. -/
+theorem isCharacterTableSpec_dihedralGroupThree :
+    IsCharacterTableSpec (DihedralGroup 3)
+      ((dihedralClassData 3).complexTableOfInteger dihedralGroupThreeCharacterTable) :=
+  isIntegerCharacterTableSpec_dihedralGroupThree.isCharacterTableSpec
 
 end TauCeti

@@ -1,0 +1,66 @@
+{
+  "_comment": "Hand assignment of roadmaps to broad mathematical areas for the Progress page's topic grouping. Keys are roadmap directory names; sub-roadmaps inherit their parent's topic. A roadmap missing here is shown under 'Unsorted'.",
+  "order": [
+    "Number theory",
+    "Algebraic geometry",
+    "Algebra and representation theory",
+    "Analysis",
+    "Geometry and topology",
+    "Probability and combinatorics"
+  ],
+  "map": {
+    "ArithmeticDirichletSeries": "Number theory",
+    "Chebotarev": "Number theory",
+    "ClassFieldTheory": "Number theory",
+    "EffectiveBounds": "Number theory",
+    "EllipticCurves": "Number theory",
+    "GlobalNumberFields": "Number theory",
+    "GlobalQuadraticForms": "Number theory",
+    "IntegralLattices": "Number theory",
+    "LocalFieldsRamification": "Number theory",
+    "ModularForms": "Number theory",
+    "Multiquadratic": "Number theory",
+    "NumberFieldArithmetic": "Number theory",
+    "PolynomialGaloisGroups": "Number theory",
+    "QuadraticFormInvariants": "Number theory",
+
+    "AdicSpaces": "Algebraic geometry",
+    "AlgebraicCurves": "Algebraic geometry",
+    "AlgebraicVectorBundles": "Algebraic geometry",
+    "AnalyticToricGeometry": "Algebraic geometry",
+    "BelyiMaps": "Algebraic geometry",
+    "HodgeStructures": "Algebraic geometry",
+    "JacobianChallenge": "Algebraic geometry",
+    "StableReduction": "Algebraic geometry",
+
+    "AlgebraicCodingTheory": "Algebra and representation theory",
+    "CFSGStatement": "Algebra and representation theory",
+    "DGAInfinity": "Algebra and representation theory",
+    "GrothendieckEulerForms": "Algebra and representation theory",
+    "ProfiniteCohomology": "Algebra and representation theory",
+    "ProfiniteProPGroups": "Algebra and representation theory",
+    "ReductiveGroups": "Algebra and representation theory",
+    "RepresentationTheory": "Algebra and representation theory",
+    "StablePeriodicCurved": "Algebra and representation theory",
+    "ZigzagPreprojective": "Algebra and representation theory",
+
+    "ConformalMapping": "Analysis",
+    "ContourIntegration": "Analysis",
+    "FuchsianOrbifolds": "Analysis",
+    "OneParameterSemigroups": "Analysis",
+    "OptimalTransport": "Analysis",
+    "OrthogonalL2Bases": "Analysis",
+    "PDE": "Analysis",
+
+    "AlgebraicTopology": "Geometry and topology",
+    "CombinatorialHeegaardFloer": "Geometry and topology",
+    "GeometricTopology": "Geometry and topology",
+    "HeegaardFloer": "Geometry and topology",
+    "HopfRinow": "Geometry and topology",
+    "UniversalCovers": "Geometry and topology",
+
+    "DenseGraphLimits": "Probability and combinatorics",
+    "Exchangeability": "Probability and combinatorics",
+    "StandardDistributions": "Probability and combinatorics"
+  }
+}

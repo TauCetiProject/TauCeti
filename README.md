@@ -162,9 +162,21 @@ the live documentation describes.
 ## Building
 
 ```bash
-lake exe cache get   # fetch prebuilt Mathlib oleans
+lake exe cache get                 # Mathlib's oleans
+bash scripts/lake-cache-get.sh .   # Tau Ceti's own oleans
 lake build
 ```
+
+Both fetches matter, and they come from different places. `lake exe cache get` is Mathlib's own
+cache and covers only Mathlib. Tau Ceti's oleans live in a separate public cache that
+`scripts/lake-cache-get.sh` reads, anonymously and with no setup; without that second line
+`lake build` compiles the whole library from source, which takes hours. A miss is never fatal: the
+script discards a partial fetch and leaves you exactly where a from-scratch build would.
+
+The cache stores each revision's outputs under the toolchain that built them, and the script looks
+back through ancestors of your checkout to find the nearest published one. So expect a full rebuild
+right after a `lean-toolchain` bump, when no ancestor has been published under the new toolchain
+yet, and expect a hit at other times.
 
 ## Roadmaps
 
@@ -175,6 +187,79 @@ genus theory. When asked to work here, read the roadmap first (see `AGENTS.md`).
 
 Before starting a substantial piece of roadmap work, register and claim your intention so you
 don't collide with others; see [Coordinating work: intentions and claims](https://github.com/TauCetiProject/TauCetiRoadmap#coordinating-work-intentions-and-claims).
+
+## Contributing with the worker CLI
+
+The reviews above can be run one PR at a time, but most contribution here happens through a
+*worker*. A single round picks one piece of work, does it, and stops; `--loop` runs rounds
+repeatedly until you interrupt it. The exemplar is
+[`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker). With
+[uv](https://docs.astral.sh/uv/):
+
+```bash
+uv tool install git+https://github.com/kim-em/TauCetiWorker.git
+gh auth login     # the worker acts as this account, and tends its PRs
+tauceti doctor    # checklist of everything it needs
+```
+
+`tauceti doctor` is the place to start: it prints a row per prerequisite and tells you what is
+missing. You need `gh`, `git`, `uv/uvx`, `jq`, an authenticated `gh`, and `lake`, plus
+credentials for whichever agent you run (Codex or Claude). The `bubble`, `incus`, `pi` and
+`kiro` rows can stay missing unless you want the sandbox or an alternative agent.
+
+By default, agents run with unrestricted host access; see
+[sandboxing with `--bubble`](https://github.com/kim-em/TauCetiWorker/blob/main/docs/sandbox.md)
+for isolation.
+
+Then survey before you act:
+
+```bash
+tauceti status    # read-only: what work is available, and your quota
+tauceti work      # ONE unit of work, then exit
+tauceti work --loop
+```
+
+Run a bare `tauceti work` before ever using `--loop`, so you see one complete round end to end.
+
+Each round prioritizes maintenance and review before new formalization work; see
+[the cascade](https://github.com/kim-em/TauCetiWorker#what-a-round-does).
+`tauceti work --dry-run` shows what a round would pick without acting.
+
+Subscription pacing can be controlled via
+[`--pace`](https://github.com/kim-em/TauCetiWorker#pacing-against-quota).
+For running several workers, see
+[the worker documentation](https://github.com/kim-em/TauCetiWorker#persistent-workers).
+
+### Only review
+
+If you would rather review than author:
+
+```bash
+tauceti work --loop --only review
+```
+
+`--skip roadmap` is "everything except opening new formalization PRs" — a good setting if you
+want to help existing work land.
+
+### Only one roadmap area
+
+Roadmap rounds pick a random area each time unless you say otherwise. To steer to one:
+
+```bash
+tauceti work --roadmap-only ReductiveGroups
+```
+
+This keeps maintenance and review enabled. We discourage `--only roadmap`: it skips both,
+leaving existing PRs untended while opening new ones.
+
+The area is a subdirectory of the [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap)
+repo. Conversely `--roadmap-skip AREA[,AREA...]` excludes areas, which is how concurrent workers
+divide the roadmap between them. Before starting substantial roadmap work, register your
+intention so you do not collide with others — the worker reads the intentions board and avoids
+claimed targets by default.
+
+Finally: merging, abandoning and de-duplicating PRs is the repo's CI, not the worker. Your job
+ends when a PR is green and reviewed.
 
 ---
 

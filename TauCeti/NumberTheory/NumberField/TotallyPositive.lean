@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Order.Ring.Units
-public import TauCeti.GroupTheory.Index
+public import TauCeti.GroupTheory.Index.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 
@@ -47,6 +47,8 @@ the narrow class group finite (see `NarrowClassGroup.Finite`).
 * `NumberField.totallyPositiveIntegerUnits`: the corresponding subgroup of the arithmetic
   units `(𝓞 K)ˣ`, the preimage of `totallyPositiveUnits` under `(𝓞 K)ˣ → Kˣ`, with
   `mem_totallyPositiveIntegerUnits` and `sq_mem_totallyPositiveIntegerUnits`.
+* `NumberField.exists_isTotallyPositive_sub_mem`: every residue class modulo a nonzero ideal of
+  `𝓞 K` contains a nonzero totally positive integer.
 * `NumberField.norm_nonneg_of_isTotallyPositive`: the field norm of a totally positive element is
   nonnegative, and `NumberField.norm_pos_of_isTotallyPositive`: for a nonzero such element it is
   strictly positive.
@@ -176,15 +178,73 @@ omit [NumberField K] in
     totallyPositiveIntegerUnits (K := K) = ⊤ := by
   ext u; simp
 
-/-- **The norm of a totally positive element is nonnegative.**
+/-- **Every residue class modulo a nonzero ideal contains a nonzero totally positive integer.**
+Adding a large enough multiple of the square of a nonzero element of `H` makes every real embedding
+of `a` positive without moving `a` out of its class modulo `H`.
 
-Over a totally complex field the hypothesis is vacuous (`not_isReal_of_isTotallyComplex`), so the
-conclusion holds for every `x` there, including `x = 0` whose norm is `0`. -/
-theorem norm_nonneg_of_isTotallyPositive {x : K} (hpos : IsTotallyPositive x) :
-    0 ≤ Algebra.norm ℚ x := by
+This is the archimedean adjustment behind any construction that has to reconcile an ideal-theoretic
+congruence with the real places, such as choosing a coprime representative of a narrow ideal class
+or a generator congruent to one modulo a ray-class modulus. -/
+theorem exists_isTotallyPositive_sub_mem {H : Ideal (𝓞 K)} (hH : H ≠ ⊥) (a : 𝓞 K) :
+    ∃ b : 𝓞 K, b ≠ 0 ∧ b - a ∈ H ∧ IsTotallyPositive (b : K) := by
   classical
-  -- Compare in `ℂ`, where the norm is the product over all the embeddings, then descend to `ℝ`;
-  -- against `prod_eq_abs_norm` this says the absolute value there costs nothing.
+  obtain ⟨q, hqH, hq0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hH
+  -- The square of a nonzero element of `H` lies in `H` and is totally positive.
+  have hpH : q ^ 2 ∈ H := by rw [sq]; exact Ideal.mul_mem_left H q hqH
+  have hppos : IsTotallyPositive ((q ^ 2 : 𝓞 K) : K) := by
+    simpa only [map_pow] using
+      isTotallyPositive_sq (K := K) (RingOfIntegers.coe_ne_zero_iff.mpr hq0)
+  set B : ℝ := ∑ w : {w : InfinitePlace K // w.IsReal},
+    |embedding_of_isReal w.2 (a : K)| / embedding_of_isReal w.2 ((q ^ 2 : 𝓞 K) : K) with hB
+  -- Any natural number exceeding `B` clears the negative values of `a` at every real place.
+  have key : ∀ m : ℕ, B < m → IsTotallyPositive ((a + (m : 𝓞 K) * q ^ 2 : 𝓞 K) : K) := by
+    intro m hm w hw
+    have hpw : 0 < embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) := hppos w hw
+    have hle : |embedding_of_isReal hw (a : K)| /
+        embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) ≤ B := by
+      rw [hB]
+      exact Finset.single_le_sum (f := fun v : {w : InfinitePlace K // w.IsReal} =>
+          |embedding_of_isReal v.2 (a : K)| / embedding_of_isReal v.2 ((q ^ 2 : 𝓞 K) : K))
+        (fun v _ => div_nonneg (abs_nonneg _) (hppos v.1 v.2).le)
+        (a := (⟨w, hw⟩ : {w : InfinitePlace K // w.IsReal})) (Finset.mem_univ _)
+    have hlt : |embedding_of_isReal hw (a : K)| <
+        m * embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) :=
+      (div_lt_iff₀ hpw).mp (hle.trans_lt hm)
+    have hval : embedding_of_isReal hw ((a + (m : 𝓞 K) * q ^ 2 : 𝓞 K) : K) =
+        embedding_of_isReal hw (a : K) + m * embedding_of_isReal hw ((q ^ 2 : 𝓞 K) : K) := by
+      push_cast
+      simp
+    rw [hval]
+    have := neg_abs_le (embedding_of_isReal hw (a : K))
+    linarith
+  obtain ⟨n, hn⟩ := exists_nat_gt B
+  -- One of two consecutive shifts is nonzero, and both are large enough.
+  set m : ℕ := if a + (n : 𝓞 K) * q ^ 2 = 0 then n + 1 else n with hm
+  have hmB : B < m := by
+    rw [hm]
+    split_ifs with h
+    · exact hn.trans (by push_cast; linarith)
+    · exact hn
+  refine ⟨a + (m : 𝓞 K) * q ^ 2, ?_, by simpa using H.mul_mem_left _ hpH, key m hmB⟩
+  rw [hm]
+  split_ifs with h
+  · have hshift : a + ((n + 1 : ℕ) : 𝓞 K) * q ^ 2 =
+        (a + (n : 𝓞 K) * q ^ 2) + q ^ 2 := by
+      push_cast
+      ring
+    rw [hshift, h, zero_add]
+    exact pow_ne_zero 2 hq0
+  · exact h
+
+/-- **The signed product formula at a totally positive element.** For a totally positive `x` the
+product of `w x ^ mult w` over the infinite places is the norm itself, and not merely its absolute
+value as in `InfinitePlace.prod_eq_abs_norm`: at a real place total positivity identifies `w x`
+with the value of the corresponding real embedding, and a complex place contributes a conjugate
+pair, whose product is a square. -/
+private theorem norm_eq_prod_of_isTotallyPositive {x : K} (hpos : IsTotallyPositive x) :
+    ((Algebra.norm ℚ x : ℚ) : ℝ) = ∏ w : InfinitePlace K, w x ^ mult w := by
+  classical
+  -- Compare in `ℂ`, where the norm is the product over all the embeddings, then descend to `ℝ`.
   have key : ((Algebra.norm ℚ x : ℚ) : ℂ) =
       ((∏ w : InfinitePlace K, w x ^ mult w : ℝ) : ℂ) := by
     rw [← eq_ratCast (algebraMap ℚ ℂ) (Algebra.norm ℚ x), Algebra.norm_eq_prod_embeddings ℚ ℂ x,
@@ -223,8 +283,16 @@ theorem norm_nonneg_of_isTotallyPositive {x : K} (hpos : IsTotallyPositive x) :
         Finset.prod_pair hne, ComplexEmbedding.conjugate_coe_eq, Complex.mul_conj,
         Complex.normSq_eq_norm_sq, norm_embedding_eq,
         (not_isReal_iff_isComplex.mp hw).mult_eq_two]
-  have hreal : ((Algebra.norm ℚ x : ℚ) : ℝ) = ∏ w : InfinitePlace K, w x ^ mult w := by
-    exact_mod_cast key
+  exact_mod_cast key
+
+/-- **The norm of a totally positive element is nonnegative.**
+
+Over a totally complex field the hypothesis is vacuous (`not_isReal_of_isTotallyComplex`), so the
+conclusion holds for every `x` there, including `x = 0` whose norm is `0`. -/
+theorem norm_nonneg_of_isTotallyPositive {x : K} (hpos : IsTotallyPositive x) :
+    0 ≤ Algebra.norm ℚ x := by
+  -- Against `prod_eq_abs_norm`, the signed product formula says the absolute value costs nothing.
+  have hreal := norm_eq_prod_of_isTotallyPositive hpos
   rw [InfinitePlace.prod_eq_abs_norm] at hreal
   have habs : |Algebra.norm ℚ x| = Algebra.norm ℚ x := by exact_mod_cast hreal.symm
   exact abs_eq_self.mp habs

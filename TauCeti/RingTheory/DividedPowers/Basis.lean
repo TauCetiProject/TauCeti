@@ -191,7 +191,7 @@ theorem mem_dividedPowerLattice_iff_existsUnique_sum_dividedPower_eq {x y : A}
     y ∈ dividedPowerLattice x ↔
       ∃! c : ℕ →₀ ℤ, c.sum (fun n a => a • dividedPower n x) = y := by
   rw [dividedPowerLattice_def]
-  exact TauCeti.LinearIndependent.mem_span_range_iff_existsUnique h y
+  exact LinearIndependent.mem_span_range_iff_existsUnique h y
 
 /-- Rational independence of the powers gives the canonical `ℤ`-basis of the integral
 divided-power lattice. -/

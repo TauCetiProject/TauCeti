@@ -145,10 +145,10 @@ private theorem mul_notMem_of_notMem {v : Valuation R Γ₀} {H : ConvexSubgroup
     have hy1 : Units.mk0 (v y) hy ≤ 1 := by
       have := lt_one_of_unit_notMem hy (fun h => hH y hy h) hy'
       simpa [← Units.val_le_val] using this.le
-    have hx1 : Units.mk0 (v x) hx < 1 := by
+    have hx1 : Units.mk0 (v x) hx ≤ 1 := by
       have := lt_one_of_unit_notMem hx (fun h => hH x hx h) hm
-      simpa [← Units.val_lt_val] using this
-    exact H.not_mem_of_not_mem_of_le_lt_one hm hx1
+      simpa [← Units.val_le_val] using this.le
+    exact H.notMem_of_notMem_of_le_le_one hm hx1
       (mul_le_of_le_one_right' (a := Units.mk0 (v x) hx) hy1)
 
 /-- `H` is closed upwards along attained values: a member below an attained unit forces that
@@ -335,6 +335,17 @@ theorem one_le_restrictToConvex (v : Valuation R Γ₀) (H : ConvexSubgroup Γ�
     rw [h]; exact one_mem H
   have := (restrictToConvex_le_iff_of_mem v H hH hone hc hmone (hH c hc h1)).mpr (by simpa using h1)
   simpa using this
+
+/-- **A valuation bounded by `1` satisfies the absorption hypothesis vacuously.** If `v r ≤ 1`
+for every `r`, then an attained value that is also `≥ 1` equals `1`, so its unit is `1` and lies
+in *every* convex subgroup. This is what lets `restrictToConvex` be applied to a valuation of a
+ring of definition without first choosing `H`. -/
+theorem mk0_mem_of_forall_le_one (v : Valuation R Γ₀) (h : ∀ r, v r ≤ 1)
+    (H : ConvexSubgroup Γ₀ˣ) (a : R) (ha : v a ≠ 0) (h1 : 1 ≤ v a) :
+    Units.mk0 (v a) ha ∈ H := by
+  have heq : Units.mk0 (v a) ha = 1 := Units.ext (le_antisymm (h a) h1)
+  rw [heq]
+  exact one_mem H
 
 /-- `H` keeps every value sandwiched between an attained value `≥ 1` and its inverse. Since
 `H` absorbs the attained values `≥ 1`, and is convex, it absorbs everything they bracket —

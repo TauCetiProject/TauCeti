@@ -208,6 +208,15 @@ def exitCapWindows (γ : ℝ → ℂ) (s : ℂ) (T : Finset ℝ) (δ ε : ℝ)
     (L_R L_L : ℝ → ℂ) : List CircularCapWindow :=
   (T.sort (· ≤ ·)).map fun t ↦ exitCapWindow γ s t δ ε (L_R t) (L_L t)
 
+/-- Summing a function over the ordered exit-window list is the same as summing its value on
+the canonical window of each crossing. -/
+theorem sum_exitCapWindows {M : Type*} [AddCommMonoid M] (f : CircularCapWindow → M)
+    (γ : ℝ → ℂ) (s : ℂ) (T : Finset ℝ) (δ ε : ℝ) (L_R L_L : ℝ → ℂ) :
+    ((exitCapWindows γ s T δ ε L_R L_L).map f).sum =
+      ∑ t ∈ T, f (exitCapWindow γ s t δ ε (L_R t) (L_L t)) := by
+  rw [exitCapWindows, List.map_map, ← List.sum_toFinset _ (T.sort_nodup (· ≤ ·))]
+  simp
+
 /-- Membership in `exitCapWindows` means being the exit-time window of a listed crossing. -/
 @[simp] theorem mem_exitCapWindows_iff {γ : ℝ → ℂ} {s : ℂ} {T : Finset ℝ} {δ ε : ℝ}
     {L_R L_L : ℝ → ℂ} {W : CircularCapWindow} :
@@ -391,7 +400,7 @@ The real logarithmic term vanishes because both exit chords have the same norm. 
 analytic input that `windingNumber_sub_cap_exitCapWindow_eq_crossingAngle_div_two_pi` consumes in
 Hungerbühler--Wasem Proposition 2.2. -/
 theorem exists_radius_hasCauchyPVAt_exitCapWindow {γ : ℝ → ℂ} {s : ℂ} {a b t₀ : ℝ}
-    (h_imm : IsPwC1ImmersionOn γ a b) (hab : a < b) (ht₀ : t₀ ∈ Ioo a b)
+    (h_imm : IsPwC1ImmersionOn γ a b) (ht₀ : t₀ ∈ Ioo a b)
     (h_at : γ t₀ = s) :
     ∃ R > 0, ∃ L_R L_L : ℂ, L_R ≠ 0 ∧ L_L ≠ 0 ∧
       Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R) ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L) ∧
@@ -403,8 +412,9 @@ theorem exists_radius_hasCauchyPVAt_exitCapWindow {γ : ℝ → ℂ} {s : ℂ} {
         (((((-L_L) / (γ (exitCapWindow γ s t₀ δ ε L_R L_L).lower - s)).arg +
           ((γ (exitCapWindow γ s t₀ δ ε L_R L_L).upper - s) / L_R).arg : ℝ) : ℂ) *
             Complex.I) := by
+  have hab : a < b := ht₀.1.trans ht₀.2
   obtain ⟨R, hR, L_R, L_L, hL_R, hL_L, h_R, h_L, hspec⟩ :=
-    exists_radius_perWindow_tendsto_log_norm_add_arg h_imm hab ht₀ h_at
+    exists_radius_perWindow_tendsto_log_norm_add_arg h_imm ht₀ h_at
   refine ⟨R, hR, L_R, L_L, hL_R, hL_L, h_R, h_L, ?_⟩
   intro δ hδ hδR ha hb h_unique ε hε hεL hεR
   let W := exitCapWindow γ s t₀ δ ε L_R L_L

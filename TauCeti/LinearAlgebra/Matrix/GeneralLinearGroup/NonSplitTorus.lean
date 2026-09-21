@@ -12,10 +12,18 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.LeftMulMatrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 -- `Module.finBasisOfFinrankEq` is the body of `TauCeti.nonSplitTorusBasis`.
 public import Mathlib.LinearAlgebra.Dimension.Free
+-- `TauCeti.Algebra.normUnits` states the determinant of a torus element below.
+public import TauCeti.RingTheory.Norm.Units
 -- Non-public: `Algebra.IsQuadraticExtension.exists_notMem_range_algebraMap`,
 -- `Algebra.norm_ne_zero_iff`, `Module.natCard_eq_pow_finrank` and `Nat.card_units` are used only
 -- inside proofs, so downstream importers do not pay for them.
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
+import TauCeti.GroupTheory.Index.Basic
+-- Non-public: conjugation invariance of the shifted determinant is used only inside a proof.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+-- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the proof of
+-- `TauCeti.GL2NonSplitTorus.index_eq`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
@@ -66,9 +74,13 @@ choice, following the convention of
 ## Main results
 
 * `TauCeti.GL2NonSplitTorus.natCard_eq`: the torus has `q² - 1` elements over a finite field with
-  `q` elements.
-* `TauCeti.GL2NonSplitTorus.conj_notMem_gl2Borel`: an element of the torus not coming from `F` has
-  no conjugate in the Borel subgroup, and
+  `q` elements, and `TauCeti.GL2NonSplitTorus.index_eq`: its index is then `q (q - 1)`.
+* `TauCeti.GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom`: an element of the torus not
+  coming from `F` is not a scalar matrix, hence is regular.
+* `TauCeti.GL2NonSplitTorus.conj_notMem_of_det_sub_algebraMap_eq_zero`: a non-scalar element with
+  an eigenvalue in `F` has no conjugate in the torus. In particular,
+  `TauCeti.GL2NonSplitTorus.conj_notMem_gl2Borel` says an element of the torus not coming from `F`
+  has no conjugate in the Borel subgroup, and
   `TauCeti.GL2NonSplitTorus.exists_forall_conj_notMem_gl2Borel`: such an element exists, so the
   torus is not conjugate into the Borel subgroup. What these contradict is
   `TauCeti.GL2Borel.exists_det_sub_algebraMap_eq_zero`, that a matrix with an upper-triangular
@@ -164,6 +176,14 @@ theorem trace_gl2NonSplitTorusHom (x : Eˣ) :
       Algebra.trace F E (x : E) :=
   trace_unitsLeftMulMatrix _ x
 
+/-- **The determinant of a non-split-torus element is its field norm, as an equality of units.** -/
+@[simp]
+theorem det_gl2NonSplitTorusHom (x : Eˣ) :
+    Matrix.GeneralLinearGroup.det (GL2NonSplitTorusHom F E hE x) = Algebra.normUnits F x := by
+  apply Units.ext
+  rw [Algebra.coe_normUnits]
+  exact val_det_gl2NonSplitTorusHom hE x
+
 /-- A unit of `F` is sent to the corresponding scalar matrix. -/
 @[simp, grind =]
 theorem gl2NonSplitTorusHom_map_algebraMap (a : Fˣ) :
@@ -176,6 +196,15 @@ theorem scalar_mem (a : Fˣ) :
     Matrix.GeneralLinearGroup.scalar (Fin 2) a ∈ GL2NonSplitTorus F E hE :=
   ⟨_, gl2NonSplitTorusHom_map_algebraMap hE a⟩
 
+/-- A scalar matrix, read back through `TauCeti.GL2NonSplitTorus.unitsEquiv`, is the unit of `F`
+it came from, pushed into `E`. -/
+@[simp]
+theorem unitsEquiv_symm_scalar (a : Fˣ) :
+    (unitsEquiv hE).symm ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem hE a⟩ =
+      Units.map (algebraMap F E : F →* E) a := by
+  rw [MulEquiv.symm_apply_eq]
+  exact Subtype.ext (by rw [coe_unitsEquiv_apply, gl2NonSplitTorusHom_map_algebraMap])
+
 /-- **The order of the non-split torus**: it has one element for each nonzero element of `E`, so
 over a field with `q` elements it has `q² - 1` of them. (Over an infinite `F` both sides are `0`,
 the `Nat.card` of an infinite type.) -/
@@ -183,6 +212,32 @@ theorem natCard_eq : Nat.card (GL2NonSplitTorus F E hE) = Nat.card F ^ 2 - 1 := 
   have := Module.finite_of_finrank_eq_succ (n := 1) hE
   rw [← Nat.card_congr (unitsEquiv hE).toEquiv, Nat.card_units,
     Module.natCard_eq_pow_finrank (K := F) (V := E), hE]
+
+/-- **The index of the non-split torus**: over a field with `q` elements the torus has `q² - 1`
+elements inside a group of order `(q² - 1) q (q - 1)`, so its index is `q (q - 1)`. It is the
+number of summands in a class function induced from the torus, and hence the dimension of a
+representation induced from a character of `Eˣ`. -/
+theorem index_eq [Finite F] : (GL2NonSplitTorus F E hE).index =
+    Nat.card F * (Nat.card F - 1) := by
+  let _ := Fintype.ofFinite F
+  refine index_eq_of_natCard_eq_mul ?_ (natCard_eq hE) ?_
+  · rw [Nat.card_eq_fintype_card]
+    have := Fintype.one_lt_card (α := F)
+    have := Nat.le_self_pow two_ne_zero (Fintype.card F)
+    omega
+  · simpa only [Nat.card_eq_fintype_card] using natCard_GL_fin_two_eq_sq_sub_one_mul F
+
+/-- An element of the non-split torus not coming from `F` is not a scalar matrix: multiplication by
+`x` on `E` is multiplication by an element of `F` exactly when `x` lies in `F`. It is therefore
+regular, which is what makes its centralizer computable. -/
+theorem notMem_range_scalar_gl2NonSplitTorusHom {x : Eˣ}
+    (hx : (x : E) ∉ Set.range (algebraMap F E)) :
+    (GL2NonSplitTorusHom F E hE x : Matrix (Fin 2) (Fin 2) F) ∉
+      Set.range (Matrix.scalar (Fin 2)) := by
+  rintro ⟨c, hc⟩
+  refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E hE) ?_⟩
+  rw [leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom hE]
+  exact hc
 
 /-- The key computation behind non-splitness: for `x : E` outside `F`, the matrix of multiplication
 by `x` has no eigenvalue `a : F`. -/
@@ -194,6 +249,45 @@ theorem det_sub_algebraMap_ne_zero {x : E} (hx : x ∉ Set.range (algebraMap F E
   rw [← (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes a, ← map_sub,
     ← Algebra.norm_eq_matrix_det]
   exact Algebra.norm_ne_zero_iff.mpr hxa
+
+/-- **A non-scalar element with an eigenvalue in `F` has no conjugate in the non-split torus.**
+An element of the torus is either scalar or has no eigenvalue in `F`
+(`TauCeti.GL2NonSplitTorus.det_sub_algebraMap_ne_zero`), and both conditions are invariant under
+conjugation. -/
+theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
+    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2))) {a : F}
+    (ha : ((g : Matrix (Fin 2) (Fin 2) F) -
+      algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0) (x : GL (Fin 2) F) :
+    x⁻¹ * g * x ∉ GL2NonSplitTorus F E hE := by
+  have : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
+  intro hmem
+  obtain ⟨v, hv⟩ := (mem_iff hE).mp hmem
+  -- the conjugated matrix is multiplication by `v`
+  have hmat : ((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) =
+      Algebra.leftMulMatrix (nonSplitTorusBasis F E hE) (v : E) := by
+    rw [← coe_gl2NonSplitTorusHom hE, hv]
+  -- conjugation does not change the determinant of `g - a`
+  have hdet : (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
+      algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0 := by
+    rw [Matrix.GeneralLinearGroup.det_sub_algebraMap_conj, ha]
+  -- so the norm of `v - a` vanishes, forcing `v` into `F`
+  have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
+    rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E hE), map_sub,
+      (Algebra.leftMulMatrix (nonSplitTorusBasis F E hE)).commutes, ← hmat, hdet]
+  have hvF : (v : E) = algebraMap F E a := sub_eq_zero.mp (Algebra.norm_eq_zero_iff.mp hnorm)
+  -- the conjugate is then a central scalar matrix, so `g` is scalar
+  have ha0 : a ≠ 0 := fun h => v.ne_zero (by rw [hvF, h, map_zero])
+  have hvu : v = Units.map (algebraMap F E : F →* E) (Units.mk0 a ha0) := by
+    ext
+    simpa using hvF
+  have hscal : x⁻¹ * g * x =
+      Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 a ha0) := by
+    rw [← hv, hvu, gl2NonSplitTorusHom_map_algebraMap]
+  have hgeq : g = Matrix.GeneralLinearGroup.scalar (Fin 2) (Units.mk0 a ha0) := by
+    have hgx : g = x * (x⁻¹ * g * x) * x⁻¹ := by group
+    rw [hgx, hscal, ← Matrix.GeneralLinearGroup.scalar_commute, mul_assoc, mul_inv_cancel,
+      mul_one]
+  exact hg ⟨a, by rw [hgeq, Matrix.GeneralLinearGroup.coe_scalar, Units.val_mk0]⟩
 
 /-- **The torus is non-split**: if `x : Eˣ` does not come from `F`, then no conjugate of the
 corresponding matrix is upper triangular. Equivalently, that matrix has no eigenvalue in `F`, which

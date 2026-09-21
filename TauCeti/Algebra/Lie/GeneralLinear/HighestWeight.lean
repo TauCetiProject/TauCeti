@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
+public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.Algebra.Ring.CharZero
 public import Mathlib.Data.Rat.Cast.Defs
+import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Weights.Central
 
 /-!
 # Dominant weights and highest weight vectors for `gl n`
@@ -41,6 +44,10 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
 * `TauCeti.IsGlDominantIntegral μ`: the consecutive differences of `μ : Fin n → R` are natural
   numbers, for `R` of characteristic zero.
 * `TauCeti.glStaircase N`: the staircase tuple `(N - 1/2, N - 3/2, …, 1/2) : Fin N → ℚ`.
+* `TauCeti.glHalfStaircase F N`: the formula `N - 1/2 - i` over any field; when two is
+  invertible, this is the same half-shifted staircase.
+* `Fin.natCast_rev_add_one_div_two_eq_glHalfStaircase`: the reverse finite index, cast to
+  a field and shifted by one half, is the corresponding half-staircase entry.
 * `TauCeti.IsGlHighestWeightVector μ v`: `v` is nonzero, the diagonal matrix unit `Eᵢᵢ` acts on it
   by `μ i`, and every raising matrix unit `Eᵢⱼ` with `i < j` annihilates it.
 
@@ -51,9 +58,19 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
   `TauCeti.isGlDominantIntegral_iff_forall_le` records the two forms as equivalent.
 * `TauCeti.isGlDominantIntegral_intCast`: an antitone integer tuple is dominant — the weights of
   the group level sit inside the dominant ones.
-* `TauCeti.IsGlDominantIntegral.add_const`: dominance is invariant under the central direction.
+* `TauCeti.IsGlDominantIntegral.add_const`: dominance is invariant under the central direction, and
+  `TauCeti.IsGlDominantIntegral.exists_antitone_natCast_add_const` is the converse decomposition:
+  every dominant weight is an antitone tuple of natural numbers translated along that direction.
+  `TauCeti.IsGlDominantIntegral.antitone_of_eq_natCast_add_const` recovers antitonicity when that
+  translated tuple is prescribed.
 * `TauCeti.isGlDominantIntegral_glStaircase` and `TauCeti.glStaircase_ne_intCast`: the staircase is
   dominant and no entry of it is an integer, so dominance genuinely does not force integrality.
+* `TauCeti.isGlDominantIntegral_glHalfStaircase`: the field-valued half-staircase is dominant in
+  characteristic zero.
+* `TauCeti.sum_glStaircase`: the sum of the staircase entries after mapping to a
+  characteristic-zero field.
+* `TauCeti.sum_glHalfStaircase`: the corresponding sum over any field in which two is
+  invertible.
 * `TauCeti.IsGlHighestWeightVector.lie_eq_glWeightEquiv_smul` and
   `TauCeti.IsGlHighestWeightVector.lie_eq_zero_of_mem_strictUpperTriangular`: the whole diagonal
   Cartan subalgebra acts by the weight, and the whole positive nilpotent subalgebra `𝔫⁺`
@@ -62,6 +79,12 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
   weight vector, so the elementwise definition loses nothing.
 * `TauCeti.IsGlHighestWeightVector.weight_eq`: a vector is a highest weight vector for at most one
   weight.
+* `TauCeti.IsGlHighestWeightVector.map` and `TauCeti.IsGlHighestWeightVector.congr`: highest weight
+  vectors transport along module morphisms that preserve nonzeroness, in particular equivalences.
+* `TauCeti.isGlHighestWeightVector_coe_iff`: a vector of a Lie submodule is a highest weight vector
+  of that submodule exactly when it is one of the ambient module.
+* `TauCeti.forall_one_lie_eq_sum_smul_of_isGlHighestWeightVector`: on an irreducible module carrying
+  a highest weight vector, the identity matrix acts by the sum of the entries of that weight.
 * `TauCeti.isGlHighestWeightVector_single_bot_top`: the highest root vector `E_{⊥⊤}` is a highest
   weight vector of the adjoint module, of weight `ε_⊥ - ε_⊤`, so the predicate is not vacuous.
 
@@ -212,6 +235,46 @@ theorem isGlDominantIntegral_intCast {a : Fin n → ℤ} (ha : Antitone a) :
   refine ⟨(a i - a j).toNat, ?_⟩
   rw [← Int.cast_natCast (R := R), Int.toNat_of_nonneg h0, Int.cast_sub]
 
+/-- **A dominant weight is a tuple of natural numbers translated along the central direction**, the
+converse of `TauCeti.isGlDominantIntegral_intCast` and `TauCeti.IsGlDominantIntegral.add_const`
+together. Subtracting the last entry `c` of a dominant `μ` leaves the differences `μ i - c`, which
+dominance makes natural numbers, and those decrease weakly because the differences `μ i - μ j`
+along the order are natural numbers too. -/
+theorem IsGlDominantIntegral.exists_antitone_natCast_add_const (hmu : IsGlDominantIntegral mu) :
+    ∃ (a : Fin n → ℕ) (c : R), Antitone a ∧ mu = fun i => (a i : R) + c := by
+  obtain _ | m := n
+  · exact ⟨fun i => i.elim0, 0, fun i => i.elim0, funext fun i => i.elim0⟩
+  set a : Fin (m + 1) → ℕ := fun i => (hmu.exists_natCast_sub_of_le (Fin.le_last i)).choose
+  have key : ∀ i : Fin (m + 1), mu i - mu (Fin.last m) = (a i : R) := fun i =>
+    (hmu.exists_natCast_sub_of_le (Fin.le_last i)).choose_spec
+  refine ⟨a, mu (Fin.last m), fun i j hij => ?_, funext fun i => ?_⟩
+  · obtain ⟨k, hk⟩ := hmu.exists_natCast_sub_of_le hij
+    have hcast : ((a j + k : ℕ) : R) = ((a i : ℕ) : R) := by
+      push_cast
+      rw [← key i, ← key j, ← hk]
+      ring
+    exact Nat.le.intro (Nat.cast_injective hcast)
+  · exact sub_eq_iff_eq_add.mp (key i)
+
+/-- If a dominant integral weight is already expressed as a common translate of a natural tuple,
+that tuple is antitone. This is the prescribed-tuple counterpart to
+`TauCeti.IsGlDominantIntegral.exists_antitone_natCast_add_const`. -/
+theorem IsGlDominantIntegral.antitone_of_eq_natCast_add_const
+    (hmu : IsGlDominantIntegral mu) {a : Fin n → ℕ} {c : R}
+    (h : mu = fun i => (a i : R) + c) : Antitone a := by
+  intro i j hij
+  obtain ⟨d, hd⟩ := hmu.exists_natCast_sub_of_le hij
+  have hdiff : (a i : R) - (a j : R) = (d : R) := by
+    calc
+      (a i : R) - (a j : R) = mu i - mu j := by rw [h]; ring
+      _ = (d : R) := hd
+  have hcast : ((a j + d : ℕ) : R) = (a i : R) := by
+    rw [Nat.cast_add]
+    calc
+      (a j : R) + (d : R) = (d : R) + (a j : R) := add_comm _ _
+      _ = (a i : R) := (sub_eq_iff_eq_add.mp hdiff).symm
+  exact Nat.le.intro (Nat.cast_injective hcast)
+
 /-- Over an index type with at most one element there is no consecutive pair, so every tuple is
 dominant. -/
 theorem isGlDominantIntegral_of_le_one (hn : n ≤ 1) (mu : Fin n → R) : IsGlDominantIntegral mu :=
@@ -230,12 +293,101 @@ def glStaircase (N : ℕ) : Fin N → ℚ := fun i => (N : ℚ) - 1 / 2 - (i : �
 theorem glStaircase_apply (N : ℕ) (i : Fin N) :
     glStaircase N i = (N : ℚ) - 1 / 2 - (i : ℕ) := (rfl)
 
+/-- The formula `N - 1/2 - i` over a field. When two is invertible, this is the half-shifted
+staircase weight `(N - 1/2, N - 3/2, …, 1/2)`. Unlike `TauCeti.glStaircase`, this definition does
+not require a map from the rationals, so it remains available in positive characteristic whenever
+two is invertible. -/
+def glHalfStaircase (F : Type*) [Field F] (N : ℕ) : Fin N → F :=
+  fun i => (N : F) - 1 / 2 - (i : ℕ)
+
+@[simp]
+theorem glHalfStaircase_apply {F : Type*} [Field F] (N : ℕ) (i : Fin N) :
+    glHalfStaircase F N i = (N : F) - 1 / 2 - (i : ℕ) := (rfl)
+
+end Dominant
+
+end TauCeti
+
+namespace Fin
+
+/-- Casting a reverse finite index and adding the half-unit shift gives the corresponding entry of
+the half-shifted staircase. -/
+@[simp↓]
+theorem natCast_rev_add_one_div_two_eq_glHalfStaircase
+    {F : Type*} [Field F] [Invertible (2 : F)] {N : ℕ} (i : Fin N) :
+    (((Fin.rev i : ℕ) : F) + 1 / 2) = TauCeti.glHalfStaircase F N i := by
+  rw [TauCeti.glHalfStaircase_apply]
+  simp only [Fin.rev, Fin.val_mk]
+  rw [Nat.cast_sub (by omega : (i : ℕ) + 1 ≤ N)]
+  push_cast
+  field_simp [Invertible.ne_zero (2 : F)]
+  ring
+
+end Fin
+
+namespace TauCeti
+
+open Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+section Dominant
+
+/-- The entries of the half-shifted staircase over a field in which two is invertible sum to
+`N² / 2`. -/
+theorem sum_glHalfStaircase {F : Type*} [Field F] [Invertible (2 : F)] (N : ℕ) :
+    (∑ i : Fin N, glHalfStaircase F N i) = (N : F) ^ 2 / 2 := by
+  obtain _ | N := N
+  · simp
+  have hsum : (∑ i ∈ Finset.range (N + 1), (i : F)) * 2 =
+      ((N + 1 : ℕ) : F) * (N : F) := by
+    have h := congrArg (fun m : ℕ => (m : F)) (Finset.sum_range_id_mul_two (N + 1))
+    simpa only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_sum, Nat.add_sub_cancel] using h
+  have hsum' : (∑ i ∈ Finset.range (N + 1), (i : F)) =
+      ((N + 1 : ℕ) : F) * (N : F) / 2 := by
+    exact (eq_div_iff (Invertible.ne_zero (2 : F))).2 hsum
+  calc
+    (∑ i : Fin (N + 1), glHalfStaircase F (N + 1) i) =
+        ∑ i : Fin (N + 1), (((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) := by
+      rfl
+    _ = ∑ i ∈ Finset.range (N + 1), (((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) :=
+      Fin.sum_univ_eq_sum_range
+        (fun i : ℕ => ((N + 1 : ℕ) : F) - 1 / 2 - (i : F)) (N + 1)
+    _ = ((N + 1 : ℕ) : F) ^ 2 / 2 := by
+      rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib]
+      simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+      rw [hsum']
+      push_cast
+      field_simp [Invertible.ne_zero (2 : F)]
+      ring
+
+/-- The entries of the staircase weight sum to `N² / 2` after mapping from `ℚ` to any
+characteristic-zero field. -/
+theorem sum_glStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
+    (∑ i : Fin N, algebraMap ℚ F (glStaircase N i)) = (N : F) ^ 2 / 2 := by
+  let _ : Invertible (2 : F) := invertibleOfNonzero (by norm_num)
+  rw [← sum_glHalfStaircase (F := F) N]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [glStaircase_apply, glHalfStaircase_apply]
+  push_cast
+  norm_num
+
 /-- The staircase weight is dominant: its consecutive differences are all `1`. -/
 theorem isGlDominantIntegral_glStaircase (N : ℕ) : IsGlDominantIntegral (glStaircase N) := by
   rw [isGlDominantIntegral_iff]
   intro i j hij
   have hji : ((j : ℕ) : ℚ) = ((i : ℕ) : ℚ) + 1 := by exact_mod_cast hij.symm
   exact ⟨1, by rw [glStaircase_apply, glStaircase_apply, hji]; push_cast; ring⟩
+
+/-- The half-staircase weight over a characteristic-zero field is dominant: as for the rational
+staircase, every consecutive difference is `1`. -/
+theorem isGlDominantIntegral_glHalfStaircase {F : Type*} [Field F] [CharZero F] (N : ℕ) :
+    IsGlDominantIntegral (glHalfStaircase F N) := by
+  rw [isGlDominantIntegral_iff]
+  intro i j hij
+  have hji : ((j : ℕ) : F) = ((i : ℕ) : F) + 1 := by exact_mod_cast hij.symm
+  exact ⟨1, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hji]; push_cast; ring⟩
 
 /-- **No entry of the staircase weight is an integer.** Together with
 `TauCeti.isGlDominantIntegral_glStaircase` this pins the difference between dominance for `gl n`
@@ -320,20 +472,26 @@ theorem lie_single_eq_zero (hv : IsGlHighestWeightVector mu v) {i j : n} (hij : 
 
 end IsGlHighestWeightVector
 
-/-- **Transport along an injective map of `gl n R`-modules.** Injectivity is only used to keep the
-image nonzero; the two weight conditions transport along any map. An equivalence `e` is the case
-`hv.map (e : M →ₗ⁅R,Matrix n n R⁆ M') e.injective`. -/
+/-- **Transport along a map of `gl n R`-modules.** The two weight conditions transport along any
+map; all that is asked of `f` is that it keep the vector nonzero, which for an injective `f` — an
+equivalence `e`, say — is automatic. -/
 theorem IsGlHighestWeightVector.map {M' : Type*} [AddCommGroup M'] [Module R M']
     [LieRingModule (Matrix n n R) M']
-    (f : M →ₗ⁅R,Matrix n n R⁆ M') (hf : Function.Injective f)
+    (f : M →ₗ⁅R,Matrix n n R⁆ M') (hf : f v ≠ 0)
     (hv : IsGlHighestWeightVector mu v) :
     IsGlHighestWeightVector mu (f v) := by
   have hmap : ∀ (x : Matrix n n R) (m : M), f ⁅x, m⁆ = ⁅x, f m⁆ := fun x m =>
     LieModuleHom.map_lie f x m
-  refine isGlHighestWeightVector_iff.mpr
-    ⟨fun h => hv.ne_zero (hf (by rw [h, map_zero])), fun i => ?_, fun i j hij => ?_⟩
+  refine isGlHighestWeightVector_iff.mpr ⟨hf, fun i => ?_, fun i j hij => ?_⟩
   · rw [← hmap, hv.lie_single_self_eq_smul, map_smul]
   · rw [← hmap, hv.lie_single_eq_zero hij, map_zero]
+
+/-- **Transport along an equivalence of `gl n R`-modules.** -/
+theorem IsGlHighestWeightVector.congr {M' : Type*} [AddCommGroup M'] [Module R M']
+    [LieRingModule (Matrix n n R) M'] (hv : IsGlHighestWeightVector mu v)
+    (e : M ≃ₗ⁅R,Matrix n n R⁆ M') : IsGlHighestWeightVector mu (e v) :=
+  hv.map (e : M →ₗ⁅R,Matrix n n R⁆ M') fun h =>
+    hv.ne_zero (e.injective (h.trans (map_zero e).symm))
 
 /-- **A vector is a highest weight vector for at most one weight.** The diagonal matrix units read
 the weight off the vector, so two weights of the same nonzero vector agree entry by entry. -/
@@ -398,6 +556,18 @@ theorem isGlHighestWeightVector_iff_forall_mem :
     simp [single_apply, Finset.sum_ite_eq]
   rwa [glWeightEquiv_apply, hsum] at h
 
+omit [LieModule R (Matrix n n R) M] in
+/-- **A vector of a Lie submodule is a highest weight vector of that submodule exactly when it is
+one of the ambient module**: both defining conditions are read off the ambient bracket. -/
+@[simp]
+theorem isGlHighestWeightVector_coe_iff {P : LieSubmodule R (Matrix n n R) M} {w : P} :
+    IsGlHighestWeightVector mu (w : M) ↔ IsGlHighestWeightVector mu w := by
+  refine ⟨fun h => isGlHighestWeightVector_iff.mpr
+    ⟨fun h0 => h.ne_zero (by simp [h0]), fun i => ?_, fun i j hij => ?_⟩,
+    fun h => h.map P.incl (by simpa using h.ne_zero)⟩
+  · exact Subtype.ext (by simpa using h.lie_single_self_eq_smul i)
+  · exact Subtype.ext (by simpa using h.lie_single_eq_zero hij)
+
 section TorsionFree
 
 variable [IsCancelMulZero R] [Module.IsTorsionFree R M]
@@ -412,6 +582,19 @@ theorem IsGlHighestWeightVector.smul (hv : IsGlHighestWeightVector mu v) {c : R}
   · rw [lie_smul, hv.lie_single_eq_zero hij, smul_zero]
 
 end TorsionFree
+
+/-- **The identity matrix acts by the sum of the highest weight entries** on any irreducible module
+carrying a highest weight vector. The scalar is read off the highest weight vector rather than
+produced by Schur's lemma, so a commutative ring of scalars is all this needs. -/
+theorem forall_one_lie_eq_sum_smul_of_isGlHighestWeightVector
+    [LieModule.IsIrreducible R (Matrix n n R) M]
+    (hv : IsGlHighestWeightVector mu v) (m : M) :
+    ⁅(1 : Matrix n n R), m⁆ = (∑ i, mu i) • m := by
+  have hone : (1 : Matrix n n R) ∈ diagonalCartan R n :=
+    mem_diagonalCartan_iff.mpr fun i j hij => Matrix.one_apply_ne hij
+  exact forall_lie_eq_smul_of_lie_eq_smul R (Matrix n n R) M
+    ⟨1, one_mem_center_matrix R n⟩
+    hv.ne_zero (by simpa using hv.lie_eq_smul_of_mem_diagonalCartan hone) m
 
 end HighestWeight
 

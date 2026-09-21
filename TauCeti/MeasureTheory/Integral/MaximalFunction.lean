@@ -9,9 +9,9 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.Semicontinuity.Defs
--- `TauCeti.MeasureTheory.Integral.Marcinkiewicz` is imported privately: its operator-level
+-- `TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic` is imported privately: its operator-level
 -- interpolation API is used only to prove the strong maximal inequality below.
-import TauCeti.MeasureTheory.Integral.Marcinkiewicz
+import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
 -- `Mathlib.MeasureTheory.Constructions.BorelSpace.Order` is imported privately: it is used only
 -- for `LowerSemicontinuous.measurable`, inside the proof of `TauCeti.measurable_maximalFunction`.
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order

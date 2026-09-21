@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Measure.Typeclasses.ZeroOne
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 import Mathlib.MeasureTheory.Constructions.Projective
 import Mathlib.MeasureTheory.SetAlgebra
 import TauCeti.MeasureTheory.Measure.ZeroOne
@@ -100,7 +101,7 @@ theorem measurable_probabilityMeasure_toMeasure_apply_toReal {s : Set α} (hs : 
 theorem measurable_probabilityMeasure_eval_family {ι : Type*}
     (B : ι → Set α) (hB : ∀ i, MeasurableSet (B i)) :
     Measurable fun P : ProbabilityMeasure α => fun i => (P (B i) : ℝ) :=
-  measurable_pi_lambda _ fun i => measurable_probabilityMeasure_apply_real (hB i)
+  Measurable.of_eval fun i => measurable_probabilityMeasure_apply_real (hB i)
 
 /-- The defining equation of `evalReal`, stated so that proofs about it cite the unfolding
 explicitly rather than relying on definitional equality. -/
@@ -108,7 +109,7 @@ private theorem evalReal_apply (P : ProbabilityMeasure α) (s : MeasIdx α) :
     evalReal P s = (P s.1 : ℝ) := rfl
 
 private theorem measurable_evalReal : Measurable (evalReal (α := α)) :=
-  measurable_pi_lambda _ fun s => by
+  Measurable.of_eval fun s => by
     simpa only [evalReal_apply] using measurable_probabilityMeasure_apply_real s.2
 
 /-- The Giry σ-algebra on `Measure α` is the pullback of the product σ-algebra along the
@@ -183,7 +184,7 @@ theorem Measure.ext_of_forall_map_probabilityMeasure_eval_eq
       set B : Fin I.card → Set α := fun j => ((e.symm j : MeasIdx α) : Set α) with hB
       have hBm : ∀ j, MeasurableSet (B j) := fun j => (e.symm j : MeasIdx α).2
       set Φ : (Fin I.card → ℝ) → (I → ℝ) := fun x i => x (e i) with hΦ
-      have hΦm : Measurable Φ := measurable_pi_lambda _ fun i => measurable_pi_apply _
+      have hΦm : Measurable Φ := Measurable.of_eval fun i => measurable_pi_apply _
       have hfam := measurable_probabilityMeasure_eval_family B hBm
       have hfun : I.restrict ∘ (evalReal (α := α))
           = Φ ∘ fun P : ProbabilityMeasure α => fun j => (P (B j) : ℝ) := by
@@ -221,33 +222,13 @@ theorem IsZeroOneMeasure.exists_eq_dirac_probabilityMeasure [CountablyGenerated 
     rcases IsZeroOrProbabilityMeasure.measure_univ (μ := π) with (h | h)
     · simp_all
     · exact ⟨h⟩
-  let 𝒜 := generateSetAlgebra (countableGeneratingSet α)
-  have hcount : 𝒜.Countable := countable_generateSetAlgebra countable_countableGeneratingSet
-  have hgen : (inferInstance : MeasurableSpace α) = generateFrom 𝒜 := by
-    simp only [𝒜, generateFrom_generateSetAlgebra_eq, generateFrom_countableGeneratingSet]
-  have hmeas : ∀ s ∈ 𝒜, MeasurableSet s := by
-    intro s hs
-    simpa only [MeasurableSet, hgen] using measurableSet_generateFrom hs
-  let : Countable {s : Set α // s ∈ 𝒜} := hcount.to_subtype
-  let e : ProbabilityMeasure α → ({s : Set α // s ∈ 𝒜} → ℝ≥0∞) :=
-    fun P s => (P : Measure α) s.1
-  have he : Measurable e :=
-    measurable_pi_lambda _ fun s => measurable_probabilityMeasure_toMeasure_apply
-      (hmeas s.1 s.2)
-  have he_inj : Function.Injective e := by
-    intro P Q hPQ
-    apply ProbabilityMeasure.toMeasure_injective
-    have := P.2
-    refine ext_of_generate_finite 𝒜 hgen
-      isSetAlgebra_generateSetAlgebra.isSetRing.isSetSemiring.isPiSystem
-      (fun s hs => congrFun hPQ ⟨s, hs⟩) ?_
-    simp
-  let : ∀ _ : {s : Set α // s ∈ 𝒜}, StandardBorelSpace ℝ≥0∞ :=
+  let : ∀ _ : ProbabilityMeasureCodeIndex α, StandardBorelSpace ℝ≥0∞ :=
     fun _ => standardBorel_of_polish
-  obtain ⟨q, heq⟩ := IsZeroOneMeasure.exists_ae_eq_const (π := π) he.aemeasurable
+  obtain ⟨q, heq⟩ := IsZeroOneMeasure.exists_ae_eq_const (π := π)
+    measurable_probabilityMeasureCode.aemeasurable
   obtain ⟨P, hP⟩ := heq.exists
   have hid : (id : ProbabilityMeasure α → ProbabilityMeasure α) =ᵐ[π] fun _ => P :=
-    heq.mono fun Q hQ => he_inj (hQ.trans hP.symm)
+    heq.mono fun Q hQ => probabilityMeasureCode_injective (hQ.trans hP.symm)
   refine ⟨P, ?_⟩
   calc
     π = π.map id := Measure.map_id.symm

@@ -89,7 +89,7 @@ theorem dualCarrier_eq_span_dualBasis (L : IntegralLattice V) [L.IsNondegenerate
   calc
     L.dualCarrier = L.form.dualSubmodule
         (Submodule.span ℤ (Set.range (b.extendOfIsLattice ℚ))) :=
-      congrArg L.form.dualSubmodule (Basis.span_range_extendOfIsLattice b).symm
+      congrArg L.form.dualSubmodule b.span_range_extendOfIsLattice.symm
     _ = _ := L.form.dualSubmodule_span_of_basis L.form_nondegenerate (b.extendOfIsLattice ℚ)
 
 open Classical in

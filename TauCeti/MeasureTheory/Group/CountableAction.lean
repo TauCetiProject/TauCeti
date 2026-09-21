@@ -62,7 +62,7 @@ theorem exists_smul_invariant_ae_eq {s : Set X} (hs : MeasurableSet s)
     simp_rw [smul_smul]
     exact (Equiv.mulLeft (g⁻¹ : G)).surjective.iUnion_comp fun h : G => h • s
   · have hae : ∀ g : G, g • s =ᵐ[μ] s := fun g => (hsmul g) ▸ hinv g⁻¹
-    have hunion := Filter.EventuallyEq.countable_iUnion (l := ae μ) hae
+    have hunion := Filter.EventuallyEqSet.countable_iUnion (l := ae μ) hae
     rwa [Set.iUnion_const] at hunion
 
 /-- **Ergodicity of a countable group action can be tested on exactly invariant events.**
@@ -71,7 +71,7 @@ Together with `MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq` this reduces
 countable action to a zero-one law for the σ-algebra of exactly invariant events. -/
 theorem ergodicSMul_of_forall_smul_invariant [SMulInvariantMeasure G X μ]
     (h : ∀ t : Set X, MeasurableSet t → (∀ g : G, (fun x => g • x) ⁻¹' t = t) →
-      EventuallyConst t (ae μ)) :
+      EventuallyEmptyOrUniv t (ae μ)) :
     ErgodicSMul G X μ :=
   ⟨fun hs hinv => by
     obtain ⟨t, ht, ht_inv, hts⟩ := exists_smul_invariant_ae_eq hs hinv

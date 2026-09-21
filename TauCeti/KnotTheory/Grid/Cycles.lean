@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.BasicCycles
 public import TauCeti.KnotTheory.Grid.SmallGrid.Differential
-public import TauCeti.KnotTheory.Grid.ChainCardinality
+public import TauCeti.KnotTheory.Grid.Chain.Cardinality
 
 /-!
 # Small-grid cycles and boundaries for the fully blocked grid differential

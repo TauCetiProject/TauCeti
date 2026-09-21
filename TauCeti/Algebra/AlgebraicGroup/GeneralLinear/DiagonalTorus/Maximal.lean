@@ -8,14 +8,16 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
+public import TauCeti.Algebra.AlgebraicGroup.Torus.Maximal
+import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
 # Maximality of the diagonal torus in the general linear group
 
-Over an algebraically closed field, the diagonal torus of `GL_n` is maximal among reduced
-commutative closed subgroup schemes. In Hopf coordinates, its defining ideal is the kernel of
-the surjective restriction morphism from `O(GL_n)` to the Laurent coordinate ring of the split
-torus.
+Over any field, the diagonal torus of `GL_n` is a maximal torus. Over an algebraically closed
+field, it is moreover maximal among reduced commutative closed subgroup schemes. In Hopf
+coordinates, its defining ideal is the kernel of the surjective restriction morphism from
+`O(GL_n)` to the Laurent coordinate ring of the split torus.
 
 The proof compares algebraically closed points. A reduced commutative closed subgroup containing
 the diagonal torus gives a commutative matrix subgroup containing all invertible diagonal
@@ -30,10 +32,16 @@ whereas the competing subgroup below need not itself be a torus or connected.
 
 * `TauCeti.GeneralLinear.diagonalTorusDefiningIdeal`: the Hopf ideal cutting out the diagonal
   torus in `GL_n`.
+* `TauCeti.GeneralLinear.diagonalTorusCoordinateIso`: its coordinate quotient is the standard
+  Laurent Hopf algebra.
+* `TauCeti.GeneralLinear.splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal`:
+  its quotient coordinate Hopf algebra is a split torus.
 * `TauCeti.GeneralLinear.quotientPointsSubgroup_diagonalTorusDefiningIdeal`: its points are the
   range of the diagonal-torus point morphism.
 * `TauCeti.GeneralLinear.eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm`: no larger reduced
   commutative closed subgroup contains the diagonal torus.
+* `TauCeti.GeneralLinear.isMaximalTorus_diagonalTorusDefiningIdeal`: the diagonal torus is a
+  maximal torus in the Hopf-ideal API.
 
 ## References
 
@@ -66,20 +74,84 @@ noncomputable def diagonalTorusDefiningIdeal :
   HopfIdeal.kerOfSurjective (diagonalTorusCoordinateMap (R := k) (N := n)).hom
     (diagonalTorusCoordinateMap_surjective k n)
 
+/-- A function belongs to the diagonal-torus ideal precisely when its restriction vanishes. -/
+@[simp]
+theorem mem_diagonalTorusDefiningIdeal (x : coordinateHopfAlgebra k n) :
+    x ∈ diagonalTorusDefiningIdeal k n ↔
+      (diagonalTorusCoordinateMap (R := k) (N := n)).hom x = 0 := by
+  rw [diagonalTorusDefiningIdeal, HopfIdeal.mem_kerOfSurjective]
+
+/-- The quotient by the diagonal-torus defining ideal is its Laurent coordinate Hopf algebra. -/
+noncomputable def diagonalTorusCoordinateIso :
+    FiniteTypeCommHopfAlgCat.quotient
+        ⟨coordinateHopfAlgebra k n,
+          (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+        (diagonalTorusDefiningIdeal k n) ≅
+      DiagonalizableGroup.coordinateRing k
+        (SplitTorus.characterGroup (ULift.{u} (Fin n))) :=
+  ObjectProperty.isoMk _ <|
+    CommHopfAlgCat.quotientKerOfSurjectiveIso (diagonalTorusCoordinateMap (R := k) (N := n))
+      (diagonalTorusCoordinateMap_surjective k n)
+
+/-- The diagonal-torus quotient isomorphism identifies the quotient morphism with the canonical
+restriction to diagonal coordinates. -/
+@[simp]
+theorem mkQuotient_comp_diagonalTorusCoordinateIso_hom :
+    FiniteTypeCommHopfAlgCat.mkQuotient
+          ⟨coordinateHopfAlgebra k n,
+            (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+          (diagonalTorusDefiningIdeal k n) ≫
+        (diagonalTorusCoordinateIso k n).hom =
+      ObjectProperty.homMk (diagonalTorusCoordinateMap (R := k) (N := n)) :=
+  ObjectProperty.hom_ext _ (CommHopfAlgCat.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _)
+
+/-- The base-change isomorphism of `GL_n` coordinate Hopf algebras carries the base-changed
+diagonal-torus ideal onto the diagonal-torus ideal over the extended base. -/
+@[simp]
+theorem map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal
+    (K : Type u) [Field K] [Algebra k K] :
+    (CommHopfAlgCat.baseChangeHopfIdeal (K := K) (diagonalTorusDefiningIdeal k n)).map
+        (coordinateHopfAlgebraBaseChangeIso k K n).hom.hom =
+      diagonalTorusDefiningIdeal K n :=
+  CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
+    (coordinateHopfAlgebraBaseChangeIso k K n)
+    (DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso k K
+      (SplitTorus.characterGroup (ULift.{u} (Fin n))))
+    (diagonalTorusCoordinateMap_surjective k n) (diagonalTorusCoordinateMap_surjective K n)
+    (diagonalTorusCoordinateMap_baseChange (N := n) k K)
+
+/-- The quotient coordinate Hopf algebra of the diagonal torus is a split torus of rank `n`. -/
+theorem splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
+    splitTorusCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient
+        ⟨coordinateHopfAlgebra k n,
+          (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+        (diagonalTorusDefiningIdeal k n)) := by
+  rw [splitTorusCommHopfAlgProperty_iff]
+  exact ⟨n, ⟨(diagonalTorusCoordinateIso k n).symm⟩⟩
+
+grind_pattern splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
+  diagonalTorusDefiningIdeal k n
+
+/-- The quotient coordinate Hopf algebra of the diagonal torus is a torus. -/
+theorem torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal :
+    torusCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient
+        ⟨coordinateHopfAlgebra k n,
+          (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+        (diagonalTorusDefiningIdeal k n)) :=
+  (splitTorusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n).torus k _
+
+grind_pattern torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal =>
+  diagonalTorusDefiningIdeal k n
+
 /-- The points cut out by `diagonalTorusDefiningIdeal` are exactly the diagonal-torus points. -/
 theorem quotientPointsSubgroup_diagonalTorusDefiningIdeal (A : CommAlgCat.{u} k) :
     CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra k n)
         (diagonalTorusDefiningIdeal k n) A =
       ((CommHopfAlgCat.mapPointsFunctor
-        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range := by
-  rw [diagonalTorusDefiningIdeal,
-    HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range]
-  apply congrArg MonoidHom.range
-  apply MonoidHom.ext
-  intro q
-  rw [AlgHom.mapDomain_apply]
-  exact (CommHopfAlgCat.mapPointsFunctor_app_apply
-    (diagonalTorusCoordinateMap (R := k) (N := n)) A q).symm
+        (diagonalTorusCoordinateMap (R := k) (N := n))).app A).hom.range :=
+  HopfIdeal.quotientPointsSubgroup_kerOfSurjective_eq_range_mapPointsFunctor _ _ A
 
 variable [IsAlgClosed k]
 
@@ -96,15 +168,6 @@ private instance instNontrivialUnitsOfInfiniteField {F : Type*} [Field F] [Infin
   apply hxy
   apply Subtype.ext
   exact congrArg Units.val h
-
-omit [IsAlgClosed k] in
-private theorem isReduced_quotient_diagonalTorusDefiningIdeal :
-    IsReduced (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n)
-      (diagonalTorusDefiningIdeal k n)) := by
-  let f := (diagonalTorusCoordinateMap (R := k) (N := n)).hom
-  let hf : Function.Surjective f := diagonalTorusCoordinateMap_surjective k n
-  let e := HopfIdeal.kerLiftBialgEquiv f hf
-  exact isReduced_of_injective e.toAlgEquiv.toRingEquiv.toRingHom e.injective
 
 omit [IsAlgClosed k] in
 private theorem pointsMulEquiv_diagonalTorusPoints_symm (t : Fin n → kˣ) :
@@ -186,8 +249,42 @@ theorem eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm
       exact hdiag.trans ht
     · exact hDG
   let _ : IsReduced (CommHopfAlgCat.quotient H D) :=
-    isReduced_quotient_diagonalTorusDefiningIdeal k n
+    HopfIdeal.isReduced_quotient_kerOfSurjective _ (diagonalTorusCoordinateMap_surjective k n)
   exact HopfIdeal.eq_of_quotientPointsSubgroup_eq hpoints
+
+/-- **The diagonal torus of `GL_n` is a maximal torus.** This packages the stronger result that
+no reduced commutative closed subgroup properly containing it exists into the general
+Hopf-ideal maximal-torus predicate. -/
+private theorem isMaximalTorus_diagonalTorusDefiningIdeal_of_isAlgClosed :
+    HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n)
+      (diagonalTorusDefiningIdeal k n) := by
+  rw [HopfIdeal.isMaximalTorus_iff]
+  refine ⟨torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n, ?_⟩
+  intro I hI hID
+  let _ : IsReduced
+      (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I) :=
+    hI.geometricallyReduced.isReduced
+  let _ : Coalgebra.IsCocomm k
+      (CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I) :=
+    hI.isCocomm k _
+  have hEq := eq_diagonalTorusDefiningIdeal_of_le_of_isCocomm k n I hID
+  subst I
+  exact le_rfl
+
+omit [IsAlgClosed k] in
+/-- **The diagonal torus of `GL_n` is a maximal torus over every field.** Maximality is checked
+after base change to an algebraic closure, where the stronger pointwise maximality theorem
+applies, and then descended using faithful flatness. -/
+@[grind =>]
+theorem isMaximalTorus_diagonalTorusDefiningIdeal :
+    HopfIdeal.IsMaximalTorus k (coordinateHopfAlgebra k n)
+      (diagonalTorusDefiningIdeal k n) :=
+  HopfIdeal.isMaximalTorus_of_baseChange (diagonalTorusDefiningIdeal k n)
+    (diagonalTorusDefiningIdeal (AlgebraicClosure k) n)
+    (coordinateHopfAlgebraBaseChangeIso k (AlgebraicClosure k) n)
+    (torusCommHopfAlgProperty_quotient_diagonalTorusDefiningIdeal k n)
+    (map_baseChangeHopfIdeal_diagonalTorusDefiningIdeal k n (AlgebraicClosure k))
+    (isMaximalTorus_diagonalTorusDefiningIdeal_of_isAlgClosed (AlgebraicClosure k) n)
 
 end
 

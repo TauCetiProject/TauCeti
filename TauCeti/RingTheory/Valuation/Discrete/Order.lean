@@ -14,6 +14,7 @@ This file packages the additive order attached to a `ℤᵐ⁰`-valued valuation
 facts that do not depend on a choice of constant field.  The convention is
 `ord_v f = -log (v f)`, so a uniformizer has order one.  As `WithZero.log 0 = 0`, the order
 has the junk value `ord_v 0 = 0`; hypotheses excluding zero are included where necessary.
+
 -/
 
 public section
@@ -101,6 +102,15 @@ theorem ord_div_zpow (v : _root_.Valuation F ℤᵐ⁰) {f t : F} (hf : f ≠ 0)
     (n : ℤ) : ord v (f / t ^ n) = ord v f - n * ord v t := by
   rw [ord_div v hf (zpow_ne_zero _ ht), ord_zpow]
 
+/-- **A surjective valuation onto `ℤᵐ⁰` is nontrivial.** Surjectivity is the form the hypothesis
+usually arrives in — a `Place` carries it by definition — while the results about order and
+normalization are stated for a nontrivial valuation, and this converts one to the other. -/
+theorem isNontrivial_of_surjective {R : Type*} [Ring R] {v : _root_.Valuation R ℤᵐ⁰}
+    (hv : Function.Surjective v) : v.IsNontrivial where
+  exists_val_nontrivial := by
+    obtain ⟨x, hx⟩ := hv (WithZero.exp (-1))
+    exact ⟨x, by simp [hx], by simp [hx]⟩
+
 theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) :
     Function.Surjective (ord v) := fun n => by
   obtain ⟨f, hf⟩ := hv (WithZero.exp (-n))
@@ -150,6 +160,53 @@ theorem ord_add_eq_min_of_ord_ne (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
     valuation_eq_exp_neg_ord v hfg, exp_max, WithZero.exp_inj] at hsum
   omega
 
+/-- The order reverses the valuation: an element of larger order has smaller valuation.  The
+hypotheses exclude the junk value `ord_v 0 = 0`. -/
+theorem ord_lt_ord_iff_valuation_gt (v : _root_.Valuation F ℤᵐ⁰) {f g : F} (hf : f ≠ 0)
+    (hg : g ≠ 0) : ord v f < ord v g ↔ v g < v f := by
+  rw [valuation_eq_exp_neg_ord v hf, valuation_eq_exp_neg_ord v hg, WithZero.exp_lt_exp]
+  omega
+
+/-- The valuation of a finite sum with a strict minimum of orders: the summand of least order
+dominates.  It is stated on the valuation because both
+`TauCeti.Valuation.sum_ne_zero_of_forall_ord_lt` and
+`TauCeti.Valuation.ord_sum_eq_of_forall_lt` read off from it. -/
+private theorem valuation_sum_eq_of_forall_ord_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*}
+    {s : Finset ι} {f : ι → F} {j : ι} (hj : j ∈ s) (hfj : f j ≠ 0)
+    (hlt : ∀ i ∈ s, i ≠ j → ord v (f j) < ord v (f i)) :
+    v (∑ i ∈ s, f i) = v (f j) := by
+  classical
+  refine v.map_sum_eq_of_lt hj fun i hi ↦ ?_
+  rw [Finset.mem_sdiff, Finset.mem_singleton] at hi
+  rcases eq_or_ne (f i) 0 with h0 | h0
+  · rw [h0, v.map_zero]
+    exact zero_lt_iff.mpr (v.ne_zero_iff.mpr hfj)
+  · exact (ord_lt_ord_iff_valuation_gt v hfj h0).mp (hlt i hi.1 hi.2)
+
+/-- A finite sum one of whose summands has strictly least order does not vanish.  A vanishing
+summand is no obstacle: it carries the junk order `0`, so the hypothesis already forces the
+distinguished summand to have negative order there. -/
+theorem sum_ne_zero_of_forall_ord_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*} {s : Finset ι}
+    {f : ι → F} {j : ι} (hj : j ∈ s) (hfj : f j ≠ 0)
+    (hlt : ∀ i ∈ s, i ≠ j → ord v (f j) < ord v (f i)) : ∑ i ∈ s, f i ≠ 0 :=
+  v.ne_zero_iff.mp <| by
+    rw [valuation_sum_eq_of_forall_ord_lt v hj hfj hlt]
+    exact v.ne_zero_iff.mpr hfj
+
+/-- **The order of a finite sum with a strict minimum**: if one summand has strictly smaller
+order than each of the others, the sum has that order.  This is the `Finset.sum` form of
+`TauCeti.Valuation.ord_add_eq_min_of_ord_ne`; only the distinguished summand is asked to be
+nonzero, which keeps the junk value `ord_v 0 = 0` out of the conclusion. -/
+theorem ord_sum_eq_of_forall_lt (v : _root_.Valuation F ℤᵐ⁰) {ι : Type*} {s : Finset ι}
+    {f : ι → F} {j : ι} (hj : j ∈ s) (hfj : f j ≠ 0)
+    (hlt : ∀ i ∈ s, i ≠ j → ord v (f j) < ord v (f i)) :
+    ord v (∑ i ∈ s, f i) = ord v (f j) := by
+  rw [ord_def, ord_def, valuation_sum_eq_of_forall_ord_lt v hj hfj hlt]
+
+section ValueGroup
+
+variable {F : Type*} [Ring F]
+
 /-- Surjectivity of `v` makes its value group the whole of `ℤᵐ⁰`. -/
 theorem valueGroup_eq_top_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
     (hv : Function.Surjective v) : valueGroup (.ofClass v) = ⊤ :=
@@ -160,6 +217,10 @@ theorem nontrivial_valueGroup_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
     (hv : Function.Surjective v) : Nontrivial (valueGroup (.ofClass v)) := by
   rw [valueGroup_eq_top_of_surjective v hv]
   exact (Subgroup.topEquiv (G := ℤᵐ⁰ˣ)).toEquiv.nontrivial
+
+end ValueGroup
+
+variable {F : Type*} [Field F]
 
 /-- The valuation ring of a surjective `ℤᵐ⁰`-valued valuation is a DVR. -/
 theorem valuationSubring_isDiscreteValuationRing_of_surjective

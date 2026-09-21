@@ -6,42 +6,63 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
+public import TauCeti.RingTheory.Frobenius
 public import TauCeti.NumberTheory.LegendreSymbol.Frobenius
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
-import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import Mathlib.Algebra.CharP.Basic
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
-# Frobenius elements of a Galois number field and their action on square roots
+# Frobenius elements of Galois number fields and their action on square roots
 
-For a Galois number field `K/ℚ` and a prime `Q` of `𝓞 K` over the rational prime `p`, an
-arithmetic Frobenius at `Q` is a `σ ∈ Gal(K/ℚ)` with `σ x ≡ x ^ #(ℤ ⧸ Q ∩ ℤ) (mod Q)` for all
-`x : 𝓞 K` — the exponent is the cardinality of the *base* residue ring `ℤ ⧸ Q ∩ ℤ`, which is
-`p` for `Q` over `(p)`, distinguishing the arithmetic Frobenius from the absolute one (whose
-exponent would be the residue-field norm `p^f`). This file provides the two number-field
+For a finite Galois extension `L/K` of number fields and a nonzero prime `Q` of `𝓞 L`, an
+arithmetic Frobenius at `Q` is a `σ ∈ Gal(L/K)` with
+`σ x ≡ x ^ #(𝓞 K ⧸ Q ∩ 𝓞 K) (mod Q)` for all `x : 𝓞 L`. The exponent is the cardinality of the
+*base* residue ring, not the absolute norm of `Q`. This file provides the following number-field
 services on top of Mathlib's `RingTheory/Frobenius.lean`:
 
-* **existence** — a Frobenius exists at every nonzero prime of `𝓞 K`
+* **relative existence** — a Frobenius exists at every nonzero prime of `𝓞 L`
   (`IsArithFrobAt.exists_of_isInvariant` with the number-field instances discharged: the
-  residue field of a nonzero prime is finite, and the Galois action on `𝓞 K` has invariants
-  `ℤ`); and
-* **the square-root action** — for `p` odd and `x ∈ K` with `x² = d ∈ ℤ`, `p ∤ d`, a
+  residue field of a nonzero prime is finite, and the Galois action on `𝓞 L` has invariants
+  `𝓞 K`);
+* **rational-prime existence** — for a Galois number field `K/ℚ`, a Frobenius relative to the
+  base ring `ℤ` exists at every prime over `(p)`, with exponent `p`. This is distinct from the
+  relative theorem at `K = ℚ`, whose base-ring carrier is `𝓞 ℚ`, not `ℤ`;
+* **uniqueness** — for a finite Galois extension `L/K` of number fields, two Frobenius elements
+  of `Gal(L/K)` at an unramified prime `Q` of `𝓞 L` are equal, by combining Mathlib's
+  integral-ring uniqueness theorem with the faithfulness of the Galois action; and
+* **the square-root action** — for a number field `K`, `p` odd, and `x ∈ K` with
+  `x² = d ∈ ℤ`, `p ∤ d`, a
   Frobenius at any ideal `Q` over `p` satisfies `σ x = legendreSym p d • x`, transporting the
-  `𝓞 K`-level computation `TauCeti.AlgHom.IsArithFrobAt.apply_sqrt` along the Galois action
+  `𝓞 K`-level computation `AlgHom.IsArithFrobAt.apply_sqrt` along the Galois action
   on the ring of integers (via `NumberField.algebraMap_smul_eq_apply`), with the `σ x = x`
   characterization read off from it.
 
-`TauCeti.NumberTheory.Multiquadratic.Frobenius` combines the two to describe the Frobenius of
-a multiquadratic field on all its generators at once (Layer 1 of the multiquadratic roadmap).
+`TauCeti.NumberTheory.Multiquadratic.Frobenius` combines existence with the square-root action
+to describe the Frobenius of a multiquadratic field on all its generators at once (Layer 1 of the
+multiquadratic roadmap).
 
 ## Main results
 
-* `NumberField.exists_isArithFrobAt`: a Frobenius exists at every nonzero prime of
-  `𝓞 K`.
+* `NumberField.exists_isArithFrobAt`: a relative Frobenius exists at every nonzero prime of
+  `𝓞 L` in a finite Galois extension `L/K` of number fields.
+* `NumberField.exists_isArithFrobAt_int_of_liesOver`: a `ℤ`-carrier Frobenius exists at every
+  prime over a rational prime.
+* `AlgEquiv.isArithFrobAt_autCongr`: an isomorphism of extensions transports the Frobenius
+  condition.
+* `NumberField.isArithFrobAt_eq_of_isUnramifiedAt`: for a finite Galois extension `L/K` of
+  number fields, two Frobenius elements of `Gal(L/K)` at an unramified prime `Q` of `𝓞 L` are
+  equal.
+* `NumberField.subsingleton_isArithFrobAt`: for such an extension and prime, the type of
+  Frobenius elements is a subsingleton.
 * `NumberField.isArithFrobAt_apply_sqrt`: a Frobenius at `Q ∣ p` sends a square root
   of `d` to `legendreSym p d` times it.
 * `NumberField.isArithFrobAt_apply_sqrt_eq_self_iff`: it fixes `√d` iff `d` is a
   quadratic residue mod `p`.
+* `TauCeti.isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight` and
+  `TauCeti.isArithFrobAt_apply_sqrt_two`: for `d ≡ 1 (mod 4)`, Frobenius at `2` fixes
+  `√d` exactly when `d ≡ 1 (mod 8)` and negates it otherwise.
 -/
 
 public section
@@ -54,23 +75,93 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
 
-/-- **Frobenius elements exist.** For a Galois number field `K/ℚ` and a *nonzero* prime `Q` of
-`𝓞 K`, some `σ ∈ Gal(K/ℚ)` is an arithmetic Frobenius at `Q`. This is Mathlib's
-`IsArithFrobAt.exists_of_isInvariant` with the number-field side conditions discharged (a
-nonzero prime of `𝓞 K` is maximal, with finite residue field). -/
-theorem exists_isArithFrobAt [IsGalois ℚ K] (Q : Ideal (𝓞 K)) [Q.IsPrime] (hQ : Q ≠ ⊥) :
-    ∃ σ : K ≃ₐ[ℚ] K, IsArithFrobAt ℤ σ Q := by
-  have : Q.IsMaximal := Ring.DimensionLEOne.maximalOfPrime hQ ‹Q.IsPrime›
-  exact IsArithFrobAt.exists_of_isInvariant ℤ (K ≃ₐ[ℚ] K) Q
+private theorem exists_isArithFrobAt_aux {L : Type*} [Field L] [NumberField L]
+    (R : Type*) [CommRing R] [Algebra R (𝓞 L)] (G : Type*) [Group G] [Finite G]
+    [MulSemiringAction G (𝓞 L)] [SMulCommClass G R (𝓞 L)]
+    [Algebra.IsInvariant R (𝓞 L) G] (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥) :
+    ∃ σ : G, IsArithFrobAt R σ Q := by
+  let _ : Finite (𝓞 L ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
+  exact IsArithFrobAt.exists_of_isInvariant R G Q
 
-/-- A Frobenius exists at every prime of `𝓞 K` lying over a rational prime — the form used when
-`Q` is presented by a `LiesOver` instance rather than a nonvanishing hypothesis. -/
-theorem exists_isArithFrobAt_of_liesOver [IsGalois ℚ K] {p : ℕ} [Fact p.Prime]
+variable (K) in
+/-- **Relative Frobenius elements exist.** For a finite Galois extension `L/K` of number fields
+and a nonzero prime `Q` of `𝓞 L`, some `σ ∈ Gal(L/K)` is an arithmetic Frobenius at `Q`. -/
+theorem exists_isArithFrobAt {L : Type*} [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥) :
+    ∃ σ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) σ Q :=
+  exists_isArithFrobAt_aux (𝓞 K) (L ≃ₐ[K] L) Q hQ
+
+/-- A Frobenius relative to the base ring `ℤ` exists at every prime of `𝓞 K` lying over the
+rational prime `(p)`; its exponent is therefore `p`. This is distinct from
+`exists_isArithFrobAt ℚ`, whose base-ring carrier is `𝓞 ℚ` rather than `ℤ`. -/
+theorem exists_isArithFrobAt_int_of_liesOver [IsGalois ℚ K] {p : ℕ} [Fact p.Prime]
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
     ∃ σ : K ≃ₐ[ℚ] K, IsArithFrobAt ℤ σ Q := by
   have hp : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
     rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
-  exact exists_isArithFrobAt Q (Ideal.ne_bot_of_liesOver_of_ne_bot hp Q)
+  exact exists_isArithFrobAt_aux ℤ (K ≃ₐ[ℚ] K) Q
+    (Ideal.ne_bot_of_liesOver_of_ne_bot hp Q)
+
+end NumberField
+
+namespace AlgEquiv
+
+variable {K L L' : Type*} [Field K] [Field L] [Algebra K L] [Field L'] [Algebra K L']
+
+/-- **A Frobenius travels along an isomorphism of extensions.** If `σ` is an arithmetic Frobenius
+at `Q`, then `AlgEquiv.autCongr e σ` is one at the prime of `𝓞 L'` matching `Q`. -/
+theorem isArithFrobAt_autCongr (e : L ≃ₐ[K] L') {Q : Ideal (𝓞 L)} {σ : L ≃ₐ[K] L}
+    (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    IsArithFrobAt (𝓞 K) (autCongr e σ)
+      (Q.comap (NumberField.RingOfIntegers.mapAlgEquiv e).symm) := by
+  have hunder : (Q.comap (NumberField.RingOfIntegers.mapAlgEquiv e).symm).under (𝓞 K) =
+      Q.under (𝓞 K) :=
+    (Ideal.LiesOver.over (p := Q.under (𝓞 K))
+      (P := Q.comap (NumberField.RingOfIntegers.mapAlgEquiv e).symm)).symm
+  intro x
+  rw [MulSemiringAction.toAlgHom_apply, Ideal.mem_comap, hunder, map_sub, map_pow,
+    e.mapAlgEquiv_symm_autCongr_smul, ← MulSemiringAction.toAlgHom_apply (𝓞 K)]
+  exact hσ _
+
+end AlgEquiv
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
+
+/-! ### Uniqueness at unramified primes
+
+Mathlib proves uniqueness for algebra homomorphisms of the integral rings.  The Galois-group
+form below first applies that theorem to the action on `𝓞 L`, then uses the faithful Galois
+action to recover equality of the automorphisms themselves.  In the number-field setting the
+complement of every prime consists of non-zero-divisors, which discharges the remaining
+hypothesis of the generic theorem.
+-/
+
+/-- **Frobenius elements are unique at an unramified prime.** If `Q` is a prime of the
+ring of integers of a finite Galois extension `L/K`, then two arithmetic Frobenius elements at
+`Q` coincide whenever `L/K` is unramified at `Q`.
+
+This is a conditional uniqueness statement and makes no existence assertion, so `Q` need not be
+nonzero.
+
+This is the Galois-group form of `IsArithFrobAt.eq_of_isUnramifiedAt`. -/
+theorem isArithFrobAt_eq_of_isUnramifiedAt {K L : Type*} [Field K] [Field L]
+    [NumberField K] [NumberField L] [Algebra K L] [IsGalois K L]
+    {σ τ : L ≃ₐ[K] L} {Q : Ideal (𝓞 L)} [Q.IsPrime]
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] (hσ : IsArithFrobAt (𝓞 K) σ Q)
+    (hτ : IsArithFrobAt (𝓞 K) τ Q) : σ = τ := by
+  let _ : FaithfulSMul (L ≃ₐ[K] L) (𝓞 L) := IsGaloisGroup.faithful (𝓞 K)
+  exact _root_.IsArithFrobAt.eq_of_isUnramifiedAt
+    (Ideal.primeCompl_le_nonZeroDivisors Q) hσ hτ
+
+/-- The Frobenius elements at an unramified prime form a subsingleton. -/
+instance subsingleton_isArithFrobAt {K L : Type*} [Field K] [Field L]
+    [NumberField K] [NumberField L] [Algebra K L] [IsGalois K L]
+    {Q : Ideal (𝓞 L)} [Q.IsPrime]
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] :
+    Subsingleton {σ : L ≃ₐ[K] L // IsArithFrobAt (𝓞 K) σ Q} where
+  allEq σ τ := Subtype.ext (isArithFrobAt_eq_of_isUnramifiedAt σ.property τ.property)
 
 /-- **A Frobenius acts on square roots by the Legendre symbol.** Let `K` be a number field,
 `p` an odd prime, and `σ ∈ Gal(K/ℚ)` an arithmetic Frobenius at an ideal `Q` of `𝓞 K` above
@@ -85,7 +176,7 @@ theorem isArithFrobAt_apply_sqrt (hodd : p ≠ 2) {d : ℤ} (hd : ¬ (p : ℤ) �
     σ x = legendreSym p d • x := by
   -- Apply the `𝓞 K`-level computation to the packaged square root and push down along `𝓞 K ↪ K`.
   have hsmul : σ • integralSqrt hx = legendreSym p d • integralSqrt hx :=
-    TauCeti.IsArithFrobAt.smul_sqrt hσ hodd hd (integralSqrt_sq hx)
+    IsArithFrobAt.smul_sqrt hσ hodd hd (integralSqrt_sq hx)
   have hcoe := congrArg (algebraMap (𝓞 K) K) hsmul
   rw [map_zsmul, algebraMap_integralSqrt, algebraMap_smul_eq_apply] at hcoe
   rwa [algebraMap_integralSqrt] at hcoe
@@ -118,3 +209,97 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff (hodd : p ≠ 2) {d : ℤ} (hd : ¬
     rw [happ, h1, one_smul]
 
 end NumberField
+
+/-! ### Frobenius on square roots at 2
+
+For `d ≡ 1 (mod 4)`, an arithmetic Frobenius at a prime above `2` fixes a square root of
+`d` exactly when `d ≡ 1 (mod 8)`, and negates it when `d ≡ 5 (mod 8)`. The ambient field
+need not be quadratic, so the result applies to each generator of a multiquadratic field.
+
+The two roots have identical reductions in characteristic two. Instead one uses the algebraic
+integer `(1 + √d) / 2`, whose conjugate is `1 - (1 + √d) / 2`; their difference has odd square
+and hence is nonzero modulo the prime. This is the dyadic counterpart of the Legendre-symbol
+formula for Frobenius at odd primes, and supplies its missing local input at an odd discriminant.
+
+The classical quadratic splitting criterion is described in D. A. Cox,
+*Primes of the Form x² + ny²*, §5.A.
+-/
+
+open NumberField
+
+namespace TauCeti
+
+/-- At a prime above `2`, Frobenius fixes `√d` exactly when `d ≡ 1 (mod 8)`, provided
+`d ≡ 1 (mod 4)`. This works in any characteristic-zero field containing the chosen square root. -/
+theorem isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight
+    {K : Type*} [Field K] [CharZero K] {d : ℤ} {x : K}
+    (hx : x ^ 2 = algebraMap ℤ K d) (hd : d % 4 = 1)
+    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(2 : ℤ)})]
+    {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
+    σ x = x ↔ d % 8 = 1 := by
+  -- Pass to the integral half-generator before reducing modulo 2.
+  let w : 𝓞 K := ⟨(1 + x) / 2, isIntegral_one_add_div_two_of_sq_eq hx hd⟩
+  have hw : algebraMap (𝓞 K) K w = (1 + x) / 2 := RingOfIntegers.map_mk _ _
+  have hwsq : w ^ 2 - w = algebraMap ℤ (𝓞 K) (d / 4) := by
+    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+    simpa only [map_sub, map_pow, hw, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K] using
+      sq_one_add_div_two_sub_self hx hd
+  have hcong : σ • w - w ^ 2 ∈ Q := by
+    have h := hσ w
+    rwa [natCard_quotient_under_of_liesOver (p := 2) Q,
+      MulSemiringAction.toAlgHom_apply] at h
+  have hfix : σ • w = w ↔ σ x = x := by
+    rw [← (FaithfulSMul.algebraMap_injective (𝓞 K) K).eq_iff,
+      algebraMap_smul_eq_apply, hw]
+    simp only [map_div₀, map_add, map_one, map_ofNat, div_left_inj' (two_ne_zero : (2 : K) ≠ 0),
+      add_right_inj]
+  -- Its conjugates are `w` and `1 - w`, even when the ambient field is larger.
+  have hpm : σ • w = w ∨ σ • w = 1 - w := by
+    have hxsq : (σ x) ^ 2 = x ^ 2 := by rw [← map_pow, hx]; simp
+    rcases sq_eq_sq_iff_eq_or_eq_neg.mp hxsq with h | h
+    · exact Or.inl (hfix.mpr h)
+    · right
+      apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+      rw [map_sub, map_one, algebraMap_smul_eq_apply, hw]
+      simp only [map_div₀, map_add, map_one, map_ofNat, h]
+      ring
+  -- The Frobenius congruence distinguishes these conjugates by the parity of `(d - 1) / 4`.
+  have heven : σ • w = w ↔ (2 : ℤ) ∣ d / 4 := by
+    constructor
+    · intro h
+      rw [h] at hcong
+      have hmem := Q.neg_mem hcong
+      rw [neg_sub, hwsq] at hmem
+      exact (algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp hmem
+    · intro h
+      rcases hpm with hfix | hneg
+      · exact hfix
+      · have hemem := (algebraMap_int_mem_iff_dvd_of_liesOver Q (d / 4)).mpr h
+        have htwo : (2 : 𝓞 K) ∈ Q := by
+          simpa using (algebraMap_int_mem_iff_dvd_of_liesOver Q 2).mpr (dvd_refl 2)
+        have hone : (1 : 𝓞 K) ∈ Q := by
+          have hsum := Q.add_mem (Q.add_mem hcong hemem) (Q.mul_mem_right w htwo)
+          rw [hneg] at hsum
+          convert hsum using 1
+          linear_combination hwsq
+        have hbad : (2 : ℤ) ∣ 1 :=
+          (algebraMap_int_mem_iff_dvd_of_liesOver Q 1).mp (by simpa using hone)
+        norm_num at hbad
+  rw [← hfix, heven, Int.dvd_iff_emod_eq_zero]
+  omega
+
+/-- At a prime above `2`, Frobenius fixes square roots of integers congruent to `1` modulo `8`
+and negates square roots of integers congruent to `5` modulo `8`. -/
+theorem isArithFrobAt_apply_sqrt_two
+    {K : Type*} [Field K] [CharZero K] {d : ℤ} {x : K}
+    (hx : x ^ 2 = algebraMap ℤ K d) (hd : d % 4 = 1)
+    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(2 : ℤ)})]
+    {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
+    σ x = if d % 8 = 1 then x else -x := by
+  have hfix := isArithFrobAt_apply_sqrt_eq_self_iff_mod_eight hx hd Q hσ
+  split_ifs with h
+  · exact hfix.mpr h
+  · have hsq : (σ x) ^ 2 = x ^ 2 := by rw [← map_pow, hx]; simp
+    exact (sq_eq_sq_iff_eq_or_eq_neg.mp hsq).resolve_left (fun h' ↦ h (hfix.mp h'))
+
+end TauCeti

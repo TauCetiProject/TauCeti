@@ -61,17 +61,11 @@ one, which is all its proof uses; the elliptic case is that hypothesis discharge
 because nothing would consume it.
 
 The structural theory of this ring is not proved here. Module-finiteness over `W₂.CoordinateRing`
-is in the sibling `IntermediateRing/Finite.lean` as `moduleFinite_intermediateRing`, for a
-separable function-field extension; Dedekindness is in `IntermediateRing/Dedekind.lean` as
+is in the sibling `IntermediateRing/Finite.lean` as `moduleFinite_intermediateRing`, with no
+separability hypothesis; Dedekindness is in `IntermediateRing/Dedekind.lean` as
 `isDedekindDomain_intermediateRing` and integral closedness in
-`IntermediateRing/IntegrallyClosed.lean` as `isIntegrallyClosed_intermediateRing`, and neither of
-those two needs separability. Its fraction field, rank, projectivity, and prime-counting theory
-are in `IntermediateRing/Rank.lean`. Every Mathlib route to either of the first two
-(`IsIntegralClosure.finite`, `integralClosure.isDedekindDomain`) carries an `Algebra.IsSeparable`
-hypothesis, but for Dedekindness Mathlib is no longer the only route:
-`TauCeti.IsIntegralClosure.isDedekindDomain` obtains it from Krull–Akizuki instead. The
-module-finiteness half is expected to hold inseparably too, by Noether's finiteness theorem, and
-remains separate work.
+`IntermediateRing/IntegrallyClosed.lean` as `isIntegrallyClosed_intermediateRing`. Its fraction
+field, rank, projectivity, and prime-counting theory are in `IntermediateRing/Rank.lean`.
 
 This opens the "points come along" milestone of Layer 1 of
 `TauCetiRoadmap/EllipticCurves/README.md`, which names this object as "the **intermediate ring**
@@ -100,9 +94,9 @@ What is adapted here is the object and the observation that the integral closure
 *coordinate* ring — rather than over a localization — is the right home for the norm and
 class-group route to the induced map on points. Of the structural instances, module-finiteness and
 Dedekindness are ported, in the siblings `IntermediateRing/Finite.lean` and
-`IntermediateRing/Dedekind.lean` rather than here: module-finiteness under the source's own
-`[Algebra.IsSeparable K L]`, Dedekindness without it, since
-`TauCeti.IsIntegralClosure.isDedekindDomain` replaces the Mathlib route the source uses.
+`IntermediateRing/Dedekind.lean` rather than here, both without separability: the former uses
+separability-free finite normalization, and the latter uses
+`TauCeti.IsIntegralClosure.isDedekindDomain` in place of the Mathlib route the source uses.
 `IntermediateRing/IntegrallyClosed.lean` proves integral closedness without it either.
 `instFractionRingB` is ported in `IntermediateRing/Rank.lean` as
 `isFractionRing_intermediateRing`, with the pullback-induced algebra structures installed locally

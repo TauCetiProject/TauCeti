@@ -26,6 +26,7 @@ field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `
 * `TauCeti.BilinForm.nondegenerate_smul_iff`: scalar multiplication by a regular element
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
+* `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
 -/
 
 public section
@@ -80,3 +81,29 @@ theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommGroup M]
 end BilinForm
 
 end TauCeti
+
+namespace Module.Basis
+
+/-- The basis dual to `b` for a nonzero scalar multiple `c • B` of a nondegenerate bilinear form
+is `c⁻¹` times the basis dual to `b` for `B`. -/
+@[simp]
+theorem dualBasis_smul_apply {K V ι : Type*} [Field K] [AddCommGroup V]
+    [Module K V] [Finite ι] [DecidableEq ι] (b : Module.Basis ι K V)
+    (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate) (c : K) (hc : c ≠ 0) (i : ι) :
+    LinearMap.BilinForm.dualBasis (c • B)
+        ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)).mpr hB) b i =
+      c⁻¹ • LinearMap.BilinForm.dualBasis B hB b i := by
+  let hBc : (c • B).Nondegenerate :=
+    (TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)).mpr hB
+  apply LinearMap.ker_eq_bot.mp hBc.ker_eq_bot
+  apply b.ext
+  intro j
+  simp only [map_smul]
+  rw [LinearMap.BilinForm.apply_dualBasis_left]
+  simp only [LinearMap.smul_apply, smul_eq_mul]
+  rw [LinearMap.BilinForm.apply_dualBasis_left]
+  split_ifs
+  · simp only [mul_one, inv_mul_cancel₀ hc]
+  · simp only [mul_zero]
+
+end Module.Basis

@@ -8,43 +8,53 @@ module
 public import Mathlib.FieldTheory.Finite.GaloisField
 
 /-!
-# The fixed points of the `q`-power map in an extension of a finite field
+# The fixed points of the `q`-power map over a finite field
 
-For a finite field `K` with `q` elements and any field extension `L`, an element of `L` is fixed by
-the `q`-power map exactly when it comes from `K`:
+For a finite field `K` with `q` elements and any commutative domain `L` that is a `K`-algebra, an
+element of `L` is fixed by the `q`-power map exactly when it comes from `K`:
 
 `a ^ q = a ↔ a ∈ Set.range (algebraMap K L)`.
 
+So an element outside `K` is moved by the map. In a quadratic extension the map is moreover an
+involution, since `L` then has `q²` elements, and it therefore exchanges the two roots of the
+minimal polynomial of such an element; in particular it keeps it outside `K`. Those statements are
+what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read off from.
+
 ## Main results
 
-* `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`: the criterion above.
-* `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that an
-  extension *all* of whose elements are fixed by the `q`-power map is `K` itself.
+* `TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`: the criterion above, with
+  `TauCeti.FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap` its `Nat.card` spelling.
+* `TauCeti.algebraMap_bijective_of_pow_card_eq_self`: its immediate global consequence, that a
+  domain over `K` *all* of whose elements are fixed by the `q`-power map is `K` itself.
+* `TauCeti.FiniteField.pow_natCard_pow_natCard`: in a quadratic extension the `q`-power map is an
+  involution, with `TauCeti.FiniteField.pow_natCard_ne` and
+  `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` its two consequences for an element
+  outside `K`.
+* `TauCeti.FiniteField.units_map_algebraMap_pow_natCard` and
+  `TauCeti.FiniteField.units_pow_natCard_pow_natCard`: the fixed-point and involution statements
+  as equalities of units, the form in which a character of `Lˣ` consumes them.
 
 Mathlib has the easy direction (`FiniteField.pow_card`) but not the equivalence.
 `IsGalois.mem_range_algebraMap_iff_fixed` characterises the base field of a Galois extension by
 being fixed, but it needs `[FiniteDimensional F E]` and quantifies over the whole Galois group
 rather than the single `q`-power map.
 
-Nothing is assumed of `L` beyond being a field extension: in particular it need not be
-algebraically closed, which is the only case the source states.
+`L` need not be a field: a commutative domain is enough, which covers polynomial rings over `K`,
+and the coordinate ring of an integral affine curve such as a Weierstrass curve, as well as field
+extensions. Nor need `L` be algebraically closed, which is the only case the source states.
 
-This belongs to the **Hasse-bound strand** of `TauCetiRoadmap/EllipticCurves/README.md`, Layer 3
-("elliptic curves over finite fields"). That roadmap's §Ordering splits the layer: "the Hasse bound
-is the earliest PR, its existing proof self-contained; the zeta strand needs Layer 1's Frobenius
-identities". This is the self-contained side — the elementary field-theoretic input to the
-Silverman V.1 route, saying that the `K`-rational coordinates are exactly the Frobenius-fixed ones.
-In the roadmap's pinned Hasse provenance the corresponding file sits inside the import closure of
-the capstone `hasse_bound` proof, not in the zeta material.
+This is the elementary field-theoretic input to the Silverman V.1 route to the Hasse bound: it says
+that the `K`-rational coordinates are exactly the Frobenius-fixed ones.
 
 ## Provenance
 
-Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-that roadmap at `dev/hasse-weil @ 513e83879e2f`),
+Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0,
+`dev/hasse-weil @ 513e83879e2f`),
 `HasseWeil/Curves/FrobeniusFixedLocus.lean`, declaration `frobenius_fixed_iff_mem_baseField`.
 
 Changes from the source. It is stated there only for `L = AlgebraicClosure K`; here `L` is an
-arbitrary field extension, since nothing in the argument uses algebraic closedness. The source
+arbitrary commutative domain over `K`, since nothing in the argument uses algebraic closedness or
+inverses. The source
 builds the root-set transport by hand, through a separability argument and a finset count; here
 that is Mathlib's `Splits.image_rootSet` applied to `FiniteField.isSplittingField_sub`. And the
 source's other public theorem is stated in terms of its own `private` finsets, so it cannot be
@@ -59,8 +69,8 @@ namespace TauCeti
 
 namespace FiniteField
 
-/-- **An element of a field extension of a finite field is fixed by the `q`-power map exactly when
-it comes from the base field**, where `q` is the cardinality of the base. -/
+/-- **An element of a domain over a finite field is fixed by the `q`-power map exactly when it
+comes from the base field**, where `q` is the cardinality of the base. -/
 @[simp]
 theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Fintype K]
     [CommRing L] [IsDomain L] [Algebra K L] (a : L) :
@@ -82,11 +92,92 @@ theorem pow_card_eq_self_iff_mem_range_algebraMap {K L : Type*} [Field K] [Finty
     eval₂_sub, eval₂_X_pow, eval₂_X, sub_eq_zero] at this
   exact this.symm
 
+section Finite
+
+variable {K L : Type*} [Field K] [Finite K] [CommRing L] [IsDomain L] [Algebra K L]
+
+/-- **The `Nat.card` spelling of
+`TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`**, for a base field given as
+`Finite` rather than as a `Fintype`.
+
+This is deliberately not a simp lemma: after synthesizing a `Fintype K` instance, simp rewrites
+`Nat.card K` to `Fintype.card K` and applies the preceding criterion, making this rule redundant. -/
+theorem pow_natCard_eq_self_iff_mem_range_algebraMap (a : L) :
+    a ^ Nat.card K = a ↔ a ∈ Set.range (algebraMap K L) := by
+  let _ := Fintype.ofFinite K
+  rw [Nat.card_eq_fintype_card]
+  exact pow_card_eq_self_iff_mem_range_algebraMap a
+
+/-- **An element outside the base field is not fixed by the `q`-power map.** -/
+theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
+  fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+
+/-- **A unit of the base field is fixed by the `q`-power map**, as an equality in `Lˣ`. -/
+theorem units_map_algebraMap_pow_natCard (a : Kˣ) :
+    Units.map (algebraMap K L : K →* L) a ^ Nat.card K = Units.map (algebraMap K L : K →* L) a :=
+  Units.ext (by
+    rw [Units.val_pow_eq_pow_val]
+    exact (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr ⟨(a : K), rfl⟩)
+
+end Finite
+
+/-! ### Quadratic extensions -/
+
+section Quadratic
+
+variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
+
+/-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
+`L` has `q²` elements, so `a ^ (q²) = a`.
+
+This is deliberately not a simp lemma: in a context with a `Fintype K` instance, `Nat.card K`
+is not in simp normal form. -/
+theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
+    (a ^ Nat.card K) ^ Nat.card K = a := by
+  have : Module.Finite K L := Module.finite_of_finrank_eq_succ (n := 1) h2
+  have : Finite L := Module.finite_of_finite K
+  let _ := Fintype.ofFinite L
+  have hcard : Nat.card L = Nat.card K ^ 2 := by
+    rw [Module.natCard_eq_pow_finrank (K := K) (V := L), h2]
+  rw [← pow_mul, ← pow_two, ← hcard, Nat.card_eq_fintype_card]
+  exact _root_.FiniteField.pow_card a
+
+/-- **In a quadratic extension the `q`-power map is an involution on units**, the units-level
+form of `TauCeti.FiniteField.pow_natCard_pow_natCard`. -/
+theorem units_pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : Lˣ) :
+    (a ^ Nat.card K) ^ Nat.card K = a :=
+  Units.ext (by
+    rw [Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
+    exact pow_natCard_pow_natCard h2 (a : L))
+
+/-- **In a quadratic extension the `q`-th power of an element outside the base field is again
+outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to
+be fixed. -/
+theorem pow_natCard_notMem_range_algebraMap (h2 : Module.finrank K L = 2) {a : L}
+    (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ∉ Set.range (algebraMap K L) := by
+  intro hmem
+  have h1 := (pow_natCard_eq_self_iff_mem_range_algebraMap _).mpr hmem
+  rw [pow_natCard_pow_natCard h2] at h1
+  exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h1.symm)
+
+end Quadratic
+
+/-- **A `K`-algebra homomorphism commutes with the finite-base-field Frobenius.** Applying the
+homomorphism and raising to the `#K`-th power can be done in either order, a ring homomorphism
+carrying `q`-th powers to `q`-th powers. -/
+@[simp]
+theorem _root_.AlgHom.frobeniusAlgHom_comm {K L Ω : Type*} [Field K] [Fintype K] [CommRing L]
+    [Algebra K L] [CommRing Ω] [Algebra K Ω] (σ : L →ₐ[K] Ω) :
+    σ.comp (_root_.FiniteField.frobeniusAlgHom K L) =
+      (_root_.FiniteField.frobeniusAlgHom K Ω).comp σ := by
+  ext x
+  simp [_root_.FiniteField.coe_frobeniusAlgHom]
+
 end FiniteField
 
-/-- **A field extension in which `x ^ |K| = x` is `K` itself.** Every element of the extension is
-then in the range of the algebra map by
-`TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`. -/
+/-- **A domain over `K` all of whose elements satisfy `x ^ |K| = x` is `K` itself.** Every element
+is then in the range of the algebra map by
+`TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap`, which is injective. -/
 theorem algebraMap_bijective_of_pow_card_eq_self {K L : Type*} [Field K] [Fintype K] [CommRing L]
     [IsDomain L] [Algebra K L] (h : ∀ x : L, x ^ Fintype.card K = x) :
     Function.Bijective (algebraMap K L) :=

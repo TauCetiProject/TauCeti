@@ -24,9 +24,9 @@ public section
 
 namespace TauCeti.LinearMap
 
-variable {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V]
+variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
-/-- The trace pairing on the endomorphisms of a finite free module over a commutative ring is
+/-- The trace pairing on the endomorphisms of a finite free module over a commutative semiring is
 nondegenerate. -/
 theorem ext_iff_trace_mul_right [Module.Free K V] [Module.Finite K V]
     (f g : Module.End K V) :

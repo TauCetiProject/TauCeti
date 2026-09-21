@@ -24,6 +24,8 @@ is an involution and preserves non-interleaving of the swapped pair.
 ## Main definitions
 
 * `TauCeti.GridDiagram.IsColumnCommutation`: one elementary column commutation.
+* `TauCeti.GridDiagram.ColumnCommutationData`: a column commutation together with the two turn
+  rows and the placement of the adjacent-column markings in the resulting bigons.
 * `TauCeti.GridDiagram.IsRowCommutation`: one elementary row commutation.
 * `TauCeti.GridDiagram.IsCommutation`: one elementary commutation of either kind.
 
@@ -31,6 +33,11 @@ is an involution and preserves non-interleaving of the swapped pair.
 
 * `TauCeti.GridDiagram.isColumnCommutation_comm` and
   `TauCeti.GridDiagram.isRowCommutation_comm`: elementary moves are reversible.
+* `TauCeti.GridDiagram.ColumnCommutationData.reverse`: the validated data for the reverse
+  column commutation.
+* `TauCeti.GridDiagram.ColumnCommutationData.ofNoninterleaving`,
+  `TauCeti.GridDiagram.isColumnCommutation_iff_exists_columnCommutationData`: every elementary
+  column commutation admits validated commutation data.
 * `TauCeti.GridDiagram.isRowCommutation_transpose` and
   `TauCeti.GridDiagram.isColumnCommutation_transpose`: diagonal reflection exchanges the two
   kinds of commutation.
@@ -74,6 +81,164 @@ theorem isColumnCommutation_swapColumns (G : GridDiagram n) (a : Fin n)
     (ha : a ≠ finRotate n a) (hG : ColumnsNoninterleaving G a (finRotate n a)) :
     IsColumnCommutation G (G.swapColumns a (finRotate n a)) :=
   ⟨a, ha, hG, rfl⟩
+
+/-- Validated geometric data for a column commutation.
+
+The column `column` and its cyclic successor are distinct and non-interleaving. The curves in the
+combined diagram meet in the square rows `turnRow` and `oppositeTurnRow`. Going upwards from the
+opposite turn to `turnRow` gives the bigon containing both markings of `column`; going upwards
+from `turnRow` to the opposite turn gives the bigon containing both markings of the successor.
+At an intersection row, which side of the intersection contains a marking is determined by its
+column, so the terminal row of either discrete interval is admitted. -/
+structure ColumnCommutationData (G : GridDiagram n) where
+  /-- The first of the two adjacent columns being commuted. -/
+  column : Fin n
+  /-- The square row containing the distinguished intersection used by the forward pentagon map. -/
+  turnRow : Fin n
+  /-- The square row containing the other intersection of the two vertical curves. -/
+  oppositeTurnRow : Fin n
+  /-- The adjacent columns are distinct. -/
+  column_ne_next : column ≠ finRotate n column
+  /-- The two marking segments satisfy the hypothesis for a column commutation. -/
+  noninterleaving : ColumnsNoninterleaving G column (finRotate n column)
+  /-- The `O`-marking of the first column lies in the bigon below the distinguished turn. -/
+  O_column_below : G.O column ∈ insert turnRow (Grid.cIco oppositeTurnRow turnRow)
+  /-- The `X`-marking of the first column lies in the bigon below the distinguished turn. -/
+  X_column_below : G.X column ∈ insert turnRow (Grid.cIco oppositeTurnRow turnRow)
+  /-- The `O`-marking of the successor column lies in the bigon above the distinguished turn. -/
+  O_next_above :
+    G.O (finRotate n column) ∈ insert oppositeTurnRow (Grid.cIco turnRow oppositeTurnRow)
+  /-- The `X`-marking of the successor column lies in the bigon above the distinguished turn. -/
+  X_next_above :
+    G.X (finRotate n column) ∈ insert oppositeTurnRow (Grid.cIco turnRow oppositeTurnRow)
+
+namespace ColumnCommutationData
+
+variable {G : GridDiagram n}
+
+/-- Two validated column commutations are equal when their geometric data agree. -/
+@[ext]
+theorem ext {C D : ColumnCommutationData G} (hcolumn : C.column = D.column)
+    (hturnRow : C.turnRow = D.turnRow)
+    (hoppositeTurnRow : C.oppositeTurnRow = D.oppositeTurnRow) : C = D := by
+  cases C
+  cases D
+  simp_all
+
+private theorem hext {G H : GridDiagram n} {C : ColumnCommutationData G}
+    {D : ColumnCommutationData H} (hdiagram : G = H) (hcolumn : C.column = D.column)
+    (hturnRow : C.turnRow = D.turnRow)
+    (hoppositeTurnRow : C.oppositeTurnRow = D.oppositeTurnRow) : HEq C D := by
+  subst H
+  exact heq_of_eq (ext hcolumn hturnRow hoppositeTurnRow)
+
+/-- Validated column-commutation data determines an elementary column commutation. -/
+theorem isColumnCommutation (C : ColumnCommutationData G) :
+    IsColumnCommutation G (G.swapColumns C.column (finRotate n C.column)) :=
+  G.isColumnCommutation_swapColumns C.column C.column_ne_next C.noninterleaving
+
+/-- The validated data for the reverse column commutation, using the other intersection as its
+distinguished turn. -/
+def reverse (C : ColumnCommutationData G) :
+    ColumnCommutationData (G.swapColumns C.column (finRotate n C.column)) where
+  column := C.column
+  turnRow := C.oppositeTurnRow
+  oppositeTurnRow := C.turnRow
+  column_ne_next := C.column_ne_next
+  noninterleaving := by
+    simpa [columnsNoninterleaving_comm] using C.noninterleaving
+  O_column_below := by
+    simpa using C.O_next_above
+  X_column_below := by
+    simpa using C.X_next_above
+  O_next_above := by
+    simpa using C.O_column_below
+  X_next_above := by
+    simpa using C.X_column_below
+
+/-- Reversing commutation data preserves the first column. -/
+@[simp]
+theorem reverse_column (C : ColumnCommutationData G) : C.reverse.column = C.column :=
+  (rfl)
+
+/-- Reversing commutation data uses the other intersection as its distinguished turn. -/
+@[simp]
+theorem reverse_turnRow (C : ColumnCommutationData G) : C.reverse.turnRow = C.oppositeTurnRow :=
+  (rfl)
+
+/-- Reversing commutation data makes the old distinguished turn the other intersection. -/
+@[simp]
+theorem reverse_oppositeTurnRow (C : ColumnCommutationData G) :
+    C.reverse.oppositeTurnRow = C.turnRow :=
+  (rfl)
+
+/-- Reversing validated commutation data twice recovers the original data. -/
+@[simp]
+theorem reverse_reverse (C : ColumnCommutationData G) :
+    cast (congrArg ColumnCommutationData (by simp)) C.reverse.reverse = C := by
+  rw [eq_comm, eq_cast_iff_heq]
+  apply HEq.symm
+  apply hext (by simp) <;> simp
+
+/-- Validated commutation data for every adjacent non-interleaving pair of columns.
+
+The two rows of the markings of `a` serve as the turn rows. Non-interleaving puts both markings
+of the successor column on one side of them, which fixes which of the two rows is the
+distinguished turn. -/
+noncomputable def ofNoninterleaving (a : Fin n) (ha : a ≠ finRotate n a)
+    (hG : ColumnsNoninterleaving G a (finRotate n a)) : ColumnCommutationData G := by
+  classical
+  have hOX := G.disjoint a
+  have hb := ((columnsNoninterleaving_iff G _ _).mp hG).2
+  simp only [mem_columnArc] at hb
+  exact if h : G.O (finRotate n a) ∈ Grid.cIoo (G.O a) (G.X a) then
+    { column := a
+      turnRow := G.O a
+      oppositeTurnRow := G.X a
+      column_ne_next := ha
+      noninterleaving := hG
+      O_column_below := Finset.mem_insert_self _ _
+      X_column_below := Finset.mem_insert_of_mem (Grid.left_mem_cIco hOX.symm)
+      O_next_above := Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ h)
+      X_next_above := Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ (hb.mp h)) }
+  else
+    have memOpposite {x : Fin n} (hx : x ∉ Grid.cIoo (G.O a) (G.X a)) :
+        x ∈ insert (G.O a) (Grid.cIco (G.X a) (G.O a)) := by
+      rcases (Grid.not_mem_cIoo_iff hOX).mp hx with hx | hx | hx
+      · rw [hx]
+        exact Finset.mem_insert_self _ _
+      · rw [hx]
+        exact Finset.mem_insert_of_mem (Grid.left_mem_cIco hOX.symm)
+      · exact Finset.mem_insert_of_mem (Grid.cIoo_subset_cIco _ _ hx)
+    { column := a
+      turnRow := G.X a
+      oppositeTurnRow := G.O a
+      column_ne_next := ha
+      noninterleaving := hG
+      O_column_below := Finset.mem_insert_of_mem (Grid.left_mem_cIco hOX)
+      X_column_below := Finset.mem_insert_self _ _
+      O_next_above := memOpposite h
+      X_next_above := memOpposite (mt hb.mpr h) }
+
+/-- The data built from a non-interleaving pair commutes the given column. -/
+@[simp]
+theorem ofNoninterleaving_column (a : Fin n) (ha : a ≠ finRotate n a)
+    (hG : ColumnsNoninterleaving G a (finRotate n a)) :
+    (ofNoninterleaving a ha hG).column = a := by
+  unfold ofNoninterleaving
+  split_ifs <;> rfl
+
+end ColumnCommutationData
+
+/-- Every elementary column commutation is realised by validated column-commutation data. -/
+theorem isColumnCommutation_iff_exists_columnCommutationData {G G' : GridDiagram n} :
+    IsColumnCommutation G G' ↔
+      ∃ C : ColumnCommutationData G, G' = G.swapColumns C.column (finRotate n C.column) := by
+  constructor
+  · rintro ⟨a, ha, hG, rfl⟩
+    exact ⟨.ofNoninterleaving a ha hG, by rw [ColumnCommutationData.ofNoninterleaving_column]⟩
+  · rintro ⟨C, rfl⟩
+    exact C.isColumnCommutation
 
 /-- An elementary column commutation is reversible. -/
 theorem isColumnCommutation_comm {G G' : GridDiagram n} :

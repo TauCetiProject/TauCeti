@@ -110,7 +110,9 @@ the net lines each roadmap has accrued — every merged PR's additions minus its
 deletions, attributed to its roadmap — by the day the PR merged. Because it sums
 diffs rather than counting the lines in the tree, a line later rewritten counts under
 both PRs, so this measures work landed per roadmap, not a snapshot line count.
-Infrastructure and refactor PRs, which advance no roadmap, are left out.
+Infrastructure and refactor PRs, which advance no roadmap, are left out. How far each roadmap
+has got against its own specification is a different question, answered on the
+[Progress](progress) page.
 
 :::blob roadmapGraph
 :::

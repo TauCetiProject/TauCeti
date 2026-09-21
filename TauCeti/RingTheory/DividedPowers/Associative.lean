@@ -40,6 +40,8 @@ definition is made here.
   antidiagonal sum.
 * `TauCeti.Associative.dividedPower_sub`: the corresponding signed expansion for a difference.
 * `TauCeti.Associative.map_dividedPower`: divided powers are natural under algebra homomorphisms.
+* `TauCeti.Associative.dividedPower_apply_mem_of_pow_two_eq_zero`: a square-zero endomorphism
+  preserving an integral submodule has all divided powers preserving it.
 * `TauCeti.Associative.dividedPower_units_conj`: divided powers are equivariant for conjugation by
   a unit.
 
@@ -81,6 +83,39 @@ theorem dividedPower_one (x : A) : dividedPower 1 x = x := by
 @[simp]
 theorem dividedPower_eval_zero {n : ℕ} (hn : n ≠ 0) : dividedPower n (0 : A) = 0 := by
   simp [dividedPower_def, hn]
+
+section ModuleEnd
+
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
+
+/-- Divided powers of a nilpotent endomorphism preserve a set containing zero if all terms below
+the nilpotency bound preserve it. -/
+theorem dividedPower_apply_mem_of_pow_eq_zero
+    (f : Module.End ℚ V) (N : Set V) (hzero : 0 ∈ N) (d : ℕ) (hf : f ^ d = 0)
+    (hN : ∀ k < d, ∀ {v : V}, v ∈ N → dividedPower k f v ∈ N)
+    (n : ℕ) {v : V} (hv : v ∈ N) : dividedPower n f v ∈ N := by
+  by_cases hn : n < d
+  · exact hN n hn hv
+  · rw [dividedPower_def, pow_eq_zero_of_le (Nat.le_of_not_gt hn) hf, smul_zero,
+      LinearMap.zero_apply]
+    exact hzero
+
+/-- Every divided power of a square-zero endomorphism preserves an additive subgroup once the
+endomorphism itself does. -/
+theorem dividedPower_apply_mem_of_pow_two_eq_zero
+    (f : Module.End ℚ V) (N : AddSubgroup V) (hf : f ^ 2 = 0)
+    (hN : ∀ {v : V}, v ∈ N → f v ∈ N) (n : ℕ) {v : V} (hv : v ∈ N) :
+    dividedPower n f v ∈ N := by
+  apply dividedPower_apply_mem_of_pow_eq_zero f N (zero_mem N) 2 hf _ n hv
+  intro k hk
+  have hk' : k = 0 ∨ k = 1 := by omega
+  rcases hk' with rfl | rfl
+  · intro v hv
+    simpa using hv
+  · intro v hv
+    simpa using hN hv
+
+end ModuleEnd
 
 /-- Multiplying a divided power by its factorial recovers the ordinary power. -/
 theorem factorial_smul_dividedPower_eq_pow (n : ℕ) (x : A) :

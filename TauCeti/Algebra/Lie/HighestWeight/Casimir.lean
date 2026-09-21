@@ -7,14 +7,10 @@ module
 
 public import Mathlib.Algebra.CharP.Invertible
 public import TauCeti.Algebra.Lie.HighestWeight.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Casimir
-public import TauCeti.Algebra.Lie.Weights.InvariantForm
-public import TauCeti.Algebra.Lie.Weights.Projection
+public import TauCeti.Algebra.Lie.Weights.Casimir
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
-
-public section
 
 /-!
 # The Casimir eigenvalue on a highest weight module
@@ -61,6 +57,10 @@ submodule by centrality and it contains the generator.
 * `TauCeti.casimirScalar_eq_add_sum`: the scalar expanded as
   `⟨λ, λ⟩ + ∑_{α > 0} ⟨λ, α⟩`, the shape in which its sign is read off.
 * `TauCeti.casimirScalar_zero`: the scalar of the zero weight is `0`.
+* `TauCeti.casimirScalar_sub_casimirScalar`: the difference of two scalars,
+  `c(λ) - c(μ) = (⟨λ, λ⟩ - ⟨μ, μ⟩) + ⟨2ρ, λ - μ⟩`.
+* `TauCeti.casimirScalar_add_sub_casimirScalar`: the scalar along a translation,
+  `c(χ + σ) - c(χ) = 2⟨χ + σ, σ⟩ - c(-σ)`.
 
 ## Implementation notes
 
@@ -70,7 +70,7 @@ Killing-dual basis need. The `U(L)`-action is the algebra homomorphism
 `UniversalEnvelopingAlgebra.lift K (LieModule.toEnd K L M)`.
 
 The weight `λ` is extended from `H` to a linear form on the whole of `L` by pairing with the vector
-representing it under the Killing form (`TauCeti.killingExtend` below). That extension agrees with
+representing it under the Killing form (`TauCeti.killingExtend`). That extension agrees with
 `λ` on `H` and vanishes on every root space, which is what lets the zero-weight term be summed
 without a case distinction on whether the zero functional is a weight at all.
 
@@ -87,6 +87,8 @@ cyclicity hypothesis its name records.
   the Casimir element is shown to act on a standard cyclic module of highest weight `λ` by the
   scalar `⟨λ, λ + 2ρ⟩`; the Casimir element itself is §6.2.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -127,107 +129,6 @@ private theorem representation_casimirElement_apply {ι : Type*} [DecidableEq ι
   rw [map_mul, Module.End.mul_apply, UniversalEnvelopingAlgebra.representation_ι,
     UniversalEnvelopingAlgebra.representation_ι, casimirBilin_apply]
   simp
-
-/-! ### Extending a weight to the whole Lie algebra -/
-
-/-- The linear form on `L` obtained by pairing with the vector representing `lam` under the Killing
-form. It agrees with `lam` on `H` (`TauCeti.killingExtend_apply_cartan`) and vanishes on every
-root space of a nonzero weight (`TauCeti.killingExtend_apply_eq_zero`). -/
-private noncomputable def killingExtend (lam : Module.Dual K H) : L →ₗ[K] K :=
-  killingForm K L (((IsKilling.cartanEquivDual H).symm lam : H) : L)
-
-omit [CharZero K] [IsTriangularizable K H L] in
-private theorem killingExtend_apply (lam : Module.Dual K H) (x : L) :
-    killingExtend lam x =
-      killingForm K L (((IsKilling.cartanEquivDual H).symm lam : H) : L) x := (rfl)
-
-omit [CharZero K] [IsTriangularizable K H L] in
-/-- On the Cartan subalgebra the extension is the weight itself. -/
-private theorem killingExtend_apply_cartan (lam : Module.Dual K H) (x : H) :
-    killingExtend lam (x : L) = lam x := by
-  have hres : killingForm K L (((IsKilling.cartanEquivDual H).symm lam : H) : L) (x : L) =
-      traceForm K H L ((IsKilling.cartanEquivDual H).symm lam) x := by
-    rw [← LieAlgebra.restrict_killingForm (R := K) (L := L) H,
-      LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply]
-  rw [killingExtend_apply, hres]
-  conv_rhs => rw [← (IsKilling.cartanEquivDual H).apply_symm_apply lam]
-  rw [IsKilling.cartanEquivDual_apply_apply, traceForm_apply_apply, Module.End.mul_eq_comp]
-
-omit [CharZero K] in
-/-- The extension of a weight vanishes on the root space of a nonzero weight, the Cartan
-subalgebra being the zero root space. -/
-private theorem killingExtend_apply_eq_zero (lam : Module.Dual K H) {χ : Weight K H L}
-    (hχ : χ.IsNonZero) {x : L} (hx : x ∈ rootSpace H (χ : H → K)) : killingExtend lam x = 0 := by
-  refine LieAlgebra.killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H
-    (α := (0 : H → K)) ?_ hx (by simpa using hχ)
-  rw [LieAlgebra.rootSpace_zero_eq, LieSubalgebra.mem_toLieSubmodule]
-  exact ((IsKilling.cartanEquivDual H).symm lam).2
-
-/-! ### Splitting the Casimir sum along the root spaces -/
-
-omit [CharZero K] in
-/-- Opposite root-space projections are a Killing-adjoint pair. -/
-private theorem isAdjointPair_genWeightSpaceProjection (χ : Weight K H L) :
-    LinearMap.IsAdjointPair (killingForm K L) (killingForm K L)
-      (genWeightSpaceProjection K H L (-χ)) (genWeightSpaceProjection K H L χ) := fun x y ↦ by
-  rw [killingForm_genWeightSpaceProjection H (-χ) x y, neg_neg]
-
-omit [CharZero K] in
-/-- **The Casimir sum splits along the root spaces.** Only the opposite pairs of projections
-survive, because the Killing form pairs the `χ`-root space with the `-χ`-root space alone. -/
-private theorem sum_casimirBilin_eq_sum_weight {ι : Type*} [DecidableEq ι] [Fintype ι]
-    (bs : Module.Basis ι K L) (v : M) :
-    ∑ i, casimirBilin K v (bs i) (killingDualBasis bs i) =
-      ∑ χ : Weight K H L, ∑ i, casimirBilin K v (genWeightSpaceProjection K H L χ (bs i))
-        (genWeightSpaceProjection K H L (-χ) (killingDualBasis bs i)) := by
-  have first : ∀ i, casimirBilin K v (bs i) (killingDualBasis bs i) =
-      ∑ χ : Weight K H L,
-        casimirBilin K v (genWeightSpaceProjection K H L χ (bs i)) (killingDualBasis bs i) := by
-    intro i
-    conv_lhs => rw [← sum_genWeightSpaceProjection_apply (K := K) (L := H) (bs i)]
-    rw [map_sum, LinearMap.sum_apply]
-  rw [Finset.sum_congr rfl fun i _ ↦ first i, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun χ _ ↦ ?_
-  have second : ∀ i, casimirBilin K v (genWeightSpaceProjection K H L χ (bs i))
-      (killingDualBasis bs i) = ∑ ψ : Weight K H L,
-        casimirBilin K v (genWeightSpaceProjection K H L χ (bs i))
-          (genWeightSpaceProjection K H L ψ (killingDualBasis bs i)) := by
-    intro i
-    conv_lhs =>
-      rw [← sum_genWeightSpaceProjection_apply (K := K) (L := H) (killingDualBasis bs i)]
-    rw [map_sum]
-  rw [Finset.sum_congr rfl fun i _ ↦ second i, Finset.sum_comm]
-  refine Finset.sum_eq_single (-χ) (fun ψ _ hψ ↦ ?_) (by simp)
-  have hmove := sum_apply_killingDualBasis_of_isAdjointPair
-    ((casimirBilin K v).comp (genWeightSpaceProjection K H L χ)) bs
-    (isAdjointPair_genWeightSpaceProjection ψ)
-  simp only [LinearMap.comp_apply] at hmove
-  rw [← hmove]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  rw [genWeightSpaceProjection_apply_apply_of_ne (fun hc ↦ hψ (by rw [← hc, neg_neg])), map_zero,
-    LinearMap.zero_apply]
-
-omit [CharZero K] in
-/-- The extension of `lam` sees only the zero weight, so the products of its values on the
-projections of two vectors telescope to the product of its values on the vectors. -/
-private theorem sum_killingExtend_genWeightSpaceProjection_mul (lam : Module.Dual K H) (x y : L) :
-    ∑ χ : Weight K H L, killingExtend lam (genWeightSpaceProjection K H L χ x) *
-        killingExtend lam (genWeightSpaceProjection K H L χ y) =
-      killingExtend lam x * killingExtend lam y := by
-  conv_rhs =>
-    rw [← sum_genWeightSpaceProjection_apply (K := K) (L := H) x,
-      ← sum_genWeightSpaceProjection_apply (K := K) (L := H) y]
-  rw [map_sum, map_sum, Finset.sum_mul_sum]
-  refine Finset.sum_congr rfl fun χ _ ↦ (Finset.sum_eq_single
-    (f := fun ψ : Weight K H L ↦ killingExtend lam (genWeightSpaceProjection K H L χ x) *
-      killingExtend lam (genWeightSpaceProjection K H L ψ y))
-    χ (fun ψ _ hψ ↦ ?_) (fun h ↦ absurd (Finset.mem_univ χ) h)).symm
-  by_cases hχ : χ.IsZero
-  · refine mul_eq_zero_of_right _ (killingExtend_apply_eq_zero lam (χ := ψ) ?_
-      (genWeightSpaceProjection_apply_mem ψ y))
-    exact fun hz ↦ hψ (Weight.ext fun z ↦ by rw [hz.eq, hχ.eq])
-  · exact mul_eq_zero_of_left
-      (killingExtend_apply_eq_zero lam hχ (genWeightSpaceProjection_apply_mem χ x)) _
 
 /-! ### The three kinds of term -/
 
@@ -336,19 +237,12 @@ private theorem representation_casimirElement_apply_eq_sum
     rw [killingExtend_apply_eq_zero lam (H.isNonZero_coe_root ⟨χ, hχ⟩)
       (genWeightSpaceProjection_apply_mem χ (bs i)), zero_mul]
   have hu_total : ∑ χ : Weight K H L, u χ = invForm lam lam := by
-    have hswap : ∑ χ : Weight K H L, u χ = ∑ i, killingExtend lam (bs i) *
-        killingExtend lam (ys i) := by
-      rw [hu, Finset.sum_comm]
-      exact Finset.sum_congr rfl fun i _ ↦
-        sum_killingExtend_genWeightSpaceProjection_mul lam (bs i) (ys i)
-    have hrep := congrArg (killingExtend lam)
-      (sum_killingForm_smul_basis bs (((IsKilling.cartanEquivDual H).symm lam : H) : L))
-    rw [map_sum] at hrep
-    simp only [map_smul, smul_eq_mul, ← killingExtend_apply] at hrep
-    rw [hswap, invForm_apply_apply, ← killingExtend_apply_cartan lam, ← hrep]
-    exact Finset.sum_congr rfl fun i _ ↦ mul_comm _ _
+    rw [hu, Finset.sum_comm, ← sum_killingExtend_mul_killingExtend_killingDualBasis lam bs]
+    exact Finset.sum_congr rfl fun i _ ↦
+      sum_killingExtend_genWeightSpaceProjection_mul lam (bs i) (ys i)
   -- Split the sum over the weights into the zero weight and the roots.
-  rw [representation_casimirElement_apply bs v, sum_casimirBilin_eq_sum_weight (H := H) bs v,
+  rw [representation_casimirElement_apply bs v,
+    sum_apply_killingDualBasis_eq_sum_weight H (casimirBilin K v) bs,
     ← Finset.sum_sdiff (Finset.subset_univ H.root)]
   have hpart_zero : ∑ χ ∈ Finset.univ \ H.root, ∑ i,
       casimirBilin K v (genWeightSpaceProjection K H L χ (bs i))
@@ -415,6 +309,32 @@ theorem casimirScalar_eq_add_sum :
   simp only [map_add, LinearMap.add_apply]
   rw [hsymm, hsum]
   ring
+
+/-- **The difference of two Casimir scalars**, split into a quadratic part and a root part:
+`c(lam) - c(mu) = (⟨lam, lam⟩ - ⟨mu, mu⟩) + ⟨2ρ, lam - mu⟩`. -/
+theorem casimirScalar_sub_casimirScalar (mu : Module.Dual K H) :
+    casimirScalar base lam - casimirScalar base mu =
+      (invForm lam lam - invForm mu mu) +
+        invForm (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu) := by
+  have hsum : ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) base,
+      (invForm lam ((IsKilling.rootSystem H).root i) -
+        invForm mu ((IsKilling.rootSystem H).root i)) =
+      invForm (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu) := by
+    rw [(invForm_isSymm (H := H)).eq (twoWeylVector (IsKilling.rootSystem H) base) (lam - mu),
+      twoWeylVector_def, map_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_sub, LinearMap.sub_apply]
+  rw [casimirScalar_eq_add_sum (lam := lam), casimirScalar_eq_add_sum (lam := mu), ← hsum,
+    Finset.sum_sub_distrib]
+  ring
+
+/-- **The Casimir scalar along a translation**:
+`c(χ + σ) - c(χ) = 2⟨χ + σ, σ⟩ - c(-σ)`. -/
+theorem casimirScalar_add_sub_casimirScalar (chi sigma : Module.Dual K H) :
+    casimirScalar base (chi + sigma) - casimirScalar base chi =
+      2 * invForm (chi + sigma) sigma - casimirScalar base (-sigma) := by
+  have h1 := (invForm_isSymm (H := H)).eq chi sigma
+  simp only [casimirScalar_def, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]
+  linear_combination -h1
 
 /-- **The Casimir eigenvalue on a highest weight vector.** The Casimir element sends a highest
 weight vector of weight `lam` to `casimirScalar base lam • v`. -/

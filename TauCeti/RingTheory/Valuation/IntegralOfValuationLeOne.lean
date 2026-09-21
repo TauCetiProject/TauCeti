@@ -38,7 +38,7 @@ does not carry. It is removed by **reducing modulo a prime**: by
 `TauCeti.isIntegral_of_forall_isPrime_map` it is enough to be integral over the image of `B` in
 `R ⧸ J` for every prime `J`, and each `R ⧸ J` is a domain, so the domain case applies there. Its
 hypothesis is met because a valuation of `R ⧸ J` pulls back along `Ideal.Quotient.mk J`, by
-`TauCeti.ValuativeRel.comap`, to one of `R`, which the hypothesis on `R` bounds. So the criterion
+`ValuativeRel.comap`, to one of `R`, which the hypothesis on `R` bounds. So the criterion
 holds for `R` in general.
 
 ## Main results

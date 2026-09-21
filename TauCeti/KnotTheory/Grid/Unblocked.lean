@@ -7,7 +7,8 @@ module
 
 import Mathlib.Tactic.Linarith
 public import Mathlib.Algebra.MvPolynomial.Degrees
-public import TauCeti.KnotTheory.Grid.Complex
+public import TauCeti.Algebra.MvPolynomial.Rename
+public import TauCeti.KnotTheory.Grid.Chain.Relabeling
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 import TauCeti.KnotTheory.Grid.Rectangle.Count
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
@@ -15,7 +16,8 @@ import TauCeti.KnotTheory.Grid.Rectangle.Swap
 /-!
 # The unblocked grid complex `GC⁻`
 
-The fully blocked complex of `Complex.lean` counts only rectangles that avoid every marking,
+The fully blocked differential `TauCeti.GridDiagram.fullyBlockedDifferential` counts only
+rectangles that avoid every marking,
 so it forgets the `O`-markings entirely. The *unblocked* complex `GC⁻` remembers them:
 it is the free module on grid states over the polynomial ring `R[V₀, …, V_{n-1}]`, one variable
 `V_c` for the `O`-marking of column `c`, and its differential
@@ -26,8 +28,8 @@ runs over the empty rectangles `r` from `x` to `y` carrying no `X`-marking, each
 monomial `V^{O(r)} = ∏ V_c` over the columns whose `O`-marking the rectangle covers. This is the
 theory that survives (de)stabilization and whose homology is a module over `R[U]`. The simply
 blocked theory is obtained by setting one selected variable, conventionally `V₀`, to zero; setting
-every variable to zero gives the square-centred fully blocked count once the canonical
-`GridRectangle.AvoidsMarkings` predicate uses that same marking region.
+every variable to zero gives the fully blocked count of `BlockedRectangle.lean`, which is
+`fullyBlockedRectangleCount_eq_constantCoeff`.
 
 Two conventions are fixed here.
 
@@ -35,9 +37,10 @@ Two conventions are fixed here.
 carries the markings of the squares it covers, `GridRectangle.coveredSquares`, not those of the
 grid points in its open interior. That is the region the Maslov and Alexander grading changes are
 computed against in `Grading/MarkingCount.lean`, and it is the region used throughout this file.
-The Lane G.3 predicate `GridRectangle.AvoidsMarkings` still tests the open interior; aligning it
-with the square-centred convention is a separate correction to that predicate, so no result here
-is phrased in terms of it.
+It is also the region the marking-avoidance predicate `GridRectangle.AvoidsMarkings` of the grid
+differential tests, under its other name `GridRectangle.squares`;
+`GridRectangle.squares_eq_coveredSquares` identifies the two, which is what makes the fully blocked
+count a specialization of a matrix coefficient here.
 
 *Which grading the variables carry.* Giving `V_c` bidegree `(-2, -1)` makes the differential
 homogeneous of bidegree `(-1, 0)`: `maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one` and
@@ -56,6 +59,8 @@ assignment, a later stage of the roadmap.
 * `TauCeti.GridDiagram.OMonomial`: the monomial `V^{O(r)}` weighting a rectangle.
 * `TauCeti.GridDiagram.unblockedRectangles`: the empty rectangles carrying no `X`-marking.
 * `TauCeti.GridChainMinus`: the free `R[V₀, …, V_{n-1}]`-module on grid states.
+* `TauCeti.GridChain.relabelColumnsRenameEquiv`: the semilinear equivalence on `GC⁻` that
+  relabels columns and renames the coefficient variables.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -65,15 +70,24 @@ assignment, a later stage of the roadmap.
   `O`-markings among the covered squares.
 * `TauCeti.GridDiagram.totalDegree_OMonomial`: the weight of a rectangle is a squarefree monomial
   whose degree is the number of `O`-markings the rectangle covers.
+* `TauCeti.GridDiagram.OMonomial_eq_prod_coveredSquares`: the weight of a rectangle as a product
+  over the squares it covers.
 * `TauCeti.GridDiagram.unblockedDifferentialOnGenerator_support_subset`: the differential of a
   generator is supported on the column transpositions of that generator.
+* `TauCeti.GridDiagram.unblockedDifferential_sq_single_apply`: the matrix of `∂⁻ ∘ ∂⁻` is a
+  sum over intermediate states of products of matrix coefficients.
 * `TauCeti.GridDiagram.maslovO_sub_two_mul_card_OColumns_eq_maslovO_sub_one`,
   `TauCeti.GridDiagram.alexander_sub_card_OColumns_eq_alexander`: the differential is homogeneous
   of bidegree `(-1, 0)` once `V_c` is given bidegree `(-2, -1)`.
 * `TauCeti.GridDiagram.constantCoeff_unblockedCoefficient`: the constant term of a matrix
   coefficient counts the contributing rectangles that carry no `O`-marking either.
+* `TauCeti.GridDiagram.fullyBlockedRectangles_eq_filter`,
+  `TauCeti.GridDiagram.fullyBlockedRectangleCount_eq_constantCoeff`: those rectangles are the
+  fully blocked ones, so the fully blocked matrix coefficient is the constant term of `∂⁻`.
 * `TauCeti.GridDiagram.exists_mem_unblockedRectangles_of_mem_support_unblockedCoefficient`: every
   monomial of a matrix coefficient is the weight of a contributing rectangle.
+* `TauCeti.GridChain.relabelColumnsRenameEquiv_symm_apply`: the inverse column relabeling and
+  coefficient-renaming formula.
 
 ## References
 
@@ -95,18 +109,88 @@ states over the polynomial ring `R[V₀, …, V_{n-1}]`, with one variable for e
 abbrev GridChainMinus (R : Type*) [CommSemiring R] (n : ℕ) : Type _ :=
   GridChain (MvPolynomial (Fin n) R) n
 
+namespace GridChain
+
+variable {n : ℕ} (R : Type*) [CommSemiring R]
+
+/-- The semilinear equivalence on `GC⁻` induced by relabeling columns and renaming coefficient
+variables by the same permutation. Its inverse uses the inverse column permutation. -/
+noncomputable def relabelColumnsRenameEquiv (κ : Equiv.Perm (Fin n)) :
+    GridChainMinus R n ≃ₛₗ[((MvPolynomial.renameEquiv R κ).toRingEquiv :
+      MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
+  (Finsupp.mapRange.linearEquiv
+    (MvPolynomial.renameEquiv R κ).toRingEquiv.toSemilinearEquiv).trans (relabelColumnsEquiv κ)
+
+/-- The coefficient of a relabeled and renamed chain at a state is the renamed coefficient at the
+inverse-relabeled state. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_apply (κ : Equiv.Perm (Fin n)) (c : GridChainMinus R n)
+    (y : GridState n) :
+    (relabelColumnsRenameEquiv R κ).toLinearMap c y =
+      rename κ (c (y.relabelColumns κ.symm)) := by
+  rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
+    relabelColumnsEquiv_apply, Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply,
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
+
+/-- Relabeling and renaming send a generator with coefficient `a` to the relabeled generator with
+the renamed coefficient. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_single (κ : Equiv.Perm (Fin n)) (x : GridState n)
+    (a : MvPolynomial (Fin n) R) :
+    (relabelColumnsRenameEquiv R κ).toLinearMap (Finsupp.single x a) =
+      Finsupp.single (x.relabelColumns κ) (rename κ a) := by
+  rw [LinearEquiv.coe_coe, relabelColumnsRenameEquiv, LinearEquiv.trans_apply,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_single, relabelColumnsEquiv_single,
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv, renameEquiv_apply]
+
+/-- The inverse equivalence relabels columns and coefficient variables by the inverse
+permutation. -/
+@[simp]
+theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
+    (c : GridChainMinus R n) (y : GridState n) :
+    (relabelColumnsRenameEquiv R κ).symm c y =
+      rename κ.symm (c (y.relabelColumns κ)) := by
+  rw [relabelColumnsRenameEquiv, LinearEquiv.symm_trans_apply, Finsupp.mapRange.linearEquiv_symm,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply, relabelColumnsEquiv_symm_apply,
+    LinearEquiv.symm_apply_eq, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_ringEquiv,
+    renameEquiv_apply, rename_rename, Equiv.self_comp_symm, rename_id_apply]
+
+end GridChain
+
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
 /-! ### The `O`-monomial of a rectangle -/
 
+/-- The columns whose `O`-marking belongs to a given set of squares. -/
+noncomputable def OColumnsOfSquares (s : Finset (Fin n × Fin n)) : Finset (Fin n) :=
+  Finset.univ.filter fun c => (c, G.O c) ∈ s
+
+/-- A column belongs to `OColumnsOfSquares` exactly when its `O`-marking belongs to the given
+set of squares. -/
+@[simp]
+theorem mem_OColumnsOfSquares {s : Finset (Fin n × Fin n)} {c : Fin n} :
+    c ∈ G.OColumnsOfSquares s ↔ (c, G.O c) ∈ s := by
+  simp [OColumnsOfSquares]
+
+/-- The `O`-markings in a set of squares are exactly those indexed by its covered `O`-columns. -/
+theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
+    G.OSet ∩ s = (G.OColumnsOfSquares s).image fun c => (c, G.O c) := by
+  ext p
+  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumnsOfSquares, mem_OSet]
+  constructor
+  · rintro ⟨hp, hs⟩
+    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
+  · rintro ⟨c, hc, rfl⟩
+    exact ⟨rfl, hc⟩
+
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
 The `O`-markings of a grid diagram are indexed by their columns, so this finite set of columns is
 the index set of the variables occurring in the rectangle's weight. -/
 noncomputable def OColumns (r : GridRectangle n) : Finset (Fin n) :=
-  Finset.univ.filter fun c => (c, G.O c) ∈ r.coveredSquares
+  G.OColumnsOfSquares r.coveredSquares
 
 /-- A column is a covered `O`-column exactly when its `O`-marking is a covered square. -/
 @[simp]
@@ -117,13 +201,7 @@ theorem mem_OColumns {r : GridRectangle n} {c : Fin n} :
 /-- The covered `O`-markings are exactly the markings of the covered `O`-columns. -/
 theorem OSet_inter_coveredSquares (r : GridRectangle n) :
     G.OSet ∩ r.coveredSquares = (G.OColumns r).image fun c => (c, G.O c) := by
-  ext p
-  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumns, mem_OSet]
-  constructor
-  · rintro ⟨hp, hcov⟩
-    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
-  · rintro ⟨c, hc, rfl⟩
-    exact ⟨rfl, hc⟩
+  exact G.OSet_inter_eq_image_OColumnsOfSquares r.coveredSquares
 
 /-- The number of covered `O`-columns is the number of `O`-markings among the covered squares:
 a grid diagram has exactly one `O`-marking in each column. -/
@@ -169,6 +247,20 @@ theorem OMonomial_eq_monomial (r : GridRectangle n) :
 theorem OMonomial_ne_zero [Nontrivial R] (r : GridRectangle n) : G.OMonomial R r ≠ 0 := by
   rw [OMonomial_eq_monomial]
   simp
+
+/-- The weight of a rectangle is the product, over the squares it covers, of the variable of the
+square's column at the `O`-marked squares and of `1` elsewhere.
+
+Written this way the weight is a multiplicative function of the covered-square domain alone, so
+any repartition of a union of covered squares into rectangles preserves the product of the
+weights. That is what the recutting arguments for `∂⁻ ∘ ∂⁻ = 0` need. -/
+theorem OMonomial_eq_prod_coveredSquares (r : GridRectangle n) :
+    G.OMonomial R r =
+      ∏ p ∈ r.coveredSquares,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  classical
+  rw [OMonomial, Finset.prod_ite_mem, Finset.inter_comm, G.OSet_inter_coveredSquares r,
+    Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
 
 /-- The weight of a rectangle has total degree the number of `O`-markings the rectangle covers.
 
@@ -251,9 +343,9 @@ theorem unblockedCoefficient_self (x : GridState n) : G.unblockedCoefficient R x
 /-- The constant term of a matrix coefficient of the unblocked differential counts those
 contributing rectangles that carry no `O`-marking either.
 
-This is the square-centred count obtained by setting every variable to zero. It is not identified
-here with the current canonical fully blocked coefficient, whose `GridRectangle.AvoidsMarkings`
-predicate still uses the smaller open interior. -/
+This is the count obtained by setting every variable to zero;
+`fullyBlockedRectangles_eq_filter` identifies the rectangles it counts with the fully blocked
+ones. -/
 theorem constantCoeff_unblockedCoefficient (x y : GridState n) :
     constantCoeff (G.unblockedCoefficient R x y) =
       (((G.unblockedRectangles x y).filter fun r =>
@@ -273,6 +365,34 @@ theorem constantCoeff_unblockedCoefficient (x y : GridState n) :
     exact Finset.prod_eq_zero hc (by simp)
   rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_const, Finset.sum_const_zero,
     nsmul_eq_mul, mul_one, add_zero]
+
+/-- The rectangles the unblocked differential counts with trivial weight are exactly the fully
+blocked ones: both sets consist of the empty rectangles covering no `X`-marking, and covering no
+`O`-marking is the remaining fully blocked condition. -/
+theorem fullyBlockedRectangles_eq_filter (x y : GridState n) :
+    G.fullyBlockedRectangles x y =
+      (G.unblockedRectangles x y).filter fun r => G.OColumns r.toGridRectangle = ∅ := by
+  classical
+  ext r
+  simp only [Finset.mem_filter, mem_fullyBlockedRectangles, mem_unblockedRectangles,
+    GridRectangleBetween.avoidsMarkings_iff, GridRectangle.squares_eq_coveredSquares,
+    G.OColumns_eq_empty_iff]
+  tauto
+
+/-- The constant term of a matrix coefficient of the unblocked differential is the number of
+fully blocked rectangles it counts. -/
+theorem constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles (x y : GridState n) :
+    constantCoeff (G.unblockedCoefficient R x y) =
+      ((G.fullyBlockedRectangles x y).card : R) := by
+  rw [G.constantCoeff_unblockedCoefficient R x y, G.fullyBlockedRectangles_eq_filter x y]
+
+/-- The fully blocked matrix coefficient is the constant term of the unblocked one: blocking every
+`O`-marking is setting every variable to zero. -/
+theorem fullyBlockedRectangleCount_eq_constantCoeff (x y : GridState n) :
+    G.fullyBlockedRectangleCount x y =
+      constantCoeff (G.unblockedCoefficient (ZMod 2) x y) := by
+  rw [G.constantCoeff_unblockedCoefficient_eq_card_fullyBlockedRectangles (ZMod 2) x y,
+    fullyBlockedRectangleCount_def]
 
 /-- Every monomial occurring in a matrix coefficient of the unblocked differential is the weight of
 one of the rectangles that coefficient counts. -/
@@ -359,6 +479,16 @@ theorem unblockedDifferential_apply_apply (c : GridChainMinus R n) (y : GridStat
     G.unblockedDifferential R c y = c.sum fun x a => a * G.unblockedCoefficient R x y := by
   rw [unblockedDifferential_apply]
   simp [Finsupp.sum_apply]
+
+/-- The matrix of the square of the unblocked differential: its `(x, z)` entry is the sum over
+intermediate grid states of the products of the two matrix coefficients. -/
+theorem unblockedDifferential_sq_single_apply (x z : GridState n) :
+    G.unblockedDifferential R (G.unblockedDifferential R (Finsupp.single x 1)) z =
+      ∑ y : GridState n, G.unblockedCoefficient R x y * G.unblockedCoefficient R y z := by
+  rw [unblockedDifferential_single, unblockedDifferential_apply_apply,
+    Finsupp.sum_fintype _ _ fun _ => zero_mul _]
+  exact Finset.sum_congr rfl fun y _ => by
+    rw [unblockedDifferentialOnGenerator_apply]
 
 /-! ### The bidegree of the unblocked differential -/
 

@@ -96,7 +96,7 @@ corresponding fibre. -/
 theorem monodromyFunctor_map_app {p q : CoveringSpace X} (f : p ⟶ q) (x : X) :
     ((monodromyFunctor X).map f).app (FundamentalGroupoid.mk x) =
       eqToHom (Functor.congr_obj (monodromyFunctor_obj p) (FundamentalGroupoid.mk x)) ≫
-        ↾(IsCoveringMap.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x) ≫
+        ↾(Function.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) x) ≫
         eqToHom (Functor.congr_obj (monodromyFunctor_obj q).symm
           (FundamentalGroupoid.mk x)) := by
   rw [monodromyFunctor_map]
@@ -124,14 +124,14 @@ instance monodromyFunctor_faithful (X : TopCat.{u}) : (monodromyFunctor X).Faith
     have happ := ConcreteCategory.congr_hom happ e'
     calc
       f.hom.left e =
-          (IsCoveringMap.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) (p.proj e) e' :
+          (Function.fiberMap f.hom.left.hom (proj_hom_comp_hom_left_hom f) (p.proj e) e' :
             (q : TopCat)) :=
-        (IsCoveringMap.fiberMap_apply_coe f.hom.left.hom (proj_hom_comp_hom_left_hom f)
+        (Function.fiberMap_apply_coe f.hom.left.hom (proj_hom_comp_hom_left_hom f)
           (p.proj e) e').symm
-      _ = IsCoveringMap.fiberMap g.hom.left.hom (proj_hom_comp_hom_left_hom g) (p.proj e) e' := by
+      _ = Function.fiberMap g.hom.left.hom (proj_hom_comp_hom_left_hom g) (p.proj e) e' := by
         exact Subtype.ext_iff.mp happ
       _ = g.hom.left e :=
-        IsCoveringMap.fiberMap_apply_coe g.hom.left.hom (proj_hom_comp_hom_left_hom g)
+        Function.fiberMap_apply_coe g.hom.left.hom (proj_hom_comp_hom_left_hom g)
           (p.proj e) e'
 
 end TauCeti.CoveringSpace

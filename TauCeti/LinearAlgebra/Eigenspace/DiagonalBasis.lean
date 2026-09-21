@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
+public import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Invariant subspaces of an endomorphism diagonal in a basis
@@ -68,23 +69,13 @@ theorem _root_.Module.Basis.repr_apply_of_apply_basis (b : Module.Basis ι K V)
     · simp [hf j, hj]
   simpa using LinearMap.congr_fun key w
 
-/-- A vector whose only possibly nonzero coordinate is the `i`-th one is that coordinate times
-the `i`-th basis vector. -/
-private theorem eq_smul_of_support_subset_singleton {b : Module.Basis ι K V} {w : V} {i : ι}
-    (h : (b.repr w).support ⊆ {i}) : w = b.repr w i • b i :=
-  calc w = b.repr.symm (b.repr w) := (b.repr.symm_apply_apply w).symm
-    _ = b.repr.symm (Finsupp.single i (b.repr w i)) :=
-        congrArg _ (Finsupp.support_subset_singleton.1 h)
-    _ = b.repr w i • b i := b.repr_symm_single i _
-
 end CommSemiring
 
 /-! ### Invariant subspaces are spanned by basis vectors -/
 
-section Field
+section CoordinateSubtraction
 
-variable [Field K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
-  {W : Submodule K V}
+variable [CommRing K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
 
 /-- **Clearing a coordinate**: subtracting from `f w` the multiple `a j • w` kills the `j`-th
 coordinate and multiplies the `k`-th one by `a k - a j`. -/
@@ -106,6 +97,13 @@ private theorem support_repr_sub_smul_subset [DecidableEq ι] (b : Module.Basis 
   rintro rfl
   exact hk0 (by rw [sub_self, zero_mul])
 
+end CoordinateSubtraction
+
+section Field
+
+variable [Field K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
+  {W : Submodule K V}
+
 private theorem self_mem_aux (b : Module.Basis ι K V) (hf : ∀ i, f (b i) = a i • b i)
     (ha : Function.Injective a) (hW : ∀ v ∈ W, f v ∈ W) :
     ∀ (n : ℕ) (w : V), w ∈ W → (b.repr w).support.card ≤ n →
@@ -124,7 +122,7 @@ private theorem self_mem_aux (b : Module.Basis ι K V) (hf : ∀ i, f (b i) = a 
       -- naming that coordinate keeps it from being rewritten along with `w` below
       set c := b.repr w i
       have hmem : c⁻¹ • w ∈ W := W.smul_mem _ hw
-      rwa [eq_smul_of_support_subset_singleton hsub, smul_smul, inv_mul_cancel₀ hi,
+      rwa [b.eq_smul_of_repr_support_subset_singleton hsub, smul_smul, inv_mul_cancel₀ hi,
         one_smul] at hmem
     · -- otherwise some other coordinate `j` is nonzero, and can be cleared
       obtain ⟨j, hjs, hji⟩ := Finset.not_subset.1 hsub
@@ -160,6 +158,15 @@ theorem _root_.Module.Basis.eq_span_self_mem (b : Module.Basis ι K V)
   · rintro v ⟨-, -, hv⟩
     exact hv
 
+end Field
+
+/-! ### Eigenvectors are multiples of basis vectors -/
+
+section CancelMulZero
+
+variable [CommSemiring K] [IsCancelMulZero K] [AddCommMonoid V] [Module K V] {f : V →ₗ[K] V}
+  {a : ι → K}
+
 /-- **A nonzero eigenvector is a multiple of a single basis vector**, when the endomorphism is
 diagonal in the basis with pairwise distinct eigenvalues, and its eigenvalue is the eigenvalue of
 that basis vector. -/
@@ -178,9 +185,9 @@ theorem _root_.Module.Basis.exists_apply_eq_and_mem_span_singleton (b : Module.B
   have hsupp : (b.repr w).support ⊆ {i} := fun k hk =>
     Finset.mem_singleton.2
       (ha ((mul_right_cancel₀ (Finsupp.mem_support_iff.1 hk) (hcoord k)).trans hci.symm))
-  rw [eq_smul_of_support_subset_singleton hsupp]
+  rw [b.eq_smul_of_repr_support_subset_singleton hsupp]
   exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
 
-end Field
+end CancelMulZero
 
 end TauCeti

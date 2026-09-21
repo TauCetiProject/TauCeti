@@ -121,8 +121,8 @@ def TubeData.toSet {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
     γ ∈ T.toSet part ↔ PathInTube γ part T :=
   Iff.rfl
 
-/-- File-local adapter from Mathlib's unit-interval open-cover partition lemma to the segment
-data needed by the tube construction. -/
+/-- File-local adapter from `Path.exists_monotone_range_subpath_subset` to the segment data needed
+by the tube construction. -/
 private theorem Path.exists_partition_with_property {x y : X} (γ : Path x y) (P : Set X → Prop)
     (h : ∀ z ∈ Set.range γ, ∃ U : Set X, IsOpen U ∧ z ∈ U ∧ P U) :
     ∃ (n : ℕ) (part : IntervalPartition n),
@@ -130,24 +130,55 @@ private theorem Path.exists_partition_with_property {x y : X} (γ : Path x y) (P
         ∀ s : unitInterval, (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) →
           γ s ∈ U := by
   choose U hU_open hU_mem hU_P using h
-  obtain ⟨t, ht0, ht_mono, ⟨N, hN⟩, ht_cover⟩ :=
-    exists_monotone_Icc_subset_open_cover_unitInterval
-      (fun z : Set.range γ ↦ (hU_open z.val z.property).preimage γ.continuous)
-      (fun s _ ↦
-        Set.mem_iUnion.2
-          ⟨⟨γ s, ⟨s, rfl⟩⟩, hU_mem (γ s) ⟨s, rfl⟩⟩)
-  let part : IntervalPartition N := {
-    t := fun k ↦ t (k : ℕ)
-    mono := fun _ _ hij ↦ ht_mono hij
-    t_zero := by simpa using ht0
-    t_last := by simpa using hN N le_rfl
-  }
-  refine ⟨N, part, fun i ↦ ?_⟩
+  obtain ⟨N, t, ht0, htN, ht_mono, ht_cover⟩ :=
+    γ.exists_monotone_range_subpath_subset (U := fun z : Set.range γ ↦ U z.val z.property)
+      fun s ↦ ⟨⟨γ s, s, rfl⟩, γ.continuous.continuousAt.preimage_mem_nhds
+        ((hU_open _ _).mem_nhds (hU_mem _ _))⟩
+  refine ⟨N, ⟨t, ht_mono, ht0, htN⟩, fun i ↦ ?_⟩
   obtain ⟨⟨z, hz⟩, h_seg⟩ := ht_cover i
-  exact ⟨U z hz, hU_open z hz, hU_P z hz, fun s hs ↦ h_seg ⟨hs.1, hs.2⟩⟩
+  rw [Path.range_subpath_of_le _ _ _ (ht_mono i.castSucc_le_succ)] at h_seg
+  exact ⟨U z hz, hU_open z hz, hU_P z hz, fun s hs ↦ h_seg ⟨s, ⟨hs.1, hs.2⟩, rfl⟩⟩
 
-/-- Given segment neighborhoods covering each subpath of `γ`, construct the vertex neighborhoods
-as path components of the finite intersections of adjacent segment neighborhoods. -/
+/-- The vertex neighborhood at a single index `j`: the path component, around `γ (t j)`, of the
+intersection of the segment neighborhoods `U i` adjacent to `j`. It is open and path-connected,
+contains `γ (t j)`, and lies inside each adjacent `U i`. -/
+private theorem Path.exists_vertexNeighborhood [LocallyPathConnectedSpace X]
+    {x y : X} {γ : Path x y} {n : ℕ} {t : Fin (n + 1) → unitInterval} {U : Fin n → Set X}
+    (h_mono : Monotone t) (hU_open : ∀ i, IsOpen (U i))
+    (hU_contains : ∀ i : Fin n, ∀ s : unitInterval,
+      (t i.castSucc : ℝ) ≤ s ∧ s ≤ (t i.succ : ℝ) → γ s ∈ U i) (j : Fin (n + 1)) :
+    ∃ V : Set X, IsOpen V ∧ IsPathConnected V ∧ γ (t j) ∈ V ∧
+      (∀ i : Fin n, j = i.castSucc → V ⊆ U i) ∧
+      (∀ i : Fin n, j = i.succ → V ⊆ U i) := by
+  let U_inter := ⋂ i : Fin n, ⋂ (_ : j = i.castSucc ∨ j = i.succ), U i
+  have hγ_in_inter : γ (t j) ∈ U_inter := by
+    simp only [U_inter, Set.mem_iInter]
+    intro i hi
+    exact hU_contains i (t j) <| by
+      cases hi with
+      | inl h =>
+          constructor <;> apply h_mono <;> simp [h, Fin.le_def]
+      | inr h =>
+          constructor <;> apply h_mono <;> simp [h, Fin.le_def, Fin.succ]
+  refine ⟨pathComponentIn U_inter (γ (t j)), ?_, isPathConnected_pathComponentIn hγ_in_inter,
+    mem_pathComponentIn_self hγ_in_inter, ?_, ?_⟩
+  · apply IsOpen.pathComponentIn
+    apply isOpen_iInter_of_finite
+    intro i
+    apply isOpen_iInter_of_finite
+    intro _
+    exact hU_open i
+  · intro i hi
+    trans U_inter
+    · exact pathComponentIn_subset
+    · exact Set.iInter_subset_of_subset i <| Set.iInter_subset_of_subset (Or.inl hi) <| subset_rfl
+  · intro i hi
+    trans U_inter
+    · exact pathComponentIn_subset
+    · exact Set.iInter_subset_of_subset i <| Set.iInter_subset_of_subset (Or.inr hi) <| subset_rfl
+
+/-- Given segment neighborhoods covering each subpath of `γ`, the vertex neighborhoods of
+`Path.exists_vertexNeighborhood` assemble into a family indexed by the partition points. -/
 private theorem Path.exists_vertexNeighborhood_family [LocallyPathConnectedSpace X]
     {x y : X} {γ : Path x y} {n : ℕ} {t : Fin (n + 1) → unitInterval} {U : Fin n → Set X}
     (h_mono : Monotone t) (hU_open : ∀ i, IsOpen (U i))
@@ -159,38 +190,8 @@ private theorem Path.exists_vertexNeighborhood_family [LocallyPathConnectedSpace
       (∀ j, γ (t j) ∈ V j) ∧
       (∀ i : Fin n, V i.castSucc ⊆ U i) ∧
       (∀ i : Fin n, V i.succ ⊆ U i) := by
-  have V_data : ∀ j : Fin (n + 1),
-      ∃ V : Set X, IsOpen V ∧ IsPathConnected V ∧ γ (t j) ∈ V ∧
-        (∀ i : Fin n, j = i.castSucc → V ⊆ U i) ∧
-        (∀ i : Fin n, j = i.succ → V ⊆ U i) := by
-    intro j
-    let U_inter := ⋂ i : Fin n, ⋂ (_ : j = i.castSucc ∨ j = i.succ), U i
-    have hγ_in_inter : γ (t j) ∈ U_inter := by
-      simp only [U_inter, Set.mem_iInter]
-      intro i hi
-      exact hU_contains i (t j) <| by
-        cases hi with
-        | inl h =>
-            constructor <;> apply h_mono <;> simp [h, Fin.le_def]
-        | inr h =>
-            constructor <;> apply h_mono <;> simp [h, Fin.le_def, Fin.succ]
-    refine ⟨pathComponentIn U_inter (γ (t j)), ?_, isPathConnected_pathComponentIn hγ_in_inter,
-      mem_pathComponentIn_self hγ_in_inter, ?_, ?_⟩
-    · apply IsOpen.pathComponentIn
-      apply isOpen_iInter_of_finite
-      intro i
-      apply isOpen_iInter_of_finite
-      intro _
-      exact hU_open i
-    · intro i hi
-      trans U_inter
-      · exact pathComponentIn_subset
-      · exact Set.iInter_subset_of_subset i <| Set.iInter_subset_of_subset (Or.inl hi) <| subset_rfl
-    · intro i hi
-      trans U_inter
-      · exact pathComponentIn_subset
-      · exact Set.iInter_subset_of_subset i <| Set.iInter_subset_of_subset (Or.inr hi) <| subset_rfl
-  choose V hV_open hV_pathConn hγ_in_V hV_left hV_right using V_data
+  choose V hV_open hV_pathConn hγ_in_V hV_left hV_right using
+    Path.exists_vertexNeighborhood h_mono hU_open hU_contains
   refine ⟨V, hV_open, hV_pathConn, hγ_in_V, ?_, ?_⟩
   · intro i
     exact hV_left i.castSucc i rfl
