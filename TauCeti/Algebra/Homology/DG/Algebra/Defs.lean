@@ -93,6 +93,7 @@ attribute [grind =>] IsNonUnitalDGAlgebra.map_mem
 namespace IsNonUnitalDGAlgebra
 
 /-- The differential commutes with homogeneous projections, up to the degree shift by one. -/
+@[simp]
 theorem map_decompose (h : IsNonUnitalDGAlgebra 𝒜 d) (p : ℤ) (a : A) :
     d (DirectSum.decompose 𝒜 a p : A) =
       (DirectSum.decompose 𝒜 (d a) (p + 1) : A) :=
