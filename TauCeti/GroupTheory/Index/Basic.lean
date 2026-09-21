@@ -114,6 +114,8 @@ abbrev rangeCompHom (φ₁ : A →* B) (φ₂ : B →* C) : φ₁.range →* (φ
 
 /-- If the ranges of `φ₁` and `φ₂` have finite index, then the range of their composite has
 finite index. -/
+@[to_additive /-- If the ranges of two additive homomorphisms have finite index, then the
+range of their composite has finite index. -/]
 theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.range.FiniteIndex]
     [φ₂.range.FiniteIndex] : (φ₂.comp φ₁).range.FiniteIndex := by
   refine ⟨?_⟩

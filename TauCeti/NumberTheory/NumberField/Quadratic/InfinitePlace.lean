@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
-public import TauCeti.NumberTheory.NumberField.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # The infinite place of a quadratic field `ℚ(√d)`

@@ -102,10 +102,9 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
     nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ.2)]
   have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
       ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := by
-    have hπβ : 0 < Real.pi * β := mul_pos Real.pi_pos hβ.1
-    have harg : (f z - w).arg ∈ Ioc (-(Real.pi * β)) (Real.pi * β) := by
-      constructor <;> nlinarith [(hsector_closed hz).1, (hsector_closed hz).2]
-    simpa only [ofReal_inv] using Complex.cpow_inv_cpow_eq_of_arg_mem hβ.1 harg
+    apply cpow_inv_cpow_of_sector hβ.1
+    rw [abs_le]
+    simpa only [mem_Icc, mul_comm β Real.pi] using hsector_closed hz
   have hgcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz
     have hbase : 0 ≤ (f z - w).re ∨ (f z - w).im ≠ 0 := by
@@ -136,7 +135,7 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
     have hzx : z ≠ (x : ℂ) := fun h => by simpa [h] using hz.2
     have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
       ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
-    have hpos := Complex.cpow_inv_re_pos_of_arg_mem_sector hβ.1
+    have hpos := cpow_inv_re_pos_of_arg_mem_sector hβ.1
       (hq_ne hzclosed hzx) (hsector_open z hz)
     simpa only [mem_ofPred_eq, g, mul_im, I_re, I_im, zero_mul, one_mul, zero_add] using hpos
   have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
@@ -182,7 +181,7 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
     have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
       ⟨hz.1, by simpa only [mem_ofPred_eq] using hz.2.le⟩
     rw [hhroot hz, mem_slitPlane_iff]
-    exact Or.inl (Complex.cpow_inv_re_pos_of_arg_mem_sector hβ.1
+    exact Or.inl (cpow_inv_re_pos_of_arg_mem_sector hβ.1
       (hq_ne hzclosed (fun h => by simpa [h] using hz.2)) (hsector_open z hz))
   · intro z hz
     have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=

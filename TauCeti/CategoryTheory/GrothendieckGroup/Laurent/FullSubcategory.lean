@@ -14,7 +14,17 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Resolution
 
 This file compares the exact Grothendieck groups associated to the graded and ungraded exact
 structures induced on a shift-stable, extension-closed full subcategory. It also records the
-transport of the Euler class of a finite resolution across this comparison.
+transport of the Euler class of a finite resolution across this comparison, and the compatibility
+of that Euler class with forgetting the grading along a conflation-exact functor into an ungraded
+exact category.
+
+## Main results
+
+* `TauCeti.GradedExactStructure.ofExactK0_toUngraded_symm_eulerClassFullSubcategory`: the graded
+  Euler class of a finite resolution is the alternating sum of the graded classes of its terms.
+* `TauCeti.GradedExactStructure.forgetGrading_foldAlternating`: at `q = 1`, forgetting the grading
+  carries the graded Euler class of a finite resolution to the Euler class of its image
+  resolution.
 -/
 
 public section
@@ -24,7 +34,7 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 open LaurentPolynomial hiding C
 
-universe w v u
+universe w w' v v' u u'
 
 namespace GradedExactStructure
 
@@ -81,6 +91,47 @@ theorem foldAlternating_shift_eq_T_one_smul_of_linearMap
         r.foldAlternating
           (fun Z hZ => LaurentK0.of (E.fullSubcategory R hR hRshift) ⟨Z, hZ⟩) := by
   rw [← hs, ← hr, ← map_smul, hshift]
+
+section ForgetGrading
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] [LocallySmall.{w'} D]
+  {E' : ExactStructure D} {Q : ObjectProperty D} [ObjectProperty.EssentiallySmall.{w'} Q]
+  [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts] (hQ : E'.IsExtensionClosed Q)
+  {F : C ⥤ D} [F.Additive] (hF : E.toExactStructure.IsConflationExact E' F)
+  (comm : E.shift.functor ⋙ F ≅ F) (hRQ : ∀ Y : R.FullSubcategory, Q (F.obj Y.obj))
+
+/-- **Forgetting the grading of a finite resolution.** Let `F` be a conflation-exact functor into
+an ungraded exact category with `{1} ⋙ F ≅ F`, carrying the shift-stable extension-closed
+property `R` into an extension-closed property `Q`. Applying `F` to a finite `R`-resolution of `X`
+gives a finite `Q`-resolution of `F X`, and the graded Euler class of the first, specialized at
+`q = 1`, is the Euler class of the second.
+
+Both alternating sums are computed termwise, and forgetting the grading sends the graded class of
+each term to the ungraded class of its image. -/
+theorem forgetGrading_foldAlternating {X : C} (r : E.toExactStructure.FiniteResolution R X) :
+    LaurentK0.forgetGrading
+        (E.isConflationExact_lift R hR hRshift hRQ hQ hF)
+        (E.liftCommShift R hR hRshift hRQ comm)
+        (LaurentSpecialization.mk 1
+          (r.foldAlternating fun Z hZ => LaurentK0.of (E.fullSubcategory R hR hRshift) ⟨Z, hZ⟩)) =
+      (r.map hF fun Z hZ => hRQ ⟨Z, hZ⟩).eulerClassFullSubcategory hQ := by
+  rw [ExactStructure.FiniteResolution.eulerClassFullSubcategory_map hQ hF
+    fun Z hZ => hRQ ⟨Z, hZ⟩]
+  induction r with
+  | base hX =>
+    rw [ExactStructure.FiniteResolution.foldAlternating_base,
+      ExactStructure.FiniteResolution.foldAlternating_base, LaurentK0.forgetGrading_mk_of]
+    -- `Q.lift (R.ι ⋙ F) hRQ` sends `⟨Z, hZ⟩` to `⟨F.obj Z, _⟩` by definition.
+    rfl
+  | step hZ i p zero hp r ih =>
+    rw [ExactStructure.FiniteResolution.foldAlternating_step,
+      ExactStructure.FiniteResolution.foldAlternating_step, map_sub, map_sub, ih,
+      LaurentK0.forgetGrading_mk_of]
+    -- `Q.lift (R.ι ⋙ F) hRQ` sends `⟨Z, hZ⟩` to `⟨F.obj Z, _⟩` by definition.
+    rfl
+
+end ForgetGrading
 
 end GradedExactStructure
 

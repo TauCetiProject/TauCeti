@@ -167,7 +167,51 @@ theorem arrayCol_apply (X : ℕ × ℕ → Ω → α) (j : ℕ) (ω : Ω) (i : �
 theorem arrayDiag_apply (X : ℕ × ℕ → Ω → α) (i : ℕ) : arrayDiag X i = X (i, i) :=
   (rfl)
 
+/-- The symmetric arrays with constant diagonal value `d`: `x (i, j) = x (j, i)` and
+`x (i, i) = d`. For `α = Bool` and `d = false` these are the adjacency arrays of the simple
+graphs on `ℕ`. -/
+def symmetricArraysWithDiag (α : Type*) (d : α) : Set (ℕ × ℕ → α) :=
+  {x | (∀ i j, x (i, j) = x (j, i)) ∧ ∀ i, x (i, i) = d}
+
+/-- Membership in the symmetric arrays with diagonal `d`. -/
+@[simp]
+theorem mem_symmetricArraysWithDiag_iff {d : α} {x : ℕ × ℕ → α} :
+    x ∈ symmetricArraysWithDiag α d ↔ (∀ i j, x (i, j) = x (j, i)) ∧ ∀ i, x (i, i) = d :=
+  Iff.rfl
+
+/-- The symmetric arrays with diagonal `d` are stable under diagonal relabelling. -/
+@[simp]
+theorem preimage_pairReindex_symmetricArraysWithDiag (σ : Equiv.Perm ℕ) (d : α) :
+    pairReindex σ σ ⁻¹' symmetricArraysWithDiag α d = symmetricArraysWithDiag α d := by
+  ext x
+  simp only [Set.mem_preimage, mem_symmetricArraysWithDiag_iff, pairReindex_apply]
+  constructor
+  · rintro ⟨hs, hd⟩
+    exact ⟨fun i j => by simpa using hs (σ.symm i) (σ.symm j),
+      fun i => by simpa using hd (σ.symm i)⟩
+  · rintro ⟨hs, hd⟩
+    exact ⟨fun i j => hs _ _, fun i => hd _⟩
+
 variable [MeasurableSpace α] [MeasurableSpace Ω]
+
+/-- The symmetric arrays with diagonal `d` form a measurable set. -/
+@[simp, measurability]
+theorem measurableSet_symmetricArraysWithDiag [MeasurableEq α] (d : α) :
+    MeasurableSet (symmetricArraysWithDiag α d) := by
+  have h1 : MeasurableSet {x : ℕ × ℕ → α | ∀ i j, x (i, j) = x (j, i)} := by
+    have : {x : ℕ × ℕ → α | ∀ i j, x (i, j) = x (j, i)}
+        = ⋂ i, ⋂ j, {x : ℕ × ℕ → α | x (i, j) = x (j, i)} := by ext; simp
+    rw [this]
+    exact MeasurableSet.iInter fun i => MeasurableSet.iInter fun j =>
+      measurableSet_eq_fun (measurable_pi_apply _) (measurable_pi_apply _)
+  have h2 : MeasurableSet {x : ℕ × ℕ → α | ∀ i, x (i, i) = d} := by
+    have : {x : ℕ × ℕ → α | ∀ i, x (i, i) = d} = ⋂ i, {x : ℕ × ℕ → α | x (i, i) = d} := by
+      ext; simp
+    rw [this]
+    exact MeasurableSet.iInter fun i =>
+      measurableSet_eq_fun (measurable_pi_apply _) measurable_const
+  exact h1.inter h2
+
 
 @[fun_prop]
 theorem measurable_pairReindex (σ τ : Equiv.Perm ℕ) :

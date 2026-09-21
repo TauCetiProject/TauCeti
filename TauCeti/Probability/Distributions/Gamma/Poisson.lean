@@ -95,7 +95,7 @@ private lemma integral_poissonMass_gammaMeasure {r p : ℝ} (hr : 0 < r) (hp : 0
     field_simp [h1mp.ne']
     ring
   -- Collect the Poisson mass with the Gamma density on its positive support.
-  rw [TauCeti.integral_gammaMeasure_eq hr hrate]
+  rw [TauCeti.integral_gammaMeasure_eq_integral_Ioi hr hrate]
   -- In this real-valued specialization, scalar multiplication is ordinary multiplication.
   change (∫ x in Ioi 0,
     ((p / (1 - p)) ^ r / Real.Gamma r * x ^ (r - 1) *

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.Degree
-public import TauCeti.NumberTheory.NumberField.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # The candidate genus field of an imaginary quadratic field is totally complex

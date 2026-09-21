@@ -8,35 +8,30 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Principal powers on an angular sector
+# Principal complex powers on a sector
 
-The principal power `z ^ (1 / β)` straightens the sector of opening `βπ` centred on the
-positive real axis into the right half-plane.  This file records the pointwise facts needed for
-that construction: a closed symmetric sector is cut out by a single linear inequality, the
-straightened point has positive real part, and raising it back to the power `β` recovers `z`.
-
-These facts are useful when a polygonal corner is normalized to a symmetric sector.  Multiplication
-by `I` then carries the right half-plane to the upper half-plane, where Schwarz reflection applies.
+This file records pointwise facts about symmetric angular sectors and principal complex powers.
+A closed symmetric sector can be described by a continuous linear inequality, the principal
+inverse power maps the corresponding open sector to the right half-plane, and raising that root
+back to the original power recovers the starting point.
 
 ## Main results
 
-* `Complex.arg_mem_Icc_iff_norm_mul_cos_le_re` -- a closed symmetric sector of half-opening `a` is
-  the set where `‖z‖ * cos a ≤ z.re`, a description free of the argument branch cut.
-* `Complex.cpow_inv_re_pos_of_arg_mem_sector` -- the inverse power maps the sector into the right
-  half-plane.
-* `Complex.cpow_inv_cpow_eq_of_arg_mem` -- the inverse power is a genuine inverse throughout the
-  principal-branch range.
+* `TauCeti.arg_mem_Icc_iff_norm_mul_cos_le_re` characterizes a closed symmetric sector without
+  referring to the discontinuous argument function on the target side.
+* `TauCeti.cpow_inv_re_pos_of_arg_mem_sector` maps an open sector into the right half-plane.
+* `TauCeti.cpow_inv_cpow_of_sector` recovers a point after taking its principal inverse power.
 -/
 
 public section
 
-open Set
+open Complex Set
 
-namespace Complex
+namespace TauCeti
 
 /-- A complex number lies in the closed sector of half-opening `a ≤ π` around the positive real
-axis exactly when `‖z‖ * cos a ≤ z.re`.  The right-hand side is continuous in `z`, so this
-characterization passes to limits, unlike the argument itself.  For `a = π / 2` this specializes
+axis exactly when `‖z‖ * cos a ≤ z.re`. The right-hand side is continuous in `z`, so this
+characterization passes to limits, unlike the argument itself. For `a = π / 2` this specializes
 to `Complex.abs_arg_le_pi_div_two_iff`. -/
 theorem arg_mem_Icc_iff_norm_mul_cos_le_re {z : ℂ} {a : ℝ} (ha : a ∈ Icc (0 : ℝ) Real.pi) :
     z.arg ∈ Icc (-a) a ↔ ‖z‖ * Real.cos a ≤ z.re := by
@@ -69,23 +64,22 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
     simpa [div_inv_eq_mul, div_eq_mul_inv, hβ.ne', mul_comm, mul_left_comm, mul_assoc] using harg
   exact mul_pos hnorm (Real.cos_pos_of_mem_Ioo hangle)
 
-/-- If dividing the argument by `β` stays in the principal-argument range, raising the principal
-inverse power back to the power `β` recovers the original point. -/
-@[simp] theorem cpow_inv_cpow_eq_of_arg_mem {z : ℂ} {β : ℝ} (hβ : 0 < β)
-    (harg : z.arg ∈ Ioc (-(Real.pi * β)) (Real.pi * β)) :
-    (z ^ (β : ℂ)⁻¹) ^ (β : ℂ) = z := by
-  rw [← ofReal_inv]
-  have hangle : z.arg * β⁻¹ ∈ Ioc (-Real.pi) Real.pi := by
-    rw [← (Set.mem_preimage (f := fun x : ℝ => x * β⁻¹)),
-      preimage_mul_const_Ioc₀ _ _ (inv_pos.mpr hβ)]
-    simpa [div_inv_eq_mul, hβ.ne', mul_comm] using harg
-  rw [← cpow_mul]
-  · rw [← ofReal_mul, inv_mul_cancel₀ hβ.ne', ofReal_one, cpow_one]
-  · simp only [log_im, mul_im, ofReal_re, ofReal_im, mul_zero]
-    linarith [hangle.1, Real.pi_pos]
-  · simp only [log_im, mul_im, ofReal_re, ofReal_im, mul_zero]
-    linarith [hangle.2, Real.pi_pos]
+/-- On a sector of half-angle `β * π / 2`, the principal `β`-th root followed by the
+principal `β`-th power is the identity, including at zero. -/
+theorem cpow_inv_cpow_of_sector {w : ℂ} {β : ℝ} (hβ : 0 < β)
+    (hw : |w.arg| ≤ β * Real.pi / 2) :
+    (w ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = w := by
+  have hb : |w.arg * β⁻¹| ≤ Real.pi / 2 := by
+    rw [← div_eq_mul_inv, abs_div, abs_of_pos hβ, div_le_iff₀ hβ]
+    nlinarith [hw]
+  obtain ⟨hl, hu⟩ := abs_le.mp hb
+  rw [← Complex.cpow_mul]
+  · simp [hβ.ne']
+  · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
+    linarith [Real.pi_pos]
+  · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
+    linarith [Real.pi_pos]
 
-end Complex
+end TauCeti
 
 end

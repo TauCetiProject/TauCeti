@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 
+import TauCeti.Topology.Algebra.Module.Complement
+
 /-!
 # Fredholm operators
 
@@ -93,22 +95,6 @@ section CompEquiv
 
 variable {T : E →L[𝕜] F}
 
-/-- A continuous linear equivalence carries a complemented submodule to a complemented
-submodule. -/
-private lemma closedComplemented_map_continuousLinearEquiv (e : E ≃L[𝕜] F)
-    (p : Submodule 𝕜 E) (hp : p.ClosedComplemented) :
-    (p.map (e : E →ₗ[𝕜] F)).ClosedComplemented := by
-  obtain ⟨P, hP⟩ := hp
-  let ep := e.submoduleMap p
-  refine ⟨ep.toContinuousLinearMap.comp (P.comp (e.symm : F →L[𝕜] E)), ?_⟩
-  intro y
-  have h := congrArg ep (hP (ep.symm y))
-  simpa only [ep, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.submoduleMap_apply,
-    ContinuousLinearEquiv.submoduleMap_symm_apply,
-    ep.apply_symm_apply] using h
-
 /-- The kernel of `e.comp T` is the kernel of `T`, since `e` is injective. Used by
 `ContinuousLinearMap.IsFredholm.equiv_comp`. -/
 private lemma ker_equiv_comp (T : E →L[𝕜] F) (e : F ≃L[𝕜] G) :
@@ -181,7 +167,7 @@ lemma _root_.ContinuousLinearMap.IsFredholm.comp_equiv (hT : ContinuousLinearMap
   · rw [range_comp_equiv T e]
     exact hT.finite_coker
   · rw [ker_comp_equiv T e]
-    exact closedComplemented_map_continuousLinearEquiv e.symm _ hT.closedComplemented_ker
+    exact hT.closedComplemented_ker.map e.symm
 
 end CompEquiv
 

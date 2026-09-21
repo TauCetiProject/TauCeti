@@ -10,7 +10,7 @@ public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Distributions.Measurability
 
 import TauCeti.Probability.Moments.IntegrableExpMul
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The inverse-gamma distribution
@@ -26,9 +26,10 @@ and obtains the mean and variance together with the matching integrability thres
 shows that nonpositive exponential moments exist while every positive exponential moment diverges.
 
 The density is derived from the pushforward definition.  On `(0, ∞)`, inversion is an involution
-with absolute derivative `x⁻²`; Mathlib's one-dimensional Jacobian formula transports the Gamma
-density through this map.  The moment calculations reduce to Euler's Gamma integral after
-composing a power with inversion.
+with absolute derivative `x⁻²`; the one-dimensional change of variables
+`TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul` transports the Gamma density through this
+map.  The moment calculations reduce to Euler's Gamma integral after composing a power with
+inversion.
 
 ## Main declarations
 
@@ -262,50 +263,18 @@ theorem inverseGammaMeasure_eq_withDensity (a r : ℝ) :
     inverseGammaMeasure a r = volume.withDensity (inverseGammaPDF a r) := by
   by_cases h : 0 < a ∧ 0 < r
   · obtain ⟨ha, hr⟩ := h
-    ext s hs
-    let u : Set ℝ := Ioi 0 ∩ Inv.inv ⁻¹' s
-    have hu : MeasurableSet u := measurableSet_Ioi.inter (measurable_inv hs)
-    have himage : Inv.inv '' u = Ioi 0 ∩ s := by
-      apply Set.Subset.antisymm
-      · rintro _ ⟨z, hz, rfl⟩
-        have hzpos : 0 < z := hz.1
-        refine ⟨by simpa using inv_pos.mpr hzpos, by simpa using hz.2⟩
-      · intro y hy
-        have hypos : 0 < y := hy.1
-        refine ⟨y⁻¹, ?_, inv_inv y⟩
-        exact ⟨by simpa using inv_pos.mpr hypos, by simpa using hy.2⟩
-    calc
-      inverseGammaMeasure a r s
-          = ∫⁻ y in Inv.inv ⁻¹' s, gammaPDF a r y := by
-              rw [inverseGammaMeasure_of_pos ha hr, Measure.map_apply measurable_inv hs,
-                gammaMeasure, withDensity_apply _ (measurable_inv hs)]
-      _ = ∫⁻ y in u, gammaPDF a r y := by
-            have hpre : MeasurableSet (Inv.inv ⁻¹' s) := measurable_inv hs
-            calc
-              ∫⁻ y in Inv.inv ⁻¹' s, gammaPDF a r y =
-                  ∫⁻ y in Inv.inv ⁻¹' s, (Ioi 0).indicator (gammaPDF a r) y := by
-                apply setLIntegral_congr_fun_ae hpre
-                filter_upwards [volume.ae_ne (0 : ℝ)] with y hy _
-                rcases lt_or_gt_of_ne hy with hy | hy
-                · have hymem : y ∉ Ioi (0 : ℝ) := by simpa using not_lt.mpr hy.le
-                  rw [gammaPDF_of_neg hy, indicator_apply, ite_eq_right hymem]
-                · have hymem : y ∈ Ioi (0 : ℝ) := hy
-                  rw [indicator_apply, ite_eq_left hymem]
-              _ = ∫⁻ y in u, gammaPDF a r y := by
-                rw [setLIntegral_indicator measurableSet_Ioi]
-      _ = ∫⁻ y in u,
-            ENNReal.ofReal (abs (-((y ^ 2)⁻¹))) * inverseGammaPDF a r y⁻¹ := by
-            refine setLIntegral_congr_fun hu fun y hy ↦ ?_
-            exact (ofReal_abs_inv_deriv_mul_inverseGammaPDF ha hr hy.1).symm
-      _ = ∫⁻ y in Ioi 0 ∩ s, inverseGammaPDF a r y := by
-            rw [← himage]
-            exact (lintegral_image_eq_lintegral_abs_deriv_mul
-              (f := Inv.inv) (f' := fun y : ℝ ↦ -((y ^ 2)⁻¹)) hu
-              (fun y hy ↦ (hasDerivAt_inv hy.1.ne').hasDerivWithinAt)
-              (MeasurableEquiv.inv ℝ).injective.injOn (inverseGammaPDF a r)).symm
-      _ = volume.withDensity (inverseGammaPDF a r) s := by
-            rw [withDensity_apply _ hs, ← setLIntegral_indicator measurableSet_Ioi,
-              indicator_Ioi_inverseGammaPDF]
+    have himage : Inv.inv '' Ioi (0 : ℝ) = Ioi 0 := by
+      ext y
+      simp [Set.image_inv_eq_inv]
+    have hweight : gammaPDF a r =ᵐ[volume.restrict (Ioi 0)]
+        fun y ↦ ENNReal.ofReal |-(y ^ 2)⁻¹| * inverseGammaPDF a r y⁻¹ := by
+      filter_upwards [ae_restrict_mem measurableSet_Ioi] with y hy
+      exact (ofReal_abs_inv_deriv_mul_inverseGammaPDF ha hr hy).symm
+    rw [inverseGammaMeasure_of_pos ha hr, gammaMeasure_eq_withDensity_restrict_Ioi,
+      withDensity_congr_ae hweight,
+      MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioi measurable_inv
+        (fun y hy ↦ (hasDerivAt_inv (ne_of_gt hy)).hasDerivWithinAt) inv_injective.injOn,
+      himage, ← withDensity_indicator measurableSet_Ioi, indicator_Ioi_inverseGammaPDF]
   · rw [inverseGammaMeasure_of_not_pos h]
     ext s hs
     simp [withDensity_apply, hs, inverseGammaPDF_of_not_pos h]

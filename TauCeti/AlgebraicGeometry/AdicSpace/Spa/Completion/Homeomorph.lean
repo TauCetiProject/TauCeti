@@ -33,9 +33,11 @@ image — when `A⁺` is a ring of integral elements, so is `Â⁺`, by
 `TauCeti.Huber.IsRingOfIntegralElements.completion`.
 
 Wedhorn's Proposition 7.48 also asserts that the homeomorphism matches rational subsets. That
-clause is **not** proved here. One direction is already available for any dense map, as
-`exists_mem_spaRationalFamily_spaComap_preimage_eq_of_denseRange`; the other needs that the image
-of an open ideal of `A` generates an open ideal of `Â`, which is a separate matter.
+clause is proved in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.RationalSubset`. One
+direction is available for any dense map, as
+`exists_mem_spaRationalFamily_spaComap_preimage_eq_of_denseRange`; the other rests on
+`TauCeti.Huber.isOpen_map_coeRingHom`, that the image of an open ideal of `A` generates an open
+ideal of `Â`.
 
 ## Main definitions
 
@@ -46,8 +48,9 @@ of an open ideal of `A` generates an open ideal of `Â`, which is a separate mat
 
 * `TauCeti.ValuationSpectrum.spaCompletionHomeomorph`: the adic spectrum is unchanged by
   completion.
-* `TauCeti.ValuationSpectrum.spaCompletionHomeomorph_apply`: the homeomorphism is pullback along
-  the completion map.
+* `TauCeti.ValuationSpectrum.spaCompletionHomeomorph_apply` and
+  `TauCeti.ValuationSpectrum.coe_spaCompletionHomeomorph`: the homeomorphism is pullback along
+  the completion map, pointwise and as an equality of functions.
 
 ## References
 
@@ -100,6 +103,16 @@ theorem spaCompletionHomeomorph_apply (Aplus : Subring A) (v : spa (completionPl
       spaComap Completion.coeRingHom Completion.continuous_coeRingHom Aplus (completionPlus Aplus)
         (fun _ ha ↦ map_mem_completionPlus ha) v :=
   Topology.IsEmbedding.toHomeomorphOfSurjective_apply _ _ v
+
+/-- The completion homeomorphism, as a function, is pullback along the completion map. This is the
+functional companion of the pointwise `spaCompletionHomeomorph_apply`, in the form that rewrites
+under `Set.preimage` and `Set.image`. -/
+@[simp]
+theorem coe_spaCompletionHomeomorph (Aplus : Subring A) :
+    ⇑(spaCompletionHomeomorph Aplus) =
+      spaComap Completion.coeRingHom Completion.continuous_coeRingHom Aplus
+        (completionPlus Aplus) fun _ ha ↦ map_mem_completionPlus ha :=
+  funext (spaCompletionHomeomorph_apply Aplus)
 
 end TauCeti.ValuationSpectrum
 

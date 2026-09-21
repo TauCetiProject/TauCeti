@@ -8,11 +8,22 @@ module
 public import Mathlib.RingTheory.Henselian
 
 /-!
-# Roots of elements congruent to one in a Henselian ring
+# Henselian rings
 
-Let `R` be a ring that is Henselian at an ideal `J`, and let `n` be a natural number that is
-invertible in `R`. Then every element `w` congruent to `1` modulo an ideal `I ≤ J` has an `n`-th
-root that is itself congruent to `1` modulo `I`.
+This file gathers the basic consequences of Henselianity that Mathlib does not provide.
+
+Mathlib has both halves of the comparison between `HenselianRing R I`, which lifts a simple root
+over `R ⧸ I`, and `HenselianLocalRing R`, which lifts a simple root over the residue field, except
+for the step that produces the local class from the ideal-theoretic one at `I = 𝔪`. So
+`IsAdicComplete.henselianRing` never reaches `HenselianLocalRing`, and the Henselian API is
+unavailable for a complete local ring such as the integers of a complete discretely valued field.
+
+The step is short: the two differ only in their simplicity hypothesis, `IsUnit (f' a₀)` against
+`IsUnit (Ideal.Quotient.mk 𝔪 (f' a₀))`, and over a local ring a unit maps to a unit.
+
+The second half of the file extracts roots. Let `R` be a ring that is Henselian at an ideal `J`,
+and let `n` be a natural number that is invertible in `R`. Then every element `w` congruent to `1`
+modulo an ideal `I ≤ J` has an `n`-th root that is itself congruent to `1` modulo `I`.
 
 This is the standard source of `n`-th roots of principal units away from the residue
 characteristic: over the integer ring of a local field it shows that each positive-depth step of
@@ -23,6 +34,10 @@ square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ 
 
 ## Main results
 
+* `TauCeti.HenselianRing.henselianLocalRing`: a local ring that is Henselian at its maximal ideal
+  is a Henselian local ring.
+* `TauCeti.IsAdicComplete.henselianLocalRing`: a local ring that is complete for the adic topology
+  of its maximal ideal is a Henselian local ring.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
 
@@ -39,6 +54,26 @@ public section
 open Polynomial
 
 namespace TauCeti
+
+open IsLocalRing
+
+/-- A local ring that is Henselian at its maximal ideal is a Henselian local ring. The two
+hypotheses differ only in their simplicity condition, which asks the derivative to be a unit in the
+residue field rather than in the ring, and over a local ring the image of a unit is a unit.
+
+This is not an instance: Mathlib already registers the converse implication as one, so the pair
+would form an instance cycle. -/
+theorem HenselianRing.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
+    [HenselianRing R (maximalIdeal R)] : HenselianLocalRing R where
+  is_henselian f hf a₀ h₁ h₂ :=
+    HenselianRing.is_henselian (I := maximalIdeal R) f hf a₀ h₁ (h₂.map _)
+
+/-- A local ring that is complete for the adic topology of its maximal ideal is a Henselian local
+ring. This is Mathlib's `IsAdicComplete.henselianRing` at `I = 𝔪`, read through
+`TauCeti.HenselianRing.henselianLocalRing`. -/
+instance IsAdicComplete.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
+    [IsAdicComplete (maximalIdeal R) R] : HenselianLocalRing R :=
+  HenselianRing.henselianLocalRing R
 
 namespace HenselianRing
 

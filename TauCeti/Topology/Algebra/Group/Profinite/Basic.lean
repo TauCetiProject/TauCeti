@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
-public import TauCeti.Topology.Algebra.Group.Quotient
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Profinite groups: quotients by normal subgroups, and open subgroups

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
+public import TauCeti.NumberTheory.LocalField.Unramified
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeExtension
 
 /-!
@@ -22,7 +23,9 @@ ramification index of `w` over `R`:
 `TauCeti.ramificationIndex K_v L_w` with `w.asIdeal.ramificationIdx R`.
 
 So the local invariant, defined through the normalized valuations of `K_v` and `L_w` alone, is the
-global one, defined as a length of a localization of `B`.
+global one, defined as a length of a localization of `B`. In particular, when `B` is essentially
+of finite type over `R`, a place unramified over the base completes to an unramified extension of
+local fields.
 
 ## Main results
 
@@ -30,6 +33,9 @@ global one, defined as a length of a localization of `B`.
   zero-preserving normalized valuation of `K_v` is the inverse of its adic valuation `Valued.v`.
 * `IsDedekindDomain.HeightOneSpectrum.ramificationIndex_adicCompletion`: the ramification index
   of `L_w / K_v` is `w.asIdeal.ramificationIdx R`.
+* `IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt`: for `B`
+  essentially of finite type over `R`, unramifiedness of `w` over `R` gives unramifiedness of
+  `L_w / K_v`.
 
 ## References
 
@@ -94,6 +100,18 @@ theorem ramificationIndex_adicCompletion :
   simpa only [WithZero.coe_pow, ← TauCeti.normalizedValuationWithZero_coe,
     Units.coe_map, MonoidHom.coe_coe] using
       normalizedValuationWithZero_adicCompletion_algebraMap v w (x : v.adicCompletion K)
+
+/-- **An unramified place gives an unramified completed extension.** If `B` is essentially of
+finite type over `R` and `w` is unramified over `R`, the extension of local fields `L_w / K_v` is
+unramified. -/
+theorem isUnramified_adicCompletion_of_isUnramifiedAt [Algebra.EssFiniteType R B]
+    [Algebra.IsUnramifiedAt R w.asIdeal] :
+    TauCeti.IsUnramified (v.adicCompletion K) (w.adicCompletion L) := by
+  rw [TauCeti.isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_adicCompletion v w,
+    Ideal.ramificationIdx_eq_one w.asIdeal R]
+
+scoped[AdicCompletionExtension] attribute [instance]
+  IsDedekindDomain.HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt
 
 end Extension
 

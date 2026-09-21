@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
-public import Mathlib.RingTheory.Henselian
+public import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # The ring of integers of a single adic completion
@@ -33,8 +33,6 @@ Everything here concerns one completion. The comparison of two completions along
   ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
 * `IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`: the subspace
   topology on `𝒪_v` is the `𝔪`-adic one.
-* `IsDedekindDomain.HeightOneSpectrum.henselianLocalRing_adicCompletionIntegers`: `𝒪_v` is a
-  Henselian local ring, being local and complete for its maximal ideal.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
   congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
@@ -258,14 +256,6 @@ instance isAdicComplete_adicCompletionIntegers :
   -- `Eq`; the lemma is `protected` and must be named in full.
   (IsAdic.isAdicComplete_iff (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))).mpr
     ⟨inferInstance, inferInstance⟩
-
-/-- **The ring of integers of an adic completion is a Henselian local ring.** It is a local ring
-that is complete with respect to its maximal ideal, and such rings are Henselian. -/
-instance henselianLocalRing_adicCompletionIntegers :
-    HenselianLocalRing (v.adicCompletionIntegers K) where
-  is_henselian f hf a₀ h₁ h₂ :=
-    (IsAdicComplete.henselianRing _
-      (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))).is_henselian f hf a₀ h₁ (h₂.map _)
 
 /-- **`R` is dense in `𝒪_v`**: every element of the ring of integers of the completion is
 congruent to an element of `R` modulo any power `𝔪 ^ n` of the maximal ideal. -/
