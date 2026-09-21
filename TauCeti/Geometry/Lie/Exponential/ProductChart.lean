@@ -85,7 +85,6 @@ theorem lieExpMulLieExp_apply (p q : Submodule ℝ (LeftInvariantDerivation I G)
   rfl
 
 /-- The exponential-product map sends the zero pair to the group identity. -/
-@[simp]
 theorem lieExpMulLieExp_zero (p q : Submodule ℝ (LeftInvariantDerivation I G)) :
     let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
     let _ : ContMDiffMul I 1 G := ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
