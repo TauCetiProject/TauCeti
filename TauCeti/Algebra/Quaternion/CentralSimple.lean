@@ -29,6 +29,8 @@ specialization used by the Brauer-valued invariants.
 * `TauCeti.QuaternionAlgebra.isCentral_of_j_sq_ne_zero`: the nonzero `j`-square specialization.
 * `TauCeti.QuaternionAlgebra.isSimpleRing_of_mul_discr_ne_zero`: a quaternion algebra with
   nonzero `j`-square and nonzero discriminant is simple.
+* `TauCeti.QuaternionAlgebra.completeSquareEquiv`: the change of generators reducing a general
+  quaternion algebra to a unit-parameter symbol.
 * `TauCeti.QuaternionAlgebra.mem_center_iff`: a central element of a unit-parameter symbol has
   zero imaginary coordinates.
 * `TauCeti.QuaternionAlgebra.instIsCentral`: unit-parameter symbol algebras are central.
@@ -107,7 +109,10 @@ private theorem completeSquareInvBasis_lift_apply_j (a b c : K) :
       ⟨0, 0, 1, 0⟩ := by
   simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
-private def completeSquareEquiv (a b c : K) :
+/-- **Completing the square in a quaternion algebra.** The change of generators
+`i ↦ (b + i) / 2` identifies `ℍ[K,a,b,c]` with the unit-parameter presentation
+`ℍ[K,b² + 4a,0,c]`. -/
+def completeSquareEquiv (a b c : K) :
     ℍ[K,a,b,c] ≃ₐ[K] ℍ[K,b ^ 2 + 4 * a,0,c] :=
   AlgEquiv.ofAlgHom (completeSquareBasis a b c).liftHom
     (completeSquareInvBasis a b c).liftHom (by
@@ -149,6 +154,26 @@ private def completeSquareEquiv (a b c : K) :
               (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c])) =
           (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c])
         rw [completeSquareBasis_lift_apply_j, completeSquareInvBasis_lift_apply_j])
+
+@[simp]
+theorem completeSquareEquiv_apply_i (a b c : K) :
+    completeSquareEquiv a b c ⟨0, 1, 0, 0⟩ = ⟨b / 2, 1 / 2, 0, 0⟩ := by
+  simp [completeSquareEquiv, completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
+
+@[simp]
+theorem completeSquareEquiv_apply_j (a b c : K) :
+    completeSquareEquiv a b c ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ := by
+  simp [completeSquareEquiv, completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
+
+@[simp]
+theorem completeSquareEquiv_symm_apply_i (a b c : K) :
+    (completeSquareEquiv a b c).symm ⟨0, 1, 0, 0⟩ = ⟨-b, 2, 0, 0⟩ := by
+  simp [completeSquareEquiv, completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
+
+@[simp]
+theorem completeSquareEquiv_symm_apply_j (a b c : K) :
+    (completeSquareEquiv a b c).symm ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ := by
+  simp [completeSquareEquiv, completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
     {x : ℍ[K,a,(b : K)]}
@@ -207,26 +232,16 @@ instance instIsCentral (a : K) (b : Kˣ) : Algebra.IsCentral K ℍ[K,a,(b : K)] 
     · simpa using ((mem_center_iff a b).mp hx |>.2.1).symm
     · simpa using ((mem_center_iff a b).mp hx |>.2.2).symm⟩⟩
 
-private theorem isSimpleRing_of_isUnit_or_split :
-    IsSimpleRing ℍ[K,(a : K),(b : K)] := by
+instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] := by
   rcases QuaternionAlgebra.forall_isUnit_or_nonempty_algEquiv_matrix a b with hdiv | hsplit
-  · apply IsSimpleRing.of_eq_bot_or_eq_top
-    intro I
-    rw [or_iff_not_imp_left]
-    intro hI
-    obtain ⟨x, hxI, hx0⟩ := SetLike.exists_of_lt
-      (bot_lt_iff_ne_bot.mpr hI : (⊥ : TwoSidedIdeal ℍ[K,(a : K),(b : K)]) < I)
-    obtain ⟨u, hu⟩ := hdiv x hx0
-    rw [← hu] at hxI
-    have hone : (1 : ℍ[K,(a : K),(b : K)]) ∈ I := by
-      simpa using I.mul_mem_left (↑(u⁻¹ : ℍ[K,(a : K),(b : K)]ˣ)) (↑u) hxI
-    exact (TwoSidedIdeal.one_mem_iff I).mp hone
+  · let divisionRing : DivisionRing ℍ[K,(a : K),(b : K)] :=
+      DivisionRing.ofIsUnitOrEqZero (fun x ↦ by
+        by_cases hx : x = 0
+        · exact Or.inr hx
+        · exact Or.inl (hdiv x hx))
+    exact @DivisionRing.isSimpleRing _ divisionRing
   · obtain ⟨e⟩ := hsplit
     exact IsSimpleRing.of_ringEquiv e.symm.toRingEquiv inferInstance
-
-/-- A unit-parameter quaternion symbol is a simple ring. -/
-instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] :=
-  isSimpleRing_of_isUnit_or_split a b
 
 /-- A quaternion algebra with nonzero `j`-square or discriminant is central. -/
 theorem isCentral_of_j_sq_ne_zero_or_discr_ne_zero {a b c : K}

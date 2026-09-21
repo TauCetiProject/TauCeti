@@ -72,14 +72,13 @@ namespace BrauerGroup
 
 variable {K : Type*} [Field K] [Invertible (2 : K)]
 
+/-- The bundled central simple algebra underlying the quaternion symbol `(a,b)`. -/
+noncomputable def quaternionCSA (a b : Kˣ) : CSA K :=
+  CSA.of K ℍ[K,(a : K),(b : K)]
+
 /-- The Brauer class of the quaternion symbol `(a,b)`. -/
 noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
-  BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)])
-
-@[simp]
-theorem quaternionClass_def (a b : Kˣ) :
-    quaternionClass a b = BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)]) :=
-  (rfl)
+  BrauerGroup.mk (quaternionCSA a b)
 
 end BrauerGroup
 
