@@ -34,7 +34,7 @@ point — the degree is surjective, so `Pic X ⧸ Pic⁰ X ≅ ℤ`.
 
 * `LineBundleClass.eulerDegreeHom`, the degree `Pic X →+ ℤ`, and `LineBundleClass.picZero`,
   the subgroup `Pic⁰ X` it cuts out;
-* `SchemeWeilDivisor.eulerDegreeHom_classGroupAddEquivLineBundleClass`: the degree of the line
+* `SchemeWeilDivisor.eulerDegree_classGroupToLineBundleClass`: the degree of the line
   bundle of a divisor class is the weighted degree of that class;
 * `SchemeWeilDivisor.classGroupAddEquivPicZero`, the isomorphism `Cl⁰(X) ≅ Pic⁰(X)`, and
   `SchemeWeilDivisor.weightedDegreeZeroQuotientAddEquivPicZero`, which presents `Pic⁰ X` as the
@@ -109,9 +109,9 @@ namespace SchemeWeilDivisor
 `Cl(X) ≅ Pic X`, the Euler-characteristic degree of the line bundle of a divisor class is the
 residue-degree-weighted degree `Σ_y D(y) [κ(y) : k]` of that class. -/
 @[simp]
-theorem eulerDegreeHom_classGroupAddEquivLineBundleClass
+theorem eulerDegree_classGroupToLineBundleClass
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
-    LineBundleClass.eulerDegreeHom k X (classGroupAddEquivLineBundleClass X c) =
+    LineBundleClass.eulerDegree k (classGroupToLineBundleClass hX.out c) =
       WeilDivisor.OrderSystem.weightedDegreeClass
         (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
         (isWeightedDegreeZero_residueDegree k hX.out) c := by
@@ -120,11 +120,10 @@ theorem eulerDegreeHom_classGroupAddEquivLineBundleClass
       WeilDivisor.weightedDegree
         (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ)) D := by
     rw [WeilDivisor.weightedDegree_apply, ← relativeDegree_apply]
-  simpa [classGroupAddEquivLineBundleClass_apply] using hdegree
+  simpa using hdegree
 
 /-- The line bundle of a divisor class has Euler degree zero exactly when the divisor class is in
 `Cl⁰(X)`. -/
-@[simp]
 lemma eulerDegree_classGroupToLineBundleClass_eq_zero_iff_mem_picZero
     (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :
     LineBundleClass.eulerDegree k (classGroupToLineBundleClass hX.out c) = 0 ↔
@@ -132,9 +131,7 @@ lemma eulerDegree_classGroupToLineBundleClass_eq_zero_iff_mem_picZero
         (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
         (isWeightedDegreeZero_residueDegree k hX.out) := by
   rw [WeilDivisor.OrderSystem.mem_picZero,
-    ← eulerDegreeHom_classGroupAddEquivLineBundleClass,
-    LineBundleClass.eulerDegreeHom_apply, classGroupAddEquivLineBundleClass_apply,
-    toMul_ofMul]
+    ← eulerDegree_classGroupToLineBundleClass]
 
 variable (X) in
 /-- `Cl(X) ≅ Pic X` carries the degree-zero divisor classes onto `Pic⁰ X`. -/
@@ -234,7 +231,8 @@ theorem eulerDegreeHom_surjective :
     (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
     (isWeightedDegreeZero_residueDegree k hX.out) (x₀ := x₀) (by simp [hx₀]) n
   exact ⟨classGroupAddEquivLineBundleClass X c, by
-    rw [eulerDegreeHom_classGroupAddEquivLineBundleClass, hc]⟩
+    rw [LineBundleClass.eulerDegreeHom_apply, classGroupAddEquivLineBundleClass_apply,
+      toMul_ofMul, eulerDegree_classGroupToLineBundleClass, hc]⟩
 
 /-- **`Pic X ⧸ Pic⁰ X ≅ ℤ`** on a proper curve carrying a codimension-one point of residue
 degree one, the isomorphism being the Euler-characteristic degree. -/
