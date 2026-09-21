@@ -19,10 +19,11 @@ norm-regrouped `L`-series is therefore, up to a sign, the ideal-indexed Dirichle
 `f` with `log N(I)`.
 
 This file proves that identity, its iterated form, and the resulting expression of the logarithmic
-derivative as a quotient of two ideal-indexed sums.  The hypothesis throughout is that `s` lies
-strictly to the right of `TauCeti.idealAbscissaOfAbsConv K f`, the abscissa of absolute convergence
-of the ideal-indexed series; the logarithmic weight can destroy summability on the boundary line
-itself, which is why a point of convergence strictly to the left is what the estimates consume.
+derivative as a quotient of two ideal-indexed sums.  The norm-regrouped derivative, its iterated
+form, and the logarithmic-derivative result assume that `s` lies strictly to the right of
+`TauCeti.idealAbscissaOfAbsConv K f`, the abscissa of absolute convergence of the ideal-indexed
+series; the logarithmic weight can destroy summability on the boundary line itself, which is why
+a point of convergence strictly to the left is what the estimates consume.
 
 Two facts do the work.  Regrouping by absolute norm turns `logMul` into Mathlib's `LSeries.logMul`,
 because the weight `log N(I)` is constant on a norm fibre
