@@ -180,7 +180,6 @@ theorem smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedSpace K}
   rw [eq_inv_smul_iff₀ hc]
 
 /-- Multiplication by a root of unity preserves membership in the ray fundamental domain. -/
-@[simp]
 theorem torsion_smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedSpace K}
     {ζ : (𝓞 K)ˣ} (hζ : ζ ∈ NumberField.Units.torsion K) :
     ζ • x ∈ rayFundamentalDomain 𝔪 ↔ x ∈ rayFundamentalDomain 𝔪 := by
