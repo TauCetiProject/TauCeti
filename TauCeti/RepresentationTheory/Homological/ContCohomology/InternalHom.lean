@@ -10,7 +10,7 @@ public import Mathlib.Algebra.GroupWithZero.Action.Hom
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 
 /-!
-# The internal hom of two discrete modules over a profinite group
+# Conjugation actions on internal homs of discrete modules
 
 Let a group `G` act on two additive monoids `M` and `N`. The additive homomorphisms
 `M →+ N` carry the *conjugation* action
@@ -23,15 +23,6 @@ continuous action on a discrete module when `M` is finite discrete and `N` is di
 group elements fixing a given `φ` is open, and over a compact `G` it contains an open normal
 subgroup.
 
-This implements the internal-hom half of the "Constructions" milestone of Layer 0 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`. The design is not
-original here: the name `homAction`, its definition, the name `evalPairing` and the statement of
-its equivariance are taken from the human-owned roadmap formalization in the accompanying
-`TauCetiRoadmap/ProfiniteCohomology/Suggested.lean`, where the roadmap's authors give the
-definitions and prove the equivariance. This file adapts them by weakening the typeclass hypotheses
-to those the proofs use, by adding the carrier `InternalHom` on which the conjugation action can be
-an instance, and by proving the topological content, which the roadmap does not.
-
 ## Main definitions
 
 * `TauCeti.homAction`: the conjugation action of `G` on `M →+ N`, with the action laws
@@ -40,7 +31,7 @@ an instance, and by proving the topological content, which the roadmap does not.
 * `TauCeti.InternalHom`: the carrier `M →+ N` equipped with that action, as a `DistribMulAction`
   instance. Its `TauCeti.InternalHom.of` and `TauCeti.InternalHom.toAddMonoidHom` translate to and
   from `M →+ N`.
-* `TauCeti.InternalHom.evalPairing`: the roadmap's evaluation pairing, the additive homomorphism
+* `TauCeti.InternalHom.evalPairing`: the evaluation pairing, the additive homomorphism
   `InternalHom G M N →+ (M →+ N)` whose value at `φ` and `m` is the evaluation `φ m`; its
   equivariance is `TauCeti.InternalHom.evalPairing_equivariant`.
 
@@ -56,8 +47,8 @@ an instance, and by proving the topological content, which the roadmap does not.
   elements fixing a continuous `φ` is open. This is what the `ContinuousSMul G` instance on
   `TauCeti.InternalHom` rests on; with the discrete topology that carrier has by definition, it is
   what makes it again a discrete `G`-module for finite discrete `M` and discrete `N`.
-* `TauCeti.exists_openNormalSubgroup_homAction_eq_self`: over a profinite group that set contains
-  an open normal subgroup.
+* `TauCeti.exists_openNormalSubgroup_homAction_eq_self`: over a compact topological group that
+  set contains an open normal subgroup.
 
 ## Implementation notes
 
@@ -67,7 +58,7 @@ one, so the conjugation action cannot be registered on `M →+ N` itself: instan
 incoherent, and continuous cohomology of `M →+ N` would silently pick up the pointwise action.
 The conjugation action is therefore introduced twice over. It is first the plain function
 `homAction` of `g`, whose action and additivity laws are the lemmas listed above; this is the
-form in which the roadmap names it and the form in which the lemmas about evaluation read. It is
+form used by the lemmas about evaluation. It is
 assembled from Mathlib's `DistribSMul.toAddMonoidHom`, which bundles each `g • ·` as an additive
 homomorphism, so that its additivity comes from `AddMonoidHom.comp`. It is then registered as a
 genuine `DistribMulAction` on the wrapper `InternalHom G M N`, which is the object downstream
@@ -99,7 +90,7 @@ setting enters only where it is discharged, in the `ContinuousSMul` instance, by
 
 `Representation.linHom` is the same conjugation construction for `k`-linear maps `V →ₗ[k] W` of
 bundled representations. It is not used as the definition here for two reasons. Its carrier is
-`V →ₗ[k] W`, a type distinct from the `M →+ N` in which the roadmap's cochains take values, so
+`V →ₗ[k] W`, a type distinct from the `M →+ N` used for additive cochains, so
 routing through it would still need a bespoke definition round-tripping along
 `AddMonoidHom.toIntLinearMap` and `LinearMap.toAddMonoidHom`; and taking `k = ℤ` forces
 `Module ℤ M` and `Module ℤ N`, hence `AddCommGroup` on both sides, whereas everything below needs
@@ -175,15 +166,13 @@ section AddCommGroup
 
 variable {N : Type*} [AddCommGroup N] [DistribMulAction G N]
 
-/-- The conjugation action commutes with negation, for the codomain groups the roadmap's
-coefficients are. -/
+/-- The conjugation action commutes with negation for an additive commutative codomain group. -/
 @[simp]
 theorem homAction_neg (g : G) (φ : M →+ N) : homAction g (-φ) = -homAction g φ := by
   ext m
   simp
 
-/-- The conjugation action commutes with subtraction, for the codomain groups the roadmap's
-coefficients are. -/
+/-- The conjugation action commutes with subtraction for an additive commutative codomain group. -/
 @[simp]
 theorem homAction_sub (g : G) (φ ψ : M →+ N) :
     homAction g (φ - ψ) = homAction g φ - homAction g ψ := by
@@ -200,7 +189,7 @@ theorem homAction_apply_smul (g : G) (φ : M →+ N) (m : M) : homAction g φ (g
 
 /-- A group element fixes `φ` for the conjugation action exactly when `φ` commutes with its
 action. It is deliberately not `@[simp]`: `homAction g φ = φ` is the shape in which the openness
-and profinite statements below are phrased, and rewriting it away would take them out of
+and compact-group statements below are phrased, and rewriting it away would take them out of
 simp-normal form. -/
 theorem homAction_eq_self_iff {g : G} {φ : M →+ N} :
     homAction g φ = φ ↔ ∀ m : M, φ (g • m) = g • φ m := by
@@ -306,7 +295,7 @@ instance : AddCommMonoid (InternalHom G M N) :=
   fast_instance% (⟨toAddMonoidHom, of G, fun _ => rfl, fun _ => rfl⟩ :
     InternalHom G M N ≃ (M →+ N)).addCommMonoid
 
-/-- The roadmap's evaluation pairing out of the internal hom: the additive homomorphism that
+/-- The evaluation pairing out of the internal hom: the additive homomorphism that
 forgets the action, so that `evalPairing G φ m` is the evaluation `φ m`. Its equivariance is
 `evalPairing_equivariant`. -/
 def evalPairing : InternalHom G M N →+ (M →+ N) where
@@ -346,7 +335,7 @@ section AddCommGroup
 variable {N : Type*} [AddCommGroup N]
 
 /-- For a codomain that is an additive commutative group, so is the internal hom; together with the
-discrete topology below this is the `G`-module structure the roadmap's coefficients require. -/
+discrete topology below this supplies coefficients for continuous cohomology. -/
 instance : AddCommGroup (InternalHom G M N) :=
   fast_instance% (⟨toAddMonoidHom, of G, fun _ => rfl, fun _ => rfl⟩ :
     InternalHom G M N ≃ (M →+ N)).addCommGroup
@@ -437,8 +426,8 @@ instance : DistribMulAction G (InternalHom G M N) :=
     smul_zero := fun _ => by ext m; simp
     smul_add := fun _ _ _ => by ext m; simp }
 
-/-- The evaluation pairing is `G`-equivariant: this is the roadmap's `evalPairing_equivariant`,
-and the carrier form of `homAction_apply_smul`. -/
+/-- The evaluation pairing is `G`-equivariant: this is the carrier form of
+`homAction_apply_smul`. -/
 theorem evalPairing_equivariant (g : G) (φ : InternalHom G M N) (m : M) :
     evalPairing G (g • φ) (g • m) = g • evalPairing G φ m := by
   simp only [evalPairing_apply, toAddMonoidHom_smul]

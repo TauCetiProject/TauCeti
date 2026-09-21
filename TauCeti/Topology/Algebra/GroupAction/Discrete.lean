@@ -48,9 +48,9 @@ theorem _root_.Set.Finite.exists_openNormalSubgroup_smul_eq_self {s : Set M} (hs
     ∃ U : OpenNormalSubgroup G, ∀ u ∈ U, ∀ m ∈ s, u • m = m := by
   let V : Set G := ⋂ m ∈ s, (MulAction.stabilizer G m : Set G)
   have hClopen : IsClopen V :=
-    ⟨isClosed_biInter fun m _ ↦
-        (MulAction.stabilizer G m).isClosed_of_isOpen (stabilizer_isOpen G m),
-      hs.isOpen_biInter fun m _ ↦ stabilizer_isOpen G m⟩
+    hs.isClopen_biInter fun m _ ↦
+      ⟨(MulAction.stabilizer G m).isClosed_of_isOpen (stabilizer_isOpen G m),
+        stabilizer_isOpen G m⟩
   have hOne : (1 : G) ∈ V := by
     simp only [V, Set.mem_iInter, SetLike.mem_coe, MulAction.mem_stabilizer_iff, one_smul,
       implies_true]
