@@ -106,12 +106,6 @@ def fiberSubMulAction (p : E → B) (b : B) : SubMulAction (deck p) E where
   carrier := p ⁻¹' {b}
   smul_mem' φ _ he := (deck.proj_smul φ _).trans he
 
-/-- A point of the total space lies in the fibre subaction over `b` exactly when `p` sends it
-to `b`. -/
-@[simp]
-lemma mem_fiberSubMulAction {e : E} : e ∈ fiberSubMulAction p b ↔ p e = b :=
-  Iff.rfl
-
 /-- Deck transformations act on each fibre by restricting their action on the total space. -/
 instance instFiberMulAction : MulAction (deck p) (p ⁻¹' {b}) :=
   (fiberSubMulAction p b).mulAction
@@ -121,13 +115,7 @@ transformation. -/
 @[simp]
 lemma _root_.deck.fiber_smul_coe (φ : deck p) (e : p ⁻¹' {b}) :
     ((φ • e : p ⁻¹' {b}) : E) = φ.1 e.1 :=
-  (rfl)
-
-/-- The restricted fibre action agrees with the ambient action on the total space after
-coercing out of the fibre subtype. -/
-lemma _root_.deck.fiber_smul_coe_eq_smul (φ : deck p) (e : p ⁻¹' {b}) :
-    ((φ • e : p ⁻¹' {b}) : E) = φ • (e : E) :=
-  (rfl)
+  (SubMulAction.val_smul (p := fiberSubMulAction p b) φ e).trans (deck.smul_eq_apply φ e.1)
 
 /-- The fibre action is evaluation of the fibre homeomorphism. -/
 lemma _root_.deck.fiber_smul_eq_fiberHomeomorph (φ : deck p) (e : p ⁻¹' {b}) :
