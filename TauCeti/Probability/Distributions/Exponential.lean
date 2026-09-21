@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalProbability
+import TauCeti.Probability.Density
 import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
@@ -37,6 +38,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 ## Main results
 
 * `expMeasure_eq_gammaMeasure` — the exponential law is the shape-one Gamma law;
+* `integrable_expMeasure_iff`, `integral_expMeasure_eq` — integrability and integration against
+  the exponential law, transferred to the real density;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
@@ -88,6 +91,34 @@ theorem ae_nonneg_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 ≤ x := by
   rw [expMeasure_eq_gammaMeasure]
   filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
   exact hx.le
+
+/-- `expMeasure r` presented by its real-valued density, the form in which the shared density
+bridge of `TauCeti/Probability/Density.lean` applies. -/
+private lemma expMeasure_eq_withDensity_ofReal (r : ℝ) :
+    expMeasure r = volume.withDensity fun x => ENNReal.ofReal (exponentialPDFReal r x) :=
+  (rfl)
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against an exponential law with positive
+rate exactly when its density-weighted version is Lebesgue integrable. -/
+theorem integrable_expMeasure_iff (hr : 0 < r) {g : ℝ → E} :
+    Integrable g (expMeasure r) ↔ Integrable fun x => exponentialPDFReal r x • g x := by
+  rw [expMeasure_eq_withDensity_ofReal]
+  exact Probability.integrable_withDensity_ofReal_iff
+    (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr))
+
+/-- **Integral transfer.** An integral against an exponential law with positive rate is the
+density-weighted Lebesgue integral. -/
+theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
+    ∫ x, g x ∂expMeasure r = ∫ x, exponentialPDFReal r x • g x := by
+  rw [expMeasure_eq_withDensity_ofReal]
+  exact Probability.integral_withDensity_ofReal
+    (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr)) g
+
+end Transfer
 
 /-- **Every moment of the exponential law is integrable.** This is not implied by the moment
 formula below: Lean's integral is defined for non-integrable functions too, so an integral equality

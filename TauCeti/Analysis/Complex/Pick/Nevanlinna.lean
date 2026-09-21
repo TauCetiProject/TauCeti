@@ -36,6 +36,7 @@ Nevanlinna kernel `(1 + x * z) / (x - z)`.
   real line, and the resulting integrability against a finite measure.
 * `TauCeti.I_mul_herglotzTransform_cayley_eq`: the resulting Nevanlinna-kernel formula for the
   Cayley-coordinate Herglotz transform.
+* `TauCeti.nevanlinnaKernel_ofReal`: the kernel is real at a real parameter.
 * `TauCeti.exists_isFiniteMeasure_eq_nevanlinnaKernel_add`: the Nevanlinna representation of a
   Pick function by a nonnegative linear coefficient and a finite real-line measure.
 
@@ -248,6 +249,14 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
 /-- The Nevanlinna kernel on the upper half-plane. -/
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
   (1 + (x : ℂ) * z) / ((x : ℂ) - z)
+
+/-- At a real parameter the Nevanlinna kernel is real. -/
+@[simp]
+theorem nevanlinnaKernel_ofReal (t x : ℝ) :
+    nevanlinnaKernel (t : ℂ) x = (((1 + x * t) / (x - t) : ℝ) : ℂ) := by
+  rw [nevanlinnaKernel]
+  push_cast
+  ring
 
 /-- In boundary Cayley coordinates, the Herglotz kernel becomes the Nevanlinna kernel. -/
 theorem I_mul_herglotzKernel_cayley (z : ℂ) (x : ℝ)

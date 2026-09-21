@@ -98,6 +98,17 @@ theorem sum_comp_rationalPrimeBelow_le {g : ℕ → ℝ} {F : Finset (HeightOneS
   exact mul_le_mul_of_nonneg_right
     (mod_cast card_filter_rationalPrimeBelow_le_finrank F m) (hg m hm)
 
+/-- Comparison of a finite sum over height-one primes with the *whole* sum over `ℕ`: fibring
+costs a factor `[K : ℚ]`, and completing the finite rational-prime sum to its `tsum` costs
+nothing because the summand is nonnegative. This is the shape both norm-sum bounds below
+take, once each has compared its own summand termwise with `g (rationalPrimeBelow 𝔭)`. -/
+theorem sum_comp_rationalPrimeBelow_le_finrank_mul_tsum {g : ℕ → ℝ} (hg : ∀ m, 0 ≤ g m)
+    (hsum : Summable g) (F : Finset (HeightOneSpectrum (𝓞 K))) :
+    ∑ 𝔭 ∈ F, g (rationalPrimeBelow 𝔭) ≤ Module.finrank ℚ K * ∑' m : ℕ, g m :=
+  (sum_comp_rationalPrimeBelow_le (fun m _ ↦ hg m)
+        fun _ ↦ Finset.mem_image_of_mem rationalPrimeBelow).trans
+    (mul_le_mul_of_nonneg_left (hsum.sum_le_tsum _ fun m _ ↦ hg m) (Nat.cast_nonneg _))
+
 /-! ### Counting the primes of residue degree above one -/
 
 /-- There are at most `[K : ℚ] √x` primes of residue degree above one and norm at most `x`:
@@ -198,13 +209,8 @@ theorem sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum {s : ℝ} (hs : 
       ring
     rw [hpow]
     exact Real.rpow_le_rpow_of_nonpos (pow_pos (by linarith) 2) hle (by linarith)
-  refine le_trans (Finset.sum_le_sum hterm) ?_
-  refine le_trans (sum_comp_rationalPrimeBelow_le (g := fun m ↦ (m : ℝ) ^ (-(2 * s)))
-    (fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _)
-    (T := F.image rationalPrimeBelow)
-    (fun 𝔭 h𝔭 ↦ Finset.mem_image_of_mem rationalPrimeBelow h𝔭)) ?_
-  refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
-  exact Summable.sum_le_tsum _ (fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _) hsummable
+  exact (Finset.sum_le_sum hterm).trans (sum_comp_rationalPrimeBelow_le_finrank_mul_tsum
+    (fun m ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _) hsummable F)
 
 /-- The Dirichlet series over the primes of residue degree above one converges for every
 `s > 1/2`, in particular at `s = 1`. -/
@@ -250,19 +256,14 @@ reaches down to `s > 1/2`. -/
 theorem sum_absNorm_rpow_le_finrank_mul_tsum {s : ℝ} (hs : 1 < s)
     (F : Finset (HeightOneSpectrum (𝓞 K))) :
     ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤ Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
-  calc ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)
-      ≤ ∑ 𝔭 ∈ F, (rationalPrimeBelow 𝔭 : ℝ) ^ (-s) :=
-        Finset.sum_le_sum fun 𝔭 _ ↦ by
-          have hpN : rationalPrimeBelow 𝔭 ≤ Ideal.absNorm 𝔭.asIdeal := by
-            simpa using rationalPrimeBelow_pow_le_absNorm (𝔭.asIdeal.inertiaDeg_pos ℤ)
-          exact Real.rpow_le_rpow_of_nonpos (mod_cast (prime_rationalPrimeBelow 𝔭).pos)
-            (mod_cast hpN) (by linarith)
-    _ ≤ Module.finrank ℚ K * ∑ m ∈ F.image rationalPrimeBelow, (m : ℝ) ^ (-s) :=
-        sum_comp_rationalPrimeBelow_le (fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _)
-          fun _ ↦ Finset.mem_image_of_mem rationalPrimeBelow
-    _ ≤ Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
-        mul_le_mul_of_nonneg_left ((Real.summable_nat_rpow.mpr (by linarith)).sum_le_tsum _
-          fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _) (Nat.cast_nonneg _)
+  (Finset.sum_le_sum fun 𝔭 _ ↦ by
+        have hpN : rationalPrimeBelow 𝔭 ≤ Ideal.absNorm 𝔭.asIdeal := by
+          simpa using rationalPrimeBelow_pow_le_absNorm (𝔭.asIdeal.inertiaDeg_pos ℤ)
+        exact Real.rpow_le_rpow_of_nonpos (mod_cast (prime_rationalPrimeBelow 𝔭).pos)
+          (mod_cast hpN) (by linarith)).trans
+    (sum_comp_rationalPrimeBelow_le_finrank_mul_tsum
+      (fun m ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _)
+      (Real.summable_nat_rpow.mpr (by linarith)) F)
 
 /-- **The prime ideal zeta sum is at most `[K : ℚ]` times the sum of `m ^ (-s)` over `ℕ`.** The
 finite-sum comparison passes to the limit on the whole range `1 < s` where both sides converge.

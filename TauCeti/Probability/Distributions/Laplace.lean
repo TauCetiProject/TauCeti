@@ -287,6 +287,32 @@ theorem isProbabilityMeasure_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
   rw [laplaceMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ, lintegral_laplacePDF_eq_one hb μ]
 
+/-! ### Transfer to the density -/
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against a Laplace measure exactly when
+its density-weighted version is Lebesgue integrable. This holds at every scale, the zero measure
+included, and is the form in which downstream files should meet `laplaceMeasure`. -/
+theorem integrable_laplaceMeasure_iff (μ b : ℝ) {g : ℝ → E} :
+    Integrable g (laplaceMeasure μ b) ↔
+      Integrable fun y ↦ laplacePDFReal μ b y • g y := by
+  rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
+  exact integrable_withDensity_ofReal_iff (measurable_laplacePDFReal μ b).aemeasurable
+    (ae_of_all _ (laplacePDFReal_nonneg μ b))
+
+/-- **Integral transfer.** An integral against a Laplace measure is the density-weighted Lebesgue
+integral. This holds at every scale, the zero measure included. -/
+theorem integral_laplaceMeasure_eq (μ b : ℝ) (g : ℝ → E) :
+    ∫ y, g y ∂laplaceMeasure μ b = ∫ y, laplacePDFReal μ b y • g y := by
+  rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
+  exact integral_withDensity_ofReal (measurable_laplacePDFReal μ b).aemeasurable
+    (ae_of_all _ (laplacePDFReal_nonneg μ b)) g
+
+end Transfer
+
 /-! ### Absolute continuity -/
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
@@ -312,11 +338,8 @@ theorem rnDeriv_laplaceMeasure (μ b : ℝ) :
 private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s)
     (hint : IntegrableOn (laplacePDFReal μ b) s) :
     (laplaceMeasure μ b).real s = ∫ y in s, laplacePDFReal μ b y := by
-  rw [measureReal_def, laplaceMeasure_eq_withDensity, withDensity_apply _ hs]
-  simp_rw [laplacePDF_eq_ofReal]
-  rw [← ofReal_integral_eq_lintegral_ofReal hint
-      (ae_of_all _ fun y => laplacePDFReal_nonneg μ b y),
-    ENNReal.toReal_ofReal (integral_nonneg fun y => laplacePDFReal_nonneg μ b y)]
+  rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
+  exact measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b)) hs hint
 
 /-- The upper tail of a Laplace law above its location. -/
 theorem measureReal_Ioi_laplaceMeasure (hb : 0 < b) (hx : μ ≤ x) :
@@ -366,9 +389,8 @@ private lemma neg_div_eq_neg_inv_mul (t b : ℝ) : -t / b = -b⁻¹ * t := by
 theorem integral_pow_abs_sub_laplaceMeasure (hb : 0 < b) (μ : ℝ) (n : ℕ) :
     ∫ y, |y - μ| ^ n ∂laplaceMeasure μ b = n ! * b ^ n := by
   have hb0 : b ≠ 0 := hb.ne'
-  rw [laplaceMeasure_eq_withDensity, integral_withDensity_eq_integral_toReal_smul
-    (measurable_laplacePDF μ b) (ae_of_all _ fun y => ENNReal.ofReal_lt_top)]
-  simp_rw [toReal_laplacePDF, smul_eq_mul]
+  rw [integral_laplaceMeasure_eq]
+  simp_rw [smul_eq_mul]
   calc ∫ y, laplacePDFReal μ b y * |y - μ| ^ n
       = ∫ y, (2 * b)⁻¹ * Real.exp (-|y - μ| / b) * |y - μ| ^ n := by
         refine integral_congr_ae (ae_of_all _ fun y => ?_)
@@ -400,9 +422,7 @@ theorem integrable_pow_abs_sub_laplaceMeasure (μ : ℝ) (n : ℕ) :
     Integrable (fun y => |y - μ| ^ n) (laplaceMeasure μ b) := by
   by_cases hb : 0 < b
   · have hb0 : b ≠ 0 := hb.ne'
-    rw [laplaceMeasure_eq_withDensity, integrable_withDensity_iff (measurable_laplacePDF μ b)
-      (ae_of_all _ fun y => ENNReal.ofReal_lt_top)]
-    simp_rw [toReal_laplacePDF]
+    rw [integrable_laplaceMeasure_iff]
     have hIoi : IntegrableOn
         (fun t : ℝ => (2 * b)⁻¹ * Real.exp (-t / b) * t ^ n) (Ioi 0) := by
       refine IntegrableOn.congr_fun
@@ -448,9 +468,8 @@ theorem integral_sub_const_laplaceMeasure (μ : ℝ) :
     ∫ y, (y - μ) ∂laplaceMeasure μ b = 0 := by
   rcases le_or_gt b 0 with hb | hb
   · simp [laplaceMeasure_of_nonpos hb]
-  rw [laplaceMeasure_eq_withDensity, integral_withDensity_eq_integral_toReal_smul
-    (measurable_laplacePDF μ b) (ae_of_all _ fun y => ENNReal.ofReal_lt_top)]
-  simp_rw [toReal_laplacePDF, smul_eq_mul]
+  rw [integral_laplaceMeasure_eq]
+  simp_rw [smul_eq_mul]
   have hshift : ∫ y, laplacePDFReal μ b y * (y - μ)
       = ∫ y, (2 * b)⁻¹ * Real.exp (-|y| / b) * y :=
     calc ∫ y, laplacePDFReal μ b y * (y - μ)
@@ -491,12 +510,10 @@ theorem variance_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
 
 private theorem laplaceMeasure_apply_eq_integral (μ b : ℝ) {s : Set ℝ} (hs : MeasurableSet s) :
     laplaceMeasure μ b s = ENNReal.ofReal (∫ x in s, laplacePDFReal μ b x) := by
-  rw [laplaceMeasure_eq_withDensity]
-  rw [withDensity_apply _ hs]
+  rw [laplaceMeasure_eq_withDensity, withDensity_apply _ hs]
   simp_rw [laplacePDF_eq_ofReal]
-  rw [
-    ← ofReal_integral_eq_lintegral_ofReal (integrable_laplacePDFReal μ).integrableOn
-      (.of_forall fun x ↦ (laplacePDFReal_nonneg μ b x))]
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_laplacePDFReal μ).integrableOn
+    (.of_forall fun x ↦ laplacePDFReal_nonneg μ b x)]
 
 /-- Translating a Laplace distribution adds the translation to its location parameter. -/
 @[simp]
@@ -528,11 +545,11 @@ theorem laplaceMeasure_map_add_const (μ y b : ℝ) :
 /-! ### Exponential moments and transforms -/
 
 private lemma laplacePDFReal_mul_exp_eq_left (hb : 0 < b) {y : ℝ} (hy : y ≤ μ) (t : ℝ) :
-    Real.exp (t * y) * laplacePDFReal μ b y =
+    laplacePDFReal μ b y * Real.exp (t * y) =
       ((2 * b)⁻¹ * Real.exp (-(μ / b))) * Real.exp ((t + b⁻¹) * y) := by
   rw [laplacePDFReal_eq_left hb hy]
   calc
-    Real.exp (t * y) * ((2 * b)⁻¹ * Real.exp (-(μ / b)) * Real.exp (b⁻¹ * y)) =
+    (2 * b)⁻¹ * Real.exp (-(μ / b)) * Real.exp (b⁻¹ * y) * Real.exp (t * y) =
         ((2 * b)⁻¹ * Real.exp (-(μ / b))) *
           (Real.exp (b⁻¹ * y) * Real.exp (t * y)) := by ring
     _ = ((2 * b)⁻¹ * Real.exp (-(μ / b))) * Real.exp ((t + b⁻¹) * y) := by
@@ -541,11 +558,11 @@ private lemma laplacePDFReal_mul_exp_eq_left (hb : 0 < b) {y : ℝ} (hy : y ≤ 
       ring
 
 private lemma laplacePDFReal_mul_exp_eq_right (hb : 0 < b) {y : ℝ} (hy : μ ≤ y) (t : ℝ) :
-    Real.exp (t * y) * laplacePDFReal μ b y =
+    laplacePDFReal μ b y * Real.exp (t * y) =
       ((2 * b)⁻¹ * Real.exp (μ / b)) * Real.exp ((t - b⁻¹) * y) := by
   rw [laplacePDFReal_eq_right hb hy]
   calc
-    Real.exp (t * y) * ((2 * b)⁻¹ * Real.exp (μ / b) * Real.exp (-b⁻¹ * y)) =
+    (2 * b)⁻¹ * Real.exp (μ / b) * Real.exp (-b⁻¹ * y) * Real.exp (t * y) =
         ((2 * b)⁻¹ * Real.exp (μ / b)) *
           (Real.exp (-b⁻¹ * y) * Real.exp (t * y)) := by ring
     _ = ((2 * b)⁻¹ * Real.exp (μ / b)) * Real.exp ((t - b⁻¹) * y) := by
@@ -559,10 +576,8 @@ private lemma laplacePDFReal_mul_exp_eq_right (hb : 0 < b) {y : ℝ} (hy : μ �
 lemma integrable_exp_mul_laplaceMeasure_iff (hb : 0 < b) (μ t : ℝ) :
     Integrable (fun x : ℝ => Real.exp (t * x)) (laplaceMeasure μ b) ↔
       t ∈ Set.Ioo (-b⁻¹) b⁻¹ := by
-  rw [laplaceMeasure_eq_withDensity,
-    integrable_withDensity_iff (measurable_laplacePDF μ b)
-      (ae_of_all _ fun y => ENNReal.ofReal_lt_top)]
-  simp only [toReal_laplacePDF]
+  rw [integrable_laplaceMeasure_iff]
+  simp only [smul_eq_mul]
   have hc_left : (2 * b)⁻¹ * Real.exp (-(μ / b)) ≠ 0 :=
     (mul_pos (inv_pos.mpr (mul_pos (by norm_num) hb)) (Real.exp_pos _)).ne'
   have hc_right : (2 * b)⁻¹ * Real.exp (μ / b) ≠ 0 :=
@@ -584,11 +599,11 @@ lemma integrable_exp_mul_laplaceMeasure_iff (hb : 0 < b) (μ t : ℝ) :
       integrableOn_exp_mul_Iic_iff.mpr (by linarith)
     have hr' : IntegrableOn (fun y : ℝ => Real.exp ((t - b⁻¹) * y)) (Ioi μ) :=
       integrableOn_exp_mul_Ioi_iff.mpr (by linarith)
-    have hl : IntegrableOn (fun y : ℝ => Real.exp (t * y) * laplacePDFReal μ b y)
+    have hl : IntegrableOn (fun y : ℝ => laplacePDFReal μ b y * Real.exp (t * y))
         (Iic μ) :=
       IntegrableOn.congr_fun (hl'.const_mul ((2 * b)⁻¹ * Real.exp (-(μ / b))))
         (fun y hy => (laplacePDFReal_mul_exp_eq_left hb hy t).symm) measurableSet_Iic
-    have hr : IntegrableOn (fun y : ℝ => Real.exp (t * y) * laplacePDFReal μ b y)
+    have hr : IntegrableOn (fun y : ℝ => laplacePDFReal μ b y * Real.exp (t * y))
         (Ioi μ) :=
       IntegrableOn.congr_fun (hr'.const_mul ((2 * b)⁻¹ * Real.exp (μ / b)))
         (fun y hy => (laplacePDFReal_mul_exp_eq_right hb (mem_Ioi.mp hy).le t).symm)
@@ -614,24 +629,15 @@ theorem mgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
     (integrable_exp_mul_laplaceMeasure_iff hb μ t).2 ht
   have hint : Integrable
       (fun y : ℝ => laplacePDFReal μ b y * Real.exp (t * y)) := by
-    rw [laplaceMeasure_eq_withDensity,
-      integrable_withDensity_iff (measurable_laplacePDF μ b)
-        (ae_of_all _ fun y => ENNReal.ofReal_lt_top)] at hmeasure
-    simpa only [toReal_laplacePDF, smul_eq_mul, mul_comm] using hmeasure
-  rw [mgf, laplaceMeasure_eq_withDensity, integral_withDensity_eq_integral_toReal_smul
-    (measurable_laplacePDF μ b) (ae_of_all _ fun y => ENNReal.ofReal_lt_top)]
-  simp only [id_eq, toReal_laplacePDF, smul_eq_mul]
+    rw [integrable_laplaceMeasure_iff] at hmeasure
+    simpa only [smul_eq_mul] using hmeasure
+  rw [mgf, integral_laplaceMeasure_eq]
+  simp only [id_eq, smul_eq_mul]
   rw [← intervalIntegral.integral_Iic_add_Ioi hint.integrableOn hint.integrableOn,
-    setIntegral_congr_fun measurableSet_Iic (fun y hy => by
-      calc
-        laplacePDFReal μ b y * Real.exp (t * y) =
-            Real.exp (t * y) * laplacePDFReal μ b y := mul_comm _ _
-        _ = _ := laplacePDFReal_mul_exp_eq_left hb hy t),
-    setIntegral_congr_fun measurableSet_Ioi (fun y hy => by
-      calc
-        laplacePDFReal μ b y * Real.exp (t * y) =
-            Real.exp (t * y) * laplacePDFReal μ b y := mul_comm _ _
-        _ = _ := laplacePDFReal_mul_exp_eq_right hb (mem_Ioi.mp hy).le t),
+    setIntegral_congr_fun measurableSet_Iic
+      (fun y hy => laplacePDFReal_mul_exp_eq_left hb hy t),
+    setIntegral_congr_fun measurableSet_Ioi
+      (fun y hy => laplacePDFReal_mul_exp_eq_right hb (mem_Ioi.mp hy).le t),
     integral_const_mul, integral_exp_mul_Iic (by linarith [ht.1]) μ,
     integral_const_mul, integral_exp_mul_Ioi (by linarith [ht.2]) μ]
   have hb_inv : b * b⁻¹ = 1 := by field_simp
@@ -674,10 +680,7 @@ theorem cgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
 private theorem charFun_laplaceMeasure_zero_loc (hb : 0 < b) (t : ℝ) :
     charFun (laplaceMeasure 0 b) t = ((1 / (1 + b ^ 2 * t ^ 2) : ℝ) : ℂ) := by
   have hpair := integral_exp_mul_I_mul_exp_neg_mul_abs (inv_pos.mpr hb) t
-  rw [charFun_apply_real, laplaceMeasure_eq_withDensity,
-    integral_withDensity_eq_integral_toReal_smul (measurable_laplacePDF 0 b)
-      (ae_of_all _ fun x => ENNReal.ofReal_lt_top)]
-  simp_rw [toReal_laplacePDF]
+  rw [charFun_apply_real, integral_laplaceMeasure_eq]
   calc
     (∫ x : ℝ, laplacePDFReal 0 b x •
           Complex.exp ((t : ℂ) * x * Complex.I)) =
