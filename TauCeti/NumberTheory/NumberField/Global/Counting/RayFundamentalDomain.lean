@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
-public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 
 /-!
 # Fundamental domains for congruence subgroups of number-field units
@@ -29,10 +29,10 @@ cone is fundamental for the full unit group. It is measurable and stable under p
 scalars — negative ones may violate nonempty prescribed sign conditions — every point of
 `posRegion 𝔪` of nonzero mixed norm is carried into it by a unit congruent to one modulo `𝔪`, and
 a congruence unit carries a point of the domain back into the domain exactly when that unit is a
-root of unity. So the domain meets each congruence-unit orbit inside `posRegion 𝔪` in one point,
-modulo the congruence units that are roots of unity. For the trivial modulus, whose infinite part
-is empty and whose congruence units are all of `(𝓞 K)ˣ`, the domain *is* Mathlib's fundamental
-cone.
+root of unity. So the domain meets each congruence-unit orbit of nonzero mixed norm inside
+`posRegion 𝔪` in one point, modulo the congruence units that are roots of unity. For the trivial
+modulus, whose infinite part is empty and whose congruence units are all of `(𝓞 K)ˣ`, the domain
+*is* Mathlib's fundamental cone.
 
 Boundary regularity — Lipschitz parametrizability of the frontier of the norm-one section — is
 developed separately; it is what upgrades the orbit description below to a count of the algebraic
@@ -67,6 +67,7 @@ S. Lang, *Algebraic Number Theory*, Chapter VI, Section 2.
 public section
 
 open NumberField NumberField.mixedEmbedding
+open TauCeti.NumberField.mixedEmbedding
 
 open scoped Pointwise
 
@@ -157,25 +158,13 @@ theorem unitSMul_mem_posRegion {𝔪 : Modulus K} {x : mixedSpace K} (hx : x ∈
   rw [hcoord]
   exact mul_pos hupos (hx w hw)
 
-/-! ### The unit action on the mixed space -/
-
-omit [NumberField K] in
-/-- The unit action on the mixed space is commutative: it is multiplication by the mixed embedding
-of a unit, and the mixed space is a commutative ring. -/
-private theorem unitSMul_comm (u v : (𝓞 K)ˣ) (x : mixedSpace K) : u • v • x = v • u • x := by
-  rw [← mul_smul, ← mul_smul, mul_comm]
-
-omit [NumberField K] in
-/-- The unit action commutes with the real scalar action. -/
-private theorem unitSMul_real_smul (u : (𝓞 K)ˣ) (c : ℝ) (x : mixedSpace K) :
-    u • (c • x) = c • (u • x) := by
-  simpa only [unitSMul_smul] using mul_smul_comm c (mixedEmbedding K (u : K)) x
-
-/-- The action of a fixed unit on the mixed space is measurable. -/
-private theorem measurable_unitSMul (u : (𝓞 K)ˣ) :
-    Measurable fun x : mixedSpace K ↦ u • x := by
-  simpa only [unitSMul_smul] using
-    (continuous_const_mul (mixedEmbedding K (u : K))).measurable
+/-- The positivity region is invariant under the action of a unit congruent to one modulo `𝔪`. -/
+theorem unitSMul_mem_posRegion_iff {𝔪 : Modulus K} {x : mixedSpace K} {u : (𝓞 K)ˣ}
+    (hu : u ∈ unitsCongruenceSubgroup 𝔪) :
+    u • x ∈ posRegion 𝔪 ↔ x ∈ posRegion 𝔪 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ unitSMul_mem_posRegion h hu⟩
+  have h' := unitSMul_mem_posRegion h ((unitsCongruenceSubgroup 𝔪).inv_mem hu)
+  rwa [inv_smul_smul] at h'
 
 /-! ### The fundamental domain -/
 
@@ -343,9 +332,9 @@ theorem rayFundamentalDomain_one :
 when it is a root of unity.
 
 Together with `exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain` this says that the
-domain meets each orbit of the congruence units inside `posRegion 𝔪` in one point, modulo the
-congruence units that are roots of unity: the sense in which Mathlib's fundamental cone is
-fundamental for the full unit group. -/
+domain meets each orbit of nonzero mixed norm of the congruence units inside `posRegion 𝔪` in
+one point, modulo the congruence units that are roots of unity: the sense in which Mathlib's
+fundamental cone is fundamental for the full unit group. -/
 theorem unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff_mem_torsion {𝔪 : Modulus K}
     {x : mixedSpace K} (hx : x ∈ rayFundamentalDomain 𝔪) {u : (𝓞 K)ˣ}
     (hu : u ∈ unitsCongruenceSubgroup 𝔪) :
