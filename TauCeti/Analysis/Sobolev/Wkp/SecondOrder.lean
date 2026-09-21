@@ -16,11 +16,12 @@ derivative of its weak gradient. Checking that a given `u ∈ W^{1,p}(Ω)` has o
 a single `Lᵖ` field of linear maps; this file reduces that to the componentwise data that a
 difference-quotient argument actually supplies, namely an `Lᵖ` weak derivative of each scalar
 component `⟪∇u, e_j⟫` in each basis direction `e_i`
-(`TauCeti.Wkp.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`).
+(`TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`).
 
 The assembly is the obvious one: the candidate Hessian is
 `x ↦ ∑ i, ∑ j, gᵢⱼ(x) ⟪eᵢ, ·⟫ eⱼ`, whose value on `eᵢ` is the vector `∑ j, gᵢⱼ eⱼ` obtained by
-recombining the components of the `i`th directional derivative. Weak differentiability in every
+recombining the components of the `i`th directional derivative
+(`TauCeti.W1p.hasWeakLineDerivOn_gradient_of_forall_inner`). Weak differentiability in every
 direction then follows from the basis directions by
 `TauCeti.hasWeakFDerivOn_of_forall_basis`.
 
@@ -28,7 +29,9 @@ No boundedness or boundary regularity of `Ω` is used.
 
 ## Main declarations
 
-* `TauCeti.Wkp.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`: componentwise second weak
+* `TauCeti.W1p.hasWeakLineDerivOn_gradient_of_forall_inner`: a weak directional derivative of
+  the weak gradient, reassembled from its orthonormal components.
+* `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`: componentwise second weak
   derivatives in `Lᵖ(Ω)` place a `W^{1,p}(Ω)` function in `W^{2,p}(Ω)`.
 -/
 
@@ -45,11 +48,11 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Recombining the components of a directional derivative of the gradient. If, in the direction
-`v`, each scalar component `⟪∇u, eⱼ⟫` has the weak derivative `gⱼ ∈ Lᵖ(Ω)`, then `∇u` itself has
-the weak derivative `∑ j, gⱼ eⱼ`. -/
-private theorem hasWeakLineDerivOn_gradient_of_components {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : W1p mu Omega p) (v : E)
+/-- **Recombining the components of a directional derivative of the gradient.** If, in the
+direction `v`, each scalar component `⟪∇u, eⱼ⟫` of the weak gradient of `u ∈ W^{1,p}(Ω)` has the
+weak derivative `gⱼ ∈ Lᵖ(Ω)`, then `∇u` itself has the weak derivative `∑ j, gⱼ eⱼ`. -/
+theorem W1p.hasWeakLineDerivOn_gradient_of_forall_inner {ι : Type*} [Fintype ι]
+    (u : W1p mu Omega p) (b : OrthonormalBasis ι ℝ E) (v : E)
     (g : ι → Lp ℝ p (mu.restrict Omega))
     (hg : ∀ j, HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient u x, b j⟫_ℝ) (g j) v) :
     HasWeakLineDerivOn mu Omega (W1p.gradient u : E → E)
@@ -72,8 +75,8 @@ weak gradient of `u ∈ W^{1,p}(Ω)` has a weak derivative in `Lᵖ(Ω)` in the 
 
 This is how a difference-quotient argument, which produces exactly these componentwise
 derivatives, certifies membership in the second-order Sobolev space. -/
-theorem Wkp.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : W1p mu Omega p)
+theorem W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn {ι : Type*} [Fintype ι]
+    (u : W1p mu Omega p) (b : OrthonormalBasis ι ℝ E)
     (h : ∀ i j : ι, ∃ g : Lp ℝ p (mu.restrict Omega),
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient u x, b j⟫_ℝ) g (b i)) :
     ∃ U : Wkp mu Omega p 2, Wkp.lowerOrder 1 U = u := by
@@ -102,7 +105,7 @@ theorem Wkp.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn {ι : Type*} [Fint
   refine HasWeakFDerivOn.congr_ae_deriv ?_ hmem.coeFn_toLp.symm
   refine hasWeakFDerivOn_of_forall_basis b.toBasis (W1p.locallyIntegrableOn_gradient u) fun i => ?_
   rw [OrthonormalBasis.coe_toBasis]
-  exact (hasWeakLineDerivOn_gradient_of_components b u (b i) (G i) (hG i)).congr_ae_deriv
-    (Filter.Eventually.of_forall fun x => (hDb i x).symm)
+  exact (W1p.hasWeakLineDerivOn_gradient_of_forall_inner u b (b i) (G i)
+    (hG i)).congr_ae_deriv (Filter.Eventually.of_forall fun x => (hDb i x).symm)
 
 end TauCeti

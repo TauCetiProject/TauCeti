@@ -25,8 +25,8 @@ second-order weak derivatives in `L²(ℝⁿ)`, that is `u ∈ H²(ℝⁿ)`, wit
 `‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`
 
 in every pair of directions, where `λ` is the ellipticity constant. No smoothness of `f` and no
-regularity of `u` beyond `H¹` is assumed: the ellipticity of the operator alone upgrades one
-weak derivative to two.
+regularity of `u` beyond `H¹` is assumed: constancy of the coefficient matrix, together with
+ellipticity, upgrades one weak derivative to two.
 
 ## The difference-quotient method
 
@@ -91,16 +91,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {A : Matrix ι ι ℝ} {lam Lam : ℝ}
 
 omit [DecidableEq ι] in
-/-- With a constant coefficient matrix and no lower-order terms the energy form is the integral
-of `⟨A ∇u, ∇v⟩`. -/
-private theorem energyFormH1_const_eq_integral (A : Matrix ι ι ℝ) (u v : W1p mu ⊤ 2) :
-    energyFormH1 (fun _ => A) 0 0 u v
-      = ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-          matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
-  rw [energyFormH1_def]
-  simp
-
-omit [DecidableEq ι] in
 /-- **Translation moves across the constant-coefficient energy form.** For opposite vectors
 `h` and `k`, translating the first argument by `h` is the same as translating the second by
 `k`. This is the integrated form of the substitution `x ↦ x - h`, and it is where constancy of
@@ -109,7 +99,7 @@ theorem energyFormH1_translate (A : Matrix ι ι ℝ) {h k : EuclideanSpace ℝ 
     (u v : W1p mu ⊤ 2) :
     energyFormH1 (fun _ => A) 0 0 (W1p.translate (Set.mapsTo_univ (· + h) _) u) v
       = energyFormH1 (fun _ => A) 0 0 u (W1p.translate (Set.mapsTo_univ (· + k) _) v) := by
-  rw [energyFormH1_const_eq_integral, energyFormH1_const_eq_integral]
+  rw [energyFormH1_const_eq_setIntegral, energyFormH1_const_eq_setIntegral]
   -- Translation invariance of the Haar measure, on an arbitrary integrand.
   have hinv : ∀ F : EuclideanSpace ℝ ι → ℝ,
       ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)), F (x + h) ∂mu
@@ -159,19 +149,8 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
     simpa using memLp_top_const (α := EuclideanSpace ℝ ι)
       (μ := mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))
       (energyIntegrand A 0 0)
-  -- Both arguments of the energy form are linear, so a difference quotient splits.
-  have hsubl : ∀ x y z : W1p mu ⊤ 2, energyFormH1 (fun _ => A) 0 0 (x - y) z
-      = energyFormH1 (fun _ => A) 0 0 x z - energyFormH1 (fun _ => A) 0 0 y z := by
-    intro x y z
-    rw [sub_eq_add_neg, energyFormH1_add_left hcoeff, ← neg_one_smul ℝ y,
-      energyFormH1_smul_left]
-    ring
-  have hsubr : ∀ x y z : W1p mu ⊤ 2, energyFormH1 (fun _ => A) 0 0 x (y - z)
-      = energyFormH1 (fun _ => A) 0 0 x y - energyFormH1 (fun _ => A) 0 0 x z := by
-    intro x y z
-    rw [sub_eq_add_neg, energyFormH1_add_right hcoeff, ← neg_one_smul ℝ z,
-      energyFormH1_smul_right]
-    ring
+  -- Both arguments of the energy form are linear, being those of the bundled bilinear map
+  -- `energyFormH1L hcoeff`, so a difference quotient splits.
   have hleft : ∀ (s : ℝ) (hs : MapsTo (· + s • w)
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) (x y : W1p mu ⊤ 2),
@@ -179,7 +158,8 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
         = s⁻¹ * (energyFormH1 (fun _ => A) 0 0 (W1p.translate hs x) y
             - energyFormH1 (fun _ => A) 0 0 x y) := by
     intro s hs x y
-    rw [W1p.differenceQuotient_def, energyFormH1_smul_left, hsubl, W1p.restrictL_self]
+    rw [W1p.differenceQuotient_def, W1p.restrictL_self, ← energyFormH1L_apply hcoeff]
+    simp only [map_smul, map_sub, smul_apply, sub_apply, energyFormH1L_apply, smul_eq_mul]
   have hright : ∀ (s : ℝ) (hs : MapsTo (· + s • w)
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
       ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) (x y : W1p mu ⊤ 2),
@@ -187,7 +167,8 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
         = s⁻¹ * (energyFormH1 (fun _ => A) 0 0 x (W1p.translate hs y)
             - energyFormH1 (fun _ => A) 0 0 x y) := by
     intro s hs x y
-    rw [W1p.differenceQuotient_def, energyFormH1_smul_right, hsubr, W1p.restrictL_self]
+    rw [W1p.differenceQuotient_def, W1p.restrictL_self, ← energyFormH1L_apply hcoeff]
+    simp only [map_smul, map_sub, energyFormH1L_apply, smul_eq_mul]
   have hk : t • w + (-t) • w = 0 := by rw [← add_smul]; simp
   rw [hleft, hright, energyFormH1_translate A hk, inv_neg]
   ring
@@ -248,8 +229,8 @@ derivative `∂_y u = ⟪∇u, y⟫` is again weakly differentiable in every dir
 
 `‖∂_w ∂_y u‖_{L²} ≤ ‖y‖ ‖w‖ ‖f‖_{L²} / λ`.
 
-This is the `H²` estimate in its sharp, direction-by-direction form; `λ` is the ellipticity
-constant and no other feature of `A` enters. -/
+This is the `H²` estimate in quantitative, direction-by-direction form; `λ` is the ellipticity
+constant and no other feature of `A` enters the bound. -/
 theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient
     (hA : UniformlyEllipticOn ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))
       (fun _ => A) lam Lam)
@@ -316,7 +297,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq
     {f : Lp ℝ 2 (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)))}
     {u : W1p0 mu ⊤ 2} (hu : IsWeakSolutionDirichlet (fun _ => A) 0 0 f u) :
     ∃ U : Wkp mu ⊤ 2 2, Wkp.lowerOrder 1 U = (u : W1p mu ⊤ 2) :=
-  Wkp.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn (EuclideanSpace.basisFun ι ℝ) _
+  W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
     fun i j => by
       obtain ⟨G, -, hG⟩ := hA.exists_norm_le_hasWeakLineDerivOn_gradient hu
         (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)

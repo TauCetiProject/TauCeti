@@ -68,7 +68,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 /-! ### Local difference quotients -/
 
-
 /-- **The local Sobolev difference quotient.** For `V ⊆ Ω` and `V + t • w ⊆ Ω`, this is the
 element of `W^{1,p}(V)` represented by `x ↦ t⁻¹ (u (x + t • w) - u x)`.
 
@@ -79,11 +78,12 @@ def W1p.differenceQuotient {Omega V : Opens E} (hV : V ≤ Omega) (w : E) (t : �
   t⁻¹ • (W1p.translate hVO u - W1p.restrictL hV u)
 
 /-- The local Sobolev difference quotient as a scaled difference of a translate and a
-restriction. -/
+restriction. The body of `TauCeti.W1p.differenceQuotient` is not exposed to importing modules,
+so this is how downstream files unfold it. -/
 theorem W1p.differenceQuotient_def {Omega V : Opens E} (hV : V ≤ Omega) (w : E) (t : ℝ)
     (hVO : MapsTo (· + t • w) V Omega) (u : W1p mu Omega p) :
-    W1p.differenceQuotient hV w t hVO u = t⁻¹ • (W1p.translate hVO u - W1p.restrictL hV u) :=
-  (rfl)
+    W1p.differenceQuotient hV w t hVO u = t⁻¹ • (W1p.translate hVO u - W1p.restrictL hV u) := by
+  rfl
 
 /-- The value of the local Sobolev difference quotient has the expected representative. -/
 theorem W1p.value_differenceQuotient_ae {Omega V : Opens E} (hV : V ≤ Omega) (w : E) (t : ℝ)

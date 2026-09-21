@@ -580,25 +580,30 @@ section Basis
 variable [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} {u : E → F}
 
 /-- **A weak Fréchet derivative is detected on a basis of directions.** If a candidate
-`U : E → E →L[ℝ] F` is a weak derivative of `u` in each direction of a finite basis of `E`, it
-is a weak derivative of `u` in every direction. Local integrability of `u` is a separate
-hypothesis because it is not implied by the basis directions when `E` is trivial. -/
-theorem hasWeakFDerivOn_of_forall_basis {ι : Type*} [Finite ι] [CompleteSpace F]
+`U : E → E →L[ℝ] F` is a weak derivative of `u` in each direction of a basis of `E`, it is a
+weak derivative of `u` in every direction, since every vector is a finite linear combination
+of basis vectors. Local integrability of `u` is a separate hypothesis because it is not implied
+by the basis directions when `E` is trivial. -/
+theorem hasWeakFDerivOn_of_forall_basis {ι : Type*} [CompleteSpace F]
     (b : Module.Basis ι ℝ E) {U : E → E →L[ℝ] F} (hu : LocallyIntegrableOn u Ω μ)
     (h : ∀ i, HasWeakLineDerivOn μ Ω u (fun x => U x (b i)) (b i)) :
     HasWeakFDerivOn μ Ω u U := by
-  have : Fintype ι := Fintype.ofFinite ι
+  classical
   intro y
+  have hy : ∑ i ∈ (b.repr y).support, b.repr y i • b i = y := by
+    have hrepr := b.linearCombination_repr y
+    rwa [Finsupp.linearCombination_apply, Finsupp.sum] at hrepr
   have key : HasWeakLineDerivOn μ Ω u
-      (fun x => ∑ i, b.repr y i • U x (b i)) (∑ i, b.repr y i • b i) :=
+      (fun x => ∑ i ∈ (b.repr y).support, b.repr y i • U x (b i))
+      (∑ i ∈ (b.repr y).support, b.repr y i • b i) :=
     HasWeakLineDerivOn.sum_direction _ hu fun i => by
       simpa [Pi.smul_def] using (h i).smul_direction (b.repr y i)
-  have hval : ∀ x, (∑ i, b.repr y i • U x (b i)) = U x y := by
+  have hval : ∀ x, (∑ i ∈ (b.repr y).support, b.repr y i • U x (b i)) = U x y := by
     intro x
-    have hy : U x y = U x (∑ i, b.repr y i • b i) := by rw [b.sum_repr y]
-    rw [hy, map_sum]
+    have hUy : U x y = U x (∑ i ∈ (b.repr y).support, b.repr y i • b i) := by rw [hy]
+    rw [hUy, map_sum]
     simp
-  rw [b.sum_repr y] at key
+  rw [hy] at key
   exact key.congr_ae_deriv (Filter.Eventually.of_forall hval)
 
 end Basis
