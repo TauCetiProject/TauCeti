@@ -27,13 +27,14 @@ exponentiating gives the displayed bound.
 
 Everything happens strictly to the right of the line `Re s = 1`, where all three series converge
 absolutely; no analytic continuation is used and none is asserted. This is the positivity half of
-the classical argument for the nonvanishing of `L(χ, s)` on `Re s = 1`: the other half is the
-behaviour of the three factors as `σ → 1⁺`, which needs a continuation of `L(χ, ·)` and
-`L(χ ^ 2, ·)` across that line and is supplied by the consumer.
+the classical argument for the nonvanishing of `L(χ, s)` on `Re s = 1`. Completing that argument
+would additionally require the behaviour of the three factors as `σ → 1⁺`, and hence continuations
+of `L(χ, ·)` and `L(χ ^ 2, ·)` across that line; no such continuation is constructed or assumed
+here.
 
 ## Main results
 
-* `TauCeti.UnitaryIdealWeight.one_le_norm_threeFourOne_product`: the displayed inequality.
+* `TauCeti.UnitaryIdealWeight.norm_threeFourOne_product_ge_one`: the displayed inequality.
 
 ## Provenance
 
@@ -84,25 +85,22 @@ private theorem threeFourOne_local_nonneg (χ : UnitaryIdealWeight K) {σ : ℝ}
 
 The bound holds on the whole open half-plane of absolute convergence and uses no continuation;
 it is the positivity input to the nonvanishing of `L(χ, ·)` on the line `Re s = 1`. -/
-theorem one_le_norm_threeFourOne_product (χ : UnitaryIdealWeight K) {σ : ℝ} (hσ : 1 < σ) (t : ℝ) :
+theorem norm_threeFourOne_product_ge_one (χ : UnitaryIdealWeight K) {σ : ℝ} (hσ : 1 < σ) (t : ℝ) :
     1 ≤ ‖NumberField.dedekindZeta K (σ : ℂ) ^ 3 *
         LSeries (normCoeff K χ.toIdealArithmeticFunction) ((σ : ℂ) + I * t) ^ 4 *
         LSeries (normCoeff K (χ ^ 2).toIdealArithmeticFunction) ((σ : ℂ) + 2 * I * t)‖ := by
   rw [pow_two χ]
-  -- A unitary weight is bounded by `1`, so all three series converge absolutely on `Re s > 1`.
-  have hsummable : ∀ (ψ : UnitaryIdealWeight K) {s : ℂ}, 1 < s.re →
-      Summable (idealTerm K ψ.1.toIdealArithmeticFunction s) := by
-    intro ψ s hs
-    refine summable_idealTerm_of_bounded_of_one_lt_re (C := 1) (fun I ↦ ?_) hs
-    rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply]
-    exact ψ.norm_le_one _
+  -- A unitary weight converges absolutely on `Re s > 1`, at each of the three points.
   have hs0 : Summable
-      (idealTerm K (1 : UnitaryIdealWeight K).1.toIdealArithmeticFunction (σ : ℂ)) :=
-    hsummable 1 (by simpa using hσ)
-  have hs1 : Summable (idealTerm K χ.1.toIdealArithmeticFunction ((σ : ℂ) + I * t)) :=
-    hsummable χ (by simpa using hσ)
-  have hs2 : Summable (idealTerm K (χ * χ).1.toIdealArithmeticFunction ((σ : ℂ) + 2 * I * t)) :=
-    hsummable (χ * χ) (by simpa using hσ)
+      (idealTerm K (1 : UnitaryIdealWeight K).1.toIdealArithmeticFunction (σ : ℂ)) := by
+    rw [← toIdealArithmeticFunction_eq_val]
+    exact summable_idealTerm_of_unitary_of_one_lt_re 1 (by simpa using hσ)
+  have hs1 : Summable (idealTerm K χ.1.toIdealArithmeticFunction ((σ : ℂ) + I * t)) := by
+    rw [← toIdealArithmeticFunction_eq_val]
+    exact summable_idealTerm_of_unitary_of_one_lt_re χ (by simpa using hσ)
+  have hs2 : Summable (idealTerm K (χ * χ).1.toIdealArithmeticFunction ((σ : ℂ) + 2 * I * t)) := by
+    rw [← toIdealArithmeticFunction_eq_val]
+    exact summable_idealTerm_of_unitary_of_one_lt_re (χ * χ) (by simpa using hσ)
   have hzeta : NumberField.dedekindZeta K (σ : ℂ) =
       LSeries (normCoeff K (1 : UnitaryIdealWeight K).1.toIdealArithmeticFunction) (σ : ℂ) := by
     rw [val_one, MultiplicativeIdealWeight.toIdealArithmeticFunction_one,

@@ -40,7 +40,6 @@ Mathlib's `Mathlib/NumberTheory/LSeries/Nonvanishing.lean`, by Michael Stoll and
 through `TauCeti.sum_re_neg_log_one_sub_nonneg`. The local-factor form below generalizes the
 private lemma `DirichletCharacter.re_log_comb_nonneg` of the same file, which fixes the base to a
 rational prime and the coefficient to a Dirichlet character value.
-This is Layer 8.2 of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.
 -/
 
 public section
