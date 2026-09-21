@@ -28,16 +28,8 @@ noncomputable section
 theorem isQuotientMap_realCliffordSpinOrbitMap (n : ℕ) (hn : 2 ≤ n)
     (x : realCliffordUnitLevel n) :
     Topology.IsQuotientMap (realCliffordSpinOrbitMap n x) := by
-  let _ : MulAction.IsPretransitive (realCliffordSpinGroupZero n)
-      (realCliffordUnitLevel n) := isPretransitive_realCliffordUnitLevel n hn
-  let h := realCliffordSpinOrbitHomeomorph n hn x
-  have hcomp :
-      (h : _ → _) ∘ QuotientGroup.mk = realCliffordSpinOrbitMap n x := by
-    funext s
-    rw [realCliffordSpinOrbitMap_apply]
-    exact realCliffordSpinOrbitHomeomorph_mk n hn x s
-  rw [← hcomp]
-  exact h.isQuotientMap.comp (QuotientGroup.isQuotientMap_mk _)
+  exact Topology.IsQuotientMap.of_surjective_continuous
+    (realCliffordSpinOrbitMap_surjective n hn x) (realCliffordSpinOrbitMap n x).continuous
 
 end
 
