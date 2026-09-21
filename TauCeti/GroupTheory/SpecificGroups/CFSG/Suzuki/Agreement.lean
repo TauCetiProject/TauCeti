@@ -159,16 +159,6 @@ theorem carrierEquivPinned_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
 
 /-! ## The pinned half-Frobenius is a half-Frobenius -/
 
-/-- **The square of the special isogeny on the standard symplectic matrix group is the prime-field
-Frobenius**, that is `τ ^ 2 = Frob_p` at the defining characteristic `p = 2`. -/
-theorem specialIsogeny_specialIsogeny (g : d.toRankTwoBLieIndex.StandardGroup) :
-    TauCeti.specialIsogeny (TauCeti.specialIsogeny g) =
-      d.toRankTwoBLieIndex.symplecticPrimeFrobenius g := by
-  obtain ⟨g, rfl⟩ := d.toRankTwoBLieIndex.carrierEquivSymplectic.surjective g
-  rw [← carrierEquivSymplectic_halfFrobenius,
-    ← carrierEquivSymplectic_halfFrobenius, halfFrobenius_halfFrobenius,
-    RankTwoBLieIndex.carrierEquivSymplectic_primeFrobenius]
-
 /-- **The square of the special isogeny on the pinned symplectic scheme points is the prime-field
 Frobenius.** Together with the simple-root equation below this is what makes the pinned map a
 half-Frobenius in the sense the Suzuki family's Steinberg map is built from. -/
@@ -178,8 +168,12 @@ theorem pinnedHalfFrobenius_pinnedHalfFrobenius (g : d.toRankTwoBLieIndex.Pinned
       d.toRankTwoBLieIndex.pinnedPrimeFrobenius g := by
   apply d.toRankTwoBLieIndex.pinnedEquivSymplectic.injective
   rw [pinnedEquivSymplectic_pinnedHalfFrobenius, pinnedEquivSymplectic_pinnedHalfFrobenius,
-    RankTwoBLieIndex.pinnedEquivSymplectic_pinnedPrimeFrobenius,
-    specialIsogeny_specialIsogeny]
+    RankTwoBLieIndex.pinnedEquivSymplectic_pinnedPrimeFrobenius]
+  obtain ⟨h, hh⟩ := d.toRankTwoBLieIndex.carrierEquivSymplectic.surjective
+    (d.toRankTwoBLieIndex.pinnedEquivSymplectic g)
+  rw [← hh, ← carrierEquivSymplectic_halfFrobenius,
+    ← carrierEquivSymplectic_halfFrobenius, halfFrobenius_halfFrobenius,
+    RankTwoBLieIndex.carrierEquivSymplectic_primeFrobenius]
 
 /-- **The special isogeny exchanges the two numbered simple root subgroups of the standard
 symplectic matrix group**, raising the parameter to the index's exponent at that root, which is one
