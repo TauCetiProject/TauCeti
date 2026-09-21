@@ -27,7 +27,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
   belongs to `S'`.
-* `TauCeti.Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: a subalgebra meeting every
+* `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: a subalgebra meeting every
   residue class modulo a principal ideal and containing a generator of it meets every residue
   class modulo each power of that ideal.
 -/
@@ -83,7 +83,7 @@ end Span
 
 end Ideal
 
-namespace TauCeti.Subalgebra
+namespace Subalgebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
@@ -110,6 +110,6 @@ theorem toSubmodule_sup_pow_restrictScalars_eq_top {T : Subalgebra R S} {I : Ide
     · rw [Submodule.restrictScalars_mem, pow_succ]
       exact Ideal.mul_mem_mul (hpow ▸ Ideal.mem_span_singleton_self _) hm'
 
-end TauCeti.Subalgebra
+end Subalgebra
 
 end
