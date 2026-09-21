@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
+public import TauCeti.LinearAlgebra.RootSystem.RootLength
 
 /-!
 # The two families on the rank-two diagram `B₂`
@@ -130,6 +131,20 @@ def carrierNode : Fin d.1.rank ≃ Fin 2 :=
 @[simp] theorem carrierNode_apply (i : Fin d.1.rank) :
     d.carrierNode i = Equiv.swap 0 1 (finCongr d.rank_eq_two i) :=
   (rfl)
+
+/-- **The final carrier node is the long simple root.** The `B₂` diagram's long simple root is
+Bourbaki node zero, and `carrierNode` swaps the two numberings, so the long simple root is the one
+the node correspondence sends to the final node of the rank-two type-`C` carrier. -/
+theorem carrierNode_eq_one_iff (i : Fin d.1.rank) :
+    d.carrierNode i = 1 ↔ d.1.dynkinType.IsLongSimpleRoot i := by
+  have hcarrier : d.carrierNode i = 1 ↔ (i : ℕ) = 0 := by
+    rw [carrierNode_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right]
+    simp [Fin.ext_iff]
+  have hlong : d.1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) = 0 := by
+    rw [DynkinType.isLongSimpleRoot_congr d.dynkinType_eq]
+    simp only [DynkinType.isLongSimpleRoot_B, finCongr_apply, Fin.val_cast]
+    omega
+  exact hcarrier.trans hlong.symm
 
 /-! ## The ambient group and its simple root subgroups -/
 
