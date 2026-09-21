@@ -26,13 +26,10 @@ declaration below is therefore a named definition, installed by the consumer wit
 
 ## Main definitions
 
-* `TauCeti.IsNonarchimedeanLocalField.normalizedRankOne`: the rank-one structure on the
-  canonical valuation of `K` that normalizes the absolute value by `q = Nat.card 𝓀[K]`.
 * `TauCeti.IsNonarchimedeanLocalField.normalizedNormedField`: the normed-field structure on `K`
   whose norm is the absolute value normalized by the residue cardinality, so that a uniformizer
-  has norm `q⁻¹` with `q = Nat.card 𝓀[K]`.
-  `TauCeti.IsNonarchimedeanLocalField.normalizedNontriviallyNormedField` is the same structure
-  with the nontriviality of the norm recorded, which is what `spectralNorm` consumes.
+  has norm `q⁻¹` with `q = Nat.card 𝓀[K]`. Its construction internally records the nontriviality
+  of the norm that `spectralNorm` consumes.
 * `TauCeti.IsNonarchimedeanLocalField.normalizedNormedFieldTopology`: the topology it carries,
   named separately so that every comparison with the ambient topology is explicit.
 * `TauCeti.IsNonarchimedeanLocalField.finiteExtensionNormedField`: the spectral norm of a finite
@@ -47,8 +44,8 @@ declaration below is therefore a named definition, installed by the consumer wit
 * `TauCeti.IsNonarchimedeanLocalField.normalizedNormedField_topology_eq`: the topology of the
   normalized norm on `K` is the given valuative topology, so no comparison is left implicit
   when the spectral norm is formed over it.
-* `TauCeti.IsNonarchimedeanLocalField.normalizedNormedField.norm_isUniformizer`: a uniformizer
-  has norm `q⁻¹`. This is the equation that fixes the normalization.
+* `normalizedNormedField.norm_eq_card_residueField_inv_of_isUniformizer`:
+  a uniformizer has norm `q⁻¹`. This is the equation that fixes the normalization.
 * `TauCeti.IsNonarchimedeanLocalField.finiteExtension_valuativeExtension`,
   `TauCeti.IsNonarchimedeanLocalField.finiteExtension_isValuativeTopology` and
   `TauCeti.IsNonarchimedeanLocalField.finiteExtension_isNonarchimedeanLocalField`: the closed
@@ -73,6 +70,8 @@ instances, so every statement carries its own `letI` and could not fire in a gen
 
 * Serre, *Corps Locaux*, II §2 and III §5.
 * Neukirch, *Algebraic Number Theory*, II §6 and II §8.
+* `Mathlib/NumberTheory/Padics/Complex.lean`, by María Inés de Frutos-Fernández, for the pattern
+  of constructing a normed field from `spectralNorm`.
 -/
 
 public section
@@ -90,19 +89,20 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- The rank-one structure on the canonical valuation of a nonarchimedean local field that
 normalizes the absolute value by the residue cardinality `q = Nat.card 𝓀[K]`, so that a
 uniformizer has absolute value `q⁻¹`. -/
-@[expose, instance_reducible]
-noncomputable def normalizedRankOne : (valuation K).RankOne :=
+@[instance_reducible]
+private noncomputable def normalizedRankOne : (valuation K).RankOne :=
   Valuation.IsRankOneDiscrete.rankOne _
     (by exact_mod_cast Finite.one_lt_card (α := 𝓀[K]) : 1 < (Nat.card 𝓀[K] : ℝ≥0))
 
 /-- The normalized absolute value of a nonarchimedean local field, as a nontrivially normed
 field structure. It is normalized by the residue cardinality `q = Nat.card 𝓀[K]`: a uniformizer
-has absolute value `q⁻¹`, by `normalizedNormedField.norm_isUniformizer`.
+has absolute value `q⁻¹`, by
+`normalizedNormedField.norm_eq_card_residueField_inv_of_isUniformizer`.
 
 This is a named definition rather than a global instance, so that a field already carrying a
 compatible normed structure does not acquire a second one. -/
-@[expose, instance_reducible]
-noncomputable def normalizedNontriviallyNormedField : NontriviallyNormedField K :=
+@[instance_reducible]
+private noncomputable def normalizedNontriviallyNormedField : NontriviallyNormedField K :=
   letI : UniformSpace K := IsTopologicalAddGroup.rightUniformSpace K
   haveI : IsUniformAddGroup K := isUniformAddGroup_of_addCommGroup
   letI := normalizedRankOne K
@@ -110,13 +110,13 @@ noncomputable def normalizedNontriviallyNormedField : NontriviallyNormedField K 
 
 /-- The normalized absolute value of a nonarchimedean local field, as a normed field structure.
 This is the structure that `spectralNorm` consumes over the base field. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def normalizedNormedField : NormedField K :=
   (normalizedNontriviallyNormedField K).toNormedField
 
 /-- The topology carried by `normalizedNormedField`. Naming it separately makes every later
 comparison with the ambient topology of `K` explicit. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def normalizedNormedFieldTopology : TopologicalSpace K :=
   (normalizedNormedField K).toMetricSpace.toUniformSpace.toTopologicalSpace
 
@@ -151,7 +151,8 @@ theorem norm_le_one_iff {x : K} :
 
 /-- A uniformizer has normalized absolute value `q⁻¹`, where `q = Nat.card 𝓀[K]` is the
 cardinality of the residue field. This is the equation that fixes the normalization. -/
-theorem norm_isUniformizer {π : K} (hπ : (valuation K).IsUniformizer π) :
+theorem norm_eq_card_residueField_inv_of_isUniformizer {π : K}
+    (hπ : (valuation K).IsUniformizer π) :
     letI := normalizedNormedField K
     ‖π‖ = (Nat.card 𝓀[K] : ℝ)⁻¹ := by
   let _ : UniformSpace K := IsTopologicalAddGroup.rightUniformSpace K
@@ -189,23 +190,17 @@ variable (L : Type*) [Field L] [Algebra K L] [Module.Finite K L]
 /-- The spectral norm of a finite extension of a nonarchimedean local field, as a normed field
 structure on `L`. Completeness and ultrametricity of the base come from
 `normalizedNormedField`; no topology and no valuative relation on `L` is assumed. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def finiteExtensionNormedField : NormedField L :=
   letI := normalizedNontriviallyNormedField K
   spectralNorm.normedField K L
 
 /-- The topology induced by the spectral norm on a finite extension. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def finiteExtensionNormedFieldTopology : TopologicalSpace L :=
   (finiteExtensionNormedField K L).toMetricSpace.toUniformSpace.toTopologicalSpace
 
 namespace finiteExtensionNormedField
-
-/-- The norm of `finiteExtensionNormedField` is the spectral norm. -/
-theorem norm_def (x : L) :
-    letI := normalizedNormedField K
-    letI := finiteExtensionNormedField K L
-    ‖x‖ = spectralNorm K L x := (rfl)
 
 /-- The spectral norm extends the normalized absolute value of the base field. -/
 theorem norm_algebraMap (a : K) :
@@ -229,7 +224,7 @@ end finiteExtensionNormedField
 /-- The valuative relation induced on a finite extension by the spectral norm. A particular
 `Valuation L ℝ≥0` is a proof witness here, not a second public carrier: the exported object is
 the valuative relation. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def finiteExtensionValuativeRel : ValuativeRel L :=
   letI := finiteExtensionNormedField K L
   haveI := finiteExtensionNormedField.isUltrametricDist K L
