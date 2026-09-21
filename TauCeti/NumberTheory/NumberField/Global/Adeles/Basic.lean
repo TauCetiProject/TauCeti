@@ -39,7 +39,7 @@ open scoped Classical in
 form of `InfiniteAdeleRing.ringEquiv_mixedSpace`: the underlying equivalence is the one of that
 ring isomorphism, and continuity in both directions comes from the isometry of each completion
 with `ℝ` or `ℂ`. -/
-@[expose] noncomputable def InfiniteAdeleRing.homeomorphMixedSpace :
+noncomputable def InfiniteAdeleRing.homeomorphMixedSpace :
     InfiniteAdeleRing K ≃ₜ mixedEmbedding.mixedSpace K :=
   let isom : InfiniteAdeleRing K ≃ₜ mixedEmbedding.mixedSpace K :=
     (Homeomorph.piEquivPiSubtypeProd (fun v : InfinitePlace K ↦ v.IsReal)
@@ -70,26 +70,34 @@ theorem InfiniteAdeleRing.homeomorphMixedSpace_apply
     (x : InfiniteAdeleRing K) :
     InfiniteAdeleRing.homeomorphMixedSpace K x =
       InfiniteAdeleRing.ringEquiv_mixedSpace K x :=
-  rfl
+  by
+    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rfl
 
 @[simp]
 theorem InfiniteAdeleRing.coe_homeomorphMixedSpace :
     ⇑(InfiniteAdeleRing.homeomorphMixedSpace K) =
       ⇑(InfiniteAdeleRing.ringEquiv_mixedSpace K) :=
-  rfl
+  by
+    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rfl
 
 @[simp]
 theorem InfiniteAdeleRing.homeomorphMixedSpace_symm_apply
     (x : mixedEmbedding.mixedSpace K) :
     (InfiniteAdeleRing.homeomorphMixedSpace K).symm x =
       (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm x :=
-  rfl
+  by
+    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rfl
 
 @[simp]
 theorem InfiniteAdeleRing.coe_homeomorphMixedSpace_symm :
     ⇑(InfiniteAdeleRing.homeomorphMixedSpace K).symm =
       ⇑(InfiniteAdeleRing.ringEquiv_mixedSpace K).symm :=
-  rfl
+  by
+    rw [InfiniteAdeleRing.homeomorphMixedSpace]
+    rfl
 
 /-- The standard ring equivalence from the infinite adele ring to the Minkowski mixed space is
 continuous. -/

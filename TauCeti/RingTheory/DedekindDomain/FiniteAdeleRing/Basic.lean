@@ -100,11 +100,16 @@ theorem integralEmbedding_apply
     integralEmbedding (R := R) (K := K) x v = x v :=
   RestrictedProduct.structureMap_apply _ _ v
 
+/-- The product of the local integer rings embeds into the finite adele ring. -/
+theorem isEmbedding_integralEmbedding :
+    Topology.IsEmbedding (integralEmbedding (R := R) (K := K)) :=
+  RestrictedProduct.isEmbedding_structureMap
+
 /-- The embedding of the product of the local integer rings into the finite adeles is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_integralEmbedding :
     Continuous (integralEmbedding (R := R) (K := K)) :=
-  RestrictedProduct.isEmbedding_structureMap.continuous
+  (isEmbedding_integralEmbedding (R := R) (K := K)).continuous
 
 /-- The range of the integral embedding is the set of finite adeles integral at every place. -/
 theorem range_integralEmbedding :
