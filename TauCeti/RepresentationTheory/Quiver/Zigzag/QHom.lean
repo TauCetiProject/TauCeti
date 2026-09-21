@@ -63,9 +63,17 @@ variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 /-! ### Finite support and the q-Hom polynomial -/
 
+private theorem zigzagProjectiveTargetShiftHom_eq_bot_of_not_mem
+    (i j : V) {d : ℤ} (hd : d ∉ ({0, -1, -2} : Finset ℤ)) :
+    zigzagProjectiveTargetShiftHom k G i j d = ⊥ := by
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hd
+  rcases lt_or_gt_of_ne hd.1 with hneg | hpos
+  · exact zigzagProjectiveTargetShiftHom_eq_bot_of_lt_neg_two k G i j (by omega)
+  · exact zigzagProjectiveTargetShiftHom_eq_bot_of_pos k G i j (by omega)
+
 /-- The target-shifted homomorphism spaces between two zigzag vertex projectives have finite
 Laurent support.  More precisely, only shifts `-2`, `-1`, and `0` can contribute. -/
-theorem zigzagProjectiveTargetShiftHomFiniteSupport
+theorem hasFiniteLaurentSupport_zigzagProjectiveTargetShiftHom
     (hns : ∀ i : V, ∃ j, G.Adj i j) (i j : V) :
     HasFiniteLaurentSupport k (fun d : ℤ => zigzagProjectiveTargetShiftHom k G i j d) := by
   let _ : Finite G.Dart :=
@@ -76,21 +84,15 @@ theorem zigzagProjectiveTargetShiftHomFiniteSupport
   · exact Module.Finite.equiv
       (zigzagProjectiveTargetShiftHomEquivIntegerGradedCorner k G i j d).symm
   · intro d hd
-    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hd
-    rcases lt_or_gt_of_ne hd.1 with hneg | hpos
-    · have hlt : d < -2 := by omega
-      rw [zigzagProjectiveTargetShiftHom_eq_bot_of_lt_neg_two k G i j hlt]
-      infer_instance
-    · have hpos' : 0 < d := by omega
-      rw [zigzagProjectiveTargetShiftHom_eq_bot_of_pos k G i j hpos']
-      infer_instance
+    rw [zigzagProjectiveTargetShiftHom_eq_bot_of_not_mem k G i j hd]
+    infer_instance
 
 /-- The **projective q-Hom value** between the zigzag vertex projectives `P_i` and `P_j`:
 the Laurent polynomial `∑_d dim_k Hom(P_i, P_j{d}) q⁻ᵈ`. -/
 noncomputable def zigzagProjectiveQHom (hns : ∀ i : V, ∃ j, G.Adj i j)
     (i j : V) : LaurentPolynomial ℤ :=
   targetShiftGradedDimension k (fun d : ℤ => zigzagProjectiveTargetShiftHom k G i j d)
-    (zigzagProjectiveTargetShiftHomFiniteSupport k G hns i j)
+    (hasFiniteLaurentSupport_zigzagProjectiveTargetShiftHom k G hns i j)
 
 /-- The coefficient of `qⁿ` in projective q-Hom is the dimension of the target-shifted Hom
 space with shift `-n`. -/
@@ -136,12 +138,8 @@ theorem zigzagProjectiveQHom_eq_toLaurent (hns : ∀ i : V, ∃ j, G.Adj i j) (i
     rw [hzero, hone, htwo]
     ring
   · intro d hd
-    simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hd
-    rcases lt_or_gt_of_ne hd.1 with hneg | hpos
-    · rw [zigzagProjectiveTargetShiftHom_eq_bot_of_lt_neg_two k G i j (by omega)]
-      infer_instance
-    · rw [zigzagProjectiveTargetShiftHom_eq_bot_of_pos k G i j (by omega)]
-      infer_instance
+    rw [zigzagProjectiveTargetShiftHom_eq_bot_of_not_mem k G i j hd]
+    infer_instance
 
 /-! ### Matrix and sesquilinear form -/
 
