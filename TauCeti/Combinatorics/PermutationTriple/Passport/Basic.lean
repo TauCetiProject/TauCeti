@@ -234,6 +234,9 @@ def conjugate (P : PassportSpec n) (τ : Perm (Fin n)) : PassportSpec n where
   lam1 := P.lam1
   laminf := P.laminf
 
+@[simp] theorem partition_conjugate (P : PassportSpec n) (τ : Perm (Fin n)) (i : Fin 3) :
+    (P.conjugate τ).partition i = P.partition i := (rfl)
+
 @[simp] theorem conjugate_G (P : PassportSpec n) (τ : Perm (Fin n)) :
     (P.conjugate τ).G = P.G.map (MulAut.conj τ).toMonoidHom := (rfl)
 

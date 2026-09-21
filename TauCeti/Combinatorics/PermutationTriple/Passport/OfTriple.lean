@@ -107,7 +107,7 @@ noncomputable def orderedPassportOf (t : ConnectedTriple n) : OrderedPassport n 
     t.orderedPassportOf.1 = t.passportOf := (rfl)
 
 /-- The indexed partition of the attached passport is the full partition of the component. -/
-@[simp] theorem partition_passportOf (t : ConnectedTriple n) (i : Fin 3) :
+@[simp] theorem passportOf_partition (t : ConnectedTriple n) (i : Fin 3) :
     t.passportOf.partition i = (t.1.component i).partition.parts := by
   fin_cases i <;> simp
 

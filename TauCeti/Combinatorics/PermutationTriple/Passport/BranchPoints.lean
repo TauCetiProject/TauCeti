@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.BranchPoints
 public import TauCeti.Combinatorics.PermutationTriple.Passport.OfTriple
-public import TauCeti.Combinatorics.PermutationTriple.Examples
 import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
@@ -19,9 +18,10 @@ monodromy subgroup unchanged. Reindexing is contravariant, so this is a right ac
 admissibility and agrees with the branch-point operations on connected triples.
 
 `OrderedPassport` carries an admissible specification, including its reference subgroup.
-Its branch-point orbit has at most six elements. It is a coarser invariant than the ordered
-partitions: the torus passport changes under an exchange of branch points, while the
-passport of the degree-one cyclic triple has a singleton orbit.
+Its branch-point orbit has at most six elements. Passing from an ordered passport to its
+branch-point orbit gives a coarser invariant than equality of ordered passports. The witnesses
+in `Passport.Examples` show that the torus passport changes under an exchange of branch points,
+while the passport of the degree-one cyclic triple has a singleton orbit.
 
 ## References
 
@@ -82,7 +82,7 @@ def reindexBranchPoints (P : PassportSpec n) (ρ : Perm (Fin 3)) : PassportSpec 
   apply ext_partition <;> simp
 
 /-- Reindexing twice composes the permutations in the order of application. -/
-theorem reindexBranchPoints_reindexBranchPoints (P : PassportSpec n) (ρ σ : Perm (Fin 3)) :
+@[simp] theorem reindexBranchPoints_reindexBranchPoints (P : PassportSpec n) (ρ σ : Perm (Fin 3)) :
     (P.reindexBranchPoints ρ).reindexBranchPoints σ = P.reindexBranchPoints (ρ * σ) := by
   apply ext_partition <;> simp
 
@@ -90,9 +90,7 @@ theorem reindexBranchPoints_reindexBranchPoints (P : PassportSpec n) (ρ σ : Pe
 @[simp] theorem reindexBranchPoints_conjugate (P : PassportSpec n) (ρ : Perm (Fin 3))
     (τ : Perm (Fin n)) :
     (P.conjugate τ).reindexBranchPoints ρ = (P.reindexBranchPoints ρ).conjugate τ := by
-  have h (i : Fin 3) : (P.conjugate τ).partition i = P.partition i := by
-    fin_cases i <;> simp
-  ext <;> simp [reindexBranchPoints, h]
+  apply ext_partition <;> simp
 
 /-- Admissibility is invariant under reordering the branch points. -/
 @[simp] theorem isAdmissible_reindexBranchPoints_iff (P : PassportSpec n) (ρ : Perm (Fin 3)) :
@@ -147,7 +145,7 @@ variable {n : ℕ}
   apply PassportSpec.ext_partition
   · simp
   · intro i
-    simp only [partition_passportOf, coe_reindexBranchPoints,
+    simp only [passportOf_partition, coe_reindexBranchPoints,
       PassportSpec.partition_reindexBranchPoints]
     exact congrArg Nat.Partition.parts
       (Equiv.Perm.partition_eq_of_isConj.mp (t.1.isConj_component_reindexBranchPoints ρ i))
@@ -178,60 +176,5 @@ variable {n : ℕ}
       (x := t.passportOf.conjugate τ) (y := P))
 
 end PassportSpec
-
-namespace PermutationTriple
-
-/-- The degree-one cyclic triple has a singleton branch-point orbit of ordered passports. -/
-theorem orbit_orderedPassportOf_cyclicTriple_one :
-    orbit (Perm (Fin 3))ᵐᵒᵖ
-        (ConnectedTriple.orderedPassportOf
-          ⟨cyclicTriple 1, isConnected_cyclicTriple_iff.mpr (by decide)⟩) =
-      {(ConnectedTriple.orderedPassportOf
-          ⟨cyclicTriple 1, isConnected_cyclicTriple_iff.mpr (by decide)⟩)} := by
-  let t : ConnectedTriple 1 :=
-    ⟨cyclicTriple 1, isConnected_cyclicTriple_iff.mpr (by decide)⟩
-  have hp (i : Fin 3) : t.passportOf.partition i = {1} := by
-    fin_cases i <;>
-      simp only [Fin.reduceFinMk, PassportSpec.partition_zero, PassportSpec.partition_one,
-        PassportSpec.partition_two, ConnectedTriple.passportOf_lam0,
-        ConnectedTriple.passportOf_lam1, ConnectedTriple.passportOf_laminf,
-        t, cycleData_cyclicTriple (by decide : 1 ≠ 0), Multiset.replicate_one]
-  apply Set.eq_singleton_iff_unique_mem.mpr
-  refine ⟨mem_orbit_self _, ?_⟩
-  intro Q hQ
-  obtain ⟨ρ, rfl⟩ := mem_orbit_iff.mp hQ
-  apply Subtype.ext
-  apply PassportSpec.ext_partition
-  · rfl
-  · intro i
-    rw [OrderedPassport.coe_smul]
-    simp only [ConnectedTriple.coe_orderedPassportOf,
-      PassportSpec.smul_eq_reindexBranchPoints, PassportSpec.partition_reindexBranchPoints]
-    exact (hp _).trans (hp _).symm
-
-/-- Different ordered passports can have the same branch-point orbit: exchanging `1` and `∞`
-changes the torus passport from `([4], [4], [2, 2])` to `([4], [2, 2], [4])`. -/
-theorem exists_ne_mem_orbit_orderedPassportOf_torusTriple :
-    ∃ Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ
-      (ConnectedTriple.orderedPassportOf ⟨torusTriple, isConnected_torusTriple⟩),
-      Q ≠ (ConnectedTriple.orderedPassportOf ⟨torusTriple, isConnected_torusTriple⟩) := by
-  let t : ConnectedTriple 4 := ⟨torusTriple, isConnected_torusTriple⟩
-  refine ⟨MulOpposite.op (swap (1 : Fin 3) 2) • t.orderedPassportOf, mem_orbit _ _, ?_⟩
-  have h1 : t.orderedPassportOf.1.partition 1 = {4} := by
-    simp only [ConnectedTriple.coe_orderedPassportOf, PassportSpec.partition_one,
-      ConnectedTriple.passportOf_lam1, t, cycleData_torusTriple]
-  have hswap :
-      (MulOpposite.op (swap (1 : Fin 3) 2) • t.orderedPassportOf).1.partition 1 = {2, 2} := by
-    simp only [OrderedPassport.coe_smul, ConnectedTriple.coe_orderedPassportOf,
-      PassportSpec.smul_eq_reindexBranchPoints, MulOpposite.unop_op,
-      PassportSpec.partition_reindexBranchPoints, swap_apply_left, PassportSpec.partition_two,
-      ConnectedTriple.passportOf_laminf, t, cycleData_torusTriple]
-  intro h
-  have hp := congrArg (fun P : OrderedPassport 4 => P.1.partition 1) h
-  have hc : ({2, 2} : Multiset ℕ) = {4} := hswap.symm.trans (hp.trans h1)
-  have := congrArg Multiset.card hc
-  norm_num at this
-
-end PermutationTriple
 
 end TauCeti
