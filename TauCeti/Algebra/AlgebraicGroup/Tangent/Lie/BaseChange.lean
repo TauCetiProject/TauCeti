@@ -160,6 +160,16 @@ private def tangentBaseChangeLinearEquiv :
       simp only [extendTangent_tmul, algEquivSelf_derivation_smul_apply]
       ring
 
+/-- The linear comparison applies by extending the tangent vector. -/
+private theorem tangentBaseChangeLinearEquiv_apply
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H K)) :
+    tangentBaseChangeLinearEquiv d = extendTangent d := rfl
+
+/-- The inverse linear comparison applies by restricting the tangent vector. -/
+private theorem tangentBaseChangeLinearEquiv_symm_apply
+    (d : Derivation K (K ⊗[R] H) (Bialgebra.CounitAlgebra K (K ⊗[R] H) K)) :
+    tangentBaseChangeLinearEquiv.symm d = restrictTangent d := rfl
+
 private theorem restrictTangent_lie
     (d e : Derivation K (K ⊗[R] H) (Bialgebra.CounitAlgebra K (K ⊗[R] H) K)) :
     restrictTangent ⁅d, e⁆ = ⁅restrictTangent d, restrictTangent e⁆ := by
@@ -197,7 +207,10 @@ theorem tangentBaseChangeLieEquiv_tmul
         (a * Bialgebra.CounitAlgebra.algEquivSelf R H K (d h)) := by
   apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
   rw [AlgEquiv.apply_symm_apply]
-  unfold tangentBaseChangeLieEquiv tangentBaseChangeLinearEquiv
+  -- The Lie comparison retains the underlying linear equivalence.
+  change Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K
+    (tangentBaseChangeLinearEquiv d (a ⊗ₜ[R] h)) = _
+  rw [tangentBaseChangeLinearEquiv_apply]
   exact extendTangent_tmul d a h
 
 /-- The inverse Lie comparison restricts along `h ↦ 1 ⊗ h`. -/
@@ -209,7 +222,10 @@ theorem tangentBaseChangeLieEquiv_symm_apply
         (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K (d (1 ⊗ₜ[R] h))) := by
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H K).injective
   rw [AlgEquiv.apply_symm_apply]
-  unfold tangentBaseChangeLieEquiv tangentBaseChangeLinearEquiv
+  -- The inverse Lie comparison retains the inverse linear equivalence.
+  change Bialgebra.CounitAlgebra.algEquivSelf R H K
+    (tangentBaseChangeLinearEquiv.symm d h) = _
+  rw [tangentBaseChangeLinearEquiv_symm_apply]
   exact restrictTangent_apply d h
 
 end
