@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Degree
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.Exponent
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Subfield
-import TauCeti.GroupTheory.ExponentTwo
+import TauCeti.GroupTheory.ExponentPrime
 import Mathlib.FieldTheory.PrimitiveElement
 
 /-!

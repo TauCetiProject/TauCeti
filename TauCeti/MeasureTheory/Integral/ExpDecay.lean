@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # Exponential integrals on the real line
@@ -25,6 +26,8 @@ inclusion.
 
 * `TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)`.
 * `TauCeti.integral_pow_mul_exp_neg_mul_Ioi`: evaluation in terms of a factorial.
+* `TauCeti.lintegral_ofReal_exp_neg_mul_mul_lintegral`: an iterated exponential integral is a
+  Stieltjes-kernel integral.
 * `TauCeti.integrableOn_exp_mul_Ioi_iff`: `exp (a * ·)` is integrable on `(c, ∞)` exactly when
   `a < 0`.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
@@ -37,6 +40,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -66,6 +70,44 @@ theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :
     rw [Real.rpow_natCast t n]
   rw [h', one_div, div_eq_mul_inv, inv_pow]
   ring
+
+/-- **The Stieltjes kernel is an iterated exponential integral.** Swapping the two integrations
+turns the outer Laplace integral of the inner one into the Stieltjes integral of `ν`. -/
+theorem lintegral_ofReal_exp_neg_mul_mul_lintegral (ν : Measure ℝ≥0) [SFinite ν] {t : ℝ}
+    (ht : 0 < t) :
+    ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(t * s))) *
+        ∫⁻ x : ℝ≥0, ENNReal.ofReal (Real.exp (-(s * (x : ℝ)))) ∂ν
+      = ∫⁻ x : ℝ≥0, ENNReal.ofReal (t + (x : ℝ))⁻¹ ∂ν := by
+  have hmeas : AEMeasurable (Function.uncurry fun (s : ℝ) (x : ℝ≥0) =>
+      ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s))))
+      ((volume.restrict (Ioi (0 : ℝ))).prod ν) := by
+    refine Measurable.aemeasurable ?_
+    simp only [Function.uncurry_def]
+    fun_prop
+  calc
+    ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(t * s))) *
+          ∫⁻ x : ℝ≥0, ENNReal.ofReal (Real.exp (-(s * (x : ℝ)))) ∂ν
+        = ∫⁻ s in Ioi (0 : ℝ), ∫⁻ x : ℝ≥0,
+            ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s))) ∂ν := by
+          refine lintegral_congr fun s => ?_
+          rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+          refine lintegral_congr fun x => ?_
+          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
+          congr 2
+          ring
+    _ = ∫⁻ x : ℝ≥0, (∫⁻ s in Ioi (0 : ℝ),
+          ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s)))) ∂ν := lintegral_lintegral_swap hmeas
+    _ = ∫⁻ x : ℝ≥0, ENNReal.ofReal (t + (x : ℝ))⁻¹ ∂ν := by
+          refine lintegral_congr fun x => ?_
+          have htx : 0 < t + (x : ℝ) := add_pos_of_pos_of_nonneg ht x.coe_nonneg
+          have hint : IntegrableOn
+              (fun s : ℝ => Real.exp (-((t + (x : ℝ)) * s))) (Ioi 0) := by
+            simpa only [pow_zero, one_mul] using
+              integrableOn_pow_mul_exp_neg_mul_Ioi 0 htx
+          rw [← ofReal_integral_eq_lintegral_ofReal hint
+            (.of_forall fun s => (Real.exp_pos _).le)]
+          simpa using congrArg ENNReal.ofReal
+            (integral_pow_mul_exp_neg_mul_Ioi 0 htx)
 
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :

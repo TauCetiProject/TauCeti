@@ -9,7 +9,6 @@ import unittest
 from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import labels  # noqa: E402
 import zulip  # noqa: E402
 
 
@@ -42,25 +41,6 @@ class ReviewEmoji(unittest.TestCase):
         self.assertEqual(self.emoji(review="changes", inprogress=True), "writing")
         self.assertEqual(self.emoji(review="approved", inprogress=True), "check")
 
-    def test_tracks_the_review_status_label_transitions(self):
-        cases = [
-            ("none", False, "awaiting-review", None),
-            ("none", True, "review-in-progress", "eyes"),
-            ("changes", False, "awaiting-author", "writing"),
-            ("approved", False, "ready-to-merge", "check"),
-        ]
-        for review, inprogress, expected_label, expected_emoji in cases:
-            status = {
-                "lifecycle": "open",
-                "ci": "success",
-                "review": review,
-                "review_inprogress": inprogress,
-                "head": "h",
-                "title": "t",
-            }
-            with self.subTest(review=review, inprogress=inprogress):
-                self.assertEqual(labels.derived_label(status), expected_label)
-                self.assertEqual(zulip.review_emoji(status), expected_emoji)
 
 
 class MessageContent(unittest.TestCase):

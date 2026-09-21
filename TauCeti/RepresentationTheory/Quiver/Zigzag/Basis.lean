@@ -80,8 +80,6 @@ private noncomputable def volumeLoop (i : V) :
 private noncomputable def volumePath (i : V) : Quiver.TotalPath (DoubledQuiver G) :=
   ⟨vertex G i, vertex G i, volumeLoop G i⟩
 
-private theorem volumePath_fst (i : V) : (volumePath G i).1 = vertex G i := (rfl)
-
 private theorem length_volumeLoop {i j : V} (h : G.Adj i j) : (volumeLoop G i).length = 2 := by
   rw [volumeLoop, dite_eq_left (⟨j, h⟩ : ∃ j, G.Adj i j)]
   exact length_backtrackPath G _
@@ -484,6 +482,22 @@ theorem zigzagVolume_ne_zero [Nontrivial k] {i j : V} (h : G.Adj i j) :
   rw [backtrackElem_eq_ofPath, shortProj_ofPath_of_loop k G (backtrackPath G h)
     (length_backtrackPath G h), vertexEquiv_symm_vertex] at hproj
   exact hne hproj
+
+/-- Scalar multiplication of a volume class at a nonisolated vertex is injective. -/
+theorem zigzagVolume_smul_left_injective {i j : V} (h : G.Adj i j) :
+  Function.Injective fun r : k ↦ r • zigzagVolume k G i := by
+  intro r s hrs
+  beta_reduce at hrs
+  rw [zigzagVolume_eq_zigzagMk_backtrackElem k G h, ← map_smul, ← map_smul] at hrs
+  have hmem : r • backtrackElem G k h - s • backtrackElem G k h ∈ zigzagIdeal k G :=
+    (zigzagMk_eq_zero_iff k G).mp (by rw [map_sub, hrs, sub_self])
+  have hproj := shortProj_eq_zero_of_mem_zigzagIdeal k G hmem
+  rw [map_sub, map_smul, map_smul, backtrackElem_eq_ofPath,
+    shortProj_ofPath_of_loop k G (backtrackPath G h) (length_backtrackPath G h),
+    vertexEquiv_symm_vertex, sub_eq_zero] at hproj
+  apply (pathAlgebraBasis k (DoubledQuiver G)).linearIndependent.smul_left_injective
+    (volumePath G i)
+  simpa only [coe_pathAlgebraBasis] using hproj
 
 /-! ### The dimension -/
 

@@ -64,8 +64,8 @@ and torus examples were proved directly.
 ## References
 
 The isomorphism on higher homotopy groups is
-`TauCeti.IsCoveringMap.homotopyGroupPiMulEquiv`; the injectivity of a covering map on
-fundamental groups is `TauCeti.IsCoveringMap.mapOfEq_injective`. The identification of the
+`IsCoveringMap.homotopyGroupPiMulEquiv`; the injectivity of a covering map on
+fundamental groups is `IsCoveringMap.mapOfEq_injective`. The identification of the
 fundamental group of the base of a simply connected quotient covering map with the opposite
 of the acting group is Junyan Xu's `IsQuotientCoveringMap.fundamentalGroupEquiv` in
 `Mathlib/Topology/Homotopy/Lifting.lean`. Compare Proposition 4.1 and Section 1.B of
@@ -86,7 +86,7 @@ with those of its base, so one is trivial exactly when the other is. -/
 theorem subsingleton_homotopyGroup_iff (hp : IsCoveringMap p) (he : p e = x) (n : ℕ) :
     Subsingleton (π_ (n + 2) E e) ↔ Subsingleton (π_ (n + 2) X x) := by
   subst he
-  exact (TauCeti.IsCoveringMap.homotopyGroupPiMulEquiv hp e n).toEquiv.subsingleton_congr
+  exact (IsCoveringMap.homotopyGroupPiMulEquiv hp e n).toEquiv.subsingleton_congr
 
 /-- **The base of a surjective covering map with aspherical total space is aspherical.** -/
 theorem isAspherical (hp : IsCoveringMap p) (hp' : Function.Surjective p)
@@ -132,7 +132,7 @@ theorem isEilenbergMacLaneSpaceOne_totalSpace (hp : IsCoveringMap p)
     IsEilenbergMacLaneSpaceOne
       (FundamentalGroup.mapOfEq (⟨p, hp.continuous⟩ : C(E, X)) he).range E e :=
   IsEilenbergMacLaneSpaceOne.mk (hp.isAspherical_totalSpace he h)
-    ⟨MonoidHom.ofInjective (TauCeti.IsCoveringMap.mapOfEq_injective hp he)⟩
+    ⟨MonoidHom.ofInjective (IsCoveringMap.mapOfEq_injective hp he)⟩
 
 end IsCoveringMap
 

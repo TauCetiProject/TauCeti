@@ -226,7 +226,7 @@ lemma groupScheme_inv_left :
     ι[(groupScheme R).X].left =
       eqToHom (groupScheme_X_left R) ≫
         Spec.map (CommRingCat.ofHom
-          (HopfAlgebra.antipodeAlgHom R (SymmetricAlgebra R R)).toRingHom) ≫
+          (HopfAlgebra.antipodeAlgHom R (SymmetricAlgebra R R))) ≫
         eqToHom (groupScheme_X_left R).symm := by
   unfold groupScheme
   convert hopfSpec_obj_inv_left R (coordinateHopfAlgebra R) using 1
@@ -317,7 +317,7 @@ noncomputable def groupSchemePointMulEquiv :
 lemma groupSchemePointMulEquiv_apply_left
     (f : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     (groupSchemePointMulEquiv A f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom f.ofConv) ≫
         eqToHom (groupScheme_X_left R).symm := by
   simpa only [groupSchemePointMulEquiv] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left

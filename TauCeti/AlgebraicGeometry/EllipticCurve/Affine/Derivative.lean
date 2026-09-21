@@ -6,6 +6,8 @@ Authors: Chris Birkbeck, The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+-- Proof-only: `Δ ≠ 0` forces `a₁ ≠ 0 ∨ a₃ ≠ 0` where `2 = 0`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
 # The Weierstrass partial derivatives are derivatives
@@ -26,8 +28,15 @@ derivative it is named after.
 * `WeierstrassCurve.Affine.derivative_eval_polynomial`: the chain rule along a substitution
   `Y := p`, which expresses `derivative (W(X, p))` through *both* partials. For a constant
   `p = C y` the `Y`-term drops out and this reads `W_X(X, y)`.
+* `WeierstrassCurve.Affine.polynomialY_eq_zero_iff`: `W_Y` vanishes exactly when `2 = 0` and
+  `a₁ = a₃ = 0`, the criterion behind `polynomialY_ne_zero`.
+* `WeierstrassCurve.Affine.polynomialY_ne_zero`: `W_Y` is a nonzero polynomial once `Δ ≠ 0`. This
+  is what makes the Weierstrass equation separable in `Y`, and so the function field a separable
+  extension of the rational functions in `x`; in characteristic two the leading term of `W_Y`
+  vanishes and the discriminant is what rules out `a₁ = a₃ = 0`.
 
-All three hold over an arbitrary commutative ring.
+Every statement here holds over an arbitrary commutative ring; only `polynomialY_ne_zero` carries
+a further hypothesis, `Δ ≠ 0`.
 
 ## Implementation notes
 
@@ -104,6 +113,26 @@ one-variable polynomial `W(X, p)` splits into the two partials of `W`, the `Y`-o
   have h := Derivation.apply_eval_eq (derivative' (R := R)) p W.polynomial
   rw [hbridge, equivPolynomial_mapCoeffs_polynomial, derivative_polynomial] at h
   simpa using h
+
+/-- **`W_Y = 2Y + a₁X + a₃` vanishes exactly when `2 = 0` and `a₁ = a₃ = 0`.** So `W_Y` is a
+nonzero polynomial wherever `2 ≠ 0`, and where `2 = 0` it is nonzero exactly when `a₁ ≠ 0` or
+`a₃ ≠ 0`; `polynomialY_ne_zero` draws the latter from `Δ ≠ 0`. -/
+@[simp]
+theorem polynomialY_eq_zero_iff : W.polynomialY = 0 ↔ (2 : R) = 0 ∧ W.a₁ = 0 ∧ W.a₃ = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨h2, ha₁, ha₃⟩ ↦ by simp [polynomialY, h2, ha₁, ha₃]⟩
+  -- Read `W_Y` as a polynomial in `Y` over `R[X]`: its coefficients are `2` and `a₁X + a₃`, whose
+  -- own coefficients are `a₁` and `a₃`.
+  have h0 : C W.a₁ * X + C W.a₃ = 0 := by simpa [polynomialY] using congrArg (·.coeff 0) h
+  exact ⟨by simpa [polynomialY] using congrArg (·.coeff 1) h,
+    by simpa using congrArg (·.coeff 1) h0, by simpa using congrArg (·.coeff 0) h0⟩
+
+/-- The partial derivative `W_Y = 2Y + a₁X + a₃` of the Weierstrass polynomial is a nonzero
+polynomial whenever the discriminant is nonzero. In characteristic two the first term vanishes,
+and it is `Δ ≠ 0` that rules out `a₁ = a₃ = 0`; the criterion carrying no hypothesis on `Δ` is
+`polynomialY_eq_zero_iff`. -/
+theorem polynomialY_ne_zero (hΔ : W.Δ ≠ 0) : W.polynomialY ≠ 0 := fun h ↦
+  have ⟨h2, ha₁, ha₃⟩ := polynomialY_eq_zero_iff.mp h
+  (a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero W hΔ h2).elim (· ha₁) (· ha₃)
 
 end WeierstrassCurve.Affine
 

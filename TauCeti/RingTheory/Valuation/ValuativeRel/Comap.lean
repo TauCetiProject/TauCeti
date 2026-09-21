@@ -14,7 +14,7 @@ We define the pullback (comap) of a `ValuativeRel` along a ring homomorphism.
 
 ## Main definitions
 
-* `TauCeti.ValuativeRel.comap φ v` : Given `φ : A →+* B` and a valuative relation `v` on `B`,
+* `ValuativeRel.comap φ v` : Given `φ : A →+* B` and a valuative relation `v` on `B`,
   the induced `ValuativeRel A` defined by `a₁ ≤ᵥ a₂ ↔ φ(a₁) ≤ᵥ φ(a₂)`.
 
 ## References
@@ -27,7 +27,7 @@ pinned Mathlib.
 
 public section
 
-namespace TauCeti.ValuativeRel
+section
 
 variable {A B : Type*} [Semiring A] [Semiring B]
 
@@ -36,7 +36,7 @@ variable {A B : Type*} [Semiring A] [Semiring B]
 -- `instance_reducible` is the minimum reducibility the `classDefReducibility` check accepts
 -- for a definition of class type; the body is deliberately not exposed.
 @[instance_reducible]
-def comap (φ : A →+* B) (v : ValuativeRel B) : ValuativeRel A where
+def _root_.ValuativeRel.comap (φ : A →+* B) (v : ValuativeRel B) : ValuativeRel A where
   vle a₁ a₂ := (φ a₁) ≤ᵥ (φ a₂)
   vle_total a₁ a₂ := v.vle_total (φ a₁) (φ a₂)
   vle_trans h₁ h₂ := v.vle_trans h₁ h₂
@@ -50,23 +50,26 @@ def comap (φ : A →+* B) (v : ValuativeRel B) : ValuativeRel A where
 
 /-- The relation pulled back along `φ` compares images under `φ`. -/
 @[simp]
-theorem comap_vle (φ : A →+* B) (v : ValuativeRel B) (a₁ a₂ : A) :
-    (comap φ v).vle a₁ a₂ ↔ v.vle (φ a₁) (φ a₂) := Iff.rfl
+theorem _root_.ValuativeRel.comap_vle (φ : A →+* B) (v : ValuativeRel B) (a₁ a₂ : A) :
+    (ValuativeRel.comap φ v).vle a₁ a₂ ↔ v.vle (φ a₁) (φ a₂) := Iff.rfl
 
 /-- The strict relation pulled back along `φ` compares images under `φ`. -/
 @[simp]
-theorem comap_vlt (φ : A →+* B) (v : ValuativeRel B) (a₁ a₂ : A) :
-    (comap φ v).vlt a₁ a₂ ↔ v.vlt (φ a₁) (φ a₂) := Iff.rfl
+theorem _root_.ValuativeRel.comap_vlt (φ : A →+* B) (v : ValuativeRel B) (a₁ a₂ : A) :
+    (ValuativeRel.comap φ v).vlt a₁ a₂ ↔ v.vlt (φ a₁) (φ a₂) := Iff.rfl
 
 /-- Pulling back along the identity homomorphism is the identity. -/
 @[simp]
-theorem comap_id (v : ValuativeRel A) : comap (RingHom.id A) v = v := by
+theorem _root_.ValuativeRel.comap_id (v : ValuativeRel A) :
+    ValuativeRel.comap (RingHom.id A) v = v := by
   ext a₁ a₂; rfl
 
 /-- Pulling back along a composite is the composite of the pullbacks. -/
 @[simp]
-theorem comap_comp {C : Type*} [Semiring C] (φ : A →+* B) (ψ : B →+* C) (v : ValuativeRel C) :
-    comap (ψ.comp φ) v = comap φ (comap ψ v) := by
+theorem _root_.ValuativeRel.comap_comp {C : Type*} [Semiring C] (φ : A →+* B) (ψ : B →+* C)
+    (v : ValuativeRel C) :
+    ValuativeRel.comap (ψ.comp φ) v =
+      ValuativeRel.comap φ (ValuativeRel.comap ψ v) := by
   ext a₁ a₂; rfl
 
-end TauCeti.ValuativeRel
+end

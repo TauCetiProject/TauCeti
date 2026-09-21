@@ -8,7 +8,7 @@ module
 -- The ambient root subgroups supply the coordinate maps through which the symplectic maps factor.
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
 -- The symplectic scheme and its point equivalence identify the target of the root maps.
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Scheme
 
 /-!
 # Root subgroups of the symplectic group
@@ -41,12 +41,16 @@ factorization through the symplectic equations is recorded scheme-theoretically,
 * `TauCeti.Symplectic.positiveLongRootSubgroup` and
   `TauCeti.Symplectic.negativeLongRootSubgroup`: the affine group-scheme morphisms.
 * `TauCeti.Symplectic.shortRootSubgroup`: the affine group-scheme morphism for any short root.
+* `TauCeti.Symplectic.schemePointsMulEquiv_rootSubgroup`: the root subgroup's action on
+  scheme-valued points.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §21 and §24.6.
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §11.3.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §26.3.
+* The scheme-points root-subgroup construction follows the formal template in
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup`.
 -/
 
 public section
@@ -473,6 +477,41 @@ theorem rootSubgroup_def (root : GLSymplecticFin.RootSubgroupIndex m) :
         eqToHom (groupScheme_def R m).symm := by
   unfold rootSubgroup
   rfl
+
+section SchemePoints
+
+variable (A : Type u) [CommRing A] [Algebra R A]
+
+private lemma groupSchemePointMulEquiv_comp_rootSubgroup
+    (root : GLSymplecticFin.RootSubgroupIndex m)
+    (q : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
+    AdditiveGroup.groupSchemePointMulEquiv A q ≫ (rootSubgroup root).hom.hom =
+      groupSchemePointMulEquiv m A (rootSubgroupPoints root q) := by
+  rw [rootSubgroup_def,
+    ← mapPointsFunctor_rootSubgroupCoordinateMap_app root (CommAlgCat.of R A) q]
+  exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
+    (R := R) A (groupScheme_def R m) (AdditiveGroup.groupScheme_def R)
+      (groupSchemePointMulEquiv m A) (AdditiveGroup.groupSchemePointMulEquiv A)
+      (groupSchemePointMulEquiv_apply_left m A)
+      (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
+      (rootSubgroupCoordinateMap root) q
+
+/-- **A symplectic root subgroup on scheme-valued points** is its standard root matrix. -/
+-- Not `@[simp]`: the reducible symplectic `groupScheme` target prevents this statement from being
+-- in simp normal form.
+theorem schemePointsMulEquiv_rootSubgroup
+    (root : GLSymplecticFin.RootSubgroupIndex m)
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
+      (AdditiveGroup.groupScheme R).X) :
+    schemePointsMulEquiv m A (p ≫ (rootSubgroup root).hom.hom) =
+      root.hom (AdditiveGroup.schemePointsMulEquiv A p) := by
+  obtain ⟨q, rfl⟩ := (AdditiveGroup.groupSchemePointMulEquiv A).surjective p
+  rw [groupSchemePointMulEquiv_comp_rootSubgroup,
+    schemePointsMulEquiv_groupSchemePointMulEquiv,
+    pointsMulEquiv_rootSubgroupPoints,
+    AdditiveGroup.schemePointsMulEquiv_groupSchemePointMulEquiv]
+
+end SchemePoints
 
 /-- **The positive long-root subgroup of `Sp₂ₘ` attached to `2eᵢ`**, as an affine
 group-scheme morphism. -/

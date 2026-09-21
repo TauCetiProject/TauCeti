@@ -24,6 +24,12 @@ letter, and cutting is injective, so no component of length at least two can sur
 
 ## Main results
 
+* `TauCeti.ReducedTensorWords.subword_one`: a block of length one is a single letter.
+* `TauCeti.ReducedTensorWords.deconcatenation_prepend`: the cuts of a prepended word.
+* `TauCeti.ReducedTensorWords.prepend_ofLetter` and
+  `TauCeti.ReducedTensorWords.deconcatenation_of_two`: the two-letter word and its only cut.
+* `TauCeti.ReducedTensorWords.letter_comp_map`: the letter of a letterwise-mapped word is the
+  image of its letter.
 * `TauCeti.ReducedTensorWords.deconcatenation_eq_zero_iff`: the primitives of the reduced tensor
   coalgebra are exactly the single letters.
 
@@ -37,7 +43,7 @@ public section
 
 open scoped BigOperators DirectSum TensorProduct
 
-universe uR uM
+universe uR uM uN
 
 namespace TauCeti
 
@@ -159,6 +165,97 @@ theorem eq_of_deconcatenation_eq_of_letter_eq {x y : ReducedTensorWords R M}
     simp only [LinearMap.comp_apply] at hx hy
     rw [← hx, ← hy, hd]
 
+/-- A block of length one is the corresponding single letter. -/
+theorem subword_one {n : ℕ} (z : Fin n → M) {a : ℕ} (ha : a < n) :
+    subword R z a 1 = ofLetter R M (z ⟨a, ha⟩) := by
+  refine eq_of_deconcatenation_eq_of_letter_eq R M ?_ ?_
+  · rw [deconcatenation_subword, deconcatenation_ofLetter]
+    exact Finset.sum_eq_zero fun c hc ↦ by simp only [Finset.mem_Ioo] at hc; omega
+  · rw [letter_ofLetter, letter_apply, subword_eq_of_tprod R z Nat.one_pos (by omega),
+      component_of_eq R M (m := ⟨1, Nat.one_pos⟩) (n := 1) (Subtype.ext rfl),
+      TensorPower.cast_refl, LinearEquiv.refl_apply, TauCeti.TensorPower.oneEquiv_tprod]
+    exact congrArg z (Fin.ext (Nat.add_zero a))
+
+section Prepend
+
+variable {R M}
+
+/-- A prepended word has length at least two, so it has no letter component. -/
+@[simp]
+theorem letter_prepend (a : M) (w : ReducedTensorWords R M) : letter R M (prepend R M a w) = 0 := by
+  have h : letter R M ∘ₗ prepend R M a = 0 := by
+    refine linearMap_ext R M fun k y ↦ ?_
+    rw [LinearMap.comp_apply, prepend_of_tprod, letter_apply,
+      component_of_of_ne R M (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega),
+      map_zero, LinearMap.zero_apply]
+  exact LinearMap.congr_fun h w
+
+/-- Cutting a prepended word `a · w` either separates the new letter from `w`, or cuts `w` and
+prepends `a` to the left half. -/
+theorem deconcatenation_prepend (a : M) (w : ReducedTensorWords R M) :
+    deconcatenation R M (prepend R M a w) =
+      ofLetter R M a ⊗ₜ[R] w +
+        LinearMap.rTensor (ReducedTensorWords R M) (prepend R M a) (deconcatenation R M w) := by
+  have h : deconcatenation R M ∘ₗ prepend R M a =
+      (TensorProduct.mk R _ _ (ofLetter R M a)) +
+        LinearMap.rTensor (ReducedTensorWords R M) (prepend R M a) ∘ₗ deconcatenation R M := by
+    refine linearMap_ext R M fun k y ↦ ?_
+    obtain ⟨k, hk⟩ := k
+    -- Read `a · y` as the whole of the tuple `z = a y`, and `y` as its block after position `0`.
+    set z : Fin (k + 1) → M := Fin.cons a y with hz
+    have hw : of R M ⟨k, hk⟩ (PiTensorProduct.tprod R y) = subword R z 1 k := by
+      rw [subword_eq_of_tprod R z hk (by omega)]
+      exact of_tprod_congr R M _ rfl fun i ↦ by
+        simp only [hz, Fin.cast_eq_self]
+        exact (Fin.cons_succ (α := fun _ ↦ M) a y i).symm.trans
+          (congrArg (Fin.cons a y) (Fin.ext ((Fin.val_succ i).trans (Nat.add_comm _ _))))
+    have ha : z ⟨0, Nat.succ_pos k⟩ = a := Fin.cons_zero _ _
+    obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+    simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply,
+      TensorProduct.mk_apply]
+    rw [hw, ← ha, prepend_subword z (Nat.succ_pos _) hk, deconcatenation_subword,
+      deconcatenation_subword, map_sum,
+      sum_Ioo_eq_sum_range _ _ (by rw [subword_length_zero, TensorProduct.zero_tmul]),
+      sum_Ioo_eq_sum_range _ _ (by rw [subword_length_zero, TensorProduct.zero_tmul, map_zero]),
+      Finset.sum_range_succ', Finset.sum_range_succ', Finset.sum_range_succ']
+    simp only [subword_length_zero, TensorProduct.zero_tmul, map_zero, add_zero]
+    rw [subword_one R M z (Nat.succ_pos _), add_comm]
+    congr 1
+    · refine Finset.sum_congr rfl fun c _ ↦ ?_
+      rw [LinearMap.rTensor_tmul, prepend_subword z (Nat.succ_pos _) (Nat.succ_pos c)]
+      exact congrArg _ (congrArg₂ (subword R z) (by omega) (by omega))
+  simpa only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply,
+    TensorProduct.mk_apply] using LinearMap.congr_fun h w
+
+/-- Prepending a letter to a single letter is the two-letter word. -/
+theorem prepend_ofLetter (a b : M) :
+    prepend R M a (ofLetter R M b) =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b]) := by
+  have hz0 : (![a, b] : Fin 2 → M) ⟨0, by omega⟩ = a := by simp
+  have hz1 : (![a, b] : Fin 2 → M) ⟨1, by omega⟩ = b := by simp
+  have h1 : subword R (![a, b] : Fin 2 → M) 1 1 = ofLetter R M b := by
+    rw [subword_one R M (![a, b] : Fin 2 → M) (by omega), hz1]
+  have h2 := prepend_subword (R := R) (N := M) (a := 0) (b := 1) (![a, b] : Fin 2 → M)
+    (by omega) Nat.one_pos
+  rw [hz0, h1] at h2
+  rw [h2]
+  convert (of_tprod_eq_subword R (Nat.succ_pos 1) (![a, b] : Fin 2 → M)).symm using 1
+  congr
+
+/-- The only cut of a two-letter word separates its two letters. -/
+theorem deconcatenation_of_two (a b : M) :
+    deconcatenation R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
+      ofLetter R M a ⊗ₜ[R] ofLetter R M b := by
+  rw [← prepend_ofLetter, deconcatenation_prepend, deconcatenation_ofLetter, map_zero, add_zero]
+
+/-- A two-letter word has no letter component. -/
+@[simp]
+theorem letter_of_two (a b : M) :
+    letter R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) = 0 := by
+  rw [← prepend_ofLetter, letter_prepend]
+
+end Prepend
+
 /-- The primitive elements of the reduced tensor coalgebra are exactly the single letters. -/
 theorem deconcatenation_eq_zero_iff {x : ReducedTensorWords R M} :
     deconcatenation R M x = 0 ↔ x ∈ LinearMap.range (ofLetter R M) := by
@@ -170,6 +267,35 @@ theorem deconcatenation_eq_zero_iff {x : ReducedTensorWords R M} :
     exact deconcatenation_ofLetter R M a
 
 end Semiring
+
+section Map
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommSemiring R] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- Mapping a single letter applies the map to that letter. -/
+@[simp]
+theorem map_ofLetter (g : M →ₗ[R] N) (a : M) :
+    ReducedTensorWords.map (R := R) g (ofLetter R M a) = ofLetter R N (g a) := by
+  have hz : (![a] : Fin 1 → M) ⟨0, Nat.one_pos⟩ = a := by simp
+  have h : subword R (![a] : Fin 1 → M) 0 1 = ofLetter R M a := by
+    rw [subword_one R M (![a] : Fin 1 → M) Nat.one_pos, hz]
+  rw [← h, map_subword, subword_one R N _ Nat.one_pos, hz]
+
+/-- The letter of a letterwise-mapped word is the image of its letter. -/
+@[simp]
+theorem letter_comp_map (g : M →ₗ[R] N) :
+    letter R N ∘ₗ ReducedTensorWords.map (R := R) g = g ∘ₗ letter R M := by
+  refine linearMap_ext R M fun n x ↦ ?_
+  simp only [LinearMap.comp_apply, letter_apply, component_map]
+  have h : (TensorPower.oneEquiv R N).toLinearMap ∘ₗ PiTensorProduct.map (fun _ ↦ g) =
+      g ∘ₗ (TensorPower.oneEquiv R M).toLinearMap := by
+    refine PiTensorProduct.ext (MultilinearMap.ext fun y ↦ ?_)
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.coe_comp, Function.comp_apply,
+      LinearEquiv.coe_coe, PiTensorProduct.map_tprod, TauCeti.TensorPower.oneEquiv_tprod]
+  exact LinearMap.congr_fun h _
+
+end Map
 
 end ReducedTensorWords
 

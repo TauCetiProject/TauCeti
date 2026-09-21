@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 
 /-!
-# Naturality of the low-degree connecting maps
+# Naturality of the low-degree connecting maps, and their compatibility with corestriction
 
 The connecting maps `δ⁰ : H⁰(G, C) → H¹(G, A)` and `δ¹ : H¹(G, C) → H²(G, A)` of a short exact
 sequence `0 → A → B → C → 0` of discrete `G`-modules are natural in the sequence and in the group.
@@ -41,6 +41,22 @@ so does not assume `fC` equivariant at all; each named degree-zero instance disc
 hypothesis by the `coe_` lemma of its own degree-zero map. In degree one both legs are
 compatible-pair maps, so `explicitDelta1_naturality` takes only the class `x : H¹(G, C)`.
 
+Corestriction along a finite-index open subgroup `U ≤ G` is not a compatible-pair map, so it is
+not a specialization of the two squares. It commutes with the connecting maps nonetheless: for the
+sequence over `G` and its restriction to `U`,
+
+```text
+H⁰(U, C) --δ⁰--> H¹(U, A)          H¹(U, C) --δ¹--> H²(U, A)
+   |                 |                 |                |
+  cor⁰             cor¹              cor¹             cor²
+   v                 v                 v                v
+H⁰(G, C) --δ⁰--> H¹(G, A)          H¹(G, C) --δ¹--> H²(G, A)
+```
+
+commute. The upper row is the connecting map of the restricted sequence `S.restrict U`, so both
+rows are taken for the same two coefficient maps, and `U` is open of finite index, as
+corestriction requires.
+
 Continuity of a coefficient map is never a hypothesis here: every module in sight is discrete.
 
 Mathlib's discrete `groupCohomology.δ_naturality` is the corresponding statement for `Rep k G`; it
@@ -50,12 +66,14 @@ and `explicitDelta1_coeffMap` half and not the change of group.
 ## Main statements
 
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_naturality` and
-  `explicitDelta1_naturality`: the two squares above.
+  `explicitDelta1_naturality`: the two compatible-pair squares above.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_res` and
   `explicitDelta1_res`: restriction to a subgroup commutes with the connecting maps.
 * `TauCeti.ContCohomology.DiscreteShortExact.explicitDelta0_coeffMap` and
   `explicitDelta1_coeffMap`: a morphism of short exact sequences commutes with the connecting
   maps.
+* `TauCeti.ContCohomology.DiscreteShortExact.explicitCor_delta0` and `explicitCor_delta1`:
+  corestriction commutes with the connecting maps, `cor ∘ δ = δ ∘ cor`.
 
 ## Implementation notes
 
@@ -315,6 +333,88 @@ theorem explicitDelta1_coeffMap [ContinuousMul G] [ContinuousSMul G C] [Continuo
     (fun g b => fB.map_smul g b) (fun g y => fC.map_smul g y) hincl hproj x
 
 end CoefficientMaps
+
+section Corestriction
+
+variable {G : Type uG} [Group G] [TopologicalSpace G]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+    [DistribMulAction G B] [ContinuousSMul G B]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
+    [DistribMulAction G C]
+  (S : DiscreteShortExact G A B C) (U : Subgroup G) [U.FiniteIndex] (hU : IsOpen (U : Set G))
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- **Corestriction commutes with `δ⁰`**: `cor¹ ∘ δ⁰ = δ⁰ ∘ cor⁰` (Neukirch–Schmidt–Wingberg
+(1.5.2)). The connecting map on the left is that of the sequence restricted to `U`, so both sides
+name the same two coefficient maps. -/
+@[simp]
+theorem explicitCor_delta0 [ContinuousMul G] [ContinuousInv G] (x : H0 U C) :
+    explicitCor1 G A U hU ((S.restrict U).explicitDelta0 x) =
+      S.explicitDelta0 (explicitCor0 G C U x) := by
+  obtain ⟨b, hb⟩ := (S.restrict U).proj_surjective (x : C)
+  obtain ⟨a, -, hai⟩ := (S.restrict U).exists_continuous_incl_comp_eq
+    (continuous_d0_apply (G := U) b) (proj_d0_eq_zero (hb ▸ x.2))
+  have hai' : ∀ u : U, (S.restrict U).incl (a u) = u • b - b := fun u =>
+    (hai u).trans (d0_apply b u)
+  have ha : a ∈ Z1 U A := (S.restrict U).mem_Z1_of_incl_comp_eq_d0 hai'
+  -- The norm `n` of `b` lifts `cor⁰ x`, and `cor¹ a` lies over the coboundary of `n`.
+  set n := ∑ u : G ⧸ U, Quotient.out u • b with hn
+  have hproj : S.proj n = (explicitCor0 G C U x : C) := by
+    rw [restrict_proj] at hb
+    simp [hn, map_sum, S.proj_equivariant, hb]
+  have hd0 : (fun u : U => S.incl (a u)) = d0 U B b := funext fun u => by
+    rw [← restrict_incl S U, hai', d0_apply]
+  have hincl : ∀ γ : G,
+      S.incl ((cocyclesCor1 G A U Quotient.out Quotient.out_eq hU ⟨a, ha⟩ : G → A) γ) =
+        γ • n - n := fun γ => by
+    rw [coe_cocyclesCor1, map_cochainsCor1 G A U _ _ S.incl S.incl_equivariant, hd0,
+      cochainsCor1_d0, d0_apply]
+  rw [(S.restrict U).explicitDelta0_apply x hb ha hai', QuotientAddGroup.mk'_apply,
+    explicitCor1_mk, S.explicitDelta0_apply _ hproj (Subtype.property _) hincl,
+    QuotientAddGroup.mk'_apply]
+
+/-- **Corestriction commutes with `δ¹`**: `cor² ∘ δ¹ = δ¹ ∘ cor¹`, the degree-one counterpart of
+`TauCeti.ContCohomology.DiscreteShortExact.explicitCor_delta0`. The connecting map on the left is
+that of `S.restrict U`, where `U` is open and has finite index. -/
+@[simp]
+theorem explicitCor_delta1 [IsTopologicalGroup G] [ContinuousSMul G C] (y : H1 U C) :
+    explicitCor2 G A U hU ((S.restrict U).explicitDelta1 y) =
+      S.explicitDelta1 (explicitCor1 G C U hU y) := by
+  induction y using QuotientAddGroup.induction_on with
+  | _ f =>
+    obtain ⟨e, hecont, he⟩ :=
+      exists_continuous_lift (S.restrict U).proj_surjective (mem_Z1_iff.1 f.2).1
+    obtain ⟨a, -, hai⟩ := (S.restrict U).exists_continuous_incl_comp_eq (X := U × U)
+      (continuous_d1_apply hecont) (proj_d1_eq_zero he (mem_Z1_iff.1 f.2).2)
+    have hai' : ∀ g h : U, (S.restrict U).incl (a (g, h)) = g • e h - e (g * h) + e g :=
+      fun g h => by rw [hai (g, h), d1_apply]
+    have ha : a ∈ Z2 U A := (S.restrict U).mem_Z2_of_incl_comp_eq_d1 hecont hai'
+    -- `cor¹ e` lifts the corestricted cocycle, and `cor² a` lies over its coboundary.
+    have he' : ∀ γ : G, S.proj (cochainsCor1 G B U Quotient.out Quotient.out_eq e γ) =
+        (cocyclesCor1 G C U Quotient.out Quotient.out_eq hU f : G → C) γ := fun γ => by
+      rw [map_cochainsCor1 G B U _ _ S.proj S.proj_equivariant, coe_cocyclesCor1]
+      simp only [← restrict_proj S U, he]
+    have hae : ∀ γ η : G,
+        S.incl ((cocyclesCor2 G A U Quotient.out Quotient.out_eq hU ⟨a, ha⟩ : G × G → A)
+          (γ, η)) =
+        γ • cochainsCor1 G B U Quotient.out Quotient.out_eq e η -
+          cochainsCor1 G B U Quotient.out Quotient.out_eq e (γ * η) +
+            cochainsCor1 G B U Quotient.out Quotient.out_eq e γ := fun γ η => by
+      have hd1 : (fun q : U × U => S.incl (a q)) = d1 U B e :=
+        funext fun q => by rw [← restrict_incl S U, hai' q.1 q.2, d1_apply]
+      rw [coe_cocyclesCor2, map_cochainsCor2 G A U _ _ S.incl S.incl_equivariant, hd1,
+        cochainsCor2_d1, d1_apply]
+    have hleft := (S.restrict U).explicitDelta1_apply f hecont he ha hai'
+    have hright := S.explicitDelta1_apply _
+      (continuous_cochainsCor1 G B U Quotient.out Quotient.out_eq hU hecont) he'
+      (Subtype.property _) hae
+    simp only [QuotientAddGroup.mk'_apply] at hleft hright
+    rw [hleft, explicitCor2_mk, explicitCor1_mk, hright]
+
+end Corestriction
 
 end DiscreteShortExact
 

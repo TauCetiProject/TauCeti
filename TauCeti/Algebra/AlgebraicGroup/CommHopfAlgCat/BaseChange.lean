@@ -9,6 +9,7 @@ import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
+public import TauCeti.Algebra.Bialgebra.BaseChange
 public import TauCeti.Algebra.Category.CommAlgCat.RestrictScalars
 
 /-!
@@ -33,6 +34,8 @@ the original points evaluated on `K`-algebras.
   `(K ⊗[k] H →ₐ[K] A) ≃* (H →ₐ[k] A)`.
 * `CommHopfAlgCat.baseChangeIsoPointsMulEquiv`: the same equivalence for a Hopf `K`-algebra
   presented as a scalar extension by an isomorphism `L ≅ K ⊗[k] H`.
+* `CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPointsFunctor`: point transport through such a
+  presentation commutes with a compatible square of coordinate morphisms.
 
 ## References
 
@@ -134,6 +137,36 @@ lemma baseChangeFunctor_map {H L : _root_.CommHopfAlgCat.{v} k} (φ : H ⟶ L) :
     (baseChangeFunctor (K := K)).map φ = baseChangeMap (K := K) φ :=
   (rfl)
 
+section Tower
+
+variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
+
+/-- **Base change of commutative Hopf algebras composes in stages.** For a tower `k → E → K`,
+extending a coordinate Hopf algebra to `E` and then to `K` agrees with extending it to `K` in one
+step.
+
+Contravariantly this says that the fibre of an affine group scheme over `K` may be computed
+through an intermediate ring, which is how a group split by a finite extension is recognised
+over an algebraic closure. -/
+noncomputable def baseChangeTowerIso (H : _root_.CommHopfAlgCat.{v} k) :
+    baseChange (K := K) (baseChange (K := E) H) ≅ baseChange (K := K) H :=
+  _root_.CommHopfAlgCat.isoMk
+    (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k E H K)
+
+/-- The tower comparison of coordinate Hopf algebras absorbs the intermediate scalar. -/
+@[simp]
+lemma baseChangeTowerIso_hom_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (e : E) (h : H) :
+    (baseChangeTowerIso k K H).hom.hom (s ⊗ₜ[E] (e ⊗ₜ[k] h)) = (e • s) ⊗ₜ[k] h :=
+  TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_tmul k E H K s e h
+
+/-- The inverse tower comparison inserts the unit of the intermediate ring. -/
+@[simp]
+lemma baseChangeTowerIso_inv_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (h : H) :
+    (baseChangeTowerIso k K H).inv.hom (s ⊗ₜ[k] h) = s ⊗ₜ[E] (1 ⊗ₜ[k] h) :=
+  TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul k E H K s h
+
+end Tower
+
 variable (A : CommAlgCat.{x} K)
 
 /-- The points of the base-changed Hopf algebra are the original points evaluated
@@ -233,6 +266,39 @@ lemma baseChangeIsoPointsMulEquiv_apply_apply (e : L ≅ baseChange (K := K) H)
   rw [baseChangeIsoPointsMulEquiv, MulEquiv.trans_apply, baseChangePointsMulEquiv_apply_apply,
     AlgHom.mapDomainMulEquiv_apply, AlgHom.mapDomain_apply_apply]
   exact congrArg f.ofConv (_root_.CommHopfAlgCat.ofIso_apply e.symm _)
+
+/-- Point transport through a scalar-extension presentation commutes with a compatible square of
+coordinate morphisms. -/
+lemma baseChangeIsoPointsMulEquiv_mapPointsFunctor
+    {G : _root_.CommHopfAlgCat.{v} k}
+    {HK GK : _root_.CommHopfAlgCat.{max w v} K}
+    (e : HK ≅ baseChange (K := K) H)
+    (gG : baseChange (K := K) G ⟶ GK)
+    (f : H ⟶ G) (fK : HK ⟶ GK)
+    (hcompat : e.hom ≫ baseChangeMap f ≫ gG = fK)
+    (A : CommAlgCat.{x} K)
+    (q : HopfAlgebra.points (R := K) (H := GK) A) :
+    baseChangeIsoPointsMulEquiv e A
+        (WithConv.toConv (q.ofConv.comp fK.hom.toAlgHom)) =
+      WithConv.toConv
+        ((baseChangePointsMulEquiv (K := K) A G
+          (WithConv.toConv (q.ofConv.comp gG.hom.toAlgHom))).ofConv.comp
+            f.hom.toAlgHom) := by
+  apply WithConv.ofConv_injective
+  apply AlgHom.ext
+  intro x
+  rw [baseChangeIsoPointsMulEquiv_apply_apply]
+  simp only [AlgHom.comp_apply]
+  rw [baseChangePointsMulEquiv_apply_apply]
+  simp only [AlgHom.comp_apply]
+  rw [← hcompat, _root_.CommHopfAlgCat.hom_comp, _root_.CommHopfAlgCat.hom_comp]
+  -- Category composition is stored as nested `BialgHom.comp`, while the isomorphism cancellation
+  -- and pure-tensor rules are stated for applications. This conversion exposes exactly those two
+  -- public interfaces and keeps downstream proofs independent of categorical wrappers.
+  change q.ofConv (gG.hom ((baseChangeMap f).hom
+      (e.hom.hom (e.inv (1 ⊗ₜ[k] x))))) =
+    q.ofConv (gG.hom (1 ⊗ₜ[k] f.hom x))
+  rw [Iso.inv_hom_id_apply, baseChangeMap_apply_tmul]
 
 /-- The presented point equivalence is natural in the value algebra. -/
 lemma baseChangeIsoPointsMulEquiv_mapPoints (e : L ≅ baseChange (K := K) H)

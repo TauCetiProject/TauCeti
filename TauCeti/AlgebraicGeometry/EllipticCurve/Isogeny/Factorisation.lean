@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Degree
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Kernel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
 
 /-!
@@ -25,10 +25,18 @@ The criterion is stated on subfields, not on kernels: over `ℚ` a curve with no
 relative Frobenius has trivial geometric point kernel while `id` does not factor through it. Both
 are correctly excluded here, the subfield containment failing in each case.
 
+When `#ker φ = deg φ`, however, `ker φ` cuts out `φ^*F(W₂)`: the kernel test `ker φ ≤ ker ψ`
+is then equivalent to the subfield criterion. In this development `Isogeny.ker` consists of
+base-field points, and the cardinality condition is equivalent to the relevant fixed-field
+equality (`TauCeti.Isogeny.card_ker_eq_degree_iff`). Over a separably closed field it is the
+condition a separable isogeny is expected to satisfy.
+
 ## Main results
 
 * `TauCeti.Isogeny.existsUnique_comp_eq_iff_fieldRange_le`: **the factorisation theorem**, that
   `ψ` factors through `φ` by a unique isogeny exactly when `ψ^*F(W₃) ⊆ φ^*F(W₂)`.
+* `TauCeti.Isogeny.existsUnique_comp_eq_iff_ker_le`: when `#ker φ = deg φ`, the same
+  criterion can equivalently be stated as `ker φ ≤ ker ψ`.
 * `TauCeti.Isogeny.exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one`: **a degree-one isogeny is
   an isomorphism**, the first consequence of the factorisation theorem.
 
@@ -48,7 +56,9 @@ finite function-field embeddings, with the named criterion `MapsInfinity λ ↔ 
 Not ported. Silverman's III.4.11 is stated for separable isogenies and proved by Galois theory of
 the function-field extension; the subfield criterion here subsumes it and needs no separability,
 and the pointedness of the factor — which the classical account does not have to address, its
-morphisms being maps of projective curves — is discharged by the place criterion above.
+morphisms being maps of projective curves — is discharged by the place criterion above. The
+kernel form uses the translation-action correspondence of
+`Affine/FunctionField/Translation/FixedField.lean` for the same Galois theory.
 
 ## References
 
@@ -112,6 +122,26 @@ theorem existsUnique_comp_eq_iff_fieldRange_le (φ : Isogeny W₁ W₂) (ψ : Is
       rw [comp_pullback]
       exact (hcomp _).trans (fieldPullback_algebraMap ψ c)
     exact ⟨χ, hfactor, fun _ h ↦ comp_right_injective φ (h.trans hfactor.symm)⟩
+
+/-- **The kernel form of the factorisation theorem** (Silverman III.4.11). When the kernel of
+`φ : W₁ → W₂` has `deg φ` points, an isogeny `ψ : W₁ → W₃` factors through `φ`, by a unique
+isogeny, exactly when `ker φ ≤ ker ψ`.
+
+Without the hypothesis only the forward implication holds (`TauCeti.Isogeny.ker_le_ker_comp`).
+The subfield criterion `TauCeti.Isogeny.existsUnique_comp_eq_iff_fieldRange_le` needs no
+hypothesis. -/
+theorem existsUnique_comp_eq_iff_ker_le [DecidableEq F] [W₁.IsElliptic]
+    {φ : Isogeny W₁ W₂} (hφ : Nat.card φ.ker = φ.degree) (ψ : Isogeny W₁ W₃) :
+    (∃! χ : Isogeny W₂ W₃, χ.comp φ = ψ) ↔ φ.ker ≤ ψ.ker := by
+  rw [existsUnique_comp_eq_iff_fieldRange_le]
+  refine ⟨fun h ↦ by rw [ker_def, ker_def]; exact translationFixingSubgroup_antitone W₁ h,
+    fun h ↦ ?_⟩
+  -- `ψ^*F(W₃)` is fixed by `ker ψ`, hence by `ker φ`, and `hφ` says that `ker φ` fixes nothing
+  -- beyond `φ^*F(W₂)`.
+  calc ψ.fieldPullback.fieldRange ≤ translationFixedField W₁ ψ.ker :=
+        by rw [ker_def]; exact le_translationFixedField_translationFixingSubgroup W₁ _
+    _ ≤ translationFixedField W₁ φ.ker := translationFixedField_antitone W₁ h
+    _ ≤ φ.fieldPullback.fieldRange := (card_ker_eq_degree_iff φ).1 hφ
 
 /-- **An isogeny of degree one is an isomorphism** (Silverman, *The Arithmetic of Elliptic
 Curves*, II.2.4.1): it has an isogeny which is both a left and a right inverse. -/

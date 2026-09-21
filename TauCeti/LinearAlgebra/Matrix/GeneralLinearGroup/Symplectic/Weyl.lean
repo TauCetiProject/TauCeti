@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- The symplectic root subgroups and their underlying transvection formulas are used below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Basic
 
 /-!
 # Weyl elements in the standard symplectic group
@@ -17,21 +17,30 @@ For distinct coordinate indices `i` and `j`, this file constructs the standard r
 n_{i,j} = x_{e_i-e_j}(1) x_{e_j-e_i}(-1) x_{e_i-e_j}(1)
 ```
 
-of the Weyl reflection exchanging `i` and `j`. Conjugation by `n_{i,j}` transports the positive
-and negative long-root subgroups at `j` to those at `i`. These identities work over an arbitrary
-commutative ring: their parameters are unchanged, so no division or characteristic restriction is
-needed.
+of the Weyl reflection exchanging `i` and `j`. It also constructs the long-root representative
+`n_{2e_i}`, which exchanges the two symplectic coordinates belonging to `i`. Conjugation by these
+representatives transports the root subgroups and acts on the paired diagonal torus by the
+corresponding type-`C_m` reflections. These identities work over an arbitrary commutative ring, so
+no division or characteristic restriction is needed.
 
-The conjugation formulas are the long-root transport step in the generation of the standard
-type-`C_m` symplectic group by its simple root subgroups. Together with the difference-root
-generation and the Chevalley commutator relations, they generate the remaining long and sum root
-subgroups. This advances the explicit full-weight type-`C` carrier in Layer 9 of the
-`ReductiveGroups` roadmap, consumed by milestone L0 of `CFSGStatement`.
+The short-root representatives permute torus coordinates, while the long-root representatives
+invert individual coordinates. Together these give the permutation and sign-change generators of
+the signed permutation group, the Weyl group of the standard symplectic torus.
 
 ## Main definitions and results
 
 * `TauCeti.GLSymplecticFin.differenceShortRootWeylElement`: the standard representative of the
   reflection in `e_i-e_j`.
+* `TauCeti.GLSymplecticFin.positiveLongRootWeylElement` and
+  `TauCeti.GLSymplecticFin.negativeLongRootWeylElement`: the two opposite representatives of the
+  reflection in `2e_i`.
+* `positiveLongRootWeylElement_mul_diagonal_mul_inv`: the long-root reflection inverts one
+  diagonal-torus coordinate.
+* `positiveLongRootWeylElement_mem_normalizer_diagonalTorus` and
+  `negativeLongRootWeylElement_mem_normalizer_diagonalTorus`: both long-root representatives belong
+  to the normalizer of the paired diagonal torus.
+* `differenceShortRootWeylElement_mem`: a subgroup containing the two difference-root elements
+  forming a Weyl word contains the corresponding Weyl representative.
 * `coe_differenceShortRootWeylElement`: in sum coordinates it is a product of two type-`A` Weyl
   representatives.
 * `differenceShortRootWeylElement_inv`: the representative for the opposite root is its inverse.
@@ -41,11 +50,18 @@ subgroups. This advances the explicit full-weight type-`C` carrier in Layer 9 of
   transports `x_{2e_j}(c)` to `x_{2e_i}(c)`.
 * `differenceShortRootWeylElement_mul_negativeLongRootTransvectionUnit_mul_inv`:
   the corresponding transport of `x_{-2e_j}(c)`.
+* `differenceShortRootWeylElement_mul_diagonal_mul_inv`: the short-root reflection exchanges two
+  diagonal-torus coordinates.
+* `differenceShortRootWeylElement_mem_normalizer_diagonalTorus`: the short-root representative
+  belongs to the normalizer of the paired diagonal torus.
 
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §5.2.
 * R. Steinberg, *Lectures on Chevalley Groups* (1968), §3.
+
+Both the short-root and the long-root representatives follow the Chevalley Weyl-word
+construction `n_α = x_α(1) x_{-α}(-1) x_α(1)` of these references.
 -/
 
 public section
@@ -63,6 +79,15 @@ variable {R : Type u} [CommRing R] {m : ℕ} {i j : Fin m}
 def differenceShortRootWeylElement (hij : i ≠ j) : GLSymplecticFin m R :=
   differenceShortRootUnit hij 1 * differenceShortRootUnit hij.symm (-1) *
     differenceShortRootUnit hij 1
+
+/-- A subgroup containing the two difference-root elements forming a Weyl word contains the
+corresponding Weyl reflection representative. -/
+theorem differenceShortRootWeylElement_mem (H : Subgroup (GLSymplecticFin m R))
+    (hij : i ≠ j) (hforward : differenceShortRootUnit hij 1 ∈ H)
+    (hbackward : differenceShortRootUnit hij.symm (-1) ∈ H) :
+    differenceShortRootWeylElement hij ∈ H := by
+  rw [differenceShortRootWeylElement]
+  exact H.mul_mem (H.mul_mem hforward hbackward) hforward
 
 /-- In sum coordinates the short-root Weyl representative is the product of the type-`A` Weyl
 representative on the first block and the inverse of the one on the second block. -/
@@ -288,5 +313,315 @@ theorem map_differenceShortRootWeylElement {S : Type v} [CommRing S]
     GLSymplecticFin.map m R f (differenceShortRootWeylElement hij) =
       differenceShortRootWeylElement hij := by
   simp [differenceShortRootWeylElement]
+
+private theorem diagonalCoordinates_comp_swaps (t : Fin m → Rˣ) :
+    (diagonalCoordinates t ∘
+          Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) ∘
+        Equiv.swap (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j)) =
+      diagonalCoordinates (t ∘ Equiv.swap i j) := by
+  funext k
+  obtain ⟨a | a, rfl⟩ := finSumFinEquiv.surjective k
+  · -- On the first block only the first-block swap moves the index.
+    rw [Function.comp_apply, Function.comp_apply]
+    by_cases hai : a = i
+    · rw [hai, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne
+        (finSumFinEquiv_inl_ne_inr j i) (finSumFinEquiv_inl_ne_inr j j)]
+      simp [finSumFinEquiv_apply_left]
+    · by_cases haj : a = j
+      · rw [haj, Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne
+          (finSumFinEquiv_inl_ne_inr i i) (finSumFinEquiv_inl_ne_inr i j)]
+        simp [finSumFinEquiv_apply_left]
+      · rw [Equiv.swap_apply_of_ne_of_ne
+            (finSumFinEquiv.injective.ne (Sum.inl_injective.ne hai))
+            (finSumFinEquiv.injective.ne (Sum.inl_injective.ne haj)),
+          Equiv.swap_apply_of_ne_of_ne (finSumFinEquiv_inl_ne_inr a i)
+            (finSumFinEquiv_inl_ne_inr a j)]
+        simp [finSumFinEquiv_apply_left, Equiv.swap_apply_of_ne_of_ne hai haj]
+  · -- On the second block only the second-block swap moves the index.
+    rw [Function.comp_apply, Function.comp_apply,
+      Equiv.swap_apply_of_ne_of_ne (finSumFinEquiv_inr_ne_inl a i)
+        (finSumFinEquiv_inr_ne_inl a j)]
+    by_cases hai : a = i
+    · rw [hai, Equiv.swap_apply_left]
+      simp [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
+    · by_cases haj : a = j
+      · rw [haj, Equiv.swap_apply_right]
+        simp [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
+      · rw [Equiv.swap_apply_of_ne_of_ne
+          (finSumFinEquiv.injective.ne (Sum.inr_injective.ne hai))
+          (finSumFinEquiv.injective.ne (Sum.inr_injective.ne haj))]
+        simp [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+          Equiv.swap_apply_of_ne_of_ne hai haj]
+
+/-- **A short-root Weyl element permutes torus coordinates.** Conjugation by the reflection
+representative for `e_i-e_j` exchanges the `i`-th and `j`-th coordinates of the paired diagonal
+torus. -/
+@[simp]
+theorem differenceShortRootWeylElement_mul_diagonal_mul_inv (hij : i ≠ j) (t : Fin m → Rˣ) :
+    differenceShortRootWeylElement hij * diagonal t *
+        differenceShortRootWeylElement hij.symm =
+      diagonal (t ∘ Equiv.swap i j) := by
+  rw [← differenceShortRootWeylElement_inv hij]
+  apply (GLSymplecticFin m R).subtype_injective
+  simp only [map_mul, map_inv, Subgroup.coe_subtype,
+    coe_differenceShortRootWeylElement, coe_diagonal]
+  set left := TauCeti.transvectionWeylElement (A := R)
+    (differenceShortRoot_first_indices_ne hij) with hleft
+  set right := TauCeti.transvectionWeylElement (A := R)
+    (differenceShortRoot_second_indices_ne hij) with hright
+  have hsecond : right⁻¹ * diagGL (diagonalCoordinates t) * right =
+      diagGL (diagonalCoordinates t ∘
+        Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) := by
+    simpa only [hright, TauCeti.transvectionWeylElement_inv] using
+      TauCeti.transvectionWeylElement_mul_diagGL_mul_inv
+        (differenceShortRoot_second_indices_ne hij).symm (diagonalCoordinates t)
+  have hfirst : ∀ u : Fin (m + m) → Rˣ, left * diagGL u * left⁻¹ =
+      diagGL (u ∘ Equiv.swap (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j))) := by
+    intro u
+    simpa only [hleft, TauCeti.transvectionWeylElement_inv] using
+      TauCeti.transvectionWeylElement_mul_diagGL_mul_inv
+        (differenceShortRoot_first_indices_ne hij) u
+  calc left * right⁻¹ * diagGL (diagonalCoordinates t) * (left * right⁻¹)⁻¹ =
+        left * (right⁻¹ * diagGL (diagonalCoordinates t) * right) * left⁻¹ := by group
+    _ = left * diagGL (diagonalCoordinates t ∘
+          Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) * left⁻¹ := by
+      rw [hsecond]
+    _ = diagGL ((diagonalCoordinates t ∘
+          Equiv.swap (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr j))) ∘
+          Equiv.swap (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j))) := hfirst _
+    _ = diagGL (diagonalCoordinates (t ∘ Equiv.swap i j)) := by
+      rw [diagonalCoordinates_comp_swaps t]
+
+private theorem differenceShortRootWeylElement_conj_mem_diagonalTorus (hij : i ≠ j)
+    {d : GLSymplecticFin m R} (hd : d ∈ diagonalTorus R m) :
+    differenceShortRootWeylElement hij * d * (differenceShortRootWeylElement hij)⁻¹ ∈
+      diagonalTorus R m := by
+  obtain ⟨t, rfl⟩ := mem_diagonalTorus_iff_exists_diagonal.mp hd
+  rw [differenceShortRootWeylElement_inv, differenceShortRootWeylElement_mul_diagonal_mul_inv]
+  exact mem_diagonalTorus_iff_exists_diagonal.mpr ⟨t ∘ Equiv.swap i j, rfl⟩
+
+/-- The short-root Weyl representative normalizes the paired diagonal torus. -/
+theorem differenceShortRootWeylElement_mem_normalizer_diagonalTorus (hij : i ≠ j) :
+    differenceShortRootWeylElement (R := R) hij ∈
+      Subgroup.normalizer (diagonalTorus R m : Set (GLSymplecticFin m R)) := by
+  rw [Subgroup.mem_normalizer_iff]
+  intro d
+  refine ⟨differenceShortRootWeylElement_conj_mem_diagonalTorus hij, fun hd => ?_⟩
+  have hback := differenceShortRootWeylElement_conj_mem_diagonalTorus hij.symm hd
+  rw [← differenceShortRootWeylElement_inv hij] at hback
+  have heq : (differenceShortRootWeylElement (R := R) hij)⁻¹ *
+      (differenceShortRootWeylElement hij * d * (differenceShortRootWeylElement hij)⁻¹) *
+        ((differenceShortRootWeylElement hij)⁻¹)⁻¹ = d := by
+    group
+  rwa [heq] at hback
+
+/-! ## Long-root reflections -/
+
+/-- The standard representative of the reflection in the long root `2e_i`:
+`x_{2e_i}(1) x_{-2e_i}(-1) x_{2e_i}(1)`. -/
+def positiveLongRootWeylElement (i : Fin m) : GLSymplecticFin m R :=
+  positiveLongRootTransvectionUnit i 1 * negativeLongRootTransvectionUnit i (-1) *
+    positiveLongRootTransvectionUnit i 1
+
+/-- The standard representative of the reflection in the opposite long root `-2e_i`:
+`x_{-2e_i}(1) x_{2e_i}(-1) x_{-2e_i}(1)`. -/
+def negativeLongRootWeylElement (i : Fin m) : GLSymplecticFin m R :=
+  negativeLongRootTransvectionUnit i 1 * positiveLongRootTransvectionUnit i (-1) *
+    negativeLongRootTransvectionUnit i 1
+
+/-- A subgroup containing the two opposite long-root elements in the Weyl word contains the
+positive long-root Weyl representative. -/
+theorem positiveLongRootWeylElement_mem (H : Subgroup (GLSymplecticFin m R)) (i : Fin m)
+    (hpositive : positiveLongRootTransvectionUnit i 1 ∈ H)
+    (hnegative : negativeLongRootTransvectionUnit i (-1) ∈ H) :
+    positiveLongRootWeylElement i ∈ H := by
+  rw [positiveLongRootWeylElement]
+  exact H.mul_mem (H.mul_mem hpositive hnegative) hpositive
+
+/-- A subgroup containing the two opposite long-root elements in the Weyl word contains the
+negative long-root Weyl representative. -/
+theorem negativeLongRootWeylElement_mem (H : Subgroup (GLSymplecticFin m R)) (i : Fin m)
+    (hnegative : negativeLongRootTransvectionUnit i 1 ∈ H)
+    (hpositive : positiveLongRootTransvectionUnit i (-1) ∈ H) :
+    negativeLongRootWeylElement i ∈ H := by
+  rw [negativeLongRootWeylElement]
+  exact H.mul_mem (H.mul_mem hnegative hpositive) hnegative
+
+/-- The matrix underlying the positive long-root Weyl representative is the elementary Weyl
+matrix exchanging the two symplectic coordinates belonging to `i`. -/
+@[simp]
+theorem coe_positiveLongRootWeylElement (i : Fin m) :
+    ((positiveLongRootWeylElement (R := R) i : GLSymplecticFin m R) :
+        GL (Fin (m + m)) R) =
+      TauCeti.transvectionWeylElement (finSumFinEquiv_inl_ne_inr i i) := by
+  rw [positiveLongRootWeylElement, TauCeti.transvectionWeylElement_def]
+  simp
+
+/-- The matrix underlying the negative long-root Weyl representative is the elementary Weyl
+matrix for the opposite ordered pair of symplectic coordinates. -/
+@[simp]
+theorem coe_negativeLongRootWeylElement (i : Fin m) :
+    ((negativeLongRootWeylElement (R := R) i : GLSymplecticFin m R) :
+        GL (Fin (m + m)) R) =
+      TauCeti.transvectionWeylElement (finSumFinEquiv_inr_ne_inl i i) := by
+  rw [negativeLongRootWeylElement, TauCeti.transvectionWeylElement_def]
+  simp
+
+/-- The representative for the opposite long root is the inverse of the positive long-root
+representative. -/
+@[simp]
+theorem positiveLongRootWeylElement_inv (i : Fin m) :
+    (positiveLongRootWeylElement (R := R) i)⁻¹ = negativeLongRootWeylElement i := by
+  apply (GLSymplecticFin m R).subtype_injective
+  rw [map_inv, Subgroup.coe_subtype, coe_positiveLongRootWeylElement,
+    coe_negativeLongRootWeylElement, TauCeti.transvectionWeylElement_inv]
+
+/-- The inverse of the negative long-root representative is the positive long-root
+representative. -/
+@[simp]
+theorem negativeLongRootWeylElement_inv (i : Fin m) :
+    (negativeLongRootWeylElement (R := R) i)⁻¹ = positiveLongRootWeylElement i := by
+  rw [← positiveLongRootWeylElement_inv, inv_inv]
+
+/-- Conjugation by the long-root Weyl representative exchanges the positive and negative long
+root subgroups and negates the parameter. -/
+@[simp]
+theorem positiveLongRootWeylElement_mul_positiveLongRootTransvectionUnit_mul_inv
+    (i : Fin m) (c : R) :
+    positiveLongRootWeylElement i * positiveLongRootTransvectionUnit i c *
+        negativeLongRootWeylElement i =
+      negativeLongRootTransvectionUnit i (-c) := by
+  rw [← positiveLongRootWeylElement_inv]
+  apply (GLSymplecticFin m R).subtype_injective
+  rw [map_mul, map_mul, map_inv, Subgroup.coe_subtype,
+    coe_positiveLongRootWeylElement, coe_positiveLongRootTransvectionUnit,
+    coe_negativeLongRootTransvectionUnit]
+  rw [TauCeti.transvectionWeylElement_inv]
+  exact TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_self
+    (finSumFinEquiv_inl_ne_inr i i) c
+
+/-- Conjugation by the long-root Weyl representative exchanges the negative and positive long
+root subgroups and negates the parameter. -/
+@[simp]
+theorem positiveLongRootWeylElement_mul_negativeLongRootTransvectionUnit_mul_inv
+    (i : Fin m) (c : R) :
+    positiveLongRootWeylElement i * negativeLongRootTransvectionUnit i c *
+        negativeLongRootWeylElement i =
+      positiveLongRootTransvectionUnit i (-c) := by
+  rw [← positiveLongRootWeylElement_inv]
+  apply (GLSymplecticFin m R).subtype_injective
+  rw [map_mul, map_mul, map_inv, Subgroup.coe_subtype,
+    coe_positiveLongRootWeylElement, coe_negativeLongRootTransvectionUnit,
+    coe_positiveLongRootTransvectionUnit]
+  rw [TauCeti.transvectionWeylElement_inv]
+  exact TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_symm
+    (finSumFinEquiv_inl_ne_inr i i) c
+
+/-- Conjugation by the long-root Weyl representative inverts the corresponding coordinate of
+the paired diagonal torus and fixes every other coordinate. -/
+@[simp]
+theorem positiveLongRootWeylElement_mul_diagonal_mul_inv
+    (i : Fin m) (t : Fin m → Rˣ) :
+    positiveLongRootWeylElement i * diagonal t * negativeLongRootWeylElement i =
+      diagonal (Function.update t i (t i)⁻¹) := by
+  rw [← positiveLongRootWeylElement_inv]
+  apply (GLSymplecticFin m R).subtype_injective
+  simp only [map_mul, map_inv, Subgroup.coe_subtype, coe_positiveLongRootWeylElement,
+    coe_diagonal]
+  rw [TauCeti.transvectionWeylElement_inv, TauCeti.transvectionWeylElement_mul_diagGL_mul_inv]
+  congr 1
+  funext a
+  obtain ⟨a | a, rfl⟩ := finSumFinEquiv.surjective a
+  · simp only [Function.comp_apply, finSumFinEquiv_apply_left,
+      finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
+    by_cases hai : a = i
+    · subst a
+      simp
+    · have hleft : Fin.castAdd m a ≠ Fin.castAdd m i :=
+        (Fin.castAdd_injective m m).ne hai
+      have hright : Fin.castAdd m a ≠ i.addNat m := by
+        simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
+          Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr a i
+      rw [Equiv.swap_apply_of_ne_of_ne hleft hright]
+      simp [Function.update_of_ne hai]
+  · simp only [Function.comp_apply, finSumFinEquiv_apply_left,
+      finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat]
+    by_cases hai : a = i
+    · subst a
+      simp
+    · have hleft : a.addNat m ≠ Fin.castAdd m i := by
+        simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
+          Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl a i
+      have hright : a.addNat m ≠ i.addNat m := by
+        simpa only [Fin.natAdd_eq_addNat] using (Fin.natAdd_injective m m).ne hai
+      rw [Equiv.swap_apply_of_ne_of_ne hleft hright]
+      simp [Function.update_of_ne hai]
+
+/-- Conjugation by the opposite long-root representative has the same reflection action on the
+paired diagonal torus. -/
+@[simp]
+theorem negativeLongRootWeylElement_mul_diagonal_mul_inv
+    (i : Fin m) (t : Fin m → Rˣ) :
+    negativeLongRootWeylElement i * diagonal t * positiveLongRootWeylElement i =
+      diagonal (Function.update t i (t i)⁻¹) := by
+  have hu : Function.update (Function.update t i (t i)⁻¹) i
+      ((Function.update t i (t i)⁻¹) i)⁻¹ = t := by
+    simp
+  have hconj := positiveLongRootWeylElement_mul_diagonal_mul_inv (R := R) i
+    (Function.update t i (t i)⁻¹)
+  rw [hu] at hconj
+  rw [← positiveLongRootWeylElement_inv, ← hconj,
+    ← positiveLongRootWeylElement_inv]
+  group
+
+/-- The long-root Weyl representative normalizes the paired diagonal torus. -/
+theorem positiveLongRootWeylElement_mem_normalizer_diagonalTorus (i : Fin m) :
+    positiveLongRootWeylElement (R := R) i ∈
+      Subgroup.normalizer (diagonalTorus R m : Set (GLSymplecticFin m R)) := by
+  rw [Subgroup.mem_normalizer_iff]
+  intro d
+  constructor
+  · rw [mem_diagonalTorus_iff_exists_diagonal]
+    rintro ⟨t, rfl⟩
+    rw [positiveLongRootWeylElement_inv,
+      positiveLongRootWeylElement_mul_diagonal_mul_inv]
+    rw [mem_diagonalTorus_iff_exists_diagonal]
+    exact ⟨Function.update t i (t i)⁻¹, rfl⟩
+  · intro hd
+    obtain ⟨t, ht⟩ := mem_diagonalTorus_iff_exists_diagonal.mp hd
+    have hback := negativeLongRootWeylElement_mul_diagonal_mul_inv (R := R) i t
+    rw [← positiveLongRootWeylElement_inv, ht] at hback
+    have heq : (positiveLongRootWeylElement i)⁻¹ *
+        (positiveLongRootWeylElement i * d * (positiveLongRootWeylElement i)⁻¹) *
+          positiveLongRootWeylElement i = d := by
+      group
+    rw [heq] at hback
+    rw [mem_diagonalTorus_iff_exists_diagonal]
+    exact ⟨Function.update t i (t i)⁻¹, hback.symm⟩
+
+/-- The opposite long-root Weyl representative normalizes the paired diagonal torus. -/
+theorem negativeLongRootWeylElement_mem_normalizer_diagonalTorus (i : Fin m) :
+    negativeLongRootWeylElement (R := R) i ∈
+      Subgroup.normalizer (diagonalTorus R m : Set (GLSymplecticFin m R)) := by
+  rw [← positiveLongRootWeylElement_inv]
+  exact inv_mem (positiveLongRootWeylElement_mem_normalizer_diagonalTorus i)
+
+/-- Applying a ring homomorphism entrywise to a long-root Weyl representative gives the
+corresponding representative over the target ring. -/
+@[simp]
+theorem map_positiveLongRootWeylElement {S : Type v} [CommRing S]
+    (f : R →+* S) (i : Fin m) :
+    GLSymplecticFin.map m R f (positiveLongRootWeylElement i) =
+      positiveLongRootWeylElement i := by
+  simp [positiveLongRootWeylElement]
+
+/-- Applying a ring homomorphism entrywise to a negative long-root Weyl representative gives the
+corresponding representative over the target ring. -/
+@[simp]
+theorem map_negativeLongRootWeylElement {S : Type v} [CommRing S]
+    (f : R →+* S) (i : Fin m) :
+    GLSymplecticFin.map m R f (negativeLongRootWeylElement i) =
+      negativeLongRootWeylElement i := by
+  simp [negativeLongRootWeylElement]
 
 end TauCeti.GLSymplecticFin

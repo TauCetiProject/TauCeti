@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.FinEnum
+import Mathlib.Data.List.NodupEquivFin
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Lift
@@ -42,6 +43,9 @@ needs the coefficient bound discussed in the cyclotomic-lift module.
 
 ## Main results
 
+* `TauCeti.ClassData.isSome_dixonCyclotomicCharacterTable_of_spec`: a certified exact table whose
+  conjugate reductions are distinct and whose coefficients lie in the balanced residue window is
+  found by the solver.
 * `conjugateResidueRow_mem_centralCharacterSearch_of_dixonCyclotomicCharacterTable?_eq_some`:
   every conjugate residue row of a returned central table comes from the modular search.
 * `TauCeti.ClassData.isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some`:
@@ -119,6 +123,16 @@ private theorem length_modularCentralRowsList (q : DixonPrimeData G) :
     simp [mem_modularCentralRowsList]
   rw [hrows, d.card_centralCharacterSearch_of_isGoodDixonPrime q.isGoodDixonPrime]
 
+/-- The canonical enumeration used by the solver identifies its row indices with the modular
+central-character search. -/
+private def modularCentralRowsEquiv (q : DixonPrimeData G) :
+    Fin d.numClasses ≃ {row // row ∈ d.centralCharacterSearch (F := ZMod q.p)} :=
+  letI : FinEnum (ZMod q.p) :=
+    FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
+  (finCongr (length_modularCentralRowsList d q).symm).trans
+    (((FinEnum.nodup_toList.filter _).getEquiv (d.modularCentralRowsList q)).trans
+      (Equiv.subtypeEquivRight fun _ ↦ mem_modularCentralRowsList d q))
+
 /-- The canonical numbering of the modular central-character rows.  The default branch of
 `List.getD` is unreachable because the row list has exactly `d.numClasses` entries. -/
 private def canonicalModularRow (q : DixonPrimeData G)
@@ -132,11 +146,52 @@ private theorem canonicalModularRow_mem (q : DixonPrimeData G) (i : Fin d.numCla
     (by simp [length_modularCentralRowsList d q, i.isLt])]
   exact (mem_modularCentralRowsList d q).mp (List.getElem_mem _)
 
+/-- The canonical modular row is the value of the equivalence enumerating the modular search. -/
+private theorem modularCentralRowsEquiv_apply (q : DixonPrimeData G) (i : Fin d.numClasses) :
+    (d.modularCentralRowsEquiv q i).1 = d.canonicalModularRow q i := by
+  let _ : FinEnum (ZMod q.p) :=
+    FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
+  simp only [modularCentralRowsEquiv, Equiv.trans_apply, Equiv.subtypeEquivRight_apply]
+  rw [canonicalModularRow, List.getD_eq_getElem _ _ (by
+    simp [length_modularCentralRowsList d q, i.isLt])]
+  congr 1
+
 /-- Divide every power-basis coordinate by a positive integer.  Candidate ordinary-character
 entries use this computable quotient; the exact checker subsequently verifies that the division
 was exact, so truncating integer division can never enter a returned result. -/
 private def cyclotomicQuotient (e : ℕ) (x : Cyclotomic e) (n : ℕ) : Cyclotomic e :=
   Cyclotomic.ofCoeffList e (x.coeffs.map fun c ↦ c / (n : ℤ))
+
+/-- Coefficientwise division by a positive constant undoes multiplication by that constant:
+a constant multiple scales every coordinate, and the integer quotients are then exact. -/
+private theorem cyclotomicQuotient_natCast_mul (e : ℕ) (x : Cyclotomic e) {n : ℕ}
+    (hn : 0 < n) : cyclotomicQuotient e ((n : Cyclotomic e) * x) n = x := by
+  have hn' : (n : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+  have hcoeffs :
+      (((n : Cyclotomic e) * x).coeffs.map fun c ↦ c / (n : ℤ)) = x.coeffs := by
+    rw [← Int.cast_natCast (R := Cyclotomic e) n, Cyclotomic.coeffs_intCast_mul,
+      List.map_map]
+    calc
+      _ = List.map id x.coeffs := by
+        apply List.map_congr_left
+        intro c _
+        simpa only [Function.comp_apply, id_eq] using Int.mul_ediv_cancel_left c hn'
+      _ = x.coeffs := List.map_id _
+  rw [cyclotomicQuotient, hcoeffs, Cyclotomic.ofCoeffList_coeffs]
+
+/-- **The certified ordinary table is the solver's coefficientwise quotient.**  The
+division-free conversion identity of the specification makes every coordinate division exact,
+so the candidate entries computed by `TauCeti.ClassData.cyclotomicQuotient` are determined. -/
+private theorem table_eq_cyclotomicQuotient (e : ℕ)
+    {omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e)}
+    {degree : Fin d.numClasses → ℕ}
+    (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
+    (i k : Fin d.numClasses) :
+    cyclotomicQuotient e ((degree i : Cyclotomic e) * omega i k) (d.classFinset k).card =
+      table i k := by
+  rw [hspec.degree_mul_central i k]
+  exact cyclotomicQuotient_natCast_mul e (table i k)
+    (Finset.card_pos.mpr ⟨d.rep k, d.rep_mem_classFinset k⟩)
 
 /-- Enumerate the exact-cyclotomic candidates inspected by the solver.
 
@@ -217,6 +272,117 @@ def dixonCyclotomicCharacterTable? (e : ℕ) (he : e = Monoid.exponent G)
   (d.dixonCyclotomicCharacterTableCandidates e he q).find? fun output ↦
     d.cyclotomicCharacterTableChecker e
       output.omega output.table output.degree
+
+/-- **Completeness criterion for the exact-cyclotomic solver.**  Suppose an exact certified table
+has coefficients within the balanced residue window and every Galois-conjugate reduction gives a
+distinct numbering of the modular central-character search.  Then the solver succeeds.
+
+The theorem hides the solver's arbitrary canonical ordering of modular rows.  Internally, the
+reduction at the first primitive root aligns the supplied rows with that ordering; the remaining
+reductions determine the permutations enumerated by the solver. -/
+theorem isSome_dixonCyclotomicCharacterTable_of_spec (e : ℕ)
+    (he : e = Monoid.exponent G) (q : DixonPrimeData G)
+    (omega table : Matrix (Fin d.numClasses) (Fin d.numClasses) (Cyclotomic e))
+    (degree : Fin d.numClasses → ℕ)
+    (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
+    (hcoeff : ∀ i k (l : Fin e.totient),
+      2 * ((omega i k).coeff l).natAbs < q.p)
+    (hresidue_injective : ∀ j, Function.Injective fun i ↦
+      (fun k ↦ Cyclotomic.conjugateResidues q.root (omega i k) j)) :
+    (d.dixonCyclotomicCharacterTable? e he q).isSome = true := by
+  let _ : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  let firstConjugate : Fin e.totient :=
+    ⟨0, Nat.totient_pos.mpr (Nat.pos_of_ne_zero
+      (he ▸ Monoid.exponent_ne_zero_of_finite))⟩
+  let residueRow (j : Fin e.totient) (i : Fin d.numClasses) :
+      Fin d.numClasses → ZMod q.p :=
+    fun k ↦ Cyclotomic.conjugateResidues q.root (omega i k) j
+  have hresidue_mem (j : Fin e.totient) (i : Fin d.numClasses) :
+      residueRow j i ∈ d.centralCharacterSearch := by
+    rw [d.mem_centralCharacterSearch]
+    constructor
+    · simp only [residueRow]
+      rw [hspec.central_one]
+      exact congrFun (Cyclotomic.conjugateResidues_one
+        (by simpa only [he] using q.isPrimitiveRoot_root)) j
+    · have hroot :
+          IsPrimitiveRoot (Cyclotomic.conjugateRoot e q.root j) e :=
+        Cyclotomic.isPrimitiveRoot_conjugateRoot
+          (by simpa only [he] using q.isPrimitiveRoot_root) j
+      simpa only [residueRow, Cyclotomic.conjugateResidues_apply,
+        ← Cyclotomic.reduceRingHom_apply q.p _ hroot] using
+          (hspec.central_eigen i).map (Cyclotomic.reduceRingHom q.p _ hroot)
+  let residueEquiv (j : Fin e.totient) :
+      Fin d.numClasses ≃ {row // row ∈ d.centralCharacterSearch (F := ZMod q.p)} :=
+    Equiv.ofBijective (fun i ↦ ⟨residueRow j i, hresidue_mem j i⟩)
+      ((Fintype.bijective_iff_injective_and_card _).mpr ⟨fun i i' h ↦
+        hresidue_injective j (congrArg Subtype.val h), by
+          rw [Fintype.card_fin, Fintype.card_coe,
+            d.card_centralCharacterSearch_of_isGoodDixonPrime q.isGoodDixonPrime]⟩)
+  let base : Equiv.Perm (Fin d.numClasses) :=
+    (d.modularCentralRowsEquiv q).trans (residueEquiv firstConjugate).symm
+  let perms (j : Fin e.totient) (i : Fin d.numClasses) : Fin d.numClasses :=
+    (d.modularCentralRowsEquiv q).symm (residueEquiv j (base i))
+  have hperms_first (i : Fin d.numClasses) : perms firstConjugate i = i := by
+    simp only [perms, base, Equiv.trans_apply, Equiv.apply_symm_apply,
+      Equiv.symm_apply_apply]
+  have hperms_injective (j : Fin e.totient) : Function.Injective (perms j) := by
+    exact (d.modularCentralRowsEquiv q).symm.injective.comp
+      ((residueEquiv j).injective.comp base.injective)
+  let output : d.CyclotomicCharacterTableData e :=
+    { omega := fun i k ↦ omega (base i) k
+      table := fun i k ↦ table (base i) k
+      degree := fun i ↦ degree (base i) }
+  have houtput_spec :
+      d.IsCyclotomicCharacterTableSpec e output.omega output.table output.degree := by
+    refine
+      { central_one := fun i ↦ hspec.central_one (base i)
+        central_eigen := fun i ↦ hspec.central_eigen (base i)
+        degree_pos := fun i ↦ hspec.degree_pos (base i)
+        degree_dvd := fun i ↦ hspec.degree_dvd (base i)
+        sum_degree_sq := ?_
+        degree_mul_central := fun i k ↦ hspec.degree_mul_central (base i) k
+        row_orthogonal := ?_ }
+    · exact (base.bijective.sum_comp fun i ↦ degree i ^ 2).trans hspec.sum_degree_sq
+    · intro i i'
+      simpa only [output, base.injective.eq_iff] using hspec.row_orthogonal (base i) (base i')
+  have hcandidate : output ∈ d.dixonCyclotomicCharacterTableCandidates e he q := by
+    let _ : FinEnum (ZMod q.p) :=
+      FinEnum.ofEquiv (Fin q.p) (ZMod.finEquiv q.p).symm.toEquiv
+    simp only [dixonCyclotomicCharacterTableCandidates, List.mem_flatMap, List.mem_map,
+      List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq]
+    refine ⟨perms, ⟨hperms_first, hperms_injective⟩,
+      fun i ↦ ⟨⟨degree (base i), Nat.lt_succ_of_le
+        (Nat.le_of_dvd Fintype.card_pos (hspec.degree_dvd (base i)))⟩,
+        Fin.ne_of_gt (hspec.degree_pos (base i)), hspec.degree_dvd (base i)⟩, ?_, ?_⟩
+    · exact (base.bijective.sum_comp fun i ↦ degree i ^ 2).trans hspec.sum_degree_sq
+    · have homega (i k : Fin d.numClasses) :
+          Cyclotomic.lift e q.root
+              (fun j ↦ (d.modularCentralRowsList q).getD (perms j i) 0 k) = omega (base i) k := by
+        have hconjugate : (fun j ↦ d.canonicalModularRow q (perms j i) k) =
+            Cyclotomic.conjugateResidues q.root (omega (base i) k) := by
+          funext j
+          rw [← d.modularCentralRowsEquiv_apply q (perms j i)]
+          simp only [perms, Equiv.apply_symm_apply, residueEquiv, residueRow,
+            Equiv.ofBijective_apply]
+        simp only [canonicalModularRow] at hconjugate
+        rw [hconjugate]
+        apply Cyclotomic.lift_conjugateResidues
+          (by simpa only [he] using q.isPrimitiveRoot_root)
+        exact fun l ↦ hcoeff (base i) k l
+      apply CyclotomicCharacterTableData.ext
+      · funext i k
+        simp only [output, Array.getElem_ofFn, Fin.eta]
+        exact homega i k
+      · funext i k
+        simp only [output, Array.getElem_ofFn, Fin.eta]
+        rw [homega]
+        exact d.table_eq_cyclotomicQuotient e hspec (base i) k
+      · funext i
+        rfl
+  rw [dixonCyclotomicCharacterTable?, List.find?_isSome]
+  exact ⟨output, hcandidate,
+    (d.cyclotomicCharacterTableChecker_eq_true_iff e _ _ _).mpr houtput_spec⟩
 
 /-- Every conjugate residue row of a successful exact-cyclotomic output is one of the rows
 returned by the modular central-character search. -/

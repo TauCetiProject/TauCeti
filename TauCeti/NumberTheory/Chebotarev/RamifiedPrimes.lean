@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Different
 public import TauCeti.RingTheory.DedekindDomain.RamificationLocus
+import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # The primes of a number field ramifying in a finite extension
@@ -34,6 +35,8 @@ wrapped in a named predicate, matching how the roadmap states it. A `Prop`-value
 ## Main results
 
 * `NumberField.Chebotarev.mem_ramifiedPrimes_iff`: the defining condition for membership.
+* `NumberField.Chebotarev.ramifiedPrimes_subset_ramifiedPrimes`: for a tower `K ⊆ L ⊆ M`, every
+  prime of `K` ramifying in `L` also ramifies in `M`.
 
 ## Relation to the absolute `NumberField.ramifiedPrimes`
 
@@ -121,5 +124,18 @@ variable {K L}
 theorem mem_ramifiedPrimes_iff (𝔭 : HeightOneSpectrum (𝓞 K)) : 𝔭 ∈ ramifiedPrimes K L ↔
     ¬ ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q :=
   Set.Finite.mem_toFinset _
+
+variable {M : Type*} [Field M] [NumberField M] [Algebra K M] [Algebra L M]
+  [IsScalarTower K L M]
+
+/-- **Ramification ascends a tower.** For number fields `K ⊆ L ⊆ M`, a prime of `K` that ramifies
+in `L` also ramifies in `M`. Equivalently, a prime unramified in `M` is unramified in every
+intermediate field. -/
+theorem ramifiedPrimes_subset_ramifiedPrimes : ramifiedPrimes K L ⊆ ramifiedPrimes K M := by
+  intro 𝔭
+  contrapose
+  rw [mem_ramifiedPrimes_iff, mem_ramifiedPrimes_iff, not_not, not_not]
+  intro hur P _ _
+  exact TauCeti.RamificationInertia.isUnramifiedAt_of_isUnramifiedIn (S := 𝓞 M) hur P
 
 end NumberField.Chebotarev

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph
 /-!
 # Local inverse of the Lie-group exponential
 
@@ -557,93 +556,48 @@ theorem isLocalDiffeomorphAt_mulInvariantExp_modelSpace_zero [FiniteDimensional 
     exists_mulInvariantExpChartPartialDiffeomorph (I := I) (G := G)
   let chart := extChartAt I (1 : G)
   let V := interior chart.target
-  have hVopen : IsOpen V := isOpen_interior
   have honeV : extChartAt I (1 : G) (1 : G) ∈ V := by
     exact (ModelWithCorners.isInteriorPoint_iff (I := I)).mp
       BoundarylessManifold.isInteriorPoint
-  have hsourceOpen : IsOpen (chart.source ∩ chart ⁻¹' V) :=
-    (continuousOn_extChartAt (I := I) (1 : G)).isOpen_inter_preimage
-      (isOpen_extChartAt_source (I := I) (1 : G)) hVopen
   -- Boundarylessness puts the identity coordinate in the interior of the chart target. Restricting
-  -- the chart to that interior gives an honest smooth partial diffeomorphism in both directions.
-  let ce : PartialEquiv G E := {
-    toFun := chart
-    invFun := chart.symm
-    source := chart.source ∩ chart ⁻¹' V
-    target := V
-    map_source' := fun _ hx => hx.2
-    map_target' := by
-      intro y hy
-      refine ⟨chart.map_target (interior_subset hy), ?_⟩
-      change chart (chart.symm y) ∈ V
-      rw [chart.right_inv (interior_subset hy)]
-      exact hy
-    left_inv' := fun _ hx => chart.left_inv hx.1
-    right_inv' := fun _ hy => chart.right_inv (interior_subset hy)
-  }
-  let c : PartialDiffeomorph I 𝓘(ℝ, E) G E ∞ := {
-    toPartialEquiv := ce
-    open_source := hsourceOpen
-    open_target := hVopen
-    contMDiffOn_toFun := by
-      apply (contMDiffOn_extChartAt (I := I) (n := ∞) (x := (1 : G))).mono
-      intro x hx
-      change x ∈ chart.source ∩ chart ⁻¹' V at hx
-      simpa only [chart, extChartAt_source] using hx.1
-    contMDiffOn_invFun :=
-      (contMDiffOn_extChartAt_symm (I := I) (1 : G)).mono interior_subset
-  }
+  -- the chart to that interior gives the canonical smooth partial diffeomorphism.
+  let c : PartialDiffeomorph I 𝓘(ℝ, E) G E ∞ :=
+    TauCeti.extChartPartialDiffeomorph I ∞ (1 : G)
+  have hctarget : c.target = V := by
+    simpa only [c, V, chart] using
+      TauCeti.extChartPartialDiffeomorph_target I ∞ (1 : G)
+  have hcsymm (y : E) : c.toPartialEquiv.symm y = chart.symm y := by
+    simpa only [c, chart] using
+      TauCeti.extChartPartialDiffeomorph_symm_apply I ∞ (1 : G) y
   -- Transport the charted local diffeomorphism `d : E ↔ E` back through the restricted identity
   -- chart. The resulting `q : E ↔ G` has the desired source, target, and smooth inverse.
-  let q := d.trans c.symm
+  set q := d.trans c.symm with hqdef
+  have hqsource : q.source = d.source ∩ d ⁻¹' c.symm.source := by
+    rw [hqdef]
+    exact OpenPartialHomeomorph.trans_source d.toOpenPartialHomeomorph
+      c.symm.toOpenPartialHomeomorph
+  have hcsymmsource : c.symm.source = c.target := by
+    exact OpenPartialHomeomorph.symm_source c.toOpenPartialHomeomorph
   have hzeroq : (0 : E) ∈ q.source := by
-    change 0 ∈ d.source ∩ d ⁻¹' c.symm.source
+    rw [hqsource]
     refine ⟨hzero, ?_⟩
-    change d 0 ∈ c.target
+    rw [Set.mem_preimage, hcsymmsource]
+    rw [hctarget]
     rw [← hd, mulInvariantExpChart_zero]
     exact honeV
   have hq (x : E) (hx : x ∈ q.source) : f x = q x := by
-    change x ∈ d.source ∩ d ⁻¹' c.symm.source at hx
-    change f x = (extChartAt I (1 : G)).symm (d x)
-    rw [← hd]
-    change f x = (extChartAt I (1 : G)).symm
-      (extChartAt I (1 : G) (f x))
-    exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm
-  -- Although `q` agrees with `f` on its source, its total forward function retains the composed
-  -- chart implementation. Re-wrap its partial equivalence using literally `f` so the final local
-  -- diffeomorphism theorem has the canonical exponential as its function.
-  let e : PartialEquiv E G := {
-    toFun := f
-    invFun := q.symm
-    source := q.source
-    target := q.target
-    map_source' := by
-      intro x hx
-      rw [hq x hx]
-      exact q.map_source hx
-    map_target' := by
-      intro y hy
-      exact q.map_target hy
-    left_inv' := by
-      intro x hx
-      rw [hq x hx]
-      exact q.left_inv hx
-    right_inv' := by
-      intro y hy
-      rw [hq (q.symm y) (q.map_target hy)]
-      exact q.right_inv hy
-  }
-  let p : PartialDiffeomorph 𝓘(ℝ, E) I E G ∞ := {
-    toPartialEquiv := e
-    open_source := q.open_source
-    open_target := q.open_target
-    contMDiffOn_toFun := by
-      simpa only [f] using
-        (contMDiff_mulInvariantExp (I := I) (G := G)).contMDiffOn
-    contMDiffOn_invFun := q.contMDiffOn_invFun
-  }
-  change IsLocalDiffeomorphAt 𝓘(ℝ, E) I ∞ f 0
-  exact p.isLocalDiffeomorphAt 𝓘(ℝ, E) I ∞ hzeroq
+    rw [hqsource] at hx
+    have hqapply : q x = c.toPartialEquiv.symm (d x) := by
+      rw [hqdef]
+      exact OpenPartialHomeomorph.trans_apply d.toOpenPartialHomeomorph
+        c.symm.toOpenPartialHomeomorph
+    calc
+      f x = chart.symm (d x) := by
+        rw [← hd]
+        exact ((extChartAt I (1 : G)).left_inv (hdsource hx.1)).symm
+      _ = c.toPartialEquiv.symm (d x) := (hcsymm (d x)).symm
+      _ = q x := hqapply.symm
+  simpa only [f] using TauCeti.isLocalDiffeomorphAt_of_eqOn hzeroq hq
 
 /-- The canonical Lie-group exponential is a smooth local diffeomorphism at zero. -/
 theorem isLocalDiffeomorphAt_lieExp_zero [FiniteDimensional ℝ E]

@@ -18,9 +18,9 @@ narrow ideal classes in Layer 3 of the multiquadratic roadmap.
 
 The proof starts with the Dedekind-domain approximation
 `IsDedekindDomain.exists_sup_span_eq`, applied to `I * M ≤ I`. It gives an element `a ∈ I` such
-that `I * M + (a) = I`; consequently the quotient `(a) / I` is coprime to `M`. Adding a sufficiently
-large positive rational integer from `I * M` makes `a` totally positive without changing this ideal
-identity. Thus `(a) / I` represents the inverse narrow class of `I`.
+that `I * M + (a) = I`; consequently the quotient `(a) / I` is coprime to `M`. Moving `a` inside
+`I * M` by `NumberField.exists_isTotallyPositive_sub_mem` makes it nonzero and totally positive
+without changing this ideal identity. Thus `(a) / I` represents the inverse narrow class of `I`.
 
 This is the usual finite-prime form of strong approximation for ideal classes. See J. W. S. Cassels
 and A. Fröhlich, *Algebraic Number Theory*, Chapter II.
@@ -65,8 +65,8 @@ there are a nonzero totally positive algebraic integer `a` and a nonzero ideal `
 such that `(a) = I * J`.
 
 Equivalently, `J = (a) / I`. The element `a` may be chosen totally positive while retaining the
-finite-place coprimality because one may add a sufficiently large positive integer lying in
-`I * M`. -/
+finite-place coprimality because `NumberField.exists_isTotallyPositive_sub_mem` moves it inside
+`I * M`, which does not change the ideal it generates together with `I * M`. -/
 theorem exists_isTotallyPositive_span_eq_mul_isCoprime (I M : (Ideal (𝓞 K))⁰) :
     ∃ (a : 𝓞 K) (J : (Ideal (𝓞 K))⁰), a ≠ 0 ∧ IsTotallyPositive (a : K) ∧
       Ideal.span {a} = (I : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)) ∧
@@ -76,71 +76,20 @@ theorem exists_isTotallyPositive_span_eq_mul_isCoprime (I M : (Ideal (𝓞 K))�
   have hI0 : (I : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp I.2
   have hM0 : (M : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp M.2
   have hH0 : H ≠ 0 := mul_ne_zero hI0 hM0
-  have hHI : H ≤ (I : Ideal (𝓞 K)) := by
-    exact Ideal.mul_le_left
+  have hHI : H ≤ (I : Ideal (𝓞 K)) := Ideal.mul_le_left
   -- Dedekind approximation supplies an initial generator with the required ideal identity.
   obtain ⟨a, ha⟩ := IsDedekindDomain.exists_sup_span_eq hHI hH0
-  let q : 𝓞 K := Ideal.absNorm H
-  have hqH : q ∈ H := by
-    simpa [q] using Ideal.absNorm_mem H
-  have hq0 : q ≠ 0 := by
-    simpa [q, Ideal.absNorm_eq_zero_iff] using hH0
-  have hqpos : 0 < Ideal.absNorm H := Nat.pos_of_ne_zero <| by
-    simpa [Ideal.absNorm_eq_zero_iff] using hH0
-  let B : ℝ := ∑ w : {w : InfinitePlace K // w.IsReal},
-    |embedding_of_isReal w.2 (a : K)|
-  -- The norm bound and positivity shift the generator by a large positive multiple of `q`.
-  obtain ⟨n, hn⟩ := exists_nat_gt B
-  let b : 𝓞 K := a + n * q
-  have hbsub : b - a ∈ H := by
-    simpa [b] using H.mul_mem_left (n : 𝓞 K) hqH
-  have hbpos : IsTotallyPositive (b : K) := by
-    rw [isTotallyPositive_iff]
-    intro w hw
-    let w' : {w : InfinitePlace K // w.IsReal} := ⟨w, hw⟩
-    have habs : |embedding_of_isReal hw (a : K)| ≤ B := by
-      exact Finset.single_le_sum (f := fun v : {w : InfinitePlace K // w.IsReal} =>
-        |embedding_of_isReal v.2 (a : K)|) (fun _ _ => abs_nonneg _) (Finset.mem_univ w')
-    have hqone : (1 : ℝ) ≤ Ideal.absNorm H := by exact_mod_cast hqpos
-    have hnq : (n : ℝ) ≤ (n : ℝ) * Ideal.absNorm H := by nlinarith
-    have hbmap : embedding_of_isReal hw (b : K) =
-        embedding_of_isReal hw (a : K) + (n : ℝ) * Ideal.absNorm H := by
-      simp [b, q]
-    rw [hbmap]
-    have halower : -B ≤ embedding_of_isReal hw (a : K) := (abs_le.mp habs).1
-    linarith
-  -- The shift lies in `H`, so the span identity is preserved.
-  have hsupb : H ⊔ Ideal.span {b} = (I : Ideal (𝓞 K)) := by
-    exact (sup_span_singleton_eq_of_sub_mem hbsub).trans ha
-  -- If the shifted generator vanishes, fall back to the positive norm element `q`.
-  let c : 𝓞 K := if b = 0 then q else b
-  have hc0 : c ≠ 0 := by
-    by_cases hb0 : b = 0
-    · simp only [c, hb0, ↓reduceIte]
-      exact hq0
-    · simp only [c, hb0, ↓reduceIte]
-      exact hb0
-  have hcpos : IsTotallyPositive (c : K) := by
-    by_cases hb0 : b = 0
-    · simp only [c, hb0, ↓reduceIte]
-      simpa [q] using (isTotallyPositive_ratCast (K := K) (q := (Ideal.absNorm H : ℚ))
-        (by exact_mod_cast hqpos))
-    · simpa [c, hb0] using hbpos
-  have hsupc : H ⊔ Ideal.span {c} = (I : Ideal (𝓞 K)) := by
-    by_cases hb0 : b = 0
-    · have hHIeq : H = (I : Ideal (𝓞 K)) := by simpa [hb0] using hsupb
-      simp only [c, hb0, ↓reduceIte]
-      rw [hHIeq, sup_eq_left]
-      rw [Ideal.span_singleton_le_iff_mem]
-      exact hHIeq ▸ hqH
-    · simpa [c, hb0] using hsupb
+  -- Shifting it inside `H` makes it totally positive and nonzero, keeping the ideal identity.
+  obtain ⟨c, hc0, hcsub, hcpos⟩ :=
+    exists_isTotallyPositive_sub_mem (by rwa [← Ideal.zero_eq_bot]) a
+  have hsupc : H ⊔ Ideal.span {c} = (I : Ideal (𝓞 K)) :=
+    (sup_span_singleton_eq_of_sub_mem hcsub).trans ha
   have hcI : Ideal.span {c} ≤ (I : Ideal (𝓞 K)) := le_sup_right.trans_eq hsupc
   obtain ⟨J, hJ⟩ := Ideal.dvd_iff_le.mpr hcI
   have hJ0 : J ≠ 0 := by
     intro hJ0
     rw [hJ0, mul_zero] at hJ
-    have hcspan : Ideal.span {c} = ⊥ := hJ
-    exact hc0 ((Ideal.span_singleton_eq_bot).mp hcspan)
+    exact hc0 (Ideal.span_singleton_eq_bot.mp hJ)
   have hcop : IsCoprime J (M : Ideal (𝓞 K)) := by
     rw [Ideal.isCoprime_iff_sup_eq, sup_comm]
     have hsupc' : (I : Ideal (𝓞 K)) * (M : Ideal (𝓞 K)) ⊔ Ideal.span {c} =

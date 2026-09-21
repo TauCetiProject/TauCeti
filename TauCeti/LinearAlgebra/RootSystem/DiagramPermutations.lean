@@ -39,7 +39,8 @@ the `CFSGStatement` roadmap's conventions for Steinberg endomorphisms.
 
 * `TauCeti.orderOf_graphPermA`, `TauCeti.orderOf_graphPermD`, `TauCeti.orderOf_graphPermE6` and
   `TauCeti.orderOf_trialityPermD4`: the graph permutations have order exactly two (for
-  `graphPermA`, on at least two nodes), except for triality, which has order three.
+  `graphPermA`, on at least two nodes), except for triality, which has order three, with
+  `TauCeti.trialityPermD4_apply_apply_apply` the pointwise form of that order relation.
 * `TauCeti.cartanMatrix_A_graphPermA`, `TauCeti.cartanMatrix_D_graphPermD`,
   `TauCeti.cartanMatrix_E6_graphPermE6` and `TauCeti.cartanMatrix_D4_trialityPermD4`: each graph
   permutation is an automorphism of the corresponding Cartan matrix.
@@ -128,6 +129,11 @@ two `Dₙ` fork nodes. -/
 @[simp] theorem graphPermD_sq (n : ℕ) (hn : 2 ≤ n) : graphPermD n hn ^ 2 = 1 := by
   simp [graphPermD, pow_two]
 
+/-- Applying the final-index swap twice returns an index to itself. -/
+@[simp] theorem graphPermD_apply_apply (n : ℕ) (hn : 2 ≤ n) (i : Fin n) :
+    graphPermD n hn (graphPermD n hn i) = i := by
+  simp [graphPermD]
+
 /-- The two swapped indices are distinct, so the swap is not the identity. -/
 theorem graphPermD_ne_one (n : ℕ) (hn : 2 ≤ n) : graphPermD n hn ≠ 1 := by
   rw [graphPermD, ne_eq, Equiv.swap_eq_one_iff]
@@ -173,6 +179,13 @@ theorem graphPermD_ne_one (n : ℕ) (hn : 2 ≤ n) : graphPermD n hn ≠ 1 := by
 
 /-- Applying triality three times is the identity. -/
 @[simp] theorem trialityPermD4_pow_three : trialityPermD4 ^ 3 = 1 := by decide
+
+/-- Applying triality three times fixes every node of the `D₄` diagram; the pointwise form of
+`TauCeti.trialityPermD4_pow_three`. -/
+@[simp] theorem trialityPermD4_apply_apply_apply (i : Fin 4) :
+    trialityPermD4 (trialityPermD4 (trialityPermD4 i)) = i := by
+  have h := congrArg (fun π : Equiv.Perm (Fin 4) => π i) trialityPermD4_pow_three
+  simpa only [pow_succ, pow_zero, one_mul, Equiv.Perm.mul_apply, Equiv.Perm.one_apply] using h
 
 /-- Triality has order exactly three. -/
 @[simp] theorem orderOf_trialityPermD4 : orderOf trialityPermD4 = 3 :=

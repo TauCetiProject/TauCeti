@@ -22,13 +22,12 @@ This file records basic lemmas for `Contractable` processes. The definitions liv
 `TauCeti.Probability.Exchangeability.Basic`; this file is the Layer 0 home for
 contractability-specific API.
 
-The main result is `contractable_of_exchangeable` (with dot-notation form
-`Exchangeable.contractable`): every exchangeable sequence with a.e. measurable coordinates is
-contractable. The file also provides `Exchangeable.blockLaw_eq_prefixLaw_of_injective` (the
-injective-selection analogue) and `Contractable.measurePreserving_reindex` /
-`Contractable.measurePreserving_shift` (a contractable path law is invariant under strictly monotone
-time-reindexing, in particular the shift), plus the converse characterization
-`contractable_iff_forall_map_reindex_pathLaw`.
+The main result is `Exchangeable.contractable`: every exchangeable sequence with a.e. measurable
+coordinates is contractable. The file also provides
+`Exchangeable.blockLaw_eq_prefixLaw_of_injective` (the injective-selection analogue) and
+`Contractable.measurePreserving_reindex` / `Contractable.measurePreserving_shift` (a contractable
+path law is invariant under strictly monotone time-reindexing, in particular the shift), plus the
+converse characterization `contractable_iff_forall_map_reindex_pathLaw`.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
@@ -77,8 +76,8 @@ theorem Contractable.identDistrib_block {μ : Measure Ω} {X : ℕ → Ω → α
     (hk_meas : ∀ r, AEMeasurable (X (k r)) μ)
     (hl_meas : ∀ r, AEMeasurable (X (l r)) μ) :
     IdentDistrib (fun ω r => X (k r) ω) (fun ω r => X (l r) ω) μ μ where
-  aemeasurable_fst := aemeasurable_pi_lambda _ hk_meas
-  aemeasurable_snd := aemeasurable_pi_lambda _ hl_meas
+  aemeasurable_fst := AEMeasurable.of_eval hk_meas
+  aemeasurable_snd := AEMeasurable.of_eval hl_meas
   map_eq := by
     simpa [blockLaw_def] using (hX.map hk).trans (hX.map hl).symm
 
@@ -172,27 +171,21 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
 /-- **Every exchangeable sequence with a.e. measurable coordinates is contractable**: along any
 strictly increasing finite selection `k`, `blockLaw μ X k = prefixLaw μ X m`. One direction of the
 de Finetti–Ryll-Nardzewski equivalence. -/
-theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
-    (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
-  fun _ k hk => Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas k hk.injective
-
-/-- Every exchangeable sequence with a.e. measurable coordinates is contractable (dot-notation
-form of `contractable_of_exchangeable`). -/
 theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
-  contractable_of_exchangeable hX hX_meas
+  fun _ k hk => Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas k hk.injective
 
 /-- **A contractable process's path law is invariant under strictly monotone time-reindexing:** for
 `StrictMono φ`, the reindexing `x ↦ x ∘ φ` preserves `pathLaw μ X`. -/
 theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
     (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) {φ : ℕ → ℕ} (hφ : StrictMono φ) :
     MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
-  refine ⟨measurable_pi_lambda _ fun k => measurable_pi_apply (φ k), ?_⟩
+  refine ⟨Measurable.of_eval fun k => measurable_pi_apply (φ k), ?_⟩
   have : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_def]; infer_instance
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
   rw [map_reindex_prefixProj_pathLaw μ hX_meas φ n,
-    map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n]
+    map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) n]
   exact hX n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
 
 /-- Contractability is equivalent to invariance of the path law under every strictly increasing
@@ -209,7 +202,7 @@ theorem contractable_iff_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ �
     obtain ⟨φ, hφ, hφ_eq⟩ := exists_strictMono_nat_extending_fin hk
     have hmap := congrArg (fun ν : Measure (ℕ → α) => ν.map (prefixProj α m)) (hX φ hφ)
     rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
-      map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) m] at hmap
+      map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
     have hidx : (fun i : Fin m => φ i.val) = k := by
       funext i
       exact hφ_eq i
@@ -257,7 +250,7 @@ private theorem map_prod_tail_eq_pathLaw_map {μ : Measure Ω} [IsFiniteMeasure 
       = (pathLaw μ X).map (fun f : ℕ → α => (f 0, fun n => f (n + 1))) := by
   let headTail : (ℕ → α) → α × (ℕ → α) := fun f => (f 0, fun n => f (n + 1))
   have hheadTail_meas : Measurable headTail :=
-    (measurable_pi_apply 0).prodMk (measurable_pi_lambda _ fun n => measurable_pi_apply (n + 1))
+    (measurable_pi_apply 0).prodMk (Measurable.of_eval fun n => measurable_pi_apply (n + 1))
   -- strictly-monotone time-reindexing preserves the path law of a contractable process
   have hreindex : ∀ φ : ℕ → ℕ, StrictMono φ →
       μ.map (fun ω (i : ℕ) => X (φ i) ω) = pathLaw μ X :=
@@ -278,7 +271,7 @@ private theorem map_prod_tail_eq_pathLaw_map {μ : Measure Ω} [IsFiniteMeasure 
   have hφsucc : ∀ n, φ (n + 1) = g n := by
     intro n; simp only [hφdef]; rw [ite_eq_right (by omega : n + 1 ≠ 0), Nat.add_sub_cancel]
   have hpath_ae : AEMeasurable (fun ω (i : ℕ) => X (φ i) ω) μ :=
-    aemeasurable_pi_lambda _ fun i => hX_ae (φ i)
+    AEMeasurable.of_eval fun i => hX_ae (φ i)
   have hfun : (fun ω => (X h ω, fun n => X (g n) ω))
       = headTail ∘ (fun ω (i : ℕ) => X (φ i) ω) := by
     funext ω
