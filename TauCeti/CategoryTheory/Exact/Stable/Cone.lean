@@ -303,8 +303,10 @@ variable {X'' Y'' : C} {f'' : X'' ⟶ Y''}
 
 /-- Cone maps preserve composition in the projective stable category. The equality need not hold
 before passing to the stable category because the chosen maps between injective presentations need
-not preserve composition strictly. -/
-@[simp]
+not preserve composition strictly.
+
+This is not a `simp` lemma: the left-hand side mentions neither the intermediate morphism `f'`
+nor the two squares `w` and `w'`, so `simp` could never instantiate them. -/
 theorem projectiveStableFunctor_map_coneMap_comp (a : X ⟶ X') (b : Y ⟶ Y')
     (a' : X' ⟶ X'') (b' : Y' ⟶ Y'') (w : f ≫ b = a ≫ f')
     (w' : f' ≫ b' = a' ≫ f'') :
