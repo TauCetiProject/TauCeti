@@ -167,6 +167,15 @@ theorem opAlgEquiv_op_op (G : InternalGrading R A) (a : A) :
   rw [transportAlgEquiv_op, G.unop_quadraticTwist]
   simp
 
+/-- The inverse of the scalar equivalence represents `a` by the quadratic twist of `a`, since the
+quadratic twist is an involution. -/
+@[simp]
+theorem opAlgEquiv_symm_apply (G : InternalGrading R A) (a : A) :
+    (opAlgEquiv G).symm a = MulOpposite.op (op G (G.quadraticTwist a)) := by
+  apply (opAlgEquiv G).injective
+  rw [AlgEquiv.apply_symm_apply, opAlgEquiv_op_op]
+  exact (G.quadraticTwist_involutive a).symm
+
 /-- Two elements of a graded opposite are equal if their underlying elements are equal. -/
 @[ext]
 theorem ext (G : InternalGrading R A) {a b : GradedOpposite G}

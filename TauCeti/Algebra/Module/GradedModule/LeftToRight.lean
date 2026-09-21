@@ -59,6 +59,7 @@ noncomputable def leftToRightModule (G : InternalGrading R A) (H : InternalGradi
 
 omit [IsScalarTower R A M] in
 /-- The graded-opposite action is conjugation of scalar restriction by the quadratic twist. -/
+@[simp]
 theorem leftToRight_smul (G : InternalGrading R A) (H : InternalGrading R M)
     (s : (GradedOpposite G)ᵐᵒᵖ) (x : M) :
     letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
