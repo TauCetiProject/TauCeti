@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Killing
-public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.Algebra.Lie.TraceForm
 
 /-!
 # An ad-nilpotent element of a Killing Lie algebra is a bracket with itself
@@ -17,8 +17,8 @@ with
 
 `⁅x, t⁆ = x`,
 
-which is `TauCeti.exists_lie_eq_self_of_isNilpotent_ad`.  Equivalently, `x` is an eigenvector of
-`ad t` for the eigenvalue `-1`.
+which is `TauCeti.exists_lie_eq_self_of_isNilpotent_ad`.  Equivalently `⁅t, x⁆ = -x`, so when `x`
+is nonzero it is an eigenvector of `ad t` for the eigenvalue `-1`.
 
 The proof is the Killing-orthogonality of the kernel and the range of `ad x`, and it needs no
 algebraically closed field, no Cartan subalgebra, and no `sl₂`-triple.  In two steps:
@@ -46,22 +46,13 @@ nondegeneracy of `κ`.
 
 ## Main results
 
-* `TauCeti.traceForm_eq_zero_of_isNilpotent_of_lie_eq_zero`: **commuting elements, one of them
-  acting nilpotently, are orthogonal for the trace form** of any representation.
 * `TauCeti.orthogonal_range_ad_eq_ker_ad` and `TauCeti.range_ad_eq_orthogonal_ker_ad`: **the
   kernel and the range of `ad x` are each other's Killing-orthogonal complements.**
 * `TauCeti.mem_range_ad_self_of_isNilpotent_ad`: **an ad-nilpotent element lies in the range of
   its own adjoint action.**
-* `TauCeti.exists_lie_eq_self_of_isNilpotent_ad`: **hence `⁅x, t⁆ = x` for some `t`**, with
-  `TauCeti.exists_lie_eq_neg_self_of_isNilpotent_ad` the eigenvector reading.
+* `TauCeti.exists_lie_eq_self_of_isNilpotent_ad`: **hence `⁅x, t⁆ = x` for some `t`.**
 
 ## References
-
-This is the `⁅s, t⁆ = s` milestone that Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/AdoIwasawa/README.md` asks to be named as its own target and
-proved over the original field, "with no algebraic closure and no appeal to `sl₂`-triple
-existence", so that Jacobson-Morozov stays out of the dependency graph of Hochschild's
-strengthening of Ado's theorem.
 
 * G. Hochschild, *An addition to Ado's theorem*, Proc. Amer. Math. Soc. **17** (1966), 531-533.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §5.1, for the
@@ -74,38 +65,6 @@ namespace TauCeti
 
 open LieAlgebra LieModule
 
-section TraceForm
-
-variable {R L M : Type*} [CommRing R] [IsReduced R] [LieRing L] [LieAlgebra R L]
-  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
-
-/-- **Commuting operators, one of them nilpotent, are orthogonal for the trace form.**  The trace
-form pairs `x` and `y` by the trace of the composite of their actions; if the two actions commute
-and the first is nilpotent then so is the composite, and a nilpotent scalar in a reduced ring is
-zero. -/
-theorem traceForm_eq_zero_of_isNilpotent_of_commute {x y : L}
-    (hx : IsNilpotent (toEnd R L M x)) (hcomm : Commute (toEnd R L M x) (toEnd R L M y)) :
-    traceForm R L M x y = 0 := by
-  rw [traceForm_apply_apply, ← Module.End.mul_eq_comp]
-  exact (LinearMap.isNilpotent_trace_of_isNilpotent (hcomm.isNilpotent_mul_right hx)).eq_zero
-
-/-- **An element acting nilpotently is orthogonal, for the trace form of any representation, to
-everything it commutes with.**  Bracketing to zero in `L` is stronger than having commuting
-actions, and it is the hypothesis available in the adjoint setting of
-`TauCeti.killingForm_eq_zero_of_isNilpotent_ad_of_lie_eq_zero`. -/
-theorem traceForm_eq_zero_of_isNilpotent_of_lie_eq_zero {x y : L}
-    (hx : IsNilpotent (toEnd R L M x)) (hxy : ⁅x, y⁆ = 0) :
-    traceForm R L M x y = 0 := by
-  have hcomm : toEnd R L M x * toEnd R L M y = toEnd R L M y * toEnd R L M x :=
-    LinearMap.ext fun m ↦ by
-      have h := lie_lie x y m
-      rw [hxy, zero_lie] at h
-      simp only [Module.End.mul_apply, toEnd_apply_apply]
-      exact sub_eq_zero.mp h.symm
-  exact traceForm_eq_zero_of_isNilpotent_of_commute hx hcomm
-
-end TraceForm
-
 section KillingForm
 
 variable {R L : Type*} [CommRing R] [IsReduced R] [LieRing L] [LieAlgebra R L]
@@ -116,12 +75,6 @@ theorem killingForm_eq_zero_of_isNilpotent_ad_of_lie_eq_zero {x y : L}
     (hx : IsNilpotent (ad R L x)) (hxy : ⁅x, y⁆ = 0) :
     killingForm R L x y = 0 :=
   traceForm_eq_zero_of_isNilpotent_of_lie_eq_zero hx hxy
-
-/-- **An ad-nilpotent element is Killing-isotropic**, the case `y = x` of
-`TauCeti.killingForm_eq_zero_of_isNilpotent_ad_of_lie_eq_zero`. -/
-theorem killingForm_self_eq_zero_of_isNilpotent_ad {x : L} (hx : IsNilpotent (ad R L x)) :
-    killingForm R L x x = 0 :=
-  killingForm_eq_zero_of_isNilpotent_ad_of_lie_eq_zero hx (lie_self x)
 
 end KillingForm
 
@@ -144,6 +97,7 @@ variable [LieAlgebra.IsKilling R L]
 /-- **The Killing-orthogonal complement of the range of `ad x` is the centraliser of `x`.**
 Invariance turns `κ ⁅x, z⁆ y = 0` for all `z` into `κ ⁅x, y⁆ z = 0` for all `z`, and nondegeneracy
 then forces `⁅x, y⁆ = 0`. -/
+@[simp]
 theorem orthogonal_range_ad_eq_ker_ad (x : L) :
     (killingForm R L).orthogonal (LinearMap.range (ad R L x)) = LinearMap.ker (ad R L x) := by
   refine le_antisymm (fun y hy ↦ ?_) (ker_ad_le_orthogonal_range_ad x)
@@ -192,13 +146,6 @@ theorem exists_lie_eq_self_of_isNilpotent_ad {x : L} (hx : IsNilpotent (ad K L x
     ∃ t : L, ⁅x, t⁆ = x := by
   obtain ⟨t, ht⟩ := mem_range_ad_self_of_isNilpotent_ad hx
   exact ⟨t, by rwa [ad_apply] at ht⟩
-
-/-- **An ad-nilpotent element of a Killing Lie algebra is an eigenvector of some `ad t` for the
-eigenvalue `-1`**, the skew form of `TauCeti.exists_lie_eq_self_of_isNilpotent_ad`. -/
-theorem exists_lie_eq_neg_self_of_isNilpotent_ad {x : L} (hx : IsNilpotent (ad K L x)) :
-    ∃ t : L, ⁅t, x⁆ = -x := by
-  obtain ⟨t, ht⟩ := exists_lie_eq_self_of_isNilpotent_ad hx
-  exact ⟨t, by rw [← lie_skew, ht]⟩
 
 end Killing
 
