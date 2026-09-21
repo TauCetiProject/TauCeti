@@ -231,7 +231,6 @@ theorem laurentCoverDiff_apply (f : A) (x : laurentCoverLe A f) (y : laurentCove
 
 /-- On quotient representatives, the Čech differential is represented by `laurentDiff A (a, b)`
 in the overlap quotient. -/
-@[simp]
 theorem laurentCoverDiff_mk (f : A) (a b : R₁) :
     laurentCoverDiff A f
         (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
