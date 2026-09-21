@@ -72,31 +72,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega U : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {S : Set E}
 
-/-! ### The mean over a subset is a continuous functional -/
-
-omit [FiniteDimensional ℝ E] in
-/-- The mean of the value of a first-order Sobolev function over a fixed subset of finite
-measure depends continuously on the function. -/
-private theorem continuous_setAverage_value (hSU : S ⊆ (U : Set E))
-    (hUfin : mu (U : Set E) ≠ ∞) :
-    Continuous fun v : W1p mu U p => ⨍ y in S, W1p.value v y ∂mu := by
-  have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
-    Measure.restrict_restrict_of_subset hSU
-  have hmeas : (mu.restrict (U : Set E)) S = mu S := by
-    rw [← Measure.restrict_apply_univ, hrs, Measure.restrict_apply_univ]
-  have hEq : ∀ v : W1p mu U p, (⨍ y in S, W1p.value v y ∂mu) =
-      (mu.real S)⁻¹ * ∫ y in S, W1p.valueL v y ∂(mu.restrict (U : Set E)) := fun v => by
-    rw [setAverage_eq, smul_eq_mul, W1p.valueL_apply, hrs]
-  have hSlt : (mu.restrict (U : Set E)) S < ∞ := by
-    rw [hmeas]; exact (ne_top_of_le_ne_top hUfin (measure_mono hSU)).lt_top
-  have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
-      ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
-    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (mu := mu.restrict (U : Set E)) (p := p) S
-      hSlt).continuous.congr fun f => Set.setIntegralLp_apply (𝕜 := ℝ) S hSlt f
-  simp only [hEq]
-  exact continuous_const.mul
-    (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
-
 /-! ### The inequality on a relatively compact convex subdomain -/
 
 /-- **The Poincaré–Wirtinger inequality for a limit of test functions.**  It holds for every
@@ -129,7 +104,7 @@ private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) 
           (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous
         simpa only [W1p.valueL_apply] using hcont
       · exact (Lp.constL p (mu.restrict (U : Set E)) ℝ).continuous.comp
-          (continuous_setAverage_value hSU hUfin)
+          (W1p.continuous_setAverage_value hSU hUfin)
     have h2 : Continuous fun w : W1p mu U p => C * ‖W1p.gradient w‖ := by
       refine continuous_const.mul (Continuous.norm ?_)
       have hcont : Continuous fun w : W1p mu U p => W1p.gradientL w :=
