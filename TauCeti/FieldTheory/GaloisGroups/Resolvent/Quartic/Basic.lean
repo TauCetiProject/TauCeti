@@ -53,7 +53,7 @@ stabilizers and the same resolvent.
   coefficients of degree at most three.
 * `TauCeti.quarticD4Spec_specialize_depressed`: the resolvent of a depressed quartic is
   `resolventCubic p q r`.
-* `TauCeti.natDegree_specialize_quarticD4Spec`: the resolvent of a quartic is a cubic.
+* `TauCeti.Polynomial.natDegree_specialize_quarticD4Spec`: the resolvent of a quartic is a cubic.
 
 ## References
 
@@ -263,6 +263,8 @@ theorem monic_resolventCubic {R : Type*} [CommRing R] (p q r : R) :
   rw [← quarticD4Spec_specialize_depressed]
   exact quarticD4Spec.monic_specialize R _
 
+namespace Polynomial
+
 /-- The resolvent of the quartic specification is a cubic over every nonzero ring, since the
 orbit of the `D₄`-invariant has three elements.
 
@@ -273,10 +275,12 @@ theorem natDegree_specialize_quarticD4Spec {R : Type*} [CommRing R] [Nontrivial 
   rw [ResolventSpec.natDegree_specialize, ← ResolventSpec.card_renameOrbit, quarticD4Spec_Φ,
     card_renameOrbit_quarticD4Invariant]
 
+end Polynomial
+
 /-- The resolvent cubic has degree `3` over every nonzero ring. -/
 @[simp]
 theorem natDegree_resolventCubic {R : Type*} [CommRing R] [Nontrivial R] (p q r : R) :
     (resolventCubic p q r).natDegree = 3 := by
-  rw [← quarticD4Spec_specialize_depressed, natDegree_specialize_quarticD4Spec]
+  rw [← quarticD4Spec_specialize_depressed, Polynomial.natDegree_specialize_quarticD4Spec]
 
 end TauCeti
