@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
@@ -38,6 +39,9 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 * `TauCeti.not_unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2)) ⊄ (Kˣ)²`.
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two_iff`: `U(K, n) ⊆ (Kˣ)²` exactly when
   `2 v_K(2) + 1 ≤ n`.
+* `TauCeti.dyadicLevel`: the valuation `v_K(2)` used in the square interface.
+* `TauCeti.unitFiltration_le_square` and `TauCeti.not_unitFiltration_le_square`: the same sharp
+  square theorem expressed using `Subgroup.square Kˣ`.
 * `TauCeti.valuation_sq_sub_one_ne_pow_odd` and `TauCeti.not_isSquare_one_add_pow_odd`: below depth
   `2 v_K(2)`, a square cannot differ from one to exact odd order, so `1 + π^(2k+1)` is not a
   square when `k < v_K(2)`.
@@ -57,6 +61,16 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
+
+/-- The dyadic level `v_K(2)`, expressed using the supplied natural-valued valuation. -/
+noncomputable def dyadicLevel (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (h2 : (2 : K) ≠ 0) : ℕ :=
+  natCastValuation K 2 h2
+
+@[simp]
+theorem dyadicLevel_def (h2 : (2 : K) ≠ 0) :
+    dyadicLevel K h2 = natCastValuation K 2 h2 :=
+  by simp only [dyadicLevel]
 
 /-- In characteristic different from two, the ideal `(4)` of `𝒪[K]` is `𝓂[K] ^ (2 v_K(2))`. -/
 theorem span_four_eq_maximalIdeal_pow (h2 : (2 : K) ≠ 0) :
@@ -126,6 +140,18 @@ theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
   obtain ⟨t, ht⟩ := (ValuationRing.isSquare_one_add_four_mul_iff h2').mp
     ⟨⟨y, hyO⟩, Subtype.ext (by simpa [pow_two, h4] using hyK.symm)⟩
   exact ha (IsLocalRing.residue 𝒪[K] t) (by rw [← ht]; simp)
+
+/-- Every unit of depth `2 * dyadicLevel K + 1` is a square. -/
+theorem unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
+    unitFiltration K (2 * dyadicLevel K h2 + 1) ≤ Subgroup.square Kˣ := by
+  rw [square_eq_powMonoidHom_two_range]
+  simpa only [dyadicLevel_def] using unitFiltration_le_range_powMonoidHom_two h2
+
+/-- The sharp depth cannot be decreased: units at `2 * dyadicLevel K` are not all squares. -/
+theorem not_unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
+    ¬ (unitFiltration K (2 * dyadicLevel K h2) ≤ Subgroup.square Kˣ) := by
+  rw [square_eq_powMonoidHom_two_range]
+  simpa only [dyadicLevel_def] using not_unitFiltration_le_range_powMonoidHom_two h2
 
 /-- The exact depth of the local square theorem: `U(K, n)` consists of squares if and only if
 `n ≥ 2 v_K(2) + 1`. -/
