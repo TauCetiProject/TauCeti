@@ -159,64 +159,35 @@ private theorem laurentCoverLeIdeal_le_ker (f : A) :
     laurentCoverLeIdeal A f ≤ RingHom.ker (laurentCoverLeMap A f) := by
   rw [laurentCoverLeIdeal, Ideal.span_le]
   rintro _ rfl
-  -- The two opaque maps must be exposed here to check that their defining generator vanishes.
-  change laurentCoverLeMap A f
-    (weightedC _ isWeightFamily_one_weight f - weightedX _ isWeightFamily_one_weight 0) = 0
+  apply (RingHom.mem_ker).2
   simp only [laurentCoverLeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
     weightedRenameAlgHom_apply, map_sub, weightedRename_weightedC, weightedRename_weightedX]
-  rw [show Fin.castSuccEmb 0 = 0 by decide,
+  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero',
     mk_weightedC_eq_mk_weightedX_in_laurentCoverOverlap, sub_self]
 
 private theorem laurentCoverGeIdeal_le_ker (f : A) :
     laurentCoverGeIdeal A f ≤ RingHom.ker (laurentCoverGeMap A f) := by
   rw [laurentCoverGeIdeal, Ideal.span_le]
   rintro _ rfl
-  -- As above, expose the maps only to verify the relation defining the quotient.
-  change laurentCoverGeMap A f
-    (1 - weightedC _ isWeightFamily_one_weight f *
-      weightedX _ isWeightFamily_one_weight 0) = 0
+  apply (RingHom.mem_ker).2
   simp only [laurentCoverGeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
     weightedRenameAlgHom_apply, map_sub, map_one, map_mul, weightedRename_weightedC,
     weightedRename_weightedX]
-  rw [show (Fin.succEmb 1) 0 = 1 by decide,
+  rw [Fin.coe_succEmb, Fin.succ_zero_eq_one',
     mk_weightedC_eq_mk_weightedX_in_laurentCoverOverlap, ← map_mul,
     mk_weightedX_zero_mul_mk_weightedX_one A, map_one, sub_self]
-
-private theorem laurentCoverLeIdeal_map_eq_zero (f : A) {a : R₁}
-    (ha : a ∈ laurentCoverLeIdeal A f) :
-      ((laurentCoverLeMap A f : R₁ →+* laurentCoverOverlap A f) a) = 0 := by
-  have h := laurentCoverLeIdeal_le_ker A f ha
-  change ((laurentCoverLeMap A f : R₁ →+* laurentCoverOverlap A f) a) = 0 at h
-  exact h
-
-private theorem laurentCoverGeIdeal_map_eq_zero (f : A) {a : R₁}
-    (ha : a ∈ laurentCoverGeIdeal A f) :
-      ((laurentCoverGeMap A f : R₁ →+* laurentCoverOverlap A f) a) = 0 := by
-  have h := laurentCoverGeIdeal_le_ker A f ha
-  change ((laurentCoverGeMap A f : R₁ →+* laurentCoverOverlap A f) a) = 0 at h
-  exact h
 
 /-- The restriction from the piece `{|f| ≤ 1}` to the overlap. -/
 noncomputable def laurentCoverLeToOverlap (f : A) :
     laurentCoverLe A f →ₐ[A] laurentCoverOverlap A f :=
   Ideal.Quotient.liftₐ (laurentCoverLeIdeal A f) (laurentCoverLeMap A f)
-    (fun _ ha ↦ laurentCoverLeIdeal_map_eq_zero A f ha)
+    (laurentCoverLeIdeal_le_ker A f)
 
 /-- The restriction from the piece `{|f| ≥ 1}` to the overlap. -/
 noncomputable def laurentCoverGeToOverlap (f : A) :
     laurentCoverGe A f →ₐ[A] laurentCoverOverlap A f :=
   Ideal.Quotient.liftₐ (laurentCoverGeIdeal A f) (laurentCoverGeMap A f)
-    (fun _ ha ↦ laurentCoverGeIdeal_map_eq_zero A f ha)
-
-private theorem laurentCoverLeToOverlap_mk_aux (f : A) (a : R₁) :
-    laurentCoverLeToOverlap A f (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a) =
-      laurentCoverLeMap A f a :=
-  rfl
-
-private theorem laurentCoverGeToOverlap_mk_aux (f : A) (a : R₁) :
-    laurentCoverGeToOverlap A f (Ideal.Quotient.mk (laurentCoverGeIdeal A f) a) =
-      laurentCoverGeMap A f a :=
-  rfl
+    (laurentCoverGeIdeal_le_ker A f)
 
 /-- The restriction from `{|f| ≤ 1}` sends a representative to the same series in the overlap. -/
 @[simp]
@@ -227,7 +198,7 @@ theorem laurentCoverLeToOverlap_mk (f : A) (a : R₁) :
           (weightedRename Fin.castSuccEmb isWeightFamily_one_weight
             isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
   by
-    rw [laurentCoverLeToOverlap_mk_aux]
+    change laurentCoverLeMap A f a = _
     simp only [laurentCoverLeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
       weightedRenameAlgHom_apply]
 
@@ -240,7 +211,7 @@ theorem laurentCoverGeToOverlap_mk (f : A) (a : R₁) :
           (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight
             isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
   by
-    rw [laurentCoverGeToOverlap_mk_aux]
+    change laurentCoverGeMap A f a = _
     simp only [laurentCoverGeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
       weightedRenameAlgHom_apply]
 
@@ -251,15 +222,22 @@ noncomputable def laurentCoverDiff (f : A) :
   (laurentCoverLeToOverlap A f).toLinearMap.comp (LinearMap.fst A _ _) -
     (laurentCoverGeToOverlap A f).toLinearMap.comp (LinearMap.snd A _ _)
 
+/-- The Čech differential sends a pair of sections to the difference of their restrictions. -/
+@[simp]
+theorem laurentCoverDiff_apply (f : A) (x : laurentCoverLe A f) (y : laurentCoverGe A f) :
+    laurentCoverDiff A f (x, y) =
+      laurentCoverLeToOverlap A f x - laurentCoverGeToOverlap A f y := by
+  rfl
+
+/-- On quotient representatives, the Čech differential is represented by `laurentDiff A (a, b)`
+in the overlap quotient. -/
 @[simp]
 theorem laurentCoverDiff_mk (f : A) (a b : R₁) :
     laurentCoverDiff A f
         (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a,
           Ideal.Quotient.mk (laurentCoverGeIdeal A f) b) =
       Ideal.Quotient.mk (laurentCoverOverlapIdeal A f) (laurentDiff A (a, b)) := by
-  simp only [laurentCoverDiff, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.fst_apply,
-    LinearMap.snd_apply, AlgHom.toLinearMap_apply, laurentCoverLeToOverlap_mk,
-    laurentCoverGeToOverlap_mk]
+  rw [laurentCoverDiff_apply, laurentCoverLeToOverlap_mk, laurentCoverGeToOverlap_mk]
   simp only [laurentDiff_apply, map_sub]
 
 end Topological
@@ -299,7 +277,7 @@ private theorem laurentDiff_pieceRelations (f : A) (u : R₂) :
   refine ⟨c, d, ?_⟩
   rw [laurentDiff_apply]
   simp only [map_mul, map_sub, map_one, weightedRename_weightedC, weightedRename_weightedX]
-  rw [show Fin.castSuccEmb 0 = 0 by decide, show (Fin.succEmb 1) 0 = 1 by decide]
+  rw [Fin.castSuccEmb_apply, Fin.castSucc_zero', Fin.coe_succEmb, Fin.succ_zero_eq_one']
   have hu' : Ideal.Quotient.mk (laurentIdeal A) u =
       Ideal.Quotient.mk (laurentIdeal A)
         (weightedRename Fin.castSuccEmb isWeightFamily_one_weight isWeightFamily_one_weight
@@ -347,11 +325,7 @@ theorem exact_algebraMap_laurentCoverDiff (f : A) :
             weightedX _ isWeightFamily_one_weight 0) * c,
           b - (1 - weightedC _ isWeightFamily_one_weight f *
             weightedX _ isWeightFamily_one_weight 0) * d) = 0 := by
-      rw [show (a - _ * c, b - _ * d) =
-        (a, b) - ((weightedC _ isWeightFamily_one_weight f -
-          weightedX _ isWeightFamily_one_weight 0) * c,
-          (1 - weightedC _ isWeightFamily_one_weight f *
-            weightedX _ isWeightFamily_one_weight 0) * d) by rfl, map_sub, hab, sub_self]
+      rw [← Prod.mk_sub_mk, map_sub, hab, sub_self]
     obtain ⟨z, hz⟩ := (exact_algebraMap_laurentDiff A _).mp hz
     refine ⟨z, Prod.ext ?_ ?_⟩
     · have hz₁ : weightedC _ isWeightFamily_one_weight z =
