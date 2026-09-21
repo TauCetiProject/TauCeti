@@ -159,7 +159,6 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
 The resulting atlas is indexed by a covering object and then by a member of the atlas chosen on
 its slice, and its generators are the chosen ones, read off the iterated slice by
 `SheafOfModules.GeneratingSections.ofIteratedSlice`. -/
-@[expose, simps I X generators]
 noncomputable def _root_.SheafOfModules.LocalGeneratorsData.bind {I : Type*}
     (X : I → C) (hX : J.CoversTop X)
     (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
@@ -168,6 +167,38 @@ noncomputable def _root_.SheafOfModules.LocalGeneratorsData.bind {I : Type*}
   X ij := ((D ij.1).X ij.2).left
   coversTop := hX.over fun i ↦ (D i).coversTop
   generators i := ((D i.1).generators i.2).ofIteratedSlice
+
+/-- Combining local-generator atlases indexes the cover by a covering object and a member of the
+atlas chosen on its slice. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.bind_I {I : Type*}
+    (X : I → C) (hX : J.CoversTop X)
+    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
+    (LocalGeneratorsData.bind X hX D).I = ((i : I) × (D i).I) :=
+  (rfl)
+
+/-- The covering objects of a combined atlas are the underlying objects of the chosen slices. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.bind_X {I : Type*}
+    (X : I → C) (hX : J.CoversTop X)
+    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i))) :
+    (LocalGeneratorsData.bind X hX D).X = fun i ↦
+      ((D ((LocalGeneratorsData.bind_I X hX D).mp i).1).X
+        ((LocalGeneratorsData.bind_I X hX D).mp i).2).left :=
+  (rfl)
+
+/-- The generators in a combined atlas are those from the chosen slice atlas, transported off
+the iterated slice. -/
+@[simp]
+theorem _root_.SheafOfModules.LocalGeneratorsData.bind_generators {I : Type*}
+    (X : I → C) (hX : J.CoversTop X)
+    (D : ∀ i, _root_.SheafOfModules.LocalGeneratorsData (M.over (X i)))
+    (i : (LocalGeneratorsData.bind X hX D).I) :
+    (LocalGeneratorsData.bind X hX D).generators i =
+      cast (by rw [LocalGeneratorsData.bind_X])
+        ((D ((LocalGeneratorsData.bind_I X hX D).mp i).1).generators
+          ((LocalGeneratorsData.bind_I X hX D).mp i).2).ofIteratedSlice :=
+  (rfl)
 
 /-- Combining locally free atlases over a cover produces locally free data on the original site. -/
 instance _root_.SheafOfModules.LocalGeneratorsData.isLocallyFreeData_bind {I : Type*}
