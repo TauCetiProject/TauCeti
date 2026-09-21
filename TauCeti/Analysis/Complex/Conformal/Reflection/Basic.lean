@@ -9,6 +9,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.ReImTopology
 public import Mathlib.Topology.Piecewise
+-- Non-public: the removable-singularity theorem and the nontriviality of the filter along the
+-- upper half-plane are used only in proofs.
+import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # Conjugation and holomorphic domains
@@ -31,6 +35,13 @@ sets, and the explicit Schwarz-reflection extension is continuous across the rea
 the boundary values are real.
 The private semilinear within-set helper adapts the proof pattern of Mathlib's
 `HasFDerivAt.comp_semilinear`.
+
+The last section turns conjugation symmetry into a statement about limits at a real point: a
+holomorphic function on a punctured disc about a real point which commutes with conjugation has a
+two-sided limit there as soon as it has one along the upper half-plane.  Symmetry transports the
+bound to the lower half-plane and continuity to the real axis, after which the singularity is
+removable.  This is how a one-sided asymptotic at a boundary point of the upper half-plane becomes
+a residue of the continued function.
 -/
 
 public section
@@ -508,5 +519,84 @@ conjugate of the derivative of the original function at the conjugate point. -/
           fun w hw => schwarzReflection_of_im_neg (f := f) hw
     _ = (starRingEnd ℂ) (deriv f ((starRingEnd ℂ) z)) := by
       simpa only [Function.comp_def] using congrFun deriv_conj_conj z
+
+section RealPoint
+
+open Topology
+
+/-- **A conjugation-symmetric holomorphic function has a two-sided limit at a real point as soon
+as it has one from above.**  If `g` is holomorphic on a punctured disc about a real point `x`,
+commutes with conjugation, and tends to `c` along the open upper half-plane, then it tends to `c`
+along the whole punctured neighbourhood of `x`.  In particular `c` is then real. -/
+theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
+    (hr : 0 < r) (hg : DifferentiableOn ℂ g (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hconj : ∀ z, g ((starRingEnd ℂ) z) = (starRingEnd ℂ) (g z))
+    (hlim : Tendsto g (𝓝[{z : ℂ | 0 < z.im}] (x : ℂ)) (𝓝 c)) :
+    Tendsto g (𝓝[≠] (x : ℂ)) (𝓝 c) := by
+  have hopen : IsOpen (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
+    Metric.isOpen_ball.sdiff isClosed_singleton
+  obtain ⟨δ₀, hδ₀, hδ⟩ := Metric.tendsto_nhdsWithin_nhds.mp hlim 1 one_pos
+  set δ := min δ₀ r
+  have hδpos : 0 < δ := lt_min hδ₀ hr
+  -- Above the axis the bound is the hypothesis; below it, conjugation symmetry; on the axis,
+  -- continuity along a vertical approach from above.
+  have hup : ∀ z : ℂ, dist z (x : ℂ) < δ → 0 < z.im → ‖g z‖ ≤ ‖c‖ + 1 := by
+    intro z hz hzim
+    have h1 : ‖g z - c‖ ≤ 1 := by
+      simpa [dist_eq_norm] using (hδ hzim (lt_of_lt_of_le hz (min_le_left _ _))).le
+    calc ‖g z‖ = ‖c + (g z - c)‖ := by congr 1; ring
+      _ ≤ ‖c‖ + ‖g z - c‖ := norm_add_le _ _
+      _ ≤ ‖c‖ + 1 := by linarith
+  have hbound : ∀ z : ℂ, dist z (x : ℂ) < δ → z ≠ (x : ℂ) → ‖g z‖ ≤ ‖c‖ + 1 := by
+    intro z hz hzx
+    rcases lt_trichotomy z.im 0 with him | him | him
+    · have hc : dist ((starRingEnd ℂ) z) (x : ℂ) < δ := by
+        rw [← Complex.conj_ofReal x, Complex.dist_conj_conj]; exact hz
+      simpa [hconj z] using hup _ hc (by simpa using him)
+    · have hzmem : z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)} :=
+        ⟨Metric.mem_ball.mpr (lt_of_lt_of_le hz (min_le_right _ _)), hzx⟩
+      have hcont : ContinuousAt g z :=
+        (hg.differentiableAt (hopen.mem_nhds hzmem)).continuousAt
+      have hpath : Tendsto (fun t : ℝ => g (z + (t : ℂ) * Complex.I)) (𝓝[>] (0 : ℝ)) (𝓝 (g z)) := by
+        have hcz : Continuous fun t : ℝ => z + (t : ℂ) * Complex.I := by fun_prop
+        exact hcont.tendsto.comp (by simpa using (hcz.tendsto 0).mono_left nhdsWithin_le_nhds)
+      refine le_of_tendsto hpath.norm ?_
+      have hpos : 0 < δ - dist z (x : ℂ) := by linarith
+      filter_upwards [self_mem_nhdsWithin,
+        mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds hpos)] with t ht ht2
+      refine hup _ ?_ (by simpa [him] using ht)
+      have hstep : dist (z + (t : ℂ) * Complex.I) z = |t| := by simp [dist_eq_norm]
+      calc dist (z + (t : ℂ) * Complex.I) (x : ℂ)
+          ≤ dist (z + (t : ℂ) * Complex.I) z + dist z (x : ℂ) := dist_triangle _ _ _
+        _ < δ := by rw [hstep, abs_of_pos ht]; linarith [Set.mem_Iio.mp ht2]
+    · exact hup z hz him
+  have hdiff : ∀ᶠ z in 𝓝[≠] (x : ℂ), DifferentiableAt ℂ g z := by
+    filter_upwards [mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds (x : ℂ) hr),
+      self_mem_nhdsWithin] with z hz hzx
+    exact hg.differentiableAt (hopen.mem_nhds ⟨hz, hzx⟩)
+  have hbdd : IsBoundedUnder (· ≤ ·) (𝓝[≠] (x : ℂ)) fun z => ‖g z - g (x : ℂ)‖ := by
+    refine ⟨‖c‖ + 1 + ‖g (x : ℂ)‖, ?_⟩
+    rw [eventually_map]
+    filter_upwards [mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds (x : ℂ) hδpos),
+      self_mem_nhdsWithin] with z hz hzx
+    calc ‖g z - g (x : ℂ)‖ ≤ ‖g z‖ + ‖g (x : ℂ)‖ := norm_sub_le _ _
+      _ ≤ ‖c‖ + 1 + ‖g (x : ℂ)‖ := by
+          have := hbound z (Metric.mem_ball.mp hz) hzx
+          linarith
+  have hten := Complex.tendsto_limUnder_of_differentiable_on_punctured_nhds_of_bounded_under
+    hdiff hbdd
+  -- The filter along the upper half-plane at a real point is nontrivial, so limits along it are
+  -- unique; this instance is what identifies the removable limit with `c`.
+  have : (𝓝[{z : ℂ | 0 < z.im}] ((x : ℝ) : ℂ)).NeBot := by
+    simpa using Real.nhdsWithin_upperHalfPlaneSet_neBot x
+  have hmono : 𝓝[{z : ℂ | 0 < z.im}] ((x : ℝ) : ℂ) ≤ 𝓝[≠] ((x : ℝ) : ℂ) :=
+    nhdsWithin_mono _ fun z (hz : 0 < z.im) => by
+      simp only [Set.mem_compl_iff, Set.mem_singleton_iff]
+      rintro rfl
+      simp at hz
+  rw [← tendsto_nhds_unique (hten.mono_left hmono) hlim]
+  exact hten
+
+end RealPoint
 
 end TauCeti
