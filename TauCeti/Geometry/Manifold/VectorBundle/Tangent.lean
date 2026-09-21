@@ -34,6 +34,8 @@ identification.
   inverse act as the identity on the fibre over `x`.
 * `TauCeti.Manifold.localFrame_trivializationAt_self`: consequently its local frame at `x` is the
   chosen basis of the model space.
+* `TauCeti.Manifold.inverse_mfderiv_extChartAt`: the inverse of the differential of an extended
+  chart is the inverse of the canonical tangent-bundle trivialization at its centre.
 * `TauCeti.Manifold.contDiffOn_tangentCoordChange`: the tangent coordinate change between the
   charts at two points is `C^n` on the overlap of their sources, read in the chart at the first
   point.
@@ -89,6 +91,17 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- The differential of the extended chart at `x₀`, at a point `x` of its source, is inverted by
+the inverse of the canonical tangent-bundle trivialization at `x₀`.  This is the inverse form of
+`TangentBundle.symmL_trivializationAt`. -/
+theorem inverse_mfderiv_extChartAt (x₀ : M) {x : M} (hx : x ∈ (extChartAt I x₀).source) :
+    (mfderiv% (extChartAt I x₀) x).inverse =
+      (trivializationAt E (TangentSpace I) x₀).symmL 𝕜 x := by
+  rw [ContinuousLinearMap.inverse_eq
+    (mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm' hx)
+    (mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hx),
+    ← TangentBundle.symmL_trivializationAt (by simpa using hx)]
 
 end BasePoint
 

@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.NumberTheory.LSeries.Deriv
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Deriv
 
 /-!
 # The logarithmic derivative of an ideal Euler product
@@ -103,7 +104,8 @@ theorem hasSum_logDeriv_eulerFactor {s : ℂ}
     summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K (by simpa using hσabs)
   have hdiffF : ∀ (P : HeightOneSpectrum (𝓞 K)), ∀ z ∈ U,
       DifferentiableAt ℂ (D.eulerFactor P) z := fun P z hz ↦
-    D.differentiableAt_eulerFactor P (habs z hz)
+    (D.hasDerivAt_eulerFactor P
+      ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt (habs z hz))).differentiableAt
   -- the uniform majorant for the deviations of the local factors from `1`
   set b : HeightOneSpectrum (𝓞 K) → ℝ := fun P ↦ ∑' e : ℕ,
     ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) (P.primeIdealPow (e + 1))‖
