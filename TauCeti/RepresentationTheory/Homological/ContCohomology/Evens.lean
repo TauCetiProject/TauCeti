@@ -96,10 +96,14 @@ is restricted to even degrees away from characteristic two.
 * L. Evens, *A generalization of the transfer map in the cohomology of groups*, Trans. Amer.
   Math. Soc. **108** (1963), 54–65: the multiplicative transfer, of which the cochain built here
   is the index-two, degree-one case.
+* A. Kozlowski, *The Evens–Kahn formula for the total Stiefel–Whitney class*, Proc. Amer. Math.
+  Soc. **91** (1984), 309–313: the transfer for double coverings, that is the index-two case,
+  and the formula it gives for a representation induced from a subgroup of index two.
 * A. Kozlowski, *Transfers in the group of multiplicative units of the classical cohomology ring
-  and Stiefel–Whitney classes*, Proc. Amer. Math. Soc. **91** (1984), Lemma 2.4: the index-two
-  expansion in low degrees, whose right-hand sides are the identities the cochain here is built
-  to satisfy.
+  and Stiefel–Whitney classes*, Publ. Res. Inst. Math. Sci. **25** (1989), 59–74: the same
+  transfer on the multiplicative units of the cohomology ring, expressed for double coverings in
+  terms of the Evens transfer; that expression in low degrees is the identity the cochain here is
+  built to satisfy.
 -/
 
 public section
@@ -139,6 +143,7 @@ theorem evensExtend_of_notMem {γ : G} (h : γ ∉ U) : evensExtend U α γ = 0 
 
 /-- The extension by zero is additive on `U`, where it is `α`. It is not additive on `G`: that
 failure is what the Evens norm measures. -/
+@[simp]
 theorem evensExtend_mul {x y : G} (hx : x ∈ U) (hy : y ∈ U) :
     evensExtend U α (x * y) = evensExtend U α x + evensExtend U α y := by
   -- the three values are `α` at three points of `U`, and the first point is the product of the
@@ -147,13 +152,16 @@ theorem evensExtend_mul {x y : G} (hx : x ∈ U) (hy : y ∈ U) :
   rw [evensExtend_of_mem (U.mul_mem hx hy), evensExtend_of_mem hx, evensExtend_of_mem hy, hmk,
     map_mul, toAdd_mul]
 
-/-- The extension by zero is `𝔽₂`-valued, so it takes inverses to themselves. -/
-theorem evensExtend_inv {x : G} (hx : x ∈ U) :
-    evensExtend U α x⁻¹ = evensExtend U α x := by
-  -- as in `evensExtend_mul`, the point `⟨x⁻¹, _⟩` of `U` is the inverse of the point `⟨x, hx⟩`
-  have hmk : (⟨x⁻¹, U.inv_mem hx⟩ : U) = (⟨x, hx⟩ : U)⁻¹ := Subtype.ext (by simp)
-  rw [evensExtend_of_mem (U.inv_mem hx), evensExtend_of_mem hx, hmk, map_inv, toAdd_inv,
-    CharTwo.neg_eq]
+/-- The extension by zero is `𝔽₂`-valued, so it takes inverses to themselves. No membership
+hypothesis is needed: on `U` this is `CharTwo.neg_eq`, and outside `U` both sides vanish. -/
+@[simp]
+theorem evensExtend_inv (x : G) : evensExtend U α x⁻¹ = evensExtend U α x := by
+  by_cases hx : x ∈ U
+  · -- as in `evensExtend_mul`, the point `⟨x⁻¹, _⟩` of `U` is the inverse of the point `⟨x, hx⟩`
+    have hmk : (⟨x⁻¹, U.inv_mem hx⟩ : U) = (⟨x, hx⟩ : U)⁻¹ := Subtype.ext (by simp)
+    rw [evensExtend_of_mem (U.inv_mem hx), evensExtend_of_mem hx, hmk, map_inv, toAdd_inv,
+      CharTwo.neg_eq]
+  · rw [evensExtend_of_notMem (mt U.inv_mem_iff.mp hx), evensExtend_of_notMem hx]
 
 variable (U α)
 
@@ -228,9 +236,16 @@ theorem evensCorCochain_apply (γ : G) :
 
 /-! The four identities below are the cocycle law of the pair `(b₁, b_s)` read in the permutation
 module `𝔽₂[G/U]`: left translation by an element of `U` fixes the two coordinates and left
-translation by an element outside `U` exchanges them. -/
+translation by an element outside `U` exchanges them.
+
+They and `TauCeti.ContCohomology.evensCorCochain_mul` carry `@[grind =]` rather than `@[simp]`:
+their side conditions `U.index = 2` and `s ∉ U` are hypotheses of the ambient context, which
+`grind` uses and `simp`'s discharger does not see, and three of them loop as `simp` lemmas
+against the unfolding lemma `TauCeti.ContCohomology.evensBs_apply`, which turns a `b_s` produced
+on the right back into a `b₁` the left-hand side matches again. -/
 
 /-- Left translation of `b₁` by an element of `U`. -/
+@[grind =]
 theorem evensB1_mul_of_mem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : γ ∈ U) (η : G) :
     evensB1 U s α (γ * η) = evensB1 U s α γ + evensB1 U s α η := by
   by_cases hη : η ∈ U
@@ -242,6 +257,7 @@ theorem evensB1_mul_of_mem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : γ 
       evensExtend_mul hγ hηs]
 
 /-- Left translation of `b₁` by an element outside `U` produces the *other* component. -/
+@[grind =]
 theorem evensB1_mul_of_notMem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : γ ∉ U) (η : G) :
     evensB1 U s α (γ * η) = evensB1 U s α γ + evensBs U s α η := by
   have hγs : γ * s ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
@@ -264,6 +280,7 @@ theorem evensB1_mul_of_notMem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : 
     group
 
 /-- Left translation of `b_s` by an element of `U`. -/
+@[grind =]
 theorem evensBs_mul_of_mem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : γ ∈ U) (η : G) :
     evensBs U s α (γ * η) = evensBs U s α γ + evensBs U s α η := by
   have hsγ : s⁻¹ * γ ∉ U := by
@@ -271,6 +288,7 @@ theorem evensBs_mul_of_mem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : γ 
   rw [evensBs_apply, ← mul_assoc, evensB1_mul_of_notMem hU hs hsγ η, ← evensBs_apply]
 
 /-- Left translation of `b_s` by an element outside `U` produces the *other* component. -/
+@[grind =]
 theorem evensBs_mul_of_notMem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : γ ∉ U) (η : G) :
     evensBs U s α (γ * η) = evensBs U s α γ + evensB1 U s α η := by
   have hsγ : s⁻¹ * γ ∈ U := by
@@ -281,6 +299,7 @@ theorem evensBs_mul_of_notMem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : 
 homomorphism; the index-two hypothesis is what makes the two cross terms recombine. Neither
 `TauCeti.ContCohomology.evensB1` nor `TauCeti.ContCohomology.evensBs` satisfies this on its own,
 which is why the corestriction is the class of the sum and not of either summand. -/
+@[grind =]
 theorem evensCorCochain_mul (hU : U.index = 2) (hs : s ∉ U) (γ η : G) :
     evensCorCochain U s α (γ * η) = evensCorCochain U s α γ + evensCorCochain U s α η := by
   simp only [evensCorCochain_apply]
@@ -450,8 +469,11 @@ section ChangeOfElement
 
 /-! ### Independence of the element outside `U`
 
-Two elements outside `U` give graph cochains differing by an explicit continuous coboundary, so
-the class of the graph cochain in `H²(G, 𝔽₂)` depends on `U` and `α` alone. -/
+Two elements outside `U` give graph cochains differing by an explicit coboundary, so the class of
+the graph cochain in `H²(G, 𝔽₂)` depends on `U` and `α` alone. This is an identity of plain
+functions and needs no topology; the `1`-cochain whose coboundary it is becomes continuous once
+`G` is a topological group, `U` is open and `α` is continuous, by
+`TauCeti.ContCohomology.continuous_evensExtend`. -/
 
 variable {U : Subgroup G} {s s' : G} {α : U →* Multiplicative (ZMod 2)}
 
@@ -480,7 +502,7 @@ theorem evensBs_eq_add_of_notMem (hU : U.index = 2) (hs : s ∉ U) (hs' : s' ∉
   -- the two evaluation points differ by the factor `(s⁻¹ * s')⁻¹` of `U`
   have hsplit : s'⁻¹ * γ = (s⁻¹ * s')⁻¹ * (s⁻¹ * γ) := by group
   rw [evensBs_apply, evensBs_apply, evensB1_of_mem hs'γ, evensB1_of_mem hsγ, hsplit,
-    evensExtend_mul (U.inv_mem hss') hsγ, evensExtend_inv hss']
+    evensExtend_mul (U.inv_mem hss') hsγ, evensExtend_inv]
   abel
 
 /-- On `U` the second Shapiro component does not depend on the element chosen outside either: it
@@ -500,7 +522,7 @@ theorem evensBs_eq_of_mem (hU : U.index = 2) (hs : s ∉ U) (hs' : s' ∉ U) {γ
   have hsplit : s'⁻¹ * γ * s' = (s⁻¹ * s')⁻¹ * (s⁻¹ * γ * s) * (s⁻¹ * s') := by group
   rw [evensBs_apply, evensBs_apply, evensB1_of_notMem hs'γ, evensB1_of_notMem hsγ, hsplit,
     evensExtend_mul (U.mul_mem (U.inv_mem hss') hsγs) hss',
-    evensExtend_mul (U.inv_mem hss') hsγs, evensExtend_inv hss']
+    evensExtend_mul (U.inv_mem hss') hsγs, evensExtend_inv]
   linear_combination (evensExtend U α (s⁻¹ * s')) * CharTwo.two_eq_zero (R := ZMod 2)
 
 /-- **The graph cochain does not depend on the element chosen outside `U`, up to a coboundary.**
