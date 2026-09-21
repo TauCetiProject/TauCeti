@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.SpecialFunctions.Log.InvLog
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.AbelSummation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 
@@ -27,10 +28,14 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
 
 * `TauCeti.summatory_mul_eq_sub_sub_integral_mul`: Abel summation between two nonnegative real
   cutoffs for a weight of the form `i ↦ w i * g (N i)`.
-* `TauCeti.summatory_mul_eq_sub_integral_mul_of_le`: Abel summation from a natural lower bound
-  for the index, with named specializations at `1` and `2` for ideals and primes.
-* `TauCeti.primeSummatory_mul_eq_sub_integral_mul`: that form for the height-one primes of a
-  number field.
+* `TauCeti.summatory_mul_eq_sub_integral_mul_of_le`: Abel summation from a real lower bound,
+  with `TauCeti.summatory_mul_eq_sub_integral_mul_of_one_le` and
+  `TauCeti.summatory_mul_eq_sub_integral_mul_of_two_le` naming the cutoffs `1` and `2`.
+* `TauCeti.idealSummatory_mul_eq_sub_integral_mul`: the cutoff-`1` form for nonzero ideals.
+* `TauCeti.primeSummatory_mul_eq_sub_integral_mul`: the cutoff-`2` form for the height-one primes
+  of a number field.
+* `TauCeti.norm_summatory_mul_cpow_le_of_summatory_le`: an imaginary-power twist preserves a
+  positive power bound for partial sums, with an explicit constant.
 * `TauCeti.integrableOn_mul_summatory`: a summatory function times an integrable factor is
   integrable on a compact interval, so the integrals above are genuine.
 * `TauCeti.summatory_mul_le_of_summatory_le` and `TauCeti.tsum_mul_le_of_summatory_le`: for a
@@ -140,53 +145,53 @@ theorem summatory_mul_eq_sub_sub_integral_mul (w : ι → 𝕜) {g : ℝ → �
     ← summatory_eq_sum_Icc_normFiberSum N w ha, hI] at key
   exact key
 
-/-- Abel summation from a natural cutoff `a` for a carrier all of whose indices have `N`-value at
+private theorem summatory_mul_eq_mul_summatory_of_le {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → 𝕜)
+    (g : ℝ → 𝕜) :
+    summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+  rw [summatory_apply, summatory_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [le_antisymm ((mem_normLE N).mp hi) (ha i), mul_comm]
+
+/-- Abel summation from a real cutoff `a` for a carrier all of whose indices have `N`-value at
 least `a`. The boundary term at `a` cancels, because there the twisted weight is `g a` times the
 untwisted one.
 
 The identity holds for every cutoff `b`: below `a` all three terms vanish. -/
-theorem summatory_mul_eq_sub_integral_mul_of_le (a : ℕ) (ha : ∀ i, a ≤ N i) (w : ι → 𝕜)
-    {g : ℝ → 𝕜} (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc (a : ℝ) b, DifferentiableAt ℝ g t)
-    (hg_int : IntegrableOn (deriv g) (Set.Icc (a : ℝ) b)) :
+theorem summatory_mul_eq_sub_integral_mul_of_le {a : ℝ} (ha : 0 ≤ a)
+    (hN : ∀ i, a ≤ (N i : ℝ)) (w : ι → 𝕜) {g : ℝ → 𝕜} (b : ℝ)
+    (hg_diff : ∀ t ∈ Set.Icc a b, DifferentiableAt ℝ g t)
+    (hg_int : IntegrableOn (deriv g) (Set.Icc a b)) :
     summatory N (fun i ↦ w i * g (N i)) b =
-      g b * summatory N w b - ∫ t in Set.Ioc (a : ℝ) b, deriv g t * summatory N w t := by
-  have ha' : ∀ i, (a : ℝ) ≤ (N i : ℝ) := fun i ↦ by exact_mod_cast ha i
+      g b * summatory N w b - ∫ t in Set.Ioc a b, deriv g t * summatory N w t := by
   rcases lt_or_ge b a with hb | hb
-  · rw [summatory_eq_zero_of_lt N ha' hb, summatory_eq_zero_of_lt N ha' hb,
+  · rw [summatory_eq_zero_of_lt N hN hb, summatory_eq_zero_of_lt N hN hb,
       Set.Ioc_eq_empty_of_le hb.le]
     simp
-  · have hcut : summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
-      rw [summatory_apply, summatory_apply, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i hi ↦ ?_
-      rw [le_antisymm ((mem_normLE N).mp hi) (ha' i), mul_comm]
-    have key := summatory_mul_eq_sub_sub_integral_mul N w a.cast_nonneg hb hg_diff hg_int
-    rw [hcut] at key
+  · have key := summatory_mul_eq_sub_sub_integral_mul N w ha hb hg_diff hg_int
+    rw [summatory_mul_eq_mul_summatory_of_le N hN w g] at key
     linear_combination key
 
 /-- Abel summation from the cutoff `1` for a carrier all of whose indices have `N`-value at least
 `1`, such as the nonzero ideals of a number field. -/
-theorem summatory_mul_eq_sub_integral_mul_of_one_le (h1 : ∀ i, 1 ≤ N i) (w : ι → 𝕜)
+theorem summatory_mul_eq_sub_integral_mul_of_one_le (h1 : ∀ i, 1 ≤ (N i : ℝ)) (w : ι → 𝕜)
     {g : ℝ → 𝕜} (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc 1 b, DifferentiableAt ℝ g t)
     (hg_int : IntegrableOn (deriv g) (Set.Icc 1 b)) :
     summatory N (fun i ↦ w i * g (N i)) b =
       g b * summatory N w b - ∫ t in Set.Ioc 1 b, deriv g t * summatory N w t :=
-  by
-    simpa using summatory_mul_eq_sub_integral_mul_of_le N 1 h1 w (g := g) b
-      (by simpa using hg_diff) (by simpa using hg_int)
+  summatory_mul_eq_sub_integral_mul_of_le N zero_le_one h1 w b hg_diff hg_int
 
 /-- Abel summation from the cutoff `2` for a carrier all of whose indices have `N`-value at least
 `2`, such as the height-one primes of a number field.  The boundary term at `2` cancels, because
 there the twisted weight is `g 2` times the untwisted one.
 
 The identity holds for every cutoff `b`: below `2` all three terms vanish. -/
-theorem summatory_mul_eq_sub_integral_mul_of_two_le (h2 : ∀ i, 2 ≤ N i) (w : ι → 𝕜) {g : ℝ → 𝕜}
+theorem summatory_mul_eq_sub_integral_mul_of_two_le (h2 : ∀ i, 2 ≤ (N i : ℝ)) (w : ι → 𝕜)
+    {g : ℝ → 𝕜}
     (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc 2 b, DifferentiableAt ℝ g t)
     (hg_int : IntegrableOn (deriv g) (Set.Icc 2 b)) :
     summatory N (fun i ↦ w i * g (N i)) b =
       g b * summatory N w b - ∫ t in Set.Ioc 2 b, deriv g t * summatory N w t :=
-  by
-    simpa using summatory_mul_eq_sub_integral_mul_of_le N 2 h2 w (g := g) b
-      (by simpa using hg_diff) (by simpa using hg_int)
+  summatory_mul_eq_sub_integral_mul_of_le N (by norm_num) h2 w b hg_diff hg_int
 
 /-- A summatory function, multiplied by a factor integrable on a compact interval of nonnegative
 cutoffs, is integrable there. -/
@@ -195,6 +200,106 @@ theorem integrableOn_mul_summatory (w : ι → 𝕜) {f : ℝ → 𝕜} {a b : �
     IntegrableOn (fun t ↦ f t * summatory N w t) (Set.Icc a b) :=
   (integrableOn_mul_sum_Icc (normFiberSum N w) ha hf).congr_fun
     (fun t ht ↦ by rw [summatory_eq_sum_Icc_normFiberSum N w (ha.trans ht.1)]) measurableSet_Icc
+
+/-! ### Imaginary-power twists -/
+
+private theorem differentiableAt_ofReal_cpow_neg (z : ℂ) (hz : z ≠ 0) {t : ℝ} (ht : 0 < t) :
+    DifferentiableAt ℝ (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t :=
+  differentiableAt_id.ofReal_cpow_const (by simpa only [id_eq] using ht.ne')
+    (neg_ne_zero.mpr hz)
+
+private theorem deriv_ofReal_cpow_neg (z : ℂ) (hz : z ≠ 0) {t : ℝ} (ht : 0 < t) :
+    deriv (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t = -z * (t : ℂ) ^ (-z - 1) :=
+  Complex.deriv_ofReal_cpow_const ht.ne' (neg_ne_zero.mpr hz)
+
+private theorem integrableOn_deriv_ofReal_cpow_neg (z : ℂ) (hz : z ≠ 0) (x : ℝ) :
+    IntegrableOn (deriv fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Icc 1 x) := by
+  refine (ContinuousOn.integrableOn_Icc fun t ht ↦ ?_).congr_fun
+    (fun t ht ↦ (deriv_ofReal_cpow_neg z hz (by linarith [ht.1])).symm) measurableSet_Icc
+  exact continuousWithinAt_const.mul
+    (Complex.continuousAt_ofReal_cpow_const t (-z - 1)
+      (Or.inr (by linarith [ht.1]))).continuousWithinAt
+
+private theorem norm_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ (-z)‖ = 1 := by
+  rw [Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.neg_re, hz, neg_zero, Real.rpow_zero]
+
+private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) (hz0 : z ≠ 0)
+    {t : ℝ} (ht : 0 < t) :
+    ‖deriv (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t‖ = ‖z‖ * t⁻¹ := by
+  rw [deriv_ofReal_cpow_neg z hz0 ht, norm_mul, norm_neg,
+    Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re, hz,
+    show -0 - 1 = (-1 : ℝ) by ring, Real.rpow_neg_one]
+
+/-- **An imaginary-power Abel bound.** Suppose every index has `N`-value at least `1`, and the
+partial sums of `w` are bounded by `C * t ^ θ` for a positive exponent `θ`. Twisting the weight
+by `(N i) ^ (-z)` with `Re z = 0` preserves that exponent, at the cost of the explicit factor
+`1 + ‖z‖ / θ`. -/
+theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ)) (w : ι → ℂ)
+    {C θ x : ℝ} (hx : 1 ≤ x) (hθ : 0 < θ) (z : ℂ) (hz : z.re = 0)
+    (hC : ∀ t, 1 ≤ t → ‖summatory N w t‖ ≤ C * t ^ θ) :
+    ‖summatory N (fun i ↦ w i * (N i : ℂ) ^ (-z)) x‖ ≤
+      C * (1 + ‖z‖ / θ) * x ^ θ := by
+  rcases eq_or_ne z 0 with rfl | hz0
+  · simpa using hC x hx
+  let g : ℝ → ℂ := fun t ↦ (t : ℂ) ^ (-z)
+  have hg_diff : ∀ t ∈ Set.Icc (1 : ℝ) x, DifferentiableAt ℝ g t :=
+    fun t ht ↦ differentiableAt_ofReal_cpow_neg z hz0 (by linarith [ht.1])
+  have hg_int : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) x) :=
+    integrableOn_deriv_ofReal_cpow_neg z hz0 x
+  have hformula : summatory N (fun i ↦ w i * (N i : ℂ) ^ (-z)) x =
+      g x * summatory N w x - ∫ t in Set.Ioc 1 x, deriv g t * summatory N w t := by
+    have hcast : ∀ i, ((N i : ℝ) : ℂ) = (N i : ℂ) := fun _ ↦ by norm_num
+    simpa only [g, hcast] using
+      summatory_mul_eq_sub_integral_mul_of_one_le N hN w x hg_diff hg_int
+  have hC0 : 0 ≤ C :=
+    (norm_nonneg (summatory N w 1)).trans (by simpa using hC 1 le_rfl)
+  have hbound_int :
+      ‖∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖ ≤
+        (‖z‖ * C / θ) * x ^ θ := by
+    rw [← intervalIntegral.integral_of_le hx]
+    calc
+      ‖∫ t in (1 : ℝ)..x, deriv g t * summatory N w t‖
+          ≤ ∫ t in (1 : ℝ)..x, (‖z‖ * C) * t ^ (θ - 1) := by
+            refine intervalIntegral.norm_integral_le_of_norm_le hx ?_
+              ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).const_mul _)
+            filter_upwards with t
+            intro ht
+            have ht0 : 0 < t := by linarith [ht.1]
+            have hinv : 0 ≤ t⁻¹ := inv_nonneg.mpr ht0.le
+            calc
+              ‖deriv g t * summatory N w t‖ =
+                  ‖z‖ * t⁻¹ * ‖summatory N w t‖ := by
+                    rw [norm_mul, norm_deriv_ofReal_cpow_neg z hz hz0 ht0]
+              _ ≤ ‖z‖ * t⁻¹ * (C * t ^ θ) :=
+                    mul_le_mul_of_nonneg_left (hC t ht.1.le)
+                      (mul_nonneg (norm_nonneg _) hinv)
+              _ = ‖z‖ * C * t ^ (θ - 1) := by
+                rw [show θ - 1 = θ + (-1 : ℝ) by ring, Real.rpow_add ht0,
+                  Real.rpow_neg_one]
+                ring
+      _ = (‖z‖ * C) * ((x ^ θ - 1) / θ) := by
+        rw [intervalIntegral.integral_const_mul,
+          integral_rpow (Or.inl (by linarith)), sub_add_cancel, Real.one_rpow]
+      _ ≤ (‖z‖ * C / θ) * x ^ θ := by
+        have hzC : 0 ≤ ‖z‖ * C := mul_nonneg (norm_nonneg _) hC0
+        calc
+          (‖z‖ * C) * ((x ^ θ - 1) / θ) ≤ (‖z‖ * C) * (x ^ θ / θ) :=
+            mul_le_mul_of_nonneg_left
+              (div_le_div_of_nonneg_right (sub_le_self _ zero_le_one) hθ.le) hzC
+          _ = (‖z‖ * C / θ) * x ^ θ := by ring
+  rw [hformula]
+  calc
+    ‖g x * summatory N w x - ∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖
+        ≤ ‖g x‖ * ‖summatory N w x‖ +
+          ‖∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖ := by
+            simpa only [norm_mul] using
+              (norm_sub_le (g x * summatory N w x)
+                (∫ t in Set.Ioc 1 x, deriv g t * summatory N w t))
+    _ ≤ C * x ^ θ + (‖z‖ * C / θ) * x ^ θ := by
+      rw [show ‖g x‖ = 1 from norm_ofReal_cpow_neg z hz (zero_lt_one.trans_le hx), one_mul]
+      exact add_le_add (hC x hx) hbound_int
+    _ = C * (1 + ‖z‖ / θ) * x ^ θ := by ring
 
 /-! ### One-sided bounds for twisted sums -/
 
@@ -210,12 +315,8 @@ theorem summatory_mul_le_of_summatory_le {a : ℝ} (ha : 0 ≤ a) (hN : ∀ i, a
     (hg_int : IntegrableOn (deriv g) (Set.Icc a x))
     (hg_deriv : ∀ t ∈ Set.Icc a x, deriv g t ≤ 0) (hg_nonneg : 0 ≤ g x) :
     summatory N (fun i ↦ w i * g (N i)) x ≤ C * g a := by
-  have hcut : summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
-    rw [summatory_apply, summatory_apply, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [le_antisymm ((mem_normLE N).mp hi) (hN i), mul_comm]
   have key := summatory_mul_eq_sub_sub_integral_mul N w ha hx hg_diff hg_int
-  rw [hcut] at key
+  rw [summatory_mul_eq_mul_summatory_of_le N hN w g] at key
   have hint : IntegrableOn (fun t ↦ deriv g t * summatory N w t) (Set.Ioc a x) :=
     (integrableOn_mul_summatory N w ha hg_int).mono_set Set.Ioc_subset_Icc_self
   have hmono : ∫ t in Set.Ioc a x, deriv g t * C ≤
@@ -252,14 +353,36 @@ theorem tsum_mul_le_of_summatory_le {a : ℝ} (ha : 0 ≤ a) (hN : ∀ i, a ≤ 
 
 variable (K : Type*) [Field K] [NumberField K]
 
+/-- Abel summation over the nonzero ideals of `𝓞 K`, from the cutoff `1`. -/
+theorem idealSummatory_mul_eq_sub_integral_mul (w : (Ideal (𝓞 K))⁰ → 𝕜) {g : ℝ → 𝕜}
+    (x : ℝ) (hg_diff : ∀ t ∈ Set.Icc 1 x, DifferentiableAt ℝ g t)
+    (hg_int : IntegrableOn (deriv g) (Set.Icc 1 x)) :
+    idealSummatory K (fun I ↦ w I * g (Ideal.absNorm (I : Ideal (𝓞 K)))) x =
+      g x * idealSummatory K w x - ∫ t in Set.Ioc 1 x, deriv g t * idealSummatory K w t :=
+  summatory_mul_eq_sub_integral_mul_of_one_le _ one_le_absNorm_real_of_nonZeroDivisors w x
+    hg_diff hg_int
+
+/-- An imaginary norm-power twist preserves a positive power bound for partial sums over the
+nonzero ideals of a number field. -/
+theorem norm_idealSummatory_mul_cpow_le_of_summatory_le
+    (w : (Ideal (𝓞 K))⁰ → ℂ) {C θ x : ℝ} (hx : 1 ≤ x) (hθ : 0 < θ)
+    (z : ℂ) (hz : z.re = 0)
+    (hC : ∀ t, 1 ≤ t → ‖idealSummatory K w t‖ ≤ C * t ^ θ) :
+    ‖idealSummatory K
+      (fun I ↦ w I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z)) x‖ ≤
+        C * (1 + ‖z‖ / θ) * x ^ θ := by
+  simpa only [idealSummatory] using
+    norm_summatory_mul_cpow_le_of_summatory_le
+      (fun I : (Ideal (𝓞 K))⁰ ↦ Ideal.absNorm (I : Ideal (𝓞 K)))
+      one_le_absNorm_real_of_nonZeroDivisors w hx hθ z hz hC
+
 /-- Abel summation over the height-one primes of `𝓞 K`, from the cutoff `2`. -/
 theorem primeSummatory_mul_eq_sub_integral_mul (w : HeightOneSpectrum (𝓞 K) → ℝ) {g : ℝ → ℝ}
     (x : ℝ) (hg_diff : ∀ t ∈ Set.Icc 2 x, DifferentiableAt ℝ g t)
     (hg_int : IntegrableOn (deriv g) (Set.Icc 2 x)) :
     primeSummatory K (fun v ↦ w v * g (Ideal.absNorm v.asIdeal)) x =
       g x * primeSummatory K w x - ∫ t in Set.Ioc 2 x, deriv g t * primeSummatory K w t :=
-  summatory_mul_eq_sub_integral_mul_of_two_le _
-    (fun v ↦ by have := NumberField.HeightOneSpectrum.one_lt_absNorm v; omega) w x hg_diff hg_int
+  summatory_mul_eq_sub_integral_mul_of_two_le _ two_le_absNorm_asIdeal_real w x hg_diff hg_int
 
 variable {K}
 

@@ -852,6 +852,20 @@ noncomputable def normTwist (z : ℂ) (hz : z.re = 0) (χ : UnitaryIdealWeight K
 theorem val_normTwist (z : ℂ) (hz : z.re = 0) (χ : UnitaryIdealWeight K) :
     (normTwist z hz χ).1 = MultiplicativeIdealWeight.normTwist z χ.1 := (rfl)
 
+/-- The zero norm twist acts trivially on unitary weights. -/
+@[simp]
+theorem normTwist_zero (χ : UnitaryIdealWeight K) : normTwist 0 (by simp) χ = χ :=
+  Subtype.ext (by rw [val_normTwist, MultiplicativeIdealWeight.normTwist_zero])
+
+/-- Successive imaginary norm twists of a unitary weight combine by adding their parameters. -/
+@[simp]
+theorem normTwist_normTwist (z w : ℂ) (hz : z.re = 0) (hw : w.re = 0)
+    (χ : UnitaryIdealWeight K) :
+    normTwist z hz (normTwist w hw χ) = normTwist (z + w) (by simp [hz, hw]) χ :=
+  Subtype.ext (by
+    rw [val_normTwist, val_normTwist, val_normTwist,
+      MultiplicativeIdealWeight.normTwist_normTwist])
+
 /-- **The modulus of an arbitrary norm twist.** At a good ideal, twisting a unitary weight by
 `z` gives modulus `N(I) ^ (-Re z)`; only the purely imaginary twists therefore stay unitary. -/
 theorem norm_normTwist (χ : UnitaryIdealWeight K) (z : ℂ) {I : Ideal (𝓞 K)}
