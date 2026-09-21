@@ -175,18 +175,17 @@ end Profinite
 
 section FactorSet
 
-variable [IsTopologicalGroup E] [T2Space E]
-  [CommGroup M] [TopologicalSpace M] [CompactSpace M] [MulDistribMulAction G M]
+variable [CommGroup M] [TopologicalSpace M] [MulDistribMulAction G M]
   {S : GroupExtension M E G}
 
-omit [T2Space E] [CompactSpace M] in
 /-- **The factor set of a continuous normalized section is continuous** as soon as the kernel
 carries the subspace topology of its image: the factor set is continuous exactly because its image
 under the inclusion, the failure `σ g * σ h * (σ (g * h))⁻¹` of the section to be a homomorphism, is
 continuous. In the profinite dictionary the hypothesis comes for free, the kernel being compact and
 the extension Hausdorff: a continuous inclusion is then a closed embedding by
 `Continuous.isClosedEmbedding`. -/
-theorem continuous_factorSet [ContinuousMul G] (hinl : Topology.IsEmbedding ⇑S.inl)
+theorem continuous_factorSet [IsTopologicalGroup E] [ContinuousMul G]
+    (hinl : Topology.IsEmbedding ⇑S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
     Continuous ⇑(factorSet σ hσ hact) := by
   refine hinl.continuous_iff.2 ?_
@@ -197,10 +196,11 @@ theorem continuous_factorSet [ContinuousMul G] (hinl : Topology.IsEmbedding ⇑S
   exact ((hσc.comp continuous_fst).mul (hσc.comp continuous_snd)).mul
     (hσc.comp (continuous_fst.mul continuous_snd)).inv
 
-omit [T2Space E] [CompactSpace M] in
 /-- The comparison map `⟨a, g⟩ ↦ inl a * σ g` out of the twisted product is continuous when the
-section is. -/
-theorem continuous_factorSetToGroupExtensionEquiv (hinl : Continuous S.inl) {σ : S.Section}
+section is. Only the multiplication of `E` has to be continuous: the map is a product of two
+continuous maps, so nothing is asked of inversion. -/
+theorem continuous_factorSetToGroupExtensionEquiv [ContinuousMul E] (hinl : Continuous S.inl)
+    {σ : S.Section}
     (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
     Continuous ⇑(factorSetToGroupExtensionEquiv σ hσ hact) := by
   have he : ⇑(factorSetToGroupExtensionEquiv σ hσ hact)
@@ -215,27 +215,30 @@ from the factor set of a continuous normalized section**: the comparison map of
 `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` is a multiplicative equivalence and a
 homeomorphism. Compactness is asked of the base rather than of the extension because it is the
 twisted product, the source of the comparison map, that has to be compact; a compact extension with
-continuous projection has compact base by `Function.Surjective.compactSpace`. -/
-noncomputable def factorSetContinuousMulEquiv [CompactSpace G] (hinl : Continuous S.inl)
+continuous projection has compact base by `Function.Surjective.compactSpace`. As for the comparison
+map itself, only the multiplication of `E` is asked to be continuous. -/
+noncomputable def factorSetContinuousMulEquiv [ContinuousMul E] [T2Space E] [CompactSpace M]
+    [CompactSpace G] (hinl : Continuous S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
     (hact : InducesAction S) : (factorSet σ hσ hact).Extension ≃ₜ* E :=
   continuousMulEquivOfEquiv (factorSetToGroupExtensionEquiv σ hσ hact)
     (continuous_factorSetToGroupExtensionEquiv hinl hσc hσ hact)
 
 @[simp]
-theorem factorSetContinuousMulEquiv_apply [CompactSpace G] (hinl : Continuous S.inl)
+theorem factorSetContinuousMulEquiv_apply [ContinuousMul E] [T2Space E] [CompactSpace M]
+    [CompactSpace G] (hinl : Continuous S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
     (hact : InducesAction S) (x : (factorSet σ hσ hact).Extension) :
     factorSetContinuousMulEquiv hinl hσc hσ hact x = S.inl x.left * σ x.right :=
   factorSetToGroupExtensionEquiv_apply σ hσ hact x
 
-omit [T2Space E] in
 /-- **A profinite extension with compact kernel is the twisted product of a continuous factor
 set**, by an equivalence of extensions that is continuous, hence a homeomorphism through
 `TauCeti.GroupExtension.continuousMulEquivOfEquiv`. This is the direction of the extension
 dictionary that reads a cocycle off an extension;
 `TauCeti.GroupExtension.factorSet_canonicalSection` is the other one. -/
-theorem exists_continuous_factorSet [CompactSpace E] [TotallyDisconnectedSpace E] [T2Space G]
+theorem exists_continuous_factorSet [IsTopologicalGroup E] [CompactSpace E]
+    [TotallyDisconnectedSpace E] [CompactSpace M] [T2Space G]
     [ContinuousMul G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hact : InducesAction S) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
