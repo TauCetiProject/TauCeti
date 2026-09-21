@@ -52,10 +52,10 @@ element `s` chosen outside `U`.
 * `TauCeti.ContCohomology.evensB1_mul_of_mem`, `evensB1_mul_of_notMem`, `evensBs_mul_of_mem` and
   `evensBs_mul_of_notMem`: the cocycle law of the pair `(b₁, b_s)` in the permutation module,
   from which everything else follows.
-* `TauCeti.ContCohomology.evensCorCochain_isCocycle`: the sum `b₁ + b_s` is a homomorphism,
+* `TauCeti.ContCohomology.evensCorCochain_mul`: the sum `b₁ + b_s` is a homomorphism,
   which neither summand is.
-* `TauCeti.ContCohomology.evensGraphCochain_isCocycle`: the `2`-cocycle identity for `ν`, in its
-  trivial-action form.
+* `TauCeti.ContCohomology.evensGraphCochain_cocycle_identity`: the `2`-cocycle identity for `ν`,
+  in its trivial-action form.
 * `TauCeti.ContCohomology.continuous_evensGraphCochain`: continuity of `ν`, for `U` open.
 * `TauCeti.ContCohomology.evensGraphCochain_sub_evensGraphCochain`: two elements outside `U` give
   graph cochains differing by the explicit coboundary of
@@ -117,9 +117,12 @@ section Extend
 variable (U : Subgroup G) (α : U →* Multiplicative (ZMod 2))
 
 open scoped Classical in
-/-- A continuous homomorphism `α : U →* Multiplicative 𝔽₂` — that is, a continuous `1`-cocycle of
-`U` with trivial coefficients — extended by zero to the whole group. The Shapiro components of
-the Evens norm are built from it. -/
+/-- A homomorphism `α : U →* Multiplicative 𝔽₂` — that is, a `1`-cocycle of `U` with trivial
+coefficients — extended by zero to the whole group: it is `Multiplicative.toAdd ∘ α` on `U` and
+`0` outside. No hypothesis on `U` or on `α` is needed to define it; when `U` is open and `α` is
+continuous the extension is continuous, by
+`TauCeti.ContCohomology.continuous_evensExtend`. The Shapiro components of the Evens norm are
+built from it. -/
 noncomputable def evensExtend : G → ZMod 2 :=
   fun γ => if h : γ ∈ U then Multiplicative.toAdd (α ⟨γ, h⟩) else 0
 
@@ -138,15 +141,18 @@ theorem evensExtend_of_notMem {γ : G} (h : γ ∉ U) : evensExtend U α γ = 0 
 failure is what the Evens norm measures. -/
 theorem evensExtend_mul {x y : G} (hx : x ∈ U) (hy : y ∈ U) :
     evensExtend U α (x * y) = evensExtend U α x + evensExtend U α y := by
-  rw [evensExtend_of_mem (U.mul_mem hx hy), evensExtend_of_mem hx, evensExtend_of_mem hy,
-    show (⟨x * y, U.mul_mem hx hy⟩ : U) = ⟨x, hx⟩ * ⟨y, hy⟩ from Subtype.ext (rfl), map_mul,
-    toAdd_mul]
+  -- the three values are `α` at three points of `U`, and the first point is the product of the
+  -- other two in `U`, since membership is a proposition and the coercion is multiplicative
+  have hmk : (⟨x * y, U.mul_mem hx hy⟩ : U) = ⟨x, hx⟩ * ⟨y, hy⟩ := Subtype.ext (by simp)
+  rw [evensExtend_of_mem (U.mul_mem hx hy), evensExtend_of_mem hx, evensExtend_of_mem hy, hmk,
+    map_mul, toAdd_mul]
 
 /-- The extension by zero is `𝔽₂`-valued, so it takes inverses to themselves. -/
 theorem evensExtend_inv {x : G} (hx : x ∈ U) :
     evensExtend U α x⁻¹ = evensExtend U α x := by
-  rw [evensExtend_of_mem (U.inv_mem hx), evensExtend_of_mem hx,
-    show (⟨x⁻¹, U.inv_mem hx⟩ : U) = (⟨x, hx⟩ : U)⁻¹ from Subtype.ext (rfl), map_inv, toAdd_inv,
+  -- as in `evensExtend_mul`, the point `⟨x⁻¹, _⟩` of `U` is the inverse of the point `⟨x, hx⟩`
+  have hmk : (⟨x⁻¹, U.inv_mem hx⟩ : U) = (⟨x, hx⟩ : U)⁻¹ := Subtype.ext (by simp)
+  rw [evensExtend_of_mem (U.inv_mem hx), evensExtend_of_mem hx, hmk, map_inv, toAdd_inv,
     CharTwo.neg_eq]
 
 variable (U α)
@@ -155,16 +161,18 @@ variable (U α)
 clopen and `𝔽₂` is discrete, so the two branches do not have to agree anywhere. -/
 theorem continuous_evensExtend [TopologicalSpace G] [IsTopologicalGroup G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensExtend U α) := by
+  -- on `U` the extension takes the first branch of its `dite`, so it restricts to `α` there
+  have hres : (U : Set G).domRestrict (evensExtend U α) =
+      fun v : ↥(U : Set G) => Multiplicative.toAdd (α ⟨(v : G), v.2⟩) :=
+    funext fun v => dite_eq_left v.2
+  -- off `U` it takes the second branch, so it restricts to the constant `0`
+  have hresc : ((U : Set G)ᶜ).domRestrict (evensExtend U α) = fun _ => (0 : ZMod 2) :=
+    funext fun v => dite_eq_right v.2
   have hon : ContinuousOn (evensExtend U α) (U : Set G) := by
-    rw [continuousOn_iff_continuous_domRestrict,
-      show (U : Set G).domRestrict (evensExtend U α) =
-          fun v : ↥(U : Set G) => Multiplicative.toAdd (α ⟨(v : G), v.2⟩) from
-        funext fun v => dite_eq_left v.2]
+    rw [continuousOn_iff_continuous_domRestrict, hres]
     exact continuous_toAdd.comp (hα.comp (continuous_subtype_val.subtype_mk _))
   have hoff : ContinuousOn (evensExtend U α) ((U : Set G)ᶜ) := by
-    rw [continuousOn_iff_continuous_domRestrict,
-      show ((U : Set G)ᶜ).domRestrict (evensExtend U α) = fun _ => (0 : ZMod 2) from
-        funext fun v => dite_eq_right v.2]
+    rw [continuousOn_iff_continuous_domRestrict, hresc]
     exact continuous_const
   rw [continuous_iff_continuousAt]
   intro x
@@ -193,8 +201,10 @@ noncomputable def evensB1 : G → ZMod 2 :=
 noncomputable def evensBs : G → ZMod 2 :=
   fun γ => evensB1 U s α (s⁻¹ * γ)
 
-/-- The sum `b₁ + b_s` of the two Shapiro components. Unlike its two summands it is a continuous
-homomorphism, by `TauCeti.ContCohomology.evensCorCochain_isCocycle`; it is the shape the
+/-- The sum `b₁ + b_s` of the two Shapiro components, a cochain defined for any `U` and any `s`.
+For `U` of index two and `s ∉ U` it is, unlike either summand, a homomorphism, by
+`TauCeti.ContCohomology.evensCorCochain_mul`, and it is continuous whenever `U` is open and `α`
+is continuous, by `TauCeti.ContCohomology.continuous_evensCorCochain`; it is then the shape the
 degree-one corestriction of `α` over the transversal `{1, s}` takes. -/
 noncomputable def evensCorCochain : G → ZMod 2 :=
   fun γ => evensB1 U s α γ + evensBs U s α γ
@@ -209,8 +219,10 @@ theorem evensB1_of_mem {γ : G} (h : γ ∈ U) : evensB1 U s α γ = evensExtend
 theorem evensB1_of_notMem {γ : G} (h : γ ∉ U) : evensB1 U s α γ = evensExtend U α (γ * s) :=
   ite_eq_right h
 
+@[simp]
 theorem evensBs_apply (γ : G) : evensBs U s α γ = evensB1 U s α (s⁻¹ * γ) := (rfl)
 
+@[simp]
 theorem evensCorCochain_apply (γ : G) :
     evensCorCochain U s α γ = evensB1 U s α γ + evensBs U s α γ := (rfl)
 
@@ -269,7 +281,7 @@ theorem evensBs_mul_of_notMem (hU : U.index = 2) (hs : s ∉ U) {γ : G} (hγ : 
 homomorphism; the index-two hypothesis is what makes the two cross terms recombine. Neither
 `TauCeti.ContCohomology.evensB1` nor `TauCeti.ContCohomology.evensBs` satisfies this on its own,
 which is why the corestriction is the class of the sum and not of either summand. -/
-theorem evensCorCochain_isCocycle (hU : U.index = 2) (hs : s ∉ U) (γ η : G) :
+theorem evensCorCochain_mul (hU : U.index = 2) (hs : s ∉ U) (γ η : G) :
     evensCorCochain U s α (γ * η) = evensCorCochain U s α γ + evensCorCochain U s α η := by
   simp only [evensCorCochain_apply]
   by_cases hγ : γ ∈ U
@@ -327,7 +339,12 @@ element `s` outside it:
 ν (γ, η) = b₁ γ * b₁ η + b₁ η * b_s η          otherwise.
 ```
 
-Its class in `H²(G, 𝔽₂)` is the Evens norm `N^{Ev}(α)`. -/
+The formula defines a cochain for any `U` and any `s`. For `U` of index two and `s ∉ U` it
+satisfies the `2`-cocycle identity, by
+`TauCeti.ContCohomology.evensGraphCochain_cocycle_identity`, and it is continuous whenever `U`
+is open and `α` is continuous, by
+`TauCeti.ContCohomology.continuous_evensGraphCochain`; under those hypotheses its class in
+`H²(G, 𝔽₂)` is the Evens norm `N^{Ev}(α)`. -/
 noncomputable def evensGraphCochain : G × G → ZMod 2 :=
   fun q => if q.1 ∈ U then evensB1 U s α q.1 * evensBs U s α q.2
     else evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2
@@ -349,7 +366,7 @@ theorem evensGraphCochain_of_notMem {γ : G} (h : γ ∉ U) (η : G) :
 `2`-cocycle identity, the same equation as `groupCohomology.IsCocycle₂` with the scalar action
 dropped. The two cases in which `γ` lies outside `U` need characteristic two; the other two hold
 over any commutative ring. -/
-theorem evensGraphCochain_isCocycle (hU : U.index = 2) (hs : s ∉ U) (γ η j : G) :
+theorem evensGraphCochain_cocycle_identity (hU : U.index = 2) (hs : s ∉ U) (γ η j : G) :
     evensGraphCochain U s α (γ * η, j) + evensGraphCochain U s α (γ, η) =
       evensGraphCochain U s α (η, j) + evensGraphCochain U s α (γ, η * j) := by
   by_cases hγ : γ ∈ U <;> by_cases hη : η ∈ U
@@ -445,8 +462,9 @@ theorem evensB1_eq_add_of_notMem (hU : U.index = 2) (hs : s ∉ U) (hs' : s' ∉
   have hss' : s⁻¹ * s' ∈ U := by
     simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hs']
   have hγs : γ * s ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-  rw [evensB1_of_notMem hγ, evensB1_of_notMem hγ,
-    show γ * s' = γ * s * (s⁻¹ * s') by group, evensExtend_mul hγs hss']
+  -- the two evaluation points differ by the factor `s⁻¹ * s'` of `U`, at which `α` is additive
+  have hsplit : γ * s' = γ * s * (s⁻¹ * s') := by group
+  rw [evensB1_of_notMem hγ, evensB1_of_notMem hγ, hsplit, evensExtend_mul hγs hss']
 
 /-- Outside `U` the second Shapiro component changes by the same value, so the two components
 move together and their sum, the corestriction cochain, does not change at all. -/
@@ -459,8 +477,9 @@ theorem evensBs_eq_add_of_notMem (hU : U.index = 2) (hs : s ∉ U) (hs' : s' ∉
     simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
   have hs'γ : s'⁻¹ * γ ∈ U := by
     simp [Subgroup.mul_mem_iff_of_index_two hU, hs', hγ]
-  rw [evensBs_apply, evensBs_apply, evensB1_of_mem hs'γ, evensB1_of_mem hsγ,
-    show s'⁻¹ * γ = (s⁻¹ * s')⁻¹ * (s⁻¹ * γ) by group,
+  -- the two evaluation points differ by the factor `(s⁻¹ * s')⁻¹` of `U`
+  have hsplit : s'⁻¹ * γ = (s⁻¹ * s')⁻¹ * (s⁻¹ * γ) := by group
+  rw [evensBs_apply, evensBs_apply, evensB1_of_mem hs'γ, evensB1_of_mem hsγ, hsplit,
     evensExtend_mul (U.inv_mem hss') hsγ, evensExtend_inv hss']
   abel
 
@@ -477,8 +496,9 @@ theorem evensBs_eq_of_mem (hU : U.index = 2) (hs : s ∉ U) (hs' : s' ∉ U) {γ
     simp [Subgroup.mul_mem_iff_of_index_two hU, hs', hγ]
   have hsγs : s⁻¹ * γ * s ∈ U := by
     simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-  rw [evensBs_apply, evensBs_apply, evensB1_of_notMem hs'γ, evensB1_of_notMem hsγ,
-    show s'⁻¹ * γ * s' = (s⁻¹ * s')⁻¹ * (s⁻¹ * γ * s) * (s⁻¹ * s') by group,
+  -- the change of element conjugates the evaluation point by the factor `s⁻¹ * s'` of `U`
+  have hsplit : s'⁻¹ * γ * s' = (s⁻¹ * s')⁻¹ * (s⁻¹ * γ * s) * (s⁻¹ * s') := by group
+  rw [evensBs_apply, evensBs_apply, evensB1_of_notMem hs'γ, evensB1_of_notMem hsγ, hsplit,
     evensExtend_mul (U.mul_mem (U.inv_mem hss') hsγs) hss',
     evensExtend_mul (U.inv_mem hss') hsγs, evensExtend_inv hss']
   linear_combination (evensExtend U α (s⁻¹ * s')) * CharTwo.two_eq_zero (R := ZMod 2)
@@ -549,16 +569,16 @@ example (hU : U.index = 2) (hs : s ∉ U) (hs2 : s * s ∈ U)
         evensCorCochain U s α (s * s) =
           evensCorCochain U s α s + evensCorCochain U s α s := by
   have hsinv : s⁻¹ * s ∈ U := by rw [inv_mul_cancel]; exact U.one_mem
-  have hsinvs : s⁻¹ * (s * s) ∉ U := by
-    rw [show s⁻¹ * (s * s) = s by group]
-    exact hs
-  refine ⟨?_, ?_, evensCorCochain_isCocycle hU hs s s⟩
+  -- `b_s` is read at `s⁻¹ * (s * s) = s`, which lies outside `U`
+  have hcancel : s⁻¹ * (s * s) = s := by group
+  have hsinvs : s⁻¹ * (s * s) ∉ U := by rw [hcancel]; exact hs
+  have hcancels : s⁻¹ * (s * s) * s = s * s := by rw [hcancel]
+  refine ⟨?_, ?_, evensCorCochain_mul hU hs s s⟩
   · rw [evensB1_of_mem hs2, evensExtend_of_mem hs2, evensB1_of_notMem hs,
       CharTwo.add_self_eq_zero]
     exact hα
   · rw [evensBs_apply, evensBs_apply, evensB1_of_notMem hsinvs, evensB1_of_mem hsinv,
-      CharTwo.add_self_eq_zero, show s⁻¹ * (s * s) * s = s * s by group,
-      evensExtend_of_mem hs2]
+      CharTwo.add_self_eq_zero, hcancels, evensExtend_of_mem hs2]
     exact hα
 
 end AcceptanceCheck
