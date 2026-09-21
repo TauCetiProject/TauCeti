@@ -104,6 +104,7 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
 right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
 `x ↦ f (x - y)`. This is how the location parameter of a location family on the line moves under
 translation. -/
+@[simp]
 theorem map_add_right_withDensity {G : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableAdd G]
     (μ : Measure G) [μ.IsAddRightInvariant] (f : G → ℝ≥0∞) (y : G) :
     (μ.withDensity f).map (· + y) = μ.withDensity fun x => f (x - y) := by
