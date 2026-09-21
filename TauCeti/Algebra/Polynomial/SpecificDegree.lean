@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 /-!
 # Polynomials of degree three and four
 
-This file supplies splitting and irreducibility criteria for cubics, together with a
+This file supplies splitting criteria for cubics, together with a
 separability criterion for irreducible quartics away from characteristic two.
 
 ## Main results
@@ -20,7 +20,6 @@ separability criterion for irreducible quartics away from characteristic two.
 * `Polynomial.separable_of_irreducible_of_natDegree_eq_four`
 * `Polynomial.splits_iff_isSquare_discr_of_isRoot_of_monic_cubic`
 * `Polynomial.Splits.of_natDegree_eq_three_of_two_isRoot`
-* `Polynomial.Monic.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three`
 -/
 
 public section
@@ -138,11 +137,5 @@ theorem Splits.of_natDegree_eq_three_of_two_isRoot {g : F[X]} (hdeg : g.natDegre
     exact (mul_eq_zero.mp hx).resolve_left (sub_ne_zero.mpr hxa)
   rw [hq, splits_mul (X_sub_C_ne_zero a) hqne]
   exact ⟨Splits.X_sub_C a, Splits.of_natDegree_eq_two hqdeg hqx⟩
-
-/-- A monic cubic over a field is irreducible exactly when it has no root in that field. -/
-theorem Monic.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three {g : F[X]} (hg : g.Monic)
-    (hdeg : g.natDegree = 3) : Irreducible g ↔ ¬ ∃ a : F, g.IsRoot a := by
-  rw [hg.irreducible_iff_roots_eq_zero_of_degree_le_three (by omega) (by omega)]
-  simp [Multiset.eq_zero_iff_forall_notMem, mem_roots hg.ne_zero]
 
 end Polynomial

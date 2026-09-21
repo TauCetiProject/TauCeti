@@ -215,8 +215,12 @@ theorem hasGaloisLabel_four_four_iff_irreducible_resolvent :
       Irreducible f ∧ f.natDegree = 4 ∧ ¬ IsSquare f.discr ∧
         Irreducible (quarticD4Spec.specialize F f) := by
   rw [hasGaloisLabel_four_four_iff hchar hf]
-  have hres := Polynomial.Monic.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three
-    (quarticD4Spec.monic_specialize F f) (Polynomial.natDegree_specialize_quarticD4Spec f)
+  have hres := (quarticD4Spec.monic_specialize F f).irreducible_iff_roots_eq_zero_of_degree_le_three
+    (by rw [Polynomial.natDegree_specialize_quarticD4Spec]; omega)
+    (by rw [Polynomial.natDegree_specialize_quarticD4Spec])
+  rw [Multiset.eq_zero_iff_forall_notMem] at hres
+  simp only [mem_roots (quarticD4Spec.monic_specialize F f).ne_zero] at hres
+  simp only [not_exists]
   tauto
 
 /-- **The irreducible-resolvent row for `4T4`.** Away from characteristic `2`, a monic
@@ -227,8 +231,12 @@ theorem hasGaloisLabel_four_three_iff_irreducible_resolvent :
       Irreducible f ∧ f.natDegree = 4 ∧ IsSquare f.discr ∧
         Irreducible (quarticD4Spec.specialize F f) := by
   rw [hasGaloisLabel_four_three_iff hchar hf]
-  have hres := Polynomial.Monic.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three
-    (quarticD4Spec.monic_specialize F f) (Polynomial.natDegree_specialize_quarticD4Spec f)
+  have hres := (quarticD4Spec.monic_specialize F f).irreducible_iff_roots_eq_zero_of_degree_le_three
+    (by rw [Polynomial.natDegree_specialize_quarticD4Spec]; omega)
+    (by rw [Polynomial.natDegree_specialize_quarticD4Spec])
+  rw [Multiset.eq_zero_iff_forall_notMem] at hres
+  simp only [mem_roots (quarticD4Spec.monic_specialize F f).ne_zero] at hres
+  simp only [not_exists]
   tauto
 
 /-- **The split-resolvent row for `4T2`.** Away from characteristic `2`, a monic polynomial
