@@ -135,11 +135,10 @@ noncomputable instance instSplitMonoCategory :
       Hom.ofIsMorphism_toRatLinearMap _ _
     have hfW_bijective : Function.Bijective fW.hom.toRatLinearMap := by
       rw [hfWQ]
-      change Function.Bijective
-        ((LinearEquiv.ofEq _ _ hWQ.symm) ∘ f.hom.toRatLinearMap.rangeRestrict)
-      apply (LinearEquiv.ofEq _ _ hWQ.symm).bijective.comp
-      exact ⟨(LinearMap.injective_rangeRestrict_iff _).2 <| (mono_iff_injective f).1 inferInstance,
-        LinearMap.surjective_rangeRestrict _⟩
+      simpa only [fWQ, LinearMap.coe_comp, LinearEquiv.coe_toLinearMap] using
+        (LinearEquiv.ofEq _ _ hWQ.symm).bijective.comp
+          ⟨(LinearMap.injective_rangeRestrict_iff _).2 <| (mono_iff_injective f).1 inferInstance,
+            LinearMap.surjective_rangeRestrict _⟩
     let _ : IsIso fW := (isIso_iff_bijective fW).2 hfW_bijective
     have hfactor : fW ≫ substructureInclusion Y W = f := by
       apply Hom.ext
