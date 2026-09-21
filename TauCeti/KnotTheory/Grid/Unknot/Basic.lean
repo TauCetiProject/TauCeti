@@ -67,10 +67,8 @@ lemmas below, and the plain count itself never has to be evaluated.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.1, "Grid diagrams
-and grid states", and supplies the diagram named in the acceptance criterion "fully blocked grid
-homology of an `n × n` unknot grid exhibits the `W^{⊗(n−1)}` factor". The diagram and the grading
-conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
+The diagram and the grading conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots
+and Links*, Chapters 3 and 4.
 -/
 
 public section

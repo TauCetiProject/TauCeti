@@ -14,7 +14,7 @@ public import TauCeti.KnotTheory.Grid.Homology.Basic
 public import TauCeti.KnotTheory.Grid.Rectangle.Count
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap
 public import TauCeti.KnotTheory.Grid.StateCardinality
-public import TauCeti.KnotTheory.Grid.Unknot.Basic
+public import TauCeti.KnotTheory.Grid.Unknot.Rectangle
 
 /-!
 # The fully blocked homology of the three-by-three unknot grid
@@ -45,14 +45,14 @@ of the homology is not computed here.
 
 ## Main results
 
-* `TauCeti.GridRectangleBetween.avoidsMarkings_unknot_iff`: marking avoidance in the standard
-  unknot grid of any size, column by column.
 * `TauCeti.GridRectangleBetween.avoidsMarkings_unknot_one_iff` and
   `TauCeti.GridDiagram.mem_fullyBlockedRectangles_unknot_one_iff`: in grid number three a
   rectangle is fully blocked exactly when it leaves the subdiagonal state through two cyclically
   consecutive columns.
 * `TauCeti.GridDiagram.fullyBlockedRectangleCount_unknot_one_eq_one_iff`: the matrix entries of
   the fully blocked differential of the `3 × 3` unknot grid.
+* `TauCeti.GridDiagram.fullyBlockedDifferentialOnGenerator_unknot_one_subdiagonal`: the value of
+  the differential on its unique nonzero generator.
 * `TauCeti.GridDiagram.fullyBlockedDifferential_unknot_one_ne_zero`: that differential is
   nonzero.
 * `TauCeti.GridDiagram.finrank_fullyBlockedHomology_unknot_one`: the fully blocked homology of
@@ -69,29 +69,7 @@ public section
 
 namespace TauCeti
 
-/-- In three columns the subdiagonal state sends each column to the row two above it. -/
-theorem GridState.subdiagonal_three_apply (c : Fin 3) : GridState.subdiagonal 3 c = c + 2 := by
-  revert c
-  decide
-
 /-! ### Fully blocked rectangles of the standard unknot grid -/
-
-namespace GridRectangleBetween
-
-variable {n : ℕ} {x y : GridState (n + 2)}
-
-/-- A rectangle of the standard unknot grid avoids the markings exactly when, for every column
-it covers, neither the diagonal row of that column nor the row above it is covered. -/
-theorem avoidsMarkings_unknot_iff (R : GridRectangleBetween x y) :
-    R.AvoidsMarkings (GridDiagram.unknot n) ↔
-      ∀ c ∈ Grid.cIco R.left R.right,
-        c ∉ Grid.cIco (x R.left) (x R.right) ∧ c + 1 ∉ Grid.cIco (x R.left) (x R.right) := by
-  simp only [R.avoidsMarkings_iff_forall, GridRectangle.mem_columnSquares,
-    GridRectangle.mem_rowSquares, toGridRectangle_left, toGridRectangle_right,
-    toGridRectangle_bottom, toGridRectangle_top, bottom_def, top_def,
-    GridDiagram.unknot_O_apply, GridDiagram.unknot_X_apply_eq_add_one]
-
-end GridRectangleBetween
 
 /-! ### Grid number three -/
 
@@ -111,6 +89,12 @@ private theorem unknot_one_avoids : ∀ l c : Fin 3, c ∈ Grid.cIco l (l + 1) �
   simp only [Grid.mem_cIco]
   decide
 
+/-- Two consecutive values determine a three-column grid state with those values. -/
+private theorem eq_subdiagonal_of_apply (x : GridState 3) (l : Fin 3)
+    (h₁ : x l = l + 2) (h₂ : x (l + 1) = l) : x = GridState.subdiagonal 3 := by
+  revert x l
+  decide
+
 namespace GridRectangleBetween
 
 variable {x y : GridState 3}
@@ -125,23 +109,10 @@ theorem avoidsMarkings_unknot_one_iff (R : GridRectangleBetween x y) :
   refine ⟨fun h => ?_, ?_⟩
   · obtain ⟨hr, hb, ht⟩ := unknot_one_sides R.left R.right (x R.left) (x R.right)
       R.left_ne_right (fun e => R.left_ne_right (x.toPerm.injective e)) h
-    -- the source state is known in the two side columns; injectivity forces the third
-    refine ⟨?_, hr⟩
-    have hsucc : x (R.left + 1) = R.left := hr ▸ ht
-    have hcases : ∀ l c : Fin 3, c = l ∨ c = l + 1 ∨ c = l + 2 := by decide
-    have hlast : ∀ l v : Fin 3, v ≠ l + 2 → v ≠ l → v = l + 1 := by decide
-    have hne : ∀ l : Fin 3, l + 2 ≠ l ∧ l + 2 ≠ l + 1 := by decide
-    have hjump : ∀ l : Fin 3, l + 2 + 2 = l + 1 := by decide
-    have h1 : x (R.left + 2) ≠ R.left + 2 := fun e =>
-      (hne R.left).1 (x.toPerm.injective (e.trans hb.symm))
-    have h2 : x (R.left + 2) ≠ R.left := fun e =>
-      (hne R.left).2 (x.toPerm.injective (e.trans hsucc.symm))
-    refine GridState.ext fun c => ?_
-    rw [GridState.subdiagonal_three_apply]
-    rcases hcases R.left c with hc | hc | hc
-    · rw [hc, hb]
-    · rw [hc, hsucc, hstep R.left]
-    · rw [hc, hjump R.left, hlast R.left _ h1 h2]
+    have hsucc : x (R.left + 1) = R.left := by
+      rw [← hr]
+      exact ht
+    exact ⟨eq_subdiagonal_of_apply x R.left hb hsucc, hr⟩
   · rintro ⟨rfl, hr⟩
     rw [hr, GridState.subdiagonal_three_apply, GridState.subdiagonal_three_apply, hstep R.left]
     exact unknot_one_avoids R.left
@@ -174,15 +145,16 @@ theorem fullyBlockedRectangleCount_unknot_one_subdiagonal (l : Fin 3) :
   have hright : R.right = l + 1 := by rw [hRdef]; simp
   have hmem : R ∈ (unknot 1).fullyBlockedRectangles x (x.swapColumns l (l + 1)) :=
     (mem_fullyBlockedRectangles_unknot_one_iff R).mpr ⟨hx, by rw [hleft, hright]⟩
-  rw [fullyBlockedRectangleCount_def, Finset.card_eq_one.mpr ⟨R, ?_⟩]
-  · norm_num
-  · refine Finset.eq_singleton_iff_unique_mem.mpr ⟨hmem, fun S hS => ?_⟩
-    have hSr := ((mem_fullyBlockedRectangles_unknot_one_iff S).mp hS).2
-    rcases R.eq_or_eq_swapSides S with h | h
-    · exact h
-    · rw [h, GridRectangleBetween.swapSides_left, GridRectangleBetween.swapSides_right,
-        hleft, hright] at hSr
-      exact absurd hSr (hne l).2
+  have hsingle : (unknot 1).fullyBlockedRectangles x (x.swapColumns l (l + 1)) = {R} :=
+    Finset.eq_singleton_iff_unique_mem.mpr ⟨hmem, fun S hS => by
+      have hSr := ((mem_fullyBlockedRectangles_unknot_one_iff S).mp hS).2
+      rcases R.eq_or_eq_swapSides S with h | h
+      · exact h
+      · rw [h, GridRectangleBetween.swapSides_left, GridRectangleBetween.swapSides_right,
+          hleft, hright] at hSr
+        exact absurd hSr (hne l).2
+    ⟩
+  rw [fullyBlockedRectangleCount_def, hsingle, Finset.card_singleton, Nat.cast_one]
 
 /-- The `3 × 3` unknot grid has no fully blocked rectangle except from the subdiagonal state to
 one of its cyclically consecutive column transpositions. -/
@@ -216,22 +188,41 @@ theorem fullyBlockedDifferentialOnGenerator_unknot_one_eq_zero {x : GridState 3}
       fun h => hx h.1]
   simp
 
-/-- The coefficient of `y` in the fully blocked differential of the subdiagonal state of the
-`3 × 3` unknot grid is one exactly for the three states obtained from it by exchanging two
-cyclically consecutive columns. -/
-theorem fullyBlockedDifferentialOnGenerator_unknot_one_subdiagonal_apply (y : GridState 3) :
-    (unknot 1).fullyBlockedDifferentialOnGenerator (GridState.subdiagonal 3) y = 1 ↔
-      ∃ l : Fin 3, y = (GridState.subdiagonal 3).swapColumns l (l + 1) := by
+/-- The fully blocked differential of the subdiagonal state of the `3 × 3` unknot grid is the
+sum of its three cyclically consecutive column transpositions. -/
+theorem fullyBlockedDifferentialOnGenerator_unknot_one_subdiagonal :
+    (unknot 1).fullyBlockedDifferentialOnGenerator (GridState.subdiagonal 3) =
+      ∑ l : Fin 3, Finsupp.single ((GridState.subdiagonal 3).swapColumns l (l + 1)) 1 := by
+  classical
+  ext y
+  apply (by decide : ∀ a b : ZMod 2, (a = 1 ↔ b = 1) → a = b)
+  have hinj : Function.Injective
+      (fun l : Fin 3 => (GridState.subdiagonal 3).swapColumns l (l + 1)) := by
+    intro l m h
+    revert l m
+    decide
+  have hsum :
+      ((∑ l : Fin 3, Finsupp.single ((GridState.subdiagonal 3).swapColumns l (l + 1)) 1) y =
+        (1 : ZMod 2) ↔
+          ∃ l : Fin 3, y = (GridState.subdiagonal 3).swapColumns l (l + 1)) := by
+    by_cases hy : ∃ l : Fin 3, y = (GridState.subdiagonal 3).swapColumns l (l + 1)
+    · obtain ⟨l, rfl⟩ := hy
+      simp [Finset.sum_apply, Finsupp.single_apply, hinj.eq_iff]
+    · have hne : ∀ l : Fin 3, (GridState.subdiagonal 3).swapColumns l (l + 1) ≠ y :=
+        fun l h => hy ⟨l, h.symm⟩
+      simp [Finset.sum_apply, hne, hy]
   rw [fullyBlockedDifferentialOnGenerator_apply,
     fullyBlockedRectangleCount_unknot_one_eq_one_iff]
-  simp
+  simpa using hsum.symm
 
 /-- The subdiagonal state of the `3 × 3` unknot grid is not a cycle. -/
 theorem fullyBlockedDifferentialOnGenerator_unknot_one_subdiagonal_ne_zero :
     (unknot 1).fullyBlockedDifferentialOnGenerator (GridState.subdiagonal 3) ≠ 0 := by
   intro h
-  have hy := (fullyBlockedDifferentialOnGenerator_unknot_one_subdiagonal_apply
-    ((GridState.subdiagonal 3).swapColumns 0 1)).mpr ⟨0, by norm_num⟩
+  have hy : (unknot 1).fullyBlockedDifferentialOnGenerator (GridState.subdiagonal 3)
+      ((GridState.subdiagonal 3).swapColumns 0 1) = 1 := by
+    rw [fullyBlockedDifferentialOnGenerator_apply]
+    simpa using fullyBlockedRectangleCount_unknot_one_subdiagonal (0 : Fin 3)
   rw [h] at hy
   simp at hy
 
@@ -271,27 +262,13 @@ states carry a rank-one differential, so five cycles modulo one boundary. This i
 unknot. -/
 theorem finrank_fullyBlockedHomology_unknot_one :
     Module.finrank (ZMod 2) (unknot 1).fullyBlockedHomology = 4 := by
-  have hchain : Module.finrank (ZMod 2) (GridChain (ZMod 2) (1 + 2)) = 6 := by
-    rw [Module.finrank_finsupp_self, GridState.card]
-    decide
   have hB : Module.finrank (ZMod 2) (LinearMap.range (unknot 1).fullyBlockedDifferential) = 1 := by
     rw [range_fullyBlockedDifferential_unknot_one,
       finrank_span_singleton fullyBlockedDifferentialOnGenerator_unknot_one_subdiagonal_ne_zero]
-  have hrk := LinearMap.finrank_range_add_finrank_ker (unknot 1).fullyBlockedDifferential
-  have hZ : Module.finrank (ZMod 2) (unknot 1).fullyBlockedCycles
-      = Module.finrank (ZMod 2) (LinearMap.ker (unknot 1).fullyBlockedDifferential) :=
-    (LinearEquiv.ofEq _ _ (unknot 1).fullyBlockedCycles_eq_ker).finrank_eq
-  have hle := (unknot 1).fullyBlockedBoundaries_le_cycles
+  have hdim := (unknot 1).finrank_fullyBlockedHomology_add_two_mul_finrank_range
     (unknot 1).fullyBlockedDifferential_comp_self_eq_zero
-  have hB' : Module.finrank (ZMod 2) (unknot 1).fullyBlockedBoundariesInCycles
-      = Module.finrank (ZMod 2) (LinearMap.range (unknot 1).fullyBlockedDifferential) :=
-    ((LinearEquiv.ofEq _ _ (unknot 1).fullyBlockedBoundariesInCycles_eq_comap).trans
-      ((Submodule.comapSubtypeEquivOfLe hle).trans
-        (LinearEquiv.ofEq _ _ (unknot 1).fullyBlockedBoundaries_eq_range))).finrank_eq
-  have hq : Module.finrank (ZMod 2) (unknot 1).fullyBlockedHomology
-      + Module.finrank (ZMod 2) (unknot 1).fullyBlockedBoundariesInCycles
-      = Module.finrank (ZMod 2) (unknot 1).fullyBlockedCycles :=
-    Submodule.finrank_quotient_add_finrank _
+  rw [hB] at hdim
+  norm_num [Nat.factorial] at hdim
   omega
 
 end GridDiagram
