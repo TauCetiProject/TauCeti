@@ -25,7 +25,7 @@ file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
 `‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖∇u‖_{Lᵖ(Ω)}`,
 
 the inequality that `TauCeti.eLpNorm_sub_setAverage_le_of_convex` proves, with the same constant,
-for `C¹` functions.  A weakly differentiable function is not `C¹`, so the two are genuinely
+for `C¹` functions.  A weakly differentiable function need not be `C¹`, so the two are genuinely
 different statements, and it is the Sobolev one that an existence or regularity argument can use.
 
 Subtracting the mean is not a normalisation that could be dropped: no inequality of this shape
