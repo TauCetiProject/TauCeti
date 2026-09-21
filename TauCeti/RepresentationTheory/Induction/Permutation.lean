@@ -195,6 +195,16 @@ theorem indTrivialIso_hom_hom_apply_mk (x : G) (a : k) :
   rw [indTrivialIso, Rep.mkIso_hom_hom_apply]
   exact indTrivialEquiv_apply_mk k H x a
 
+/-- The computation rule for the inverse of `TauCeti.indTrivialIso` on the standard basis of
+`k[G ⧸ H]`; the underlying rule for the bare equivalence is
+`TauCeti.indTrivialEquiv_symm_apply_single`. -/
+@[simp]
+theorem indTrivialIso_inv_hom_apply_single (x : G) (r : k) :
+    (indTrivialIso k H).inv.hom (MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r) =
+      r • IndV.mk H.subtype (Representation.trivial k H k) x⁻¹ (1 : k) := by
+  rw [indTrivialIso, Rep.mkIso_inv_hom_apply]
+  exact indTrivialEquiv_symm_apply_single k H x r
+
 /-- `Ind_H^G (trivial)` is a finite module whenever `H` has finite index, by transport along
 `TauCeti.indTrivialEquiv`; over a field this is the `FiniteDimensional` instance that lets one
 even state its character. -/

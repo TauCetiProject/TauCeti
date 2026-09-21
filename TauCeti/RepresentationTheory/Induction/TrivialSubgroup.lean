@@ -303,6 +303,18 @@ theorem indBotIsoLeftRegular_hom_hom_apply_coeff (v : indBot k G k) (g : G) :
   · have hg' : h ≠ g⁻¹ := fun e ↦ hg (inv_eq_iff_eq_inv.mpr e)
     simp [hg, hg']
 
+/-- The inverse isomorphism, from the left regular representation back to induction out of the
+trivial subgroup, likewise reads the underlying finitely supported function with inverted
+indices. -/
+@[simp]
+theorem indBotEquivFinsupp_indBotIsoLeftRegular_inv_hom (v : leftRegular k G) (g : G) :
+    indBotEquivFinsupp k G k
+        ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).inv.hom v) g = v.coeff g⁻¹ := by
+  have h := indBotIsoLeftRegular_hom_hom_apply_coeff
+    ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).inv.hom v) g⁻¹
+  rw [hom_inv_apply, inv_inv] at h
+  exact h.symm
+
 end Induction
 
 section Finite
