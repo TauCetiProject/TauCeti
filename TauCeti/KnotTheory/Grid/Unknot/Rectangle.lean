@@ -62,12 +62,8 @@ every column it covers, neither the diagonal row of that column nor the row abov
 theorem avoidsMarkings_unknot_iff (R : GridRectangleBetween x y) :
     R.AvoidsMarkings (GridDiagram.unknot n) ↔
       ∀ c ∈ Grid.cIco R.left R.right,
-        c ∉ Grid.cIco (x R.left) (x R.right) ∧ c + 1 ∉ Grid.cIco (x R.left) (x R.right) := by
-  simpa only [toGridRectangle_left, toGridRectangle_right, toGridRectangle_bottom,
-    toGridRectangle_top, bottom_def, top_def] using
-      (R.avoidsMarkings_iff_forall (GridDiagram.unknot n)).trans
-        ((R.toGridRectangle.avoidsMarkings_iff_forall (GridDiagram.unknot n)).symm.trans
-          R.toGridRectangle.avoidsMarkings_unknot_iff)
+        c ∉ Grid.cIco (x R.left) (x R.right) ∧ c + 1 ∉ Grid.cIco (x R.left) (x R.right) :=
+  R.toGridRectangle.avoidsMarkings_unknot_iff
 
 end GridRectangleBetween
 

@@ -61,9 +61,7 @@ convention the Maslov and Alexander gradings use. `GridRectangle.squares_eq_cove
   rectangle and its source state.
 * `TauCeti.GridRectangleBetween.isEmpty_of_right_eq_finRotate`: a rectangle one column wide is
   empty.
-* `TauCeti.GridRectangle.avoidsMarkings_iff_forall` and
-  `TauCeti.GridRectangleBetween.avoidsMarkings_iff_forall`: marking avoidance tested column by
-  column.
+* `TauCeti.GridRectangle.avoidsMarkings_iff_forall`: marking avoidance tested column by column.
 * `TauCeti.GridRectangleBetween.toGridRectangle_eq`: the toroidal rectangle underlying an
   oriented rectangle, in terms of its two side columns.
 
@@ -814,14 +812,6 @@ theorem avoidsMarkings_iff (G : GridDiagram n) :
       Disjoint R.toGridRectangle.squares G.OSet ∧
         Disjoint R.toGridRectangle.squares G.XSet :=
   R.toGridRectangle.avoidsMarkings_iff G
-
-/-- A rectangle between states avoids markings exactly when, in each column of squares it
-covers, neither marking of that column lies in a covered row. -/
-theorem avoidsMarkings_iff_forall (G : GridDiagram n) :
-    R.AvoidsMarkings G ↔
-      ∀ c ∈ R.toGridRectangle.columnSquares,
-        G.O c ∉ R.toGridRectangle.rowSquares ∧ G.X c ∉ R.toGridRectangle.rowSquares :=
-  R.toGridRectangle.avoidsMarkings_iff_forall G
 
 /-- A marking-avoiding rectangle between states covers no square carrying an `O` marking. -/
 theorem disjoint_squares_OSet_of_avoidsMarkings {G : GridDiagram n}
