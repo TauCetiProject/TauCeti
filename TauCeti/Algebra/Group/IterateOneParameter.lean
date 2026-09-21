@@ -73,14 +73,18 @@ theorem iterate_apply_pow {f : G → G} {x : A → G} {p : ℕ} (hf : ∀ t, f (
   | zero => simp
   | succ n ih => rw [Function.iterate_succ_apply, hf, ih, ← pow_mul, ← Nat.pow_succ']
 
+private theorem iterate_two_apply (f : G → G) (a : G) : f^[2] a = f (f a) := by
+  simp only [Function.iterate_succ_apply, Function.iterate_zero_apply]
+
+private theorem iterate_two_eq {f g : G → G} (h : ∀ a, f (f a) = g a) : f^[2] = g :=
+  funext fun a => (iterate_two_apply f a).trans (h a)
+
 /-- **The iterates of a square root of a self-map.** If `f ∘ f = g` then applying the `n`-th
 iterate of `f` twice is the `n`-th iterate of `g`. -/
 theorem iterate_iterate_apply {f g : G → G} (h : ∀ a, f (f a) = g a) (n : ℕ) (a : G) :
     f^[n] (f^[n] a) = g^[n] a := by
   rw [← Function.iterate_add_apply, ← Nat.two_mul, Function.iterate_mul,
-    show f^[2] = g from funext fun b => by
-      rw [show (2 : ℕ) = 1 + 1 from rfl, Function.iterate_succ_apply,
-        Function.iterate_one, h]]
+    iterate_two_eq h]
 
 /-- **One further application of a square root of a self-map after an odd iterate.** If `f ∘ f = g`
 then `f` after `f^[2 * n + 1]` is `g^[n + 1]`, the odd exponent becoming the even one
@@ -89,9 +93,7 @@ theorem apply_iterate_two_mul_add_one {f g : G → G} (h : ∀ a, f (f a) = g a)
     f (f^[2 * n + 1] a) = g^[n + 1] a := by
   have hn : (2 * n + 1).succ = 2 * (n + 1) := by rw [Nat.succ_eq_add_one, Nat.mul_succ]
   rw [← Function.iterate_succ_apply' f (2 * n + 1) a, hn, Function.iterate_mul,
-    show f^[2] = g from funext fun b => by
-      rw [show (2 : ℕ) = 1 + 1 from rfl, Function.iterate_succ_apply,
-        Function.iterate_one, h]]
+    iterate_two_eq h]
 
 /-- **The odd iterates of a square root of a map that raises a parameter to its `p`-th power.** Let
 `f` carry the one-parameter map `x` to the one-parameter map `y`, raising the parameter to its
@@ -107,8 +109,7 @@ theorem iterate_two_mul_add_one_apply_pow {f : G → G} {x y : A → G} {e p : �
     f^[2 * n + 1] (x t) = y (t ^ (p ^ n * e)) := by
   rw [Function.iterate_succ_apply, hf, Function.iterate_mul,
     iterate_apply_pow (f := f^[2]) (x := y) (fun s => by
-      rw [show (2 : ℕ) = 1 + 1 from rfl, Function.iterate_succ_apply,
-        Function.iterate_one, hsq]) n,
+      rw [iterate_two_apply, hsq]) n,
     ← pow_mul, Nat.mul_comm e]
 
 end TauCeti
