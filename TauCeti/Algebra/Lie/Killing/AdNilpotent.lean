@@ -39,10 +39,11 @@ Nondegeneracy is what carries the argument: in an abelian Lie algebra every `ad 
 while `range (ad x)` is `⊥`, so no nonzero `x` is a bracket with itself there.  The hypothesis is
 satisfied, nonvacuously, by every root vector of a split semisimple Lie algebra, which is
 ad-nilpotent by `LieAlgebra.isNilpotent_ad_of_mem_rootSpace`.  For such a vector `e` the
-conclusion is also visible in an `sl₂`-triple `(h, e, f)`, where `⁅h, e⁆ = 2 • e` gives
-`t = -(2 : K)⁻¹ • h`; what is proved here needs no triple, no Cartan subalgebra, no root space
-decomposition, no triangularizability and no invertible `2`, only ad-nilpotence of `x` and
-nondegeneracy of `κ`.
+conclusion is also visible in an `sl₂`-triple `(h, e, f)` over a field in which `2 ≠ 0`, since
+`⁅h, e⁆ = 2 • e` then gives `t = -(2 : K)⁻¹ • h`; that route is genuinely characteristic-dependent,
+and it fails in characteristic two.  What is proved here needs no triple, no Cartan subalgebra, no
+root space decomposition, no triangularizability and no invertible `2`, only ad-nilpotence of `x`
+and nondegeneracy of `κ`.
 
 ## Main results
 
