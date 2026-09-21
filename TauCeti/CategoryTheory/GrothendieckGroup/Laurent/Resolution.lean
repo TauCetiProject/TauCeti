@@ -127,16 +127,6 @@ noncomputable def laurentResolutionEquiv :
     (GradedConflationExact.ιOfLE E P hP hR hshift hRshift (E.le_admitsFiniteResolution P))
     (E.resolutionAddEquiv hproj hshift) (E.resolutionAddEquiv_apply hproj hshift)
 
-private lemma laurentResolutionEquiv_apply (x : LaurentK0 (E.fullSubcategory P hP hshift)) :
-    E.laurentResolutionEquiv hproj hshift x = E.resolutionAddEquiv hproj hshift x := by
-  change (E.laurentResolutionEquiv hproj hshift).toLinearMap x =
-    E.resolutionAddEquiv hproj hshift x
-  have hx := DFunLike.congr_fun
-    (LaurentK0.linearEquivOfMap_toLinearMap
-      (GradedConflationExact.ιOfLE E P hP hR hshift hRshift (E.le_admitsFiniteResolution P))
-      (E.resolutionAddEquiv hproj hshift) (E.resolutionAddEquiv_apply hproj hshift)) x
-  exact hx.trans (E.resolutionAddEquiv_apply hproj hshift x).symm
-
 /-- The forward map of the graded resolution isomorphism is the map induced by the graded
 conflation-exact inclusion of `P` into the objects of finite `P`-dimension. -/
 theorem laurentResolutionEquiv_toLinearMap :
@@ -151,7 +141,8 @@ objects of finite `P`-dimension. -/
 theorem laurentResolutionEquiv_of (X : P.FullSubcategory) :
     E.laurentResolutionEquiv hproj hshift (LaurentK0.of _ X) =
       LaurentK0.of _ ⟨X.obj, E.le_admitsFiniteResolution P X.obj X.property⟩ := by
-  rw [laurentResolutionEquiv_apply, resolutionAddEquiv_apply, LaurentK0.map_of]
+  rw [laurentResolutionEquiv, LaurentK0.linearEquivOfMap_apply, resolutionAddEquiv_apply,
+    LaurentK0.map_of]
   exact congrArg _ (ObjectProperty.FullSubcategory.ext (ObjectProperty.ιOfLE_obj_obj _ X))
 
 /-- **The inverse of the graded resolution isomorphism is the Euler class**: it sends the class
@@ -163,7 +154,7 @@ theorem laurentResolutionEquiv_symm_of {X : C} (hX : E.admitsFiniteResolution P 
       r.foldAlternating fun Z hZ => LaurentK0.of (E.fullSubcategory P hP hshift) ⟨Z, hZ⟩ := by
   rw [← ofExactK0_toUngraded_symm_eulerClassFullSubcategory, ← E.eulerClassOf_eq hproj hX r,
     ← ExactStructure.resolutionEquiv_symm_of hproj hX, LinearEquiv.symm_apply_eq,
-    laurentResolutionEquiv_apply]
+    laurentResolutionEquiv, LaurentK0.linearEquivOfMap_apply]
   simp only [resolutionAddEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply,
     AddEquiv.apply_symm_apply, toUngraded_symm_of, LaurentK0.ofExactK0_exactK0_of]
 

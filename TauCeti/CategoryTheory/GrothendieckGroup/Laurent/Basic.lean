@@ -356,6 +356,17 @@ theorem linearEquivOfMap_toLinearMap (h : GradedConflationExact E E' F)
     (linearEquivOfMap h e he).toLinearMap = map h :=
   LinearMap.ext he
 
+/-- The linear equivalence constructed by `TauCeti.LaurentK0.linearEquivOfMap` agrees pointwise
+with the supplied additive equivalence. -/
+@[simp]
+theorem linearEquivOfMap_apply (h : GradedConflationExact E E' F)
+    (e : LaurentK0 E ≃+ LaurentK0 E') (he : ∀ x, e x = map h x) (x : LaurentK0 E) :
+    linearEquivOfMap h e he x = e x := by
+  calc
+    linearEquivOfMap h e he x = map h x := by
+      rw [← LinearEquiv.coe_coe, linearEquivOfMap_toLinearMap]
+    _ = e x := (he x).symm
+
 /-- **The identity functor induces the identity map** of graded Grothendieck groups. -/
 @[simp]
 theorem map_id : map (GradedConflationExact.id E) = LinearMap.id :=

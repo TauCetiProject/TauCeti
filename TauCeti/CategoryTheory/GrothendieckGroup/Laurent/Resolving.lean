@@ -116,15 +116,6 @@ noncomputable def laurentResolutionEquiv :
   LaurentK0.linearEquivOfMap (GradedConflationExact.ι E P hP hshift)
     (resolutionAddEquiv E P hshift) (resolutionAddEquiv_apply E P hshift)
 
-private lemma laurentResolutionEquiv_apply
-    (x : LaurentK0 (E.fullSubcategory P hP hshift)) :
-    laurentResolutionEquiv E P hshift x = resolutionAddEquiv E P hshift x := by
-  change (laurentResolutionEquiv E P hshift).toLinearMap x = resolutionAddEquiv E P hshift x
-  have hx := DFunLike.congr_fun
-    (LaurentK0.linearEquivOfMap_toLinearMap (GradedConflationExact.ι E P hP hshift)
-      (resolutionAddEquiv E P hshift) (resolutionAddEquiv_apply E P hshift)) x
-  exact hx.trans (resolutionAddEquiv_apply E P hshift x).symm
-
 /-- The forward map of the graded resolution theorem is induced by the graded conflation-exact
 inclusion of the resolving subcategory. -/
 theorem laurentResolutionEquiv_toLinearMap :
@@ -139,7 +130,8 @@ theorem laurentResolutionEquiv_of (X : P.FullSubcategory) :
     laurentResolutionEquiv E P hshift
         (LaurentK0.of (E.fullSubcategory P hP hshift) X) =
       LaurentK0.of E X.obj := by
-  rw [laurentResolutionEquiv_apply, resolutionAddEquiv_apply, LaurentK0.map_of]
+  rw [laurentResolutionEquiv, LaurentK0.linearEquivOfMap_apply, resolutionAddEquiv_apply,
+    LaurentK0.map_of]
   exact congrArg _ (ObjectProperty.ι_obj P (X := X))
 
 /-- **The inverse of the graded resolution equivalence is the Euler class.** It sends the class
@@ -155,7 +147,7 @@ theorem laurentResolutionEquiv_symm_of {X : C}
       (E := E.toExactStructure) (P := P) (ExactStructure.IsResolving.finiteResolution X) r,
     ← ExactStructure.IsResolving.resolutionEquiv_symm_of
       (E := E.toExactStructure) (P := P) X,
-    LinearEquiv.symm_apply_eq, laurentResolutionEquiv_apply]
+    LinearEquiv.symm_apply_eq, laurentResolutionEquiv, LaurentK0.linearEquivOfMap_apply]
   simp only [resolutionAddEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply,
     AddEquiv.apply_symm_apply, LaurentK0.ofExactK0_exactK0_of]
 
