@@ -10,6 +10,7 @@ public import TauCeti.Probability.Exchangeability.Arrays.Windows
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.AdjArray
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
+import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 
 /-!
 # Exchangeable graph laws as jointly exchangeable array laws
@@ -222,67 +223,41 @@ theorem graphLawArrayLawEquiv_symm_apply
 
 /-! ### Dissociation -/
 
-/-- An injective measurable map out of a countable type with measurable singletons is a
-measurable embedding. -/
-private theorem measurableEmbedding_of_countable {β γ : Type*} [MeasurableSpace β]
-    [MeasurableSpace γ] [Countable β] [MeasurableSingletonClass γ] {f : β → γ}
-    (hf : Measurable f) (hinj : Function.Injective f) : MeasurableEmbedding f where
-  injective := hinj
-  measurable := hf
-  measurableSet_image' s _ := ((Set.to_countable s).image f).measurableSet
-
 open Classical in
-/-- A graph on `Fin n` read on the block `[0, n)²`. -/
-private noncomputable def finGraphBlockZero (n : ℕ) (H : SimpleGraph (Fin n)) :
-    (Finset.Ico 0 n ×ˢ Finset.Ico 0 n : Finset (ℕ × ℕ)) → Bool :=
-  fun p => decide (H.Adj ⟨p.1.1, by have := (Finset.mem_product.1 p.2).1; simp at this; omega⟩
-    ⟨p.1.2, by have := (Finset.mem_product.1 p.2).2; simp at this; omega⟩)
-
-open Classical in
-/-- A graph on `Fin n` read on the block `[k, k + n)²`. -/
-private noncomputable def finGraphBlockAt (k n : ℕ) (H : SimpleGraph (Fin n)) :
-    (Finset.Ico k (k + n) ×ˢ Finset.Ico k (k + n) : Finset (ℕ × ℕ)) → Bool :=
+/-- A graph on `Fin n` read on the block `[k, m)²`, where `m = k + n`. -/
+private noncomputable def finGraphBlockAt (k n m : ℕ) (hm : k + n = m) (H : SimpleGraph (Fin n)) :
+    (Finset.Ico k m ×ˢ Finset.Ico k m : Finset (ℕ × ℕ)) → Bool :=
   fun p => decide (H.Adj ⟨p.1.1 - k, by have := (Finset.mem_product.1 p.2).1; simp at this; omega⟩
     ⟨p.1.2 - k, by have := (Finset.mem_product.1 p.2).2; simp at this; omega⟩)
 
 open Classical in
-private theorem measurableEmbedding_finGraphBlockZero (n : ℕ) :
-    MeasurableEmbedding (finGraphBlockZero n) :=
-  measurableEmbedding_of_countable
+private theorem measurableEmbedding_finGraphBlockAt (k n m : ℕ) (hm : k + n = m) :
+    MeasurableEmbedding (finGraphBlockAt k n m hm) :=
+  MeasurableEmbedding.of_injective_of_countable
     (Measurable.of_eval fun _ => (measurable_of_countable (fun q : Prop => decide q)).comp
       (measurable_iff_adj.1 measurable_id _ _))
     (fun H H' h => by
       ext a b
-      have := congrFun h ⟨(a, b), by simp⟩
-      simpa [finGraphBlockZero] using this)
-
-open Classical in
-private theorem measurableEmbedding_finGraphBlockAt (k n : ℕ) :
-    MeasurableEmbedding (finGraphBlockAt k n) :=
-  measurableEmbedding_of_countable
-    (Measurable.of_eval fun _ => (measurable_of_countable (fun q : Prop => decide q)).comp
-      (measurable_iff_adj.1 measurable_id _ _))
-    (fun H H' h => by
-      ext a b
-      have := congrFun h ⟨(k + a, k + b), by simp⟩
+      have := congrFun h ⟨(k + a, k + b), by simp; omega⟩
       simpa [finGraphBlockAt] using this)
-
-/-- The block restriction of the adjacency array on `[0, n)²` is the window of length `n`. -/
-private theorem restrict_adjArray_zero (n : ℕ) (G : SimpleGraph ℕ) :
-    (Finset.Ico 0 n ×ˢ Finset.Ico 0 n).restrict G.adjArray
-      = finGraphBlockZero n (G.restrictFin n) := by
-  funext ⟨⟨a, b⟩, hab⟩
-  simp [Finset.restrict, finGraphBlockZero, SimpleGraph.adjArray_apply, restrictFin_adj]
 
 /-- The block restriction of the adjacency array on `[k, k + n)²` is the window at offset `k`. -/
 private theorem restrict_adjArray (k n : ℕ) (G : SimpleGraph ℕ) :
     (Finset.Ico k (k + n) ×ˢ Finset.Ico k (k + n)).restrict G.adjArray
-      = finGraphBlockAt k n (SimpleGraph.comap (fun i : Fin n => k + (i : ℕ)) G) := by
+      = finGraphBlockAt k n (k + n) rfl (SimpleGraph.comap (fun i : Fin n => k + (i : ℕ)) G) := by
   funext ⟨⟨a, b⟩, hab⟩
   simp only [Finset.restrict, finGraphBlockAt, SimpleGraph.adjArray_apply, SimpleGraph.comap_adj]
   have ha : k ≤ a := by have := (Finset.mem_product.1 hab).1; simp at this; omega
   have hb : k ≤ b := by have := (Finset.mem_product.1 hab).2; simp at this; omega
   congr 1; simp [Nat.add_sub_cancel' ha, Nat.add_sub_cancel' hb]
+
+/-- The block restriction of the adjacency array on `[0, n)²` is the window of length `n`. -/
+private theorem restrict_adjArray_zero (n : ℕ) (G : SimpleGraph ℕ) :
+    (Finset.Ico 0 n ×ˢ Finset.Ico 0 n).restrict G.adjArray
+      = finGraphBlockAt 0 n n (Nat.zero_add n) (G.restrictFin n) := by
+  -- the general lemma at offset `0` reads the window `[0, 0 + n)`; the block is `[0, n)`
+  funext ⟨⟨a, b⟩, hab⟩
+  simp [Finset.restrict, finGraphBlockAt, SimpleGraph.adjArray_apply, restrictFin_adj]
 
 /-- The dissociation identity of the finite law at `(k, l)` is block independence of the array
 law at the windows `[0, k)²` and `[k, k + l)²`. -/
@@ -310,7 +285,8 @@ theorem isDissociated_iff_forall_indepFun_restrict (L : InfiniteExchangeableGrap
   have e1 : (fun x : ℕ × ℕ → Bool =>
         ((Finset.Ico 0 k ×ˢ Finset.Ico 0 k).restrict x,
           (Finset.Ico k (k + l) ×ˢ Finset.Ico k (k + l)).restrict x)) ∘ SimpleGraph.adjArray
-      = (Prod.map (finGraphBlockZero k) (finGraphBlockAt k l)) ∘ fun G : SimpleGraph ℕ =>
+      = (Prod.map (finGraphBlockAt 0 k k (Nat.zero_add k)) (finGraphBlockAt k l (k + l) rfl))
+        ∘ fun G : SimpleGraph ℕ =>
           (SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)),
             SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))) := by
     funext G
@@ -318,18 +294,22 @@ theorem isDissociated_iff_forall_indepFun_restrict (L : InfiniteExchangeableGrap
       restrict_adjArray_zero, restrict_adjArray]
   have e2 : (fun x : ℕ × ℕ → Bool => (Finset.Ico 0 k ×ˢ Finset.Ico 0 k).restrict x)
         ∘ SimpleGraph.adjArray
-      = finGraphBlockZero k ∘ fun G : SimpleGraph ℕ =>
+      = finGraphBlockAt 0 k k (Nat.zero_add k) ∘ fun G : SimpleGraph ℕ =>
           SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)) := by
     funext G; simp only [Function.comp, restrictFin_comap_castAdd, restrict_adjArray_zero]
   have e3 : (fun x : ℕ × ℕ → Bool => (Finset.Ico k (k + l) ×ˢ Finset.Ico k (k + l)).restrict x)
         ∘ SimpleGraph.adjArray
-      = finGraphBlockAt k l ∘ fun G : SimpleGraph ℕ =>
+      = finGraphBlockAt k l (k + l) rfl ∘ fun G : SimpleGraph ℕ =>
           SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l)) := by
     funext G; simp only [Function.comp, restrictFin_comap_natAdd, restrict_adjArray]
-  have hemb : MeasurableEmbedding (Prod.map (finGraphBlockZero k) (finGraphBlockAt k l)) :=
-    (measurableEmbedding_finGraphBlockZero k).prodMap (measurableEmbedding_finGraphBlockAt k l)
-  have hf : Measurable (finGraphBlockZero k) := (measurableEmbedding_finGraphBlockZero k).measurable
-  have hg : Measurable (finGraphBlockAt k l) := (measurableEmbedding_finGraphBlockAt k l).measurable
+  have hemb : MeasurableEmbedding
+      (Prod.map (finGraphBlockAt 0 k k (Nat.zero_add k)) (finGraphBlockAt k l (k + l) rfl)) :=
+    (measurableEmbedding_finGraphBlockAt 0 k k (Nat.zero_add k)).prodMap
+      (measurableEmbedding_finGraphBlockAt k l (k + l) rfl)
+  have hf : Measurable (finGraphBlockAt 0 k k (Nat.zero_add k)) :=
+    (measurableEmbedding_finGraphBlockAt 0 k k (Nat.zero_add k)).measurable
+  have hg : Measurable (finGraphBlockAt k l (k + l) rfl) :=
+    (measurableEmbedding_finGraphBlockAt k l (k + l) rfl).measurable
   rw [e1, e2, e3, ← Measure.map_map hemb.measurable hw, ← Measure.map_map hf (by fun_prop),
     ← Measure.map_map hg (by fun_prop), Measure.map_prod_map _ _ hf hg,
     hemb.map_injective.eq_iff]

@@ -271,6 +271,19 @@ theorem jointlyDissociated_iff_indep_blockSigma_finset [IsZeroOrProbabilityMeasu
   ⟨fun h _ _ hIJ ↦ h.indep_blockSigma_prod_self (Finset.disjoint_coe.2 hIJ),
     jointlyDissociated_of_indep_blockSigma_finset hX⟩
 
+/-- Joint dissociation of the coordinate array is independence of the restrictions to every
+pair of disjoint square blocks. -/
+theorem jointlyDissociated_coord_iff_indepFun_restrict (ρ : Measure (ℕ × ℕ → α))
+    [IsZeroOrProbabilityMeasure ρ] :
+    JointlyDissociated ρ (fun p x => x p) ↔
+      ∀ I J : Finset ℕ, Disjoint I J →
+        IndepFun (fun x : ℕ × ℕ → α => (I ×ˢ I).restrict x)
+          (fun x : ℕ × ℕ → α => (J ×ˢ J).restrict x) ρ := by
+  rw [jointlyDissociated_iff_indep_blockSigma_finset fun p => measurable_pi_apply p]
+  refine forall₃_congr fun I J _ => ?_
+  rw [IndepFun_iff_Indep, ← Finset.coe_product, ← Finset.coe_product,
+    blockSigma_coe_eq_comap_finset_restrict, blockSigma_coe_eq_comap_finset_restrict]
+
 /-- Entries of a separately dissociated array in different rows **and** different columns are
 independent. -/
 theorem SeparatelyDissociated.indepFun_apply (h : SeparatelyDissociated μ X) {i j i' j' : ℕ}

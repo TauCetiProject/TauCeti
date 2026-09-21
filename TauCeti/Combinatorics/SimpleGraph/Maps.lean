@@ -72,6 +72,7 @@ theorem restrictFin_comap_castAdd (G : SimpleGraph ℕ) (k l : ℕ) :
   ext a b; simp [restrictFin_adj]
 
 /-- The second of two consecutive windows of a window is the window at the offset. -/
+@[simp]
 theorem restrictFin_comap_natAdd (G : SimpleGraph ℕ) (k l : ℕ) :
     SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))
       = SimpleGraph.comap (fun i : Fin l => k + (i : ℕ)) G := by

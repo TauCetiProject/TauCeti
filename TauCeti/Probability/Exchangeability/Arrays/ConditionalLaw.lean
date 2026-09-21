@@ -11,7 +11,6 @@ import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Exchangeability.PermutationExtension
 import TauCeti.Probability.Kernel.Invariant
 import TauCeti.Probability.Martingale.Convergence
-import TauCeti.Probability.Exchangeability.Arrays.Windows
 
 /-!
 # Conditional array laws given the corner tail

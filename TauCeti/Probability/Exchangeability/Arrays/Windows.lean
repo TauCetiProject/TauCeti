@@ -16,7 +16,8 @@ import Mathlib.Data.Finset.Sort
 
 Joint dissociation of the coordinate array of a law on `ℕ × ℕ → α` is independence of the
 `Finset` restrictions of the array to every pair of disjoint finite square blocks `I ×ˢ I`,
-`J ×ˢ J`. For a jointly exchangeable law the blocks may be taken consecutive: independence of the
+`J ×ˢ J` (`jointlyDissociated_coord_iff_indepFun_restrict`). For a jointly exchangeable law the
+blocks may be taken consecutive: independence of the
 windows `[0, k)²` and `[k, k + l)²` for all `k, l` already gives independence of all disjoint
 blocks, since a finitely supported permutation carries any two disjoint finite sets onto two
 consecutive windows and the law is invariant under it. This is the form in which dissociation of
@@ -25,8 +26,6 @@ dissociation.
 
 ## Main results
 
-* `TauCeti.Probability.jointlyDissociated_coord_iff_indepFun_restrict` — joint dissociation is
-  independence of disjoint block restrictions.
 * `TauCeti.Probability.indepFun_restrict_of_forall_Ico` — for a jointly exchangeable law,
   consecutive windows suffice.
 -/
@@ -41,19 +40,6 @@ namespace TauCeti
 namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
-
-/-- Joint dissociation of the coordinate array is independence of the restrictions to every
-pair of disjoint square blocks. -/
-theorem jointlyDissociated_coord_iff_indepFun_restrict (ρ : Measure (ℕ × ℕ → α))
-    [IsZeroOrProbabilityMeasure ρ] :
-    JointlyDissociated ρ (fun p x => x p) ↔
-      ∀ I J : Finset ℕ, Disjoint I J →
-        IndepFun (fun x : ℕ × ℕ → α => (I ×ˢ I).restrict x)
-          (fun x : ℕ × ℕ → α => (J ×ˢ J).restrict x) ρ := by
-  rw [jointlyDissociated_iff_indep_blockSigma_finset fun p => measurable_pi_apply p]
-  refine forall₃_congr fun I J _ => ?_
-  rw [IndepFun_iff_Indep, ← Finset.coe_product, ← Finset.coe_product,
-    blockSigma_coe_eq_comap_finset_restrict, blockSigma_coe_eq_comap_finset_restrict]
 
 /-- Reindexing a block restriction along a permutation of the axis. -/
 private def blockReindex (σ : Equiv.Perm ℕ) (I : Finset ℕ)
