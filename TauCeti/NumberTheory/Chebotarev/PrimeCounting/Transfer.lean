@@ -175,38 +175,38 @@ theorem frobeniusPrimeCount_asymptotic_of_tendsto_frobeniusPsi_div
 
 /-- The prime-counting quotient form obtained from a Frobenius `ψ` quotient limit. -/
 theorem tendsto_frobeniusPrimeCount_div_log_of_tendsto_frobeniusPsi_div
-    (C : ConjClasses (L ≃ₐ[K] L)) {δ : ℝ} (hδ : δ ≠ 0)
+    (C : ConjClasses (L ≃ₐ[K] L)) {δ : ℝ}
     (hψ : Tendsto (fun x : ℝ ↦ frobeniusPsi K L C x / x) atTop (𝓝 δ)) :
     Tendsto
       (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) / (x / Real.log x)) atTop (𝓝 δ) := by
-  have hcount := frobeniusPrimeCount_asymptotic_of_tendsto_frobeniusPsi_div C hδ hψ
-  have hli : (fun x : ℝ ↦ δ * Real.logIntegral x) ~[atTop]
-      fun x : ℝ ↦ δ * (x / Real.log x) := by
-    rw [Asymptotics.IsEquivalent]
-    have hli' := Real.logIntegral_isEquivalent_div_log.isLittleO.const_mul_left δ
-    exact (hli'.const_mul_right hδ).congr'
-      (Eventually.of_forall fun x ↦ by
-        simp only [Pi.sub_apply, div_eq_mul_inv]
-        ring)
-      (Eventually.of_forall fun x ↦ by
-        simp only [div_eq_mul_inv]
-        )
-  have hcount' := hcount.trans hli
-  have hratio : Tendsto
-      (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) /
-        (δ * (x / Real.log x))) atTop (𝓝 1) :=
+  have hψ' : (fun x : ℝ ↦ frobeniusPsi K L C x - δ * x) =o[atTop] fun x : ℝ ↦ x := by
+    refine (isLittleO_iff_tendsto'
+      ((eventually_ne_atTop (0 : ℝ)).mono fun _ hx hzero ↦ (hx hzero).elim)).2 ?_
+    have h := hψ.sub_const δ
+    rw [sub_self] at h
+    refine h.congr' ?_
+    filter_upwards [eventually_ne_atTop (0 : ℝ)] with x hx
+    field_simp
+  have hθ : (fun x : ℝ ↦ frobeniusTheta K L C x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
+    frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO C hψ'
+  have hcount := frobeniusPrimeCount_sub_mul_logIntegral_isLittleO C hθ
+  have herror := hcount.tendsto_div_nhds_zero
+  have hli : Tendsto
+    (fun x : ℝ ↦ Real.logIntegral x / (x / Real.log x)) atTop (𝓝 1) :=
     (isEquivalent_iff_tendsto_one (by
       filter_upwards [eventually_gt_atTop (2 : ℝ)] with x hx
-      have hx0 : 0 < x := by linarith
-      exact mul_ne_zero hδ (div_ne_zero hx0.ne'
-        (ne_of_gt (Real.log_pos (by linarith)))))).mp hcount'
-  have hratio' := hratio.mul_const δ
-  have hratio'' : Tendsto
-      (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) /
-        (δ * (x / Real.log x)) * δ) atTop (𝓝 δ) := by
-    simpa only [one_mul] using hratio'
-  refine hratio''.congr' ?_
+      have hx0 : x ≠ 0 := by linarith
+      have hlog : Real.log x ≠ 0 := (Real.log_pos (by linarith)).ne'
+      exact div_ne_zero hx0 hlog)).mp
+      Real.logIntegral_isEquivalent_div_log
+  have hsum : Tendsto
+      (fun x : ℝ ↦ ((frobeniusPrimeCount K L C x : ℝ) -
+        δ * Real.logIntegral x) / (x / Real.log x) +
+        δ * (Real.logIntegral x / (x / Real.log x))) atTop (𝓝 δ) := by
+    simpa only [zero_add, mul_one] using herror.add (tendsto_const_nhds.mul hli)
+  refine hsum.congr' ?_
   filter_upwards [eventually_gt_atTop (2 : ℝ)] with x hx
-  field_simp [hδ]
+  field_simp
+  ring
 
 end NumberField.Chebotarev
