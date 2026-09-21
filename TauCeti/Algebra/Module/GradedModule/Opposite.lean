@@ -29,8 +29,9 @@ opposite DG and `A∞` objects without changing their sign convention.
 * `InternalGrading.op_mem_opposite_piece_iff`: `op` preserves each degree.
 * `InternalGrading.oppositeGradedAlgebra`: a graded algebra induces one on its opposite.
 * `InternalGrading.op_koszulTwist`: the Koszul twist commutes with `op`.
-* `InternalGrading.op_quadraticTwist` and `InternalGrading.unop_quadraticTwist`: the quadratic
-  twist commutes with passage to and from the opposite.
+* `InternalGrading.opLinearEquiv_comp_quadraticTwist`, `InternalGrading.op_quadraticTwist`, and
+  `InternalGrading.unop_quadraticTwist`: the quadratic twist commutes with passage to and from the
+  opposite.
 
 This supplies the opposite compatibility in Layer 0 of the `DGAInfinity` roadmap. The conventions
 follow B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3 and 7.
@@ -128,27 +129,38 @@ theorem unop_koszulTwist (G : InternalGrading R M) (q : ℤ) (x : Mᵐᵒᵖ) :
   have h := congrArg unop (G.op_koszulTwist q x.unop)
   simpa only [op_unop, unop_op] using h.symm
 
-/-- Applying the quadratic twist to an opposite element and then `unop` agrees with twisting its
-underlying element. -/
-@[simp]
-theorem unop_quadraticTwist (G : InternalGrading R M) (x : Mᵐᵒᵖ) :
-    unop (G.opposite.quadraticTwist x) = G.quadraticTwist x.unop := by
-  induction x using DirectSum.Decomposition.inductionOn (ℳ := G.opposite.piece) with
-  | zero => simp
-  | add x y hx hy => simp only [map_add, unop_add, hx, hy]
-  | homogeneous x =>
-      have hx' : (x : Mᵐᵒᵖ).unop ∈ G.piece _ :=
-        (G.mem_opposite_piece_iff _ _).1 x.property
-      rw [G.opposite.quadraticTwist_apply_of_mem x.property,
-        G.quadraticTwist_apply_of_mem hx']
-      simp
+/-- The quadratic twist commutes with the linear equivalence to the multiplicative opposite. -/
+theorem opLinearEquiv_comp_quadraticTwist (G : InternalGrading R M) :
+    (opLinearEquiv R).toLinearMap ∘ₗ G.quadraticTwist =
+      G.opposite.quadraticTwist ∘ₗ (opLinearEquiv R).toLinearMap := by
+  refine DirectSum.decompose_lhom_ext (ℳ := G.piece) fun p => ?_
+  ext x
+  have hx : (x : M) ∈ G.piece p := Submodule.coe_mem x
+  have hop : op (x : M) ∈ G.opposite.piece p :=
+    (G.op_mem_opposite_piece_iff p x).2 hx
+  calc
+    ((opLinearEquiv R).toLinearMap ∘ₗ G.quadraticTwist) (x : M) =
+        op (G.quadraticTwist (x : M)) := rfl
+    _ = op (((((quadraticExponent p).negOnePow : ℤ) : R)) • (x : M)) :=
+      congrArg op (G.quadraticTwist_apply_of_mem hx)
+    _ = (((quadraticExponent p).negOnePow : ℤ) : R) • op (x : M) := by simp
+    _ = G.opposite.quadraticTwist (op (x : M)) :=
+      (G.opposite.quadraticTwist_apply_of_mem hop).symm
+    _ = (G.opposite.quadraticTwist ∘ₗ (opLinearEquiv R).toLinearMap) (x : M) := rfl
 
 /-- Applying the quadratic twist and then `op` agrees with twisting the opposite element. -/
 @[simp]
 theorem op_quadraticTwist (G : InternalGrading R M) (x : M) :
     op (G.quadraticTwist x) = G.opposite.quadraticTwist (op x) := by
-  have h := congrArg op (G.unop_quadraticTwist (op x))
-  simpa only [unop_op, op_unop] using h.symm
+  exact LinearMap.congr_fun G.opLinearEquiv_comp_quadraticTwist x
+
+/-- Applying the quadratic twist to an opposite element and then `unop` agrees with twisting its
+underlying element. -/
+@[simp]
+theorem unop_quadraticTwist (G : InternalGrading R M) (x : Mᵐᵒᵖ) :
+    unop (G.opposite.quadraticTwist x) = G.quadraticTwist x.unop := by
+  have h := congrArg unop (G.op_quadraticTwist x.unop)
+  simpa only [op_unop, unop_op] using h.symm
 
 end KoszulTwist
 
