@@ -276,6 +276,10 @@ theorem ofMemZ2_apply (hz : z ∈ ContCohomology.Z2 G (Additive M)) (hz₁ : z (
     (p : G × G) : ofMemZ2 hz hz₁ p = (z p).toMul :=
   (rfl)
 
+/-- **The factor set named by a normalized continuous `2`-cocycle is continuous.** Continuity is
+one half of membership of `TauCeti.ContCohomology.Z2`, and `TauCeti.FactorSet.ofMemZ2` changes only
+the notation, so the hypothesis of `TauCeti.FactorSet.Extension.isTopologicalGroup` is available for
+the extension built from a cocycle of the explicit complex of continuous cochains. -/
 theorem continuous_ofMemZ2 (hz : z ∈ ContCohomology.Z2 G (Additive M)) (hz₁ : z (1, 1) = 0) :
     Continuous ⇑(ofMemZ2 hz hz₁) :=
   (ContCohomology.mem_Z2_iff.1 hz).1

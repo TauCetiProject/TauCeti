@@ -55,7 +55,8 @@ this dictionary is used on have infinite `G`.
 * `TauCeti.GroupExtension.exists_continuous_section`: the projection of a profinite extension with
   compact kernel has a continuous normalized section.
 * `TauCeti.GroupExtension.continuous_factorSet`: the factor set of a continuous normalized section
-  is continuous.
+  is continuous whenever the inclusion of the kernel is an embedding, as a compact kernel of a
+  Hausdorff extension is.
 * `TauCeti.GroupExtension.exists_continuous_factorSet`: **a profinite extension with compact kernel
   is the twisted product of a continuous factor set.**
 
@@ -178,14 +179,17 @@ variable [IsTopologicalGroup E] [T2Space E]
   [CommGroup M] [TopologicalSpace M] [CompactSpace M] [MulDistribMulAction G M]
   {S : GroupExtension M E G}
 
-/-- **The factor set of a continuous normalized section is continuous.** The kernel is compact and
-the extension is Hausdorff, so the inclusion of the kernel is a closed embedding, and the factor set
-is continuous exactly because its image under that inclusion, the failure
-`σ g * σ h * (σ (g * h))⁻¹` of the section to be a homomorphism, is continuous. -/
-theorem continuous_factorSet [ContinuousMul G] (hinl : Continuous S.inl) {σ : S.Section}
-    (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
+omit [T2Space E] [CompactSpace M] in
+/-- **The factor set of a continuous normalized section is continuous** as soon as the kernel
+carries the subspace topology of its image: the factor set is continuous exactly because its image
+under the inclusion, the failure `σ g * σ h * (σ (g * h))⁻¹` of the section to be a homomorphism, is
+continuous. In the profinite dictionary the hypothesis comes for free, the kernel being compact and
+the extension Hausdorff: a continuous inclusion is then a closed embedding by
+`Continuous.isClosedEmbedding`. -/
+theorem continuous_factorSet [ContinuousMul G] (hinl : Topology.IsEmbedding ⇑S.inl)
+    {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
     Continuous ⇑(factorSet σ hσ hact) := by
-  refine (hinl.isClosedEmbedding S.inl_injective).isEmbedding.continuous_iff.2 ?_
+  refine hinl.continuous_iff.2 ?_
   have hfs : ⇑S.inl ∘ ⇑(factorSet σ hσ hact)
       = fun p : G × G => σ p.1 * σ p.2 * (σ (p.1 * p.2))⁻¹ :=
     funext fun p => inl_factorSet σ hσ hact p.1 p.2
@@ -235,7 +239,8 @@ theorem exists_continuous_factorSet [CompactSpace E] [TotallyDisconnectedSpace E
     (hrh : Continuous S.rightHom) (hact : InducesAction S) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
   obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
-  exact ⟨factorSet σ hσ hact, continuous_factorSet hinl hσc hσ hact,
+  exact ⟨factorSet σ hσ hact,
+    continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact,
     factorSetToGroupExtensionEquiv σ hσ hact,
     continuous_factorSetToGroupExtensionEquiv hinl hσc hσ hact⟩
 
