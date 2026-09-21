@@ -336,7 +336,7 @@ times the common argument raised to the length. -/
 @[simp]
 theorem aeval_weightEnumerator_diag {ι : Type*} {β : ι → Type*} [Fintype ι]
     [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] {R : Type*} [CommRing R]
-    (C : Set (∀ i, β i)) (z : R) (hC : C.Finite) :
+    {C : Set (∀ i, β i)} (z : R) (hC : C.Finite) :
     aeval ![z, z] C.weightEnumerator = (Nat.card C : R) * z ^ Fintype.card ι := by
   classical
   rw [Set.weightEnumerator_eq_sum hC]
