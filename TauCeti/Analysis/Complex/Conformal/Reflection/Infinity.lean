@@ -22,7 +22,9 @@ The final theorem transfers this decay to any conjugation-symmetric continuation
 pre-Schwarzian which is continuous near infinity. It supplies the full-plane limit needed in
 the partial-fraction characterization of the Schwarz--Christoffel differential equation.
 The straight-edge hypotheses concern the map in the inverse coordinate, rather than assuming
-any differentiability of that map on the boundary.
+any differentiability of that map on the boundary.  A second form of the decay theorem is stated
+for the original map, whose normalized inverse coordinate is the one assumed to extend across
+zero.
 
 ## References
 
@@ -94,5 +96,44 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv
   rw [hφ hz]
   have hz0 : z ≠ 0 := by rintro rfl; simp at hz
   field_simp
+
+/-- **Decay of a continued pre-Schwarzian derivative at infinity.** Read the map `f` of the upper
+half-plane in the coordinate `w ↦ -1 / w` at infinity and normalize the target by `w ↦ (w - q) / b`.
+If the result extends to a function `g` which is continuous and injective up to a real segment
+through `0`, holomorphic and upper half-plane valued above it, and real on it, then every
+conjugation-symmetric continuation `φ` of the pre-Schwarzian derivative of `f` which is continuous
+near infinity on the real axis tends to `0` at infinity.
+
+This is the form the Schwarz--Christoffel converse uses: `φ` is holomorphic off the finitely many
+prevertices, so it is automatically continuous near infinity, and the hypotheses on `g` say that
+the point at infinity is an interior point of a side of the polygon. -/
+theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b : ℂ} {r : ℝ}
+    (hr : 0 < r) (hb : b ≠ 0) (hgf : ∀ w : ℂ, w ≠ 0 → g w = (f (-w⁻¹) - q) / b)
+    (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet))
+    (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
+    (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
+    (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφconj : ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet) :
+    Tendsto φ (cobounded ℂ) (𝓝 0) := by
+  have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
+    rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]
+    exact hz
+  refine tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv Metric.isOpen_ball hball
+    (Metric.mem_ball_self hr) hcont hholo hreal hupper hinj hφcont
+    (Eventually.of_forall hφconj) fun z hz => ?_
+  have hz0 : z ≠ 0 := fun h => by simp [h] at hz
+  -- Off the origin, the inverse coordinate of the inverse coordinate is the original map.
+  have heq : (fun w : ℂ => g (-w⁻¹)) =ᶠ[𝓝 z] fun w : ℂ => (f w - q) / b := by
+    filter_upwards [isOpen_compl_singleton.mem_nhds (by simpa using hz0)] with w hw
+    have hw0 : w ≠ 0 := hw
+    rw [hgf _ (by simpa using hw0), inv_neg, inv_inv, neg_neg]
+  have hderiv : (deriv fun w : ℂ => (f w - q) / b) = fun w => deriv f w / b := by
+    ext w
+    simp only [deriv_div_const, deriv_sub_const]
+  rw [hφf hz, (logDeriv_congr_nhds heq.deriv).eq_of_nhds, hderiv]
+  simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
 
 end TauCeti
