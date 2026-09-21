@@ -15,8 +15,9 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 For a prime `p`, `TauCeti.proPFrattini p G` is the intersection of the open normal subgroups of
 index `p` of a topological group `G`. For a pro-`p` group these are exactly the maximal open
-subgroups, so this is the Frattini subgroup; the quotient `G ⧸ proPFrattini p G` is the largest
-elementary abelian `p`-quotient of `G`, and it is what topological generation of `G` is measured
+subgroups, so this is the Frattini subgroup. For profinite `G`, the quotient
+`G ⧸ proPFrattini p G` is the largest continuous elementary abelian `p`-quotient, detected by the
+open normal subgroups of index `p`, and it is what topological generation of `G` is measured
 against.
 
 The main theorem is the verbal description of the subgroup: for a profinite `G`,
@@ -32,8 +33,8 @@ intersection of its joins with the open normal subgroups; the quotient by `V ⊔
 abelian of exponent dividing `p`, so a `ZMod p`-valued character separates the element from `1`,
 and the kernel of that character is an open normal subgroup of index `p` avoiding it.
 
-Neither the statement nor the proof needs `G` to be pro-`p`: the two descriptions of the maximal
-elementary abelian `p`-quotient agree for every profinite group.
+Neither the statement nor the proof needs `G` to be pro-`p`: the two descriptions of the largest
+continuous elementary abelian `p`-quotient agree for every profinite group.
 
 ## Main definitions
 
@@ -44,14 +45,15 @@ elementary abelian `p`-quotient agree for every profinite group.
 * `TauCeti.pow_mem_proPFrattini`, `TauCeti.commutator_le_proPFrattini`: the Frattini quotient is
   abelian of exponent dividing `p`.
 * `TauCeti.isClosed_proPFrattini`: the Frattini subgroup is closed.
-* `TauCeti.proPFrattini_map_le`, `TauCeti.proPFrattini_map_continuousMulEquiv`,
-  `TauCeti.proPFrattini_map`: the Frattini subgroup is carried into the Frattini subgroup by a
-  continuous surjection, and onto it by a topological group isomorphism, or by a continuous
-  surjection of profinite groups; in particular it is invariant under the continuous
+* `TauCeti.map_proPFrattini_le`, `TauCeti.map_proPFrattini_eq`,
+  `TauCeti.map_proPFrattini_eq_of_surjective`: the Frattini subgroup is carried into the Frattini
+  subgroup by a continuous surjection, and onto it by a topological group isomorphism, or by a
+  continuous surjection of profinite groups; in particular it is invariant under the continuous
   automorphisms of `G`.
-* `TauCeti.exists_openNormalSubgroup_index_eq_of_notMem`: in a profinite group an element
+* `TauCeti.exists_openNormalSubgroup_index_eq_and_notMem_of_notMem_topologicalClosure`:
+  in a profinite group an element
   outside `closure (Gᵖ [G, G])` lies outside some open normal subgroup of index `p`.
-* `TauCeti.proPFrattini_eq_topologicalClosure`: the verbal description
+* `TauCeti.proPFrattini_eq_topologicalClosure_pow_sup_commutator`: the verbal description
   `proPFrattini p G = closure (Gᵖ [G, G])` of the Frattini subgroup of a profinite group.
 
 ## References
@@ -83,7 +85,7 @@ instance proPFrattini_normal : (proPFrattini p G).Normal :=
   Subgroup.normal_iInf_normal fun U ↦ U.1.isNormal'
 
 /-- The Frattini subgroup is an intersection of open, hence closed, subgroups. -/
-theorem isClosed_proPFrattini [IsTopologicalGroup G] :
+instance isClosed_proPFrattini [IsTopologicalGroup G] :
     IsClosed (proPFrattini p G : Set G) := by
   rw [proPFrattini, Subgroup.coe_iInf]
   exact isClosed_iInter fun U ↦ U.1.toOpenSubgroup.isClosed
@@ -108,14 +110,20 @@ theorem pow_mem_proPFrattini (g : G) : g ^ p ∈ proPFrattini p G := by
 /-- The commutator subgroup lies in the Frattini subgroup: the Frattini quotient is abelian,
 because a quotient of prime order is cyclic. -/
 theorem commutator_le_proPFrattini [Fact p.Prime] : commutator G ≤ proPFrattini p G := by
-  rw [commutator_def, Subgroup.commutator_le]
-  refine fun a _ b _ ↦ mem_proPFrattini_iff.mpr fun U hU ↦ ?_
+  refine fun _ hg ↦ mem_proPFrattini_iff.mpr fun U hU ↦ ?_
   have hcard : Nat.card (G ⧸ U.toSubgroup) = p := by rw [← Subgroup.index_eq_card, hU]
   have _ : IsCyclic (G ⧸ U.toSubgroup) := isCyclic_of_prime_card hcard
-  let _ : CommGroup (G ⧸ U.toSubgroup) := IsCyclic.commGroup
-  refine (QuotientGroup.eq_one_iff _).mp ?_
-  rw [← QuotientGroup.mk'_apply, map_commutatorElement, commutatorElement_eq_one_iff_mul_comm]
-  exact mul_comm _ _
+  exact Subgroup.Normal.quotient_commutative_iff_commutator_le.mp inferInstance hg
+
+/-- The Frattini quotient is commutative. -/
+instance [Fact p.Prime] : IsMulCommutative (G ⧸ proPFrattini p G) :=
+  Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr commutator_le_proPFrattini
+
+/-- Every element of the Frattini quotient has `p`-th power equal to one. -/
+theorem pow_eq_one_quotient_proPFrattini (x : G ⧸ proPFrattini p G) : x ^ p = 1 :=
+  QuotientGroup.induction_on x fun g ↦ by
+    rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+    exact pow_mem_proPFrattini g
 
 end Defs
 
@@ -125,7 +133,7 @@ variable {p} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] 
 
 /-- The subgroup `Gᵖ [G, G]` generated by the `p`-th powers and the commutators lies in every
 open normal subgroup of index `p`; those subgroups being closed, so does its closure. -/
-theorem topologicalClosure_le_proPFrattini :
+theorem topologicalClosure_pow_sup_commutator_le_proPFrattini :
     (Subgroup.closure (Set.range fun g : G ↦ g ^ p) ⊔ commutator G).topologicalClosure
       ≤ proPFrattini p G := by
   intro g hg
@@ -140,7 +148,7 @@ variable [CompactSpace G] [TotallyDisconnectedSpace G]
 /-- **Index-`p` separation in a profinite group.** An element outside the closure of `Gᵖ [G, G]`
 lies outside some open normal subgroup of index `p`. This is the substance of the verbal
 description of the Frattini subgroup, and the form in which non-generation is detected. -/
-theorem exists_openNormalSubgroup_index_eq_of_notMem {g : G}
+theorem exists_openNormalSubgroup_index_eq_and_notMem_of_notMem_topologicalClosure {g : G}
     (hg : g ∉ (Subgroup.closure (Set.range fun x : G ↦ x ^ p) ⊔ commutator G).topologicalClosure) :
     ∃ U : OpenNormalSubgroup G, U.toSubgroup.index = p ∧ g ∉ U.toSubgroup := by
   set W := Subgroup.closure (Set.range fun x : G ↦ x ^ p) ⊔ commutator G
@@ -160,53 +168,36 @@ theorem exists_openNormalSubgroup_index_eq_of_notMem {g : G}
   have hWU₀ : W ≤ U₀ := W.le_topologicalClosure.trans le_sup_left
   have hpowmem : ∀ x : G, x ^ p ∈ U₀ := fun x ↦
     hWU₀ (Subgroup.mem_sup_left (Subgroup.subset_closure ⟨x, rfl⟩))
-  have hcommmem : ∀ x y : G, ⁅x, y⁆ ∈ U₀ := fun x y ↦
-    hWU₀ (Subgroup.mem_sup_right
-      (Subgroup.commutator_mem_commutator (Subgroup.mem_top x) (Subgroup.mem_top y)))
   -- `G ⧸ U₀` is abelian of exponent dividing `p`, so a character detects the class of `g`.
-  have hkey : ∀ x y : G, (x : G ⧸ U₀) * (y : G ⧸ U₀) = (y : G ⧸ U₀) * (x : G ⧸ U₀) := by
-    intro x y
-    rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq]
-    have hrw : (x * y)⁻¹ * (y * x) = ⁅y⁻¹, x⁻¹⁆ := by group
-    rw [hrw]
-    exact hcommmem _ _
-  have hcomm : ∀ a b : G ⧸ U₀, a * b = b * a := fun a b ↦
-    QuotientGroup.induction_on a fun x ↦ QuotientGroup.induction_on b fun y ↦ hkey x y
+  have _ : IsMulCommutative (G ⧸ U₀) :=
+    Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr (le_sup_right.trans hWU₀)
   have hpow : ∀ a : G ⧸ U₀, a ^ p = 1 := fun a ↦
     QuotientGroup.induction_on a fun x ↦ by
       rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
       exact hpowmem x
   have hg0 : (QuotientGroup.mk g : G ⧸ U₀) ≠ 1 := fun h ↦ hN ((QuotientGroup.eq_one_iff g).mp h)
-  obtain ⟨φ, hφ⟩ := exists_monoidHom_multiplicative_zmod_apply_ne_one hcomm hpow hg0
-  set χ := φ.comp (QuotientGroup.mk' U₀) with hχdef
-  have hχg : χ g ≠ 1 := hφ
-  have hker : U₀ ≤ χ.ker := fun x hx ↦ by
-    simpa [hχdef, MonoidHom.mem_ker] using congrArg φ ((QuotientGroup.eq_one_iff x).mpr hx)
-  -- The kernel of that character is open, normal, and of index `p`.
-  refine ⟨⟨⟨χ.ker, Subgroup.isOpen_mono hker hU₀open⟩, inferInstance⟩, ?_, hχg⟩
-  have _ : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  have hcard : Nat.card (Multiplicative (ZMod p)) = p := by
-    rw [Nat.card_congr Multiplicative.toAdd, Nat.card_eq_fintype_card, ZMod.card]
-  have hdvd : Nat.card χ.range ∣ Nat.card (Multiplicative (ZMod p)) :=
-    Subgroup.card_subgroup_dvd_card _
-  rw [hcard] at hdvd
-  have hne : Nat.card χ.range ≠ 1 := fun h ↦ hχg <| by
-    have hmem : χ g ∈ χ.range := ⟨g, rfl⟩
-    rwa [Subgroup.card_eq_one.mp h, Subgroup.mem_bot] at hmem
-  exact (Subgroup.index_ker χ).trans
-    (((Fact.out : p.Prime).eq_one_or_self_of_dvd _ hdvd).resolve_left hne)
+  obtain ⟨K, hKindex, hgK⟩ := exists_subgroup_index_eq_prime_and_notMem hpow hg0
+  have hU₀K : U₀ ≤ K.comap (QuotientGroup.mk' U₀) := fun x hx ↦ by
+    change (x : G ⧸ U₀) ∈ K
+    rw [(QuotientGroup.eq_one_iff x).mpr hx]
+    exact K.one_mem
+  refine ⟨⟨⟨K.comap (QuotientGroup.mk' U₀), Subgroup.isOpen_mono hU₀K hU₀open⟩,
+    inferInstance⟩, ?_, ?_⟩
+  · exact (K.index_comap_of_surjective (QuotientGroup.mk'_surjective U₀)).trans hKindex
+  · simpa using hgK
 
 /-- The **Frattini subgroup of a profinite group is `closure (Gᵖ [G, G])`**: the intersection of
 the open normal subgroups of index `p` is the topological closure of the subgroup generated by
 the `p`-th powers together with the commutators. -/
-theorem proPFrattini_eq_topologicalClosure : proPFrattini p G =
+theorem proPFrattini_eq_topologicalClosure_pow_sup_commutator : proPFrattini p G =
     (Subgroup.closure (Set.range fun g : G ↦ g ^ p) ⊔ commutator G).topologicalClosure :=
   le_antisymm
     (fun g hg ↦ by
       by_contra hgV
-      obtain ⟨U, hUindex, hgU⟩ := exists_openNormalSubgroup_index_eq_of_notMem hgV
+      obtain ⟨U, hUindex, hgU⟩ :=
+        exists_openNormalSubgroup_index_eq_and_notMem_of_notMem_topologicalClosure hgV
       exact hgU (mem_proPFrattini_iff.mp hg U hUindex))
-    topologicalClosure_le_proPFrattini
+    topologicalClosure_pow_sup_commutator_le_proPFrattini
 
 end Verbal
 
@@ -217,7 +208,7 @@ variable {p} {G : Type u} [Group G] [TopologicalSpace G] {H : Type v} [Group H]
 
 /-- The Frattini subgroup is carried into the Frattini subgroup by a continuous surjection: the
 preimage of an open normal subgroup of index `p` is one again. -/
-theorem proPFrattini_map_le (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
+theorem map_proPFrattini_le (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
     (proPFrattini p G).map f ≤ proPFrattini p H := by
   rw [Subgroup.map_le_iff_le_comap]
   refine fun g hg ↦ mem_proPFrattini_iff.mpr fun U hU ↦ ?_
@@ -226,36 +217,32 @@ theorem proPFrattini_map_le (f : G →* H) (hf : Continuous f) (hsurj : Function
 
 /-- The Frattini subgroup is carried onto the Frattini subgroup by a topological group
 isomorphism; taking `H = G` this says that it is invariant under the continuous automorphisms of
-`G`. Unlike `TauCeti.proPFrattini_map`, this needs no compactness, because an isomorphism
-matches up the two families of index-`p` open normal subgroups directly. -/
-theorem proPFrattini_map_continuousMulEquiv (e : G ≃ₜ* H) :
+`G`. Unlike `TauCeti.map_proPFrattini_eq_of_surjective`, this needs no compactness, because an
+isomorphism matches up the two families of index-`p` open normal subgroups directly. -/
+theorem map_proPFrattini_eq (e : G ≃ₜ* H) :
     (proPFrattini p G).map e.toMulEquiv.toMonoidHom = proPFrattini p H := by
-  refine le_antisymm (proPFrattini_map_le _ e.continuous e.surjective) fun g hg ↦ ?_
+  refine le_antisymm (map_proPFrattini_le _ e.continuous e.surjective) fun g hg ↦ ?_
   have hsymm : (proPFrattini p H).map e.symm.toMulEquiv.toMonoidHom ≤ proPFrattini p G :=
-    proPFrattini_map_le _ e.symm.continuous e.symm.surjective
+    map_proPFrattini_le _ e.symm.continuous e.symm.surjective
   exact ⟨e.symm g, hsymm ⟨g, hg, rfl⟩, e.apply_symm_apply g⟩
 
 /-- A continuous surjection of profinite groups carries the Frattini subgroup **onto** the
 Frattini subgroup: through the verbal description both sides are closures of `Gᵖ [G, G]`, and a
 continuous map out of a compact space is closed. -/
-theorem proPFrattini_map [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
-    [IsTopologicalGroup H] [CompactSpace H] [TotallyDisconnectedSpace H] [Fact p.Prime]
+theorem map_proPFrattini_eq_of_surjective [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G] [IsTopologicalGroup H] [TotallyDisconnectedSpace H] [Fact p.Prime]
     (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
     (proPFrattini p G).map f = proPFrattini p H := by
+  let _ : CompactSpace H := hsurj.compactSpace hf
   have himg : f '' (Set.range fun x : G ↦ x ^ p) = Set.range fun y : H ↦ y ^ p := by
-    ext y
-    simp only [Set.mem_image, Set.mem_range]
-    constructor
-    · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-      exact ⟨f x, (map_pow f x p).symm⟩
-    · rintro ⟨z, rfl⟩
-      obtain ⟨x, rfl⟩ := hsurj z
-      exact ⟨x ^ p, ⟨x, rfl⟩, map_pow f x p⟩
+    rw [← Set.range_comp', show (fun x : G ↦ f (x ^ p)) = (fun y : H ↦ y ^ p) ∘ f by
+      funext x; exact map_pow f x p, hsurj.range_comp]
   have hW : (Subgroup.closure (Set.range fun x : G ↦ x ^ p) ⊔ commutator G).map f
       = Subgroup.closure (Set.range fun y : H ↦ y ^ p) ⊔ commutator H := by
     rw [Subgroup.map_sup, MonoidHom.map_closure, himg, commutator_def, commutator_def,
       Subgroup.map_commutator, Subgroup.map_top_of_surjective f hsurj]
-  rw [proPFrattini_eq_topologicalClosure, proPFrattini_eq_topologicalClosure, ← hW]
+  rw [proPFrattini_eq_topologicalClosure_pow_sup_commutator,
+    proPFrattini_eq_topologicalClosure_pow_sup_commutator, ← hW]
   refine le_antisymm ?_ (Subgroup.topologicalClosure_minimal _
     (Subgroup.map_mono (Subgroup.le_topologicalClosure _)) ?_)
   · rw [Subgroup.map_le_iff_le_comap]
