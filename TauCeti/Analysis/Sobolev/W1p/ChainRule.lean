@@ -57,6 +57,8 @@ by approximation, and the *order* of the two limits matters.
 * `TauCeti.W1p.hasWeakFDerivOn_comp`: the chain rule, as a weak-derivative statement.
 * `TauCeti.W1p.contDiffComp`: `F ∘ u` as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.hasWeakFDerivOn_posPart`: the weak gradient of the positive part.
+* `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
+  level, assuming its value is globally in `Lᵖ`.
 * `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
   `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
@@ -556,7 +558,8 @@ private theorem memLp_posPartAboveGradient (k : ℝ) (u : W1p mu Omega p) :
     (Filter.Eventually.of_forall (norm_posPartAboveGradient_le k u))
 
 omit [FiniteDimensional ℝ E] in
-private theorem memLp_posPartAboveValue {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
+/-- The pointwise truncation `(u - k)⁺` is in `Lᵖ` when `u` is and `k ≥ 0`. -/
+theorem W1p.memLp_posPartAbove {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
     MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega) := by
   have hlip : LipschitzWith 1 (fun t : ℝ => max (t - k) 0) := by
     refine LipschitzWith.of_dist_le_mul fun x y => ?_
@@ -703,18 +706,53 @@ theorem W1p.hasWeakFDerivOn_posPart (hp : p ≠ ∞) (u : W1p mu Omega p) :
       fun x => innerSL ℝ ({x | 0 < W1p.value u x}.indicator (⇑(W1p.gradient u)) x) := by
   simpa using W1p.hasWeakFDerivOn_posPartAbove hp 0 u
 
+/-- **For `1 ≤ p < ∞`, truncation above any level preserves `W^{1,p}(Ω)` whenever the
+truncated value is globally in `Lᵖ`.** Its weak gradient is `1_{u > k} ∇u`. -/
+def W1p.posPartAboveOfMemLp (hp : p ≠ ∞) (k : ℝ) (u : W1p mu Omega p)
+    (hmem : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
+    W1p mu Omega p :=
+  W1p.mk (hmem.toLp _)
+    ((memLp_posPartAboveGradient k u).toLp _)
+    (((W1p.hasWeakFDerivOn_posPartAbove hp k u).congr_ae
+      (MemLp.coeFn_toLp hmem).symm).congr_ae_deriv (by
+        filter_upwards [MemLp.coeFn_toLp (memLp_posPartAboveGradient k u)] with x hx
+        rw [hx]
+        rfl))
+
+/-- The value of `W1p.posPartAboveOfMemLp hp k u hmem` is `(u - k)⁺` almost everywhere. -/
+@[simp]
+theorem W1p.value_posPartAboveOfMemLp_ae (hp : p ≠ ∞) (k : ℝ) (u : W1p mu Omega p)
+    (hmem : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
+    ⇑(W1p.value (W1p.posPartAboveOfMemLp hp k u hmem)) =ᵐ[mu.restrict Omega]
+      fun x => max (W1p.value u x - k) 0 := by
+  rw [W1p.posPartAboveOfMemLp, W1p.value_mk]
+  exact MemLp.coeFn_toLp _
+
+/-- The weak gradient of an `Lᵖ` truncation `(u - k)⁺` is `1_{u > k} ∇u` almost
+everywhere. -/
+@[simp]
+theorem W1p.gradient_posPartAboveOfMemLp_ae (hp : p ≠ ∞) (k : ℝ) (u : W1p mu Omega p)
+    (hmem : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
+    ⇑(W1p.gradient (W1p.posPartAboveOfMemLp hp k u hmem)) =ᵐ[mu.restrict Omega]
+      {x | k < W1p.value u x}.indicator ⇑(W1p.gradient u) := by
+  rw [W1p.posPartAboveOfMemLp, W1p.gradient_mk]
+  exact MemLp.coeFn_toLp _
+
 /-- **For `1 ≤ p < ∞`, truncation above a nonnegative level preserves `W^{1,p}(Ω)`.**
 The value of `W1p.posPartAbove hp hk u` is `(u - k)⁺`, and its weak gradient is
 `1_{u > k} ∇u`. -/
 def W1p.posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
     W1p mu Omega p :=
-  W1p.mk ((memLp_posPartAboveValue hk u).toLp _)
-    ((memLp_posPartAboveGradient k u).toLp _)
-    (((W1p.hasWeakFDerivOn_posPartAbove hp k u).congr_ae
-      (MemLp.coeFn_toLp (memLp_posPartAboveValue hk u)).symm).congr_ae_deriv (by
-        filter_upwards [MemLp.coeFn_toLp (memLp_posPartAboveGradient k u)] with x hx
-        rw [hx]
-        rfl))
+  W1p.posPartAboveOfMemLp hp k u (W1p.memLp_posPartAbove hk u)
+
+/-- At a nonnegative level, the general `Lᵖ` truncation constructor agrees with
+`W1p.posPartAbove`, independently of the supplied `MemLp` proof. -/
+@[simp]
+theorem W1p.posPartAboveOfMemLp_eq_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
+    (u : W1p mu Omega p)
+    (hmem : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
+    W1p.posPartAboveOfMemLp hp k u hmem = W1p.posPartAbove hp hk u := by
+  rfl
 
 /-- The value of `W1p.posPartAbove hp hk u` is `(u - k)⁺` almost everywhere. -/
 @[simp]
@@ -722,8 +760,7 @@ theorem W1p.value_posPartAbove_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
     (u : W1p mu Omega p) :
     ⇑(W1p.value (W1p.posPartAbove hp hk u)) =ᵐ[mu.restrict Omega]
       fun x => max (W1p.value u x - k) 0 := by
-  rw [W1p.posPartAbove, W1p.value_mk]
-  exact MemLp.coeFn_toLp _
+  exact W1p.value_posPartAboveOfMemLp_ae hp k u (W1p.memLp_posPartAbove hk u)
 
 /-- The weak gradient of `(u - k)⁺` is `1_{u > k} ∇u` almost everywhere. -/
 @[simp]
@@ -731,8 +768,7 @@ theorem W1p.gradient_posPartAbove_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
     (u : W1p mu Omega p) :
     ⇑(W1p.gradient (W1p.posPartAbove hp hk u)) =ᵐ[mu.restrict Omega]
       {x | k < W1p.value u x}.indicator ⇑(W1p.gradient u) := by
-  rw [W1p.posPartAbove, W1p.gradient_mk]
-  exact MemLp.coeFn_toLp _
+  exact W1p.gradient_posPartAboveOfMemLp_ae hp k u (W1p.memLp_posPartAbove hk u)
 
 /-- **For `1 ≤ p < ∞`, the positive part `u⁺` of a Sobolev function is again in
 `W^{1,p}(Ω)`.**  Its value is Mathlib's `MeasureTheory.Lp.posPart` of the value of `u`, and its

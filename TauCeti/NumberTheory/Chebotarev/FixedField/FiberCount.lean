@@ -92,24 +92,19 @@ private theorem isArithFrobAt_of_fixedField_isArithFrobAt
   rw [AlgEquiv.restrictScalars_toFixedFieldAlgEquiv] at habs
   exact habs
 
-/-- **Contraction identifies the fixed-field and absolute Frobenius fibers.** Over a prime `p`
-with Artin class represented by `sigma`, contraction from `L` to `L ^ <sigma>` carries exactly the
-primes whose absolute Frobenius is `sigma` onto the primes whose relative Artin class is represented
-by `sigma.toFixedFieldAlgEquiv`. -/
-theorem fixedField_frobenius_fiber_eq_image
+/-- **The forward inclusion.** A prime of the fixed field lying over `p`, whose relative Artin
+class is represented by `sigma.toFixedFieldAlgEquiv`, is the contraction of a prime of `L` that
+lies over `p` and at which `sigma` is the arithmetic Frobenius. -/
+private theorem exists_under_eq_and_isArithFrobAt
     (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
-    (hp : p ∈ frobeniusPrimeSet K L (ConjClasses.mk sigma)) :
-    {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) |
-        P.under (𝓞 K) = p ∧
-          P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers sigma)) L
-            (ConjClasses.mk sigma.toFixedFieldAlgEquiv)} =
-      (fun Q : HeightOneSpectrum (𝓞 L) ↦
-        Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))) ''
-        {Q : HeightOneSpectrum (𝓞 L) |
-          Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} := by
-  ext P
-  constructor
-  · rintro ⟨hPp, hP⟩
+    (hp : p ∈ frobeniusPrimeSet K L (ConjClasses.mk sigma))
+    {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))}
+    (hPp : P.under (𝓞 K) = p)
+    (hP : P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers sigma)) L
+      (ConjClasses.mk sigma.toFixedFieldAlgEquiv)) :
+    ∃ Q : HeightOneSpectrum (𝓞 L),
+      (Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal) ∧
+        Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) = P := by
     obtain ⟨Q, hQ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk hP
     have hQne : Q.1 ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot P.ne_bot Q.1
     let Q' : HeightOneSpectrum (𝓞 L) := HeightOneSpectrum.ofPrime
@@ -129,6 +124,53 @@ theorem fixedField_frobenius_fiber_eq_image
     have habs : IsArithFrobAt (𝓞 K) sigma Q.1 :=
       isArithFrobAt_of_fixedField_isArithFrobAt sigma p hp Q.1 hQK' hQ
     exact ⟨Q', ⟨hQK, habs⟩, hQE⟩
+
+omit [NumberField K] [NumberField L] [IsGalois K L] in
+/-- **Unramifiedness passes down to the fixed field.** Suppose every prime of `𝓞 L` over `p` is
+unramified over `𝓞 K`, and `Q` lies over `p`. Then a prime of `𝓞 L` over the fixed-field prime
+beneath `Q` also lies over `p`, so it is unramified over the fixed field by restriction. -/
+private theorem isUnramifiedAt_fixedField_of_under_eq
+    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+    (hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
+      Algebra.IsUnramifiedAt (𝓞 K) R)
+    (Q : HeightOneSpectrum (𝓞 L)) (hQp : Q.under (𝓞 K) = p)
+    (R : Ideal (𝓞 L)) [R.IsPrime]
+    [R.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal] :
+    Algebra.IsUnramifiedAt (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) R := by
+  have hover : R.under (𝓞 K) = p.asIdeal := by
+    calc
+      R.under (𝓞 K) =
+          (R.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).under (𝓞 K) :=
+        (Ideal.under_under
+          (B := 𝓞 ↥(fixedField (Subgroup.zpowers sigma))) R).symm
+      _ = (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal.under (𝓞 K) :=
+        congrArg (Ideal.under (𝓞 K)) Ideal.LiesOver.over.symm
+      _ = Q.asIdeal.under (𝓞 K) :=
+        (Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers sigma))) Q.asIdeal)
+      _ = p.asIdeal := (HeightOneSpectrum.under_asIdeal (𝓞 K) Q).symm.trans
+        (congrArg HeightOneSpectrum.asIdeal hQp)
+  have : R.LiesOver p.asIdeal := ⟨hover.symm⟩
+  exact Algebra.IsUnramifiedAt.of_restrictScalars (𝓞 K) R
+
+/-- **Contraction identifies the fixed-field and absolute Frobenius fibers.** Over a prime `p`
+with Artin class represented by `sigma`, contraction from `L` to `L ^ <sigma>` carries exactly the
+primes whose absolute Frobenius is `sigma` onto the primes whose relative Artin class is represented
+by `sigma.toFixedFieldAlgEquiv`. -/
+theorem fixedField_frobenius_fiber_eq_image
+    (sigma : L ≃ₐ[K] L) (p : HeightOneSpectrum (𝓞 K))
+    (hp : p ∈ frobeniusPrimeSet K L (ConjClasses.mk sigma)) :
+    {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) |
+        P.under (𝓞 K) = p ∧
+          P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers sigma)) L
+            (ConjClasses.mk sigma.toFixedFieldAlgEquiv)} =
+      (fun Q : HeightOneSpectrum (𝓞 L) ↦
+        Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))) ''
+        {Q : HeightOneSpectrum (𝓞 L) |
+          Q.under (𝓞 K) = p ∧ IsArithFrobAt (𝓞 K) sigma Q.asIdeal} := by
+  ext P
+  constructor
+  · rintro ⟨hPp, hP⟩
+    exact exists_under_eq_and_isArithFrobAt sigma p hp hPp hP
   · rintro ⟨Q, ⟨hQp, hQ⟩, rfl⟩
     have hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
         Algebra.IsUnramifiedAt (𝓞 K) R :=
@@ -142,22 +184,8 @@ theorem fixedField_frobenius_fiber_eq_image
         (hres.trans sigma.restrictScalars_toFixedFieldAlgEquiv.symm)
     have hurE : ∀ (R : Ideal (𝓞 L)) [R.IsPrime]
         [R.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal],
-        Algebra.IsUnramifiedAt (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) R := by
-      intro R _ _
-      have hover : R.under (𝓞 K) = p.asIdeal := by
-        calc
-          R.under (𝓞 K) =
-              (R.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).under (𝓞 K) :=
-            (Ideal.under_under
-              (B := 𝓞 ↥(fixedField (Subgroup.zpowers sigma))) R).symm
-          _ = (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal.under (𝓞 K) :=
-            congrArg (Ideal.under (𝓞 K)) Ideal.LiesOver.over.symm
-          _ = Q.asIdeal.under (𝓞 K) :=
-            (Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers sigma))) Q.asIdeal)
-          _ = p.asIdeal := (HeightOneSpectrum.under_asIdeal (𝓞 K) Q).symm.trans
-            (congrArg HeightOneSpectrum.asIdeal hQp)
-      have : R.LiesOver p.asIdeal := ⟨hover.symm⟩
-      exact Algebra.IsUnramifiedAt.of_restrictScalars (𝓞 K) R
+        Algebra.IsUnramifiedAt (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) R :=
+      fun R _ _ ↦ isUnramifiedAt_fixedField_of_under_eq sigma p hur Q hQp R
     have : Q.asIdeal.LiesOver
         (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal :=
       ⟨HeightOneSpectrum.under_asIdeal _ Q⟩

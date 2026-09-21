@@ -20,7 +20,8 @@ f (x t) = x (t ^ p)
 
 for every parameter `t`, the power being taken in `A`. This file records what the iterates of such
 an `f` do, and what the odd iterates of an `f` do when only its square raises the parameter that
-way:
+way, together with two bookkeeping identities for the iterates of a square root of a self-map,
+which is the shape a Suzuki--Ree Steinberg endomorphism has:
 
 ```text
 f^[n] (x t)         = x (t ^ p ^ n),
@@ -48,6 +49,8 @@ None of that structure is assumed below: `G` is a bare type, `x` and `y` are bar
   raises that parameter to its `p ^ n`-th power.
 * `TauCeti.iterate_two_mul_add_one_apply_pow`: the odd iterates of a square root of such a map, on
   a one-parameter map it may carry to another.
+* `TauCeti.iterate_iterate_apply` and `TauCeti.apply_iterate_two_mul_add_one`: the iterates of a
+  square root of a self-map, in terms of the iterates of that self-map.
 
 ## References
 
@@ -70,6 +73,28 @@ theorem iterate_apply_pow {f : G → G} {x : A → G} {p : ℕ} (hf : ∀ t, f (
   | zero => simp
   | succ n ih => rw [Function.iterate_succ_apply, hf, ih, ← pow_mul, ← Nat.pow_succ']
 
+private theorem iterate_two_apply (f : G → G) (a : G) : f^[2] a = f (f a) := by
+  simp only [Function.iterate_succ_apply, Function.iterate_zero_apply]
+
+private theorem iterate_two_eq {f g : G → G} (h : ∀ a, f (f a) = g a) : f^[2] = g :=
+  funext fun a => (iterate_two_apply f a).trans (h a)
+
+/-- **The iterates of a square root of a self-map.** If `f ∘ f = g` then applying the `n`-th
+iterate of `f` twice is the `n`-th iterate of `g`. -/
+theorem iterate_iterate_apply {f g : G → G} (h : ∀ a, f (f a) = g a) (n : ℕ) (a : G) :
+    f^[n] (f^[n] a) = g^[n] a := by
+  rw [← Function.iterate_add_apply, ← Nat.two_mul, Function.iterate_mul,
+    iterate_two_eq h]
+
+/-- **One further application of a square root of a self-map after an odd iterate.** If `f ∘ f = g`
+then `f` after `f^[2 * n + 1]` is `g^[n + 1]`, the odd exponent becoming the even one
+`2 * (n + 1)`. -/
+theorem apply_iterate_two_mul_add_one {f g : G → G} (h : ∀ a, f (f a) = g a) (n : ℕ) (a : G) :
+    f (f^[2 * n + 1] a) = g^[n + 1] a := by
+  have hn : (2 * n + 1).succ = 2 * (n + 1) := by rw [Nat.succ_eq_add_one, Nat.mul_succ]
+  rw [← Function.iterate_succ_apply' f (2 * n + 1) a, hn, Function.iterate_mul,
+    iterate_two_eq h]
+
 /-- **The odd iterates of a square root of a map that raises a parameter to its `p`-th power.** Let
 `f` carry the one-parameter map `x` to the one-parameter map `y`, raising the parameter to its
 `e`-th power, and let `f ∘ f` raise the parameter of `y` to its `p`-th power without moving `y`.
@@ -82,11 +107,9 @@ f^[2 * n + 1] (x t) = y (t ^ (p ^ n * e)).
 theorem iterate_two_mul_add_one_apply_pow {f : G → G} {x y : A → G} {e p : ℕ}
     (hf : ∀ t, f (x t) = y (t ^ e)) (hsq : ∀ t, f (f (y t)) = y (t ^ p)) (n : ℕ) (t : A) :
     f^[2 * n + 1] (x t) = y (t ^ (p ^ n * e)) := by
-  have hf2 : ∀ a, f^[2] a = f (f a) := fun a => by
-    -- The numeral is split so that `Function.iterate_succ_apply` applies to the exponent.
-    rw [show (2 : ℕ) = 1 + 1 from rfl, Function.iterate_succ_apply, Function.iterate_one]
   rw [Function.iterate_succ_apply, hf, Function.iterate_mul,
-    iterate_apply_pow (f := f^[2]) (x := y) (fun s => by rw [hf2, hsq]) n, ← pow_mul,
-    Nat.mul_comm e]
+    iterate_apply_pow (f := f^[2]) (x := y) (fun s => by
+      rw [iterate_two_apply, hsq]) n,
+    ← pow_mul, Nat.mul_comm e]
 
 end TauCeti

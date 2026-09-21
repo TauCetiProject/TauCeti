@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.IterateOneParameter
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.OddPowerSteinberg
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Basic
 
 /-!
@@ -138,19 +138,6 @@ theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
   congr 1
   rw [hchar]
 
-private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieIndex.AmbientGroup) :
-    (⇑d.halfFrobenius)^[2 * k] g =
-      SpStd.frobenius 1 (d.toRankTwoBLieIndex.1).characteristic k
-        (d.toRankTwoBLieIndex.1).Closure g := by
-  induction k generalizing g with
-  | zero => simp [SpStd.frobenius_zero]
-  | succ k ih =>
-      have hsucc : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
-      have hk : k + 1 = 1 + k := Nat.add_comm k 1
-      rw [hsucc, Function.iterate_succ_apply', Function.iterate_succ_apply', ih,
-        d.halfFrobenius_halfFrobenius, RankTwoBLieIndex.primeFrobenius_def, hk,
-        SpStd.frobenius_add, MonoidHom.comp_apply]
-
 /-- **The Steinberg endomorphism of a Suzuki index**: the odd power `τ ^ (2m+1)` of the
 half-Frobenius, for `2m+1` the field exponent the index records. -/
 noncomputable def steinberg :
@@ -169,11 +156,8 @@ power `τ ^ (2m+1)` doubles the exponent, and `τ ^ 2` is the prime-field Froben
 @[simp]
 theorem steinberg_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.steinberg (d.steinberg g) = d.toRankTwoBLieIndex.frobenius g := by
-  have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
-    Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  have hdouble : d.1.fieldExponent + d.1.fieldExponent = 2 * d.1.fieldExponent := by ring
-  rw [hpow, ← Function.iterate_add_apply, hdouble, halfFrobenius_iterate_two_mul,
-    RankTwoBLieIndex.frobenius_def]
+  rw [d.toRankTwoBLieIndex.frobenius_eq_primeFrobenius_pow]
+  exact d.toSuzukiReeIndex.pow_fieldExponent_pow_fieldExponent d.halfFrobenius_halfFrobenius g
 
 /-- Applying the half-Frobenius after the Suzuki Steinberg map gives the
 `2^(m+1)`-power Frobenius. -/
@@ -182,15 +166,11 @@ theorem halfFrobenius_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.halfFrobenius (d.steinberg g) =
       SpStd.frobenius 1 d.1.characteristic
         (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) d.1.Closure g := by
-  have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] := by
-    rw [steinberg_def]
-    exact Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) _ _
-  have hexp : d.1.fieldExponent + 1 =
-      2 * (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1) := by
-    rw [SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex]
-    omega
-  rw [hpow, ← Function.iterate_succ_apply' (⇑d.halfFrobenius),
-    Nat.succ_eq_add_one, hexp, halfFrobenius_iterate_two_mul]
+  refine (d.toSuzukiReeIndex.apply_pow_fieldExponent d.halfFrobenius_halfFrobenius g).trans ?_
+  rw [RankTwoBLieIndex.primeFrobenius_def, SpStd.frobenius_pow, Nat.one_mul]
+  -- `toRankTwoBLieIndex` is an abbreviation preserving `d.1`; reduce it here rather than
+  -- duplicating that equality in a private wrapper lemma.
+  rfl
 
 /-- The final node of the two-node carrier is the numeral one. -/
 private theorem one_eq_last : (1 : Fin 2) = Fin.last 1 := rfl
@@ -293,22 +273,13 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd
           (Multiplicative.toAdd u ^
             (d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
-              SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) := by
-  have hsq : ∀ (j : Fin d.1.rank) (t : Multiplicative d.1.Closure),
-      d.halfFrobenius (d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup j t)) =
-        d.toRankTwoBLieIndex.simpleRootSubgroup j
-          (Multiplicative.ofAdd (Multiplicative.toAdd t ^ d.1.characteristic)) := fun j t => by
-    rw [halfFrobenius_halfFrobenius, RankTwoBLieIndex.primeFrobenius_simpleRootSubgroup]
-  have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
-    Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  rw [hpow, SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex]
-  exact iterate_two_mul_add_one_apply_pow
-    (x := fun a => d.toRankTwoBLieIndex.simpleRootSubgroup i (Multiplicative.ofAdd a))
-    (y := fun a => d.toRankTwoBLieIndex.simpleRootSubgroup
-      (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) (Multiplicative.ofAdd a))
-    (fun a => d.halfFrobenius_simpleRootSubgroup i (Multiplicative.ofAdd a))
-    (fun a => hsq (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) (Multiplicative.ofAdd a))
-    (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex) (Multiplicative.toAdd u)
+              SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) :=
+  d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
+    (x := fun j t => d.toRankTwoBLieIndex.simpleRootSubgroup j t)
+    (fun j t => d.halfFrobenius_simpleRootSubgroup j t)
+    (fun j t => (d.halfFrobenius_halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup j t)).trans
+      (d.toRankTwoBLieIndex.primeFrobenius_simpleRootSubgroup j t))
+    i u
 
 /-! ## The finite-group candidate -/
 
