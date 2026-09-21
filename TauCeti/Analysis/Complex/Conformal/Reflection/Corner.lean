@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
+public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -36,21 +37,6 @@ public section
 open Complex Set
 
 namespace TauCeti
-
--- On this sector the principal powers are inverse, including at the vertex.
-private lemma cpow_inv_cpow_of_sector {w : ℂ} {β : ℝ} (hβ : 0 < β)
-    (hw : |w.arg| ≤ β * Real.pi / 2) :
-    (w ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = w := by
-  have hb : |w.arg * β⁻¹| ≤ Real.pi / 2 := by
-    rw [← div_eq_mul_inv, abs_div, abs_of_pos hβ, div_le_iff₀ hβ]
-    nlinarith [hw]
-  obtain ⟨hl, hu⟩ := abs_le.mp hb
-  rw [← Complex.cpow_mul]
-  · simp [hβ.ne']
-  · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
-    linarith [Real.pi_pos]
-  · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
-    linarith [Real.pi_pos]
 
 /-- **Power coordinate at a corner.** Suppose `f` is continuous and injective on the closed
 upper part of a symmetric open set, holomorphic on its open upper part, and takes a real point
