@@ -32,7 +32,7 @@ associativity follow from transport.
 * `GradedOpposite.op` and `GradedOpposite.unop`: the additive, degree-preserving passage between
   an algebra and its graded opposite.
 * `GradedOpposite.map`: the induced homomorphism of signed opposites of graded algebras.
-* `GradedOpposite.rightModuleAlgEquiv`: the algebra equivalence from the ordinary opposite of the
+* `GradedOpposite.opAlgEquiv`: the algebra equivalence from the ordinary opposite of the
   graded opposite back to the original algebra.
 
 ## Main results
@@ -153,15 +153,15 @@ private theorem transportAlgEquiv_op (G : InternalGrading R A) (a : A) :
 /-- The ordinary opposite of the Koszul-signed opposite is canonically equivalent to the
 original algebra.  This is the scalar equivalence which identifies left modules over `A` with
 right modules over its graded opposite. -/
-noncomputable def rightModuleAlgEquiv (G : InternalGrading R A) :
+noncomputable def opAlgEquiv (G : InternalGrading R A) :
     (GradedOpposite G)ᵐᵒᵖ ≃ₐ[R] A :=
   AlgEquiv.opComm (transportAlgEquiv G)
 
 /-- On an element represented by `a : A`, the scalar equivalence from the ordinary opposite of
 the graded opposite applies the quadratic twist. -/
 @[simp]
-theorem rightModuleAlgEquiv_op_op (G : InternalGrading R A) (a : A) :
-    rightModuleAlgEquiv G (MulOpposite.op (op G a)) = G.quadraticTwist a := by
+theorem opAlgEquiv_op_op (G : InternalGrading R A) (a : A) :
+    opAlgEquiv G (MulOpposite.op (op G a)) = G.quadraticTwist a := by
   -- Unfolding `opComm` exposes the underlying value of the transport equivalence.
   change MulOpposite.unop (transportAlgEquiv G (op G a)) = _
   rw [transportAlgEquiv_op, G.unop_quadraticTwist]
