@@ -184,6 +184,15 @@ noncomputable def indTrivialIso :
     Rep.ind H.subtype (Rep.trivial k H k) ≅ Rep.ofMulAction k G (G ⧸ H) :=
   Rep.mkIso (indTrivialEquiv k H)
 
+/-- The generator computation rule for `TauCeti.indTrivialIso`. Not a `simp` lemma because
+`simp` unfolds the reducible `Representation.IndV.mk`. -/
+theorem indTrivialIso_hom_hom_mk (x : G) (a : k) :
+    (indTrivialIso k H).hom.hom
+        (IndV.mk H.subtype (Representation.trivial k H k) x a) =
+      MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a := by
+  rw [indTrivialIso, Rep.mkIso_hom_hom_apply]
+  exact indTrivialEquiv_apply_mk k H x a
+
 /-- `Ind_H^G (trivial)` is a finite module whenever `H` has finite index, by transport along
 `TauCeti.indTrivialEquiv`; over a field this is the `FiniteDimensional` instance that lets one
 even state its character. -/

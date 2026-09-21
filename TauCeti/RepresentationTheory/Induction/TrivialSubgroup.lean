@@ -273,6 +273,33 @@ theorem indBotEquivFinsupp_ρ_apply (X : Type u) [AddCommGroup X] [Module k X] (
 def indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G :=
   TauCeti.indTrivialIso k (⊥ : Subgroup G) ≪≫ TauCeti.quotientBotIsoLeftRegular k
 
+/-- The isomorphism from induction out of the trivial subgroup to the left regular
+representation reads the underlying finitely supported function with inverted indices. -/
+@[simp]
+theorem indBotIsoLeftRegular_hom_hom_apply_coeff (v : indBot k G k) (g : G) :
+    ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom v).coeff g =
+      indBotEquivFinsupp k G k v g⁻¹ := by
+  refine LinearMap.congr_fun
+    (f := Finsupp.lapply g ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ
+      (indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom.toLinearMap)
+    (g := Finsupp.lapply g⁻¹ ∘ₗ (indBotEquivFinsupp k G k).toLinearMap)
+    (IndV.hom_ext _ _ fun h ↦ LinearMap.ext fun a ↦ ?_) v
+  change ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom
+      (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a)).coeff
+    g = indBotEquivFinsupp k G k
+      (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a) g⁻¹
+  simp only [indBotIsoLeftRegular, Iso.trans_hom, hom_comp,
+    IntertwiningMap.comp_apply]
+  rw [TauCeti.indTrivialIso_hom_hom_mk,
+    TauCeti.quotientBotIsoLeftRegular_hom_hom_single_mk,
+    indBotEquivFinsupp_mk]
+  simp only [MonoidAlgebra.coeff_single, Finsupp.single_apply]
+  by_cases hg : h⁻¹ = g
+  · have hg' : h = g⁻¹ := inv_eq_iff_eq_inv.mp hg
+    simp [hg']
+  · have hg' : h ≠ g⁻¹ := fun e ↦ hg (inv_eq_iff_eq_inv.mpr e)
+    simp [hg, hg']
+
 end Induction
 
 section Finite
