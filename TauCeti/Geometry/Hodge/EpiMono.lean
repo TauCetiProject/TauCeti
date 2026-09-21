@@ -49,12 +49,12 @@ theorem mono_iff_injective (f : X ⟶ Y) :
     have hfC := Hom.isMorphism f
     rw [MixedHodgeStructure.Hom.toLinearMap_def] at hfC
     let W := RationalHodgeSubstructure.ofRationalMorphismKer hfC
-    obtain ⟨P⟩ := isPolarizable_iff_nonempty.1 X.isPolarizable
-    let e : X ⟶ X := Hom.ofIsMorphism (W.projection P)
-      (W.isMorphism_rationalMapToComplex_projection P)
-    have he : e.hom.toRatLinearMap = W.projection P := Hom.ofIsMorphism_toRatLinearMap _ _
+    obtain ⟨p, -, hp, hrange⟩ :=
+      exists_isIdempotentElem_isMorphism_range_eq_of_isPolarizable X.isPolarizable W
+    let e : X ⟶ X := Hom.ofIsMorphism p hp
+    have he : e.hom.toRatLinearMap = p := Hom.ofIsMorphism_toRatLinearMap _ _
     have hr : LinearMap.range e.hom.toRatLinearMap = LinearMap.ker f.hom.toRatLinearMap := by
-      rw [he, RationalHodgeSubstructure.range_projection]
+      rw [he, hrange]
       exact RationalHodgeSubstructure.ofRationalMorphismKer_WQ _
     have hzero : e ≫ f = 0 := by
       apply Hom.ext
@@ -80,18 +80,17 @@ theorem epi_iff_surjective (f : X ⟶ Y) :
     have hfC := Hom.isMorphism f
     rw [MixedHodgeStructure.Hom.toLinearMap_def] at hfC
     let W := RationalHodgeSubstructure.ofRationalMorphismRange hfC
-    obtain ⟨P⟩ := isPolarizable_iff_nonempty.1 Y.isPolarizable
-    let e : Y ⟶ Y := Hom.ofIsMorphism (W.projection P)
-      (W.isMorphism_rationalMapToComplex_projection P)
-    have he : e.hom.toRatLinearMap = W.projection P := Hom.ofIsMorphism_toRatLinearMap _ _
+    obtain ⟨p, hidem, hp, hrange⟩ :=
+      exists_isIdempotentElem_isMorphism_range_eq_of_isPolarizable Y.isPolarizable W
+    let e : Y ⟶ Y := Hom.ofIsMorphism p hp
+    have he : e.hom.toRatLinearMap = p := Hom.ofIsMorphism_toRatLinearMap _ _
     have hr : LinearMap.range e.hom.toRatLinearMap = LinearMap.range f.hom.toRatLinearMap := by
-      rw [he, RationalHodgeSubstructure.range_projection]
+      rw [he, hrange]
       exact RationalHodgeSubstructure.ofRationalMorphismRange_WQ _
     have hcomp : f ≫ e = f ≫ 𝟙 Y := by
       apply Hom.ext
       simp only [comp_toRatLinearMap, id_toRatLinearMap, LinearMap.id_comp, he]
-      apply (LinearMap.IsIdempotentElem.comp_eq_right_iff
-        (W.isIdempotentElem_projection P) _).2
+      apply (LinearMap.IsIdempotentElem.comp_eq_right_iff hidem _).2
       rw [← he, hr]
     have heid : e = 𝟙 Y := (cancel_epi f).1 hcomp
     rw [← LinearMap.range_eq_top, ← hr, heid, id_toRatLinearMap, LinearMap.range_id]
