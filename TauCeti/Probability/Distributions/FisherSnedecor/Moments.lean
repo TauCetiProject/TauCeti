@@ -69,13 +69,10 @@ private lemma integrableOn_fisherMomentKernel_iff (hm : 0 < m) (q : ℝ)
     (1 + x) ^ (-((m + n) / 2))) (Ioi 0) ↔ q < n / 2
   simpa only [hsum, htail] using h
 
-private lemma integrable_fisherSnedecorMeasure_iff (f : ℝ → ℝ) :
+private lemma integrable_fisherSnedecorMeasure_iff_integrableOn_Ioi (f : ℝ → ℝ) :
     Integrable f (fisherSnedecorMeasure m n) ↔
       IntegrableOn (fun x ↦ f x * fisherSnedecorPDFReal m n x) (Ioi (0 : ℝ)) := by
-  rw [fisherSnedecorMeasure_eq_withDensity, funext (fisherSnedecorPDF_eq_ofReal m n),
-    Probability.integrable_withDensity_ofReal_iff
-      (measurable_fisherSnedecorPDFReal m n).aemeasurable
-      (ae_of_all _ (fisherSnedecorPDFReal_nonneg m n))]
+  rw [integrable_fisherSnedecorMeasure_iff]
   simp_rw [smul_eq_mul]
   rw [integrable_congr (.of_forall fun x ↦ mul_comm (fisherSnedecorPDFReal m n x) (f x))]
   have hzero : ∀ x ∉ Ioi (0 : ℝ), f x * fisherSnedecorPDFReal m n x = 0 := by
@@ -153,7 +150,7 @@ private lemma integrableOn_scaled_fisherMomentKernel_iff (hm : 0 < m) (hn : 0 < 
 order is below the denominator degrees of freedom. -/
 private theorem integrable_pow_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) (q : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ q) (fisherSnedecorMeasure m n) ↔ 2 * q < n := by
-  rw [integrable_fisherSnedecorMeasure_iff]
+  rw [integrable_fisherSnedecorMeasure_iff_integrableOn_Ioi]
   have hC : IsUnit (Real.Gamma ((m + n) / 2) /
       (Real.Gamma (m / 2) * Real.Gamma (n / 2)) * (m / n) ^ (m / 2)) := by
     rw [isUnit_iff_ne_zero]

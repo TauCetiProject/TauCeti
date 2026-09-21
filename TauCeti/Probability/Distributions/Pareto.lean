@@ -28,6 +28,9 @@ bases are positive, so Mathlib's improper-integral criterion for real powers app
 
 ## Main results
 
+* `ProbabilityTheory.integrable_paretoMeasure_iff` and
+  `ProbabilityTheory.integral_paretoMeasure_eq` transfer integrability and integration to the
+  real density.
 * `ProbabilityTheory.integrable_rpow_paretoMeasure_iff` and
   `ProbabilityTheory.integral_rpow_paretoMeasure` give the sharp moment criterion and value.
 * `ProbabilityTheory.integral_id_paretoMeasure` and
@@ -62,6 +65,28 @@ private theorem paretoMeasure_eq_withDensity_ofReal (t r : ℝ) :
     paretoMeasure t r = volume.withDensity fun x => ENNReal.ofReal (paretoPDFReal t r x) :=
   (rfl)
 
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against a Pareto law with nonnegative
+threshold and shape exactly when its density-weighted version is Lebesgue integrable. -/
+theorem integrable_paretoMeasure_iff (ht : 0 ≤ t) (hr : 0 ≤ r) {g : ℝ → E} :
+    Integrable g (paretoMeasure t r) ↔ Integrable fun x => paretoPDFReal t r x • g x := by
+  rw [paretoMeasure_eq_withDensity_ofReal]
+  exact TauCeti.Probability.integrable_withDensity_ofReal_iff
+    (measurable_paretoPDFReal t r).aemeasurable (ae_of_all _ (paretoPDFReal_nonneg ht hr))
+
+/-- **Integral transfer.** An integral against a Pareto law with nonnegative threshold and shape
+is the density-weighted Lebesgue integral. -/
+theorem integral_paretoMeasure_eq (ht : 0 ≤ t) (hr : 0 ≤ r) (g : ℝ → E) :
+    ∫ x, g x ∂paretoMeasure t r = ∫ x, paretoPDFReal t r x • g x := by
+  rw [paretoMeasure_eq_withDensity_ofReal]
+  exact TauCeti.Probability.integral_withDensity_ofReal
+    (measurable_paretoPDFReal t r).aemeasurable (ae_of_all _ (paretoPDFReal_nonneg ht hr)) g
+
+end Transfer
+
 /-- The Pareto density times `x ^ q` is, on the support, the constant `r * t ^ r` times the
 single real power `x ^ (q - r - 1)`, and vanishes off the support. -/
 private theorem paretoPDFReal_mul_rpow (ht : 0 < t) (q x : ℝ) :
@@ -89,8 +114,7 @@ parameter. -/
 @[simp]
 theorem integrable_rpow_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) (q : ℝ) :
     Integrable (fun x : ℝ => x ^ q) (paretoMeasure t r) ↔ q < r := by
-  rw [paretoMeasure_eq_withDensity_ofReal, TauCeti.Probability.integrable_withDensity_ofReal_iff
-    (measurable_paretoPDFReal t r).aemeasurable (ae_of_all _ (paretoPDFReal_nonneg ht.le hr.le))]
+  rw [integrable_paretoMeasure_iff ht.le hr.le]
   simp only [smul_eq_mul]
   have hfun : (fun x : ℝ => paretoPDFReal t r x * x ^ q) =
       Set.indicator (Set.Ici t) (fun y => r * t ^ r * y ^ (q - r - 1)) :=
@@ -112,8 +136,7 @@ theorem integrable_rpow_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) (q : ℝ) :
 shape parameter. -/
 theorem integral_rpow_paretoMeasure (ht : 0 < t) (hr : 0 < r) (hq : q < r) :
     ∫ x : ℝ, x ^ q ∂paretoMeasure t r = r * t ^ q / (r - q) := by
-  rw [paretoMeasure_eq_withDensity_ofReal, TauCeti.Probability.integral_withDensity_ofReal
-    (measurable_paretoPDFReal t r).aemeasurable (ae_of_all _ (paretoPDFReal_nonneg ht.le hr.le))]
+  rw [integral_paretoMeasure_eq ht.le hr.le]
   simp only [smul_eq_mul]
   have hfun : (fun x : ℝ => paretoPDFReal t r x * x ^ q) =
       Set.indicator (Set.Ici t) (fun y => r * t ^ r * y ^ (q - r - 1)) :=

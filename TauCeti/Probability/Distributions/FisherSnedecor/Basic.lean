@@ -32,6 +32,8 @@ import TauCeti.Analysis.Calculus.RealCharts
 * `ae_mem_Ioi_fisherSnedecorMeasure` — positivity almost surely.
 * `fisherSnedecorMeasure_eq_withDensity` — the density representation with respect to Lebesgue
   measure.
+* `integrable_fisherSnedecorMeasure_iff` and `integral_fisherSnedecorMeasure_eq` — integrability
+  and integration transferred to the real density.
 * `hasPDF_of_hasLaw_fisherSnedecorMeasure` and `rnDeriv_fisherSnedecorMeasure` — the
   random-variable and Radon--Nikodym density interfaces.
 * `cdf_fisherSnedecorMeasure_eq` — the closed-form cumulative distribution function.
@@ -506,6 +508,30 @@ theorem fisherSnedecorMeasure_eq_withDensity (m n : ℝ) :
   · rw [fisherSnedecorMeasure_of_not_pos h]
     ext s hs
     simp [withDensity_apply, hs, fisherSnedecorPDF_of_not_pos h]
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against a Fisher--Snedecor law exactly
+when its density-weighted version is Lebesgue integrable. This holds at every parameter, the zero
+measure included. -/
+theorem integrable_fisherSnedecorMeasure_iff (m n : ℝ) {g : ℝ → E} :
+    Integrable g (fisherSnedecorMeasure m n) ↔
+      Integrable fun x ↦ fisherSnedecorPDFReal m n x • g x := by
+  rw [fisherSnedecorMeasure_eq_withDensity, funext (fisherSnedecorPDF_eq_ofReal m n)]
+  exact integrable_withDensity_ofReal_iff (measurable_fisherSnedecorPDFReal m n).aemeasurable
+    (ae_of_all _ (fisherSnedecorPDFReal_nonneg m n))
+
+/-- **Integral transfer.** An integral against a Fisher--Snedecor law is the density-weighted
+Lebesgue integral. This holds at every parameter, the zero measure included. -/
+theorem integral_fisherSnedecorMeasure_eq (m n : ℝ) (g : ℝ → E) :
+    ∫ x, g x ∂fisherSnedecorMeasure m n = ∫ x, fisherSnedecorPDFReal m n x • g x := by
+  rw [fisherSnedecorMeasure_eq_withDensity, funext (fisherSnedecorPDF_eq_ofReal m n)]
+  exact integral_withDensity_ofReal (measurable_fisherSnedecorPDFReal m n).aemeasurable
+    (ae_of_all _ (fisherSnedecorPDFReal_nonneg m n)) g
+
+end Transfer
 
 section DensityCorollaries
 
