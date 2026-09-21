@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Scheme.Place
+public import TauCeti.AlgebraicGeometry.Scheme.Place.Injective
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
 /-!
@@ -21,6 +21,8 @@ scheme-theoretic codimension-one points and abstract function-field places.
 
 ## Main results
 
+* `CodimensionOnePoint.toPlace_injective`: distinct codimension-one points on a separated
+  scheme give distinct places.
 * `CodimensionOnePoint.toPlace_ord`: the order at the place is the scheme-theoretic order of
   vanishing.
 * `CodimensionOnePoint.toPlace_ordAddMonoidHom`: the corresponding additive order homomorphisms
@@ -76,6 +78,15 @@ theorem toPlace_ordAddMonoidHom (x : CodimensionOnePoint X)
   intro f
   rw [← ofMul_toMul f, Place.ordAddMonoidHom_apply, SchemeWeilDivisor.orderAt_apply,
     toPlace_ord, toMul_ofMul]
+
+omit [IsLocallyNoetherian X] in
+/-- Distinct codimension-one points of a separated integral scheme give distinct function-field
+places, provided their local rings are discrete valuation rings. -/
+theorem toPlace_injective [X.IsSeparated]
+    [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] :
+    Function.Injective (fun x : CodimensionOnePoint X ↦ X.toPlace (k := k) (x : X)) := by
+  intro x y h
+  exact Subtype.ext (toPlace_eq_iff.mp h)
 
 end CodimensionOnePoint
 
