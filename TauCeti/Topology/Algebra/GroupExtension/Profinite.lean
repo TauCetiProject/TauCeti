@@ -210,22 +210,23 @@ theorem continuous_factorSetToGroupExtensionEquiv (hinl : Continuous S.inl) {σ 
   exact (hinl.comp FactorSet.Extension.continuous_left).mul
     (hσc.comp FactorSet.Extension.continuous_right)
 
-/-- **A compact Hausdorff extension with compact kernel is the twisted product built from the
-factor set of a continuous normalized section**: the comparison map of
+/-- **A Hausdorff extension with compact kernel over a compact base is the twisted product built
+from the factor set of a continuous normalized section**: the comparison map of
 `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv` is a multiplicative equivalence and a
-homeomorphism. -/
-noncomputable def factorSetContinuousMulEquiv [CompactSpace E] (hinl : Continuous S.inl)
-    (hrh : Continuous S.rightHom) {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
+homeomorphism. Compactness is asked of the base rather than of the extension because it is the
+twisted product, the source of the comparison map, that has to be compact; a compact extension with
+continuous projection has compact base by `Function.Surjective.compactSpace`. -/
+noncomputable def factorSetContinuousMulEquiv [CompactSpace G] (hinl : Continuous S.inl)
+    {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
     (hact : InducesAction S) : (factorSet σ hσ hact).Extension ≃ₜ* E :=
-  haveI : CompactSpace G := S.rightHom_surjective.compactSpace hrh
   continuousMulEquivOfEquiv (factorSetToGroupExtensionEquiv σ hσ hact)
     (continuous_factorSetToGroupExtensionEquiv hinl hσc hσ hact)
 
 @[simp]
-theorem factorSetContinuousMulEquiv_apply [CompactSpace E] (hinl : Continuous S.inl)
-    (hrh : Continuous S.rightHom) {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
+theorem factorSetContinuousMulEquiv_apply [CompactSpace G] (hinl : Continuous S.inl)
+    {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1)
     (hact : InducesAction S) (x : (factorSet σ hσ hact).Extension) :
-    factorSetContinuousMulEquiv hinl hrh hσc hσ hact x = S.inl x.left * σ x.right :=
+    factorSetContinuousMulEquiv hinl hσc hσ hact x = S.inl x.left * σ x.right :=
   factorSetToGroupExtensionEquiv_apply σ hσ hact x
 
 omit [T2Space E] in

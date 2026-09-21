@@ -16,17 +16,18 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 # The topological group extension built from a continuous factor set
 
 A factor set `α : FactorSet G M` builds the group extension `1 → M → E_α → G → 1` whose underlying
-set is `M × G` and whose multiplication is twisted by `α`. When `G` and `M` are topological groups
-and `α` is continuous, the product topology on `M × G` makes `E_α` a topological group, the
-projection to `G` an open quotient map, and — as soon as `G` is `T1`, so that the range of the
-inclusion, the preimage of `{1}`, is closed — the inclusion of `M` a closed embedding. For `G` a
-profinite group and `M` a finite discrete module this exhibits `E_α` as a profinite group, which is
-the extension attached to a continuous `2`-cocycle.
+set is `M × G` and whose multiplication is twisted by `α`. When `G` and `M` are topological groups,
+the action of `G` on `M` is continuous and `α` is continuous, the product topology on `M × G` makes
+`E_α` a topological group. The projection to `G` is an open quotient map, and — as soon as `G` is
+`T1`, so that the range of the inclusion, the preimage of `{1}`, is closed — the inclusion of `M` is
+a closed embedding. For `G` a profinite group and `M` a finite discrete module this exhibits `E_α`
+as a profinite group, which is the extension attached to a continuous `2`-cocycle.
 
 The topology is put on `TauCeti.FactorSet.Extension` unconditionally, as the product topology
-transported along the coordinate equivalence `TauCeti.FactorSet.Extension.equivProd`; it is the
-group structure, not the topology, that needs `α` to be continuous, and the separation, compactness
-and disconnectedness instances below hold for every factor set.
+transported along the coordinate equivalence `TauCeti.FactorSet.Extension.equivProd`. The group
+structure itself needs no continuity at all; what needs `α` and the action of `G` on `M` to be
+continuous is the compatibility of the group operations with the topology. The separation,
+compactness and disconnectedness instances below hold for every factor set.
 
 Continuity of a factor set is membership of the explicit complex of continuous cochains:
 `TauCeti.FactorSet.ofMul_mem_Z2_iff` says that `α` is continuous exactly when it is a continuous
@@ -43,8 +44,8 @@ continuous `2`-cocycle, so the two descriptions of the data are interchangeable.
 
 ## Main results
 
-* `TauCeti.FactorSet.Extension.isTopologicalGroup`: a continuous factor set builds a topological
-  group.
+* `TauCeti.FactorSet.Extension.isTopologicalGroup`: over a continuous action of `G` on `M`, a
+  continuous factor set builds a topological group.
 * `TauCeti.FactorSet.isClosedEmbedding_inl` and `TauCeti.FactorSet.isQuotientMap_rightHom`: for
   `G` a `T1` space the copy of `M` is a closed subgroup, and the projection to `G` is an open
   quotient map, so `1 → M → E_α → G → 1` is an extension of topological groups.
@@ -171,9 +172,11 @@ private theorem continuous_inv_extension : Continuous fun x : α.Extension => x�
     ((continuous_left.mul (hα.comp (continuous_right.prodMk continuous_right.inv))).inv)).prodMk
     continuous_right.inv
 
-/-- **A continuous factor set builds a topological group.** The twisted multiplication of
-`TauCeti.FactorSet.Extension` is continuous for the product topology exactly because the factor set
-appearing in it is. -/
+/-- **Over a continuous action of `G` on `M`, a continuous factor set builds a topological group.**
+The twisted multiplication of `TauCeti.FactorSet.Extension` is
+`⟨a, g⟩ * ⟨b, h⟩ = ⟨a * g • b * α (g, h), g * h⟩`, so it is continuous for the product topology
+exactly because the two things appearing in it beyond the group operations — the action and the
+factor set — are. -/
 theorem isTopologicalGroup : IsTopologicalGroup α.Extension where
   continuous_mul := continuous_mul_extension hα
   continuous_inv := continuous_inv_extension hα
