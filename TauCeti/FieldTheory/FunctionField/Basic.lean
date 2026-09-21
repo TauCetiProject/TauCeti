@@ -26,8 +26,7 @@ Fields and Codes*, second edition, Definition 1.1.1 and Remark 1.1.2.
 
 The proof of independence of the parameter adapts Mathlib's
 `FunctionField.finiteDimensional_of_adjoin_transcendental` to the intrinsic predicate defined
-here. The base-change proofs use Mathlib's transcendence-degree tower formula
-`lift_trdeg_add_eq`. No code from external formalizations is used.
+here.
 -/
 
 public section

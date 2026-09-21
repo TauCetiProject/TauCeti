@@ -10,16 +10,14 @@ public import Mathlib.FieldTheory.FinTrdeg
 /-!
 # Transcendence degree in field towers
 
-This file records general consequences of the transcendence-degree tower formula for field
-extensions.
+This file records general consequences of Mathlib's transcendence-degree tower formula
+`lift_trdeg_add_eq` for field extensions.
 
 ## Main results
 
 * `TauCeti.isAlgebraic_of_trdeg_eq`: if a field has the same finite transcendence degree over two
   fields in a tower, then the intermediate extension is algebraic;
   `TauCeti.isAlgebraic_of_trdeg_eq_one` is the case of transcendence degree one.
-
-The proof uses Mathlib's `lift_trdeg_add_eq`.
 -/
 
 public section
