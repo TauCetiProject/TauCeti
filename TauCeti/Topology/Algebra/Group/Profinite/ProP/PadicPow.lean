@@ -43,8 +43,8 @@ abelian pro-`p` groups is stated.
   `TauCeti.IsProP.inv_padicPow`, `TauCeti.IsProP.mul_padicPow` in the base, the latter for
   commuting elements.
 * `TauCeti.IsProP.continuous_padicPow`: the action `ℤ_[p] × A → A` is jointly continuous.
-* `TauCeti.IsProP.eq_padicPow_of_continuous`: the power is the unique continuous extension of
-  the natural powers.
+* `TauCeti.IsProP.eq_padicPow_of_continuous`, `TauCeti.IsProP.map_padicPow`: the power is the
+  unique continuous extension of the natural powers, and continuous homomorphisms preserve it.
 * `TauCeti.IsProP.module_smul`, `TauCeti.IsProP.continuousSMul_module`: the module structure
   acts by the `p`-adic power, and is topological.
 
@@ -57,7 +57,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 namespace IsProP
 
@@ -225,6 +225,16 @@ theorem eq_padicPow_of_continuous (hA : IsProP p A) {a : A} {f : ℤ_[p] → A} 
   exact congrFun (PadicInt.denseRange_natCast.equalizer hf hcont
     (funext fun k ↦ by simp [hnat k])) l
 
+/-- Continuous homomorphisms between pro-`p` groups preserve the `p`-adic power. -/
+theorem map_padicPow {B : Type v} [Group B] [TopologicalSpace B] [IsTopologicalGroup B]
+    [CompactSpace B] [TotallyDisconnectedSpace B] (hA : IsProP p A) (hB : IsProP p B)
+    (f : A →* B) (hf : Continuous f) (a : A) (l : ℤ_[p]) :
+    f (hA.padicPow a l) = hB.padicPow (f a) l := by
+  apply hB.eq_padicPow_of_continuous
+    (hf.comp (hA.continuous_padicPow.comp (continuous_id.prodMk continuous_const)))
+  intro k
+  simp
+
 /-- The `p`-adic power is multiplicative on commuting base elements. -/
 @[simp]
 theorem mul_padicPow (hA : IsProP p A) (a b : A) (hab : Commute a b) (l : ℤ_[p]) :
@@ -245,7 +255,7 @@ variable {p : ℕ} [hp : Fact p.Prime] {A : Type u} [CommGroup A] [TopologicalSp
 /-- **An abelian pro-`p` group is a `ℤ_[p]`-module**, with `l` acting as the `p`-adic power
 by `l`. The prime is not determined by `A`, so this is a definition rather than an instance;
 consumers introduce it with `letI := hA.module`. -/
-@[reducible]
+@[instance_reducible]
 noncomputable def module (hA : IsProP p A) : Module ℤ_[p] (Additive A) where
   smul l x := Additive.ofMul (hA.padicPow x.toMul l)
   one_smul x := congrArg Additive.ofMul (hA.padicPow_one x.toMul)
