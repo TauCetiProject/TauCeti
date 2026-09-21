@@ -19,7 +19,8 @@ the *Teichmüller lift* `teichmuller R : kˣ →* Rˣ`.
 
 Thus this construction reuses the general Henselian roots-of-unity equivalence. Its public
 characterization says that the lift of `x` is the unique `(q - 1)`-st root of unity reducing to
-`x`; in particular its image is exactly `μ_{q-1}(R)`.
+`x`; in particular its image is exactly `μ_{q-1}(R)`, and it is the *only* multiplicative section
+of reduction.
 
 A ring `R` that is moreover integrally closed in an `R`-algebra `A` has the same `(q - 1)`-st
 roots of unity as `A`, since roots of unity are integral. This gives the corresponding
@@ -28,15 +29,13 @@ fields.
 
 ## Main results
 
-* `TauCeti.IsLocalRing.teichmuller`: the Teichmüller lift `kˣ →* Rˣ`.
-* `TauCeti.IsLocalRing.teichmuller_eq_iff`: the characterization of its values.
-* `TauCeti.IsLocalRing.eq_teichmuller`: it is the only multiplicative section of reduction whose
-  values are `(q - 1)`-st roots of unity.
-* `TauCeti.IsLocalRing.range_teichmuller`: its image is exactly `μ_{q-1}(R)`.
-* `TauCeti.IsLocalRing.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism
-  `μ_{q-1}(R) ≃* kˣ`.
-* `TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField`: if `R` is integrally
-  closed in an `R`-algebra `A`, then `μ_{q-1}(A) ≃* kˣ`.
+* `TauCeti.teichmuller`: the Teichmüller lift `kˣ →* Rˣ`.
+* `TauCeti.teichmuller_eq_iff`: the characterization of its values.
+* `TauCeti.eq_teichmuller`: it is the only multiplicative section of reduction.
+* `TauCeti.range_teichmuller`: its image is exactly `μ_{q-1}(R)`.
+* `TauCeti.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism `μ_{q-1}(R) ≃* kˣ`.
+* `TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField`: if `R` is integrally closed in an
+  `R`-algebra `A`, then `μ_{q-1}(A) ≃* kˣ`.
 
 ## References
 
@@ -48,9 +47,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti.IsLocalRing
+namespace TauCeti
 
-open _root_.IsLocalRing
+open IsLocalRing
 
 variable (R : Type*) [CommRing R] [HenselianLocalRing R] [Finite (ResidueField R)]
 
@@ -68,15 +67,14 @@ private theorem isUnit_card_residueField_sub_one :
 field. -/
 noncomputable def rootsOfUnityMulEquivUnitsResidueField :
     rootsOfUnity (Nat.card (ResidueField R) - 1) R ≃* (ResidueField R)ˣ :=
-  (TauCeti.rootsOfUnityEquivResidueField (isUnit_card_residueField_sub_one R)).trans
-    (TauCeti.rootsOfUnityEquivUnits (ResidueField R))
+  (rootsOfUnityEquivResidueField (isUnit_card_residueField_sub_one R)).trans
+    (rootsOfUnityEquivUnits (ResidueField R))
 
 @[simp] theorem coe_rootsOfUnityMulEquivUnitsResidueField
     (u : rootsOfUnity (Nat.card (ResidueField R) - 1) R) :
     (rootsOfUnityMulEquivUnitsResidueField R u : ResidueField R) = residue R (u : Rˣ) := by
-  rw [rootsOfUnityMulEquivUnitsResidueField, MulEquiv.trans_apply,
-    TauCeti.rootsOfUnityEquivUnits_apply]
-  exact TauCeti.coe_rootsOfUnityEquivResidueField _ u
+  rw [rootsOfUnityMulEquivUnitsResidueField, MulEquiv.trans_apply, rootsOfUnityEquivUnits_apply]
+  exact coe_rootsOfUnityEquivResidueField _ u
 
 /-- The **Teichmüller lift** of a Henselian local ring `R` with finite residue field `k` of
 cardinality `q`: the multiplicative section of reduction that sends `x` to the unique
@@ -137,11 +135,13 @@ theorem teichmuller_eq_iff {x : (ResidueField R)ˣ} {u : Rˣ} :
 theorem teichmuller_injective : Function.Injective (teichmuller R) := fun x y h ↦ by
   simpa using congrArg (Units.map (residue R : R →* ResidueField R)) h
 
-/-- The Teichmüller lift is the only multiplicative section of reduction all of whose values are
-`q - 1`-st roots of unity. -/
-theorem eq_teichmuller (s : (ResidueField R)ˣ →* Rˣ) (hsec : ∀ x, residue R (s x : R) = x)
-    (htor : ∀ x, s x ^ (Nat.card (ResidueField R) - 1) = 1) : s = teichmuller R :=
-  MonoidHom.ext fun x ↦ ((teichmuller_eq_iff R).2 ⟨htor x, hsec x⟩).symm
+/-- The Teichmüller lift is the only multiplicative section of reduction. No torsion assumption on
+the section is needed: a monoid hom out of `kˣ`, a group of order `q - 1`, automatically takes
+`(q - 1)`-st roots of unity as values. -/
+theorem eq_teichmuller (s : (ResidueField R)ˣ →* Rˣ) (hsec : ∀ x, residue R (s x : R) = x) :
+    s = teichmuller R :=
+  MonoidHom.ext fun x ↦ ((teichmuller_eq_iff R).2
+    ⟨by rw [← map_pow, ← Nat.card_units, pow_card_eq_one', map_one], hsec x⟩).symm
 
 /-- The image of the Teichmüller lift is `μ_{q-1}(R)`. -/
 theorem range_teichmuller :
@@ -170,8 +170,7 @@ already lie in `R`. -/
 noncomputable def rootsOfUnityAlgebraMulEquivUnitsResidueField :
     rootsOfUnity (Nat.card (ResidueField R) - 1) A ≃* (ResidueField R)ˣ :=
   haveI : NeZero (Nat.card (ResidueField R) - 1) := ⟨card_residueField_sub_one_ne_zero R⟩
-  (IsIntegrallyClosedIn.rootsOfUnityMulEquiv R A _).symm.trans
-    (rootsOfUnityMulEquivUnitsResidueField R)
+  (rootsOfUnityMulEquiv R A _).symm.trans (rootsOfUnityMulEquivUnitsResidueField R)
 
 @[simp] theorem rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply
     (x : (ResidueField R)ˣ) :
@@ -180,6 +179,25 @@ noncomputable def rootsOfUnityAlgebraMulEquivUnitsResidueField :
   have : NeZero (Nat.card (ResidueField R) - 1) := ⟨card_residueField_sub_one_ne_zero R⟩
   simp [rootsOfUnityAlgebraMulEquivUnitsResidueField]
 
+/-- The forward direction of the equivalence, read in `A`: the Teichmüller lift of the value at a
+root of unity `u` of `A` is `u` itself. -/
+@[simp] theorem algebraMap_teichmuller_rootsOfUnityAlgebraMulEquivUnitsResidueField
+    (u : rootsOfUnity (Nat.card (ResidueField R) - 1) A) :
+    algebraMap R A (teichmuller R (rootsOfUnityAlgebraMulEquivUnitsResidueField R A u) : R) =
+      ((u : Aˣ) : A) := by
+  rw [← rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply, MulEquiv.symm_apply_apply]
+
+/-- The value of the equivalence at a root of unity `u` of `A` is the reduction of the element of
+`R` that `u` comes from. -/
+theorem coe_rootsOfUnityAlgebraMulEquivUnitsResidueField
+    (u : rootsOfUnity (Nat.card (ResidueField R) - 1) A) {y : R}
+    (hy : algebraMap R A y = ((u : Aˣ) : A)) :
+    (rootsOfUnityAlgebraMulEquivUnitsResidueField R A u : ResidueField R) = residue R y := by
+  have hinj : Function.Injective (algebraMap R A) := IsIntegralClosure.algebraMap_injective R R A
+  have h : (teichmuller R (rootsOfUnityAlgebraMulEquivUnitsResidueField R A u) : R) = y :=
+    hinj (by rw [algebraMap_teichmuller_rootsOfUnityAlgebraMulEquivUnitsResidueField, hy])
+  rw [← h, residue_teichmuller]
+
 end IsIntegrallyClosedIn
 
-end TauCeti.IsLocalRing
+end TauCeti

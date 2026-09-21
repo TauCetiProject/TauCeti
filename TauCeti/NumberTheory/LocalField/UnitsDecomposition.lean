@@ -219,28 +219,28 @@ private theorem rootsOfUnity_residue_le :
 private theorem unitFiltrationZeroReduction_inclusion_symm (α : 𝓀[K]ˣ) :
     unitFiltrationZeroReduction K (Subgroup.inclusion
       (rootsOfUnity_residue_le K)
-      ((TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
+      ((TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
         𝒪[K] K).symm α)) = α :=
   Units.ext <| (coe_unitFiltrationZeroReduction K _ _
-    (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply
+    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply
       𝒪[K] K α).symm).trans
-      (TauCeti.IsLocalRing.residue_teichmuller 𝒪[K] α)
+      (TauCeti.residue_teichmuller 𝒪[K] α)
 
 private theorem unitFiltrationZeroReduction_comp_inclusion :
     (unitFiltrationZeroReduction K).comp
         (Subgroup.inclusion (rootsOfUnity_residue_le K)) =
-      (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
+      (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
         𝒪[K] K).toMonoidHom := by
   ext1 ζ
   obtain ⟨α, rfl⟩ :=
-    (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
+    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
       𝒪[K] K).symm.surjective ζ
   simp [unitFiltrationZeroReduction_inclusion_symm]
 
 /-- The projection `U(K,0) →* μ_{q-1}(K)`: the Teichmüller representative of the residue class. -/
 private def teichmullerProjection :
     unitFiltration K 0 →* rootsOfUnity (Nat.card 𝓀[K] - 1) K :=
-  (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
+  (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
     𝒪[K] K).symm.toMonoidHom.comp (unitFiltrationZeroReduction K)
 
 private theorem teichmullerProjection_inclusion (ζ : rootsOfUnity (Nat.card 𝓀[K] - 1) K) :
@@ -314,7 +314,7 @@ def unitFiltrationZeroEquivProd :
 @[simp]
 theorem rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst
     (u : unitFiltration K 0) :
-    TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[K] K
+    TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[K] K
         (unitFiltrationZeroEquivProd K u).1 =
       unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk u) := by
   simp [unitFiltrationZeroEquivProd, teichmullerProjection, unitFiltrationZeroReduction]

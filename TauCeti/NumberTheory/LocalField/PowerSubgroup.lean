@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.RingTheory.Henselian
+public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
@@ -161,17 +161,17 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
     obtain ⟨z, hz⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn
       (integerUnitsEquivProd u).2.2
     rw [powMonoidHom_apply] at hz
-    have hpow : TauCeti.IsLocalRing.teichmuller 𝒪[K] α ^ n =
-        TauCeti.IsLocalRing.teichmuller 𝒪[K] (α ^ n) :=
-      (map_pow (TauCeti.IsLocalRing.teichmuller 𝒪[K]) α n).symm
-    have hu' : TauCeti.IsLocalRing.teichmuller 𝒪[K] (α ^ n) *
+    have hpow : TauCeti.teichmuller 𝒪[K] α ^ n =
+        TauCeti.teichmuller 𝒪[K] (α ^ n) :=
+      (map_pow (TauCeti.teichmuller 𝒪[K]) α n).symm
+    have hu' : TauCeti.teichmuller 𝒪[K] (α ^ n) *
         unitFiltrationToIntegerUnits 1 (integerUnitsEquivProd u).2 = u := by
       calc
         _ = integerUnitsProdHom (K := K) (α ^ n, (integerUnitsEquivProd u).2) :=
           (integerUnitsProdHom_apply (K := K) _).symm
         _ = u := hu
     refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
-      (TauCeti.IsLocalRing.teichmuller 𝒪[K] α) * z, ?_⟩
+      (TauCeti.teichmuller 𝒪[K] α) * z, ?_⟩
     rw [powMonoidHom_apply, mul_pow, hz, ← map_pow,
       ← unitsMap_subtype_unitFiltrationToIntegerUnits, ← map_mul,
       hpow, hu']
@@ -248,7 +248,7 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
   set μ := rootsOfUnity (Nat.card 𝓀[K] - 1) K
   set V := unitFiltration K 1
   have : Finite μ := .of_equiv _
-    (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
+    (TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField
       𝒪[K] K).symm.toEquiv
   have hn0 : n ≠ 0 := by
     rintro rfl

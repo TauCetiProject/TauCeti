@@ -20,17 +20,22 @@ unity of the field are already units of the valuation ring.
 
 ## Main results
 
-* `TauCeti.IsIntegrallyClosedIn.rootsOfUnityMulEquiv`: the inclusion `R → A` restricts to an
+* `TauCeti.restrictRootsOfUnity_bijective`: the inclusion `R → A` induces a bijection on
+  `n`-th roots of unity.
+* `TauCeti.rootsOfUnityMulEquiv`: the inclusion `R → A` restricts to an
   isomorphism `μ_n(R) ≃* μ_n(A)`.
 -/
 
 public section
 
-namespace TauCeti.IsIntegrallyClosedIn
+namespace TauCeti
 
 variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] [IsIntegrallyClosedIn R A]
 variable (n : ℕ) [NeZero n]
 
+/-- If `R` is integrally closed in `A` and `n ≠ 0`, restricting the inclusion `R → A` to `n`-th
+roots of unity is a bijection: it is injective because `R → A` is, and surjective because an
+`n`-th root of unity of `A` is integral over `R`, hence comes from `R`. -/
 theorem restrictRootsOfUnity_bijective :
     Function.Bijective (restrictRootsOfUnity (algebraMap R A) n) := by
   have hinj : Function.Injective (algebraMap R A) := IsIntegralClosure.algebraMap_injective R R A
@@ -52,4 +57,4 @@ noncomputable def rootsOfUnityMulEquiv : rootsOfUnity n R ≃* rootsOfUnity n A 
     ((rootsOfUnityMulEquiv R A n x : Aˣ) : A) = algebraMap R A ((x : Rˣ) : R) := by
   simp [rootsOfUnityMulEquiv]
 
-end TauCeti.IsIntegrallyClosedIn
+end TauCeti

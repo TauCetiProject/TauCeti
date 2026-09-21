@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Henselian.Teichmuller
 /-!
 # The zero-preserving Teichmüller lift of a nonarchimedean local field
 
-For a nonarchimedean local field `K`, `TauCeti.IsLocalRing.teichmuller 𝒪[K]` is the canonical
+For a nonarchimedean local field `K`, `TauCeti.teichmuller 𝒪[K]` is the canonical
 multiplicative section `𝓀[K]ˣ →* 𝒪[K]ˣ`. This file adds its zero-preserving extension
 `teichmullerLift K : 𝓀[K] →*₀ 𝒪[K]`, obtained from Mathlib's `Perfection.teichmuller₀`, and proves
 that the two constructions agree on units.
@@ -87,20 +87,17 @@ theorem teichmullerLift_pow_fintype_card (a : 𝓀[K]) :
 /-- On units, the zero-preserving lift is the Henselian-local-ring Teichmüller lift. -/
 @[simp]
 theorem coe_teichmuller_apply (a : 𝓀[K]ˣ) :
-    ((IsLocalRing.teichmuller 𝒪[K] a : 𝒪[K]ˣ) : 𝒪[K]) = teichmullerLift K (a : 𝓀[K]) := by
+    ((TauCeti.teichmuller 𝒪[K] a : 𝒪[K]ˣ) : 𝒪[K]) = teichmullerLift K (a : 𝓀[K]) := by
   have hsection (b : 𝓀[K]ˣ) :
       residue 𝒪[K] ((Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]) b : 𝒪[K]ˣ) : 𝒪[K]) =
         (b : 𝓀[K]) := by
     rw [Units.coe_map, MonoidHom.coe_coe]
     exact residue_teichmullerLift K b
-  have htor (b : 𝓀[K]ˣ) :
-      Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]) b ^ (Nat.card 𝓀[K] - 1) = 1 := by
-    rw [← map_pow, ← Nat.card_units, pow_card_eq_one', map_one]
   have h : Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K]) a =
-      IsLocalRing.teichmuller 𝒪[K] a :=
+      TauCeti.teichmuller 𝒪[K] a :=
     congrArg (fun f : 𝓀[K]ˣ →* 𝒪[K]ˣ ↦ f a)
-      (IsLocalRing.eq_teichmuller 𝒪[K]
-        (Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K])) hsection htor)
+      (TauCeti.eq_teichmuller 𝒪[K]
+        (Units.map (teichmullerLift K : 𝓀[K] →* 𝒪[K])) hsection)
   rw [← h, Units.coe_map, MonoidHom.coe_coe]
 
 /-- An element of `𝒪[K]` is `teichmullerLift K a` exactly when it reduces to `a` and is
@@ -122,16 +119,15 @@ theorem eq_teichmullerLift_iff {a : 𝓀[K]} {x : 𝒪[K]} :
     exact (residue_ne_zero_iff_isUnit x).2 u.isUnit
   have hres' : residue 𝒪[K] (u : 𝒪[K]) = (Units.mk0 a ha : 𝓀[K]ˣ) := by
     simpa [u] using hres
-  have h := (IsLocalRing.teichmuller_eq_iff 𝒪[K]
+  have h := (TauCeti.teichmuller_eq_iff 𝒪[K]
     (x := Units.mk0 a ha) (u := u)).2 ⟨Units.pow_ofPowEqOne hunit hq₁, hres'⟩
   rw [← Units.val_mk0 ha, ← coe_teichmuller_apply, h, Units.val_ofPowEqOne]
 
 /-- The zero-preserving Teichmüller lift is the unique multiplicative section of reduction. -/
 theorem teichmullerLift_unique (f : 𝓀[K] →*₀ 𝒪[K])
     (hsection : ∀ a, residue 𝒪[K] (f a) = a) : f = teichmullerLift K := by
-  have hunits : Units.map (f : 𝓀[K] →* 𝒪[K]) = IsLocalRing.teichmuller 𝒪[K] :=
-    IsLocalRing.eq_teichmuller 𝒪[K] _ (fun a ↦ hsection a) fun a ↦ by
-      rw [← map_pow, ← Nat.card_units, pow_card_eq_one', map_one]
+  have hunits : Units.map (f : 𝓀[K] →* 𝒪[K]) = TauCeti.teichmuller 𝒪[K] :=
+    TauCeti.eq_teichmuller 𝒪[K] _ fun a ↦ hsection a
   ext a
   rcases eq_or_ne a 0 with rfl | ha
   · rw [map_zero, map_zero]
