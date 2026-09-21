@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -52,7 +51,7 @@ theorem curvatureOperator_cyclic_eq_zero
   have ht'free : ∀ {U V : Π y : M, TangentSpace I y} {y : M},
       MDiffAt (T% U) y → MDiffAt (T% V) y →
         cov V y (U y) - cov U y (V y) = mlieBracket I U V y :=
-    (isTorsionFree_iff cov).mp ht
+    ht
   let _ : IsManifold I (minSmoothness ℝ 3) M :=
     IsManifold.of_le (m := minSmoothness ℝ 3) (n := ∞) (by simp)
   let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
@@ -71,9 +70,9 @@ theorem curvatureOperator_cyclic_eq_zero
     (hY.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hZ.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt (x := x)
   rw [ht' hX (hbr hY hZ), ht' (hbr hX hY) hZ, ht' hY (hbr hX hZ),
-    cov.mlieBracket_apply_eq_sub_of_torsion_free ht hY hZ x (X x),
-    cov.mlieBracket_apply_eq_sub_of_torsion_free ht hX hY x (Z x),
-    cov.mlieBracket_apply_eq_sub_of_torsion_free ht hX hZ x (Y x)] at hj
+    cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hY hZ x (X x),
+    cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hX hY x (Z x),
+    cov.covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free ht hX hZ x (Y x)] at hj
   simp only [curvatureOperator_apply]
   rw [mlieBracket_swap_apply (V := Z) (W := X), map_neg]
   convert sub_eq_zero.mpr hj using 1

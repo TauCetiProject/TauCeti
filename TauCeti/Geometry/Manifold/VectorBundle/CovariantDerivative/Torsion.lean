@@ -14,8 +14,8 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 This file names the pointwise torsion-free condition for a covariant derivative on the tangent
 bundle.  When the bundled torsion tensor is available, `isTorsionFree_iff_torsion_eq_zero`
 identifies this condition with its vanishing. The condition is available without finite
-dimensionality or completeness, supporting the first Bianchi identity in
-`TauCetiRoadmap/GeometricTopology/README.md`, Layer 7, “Curvature”.
+dimensionality or completeness, and supplies the torsion hypothesis for curvature identities
+such as the first Bianchi identity.
 -/
 
 public section
@@ -33,18 +33,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A covariant derivative on the tangent bundle is torsion-free when it evaluates the Lie
 bracket of differentiable vector fields as the difference of their two covariant derivatives. -/
-def IsTorsionFree
+@[expose] def IsTorsionFree
     (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) : Prop :=
   ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
     MDiffAt (T% X) x → MDiffAt (T% Y) x →
       cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x
-
-/-- The pointwise characterization of a torsion-free covariant derivative. -/
-theorem isTorsionFree_iff
-    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
-    cov.IsTorsionFree ↔ ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
-      MDiffAt (T% X) x → MDiffAt (T% Y) x →
-        cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x := Iff.rfl
 
 section TorsionFree
 
@@ -53,9 +46,9 @@ variable [CompleteSpace E]
   [cov.ContMDiffCovariantDerivative ∞]
 
 omit [CompleteSpace E] in
-/-- A torsion-free connection evaluates the Lie bracket of smooth vector fields as the
-difference of their two covariant derivatives. -/
-theorem mlieBracket_apply_eq_sub_of_torsion_free
+/-- Applying a torsion-free connection to the Lie bracket of smooth vector fields gives the
+difference of applying it to their two covariant derivatives. -/
+theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
     (ht : cov.IsTorsionFree)
     {Y Z : Π x : M, TangentSpace I x}
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
