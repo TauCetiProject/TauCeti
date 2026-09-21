@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Frobenius.Points
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Equivalence
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic
 
@@ -104,12 +106,14 @@ noncomputable def symplecticFrobenius (d : TypeCLieIndex) :
   GLSymplecticFin.map (d.carrierRank + 1) d.1.Closure
     (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
 
-/-- Entrywise `q`-power Frobenius on pinned symplectic scheme points, defined through their
-canonical matrix realization and independently of the explicit carrier. -/
+/-- The `q`-power Frobenius on pinned symplectic scheme points, defined on the represented
+coordinate-Hopf-algebra points. -/
 noncomputable def pinnedFrobenius (d : TypeCLieIndex) :
     d.PinnedGroup →* d.PinnedGroup :=
-  d.pinnedEquivSymplectic.symm.toMonoidHom.comp
-    (d.symplecticFrobenius.comp d.pinnedEquivSymplectic.toMonoidHom)
+  (Symplectic.groupSchemePointMulEquiv (d.carrierRank + 1) d.1.Closure).toMonoidHom.comp
+    ((Bialgebra.iterateFrobeniusPoints d.1.characteristic d.1.fieldExponent).comp
+      (Symplectic.groupSchemePointMulEquiv
+        (d.carrierRank + 1) d.1.Closure).symm.toMonoidHom)
 
 /-- **The Steinberg endomorphism on the pinned symplectic scheme points.** Type `C` is untwisted,
 so this is the pinned Frobenius. -/
@@ -141,9 +145,28 @@ theorem pinnedEquivSymplectic_pinnedSimpleRootSubgroup (d : TypeCLieIndex)
 theorem pinnedEquivSymplectic_pinnedFrobenius (d : TypeCLieIndex) (g : d.PinnedGroup) :
     d.pinnedEquivSymplectic (d.pinnedFrobenius g) =
       d.symplecticFrobenius (d.pinnedEquivSymplectic g) := by
-  rw [pinnedFrobenius, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]
-  rfl
+  change ((Spec (CommRingCat.of d.1.Closure)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+    (Symplectic.groupScheme ℤ (d.carrierRank + 1)).X) at g
+  change Symplectic.schemePointsMulEquiv (d.carrierRank + 1) d.1.Closure
+      (Symplectic.groupSchemePointMulEquiv (d.carrierRank + 1) d.1.Closure
+        (Bialgebra.iterateFrobeniusPoints d.1.characteristic d.1.fieldExponent
+          ((Symplectic.groupSchemePointMulEquiv
+            (d.carrierRank + 1) d.1.Closure).symm g))) =
+    GLSymplecticFin.map (d.carrierRank + 1) d.1.Closure
+      (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
+      (Symplectic.schemePointsMulEquiv (d.carrierRank + 1) d.1.Closure g)
+  rw [Symplectic.schemePointsMulEquiv_groupSchemePointMulEquiv]
+  have hF : Bialgebra.iterateFrobeniusPoints d.1.characteristic d.1.fieldExponent
+        ((Symplectic.groupSchemePointMulEquiv
+          (d.carrierRank + 1) d.1.Closure).symm g) =
+      AlgHom.mapValue
+        (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent).toIntAlgHom
+        ((Symplectic.groupSchemePointMulEquiv
+          (d.carrierRank + 1) d.1.Closure).symm g) := by
+    rw [Bialgebra.iterateFrobeniusPoints_apply, AlgHom.mapValue_apply]
+  rw [hF, Symplectic.pointsMulEquiv_mapValue, RingHom.toIntAlgHom_toRingHom]
+  congr 1
+  exact (Symplectic.schemePointsMulEquiv_apply (d.carrierRank + 1) d.1.Closure g).symm
 
 /-- The canonical matrix realization intertwines the pinned and matrix Steinberg maps. -/
 @[simp]
