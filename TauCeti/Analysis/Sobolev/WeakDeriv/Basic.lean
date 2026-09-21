@@ -451,7 +451,7 @@ theorem HasWeakLineDerivOn.sub {u₁ u₁' u₂ u₂' : E → F} (h₁ : HasWeak
 
 /-- Weak differentiation commutes with a finite sum of functions. -/
 theorem HasWeakLineDerivOn.sum {ι : Type*} [CompleteSpace F] {w w' : ι → E → F} (s : Finset ι)
-    (h : ∀ i, HasWeakLineDerivOn μ Ω (w i) (w' i) v) :
+    (h : ∀ i ∈ s, HasWeakLineDerivOn μ Ω (w i) (w' i) v) :
     HasWeakLineDerivOn μ Ω (fun x => ∑ i ∈ s, w i x) (fun x => ∑ i ∈ s, w' i x) v := by
   classical
   induction s using Finset.induction_on with
@@ -459,7 +459,8 @@ theorem HasWeakLineDerivOn.sum {ι : Type*} [CompleteSpace F] {w w' : ι → E �
       simp only [Finset.sum_empty]
       exact hasWeakLineDerivOn_zero
   | insert a s ha ih =>
-      have key := (h a).add ih
+      have key := (h a (Finset.mem_insert_self a s)).add
+        (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
       have e : ∀ z : ι → E → F,
           (fun x => ∑ i ∈ insert a s, z i x) = z a + fun x => ∑ i ∈ s, z i x :=
         fun z => funext fun x => by simp [Finset.sum_insert ha]
@@ -541,7 +542,7 @@ theorem HasWeakLineDerivOn.add_direction {u u₁' u₂' : E → F} {v₁ v₂ : 
 /-- The weak derivative is additive over a finite sum of directions. -/
 theorem HasWeakLineDerivOn.sum_direction {ι : Type*} [CompleteSpace F] {u : E → F}
     {u' : ι → E → F} {w : ι → E} (s : Finset ι) (hu : LocallyIntegrableOn u Ω μ)
-    (h : ∀ i, HasWeakLineDerivOn μ Ω u (u' i) (w i)) :
+    (h : ∀ i ∈ s, HasWeakLineDerivOn μ Ω u (u' i) (w i)) :
     HasWeakLineDerivOn μ Ω u (fun x => ∑ i ∈ s, u' i x) (∑ i ∈ s, w i) := by
   classical
   induction s using Finset.induction_on with
@@ -549,7 +550,8 @@ theorem HasWeakLineDerivOn.sum_direction {ι : Type*} [CompleteSpace F] {u : E �
       simp only [Finset.sum_empty]
       exact hasWeakLineDerivOn_zero_direction hu
   | insert a s ha ih =>
-      have key := (h a).add_direction ih
+      have key := (h a (Finset.mem_insert_self a s)).add_direction
+        (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
       have e : (fun x => ∑ i ∈ insert a s, u' i x) = u' a + fun x => ∑ i ∈ s, u' i x :=
         funext fun x => by simp [Finset.sum_insert ha]
       rw [e, Finset.sum_insert ha]
@@ -596,7 +598,7 @@ theorem hasWeakFDerivOn_of_forall_basis {ι : Type*} [CompleteSpace F]
   have key : HasWeakLineDerivOn μ Ω u
       (fun x => ∑ i ∈ (b.repr y).support, b.repr y i • U x (b i))
       (∑ i ∈ (b.repr y).support, b.repr y i • b i) :=
-    HasWeakLineDerivOn.sum_direction _ hu fun i => by
+    HasWeakLineDerivOn.sum_direction _ hu fun i _ => by
       simpa [Pi.smul_def] using (h i).smul_direction (b.repr y i)
   have hval : ∀ x, (∑ i ∈ (b.repr y).support, b.repr y i • U x (b i)) = U x y := by
     intro x

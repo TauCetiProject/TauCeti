@@ -60,7 +60,7 @@ theorem W1p.hasWeakLineDerivOn_gradient_of_forall_inner {ι : Type*} [Fintype ι
   have hsum : HasWeakLineDerivOn mu Omega
       (fun x => ∑ j, ⟪W1p.gradient u x, b j⟫_ℝ • b j)
       (fun x => ∑ j, (g j : E → ℝ) x • b j) v :=
-    HasWeakLineDerivOn.sum Finset.univ fun j => by
+    HasWeakLineDerivOn.sum Finset.univ fun j _ => by
       simpa using (hg j).clm_comp (ContinuousLinearMap.toSpanSingleton ℝ (b j))
   refine hsum.congr_ae (Filter.Eventually.of_forall fun x => ?_)
   have hcomm : ∀ j, ⟪W1p.gradient u x, b j⟫_ℝ = ⟪b j, W1p.gradient u x⟫_ℝ :=
