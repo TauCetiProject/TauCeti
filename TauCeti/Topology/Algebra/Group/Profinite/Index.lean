@@ -71,26 +71,12 @@ namespace TauCeti
 
 open Supernatural
 
-/-- A positive natural number divides another exactly when it does so prime by prime.  This is
-the numerical shadow of `Supernatural.ofNat_dvd_ofNat_iff`, used to move between the
-supernatural index and Mathlib's `Subgroup.index`. -/
-private theorem dvd_iff_forall_padicValNat_le {a b : ℕ} (ha : a ≠ 0) (hb : b ≠ 0) :
-    a ∣ b ↔ ∀ ℓ : Nat.Primes, padicValNat ℓ a ≤ padicValNat ℓ b := by
-  rw [← Nat.factorization_prime_le_iff_dvd ha hb]
-  exact ⟨fun h ℓ => by simpa [Nat.factorization_def _ ℓ.prop] using h ℓ ℓ.prop,
-    fun h q hq => by simpa [Nat.factorization_def _ hq] using h ⟨q, hq⟩⟩
-
-/-- Divisibility of positive natural numbers is monotone for the `ℓ`-adic valuations. -/
+/-- Divisibility of positive natural numbers is monotone for the `ℓ`-adic valuations: the
+prime-by-prime reading of `Nat.factorization_le_iff_dvd`. -/
 private theorem padicValNat_le_of_dvd {a b : ℕ} (hb : b ≠ 0) (hab : a ∣ b) (ℓ : Nat.Primes) :
-    padicValNat ℓ a ≤ padicValNat ℓ b :=
-  (dvd_iff_forall_padicValNat_le (ne_zero_of_dvd_ne_zero hb hab) hb).mp hab ℓ
-
-/-- Two nested subgroups of the same finite index coincide. -/
-private theorem eq_of_le_of_index_eq {G : Type*} [Group G] {K L : Subgroup G} (h : K ≤ L)
-    (hL : L.index ≠ 0) (hidx : K.index = L.index) : K = L :=
-  le_antisymm h <| Subgroup.relIndex_eq_one.mp <|
-    Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero hL)
-      ((Subgroup.relIndex_mul_index h).trans (hidx.trans (one_mul _).symm))
+    padicValNat ℓ a ≤ padicValNat ℓ b := by
+  simpa [Nat.factorization_def _ ℓ.prop] using
+    (Nat.factorization_le_iff_dvd (ne_zero_of_dvd_ne_zero hb hab) hb).2 hab ℓ
 
 variable {G G' : Type*} [Group G] [TopologicalSpace G] [Group G'] [TopologicalSpace G']
 
@@ -237,14 +223,11 @@ has ordinary index dividing `n`. -/
 private theorem index_dvd_of_profiniteIndex_eq_ofNat {H : Subgroup G} {n : ℕ+}
     (hn : profiniteIndex H = ofNat n) {U : OpenSubgroup G} (hU : H ≤ U.toSubgroup) :
     U.toSubgroup.index ∣ (n : ℕ) := by
-  refine (dvd_iff_forall_padicValNat_le (index_ne_zero_of_isOpen U.isOpen) n.ne_zero).mpr
-    fun ℓ => ?_
-  have hle : ((padicValNat ℓ U.toSubgroup.index : ℕ∞)) ≤ profiniteIndex H ℓ := by
-    rw [profiniteIndex_apply_eq_iSup_openSubgroup]
-    exact le_iSup (fun U : {U : OpenSubgroup G // H ≤ U.toSubgroup} =>
-      ((padicValNat ℓ U.1.toSubgroup.index : ℕ∞))) ⟨U, hU⟩
-  rw [hn, ofNat_apply] at hle
-  exact_mod_cast hle
+  have hpos := Nat.pos_of_ne_zero (index_ne_zero_of_isOpen U.isOpen)
+  have key : ofNat (⟨U.toSubgroup.index, hpos⟩ : ℕ+) ∣ ofNat n := by
+    rw [← profiniteIndex_eq_ofNat_of_isOpen U.isOpen (n := ⟨U.toSubgroup.index, hpos⟩) rfl, ← hn]
+    exact profiniteIndex_dvd_of_le hU
+  exact PNat.dvd_iff.mp (ofNat_dvd_ofNat_iff.mp key)
 
 end CompactSpace
 
@@ -261,14 +244,12 @@ theorem profiniteIndex_eq_one_iff_topologicalClosure_eq_top (H : Subgroup G) :
   have hsup : ∀ N : OpenNormalSubgroup G, H ⊔ N.toSubgroup = ⊤ := by
     intro N
     rw [← Subgroup.index_eq_one]
-    refine Nat.dvd_one.mp
-      ((dvd_iff_forall_padicValNat_le (index_sup_ne_zero H N) one_ne_zero).mpr fun ℓ => ?_)
-    have hle : ((padicValNat ℓ (H ⊔ N.toSubgroup).index : ℕ∞)) ≤ profiniteIndex H ℓ := by
-      rw [profiniteIndex_apply_eq_iSup_sup]
-      exact le_iSup (fun N : OpenNormalSubgroup G =>
-        ((padicValNat ℓ (H ⊔ N.toSubgroup).index : ℕ∞))) N
-    rw [h, one_apply, nonpos_iff_eq_zero, Nat.cast_eq_zero] at hle
-    simp [hle]
+    have hpos := Nat.pos_of_ne_zero (index_sup_ne_zero H N)
+    have key : ofNat (⟨(H ⊔ N.toSubgroup).index, hpos⟩ : ℕ+) ∣ ofNat 1 := by
+      rw [← profiniteIndex_eq_ofNat_of_isOpen (isOpen_sup_openNormalSubgroup H N)
+        (n := ⟨(H ⊔ N.toSubgroup).index, hpos⟩) rfl, ofNat_one, ← h]
+      exact profiniteIndex_dvd_of_le le_sup_left
+    simpa using PNat.dvd_iff.mp (ofNat_dvd_ofNat_iff.mp key)
   have hclos : ∀ N : OpenNormalSubgroup G, H.topologicalClosure ⊔ N.toSubgroup = ⊤ := fun N =>
     top_le_iff.mp ((hsup N).ge.trans (sup_le_sup_right H.le_topologicalClosure _))
   rw [Subgroup.eq_iInf_sup_openNormalSubgroup H.topologicalClosure H.isClosed_topologicalClosure]
@@ -310,7 +291,10 @@ theorem isOpen_iff_isClosed_and_isNatural_profiniteIndex (H : Subgroup G) :
           ⟨U ⊓ U₀, by rw [OpenSubgroup.toSubgroup_inf]; exact le_inf hU hU₀, rfl⟩)
         (Nat.le_of_dvd (Nat.pos_of_ne_zero (index_ne_zero_of_isOpen (U ⊓ U₀).isOpen))
           (Subgroup.index_dvd_of_le hle))
-    have hsub := eq_of_le_of_index_eq hle (index_ne_zero_of_isOpen U₀.isOpen) heq
+    have : (U ⊓ U₀).toSubgroup.FiniteIndex :=
+      Subgroup.finiteIndex_iff.mpr (index_ne_zero_of_isOpen (U ⊓ U₀).isOpen)
+    have hsub : (U ⊓ U₀).toSubgroup = U₀.toSubgroup :=
+      hle.eq_or_lt.resolve_right fun hlt => absurd heq (Subgroup.index_strictAnti hlt).ne'
     rw [OpenSubgroup.toSubgroup_inf] at hsub
     exact hsub.ge.trans inf_le_left
   -- so `U₀` sits inside the intersection of the open subgroups above `H`, which is `H` itself
