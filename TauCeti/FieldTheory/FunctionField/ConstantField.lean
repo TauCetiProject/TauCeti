@@ -18,13 +18,16 @@ no larger than `k` (the literature's "`k` is the full field of constants"), and 
 replacing `k` by the field of constants normalizes any function field to one whose field of
 constants is exact.
 
-It then identifies the constant fields along a change of base.  An intermediate field `k'` of
-`F / k` is again a legitimate base field exactly when it is algebraic over `k`, and it is then
-automatically finite over `k`; if moreover `k'` is its own field of constants, it *is* the field
-of constants of `F / k`.  Specialized to the standing tower of an extension `F' / k'` of `F / k`
-with `F' / F` finite, this says that the extension of constant fields `k' / k` is finite — a
-theorem, not a hypothesis, and the finiteness that makes the factor `[k' : k]` in the conorm
-degree identity and in the Hurwitz genus formula meaningful.
+It then follows the field of constants along a change of the base field.  An intermediate base
+field `k'` of `F / k` — one over which `F` is again a function field, which by
+`TauCeti.isFunctionField_base_iff_isAlgebraic` means exactly that `k' / k` is algebraic — is
+automatically finite over `k`, and as soon as `k'` is its own field of constants it *is* the
+field of constants of `F / k`.  In the tower of an extension `F' / k'` of `F / k`, the field of
+constants of `F' / k'` cuts down along `F ⊆ F'` to the field of constants of `F / k`; when both
+bases are exact this says that `k' ∩ F = k`, so the tower map `k → k'` is the induced inclusion
+of the two fields of constants.  The base extension `k' / k` is always algebraic, and finite
+once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes the factor
+`[k' : k]` in the conorm degree identity and in the Hurwitz genus formula meaningful.
 
 ## Main results
 
@@ -40,18 +43,17 @@ degree identity and in the Hurwitz genus formula meaningful.
   `TauCeti.isIntegrallyClosedIn_algebraicClosure`: `F` is a function field over its field of
   constants, and there the field of constants is exact; the two are packaged as
   `TauCeti.IsFunctionField.exists_intermediateField_isIntegrallyClosedIn`.
-* `TauCeti.isFunctionField_base_iff_isAlgebraic`, with its two directions
-  `TauCeti.IsFunctionField.isAlgebraic_base` and `TauCeti.IsFunctionField.of_isAlgebraic`: an
-  intermediate field of `F / k` is a base field for `F` exactly when it is algebraic over `k`;
-  `TauCeti.IsFunctionField.of_finiteDimensional` lowers the base field again.
 * `TauCeti.IsFunctionField.finiteDimensional_base` and
-  `TauCeti.IsFunctionField.algebraicClosure_eq_restrictScalars_bot`: such an intermediate base
-  field is finite over `k`, and is the field of constants of `F / k` as soon as it is its own.
-* `TauCeti.IsFunctionField.finiteDimensional_constantExtension`: in an extension `F' / k'` of
-  `F / k` with `F' / F` finite, `k' / k` is a finite extension (Stichtenoth, Definition 3.1.1);
-  `TauCeti.IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic` identifies the fields of
-  constants
-  along `F ⊆ F'`.
+  `TauCeti.IsFunctionField.algebraicClosure_eq_restrictScalars_bot`: an intermediate base field
+  of `F / k` is finite over `k`, and is the field of constants of `F / k` as soon as it is its
+  own; `TauCeti.IsFunctionField.isAlgebraic_iff_mem_range_algebraMap` is the elementwise form.
+* `TauCeti.IsFunctionField.isAlgebraic_baseExtension` and
+  `TauCeti.IsFunctionField.finiteDimensional_baseExtension`: in an extension `F' / k'` of
+  `F / k`, the base extension `k' / k` is algebraic, and finite once `F' / F` is (Stichtenoth,
+  Definition 3.1.1).
+* `TauCeti.IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic`: the field of constants of
+  `F' / k'` cuts down along `F ⊆ F'` to the field of constants of `F / k`; for exact bases
+  `TauCeti.IsFunctionField.algebraMap_mem_range_algebraMap_iff` reads this as `k' ∩ F = k`.
 * `TauCeti.algebraicClosure_ratFunc`: `k` is the field of constants of `k(x)`.
 
 ## References
@@ -169,52 +171,6 @@ section IntermediateBase
 
 variable {k' : Type*} [Field k'] [Algebra k k'] [Algebra k' F] [IsScalarTower k k' F]
 
-/-- An intermediate field `k'` between `k` and an algebraic function field `F / k` over which `F`
-is again an algebraic function field is algebraic over `k`: transcendence degree one leaves no
-room for a transcendental constant. -/
-theorem IsFunctionField.isAlgebraic_base (hF : IsFunctionField k F)
-    (hF' : IsFunctionField k' F) : Algebra.IsAlgebraic k k' := by
-  rw [← trdeg_eq_zero_iff]
-  have h := lift_trdeg_add_eq k k' F
-  rw [hF.trdeg_eq_one, hF'.trdeg_eq_one] at h
-  simp only [Cardinal.lift_one] at h
-  rcases Cardinal.add_eq_right_iff.mp h with h | h
-  -- the first alternative would force `ℵ₀ ≤ 1`
-  · exact absurd ((le_max_left _ _).trans h) (by simp)
-  · simpa using h
-
-/-- Enlarging the base field of an algebraic function field by an algebraic extension inside it
-leaves an algebraic function field (Stichtenoth, Corollary 1.1.16 and Definition 3.1.1): the new
-base contributes no transcendence. -/
-theorem IsFunctionField.of_isAlgebraic (hF : IsFunctionField k F) [Algebra.IsAlgebraic k k'] :
-    IsFunctionField k' F := by
-  have : Algebra.EssFiniteType k F := hF.essFiniteType
-  have : Algebra.EssFiniteType k' F := Algebra.EssFiniteType.of_comp k k' F
-  rw [isFunctionField_iff_trdeg_eq_one]
-  have h := lift_trdeg_add_eq k k' F
-  rw [trdeg_eq_zero_iff.mpr ‹Algebra.IsAlgebraic k k'›, hF.trdeg_eq_one] at h
-  simpa using h
-
-/-- Shrinking the base field of an algebraic function field along a finite extension leaves an
-algebraic function field: if `F` is a function field over `k'` and `k'` is finite over `k`, then
-`F` is a function field over `k`.  This is the converse of
-`TauCeti.IsFunctionField.of_isAlgebraic` for the finite extensions that
-`TauCeti.IsFunctionField.finiteDimensional_base` produces. -/
-theorem IsFunctionField.of_finiteDimensional (hF' : IsFunctionField k' F)
-    [FiniteDimensional k k'] : IsFunctionField k F := by
-  have : Algebra.EssFiniteType k' F := hF'.essFiniteType
-  have : Algebra.EssFiniteType k F := Algebra.EssFiniteType.comp k k' F
-  rw [isFunctionField_iff_trdeg_eq_one]
-  have h := lift_trdeg_add_eq k k' F
-  rw [trdeg_eq_zero_iff.mpr (Algebra.IsAlgebraic.of_finite k k'), hF'.trdeg_eq_one] at h
-  simpa using h.symm
-
-/-- An intermediate field of an algebraic function field `F / k` is a legitimate base field for
-`F` exactly when it is algebraic over `k`. -/
-theorem isFunctionField_base_iff_isAlgebraic (hF : IsFunctionField k F) :
-    IsFunctionField k' F ↔ Algebra.IsAlgebraic k k' :=
-  ⟨hF.isAlgebraic_base, fun h ↦ have := h; hF.of_isAlgebraic⟩
-
 /-- An intermediate base field of an algebraic function field is a finite extension of the
 original base field (Stichtenoth, Corollary 1.1.16). -/
 theorem IsFunctionField.finiteDimensional_base (hF : IsFunctionField k F)
@@ -233,9 +189,9 @@ theorem IsFunctionField.algebraicClosure_eq_restrictScalars_bot (hF : IsFunction
 
 /-- The elementwise form of `TauCeti.IsFunctionField.algebraicClosure_eq_restrictScalars_bot`: an
 element of `F` is algebraic over `k` exactly when it is one of the constants `k'`. -/
-theorem IsFunctionField.isAlgebraic_iff_exists_algebraMap (hF : IsFunctionField k F)
+theorem IsFunctionField.isAlgebraic_iff_mem_range_algebraMap (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F) (hex : IsIntegrallyClosedIn k' F) {x : F} :
-    IsAlgebraic k x ↔ ∃ c : k', algebraMap k' F c = x := by
+    IsAlgebraic k x ↔ x ∈ Set.range (algebraMap k' F) := by
   refine ⟨fun hx ↦ ?_, ?_⟩
   · have hmem : x ∈ _root_.algebraicClosure k F := mem_algebraicClosure_iff.2 hx
     rw [hF.algebraicClosure_eq_restrictScalars_bot hF' hex] at hmem
@@ -251,36 +207,62 @@ end IntermediateBase
 section Extension
 
 variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra F F']
-variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] [FiniteDimensional F F']
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- **The constant field of an extension of function fields is algebraic over the constant field
-below** (Stichtenoth, Definition 3.1.1 and the remark following it): in the standing tower of an
-extension `F' / k'` of `F / k` with `F' / F` finite, `k' / k` is not an assumption but a
-theorem. -/
-theorem IsFunctionField.isAlgebraic_constantExtension (hF : IsFunctionField k F)
+section IsAlgebraic
+
+variable [Algebra.IsAlgebraic F F']
+
+/-- **The base field of an extension of function fields is algebraic over the base field below**
+(Stichtenoth, Definition 3.1.1 and the remark following it): in the tower of an extension
+`F' / k'` of `F / k` with `F' / F` algebraic, the algebraicity of `k' / k` is not an assumption
+but a theorem. -/
+theorem IsFunctionField.isAlgebraic_baseExtension (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') : Algebra.IsAlgebraic k k' :=
-  (hF.finite_extension (E := F')).isAlgebraic_base hF'
+  isAlgebraic_of_trdeg_eq_one (hF.trdeg_eq_one_of_isAlgebraic (E := F')) hF'.trdeg_eq_one
 
-/-- **The constant field of an extension of function fields is a finite extension of the constant
-field below** (Stichtenoth, Corollary 1.1.16 applied in the tower of Definition 3.1.1).  This is
-the finiteness that makes the factor `[k' : k]` of the conorm degree identity and of the Hurwitz
-genus formula meaningful. -/
-theorem IsFunctionField.finiteDimensional_constantExtension (hF : IsFunctionField k F)
-    (hF' : IsFunctionField k' F') : FiniteDimensional k k' :=
-  (hF.finite_extension (E := F')).finiteDimensional_base hF'
-
-/-- **A function of `F` is a constant of `F' / k'` exactly when it is a constant of `F / k`**: the
-two fields of constants meet in `F` along the field of constants of `F / k`, so the inclusion
-`k → k'` of the tower really is an inclusion of constant fields.  No exactness hypothesis is
-needed: the statement is about being algebraic, not about lying in the base field. -/
+/-- **The field of constants of `F' / k'` cuts down along `F ⊆ F'` to the field of constants of
+`F / k`**: a function of `F` is algebraic over `k'` exactly when it is algebraic over `k`.  The
+bases need not be exact, since either field of constants is a relative algebraic closure and not
+a base field. -/
 theorem IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') {a : F} :
     IsAlgebraic k' (algebraMap F F' a) ↔ IsAlgebraic k a := by
-  have := hF.isAlgebraic_constantExtension hF'
+  have := hF.isAlgebraic_baseExtension hF'
   rw [← mem_algebraicClosure_iff, ← IntermediateField.mem_restrictScalars (K := k),
     ← _root_.algebraicClosure.eq_restrictScalars_of_isAlgebraic k k' F',
     mem_algebraicClosure_iff]
   exact isAlgebraic_algebraMap_iff (FaithfulSMul.algebraMap_injective F F')
+
+/-- **The fields of constants of an extension of function fields are identified along the tower
+map `k → k'`** (Stichtenoth, Definition 3.1.1 and the remark following it).  Once `k` is the full
+field of constants of `F / k` and `k'` the full field of constants of `F' / k'`, a function of
+`F` is a constant of `F' / k'` exactly when it is already a constant of `F / k`: inside `F'` the
+two fields of constants meet in `k`, so `k → k'` is the induced inclusion of fields of
+constants. -/
+theorem IsFunctionField.algebraMap_mem_range_algebraMap_iff (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k' F') (hk : IsIntegrallyClosedIn k F)
+    (hk' : IsIntegrallyClosedIn k' F') {a : F} :
+    algebraMap F F' a ∈ Set.range (algebraMap k' F') ↔ a ∈ Set.range (algebraMap k F) := by
+  rw [← IntermediateField.mem_bot (F := k'), ← IntermediateField.mem_bot (F := k),
+    ← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 hk',
+    ← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.2 hk]
+  simp only [mem_algebraicClosure_iff]
+  exact hF.isAlgebraic_algebraMap_iff_isAlgebraic hF'
+
+end IsAlgebraic
+
+/-- **The base field of an extension of function fields is a finite extension of the base field
+below** (Stichtenoth, Corollary 1.1.16 applied in the tower of Definition 3.1.1).  This is the
+finiteness that makes the factor `[k' : k]` of the conorm degree identity and of the Hurwitz
+genus formula meaningful.
+
+Unlike `TauCeti.IsFunctionField.isAlgebraic_baseExtension`, this does need `F' / F` to be finite
+and not merely algebraic: for an algebraic closure `k'` of a finite field `k`, the extension
+`k'(x) / k(x)` is algebraic while `k' / k` is infinite. -/
+theorem IsFunctionField.finiteDimensional_baseExtension [FiniteDimensional F F']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') : FiniteDimensional k k' :=
+  (hF.finite_extension (E := F')).finiteDimensional_base hF'
 
 end Extension
 

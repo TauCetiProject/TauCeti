@@ -5,22 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.ConstantField
+public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 
 import Mathlib.RingTheory.Valuation.LocalSubring
+import TauCeti.FieldTheory.FunctionField.ConstantField
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 
 /-!
 # Existence of extensions of places
 
 Every place of an algebraic function field extends across an integral field extension. More
-generally, the field of constants may also grow by an integral extension: a valuation trivial on
-the smaller constant field is automatically trivial on the larger one. For an extension of
-algebraic function fields with `F' / F` finite, both integrality hypotheses are automatic, the
-one on the constant fields because the extension of constant fields is then finite. The same
-argument shows that the places above a place `P` see the whole integral closure of its valuation
-ring: an element regular at all of them is integral over `𝒪_P`.
+generally, the base field may also grow by an integral extension: a valuation trivial on the
+smaller base field is automatically trivial on the larger one. For an extension of algebraic
+function fields with `F' / F` finite, both integrality hypotheses are automatic, the one on the
+base fields because the base extension is then finite. The same argument shows that the places
+above a place `P` see the whole integral closure of its valuation ring: an element regular at
+all of them is integral over `𝒪_P`.
 
 The proof dominates the local valuation ring of the original place by a valuation subring of the
 larger function field. Locality ensures that the resulting valuation subring is proper. Since
@@ -141,14 +142,14 @@ end Integral
 /-- **Existence of extensions of places for an extension of function fields** (Stichtenoth,
 Proposition 3.1.7): every place of `F / k` is the restriction of a place of `F' / k'`.
 
-Unlike `TauCeti.Place.restrict_surjective`, this asks nothing of the extension of constants:
-`k' / k` is finite by `TauCeti.IsFunctionField.finiteDimensional_constantExtension`.  Neither
-statement subsumes the other, since `TauCeti.Place.restrict_surjective` allows an infinite
-algebraic extension `F' / F`. -/
+Unlike `TauCeti.Place.restrict_surjective`, this asks nothing of the base extension: `k' / k` is
+finite by `TauCeti.IsFunctionField.finiteDimensional_baseExtension`.  Neither statement subsumes
+the other, since `TauCeti.Place.restrict_surjective` allows an infinite algebraic extension
+`F' / F`. -/
 theorem restrict_surjective_of_finiteDimensional [FiniteDimensional F F']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') :
     Function.Surjective (fun P' : Place k' F' ↦ restrict k F P') :=
-  have := hF.finiteDimensional_constantExtension hF'
+  have := hF.finiteDimensional_baseExtension hF'
   have := Algebra.IsIntegral.of_finite k k'
   have := Algebra.IsIntegral.of_finite F F'
   restrict_surjective hF'
