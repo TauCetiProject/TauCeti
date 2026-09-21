@@ -115,30 +115,36 @@ noncomputable instance instSplitMonoCategory :
     have hfC := Hom.isMorphism f
     rw [MixedHodgeStructure.Hom.toLinearMap_def] at hfC
     let W := RationalHodgeSubstructure.ofRationalMorphismRange hfC
+    have hWQ : W.WQ = LinearMap.range f.hom.toRatLinearMap :=
+      RationalHodgeSubstructure.ofRationalMorphismRange_WQ hfC
     let fWQ : X.ratCarrier →ₗ[ℚ] W.WQ :=
-      f.hom.toRatLinearMap.codRestrict W.WQ fun x ↦ by
-        rw [RationalHodgeSubstructure.ofRationalMorphismRange_WQ]
-        exact LinearMap.mem_range_self f.hom.toRatLinearMap x
+      (LinearEquiv.ofEq _ _ hWQ.symm).toLinearMap.comp f.hom.toRatLinearMap.rangeRestrict
+    have hfWQ_codRestrict : fWQ =
+        f.hom.toRatLinearMap.codRestrict W.WQ fun x ↦ by
+          rw [hWQ]
+          exact LinearMap.mem_range_self f.hom.toRatLinearMap x := by
+      ext
+      rfl
     let fW : X ⟶ ofSubstructure Y W :=
-      Hom.ofIsMorphism fWQ <| isMorphism_codRestrict W f.hom.toRatLinearMap hfC fun x ↦ by
-        rw [RationalHodgeSubstructure.ofRationalMorphismRange_WQ]
-        exact LinearMap.mem_range_self f.hom.toRatLinearMap x
+      Hom.ofIsMorphism fWQ <| by
+        rw [hfWQ_codRestrict]
+        exact isMorphism_codRestrict W f.hom.toRatLinearMap hfC fun x ↦ by
+          rw [hWQ]
+          exact LinearMap.mem_range_self f.hom.toRatLinearMap x
     have hfWQ : fW.hom.toRatLinearMap = fWQ :=
       Hom.ofIsMorphism_toRatLinearMap _ _
     have hfW_bijective : Function.Bijective fW.hom.toRatLinearMap := by
       rw [hfWQ]
-      constructor
-      · intro x y hxy
-        apply (mono_iff_injective f).1 inferInstance
-        exact congrArg Subtype.val hxy
-      · rintro ⟨y, hy⟩
-        rw [RationalHodgeSubstructure.ofRationalMorphismRange_WQ] at hy
-        obtain ⟨x, rfl⟩ := hy
-        exact ⟨x, rfl⟩
+      change Function.Bijective
+        ((LinearEquiv.ofEq _ _ hWQ.symm) ∘ f.hom.toRatLinearMap.rangeRestrict)
+      apply (LinearEquiv.ofEq _ _ hWQ.symm).bijective.comp
+      exact ⟨(LinearMap.injective_rangeRestrict_iff _).2 <| (mono_iff_injective f).1 inferInstance,
+        LinearMap.surjective_rangeRestrict _⟩
     let _ : IsIso fW := (isIso_iff_bijective fW).2 hfW_bijective
     have hfactor : fW ≫ substructureInclusion Y W = f := by
       apply Hom.ext
       rw [comp_toRatLinearMap, substructureInclusion_toRatLinearMap, hfWQ]
+      rw [hfWQ_codRestrict]
       exact LinearMap.subtype_comp_codRestrict _ _ _
     let _ : IsSplitMono (substructureInclusion Y W) :=
       isSplitMono_substructureInclusion Y W
