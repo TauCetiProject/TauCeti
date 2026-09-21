@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.AbelSummation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
@@ -227,9 +226,10 @@ private theorem norm_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) {t : ℝ} (ht : 0
 private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) (hz0 : z ≠ 0)
     {t : ℝ} (ht : 0 < t) :
     ‖deriv (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t‖ = ‖z‖ * t⁻¹ := by
+  have hneg : -z.re - 1 = (-1 : ℝ) := by rw [hz]; norm_num
   rw [deriv_ofReal_cpow_neg z hz0 ht, norm_mul, norm_neg,
-    Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re, hz,
-    show -0 - 1 = (-1 : ℝ) by ring, Real.rpow_neg_one]
+    Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re, hneg,
+    Real.rpow_neg_one]
 
 /-- **An imaginary-power Abel bound.** Suppose every index has `N`-value at least `1`, and the
 partial sums of `w` are bounded by `C * t ^ θ` for a positive exponent `θ`. Twisting the weight
@@ -275,8 +275,7 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
                     mul_le_mul_of_nonneg_left (hC t ht.1.le)
                       (mul_nonneg (norm_nonneg _) hinv)
               _ = ‖z‖ * C * t ^ (θ - 1) := by
-                rw [show θ - 1 = θ + (-1 : ℝ) by ring, Real.rpow_add ht0,
-                  Real.rpow_neg_one]
+                rw [sub_eq_add_neg, Real.rpow_add ht0, Real.rpow_neg_one]
                 ring
       _ = (‖z‖ * C) * ((x ^ θ - 1) / θ) := by
         rw [intervalIntegral.integral_const_mul,
@@ -297,7 +296,8 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
               (norm_sub_le (g x * summatory N w x)
                 (∫ t in Set.Ioc 1 x, deriv g t * summatory N w t))
     _ ≤ C * x ^ θ + (‖z‖ * C / θ) * x ^ θ := by
-      rw [show ‖g x‖ = 1 from norm_ofReal_cpow_neg z hz (zero_lt_one.trans_le hx), one_mul]
+      have hg_norm : ‖g x‖ = 1 := norm_ofReal_cpow_neg z hz (zero_lt_one.trans_le hx)
+      rw [hg_norm, one_mul]
       exact add_le_add (hC x hx) hbound_int
     _ = C * (1 + ‖z‖ / θ) * x ^ θ := by ring
 
@@ -349,7 +349,7 @@ theorem tsum_mul_le_of_summatory_le {a : ℝ} (ha : 0 ≤ a) (hN : ∀ i, a ≤ 
   exact summatory_mul_le_of_summatory_le N ha hN w hx (fun t ht ↦ hC t ht.1)
     (fun t ht ↦ hg_diff t ht.1) (hg_int x hx) (fun t ht ↦ hg_deriv t ht.1) (hg_nonneg x hx)
 
-/-! ### The prime carrier of a number field -/
+/-! ### The ideal and prime carriers of a number field -/
 
 variable (K : Type*) [Field K] [NumberField K]
 
