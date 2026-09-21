@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
+public import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
 # Collapsing an iterated product of powers into a single product of powers
@@ -40,19 +41,22 @@ variable {ι κ M G G₀ : Type*}
 power. This is the integral-exponent analogue of `Finset.prod_pow_eq_pow_sum`. -/
 theorem prod_zpow_eq_zpow_sum [CommGroup G] (s : Finset ι) (y : G) (e : ι → ℤ) :
     ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
-  classical
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s ha ih => rw [prod_cons, sum_cons, ih, zpow_add]
+  change ∏ i ∈ s, zpowersHom G y (.ofAdd (e i)) =
+    zpowersHom G y (.ofAdd (∑ i ∈ s, e i))
+  rw [← map_prod]
+  simp
 
 /-- A product of integral powers of one fixed invertible element of a commutative group with zero
 collapses to a single power. -/
 theorem prod_zpow_eq_zpow_sum₀ [CommGroupWithZero G₀] (s : Finset ι) {y : G₀} (hy : y ≠ 0)
     (e : ι → ℤ) : ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
-  classical
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s ha ih => rw [prod_cons, sum_cons, ih, zpow_add₀ hy]
+  let u : G₀ˣ := Units.mk0 y hy
+  simpa [u] using congrArg Units.val
+    (show ∏ i ∈ s, u ^ e i = u ^ ∑ i ∈ s, e i from by
+      change ∏ i ∈ s, zpowersHom G₀ˣ u (.ofAdd (e i)) =
+        zpowersHom G₀ˣ u (.ofAdd (∑ i ∈ s, e i))
+      rw [← map_prod]
+      simp)
 
 /-- Substituting the monomials `∏ b ∈ t, x b ^ e a b` into the monomial with natural exponents
 `g` produces the monomial whose exponent matrix is the product `∑ a ∈ s, g a * e a b`. -/
