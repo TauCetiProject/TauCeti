@@ -36,7 +36,7 @@ variable {R H B : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 is `e + ε[d,e]`. Thus the differential of the group adjoint action is the Lie bracket. -/
 -- Apply before the general adjoint and coefficient-map evaluation rules expand the input.
 @[simp↓]
-theorem adDerivation_dualNumber
+theorem adDerivation_dualNumber_apply
     (d e : Derivation R H (Bialgebra.CounitAlgebra R H B)) (a : H) :
     (Bialgebra.CounitAlgebra.algEquivSelf R H
       (DualNumber (Bialgebra.CounitAlgebra R H B)))
@@ -98,7 +98,7 @@ theorem adDerivation_dualNumber
   have hprodS : S ∘ₗ
       (toConv (p d).ofConv.toLinearMap * toConv E *
         toConv (p (-d)).ofConv.toLinearMap).ofConv = (⁅d, e⁆).toLinearMap := by
-    rw [snd_comp_convMul, snd_comp_convMul]
+    rw [LinearMap.snd_comp_convMul, LinearMap.snd_comp_convMul]
     rw [LinearMap.algHom_comp_convMul_distrib]
     simp only [toConv_ofConv, hF, hS, hFE, hSE, Derivation.coe_neg_linearMap,
       toConv_neg, toConv_zero, mul_zero, zero_add, one_mul, mul_one,
