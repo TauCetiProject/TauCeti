@@ -19,10 +19,7 @@ maps, `f_P (μ m x) = μ' (f_M m) (f_N x)`:
 (φ, f_P)^* (x ⌣_μ y) = (φ, f_M)^* x ⌣_{μ'} (φ, f_N)^* y.
 ```
 
-Each of the six shapes `(p, q)` with `p + q ≤ 2` gets one such theorem, and each proof is the same
-computation on cochains: the pullback moves the coefficient maps inside `μ`, where the intertwining
-hypothesis turns it into `μ'`, and the translation factor `φ h •` becomes `h •` by equivariance of
-the coefficient map it meets.
+Each of the six shapes `(p, q)` with `p + q ≤ 2` gets one such theorem.
 
 ## Main statements
 
@@ -37,14 +34,10 @@ the coefficient map it meets.
 
 ## Implementation notes
 
-The other named instance, the pair `(S ↪ G, id)`, is compatibility with restriction; it is proved
-directly on cocycle representatives in
+The other named instance, the pair `(S ↪ G, id)`, is compatibility with restriction; it is
+deduced from these theorems in
 `TauCeti/RepresentationTheory/Homological/ContCohomology/Cup/Restriction.lean`, where the
 statements are `simp` lemmas.
-
-This implements the coefficient-map half of the "compatibilities" milestone of Layer 8 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, in the general
-compatible-pair form that the same layer's inflation and corestriction targets need.
 
 ## References
 
@@ -160,9 +153,7 @@ variable (G : Type uG) [Group G] [TopologicalSpace G]
   (hpair : ∀ (m : M) (x : N), fP (μ m x) = μ' (fM m) (fN x))
 
 include hpair in
-/-- **Naturality of the `(1,0)` cup product in compatible pairs.** The translation factor of the
-`(1,0)` formula is carried across by equivariance of `f_N`, even though it acts on an invariant
-element. -/
+/-- **Naturality of the `(1,0)` cup product in compatible pairs.** -/
 theorem explicitMap1_explicitCup10 (a : H1 G M) (n : H0 G N) :
     explicitMap1 G P H P' φ fP hcP hfP (explicitCup10 G M N P μ hμ hequiv a n) =
       explicitCup10 H M' N' P' μ' hμ' hequiv'
@@ -253,9 +244,7 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (hpair : ∀ (m : M) (x : N), fP (μ m x) = μ' (fM m) (fN x))
 
 include hpair in
-/-- **Naturality of the `(2,0)` cup product in compatible pairs.** The translation factor of the
-`(2,0)` formula is `(φ h * φ k) •`, which multiplicativity of `φ` turns into `φ (h * k) •` before
-equivariance of `f_N` applies. -/
+/-- **Naturality of the `(2,0)` cup product in compatible pairs.** -/
 theorem explicitMap2_explicitCup20 (a : H2 G M) (n : H0 G N) :
     explicitMap2 G P H P' φ fP hcP hfP (explicitCup20 G M N P μ hμ hequiv a n) =
       explicitCup20 H M' N' P' μ' hμ' hequiv'
@@ -306,9 +295,8 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (hpair : ∀ (m : M) (x : N), fP (μ m x) = μ' (fM m) (fN x))
 
 include hpair in
-/-- **Naturality of the `(1,1)` cup product in compatible pairs.** This is the only shape that is
-not a coefficient map, so it is also the only one whose naturality does not already follow from
-the composition law `TauCeti.ContCohomology.explicitMap1_comp`. -/
+/-- **Naturality of the `(1,1)` cup product in compatible pairs.** This is the only shape in
+which neither factor is invariant, so the cup is not a coefficient map. -/
 theorem explicitMap2_explicitCup11 (a : H1 G M) (b : H1 G N) :
     explicitMap2 G P H P' φ fP hcP hfP (explicitCup11 G M N P μ hμ hequiv a b) =
       explicitCup11 H M' N' P' μ' hμ' hequiv'
