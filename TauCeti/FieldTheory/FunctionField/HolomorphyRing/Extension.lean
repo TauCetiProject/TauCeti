@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 /-!
 # Holomorphy rings in an extension: `𝒪'_P` is the integral closure of `𝒪_P`
@@ -25,13 +25,8 @@ Stichtenoth's Section III.3, and the base of the complementary module and the di
 Section III.4 — into an intersection of valuation rings, so that its arithmetic is the arithmetic
 of the places over `P`.
 
-One inclusion is formal: `𝒪_P` sits inside every `𝒪_{P'}` with `P' ∣ P`, and a valuation ring is
-integrally closed. For the other, a function of `F'` not integral over the base is separated from
-the integral closure by a valuation subring
-(`Subring.exists_le_valuationSubring_of_isIntegrallyClosedIn`, the domination lemma behind
-Stichtenoth's Theorem 3.2.6) which — containing the constants `k'` and being proper — is the
-valuation ring of a place of `F' / k'`; that the place lies over `S` is Stichtenoth's
-Corollary 3.2.8, already available as `TauCeti.coe_holomorphyRing_subset_integers_iff`.
+The setwise form complements the local integral-closure criterion for one place: it characterizes
+integrality over an arbitrary holomorphy ring by regularity above its defining set of places.
 
 ## Main results
 
@@ -47,9 +42,6 @@ Corollary 3.2.8, already available as `TauCeti.coe_holomorphyRing_subset_integer
   every function of `𝒪'_P` is regular are exactly the places over `P`, so `𝒪'_P` remembers the
   fibre; `TauCeti.coe_integralClosure_holomorphyRing_subset_integers_iff` is the version over a
   set of places.
-* `TauCeti.Place.isIntegral_algebraMap_iff_mem_integers`: `𝒪'_P` contracts to `𝒪_P`, that is, a
-  function of `F` is integral over `𝒪_P` exactly when it is regular at `P`.
-
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
@@ -76,11 +68,9 @@ variable (k F)
 
 /-- **Separating a non-integral function by a place.** If `z : F'` is not integral over a
 `k`-algebra `R` acting on `F'` through `F`, there is a place `P'` of `F' / k'` at which `z` is
-irregular while every function of `R` is regular at the place of `F / k` below `P'`.
-
-This is the engine of the theorems below: the integral closure of `R` in `F'` is integrally
-closed in `F'`, so it is dominated by a valuation subring avoiding `z`, and that valuation
-subring contains `k'` because `k'` is integral over `k`. -/
+irregular while every function of `R` is regular at the place of `F / k` below `P'`. This
+separation statement extends the one-place integral-closure criterion to arbitrary holomorphy
+rings. -/
 private theorem exists_place_of_not_isIntegral (hF' : IsFunctionField k' F')
     {R : Type*} [CommRing R] [Algebra k R] [Algebra R F] [Algebra R F']
     [IsScalarTower k R F'] [IsScalarTower R F F'] {z : F'} (hz : ¬ IsIntegral R z) :
@@ -135,18 +125,8 @@ theorem mem_holomorphyRing_setOf_restrict_eq_iff_isIntegral (hF' : IsFunctionFie
     (P : Place k F) {z : F'} :
     z ∈ holomorphyRing {P' : Place k' F' | P'.restrict k F = P} ↔
       IsIntegral ↥P.integers z := by
-  have : IsScalarTower k ↥P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply k F F', IsScalarTower.algebraMap_apply ↥P.integers F F',
-      ← IsScalarTower.algebraMap_apply k ↥P.integers F]
   rw [mem_holomorphyRing_iff]
-  refine ⟨fun hz ↦ by_contra fun hint ↦ ?_, fun hint P' hP' ↦ ?_⟩
-  · obtain ⟨Q, hQ, hzQ⟩ := exists_place_of_not_isIntegral k F hF' hint
-    refine hzQ (hz Q (Place.eq_of_integers_le (SetLike.le_def.mpr fun x hx ↦ ?_)).symm)
-    simpa using hQ ⟨x, hx⟩
-  · replace hP' : P'.restrict k F = P := hP'
-    refine P'.mem_integers_of_isIntegral (fun r ↦ ?_) hint
-    rw [IsScalarTower.algebraMap_apply ↥P.integers F F']
-    exact (Place.mem_integers_restrict_iff k F P' _).mp (by rw [hP']; exact r.2)
+  exact (Place.isIntegral_iff_forall_restrict_eq_mem_integers hF' P).symm
 
 /-- **`𝒪'_P` is the ring of functions regular over `P`**: the holomorphy ring of the places of
 `F' / k'` lying over the place `P` of `F / k` is the integral closure `𝒪'_P` of `𝒪_P` in `F'`
@@ -170,6 +150,7 @@ theorem isIntegral_integers_iff_forall_ord_nonneg (hF' : IsFunctionField k' F') 
 /-- The places of `F' / k'` at which every function of the integral closure of `𝒪_S` is regular
 are exactly the places lying over `S` (Stichtenoth, Corollary 3.2.8 read through the theorem
 above). -/
+@[simp]
 theorem coe_integralClosure_holomorphyRing_subset_integers_iff (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') (S : Set (Place k F)) (P' : Place k' F') :
     (integralClosure ↥(holomorphyRing S) F' : Set F') ⊆ P'.integers ↔ P'.restrict k F ∈ S := by
@@ -179,22 +160,11 @@ theorem coe_integralClosure_holomorphyRing_subset_integers_iff (hF : IsFunctionF
 /-- The places of `F' / k'` at which every function of `𝒪'_P` is regular are exactly the places
 lying over `P`, so the fibre over `P` is recovered from `𝒪'_P` (Stichtenoth, Corollary 3.2.8 read
 through the theorem above). -/
+@[simp]
 theorem coe_integralClosure_integers_subset_integers_iff (hF' : IsFunctionField k' F')
     (P : Place k F) (P' : Place k' F') :
     (integralClosure ↥P.integers F' : Set F') ⊆ P'.integers ↔ P'.restrict k F = P := by
   rw [← coe_holomorphyRing_setOf_restrict_eq hF' P,
     coe_holomorphyRing_subset_integers_iff hF', Set.mem_ofPred_eq]
-
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F'] [Algebra.IsIntegral k k'] [Algebra.IsIntegral F F'] in
-/-- **`𝒪'_P` contracts to `𝒪_P`**: a function of `F` is integral over `𝒪_P` in the extension `F'`
-exactly when it is regular at `P`.  So enlarging the field does not enlarge the ring of functions
-of `F` integral over `𝒪_P`, and `𝒪'_P ∩ F = 𝒪_P`. -/
-theorem Place.isIntegral_algebraMap_iff_mem_integers (P : Place k F) {x : F} :
-    IsIntegral ↥P.integers (algebraMap F F' x) ↔ x ∈ P.integers :=
-  (isIntegral_algHom_iff (IsScalarTower.toAlgHom ↥P.integers F F')
-      (algebraMap F F').injective (x := x)).trans
-    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.2) hx,
-      fun hx ↦ isIntegral_algebraMap (x := (⟨x, hx⟩ : P.integers))⟩
 
 end TauCeti
