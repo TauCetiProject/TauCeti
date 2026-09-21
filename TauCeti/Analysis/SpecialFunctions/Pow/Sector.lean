@@ -22,8 +22,8 @@ by `I` then carries the right half-plane to the upper half-plane, where Schwarz 
 
 * `Complex.cpow_inv_re_pos_of_arg_mem_sector` -- the inverse power maps the sector into the right
   half-plane.
-* `Complex.cpow_inv_cpow_eq_of_arg_mem_closed_sector` -- the inverse power is a genuine inverse on
-  the closed sector.
+* `Complex.cpow_inv_cpow_eq_of_arg_mem` -- the inverse power is a genuine inverse throughout the
+  principal-branch range.
 -/
 
 public section
@@ -45,16 +45,16 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
     simpa [div_inv_eq_mul, div_eq_mul_inv, hβ.ne', mul_comm, mul_left_comm, mul_assoc] using harg
   exact mul_pos hnorm (Real.cos_pos_of_mem_Ioo hangle)
 
-/-- On the closed sector of opening `βπ`, raising the principal inverse power back to the power
-`β` recovers the original point.  The endpoint rays are included. -/
-@[simp] theorem cpow_inv_cpow_eq_of_arg_mem_closed_sector {z : ℂ} {β : ℝ} (hβ : 0 < β)
-    (harg : z.arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
+/-- If dividing the argument by `β` stays in the principal-argument range, raising the principal
+inverse power back to the power `β` recovers the original point. -/
+@[simp] theorem cpow_inv_cpow_eq_of_arg_mem {z : ℂ} {β : ℝ} (hβ : 0 < β)
+    (harg : z.arg ∈ Ioc (-(Real.pi * β)) (Real.pi * β)) :
     (z ^ (β : ℂ)⁻¹) ^ (β : ℂ) = z := by
   rw [← ofReal_inv]
-  have hangle : z.arg * β⁻¹ ∈ Icc (-(Real.pi / 2)) (Real.pi / 2) := by
+  have hangle : z.arg * β⁻¹ ∈ Ioc (-Real.pi) Real.pi := by
     rw [← (Set.mem_preimage (f := fun x : ℝ => x * β⁻¹)),
-      preimage_mul_const_Icc₀ _ _ (inv_pos.mpr hβ)]
-    simpa [div_inv_eq_mul, div_eq_mul_inv, hβ.ne', mul_comm, mul_left_comm, mul_assoc] using harg
+      preimage_mul_const_Ioc₀ _ _ (inv_pos.mpr hβ)]
+    simpa [div_inv_eq_mul, hβ.ne', mul_comm] using harg
   rw [← cpow_mul]
   · rw [← ofReal_mul, inv_mul_cancel₀ hβ.ne', ofReal_one, cpow_one]
   · simp only [log_im, mul_im, ofReal_re, ofReal_im, mul_zero]
