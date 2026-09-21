@@ -23,7 +23,7 @@ so constructions formulated at the nonunital level apply directly to unital DG a
 
 * `TauCeti.NonUnitalDGAlgHom`: a morphism of nonunital DG algebras.
 * `TauCeti.NonUnitalDGAlgHom.id` and `TauCeti.NonUnitalDGAlgHom.comp`: identity and composition.
-* `TauCeti.DGAlgHom.toNonUnital`: forget that a DG algebra morphism preserves units.
+* `TauCeti.DGAlgHom.toNonUnitalDGAlgHom`: forget that a DG algebra morphism preserves units.
 
 ## References
 
@@ -192,7 +192,7 @@ variable {A' : Type uA} {B' : Type uB}
   {hA' : IsDGAlgebra 𝒜' dA'} {hB' : IsDGAlgebra ℬ' dB'}
 
 /-- Forget that a morphism of unital DG algebras preserves units. -/
-def toNonUnital (f : DGAlgHom hA' hB') :
+def toNonUnitalDGAlgHom (f : DGAlgHom hA' hB') :
     NonUnitalDGAlgHom hA'.toIsNonUnitalDGAlgebra hB'.toIsNonUnitalDGAlgebra where
   toNonUnitalAlgHom := f.toGradedAlgHom.toAlgHom.toNonUnitalAlgHom
   map_mem' := f.map_mem
@@ -200,30 +200,31 @@ def toNonUnital (f : DGAlgHom hA' hB') :
 
 /-- Forgetting units does not change the value of a DG algebra morphism. -/
 @[simp]
-theorem toNonUnital_apply (f : DGAlgHom hA' hB') (a : A') :
-    f.toNonUnital a = f a := (rfl)
+theorem toNonUnitalDGAlgHom_apply (f : DGAlgHom hA' hB') (a : A') :
+    f.toNonUnitalDGAlgHom a = f a := (rfl)
 
 @[simp]
-theorem coe_toNonUnital (f : DGAlgHom hA' hB') : ⇑f.toNonUnital = f :=
-  funext f.toNonUnital_apply
+theorem coe_toNonUnitalDGAlgHom (f : DGAlgHom hA' hB') : ⇑f.toNonUnitalDGAlgHom = f :=
+  funext f.toNonUnitalDGAlgHom_apply
 
 /-- Forgetting units sends the identity unital DG algebra morphism to the nonunital identity. -/
 @[simp]
-theorem toNonUnital_id (hA' : IsDGAlgebra 𝒜' dA') :
-    (DGAlgHom.id hA').toNonUnital =
+theorem toNonUnitalDGAlgHom_id (hA' : IsDGAlgebra 𝒜' dA') :
+    (DGAlgHom.id hA').toNonUnitalDGAlgHom =
       NonUnitalDGAlgHom.id hA'.toIsNonUnitalDGAlgebra := by
   ext a
-  simp only [toNonUnital_apply, DGAlgHom.id_apply, NonUnitalDGAlgHom.id_apply]
+  simp only [toNonUnitalDGAlgHom_apply, DGAlgHom.id_apply, NonUnitalDGAlgHom.id_apply]
 
 /-- Forgetting units preserves composition of DG algebra morphisms. -/
 @[simp]
-theorem toNonUnital_comp {C' : Type uC} [Ring C'] [Algebra R C']
+theorem toNonUnitalDGAlgHom_comp {C' : Type uC} [Ring C'] [Algebra R C']
     {𝒞' : ℤ → Submodule R C'} [GradedAlgebra 𝒞']
     {dC' : C' →ₗ[R] C'} {hC' : IsDGAlgebra 𝒞' dC'}
     (g : DGAlgHom hB' hC') (f : DGAlgHom hA' hB') :
-    (g.comp f).toNonUnital = g.toNonUnital.comp f.toNonUnital := by
+    (g.comp f).toNonUnitalDGAlgHom =
+      g.toNonUnitalDGAlgHom.comp f.toNonUnitalDGAlgHom := by
   ext a
-  simp only [toNonUnital_apply, DGAlgHom.comp_apply, NonUnitalDGAlgHom.comp_apply]
+  simp only [toNonUnitalDGAlgHom_apply, DGAlgHom.comp_apply, NonUnitalDGAlgHom.comp_apply]
 
 end DGAlgHom
 
