@@ -290,7 +290,9 @@ theorem indBotIsoLeftRegular_hom_hom_apply_coeff (v : indBot k G k) (g : G) :
       (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a) g⁻¹
   simp only [indBotIsoLeftRegular, Iso.trans_hom, hom_comp,
     IntertwiningMap.comp_apply]
-  rw [TauCeti.indTrivialIso_hom_hom_mk,
+  rw [TauCeti.indTrivialIso, Rep.mkIso_hom_hom_apply,
+    Representation.Equiv.coe_toLinearMap,
+    TauCeti.indTrivialEquiv_apply_mk,
     TauCeti.quotientBotIsoLeftRegular_hom_hom_single_mk,
     indBotEquivFinsupp_mk]
   simp only [MonoidAlgebra.coeff_single, Finsupp.single_apply]
