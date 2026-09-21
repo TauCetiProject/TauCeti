@@ -20,6 +20,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 
 * `Scheme.baseRingToFunctionField`: the canonical map from the base ring to the function field.
 * `Scheme.baseRingToStalk`: the canonical map from the base ring to a stalk.
+* `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
+  algebra structures.
 * `Scheme.baseStalkFunctionFieldIsScalarTower`: compatibility of the base, stalk, and
   function-field algebra structures.
 * `Scheme.finrank_residueField_eq_residueDegree`: over a field, the dimension of a residue field
@@ -68,6 +70,11 @@ instance (priority := 900) _root_.AlgebraicGeometry.Scheme.residueFieldBaseAlgeb
     Algebra k (X.residueField x) :=
   ((X.residue x).hom.comp (Scheme.baseRingToStalk k X x)).toAlgebra
 
+/-- The residue field at a point is canonically an algebra over its stalk. -/
+instance _root_.AlgebraicGeometry.Scheme.residueFieldStalkAlgebra (x : X) :
+    Algebra (X.presheaf.stalk x) (X.residueField x) :=
+  (X.residue x).hom.toAlgebra
+
 /-- The algebra map to the function field is the canonical composite from the base ring. -/
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.algebraMap_functionField_eq_baseRingToFunctionField
@@ -87,6 +94,21 @@ lemma _root_.AlgebraicGeometry.Scheme.algebraMap_residueField_eq_residue_comp_ba
     (x : X) :
     algebraMap k (X.residueField x) = (X.residue x).hom.comp (Scheme.baseRingToStalk k X x) :=
   rfl
+
+/-- The algebra map from a stalk to its residue field is the residue map. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.algebraMap_stalk_residueField_eq_residue (x : X) :
+    algebraMap (X.presheaf.stalk x) (X.residueField x) = (X.residue x).hom :=
+  rfl
+
+/-- The canonical maps from the base ring through a stalk to its residue field form a scalar
+tower. -/
+instance _root_.AlgebraicGeometry.Scheme.baseStalkResidueFieldIsScalarTower (x : X) :
+    IsScalarTower k (X.presheaf.stalk x) (X.residueField x) := by
+  apply IsScalarTower.of_algebraMap_eq'
+  rw [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk,
+    Scheme.algebraMap_stalk_residueField_eq_residue,
+    Scheme.algebraMap_stalk_eq_baseRingToStalk]
 
 /-- The residue at `x` of the image of a base ring element in the stalk is the evaluation at `x`
 of the corresponding global function: both are the germ at `x` followed by the residue map. -/
