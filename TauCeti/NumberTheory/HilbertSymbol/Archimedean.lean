@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 
 /-!
@@ -19,6 +20,10 @@ Over `ℝ` the equation `b = x² - a y²` is solvable unless both `a` and `b` ar
 the product `∏_{i<j} (a_i, a_j)` attached to a diagonal real form: it is `(-1)^(q(q-1)/2)`,
 where `q` is the number of negative coefficients.
 
+By Sylvester's law of inertia that count is the negative index of the form the family
+diagonalizes, so the product is an invariant of the isometry class and is the archimedean
+counterpart of the Hasse invariant of a form over a nonarchimedean local field.
+
 ## Main results
 
 * `TauCeti.hilbertSymbol_real`: the closed formula for the real symbol.
@@ -28,6 +33,9 @@ where `q` is the number of negative coefficients.
   `-1`.
 * `TauCeti.prod_hilbertSymbol_real`: the product of the symbols over ordered pairs of a finite
   family of real units.
+* `TauCeti.prod_hilbertSymbol_real_of_equiv_weightedSumSquares`: that product is `(-1)^(q(q-1)/2)`
+  for the negative index `q` of any real form the family diagonalizes, so it depends only on the
+  isometry class.
 
 ## References
 
@@ -120,6 +128,20 @@ theorem prod_hilbertSymbol_real {ι : Type*} [Fintype ι] [LinearOrder ι] (a : 
   ext ij
   simp only [mem_filter, mem_univ, mem_product, true_and]
   tauto
+
+/-- The product of the real Hilbert symbols over the ordered pairs of a diagonalization of a
+real quadratic form is `(-1)^(q(q-1)/2)`, where `q = sigNeg Q` is the negative index of the
+form.  In particular the product depends only on the isometry class of `Q` and not on the chosen
+diagonalization. -/
+theorem prod_hilbertSymbol_real_of_equiv_weightedSumSquares {M : Type*} [AddCommGroup M]
+    [Module ℝ M] {ι : Type*} [Fintype ι] [LinearOrder ι] {Q : _root_.QuadraticForm ℝ M}
+    {a : ι → ℝˣ}
+    (h : Q.Equivalent (QuadraticMap.weightedSumSquares ℝ fun i ↦ (a i : ℝ))) :
+    ∏ ij ∈ univ.filter (fun ij : ι × ι => ij.1 < ij.2), hilbertSymbol (a ij.1) (a ij.2) =
+      (-1) ^ (sigNeg Q).choose 2 := by
+  classical
+  rw [prod_hilbertSymbol_real, _root_.QuadraticForm.sigNeg_of_equiv_weightedSumSquares h,
+    Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
 
 end Real
 
