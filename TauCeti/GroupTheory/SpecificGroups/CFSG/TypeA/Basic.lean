@@ -209,6 +209,10 @@ noncomputable def frobenius (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientG
 
 /-- The type-A Frobenius is the standard carrier's Frobenius at the characteristic and field
 exponent recorded by the index. -/
+-- The body of `frobenius` is not exposed, so downstream modules cannot unfold the definition
+-- itself; this equation is how they reach the standard carrier's Frobenius. As in
+-- `TauCeti.TypeBLieIndex.frobenius_def`, it is deliberately not a `simp` lemma: unfolding to
+-- `TauCeti.SlStd.frobenius` would keep `frobenius_simpleRootSubgroup` from firing.
 theorem frobenius_def (d : TypeALieIndex) :
     d.frobenius =
       SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure :=
