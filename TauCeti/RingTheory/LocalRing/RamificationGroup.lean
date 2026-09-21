@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
+public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
+public import TauCeti.Algebra.Ring.Action.End
+public import TauCeti.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.RingTheory.Ideal.Inertia
+public import TauCeti.RingTheory.LocalRing.Pointwise
 
 /-!
 # The ramification filtration of a group acting on a local ring
@@ -39,14 +43,17 @@ integer indexing that Herbrand theory uses.
 
 * `TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one` and
   `TauCeti.IsLocalRing.ramificationGroup_antitone`: the filtration starts at `⊤` and decreases.
-* `TauCeti.IsLocalRing.ramificationGroup_zero`: `G_0` is the kernel of the action on the residue
-  field, and `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` identifies it with
-  Mathlib's `ValuationSubring.inertiaSubgroup` for a valuation subring of a field.
+* `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia`: `G_0` is the inertia subgroup of the
+  maximal ideal, `TauCeti.IsLocalRing.ramificationGroup_zero_eq_ker_toRingAut` identifies it with
+  the kernel of the action on the residue field, and
+  `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` reads that off as Mathlib's
+  `ValuationSubring.inertiaSubgroup` for a valuation subring of a field.
 * `TauCeti.IsLocalRing.instNormalRamificationGroup`: each `G_i` is normal in `G`.
-* `TauCeti.IsLocalRing.iInf_ramificationGroup` and
-  `TauCeti.IsLocalRing.exists_ramificationGroup_eq_bot`: for a faithful action on a Noetherian
-  local ring the filtration separates points, and it is trivial from some index on when `G` is
-  finite.
+* `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
+  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`: over a Noetherian local ring the
+  filtration cuts out the kernel of the action, and reaches it at a finite index once `G_0` is
+  finite; `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_bot` and
+  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot` are the faithful case.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_eq_top`: when `S` is generated over a
   base ring `R` whose elements `G` fixes by a set `s`, membership in `G_i` is decided on `s`
   alone; `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top` is the
@@ -56,26 +63,16 @@ integer indexing that Herbrand theory uses.
 
 ## References
 
-* [J.-P. Serre, *Corps Locaux*][serre1968corpslocaux], Chapter IV, §1.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §1.
 -/
 
 public section
 
 open IsLocalRing
 
+open scoped Pointwise
+
 namespace TauCeti
-
-namespace MulSemiringAction
-
-variable {G : Type*} [Group G] {S : Type*} [Ring S] [MulSemiringAction G S]
-
-/-- Membership in the kernel of the automorphism representation means acting trivially on every
-element. -/
-theorem mem_ker_toRingAut_iff {σ : G} :
-    σ ∈ MonoidHom.ker (_root_.MulSemiringAction.toRingAut G S) ↔ ∀ x : S, σ • x = x := by
-  simp [MonoidHom.mem_ker, RingEquiv.ext_iff]
-
-end MulSemiringAction
 
 namespace IsLocalRing
 
@@ -111,6 +108,12 @@ theorem mem_ramificationGroup_natCast_iff {n : ℕ} {σ : G} :
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
   rw [mem_ramificationGroup_iff, h]
 
+/-- At the index `0` the defining condition is congruence modulo the maximal ideal itself. -/
+theorem mem_ramificationGroup_zero_iff {σ : G} :
+    σ ∈ ramificationGroup G S 0 ↔ ∀ x : S, σ • x - x ∈ maximalIdeal S := by
+  have h : ((0 : ℤ) + 1).toNat = 1 := by omega
+  rw [mem_ramificationGroup_iff, h, pow_one]
+
 /-- Membership in `G_i` says that `σ` acts trivially on `S ⧸ 𝔪 ^ (i + 1)`. -/
 theorem mem_ramificationGroup_iff_quotient_mk_smul_eq {i : ℤ} {σ : G} :
     σ ∈ ramificationGroup G S i ↔ ∀ x : S,
@@ -127,6 +130,12 @@ theorem ramificationGroup_eq_top_of_le_neg_one {i : ℤ} (hi : i ≤ -1) :
   ext σ
   simp [mem_ramificationGroup_iff, h]
 
+/-- The zeroth ramification group is the inertia subgroup of the maximal ideal. -/
+theorem ramificationGroup_zero_eq_inertia :
+    ramificationGroup G S 0 = Ideal.inertia G (maximalIdeal S) := by
+  have h : ((0 : ℤ) + 1).toNat = 1 := by omega
+  rw [ramificationGroup_def, h, pow_one]
+
 /-- The ramification filtration is decreasing. -/
 theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by
   intro i j hij σ hσ
@@ -140,31 +149,13 @@ section Adjoin
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
 
-/-- **Serre's criterion.** When `S` is generated over `R` by a set `s` and `G` acts by `R`-algebra
-automorphisms, membership in `G_i` is decided on `s` alone: the elements moved into `𝔪 ^ (i + 1)`
-form an `R`-subalgebra. -/
+/-- **Serre's criterion** for the ramification filtration: when `S` is generated over `R` by a set
+`s` and `G` acts by `R`-algebra automorphisms, membership in `G_i` is decided on `s` alone. This
+is `TauCeti.Ideal.mem_inertia_iff_of_adjoin_eq_top` at a power of the maximal ideal. -/
 theorem mem_ramificationGroup_iff_of_adjoin_eq_top {s : Set S} (hs : Algebra.adjoin R s = ⊤)
     {i : ℤ} {σ : G} :
     σ ∈ ramificationGroup G S i ↔ ∀ x ∈ s, σ • x - x ∈ maximalIdeal S ^ (i + 1).toNat := by
-  rw [mem_ramificationGroup_iff]
-  refine ⟨fun h x _ ↦ h x, fun h x ↦ ?_⟩
-  have hx : x ∈ Algebra.adjoin R s := hs ▸ Algebra.mem_top
-  induction hx using Algebra.adjoin_induction with
-  | mem y hy => exact h y hy
-  | algebraMap r =>
-      have hr : σ • algebraMap R S r = algebraMap R S r := by simp
-      rw [hr, sub_self]
-      exact zero_mem _
-  | add y z _ _ hy hz =>
-      have hyz : σ • (y + z) - (y + z) = (σ • y - y) + (σ • z - z) := by
-        rw [smul_add]; ring
-      rw [hyz]
-      exact add_mem hy hz
-  | mul y z _ _ hy hz =>
-      have hyz : σ • (y * z) - y * z = σ • y * (σ • z - z) + (σ • y - y) * z := by
-        rw [smul_mul']; ring
-      rw [hyz]
-      exact add_mem (Ideal.mul_mem_left _ _ hz) (Ideal.mul_mem_right _ _ hy)
+  rw [ramificationGroup_def, TauCeti.Ideal.mem_inertia_iff_of_adjoin_eq_top hs]
 
 /-- The monogenic case of **Serre's criterion**: when `S` is generated over `R` by a single
 element `ξ`, membership in `G_i` is decided at `ξ` alone. This is what makes the filtration
@@ -173,7 +164,7 @@ through local monogenicity. -/
 theorem mem_ramificationGroup_iff_of_adjoin_singleton_eq_top {ξ : S}
     (hξ : Algebra.adjoin R {ξ} = ⊤) {i : ℤ} {σ : G} :
     σ ∈ ramificationGroup G S i ↔ σ • ξ - ξ ∈ maximalIdeal S ^ (i + 1).toNat := by
-  simp [mem_ramificationGroup_iff_of_adjoin_eq_top hξ]
+  rw [ramificationGroup_def, TauCeti.Ideal.mem_inertia_iff_of_adjoin_singleton_eq_top hξ]
 
 end Adjoin
 
@@ -181,28 +172,12 @@ section Normal
 
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
-/-- A group acting by ring automorphisms on a local ring preserves the powers of the maximal
-ideal. -/
-theorem smul_mem_maximalIdeal_pow (σ : G) {n : ℕ} {x : S} (hx : x ∈ maximalIdeal S ^ n) :
-    σ • x ∈ maximalIdeal S ^ n := by
-  have hsurj : Function.Surjective (MulSemiringAction.toRingHom G S σ) :=
-    fun y ↦ ⟨σ⁻¹ • y, smul_inv_smul σ y⟩
-  have hmap : (maximalIdeal S ^ n).map (MulSemiringAction.toRingHom G S σ) =
-      maximalIdeal S ^ n := by
-    rw [Ideal.map_pow, IsLocalRing.map_maximalIdeal_of_surjective _ hsurj]
-  exact hmap ▸ Ideal.mem_map_of_mem (MulSemiringAction.toRingHom G S σ) hx
-
-/-- Every ramification group is normal, because the action preserves the powers of the maximal
+/-- Every ramification group is normal, because the action fixes the powers of the maximal
 ideal. -/
 instance instNormalRamificationGroup (G : Type*) [Group G] (S : Type*) [CommRing S]
-    [IsLocalRing S] [MulSemiringAction G S] (i : ℤ) : (ramificationGroup G S i).Normal where
-  conj_mem σ hσ τ := by
-    rw [mem_ramificationGroup_iff] at hσ ⊢
-    intro x
-    have h : (τ * σ * τ⁻¹) • x - x = τ • (σ • (τ⁻¹ • x) - τ⁻¹ • x) := by
-      simp [mul_smul, smul_sub]
-    rw [h]
-    exact smul_mem_maximalIdeal_pow τ (hσ _)
+    [IsLocalRing S] [MulSemiringAction G S] (i : ℤ) : (ramificationGroup G S i).Normal := by
+  simp_rw [ramificationGroup_def, Subgroup.normal_iff_map_conj_eq, ← Ideal.inertia_smul]
+  exact fun σ ↦ congrArg (Ideal.inertia G) (smul_maximalIdeal_pow σ _)
 
 end Normal
 
@@ -212,72 +187,94 @@ variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemi
 
 /-- The zeroth ramification group is the inertia group: the kernel of the induced action on the
 residue field. -/
-theorem ramificationGroup_zero :
+theorem ramificationGroup_zero_eq_ker_toRingAut :
     ramificationGroup G S 0 = MonoidHom.ker (MulSemiringAction.toRingAut G (ResidueField S)) := by
   ext σ
-  rw [mem_ramificationGroup_iff, TauCeti.MulSemiringAction.mem_ker_toRingAut_iff]
+  rw [mem_ramificationGroup_zero_iff, TauCeti.MulSemiringAction.mem_ker_toRingAut_iff]
   constructor
   · intro h y
     obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective y
     have hx : residue S (σ • x - x) = 0 := by
       rw [residue_eq_zero_iff]
-      simpa using h x
+      exact h x
     rwa [map_sub, ResidueField.residue_smul, sub_eq_zero] at hx
   · intro h x
     have hx : residue S (σ • x - x) = 0 := by
       rw [map_sub, ResidueField.residue_smul, sub_eq_zero]
       exact h (residue S x)
-    rw [residue_eq_zero_iff] at hx
-    simpa using hx
+    rwa [residue_eq_zero_iff] at hx
 
 /-- For a valuation subring of a field, the zeroth ramification group of the decomposition
-subgroup is Mathlib's `ValuationSubring.inertiaSubgroup`. -/
+subgroup is Mathlib's `ValuationSubring.inertiaSubgroup`, which is defined as that same kernel. -/
 theorem ramificationGroup_zero_eq_inertiaSubgroup (K : Type*) {L : Type*} [Field K] [Field L]
     [Algebra K L] (A : ValuationSubring L) :
-    ramificationGroup (A.decompositionSubgroup K) A 0 = A.inertiaSubgroup K :=
-  ramificationGroup_zero _ _
+    ramificationGroup (A.decompositionSubgroup K) A 0 = A.inertiaSubgroup K := by
+  rw [ramificationGroup_zero_eq_ker_toRingAut, ValuationSubring.inertiaSubgroup]
 
 end ResidueField
 
 section Separated
 
 variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-variable [IsNoetherianRing S] [FaithfulSMul G S]
+variable [IsNoetherianRing S]
+
+/-- Over a Noetherian local ring the ramification filtration cuts out the kernel of the action:
+an element moving no point of `S` into every power of the maximal ideal is one that moves no
+point at all. -/
+theorem iInf_ramificationGroup_eq_ker :
+    ⨅ i : ℤ, ramificationGroup G S i = MonoidHom.ker (MulSemiringAction.toRingAut G S) := by
+  ext σ
+  rw [Subgroup.mem_iInf, TauCeti.MulSemiringAction.mem_ker_toRingAut_iff]
+  refine ⟨fun hσ x ↦ ?_, fun h i ↦ mem_ramificationGroup_iff.2 fun x ↦ ?_⟩
+  · have hmem : σ • x - x ∈ ⨅ n : ℕ, maximalIdeal S ^ n := by
+      refine Submodule.mem_iInf _ |>.2 fun n ↦ ?_
+      have h : (((n : ℤ) - 1) + 1).toNat = n := by omega
+      have hx := mem_ramificationGroup_iff.1 (hσ ((n : ℤ) - 1)) x
+      rwa [h] at hx
+    rw [Ideal.iInf_pow_eq_bot_of_isLocalRing _ (maximalIdeal.isMaximal S).ne_top,
+      Ideal.mem_bot, sub_eq_zero] at hmem
+    exact hmem
+  · rw [h x, sub_self]
+    exact zero_mem _
 
 /-- A faithful action on a Noetherian local ring is separated by its ramification filtration. -/
-theorem iInf_ramificationGroup : ⨅ i : ℤ, ramificationGroup G S i = ⊥ := by
-  refine le_antisymm (fun σ hσ ↦ ?_) bot_le
-  rw [Subgroup.mem_iInf] at hσ
-  refine Subgroup.mem_bot.2 (eq_of_smul_eq_smul fun x : S ↦ ?_)
-  have hmem : σ • x - x ∈ ⨅ n : ℕ, maximalIdeal S ^ n := by
-    refine Submodule.mem_iInf _ |>.2 fun n ↦ ?_
-    have h : (((n : ℤ) - 1) + 1).toNat = n := by omega
-    have := mem_ramificationGroup_iff.1 (hσ ((n : ℤ) - 1)) x
-    rwa [h] at this
-  rw [Ideal.iInf_pow_eq_bot_of_isLocalRing _ (maximalIdeal.isMaximal S).ne_top,
-    Ideal.mem_bot, sub_eq_zero] at hmem
-  rw [hmem, one_smul]
+theorem iInf_ramificationGroup_eq_bot [FaithfulSMul G S] :
+    ⨅ i : ℤ, ramificationGroup G S i = ⊥ := by
+  rw [iInf_ramificationGroup_eq_ker, TauCeti.MulSemiringAction.ker_toRingAut_eq_bot]
 
-/-- For a faithful action of a finite group on a Noetherian local ring the ramification groups
-vanish from some index on. -/
-theorem exists_ramificationGroup_eq_bot [Finite G] :
+omit [IsNoetherianRing S] in
+/-- The intersection over the integer indices is already attained over the natural ones, since the
+filtration is constantly `⊤` below `0`. -/
+private theorem iInf_natCast_ramificationGroup :
+    ⨅ n : ℕ, ramificationGroup G S (n : ℤ) = ⨅ i : ℤ, ramificationGroup G S i :=
+  le_antisymm
+    (le_iInf fun i ↦ (iInf_le _ i.toNat).trans
+      (ramificationGroup_antitone G S (Int.self_le_toNat i)))
+    (le_iInf fun n ↦ iInf_le _ (n : ℤ))
+
+/-- Once the zeroth ramification group is finite, the filtration over a Noetherian local ring
+reaches the kernel of the action at a finite index. -/
+theorem exists_forall_ramificationGroup_eq_ker [Finite (ramificationGroup G S 0)] :
+    ∃ N : ℤ, ∀ i : ℤ, N ≤ i →
+      ramificationGroup G S i = MonoidHom.ker (MulSemiringAction.toRingAut G S) := by
+  have hanti : Antitone fun n : ℕ ↦ ramificationGroup G S (n : ℤ) :=
+    fun _ _ hmn ↦ ramificationGroup_antitone G S (by exact_mod_cast hmn)
+  have h0 : (fun n : ℕ ↦ ramificationGroup G S (n : ℤ)) 0 = ramificationGroup G S 0 := by
+    norm_num
+  have : Finite ((fun n : ℕ ↦ ramificationGroup G S (n : ℤ)) 0) := h0 ▸ ‹_›
+  obtain ⟨N, hN⟩ := TauCeti.Subgroup.exists_forall_eq_iInf_of_antitone _ hanti
+  refine ⟨(N : ℤ), fun i hi ↦ ?_⟩
+  have hiN : N ≤ i.toNat := by omega
+  rw [show i = ((i.toNat : ℤ)) by omega, hN i.toNat hiN, iInf_natCast_ramificationGroup,
+    iInf_ramificationGroup_eq_ker]
+
+/-- For a faithful action whose zeroth ramification group is finite, the ramification groups over
+a Noetherian local ring vanish from some index on. -/
+theorem exists_forall_ramificationGroup_eq_bot [FaithfulSMul G S]
+    [Finite (ramificationGroup G S 0)] :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i → ramificationGroup G S i = ⊥ := by
-  classical
-  have key : ∀ σ : G, σ ≠ 1 → ∃ i : ℤ, σ ∉ ramificationGroup G S i := by
-    intro σ hσ
-    by_contra hcon
-    push Not at hcon
-    refine hσ ?_
-    have hmem : σ ∈ ⨅ i : ℤ, ramificationGroup G S i := Subgroup.mem_iInf.2 hcon
-    rw [iInf_ramificationGroup] at hmem
-    exact hmem
-  choose! f hf using key
-  obtain ⟨N, hN⟩ := (Set.finite_range f).bddAbove
-  refine ⟨N, fun i hi ↦ eq_bot_iff.2 fun σ hσi ↦ ?_⟩
-  by_contra hσ
-  rw [Subgroup.mem_bot] at hσ
-  exact hf σ hσ
-    (ramificationGroup_antitone G S ((hN (Set.mem_range_self σ)).trans hi) hσi)
+  simpa only [TauCeti.MulSemiringAction.ker_toRingAut_eq_bot] using
+    exists_forall_ramificationGroup_eq_ker G S
 
 end Separated
 
@@ -286,20 +283,13 @@ section DiscreteValuationRing
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
 variable [MulSemiringAction G S]
 
-/-- Membership in a power of the maximal ideal of a discrete valuation ring, read on the additive
-valuation. -/
-theorem mem_maximalIdeal_pow_iff_le_addVal {n : ℕ} {x : S} :
-    x ∈ maximalIdeal S ^ n ↔ (n : ℕ∞) ≤ IsDiscreteValuationRing.addVal S x := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible S
-  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
-    ← IsDiscreteValuationRing.addVal_le_iff_dvd, hϖ.addVal_pow]
-
 /-- Over a discrete valuation ring the ramification groups are cut out by the valuation
 inequality `v (σ x - x) ≥ i + 1`, which is Serre's definition. -/
 theorem mem_ramificationGroup_iff_le_addVal {i : ℤ} {σ : G} :
     σ ∈ ramificationGroup G S i ↔
       ∀ x : S, ((i + 1).toNat : ℕ∞) ≤ IsDiscreteValuationRing.addVal S (σ • x - x) := by
-  simp only [mem_ramificationGroup_iff, mem_maximalIdeal_pow_iff_le_addVal]
+  simp only [mem_ramificationGroup_iff,
+    TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
 
 end DiscreteValuationRing
 
@@ -331,19 +321,39 @@ theorem ramificationGroupReal_def (u : ℝ) :
   -- `(rfl)` for the same reason as in `ramificationGroup_def`.
   (rfl)
 
+variable {G S} in
+/-- The defining membership criterion of the real-indexed ramification groups. -/
+@[simp]
+theorem mem_ramificationGroupReal_iff {u : ℝ} {σ : G} :
+    σ ∈ ramificationGroupReal G S u ↔ ∀ x : S, σ • x - x ∈ maximalIdeal S ^ (⌈u⌉ + 1).toNat := by
+  rw [ramificationGroupReal_def, mem_ramificationGroup_iff]
+
+/-- Every real-indexed ramification group is normal in `G`. -/
+instance instNormalRamificationGroupReal (u : ℝ) : (ramificationGroupReal G S u).Normal := by
+  rw [ramificationGroupReal_def]
+  infer_instance
+
 /-- The real-indexed ramification filtration is decreasing. -/
 theorem ramificationGroupReal_antitone : Antitone (ramificationGroupReal G S) :=
   fun _ _ huv ↦ ramificationGroup_antitone G S (Int.ceil_mono huv)
 
+/-- The real-indexed filtration of a subgroup is the trace on it of the real-indexed filtration of
+the ambient group. -/
+@[simp]
+theorem subgroupOf_ramificationGroupReal (H : Subgroup G) (u : ℝ) :
+    (ramificationGroupReal G S u).subgroupOf H = ramificationGroupReal H S u := by
+  rw [ramificationGroupReal_def, ramificationGroupReal_def, subgroupOf_ramificationGroup]
+
+/-- At an integer argument the real-indexed filtration agrees with the integer-indexed one. -/
 @[simp]
 theorem ramificationGroupReal_intCast (i : ℤ) :
     ramificationGroupReal G S (i : ℝ) = ramificationGroup G S i := by
-  rw [ramificationGroupReal, Int.ceil_intCast]
+  rw [ramificationGroupReal_def, Int.ceil_intCast]
 
 /-- The real indexing is constant on the interval `(i - 1, i]`. -/
 theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft : (i : ℝ) - 1 < u)
     (hright : u ≤ i) : ramificationGroupReal G S u = ramificationGroup G S i := by
-  rw [ramificationGroupReal, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
+  rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
 
 end Real
 
