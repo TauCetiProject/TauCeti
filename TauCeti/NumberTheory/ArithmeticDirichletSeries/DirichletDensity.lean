@@ -38,7 +38,9 @@ the denominator.
   ratio, characterized by `NumberField.Set.isLowerDirichletDensityBound_iff` and
   `NumberField.Set.isUpperDirichletDensityBound_iff`, and
   `NumberField.Set.hasDirichletDensity_of_upperBound_of_lowerBound`, which turns a matching pair
-  of them into a genuine density.
+  of them into a genuine density. The resulting characterization of
+  `NumberField.Set.HasDirichletDensity` is
+  `NumberField.Set.hasDirichletDensity_iff_upperBound_and_lowerBound`.
 * `NumberField.Set.hasDirichletDensity_of_subset_of_subset`: the resulting squeeze.
 * `NumberField.Set.HasDirichletDensity.union`,
   `NumberField.Set.HasDirichletDensity.biUnion_finset`,
@@ -216,6 +218,13 @@ theorem hasDirichletDensity_of_upperBound_of_lowerBound (hup : S.IsUpperDirichle
   filter_upwards [hlo ε hε, hup ε hε] with s h₁ h₂
   rw [Real.dist_eq, abs_lt]
   constructor <;> linarith
+
+/-- Having Dirichlet density `δ` is exactly having `δ` as both an upper and a lower bound. -/
+theorem hasDirichletDensity_iff_upperBound_and_lowerBound :
+    S.HasDirichletDensity δ ↔
+      S.IsUpperDirichletDensityBound δ ∧ S.IsLowerDirichletDensityBound δ :=
+  ⟨fun h ↦ ⟨h.isUpperDirichletDensityBound, h.isLowerDirichletDensityBound⟩,
+    fun h ↦ hasDirichletDensity_of_upperBound_of_lowerBound h.1 h.2⟩
 
 /-- The density ratio is monotone in the set of primes, on a right neighbourhood of `1`. -/
 private theorem eventually_ratio_le (hST : S ⊆ T) :
