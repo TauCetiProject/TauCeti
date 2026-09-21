@@ -37,6 +37,7 @@ public section
 noncomputable section
 
 open ValuativeRel
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -54,22 +55,44 @@ group. -/
 theorem ker_residueField_toAlgAut :
     (MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]).ker =
       𝓂[L].inertia (L ≃ₐ[K] L) := by
+  let _ : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
+    ⟨fun σ x y => by
+      simpa only [AlgEquiv.integerRingAlgEquiv_apply] using
+        (map_smul σ.integerRingAlgEquiv x y)⟩
   ext σ
-  rw [MonoidHom.mem_ker, Ideal.mem_inertia]
+  let σ' : MulAction.stabilizer (L ≃ₐ[K] L) 𝓂[L] := ⟨σ, by
+    rw [MulAction.mem_stabilizer_iff, Ideal.pointwise_smul_eq_comap]
+    exact IsLocalRing.eq_maximalIdeal inferInstance⟩
+  have haction :
+      MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L] σ =
+        Ideal.Quotient.stabilizerHom 𝓂[L] 𝓂[K] (L ≃ₐ[K] L) σ' := by
+    ext x
+    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+    rw [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply]
+    -- Mathlib's generic action is on the quotient, definitionally the residue field.
+    change σ • IsLocalRing.residue 𝒪[L] x =
+      IsLocalRing.residue 𝒪[L] (σ' • x)
+    rw [IsLocalRing.ResidueField.residue_smul]
+    rfl
+  rw [MonoidHom.mem_ker]
   constructor
-  · intro h x
-    rw [← IsLocalRing.residue_eq_zero_iff, map_sub,
-      IsLocalRing.ResidueField.residue_smul]
-    exact sub_eq_zero.mpr (by
-      simpa using DFunLike.congr_fun h (IsLocalRing.residue 𝒪[L] x))
   · intro h
-    ext y
-    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective y
-    -- Expose the induced action after reducing to a representative of the residue class.
-    change σ • IsLocalRing.residue 𝒪[L] x = IsLocalRing.residue 𝒪[L] x
-    rw [← IsLocalRing.ResidueField.residue_smul, ← sub_eq_zero, ← map_sub,
-      IsLocalRing.residue_eq_zero_iff]
-    exact h x
+    have hgeneric :
+        Ideal.Quotient.stabilizerHom 𝓂[L] 𝓂[K] (L ≃ₐ[K] L) σ' = 1 :=
+      haction.symm.trans h
+    have hmem : σ' ∈ 𝓂[L].inertia (MulAction.stabilizer (L ≃ₐ[K] L) 𝓂[L]) := by
+      rw [← Ideal.Quotient.ker_stabilizerHom 𝓂[L] 𝓂[K] (L ≃ₐ[K] L),
+        MonoidHom.mem_ker]
+      exact hgeneric
+    exact Ideal.coe_mem_inertia.mpr hmem
+  · intro h
+    have hmem : σ' ∈ 𝓂[L].inertia (MulAction.stabilizer (L ≃ₐ[K] L) 𝓂[L]) :=
+      Ideal.coe_mem_inertia.mp h
+    have hgeneric :
+        Ideal.Quotient.stabilizerHom 𝓂[L] 𝓂[K] (L ≃ₐ[K] L) σ' = 1 := by
+      rw [← MonoidHom.mem_ker, Ideal.Quotient.ker_stabilizerHom]
+      exact hmem
+    exact haction.trans hgeneric
 
 /-- The inertia group of an unramified finite Galois extension of local fields is trivial. -/
 theorem IsUnramified.inertia_eq_bot [IsUnramified K L] :
@@ -88,17 +111,22 @@ theorem IsUnramified.inertia_eq_bot [IsUnramified K L] :
 group of its residue-field extension. -/
 theorem residueField_toAlgAut_bijective [IsUnramified K L] :
     Function.Bijective (MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]) := by
-  rw [Nat.bijective_iff_injective_and_card]
   constructor
   · rw [← MonoidHom.ker_eq_bot_iff, ker_residueField_toAlgAut,
       IsUnramified.inertia_eq_bot]
-  · calc
-      Nat.card (L ≃ₐ[K] L) = Module.finrank K L := IsGalois.card_aut_eq_finrank K L
-      _ = inertiaDegree K L := IsUnramified.inertiaDegree_eq_finrank.symm
-      _ = Module.finrank 𝓀[K] 𝓀[L] := inertiaDegree_def K L
-      _ = Nat.card (𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L]) := by
-        simpa using Nat.card_eq_of_bijective _
-          (FiniteField.bijective_frobeniusAlgEquivOfAlgebraic_pow 𝓀[K] 𝓀[L])
+  · intro τ
+    obtain ⟨σ, hσ⟩ := Ideal.Quotient.stabilizerHom_surjective
+      (L ≃ₐ[K] L) 𝓂[K] 𝓂[L] τ
+    refine ⟨σ.1, ?_⟩
+    ext x
+    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+    have hx := DFunLike.congr_fun hσ (IsLocalRing.residue 𝒪[L] x)
+    -- Identify the quotient in `stabilizerHom` with the local ring's residue field.
+    change IsLocalRing.residue 𝒪[L] (σ.1 • x) =
+      τ (IsLocalRing.residue 𝒪[L] x) at hx
+    rw [IsLocalRing.ResidueField.residue_smul] at hx
+    rw [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply]
+    exact hx
 
 /-- The residue correspondence between the Galois groups of an unramified local extension and
 its residue-field extension. -/
@@ -204,8 +232,13 @@ theorem eq_frobeniusAlgEquiv_of_valuation_sub_pow_lt_one [IsUnramified K L]
   rw [← IsLocalRing.ResidueField.residue_smul]
   rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff]
   apply (Valuation.mem_maximalIdeal_iff (v := valuation L)).2
-  change valuation L (((σ • y : 𝒪[L]) : L) - (y : L) ^ Nat.card 𝓀[K]) < 1
-  rw [AlgEquiv.coe_smul_integerRing]
-  exact hσ y
+  have hsubtype :
+      valuation L (𝒪[L].subtype (σ • y - y ^ Nat.card 𝓀[K])) < 1 := by
+    rw [map_sub, map_pow]
+    have hcoe : 𝒪[L].subtype (σ • y) = σ (y : L) :=
+      AlgEquiv.coe_smul_integerRing σ y
+    rw [hcoe]
+    exact hσ y
+  exact hsubtype
 
 end TauCeti
