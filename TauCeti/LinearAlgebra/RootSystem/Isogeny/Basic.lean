@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 
 import Mathlib.LinearAlgebra.Matrix.Adjugate
+import TauCeti.Algebra.Module.LinearMap.Defs
 import TauCeti.GroupTheory.Index.Basic
 
 /-!
@@ -226,10 +227,6 @@ def smulId [Module.Free ℤ M] [Module.Finite ℤ M] [Module.Free ℤ N] [Module
     (smulId P c).exponent i = c := by
   rw [smulId]
 
--- Forgetting scalar compatibility commutes definitionally with composition.
-private theorem toAddMonoidHom_comp (g : M₂ →ₗ[R] M₃) (f : M →ₗ[R] M₂) :
-    (g ∘ₗ f).toAddMonoidHom = g.toAddMonoidHom.comp f.toAddMonoidHom := rfl
-
 /-- The composite of two isogenies, whose exponent at an index is the product of the exponent of
 the first at that index and the exponent of the second at its image. -/
 def comp (g : RootPairingIsogeny Q S) (f : RootPairingIsogeny P Q) :
@@ -246,7 +243,7 @@ def comp (g : RootPairingIsogeny Q S) (f : RootPairingIsogeny P Q) :
       simpa only [LinearMap.range_toAddSubgroup] using f.weightMap_finiteIndex
     have : g.weightMap.toAddMonoidHom.range.FiniteIndex := by
       simpa only [LinearMap.range_toAddSubgroup] using g.weightMap_finiteIndex
-    simpa only [LinearMap.range_toAddSubgroup, toAddMonoidHom_comp] using
+    simpa only [LinearMap.range_toAddSubgroup, LinearMap.toAddMonoidHom_comp] using
       AddMonoidHom.finiteIndex_range_comp f.weightMap.toAddMonoidHom
         g.weightMap.toAddMonoidHom
   coweightMap_finiteIndex := by
@@ -254,7 +251,7 @@ def comp (g : RootPairingIsogeny Q S) (f : RootPairingIsogeny P Q) :
       simpa only [LinearMap.range_toAddSubgroup] using g.coweightMap_finiteIndex
     have : f.coweightMap.toAddMonoidHom.range.FiniteIndex := by
       simpa only [LinearMap.range_toAddSubgroup] using f.coweightMap_finiteIndex
-    simpa only [LinearMap.range_toAddSubgroup, toAddMonoidHom_comp] using
+    simpa only [LinearMap.range_toAddSubgroup, LinearMap.toAddMonoidHom_comp] using
       AddMonoidHom.finiteIndex_range_comp g.coweightMap.toAddMonoidHom
         f.coweightMap.toAddMonoidHom
   weight_coweight_transpose x y := by
