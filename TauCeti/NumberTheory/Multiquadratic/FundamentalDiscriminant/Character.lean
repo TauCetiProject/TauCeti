@@ -56,6 +56,33 @@ theorem fundamentalDiscriminantChar_apply_int {D : ℤ} (hD : IsFundamentalDiscr
   rw [fundamentalDiscriminantChar_eq_genusChar hD hs rfl, changeLevel_self,
     genusChar_apply_int]
 
+/-- The fundamental-discriminant character at `-1` is the sign of the discriminant. -/
+theorem fundamentalDiscriminantChar_neg_one {D : ℤ} (hD : IsFundamentalDiscriminant D) :
+    fundamentalDiscriminantChar D hD (-1) = D.sign := by
+  obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
+  have h := fundamentalDiscriminantChar_apply_int hD hs hprod (-1)
+  rw [genusCharFun_neg_one_eq_sign_prod hs, hprod] at h
+  simpa using h
+
+/-- The Dirichlet character of a fundamental discriminant is quadratic. -/
+theorem fundamentalDiscriminantChar_isQuadratic {D : ℤ}
+    (hD : IsFundamentalDiscriminant D) :
+    (fundamentalDiscriminantChar D hD).IsQuadratic := by
+  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
+  intro a
+  have hval : fundamentalDiscriminantChar D hD a = genusCharFun s (a.val : ℤ) := by
+    calc
+      _ = fundamentalDiscriminantChar D hD ((a.val : ℕ) : ZMod D.natAbs) := by
+        rw [ZMod.natCast_zmod_val]
+      _ = genusCharFun s ((a.val : ℕ) : ℤ) := by
+        simpa only [Int.cast_natCast] using
+          fundamentalDiscriminantChar_apply_int hD hs hprod ((a.val : ℕ) : ℤ)
+  rw [hval]
+  by_cases ha : IsCoprime (a.val : ℤ) (∏ P ∈ s, P)
+  · exact Or.inr (genusCharFun_eq_one_or_eq_neg_one hs ha)
+  · exact Or.inl <| (genusCharFun_eq_zero_iff hs).mpr ha
+
 /-- The character of a fundamental discriminant has conductor exactly `|D|`. -/
 theorem isPrimitive_fundamentalDiscriminantChar {D : ℤ} (hD : IsFundamentalDiscriminant D) :
     IsPrimitive (fundamentalDiscriminantChar D hD) := by
