@@ -14,7 +14,7 @@ public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Fourier.ExpNegAbs
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
 /-!
@@ -508,39 +508,14 @@ theorem variance_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
   rw [h]
   norm_num
 
-private theorem laplaceMeasure_apply_eq_integral (μ b : ℝ) {s : Set ℝ} (hs : MeasurableSet s) :
-    laplaceMeasure μ b s = ENNReal.ofReal (∫ x in s, laplacePDFReal μ b x) := by
-  rw [laplaceMeasure_eq_withDensity, withDensity_apply _ hs]
-  simp_rw [laplacePDF_eq_ofReal]
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_laplacePDFReal μ).integrableOn
-    (.of_forall fun x ↦ laplacePDFReal_nonneg μ b x)]
-
 /-- Translating a Laplace distribution adds the translation to its location parameter. -/
 @[simp]
 theorem laplaceMeasure_map_add_const (μ y b : ℝ) :
     (laplaceMeasure μ b).map (· + y) = laplaceMeasure (μ + y) b := by
-  by_cases hb : 0 < b
-  · let e : ℝ ≃ᵐ ℝ := (Homeomorph.addRight y).symm.toMeasurableEquiv
-    have he' : ∀ x, HasDerivAt e ((fun _ ↦ 1) x) x := fun x ↦ (hasDerivAt_id x).sub_const y
-    have he_symm : e.symm = (fun x : ℝ ↦ x + y) := by
-      ext x
-      simp [e, Homeomorph.addRight]
-    rw [← he_symm]
-    ext s hs
-    have hpdf : laplacePDF μ b = fun x ↦ ENNReal.ofReal (laplacePDFReal μ b x) := by
-      funext x
-      rw [laplacePDF_eq_ofReal]
-    rw [laplaceMeasure_eq_withDensity, hpdf]
-    rw [e.withDensity_ofReal_map_symm_apply_eq_integral_abs_deriv_mul' hs he'
-      (.of_forall fun x ↦ laplacePDFReal_nonneg μ b x) (integrable_laplacePDFReal μ),
-      laplaceMeasure_apply_eq_integral (μ + y) b hs]
-    simp only [abs_one, one_mul]
-    congr 2 with x
-    dsimp [e, Homeomorph.addRight]
-    rw [laplacePDFReal_of_pos hb, laplacePDFReal_of_pos hb]
-    congr 3
-    ring_nf
-  · simp [laplaceMeasure_of_nonpos (not_lt.mp hb)]
+  rw [laplaceMeasure_eq_withDensity, laplaceMeasure_eq_withDensity,
+    Measure.map_add_right_withDensity]
+  congr with x
+  simp only [laplacePDF_eq_ofReal, laplacePDFReal, sub_sub, add_comm y]
 
 /-! ### Exponential moments and transforms -/
 

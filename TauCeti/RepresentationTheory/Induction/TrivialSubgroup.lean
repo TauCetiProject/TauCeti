@@ -273,6 +273,48 @@ theorem indBotEquivFinsupp_ρ_apply (X : Type u) [AddCommGroup X] [Module k X] (
 def indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G :=
   TauCeti.indTrivialIso k (⊥ : Subgroup G) ≪≫ TauCeti.quotientBotIsoLeftRegular k
 
+/-- The isomorphism from induction out of the trivial subgroup to the left regular
+representation reads the underlying finitely supported function with inverted indices. -/
+@[simp]
+theorem indBotIsoLeftRegular_hom_hom_apply_coeff (v : indBot k G k) (g : G) :
+    ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom v).coeff g =
+      indBotEquivFinsupp k G k v g⁻¹ := by
+  refine LinearMap.congr_fun
+    (f := Finsupp.lapply g ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ
+      (indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom.toLinearMap)
+    (g := Finsupp.lapply g⁻¹ ∘ₗ (indBotEquivFinsupp k G k).toLinearMap)
+    (IndV.hom_ext _ _ fun h ↦ LinearMap.ext fun a ↦ ?_) v
+  -- Keep `IndV.mk` folded while exposing the two composed representation maps: rewriting the
+  -- composition directly unfolds this reducible generator, after which the generator lemmas below
+  -- no longer match.
+  change ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom
+      (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a)).coeff
+    g = indBotEquivFinsupp k G k
+      (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a) g⁻¹
+  simp only [indBotIsoLeftRegular, Iso.trans_hom, hom_comp,
+    IntertwiningMap.comp_apply]
+  rw [TauCeti.indTrivialIso_hom_hom_apply_mk,
+    TauCeti.quotientBotIsoLeftRegular_hom_hom_single_mk,
+    indBotEquivFinsupp_mk]
+  simp only [MonoidAlgebra.coeff_single, Finsupp.single_apply]
+  by_cases hg : h⁻¹ = g
+  · have hg' : h = g⁻¹ := inv_eq_iff_eq_inv.mp hg
+    simp [hg']
+  · have hg' : h ≠ g⁻¹ := fun e ↦ hg (inv_eq_iff_eq_inv.mpr e)
+    simp [hg, hg']
+
+/-- The inverse isomorphism, from the left regular representation back to induction out of the
+trivial subgroup, likewise reads the underlying finitely supported function with inverted
+indices. -/
+@[simp]
+theorem indBotEquivFinsupp_indBotIsoLeftRegular_inv_hom (v : leftRegular k G) (g : G) :
+    indBotEquivFinsupp k G k
+        ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).inv.hom v) g = v.coeff g⁻¹ := by
+  have h := indBotIsoLeftRegular_hom_hom_apply_coeff
+    ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).inv.hom v) g⁻¹
+  rw [hom_inv_apply, inv_inv] at h
+  exact h.symm
+
 end Induction
 
 section Finite
