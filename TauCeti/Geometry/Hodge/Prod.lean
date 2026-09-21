@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.Geometry.Hodge.Zero
 public import TauCeti.LinearAlgebra.Submodule.Compl
+import Mathlib.Analysis.Complex.Basic
 import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
 
 /-!
