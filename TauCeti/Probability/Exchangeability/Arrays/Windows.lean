@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Dissociated
-public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Independence.Map
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 import Mathlib.Order.Interval.Finset.Nat
