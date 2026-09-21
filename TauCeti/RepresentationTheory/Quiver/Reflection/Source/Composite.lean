@@ -102,6 +102,8 @@ noncomputable instance sourceReflectionFunctorList_additive (l : List V)
   | nil =>
       let : _root_.Quiver.{w} V := q
       rw [sourceReflectionFunctorList_nil]
+      -- Elaboration does not unfold the `reflectList`-indexed category and preadditive instances
+      -- when applying `Functor.instAdditiveId`, so expose the definitionally equal category.
       change (𝟭 (@QuiverRep.{u, v, w, max v w x} k V fld q)).Additive
       exact Functor.instAdditiveId
   | cons i l ih =>
