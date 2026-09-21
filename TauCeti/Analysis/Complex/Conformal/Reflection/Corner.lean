@@ -37,13 +37,30 @@ open Complex Set
 
 namespace TauCeti
 
+-- On this sector the principal powers are inverse, including at the vertex.
+private lemma cpow_inv_cpow_of_sector {w : ℂ} {β : ℝ} (hβ : 0 < β)
+    (hw : |w.arg| ≤ β * Real.pi / 2) :
+    (w ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = w := by
+  have hb : |w.arg * β⁻¹| ≤ Real.pi / 2 := by
+    rw [← div_eq_mul_inv, abs_div, abs_of_pos hβ, div_le_iff₀ hβ]
+    nlinarith [hw]
+  obtain ⟨hl, hu⟩ := abs_le.mp hb
+  rw [← Complex.cpow_mul]
+  · simp [hβ.ne']
+  · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
+    linarith [Real.pi_pos]
+  · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
+    linarith [Real.pi_pos]
+
 /-- **Power coordinate at a corner.** Suppose `f` is continuous and injective on the closed
 upper part of a symmetric open set, holomorphic on its open upper part, and takes a real point
 `x` to the vertex `0`. Its interior values lie strictly between the rays of arguments
 `± β * π / 2`, and its nonzero boundary values lie on those rays. For every opening
 `0 < β * π < 2 * π`, there is an injective holomorphic coordinate `h`, with a simple zero at
 `x`, such that `f = h ^ β` on the closed upper part. The coordinate has positive real part
-on the open upper part, fixing the branch of the power. -/
+on the open upper part, fixing the branch of the power. On the closed upper part it equals the
+principal `β`-th root of `f`, and conjugating the source negates the conjugate of the coordinate.
+In particular, the coordinate is purely imaginary on the real axis. -/
 theorem exists_differentiableOn_injOn_cpow_eq_of_sector
     {Ω : Set ℂ} {f : ℂ → ℂ} {x β : ℝ}
     (hβ : β ∈ Ioo (0 : ℝ) 2) (hΩopen : IsOpen Ω)
@@ -55,7 +72,9 @@ theorem exists_differentiableOn_injOn_cpow_eq_of_sector
     (hrays : ∀ z ∈ Ω, z.im = 0 → f z ≠ 0 → |(f z).arg| = β * Real.pi / 2) :
     ∃ h : ℂ → ℂ, DifferentiableOn ℂ h Ω ∧ InjOn h Ω ∧ h x = 0 ∧ deriv h x ≠ 0 ∧
       EqOn (fun z => h z ^ (β : ℂ)) f (Ω ∩ {z : ℂ | 0 ≤ z.im}) ∧
-      ∀ z ∈ Ω, 0 < z.im → 0 < (h z).re := by
+      (∀ z ∈ Ω, 0 < z.im → 0 < (h z).re) ∧
+      (∀ z ∈ Ω, h ((starRingEnd ℂ) z) = -(starRingEnd ℂ) (h z)) ∧
+      EqOn h (fun z => f z ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
   have hβc : (β : ℂ) ≠ 0 := ofReal_ne_zero.mpr hβ.1.ne'
   have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ.1
   have hangle : β * Real.pi / 2 < Real.pi := by nlinarith [Real.pi_pos, hβ.2]
@@ -78,23 +97,9 @@ theorem exists_differentiableOn_injOn_cpow_eq_of_sector
     have := (le_abs_self (f z).arg).trans (hbound z hz) |>.trans_lt hangle
     exact this.ne
   let g : ℂ → ℂ := fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)
-  -- On this sector the principal powers are inverse, including at the vertex.
   have hpow : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
-      (f z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z := by
-    intro z hz
-    have hb := abs_le.mp (hbound z hz)
-    have hl : -(Real.pi / 2) ≤ (f z).arg * β⁻¹ := by
-      rw [← div_eq_mul_inv, le_div_iff₀ hβ.1]
-      nlinarith [hb.1]
-    have hu : (f z).arg * β⁻¹ ≤ Real.pi / 2 := by
-      rw [← div_eq_mul_inv, div_le_iff₀ hβ.1]
-      nlinarith [hb.2]
-    rw [← Complex.cpow_mul]
-    · simp [hβ.1.ne']
-    · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
-      linarith [Real.pi_pos]
-    · simp only [mul_im, log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
-      linarith [Real.pi_pos]
+      (f z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z :=
+    fun z hz => cpow_inv_cpow_of_sector hβ.1 (hbound z hz)
   -- The root is continuous even at the vertex and holomorphic away from it.
   have hgcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz
@@ -121,13 +126,10 @@ theorem exists_differentiableOn_injOn_cpow_eq_of_sector
       rw [← Real.cos_abs, heq, Real.cos_pi_div_two, mul_zero]
   have hgupper : MapsTo g (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im} := by
     intro z hz
-    have hb := abs_lt.mp (hsector z hz.1 hz.2)
-    have hl : -(Real.pi / 2) < (f z).arg * β⁻¹ := by
-      rw [← div_eq_mul_inv, lt_div_iff₀ hβ.1]
-      nlinarith [hb.1]
-    have hu : (f z).arg * β⁻¹ < Real.pi / 2 := by
-      rw [← div_eq_mul_inv, div_lt_iff₀ hβ.1]
-      nlinarith [hb.2]
+    have hb : |(f z).arg * β⁻¹| < Real.pi / 2 := by
+      rw [← div_eq_mul_inv, abs_div, abs_of_pos hβ.1, div_lt_iff₀ hβ.1]
+      nlinarith [hsector z hz.1 hz.2]
+    obtain ⟨hl, hu⟩ := abs_lt.mp hb
     have hpos := mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr (hne z hz.1 hz.2)) β⁻¹)
       (Real.cos_pos_of_mem_Ioo ⟨hl, hu⟩)
     simpa only [g, mem_ofPred_eq, I_mul_im, cpow_ofReal_re] using hpos
@@ -137,24 +139,26 @@ theorem exists_differentiableOn_injOn_cpow_eq_of_sector
       mul_left_cancel₀ I_ne_zero hzw
     exact hinj hz hw (by rw [← hpow z hz, ← hpow w hw, hp])
   -- Reflect the straightened map, then undo its quarter-turn.
-  let h : ℂ → ℂ := fun z => -I * schwarzReflection g z
-  have hd := differentiableOn_schwarzReflection_of_symmetric hΩopen hΩ hgcont hgholo hgreal
-  have hi := injOn_schwarzReflection_of_symmetric hΩ hgupper
-    (fun z hz hzim => (hgreal z hz hzim).ge) hginj
+  obtain ⟨F, hd, hi, hF, hconj⟩ :=
+    exists_differentiableOn_injOn_eqOn_conj_of_symmetric
+      hΩopen hΩ hgcont hgholo hgreal hgupper hginj
+  let h : ℂ → ℂ := fun z => -I * F z
   have heq : EqOn h (fun z => f z ^ ((β⁻¹ : ℝ) : ℂ))
       (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz
-    simp [h, schwarzReflection_of_im_nonneg hz.2, g, ← mul_assoc]
+    simp [h, hF hz, g, ← mul_assoc]
   have hdh : DifferentiableOn ℂ h Ω := hd.const_mul (-I)
   have hih : InjOn h Ω := by
     intro z hz w hw hzw
     exact hi hz hw (mul_left_cancel₀ (neg_ne_zero.mpr I_ne_zero) hzw)
-  refine ⟨h, hdh, hih, ?_, deriv_ne_zero_of_injOn hdh hΩopen hih hx, ?_, ?_⟩
+  refine ⟨h, hdh, hih, ?_, deriv_ne_zero_of_injOn hdh hΩopen hih hx, ?_, ?_, ?_, heq⟩
   · simpa only [hfx, ofReal_inv, zero_cpow (inv_ne_zero hβc)] using heq ⟨hx, by simp⟩
   · intro z hz
     simpa only [heq hz] using hpow z hz
   · intro z hz hzim
     have := hgupper ⟨hz, hzim⟩
     simpa [g, heq ⟨hz, hzim.le⟩] using this
+  · intro z hz
+    simp [h, hconj z hz]
 
 end TauCeti

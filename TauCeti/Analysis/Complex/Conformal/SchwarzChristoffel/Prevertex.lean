@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
--- Non-public: the corner asymptotic, the conjugation-symmetric limit transfer, the branch facts
--- for a power with a real base point, and partial fractions are used only in proofs.
+-- Non-public: the corner asymptotic, the corner power coordinate and its accompanying
+-- conjugation-symmetric limit transfer, the branch facts for a power with a real base point,
+-- and partial fractions are used only in proofs.
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
@@ -101,8 +102,9 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow {φ f h : ℂ → ℂ} {x r : �
 
 /-- **The pre-Schwarzian residue at a polygonal corner is its normalized angle minus one.**
 After translating the vertex `f x` and rotating and scaling by `b`, suppose a holomorphic
-injection takes the upper part of a neighborhood of `x` into the sector
-`|arg w| < β * π / 2`, with continuous boundary values on its two rays.
+map is continuous and injective on the closed upper part of a conjugation-symmetric open
+neighborhood `Ω` of `x`. Suppose it takes the open upper part into the sector
+`|arg w| < β * π / 2`, with boundary values on its two rays.
 If its pre-Schwarzian has a conjugation-symmetric holomorphic continuation `φ` to a punctured
 disc about `x`, then `(z - x) * φ z → β - 1` from every direction. Both convex and reentrant
 corners are allowed. No power representation or boundary differentiability is assumed. -/
@@ -124,7 +126,7 @@ theorem tendsto_sub_mul_nhdsNE_of_sector {φ f : ℂ → ℂ} {x r β : ℝ} {Ω
   have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz w hw hzw
     exact hinj hz hw (by simpa [g, div_left_inj' hb] using hzw)
-  obtain ⟨h, hh, -, hhx, hdh, hpow, hright⟩ :=
+  obtain ⟨h, hh, -, hhx, hdh, hpow, hright, -, -⟩ :=
     exists_differentiableOn_injOn_cpow_eq_of_sector (f := g) hβ hΩopen hΩ hx
       (by simp [g]) ((hcont.sub continuousOn_const).div_const b)
       ((hholo.sub_const (f x)).div_const b) hginj hsector
