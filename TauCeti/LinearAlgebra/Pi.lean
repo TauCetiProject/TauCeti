@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Pi
+public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
 # Disjointness of `Submodule.pi` supports
@@ -42,3 +44,64 @@ public theorem disjoint_pi_compl_bot_of_disjoint {ι : Type*} {s t : Set ι} (h 
     · exact hs i hi
 
 end Submodule
+
+namespace TauCeti
+
+open scoped BigOperators
+
+universe u v
+
+variable {R : Type u} [CommRing R]
+variable {ι : Type v} [Fintype ι]
+
+/-- The determinant of a coordinatewise endomorphism of a finite dependent product. -/
+public theorem _root_.LinearMap.det_pi_of_apply_eq_dependent {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, Module.Free R (M i)]
+    [∀ i, Module.Finite R (M i)]
+    (T : ((i : ι) → M i) →ₗ[R] ((i : ι) → M i)) (f : ∀ i, M i →ₗ[R] M i)
+    (hT : ∀ x i, T x i = f i (x i)) :
+    T.det = ∏ i, (f i).det := by
+  classical
+  let b (i : ι) := Module.Free.chooseBasis R (M i)
+  let _ (i : ι) : Fintype (Module.Free.ChooseBasisIndex R (M i)) := Fintype.ofFinite _
+  let B : Module.Basis (Σ i, Module.Free.ChooseBasisIndex R (M i)) R ((i : ι) → M i) :=
+    Pi.basis b
+  rw [← LinearMap.det_toMatrix B]
+  have hmatrix :
+      (LinearMap.toMatrix B B T) =
+        Matrix.blockDiagonal' (fun i ↦ LinearMap.toMatrix (b i) (b i) (f i)) := by
+    ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
+    simp only [LinearMap.toMatrix_apply', B, b, Pi.basis_apply, Matrix.blockDiagonal'_apply]
+    split_ifs with h
+    · subst i₂
+      simp [hT]
+    · simp [hT, h]
+  rw [hmatrix]
+  let _ : LinearOrder ι := Equiv.linearOrder (Fintype.equivFin ι)
+  rw [(Matrix.blockTriangular_blockDiagonal' _).det_fintype]
+  apply Finset.prod_congr rfl
+  intro i hi
+  let e : Module.Free.ChooseBasisIndex R (M i) ≃
+      {a : Σ i, Module.Free.ChooseBasisIndex R (M i) // a.1 = i} :=
+    { toFun := fun j ↦ ⟨⟨i, j⟩, rfl⟩
+      invFun := fun a ↦ cast (by rw [a.2]) a.1.2
+      left_inv := by intro j; rfl
+      right_inv := by
+        intro a
+        apply Subtype.ext
+        rcases a with ⟨⟨a, j⟩, ha⟩
+        dsimp at ha
+        subst a
+        rfl }
+  rw [← LinearMap.det_toMatrix (b i)]
+  rw [← Matrix.det_reindex_self e]
+  congr 1
+  ext j k
+  rcases j with ⟨⟨j₁, j₂⟩, hj⟩
+  rcases k with ⟨⟨k₁, k₂⟩, hk⟩
+  dsimp at hj hk
+  subst j₁
+  subst k₁
+  simp [e, Matrix.toSquareBlock_def, Matrix.reindex]
+
+end TauCeti
