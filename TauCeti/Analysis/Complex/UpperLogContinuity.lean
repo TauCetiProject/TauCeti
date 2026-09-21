@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
 # Continuity of `arg` and `log` on the closed upper half-plane
@@ -21,6 +21,7 @@ touch the slit-plane boundary.
 
 * `TauCeti.continuousOn_arg_im_nonneg_ne_zero`.
 * `TauCeti.continuousOn_log_im_nonneg_ne_zero`.
+* `TauCeti.continuousOn_cpow_const_im_nonneg`.
 
 ## References
 
@@ -31,7 +32,7 @@ touch the slit-plane boundary.
 
 public section
 
-open Complex
+open Complex Filter
 
 namespace TauCeti
 
@@ -62,6 +63,33 @@ theorem continuousOn_log_im_nonneg_ne_zero :
         continuous_norm.continuousAt)).continuousWithinAt
   · exact (continuous_ofReal.continuousAt.comp_continuousWithinAt
       (continuousOn_arg_im_nonneg_ne_zero z ⟨hz_im, hz_ne⟩)).mul continuousWithinAt_const
+
+/-- A complex power whose exponent has positive real part is continuous on the closed upper
+half-plane. Unlike continuity on the open slit plane, this includes one-sided continuity at the
+negative real axis; positivity of the exponent's real part also supplies continuity at zero. -/
+@[fun_prop]
+theorem continuousOn_cpow_const_im_nonneg {r : ℂ} (hr : 0 < r.re) :
+    ContinuousOn (fun z : ℂ => z ^ r) {z | 0 ≤ z.im} := by
+  intro z hz
+  by_cases hz0 : z = 0
+  · subst z
+    exact (Complex.continuousAt_cpow_const_of_re_pos (Or.inl (by simp))
+      hr).continuousWithinAt
+  · have hne : ∀ᶠ w in nhdsWithin z {z : ℂ | 0 ≤ z.im}, w ≠ 0 :=
+      nhdsWithin_le_nhds (eventually_ne_nhds hz0)
+    have hlog : ContinuousWithinAt Complex.log {z : ℂ | 0 ≤ z.im} z := by
+      -- Expose the source filter so it can be restricted to the punctured half-plane.
+      change Tendsto Complex.log (nhdsWithin z {z : ℂ | 0 ≤ z.im}) (nhds (Complex.log z))
+      rw [← nhdsWithin_inter_of_mem hne]
+      simpa only [ContinuousWithinAt, Set.ofPred_and, Set.inter_comm] using
+        continuousOn_log_im_nonneg_ne_zero z ⟨hz, hz0⟩
+    refine (continuous_exp.continuousAt.comp_continuousWithinAt
+      (hlog.mul (continuousWithinAt_const (b := r)))).congr_of_eventuallyEq ?_ ?_
+    · filter_upwards [hne] with w hw
+      simpa only [Function.comp_apply, Pi.mul_apply] using
+        Complex.cpow_def_of_ne_zero hw r
+    · simpa only [Function.comp_apply, Pi.mul_apply] using
+        Complex.cpow_def_of_ne_zero hz0 r
 
 end TauCeti
 

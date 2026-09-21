@@ -12,6 +12,7 @@ public import Mathlib.Topology.Piecewise
 -- Non-public: the removable-singularity theorem and the nontriviality of the filter along the
 -- upper half-plane are used only in proofs.
 import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Analysis.Calculus.FDeriv.Semilinear
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
@@ -33,8 +34,6 @@ differentiability transfer.  The continuity lemmas record the topological gluing
 the later Morera-based reflection theorem: the reflected branch is continuous on reflected
 sets, and the explicit Schwarz-reflection extension is continuous across the real axis when
 the boundary values are real.
-The private semilinear within-set helper adapts the proof pattern of Mathlib's
-`HasFDerivAt.comp_semilinear`.
 
 The last section turns conjugation symmetry into a statement about limits at a real point: a
 holomorphic function on a punctured disc about a real point which commutes with conjugation has a
@@ -332,26 +331,6 @@ lemma continuous_schwarzReflection (hf : ContinuousOn f {z : ℂ | 0 ≤ z.im})
     (Set.mapsTo_univ _ _) ?_ (fun z _ => hreal z)
   rwa [Set.univ_inter]
 
-private lemma starRingEnd_eq_starL (z : ℂ) : (starRingEnd ℂ) z = (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) z := by
-  rw [starL_apply, starRingEnd_apply]
-
-private lemma HasFDerivWithinAt.comp_semilinear_preimage
-    {𝕜 V V' W W' : Type*} [NontriviallyNormedField 𝕜] {σ σ' : RingHom 𝕜 𝕜}
-    [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup V'] [NormedSpace 𝕜 V']
-    [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup W'] [NormedSpace 𝕜 W']
-    [RingHomIsometric σ] [RingHomInvPair σ σ'] (L : W →SL[σ] W') (R : V' →SL[σ'] V)
-    {g : V → W} {g' : V →L[𝕜] W} {T : Set V} {x : V'} (hg : HasFDerivWithinAt g g' T (R x)) :
-    HasFDerivWithinAt (L ∘ g ∘ R) (L.comp (g'.comp R)) (R ⁻¹' T) x := by
-  rw [hasFDerivWithinAt_iff_isLittleO] at ⊢ hg
-  have : RingHomIsometric σ' := .inv σ
-  have hR : Tendsto R (nhdsWithin x (R ⁻¹' T)) (nhdsWithin (R x) T) :=
-    R.continuous.continuousAt.continuousWithinAt.tendsto_nhdsWithin (mapsTo_preimage R T)
-  have hsmall := hg.comp_tendsto hR
-  have hRsub : ((fun x' => x' - R x) ∘ R) =O[nhdsWithin x (R ⁻¹' T)] fun x' => x' - x := by
-    simpa [Function.comp_def, map_sub] using R.isBigO_sub (nhdsWithin x (R ⁻¹' T)) x
-  simpa [Function.comp_def, map_sub] using
-    ((L.isBigO_comp _ _).trans_isLittleO hsmall).trans_isBigO hRsub
-
 /--
 Antiholomorphic-composition prerequisite for Schwarz reflection.
 
@@ -368,28 +347,13 @@ lemma differentiableOn_conj_conj (hf : DifferentiableOn ℂ f S) :
         (starRingEnd ℂ)))
       (Function.Involutive.rightInverse (starRingEnd_self_apply : Function.Involutive
         (starRingEnd ℂ)))).mp hz
-  rcases (hf ((starRingEnd ℂ) z) hzS) with ⟨f', hf'⟩
-  have hstar :=
-    HasFDerivWithinAt.comp_semilinear_preimage
-      (starL ℂ).toContinuousLinearMap (starL ℂ).toContinuousLinearMap (x := z) hf'
-  rw [Function.Involutive.image_eq_preimage_symm
-    (starRingEnd_self_apply : Function.Involutive (starRingEnd ℂ))]
-  have hfun :
-      (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) =
-        (⇑(starL ℂ).toContinuousLinearMap ∘ f ∘ ⇑(starL ℂ).toContinuousLinearMap) := by
-    funext w
-    dsimp [Function.comp_def]
-    rw [starRingEnd_eq_starL, starRingEnd_eq_starL]
-  have hset : (starRingEnd ℂ) ⁻¹' S = ⇑(starL ℂ).toContinuousLinearMap ⁻¹' S := by
-    ext w
-    -- Expose membership in the preimages before rewriting across the two conjugation coercions.
-    change (starRingEnd ℂ) w ∈ S ↔ ((starL ℂ).toContinuousLinearMap : ℂ → ℂ) w ∈ S
-    have hw : (starRingEnd ℂ) w = ((starL ℂ).toContinuousLinearMap : ℂ → ℂ) w := by
-      rw [starRingEnd_eq_starL]
-      rfl
-    rw [hw]
-  rw [hfun, hset]
-  exact hstar.differentiableWithinAt
+  have hmaps : MapsTo (starL ℂ).toContinuousLinearMap ((starRingEnd ℂ) '' S) S := by
+    rintro w ⟨v, hv, rfl⟩
+    simpa using hv
+  simpa [Function.comp_def] using
+    DifferentiableWithinAt.comp_semilinear₂
+      (starL ℂ).toContinuousLinearMap (starL ℂ).toContinuousLinearMap
+      (x := z) (hf ((starRingEnd ℂ) z) hzS) hmaps
 
 /--
 On any subset of the closed upper half-plane, the explicit Schwarz-reflection extension is

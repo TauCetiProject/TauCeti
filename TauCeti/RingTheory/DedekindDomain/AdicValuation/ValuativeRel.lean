@@ -31,9 +31,9 @@ and the residue field of the valuative relation with the ones `K_v` already has.
 * `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: when `R` is
   infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
-  completion with finite residue field is a nonarchimedean local field, and
-  `IsDedekindDomain.HeightOneSpectrum.instCompactSpaceAdicCompletionIntegers`: the integer ring
-  `𝒪_v` of such a completion is compact.
+  completion with finite residue field is a nonarchimedean local field.
+* `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
+  of such a completion is compact.
 
 ## Implementation notes
 
@@ -207,16 +207,19 @@ instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
         inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))⟩
   exact ⟨⟩
 
-/-- The ring of integers `𝒪_v` of an adic completion is compact whenever that completion is a
-nonarchimedean local field. -/
-instance instCompactSpaceAdicCompletionIntegers
-    [IsNonarchimedeanLocalField (v.adicCompletion K)] :
+/-- The ring of integers in an adic completion with finite residue field is compact. -/
+instance compactSpace_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)] :
     CompactSpace (v.adicCompletionIntegers K) := by
-  apply isCompact_iff_compactSpace.mp
-  -- Expose the underlying subring so the comparison with the valuative integer ring rewrites it.
-  change IsCompact ((v.adicCompletionIntegers K).toSubring : Set (v.adicCompletion K))
-  rw [← v.integer_eq_adicCompletionIntegers (K := K)]
-  exact IsNonarchimedeanLocalField.isCompact_closedBall (v.adicCompletion K) 1
+  let _ := v.isNonarchimedeanLocalField_adicCompletion (K := K)
+  let f : 𝒪[v.adicCompletion K] ≃ₜ v.adicCompletionIntegers K := {
+    toEquiv := (v.integerEquivAdicCompletionIntegers (K := K)).toEquiv
+    continuous_toFun := continuous_induced_rng.mpr <|
+      continuous_subtype_val.congr fun x ↦
+        (v.coe_integerEquivAdicCompletionIntegers (K := K) x).symm
+    continuous_invFun := continuous_induced_rng.mpr <|
+      continuous_subtype_val.congr fun x ↦
+        (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
+  exact f.compactSpace
 
 end IsDedekindDomain.HeightOneSpectrum
 

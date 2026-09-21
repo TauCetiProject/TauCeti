@@ -12,25 +12,23 @@ public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.Algebra.MulAction
 
 /-!
-# Discrete modules over profinite groups
+# Continuous actions on discrete spaces
 
-This file develops the openness properties of a continuous action on a discrete additive group.
-For a finite coefficient group, the kernel of the action is open and the action is therefore an
-action of a finite quotient. For an arbitrary discrete coefficient group, the corresponding
-statement holds one element at a time: every element is fixed by an open normal subgroup.
+This file develops openness properties of continuous group actions on discrete spaces.
+For a finite space, the kernel of the action is open and the action factors through a finite
+quotient. For an arbitrary discrete space acted on by a compact topological group, every finite
+set is fixed pointwise by an open normal subgroup. In particular, each orbit map factors through
+a finite quotient. Total disconnectedness of the acting group is not needed: point stabilizers
+are clopen, so Mathlib's compact-group clopen-neighborhood theorem applies directly.
 
-This implements the Layer 0 “Openness” milestone of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`.
+For actions on discrete additive groups, the fixed-point subgroups over all open normal
+subgroups exhaust the group; the additive group need not be commutative. These results supply
+the openness and exhaustion properties used by the finite-quotient system for continuous
+cohomology.
 
-The latter statement is recorded both as an elementwise factorization of the orbit map and as the
-fact that the fixed-point subgroups over all open normal subgroups exhaust the coefficient group.
-These are the forms used by the finite-quotient system for continuous cohomology.
-
-Mathlib already supplies the two principal ingredients: point stabilizers are open for continuous
-actions on discrete spaces, and every neighbourhood of the identity in a profinite group contains
-an open normal subgroup. It also supplies `MulAction.fixedPoints` and the quotient action on the
-fixed points of a normal subgroup; this file uses those definitions rather than introducing a
-parallel invariants object.
+Mathlib supplies open point stabilizers, open normal subgroups inside clopen neighborhoods of
+the identity in compact groups, and the quotient action on fixed points of a normal subgroup.
+We use its fixed-point objects throughout.
 -/
 
 public section
@@ -41,26 +39,27 @@ universe u v
 
 section Elementwise
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G]
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   {M : Type v} [TopologicalSpace M] [DiscreteTopology M] [MulAction G M] [ContinuousSMul G M]
 
-/-- A finite set in a discrete continuous module over a profinite group is fixed pointwise by a
+/-- A finite set in a discrete continuous action of a compact group is fixed pointwise by a
 single open normal subgroup. -/
 theorem _root_.Set.Finite.exists_openNormalSubgroup_smul_eq_self {s : Set M} (hs : s.Finite) :
     ∃ U : OpenNormalSubgroup G, ∀ u ∈ U, ∀ m ∈ s, u • m = m := by
   let V : Set G := ⋂ m ∈ s, (MulAction.stabilizer G m : Set G)
-  have hOpen : IsOpen V :=
-    hs.isOpen_biInter fun m _ ↦ stabilizer_isOpen G m
+  have hClopen : IsClopen V :=
+    hs.isClopen_biInter fun m _ ↦
+      ⟨(MulAction.stabilizer G m).isClosed_of_isOpen (stabilizer_isOpen G m),
+        stabilizer_isOpen G m⟩
   have hOne : (1 : G) ∈ V := by
     simp only [V, Set.mem_iInter, SetLike.mem_coe, MulAction.mem_stabilizer_iff, one_smul,
       implies_true]
   obtain ⟨U, hU⟩ :=
-    ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hOpen hOne
+    IsTopologicalGroup.exist_openNormalSubgroup_sub_clopen_nhds_of_one hClopen hOne
   refine ⟨U, fun u hu m hm ↦ ?_⟩
   exact MulAction.mem_stabilizer_iff.mp (Set.mem_iInter₂.mp (hU hu) m hm)
 
-/-- Every element of a discrete continuous module over a profinite group is fixed by an open
+/-- Every element of a discrete continuous action of a compact group is fixed by an open
 normal subgroup. -/
 theorem exists_openNormalSubgroup_smul_eq_self (m : M) :
     ∃ U : OpenNormalSubgroup G, ∀ u ∈ U, u • m = m := by
@@ -68,7 +67,7 @@ theorem exists_openNormalSubgroup_smul_eq_self (m : M) :
     (Set.finite_singleton m).exists_openNormalSubgroup_smul_eq_self (G := G)
   exact ⟨U, fun u hu ↦ hU u hu m (Set.mem_singleton m)⟩
 
-/-- A finite family in a discrete continuous module over a profinite group has a common open
+/-- A finite family in a discrete continuous action of a compact group has a common open
 normal stabilizer. This is the form used for the finite image of a locally constant cochain. -/
 theorem exists_openNormalSubgroup_smul_eq_self_range {ι : Type*} [Finite ι] (f : ι → M) :
     ∃ U : OpenNormalSubgroup G, ∀ u ∈ U, ∀ i, u • f i = f i := by
@@ -77,8 +76,8 @@ theorem exists_openNormalSubgroup_smul_eq_self_range {ι : Type*} [Finite ι] (f
     Set.Finite.exists_openNormalSubgroup_smul_eq_self (G := G) hrange
   exact ⟨U, fun u hu i ↦ hU u hu (f i) ⟨i, rfl⟩⟩
 
-/-- The orbit map of an element of a discrete profinite module factors through a finite quotient.
-The factor is obtained from Mathlib's quotient action on the fixed points of a normal subgroup. -/
+/-- The orbit map of a discrete continuous action of a compact group factors through a finite
+quotient, using the quotient action on the fixed points of an open normal subgroup. -/
 theorem exists_orbitMap_quotient (m : M) :
     ∃ (U : OpenNormalSubgroup G) (f : G ⧸ U.toSubgroup → M),
       ∀ g : G, f (QuotientGroup.mk g) = g • m := by
@@ -142,8 +141,8 @@ theorem openActionKernel_toSubgroup [Finite M] :
   ext
   simp only [openActionKernel]
 
-/-- A finite discrete module is fixed pointwise by an open normal subgroup. The subgroup can be
-taken to be the kernel of the action. -/
+/-- A finite discrete space with a continuous group action is fixed pointwise by an open normal
+subgroup. The subgroup can be taken to be the kernel of the action. -/
 @[simp]
 theorem openActionKernel_smul_eq_self [Finite M] (g : openActionKernel G M) (m : M) :
     (g : G) • m = m := by
@@ -155,11 +154,11 @@ end Kernel
 section FiniteCoefficients
 
 variable (G : Type u) [Group G] [TopologicalSpace G]
-  (M : Type v) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (M : Type v) [AddGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
 
-/-- The fixed points of the action kernel on a finite discrete module are the whole module. This
-is the levelwise stabilization of the invariant coefficient system. -/
+/-- The fixed points of the action kernel on a finite discrete additive group are the whole group.
+The additive group need not be commutative. -/
 @[simp]
 theorem fixedPoints_openActionKernel_eq_top :
     FixedPoints.addSubgroup (openActionKernel G M).toSubgroup M = ⊤ := by
@@ -171,12 +170,12 @@ end FiniteCoefficients
 
 section Exhaustion
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G]
-  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  {M : Type v} [AddGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
-/-- The fixed-point subgroups over the open normal subgroups exhaust a discrete module. -/
+/-- The fixed-point subgroups over the open normal subgroups of a compact group exhaust a
+discrete additive group with a continuous action. The additive group need not be commutative. -/
 theorem iSup_fixedPoints_openNormal_eq_top :
     (⨆ U : OpenNormalSubgroup G, FixedPoints.addSubgroup U.toSubgroup M) = ⊤ := by
   rw [eq_top_iff]
