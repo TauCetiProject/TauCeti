@@ -12,10 +12,13 @@ import Mathlib.Analysis.SpecificLimits.Basic
 /-!
 # Exhausting a bounded convex open set from inside
 
-A bounded convex open subset `Ω` of a real normed space is the increasing union of convex open
-subsets whose closures are compact subsets of `Ω`.  The subsets are the homothetic copies
-`c + t • (Ω - c)` of `Ω` about a point `c ∈ Ω`, for `0 < t < 1`: convexity is what keeps their
-closures inside `Ω`, and boundedness is what makes those closures compact.
+A bounded convex open subset `Ω` of a *proper* real normed space — a finite-dimensional one,
+say — is the increasing union of convex open subsets whose closures are compact subsets of `Ω`.
+The subsets are the homothetic copies `c + t • (Ω - c)` of `Ω` about a point `c ∈ Ω`, for
+`0 < t < 1`: convexity is what keeps their closures inside `Ω`, and boundedness together with
+properness of the ambient space is what makes those closures compact.  Properness cannot be
+dropped: in an infinite-dimensional normed space a bounded closed set need not be compact, and
+the unit ball is then exhausted by no sequence of relatively compact sets at all.
 
 Convexity of the pieces is the point of the construction.  A general open set is exhausted by the
 relatively compact open sets `{x | dist x Ωᶜ > 1 / n} ∩ ball 0 n`, but those are not convex, and an
@@ -35,9 +38,10 @@ open Filter Set Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] {Ω : Set E}
 
-/-- **A bounded convex open set is exhausted from inside by convex open sets.**  If `Ω` is open,
-convex and bounded, there is an increasing sequence of convex open sets `U n` whose closures are
-compact subsets of `Ω` and whose union is `Ω`. -/
+/-- **A bounded convex open set is exhausted from inside by convex open sets.**  In a proper
+real normed space, if `Ω` is open, convex and bounded, there is an increasing sequence of convex
+open sets `U n` whose closures are compact subsets of `Ω` and whose union is `Ω`.  Properness is
+what turns the bounded closures into compact ones. -/
 theorem exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq
     (hΩ : IsOpen Ω) (hconv : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) :
     ∃ U : ℕ → Set E, Monotone U ∧ (∀ n, IsOpen (U n)) ∧ (∀ n, Convex ℝ (U n)) ∧

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Exhaustion
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
-public import TauCeti.Analysis.Sobolev.W1p.LocalApproximation
-import TauCeti.MeasureTheory.Function.Lp.SetIntegral
+public import TauCeti.Analysis.Sobolev.W1p.Basic
+import TauCeti.Analysis.Convex.Exhaustion
+import TauCeti.Analysis.Sobolev.W1p.LocalApproximation
+import TauCeti.MeasureTheory.Function.Lp.Const
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
@@ -38,7 +40,7 @@ whose closure is a compact subset of `Ω`.  Two limits are therefore taken.
 
 * On a fixed such `U`, convex so that the `C¹` inequality applies to it, the Sobolev functions
   satisfying the inequality form a closed set — the mean over `S` is a continuous functional, by
-  `TauCeti.lipschitzWith_setIntegral` — which contains every test function, hence their closure.
+  `Set.setIntegralLp` — which contains every test function, hence their closure.
 * The convex subdomains are then increased to `Ω`, along the exhaustion
   `TauCeti.exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq`.  The means over `S ∩ U`
   converge to the mean over `S`, and Fatou's lemma for the `Lᵖ` seminorm,
@@ -77,7 +79,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 omit [FiniteDimensional ℝ E] in
 /-- The mean of the value of a first-order Sobolev function over a fixed subset of finite
 measure depends continuously on the function. -/
-private theorem continuous_setAverage_value (hp : p ≠ ∞) (hSU : S ⊆ (U : Set E))
+private theorem continuous_setAverage_value (hSU : S ⊆ (U : Set E))
     (hUfin : mu (U : Set E) ≠ ∞) :
     Continuous fun v : W1p mu U p => ⨍ y in S, W1p.value v y ∂mu := by
   have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
@@ -87,28 +89,17 @@ private theorem continuous_setAverage_value (hp : p ≠ ∞) (hSU : S ⊆ (U : S
   have hEq : ∀ v : W1p mu U p, (⨍ y in S, W1p.value v y ∂mu) =
       (mu.real S)⁻¹ * ∫ y in S, W1p.valueL v y ∂(mu.restrict (U : Set E)) := fun v => by
     rw [setAverage_eq, smul_eq_mul, W1p.valueL_apply, hrs]
+  have hSlt : (mu.restrict (U : Set E)) S < ∞ := by
+    rw [hmeas]; exact (ne_top_of_le_ne_top hUfin (measure_mono hSU)).lt_top
   have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
       ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
-    (lipschitzWith_setIntegral (F := ℝ) (μ := mu.restrict (U : Set E)) (s := S) hp
-      (by rw [hmeas]; exact ne_top_of_le_ne_top hUfin (measure_mono hSU))).continuous
+    (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (mu := mu.restrict (U : Set E)) (p := p) S
+      hSlt).continuous.congr fun f => Set.setIntegralLp_apply (𝕜 := ℝ) S hSlt f
   simp only [hEq]
   exact continuous_const.mul
     (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
 
 /-! ### The inequality on a relatively compact convex subdomain -/
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
-/-- Rewriting the deviation from a constant as a distance in `Lᵖ`. -/
-private theorem eLpNorm_sub_const_eq_enorm (a : ℝ)
-    [IsFiniteMeasure (mu.restrict (U : Set E))] (f : Lp ℝ p (mu.restrict U)) :
-    eLpNorm (fun x => f x - a) p (mu.restrict U) =
-      ‖f - Lp.const p (mu.restrict (U : Set E)) a‖ₑ := by
-  rw [Lp.enorm_def]
-  refine (eLpNorm_congr_ae ?_).symm
-  filter_upwards [Lp.coeFn_sub f (Lp.const p (mu.restrict (U : Set E)) a),
-    Lp.coeFn_const (p := p) (μ := mu.restrict (U : Set E)) (c := a)] with x h1 h2
-  rw [h1, Pi.sub_apply, h2]
-  rfl
 
 /-- **The Poincaré–Wirtinger inequality for a limit of test functions.**  It holds for every
 Sobolev function on `U` that is an `Lᵖ`-limit of restrictions of test functions on a larger
@@ -140,7 +131,7 @@ private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) 
           (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous
         simpa only [W1p.valueL_apply] using hcont
       · exact (Lp.constL p (mu.restrict (U : Set E)) ℝ).continuous.comp
-          (continuous_setAverage_value hp hSU hUfin)
+          (continuous_setAverage_value hSU hUfin)
     have h2 : Continuous fun w : W1p mu U p => C * ‖W1p.gradient w‖ := by
       refine continuous_const.mul (Continuous.norm ?_)
       have hcont : Continuous fun w : W1p mu U p => W1p.gradientL w :=
@@ -262,8 +253,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
           (mu.restrict (V n)) := by
       refine eLpNorm_congr_ae ?_
       filter_upwards [hval] with x hx
-      show W1p.value v x - _ = W1p.value u x - _
-      rw [hx]
+      exact congrArg (· - ⨍ y in S ∩ V n, W1p.value u y ∂mu) hx
     have hconst : mu.real (ball (0 : E) 1) * diam (V n) ^ (finrank ℝ E + 1) /
         mu.real (S ∩ V n) ≤ K / mu.real (S ∩ V n) := by
       rw [hKdef]
@@ -330,27 +320,32 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
 `u ∈ W^{1,p}(B(c, R))` from its mean over the ball is at most `2 ^ (n + 1) * R` times the `Lᵖ`
 norm of its weak gradient.  The constant is proportional to `R`, as the scaling of both sides
 forces. -/
-theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball [Nontrivial E] {c : E} {R : ℝ}
+theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
     (hp : p ≠ ∞) (hR : 0 < R) (hOmega : (Omega : Set E) = ball c R) (u : W1p mu Omega p) :
     eLpNorm (fun x => W1p.value u x - ⨍ y in (Omega : Set E), W1p.value u y ∂mu) p
         (mu.restrict Omega) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * R) * ‖W1p.gradient u‖ₑ := by
   have hpos : mu (Omega : Set E) ≠ 0 := by
     rw [hOmega]; exact (measure_ball_pos mu c hR).ne'
-  have homega : 0 < mu.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
-  have hmeas : mu.real (Omega : Set E) = R ^ finrank ℝ E * mu.real (ball (0 : E) 1) := by
-    rw [hOmega, measureReal_def, measureReal_def, Measure.addHaar_ball mu c hR.le,
-      ENNReal.toReal_mul, ENNReal.toReal_ofReal (pow_nonneg hR.le _)]
   have hconst : mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) /
       mu.real (Omega : Set E) ≤ 2 ^ (finrank ℝ E + 1) * R := by
-    rw [hmeas, div_le_iff₀ (by positivity)]
-    calc mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
-        ≤ mu.real (ball (0 : E) 1) * (2 * R) ^ (finrank ℝ E + 1) := by
-          gcongr
-          rw [hOmega]
-          exact Metric.diam_ball hR.le
-      _ = 2 ^ (finrank ℝ E + 1) * R * (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by ring
+    rcases subsingleton_or_nontrivial E with _ | _
+    · -- In a zero-dimensional space every set has diameter `0`, so the left side vanishes.
+      rw [Metric.diam_subsingleton Set.subsingleton_of_subsingleton,
+        zero_pow (Nat.succ_ne_zero _), mul_zero, zero_div]
+      exact mul_nonneg (by positivity) hR.le
+    · have homega : 0 < mu.real (ball (0 : E) 1) :=
+        ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+      have hmeas : mu.real (Omega : Set E) = R ^ finrank ℝ E * mu.real (ball (0 : E) 1) := by
+        rw [hOmega, measureReal_def, measureReal_def, Measure.addHaar_ball mu c hR.le,
+          ENNReal.toReal_mul, ENNReal.toReal_ofReal (pow_nonneg hR.le _)]
+      rw [hmeas, div_le_iff₀ (by positivity)]
+      calc mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1)
+          ≤ mu.real (ball (0 : E) 1) * (2 * R) ^ (finrank ℝ E + 1) := by
+            gcongr
+            rw [hOmega]
+            exact Metric.diam_ball hR.le
+        _ = 2 ^ (finrank ℝ E + 1) * R * (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by ring
   refine (W1p.eLpNorm_value_sub_setAverage_le_of_convex hp (hOmega ▸ convex_ball c R)
     (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
     Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans
