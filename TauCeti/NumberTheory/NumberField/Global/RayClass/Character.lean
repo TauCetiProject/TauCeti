@@ -156,7 +156,6 @@ theorem induced_eq_one_iff (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
 
 /-- Change of modulus commutes with evaluation on integral ideals: the induced character at an
 ideal prime to `𝔫` is the original character at the same ideal viewed as prime to `𝔪`. -/
-@[simp]
 theorem onIdeals_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
     (I : integralIdealsPrimeTo 𝔫) :
     (χ.induced h).onIdeals I = χ.onIdeals (integralIdealsPrimeToInclusion h I) := by
