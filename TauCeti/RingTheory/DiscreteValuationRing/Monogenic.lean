@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Lifts
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
-public import Mathlib.FieldTheory.PrimitiveElement
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-public import Mathlib.RingTheory.LocalRing.Etale
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.Algebra.Polynomial.Lifts
+import Mathlib.FieldTheory.PrimitiveElement
+import Mathlib.RingTheory.LocalRing.Quotient
+import Mathlib.RingTheory.Nakayama
 -- for `UniqueFactorizationMonoid.instIsIntegrallyClosed`, which `PowerBasis.ofAdjoinEqTop'` needs
-public import Mathlib.RingTheory.Polynomial.RationalRoot
+import Mathlib.RingTheory.Polynomial.RationalRoot
 
 /-!
 # Monogenicity of a finite extension of discrete valuation rings
@@ -30,17 +34,23 @@ that `g(β)` *generates* the maximal ideal.  The subring `R[β]` then meets ever
 modulo `𝓂(S)` and contains a uniformizer, hence meets every residue class modulo `𝓂(S) ^ n`;
 taking `n` large enough that `𝓂(S) ^ n ⊆ 𝓂(R) S`, Nakayama's lemma gives `R[β] = S`.
 
+Only the existence of the generator needs the two rings to be discrete valuation rings: the
+generation criterion and the steps it is assembled from hold for a module-finite extension of
+local rings, and are stated there.
+
 ## Main results
 
 * `TauCeti.IsLocalRing.exists_span_eval_eq_maximalIdeal`: the Newton step.
-* `TauCeti.IsDiscreteValuationRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal`: the criterion
-  for a single element to generate `S` over `R`.
+* `TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal`: the criterion for a single
+  element to generate `S` over `R`.
+* `TauCeti.IsLocalRing.adjoin_eq_top_of_residue_surjective_of_span_eq_maximalIdeal`: in the
+  totally ramified case every generator of the maximal ideal of `S` generates `S` over `R`.
 * `TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top`: a finite extension of discrete
   valuation rings with separable residue extension is monogenic.
-* `TauCeti.IsDiscreteValuationRing.adjoin_eq_top_of_irreducible`: in the totally ramified case
-  every uniformizer of `S` is a generator.
 * `TauCeti.IsDiscreteValuationRing.nonempty_powerBasis`: the integral basis a generator produces,
   via Mathlib's `PowerBasis.ofAdjoinEqTop'`.
+* `TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top_and_intermediateField_adjoin_eq_top`: a
+  generator of `S` over `R` also generates the fraction field of `S` over that of `R`.
 
 ## References
 
@@ -52,6 +62,35 @@ public section
 open IsLocalRing Polynomial
 
 namespace TauCeti
+
+namespace Subalgebra
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- If a subalgebra `T` meets every residue class of `S` modulo a principal ideal `I` and contains
+a generator of `I`, then it meets every residue class modulo any power of `I`. -/
+theorem sup_pow_eq_top {T : Subalgebra R S} {I : Ideal S} {π : S}
+    (hπ : Ideal.span {π} = I) (hπT : π ∈ T)
+    (h : T.toSubmodule ⊔ I.restrictScalars R = ⊤) (n : ℕ) :
+    T.toSubmodule ⊔ (I ^ n).restrictScalars R = ⊤ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hpow : I ^ n = Ideal.span {π ^ n} := by
+      rw [← hπ, Ideal.span_singleton_pow]
+    refine eq_top_iff.mpr fun s _ => ?_
+    obtain ⟨t, ht, m, hm, rfl⟩ := Submodule.mem_sup.mp (ih.ge Submodule.mem_top : s ∈ _)
+    obtain ⟨u, rfl⟩ : ∃ u, m = π ^ n * u := by
+      rw [Submodule.restrictScalars_mem, hpow, Ideal.mem_span_singleton] at hm
+      exact hm
+    obtain ⟨t', ht', m', hm', rfl⟩ := Submodule.mem_sup.mp (h.ge Submodule.mem_top : u ∈ _)
+    refine Submodule.mem_sup.mpr ⟨t + π ^ n * t', ?_, π ^ n * m', ?_, by ring⟩
+    · rw [Subalgebra.mem_toSubmodule] at ht ht' ⊢
+      exact add_mem ht (mul_mem (pow_mem hπT n) ht')
+    · rw [Submodule.restrictScalars_mem, pow_succ]
+      exact Ideal.mul_mem_mul (hpow ▸ Ideal.mem_span_singleton_self _) hm'
+
+end Subalgebra
 
 namespace IsLocalRing
 
@@ -66,7 +105,7 @@ theorem exists_span_eval_eq_maximalIdeal {f : S[X]} {a π : S}
     (hπ : Ideal.span {π} = maximalIdeal S) (ha : f.eval a ∈ maximalIdeal S)
     (ha' : IsUnit ((derivative f).eval a)) :
     ∃ b : S, b - a ∈ maximalIdeal S ∧ Ideal.span {f.eval b} = maximalIdeal S := by
-  have hπmem : π ∈ maximalIdeal S := hπ ▸ Ideal.subset_span rfl
+  have hπmem : π ∈ maximalIdeal S := hπ ▸ Ideal.mem_span_singleton_self π
   by_cases h : Ideal.span {f.eval a} = maximalIdeal S
   · exact ⟨a, by simp, h⟩
   refine ⟨a + π, by simpa using hπmem, ?_⟩
@@ -88,47 +127,23 @@ theorem exists_span_eval_eq_maximalIdeal {f : S[X]} {a π : S}
 
 end Newton
 
-section Nakayama
-
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing S]
-
-/-- If a subalgebra `T` meets every residue class of `S` modulo the maximal ideal and contains a
-generator `π` of that maximal ideal, then it meets every residue class modulo any power of the
-maximal ideal. -/
-theorem sup_maximalIdeal_pow_eq_top {T : Subalgebra R S} {π : S}
-    (hπ : Ideal.span {π} = maximalIdeal S) (hπT : π ∈ T)
-    (h : T.toSubmodule ⊔ (maximalIdeal S).restrictScalars R = ⊤) (n : ℕ) :
-    T.toSubmodule ⊔ (maximalIdeal S ^ n).restrictScalars R = ⊤ := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have hpow : maximalIdeal S ^ n = Ideal.span {π ^ n} := by
-      rw [← hπ, Ideal.span_singleton_pow]
-    refine eq_top_iff.mpr fun s _ => ?_
-    obtain ⟨t, ht, m, hm, rfl⟩ := Submodule.mem_sup.mp (ih ▸ Submodule.mem_top : s ∈ _)
-    obtain ⟨u, rfl⟩ : ∃ u, m = π ^ n * u := by
-      rw [Submodule.restrictScalars_mem, hpow, Ideal.mem_span_singleton] at hm
-      exact hm
-    obtain ⟨t', ht', m', hm', rfl⟩ := Submodule.mem_sup.mp (h ▸ Submodule.mem_top : u ∈ _)
-    refine Submodule.mem_sup.mpr ⟨t + π ^ n * t', ?_, π ^ n * m', ?_, by ring⟩
-    · rw [Subalgebra.mem_toSubmodule] at ht ht' ⊢
-      exact add_mem ht (mul_mem (pow_mem hπT n) ht')
-    · rw [Submodule.restrictScalars_mem, pow_succ]
-      exact Ideal.mul_mem_mul (hpow ▸ Ideal.mem_span_singleton_self _) hm'
-
-end Nakayama
-
-section Residue
-
 variable {R S : Type*} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
   [Algebra R S] [IsLocalHom (algebraMap R S)]
+
+/-- Reduction modulo the maximal ideals commutes with `algebraMap`, as a square of ring
+homomorphisms.  This is Mathlib's `IsLocalRing.ResidueField.algebraMap_residue` in the form
+`Polynomial.map_aeval_eq_aeval_map` takes. -/
+private theorem residue_comp_algebraMap :
+    (algebraMap (ResidueField R) (ResidueField S)).comp (residue R) =
+      (residue S).comp (algebraMap R S) :=
+  RingHom.ext fun x => ResidueField.algebraMap_residue x
 
 /-- If the residue of `β` generates the residue field extension, then `R[β]` meets every residue
 class of `S` modulo the maximal ideal.  The proof is the forward half of Mathlib's
 `IsLocalRing.adjoin_residue_eq_top_iff_adjoin_eq_top`, stopped one step earlier: that lemma
 concludes with `𝓂(R) S` in place of `𝓂(S)`, which needs `S` unramified over `R` so that the two
 ideals agree.  Here they do not, and the gap between them is closed instead by
-`TauCeti.IsLocalRing.sup_maximalIdeal_pow_eq_top`. -/
+`TauCeti.Subalgebra.sup_pow_eq_top`. -/
 theorem sup_maximalIdeal_eq_top_of_adjoin_residue_eq_top {β : S}
     (hβ : Algebra.adjoin (ResidueField R) {residue S β} = ⊤) :
     (Algebra.adjoin R {β}).toSubmodule ⊔ (maximalIdeal S).restrictScalars R = ⊤ := by
@@ -136,37 +151,31 @@ theorem sup_maximalIdeal_eq_top_of_adjoin_residue_eq_top {β : S}
   refine eq_top_iff.mpr fun s _ => ?_
   obtain ⟨p, hp⟩ := hβ (residue S s)
   obtain ⟨q, rfl⟩ := Polynomial.map_surjective _ residue_surjective p
-  rw [← map_aeval_eq_aeval_map (ψ := residue S) (φ := residue R) rfl] at hp
+  rw [← map_aeval_eq_aeval_map residue_comp_algebraMap] at hp
   refine Submodule.mem_sup.mpr ⟨aeval β q, ?_, s - aeval β q, ?_, by ring⟩
   · rw [Subalgebra.mem_toSubmodule, Algebra.adjoin_singleton_eq_range_aeval]
     exact ⟨q, rfl⟩
   · rw [Submodule.restrictScalars_mem, ← Ideal.Quotient.eq]
     exact hp.symm
 
-end Residue
+variable [Module.Finite R S]
 
-end IsLocalRing
-
-namespace IsDiscreteValuationRing
-
-variable {R S : Type*} [CommRing R] [CommRing S] [IsDomain R] [IsDomain S]
-  [IsDiscreteValuationRing R] [IsDiscreteValuationRing S] [Algebra R S] [Module.Finite R S]
-  [FaithfulSMul R S]
-
-omit [Module.Finite R S] in
+omit [IsLocalHom (algebraMap R S)] in
 /-- The maximal ideal of `S` is nilpotent modulo the ideal generated by the maximal ideal of `R`:
-some power of `𝓂(S)` lies in `𝓂(R) S`.  The exponent that works is the ramification index. -/
+some power of `𝓂(S)` lies in `𝓂(R) S`.  For discrete valuation rings the exponent that works is
+the ramification index. -/
 theorem exists_maximalIdeal_pow_le_map :
     ∃ n : ℕ, maximalIdeal S ^ n ≤ (maximalIdeal R).map (algebraMap R S) := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  have hne : (maximalIdeal R).map (algebraMap R S) ≠ ⊥ := by
-    refine fun hbot => (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R S)).mpr
-      hϖ.ne_zero ?_
-    exact (Submodule.eq_bot_iff _).mp hbot _
-      (Ideal.mem_map_of_mem _ (hϖ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self ϖ))
-  obtain ⟨n, hn⟩ := _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hne hπ
-  exact ⟨n, by rw [hn, hπ.maximalIdeal_eq, Ideal.span_singleton_pow]⟩
+  have : Module.Finite R (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
+    Module.Finite.of_surjective (Ideal.Quotient.mkₐ R _).toLinearMap Ideal.Quotient.mk_surjective
+  have : Module.Finite (R ⧸ maximalIdeal R) (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
+    Module.Finite.of_restrictScalars_finite R _ _
+  have : IsArtinianRing (R ⧸ maximalIdeal R) :=
+    letI := Ideal.Quotient.field (maximalIdeal R)
+    inferInstance
+  have : IsArtinianRing (S ⧸ (maximalIdeal R).map (algebraMap R S)) :=
+    IsArtinianRing.of_finite (R ⧸ maximalIdeal R) _
+  exact _root_.IsLocalRing.exists_maximalIdeal_pow_le_of_isArtinianRing_quotient _
 
 /-- **The generation criterion.**  An element `β` of `S` generates `S` as an `R`-algebra as soon as
 its residue generates the residue field extension and some polynomial in `β` with coefficients in
@@ -178,13 +187,62 @@ theorem adjoin_eq_top_of_span_eval_eq_maximalIdeal {β : S} {g : R[X]}
   obtain ⟨n, hn⟩ := exists_maximalIdeal_pow_le_map (R := R) (S := S)
   have hmem : aeval β g ∈ Algebra.adjoin R {β} := by
     rw [Algebra.adjoin_singleton_eq_range_aeval]; exact ⟨g, rfl⟩
-  have hsup := TauCeti.IsLocalRing.sup_maximalIdeal_pow_eq_top hgen hmem
-    (TauCeti.IsLocalRing.sup_maximalIdeal_eq_top_of_adjoin_residue_eq_top hres) n
+  have hsup := TauCeti.Subalgebra.sup_pow_eq_top hgen hmem
+    (sup_maximalIdeal_eq_top_of_adjoin_residue_eq_top hres) n
   rw [← Algebra.toSubmodule_eq_top]
   refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson_bot
     (Module.finite_def.mp inferInstance) (maximalIdeal_le_jacobson ⊥) ?_)
   rw [Ideal.smul_top_eq_map]
   exact hsup.ge.trans (sup_le_sup_left (Submodule.restrictScalars_mono R hn) _)
+
+/-- **The totally ramified case.**  If the residue extension is trivial, every generator of the
+maximal ideal of `S` generates `S` over `R`.  This is the direction of the Eisenstein description
+of a totally ramified extension that produces an integral power basis. -/
+theorem adjoin_eq_top_of_residue_surjective_of_span_eq_maximalIdeal
+    (hsurj : Function.Surjective (algebraMap (ResidueField R) (ResidueField S)))
+    {π : S} (hπ : Ideal.span {π} = maximalIdeal S) : Algebra.adjoin R {π} = ⊤ := by
+  refine adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := X) ?_ (by simpa using hπ)
+  rw [eq_top_iff]
+  rintro x -
+  obtain ⟨y, rfl⟩ := hsurj x
+  exact _root_.Subalgebra.algebraMap_mem _ y
+
+end IsLocalRing
+
+namespace IntermediateField
+
+variable {R S K L : Type*} [CommRing R] [CommRing S] [Field K] [Field L] [Algebra R S]
+  [Algebra R K] [Algebra R L] [Algebra S L] [Algebra K L] [IsScalarTower R S L]
+  [IsScalarTower R K L] [IsFractionRing S L]
+
+/-- If `S` is generated as an `R`-algebra by a single element `β`, then the fraction field `L` of
+`S` is generated by the image of `β` over any field `K` sitting between `R` and `L`: every element
+of `L` is a ratio of two elements of `R[β]`. -/
+theorem adjoin_eq_top_of_algebra_adjoin_eq_top {β : S} (h : Algebra.adjoin R {β} = ⊤) :
+    IntermediateField.adjoin K {algebraMap S L β} = ⊤ := by
+  have key : ∀ s : S, algebraMap S L s ∈ IntermediateField.adjoin K {algebraMap S L β} := by
+    intro s
+    have hs : s ∈ Algebra.adjoin R {β} := h.ge Algebra.mem_top
+    induction hs using Algebra.adjoin_induction with
+    | mem x hx =>
+      obtain rfl : x = β := hx
+      exact IntermediateField.subset_adjoin K _ rfl
+    | algebraMap r =>
+      rw [← IsScalarTower.algebraMap_apply R S L, IsScalarTower.algebraMap_apply R K L]
+      exact IntermediateField.algebraMap_mem _ _
+    | add x y _ _ hx hy => rw [map_add]; exact add_mem hx hy
+    | mul x y _ _ hx hy => rw [map_mul]; exact mul_mem hx hy
+  refine eq_top_iff.mpr fun x _ => ?_
+  obtain ⟨s, t, -, rfl⟩ := IsFractionRing.div_surjective (A := S) x
+  exact div_mem (key s) (key t)
+
+end IntermediateField
+
+namespace IsDiscreteValuationRing
+
+variable {R S : Type*} [CommRing R] [CommRing S] [IsDomain R] [IsDomain S]
+  [IsDiscreteValuationRing R] [IsDiscreteValuationRing S] [Algebra R S] [Module.Finite R S]
+  [FaithfulSMul R S]
 
 /-- **Local monogenicity.**  A finite extension of discrete valuation rings whose residue
 extension is separable is generated by a single element.  Completeness of `R` is not needed: it
@@ -200,10 +258,10 @@ theorem exists_adjoin_eq_top [Algebra.IsSeparable (ResidueField R) (ResidueField
     (mem_lifts_of_surjective residue_surjective (minpoly (ResidueField R) (residue S a)))
   have hbridge : ∀ x : S, residue S (aeval x g) =
       aeval (residue S x) (minpoly (ResidueField R) (residue S a)) := fun x => by
-    rw [map_aeval_eq_aeval_map (ψ := residue S) (φ := residue R) rfl, hg]
+    rw [map_aeval_eq_aeval_map TauCeti.IsLocalRing.residue_comp_algebraMap, hg]
   have hbridge' : ∀ x : S, residue S (aeval x (derivative g)) =
       aeval (residue S x) (derivative (minpoly (ResidueField R) (residue S a))) := fun x => by
-    rw [map_aeval_eq_aeval_map (ψ := residue S) (φ := residue R) rfl, ← derivative_map, hg]
+    rw [map_aeval_eq_aeval_map TauCeti.IsLocalRing.residue_comp_algebraMap, ← derivative_map, hg]
   -- `g` has a simple root at `a` modulo the maximal ideal, so a Newton step applies.
   have hval : (g.map (algebraMap R S)).eval a ∈ maximalIdeal S := by
     rw [eval_map, ← aeval_def, ← residue_eq_zero_iff]
@@ -215,9 +273,8 @@ theorem exists_adjoin_eq_top [Algebra.IsSeparable (ResidueField R) (ResidueField
     hπ.maximalIdeal_eq.symm hval hder
   have hres : residue S β = residue S a := by
     rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff]; exact hβa
-  refine ⟨β, adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := g) ?_ ?_⟩
-  · rw [hres, ← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-      (IsAlgebraic.of_finite _ _), hα, IntermediateField.top_toSubalgebra]
+  refine ⟨β, TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := g) ?_ ?_⟩
+  · exact hres ▸ Algebra.adjoin_eq_top_of_primitive_element (IsAlgebraic.of_finite _ _) hα
   · rwa [aeval_def, ← eval_map]
 
 /-- A finite extension of discrete valuation rings with separable residue extension admits a
@@ -227,18 +284,25 @@ theorem nonempty_powerBasis [Algebra.IsSeparable (ResidueField R) (ResidueField 
   let ⟨β, h⟩ := exists_adjoin_eq_top (R := R) (S := S)
   ⟨PowerBasis.ofAdjoinEqTop' (IsIntegral.of_finite R β) h⟩
 
+/-- A generator of `S` over `R` also generates the fraction field of `S` over that of `R`, so the
+power basis of `TauCeti.IsDiscreteValuationRing.nonempty_powerBasis` is built from a primitive
+element of the extension of fraction fields. -/
+theorem exists_adjoin_eq_top_and_intermediateField_adjoin_eq_top
+    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] (K L : Type*) [Field K] [Field L]
+    [Algebra R K] [Algebra R L] [Algebra S L] [Algebra K L] [IsScalarTower R S L]
+    [IsScalarTower R K L] [IsFractionRing S L] :
+    ∃ β : S, Algebra.adjoin R {β} = ⊤ ∧ IntermediateField.adjoin K {algebraMap S L β} = ⊤ :=
+  let ⟨β, h⟩ := exists_adjoin_eq_top (R := R) (S := S)
+  ⟨β, h, TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top h⟩
+
 /-- **The totally ramified case.**  If the residue extension is trivial, every uniformizer of `S`
 generates `S` over `R`.  This is the direction of the Eisenstein description of a totally ramified
 extension that produces an integral power basis. -/
-theorem adjoin_eq_top_of_irreducible
+theorem adjoin_eq_top_of_residue_surjective_of_irreducible
     (hsurj : Function.Surjective (algebraMap (ResidueField R) (ResidueField S)))
-    {π : S} (hπ : Irreducible π) : Algebra.adjoin R {π} = ⊤ := by
-  refine adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := X) ?_ (by simpa using
-    hπ.maximalIdeal_eq.symm)
-  rw [eq_top_iff]
-  rintro x -
-  obtain ⟨y, rfl⟩ := hsurj x
-  exact Subalgebra.algebraMap_mem _ y
+    {π : S} (hπ : Irreducible π) : Algebra.adjoin R {π} = ⊤ :=
+  TauCeti.IsLocalRing.adjoin_eq_top_of_residue_surjective_of_span_eq_maximalIdeal hsurj
+    hπ.maximalIdeal_eq.symm
 
 end IsDiscreteValuationRing
 
