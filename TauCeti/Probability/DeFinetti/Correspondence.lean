@@ -214,8 +214,7 @@ carried by the extreme — equivalently i.i.d. — exchangeable laws
 themselves. -/
 theorem deFinettiBarycenter_mem_extremePoints_iff [StandardBorelSpace α]
     {π : Measure (ProbabilityMeasure α)} [IsProbabilityMeasure π] :
-    deFinettiBarycenter π ∈ extremePoints ℝ≥0∞
-        {ν : Measure (ℕ → α) | ExchangeableLaw ν ∧ IsProbabilityMeasure ν} ↔
+    deFinettiBarycenter π ∈ extremePoints ℝ≥0∞ (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α, π = Measure.dirac P := by
   rw [exchangeable_extreme_iff_iid]
   refine ⟨fun ⟨P, hP⟩ => ⟨P, TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq ?_⟩,

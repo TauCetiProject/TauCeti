@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TrialityD4
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD

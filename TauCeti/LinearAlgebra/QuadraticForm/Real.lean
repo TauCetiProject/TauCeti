@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
+import TauCeti.Analysis.Real.Sqrt
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
@@ -27,6 +28,9 @@ to the normal form of its own signature.
 
 ## Main results
 
+* `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
+  normalized to value one by inverse-square-root scaling. This normalization feeds the
+  reflection-pair construction for compact real Clifford forms.
 * `QuadraticForm.sigPos_weightedSumSquares_signType` and
   `QuadraticForm.sigNeg_weightedSumSquares_signType`: the two indices of inertia of a
   sign-weighted sum of squares count the weights `1` and the weights `-1`.
@@ -52,6 +56,24 @@ public section
 noncomputable section
 
 open Finset QuadraticMap
+
+namespace QuadraticMap
+
+variable {M : Type*} [AddCommMonoid M] [Module ℝ M]
+
+/-- Scaling a vector by the inverse square root of its positive quadratic value gives value one. -/
+@[simp]
+theorem map_inv_sqrt_smul_eq_one {Q : QuadraticForm ℝ M} {v : M} (hpos : 0 < Q v) :
+    Q ((Real.sqrt (Q v))⁻¹ • v) = 1 := by
+  have hsquare : (Real.sqrt (Q v))⁻¹ ^ 2 = (Q v)⁻¹ := by
+    simpa only [mul_one, one_pow, one_div] using Real.inv_sqrt_mul_sq hpos.le 1
+  calc
+    Q ((Real.sqrt (Q v))⁻¹ • v) = (Real.sqrt (Q v))⁻¹ ^ 2 * Q v := by
+      simp only [QuadraticMap.map_smul, smul_eq_mul, pow_two]
+    _ = (Q v)⁻¹ * Q v := by rw [hsquare]
+    _ = 1 := inv_mul_cancel₀ hpos.ne'
+
+end QuadraticMap
 
 namespace QuadraticForm
 

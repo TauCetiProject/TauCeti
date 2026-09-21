@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Orbits
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 public import TauCeti.RepresentationTheory.Induction.Permutation
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # The pairing of two permutation characters counts double cosets

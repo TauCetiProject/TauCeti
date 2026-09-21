@@ -255,7 +255,7 @@ def counitBialgEquivOfSmoothOfIsLinearlyReductiveOfForallIsUnipotentPoint
     (hH : ∀ g : WithConv (H →ₐ[k] k), IsUnipotentPoint g) :
     H ≃ₐc[k] k :=
   letI := hsm
-  letI : IsReduced H := isReduced_of_smooth_of_field k H
+  letI : IsReduced H := isReduced_of_smooth k H
   counitBialgEquivOfIsLinearlyReductiveOfForallIsUnipotentPoint k H hlr hH
 
 variable (k H) in
@@ -268,7 +268,7 @@ theorem counitBialgEquivOfSmoothOfIsLinearlyReductiveOfForallIsUnipotentPoint_ap
     counitBialgEquivOfSmoothOfIsLinearlyReductiveOfForallIsUnipotentPoint k H hsm hlr hH x =
       Bialgebra.counitBialgHom k H x := by
   let _ := hsm
-  let _ : IsReduced H := isReduced_of_smooth_of_field k H
+  let _ : IsReduced H := isReduced_of_smooth k H
   rw [counitBialgEquivOfSmoothOfIsLinearlyReductiveOfForallIsUnipotentPoint]
   exact counitBialgEquivOfIsLinearlyReductiveOfForallIsUnipotentPoint_apply k H hlr hH x
 
@@ -282,7 +282,7 @@ theorem counitBialgEquivOfSmoothOfIsLinearlyReductiveOfForallIsUnipotentPoint_sy
     (counitBialgEquivOfSmoothOfIsLinearlyReductiveOfForallIsUnipotentPoint k H hsm hlr hH).symm
         r = algebraMap k H r := by
   let _ := hsm
-  let _ : IsReduced H := isReduced_of_smooth_of_field k H
+  let _ : IsReduced H := isReduced_of_smooth k H
   rw [counitBialgEquivOfSmoothOfIsLinearlyReductiveOfForallIsUnipotentPoint]
   exact counitBialgEquivOfIsLinearlyReductiveOfForallIsUnipotentPoint_symm_apply k H hlr hH r
 

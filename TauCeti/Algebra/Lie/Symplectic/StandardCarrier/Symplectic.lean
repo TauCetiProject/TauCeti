@@ -96,7 +96,7 @@ theorem baseChangeDefiningIdeal_eq_symplecticDefiningHopfIdeal
     (k : Type u) [Field k] :
     baseChangeDefiningIdeal n k = Symplectic.definingHopfIdeal k (n + 1) := by
   let _ : IsReduced (Symplectic.coordinateHopfAlgebra k (n + 1)) :=
-    isReduced_of_smooth_of_field k _
+    isReduced_of_smooth k _
   apply le_antisymm
   · apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := AlgebraicClosure k)
     intro g hg

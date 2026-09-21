@@ -25,6 +25,11 @@ inflation has a retraction.
 
 The bundled `TauCeti.ExactStructure.InjectivePresentation` records a conflation into a relatively
 injective object, and `TauCeti.ExactStructure.EnoughInjectives` says that every object admits one.
+A morphism of the presented objects extends to the injective middle terms and hence induces a
+morphism of the cokernel terms; both are recorded as
+`TauCeti.ExactStructure.InjectivePresentation.middleMap` and
+`TauCeti.ExactStructure.InjectivePresentation.cokernelMap`. They depend on a choice of extension,
+which only the stable quotient removes.
 
 ## References
 
@@ -222,6 +227,38 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
 @[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughInjectives A] (X : A) :
     HEq (abelian X).p (cokernel.π (Injective.ι X)) := (HEq.rfl)
+
+section Comparison
+
+variable {X Y : C}
+
+/-- The extension of `f : X ⟶ Y` to the injective middle terms of relative injective
+presentations `P` of `X` and `Q` of `Y`, chosen by relative injectivity of `Q.I`. -/
+noncomputable def middleMap (P : E.InjectivePresentation X) (Q : E.InjectivePresentation Y)
+    (f : X ⟶ Y) : P.I ⟶ Q.I :=
+  Q.isInjective.factorThru (E.isInflation_f P.conflation) (f ≫ Q.i)
+
+/-- The chosen extension of `f` does extend `f` across the two inflations. -/
+@[reassoc (attr := simp)]
+theorem i_comp_middleMap (P : E.InjectivePresentation X) (Q : E.InjectivePresentation Y)
+    (f : X ⟶ Y) : P.i ≫ P.middleMap Q f = f ≫ Q.i :=
+  Q.isInjective.comp_factorThru (E.isInflation_f P.conflation) (f ≫ Q.i)
+
+/-- The morphism induced by `f : X ⟶ Y` on the cokernel terms of relative injective
+presentations, through the chosen extension `TauCeti.ExactStructure.InjectivePresentation.middleMap`
+of the injective middle terms. -/
+noncomputable def cokernelMap (P : E.InjectivePresentation X) (Q : E.InjectivePresentation Y)
+    (f : X ⟶ Y) : P.K ⟶ Q.K :=
+  (E.isKernelCokernelPair _ P.conflation).desc (P.middleMap Q f ≫ Q.p) (by
+    rw [← Category.assoc, P.i_comp_middleMap, Category.assoc, Q.zero, comp_zero])
+
+/-- The induced morphism on cokernel terms makes the square on the two deflations commute. -/
+@[reassoc (attr := simp)]
+theorem p_comp_cokernelMap (P : E.InjectivePresentation X) (Q : E.InjectivePresentation Y)
+    (f : X ⟶ Y) : P.p ≫ P.cokernelMap Q f = P.middleMap Q f ≫ Q.p :=
+  (E.isKernelCokernelPair _ P.conflation).g_desc _ _
+
+end Comparison
 
 end InjectivePresentation
 

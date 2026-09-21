@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.IterateOneParameter
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.SpecialIsogeny
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.ReeG2.Carrier
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
@@ -128,14 +129,24 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.AmbientGroup) :
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^
           (d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
             d.toSuzukiReeIndex.exponent i))) := by
+  have hsq : ∀ (j : Fin d.1.rank) (t : Multiplicative d.1.Closure),
+      d.halfFrobenius (d.halfFrobenius (d.simpleRootSubgroup j t)) =
+        d.simpleRootSubgroup j (Multiplicative.ofAdd (Multiplicative.toAdd t ^ 3)) := fun j t => by
+    rw [halfFrobenius_halfFrobenius, primeFrobenius_simpleRootSubgroup]
   have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
     Monoid.End.coe_pow (M := d.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  rw [hpow, d.toSuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one,
-    Function.iterate_succ_apply, halfFrobenius_simpleRootSubgroup,
-    halfFrobenius_iterate_two_mul, simpleRootSubgroup_def,
-    G2ShortRoot.PrimeField.frobenius_rootSubgroupPoints]
-  congr 2
-  simp only [toAdd_ofAdd, ← pow_mul, characteristic_eq_three, Nat.mul_comm]
+  have hexp : d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
+      d.toSuzukiReeIndex.exponent i =
+        3 ^ d.toSuzukiReeIndex.halfExponent * d.toSuzukiReeIndex.exponent i := by
+    rw [characteristic_eq_three]
+  rw [hexp, hpow, d.toSuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one]
+  exact iterate_two_mul_add_one_apply_pow
+    (x := fun a => d.simpleRootSubgroup i (Multiplicative.ofAdd a))
+    (y := fun a => d.simpleRootSubgroup (d.toSuzukiReeIndex.lengthPerm i)
+      (Multiplicative.ofAdd a))
+    (fun a => d.halfFrobenius_simpleRootSubgroup i (Multiplicative.ofAdd a))
+    (fun a => hsq (d.toSuzukiReeIndex.lengthPerm i) (Multiplicative.ofAdd a))
+    d.toSuzukiReeIndex.halfExponent (Multiplicative.toAdd u)
 
 /-- The fixed subgroup of the Ree G2 Steinberg endomorphism. -/
 abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)

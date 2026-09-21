@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 
 /-!
-# Orbit-stabiliser for a transitive action
+# Transitive actions
 
 Mathlib's `MulAction.ofQuotientStabilizer` sends the coset of `g` in `G ⧸ stabilizer G b` to
 `g • b`; it is injective by `MulAction.injective_ofQuotientStabilizer`, and its image is the orbit
@@ -17,6 +17,10 @@ of `b`, which is the orbit-stabiliser theorem. When the action is transitive tha
 `X`, so the map is a bijection. This file records that specialisation, together with the
 equivariance -- Mathlib's `MulAction.ofQuotientStabilizer_smul` -- that makes it an isomorphism of
 `G`-sets rather than a bare bijection.
+
+It also records one closure property of pretransitivity, `TauCeti.isPretransitive_prod_left`,
+which needs no group and no action laws and so comes first, before any of the above structure is
+assumed.
 
 ## Main definitions
 
@@ -29,6 +33,7 @@ equivariance -- Mathlib's `MulAction.ofQuotientStabilizer_smul` -- that makes it
   `TauCeti.quotientStabilizerEquiv_smul`: its equivariance.
 * `TauCeti.natCard_dvd_natCard_of_isPretransitive`: the number of points of a nonempty set acted
   on transitively divides the order of the group.
+* `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
 
 ## Implementation notes
 
@@ -43,6 +48,26 @@ public section
 open MulAction
 
 namespace TauCeti
+
+section SMul
+
+variable {G : Type*} (X Y : Type*) [SMul G X] [SMul G Y]
+
+/-- **Pairing a pretransitive action with a subsingleton leaves it pretransitive.** A scalar
+carrying `p.1` to `q.1` carries `p` to `q` outright, the second coordinates being equal for want of
+anywhere else to be, so neither a monoid nor any action law enters.
+
+`Y` is allowed to be empty, in which case `X × Y` is empty and the statement is vacuous. Counting
+the orbits of such a product -- via `TauCeti.MulAction.card_orbitRelQuotient_eq_one`, which is the
+value Burnside's lemma takes on it -- needs more than this: a genuine `MulAction` of a group, and
+`Nonempty` to rule the empty case back out. -/
+theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
+    IsPretransitive G (X × Y) :=
+  ⟨fun p q => by
+    obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G p.1 q.1
+    exact ⟨g, Prod.fst_injective hg⟩⟩
+
+end SMul
 
 variable (G : Type*) {X : Type*} [Group G] [MulAction G X] [IsPretransitive G X]
 

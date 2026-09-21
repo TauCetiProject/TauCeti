@@ -120,7 +120,7 @@ theorem smoothCommHopfAlgProperty_iff_isReduced_of_isAlgClosed
   constructor
   · intro hH
     let _ : Algebra.Smooth k H := (smoothCommHopfAlgProperty_iff H).mp hH
-    exact isReduced_of_smooth_of_field k H
+    exact isReduced_of_smooth k H
   · intro hH
     let _ : IsReduced H := hH
     exact smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced k H

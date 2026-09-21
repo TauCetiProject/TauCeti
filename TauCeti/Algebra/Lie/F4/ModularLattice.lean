@@ -409,6 +409,29 @@ second half of the table. -/
   revert i
   decide
 
+/-- The pinned root index of a positive or negative simple root. -/
+def f4SignedSimpleRootIndex : Fin 4 ⊕ Fin 4 → Fin 48
+  | .inl i => Fin.castAdd 44 i
+  | .inr i => f4OppositeRootIndex (Fin.castAdd 44 i)
+
+/-- A positive simple-root label is its pinned root index. -/
+@[simp] theorem f4SignedSimpleRootIndex_inl (i : Fin 4) :
+    f4SignedSimpleRootIndex (.inl i) = Fin.castAdd 44 i := (rfl)
+
+/-- A negative simple-root label is the index opposite to the corresponding positive root. -/
+@[simp] theorem f4SignedSimpleRootIndex_inr (i : Fin 4) :
+    f4SignedSimpleRootIndex (.inr i) = f4OppositeRootIndex (Fin.castAdd 44 i) := (rfl)
+
+/-- A pinned positive or negative simple root vector in the reduced Chevalley lattice. -/
+noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
+    f4ModularChevalleyLieAlgebra :=
+  f4ModularRootVector (f4SignedSimpleRootIndex k)
+
+/-- A signed simple root vector is the modular root vector at its pinned root index. -/
+@[simp] theorem f4ModularSignedSimpleRootVector_eq (k : Fin 4 ⊕ Fin 4) :
+    f4ModularSignedSimpleRootVector k = f4ModularRootVector (f4SignedSimpleRootIndex k) := by
+  rw [f4ModularSignedSimpleRootVector]
+
 /-- Opposite roots have the same coroot after reduction modulo two. -/
 @[simp] theorem f4ModularCoroot_f4OppositeRootIndex (α : Fin 48) :
     f4ModularCoroot (f4OppositeRootIndex α) = f4ModularCoroot α := by

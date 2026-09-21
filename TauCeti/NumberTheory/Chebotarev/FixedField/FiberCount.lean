@@ -225,8 +225,7 @@ private theorem under_fixedField_injOn_frobenius
   exact (Ideal.eq_of_smul_eq_of_liesOver_under_fixedField
     hQ.2.mem_stabilizer R.asIdeal).symm
 
--- Source: `TauCetiRoadmap/Chebotarev/Suggested.lean`, lines 384--391, and the fixed-field
--- counting argument in Birkbeck--Brasca, `CebotarevDensity/FixedFieldDensity.lean`.
+-- The counting argument follows Birkbeck--Brasca, `CebotarevDensity/FixedFieldDensity.lean`.
 /-- **The fixed-field Frobenius fiber count.** Let `sigma` represent the conjugacy class `C`, and
 let `p` be an unramified prime with Artin class `C`.  The number of primes of
 `L ^ <sigma>` above `p` whose relative Artin class in `L / L ^ <sigma>` is represented by
