@@ -162,11 +162,16 @@ lemma principalPartsBoundary_apply (D : SchemeWeilDivisor X)
 parts. -/
 lemma principalPartsBoundary_surjective (D : SchemeWeilDivisor X) :
     Function.Surjective (principalPartsBoundary R hclosed D) := by
-  intro z
-  obtain ⟨q, rfl⟩ := (principalPartsQuotientEquivCohomologyOne R hclosed D).surjective z
-  obtain ⟨p, rfl⟩ := (LinearMap.range
-    (globalToPrincipalPartsBaseLinear R D)).mkQ_surjective q
-  exact ⟨p, principalPartsQuotientEquivCohomologyOne_mk R hclosed D p |>.symm⟩
+  exact (principalPartsQuotientEquivCohomologyOne R hclosed D).surjective.comp
+    (LinearMap.range (globalToPrincipalPartsBaseLinear R D)).mkQ_surjective
+
+/-- The kernel of the principal-parts boundary is the image of global rational functions. -/
+lemma ker_principalPartsBoundary (D : SchemeWeilDivisor X) :
+    LinearMap.ker (principalPartsBoundary R hclosed D) =
+      LinearMap.range (globalToPrincipalPartsBaseLinear R D) := by
+  rw [principalPartsBoundary, LinearMap.ker_comp_of_ker_eq_bot _
+    (LinearMap.ker_eq_bot.2 (principalPartsQuotientEquivCohomologyOne R hclosed D).injective),
+    Submodule.ker_mkQ]
 
 /-- A family of global principal parts has zero boundary exactly when it is the family of
 principal parts of a global rational function. -/
@@ -176,37 +181,7 @@ lemma principalPartsBoundary_eq_zero_iff (D : SchemeWeilDivisor X)
     principalPartsBoundary R hclosed D p = 0 ↔
       ∃ f : Γ(Scheme.rationalFunctions X, ⊤),
         globalToPrincipalPartsBaseLinear R D f = p := by
-  let Q := LinearMap.range (globalToPrincipalPartsBaseLinear R D)
-  let e := principalPartsQuotientEquivCohomologyOne R hclosed D
-  constructor
-  · intro hp
-    have hq : Q.mkQ p = 0 := by
-      rw [principalPartsBoundary, LinearMap.comp_apply] at hp
-      apply e.injective
-      exact hp.trans (map_zero e).symm
-    apply LinearMap.mem_range.mp
-    rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply]
-    exact hq
-  · intro hp
-    have hp' : p ∈ Q := LinearMap.mem_range.mpr hp
-    have hq : (Submodule.Quotient.mk p : Γ(principalParts D, ⊤) ⧸ Q) = 0 := by
-      rw [Submodule.Quotient.mk_eq_zero]
-      exact hp'
-    rw [principalPartsBoundary, LinearMap.comp_apply, Submodule.mkQ_apply, hq, map_zero]
-
-/-- The kernel of the principal-parts boundary is the image of global rational functions. -/
-lemma ker_principalPartsBoundary (D : SchemeWeilDivisor X) :
-    LinearMap.ker (principalPartsBoundary R hclosed D) =
-      LinearMap.range (globalToPrincipalPartsBaseLinear R D) := by
-  apply le_antisymm
-  · intro p hp
-    rw [LinearMap.mem_ker] at hp
-    rw [LinearMap.mem_range]
-    exact (principalPartsBoundary_eq_zero_iff R hclosed D p).mp hp
-  · intro p hp
-    rw [LinearMap.mem_range] at hp
-    rw [LinearMap.mem_ker]
-    exact (principalPartsBoundary_eq_zero_iff R hclosed D p).mpr hp
+  rw [← LinearMap.mem_ker, ker_principalPartsBoundary, LinearMap.mem_range]
 
 end SchemeWeilDivisor
 
