@@ -55,6 +55,51 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+namespace HolderSpace
+
+/-- Derivative graphs between bounded continuous and Hölder fields are closed. -/
+theorem isClosed_fderivGraph {α : ℝ≥0} {E : Type u} {Y : Type v}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] :
+    IsClosed {J : (E →ᵇ Y) × HolderSpace α E (E →L[ℝ] Y) |
+      ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} := by
+  rw [← isSeqClosed_iff_isClosed]
+  intro J j hJ hjlim x
+  apply hasFDerivAt_of_tendstoUniformly
+      (f := fun n ↦ (J n).1) (f' := fun n y ↦ (J n).2 y)
+      (g := j.1) (g' := fun y ↦ j.2 y) (l := atTop)
+  · have hder : Tendsto (fun n ↦ (J n).2) atTop (𝓝 j.2) :=
+      (continuous_snd.tendsto j).comp hjlim
+    have hcontinuous : Continuous
+        (HolderSpace.toBoundedContinuousFunction :
+          HolderSpace α E (E →L[ℝ] Y) → E →ᵇ (E →L[ℝ] Y)) := by
+      have h := (HolderSpace.toBoundedContinuousFunctionCLM
+        (α := α) (X := E) (Y := E →L[ℝ] Y)).continuous
+      apply h.congr
+      exact fun f ↦ HolderSpace.toBoundedContinuousFunctionCLM_apply f
+    have hderBCF : Tendsto
+        (fun n ↦ (J n).2.toBoundedContinuousFunction) atTop
+        (𝓝 j.2.toBoundedContinuousFunction) :=
+      (hcontinuous.tendsto j.2).comp hder
+    have huni := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp hderBCF
+    have hseq : (fun n y ↦ (J n).2 y) =
+        (fun n y ↦ (J n).2.toBoundedContinuousFunction y) := by
+      funext n y
+      exact (HolderSpace.toBoundedContinuousFunction_apply (J n).2 y).symm
+    have hlim : (fun y ↦ j.2 y) =
+        (fun y ↦ j.2.toBoundedContinuousFunction y) := by
+      funext y
+      exact (HolderSpace.toBoundedContinuousFunction_apply j.2 y).symm
+    rw [hseq, hlim]
+    exact huni
+  · intro n y
+    exact hJ n y
+  · intro y
+    exact ((BoundedContinuousFunction.evalCLM ℝ y).continuous.tendsto j.1).comp
+      (continuous_fst.tendsto j |>.comp hjlim)
+
+end HolderSpace
+
 namespace C1HolderSpace
 
 /-- The ambient jet space for bounded `C^{1,α}` maps: a bounded continuous value field paired with
@@ -67,7 +112,7 @@ private abbrev C1HolderJet := (E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)
 `max ‖f‖_∞ (‖Df‖_∞ + [Df]_α)`.
 -/
 -- The module system requires exposure while the declarations below construct and project through
--- this graph alias.  The final `irreducible` attribute restores the abstraction boundary.
+-- this graph alias.
 @[expose] def _root_.TauCeti.C1HolderSpace : Type _ :=
   let graph : Submodule ℝ ((E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)) :=
     { carrier := {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x}
@@ -309,51 +354,11 @@ theorem norm_fderiv_le (f : C1HolderSpace α E F) : ‖fderiv f‖ ≤ ‖f‖ :
   simpa only [Submodule.norm_coe] using
     norm_snd_le (toJet f)
 
-/-- The derivative graph defining `C1HolderSpace` is closed. -/
-private theorem isClosed_c1HolderSpace :
-    IsClosed {J : C1HolderJet α E F | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x} := by
-  rw [← isSeqClosed_iff_isClosed]
-  intro J j hJ hjlim x
-  apply hasFDerivAt_of_tendstoUniformly
-      (f := fun n ↦ (J n).1) (f' := fun n y ↦ (J n).2 y)
-      (g := j.1) (g' := fun y ↦ j.2 y) (l := atTop)
-  · have hder : Tendsto (fun n ↦ (J n).2) atTop (𝓝 j.2) :=
-      (continuous_snd.tendsto j).comp hjlim
-    have hcontinuous : Continuous
-        (HolderSpace.toBoundedContinuousFunction :
-          HolderSpace α E (E →L[ℝ] F) → E →ᵇ (E →L[ℝ] F)) := by
-      have h := (HolderSpace.toBoundedContinuousFunctionCLM
-        (α := α) (X := E) (Y := E →L[ℝ] F)).continuous
-      apply h.congr
-      exact fun f ↦ HolderSpace.toBoundedContinuousFunctionCLM_apply f
-    have hderBCF : Tendsto
-        (fun n ↦ (J n).2.toBoundedContinuousFunction) atTop
-        (𝓝 j.2.toBoundedContinuousFunction) :=
-      (hcontinuous.tendsto j.2).comp hder
-    have huni := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp hderBCF
-    have hseq : (fun n y ↦ (J n).2 y) =
-        (fun n y ↦ (J n).2.toBoundedContinuousFunction y) := by
-      funext n y
-      exact (HolderSpace.toBoundedContinuousFunction_apply (J n).2 y).symm
-    have hlim : (fun y ↦ j.2 y) =
-        (fun y ↦ j.2.toBoundedContinuousFunction y) := by
-      funext y
-      exact (HolderSpace.toBoundedContinuousFunction_apply j.2 y).symm
-    rw [hseq, hlim]
-    exact huni
-  · intro n y
-    exact hJ n y
-  · intro y
-    exact ((BoundedContinuousFunction.evalCLM ℝ y).continuous.tendsto j.1).comp
-      (continuous_fst.tendsto j |>.comp hjlim)
-
 /-- Bounded `C^{1,α}` maps into a Banach space form a Banach space. -/
 noncomputable instance instCompleteSpace [CompleteSpace F] :
     CompleteSpace (C1HolderSpace α E F) := by
   unfold C1HolderSpace
-  exact (isClosed_c1HolderSpace (α := α) (E := E) (F := F)).completeSpace_coe
-
-attribute [irreducible] _root_.TauCeti.C1HolderSpace
+  exact (HolderSpace.isClosed_fderivGraph (α := α) (E := E) (Y := F)).completeSpace_coe
 
 end C1HolderSpace
 
