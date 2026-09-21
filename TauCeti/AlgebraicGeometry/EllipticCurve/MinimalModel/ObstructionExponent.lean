@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
-public import TauCeti.RingTheory.Valuation.Discrete.Order
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 
 /-!
@@ -62,31 +61,6 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 variable (O : Type*) [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
-/-- **A change of variables subtracts twelve times the order of its scaling parameter from the
-order of the discriminant.** -/
-theorem ord_Δ_smul (v : HeightOneSpectrum O) (C : VariableChange K)
-    (W : WeierstrassCurve K) [W.IsElliptic] :
-    (v.valuation K).ord (C • W).Δ =
-      (v.valuation K).ord W.Δ - 12 * (v.valuation K).ord (C.u : K) := by
-  rw [variableChange_Δ,
-    Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
-    Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv]
-  ring
-
-/-- **A minimal equation computes the local minimal discriminant valuation in additive
-notation.** -/
-theorem ord_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) [W.IsElliptic] {W' : WeierstrassCurve K}
-    [IsMinimal (Localization.AtPrime v.asIdeal) W'] (D : VariableChange K) (hD : D • W = W') :
-    (v.valuation K).ord W'.Δ =
-      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
-  have hΔ : W'.Δ ≠ 0 := by
-    rw [← hD, variableChange_Δ]
-    exact mul_ne_zero (pow_ne_zero _ D.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero
-  apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ hΔ).2
-  rw [← v.valuation_maximalIdeal_localizationAtPrime W'.Δ]
-  exact W.valuation_Δ_eq_exp_neg_of_isMinimal_smul _ D hD
-
 /-- **The difference between the discriminant valuation of an equation and the local minimal
 valuation is divisible by twelve.** An admissible change of variables scales the discriminant by
 the inverse twelfth power of its `u`-parameter. -/
@@ -136,50 +110,6 @@ theorem obstructionExponentAt_smul (v : HeightOneSpectrum O) (C : VariableChange
   have hW := twelve_mul_obstructionExponentAt O v W
   rw [ord_Δ_smul, localMinimalDiscriminantValuation_smul] at hC
   omega
-
-/-- **The local minimal discriminant valuation bounds the order of the discriminant of every
-integral equation.** -/
-theorem localMinimalDiscriminantValuation_le_ord_Δ (v : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) [W.IsElliptic]
-    [IsIntegral (Localization.AtPrime v.asIdeal) W] :
-    W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) ≤
-      (v.valuation K).ord W.Δ := by
-  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
-  have hCinv : C⁻¹ • W.minimal (Localization.AtPrime v.asIdeal) = W := by
-    rw [← hC, inv_smul_smul]
-  have hle := valuation_Δ_le_of_isMinimal_smul
-    (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
-  have hmin := W.valuation_Δ_eq_exp_neg_of_isMinimal_smul
-    (Localization.AtPrime v.asIdeal) C hC
-  simp only [v.valuation_maximalIdeal_localizationAtPrime] at hle hmin
-  rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin,
-    WithZero.exp_le_exp] at hle
-  omega
-
-/-- **An integral equation attains the local minimal discriminant valuation exactly when it is
-minimal.** -/
-theorem ord_Δ_eq_localMinimalDiscriminantValuation_iff_isMinimal (v : HeightOneSpectrum O)
-    (W : WeierstrassCurve K) [W.IsElliptic]
-    [IsIntegral (Localization.AtPrime v.asIdeal) W] :
-    (v.valuation K).ord W.Δ =
-        W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) ↔
-      IsMinimal (Localization.AtPrime v.asIdeal) W := by
-  constructor
-  · intro h
-    obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
-    have hCinv : C⁻¹ • W.minimal (Localization.AtPrime v.asIdeal) = W := by
-      rw [← hC, inv_smul_smul]
-    apply isMinimal_of_valuation_Δ_eq_of_isMinimal_smul
-      (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
-    have hmin := W.valuation_Δ_eq_exp_neg_of_isMinimal_smul
-      (Localization.AtPrime v.asIdeal) C hC
-    simp only [v.valuation_maximalIdeal_localizationAtPrime] at hmin
-    simp only [v.valuation_maximalIdeal_localizationAtPrime]
-    rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero, hmin, WithZero.exp_inj]
-    exact congrArg Neg.neg h
-  · intro hmin
-    have := hmin -- expose minimality to instance synthesis for the ord-level comparison
-    exact ord_Δ_eq_localMinimalDiscriminantValuation O v W (1 : VariableChange K) (one_smul _ W)
 
 /-- **Local integrality makes the local obstruction exponent nonnegative.** Without integrality
 the exponent remains defined but may be negative. -/
