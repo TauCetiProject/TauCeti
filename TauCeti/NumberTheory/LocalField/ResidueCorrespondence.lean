@@ -114,16 +114,6 @@ theorem residueFieldAutEquiv_apply [IsUnramified K L] (σ : L ≃ₐ[K] L) :
       MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L] σ :=
   MulEquiv.ofBijective_apply _ _ σ
 
-/-- The inverse residue correspondence induces the given residue-field automorphism. -/
-@[simp]
-theorem residueField_toAlgEquiv_residueFieldAutEquiv_symm_apply [IsUnramified K L]
-    (τ : 𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L]) :
-    MulSemiringAction.toAlgEquiv 𝓀[K] 𝓀[L]
-      ((residueFieldAutEquiv (K := K) (L := L)).symm τ) = τ := by
-  change residueFieldAutEquiv (K := K) (L := L)
-    ((residueFieldAutEquiv (K := K) (L := L)).symm τ) = τ
-  exact (residueFieldAutEquiv (K := K) (L := L)).apply_symm_apply τ
-
 /-- The Frobenius automorphism of an unramified local extension is the unique lift of the
 finite-field Frobenius on its residue field. -/
 noncomputable def frobeniusAlgEquiv [IsUnramified K L] : L ≃ₐ[K] L := by
@@ -136,6 +126,7 @@ theorem residueField_toAlgEquiv_frobeniusAlgEquiv [IsUnramified K L] :
     MulSemiringAction.toAlgEquiv 𝓀[K] 𝓀[L]
         (frobeniusAlgEquiv (K := K) (L := L)) =
       FiniteField.frobeniusAlgEquivOfAlgebraic 𝓀[K] 𝓀[L] := by
+  rw [← MulSemiringAction.toAlgAut_apply, ← residueFieldAutEquiv_apply]
   exact (residueFieldAutEquiv (K := K) (L := L)).apply_symm_apply _
 
 /-- The order of Frobenius is the inertia degree of an unramified local extension. -/
@@ -196,5 +187,25 @@ theorem valuation_frobeniusAlgEquiv_sub_pow [IsUnramified K L] (y : 𝒪[L]) :
       (y : L) ^ Nat.card 𝓀[K]) < 1 at hv
   rw [AlgEquiv.integerRingAlgEquiv_apply, AlgEquiv.coe_smul_integerRing] at hv
   exact hv
+
+/-- An automorphism satisfying the characteristic Frobenius congruence is Frobenius. -/
+theorem eq_frobeniusAlgEquiv_of_valuation_sub_pow_lt_one [IsUnramified K L]
+    (σ : L ≃ₐ[K] L)
+    (hσ : ∀ y : 𝒪[L],
+      valuation L (σ (y : L) - (y : L) ^ Nat.card 𝓀[K]) < 1) :
+    σ = frobeniusAlgEquiv (K := K) (L := L) := by
+  apply (residueFieldAutEquiv (K := K) (L := L)).injective
+  ext x
+  obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [residueFieldAutEquiv_apply, MulSemiringAction.toAlgAut_apply,
+    residueField_toAlgEquiv_frobeniusAlgEquiv,
+    FiniteField.coe_frobeniusAlgEquivOfAlgebraic, Fintype.card_eq_nat_card,
+    MulSemiringAction.toAlgEquiv_apply]
+  rw [← IsLocalRing.ResidueField.residue_smul]
+  rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff]
+  apply (Valuation.mem_maximalIdeal_iff (v := valuation L)).2
+  change valuation L (((σ • y : 𝒪[L]) : L) - (y : L) ^ Nat.card 𝓀[K]) < 1
+  rw [AlgEquiv.coe_smul_integerRing]
+  exact hσ y
 
 end TauCeti
