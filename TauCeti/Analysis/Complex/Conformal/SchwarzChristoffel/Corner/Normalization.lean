@@ -128,8 +128,9 @@ theorem exists_differentiableOn_injOn_eqOn_add_cpow_of_convex_corner
       rw [this, Real.sin_pi, mul_zero]
   have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
       g z ^ (β : ℂ) = f z - w := by
-    refine cpow_inv_cpow_of_arg_mem_Icc hβ ⟨?_, ?_⟩
-    · exact Complex.arg_nonneg_iff.mpr (hsector z hz)
+    refine cpow_inv_cpow_of_arg_mem_Ioc hβ ⟨?_, ?_⟩
+    · exact (neg_lt_zero.mpr (mul_pos hβ Real.pi_pos)).trans_le <|
+        Complex.arg_nonneg_iff.mpr (hsector z hz)
     · have hzim : 0 ≤ z.im := hz.2
       rcases hzim.eq_or_lt with haxis | hpos
       · rcases hedges z hz.1 haxis.symm with harg | harg
