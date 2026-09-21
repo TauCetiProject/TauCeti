@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.ZMod
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
@@ -24,6 +25,8 @@ trivial coefficient object for that subgroup.
 
 * `TauCeti.trivialF2`: trivial `𝔽₂` coefficients over an arbitrary
   universe.
+* `TauCeti.trivialF2ResMap`: restriction on continuous cohomology with trivial `𝔽₂`
+  coefficients.
 
 ## Main results
 
@@ -46,18 +49,32 @@ variable (G : Type u) [Monoid G]
 
 /-- Trivial `𝔽₂` coefficients as an object of `TopRep ℤ G` in the universe of `G`.
 
-The lift is forced by the universe of Mathlib's continuous-cohomology resolution. The body is
-exposed so that the domain of `trivialF2Equiv` reduces to the lifted carrier in downstream
-elaboration; that equivalence is the public API for crossing the lift. -/
-@[expose] noncomputable def trivialF2 : TopRep ℤ G :=
+The lift is forced by the universe of Mathlib's continuous-cohomology resolution. -/
+noncomputable def trivialF2 : TopRep ℤ G :=
   TopRep.of (ContRepresentation.trivial ℤ G (ULift.{u} (ZMod 2)))
 
 /-- The carrier of `trivialF2 G` is the universe lift of `ZMod 2`. -/
 @[simp] theorem trivialF2_V : (trivialF2 G).V = ULift.{u} (ZMod 2) := (rfl)
 
 /-- The additive equivalence from the lifted carrier of `trivialF2 G` to `ZMod 2`. -/
-@[expose, simps! apply symm_apply]
-noncomputable def trivialF2Equiv : (trivialF2 G).V ≃+ ZMod 2 := AddEquiv.ulift
+noncomputable def trivialF2Equiv : (trivialF2 G).V ≃+ ZMod 2 := by
+  change ULift.{u} (ZMod 2) ≃+ ZMod 2
+  exact AddEquiv.ulift
+
+/-- `trivialF2Equiv` sends a lifted element to its underlying value. -/
+@[simp]
+theorem trivialF2Equiv_apply (x : ULift.{u} (ZMod 2)) :
+    trivialF2Equiv G (cast (trivialF2_V G).symm x) = x.down :=
+  -- `(rfl)`, not `rfl`: the body of `trivialF2Equiv` is hidden, and this lemma is its public
+  -- application rule.
+  (rfl)
+
+/-- The inverse of `trivialF2Equiv` lifts a value. -/
+@[simp]
+theorem trivialF2Equiv_symm_apply (x : ZMod 2) :
+    (trivialF2Equiv G).symm x = cast (trivialF2_V G).symm (ULift.up x) :=
+  -- As above, the parenthesized proof keeps the hidden definition out of downstream reduction.
+  (rfl)
 
 /-- The lifted carrier of `trivialF2 G` has the discrete topology. -/
 instance : DiscreteTopology (trivialF2 G).V :=
@@ -85,6 +102,17 @@ variable (G : Type u) [Group G]
 theorem res_trivialF2 (S : Subgroup G) :
     TopRep.res (S.subtype : S →* G) (trivialF2 G) = trivialF2 S :=
   res_trivial ℤ G (ULift.{u} (ZMod 2)) S.subtype
+
+open CategoryTheory _root_.ContinuousCohomology
+
+variable [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- Restriction on continuous cohomology with trivial `𝔽₂` coefficients. This is the
+generic restriction map followed by the on-the-nose identification `res_trivialF2`. -/
+noncomputable def trivialF2ResMap (S : Subgroup G) (n : ℕ) :
+    continuousCohomology n (trivialF2 G) ⟶ continuousCohomology n (trivialF2 S) :=
+  ContinuousCohomology.res S (trivialF2 G) n ≫
+    eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S))
 
 end Group
 

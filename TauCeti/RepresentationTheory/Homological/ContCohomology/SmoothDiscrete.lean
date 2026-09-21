@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Action.Continuous
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.RepresentationTheory.Continuous.TopRep
 public import Mathlib.Topology.Algebra.MulAction
+public import TauCeti.RepresentationTheory.Continuous.Restriction
 
 /-!
 # Smooth discrete topological representations
@@ -34,9 +34,8 @@ with a discontinuous action whose object is discrete but not smooth. So the sour
 dictionary is the discrete `G`-modules with continuous `G`-action, and the image of the
 unrestricted construction is larger than the smooth discrete subcategory.
 
-The general restriction and smoothness facts for trivial topological representations also live
-here, since they provide the basic examples of smooth discrete objects used by coefficient
-constructions.
+The general smoothness facts for trivial topological representations also live here, since they
+provide the basic examples of smooth discrete objects used by coefficient constructions.
 
 ## Main definitions
 
@@ -77,7 +76,6 @@ constructions.
   underlying map, which is how statements phrased with it are specialised.
 * `TauCeti.res_ofDiscreteModule`: the dictionary commutes with restriction to a subgroup, on the
   nose.
-* `TauCeti.res_trivial`: restriction of a trivial representation is trivial on the nose.
 * `TauCeti.isSmoothDiscrete_of_ρ_apply_eq_self`: a discrete object with trivial action is smooth
   discrete.
 * `TauCeti.IsSmoothDiscrete.res`: smoothness is inherited by restriction along a continuous
@@ -254,25 +252,6 @@ variable {R G M}
     (ofDiscreteModule R G M).ρ g m = g • m := (rfl)
 
 end OfDiscreteModule
-
-/-! ### Trivial representations -/
-
-section Trivial
-
-variable (R : Type u) [Ring R] [TopologicalSpace R] (G : Type v) [Monoid G]
-  (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [ContinuousSMul R M]
-
-/-- Restriction of a trivial representation along a monoid homomorphism is the corresponding
-trivial representation of the source monoid, on the nose.
-
-For groups, `TopRep.res` is a reducible abbreviation for the left-hand side, so this lemma also
-proves the corresponding equality stated with `TopRep.res` verbatim. -/
-lemma res_trivial {H : Type*} [Monoid H] (f : H →* G) :
-    TopRep.of ((ContRepresentation.trivial R G M).restrict f) =
-      TopRep.of (ContRepresentation.trivial R H M) := (rfl)
-
-end Trivial
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
