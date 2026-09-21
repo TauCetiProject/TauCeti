@@ -17,7 +17,8 @@ Mathlib's `IsDedekindDomain.FiniteAdeleRing R K` is the restricted product of th
 about it that are not stated in Mathlib:
 
 * the finite adele ring is Hausdorff, since each completion is;
-* multiplication and the multiplicative unit are computed place by place;
+* subtraction, multiplication, and the multiplicative unit are computed place by place;
+* the product of the local integer rings embeds continuously as the integral finite adeles;
 * an element of `K` is integral at every finite place exactly when it lies in `R`, so the integral
   finite adeles meet the diagonal copy of `K` in `R`;
 * **strong approximation**: `K` is dense in the finite adele ring.
@@ -36,8 +37,10 @@ approximates `a`.
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.one_apply` and `IsDedekindDomain.FiniteAdeleRing.mul_apply`:
-  the value of `1` and of a product at a finite place.
+* `IsDedekindDomain.FiniteAdeleRing.integralEmbedding`: the continuous embedding of the product of
+  the local integer rings into the finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.one_apply`, `sub_apply`, and `mul_apply`: the corresponding
+  operations are computed place by place.
 * `IsDedekindDomain.FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff`: the diagonal
   image of `x : K` is integral at every finite place if and only if `x` lies in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_adicCompletionIntegers`: a finite adele
@@ -69,14 +72,52 @@ instance : T2Space (FiniteAdeleRing R K) :=
 variable {R K}
 
 -- `FiniteAdeleRing R K` is a `def` wrapping the restricted product, so
--- `RestrictedProduct.one_apply` and `RestrictedProduct.mul_apply` do not apply to it directly;
+-- the corresponding `RestrictedProduct` lemmas do not apply to it directly;
 -- these are their restatements, and like them they hold by `rfl`.
 /-- The value of `1 : 𝔸ᶠ[R, K]` at a finite place is `1`. -/
 @[simp] theorem one_apply (v : HeightOneSpectrum R) : (1 : FiniteAdeleRing R K) v = 1 := rfl
 
+/-- Subtraction of finite adeles is computed place by place. -/
+@[simp] theorem sub_apply (a b : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
+    (a - b) v = a v - b v := rfl
+
 /-- Multiplication of finite adeles is computed place by place. -/
 @[simp] theorem mul_apply (a b : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
     (a * b) v = a v * b v := rfl
+
+/-- The product of the local integer rings embedded in the finite adele ring. Its range is the set
+of finite adeles integral at every finite place. -/
+noncomputable def integralEmbedding :
+    (∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K) → FiniteAdeleRing R K :=
+  RestrictedProduct.structureMap
+    (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
+    (fun v ↦ (v.adicCompletionIntegers K : Set (v.adicCompletion K))) Filter.cofinite
+
+/-- The integral embedding is evaluated place by place. -/
+@[simp]
+theorem integralEmbedding_apply
+    (x : ∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K) (v : HeightOneSpectrum R) :
+    integralEmbedding (R := R) (K := K) x v = x v :=
+  RestrictedProduct.structureMap_apply _ _ v
+
+/-- The embedding of the product of the local integer rings into the finite adeles is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_integralEmbedding :
+    Continuous (integralEmbedding (R := R) (K := K)) :=
+  RestrictedProduct.isEmbedding_structureMap.continuous
+
+/-- The range of the integral embedding is the set of finite adeles integral at every place. -/
+theorem range_integralEmbedding :
+    Set.range (integralEmbedding (R := R) (K := K)) =
+      {a : FiniteAdeleRing R K | ∀ v, a v ∈ v.adicCompletionIntegers K} := by
+  exact RestrictedProduct.range_structureMap _ _
+
+/-- The integral finite adeles are compact when every local integer ring is compact. -/
+theorem isCompact_integralFiniteAdeles
+    [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)] :
+    IsCompact {a : FiniteAdeleRing R K | ∀ v, a v ∈ v.adicCompletionIntegers K} := by
+  rw [← range_integralEmbedding]
+  exact isCompact_range (continuous_integralEmbedding (R := R) (K := K))
 
 /-- The diagonal image of an element of `K` in the finite adele ring is integral at every finite
 place exactly when the element lies in `R`. -/
@@ -167,6 +208,19 @@ theorem exists_forall_valued_sub_le_and_forall_valued_sub_le_one (a : FiniteAdel
     rw [hkey]
     exact Valuation.map_sub_le _ (hda v) (v.coe_mem_adicCompletionIntegers r)
 
+/-- Every finite adele differs from a diagonal element by an integral finite adele. -/
+theorem exists_forall_sub_algebraMap_mem_adicCompletionIntegers (a : FiniteAdeleRing R K) :
+    ∃ x : K, ∀ v, a v - algebraMap K (v.adicCompletion K) x ∈
+      v.adicCompletionIntegers K := by
+  obtain ⟨x, -, hx⟩ :=
+    exists_forall_valued_sub_le_and_forall_valued_sub_le_one a ∅ (fun _ ↦ 0)
+  refine ⟨x, fun v ↦ ?_⟩
+  have hxa : algebraMap K (v.adicCompletion K) x - a v ∈
+      v.adicCompletionIntegers K := by
+    rw [mem_adicCompletionIntegers]
+    exact hx v
+  simpa only [neg_sub] using neg_mem hxa
+
 variable (R K) in
 /-- **Strong approximation**: `K` is dense in the finite adele ring of `R`. -/
 theorem denseRange_algebraMap : DenseRange (algebraMap K (FiniteAdeleRing R K)) := by
@@ -181,11 +235,7 @@ theorem denseRange_algebraMap : DenseRange (algebraMap K (FiniteAdeleRing R K)) 
     Valued.isOpen_valuationSubring _
   -- `FiniteAdeleRing R K` is by definition the restricted product, so its neighbourhoods of `0`
   -- are images of neighbourhoods of `0` in the product of the `𝒪_v`
-  let ι : (∀ v : HeightOneSpectrum R, v.adicCompletionIntegers K) → FiniteAdeleRing R K :=
-    RestrictedProduct.structureMap (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
-      (fun v : HeightOneSpectrum R ↦ (v.adicCompletionIntegers K : Set (v.adicCompletion K)))
-      Filter.cofinite
-  have hU1 : (fun y ↦ a + ι y) ⁻¹' U ∈ 𝓝 0 :=
+  have hU1 : (fun y ↦ a + integralEmbedding (R := R) (K := K) y) ⁻¹' U ∈ 𝓝 0 :=
     (RestrictedProduct.nhds_zero_eq_map_structureMap (fun v : HeightOneSpectrum R ↦
       v.adicCompletion K) (B := fun v ↦ v.adicCompletionIntegers K) hopen).ge hU0
   rw [nhds_pi, Filter.mem_pi] at hU1
@@ -198,13 +248,15 @@ theorem denseRange_algebraMap : DenseRange (algebraMap K (FiniteAdeleRing R K)) 
     fun v ↦ ⟨algebraMap K (v.adicCompletion K) x - a v, hx v⟩
   have hw : w ∈ I.pi t := fun v hv ↦
     hn v ((mem_maximalIdeal_pow_iff v).mpr (hxI v (hI.mem_toFinset.mpr hv)))
-  have heq : a + ι w = algebraMap K (FiniteAdeleRing R K) x := by
+  have heq : a + integralEmbedding (R := R) (K := K) w =
+      algebraMap K (FiniteAdeleRing R K) x := by
     apply RestrictedProduct.ext
     intro v
     calc
-      (a + ι w) v = a v + (ι w) v := RestrictedProduct.add_apply _ _ _ v
-      _ = a v + (w v : v.adicCompletion K) := by
-        exact congrArg (a v + ·) (RestrictedProduct.structureMap_apply _ _ v)
+      (a + integralEmbedding (R := R) (K := K) w) v =
+          a v + (integralEmbedding (R := R) (K := K) w) v :=
+        RestrictedProduct.add_apply _ _ _ v
+      _ = a v + (w v : v.adicCompletion K) := by simp
       _ = algebraMap K (v.adicCompletion K) x := add_sub_cancel _ _
       _ = (algebraMap K (FiniteAdeleRing R K) x) v := (algebraMap_apply R K x v).symm
   exact heq ▸ hIt hw
