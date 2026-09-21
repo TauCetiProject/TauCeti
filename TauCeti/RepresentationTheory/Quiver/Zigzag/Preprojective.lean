@@ -28,8 +28,8 @@ preprojective algebra of its source--sink orientation.
 Conversely, suppose that a unit gauge makes every corner of the preprojective relator a scalar
 multiple of the corresponding signless relator. The comparison scalars change sign along every
 edge. A non-bipartite graph has an odd closed walk, which would therefore force `2 = 0`. Over a
-coefficient ring in which `2 ≠ 0`, such a comparison forces bipartiteness, independently of the
-chosen orientation.
+coefficient ring in which `2 ≠ 0`, a non-bipartite graph therefore admits no such comparison, for
+any choice of orientation.
 
 ## Main definitions
 
@@ -41,9 +41,9 @@ chosen orientation.
   orientation.
 * `SimpleGraph.Coloring.sourceSinkSignlessPreprojectiveAlgebraEquiv`: the comparison between the
   graph's signless algebra and the preprojective algebra of the source--sink orientation.
-* `TauCeti.DoubledQuiver.Orientation.isBipartite_of_exists_forall_vertexCorner_eq_smul`: over
-  coefficients with `2 ≠ 0`, a cornerwise unit-gauge comparison forces the graph to be
-  bipartite.
+* `TauCeti.DoubledQuiver.Orientation.not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite`:
+  over coefficients with `2 ≠ 0`, a non-bipartite graph admits no cornerwise unit-gauge
+  comparison.
 
 ## References
 
@@ -340,10 +340,11 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
               doubledVertexIdempotent k v =
             c v • signlessPreprojectiveRelator k (Symmetrify.of.obj v) := by
   classical
-  change ¬ G.Colorable 2 at hG
-  rw [SimpleGraph.two_colorable_iff_forall_loop_even] at hG
-  push Not at hG
-  obtain ⟨v, p, hp⟩ := hG
+  -- `SimpleGraph.IsBipartite` is an abbreviation for `SimpleGraph.Colorable 2`.
+  have hwalk : ¬ ∀ u, ∀ w : G.Walk u u, Even w.length := fun h =>
+    hG (SimpleGraph.two_colorable_iff_forall_loop_even.mpr h)
+  push Not at hwalk
+  obtain ⟨v, p, hp⟩ := hwalk
   have hpodd : Odd p.length := Nat.not_even_iff_odd.mp hp
   let q₀ := (unsymmetrifyMap G o).mapPath (walkToPath G p)
   have hq₀odd : Odd q₀.length := by simpa [q₀] using hpodd
@@ -366,21 +367,5 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
     exact hq₀odd
   apply TauCeti.not_exists_forall_vertexCorner_eq_smul_of_odd_length k hε h2 q
   exact hqodd
-
-/-- **A cornerwise unit-gauge comparison forces the graph to be bipartite** when `2 ≠ 0` in
-the coefficient ring. -/
-theorem isBipartite_of_exists_forall_vertexCorner_eq_smul
-    (o : Orientation G) (k : Type w) [CommRing k] [Finite V]
-    {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k}
-    (hε : ∀ ⦃i j : OrientedQuiver G o⦄ (a : i ⟶ j), IsUnit (ε a))
-    (h2 : (2 : k) ≠ 0)
-    (hc : ∃ c : OrientedQuiver G o → k,
-      ∀ v : OrientedQuiver G o,
-        doubledVertexIdempotent k v * gaugedPreprojectiveRelator k ε *
-            doubledVertexIdempotent k v =
-          c v • signlessPreprojectiveRelator k (Symmetrify.of.obj v)) :
-    G.IsBipartite := by
-  by_contra hG
-  exact (not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite o k hG hε h2) hc
 
 end TauCeti.DoubledQuiver.Orientation
