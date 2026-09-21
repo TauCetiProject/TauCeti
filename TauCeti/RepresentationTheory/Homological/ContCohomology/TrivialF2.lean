@@ -27,8 +27,6 @@ trivial coefficient object for that subgroup.
 
 ## Main results
 
-* `TauCeti.trivialF2_eq_ofDiscreteModule`: the coefficient object lies in the discrete-module
-  dictionary.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.trivialF2_isSmoothDiscrete`: the coefficient object is smooth discrete.
 -/
@@ -62,17 +60,11 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 @[simp]
 theorem trivialF2_ρ_apply_apply (g : G) (x : (trivialF2 G).V) :
     (trivialF2 G).ρ g x = x :=
-  (rfl)
-
-/-- The trivial `𝔽₂` coefficient object is the image of its underlying discrete module under
-the discrete-module dictionary. -/
-theorem trivialF2_eq_ofDiscreteModule :
-    trivialF2 G = ofDiscreteModule ℤ G (trivialF2 G).V :=
-  (ofDiscreteModule_eq_self (trivialF2 G)).symm
+  trivial_ρ_apply ℤ G (ULift.{u} (ZMod 2)) g x
 
 /-- Restriction preserves the trivial `𝔽₂` coefficient object on the nose. -/
 theorem res_trivialF2 (S : Subgroup G) :
-    (TopRep.resFunctor S.subtype).obj (trivialF2 G) = trivialF2 S :=
+    TopRep.res (S.subtype : S →* G) (trivialF2 G) = trivialF2 S :=
   res_trivial ℤ G (ULift.{u} (ZMod 2)) S.subtype
 
 variable [TopologicalSpace G]

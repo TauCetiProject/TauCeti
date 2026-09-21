@@ -74,6 +74,7 @@ unrestricted construction is larger than the smooth discrete subcategory.
 * `TauCeti.res_ofDiscreteModule`: the dictionary commutes with restriction to a subgroup, on the
   nose.
 * `TauCeti.res_trivial`: restriction of a trivial representation is trivial on the nose.
+* `TauCeti.trivial_ρ_apply`: every element acts as the identity in a trivial representation.
 * `TauCeti.IsSmoothDiscrete.res`: smoothness is inherited by restriction along a continuous
   homomorphism.
 * `TauCeti.trivial_isSmoothDiscrete`: a trivial representation on a discrete module is smooth
@@ -261,6 +262,11 @@ lemma res_trivial {H : Type*} [Monoid H] (f : H →* G) :
     TopRep.of ((ContRepresentation.trivial R G M).restrict f) =
       TopRep.of (ContRepresentation.trivial R H M) := (rfl)
 
+/-- Every monoid element acts as the identity in a trivial topological representation. -/
+@[simp] lemma trivial_ρ_apply (g : G) (x : M) :
+    (TopRep.of (ContRepresentation.trivial R G M)).ρ g x = x :=
+  ContRepresentation.trivial_apply g x
+
 end Trivial
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
@@ -285,7 +291,7 @@ structure IsSmoothDiscrete (X : TopRep R G) : Prop where
 /-- A trivial representation on a discrete module is smooth discrete: every point stabilizer is
 the whole monoid. -/
 lemma trivial_isSmoothDiscrete (M : Type w) [AddCommGroup M] [Module R M]
-    [TopologicalSpace M] [DiscreteTopology M] [IsTopologicalAddGroup M] [ContinuousSMul R M] :
+    [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul R M] :
     IsSmoothDiscrete R (TopRep.of (ContRepresentation.trivial R G M)) := by
   refine ⟨inferInstance, fun x ↦ ?_⟩
   have hstabilizer :
