@@ -117,7 +117,7 @@ theorem steinberg_def :
           (d.1.characteristic ^ d.toSuzukiReeIndex.halfExponent *
             d.toSuzukiReeIndex.exponent i))) :=
   d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
-    (x := d.simpleRootSubgroup)
+    (x := fun j t => d.simpleRootSubgroup j t)
     (fun j t => d.halfFrobenius_simpleRootSubgroup j t)
     (fun j t => (d.halfFrobenius_halfFrobenius (d.simpleRootSubgroup j t)).trans
       ((d.primeFrobenius_simpleRootSubgroup j t).trans (by simp)))

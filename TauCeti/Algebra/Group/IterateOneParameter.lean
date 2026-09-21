@@ -74,12 +74,12 @@ theorem iterate_apply_pow {f : G → G} {x : A → G} {p : ℕ} (hf : ∀ t, f (
   | succ n ih => rw [Function.iterate_succ_apply, hf, ih, ← pow_mul, ← Nat.pow_succ']
 
 /-- The second iterate of a self-map is that map applied twice. -/
-private theorem iterate_two_apply (f : G → G) (a : G) : f^[2] a = f (f a) := by
+theorem iterate_two_apply (f : G → G) (a : G) : f^[2] a = f (f a) := by
   -- The numeral is split so that `Function.iterate_succ_apply` applies to the exponent.
   rw [show (2 : ℕ) = 1 + 1 from rfl, Function.iterate_succ_apply, Function.iterate_one]
 
 /-- The second iterate of a self-map, read off its values. -/
-private theorem iterate_two_eq {f g : G → G} (h : ∀ a, f (f a) = g a) : f^[2] = g :=
+theorem iterate_two_eq {f g : G → G} (h : ∀ a, f (f a) = g a) : f^[2] = g :=
   funext fun a => (iterate_two_apply f a).trans (h a)
 
 /-- **The iterates of a square root of a self-map.** If `f ∘ f = g` then applying the `n`-th

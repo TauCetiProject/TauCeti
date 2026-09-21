@@ -106,7 +106,7 @@ permutation of the index exchanges the numbers exactly as the half-Frobenius doe
 power multiplies the pinned exponent of the half-Frobenius by the remaining even power `p ^ m` of
 the characteristic. -/
 theorem pow_fieldExponent_apply_lengthPerm {τ : Monoid.End G}
-    {x : Fin e.1.rank → Multiplicative e.1.Closure →* G}
+    {x : Fin e.1.rank → Multiplicative e.1.Closure → G}
     (hτ : ∀ i u, τ (x i u) =
       x (e.lengthPerm i) (Multiplicative.ofAdd (Multiplicative.toAdd u ^ e.exponent i)))
     (hsq : ∀ i u, τ (τ (x i u)) =
