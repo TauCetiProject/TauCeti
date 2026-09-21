@@ -23,6 +23,8 @@ weight-space theory.
   weight space with the intersection of the target weight space and its range.
 * `LieModule.map_weightSpace_eq`: a Lie-module equivalence maps each weight space onto the
   corresponding weight space.
+* `LieModuleEquiv.finrank_weightSpace_eq`: equivalent Lie modules have weight spaces of equal
+  dimension.
 * `LieSubmodule.toSubmodule_map_weightSpace_incl`: inclusion identifies a submodule's weight space
   with its intersection with the ambient weight space.
 * `LieSubmodule.finrank_inf_weightSpace`: that intersection has the dimension of the submodule's
@@ -92,6 +94,25 @@ theorem map_weightSpace_eq (e : LieModuleEquiv R L M M₂) (χ : L → R) :
   simp [map_weightSpace_eq_of_injective χ e.injective]
 
 end LieModule
+
+namespace LieModuleEquiv
+
+open LieModule Module
+
+/-- **Weight-space dimension is an isomorphism invariant.** An equivalence of Lie modules carries
+the `χ`-weight space of one module onto the `χ`-weight space of the other. -/
+theorem finrank_weightSpace_eq
+    {K L M P : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+    [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
+    (e : M ≃ₗ⁅K,L⁆ P) (χ : L → K) :
+    finrank K (weightSpace M χ) = finrank K (weightSpace P χ) := by
+  have hequiv := (LieSubmodule.equivMapOfInjective
+    (weightSpace M χ) e.injective).toLinearEquiv.finrank_eq
+  rw [LieModule.map_weightSpace_eq e χ] at hequiv
+  exact hequiv
+
+end LieModuleEquiv
 
 namespace LieSubmodule
 

@@ -31,8 +31,6 @@ of the module.
 
 ## Main results
 
-* `LieModuleEquiv.finrank_weightSpace_eq`: equivalent Lie modules have weight spaces of equal
-  dimension.
 * `DirectSum.IsInternal.finrank_weightSpace_eq_sum`: weight-space dimensions add over a finite
   internal decomposition by Lie submodules.
 * `LieModule.IsIsotypicOfType.finrank_weightSpace_eq_isotypicMultiplicity_mul`: the dimension of
@@ -44,25 +42,6 @@ of the module.
 public section
 
 open scoped BigOperators DirectSum
-
-namespace LieModuleEquiv
-
-open LieModule Module
-
-/-- **Weight-space dimension is an isomorphism invariant.** An equivalence of Lie modules carries
-the `χ`-weight space of one module onto the `χ`-weight space of the other. -/
-theorem finrank_weightSpace_eq
-    {K L M P : Type*} [Field K] [LieRing L] [LieAlgebra K L]
-    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-    [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
-    (e : M ≃ₗ⁅K,L⁆ P) (χ : L → K) :
-    finrank K (weightSpace M χ) = finrank K (weightSpace P χ) := by
-  have hequiv := (LieSubmodule.equivMapOfInjective
-    (weightSpace M χ) e.injective).toLinearEquiv.finrank_eq
-  rw [LieModule.map_weightSpace_eq e χ] at hequiv
-  exact hequiv
-
-end LieModuleEquiv
 
 namespace DirectSum.IsInternal
 
