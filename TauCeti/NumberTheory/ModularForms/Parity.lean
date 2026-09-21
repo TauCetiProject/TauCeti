@@ -41,7 +41,8 @@ additional to it: there `-1 = 1` in `(ZMod N)ˣ`, so every `χ` has `χ(-1) = 1 
   its contrapositive, the emptiness criterion; `char_neg_one_of_modFormCharSpace_ne_bot` and
   `char_neg_one_of_cuspFormCharSpace_ne_bot` restate the lemma on the space itself.
 * `modFormCharSpace_one_eq_bot_of_odd`: there are no odd-weight forms with trivial nebentypus,
-  the classical `M_k(Γ₀(N)) = 0` for odd `k`.
+  the classical `M_k(Γ₀(N)) = 0` for odd `k`; `even_of_mem_modFormCharSpace_one` and
+  `even_of_mem_cuspFormCharSpace_one` read it as the evenness of the weight of a nonzero form.
 * `ModularForm.eq_zero_of_odd_of_dvd_two`: at the levels `N ∣ 2` all of `M_k(Γ₁(N))` vanishes
   in odd weight.
 
@@ -159,6 +160,18 @@ theorem modFormCharSpace_one_eq_bot_of_odd (hk : Odd k) :
 theorem cuspFormCharSpace_one_eq_bot_of_odd (hk : Odd k) :
     cuspFormCharSpace (N := N) k 1 = ⊥ :=
   cuspFormCharSpace_eq_bot_of_char_neg_one_ne (by norm_num [hk.neg_one_zpow])
+
+/-- A nonzero form with trivial nebentypus has even weight. -/
+theorem even_of_mem_modFormCharSpace_one {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ modFormCharSpace k 1) (hf0 : f ≠ 0) : Even k := by
+  refine Int.even_or_odd k |>.resolve_right fun hk ↦ hf0 ?_
+  simpa using (modFormCharSpace_one_eq_bot_of_odd hk).le hf
+
+/-- A nonzero cusp form with trivial nebentypus has even weight. -/
+theorem even_of_mem_cuspFormCharSpace_one {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
+    (hf : f ∈ cuspFormCharSpace k 1) (hf0 : f ≠ 0) : Even k := by
+  refine Int.even_or_odd k |>.resolve_right fun hk ↦ hf0 ?_
+  simpa using (cuspFormCharSpace_one_eq_bot_of_odd hk).le hf
 
 /-! ### The degenerate levels `N ∣ 2` -/
 
