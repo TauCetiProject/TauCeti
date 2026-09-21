@@ -76,9 +76,16 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 noncomputable def quaternionCSA (a b : Kˣ) : CSA K :=
   CSA.of K ℍ[K,(a : K),(b : K)]
 
+/-- The bundled algebra underlying `quaternionCSA` is the corresponding quaternion symbol. -/
+theorem quaternionCSA_def (a b : Kˣ) :
+    quaternionCSA a b = CSA.of K ℍ[K,(a : K),(b : K)] := (rfl)
+
 /-- The Brauer class of the quaternion symbol `(a,b)`. -/
 noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
   BrauerGroup.mk (quaternionCSA a b)
+
+@[simp] theorem quaternionClass_def (a b : Kˣ) :
+    quaternionClass a b = BrauerGroup.mk (quaternionCSA a b) := (rfl)
 
 end BrauerGroup
 
