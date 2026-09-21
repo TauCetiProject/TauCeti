@@ -38,8 +38,8 @@ restricted to more than five components because the five-component case is its L
 * `TauCeti.NumericalType.IsMinusTwoChain.intersection_eq_zero`: two components of such a chain
   which are not consecutive do not meet, provided the numerical type has more components than
   the chain has length.
-* `TauCeti.NumericalType.IsMinusTwoChain.exists_weight_eq`: the weights along such a chain of at
-  least five components are constant except possibly at one end.
+* `TauCeti.NumericalType.IsMinusTwoChain.exists_weight_eq_except_one_end`: the weights along such
+  a chain of at least five components are constant except possibly at one end.
 -/
 
 public section
@@ -324,15 +324,23 @@ This is the graph-shape half of
 [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89). -/
 theorem IsMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
     (hc : T.IsMinusTwoChain t c) (hcard : t < Fintype.card T.Component) {p q : ℕ}
-    (hpq : p + 1 < q) (hq : q < t) : T.intersection (c p) (c q) = 0 := by
-  have key := T.intersection_ends_eq_zero (q - p + 1) (fun k ↦ c (p + k)) (hc.shift (by omega))
-    (by omega) (by omega)
-  have hend : p + (q - p + 1 - 1) = q := by omega
-  rwa [hend, Nat.add_zero] at key
+    (hp : p < t) (hq : q < t) (hpq : p ≠ q) (hpq₁ : p + 1 ≠ q) (hqp₁ : q + 1 ≠ p) :
+    T.intersection (c p) (c q) = 0 := by
+  -- The two ends of the subchain joining the two positions do not meet.
+  have ends : ∀ u v : ℕ, u + 1 < v → v < t → T.intersection (c u) (c v) = 0 := by
+    intro u v huv hv
+    have key := T.intersection_ends_eq_zero (v - u + 1) (fun k ↦ c (u + k)) (hc.shift (by omega))
+      (by omega) (by omega)
+    have hend : u + (v - u + 1 - 1) = v := by omega
+    rwa [hend, Nat.add_zero] at key
+  rcases lt_or_gt_of_ne hpq with h | h
+  · exact ends p q (by omega) hq
+  · rw [T.intersection_comm]
+    exact ends q p (by omega) hp
 
 
 /-- The weight classification of a chain of components of self-intersection `-2w`. -/
-private lemma exists_weight_eq_aux (T : NumericalType.{u}) (t : ℕ) :
+private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : ℕ) :
     ∀ c : ℕ → T.Component, T.IsMinusTwoChain t c → t < Fintype.card T.Component → 4 < t →
       ∃ W : ℤ, 0 < W ∧ (∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = W) ∧
         ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c 0) : ℤ) = 2 * W ∨
@@ -449,7 +457,8 @@ private lemma exists_weight_eq_aux (T : NumericalType.{u}) (t : ℕ) :
       (hint (t - 2) (by omega) (by omega))
       (by rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega)) hcaseₗ
     have hchord : ∀ p q, p + 1 < q → q < t → T.intersection (c p) (c q) = 0 :=
-      fun p q h1 h2 ↦ hc.intersection_eq_zero hcard h1 h2
+      fun p q h1 h2 ↦
+        hc.intersection_eq_zero hcard (by omega) h2 (by omega) (by omega) (by omega)
     set y : ℕ → ℤ := fun j ↦ if j = 0 then α else if j = t - 1 then γ else 2 with hydef
     have hy₀ : y 0 = α := by simp [hydef]
     have hyₗ : y (t - 1) = γ := by
@@ -523,7 +532,7 @@ weight may be twice or half the common interior weight. Together with
 `TauCeti.NumericalType.intersection_eq_max_weight`, which turn these weights into the
 intersection numbers, this is
 [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89). -/
-theorem IsMinusTwoChain.exists_weight_eq {t : ℕ} {c : ℕ → T.Component}
+theorem IsMinusTwoChain.exists_weight_eq_except_one_end {t : ℕ} {c : ℕ → T.Component}
     (hc : T.IsMinusTwoChain t c) (hcard : t < Fintype.card T.Component) (ht : 4 < t) :
     ∃ W : ℤ, 0 < W ∧ (∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = W) ∧
       ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c 0) : ℤ) = 2 * W ∨
@@ -531,7 +540,7 @@ theorem IsMinusTwoChain.exists_weight_eq {t : ℕ} {c : ℕ → T.Component}
       ((T.weight (c (t - 1)) : ℤ) = W ∨ (T.weight (c (t - 1)) : ℤ) = 2 * W ∨
         2 * (T.weight (c (t - 1)) : ℤ) = W) ∧
       ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c (t - 1)) : ℤ) = W) :=
-  T.exists_weight_eq_aux t c hc hcard ht
+  T.exists_weight_eq_except_one_end_aux t c hc hcard ht
 
 end NumericalType
 
