@@ -15,15 +15,13 @@ A function dominated by a strictly decreasing real exponential in the imaginary 
 tends to zero as that coordinate tends to infinity. This supplies the general asymptotic step
 used when exponential decay in a cusp coordinate is converted into vanishing at the cusp.
 
-The proof is extracted from the private lemma `UpperHalfPlane.of_exp_decay` used for Petersson
-products in Mathlib's `NumberTheory.ModularForms.Petersson`.
 -/
 
 public section
 
-open Asymptotics Filter
+open Asymptotics Filter UpperHalfPlane
 
-namespace UpperHalfPlane
+namespace TauCeti.UpperHalfPlane
 
 /-- A function bounded by `exp (-c * im z)` for some `c > 0` tends to zero at imaginary
 infinity. -/
@@ -33,4 +31,4 @@ theorem isZeroAtImInfty_of_isBigO_exp_neg {E : Type*} [NormedAddCommGroup E] {f 
   refine hf.trans_tendsto <| (Real.tendsto_exp_atBot.comp ?_).comp tendsto_comap
   exact tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.mpr hc)
 
-end UpperHalfPlane
+end TauCeti.UpperHalfPlane
