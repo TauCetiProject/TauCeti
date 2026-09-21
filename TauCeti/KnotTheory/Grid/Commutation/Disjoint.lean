@@ -436,16 +436,10 @@ theorem commute_commute (D : GridPentagonRectangleDecomposition a s x z)
     (h : D.HasDisjointSides) :
     (D.commute h).commute (D.hasDisjointSides_commute h) = D := by
   apply toRectangleDecomposition_injective
-  apply GridRectangleDecomposition.ext <;>
-    dsimp only [toRectangleDecomposition]
-  · exact (GridRectanglePentagonDecomposition.commute_pentagon_left _ _).trans
-      (D.commute_pentagon_left h)
-  · exact (GridRectanglePentagonDecomposition.commute_pentagon_right _ _).trans
-      (D.commute_pentagon_right h)
-  · exact (GridRectanglePentagonDecomposition.commute_rectangle_left _ _).trans
-      (D.commute_rectangle_left h)
-  · exact (GridRectanglePentagonDecomposition.commute_rectangle_right _ _).trans
-      (D.commute_rectangle_right h)
+  simpa only [GridRectanglePentagonDecomposition.commute_toRectangleDecomposition,
+    commute_toRectangleDecomposition] using
+    GridRectangleDecomposition.commute_commute D.toRectangleDecomposition
+      (D.hasDisjointSides_iff.mp h)
 
 end GridPentagonRectangleDecomposition
 
@@ -460,16 +454,10 @@ theorem commute_commute (D : GridRectanglePentagonDecomposition a s x z)
     (h : D.HasDisjointSides) :
     (D.commute h).commute (D.hasDisjointSides_commute h) = D := by
   apply toRectangleDecomposition_injective
-  apply GridRectangleDecomposition.ext <;>
-    dsimp only [toRectangleDecomposition]
-  · exact (GridPentagonRectangleDecomposition.commute_rectangle_left _ _).trans
-      (D.commute_rectangle_left h)
-  · exact (GridPentagonRectangleDecomposition.commute_rectangle_right _ _).trans
-      (D.commute_rectangle_right h)
-  · exact (GridPentagonRectangleDecomposition.commute_pentagon_left _ _).trans
-      (D.commute_pentagon_left h)
-  · exact (GridPentagonRectangleDecomposition.commute_pentagon_right _ _).trans
-      (D.commute_pentagon_right h)
+  simpa only [GridPentagonRectangleDecomposition.commute_toRectangleDecomposition,
+    commute_toRectangleDecomposition] using
+    GridRectangleDecomposition.commute_commute D.toRectangleDecomposition
+      (D.hasDisjointSides_iff.mp h)
 
 end GridRectanglePentagonDecomposition
 
