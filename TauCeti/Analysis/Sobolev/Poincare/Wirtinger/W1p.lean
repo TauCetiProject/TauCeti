@@ -75,7 +75,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 /-! ### The inequality on a relatively compact convex subdomain -/
 
 /-- **The Poincaré–Wirtinger inequality for a limit of test functions.**  It holds for every
-Sobolev function on `U` that is an `Lᵖ`-limit of restrictions of test functions on a larger
+Sobolev function on `U` that is a `W^{1,p}`-limit of restrictions of test functions on a larger
 domain. -/
 private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) (hU : U ≤ Omega)
     (hUc : Convex ℝ (U : Set E)) (hUb : Bornology.IsBounded (U : Set E))
@@ -104,7 +104,8 @@ private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) 
           (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous
         simpa only [W1p.valueL_apply] using hcont
       · exact (Lp.constL p (mu.restrict (U : Set E)) ℝ).continuous.comp
-          (W1p.continuous_setAverage_value hSU hUfin)
+          (W1p.continuous_setAverage_value hSU
+            (ne_top_of_le_ne_top hUfin (measure_mono hSU)))
     have h2 : Continuous fun w : W1p mu U p => C * ‖W1p.gradient w‖ := by
       refine continuous_const.mul (Continuous.norm ?_)
       have hcont : Continuous fun w : W1p mu U p => W1p.gradientL w :=

@@ -239,7 +239,7 @@ omit [FiniteDimensional ℝ E] in
 /-- The mean of the value of a first-order Sobolev function over a fixed subset of finite
 measure depends continuously on the function. -/
 theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
-    (hUfin : mu (U : Set E) ≠ ∞) :
+    (hSfin : mu S ≠ ∞) :
     Continuous fun v : W1p mu U p => ⨍ y in S, W1p.value v y ∂mu := by
   have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
     Measure.restrict_restrict_of_subset hSU
@@ -250,7 +250,7 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
     rw [setAverage_eq, smul_eq_mul, W1p.valueL_apply, hrs]
   have hSlt : (mu.restrict (U : Set E)) S < ∞ := by
     rw [hmeas]
-    exact (ne_top_of_le_ne_top hUfin (measure_mono hSU)).lt_top
+    exact hSfin.lt_top
   have hF : Continuous fun f : Lp ℝ p (mu.restrict (U : Set E)) =>
       ∫ y in S, f y ∂(mu.restrict (U : Set E)) :=
     (Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (mu := mu.restrict (U : Set E)) (p := p) S
