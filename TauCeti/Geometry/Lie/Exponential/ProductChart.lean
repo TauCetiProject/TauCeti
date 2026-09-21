@@ -229,6 +229,8 @@ theorem groupLieAlgebraEquivModelVectorSpace_mfderiv_lieExpMulLieExp_zero_apply
     (NormedSpace.fromTangentSpace (0 : p × q) v)
   have hresult := happly.symm.trans hfderiv
   rw [lieExpMulLieExp_zero, mfderiv_extChartAt_self] at hresult
+  -- The public formula records both coordinate transports explicitly: the source tangent
+  -- vector is read in model coordinates, while the target is read in the Lie-algebra model.
   exact hresult
 
 /-- The tangent-space derivative equivalence of the complementary exponential-product chart. -/
@@ -307,6 +309,8 @@ theorem hasMFDerivAt_lieExpMulLieExp_zero_of_isCompl
     (x := 0) (by simp)).hasMFDerivAt.congr_mfderiv
   apply ContinuousLinearMap.ext
   intro z
+  -- Transport the already-coordinate-normalized derivative through the inverse target
+  -- equivalence and the tangent-space cast; no tangent-space/model-space defeq is used here.
   have hm := groupLieAlgebraEquivModelVectorSpace_mfderiv_lieExpMulLieExp_zero_apply
     (I := I) (G := G) p q (NormedSpace.fromTangentSpace (0 : p × q) z)
   have hm' := congrArg
