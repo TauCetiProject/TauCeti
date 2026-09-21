@@ -130,7 +130,7 @@ theorem orderOf_nsmul_indPSectionIndicator_mem_span_indVirtualCharacters (A : Su
     orderOf s • indPSectionIndicator k s P ∈
       Submodule.span A
         (ClassFunction.indVirtualCharacters k G (fun S => IsPElementary p S) : Set (G → k)) := by
-  rw [indPSectionIndicator, ← indClassFunAddHom_apply, ← map_nsmul, indClassFunAddHom_apply]
+  rw [nsmul_indPSectionIndicator]
   exact ClassFunction.indClassFun_mem_span_indVirtualCharacters A
     (isPElementary_pElementaryOfSylow s P hs)
     (orderOf_nsmul_pSectionIndicator_mem_span_virtualCharacters A hA hs)

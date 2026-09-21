@@ -126,9 +126,15 @@ theorem pSectionIndicator_mem_classFunction :
 
 /-- **The class function of `G` induced from the `p`-section indicator.**  Its values are computed
 by `TauCeti.indPSectionIndicator_eq_pSectionCosetCard`. -/
-@[expose] noncomputable def indPSectionIndicator (k : Type u) [Semiring k] [Finite G] (s : G)
+noncomputable def indPSectionIndicator (k : Type u) [Semiring k] [Finite G] (s : G)
     (P : Sylow p (centralizer ({s} : Set G))) : G → k :=
   indClassFun (pElementaryOfSylow s P) (pSectionIndicator k s P)
+
+/-- Scaling the induced `p`-section indicator is the induction of the scaled section indicator. -/
+theorem nsmul_indPSectionIndicator [Finite G] (n : ℕ) :
+    n • indPSectionIndicator k s P =
+      indClassFun (pElementaryOfSylow s P) (n • pSectionIndicator k s P) := by
+  rw [indPSectionIndicator, ← indClassFunAddHom_apply, ← map_nsmul, indClassFunAddHom_apply]
 
 /-- The induced `p`-section indicator is a class function of `G`. -/
 theorem indPSectionIndicator_mem_classFunction [Finite G] :
