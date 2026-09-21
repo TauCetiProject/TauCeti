@@ -330,6 +330,36 @@ theorem fderivC1L_apply (f : C2HolderSpace α E F) : fderivC1L f = f.fderivC1 :=
   rw [fderivC1L]
   rfl
 
+@[simp]
+theorem fderivC1_const (c : F) :
+    fderivC1 (const (α := α) (E := E) c) = 0 := by
+  apply C1HolderSpace.ext
+  intro x
+  calc
+    fderivC1 (const (α := α) (E := E) c) x =
+        fderiv (const (α := α) (E := E) c) x :=
+      congrFun (fderiv_eq_fderivC1_coe (const (α := α) (E := E) c)).symm x
+    _ = 0 := by rw [fderiv_const]; rfl
+    _ = (0 : C1HolderSpace α E (E →L[ℝ] F)) x :=
+      (C1HolderSpace.zero_apply x).symm
+
+@[simp]
+theorem fderivC1_zero : fderivC1 (0 : C2HolderSpace α E F) = 0 := by
+  simpa only [fderivC1L_apply] using
+    (fderivC1L (α := α) (E := E) (F := F)).map_zero
+
+@[simp]
+theorem fderivC1_add (f g : C2HolderSpace α E F) :
+    fderivC1 (f + g) = f.fderivC1 + g.fderivC1 := by
+  simpa only [fderivC1L_apply] using
+    (fderivC1L (α := α) (E := E) (F := F)).map_add f g
+
+@[simp]
+theorem fderivC1_smul (c : ℝ) (f : C2HolderSpace α E F) :
+    fderivC1 (c • f) = c • f.fderivC1 := by
+  simpa only [fderivC1L_apply] using
+    (fderivC1L (α := α) (E := E) (F := F)).map_smul c f
+
 /-- Forgetting the derivatives defines a continuous linear map to bounded continuous functions. -/
 def valueL : C2HolderSpace α E F →L[ℝ] (E →ᵇ F) :=
   (ContinuousLinearMap.fst ℝ (E →ᵇ F) (C1HolderSpace α E (E →L[ℝ] F))).comp (by
