@@ -213,7 +213,7 @@ private lemma dgCompMap_assoc (W X Y Z : C) (p q r n : ℤ) (h : p + q + r = n) 
 /-- Composition of homogeneous morphisms in a differential graded category is associative. -/
 theorem dgComp_assoc {W X Y Z : C} {p q r pq qr n : ℤ} (f : DGHom R p W X) (g : DGHom R q X Y)
     (k : DGHom R r Y Z) (hpq : p + q = pq) (hqr : q + r = qr) (hn : p + q + r = n) :
-    dgComp R (dgComp R f g hpq) k (show pq + r = n by rw [← hpq, hn]) =
+    dgComp R (dgComp R f g hpq) k (by omega : pq + r = n) =
       dgComp R f (dgComp R g k hqr) (by rw [← hqr, ← hn, add_assoc]) := by
   subst hpq
   subst hqr
