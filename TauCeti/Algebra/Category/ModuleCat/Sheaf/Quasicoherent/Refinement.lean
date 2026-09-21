@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
 
 /-!
 # Refining quasi-coherent data
@@ -29,13 +28,6 @@ module: generating sections are carried along a colimit-preserving functor by Ma
 `SheafOfModules.GeneratingSections.map` and then read through an isomorphism by
 `SheafOfModules.GeneratingSections.equivOfIso`.
 
-Generating sections on an iterated slice `(M.over Z).over Y` are transported to generating
-sections of `M.over Y.left` along `TauCeti.SheafOfModules.iteratedSliceEquivalence`
-(`SheafOfModules.GeneratingSections.ofIteratedSlice`); this too preserves the index type, an
-invertible generating morphism, and finiteness. That transport follows the construction proposed
-in Brian Nugent's
-[Mathlib PR #39553](https://github.com/leanprover-community/mathlib4/pull/39553).
-
 This lets two quasi-coherent sheaves be presented on a common refinement of their covers, which is
 how the tensor product and the biproduct of quasi-coherent sheaves are shown to be quasi-coherent.
 
@@ -45,8 +37,6 @@ quasi-coherent data or locally free data gives data of the same kind.
 
 ## Main declarations
 
-* `SheafOfModules.GeneratingSections.ofIteratedSlice`: generating sections on an iterated slice,
-  read as generating sections on the slice over the underlying object;
 * `SheafOfModules.QuasicoherentData.ofRefinement`;
 * `SheafOfModules.QuasicoherentData.isIso_ofRefinement_presentation_generators_π`: refinement
   preserves presentations with an invertible generating morphism;
@@ -117,90 +107,6 @@ theorem _root_.SheafOfModules.Presentation.isIso_map_generators_π (h : IsIso P.
 
 end Map
 
-section IteratedSlice
-
-variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
-  {R : Sheaf J RingCat.{u}} {M : SheafOfModules.{u} R}
-
-/-- Generating sections of the twice-restricted sheaf `(M.over Z).over Y`, read along
-`iteratedSliceEquivalence` as generating sections of the restriction of `M` to `Y.left`. -/
-noncomputable def _root_.SheafOfModules.GeneratingSections.ofIteratedSlice {Z : C} {Y : Over Z}
-    [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
-    [(J.over Y.left).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
-    [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (σ : ((M.over Z).over Y).GeneratingSections) : (M.over Y.left).GeneratingSections :=
-  σ.mapIso (iteratedSliceEquivalence R Y).inverse (iteratedSliceEquivalenceUnitSheafIso R Y)
-    (iteratedSliceEquivalenceInverseObjIso R Y M)
-
-/-- Transporting generating sections off an iterated slice preserves their index type. -/
-@[simp]
-theorem _root_.SheafOfModules.GeneratingSections.ofIteratedSlice_I {Z : C} {Y : Over Z}
-    [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
-    [(J.over Y.left).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
-    [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (σ : ((M.over Z).over Y).GeneratingSections) : σ.ofIteratedSlice.I = σ.I :=
-  (by
-    simpa only [GeneratingSections.ofIteratedSlice] using
-      GeneratingSections.mapIso_I σ (iteratedSliceEquivalence R Y).inverse
-        (iteratedSliceEquivalenceUnitSheafIso R Y)
-        (iteratedSliceEquivalenceInverseObjIso R Y M))
-
-/-- The generating morphism after transport off an iterated slice is the mapped generating
-morphism followed by the comparison with restriction to `Y.left`, read along the identification
-`ofIteratedSlice_I` of the index types. -/
-@[simp]
-theorem _root_.SheafOfModules.GeneratingSections.ofIteratedSlice_π {Z : C} {Y : Over Z}
-    [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
-    [(J.over Y.left).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
-    [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (σ : ((M.over Z).over Y).GeneratingSections) :
-    eqToHom (congrArg free (GeneratingSections.ofIteratedSlice_I σ).symm) ≫
-        σ.ofIteratedSlice.π =
-      ((mapFreeIso (iteratedSliceEquivalence R Y).inverse σ.I
-          (iteratedSliceEquivalenceUnitSheafIso R Y)).hom ≫
-        (iteratedSliceEquivalence R Y).inverse.map σ.π) ≫
-          (iteratedSliceEquivalenceInverseObjIso R Y M).hom :=
-  (by
-    simpa only [GeneratingSections.ofIteratedSlice] using
-      GeneratingSections.mapIso_π σ (iteratedSliceEquivalence R Y).inverse
-        (iteratedSliceEquivalenceUnitSheafIso R Y)
-        (iteratedSliceEquivalenceInverseObjIso R Y M))
-
-/-- Reading a local basis through `iteratedSliceEquivalence` again gives a local basis. -/
-instance _root_.SheafOfModules.GeneratingSections.isIso_ofIteratedSlice_π
-    {Z : C} {Y : Over Z}
-    [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
-    [(J.over Y.left).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
-    [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (σ : ((M.over Z).over Y).GeneratingSections) [IsIso σ.π] :
-    IsIso σ.ofIteratedSlice.π :=
-  (by
-    change IsIso (σ.mapIso (iteratedSliceEquivalence R Y).inverse
-      (iteratedSliceEquivalenceUnitSheafIso R Y)
-      (iteratedSliceEquivalenceInverseObjIso R Y M)).π
-    infer_instance)
-
-/-- Transporting generating sections off an iterated slice preserves finiteness. -/
-instance _root_.SheafOfModules.GeneratingSections.isFiniteType_ofIteratedSlice
-    {Z : C} {Y : Over Z}
-    [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
-    [(J.over Y.left).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
-    [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (σ : ((M.over Z).over Y).GeneratingSections) [hσ : σ.IsFiniteType] :
-    σ.ofIteratedSlice.IsFiniteType :=
-  (by
-    change (σ.mapIso (iteratedSliceEquivalence R Y).inverse
-      (iteratedSliceEquivalenceUnitSheafIso R Y)
-      (iteratedSliceEquivalenceInverseObjIso R Y M)).IsFiniteType
-    infer_instance)
-
-end IteratedSlice
-
 variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}}
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
@@ -224,7 +130,6 @@ def _root_.SheafOfModules.QuasicoherentData.ofRefinement {M : SheafOfModules.{u}
 /-- Generating sections of `M.over X` restricted along `f : Y ⟶ X` to generating sections of
 `M.over Y`: they are carried by the restriction functor `overMap R f`, which is identified with
 restriction to `Y` by `overFunctorMap`. -/
-@[expose]
 def _root_.SheafOfModules.GeneratingSections.restrict {M : SheafOfModules.{u} R} {X Y : C}
     (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (M.over Y).GeneratingSections :=
   G.mapIso (overMap R f) (overMapUnitIso f).symm ((overFunctorMap R f).app M)

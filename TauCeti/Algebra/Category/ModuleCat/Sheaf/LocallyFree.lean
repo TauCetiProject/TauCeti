@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.Sites.CoversTop.Over
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 
