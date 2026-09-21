@@ -118,3 +118,17 @@ theorem natCard_mul_weightEnumerator_euclideanDual {F : Type*} [Field F] [Finite
       (by simpa [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm)).prim C
 
 end Submodule
+
+namespace TauCeti
+
+/-- A self-dual code over a finite field satisfies the division-free MacWilliams
+identity in `ℤ[X, Y]`. -/
+theorem natCard_mul_weightEnumerator_of_eq_euclideanDual
+    {ι F : Type*} [Fintype ι] [Field F] [Finite F] [DecidableEq F]
+    (C : Submodule F (ι → F)) (hC : C = Submodule.euclideanDual C) :
+    (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → F)).weightEnumerator =
+      aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
+        (C : Set (ι → F)).weightEnumerator := by
+  simpa only [← hC] using Submodule.natCard_mul_weightEnumerator_euclideanDual C
+
+end TauCeti

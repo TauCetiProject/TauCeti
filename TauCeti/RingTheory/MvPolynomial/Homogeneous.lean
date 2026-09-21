@@ -24,10 +24,8 @@ open MvPolynomial
 /-- Scaling all variables by `a` scales the value of a degree-`n` homogeneous polynomial
 by `a ^ n`, after any change of coefficient ring.
 
-Use `simp only [eval₂_fun_mul_of_isHomogeneous hp]` with a homogeneity proof `hp`
-after `open TauCeti`.
 This is not a global `simp` lemma: the degree `n` cannot be inferred from its left-hand side. -/
-theorem eval₂_fun_mul_of_isHomogeneous {σ R S : Type*} [CommSemiring R] [CommSemiring S]
+theorem eval₂_const_mul_of_isHomogeneous {σ R S : Type*} [CommSemiring R] [CommSemiring S]
     {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
     (f : R →+* S) (g : σ → S) (a : S) :
     eval₂ f (fun i ↦ a * g i) p = a ^ n * eval₂ f g p := by
@@ -38,5 +36,24 @@ theorem eval₂_fun_mul_of_isHomogeneous {σ R S : Type*} [CommSemiring R] [Comm
   have hdeg : ∑ i ∈ d.support, d i = n := (hp.degree_eq_sum_deg_support hd).symm
   simp only [mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, hdeg]
   ring
+
+/-- Scaling the variables of a homogeneous polynomial by a scalar scales its algebra
+evaluation by the corresponding power of that scalar. The scalar algebra may differ
+from the coefficient algebra. -/
+theorem aeval_smul_of_isHomogeneous {σ R S A : Type*}
+    [CommSemiring R] [CommSemiring S] [CommSemiring A] [Algebra R A] [Algebra S A]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (g : σ → A) (a : S) :
+    aeval (a • g) p = a ^ n • aeval g p := by
+  rw [Pi.smul_def]
+  simpa only [aeval_def, Algebra.smul_def, map_pow] using
+    eval₂_const_mul_of_isHomogeneous hp (algebraMap R A) g (algebraMap S A a)
+
+/-- Scaling the variables of a homogeneous polynomial scales its evaluation by the
+corresponding power of the scalar. -/
+theorem eval_smul_of_isHomogeneous {σ R : Type*} [CommSemiring R]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (g : σ → R) (a : R) :
+    eval (a • g) p = a ^ n • eval g p := by
+  simpa only [eval, coe_eval₂Hom, Pi.smul_def, smul_eq_mul] using
+    eval₂_const_mul_of_isHomogeneous hp (RingHom.id R) g a
 
 end TauCeti
