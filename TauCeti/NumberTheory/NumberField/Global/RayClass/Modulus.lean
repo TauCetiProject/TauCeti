@@ -454,8 +454,7 @@ theorem Modulus.isCoprimeTo_iff {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ ∀ v ∈ 𝔪.support, ¬ v.asIdeal ∣ I := Ideal.isPrimeTo_iff
 
 /-- **A divisor of a principal ideal with a generator prime to the modulus is prime to the
-modulus.**  A prime of the support dividing `J` would contain the generator `a`, whose valuation
-there is one because `a` is a unit at the finite part. -/
+modulus.** -/
 theorem Modulus.isCoprimeTo_of_dvd_span_singleton {m : Modulus K} {J : Ideal (𝓞 K)}
     {a : 𝓞 K} {x : Kˣ} (hxa : (x : K) = a) (hx : x ∈ primeToSubgroup m)
     (hdvd : J ∣ Ideal.span {a}) : m.IsCoprimeTo J := by
