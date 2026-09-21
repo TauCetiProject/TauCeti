@@ -34,6 +34,10 @@ with a discontinuous action whose object is discrete but not smooth. So the sour
 dictionary is the discrete `G`-modules with continuous `G`-action, and the image of the
 unrestricted construction is larger than the smooth discrete subcategory.
 
+The general restriction and smoothness facts for trivial topological representations also live
+here, since they provide the basic examples of smooth discrete objects used by coefficient
+constructions.
+
 ## Main definitions
 
 * `TauCeti.ofDiscreteModule`: a discrete `G`-module as an object of `TopRep R G`.
@@ -74,7 +78,8 @@ unrestricted construction is larger than the smooth discrete subcategory.
 * `TauCeti.res_ofDiscreteModule`: the dictionary commutes with restriction to a subgroup, on the
   nose.
 * `TauCeti.res_trivial`: restriction of a trivial representation is trivial on the nose.
-* `TauCeti.trivial_ρ_apply`: every element acts as the identity in a trivial representation.
+* `TauCeti.isSmoothDiscrete_of_ρ_apply_eq_self`: a discrete object with trivial action is smooth
+  discrete.
 * `TauCeti.IsSmoothDiscrete.res`: smoothness is inherited by restriction along a continuous
   homomorphism.
 * `TauCeti.trivial_isSmoothDiscrete`: a trivial representation on a discrete module is smooth
@@ -250,6 +255,8 @@ variable {R G M}
 
 end OfDiscreteModule
 
+/-! ### Trivial representations -/
+
 section Trivial
 
 variable (R : Type u) [Ring R] [TopologicalSpace R] (G : Type v) [Monoid G]
@@ -257,15 +264,13 @@ variable (R : Type u) [Ring R] [TopologicalSpace R] (G : Type v) [Monoid G]
   [ContinuousSMul R M]
 
 /-- Restriction of a trivial representation along a monoid homomorphism is the corresponding
-trivial representation of the source monoid, on the nose. -/
+trivial representation of the source monoid, on the nose.
+
+For groups, `TopRep.res` is a reducible abbreviation for the left-hand side, so this lemma also
+proves the corresponding equality stated with `TopRep.res` verbatim. -/
 lemma res_trivial {H : Type*} [Monoid H] (f : H →* G) :
     TopRep.of ((ContRepresentation.trivial R G M).restrict f) =
       TopRep.of (ContRepresentation.trivial R H M) := (rfl)
-
-/-- Every monoid element acts as the identity in a trivial topological representation. -/
-@[simp] lemma trivial_ρ_apply (g : G) (x : M) :
-    (TopRep.of (ContRepresentation.trivial R G M)).ρ g x = x :=
-  ContRepresentation.trivial_apply g x
 
 end Trivial
 
@@ -288,17 +293,22 @@ structure IsSmoothDiscrete (X : TopRep R G) : Prop where
   /-- every point stabilizer is open -/
   stabilizer_isOpen (x : X.V) : IsOpen {g : G | X.ρ g x = x}
 
+/-- A discrete topological representation on which every operator fixes every point is smooth
+discrete. -/
+lemma isSmoothDiscrete_of_ρ_apply_eq_self (X : TopRep R G) [DiscreteTopology X.V]
+    (htriv : ∀ (g : G) (x : X.V), X.ρ g x = x) : IsSmoothDiscrete R X := by
+  refine ⟨inferInstance, fun x ↦ ?_⟩
+  have hstabilizer : {g : G | X.ρ g x = x} = Set.univ :=
+    Set.eq_univ_of_forall fun g ↦ htriv g x
+  rw [hstabilizer]
+  exact isOpen_univ
+
 /-- A trivial representation on a discrete module is smooth discrete: every point stabilizer is
 the whole monoid. -/
 lemma trivial_isSmoothDiscrete (M : Type w) [AddCommGroup M] [Module R M]
     [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul R M] :
-    IsSmoothDiscrete R (TopRep.of (ContRepresentation.trivial R G M)) := by
-  refine ⟨inferInstance, fun x ↦ ?_⟩
-  have hstabilizer :
-      {g : G | (TopRep.of (ContRepresentation.trivial R G M)).ρ g x = x} = Set.univ :=
-    Set.eq_univ_of_forall fun g ↦ ContRepresentation.trivial_apply g x
-  rw [hstabilizer]
-  exact isOpen_univ
+    IsSmoothDiscrete R (TopRep.of (ContRepresentation.trivial R G M)) :=
+  isSmoothDiscrete_of_ρ_apply_eq_self R _ fun g x ↦ ContRepresentation.trivial_apply g x
 
 variable {R}
 
