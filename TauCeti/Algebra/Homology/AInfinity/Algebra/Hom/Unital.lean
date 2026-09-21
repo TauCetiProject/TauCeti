@@ -60,7 +60,8 @@ namespace AInfinityHom
 /-- A general `A∞` morphism is **strictly unital** when its linear component preserves the
 chosen unit and every component of arity other than one vanishes on a tuple containing the source
 unit.  Since `A∞` algebras here are uncurved, the arity-zero clause is vacuous. -/
-structure IsStrictlyUnital (f : AInfinityHom AA BB) (eA : A) (eB : B) : Prop where
+structure IsStrictlyUnital (f : AInfinityHom AA BB) {eA : A} {eB : B}
+    (_hA : AA.StrictUnit eA) (_hB : BB.StrictUnit eB) : Prop where
   /-- The linear component preserves the chosen strict unit. -/
   map_unit : f.linearPart eA = eB
   /-- Every higher component vanishes on a tuple containing the source strict unit. -/
@@ -70,11 +71,12 @@ structure IsStrictlyUnital (f : AInfinityHom AA BB) (eA : A) (eB : B) : Prop whe
 namespace IsStrictlyUnital
 
 variable {f : AInfinityHom AA BB} {eA : A} {eB : B}
+  {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB}
 
 /-- A higher component of a strictly unital morphism vanishes when a specified input is the
 source unit.  This is not a `simp` lemma: neither the units nor the index of the unit input can
 be recovered from the left-hand side. -/
-theorem component_eq_zero_of_eq_unit (hf : f.IsStrictlyUnital eA eB) {n : ℕ} (hn : n ≠ 1)
+theorem component_eq_zero_of_eq_unit (hf : f.IsStrictlyUnital hA hB) {n : ℕ} (hn : n ≠ 1)
     (x : Fin n → A) {i : Fin n} (hi : x i = eA) : f.component n x = 0 :=
   hf.component_eq_zero hn x ⟨i, hi⟩
 
@@ -87,7 +89,8 @@ namespace AInfinityHom
 /-- A strict `A∞` morphism is strictly unital exactly when its linear part preserves the chosen
 strict unit.  All higher unit clauses follow from strictness. -/
 theorem IsStrict.isStrictlyUnital_iff {f : AInfinityHom AA BB} {eA : A} {eB : B}
-    (hf : f.IsStrict) : f.IsStrictlyUnital eA eB ↔ f.linearPart eA = eB := by
+    {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB} (hf : f.IsStrict) :
+    f.IsStrictlyUnital hA hB ↔ f.linearPart eA = eB := by
   constructor
   · exact IsStrictlyUnital.map_unit
   · intro hunit
@@ -99,7 +102,8 @@ theorem IsStrict.isStrictlyUnital_iff {f : AInfinityHom AA BB} {eA : A} {eB : B}
 
 /-- A strict `A∞` morphism whose linear part preserves the unit is strictly unital. -/
 theorem IsStrict.isStrictlyUnital {f : AInfinityHom AA BB} {eA : A} {eB : B}
-    (hf : f.IsStrict) (hunit : f.linearPart eA = eB) : f.IsStrictlyUnital eA eB :=
+    {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB} (hf : f.IsStrict)
+    (hunit : f.linearPart eA = eB) : f.IsStrictlyUnital hA hB :=
   hf.isStrictlyUnital_iff.2 hunit
 
 /-! ### Composition with a strict outer morphism -/
@@ -109,8 +113,9 @@ composition case in which the outer morphism has no higher components. -/
 theorem IsStrictlyUnital.comp_toAInfinityHom {CC : AInfinityAlgebra R C}
     {f : AInfinityHom AA BB} (g : AInfinityStrictHom BB CC)
     {eA : A} {eB : B} {eC : C}
-    (hf : f.IsStrictlyUnital eA eB) (hgunit : g eB = eC) :
-    (g.toAInfinityHom.comp f).IsStrictlyUnital eA eC := by
+    {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB} {hC : CC.StrictUnit eC}
+    (hf : f.IsStrictlyUnital hA hB) (hgunit : g eB = eC) :
+    (g.toAInfinityHom.comp f).IsStrictlyUnital hA hC := by
   refine ⟨?_, ?_⟩
   · rw [linearPart_comp, AInfinityStrictHom.linearPart_toAInfinityHom,
       LinearMap.comp_apply, hf.map_unit]
@@ -133,21 +138,22 @@ preserves strictly unitality. -/
 theorem IsStrictlyUnital.comp_of_isStrict {CC : AInfinityAlgebra R C}
     {f : AInfinityHom AA BB} {g : AInfinityHom BB CC}
     {eA : A} {eB : B} {eC : C}
-    (hf : f.IsStrictlyUnital eA eB) (hg : g.IsStrict) (hgunit : g.linearPart eB = eC) :
-    (g.comp f).IsStrictlyUnital eA eC := by
+    {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB} {hC : CC.StrictUnit eC}
+    (hf : f.IsStrictlyUnital hA hB) (hg : g.IsStrict) (hgunit : g.linearPart eB = eC) :
+    (g.comp f).IsStrictlyUnital hA hC := by
   have hunit : hg.toStrictHom eB = eC := by
     rw [← AInfinityStrictHom.coe_toLinearMap, hg.toStrictHom_toLinearMap]
     exact hgunit
-  have h := hf.comp_toAInfinityHom hg.toStrictHom hunit
+  have h := hf.comp_toAInfinityHom (hC := hC) hg.toStrictHom hunit
   rw [hg.toAInfinityHom_toStrictHom] at h
   exact h
 
 /-! ### Identities -/
 
-/-- The identity `A∞` morphism is strictly unital relative to every chosen element. -/
+/-- The identity `A∞` morphism is strictly unital for every strict unit. -/
 @[simp]
-theorem isStrictlyUnital_id (eA : A) :
-    (AInfinityHom.id AA).IsStrictlyUnital eA eA := by
+theorem isStrictlyUnital_id {eA : A} (hA : AA.StrictUnit eA) :
+    (AInfinityHom.id AA).IsStrictlyUnital hA hA := by
   apply (isStrict_id AA).isStrictlyUnital
   rw [linearPart_id]
   rfl
@@ -164,7 +170,7 @@ variable {eA : A} {eB : B} {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB}
 unital in the componentwise sense. -/
 @[simp]
 theorem isStrictlyUnital_toAInfinityHom (f : AInfinityStrictUnitalHom hA hB) :
-    f.toAInfinityStrictHom.toAInfinityHom.IsStrictlyUnital eA eB := by
+    f.toAInfinityStrictHom.toAInfinityHom.IsStrictlyUnital hA hB := by
   apply (AInfinityHom.isStrict_toAInfinityHom f.toAInfinityStrictHom).isStrictlyUnital
   rw [AInfinityStrictHom.linearPart_toAInfinityHom]
   exact f.map_unit
