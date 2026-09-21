@@ -45,7 +45,9 @@ every affine chart of a fan contains the dense torus.
   support of its target.
 * `TauCeti.Toric.FanHom.exists_isLeast_cone`: the target cones containing the image of a given
   source cone have a least element, so a fan morphism has a well-defined cone-by-cone description.
-  `TauCeti.Toric.FanHom.leastCone` names that least target cone.
+  `TauCeti.Toric.FanHom.leastCone` names that least target cone, and
+  `TauCeti.Toric.FanHom.leastCone_mono` records its monotonicity, while
+  `TauCeti.Toric.FanHom.leastCone_isFaceOf` transports face inclusions to the least cones.
 
 ## Implementation notes
 
@@ -390,6 +392,20 @@ theorem map_le_leastCone (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) :
 theorem leastCone_le (f : FanHom Φ Ψ) (hσ : σ ∈ Φ.cones) {υ : PointedCone ℝ V'}
     (hυ : υ ∈ Ψ.cones) (h : σ.map f.realMap ≤ υ) : f.leastCone hσ ≤ υ :=
   (f.isLeast_leastCone hσ).2 ⟨hυ, h⟩
+
+/-- The least target cone is monotone in the source cone. -/
+theorem leastCone_mono (f : FanHom Φ Ψ) {τ σ : PointedCone ℝ V} (hτ : τ ∈ Φ.cones)
+    (hσ : σ ∈ Φ.cones) (h : τ ≤ σ) : f.leastCone hτ ≤ f.leastCone hσ :=
+  f.leastCone_le hτ (f.leastCone_mem hσ) <|
+    (Submodule.map_mono h).trans (f.map_le_leastCone hσ)
+
+/-- The least target cones preserve face inclusions. -/
+theorem leastCone_isFaceOf (f : FanHom Φ Ψ) {τ σ : PointedCone ℝ V}
+    (hσ : σ ∈ Φ.cones) (h : τ.IsFaceOf σ) :
+    (f.leastCone (Φ.mem_of_isFaceOf hσ h)).IsFaceOf (f.leastCone hσ) :=
+  Ψ.isFaceOf_of_le (f.leastCone_mem hσ)
+    (f.leastCone_mem (Φ.mem_of_isFaceOf hσ h))
+    (f.leastCone_mono (Φ.mem_of_isFaceOf hσ h) hσ h.le)
 
 end FanHom
 

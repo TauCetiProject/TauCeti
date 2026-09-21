@@ -18,18 +18,20 @@ that every positive root is carried to a **simple** root `αⱼ = Pi.single j 1`
 simple reflections read along a repetition-free word running over all the vertices. Equivalently,
 every positive root lies in the Weyl orbit of a simple one.
 
-This is a prerequisite for the reflection induction in Gabriel's theorem. It does not assert that
-the reflection word is sink- or source-admissible for the evolving quivers, nor that its steps
-decrease root height; those additional properties are needed to transport the word through
-reflection functors.
+This is a prerequisite for the reflection induction in Gabriel's theorem. The reduction records
+that every intermediate vector remains nonnegative, so the reverse word can be transported through
+source reflection functors. It does not assert that the reflection word is sink- or
+source-admissible for the evolving quivers; that property comes from choosing the full word to be a
+sink-admissible ordering.
 
 ## Main results
 
 * `TauCeti.vertexPreReflection_apply_self_neg_iff_eq_single`: **a positive root is simple exactly
   when the reflection at that vertex makes its coordinate there negative.**
-* `TauCeti.exists_vertexPreReflectionList_take_apply_eq_single`: some number of full passes of the
-  reflection product followed by an initial segment of the word carries a positive root to the
-  simple root at the next vertex of the word.
+* `TauCeti.exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg`: some number of full
+  passes of the reflection product followed by an initial segment of the word carries a positive
+  root to the simple root at the next vertex of the word, without leaving the nonnegative cone
+  before reaching that root.
 * `TauCeti.titsForm_eq_one_iff_exists_vertexPreReflectionList_single`: consequently the positive
   roots are exactly the nonnegative reflection images of the simple roots.
 
@@ -111,20 +113,29 @@ theorem vertexPreReflection_apply_self_neg_iff_eq_single (hpd : (titsForm Q).Pos
 
 /-! ### Reduction of a positive root to a simple root -/
 
-/-- **Weyl-orbit reduction.** For a quiver with positive definite Tits form and a repetition-free
-word `l` running over all the vertices, every positive root `d` is carried to a simple root by
-finitely many full passes of the reflection product followed by an initial segment of `l`: the
-simple root is the one at the vertex `l` reaches next.
+/-- **Weyl-orbit reduction with nonnegative intermediate vectors.** For a quiver with positive
+definite Tits form and a repetition-free word `l` running over all the vertices, every positive
+root `d` is carried to a simple root by finitely many full passes of the reflection product
+followed by an initial segment of `l`: the simple root is the one at the vertex `l` reaches next.
+
+Every intermediate vector in each earlier pass, and every intermediate vector up to the returned
+initial segment in the final pass, is nonnegative. This is the condition needed to reverse the word
+using source reflection functors: none of the intermediate vectors asks for a representation with a
+negative vertex dimension.
 
 No admissibility property of the word for successive reflected quivers is asserted. Reading the
 word backwards exhibits `d` in the Weyl orbit of a simple root, as recorded by
 `TauCeti.titsForm_eq_one_iff_exists_vertexPreReflectionList_single`. -/
-theorem exists_vertexPreReflectionList_take_apply_eq_single (hpd : (titsForm Q).PosDef)
+theorem exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg (hpd : (titsForm Q).PosDef)
     {l : List Q} (hnd : l.Nodup) (hmem : ∀ i : Q, i ∈ l) {d : Q → ℤ}
     (hd : 0 ≤ d) (hroot : titsForm Q d = 1) :
     ∃ (N m : ℕ) (j : Q), l[m]? = some j ∧
       vertexPreReflectionList Q (l.take m) ((vertexPreReflectionList Q l ^ N) d)
-        = Pi.single j 1 := by
+        = Pi.single j 1 ∧
+      (∀ p < N, ∀ r ≤ l.length,
+        0 ≤ vertexPreReflectionList Q (l.take r) ((vertexPreReflectionList Q l ^ p) d)) ∧
+      ∀ r ≤ m,
+        0 ≤ vertexPreReflectionList Q (l.take r) ((vertexPreReflectionList Q l ^ N) d) := by
   classical
   have hd0 : d ≠ 0 := by
     rintro rfl
@@ -134,63 +145,86 @@ theorem exists_vertexPreReflectionList_take_apply_eq_single (hpd : (titsForm Q).
   have hword : ∀ (w : List Q) (y : Q → ℤ),
       titsForm Q (vertexPreReflectionList Q w y) = titsForm Q y :=
     fun w y ↦ titsForm_vertexPreReflectionList Q (fun j _ ↦ hloop j) y
-  -- the first index at which a sequence of dimension vectors leaves the positive cone; the
-  -- argument uses it twice, once for the Coxeter passes and once inside the offending pass
-  have hfirst : ∀ F : ℕ → Q → ℤ, (∃ n : ℕ, ∃ j : Q, F n j < 0) →
-      ∃ n : ℕ, (∃ j : Q, F n j < 0) ∧ ∀ p < n, ∀ j : Q, 0 ≤ F p j := fun F h ↦
-    ⟨Nat.find h, Nat.find_spec h, fun p hp j ↦ not_lt.mp fun hj ↦ Nat.find_min h hp ⟨j, hj⟩⟩
   have hpow : ∀ N : ℕ, titsForm Q ((vertexPreReflectionList Q l ^ N) d) = 1 := by
     intro N
     induction N with
     | zero => simpa using hroot
     | succ N ih => rw [pow_succ', Module.End.mul_apply, hword, ih]
-  -- the first Coxeter pass at which the vector leaves the positive cone
-  obtain ⟨N, hNneg, hNmin⟩ := hfirst (fun N ↦ (vertexPreReflectionList Q l ^ N) d)
-    (exists_vertexPreReflectionList_pow_apply_neg Q hpd hnd hmem hd0)
-  have hN0 : N ≠ 0 := by
-    rintro rfl
-    obtain ⟨j, hj⟩ := hNneg
-    rw [pow_zero, Module.End.one_apply] at hj
-    exact absurd hj (not_lt.mpr (by simpa using Pi.le_def.mp hd j))
-  obtain ⟨N, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN0
-  -- the first reflection within that pass at which it does
+  -- Choose the first pass containing a reflection that leaves the positive cone. Such a pass
+  -- exists because a negative coordinate after a full pass is witnessed by its full prefix.
+  have hbad : ∃ N m : ℕ, ∃ j : Q,
+      vertexPreReflectionList Q (l.take m) ((vertexPreReflectionList Q l ^ N) d) j < 0 := by
+    obtain ⟨n, j, hj⟩ := exists_vertexPreReflectionList_pow_apply_neg Q hpd hnd hmem hd0
+    have hn0 : n ≠ 0 := by
+      rintro rfl
+      rw [pow_zero, Module.End.one_apply] at hj
+      exact absurd hj (not_lt.mpr (Pi.le_def.mp hd j))
+    obtain ⟨N, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn0
+    refine ⟨N, l.length, j, ?_⟩
+    simpa [pow_succ', Module.End.mul_apply] using hj
+  let IsBadPass : ℕ → Prop := fun N ↦ ∃ m : ℕ, ∃ j : Q,
+    vertexPreReflectionList Q (l.take m) ((vertexPreReflectionList Q l ^ N) d) j < 0
+  have hbadPass : ∃ N, IsBadPass N := by
+    obtain ⟨N, m, j, h⟩ := hbad
+    exact ⟨N, m, j, h⟩
+  let N := Nat.find hbadPass
+  have hNneg : ∃ m : ℕ, ∃ j : Q,
+      vertexPreReflectionList Q (l.take m) ((vertexPreReflectionList Q l ^ N) d) j < 0 :=
+    Nat.find_spec hbadPass
+  have hNmin : ∀ p < N, ¬ IsBadPass p := fun p hp ↦ Nat.find_min hbadPass hp
+  have hpasses : ∀ p < N, ∀ r : ℕ,
+      0 ≤ vertexPreReflectionList Q (l.take r) ((vertexPreReflectionList Q l ^ p) d) := by
+    intro p hp r
+    exact Pi.le_def.mpr fun j ↦ not_lt.mp fun h ↦ hNmin p hp ⟨r, j, h⟩
+  -- The vector at the start of the first bad pass is still nonnegative.
   set x : Q → ℤ := (vertexPreReflectionList Q l ^ N) d with hxdef
-  have hx : ∀ j : Q, 0 ≤ x j := hNmin N (Nat.lt_succ_self N)
+  have hx : 0 ≤ x := by
+    rcases N with _ | N
+    · simpa [x] using hd
+    · have h := hpasses N (Nat.lt_succ_self N) l.length
+      simpa [x, pow_succ', Module.End.mul_apply] using h
   have hxroot : titsForm Q x = 1 := hpow N
-  have hxneg : ∃ j : Q, vertexPreReflectionList Q l x j < 0 := by
-    obtain ⟨j, hj⟩ := hNneg
-    exact ⟨j, by rwa [pow_succ', Module.End.mul_apply, ← hxdef] at hj⟩
-  obtain ⟨m, hmneg, hmmin⟩ := hfirst (fun m ↦ vertexPreReflectionList Q (l.take m) x)
-    ⟨l.length, by rwa [List.take_length]⟩
+  -- Inside that pass, choose the first bad prefix.
+  let m := Nat.find hNneg
+  have hmneg : ∃ j : Q, vertexPreReflectionList Q (l.take m) x j < 0 :=
+    Nat.find_spec hNneg
+  have hmmin : ∀ r < m, ∀ j : Q, 0 ≤ vertexPreReflectionList Q (l.take r) x j := by
+    intro r hr j
+    exact not_lt.mp fun h ↦ Nat.find_min hNneg hr ⟨j, h⟩
   have hm0 : m ≠ 0 := by
-    rintro rfl
+    intro hm
     obtain ⟨j, hj⟩ := hmneg
+    rw [hm] at hj
     simp only [List.take_zero, vertexPreReflectionList_nil, Module.End.one_apply] at hj
-    exact absurd hj (not_lt.mpr (hx j))
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm0
+    exact absurd hj (not_lt.mpr (Pi.le_def.mp hx j))
+  obtain ⟨k, hmk⟩ := Nat.exists_eq_succ_of_ne_zero hm0
   have hk : 0 ≤ vertexPreReflectionList Q (l.take k) x :=
-    Pi.le_def.mpr fun j ↦ hmmin k (Nat.lt_succ_self k) j
+    Pi.le_def.mpr fun j ↦ hmmin k (by omega) j
   have hklen : k < l.length := by
     by_contra hcon
-    obtain ⟨j, hj⟩ := hxneg
-    have hnn := hmmin l.length (by omega) j
-    rw [List.take_length] at hnn
-    exact absurd hj (not_lt.mpr hnn)
+    obtain ⟨j, hj⟩ := hmneg
+    have htake : l.take m = l.take k := by
+      rw [(List.take_eq_self_iff l).mpr (by omega), (List.take_eq_self_iff l).mpr (by omega)]
+    rw [htake] at hj
+    exact absurd hj (not_lt.mpr (hmmin k (by omega) j))
   -- the offending reflection is the one at `l[k]`
-  refine ⟨N, k, l[k], List.getElem?_eq_getElem hklen, ?_⟩
-  have hstep : vertexPreReflectionList Q (l.take (k + 1)) x
-      = vertexPreReflection Q l[k] (vertexPreReflectionList Q (l.take k) x) := by
-    rw [List.take_add_one, List.getElem?_eq_getElem hklen, vertexPreReflectionList_append]
-    simp [Module.End.mul_apply]
-  obtain ⟨w, hw⟩ := hmneg
-  rw [hstep] at hw
-  have hwk : w = l[k] := by
-    by_contra hne
-    rw [vertexPreReflection_apply_of_ne Q _ _ hne] at hw
-    exact absurd hw (not_lt.mpr (by simpa using Pi.le_def.mp hk w))
-  subst hwk
-  refine (vertexPreReflection_apply_self_neg_iff_eq_single Q hpd hk ?_).mp hw
-  rw [hword, hxroot]
+  refine ⟨N, k, l[k], List.getElem?_eq_getElem hklen, ?_, ?_, ?_⟩
+  · have hstep : vertexPreReflectionList Q (l.take (k + 1)) x
+        = vertexPreReflection Q l[k] (vertexPreReflectionList Q (l.take k) x) := by
+      rw [List.take_add_one, List.getElem?_eq_getElem hklen, vertexPreReflectionList_append]
+      simp [Module.End.mul_apply]
+    obtain ⟨w, hw⟩ := hmneg
+    rw [hmk] at hw
+    rw [hstep] at hw
+    have hwk : w = l[k] := by
+      by_contra hne
+      rw [vertexPreReflection_apply_of_ne Q _ _ hne] at hw
+      exact absurd hw (not_lt.mpr (by simpa using Pi.le_def.mp hk w))
+    subst hwk
+    refine (vertexPreReflection_apply_self_neg_iff_eq_single Q hpd hk ?_).mp hw
+    rw [hword, hxroot]
+  · exact fun p hp r _ ↦ hpasses p hp r
+  · exact fun r hr ↦ Pi.le_def.mpr fun j ↦ hmmin r (by omega) j
 
 /-- **The positive roots are exactly the nonnegative reflection images of the simple roots.** For a
 quiver with positive definite Tits form, a nonnegative dimension vector has Tits norm one if and
@@ -212,8 +246,8 @@ theorem titsForm_eq_one_iff_exists_vertexPreReflectionList_single (hpd : (titsFo
   have hloop : ∀ j : Q, IsEmpty (j ⟶ j) := isEmpty_hom_self_of_titsForm_posDef Q hpd
   constructor
   · intro hroot
-    obtain ⟨N, m, j, -, hEq⟩ :=
-      exists_vertexPreReflectionList_take_apply_eq_single Q hpd hnd hmem hd hroot
+    obtain ⟨N, m, j, -, hEq, -, -⟩ :=
+      exists_vertexPreReflectionList_take_apply_eq_single_and_nonneg Q hpd hnd hmem hd hroot
     refine ⟨((List.replicate N l).flatten ++ l.take m).reverse, j, ?_⟩
     have hfwd : vertexPreReflectionList Q ((List.replicate N l).flatten ++ l.take m) d
         = Pi.single j 1 := by

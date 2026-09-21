@@ -68,7 +68,7 @@ theorem reductive (hH : torusCommHopfAlgProperty k H) :
   let _ : IsReduced
       (FiniteTypeCommHopfAlgCat.quotient
         (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) I) :=
-    isReduced_of_smooth_of_field (AlgebraicClosure k) _
+    isReduced_of_smooth (AlgebraicClosure k) _
   apply (hH.multiplicativeType k H).eq_augmentation_of_geometricallyUnipotent k H I
   exact (geometricallyUnipotentPointsCommHopfAlgProperty_iff (AlgebraicClosure k) _).mpr hI'.2
 

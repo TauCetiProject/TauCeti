@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
-public import Mathlib.RingTheory.PowerSeries.Restricted
+public import Mathlib.RingTheory.PowerSeries.Trunc
+public import TauCeti.RingTheory.PowerSeries.Restricted
+import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Topology.Order.LiminfLimsup
 
 /-!
@@ -23,6 +26,11 @@ The distinguished degree is the datum Weierstrass division and preparation for T
 organised around. No completeness hypothesis is needed for the norm identities here. The radius is
 any positive real number, including the unit radius of the usual Tate algebra.
 
+Completeness enters only at the end of the file, where a family of restricted series with
+summable Gauss norms is summed coefficientwise. This is the convergence statement that
+successive-approximation arguments over a complete nonarchimedean ring run on, and it takes the
+place of completeness of the Tate algebra for the Gauss norm.
+
 ## Main definitions
 
 * `TauCeti.PowerSeries.IsDistinguished`: the Gauss norm is attained in degree `s` and every later
@@ -33,9 +41,18 @@ any positive real number, including the unit radius of the usual Tate algebra.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
   series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
+* `TauCeti.PowerSeries.IsDistinguished.trunc`,
+  `TauCeti.PowerSeries.IsDistinguished.gaussNorm_trunc` and
+  `TauCeti.PowerSeries.IsDistinguished.gaussNorm_sub_trunc_lt`: the polynomial part of a
+  distinguished series is distinguished of the same degree and the same Gauss norm, and the
+  tail it leaves is strictly smaller.
 * `TauCeti.PowerSeries.IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul`: the dominant
   coefficient of a product of distinguished series.
 * `TauCeti.PowerSeries.gaussNorm_mul_of_isRestricted`: multiplicativity of the Gauss norm.
+* `TauCeti.PowerSeries.summable_coeff_of_summable_gaussNorm` and
+  `TauCeti.PowerSeries.isRestricted_mk_tsum_coeff`: over a complete ring, a family of restricted
+  series with summable Gauss norms has summable coefficients, and its coefficientwise sum is
+  again restricted.
 
 ## References
 
@@ -168,6 +185,71 @@ theorem exists_isDistinguished (hc : 0 < c) (hf : f.IsRestricted c) (hf0 : f ≠
     exact ⟨by simpa [S] using (hmax i hi_mem).trans_eq h.symm, h⟩
   exact (not_le_of_gt hm) (hnmax m hm_mem)
 
+section Truncation
+
+/-- Truncating a series just past a degree in which its Gauss norm is attained leaves that norm
+unchanged. -/
+@[simp] theorem IsDistinguished.gaussNorm_trunc (hf : IsDistinguished c s f) :
+    ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).gaussNorm norm c
+      = f.gaussNorm norm c := by
+  have hcoeff (m : ℕ) : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff m =
+      if m < s + 1 then f.coeff m else 0 := by
+    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  refine le_antisymm ?_ ?_
+  · rw [PowerSeries.gaussNorm_eq]
+    refine ciSup_le fun m ↦ ?_
+    rw [hcoeff m]
+    split_ifs
+    · exact PowerSeries.le_gaussNorm norm c f hf.hasGaussNorm m
+    · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
+  · have hbdd : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).HasGaussNorm norm c :=
+      hasGaussNorm_of_isRestricted (isRestricted_of_forall_coeff_eq_zero (n := s + 1)
+        fun m hm ↦ by rw [hcoeff m, ite_eq_right (by omega)])
+    have h := PowerSeries.le_gaussNorm norm c _ hbdd s
+    rw [hcoeff s, ite_eq_left (Nat.lt_succ_self s)] at h
+    exact le_of_eq_of_le hf.norm_coeff_mul_pow_eq.symm h
+
+/-- The truncation of a distinguished series just past its distinguished degree is again
+distinguished of that degree. It is the polynomial part `f⁻` a Weierstrass division divides by. -/
+theorem IsDistinguished.trunc (hf : IsDistinguished c s f) :
+    IsDistinguished c s ((f.trunc (s + 1) : Polynomial R) : PowerSeries R) := by
+  have hcoeff (m : ℕ) : ((f.trunc (s + 1) : Polynomial R) : PowerSeries R).coeff m =
+      if m < s + 1 then f.coeff m else 0 := by
+    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  refine ⟨?_, fun m hm ↦ ?_⟩
+  · rw [hcoeff s, ite_eq_left (Nat.lt_succ_self s), hf.gaussNorm_trunc]
+    exact hf.norm_coeff_mul_pow_eq
+  · rw [hcoeff m, ite_eq_right (by omega), hf.gaussNorm_trunc]
+    simpa using hf.gaussNorm_pos
+
+/-- The tail `f⁺` left by truncating a restricted distinguished series just past its
+distinguished degree has strictly smaller Gauss norm than the series itself. This is the
+contraction factor of the Weierstrass division algorithm. -/
+theorem IsDistinguished.gaussNorm_sub_trunc_lt (hf : IsDistinguished c s f) (hc : 0 < c)
+    (hfr : f.IsRestricted c) :
+    (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
+      < f.gaussNorm norm c := by
+  have hcoeff (m : ℕ) : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).coeff m =
+      if m < s + 1 then 0 else f.coeff m := by
+    rw [map_sub, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+    split_ifs <;> simp
+  have htr : (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
+    rw [sub_eq_add_neg]
+    exact PowerSeries.isRestricted.add c hfr (PowerSeries.isRestricted.neg c
+      (isRestricted_of_forall_coeff_eq_zero (n := s + 1) fun m hm ↦ by
+        rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc, ite_eq_right (by omega)]))
+  rcases eq_or_ne (f - ((f.trunc (s + 1) : Polynomial R) : PowerSeries R)) 0 with h0 | h0
+  · rw [h0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
+    exact hf.gaussNorm_pos
+  · obtain ⟨n, hn⟩ := exists_isDistinguished hc htr h0
+    have hns : s < n := by
+      by_contra hcon
+      exact hn.coeff_ne_zero (by rw [hcoeff n, ite_eq_left (by omega)])
+    rw [← hn.norm_coeff_mul_pow_eq, hcoeff n, ite_eq_right (by omega)]
+    exact hf.norm_coeff_mul_pow_lt n hns
+
+end Truncation
+
 variable [IsUltrametricDist R]
 
 /-- The sum of two power series with bounded weighted coefficient norms again has bounded weighted
@@ -221,6 +303,68 @@ theorem hasGaussNorm_mul (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
                 (mul_nonneg (norm_nonneg _) (pow_nonneg hc _))
                 (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg)
   exact ⟨_, Set.forall_mem_range.mpr key⟩
+
+section Summation
+
+variable [CompleteSpace R] {ι : Type*} {a : ι → PowerSeries R}
+
+omit [IsUltrametricDist R] in
+/-- Over a complete ring, a family of power series with summable Gauss norms has summable
+coefficients in every degree. -/
+theorem summable_coeff_of_summable_gaussNorm (hc : 0 < c)
+    (ha : ∀ k, (a k).HasGaussNorm norm c)
+    (hs : Summable fun k ↦ (a k).gaussNorm norm c) (i : ℕ) :
+    Summable fun k ↦ (a k).coeff i := by
+  refine Summable.of_norm_bounded (hs.mul_right (c ^ i)⁻¹) fun k ↦ ?_
+  rw [← div_eq_mul_inv, le_div_iff₀ (pow_pos hc i)]
+  exact PowerSeries.le_gaussNorm norm c _ (ha k) i
+
+/-- **Coefficientwise summation of restricted power series.** Over a complete nonarchimedean
+ring, the degreewise sums of a family of restricted power series with summable Gauss norms
+assemble into a restricted power series.
+
+This is the convergence statement behind successive-approximation arguments such as Weierstrass
+division: it plays the role of completeness of the Tate algebra for the Gauss norm. -/
+theorem isRestricted_mk_tsum_coeff (hc : 0 < c) (ha : ∀ k, (a k).IsRestricted c)
+    (hs : Summable fun k ↦ (a k).gaussNorm norm c) :
+    (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).IsRestricted c := by
+  classical
+  have hsum := summable_coeff_of_summable_gaussNorm hc
+    (fun k ↦ hasGaussNorm_of_isRestricted (ha k)) hs
+  rw [PowerSeries.isRestricted_iff']
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun i ↦
+    hb.trans_le (by positivity), fun ε hε ↦ ?_⟩
+  have hsmall : {k | ¬(a k).gaussNorm norm c < ε / 2}.Finite :=
+    Filter.eventually_cofinite.mp
+      (hs.tendsto_cofinite_zero.eventually (gt_mem_nhds (half_pos hε)))
+  let S := hsmall.toFinset
+  have hpartial : (∑ k ∈ S, a k).IsRestricted c :=
+    sum_mem (S := PowerSeries.IsRestricted.addSubgroup c) fun k _ ↦ ha k
+  filter_upwards [((PowerSeries.isRestricted_iff' c
+    (∑ k ∈ S, a k)).mp hpartial).eventually
+      (gt_mem_nhds (half_pos hε))] with i hi
+  have hsplit : (PowerSeries.mk fun i ↦ ∑' k, (a k).coeff i).coeff i =
+      (∑ k ∈ S, a k).coeff i + ∑' k : {k // k ∉ S}, (a k).coeff i := by
+    rw [PowerSeries.coeff_mk, ← (hsum i).sum_add_tsum_subtype_compl S, map_sum]
+  have htail : ‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i ≤ ε / 2 := by
+    rw [← le_div_iff₀ (pow_pos hc i)]
+    refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+      (by positivity) fun k ↦ ?_
+    rw [le_div_iff₀ (pow_pos hc i)]
+    have hk : (a k).gaussNorm norm c < ε / 2 := by simpa [S] using k.property
+    exact (PowerSeries.le_gaussNorm norm c _
+      (hasGaussNorm_of_isRestricted (ha k)) i).trans hk.le
+  rw [hsplit]
+  calc ‖(∑ k ∈ S, a k).coeff i + ∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i
+      ≤ max ‖(∑ k ∈ S, a k).coeff i‖ ‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i :=
+        mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _)
+          (pow_nonneg hc.le i)
+    _ = max (‖(∑ k ∈ S, a k).coeff i‖ * c ^ i)
+          (‖∑' k : {k // k ∉ S}, (a k).coeff i‖ * c ^ i) :=
+        max_mul_of_nonneg _ _ (pow_nonneg hc.le i)
+    _ < ε := max_lt (hi.trans (half_lt_self hε)) (htail.trans_lt (half_lt_self hε))
+
+end Summation
 
 variable [NormMulClass R]
 

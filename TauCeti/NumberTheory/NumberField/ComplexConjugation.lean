@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Tower
 
 /-!
 # The canonical element at a ramified real place
@@ -46,6 +46,14 @@ there is no residue field, and no congruence `σ x ≡ x ^ q`.
   resulting uniqueness among nonidentity elements.
 * `TauCeti.NumberField.complexConjugationAt_smul`: the conjugation transforms by conjugacy,
   `c (σ • w) = σ * c w * σ⁻¹`.
+* `TauCeti.NumberField.complexConjugationAt_restrictNormal_of_isComplex` and
+  `TauCeti.NumberField.complexConjugationAt_restrictNormal_eq_one_of_isReal`: restriction to an
+  intermediate field, in both branches. The restriction is the conjugation at the induced place
+  when that place stays complex, and is trivial when the induced place is real.
+
+The general tower facts these rest on — equivariance of the action along the tower, and the
+ramification of a complex induced place — are in
+`TauCeti/NumberTheory/NumberField/InfinitePlace/Tower.lean`.
 
 ## References
 
@@ -143,5 +151,45 @@ theorem complexConjugationAt_smul (w : InfinitePlace L) (hw : w.IsRamified K)
     simp only [MulAction.mem_stabilizer_iff] at hc ⊢
     rw [mul_smul, mul_smul, inv_smul_smul, hc]
   · simp
+
+/-! ### Restriction in a normal tower -/
+
+section Tower
+
+variable {F : Type*} [Field F] [Algebra K F] [Algebra F L] [IsScalarTower K F L]
+
+/-- The conjugation at `w` restricts trivially when the induced place on `F` is real. -/
+@[simp]
+theorem complexConjugationAt_restrictNormal_eq_one_of_isReal [Normal K F] (w : InfinitePlace L)
+    (hw : w.IsRamified K) (hv : (w.comap (algebraMap F L)).IsReal) :
+    (complexConjugationAt K w hw).restrictNormal F = 1 := by
+  have hmem : (complexConjugationAt K w hw).restrictNormal F
+      ∈ MulAction.stabilizer (F ≃ₐ[K] F) (w.comap (algebraMap F L)) := by
+    rw [MulAction.mem_stabilizer_iff, AlgEquiv.restrictNormal_smul_comap,
+      complexConjugationAt_smul_self]
+  rwa [(hv.isUnramified (k := K)).stabilizer_eq_bot, Subgroup.mem_bot] at hmem
+
+/-- The conjugation at `w` restricts to the conjugation at the induced complex place on `F`. -/
+@[simp]
+theorem complexConjugationAt_restrictNormal_of_isComplex [Normal K F] (w : InfinitePlace L)
+    (hw : w.IsRamified K) (hv : (w.comap (algebraMap F L)).IsComplex) :
+    letI : Algebra.IsSeparable K F :=
+      Algebra.isSeparable_tower_bot_of_isSeparable K F L
+    letI : IsGalois K F := ⟨⟩
+    (complexConjugationAt K w hw).restrictNormal F
+      = complexConjugationAt K (w.comap (algebraMap F L))
+          (isRamified_comap_of_isComplex K hw.isReal hv) := by
+  let hsep : Algebra.IsSeparable K F :=
+    Algebra.isSeparable_tower_bot_of_isSeparable K F L
+  let hgalois : IsGalois K F := { to_isSeparable := hsep }
+  refine @eq_complexConjugationAt_of_mem_stabilizer_of_ne_one K _ F _ _ hgalois _ _ _ ?_ ?_
+  · rw [MulAction.mem_stabilizer_iff, AlgEquiv.restrictNormal_smul_comap,
+      complexConjugationAt_smul_self]
+  · intro h1
+    exact complexConjugationAt_ne_one K w hw
+      (eq_one_of_restrictNormal_eq_one K (isUnramified_iff.mpr (Or.inr hv))
+        (complexConjugationAt_smul_self K w hw) h1)
+
+end Tower
 
 end TauCeti.NumberField

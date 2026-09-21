@@ -13,9 +13,13 @@ public import TauCeti.RingTheory.MvPowerSeries.Substitution
 /-!
 # Renaming the variables of a multivariate power series
 
-Three gaps in Mathlib's `rename` API, each about comparing a renaming with another operation on
-the same series, and one consequence of them: that reindexing a two-variable series along
-`unitSumUnitEquivFinTwo` carries an associativity identity with it.
+Gaps in Mathlib's `rename` API, in three groups. The first compares a renaming with another
+operation on the same series — substitution, evaluation, or reading a single-variable
+coefficient — together with one consequence of those comparisons: that reindexing a two-variable
+series along `unitSumUnitEquivFinTwo` carries an associativity identity with it. The second says
+where a renamed series *vanishes*: at every exponent that is nonzero at a variable outside the
+image of the renaming. The third is about two renamings at once — along embeddings with disjoint
+images, a common value forces both series to be the same constant.
 
 Substituting after renaming is the substitution along the renamed index, and evaluating after
 renaming is the evaluation at the reindexed family: Mathlib has all these operations and the law
@@ -42,13 +46,19 @@ reindexing the three-variable ambient ring as well, along `unitSumUnitSumUnitEqu
   is evaluating `p` at that family precomposed with `e`.
 * `MvPowerSeries.rename_unitSumUnitEquivFinTwo_assoc`: reindexing a two-variable associative
   series from `Unit ⊕ Unit` to `Fin 2` preserves its associativity identity.
+* `MvPowerSeries.coeff_rename_eq_zero_of_apply_ne_zero`: a renamed series vanishes at every
+  exponent that is nonzero at a variable outside the image of the renaming.
+* `MvPowerSeries.eq_C_of_rename_eq_rename` and
+  `MvPowerSeries.right_eq_C_of_rename_eq_rename`: renamings along embeddings with disjoint images
+  agree only when both series are the same constant.
 
 ## Provenance
 
 No external source. The first three statements are gaps in Mathlib's `MvPowerSeries` API and each
 proof is a few steps of that same API; the fourth is the reindexing they were extracted for, and
-its proof rewrites both sides of the identity through the three-variable renaming. All four are
-recorded here rather than inside their callers because they carry no elliptic content.
+its proof rewrites both sides of the identity through the three-variable renaming. The vanishing
+and disjointness lemmas are likewise gaps in that API. All of them are recorded here rather than
+inside their callers because they carry no content beyond `rename`.
 -/
 
 public section
@@ -70,6 +80,47 @@ variable the `single (e i) n` spelling is the one a caller meets. -/
 theorem coeff_single_rename (e : σ ↪ τ) (p : MvPowerSeries σ R) (i : σ) (n : ℕ) :
     coeff (single (e i) n) (rename e p) = coeff (single i n) p := by
   rw [← embDomain_single, coeff_embDomain_rename]
+
+/-- **A renamed series has no exponent outside the image of `e`**: if `ν` is nonzero at a variable
+`j` that `e` misses, then `ν` is not in the range of `Finsupp.mapDomain e`, so the coefficient
+vanishes. This is Mathlib's `MvPowerSeries.coeff_rename_eq_zero` with the witness of
+non-membership supplied by a single variable. -/
+theorem coeff_rename_eq_zero_of_apply_ne_zero (e : σ ↪ τ) (p : MvPowerSeries σ R) {ν : τ →₀ ℕ}
+    {j : τ} (hj : j ∉ Set.range e) (hν : ν j ≠ 0) : coeff ν (rename e p) = 0 :=
+  coeff_rename_eq_zero _ _ fun ⟨s, hs⟩ ↦ hν (hs ▸ mapDomain_of_notMem_range s j hj)
+
+section Disjoint
+
+variable {σ₁ σ₂ : Type*} {e₁ : σ₁ ↪ τ} {e₂ : σ₂ ↪ τ} {a : MvPowerSeries σ₁ R}
+  {b : MvPowerSeries σ₂ R}
+
+/-- **Renamings along embeddings with disjoint images agree only on constants**: if
+`rename e₁ a = rename e₂ b` and no `e₁ i` is an `e₂ j`, then `a` is the constant series at its own
+constant coefficient. `MvPowerSeries.right_eq_C_of_rename_eq_rename` is the companion for `b`,
+which is the constant series at the *same* constant. The two series need not be indexed by the
+same type: only the images of `e₁` and `e₂` inside `τ` have to be disjoint. -/
+theorem eq_C_of_rename_eq_rename (hdisj : ∀ i j, e₁ i ≠ e₂ j) (h : rename e₁ a = rename e₂ b) :
+    a = C (constantCoeff a) := by
+  classical
+  ext s
+  rw [coeff_C]
+  split_ifs with hs
+  · rw [hs, coeff_zero_eq_constantCoeff_apply]
+  obtain ⟨i, hi⟩ := Finsupp.ne_iff.mp hs
+  rw [← coeff_embDomain_rename e₁, h, coeff_rename_eq_zero_of_apply_ne_zero e₂ b
+    (j := e₁ i) (fun ⟨j, hj⟩ ↦ hdisj i j hj.symm) (by simpa using hi)]
+
+/-- **Both sides are the same constant**: the companion of
+`MvPowerSeries.eq_C_of_rename_eq_rename` for `b`. Reading the constant coefficient through the
+renamings identifies the two constants, so the two series are equal as well. -/
+theorem right_eq_C_of_rename_eq_rename (hdisj : ∀ i j, e₁ i ≠ e₂ j)
+    (h : rename e₁ a = rename e₂ b) : b = C (constantCoeff a) := by
+  have hconst : constantCoeff b = constantCoeff a := by
+    rw [← constantCoeff_rename (f := e₂) b, ← h, constantCoeff_rename]
+  rw [← hconst]
+  exact eq_C_of_rename_eq_rename (fun i j ↦ (hdisj j i).symm) h.symm
+
+end Disjoint
 
 end CommSemiring
 

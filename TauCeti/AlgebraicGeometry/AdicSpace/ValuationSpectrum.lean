@@ -299,6 +299,15 @@ noncomputable def valuation (v : Spv A) :
     Valuation A (@ValuativeRel.ValueGroupWithZero A _ v.toValuativeRel) :=
   @ValuativeRel.valuation A _ v.toValuativeRel
 
+/-- **`v.valuation` is `ValuativeRel.valuation` for the valuative relation of `v`.**
+
+The two sides are definitionally equal, but the definition of
+`TauCeti.ValuationSpectrum.valuation` is not exposed outside this module, so a downstream module
+cannot match `v.valuation` against Mathlib's `ValuativeRel.valuation` API without this equation.
+It exists to cross that module boundary, not to abbreviate. -/
+lemma valuation_def (v : Spv A) :
+    v.valuation = @ValuativeRel.valuation A _ v.toValuativeRel := (rfl)
+
 /-- Comparison under the canonical valuation of a point is the point's valuative relation. -/
 @[simp]
 lemma valuation_le_iff (v : Spv A) (x y : A) :

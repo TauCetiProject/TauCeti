@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Basic
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Component
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 
 /-!
@@ -20,7 +20,9 @@ This file bundles strict morphisms and supplies their extensionality, identity, 
 strict-unit-preservation API.  It also identifies strict morphisms with general `A∞` morphisms
 whose Taylor components above arity one vanish.  The operation equations are stated both as
 multilinear-map equalities and pointwise, so later constructions can use them without unfolding
-the structure.
+the structure.  The components of a composite also simplify when either factor is strict: a
+strict outer factor acts by its linear part, while a strict inner factor applies its linear part
+to every input.
 
 ## Main definitions
 
@@ -34,6 +36,9 @@ the structure.
 
 * `TauCeti.AInfinityHom.isStrict_iff_exists_eq_toAInfinityHom`: the strict `A∞` morphisms are
   exactly the images of strict morphisms.
+* `TauCeti.AInfinityHom.component_comp_of_isStrict_outer` and
+  `TauCeti.AInfinityHom.component_comp_of_isStrict_inner`: the component formulas for a composite
+  having a strict factor.
 
 ## References
 
@@ -361,6 +366,23 @@ theorem linearPart_toAInfinityHom (f : AInfinityStrictHom AA BB) :
   rw [AInfinityHom.linearPart_apply, taylor_toAInfinityHom, LinearMap.comp_apply,
     ReducedTensorWords.letter_ofLetter]
 
+/-- The unsuspended component of a strict morphism in arity other than one is zero. -/
+@[simp]
+theorem component_toAInfinityHom_eq_zero (f : AInfinityStrictHom AA BB) {n : ℕ} (hn : n ≠ 1) :
+    f.toAInfinityHom.component n = 0 := by
+  rcases n with _ | n
+  · exact f.toAInfinityHom.component_zero
+  · apply MultilinearMap.ext
+    intro x
+    rw [AInfinityHom.component_apply _ (n + 1) (by omega), taylor_toAInfinityHom,
+      LinearMap.comp_apply, ReducedTensorWords.letter_apply]
+    have hlength : (⟨n + 1, by omega⟩ : {k : ℕ // 0 < k}) ≠ 1 := by
+      intro h
+      apply hn
+      simpa using congrArg Subtype.val h
+    rw [ReducedTensorWords.component_of_of_ne R A hlength]
+    simp
+
 /-- Passing from strict morphisms to `A∞` morphisms is injective. -/
 theorem toAInfinityHom_injective :
     Function.Injective (toAInfinityHom : AInfinityStrictHom AA BB → AInfinityHom AA BB) := by
@@ -462,7 +484,7 @@ theorem IsStrict.toStrictHom_toLinearMap {f : AInfinityHom AA BB} (hf : f.IsStri
 @[simp]
 theorem IsStrict.toAInfinityHom_toStrictHom {f : AInfinityHom AA BB} (hf : f.IsStrict) :
     hf.toStrictHom.toAInfinityHom = f := by
-  ext1
+  apply AInfinityHom.ext
   rw [AInfinityStrictHom.taylor_toAInfinityHom, IsStrict.toStrictHom_toLinearMap, hf]
 
 /-- The `A∞` morphism induced by a strict morphism is strict. -/
@@ -477,6 +499,44 @@ theorem isStrict_iff_exists_eq_toAInfinityHom (f : AInfinityHom AA BB) :
   refine ⟨fun hf ↦ ⟨hf.toStrictHom, hf.toAInfinityHom_toStrictHom⟩, ?_⟩
   rintro ⟨g, rfl⟩
   exact isStrict_toAInfinityHom g
+
+/-! ### Components of composites with a strict factor -/
+
+/-- If the outer factor of a composite is strict, its linear part is applied to each component of
+the inner factor. -/
+@[simp]
+theorem component_comp_of_isStrict_outer {CC : AInfinityAlgebra R C}
+    {g : AInfinityHom BB CC} {f : AInfinityHom AA BB} (hg : g.IsStrict) (n : ℕ) :
+    (g.comp f).component n = g.linearPart.compMultilinearMap (f.component n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · ext x
+    rw [component_apply _ n hn, taylor_comp, hg, LinearMap.comp_apply,
+      LinearMap.comp_apply, LinearMap.compMultilinearMap_apply, component_apply f n hn,
+      f.taylor_def, LinearMap.comp_apply]
+
+/-- If the inner factor of a composite is strict, its linear part is applied to every input of
+each component of the outer factor.  Degree-zero homogeneity makes the linear part commute with
+the Koszul twists, so no additional sign occurs. -/
+@[simp]
+theorem component_comp_of_isStrict_inner {CC : AInfinityAlgebra R C}
+    {g : AInfinityHom BB CC} {f : AInfinityHom AA BB} (hf : f.IsStrict) (n : ℕ) :
+    (g.comp f).component n =
+      (g.component n).compLinearMap fun _ ↦ f.linearPart := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · ext x
+    rw [component_apply _ n hn, taylor_comp, LinearMap.comp_apply, f.barMap_eq_coalgHom, hf,
+      ReducedTensorWords.coalgHom_comp_letter, ReducedTensorWords.map_of_tprod]
+    simp only [MultilinearMap.compLinearMap_apply]
+    rw [component_apply g n hn]
+    apply congrArg g.taylor
+    apply congrArg (ReducedTensorWords.of R B ⟨n, hn⟩)
+    apply congrArg (PiTensorProduct.tprod R)
+    funext i
+    have hcomm := LinearMap.congr_fun
+      (f.isHomogeneous_linearPart.koszulTwist_comp ((n : ℤ) - 1 - i)) (x i)
+    simpa [LinearMap.comp_apply] using hcomm.symm
 
 end AInfinityHom
 

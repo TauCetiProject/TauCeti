@@ -90,7 +90,7 @@ theorem eq_augmentation_of_isNormal_of_smoothUnipotent_of_three_le
     -- `H` packages this coordinate algebra with its finite-type proof, so its carrier is
     -- definitionally the coordinate algebra on which smoothness supplies reducedness.
     change IsReduced (coordinateHopfAlgebra k n)
-    exact isReduced_of_smooth_of_field k _
+    exact isReduced_of_smooth k _
   let _ : Comodule k (coordinateHopfAlgebra k n) (Fin n → k) := standardComodule k n
   exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso
     k H (Fin n → k) (finiteTypeCoordinateHopfAlgebra k n) e

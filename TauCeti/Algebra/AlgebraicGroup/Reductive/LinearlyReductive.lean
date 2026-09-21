@@ -348,11 +348,11 @@ theorem of_smooth_of_geometricallyConnected_of_baseChange_linearlyReductive
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) :=
     @Algebra.Smooth.baseChange k _ H (AlgebraicClosure k) _ _ _ _ hsm
   let _ : IsReduced (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) :=
-    isReduced_of_smooth_of_field (AlgebraicClosure k) _
+    isReduced_of_smooth (AlgebraicClosure k) _
   let _ := hunipotent.1
   let _ : IsReduced (FiniteTypeCommHopfAlgCat.quotient
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) I) :=
-    isReduced_of_smooth_of_field (AlgebraicClosure k) _
+    isReduced_of_smooth (AlgebraicClosure k) _
   exact HopfIdeal.eq_augmentation_of_isNormal_of_forall_isUnipotentPoint_of_isLinearlyReductive
     hnormal
     (geometricallyUnipotentPointsCommHopfAlgProperty.forall_isUnipotentPoint

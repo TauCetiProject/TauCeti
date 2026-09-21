@@ -8,6 +8,7 @@ module
 import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Probability.Distributions.Cauchy
 public import Mathlib.Probability.HasLaw
@@ -168,6 +169,24 @@ section Integrability
 
 variable {γ : ℝ≥0}
 
+/-- **Integrability transfer at nonzero scale.** A function is integrable against a nondegenerate
+Cauchy law exactly when its density-weighted version is Lebesgue integrable. -/
+theorem integrable_cauchyMeasure_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (x₀ : ℝ) (hγ : γ ≠ 0) {g : ℝ → E} :
+    Integrable g (cauchyMeasure x₀ γ) ↔ Integrable fun x ↦ cauchyPDFReal x₀ γ x • g x := by
+  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
+  exact Probability.integrable_withDensity_ofReal_iff (measurable_cauchyPDFReal x₀ γ).aemeasurable
+    (ae_of_all _ fun x ↦ (cauchyPDF_pos x₀ hγ x).le)
+
+/-- **Integral transfer at nonzero scale.** An integral against a nondegenerate Cauchy law is the
+density-weighted Lebesgue integral. -/
+theorem integral_cauchyMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (x₀ : ℝ) (hγ : γ ≠ 0) (g : ℝ → E) :
+    ∫ x, g x ∂cauchyMeasure x₀ γ = ∫ x, cauchyPDFReal x₀ γ x • g x := by
+  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ)]
+  exact Probability.integral_withDensity_ofReal (measurable_cauchyPDFReal x₀ γ).aemeasurable
+    (ae_of_all _ fun x ↦ (cauchyPDF_pos x₀ hγ x).le) g
+
 private lemma eventually_cauchyPDFReal_ge (x₀ : ℝ) (hγ : γ ≠ 0) :
     ∀ᶠ x in atTop,
       Real.pi⁻¹ * (γ : ℝ) / (5 * x ^ 2) ≤ cauchyPDFReal x₀ γ x := by
@@ -199,7 +218,7 @@ private lemma eventually_cauchyPDFReal_ge (x₀ : ℝ) (hγ : γ ≠ 0) :
 
 private theorem not_integrable_exp_mul_cauchyPDFReal_of_pos (x₀ : ℝ) (hγ : γ ≠ 0)
     {t : ℝ} (ht : 0 < t) :
-    ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x) * cauchyPDFReal x₀ γ x) volume := by
+    ¬ Integrable (fun x : ℝ ↦ cauchyPDFReal x₀ γ x * Real.exp (t * x)) volume := by
   let c : ℝ := Real.pi⁻¹ * (γ : ℝ)
   have hc : 0 < c := by
     dsimp [c]
@@ -207,7 +226,7 @@ private theorem not_integrable_exp_mul_cauchyPDFReal_of_pos (x₀ : ℝ) (hγ : 
   have hlarge : ∀ᶠ x in atTop, 5 / c ≤ Real.exp (t * x) / x ^ (2 : ℝ) :=
     (tendsto_exp_mul_div_rpow_atTop 2 t ht).eventually_ge_atTop (5 / c)
   have hbound : ∀ᶠ x in atTop,
-      (1 : ℝ) ≤ Real.exp (t * x) * cauchyPDFReal x₀ γ x := by
+      (1 : ℝ) ≤ cauchyPDFReal x₀ γ x * Real.exp (t * x) := by
     filter_upwards [eventually_cauchyPDFReal_ge x₀ hγ, hlarge,
       eventually_ge_atTop (1 : ℝ)] with x hpdf hexp hx
     have hxpos : 0 < x := zero_lt_one.trans_le hx
@@ -218,34 +237,30 @@ private theorem not_integrable_exp_mul_cauchyPDFReal_of_pos (x₀ : ℝ) (hγ : 
         mul_le_mul_of_nonneg_left hexp (by positivity)
       _ = Real.exp (t * x) * (c / (5 * x ^ (2 : ℕ))) := by
         field_simp
-      _ ≤ Real.exp (t * x) * cauchyPDFReal x₀ γ x :=
-        mul_le_mul_of_nonneg_left hpdf (Real.exp_pos _).le
+      _ = (c / (5 * x ^ (2 : ℕ))) * Real.exp (t * x) := mul_comm _ _
+      _ ≤ cauchyPDFReal x₀ γ x * Real.exp (t * x) :=
+        mul_le_mul_of_nonneg_right hpdf (Real.exp_pos _).le
   exact MeasureTheory.not_integrable_of_eventually_le_atTop one_pos hbound
 
 /-- A nondegenerate Cauchy law has no first absolute moment. -/
 theorem not_integrable_id_cauchyMeasure (x₀ : ℝ) (hγ : γ ≠ 0) :
     ¬ Integrable id (cauchyMeasure x₀ γ) := by
-  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ,
-    integrable_withDensity_iff (measurable_cauchyPDF x₀ γ) (ae_of_all _ fun x ↦ by
-      simp [cauchyPDF])]
-  simp only [id_eq]
+  rw [integrable_cauchyMeasure_iff x₀ hγ]
+  simp only [id_eq, smul_eq_mul]
   intro hint
-  have htoReal : ∀ x : ℝ, (cauchyPDF x₀ γ x).toReal = cauchyPDFReal x₀ γ x :=
-    fun x ↦ by rw [cauchyPDF_def, ENNReal.toReal_ofReal (cauchyPDF_pos x₀ hγ x).le]
-  simp_rw [htoReal] at hint
   let c : ℝ := Real.pi⁻¹ * (γ : ℝ)
   have hc : 0 < c := by
     dsimp [c]
     positivity
   have hbound : ∀ᶠ x in atTop,
-      ‖x⁻¹‖ ≤ (5 / c) * (x * cauchyPDFReal x₀ γ x) := by
+      ‖x⁻¹‖ ≤ (5 / c) * (cauchyPDFReal x₀ γ x * x) := by
     filter_upwards [eventually_cauchyPDFReal_ge x₀ hγ,
       eventually_ge_atTop (1 : ℝ)] with x hpdf hx
     have hxpos : 0 < x := zero_lt_one.trans_le hx
     rw [Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hxpos)]
     calc
-      x⁻¹ = (5 / c) * (x * (c / (5 * x ^ 2))) := by field_simp
-      _ ≤ (5 / c) * (x * cauchyPDFReal x₀ γ x) := by gcongr
+      x⁻¹ = (5 / c) * ((c / (5 * x ^ 2)) * x) := by field_simp
+      _ ≤ (5 / c) * (cauchyPDFReal x₀ γ x * x) := by gcongr
   obtain ⟨a, ha⟩ := eventually_atTop.mp hbound
   have hinv : IntegrableOn (fun x : ℝ ↦ x⁻¹) (Ioi a) volume := by
     refine Integrable.mono' (hint.const_mul (5 / c)).integrableOn (by fun_prop) ?_
@@ -258,20 +273,16 @@ nondegenerate Cauchy law. -/
 theorem not_integrable_exp_mul_id_cauchyMeasure (x₀ : ℝ) (hγ : γ ≠ 0) {t : ℝ}
     (ht : t ≠ 0) :
     ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x)) (cauchyMeasure x₀ γ) := by
-  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ,
-    integrable_withDensity_iff (measurable_cauchyPDF x₀ γ) (ae_of_all _ fun x ↦ by
-      simp [cauchyPDF])]
+  rw [integrable_cauchyMeasure_iff x₀ hγ]
+  simp only [smul_eq_mul]
   intro hint
-  have htoReal : ∀ x : ℝ, (cauchyPDF x₀ γ x).toReal = cauchyPDFReal x₀ γ x :=
-    fun x ↦ by rw [cauchyPDF_def, ENNReal.toReal_ofReal (cauchyPDF_pos x₀ hγ x).le]
-  simp_rw [htoReal] at hint
   rcases lt_or_gt_of_ne ht with ht | ht
   · have hcomp := (Measure.measurePreserving_neg (volume : Measure ℝ)).integrable_comp_of_integrable
       hint
     apply not_integrable_exp_mul_cauchyPDFReal_of_pos (-x₀) hγ (neg_pos.mpr ht)
     have hpoint (x : ℝ) :
-        Real.exp (t * -x) * cauchyPDFReal x₀ γ (-x) =
-          Real.exp (-t * x) * cauchyPDFReal (-x₀) γ x := by
+        cauchyPDFReal x₀ γ (-x) * Real.exp (t * -x) =
+          cauchyPDFReal (-x₀) γ x * Real.exp (-t * x) := by
       rw [cauchyPDFReal_def, cauchyPDFReal_def]
       congr 2 <;> ring
     refine hcomp.congr (ae_of_all _ fun x ↦ ?_)
@@ -306,11 +317,7 @@ variable {γ : ℝ≥0}
 private theorem cauchyMeasure_apply_eq_integral (x₀ : ℝ) (hγ : γ ≠ 0)
     {s : Set ℝ} (hs : MeasurableSet s) :
     cauchyMeasure x₀ γ s = ENNReal.ofReal (∫ x in s, cauchyPDFReal x₀ γ x) := by
-  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ]
-  -- `cauchyPDF` is the `ofReal` lift of `cauchyPDFReal`; exposing it lets the
-  -- with-density integral API apply.
-  change (volume.withDensity (fun x ↦ ENNReal.ofReal (cauchyPDFReal x₀ γ x))) s = _
-  rw [withDensity_apply _ hs,
+  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ), withDensity_apply _ hs,
     ← ofReal_integral_eq_lintegral_ofReal (integrable_cauchyPDFReal x₀).integrableOn
       (.of_forall fun x ↦ (cauchyPDF_pos x₀ hγ x).le)]
 
@@ -326,10 +333,7 @@ theorem cauchyMeasure_map_add_const (x₀ y : ℝ) (γ : ℝ≥0) :
   -- By construction, `e.symm` is the translation `fun x ↦ x + y`.
   change (cauchyMeasure x₀ γ).map e.symm = cauchyMeasure (x₀ + y) γ
   ext s hs
-  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ]
-  -- As above, unfold the density wrapper to use the Jacobian formula stated for `ofReal`.
-  change (volume.withDensity (fun x ↦ ENNReal.ofReal (cauchyPDFReal x₀ γ x))).map e.symm s = _
-  rw [
+  rw [cauchyMeasure_of_scale_ne_zero x₀ hγ, funext (cauchyPDF_def x₀ γ),
     e.withDensity_ofReal_map_symm_apply_eq_integral_abs_deriv_mul' hs he'
       (.of_forall fun x ↦ (cauchyPDF_pos x₀ hγ x).le) (integrable_cauchyPDFReal x₀),
     cauchyMeasure_apply_eq_integral (x₀ + y) hγ hs]
@@ -388,13 +392,7 @@ theorem integral_exp_mul_I_mul_cauchyPDFReal_zero_loc (hγ : γ ≠ 0) (t : ℝ)
 
 private theorem charFun_cauchyMeasure_zero_loc (hγ : γ ≠ 0) (t : ℝ) :
     charFun (cauchyMeasure 0 γ) t = (Real.exp (-((γ : ℝ) * |t|)) : ℂ) := by
-  have hltop : ∀ᵐ x : ℝ ∂volume, cauchyPDF 0 γ x < ⊤ :=
-    .of_forall fun x ↦ by rw [cauchyPDF_def]; exact ENNReal.ofReal_lt_top
-  rw [charFun_apply_real, cauchyMeasure_of_scale_ne_zero 0 hγ,
-    integral_withDensity_eq_integral_toReal_smul (measurable_cauchyPDF 0 γ) hltop]
-  have htoReal : ∀ x : ℝ, (cauchyPDF 0 γ x).toReal = cauchyPDFReal 0 γ x := fun x ↦ by
-    rw [cauchyPDF_def, ENNReal.toReal_ofReal (cauchyPDF_pos 0 hγ x).le]
-  simp_rw [htoReal]
+  rw [charFun_apply_real, integral_cauchyMeasure_eq 0 hγ]
   simpa only [Complex.real_smul, mul_comm] using
     integral_exp_mul_I_mul_cauchyPDFReal_zero_loc hγ t
 

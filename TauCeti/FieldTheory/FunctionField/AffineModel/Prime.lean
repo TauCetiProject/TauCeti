@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Place
-public import TauCeti.FieldTheory.FunctionField.HolomorphyRing
+public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 
 /-!
 # Affine models: the place of a height one prime, and the two-way correspondence

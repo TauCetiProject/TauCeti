@@ -277,23 +277,15 @@ theorem exists_graphon_repr (f : (Ω × Ω) →ₘ[μ.prod μ] ℝ)
     (hbdd : ∀ᵐ p ∂(μ.prod μ), f p ∈ Set.Icc (0 : ℝ) 1)
     (hsymm : ∀ᵐ p ∂(μ.prod μ), f p = f p.swap) :
     ∃ W : Graphon Ω μ, Graphon.toAEEqFun W = f := by
-  set g : Ω × Ω → ℝ := fun p => max 0 (min 1 ((f p + f p.swap) / 2)) with hg
-  have hgmem (p : Ω × Ω) : g p ∈ Set.Icc (0 : ℝ) 1 :=
-    ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩
-  have hgmeas : Measurable g :=
-    measurable_const.max (measurable_const.min
-      (((AEEqFun.measurable f).add ((AEEqFun.measurable f).comp measurable_swap)).div_const 2))
-  refine ⟨{ toFun := fun x y => g (x, y)
-            symm' := fun x y => by simp only [hg, Prod.swap_prod_mk, add_comm]
-            meas' := hgmeas
-            bdd' := ⟨1, fun x y => abs_le.2 ⟨by linarith [(hgmem (x, y)).1], (hgmem (x, y)).2⟩⟩
-            mem01' := fun x y => hgmem (x, y) }, ?_⟩
+  let g : Ω → Ω → ℝ := fun x y => f (x, y)
+  have hgmeas : Measurable (Function.uncurry g) := AEEqFun.measurable f
+  refine ⟨Graphon.clampSymm μ g hgmeas, ?_⟩
   refine Graphon.toAEEqFun_eq_of_ae ?_
   filter_upwards [hbdd, hsymm] with p hp hps
-  -- The graphon just built reads `g` at `(p.1, p.2) = p`, so this is the claim about `g`.
-  have hgp : g p = f p := by
-    simp only [hg, ← hps, add_self_div_two, min_eq_right hp.2, max_eq_right hp.1]
-  exact hgp
+  rcases p with ⟨x, y⟩
+  have hps' : f (x, y) = f (y, x) := by simpa only [Prod.swap_prod_mk] using hps
+  exact Graphon.clampSymm_apply_of_symm_of_mem μ g hgmeas (x := x) (y := y)
+    (by simpa only [g] using hps') (by simpa only [g] using hp)
 
 /-- **The classes that come from graphons are exactly the a.e. `[0, 1]`-valued, a.e. symmetric
 ones.**  The forward direction is the pointwise range and symmetry of a strict graphon read on its

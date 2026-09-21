@@ -91,6 +91,8 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 
 * `TauCeti.PDE.jetField`: the value-gradient jet field of a Sobolev function.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
+* `TauCeti.PDE.energyFormH1_const_eq_setIntegral`: the energy form of a constant principal
+  coefficient with no lower-order terms is the integral of `⟨A ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
@@ -337,6 +339,16 @@ theorem energyFormH1_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     energyFormH1 a b c u v =
       ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x) ∂mu :=
   energyFormIntegral_def _ _ _ _ _ _
+
+/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
+matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
+over `Ω`. This is the shape the difference-quotient arguments of elliptic regularity work
+with. -/
+theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => A) 0 0 u v
+      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
+  rw [energyFormH1_def]
+  simp
 
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]

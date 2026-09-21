@@ -12,7 +12,7 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 
-import TauCeti.Probability.GeneratingFunction
+import TauCeti.Probability.Distributions.NegativeBinomial.Transforms
 
 /-!
 # Elementary theory of the geometric distribution
@@ -24,6 +24,10 @@ mass and memoryless tail identity.  Mathlib totalizes the zero-success parameter
 hypotheses `p ≠ 0` below only exclude that totalized boundary: they still admit the degenerate
 endpoint `p = 1`, where the law is Dirac at zero and the formulas below specialize to the constant
 random variable `0`.
+
+For `p ≠ 0` the geometric law is the negative-binomial law of shape one
+(`geometricMeasure_eq_negativeBinomialMeasure_one`), so its transforms and moments are
+specializations of the negative-binomial ones.
 
 ## Main results
 
@@ -37,7 +41,6 @@ random variable `0`.
 
 ## References
 
-* `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, Geometric.
 * N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed.,
   Wiley, 2005, Chapter 5.
 -/
@@ -53,48 +56,33 @@ namespace Probability
 
 variable {p : unitInterval}
 
-private lemma one_sub_coe_nonneg (p : unitInterval) : 0 ≤ 1 - (p : ℝ) := by grind
-
-private lemma one_sub_coe_lt_one (hp : p ≠ 0) : 1 - (p : ℝ) < 1 := by grind
-
-private lemma abs_one_sub_coe_lt_one (hp : p ≠ 0) : |1 - (p : ℝ)| < 1 := by
-  rw [abs_of_nonneg (one_sub_coe_nonneg p)]
-  exact one_sub_coe_lt_one hp
-
-private lemma coe_ne_zero (hp : p ≠ 0) : (p : ℝ) ≠ 0 := by grind
-
 /-- The exponential integrand for the cast geometric law is integrable exactly below the pole of
 its geometric series. -/
 theorem integrable_exp_mul_id_map_cast_geometricMeasure_iff (hp : p ≠ 0) (t : ℝ) :
     Integrable (fun x : ℝ ↦ exp (t * x))
         ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) ↔
       (1 - (p : ℝ)) * exp t < 1 := by
-  have hcomp : ((fun x : ℝ ↦ exp (t * x)) ∘ (Nat.cast : ℕ → ℝ)) = fun n : ℕ ↦ exp t ^ n := by
-    funext n
-    rw [Function.comp_apply, mul_comm, Real.exp_nat_mul]
-  rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff, hcomp,
-    integrable_pow_geometricMeasure_iff hp,
-    abs_of_nonneg (mul_nonneg (one_sub_coe_nonneg p) (exp_nonneg t))]
+  rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
+  exact integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff one_pos
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 t
 
 /-- The exact moment-generating domain of the real cast of a nonzero-parameter geometric law. -/
 theorem integrableExpSet_id_map_cast_geometricMeasure (hp : p ≠ 0) :
     integrableExpSet id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) =
       {t | (1 - (p : ℝ)) * exp t < 1} := by
-  ext t
-  exact integrable_exp_mul_id_map_cast_geometricMeasure_iff hp t
+  rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
+  exact integrableExpSet_id_map_cast_negativeBinomialMeasure one_pos
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2
 
 /-- The moment-generating function of the real cast of a nonzero-parameter geometric law. -/
 theorem mgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
     (ht : (1 - (p : ℝ)) * exp t < 1) :
     mgf id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) t =
       (p : ℝ) / (1 - (1 - (p : ℝ)) * exp t) := by
-  have habs : |(1 - (p : ℝ)) * exp t| < 1 := by
-    rwa [abs_of_nonneg (mul_nonneg (one_sub_coe_nonneg p) (exp_nonneg t))]
-  have hpgf := pgf_exp (id : ℕ → ℕ) (geometricMeasure p) t
-  rw [pgf_geometricMeasure hp habs] at hpgf
-  rw [mgf_id_map (Measurable.of_discrete.aemeasurable :
-    AEMeasurable (Nat.cast : ℕ → ℝ) (geometricMeasure p))]
-  exact hpgf.symm
+  rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
+    mgf_id_map_cast_negativeBinomialMeasure zero_le_one
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 ht]
+  exact Real.rpow_one _
 
 /-- The cumulant-generating function of the real cast of a nonzero-parameter geometric law. -/
 theorem cgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
@@ -110,47 +98,9 @@ theorem integral_id_map_cast_geometricMeasure :
   by_cases hp : p = 0
   · subst p
     norm_num [geometricMeasure]
-  · rw [integral_map (by fun_prop) (by fun_prop), integral_geometricMeasure hp]
-    simp_rw [smul_eq_mul]
-    have hfun : (fun n : ℕ ↦ (1 - (p : ℝ)) ^ n * p * (n : ℝ)) =
-        fun n : ℕ ↦ (p : ℝ) * ((n : ℝ) * (1 - (p : ℝ)) ^ n) := by
-      funext n
-      ring
-    rw [hfun, tsum_mul_left,
-      tsum_coe_mul_geometric_of_norm_lt_one (abs_one_sub_coe_lt_one hp)]
-    field_simp [coe_ne_zero hp]
-    ring
-
-/-- The second raw moment of the real cast of a nonzero-parameter geometric law. -/
-private theorem integral_sq_id_map_cast_geometricMeasure (hp : p ≠ 0) :
-    ∫ x, x ^ 2 ∂((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) =
-      (1 - (p : ℝ)) * (2 - (p : ℝ)) / (p : ℝ) ^ 2 := by
-  rw [integral_map (by fun_prop) (by fun_prop), integral_geometricMeasure hp]
-  simp_rw [smul_eq_mul]
-  have hfun : (fun n : ℕ ↦ (1 - (p : ℝ)) ^ n * p * ((n : ℝ) ^ 2)) =
-      fun n : ℕ ↦ (p : ℝ) * ((n : ℝ) ^ 2 * (1 - (p : ℝ)) ^ n) := by
-    funext n
-    ring
-  rw [hfun, tsum_mul_left,
-    tsum_sq_mul_geometric_of_norm_lt_one (abs_one_sub_coe_lt_one hp)]
-  field_simp [coe_ne_zero hp]
-  ring
-
-private theorem integrable_sq_id_map_cast_geometricMeasure (hp : p ≠ 0) :
-    Integrable (fun x : ℝ ↦ x ^ 2)
-      ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) := by
-  rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff,
-    integrable_geometricMeasure_iff hp]
-  simp only [Function.comp_apply]
-  have hs := summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 2
-    (abs_one_sub_coe_lt_one hp)
-  have hfun : (fun n : ℕ ↦ (1 - (p : ℝ)) ^ n * p * ‖((n : ℕ) : ℝ) ^ 2‖) =
-      fun n : ℕ ↦ (p : ℝ) * ((n : ℝ) ^ 2 * (1 - (p : ℝ)) ^ n) := by
-    funext n
-    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg (n : ℝ))]
-    ring
-  rw [hfun]
-  exact hs.mul_left (p : ℝ)
+  · rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
+      integral_id_map_cast_negativeBinomialMeasure zero_le_one
+        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2, one_mul]
 
 /-- The variance of the real cast of a geometric law. -/
 theorem variance_id_map_cast_geometricMeasure :
@@ -159,39 +109,18 @@ theorem variance_id_map_cast_geometricMeasure :
   by_cases hp : p = 0
   · subst p
     norm_num [geometricMeasure]
-  · have hmem : MemLp id 2 ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) :=
-      (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2
-        (integrable_sq_id_map_cast_geometricMeasure hp)
-    rw [variance_eq_sub hmem]
-    simp only [Pi.pow_apply, id_eq]
-    rw [integral_sq_id_map_cast_geometricMeasure hp, integral_id_map_cast_geometricMeasure]
-    field_simp [coe_ne_zero hp]
-    ring
+  · rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
+      variance_id_map_cast_negativeBinomialMeasure zero_le_one
+        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2, one_mul]
 
 /-- The characteristic function of the real cast of a nonzero-parameter geometric law. -/
 theorem charFun_map_cast_geometricMeasure (hp : p ≠ 0) (t : ℝ) :
     charFun ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) t =
       (p : ℂ) / (1 - (1 - (p : ℂ)) * Complex.exp (Complex.I * t)) := by
-  rw [charFun_apply_real, integral_map (by fun_prop) (by fun_prop), integral_geometricMeasure hp]
-  have hexp (n : ℕ) : Complex.exp (((t : ℂ) * ((n : ℝ) : ℂ)) * Complex.I) =
-      Complex.exp (Complex.I * t) ^ n := by
-    have hmul : ((t : ℂ) * ((n : ℝ) : ℂ)) * Complex.I = n * (Complex.I * t) := by
-      push_cast
-      ring
-    rw [hmul, Complex.exp_nat_mul]
-  have hfun : (fun n : ℕ ↦ ((1 - (p : ℝ)) ^ n * p : ℝ) •
-      Complex.exp ((t : ℂ) * ((n : ℝ) : ℂ) * Complex.I)) =
-      fun n ↦ (p : ℂ) * (((1 - (p : ℂ)) * Complex.exp (Complex.I * t)) ^ n) := by
-    funext n
-    rw [hexp n, mul_pow, Complex.real_smul]
-    push_cast
-    ring
-  rw [hfun, tsum_mul_left, tsum_geometric_of_norm_lt_one]
-  · simp [div_eq_mul_inv]
-  · have hnorm : ‖1 - (p : ℂ)‖ = |1 - (p : ℝ)| := by
-      rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
-    rw [norm_mul, hnorm, Complex.norm_exp]
-    simpa [Complex.mul_re, abs_of_nonneg (one_sub_coe_nonneg p)] using one_sub_coe_lt_one hp
+  rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
+    charFun_map_cast_negativeBinomialMeasure zero_le_one
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2,
+    Complex.ofReal_one, Complex.cpow_one]
 
 /-- The cumulative mass of a nonzero-parameter geometric law on its native carrier. -/
 theorem geometricMeasure_real_Iic (hp : p ≠ 0) (n : ℕ) :

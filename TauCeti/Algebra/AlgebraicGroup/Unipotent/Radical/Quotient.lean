@@ -83,7 +83,7 @@ theorem smoothUnipotent_image_quotient_unipotentRadical
   have hQ := smoothUnipotent_unipotentRadical H
   have hQ' := (smoothUnipotentCommHopfAlgProperty_iff k Q).mp hQ
   let _ : Algebra.Smooth k Q := hQ'.1
-  let _ : IsReduced Q := isReduced_of_smooth_of_field k Q
+  let _ : IsReduced Q := isReduced_of_smooth k Q
   refine ⟨smoothCommHopfAlgProperty.image _ ((smoothCommHopfAlgProperty_iff _).mpr hQ'.1), ?_⟩
   apply geometricallyUnipotentPointsCommHopfAlgProperty.image_of_reduced
   exact (geometricallyUnipotentPointsCommHopfAlgProperty_iff k Q.obj).mpr hQ'.2

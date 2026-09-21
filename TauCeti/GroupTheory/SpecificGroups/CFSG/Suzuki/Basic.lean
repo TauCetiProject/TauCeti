@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.IterateOneParameter
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Basic
 
 /-!
 # The Steinberg endomorphism and candidate group of the Suzuki family
@@ -219,21 +220,6 @@ private theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.C
     one_eq_last]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
 
-/-- **The final carrier node is the long simple root.** The `B₂` diagram's long simple root is
-Bourbaki node zero, and `carrierNode` swaps the two numberings. -/
-private theorem carrierNode_eq_one_iff (i : Fin d.1.rank) :
-    d.toRankTwoBLieIndex.carrierNode i = 1 ↔ d.1.dynkinType.IsLongSimpleRoot i := by
-  have hcarrier : d.toRankTwoBLieIndex.carrierNode i = 1 ↔ (i : ℕ) = 0 := by
-    rw [RankTwoBLieIndex.carrierNode_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right]
-    simp [Fin.ext_iff]
-  have hlong : d.1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) = 0 := by
-    obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
-    simp only [ValidLieTypeIndex.dynkinType]
-    rw [DynkinType.isLongSimpleRoot_congr (LieTypeIndex.dynkinType_suzuki m)]
-    simp only [DynkinType.isLongSimpleRoot_B, finCongr_apply, Fin.val_cast]
-    omega
-  exact hcarrier.trans hlong.symm
-
 /-- The length permutation of the index exchanges the two carrier nodes. -/
 private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
     d.toRankTwoBLieIndex.carrierNode (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) =
@@ -241,9 +227,9 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
   have hswap : d.toRankTwoBLieIndex.carrierNode
         (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) = 1 ↔
       ¬d.toRankTwoBLieIndex.carrierNode i = 1 :=
-    (d.carrierNode_eq_one_iff _).trans
+    (d.toRankTwoBLieIndex.carrierNode_eq_one_iff _).trans
       ((SuzukiReeIndex.isLongSimpleRoot_lengthPerm d.toSuzukiReeIndex i).trans
-        (not_congr (d.carrierNode_eq_one_iff i)).symm)
+        (not_congr (d.toRankTwoBLieIndex.carrierNode_eq_one_iff i)).symm)
   revert hswap
   generalize d.toRankTwoBLieIndex.carrierNode
     (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) = a
@@ -255,7 +241,7 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
 private theorem exponent_eq (i : Fin d.1.rank) :
     SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
       if d.toRankTwoBLieIndex.carrierNode i = 1 then 1 else 2 := by
-  have hnode := d.carrierNode_eq_one_iff i
+  have hnode := d.toRankTwoBLieIndex.carrierNode_eq_one_iff i
   by_cases hi : d.1.dynkinType.IsLongSimpleRoot i
   · rw [SuzukiReeIndex.exponent_of_isLongSimpleRoot _ _ hi]
     simp [hnode.mpr hi]
@@ -308,20 +294,21 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
           (Multiplicative.toAdd u ^
             (d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
               SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) := by
+  have hsq : ∀ (j : Fin d.1.rank) (t : Multiplicative d.1.Closure),
+      d.halfFrobenius (d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup j t)) =
+        d.toRankTwoBLieIndex.simpleRootSubgroup j
+          (Multiplicative.ofAdd (Multiplicative.toAdd t ^ d.1.characteristic)) := fun j t => by
+    rw [halfFrobenius_halfFrobenius, RankTwoBLieIndex.primeFrobenius_simpleRootSubgroup]
   have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  have hodd : d.1.fieldExponent = 2 * SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1 :=
-    SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex
-  have hexp : d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
-      SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
-        SuzukiReeIndex.exponent d.toSuzukiReeIndex i *
-          d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex :=
-    Nat.mul_comm _ _
-  rw [hpow, hodd, Function.iterate_succ_apply, d.halfFrobenius_simpleRootSubgroup i u,
-    d.halfFrobenius_iterate_two_mul, RankTwoBLieIndex.simpleRootSubgroup_def,
-    SpStd.frobenius_rootSubgroupPoints, ← RankTwoBLieIndex.simpleRootSubgroup_def, hexp]
-  congr 2
-  exact (pow_mul _ _ _).symm
+  rw [hpow, SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex]
+  exact iterate_two_mul_add_one_apply_pow
+    (x := fun a => d.toRankTwoBLieIndex.simpleRootSubgroup i (Multiplicative.ofAdd a))
+    (y := fun a => d.toRankTwoBLieIndex.simpleRootSubgroup
+      (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) (Multiplicative.ofAdd a))
+    (fun a => d.halfFrobenius_simpleRootSubgroup i (Multiplicative.ofAdd a))
+    (fun a => hsq (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) (Multiplicative.ofAdd a))
+    (SuzukiReeIndex.halfExponent d.toSuzukiReeIndex) (Multiplicative.toAdd u)
 
 /-! ## The finite-group candidate -/
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.FiniteExtension
+public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegersExtension
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeExtension
