@@ -59,10 +59,11 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The set of bounded continuous fields satisfying the Fréchet derivative identity is closed. -/
-theorem isClosed_setOf_hasFDerivAt {E : Type u} {Y : Type v}
-    [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup Y] [NormedSpace ℝ Y] :
-    IsClosed {J : (E →ᵇ Y) × (E →ᵇ (E →L[ℝ] Y)) |
+theorem isClosed_setOf_hasFDerivAt {𝕜 : Type*} {E : Type u} {Y : Type v}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] :
+    IsClosed {J : (E →ᵇ Y) × (E →ᵇ (E →L[𝕜] Y)) |
       ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} := by
   rw [← isSeqClosed_iff_isClosed]
   intro J j hJ hjlim x
@@ -74,7 +75,7 @@ theorem isClosed_setOf_hasFDerivAt {E : Type u} {Y : Type v}
   · intro n y
     exact hJ n y
   · intro y
-    exact ((BoundedContinuousFunction.evalCLM ℝ y).continuous.tendsto j.1).comp
+    exact ((BoundedContinuousFunction.evalCLM 𝕜 y).continuous.tendsto j.1).comp
       (continuous_fst.tendsto j |>.comp hjlim)
 
 namespace C1HolderSpace

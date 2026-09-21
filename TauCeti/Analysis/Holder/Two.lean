@@ -267,14 +267,17 @@ private noncomputable def secondIteratedEquiv :
   (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F)).symm.trans
     (continuousMultilinearCurryRightEquiv' ℝ 1 E F).symm
 
+private theorem secondIteratedEquiv_apply (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
+    secondIteratedEquiv (E := E) (F := F) g m = g (m 0) (m 1) := by
+  simp [secondIteratedEquiv, Fin.init]
+
 private theorem iteratedFDeriv_two_eq (f : C2HolderSpace α E F) :
     iteratedFDeriv ℝ 2 (f : E → F) =
       (secondIteratedEquiv (E := E) (F := F) : _ → _) ∘
         _root_.fderiv ℝ (_root_.fderiv ℝ (f : E → F)) := by
   funext x
   ext m
-  simp [secondIteratedEquiv, iteratedFDeriv_succ_apply_right, Fin.init,
-    f.fderiv_eq_fderiv, f.fderiv_fderiv_eq]
+  rw [iteratedFDeriv_two_apply, Function.comp_apply, secondIteratedEquiv_apply]
 
 /-- The canonical second iterated Fréchet derivative is globally `α`-Hölder. -/
 theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
