@@ -144,13 +144,6 @@ theorem summatory_mul_eq_sub_sub_integral_mul (w : ι → 𝕜) {g : ℝ → �
     ← summatory_eq_sum_Icc_normFiberSum N w ha, hI] at key
   exact key
 
-private theorem summatory_mul_eq_mul_summatory_of_le {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → 𝕜)
-    (g : ℝ → 𝕜) :
-    summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
-  rw [summatory_apply, summatory_apply, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [le_antisymm ((mem_normLE N).mp hi) (ha i), mul_comm]
-
 /-- Abel summation from a real cutoff `a` for a carrier all of whose indices have `N`-value at
 least `a`. The boundary term at `a` cancels, because there the twisted weight is `g a` times the
 untwisted one.
