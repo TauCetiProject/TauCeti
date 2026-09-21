@@ -300,10 +300,10 @@ theorem faceAffineToricSchemeMap_comp_affineToricChartMap (f : FanHom Φ Ψ)
     {τ σ : Φ.cones} (h : τ.1.IsFaceOf σ.1) :
     faceAffineToricSchemeMap Φ.lattice h ≫ f.affineToricChartMap σ =
       f.affineToricChartMap τ ≫ faceAffineToricSchemeMap Ψ.lattice
-        (f.leastCone_isFaceOf τ.2 σ.2 h) := by
+        (f.leastCone_isFaceOf (τ := τ.1) (σ := σ.1) σ.2 h) := by
   rw [affineToricChartMap, affineToricChartMap]
-  rw [faceAffineToricSchemeMap_as_affineToricSchemeMap,
-    faceAffineToricSchemeMap_as_affineToricSchemeMap]
+  rw [faceAffineToricSchemeMap_eq_affineToricSchemeMap,
+    faceAffineToricSchemeMap_eq_affineToricSchemeMap]
   rw [affineToricSchemeMap_comp, affineToricSchemeMap_comp]
   simp
 
@@ -323,7 +323,8 @@ private noncomputable def algebraicMapCocone (f : FanHom Φ Ψ) (hΨ : Ψ.IsRegu
         have hface := Fan.faceAffineToricSchemeMap_comp_affineToricChartι hΨ
           (τ := ⟨f.leastCone τ.2, f.leastCone_mem τ.2⟩)
           (σ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩)
-          (f.leastCone_isFaceOf τ.2 σ.2 (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h)))
+          (f.leastCone_isFaceOf (τ := τ.1) (σ := σ.1) σ.2
+            (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h)))
         simpa only [Category.assoc] using
           congrArg (fun g ↦ f.affineToricChartMap τ ≫ g) hface }
 
@@ -355,7 +356,7 @@ theorem algebraicMap_id (Φ : Fan i) (hΦ : Φ.IsRegular) :
         (FanHom.id Φ).map_le_leastCone σ.2)
   have hmap : (FanHom.id Φ).affineToricChartMap σ =
       faceAffineToricSchemeMap Φ.lattice hσleast := by
-    rw [affineToricChartMap, faceAffineToricSchemeMap_as_affineToricSchemeMap]
+    rw [affineToricChartMap, faceAffineToricSchemeMap_eq_affineToricSchemeMap]
     simp only [FanHom.id_latticeMap, FanHom.id_realMap]
   rw [hmap, Fan.faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ) hΦ
     (τ := σ) (σ := ⟨(FanHom.id Φ).leastCone σ.2, (FanHom.id Φ).leastCone_mem σ.2⟩)
@@ -385,7 +386,7 @@ theorem algebraicMap_comp (g : FanHom Ψ Ω) (f : FanHom Φ Ψ)
       (g.comp f).affineToricChartMap σ ≫ faceAffineToricSchemeMap Ω.lattice hκυ =
         f.affineToricChartMap σ ≫ g.affineToricChartMap τ := by
     rw [affineToricChartMap, affineToricChartMap, affineToricChartMap,
-      faceAffineToricSchemeMap_as_affineToricSchemeMap]
+      faceAffineToricSchemeMap_eq_affineToricSchemeMap]
     rw [affineToricSchemeMap_comp, affineToricSchemeMap_comp]
     simp [FanHom.comp_latticeMap, FanHom.comp_realMap]
   rw [affineToricChartι_comp_algebraicMap]

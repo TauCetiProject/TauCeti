@@ -42,7 +42,7 @@ functoriality needed for the overlap and cocycle maps in fan gluing.
 * `TauCeti.Toric.faceAffineCoordinateRingMap` and
   `TauCeti.Toric.faceAffineToricSchemeMap`: the canonical restriction map and affine-scheme
   morphism attached to a face inclusion, with identity and composition laws; and
-  `TauCeti.Toric.faceAffineToricSchemeMap_as_affineToricSchemeMap`: the affine-scheme
+  `TauCeti.Toric.faceAffineToricSchemeMap_eq_affineToricSchemeMap`: the affine-scheme
   characterization of the canonical face morphism.
 * `TauCeti.Toric.IsRegularCone.exists_isLocalization_away_faceAffineCoordinateRingMap` and
   `TauCeti.Toric.IsRegularCone.isOpenImmersion_faceAffineToricSchemeMap`: for a face `τ` of a
@@ -137,7 +137,7 @@ theorem faceAffineToricSchemeMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFa
 
 /-- The canonical face morphism is the affine toric scheme map induced by the identity on the
   lattice and real vector space. -/
-theorem faceAffineToricSchemeMap_as_affineToricSchemeMap (hi : IsIntegralLattice i)
+theorem faceAffineToricSchemeMap_eq_affineToricSchemeMap (hi : IsIntegralLattice i)
     (hτσ : τ.IsFaceOf σ) :
     faceAffineToricSchemeMap hi hτσ =
       affineToricSchemeMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)

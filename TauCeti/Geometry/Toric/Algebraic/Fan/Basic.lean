@@ -400,11 +400,12 @@ theorem leastCone_mono (f : FanHom Φ Ψ) {τ σ : PointedCone ℝ V} (hτ : τ 
     (Submodule.map_mono h).trans (f.map_le_leastCone hσ)
 
 /-- The least target cones preserve face inclusions. -/
-theorem leastCone_isFaceOf (f : FanHom Φ Ψ) {τ σ : PointedCone ℝ V} (hτ : τ ∈ Φ.cones)
+theorem leastCone_isFaceOf (f : FanHom Φ Ψ) {τ σ : PointedCone ℝ V}
     (hσ : σ ∈ Φ.cones) (h : τ.IsFaceOf σ) :
-    (f.leastCone hτ).IsFaceOf (f.leastCone hσ) :=
-  Ψ.isFaceOf_of_le (f.leastCone_mem hσ) (f.leastCone_mem hτ)
-    (f.leastCone_mono hτ hσ h.le)
+    (f.leastCone (Φ.mem_of_isFaceOf hσ h)).IsFaceOf (f.leastCone hσ) :=
+  Ψ.isFaceOf_of_le (f.leastCone_mem hσ)
+    (f.leastCone_mem (Φ.mem_of_isFaceOf hσ h))
+    (f.leastCone_mono (Φ.mem_of_isFaceOf hσ h) hσ h.le)
 
 end FanHom
 
