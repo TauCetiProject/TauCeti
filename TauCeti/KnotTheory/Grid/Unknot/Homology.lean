@@ -14,7 +14,7 @@ public import TauCeti.KnotTheory.Grid.Homology.Basic
 public import TauCeti.KnotTheory.Grid.Rectangle.Count
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap
 public import TauCeti.KnotTheory.Grid.StateCardinality
-public import TauCeti.KnotTheory.Grid.Unknot
+public import TauCeti.KnotTheory.Grid.Unknot.Basic
 
 /-!
 # The fully blocked homology of the three-by-three unknot grid
@@ -43,11 +43,6 @@ size at most two every square is marked and no rectangle survives. The resulting
 unknot, so the dependence of the fully blocked theory on the grid number is real. The bigrading
 of the homology is not computed here.
 
-## Main definitions
-
-* `TauCeti.GridState.subdiagonal`: the grid state whose point in each column lies one row below
-  the diagonal.
-
 ## Main results
 
 * `TauCeti.GridRectangleBetween.avoidsMarkings_unknot_iff`: marking avoidance in the standard
@@ -73,26 +68,6 @@ homology of an `N`-grid unknot is the stabilization statement of Chapter 4.6 the
 public section
 
 namespace TauCeti
-
-/-! ### The subdiagonal grid state -/
-
-/-- The subdiagonal grid state of an `n`-column grid: its point in column `c` lies one row below
-the diagonal point `(c, c)`. In the standard unknot grid `TauCeti.GridDiagram.unknot` the
-diagonal carries the `O` markings and the row above it the `X` markings, so the subdiagonal is
-the first diagonal state carrying no marking. -/
-def GridState.subdiagonal (n : ℕ) : GridState n :=
-  ⟨(finRotate n)⁻¹⟩
-
-/-- The subdiagonal state reads off the inverse cyclic shift. -/
-theorem GridState.subdiagonal_apply {n : ℕ} (c : Fin n) :
-    GridState.subdiagonal n c = (finRotate n)⁻¹ c :=
-  (rfl)
-
-/-- Moving the subdiagonal point of a column up one row reaches the diagonal. -/
-@[simp]
-theorem GridState.subdiagonal_apply_add_one {n : ℕ} [NeZero n] (c : Fin n) :
-    GridState.subdiagonal n c + 1 = c := by
-  rw [← finRotate_apply, GridState.subdiagonal_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
 
 /-- In three columns the subdiagonal state sends each column to the row two above it. -/
 theorem GridState.subdiagonal_three_apply (c : Fin 3) : GridState.subdiagonal 3 c = c + 2 := by
