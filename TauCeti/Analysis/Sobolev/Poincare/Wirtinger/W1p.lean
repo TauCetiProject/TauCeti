@@ -12,8 +12,6 @@ import TauCeti.Analysis.Sobolev.W1p.LocalApproximation
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
-import Mathlib.MeasureTheory.Function.LpSpace.Indicator
-import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 
 /-!
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
