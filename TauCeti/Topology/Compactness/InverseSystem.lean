@@ -8,6 +8,10 @@ module
 public import Mathlib.Order.DirectedInverseSystem
 public import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.Topology.Compactness.Compact
+-- Non-public: the functor `ℕᵒᵖ ⥤ Type _` built from the one-step maps of a sequential system,
+-- and Mathlib's Kőnig lemma for it, occur only inside the proof of the sequential form.
+import Mathlib.CategoryTheory.CofilteredSystem
+import Mathlib.CategoryTheory.Functor.OfSequence
 
 /-!
 # Inverse limits of compact spaces are nonempty
@@ -22,7 +26,10 @@ The data stay unbundled: a family of transition maps and the two laws of `Invers
 no functor and no category instance on the index. Mathlib's bundled counterparts are
 `TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system` and, for finite systems,
 `nonempty_sections_of_finite_cofiltered_system` and `nonempty_sections_of_finite_inverse_system`,
-all of which take a functor out of the index category.
+all of which take a functor out of the index category — the plumbing the consumers here do not
+have. The sequential form is the one case where that plumbing is cheap to supply, so it is
+deduced from `nonempty_sections_of_finite_inverse_system` along
+`CategoryTheory.Functor.ofOpSequence` rather than reproved.
 
 ## Main statements
 
@@ -119,37 +126,26 @@ section Sequence
 
 variable {S : ℕ → Type*} (β : ∀ k, S (k + 1) → S k)
 
-/-- The composite `S j → S i`, for `i ≤ j`, of the one-step maps of a sequential inverse
-system. -/
-private def seqComp ⦃i j : ℕ⦄ (h : i ≤ j) : S j → S i :=
-  Nat.leRec (motive := fun j _ ↦ S j → S i) id (fun k _ g ↦ g ∘ β k) h
-
-private theorem seqComp_self ⦃i : ℕ⦄ (x : S i) : seqComp β le_rfl x = x := by
-  rw [seqComp, Nat.leRec_self, id_eq]
-
-private theorem seqComp_succ {i k : ℕ} (h : i ≤ k) (h' : i ≤ k + 1) (x : S (k + 1)) :
-    seqComp β h' x = seqComp β h (β k x) := by
-  rw [seqComp, Nat.leRec_succ _ _ h, Function.comp_apply, seqComp]
-
-private theorem seqComp_trans ⦃i j k : ℕ⦄ (hij : i ≤ j) (hjk : j ≤ k) (x : S k) :
-    seqComp β hij (seqComp β hjk x) = seqComp β (hij.trans hjk) x := by
-  induction k, hjk using Nat.le_induction with
-  | base => rw [seqComp_self]
-  | succ k hjk ih => rw [seqComp_succ β hjk _ x, seqComp_succ β (hij.trans hjk) _ x, ih]
-
-private instance : InverseSystem (seqComp β) where
-  map_self := seqComp_self β
-  map_map := seqComp_trans β
-
+open CategoryTheory in
 /-- **Kőnig's lemma, sequential form.** A sequence of nonempty finite types `S k` with one-step
 maps `β k : S (k + 1) → S k` has a compatible family: some `s : ∀ k, S k` satisfies
 `β k (s (k + 1)) = s k` for every `k`. -/
 theorem exists_forall_map_succ_eq_of_finite [∀ k, Finite (S k)] [∀ k, Nonempty (S k)] :
     ∃ s : ∀ k, S k, ∀ k, β k (s (k + 1)) = s k := by
-  obtain ⟨s, hs⟩ := exists_forall_map_eq_of_finite (seqComp β)
-  refine ⟨s, fun k ↦ ?_⟩
-  have h := hs (Nat.le_succ k)
-  rwa [seqComp_succ β le_rfl _ (s (k + 1)), seqComp_self] at h
+  -- The one-step maps already assemble into a functor `ℕᵒᵖ ⥤ Type _`, so the composites along
+  -- `i ≤ j` need not be built by hand; `ℕ` is directed, so Mathlib's Kőnig lemma applies.
+  have : ∀ j : ℕᵒᵖ, Finite ((Functor.ofOpSequence fun k ↦ ↾(β k)).obj j) :=
+    fun j ↦ inferInstanceAs (Finite (S j.unop))
+  have : ∀ j : ℕᵒᵖ, Nonempty ((Functor.ofOpSequence fun k ↦ ↾(β k)).obj j) :=
+    fun j ↦ inferInstanceAs (Nonempty (S j.unop))
+  obtain ⟨s, hs⟩ :=
+    nonempty_sections_of_finite_inverse_system (Functor.ofOpSequence fun k ↦ ↾(β k))
+  refine ⟨fun k ↦ s (Opposite.op k), fun k ↦ ?_⟩
+  have h := hs (homOfLE (Nat.le_add_right k 1)).op
+  rw [Functor.ofOpSequence_map_homOfLE_succ] at h
+  -- Both the object part of the functor and `↾` are definitional wrappers; see
+  -- `CategoryTheory.Functor.ofOpSequence_obj` and `TypeCat.ofHom_apply`.
+  exact h
 
 end Sequence
 
