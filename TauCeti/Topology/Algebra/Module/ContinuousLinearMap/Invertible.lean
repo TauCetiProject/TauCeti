@@ -12,9 +12,10 @@ public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 # Persistence of invertibility from convergence of inverses
 
 The totalized inverse of a continuous linear map is zero when the map is not invertible.
-Consequently, convergence of inverse maps to the inverse of an invertible map forces eventual
-invertibility. This applies to inverse families without completeness or continuity of the
-original family, and is useful when differentiating such families.
+Consequently, convergence of inverse maps to any nonzero map forces eventual invertibility.
+The inverse of an invertible map also suffices, including on trivial spaces. These results apply
+without completeness or continuity of the original family, and are useful when differentiating
+inverse families.
 -/
 
 public section
@@ -27,6 +28,16 @@ namespace ContinuousLinearMap
 variable {𝕜 E F ι : Type*} [NormedField 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [T2Space E]
   [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousSMul 𝕜 F]
+
+/-- If the inverses of a family converge to a nonzero map, then the family is eventually
+invertible. Convergence uses the topology of bounded convergence; neither completeness nor
+convergence of the original family is required. -/
+theorem eventually_isInvertible_of_tendsto_inverse {A : ι → E →L[𝕜] F} {B : F →L[𝕜] E}
+    {l : Filter ι} (h : Tendsto (fun i => (A i).inverse) l (𝓝 B)) (hB : B ≠ 0) :
+    ∀ᶠ i in l, (A i).IsInvertible := by
+  filter_upwards [h.eventually_ne hB] with i hi
+  by_contra hA
+  exact hi (inverse_of_not_isInvertible hA)
 
 /-- If the inverses of a family converge to the inverse of an invertible map, then the family
 is eventually invertible. Convergence uses the topology of bounded convergence; neither
@@ -45,8 +56,6 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
   · have hne : B.inverse ≠ 0 := by
       intro hzero
       exact hE (isInvertible_zero_iff.mp (hzero ▸ hB.inverse)).2
-    filter_upwards [h.eventually_ne hne] with i hi
-    by_contra hA
-    exact hi (inverse_of_not_isInvertible hA)
+    exact eventually_isInvertible_of_tendsto_inverse h hne
 
 end ContinuousLinearMap
