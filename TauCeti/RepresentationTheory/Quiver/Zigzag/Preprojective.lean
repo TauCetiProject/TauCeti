@@ -7,9 +7,13 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
+import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Bipartite
+import TauCeti.RepresentationTheory.Quiver.Zigzag.Connected
 
 /-!
-# The signless algebra of a bipartite graph
+# Signless and preprojective relations of an oriented graph
 
 A two-colouring of a simple graph gives a source--sink orientation by directing every edge toward
 its `true` endpoint. Symmetrifying this oriented quiver recovers the doubled quiver. Under that
@@ -21,6 +25,12 @@ signless/preprojective comparison needs no further arrow rescaling. Thus the sig
 preprojective algebra of the doubled graph is explicitly isomorphic to the additive
 preprojective algebra of its source--sink orientation.
 
+Conversely, suppose that a unit gauge makes every corner of the preprojective relator a scalar
+multiple of the corresponding signless relator. The comparison scalars change sign along every
+edge. A non-bipartite graph has an odd closed walk, which would therefore force `2 = 0`. Over a
+coefficient ring in which `2 ≠ 0`, such a comparison forces bipartiteness, independently of the
+chosen orientation.
+
 ## Main definitions
 
 * `SimpleGraph.Coloring.sourceSink`: the orientation directed toward colour `true`.
@@ -31,6 +41,9 @@ preprojective algebra of its source--sink orientation.
   orientation.
 * `SimpleGraph.Coloring.sourceSinkSignlessPreprojectiveAlgebraEquiv`: the comparison between the
   graph's signless algebra and the preprojective algebra of the source--sink orientation.
+* `TauCeti.DoubledQuiver.Orientation.isBipartite_of_exists_forall_vertexCorner_eq_smul`: over
+  coefficients with `2 ≠ 0`, a cornerwise unit-gauge comparison forces the graph to be
+  bipartite.
 
 ## References
 
@@ -300,3 +313,74 @@ theorem sourceSinkSignlessPreprojectiveAlgebraEquiv_symm_preprojectiveMk
     AlgEquiv.apply_symm_apply]
 
 end SimpleGraph.Coloring
+
+namespace TauCeti.DoubledQuiver.Orientation
+
+open _root_.Quiver
+
+universe u w
+
+variable {V : Type u} {G : SimpleGraph V}
+
+/-! ### The non-bipartite obstruction -/
+
+/-- **A non-bipartite graph admits no cornerwise signless comparison.** For any orientation of a
+finite simple graph, an odd closed graph walk maps to an odd closed path in the symmetrified
+oriented quiver. Hence, when `2 ≠ 0`, no unit gauge makes every corner of the gauged
+preprojective relator a scalar multiple of the corresponding signless relator. -/
+theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
+    (o : Orientation G) (k : Type w) [CommRing k] [Finite V]
+    (hG : ¬ G.IsBipartite)
+    {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k}
+    (hε : ∀ ⦃i j : OrientedQuiver G o⦄ (a : i ⟶ j), IsUnit (ε a))
+    (h2 : (2 : k) ≠ 0) :
+    ¬ ∃ c : OrientedQuiver G o → k,
+        ∀ v : OrientedQuiver G o,
+          doubledVertexIdempotent k v * gaugedPreprojectiveRelator k ε *
+              doubledVertexIdempotent k v =
+            c v • signlessPreprojectiveRelator k (Symmetrify.of.obj v) := by
+  classical
+  change ¬ G.Colorable 2 at hG
+  rw [SimpleGraph.two_colorable_iff_forall_loop_even] at hG
+  push Not at hG
+  obtain ⟨v, p, hp⟩ := hG
+  have hpodd : Odd p.length := Nat.not_even_iff_odd.mp hp
+  let q₀ := (unsymmetrifyMap G o).mapPath (walkToPath G p)
+  have hq₀odd : Odd q₀.length := by simpa [q₀] using hpodd
+  have hobj : (unsymmetrifyMap G o).obj (vertex G v) =
+      Symmetrify.of.obj (OrientedQuiver.vertex G o v) :=
+    unsymmetrifyMap_obj G o v
+  let q : Quiver.Path (Symmetrify.of.obj (OrientedQuiver.vertex G o v))
+      (Symmetrify.of.obj (OrientedQuiver.vertex G o v)) :=
+    q₀.cast hobj hobj
+  have length_cast : ∀ {a b c d : Symmetrify (OrientedQuiver G o)}
+      (ha : a = c) (hb : b = d) (r : Quiver.Path a b),
+      (r.cast ha hb).length = r.length := by
+    intro a b c d ha hb r
+    subst c
+    subst d
+    rfl
+  have hlength : q.length = q₀.length := length_cast hobj hobj q₀
+  have hqodd : Odd q.length := by
+    rw [hlength]
+    exact hq₀odd
+  apply TauCeti.not_exists_forall_vertexCorner_eq_smul_of_odd_length k hε h2 q
+  exact hqodd
+
+/-- **A cornerwise unit-gauge comparison forces the graph to be bipartite** when `2 ≠ 0` in
+the coefficient ring. -/
+theorem isBipartite_of_exists_forall_vertexCorner_eq_smul
+    (o : Orientation G) (k : Type w) [CommRing k] [Finite V]
+    {ε : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) → k}
+    (hε : ∀ ⦃i j : OrientedQuiver G o⦄ (a : i ⟶ j), IsUnit (ε a))
+    (h2 : (2 : k) ≠ 0)
+    (hc : ∃ c : OrientedQuiver G o → k,
+      ∀ v : OrientedQuiver G o,
+        doubledVertexIdempotent k v * gaugedPreprojectiveRelator k ε *
+            doubledVertexIdempotent k v =
+          c v • signlessPreprojectiveRelator k (Symmetrify.of.obj v)) :
+    G.IsBipartite := by
+  by_contra hG
+  exact (not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite o k hG hε h2) hc
+
+end TauCeti.DoubledQuiver.Orientation
