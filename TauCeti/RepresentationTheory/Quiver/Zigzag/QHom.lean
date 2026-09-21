@@ -102,7 +102,6 @@ theorem coeff_zigzagProjectiveQHom (hns : ∀ i : V, ∃ j, G.Adj i j) (i j : V)
 
 /-- At a nonnegative exponent, projective q-Hom records the degree-raising Hom space
 `Hom(P_i{n}, P_j)`. -/
-@[simp]
 theorem coeff_zigzagProjectiveQHom_ofNat (hns : ∀ i : V, ∃ j, G.Adj i j) (i j : V) (n : ℕ) :
     (zigzagProjectiveQHom k G hns i j).coeff n =
       Module.finrank k (zigzagProjectiveHomOfDegree k G i j n) := by
