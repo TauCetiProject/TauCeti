@@ -81,6 +81,9 @@ theorem gradedCochainComplex_d (p : ℤ) :
   unfold gradedCochainComplex
   simp only [CochainComplex.of_d, eqToHom_refl, Category.id_comp, Category.comp_id]
 
+/-- The differential of `gradedCochainComplex` on an element. This is intentionally not a simp
+lemma: `gradedCochainComplex_d` already simplifies its left-hand side, so registering both rules
+would fail the `simpNF` linter. -/
 theorem gradedCochainComplex_d_apply (p : ℤ) (x : ℳ p) :
     eqToHom (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) (p + 1))
         ((gradedCochainComplex ℳ dM hdeg hsq).d p (p + 1)
