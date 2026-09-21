@@ -65,6 +65,18 @@ open IsLocalRing
 
 namespace TauCeti
 
+namespace MulSemiringAction
+
+variable {G : Type*} [Group G] {S : Type*} [Ring S] [MulSemiringAction G S]
+
+/-- Membership in the kernel of the automorphism representation means acting trivially on every
+element. -/
+theorem mem_ker_toRingAut_iff {σ : G} :
+    σ ∈ MonoidHom.ker (_root_.MulSemiringAction.toRingAut G S) ↔ ∀ x : S, σ • x = x := by
+  simp [MonoidHom.mem_ker, RingEquiv.ext_iff]
+
+end MulSemiringAction
+
 namespace IsLocalRing
 
 section Defs
@@ -198,16 +210,12 @@ section ResidueField
 
 variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
 
-private theorem mem_ker_toRingAut_iff {k : Type*} [Ring k] [MulSemiringAction G k] {σ : G} :
-    σ ∈ MonoidHom.ker (MulSemiringAction.toRingAut G k) ↔ ∀ y : k, σ • y = y := by
-  simp [MonoidHom.mem_ker, RingEquiv.ext_iff]
-
 /-- The zeroth ramification group is the inertia group: the kernel of the induced action on the
 residue field. -/
 theorem ramificationGroup_zero :
     ramificationGroup G S 0 = MonoidHom.ker (MulSemiringAction.toRingAut G (ResidueField S)) := by
   ext σ
-  rw [mem_ramificationGroup_iff, mem_ker_toRingAut_iff]
+  rw [mem_ramificationGroup_iff, TauCeti.MulSemiringAction.mem_ker_toRingAut_iff]
   constructor
   · intro h y
     obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective y
@@ -322,6 +330,10 @@ theorem ramificationGroupReal_def (u : ℝ) :
     ramificationGroupReal G S u = ramificationGroup G S ⌈u⌉ :=
   -- `(rfl)` for the same reason as in `ramificationGroup_def`.
   (rfl)
+
+/-- The real-indexed ramification filtration is decreasing. -/
+theorem ramificationGroupReal_antitone : Antitone (ramificationGroupReal G S) :=
+  fun _ _ huv ↦ ramificationGroup_antitone G S (Int.ceil_mono huv)
 
 @[simp]
 theorem ramificationGroupReal_intCast (i : ℤ) :
