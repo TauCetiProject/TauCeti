@@ -16,8 +16,10 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.PrincipalSeries.Ba
 -- The Mackey irreducibility criterion `TauCeti.simple_indFDRep_iff`, its predicate
 -- `TauCeti.MackeyDisjoint`, and the Mackey subgroup the predicate is stated on.
 public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
--- Non-public: irreducibility of a line and its passage to `CategoryTheory.Simple` are used only
--- inside the proof that the two sides of the Mackey condition are simple.
+-- Non-public: `FDRep.character_actionRes` reads the characters of the two sides of the Mackey
+-- condition, and irreducibility of a line and its passage to `CategoryTheory.Simple` are used
+-- only inside the proof that those two sides are simple.
+import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.Simple.Basic
 
@@ -109,15 +111,6 @@ public section
 open CategoryTheory Matrix
 
 namespace TauCeti
-
-/-- **The character of a restriction along a group homomorphism is the character pulled back.**
-This is `TauCeti.character_resFDRep` for an arbitrary homomorphism in place of the inclusion of a
-subgroup; it stays private because the only restrictions it is read on here are the two sides of
-the Mackey condition. -/
-private theorem character_actionRes_obj {k : Type u} {S T : Type v} [Field k] [Group S] [Group T]
-    (f : S →* T) (A : FDRep k T) (x : S) :
-    FDRep.character ((Action.res (FGModuleCat k) f).obj A) x = A.character (f x) :=
-  (rfl)
 
 /-- **A representation on a line is a simple object of `FDRep k G`.** Private packaging of
 `TauCeti.Representation.isIrreducible_of_finrank_eq_one` and
@@ -212,7 +205,7 @@ theorem nonempty_iso_mackey_weyl_iff (α β : Fˣ →* ℂˣ) :
     have hchar := FDRep.char_iso e
     refine MonoidHom.ext fun a => Units.ext ?_
     have h := congrArg (fun χ => χ (mackeyTorusElt (a, 1))) hchar
-    simpa [character_actionRes_obj] using h
+    simpa using h
   · rintro rfl
     -- The two actions are the same monoid homomorphism, because `α ∘ det` is
     -- conjugation-invariant.
