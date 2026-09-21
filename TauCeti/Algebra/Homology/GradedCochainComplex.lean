@@ -10,33 +10,30 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
-# The cochain complex of an internally graded module with a differential
+# The cochain complex of a family of submodules with a differential
 
-An internal `ℤ`-grading `ℳ` of an `R`-module `M`, together with an `R`-linear endomorphism `dM`
-which raises degree by one and squares to zero, is the same data as a cochain complex of
-`R`-modules: the degree-`p` term is the submodule `ℳ p` and the differential is the restriction
-of `dM`.  This file performs that repackaging.
+A `ℤ`-indexed family `ℳ` of submodules of an `R`-module `M`, together with an `R`-linear
+endomorphism `dM` which carries `ℳ p` into `ℳ (p + 1)` and squares to zero, assembles into a
+cochain complex of `R`-modules: the degree-`p` term is the submodule `ℳ p` and the differential is
+the restriction of `dM`.  This file performs that assembly.  No decomposition or exhaustiveness
+hypothesis on `ℳ` is required, and the differential is not assumed to come from a module action.
 
-Internal gradings are the presentation in which the differential graded algebras and modules of
+In practice `ℳ` is the internal grading in which the differential graded algebras and modules of
 `TauCeti.Algebra.Homology.DG` store their structure, because a product or an action is easier to
 write on one carrier than on a family of summands.  Statements which compare such an object with
 a genuine complex — quasi-isomorphisms, Hom complexes, cohomology computed by Mathlib's
 homological algebra — need the complex on the other side, and that is what this construction
-supplies.
-
-The differential is *not* assumed to come from a module action, so the construction applies to
-the underlying complex of a DG algebra, of a DG module on either side, and of any graded module
-carrying a square-zero degree-one map.
+supplies: it serves the underlying complex of a DG algebra and of a DG module on either side.
 
 ## Main definitions
 
-* `TauCeti.gradedCochainComplex`: the cochain complex whose degree-`p` term is the homogeneous
-  submodule `ℳ p` and whose differential is the restriction of `dM`.
+* `TauCeti.gradedCochainComplex`: the cochain complex whose degree-`p` term is the submodule
+  `ℳ p` and whose differential is the restriction of `dM`.
 
 ## Implementation notes
 
 `gradedCochainComplex` exposes its body so that the component types in
-`TauCeti.gradedCochainComplex_d_apply` reduce to the advertised homogeneous submodules.  The
+`TauCeti.gradedCochainComplex_d_apply` reduce to the advertised submodules `ℳ p`.  The
 element-level API is that lemma; nothing downstream should unfold the construction further.
 -/
 
@@ -48,8 +45,8 @@ universe uR uM
 
 variable {R : Type uR} {M : Type uM} [Ring R] [AddCommGroup M] [Module R M]
 
-/-- The cochain complex of `R`-modules assembled from the homogeneous pieces of an internal
-`ℤ`-grading `ℳ` of `M` and a square-zero differential `dM` of degree one. -/
+/-- The cochain complex of `R`-modules assembled from a `ℤ`-indexed family `ℳ` of submodules of
+`M` and a square-zero `R`-linear endomorphism `dM` carrying `ℳ p` into `ℳ (p + 1)`. -/
 @[expose]
 def gradedCochainComplex (ℳ : ℤ → Submodule R M) (dM : M →ₗ[R] M)
     (hdeg : LinearMap.IsHomogeneous dM ℳ ℳ 1) (hsq : ∀ x, dM (dM x) = 0) :

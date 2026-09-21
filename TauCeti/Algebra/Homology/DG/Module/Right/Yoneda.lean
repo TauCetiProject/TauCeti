@@ -12,11 +12,9 @@ public import TauCeti.Algebra.Homology.DG.Module.Right.HomComplex
 /-!
 # The free rank-one right module and the differential graded Yoneda lemma
 
-A differential graded algebra `A` is a differential graded right module over itself: right
-multiplication is the action, the grading is the grading of `A`, and the right Leibniz rule is
-the algebra Leibniz rule read with the homogeneous factor on the left.  This is the **free
-rank-one** right module, the module represented by the unique object of the one-object
-differential graded category attached to `A`.
+A differential graded algebra `A` is a differential graded right module over itself — this is
+`TauCeti.IsDGAlgebra.isDGRightModule`, the **free rank-one** right module, the module represented
+by the unique object of the one-object differential graded category attached to `A`.
 
 The Yoneda lemma identifies the cochains out of it with the module itself.  A right-module map
 `A ⟶ M` is determined by the image of `1`; an element `x` of degree `p` produces the map
@@ -35,16 +33,14 @@ of differential graded right modules `A ⟶ M` is the same thing as a degree-zer
   rank-one module are the degree-zero cycles of `M`.
 * `TauCeti.dgYonedaIso`: the degreewise identification as an isomorphism of cochain complexes.
 
-## Main results
-
-* `TauCeti.IsDGAlgebra.isDGRightModule`: a differential graded algebra is a differential graded
-  right module over itself.
-
 ## Implementation notes
 
 The Hom complex out of the free rank-one module has its terms in the universe of
-`A →ₗ[Aᵐᵒᵖ] M`, so the isomorphism of complexes `TauCeti.dgYonedaIso` is stated for an algebra
-and a module in one universe.  The degreewise statements have no such constraint.
+`A →ₗ[Aᵐᵒᵖ] M`, while the underlying complex of `M` has its terms in the universe of `M`; an
+isomorphism between them therefore needs the universe of `A` to be at most that of `M`.  This is
+what `M : Type (max uA uM)` expresses in `TauCeti.dgYonedaIso`, and it is the widest hypothesis
+under which the two complexes are objects of a single category without inserting `ULift`.  The
+degreewise statements carry no universe constraint at all.
 
 ## References
 
@@ -69,26 +65,6 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   {ℳ : ℤ → Submodule R M}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
   [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
-
-/-- Right multiplication makes a graded algebra a graded right module over itself: the degrees of
-the two factors add, in the order fixed by the opposite grading. -/
-instance instGradedSMulOppositeSelf (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] :
-    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒜 where
-  smul_mem := by
-    intro i j a b ha hb
-    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece 𝒜] at ha
-    rw [← op_unop a, op_smul_eq_mul, vadd_eq_add, add_comm i j]
-    exact SetLike.mul_mem_graded hb ha
-
-/-- A differential graded algebra is a differential graded right module over itself, the **free
-rank-one** right module.  Its Leibniz rule is the algebra Leibniz rule, whose sign is carried by
-the module element because that is the left-hand factor of the product. -/
-theorem IsDGAlgebra.isDGRightModule (h : IsDGAlgebra 𝒜 d) : IsDGRightModule h 𝒜 d where
-  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ h.map_mem ha
-  sq_zero := h.sq_zero
-  leibniz {_ _} hx a := by
-    simp only [op_smul_eq_mul]
-    exact h.leibniz hx a
 
 /-- **The differential graded Yoneda lemma**, degreewise: evaluation at `1` identifies the
 right-module cochains of degree `p` out of the free rank-one module with the degree-`p` part of
@@ -175,7 +151,7 @@ end Degreewise
 
 section Complex
 
-variable {R : Type uR} {A M : Type uM}
+variable {R : Type uR} {A : Type uA} {M : Type (max uA uM)}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {h : IsDGAlgebra 𝒜 d}
