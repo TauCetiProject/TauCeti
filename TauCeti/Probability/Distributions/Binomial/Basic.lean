@@ -55,6 +55,7 @@ namespace Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 /-- The probability-generating function of a binomial distribution. -/
+@[simp]
 theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
     pgf id (binomial n p) t = (1 - (p : ℝ) + (p : ℝ) * t) ^ n := by
   -- `add_pow` attaches the binomial weights to its first summand.
@@ -65,28 +66,11 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
   intro k hk
   ring
 
-private theorem mgf_id_map_cast_binomial_aux (n : ℕ) (p : unitInterval) (t : ℝ) :
-    mgf id Bin(ℝ, n, p) t =
-      ∑ k ∈ Finset.Iic n, n.choose k * (p : ℝ) ^ k * (1 - p : ℝ) ^ (n - k) *
-        Real.exp (t * k) := by
-  rw [mgf, integral_map_cast_binomial]
-  simp only [id_eq, smul_eq_mul]
-
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
     mgf id Bin(ℝ, n, p) t = (1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n := by
-  rw [mgf_id_map_cast_binomial_aux, ← n.range_succ_eq_Iic]
-  calc
-    _ = ∑ k ∈ Finset.range (n + 1), n.choose k *
-        ((p : ℝ) * Real.exp t) ^ k * (1 - p : ℝ) ^ (n - k) := by
-      apply Finset.sum_congr rfl
-      intro k hk
-      rw [mul_comm t (k : ℝ), Real.exp_nat_mul, mul_pow]
-      ring
-    _ = ((p : ℝ) * Real.exp t + (1 - p : ℝ)) ^ n := by
-      simpa only [Nat.cast_choose, nsmul_eq_mul, mul_assoc, mul_comm, mul_left_comm] using
-        (add_pow ((p : ℝ) * Real.exp t) (1 - p : ℝ) n).symm
-    _ = (1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n := by ring
+  rw [← pgf_binomial, pgf_exp]
+  exact congrFun (mgf_id_map (X := (Nat.cast : ℕ → ℝ)) .of_discrete) t
 
 /-- The cumulant generating function of the real-valued binomial law. -/
 theorem cgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :

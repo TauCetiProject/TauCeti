@@ -15,7 +15,8 @@ public import TauCeti.Probability.GeneratingFunction
 # Elementary theory of the Bernoulli distribution
 
 This file computes the elementary moments and transforms of the real-valued Bernoulli law
-`Ber((1 : ℝ), 0, p)`. It uses Mathlib's convention that the value `1` has mass `p` and the value
+`Ber((1 : ℝ), 0, p)`, together with the probability-generating function of the native ℕ-valued law
+`Ber((1 : ℕ), 0, p)`. It uses Mathlib's convention that the value `1` has mass `p` and the value
 `0` has mass `1 - p`.
 
 ## Main results
@@ -46,10 +47,11 @@ namespace TauCeti
 namespace Probability
 
 /-- The probability-generating function of a Bernoulli distribution. -/
+@[simp]
 theorem pgf_bernoulliMeasure (p : unitInterval) (t : ℝ) :
     pgf id Ber((1 : ℕ), 0, p) t = 1 - (p : ℝ) + (p : ℝ) * t := by
   rw [pgf_def, integral_bernoulliMeasure]
-  simp
+  simp only [id_eq, pow_one, smul_eq_mul, pow_zero, mul_one]
   ring
 
 /-- The mean of the real-valued Bernoulli law with success probability `p` is `p`. -/

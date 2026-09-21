@@ -59,27 +59,14 @@ namespace Probability
 
 variable {p : unitInterval}
 
-/-- At the zero parameter, Mathlib's geometric distribution is a Dirac mass at zero, so its
-probability-generating function is identically one. -/
-@[simp]
-theorem pgf_geometricMeasure_zero (t : ℝ) : pgf id (geometricMeasure 0) t = 1 := by
-  simp [pgf_def, geometricMeasure]
-
 /-- For a nonzero success probability, the geometric probability-generating-function integrand
 is integrable exactly on the open interval determined by the geometric-series ratio. -/
 theorem integrable_pow_geometricMeasure_iff {p : unitInterval} (hp : p ≠ 0) (t : ℝ) :
     Integrable (fun n : ℕ => t ^ n) (geometricMeasure p) ↔
       |(1 - (p : ℝ)) * t| < 1 := by
-  rw [integrable_geometricMeasure_iff hp]
-  have hp0 : (p : ℝ) ≠ 0 := by simpa using hp
-  have hfun : (fun n : ℕ => (1 - (p : ℝ)) ^ n * p * ‖t ^ n‖) =
-      fun n : ℕ => ((1 - (p : ℝ)) * |t|) ^ n * p := by
-    funext n
-    rw [Real.norm_eq_abs, abs_pow, mul_pow]
-    ring
-  rw [hfun, summable_mul_right_iff hp0, summable_geometric_iff_norm_lt_one,
-    Real.norm_eq_abs]
-  simp only [abs_mul, abs_abs, abs_of_nonneg (by grind : 0 ≤ 1 - (p : ℝ))]
+  rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
+  exact integrable_pow_negativeBinomialMeasure_iff one_pos
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 t
 
 /-- The probability-generating function of a geometric distribution with nonzero parameter, on its
 exact integrability domain.  The boundary case `p = 1`, whose law is a Dirac mass at zero, is
@@ -87,19 +74,10 @@ included. -/
 theorem pgf_geometricMeasure {p : unitInterval} (hp : p ≠ 0) {t : ℝ}
     (ht : |(1 - (p : ℝ)) * t| < 1) :
     pgf id (geometricMeasure p) t = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by
-  rw [pgf_def, integral_geometricMeasure hp]
-  simp only [smul_eq_mul, id_eq]
-  calc
-    ∑' n : ℕ, ((1 - (p : ℝ)) ^ n * p) * t ^ n =
-        (p : ℝ) * ∑' n : ℕ, ((1 - (p : ℝ)) * t) ^ n := by
-      rw [← tsum_mul_left]
-      congr with n
-      rw [mul_pow]
-      ring
-    _ = (p : ℝ) * (1 - (1 - (p : ℝ)) * t)⁻¹ := by
-      rw [tsum_geometric_of_norm_lt_one]
-      simpa only [Real.norm_eq_abs] using ht
-    _ = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by rw [div_eq_mul_inv]
+  rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
+    pgf_negativeBinomialMeasure one_pos
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 ht]
+  exact Real.rpow_one _
 
 /-- The exponential integrand for the cast geometric law is integrable exactly below the pole of
 its geometric series. -/
@@ -237,6 +215,13 @@ theorem geometricMeasure_cond_Ici (p : unitInterval) (n m : ℕ)
 /-- At success probability zero, Mathlib's totalized geometric law is Dirac at zero. -/
 theorem geometricMeasure_zero : geometricMeasure (0 : unitInterval) = Measure.dirac 0 := by
   simp [geometricMeasure]
+
+/-- At the zero parameter, Mathlib's geometric distribution is a Dirac mass at zero, so its
+probability-generating function is identically one. -/
+@[simp]
+theorem pgf_geometricMeasure_zero (t : ℝ) : pgf id (geometricMeasure 0) t = 1 := by
+  rw [geometricMeasure_zero, pgf_def]
+  simp
 
 /-- The real cast of the zero-parameter geometric law has every exponential moment. -/
 @[simp] theorem integrableExpSet_id_map_cast_geometricMeasure_zero :

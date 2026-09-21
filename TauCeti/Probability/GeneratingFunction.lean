@@ -26,10 +26,6 @@ sum of the power series carrying its singleton masses, so that the generating fu
 on `(-1, 1)` and its Taylor coefficients at the origin recover those masses;
 consequently a law on `ℕ` is determined by its generating function near `0`.
 
-These results implement the definition, the generic API, and the coefficient-recovery and
-uniqueness statements of the probability-generating-function target in
-`TauCetiRoadmap/StandardDistributions/README.md`, Layer 1.
-
 ## Main declarations
 
 * `TauCeti.Probability.pgf` — the probability-generating function.
