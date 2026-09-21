@@ -108,7 +108,9 @@ def galoisAddRepIsoIndBot : galoisAddRep R K L ≅ Rep.indBot R Gal(L/K) K :=
 @[simp]
 theorem galoisAddRepIsoIndBot_hom_apply (x : L) :
     (galoisAddRepIsoIndBot R K L).hom.hom x = galoisAddRepEquivIndBot R K L x :=
-  (rfl)
+  by
+    unfold galoisAddRepIsoIndBot
+    erw [Rep.mkIso_hom_hom_apply]
 
 /-- **Normal basis theorem, representation form**: over the base field, the additive group of `L`
 is the left regular representation `K[Gal(L/K)]`. -/
@@ -121,8 +123,8 @@ normal-basis coordinate. -/
 theorem galoisAddRepIsoLeftRegular_hom_hom_apply_coeff (x : L) (σ : Gal(L/K)) :
     ((galoisAddRepIsoLeftRegular K L).hom.hom x).coeff σ =
       (IsGalois.normalBasis K L).repr x σ := by
-  change ((Rep.indBotIsoLeftRegular.hom.hom
-    ((galoisAddRepIsoIndBot K K L).hom.hom x))).coeff σ = _
+  rw [galoisAddRepIsoLeftRegular, Iso.trans_hom, Rep.hom_comp]
+  erw [Representation.IntertwiningMap.comp_apply]
   rw [Rep.indBotIsoLeftRegular_hom_hom_apply_coeff, galoisAddRepIsoIndBot_hom_apply,
     indBotEquivFinsupp_galoisAddRepEquivIndBot, normalBasisFinsuppEquiv_apply]
   simp

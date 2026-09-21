@@ -284,6 +284,9 @@ theorem indBotIsoLeftRegular_hom_hom_apply_coeff (v : indBot k G k) (g : G) :
       (indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom.toLinearMap)
     (g := Finsupp.lapply g⁻¹ ∘ₗ (indBotEquivFinsupp k G k).toLinearMap)
     (IndV.hom_ext _ _ fun h ↦ LinearMap.ext fun a ↦ ?_) v
+  -- Keep `IndV.mk` folded while exposing the two composed representation maps: rewriting the
+  -- composition directly unfolds this reducible generator, after which the generator lemmas below
+  -- no longer match.
   change ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom
       (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a)).coeff
     g = indBotEquivFinsupp k G k
