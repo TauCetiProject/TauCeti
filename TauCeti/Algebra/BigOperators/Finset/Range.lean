@@ -29,7 +29,6 @@ which reindex a sum over antidiagonals to a rectangle.
   the rectangle `range k × range l` when the summand vanishes outside that rectangle.
 * `sum_sum_range_eq_of_eq_zero_right`: enlarging both ranges of a double sum that vanishes outside
   a rectangle.
-* `sum_range_eq_sum_of_eq_zero_off`: restricting a range sum to a finite support.
 * `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
   specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
@@ -133,13 +132,6 @@ theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : �
       exact sum_eq_zero fun d _ ↦ hg p d (Or.inl hp)
   rw [← outer, ← sum_congr rfl fun p _ ↦ inner p]
 
-/-- A sum over `Finset.range t` whose terms vanish outside `s` is the sum over `s`, provided
-`s ⊆ Finset.range t`. -/
-theorem sum_range_eq_sum_of_eq_zero_off {N : Type*} [AddCommMonoid N] {t : ℕ} {f : ℕ → N}
-    {s : Finset ℕ} (hs : s ⊆ range t) (hz : ∀ j ∈ range t, j ∉ s → f j = 0) :
-    ∑ j ∈ range t, f j = ∑ j ∈ s, f j :=
-  (Finset.sum_subset hs hz).symm
-
 /-- A sum over `Finset.range t` whose terms vanish outside two distinct positions is the sum of
 the terms at those positions. -/
 theorem sum_range_eq_of_eq_zero_off_pair {N : Type*} [AddCommMonoid N] {t : ℕ} {f : ℕ → N}
@@ -147,7 +139,7 @@ theorem sum_range_eq_of_eq_zero_off_pair {N : Type*} [AddCommMonoid N] {t : ℕ}
     (hz : ∀ j < t, j ≠ a → j ≠ b → f j = 0) (hv : f a + f b = v) :
     ∑ j ∈ range t, f j = v := by
   classical
-  rw [sum_range_eq_sum_of_eq_zero_off (s := {a, b})
+  rw [← Finset.sum_subset (s₁ := ({a, b} : Finset ℕ)) (s₂ := range t)
     (fun x hx ↦ by
       simp only [mem_insert, mem_singleton] at hx
       rcases hx with rfl | rfl <;> simpa using by omega)
@@ -163,7 +155,7 @@ theorem sum_range_eq_of_eq_zero_off_triple {N : Type*} [AddCommMonoid N] {t : �
     (hbd : b ≠ d) (hz : ∀ j < t, j ≠ a → j ≠ b → j ≠ d → f j = 0)
     (hv : f a + f b + f d = v) : ∑ j ∈ range t, f j = v := by
   classical
-  rw [sum_range_eq_sum_of_eq_zero_off (s := {a, b, d})
+  rw [← Finset.sum_subset (s₁ := ({a, b, d} : Finset ℕ)) (s₂ := range t)
     (fun x hx ↦ by
       simp only [mem_insert, mem_singleton] at hx
       rcases hx with rfl | rfl | rfl <;> simpa using by omega)
