@@ -23,10 +23,6 @@ is a legitimate base field for `F` exactly when `k' / k` is algebraic
 
 The definition and the independence-of-parameter result follow Stichtenoth, *Algebraic Function
 Fields and Codes*, second edition, Definition 1.1.1 and Remark 1.1.2.
-
-The proof of independence of the parameter adapts Mathlib's
-`FunctionField.finiteDimensional_of_adjoin_transcendental` to the intrinsic predicate defined
-here.
 -/
 
 public section
