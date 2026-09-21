@@ -44,8 +44,8 @@ multiplicities of a minimal numerical type.
   over the principal submatrix carrying the support of `x`.
 * `TauCeti.NumericalType.sum_sum_intersection_mul_neg`: the same sum is negative for a nonzero
   vector on a proper finite set of components.
-* `TauCeti.NumericalType.not_forall_sum_intersection_mul_nonneg_of_pos`: a positive vector on a
-  proper family of distinct components has a row with negative intersection sum.
+* `TauCeti.NumericalType.not_forall_sum_intersection_mul_nonneg_of_pos`: a nonnegative, nonzero
+  vector on a proper family of distinct components has a row with negative intersection sum.
 * `TauCeti.NumericalType.intersection_sq_lt_intersection_mul_intersection`: `aᵢⱼ² < aᵢᵢ aⱼⱼ` for
   distinct components when there are more than two components.
 * `TauCeti.NumericalType.intersection_det_triple_neg`: the determinant of the principal `3 × 3`
@@ -175,12 +175,13 @@ theorem sum_sum_intersection_mul_neg {s : Finset T.Component} (hs : s ≠ univ)
   have hneg := T.dotProduct_intersection_mulVec_neg hxne (hx m hm)
   rwa [T.dotProduct_intersection_mulVec_of_support_subset hx, heq] at hneg
 
-/-- A positive integral vector on a proper family of distinct components cannot have every row
-of the intersection form nonnegative. This excludes affine configurations whose intersection
-matrix has a positive kernel vector. -/
+/-- A nonnegative, nonzero integral vector on a proper family of distinct components cannot have
+every row of the intersection form nonnegative. This excludes affine configurations whose
+intersection matrix has a positive kernel vector. -/
 theorem not_forall_sum_intersection_mul_nonneg_of_pos {t : ℕ} {c : ℕ → T.Component}
-    (ht : 0 < t) (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
-    (hcard : t < Fintype.card T.Component) {y : ℕ → ℤ} (hy : ∀ i < t, 0 < y i) :
+    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : t < Fintype.card T.Component) {y : ℕ → ℤ} (hy : ∀ i < t, 0 ≤ y i)
+    (hypos : ∃ i < t, 0 < y i) :
     ¬ ∀ i < t, 0 ≤ ∑ j ∈ range t, T.intersection (c i) (c j) * y j := by
   classical
   intro hrow
@@ -200,8 +201,9 @@ theorem not_forall_sum_intersection_mul_nonneg_of_pos {t : ℕ} {c : ℕ → T.C
     intro h
     rw [h, card_univ] at hcards
     omega
-  have hne : ∃ i ∈ (range t).image c, x i ≠ 0 :=
-    ⟨c 0, Finset.mem_image_of_mem c (mem_range.mpr ht), by rw [hxc 0 ht]; exact (hy 0 ht).ne'⟩
+  obtain ⟨i, hi, hyi⟩ := hypos
+  have hne : ∃ k ∈ (range t).image c, x k ≠ 0 :=
+    ⟨c i, Finset.mem_image_of_mem c (mem_range.mpr hi), by rw [hxc i hi]; exact hyi.ne'⟩
   have key := T.sum_sum_intersection_mul_neg hs hne
   simp only [Finset.sum_image hinjOn] at key
   have heq : ∑ i ∈ range t, ∑ j ∈ range t, T.intersection (c i) (c j) * x (c i) * x (c j)
@@ -213,7 +215,7 @@ theorem not_forall_sum_intersection_mul_nonneg_of_pos {t : ℕ} {c : ℕ → T.C
     ring
   rw [heq] at key
   exact absurd key (not_lt.mpr (Finset.sum_nonneg fun i hi ↦
-    mul_nonneg (hy i (mem_range.mp hi)).le (hrow i (mem_range.mp hi))))
+    mul_nonneg (hy i (mem_range.mp hi)) (hrow i (mem_range.mp hi))))
 
 /-! ### Two components -/
 

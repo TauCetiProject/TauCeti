@@ -289,8 +289,8 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
       exact hedge i hj
     -- The cycle is affine: the all-ones vector makes every row of the intersection form vanish,
     -- which negative definiteness on a proper subset of the components forbids.
-    refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) (by omega) hc.injOn hcard
-      (y := fun _ ↦ (1 : ℤ)) (fun i _ ↦ one_pos) ?_
+    refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hc.injOn hcard
+      (y := fun _ ↦ (1 : ℤ)) (fun _ _ ↦ by norm_num) ⟨0, by omega, one_pos⟩ ?_
     intro i hi
     simp only [mul_one]
     rcases Nat.eq_zero_or_pos i with rfl | hi0
@@ -474,16 +474,16 @@ private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : �
       have e₁ : j ≠ 0 := by omega
       have e₂ : j ≠ t - 1 := by omega
       simp [hydef, e₁, e₂]
-    refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) (by omega) hc.injOn hcard
-      (y := y) ?_ ?_
+    refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hc.injOn hcard
+      (y := y) ?_ ⟨0, by omega, by rw [hy₀]; exact hα⟩ ?_
     · intro i hi
       rcases Nat.eq_zero_or_pos i with rfl | h1
-      · rw [hy₀]; exact hα
+      · rw [hy₀]; exact hα.le
       rcases lt_or_ge i (t - 1) with h2 | h2
       · rw [hy₂ i h1 h2]; norm_num
       · have hi_last : i = t - 1 := by omega
         rw [hi_last, hyₗ]
-        exact hγ
+        exact hγ.le
     intro i hi
     rcases Nat.eq_zero_or_pos i with rfl | h1
     · refine Eq.ge (sum_range_eq_of_eq_zero_off_pair (a := 0) (b := 1) (by omega) (by omega)
