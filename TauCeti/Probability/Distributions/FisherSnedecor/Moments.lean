@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # Moments of Fisher's F distribution
@@ -208,10 +209,8 @@ theorem integrable_exp_mul_id_fisherSnedecorMeasure_of_nonpos (m n : ℝ) {t : �
     Integrable (fun x : ℝ ↦ Real.exp (t * x)) (fisherSnedecorMeasure m n) := by
   by_cases hmn : 0 < m ∧ 0 < n
   · let _ := isProbabilityMeasure_fisherSnedecorMeasure hmn.1 hmn.2
-    have h := integrable_exp_mul_of_le (μ := fisherSnedecorMeasure m n) (X := fun x : ℝ ↦ -x)
-      (-t) 0 (neg_nonneg.mpr ht) measurable_id.neg.aemeasurable
-      ((ae_mem_Ioi_fisherSnedecorMeasure m n).mono fun _ hx ↦ neg_nonpos.mpr hx.le)
-    simpa only [neg_mul_neg] using h
+    exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+      ((ae_mem_Ioi_fisherSnedecorMeasure m n).mono fun _ hx ↦ hx.le)
   · rw [fisherSnedecorMeasure_of_not_pos hmn]
     exact integrable_zero_measure
 
@@ -219,12 +218,11 @@ theorem integrable_exp_mul_id_fisherSnedecorMeasure_of_nonpos (m n : ℝ) {t : �
 theorem not_integrable_exp_mul_id_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n)
     {t : ℝ} (ht : 0 < t) :
     ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x)) (fisherSnedecorMeasure m n) := by
-  intro hint
-  have hpow := integrable_pow_of_integrable_exp_mul ht.ne' hint
-    (integrable_exp_mul_id_fisherSnedecorMeasure_of_nonpos m n
-      (by linarith : -t ≤ 0)) ⌈n⌉₊
-  have hlt := (integrable_pow_fisherSnedecorMeasure_iff hm hn ⌈n⌉₊).1 hpow
-  exact (not_lt_of_ge (by nlinarith [Nat.le_ceil n])) hlt
+  let _ := isProbabilityMeasure_fisherSnedecorMeasure hm hn
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈n⌉₊ measurable_id.aemeasurable
+    ((ae_mem_Ioi_fisherSnedecorMeasure m n).mono fun _ hx ↦ hx.le) (fun hpow ↦ ?_) ht
+  exact not_lt_of_ge (by nlinarith [Nat.le_ceil n])
+    ((integrable_pow_fisherSnedecorMeasure_iff hm hn ⌈n⌉₊).1 hpow)
 
 /-- The exponential of a multiple of the identity is integrable under a valid
 Fisher--Snedecor law exactly when the rate is nonpositive. -/

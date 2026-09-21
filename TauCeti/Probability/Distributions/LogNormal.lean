@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Measurability
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # The log-normal distribution
@@ -347,11 +348,9 @@ theorem variance_id_logNormalMeasure (m : ℝ) (v : ℝ≥0) :
 /-- For nonpositive `t` the moment-generating integrand of a log-normal law is bounded by `1` on
 the support, hence integrable. -/
 theorem integrable_exp_mul_logNormalMeasure (m : ℝ) (v : ℝ≥0) (ht : t ≤ 0) :
-    Integrable (fun x => Real.exp (t * x)) (logNormalMeasure m v) := by
-  refine Integrable.mono' (integrable_const 1) (by fun_prop) ?_
-  filter_upwards [ae_pos_logNormalMeasure m v] with x hx
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_one_iff]
-  nlinarith [hx.le]
+    Integrable (fun x => Real.exp (t * x)) (logNormalMeasure m v) :=
+  integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+    ((ae_pos_logNormalMeasure m v).mono fun _ hx ↦ hx.le)
 
 /-- The growth statement behind the failure of the positive exponential moments: against the
 Gaussian exponent `-(x - m) ^ 2 / (2 * v)`, the term `t * exp x` wins for every `t > 0`. -/

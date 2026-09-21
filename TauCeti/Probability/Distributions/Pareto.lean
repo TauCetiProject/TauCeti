@@ -9,6 +9,8 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Distributions.PDFInstances
 
+import TauCeti.Probability.Moments.IntegrableExpMul
+
 /-!
 # Elementary theory of the Pareto distribution
 
@@ -243,24 +245,21 @@ theorem integrable_exp_mul_id_paretoMeasure_of_nonpos (ht : 0 < t) (hr : 0 < r)
     Integrable (fun x : ℝ => Real.exp (u * x)) (paretoMeasure t r) := by
   let _ : IsProbabilityMeasure (paretoMeasure t r) :=
     isProbabilityMeasure_paretoMeasure ht hr
-  apply Integrable.of_bound (by fun_prop) (Real.exp (u * t))
-  filter_upwards [ae_paretoMeasure_mem_Ici t r] with x hx
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-  exact Real.exp_le_exp.mpr (mul_le_mul_of_nonpos_left hx hu)
+  exact TauCeti.integrable_exp_mul_of_ge u t hu measurable_id.aemeasurable
+    (ae_paretoMeasure_mem_Ici t r)
 
 /-- The exponential of a multiple of the identity is integrable under a nondegenerate Pareto
 law exactly when the rate is nonpositive. -/
 @[simp]
 theorem integrable_exp_mul_id_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) (u : ℝ) :
     Integrable (fun x : ℝ => Real.exp (u * x)) (paretoMeasure t r) ↔ u ≤ 0 := by
-  refine ⟨fun h => ?_, integrable_exp_mul_id_paretoMeasure_of_nonpos ht hr⟩
-  by_contra hu
-  have hu_pos : 0 < u := lt_of_not_ge hu
-  have hneg : Integrable (fun x : ℝ => Real.exp (-u * x)) (paretoMeasure t r) :=
-    integrable_exp_mul_id_paretoMeasure_of_nonpos ht hr (neg_nonpos.mpr hu_pos.le)
-  have hmoment : Integrable (fun x : ℝ => x ^ r) (paretoMeasure t r) :=
-    integrable_rpow_of_integrable_exp_mul hu_pos.ne' h hneg hr.le
-  exact (lt_irrefl r) ((integrable_rpow_paretoMeasure_iff ht hr r).mp hmoment)
+  let _ : IsProbabilityMeasure (paretoMeasure t r) :=
+    isProbabilityMeasure_paretoMeasure ht hr
+  have hmoment : ¬ Integrable (fun x : ℝ => x ^ r) (paretoMeasure t r) := fun h =>
+    lt_irrefl r ((integrable_rpow_paretoMeasure_iff ht hr r).mp h)
+  refine ⟨fun h => not_lt.mp fun hu => ?_, integrable_exp_mul_id_paretoMeasure_of_nonpos ht hr⟩
+  exact TauCeti.not_integrable_exp_mul_of_not_integrable_rpow r measurable_id.aemeasurable
+    (ae_paretoMeasure_mem_Ici t r) hr.le hmoment hu h
 
 /-- The exact exponential-integrability domain of the identity under a nondegenerate Pareto law
 is the nonpositive half-line. -/
