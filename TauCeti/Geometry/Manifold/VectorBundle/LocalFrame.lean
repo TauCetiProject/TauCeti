@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
+public import Mathlib.LinearAlgebra.Matrix.Basis
 
 /-!
 # Local frames: duality with the coefficient functionals, and testing hom-bundle sections
@@ -36,6 +37,8 @@ a time.
 * `TauCeti.Manifold.symmL_basis_eq_localFrame` and
   `TauCeti.Manifold.continuousLinearMapAt_localFrame`: a trivialization transports basis vectors
   to its local frame and reads those frame vectors back as basis vectors.
+* `TauCeti.Manifold.coordChangeL_toMatrix`: a trivialization coordinate change has the
+  change-of-basis matrix between the corresponding local frames.
 * `TauCeti.Manifold.contMDiffOn_hom_of_localFrame`: a section of the bundle of continuous linear
   maps is `C^n` once its evaluations on a local frame of the source bundle are.
 -/
@@ -88,6 +91,21 @@ vector. -/
 theorem continuousLinearMapAt_localFrame (hx : x ∈ e.baseSet) (i : ι) :
     e.continuousLinearMapAt 𝕜 x (e.localFrame b i x) = b i := by
   rw [← symmL_basis_eq_localFrame b hx i, e.continuousLinearMapAt_symmL hx]
+
+omit [ContMDiffVectorBundle 1 F V I] in
+/-- The matrix of a coordinate change between two vector-bundle trivializations is the
+change-of-basis matrix between the corresponding local frames. -/
+theorem coordChangeL_toMatrix [Fintype ι] [DecidableEq ι]
+    {e' : Trivialization F (TotalSpace.proj : TotalSpace F V → M)} [MemTrivializationAtlas e']
+    (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet) :
+    LinearMap.toMatrix b b (e.coordChangeL 𝕜 e' x).toLinearMap =
+      (e'.basisAt b hx').toMatrix (e.basisAt b hx) := by
+  rw [LinearMap.toMatrix_eq_basisToMatrix, Bundle.Trivialization.basisAt,
+    Module.Basis.toMatrix_map]
+  congr 1
+  funext i
+  simp only [Function.comp_apply, LinearEquiv.symm_symm]
+  exact congr_fun (Bundle.Trivialization.coe_coordChangeL e e' ⟨hx, hx'⟩) (b i)
 
 /-! ### Testing a hom-bundle section on a local frame -/
 

@@ -172,21 +172,8 @@ theorem fi24AutomorphismEdges_def :
 
 /-- The Coxeter matrix of Hall--Soicher's twelve-generator presentation of `Fi₂₄'·2`.
 Adjacent nodes have entry three and all other distinct nodes have entry two. -/
-def fi24AutomorphismCoxeterMatrix : CoxeterMatrix (Fin 12) where
-  M := Matrix.of fun i j =>
-    if i = j then 1
-    else if (i, j) ∈ fi24AutomorphismEdges ∨ (j, i) ∈ fi24AutomorphismEdges then 3 else 2
-  isSymm := by
-    ext i j
-    simp only [Matrix.transpose_apply, Matrix.of_apply]
-    rcases eq_or_ne i j with rfl | h
-    · rfl
-    · simp only [h, Ne.symm h, ↓reduceIte]
-      exact if_congr or_comm rfl rfl
-  diagonal i := by simp
-  off_diagonal i j h := by
-    simp only [Matrix.of_apply, h, ↓reduceIte]
-    split <;> omega
+def fi24AutomorphismCoxeterMatrix : CoxeterMatrix (Fin 12) :=
+  coxeterMatrixOfEdges fi24AutomorphismEdges
 
 /-- Evaluation of the source Coxeter matrix directly from its edge list. -/
 @[simp]
@@ -194,7 +181,7 @@ theorem fi24AutomorphismCoxeterMatrix_apply (i j : Fin 12) :
     fi24AutomorphismCoxeterMatrix i j =
       if i = j then 1
       else if (i, j) ∈ fi24AutomorphismEdges ∨ (j, i) ∈ fi24AutomorphismEdges then 3 else 2 := by
-  simp only [fi24AutomorphismCoxeterMatrix, Matrix.of_apply]
+  rw [fi24AutomorphismCoxeterMatrix, coxeterMatrixOfEdges_apply]
 
 /-- The source diagram has eleven edges. -/
 @[simp]

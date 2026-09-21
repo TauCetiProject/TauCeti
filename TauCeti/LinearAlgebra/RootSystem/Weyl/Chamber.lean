@@ -72,7 +72,7 @@ the type `TauCeti.openWeylChambers P b`.
 
 The covering statements are proved as `..._of_finite_weylGroup`, which asks only that the Weyl
 group be finite, and the root-system forms are read off from those using
-`TauCeti.RootPairing.finite_weylGroup`; this follows the shape of
+`RootPairing.finite_weylGroup`; this follows the shape of
 `TauCeti.exists_mem_dominantChamber_of_finite_weylGroup`, which is what they consume.
 
 ## References

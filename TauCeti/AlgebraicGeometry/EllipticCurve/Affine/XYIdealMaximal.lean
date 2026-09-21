@@ -18,23 +18,31 @@ records the consequences: that ideal is maximal, it is nonzero, and it determine
 it was built from. Conversely, every ideal whose quotient has rank one over the base field is the
 ideal of a point.
 
+The identification of `XYIdeal` with the kernel of evaluation needs none of that: evaluation
+kernels identify point ideals over any commutative base ring. Only the maximality results below
+want a field.
+
 ## Main results
 
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_ne_bot`: `XYIdeal W x y` is nonzero, over
+* `WeierstrassCurve.Affine.CoordinateRing.XYIdeal_ne_bot`: `XYIdeal W x y` is nonzero, over
   any nontrivial commutative base.
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal`: `XYIdeal W x y` is maximal
+* `WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal`: `XYIdeal W x y` is maximal
   for any `y : F[X]` solving the Weierstrass equation at `x`, matching the generality of
   `XYIdeal` and `quotientXYIdealEquiv` themselves.
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal_of_equation`: the point case,
+* `WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal_of_equation`: the point case,
   `XYIdeal W x (C y)` for `(x, y)` on `W`.
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff_of_ne_top`: two such ideals are
+* `WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff_of_ne_top`: two such ideals are
   equal exactly when `x₁ = x₂` and the two `Y`-polynomials agree at the point,
   `y₁.eval x₁ = y₂.eval x₂`, as soon as the first is proper.
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff`: the constant-polynomial point
+* `WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff`: the constant-polynomial point
   case, where the conclusion is equality of the coordinates and properness comes from maximality.
-* `TauCeti.WeierstrassCurve.Affine.CoordinateRing.finrank_quotient_eq_one_iff`: an ideal has a
+* `WeierstrassCurve.Affine.CoordinateRing.finrank_quotient_eq_one_iff`: an ideal has a
   rank-one quotient exactly when it is `XYIdeal W x (C y)` for a solution `(x, y)` of the
   Weierstrass equation.
+* `WeierstrassCurve.Affine.CoordinateRing.ker_evalAlgHom_eq_XYIdeal`: the kernel of evaluation
+  at a point is the ideal of that point.
+* `WeierstrassCurve.Affine.CoordinateRing.mem_XYIdeal_iff_evalAlgHom_eq_zero`: its elementwise
+  form, a function lying in the ideal exactly when it vanishes at the point.
 
 Mathlib has the quotient isomorphism but records nothing about the ideal itself; the many `XYIdeal`
 lemmas it does state (`XYIdeal_eq₁`, `XYIdeal_eq₂`, `XYIdeal_mul_XYIdeal`, `XYIdeal_neg_mul`) are
@@ -43,6 +51,12 @@ the two generators are nonzero (`XClass_ne_zero`, `YClass_ne_zero`), which is wh
 rests on.
 
 Only the curve equation is needed, not nonsingularity: the quotient is the base field either way.
+
+Evaluation at a point of the curve is an `F`-algebra map out of the coordinate ring whose kernel
+is that point's ideal, so a function lies in the ideal exactly when it vanishes at the point. The
+membership test detects that vanishing and nothing finer — the order of vanishing is a fact about
+the valuation, not about the ideal — and it is what identifies the residue-degree-one ideals with
+points below.
 
 This supports `TauCetiRoadmap/EllipticCurves/README.md`, Layer 0, whose point–place dictionary
 identifies the affine places of `W` with the maximal ideals of its coordinate ring — "the affine
@@ -76,6 +90,7 @@ about a *maximal* ideal of the coordinate ring of a `SmoothPlaneCurve`, hypothes
 of `algebraMap F (F[C] ⧸ M)`, and assumes ellipticity throughout. The classification below is
 written directly against Mathlib's `XYIdeal`: its hypothesis is the residue degree and it uses no
 ellipticity or Dedekind assumption.
+
 -/
 
 public section
@@ -85,7 +100,7 @@ open scoped Polynomial.Bivariate
 
 namespace TauCeti
 
-namespace WeierstrassCurve.Affine.CoordinateRing
+section
 
 section CommRing
 
@@ -93,11 +108,64 @@ variable {R : Type*} [CommRing R] [Nontrivial R] {W : _root_.WeierstrassCurve.Af
 
 /-- **The ideal `⟨X - x, Y - y(X)⟩` of the coordinate ring is nonzero** over a nontrivial base. -/
 @[simp]
-lemma XYIdeal_ne_bot (x : R) (y : R[X]) : CoordinateRing.XYIdeal W x y ≠ ⊥ := fun hbot => by
+lemma _root_.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_ne_bot
+    (x : R) (y : R[X]) : CoordinateRing.XYIdeal W x y ≠ ⊥ := fun hbot => by
   have hmem : CoordinateRing.XClass W x ∈ CoordinateRing.XYIdeal W x y :=
     Ideal.subset_span (Set.mem_insert _ _)
   rw [hbot, Ideal.mem_bot] at hmem
   exact CoordinateRing.XClass_ne_zero x hmem
+
+section EvalKernel
+
+variable {R : Type*} [CommRing R] {W : _root_.WeierstrassCurve.Affine R} {x : R}
+
+/-- **The kernel of evaluation at a point is the ideal of that point.** The evaluation map
+`W.CoordinateRing →ₐ[R] R` at a solution `(x, y)` of the Weierstrass equation has kernel
+`⟨X - x, Y - y⟩`. -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.ker_evalAlgHom_eq_XYIdeal {y : R}
+    (h : (W⁄R).toAffine.Equation x y) :
+    RingHom.ker (CoordinateRing.evalAlgHom h : W.CoordinateRing →+* R) =
+      CoordinateRing.XYIdeal W x (C y) := by
+  refine le_antisymm (fun f hf ↦ ?_) ?_
+  · -- `f = mk W p`; the bivariate kernel is `⟨X - x, Y - y⟩`, by `ker_evalRingHom` twice
+    obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective f
+    simp only [RingHom.mem_ker, RingHom.coe_coe, CoordinateRing.evalAlgHom_mk,
+      Algebra.algebraMap_self, Polynomial.mapRingHom_id, Polynomial.map_id] at hf
+    have hy : Polynomial.eval (C y) p ∈ Ideal.span {(X : R[X]) - C x} := by
+      rw [← Polynomial.ker_evalRingHom, RingHom.mem_ker]; exact hf
+    obtain ⟨q, hq⟩ := Ideal.mem_span_singleton.mp hy
+    have hx : p - C ((X - C x) * q) ∈ Ideal.span {(Y : R[X][Y]) - C (C y)} := by
+      rw [← Polynomial.ker_evalRingHom, RingHom.mem_ker, map_sub, sub_eq_zero]
+      simpa using hq
+    obtain ⟨r, hr⟩ := Ideal.mem_span_singleton.mp hx
+    have hp : p = C (X - C x) * C q + (Y - C (C y)) * r := by
+      rw [← map_mul, ← hr]; ring
+    rw [hp, map_add, map_mul, map_mul]
+    refine Ideal.add_mem _ (Ideal.mul_mem_right _ _ ?_) (Ideal.mul_mem_right _ _ ?_)
+    · exact Ideal.subset_span (Set.mem_insert _ _)
+    · exact Ideal.subset_span (Set.mem_insert_of_mem _ rfl)
+  · -- `AdjoinRoot.of W.polynomial (C c)` is the structure map, definitionally; unfolding
+    -- `AdjoinRoot.of` inside `simp` instead makes `XClass.eq_1` and `YClass.eq_1` loop.
+    have hconst : ∀ c : R, (AdjoinRoot.of W.polynomial (C c) : W.CoordinateRing)
+        = algebraMap R W.CoordinateRing c := fun _ ↦ rfl
+    rw [CoordinateRing.XYIdeal, Ideal.span_le]
+    rintro _ (rfl | rfl) <;>
+      simp [RingHom.mem_ker, CoordinateRing.XClass, CoordinateRing.YClass, hconst,
+        AlgHom.commutes]
+
+/-- **A function lies in the ideal of a point exactly when it vanishes there**, the elementwise
+form of `ker_evalAlgHom_eq_XYIdeal`.
+
+Not `@[simp]`: `AlgHom.toRingHom_eq_coe` rewrites the left-hand side of the kernel equality this
+rests on, and `simpNF` rejects the pair. -/
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.mem_XYIdeal_iff_evalAlgHom_eq_zero {y : R}
+    (h : (W⁄R).toAffine.Equation x y) {f : W.CoordinateRing} :
+    f ∈ CoordinateRing.XYIdeal W x (C y) ↔ CoordinateRing.evalAlgHom h f = 0 := by
+  rw [← CoordinateRing.ker_evalAlgHom_eq_XYIdeal h, RingHom.mem_ker, RingHom.coe_coe]
+
+
+end EvalKernel
 
 end CommRing
 
@@ -106,27 +174,30 @@ variable {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F} {x : F}
 /-- **The ideal `⟨X - x, Y - y(X)⟩` of the coordinate ring is maximal** whenever `y` is a
 polynomial solving the Weierstrass equation at `x`. Equivalently, the quotient by it is the base
 field. -/
-theorem XYIdeal_isMaximal {y : F[X]} (h : (W.polynomial.eval y).eval x = 0) :
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal
+    {y : F[X]} (h : (W.polynomial.eval y).eval x = 0) :
     (CoordinateRing.XYIdeal W x y).IsMaximal :=
   Ideal.Quotient.maximal_of_isField _
     ((CoordinateRing.quotientXYIdealEquiv h).toRingEquiv.isField (Field.toIsField F))
 
 /-- **The ideal of a point of a Weierstrass curve is maximal**, the constant-polynomial case of
 `XYIdeal_isMaximal`. -/
-theorem XYIdeal_isMaximal_of_equation {y : F} (h : W.Equation x y) :
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal_of_equation
+    {y : F} (h : W.Equation x y) :
     (CoordinateRing.XYIdeal W x (C y)).IsMaximal :=
-  XYIdeal_isMaximal h
+  WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal h
 
 /-- A proper ideal of the coordinate ring contains the class of no nonzero constant: the class of
 a unit is a unit. -/
-private theorem eq_zero_of_mk_C_C_mem {I : Ideal W.CoordinateRing} (hI : I ≠ ⊤) {c : F}
+private theorem _root_.WeierstrassCurve.Affine.CoordinateRing.eq_zero_of_mk_C_C_mem
+    {I : Ideal W.CoordinateRing} (hI : I ≠ ⊤) {c : F}
     (hc : CoordinateRing.mk W (C (C c)) ∈ I) : c = 0 := by
   by_contra hne
   exact hI (I.eq_top_of_isUnit_mem hc
     ((isUnit_C.mpr (isUnit_C.mpr (IsUnit.mk0 c hne))).map (CoordinateRing.mk W)))
 
 /-- Two `XClass` generators differ by the constant `x₂ - x₁`. -/
-private theorem XClass_sub_XClass (x₁ x₂ : F) :
+private theorem _root_.WeierstrassCurve.Affine.CoordinateRing.XClass_sub_XClass (x₁ x₂ : F) :
     CoordinateRing.XClass W x₁ - CoordinateRing.XClass W x₂ =
       CoordinateRing.mk W (C (C (x₂ - x₁))) := by
   simp only [CoordinateRing.XClass, ← map_sub]
@@ -135,7 +206,7 @@ private theorem XClass_sub_XClass (x₁ x₂ : F) :
   ring
 
 /-- Two `YClass` generators differ by the image of the polynomial `y₂ - y₁`. -/
-private theorem YClass_sub_YClass (y₁ y₂ : F[X]) :
+private theorem _root_.WeierstrassCurve.Affine.CoordinateRing.YClass_sub_YClass (y₁ y₂ : F[X]) :
     CoordinateRing.YClass W y₁ - CoordinateRing.YClass W y₂ =
       CoordinateRing.mk W (C (y₂ - y₁)) := by
   simp only [CoordinateRing.YClass, ← map_sub]
@@ -145,7 +216,8 @@ private theorem YClass_sub_YClass (y₁ y₂ : F[X]) :
 
 /-- Modulo `X - x`, a polynomial in `X` is its value at `x`: the two differ by an explicit multiple
 of the `XClass` generator. -/
-private theorem mk_C_sub_mk_C_C_eval (x : F) (y : F[X]) :
+private theorem _root_.WeierstrassCurve.Affine.CoordinateRing.mk_C_sub_mk_C_C_eval
+    (x : F) (y : F[X]) :
     ∃ q : F[X], CoordinateRing.mk W (C y) - CoordinateRing.mk W (C (C (y.eval x))) =
       CoordinateRing.XClass W x * CoordinateRing.mk W (C q) := by
   obtain ⟨q, hq⟩ := X_sub_C_dvd_sub_C_eval (a := x) (p := y)
@@ -154,13 +226,14 @@ private theorem mk_C_sub_mk_C_C_eval (x : F) (y : F[X]) :
 
 /-- A proper ideal `⟨X - x₁, Y - y₁(X)⟩` sees the value of a polynomial at the point: if the class
 of `p` lies in it, then `p` vanishes at `x₁`. -/
-private theorem eval_eq_zero_of_mk_C_mem {x₁ : F} {y₁ : F[X]}
+private theorem _root_.WeierstrassCurve.Affine.CoordinateRing.eval_eq_zero_of_mk_C_mem
+    {x₁ : F} {y₁ : F[X]}
     (hI : CoordinateRing.XYIdeal W x₁ y₁ ≠ ⊤) {p : F[X]}
     (hp : CoordinateRing.mk W (C p) ∈ CoordinateRing.XYIdeal W x₁ y₁) : p.eval x₁ = 0 := by
   -- modulo `X - x₁` the class of `p` is the constant `p.eval x₁`, which a proper ideal can only
   -- contain if it is zero
-  obtain ⟨q, hq⟩ := mk_C_sub_mk_C_C_eval (W := W) x₁ p
-  refine eq_zero_of_mk_C_C_mem hI ?_
+  obtain ⟨q, hq⟩ := WeierstrassCurve.Affine.CoordinateRing.mk_C_sub_mk_C_C_eval (W := W) x₁ p
+  refine WeierstrassCurve.Affine.CoordinateRing.eq_zero_of_mk_C_C_mem hI ?_
   have hX₁ : CoordinateRing.XClass W x₁ ∈ CoordinateRing.XYIdeal W x₁ y₁ :=
     Ideal.subset_span (Set.mem_insert _ _)
   have hmem := Ideal.sub_mem _ hp (hq ▸ Ideal.mul_mem_right (CoordinateRing.mk W (C q)) _ hX₁)
@@ -169,7 +242,8 @@ private theorem eval_eq_zero_of_mk_C_mem {x₁ : F} {y₁ : F[X]}
 /-- **Equal ideals have equal data**: if `⟨X - x₁, Y - y₁(X)⟩` is proper and equals
 `⟨X - x₂, Y - y₂(X)⟩`, then `x₁ = x₂` and the two `Y`-polynomials agree at the point. The forward
 half of `XYIdeal_eq_iff_of_ne_top`. -/
-private theorem eq_and_eval_eq_of_XYIdeal_eq {x₁ x₂ : F} {y₁ y₂ : F[X]}
+private theorem _root_.WeierstrassCurve.Affine.CoordinateRing.eq_and_eval_eq_of_XYIdeal_eq
+    {x₁ x₂ : F} {y₁ y₂ : F[X]}
     (hI : CoordinateRing.XYIdeal W x₁ y₁ ≠ ⊤)
     (h : CoordinateRing.XYIdeal W x₁ y₁ = CoordinateRing.XYIdeal W x₂ y₂) :
     x₁ = x₂ ∧ y₁.eval x₁ = y₂.eval x₂ := by
@@ -179,13 +253,14 @@ private theorem eq_and_eval_eq_of_XYIdeal_eq {x₁ x₂ : F} {y₁ y₂ : F[X]}
       CoordinateRing.XYIdeal W x₁ y₁ :=
     Ideal.sub_mem _ (Ideal.subset_span (Set.mem_insert _ _))
       (h ▸ Ideal.subset_span (Set.mem_insert _ _))
-  rw [XClass_sub_XClass] at hmemX
-  have hx : x₁ = x₂ := (sub_eq_zero.mp (eq_zero_of_mk_C_C_mem hI hmemX)).symm
+  rw [WeierstrassCurve.Affine.CoordinateRing.XClass_sub_XClass] at hmemX
+  have hx : x₁ = x₂ := (sub_eq_zero.mp
+      (WeierstrassCurve.Affine.CoordinateRing.eq_zero_of_mk_C_C_mem hI hmemX)).symm
   have hmemY : CoordinateRing.mk W (C (y₂ - y₁)) ∈ CoordinateRing.XYIdeal W x₁ y₁ := by
-    rw [← YClass_sub_YClass]
+    rw [← WeierstrassCurve.Affine.CoordinateRing.YClass_sub_YClass]
     exact Ideal.sub_mem _ (Ideal.subset_span (Set.mem_insert_of_mem _ rfl))
       (h ▸ Ideal.subset_span (Set.mem_insert_of_mem _ rfl))
-  have hy := eval_eq_zero_of_mk_C_mem hI hmemY
+  have hy := WeierstrassCurve.Affine.CoordinateRing.eval_eq_zero_of_mk_C_mem hI hmemY
   rw [eval_sub, sub_eq_zero] at hy
   exact ⟨hx, by rw [← hx, hy]⟩
 
@@ -193,18 +268,20 @@ private theorem eq_and_eval_eq_of_XYIdeal_eq {x₁ x₂ : F} {y₁ y₂ : F[X]}
 first is proper: the `X`-coordinates must coincide, and the two `Y`-polynomials must take the same
 value there. Stated for polynomial `y`, matching `XYIdeal` and `XYIdeal_isMaximal`; no curve
 equation is needed. Use `XYIdeal_eq_iff` for points, whose properness is automatic. -/
-theorem XYIdeal_eq_iff_of_ne_top {x₁ x₂ : F} {y₁ y₂ : F[X]}
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff_of_ne_top
+    {x₁ x₂ : F} {y₁ y₂ : F[X]}
     (hI : CoordinateRing.XYIdeal W x₁ y₁ ≠ ⊤) :
     CoordinateRing.XYIdeal W x₁ y₁ = CoordinateRing.XYIdeal W x₂ y₂ ↔
       x₁ = x₂ ∧ y₁.eval x₁ = y₂.eval x₂ := by
   constructor
-  · exact eq_and_eval_eq_of_XYIdeal_eq hI
+  · exact WeierstrassCurve.Affine.CoordinateRing.eq_and_eval_eq_of_XYIdeal_eq hI
   · rintro ⟨rfl, hy⟩
     -- the two `Y` generators differ by a multiple of `X - x₁`, which is a change of generator
     -- Mathlib already knows leaves the span alone
-    obtain ⟨q, hq⟩ := mk_C_sub_mk_C_C_eval (W := W) x₁ (y₂ - y₁)
+    obtain ⟨q, hq⟩ := WeierstrassCurve.Affine.CoordinateRing.mk_C_sub_mk_C_C_eval (W := W) x₁ (y₂ -
+        y₁)
     rw [eval_sub, sub_eq_zero.mpr hy.symm] at hq
-    simp only [map_zero, sub_zero, ← YClass_sub_YClass] at hq
+    simp only [map_zero, sub_zero, ← WeierstrassCurve.Affine.CoordinateRing.YClass_sub_YClass] at hq
     rw [CoordinateRing.XYIdeal, CoordinateRing.XYIdeal, sub_eq_iff_eq_add.mp hq,
       Ideal.span_pair_left_mul_add]
 
@@ -213,22 +290,23 @@ theorem XYIdeal_eq_iff_of_ne_top {x₁ x₂ : F} {y₁ y₂ : F[X]}
 on points. The point case of `XYIdeal_eq_iff_of_ne_top`, whose properness comes from
 `XYIdeal_isMaximal_of_equation`. -/
 @[simp]
-theorem XYIdeal_eq_iff {x₁ x₂ y₁ y₂ : F} (h₁ : W.Equation x₁ y₁) :
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff
+    {x₁ x₂ y₁ y₂ : F} (h₁ : W.Equation x₁ y₁) :
     CoordinateRing.XYIdeal W x₁ (C y₁) = CoordinateRing.XYIdeal W x₂ (C y₂) ↔
       x₁ = x₂ ∧ y₁ = y₂ := by
-  simpa only [eval_C] using XYIdeal_eq_iff_of_ne_top (x₂ := x₂) (y₂ := C y₂)
-    (XYIdeal_isMaximal_of_equation h₁).ne_top
+  simpa only [eval_C] using WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff_of_ne_top (x₂ :=
+      x₂) (y₂ := C y₂)
+    (WeierstrassCurve.Affine.CoordinateRing.XYIdeal_isMaximal_of_equation h₁).ne_top
 
 /-- **The ideals of residue degree one are exactly the ideals of points.** An ideal `I` has a
 rank-one quotient over `F` if and only if it is `XYIdeal W x (C y)` for some solution `(x, y)` of
 the Weierstrass equation. No ellipticity or Dedekind hypothesis is involved. -/
-theorem finrank_quotient_eq_one_iff {I : Ideal W.CoordinateRing} :
+theorem _root_.WeierstrassCurve.Affine.CoordinateRing.finrank_quotient_eq_one_iff
+    {I : Ideal W.CoordinateRing} :
     Module.finrank F (W.CoordinateRing ⧸ I) = 1 ↔
       ∃ x y : F, W.Equation x y ∧ I = CoordinateRing.XYIdeal W x (C y) := by
   constructor
   · intro hdeg
-    have hI : I ≠ ⊤ := Ideal.Quotient.nontrivial_iff.mp <|
-      Module.nontrivial_of_finrank_pos (R := F) (by rw [hdeg]; norm_num)
     have hbij : Function.Bijective (algebraMap F (W.CoordinateRing ⧸ I)) :=
       Algebra.finrank_eq_one_iff_bijective_algebraMap.mp hdeg
     let e : (W.CoordinateRing ⧸ I) ≃ₐ[F] F :=
@@ -237,27 +315,23 @@ theorem finrank_quotient_eq_one_iff {I : Ideal W.CoordinateRing} :
     have hρmem : ∀ a, ρ a = 0 ↔ a ∈ I := fun a ↦ by
       simp only [ρ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, Ideal.Quotient.mkₐ_eq_mk]
       rw [map_eq_zero_iff _ e.injective, Ideal.Quotient.eq_zero_iff_mem]
-    let x₀ := ρ (CoordinateRing.mk W (C X))
-    let y₀ := ρ (CoordinateRing.mk W Y)
-    have hcomp : ∀ p : F[X][Y], ρ (CoordinateRing.mk W p) = p.evalEval x₀ y₀ := fun p ↦ by
-      simpa only [x₀, y₀, AdjoinRoot.mk_C, AdjoinRoot.mk_X, Algebra.algebraMap_self,
-        mapRingHom_id, Polynomial.map_id] using
-        _root_.WeierstrassCurve.Affine.CoordinateRing.algHom_mk_eq_evalEval ρ p
-    have heq : W.Equation x₀ y₀ := by
-      simpa only [x₀, y₀, AdjoinRoot.mk_C, AdjoinRoot.mk_X, Algebra.algebraMap_self,
-        _root_.WeierstrassCurve.baseChange, _root_.WeierstrassCurve.map_id] using
+    -- `ρ` is evaluation at the images of the two coordinate functions, so its kernel is the
+    -- ideal of that point; and its kernel is `I`.
+    have hker := WeierstrassCurve.Affine.CoordinateRing.ker_evalAlgHom_eq_XYIdeal
+      (_root_.WeierstrassCurve.Affine.CoordinateRing.equation_of_algHom ρ)
+    rw [_root_.WeierstrassCurve.Affine.CoordinateRing.evalAlgHom_equation_ofAlgHom] at hker
+    have hIker : I = RingHom.ker (ρ : W.CoordinateRing →+* F) :=
+      Ideal.ext fun a ↦ by simpa only [RingHom.mem_ker, RingHom.coe_coe] using (hρmem a).symm
+    have heq : W.Equation (ρ (AdjoinRoot.of W.polynomial X))
+        (ρ (AdjoinRoot.root W.polynomial)) := by
+      simpa only [Algebra.algebraMap_self, _root_.WeierstrassCurve.baseChange,
+        _root_.WeierstrassCurve.map_id] using
         _root_.WeierstrassCurve.Affine.CoordinateRing.equation_of_algHom ρ
-    refine ⟨x₀, y₀, heq, ((XYIdeal_isMaximal_of_equation heq).eq_of_le hI ?_).symm⟩
-    rw [CoordinateRing.XYIdeal, Ideal.span_le, Set.pair_subset_iff]
-    refine ⟨?_, ?_⟩
-    · rw [SetLike.mem_coe, ← hρmem, CoordinateRing.XClass, hcomp]
-      simp [evalEval_C]
-    · rw [SetLike.mem_coe, ← hρmem, CoordinateRing.YClass, hcomp]
-      simp
+    exact ⟨_, _, heq, hIker.trans hker⟩
   · rintro ⟨x, y, h, rfl⟩
     rw [(CoordinateRing.quotientXYIdealEquiv h).toLinearEquiv.finrank_eq, Module.finrank_self]
 
-end WeierstrassCurve.Affine.CoordinateRing
+end
 
 end TauCeti
 

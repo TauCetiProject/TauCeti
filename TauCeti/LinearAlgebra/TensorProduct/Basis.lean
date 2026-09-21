@@ -7,18 +7,25 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
-# Naturality of base-changed basis coordinates
+# Tensor-product basis coordinates
 
-An `R`-basis of a module gives a basis after extension of scalars to every commutative
-`R`-algebra. This file records that the coordinates in those bases commute with a map of
-the scalar-extension algebras.
+This file records how contractions against one factor of a tensor product detect equality when
+that factor is free. It also proves that the coordinates in bases obtained by scalar extension
+commute with a map of the scalar-extension algebras, and that over a basis with at most one
+index a scalar extension consists of pure tensors.
 
 ## Main declarations
 
+* `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
+  factor detect equality.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
+* `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
+  every element of a scalar extension is the pure tensor of its unique coordinate with the
+  corresponding basis vector.
 * `Module.Basis.map_toMatrixAlgEquiv_baseChange`: matrices in base-changed bases commute with
   scalar maps when the represented endomorphisms are intertwined by tensor-product base change.
 -/
@@ -26,6 +33,69 @@ the scalar-extension algebras.
 public section
 
 open TensorProduct
+open scoped TensorProduct
+
+namespace TensorProduct
+
+universe u v w
+
+variable {R : Type u} {M : Type v} {N : Type w}
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable [AddCommMonoid N] [Module R N]
+
+/-- Equality of all contractions against the right factor detects equality in a tensor product
+over a commutative semiring when the right factor is projective. -/
+theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M ⊗[R] N}
+    (h : ∀ φ : Module.Dual R N,
+      _root_.LinearMap.tensorComponent (R := R) (M := M) φ x =
+        _root_.LinearMap.tensorComponent (R := R) (M := M) φ y) :
+    x = y := by
+  classical
+  obtain ⟨s, hs⟩ := Module.projective_def'.mp (inferInstance : Module.Projective R N)
+  let b := Finsupp.basisSingleOne (R := R) (ι := N)
+  have hcomponent (φ : (N →₀ R) →ₗ[R] R) (t : M ⊗[R] (N →₀ R)) :
+      TensorProduct.rid R M (φ.lTensor M t) =
+        _root_.LinearMap.tensorComponent φ t := by
+    induction t using TensorProduct.induction_on with
+    | zero => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul m n => simp
+  have hmap : TensorProduct.map LinearMap.id s x = TensorProduct.map LinearMap.id s y := by
+    apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
+    ext i
+    rw [TensorProduct.equivFinsuppOfBasisRight_apply,
+      TensorProduct.equivFinsuppOfBasisRight_apply]
+    calc
+      TensorProduct.rid R M
+          ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s x)) =
+          _root_.LinearMap.tensorComponent (b.coord i)
+            (TensorProduct.map LinearMap.id s x) := by
+            exact hcomponent (b.coord i) _
+      _ = LinearMap.id (_root_.LinearMap.tensorComponent ((b.coord i).comp s) x) :=
+        _root_.LinearMap.tensorComponent_map (b.coord i) LinearMap.id s x
+      _ = LinearMap.id (_root_.LinearMap.tensorComponent ((b.coord i).comp s) y) := by
+        rw [h ((b.coord i).comp s)]
+      _ = _root_.LinearMap.tensorComponent (b.coord i)
+          (TensorProduct.map LinearMap.id s y) :=
+        (_root_.LinearMap.tensorComponent_map (b.coord i) LinearMap.id s y).symm
+      _ = TensorProduct.rid R M
+          ((b.coord i).lTensor M (TensorProduct.map LinearMap.id s y)) := by
+            exact (hcomponent (b.coord i) _).symm
+  let p : (N →₀ R) →ₗ[R] N := Finsupp.linearCombination R id
+  have hleft (z : M ⊗[R] N) :
+      TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s z) = z := by
+    induction z using TensorProduct.induction_on with
+    | zero => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul m n =>
+        simp only [TensorProduct.map_tmul, LinearMap.id_apply]
+        rw [← LinearMap.comp_apply, hs, LinearMap.id_apply]
+  calc
+    x = TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s x) := (hleft x).symm
+    _ = TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s y) := congrArg _ hmap
+    _ = y := hleft y
+
+end TensorProduct
 
 namespace Module.Basis
 
@@ -50,6 +120,18 @@ variable {T : Type w} [Semiring T] [Algebra R T]
   | zero => simp
   | add x y hx hy => simp only [map_add, Finsupp.add_apply, hx, hy]
   | tmul s m => simp
+
+/-- Over a basis with at most one index, every element of a scalar extension is the pure tensor
+of its unique coordinate with the corresponding basis vector.  This isolates the tensor
+bookkeeping needed to reduce statements about rank-at-most-one scalar extensions to scalar
+multiples of a single vector. -/
+theorem eq_baseChange_repr_tmul_of_subsingleton [Subsingleton ι] (b : Basis ι R M)
+    (z : S ⊗[R] M) (i : ι) :
+    z = (b.baseChange S).repr z i ⊗ₜ b i := by
+  let _ : Fintype ι := Fintype.ofFinite ι
+  conv_lhs => rw [← (b.baseChange S).sum_repr z]
+  rw [Fintype.sum_subsingleton _ i, baseChange_apply, TensorProduct.smul_tmul', smul_eq_mul,
+    mul_one]
 
 end Repr
 

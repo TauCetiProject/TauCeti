@@ -29,11 +29,10 @@ variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
 
-namespace ContinuousLinearMap
 
 /-- If `T i` is eventually uniformly bounded, `T i z` tends to `w`, and `g i` tends to `z`, then
 the moving evaluations `T i (g i)` tend to `w`. -/
-theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
+theorem _root_.ContinuousLinearMap.tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
     {T : ι → X →L[𝕜] Y} {C : ℝ} {g : ι → X} {z : X} {w : Y}
     (hT : ∀ᶠ i in l, ‖T i‖ ≤ C) (hz : Tendsto (fun i => T i z) l (𝓝 w))
     (hg : Tendsto g l (𝓝 z)) : Tendsto (fun i => T i (g i)) l (𝓝 w) := by
@@ -47,7 +46,6 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
     rw [← ContinuousLinearMap.map_add, sub_add_cancel]
   simpa using (hmove.add hz).congr fun i => (hsplit i).symm
 
-end ContinuousLinearMap
 
 end TauCeti
 

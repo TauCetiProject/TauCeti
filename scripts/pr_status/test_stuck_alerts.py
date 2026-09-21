@@ -7,6 +7,8 @@ recurrence visibility. Pure logic only -- GitHub and Zulip are faked, so no netw
 or `gh` is needed. Run: python3 scripts/pr_status/test_stuck_alerts.py
 """
 
+import datetime
+import json
 import os
 import unittest
 
@@ -210,18 +212,28 @@ class ReconcileTest(unittest.TestCase):
 class ReviewStuckTest(unittest.TestCase):
     """An issue outliving its PR must not alert; anything unreadable still must."""
 
-    ISSUES = '{"number": 1137, "title": "Review stuck: PR #1134"}\n'
+    ISSUE = {"number": 1137, "title": "Review stuck: PR #1134", "body": "",
+             "created_at": "2026-09-16T08:00:00Z"}
+    META = {"kind": "scoreboard", "repo": sa.REPO, "pr": 1134, "mode": "commit",
+            "head_sha": "a" * 40, "ts": "2026-09-16T09:00:00Z",
+            "states": {"correctness": "green", "reuse": "green"}}
 
-    def fake_gh(self, pr_state):
+    def fake_gh(self, pr_state, meta=None, issue=None):
         """Serve the issue list, then `pr_state` for the PR lookup (or raise)."""
         def gh_api(path, jq=None, paginate=False):
             if path.startswith("/repos/") and "/pulls/" in path:
                 if isinstance(pr_state, Exception):
                     raise pr_state
-                return pr_state + "\n"
-            return self.ISSUES
+                return json.dumps({"state": pr_state, "head": "a" * 40}) + "\n"
+            return json.dumps(issue or self.ISSUE) + "\n"
         self.addCleanup(setattr, core, "gh_api", core.gh_api)
         core.gh_api = gh_api
+        self.addCleanup(setattr, core, "scoreboard_meta", core.scoreboard_meta)
+        def scoreboard(_pr):
+            if isinstance(meta, Exception):
+                raise meta
+            return meta if meta is not None else {}
+        core.scoreboard_meta = scoreboard
 
     def test_open_pr_alerts(self):
         self.fake_gh("open")
@@ -247,6 +259,47 @@ class ReviewStuckTest(unittest.TestCase):
         body = sa.detect_review_stuck()[0]["body"]
         self.assertIn("/issues/1137", body)
         self.assertNotIn("1134", body)
+        self.assertNotIn("state it has no rule for", body)
+
+    def test_completed_current_head_review_clears(self):
+        self.fake_gh("open", self.META)
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_changes_requested_also_proves_review_recovery(self):
+        self.fake_gh("open", {**self.META, "states": {"reuse": "blocking_request"}})
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_new_push_does_not_revive_a_recovered_command_failure(self):
+        self.fake_gh("open", {**self.META, "head_sha": "b" * 40})
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_old_verdict_does_not_mask_new_failure(self):
+        self.fake_gh("open", {**self.META, "ts": "2026-09-16T07:00:00Z"})
+        self.assertEqual(len(sa.detect_review_stuck()), 1)
+
+    def test_later_diagnostic_takes_precedence_over_issue_creation(self):
+        issue = {**self.ISSUE, "body": "- 2026-09-16T10:00:00Z: `review-engine` via `codex` (exit 1): review engine failed"}
+        self.fake_gh("open", self.META, issue)
+        self.assertEqual(len(sa.detect_review_stuck()), 1)
+
+    def test_review_after_latest_failure_clears(self):
+        issue = {**self.ISSUE, "body": "- 2026-09-16T10:00:00Z: `review-engine` via `codex` (exit 1): review engine failed"}
+        self.fake_gh("open", {**self.META, "ts": "2026-09-16T11:00:00Z"}, issue)
+        self.assertEqual(sa.detect_review_stuck(), [])
+
+    def test_incomplete_or_malformed_review_keeps_alert(self):
+        for state in ("stale", "error", "not_run", None, {}, []):
+            with self.subTest(state=state):
+                self.fake_gh("open", {**self.META, "states": {"reuse": state}})
+                self.assertEqual(len(sa.detect_review_stuck()), 1)
+
+    def test_missing_wrong_or_unreadable_evidence_keeps_alert(self):
+        for meta in ({}, [], {**self.META, "states": {}}, {**self.META, "repo": "other/repo"},
+                     {**self.META, "pr": 99}, {**self.META, "mode": "init"}, {**self.META, "head_sha": ""},
+                     {**self.META, "ts": "bad"}, RuntimeError("GitHub unavailable")):
+            with self.subTest(meta=meta):
+                self.fake_gh("open", meta)
+                self.assertEqual(len(sa.detect_review_stuck()), 1)
 
 
 class MarkerSafetyTest(unittest.TestCase):
@@ -418,8 +471,36 @@ class MissingStatusTest(unittest.TestCase):
 
     def test_cancelled_run_is_not_proof_of_a_missing_status(self):
         # A cancelled run (concurrency or manual) never reaches its reporting step, so it
-        # posting no status is by design, not a wedge.
+        # posting no status is by design, not a wedge. A supersede re-dispatches within
+        # minutes, so a recent cancellation is still presumed to be one.
         _install(self, self._routes("", [self._run(2, conclusion="cancelled")]))
+        self.assertEqual(sa.detect_missing_required_status(), [])
+
+    def test_a_cancellation_nothing_came_after_is_a_wedge(self):
+        """A supersede is followed by the run that replaces it. A cancellation that is
+        still the newest run for a head a day later was not superseded by anything, and
+        nothing will now post the status. PRs 6633, 6583 and 6590 sat wedged exactly
+        this way for three days, each with one cancelled run and no `build` status,
+        invisible here because every cancellation was skipped."""
+        _install(self, self._routes(
+            "", [self._run(sa.ABANDONED_CANCEL_HOURS + 1, conclusion="cancelled")]))
+        found = sa.detect_missing_required_status()
+        self.assertEqual([a["key"] for a in found], ["missing-status/8"])
+        self.assertIn("cancelled", found[0]["body"])
+
+    def test_a_cancellation_still_inside_the_grace_window_stays_quiet(self):
+        # Long enough to be a wedge is the whole distinction; just under it is not.
+        _install(self, self._routes(
+            "", [self._run(sa.ABANDONED_CANCEL_HOURS - 1, conclusion="cancelled")]))
+        self.assertEqual(sa.detect_missing_required_status(), [])
+
+    def test_a_newer_cancellation_over_an_older_one_is_still_read_from_the_newest(self):
+        # Two cancellations, the newer inside the window: something was still being
+        # dispatched recently, so this is churn rather than abandonment.
+        _install(self, self._routes("", [
+            self._run(1, conclusion="cancelled"),
+            self._run(sa.ABANDONED_CANCEL_HOURS + 5, conclusion="cancelled"),
+        ]))
         self.assertEqual(sa.detect_missing_required_status(), [])
 
     def test_older_concluded_run_still_alerts_behind_a_cancellation(self):
@@ -456,6 +537,74 @@ class DivergedHeadTest(unittest.TestCase):
         # A deleted head repo/branch is a different problem; do not cry wolf on an API miss.
         _install(self, self._routes(""))
         self.assertEqual(sa.detect_diverged_head(), [])
+
+class FailingSchedulerTest(unittest.TestCase):
+    """A cron that fires punctually and fails punctually must not read as healthy.
+
+    dead-scheduler reads only a run's created_at, so it cannot distinguish a working job from a
+    broken one. pages.yml failed every scheduled run for a day while that detector stayed quiet
+    and the site served stale content; these tests pin the gap shut.
+    """
+
+    @staticmethod
+    def sched_run(conclusion, status="completed", hours=1):
+        when = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=hours)
+        return {"status": status, "conclusion": conclusion,
+                "created_at": when.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "url": "https://github.com/x/y/actions/runs/1"}
+
+    def check(self, runs):
+        self.addCleanup(setattr, sa, "gh_stream", sa.gh_stream)
+        sa.gh_stream = lambda *a, **k: runs
+        return sa._check_scheduler_health("pages.yml", "pages / doc-gen publish")
+
+    def test_a_streak_of_failures_alerts(self):
+        alerts = self.check([self.sched_run("failure", hours=1), self.sched_run("failure", hours=4)])
+        self.assertEqual(len(alerts), 1)
+        self.assertEqual(alerts[0]["key"], "failing-scheduler/pages.yml")
+        self.assertIn("pages.yml", alerts[0]["body"])
+
+    def test_one_failure_is_not_an_emergency(self):
+        # These jobs are long and touch the network; a lone red run is noise, and this topic
+        # stops being read the moment it carries noise.
+        self.assertEqual(
+            self.check([self.sched_run("failure", hours=1), self.sched_run("success", hours=4)]), [])
+
+    def test_a_recent_success_clears_the_streak(self):
+        self.assertEqual(
+            self.check([self.sched_run("success", hours=1), self.sched_run("failure", hours=4),
+                        self.sched_run("failure", hours=7)]), [])
+
+    def test_in_progress_and_cancelled_runs_do_not_hide_a_streak(self):
+        # A queued run at the head, and a cancelled one between two failures, are evidence of
+        # nothing. Treating either as a break would let a concurrency policy mask real breakage.
+        alerts = self.check([
+            self.sched_run(None, status="in_progress", hours=0),
+            self.sched_run("failure", hours=1),
+            self.sched_run("cancelled", hours=4),
+            self.sched_run("failure", hours=7),
+        ])
+        self.assertEqual(len(alerts), 1)
+
+    def test_an_entirely_red_window_says_it_is_a_lower_bound(self):
+        alerts = self.check([self.sched_run("failure", hours=h) for h in (1, 4, 7)])
+        self.assertIn("at least", alerts[0]["body"])
+
+    def test_timed_out_counts_as_failure(self):
+        alerts = self.check([self.sched_run("timed_out", hours=1), self.sched_run("failure", hours=4)])
+        self.assertEqual(len(alerts), 1)
+
+    def test_no_runs_at_all_is_dead_schedulers_business(self):
+        # An absent cron is a different alert with a different fix; do not double-report it.
+        self.assertEqual(self.check([]), [])
+
+    def test_the_detector_is_registered_under_its_own_prefix(self):
+        # The prefix is what "fail closed" keys off: a detector raising must mark only its own
+        # alerts unknown, so its keys and its registered prefix have to agree.
+        prefixes = dict(sa.DETECTORS)
+        self.assertIn("failing-scheduler", prefixes)
+        self.assertEqual(sa.key_prefix("failing-scheduler/pages.yml"), "failing-scheduler")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -138,7 +138,7 @@ omit [Fintype V] in
 /-- A finite product of edge factors is at most `1`: every factor lies in `[0, 1]`. -/
 theorem prod_edgeFactor_le_one (E : Finset (Sym2 V)) (G : Sym2 V → Graphon Ω μ) (x : V → Ω) :
     ∏ e ∈ E, edgeFactor (G e) x e ≤ 1 :=
-  Finset.prod_le_one (fun e _ => edgeFactor_nonneg (G e) x e)
+  Finset.prod_le_one₀ (fun e _ => edgeFactor_nonneg (G e) x e)
     fun e _ => edgeFactor_le_one (G e) x e
 
 /-- A finite product of edge factors is integrable against the product measure: it is measurable

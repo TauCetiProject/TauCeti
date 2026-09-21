@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Maschke
+public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.Symmetric.TensorAction.Centralizer
 public import TauCeti.RingTheory.Semisimple.DoubleCentralizer
 
@@ -38,22 +39,19 @@ The distinction between `k[S_d]` and its image is not cosmetic: the algebra map
 the *image* of `k[S_d]` and not `k[S_d]` itself. The statements below are accordingly about
 `AlgHom.range`.
 
-## What is not proved here
+## Relation to the general-linear image
 
 Every statement below takes the span of the diagonal operators `f^{⊗d}` over *all*
 `f : kⁿ →ₗ[k] kⁿ`, matching the half already proved. The general linear group acts through the
-subfamily of `g^{⊗d}` with `g` invertible, so the image of `k[GLₙ]` is contained in this span, but
-the reverse inclusion -- that the invertible `g^{⊗d}` already span everything -- is a separate
-statement and is not proved here. Nothing below is therefore a statement about the image of
-`k[GLₙ]`, and the mutual-commutant results are between the symmetric-group image and the span of
-*all* diagonal operators.
+subfamily of `g^{⊗d}` with `g` invertible. The downstream module
+`TauCeti/RepresentationTheory/Symmetric/TensorAction/GeneralLinear.lean` proves that these already
+span everything (`TauCeti.toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const`)
+and deduces the image-level mutual commutants, including
+`TauCeti.centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom`. The results
+in this file are the span-level input to that identification.
 
 ## Main results
 
-* `TauCeti.commute_permTensorActionAlgHom_of_forall_commute`: commuting with every factor
-  permutation propagates to the whole image of the group algebra the permutations span. (In the
-  other direction, commuting with every diagonal operator propagates to their span by Mathlib's
-  `Commute.span_right`.)
 * `TauCeti.coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const`: the commutant of
   the symmetric-group image is the span of the diagonal operators.
 * `TauCeti.centralizer_span_range_map_const_eq_range_permTensorActionAlgHom`: **the commutant of
@@ -79,24 +77,6 @@ open PiTensorProduct
 
 namespace TauCeti
 
-section CommSemiring
-
-variable {R : Type*} {n d : ℕ} [CommSemiring R]
-
-/-- An endomorphism of `(Rⁿ)^{⊗d}` commuting with every factor permutation commutes with the whole
-image of the group algebra `R[S_d]`, the group algebra being spanned by the permutations. -/
-theorem commute_permTensorActionAlgHom_of_forall_commute
-    {y : Module.End R (⨂[R] _ : Fin d, Fin n → R)}
-    (hy : ∀ σ : Equiv.Perm (Fin d), Commute y (permTensorAction R n d σ))
-    (a : MonoidAlgebra R (Equiv.Perm (Fin d))) :
-    Commute y (permTensorActionAlgHom R n d a) := by
-  induction a using MonoidAlgebra.induction_on with
-  | of σ => rw [permTensorActionAlgHom_of]; exact hy σ
-  | add a b ha hb => rw [map_add]; exact ha.add_right hb
-  | smul r a ha => rw [map_smul]; exact ha.smul_right r
-
-end CommSemiring
-
 section CommRing
 
 variable {R : Type*} {n d : ℕ} [CommRing R]
@@ -113,13 +93,9 @@ theorem coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const
       (Submodule.span R (Set.range fun f : (Fin n → R) →ₗ[R] (Fin n → R) =>
         map fun _ : Fin d => f) : Set (Module.End R (⨂[R] _ : Fin d, Fin n → R))) := by
   ext y
-  rw [SetLike.mem_coe, SetLike.mem_coe,
-    mem_span_range_map_const_iff_forall_commute_permTensorAction h,
-    Subalgebra.mem_centralizer_iff]
-  refine ⟨fun hy σ => (hy _ ⟨MonoidAlgebra.of R _ σ, permTensorActionAlgHom_of R n d σ⟩).symm,
-    fun hy g hg => ?_⟩
-  obtain ⟨a, rfl⟩ := hg
-  exact (commute_permTensorActionAlgHom_of_forall_commute hy a).symm
+  rw [SetLike.mem_coe, SetLike.mem_coe, AlgHom.coe_range, permTensorActionAlgHom_def,
+    Representation.mem_centralizer_range_asAlgebraHom_iff,
+    mem_span_range_map_const_iff_forall_commute_permTensorAction h]
 
 end CommRing
 
@@ -134,8 +110,11 @@ of the group algebra `k[S_d]` acting by permuting the tensor factors.
 Together with `TauCeti.coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const`, which
 computes the commutant in the other direction, this says that the symmetric-group image and the
 span of the diagonal operators are each other's commutants. The general linear group acts through
-the invertible `g^{⊗d}`, which are among the `f^{⊗d}`; that they span the same subalgebra, and
-hence that the commutant here is the commutant of the image of `k[GLₙ]`, is not proved here. -/
+the invertible `g^{⊗d}`. The downstream theorem
+`TauCeti.toSubmodule_range_tensorPowerRep_asAlgebraHom_eq_span_range_map_const` proves that these
+span the same subalgebra, and
+`TauCeti.centralizer_range_tensorPowerRep_asAlgebraHom_eq_range_permTensorActionAlgHom` gives the
+resulting commutant of the image of `k[GLₙ]`. -/
 @[simp]
 theorem centralizer_span_range_map_const_eq_range_permTensorActionAlgHom :
     Subalgebra.centralizer k

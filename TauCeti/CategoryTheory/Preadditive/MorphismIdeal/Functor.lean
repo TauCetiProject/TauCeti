@@ -1,0 +1,275 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Basic
+
+/-!
+# Functoriality of quotients by morphism ideals
+
+An additive functor `F : C ⥤ D` pulls a morphism ideal of `D` back to one of `C`. Consequently,
+if `F` carries an ideal `I` into an ideal `J`, it induces an additive functor `C/I ⥤ D/J`.
+Natural transformations descend to these quotient functors, and the construction respects
+identities and composition.
+
+This is the functorial part of the universal property of an additive quotient. In particular, it
+is the mechanism by which an additive functor preserving projective-injective objects will induce
+a functor between stable categories.
+
+## Main definitions
+
+* `TauCeti.MorphismIdeal.comap`: the inverse image of a morphism ideal under an additive functor.
+* `TauCeti.MorphismIdeal.map`: the functor induced between quotient categories.
+* `TauCeti.MorphismIdeal.mapNatTrans` and `TauCeti.MorphismIdeal.mapNatIso`: the natural
+  transformation and natural isomorphism induced between quotient functors.
+
+## Main results
+
+* `TauCeti.MorphismIdeal.comap_eq_of_iso`: naturally isomorphic functors pull back an ideal to the
+  same ideal.
+* `TauCeti.MorphismIdeal.map_id` and `TauCeti.MorphismIdeal.map_comp`: quotient functors preserve
+  identities and composition.
+* `TauCeti.MorphismIdeal.mapNatTrans_id` and
+  `TauCeti.MorphismIdeal.comp_mapNatTrans`: descent of natural transformations preserves
+  identities and vertical composition.
+
+## References
+
+* M. Auslander, I. Reiten, S. Smalø, *Representation Theory of Artin Algebras*, CUP (1995),
+  Chapter IV, Section 1.
+* D. Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
+  Algebras*, LMS Lecture Note Series 119, CUP (1988), Section I.2.
+-/
+
+public section
+
+universe v u v' u' v'' u''
+
+namespace TauCeti
+
+open CategoryTheory
+
+namespace MorphismIdeal
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+variable {D : Type u'} [Category.{v'} D] [Preadditive D]
+variable {E : Type u''} [Category.{v''} E] [Preadditive E]
+
+/-! ### Pullback of ideals -/
+
+/-- The inverse image of a morphism ideal under an additive functor. A morphism belongs to
+`J.comap F` precisely when its image under `F` belongs to `J`. -/
+def comap (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive] : MorphismIdeal C where
+  hom X Y := J.hom (F.obj X) (F.obj Y) |>.comap F.mapAddHom
+  comp_mem_left := by
+    intro X Y Z f g hg
+    rw [AddSubgroup.mem_comap, Functor.coe_mapAddHom, F.map_comp]
+    exact J.comp_mem_left (F.map f) hg
+  comp_mem_right := by
+    intro X Y Z f g hf
+    rw [AddSubgroup.mem_comap, Functor.coe_mapAddHom, F.map_comp]
+    exact J.comp_mem_right (F.map g) hf
+
+/-- A morphism belongs to the pullback ideal exactly when its image belongs to the original
+ideal. -/
+@[simp]
+theorem mem_comap_hom (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive] {X Y : C}
+    {f : X ⟶ Y} : f ∈ (J.comap F).hom X Y ↔ F.map f ∈ J.hom (F.obj X) (F.obj Y) :=
+  Iff.rfl
+
+/-- Pullback of ideals is monotone. -/
+theorem comap_mono (F : C ⥤ D) [F.Additive] {J J' : MorphismIdeal D} (h : J ≤ J') :
+    J.comap F ≤ J'.comap F := by
+  intro X Y f hf
+  rw [mem_comap_hom] at hf ⊢
+  exact (le_def.1 h) (F.map f) hf
+
+/-- Pulling an ideal back along the identity functor leaves it unchanged. -/
+@[simp]
+theorem comap_id (I : MorphismIdeal C) : I.comap (𝟭 C) = I := by
+  ext
+  simp
+
+/-- Pullback along a composite functor is the composite of the two pullbacks. -/
+@[simp]
+theorem comap_comp (K : MorphismIdeal E) (F : C ⥤ D) (G : D ⥤ E)
+    [F.Additive] [G.Additive] : K.comap (F ⋙ G) = (K.comap G).comap F := by
+  ext
+  simp
+
+/-- Pullback of ideals only depends on the functor up to natural isomorphism. -/
+theorem comap_eq_of_iso (J : MorphismIdeal D) {F G : C ⥤ D} [F.Additive] [G.Additive]
+    (α : F ≅ G) : J.comap F = J.comap G := by
+  ext X Y f
+  simp only [mem_comap_hom]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← NatIso.naturality_1 α f]
+    exact J.comp_mem_left _ (J.comp_mem_right _ h)
+  · rw [← NatIso.naturality_2 α f]
+    exact J.comp_mem_left _ (J.comp_mem_right _ h)
+
+/-- If `F` carries `I` into `J` and `G` carries `J` into `K`, then `F ⋙ G` carries `I` into
+`K`. -/
+theorem le_comap_comp (I : MorphismIdeal C) (J : MorphismIdeal D) (K : MorphismIdeal E)
+    (F : C ⥤ D) (G : D ⥤ E) [F.Additive] [G.Additive]
+    (hF : I ≤ J.comap F) (hG : J ≤ K.comap G) : I ≤ K.comap (F ⋙ G) := by
+  intro X Y f hf
+  have hFf := (mem_comap_hom J F).1 ((le_def.1 hF) f hf)
+  rw [mem_comap_hom, Functor.comp_map]
+  exact (mem_comap_hom K G).1 ((le_def.1 hG) (F.map f) hFf)
+
+/-! ### Functors between quotients -/
+
+/-- An additive functor carrying `I` into `J` induces a functor from `C/I` to `D/J`. -/
+noncomputable def map (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
+    (hF : I ≤ J.comap F) : I.Quotient ⥤ J.Quotient :=
+  I.lift (F ⋙ J.quotientFunctor) <| by
+    intro X Y f hf
+    rw [CategoryTheory.Functor.mem_kerIdeal_hom, Functor.comp_map,
+      J.quotientFunctor_map_eq_zero_iff]
+    exact (mem_comap_hom J F).1 ((le_def.1 hF) f hf)
+
+/-- The functor induced on ideal quotients is additive. -/
+instance map_additive (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
+    (hF : I ≤ J.comap F) : (I.map J F hF).Additive := by
+  unfold map
+  infer_instance
+
+/-- Precomposing the induced functor with the source quotient functor recovers the original
+functor followed by the target quotient functor. -/
+@[simp]
+theorem quotientFunctor_comp_map (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
+    [F.Additive] (hF : I ≤ J.comap F) :
+    I.quotientFunctor ⋙ I.map J F hF = F ⋙ J.quotientFunctor :=
+  by
+    unfold map
+    exact CategoryTheory.Quotient.lift_spec _ _ _
+
+/-- On objects from the original category, the induced functor applies the original functor and
+then passes to the target quotient. -/
+@[simp]
+theorem map_obj_quotientFunctor_obj (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
+    [F.Additive] (hF : I ≤ J.comap F) (X : C) :
+    (I.map J F hF).obj (I.quotientFunctor.obj X) = J.quotientFunctor.obj (F.obj X) :=
+  by
+    unfold map
+    rfl
+
+/-- On morphisms from the original category, the induced functor applies the original functor and
+then passes to the target quotient. -/
+@[simp]
+theorem map_map_quotientFunctor_map (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
+    [F.Additive] (hF : I ≤ J.comap F) {X Y : C} (f : X ⟶ Y) :
+    (I.map J F hF).map (I.quotientFunctor.map f) ≫
+        eqToHom (I.map_obj_quotientFunctor_obj J F hF Y) =
+      eqToHom (I.map_obj_quotientFunctor_obj J F hF X) ≫
+        J.quotientFunctor.map (F.map f) := by
+  have h := Functor.congr_hom (I.quotientFunctor_comp_map J F hF) f
+  simp only [Functor.comp_map] at h
+  rw [h]
+  simp
+
+/-- The identity functor on a category induces the identity functor on every ideal quotient. -/
+@[simp]
+theorem map_id (I : MorphismIdeal C) :
+    I.map I (𝟭 C) (by simp) = 𝟭 I.Quotient := by
+  apply CategoryTheory.Quotient.lift_unique' I.rel
+  rw [quotientFunctor_comp_map]
+  rfl
+
+/-- Compatible functors induce the composite of their functors on ideal quotients. -/
+-- Not `@[simp]`: the intermediate ideal `J` does not occur in the left-hand side, so simp could
+-- never instantiate it (the `simpNF` linter rejects the attribute).
+theorem map_comp (I : MorphismIdeal C) (J : MorphismIdeal D) (K : MorphismIdeal E)
+    (F : C ⥤ D) (G : D ⥤ E) [F.Additive] [G.Additive]
+    (hF : I ≤ J.comap F) (hG : J ≤ K.comap G) :
+    I.map K (F ⋙ G) (I.le_comap_comp J K F G hF hG) =
+      I.map J F hF ⋙ J.map K G hG := by
+  apply CategoryTheory.Quotient.lift_unique' I.rel
+  rw [quotientFunctor_comp_map]
+  calc
+    (F ⋙ G) ⋙ K.quotientFunctor = F ⋙ (G ⋙ K.quotientFunctor) :=
+      rfl
+    _ = F ⋙ (J.quotientFunctor ⋙ J.map K G hG) := by rw [quotientFunctor_comp_map]
+    _ = (F ⋙ J.quotientFunctor) ⋙ J.map K G hG :=
+      rfl
+    _ = (I.quotientFunctor ⋙ I.map J F hF) ⋙ J.map K G hG := by
+      rw [quotientFunctor_comp_map]
+    _ = I.quotientFunctor ⋙ I.map J F hF ⋙ J.map K G hG :=
+      rfl
+
+/-! ### Natural transformations between quotient functors -/
+
+/-- A natural transformation between ideal-preserving functors descends to their induced
+functors on the quotients. -/
+noncomputable def mapNatTrans (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
+    [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ⟶ G) :
+    I.map J F hF ⟶ I.map J G hG :=
+  CategoryTheory.Quotient.natTransLift I.rel
+    (eqToHom (I.quotientFunctor_comp_map J F hF) ≫ Functor.whiskerRight α J.quotientFunctor ≫
+      eqToHom (I.quotientFunctor_comp_map J G hG).symm)
+
+/-- On objects from the original category, a descended natural transformation is represented by
+the corresponding component of the original transformation. -/
+@[simp]
+theorem mapNatTrans_app_quotientFunctor_obj (I : MorphismIdeal C) (J : MorphismIdeal D)
+    {F G : C ⥤ D} [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G)
+    (α : F ⟶ G) (X : C) :
+    eqToHom (I.map_obj_quotientFunctor_obj J F hF X).symm ≫
+        (I.mapNatTrans J hF hG α).app (I.quotientFunctor.obj X) ≫
+          eqToHom (I.map_obj_quotientFunctor_obj J G hG X) =
+      J.quotientFunctor.map (α.app X) := by
+  unfold mapNatTrans
+  simp
+
+/-- Descent sends an identity natural transformation to an identity. -/
+@[simp]
+theorem mapNatTrans_id (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
+    [F.Additive] (hF : I ≤ J.comap F) :
+    I.mapNatTrans J hF hF (𝟙 F) = 𝟙 (I.map J F hF) := by
+  unfold mapNatTrans
+  simp only [Functor.whiskerRight_id', Category.id_comp, eqToHom_trans, eqToHom_refl]
+  exact CategoryTheory.Quotient.natTransLift_id I.rel _
+
+/-- Descent preserves vertical composition of natural transformations. -/
+@[simp]
+theorem comp_mapNatTrans (I : MorphismIdeal C) (J : MorphismIdeal D) {F G H : C ⥤ D}
+    [F.Additive] [G.Additive] [H.Additive]
+    (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (hH : I ≤ J.comap H)
+    (α : F ⟶ G) (β : G ⟶ H) :
+    I.mapNatTrans J hF hG α ≫ I.mapNatTrans J hG hH β =
+      I.mapNatTrans J hF hH (α ≫ β) := by
+  unfold mapNatTrans
+  rw [CategoryTheory.Quotient.comp_natTransLift]
+  simp
+
+/-- A natural isomorphism between ideal-preserving functors descends to a natural isomorphism
+between their induced functors on the quotients. -/
+noncomputable def mapNatIso (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
+    [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
+    I.map J F hF ≅ I.map J G hG where
+  hom := I.mapNatTrans J hF hG α.hom
+  inv := I.mapNatTrans J hG hF α.inv
+  hom_inv_id := by rw [comp_mapNatTrans, α.hom_inv_id, mapNatTrans_id]
+  inv_hom_id := by rw [comp_mapNatTrans, α.inv_hom_id, mapNatTrans_id]
+
+/-- The forward component of a descended natural isomorphism is the descended transformation. -/
+@[simp]
+theorem mapNatIso_hom (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
+    [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
+    (I.mapNatIso J hF hG α).hom = I.mapNatTrans J hF hG α.hom :=
+  (rfl)
+
+/-- The inverse component of a descended natural isomorphism is the descended inverse. -/
+@[simp]
+theorem mapNatIso_inv (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D}
+    [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
+    (I.mapNatIso J hF hG α).inv = I.mapNatTrans J hG hF α.inv :=
+  (rfl)
+
+end MorphismIdeal
+
+end TauCeti

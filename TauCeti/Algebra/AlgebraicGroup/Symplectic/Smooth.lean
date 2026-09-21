@@ -56,7 +56,7 @@ private theorem pointsMulEquivGLSymplectic_mapValue
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     pointsMulEquivGLSymplectic R m (A := B)
         (AlgHom.mapValue (H := coordinateHopfAlgebra R m) phi f) =
-      GLSymplectic.map (Fin m) phi.toRingHom
+      GLSymplectic.map (Fin m) (phi : A →+* B)
         (pointsMulEquivGLSymplectic R m (A := A) f) := by
   apply Subtype.ext
   apply Matrix.GeneralLinearGroup.ext
@@ -68,7 +68,9 @@ private theorem pointsMulEquivGLSymplectic_mapValue
   rw [GLSymplecticFin.coe_map] at hlhs
   rw [GLSymplectic.coe_map]
   rw [hlhs, hrhs]
-  simp only [coe_reindexGL, Matrix.GeneralLinearGroup.map_apply, Matrix.submatrix_apply]
+  simp only [Equiv.coe_reindexGL, Equiv.symm_symm,
+    Matrix.GeneralLinearGroup.map_apply,
+    Matrix.submatrix_apply]
 
 /-- The symplectic coordinate algebra is formally smooth over its ground ring. -/
 private instance instFormallySmoothCoordinateHopfAlgebra :

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.ZMod.ValMinAbs
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Quaternion
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Quaternion
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Solver
 
 /-!
 # The rational Dixon computation for the quaternion group of order eight
@@ -39,6 +39,13 @@ classical example of nonisomorphic groups with equal character tables.
   every modular entry to the displayed integer.
 * `TauCeti.quaternionGroupTwo_degree_mul_centralCharacterTable`: the division-free conversion to
   the ordinary character table.
+* `TauCeti.isIntegerCharacterTableSpec_quaternionGroupTwo`: the exact integral certificate.
+* `TauCeti.integerCharacterTableChecker_quaternionGroupTwo`: the executable checker accepts the
+  displayed tables and degrees.
+* `TauCeti.isSome_dixonRationalCharacterTable_quaternionGroupTwo`: the assembled rational solver
+  succeeds on the certified prime.
+* `TauCeti.isCharacterTableSpec_quaternionGroupTwo`: the displayed ordinary table, cast to `ℂ`,
+  satisfies the character-table specification.
 
 ## References
 
@@ -159,32 +166,17 @@ theorem quaternionGroupTwo_valMinAbs_centralCharacterTable
   apply ZMod.valMinAbs_intCast_of_two_mul_natAbs_lt
   fin_cases i <;> fin_cases j <;> decide
 
-/-- The signed integral rows obtained from the output of the modular search. -/
-def quaternionGroupTwoLiftedCentralRows :
-    Finset (QuaternionGroupTwoClassIndex → ℤ) :=
-  ((quaternionClassData 2).centralCharacterSearch (F := ZMod 5)).image
-    fun a j => (a j).valMinAbs
-
 /-- **The rational lift is exactly the displayed integral central-character table, up to row
 order.** -/
 theorem quaternionGroupTwo_liftedCentralRows :
-    quaternionGroupTwoLiftedCentralRows =
+    (quaternionClassData 2).liftedCentralRows 5 =
       Finset.univ.image fun i => quaternionGroupTwoCentralCharacterTable i := by
-  rw [quaternionGroupTwoLiftedCentralRows, quaternionGroupTwo_centralCharacterSearch,
-    quaternionGroupTwoModularCentralRows, ClassData.rowsOfMap, Finset.image_image]
-  apply Finset.image_congr
-  intro i _
-  funext j
-  exact quaternionGroupTwo_valMinAbs_centralCharacterTable i j
-
-/-- A lifted row occurs exactly when it is a row of the displayed integral table. -/
-@[simp]
-theorem mem_quaternionGroupTwoLiftedCentralRows_iff
-    {a : QuaternionGroupTwoClassIndex → ℤ} :
-    a ∈ quaternionGroupTwoLiftedCentralRows ↔
-      ∃ i, quaternionGroupTwoCentralCharacterTable i = a := by
-  rw [quaternionGroupTwo_liftedCentralRows]
-  simp
+  apply (quaternionClassData 2).liftedCentralRows_eq_image_of_centralCharacterSearch_eq
+    quaternionGroupTwoCentralCharacterTable
+    (by rw [quaternionGroupTwo_centralCharacterSearch, quaternionGroupTwoModularCentralRows])
+  intro i j
+  rw [quaternionGroupTwoCentralCharacterTable_apply]
+  fin_cases i <;> fin_cases j <;> decide
 
 /-- The degrees attached to the five central-character rows. -/
 def quaternionGroupTwoCharacterDegrees : QuaternionGroupTwoClassIndex → ℕ :=
@@ -252,5 +244,52 @@ theorem quaternionGroupTwo_characterTable_orthogonal (i j : QuaternionGroupTwoCl
   rw [Nat.card_eq_fintype_card, QuaternionGroup.card]
   simp only [quaternionGroupTwoCharacterTable_apply]
   fin_cases i <;> fin_cases j <;> decide
+
+/-- **The rational Dixon output for the quaternion group of order eight has an exact
+character-table certificate.** The certificate assembles the integral class-algebra
+eigenvectors, character degrees, conversion identity, and weighted row orthogonality. -/
+theorem isIntegerCharacterTableSpec_quaternionGroupTwo :
+    (quaternionClassData 2).IsIntegerCharacterTableSpec
+      quaternionGroupTwoCentralCharacterTable quaternionGroupTwoCharacterTable
+      quaternionGroupTwoCharacterDegrees where
+  central_one i := by fin_cases i <;> decide
+  central_eigen := isModularEigenrow_quaternionGroupTwoCentralCharacterTable_int
+  degree_pos i := (quaternionGroupTwo_characterDegrees_pos_and_dvd i).1
+  degree_dvd i := by
+    simpa only [Nat.card_eq_fintype_card] using
+      (quaternionGroupTwo_characterDegrees_pos_and_dvd i).2
+  sum_degree_sq := by
+    simpa only [Nat.card_eq_fintype_card] using quaternionGroupTwo_sum_characterDegrees_sq
+  degree_mul_central := quaternionGroupTwo_degree_mul_centralCharacterTable
+  row_orthogonal i j := by
+    simpa only [Nat.card_eq_fintype_card, Nat.cast_ite, Nat.cast_zero] using
+      quaternionGroupTwo_characterTable_orthogonal i j
+
+/-- The executable exact checker accepts the rational Dixon output for `QuaternionGroup 2`. -/
+theorem integerCharacterTableChecker_quaternionGroupTwo :
+    (quaternionClassData 2).integerCharacterTableChecker
+      quaternionGroupTwoCentralCharacterTable quaternionGroupTwoCharacterTable
+      quaternionGroupTwoCharacterDegrees = true := by
+  rw [(quaternionClassData 2).integerCharacterTableChecker_eq_true_iff]
+  exact isIntegerCharacterTableSpec_quaternionGroupTwo
+
+/-- **The assembled rational Dixon--Schneider solver succeeds on the certified prime for
+`QuaternionGroup 2`.** -/
+theorem isSome_dixonRationalCharacterTable_quaternionGroupTwo :
+    ((quaternionClassData 2).dixonRationalCharacterTable? 5).isSome = true := by
+  rw [(quaternionClassData 2).isSome_dixonRationalCharacterTable_iff]
+  refine ⟨⟨quaternionGroupTwoCentralCharacterTable, quaternionGroupTwoCharacterTable,
+    quaternionGroupTwoCharacterDegrees⟩, ?_, isIntegerCharacterTableSpec_quaternionGroupTwo⟩
+  intro i
+  rw [quaternionGroupTwo_liftedCentralRows]
+  exact Finset.mem_image.mpr ⟨i, Finset.mem_univ i, rfl⟩
+
+/-- **The exact rational Dixon output for `QuaternionGroup 2`, cast to `ℂ`, satisfies the
+character-table specification.** Consequently it is the ordinary complex character table up to
+a row permutation. -/
+theorem isCharacterTableSpec_quaternionGroupTwo :
+    IsCharacterTableSpec (QuaternionGroup 2)
+      ((quaternionClassData 2).complexTableOfInteger quaternionGroupTwoCharacterTable) :=
+  isIntegerCharacterTableSpec_quaternionGroupTwo.isCharacterTableSpec
 
 end TauCeti

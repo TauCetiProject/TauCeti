@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Basic
-public import TauCeti.MeasureTheory.Measure.Coupling
+public import TauCeti.MeasureTheory.Measure.Coupling.Basic
 
 /-!
 # The overlaid difference of two graphons
@@ -15,7 +15,7 @@ Given a coupling of two probability spaces, two graphons living on *different* c
 compared: read `U` through the first coordinate, read `W` through the second, and subtract. The
 result is the **overlaid difference kernel** `overlayDiff U W π`, a symmetric kernel on the coupled
 space `(Ω₁ × Ω₂, π)`. The carrier-independent coupling API lives in
-`TauCeti.MeasureTheory.Measure.Coupling`.
+`TauCeti.MeasureTheory.Measure.Coupling.Basic`.
 
 These two objects are what makes the cut distance of the dense graph limit theory cross-carrier.
 `cutDist U W` is the infimum, over all couplings `π`, of the cut norm of `overlayDiff U W π`; the

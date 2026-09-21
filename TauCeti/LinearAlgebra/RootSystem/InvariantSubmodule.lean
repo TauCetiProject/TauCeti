@@ -22,7 +22,7 @@ the nonvanishing of the pairing from adjacency at the call site.
 
 ## Main results
 
-* `TauCeti.RootPairing.root_mem_of_pairing_ne_zero`: membership of a root in a reflection-invariant
+* `RootPairing.root_mem_of_pairing_ne_zero`: membership of a root in a reflection-invariant
   submodule propagates along a nonzero pairing.
 -/
 
@@ -30,7 +30,7 @@ public section
 
 namespace TauCeti
 
-namespace RootPairing
+section
 
 variable {K M N ι : Type*} [Field K] [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] {P : RootPairing ι K M N}
@@ -38,7 +38,7 @@ variable {K M N ι : Type*} [Field K] [AddCommGroup M] [Module K M]
 /-- **Membership of a root in a reflection-invariant submodule propagates along a nonzero
 pairing.** If `q` is invariant under the reflection at `v`, the pairing of `u` with `v` is nonzero,
 and the root at `u` lies in `q`, then so does the root at `v`. -/
-theorem root_mem_of_pairing_ne_zero {q : Submodule K M} {u v : ι}
+theorem _root_.RootPairing.root_mem_of_pairing_ne_zero {q : Submodule K M} {u v : ι}
     (hinvv : q ∈ Module.End.invtSubmodule (P.reflection v))
     (hpair : P.pairing u v ≠ 0) (hu : P.root u ∈ q) : P.root v ∈ q := by
   -- Reflecting `u` in `v` keeps us inside `q`; subtracting leaves a multiple of `root v`, and the
@@ -49,6 +49,6 @@ theorem root_mem_of_pairing_ne_zero {q : Submodule K M} {u v : ι}
     simpa only [P.reflection_apply_root, sub_sub_cancel] using q.sub_mem hu hrefl
   exact (q.smul_mem_iff hpair).mp hsmul
 
-end RootPairing
+end
 
 end TauCeti

@@ -5,49 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 
 /-!
-# The Koszul formula and uniqueness of the Levi-Civita connection
+# The Koszul formula for Levi-Civita connections
 
 A covariant derivative `∇` on the tangent bundle of a Riemannian manifold is a *Levi-Civita
 connection*, or *Riemannian connection*, if it is torsion free and compatible with the metric.
-This file introduces that predicate, proves the Koszul formula
+Mathlib states this as `CovariantDerivative.IsLeviCivitaConnection`, constructs such a connection,
+`CovariantDerivative.leviCivitaConnection`, and proves that it is unique on differentiable sections,
+`CovariantDerivative.IsLeviCivitaConnection.uniqueness`. This file develops the right-hand side of
+the Koszul formula
 
 `2 ⟪∇_X Y, Z⟫ = X ⟪Y, Z⟫ + Y ⟪Z, X⟫ - Z ⟪X, Y⟫ + ⟪[X, Y], Z⟫ - ⟪[X, Z], Y⟫ - ⟪[Y, Z], X⟫`
 
-characterising it, and deduces that a Levi-Civita connection is unique.
-
-The right-hand side of the Koszul formula involves the metric only, so it is packaged as a
-standalone function `TauCeti.Manifold.koszul`. Since the inner product on a fibre is
-nondegenerate, the formula pins `∇_X Y` down completely: this is `IsLeviCivita.unique`, whose
-tensorial repackaging is `IsLeviCivita.difference_eq_zero`. The converse direction
-`isLeviCivita_iff` shows nothing is lost in the passage to `koszul`: a connection satisfying the
-Koszul formula is automatically torsion free and metric. Since `koszul I X Y · x` is moreover
-tensorial in its last slot, the Koszul formula is also the shape in which the Levi-Civita
-connection gets constructed; that construction, together with the tensoriality in the first slot
-and the Leibniz rule in the second which it needs, is carried out in
-`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Existence`.
+as an object in its own right. It involves the metric only, so it is packaged as a standalone
+function `TauCeti.Manifold.koszul`. The Koszul formula in that form is
+`IsLeviCivitaConnection.two_inner_eq_koszul`, and for Mathlib's connection
+`two_inner_leviCivitaConnection_eq_koszul`; this is the shape in which
+`TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity` reads the
+connection in a local frame. The converse direction `isLeviCivitaConnection_iff` shows nothing is
+lost in the passage to `koszul`: a connection satisfying the Koszul formula is automatically torsion
+free and metric.
 
 Two covariant derivatives can only be compared through sections that are differentiable at the
 point under consideration, because `CovariantDerivative` puts no constraint whatsoever on the
-value of `∇ σ` for a nowhere differentiable section `σ`. Uniqueness is therefore stated as
-`∇ Y x = ∇' Y x` for `Y` differentiable at `x`, which is exactly the statement that the
-endomorphism-valued one-form `CovariantDerivative.difference ∇ ∇'` vanishes.
+value of `∇ σ` for a nowhere differentiable section `σ`. Mathlib's uniqueness is accordingly
+stated for `Y` differentiable at `x`; `IsLeviCivitaConnection.difference_eq_zero` repackages it as
+the vanishing of the endomorphism-valued one-form `CovariantDerivative.difference ∇ ∇'`.
 
 ## Main definitions and results
 
 * `TauCeti.Manifold.koszul` and `TauCeti.Manifold.koszul_apply`: the right-hand side of the Koszul
   formula, a function of the Riemannian metric alone, and its defining formula.
-* `CovariantDerivative.IsLeviCivita`: a covariant derivative on the tangent bundle is
-  torsion free and compatible with the metric.
-* `CovariantDerivative.IsLeviCivita.two_inner_eq_koszul`: the Koszul formula.
-* `CovariantDerivative.isLeviCivita_iff`: the Koszul formula characterises the
+* `CovariantDerivative.IsLeviCivitaConnection.two_inner_eq_koszul`: the Koszul formula, and
+  `CovariantDerivative.two_inner_leviCivitaConnection_eq_koszul` for Mathlib's connection.
+* `CovariantDerivative.isLeviCivitaConnection_iff`: the Koszul formula characterises the
   Levi-Civita connections.
-* `CovariantDerivative.IsLeviCivita.unique` and
-  `CovariantDerivative.IsLeviCivita.difference_eq_zero`: uniqueness of the Levi-Civita
-  connection.
+* `CovariantDerivative.IsLeviCivitaConnection.difference_eq_zero`: uniqueness of the Levi-Civita
+  connection, as the vanishing of the difference of two of them.
 * `TauCeti.Manifold.koszul_sub_koszul_swap_first_two` and
   `TauCeti.Manifold.koszul_add_koszul_swap_last_two`: the two symmetries of the Koszul expression
   from which the converse direction is read off.
@@ -128,7 +124,7 @@ variable (I) in
 
 evaluated at `x`. It depends on the Riemannian metric alone; for the Levi-Civita connection `∇` of
 that metric it computes `2 ⟪∇_X Y, Z⟫`, by
-`CovariantDerivative.IsLeviCivita.two_inner_eq_koszul`. -/
+`CovariantDerivative.IsLeviCivitaConnection.two_inner_eq_koszul`. -/
 def koszul (X Y Z : Π x : M, TangentSpace I x) (x : M) : ℝ :=
   mvfderiv I (fun y ↦ inner ℝ (Y y) (Z y)) x (X x)
     + mvfderiv I (fun y ↦ inner ℝ (Z y) (X y)) x (Y x)
@@ -157,7 +153,7 @@ private theorem inner_section_comm (Y Z : Π x : M, TangentSpace I x) :
 
 /-- Antisymmetrising the Koszul expression in its first two arguments returns twice the inner
 product of the Lie bracket with the third argument. This is the identity behind the torsion-free
-half of `CovariantDerivative.isLeviCivita_iff`. -/
+half of `CovariantDerivative.isLeviCivitaConnection_iff`. -/
 theorem koszul_sub_koszul_swap_first_two :
     koszul I X Y Z x - koszul I Y X Z x = 2 * inner ℝ (mlieBracket I X Y x) (Z x) := by
   rw [koszul, koszul, inner_section_comm Z Y, inner_section_comm Y X, inner_section_comm X Z,
@@ -167,7 +163,7 @@ theorem koszul_sub_koszul_swap_first_two :
 
 /-- Symmetrising the Koszul expression in its last two arguments returns twice the derivative of
 their inner product along the first argument. This is the identity behind the metric half of
-`CovariantDerivative.isLeviCivita_iff`. -/
+`CovariantDerivative.isLeviCivitaConnection_iff`. -/
 theorem koszul_add_koszul_swap_last_two :
     koszul I Z X Y x + koszul I Z Y X x =
       2 * mvfderiv I (fun y ↦ inner ℝ (X y) (Y y)) x (Z x) := by
@@ -200,9 +196,8 @@ variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ Ta
 /-! ### Behaviour in the first two arguments
 
 The Koszul expression is tensorial in its first argument, just as it is in its third, and obeys a
-Leibniz rule in its second. These are the identities which turn
-`CovariantDerivative.isLeviCivita_iff` into a construction of the Levi-Civita connection, carried
-out in `TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Existence`.
+Leibniz rule in its second. These are the identities from which a connection is built out of the
+Koszul formula, as Mathlib builds `CovariantDerivative.leviCivitaConnection`.
 -/
 
 variable {X' Y' : Π x : M, TangentSpace I x} {f : M → ℝ}
@@ -281,7 +276,7 @@ theorem tensorialAt_koszul_first (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x)
 
 /-- The Koszul expression is tensorial in its third argument: replacing `Z` by `f • Z` multiplies
 it by `f x`, and it is additive in `Z`. Together with
-`CovariantDerivative.isLeviCivita_iff` this is what turns the Koszul formula from a
+`CovariantDerivative.isLeviCivitaConnection_iff` this is what turns the Koszul formula from a
 characterisation of the Levi-Civita connection into a construction of it. -/
 theorem tensorialAt_koszul_third (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
     TensorialAt I E (fun Z : Π y : M, TangentSpace I y ↦ koszul I X Y Z x) x where
@@ -317,7 +312,7 @@ end Manifold
 
 end TauCeti
 
-/-! ### The Levi-Civita connection -/
+/-! ### Levi-Civita connections and the Koszul expression -/
 
 namespace CovariantDerivative
 
@@ -328,41 +323,32 @@ variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
-
-/-- A covariant derivative on the tangent bundle of a Riemannian manifold is a *Levi-Civita
-connection* if it is torsion free and compatible with the metric. -/
-structure IsLeviCivita : Prop where
-  /-- A Levi-Civita connection is torsion free. -/
-  torsion_eq_zero : cov.torsion = 0
-  /-- A Levi-Civita connection is compatible with the Riemannian metric. -/
-  isMetricCompatible :
-    CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov
-
-variable {cov} {cov' : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+  {cov cov' : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   {X Y Z : Π x : M, TangentSpace I x} {x : M}
 
 /-- Freedom from torsion of a Levi-Civita connection, in the usable form
-`∇_X Y - ∇_Y X = [X, Y]`: this is `CovariantDerivative.torsion_eq_zero_iff` read off the first
-defining property. -/
-theorem IsLeviCivita.sub_eq_mlieBracket (h : IsLeviCivita cov) (hX : MDiffAt (T% X) x)
-    (hY : MDiffAt (T% Y) x) : cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x :=
-  cov.torsion_eq_zero_iff.mp h.torsion_eq_zero hX hY
+`∇_X Y - ∇_Y X = [X, Y]`: this is `CovariantDerivative.torsion_eq_zero_iff` read off the defining
+property `IsLeviCivitaConnection.torsion`. -/
+theorem IsLeviCivitaConnection.sub_eq_mlieBracket (h : cov.IsLeviCivitaConnection)
+    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
+    cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x :=
+  cov.torsion_eq_zero_iff.mp h.torsion hX hY
 
 /-- Metric compatibility of a Levi-Civita connection, in the usable form
 `X ⟪Y, Z⟫ = ⟪∇_X Y, Z⟫ + ⟪Y, ∇_X Z⟫`: this is
-`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq` read off the second defining
-property. -/
-theorem IsLeviCivita.mvfderiv_inner_eq (h : IsLeviCivita cov) (X : Π x : M, TangentSpace I x)
-    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq` read off the defining property
+`IsLeviCivitaConnection.isMetricCompatible`. -/
+theorem IsLeviCivitaConnection.mvfderiv_inner_eq (h : cov.IsLeviCivitaConnection)
+    (X : Π x : M, TangentSpace I x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     mvfderiv I (fun y ↦ inner ℝ (Y y) (Z y)) x (X x) =
       inner ℝ (cov Y x (X x)) (Z x) + inner ℝ (Y x) (cov Z x (X x)) :=
   h.isMetricCompatible.mvfderiv_inner_eq X hY hZ
 
-/-- **The Koszul formula**: for the Levi-Civita connection, `2 ⟪∇_X Y, Z⟫` is the Koszul
-expression of the metric. -/
-theorem IsLeviCivita.two_inner_eq_koszul (h : IsLeviCivita cov) (hX : MDiffAt (T% X) x)
-    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+/-- **The Koszul formula**: for a Levi-Civita connection, `2 ⟪∇_X Y, Z⟫` is the Koszul expression
+of the metric. Mathlib's `CovariantDerivative.IsLeviCivitaConnection.apply_eq` is the same identity
+with the expression written out; this form is the one `TauCeti.Manifold.koszul` controls. -/
+theorem IsLeviCivitaConnection.two_inner_eq_koszul (h : cov.IsLeviCivitaConnection)
+    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     2 * inner ℝ (cov Y x (X x)) (Z x) = TauCeti.Manifold.koszul I X Y Z x := by
   rw [TauCeti.Manifold.koszul, ← h.sub_eq_mlieBracket hX hY, ← h.sub_eq_mlieBracket hX hZ,
     ← h.sub_eq_mlieBracket hY hZ, h.mvfderiv_inner_eq X hY hZ, h.mvfderiv_inner_eq Y hZ hX,
@@ -374,20 +360,11 @@ theorem IsLeviCivita.two_inner_eq_koszul (h : IsLeviCivita cov) (hX : MDiffAt (T
 
 /-- A covariant derivative on the tangent bundle is a Levi-Civita connection exactly when it
 satisfies the Koszul formula. -/
-theorem isLeviCivita_iff :
-    IsLeviCivita cov ↔ ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄, MDiffAt (T% X) x →
-      MDiffAt (T% Y) x → MDiffAt (T% Z) x →
+theorem isLeviCivitaConnection_iff :
+    cov.IsLeviCivitaConnection ↔ ∀ ⦃x : M⦄ ⦃X Y Z : Π x : M, TangentSpace I x⦄,
+      MDiffAt (T% X) x → MDiffAt (T% Y) x → MDiffAt (T% Z) x →
       2 * inner ℝ (cov Y x (X x)) (Z x) = TauCeti.Manifold.koszul I X Y Z x := by
   refine ⟨fun h _ _ _ _ hX hY hZ ↦ h.two_inner_eq_koszul hX hY hZ, fun h ↦ ⟨?_, ?_⟩⟩
-  · refine cov.torsion_eq_zero_iff.mpr fun {X Y x} hX hY ↦ ?_
-    refine TauCeti.eq_of_forall_inner_section_eq (I := I) (V := fun x : M ↦ TangentSpace I x) E
-      fun Z hZ ↦ ?_
-    have hXY := h hX hY hZ
-    have hYX := h hY hX hZ
-    have key := TauCeti.Manifold.koszul_sub_koszul_swap_first_two
-      (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
-    rw [inner_sub_left]
-    linarith
   · rw [CovariantDerivative.isMetricCompatible_iff]
     intro x X Y Z hX hY hZ
     have hXY := h hX hY hZ
@@ -398,29 +375,37 @@ theorem isLeviCivita_iff :
     simp only
     rw [real_inner_comm (cov Z x (X x)) (Y x)]
     linarith
-
-/-! ### Uniqueness -/
-
-/-- **Uniqueness of the Levi-Civita connection**: two Levi-Civita connections agree on every
-section that is differentiable at the point under consideration. -/
-theorem IsLeviCivita.unique (h : IsLeviCivita cov) (h' : IsLeviCivita cov')
-    (hY : MDiffAt (T% Y) x) : cov Y x = cov' Y x := by
-  refine TauCeti.continuousLinearMap_ext_of_forall_inner_section_eq (I := I)
-    (V := fun x : M ↦ TangentSpace I x) E E fun _ hX _ hZ ↦ ?_
-  have h1 := h.two_inner_eq_koszul hX hY hZ
-  have h2 := h'.two_inner_eq_koszul hX hY hZ
-  linarith
+  · refine cov.torsion_eq_zero_iff.mpr fun {X Y x} hX hY ↦ ?_
+    refine TauCeti.eq_of_forall_inner_section_eq (I := I) (V := fun x : M ↦ TangentSpace I x) E
+      fun Z hZ ↦ ?_
+    have hXY := h hX hY hZ
+    have hYX := h hY hX hZ
+    have key := TauCeti.Manifold.koszul_sub_koszul_swap_first_two
+      (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
+    rw [inner_sub_left]
+    linarith
 
 /-- **Uniqueness of the Levi-Civita connection**, as the vanishing of the endomorphism-valued
-one-form measuring the difference of two connections. -/
-theorem IsLeviCivita.difference_eq_zero (h : IsLeviCivita cov) (h' : IsLeviCivita cov') :
-    cov.difference cov' = 0 := by
+one-form measuring the difference of two connections. On a single differentiable section this is
+Mathlib's `CovariantDerivative.IsLeviCivitaConnection.uniqueness`. -/
+theorem IsLeviCivitaConnection.difference_eq_zero (h : cov.IsLeviCivitaConnection)
+    (h' : cov'.IsLeviCivitaConnection) : cov.difference cov' = 0 := by
   ext x v
   have hv : MDiffAt (T% (extend E v : Π y : M, TangentSpace I y)) x :=
     mdifferentiableAt_extend I E v
   have hd := IsCovariantDerivativeOn.difference_apply cov.isCovariantDerivativeOnUniv
     cov'.isCovariantDerivativeOnUniv (x := x) (Set.mem_univ x) hv
   rw [extend_apply_self] at hd
-  simp [CovariantDerivative.difference, hd, h.unique h' hv]
+  have hu : cov (extend E v) x = cov' (extend E v) x :=
+    ContinuousLinearMap.ext (h.uniqueness (hcov' := h') (hY := hv))
+  simp [CovariantDerivative.difference, hd, hu]
+
+/-- **The Koszul formula** for Mathlib's Levi-Civita connection
+`CovariantDerivative.leviCivitaConnection`, in terms of `TauCeti.Manifold.koszul`. -/
+theorem two_inner_leviCivitaConnection_eq_koszul (hX : MDiffAt (T% X) x)
+    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    2 * inner ℝ (leviCivitaConnection I M Y x (X x)) (Z x) =
+      TauCeti.Manifold.koszul I X Y Z x :=
+  (isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)).two_inner_eq_koszul hX hY hZ
 
 end CovariantDerivative

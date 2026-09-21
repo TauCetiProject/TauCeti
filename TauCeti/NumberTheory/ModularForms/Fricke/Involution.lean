@@ -91,7 +91,7 @@ public noncomputable def frickeScalar (N : ℕ) (k : ℤ) : ℂ :=
 
 Deliberately not `@[simp]`: `frickeScalar N k` is the normal form here, not the expanded product.
 Every statement below is phrased in terms of the named constant, and the two factors only need to
-be visible inside `frickeGL_sq_slash`, which rewrites with this lemma explicitly. -/
+be visible inside `frickeScalar_eq`, which rewrites with this lemma explicitly. -/
 public theorem frickeScalar_def (N : ℕ) (k : ℤ) :
     frickeScalar N k = (N : ℂ) ^ (2 * (k - 1)) * (-(N : ℂ)) ^ (-k) := (rfl)
 
@@ -138,22 +138,16 @@ slash is the constant `|det W²| ^ (k - 1) * (-N) ^ (-k)`. -/
 public theorem frickeGL_sq_slash (k : ℤ) (f : ℍ → ℂ) :
     f ∣[k] (frickeGL ℝ N * frickeGL ℝ N) = frickeScalar N k • f := by
   have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  set u : ℝˣ := Units.mk0 (-(N : ℝ)) (neg_ne_zero.mpr hN) with hu
-  have hdet : ((Matrix.GeneralLinearGroup.scalar (Fin 2) u).det : ℝ) = (N : ℝ) ^ 2 := by
-    rw [Matrix.GeneralLinearGroup.det_scalar]
-    simp [hu, sq]
-  have hpos : 0 < ((Matrix.GeneralLinearGroup.scalar (Fin 2) u).det : ℝ) := by
-    rw [hdet]
-    exact pow_pos ((Nat.cast_pos (α := ℝ)).mpr (NeZero.pos N)) 2
-  have hσ := UpperHalfPlane.σ_eq_refl_of_det_pos hpos
-  ext z
-  rw [ModularForm.slash_apply, frickeGL_sq_eq_scalar hN, ← hu, hσ, glScalar_smul, denom_scalar,
-    hdet, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (N : ℝ) ^ 2)]
-  push_cast [hu, frickeScalar_def]
-  rw [← zpow_natCast (N : ℂ) 2, ← zpow_mul]
-  simp only [ContinuousAlgEquiv.refl_apply, Nat.cast_ofNat, Units.val_mk0, Complex.ofReal_neg,
-    Complex.ofReal_natCast, zpow_neg, Pi.smul_apply, smul_eq_mul]
-  ring
+  rw [frickeGL_sq_eq_scalar hN, ModularForm.slash_scalar, frickeScalar_eq]
+  congr 1
+  -- `ModularForm.slash_scalar` leaves the scalar of `W²`, namely `-N`, raised to `k - 2`.
+  -- Splitting the sign off the base is what turns it into the evaluated form of `frickeScalar`.
+  have hsplit : ((Units.mk0 (-(N : ℝ)) (neg_ne_zero.mpr hN) : ℝˣ) : ℝ) = (-1) * (N : ℝ) := by
+    simp
+  rw [hsplit]
+  push_cast
+  rw [mul_zpow, zpow_sub₀ (by norm_num : (-1 : ℂ) ≠ 0)]
+  norm_num
 
 /-- **Collapsing a Fricke factor**: slashing by `A * W` is `frickeScalar N k •` slashing by
 `A * W⁻¹`, because `A * W = (A * W⁻¹) * W²`. This is the step that lets the two Fricke factors

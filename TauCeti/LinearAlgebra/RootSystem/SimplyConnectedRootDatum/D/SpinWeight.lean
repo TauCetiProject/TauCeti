@@ -41,10 +41,17 @@ index-four root lattice.
 * `TauCeti.DynkinType.typeDSpinWeight`: a spin weight in fundamental-weight coordinates.
 * `TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply`: comparison with the half-integer
   orthonormal coordinates of `TauCeti.spinWeight`.
+* `TauCeti.DynkinType.typeDSpinWeight_univ_apply`,
+  `TauCeti.DynkinType.typeDSpinWeight_univ_eq_single`, and
+  `TauCeti.DynkinType.typeDSpinWeight_univ_erase_last_eq_single`: the terminal and penultimate fork
+  fundamental weights.
 * `TauCeti.DynkinType.span_range_typeDSpinWeight_eq_top`: the spin weights generate the full
   simply connected character lattice.
 * `TauCeti.DynkinType.typeDSpinGraphPerm`: the graph symmetry on the spin basis, with
-  `TauCeti.DynkinType.typeDSpinWeight_typeDSpinGraphPerm_apply` recording its action on weights.
+  `TauCeti.DynkinType.typeDSpinWeight_typeDSpinGraphPerm_apply` recording its action on weights,
+  and `TauCeti.DynkinType.typeDSpinGraphPerm_of_mem` and
+  `TauCeti.DynkinType.typeDSpinGraphPerm_of_notMem` reading the toggle as an erasure or an
+  insertion.
 
 ## References
 
@@ -201,6 +208,20 @@ private theorem symmDiff_singleton_eq_erase_or_insert {α : Type*} [DecidableEq 
   ext x
   by_cases ha : a ∈ s <;> simp [Finset.mem_symmDiff, ha] <;> aesop
 
+/-- **Toggling the final sign of a sign set that carries the final index erases it.** -/
+@[simp]
+theorem typeDSpinGraphPerm_of_mem (n : ℕ) (hn : 1 ≤ n) {s : Finset (Fin n)}
+    (hs : (⟨n - 1, by omega⟩ : Fin n) ∈ s) :
+    typeDSpinGraphPerm n hn s = s.erase (⟨n - 1, by omega⟩ : Fin n) := by
+  rw [typeDSpinGraphPerm_apply, symmDiff_singleton_eq_erase_or_insert, ite_eq_left hs]
+
+/-- **Toggling the final sign of a sign set that lacks the final index inserts it.** -/
+@[simp]
+theorem typeDSpinGraphPerm_of_notMem (n : ℕ) (hn : 1 ≤ n) {s : Finset (Fin n)}
+    (hs : (⟨n - 1, by omega⟩ : Fin n) ∉ s) :
+    typeDSpinGraphPerm n hn s = insert (⟨n - 1, by omega⟩ : Fin n) s := by
+  rw [typeDSpinGraphPerm_apply, symmDiff_singleton_eq_erase_or_insert, ite_eq_right hs]
+
 /-- An index belongs to the graph-transformed sign set precisely when its old membership agrees
 with not being the final index. Thus membership is unchanged away from the final coordinate and
 reversed there. -/
@@ -282,19 +303,18 @@ private theorem typeDSpinWeight_typeDSpinGraphPerm_fork {n : ℕ} (hn : 2 ≤ n)
     apply Fin.ext
     dsimp only
     omega
-  have hpen_not_last : n - 2 + 1 ≠ n := by omega
-  have hlast_is_last : n - 1 + 1 = n := Nat.sub_add_cancel (by omega)
+  have hpen_ne_last : n - 2 ≠ n - 1 := by omega
   constructor
   · rw [typeDSpinWeight_apply, dite_eq_left hpen_lt, hnext,
       typeDSpinWeight_apply, dite_eq_right hlast_not_lt, hprev]
     by_cases hp : (⟨n - 2, by omega⟩ : Fin n) ∈ s <;>
       by_cases hl : (⟨n - 1, by omega⟩ : Fin n) ∈ s <;>
-      simp [mem_typeDSpinGraphPerm_iff, hpen_not_last, hlast_is_last, hp, hl]
+      simp [hpen_ne_last, hp, hl]
   · rw [typeDSpinWeight_apply, dite_eq_right hlast_not_lt, hprev,
       typeDSpinWeight_apply, dite_eq_left hpen_lt, hnext]
     by_cases hp : (⟨n - 2, by omega⟩ : Fin n) ∈ s <;>
       by_cases hl : (⟨n - 1, by omega⟩ : Fin n) ∈ s <;>
-      simp [mem_typeDSpinGraphPerm_iff, hpen_not_last, hlast_is_last, hp, hl]
+      simp [hpen_ne_last, hp, hl]
 
 /-- **The final-sign toggle realizes the type-`D` graph automorphism on spin weights.** Applying
 the fork-node permutation to the fundamental-weight coordinates of a spin weight gives the weight
@@ -354,8 +374,9 @@ private theorem mem_typeDSpinCut_iff {n : ℕ} (i j : Fin n) :
     j ∈ typeDSpinCut i ↔ j ≤ i := by
   simp [typeDSpinCut]
 
-/-- The all-positive sign weight has only its terminal fundamental-weight coordinate nonzero. -/
-private theorem typeDSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
+/-- The all-positive type-`D` spin weight, evaluated at an arbitrary fundamental-weight
+coordinate. -/
+@[simp 1100] theorem typeDSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
     typeDSpinWeight (Finset.univ : Finset (Fin n)) i =
       if (i : ℕ) + 1 = n then 1 else 0 := by
   rw [typeDSpinWeight_apply]
@@ -366,6 +387,52 @@ private theorem typeDSpinWeight_univ_apply {n : ℕ} (i : Fin n) :
   · have heq : (i : ℕ) + 1 = n := by omega
     rw [dite_eq_right hnext, ite_eq_left heq]
     simp
+
+/-- **The all-positive type-`D` spin weight is the terminal fundamental weight.** In fundamental-
+weight coordinates it has value one at the final fork node and zero at every other node. -/
+theorem typeDSpinWeight_univ_eq_single {n : ℕ} (hn : 1 ≤ n) :
+    typeDSpinWeight (Finset.univ : Finset (Fin n)) =
+      Pi.single (⟨n - 1, by omega⟩ : Fin n) 1 := by
+  classical
+  funext i
+  rw [typeDSpinWeight_univ_apply, Pi.single_apply]
+  by_cases hlast : (i : ℕ) + 1 = n
+  · have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
+      apply Fin.ext
+      dsimp only
+      omega
+    rw [ite_eq_left hlast, ite_eq_left hi]
+  · have hi : i ≠ (⟨n - 1, by omega⟩ : Fin n) := by
+      intro hi
+      apply hlast
+      have := congrArg Fin.val hi
+      dsimp only at this ⊢
+      omega
+    rw [ite_eq_right hlast, ite_eq_right hi]
+
+/-- **Erasing the final sign from the all-positive type-`D` spin weight gives the penultimate
+fundamental weight.** This pins the order of the two fork weights under the diagram symmetry. -/
+theorem typeDSpinWeight_univ_erase_last_eq_single {n : ℕ} (hn : 2 ≤ n) :
+    typeDSpinWeight
+        ((Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n)) =
+      Pi.single (⟨n - 2, by omega⟩ : Fin n) 1 := by
+  classical
+  rw [← typeDSpinGraphPerm_of_mem n (by omega) (Finset.mem_univ _)]
+  funext i
+  rw [typeDSpinWeight_typeDSpinGraphPerm_apply hn, typeDSpinWeight_univ_eq_single (by omega),
+    Pi.single_apply, Pi.single_apply]
+  by_cases hpen : (i : ℕ) = n - 2
+  · have hi : i = (⟨n - 2, by omega⟩ : Fin n) := Fin.ext hpen
+    rw [hi]
+    simp
+  · by_cases hlast : (i : ℕ) = n - 1
+    · have hi : i = (⟨n - 1, by omega⟩ : Fin n) := Fin.ext hlast
+      rw [hi]
+      simp [Fin.ext_iff]
+      omega
+    · rw [TauCeti.graphPermD_apply_of_ne_of_ne n hn i hpen hlast]
+      simp only [Fin.ext_iff]
+      simp [hpen, hlast]
 
 private theorem typeDSpinWeight_cut_apply {n : ℕ} (i j : Fin n) :
     typeDSpinWeight (typeDSpinCut i) j =
@@ -380,24 +447,6 @@ private theorem typeDSpinWeight_cut_apply {n : ℕ} (i j : Fin n) :
   · rw [dite_eq_right hjnext]
     simp only [Fin.le_def]
     split_ifs <;> omega
-
-/-- At the terminal node, the cut sign weight is the terminal coordinate basis vector. -/
-private theorem typeDSpinWeight_cut_eq_single_of_isLast {n : ℕ} (i : Fin n)
-    (hi : (i : ℕ) + 1 = n) :
-    typeDSpinWeight (typeDSpinCut i) = Pi.single i 1 := by
-  classical
-  funext j
-  rw [typeDSpinWeight_cut_apply, Pi.single_apply]
-  split_ifs <;> omega
-
-/-- At the penultimate node, the cut sign weight is the penultimate coordinate basis vector. -/
-private theorem typeDSpinWeight_cut_eq_single_of_isPenultimate {n : ℕ} (i : Fin n)
-    (hi : (i : ℕ) + 2 = n) :
-    typeDSpinWeight (typeDSpinCut i) = Pi.single i 1 := by
-  classical
-  funext j
-  rw [typeDSpinWeight_cut_apply, Pi.single_apply]
-  split_ifs <;> omega
 
 /-- Before the two fork nodes, adding the all-positive weight to the cut sign weight gives the
 corresponding coordinate basis vector. -/
@@ -424,11 +473,20 @@ theorem span_range_typeDSpinWeight_eq_top (n : ℕ) :
   rintro _ ⟨i, rfl⟩
   rw [Pi.basisFun_apply]
   by_cases hlast : (i : ℕ) + 1 = n
-  · rw [← typeDSpinWeight_cut_eq_single_of_isLast i hlast]
-    exact Submodule.subset_span ⟨typeDSpinCut i, rfl⟩
+  · have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
+      apply Fin.ext
+      dsimp only
+      omega
+    rw [hi, ← typeDSpinWeight_univ_eq_single (n := n) (by omega)]
+    exact Submodule.subset_span ⟨Finset.univ, rfl⟩
   · by_cases hpenultimate : (i : ℕ) + 2 = n
-    · rw [← typeDSpinWeight_cut_eq_single_of_isPenultimate i hpenultimate]
-      exact Submodule.subset_span ⟨typeDSpinCut i, rfl⟩
+    · have hi : i = (⟨n - 2, by omega⟩ : Fin n) := by
+        apply Fin.ext
+        dsimp only
+        omega
+      rw [hi, ← typeDSpinWeight_univ_erase_last_eq_single (n := n) (by omega)]
+      exact Submodule.subset_span ⟨
+        (Finset.univ : Finset (Fin n)).erase (⟨n - 1, by omega⟩ : Fin n), rfl⟩
     · have hi : (i : ℕ) + 2 < n := by omega
       rw [← typeDSpinWeight_cut_add_univ_eq_single i hi]
       exact Submodule.add_mem _

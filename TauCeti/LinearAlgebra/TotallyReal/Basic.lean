@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.LinearAlgebra.Submodule.Compl
 public import Mathlib.LinearAlgebra.Projection
 
 /-!
@@ -85,22 +85,6 @@ theorem prod {K : F →ₗ[R] F} {M : Submodule R F} (hL : IsTotallyReal J L) (h
 
 end IsTotallyReal
 
-namespace IsCompl
-
-variable {L₁ L₂ : Submodule R E} {M₁ M₂ : Submodule R F}
-
-/-- Products of complementary submodules are complementary.
-
-This is a local helper for the maximal totally real product and doubled-module lemmas below; it
-is `private` because it is not part of the totally real subspace API surface. -/
-private theorem prod (hL : IsCompl L₁ L₂) (hM : IsCompl M₁ M₂) :
-    IsCompl (L₁.prod M₁) (L₂.prod M₂) := by
-  refine IsCompl.of_eq ?_ ?_
-  · rw [Submodule.prod_inf_prod, hL.inf_eq_bot, hM.inf_eq_bot, Submodule.prod_bot]
-  · rw [Submodule.prod_sup_prod, hL.sup_eq_top, hM.sup_eq_top, Submodule.prod_top]
-
-end IsCompl
-
 namespace IsMaximalTotallyReal
 
 variable {J : E →ₗ[R] E} {K : F →ₗ[R] F} {L L' : Submodule R E} {M : Submodule R F}
@@ -134,7 +118,7 @@ theorem prod (hL : IsMaximalTotallyReal J L) (hM : IsMaximalTotallyReal K M) :
     IsMaximalTotallyReal (LinearMap.prodMap J K) (L.prod M) := by
   rw [isMaximalTotallyReal_iff]
   rw [LinearMap.prodMap_map_prod]
-  exact TauCeti.IsCompl.prod hL.isCompl hM.isCompl
+  exact IsCompl.prod hL.isCompl hM.isCompl
 
 end IsMaximalTotallyReal
 
@@ -186,7 +170,7 @@ theorem isMaximalTotallyReal_prod_top_bot_skewSwap :
       ((⊤ : Submodule R E).prod (⊥ : Submodule R E)) := by
   rw [isMaximalTotallyReal_iff]
   rw [map_prod_top_bot_skewSwap]
-  exact TauCeti.IsCompl.prod isCompl_top_bot isCompl_bot_top
+  exact IsCompl.prod isCompl_top_bot isCompl_bot_top
 
 /-- The second factor in `E × E` is maximal totally real for the standard doubled-module complex
 structure. -/
@@ -195,7 +179,7 @@ theorem isMaximalTotallyReal_prod_bot_top_skewSwap :
       ((⊥ : Submodule R E).prod (⊤ : Submodule R E)) := by
   rw [isMaximalTotallyReal_iff]
   rw [map_prod_bot_top_skewSwap]
-  exact TauCeti.IsCompl.prod isCompl_bot_top isCompl_top_bot
+  exact IsCompl.prod isCompl_bot_top isCompl_top_bot
 
 end Submodule
 

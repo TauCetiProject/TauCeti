@@ -24,6 +24,9 @@ preceding filtration step, by
 `pbwMonomial_sub_insertionSort_mem_pbwFiltrationPrevious`. Induction on the filtration degree then
 absorbs this error into shorter ordered monomials.
 
+For an arbitrary Lie homomorphism, the induced enveloping-algebra map sends the ordered monomials
+in a family, and their span, exactly onto those for the image family.
+
 This is the spanning half of the ordered-monomial basis target in Layer 3 of
 `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. Linear independence, and hence the
 full PBW basis, still requires the symmetric-algebra comparison.
@@ -32,6 +35,8 @@ full PBW basis, still requires the symmetric-algebra comparison.
 
 * `TauCeti.UniversalEnvelopingAlgebra.orderedPBWMonomials`: the ordered monomials of length at
   most a specified degree.
+* `TauCeti.UniversalEnvelopingAlgebra.map_span_orderedPBWMonomials`: induced maps carry their
+  spans onto the spans of the corresponding image-family monomials.
 * `TauCeti.UniversalEnvelopingAlgebra.span_orderedPBWMonomials_eq_pbwFiltration`: these monomials
   span exactly the corresponding PBW filtration step.
 * `TauCeti.UniversalEnvelopingAlgebra.span_iUnion_orderedPBWMonomials_eq_top`: all ordered monomials
@@ -45,7 +50,7 @@ full PBW basis, still requires the symmetric-algebra comparison.
 
 public section
 
-universe u v w
+universe u v w x
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -104,6 +109,40 @@ theorem orderedPBWMonomials_zero : orderedPBWMonomials R L e 0 = {1} := by
     exact ⟨[], List.Pairwise.nil, le_rfl, pbwMonomial_nil R L e⟩
 
 end OrderedWords
+
+section Map
+
+variable {M : Type x} [LieRing M] [LieAlgebra R M]
+variable {ι : Type w} [LE ι]
+
+/-- An induced enveloping-algebra map sends the ordered monomials in a family exactly to the
+ordered monomials in its image family. This statement does not require the Lie map or the family
+to be surjective. -/
+@[simp]
+theorem image_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
+    map R f '' orderedPBWMonomials R L e k =
+      orderedPBWMonomials R M (fun i ↦ f (e i)) k := by
+  ext a
+  constructor
+  · rintro ⟨b, hb, rfl⟩
+    rw [mem_orderedPBWMonomials_iff] at hb ⊢
+    obtain ⟨word, hordered, hlength, rfl⟩ := hb
+    exact ⟨word, hordered, hlength, (map_pbwMonomial R f e word).symm⟩
+  · rw [mem_orderedPBWMonomials_iff]
+    rintro ⟨word, hordered, hlength, rfl⟩
+    have hsource : pbwMonomial R L e word ∈ orderedPBWMonomials R L e k :=
+      (mem_orderedPBWMonomials_iff R L e).2 ⟨word, hordered, hlength, rfl⟩
+    exact ⟨pbwMonomial R L e word, hsource, map_pbwMonomial R f e word⟩
+
+/-- The induced enveloping-algebra map carries the span of the ordered monomials in a family
+onto the span of the corresponding ordered monomials in its image family. -/
+@[simp]
+theorem map_span_orderedPBWMonomials (f : LieHom R L M) (e : ι → L) (k : ℕ) :
+    (Submodule.span R (orderedPBWMonomials R L e k)).map (map R f).toLinearMap =
+      Submodule.span R (orderedPBWMonomials R M (fun i ↦ f (e i)) k) := by
+  rw [Submodule.map_span, AlgHom.coe_toLinearMap, image_orderedPBWMonomials R L f e k]
+
+end Map
 
 section Spanning
 

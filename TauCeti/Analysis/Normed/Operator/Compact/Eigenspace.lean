@@ -55,7 +55,8 @@ namespace IsCompactOperator
 
 Unlike Mathlib's `ContinuousLinearMap.finite_dimensional_eigenspace`, this needs no inner product
 and works over any complete nontrivially normed field. -/
-theorem finiteDimensional_eigenspace (hT : IsCompactOperator T) (hμ : μ ≠ 0) :
+theorem _root_.IsCompactOperator.finiteDimensional_eigenspace (hT : IsCompactOperator T)
+    (hμ : μ ≠ 0) :
     FiniteDimensional 𝕜 (eigenspace T.toLinearMap μ) := by
   have hT' := hT.restrict
     ((mem_invtSubmodule_iff_forall_mem_of_mem _).mp
@@ -128,9 +129,11 @@ private theorem finiteDimensional_genEigenspace_nat_of_eigenspace
 /-- Every finite stage of the generalized eigenspace of a compact operator at a nonzero scalar is
 finite dimensional. In particular, compact operators have no infinite-dimensional finite-order
 Jordan block at a nonzero eigenvalue. -/
-theorem finiteDimensional_genEigenspace_nat (hT : IsCompactOperator T) (hμ : μ ≠ 0) (n : ℕ) :
+theorem _root_.IsCompactOperator.finiteDimensional_genEigenspace_nat (hT : IsCompactOperator T)
+    (hμ : μ ≠ 0) (n : ℕ) :
     FiniteDimensional 𝕜 (genEigenspace T.toLinearMap μ n) :=
-  finiteDimensional_genEigenspace_nat_of_eigenspace (finiteDimensional_eigenspace hT hμ) n
+  finiteDimensional_genEigenspace_nat_of_eigenspace
+    (IsCompactOperator.finiteDimensional_eigenspace hT hμ) n
 
 end IsCompactOperator
 

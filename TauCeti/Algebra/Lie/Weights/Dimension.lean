@@ -12,8 +12,6 @@ public import TauCeti.Algebra.Lie.Weights.Diagonalizable
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 
-public section
-
 /-!
 # The dimension count of the root-space decomposition
 
@@ -46,6 +44,8 @@ complement rather than by removing a named zero weight, which need not exist.
   by the weights of `H` on `L`. Only nilpotency of `H` and triangularizability are needed here.
 * `TauCeti.finrank_rootSpace_zero_eq_finrank_cartan`: the zero root space has the dimension of `H`.
 * `TauCeti.finrank_eq_finrank_cartan_add_card_root`: **`dim L = dim H + #Δ`**.
+* `TauCeti.card_root_sum_support_eq_finrank`: the roots together with the support of a base have
+  cardinality `dim L`.
 * `TauCeti.card_root_eq_two_mul_ncard_posRoots`: `#Δ = 2 · #Δ⁺`, and `TauCeti.even_card_root` the
   parity of `#Δ` it gives.
 * `TauCeti.finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots` and
@@ -69,6 +69,8 @@ subalgebra; it is not proved here, and no declaration below claims that pin.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Springer GTM 9 (1972),
   §8.1 (the root-space decomposition) and §10.1 (the pairing of positive and negative roots).
 -/
+
+public section
 
 namespace TauCeti
 
@@ -157,6 +159,14 @@ theorem finrank_eq_finrank_cartan_add_card_root :
   rw [← Finset.sum_compl_add_sum H.root fun α : Weight K H L ↦
       finrank K (rootSpace H (α : H → K)),
     sum_finrank_rootSpace_compl_root H, sum_finrank_rootSpace_root H]
+
+/-- The index set consisting of every root and every simple root has cardinality equal to the
+dimension of the Lie algebra. -/
+theorem card_root_sum_support_eq_finrank (b : (IsKilling.rootSystem H).Base) :
+    Fintype.card (H.root ⊕ b.support) = finrank K L := by
+  rw [Fintype.card_sum, Fintype.card_coe,
+    ← Module.finrank_eq_card_basis b.toCoweightBasis,
+    finrank_eq_finrank_cartan_add_card_root H, Nat.add_comm]
 
 /-- **The number of roots is twice the number of positive roots** for any base, since root
 negation exchanges the positive and the negative roots. -/

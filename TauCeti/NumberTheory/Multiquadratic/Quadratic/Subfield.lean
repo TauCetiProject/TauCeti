@@ -11,12 +11,13 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 /-!
 # Quadratic subfields of a multiquadratic field from subset products
 
-For square roots `root i` of radicands `d i ∈ K` over a field `K` with `2 ≠ 0`, the subset-product
+For square roots `root i` of radicands `d i ∈ K` over a field `K`, the subset-product
 root `∏_{i ∈ S} root i` squares into `K`: its square is the subset product `∏_{i ∈ S} d i` of the
 radicands. Each subset therefore names a simple subfield `K(∏_{i ∈ S} root i)` of the
 multiquadratic field `M = K(rootᵢ : i)`, and under square-class independence the nonempty ones are
 genuinely quadratic and pairwise distinct: the assignment `S ↦ K(∏_{i ∈ S} root i)` from the
-nonempty subsets of the index type is injective. This gives a concrete, arithmetic family of
+nonempty subsets of the index type is injective. Quadraticity asks nothing of the characteristic;
+`2 ≠ 0` enters only for distinctness. This gives a concrete, arithmetic family of
 quadratic subfields that the genus-field constructions consume, complementing the abstract
 subfield/subspace dictionary of `TauCeti.NumberTheory.Multiquadratic.Subfield.Lattice` and
 `TauCeti.NumberTheory.Multiquadratic.Subfield.Degree` (where a quadratic subfield is characterised
@@ -38,10 +39,12 @@ the same simple extension only when their radicands lie in the same square class
 
 ## Provenance
 
-The one-step quadratic normal form this rests on (`mem_sup_adjoin_sq`,
-`finrank_sup_adjoin_simple_eq_mul_two`) is migrated, with the rest of the multiquadratic Layer 0,
-from [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization
-of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The subset-product
+The one-step quadratic normal form this rests on
+(`TauCeti.IntermediateField.mem_sup_adjoin_sq`,
+`IntermediateField.finrank_sup_adjoin_simple_eq_mul_two`) is migrated, with the rest of the
+multiquadratic Layer 0, from
+[kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
+L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture. The subset-product
 description of the quadratic subfields is assembled here from that normal form.
 -/
 
@@ -81,14 +84,18 @@ private theorem prod_root_notMem_bot (hroot : ∀ i, root i ^ 2 = algebraMap K L
 
 /-- **A nonempty subset-product root generates a quadratic subfield.** When the subset product
 `∏_{i ∈ S} d i` of the radicands is not a square, the subset-product root of `S` lies outside `K`
-yet squares into `K`, so `[K(∏_{i ∈ S} root i) : K] = 2`. -/
-theorem finrank_adjoin_prod_root [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+yet squares into `K`, so `[K(∏_{i ∈ S} root i) : K] = 2`.
+
+No assumption on the characteristic of `K` is needed: when `2 = 0` the extension is purely
+inseparable, `T ^ 2 - ∏_{i ∈ S} d i` being `(T - ∏_{i ∈ S} root i) ^ 2`, but it is still
+quadratic. -/
+theorem finrank_adjoin_prod_root (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     {S : Finset ι} (hSsq : ¬ IsSquare (∏ i ∈ S, d i)) :
     Module.finrank K (IntermediateField.adjoin K {∏ i ∈ S, root i}) = 2 := by
   have hx2 : (∏ i ∈ S, root i) ^ 2 ∈ (⊥ : IntermediateField K L) := by
     rw [prod_root_sq hroot]; exact IntermediateField.algebraMap_mem _ _
   have hxb := prod_root_notMem_bot hroot hSsq
-  have h := finrank_sup_adjoin_simple_eq_mul_two (⊥ : IntermediateField K L) hx2 hxb
+  have h := (⊥ : IntermediateField K L).finrank_sup_adjoin_simple_eq_mul_two hx2 hxb
   rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at h
 
 /-- **A subset-product subfield sits inside the multiquadratic field.** For any subset `S`, the

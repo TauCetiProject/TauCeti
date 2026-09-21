@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 import Mathlib.FieldTheory.KummerPolynomial
+import Mathlib.Data.Nat.Squarefree
 
 /-!
 # The `AdjoinRoot (X² + 21)` model of `ℚ(√-21)`
@@ -16,9 +18,11 @@ import Mathlib.FieldTheory.KummerPolynomial
 The concrete number field `AdjoinRoot (X² + 21)` serving as the canonical model of `ℚ(√-21)`,
 together with its integral generator. This presentation datum is foundational: it is shared by both
 the class-number and the `2`-rank worked examples for this field, so it lives here rather than in
-either of them.
+either of them. The squarefreeness of `-21` is shared with the genus-field example.
 
 ## Main results
+
+* `TauCeti.Multiquadratic.squarefree_neg_twenty_one`: the radicand `-21` is squarefree.
 
 * `TauCeti.NumberField.exists_minpoly_eq_X_sq_add_twenty_one_and_adjoin_eq_top`: the model has an
   integral generator with minimal polynomial `X² + 21` generating the field over `ℚ`.
@@ -28,6 +32,16 @@ public section
 
 open NumberField Polynomial
 open scoped NumberField
+
+namespace TauCeti.Multiquadratic
+
+/-- The radicand `-21` is squarefree. -/
+theorem squarefree_neg_twenty_one : Squarefree (-21 : ℤ) := by
+  rw [← Int.squarefree_natAbs]
+  simpa using (Nat.squarefree_mul (by decide : Nat.Coprime 3 7)).mpr
+    ⟨(by decide : Nat.Prime 3).squarefree, (by decide : Nat.Prime 7).squarefree⟩
+
+end TauCeti.Multiquadratic
 
 namespace TauCeti.NumberField
 

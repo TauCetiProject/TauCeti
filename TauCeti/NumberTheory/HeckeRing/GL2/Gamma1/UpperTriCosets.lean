@@ -61,8 +61,9 @@ every power of `T = !![1, 1; 0, 1]` lies in `Γ₁(N)`.
 
 ## Main results
 
-* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`: `diag(1, p)` lies
-  in `Δ₀(N)` at every level, and its matrix.
+* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`, and
+  `HeckeRing.GL2.coe_map_natDiagGL_one`: `diag(1, p)` lies in `Δ₀(N)` at every level, and its
+  matrix over `ℚ` and `ℝ`.
 * `HeckeRing.GL2.natDiagGL_mul_mapGL_T_zpow`: `diag(1, p) · Tᵇ = !![1, b; 0, p]`, the
   reverse inclusion in one line.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_of_dvd`: the factorisation
@@ -121,6 +122,14 @@ lemma coe_natDiagGL_one (hp : 0 < p) :
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
+/-- The real matrix obtained by mapping `diag(1, p)` from `GL₂(ℚ)`, for nonzero `p`. -/
+@[simp] lemma coe_map_natDiagGL_one [NeZero p] :
+    (↑(natDiagGL 2 ![1, p]) : Matrix (Fin 2) (Fin 2) ℚ).map (algebraMap ℚ ℝ) =
+      !![1, 0; 0, (p : ℝ)] := by
+  ext i j
+  rw [coe_natDiagGL_one (Nat.pos_of_neZero p)]
+  fin_cases i <;> fin_cases j <;> simp
+
 /-- **The Hecke double coset of `diag(1, p)` at level `Γ₁(N)`.** For `p ∣ N` this is the coset
 whose slash sum is the classical `Tₚ = Uₚ`; the identification is
 `doubleCoset_natDiagGL_eq_iUnion_rightCosets`, and its operator form lives in
@@ -173,38 +182,29 @@ lemma exists_mem_Gamma1_natDiagGL_mul_of_dvd (hp : 0 < p) {γ : SL(2, ℤ)} (hγ
     {j : ℕ} (hjlt : j < p) (hj : (p : ℤ) ∣ γ 0 1 - γ 0 0 * j) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma1 N ∧
       natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * upperTriRep p ⟨j, hjlt⟩ := by
-  obtain ⟨ha, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
+  obtain ⟨-, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
+  replace hc : (N : ℤ) ∣ γ 1 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp hc
+  replace hd : (N : ℤ) ∣ γ 1 1 - 1 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp <| by simp [hd]
   obtain ⟨m, hm⟩ := hj
   -- the new left factor
   have hdet : (!![γ 0 0, m; (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * j] :
       Matrix (Fin 2) (Fin 2) ℤ).det = 1 := by
-    have hγdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 :=
-      Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
     rw [Matrix.det_fin_two_of]
-    linear_combination hγdet + γ 1 0 * hm
-  obtain ⟨δ, hδmat⟩ : ∃ δ : SL(2, ℤ), (δ : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![γ 0 0, m; (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * j] := ⟨⟨_, hdet⟩, rfl⟩
-  refine ⟨δ, ?_, ?_⟩
-  · refine (Gamma1_mem N δ).mpr ⟨?_, ?_, ?_⟩
-    · simpa [hδmat] using ha
-    · have h : ((γ 1 1 - γ 1 0 * j : ℤ) : ZMod N) = 1 := by push_cast; rw [hd, hc]; ring
-      simpa [hδmat] using h
-    · have h : (((p : ℤ) * γ 1 0 : ℤ) : ZMod N) = 0 := by push_cast; rw [hc]; ring
-      simpa [hδmat] using h
+    linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ + γ 1 0 * hm
+  obtain ⟨δ, e00, e01, e10, e11⟩ : ∃ δ : SL(2, ℤ), (δ 0 0 : ℤ) = γ 0 0 ∧ (δ 0 1 : ℤ) = m ∧
+      (δ 1 0 : ℤ) = (p : ℤ) * γ 1 0 ∧ (δ 1 1 : ℤ) = γ 1 1 - γ 1 0 * j :=
+    ⟨⟨_, hdet⟩, rfl, rfl, rfl, rfl⟩
+  refine ⟨δ, mem_Gamma1_of_dvd_lowerRow ?_ ?_, ?_⟩
+  · rw [e10]
+    exact hc.mul_left _
+  · rw [e11, sub_right_comm]
+    exact hd.sub (hc.mul_right _)
   · refine Units.ext ?_
-    have hmZ : (γ 0 1 : ℤ) = γ 0 0 * j + m * p := by linarith
-    have e00 : (δ 0 0 : ℤ) = γ 0 0 := by rw [hδmat]; simp
-    have e01 : (δ 0 1 : ℤ) = m := by rw [hδmat]; simp
-    have e10 : (δ 1 0 : ℤ) = (p : ℤ) * γ 1 0 := by rw [hδmat]; simp
-    have e11 : (δ 1 1 : ℤ) = γ 1 1 - γ 1 0 * j := by rw [hδmat]; simp
+    have hmZ : (γ 0 1 : ℤ) = γ 0 0 * j + m * p := by linear_combination hm
     rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hp, coe_upperTriRep,
       coe_mapGL_int_rat_fin_two γ, coe_mapGL_int_rat_fin_two δ, e00, e01, e10, e11,
       Matrix.mul_fin_two, Matrix.mul_fin_two]
-    congrm !![?_, ?_; ?_, ?_]
-    · ring1
-    · rw [hmZ]; push_cast; ring1
-    · push_cast; ring1
-    · push_cast; ring1
+    congrm !![?_, ?_; ?_, ?_] <;> push_cast [hmZ] <;> ring1
 
 /-- **The upper-left entry of a level-`N` element is invertible modulo an index supported on the
 level.** If every prime factor of `p` divides `N` and `a ≡ 1 (mod N)`, then `a` is coprime to `p`:
@@ -349,5 +349,21 @@ theorem doubleCoset_out_diagCosetGamma1_eq_iUnion_rightCosets (hp : 0 < p)
     doubleCoset_natDiagGL_eq_iUnion_rightCosets hp hpN]
 
 end HeckeRing.GL2
+
+namespace TauCeti
+
+open HeckeRing.GL2
+
+/-- The right-coset decomposition of `Γ₁(N) diag(1,n) Γ₁(N)` is finite. Stated on the
+underlying rational matrix so instance search does not need to recover its `Δ₀(N)` membership. -/
+instance finite_decompQuotient_natDiagGL_Gamma1 (N n : ℕ) [NeZero N] :
+    Finite (DecompQuotient ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
+      (natDiagGL 2 ![1, n])⁻¹) :=
+  @Finite.of_fintype _ (Subgroup.fintypeOfIndexNeZero
+    (IsHeckeTriple.commensurable_conjAct_inv_left
+      (H₁ := (Gamma1 N).map (mapGL ℚ)) (H₂ := (Gamma1 N).map (mapGL ℚ))
+      (⟨natDiagGL 2 ![1, n], natDiagGL_one_mem_Delta0 N n⟩ : Delta0 N)).1.relIndex_ne_zero)
+
+end TauCeti
 
 end

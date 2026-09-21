@@ -48,8 +48,7 @@ private def structureConstantFiberEquiv (Cᵢ Cⱼ : ConjClasses G) {g h : G}
   invFun p := ⟨
     (conjugateCarrierEquiv s⁻¹ Cᵢ p.1.1, conjugateCarrierEquiv s⁻¹ Cⱼ p.1.2),
     by
-      rw [conjugateCarrierEquiv_apply, conjugateCarrierEquiv_apply, conj_mul, p.2]
-      rw [← hs]
+      rw [conjugateCarrierEquiv_apply, conjugateCarrierEquiv_apply, conj_mul, p.2, ← hs]
       simp [mul_assoc]⟩
   left_inv p := by
     apply Subtype.ext
@@ -154,5 +153,30 @@ theorem structureConstant_mk_one_right (Cᵢ Cₖ : ConjClasses G) :
 theorem structureConstant_mk_one_left (Cⱼ Cₖ : ConjClasses G) :
     structureConstant (ConjClasses.mk (1 : G)) Cⱼ Cₖ = if Cₖ = Cⱼ then 1 else 0 := by
   rw [structureConstant_comm, structureConstant_mk_one_right]
+
+/-- **The structure constant at the class of `g`, as a count of pairs of group elements**: the
+pairs `(x, y)` in `G × G` with `x` in `Cᵢ`, `y` in `Cⱼ` and `x * y = g`. This is
+`TauCeti.structureConstant_mk` with the membership in the two class carriers turned into
+conditions on a pair of group elements, so that it can be compared with, or computed alongside,
+other counts indexed by `G`. -/
+theorem structureConstant_mk_eq_card_filter (Cᵢ Cⱼ : ConjClasses G) (g : G) :
+    structureConstant Cᵢ Cⱼ (ConjClasses.mk g) =
+      {q ∈ (Finset.univ : Finset (G × G)) |
+        ConjClasses.mk q.1 = Cᵢ ∧ ConjClasses.mk q.2 = Cⱼ ∧ q.1 * q.2 = g}.card := by
+  rw [structureConstant_mk]
+  refine Finset.card_bij (fun p _ => ((p.1 : G), (p.2 : G))) ?_ ?_ ?_
+  · rintro ⟨x, y⟩ hp
+    rw [Finset.mem_filter] at hp
+    exact Finset.mem_filter.2 ⟨Finset.mem_univ _,
+      ConjClasses.mem_carrier_iff_mk_eq.1 x.2, ConjClasses.mem_carrier_iff_mk_eq.1 y.2, hp.2⟩
+  · rintro ⟨x, y⟩ _ ⟨x', y'⟩ _ h
+    rw [Prod.mk.injEq] at h
+    exact Prod.ext (Subtype.ext h.1) (Subtype.ext h.2)
+  · rintro ⟨x, y⟩ hq
+    rw [Finset.mem_filter] at hq
+    exact ⟨(⟨x, ConjClasses.mem_carrier_iff_mk_eq.2 hq.2.1⟩,
+        ⟨y, ConjClasses.mem_carrier_iff_mk_eq.2 hq.2.2.1⟩),
+      Finset.mem_filter.2 ⟨Finset.mem_product.2 ⟨Finset.mem_univ _, Finset.mem_univ _⟩,
+        hq.2.2.2⟩, rfl⟩
 
 end TauCeti

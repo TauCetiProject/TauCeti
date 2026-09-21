@@ -42,7 +42,8 @@ depends only on the isomorphism class of `G`.
 * `TauCeti.DerivedCentralQuotient`: the group `[G, G] / Z([G, G])`.
 * `TauCeti.DerivedCentralQuotient.lift`: the factorisation of a surjection onto a centreless group.
 * `TauCeti.DerivedCentralQuotient.congr`: transport of the derived central quotient along an
-  isomorphism of groups, built from the transport `TauCeti.commutatorCongr` of the derived subgroup.
+  isomorphism of groups, built from the transport `MulEquiv.commutatorCongr` of the derived
+  subgroup.
 
 ## Main results
 
@@ -120,7 +121,7 @@ theorem card_dvd_card : Nat.card (DerivedCentralQuotient G) ∣ Nat.card G :=
 quotient. -/
 def lift {K : Type*} [Group K] (f : ↥(commutator G) →* K) (hf : Function.Surjective f)
     (hK : center K = ⊥) : DerivedCentralQuotient G →* K :=
-  QuotientGroup.lift _ f (TauCeti.MonoidHom.center_le_ker f hf hK)
+  QuotientGroup.lift _ f (MonoidHom.center_le_ker f hf hK)
 
 @[simp]
 theorem lift_mk {K : Type*} [Group K] (f : ↥(commutator G) →* K) (hf : Function.Surjective f)
@@ -141,7 +142,7 @@ the quotient sits between `[G, G]` and the centreless group it was mapped onto. 
 theorem lift_surjective {K : Type*} [Group K] (f : ↥(commutator G) →* K)
     (hf : Function.Surjective f) (hK : center K = ⊥) : Function.Surjective (lift f hf hK) :=
   QuotientGroup.lift_surjective_of_surjective _ f hf
-    (TauCeti.MonoidHom.center_le_ker f hf hK)
+    (MonoidHom.center_le_ker f hf hK)
 
 /-! ### The recipe on groups it has already succeeded on -/
 
@@ -151,7 +152,7 @@ def mulEquivOfCenterEqBot [Group.IsPerfect G] (h : center G = ⊥) :
   let e : ↥(commutator G) ≃* G :=
     (MulEquiv.subgroupCongr Group.IsPerfect.commutator_eq_top).trans Subgroup.topEquiv
   have hc : center ↥(commutator G) = ⊥ := by
-    rw [← TauCeti.Subgroup.map_center_eq_center e.symm, h, Subgroup.map_bot]
+    rw [← Subgroup.map_center_eq e.symm, h, Subgroup.map_bot]
   (QuotientGroup.quotientMulEquivOfEq hc).trans (QuotientGroup.quotientBot.trans e)
 
 @[simp]
@@ -212,13 +213,13 @@ Both steps of the recipe are transported: the isomorphism restricts to the deriv
 that restriction carries the centre of the one onto the centre of the other. So the recipe depends
 only on the isomorphism class of `G`. -/
 def congr (ψ : G ≃* G') : DerivedCentralQuotient G ≃* DerivedCentralQuotient G' :=
-  QuotientGroup.congr _ _ (commutatorCongr ψ)
-    (TauCeti.Subgroup.map_center_eq_center (commutatorCongr ψ))
+  QuotientGroup.congr _ _ (MulEquiv.commutatorCongr ψ)
+    (Subgroup.map_center_eq (MulEquiv.commutatorCongr ψ))
 
 @[simp]
 theorem congr_mk (ψ : G ≃* G') (x : ↥(commutator G)) :
     DerivedCentralQuotient.congr ψ (x : DerivedCentralQuotient G) =
-      (commutatorCongr ψ x : DerivedCentralQuotient G') := by
+      (MulEquiv.commutatorCongr ψ x : DerivedCentralQuotient G') := by
   simp only [DerivedCentralQuotient.congr, QuotientGroup.congr_mk]
 
 @[simp]
@@ -239,7 +240,7 @@ theorem congr_symm (ψ : G ≃* G') :
     (DerivedCentralQuotient.congr ψ).symm = DerivedCentralQuotient.congr ψ.symm :=
   MulEquiv.ext fun x => QuotientGroup.induction_on x fun y => by
     simp only [DerivedCentralQuotient.congr, QuotientGroup.congr_symm, QuotientGroup.congr_mk,
-      commutatorCongr_symm]
+      MulEquiv.commutatorCongr_symm]
 
 end DerivedCentralQuotient
 

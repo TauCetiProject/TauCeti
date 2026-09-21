@@ -11,7 +11,7 @@ import TauCeti.Probability.Exchangeability.PermutationExtension
 /-!
 # Monotonicity of finite exchangeability
 
-This file records the Layer 0 implication-lattice API for `ExchangeableAt`: if the first `n`
+This file records the implication-lattice API for `ExchangeableAt`: if the first `n`
 coordinates have permutation-invariant law, then so do the first `m` coordinates for every
 `m ≤ n`. The proof is the finite-dimensional marginal argument: extend a permutation of
 `Fin m` to one of `Fin n`, use exchangeability at `n`, and project the `n`-prefix law back to
@@ -22,7 +22,7 @@ measure-level projection step reuses Tau Ceti's `map_blockLaw_reindex` and `map_
 
 This projection argument is adapted from Tau Ceti's credited
 `Exchangeable.blockLaw_eq_prefixLaw_of_injective` proof in `Contractability.lean`, following the
-`cameronfreer/exchangeability` Layer 0 sources.
+`cameronfreer/exchangeability` sources.
 -/
 
 public section
@@ -79,13 +79,6 @@ theorem of_le {μ : Measure Ω} {X : ℕ → Ω → α} {m n : ℕ}
       intro i j hij
       exact τ.injective (Fin.castLE_injective hmn hij))
     hX
-
-/-- Finite exchangeability at length `n` descends to any strictly shorter prefix length. -/
-theorem of_lt {μ : Measure Ω} {X : ℕ → Ω → α} {m n : ℕ}
-    (h : ExchangeableAt μ X n) (hmn : m < n)
-    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
-    ExchangeableAt μ X m :=
-  h.of_le hmn.le hX
 
 /-- Exchangeability at `n + 1` descends to exchangeability at `n`. -/
 theorem pred {μ : Measure Ω} {X : ℕ → Ω → α} {n : ℕ}

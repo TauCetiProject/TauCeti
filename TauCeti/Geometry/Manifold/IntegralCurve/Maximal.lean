@@ -50,7 +50,8 @@ arbitrary initial time is recovered by translating the parameter with
 
 * `isOpen_maximalIntegralCurveInterval`, `ordConnected_maximalIntegralCurveInterval` and
   `isPreconnected_maximalIntegralCurveInterval`: the maximal interval of existence is an open
-  interval, and `zero_mem_maximalIntegralCurveInterval` puts `0` in it.
+  interval, and `zero_mem_maximalIntegralCurveInterval` puts `0` in it, uniformly in the initial
+  point in `TauCeti.eventually_mem_maximalIntegralCurveInterval`.
 * `isMIntegralCurveOn_maximalIntegralCurve`: the maximal curve is an integral curve of `v` on the
   maximal interval, with `maximalIntegralCurve_zero` giving its value at `0`.
 * `IsMIntegralCurveOn.eqOn_maximalIntegralCurve` and
@@ -63,6 +64,8 @@ arbitrary initial time is recovered by translating the parameter with
   maximal curve has no cluster point in the manifold, with
   `eventually_notMem_nhdsLT_maximalIntegralCurve` and
   `eventually_notMem_nhdsGT_maximalIntegralCurve` the compact-set forms.
+* `maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow`: an interval of existence
+  unbounded on both sides is all of `ℝ`.
 * `maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo`: a maximal curve confined to a
   compact set is defined for all time, and `isMIntegralCurve_maximalIntegralCurve` specializes this
   to a compact manifold: **a `C^1` vector field on a compact manifold is complete**.
@@ -181,6 +184,24 @@ theorem zero_mem_maximalIntegralCurveInterval [CompleteSpace E] [IsManifold I 1 
   rw [Real.ball_eq_Ioo, zero_sub, zero_add] at hγε
   have h0 : (0 : ℝ) ∈ Ioo (-ε) ε := ⟨by linarith, by linarith⟩
   exact hγε.subset_maximalIntegralCurveInterval h0 hγ0 h0
+
+namespace TauCeti
+
+/-- **The domain of the maximal flow contains a neighbourhood of `(x, 0)`.** For a vector field
+which is `C^1` at `x`, every initial point near `x` has a maximal integral curve defined at every
+time near `0`. This is the uniform-in-the-initial-point form of
+`zero_mem_maximalIntegralCurveInterval`. -/
+theorem eventually_mem_maximalIntegralCurveInterval [CompleteSpace E] [IsManifold I 1 M]
+    [BoundarylessManifold I M]
+    (hv : CMDiffAt 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) x) :
+    ∀ᶠ p in 𝓝 ((x, 0) : M × ℝ), p.2 ∈ maximalIntegralCurveInterval v p.1 := by
+  obtain ⟨w, hw, ε, hε, hγ⟩ := exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo hv
+  have h0 : (0 : ℝ) ∈ Ioo (0 - ε) (0 + ε) := by simpa using hε
+  filter_upwards [prod_mem_nhds hw (Ioo_mem_nhds h0.1 h0.2)] with p hp
+  obtain ⟨γ, hγ0, hγ⟩ := hγ 0 p.1 hp.1
+  exact hγ.subset_maximalIntegralCurveInterval h0 hγ0 hp.2
+
+end TauCeti
 
 /-- **The maximal integral curve** of `v` through `x`: at a time of `maximalIntegralCurveInterval
 v x` it is the value there of one integral curve of `v` through `x` defined at that time, chosen
@@ -322,6 +343,21 @@ theorem eventually_notMem_nhdsGT_maximalIntegralCurve [CompleteSpace E]
   obtain ⟨z, -, hz⟩ := hK.exists_mapClusterPt_of_frequently h
   exact not_mapClusterPt_nhdsGT_maximalIntegralCurve hv h0 ha z hz
 
+omit [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
+/-- **The maximal interval of existence is all of `ℝ` once it is unbounded on both sides.** It is
+an interval containing `0`, so unboundedness in both directions leaves no time out. -/
+theorem maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow
+    (h0 : (0 : ℝ) ∈ maximalIntegralCurveInterval v x)
+    (hup : ¬ BddAbove (maximalIntegralCurveInterval v x))
+    (hlow : ¬ BddBelow (maximalIntegralCurveInterval v x)) :
+    maximalIntegralCurveInterval v x = univ := by
+  refine eq_univ_of_forall fun t ↦ ?_
+  rcases le_or_gt 0 t with h | h
+  · obtain ⟨s, hs, hts⟩ := not_bddAbove_iff.mp hup t
+    exact ordConnected_maximalIntegralCurveInterval.out h0 hs ⟨h, hts.le⟩
+  · obtain ⟨s, hs, hst⟩ := not_bddBelow_iff.mp hlow t
+    exact ordConnected_maximalIntegralCurveInterval.out hs h0 ⟨hst.le, h.le⟩
+
 /-- **A maximal integral curve confined to a compact set is defined for all time.** Neither
 endpoint of the maximal interval can be finite, since the escape lemma would force the curve out of
 the compact set there. -/
@@ -348,12 +384,7 @@ theorem maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo [CompleteSpa
     exact hcontra inferInstance
       (mem_of_superset (Ioo_mem_nhdsGT (ha0.trans hb)) hsub)
       (eventually_notMem_nhdsGT_maximalIntegralCurve hv h0 hglb hK)
-  refine eq_univ_of_forall fun t ↦ ?_
-  rcases le_or_gt 0 t with h | h
-  · obtain ⟨s, hs, hts⟩ := not_bddAbove_iff.mp hup t
-    exact ordConnected_maximalIntegralCurveInterval.out h0 hs ⟨h, hts.le⟩
-  · obtain ⟨s, hs, hst⟩ := not_bddBelow_iff.mp hlow t
-    exact ordConnected_maximalIntegralCurveInterval.out hs h0 ⟨hst.le, h.le⟩
+  exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 hup hlow
 
 /-- **A `C^1` vector field on a compact boundaryless manifold is complete**: its maximal integral
 curve through any point is defined for all time. -/

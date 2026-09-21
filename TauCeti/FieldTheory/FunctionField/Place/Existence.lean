@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.LocalSubring
+public import TauCeti.FieldTheory.FunctionField.Place.Approximation
 public import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring
 
 /-!
@@ -17,6 +18,10 @@ a proper nonzero ideal: if `k ⊆ R ⊆ F` and `I` is a proper nonzero ideal of 
 that gives the divisor theory its substance: every element of `F` transcendental over `k` has both
 a zero and a pole, so `ℙ_F` is nonempty and the constants `algebraicClosure k F` are exactly the
 functions regular at every place.
+
+Combined with weak approximation, the existence of poles shows that there are infinitely many
+places (Stichtenoth, Corollary 1.3.2): at finitely many places a single function could be given a
+zero everywhere, and such a function would be transcendental yet have no pole.
 
 The Zorn's lemma half of Theorem 1.1.19 is Mathlib's
 `Ideal.image_subset_nonunits_valuationSubring`, which dominates a proper ideal of a subring of a
@@ -30,14 +35,17 @@ subring is discrete, and that is
 * `TauCeti.Place.exists_ord_pos` and `TauCeti.Place.exists_ord_neg`: an element transcendental over
   the constants has a zero and a pole (Stichtenoth, Corollary 1.1.20).
 * `TauCeti.Place.nonempty`: an algebraic function field has at least one place.
+* `TauCeti.Place.infinite`: an algebraic function field has infinitely many places.
 * `TauCeti.Place.mem_algebraicClosure_iff_forall_mem_integers` and
   `TauCeti.Place.coe_algebraicClosure_eq_iInter_integers`: `algebraicClosure k F = ⋂_P 𝒪_P`, the
   constants are the everywhere-regular functions.
+* `TauCeti.Place.exists_algebraMap_notMem_integers`: every subring with fraction field `F` has a
+  place at infinity.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Theorem 1.1.19 and Corollary 1.1.20.
+  Theorem 1.1.19 and Corollaries 1.1.20 and 1.3.2.
 -/
 
 public section
@@ -46,7 +54,7 @@ open Polynomial
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 
@@ -126,6 +134,18 @@ theorem nonempty (hF : IsFunctionField k F) : Nonempty (Place k F) := by
   obtain ⟨P, -⟩ := exists_ord_pos hF hx
   exact ⟨P⟩
 
+/-- **An algebraic function field has infinitely many places** (Stichtenoth, Corollary 1.3.2).
+Were there only finitely many, weak approximation would give a function with a simple zero at
+every place; having nonzero order somewhere, it would be transcendental over the constants, yet
+it would have no pole. -/
+theorem infinite (hF : IsFunctionField k F) : Infinite (Place k F) := by
+  refine not_finite_iff_infinite.1 fun _ ↦ ?_
+  obtain ⟨g, hg⟩ : ∃ g : F, ∀ P : Place k F, P.ord g = 1 :=
+    exists_forall_ord_eq Function.injective_id fun _ ↦ 1
+  obtain ⟨P⟩ := nonempty hF
+  obtain ⟨Q, hQ⟩ := exists_ord_neg hF (P.transcendental_of_ord_ne_zero (f := g) (by simp [hg]))
+  simp [hg] at hQ
+
 /-! ### The constants are the everywhere-regular functions -/
 
 /-- `algebraicClosure k F = ⋂_P 𝒪_P` (Stichtenoth, Corollary 1.1.20): an element of an algebraic
@@ -143,6 +163,32 @@ theorem coe_algebraicClosure_eq_iInter_integers (hF : IsFunctionField k F) :
     (algebraicClosure k F : Set F) = ⋂ P : Place k F, (P.integers : Set F) := by
   ext f
   simpa using mem_algebraicClosure_iff_forall_mem_integers hF
+
+/-! ### Places at infinity of affine models -/
+
+section PlacesAtInfinity
+
+variable (k F)
+variable {R : Type w} [CommRing R] [Algebra R F] [IsFractionRing R F]
+
+variable (R) in
+/-- **Every affine model of an algebraic function field has a place at infinity.** If no place
+were infinite on `R`, every element of `R` would be regular at every place, hence algebraic over
+`k` (`TauCeti.Place.mem_algebraicClosure_iff_forall_mem_integers`); the algebraic elements form a
+subfield, so every fraction of two elements of `R` would be algebraic too, and `F` is the fraction
+field of `R`. That contradicts the transcendental element of an algebraic function field. -/
+theorem exists_algebraMap_notMem_integers (hF : IsFunctionField k F) :
+    ∃ (P : Place k F) (r : R), algebraMap R F r ∉ P.integers := by
+  by_contra hcon
+  have hmem : ∀ (P : Place k F) (r : R), algebraMap R F r ∈ P.integers :=
+    fun P r ↦ not_not.mp fun hr ↦ hcon ⟨P, r, hr⟩
+  have hR : ∀ r : R, algebraMap R F r ∈ algebraicClosure k F := fun r ↦
+    (mem_algebraicClosure_iff_forall_mem_integers hF).mpr fun P ↦ hmem P r
+  obtain ⟨x, hx⟩ := IsFunctionField.exists_transcendental hF
+  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := R) x
+  exact hx (_root_.mem_algebraicClosure_iff.mp (div_mem (hR a) (hR b)))
+
+end PlacesAtInfinity
 
 end Place
 

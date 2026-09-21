@@ -32,7 +32,7 @@ Commutation is a special case of naturality: the Frobenius endomorphism is the m
 induced by the iterated Frobenius of the value ring, and the graph automorphism is natural in that
 ring because it is conjugation by a permutation matrix whose entries are `0` and `1`, and which is
 therefore fixed entrywise by any ring map. So the commutation is
-`TauCeti.DynkinType.geckPointsMap_comp_geckGraphAutPoints`, read at the iterated Frobenius.
+`TauCeti.DynkinType.map_comp_geckGraphAutPoints`, read at the iterated Frobenius.
 
 Because the two factors commute, the powers of the composite separate: the `m`-th power is
 `γ ^ m ∘ Frob_(q ^ m)`, so a symmetry of order dividing `m` makes it the plain `q ^ m`-power
@@ -85,8 +85,9 @@ reproved.
   Frobenius by the pinned symmetry matrix.
 * `TauCeti.DynkinType.geckTwistedFrobenius_geckRootSubgroupMatrix`: the defining equation on the
   pinned numbered root subgroups.
-* `TauCeti.DynkinType.geckTwistedFrobenius_geckTorusMatrix`: the equation on the pinned weight
-  torus.
+* `TauCeti.DynkinType.geckTwistedFrobenius_geckWeightTorusPoints` and
+  `TauCeti.DynkinType.geckTwistedFrobenius_geckTorusMatrix`: the equation on the pinned weight
+  torus, on the represented torus homomorphism and on the matrix that homomorphism produces.
 * `TauCeti.DynkinType.geckFrobenius_pow` and `TauCeti.DynkinType.geckTwistedFrobenius_pow`: the
   powers of the two endomorphisms, the second separating into `γ ^ m ∘ Frob_(q ^ m)`.
 * `TauCeti.DynkinType.geckTwistedFrobenius_pow_eq_geckFrobenius`: a symmetry of order dividing `m`
@@ -138,11 +139,14 @@ of Lie type are required to satisfy. -/
 theorem geckGraphAutPoints_comp_geckFrobenius :
     (t.geckGraphAutPoints ht hsigma A).toMonoidHom.comp (t.geckFrobenius ht p k A) =
       (t.geckFrobenius ht p k A).comp (t.geckGraphAutPoints ht hsigma A).toMonoidHom := by
-  have hF : t.geckFrobenius ht p k A = t.geckPointsMap ht (iterateFrobenius A p k) :=
+  have hF : t.geckFrobenius ht p k A =
+      (t.geckPointsPresentation ht A).map (t.geckPointsPresentation ht A)
+        (iterateFrobenius A p k) :=
     MonoidHom.ext fun g => Subtype.ext
-      ((t.coe_geckFrobenius ht p k A g).trans (t.coe_geckPointsMap ht _ g).symm)
+      ((t.coe_geckFrobenius ht p k A g).trans
+        ((t.geckPointsPresentation ht A).coe_map (t.geckPointsPresentation ht A) _ g).symm)
   rw [hF]
-  exact (t.geckPointsMap_comp_geckGraphAutPoints ht hsigma (iterateFrobenius A p k)).symm
+  exact (t.map_comp_geckGraphAutPoints ht hsigma (iterateFrobenius A p k)).symm
 
 /-- **The graph-twisted `p ^ k`-power Frobenius on the points of the pinned Geck carrier**, the
 graph automorphism attached to a diagram symmetry composed with the Frobenius endomorphism. The
@@ -199,11 +203,21 @@ theorem geckTwistedFrobenius_geckRootSubgroupMatrix (i : Fin t.rank ⊕ Fin t.ra
         t.geckRootSubgroupPoints ht j A v := by
     apply Subtype.ext
     exact (t.coe_geckRootSubgroupPoints ht j A v).symm
-  rw [geckTwistedFrobenius_apply, hroot, geckFrobenius_geckRootSubgroupPoints, ← hroot,
-    geckGraphAutPoints_geckRootSubgroupMatrix]
+  rw [geckTwistedFrobenius_apply, hroot, geckFrobenius_geckRootSubgroupPoints,
+    geckGraphAutPoints_geckRootSubgroupPoints, ← hroot]
 
-/-- **The twisted Frobenius raises a point of the pinned Geck weight torus to its `p ^ k`-th power
-and relabels its coordinates** by the inverse of the diagram symmetry. -/
+/-- **The twisted Frobenius raises a point of the represented Geck weight torus to its `p ^ k`-th
+power and relabels its coordinates** by the inverse of the diagram symmetry. -/
+@[simp]
+theorem geckTwistedFrobenius_geckWeightTorusPoints (s : Fin t.rank → Aˣ) :
+    t.geckTwistedFrobenius ht hsigma p k A (t.geckWeightTorusPoints ht A s) =
+      t.geckWeightTorusPoints ht A fun j => s (sigma⁻¹ j) ^ p ^ k := by
+  rw [geckTwistedFrobenius_apply, geckFrobenius_geckWeightTorusPoints,
+    geckGraphAutPoints_geckWeightTorusPoints]
+  exact congrArg _ (funext fun j => Pi.pow_apply s (p ^ k) _)
+
+/-- **The twisted Frobenius on the pinned Geck weight torus**, written on the matrix that the
+represented torus produces. -/
 @[simp]
 theorem geckTwistedFrobenius_geckTorusMatrix (s : Fin t.rank → Aˣ) :
     t.geckTwistedFrobenius ht hsigma p k A
@@ -214,13 +228,10 @@ theorem geckTwistedFrobenius_geckTorusMatrix (s : Fin t.rank → Aˣ) :
         t.geckTorusMatrix_mem_geckPoints ht A _⟩ := by
   have htorus (r : Fin t.rank → Aˣ) :
       (⟨t.geckTorusMatrix ht r, t.geckTorusMatrix_mem_geckPoints ht A r⟩ :
-          t.geckPoints ht A) = t.geckWeightTorusPoints ht A r := by
-    apply Subtype.ext
-    exact (t.coe_geckWeightTorusPoints ht A r).symm
-  rw [geckTwistedFrobenius_apply, ← geckPoints_mk_geckTorusMatrix]
-  rw [htorus, geckFrobenius_geckWeightTorusPoints, ← htorus, geckPoints_mk_geckTorusMatrix,
-    geckGraphAutPoints_geckTorusMatrix]
-  exact Subtype.ext (congrArg (t.geckTorusMatrix ht) (funext fun j => Pi.pow_apply s (p ^ k) _))
+          t.geckPoints ht A) = t.geckWeightTorusPoints ht A r :=
+    Subtype.ext (t.coe_geckWeightTorusPoints ht A r).symm
+  rw [← geckPoints_mk_geckTorusMatrix, htorus, geckTwistedFrobenius_geckWeightTorusPoints,
+    ← htorus]
 
 /-! ## The degenerate parameters
 

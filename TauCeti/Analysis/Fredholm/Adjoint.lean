@@ -25,14 +25,14 @@ surjective, which removes the closure from Mathlib's general identity
 
 ## Main declarations
 
-* `TauCeti.ContinuousLinearMap.orthogonalKerEquivRange`: the restriction of a closed-range
+* `ContinuousLinearMap.orthogonalKerEquivRange`: the restriction of a closed-range
   operator to the orthogonal complement of its kernel.
-* `TauCeti.ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range`: the
+* `ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range`: the
   closed-range theorem for adjoints.
-* `TauCeti.ContinuousLinearMap.isClosed_range_adjoint_iff`: an operator has closed range if and
+* `ContinuousLinearMap.isClosed_range_adjoint_iff`: an operator has closed range if and
   only if its adjoint does.
 * `ContinuousLinearMap.IsFredholm.adjoint`: the adjoint of a Fredholm operator is Fredholm.
-* `TauCeti.ContinuousLinearMap.index_adjoint`: taking the adjoint negates the Fredholm index.
+* `ContinuousLinearMap.index_adjoint`: taking the adjoint negates the Fredholm index.
 
 The argument and index convention follow McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -49,7 +49,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
 variable [NormedAddCommGroup F]
 
-namespace ContinuousLinearMap
+section
 
 section Restriction
 
@@ -57,7 +57,7 @@ variable [NormedSpace 𝕜 F] [CompleteSpace F]
 
 /-- The restriction of a closed-range operator to the orthogonal complement of its kernel is a
 continuous linear equivalence onto its range. -/
-noncomputable def orthogonalKerEquivRange (T : E →L[𝕜] F)
+noncomputable def _root_.ContinuousLinearMap.orthogonalKerEquivRange (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ ≃L[𝕜]
       LinearMap.range (T : E →ₗ[𝕜] F) := by
@@ -71,9 +71,9 @@ noncomputable def orthogonalKerEquivRange (T : E →L[𝕜] F)
 
 /-- The closed-range restriction equivalence acts by the original operator. -/
 @[simp]
-theorem orthogonalKerEquivRange_apply (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.orthogonalKerEquivRange_apply (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F))
-    (x : (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ) : (orthogonalKerEquivRange T hT x :
+    (x : (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ) : (ContinuousLinearMap.orthogonalKerEquivRange T hT x :
       F) = T x := by
   let : CompleteSpace (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ :=
     (LinearMap.ker (T : E →ₗ[𝕜] F)).isClosed_orthogonal.completeSpace_coe
@@ -92,25 +92,24 @@ theorem orthogonalKerEquivRange_apply (T : E →L[𝕜] F)
 /-- Applying a closed-range operator to the inverse of its orthogonal-kernel restriction
 recovers the given range element. -/
 @[simp]
-theorem orthogonalKerEquivRange_symm_apply (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.orthogonalKerEquivRange_symm_apply (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F))
     (y : LinearMap.range (T : E →ₗ[𝕜] F)) :
-    T ((orthogonalKerEquivRange T hT).symm y) = (y : F) :=
-  (orthogonalKerEquivRange_apply T hT _).symm.trans <|
-    congr_arg Subtype.val ((orthogonalKerEquivRange T hT).apply_symm_apply y)
+    T ((ContinuousLinearMap.orthogonalKerEquivRange T hT).symm y) = (y : F) :=
+  (ContinuousLinearMap.orthogonalKerEquivRange_apply T hT _).symm.trans <|
+    congr_arg Subtype.val ((ContinuousLinearMap.orthogonalKerEquivRange T hT).apply_symm_apply y)
 
 end Restriction
 
-end ContinuousLinearMap
+end
 
 section HilbertCodomain
 
 variable [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
-namespace ContinuousLinearMap
 
 /-- The adjoint of a continuous linear equivalence is bijective. -/
-private theorem adjoint_bijective (e : E ≃L[𝕜] F) :
+private theorem _root_.ContinuousLinearMap.adjoint_bijective (e : E ≃L[𝕜] F) :
     Function.Bijective ((e : E →L[𝕜] F)†) := by
   let A : F →L[𝕜] E := ((e : E →L[𝕜] F)†)
   let B : E →L[𝕜] F := ((e.symm : F →L[𝕜] E)†)
@@ -137,7 +136,7 @@ private theorem adjoint_bijective (e : E ≃L[𝕜] F) :
 /-- The adjoint maps into the orthogonal complement of the kernel. Mathlib's
 `ContinuousLinearMap.orthogonal_ker` identifies `(ker T)ᗮ` with the *closure* of the adjoint's
 range, and the range is contained in its closure. -/
-private theorem adjoint_mem_orthogonal_ker (T : E →L[𝕜] F) (y : F) :
+private theorem _root_.ContinuousLinearMap.adjoint_mem_orthogonal_ker (T : E →L[𝕜] F) (y : F) :
     (T†) y ∈ (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ := by
   rw [T.orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
@@ -145,68 +144,70 @@ private theorem adjoint_mem_orthogonal_ker (T : E →L[𝕜] F) (y : F) :
 /-- The adjoint of `T`, restricted to the range of `T` and corestricted to `(ker T)ᗮ`, is
 surjective: it *is* the adjoint of the isomorphism `(ker T)ᗮ ≃L range T`, and the adjoint of an
 isomorphism is bijective. -/
-private theorem codRestrict_domRestrict_adjoint_surjective (T : E →L[𝕜] F)
+private theorem _root_.ContinuousLinearMap.codRestrict_domRestrict_adjoint_surjective
+    (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     Function.Surjective
       (((T†).domRestrict (LinearMap.range (T : E →ₗ[𝕜] F))).codRestrict
-        (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ fun y => adjoint_mem_orthogonal_ker T y) := by
+        (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T
+          y) := by
   set K := LinearMap.ker (T : E →ₗ[𝕜] F) with hK
   set R := LinearMap.range (T : E →ₗ[𝕜] F) with hR
-  set e : Kᗮ ≃L[𝕜] R := orthogonalKerEquivRange T hT with he
+  set e : Kᗮ ≃L[𝕜] R := ContinuousLinearMap.orthogonalKerEquivRange T hT with he
   have he_apply (x : Kᗮ) : (e x : F) = T (x : E) := by
-    simpa only [he] using orthogonalKerEquivRange_apply T hT x
+    simpa only [he] using ContinuousLinearMap.orthogonalKerEquivRange_apply T hT x
   -- Peeling both restriction wrappers off the corestricted adjoint, once and by name.
   have hcoe (y : R) :
-      ((((T†).domRestrict R).codRestrict Kᗮ (fun y => adjoint_mem_orthogonal_ker T y)) y : E)
+      ((((T†).domRestrict R).codRestrict Kᗮ
+          (fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T y)) y : E)
         = (T†) (y : F) :=
     (ContinuousLinearMap.coe_codRestrict_apply _ _ _ y).trans
       (congrFun (ContinuousLinearMap.coe_domRestrict (T†) R) y)
-  have hB : ((T†).domRestrict R).codRestrict Kᗮ (fun y => adjoint_mem_orthogonal_ker T y)
+  have hB : ((T†).domRestrict R).codRestrict Kᗮ
+    (fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T y)
       = ((e : Kᗮ →L[𝕜] R)†) :=
     (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun y x => by
       rw [Submodule.coe_inner, hcoe, Submodule.coe_inner, T.adjoint_inner_left,
         ContinuousLinearEquiv.coe_coe, he_apply]
   rw [hB]
-  exact (adjoint_bijective e).2
+  exact (ContinuousLinearMap.adjoint_bijective e).2
 
 /-- A continuous linear map with closed range has adjoint range equal to the orthogonal
 complement of its kernel. -/
-theorem range_adjoint_eq_orthogonal_ker_of_isClosed_range (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     LinearMap.range (T† : F →ₗ[𝕜] E) =
       (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ := by
   refine le_antisymm ?_ fun x hx => ?_
   · rintro _ ⟨y, rfl⟩
-    exact adjoint_mem_orthogonal_ker T y
-  · obtain ⟨y, hy⟩ := codRestrict_domRestrict_adjoint_surjective T hT ⟨x, hx⟩
+    exact ContinuousLinearMap.adjoint_mem_orthogonal_ker T y
+  · obtain ⟨y, hy⟩ := ContinuousLinearMap.codRestrict_domRestrict_adjoint_surjective T hT ⟨x, hx⟩
     exact ⟨(y : F), congr_arg Subtype.val hy⟩
 
 /-- If a continuous linear map between Hilbert spaces has closed range, then so does its
 adjoint. -/
-theorem isClosed_range_adjoint_of_isClosed_range (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     IsClosed (LinearMap.range (T† : F →ₗ[𝕜] E) : Set E) := by
-  rw [range_adjoint_eq_orthogonal_ker_of_isClosed_range T hT]
+  rw [ContinuousLinearMap.range_adjoint_eq_orthogonal_ker_of_isClosed_range T hT]
   exact (LinearMap.ker (T : E →ₗ[𝕜] F)).isClosed_orthogonal
 
 /-- A continuous linear map between Hilbert spaces has closed range if and only if its adjoint
 does. -/
 @[simp]
-theorem isClosed_range_adjoint_iff (T : E →L[𝕜] F) :
+theorem _root_.ContinuousLinearMap.isClosed_range_adjoint_iff (T : E →L[𝕜] F) :
     IsClosed (LinearMap.range (T† : F →ₗ[𝕜] E) : Set E) ↔
       IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F) := by
   constructor
   · intro hT
-    simpa using isClosed_range_adjoint_of_isClosed_range (T†) hT
-  · exact isClosed_range_adjoint_of_isClosed_range T
+    simpa using ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range (T†) hT
+  · exact ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range T
 
-end ContinuousLinearMap
 
-namespace ContinuousLinearMap
 
 /-- The cokernel of a closed-range operator is continuously linearly equivalent to the kernel of
 its adjoint. -/
-noncomputable def cokerEquivKerAdjoint (T : E →L[𝕜] F)
+noncomputable def _root_.ContinuousLinearMap.cokerEquivKerAdjoint (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) ≃L[𝕜]
       LinearMap.ker (T† : F →ₗ[𝕜] E) := by
@@ -218,50 +219,51 @@ noncomputable def cokerEquivKerAdjoint (T : E →L[𝕜] F)
 /-- On quotient representatives, the cokernel--adjoint-kernel equivalence is orthogonal
 projection onto the orthogonal complement of the range. -/
 @[simp]
-theorem coe_cokerEquivKerAdjoint_apply_mk (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.coe_cokerEquivKerAdjoint_apply_mk (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) (y : F) :
-    (cokerEquivKerAdjoint T hT (Submodule.Quotient.mk y) : F) =
+    (ContinuousLinearMap.cokerEquivKerAdjoint T hT (Submodule.Quotient.mk y) : F) =
       ((LinearMap.range (T : E →ₗ[𝕜] F))ᗮ.orthogonalProjectionOnto y : F) := by
-  simp [cokerEquivKerAdjoint,
+  simp [ContinuousLinearMap.cokerEquivKerAdjoint,
     Submodule.orthogonalProjectionOnto_apply_eq_projectionOnto]
 
 /-- The inverse cokernel--adjoint-kernel equivalence sends a kernel vector to its quotient
 class. -/
 @[simp]
-theorem cokerEquivKerAdjoint_symm_apply (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.cokerEquivKerAdjoint_symm_apply (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) (y : LinearMap.ker (T† : F →ₗ[𝕜] E)) :
-    (cokerEquivKerAdjoint T hT).symm y = Submodule.Quotient.mk (y : F) := by
+    (ContinuousLinearMap.cokerEquivKerAdjoint T hT).symm y = Submodule.Quotient.mk (y : F) := by
   let range := LinearMap.range (T : E →ₗ[𝕜] F)
   let : CompleteSpace range := hT.completeSpace_coe
-  simp [cokerEquivKerAdjoint]
+  simp [ContinuousLinearMap.cokerEquivKerAdjoint]
 
 /-- The cokernel of the adjoint of a closed-range operator is continuously linearly equivalent to
 the original kernel. -/
-noncomputable def cokerAdjointEquivKer (T : E →L[𝕜] F)
+noncomputable def _root_.ContinuousLinearMap.cokerAdjointEquivKer (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) :
     (E ⧸ LinearMap.range (T† : F →ₗ[𝕜] E)) ≃L[𝕜]
       LinearMap.ker (T : E →ₗ[𝕜] F) :=
-  (cokerEquivKerAdjoint (T†) (isClosed_range_adjoint_of_isClosed_range T hT)).trans
+  (ContinuousLinearMap.cokerEquivKerAdjoint (T†)
+      (ContinuousLinearMap.isClosed_range_adjoint_of_isClosed_range T hT)).trans
     (LinearIsometryEquiv.ofEq _ _ <| by simp).toContinuousLinearEquiv
 
 /-- On quotient representatives, the adjoint-cokernel--kernel equivalence is orthogonal
 projection onto the orthogonal complement of the adjoint range. -/
 @[simp]
-theorem coe_cokerAdjointEquivKer_apply_mk (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.coe_cokerAdjointEquivKer_apply_mk (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) (x : E) :
-    (cokerAdjointEquivKer T hT (Submodule.Quotient.mk x) : E) =
+    (ContinuousLinearMap.cokerAdjointEquivKer T hT (Submodule.Quotient.mk x) : E) =
       ((LinearMap.range (T† : F →ₗ[𝕜] E))ᗮ.orthogonalProjectionOnto x : E) := by
-  simp [cokerAdjointEquivKer, coe_cokerEquivKerAdjoint_apply_mk]
+  simp [ContinuousLinearMap.cokerAdjointEquivKer,
+    ContinuousLinearMap.coe_cokerEquivKerAdjoint_apply_mk]
 
 /-- The inverse adjoint-cokernel--kernel equivalence sends a kernel vector to its quotient
 class. -/
 @[simp]
-theorem cokerAdjointEquivKer_symm_apply (T : E →L[𝕜] F)
+theorem _root_.ContinuousLinearMap.cokerAdjointEquivKer_symm_apply (T : E →L[𝕜] F)
     (hT : IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F)) (x : LinearMap.ker (T : E →ₗ[𝕜] F)) :
-    (cokerAdjointEquivKer T hT).symm x = Submodule.Quotient.mk (x : E) := by
-  simp [cokerAdjointEquivKer]
+    (ContinuousLinearMap.cokerAdjointEquivKer T hT).symm x = Submodule.Quotient.mk (x : E) := by
+  simp [ContinuousLinearMap.cokerAdjointEquivKer]
 
-end ContinuousLinearMap
 
 /-- The adjoint of a Fredholm operator between Hilbert spaces is Fredholm. -/
 theorem _root_.ContinuousLinearMap.IsFredholm.adjoint {T : E →L[𝕜] F}
@@ -285,18 +287,19 @@ theorem isFredholm_adjoint_iff (T : E →L[𝕜] F) :
     simpa using hT.adjoint
   · exact ContinuousLinearMap.IsFredholm.adjoint
 
-namespace ContinuousLinearMap
 
 /-- Taking the adjoint of a Fredholm operator negates its index. -/
 @[simp]
-theorem index_adjoint (T : E →L[𝕜] F) (hT : ContinuousLinearMap.IsFredholm T) :
-    index (T†) = -index T := by
-  rw [index_eq_finrank_sub, index_eq_finrank_sub,
-    ← LinearEquiv.finrank_eq (cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv,
-    LinearEquiv.finrank_eq (cokerAdjointEquivKer T hT.isClosed_range).toLinearEquiv]
+theorem _root_.ContinuousLinearMap.index_adjoint (T : E →L[𝕜] F)
+    (hT : ContinuousLinearMap.IsFredholm T) :
+    ContinuousLinearMap.index (T†) = -ContinuousLinearMap.index T := by
+  rw [ContinuousLinearMap.index_eq_finrank_sub, ContinuousLinearMap.index_eq_finrank_sub,
+    ← LinearEquiv.finrank_eq
+      (ContinuousLinearMap.cokerEquivKerAdjoint T hT.isClosed_range).toLinearEquiv,
+    LinearEquiv.finrank_eq
+      (ContinuousLinearMap.cokerAdjointEquivKer T hT.isClosed_range).toLinearEquiv]
   omega
 
-end ContinuousLinearMap
 
 end HilbertCodomain
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Internal
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
+public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.Algebra.WordFiltration.Basic
 
 /-!
@@ -16,7 +17,8 @@ For a module `M` over a commutative semiring `R`, this file defines the degree-`
 `SymmetricAlgebra R M` to be the `n`-th power of the range of the canonical generator map,
 identifies it with the span of the products of exactly `n` generators, and records that degrees add
 under multiplication. The pieces span the whole symmetric algebra, but no internal direct-sum
-decomposition is proven here.
+decomposition is proven here. A derivation of the symmetric algebra that sends every generator to
+degree one preserves every homogeneous submodule.
 
 ## Main definitions and results
 
@@ -26,6 +28,8 @@ decomposition is proven here.
 * `TauCeti.SymmetricAlgebra.iSup_homogeneousSubmodule_eq_top`: the homogeneous pieces span the
   whole symmetric algebra.
 * `TauCeti.SymmetricAlgebra.instGradedMonoid`: the homogeneous submodules form a graded monoid.
+* `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
+  to degree one preserves every homogeneous submodule.
 
 This is the homogeneous-piece prerequisite for the degreewise PBW comparison map in
 Layer 3, “PBW, a substantial sub-project”, of the
@@ -44,6 +48,11 @@ variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R 
 the canonical generator map. -/
 abbrev homogeneousSubmodule (n : ℕ) : Submodule R (SymmetricAlgebra R M) :=
   LinearMap.range (SymmetricAlgebra.ι R M) ^ n
+
+/-- A symmetric-algebra generator is homogeneous of degree one. -/
+theorem ι_mem_homogeneousSubmodule (x : M) :
+    SymmetricAlgebra.ι R M x ∈ homogeneousSubmodule R M 1 := by
+  simpa only [pow_one] using LinearMap.mem_range_self (SymmetricAlgebra.ι R M) x
 
 /-- A product of `n` symmetric-algebra generators is homogeneous of degree `n`. -/
 theorem prod_map_ι_mem_homogeneousSubmodule (l : List M) :
@@ -100,5 +109,22 @@ theorem iSup_homogeneousSubmodule_eq_top :
 multiplication adds degrees. -/
 instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule R M) :=
   Submodule.nat_power_gradedMonoid (LinearMap.range (SymmetricAlgebra.ι R M))
+
+/-- A derivation of the symmetric algebra sending every generator into degree one preserves every
+homogeneous submodule. -/
+theorem derivation_mem_homogeneousSubmodule
+    (D : Derivation R (SymmetricAlgebra R M) (SymmetricAlgebra R M))
+    (hD : ∀ x, D (SymmetricAlgebra.ι R M x) ∈ homogeneousSubmodule R M 1) {n : ℕ}
+    {p : SymmetricAlgebra R M} (hp : p ∈ homogeneousSubmodule R M n) :
+    D p ∈ homogeneousSubmodule R M n := by
+  induction hp using Submodule.pow_induction_on_left' with
+  | algebraMap r => simp
+  | add x y i _ _ ihx ihy => rw [map_add]; exact Submodule.add_mem _ ihx ihy
+  | mem_mul m hm i x hx ih =>
+      obtain ⟨y, rfl⟩ := hm
+      rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
+      refine Submodule.add_mem _ ?_ (SetLike.mul_mem_graded hx (hD y))
+      rw [Nat.succ_eq_add_one, Nat.add_comm]
+      exact SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule R M y) ih
 
 end TauCeti.SymmetricAlgebra

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
@@ -23,8 +23,17 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
+* `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
+* `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a subspace on which the form restricts
+  nondegenerately is complementary to its polar orthogonal complement.
+* `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular finite-dimensional
+  quadratic space, the orthogonal complement of a regular subspace is regular.
+* `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic form on a nontrivial module is
   nonzero.
+* `TauCeti.nondegenerate_of_span_singleton_eq_top`: a form on a line is nondegenerate when it is
+  nonzero on a spanning vector.
 * `QuadraticMap.Anisotropic.radical_eq_bot`: an anisotropic quadratic map has trivial radical.
 * `QuadraticMap.Anisotropic.nondegenerate`: an anisotropic quadratic map is nondegenerate when
   `2` is invertible.
@@ -42,6 +51,20 @@ namespace QuadraticMap
 
 variable {R M P : Type*} [CommRing R] [AddCommGroup M] [AddCommGroup P]
   [Module R M] [Module R P]
+
+/-- The polar bilinear form of a scalar-valued quadratic map is symmetric. -/
+theorem isSymm_polarBilin (Q : QuadraticForm R M) :
+    LinearMap.BilinForm.IsSymm Q.polarBilin :=
+  ⟨fun x y => polar_comm Q x y⟩
+
+/-- Polarization commutes with restricting a quadratic map to a submodule. -/
+@[simp]
+theorem polarBilin_restrict (Q : QuadraticMap R M P) (W : Submodule R M) :
+    (Q.restrict W).polarBilin = Q.polarBilin.domRestrict₁₂ W W := by
+  ext x y
+  simp only [polarBilin_apply_apply, polar, restrict_apply,
+    LinearMap.domRestrict₁₂_apply]
+  rw [Submodule.coe_add]
 
 /-- Negating a quadratic map does not change its radical. -/
 @[simp]
@@ -70,7 +93,15 @@ end QuadraticMap
 
 namespace QuadraticMap.Nondegenerate
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+variable {R M M' P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup P] [Module R P]
+
+/-- The orthogonal product of two nondegenerate quadratic maps is nondegenerate, when `2` is
+invertible in the coefficient ring. -/
+theorem prod [Invertible (2 : R)] {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
+    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate) : (Q.prod Q').Nondegenerate := by
+  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_prod,
+    hQ.radical_eq_bot, hQ'.radical_eq_bot, Submodule.prod_bot]
 
 /-- A nondegenerate quadratic form on a nontrivial module is nonzero. -/
 theorem ne_zero [Nontrivial M] {Q : QuadraticForm R M} (hQ : Q.Nondegenerate) : Q ≠ 0 := by
@@ -81,6 +112,39 @@ theorem ne_zero [Nontrivial M] {Q : QuadraticForm R M} (hQ : Q.Nondegenerate) : 
     rw [hzero, QuadraticMap.mem_radical_iff']
     simp
   rwa [hQ.radical_eq_bot, Submodule.mem_bot] at hm
+
+section Orthogonal
+
+variable {K : Type*} [Field K] [Invertible (2 : K)] {V : Type*} [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] {Q : QuadraticForm K V} {W : Submodule K V}
+
+/-- A subspace on which a quadratic form restricts nondegenerately is complementary to its
+orthogonal complement. -/
+theorem isCompl_orthogonal (hW : (Q.restrict W).Nondegenerate) :
+    IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) := by
+  apply LinearMap.BilinForm.isCompl_orthogonal_of_restrict_nondegenerate
+    Q.isSymm_polarBilin.isRefl
+  have hpolar := QuadraticMap.nondegenerate_polar_iff.mpr hW
+  rwa [QuadraticMap.polarBilin_restrict] at hpolar
+
+/-- In a regular finite-dimensional quadratic space, the orthogonal complement of a regular
+subspace is regular. -/
+theorem nondegenerate_restrict_orthogonal (hQ : Q.Nondegenerate)
+    (hW : (Q.restrict W).Nondegenerate) :
+    (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate := by
+  have hB : Q.polarBilin.Nondegenerate := QuadraticMap.nondegenerate_polar_iff.mpr hQ
+  have hBsymm : Q.polarBilin.IsRefl := Q.isSymm_polarBilin.isRefl
+  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
+    hW.isCompl_orthogonal
+  apply QuadraticMap.nondegenerate_polar_iff.mp
+  rw [QuadraticMap.polarBilin_restrict]
+  exact
+    (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
+      (B := Q.polarBilin) hBsymm).mpr (by
+      rw [LinearMap.BilinForm.orthogonal_orthogonal hB hBsymm]
+      exact hcomp.symm)
+
+end Orthogonal
 
 end QuadraticMap.Nondegenerate
 
@@ -136,3 +200,23 @@ theorem BilinForm.Nondegenerate.toQuadraticMap [Invertible (2 : R)] {B : LinearM
   · simpa only [LinearMap.smul_apply, smul_eq_mul, h2.mul_right_eq_zero] using hy x
 
 end LinearMap
+
+namespace TauCeti
+
+variable {R V : Type*} [CommRing R] [IsDomain R] [Invertible (2 : R)] [AddCommGroup V]
+  [Module R V]
+
+/-- A form on a line spanned by a vector of nonzero value is nondegenerate. -/
+theorem nondegenerate_of_span_singleton_eq_top {Q : QuadraticForm R V} {v : V}
+    (hspan : Submodule.span R {v} = ⊤) (hv : Q v ≠ 0) : Q.Nondegenerate := by
+  rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_eq_ker_polarBilin,
+    LinearMap.ker_eq_bot']
+  intro z hz
+  obtain ⟨c, rfl⟩ := (Submodule.span_singleton_eq_top_iff R v).mp hspan z
+  have hpolar : QuadraticMap.polar Q (c • v) v = 0 := by
+    simpa using congrArg (fun L : V →ₗ[R] R => L v) hz
+  rw [QuadraticMap.polar_smul_left, QuadraticMap.polar_self] at hpolar
+  have hc : c = 0 := by simpa [(isUnit_of_invertible (2 : R)).ne_zero, hv] using hpolar
+  rw [hc, zero_smul]
+
+end TauCeti
