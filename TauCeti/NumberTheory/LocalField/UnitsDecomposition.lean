@@ -39,8 +39,8 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
 * `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
 * `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
 * `TauCeti.coe_unitsEquivIntProd_apply_snd_eq_mul`: how the splitting changes with the uniformizer.
-* `TauCeti.rootsOfUnityResidueEquiv_unitFiltrationZeroEquivProd_apply_fst`: the root-of-unity
-  component of `u ∈ U(K,0)` has the same residue class as `u`.
+* `TauCeti.rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst`:
+  the root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`.
 
 ## Implementation notes
 
@@ -219,28 +219,28 @@ private theorem rootsOfUnity_residue_le :
 private theorem unitFiltrationZeroReduction_inclusion_symm (α : 𝓀[K]ˣ) :
     unitFiltrationZeroReduction K (Subgroup.inclusion
       (rootsOfUnity_residue_le K)
-      ((TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField
+      ((TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
         𝒪[K] K).symm α)) = α :=
   Units.ext <| (coe_unitFiltrationZeroReduction K _ _
-    (TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField_symm_apply
+    (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField_symm_apply
       𝒪[K] K α).symm).trans
       (TauCeti.IsLocalRing.residue_teichmuller 𝒪[K] α)
 
 private theorem unitFiltrationZeroReduction_comp_inclusion :
     (unitFiltrationZeroReduction K).comp
         (Subgroup.inclusion (rootsOfUnity_residue_le K)) =
-      (TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField
+      (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
         𝒪[K] K).toMonoidHom := by
   ext1 ζ
   obtain ⟨α, rfl⟩ :=
-    (TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField
+    (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
       𝒪[K] K).symm.surjective ζ
   simp [unitFiltrationZeroReduction_inclusion_symm]
 
 /-- The projection `U(K,0) →* μ_{q-1}(K)`: the Teichmüller representative of the residue class. -/
 private def teichmullerProjection :
     unitFiltration K 0 →* rootsOfUnity (Nat.card 𝓀[K] - 1) K :=
-  (TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField
+  (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
     𝒪[K] K).symm.toMonoidHom.comp (unitFiltrationZeroReduction K)
 
 private theorem teichmullerProjection_inclusion (ζ : rootsOfUnity (Nat.card 𝓀[K] - 1) K) :
@@ -312,9 +312,9 @@ def unitFiltrationZeroEquivProd :
 
 /-- The root-of-unity component of `u ∈ U(K,0)` has the same residue class as `u`. -/
 @[simp]
-theorem rootsOfUnityResidueEquiv_unitFiltrationZeroEquivProd_apply_fst
+theorem rootsOfUnityAlgebraMulEquivUnitsResidueField_unitFiltrationZeroEquivProd_apply_fst
     (u : unitFiltration K 0) :
-    TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField 𝒪[K] K
+    TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[K] K
         (unitFiltrationZeroEquivProd K u).1 =
       unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk u) := by
   simp [unitFiltrationZeroEquivProd, teichmullerProjection, unitFiltrationZeroReduction]

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Teichmuller
 public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.RingTheory.Henselian.Teichmuller

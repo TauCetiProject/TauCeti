@@ -21,6 +21,8 @@ The step is short: the two differ only in their simplicity hypothesis, `IsUnit (
 
 ## Main results
 
+* `TauCeti.HenselianRing.henselianLocalRing`: a local ring that is Henselian at its maximal ideal
+  is a Henselian local ring.
 * `TauCeti.IsAdicComplete.henselianLocalRing`: a local ring that is complete for the adic topology
   of its maximal ideal is a Henselian local ring.
 -/
@@ -31,13 +33,22 @@ namespace TauCeti
 
 open IsLocalRing
 
-/-- A local ring that is complete for the adic topology of its maximal ideal is a Henselian local
-ring. This is Mathlib's `IsAdicComplete.henselianRing` at `I = 𝔪`, whose simplicity hypothesis is
-weaker: it asks the derivative to be a unit in the residue field rather than in the ring, and over
-a local ring the image of a unit is a unit. -/
-instance IsAdicComplete.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
-    [IsAdicComplete (maximalIdeal R) R] : HenselianLocalRing R where
+/-- A local ring that is Henselian at its maximal ideal is a Henselian local ring. The two
+hypotheses differ only in their simplicity condition, which asks the derivative to be a unit in the
+residue field rather than in the ring, and over a local ring the image of a unit is a unit.
+
+This is not an instance: Mathlib already registers the converse implication as one, so the pair
+would form an instance cycle. -/
+theorem HenselianRing.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
+    [HenselianRing R (maximalIdeal R)] : HenselianLocalRing R where
   is_henselian f hf a₀ h₁ h₂ :=
     HenselianRing.is_henselian (I := maximalIdeal R) f hf a₀ h₁ (h₂.map _)
+
+/-- A local ring that is complete for the adic topology of its maximal ideal is a Henselian local
+ring. This is Mathlib's `IsAdicComplete.henselianRing` at `I = 𝔪`, read through
+`TauCeti.HenselianRing.henselianLocalRing`. -/
+instance IsAdicComplete.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
+    [IsAdicComplete (maximalIdeal R) R] : HenselianLocalRing R :=
+  HenselianRing.henselianLocalRing R
 
 end TauCeti

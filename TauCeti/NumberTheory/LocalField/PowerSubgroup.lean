@@ -248,7 +248,7 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
   set μ := rootsOfUnity (Nat.card 𝓀[K] - 1) K
   set V := unitFiltration K 1
   have : Finite μ := .of_equiv _
-    (TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField
+    (TauCeti.IsLocalRing.rootsOfUnityAlgebraMulEquivUnitsResidueField
       𝒪[K] K).symm.toEquiv
   have hn0 : n ≠ 0 := by
     rintro rfl
