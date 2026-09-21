@@ -128,6 +128,19 @@ namespace PassportSpec
 
 variable {n : ℕ}
 
+/-- The cycle partition at a branch point, numbered `0`, `1`, `2` for `0`, `1`, `∞`. -/
+def partition (P : PassportSpec n) (i : Fin 3) : Multiset ℕ :=
+  ![P.lam0, P.lam1, P.laminf] i
+
+@[simp] theorem partition_zero (P : PassportSpec n) : P.partition 0 = P.lam0 := (rfl)
+@[simp] theorem partition_one (P : PassportSpec n) : P.partition 1 = P.lam1 := (rfl)
+@[simp] theorem partition_two (P : PassportSpec n) : P.partition 2 = P.laminf := (rfl)
+
+/-- Passport specifications agree when their reference groups and indexed partitions agree. -/
+theorem ext_partition {P Q : PassportSpec n} (hG : P.G = Q.G)
+    (h : ∀ i, P.partition i = Q.partition i) : P = Q :=
+  PassportSpec.ext hG (h 0) (h 1) (h 2)
+
 /-- A passport is admissible when its degree is nonzero, its reference subgroup is transitive,
 and its three multisets are partitions of the degree into positive parts. -/
 def IsAdmissible (P : PassportSpec n) : Prop :=
@@ -136,6 +149,12 @@ def IsAdmissible (P : PassportSpec n) : Prop :=
     (P.lam0.sum = n ∧ ∀ i ∈ P.lam0, 0 < i) ∧
     (P.lam1.sum = n ∧ ∀ i ∈ P.lam1, 0 < i) ∧
     (P.laminf.sum = n ∧ ∀ i ∈ P.laminf, 0 < i)
+
+/-- Admissibility expressed uniformly over the three branch points. -/
+theorem isAdmissible_iff_partition (P : PassportSpec n) :
+    P.IsAdmissible ↔ n ≠ 0 ∧ IsPretransitive P.G (Fin n) ∧
+      ∀ i, (P.partition i).sum = n ∧ ∀ j ∈ P.partition i, 0 < j := by
+  simp [IsAdmissible, Fin.forall_fin_succ, partition]
 
 theorem IsAdmissible.ne_zero {P : PassportSpec n} (hP : P.IsAdmissible) : n ≠ 0 := hP.1
 
