@@ -62,49 +62,25 @@ theorem IsDoublyEven.directSum (hC : IsDoublyEven C) (hD : IsDoublyEven D) :
 theorem IsEven.of_isMonomialEquivalent (hC : IsEven C) (h : IsMonomialEquivalent C D) :
     IsEven D := by
   rw [isEven_iff] at hC ⊢
-  intro y hy
-  obtain ⟨x, hx, hxy⟩ := h.exists_mem_hammingNorm_eq hy
-  rw [← hxy]
-  exact hC x hx
-
-/-- Permutation equivalence preserves evenness of binary codes. -/
-theorem IsEven.of_isPermutationEquivalent (hC : IsEven C) (h : IsPermutationEquivalent C D) :
-    IsEven D :=
-  hC.of_isMonomialEquivalent h.isMonomialEquivalent
+  simp only [even_iff_two_dvd] at hC ⊢
+  exact (h.forall_dvd_hammingNorm_iff 2).mp hC
 
 /-- Evenness of binary codes is invariant under monomial equivalence. -/
 theorem isEven_iff_of_isMonomialEquivalent (h : IsMonomialEquivalent C D) :
-    IsEven C ↔ IsEven D :=
-  ⟨fun hC ↦ hC.of_isMonomialEquivalent h, fun hD ↦ hD.of_isMonomialEquivalent h.symm⟩
-
-/-- Evenness of binary codes is invariant under permutation equivalence. -/
-theorem isEven_iff_of_isPermutationEquivalent (h : IsPermutationEquivalent C D) :
-    IsEven C ↔ IsEven D :=
-  isEven_iff_of_isMonomialEquivalent h.isMonomialEquivalent
+    IsEven C ↔ IsEven D := by
+  simpa only [isEven_iff, even_iff_two_dvd] using h.forall_dvd_hammingNorm_iff 2
 
 /-- Monomial equivalence preserves double evenness of binary codes. -/
 theorem IsDoublyEven.of_isMonomialEquivalent (hC : IsDoublyEven C)
     (h : IsMonomialEquivalent C D) : IsDoublyEven D := by
   rw [isDoublyEven_iff] at hC ⊢
-  intro y hy
-  obtain ⟨x, hx, hxy⟩ := h.exists_mem_hammingNorm_eq hy
-  rw [← hxy]
-  exact hC x hx
-
-/-- Permutation equivalence preserves double evenness of binary codes. -/
-theorem IsDoublyEven.of_isPermutationEquivalent (hC : IsDoublyEven C)
-    (h : IsPermutationEquivalent C D) : IsDoublyEven D :=
-  hC.of_isMonomialEquivalent h.isMonomialEquivalent
+  exact (h.forall_dvd_hammingNorm_iff 4).mp hC
 
 /-- Double evenness of binary codes is invariant under monomial equivalence. -/
 theorem isDoublyEven_iff_of_isMonomialEquivalent (h : IsMonomialEquivalent C D) :
-    IsDoublyEven C ↔ IsDoublyEven D :=
-  ⟨fun hC ↦ hC.of_isMonomialEquivalent h, fun hD ↦ hD.of_isMonomialEquivalent h.symm⟩
-
-/-- Double evenness of binary codes is invariant under permutation equivalence. -/
-theorem isDoublyEven_iff_of_isPermutationEquivalent (h : IsPermutationEquivalent C D) :
-    IsDoublyEven C ↔ IsDoublyEven D :=
-  isDoublyEven_iff_of_isMonomialEquivalent h.isMonomialEquivalent
+    IsDoublyEven C ↔ IsDoublyEven D := by
+  rw [isDoublyEven_iff, isDoublyEven_iff]
+  exact h.forall_dvd_hammingNorm_iff 4
 
 end BinaryCode
 

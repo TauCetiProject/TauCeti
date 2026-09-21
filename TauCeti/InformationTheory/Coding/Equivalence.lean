@@ -142,15 +142,30 @@ end Monomial
 
 section Relabelling
 
-variable [Semiring R] [DecidableEq R] [Fintype ι] [Fintype κ]
+variable [Semiring R]
 
-/-- A relabelling of finite coordinate spaces preserves Hamming weight.
+/-- A relabelling of coordinate spaces transports the support of a word. -/
+@[simp]
+theorem support_funLeft (e : ι ≃ κ) (x : ι → R) :
+    support (LinearMap.funLeft R R e.symm x) = e '' support x := by
+  rw [Equiv.image_eq_preimage_symm]
+  ext j
+  simp [Function.mem_support]
 
-This is deliberately not a `simp` lemma: `LinearEquiv.funCongrLeft_apply` rewrites its
-left-hand side to the `LinearMap.funLeft` normal form, which the `simpNF` linter rejects. -/
-theorem hammingNorm_funCongrLeft (e : ι ≃ κ) (x : ι → R) :
-    hammingNorm (LinearEquiv.funCongrLeft R R e.symm x) = hammingNorm x :=
+/-- A relabelling of finite coordinate spaces preserves Hamming weight. -/
+@[simp]
+theorem hammingNorm_funLeft [DecidableEq R] [Fintype ι] [Fintype κ]
+    (e : ι ≃ κ) (x : ι → R) :
+    hammingNorm (LinearMap.funLeft R R e.symm x) = hammingNorm x :=
   Equiv.hammingNorm_comp e.symm x
+
+/-- A relabelling of finite coordinate spaces preserves Hamming distance. -/
+@[simp]
+theorem hammingDist_funLeft [DecidableEq R] [Fintype ι] [Fintype κ]
+    (e : ι ≃ κ) (x y : ι → R) :
+    hammingDist (LinearMap.funLeft R R e.symm x) (LinearMap.funLeft R R e.symm y) =
+      hammingDist x y :=
+  Equiv.hammingDist_comp e.symm x y
 
 end Relabelling
 
@@ -303,6 +318,20 @@ theorem IsMonomialEquivalent.exists_mem_hammingNorm_eq [Fintype ι] [Fintype κ]
   obtain ⟨u, e, rfl⟩ := h
   obtain ⟨x, hx, rfl⟩ := hy
   exact ⟨x, hx, (hammingNorm_monomialEquiv u e x).symm⟩
+
+/-- Monomial equivalence preserves divisibility of all codeword weights. -/
+theorem IsMonomialEquivalent.forall_dvd_hammingNorm_iff [Fintype ι] [Fintype κ]
+    [DecidableEq R] (h : IsMonomialEquivalent C D) (k : ℕ) :
+    (∀ x ∈ C, k ∣ hammingNorm x) ↔ ∀ y ∈ D, k ∣ hammingNorm y := by
+  constructor
+  · intro hC y hy
+    obtain ⟨x, hx, hxy⟩ := h.exists_mem_hammingNorm_eq hy
+    rw [← hxy]
+    exact hC x hx
+  · intro hD x hx
+    obtain ⟨y, hy, hyx⟩ := h.symm.exists_mem_hammingNorm_eq hx
+    rw [← hyx]
+    exact hD y hy
 
 /-- Monomially equivalent codes have the same dimension. -/
 theorem IsMonomialEquivalent.finrank_eq (h : IsMonomialEquivalent C D) :
@@ -474,14 +503,14 @@ theorem hammingNorm_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x : ι → R) :
     hammingNorm (f x) = hammingNorm x := by
   obtain ⟨e, rfl⟩ := hf
-  exact hammingNorm_funCongrLeft e x
+  exact hammingNorm_funLeft e x
 
 /-- A permutation-group element preserves Hamming distance. -/
 theorem hammingDist_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x y : ι → R) :
     hammingDist (f x) (f y) = hammingDist x y := by
   obtain ⟨e, rfl⟩ := hf
-  exact Equiv.hammingDist_comp e.symm x y
+  exact hammingDist_funLeft e x y
 
 variable (C : Submodule R (ι → R))
 
