@@ -64,6 +64,7 @@ theorem gradedCochainComplex_X (p : ℤ) :
     (gradedCochainComplex ℳ dM hdeg hsq).X p = ModuleCat.of R (ℳ p) :=
   (rfl)
 
+@[simp]
 theorem gradedCochainComplex_d (p : ℤ) :
     (gradedCochainComplex ℳ dM hdeg hsq).d p (p + 1) =
       ModuleCat.ofHom (dM.restrict (p := ℳ p) (q := ℳ (p + 1)) fun _ hx ↦ hdeg.map_mem hx) := by
