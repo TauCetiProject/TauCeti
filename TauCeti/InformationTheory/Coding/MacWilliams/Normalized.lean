@@ -33,6 +33,7 @@ Cambridge University Press (2003), §7.2.
 public section
 
 namespace TauCeti
+namespace Submodule
 
 open _root_.MvPolynomial
 
@@ -108,4 +109,5 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual
   ext i
   fin_cases i <;> simp
 
+end Submodule
 end TauCeti
