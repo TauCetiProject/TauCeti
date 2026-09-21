@@ -28,9 +28,11 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.BrauerGroup.BaseChange
 
 /-!
-# The Brauer class of the real quaternions has order two
+# Quaternion-symbol classes and the Brauer class of the real quaternions
 
-This file applies the general Brauer-group API to the real quaternions. Quaternion conjugation
+For a field `K` with `2` invertible, this file defines the Brauer class of each quaternion symbol
+`ℍ[K,a,b]`. It then applies the general Brauer-group API to the real quaternions. Quaternion
+conjugation
 identifies `ℍ[ℝ]` with its opposite algebra, so its Brauer class is self-inverse; and `ℍ[ℝ]` is a
 central division algebra of dimension `4`, so that class is not the identity
 (`TauCeti.BrauerGroup.mk_eq_one_iff_finrank_eq_one`). Together these say the class has order exactly
@@ -73,6 +75,11 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 /-- The Brauer class of the quaternion symbol `(a,b)`. -/
 noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
   BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)])
+
+@[simp]
+theorem quaternionClass_def (a b : Kˣ) :
+    quaternionClass a b = BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)]) :=
+  (rfl)
 
 end BrauerGroup
 

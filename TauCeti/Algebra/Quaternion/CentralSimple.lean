@@ -16,15 +16,17 @@ import Mathlib.Tactic.LinearCombination
 # Central simple quaternion symbol algebras
 
 For a field `K` with `2` invertible, this file proves centrality for the general quaternion algebra
-`ℍ[K,a,b,c]` when `c ≠ 0`, and simplicity when `c * (b ^ 2 + 4 * a) ≠ 0`. Completing the square
+`ℍ[K,a,b,c]` when `c ≠ 0 ∨ b ^ 2 + 4 * a ≠ 0`, and simplicity when
+`c * (b ^ 2 + 4 * a) ≠ 0`. Completing the square
 reduces these cases to a unit-parameter symbol, for which the norm criterion gives either a
 division algebra or a two-by-two matrix algebra. The two-parameter symbol `ℍ[K,a,b]` is the
 specialization used by the Brauer-valued invariants.
 
 ## Main results
 
-* `TauCeti.QuaternionAlgebra.isCentral_of_j_sq_ne_zero`: a quaternion algebra with nonzero
-  `j`-square is central.
+* `TauCeti.QuaternionAlgebra.isCentral_of_j_sq_ne_zero_or_discr_ne_zero`: a quaternion algebra
+  with nonzero `j`-square or discriminant is central.
+* `TauCeti.QuaternionAlgebra.isCentral_of_j_sq_ne_zero`: the nonzero `j`-square specialization.
 * `TauCeti.QuaternionAlgebra.isSimpleRing_of_mul_discr_ne_zero`: a quaternion algebra with
   nonzero `j`-square and nonzero discriminant is simple.
 * `TauCeti.QuaternionAlgebra.mem_center_iff`: a central element of a unit-parameter symbol has
@@ -172,7 +174,9 @@ private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
   · exact (mul_eq_zero.mp hJ).resolve_left (mul_ne_zero h2 hb)
   · exact (mul_eq_zero.mp hK).resolve_left (mul_ne_zero h2 hb)
 
-/-- A central element of a unit-parameter quaternion symbol has no imaginary part. -/
+/-- An element of a unit-parameter quaternion symbol is central if and only if all three imaginary
+coordinates vanish. -/
+@[simp]
 theorem mem_center_iff (a : K) (b : Kˣ) {x : ℍ[K,a,(b : K)]} :
     x ∈ Subalgebra.center K ℍ[K,a,(b : K)] ↔
       x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
@@ -225,15 +229,38 @@ private theorem isSimpleRing_of_isUnit_or_split :
 instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] :=
   isSimpleRing_of_isUnit_or_split a b
 
+/-- A quaternion algebra with nonzero `j`-square or discriminant is central. -/
+theorem isCentral_of_j_sq_ne_zero_or_discr_ne_zero {a b c : K}
+    (h : c ≠ 0 ∨ b ^ 2 + 4 * a ≠ 0) :
+    Algebra.IsCentral K ℍ[K,a,b,c] := by
+  rcases h with hc | hd
+  · let v : Kˣ := Units.mk0 c hc
+    have htarget : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,c] :=
+      instIsCentral (b ^ 2 + 4 * a) v
+    exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,c])
+      (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
+  · by_cases hc : c = 0
+    · subst c
+      let v : Kˣ := Units.mk0 (b ^ 2 + 4 * a) hd
+      have htarget : Algebra.IsCentral K ℍ[K,0,0,(b ^ 2 + 4 * a)] :=
+        instIsCentral 0 v
+      have hsource : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,0] :=
+        Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,0,0,(b ^ 2 + 4 * a)])
+          (D' := ℍ[K,b ^ 2 + 4 * a,0,0]) (h := htarget)
+          (_root_.QuaternionAlgebra.swapEquiv (b ^ 2 + 4 * a) 0).symm
+      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,0])
+        (D' := ℍ[K,a,b,0]) (h := hsource) (completeSquareEquiv a b 0).symm
+    · let v : Kˣ := Units.mk0 c hc
+      have htarget : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,c] :=
+        instIsCentral (b ^ 2 + 4 * a) v
+      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,c])
+        (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
+
 /-- A quaternion algebra with nonzero `j`-square is central. -/
 theorem isCentral_of_j_sq_ne_zero {a b c : K}
     (hc : c ≠ 0) :
-    Algebra.IsCentral K ℍ[K,a,b,c] := by
-  let v : Kˣ := Units.mk0 c hc
-  have htarget : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,c] :=
-    instIsCentral (b ^ 2 + 4 * a) v
-  exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,c])
-    (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
+    Algebra.IsCentral K ℍ[K,a,b,c] :=
+  isCentral_of_j_sq_ne_zero_or_discr_ne_zero (Or.inl hc)
 
 /-- A quaternion algebra with nonzero discriminant and nonzero `j`-square is simple. -/
 theorem isSimpleRing_of_mul_discr_ne_zero {a b c : K}
