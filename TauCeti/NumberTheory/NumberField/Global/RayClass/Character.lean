@@ -14,7 +14,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 A ray class character of a modulus `𝔪` is a multiplicative character of its finite ray class
 group with values in the complex units.  Composing with `idealClass 𝔪` evaluates it on the
 nonzero integral ideals prime to the finite part of `𝔪`; the coprimality proof remains in the
-domain, so no value is assigned to an ideal at which the character is ramified.
+domain because `idealClass 𝔪` is defined only on those ideals.
 
 When `𝔪 ∣ 𝔫`, pullback along the surjective transition `classMap : Cl_𝔫 → Cl_𝔪` induces a
 character of the larger modulus.  These pullbacks are injective, compose along chains of moduli,
@@ -84,9 +84,17 @@ theorem ext {χ ψ : RayClassCharacter 𝔪}
   obtain ⟨I, rfl⟩ := idealClass_surjective 𝔪 c
   simpa only [onIdeals_apply] using h I
 
-/-- Pull a ray class character back from a modulus `𝔪` to a multiple `𝔫` of that modulus. -/
-noncomputable def induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) : RayClassCharacter 𝔫 :=
-  χ.comp (classMap h)
+/-- Pullback of ray class characters from a modulus `𝔪` to a multiple `𝔫` of that modulus. -/
+noncomputable def induced (h : 𝔪 ∣ 𝔫) : RayClassCharacter 𝔪 →* RayClassCharacter 𝔫 where
+  toFun χ := χ.comp (classMap h)
+  map_one' := by
+    apply MonoidHom.ext
+    intro c
+    simp
+  map_mul' χ ψ := by
+    apply MonoidHom.ext
+    intro c
+    simp
 
 /-- A character induced to a larger modulus is evaluated through the transition map. -/
 @[simp]
@@ -109,29 +117,6 @@ theorem induced_trans (h₁ : 𝔪 ∣ 𝔫) (h₂ : 𝔫 ∣ 𝔬) (χ : RayCla
   intro c
   simp
 
-/-- Pullback of the trivial character is trivial. -/
-@[simp]
-theorem induced_one (h : 𝔪 ∣ 𝔫) : (1 : RayClassCharacter 𝔪).induced h = 1 := by
-  apply MonoidHom.ext
-  intro c
-  simp
-
-/-- Pullback of ray class characters preserves multiplication. -/
-@[simp]
-theorem induced_mul (h : 𝔪 ∣ 𝔫) (χ ψ : RayClassCharacter 𝔪) :
-    (χ * ψ).induced h = χ.induced h * ψ.induced h := by
-  apply MonoidHom.ext
-  intro c
-  simp
-
-/-- Pullback of ray class characters preserves inverses. -/
-@[simp]
-theorem induced_inv (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
-    χ⁻¹.induced h = (χ.induced h)⁻¹ := by
-  apply MonoidHom.ext
-  intro c
-  simp
-
 /-- Increasing the modulus does not identify distinct ray class characters. -/
 theorem induced_injective (h : 𝔪 ∣ 𝔫) :
     Function.Injective (induced h : RayClassCharacter 𝔪 → RayClassCharacter 𝔫) := by
@@ -150,16 +135,17 @@ theorem induced_eq_one_iff (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
   constructor
   · intro hχ
     apply induced_injective h
-    rw [hχ, induced_one]
+    simpa only [map_one] using hχ
   · rintro rfl
-    exact induced_one h
+    exact map_one (induced h)
 
 /-- Change of modulus commutes with evaluation on integral ideals: the induced character at an
 ideal prime to `𝔫` is the original character at the same ideal viewed as prime to `𝔪`. -/
+@[simp]
 theorem onIdeals_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
     (I : integralIdealsPrimeTo 𝔫) :
     (χ.induced h).onIdeals I = χ.onIdeals (integralIdealsPrimeToInclusion h I) := by
-  simp [onIdeals, induced]
+  simp
 
 end RayClassCharacter
 
