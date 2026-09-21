@@ -43,6 +43,8 @@ sum of objects.
 
 Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2; Peters--Steenbrink, *Mixed Hodge
 Structures*, §2.
+
+The categorical bicone construction follows `TauCeti.Geometry.Hodge.Mixed.Prod`.
 -/
 
 public section

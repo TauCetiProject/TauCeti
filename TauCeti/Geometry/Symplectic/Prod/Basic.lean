@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.Geometry.Symplectic.Transport
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # Direct sums of almost complex structures and symplectic forms
@@ -171,8 +172,7 @@ variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 /-- The underlying bilinear form of the direct-sum symplectic form. -/
 def prodBilin (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     LinearMap.BilinForm ℝ (V × W) :=
-  ω₁.toBilinForm.comp (LinearMap.fst ℝ V W) (LinearMap.fst ℝ V W) +
-    ω₂.toBilinForm.comp (LinearMap.snd ℝ V W) (LinearMap.snd ℝ V W)
+  ω₁.toBilinForm.prod ω₂.toBilinForm
 
 @[simp]
 private lemma prodBilin_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
@@ -185,21 +185,7 @@ lemma prodBilin_isAlt (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
 
 lemma prodBilin_nondegenerate (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     (prodBilin ω₁ ω₂).Nondegenerate := by
-  refine ⟨fun p hp => ?_, fun q hq => ?_⟩
-  · have h1 : p.1 = 0 := ω₁.separatingLeft p.1 fun x => by
-      have := hp (x, 0)
-      simpa using this
-    have h2 : p.2 = 0 := ω₂.separatingLeft p.2 fun y => by
-      have := hp (0, y)
-      simpa using this
-    exact Prod.ext h1 h2
-  · have h1 : q.1 = 0 := ω₁.separatingRight q.1 fun x => by
-      have := hq (x, 0)
-      simpa using this
-    have h2 : q.2 = 0 := ω₂.separatingRight q.2 fun y => by
-      have := hq (0, y)
-      simpa using this
-    exact Prod.ext h1 h2
+  exact LinearMap.BilinForm.nondegenerate_prod_iff.mpr ⟨ω₁.nondegenerate, ω₂.nondegenerate⟩
 
 /-- The direct-sum symplectic form on `V × W`, given by
 `(ω₁ ⊕ ω₂)((v₁, w₁), (v₂, w₂)) = ω₁(v₁, v₂) + ω₂(w₁, w₂)`. -/

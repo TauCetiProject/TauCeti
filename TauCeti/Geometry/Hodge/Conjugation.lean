@@ -744,6 +744,7 @@ theorem latticeConj_prodMap (x : Vℂ × V'ℂ) :
   | add x y hx hy => simp [hx, hy]
 
 /-- The bundled lattice conjugation of a product of complexifications acts componentwise. -/
+@[simp]
 theorem latticeConjugation_prodMap_toEquiv_apply (x : Vℂ × V'ℂ) :
     (latticeConjugation (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ)).toEquiv x =
       ((latticeConjugation hℂ).toEquiv x.1, (latticeConjugation h'ℂ).toEquiv x.2) := by
