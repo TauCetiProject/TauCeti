@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.TensorProduct.Free
 import Mathlib.Algebra.Algebra.Rat
 import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Geometry.Hodge.BaseChange
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 
 /-!
 # Scalar extension of an integral bilinear form
@@ -39,6 +40,8 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
   conjugation.
 * `TauCeti.Hodge.integralFormBaseChange_nondegenerate`: the complex extension inherits
   nondegeneracy from the integral form.
+* `TauCeti.Hodge.integralFormBaseChange_prod`: scalar extension of a block-diagonal form is
+  block diagonal.
 * `TauCeti.Hodge.integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul`: the complexified
   form computes the rationalified one on purely rational vectors.
 -/
@@ -273,5 +276,25 @@ theorem integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul (hℚ : IsB
       simp [TensorProduct.tmul_add, h₁, h₂]
 
 end Rational
+
+/-! ### Products -/
+
+section Prod
+
+variable {A : Type*} {V' : Type*} {V_A : Type*} {V'_A : Type*}
+variable [CommRing A] [AddCommGroup V'] [AddCommGroup V_A] [Module A V_A]
+variable [AddCommGroup V'_A] [Module A V'_A]
+variable {ι : V →ₗ[ℤ] V_A} {ι' : V' →ₗ[ℤ] V'_A}
+
+/-- The scalar extension of a block-diagonal integral form is the block-diagonal form of the
+scalar extensions of its two blocks. -/
+theorem integralFormBaseChange_prod (h : IsBaseChange A ι) (h' : IsBaseChange A ι')
+    (Q : LinearMap.BilinForm ℤ V) (Q' : LinearMap.BilinForm ℤ V') :
+    integralFormBaseChange (IsBaseChange.prodMap ι ι' h h') (Q.prod Q') =
+      (integralFormBaseChange h Q).prod (integralFormBaseChange h' Q') :=
+  (integralFormBaseChange_unique _ _ _ fun x y ↦ by
+    simp [LinearMap.prodMap_apply]).symm
+
+end Prod
 
 end TauCeti.Hodge
