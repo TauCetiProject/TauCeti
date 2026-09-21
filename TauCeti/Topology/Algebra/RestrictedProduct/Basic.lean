@@ -47,6 +47,7 @@ def integralSubgroupOf (U V : ∀ i, Subgroup (G i)) :
     Subgroup (Πʳ i, [G i, (U i : Set (G i))]) :=
   (Subgroup.pi Set.univ V).comap RestrictedProduct.coeMonoidHom
 
+/-- Membership means that every coordinate belongs to the corresponding subgroup `V i`. -/
 @[simp]
 theorem mem_integralSubgroupOf (U V : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
@@ -59,6 +60,7 @@ def integralSubgroup (U : ∀ i, Subgroup (G i)) :
     Subgroup (Πʳ i, [G i, (U i : Set (G i))]) :=
   integralSubgroupOf U U
 
+/-- Membership means that every coordinate belongs to the reference subgroup `U i`. -/
 @[simp]
 theorem mem_integralSubgroup (U : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
@@ -69,19 +71,39 @@ variable [∀ i, TopologicalSpace (G i)]
 
 /-- Openness when the second family agrees with the reference family eventually. -/
 theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
-    (hU : ∀ i, IsOpen (U i : Set (G i)))
-    (hV : ∀ i, U i ≠ V i → IsOpen (V i : Set (G i)))
+    (hV : ∀ i, IsOpen (V i : Set (G i)))
     (hUV : ∀ᶠ i in cofinite, U i = V i) :
     IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   classical
   let S : Set ι := {i | U i = V i}
   have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
   have hopenU : IsOpen {x : Πʳ i, [G i, (U i : Set (G i))] |
-      ∀ i, i ∈ S → x i ∈ U i} :=
-    RestrictedProduct.isOpen_forall_imp_mem hU
+      ∀ i, i ∈ S → x i ∈ U i} := by
+    simp_rw +instances [RestrictedProduct.topologicalSpace_eq_iSup cofinite,
+      isOpen_iSup_iff, isOpen_coinduced]
+    intro T hT
+    have hfinite : (S \ T).Finite :=
+      (mem_cofinite.mp (le_principal_iff.mp hT)).subset fun i hi ↦ hi.2
+    have hopen : IsOpen ((S \ T : Set ι).pi fun i ↦ (V i : Set (G i))) :=
+      isOpen_set_pi hfinite (fun i _ ↦ hV i)
+    convert hopen.preimage RestrictedProduct.continuous_coe using 1
+    ext x
+    constructor
+    · intro hx i hi
+      have hi' : U i = V i := hi.1
+      change x i ∈ V i
+      rw [← hi']
+      exact hx i hi.1
+    · intro hx i hi
+      by_cases hiT : i ∈ T
+      · exact x.2 hiT
+      · have hi' : U i = V i := hi
+        change x i ∈ U i
+        rw [hi']
+        exact hx i ⟨hi, hiT⟩
   have hopenV : IsOpen ((Sᶜ : Set ι).pi fun i ↦ (V i : Set (G i)) :
       Set (∀ i, G i)) :=
-    isOpen_set_pi (mem_cofinite.mp hUV) (fun i hi ↦ hV i (fun h ↦ hi h))
+    isOpen_set_pi (mem_cofinite.mp hUV) (fun i _ ↦ hV i)
   have hopen := hopenU.inter (hopenV.preimage RestrictedProduct.continuous_coe)
   convert hopen using 1
   ext x
@@ -138,7 +160,7 @@ theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hU : ∀ i, IsOpen (U i : Set (G i))) :
     IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   simpa [integralSubgroup] using
-    isOpen_forall_mem_of_eventually_eq U U hU (fun i _ ↦ hU i) (.of_forall fun _ ↦ rfl)
+    isOpen_forall_mem_of_eventually_eq U U hU (.of_forall fun _ ↦ rfl)
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
