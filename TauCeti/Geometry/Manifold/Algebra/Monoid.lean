@@ -108,11 +108,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A multiplicative map from a group that is `C^n` at one point is `C^n` everywhere.
 
+This is a smooth generalization of Mathlib's `continuous_of_continuousAt_one`, with regularity
+assumed at an arbitrary basepoint.
+
 The map need not preserve an identity. Only the individual left translations on the source
 and target must be `C^n`, as expressed by `ContMDiffConstSMul` for multiplication acting on
 itself. In particular, smooth multiplication suffices; smooth inversion is not required. -/
 @[to_additive
   /-- An additive map from an additive group that is `C^n` at one point is `C^n` everywhere.
+
+  This is a smooth generalization of Mathlib's `continuous_of_continuousAt_zero`, with regularity
+  assumed at an arbitrary basepoint.
 
   The map need not preserve a zero. Only the individual left translations on the source
   and target must be `C^n`, as expressed by `ContMDiffConstVAdd` for addition acting on
