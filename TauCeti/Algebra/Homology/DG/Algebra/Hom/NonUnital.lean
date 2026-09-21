@@ -101,11 +101,6 @@ theorem coe_mk (f : A →ₙₐ[R] B) (hf hd) :
 theorem ext {f g : NonUnitalDGAlgHom hA hB} (h : ∀ a, f a = g a) : f = g :=
   toNonUnitalAlgHom_injective <| NonUnitalAlgHom.ext h
 
-/-- A nonunital DG algebra morphism sends a homogeneous element to the piece of the same degree. -/
-theorem map_mem (f : NonUnitalDGAlgHom hA hB) {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) :
-    f a ∈ ℬ p :=
-  f.map_mem' ha
-
 /-- A nonunital DG algebra morphism commutes with the differentials. -/
 @[simp]
 theorem map_d (f : NonUnitalDGAlgHom hA hB) (a : A) : dB (f a) = f (dA a) :=
@@ -134,7 +129,7 @@ theorem id_apply (hA : IsNonUnitalDGAlgebra 𝒜 dA) (a : A) :
 def comp (g : NonUnitalDGAlgHom hB hC) (f : NonUnitalDGAlgHom hA hB) :
     NonUnitalDGAlgHom hA hC where
   toNonUnitalAlgHom := g.toNonUnitalAlgHom.comp f.toNonUnitalAlgHom
-  map_mem' ha := g.map_mem (f.map_mem ha)
+  map_mem' ha := Graded.map_mem g (Graded.map_mem f ha)
   map_d' a :=
     (g.map_d' (f.toNonUnitalAlgHom a)).trans
       (congrArg g.toNonUnitalAlgHom (f.map_d' a))
