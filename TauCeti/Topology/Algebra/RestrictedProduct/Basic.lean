@@ -16,6 +16,18 @@ subgroups are kept separate, so changing the integral model at finitely many ind
 represented without changing the ambient restricted product.  The resulting openness and
 compactness statements are the point-set input for maps and decompositions of restricted
 products.
+
+The eventual comparison results are adapted from the FLT project
+(`ImperialCollegeLondon/FLT`, file `TopologicalSpace.lean`, source commit
+`bc2fe8ff7396469a16c2a6d51d6117f5825d93a0`, FLT PR #1088, Apache 2.0), whose source file
+credits Matthew Jasper, Kevin Buzzard, Bhavik Mehta, Ruben Van de Velde, Bryan Wang Peng Jun,
+and Pietro Monticone.  The compactness result here deliberately drops
+FLT's openness hypothesis on the reference family, using the structure-map argument instead.
+
+## References
+
+* N. Bourbaki, *General Topology*.
+* A. Weil, *Basic Number Theory*.
 -/
 
 public section
@@ -32,16 +44,15 @@ variable [∀ i, Group (G i)]
 
 /-- The subgroup of a restricted product cut out by a second family of subgroups. -/
 def integralSubgroupOf (U V : ∀ i, Subgroup (G i)) :
-    Subgroup (Πʳ i, [G i, (U i : Set (G i))]) where
-  carrier := {x | ∀ i, x i ∈ V i}
-  one_mem' := fun i ↦ (V i).one_mem
-  mul_mem' := fun hx hy i ↦ (V i).mul_mem (hx i) (hy i)
-  inv_mem' := fun hx i ↦ (V i).inv_mem (hx i)
+    Subgroup (Πʳ i, [G i, (U i : Set (G i))]) :=
+  (Subgroup.pi Set.univ V).comap RestrictedProduct.coeMonoidHom
 
 @[simp]
 theorem mem_integralSubgroupOf (U V : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
-    x ∈ integralSubgroupOf U V ↔ ∀ i, x i ∈ V i := Iff.rfl
+    x ∈ integralSubgroupOf U V ↔ ∀ i, x i ∈ V i := by
+  change (∀ i, i ∈ Set.univ → x i ∈ V i) ↔ _
+  simp
 
 /-- The subgroup whose coordinates lie in the reference subgroup at every index. -/
 def integralSubgroup (U : ∀ i, Subgroup (G i)) :
@@ -51,7 +62,8 @@ def integralSubgroup (U : ∀ i, Subgroup (G i)) :
 @[simp]
 theorem mem_integralSubgroup (U : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
-    x ∈ integralSubgroup U ↔ ∀ i, x i ∈ U i := Iff.rfl
+    x ∈ integralSubgroup U ↔ ∀ i, x i ∈ U i := by
+  simp [integralSubgroup, mem_integralSubgroupOf]
 
 variable [∀ i, TopologicalSpace (G i)]
 
@@ -72,12 +84,16 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
   have hopen := hopenU.inter (hopenV.preimage RestrictedProduct.continuous_coe)
   convert hopen using 1
   ext x
+  change (x ∈ integralSubgroupOf U V) ↔ _
   constructor
   · intro hx
+    have hx' := (mem_integralSubgroupOf U V x).mp hx
     constructor
-    · exact fun i hi ↦ hi ▸ hx i
-    · exact fun i hi ↦ hx i
-  · rintro ⟨hxS, hxSc⟩ i
+    · exact fun i hi ↦ hi ▸ hx' i
+    · exact fun i hi ↦ hx' i
+  · rintro ⟨hxS, hxSc⟩
+    apply (mem_integralSubgroupOf U V x).mpr
+    intro i
     by_cases hi : i ∈ S
     · exact hi ▸ hxS i hi
     · exact hxSc i hi
@@ -107,10 +123,12 @@ theorem isCompact_forall_mem_of_eventually_subset (U V : ∀ i, Subgroup (G i))
     ext x
     constructor
     · intro hx
+      have hx' := (mem_integralSubgroupOf U V x).mp hx
       refine ⟨⟨x, ?_⟩, ?_, rfl⟩
-      · exact fun i hi ↦ hi (hx i)
-      · exact fun i _ ↦ hx i
+      · exact fun i hi ↦ hi (hx' i)
+      · exact fun i _ ↦ hx' i
     · rintro ⟨y, hy, rfl⟩
+      apply (mem_integralSubgroupOf U V _).mpr
       exact fun i ↦ hy i trivial
   rw [himage]
   exact hK.image (RestrictedProduct.continuous_inclusion hS)
@@ -120,9 +138,16 @@ theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hU : ∀ i, IsOpen (U i : Set (G i))) :
     IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   -- The explicit coercions expose the carrier predicate in Mathlib's normal form.
-  change IsOpen {x : Πʳ i, [G i, (U i : Set (G i))] |
-    ∀ i, (x i : G i) ∈ (U i : Set (G i))}
-  exact RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU
+  convert (RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU) using 1
+  ext x
+  constructor
+  · intro hx
+    change ∀ i, x i ∈ U i
+    exact (mem_integralSubgroup U x).mp hx
+  · intro hx
+    change ∀ i, x i ∈ U i at hx
+    apply (mem_integralSubgroup U x).mpr
+    exact hx
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
@@ -135,26 +160,25 @@ theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
     (R := fun i ↦ G i) (A := fun i ↦ (U i : Set (G i))) (𝓕 := cofinite)).continuous
   rw [Set.image_univ, RestrictedProduct.range_structureMap] at hrange
   -- The image of the structure map is exactly the everywhere-integral carrier.
-  change IsCompact {x : Πʳ i, [G i, (U i : Set (G i))] |
-    ∀ i, (x i : G i) ∈ (U i : Set (G i))}
-  exact hrange
+  convert hrange using 1
+  ext x
+  constructor
+  · intro hx
+    change ∀ i, x i ∈ U i
+    exact (mem_integralSubgroup U x).mp hx
+  · intro hx
+    change ∀ i, x i ∈ U i at hx
+    apply (mem_integralSubgroup U x).mpr
+    exact hx
 
 /-- A family of compact open subgroups, one in each factor. -/
 structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] where
   /-- The compact open subgroup chosen in each factor. -/
   subgroup : ∀ i, Subgroup (G i)
+  /-- Openness of the chosen subgroup in each factor. -/
   isOpen_subgroup : ∀ i, IsOpen (subgroup i : Set (G i))
+  /-- Compactness of the chosen subgroup in each factor. -/
   isCompact_subgroup : ∀ i, IsCompact (subgroup i : Set (G i))
-
-/-- The integral subgroup associated to a bundled compact-open family is open. -/
-theorem CompactOpenSubgroups.isOpen_integralSubgroup (K : CompactOpenSubgroups G) :
-    IsOpen (integralSubgroup K.subgroup : Set (Πʳ i, [G i, (K.subgroup i : Set (G i))])) :=
-  TauCeti.isOpen_integralSubgroup K.subgroup K.isOpen_subgroup
-
-/-- The integral subgroup associated to a bundled compact-open family is compact. -/
-theorem CompactOpenSubgroups.isCompact_integralSubgroup (K : CompactOpenSubgroups G) :
-    IsCompact (integralSubgroup K.subgroup : Set (Πʳ i, [G i, (K.subgroup i : Set (G i))])) :=
-  TauCeti.isCompact_integralSubgroup K.subgroup K.isCompact_subgroup
 
 end TauCeti
