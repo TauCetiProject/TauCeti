@@ -142,9 +142,11 @@ end Integral
 /-- **Existence of extensions of places for an extension of function fields** (Stichtenoth,
 Proposition 3.1.7): every place of `F / k` is the restriction of a place of `F' / k'`.
 
-Unlike `TauCeti.Place.restrict_surjective`, this asks nothing of the base extension: `k' / k` is
-finite by `TauCeti.IsFunctionField.finiteDimensional_baseExtension`.  Neither statement subsumes
-the other, since `TauCeti.Place.restrict_surjective` allows an infinite algebraic extension
+This is a convenience corollary of `TauCeti.Place.restrict_surjective`, which replaces both
+explicit integrality hypotheses by the function-field hypotheses together with finiteness of
+`F' / F`: it asks nothing of the base extension, since `k' / k` is then finite by
+`TauCeti.IsFunctionField.finiteDimensional_baseExtension`.  The general statement
+`TauCeti.Place.restrict_surjective` stays available for an infinite algebraic extension
 `F' / F`. -/
 theorem restrict_surjective_of_finiteDimensional [FiniteDimensional F F']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') :
