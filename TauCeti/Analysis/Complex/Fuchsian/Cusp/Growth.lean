@@ -117,6 +117,26 @@ theorem analyticAt_poleRemovedExtension_zero (D : Γ.CuspDatum) (n : ℕ) (f : �
     exact TauCeti.UpperHalfPlane.isBoundedAtImInfty_qParam_pow_mul_of_isBigO
       D.width n hgrowth
 
+/-- The value at zero of the pole-removed extension is the value at infinity of the twisted
+function in the normalized scaling coordinate. -/
+theorem poleRemovedExtension_zero_eq_valueAtInfty (D : Γ.CuspDatum) (n : ℕ) (f : ℍ → ℂ)
+    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
+    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
+    (hgrowth : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * n * z.im / D.width)) :
+    poleRemovedExtension D n f 0 = valueAtInfty (fun z : ℍ ↦
+      Function.Periodic.qParam D.width z ^ n * f (D.scaling⁻¹ • z)) := by
+  have hbounded : IsBoundedAtImInfty
+      (fun z : ℍ ↦ cuspTwist D n f (D.scaling⁻¹ • z)) := by
+    simpa only [cuspTwist_inv_smul] using
+      TauCeti.UpperHalfPlane.isBoundedAtImInfty_qParam_pow_mul_of_isBigO
+        D.width n hgrowth
+  rw [poleRemovedExtension, cuspExtension_zero_eq_valueAtInfty D (cuspTwist D n f)
+    (cuspTwist_smul D n f hf) (mdifferentiable_cuspTwist D n f hhol) hbounded]
+  congr 1
+  funext z
+  exact cuspTwist_inv_smul D n f z
+
 /-- Near the puncture, the original cusp extension is `q⁻ⁿ` times its analytic
 pole-removed extension. -/
 theorem cuspExtension_eventuallyEq_zpow_mul_poleRemovedExtension (D : Γ.CuspDatum) (n : ℕ)
