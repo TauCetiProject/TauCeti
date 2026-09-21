@@ -25,6 +25,8 @@ pair-interchange symmetry of the Riemann tensor and symmetry of its Ricci contra
 
 The sign convention and identity follow J. M. Lee, *Introduction to Riemannian
 Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 7 (curvature symmetries).
+The formalization uses Mathlib's `CovariantDerivative.torsion_eq_zero_iff` and
+`VectorField.leibniz_identity_mlieBracket_apply`.
 -/
 
 public section
@@ -35,7 +37,7 @@ open scoped ContDiff Manifold
 namespace CovariantDerivative
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
+  [CompleteSpace E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (TangentSpace I : M → Type _)]
@@ -47,7 +49,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 local notation "tangentNorm" => fun x : M ↦
   (inferInstance : NormedAddCommGroup (TangentSpace I x))
 
-private theorem apply_mlieBracket_of_torsion_eq_zero (ht : cov.torsion = 0)
+omit [CompleteSpace E] in
+private theorem apply_mlieBracket_of_torsion_eq_zero
+    (ht : ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
+      MDiffAt (T% X) x → MDiffAt (T% Y) x →
+      cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x)
     {Y Z : Π x : M, TangentSpace I x}
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
     (x : M) (u : TangentSpace I x) :
@@ -60,8 +66,7 @@ private theorem apply_mlieBracket_of_torsion_eq_zero (ht : cov.torsion = 0)
   have heq : mlieBracket I Y Z =
       (fun y ↦ cov Z y (Y y)) - fun y ↦ cov Y y (Z y) := by
     funext y
-    exact (cov.torsion_eq_zero_iff.mp ht
-      (hY.mdifferentiable (by simp) y) (hZ.mdifferentiable (by simp) y)).symm
+    exact (ht (hY.mdifferentiable (by simp) y) (hZ.mdifferentiable (by simp) y)).symm
   have hb : CMDiff ∞ (T% (mlieBracket I Y Z)) := by
     rw [heq]
     exact hYZ.sub_section hZY
@@ -78,7 +83,10 @@ local notation "curvature" => cov.curvatureOperator (I := I) (M := M) (F := E)
 
 /-- The first Bianchi identity for smooth vector fields and a torsion-free smooth
 connection on the tangent bundle. -/
-theorem curvatureOperator_cyclic_eq_zero (ht : cov.torsion = 0)
+theorem curvatureOperator_cyclic_eq_zero
+    (ht : ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
+      MDiffAt (T% X) x → MDiffAt (T% Y) x →
+      cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x)
     {X Y Z : Π x : M, TangentSpace I x}
     (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
     (x : M) :
@@ -96,8 +104,7 @@ theorem curvatureOperator_cyclic_eq_zero (ht : cov.torsion = 0)
   have ht' {U V : Π y : M, TangentSpace I y}
       (hU : CMDiff ∞ (T% U)) (hV : CMDiff ∞ (T% V)) :
       mlieBracket I U V x = cov V x (U x) - cov U x (V x) :=
-    (cov.torsion_eq_zero_iff.mp ht
-      (hU.mdifferentiable (by simp) x) (hV.mdifferentiable (by simp) x)).symm
+    (ht (hU.mdifferentiable (by simp) x) (hV.mdifferentiable (by simp) x)).symm
   have hj := leibniz_identity_mlieBracket_apply
     (hX.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hY.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
@@ -111,7 +118,7 @@ theorem curvatureOperator_cyclic_eq_zero (ht : cov.torsion = 0)
   convert sub_eq_zero.mpr hj using 1
   abel
 
-variable [T2Space M]
+variable [FiniteDimensional ℝ E] [T2Space M]
 
 local notation "tensor" => cov.curvatureTensor (fiberNorm := tangentNorm)
 
@@ -126,6 +133,6 @@ theorem curvatureTensor_cyclic_eq_zero (ht : cov.torsion = 0)
   rw [curvatureTensor_apply (fiberNorm := tangentNorm) cov x hX hY hZ,
     curvatureTensor_apply (fiberNorm := tangentNorm) cov x hY hZ hX,
     curvatureTensor_apply (fiberNorm := tangentNorm) cov x hZ hX hY]
-  exact curvatureOperator_cyclic_eq_zero ht hX hY hZ x
+  exact curvatureOperator_cyclic_eq_zero (cov.torsion_eq_zero_iff.mp ht) hX hY hZ x
 
 end CovariantDerivative
