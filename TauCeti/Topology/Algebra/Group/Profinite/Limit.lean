@@ -24,6 +24,9 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
   and `ProfiniteGrp.toLimit_injective`, which describe the same identification for the
   `ProfiniteGrp` category. The compactness input is
   `TauCeti.nonempty_iInter_of_directed_nonempty_isClosed`.
+* Two companion forms of the same identification: a point of `G` is determined by its images in
+  the finite quotients (`eq_of_forall_mk_eq`), and a map into `G` is continuous as soon as all
+  of its finite-quotient shadows are (`continuous_iff_forall_continuous_mk`).
 * The same for subgroups: a family `H` of subgroups of the quotients `G ⧸ U` cuts out the closed
   subgroup `limitSubgroup H` of `G` (`isClosed_limitSubgroup`), and when `H` is compatible along
   the quotient maps and `G` is compact, its image in every `G ⧸ U` is exactly `H U`
@@ -75,6 +78,35 @@ theorem existsUnique_forall_mk_eq (x : ∀ U : OpenNormalSubgroup G, G ⧸ (U : 
   refine (inv_mul_eq_one.mp ?_).symm
   refine Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun U => ?_
   exact QuotientGroup.eq.mp ((hgg U).trans (hgg' U).symm)
+
+/-- Two elements of a profinite group with the same class modulo every open normal subgroup
+are equal. -/
+theorem eq_of_forall_mk_eq {x y : G}
+    (h : ∀ U : OpenNormalSubgroup G, (x : G ⧸ U.toSubgroup) = (y : G ⧸ U.toSubgroup)) : x = y := by
+  refine inv_mul_eq_one.mp (Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun U ↦ ?_)
+  exact QuotientGroup.eq.mp (h U)
+
+/-- A map into a profinite group is continuous exactly when all of its composites with the
+quotient maps onto the finite quotients are.
+
+Only the quotients themselves are visible in the criterion, so continuity of a map built from
+the limit description can be checked one finite quotient at a time. -/
+theorem continuous_iff_forall_continuous_mk {X : Type*} [TopologicalSpace X] {f : X → G} :
+    Continuous f ↔ ∀ U : OpenNormalSubgroup G,
+      Continuous fun x ↦ (f x : G ⧸ U.toSubgroup) := by
+  refine ⟨fun hf U ↦ QuotientGroup.continuous_mk.comp hf, fun h ↦ ?_⟩
+  refine continuous_iff_continuousAt.mpr fun x₀ ↦ Filter.tendsto_def.mpr fun V hV ↦ ?_
+  obtain ⟨W, hWV, hWopen, hWx⟩ := mem_nhds_iff.mp hV
+  -- An open normal subgroup `U` small enough that the coset `f x₀ * U` stays inside `W`.
+  obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
+    (hWopen.preimage (f := fun y ↦ f x₀ * y) (continuous_const.mul continuous_id))
+    (by simpa using hWx)
+  refine Filter.mem_of_superset
+    (((h U).isOpen_preimage _ (isOpen_discrete {(f x₀ : G ⧸ U.toSubgroup)})).mem_nhds rfl)
+    fun x hx ↦ ?_
+  have hmem : (f x₀)⁻¹ * f x ∈ U.toSubgroup := by
+    simpa using U.toSubgroup.inv_mem (QuotientGroup.eq.mp hx)
+  exact hWV (by simpa using hU hmem)
 
 end LimitDescription
 
