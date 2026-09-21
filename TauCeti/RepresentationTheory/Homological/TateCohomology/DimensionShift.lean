@@ -92,6 +92,22 @@ theorem dimensionShiftDownIso_hom :
         (by simpa only [dimensionShiftDownSES_def] using
           dimensionShiftDownSES_shortExact A) n := (rfl)
 
+/-- Vanishing in degree `n` of an upward shift is vanishing in degree `n + 1` of the original
+module. -/
+@[simp]
+theorem isZero_dimensionShiftUp_iff :
+    IsZero (tateCohomology (dimensionShiftUp A) n) ↔
+      IsZero (tateCohomology A (n + 1)) :=
+  (dimensionShiftUpIso A n).isZero_iff
+
+/-- Vanishing in degree `n + 1` of a downward shift is vanishing in degree `n` of the original
+module. -/
+@[simp]
+theorem isZero_dimensionShiftDown_iff :
+    IsZero (tateCohomology (dimensionShiftDown A) (n + 1)) ↔
+      IsZero (tateCohomology A n) :=
+  (dimensionShiftDownIso A n).isZero_iff.symm
+
 end Fintype
 
 section Restriction
