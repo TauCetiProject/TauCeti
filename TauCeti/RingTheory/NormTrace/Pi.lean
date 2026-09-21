@@ -29,10 +29,13 @@ universe u v
 variable {K : Type u} [CommRing K]
 
 variable {ι : Type v} [Fintype ι]
-variable {L : ι → Type*} [∀ i, CommRing (L i)] [∀ i, Algebra K (L i)]
-  [∀ i, Module.Free K (L i)] [∀ i, Module.Finite K (L i)]
 
 open Module
+
+section Norm
+
+variable {L : ι → Type*} [∀ i, Ring (L i)] [∀ i, Algebra K (L i)]
+  [∀ i, Module.Free K (L i)] [∀ i, Module.Finite K (L i)]
 
 /-- The norm of an element of a finite dependent product is the product of its component norms. -/
 @[simp]
@@ -50,6 +53,13 @@ theorem Algebra.norm_pi (x : ∀ i, L i) :
     simp [Algebra.lmul])]
   simp_rw [Algebra.norm_apply]
 
+end Norm
+
+section Trace
+
+variable {L : ι → Type*} [∀ i, CommRing (L i)] [∀ i, Algebra K (L i)]
+  [∀ i, Module.Free K (L i)] [∀ i, Module.Finite K (L i)]
+
 /-- The trace of an element of a finite dependent product is the sum of its component traces. -/
 @[simp]
 theorem Algebra.trace_pi (x : ∀ i, L i) :
@@ -64,5 +74,7 @@ theorem Algebra.trace_pi (x : ∀ i, L i) :
       simp [Algebra.lmul]
     _ = ∑ i, Algebra.trace K (L i) (x i) := by
       simp_rw [Algebra.trace_apply]
+
+end Trace
 
 end TauCeti

@@ -25,7 +25,10 @@ universe u
 
 variable {K : Type u} [CommRing K]
 variable {A B : Type*} [CommRing A] [Algebra K A]
-variable [CommRing B] [Algebra K B]
+
+section Norm
+
+variable [Ring B] [Algebra K B]
 variable [Module.Free K B] [Module.Finite K B]
 
 /-- Norm commutes with scalar extension on a pure tensor. -/
@@ -42,6 +45,13 @@ theorem Algebra.norm_baseChange_tmul (x : B) :
     _ = algebraMap K A (Algebra.norm K x) := by
       rw [Algebra.norm_apply]
 
+end Norm
+
+section Trace
+
+variable [CommRing B] [Algebra K B]
+variable [Module.Free K B] [Module.Finite K B]
+
 /-- Trace commutes with scalar extension on a pure tensor. -/
 @[simp]
 theorem Algebra.trace_baseChange_tmul (x : B) :
@@ -57,5 +67,7 @@ theorem Algebra.trace_baseChange_tmul (x : B) :
       LinearMap.trace_baseChange (R := K) (M := B) (f := Algebra.lmul K B x) (A := A)
     _ = algebraMap K A (Algebra.trace K B x) := by
       rw [Algebra.trace_apply]
+
+end Trace
 
 end TauCeti
