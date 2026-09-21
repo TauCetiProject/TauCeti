@@ -29,8 +29,9 @@ existing bundled strictly unital strict morphisms embed into the general notion.
 * `TauCeti.AInfinityHom.isStrictlyUnital_id`: the identity is strictly unital.
 * `TauCeti.AInfinityHom.IsStrict.isStrictlyUnital_iff`: for a strict `A∞` morphism,
   strictly unitality is equivalent to preservation of the unit by its linear part.
-* `TauCeti.AInfinityHom.IsStrictlyUnital.comp_of_isStrict`: postcomposition by a strict
-  unit-preserving morphism preserves strictly unitality.
+* `TauCeti.AInfinityHom.IsStrictlyUnital.comp_of_isStrict_outer` and
+  `TauCeti.AInfinityHom.IsStrictlyUnital.comp_of_isStrict_inner`: composition preserves strict
+  unitality when the other factor is strict and unit-preserving.
 * `TauCeti.AInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom`: a bundled strictly
   unital strict morphism gives a strictly unital `A∞` morphism.
 
@@ -121,21 +122,12 @@ theorem IsStrictlyUnital.comp_toAInfinityHom {CC : AInfinityAlgebra R C}
       LinearMap.comp_apply, hf.map_unit]
     exact hgunit
   · intro n hn x hx
-    rcases Nat.eq_zero_or_pos n with rfl | hnpos
-    · simp
-    rw [component_apply _ n hnpos, taylor_comp, LinearMap.comp_apply,
-      AInfinityStrictHom.taylor_toAInfinityHom, LinearMap.comp_apply]
-    let w := ReducedTensorWords.of R A ⟨n, hnpos⟩
-      (PiTensorProduct.tprod R fun i ↦
-        AA.grading.koszulTwist ((n : ℤ) - 1 - i) (x i))
-    have htaylor : ReducedTensorWords.letter R B (f.barMap w) = f.taylor w := by
-      rw [f.taylor_def, LinearMap.comp_apply]
-    rw [htaylor]
-    rw [← component_apply f n hnpos, hf.component_eq_zero hn x hx, map_zero]
+    rw [component_comp_of_isStrict_outer (isStrict_toAInfinityHom g) n,
+      LinearMap.compMultilinearMap_apply, hf.component_eq_zero hn x hx, map_zero]
 
 /-- Postcomposition by a strict `A∞` morphism whose linear part preserves the chosen unit
 preserves strictly unitality. -/
-theorem IsStrictlyUnital.comp_of_isStrict {CC : AInfinityAlgebra R C}
+theorem IsStrictlyUnital.comp_of_isStrict_outer {CC : AInfinityAlgebra R C}
     {f : AInfinityHom AA BB} {g : AInfinityHom BB CC}
     {eA : A} {eB : B} {eC : C}
     {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB} {hC : CC.StrictUnit eC}
@@ -147,6 +139,23 @@ theorem IsStrictlyUnital.comp_of_isStrict {CC : AInfinityAlgebra R C}
   have h := hf.comp_toAInfinityHom (hC := hC) hg.toStrictHom hunit
   rw [hg.toAInfinityHom_toStrictHom] at h
   exact h
+
+/-- Precomposition by a strict unit-preserving morphism preserves strictly unitality. This is the
+composition case in which the inner morphism has no higher components. -/
+theorem IsStrictlyUnital.comp_of_isStrict_inner {CC : AInfinityAlgebra R C}
+    {f : AInfinityHom AA BB} {g : AInfinityHom BB CC}
+    {eA : A} {eB : B} {eC : C}
+    {hA : AA.StrictUnit eA} {hB : BB.StrictUnit eB} {hC : CC.StrictUnit eC}
+    (hg : g.IsStrictlyUnital hB hC) (hf : f.IsStrict) (hfunit : f.linearPart eA = eB) :
+    (g.comp f).IsStrictlyUnital hA hC := by
+  refine ⟨?_, ?_⟩
+  · rw [linearPart_comp, LinearMap.comp_apply, hfunit]
+    exact hg.map_unit
+  · intro n hn x hx
+    rw [component_comp_of_isStrict_inner hf n, MultilinearMap.compLinearMap_apply]
+    apply hg.component_eq_zero hn
+    obtain ⟨i, hi⟩ := hx
+    exact ⟨i, by rw [hi, hfunit]⟩
 
 /-! ### Identities -/
 
