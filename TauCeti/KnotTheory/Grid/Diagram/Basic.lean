@@ -126,7 +126,6 @@ theorem subdiagonal_apply {n : ℕ} (c : Fin n) :
   (rfl)
 
 /-- Moving the subdiagonal point of a column up one row reaches the diagonal. -/
-@[simp]
 theorem subdiagonal_apply_add_one {n : ℕ} [NeZero n] (c : Fin n) :
     subdiagonal n c + 1 = c := by
   rw [← finRotate_apply, subdiagonal_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
