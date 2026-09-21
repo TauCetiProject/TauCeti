@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Agreement
 
@@ -162,7 +161,7 @@ theorem carrierEquivPinned_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
 
 /-- **The square of the special isogeny on the standard symplectic matrix group is the prime-field
 Frobenius**, that is `τ ^ 2 = Frob_p` at the defining characteristic `p = 2`. -/
-theorem symplecticHalfFrobenius_symplecticHalfFrobenius (g : d.toRankTwoBLieIndex.StandardGroup) :
+theorem specialIsogeny_specialIsogeny (g : d.toRankTwoBLieIndex.StandardGroup) :
     TauCeti.specialIsogeny (TauCeti.specialIsogeny g) =
       d.toRankTwoBLieIndex.symplecticPrimeFrobenius g := by
   obtain ⟨g, rfl⟩ := d.toRankTwoBLieIndex.carrierEquivSymplectic.surjective g
@@ -180,13 +179,13 @@ theorem pinnedHalfFrobenius_pinnedHalfFrobenius (g : d.toRankTwoBLieIndex.Pinned
   apply d.toRankTwoBLieIndex.pinnedEquivSymplectic.injective
   rw [pinnedEquivSymplectic_pinnedHalfFrobenius, pinnedEquivSymplectic_pinnedHalfFrobenius,
     RankTwoBLieIndex.pinnedEquivSymplectic_pinnedPrimeFrobenius,
-    symplecticHalfFrobenius_symplecticHalfFrobenius]
+    specialIsogeny_specialIsogeny]
 
 /-- **The special isogeny exchanges the two numbered simple root subgroups of the standard
 symplectic matrix group**, raising the parameter to the index's exponent at that root, which is one
 at the long simple root and the defining characteristic at the short one. -/
 @[simp]
-theorem symplecticHalfFrobenius_symplecticSimpleRootSubgroup (i : Fin d.1.rank)
+theorem specialIsogeny_symplecticSimpleRootSubgroup (i : Fin d.1.rank)
     (u : Multiplicative d.1.Closure) :
     TauCeti.specialIsogeny (d.toRankTwoBLieIndex.symplecticSimpleRootSubgroup i u) =
       d.toRankTwoBLieIndex.symplecticSimpleRootSubgroup
@@ -211,6 +210,6 @@ theorem pinnedHalfFrobenius_pinnedSimpleRootSubgroup (i : Fin d.1.rank)
   rw [pinnedEquivSymplectic_pinnedHalfFrobenius,
     RankTwoBLieIndex.pinnedEquivSymplectic_pinnedSimpleRootSubgroup,
     RankTwoBLieIndex.pinnedEquivSymplectic_pinnedSimpleRootSubgroup,
-    symplecticHalfFrobenius_symplecticSimpleRootSubgroup]
+    specialIsogeny_symplecticSimpleRootSubgroup]
 
 end TauCeti.SuzukiLieIndex
