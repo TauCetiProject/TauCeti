@@ -9,6 +9,7 @@ public import Mathlib.Probability.Distributions.Bernoulli
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import TauCeti.Probability.GeneratingFunction
 
 /-!
 # Elementary theory of the Bernoulli distribution
@@ -22,6 +23,7 @@ This file computes the elementary moments and transforms of the real-valued Bern
 * `integral_id_bernoulliMeasure` and `variance_id_bernoulliMeasure` give the mean and variance;
 * `integral_of_hasLaw_bernoulliMeasure` and `variance_of_hasLaw_bernoulliMeasure` give the
   corresponding random-variable statements;
+* `pgf_bernoulliMeasure` computes the probability-generating function on the native carrier;
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
   cumulant-generating functions;
 * `charFun_bernoulliMeasure` computes the characteristic function.
@@ -42,6 +44,13 @@ open scoped ProbabilityTheory unitInterval
 namespace TauCeti
 
 namespace Probability
+
+/-- The probability-generating function of a Bernoulli distribution. -/
+theorem pgf_bernoulliMeasure (p : unitInterval) (t : ℝ) :
+    pgf id Ber((1 : ℕ), 0, p) t = 1 - (p : ℝ) + (p : ℝ) * t := by
+  rw [pgf_def, integral_bernoulliMeasure]
+  simp
+  ring
 
 /-- The mean of the real-valued Bernoulli law with success probability `p` is `p`. -/
 @[simp]

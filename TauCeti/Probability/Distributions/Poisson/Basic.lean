@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Probability.Distributions.Poisson.Basic
 public import Mathlib.Probability.Moments.MGFAnalytic
+public import TauCeti.Probability.GeneratingFunction
 
 /-!
 # Moments and moment-generating function of the Poisson distribution
 
-This file develops the elementary analytic API of the real-valued Poisson law. For a rate
+This file develops the probability-generating function of the native Poisson law and the elementary
+analytic API of the real-valued Poisson law. For a rate
 `r : ℝ≥0`, the cast law `Po(ℝ, r)` has all exponential moments, moment-generating function
 `exp (r * (exp t - 1))`, cumulant-generating function `r * (exp t - 1)`, and both mean and
 variance equal to `r`.
@@ -27,6 +29,29 @@ open MeasureTheory ProbabilityTheory Real
 open scoped NNReal Nat
 
 namespace TauCeti
+
+namespace Probability
+
+/-- The probability-generating function of a Poisson distribution. -/
+theorem pgf_poissonMeasure (r : ℝ≥0) (t : ℝ) :
+    pgf id (poissonMeasure r) t = Real.exp ((r : ℝ) * (t - 1)) := by
+  rw [pgf_def, integral_poissonMeasure]
+  simp only [smul_eq_mul, id_eq]
+  calc
+    ∑' n : ℕ, (Real.exp (-r) * (r : ℝ) ^ n / n.factorial) * t ^ n =
+        Real.exp (-r) * ∑' n : ℕ, (((r : ℝ) * t) ^ n / n.factorial) := by
+      rw [← tsum_mul_left]
+      congr with n
+      rw [mul_pow]
+      ring
+    _ = Real.exp (-r) * Real.exp ((r : ℝ) * t) := by
+      rw [(NormedSpace.expSeries_div_hasSum_exp ((r : ℝ) * t)).tsum_eq, Real.exp_eq_exp_ℝ]
+    _ = Real.exp ((r : ℝ) * (t - 1)) := by
+      rw [← Real.exp_add]
+      congr 1
+      ring
+
+end Probability
 
 /-- The moment-generating function of a real-valued Poisson law of rate `r` is
 `t ↦ exp (r * (exp t - 1))`. -/

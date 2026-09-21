@@ -9,6 +9,7 @@ public import Mathlib.Probability.Distributions.Binomial
 public import Mathlib.Probability.Independence.CharacteristicFunction
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Probability.GeneratingFunction
 import TauCeti.Probability.Distributions.Bernoulli
 
 /-!
@@ -21,6 +22,8 @@ characterization of Mathlib's binomial measure.  The native law remains
 
 ## Main results
 
+* `TauCeti.Probability.pgf_binomial` computes the probability-generating function on the native
+  carrier;
 * `TauCeti.Probability.variance_id_map_cast_binomial` computes the variance of the cast law;
 * `TauCeti.Probability.mgf_id_map_cast_binomial` and
   `TauCeti.Probability.cgf_id_map_cast_binomial` compute its moment and cumulant generating
@@ -50,6 +53,17 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- The probability-generating function of a binomial distribution. -/
+theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
+    pgf id (binomial n p) t = (1 - (p : ℝ) + (p : ℝ) * t) ^ n := by
+  -- `add_pow` attaches the binomial weights to its first summand.
+  have hbase : 1 - (p : ℝ) + (p : ℝ) * t = (p : ℝ) * t + (1 - (p : ℝ)) := add_comm _ _
+  rw [pgf_def, integral_binomial, ← Nat.range_succ_eq_Iic, hbase, add_pow]
+  simp only [smul_eq_mul, id_eq]
+  apply Finset.sum_congr rfl
+  intro k hk
+  ring
 
 private theorem mgf_id_map_cast_binomial_aux (n : ℕ) (p : unitInterval) (t : ℝ) :
     mgf id Bin(ℝ, n, p) t =

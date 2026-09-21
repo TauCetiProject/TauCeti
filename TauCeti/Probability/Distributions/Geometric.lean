@@ -11,6 +11,7 @@ public import Mathlib.Probability.Distributions.Geometric
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import TauCeti.Probability.GeneratingFunction
 
 import TauCeti.Probability.Distributions.NegativeBinomial.Transforms
 
@@ -35,6 +36,8 @@ specializations of the negative-binomial ones.
   mean and variance of the real cast of a geometric law.
 * `integrableExpSet_id_map_cast_geometricMeasure` and `mgf_id_map_cast_geometricMeasure` give its
   exact moment-generating domain and moment-generating function.
+* `integrable_pow_geometricMeasure_iff` and `pgf_geometricMeasure` give its exact
+  probability-generating domain and probability-generating function.
 * `charFun_map_cast_geometricMeasure` computes its characteristic function.
 * `geometricMeasure_real_Iic` and `geometricMeasure_memoryless` give the cumulative mass and the
   division-free memoryless identity on the native carrier.
@@ -55,6 +58,48 @@ namespace TauCeti
 namespace Probability
 
 variable {p : unitInterval}
+
+/-- At the zero parameter, Mathlib's geometric distribution is a Dirac mass at zero, so its
+probability-generating function is identically one. -/
+@[simp]
+theorem pgf_geometricMeasure_zero (t : ℝ) : pgf id (geometricMeasure 0) t = 1 := by
+  simp [pgf_def, geometricMeasure]
+
+/-- For a nonzero success probability, the geometric probability-generating-function integrand
+is integrable exactly on the open interval determined by the geometric-series ratio. -/
+theorem integrable_pow_geometricMeasure_iff {p : unitInterval} (hp : p ≠ 0) (t : ℝ) :
+    Integrable (fun n : ℕ => t ^ n) (geometricMeasure p) ↔
+      |(1 - (p : ℝ)) * t| < 1 := by
+  rw [integrable_geometricMeasure_iff hp]
+  have hp0 : (p : ℝ) ≠ 0 := by simpa using hp
+  have hfun : (fun n : ℕ => (1 - (p : ℝ)) ^ n * p * ‖t ^ n‖) =
+      fun n : ℕ => ((1 - (p : ℝ)) * |t|) ^ n * p := by
+    funext n
+    rw [Real.norm_eq_abs, abs_pow, mul_pow]
+    ring
+  rw [hfun, summable_mul_right_iff hp0, summable_geometric_iff_norm_lt_one,
+    Real.norm_eq_abs]
+  simp only [abs_mul, abs_abs, abs_of_nonneg (by grind : 0 ≤ 1 - (p : ℝ))]
+
+/-- The probability-generating function of a geometric distribution with nonzero parameter, on its
+exact integrability domain.  The boundary case `p = 1`, whose law is a Dirac mass at zero, is
+included. -/
+theorem pgf_geometricMeasure {p : unitInterval} (hp : p ≠ 0) {t : ℝ}
+    (ht : |(1 - (p : ℝ)) * t| < 1) :
+    pgf id (geometricMeasure p) t = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by
+  rw [pgf_def, integral_geometricMeasure hp]
+  simp only [smul_eq_mul, id_eq]
+  calc
+    ∑' n : ℕ, ((1 - (p : ℝ)) ^ n * p) * t ^ n =
+        (p : ℝ) * ∑' n : ℕ, ((1 - (p : ℝ)) * t) ^ n := by
+      rw [← tsum_mul_left]
+      congr with n
+      rw [mul_pow]
+      ring
+    _ = (p : ℝ) * (1 - (1 - (p : ℝ)) * t)⁻¹ := by
+      rw [tsum_geometric_of_norm_lt_one]
+      simpa only [Real.norm_eq_abs] using ht
+    _ = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by rw [div_eq_mul_inv]
 
 /-- The exponential integrand for the cast geometric law is integrable exactly below the pole of
 its geometric series. -/
