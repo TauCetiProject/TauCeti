@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.Graded.FullSubcategory
 public import TauCeti.CategoryTheory.Exact.Graded.Resolution
-public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Basic
+public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.FullSubcategory
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 
 /-!
@@ -74,41 +73,6 @@ namespace GradedExactStructure
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   (E : GradedExactStructure C)
 
-section Transport
-
-variable [LocallySmall.{w} C] (R : ObjectProperty C) [ObjectProperty.EssentiallySmall.{w} R]
-  [R.ContainsZero] [R.IsClosedUnderBinaryProducts] (hR : E.toExactStructure.IsExtensionClosed R)
-  (hRshift : R.inverseImage E.shift.functor = R)
-
-/-- The graded and the ungraded induced exact structures on a full subcategory have the same
-conflations, so the identity functor compares their exact `K₀` groups. -/
-private noncomputable def toUngraded :
-    ExactK0 (E.fullSubcategory R hR hRshift).toExactStructure ≃+
-      ExactK0 (E.toExactStructure.fullSubcategory R hR) :=
-  ExactK0.ofLEEquiv fun _ => by rw [fullSubcategory_toExactStructure]
-
-@[simp]
-private lemma toUngraded_of (X : R.FullSubcategory) :
-    toUngraded E R hR hRshift (ExactK0.of X) = ExactK0.of X :=
-  ExactK0.ofLEEquiv_of _ X
-
-@[simp]
-private lemma toUngraded_symm_of (X : R.FullSubcategory) :
-    (toUngraded E R hR hRshift).symm (ExactK0.of X) = ExactK0.of X :=
-  ExactK0.ofLEEquiv_symm_of _ X
-
-/-- Transported to the graded Grothendieck group, the Euler class of a finite `R`-resolution is
-the alternating sum of the graded classes of its terms. -/
-private lemma ofExactK0_toUngraded_symm_eulerClassFullSubcategory {X : C}
-    (r : E.toExactStructure.FiniteResolution R X) :
-    LaurentK0.ofExactK0 _ ((toUngraded E R hR hRshift).symm (r.eulerClassFullSubcategory hR)) =
-      r.foldAlternating fun Z hZ => LaurentK0.of (E.fullSubcategory R hR hRshift) ⟨Z, hZ⟩ := by
-  induction r with
-  | base hX => simp
-  | step hQ i p zero hp r ih => simp [ih]
-
-end Transport
-
 variable [LocallySmall.{w} C] {P : ObjectProperty C} [ObjectProperty.EssentiallySmall.{w} P]
   [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
   [ObjectProperty.EssentiallySmall.{w} (E.admitsFiniteResolution P)]
@@ -158,22 +122,28 @@ as `ℤ[q,q⁻¹]`-modules. Its inverse sends the class of an object to its Eule
 `TauCeti.GradedExactStructure.laurentResolutionEquiv_symm_of`. -/
 noncomputable def laurentResolutionEquiv :
     LaurentK0 (E.fullSubcategory P hP hshift) ≃ₗ[LaurentPolynomial ℤ]
-      LaurentK0 (E.fullSubcategory (E.admitsFiniteResolution P) hR hRshift) where
-  __ := E.resolutionAddEquiv hproj hshift
-  map_smul' c x := by
-    simp only [AddEquiv.toFun_eq_coe, resolutionAddEquiv_apply, map_smul, RingHom.id_apply]
+      LaurentK0 (E.fullSubcategory (E.admitsFiniteResolution P) hR hRshift) :=
+  LaurentK0.linearEquivOfMap
+    (GradedConflationExact.ιOfLE E P hP hR hshift hRshift (E.le_admitsFiniteResolution P))
+    (E.resolutionAddEquiv hproj hshift) (E.resolutionAddEquiv_apply hproj hshift)
 
 private lemma laurentResolutionEquiv_apply (x : LaurentK0 (E.fullSubcategory P hP hshift)) :
-    E.laurentResolutionEquiv hproj hshift x = E.resolutionAddEquiv hproj hshift x :=
-  (rfl)
+    E.laurentResolutionEquiv hproj hshift x = E.resolutionAddEquiv hproj hshift x := by
+  change (E.laurentResolutionEquiv hproj hshift).toLinearMap x =
+    E.resolutionAddEquiv hproj hshift x
+  have hx := DFunLike.congr_fun
+    (LaurentK0.linearEquivOfMap_toLinearMap
+      (GradedConflationExact.ιOfLE E P hP hR hshift hRshift (E.le_admitsFiniteResolution P))
+      (E.resolutionAddEquiv hproj hshift) (E.resolutionAddEquiv_apply hproj hshift)) x
+  exact hx.trans (E.resolutionAddEquiv_apply hproj hshift x).symm
 
 /-- The forward map of the graded resolution isomorphism is the map induced by the graded
 conflation-exact inclusion of `P` into the objects of finite `P`-dimension. -/
 theorem laurentResolutionEquiv_toLinearMap :
     (E.laurentResolutionEquiv hproj hshift).toLinearMap =
       LaurentK0.map (GradedConflationExact.ιOfLE E P hP hR hshift hRshift
-        (E.le_admitsFiniteResolution P)) :=
-  LinearMap.ext (E.resolutionAddEquiv_apply hproj hshift)
+        (E.le_admitsFiniteResolution P)) := by
+  simp [laurentResolutionEquiv]
 
 /-- The graded resolution isomorphism sends the class of a `P`-object to its class among the
 objects of finite `P`-dimension. -/
@@ -208,13 +178,16 @@ theorem foldAlternating_shift_eq_T_one_smul {X : C} (r : E.toExactStructure.Fini
   have hX : E.admitsFiniteResolution P X := (E.admitsFiniteResolution_iff P).mpr ⟨r⟩
   have hX' : E.admitsFiniteResolution P (E.shift.functor.obj X) :=
     (E.admitsFiniteResolution_iff P).mpr ⟨s⟩
-  rw [← E.laurentResolutionEquiv_symm_of hproj hshift hX' s,
-    ← E.laurentResolutionEquiv_symm_of hproj hshift hX r, ← map_smul, LaurentK0.T_one_smul_of,
-    fullSubcategory_shift]
   have e : (E.fullSubcategoryShift _ hRshift).functor.obj ⟨X, hX⟩ ≅
       ⟨E.shift.functor.obj X, hX'⟩ :=
     ObjectProperty.isoMk _ ((E.fullSubcategoryShiftFunctorCompιIso _ hRshift).app ⟨X, hX⟩)
-  exact congrArg _ (LaurentK0.of_congr _ e.symm)
+  apply foldAlternating_shift_eq_T_one_smul_of_linearEquiv E P hP hshift
+    (E.laurentResolutionEquiv hproj hshift) r s
+    (LaurentK0.of _ ⟨X, hX⟩) (LaurentK0.of _ ⟨E.shift.functor.obj X, hX'⟩)
+  · exact E.laurentResolutionEquiv_symm_of hproj hshift hX r
+  · exact E.laurentResolutionEquiv_symm_of hproj hshift hX' s
+  · rw [LaurentK0.T_one_smul_of, fullSubcategory_shift]
+    exact LaurentK0.of_congr _ e.symm
 
 end GradedExactStructure
 

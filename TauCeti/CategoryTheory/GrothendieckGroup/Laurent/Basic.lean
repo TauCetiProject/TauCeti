@@ -48,6 +48,8 @@ graded objects with isomorphic images.
 * `TauCeti.LaurentK0.of`: the class `[M]` of an object.
 * `TauCeti.LaurentK0.lift`: the `ℤ[q,q⁻¹]`-linear map induced by a shift-compatible invariant.
 * `TauCeti.LaurentK0.map`: the `ℤ[q,q⁻¹]`-linear map induced by a graded conflation-exact functor.
+* `TauCeti.LaurentK0.linearEquivOfMap`: the linear equivalence underlying an additive equivalence
+  that agrees with such an induced map.
 * `TauCeti.LaurentK0.mapEquiv`: the isomorphism induced by a graded exact equivalence.
 * `TauCeti.LaurentK0.forgetGrading`: forgetting the grading, as a map out of graded `K₀` specialized
   at `q = 1`.
@@ -338,6 +340,21 @@ lemma map_of (h : GradedConflationExact E E' F) (X : C) :
     map h (of E X) = of E' (F.obj X) := by
   rw [map, liftAux_of, AddMonoidHom.comp_apply, ExactK0.map_of, AddEquiv.coe_toAddMonoidHom,
     ofExactK0_exactK0_of]
+
+/-- An additive equivalence that agrees with the map induced by a graded conflation-exact functor
+is automatically an equivalence of modules over the Laurent coefficient ring. -/
+noncomputable def linearEquivOfMap (h : GradedConflationExact E E' F)
+    (e : LaurentK0 E ≃+ LaurentK0 E') (he : ∀ x, e x = map h x) :
+    LaurentK0 E ≃ₗ[LaurentPolynomial ℤ] LaurentK0 E' where
+  __ := e
+  map_smul' c x := by simp only [AddEquiv.toFun_eq_coe, he, map_smul, RingHom.id_apply]
+
+/-- The linear map underlying `TauCeti.LaurentK0.linearEquivOfMap` is the given functorial map. -/
+@[simp]
+theorem linearEquivOfMap_toLinearMap (h : GradedConflationExact E E' F)
+    (e : LaurentK0 E ≃+ LaurentK0 E') (he : ∀ x, e x = map h x) :
+    (linearEquivOfMap h e he).toLinearMap = map h :=
+  LinearMap.ext he
 
 /-- **The identity functor induces the identity map** of graded Grothendieck groups. -/
 @[simp]
