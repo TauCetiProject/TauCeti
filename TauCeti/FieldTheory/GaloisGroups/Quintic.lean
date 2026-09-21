@@ -9,7 +9,6 @@ public import TauCeti.FieldTheory.GaloisGroups.Label
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Basic
 
 import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Solvable
-import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 
 /-!
@@ -18,12 +17,12 @@ import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 An irreducible separable quintic over a field carries exactly one of the five transitive-group
 labels `5T1`, …, `5T5`, and two data constrain it. Away from characteristic `2` the discriminant
 reads the parity of the label: it is a square exactly for the even labels `5T1`, `5T2` and `5T4`.
-Dummit's `F₂₀` resolvent sextic reads solvability: its specialization has a root in the base field
-exactly when the Galois group is solvable, that is exactly for the labels `5T1`, `5T2` and `5T3`.
+Dummit's `F₂₀` resolvent sextic gives an unconditional implication from solvability to having a
+root in the base field; when its specialization is separable, the converse holds as well, so a root
+is then equivalent to one of the labels `5T1`, `5T2` and `5T3`.
 
 The two data together separate `5T3`, `5T4` and `5T5` from each other and from the rest, and this
-file proves those three identifications, together with the fourth branch, in which they do not
-decide:
+file proves those three identifications, together with a fourth branch concluding `5T1` or `5T2`:
 
 | discriminant | resolvent sextic | label |
 |---|---|---|
@@ -32,10 +31,7 @@ decide:
 | not a square | a root in the base field | `5T3` |
 | a square | a root in the base field | `5T1` **or** `5T2` |
 
-The fourth row is genuinely undetermined: the cyclic group `5T1` and the dihedral group `5T2` are
-both even and both solvable, so no combination of these two data tells them apart, and separating
-them needs a further datum such as a good-prime factorization type or a second root of `f` in a
-root field.
+The fourth row concludes only that the label is `5T1` or `5T2`.
 
 The first two rows need no hypothesis on the resolvent sextic, because they use only the
 unconditional direction of the resolvent criterion, that a solvable Galois group produces a root.
@@ -44,8 +40,9 @@ specialized sextic is separable; separability of `f` does not imply it, since sp
 make the values of two distinct orbit elements collide.
 
 The two characterizations behind the table, `TauCeti.HasGaloisLabel.isSquare_discr_iff_five` and
-`TauCeti.HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_iff`, are equivalences, so they
-also supply the converse of each row.
+`TauCeti.HasGaloisLabel.exists_isRoot_specialize_quinticF20Spec_iff`, are equivalences when the
+specialized resolvent is separable, so under that additional hypothesis they also supply the
+converse of each row.
 
 ## Main results
 
@@ -140,7 +137,8 @@ theorem hasGaloisLabel_five_four_of_not_isSquare_discr_of_forall_not_isRoot (hf 
   have hpar : ¬ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3) := fun hp =>
     hdisc ((hj.isSquare_discr_iff_five hf hchar).mpr hp)
   have hlt : (j : ℕ) < 5 := by simpa [numTransitiveGroups_five] using j.isLt
-  have : j = ⟨4, by simp⟩ := Fin.ext (show (j : ℕ) = 4 by omega)
+  have hval : (j : ℕ) = 4 := by omega
+  have : j = ⟨4, by simp⟩ := Fin.ext hval
   exact this ▸ hj
 
 /-- **The second row of the quintic table: `5T4`.** Away from characteristic `2`, an irreducible
@@ -155,7 +153,8 @@ theorem hasGaloisLabel_five_three_of_isSquare_discr_of_forall_not_isRoot (hf : f
   have hsol : ¬ (j : ℕ) < 3 := fun hlt =>
     (hj.exists_isRoot_specialize_quinticF20Spec_of_lt_three hf hlt).elim hroot
   have hpar := (hj.isSquare_discr_iff_five hf hchar).mp hdisc
-  have : j = ⟨3, by simp⟩ := Fin.ext (show (j : ℕ) = 3 by omega)
+  have hval : (j : ℕ) = 3 := by omega
+  have : j = ⟨3, by simp⟩ := Fin.ext hval
   exact this ▸ hj
 
 /-- **The third row of the quintic table: `5T3`.** Away from characteristic `2`, an irreducible
@@ -171,21 +170,14 @@ theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf : f.Monic)
   have hsol := (hj.exists_isRoot_specialize_quinticF20Spec_iff hf hres).mp ⟨a, ha⟩
   have hpar : ¬ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3) := fun hp =>
     hdisc ((hj.isSquare_discr_iff_five hf hchar).mpr hp)
-  have : j = ⟨2, by simp⟩ := Fin.ext (show (j : ℕ) = 2 by omega)
+  have hval : (j : ℕ) = 2 := by omega
+  have : j = ⟨2, by simp⟩ := Fin.ext hval
   exact this ▸ hj
 
-/-- **The fourth row of the quintic table: `5T1` or `5T2`, and the data do not say which.** Away
-from characteristic `2`, an irreducible separable monic quintic whose discriminant is a square and
-whose separable `F₂₀` resolvent has a root in the base field has either the cyclic group or the
-dihedral group of order ten on its five roots.
-
-Neither datum can decide between the two alternatives, because the cyclic and the dihedral group
-satisfy both hypotheses alike: each lies in the alternating group, by
-`TauCeti.referenceSubgroup_five_zero_le_alternatingGroup` and
-`TauCeti.referenceSubgroup_five_one_le_alternatingGroup`, and each is solvable, by
-`TauCeti.isSolvable_referenceSubgroup_five_iff`. Separating them needs a further datum, such as a
-factorization type at a prime not dividing the discriminant, or a second root of `f` in a root
-field. -/
+/-- **The fourth row of the quintic table: `5T1` or `5T2`.** Away from characteristic `2`, an
+irreducible separable monic quintic whose discriminant is a square and whose separable `F₂₀`
+resolvent has a root in the base field has either the cyclic group or the dihedral group of order
+ten on its five roots. -/
 theorem hasGaloisLabel_five_zero_or_one_of_isSquare_discr_of_isRoot (hf : f.Monic)
     (hchar : ringChar F ≠ 2) (hsep : f.Separable) (hirr : Irreducible f) (hdeg : f.natDegree = 5)
     (hdisc : IsSquare f.discr) (hres : (quinticF20Spec.specialize F f).Separable) {a : F}
