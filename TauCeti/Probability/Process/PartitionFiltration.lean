@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Process.PartitionFiltration
 public import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
+import TauCeti.MeasureTheory.MeasurableSpace.Prod
 
 /-!
 # Square filtrations from finite measurable partitions
@@ -90,15 +91,6 @@ theorem iSup_countableSquareFiltration :
       rw [← h, MeasurableSpace.comap_iSup]
       refine iSup_le fun n => le_iSup_of_le n ?_
       exact le_sup_right
-
-/-- The product of the discrete σ-algebras on two countable types is discrete. -/
-theorem prod_top_eq_top_of_countable (α β : Type*) [Countable α] [Countable β] :
-    (⊤ : MeasurableSpace α).prod (⊤ : MeasurableSpace β) = ⊤ := by
-  apply top_unique
-  let _ : MeasurableSpace α := ⊤
-  let _ : MeasurableSpace β := ⊤
-  intro s _
-  exact MeasurableSet.of_discrete
 
 /-- A level of the square filtration is precisely the information carried by the two canonical
 finite-partition indices. -/

@@ -23,7 +23,7 @@ language used by analytic limit arguments.
 ## Main result
 
 * `TauCeti.DenseGraphLimits.countableStepGraphonAvg` is the canonical sequence of block-average
-  step graphons.
+  step graphons, characterized by `TauCeti.DenseGraphLimits.countableStepGraphonAvg_def`.
 * `TauCeti.DenseGraphLimits.tendsto_eLpNorm_stepGraphonAvg_countablePartition` gives `L¹`
   convergence of canonical block averages.
 
@@ -52,13 +52,24 @@ noncomputable def countableStepGraphonAvg (W : Graphon Ω μ) (n : ℕ) : Grapho
     (fun _ hp => Finpartition.measurableSet_of_mem_countablePartition Ω n hp) W
 
 /-- The canonical block-average step graphon is the block average on the canonical finite
-partition. -/
+partition.
+
+`countableStepGraphonAvg` is a definition whose body is not exposed outside this module, so this is
+the only way a downstream file can rewrite it into the bundled `stepGraphonAvg` API. -/
+theorem countableStepGraphonAvg_def (W : Graphon Ω μ) (n : ℕ) :
+    countableStepGraphonAvg W n =
+      stepGraphonAvg (Finpartition.countablePartition Ω n)
+        (fun _ hp => Finpartition.measurableSet_of_mem_countablePartition Ω n hp) W := by
+  rw [countableStepGraphonAvg]
+
+/-- The canonical block-average step graphon takes the same values as the block average on the
+canonical finite partition. -/
 @[simp]
 theorem countableStepGraphonAvg_apply (W : Graphon Ω μ) (n : ℕ) (x y : Ω) :
     countableStepGraphonAvg W n x y =
       stepGraphonAvg (Finpartition.countablePartition Ω n)
-        (fun _ hp => Finpartition.measurableSet_of_mem_countablePartition Ω n hp) W x y :=
-  (rfl)
+        (fun _ hp => Finpartition.measurableSet_of_mem_countablePartition Ω n hp) W x y := by
+  rw [countableStepGraphonAvg_def]
 
 /-- The block-average step graphons along the canonical refining finite partitions converge to the
 original graphon in `L¹` on the product space. -/
@@ -71,10 +82,9 @@ theorem tendsto_eLpNorm_stepGraphonAvg_countablePartition (W : Graphon Ω μ) :
   let ℱ := TauCeti.MeasureTheory.countableSquareFiltration Ω
   let f : Ω × Ω → ℝ := fun z => W z.1 z.2
   have hfint : Integrable f (μ.prod μ) := W.toSymmKernel.integrable_uncurry μ
-  have hfmeas : StronglyMeasurable[⨆ n, ℱ n] f := by
-    rw [show (⨆ n, ℱ n) = m.prod m from
-      TauCeti.MeasureTheory.iSup_countableSquareFiltration]
-    exact W.measurable.stronglyMeasurable
+  have hfmeas : StronglyMeasurable[⨆ n, ℱ n] f :=
+    W.measurable.stronglyMeasurable.mono
+      TauCeti.MeasureTheory.iSup_countableSquareFiltration.ge
   have hcond : Tendsto (fun n => eLpNorm ((μ.prod μ)[f | ℱ n] - f) 1 (μ.prod μ))
       atTop (𝓝 0) := hfint.tendsto_eLpNorm_condExp hfmeas
   refine hcond.congr' (Eventually.of_forall fun n => ?_)
