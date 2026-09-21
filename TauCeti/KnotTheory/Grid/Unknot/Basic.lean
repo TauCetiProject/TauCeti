@@ -32,7 +32,7 @@ one component. Second, the bigradings of its two marking states are computed. Wr
 `(M_O, A)` is `(1 - N, -(N - 1))` at the `O`-state and `(0, 0)` at the `X`-state.
 
 Both gradings therefore differ by `N - 1` between the two marking states, which is the spread
-expected of the fully blocked grid homology `GH̃` of an `N`-grid unknot: that homology is
+expected of the fully blocked grid homology of an `N`-grid unknot: that homology is
 predicted to be `W^{⊗(N-1)}` with `W = 𝔽 ⊕ 𝔽` in bigradings `(0, 0)` and `(-1, -1)`, and the two
 computed bigradings are exactly the two extreme bigradings of that tensor power.
 Nothing about the homology is proved here, and the gradings of the remaining grid states are
@@ -68,9 +68,9 @@ lemmas below, and the plain count itself never has to be evaluated.
 ## References
 
 This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.1, "Grid diagrams
-and grid states", and supplies the diagram named in the acceptance criterion "`GH̃` of an
-`n × n` unknot grid exhibits the `W^{⊗(n−1)}` factor". The diagram and the grading conventions
-follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
+and grid states", and supplies the diagram named in the acceptance criterion "fully blocked grid
+homology of an `n × n` unknot grid exhibits the `W^{⊗(n−1)}` factor". The diagram and the grading
+conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters 3 and 4.
 -/
 
 public section
