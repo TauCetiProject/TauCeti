@@ -23,7 +23,7 @@ open Set Topology
 
 public section
 
-namespace QuotientGroup
+namespace Subgroup
 
 variable {G : Type*} [Group G]
 
@@ -41,12 +41,13 @@ private theorem mk_mul_eq_of_localSection (H : Subgroup G) (U : Set (G ⧸ H))
 
 /-- A continuous local section of a subgroup quotient defines the standard local product chart.
 
-The chart sends `g` to `([g], s([g])⁻¹ * g)` and its inverse sends `(q, h)` to `s(q) * h`.
+On the target `U ×ˢ univ`, the chart sends `g` to `([g], s([g])⁻¹ * g)` and its inverse sends
+`(q, h)` to `s(q) * h`; outside that target the inverse uses the canonical value `1`.
 -/
 @[to_additive
   /-- A continuous local section of an additive-subgroup quotient defines the standard local
-  product chart. The chart sends `g` to `([g], -s([g]) + g)` and its inverse sends `(q, h)` to
-  `s(q) + h`. -/,
+  product chart. On the target `U ×ˢ univ`, the chart sends `g` to `([g], -s([g]) + g)` and its
+  inverse sends `(q, h)` to `s(q) + h`; outside that target the inverse uses `0`. -/,
   expose]
 def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
     (H : Subgroup G) (U : Set (G ⧸ H)) (hU : IsOpen U)
@@ -57,7 +58,7 @@ def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [Continuou
   refine
     { toFun := fun g ↦ ((g : G ⧸ H), if hg : (g : G ⧸ H) ∈ U then
         ⟨(s (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (hsec (g : G ⧸ H) hg)⟩ else 1)
-      invFun := fun qh ↦ s qh.1 * qh.2
+      invFun := fun qh ↦ if hq : qh.1 ∈ U then s qh.1 * qh.2 else 1
       source := (QuotientGroup.mk : G → G ⧸ H) ⁻¹' U
       target := U ×ˢ Set.univ
       map_source' := by
@@ -65,22 +66,27 @@ def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [Continuou
         exact ⟨hg, Set.mem_univ _⟩
       map_target' := by
         rintro ⟨q, h⟩ ⟨hq, -⟩
-        simpa only [Set.mem_preimage, mk_mul_eq_of_localSection H U s hsec q hq h] using hq
+        have hq' : (q, h).1 ∈ U := hq
+        simp only [dite_eq_left hq', Set.mem_preimage]
+        rw [mk_mul_eq_of_localSection H U s hsec q hq h]
+        exact hq
       left_inv' := by
         intro g hg
         have hg' : (g : G ⧸ H) ∈ U := hg
         simp [hg']
       right_inv' := by
         rintro ⟨q, h⟩ ⟨hq, -⟩
+        have hq' : (q, h).1 ∈ U := hq
         have hmk := mk_mul_eq_of_localSection H U s hsec q hq h
+        simp only [dite_eq_left hq']
         apply Prod.ext
         · exact hmk
         · apply Subtype.ext
           simp [hmk, hq]
-      open_source := hU.preimage continuous_mk
+      open_source := hU.preimage QuotientGroup.continuous_mk
       open_target := hU.prod isOpen_univ
       continuousOn_toFun := by
-        apply ContinuousOn.prodMk continuous_mk.continuousOn
+        apply ContinuousOn.prodMk QuotientGroup.continuous_mk.continuousOn
         have hcarrier :
             ContinuousOn (fun g : G ↦ ((if hg : (g : G ⧸ H) ∈ U then
                 ⟨(s (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (hsec (g : G ⧸ H) hg)⟩
@@ -89,7 +95,7 @@ def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [Continuou
           intro g hg
           have hs' : ContinuousWithinAt (fun x : G ↦ s (x : G ⧸ H))
               ((QuotientGroup.mk : G → G ⧸ H) ⁻¹' U) g :=
-            (hs (g : G ⧸ H) hg).comp continuous_mk.continuousAt.continuousWithinAt
+            (hs (g : G ⧸ H) hg).comp QuotientGroup.continuous_mk.continuousAt.continuousWithinAt
               (fun _ hx ↦ hx)
           apply (hs'.inv.mul continuousWithinAt_id).congr_of_mem _ hg
           intro x hx
@@ -98,9 +104,14 @@ def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [Continuou
         rw [continuousOn_iff_continuous_domRestrict]
         exact (continuousOn_iff_continuous_domRestrict.mp hcarrier).subtype_mk _
       continuousOn_invFun := by
-        apply ContinuousOn.mul
-        · exact hs.comp continuousOn_fst (fun _ hx ↦ hx.1)
-        · exact continuous_subtype_val.comp_continuousOn continuousOn_snd
+        have hcont : ContinuousOn (fun qh : (G ⧸ H) × H ↦ s qh.1 * qh.2)
+            (U ×ˢ Set.univ) := by
+          apply ContinuousOn.mul
+          · exact hs.comp continuousOn_fst (fun _ hx ↦ hx.1)
+          · exact continuous_subtype_val.comp_continuousOn continuousOn_snd
+        apply hcont.congr
+        intro qh hq
+        simp [hq.1]
       baseSet := U
       open_baseSet := hU
       source_eq := rfl
@@ -133,10 +144,11 @@ theorem localSectionTrivialization_symm_apply [TopologicalSpace G] [ContinuousMu
     [ContinuousInv G]
     (H : Subgroup G) (U : Set (G ⧸ H))
     (hU : IsOpen U) (s : G ⧸ H → G) (hs : ContinuousOn s U)
-    (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) (q : G ⧸ H) (h : H) :
+    (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) (q : G ⧸ H) (hq : q ∈ U) (h : H) :
     (localSectionTrivialization H U hU s hs hsec).toOpenPartialHomeomorph.symm (q, h) =
-      s q * h := rfl
+      s q * h := by
+  simp [localSectionTrivialization, hq]
 
 end
 
-end QuotientGroup
+end Subgroup
