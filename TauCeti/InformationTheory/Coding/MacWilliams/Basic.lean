@@ -40,6 +40,8 @@ to `AddChar.FiniteField.primitiveChar`.
   identity over a finite commutative ring with a primitive additive character.
 * `Submodule.natCard_mul_weightEnumerator_euclideanDual`: the MacWilliams identity over a finite
   field.
+* `TauCeti.aeval_macWilliams_identity`: evaluation of a division-free MacWilliams identity
+  in any commutative ring.
 * `TauCeti.natCard_mul_weightEnumerator_of_eq_euclideanDual`: the division-free MacWilliams
   identity for a self-dual code.
 
@@ -122,6 +124,22 @@ theorem natCard_mul_weightEnumerator_euclideanDual {F : Type*} [Field F] [Finite
 end Submodule
 
 namespace TauCeti
+
+/-- Evaluating an integral MacWilliams identity in any commutative ring preserves its
+cardinality factor and the substitution `(X, Y) ↦ (X + (q - 1) Y, X - Y)`. -/
+theorem aeval_macWilliams_identity
+    {p p' : MvPolynomial (Fin 2) ℤ} {m q : ℕ}
+    (h : (m : MvPolynomial (Fin 2) ℤ) * p' =
+      aeval ![X 0 + (q - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1] p)
+    {A : Type*} [CommRing A] (x y : A) :
+    (m : A) * aeval ![x, y] p' = aeval ![x + (q - 1 : A) * y, x - y] p := by
+  have hvec : (fun i ↦ aeval ![x, y]
+      (![X 0 + (q - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1] i)) =
+      ![x + (q - 1 : A) * y, x - y] := by
+    ext i
+    fin_cases i <;> simp
+  have heval := congrArg (aeval ![x, y]) h
+  simpa only [map_mul, map_natCast, aeval_eq_bind₁, aeval_bind₁, hvec] using heval
 
 /-- A self-dual code over a finite field satisfies the division-free MacWilliams
 identity in `ℤ[X, Y]`. -/

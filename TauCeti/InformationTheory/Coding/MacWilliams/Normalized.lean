@@ -39,20 +39,6 @@ open _root_.MvPolynomial
 
 variable {ι : Type*} [Fintype ι]
 
-private theorem aeval_macWilliams_identity
-    {p p' : MvPolynomial (Fin 2) ℤ} {m q : ℕ}
-    (h : (m : MvPolynomial (Fin 2) ℤ) * p' =
-      aeval ![X 0 + (q - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1] p)
-    {A : Type*} [CommRing A] (x y : A) :
-    (m : A) * aeval ![x, y] p' = aeval ![x + (q - 1 : A) * y, x - y] p := by
-  have hvec : (fun i ↦ aeval ![x, y]
-      (![X 0 + (q - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1] i)) =
-      ![x + (q - 1 : A) * y, x - y] := by
-    ext i
-    fin_cases i <;> simp
-  have heval := congrArg (aeval ![x, y]) h
-  simpa only [map_mul, map_natCast, aeval_eq_bind₁, aeval_bind₁, hvec] using heval
-
 /-- The rational normalized MacWilliams identity over a finite commutative ring
 carrying a primitive additive character into a characteristic zero domain, evaluated
 in any commutative `ℚ`-algebra. -/
