@@ -55,9 +55,7 @@ theorem exists_transcendental_and_isSeparable_adjoin_of_perfectField
     exact Nat.cast_injective h'
   obtain ⟨x, rfl⟩ := Finset.card_eq_one.mp hcard
   refine ⟨x, hs.1.transcendental ⟨x, by simp⟩, ?_⟩
-  have heq : ((↑({x} : Finset F) : Set F)) = {x} := by ext; simp
-  rw [heq] at hsep
+  rw [Finset.coe_singleton] at hsep
   exact hsep
 
 end TauCeti
-
