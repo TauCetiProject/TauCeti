@@ -535,11 +535,6 @@ theorem referenceSubgroup_five_zero_le_alternatingGroup :
   referenceSubgroup_five_zero_le_referenceSubgroup_five_one.trans
     referenceSubgroup_five_one_le_alternatingGroup
 
-/-- The reference subgroup of `5T4` consists of even permutations: it is the alternating group. -/
-theorem referenceSubgroup_five_three_le_alternatingGroup :
-    referenceSubgroup 5 ⟨3, by simp⟩ ≤ alternatingGroup (Fin 5) :=
-  le_of_eq referenceSubgroup_five_three
-
 /-- The reference subgroup of `5T5` is not contained in the alternating group: it is the whole
 symmetric group, which contains the odd permutations of `5T3`. -/
 theorem not_referenceSubgroup_five_four_le_alternatingGroup :
@@ -560,7 +555,7 @@ theorem referenceSubgroup_five_le_alternatingGroup_iff (j : TransitiveGroupIndex
   · exact iff_of_true referenceSubgroup_five_zero_le_alternatingGroup (by simp)
   · exact iff_of_true referenceSubgroup_five_one_le_alternatingGroup (by simp)
   · exact iff_of_false not_referenceSubgroup_five_two_le_alternatingGroup (by simp)
-  · exact iff_of_true referenceSubgroup_five_three_le_alternatingGroup (by simp)
+  · exact iff_of_true (le_of_eq referenceSubgroup_five_three) (by simp)
   · exact iff_of_false not_referenceSubgroup_five_four_le_alternatingGroup (by simp)
 
 /-- A subgroup of the symmetric group on five points carries at most one label. -/
