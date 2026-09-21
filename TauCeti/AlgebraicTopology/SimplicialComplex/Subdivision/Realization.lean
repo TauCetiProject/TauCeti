@@ -9,6 +9,8 @@ public import Mathlib.Topology.Algebra.Ring.Real
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Basic
 
+import TauCeti.Order.Chain
+
 /-!
 # The realization map of a barycentric subdivision
 
@@ -19,8 +21,8 @@ face in that chain. The affine extension therefore lands in the realization of `
 
 This file constructs that canonical continuous map. It is the forward map in the homeomorphism
 between the realizations of a complex and its barycentric subdivision required by Layer 11 of the
-GeometricTopology roadmap. Proving that it is a homeomorphism requires the inverse obtained by
-sorting the barycentric coordinates of a point, and is left to the next step.
+GeometricTopology roadmap. The inverse is constructed and proved continuous in
+`Subdivision.Homeomorph`.
 
 The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2,
 "Derived Subdivisions".
@@ -49,17 +51,6 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
-
-/-- A finite nonempty chain in a partial order has a greatest element. -/
-private theorem exists_greatest_of_isChain {α : Type*} [PartialOrder α] (s : Finset α)
-    (hs : s.Nonempty) (hchain : IsChain (· ≤ ·) (s : Set α)) :
-    ∃ a ∈ s, ∀ b ∈ s, b ≤ a := by
-  classical
-  obtain ⟨a, hmax⟩ := s.exists_maximal hs
-  refine ⟨a, hmax.prop, fun b hb => ?_⟩
-  rcases hchain.total hb hmax.prop with hba | hab
-  · exact hba
-  · exact hmax.le_of_ge hb hab
 
 /-- The linear extension which sends every subdivision vertex to its face barycenter. The
 restriction of this map to the subdivision realization lands in the original realization. -/
@@ -111,7 +102,7 @@ private theorem barycentricSubdivisionLinearMap_mem (K : AbstractSimplicialCompl
   have hρ : ρ.1 ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex := ρ.2
   have hρ' := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp hρ
-  obtain ⟨σ, hσρ, hσmax⟩ := exists_greatest_of_isChain ρ.1 hρ'.1 hρ'.2
+  obtain ⟨σ, hσρ, hσmax⟩ := hρ'.2.exists_isGreatest ρ.1.finite_toSet hρ'.1
   rw [mem_realization_iff]
   refine ⟨σ.1, σ.2, ?_⟩
   let x' : StandardSimplex ρ.1 := ⟨x.1, mem_convexHull_carrier _ x⟩
@@ -152,7 +143,7 @@ theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialC
   apply continuous_iff_faceInclusion.2
   intro ρ
   have hρ := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
-  obtain ⟨σ, hσρ, hσmax⟩ := exists_greatest_of_isChain ρ.1 hρ.1 hρ.2
+  obtain ⟨σ, hσρ, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
   let toFace : StandardSimplex ρ.1 → StandardSimplex σ.1 := fun x =>
     ⟨barycentricSubdivisionLinearMap K x.1,
       barycentricSubdivisionLinearMap_mem_closedSimplex K σ x hσmax⟩

@@ -31,7 +31,7 @@ This is the case of the Chevalley commutator formula in which the roots of the f
 with `i, j > 0` are exactly `α + β` and `2 α + β`, covering the additional chains in types
 `B`, `C`, and `F₄`. Type `G₂` also needs the longer chain containing `3α + β` and `3α + 2β`,
 which is `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul` in
-`TauCeti.RingTheory.Nilpotent.RootString.G2`. This extends the class-two case of
+`TauCeti.RingTheory.Nilpotent.RootString.G2.Basic`. This extends the class-two case of
 `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq`. The parameter of the extra factor is
 `t ^ 2 * u`, matching the exponents `(i, j) = (2, 1)` of the root `2 α + β`.
 

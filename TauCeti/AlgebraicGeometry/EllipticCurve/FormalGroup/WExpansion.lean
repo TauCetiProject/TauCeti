@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.SelfConvolution
 
@@ -48,8 +48,12 @@ equation at the substituted parameter rather than at `z`.
 * `WeierstrassCurve.eq_of_wEquation_mvPowerSeries`: that same uniqueness one index type up, for
   series in `MvPowerSeries σ S` over any `R`-algebra `S` — so it survives scalar extension. It is
   a sibling of `eq_of_wEquation` and not a generalisation of it: filtering by total degree needs
-  subtraction, so this one asks for a `CommRing`, where the univariate statement holds over a
-  `CommSemiring`.
+  subtraction, so this one asks for `[CommRing S]` on the *coefficient algebra*. The curve's base
+  ring `R` is a `CommSemiring` for both.
+* `WeierstrassCurve.algebraMap_wEquationRHS`: the equation's right-hand side commutes with an
+  algebra map, so a solution over a ring is a solution over any algebra over it.
+* `WeierstrassCurve.wEquation_of_equation`: the `w`-equation is the Weierstrass equation in the
+  coordinates `z = -x / y`, `w = -1 / y`.
 * `WeierstrassCurve.subst_wEquationRHS` and `WeierstrassCurve.subst_formalW_wEquation`:
   substituting a series `q` into the equation gives the equation at `q`, so `w(q)` solves it
   there. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
@@ -271,6 +275,38 @@ theorem wEquationRHS_def {A : Type*} [CommSemiring A] [Algebra R A] (W : Weierst
         algebraMap R A W.a₆ * v ^ 3 :=
   (rfl)
 
+/-- The right-hand side of the `w`-equation commutes with an algebra map, both the parameter and
+the unknown being carried along. This is the element-level companion of `map_wEquationRHS`, which
+transports series along a ring homomorphism; here the coefficients stay put and only the two
+arguments move up the tower. -/
+@[simp]
+theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
+    [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
+    algebraMap A B (wEquationRHS W q v) =
+      wEquationRHS W (algebraMap A B q) (algebraMap A B v) := by
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, ← IsScalarTower.algebraMap_apply]
+
+section Equation
+
+variable {O : Type*} [CommRing O] {K : Type*} [Field K] [Algebra O K]
+
+/-- **The `w`-equation is the Weierstrass equation read in the coordinates `z = -x / y`,
+`w = -1 / y`.** Clearing the denominators of `y ^ 2 + a₁ x y + a₃ y = x ^ 3 + a₂ x ^ 2 + a₄ x + a₆`
+at `x = z / w`, `y = -1 / w` is what produces that equation in the first place; this is the
+converse reading, from a point of the curve to a solution of the equation.
+
+The hypothesis is `Equation`, not `Nonsingular`: nothing here needs the point to be smooth. -/
+theorem wEquation_of_equation (W : WeierstrassCurve O) {x y : K}
+    (hxy : (W.baseChange K).toAffine.Equation x y) (hy : y ≠ 0) :
+    -y⁻¹ = wEquationRHS W (-(x / y)) (-y⁻¹) := by
+  rw [WeierstrassCurve.Affine.equation_iff] at hxy
+  simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hxy
+  rw [wEquationRHS_def]
+  field_simp
+  linear_combination -hxy
+
+end Equation
+
 /-- The `w`-equation in `R⟦z⟧` itself, where the structure map is `PowerSeries.C`. This is the
 spelling the coefficient lemmas below match against. -/
 theorem wEquationRHS_powerSeries (W : WeierstrassCurve R) (q v : PowerSeries R) :
@@ -411,64 +447,15 @@ theorem eq_formalW_of_wEquation (w : PowerSeries R)
     w = formalW W :=
   eq_of_wEquation W (by simp) h0 (by simp) hw (formalW_wEquation W)
 
-/-! ### Substituting into the equation
-
-Substituting a series into the `w`-equation gives the equation at the substituted parameters. The
-`w`-equation makes sense in any commutative `R`-algebra, and substitution is an `R`-algebra map, so
-this is just the statement that `wEquationRHS` is built from `+`, `*`, `^` and the structure map.
-
-With `constantCoeff q = 0` — strictly stronger than `PowerSeries.HasSubst q`, which asks only that
-the constant coefficient be nilpotent — this combines with `eq_of_wEquation` to identify the
-substituted solution, which is `eq_subst_formalW_of_wEquation`.
-
-Mathlib's `PowerSeries.subst` is defined only over a `CommRing`, so this section is stated there;
-everything above needs no such hypothesis and keeps the `CommSemiring` of the rest of this file.
--/
-
-section CommRing
-
-variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
-
-/-- Substitution passes through the `w`-equation, carrying both the parameter and the unknown with
-it. Both sides are read in the target algebra, which is why `wEquationRHS` is stated for an
-arbitrary `R`-algebra: substituting a one-variable series into it lands in `MvPowerSeries τ S`. -/
-theorem subst_wEquationRHS {τ S : Type*} [CommRing S] [Algebra R S] {a : MvPowerSeries τ S}
-    (ha : PowerSeries.HasSubst a) (q v : PowerSeries R) :
-    PowerSeries.subst a (wEquationRHS W q v) =
-      wEquationRHS W (PowerSeries.subst a q) (PowerSeries.subst a v) := by
-  rw [wEquationRHS_def, wEquationRHS_def, ← PowerSeries.coe_substAlgHom ha]
-  simp only [map_add, map_mul, map_pow, AlgHom.commutes]
-
-/-- The `w`-expansion composed with a substitutable series `a` solves the `w`-equation at `a`. -/
-theorem subst_formalW_wEquation {τ S : Type*} [CommRing S] [Algebra R S] {a : MvPowerSeries τ S}
-    (ha : PowerSeries.HasSubst a) :
-    PowerSeries.subst a (formalW W) = wEquationRHS W a (PowerSeries.subst a (formalW W)) := by
-  conv_lhs => rw [formalW_wEquation W]
-  rw [subst_wEquationRHS W ha, PowerSeries.subst_X ha]
-
-/-- **The substituted `w`-expansion is the unique solution at the substituted parameter.** For a
-parameter `q` with vanishing constant coefficient, any series with vanishing constant coefficient
-solving the `w`-equation at `q` is `w(q)`.
-
-This is the composite the formal group consumes: `subst_formalW_wEquation` supplies a solution and
-`eq_of_wEquation` says there is only one. Note the hypothesis is `constantCoeff q = 0` rather than
-`PowerSeries.HasSubst q`; the latter asks only for a nilpotent constant coefficient, which is not
-enough for uniqueness. -/
-theorem eq_subst_formalW_of_wEquation {q v : PowerSeries R}
-    (hq : PowerSeries.constantCoeff q = 0) (hv : PowerSeries.constantCoeff v = 0)
-    (h : v = wEquationRHS W q v) : v = PowerSeries.subst q (formalW W) := by
-  have ha : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero' hq
-  refine eq_of_wEquation W hq hv ?_ h (subst_formalW_wEquation W ha)
-  exact PowerSeries.constantCoeff_subst_eq_zero hq (formalW W) (constantCoeff_formalW W)
-
 /-! ### Uniqueness over a multivariate power series ring
 
 `eq_of_wEquation` argues by strong induction on the coefficient index, which needs that index to be
 linearly ordered. Over `MvPowerSeries σ S` no such order is available, so the induction runs on the
 total degree instead: `MvPowerSeries.order` is exactly the filtration by total degree, and the
-right-hand side of the `w`-equation is a contraction for it. That argument needs additive inverses,
-so this material stays in the `CommRing` section rather than joining the `CommSemiring` development
-above; the two uniqueness statements are siblings and neither subsumes the other.
+right-hand side of the `w`-equation is a contraction for it. That argument needs additive inverses
+in the *coefficient algebra* `S`, and only there, which is why `[CommRing S]` appears below while
+the curve's base ring `R` stays a `CommSemiring`; the two uniqueness statements are siblings and
+neither subsumes the other.
 -/
 
 /-- **The right-hand side of the `w`-equation is a contraction for the total-degree filtration.**
@@ -528,10 +515,11 @@ series with vanishing constant coefficient that satisfy the `w`-equation at the 
 are equal, provided `q` too has vanishing constant coefficient.
 
 The coefficients are taken in an arbitrary `R`-algebra `S`, matching `wEquationRHS` itself and the
-substitution lemmas above, so the statement survives scalar extension of the curve's base ring.
+substitution lemmas, so the statement survives scalar extension of the curve's base ring.
 
 This is `eq_of_wEquation` one index type up. It is not a generalisation of it: the argument here
-subtracts, so it needs a `CommRing`, whereas the univariate statement holds over a `CommSemiring`.
+subtracts, so it needs `[CommRing S]` on the coefficient algebra, whereas the univariate statement
+needs no inverses at all. The base ring `R` is a `CommSemiring` in both.
 -/
 theorem eq_of_wEquation_mvPowerSeries {σ S : Type*} [CommRing S] [Algebra R S]
     {q v v' : MvPowerSeries σ S}
@@ -550,6 +538,56 @@ theorem eq_of_wEquation_mvPowerSeries {σ S : Type*} [CommRing S] [Algebra R S]
   have hzero : (v - v').order = ⊤ := ENat.eq_top_iff_forall_ge.mpr key
   rw [MvPowerSeries.order_eq_top_iff] at hzero
   exact sub_eq_zero.mp hzero
+
+/-! ### Substituting into the equation
+
+Substituting a series into the `w`-equation gives the equation at the substituted parameters. The
+`w`-equation makes sense in any commutative `R`-algebra, and substitution is an `R`-algebra map, so
+this is just the statement that `wEquationRHS` is built from `+`, `*`, `^` and the structure map.
+
+With `constantCoeff q = 0` — strictly stronger than `PowerSeries.HasSubst q`, which asks only that
+the constant coefficient be nilpotent — this combines with `eq_of_wEquation` to identify the
+substituted solution, which is `eq_subst_formalW_of_wEquation`.
+
+Mathlib's `PowerSeries.subst` is defined only over a `CommRing`, so this section is stated there;
+everything above needs no such hypothesis and keeps the `CommSemiring` of the rest of this file.
+-/
+
+section CommRing
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
+
+/-- Substitution passes through the `w`-equation, carrying both the parameter and the unknown with
+it. Both sides are read in the target algebra, which is why `wEquationRHS` is stated for an
+arbitrary `R`-algebra: substituting a one-variable series into it lands in `MvPowerSeries τ S`. -/
+theorem subst_wEquationRHS {τ S : Type*} [CommRing S] [Algebra R S] {a : MvPowerSeries τ S}
+    (ha : PowerSeries.HasSubst a) (q v : PowerSeries R) :
+    PowerSeries.subst a (wEquationRHS W q v) =
+      wEquationRHS W (PowerSeries.subst a q) (PowerSeries.subst a v) := by
+  rw [wEquationRHS_def, wEquationRHS_def, ← PowerSeries.coe_substAlgHom ha]
+  simp only [map_add, map_mul, map_pow, AlgHom.commutes]
+
+/-- The `w`-expansion composed with a substitutable series `a` solves the `w`-equation at `a`. -/
+theorem subst_formalW_wEquation {τ S : Type*} [CommRing S] [Algebra R S] {a : MvPowerSeries τ S}
+    (ha : PowerSeries.HasSubst a) :
+    PowerSeries.subst a (formalW W) = wEquationRHS W a (PowerSeries.subst a (formalW W)) := by
+  conv_lhs => rw [formalW_wEquation W]
+  rw [subst_wEquationRHS W ha, PowerSeries.subst_X ha]
+
+/-- **The substituted `w`-expansion is the unique solution at the substituted parameter.** For a
+parameter `q` with vanishing constant coefficient, any series with vanishing constant coefficient
+solving the `w`-equation at `q` is `w(q)`.
+
+This is the composite the formal group consumes: `subst_formalW_wEquation` supplies a solution and
+`eq_of_wEquation` says there is only one. Note the hypothesis is `constantCoeff q = 0` rather than
+`PowerSeries.HasSubst q`; the latter asks only for a nilpotent constant coefficient, which is not
+enough for uniqueness. -/
+theorem eq_subst_formalW_of_wEquation {q v : PowerSeries R}
+    (hq : PowerSeries.constantCoeff q = 0) (hv : PowerSeries.constantCoeff v = 0)
+    (h : v = wEquationRHS W q v) : v = PowerSeries.subst q (formalW W) := by
+  have ha : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero' hq
+  refine eq_of_wEquation W hq hv ?_ h (subst_formalW_wEquation W ha)
+  exact PowerSeries.constantCoeff_subst_eq_zero hq (formalW W) (constantCoeff_formalW W)
 
 /-! ### Base change
 

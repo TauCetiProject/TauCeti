@@ -1,0 +1,67 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Dynamics.Flow
+
+/-!
+# Conjugacies of flows
+
+This file collects general consequences of an inducing map that semiconjugates two flows. These
+lemmas transport asymptotic trajectory behavior, enabling stable and unstable sets to be
+transferred through coordinate conjugacies.
+
+## Main declarations
+
+* `Topology.IsInducing.tendsto_flow_iff`: an inducing semiconjugacy transports convergence of flow
+  trajectories in either direction.
+* `Homeomorph.tendsto_flow_iff`: a homeomorphic semiconjugacy transports convergence of flow
+  trajectories in either direction.
+* `Homeomorph.map_flow_symm`: the inverse of a homeomorphic semiconjugacy satisfies the
+  conjugacy equation in the reverse direction.
+-/
+
+public section
+
+open Filter Topology
+
+variable {τ α β : Type*} [TopologicalSpace τ] [TopologicalSpace α] [TopologicalSpace β]
+  [AddMonoid τ] {φ : _root_.Flow τ α} {ψ : _root_.Flow τ β}
+
+/-- An inducing semiconjugacy transports convergence of flow trajectories in either direction. -/
+theorem Topology.IsInducing.tendsto_flow_iff {f : α → β} (hf : IsInducing f)
+    (hconj : _root_.Flow.IsSemiconjugacy f φ ψ) {l : Filter τ} {x y : α} :
+    Tendsto (fun t ↦ ψ t (f y)) l (𝓝 (f x)) ↔ Tendsto (fun t ↦ φ t y) l (𝓝 x) := by
+  constructor
+  · intro h
+    apply hf.tendsto_nhds_iff.mpr
+    refine Filter.Tendsto.congr' (f₂ := f ∘ fun t ↦ φ t y)
+      (Eventually.of_forall fun t ↦ by
+        simpa only [Function.comp_apply] using (hconj.semiconj t y).symm) h
+  · intro h
+    have h' : Tendsto (f ∘ fun t ↦ φ t y) l (𝓝 (f x)) :=
+      hf.tendsto_nhds_iff.mp h
+    refine Filter.Tendsto.congr' (f₂ := fun t ↦ ψ t (f y))
+      (Eventually.of_forall fun t ↦ by
+        simpa only [Function.comp_apply] using hconj.semiconj t y) h'
+
+namespace Homeomorph
+
+variable (e : α ≃ₜ β)
+
+/-- A homeomorphic semiconjugacy transports convergence of flow trajectories in either direction. -/
+theorem tendsto_flow_iff (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) {l : Filter τ}
+    {x y : α} :
+    Tendsto (fun t ↦ ψ t (e y)) l (𝓝 (e x)) ↔ Tendsto (fun t ↦ φ t y) l (𝓝 x) := by
+  exact e.isInducing.tendsto_flow_iff hconj
+
+/-- The inverse of a homeomorphic semiconjugacy is a semiconjugacy in the reverse direction. -/
+theorem map_flow_symm (hconj : _root_.Flow.IsSemiconjugacy e φ ψ) (t : τ) (y : β) :
+    e.symm (ψ t y) = φ t (e.symm y) := by
+  apply e.injective
+  rw [e.apply_symm_apply, hconj.semiconj t, e.apply_symm_apply]
+
+end Homeomorph

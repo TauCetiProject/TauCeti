@@ -15,6 +15,14 @@ Left multiplication by a basis vector after contraction by its dual coordinate i
 onto the exterior basis vectors containing that coordinate. This is the occupation-number
 projection used by both scalar detection in Clifford algebras and the matrix-unit construction
 from creation and annihilation operators.
+
+Each of the two halves acts on an exterior basis vector by a single coordinate move, up to the
+shuffle sign that carries the moved coordinate to the front: contraction erases the coordinate
+from the index set, and left multiplication inserts it, each vanishing when the index set is on
+the wrong side of that move.
+
+The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
+monomial, and so the basis vector indexed by `s`, by the parity of its degree.
 -/
 
 public section
@@ -59,6 +67,29 @@ private theorem contractLeft_coord_basis_eq_zero_of_not_mem {I : Type w} [Linear
     exact hj
   · rfl
 
+/-- **The grade involution acts on an exterior monomial by the parity of its degree.** The
+monomial is the product of its `n` generators, each of which the involution negates. -/
+@[simp]
+theorem involute_ιMulti {n : ℕ} (v : Fin n → M) :
+    CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) (ExteriorAlgebra.ιMulti R n v) =
+      (-1 : R) ^ n • ExteriorAlgebra.ιMulti R n v := by
+  -- Every exterior monomial is the product of the list of its generators.
+  have h : ExteriorAlgebra.ιMulti R n v =
+      ((List.ofFn v).map (CliffordAlgebra.ι (0 : QuadraticForm R M))).prod := by
+    rw [ExteriorAlgebra.ιMulti_apply, List.map_ofFn]
+    rfl
+  rw [h, CliffordAlgebra.involute_prod_map_ι, List.length_ofFn]
+
+/-- **The grade involution acts on an exterior-basis vector by the parity of its index set.** The
+basis vector indexed by `s` is the monomial on `s.card` generators. -/
+@[simp]
+theorem involute_basis {I : Type w} [LinearOrder I]
+    (b : Module.Basis I R M) (s : Finset I) :
+    CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) (b.ExteriorAlgebra s) =
+      (-1 : R) ^ s.card • b.ExteriorAlgebra s := by
+  rw [ExteriorAlgebra.basis_apply]
+  exact involute_ιMulti _
+
 /-- The shuffle sign for the singleton basis vector indexed by `i` followed by the basis vector
 indexed by `s.erase i`. When `i ∈ s`, this is the sign of moving `i` to the front of `s`. -/
 def basisEraseSign {I : Type w} [LinearOrder I] (i : I) (s : Finset I) : ℤˣ :=
@@ -102,6 +133,24 @@ theorem basis_singleton_mul_basis_erase {I : Type w} [LinearOrder I]
   have hprod := ExteriorAlgebra.basis_mul_of_disjoint b u t hdisj
   rw [hunion] at hprod
   simpa [basisEraseSign, u, t] using hprod
+
+/-- **Creating a basis coordinate inserts it into the index set**, with the shuffle sign that
+moves it to the front; it is zero when the coordinate is already present, since a repeated
+generator squares to zero. -/
+@[simp]
+theorem ι_mul_basis {I : Type w} [LinearOrder I]
+    (b : Module.Basis I R M) (i : I) (s : Finset I) :
+    ExteriorAlgebra.ι R (b i) * b.ExteriorAlgebra s =
+      if i ∈ s then 0
+        else basisEraseSign i (insert i s) • b.ExteriorAlgebra (insert i s) := by
+  classical
+  rw [← basis_singleton]
+  split_ifs with hi
+  · exact ExteriorAlgebra.basis_mul_of_not_disjoint b
+      (⟨{i}, Finset.card_singleton i⟩ : Set.powersetCard I 1) (⟨s, rfl⟩ : Set.powersetCard I s.card)
+      (by simp [hi])
+  · have h := basis_singleton_mul_basis_erase b i (insert i s) (Finset.mem_insert_self i s)
+    rwa [Finset.erase_insert hi] at h
 
 /-- Contracting an exterior-basis vector erases the contracted coordinate, with the shuffle sign
 that moves that coordinate to the front; it is zero when the coordinate is absent. -/

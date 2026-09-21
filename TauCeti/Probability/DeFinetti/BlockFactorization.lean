@@ -58,7 +58,7 @@ finite-block rectangle identity for `directingProbabilityMeasure μ X`, exactly 
   explicitly.
 * `mixedIID_of_contractable` — the existential form, for a contractable process on an
   arbitrary measurable sample space (state space still standard Borel).
-* `mixedIID_of_exchangeable` — the exchangeable form (via `contractable_of_exchangeable`).
+* `mixedIID_of_exchangeable` — the exchangeable form (via `Exchangeable.contractable`).
 
 The `..._of_iCondIndepFun_tailProcess` theorems expose the intermediate reduction (de Finetti given
 tail conditional independence of the coordinates). All of the rectangle-mixture staging lemmas and
@@ -174,7 +174,7 @@ theorem mixedIIDWith_of_iCondIndepFun_tailProcess
         (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
     MixedIIDWith μ X (directingProbabilityMeasure μ X) := by
   have hTail : tailProcess X ≤ mΩ := tailProcess_le_ambient 0 fun j _ => hX_meas j
-  refine mixedIIDWith_of_forall_rectangles
+  refine mixedIIDWith_of_forall_rectangles (fun n => (hX_meas n).aemeasurable)
     (measurable_directingProbabilityMeasure (μ := μ) hTail) ?_
   intro m k hk B hB
   rw [blockLaw_eq_lintegral_prod_directingMeasure_of_iCondIndepFun_tailProcess
@@ -268,7 +268,7 @@ theorem mixedIIDWith_of_contractable
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     MixedIIDWith μ X (directingProbabilityMeasure μ X) := by
   have hTail : tailProcess X ≤ mΩ := tailProcess_le_ambient 0 fun j _ => hX_meas j
-  refine mixedIIDWith_of_forall_rectangles
+  refine mixedIIDWith_of_forall_rectangles (fun n => (hX_meas n).aemeasurable)
     (measurable_directingProbabilityMeasure (μ := μ) hTail) ?_
   intro m k hk B hB
   rw [blockLaw_injective_eq_lintegral_prod_directingMeasure hX hX_meas hk hB]
@@ -303,7 +303,7 @@ theorem mixedIID_of_exchangeable {Ω α : Type*} [MeasurableSpace Ω] [Measurabl
     {X : ℕ → Ω → α} (hX : Exchangeable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     MixedIID μ X :=
   mixedIID_of_contractable
-    (contractable_of_exchangeable hX fun i => (hX_meas i).aemeasurable) hX_meas
+    (hX.contractable fun i => (hX_meas i).aemeasurable) hX_meas
 
 end Probability
 

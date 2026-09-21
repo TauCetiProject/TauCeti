@@ -14,9 +14,9 @@ public import Mathlib.RepresentationTheory.Character
 
 This file records how the forgetful functor `FDRep R G ⥤ Rep R G` preserves module-finiteness,
 finrank and characters. These facts let results proved for representation carriers transfer back to
-`FDRep`, in particular in `TauCeti.RepresentationTheory.Induction.FiniteDimensional`. In the same
-spirit it records that rebundling the representation an object carries returns that object, which
-is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
+`FDRep`, in particular in `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`. In the
+same spirit it records that rebundling the representation an object carries returns that object,
+which is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
 statement about the object it started from.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
@@ -29,11 +29,16 @@ representation only when its carrier already lies there. A module-finite carrier
 neither the dimension nor the character. Only the character transfer needs `k` to be a field, `k`
 being a commutative ring throughout otherwise.
 
-Finally it records the two structural properties of the character that Mathlib's
+Finally it records the structural properties of the character that Mathlib's
 `RepresentationTheory/Character.lean` leaves out beside `FDRep.char_iso` and `FDRep.char_tensor`:
-the character is **additive on biproducts**, and the character of the **tensor unit** is the
-constant function `1`. Those are what is still missing before the character can be read as a ring
-homomorphism out of the representation ring, `TauCeti.repRingCharacter`.
+the character is **additive on biproducts** (and, unbundled, on products of representations), the
+character of the **tensor unit** is the constant function `1`, and the character is **constant on
+the cosets of its kernel**. The first two are what
+is still missing before the character can be read as a ring homomorphism out of the representation
+ring, `TauCeti.repRingCharacter`; the last is the elementary half of the kernel API whose analytic
+half, over `ℂ`, is `TauCeti/RepresentationTheory/CharacterTable/Kernel.lean`. Beside it, and needing
+no characters at all, the **common kernel of a family** of representations is registered as a normal
+subgroup.
 
 ## Main definitions
 
@@ -44,14 +49,20 @@ homomorphism out of the representation ring, `TauCeti.repRingCharacter`.
 
 * `Representation.char_trivial`: the character of a trivial representation is the dimension of its
   carrier, whence `FDRep.character_of_trivial` for the trivial representation on `k` itself.
+* `Representation.char_prod`: the character is additive on products of representations, the
+  unbundled counterpart of `FDRep.char_biprod`.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
+  it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
 * `FDRep.char_biprod`: the character is additive on biproducts.
 * `FDRep.char_tensorUnit`: the character of the tensor unit is the constant function `1`.
+* `FDRep.char_mul_of_mem_ker_left`: the character is constant on the cosets of its kernel.
+* `FDRep.normal_iInf_ker`: the common kernel of a family of representations is a normal subgroup.
 -/
 
 public section
@@ -69,6 +80,19 @@ theorem char_trivial {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
   have hone : trivial k G V g = 1 :=
     LinearMap.ext fun v => by rw [trivial_apply, Module.End.one_apply]
   rw [character, hone, LinearMap.trace_one]
+
+/-- **The character is additive on products of representations.** This is the unbundled counterpart
+of `FDRep.char_biprod`, and it is what reads a splitting `ρ ≃ ρ₁ × ρ₂` -- the shape
+`TauCeti.Subrepresentation.equivProdOfIsCompl` produces -- off the two characters. -/
+@[simp]
+theorem char_prod {k : Type u} {G : Type v} {V W : Type*} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+    [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+    (ρ : Representation k G V) (σ : Representation k G W) (g : G) :
+    (ρ.prod σ).character g = ρ.character g + σ.character g := by
+  have hg : (ρ.prod σ) g = LinearMap.prodMap (ρ g) (σ g) := rfl
+  rw [character, character, character, hg]
+  exact LinearMap.trace_prodMap' (ρ g) (σ g)
 
 end Representation
 
@@ -111,6 +135,33 @@ theorem character_forget₂_obj {k : Type u} {G : Type v} [Field k] [Monoid G] (
 @[simp]
 theorem of_ρ_eq_self {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G) :
     FDRep.of A.ρ = A := (rfl)
+
+/-- **Forgetting finite-dimensionality is an additive functor**: `forget₂ (FDRep R G) (Rep R G)`
+preserves sums of intertwiners.  This is what lets an additive construction on `Rep R G` -- the
+induction of `TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic`, say -- be recognized
+through the forgetful functor. -/
+instance forget₂_additive {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
+    (forget₂ (FDRep R G) (Rep R G)).Additive where
+  map_add := by
+    intros
+    apply Rep.hom_ext
+    ext x
+    -- The remaining `rfl` only identifies the two names of the single underlying addition of
+    -- intertwiners, the same definitional identification that lets `FDRep.forget₂_ρ` be stated.
+    rfl
+
+open MonoidalCategory in
+/-- **Forgetting finite-dimensionality preserves the tensor product on the nose.**  The monoidal
+structure of `FDRep R G` is that of `FGModuleCat R` with the diagonal action, and the monoidal
+structure of `FGModuleCat R` is that of `ModuleCat R` on a carrier that happens to be finite, so
+the two sides are the same object rather than isomorphic ones.
+
+Deliberately not a `simp` lemma: it is an equation between *objects* of `Rep R G`, which has no
+business in the global `simp` set. It is used through `CategoryTheory.eqToIso`, where the
+definitional equality it records is too deep for the unifier to find on its own. -/
+theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) :
+    (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
+      (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)
 
 section Shrink
 
@@ -229,5 +280,34 @@ theorem char_tensorUnit (k : Type u) (G : Type v) [Field k] [Monoid G] :
   rw [hunit, Pi.one_apply, character_of_trivial]
 
 end TensorUnit
+
+section Kernel
+
+variable {k : Type u} {G : Type v} [Field k] [Group G]
+
+/-- **A character is constant on the cosets of its kernel**: an element acting as the identity may
+be deleted from a character value. This is an algebraic identity, so it holds over any field. The
+right-handed form is this one composed with `FDRep.char_mul_comm`. -/
+@[simp]
+theorem char_mul_of_mem_ker_left (V : FDRep k G) {g : G} (hg : g ∈ V.ρ.ker) (h : G) :
+    V.character (g * h) = V.character h := by
+  simp only [character, map_mul, MonoidHom.mem_ker.1 hg, one_mul]
+
+end Kernel
+
+section CommonKernel
+
+variable {ι : Type*} {k : Type u} {G : Type v} [CommRing k] [Group G]
+
+/-- **The common kernel of a family of representations is a normal subgroup.** Each kernel is
+normal, and Mathlib's `Subgroup.normal_iInf_normal` passes that to the infimum; what is added here
+is the registration as an instance, that lemma taking its hypothesis as an explicit argument, so
+that the normality of a common kernel is available to instance search. Nothing here is analytic or
+character-theoretic; over `ℂ` the common kernel is a locus of character equations by
+`FDRep.coe_iInf_ker` (`TauCeti/RepresentationTheory/CharacterTable/Kernel.lean`). -/
+instance normal_iInf_ker (W : ι → FDRep k G) : (⨅ i, (W i).ρ.ker).Normal :=
+  Subgroup.normal_iInf_normal fun _ => inferInstance
+
+end CommonKernel
 
 end FDRep

@@ -114,7 +114,7 @@ theorem productOfNormal (H : FiniteTypeCommHopfAlgCat.{u, u} k)
         (CommHopfAlgCat.normalSemidirectProduct H.obj I J hI))).mp hsource
   let _ : Algebra.Smooth k (CommHopfAlgCat.normalSemidirectProduct H.obj I J hI) := hsource'.1
   let _ : IsReduced (CommHopfAlgCat.normalSemidirectProduct H.obj I J hI) :=
-    isReduced_of_smooth_of_field k _
+    isReduced_of_smooth k _
   apply image_of_reduced (CommHopfAlgCat.productMapOfNormal H.obj I J hI)
   rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff]
   exact hsource'.2

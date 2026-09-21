@@ -5,18 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Convex.Mul
 
 /-!
 # Additional lemmas for the Bochner integral
 
-This file records general-purpose bridges between real-valued Bochner integrals and
-extended-nonnegative Lebesgue integrals.
+This file records general-purpose lemmas for Bochner integrals, including bridges between
+real-valued Bochner integrals and extended-nonnegative Lebesgue integrals, as well as inequalities
+for set and probability integrals.
 
 ## Positive parts
 
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
+
+## Set and probability integrals
+
+* `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
+  integral, in squared form.
+* The set-integral inequality specializes to the second-moment lower bound for a real-valued
+  function on a probability space.
 
 ## `L¹` convergence
 
@@ -28,19 +39,104 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
 
 The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
+
+## Tail lower bounds
+
+A function on the real line whose norm stays above a positive constant on a set of infinite
+measure cannot be integrable there.
+
+* `not_integrableOn_Ioi_of_eventually_le_norm` is the half-line form, and
+  `not_integrable_of_eventually_le_atTop` is its real-valued Lebesgue-integrability consequence.
+
+## Kernel averages on the real line
+
+* `integral_kernel_mem_Icc_of_antitoneOn` squeezes the average of a function against a probability
+  density supported in `[-ε, 0]` between the function's values at `t + ε` and `t`, given only
+  antitonicity on the sampled interval `[t, t + ε]`.
+
+## Almost-everywhere disjoint finite unions
+
+Mathlib's `MeasureTheory.integral_biUnion_finset` splits an integral over a finite union into a
+sum, but asks for genuinely measurable and genuinely disjoint pieces. A family of translates of
+a fundamental domain need satisfy neither: they overlap on a null set, and
+`MeasureTheory.IsFundamentalDomain` records its pieces as `MeasureTheory.NullMeasurableSet`,
+pairwise `MeasureTheory.AEDisjoint`, rather than as disjoint measurable sets.
+
+* `integral_biUnion_finset₀` is the almost-everywhere form, in the `₀` convention of
+  `MeasureTheory.lintegral_biUnion_finset₀`.
+
+Adapted from the AINTLIB `LeanModularForms` project,
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>, commit
+`6d87d596a5372d5b122c47b7082d4c3afa9b7c3b`, Apache-2.0 —
+`HeckeRIngs/GL2/AdjointTheory/SummandAdjoint.lean`, `setIntegral_biUnion_finset_ae`, where it is
+stated for the same purpose. The name here follows the Mathlib lemma it weakens rather than that
+source's.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Filter
+open MeasureTheory Filter TopologicalSpace
 
-open scoped ENNReal Topology
+open scoped ENNReal Function Topology
 
 namespace TauCeti
 
 namespace MeasureTheory
+
+/-- A function whose norm is eventually at least a positive constant at `atTop` is not integrable
+on any right half-line: it is bounded below in norm on a set of infinite measure. -/
+theorem not_integrableOn_Ioi_of_eventually_le_norm {E : Type*} [NormedAddCommGroup E]
+    {f : ℝ → E} {ε : ℝ} (hε : 0 < ε) (c : ℝ) (hf : ∀ᶠ x in atTop, ε ≤ ‖f x‖) :
+    ¬ IntegrableOn f (Set.Ioi c) := by
+  intro hint
+  obtain ⟨a, ha⟩ := eventually_atTop.mp hf
+  have htail : IntegrableOn f (Set.Ioi (max a c)) :=
+    hint.mono_set (Set.Ioi_subset_Ioi (le_max_right a c))
+  have hconst : IntegrableOn (fun _ : ℝ => ε) (Set.Ioi (max a c)) volume := by
+    refine Integrable.mono' htail.norm (by fun_prop) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
+    simpa only [Real.norm_eq_abs, abs_of_pos hε] using ha x ((le_max_left a c).trans hx.le)
+  rw [integrableOn_const_iff] at hconst
+  simp [Real.volume_Ioi, hε.ne'] at hconst
+
+/-- A real function that is eventually at least a positive constant at `atTop` is not Lebesgue
+integrable. -/
+theorem not_integrable_of_eventually_le_atTop {f : ℝ → ℝ} {ε : ℝ} (hε : 0 < ε)
+    (hf : ∀ᶠ x in atTop, ε ≤ f x) : ¬ Integrable f volume := fun hint =>
+  not_integrableOn_Ioi_of_eventually_le_norm hε 0
+    (hf.mono fun x hx => by rw [Real.norm_eq_abs]; exact hx.trans (le_abs_self _))
+    hint.integrableOn
+
+/-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
+theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} (f : Ω → ℝ) (S : Set Ω) (hS_top : μ S ≠ ⊤)
+    (hf : IntegrableOn f S μ) (hf_sq : IntegrableOn (fun x => f x ^ 2) S μ) :
+    (∫ x in S, f x ∂μ) ^ 2 ≤ μ.real S * ∫ x in S, f x ^ 2 ∂μ := by
+  by_cases hS : μ S = 0
+  · rw [Measure.restrict_eq_zero.mpr hS]
+    simp
+  · have hS_pos : 0 < μ.real S := ENNReal.toReal_pos hS hS_top
+    have hconv : ConvexOn ℝ Set.univ (fun x : ℝ => x ^ 2) :=
+      Even.convexOn_pow (by norm_num : Even 2)
+    have hjensen := hconv.map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
+      hS hS_top (ae_of_all _ fun _ => Set.mem_univ _) hf hf_sq
+    rw [setAverage_eq, setAverage_eq] at hjensen
+    simp only [smul_eq_mul] at hjensen
+    have hkey : (μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2
+        ≤ (μ.real S)⁻¹ * ∫ x in S, f x ^ 2 ∂μ := by
+      calc
+        (μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2 =
+            ((μ.real S)⁻¹ * ∫ x in S, f x ∂μ) ^ 2 := by ring
+        _ ≤ _ := hjensen
+    calc
+      (∫ x in S, f x ∂μ) ^ 2 =
+          μ.real S ^ 2 * ((μ.real S)⁻¹ ^ 2 * (∫ x in S, f x ∂μ) ^ 2) := by
+            field_simp
+      _ ≤ μ.real S ^ 2 * ((μ.real S)⁻¹ * ∫ x in S, f x ^ 2 ∂μ) :=
+        mul_le_mul_of_nonneg_left hkey (sq_nonneg _)
+      _ = μ.real S * ∫ x in S, f x ^ 2 ∂μ := by field_simp
 
 /-- The positive part of the integral of a real-valued function is at most the integral of its
 pointwise positive part. No integrability or pointwise sign assumption on `f` is needed. -/
@@ -72,6 +168,81 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
     simp [Pi.sub_apply]
   simp_rw [heq]
   simpa [Function.comp_def] using (ENNReal.continuous_ofReal.tendsto 0).comp h
+
+/-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
+nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone
+on `[t, t + ε]`, then the average `∫ s, ψ s * F (t - s) ∂μ` lies between `F (t + ε)` and `F t`.
+
+Use this to bound a mollification of a monotone function by two of its values. No separate
+integrability hypotheses or sign assumption on `ε` are needed. -/
+theorem integral_kernel_mem_Icc_of_antitoneOn {μ : Measure ℝ} {ψ F : ℝ → ℝ} {ε t : ℝ}
+    (hFanti : AntitoneOn F (Set.Icc t (t + ε))) (hψ0 : ∀ s, 0 ≤ ψ s)
+    (hψint : ∫ s, ψ s ∂μ = 1)
+    (hsupp : ∀ s : ℝ, ψ s ≠ 0 → s ∈ Set.Icc (-ε) 0) :
+    (∫ s, ψ s * F (t - s) ∂μ) ∈ Set.Icc (F (t + ε)) (F t) := by
+  have hψi : Integrable ψ μ := integrable_of_integral_eq_one hψint
+  have hε : 0 ≤ ε := by
+    obtain ⟨s, hs⟩ := exists_ne_zero_of_integral_ne_zero (hψint ▸ one_ne_zero)
+    have := hsupp s hs
+    linarith [this.1, this.2]
+  have hmass : ∀ c : ℝ, ∫ s, ψ s * c ∂μ = c := by
+    intro c
+    rw [integral_mul_const, hψint, one_mul]
+  have hsample : ∀ s : ℝ, -ε ≤ s → s ≤ 0 → t - s ∈ Set.Icc t (t + ε) := fun s h1 h2 =>
+    ⟨by linarith, by linarith⟩
+  have hlo : t ∈ Set.Icc t (t + ε) := ⟨le_rfl, by linarith⟩
+  have hhi : t + ε ∈ Set.Icc t (t + ε) := ⟨by linarith, le_rfl⟩
+  have hbounds (s : ℝ) : ψ s * F (t + ε) ≤ ψ s * F (t - s) ∧
+      ψ s * F (t - s) ≤ ψ s * F t := by
+    by_cases hs : ψ s = 0
+    · simp [hs]
+    obtain ⟨hs1, hs2⟩ := hsupp s hs
+    exact ⟨mul_le_mul_of_nonneg_left
+      (hFanti (hsample s hs1 hs2) hhi (by linarith)) (hψ0 s),
+      mul_le_mul_of_nonneg_left (hFanti hlo (hsample s hs1 hs2) (by linarith)) (hψ0 s)⟩
+  -- Monotonicity gives measurability on the sampled interval. Cutting off outside it
+  -- does not change the weighted integrand, which lies between two integrable functions.
+  have hmono : MonotoneOn (fun s => F (t - s)) (Set.Icc (-ε) 0) := by
+    intro x hx y hy hxy
+    exact hFanti (hsample y hy.1 hy.2) (hsample x hx.1 hx.2) (by linarith)
+  have hmeas :=
+    (aemeasurable_restrict_of_monotoneOn (μ := μ) measurableSet_Icc hmono).aestronglyMeasurable
+  have hprod : AEStronglyMeasurable (fun s => ψ s * F (t - s)) μ := by
+    refine (hψi.aestronglyMeasurable.mul
+      ((aestronglyMeasurable_indicator_iff measurableSet_Icc).2 hmeas)).congr
+        (ae_of_all μ fun s => ?_)
+    by_cases hs : ψ s = 0
+    · simp [hs]
+    · simp only [Pi.mul_apply, Set.indicator_of_mem (hsupp s hs)]
+  have hintF := integrable_of_le_of_le hprod (ae_of_all μ fun s => (hbounds s).1)
+    (ae_of_all μ fun s => (hbounds s).2) (hψi.mul_const _) (hψi.mul_const _)
+  constructor
+  · rw [← hmass (F (t + ε))]
+    exact integral_mono (hψi.mul_const _) hintF fun s => (hbounds s).1
+  · rw [← hmass (F t)]
+    exact integral_mono hintF (hψi.mul_const _) fun s => (hbounds s).2
+
+/-- **A Bochner integral over a finite almost-everywhere disjoint union splits as a sum.**
+
+The almost-everywhere counterpart of `MeasureTheory.integral_biUnion_finset`, which asks for
+genuinely measurable and genuinely disjoint pieces: here the pieces need only be
+`MeasureTheory.NullMeasurableSet` and pairwise `MeasureTheory.AEDisjoint`, which is what
+`MeasureTheory.IsFundamentalDomain` supplies for a family of translates of a fundamental domain.
+
+Integrability is asked for once, on the union, rather than on each piece. The two are equivalent
+— `MeasureTheory.integrableOn_finset_iUnion` — and the union is the form
+`MeasureTheory.integral_iUnion_ae` consumes. -/
+theorem integral_biUnion_finset₀ {X E ι : Type*} [MeasurableSpace X] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure X} {f : X → E} (s : Finset ι) {t : ι → Set X}
+    (hd : Set.Pairwise (↑s) (AEDisjoint μ on t)) (hm : ∀ i ∈ s, NullMeasurableSet (t i) μ)
+    (hf : IntegrableOn f (⋃ i ∈ s, t i) μ) :
+    ∫ x in ⋃ i ∈ s, t i, f x ∂μ = ∑ i ∈ s, ∫ x in t i, f x ∂μ := by
+  have hcoe : (⋃ i ∈ s, t i) = ⋃ i : (↑s : Set ι), t (i : ι) := by
+    simp only [← Finset.mem_coe, Set.biUnion_eq_iUnion]
+  rw [hcoe] at hf ⊢
+  rw [integral_iUnion_ae (s := fun i : (↑s : Set ι) ↦ t (i : ι))
+    (fun i ↦ hm (i : ι) i.2) (hd.subtype _ _) hf]
+  exact Finset.tsum_subtype' s fun i ↦ ∫ x in t i, f x ∂μ
 
 end MeasureTheory
 

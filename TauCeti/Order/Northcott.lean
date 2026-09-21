@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Set.Card
+public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
 
 /-!
@@ -56,6 +57,12 @@ theorem Nat.card_coe_normLE (x : ℝ) :
 theorem normLE_mono : Monotone (normLE N) := fun _ _ hxy _ hi ↦
   mem_normLE N |>.mpr <| (mem_normLE N |>.mp hi).trans hxy
 
+/-- The finite carriers exhaust the index type as the cutoff grows: every finite set of indices
+is eventually contained in `normLE N x`. -/
+theorem tendsto_normLE_atTop : Filter.Tendsto (normLE N) Filter.atTop Filter.atTop :=
+  Filter.tendsto_atTop_finset_of_monotone (normLE_mono N) fun i ↦
+    ⟨N i, (mem_normLE N).mpr le_rfl⟩
+
 /-- Membership in a carrier with natural cutoff is the plain inequality of natural numbers. -/
 theorem mem_normLE_natCast {i : ι} {n : ℕ} : i ∈ normLE N (n : ℝ) ↔ N i ≤ n := by
   simp
@@ -99,7 +106,7 @@ theorem summatory_add {M : Type*} [AddCommMonoid M] (w₁ w₂ : ι → M) (x : 
   simp [summatory, Finset.sum_add_distrib]
 
 /-- Summation distributes over pointwise subtraction of weights. -/
-theorem summatory_sub {M : Type*} [AddCommGroup M] (w₁ w₂ : ι → M) (x : ℝ) :
+theorem summatory_sub {M : Type*} [SubtractionCommMonoid M] (w₁ w₂ : ι → M) (x : ℝ) :
     summatory N (w₁ - w₂) x = summatory N w₁ x - summatory N w₂ x := by
   simp [summatory, Finset.sum_sub_distrib]
 

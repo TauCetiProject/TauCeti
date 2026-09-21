@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 -- Both `ΨSq ≠ 0` lemmas are used only inside proofs below, so both imports are private:
 -- Mathlib's `ΨSq_ne_zero` for the characteristic-conditional discharge, and this repository's
 -- `ΨSq_ne_zero_of_Δ_ne_zero` for the characteristic-free one.
 import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Coprimality
 
 /-!
 # The coordinate pullback of multiplication by `n`, for every nonzero `n`
 
-`Isogeny/Basic.lean` gives the identity coordinate pullback and `Isogeny/Frobenius.lean` gives
+`Isogeny/Basic.lean` gives the identity coordinate pullback and `Isogeny/Frobenius/Basic.lean` gives
 the Frobenius one. This file gives `[n]`: multiplication by `n` pulls back to a map
 `W.CoordinateRing →ₐ[F] W.FunctionField` wherever `ψₙ` does not vanish at the generic point.
 
@@ -57,7 +57,8 @@ checked; it holds because `n • P` is a point of the curve whenever `P` is, whi
 `WeierstrassCurve.zsmul_point_eq_smulEval` at the generic point.
 
 That the generic point is itself a point of the curve — the other half of the argument — lives
-in `Affine/FunctionField/GenericPoint.lean` as `WeierstrassCurve.Affine.equation_genericPoint`,
+in `Affine/FunctionField/GenericPoint.lean` as
+`WeierstrassCurve.Affine.equation_genericX_genericY`,
 since it is about `W` and not about `[n]`.
 
 ## Main definitions
@@ -68,21 +69,29 @@ since it is about `W` and not about `[n]`.
 * `TauCeti.Isogeny.mulByIntPullbackOfNeZero`: its specialisation to `n ≠ 0` on an elliptic
   curve, where the non-vanishing is discharged.
 
-The generic point itself (`genericX`, `genericY`, `functionFieldCurve`) is not defined here; it
+The generic point itself (`genericX`, `genericY`) is not defined here; it
 is `WeierstrassCurve.Affine`'s, in `Affine/FunctionField/GenericPoint.lean`.
 
 ## Main results
 
 * `TauCeti.Isogeny.equation_mulByInt`: the coordinates of `[n]` satisfy the equation of `W` over
   its function field.
+* `TauCeti.Isogeny.psiFunctionField_two_mul`: `ψ_{2n} = preΨ_{2n} · ψ₂` at the generic point.
 * `TauCeti.Isogeny.psiFunctionField_ne_zero`: `ψₙ` does not vanish at the generic point when
   `(n : F) ≠ 0`, needing no nonsingularity.
 * `TauCeti.Isogeny.psiFunctionField_ne_zero_of_Δ_ne_zero`: the same conclusion from `W.Δ ≠ 0`
   and `n ≠ 0`, with no hypothesis on the characteristic. These are the two discharges of
   `mulByIntPullback`'s hypothesis; neither subsumes the other.
+* `TauCeti.Isogeny.phiFunctionField_eq_algebraMap`: `Φₙ` at the generic point is the image of
+  the univariate `Φₙ`, the companion of `psiFunctionField_sq` for the numerator.
+* `TauCeti.Isogeny.mulByIntX_mul_aeval_ΨSq`: the coordinate identity `[n]*x · ΨSqₙ(x) = Φₙ(x)`
+  at the generic point, where `ψₙ` does not vanish.
 * `TauCeti.Isogeny.mulByIntPullback_mk`: the pullback of an arbitrary class, as evaluation of a
   bivariate polynomial at `(φₙ/ψₙ², ωₙ/ψₙ³)`, with `TauCeti.Isogeny.mulByIntPullback_X` and
   `TauCeti.Isogeny.mulByIntPullback_Y` its values on the two coordinates.
+* `TauCeti.Isogeny.tautologicalPoint_mulByIntPullback`: the tautological point of `[n]` is
+  `n • ` the generic point. It lives here, next to the Jacobian-coordinate lemmas it is proved
+  from, which stay private.
 
 ## References
 
@@ -126,6 +135,11 @@ noncomputable def omegaFunctionField (n : ℤ) : W.FunctionField :=
 noncomputable def phiFunctionField (n : ℤ) : W.FunctionField :=
   algebraMap W.CoordinateRing W.FunctionField (Affine.CoordinateRing.mk W (W.φ n))
 
+/-- The image of the complementary division polynomial `ψcₙ` in the function field. It is the
+numerator of the pullback of `2y + a₁x + a₃` along `[n]`, by the defining identity `ω_spec`. -/
+noncomputable def psicFunctionField (n : ℤ) : W.FunctionField :=
+  algebraMap W.CoordinateRing W.FunctionField (Affine.CoordinateRing.mk W (W.ψc n))
+
 /-- The rational division-polynomial expression `φₙ / ψₙ²`.
 
 This is the `x`-coordinate of `[n]` at the generic point exactly when `ψₙ` does not vanish
@@ -151,6 +165,17 @@ theorem omegaFunctionField_def (n : ℤ) : omegaFunctionField W n =
 theorem phiFunctionField_def (n : ℤ) : phiFunctionField W n =
     algebraMap W.CoordinateRing W.FunctionField (Affine.CoordinateRing.mk W (W.φ n)) := (rfl)
 
+/-- **The defining equation of `psicFunctionField`.** -/
+theorem psicFunctionField_def (n : ℤ) : psicFunctionField W n =
+    algebraMap W.CoordinateRing W.FunctionField (Affine.CoordinateRing.mk W (W.ψc n)) := (rfl)
+
+/-- **`Φₙ` at the generic point is the image of the univariate `Φₙ`.** -/
+theorem phiFunctionField_eq_algebraMap (n : ℤ) :
+    phiFunctionField W n = algebraMap F[X] W.FunctionField (W.Φ n) := by
+  rw [phiFunctionField_def, Affine.CoordinateRing.mk_φ,
+    WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+    ← IsScalarTower.algebraMap_apply]
+
 /-- **The defining equation of `mulByIntX`**: the `x`-coordinate of `[n]` is `φₙ / ψₙ²`. -/
 theorem mulByIntX_def (n : ℤ) :
     mulByIntX W n = phiFunctionField W n / psiFunctionField W n ^ 2 := (rfl)
@@ -161,29 +186,38 @@ theorem mulByIntY_def (n : ℤ) :
 
 /-- The `Z`-coordinate of the Jacobian triple of `[n]` at the generic point is `ψₙ`.
 
-Private, like the two below: all three are `rw`-lemmas for `equation_mulByInt`, which is the
-public statement of what they add up to. They are not `@[simp]` either — `smulEval` is an
-`abbrev`, so `simp` unfolds the left-hand side through `Function.comp_apply` and `map_ψ` before
-these could fire, and `simpNF` rejects them. -/
+Private, like the two below: all three are `rw`-lemmas for `equation_mulByInt` and
+`tautologicalPoint_mulByIntPullback`, which are the public statements of what they add up to.
+They are not `@[simp]` either — `smulEval` is an `abbrev`, so `simp` unfolds the left-hand side
+through `Function.comp_apply` and `map_ψ` before these could fire, and `simpNF` rejects them. -/
 private theorem smulEval_genericPoint_Z (n : ℤ) :
-    smulEval W.functionFieldCurve W.genericX W.genericY n 2 = psiFunctionField W n := by
-  dsimp only [smulEval, Affine.functionFieldCurve, Function.comp_def]
+  smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 =
+      psiFunctionField W n := by
+  dsimp only [smulEval, Function.comp_def]
+  -- `W⁄W.FunctionField` abbreviates the mapped curve; expose that spelling for `map_ψ`.
+  change ((W.map (algebraMap F W.FunctionField)).ψ n).evalEval W.genericX W.genericY = _
   rw [map_ψ, psiFunctionField]
-  exact Affine.evalEval_genericPoint W (W.ψ n)
+  exact Affine.evalEval_genericX_genericY W (W.ψ n)
 
 /-- The `X`-coordinate of the Jacobian triple of `[n]` at the generic point is `φₙ`. -/
 private theorem smulEval_genericPoint_X (n : ℤ) :
-    smulEval W.functionFieldCurve W.genericX W.genericY n 0 = phiFunctionField W n := by
-  dsimp only [smulEval, Affine.functionFieldCurve, Function.comp_def]
+    smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 0 =
+      phiFunctionField W n := by
+  dsimp only [smulEval, Function.comp_def]
+  -- `W⁄W.FunctionField` abbreviates the mapped curve; expose that spelling for `map_φ`.
+  change ((W.map (algebraMap F W.FunctionField)).φ n).evalEval W.genericX W.genericY = _
   rw [map_φ, phiFunctionField]
-  exact Affine.evalEval_genericPoint W (W.φ n)
+  exact Affine.evalEval_genericX_genericY W (W.φ n)
 
 /-- The `Y`-coordinate of the Jacobian triple of `[n]` at the generic point is `ωₙ`. -/
 private theorem smulEval_genericPoint_Y (n : ℤ) :
-    smulEval W.functionFieldCurve W.genericX W.genericY n 1 = omegaFunctionField W n := by
-  dsimp only [smulEval, Affine.functionFieldCurve, Function.comp_def]
+    smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 1 =
+      omegaFunctionField W n := by
+  dsimp only [smulEval, Function.comp_def]
+  -- `W⁄W.FunctionField` abbreviates the mapped curve; expose that spelling for `map_ω`.
+  change ((W.map (algebraMap F W.FunctionField)).ω n).evalEval W.genericX W.genericY = _
   rw [map_ω, omegaFunctionField]
-  exact Affine.evalEval_genericPoint W (W.ω n)
+  exact Affine.evalEval_genericX_genericY W (W.ω n)
 
 /-- `ψₙ² = ΨSqₙ` in the function field: the division polynomial's square is the univariate
 `ΨSq`, already known in the coordinate ring as `mk_ψ` followed by `mk_Ψ_sq`. -/
@@ -191,6 +225,38 @@ private theorem smulEval_genericPoint_Y (n : ℤ) :
 theorem psiFunctionField_sq (n : ℤ) : psiFunctionField W n ^ 2 =
       algebraMap W.CoordinateRing W.FunctionField (Affine.CoordinateRing.mk W (C (W.ΨSq n))) := by
   rw [psiFunctionField, ← map_pow, Affine.CoordinateRing.mk_ψ, Affine.CoordinateRing.mk_Ψ_sq]
+
+/-- **`ψ_{2n} = preΨ_{2n} · ψ₂` at the generic point.** `Ψ` at an even argument is
+`C (preΨ) * ψ₂`, and `ψ` and `Ψ` agree in the coordinate ring, so an even-indexed
+`psiFunctionField` splits off its `preΨ` factor. -/
+theorem psiFunctionField_two_mul (n : ℤ) :
+    psiFunctionField W (2 * n) =
+      algebraMap F[X] W.FunctionField (W.preΨ (2 * n)) * psiFunctionField W 2 := by
+  have h2 : psiFunctionField W 2 =
+      algebraMap W.CoordinateRing W.FunctionField (Affine.CoordinateRing.mk W W.ψ₂) := by
+    rw [psiFunctionField_def, WeierstrassCurve.ψ_two]
+  rw [psiFunctionField_def, Affine.CoordinateRing.mk_ψ, WeierstrassCurve.Ψ, h2]
+  simp only [even_two_mul, ite_true, map_mul, Affine.CoordinateRing.mk_C_eq_algebraMap,
+    ← IsScalarTower.algebraMap_apply]
+
+/-- **`Φₙ` at the generic point is `φₙ`**: the univariate division polynomial evaluated at the
+generic coordinate is its image in the function field. -/
+@[simp]
+theorem aeval_genericX_Φ (n : ℤ) : aeval W.genericX (W.Φ n) = phiFunctionField W n := by
+  rw [phiFunctionField_eq_algebraMap, W.algebraMap_eq_aeval_genericX]
+
+/-- **`ΨSqₙ` at the generic point is `ψₙ²`.** -/
+@[simp]
+theorem aeval_genericX_ΨSq (n : ℤ) : aeval W.genericX (W.ΨSq n) = psiFunctionField W n ^ 2 := by
+  rw [psiFunctionField_sq, WeierstrassCurve.Affine.CoordinateRing.mk_C_eq_algebraMap,
+    ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
+    W.algebraMap_eq_aeval_genericX]
+
+/-- **The coordinate identity at the generic point**: `[n]*x · ΨSqₙ(x) = Φₙ(x)`. -/
+theorem mulByIntX_mul_aeval_ΨSq (n : ℤ) (hn : psiFunctionField W n ≠ 0) :
+    mulByIntX W n * aeval W.genericX (W.ΨSq n) = aeval W.genericX (W.Φ n) := by
+  rw [aeval_genericX_Φ, aeval_genericX_ΨSq, mulByIntX_def]
+  exact div_mul_cancel₀ _ (pow_ne_zero 2 hn)
 
 /-- **The coordinates of `[n]` satisfy the equation of `W` over its function field.**
 
@@ -200,13 +266,12 @@ identity: it holds because `n • P` is again a point of the curve whenever `P` 
 `(φₙ : ωₙ : ψₙ)`, that class is nonsingular because it is a point, and `ψₙ ≠ 0` lets it be read
 in affine coordinates — where it becomes exactly this equation. -/
 theorem equation_mulByInt [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
-    W.functionFieldCurve.Equation (mulByIntX W n) (mulByIntY W n) := by
-  have hns := W.nonsingular_genericPoint
-  have hsmul : Jacobian.Nonsingular W.functionFieldCurve.toJacobian
-      (smulEval W.functionFieldCurve W.genericX W.genericY n) := by
-    rw [← Jacobian.nonsingularLift_iff, ← zsmul_point_eq_smulEval _ hns n]
-    exact (n • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)).nonsingular
-  have hZ : smulEval W.functionFieldCurve W.genericX W.genericY n 2 ≠ 0 := by
+    (W⁄W.FunctionField).toAffine.Equation (mulByIntX W n) (mulByIntY W n) := by
+  have hns := W.nonsingular_genericX_genericY
+  have hsmul : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) :=
+    nonsingular_smulEval _ hns n
+  have hZ : smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 ≠ 0 := by
     rw [smulEval_genericPoint_Z]; exact hn
   have hJ := (Jacobian.equation_of_Z_ne_zero hZ).mp hsmul.1
   rwa [smulEval_genericPoint_X, smulEval_genericPoint_Y, smulEval_genericPoint_Z,
@@ -252,13 +317,9 @@ theorem psiFunctionField_ne_zero_of_Δ_ne_zero (hΔ : W.Δ ≠ 0) {n : ℤ} (hn 
   fun h ↦ WeierstrassCurve.ΨSq_ne_zero_of_Δ_ne_zero W hΔ hn
     (ΨSq_eq_zero_of_psiFunctionField_eq_zero W h)
 
-/-- **The coordinate pullback of `[n]`.** The coordinate ring is `F[X]` with a root of the
-Weierstrass polynomial adjoined, so a map out of it is exactly a value for `X` together with a
-value for `Y` satisfying that polynomial — here `φₙ/ψₙ²` and `ωₙ/ψₙ³`, which satisfy it by
-`equation_mulByInt`.
-
-`CoordinatePullback` asks for an `F`-algebra hom, which is what `AdjoinRoot.liftAlgHom` produces
-from the `F`-algebra map `F[X] → W.FunctionField` sending `X` to `φₙ/ψₙ²`.
+/-- **The coordinate pullback of `[n]`.** The point `(φₙ/ψₙ², ωₙ/ψₙ³)` over `W.FunctionField`,
+which `equation_mulByInt` says lies on `W`, defines a pullback through
+`WeierstrassCurve.Affine.CoordinateRing.evalAlgHom`.
 
 The hypothesis is the weakest one the construction uses: `ψₙ` must not vanish at the generic
 point, which is what makes `φₙ/ψₙ²` and `ωₙ/ψₙ³` defined. Two lemmas discharge it —
@@ -266,18 +327,7 @@ point, which is what makes `φₙ/ψₙ²` and `ωₙ/ψₙ³` defined. Two lemm
 `mulByIntPullbackOfNeZero` is the packaged form. -/
 noncomputable def mulByIntPullback [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
     CoordinatePullback W W :=
-  AdjoinRoot.liftAlgHom W.polynomial (aeval (mulByIntX W n)) (mulByIntY W n) <| by
-    -- `liftAlgHom` wants the equation in `eval₂` form against the coerced `aeval`, and
-    -- `equation_mulByInt` is the same fact with the base change written out.
-    have hcoe : ((aeval (mulByIntX W n) : F[X] →ₐ[F] W.FunctionField) :
-        F[X] →+* W.FunctionField) =
-        eval₂RingHom (algebraMap F W.FunctionField) (mulByIntX W n) :=
-      RingHom.ext fun _ ↦ rfl
-    have h := equation_mulByInt W hn
-    dsimp only [Affine.Equation, Affine.functionFieldCurve] at h
-    rw [Affine.map_polynomial, ← eval₂_eval₂RingHom_apply] at h
-    rw [hcoe]
-    exact h
+  Affine.CoordinateRing.evalAlgHom (equation_mulByInt W hn)
 
 /-- **The coordinate pullback of `[n]` for every `n ≠ 0`**, the non-vanishing hypothesis of
 `mulByIntPullback` being discharged by `psiFunctionField_ne_zero_of_Δ_ne_zero`. This is the
@@ -297,9 +347,8 @@ rule; `mulByIntPullback_X` and `mulByIntPullback_Y` are its two special cases. -
 theorem mulByIntPullback_mk [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n ≠ 0) (p : F[X][Y]) :
     mulByIntPullback W hn (Affine.CoordinateRing.mk W p) =
       (p.map (mapRingHom (algebraMap F W.FunctionField))).evalEval (mulByIntX W n)
-        (mulByIntY W n) := by
-  rw [mulByIntPullback, AdjoinRoot.liftAlgHom_mk]
-  exact eval₂_eval₂RingHom_apply (algebraMap F W.FunctionField) _ _ p
+        (mulByIntY W n) :=
+  Affine.CoordinateRing.evalAlgHom_mk _ p
 
 /-- The pullback of `[n]` sends the class of `X` to `φₙ/ψₙ²`.
 
@@ -309,13 +358,51 @@ already normalised this way by the time this fires. -/
 @[simp]
 theorem mulByIntPullback_X [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
     mulByIntPullback W hn (AdjoinRoot.of W.polynomial X) = mulByIntX W n := by
-  rw [mulByIntPullback, AdjoinRoot.liftAlgHom_of, aeval_X]
+  simp [mulByIntPullback]
 
 /-- The pullback of `[n]` sends the class of `Y` to `ωₙ/ψₙ³`. -/
 @[simp]
 theorem mulByIntPullback_Y [W.IsElliptic] {n : ℤ} (hn : psiFunctionField W n ≠ 0) :
     mulByIntPullback W hn (AdjoinRoot.root W.polynomial) = mulByIntY W n := by
-  rw [mulByIntPullback, AdjoinRoot.liftAlgHom_root]
+  simp [mulByIntPullback]
+
+section TautologicalPoint
+
+open _root_.WeierstrassCurve.Affine
+
+/-- **The tautological point of `[n]` is `n` times the generic point.** -/
+@[simp]
+theorem tautologicalPoint_mulByIntPullback [W.IsElliptic] {n : ℤ}
+    (hn : psiFunctionField W n ≠ 0) :
+    (mulByIntPullback W hn).tautologicalPoint = n • W.genericPoint := by
+  have hns' : (W⁄W.FunctionField).toAffine.Nonsingular (mulByIntX W n) (mulByIntY W n) :=
+    equation_iff_nonsingular.mp (equation_mulByInt W hn)
+  have hnsEval : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) :=
+    nonsingular_smulEval _ W.nonsingular_genericX_genericY n
+  have hpoint : n • Jacobian.Point.fromAffine
+        (Affine.Point.some _ _ W.nonsingular_genericX_genericY) =
+      (⟨(Jacobian.nonsingularLift_iff _).2 hnsEval⟩ :
+        (W⁄W.FunctionField).toAffine.toJacobian.Point) := by
+    rw [Jacobian.Point.ext_iff]
+    exact zsmul_point_eq_smulEval _ W.nonsingular_genericX_genericY n
+  have hZ : smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 ≠ 0 := by
+    rw [smulEval_genericPoint_Z]
+    exact hn
+  have hsmul : n • W.genericPoint = Affine.Point.some _ _ hns' := by
+    have h := congrArg (Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)) hpoint
+    simp only [map_zsmul, Jacobian.Point.toAffineAddEquiv_apply] at h
+    rw [Jacobian.Point.fromAffine_some, Jacobian.Point.toAffineLift_some] at h
+    rw [Jacobian.Point.toAffineLift_of_Z_ne_zero hZ] at h
+    simpa only [genericPoint_eq_some, smulEval_genericPoint_X, smulEval_genericPoint_Y,
+      smulEval_genericPoint_Z, mulByIntX_def, mulByIntY_def] using h
+  rw [hsmul]
+  refine Point.eq_of_coords (CoordinatePullback.tautologicalPoint_ne_zero _)
+    (Point.some_ne_zero _) ?_ ?_
+  · rw [CoordinatePullback.xCoord_tautologicalPoint, Point.xCoord_some, mulByIntPullback_X]
+  · rw [CoordinatePullback.yCoord_tautologicalPoint, Point.yCoord_some, mulByIntPullback_Y]
+
+end TautologicalPoint
 
 end Isogeny
 

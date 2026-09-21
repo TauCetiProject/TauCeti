@@ -32,10 +32,11 @@ zeros of `sin` is needed, because the numerator identity holds there too.
 
 Two things are deliberately *not* proved here. First, the Weyl integration formula itself -- that
 integrating a class function over `SU(2)` against Haar equals the right-hand side above -- is a
-measure-theoretic statement about `SU(2)`, and it is the missing input that would turn the results
-below into the roadmap's `su2Character_orthonormal`. Second, that the `Symᵈ(ℂ²)` exhaust the
-irreducible representations of `SU(2)`: that is the separate highest-weight classification, and
-character orthonormality is validation for it, not a substitute.
+measure-theoretic statement about `SU(2)`; it is `TauCeti.SU2.weyl_integration_formula` in
+`TauCeti/RepresentationTheory/SU2/Weyl/Integration.lean`, which combines it with the results below
+into the orthonormality of the characters against Haar measure. Second, that the `Symᵈ(ℂ²)`
+exhaust the irreducible representations of `SU(2)`: that is the separate highest-weight
+classification, and character orthonormality is validation for it, not a substitute.
 
 ## Main results
 
@@ -103,9 +104,10 @@ standard representation are orthonormal:
 
 The name records that this is orthonormality of the characters *restricted to the torus*, against
 the transported density, not against Haar measure on `SU(2)`. Composing it with the Weyl
-integration formula -- which reduces the Haar integral of a class function on `SU(2)` to exactly
-this right-hand side, and which is *not* proved here -- gives the character orthonormality
-`∫ χ_m · conj χ_n dμ = δ_{mn}` of the compact-groups roadmap, in the shape of the abstract
+integration formula `TauCeti.SU2.weyl_integration_formula` -- which reduces the Haar integral of a
+class function on `SU(2)` to exactly this right-hand side -- gives the character orthonormality
+`∫ χ_m · conj χ_n dμ = δ_{mn}` of the compact-groups roadmap
+(`TauCeti.SU2.integral_character_symPower_mul_conj`), in the shape of the abstract
 `TauCeti.ContRepresentation.character_orthonormal_self` and
 `TauCeti.ContRepresentation.character_orthonormal_distinct`
 (`TauCeti/RepresentationTheory/Compact/Character/Basic.lean`), whose name shape this deliberately

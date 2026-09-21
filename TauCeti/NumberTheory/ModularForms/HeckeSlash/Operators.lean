@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupWithZero.Divisibility
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Prime
 
 /-!
@@ -33,6 +34,10 @@ before the multiplicativity and prime-power recurrences are developed.
 ## Main results
 
 * `HeckeRing.GL2.coe_heckeTNat`, `HeckeRing.GL2.coe_heckeTCuspNat`: the underlying slash sums.
+* `HeckeRing.GL2.heckeTNat_coe_cuspForm`: `T_n` agrees under the coercion from cusp forms to
+  modular forms.
+* `HeckeRing.GL2.heckeTCuspNat_eq_smul_iff_heckeTNat_eq_smul`: transfer an eigen-relation
+  between a cusp form and its underlying modular form.
 * `HeckeRing.GL2.heckeTNat_congr`, `HeckeRing.GL2.heckeTCuspNat_congr`: transport the index
   across an equality despite its `NeZero` instance argument.
 * `HeckeRing.GL2.heckeTNat_one`, `HeckeRing.GL2.heckeTCuspNat_one`: `T₁` is the identity.
@@ -123,6 +128,31 @@ lemma heckeTCuspNat_congr {n m : ℕ} [NeZero n] [NeZero m] (h : n = m) :
     ⇑(heckeTCuspNat (N := N) k n f) = heckeSlashSum k (diagCosetGamma1 N n) f := by
   rw [heckeTCuspNat_def, coe_heckeSlashGamma1CuspFormEnd]
 
+/-- The modular-form and cusp-form `T_n` operators agree under the coercion
+`S_k(Γ₁(N)) → M_k(Γ₁(N))`. -/
+@[simp] theorem heckeTNat_coe_cuspForm (n : ℕ) [NeZero n]
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    heckeTNat k n (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      (heckeTCuspNat k n f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  rw [heckeTNat_def, heckeTCuspNat_def, heckeSlashGamma1ModularFormEnd_coe_cuspForm]
+
+/-- A cusp form satisfies a `T_n` eigen-relation exactly when its underlying modular form does.
+The two operators are defined by the same slash sum. -/
+theorem heckeTCuspNat_eq_smul_iff_heckeTNat_eq_smul (n : ℕ) [NeZero n]
+    (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (c : ℂ) :
+    heckeTCuspNat (N := N) k n F = c • F ↔
+      heckeTNat (N := N) k n (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
+        c • (F : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) := by
+  constructor
+  · intro hT
+    refine DFunLike.ext _ _ fun τ ↦ ?_
+    have := DFunLike.congr_fun hT τ
+    simpa using this
+  · intro hT
+    refine CuspForm.toModularFormₗ_injective (DFunLike.ext _ _ fun τ ↦ ?_)
+    have := DFunLike.congr_fun hT τ
+    simpa [CuspForm.toModularFormₗ_eq_coe] using this
+
 /-- **The classical `T_p` formula on modular forms, at every prime.** -/
 theorem coe_heckeTNat_prime (hp : p.Prime)
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
@@ -143,18 +173,18 @@ theorem coe_heckeTCuspNat_prime (hp : p.Prime)
 operator modern sources denote by `U_p`. -/
 theorem heckeTNat_eq_upperTri (hpN : p ∣ N) :
     heckeTNat (N := N) k p
-      (_hn := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩) =
+      (_hn := NeZero.of_dvd hpN) =
       heckeSlashUpperTriModularFormEnd k hpN := by
-  let _ : NeZero p := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩
+  let _ : NeZero p := NeZero.of_dvd hpN
   rw [heckeTNat_def, heckeSlashGamma1ModularFormEnd_diagCosetGamma1 k hpN]
 
 /-- At a positive index dividing the level, the cusp-form `T_p` is the upper-triangular
 operator. -/
 theorem heckeTCuspNat_eq_upperTri (hpN : p ∣ N) :
     heckeTCuspNat (N := N) k p
-      (_hn := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩) =
+      (_hn := NeZero.of_dvd hpN) =
       heckeSlashUpperTriCuspFormEnd k hpN := by
-  let _ : NeZero p := ⟨fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (h ▸ hpN))⟩
+  let _ : NeZero p := NeZero.of_dvd hpN
   rw [heckeTCuspNat_def, heckeSlashGamma1CuspFormEnd_diagCosetGamma1 k hpN]
 
 /-- The first Hecke operator on modular forms is the identity. -/

@@ -60,7 +60,7 @@ private theorem hasStrictFDerivAt_mul_self_one :
     HasStrictFDerivAt (fun a : A ↦ a * a)
       ((ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A) :
         A →L[ℝ] A) 1 := by
-  have h := TauCeti.ContinuousLinearMap.hasStrictFDerivAt_apply_self
+  have h := ContinuousLinearMap.hasStrictFDerivAt_apply_self
     (ContinuousLinearMap.mul ℝ A) 1
   have he : (ContinuousLinearMap.mul ℝ A).flip 1 + ContinuousLinearMap.mul ℝ A 1 =
       ((ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A) :

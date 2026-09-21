@@ -36,7 +36,6 @@ The `3-4-1` argument is classical; see Davenport, *Multiplicative Number Theory*
 The logarithmic form specializes the private lemma `DirichletCharacter.re_log_comb_nonneg'` in
 Mathlib's `Mathlib/NumberTheory/LSeries/Nonvanishing.lean`, by Michael Stoll and David Loeffler,
 through `TauCeti.sum_re_neg_log_one_sub_nonneg`.
-This is Layer 8.2 of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.
 -/
 
 public section

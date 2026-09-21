@@ -148,7 +148,7 @@ variable {ιℂ : V →ₗ[ℤ] Vℂ}
 theorem finsum_hodgeNumber_eq_finrank_lattice [Module.Free ℤ V] [Module.Finite ℤ V]
     {hℂ : IsBaseChange ℂ ιℂ} {n : ℤ} (hs : HodgeStructure hℂ n) :
     ∑ᶠ p, hs.hodgeNumber p = Module.finrank ℤ V := by
-  have := finite_of_isBaseChange hℂ
-  rw [HodgeStructureOn.finsum_hodgeNumber_eq_finrank hs, finrank_of_isBaseChange hℂ]
+  have := hℂ.finite
+  rw [HodgeStructureOn.finsum_hodgeNumber_eq_finrank hs, hℂ.finrank_eq_of_free]
 
 end TauCeti.Hodge

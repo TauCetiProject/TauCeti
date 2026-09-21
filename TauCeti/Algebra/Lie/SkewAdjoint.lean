@@ -5,12 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.Algebra.Lie.SkewAdjoint
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
+import TauCeti.LinearAlgebra.BilinearForm.Basic
+
 /-!
-# The adjoint action of a Lie algebra carrying an invariant bilinear form
+# Skew-adjoint Lie algebras
+
+A basis identifies matrices skew-adjoint for the Gram matrix of a bilinear form with
+endomorphisms skew-adjoint for the form itself. This file packages that identification as
+`TauCeti.skewAdjointLieEquivOfBasis`.
+
+## The adjoint action of a Lie algebra carrying an invariant bilinear form
 
 A bilinear form `B` on a Lie algebra `L` is *invariant* when `B ⁅x, y⁆ z = -B y ⁅x, z⁆`
 (`LinearMap.BilinForm.lieInvariant`). Read with `x` fixed, that equation says exactly that the
@@ -44,6 +53,8 @@ composite is not built here.
 
 ## Main definitions
 
+* `TauCeti.skewAdjointLieEquivOfBasis`: the basis transport from skew-adjoint matrices to
+  skew-adjoint endomorphisms.
 * `TauCeti.LieAlgebra.adSkewAdjoint`: the adjoint action of a Lie algebra carrying an invariant
   bilinear form `B`, as a Lie algebra homomorphism into the skew-adjoint endomorphisms of `B`.
 * `TauCeti.LieAlgebra.adjointSO`: the same map read into the skew-adjoint endomorphisms of the
@@ -52,6 +63,8 @@ composite is not built here.
 
 ## Main results
 
+* `TauCeti.mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff`: matrix skew-adjointness for a Gram
+  matrix is equivalent to basis-free skew-adjointness.
 * `TauCeti.LieAlgebra.ad_mem_skewAdjointSubmodule`: invariance of a form is skew-adjointness of the
   adjoint action.
 * `TauCeti.LieAlgebra.ker_adSkewAdjoint`: the kernel of `adSkewAdjoint` is the centre, so the map is
@@ -62,6 +75,8 @@ composite is not built here.
   form is `2 • killingForm`.
 * `TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate`: over a ring in which `2` is invertible,
   the Killing quadratic form of a Killing-semisimple Lie algebra is nondegenerate.
+* `Module.Basis.dualBasis_polarBilin_killingQuadraticForm_apply`: the basis dual for the polar form
+  is half the Killing-dual basis.
 
 ## Implementation notes
 
@@ -88,6 +103,67 @@ here; only from `ad_mem_skewAdjointSubmodule` on, where the adjoint action enter
 public section
 
 open LinearMap (BilinForm)
+
+namespace TauCeti
+
+universe u v w
+
+section Basis
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+  {n : Type w} [Fintype n] [DecidableEq n]
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- An endomorphism is skew-adjoint for a bilinear form exactly when its matrix in a basis is
+skew-adjoint for the Gram matrix of the form. -/
+theorem mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff (b : Module.Basis n R M)
+    (B : BilinForm R M) {J : Matrix n n R} (hJ : B.toMatrix b = J) (f : Module.End R M) :
+    LinearMap.toMatrix b b f ∈ skewAdjointMatricesLieSubalgebra J ↔
+      f ∈ skewAdjointLieSubalgebra B := by
+  have hB : Matrix.toLinearMap₂ b b J = B := by
+    rw [← hJ]
+    exact Matrix.toLinearMap₂_toMatrix₂ b b B
+  rw [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule]
+  -- The rewrites expose matrix skew-adjointness, but membership in the bundled endomorphism Lie
+  -- subalgebra is definitionally membership in the underlying skew-adjoint submodule. Cross that
+  -- wrapper so the explicit membership lemma below can rewrite the predicate.
+  change J.IsSkewAdjoint (LinearMap.toMatrix b b f) ↔
+    f ∈ B.skewAdjointSubmodule
+  rw [LinearMap.mem_skewAdjointSubmodule, Matrix.IsSkewAdjoint, LinearMap.IsSkewAdjoint]
+  symm
+  simpa [hB] using
+    (isAdjointPair_toLinearMap₂
+      (b₁ := b) (b₂ := b) (J := J) (J' := J)
+      (A := LinearMap.toMatrix b b f) (A' := -(LinearMap.toMatrix b b f)))
+
+/-- A basis transports the Lie algebra of matrices skew-adjoint for a Gram matrix to the
+basis-free Lie algebra of skew-adjoint endomorphisms. -/
+noncomputable def skewAdjointLieEquivOfBasis (b : Module.Basis n R M) (B : BilinForm R M)
+    {J : Matrix n n R} (hJ : B.toMatrix b = J) :
+    skewAdjointMatricesLieSubalgebra J ≃ₗ⁅R⁆ skewAdjointLieSubalgebra B :=
+  LieEquiv.ofSubalgebras _ _ (Matrix.toLinAlgEquiv b).toLieEquiv <| by
+    ext f
+    simp only [Submodule.mem_map_equiv, LieSubalgebra.mem_map_submodule]
+    -- The map-membership lemmas leave the inverse basis transport bundled; definitionally its
+    -- underlying endomorphism has matrix `LinearMap.toMatrix b b f`. Expose that matrix so the
+    -- shared membership theorem applies directly.
+    change LinearMap.toMatrix b b f ∈ skewAdjointMatricesLieSubalgebra J ↔
+      f ∈ skewAdjointLieSubalgebra B
+    exact mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff b B hJ f
+
+/-- The basis transport from skew-adjoint matrices acts by the corresponding matrix
+endomorphism. -/
+@[simp]
+theorem coe_skewAdjointLieEquivOfBasis_apply (b : Module.Basis n R M) (B : BilinForm R M)
+    {J : Matrix n n R} (hJ : B.toMatrix b = J) (A : skewAdjointMatricesLieSubalgebra J) :
+    (skewAdjointLieEquivOfBasis b B hJ A : Module.End R M) = Matrix.toLinAlgEquiv b A := by
+  rw [skewAdjointLieEquivOfBasis, LieEquiv.ofSubalgebras_apply]
+  rfl
+
+end Basis
+
+end TauCeti
 
 namespace TauCeti.LieAlgebra
 
@@ -266,3 +342,36 @@ theorem killingAdjointSO_injective_iff :
 end Killing
 
 end TauCeti.LieAlgebra
+
+open TauCeti
+
+namespace Module.Basis
+
+variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+/-- The basis dual to `b` for the polar form of the Killing quadratic form is half the
+Killing-dual basis. The factor records that this polar form is `2 • killingForm K L`. -/
+@[simp]
+theorem dualBasis_polarBilin_killingQuadraticForm_apply {ι : Type w} [Fintype ι]
+    [DecidableEq ι] {L : Type v} [LieRing L] [LieAlgebra K L]
+    [_root_.LieAlgebra.IsKilling K L]
+    (b : Module.Basis ι K L) (i : ι) :
+    LinearMap.BilinForm.dualBasis
+        ((2 : K) • killingForm K L)
+        (by
+          rw [← _root_.TauCeti.LieAlgebra.polarBilin_killingQuadraticForm]
+          exact QuadraticMap.nondegenerate_polar_iff.mpr
+            (_root_.TauCeti.LieAlgebra.killingQuadraticForm_nondegenerate K L)) b i =
+      (2 : K)⁻¹ • killingDualBasis b i := by
+  let hκ := _root_.LieAlgebra.IsKilling.killingForm_nondegenerate K L
+  have hdual (j : ι) :
+      LinearMap.BilinForm.dualBasis (killingForm K L) hκ b j = killingDualBasis b j := by
+    apply LinearMap.ker_eq_bot.mp hκ.ker_eq_bot
+    apply b.ext
+    intro k
+    rw [LinearMap.BilinForm.apply_dualBasis_left, killingForm_killingDualBasis_left]
+    simp only [eq_comm]
+  rw [b.dualBasis_smul_apply (killingForm K L) hκ (2 : K)
+    (Invertible.ne_zero (2 : K)), hdual]
+
+end Module.Basis

@@ -8,6 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Place
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
+-- Proof-only: `Valuation.algebraMap_coordinateRing_le_one`, the integrality of the coordinate ring
+-- at a valuation with no pole at `x`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.CoordinateRingIntegral
 
 /-!
 # Rational points as degree-one places of an elliptic function field
@@ -42,6 +45,8 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   exactly when `x` has no pole there.
 * `TauCeti.Place.eq_infinity_or_existsUnique_eq_ofPrime`: every place is either the place at
   infinity or the place of a unique height-one prime of the coordinate ring.
+* `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
+  coordinate ring exactly when it is the place at infinity.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
 
 ## Roadmap
@@ -91,67 +96,46 @@ noncomputable def infinity : Place F W.FunctionField where
 theorem valuation_infinity : (infinity W).valuation = W.infinityPlace := by
   rw [infinity]
 
+/-- Subtracting a suitable constant takes a rational function of non-positive `intDegree` to one
+of strictly negative `intDegree` — or to `0`, whose `intDegree` is `0` rather than `-∞`, which is
+why the conclusion is a disjunction. Equivalently, the residue of `A` at the infinite place of
+`F(X)` is a constant: it is the Euclidean quotient of `A.num` by the monic `A.denom`, and what is
+left over is the Euclidean remainder. -/
 private theorem exists_sub_C_eq_zero_or_intDegree_neg (A : RatFunc F)
     (hA : A.intDegree ≤ 0) :
     ∃ c : F, A - RatFunc.C c = 0 ∨ (A - RatFunc.C c).intDegree < 0 := by
-  classical
-  by_cases hA0 : A = 0
-  · exact ⟨0, by simp [hA0]⟩
-  have hnum0 : A.num ≠ 0 := RatFunc.num_ne_zero hA0
-  have hden0 : A.denom ≠ 0 := A.denom_ne_zero
-  have hdegree : A.num.natDegree ≤ A.denom.natDegree := by
+  have hden : A.denom.Monic := A.monic_denom
+  have hdenMap0 : algebraMap F[X] (RatFunc F) A.denom ≠ 0 := by simpa using A.denom_ne_zero
+  -- `A.intDegree ≤ 0` bounds the numerator's degree by the denominator's, so the Euclidean
+  -- quotient of `A.num` by the monic `A.denom` is a constant `c`.
+  obtain ⟨c, hc⟩ : ∃ c : F, A.num /ₘ A.denom = Polynomial.C c := by
+    refine ⟨_, Polynomial.eq_C_of_natDegree_eq_zero ?_⟩
+    rw [Polynomial.natDegree_divByMonic _ hden]
     rw [RatFunc.intDegree] at hA
     omega
-  -- A strictly smaller numerator already has zero residue.  In the equal-degree case,
-  -- subtract the quotient of leading coefficients to cancel the leading term.
-  rcases hdegree.lt_or_eq with hdegree | hdegree
-  · refine ⟨0, Or.inr ?_⟩
-    have hdegreeInt : (A.num.natDegree : ℤ) - A.denom.natDegree < 0 := by omega
-    simpa [hA0, RatFunc.intDegree] using hdegreeInt
-  · let c := A.num.leadingCoeff / A.denom.leadingCoeff
-    refine ⟨c, ?_⟩
-    by_cases hsub : A - RatFunc.C c = 0
-    · exact Or.inl hsub
-    · right
-      have hc0 : c ≠ 0 := div_ne_zero (Polynomial.leadingCoeff_ne_zero.mpr hnum0)
-        (Polynomial.leadingCoeff_ne_zero.mpr hden0)
-      have hdenMap0 : algebraMap F[X] (RatFunc F) A.denom ≠ 0 := by
-        simpa using hden0
-      have hquotient : A - RatFunc.C c =
-          algebraMap F[X] (RatFunc F) (A.num - Polynomial.C c * A.denom) /
-            algebraMap F[X] (RatFunc F) A.denom := calc
-        A - RatFunc.C c =
-            algebraMap F[X] (RatFunc F) A.num /
-              algebraMap F[X] (RatFunc F) A.denom - RatFunc.C c :=
-          congrArg (fun z ↦ z - RatFunc.C c) (RatFunc.num_div_denom A).symm
-        _ = algebraMap F[X] (RatFunc F) (A.num - Polynomial.C c * A.denom) /
-              algebraMap F[X] (RatFunc F) A.denom := by
-          rw [← RatFunc.algebraMap_C, map_sub, map_mul]
-          field_simp [hdenMap0]
-      have hpoly0 : A.num - Polynomial.C c * A.denom ≠ 0 := by
-        intro h
-        apply hsub
-        rw [hquotient, h, map_zero, zero_div]
-      have hdegrees : A.num.degree = A.denom.degree := by
-        rw [Polynomial.degree_eq_natDegree hnum0, Polynomial.degree_eq_natDegree hden0, hdegree]
-      have hleading : A.num.leadingCoeff =
-          (Polynomial.C c * A.denom).leadingCoeff := by
-        rw [Polynomial.leadingCoeff_mul, Polynomial.leadingCoeff_C]
-        dsimp [c]
-        field_simp [Polynomial.leadingCoeff_ne_zero.mpr hden0]
-      -- The cancellation makes the new numerator have smaller degree than the denominator.
-      have hdegreeSub :
-          (A.num - Polynomial.C c * A.denom).natDegree < A.denom.natDegree :=
-        (Polynomial.natDegree_lt_natDegree_iff hpoly0).mpr <| by
-          apply (Polynomial.degree_sub_lt_left
-            (hdegrees.trans (Polynomial.degree_C_mul hc0).symm) hnum0 hleading).trans_eq
-          exact hdegrees
-      have hpolyMap0 :
-          algebraMap F[X] (RatFunc F) (A.num - Polynomial.C c * A.denom) ≠ 0 :=
-        (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective F[X] (RatFunc F))).mpr hpoly0
-      rw [hquotient, RatFunc.intDegree_div hpolyMap0 (by simpa),
-        RatFunc.intDegree_polynomial, RatFunc.intDegree_polynomial]
-      omega
+  refine ⟨c, ?_⟩
+  -- Subtracting `c` leaves exactly the Euclidean remainder over the denominator.
+  have hnum : A.num %ₘ A.denom = A.num - Polynomial.C c * A.denom := by
+    have h := Polynomial.modByMonic_add_div A.num A.denom
+    rw [hc] at h
+    linear_combination h
+  -- `A.num = A * A.denom` in the function field: the defining property of `num` and `denom`,
+  -- taken as a term so the identity below is closed by `ring` rather than by ordered rewriting.
+  have hnumA : algebraMap F[X] (RatFunc F) A.num = A * algebraMap F[X] (RatFunc F) A.denom :=
+    (div_eq_iff hdenMap0).mp (RatFunc.num_div_denom A)
+  have key : A - RatFunc.C c = algebraMap F[X] (RatFunc F) (A.num %ₘ A.denom) /
+      algebraMap F[X] (RatFunc F) A.denom := by
+    rw [eq_div_iff hdenMap0, hnum]
+    simp only [map_sub, map_mul, RatFunc.algebraMap_C, hnumA]
+    ring
+  rw [key]
+  rcases eq_or_ne (A.num %ₘ A.denom) 0 with h0 | h0
+  · exact Or.inl (by simp [h0])
+  · refine Or.inr ?_
+    rw [RatFunc.intDegree_div (by simpa using h0) hdenMap0, RatFunc.intDegree_polynomial,
+      RatFunc.intDegree_polynomial]
+    have h := Polynomial.natDegree_lt_natDegree h0 (Polynomial.degree_modByMonic_lt A.num hden)
+    omega
 
 variable {W}
 
@@ -168,18 +152,7 @@ theorem exists_eq_ofPrime_iff_valuation_X_le_one [IsDedekindDomain W.CoordinateR
     simpa only [IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField] using
       P.mem_integers_iff.mp (hR (algebraMap F[X] W.CoordinateRing Polynomial.X))
   · intro hx r
-    apply P.mem_integers_of_isIntegral
-      (R := F[X]) (fun p ↦ ?_) ((Algebra.IsIntegral.isIntegral r).map
-        (IsScalarTower.toAlgHom F[X] W.CoordinateRing W.FunctionField))
-    apply P.adjoin_le_integers_iff.mpr (P.mem_integers_iff.mpr hx)
-    rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range]
-    have heval :
-        (Polynomial.aeval (algebraMap F[X] W.FunctionField Polynomial.X) :
-            F[X] →ₐ[F] W.FunctionField) =
-          IsScalarTower.toAlgHom F F[X] W.FunctionField := by
-      apply Polynomial.algHom_ext
-      rw [Polynomial.aeval_X, IsScalarTower.toAlgHom_apply]
-    exact ⟨p, congrArg (fun f : F[X] →ₐ[F] W.FunctionField ↦ f p) heval⟩
+    exact P.mem_integers_iff.mpr (P.valuation.algebraMap_coordinateRing_le_one hx r)
 
 /-- If the coordinate ring is Dedekind, every normalized place of a Weierstrass function field is
 either the place at infinity or the place of a unique height-one prime of the coordinate ring. -/
@@ -194,6 +167,29 @@ theorem eq_infinity_or_existsUnique_eq_ofPrime [IsDedekindDomain W.CoordinateRin
     obtain ⟨𝔭, h𝔭⟩ := (exists_eq_ofPrime_iff_valuation_X_le_one P).mpr hx
     refine ⟨𝔭, h𝔭, fun 𝔮 h𝔮 ↦ ?_⟩
     exact ofPrime_injective F W.FunctionField (h𝔮.trans h𝔭.symm)
+
+/-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
+-- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
+-- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
+-- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
+-- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
+@[simp]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+    (Q : Place F W.FunctionField) :
+    (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
+      Q = infinity W := by
+  constructor
+  · rintro ⟨r, hr⟩
+    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
+    · exact h
+    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
+        (by simpa using hr)
+  · rintro rfl
+    refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
+    rw [valuation_infinity,
+      ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField]
+    exact W.one_lt_infinityPlace_X
 
 /-- The place at infinity is rational: its residue field has degree one over the base field. -/
 @[simp]
@@ -218,11 +214,9 @@ theorem degree_infinity : (infinity W).degree = 1 := by
     · have hAc0 : A - RatFunc.C c ≠ 0 := by
         intro h
         simp [h] at hAc
-      rw [WeierstrassCurve.Affine.infinityPlace.algebraMap_eq_sq,
-        sq_lt_one_iff₀ zero_le, RatFunc.inftyValuation_apply,
-        RatFunc.inftyValuation_of_nonzero F hAc0, ← WithZero.exp_zero,
-        WithZero.exp_lt_exp]
-      exact hAc
+      rw [WeierstrassCurve.Affine.infinityPlace_algebraMap_ratFunc W hAc0,
+        ← WithZero.exp_zero, WithZero.exp_lt_exp]
+      omega
   have hBval : W.infinityPlace
       (algebraMap (RatFunc F) W.FunctionField B *
         algebraMap W.CoordinateRing W.FunctionField
@@ -231,12 +225,10 @@ theorem degree_infinity : (infinity W).degree = 1 := by
     · simp [hB]
     · by_cases hB0 : B = 0
       · simp [hB0]
-      · have hBnegative : 2 * B.intDegree + 3 < 0 := by omega
-        rw [map_mul, WeierstrassCurve.Affine.infinityPlace.algebraMap_eq_sq,
-          RatFunc.inftyValuation_apply, RatFunc.inftyValuation_of_nonzero F hB0,
-          WeierstrassCurve.Affine.infinityPlace.mk_Y, ← WithZero.exp_nsmul,
-          ← WithZero.exp_add, ← WithZero.exp_zero, WithZero.exp_lt_exp]
-        simpa [two_nsmul] using hBnegative
+      · rw [map_mul, WeierstrassCurve.Affine.infinityPlace_algebraMap_ratFunc W hB0,
+          WeierstrassCurve.Affine.infinityPlace.mk_Y, ← WithZero.exp_add,
+          ← WithZero.exp_zero, WithZero.exp_lt_exp]
+        omega
   calc
     W.infinityPlace (f - algebraMap F W.FunctionField c) =
         W.infinityPlace
@@ -321,12 +313,13 @@ end TauCeti
 
 namespace WeierstrassCurve.Affine
 
-open TauCeti TauCeti.WeierstrassCurve.Affine
+open TauCeti WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve.Affine F) [W.IsElliptic]
 
 local instance : IsDedekindDomain W.CoordinateRing :=
-  isDedekindDomain_coordinateRing W
+  have := isIntegrallyClosed_coordinateRing W
+  W.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
 
 /-- **The point--place dictionary for an elliptic curve**: rational points correspond to the
 degree-one normalized places of the function field.  The point at infinity goes to

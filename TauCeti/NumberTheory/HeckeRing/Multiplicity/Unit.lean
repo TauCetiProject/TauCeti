@@ -128,10 +128,8 @@ lemma mulMapOf_one_right (h₁ : H₁.toSubmonoid ≤ Δ) (h₂ : H₂.toSubmono
     (p : DecompQuotient H₁ H₂ (g₁ : G) ×
       DecompQuotient H₂ H₂ (((1 : HeckeCoset Δ H₂ H₂).rep : G))) :
     mulMapOf h₁ h₂ H₂ g₁ (1 : HeckeCoset Δ H₂ H₂).rep p = mk H₁ H₂ g₁ :=
-  (HeckeCoset.mulMapOf_eq_mk _ _ _ _ _ _).trans <|
-    HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr ⟨(p.1.out : G), p.1.out.2,
-      (p.2.out : G) * ((1 : HeckeCoset Δ H₂ H₂).rep : G),
-      H₂.mul_mem p.2.out.2 HeckeCoset.rep_one_mem, rfl⟩)
+  HeckeCoset.mulMapOf_eq_of_eq_mul_mul p.1.out.2
+    (H₂.mul_mem p.2.out.2 HeckeCoset.rep_one_mem) rfl
 
 /-- Every pair of representatives multiplies into `mk H₁ H₂ g₁` when the second double coset is
 the identity. -/
@@ -148,11 +146,9 @@ lemma mulMapOf_one_left (h₁ : H₁.toSubmonoid ≤ Δ) (g₁ : Δ)
     (p : DecompQuotient H₁ H₁ (((1 : HeckeCoset Δ H₁ H₁).rep : G)) ×
       DecompQuotient H₁ H₂ (g₁ : G)) :
     mulMapOf h₁ h₁ H₂ (1 : HeckeCoset Δ H₁ H₁).rep g₁ p = mk H₁ H₂ g₁ :=
-  (HeckeCoset.mulMapOf_eq_mk _ _ _ _ _ _).trans <|
-    HeckeCoset.mk_eq_mk_of_mem (mem_doubleCoset.mpr
-      ⟨(p.1.out : G) * ((1 : HeckeCoset Δ H₁ H₁).rep : G) * (p.2.out : G),
-        H₁.mul_mem (H₁.mul_mem p.1.out.2 HeckeCoset.rep_one_mem) p.2.out.2, 1, H₂.one_mem,
-        by simp [mul_assoc]⟩)
+  HeckeCoset.mulMapOf_eq_of_eq_mul_mul
+    (H₁.mul_mem (H₁.mul_mem p.1.out.2 (HeckeCoset.rep_one_mem (Δ := Δ))) p.2.out.2) H₂.one_mem
+    (by simp [mul_assoc])
 
 /-- Every pair of representatives multiplies into `mk H₁ H₂ g₁` when the first double coset is
 the identity. -/

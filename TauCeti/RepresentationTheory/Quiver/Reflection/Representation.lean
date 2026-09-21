@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.EqToHom
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Basic
 public import TauCeti.RepresentationTheory.Quiver.Reflection.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
+public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 
@@ -70,7 +72,10 @@ representation concentrated at `i` whose space at `i` is nontrivial, of which th
   every vertex and on the whole reflection.
 * `TauCeti.finiteDimensional_reflectRep_obj`: reflection preserves finite-dimensionality of the
   vertex spaces.
-
+* `TauCeti.nonempty_iso_of_isZero_away_of_linearEquiv` and
+  `TauCeti.nonempty_iso_of_dimVector_eq_of_forall_subsingleton`: two representations concentrated
+  at the same sink are isomorphic as soon as their vertex spaces there are, respectively as soon
+  as their dimension vectors agree.
 ## Implementation notes
 
 The vertex spaces branch on equality with `i`, so they are written with an `if` and decided
@@ -395,25 +400,9 @@ private theorem reflectRepMapApp_of_ne
   simp [reflectRepMapApp, hj]
 
 /-! The components of the reflected morphism are transports of components of the original one, so
-every identity about them is an identity of the original conjugated by `eqToHom`. The next five
-lemmas are those conjugations, stated generically. They are what the proofs below use instead of
-`simp`: the vertex `i` is used both as a vertex of `Q` and as an object of `CategoryTheory.Paths`
-of the reflected quiver, so a goal about the reflected representation is type-correct only up to
-unfolding the semireducible `CategoryTheory.Paths` and `TauCeti.Quiver.Reflect`, which is more than
-the transparency `rw` and `simp` use to build a motive. Conjugation is stripped by `subst` inside
-these lemmas, where no such identification is in play.
-
-The first and the last of them are public: that obstruction, and this remedy for it, recur wherever
-the reflection functor is used, so they are available to `TauCeti.reflectionFunctor`'s consumers
-rather than copied by each of them. -/
-
-/-- Transporting a morphism along object equalities and then back leaves it unchanged. -/
-theorem eqToHom_conjugate_cancel {C : Type*} [Category* C] {X X' Y Y' : C}
-    (hX : X = X') (hY : Y = Y') (f : X' ⟶ Y') :
-    eqToHom hX.symm ≫ (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hY = f := by
-  subst X'
-  subst Y'
-  simp
+every identity about them is an identity of the original conjugated by `eqToHom`. The general
+transport API is in `TauCeti.CategoryTheory.EqToHom`; the next three private lemmas specialize it
+to the identities, compositions, and sums used to construct the reflection functor. -/
 
 /-- A conjugated identity is the identity. -/
 private theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
@@ -440,21 +429,6 @@ private theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C] 
   subst hX
   subst hY
   simp [hfgh]
-
-/-- **Conjugating a commuting square by object equalities leaves it commuting**, and nothing else
-becomes commuting that way: the square of transported edges commutes exactly when the original
-one does. -/
-theorem eqToHom_conjugate_square {C : Type*} [Category* C] {X X' Y Y' Z Z' W W' : C}
-    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (hW : W = W')
-    (f : X' ⟶ Y') (g : Y' ⟶ Z') (f' : X' ⟶ W') (g' : W' ⟶ Z') :
-    (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ g ≫ eqToHom hZ.symm =
-        (eqToHom hX ≫ f' ≫ eqToHom hW.symm) ≫ eqToHom hW ≫ g' ≫ eqToHom hZ.symm ↔
-      f ≫ g = f' ≫ g' := by
-  subst hX
-  subst hY
-  subst hZ
-  subst hW
-  simp
 
 /-- The components of the reflected morphism are natural for every arrow of the reflected
 quiver. -/
@@ -799,5 +773,69 @@ theorem dimVector_reflectRep_self_eq_zero {i : Q} (hi : IsSink i)
   exact Module.finrank_zero_of_subsingleton (R := k)
 
 end Concentrated
+
+/-! ### Comparing two representations concentrated at the same sink -/
+
+section ConcentratedComparison
+
+variable {M N : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
+
+/-- **Two representations vanishing away from a sink are isomorphic as soon as their vertex spaces
+at that sink are.** Every component away from `i` is a map between zero objects, and there is no
+naturality condition to check at `i`, since no arrow leaves a sink. -/
+theorem nonempty_iso_of_isZero_away_of_linearEquiv (hi : IsSink i)
+    (hM : ∀ a : Q, a ≠ i → Limits.IsZero (M.obj a))
+    (hN : ∀ a : Q, a ≠ i → Limits.IsZero (N.obj a))
+    (e : M.obj ((Paths.of Q).obj i) ≃ₗ[k] N.obj ((Paths.of Q).obj i)) :
+    Nonempty (M ≅ N) := by
+  classical
+  have eIso : M.obj ((Paths.of Q).obj i) ≅ N.obj ((Paths.of Q).obj i) := e.toModuleIso
+  refine ⟨NatIso.ofComponents (fun a ↦ if h : a = (Paths.of Q).obj i then
+      eqToIso (congrArg M.obj h) ≪≫ eIso ≪≫ eqToIso (congrArg N.obj h).symm
+    else (hM a h).iso (hN a h)) fun {a b} p ↦ ?_⟩
+  by_cases ha : a = (Paths.of Q).obj i
+  · -- a path out of a sink is the identity, so the naturality square is trivial
+    subst ha
+    obtain rfl := hi.eq_of_path p
+    have hMp : M.map p = 𝟙 (M.obj a) := by
+      rw [hi.path_self_eq_nil p]
+      exact M.map_id a
+    have hNp : N.map p = 𝟙 (N.obj a) := by
+      rw [hi.path_self_eq_nil p]
+      exact N.map_id a
+    rw [hMp, hNp]
+    simp
+  · exact (hM a ha).eq_of_src _ _
+
+/-- **A representation concentrated at a sink is isomorphic to every finite-dimensional
+representation with the same dimension vector.** Equality of dimension vectors makes the comparison
+representation vanish wherever `M` does, and matches the two vertex spaces at the sink. Only the
+vertex space of `M` at the sink is asked to be finite-dimensional, since `M` is a subsingleton
+everywhere else; `N` is asked for it at every vertex, to read a vanishing dimension vector there as
+a vanishing vertex space. -/
+theorem nonempty_iso_of_dimVector_eq_of_forall_subsingleton (hi : IsSink i)
+    (hsub : ∀ a : Q, a ≠ i → Subsingleton (M.obj a))
+    (hfdM : FiniteDimensional k (M.obj ((Paths.of Q).obj i)))
+    (hfdN : IsFinDim.{u, v, w, max v w x} k Q N)
+    (hd : dimVector M = dimVector N) : Nonempty (M ≅ N) := by
+  have hfdN' := isFinDim_iff.mp hfdN
+  have hNzero : ∀ a : Q, a ≠ i → Limits.IsZero (N.obj a) := by
+    intro a ha
+    have hMa : Subsingleton (M.obj ((Paths.of Q).obj a)) := hsub a ha
+    have hfdNa := hfdN' ((Paths.of Q).obj a)
+    have h0 : Module.finrank k (N.obj ((Paths.of Q).obj a)) = 0 := by
+      rw [← dimVector_apply, ← congrFun hd a, dimVector_apply]
+      exact Module.finrank_zero_of_subsingleton (R := k)
+    have hss : Subsingleton (N.obj ((Paths.of Q).obj a)) := Module.finrank_zero_iff.mp h0
+    exact @ModuleCat.isZero_of_subsingleton k _ (N.obj a) hss
+  have hfdNi := hfdN' ((Paths.of Q).obj i)
+  have hfr : Module.finrank k (M.obj ((Paths.of Q).obj i))
+      = Module.finrank k (N.obj ((Paths.of Q).obj i)) := by
+    rw [← dimVector_apply, ← dimVector_apply, hd]
+  exact nonempty_iso_of_isZero_away_of_linearEquiv hi
+    (fun a ha ↦ @ModuleCat.isZero_of_subsingleton k _ (M.obj a) (hsub a ha)) hNzero
+    (LinearEquiv.ofFinrankEq _ _ hfr)
+
+end ConcentratedComparison
 
 end TauCeti

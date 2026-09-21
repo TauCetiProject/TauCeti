@@ -19,7 +19,7 @@ transitive on each fibre.
 Combining this regularity with the simple connectedness of the universal cover and the generic
 regular-cover comparison gives the convention-correct form of the classical calculation
 
-`Deck (UniversalCover.proj : UniversalCover x₀ → X) ≃* (FundamentalGroup X x₀)ᵐᵒᵖ`.
+`deck (UniversalCover.proj : UniversalCover x₀ → X) ≃* (FundamentalGroup X x₀)ᵐᵒᵖ`.
 
 The opposite is genuine: the fundamental group acts on the universal cover by prepending the
 inverse loop, while deck transformations are composed as homeomorphisms. This is the convention
@@ -34,8 +34,7 @@ pinned by `TauCeti.Deck.IsRegular.deckFundamentalGroupEquiv`.
 
 ## References
 
-This completes Stage 1, item 5 of `TauCetiRoadmap/UniversalCovers/README.md`. The construction
-uses the universal-cover action adapted from Kim Morrison's mathlib4 PR
+The construction uses the universal-cover action adapted from Kim Morrison's mathlib4 PR
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), and the generic
 comparison ultimately uses Junyan Xu's `IsQuotientCoveringMap.fundamentalGroupEquiv` from
 `Mathlib.Topology.Homotopy.Lifting`.
@@ -51,8 +50,8 @@ variable {X : Type*} [TopologicalSpace X] (x₀ : X)
 /-- A loop class acts on the universal cover by a deck transformation of the endpoint
 projection. -/
 def loopDeck (g : FundamentalGroup X x₀) :
-    Deck (proj : UniversalCover x₀ → X) :=
-  ⟨Homeomorph.smul g, fun p => proj_smul g p⟩
+    deck (proj : UniversalCover x₀ → X) :=
+  ⟨Homeomorph.smul g, deck.mem_iff.mpr (funext fun p => proj_smul g p)⟩
 
 /-- The deck transformation induced by a loop class acts by the fundamental-group action. -/
 @[simp]
@@ -83,7 +82,7 @@ lemma loopDeck_mul (g h : FundamentalGroup X x₀) :
 /-- The fundamental-group action, bundled as a homomorphism into the deck group of the
 universal-cover projection. -/
 def loopDeckHom :
-    FundamentalGroup X x₀ →* Deck (proj : UniversalCover x₀ → X) where
+    FundamentalGroup X x₀ →* deck (proj : UniversalCover x₀ → X) where
   toFun := loopDeck x₀
   map_one' := loopDeck_one x₀
   map_mul' := loopDeck_mul x₀
@@ -108,7 +107,7 @@ fundamental group of the base. -/
 noncomputable def deckFundamentalGroupEquiv
     [LocallyPathConnectedSpace X] [PathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] :
-    Deck (proj : UniversalCover x₀ → X) ≃* (FundamentalGroup X x₀)ᵐᵒᵖ :=
+    deck (proj : UniversalCover x₀ → X) ≃* (FundamentalGroup X x₀)ᵐᵒᵖ :=
   (isRegular_proj x₀).deckFundamentalGroupEquiv (isCoveringMap x₀)
     (basepointLift x₀)
 
@@ -129,6 +128,6 @@ lemma deckFundamentalGroupEquiv_symm_op
   -- wrapper.
   change ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) :
     UniversalCover x₀) = (loopDeck x₀ g⁻¹).1 (basepointLift x₀)
-  simpa only [Deck.smul_eq_apply, loopDeck_apply] using monodromy_basepointLift x₀ g
+  simpa only [deck.smul_eq_apply, loopDeck_apply] using monodromy_basepointLift x₀ g
 
 end TauCeti.UniversalCover

@@ -80,7 +80,10 @@ lemma mapMulEquiv_left
     {S T : Type u} [CommRing S] [CommRing T] [Bialgebra R S] [Algebra R T]
     (f : WithConv (S →ₐ[R] T)) :
     (AlgebraicGeometry.Spec.mapMulEquiv f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) :=
+      Spec.map (CommRingCat.ofHom f.ofConv) := by
+  rw [← AlgHom.toRingHom_eq_coe]
+  -- `rfl` then closes Mathlib's `Spec.mapMulEquiv` wrapper, as it did before the coercion
+  -- step was named.
   rfl
 
 /-- Mathlib's spectrum-points equivalence is contravariantly natural in the coordinate
@@ -319,8 +322,9 @@ private theorem mapMulEquivOfPresentation_apply_left_comp
     (f : WithConv (H →ₐ[R] A)) :
     (mapMulEquivOfPresentation H A hG f).left ≫
         eqToHom hX =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) := by
+      Spec.map (CommRingCat.ofHom f.ofConv) := by
   subst G
+  rw [← AlgHom.toRingHom_eq_coe]
   rfl
 
 /-- The underlying scheme map of the spectrum point transported across a named presentation.
@@ -334,10 +338,11 @@ theorem mapMulEquivOfPresentation_apply_left
     (hX : G.X.left = Spec (CommRingCat.of H))
     (f : WithConv (H →ₐ[R] A)) :
     (mapMulEquivOfPresentation H A hG f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom f.ofConv) ≫
         eqToHom hX.symm := by
   apply (cancel_mono (eqToHom hX)).1
   subst G
+  rw [← AlgHom.toRingHom_eq_coe]
   rfl
 
 /-- Mathlib's spectrum-points equivalence is natural in the value algebra. Postcomposing
@@ -404,10 +409,11 @@ private lemma transportedHopfSpecMap_left
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map φ.op ≫
         eqToHom hG.symm).hom.hom.left =
       eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of R))) ↦ K.X.left) hH') ≫
-        Spec.map (CommRingCat.ofHom φ.hom.toAlgHom.toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (φ.hom.toAlgHom : H →+* K)) ≫
         eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of R))) ↦ K.X.left) hG).symm := by
   subst G
   subst H'
+  rw [← AlgHom.toRingHom_eq_coe]
   rfl
 
 /-- Contravariant naturality in the coordinate Hopf algebra for named point equivalences.
@@ -425,10 +431,10 @@ theorem pointMulEquivOfPresentation_mapDomain
     (eH' : WithConv (K →ₐ[R] A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ H'.X))
     (eG_apply_left : ∀ f, (eG f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (f.ofConv : H →+* A)) ≫
         eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of R))) ↦ K.X.left) hG).symm)
     (eH'_apply_left : ∀ f, (eH' f).left =
-      Spec.map (CommRingCat.ofHom f.ofConv.toRingHom) ≫
+      Spec.map (CommRingCat.ofHom (f.ofConv : K →+* A)) ≫
         eqToHom (congrArg (fun K : Grp (Over (Spec (CommRingCat.of R))) ↦ K.X.left) hH').symm)
     (φ : H ⟶ K) (p : HopfAlgebra.points (R := R) (H := K) (CommAlgCat.of R A)) :
     eH' p ≫
@@ -446,11 +452,11 @@ theorem pointMulEquivOfPresentation_mapDomain
     transportedHopfSpecMap_left hG hH' φ, eG_apply_left]
   -- The public computations expose the same spectrum maps behind differently wrapped `Over`
   -- sources; restate them explicitly so the two presentation transports can cancel.
-  change (Spec.map (CommRingCat.ofHom p.ofConv.toRingHom) ≫ eqToHom hH'X.symm) ≫
-      eqToHom hH'X ≫ Spec.map (CommRingCat.ofHom φ.hom.toAlgHom.toRingHom) ≫
+  change (Spec.map (CommRingCat.ofHom (p.ofConv : K →+* A)) ≫ eqToHom hH'X.symm) ≫
+      eqToHom hH'X ≫ Spec.map (CommRingCat.ofHom (φ.hom.toAlgHom : H →+* K)) ≫
         eqToHom hGX.symm =
     Spec.map (CommRingCat.ofHom
-      (((mapPointsFunctor φ).app (CommAlgCat.of R A) p).ofConv.toRingHom)) ≫
+      (((mapPointsFunctor φ).app (CommAlgCat.of R A) p).ofConv : H →+* A)) ≫
         eqToHom hGX.symm
   rw [mapPointsFunctor_app_apply, WithConv.ofConv_toConv]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]

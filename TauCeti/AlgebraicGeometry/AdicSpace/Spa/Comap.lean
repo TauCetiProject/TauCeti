@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
-public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # Pullbacks and quotient embeddings of sub-unit valuation loci
@@ -31,6 +30,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.comap_mem_spa`: pullback preserves the sub-unit locus.
+* `TauCeti.ValuationSpectrum.mem_spa_map_iff`: a continuous point lies over the image plus ring
+  exactly when its pullback lies over the original one.
 * `TauCeti.ValuationSpectrum.continuous_spaComap`: `spaComap` is continuous.
 * `TauCeti.ValuationSpectrum.spaComap_id`, `spaComap_comp`: contravariant functoriality.
 * `TauCeti.ValuationSpectrum.comap_preimage_rationalSubset_inter_spa`,
@@ -39,7 +40,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
   `rationalSubset_image_eq_spa`: elementwise criteria for rational subsets under pullback.
 * `TauCeti.ValuationSpectrum.isEmbedding_spaComap`: an embedding of valuation spectra restricts
   to an embedding of sub-unit loci.
-* `TauCeti.ValuationSpectrum.isEmbedding_spaComap_quotientMk`,
+* `TauCeti.ValuationSpectrum.isOpen_supp_comap_quotientMk_iff`,
+  `isEmbedding_spaComap_quotientMk`,
   `range_spaComap_quotientMk`, `isClosedEmbedding_spaComap_quotientMk`: the quotient map for the
   image plus ring is a closed embedding with support locus as its range.
 
@@ -76,6 +78,12 @@ theorem comap_mem_spa {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A}
   refine ⟨hv.1.comap hφ, fun a ha ↦ ?_⟩
   rw [comap_vle, map_one]
   exact hv.2 (φ a) (hplus a ha)
+
+/-- A continuous point of `Spv B` lies in `spa (φ(A⁺))` exactly when its pullback along a
+continuous ring homomorphism `φ : A →+* B` lies in `spa A⁺`. -/
+theorem mem_spa_map_iff {φ : A →+* B} (hφ : Continuous φ) (Aplus : Subring A) {w : Spv B}
+    (hw : w.IsContinuous) : w ∈ spa (Aplus.map φ) ↔ comap φ w ∈ spa Aplus := by
+  simp [hw, hw.comap hφ, -isContinuous_def]
 
 /-- The contravariant map on sub-unit valuation loci induced by a continuous ring homomorphism
 `φ : A →+* B` carrying `Aplus` into `Bplus`. -/
@@ -196,6 +204,19 @@ theorem isEmbedding_spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Sub
 
 section Quotient
 
+/-- Pullback along a quotient map preserves and reflects whether the support of a valuation is
+open. -/
+@[simp]
+theorem isOpen_supp_comap_quotientMk_iff (J : Ideal A) (v : Spv (A ⧸ J)) :
+    IsOpen ((comap (Ideal.Quotient.mk J) v).supp : Set A) ↔
+      IsOpen (v.supp : Set (A ⧸ J)) := by
+  have hsupp : Ideal.Quotient.mk J ⁻¹' (v.supp : Set (A ⧸ J)) =
+      ((comap (Ideal.Quotient.mk J) v).supp : Set A) := by
+    ext a
+    simp only [Set.mem_preimage, SetLike.mem_coe, mem_supp_iff, comap_vle, map_zero]
+  rw [← hsupp]
+  exact isOpen_coinduced.symm
+
 /-- The map on sub-unit valuation loci for a quotient homomorphism and the image plus ring is a
 topological embedding. -/
 theorem isEmbedding_spaComap_quotientMk (J : Ideal A) (Aplus : Subring A) :
@@ -219,12 +240,9 @@ theorem range_spaComap_quotientMk (J : Ideal A) (Aplus : Subring A) :
     rw [← hval]
     exact self_le_supp_comap J w
   · intro hJ
-    have hlift_spa : quotientLift J hJ ∈ spa (Aplus.map (Ideal.Quotient.mk J)) := by
-      rw [mem_spa_iff]
-      refine ⟨IsContinuous.quotientLift J hJ (mem_spa_iff Aplus v |>.mp hv).1, ?_⟩
-      rintro _ ⟨a, ha, rfl⟩
-      rw [← map_one (Ideal.Quotient.mk J), ← comap_vle, comap_quotientLift]
-      exact (mem_spa_iff Aplus v |>.mp hv).2 a ha
+    have hlift_spa : quotientLift J hJ ∈ spa (Aplus.map (Ideal.Quotient.mk J)) :=
+      (mem_spa_map_iff continuous_quotient_mk' Aplus
+        (((mem_spa_iff Aplus v).mp hv).1.quotientLift J hJ)).mpr (by rwa [comap_quotientLift])
     refine ⟨⟨quotientLift J hJ, hlift_spa⟩, ?_⟩
     apply Subtype.ext
     exact (spaComap_val (Ideal.Quotient.mk J) continuous_quotient_mk' Aplus

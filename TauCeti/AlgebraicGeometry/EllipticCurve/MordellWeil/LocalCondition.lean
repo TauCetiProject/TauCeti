@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.BaseChange
 
 /-!
 # Base change of the étale algebra, and the local condition of `2`-descent
@@ -95,19 +96,6 @@ namespace Affine
 section CommRing
 
 variable {R : Type*} [CommRing R] (W : Affine R)
-
-/-- Base changing along the identity algebra map returns the curve itself. Stated over a
-commutative ring: it is a formal `map` identity and uses nothing about `R` beyond its ring
-structure. -/
-@[simp]
-lemma baseChange_self : (W⁄R).toAffine = W := by
-  -- `WeierstrassCurve.baseChange` (Weierstrass.lean:236) is a plain `def` and Mathlib exposes no
-  -- unfolding lemma for it, so this one definitional step cannot be replaced by an API rewrite.
-  -- It must be `change` rather than `show`: the step rewrites the goal rather than restating it,
-  -- which is exactly what `linter.style.show` requires. Everything after it is a named rewrite.
-  change W.map (algebraMap R R) = W
-  rw [show algebraMap R R = RingHom.id R from Algebra.algebraMap_self]
-  exact W.map_id
 
 section Map
 
@@ -248,8 +236,6 @@ lemma pointMap_some {x y : K} (h : W.Nonsingular x y) : W.pointMap L (Point.some
 end PointMap
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
-
-instance : (W⁄L).IsElliptic := inferInstanceAs (W.map (algebraMap K L)).IsElliptic
 
 open scoped Classical in
 /-- The local `2`-descent condition at the extension field `L` of `K` (in the applications,
