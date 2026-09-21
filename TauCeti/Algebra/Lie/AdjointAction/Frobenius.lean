@@ -72,6 +72,7 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 /-- **The Frobenius commutator identity.**  In exponential characteristic `p`, taking the
 `p ^ n`-th power in the algebra `A` and iterating the commutator `p ^ n` times in
 `Module.End R A` give the same endomorphism. -/
+@[simp]
 theorem ad_pow_expChar_pow (p : ℕ) [ExpChar A p] (a : A) (n : ℕ) :
     LieAlgebra.ad R A (a ^ p ^ n) = LieAlgebra.ad R A a ^ p ^ n := by
   have : ExpChar (Module.End R A) p :=
@@ -84,14 +85,15 @@ theorem ad_pow_expChar_pow (p : ℕ) [ExpChar A p] (a : A) (n : ℕ) :
 /-- Iterating the commutator with `a` exactly `p ^ n` times collapses to a single commutator with
 `a ^ p ^ n`.  This is the concrete reading of `ad_pow_expChar_pow`, and the reason the expansion
 `ad_pow_apply` degenerates in characteristic `p`. -/
+@[simp]
 theorem ad_pow_expChar_pow_apply (p : ℕ) [ExpChar A p] (a b : A) (n : ℕ) :
     (LieAlgebra.ad R A a ^ p ^ n) b = a ^ p ^ n * b - b * a ^ p ^ n := by
-  rw [← ad_pow_expChar_pow p a n]
-  simp [LieAlgebra.ad_apply, Ring.lie_def]
+  rw [← ad_pow_expChar_pow p a n, LieAlgebra.ad_apply, Ring.lie_def]
 
 /-- **The quantitative form of the Frobenius commutator identity.**  The `p ^ n`-fold commutator
 with `a` vanishes exactly when the Frobenius power `a ^ p ^ n` is central.  Both nilpotence
 statements below are this equivalence with the exponent quantified. -/
+@[simp]
 theorem ad_pow_expChar_pow_eq_zero_iff (p : ℕ) [ExpChar A p] (a : A) (n : ℕ) :
     LieAlgebra.ad R A a ^ p ^ n = 0 ↔ a ^ p ^ n ∈ Subalgebra.center R A := by
   rw [← ad_pow_expChar_pow p a n, ad_eq_zero_iff_mem_center]

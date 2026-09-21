@@ -79,6 +79,7 @@ theorem ad_pow_apply (a b : A) (n : ℕ) :
     LinearMap.mulRight_apply, mul_assoc]
 
 /-- The adjoint action of `a` vanishes exactly when `a` is central. -/
+@[simp]
 theorem ad_eq_zero_iff_mem_center (a : A) :
     LieAlgebra.ad R A a = 0 ↔ a ∈ Subalgebra.center R A := by
   rw [LinearMap.ext_iff, Subalgebra.mem_center_iff]
