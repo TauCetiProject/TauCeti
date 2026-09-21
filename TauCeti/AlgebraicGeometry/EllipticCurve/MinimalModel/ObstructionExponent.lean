@@ -71,7 +71,7 @@ theorem twelve_dvd_ord_Δ_sub_localMinimalDiscriminantValuation
       W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
   have hmin := ord_Δ_eq_localMinimalDiscriminantValuation O v W C hC
-  have hord := ord_Δ_smul O v C W
+  have hord := ord_Δ_smul (v.valuation K) C W
   rw [hC] at hord
   refine ⟨(v.valuation K).ord (C.u : K), ?_⟩
   omega

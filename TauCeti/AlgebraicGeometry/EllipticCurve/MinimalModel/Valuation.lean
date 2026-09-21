@@ -160,23 +160,31 @@ theorem localMinimalDiscriminantValuation_pos_iff (W : WeierstrassCurve K) [W.Is
       ¬(W.minimal R).HasGoodReduction R := by
   rw [Nat.pos_iff_ne_zero, ne_eq, localMinimalDiscriminantValuation_eq_zero_iff]
 
+section Ord
+
+open scoped WithZero
+
+variable {K : Type*} [Field K]
+
+/-- **A change of variables subtracts twelve times the order of its scaling parameter from the
+order of the discriminant.** This is a statement about an arbitrary `ℤᵐ⁰`-valued valuation of
+`K`; the discrete valuation of a local minimal model plays no role. -/
+theorem ord_Δ_smul (w : Valuation K ℤᵐ⁰) (C : VariableChange K)
+    (W : WeierstrassCurve K) [W.IsElliptic] :
+    w.ord (C • W).Δ = w.ord W.Δ - 12 * w.ord (C.u : K) := by
+  rw [variableChange_Δ,
+    Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
+    Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv]
+  ring
+
+end Ord
+
 section HeightOneSpectrum
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
 variable (O : Type*) [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
-
-/-- **A change of variables subtracts twelve times the order of its scaling parameter from the
-order of the discriminant.** -/
-theorem ord_Δ_smul (v : HeightOneSpectrum O) (C : VariableChange K)
-    (W : WeierstrassCurve K) [W.IsElliptic] :
-    (v.valuation K).ord (C • W).Δ =
-      (v.valuation K).ord W.Δ - 12 * (v.valuation K).ord (C.u : K) := by
-  rw [variableChange_Δ,
-    Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
-    Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv]
-  ring
 
 /-- **A minimal equation computes the local minimal discriminant valuation in additive
 notation.** -/
