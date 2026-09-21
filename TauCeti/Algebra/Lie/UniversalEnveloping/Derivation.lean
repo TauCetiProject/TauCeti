@@ -62,8 +62,10 @@ agree are closed under products and contain the scalars; this is
   derivation `y ↦ ⁅y, x⁆` of `L` is `-innerDerivation R (ι x)`, the derivation `a ↦ ⁅a, ι x⁆` of
   `U(L)`; so the construction carries the adjoint action of `L` on itself to the adjoint action of
   `U(L)` on itself, up to the sign by which the two conventions differ.
-* `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_range_le_iff`: the lifted derivation has
-  range in a two-sided ideal exactly when its values on the canonical generators lie there.
+* `TauCeti.UniversalEnvelopingAlgebra.derivation_range_le_iff`: a derivation has range in a
+  two-sided ideal exactly when its values on the canonical generators lie there, with
+  `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_range_le_iff` as the specialization to
+  lifted derivations.
 * `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_mem_stableDerivations_pow`: under the
   same generator condition, every power of the ideal is stable under the lifted derivation.
 
@@ -247,24 +249,20 @@ theorem envelopingDerivation_ι' (D : LieDerivation R L L) (x : L) :
 
 /-! ### Ideals containing the range -/
 
-/-- **The range of a lifted derivation lies in a two-sided ideal exactly when its values on the
-canonical generators do.** This reduces a range containment in `U(L)` to a condition checked on
-`L` alone. -/
-@[simp]
-theorem envelopingDerivation_range_le_iff (D : LieDerivation R L L) (I : Ideal U)
-    [I.IsTwoSided] :
-    LinearMap.range (envelopingDerivation R L D : Module.End R U) ≤ I.restrictScalars R ↔
-      ∀ x : L, _root_.UniversalEnvelopingAlgebra.ι R (D x) ∈ I := by
+/-- **A derivation of `U(L)` has range in a two-sided ideal exactly when its values on the
+canonical generators do.** -/
+theorem derivation_range_le_iff (D : derivationLieAlgebra R U) (I : Ideal U) [I.IsTwoSided] :
+    LinearMap.range (D : Module.End R U) ≤ I.restrictScalars R ↔
+      ∀ x : L, (D : Module.End R U) (_root_.UniversalEnvelopingAlgebra.ι R x) ∈ I := by
   constructor
   · intro h x
-    rw [← envelopingDerivation_ι R L D x]
-    exact h (LinearMap.mem_range_self (envelopingDerivation R L D : Module.End R U)
+    exact h (LinearMap.mem_range_self (D : Module.End R U)
       (_root_.UniversalEnvelopingAlgebra.ι R x))
   · intro h _ ha
     obtain ⟨a, rfl⟩ := ha
     rw [Submodule.restrictScalars_mem]
     induction a using induction_ι R L with
-    | ι x => simpa only [envelopingDerivation_ι] using h x
+    | ι x => exact h x
     | algebraMap r =>
       rw [Algebra.algebraMap_eq_smul_one, map_smul,
         derivationLieAlgebra.apply_one_eq_zero, smul_zero]
@@ -275,6 +273,17 @@ theorem envelopingDerivation_range_le_iff (D : LieDerivation R L L) (I : Ideal U
     | mul a b ha hb =>
       rw [derivationLieAlgebra.leibniz]
       exact I.add_mem (I.mul_mem_right b ha) (I.mul_mem_left a hb)
+
+/-- **The range of a lifted derivation lies in a two-sided ideal exactly when its values on the
+canonical generators do.** This reduces a range containment in `U(L)` to a condition checked on
+`L` alone. -/
+@[simp]
+theorem envelopingDerivation_range_le_iff (D : LieDerivation R L L) (I : Ideal U)
+    [I.IsTwoSided] :
+    LinearMap.range (envelopingDerivation R L D : Module.End R U) ≤ I.restrictScalars R ↔
+      ∀ x : L, _root_.UniversalEnvelopingAlgebra.ι R (D x) ∈ I := by
+  rw [derivation_range_le_iff]
+  simp only [envelopingDerivation_ι]
 
 /-- If a two-sided ideal contains the values of a Lie derivation on the canonical enveloping
 generators, every power of that ideal is stable under the lifted derivation -- so the lift descends
