@@ -131,6 +131,14 @@ def singularSubdivisionOrder {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌) : ℕ
   sInf {m | (TopCat.toSSet.obj X).ιChainComplex σ ≫
     (End.of (singularSubdivisionChainMap R X) ^ m).f n ∈ smallSingularChains R U n}
 
+/-- The subdivision order is at most any number of subdivisions that makes the simplex
+subordinate to `U`. -/
+lemma singularSubdivisionOrder_le {n m : ℕ} {σ : TopCat.toSSet.obj X _⦋n⦌}
+    (hσ : (TopCat.toSSet.obj X).ιChainComplex σ ≫
+      (End.of (singularSubdivisionChainMap R X) ^ m).f n ∈ smallSingularChains R U n) :
+    singularSubdivisionOrder R U σ ≤ m :=
+  Nat.sInf_le hσ
+
 /-- After `singularSubdivisionOrder` subdivisions, or any larger number, a singular simplex is a
 chain subordinate to the open cover `U`. -/
 theorem mem_smallSingularChains_ιChainComplex_comp_pow (hU : ∀ i, IsOpen (U i))
@@ -145,6 +153,7 @@ theorem mem_smallSingularChains_ιChainComplex_comp_pow (hU : ∀ i, IsOpen (U i
       ⟨n₀, (mem_smallSingularChains_iff _).2 (hn₀ n₀ le_rfl)⟩)
 
 /-- A simplex already subordinate to `U` needs no subdivision. -/
+@[simp]
 lemma singularSubdivisionOrder_eq_zero {n : ℕ} {σ : TopCat.toSSet.obj X _⦋n⦌}
     (hσ : σ ∈ (X.smallSingularSubcomplex U).obj (Opposite.op ⦋n⦌)) :
     singularSubdivisionOrder R U σ = 0 :=
@@ -177,6 +186,7 @@ lemma singularSubdivisionDepth_δ_le (n : ℕ) (σ : TopCat.toSSet.obj X _⦋n +
   exact le_max_of_le_right (Finset.le_sup (f := fun j : Fin (n + 2) ↦
     singularSubdivisionDepth R U n ((TopCat.toSSet.obj X).δ j σ)) (Finset.mem_univ j))
 
+@[simp]
 lemma singularSubdivisionDepth_eq_zero : ∀ (n : ℕ) (σ : TopCat.toSSet.obj X _⦋n⦌),
     σ ∈ (X.smallSingularSubcomplex U).obj (Opposite.op ⦋n⦌) →
       singularSubdivisionDepth R U n σ = 0 := by
@@ -242,7 +252,7 @@ lemma ι_comp_singularSmallApproxHom (i j : ℕ) :
       singularSmallApproxHom R U i j = 0 := by
   ext τ
   rw [← Category.assoc, SSet.ι_chainComplexMap_f]
-  simp [singularSubdivisionDepth_eq_zero R U i _ τ.2]
+  simp
 
 /-- The approximation restricts to the identity on the chains subordinate to `U`. -/
 @[reassoc (attr := simp)]
