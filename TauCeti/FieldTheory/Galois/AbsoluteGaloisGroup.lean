@@ -10,7 +10,6 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.Galois.Profinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
-public import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The absolute Galois group of a field, taken at its separable closure
@@ -235,6 +234,14 @@ variable {F E}
 
 /-! ### The Galois correspondence -/
 
+/-- `IntermediateField.map_fixingSubgroup` for the separable closure, phrased with
+`IntermediateField.lift`. The two sides are definitionally equal — `lift M` is `M.map (val _)` —
+but `rw` does not see through `IntermediateField.lift`, so the rewrites below need this form. -/
+private theorem fixingSubgroup_lift (M : IntermediateField F (separableClosure F E)) :
+    (IntermediateField.lift M).fixingSubgroup =
+      M.fixingSubgroup.comap (AlgEquiv.restrictNormalHom (separableClosure F E)) :=
+  IntermediateField.map_fixingSubgroup (E' := E) M
+
 /-- **The fixing subgroup of an intermediate field of a normal extension is closed.** This is
 `InfiniteGalois.fixingSubgroup_isClosed` with the separability hypothesis on `E/F` removed: the
 fixing subgroup of `L` is the preimage, under restriction to the separable closure, of the fixing
@@ -244,7 +251,7 @@ theorem _root_.IntermediateField.isClosed_fixingSubgroup (L : IntermediateField 
   rw [← IntermediateField.fixingSubgroup_inf_separableClosure L,
     ← IntermediateField.lift_restrict
       (inf_le_right : L ⊓ separableClosure F E ≤ separableClosure F E),
-    IntermediateField.fixingSubgroup_lift, Subgroup.coe_comap]
+    fixingSubgroup_lift, Subgroup.coe_comap]
   exact (InfiniteGalois.fixingSubgroup_isClosed _).preimage
     (InfiniteGalois.restrictNormalHom_continuous _)
 
@@ -255,7 +262,7 @@ theorem fixedField_fixingSubgroup_lift_inf_separableClosure
     (M : IntermediateField F (separableClosure F E)) :
     IntermediateField.fixedField (IntermediateField.lift M).fixingSubgroup ⊓
         separableClosure F E = IntermediateField.lift M := by
-  rw [InfiniteGalois.restrict_fixedField, IntermediateField.fixingSubgroup_lift,
+  rw [InfiniteGalois.restrict_fixedField, fixingSubgroup_lift,
     Subgroup.map_comap_eq_self_of_surjective (AlgEquiv.restrictNormalHom_surjective E),
     InfiniteGalois.fixedField_fixingSubgroup]
 
@@ -269,7 +276,7 @@ theorem fixingSubgroup_fixedField {H : Subgroup Gal(E/F)}
     rw [Subgroup.coe_map]
     exact (separableClosureRestrictEquiv F E).toHomeomorph.isClosedMap _ hH
   rw [← IntermediateField.fixingSubgroup_inf_separableClosure,
-    InfiniteGalois.restrict_fixedField, IntermediateField.fixingSubgroup_lift,
+    InfiniteGalois.restrict_fixedField, fixingSubgroup_lift,
     InfiniteGalois.fixingSubgroup_fixedField ⟨_, hmap⟩,
     Subgroup.comap_map_eq_self_of_injective
       (AlgEquiv.restrictNormalHom_separableClosure_injective F E)]

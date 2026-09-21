@@ -22,9 +22,7 @@ With no hypothesis on `M / K`, the fixers of an arbitrary join of intermediate f
 automorphisms fixing each of them.
 
 The correspondence is equivariant for conjugation: the fixed field of a conjugate subgroup is the
-image of the fixed field under the conjugating automorphism. It is also compatible with passing to
-a normal subextension `S`: the fixing subgroup of an intermediate field of `S`, lifted to `M`, is
-the preimage of its fixing subgroup in `Gal(S/K)`.
+image of the fixed field under the conjugating automorphism.
 
 The correspondence between subgroups and their fixed fields also holds with no hypothesis on
 `M / K` at all, provided the subgroup is finite: Artin's theorem makes `M` finite Galois over the
@@ -51,7 +49,6 @@ its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M
 * `Subgroup.fixedField_map_conj`
 * `IntermediateField.fixingSubgroup_inf`
 * `IntermediateField.fixingSubgroup_iSup`
-* `IntermediateField.fixingSubgroup_lift`
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
@@ -119,21 +116,6 @@ theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
   rw [Subgroup.mem_iInf]
   exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
     by simp [← Subgroup.zpowers_le, ← IntermediateField.le_iff_le]⟩
-
-/-- **The fixing subgroup of a lifted intermediate field is a preimage.** For a normal
-subextension `S` of `M / K` and an intermediate field `E` of `S / K`, an automorphism of `M` fixes
-`IntermediateField.lift E` pointwise exactly when its restriction to `S` fixes `E` pointwise. This
-transports fixing subgroups, hence the Galois correspondence, along `AlgEquiv.restrictNormalHom`.
--/
-theorem fixingSubgroup_lift {S : IntermediateField K M} [Normal K S] (E : IntermediateField K S) :
-    (lift E).fixingSubgroup = E.fixingSubgroup.comap (AlgEquiv.restrictNormalHom S) := by
-  ext σ
-  simp only [Subgroup.mem_comap, mem_fixingSubgroup_iff]
-  refine ⟨fun h y hy ↦ Subtype.ext ?_, fun h x hx ↦ ?_⟩
-  · exact (AlgEquiv.restrictNormalHom_apply S σ y).trans (h _ ((mem_lift y).mpr hy))
-  · have hxS : x ∈ S := lift_le E hx
-    exact (AlgEquiv.restrictNormalHom_apply S σ ⟨x, hxS⟩).symm.trans
-      (congrArg Subtype.val (h ⟨x, hxS⟩ ((mem_lift ⟨x, hxS⟩).mp hx)))
 
 /-- **A finite group of automorphisms is the whole fixing subgroup of its fixed field.** Every
 `K`-automorphism of `M` that fixes `M ^ H` pointwise already lies in `H`.
