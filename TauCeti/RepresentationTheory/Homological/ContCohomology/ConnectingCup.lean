@@ -136,6 +136,8 @@ structure ShortExactPairingFst {G : Type uG} [Monoid G]
   /-- The projections of the two sequences intertwine the two pairings they connect. -/
   proj_pairing : ∀ (a : A) (b : B), T.proj (pairing a b) = pairing'' (S.proj a) b
 
+attribute [simp] ShortExactPairingFst.incl_pairing ShortExactPairingFst.proj_pairing
+
 namespace ShortExactPairingFst
 
 variable {G : Type uG} [Group G]
@@ -156,11 +158,6 @@ variable {G : Type uG} [Group G]
   {S : DiscreteShortExact G A' A A''} {T : DiscreteShortExact G C' C C''}
   (P : ShortExactPairingFst S B T)
 
-/-- Pairing with an invariant second factor commutes with the action of `G` on the first. -/
-theorem pairing_smul_left (g : G) (a : A) (y : H0 G B) :
-    P.pairing (g • a) (y : B) = g • P.pairing a (y : B) :=
-  pairingRight_smul P.pairing P.equivariant y g a
-
 variable [TopologicalSpace G] [ContinuousSMul G A'] [ContinuousSMul G A]
   [ContinuousSMul G A''] [ContinuousSMul G B] [ContinuousSMul G C'] [ContinuousSMul G C]
   [ContinuousSMul G C'']
@@ -178,7 +175,8 @@ theorem explicitDelta0_explicitCup00 (x : H0 G A'') (y : H0 G B) :
   rw [S.explicitDelta0_apply x ha hv hincl, QuotientAddGroup.mk'_apply, explicitCup10_mk]
   refine T.explicitDelta0_apply _ (b := P.pairing a (y : B)) ?_ _ fun g => ?_
   · rw [P.proj_pairing, ha, coe_explicitCup00]
-  · rw [P.incl_pairing, hincl g, hy g, map_sub, AddMonoidHom.sub_apply, P.pairing_smul_left g a y]
+  · rw [P.incl_pairing, hincl g, hy g, map_sub, AddMonoidHom.sub_apply,
+      pairingRight_smul P.pairing P.equivariant y g a]
 
 variable [ContinuousMul G]
 
@@ -225,7 +223,7 @@ theorem explicitDelta1_explicitCup10 (x : H1 G A'') (y : H0 G B) :
       ((continuous_of_discreteTopology (f := fun z : A => P.pairing z (y : B))).comp' hec)
       (fun g => by simp only [P.proj_pairing, hep, hy]) _ fun g h => ?_
     rw [P.incl_pairing, hincl g h, hy (g * h), map_add, map_sub, AddMonoidHom.add_apply,
-      AddMonoidHom.sub_apply, P.pairing_smul_left g (e h) y]
+      AddMonoidHom.sub_apply, pairingRight_smul P.pairing P.equivariant y g (e h)]
 
 end ShortExactPairingFst
 
@@ -273,6 +271,8 @@ structure ShortExactPairingSnd {G : Type uG} [Monoid G]
   /-- The projections of the two sequences intertwine the two pairings they connect. -/
   proj_pairing : ∀ (a : A) (b : B), T.proj (pairing a b) = pairing'' a (S.proj b)
 
+attribute [simp] ShortExactPairingSnd.incl_pairing ShortExactPairingSnd.proj_pairing
+
 namespace ShortExactPairingSnd
 
 variable {G : Type uG} [Group G]
@@ -293,11 +293,6 @@ variable {G : Type uG} [Group G]
   {S : DiscreteShortExact G B' B B''} {T : DiscreteShortExact G C' C C''}
   (P : ShortExactPairingSnd A S T)
 
-/-- Pairing with an invariant first factor commutes with the action of `G` on the second. -/
-theorem pairing_smul_right (g : G) (x : H0 G A) (b : B) :
-    P.pairing (x : A) (g • b) = g • P.pairing (x : A) b :=
-  pairingLeft_smul P.pairing P.equivariant x g b
-
 variable [TopologicalSpace G] [ContinuousSMul G A] [ContinuousSMul G B']
   [ContinuousSMul G B] [ContinuousSMul G B''] [ContinuousSMul G C'] [ContinuousSMul G C]
   [ContinuousSMul G C'']
@@ -314,7 +309,8 @@ theorem explicitDelta0_explicitCup00 (x : H0 G A) (y : H0 G B'') :
   rw [S.explicitDelta0_apply y hb hv hincl, QuotientAddGroup.mk'_apply, explicitCup01_mk]
   refine T.explicitDelta0_apply _ (b := P.pairing (x : A) b) ?_ _ fun g => ?_
   · rw [P.proj_pairing, hb, coe_explicitCup00]
-  · rw [P.incl_pairing, hincl g, map_sub, P.pairing_smul_right g x b]
+  · rw [P.incl_pairing, hincl g, map_sub,
+      pairingLeft_smul P.pairing P.equivariant x g b]
 
 variable [ContinuousMul G]
 
@@ -365,7 +361,8 @@ theorem explicitDelta1_explicitCup01 (x : H0 G A) (y : H1 G B'') :
     refine T.explicitDelta1_apply _ (e := fun g => P.pairing (x : A) (e g))
       ((continuous_of_discreteTopology (f := P.pairing (x : A))).comp' hec)
       (fun g => by rw [P.proj_pairing, hep]) _ fun g h => ?_
-    rw [P.incl_pairing, hincl g h, map_add, map_sub, P.pairing_smul_right g x (e h)]
+    rw [P.incl_pairing, hincl g h, map_add, map_sub,
+      pairingLeft_smul P.pairing P.equivariant x g (e h)]
 
 end ShortExactPairingSnd
 
