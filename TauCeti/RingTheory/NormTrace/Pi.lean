@@ -37,7 +37,7 @@ variable {L : ι → Type*} [∀ i, Field (L i)] [∀ i, Algebra K (L i)]
 open Module
 
 /-- The determinant of a coordinatewise endomorphism of a finite dependent product. -/
-theorem LinearMap.det_pi_of_apply_eq_dependent {M : ι → Type*}
+theorem _root_.LinearMap.det_pi_of_apply_eq_dependent {M : ι → Type*}
     [∀ i, AddCommGroup (M i)] [∀ i, Module K (M i)] [∀ i, FiniteDimensional K (M i)]
     (T : ((i : ι) → M i) →ₗ[K] ((i : ι) → M i)) (f : ∀ i, M i →ₗ[K] M i)
     (hT : ∀ x i, T x i = f i (x i)) :
