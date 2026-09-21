@@ -41,8 +41,6 @@ the slit plane, is `TauCeti.IsCompleteBernsteinFunction.exists_analyticOnNhd_sli
 
 ## Main declarations
 
-* `TauCeti.lintegral_inv_le_of_forall_integral_inv_add_le`: an affine bound on the Stieltjes
-  transform of a finite measure on `ℝ≥0` near the origin bounds `∫ y, y⁻¹ ∂ν`.
 * `TauCeti.exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_div_add`: the reflected form of
   the conversion, for a measure on `ℝ≥0`.
 * `TauCeti.exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_nevanlinnaKernel`: the
@@ -62,56 +60,6 @@ open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-- If the Stieltjes transform of a finite measure on `ℝ≥0` is bounded by `c + C t` at every
-positive parameter `t`, then `∫ y, y⁻¹ ∂ν ≤ c`: the parameter may be sent to zero.  The bound is
-stated as a lower Lebesgue integral because `y ↦ y⁻¹` is unbounded, and the conclusion carries in
-particular the finiteness of that integral. -/
-theorem lintegral_inv_le_of_forall_integral_inv_add_le {ν : Measure ℝ≥0} [IsFiniteMeasure ν]
-    {c C : ℝ} (h : ∀ t : ℝ, 0 < t → (∫ y : ℝ≥0, (t + (y : ℝ))⁻¹ ∂ν) ≤ c + C * t) :
-    ∫⁻ y : ℝ≥0, (y : ℝ≥0∞)⁻¹ ∂ν ≤ ENNReal.ofReal c := by
-  set u : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1) with hu
-  have hupos : ∀ n, 0 < u n := fun n => by positivity
-  have huanti : Antitone u := by
-    intro m n hmn
-    have hle : (m : ℝ) ≤ (n : ℝ) := by exact_mod_cast hmn
-    simp only [hu]
-    gcongr
-  have hu0 : Tendsto u atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  set F : ℕ → ℝ≥0 → ℝ≥0∞ := fun n y => (ENNReal.ofReal (u n) + (y : ℝ≥0∞))⁻¹ with hF
-  have hFmeas : ∀ n, Measurable (F n) := fun n => by fun_prop
-  have hFmono : Monotone F := by
-    intro m n hmn y
-    exact ENNReal.inv_le_inv' (by gcongr; exact huanti hmn)
-  have hsup : ∀ y : ℝ≥0, ⨆ n, F n y = (y : ℝ≥0∞)⁻¹ := by
-    intro y
-    have htend : Tendsto (fun n => F n y) atTop (𝓝 ((y : ℝ≥0∞))⁻¹) := by
-      have h1 : Tendsto (fun n => ENNReal.ofReal (u n) + (y : ℝ≥0∞)) atTop
-          (𝓝 (0 + (y : ℝ≥0∞))) := by
-        refine Tendsto.add ?_ tendsto_const_nhds
-        simpa using ENNReal.tendsto_ofReal hu0
-      simpa [hF] using tendsto_inv_iff.2 h1
-    exact tendsto_nhds_unique (tendsto_atTop_iSup fun m n hmn => hFmono hmn y) htend
-  have hint : ∀ t : ℝ, 0 < t → Integrable (fun y : ℝ≥0 => (t + (y : ℝ))⁻¹) ν :=
-    fun t ht => integrable_inv_add (integrable_stieltjesWeight ν) ht
-  have hFint : ∀ n, ∫⁻ y : ℝ≥0, F n y ∂ν
-      = ENNReal.ofReal (∫ y : ℝ≥0, (u n + (y : ℝ))⁻¹ ∂ν) := by
-    intro n
-    rw [ofReal_integral_eq_lintegral_ofReal (hint _ (hupos n))
-      (.of_forall fun y => by positivity)]
-    refine lintegral_congr fun y => ?_
-    rw [hF, ENNReal.ofReal_inv_of_pos (by positivity),
-      ENNReal.ofReal_add (hupos n).le y.coe_nonneg, ENNReal.ofReal_coe_nnreal]
-  have hrw : ∫⁻ y : ℝ≥0, (y : ℝ≥0∞)⁻¹ ∂ν = ⨆ n, ∫⁻ y : ℝ≥0, F n y ∂ν := by
-    rw [← lintegral_iSup hFmeas hFmono]
-    exact lintegral_congr fun y => (hsup y).symm
-  rw [hrw]
-  refine le_of_tendsto_of_tendsto'
-    (tendsto_atTop_iSup fun m n hmn => lintegral_mono (hFmono hmn))
-    (ENNReal.tendsto_ofReal (by simpa using tendsto_const_nhds.add (hu0.const_mul C)))
-    fun n => ?_
-  rw [hFint n]
-  exact ENNReal.ofReal_le_ofReal (h _ (hupos n))
 
 /-- The algebraic identity behind the conversion: the complete-Bernstein kernel weighted by the
 Stieltjes density `(1 + y ^ 2) / y` differs from the reflected Nevanlinna kernel by `y⁻¹`. -/
@@ -251,6 +199,14 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_div_add {ν : Mea
   simp only [NNReal.smul_def, smul_eq_mul]
   ring
 
+/-- The reflection `x = -y` transporting the Nevanlinna kernel to `ℝ≥0`: negating numerator and
+denominator turns the reflected kernel back into `(1 + x t) / (x - t)`. -/
+private lemma mul_neg_sub_one_div_add_neg_eq (t : ℝ) {x : ℝ} (hxt : x - t ≠ 0) :
+    (t * -x - 1) / (t + -x) = (1 + x * t) / (x - t) := by
+  have hx : t + -x ≠ 0 := fun h => hxt (by linarith)
+  rw [div_eq_div_iff hx hxt]
+  ring
+
 /-- **Complete Bernstein functions from a Nevanlinna representation off the positive half-axis.**
 A function that agrees on `(0, ∞)` with the Nevanlinna transform `b t + ∫ x, (1 + x t) / (x - t) ∂ρ
 + c` of a nonnegative coefficient `b` and a finite measure `ρ` giving no mass to `(0, ∞)`, and is
@@ -286,8 +242,8 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_nevanlinnaKernel
     refine (integral_congr_ae ?_).symm
     filter_upwards [hale] with x hx
     have hxc : ((-x).toNNReal : ℝ) = -x := Real.coe_toNNReal _ (by linarith)
-    rw [hxc]
-    rw [show t + -x = -(x - t) by ring, show t * -x - 1 = -(1 + x * t) by ring, neg_div_neg_eq]
+    have hxt : x - t ≠ 0 := (by linarith : x - t < 0).ne
+    rw [hxc, mul_neg_sub_one_div_add_neg_eq t hxt]
   have := hf t ht
   rw [hreal, htransport] at this
   have hcast : (f t : ℂ) = ((c + b * t + ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν : ℝ) : ℂ) := by

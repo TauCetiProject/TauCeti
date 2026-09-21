@@ -248,6 +248,7 @@ def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
   (1 + (x : ℂ) * z) / ((x : ℂ) - z)
 
 /-- At a real parameter the Nevanlinna kernel is real. -/
+@[simp]
 theorem nevanlinnaKernel_ofReal (t x : ℝ) :
     nevanlinnaKernel (t : ℂ) x = (((1 + x * t) / (x - t) : ℝ) : ℂ) := by
   rw [nevanlinnaKernel]
