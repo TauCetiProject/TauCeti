@@ -150,6 +150,7 @@ theorem padicPow_one (hA : IsProP p A) (a : A) : hA.padicPow a 1 = a := by
   simpa using hA.padicPow_natCast a 1
 
 /-- The `p`-adic power is additive in the exponent. -/
+@[simp]
 theorem padicPow_add (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
     hA.padicPow a (l + l') = hA.padicPow a l * hA.padicPow a l' := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
@@ -159,6 +160,7 @@ theorem padicPow_add (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
   exact pow_eq_pow_of_modEq (PadicInt.appr_add_modEq l l' n) (hn _)
 
 /-- Iterating the `p`-adic power multiplies the exponents. -/
+@[simp]
 theorem padicPow_mul (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
     hA.padicPow a (l * l') = hA.padicPow (hA.padicPow a l) l' := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
