@@ -168,13 +168,8 @@ theorem chartJetSet_self_target (x : M) (y : F) (m : ℕ) (hm : m ≤ n)
     chartJetSet (J := 𝓘(𝕜, F)) (n := n) x y m K V =
       {f | MapsTo (chartIteratedFDeriv f x m hm) K V} := by
   ext f
-  have hjet (z : (extChartAt I x).target) :
-      chartIteratedFDeriv f x m hm z =
-        iteratedFDerivWithin 𝕜 m (f ∘ (extChartAt I x).symm)
-          (extChartAt I x).target z :=
-    chartIteratedFDeriv_self_target_apply f x m hm z
   simp only [mem_chartJetSet, extChartAt_model_space_eq_id, PartialEquiv.refl_source,
-    mem_univ, true_and, mem_ofPred_eq, MapsTo, hjet,
+    mem_univ, true_and, mem_ofPred_eq, MapsTo, chartIteratedFDeriv_self_target_apply,
     PartialEquiv.refl_coe, Function.id_comp]
 
 /-- Assuming the source is a `C^n` manifold, the vector-valued manifold weak Whitney topology
