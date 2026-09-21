@@ -480,7 +480,8 @@ noncomputable instance instCompleteSpace [CompleteSpace F] :
   unfold C2HolderSpace
   exact (isClosed_c2HolderSpace (α := α) (E := E) (F := F)).completeSpace_coe
 
-attribute [irreducible] _root_.TauCeti.C2HolderSpace
+attribute [irreducible] instNormedAddCommGroup instNormedSpace
+  _root_.TauCeti.C2HolderSpace
 
 end C2HolderSpace
 
