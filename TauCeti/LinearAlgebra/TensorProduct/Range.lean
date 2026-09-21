@@ -15,6 +15,11 @@ coefficient algebra is faithfully flat, membership of a vector in that range can
 extension of scalars.  This is the linear-algebraic descent step used when an equation acquires a
 solution after passing to a larger field.
 
+This builds on `Submodule.baseChange` from
+`Mathlib/LinearAlgebra/TensorProduct/Tower.lean` and
+`Module.FaithfullyFlat.one_tmul_eq_zero_iff` from
+`Mathlib/RingTheory/Flat/FaithfullyFlat/Basic.lean`.
+
 ## Main results
 
 * `LinearMap.range_baseChange`: the range of an extended linear map is the extension of its range.
@@ -37,7 +42,8 @@ variable [AddCommGroup M] [Module R M]
 
 /-- Over a faithfully flat coefficient algebra, a vector belongs to a submodule exactly when its
 canonical image belongs to the extension of that submodule. -/
-theorem mem_baseChange_one_tmul_iff [Module.FaithfullyFlat R A]
+@[simp]
+theorem one_tmul_mem_baseChange_iff [Module.FaithfullyFlat R A]
     (p : Submodule R M) (m : M) :
     (1 : A) ⊗ₜ[R] m ∈ p.baseChange A ↔ m ∈ p := by
   constructor
@@ -68,6 +74,7 @@ variable [CommSemiring R] [Semiring A] [Algebra R A]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- Extension of scalars carries the range of a linear map to the extension of its range. -/
+@[simp]
 theorem range_baseChange (f : M →ₗ[R] N) :
     range (f.baseChange A) = (range f).baseChange A := by
   calc
@@ -80,7 +87,7 @@ theorem range_baseChange (f : M →ₗ[R] N) :
       apply range_comp_of_range_eq_top
       rw [range_eq_top]
       exact baseChange_surjective A f.surjective_rangeRestrict
-    _ = (range f).baseChange A := rfl
+    _ = (range f).baseChange A := by rw [Submodule.baseChange]
 
 end Range
 
@@ -94,7 +101,7 @@ and only if its canonical image belongs to the range after extension of scalars.
 theorem one_tmul_mem_range_baseChange_iff [Module.FaithfullyFlat R A]
     (f : M →ₗ[R] N) (y : N) :
     (1 : A) ⊗ₜ[R] y ∈ range (f.baseChange A) ↔ y ∈ range f := by
-  rw [range_baseChange, Submodule.mem_baseChange_one_tmul_iff]
+  rw [range_baseChange, Submodule.one_tmul_mem_baseChange_iff]
 
 end Descent
 

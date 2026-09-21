@@ -16,6 +16,9 @@ bracket equation `x = ⁅x, y⁆` that has a solution after a faithfully flat ex
 solution over the original coefficient ring.  In particular, passing to an algebraic closure cannot
 create a solution to such an equation.
 
+The compatibility with the adjoint action uses `LieModule.toEnd_baseChange` from
+`Mathlib/Algebra/Lie/BaseChange.lean`.
+
 ## Main results
 
 * `LieAlgebra.exists_eq_lie_of_one_tmul_mem_range_ad`: membership of `1 ⊗ₜ x` in the range of
