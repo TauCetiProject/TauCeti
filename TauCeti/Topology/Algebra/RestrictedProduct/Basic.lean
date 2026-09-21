@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+public import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Integral subgroups of restricted products
 
-This file packages the everywhere-integral part of a restricted product of topological
-groups.  The reference family used to form the restricted product and a second family of
+This file packages the everywhere-integral part of a restricted product of groups equipped
+with topologies.  The reference family used to form the restricted product and a second family of
 subgroups are kept separate, so changing the integral model at finitely many indices is
 represented without changing the ambient restricted product.  The resulting openness and
 compactness statements are the point-set input for maps and decompositions of restricted
@@ -21,8 +22,7 @@ The eventual comparison results are adapted from the FLT project
 (`ImperialCollegeLondon/FLT`, file `TopologicalSpace.lean`, source commit
 `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0`, FLT PR #1088, Apache 2.0), whose source file
 credits Matthew Jasper, Kevin Buzzard, Bhavik Mehta, Ruben Van de Velde, Bryan Wang Peng Jun,
-and Pietro Monticone.  The compactness result here deliberately drops
-FLT's openness hypothesis on the reference family, using the structure-map argument instead.
+and Pietro Monticone.
 
 ## References
 
@@ -51,8 +51,8 @@ def integralSubgroupOf (U V : ∀ i, Subgroup (G i)) :
 theorem mem_integralSubgroupOf (U V : ∀ i, Subgroup (G i))
     (x : Πʳ i, [G i, (U i : Set (G i))]) :
     x ∈ integralSubgroupOf U V ↔ ∀ i, x i ∈ V i := by
-  change (∀ i, i ∈ Set.univ → x i ∈ V i) ↔ _
-  simp
+  rw [integralSubgroupOf, Subgroup.mem_comap, Subgroup.mem_pi]
+  simp [RestrictedProduct.coeMonoidHom]
 
 /-- The subgroup whose coordinates lie in the reference subgroup at every index. -/
 def integralSubgroup (U : ∀ i, Subgroup (G i)) :
@@ -84,7 +84,6 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
   have hopen := hopenU.inter (hopenV.preimage RestrictedProduct.continuous_coe)
   convert hopen using 1
   ext x
-  change (x ∈ integralSubgroupOf U V) ↔ _
   constructor
   · intro hx
     have hx' := (mem_integralSubgroupOf U V x).mp hx
@@ -140,14 +139,7 @@ theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
   -- The explicit coercions expose the carrier predicate in Mathlib's normal form.
   convert (RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU) using 1
   ext x
-  constructor
-  · intro hx
-    change ∀ i, x i ∈ U i
-    exact (mem_integralSubgroup U x).mp hx
-  · intro hx
-    change ∀ i, x i ∈ U i at hx
-    apply (mem_integralSubgroup U x).mpr
-    exact hx
+  exact mem_integralSubgroup U x
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
@@ -162,23 +154,22 @@ theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
   -- The image of the structure map is exactly the everywhere-integral carrier.
   convert hrange using 1
   ext x
-  constructor
-  · intro hx
-    change ∀ i, x i ∈ U i
-    exact (mem_integralSubgroup U x).mp hx
-  · intro hx
-    change ∀ i, x i ∈ U i at hx
-    apply (mem_integralSubgroup U x).mpr
-    exact hx
+  exact mem_integralSubgroup U x
 
 /-- A family of compact open subgroups, one in each factor. -/
 structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
     [∀ i, TopologicalSpace (G i)] where
   /-- The compact open subgroup chosen in each factor. -/
-  subgroup : ∀ i, Subgroup (G i)
-  /-- Openness of the chosen subgroup in each factor. -/
-  isOpen_subgroup : ∀ i, IsOpen (subgroup i : Set (G i))
+  subgroup : ∀ i, OpenSubgroup (G i)
   /-- Compactness of the chosen subgroup in each factor. -/
   isCompact_subgroup : ∀ i, IsCompact (subgroup i : Set (G i))
+
+@[ext]
+theorem CompactOpenSubgroups.ext {K L : CompactOpenSubgroups G}
+    (h : K.subgroup = L.subgroup) : K = L := by
+  cases K
+  cases L
+  cases h
+  rfl
 
 end TauCeti
