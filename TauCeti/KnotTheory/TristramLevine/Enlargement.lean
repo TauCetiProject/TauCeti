@@ -15,15 +15,11 @@ Together with congruence invariance, these are the algebraic identities needed f
 under S-equivalence. The statements hold for every complex parameter, including `ω = 1`,
 where the form vanishes; no condition on the Alexander polynomial is needed.
 
-For `ω ≠ 1`, a block shear splits the enlarged Hermitian form into the original form and a
-hyperbolic plane. The latter has zero diagonal and signature zero. The row enlargement follows
-by transposition. The input remains a real matrix: this does not construct a Seifert surface
-or assert knot-concordance invariance at roots of the Alexander polynomial.
+The input remains a real matrix: this does not construct a Seifert surface or assert
+knot-concordance invariance at roots of the Alexander polynomial.
 
 The calculation follows W. B. R. Lickorish, *An Introduction to Knot Theory*, GTM 175,
-Chapter 8, Theorem 8.9. It extends the classical-signature block-shear proof in
-`TauCeti.KnotTheory.Signature`, using the Hermitian congruence and block-additivity API of
-`TauCeti.Analysis.Matrix.HermitianSignature`.
+Chapter 8, Theorem 8.9.
 -/
 
 public section
@@ -86,7 +82,8 @@ theorem tristramLevineSignature_enlargeColumn (V : Matrix ι ι ℝ) (ξ : ι �
   have hcong : P * tristramLevineForm (enlargeColumn V ξ) ω * Pᴴ =
       fromBlocks (tristramLevineForm V ω) 0 0 H := by
     rw [tristramLevineForm_enlargeColumn]
-    -- The local names are the three displayed blocks of the enlargement formula.
+    -- `rw` leaves the local block aliases folded inside `fromBlocks`; no rewrite lemma
+    -- can match through those aliases, so `change` unfolds only their definitional equalities.
     change fromBlocks 1 F 0 1 * fromBlocks (tristramLevineForm V ω) E Eᴴ H *
       (fromBlocks 1 F 0 1)ᴴ = _
     rw [Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply,
