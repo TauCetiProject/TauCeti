@@ -90,18 +90,15 @@ noncomputable def primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
 theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
     primeDiscriminantChar P hP ≠ 1 := by
   obtain ⟨a, ha⟩ := exists_primeDiscriminantCharFun_eq_neg_one hP
-  intro h
-  have happ : primeDiscriminantChar P hP (a : ℤ) =
-      (1 : DirichletCharacter ℤ P.natAbs) (a : ℤ) := by
-    exact DFunLike.congr_fun h ((a : ℤ) : ZMod P.natAbs)
   have haunit : IsUnit ((a : ℤ) : ZMod P.natAbs) := by
     by_contra ha'
-    have hz := MulChar.map_nonunit (primeDiscriminantChar P hP) ha'
-    have hz' : primeDiscriminantChar P hP (a : ℤ) = 0 := hz
-    rw [primeDiscriminantChar_apply_int, ha] at hz'
-    norm_num at hz'
-  rw [primeDiscriminantChar_apply_int, ha, MulChar.one_apply haunit] at happ
-  omega
+    have hz : primeDiscriminantChar P hP ((a : ℤ) : ZMod P.natAbs) = 0 :=
+      MulChar.map_nonunit (primeDiscriminantChar P hP) ha'
+    rw [primeDiscriminantChar_apply_int, ha] at hz
+    norm_num at hz
+  refine MulChar.ne_one_iff.mpr ⟨haunit.unit, ?_⟩
+  rw [IsUnit.unit_spec, primeDiscriminantChar_apply_int, ha]
+  norm_num
 
 /-- **The Dirichlet character of a prime discriminant is primitive.** Its conductor is exactly
 the absolute value of the prime discriminant. -/
@@ -114,13 +111,24 @@ theorem isPrimitive_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P)
     exact primeDiscriminantChar_ne_one P hP
       ((DirichletCharacter.eq_one_iff_conductor_eq_one).2 h)
   rcases isPrimeDiscriminant_iff.mp hP with hP | ⟨p, hp, hodd, hP⟩
-  · rcases hP with rfl | rfl | rfl
-    · exact DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three _
-        (by simp [primeDiscriminantChar])
-    · exact DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five _
-        (by simp [primeDiscriminantChar])
-    · exact DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five _
-        (by simp [primeDiscriminantChar])
+  · -- At an even prime discriminant the character is `χ₄`, `χ₈` or `χ₈'`, whose values at `1`
+    -- and at `3`, respectively `5`, are `1` and `-1`.
+    rcases hP with rfl | rfl | rfl
+    · refine DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three _ ?_
+      rw [primeDiscriminantChar_apply_int, primeDiscriminantChar_apply_int,
+        primeDiscriminantCharFun_one, primeDiscriminantCharFun_neg_four,
+        ZMod.χ₄_int_eq_if_mod_four]
+      norm_num
+    · refine DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five _ ?_
+      rw [primeDiscriminantChar_apply_int, primeDiscriminantChar_apply_int,
+        primeDiscriminantCharFun_one, primeDiscriminantCharFun_eight,
+        ZMod.χ₈_int_eq_if_mod_eight]
+      norm_num
+    · refine DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five _ ?_
+      rw [primeDiscriminantChar_apply_int, primeDiscriminantChar_apply_int,
+        primeDiscriminantCharFun_one, primeDiscriminantCharFun_neg_eight,
+        ZMod.χ₈'_int_eq_if_mod_eight]
+      norm_num
   · subst P
     have hdiv : (primeDiscriminantChar (oddPrimeDiscriminant p) hP).conductor ∣ p := by
       simpa only [oddPrimeDiscriminant_natAbs] using DirichletCharacter.conductor_dvd_level
