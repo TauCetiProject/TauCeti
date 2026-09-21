@@ -8,14 +8,14 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Probability.HasLaw
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
 public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 
 import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.Probability.ProductMeasure
 import TauCeti.Analysis.Matrix.Sqrt
+import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
+import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
 
 /-!
 # The Gaussian-Gram Wishart family
