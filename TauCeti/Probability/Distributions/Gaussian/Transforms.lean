@@ -25,8 +25,10 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 ## Main results
 
 * `ProbabilityTheory.IsGaussian.integrableExpSet_dual` identifies the exponential-integrability
-  domain of a continuous linear functional of a Gaussian measure with all of `ℝ`.
-* `ProbabilityTheory.IsGaussian.mgf_dual` computes its moment-generating function from its mean and
+  domain of an almost everywhere measurable continuous linear functional of a Gaussian measure
+  with all of `ℝ`.
+* `ProbabilityTheory.IsGaussian.mgf_dual` computes the moment-generating function of an almost
+  everywhere measurable continuous linear functional of a Gaussian measure from its mean and
   variance.
 * `TauCeti.integrableExpSet_inner_multivariateGaussian` gives the exact domain for a directional
   functional of a multivariate Gaussian.
