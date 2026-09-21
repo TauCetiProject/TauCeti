@@ -73,7 +73,7 @@ namespace IdeleGroup
 number field. -/
 @[simp]
 theorem mem_principalSubgroup_iff (x : IdeleGroup (𝓞 K) K) :
-    x ∈ principalSubgroup (𝓞 K) K ↔
+    (∃ y : Kˣ, unitEmbedding (𝓞 K) K y = x) ↔
       (x : AdeleRing (𝓞 K) K) ∈ AdeleRing.principalSubgroup (𝓞 K) K := by
   let _ : Nontrivial (AdeleRing (𝓞 K) K) :=
     Function.Injective.nontrivial (AdeleRing.algebraMap_injective (𝓞 K) K)
@@ -95,6 +95,7 @@ theorem isClosed_principalSubgroup :
       (fun x : IdeleGroup (𝓞 K) K ↦ (x : AdeleRing (𝓞 K) K)) ⁻¹'
         (AdeleRing.principalSubgroup (𝓞 K) K : Set (AdeleRing (𝓞 K) K)) := by
     ext x
+    change (∃ y : Kˣ, unitEmbedding (𝓞 K) K y = x) ↔ _
     exact mem_principalSubgroup_iff K x
   rw [hset]
   exact (TauCeti.GlobalNumberFields.isClosed_principalSubgroup K).preimage Units.continuous_val
