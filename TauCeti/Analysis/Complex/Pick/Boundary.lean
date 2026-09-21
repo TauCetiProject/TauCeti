@@ -117,15 +117,15 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = (beta : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂mu + c)
     {a b eps delta : ℝ} (hab : a < b) (hdelta : 0 < delta)
-    (hd : ∀ u ∈ Icc a b, ∀ v : ℝ, 0 < v → v < delta → v ≤ 1 →
+    (hd : ∀ u ∈ Icc a b, ∀ v : ℝ, 0 < v → v < delta →
       (F ((u : ℂ) + (v : ℂ) * I)).im < eps) :
     mu.real (Icc a b) ≤ (b - a) * eps := by
-  obtain ⟨N, hN⟩ := exists_nat_gt (max ((b - a) / (2 * delta)) ((b - a) / 2))
+  obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / (2 * delta))
   have hNpos : 0 < N := by
     by_contra h
     have hzero : N = 0 := by omega
-    simp only [hzero, Nat.cast_zero, max_lt_iff] at hN
-    nlinarith [hN.2]
+    rw [hzero, Nat.cast_zero] at hN
+    exact absurd hN (not_lt.2 (div_nonneg (by linarith) (by positivity)))
   have hNposR : (0 : ℝ) < N := by exact_mod_cast hNpos
   set v : ℝ := (b - a) / (2 * N) with hvdef
   have hvpos : 0 < v := by
@@ -133,13 +133,7 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
     positivity
   have hvlt : v < delta := by
     rw [hvdef, div_lt_iff₀ (by positivity)]
-    have h := (max_lt_iff.mp hN).1
-    rw [div_lt_iff₀ (by positivity)] at h
-    nlinarith
-  have hvle : v ≤ 1 := by
-    rw [hvdef, div_le_one (by positivity)]
-    have h := (max_lt_iff.mp hN).2
-    rw [div_lt_iff₀ (by norm_num)] at h
+    rw [div_lt_iff₀ (by positivity)] at hN
     nlinarith
   have hbeq : b = a + 2 * (N : ℝ) * v := by
     rw [hvdef]
@@ -179,7 +173,7 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
       · rw [hck, hbeq]; nlinarith
     rw [hck1, hck2]
     refine (measureReal_Icc_le_of_eq_nevanlinnaKernel_add hbeta hrep ck hvpos).trans ?_
-    nlinarith [hd ck hckmem v hvpos hvlt hvle]
+    nlinarith [hd ck hckmem v hvpos hvlt]
   calc mu.real (Icc a b)
       ≤ mu.real (⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v)) :=
         measureReal_mono hcover (measure_ne_top _ _)
@@ -194,14 +188,13 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
 
 /-- **The Stieltjes--Perron vanishing theorem.** A Nevanlinna measure gives no mass to a compact
 interval over which the imaginary part of the represented function is continuous up to the real
-axis and vanishes there.  Continuity is asked for on the closed rectangle of unit height over the
-interval; any positive height would do, and a function holomorphic near the interval supplies it.
--/
+axis and vanishes there.  Continuity is asked for on the closed rectangle of any positive height
+`d` over the interval, as a function holomorphic near the interval supplies it. -/
 theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu]
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = (beta : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂mu + c)
-    {a b : ℝ} (hab : a < b)
-    (hcont : ContinuousOn (fun z ↦ (F z).im) (Icc a b ×ℂ Icc 0 1))
+    {a b d : ℝ} (hab : a < b) (hd : 0 < d)
+    (hcont : ContinuousOn (fun z ↦ (F z).im) (Icc a b ×ℂ Icc 0 d))
     (hzero : ∀ u ∈ Icc a b, (F (u : ℂ)).im = 0) :
     mu (Icc a b) = 0 := by
   let G : ℂ → ℂ := fun z ↦ F z - (beta : ℂ) * z
@@ -211,31 +204,34 @@ theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu]
     dsimp only [G]
     rw [hrep z hz]
     ring
-  have hcontG : ContinuousOn (fun z ↦ (G z).im) (Icc a b ×ℂ Icc 0 1) := by
+  have hcontG : ContinuousOn (fun z ↦ (G z).im) (Icc a b ×ℂ Icc 0 d) := by
     have hlin : ContinuousOn (fun z : ℂ ↦ ((beta : ℂ) * z).im)
-        (Icc a b ×ℂ Icc 0 1) := by fun_prop
+        (Icc a b ×ℂ Icc 0 d) := by fun_prop
     refine (hcont.sub hlin).congr ?_
     intro z _
     simp only [Pi.sub_apply, G, Complex.sub_im]
   have hzeroG : ∀ u ∈ Icc a b, (G (u : ℂ)).im = 0 := by
     intro u hu
     simp [G, hzero u hu]
-  have hK : IsCompact ((Icc a b : Set ℝ) ×ℂ (Icc 0 1 : Set ℝ)) :=
+  have hK : IsCompact ((Icc a b : Set ℝ) ×ℂ (Icc 0 d : Set ℝ)) :=
     isCompact_Icc.reProdIm isCompact_Icc
   have huc := hK.uniformContinuousOn_of_continuous hcontG
   -- Uniform continuity on the closed rectangle turns the vanishing boundary values into a
   -- bound on `Im F` that is uniform in the base point, which the covering estimate consumes.
   have hsmall : ∀ eps : ℝ, 0 < eps → mu.real (Icc a b) ≤ (b - a) * eps := by
     intro eps heps
-    obtain ⟨delta, hdelta, hd⟩ := Metric.uniformContinuousOn_iff.mp huc eps heps
-    refine measureReal_Icc_le_mul (le_refl 0) hrepG hab hdelta fun u hu v hv hvd hv1 ↦ ?_
-    have hmem1 : ((u : ℂ) + (v : ℂ) * I) ∈ (Icc a b ×ℂ Icc 0 1 : Set ℂ) := by
-      refine ⟨?_, ?_⟩ <;> simp [hu, hv.le, hv1]
-    have hmem2 : ((u : ℂ)) ∈ (Icc a b ×ℂ Icc 0 1 : Set ℂ) := by
-      refine ⟨?_, ?_⟩ <;> simp [hu]
+    obtain ⟨delta, hdelta, huniform⟩ := Metric.uniformContinuousOn_iff.mp huc eps heps
+    -- Shrinking `delta` below `d` keeps the perturbed point inside the rectangle.
+    refine measureReal_Icc_le_mul (le_refl 0) hrepG hab (lt_min hdelta hd)
+      fun u hu v hv hvd ↦ ?_
+    obtain ⟨hvdelta, hvd'⟩ := lt_min_iff.mp hvd
+    have hmem1 : ((u : ℂ) + (v : ℂ) * I) ∈ (Icc a b ×ℂ Icc 0 d : Set ℂ) := by
+      refine ⟨?_, ?_⟩ <;> simp [hu, hv.le, hvd'.le]
+    have hmem2 : ((u : ℂ)) ∈ (Icc a b ×ℂ Icc 0 d : Set ℂ) := by
+      refine ⟨?_, ?_⟩ <;> simp [hu, hd.le]
     have hdist : dist ((u : ℂ) + (v : ℂ) * I) (u : ℂ) < delta := by
-      simpa [Complex.dist_eq, abs_of_pos hv] using hvd
-    have hlt := hd _ hmem1 _ hmem2 hdist
+      simpa [Complex.dist_eq, abs_of_pos hv] using hvdelta
+    have hlt := huniform _ hmem1 _ hmem2 hdist
     simp only [Real.dist_eq, hzeroG u hu, sub_zero] at hlt
     exact (le_abs_self _).trans_lt hlt
   rw [← measureReal_eq_zero_iff (measure_ne_top _ _)]
@@ -297,7 +293,7 @@ theorem exists_isFiniteMeasure_eq_nevanlinnaKernel_add_of_im_eq_zero {F : ℂ �
   have hrect : (Icc a b ×ℂ Icc 0 1 : Set ℂ) ⊆ Complex.slitPlane := by
     rintro z ⟨hz1, hz2⟩
     exact Complex.mem_slitPlane_iff.2 (Or.inl (lt_of_lt_of_le hapos hz1.1))
-  refine measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add hrep hab
+  refine measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add hrep hab one_pos
     (Complex.continuous_im.comp_continuousOn ((hF.mono hrect).continuousOn))
     fun u hu ↦ hzero u (lt_of_lt_of_le hapos hu.1)
 
