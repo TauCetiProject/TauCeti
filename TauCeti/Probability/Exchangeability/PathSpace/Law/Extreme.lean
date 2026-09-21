@@ -36,7 +36,8 @@ applies.
 
 ## Main results
 
-* `exchangeableProbabilityMeasures_eq` — the exchangeable probability laws are the invariant
+* `exchangeableProbabilityMeasures`, with its membership and convexity lemmas, and
+  `exchangeableProbabilityMeasures_eq` — the exchangeable probability laws are the invariant
   probability laws of the finitary action.
 * `ergodic_shift_infinitePi_const` — an i.i.d. product law is ergodic for the one-sided shift.
 * `infinitePi_mem_extremePoints_exchangeable` — an i.i.d. product law is an extreme exchangeable
@@ -66,18 +67,33 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- The convex set of exchangeable probability laws on path space. -/
+def exchangeableProbabilityMeasures (α : Type*) [MeasurableSpace α] : Set (Measure (ℕ → α)) :=
+  {ν | ExchangeableLaw ν ∧ IsProbabilityMeasure ν}
+
+/-- Membership in the exchangeable probability laws. -/
+@[simp]
+theorem mem_exchangeableProbabilityMeasures_iff {ν : Measure (ℕ → α)} :
+    ν ∈ exchangeableProbabilityMeasures α ↔ ExchangeableLaw ν ∧ IsProbabilityMeasure ν :=
+  Iff.rfl
+
 /-- The exchangeable probability laws are the invariant measures of total mass one of the finitary
 permutation action. -/
 theorem exchangeableProbabilityMeasures_eq :
-    {ν : Measure (ℕ → α) | ExchangeableLaw ν ∧ IsProbabilityMeasure ν}
+    exchangeableProbabilityMeasures α
       = invariantMeasuresOfMeasureUnivEq FinitaryPerm (ℕ → α) 1 := by
   ext ν
-  rw [mem_invariantMeasuresOfMeasureUnivEq_iff]
+  rw [mem_exchangeableProbabilityMeasures_iff, mem_invariantMeasuresOfMeasureUnivEq_iff]
   constructor
   · rintro ⟨hν, hp⟩; exact ⟨hν.smulInvariantMeasure, hp.measure_univ⟩
   · rintro ⟨hν, hp⟩
     have : IsProbabilityMeasure ν := ⟨hp⟩
     exact ⟨exchangeableLaw_iff_smulInvariantMeasure.2 hν, inferInstance⟩
+
+/-- The exchangeable probability laws form a convex set. -/
+theorem convex_exchangeableProbabilityMeasures :
+    Convex ℝ≥0∞ (exchangeableProbabilityMeasures α) := by
+  rw [exchangeableProbabilityMeasures_eq]; exact convex_invariantMeasuresOfMeasureUnivEq
 
 /-- An i.i.d. infinite product law is ergodic for the one-sided shift.
 
@@ -103,7 +119,7 @@ finitary permutation action, hence extreme among its invariant probability laws,
 exchangeable ones. -/
 theorem infinitePi_mem_extremePoints_exchangeable (P : ProbabilityMeasure α) :
     (Measure.infinitePi fun _ : ℕ => (P : Measure α)) ∈ extremePoints ℝ≥0∞
-      {ν : Measure (ℕ → α) | ExchangeableLaw ν ∧ IsProbabilityMeasure ν} := by
+      (exchangeableProbabilityMeasures α) := by
   rw [exchangeableProbabilityMeasures_eq]
   let : ErgodicSMul FinitaryPerm (ℕ → α) (Measure.infinitePi fun _ : ℕ => (P : Measure α)) :=
     ergodicSMul_infinitePi_const P
@@ -117,7 +133,7 @@ triviality of the exchangeable σ-algebra, which is the i.i.d. property. -/
 theorem exchangeable_extreme_iff_iid [StandardBorelSpace α]
     {ρ : Measure (ℕ → α)} [IsProbabilityMeasure ρ] :
     ρ ∈ extremePoints ℝ≥0∞
-        {ν : Measure (ℕ → α) | ExchangeableLaw ν ∧ IsProbabilityMeasure ν} ↔
+        (exchangeableProbabilityMeasures α) ↔
       ∃ P : ProbabilityMeasure α,
         ρ = Measure.infinitePi fun _ : ℕ => (P : Measure α) := by
   constructor
