@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
-# The Caccioppoli inequality
+# The Caccioppoli inequality for weak solutions
 
 Let `u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
 
@@ -38,6 +38,8 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
 
 ## Main declarations
 
+* `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm`: the pointwise absorption estimate
+  shared by the solution and subsolution forms of Caccioppoli's inequality.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
 
@@ -66,12 +68,14 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
-/-- The pointwise form of the Caccioppoli estimate. For a matrix with quadratic form bounded
-below by `λ > 0` and bilinear form bounded by `Λ`, a scalar `z` (the cutoff), a scalar `w` (the
-solution) and vectors `g` (its gradient) and `q` (the gradient of the cutoff),
+/-- The pointwise absorption estimate behind Caccioppoli's inequality. For a matrix with
+quadratic form bounded below by `λ > 0` and bilinear form bounded by `Λ`, a scalar `z`
+(the cutoff), a scalar `w` (the function), and vectors `g` and `q`, the cross term in
+`A(g, z²g + 2zwq)` is absorbed by half of the elliptic term and a multiple of `w²‖q‖²`.
 
-`λ z² ‖g‖² ≤ ⟨A g, z² g + 2zw q⟩ + (λ/2) z² ‖g‖² + (2Λ²/λ) ‖q‖² w²`. -/
-private theorem mul_sq_mul_norm_sq_le {A : Matrix ι ι ℝ} (hlam : 0 < lam)
+This algebraic form is used both for weak solutions and for positive truncations of weak
+subsolutions. -/
+theorem mul_sq_mul_norm_sq_le_matrixBilinearForm {A : Matrix ι ι ℝ} (hlam : 0 < lam)
     (hlower : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hupper : ∀ η ξ : EuclideanSpace ℝ ι, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
     (z w : ℝ) (g q : EuclideanSpace ℝ ι) :
@@ -173,7 +177,8 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le
     filter_upwards [hmem, W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
       W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' u,
       W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' u] with x hx hgv hgw hvw
-    have key := mul_sq_mul_norm_sq_le hlam (h.lower_bound hx) (h.upper_bound hx) (ψ x)
+    have key := mul_sq_mul_norm_sq_le_matrixBilinearForm hlam (h.lower_bound hx)
+      (h.upper_bound hx) (ψ x)
       (W1p.value u x) (W1p.gradient u x) (∇ ψ x)
     rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgw, hvw]
     simpa [driftForm_apply, massForm_apply, smul_eq_mul] using key
