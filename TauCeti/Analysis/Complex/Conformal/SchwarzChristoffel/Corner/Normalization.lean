@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Prevertex
 import TauCeti.Analysis.Complex.Conformal.Reflection.Injective
 import TauCeti.Analysis.Complex.UpperLogContinuity
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
@@ -44,19 +45,6 @@ noncomputable section
 open Complex Filter Set Topology
 
 namespace TauCeti
-
-private theorem cpow_inv_cpow_eq_of_arg {u : ℂ} {r : ℝ} (hr : 0 < r)
-    (harg0 : 0 ≤ u.arg) (hargr : u.arg ≤ r * Real.pi) :
-    (u ^ ((r⁻¹ : ℝ) : ℂ)) ^ (r : ℂ) = u := by
-  rw [← Complex.cpow_mul]
-  · norm_num [hr.ne']
-  · simp only [Complex.mul_im, Complex.log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
-    exact lt_of_lt_of_le (neg_lt_zero.mpr Real.pi_pos)
-      (mul_nonneg harg0 (inv_nonneg.mpr hr.le))
-  · simp only [Complex.mul_im, Complex.log_im, ofReal_re, ofReal_im, mul_zero, zero_add]
-    calc
-      u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right hargr (inv_nonneg.mpr hr.le)
-      _ = Real.pi := by field_simp
 
 /-- **A convex conformal corner has a holomorphic simple-zero power coordinate.**
 
@@ -140,7 +128,7 @@ theorem exists_differentiableOn_injOn_eqOn_add_cpow_of_convex_corner
       rw [this, Real.sin_pi, mul_zero]
   have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
       g z ^ (β : ℂ) = f z - w := by
-    apply cpow_inv_cpow_eq_of_arg hβ
+    refine cpow_inv_cpow_of_arg_mem_Icc hβ ⟨?_, ?_⟩
     · exact Complex.arg_nonneg_iff.mpr (hsector z hz)
     · have hzim : 0 ≤ z.im := hz.2
       rcases hzim.eq_or_lt with haxis | hpos
