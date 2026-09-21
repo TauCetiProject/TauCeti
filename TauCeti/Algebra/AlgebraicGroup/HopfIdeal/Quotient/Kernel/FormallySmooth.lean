@@ -19,7 +19,9 @@ differential, and `CommHopfAlgCat.kernelLieEquiv` identifies its kernel.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §10.a.
+* J. S. Milne, *Algebraic Groups* (2017), §1.e, Proposition 1.63, for the relation between
+  smoothness, differential surjectivity, and kernel dimensions for group varieties;
+  §10.b, 10.6, and Appendix A.51 for the dual-number description of Lie and tangent spaces.
 -/
 
 public section
