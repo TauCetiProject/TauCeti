@@ -22,8 +22,8 @@ diagonal state of a `3 × 3` grid carrying no marking.
 
 ## Main results
 
-* `TauCeti.GridRectangleBetween.avoidsMarkings_unknot_iff`: marking avoidance in the standard
-  unknot grid of any size.
+* `TauCeti.GridRectangle.avoidsMarkings_unknot_iff`: marking avoidance in the standard unknot
+  grid of any size.
 * `TauCeti.GridRectangleBetween.avoidsMarkings_unknot_one_iff`: in grid number three a rectangle
   avoids the markings exactly when it leaves the subdiagonal state through two cyclically
   consecutive columns.
@@ -38,20 +38,36 @@ public section
 
 namespace TauCeti
 
+namespace GridRectangle
+
+variable {n : ℕ}
+
+/-- A rectangle of the standard unknot grid avoids the markings exactly when, for every column
+it covers, neither the diagonal row of that column nor the row above it is covered. -/
+theorem avoidsMarkings_unknot_iff (R : GridRectangle (n + 2)) :
+    R.AvoidsMarkings (GridDiagram.unknot n) ↔
+      ∀ c ∈ Grid.cIco R.left R.right,
+        c ∉ Grid.cIco R.bottom R.top ∧ c + 1 ∉ Grid.cIco R.bottom R.top := by
+  simp only [R.avoidsMarkings_iff_forall, mem_columnSquares, mem_rowSquares,
+    GridDiagram.unknot_O_apply, GridDiagram.unknot_X_apply_eq_add_one]
+
+end GridRectangle
+
 namespace GridRectangleBetween
 
 variable {n : ℕ} {x y : GridState (n + 2)}
 
-/-- A rectangle of the standard unknot grid avoids the markings exactly when, for every column
-it covers, neither the diagonal row of that column nor the row above it is covered. -/
+/-- A rectangle between states of the standard unknot grid avoids the markings exactly when, for
+every column it covers, neither the diagonal row of that column nor the row above it is covered. -/
 theorem avoidsMarkings_unknot_iff (R : GridRectangleBetween x y) :
     R.AvoidsMarkings (GridDiagram.unknot n) ↔
       ∀ c ∈ Grid.cIco R.left R.right,
         c ∉ Grid.cIco (x R.left) (x R.right) ∧ c + 1 ∉ Grid.cIco (x R.left) (x R.right) := by
-  simp only [R.avoidsMarkings_iff_forall, GridRectangle.mem_columnSquares,
-    GridRectangle.mem_rowSquares, toGridRectangle_left, toGridRectangle_right,
-    toGridRectangle_bottom, toGridRectangle_top, bottom_def, top_def,
-    GridDiagram.unknot_O_apply, GridDiagram.unknot_X_apply_eq_add_one]
+  simpa only [toGridRectangle_left, toGridRectangle_right, toGridRectangle_bottom,
+    toGridRectangle_top, bottom_def, top_def] using
+      (R.avoidsMarkings_iff_forall (GridDiagram.unknot n)).trans
+        ((R.toGridRectangle.avoidsMarkings_iff_forall (GridDiagram.unknot n)).symm.trans
+          R.toGridRectangle.avoidsMarkings_unknot_iff)
 
 end GridRectangleBetween
 

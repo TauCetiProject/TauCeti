@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.ZMod
-public import Mathlib.LinearAlgebra.Dimension.RankNullity
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.LinearAlgebra.Dimension.RankNullity
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
 public import TauCeti.KnotTheory.Grid.Homology.Basic
 public import TauCeti.KnotTheory.Grid.Rectangle.Count
