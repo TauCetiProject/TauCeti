@@ -18,7 +18,7 @@ The subsets are the homothetic copies `c + t • (Ω - c)` of `Ω` about a point
 `0 < t < 1`: convexity is what keeps their closures inside `Ω`, and boundedness together with
 properness of the ambient space is what makes those closures compact.  Properness cannot be
 dropped: in an infinite-dimensional normed space a bounded closed set need not be compact, and
-the unit ball is then exhausted by no sequence of relatively compact sets at all.
+the unit ball is then exhausted by no sequence of relatively compact open subsets.
 
 Convexity of the pieces is the point of the construction.  A general open set is exhausted by the
 relatively compact open sets `{x | dist x Ωᶜ > 1 / n} ∩ ball 0 n`, but those are not convex, and an
