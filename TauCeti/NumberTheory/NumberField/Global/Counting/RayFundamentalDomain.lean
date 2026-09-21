@@ -86,24 +86,16 @@ translates of the cone below. -/
 def unitsCongruenceSubgroupSupTorsion (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
   unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K
 
-/-- `unitsCongruenceSubgroupSupTorsion 𝔪` is the join of the congruence units with the roots of
-unity. This is the characteristic lemma of the definition: its body is not exposed, so this is
-how membership, `le_sup_left`, `le_sup_right`, `Subgroup.mem_sup` and `QuotientGroup.eq` are
-applied to the indexing subgroup, here and downstream. -/
-theorem unitsCongruenceSubgroupSupTorsion_def (𝔪 : Modulus K) :
-    unitsCongruenceSubgroupSupTorsion 𝔪 =
-      unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K := (rfl)
-
 instance unitsCongruenceSubgroupSupTorsion_finiteIndex (𝔪 : Modulus K) :
     (unitsCongruenceSubgroupSupTorsion 𝔪).FiniteIndex := by
-  rw [unitsCongruenceSubgroupSupTorsion_def]
+  rw [unitsCongruenceSubgroupSupTorsion]
   exact Subgroup.finiteIndex_of_le (H := unitsCongruenceSubgroup 𝔪) le_sup_left
 
 /-- For the trivial modulus the congruence units are already all of `(𝓞 K)ˣ`, so adjoining the
 roots of unity changes nothing and there is a single coset. -/
 @[simp] theorem unitsCongruenceSubgroupSupTorsion_one :
     unitsCongruenceSubgroupSupTorsion (Modulus.one K) = ⊤ := by
-  rw [unitsCongruenceSubgroupSupTorsion_def]
+  rw [unitsCongruenceSubgroupSupTorsion]
   simp
 
 /-! ### The sign conditions prescribed by the infinite part -/
@@ -295,7 +287,7 @@ theorem exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain (𝔪 : Mod
   set r : (𝓞 K)ˣ := rayUnitRepresentative 𝔪 q with hr
   have hmem : r⁻¹ * u⁻¹ ∈ unitsCongruenceSubgroupSupTorsion 𝔪 :=
     QuotientGroup.eq.mp (by rw [hr, rayUnitRepresentative_mk, hq])
-  rw [unitsCongruenceSubgroupSupTorsion_def] at hmem
+  rw [unitsCongruenceSubgroupSupTorsion] at hmem
   obtain ⟨v, hv, ζ, hζ, hvζ⟩ := Subgroup.mem_sup.mp hmem
   have hv' : v⁻¹ ∈ unitsCongruenceSubgroup 𝔪 := (unitsCongruenceSubgroup 𝔪).inv_mem hv
   refine ⟨v⁻¹, hv', mem_rayFundamentalDomain_iff.mpr
@@ -359,7 +351,7 @@ theorem unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff_mem_torsion {�
     have hsplit : (rayUnitRepresentative 𝔪 q)⁻¹ * rayUnitRepresentative 𝔪 q'
         = ((rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q)⁻¹ * u := by
       simp [mul_comm, mul_left_comm]
-    rw [unitsCongruenceSubgroupSupTorsion_def, hsplit]
+    rw [unitsCongruenceSubgroupSupTorsion, hsplit]
     exact mul_mem (inv_mem (Subgroup.mem_sup_right htor)) (Subgroup.mem_sup_left hu)
   subst hqq
   have hconj : (rayUnitRepresentative 𝔪 q)⁻¹ * u * rayUnitRepresentative 𝔪 q = u := by
