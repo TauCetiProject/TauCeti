@@ -26,12 +26,13 @@ about it that are not stated in Mathlib:
   finite adeles meet the diagonal copy of `K` in `R`;
 * **strong approximation**: `K` is dense in the finite adele ring.
 
-The third fact is the finite half of the discreteness of a number field in its adele ring.  The
-fourth says that an element of `K` can be made close to a given finite adele `a` at finitely many
-places while differing from `a` by an integral element at every other place.  Since the integral
-finite adeles are open, it implies that `K` and the integral finite adeles together span the finite
-adele ring additively.  For a number field the infinite places are what is omitted here: `K` is
-discrete, not dense, in the full adele ring.
+The characterization of elements integral at every finite place is the finite half of the
+discreteness of a number field in its adele ring.  Strong approximation says that an element of
+`K` can be made close to a given finite adele `a` at finitely many places while differing from `a`
+by an integral element at every other place.  Since the integral finite adeles are open, it
+implies that `K` and the integral finite adeles together span the finite adele ring additively.
+For a number field the infinite places are what is omitted here: `K` is discrete, not dense, in
+the full adele ring.
 
 The proof clears denominators: a finite adele `a` has a common denominator `d ∈ R`, and the
 integral adele `a * d` is approximated by an element `r ∈ R` at finitely many places by the Chinese

@@ -43,18 +43,23 @@ open scoped NumberField.AdeleRing
 
 namespace NumberField.IdeleGroup
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {R K : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
+  [IsFractionRing R K]
 
-/-- An idele comes from a field unit exactly when its underlying adele belongs to the diagonal copy
-of the number field.  In the reverse direction, invertibility of the adele forces the diagonal
-element to be nonzero, hence a field unit. -/
-@[simp] theorem mem_principalSubgroup_iff (x : IdeleGroup (𝓞 K) K) :
-    (∃ u, unitEmbedding (𝓞 K) K u = x) ↔
-      (x : AdeleRing (𝓞 K) K) ∈ AdeleRing.principalSubgroup (𝓞 K) K := by
+/-- An idele is principal exactly when its underlying adele belongs to the diagonal copy of the
+fraction field.  In the reverse direction, invertibility of the adele forces the diagonal element
+to be nonzero, hence a field unit. -/
+theorem mem_principalSubgroup_iff (x : IdeleGroup R K) :
+    x ∈ principalSubgroup R K ↔
+      (x : AdeleRing R K) ∈ AdeleRing.principalSubgroup R K := by
   constructor
   · rintro ⟨u, rfl⟩
     exact ⟨(u : K), rfl⟩
   · rintro ⟨k, hk⟩
+    rcases subsingleton_or_nontrivial (AdeleRing R K) with h | h
+    · let _ := h
+      exact ⟨1, Subsingleton.elim _ _⟩
+    let _ := h
     have hk0 : k ≠ 0 := by
       intro h
       subst k
@@ -62,14 +67,13 @@ element to be nonzero, hence a field unit. -/
     exact ⟨Units.mk0 k hk0, Units.ext hk⟩
 
 /-- The subgroup of principal ideles is closed in the idele group. -/
-theorem isClosed_principalSubgroup :
+theorem isClosed_principalSubgroup {K : Type*} [Field K] [NumberField K] :
     IsClosed (principalSubgroup (𝓞 K) K : Set (IdeleGroup (𝓞 K) K)) := by
   have hpreimage :
       (principalSubgroup (𝓞 K) K : Set (IdeleGroup (𝓞 K) K)) =
         ((fun x : IdeleGroup (𝓞 K) K => (x : AdeleRing (𝓞 K) K)) ⁻¹'
           (AdeleRing.principalSubgroup (𝓞 K) K : Set (AdeleRing (𝓞 K) K))) := by
     ext x
-    change (∃ u, unitEmbedding (𝓞 K) K u = x) ↔ _
     exact mem_principalSubgroup_iff x
   rw [hpreimage]
   exact (TauCeti.GlobalNumberFields.isClosed_principalSubgroup K).preimage Units.continuous_val
