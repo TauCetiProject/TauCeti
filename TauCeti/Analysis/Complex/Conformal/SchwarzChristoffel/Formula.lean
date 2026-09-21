@@ -13,13 +13,12 @@ import TauCeti.Analysis.Complex.Conformal.Reflection.Infinity
 import TauCeti.Analysis.Complex.Conformal.Reflection.LogDeriv
 
 /-!
-# The Schwarz--Christoffel formula from the boundary geometry of a polygon map
+# The Schwarz--Christoffel formula from local polygonal boundary data
 
-A conformal map `f` of the upper half-plane onto a polygon is completely determined, up to an
-affine map of the target, by the real **prevertices** `a i` and the **turning exponents** `e i`:
-it is `A * F + B`, where `F` is the normalized Schwarz--Christoffel primitive for `a` and `e`.
-This file proves that implication from purely local boundary data, and so closes the converse
-direction of the Schwarz--Christoffel theory.
+A locally conformal map `f` of the upper half-plane satisfying the prescribed straight-side,
+corner-sector, and infinity boundary conditions is completely determined, up to an affine map of
+the target, by the real **prevertices** `a i` and the **turning exponents** `e i`: it is
+`A * F + B`, where `F` is the normalized Schwarz--Christoffel primitive for `a` and `e`.
 
 The three pieces of boundary data are the three ways a real point can sit against the polygon.
 
@@ -35,19 +34,18 @@ The three pieces of boundary data are the three ways a real point can sit agains
   normalizing the target so that the side is the real axis with the polygon above it, `f` extends
   continuously and injectively across `0`.
 
-Together these say that `f` maps the upper half-plane onto a polygon with the prescribed corner
-data, so the theorem is the Schwarz--Christoffel representation of such a map.  The proof runs the
-classical argument: the pre-Schwarzian derivative `f'' / f'` continues by Schwarz reflection
-across every boundary side to a conjugation-symmetric function holomorphic off the prevertices, a
-straightened corner gives it the residue `e i` at `a i`, the side through infinity makes it decay
-there, so partial fractions identify it with `∑ i, e i / (z - a i)`, and integrating that
-differential equation recovers `f`.
+These are local polygonal boundary conditions; they do not assert global injectivity or
+surjectivity onto a polygon.  Under these conditions, the proof runs the classical argument: the
+pre-Schwarzian derivative `f'' / f'` continues by Schwarz reflection across every boundary side to
+a conjugation-symmetric function holomorphic off the prevertices, a straightened corner gives it
+the residue `e i` at `a i`, the side through infinity makes it decay there, so partial fractions
+identify it with `∑ i, e i / (z - a i)`, and integrating that differential equation recovers `f`.
 
 ## Main result
 
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary` -- a locally
-  conformal map of the upper half-plane whose boundary is a polygon with prevertices `a` and
-  turning exponents `e` is an affine image of the Schwarz--Christoffel primitive for `a` and `e`.
+  conformal map of the upper half-plane satisfying the prescribed local side, corner, and infinity
+  conditions is an affine image of the Schwarz--Christoffel primitive for `a` and `e`.
 
 ## References
 
