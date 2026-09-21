@@ -37,8 +37,8 @@ taking `n` large enough that `𝓂(S) ^ n ⊆ 𝓂(R) S`, Nakayama's lemma gives
   valuation rings with separable residue extension is monogenic.
 * `TauCeti.IsDiscreteValuationRing.adjoin_eq_top_of_irreducible`: in the totally ramified case
   every uniformizer of `S` is a generator.
-* `TauCeti.Algebra.powerBasisOfAdjoinEqTop`: the power basis attached to a generator, and
-  `TauCeti.IsDiscreteValuationRing.nonempty_powerBasis`, the integral basis it produces here.
+* `TauCeti.IsDiscreteValuationRing.nonempty_powerBasis`: the integral basis a generator produces,
+  via Mathlib's `PowerBasis.ofAdjoinEqTop'`.
 
 ## References
 
@@ -145,32 +145,6 @@ end Residue
 
 end IsLocalRing
 
-namespace Algebra
-
-variable {R S : Type*} [CommRing R] [CommRing S] [IsDomain R] [IsDomain S]
-  [IsIntegrallyClosed R] [Algebra R S] [Module.Finite R S] [FaithfulSMul R S]
-
-/-- The power basis `1, β, …, β ^ (n - 1)` of `S` over `R` attached to a generator `β` of `S` as
-an `R`-algebra, where `n` is the degree of the minimal polynomial of `β`.  This transports
-Mathlib's `Algebra.adjoin.powerBasis'` along `Algebra.adjoin R {β} = ⊤`, and packages the integral
-basis that a consumer of `TauCeti.IsDiscreteValuationRing.exists_adjoin_eq_top` wants. -/
-noncomputable def powerBasisOfAdjoinEqTop {β : S} (h : Algebra.adjoin R {β} = ⊤) :
-    PowerBasis R S :=
-  (Algebra.adjoin.powerBasis' (IsIntegral.of_finite R β)).map
-    ((Subalgebra.equivOfEq _ _ h).trans Subalgebra.topEquiv)
-
-@[simp]
-theorem powerBasisOfAdjoinEqTop_gen {β : S} (h : Algebra.adjoin R {β} = ⊤) :
-    (powerBasisOfAdjoinEqTop h).gen = β := by
-  simp [powerBasisOfAdjoinEqTop]
-
-@[simp]
-theorem powerBasisOfAdjoinEqTop_dim {β : S} (h : Algebra.adjoin R {β} = ⊤) :
-    (powerBasisOfAdjoinEqTop h).dim = (minpoly R β).natDegree :=
-  (rfl)
-
-end Algebra
-
 namespace IsDiscreteValuationRing
 
 variable {R S : Type*} [CommRing R] [CommRing S] [IsDomain R] [IsDomain S]
@@ -245,11 +219,11 @@ theorem exists_adjoin_eq_top [Algebra.IsSeparable (ResidueField R) (ResidueField
   · rwa [aeval_def, ← eval_map]
 
 /-- A finite extension of discrete valuation rings with separable residue extension admits a
-power basis. -/
+power basis: the integral basis `1, β, …, β ^ (n - 1)` attached to a generator `β`. -/
 theorem nonempty_powerBasis [Algebra.IsSeparable (ResidueField R) (ResidueField S)] :
     Nonempty (PowerBasis R S) :=
-  let ⟨_, h⟩ := exists_adjoin_eq_top (R := R) (S := S)
-  ⟨TauCeti.Algebra.powerBasisOfAdjoinEqTop h⟩
+  let ⟨β, h⟩ := exists_adjoin_eq_top (R := R) (S := S)
+  ⟨PowerBasis.ofAdjoinEqTop' (IsIntegral.of_finite R β) h⟩
 
 /-- **The totally ramified case.**  If the residue extension is trivial, every uniformizer of `S`
 generates `S` over `R`.  This is the direction of the Eisenstein description of a totally ramified
