@@ -342,7 +342,7 @@ theorem graphLawOfArray_arrayLaw (L : InfiniteExchangeableGraphLaw) :
 
 /-- The array law of the graph law of an array law carried by the symmetric arrays is the array
 law. -/
-theorem arrayLaw_graphLawOfArray {ρ : Measure (ℕ × ℕ → Bool)} [IsProbabilityMeasure ρ]
+theorem arrayLaw_graphLawOfArray {ρ : Measure (ℕ × ℕ → Bool)}
     (hρ : ρ (symmetricArraysWithDiag Bool false)ᶜ = 0) :
     (graphLawOfArray ρ).map graphArray = ρ := by
   simp only [graphLawOfArray]
