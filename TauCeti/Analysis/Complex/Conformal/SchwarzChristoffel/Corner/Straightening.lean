@@ -46,11 +46,29 @@ open scoped ComplexConjugate
 
 namespace TauCeti
 
+private theorem arg_mem_Icc_iff_norm_mul_cos_le_re {z : ℂ} {a : ℝ}
+    (ha : a ∈ Icc (0 : ℝ) Real.pi) :
+    z.arg ∈ Icc (-a) a ↔ ‖z‖ * Real.cos a ≤ z.re := by
+  simp only [mem_Icc]
+  rw [← abs_le]
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp [ha.1]
+  constructor
+  · intro harg
+    have hcos := Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg z.arg) ha.2 harg
+    rw [Real.cos_abs] at hcos
+    nlinarith [norm_nonneg z, Complex.norm_mul_cos_arg z]
+  · intro hsector
+    by_contra harg
+    have harg' : a < |z.arg| := lt_of_not_ge harg
+    have hcos := Real.cos_lt_cos_of_nonneg_of_le_pi ha.1 (Complex.abs_arg_le_pi z) harg'
+    rw [Real.cos_abs] at hcos
+    nlinarith [norm_pos_iff.mpr hz, Complex.norm_mul_cos_arg z]
+
 /-- **Power-map straightening of a conformal corner.**  Let `f` be continuous and injective on
 the closed upper part of a conjugation-symmetric neighbourhood `Ω`, holomorphic on its open upper
-part, and send a real point `x` to the corner `w`.  Assume the translated boundary values lie in
-the closed sector of opening `βπ`, the interior values lie strictly inside that sector, and the
-straightened coordinate
+part, and send a real point `x` to the corner `w`.  Assume the translated interior values lie
+strictly inside the sector of opening `βπ`, and that the straightened coordinate
 
 `I * (f z - w) ^ (1 / β)`
 
@@ -64,8 +82,6 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
     (hreal : ∀ z ∈ Ω, z.im = 0 →
       (I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)).im = 0)
     (hfinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im})) (hfx : f x = w)
-    (hsector : ∀ z ∈ Ω, z.im = 0 → z ≠ (x : ℂ) →
-      (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2))
     (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
       (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
     ∃ h : ℂ → ℂ,
@@ -79,27 +95,42 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
     rw [sub_ne_zero]
     intro hzw
     exact hzx (hfinj hz hxclosed (hzw.trans hfx.symm))
-  have hsector_closed {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im})
-      (hzx : z ≠ (x : ℂ)) :
+  have hangle : Real.pi * β / 2 ∈ Icc (0 : ℝ) Real.pi := by
+    constructor
+    · exact div_nonneg (mul_nonneg Real.pi_pos.le hβ.1.le) (by norm_num)
+    · nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ.2)]
+  have hsector_closed {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
       (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2) := by
-    by_cases hzim : z.im = 0
-    · exact hsector z hz.1 hzim hzx
-    · exact Ioo_subset_Icc_self
-        (hsector_open z ⟨hz.1, lt_of_le_of_ne hz.2 (Ne.symm hzim)⟩)
+    have hzclosure : z ∈ closure (Ω ∩ {y : ℂ | 0 < y.im}) := by
+      apply hΩopen.inter_closure
+      exact ⟨hz.1, by simpa only [Complex.closure_setOfPred_lt_im, mem_ofPred_eq] using hz.2⟩
+    have hqcont : ContinuousWithinAt (fun y => f y - w) (Ω ∩ {y : ℂ | 0 < y.im}) z :=
+      ((hfcont z hz).sub continuousWithinAt_const).mono fun y hy =>
+        ⟨hy.1, by simpa only [mem_ofPred_eq] using hy.2.le⟩
+    have htarget : IsClosed {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} :=
+      isClosed_le (continuous_norm.mul continuous_const) Complex.continuous_re
+    apply (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).2
+    have hmem : f z - w ∈ closure {q : ℂ |
+        ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} := by
+      apply hqcont.mem_closure hzclosure
+      intro y hy
+      exact (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).1
+        (Ioo_subset_Icc_self (hsector_open y hy))
+    simpa only [htarget.closure_eq, mem_ofPred_eq] using hmem
   have hsector_upper_lt_pi : Real.pi * β / 2 < Real.pi := by
     nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ.2)]
   have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
       ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := by
     rcases eq_or_ne z (x : ℂ) with rfl | hzx
     · simp [hfx, hβ.1.ne']
-    · exact Complex.cpow_inv_cpow_eq_of_arg_mem_closed_sector hβ.1 (hsector_closed hz hzx)
+    · exact Complex.cpow_inv_cpow_eq_of_arg_mem_closed_sector hβ.1 (hsector_closed hz)
   have hgcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz
     have hbase : 0 ≤ (f z - w).re ∨ (f z - w).im ≠ 0 := by
       rcases eq_or_ne z (x : ℂ) with rfl | hzx
       · simp [hfx]
       · have hslit : f z - w ∈ slitPlane := Complex.mem_slitPlane_iff_arg.mpr
-          ⟨ne_of_lt ((hsector_closed hz hzx).2.trans_lt hsector_upper_lt_pi), hq_ne hz hzx⟩
+          ⟨ne_of_lt ((hsector_closed hz).2.trans_lt hsector_upper_lt_pi), hq_ne hz hzx⟩
         exact (Complex.mem_slitPlane_iff.mp hslit).imp le_of_lt id
     have hqcont : ContinuousWithinAt (fun y => f y - w)
         (Ω ∩ {z : ℂ | 0 ≤ z.im}) z := (hfcont z hz).sub continuousWithinAt_const
@@ -190,8 +221,6 @@ theorem tendsto_sub_mul_nhdsNE_of_arg_mem_sector {Ω : Set ℂ} {f φ : ℂ → 
     (hreal : ∀ z ∈ Ω, z.im = 0 →
       (I * (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)).im = 0)
     (hfinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im})) (hfx : f x = w)
-    (hsector : ∀ z ∈ Ω, z.im = 0 → z ≠ (x : ℂ) →
-      (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2))
     (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
       (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2))
     (hr : 0 < r) (hφ : DifferentiableOn ℂ φ (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
@@ -202,7 +231,7 @@ theorem tendsto_sub_mul_nhdsNE_of_arg_mem_sector {Ω : Set ℂ} {f φ : ℂ → 
     Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] ((x : ℝ) : ℂ))
       (𝓝 ((β : ℂ) - 1)) := by
   obtain ⟨h, hhd, hhx, hdh, hslit, hfh⟩ := exists_corner_power_of_arg_mem_sector hΩopen hΩconj
-    hxΩ hβ hfcont hfd hreal hfinj hfx hsector hsector_open
+    hxΩ hβ hfcont hfd hreal hfinj hfx hsector_open
   have hφf' : EqOn φ (logDeriv (deriv f)) (UpperHalfPlane.upperHalfPlaneSet ∩ Ω) := by
     intro z hz
     exact hφf ⟨hz.2, hz.1⟩

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -69,7 +68,7 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
 
 /-- On the closed sector of opening `βπ`, raising the principal inverse power back to the power
 `β` recovers the original point.  The endpoint rays are included. -/
-theorem cpow_inv_cpow_eq_of_arg_mem_closed_sector {z : ℂ} {β : ℝ} (hβ : 0 < β)
+@[simp] theorem cpow_inv_cpow_eq_of_arg_mem_closed_sector {z : ℂ} {β : ℝ} (hβ : 0 < β)
     (harg : z.arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
     (z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = z := by
   have hangle := mul_inv_mem_Icc_of_mem_closed_sector hβ harg
