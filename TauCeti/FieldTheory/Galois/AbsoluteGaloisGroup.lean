@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.Galois.Profinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+public import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The absolute Galois group of a field, taken at its separable closure
@@ -49,10 +50,6 @@ the correspondence is indexed by the separable closure.
   of topological groups, for any normal extension.
 * `TauCeti.absoluteGaloisGroupRestrictEquiv`: its specialisation comparing
   `Field.absoluteGaloisGroup K` with `TauCeti.AbsoluteGaloisGroup K`.
-* `IntermediateField.fixingSubgroup_inf_separableClosure`: a fixing subgroup only sees the
-  separable part of the intermediate field it fixes.
-* `IntermediateField.isClosed_fixingSubgroup`: every fixing subgroup of a normal extension is
-  closed.
 * `TauCeti.fixingSubgroup_fixedField`: every closed subgroup is a fixing subgroup.
 * `TauCeti.intermediateFieldEquivClosedSubgroup`: the fundamental theorem of Galois theory for a
   normal extension.
@@ -89,33 +86,6 @@ private theorem finiteDimensional_comap {L : Type*} [Field L] [Algebra F L] (g :
       (IntermediateField.equivMap (M.comap g) g).injective)
 
 end Auxiliary
-
-section FixingSubgroup
-
-variable {F E}
-
-/-- **A fixing subgroup sees only the separable closure.** For an algebraic extension `E/F` an
-`F`-automorphism of `E` fixing `M ⊓ separableClosure F E` pointwise already fixes the intermediate
-field `M` pointwise, because every `x ∈ M` has a power `x ^ q ^ n` in that intersection, `q` the
-exponential characteristic of `F`. -/
-theorem _root_.IntermediateField.fixingSubgroup_inf_separableClosure [Algebra.IsAlgebraic F E]
-    (M : IntermediateField F E) :
-    (M ⊓ separableClosure F E).fixingSubgroup = M.fixingSubgroup := by
-  have hE : ExpChar E (ringExpChar F) :=
-    expChar_of_injective_algebraMap (algebraMap F E).injective _
-  have hS : ExpChar (separableClosure F E) (ringExpChar F) :=
-    expChar_of_injective_algebraMap (algebraMap F (separableClosure F E)).injective _
-  refine le_antisymm (fun σ hσ ↦ ?_) (IntermediateField.fixingSubgroup_antitone inf_le_left)
-  rw [IntermediateField.mem_fixingSubgroup_iff] at hσ ⊢
-  intro x hx
-  obtain ⟨n, y, hy⟩ := IsPurelyInseparable.pow_mem (separableClosure F E) (ringExpChar F) x
-  have hyS : x ^ ringExpChar F ^ n ∈ separableClosure F E := by rw [← hy]; exact y.2
-  have hpow : σ x ^ ringExpChar F ^ n = x ^ ringExpChar F ^ n := by
-    rw [← map_pow]
-    exact hσ _ (IntermediateField.mem_inf.mpr ⟨pow_mem hx _, hyS⟩)
-  exact iterateFrobenius_inj E (ringExpChar F) n hpow
-
-end FixingSubgroup
 
 section Normal
 
@@ -234,26 +204,13 @@ variable {F E}
 
 /-! ### The Galois correspondence -/
 
-/-- **The fixing subgroup of an intermediate field of a normal extension is closed.** This is
-`InfiniteGalois.fixingSubgroup_isClosed` with the separability hypothesis on `E/F` removed: the
-fixing subgroup of `L` is the preimage, under restriction to the separable closure, of the fixing
-subgroup of the part of `L` lying there. -/
-theorem _root_.IntermediateField.isClosed_fixingSubgroup (L : IntermediateField F E) :
-    IsClosed (L.fixingSubgroup : Set Gal(E/F)) := by
-  have hle : L ⊓ separableClosure F E ≤ separableClosure F E := inf_le_right
-  -- `IntermediateField.lift N` is `N.map (val _)`, so the equation below is Mathlib's
-  -- `IntermediateField.map_fixingSubgroup`; naming it lets `rw` see through `lift`.
-  have hcomap : (IntermediateField.lift (IntermediateField.restrict hle)).fixingSubgroup = _ :=
-    IntermediateField.map_fixingSubgroup (E' := E) _
-  rw [← IntermediateField.fixingSubgroup_inf_separableClosure L,
-    ← IntermediateField.lift_restrict hle, hcomap, Subgroup.coe_comap]
-  exact (InfiniteGalois.fixingSubgroup_isClosed _).preimage
-    (InfiniteGalois.restrictNormalHom_continuous _)
-
 /-- **An intermediate field of the separable closure is the part of the fixed field of its fixing
-subgroup that lies in the separable closure.** Over an imperfect `F` the fixed field itself is
-larger: it is the relative perfect closure, by `mem_perfectClosure_iff_fixed`. -/
-theorem fixedField_fixingSubgroup_lift_inf_separableClosure
+subgroup that lies in the separable closure.** The fixed field itself can be larger, because a
+fixing subgroup does not see the purely inseparable elements of `E` outside the separable closure;
+in the extreme case `M = ⊥` it is all of `perfectClosure F E`, by
+`TauCeti.mem_perfectClosure_iff_fixed`. It is the intersection that is pinned down here, and that
+is what makes the correspondence below an order isomorphism. -/
+theorem _root_.IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure
     (M : IntermediateField F (separableClosure F E)) :
     IntermediateField.fixedField (IntermediateField.lift M).fixingSubgroup ⊓
         separableClosure F E = IntermediateField.lift M := by
@@ -288,11 +245,12 @@ the separable closure has the same fixing subgroup as its separable part. -/
 def intermediateFieldEquivClosedSubgroup :
     IntermediateField F (separableClosure F E) ≃o (ClosedSubgroup Gal(E/F))ᵒᵈ where
   toFun M := ⟨(IntermediateField.lift M).fixingSubgroup,
-    IntermediateField.isClosed_fixingSubgroup _⟩
+    IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic _⟩
   invFun H := IntermediateField.restrict
     (inf_le_right : IntermediateField.fixedField H.1 ⊓ _ ≤ separableClosure F E)
   left_inv M := IntermediateField.lift_injective _ <| by
-    rw [IntermediateField.lift_restrict, fixedField_fixingSubgroup_lift_inf_separableClosure]
+    rw [IntermediateField.lift_restrict,
+      IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure]
   right_inv H := by
     apply ClosedSubgroup.toSubgroup_injective
     dsimp only
@@ -302,19 +260,29 @@ def intermediateFieldEquivClosedSubgroup :
     refine ⟨fun h ↦ ?_, fun h ↦ IntermediateField.fixingSubgroup_le
       ((IntermediateField.gc_map_comap _).monotone_l h)⟩
     have h₁ : IntermediateField.lift M₁ ≤ IntermediateField.lift M₂ := by
-      rw [← fixedField_fixingSubgroup_lift_inf_separableClosure M₂]
+      rw [← IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure M₂]
       exact le_inf ((IntermediateField.le_iff_le _ _).mpr h) (IntermediateField.lift_le M₁)
     exact fun y hy ↦ (IntermediateField.mem_lift y).mp (h₁ ((IntermediateField.mem_lift y).mpr hy))
 
 /-- The correspondence sends an intermediate field to the fixing subgroup of its lift. -/
+@[simp]
 theorem intermediateFieldEquivClosedSubgroup_apply
     (M : IntermediateField F (separableClosure F E)) :
     (OrderDual.ofDual (intermediateFieldEquivClosedSubgroup (F := F) (E := E) M)).toSubgroup =
       (IntermediateField.lift M).fixingSubgroup :=
   (rfl)
 
-/-- The inverse of the correspondence sends a closed subgroup to the part of its fixed field that
-lies in the separable closure. -/
+/-- The inverse of the correspondence sends a closed subgroup to its fixed field, restricted to
+the separable closure. -/
+@[simp]
+theorem intermediateFieldEquivClosedSubgroup_symm_apply (H : ClosedSubgroup Gal(E/F)) :
+    (intermediateFieldEquivClosedSubgroup (F := F) (E := E)).symm H =
+      IntermediateField.restrict
+        (inf_le_right : IntermediateField.fixedField H.1 ⊓ _ ≤ separableClosure F E) :=
+  (rfl)
+
+/-- The inverse of the correspondence, read back inside `E`: the lift of the restricted fixed
+field is the part of the fixed field that lies in the separable closure. -/
 theorem lift_intermediateFieldEquivClosedSubgroup_symm_apply (H : ClosedSubgroup Gal(E/F)) :
     IntermediateField.lift ((intermediateFieldEquivClosedSubgroup (F := F) (E := E)).symm H) =
       IntermediateField.fixedField H.1 ⊓ separableClosure F E :=
