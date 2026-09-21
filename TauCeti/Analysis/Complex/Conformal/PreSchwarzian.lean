@@ -26,8 +26,8 @@ such as the Schwarz--Christoffel equation `f'' / f' = ∑ i, e i / (z - a i)`, b
 The second half of the file computes the pre-Schwarzian derivative of a **corner power**
 `f = w + h ^ β`, where `h` is holomorphic and `β` is a fixed complex exponent.  Its pre-Schwarzian
 is `(β - 1) * logDeriv h + logDeriv (deriv h)`, independently of the branch, and at a simple zero
-`p` of `h` the first summand carries a simple pole: `(z - p) * logDeriv (deriv f) z` tends to
-`β - 1`.  So the exponent of a corner power is read off from the residue of the pre-Schwarzian
+`p` of `h` one has the residue asymptotic `(z - p) * logDeriv (deriv f) z → β - 1`.
+So the exponent of a corner power is read off from the residue of the pre-Schwarzian
 derivative at that corner, which is how a map with a corner of opening `α` contributes the
 residue `α / π - 1` to the Schwarz--Christoffel partial-fraction identity.
 
@@ -38,7 +38,7 @@ residue `α / π - 1` to the Schwarz--Christoffel partial-fraction identity.
   is `w ↦ a * w + b` applied to the other, for some `a ≠ 0`.
 * `TauCeti.logDeriv_deriv_of_eqOn_add_cpow` -- the pre-Schwarzian derivative of a corner power.
 * `TauCeti.tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow` -- at a simple zero of the base, the
-  pre-Schwarzian derivative of a corner power has a simple pole of residue `β - 1`.
+  pre-Schwarzian derivative of a corner power has residue asymptotic `β - 1`.
 
 ## References
 
@@ -102,7 +102,7 @@ theorem logDeriv_deriv_of_eqOn_add_cpow (hs : IsOpen s) (hh : DifferentiableOn �
     logDeriv_fun_mul z hpow hdh (hhz.cpow_const (hslit z hz)) hdh',
     logDeriv_fun_cpow hhz (hslit z hz)]
 
-/-- **The pre-Schwarzian derivative of a corner power has a simple pole at the corner.**  If the
+/-- **The residue asymptotic of the pre-Schwarzian derivative at a corner.**  If the
 holomorphic base `h` has a simple zero at `p` and `f` agrees with `w + h ^ β` on an open set `s`
 avoiding the branch cut, and `s` nontrivially approaches `p`, then
 `(z - p) * logDeriv (deriv f) z` tends to `β - 1` as `z` tends to `p` inside `s`.  The exponent

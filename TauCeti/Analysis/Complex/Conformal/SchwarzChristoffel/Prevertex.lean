@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 -- for a power with a real base point, and partial fractions are used only in proofs.
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
-import TauCeti.Analysis.Complex.UpperHalfPlane.Cpow
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
@@ -26,24 +25,22 @@ formula.
 
 At a prevertex the map has a **corner power form**: `f = w + h ^ β` near the prevertex inside the
 upper half-plane, for a holomorphic `h` with a simple zero there, where `β` is the interior angle
-divided by `π`.  The pre-Schwarzian derivative of such an `f` blows up like `(β - 1) / (z - x)`
-from above, and conjugation symmetry propagates that asymptotic to the punctured neighbourhood,
-so `β - 1` is the residue of `φ` at the prevertex.  Once each prevertex contributes its residue
-and `φ` decays at infinity, partial fractions identify `φ` with `∑ i, e i / (z - a i)` and the
-integration theorem identifies `f` itself with an affine image of the Schwarz--Christoffel
-primitive.
+divided by `π`.  The pre-Schwarzian derivative of such an `f` has residue asymptotic
+`(z - x) * f''(z) / f'(z) → β - 1` from above, and conjugation symmetry propagates that
+asymptotic to the punctured neighbourhood, so `β - 1` is the residue of `φ` at the prevertex.
+Once each prevertex contributes its residue and `φ` decays at infinity, partial fractions identify
+`φ` with `∑ i, e i / (z - a i)` and the integration theorem identifies `f` itself with an affine
+image of the Schwarz--Christoffel primitive.
 
 ## Main results
 
 * `TauCeti.tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow` -- the continuation of the pre-Schwarzian
-  derivative of a map with a corner power form has a simple pole of residue `β - 1` at the
+  derivative of a map with a corner power form has residue asymptotic `β - 1` at the
   corner.
-* `TauCeti.tendsto_sub_mul_logDeriv_deriv_cpow_sub` -- the model corner map `w + (z - x) ^ β` has
-  that asymptotic from above.
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto` -- a map of the upper
-  half-plane whose pre-Schwarzian derivative continues with simple poles of residues `e i` at the
-  prevertices `a i` and decays at infinity is an affine image of the Schwarz--Christoffel
-  primitive for those data.
+  half-plane whose pre-Schwarzian derivative continues with at most simple poles of residues
+  `e i` at the prevertices `a i` and decays at infinity is an affine image of the
+  Schwarz--Christoffel primitive for those data.
 
 ## References
 
@@ -59,15 +56,16 @@ namespace TauCeti
 
 /-! ### The residue at a single corner -/
 
-/-- **The pre-Schwarzian derivative has a simple pole of residue `β - 1` at a corner.**  Let `φ`
-be holomorphic on a punctured disc about a real point `x`, symmetric under conjugation, and equal
-to the pre-Schwarzian derivative of `f` on the upper half-plane.  If `f` has the corner power form
-`w + h ^ β` above the axis near `x`, with `h` holomorphic and having a simple zero at `x`, then
-`(z - x) * φ z` tends to `β - 1` as `z` tends to `x` from any direction. -/
+/-- **The pre-Schwarzian derivative has residue asymptotic `β - 1` at a corner.**  Let `φ`
+be holomorphic on a punctured disc about a real point `x`, symmetric under conjugation, and agree
+with the pre-Schwarzian derivative of `f` above the axis near `x`.  If `f` has the corner power
+form `w + h ^ β` there, with `h` holomorphic and having a simple zero at `x`, then `(z - x) * φ z`
+tends to `β - 1` as `z` tends to `x` from any direction. -/
 theorem tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow {φ f h : ℂ → ℂ} {x r : ℝ} {U : Set ℂ} {w β : ℂ}
     (hr : 0 < r) (hφ : DifferentiableOn ℂ φ (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
-    (hφconj : ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
-    (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet)
+    (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ U))
     (hU : IsOpen U) (hxU : (x : ℂ) ∈ U) (hh : DifferentiableOn ℂ h U) (hhx : h (x : ℂ) = 0)
     (hdh : deriv h (x : ℂ) ≠ 0) (hslit : ∀ z ∈ upperHalfPlaneSet ∩ U, h z ∈ slitPlane)
     (hβ : β ≠ 0) (hf : EqOn f (fun z => w + h z ^ β) (upperHalfPlaneSet ∩ U)) :
@@ -82,41 +80,31 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow {φ f h : ℂ → ℂ} {x r : �
   -- The corner asymptotic, taken along the part of the upper half-plane inside `U`.
   have hcorner := tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow hU hxU hh hhx hdh
     (isOpen_upperHalfPlaneSet.inter hU) hne inter_subset_right hslit hβ hf
-  rw [hfilter] at hcorner
+  have hcornerφ : Tendsto (fun z => (z - (x : ℂ)) * φ z)
+      (𝓝[upperHalfPlaneSet ∩ U] ((x : ℝ) : ℂ)) (𝓝 (β - 1)) := hcorner.congr' (by
+    filter_upwards [self_mem_nhdsWithin] with z hz
+    rw [hφf hz])
+  rw [hfilter] at hcornerφ
   have hmul : DifferentiableOn ℂ (fun z => (z - (x : ℂ)) * φ z)
       (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
     (by fun_prop : Differentiable ℂ fun z : ℂ => z - (x : ℂ)).differentiableOn.mul hφ
-  have hconj : ∀ z : ℂ, ((starRingEnd ℂ) z - (x : ℂ)) * φ ((starRingEnd ℂ) z) =
-      (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := fun z =>
+  have hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      ((starRingEnd ℂ) z - (x : ℂ)) * φ ((starRingEnd ℂ) z) =
+        (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := fun z hz =>
     calc ((starRingEnd ℂ) z - (x : ℂ)) * φ ((starRingEnd ℂ) z)
         = ((starRingEnd ℂ) z - (starRingEnd ℂ) ((x : ℝ) : ℂ)) * (starRingEnd ℂ) (φ z) := by
-          rw [Complex.conj_ofReal x, hφconj z]
+          rw [Complex.conj_ofReal x, hφconj z hz]
       _ = (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := by rw [← map_sub, ← map_mul]
-  refine tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hmul hconj (hcorner.congr' ?_)
-  filter_upwards [self_mem_nhdsWithin] with z hz
-  rw [hφf hz]
-
-/-- **The model corner map.**  The pre-Schwarzian derivative of `w + (z - x) ^ β` at a real base
-point `x` has the corner asymptotic with residue `β - 1` from above.  This is the local model
-every Schwarz--Christoffel corner is compared with. -/
-theorem tendsto_sub_mul_logDeriv_deriv_cpow_sub (x : ℝ) {β : ℂ} (hβ : β ≠ 0) (w : ℂ) :
-    Tendsto (fun z => (z - (x : ℂ)) *
-        logDeriv (deriv fun z : ℂ => w + (z - (x : ℂ)) ^ β) z)
-      (𝓝[upperHalfPlaneSet] ((x : ℝ) : ℂ)) (𝓝 (β - 1)) :=
-  tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow (h := fun z : ℂ => z - (x : ℂ)) isOpen_univ
-    (mem_univ _) (by fun_prop) (by ring) (by simp) isOpen_upperHalfPlaneSet
-    (Real.nhdsWithin_upperHalfPlaneSet_neBot x) (subset_univ _)
-    (fun z hz => sub_ofReal_mem_slitPlane_of_im_pos hz x)
-    hβ fun _ _ => rfl
+  exact tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hmul hconj hcornerφ
 
 /-! ### Assembling the Schwarz--Christoffel formula -/
 
 /-- **The converse Schwarz--Christoffel theorem from the prevertex residues.**  Let `f` be
 holomorphic with nonvanishing derivative on the upper half-plane and suppose its pre-Schwarzian
-derivative continues to a function `φ` holomorphic off the distinct real prevertices `a i`, with a
-simple pole of residue `e i` at `a i`, and decaying at infinity.  Then `f` is the affine image
-`A * F + B` of the normalized Schwarz--Christoffel primitive `F` for the data `a` and `e`, with
-`A` and `B` read off at the normalization point. -/
+derivative continues to a function `φ` holomorphic off the distinct real prevertices `a i`, with
+singularities at worst simple poles of residues `e i`, and decaying at infinity.  Then `f` is the
+affine image `A * F + B` of the normalized Schwarz--Christoffel primitive `F` for the data `a` and
+`e`, with `A` and `B` read off at the normalization point. -/
 theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto {ι : Type*} [Fintype ι]
     (a e : ι → ℝ) (ha : Function.Injective a) (z₀ : UpperHalfPlane) {f φ : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f upperHalfPlaneSet)

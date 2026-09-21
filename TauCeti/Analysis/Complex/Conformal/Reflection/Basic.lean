@@ -530,7 +530,8 @@ commutes with conjugation, and tends to `c` along the open upper half-plane, the
 along the whole punctured neighbourhood of `x`.  In particular `c` is then real. -/
 theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
     (hr : 0 < r) (hg : DifferentiableOn ℂ g (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
-    (hconj : ∀ z, g ((starRingEnd ℂ) z) = (starRingEnd ℂ) (g z))
+    (hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      g ((starRingEnd ℂ) z) = (starRingEnd ℂ) (g z))
     (hlim : Tendsto g (𝓝[{z : ℂ | 0 < z.im}] (x : ℂ)) (𝓝 c)) :
     Tendsto g (𝓝[≠] (x : ℂ)) (𝓝 c) := by
   have hopen : IsOpen (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
@@ -552,7 +553,9 @@ theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} 
     rcases lt_trichotomy z.im 0 with him | him | him
     · have hc : dist ((starRingEnd ℂ) z) (x : ℂ) < δ := by
         rw [← Complex.conj_ofReal x, Complex.dist_conj_conj]; exact hz
-      simpa [hconj z] using hup _ hc (by simpa using him)
+      have hzmem : z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)} :=
+        ⟨Metric.mem_ball.mpr (lt_of_lt_of_le hz (min_le_right _ _)), hzx⟩
+      simpa [hconj z hzmem] using hup _ hc (by simpa using him)
     · have hzmem : z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)} :=
         ⟨Metric.mem_ball.mpr (lt_of_lt_of_le hz (min_le_right _ _)), hzx⟩
       have hcont : ContinuousAt g z :=
