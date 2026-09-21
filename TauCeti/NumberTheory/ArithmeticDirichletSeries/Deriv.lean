@@ -105,12 +105,14 @@ noncomputable def logMul (f : IdealArithmeticFunction K) : IdealArithmeticFuncti
   fun I ↦ log (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) * f I
 
 /-- Evaluation of the logarithmic weighting. -/
+@[simp]
 theorem logMul_apply (f : IdealArithmeticFunction K) (I : (Ideal (𝓞 K))⁰) :
     f.logMul I = log (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) * f I :=
   (rfl)
 
 /-- Evaluation of an iterated logarithmic weighting: the weight is the `m`-th power of
 `log N(I)`. -/
+@[simp]
 theorem logMul_iterate_apply (f : IdealArithmeticFunction K) (m : ℕ) (I : (Ideal (𝓞 K))⁰) :
     logMul^[m] f I = log (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ m * f I := by
   induction m with
@@ -124,6 +126,7 @@ end IdealArithmeticFunction
 open IdealArithmeticFunction
 
 /-- The ideal term of a logarithmic weighting is the original term weighted by `log N(I)`. -/
+@[simp]
 theorem idealTerm_logMul (f : IdealArithmeticFunction K) (s : ℂ) (I : (Ideal (𝓞 K))⁰) :
     idealTerm K f.logMul s I =
       log (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) * idealTerm K f s I := by
