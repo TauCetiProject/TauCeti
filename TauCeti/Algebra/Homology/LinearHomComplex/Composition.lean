@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import TauCeti.Algebra.Homology.Monoidal.Summand
 
 /-!
 # Composition of cochains as a morphism of `R`-linear Hom complexes
@@ -537,27 +538,6 @@ lemma linearHomComplexComp_assoc :
   exact (Cochain.comp_assoc (n₁₂ := q + r) (n₂₃ := p + q) (n₁₂₃ := j)
     z₁' z₂' z₃' (by omega) (by omega) (by omega)).symm
 
-/- Mathlib builds the unitors of `HomologicalComplex` from the auxiliary graded-object
-isomorphisms `leftUnitor'` and `rightUnitor'`, and states its component formulas
-(`leftUnitor'_inv`, `rightUnitor'_inv`) for those; there is no lemma for the components of `λ_`
-and `ρ_` themselves.  The two lemmas below bridge that gap once, by unfolding the monoidal
-structure of `HomologicalComplex` down to `Hom.isoOfComponents`, so that the unit laws proved
-afterwards never mention it.  The final step is the definition of `GradedObject.eval`, whose
-action on morphisms is evaluation at a degree. -/
-private lemma leftUnitor_inv_f (X : CochainComplex (ModuleCat.{v} R) ℤ) (j : ℤ) :
-    (λ_ X).inv.f j = (HomologicalComplex.leftUnitor' X).inv j := by
-  dsimp only [MonoidalCategoryStruct.leftUnitor, HomologicalComplex.monoidalCategoryStruct,
-    HomologicalComplex.monoidalCategory, HomologicalComplex.leftUnitor, Iso.symm_inv]
-  simp only [HomologicalComplex.Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
-  rfl
-
-private lemma rightUnitor_inv_f (X : CochainComplex (ModuleCat.{v} R) ℤ) (j : ℤ) :
-    (ρ_ X).inv.f j = (HomologicalComplex.rightUnitor' X).inv j := by
-  dsimp only [MonoidalCategoryStruct.rightUnitor, HomologicalComplex.monoidalCategoryStruct,
-    HomologicalComplex.monoidalCategory, HomologicalComplex.rightUnitor, Iso.symm_inv]
-  simp only [HomologicalComplex.Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
-  rfl
-
 /-- Composing with the degree-zero cocycle associated to `ψ` is postcomposition by `ψ`. -/
 @[reassoc]
 lemma linearHomComplexOfHom_comp (ψ : G ⟶ K) :
@@ -568,7 +548,7 @@ lemma linearHomComplexOfHom_comp (ψ : G ⟶ K) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [leftUnitor_inv_f, HomologicalComplex.leftUnitor'_inv]
+  rw [HomologicalComplex.leftUnitor_inv_f, HomologicalComplex.leftUnitor'_inv]
   have hι :
       HomologicalComplex.ιTensorObj
           (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
@@ -617,7 +597,7 @@ lemma linearHomComplexComp_ofHom {F' : CochainComplex C ℤ} (φ : F' ⟶ F) :
   rw [Iso.inv_hom_id_assoc]
   ext j : 1
   simp only [HomologicalComplex.comp_f]
-  rw [rightUnitor_inv_f, HomologicalComplex.rightUnitor'_inv]
+  rw [HomologicalComplex.rightUnitor_inv_f, HomologicalComplex.rightUnitor'_inv]
   have hι :
       HomologicalComplex.ιTensorObj (linearHomComplex R F G)
           (HomologicalComplex.tensorUnit (ModuleCat.{v} R) (ComplexShape.up ℤ))
