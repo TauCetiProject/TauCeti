@@ -907,6 +907,12 @@ theorem ofArrow_eq_ofPath {a b : Q} (e : a ⟶ b) :
     (ofArrow e : pathAlgebra k Q) = ofPath ⟨a, b, e.toPath⟩ := by
   rw [ofArrow]
 
+/-- **Extending a path by an arrow.** In the later-factor-first convention the new arrow is the
+left factor, so the product is the path with that arrow consed on. -/
+theorem ofArrow_mul_ofPath {a b c : Q} (e : b ⟶ c) (p : _root_.Quiver.Path a b) :
+    (ofArrow e : pathAlgebra k Q) * ofPath ⟨a, b, p⟩ = ofPath ⟨a, c, p.cons e⟩ := by
+  rw [ofArrow_eq_ofPath, ofPath_mul_ofPath_of_comp, _root_.Quiver.Path.comp_toPath_eq_cons]
+
 /-- Transporting an arrow along equalities of its source and target does not change the basis
 element it names, the endpoints of a path being recorded in the path itself. -/
 theorem ofArrow_homOfEq {a b a' b' : Q} (f : a ⟶ b) (ha : a = a') (hb : b = b') :
