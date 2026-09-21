@@ -265,7 +265,8 @@ theorem liftDerivation_mem_gradeBy
   | smul r u _ ih => rw [map_smul]; exact Submodule.smul_mem _ r ih
 
 include hfl hfr in
-/-- **A graded derivation is determined by its values on the arrows.** -/
+/-- **A graded derivation is determined by vanishing on the vertex idempotents together with its
+values on the arrows.** -/
 theorem liftDerivation_unique (D : pathAlgebra k Q →ₗ[k] pathAlgebra k Q)
     (hvertex : ∀ v : Q, D (vertexIdempotent k v) = 0)
     (hleibniz : ∀ {m : ℤ} {x : pathAlgebra k Q}, x ∈ gradeBy k wt m → ∀ y : pathAlgebra k Q,
