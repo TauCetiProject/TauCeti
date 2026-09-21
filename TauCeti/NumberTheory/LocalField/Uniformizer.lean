@@ -38,8 +38,8 @@ theorem isUniformizer_def (π : Kˣ) :
   rfl
 
 variable (K) in
-/-- A uniformizer has the same order of vanishing as an irreducible element of the ring of
-integers. -/
+/-- A field unit is a uniformizer iff its underlying element is the image of an irreducible
+element of the ring of integers. -/
 theorem isUniformizer_iff_exists_irreducible (π : Kˣ) :
     IsUniformizer (K := K) π ↔ ∃ ϖ : 𝒪[K], Irreducible ϖ ∧ (ϖ : K) = (π : K) := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (𝒪[K])
@@ -60,11 +60,15 @@ theorem isUniformizer_iff_exists_irreducible (π : Kˣ) :
     have hu_cancel :
         ((↑(u⁻¹) : 𝒪[K]) : K) * ((u : K) * (π : K)) = (π : K) := by
       rw [← mul_assoc]
-      change (((↑(u⁻¹) : 𝒪[K]) * (u : 𝒪[K]) : 𝒪[K]) : K) * (π : K) = (π : K)
-      simp
-    change ((↑(u⁻¹) : 𝒪[K]) : K) * (ϖ : K) = (π : K)
-    rw [← hu, Units.smul_def]
-    exact hu_cancel
+      have hu_inv :
+        ((↑(u⁻¹) : 𝒪[K]) : K) * ((u : 𝒪[K]) : K) = 1 := by
+        have hu_inv' := congrArg (fun x : 𝒪[K] => (x : K)) (Units.inv_mul u)
+        simpa only [Subring.coe_mul, Subring.coe_one] using hu_inv'
+      rw [hu_inv, one_mul]
+    dsimp only [ϖ']
+    rw [Subring.coe_mul, ← hu, Units.smul_def]
+    have hu_coe : algebraMap 𝒪[K] K (u : 𝒪[K]) = (u : K) := by rfl
+    simpa only [Algebra.smul_def, hu_coe] using hu_cancel
   · rintro ⟨ϖ, hϖ, hϖπ⟩
     have hπϖ : π = Units.mk0 (ϖ : K) (fun h => hϖ.ne_zero (Subtype.ext h)) := by
       apply Units.ext
