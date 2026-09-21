@@ -41,8 +41,8 @@ the slit plane, is `TauCeti.IsCompleteBernsteinFunction.exists_analyticOnNhd_sli
 
 ## Main declarations
 
-* `TauCeti.exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_div_add`: the reflected form of
-  the conversion, for a measure on `ℝ≥0`.
+* `TauCeti.exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanlinnaKernel`: the
+  reflected form of the conversion, for a measure on `ℝ≥0`.
 * `TauCeti.exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_nevanlinnaKernel`: the
   conversion, for Nevanlinna data on `ℝ` carried by `(-∞, 0]`.
 
@@ -74,7 +74,8 @@ private lemma one_add_sq_div_mul_div_add_eq (t : ℝ) {y : ℝ} (hy : y ≠ 0) (
 
 The integrand is the Nevanlinna kernel `(1 + x t) / (x - t)` after the reflection `x = -y` that
 carries `(-∞, 0]` onto `ℝ≥0`. -/
-theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_div_add {ν : Measure ℝ≥0}
+theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanlinnaKernel
+    {ν : Measure ℝ≥0}
     [IsFiniteMeasure ν] {b c : ℝ} (hb : 0 ≤ b) {f : ℝ → ℝ}
     (hf : ∀ t : ℝ, 0 < t → f t = c + b * t + ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν)
     (hpos : ∀ t : ℝ, 0 < t → 0 ≤ f t) :
@@ -119,7 +120,8 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_div_add {ν : Mea
     exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall hle)
   -- The pivot: `∫ y⁻¹ ∂ν` is finite and bounded by `c`.
   have hmeas : AEMeasurable (fun y : ℝ≥0 => (y : ℝ≥0∞)⁻¹) ν := by fun_prop
-  have hlint := lintegral_inv_le_of_forall_integral_inv_add_le hbound
+  have hlint := lintegral_inv_le_of_forall_integral_inv_add_le
+    (integrable_stieltjesWeight ν) hbound
   have hlinttop : ∫⁻ y : ℝ≥0, (y : ℝ≥0∞)⁻¹ ∂ν ≠ ⊤ :=
     ne_top_of_le_ne_top ENNReal.ofReal_ne_top hlint
   have hν0 : ν {0} = 0 := by
@@ -227,8 +229,8 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_nevanlinnaKernel
   have : IsFiniteMeasure ν := by
     rw [hν]
     exact ρ.isFiniteMeasure_map fun x => (-x).toNNReal
-  refine exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_div_add (ν := ν) (c := c) hb ?_
-    hpos
+  refine exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanlinnaKernel
+    (ν := ν) (c := c) hb ?_ hpos
   intro t ht
   have hreal : (∫ x : ℝ, nevanlinnaKernel (t : ℂ) x ∂ρ : ℂ)
       = ((∫ x : ℝ, (1 + x * t) / (x - t) ∂ρ : ℝ) : ℂ) := by
