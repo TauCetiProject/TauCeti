@@ -33,11 +33,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A covariant derivative on the tangent bundle is torsion-free when it evaluates the Lie
 bracket of differentiable vector fields as the difference of their two covariant derivatives. -/
-@[expose] def IsTorsionFree
+def IsTorsionFree
     (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) : Prop :=
   ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
     MDiffAt (T% X) x → MDiffAt (T% Y) x →
       cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x
+
+/-- The pointwise characterization of a torsion-free covariant derivative. -/
+theorem isTorsionFree_iff
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    cov.IsTorsionFree ↔ ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
+      MDiffAt (T% X) x → MDiffAt (T% Y) x →
+        cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x := Iff.rfl
 
 section TorsionFree
 
@@ -60,7 +67,8 @@ theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
   have heq : mlieBracket I Y Z =
       (fun y ↦ cov Z y (Y y)) - fun y ↦ cov Y y (Z y) := by
     funext y
-    exact (ht (hY.mdifferentiable (by simp) y) (hZ.mdifferentiable (by simp) y)).symm
+    exact ((isTorsionFree_iff cov).mp ht
+      (hY.mdifferentiable (by simp) y) (hZ.mdifferentiable (by simp) y)).symm
   have hb : CMDiff ∞ (T% (mlieBracket I Y Z)) := by
     rw [heq]
     exact hYZ.sub_section hZY

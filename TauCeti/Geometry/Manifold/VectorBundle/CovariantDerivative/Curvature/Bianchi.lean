@@ -51,7 +51,7 @@ theorem curvatureOperator_cyclic_eq_zero
   have ht'free : ∀ {U V : Π y : M, TangentSpace I y} {y : M},
       MDiffAt (T% U) y → MDiffAt (T% V) y →
         cov V y (U y) - cov U y (V y) = mlieBracket I U V y :=
-    ht
+    (isTorsionFree_iff cov).mp ht
   let _ : IsManifold I (minSmoothness ℝ 3) M :=
     IsManifold.of_le (m := minSmoothness ℝ 3) (n := ∞) (by simp)
   let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
