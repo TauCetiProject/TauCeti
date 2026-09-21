@@ -185,6 +185,7 @@ theorem inv_padicPow (hA : IsProP p A) (a : A) (l : ℤ_[p]) :
     QuotientGroup.mk_inv, inv_pow]
 
 /-- Negating the exponent inverts the `p`-adic power. -/
+@[simp]
 theorem padicPow_neg (hA : IsProP p A) (a : A) (l : ℤ_[p]) :
     hA.padicPow a (-l) = (hA.padicPow a l)⁻¹ :=
   eq_inv_of_mul_eq_one_left (by rw [← hA.padicPow_add, neg_add_cancel, hA.padicPow_zero])
@@ -232,6 +233,7 @@ variable {p : ℕ} [hp : Fact p.Prime] {A : Type u} [CommGroup A] [TopologicalSp
   [IsTopologicalGroup A] [CompactSpace A] [TotallyDisconnectedSpace A]
 
 /-- In an abelian pro-`p` group the `p`-adic power is multiplicative in the base. -/
+@[simp]
 theorem mul_padicPow (hA : IsProP p A) (a b : A) (l : ℤ_[p]) :
     hA.padicPow (a * b) l = hA.padicPow a l * hA.padicPow b l := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
