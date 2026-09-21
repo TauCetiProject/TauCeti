@@ -44,13 +44,13 @@ namespace IsDedekindDomain.HeightOneSpectrum
 local notation "𝒪" => _root_.NumberField.RingOfIntegers
 
 variable {K L : Type*} [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
-  {v : HeightOneSpectrum (𝒪 K)} {w : HeightOneSpectrum (𝒪 L)}
-  [w.asIdeal.LiesOver v.asIdeal]
 
 /-- **The global and local residue actions agree.** Under the canonical identification of the
 residue field of `w` with the residue field of `L_w`, the action of an element of the global
 decomposition group is the residue action of its continuous extension to `L_w`. -/
 theorem residueFieldEquivAdicCompletion_stabilizerHom
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal]
     (σ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) (x : (𝒪 L) ⧸ w.asIdeal) :
     w.residueFieldEquivAdicCompletion (K := L)
         (Ideal.Quotient.stabilizerHom w.asIdeal (w.asIdeal.under (𝒪 K)) (L ≃ₐ[K] L) σ x) =
@@ -74,13 +74,17 @@ theorem residueFieldEquivAdicCompletion_stabilizerHom
   rw [IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L)]
   rw [IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L)]
   rw [decompositionHom_algebraMap]
-  rfl
+  exact congrArg (algebraMap L (w.adicCompletion L))
+    (NumberField.algebraMap_smul_eq_apply (σ : L ≃ₐ[K] L) x)
 
 /-- **The decomposition-group map carries global arithmetic Frobenius to local Frobenius.**
-If `w` is unramified over `v`, the continuous extension to `L_w` of an arithmetic Frobenius at
-`w` is the canonical Frobenius automorphism of the unramified local extension `L_w/K_v`. -/
-theorem decompositionHom_eq_frobeniusAlgEquiv [IsGalois K L]
-    [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal] {σ : L ≃ₐ[K] L}
+If the completed extension `L_w/K_v` is Galois and unramified, the continuous extension to `L_w`
+of an arithmetic Frobenius at `w` is its canonical Frobenius automorphism. -/
+theorem decompositionHom_eq_frobeniusAlgEquiv
+    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal]
+    [IsGalois (v.adicCompletion K) (w.adicCompletion L)]
+    [TauCeti.IsUnramified (v.adicCompletion K) (w.adicCompletion L)] {σ : L ≃ₐ[K] L}
     (hσ : IsArithFrobAt (𝒪 K) σ w.asIdeal) :
     decompositionHom v w ⟨σ, hσ.mem_stabilizer⟩ =
       TauCeti.frobeniusAlgEquiv (K := v.adicCompletion K) (L := w.adicCompletion L) := by
@@ -92,7 +96,7 @@ theorem decompositionHom_eq_frobeniusAlgEquiv [IsGalois K L]
   rw [TauCeti.residueFieldAutEquiv_apply,
     TauCeti.residueFieldAutEquiv_apply]
   obtain ⟨x, rfl⟩ := w.residueFieldEquivAdicCompletion (K := L).surjective x
-  rw [← residueFieldEquivAdicCompletion_stabilizerHom,
+  rw [← residueFieldEquivAdicCompletion_stabilizerHom v w,
     Ideal.stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic w.asIdeal w.ne_bot hσ,
     FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
     MulSemiringAction.toAlgAut_apply,
