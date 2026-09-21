@@ -50,7 +50,7 @@ conflation `X ⟶ Y ⟶ Z`, the cone of `f` is an extension of `Z` by the projec
 * `TauCeti.ExactStructure.IsFrobenius.coneObj`: the cone `cone f` of `f : X ⟶ Y`.
 * `TauCeti.ExactStructure.IsFrobenius.coneInclusion`: the map `Y ⟶ cone f`.
 * `TauCeti.ExactStructure.IsFrobenius.coneInjectiveMap`: the map `I(X) ⟶ cone f`.
-* `TauCeti.ExactStructure.IsFrobenius.coneConnecting`: the map `cone f ⟶ ΣX`.
+* `TauCeti.ExactStructure.IsFrobenius.coneConnectingMap`: the map `cone f ⟶ ΣX`.
 * `TauCeti.ExactStructure.IsFrobenius.coneMap`: the map of cones induced by a commutative
   square.
 * `TauCeti.ExactStructure.IsFrobenius.coneComparison`: the map from the cone of the first map of
@@ -66,11 +66,11 @@ conflation `X ⟶ Y ⟶ Z`, the cone of `f` is an extension of `Z` by the projec
   category, the inflation of the cone conflation is `f` followed by the isomorphism
   `Y ≅ I(X) ⊞ Y`.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_comp_coneInclusion`,
-  `TauCeti.ExactStructure.IsFrobenius.coneInclusion_comp_coneConnecting` and
-  `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_coneConnecting_comp_cokernelMap`:
+  `TauCeti.ExactStructure.IsFrobenius.coneInclusion_comp_coneConnectingMap` and
+  `projectiveStableFunctor_map_coneConnectingMap_comp_cokernelMap`:
   consecutive composites of `X ⟶ Y ⟶ cone f ⟶ ΣX ⟶ ΣY` vanish in the stable category.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_connectingMap_cone`: the
-  connecting morphism of the cone conflation is `coneConnecting f`.
+  connecting morphism of the cone conflation is `coneConnectingMap f`.
 * `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_coneMap_id` and
   `TauCeti.ExactStructure.IsFrobenius.projectiveStableFunctor_map_coneMap_comp`: cone maps
   preserve identities and composition in the stable category.
@@ -163,27 +163,28 @@ theorem conflation_cone (f : X ⟶ Y) :
 
 /-- The connecting map `cone f ⟶ ΣX` of the cone of `f : X ⟶ Y`, induced by the chosen
 deflation `I(X) ⟶ ΣX` and the zero map on `Y`. -/
-noncomputable def coneConnecting (f : X ⟶ Y) : hE.coneObj f ⟶ hE.suspensionObj X :=
+noncomputable def coneConnectingMap (f : X ⟶ Y) : hE.coneObj f ⟶ hE.suspensionObj X :=
   (hE.isPushout_cone f).desc (hE.suspensionDeflation X) 0
     (by simp [(hE.suspensionPresentation X).zero])
 
 /-- The connecting map of the cone restricts on the injective object to the chosen suspension
 deflation. -/
 @[reassoc (attr := simp)]
-theorem coneInjectiveMap_comp_coneConnecting (f : X ⟶ Y) :
-    hE.coneInjectiveMap f ≫ hE.coneConnecting f = hE.suspensionDeflation X :=
+theorem coneInjectiveMap_comp_coneConnectingMap (f : X ⟶ Y) :
+    hE.coneInjectiveMap f ≫ hE.coneConnectingMap f = hE.suspensionDeflation X :=
   (hE.isPushout_cone f).inl_desc _ _ _
 
 /-- The composite `Y ⟶ cone f ⟶ ΣX` of the cone sequence vanishes. -/
 @[reassoc (attr := simp)]
-theorem coneInclusion_comp_coneConnecting (f : X ⟶ Y) :
-    hE.coneInclusion f ≫ hE.coneConnecting f = 0 :=
+theorem coneInclusion_comp_coneConnectingMap (f : X ⟶ Y) :
+    hE.coneInclusion f ≫ hE.coneConnectingMap f = 0 :=
   (hE.isPushout_cone f).inr_desc _ _ _
 
 section Stable
 
 /-- In the projective stable category, the inflation of the cone conflation of `f` is `f`
 followed by the isomorphism `Y ≅ I(X) ⊞ Y`. -/
+@[simp]
 theorem projectiveStableFunctor_map_coneInflation (f : X ⟶ Y) :
     E.projectiveStableFunctor.map (hE.coneInflation f) =
       E.projectiveStableFunctor.map f ≫
@@ -211,17 +212,18 @@ theorem projectiveStableFunctor_map_comp_coneInclusion (f : X ⟶ Y) :
     (hE.isProjective_I (hE.suspensionPresentation X)) _ _
 
 /-- The connecting morphism of the cone conflation is the connecting map of the cone. -/
+@[simp]
 theorem projectiveStableFunctor_map_connectingMap_cone (f : X ⟶ Y) :
     E.projectiveStableFunctor.map (hE.connectingMap (hE.conflation_cone f)) =
-      E.projectiveStableFunctor.map (hE.coneConnecting f) :=
+      E.projectiveStableFunctor.map (hE.coneConnectingMap f) :=
   hE.projectiveStableFunctor_map_connectingMap_eq (hE.conflation_cone f) biprod.fst
-    (hE.coneConnecting f) (by simp) (by refine biprod.hom_ext' _ _ ?_ ?_ <;> simp)
+    (hE.coneConnectingMap f) (by simp) (by refine biprod.hom_ext' _ _ ?_ ?_ <;> simp)
 
 /-- The composite `cone f ⟶ ΣX ⟶ ΣY` of the cone sequence vanishes in the projective stable
 category: it factors through the injective `I(Y)`. -/
 @[simp]
-theorem projectiveStableFunctor_map_coneConnecting_comp_cokernelMap (f : X ⟶ Y) :
-    E.projectiveStableFunctor.map (hE.coneConnecting f) ≫
+theorem projectiveStableFunctor_map_coneConnectingMap_comp_cokernelMap (f : X ⟶ Y) :
+    E.projectiveStableFunctor.map (hE.coneConnectingMap f) ≫
         E.projectiveStableFunctor.map ((hE.suspensionPresentation X).cokernelMap
           (hE.suspensionPresentation Y) f) = 0 := by
   have hw : hE.suspensionInflation X ≫
@@ -229,7 +231,7 @@ theorem projectiveStableFunctor_map_coneConnecting_comp_cokernelMap (f : X ⟶ Y
       (-f) ≫ (-(hE.suspensionInflation Y)) := by
     rw [InjectivePresentation.i_comp_middleMap, Preadditive.neg_comp, Preadditive.comp_neg,
       neg_neg]
-  have hfac : hE.coneConnecting f ≫ (hE.suspensionPresentation X).cokernelMap
+  have hfac : hE.coneConnectingMap f ≫ (hE.suspensionPresentation X).cokernelMap
       (hE.suspensionPresentation Y) f =
       (hE.isPushout_cone f).desc
         ((hE.suspensionPresentation X).middleMap (hE.suspensionPresentation Y) f)
@@ -302,6 +304,7 @@ variable {X'' Y'' : C} {f'' : X'' ⟶ Y''}
 /-- Cone maps preserve composition in the projective stable category. The equality need not hold
 before passing to the stable category because the chosen maps between injective presentations need
 not preserve composition strictly. -/
+@[simp]
 theorem projectiveStableFunctor_map_coneMap_comp (a : X ⟶ X') (b : Y ⟶ Y')
     (a' : X' ⟶ X'') (b' : Y' ⟶ Y'') (w : f ≫ b = a ≫ f')
     (w' : f' ≫ b' = a' ≫ f'') :
@@ -331,10 +334,10 @@ theorem projectiveStableFunctor_map_coneMap_comp (a : X ⟶ X') (b : Y ⟶ Y')
 
 /-- The cone map commutes with the connecting maps and the map induced by `a` on the cokernel
 terms of the chosen injective presentations. -/
-@[reassoc]
-theorem coneMap_comp_coneConnecting (a : X ⟶ X') (b : Y ⟶ Y') (w : f ≫ b = a ≫ f') :
-    hE.coneMap a b w ≫ hE.coneConnecting f' =
-      hE.coneConnecting f ≫
+@[reassoc (attr := simp)]
+theorem coneMap_comp_coneConnectingMap (a : X ⟶ X') (b : Y ⟶ Y') (w : f ≫ b = a ≫ f') :
+    hE.coneMap a b w ≫ hE.coneConnectingMap f' =
+      hE.coneConnectingMap f ≫
         (hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation X') a := by
   refine (hE.isPushout_cone f).hom_ext ?_ ?_
   · simp [InjectivePresentation.p_comp_cokernelMap]
@@ -363,12 +366,11 @@ theorem coneInclusion_comp_coneComparison (S : ShortComplex C) :
     hE.coneInclusion S.f ≫ hE.coneComparison S = S.g :=
   (hE.isPushout_cone S.f).inr_desc _ _ _
 
-/-- The third term of a conflation is the cokernel of the injective object inside the cone of
-its inflation. -/
-noncomputable def isColimitConeComparison (hS : E.Conflation S) :
+/-- The third term of a kernel–cokernel pair is the cokernel of the injective object inside the
+cone of its first map. -/
+noncomputable def isColimitConeComparison (hkc : IsKernelCokernelPair S) :
     IsColimit (CokernelCofork.ofπ (hE.coneComparison S)
       (hE.coneInjectiveMap_comp_coneComparison S)) := by
-  have hkc := E.isKernelCokernelPair S hS
   have := hkc.epi_g
   have hzero : ∀ (W : C) (u : hE.coneObj S.f ⟶ W), hE.coneInjectiveMap S.f ≫ u = 0 →
       S.f ≫ hE.coneInclusion S.f ≫ u = 0 := by
@@ -392,7 +394,8 @@ injective object**: `I(X) ⟶ cone S.f ⟶ Z` is a conflation. -/
 theorem conflation_coneComparison (hS : E.Conflation S) :
     E.Conflation (ShortComplex.mk (hE.coneInjectiveMap S.f) (hE.coneComparison S)
       (hE.coneInjectiveMap_comp_coneComparison S)) :=
-  E.conflation_of_isColimit_of_isInflation (hE.isColimitConeComparison hS)
+  E.conflation_of_isColimit_of_isInflation
+    (hE.isColimitConeComparison (E.isKernelCokernelPair S hS))
     (E.isStableUnderCobaseChange_inflations.of_isPushout (hE.isPushout_cone S.f)
       (E.isInflation_f hS).neg)
 
