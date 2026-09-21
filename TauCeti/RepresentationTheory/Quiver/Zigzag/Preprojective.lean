@@ -325,8 +325,7 @@ variable {V : Type u} {G : SimpleGraph V}
 /-! ### The non-bipartite obstruction -/
 
 /-- **A non-bipartite graph admits no cornerwise signless comparison.** For any orientation of a
-finite simple graph, an odd closed graph walk maps to an odd closed path in the symmetrified
-oriented quiver. Hence, when `2 ≠ 0`, no unit gauge makes every corner of the gauged
+finite non-bipartite simple graph, when `2 ≠ 0`, no unit gauge makes every corner of the gauged
 preprojective relator a scalar multiple of the corresponding signless relator. -/
 theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
     (o : Orientation G) (k : Type w) [CommRing k] [Finite V]
