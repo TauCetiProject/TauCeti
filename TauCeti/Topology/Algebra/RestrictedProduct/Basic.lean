@@ -147,4 +147,14 @@ structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
   isOpen_subgroup : ∀ i, IsOpen (subgroup i : Set (G i))
   isCompact_subgroup : ∀ i, IsCompact (subgroup i : Set (G i))
 
+/-- The integral subgroup associated to a bundled compact-open family is open. -/
+theorem CompactOpenSubgroups.isOpen_integralSubgroup (K : CompactOpenSubgroups G) :
+    IsOpen (integralSubgroup K.subgroup : Set (Πʳ i, [G i, (K.subgroup i : Set (G i))])) :=
+  TauCeti.isOpen_integralSubgroup K.subgroup K.isOpen_subgroup
+
+/-- The integral subgroup associated to a bundled compact-open family is compact. -/
+theorem CompactOpenSubgroups.isCompact_integralSubgroup (K : CompactOpenSubgroups G) :
+    IsCompact (integralSubgroup K.subgroup : Set (Πʳ i, [G i, (K.subgroup i : Set (G i))])) :=
+  TauCeti.isCompact_integralSubgroup K.subgroup K.isCompact_subgroup
+
 end TauCeti
