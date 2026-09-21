@@ -20,8 +20,8 @@ inductions to `G` are isomorphic.
 The proof uses the off-diagonal Mackey intertwining formula.  A Mackey term indexed by
 `s ∉ T` vanishes because the restrictions of both representations are spanned by copies of `V`,
 whereas conjugation by `s` moves `V` out of its isomorphism class.  The identity double coset then
-recovers the intertwining space over `T`, so an isomorphism between the induced representations
-forces an isomorphism before induction.
+recovers the dimension of the intertwining space over `T`, so an isomorphism between the induced
+representations forces an isomorphism before induction.
 
 ## Main statements
 
@@ -52,7 +52,7 @@ variable {k G : Type u} [Field k] [Group G] {N : Subgroup G} [N.Normal]
 /-- **Injectivity in the Clifford correspondence.** Two irreducible representations of
 `inertia V` lying over `V` are isomorphic if their inductions to `G` are isomorphic. -/
 theorem nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep
-    [Finite G] [IsAlgClosed k] [CharZero k]
+    [Finite G] [CharZero k]
     (V : FDRep k N) [Simple V] (A B : FDRep k (inertia V)) [Simple A] [Simple B]
     (hA : A.LiesOver (Subgroup.inclusion (le_inertia V)) V)
     (hB : B.LiesOver (Subgroup.inclusion (le_inertia V)) V)
@@ -60,10 +60,8 @@ theorem nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep
   classical
   let _ := Fintype.ofFinite
     (DoubleCoset.Quotient (inertia V : Set G) (inertia V : Set G))
-  let _ : Simple (indFDRep A) := simple_indFDRep_of_inertia V A hA
-  let _ : Simple (indFDRep B) := simple_indFDRep_of_inertia V B hB
   by_contra hAB
-  have hBA : ¬ Nonempty (B ≅ A) := fun ⟨e⟩ ↦ hAB ⟨e.symm⟩
+  have hBA : (B ≅ A) → False := fun e ↦ hAB ⟨e.symm⟩
   have hterm (D : DoubleCoset.Quotient (inertia V : Set G) (inertia V : Set G)) :
       Module.finrank k
           (resFDRep ((mackeySubgroup D.out (inertia V) (inertia V)).subgroupOf (inertia V)) B ⟶
@@ -74,13 +72,27 @@ theorem nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep
           (one_mem (inertia V)) 1
       have hrepresentative : D.out * 1 * 1 = D.out := by simp
       rw [hrepresentative] at hchange
-      rw [hchange, finrank_hom_res_mackeyToH_one, FDRep.finrank_hom_simple_simple,
-        ite_eq_right hBA]
+      rw [hchange, finrank_hom_res_mackeyToH_one,
+        CategoryTheory.finrank_hom_simple_simple_eq_zero_of_not_iso k hBA]
     · let _ := subsingleton_hom_res_mackeyToH_of_not_mem_inertia V B A hB hA hs
       exact Module.finrank_zero_of_subsingleton
   have hzero : Module.finrank k (indFDRep A ⟶ indFDRep B) = 0 := by
     rw [finrank_hom_indFDRep_mackey B A, Finset.sum_eq_zero fun D _ ↦ hterm D]
-  rw [FDRep.finrank_hom_simple_simple, ite_eq_left hInd] at hzero
-  exact one_ne_zero hzero
+  obtain ⟨e⟩ := hInd
+  have he : e.hom ≠ 0 := by
+    obtain ⟨x, hx⟩ := Module.finrank_pos_iff_exists_ne_zero.mp (show
+      0 < Module.finrank k (indFDRep A) by
+        rw [finrank_indFDRep]
+        exact Nat.mul_pos (Nat.pos_of_ne_zero Subgroup.index_ne_zero_of_finite) (by
+          let _ : Nontrivial A :=
+            _root_.Representation.IsIrreducible.nontrivial (FDRep.isIrreducible_of_simple A)
+          exact Module.finrank_pos_iff.mpr inferInstance))
+    intro he
+    have hid : 𝟙 (indFDRep A) = 0 := by
+      rw [← e.hom_inv_id]
+      simp [he]
+    have hxzero := congrArg (fun f : indFDRep A ⟶ indFDRep A => f.hom.hom x) hid
+    exact hx (by simpa using hxzero)
+  exact he ((Module.finrank_zero_iff.mp hzero).elim e.hom 0)
 
 end FDRep
