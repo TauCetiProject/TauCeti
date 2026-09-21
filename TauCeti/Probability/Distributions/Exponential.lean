@@ -37,7 +37,6 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 
 ## Main results
 
-* `expMeasure_eq_gammaMeasure` — the exponential law is the shape-one Gamma law;
 * `integrable_expMeasure_iff`, `integral_expMeasure_eq` — integrability and integration against
   the exponential law, transferred to the real density;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
@@ -78,17 +77,13 @@ namespace Probability
 
 variable {a r s t : ℝ} {n : ℕ}
 
-/-- `expMeasure r` is the shape-one Gamma law of rate `r`. Every moment and transform below is the
-`a = 1` case of the corresponding Gamma result. -/
-theorem expMeasure_eq_gammaMeasure (r : ℝ) : expMeasure r = gammaMeasure 1 r := rfl
-
 /-- `expMeasure r` is the Lebesgue measure weighted by its exponential density. -/
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
 /-- An exponential law on `ℝ` is nonnegative almost surely, for every rate. -/
 theorem ae_nonneg_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 ≤ x := by
-  rw [expMeasure_eq_gammaMeasure]
+  rw [expMeasure]
   filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
   exact hx.le
 
@@ -126,7 +121,7 @@ alone says nothing about finiteness. -/
 @[simp]
 theorem integrable_pow_expMeasure (hr : 0 < r) (n : ℕ) :
     Integrable (fun x => x ^ n) (expMeasure r) := by
-  rw [expMeasure_eq_gammaMeasure]
+  rw [expMeasure]
   exact integrable_pow_gammaMeasure one_pos hr n
 
 /-- **The moments of the exponential law.** `∫ x ^ n ∂(expMeasure r) = n ! / r ^ n`, for every `n`.
@@ -136,7 +131,7 @@ second moment below are the `n = 1` and `n = 2` cases. -/
 @[simp]
 theorem integral_pow_expMeasure (hr : 0 < r) (n : ℕ) :
     ∫ x, x ^ n ∂(expMeasure r) = (Nat.factorial n : ℝ) / r ^ n := by
-  rw [expMeasure_eq_gammaMeasure, integral_pow_gammaMeasure one_pos hr, add_comm,
+  rw [expMeasure, integral_pow_gammaMeasure one_pos hr, add_comm,
     Real.Gamma_nat_eq_factorial, Real.Gamma_one, one_mul]
 
 /-- **The mean of the exponential law** with rate `r` is `r⁻¹`. -/
@@ -151,14 +146,14 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 /-- **The variance of the exponential law** with rate `r` is `(r ^ 2)⁻¹`. -/
 @[simp]
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
-  rw [expMeasure_eq_gammaMeasure, variance_id_gammaMeasure one_pos hr, one_div]
+  rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
 
 /-- **The exact exponential-integrability threshold.** The integrand `exp (t * x)` is integrable
 against an exponential law with positive rate `r` exactly when `t < r`. -/
 @[simp]
 lemma integrable_exp_mul_expMeasure_iff (hr : 0 < r) :
     Integrable (fun x => exp (t * x)) (expMeasure r) ↔ t < r := by
-  rw [expMeasure_eq_gammaMeasure]
+  rw [expMeasure]
   exact ⟨fun h => not_le.mp fun hrt => not_integrable_exp_mul_id_gammaMeasure one_pos hr hrt h,
     integrable_exp_mul_id_gammaMeasure one_pos hr⟩
 
@@ -168,7 +163,7 @@ lemma integrable_exp_mul_expMeasure_iff (hr : 0 < r) :
 @[simp]
 theorem integrableExpSet_id_expMeasure (hr : 0 < r) :
     integrableExpSet id (expMeasure r) = Set.Iio r := by
-  rw [expMeasure_eq_gammaMeasure, integrableExpSet_id_gammaMeasure one_pos hr]
+  rw [expMeasure, integrableExpSet_id_gammaMeasure one_pos hr]
 
 /-- **The exact exponential-integrability domain** of an exponential law with positive rate is
 `(-∞, r)`. This is the `fun x => x` spelling of `integrableExpSet_id_expMeasure`. -/
@@ -183,7 +178,7 @@ domain `t < r`. This is the `id` spelling, the form the `cgf` below and a `HasLa
 @[simp]
 theorem mgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
     mgf id (expMeasure r) t = r / (r - t) := by
-  rw [expMeasure_eq_gammaMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
+  rw [expMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
     one_sub_div hr.ne', inv_div]
 
 /-- **The moment-generating function of an exponential law** with positive rate, on its finiteness
@@ -202,7 +197,7 @@ theorem cgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
 @[simp]
 theorem charFun_expMeasure (hr : 0 < r) (t : ℝ) :
     charFun (expMeasure r) t = (r : ℂ) / (r - Complex.I * t) := by
-  rw [expMeasure_eq_gammaMeasure, charFun_gammaMeasure one_pos hr, Complex.ofReal_one,
+  rw [expMeasure, charFun_gammaMeasure one_pos hr, Complex.ofReal_one,
     Complex.cpow_neg_one, one_sub_div (Complex.ofReal_ne_zero.mpr hr.ne'), inv_div]
 
 /-- The real-valued tail probability of a positive-rate exponential law. -/
