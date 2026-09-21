@@ -28,20 +28,6 @@ noncomputable section
 
 universe u v
 
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
-  [Invertible (2 : R)]
-
-/-- The Spin action is available for every quadratic form with `2` invertible. -/
-noncomputable instance instMulActionSpinGroup (Q : QuadraticForm R M) :
-    MulAction (spinGroup Q) M :=
-  MulAction.compHom _ (spinToOrthogonal Q)
-
-@[simp]
-theorem spinGroup_smul_apply (Q : QuadraticForm R M) (s : spinGroup Q) (x : M) :
-    s • x = spinVectorAction Q s x := by
-  rw [MulAction.compHom_smul_def]
-  exact coe_spinToOrthogonal_apply Q s x
-
 variable {V : Type u} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
 /-- The unit quadratic level as a subaction of the compact real Spin action. -/
@@ -62,7 +48,7 @@ dimension at least two. -/
 theorem exists_spinVectorAction_eq_of_posDef (Q : QuadraticForm ℝ V) (hQ : Q.PosDef)
     (hrank : 2 ≤ Module.finrank ℝ V) {x y : V} (hxy : Q x = Q y) (hy : Q y ≠ 0) :
     ∃ s : spinGroup Q, spinVectorAction Q s x = y := by
-  obtain ⟨g, hg⟩ := TauCeti.QuadraticMap.exists_specialOrthogonal_map_eq_of_nondegenerate
+  obtain ⟨g, hg⟩ := QuadraticMap.exists_specialOrthogonal_map_eq_of_nondegenerate
     Q hQ.anisotropic.nondegenerate hrank hxy hy
   obtain ⟨s, hs⟩ := spinToSpecialOrthogonal_surjective_of_posDef Q hQ g
   refine ⟨s, ?_⟩

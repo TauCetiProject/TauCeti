@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RealOrbit
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Orbit
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 import TauCeti.GroupTheory.GroupAction.Transitive
 
@@ -13,10 +13,11 @@ import TauCeti.GroupTheory.GroupAction.Transitive
 # Continuous orbits of compact real Spin groups
 
 For `n ≥ 2` and a chosen point on the unit level, the compact real Spin action gives a continuous
-surjection onto that level. This is the sphere-orbit input for proving connectivity of `Spin(n)`.
+surjection onto that level. This is the sphere-orbit input for the compact Spin sphere-bundle and
+universal-cover construction.
 
 The construction follows Lawson--Michelsohn, *Spin Geometry*, Chapter I, Section 2; its algebraic
-prerequisites are supplied by `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.RealOrbit`.
+prerequisites are supplied by `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Orbit`.
 -/
 
 public section
@@ -38,6 +39,11 @@ noncomputable def realCliffordSpinOrbitMap (n : ℕ) (x : realCliffordUnitLevel 
 
 @[simp]
 theorem realCliffordSpinOrbitMap_apply (n : ℕ) (x : realCliffordUnitLevel n)
+    (s : realCliffordSpinGroupZero n) :
+    realCliffordSpinOrbitMap n x s = s • x :=
+  by simp only [realCliffordSpinOrbitMap, ContinuousMap.coe_mk]
+
+theorem realCliffordSpinOrbitMap_val_apply (n : ℕ) (x : realCliffordUnitLevel n)
     (s : realCliffordSpinGroupZero n) :
     (realCliffordSpinOrbitMap n x s : Fin n → ℝ) =
       spinVectorAction (realCliffordForm n 0) s x := by

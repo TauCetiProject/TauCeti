@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
-public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
 
 /-!
@@ -25,8 +23,9 @@ preceding Cartan--Dieudonne and orthogonal-group developments, following Lawson-
 public section
 
 open Module Submodule
+open TauCeti.QuadraticMap
 
-namespace TauCeti.QuadraticMap
+namespace QuadraticMap
 
 noncomputable section
 
@@ -61,7 +60,7 @@ theorem exists_specialOrthogonal_map_eq_of_nondegenerate (Q : QuadraticForm K V)
   rcases isUnit_sub_or_add_of_map_eq Q x y hxy hy with hsub | hadd
   · let _ : Invertible (Q (x - y)) := hsub.invertible
     obtain ⟨z, hzy, hzQ⟩ :=
-      TauCeti.QuadraticMap.exists_orthogonal_anisotropic Q hQ hrank (y := y) hy
+      exists_orthogonal_anisotropic Q hQ hrank (y := y) hy
     let _ : Invertible (Q z) := (isUnit_iff_ne_zero.mpr hzQ).invertible
     refine ⟨reflectionPairSpecialOrthogonal Q z (x - y), ?_⟩
     rw [reflectionPairSpecialOrthogonal_apply]
@@ -79,4 +78,4 @@ theorem exists_specialOrthogonal_map_eq_of_nondegenerate (Q : QuadraticForm K V)
 
 end
 
-end TauCeti.QuadraticMap
+end QuadraticMap
