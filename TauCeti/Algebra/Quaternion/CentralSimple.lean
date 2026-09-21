@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Central.Basic
+public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 import Mathlib.RingTheory.SimpleRing.Congr
@@ -16,8 +17,8 @@ import Mathlib.Tactic.LinearCombination
 # Central simple quaternion symbol algebras
 
 For a field `K` with `2` invertible, this file proves centrality for the general quaternion algebra
-`ℍ[K,a,b,c]` when `c ≠ 0 ∨ b ^ 2 + 4 * a ≠ 0`, and simplicity when
-`c * (b ^ 2 + 4 * a) ≠ 0`. Completing the square
+`ℍ[K,a,b,c]` when `c ≠ 0 ∨ QuadraticAlgebra.discr a b ≠ 0`, and simplicity when
+`c * QuadraticAlgebra.discr a b ≠ 0`. Completing the square
 reduces these cases to a unit-parameter symbol, for which the norm criterion gives either a
 division algebra or a two-by-two matrix algebra. The two-parameter symbol `ℍ[K,a,b]` is the
 specialization used by the Brauer-valued invariants.
@@ -53,11 +54,12 @@ section CompleteSquare
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
 private def completeSquareBasis (a b c : R) :
-    _root_.QuaternionAlgebra.Basis ℍ[R,b ^ 2 + 4 * a,0,c] a b c where
+    _root_.QuaternionAlgebra.Basis ℍ[R,QuadraticAlgebra.discr a b,0,c] a b c where
   i := ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩
   j := ⟨0, 0, 1, 0⟩
   k := ⟨0, 0, ⅟ (2 : R) * b, ⅟ (2 : R)⟩
   i_mul_i := by
+    rw [QuadraticAlgebra.discr_def]
     ext <;> simp [mul_assoc]
     · linear_combination
         (⅟ (2 : R) * b ^ 2 + a * (2 * ⅟ (2 : R) + 1)) *
@@ -72,11 +74,12 @@ private def completeSquareBasis (a b c : R) :
     linear_combination b * (invOf_mul_self (2 : R))
 
 private def completeSquareInvBasis (a b c : R) :
-    _root_.QuaternionAlgebra.Basis ℍ[R,a,b,c] (b ^ 2 + 4 * a) 0 c where
+    _root_.QuaternionAlgebra.Basis ℍ[R,a,b,c] (QuadraticAlgebra.discr a b) 0 c where
   i := ⟨-b, 2, 0, 0⟩
   j := ⟨0, 0, 1, 0⟩
   k := ⟨0, 0, -b, 2⟩
   i_mul_i := by
+    rw [QuadraticAlgebra.discr_def]
     ext <;> simp <;> ring
   j_mul_j := by
     ext <;> simp
@@ -99,30 +102,30 @@ private theorem completeSquareBasis_lift_apply_j (a b c : R) :
 omit [Invertible (2 : R)] in
 private theorem completeSquareInvBasis_lift_apply_i (a b c : R) :
     (completeSquareInvBasis a b c).liftHom
-        (⟨0, 1, 0, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c]) =
+        (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
       ⟨-b, 2, 0, 0⟩ := by
   simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 omit [Invertible (2 : R)] in
 private theorem completeSquareInvBasis_lift_apply_j (a b c : R) :
     (completeSquareInvBasis a b c).liftHom
-        (⟨0, 0, 1, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c]) =
+        (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
       ⟨0, 0, 1, 0⟩ := by
   simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 /-- **Completing the square in a quaternion algebra.** The change of generators
 `i ↦ ⅟ 2 * (b + i)` identifies `ℍ[R,a,b,c]` with the unit-parameter presentation
-`ℍ[R,b² + 4a,0,c]`. -/
+`ℍ[R,QuadraticAlgebra.discr a b,0,c]`. -/
 def completeSquareEquiv (a b c : R) :
-    ℍ[R,a,b,c] ≃ₐ[R] ℍ[R,b ^ 2 + 4 * a,0,c] :=
+    ℍ[R,a,b,c] ≃ₐ[R] ℍ[R,QuadraticAlgebra.discr a b,0,c] :=
   AlgEquiv.ofAlgHom (completeSquareBasis a b c).liftHom
     (completeSquareInvBasis a b c).liftHom (by
       apply _root_.QuaternionAlgebra.hom_ext
       · -- Expose the standard generator before applying the two change-of-basis formulas.
         change (completeSquareBasis a b c).liftHom
             ((completeSquareInvBasis a b c).liftHom
-              (⟨0, 1, 0, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])) =
-          (⟨0, 1, 0, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])
+              (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])) =
+          (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
         rw [completeSquareInvBasis_lift_apply_i]
         simp only [_root_.QuaternionAlgebra.Basis.liftHom_apply]
         simp only [completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
@@ -130,8 +133,8 @@ def completeSquareEquiv (a b c : R) :
       · -- The second generator is fixed by both changes of basis.
         change (completeSquareBasis a b c).liftHom
             ((completeSquareInvBasis a b c).liftHom
-              (⟨0, 0, 1, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])) =
-          (⟨0, 0, 1, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])
+              (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])) =
+          (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
         rw [completeSquareInvBasis_lift_apply_j, completeSquareBasis_lift_apply_j]) (by
       apply _root_.QuaternionAlgebra.hom_ext
       · -- The inverse change sends the completed-square generator back to the original one.
@@ -246,29 +249,29 @@ instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] := by
 
 /-- A quaternion algebra with nonzero `j`-square or discriminant is central. -/
 theorem isCentral_of_j_sq_ne_zero_or_discr_ne_zero {a b c : K}
-    (h : c ≠ 0 ∨ b ^ 2 + 4 * a ≠ 0) :
+    (h : c ≠ 0 ∨ QuadraticAlgebra.discr a b ≠ 0) :
     Algebra.IsCentral K ℍ[K,a,b,c] := by
   rcases h with hc | hd
   · let v : Kˣ := Units.mk0 c hc
-    have htarget : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,c] :=
-      instIsCentral (b ^ 2 + 4 * a) v
-    exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,c])
+    have htarget : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
+      instIsCentral (QuadraticAlgebra.discr a b) v
+    exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,c])
       (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
   · by_cases hc : c = 0
     · subst c
-      let v : Kˣ := Units.mk0 (b ^ 2 + 4 * a) hd
-      have htarget : Algebra.IsCentral K ℍ[K,0,0,(b ^ 2 + 4 * a)] :=
+      let v : Kˣ := Units.mk0 (QuadraticAlgebra.discr a b) hd
+      have htarget : Algebra.IsCentral K ℍ[K,0,0,QuadraticAlgebra.discr a b] :=
         instIsCentral 0 v
-      have hsource : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,0] :=
-        Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,0,0,(b ^ 2 + 4 * a)])
-          (D' := ℍ[K,b ^ 2 + 4 * a,0,0]) (h := htarget)
-          (_root_.QuaternionAlgebra.swapEquiv (b ^ 2 + 4 * a) 0).symm
-      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,0])
+      have hsource : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,0] :=
+        Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,0,0,QuadraticAlgebra.discr a b])
+          (D' := ℍ[K,QuadraticAlgebra.discr a b,0,0]) (h := htarget)
+          (_root_.QuaternionAlgebra.swapEquiv (QuadraticAlgebra.discr a b) 0).symm
+      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,0])
         (D' := ℍ[K,a,b,0]) (h := hsource) (completeSquareEquiv a b 0).symm
     · let v : Kˣ := Units.mk0 c hc
-      have htarget : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,c] :=
-        instIsCentral (b ^ 2 + 4 * a) v
-      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,c])
+      have htarget : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
+        instIsCentral (QuadraticAlgebra.discr a b) v
+      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,c])
         (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
 
 /-- A quaternion algebra with nonzero `j`-square is central. -/
@@ -279,11 +282,11 @@ theorem isCentral_of_j_sq_ne_zero {a b c : K}
 
 /-- A quaternion algebra with nonzero discriminant and nonzero `j`-square is simple. -/
 theorem isSimpleRing_of_mul_discr_ne_zero {a b c : K}
-    (h : c * (b ^ 2 + 4 * a) ≠ 0) : IsSimpleRing ℍ[K,a,b,c] := by
+    (h : c * QuadraticAlgebra.discr a b ≠ 0) : IsSimpleRing ℍ[K,a,b,c] := by
   have ⟨hc, hd⟩ := mul_ne_zero_iff.mp h
-  let u : Kˣ := Units.mk0 (b ^ 2 + 4 * a) hd
+  let u : Kˣ := Units.mk0 (QuadraticAlgebra.discr a b) hd
   let v : Kˣ := Units.mk0 c hc
-  have htarget : IsSimpleRing ℍ[K,b ^ 2 + 4 * a,0,c] := instIsSimpleRing u v
+  have htarget : IsSimpleRing ℍ[K,QuadraticAlgebra.discr a b,0,c] := instIsSimpleRing u v
   exact IsSimpleRing.of_ringEquiv (completeSquareEquiv a b c).symm.toRingEquiv htarget
 
 end QuaternionAlgebra
