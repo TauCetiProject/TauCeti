@@ -44,6 +44,8 @@ theorem mono_iff_injective (f : X ⟶ Y) :
     Mono f ↔ Function.Injective f.hom.toRatLinearMap := by
   constructor
   · intro hf
+    -- Full faithfulness of `mixed` reflects monomorphisms but does not supply preservation.
+    -- The kernel projector gives a cancellation witness within the polarizable category.
     have hfC := Hom.isMorphism f
     rw [MixedHodgeStructure.Hom.toLinearMap_def] at hfC
     let W := RationalHodgeSubstructure.ofRationalMorphismKer hfC
@@ -73,6 +75,8 @@ theorem epi_iff_surjective (f : X ⟶ Y) :
     Epi f ↔ Function.Surjective f.hom.toRatLinearMap := by
   constructor
   · intro hf
+    -- Full faithfulness of `mixed` reflects epimorphisms but does not supply preservation.
+    -- The image projector gives a cancellation witness within the polarizable category.
     have hfC := Hom.isMorphism f
     rw [MixedHodgeStructure.Hom.toLinearMap_def] at hfC
     let W := RationalHodgeSubstructure.ofRationalMorphismRange hfC
