@@ -27,9 +27,7 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
 
 * `TauCeti.summatory_mul_eq_sub_sub_integral_mul`: Abel summation between two nonnegative real
   cutoffs for a weight of the form `i ↦ w i * g (N i)`.
-* `TauCeti.summatory_mul_eq_sub_integral_mul_of_le`: Abel summation from a real lower bound,
-  with `TauCeti.summatory_mul_eq_sub_integral_mul_of_one_le` and
-  `TauCeti.summatory_mul_eq_sub_integral_mul_of_two_le` naming the cutoffs `1` and `2`.
+* `TauCeti.summatory_mul_eq_sub_integral_mul_of_le`: Abel summation from a real lower bound.
 * `TauCeti.idealSummatory_mul_eq_sub_integral_mul`: the cutoff-`1` form for nonzero ideals.
 * `TauCeti.primeSummatory_mul_eq_sub_integral_mul`: the cutoff-`2` form for the height-one primes
   of a number field.
@@ -163,28 +161,6 @@ theorem summatory_mul_eq_sub_integral_mul_of_le {a : ℝ} (ha : 0 ≤ a)
     rw [summatory_mul_eq_mul_summatory_of_le N hN w g] at key
     linear_combination key
 
-/-- Abel summation from the cutoff `1` for a carrier all of whose indices have `N`-value at least
-`1`, such as the nonzero ideals of a number field. -/
-theorem summatory_mul_eq_sub_integral_mul_of_one_le (h1 : ∀ i, 1 ≤ (N i : ℝ)) (w : ι → 𝕜)
-    {g : ℝ → 𝕜} (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc 1 b, DifferentiableAt ℝ g t)
-    (hg_int : IntegrableOn (deriv g) (Set.Icc 1 b)) :
-    summatory N (fun i ↦ w i * g (N i)) b =
-      g b * summatory N w b - ∫ t in Set.Ioc 1 b, deriv g t * summatory N w t :=
-  summatory_mul_eq_sub_integral_mul_of_le N zero_le_one h1 w b hg_diff hg_int
-
-/-- Abel summation from the cutoff `2` for a carrier all of whose indices have `N`-value at least
-`2`, such as the height-one primes of a number field.  The boundary term at `2` cancels, because
-there the twisted weight is `g 2` times the untwisted one.
-
-The identity holds for every cutoff `b`: below `2` all three terms vanish. -/
-theorem summatory_mul_eq_sub_integral_mul_of_two_le (h2 : ∀ i, 2 ≤ (N i : ℝ)) (w : ι → 𝕜)
-    {g : ℝ → 𝕜}
-    (b : ℝ) (hg_diff : ∀ t ∈ Set.Icc 2 b, DifferentiableAt ℝ g t)
-    (hg_int : IntegrableOn (deriv g) (Set.Icc 2 b)) :
-    summatory N (fun i ↦ w i * g (N i)) b =
-      g b * summatory N w b - ∫ t in Set.Ioc 2 b, deriv g t * summatory N w t :=
-  summatory_mul_eq_sub_integral_mul_of_le N (by norm_num) h2 w b hg_diff hg_int
-
 /-- A summatory function, multiplied by a factor integrable on a compact interval of nonnegative
 cutoffs, is integrable there. -/
 theorem integrableOn_mul_summatory (w : ι → 𝕜) {f : ℝ → 𝕜} {a b : ℝ} (ha : 0 ≤ a)
@@ -195,19 +171,11 @@ theorem integrableOn_mul_summatory (w : ι → 𝕜) {f : ℝ → 𝕜} {a b : �
 
 /-! ### Imaginary-power twists -/
 
-private theorem differentiableAt_ofReal_cpow_neg (z : ℂ) (hz : z ≠ 0) {t : ℝ} (ht : 0 < t) :
-    DifferentiableAt ℝ (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t :=
-  differentiableAt_id.ofReal_cpow_const (by simpa only [id_eq] using ht.ne')
-    (neg_ne_zero.mpr hz)
-
-private theorem deriv_ofReal_cpow_neg (z : ℂ) (hz : z ≠ 0) {t : ℝ} (ht : 0 < t) :
-    deriv (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t = -z * (t : ℂ) ^ (-z - 1) :=
-  Complex.deriv_ofReal_cpow_const ht.ne' (neg_ne_zero.mpr hz)
-
 private theorem integrableOn_deriv_ofReal_cpow_neg (z : ℂ) (hz : z ≠ 0) (x : ℝ) :
     IntegrableOn (deriv fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Icc 1 x) := by
   refine (ContinuousOn.integrableOn_Icc fun t ht ↦ ?_).congr_fun
-    (fun t ht ↦ (deriv_ofReal_cpow_neg z hz (by linarith [ht.1])).symm) measurableSet_Icc
+    (fun t ht ↦ (Complex.deriv_ofReal_cpow_const (by linarith [ht.1])
+      (neg_ne_zero.mpr hz)).symm) measurableSet_Icc
   exact continuousWithinAt_const.mul
     (Complex.continuousAt_ofReal_cpow_const t (-z - 1)
       (Or.inr (by linarith [ht.1]))).continuousWithinAt
@@ -220,7 +188,7 @@ private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) (hz0 : z �
     {t : ℝ} (ht : 0 < t) :
     ‖deriv (fun u : ℝ ↦ (u : ℂ) ^ (-z)) t‖ = ‖z‖ * t⁻¹ := by
   have hneg : -z.re - 1 = (-1 : ℝ) := by rw [hz]; norm_num
-  rw [deriv_ofReal_cpow_neg z hz0 ht, norm_mul, norm_neg,
+  rw [Complex.deriv_ofReal_cpow_const ht.ne' (neg_ne_zero.mpr hz0), norm_mul, norm_neg,
     Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re, hneg,
     Real.rpow_neg_one]
 
@@ -237,14 +205,15 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
   · simpa using hC x ⟨hx, le_rfl⟩
   let g : ℝ → ℂ := fun t ↦ (t : ℂ) ^ (-z)
   have hg_diff : ∀ t ∈ Set.Icc (1 : ℝ) x, DifferentiableAt ℝ g t :=
-    fun t ht ↦ differentiableAt_ofReal_cpow_neg z hz0 (by linarith [ht.1])
+    fun t ht ↦ differentiableAt_id.ofReal_cpow_const
+      (by simpa only [id_eq] using (show t ≠ 0 by linarith [ht.1])) (neg_ne_zero.mpr hz0)
   have hg_int : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) x) :=
     integrableOn_deriv_ofReal_cpow_neg z hz0 x
   have hformula : summatory N (fun i ↦ w i * (N i : ℂ) ^ (-z)) x =
       g x * summatory N w x - ∫ t in Set.Ioc 1 x, deriv g t * summatory N w t := by
     have hcast : ∀ i, ((N i : ℝ) : ℂ) = (N i : ℂ) := fun _ ↦ by norm_num
     simpa only [g, hcast] using
-      summatory_mul_eq_sub_integral_mul_of_one_le N hN w x hg_diff hg_int
+      summatory_mul_eq_sub_integral_mul_of_le N zero_le_one hN w x hg_diff hg_int
   have hC0 : 0 ≤ C :=
     (norm_nonneg (summatory N w 1)).trans (by simpa using hC 1 ⟨le_rfl, hx⟩)
   have hbound_int :
@@ -352,8 +321,8 @@ theorem idealSummatory_mul_eq_sub_integral_mul (w : (Ideal (𝓞 K))⁰ → 𝕜
     (hg_int : IntegrableOn (deriv g) (Set.Icc 1 x)) :
     idealSummatory K (fun I ↦ w I * g (Ideal.absNorm (I : Ideal (𝓞 K)))) x =
       g x * idealSummatory K w x - ∫ t in Set.Ioc 1 x, deriv g t * idealSummatory K w t :=
-  summatory_mul_eq_sub_integral_mul_of_one_le _ one_le_absNorm_real_of_nonZeroDivisors w x
-    hg_diff hg_int
+  summatory_mul_eq_sub_integral_mul_of_le _ zero_le_one
+    one_le_absNorm_real_of_nonZeroDivisors w x hg_diff hg_int
 
 /-- An imaginary norm-power twist preserves a positive power bound for partial sums over the
 nonzero ideals of a number field. -/
@@ -375,7 +344,8 @@ theorem primeSummatory_mul_eq_sub_integral_mul (w : HeightOneSpectrum (𝓞 K) �
     (hg_int : IntegrableOn (deriv g) (Set.Icc 2 x)) :
     primeSummatory K (fun v ↦ w v * g (Ideal.absNorm v.asIdeal)) x =
       g x * primeSummatory K w x - ∫ t in Set.Ioc 2 x, deriv g t * primeSummatory K w t :=
-  summatory_mul_eq_sub_integral_mul_of_two_le _ two_le_absNorm_asIdeal_real w x hg_diff hg_int
+  summatory_mul_eq_sub_integral_mul_of_le _ (by norm_num) two_le_absNorm_asIdeal_real w x
+    hg_diff hg_int
 
 variable {K}
 

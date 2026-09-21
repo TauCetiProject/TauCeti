@@ -395,7 +395,7 @@ variable (K)
 /-- At a uniform lower-bound cutoff, twisting a weight by a function of its `N`-value multiplies
 the summatory function by the value of the twist at that cutoff. -/
 theorem summatory_mul_eq_mul_summatory_of_le {ι 𝕜 : Type*} (N : ι → ℕ) [Northcott N]
-    [RCLike 𝕜] {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → 𝕜) (g : ℝ → 𝕜) :
+    [NonUnitalCommSemiring 𝕜] {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → 𝕜) (g : ℝ → 𝕜) :
     summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
   rw [summatory_apply, summatory_apply, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
