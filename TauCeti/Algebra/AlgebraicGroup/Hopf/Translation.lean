@@ -285,6 +285,7 @@ theorem counitAlgHom_comp_rightTranslationAlgHom (g : WithConv (H →ₐ[k] k)) 
 
 /-- Translation identifies the height of the ideal of any rational point with the height of
 the augmentation ideal. -/
+@[simp]
 theorem height_kernel_eq_height_augmentation (g : WithConv (H →ₐ[k] k)) :
     (RingHom.ker (g.ofConv : H →+* k)).height =
       (RingHom.ker (_root_.Bialgebra.counitAlgHom k H : H →+* k)).height := by
