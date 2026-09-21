@@ -13,9 +13,10 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Agreement
 # The Suzuki special isogeny in the pinned symplectic model
 
 This file extends the shared rank-two `B₂` carrier comparison with the data specific to a
-`TauCeti.SuzukiLieIndex`. On the standard symplectic matrix group it defines the characteristic-
-two special isogeny and its odd power, and transports them independently to the pinned `Sp₄/ℤ`
-scheme points. It then proves that the shared carrier equivalence intertwines both maps.
+`TauCeti.SuzukiLieIndex`. On the standard symplectic matrix group it uses the existing
+characteristic-two special isogeny, defines its odd power, and transports both maps independently
+to the pinned `Sp₄/ℤ` scheme points. It then proves that the shared carrier equivalence intertwines
+both maps.
 
 The pinned half-Frobenius is the matrix special isogeny `TauCeti.specialIsogeny`, rather than a
 map transported from the explicit carrier. Its odd power is therefore an independently built
@@ -24,8 +25,8 @@ this pinned map has the expected half-Frobenius behavior.
 
 ## Main definitions
 
-* `TauCeti.specialIsogeny` and `TauCeti.SuzukiLieIndex.symplecticSteinberg`: the special isogeny
-  and its odd power on the standard symplectic matrix group.
+* `TauCeti.SuzukiLieIndex.symplecticSteinberg`: the odd power of the imported special isogeny on
+  the standard symplectic matrix group.
 * `TauCeti.SuzukiLieIndex.pinnedHalfFrobenius` and
   `TauCeti.SuzukiLieIndex.pinnedSteinberg`: the corresponding independently defined maps on the
   pinned scheme points.
@@ -113,7 +114,8 @@ theorem pinnedEquivSymplectic_pinnedSteinberg (g : d.toRankTwoBLieIndex.PinnedGr
 theorem carrierEquivSymplectic_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.toRankTwoBLieIndex.carrierEquivSymplectic (d.halfFrobenius g) =
       TauCeti.specialIsogeny (d.toRankTwoBLieIndex.carrierEquivSymplectic g) := by
-  rw [RankTwoBLieIndex.carrierEquivSymplectic, halfFrobenius_def,
+  rw [RankTwoBLieIndex.carrierEquivSymplectic_apply,
+    RankTwoBLieIndex.carrierEquivSymplectic_apply, halfFrobenius_def,
     SpStd.pointsMulEquivGLSymplecticFin_specialIsogeny]
 
 /-- **The carrier equivalence intertwines the two Steinberg maps.** Both sides are the same odd
@@ -163,21 +165,10 @@ Frobenius**, that is `τ ^ 2 = Frob_p` at the defining characteristic `p = 2`. -
 theorem symplecticHalfFrobenius_symplecticHalfFrobenius (g : d.toRankTwoBLieIndex.StandardGroup) :
     TauCeti.specialIsogeny (TauCeti.specialIsogeny g) =
       d.toRankTwoBLieIndex.symplecticPrimeFrobenius g := by
-  -- The matrix square relation is stated at the literal `2` and this one at the index's
-  -- characteristic; identifying the two is the step that descends to matrix entries, the
-  -- characteristic not being rewritable at the exponent of `iterateFrobenius`, whose instances
-  -- depend on it.
-  have hchar : d.1.characteristic = 2 := d.characteristic_eq_two
-  rw [TauCeti.specialIsogeny_specialIsogeny,
-    RankTwoBLieIndex.symplecticPrimeFrobenius]
-  apply Subtype.ext
-  apply Units.ext
-  rw [GLSymplecticFin.coe_map, GLSymplecticFin.coe_map]
-  ext a b
-  rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.map_apply,
-    iterateFrobenius_def, frobenius_def]
-  congr 1
-  rw [pow_one, hchar]
+  obtain ⟨g, rfl⟩ := d.toRankTwoBLieIndex.carrierEquivSymplectic.surjective g
+  rw [← carrierEquivSymplectic_halfFrobenius,
+    ← carrierEquivSymplectic_halfFrobenius, halfFrobenius_halfFrobenius,
+    RankTwoBLieIndex.carrierEquivSymplectic_primeFrobenius]
 
 /-- **The square of the special isogeny on the pinned symplectic scheme points is the prime-field
 Frobenius.** Together with the simple-root equation below this is what makes the pinned map a

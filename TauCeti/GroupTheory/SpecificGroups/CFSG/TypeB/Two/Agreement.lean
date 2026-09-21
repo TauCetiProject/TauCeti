@@ -90,9 +90,13 @@ noncomputable def pinnedEquivSymplectic : d.PinnedGroup ≃* d.StandardGroup :=
 
 /-- **The explicit rank-two type-`C` carrier is the standard symplectic matrix group.** The
 equivalence preserves the underlying matrix. -/
-@[expose]
 noncomputable def carrierEquivSymplectic : d.AmbientGroup ≃* d.StandardGroup :=
   SpStd.pointsMulEquivGLSymplecticFin 1 d.1.Closure
+
+/-- The carrier equivalence acts through the canonical identification with symplectic matrices. -/
+theorem carrierEquivSymplectic_apply (g : d.AmbientGroup) :
+    d.carrierEquivSymplectic g = SpStd.pointsMulEquivGLSymplecticFin 1 d.1.Closure g :=
+  (rfl)
 
 /-- **The explicit rank-two type-`C` carrier is equivalent to the points of the pinned `Sp₄/ℤ`
 group scheme.** -/
@@ -166,7 +170,6 @@ noncomputable def symplecticFrobenius : d.StandardGroup →* d.StandardGroup :=
     (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
 
 /-- Entrywise prime-field Frobenius on the standard symplectic matrix group. -/
-@[expose]
 noncomputable def symplecticPrimeFrobenius : d.StandardGroup →* d.StandardGroup :=
   GLSymplecticFin.map 2 d.1.Closure (iterateFrobenius d.1.Closure d.1.characteristic 1)
 
