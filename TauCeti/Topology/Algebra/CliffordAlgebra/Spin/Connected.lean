@@ -56,9 +56,9 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
       let a := (Real.sqrt (Q v))⁻¹
       let b := (Real.sqrt (Q w))⁻¹
       have hva : a ≠ 0 := by
-        simpa only [a] using QuadraticMap.inv_sqrt_apply_ne_zero hvpos
+        simpa only [a] using inv_ne_zero (Real.sqrt_pos.mpr hvpos).ne'
       have hwb : b ≠ 0 := by
-        simpa only [b] using QuadraticMap.inv_sqrt_apply_ne_zero hwpos
+        simpa only [b] using inv_ne_zero (Real.sqrt_pos.mpr hwpos).ne'
       let _ : Invertible a := (isUnit_iff_ne_zero.mpr hva).invertible
       let _ : Invertible b := (isUnit_iff_ne_zero.mpr hwb).invertible
       have hv : Q (a • v) = 1 := by
