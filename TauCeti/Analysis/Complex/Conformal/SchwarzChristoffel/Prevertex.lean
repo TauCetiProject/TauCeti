@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cpow
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
 /-!
@@ -71,13 +72,16 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow {φ f h : ℂ → ℂ} {x r : �
     (hdh : deriv h (x : ℂ) ≠ 0) (hslit : ∀ z ∈ upperHalfPlaneSet ∩ U, h z ∈ slitPlane)
     (hβ : β ≠ 0) (hf : EqOn f (fun z => w + h z ^ β) (upperHalfPlaneSet ∩ U)) :
     Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] ((x : ℝ) : ℂ)) (𝓝 (β - 1)) := by
-  -- The corner asymptotic, taken along the part of the upper half-plane inside `U`.
-  have hcorner := tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow hU hxU hh hhx hdh
-    (isOpen_upperHalfPlaneSet.inter hU) inter_subset_right hslit hβ hf
   -- `U` is a neighbourhood of `x`, so that filter is the whole upper half-plane filter.
   have hfilter : 𝓝[upperHalfPlaneSet ∩ U] ((x : ℝ) : ℂ) = 𝓝[upperHalfPlaneSet] ((x : ℝ) : ℂ) := by
     rw [inter_comm]
     exact nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hxU))
+  have hne : (𝓝[upperHalfPlaneSet ∩ U] ((x : ℝ) : ℂ)).NeBot := by
+    rw [hfilter]
+    exact Real.nhdsWithin_upperHalfPlaneSet_neBot x
+  -- The corner asymptotic, taken along the part of the upper half-plane inside `U`.
+  have hcorner := tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow hU hxU hh hhx hdh
+    (isOpen_upperHalfPlaneSet.inter hU) hne inter_subset_right hslit hβ hf
   rw [hfilter] at hcorner
   have hmul : DifferentiableOn ℂ (fun z => (z - (x : ℂ)) * φ z)
       (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
@@ -100,8 +104,10 @@ theorem tendsto_sub_mul_logDeriv_deriv_cpow_sub (x : ℝ) {β : ℂ} (hβ : β �
         logDeriv (deriv fun z : ℂ => w + (z - (x : ℂ)) ^ β) z)
       (𝓝[upperHalfPlaneSet] ((x : ℝ) : ℂ)) (𝓝 (β - 1)) :=
   tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow (h := fun z : ℂ => z - (x : ℂ)) isOpen_univ
-    (mem_univ _) (by fun_prop) (by ring) (by simp) isOpen_upperHalfPlaneSet (subset_univ _)
-    (fun z hz => sub_ofReal_mem_slitPlane_of_im_pos hz x) hβ fun _ _ => rfl
+    (mem_univ _) (by fun_prop) (by ring) (by simp) isOpen_upperHalfPlaneSet
+    (Real.nhdsWithin_upperHalfPlaneSet_neBot x) (subset_univ _)
+    (fun z hz => sub_ofReal_mem_slitPlane_of_im_pos hz x)
+    hβ fun _ _ => rfl
 
 /-! ### Assembling the Schwarz--Christoffel formula -/
 

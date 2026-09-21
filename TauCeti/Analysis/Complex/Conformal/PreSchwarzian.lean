@@ -104,12 +104,12 @@ theorem logDeriv_deriv_of_eqOn_add_cpow (hs : IsOpen s) (hh : DifferentiableOn �
 
 /-- **The pre-Schwarzian derivative of a corner power has a simple pole at the corner.**  If the
 holomorphic base `h` has a simple zero at `p` and `f` agrees with `w + h ^ β` on an open set `s`
-avoiding the branch cut, then `(z - p) * logDeriv (deriv f) z` tends to `β - 1` as `z` tends to
-`p` inside `s`.  The exponent `β` is thus the residue of the pre-Schwarzian derivative at the
-corner, shifted by one. -/
+avoiding the branch cut, and `s` nontrivially approaches `p`, then
+`(z - p) * logDeriv (deriv f) z` tends to `β - 1` as `z` tends to `p` inside `s`.  The exponent
+`β` is thus the residue of the pre-Schwarzian derivative at the corner, shifted by one. -/
 theorem tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow {U : Set ℂ} (hU : IsOpen U) (hpU : p ∈ U)
     (hh : DifferentiableOn ℂ h U) (hhp : h p = 0) (hdh : deriv h p ≠ 0) (hs : IsOpen s)
-    (hsU : s ⊆ U) (hslit : ∀ z ∈ s, h z ∈ slitPlane) (hβ : β ≠ 0)
+    (_hne : (𝓝[s] p).NeBot) (hsU : s ⊆ U) (hslit : ∀ z ∈ s, h z ∈ slitPlane) (hβ : β ≠ 0)
     (hf : EqOn f (fun z => w + h z ^ β) s) :
     Tendsto (fun z => (z - p) * logDeriv (deriv f) z) (𝓝[s] p) (𝓝 (β - 1)) := by
   have hAn : AnalyticAt ℂ h p := hh.analyticAt (hU.mem_nhds hpU)
