@@ -122,7 +122,6 @@ theorem weightedRename_weightedC [NonarchimedeanRing A] (e : Fin k ↪ Fin m) {T
   Subtype.ext (by simp)
 
 /-- The `A`-algebra-homomorphism form of `weightedRename`. -/
-@[expose]
 noncomputable def weightedRenameAlgHom [NonarchimedeanRing A] (e : Fin k ↪ Fin m)
     {T : Fin k → Set A} {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
     (hTS : ∀ i, T i ⊆ S (e i)) :
@@ -137,8 +136,8 @@ noncomputable def weightedRenameAlgHom [NonarchimedeanRing A] (e : Fin k ↪ Fin
 theorem weightedRenameAlgHom_apply [NonarchimedeanRing A] (e : Fin k ↪ Fin m)
     {T : Fin k → Set A} {S : Fin m → Set A} (hT : IsWeightFamily T) (hS : IsWeightFamily S)
     (hTS : ∀ i, T i ⊆ S (e i)) (f : weightedRestrictedSubring T hT) :
-    weightedRenameAlgHom e hT hS hTS f = weightedRename e hT hS hTS f :=
-  rfl
+    weightedRenameAlgHom e hT hS hTS f = weightedRename e hT hS hTS f := by
+  simp [weightedRenameAlgHom]
 
 /-- `weightedRename` sends the variable `Xᵢ` to `X_{e i}`. -/
 @[simp]
