@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Order.DirectedInverseSystem
 public import Mathlib.Topology.Separation.Hausdorff
-public import TauCeti.Topology.Compactness.Compact
--- Non-public: the functor `ℕᵒᵖ ⥤ Type _` built from the one-step maps of a sequential system,
--- and Mathlib's Kőnig lemma for it, occur only inside the proof of the sequential form.
+-- Non-public: the functors out of the index category that the unbundled data assemble into, and
+-- Mathlib's limit theorems for them, occur only inside the proofs.
 import Mathlib.CategoryTheory.CofilteredSystem
 import Mathlib.CategoryTheory.Functor.OfSequence
+import Mathlib.Topology.Category.TopCat.Limits.Konig
 
 /-!
 # Inverse limits of compact spaces are nonempty
@@ -23,13 +23,12 @@ that such a family exists as soon as the index is directed and every `X i` is no
 compact Hausdorff, and specialize that to the finite systems for which it is Kőnig's lemma.
 
 The data stay unbundled: a family of transition maps and the two laws of `InverseSystem`, with
-no functor and no category instance on the index. Mathlib's bundled counterparts are
-`TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system` and, for finite systems,
-`nonempty_sections_of_finite_cofiltered_system` and `nonempty_sections_of_finite_inverse_system`,
-all of which take a functor out of the index category — the plumbing the consumers here do not
-have. The sequential form is the one case where that plumbing is cheap to supply, so it is
-deduced from `nonempty_sections_of_finite_inverse_system` along
-`CategoryTheory.Functor.ofOpSequence` rather than reproved.
+no functor and no category instance on the index, which is what the consumers have. The
+mathematics is Mathlib's and is not reproved here: each proof packages the unbundled data into
+a functor out of the index category and appeals to
+`TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system` for the compact Hausdorff statement,
+and to `nonempty_sections_of_finite_inverse_system` along `CategoryTheory.Functor.ofOpSequence`
+for the sequential one; the remaining forms are specializations of these.
 
 ## Main statements
 
@@ -53,8 +52,22 @@ namespace TauCeti
 
 section Directed
 
-variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {X : ι → Type*}
+universe u w
 
+variable {ι : Type u} [Preorder ι] [IsDirectedOrder ι] {X : ι → Type w}
+
+open CategoryTheory in
+/-- An inverse system of topological spaces, read as a functor `ιᵒᵖ ⥤ TopCat`. The spaces are
+`ULift`ed into the universe `max w u` in which Mathlib's limit theorem expects them. -/
+private def topCatFunctor [∀ i, TopologicalSpace (X i)] (f : ∀ ⦃i j⦄, i ≤ j → X j → X i)
+    [InverseSystem f] (hf : ∀ ⦃i j⦄ (h : i ≤ j), Continuous (f h)) : ιᵒᵖ ⥤ TopCat.{max w u} where
+  obj i := TopCat.of (ULift.{u} (X i.unop))
+  map h := TopCat.ofHom ⟨fun x ↦ ULift.up (f (leOfHom h.unop) x.down),
+    continuous_uliftUp.comp ((hf _).comp continuous_uliftDown)⟩
+  map_id i := by ext x; exact InverseSystem.map_self (f := f) x.down
+  map_comp g h := by ext x; exact (InverseSystem.map_map (f := f) _ _ x.down).symm
+
+open CategoryTheory in
 /-- **Inverse limits of nonempty compact Hausdorff spaces are nonempty.** Let `X` be a family of
 nonempty compact Hausdorff spaces indexed by a directed preorder, forming an inverse system whose
 transition maps `f h : X j → X i` are continuous. Then some family `x : ∀ i, X i` is compatible
@@ -63,31 +76,17 @@ theorem exists_forall_map_eq_of_compact_t2 [∀ i, TopologicalSpace (X i)] [∀ 
     [∀ i, T2Space (X i)] [∀ i, Nonempty (X i)] (f : ∀ ⦃i j⦄, i ≤ j → X j → X i)
     [InverseSystem f] (hf : ∀ ⦃i j⦄ (h : i ≤ j), Continuous (f h)) :
     ∃ x : ∀ i, X i, ∀ ⦃i j⦄ (h : i ≤ j), f h (x j) = x i := by
-  classical
-  cases isEmpty_or_nonempty ι
-  · exact ⟨fun i ↦ isEmptyElim i, fun i ↦ isEmptyElim i⟩
-  -- `C i` collects the families that are compatible with the transition maps into the `X j`
-  -- for `j ≤ i`; a point of `⋂ i, C i` is a compatible family.
-  set C : ι → Set (∀ i, X i) := fun i ↦ {x | ∀ j, ∀ h : j ≤ i, f h (x i) = x j} with hC
-  have hclosed (i : ι) : IsClosed (C i) := by
-    have : C i = ⋂ j, ⋂ h : j ≤ i, {x : ∀ i, X i | f h (x i) = x j} := by
-      ext x; simp [hC]
-    rw [this]
-    exact isClosed_iInter fun j ↦ isClosed_iInter fun h ↦
-      isClosed_eq ((hf h).comp (continuous_apply i)) (continuous_apply j)
-  have hne (i : ι) : (C i).Nonempty := by
-    -- Push a single point of `X i` down to every `X j` with `j ≤ i`.
-    refine ⟨fun j ↦ if h : j ≤ i then f h (Classical.arbitrary (X i))
-      else Classical.arbitrary (X j), fun j h ↦ ?_⟩
-    simp only [dite_eq_left h, dite_eq_left (le_refl i), InverseSystem.map_self]
-  have hmono ⦃i k : ι⦄ (hik : i ≤ k) : C k ⊆ C i := by
-    intro x hx j hji
-    rw [← hx i hik, InverseSystem.map_map (f := f), hx j (hji.trans hik)]
-  have hdir : Directed (· ⊇ ·) C := fun i₁ i₂ ↦
-    let ⟨k, hk₁, hk₂⟩ := exists_ge_ge i₁ i₂
-    ⟨k, hmono hk₁, hmono hk₂⟩
-  obtain ⟨x, hx⟩ := nonempty_iInter_of_directed_nonempty_isClosed C hdir hne hclosed
-  exact ⟨x, fun i j h ↦ Set.mem_iInter.mp hx j i h⟩
+  -- The index is directed, so `ιᵒᵖ` is cofiltered and Mathlib's Kőnig lemma for compact
+  -- Hausdorff systems applies to the functor the data assemble into.
+  have : ∀ i : ιᵒᵖ, Nonempty ((topCatFunctor f hf).obj i) :=
+    fun i ↦ inferInstanceAs (Nonempty (ULift (X i.unop)))
+  have : ∀ i : ιᵒᵖ, CompactSpace ((topCatFunctor f hf).obj i) :=
+    fun i ↦ inferInstanceAs (CompactSpace (ULift (X i.unop)))
+  have : ∀ i : ιᵒᵖ, T2Space ((topCatFunctor f hf).obj i) :=
+    fun i ↦ inferInstanceAs (T2Space (ULift (X i.unop)))
+  obtain ⟨⟨x, hx⟩⟩ := TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system (topCatFunctor f hf)
+  -- A point of the limit is a compatible family, once the `ULift` wrapper is removed.
+  exact ⟨fun i ↦ (x (Opposite.op i)).down, fun i j h ↦ congrArg ULift.down (hx (homOfLE h).op)⟩
 
 /-- **Kőnig's lemma for a directed index.** An inverse system of nonempty finite types over a
 directed preorder has a compatible family. -/
