@@ -134,6 +134,28 @@ lemma principalPartsQuotientEquivCohomologyOne_mk (D : SchemeWeilDivisor X)
       principalPartsBoundary R hclosed D p := by
   rfl
 
+/-- The principal-parts boundary is the connecting map of the principal-parts short exact
+sequence, after identifying zeroth cohomology with global sections. -/
+@[simp]
+lemma principalPartsBoundary_apply (D : SchemeWeilDivisor X)
+    (p : Γ(principalParts D, ⊤)) :
+    principalPartsBoundary R hclosed D p =
+      Scheme.Modules.cohomologyδ (principalPartsShortComplex_shortExact hclosed D) 0 1 rfl
+        ((Scheme.Modules.cohomologyZeroBaseLinearEquiv R X (principalParts D)).symm p) := by
+  let _ : (principalPartsShortComplex D).X₂.presheaf.IsFlasque :=
+    principalPartsShortComplex_X₂ D ▸
+      inferInstanceAs (Scheme.rationalFunctions X).presheaf.IsFlasque
+  change principalPartsQuotientEquivCohomologyOne R hclosed D
+      (Submodule.Quotient.mk p) = _
+  change Scheme.Modules.cohomologyOneLinearEquivOfIsFlasque R
+      (principalPartsShortComplex_shortExact hclosed D)
+        (globalPrincipalPartsQuotientEquiv R D (Submodule.Quotient.mk p)) = _
+  rw [globalPrincipalPartsQuotientEquiv, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply]
+  exact Scheme.Modules.cohomologyOneLinearEquivOfIsFlasque_mk R
+    (principalPartsShortComplex_shortExact hclosed D)
+    ((Scheme.Modules.cohomologyZeroBaseLinearEquiv R X (principalParts D)).symm p)
+
 /-- Every first-cohomology class of `𝒪_X(D)` is represented by a global family of principal
 parts. -/
 lemma principalPartsBoundary_surjective (D : SchemeWeilDivisor X) :
