@@ -36,11 +36,9 @@ point — the degree is surjective, so `Pic X ⧸ Pic⁰ X ≅ ℤ`.
   the subgroup `Pic⁰ X` it cuts out;
 * `SchemeWeilDivisor.eulerDegree_classGroupToLineBundleClass`: the degree of the line
   bundle of a divisor class is the weighted degree of that class;
-* `SchemeWeilDivisor.classGroupAddEquivPicZero`, the isomorphism `Cl⁰(X) ≅ Pic⁰(X)`, and
+* `SchemeWeilDivisor.classGroupPicZeroAddEquivPicZero`, the isomorphism `Cl⁰(X) ≅ Pic⁰(X)`, and
   `SchemeWeilDivisor.weightedDegreeZeroQuotientAddEquivPicZero`, which presents `Pic⁰ X` as the
   degree-zero divisors modulo the principal ones;
-* `SchemeWeilDivisor.toLineBundleClass_mem_picZero_iff`: `𝒪_X(D)` has degree-zero class exactly
-  when `D` has degree zero;
 * `SchemeWeilDivisor.eulerDegreeHom_surjective` and
   `SchemeWeilDivisor.picQuotientPicZeroAddEquivInt`: at a point of residue degree one the degree
   is onto `ℤ`, so `Pic X ⧸ Pic⁰ X ≅ ℤ`.
@@ -150,7 +148,7 @@ variable (X) in
 /-- **`Cl⁰(X) ≅ Pic⁰(X)`.** On a proper integral curve over `k` whose codimension-one local rings
 are discrete valuation rings, `D ↦ 𝒪_X(D)` identifies the degree-zero divisor classes with the
 degree-zero part of the Picard group. -/
-def classGroupAddEquivPicZero :
+def classGroupPicZeroAddEquivPicZero :
     (WeilDivisor.OrderSystem.ofScheme X).picZero
         (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
         (isWeightedDegreeZero_residueDegree k hX.out) ≃+ LineBundleClass.picZero k X :=
@@ -159,28 +157,21 @@ def classGroupAddEquivPicZero :
 
 /-- `Cl⁰(X) ≅ Pic⁰(X)` is the restriction of `Cl(X) ≅ Pic X`. -/
 @[simp]
-lemma coe_classGroupAddEquivPicZero_apply
+lemma coe_classGroupPicZeroAddEquivPicZero_apply
     (c : (WeilDivisor.OrderSystem.ofScheme X).picZero
       (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ))
       (isWeightedDegreeZero_residueDegree k hX.out)) :
-    (classGroupAddEquivPicZero k X c : Additive (LineBundleClass X)) =
+    (classGroupPicZeroAddEquivPicZero k X c : Additive (LineBundleClass X)) =
       classGroupAddEquivLineBundleClass X (c : (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) :=
   (rfl)
 
 /-- The inverse of `Cl⁰(X) ≅ Pic⁰(X)` is the restriction of the inverse of `Cl(X) ≅ Pic X`. -/
 @[simp]
-lemma coe_classGroupAddEquivPicZero_symm_apply (b : LineBundleClass.picZero k X) :
-    ((classGroupAddEquivPicZero k X).symm b :
+lemma coe_classGroupPicZeroAddEquivPicZero_symm_apply (b : LineBundleClass.picZero k X) :
+    ((classGroupPicZeroAddEquivPicZero k X).symm b :
         (WeilDivisor.OrderSystem.ofScheme X).ClassGroup) =
       (classGroupAddEquivLineBundleClass X).symm (b : Additive (LineBundleClass X)) :=
   (rfl)
-
-/-- The class of `𝒪_X(D)` lies in `Pic⁰ X` exactly when `D` has degree zero. -/
-lemma toLineBundleClass_mem_picZero_iff (D : SchemeWeilDivisor X) :
-    Additive.ofMul (toLineBundleClass hX.out D) ∈ LineBundleClass.picZero k X ↔
-      relativeDegree (X ↘ Spec (.of k)) D = 0 := by
-  rw [LineBundleClass.mem_picZero_iff, toMul_ofMul,
-    LineBundleClass.eulerDegree_toLineBundleClass]
 
 variable (X) in
 /-- **`Pic⁰ X` is the group of degree-zero divisors modulo principal divisors.** -/
@@ -191,7 +182,7 @@ def weightedDegreeZeroQuotientAddEquivPicZero :
         (fun y : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree y : ℤ)) ≃+
       LineBundleClass.picZero k X :=
   ((WeilDivisor.OrderSystem.ofScheme X).weightedDegreeZeroQuotientEquivPicZero _
-    (isWeightedDegreeZero_residueDegree k hX.out)).trans (classGroupAddEquivPicZero k X)
+    (isWeightedDegreeZero_residueDegree k hX.out)).trans (classGroupPicZeroAddEquivPicZero k X)
 
 /-- `Div⁰(X) / (principal divisors) ≅ Pic⁰ X` sends the class of a degree-zero divisor `D` to the
 class of `𝒪_X(D)`. -/
@@ -203,7 +194,7 @@ lemma coe_weightedDegreeZeroQuotientAddEquivPicZero_mk
         Additive (LineBundleClass X)) =
       Additive.ofMul (toLineBundleClass hX.out (D : SchemeWeilDivisor X)) := by
   rw [weightedDegreeZeroQuotientAddEquivPicZero, AddEquiv.trans_apply,
-    coe_classGroupAddEquivPicZero_apply,
+    coe_classGroupPicZeroAddEquivPicZero_apply,
     WeilDivisor.OrderSystem.coe_weightedDegreeZeroQuotientEquivPicZero_mk,
     classGroupAddEquivLineBundleClass_apply, classGroupToLineBundleClass_divisorClass]
 
