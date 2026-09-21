@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
 # Real boundary values and the support of a Nevanlinna measure
@@ -36,7 +37,7 @@ Nevanlinna representation whose measure lives on `(-∞, 0]`.
 * `TauCeti.measureReal_Icc_le_of_eq_nevanlinnaKernel_add`: the Poisson lower bound
   `rho [u - v, u + v] ≤ 2 v * Im F (u + i v)`.
 * `TauCeti.measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add`: a Nevanlinna measure gives no mass to
-  a compact interval across which the represented function is continuous with real values.
+  a compact interval across which its imaginary part is continuous and has zero boundary values.
 * `TauCeti.exists_isFiniteMeasure_eq_nevanlinnaKernel_add_of_im_eq_zero`: a Pick function that is
   holomorphic on the slit plane and real on `(0, ∞)` has a Nevanlinna measure vanishing on
   `(0, ∞)`.
@@ -108,31 +109,6 @@ theorem measureReal_Icc_le_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu] (hbet
     _ ≤ 2 * v * (F z).im := by
         exact mul_le_mul_of_nonneg_left hkey (by positivity)
 
-/-- A compact interval is covered by the `N` closed intervals of half-width `v` centred at
-`a + (2 k + 1) v`.  This is the covering behind the Stieltjes--Perron estimate below. -/
-private theorem Icc_subset_biUnion_Icc (a : ℝ) {v : ℝ} (hv : 0 ≤ v) :
-    ∀ N : ℕ, 0 < N → Icc a (a + 2 * N * v) ⊆
-      ⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v) := by
-  intro N
-  induction N with
-  | zero => omega
-  | succ n ih =>
-    intro _
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · simp
-    · have h1 : a ≤ a + 2 * (n : ℝ) * v := by
-        have := mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 2)
-          (Nat.cast_nonneg (α := ℝ) n)) hv
-        linarith
-      have h2 : a + 2 * (n : ℝ) * v ≤ a + 2 * ((n : ℝ) + 1) * v := by nlinarith
-      have hstep : Icc a (a + 2 * ((n : ℝ) + 1) * v) =
-          Icc a (a + 2 * (n : ℝ) * v) ∪ Icc (a + 2 * (n : ℝ) * v) (a + 2 * ((n : ℝ) + 1) * v) :=
-        (Set.Icc_union_Icc_eq_Icc h1 h2).symm
-      rw [Finset.range_add_one, Finset.set_biUnion_insert]
-      push_cast
-      rw [hstep]
-      exact Set.union_subset (Set.subset_union_of_subset_right (ih hn) _) Set.subset_union_left
-
 /-- The covering estimate behind the Stieltjes--Perron vanishing theorem.  If the imaginary part
 of the represented function stays below `eps` at every height smaller than `delta` over `[a, b]`,
 the Nevanlinna measure of `[a, b]` is at most `(b - a) * eps`: cover `[a, b]` by `N` intervals of
@@ -169,10 +145,25 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
     rw [hvdef]
     field_simp
     ring
+  have hmono : Monotone (fun k : ℕ ↦ a + 2 * k * v) := by
+    intro k l hkl
+    have hklR : (k : ℝ) ≤ l := by exact_mod_cast hkl
+    nlinarith [mul_nonneg (sub_nonneg.mpr hklR) hvpos.le]
   have hcover : Icc a b ⊆
       ⋃ k ∈ Finset.range N, Icc (a + 2 * k * v) (a + 2 * (k + 1) * v) := by
-    rw [hbeq]
-    exact Icc_subset_biUnion_Icc a hvpos.le N hNpos
+    intro x hx
+    rcases hx.1.eq_or_lt with hxa | hxa
+    · subst x
+      simp only [Set.mem_iUnion, Finset.mem_range]
+      exact ⟨0, hNpos, by constructor <;> simp [hvpos.le]⟩
+    · have hx' : x ∈ ⋃ k ∈ Ico 0 N,
+          Ioc (a + 2 * k * v) (a + 2 * (Order.succ k) * v) := by
+        rw [hmono.biUnion_Ico_Ioc_map_succ]
+        simpa only [Nat.cast_zero, mul_zero, zero_mul, add_zero, ← hbeq] using ⟨hxa, hx.2⟩
+      simp only [Set.mem_iUnion, mem_Ico] at hx'
+      obtain ⟨k, ⟨-, hkN⟩, hxk⟩ := hx'
+      simp only [Set.mem_iUnion, Finset.mem_range]
+      exact ⟨k, hkN, Ioc_subset_Icc_self (by simpa using hxk)⟩
   have hstep : ∀ k ∈ Finset.range N,
       mu.real (Icc (a + 2 * k * v) (a + 2 * (k + 1) * v)) ≤ 2 * v * eps := by
     intro k hk
@@ -202,31 +193,36 @@ private theorem measureReal_Icc_le_mul [IsFiniteMeasure mu] (hbeta : 0 ≤ beta)
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, ← mul_assoc, hNv]
 
 /-- **The Stieltjes--Perron vanishing theorem.** A Nevanlinna measure gives no mass to a compact
-interval over which the represented function is continuous up to the real axis and has real
-boundary values there.  Continuity is asked for on the closed rectangle of unit height over the
+interval over which the imaginary part of the represented function is continuous up to the real
+axis and vanishes there.  Continuity is asked for on the closed rectangle of unit height over the
 interval; any positive height would do, and a function holomorphic near the interval supplies it.
 -/
 theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu]
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = (beta : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂mu + c)
-    {a b : ℝ} (hab : a < b) (hcont : ContinuousOn F (Icc a b ×ℂ Icc 0 1))
+    {a b : ℝ} (hab : a < b)
+    (hcont : ContinuousOn (fun z ↦ (F z).im) (Icc a b ×ℂ Icc 0 1))
     (hzero : ∀ u ∈ Icc a b, (F (u : ℂ)).im = 0) :
     mu (Icc a b) = 0 := by
   let G : ℂ → ℂ := fun z ↦ F z - (beta : ℂ) * z
   have hrepG : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       G z = (0 : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂mu + c := by
     intro z hz
-    rw [show G z = F z - (beta : ℂ) * z from rfl, hrep z hz]
+    dsimp only [G]
+    rw [hrep z hz]
     ring
-  have hcontG : ContinuousOn G (Icc a b ×ℂ Icc 0 1) :=
-    hcont.sub ((continuous_const.mul continuous_id).continuousOn)
+  have hcontG : ContinuousOn (fun z ↦ (G z).im) (Icc a b ×ℂ Icc 0 1) := by
+    have hlin : ContinuousOn (fun z : ℂ ↦ ((beta : ℂ) * z).im)
+        (Icc a b ×ℂ Icc 0 1) := by fun_prop
+    refine (hcont.sub hlin).congr ?_
+    intro z _
+    simp only [Pi.sub_apply, G, Complex.sub_im]
   have hzeroG : ∀ u ∈ Icc a b, (G (u : ℂ)).im = 0 := by
     intro u hu
     simp [G, hzero u hu]
   have hK : IsCompact ((Icc a b : Set ℝ) ×ℂ (Icc 0 1 : Set ℝ)) :=
     isCompact_Icc.reProdIm isCompact_Icc
-  have huc := hK.uniformContinuousOn_of_continuous
-    (Complex.continuous_im.comp_continuousOn hcontG)
+  have huc := hK.uniformContinuousOn_of_continuous hcontG
   -- Uniform continuity on the closed rectangle turns the vanishing boundary values into a
   -- bound on `Im F` that is uniform in the base point, which the covering estimate consumes.
   have hsmall : ∀ eps : ℝ, 0 < eps → mu.real (Icc a b) ≤ (b - a) * eps := by
@@ -240,7 +236,7 @@ theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu]
     have hdist : dist ((u : ℂ) + (v : ℂ) * I) (u : ℂ) < delta := by
       simpa [Complex.dist_eq, abs_of_pos hv] using hvd
     have hlt := hd _ hmem1 _ hmem2 hdist
-    simp only [Function.comp_apply, Real.dist_eq, hzeroG u hu, sub_zero] at hlt
+    simp only [Real.dist_eq, hzeroG u hu, sub_zero] at hlt
     exact (le_abs_self _).trans_lt hlt
   rw [← measureReal_eq_zero_iff (measure_ne_top _ _)]
   by_contra hne
@@ -302,7 +298,8 @@ theorem exists_isFiniteMeasure_eq_nevanlinnaKernel_add_of_im_eq_zero {F : ℂ �
     rintro z ⟨hz1, hz2⟩
     exact Complex.mem_slitPlane_iff.2 (Or.inl (lt_of_lt_of_le hapos hz1.1))
   refine measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add hrep hab
-    ((hF.mono hrect).continuousOn) fun u hu ↦ hzero u (lt_of_lt_of_le hapos hu.1)
+    (Complex.continuous_im.comp_continuousOn ((hF.mono hrect).continuousOn))
+    fun u hu ↦ hzero u (lt_of_lt_of_le hapos hu.1)
 
 end TauCeti
 
