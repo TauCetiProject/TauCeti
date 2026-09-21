@@ -21,8 +21,6 @@ valid.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.instCompactSpaceAdicCompletionIntegers`: the integers in an
-  adic completion are compact when the residue field is finite.
 * `IsDedekindDomain.FiniteAdeleRing.instLocallyCompactSpace`: the finite adele ring is locally
   compact when all residue fields are finite.
 
@@ -35,23 +33,6 @@ public section
 noncomputable section
 
 open IsDedekindDomain
-
-namespace IsDedekindDomain.HeightOneSpectrum
-
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-
-/-- The integer ring in an adic completion is compact when its residue field is finite. -/
-instance instCompactSpaceAdicCompletionIntegers (v : HeightOneSpectrum R)
-    [Finite (R ⧸ v.asIdeal)] : CompactSpace (v.adicCompletionIntegers K) := by
-  let _ : IsNonarchimedeanLocalField (v.adicCompletion K) := inferInstance
-  apply isCompact_iff_compactSpace.mp
-  -- Expose the underlying subring so the comparison with the valuative integer ring rewrites it.
-  change IsCompact ((v.adicCompletionIntegers K).toSubring : Set (v.adicCompletion K))
-  rw [← v.integer_eq_adicCompletionIntegers (K := K)]
-  exact IsNonarchimedeanLocalField.isCompact_closedBall (v.adicCompletion K) 1
-
-end IsDedekindDomain.HeightOneSpectrum
 
 namespace IsDedekindDomain.FiniteAdeleRing
 

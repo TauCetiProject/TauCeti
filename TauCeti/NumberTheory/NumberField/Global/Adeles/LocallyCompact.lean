@@ -71,12 +71,15 @@ namespace IdeleGroup
 
 /-- An idele is principal exactly when its underlying adele lies in the diagonal copy of the
 number field. -/
-@[simp]
+-- This is intentionally not a simp lemma: Mathlib's `MonoidHom.mem_range` is already `simp`, so it
+-- rewrites this left-hand side to an existential over `unitEmbedding` and the simp-normal-form
+-- linter rejects the membership form.
 theorem mem_principalSubgroup_iff (x : IdeleGroup (𝓞 K) K) :
-    (∃ y : Kˣ, unitEmbedding (𝓞 K) K y = x) ↔
+    x ∈ principalSubgroup (𝓞 K) K ↔
       (x : AdeleRing (𝓞 K) K) ∈ AdeleRing.principalSubgroup (𝓞 K) K := by
   let _ : Nontrivial (AdeleRing (𝓞 K) K) :=
     Function.Injective.nontrivial (AdeleRing.algebraMap_injective (𝓞 K) K)
+  rw [MonoidHom.mem_range]
   constructor
   · rintro ⟨y, rfl⟩
     exact ⟨y, rfl⟩
@@ -93,10 +96,8 @@ theorem isClosed_principalSubgroup :
     IsClosed (principalSubgroup (𝓞 K) K : Set (IdeleGroup (𝓞 K) K)) := by
   have hset : (principalSubgroup (𝓞 K) K : Set (IdeleGroup (𝓞 K) K)) =
       (fun x : IdeleGroup (𝓞 K) K ↦ (x : AdeleRing (𝓞 K) K)) ⁻¹'
-        (AdeleRing.principalSubgroup (𝓞 K) K : Set (AdeleRing (𝓞 K) K)) := by
-    ext x
-    change (∃ y : Kˣ, unitEmbedding (𝓞 K) K y = x) ↔ _
-    exact mem_principalSubgroup_iff K x
+        (AdeleRing.principalSubgroup (𝓞 K) K : Set (AdeleRing (𝓞 K) K)) :=
+    Set.ext fun x ↦ mem_principalSubgroup_iff K x
   rw [hset]
   exact (TauCeti.GlobalNumberFields.isClosed_principalSubgroup K).preimage Units.continuous_val
 

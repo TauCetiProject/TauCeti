@@ -31,7 +31,9 @@ and the residue field of the valuative relation with the ones `K_v` already has.
 * `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: when `R` is
   infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
-  completion with finite residue field is a nonarchimedean local field.
+  completion with finite residue field is a nonarchimedean local field, and
+  `IsDedekindDomain.HeightOneSpectrum.instCompactSpaceAdicCompletionIntegers`: the integer ring
+  `𝒪_v` of such a completion is compact.
 
 ## Implementation notes
 
@@ -204,6 +206,17 @@ instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
         inferInstanceAs (IsDiscreteValuationRing (v.adicCompletionIntegers K)),
         inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))⟩
   exact ⟨⟩
+
+/-- The ring of integers `𝒪_v` of an adic completion is compact whenever that completion is a
+nonarchimedean local field. -/
+instance instCompactSpaceAdicCompletionIntegers
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] :
+    CompactSpace (v.adicCompletionIntegers K) := by
+  apply isCompact_iff_compactSpace.mp
+  -- Expose the underlying subring so the comparison with the valuative integer ring rewrites it.
+  change IsCompact ((v.adicCompletionIntegers K).toSubring : Set (v.adicCompletion K))
+  rw [← v.integer_eq_adicCompletionIntegers (K := K)]
+  exact IsNonarchimedeanLocalField.isCompact_closedBall (v.adicCompletion K) 1
 
 end IsDedekindDomain.HeightOneSpectrum
 
