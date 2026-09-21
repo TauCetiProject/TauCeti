@@ -13,35 +13,27 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 Let `F' / k'` be an extension of the algebraic function field `F / k`, integral both on the
 constants and on the functions. Every place `P'` of `F' / k'` restricts to a place
-`P'.restrict k F` of `F / k` (`TauCeti.Place.restrict`), and this file computes the holomorphy
-ring of a fibre of that restriction map: for a set `S` of places of `F / k`, the intersection of
-the valuation rings `𝒪_{P'}` over the places `P'` lying over `S` is the integral closure of the
-holomorphy ring `𝒪_S = ⋂_{P ∈ S} 𝒪_P` in `F'`, and in particular, at a single place,
+`P'.restrict k F` of `F / k` (`TauCeti.Place.restrict`), and at a single place `P` the integral
+closure `𝒪'_P` of `𝒪_P` in `F'` is already known to be the intersection of the valuation rings
+of the fibre over `P` (`TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`). This file
+extends that computation from one place to a set of them: for a set `S` of places of `F / k`, the
+intersection of the valuation rings `𝒪_{P'}` over the places `P'` lying over `S` is the integral
+closure of the holomorphy ring `𝒪_S = ⋂_{P ∈ S} 𝒪_P` in `F'`. So integrality over an arbitrary
+holomorphy ring is regularity above its defining set of places.
 
-`⋂_{P' ∣ P} 𝒪_{P'} = 𝒪'_P`, the integral closure of `𝒪_P` in `F'`.
-
-This identification is what turns `𝒪'_P` — the ring underlying the local integral bases of
-Stichtenoth's Section III.3, and the base of the complementary module and the different of his
-Section III.4 — into an intersection of valuation rings, so that its arithmetic is the arithmetic
-of the places over `P`.
-
-The setwise form complements the local integral-closure criterion for one place: it characterizes
-integrality over an arbitrary holomorphy ring by regularity above its defining set of places.
+It also reads the fibre back off the integral closure: the places of `F' / k'` at which every
+function of `𝒪'_P` is regular are exactly the places over `P`, and likewise over a set.
 
 ## Main results
 
-* `TauCeti.coe_holomorphyRing_setOf_restrict_eq`: the holomorphy ring of the places over `P` is
-  the integral closure `𝒪'_P` of `𝒪_P` in `F'`, with
-  `TauCeti.mem_holomorphyRing_setOf_restrict_eq_iff_isIntegral` its membership form.
 * `TauCeti.coe_holomorphyRing_setOf_restrict_mem` and
-  `TauCeti.mem_holomorphyRing_setOf_restrict_mem_iff_isIntegral`: the same statement over a set
-  of places, with the holomorphy ring `𝒪_S` as the base.
-* `TauCeti.isIntegral_integers_iff_forall_ord_nonneg`: the same criterion in additive form,
-  through the order functions at the places over `P`.
+  `TauCeti.mem_holomorphyRing_setOf_restrict_mem_iff_isIntegral`: the holomorphy ring of the
+  places lying over `S` is the integral closure of `𝒪_S` in `F'`, in set and membership form.
 * `TauCeti.coe_integralClosure_integers_subset_integers_iff`: the places of `F' / k'` at which
   every function of `𝒪'_P` is regular are exactly the places over `P`, so `𝒪'_P` remembers the
   fibre; `TauCeti.coe_integralClosure_holomorphyRing_subset_integers_iff` is the version over a
   set of places.
+
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
@@ -117,34 +109,6 @@ theorem coe_holomorphyRing_setOf_restrict_mem (hF : IsFunctionField k F)
       integralClosure ↥(holomorphyRing S) F' :=
   Set.ext fun _ ↦ mem_holomorphyRing_setOf_restrict_mem_iff_isIntegral hF hF'
 
-/-- **`𝒪'_P` is the ring of functions regular over `P`**: a function of `F'` is regular at every
-place of `F' / k'` lying over the place `P` of `F / k` exactly when it is integral over `𝒪_P`
-(Stichtenoth, Section III.3).  Unlike the version over a set of places, this needs no hypothesis
-on `F / k`: a valuation ring containing `𝒪_P` is `𝒪_P`. -/
-theorem mem_holomorphyRing_setOf_restrict_eq_iff_isIntegral (hF' : IsFunctionField k' F')
-    (P : Place k F) {z : F'} :
-    z ∈ holomorphyRing {P' : Place k' F' | P'.restrict k F = P} ↔
-      IsIntegral ↥P.integers z := by
-  rw [mem_holomorphyRing_iff]
-  exact (Place.isIntegral_iff_forall_restrict_eq_mem_integers hF' P).symm
-
-/-- **`𝒪'_P` is the ring of functions regular over `P`**: the holomorphy ring of the places of
-`F' / k'` lying over the place `P` of `F / k` is the integral closure `𝒪'_P` of `𝒪_P` in `F'`
-(Stichtenoth, Section III.3). -/
-theorem coe_holomorphyRing_setOf_restrict_eq (hF' : IsFunctionField k' F') (P : Place k F) :
-    (holomorphyRing {P' : Place k' F' | P'.restrict k F = P} : Set F') =
-      integralClosure ↥P.integers F' :=
-  Set.ext fun _ ↦ mem_holomorphyRing_setOf_restrict_eq_iff_isIntegral hF' P
-
-/-- **`𝒪'_P` in additive form**: a function of `F'` is integral over `𝒪_P` exactly when it has no
-pole at any place of `F' / k'` lying over `P`. -/
-theorem isIntegral_integers_iff_forall_ord_nonneg (hF' : IsFunctionField k' F') (P : Place k F)
-    {z : F'} :
-    IsIntegral ↥P.integers z ↔ ∀ P' : Place k' F', P'.restrict k F = P → 0 ≤ P'.ord z := by
-  rw [← mem_holomorphyRing_setOf_restrict_eq_iff_isIntegral hF' P,
-    mem_holomorphyRing_iff_forall_ord_nonneg]
-  exact Iff.rfl
-
 /-! ### Recovering the fibre from the integral closure -/
 
 /-- The places of `F' / k'` at which every function of the integral closure of `𝒪_S` is regular
@@ -159,12 +123,17 @@ theorem coe_integralClosure_holomorphyRing_subset_integers_iff (hF : IsFunctionF
 
 /-- The places of `F' / k'` at which every function of `𝒪'_P` is regular are exactly the places
 lying over `P`, so the fibre over `P` is recovered from `𝒪'_P` (Stichtenoth, Corollary 3.2.8 read
-through the theorem above). -/
+through `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`).  Unlike the version over
+a set of places, this needs no hypothesis on `F / k`. -/
 @[simp]
 theorem coe_integralClosure_integers_subset_integers_iff (hF' : IsFunctionField k' F')
     (P : Place k F) (P' : Place k' F') :
     (integralClosure ↥P.integers F' : Set F') ⊆ P'.integers ↔ P'.restrict k F = P := by
-  rw [← coe_holomorphyRing_setOf_restrict_eq hF' P,
-    coe_holomorphyRing_subset_integers_iff hF', Set.mem_ofPred_eq]
+  have h : (integralClosure ↥P.integers F' : Set F') =
+      holomorphyRing {Q' : Place k' F' | Q'.restrict k F = P} := by
+    ext z
+    simp only [SetLike.mem_coe, mem_holomorphyRing_iff]
+    exact Place.isIntegral_iff_forall_restrict_eq_mem_integers hF' P
+  rw [h, coe_holomorphyRing_subset_integers_iff hF', Set.mem_ofPred_eq]
 
 end TauCeti
