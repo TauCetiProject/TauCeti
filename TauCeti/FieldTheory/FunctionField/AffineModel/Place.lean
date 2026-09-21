@@ -90,8 +90,10 @@ variable {R : Type w} [CommRing R] [IsDedekindDomain R] [Algebra R F] [IsFractio
 
 include hR
 
-/-- The **centre** on an affine model `R` of a place `P` finite on `R`: the height one prime of
-`R` consisting of the elements with a zero at `P`. -/
+omit [IsDedekindDomain R] in
+/-- The **centre** on `R` of a place `P` finite on `R`: the nonzero prime ideal consisting of
+the elements with a zero at `P`, bundled as a `HeightOneSpectrum R`. For a Dedekind affine model,
+this is a height one prime. -/
 def center : HeightOneSpectrum R :=
   P.valuation.heightOneSpectrum R fun r ↦ P.mem_integers_iff.mp (hR r)
 
