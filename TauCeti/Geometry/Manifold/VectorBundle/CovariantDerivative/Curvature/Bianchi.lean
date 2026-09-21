@@ -40,31 +40,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 local notation "curvature" => cov.curvatureOperator (I := I) (M := M) (F := E)
   (V := TangentSpace I)
 
-omit [CompleteSpace E] in
-private theorem apply_mlieBracket_eq_sub_of_torsion_free
-    (ht : cov.IsTorsionFree)
-    {Y Z : Π x : M, TangentSpace I x}
-    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
-    (x : M) (u : TangentSpace I x) :
-    cov (mlieBracket I Y Z) x u =
-      cov (fun y ↦ cov Z y (Y y)) x u - cov (fun y ↦ cov Y y (Z y)) x u := by
-  have hYZ := cov.contMDiff_apply hY hZ
-  have hZY := cov.contMDiff_apply hZ hY
-  have heq : mlieBracket I Y Z =
-      (fun y ↦ cov Z y (Y y)) - fun y ↦ cov Y y (Z y) := by
-    funext y
-    exact (ht (hY.mdifferentiable (by simp) y) (hZ.mdifferentiable (by simp) y)).symm
-  have hb : CMDiff ∞ (T% (mlieBracket I Y Z)) := by
-    rw [heq]
-    exact hYZ.sub_section hZY
-  have ha : (fun y ↦ cov Z y (Y y)) =
-      mlieBracket I Y Z + fun y ↦ cov Y y (Z y) := by
-    rw [heq, sub_add_cancel]
-  have hd := congrArg (fun s ↦ cov s x u) ha
-  rw [cov.isCovariantDerivativeOn.add (hb.mdifferentiable (by simp) x)
-    (hZY.mdifferentiable (by simp) x)] at hd
-  exact eq_sub_of_add_eq hd.symm
-
 /-- The first Bianchi identity for smooth vector fields and a torsion-free smooth
 connection on the tangent bundle. -/
 theorem curvatureOperator_cyclic_eq_zero
@@ -74,6 +49,10 @@ theorem curvatureOperator_cyclic_eq_zero
     (x : M) :
     curvature X Y Z x + curvature Y Z X x +
       curvature Z X Y x = 0 := by
+  have ht'free : ∀ {U V : Π y : M, TangentSpace I y} {y : M},
+      MDiffAt (T% U) y → MDiffAt (T% V) y →
+        cov V y (U y) - cov U y (V y) = mlieBracket I U V y :=
+    (isTorsionFree_iff cov).mp ht
   let _ : IsManifold I (minSmoothness ℝ 3) M :=
     IsManifold.of_le (m := minSmoothness ℝ 3) (n := ∞) (by simp)
   let _ : IsManifold I ((∞ : ℕ∞ω) + 1) M :=
@@ -86,15 +65,15 @@ theorem curvatureOperator_cyclic_eq_zero
   have ht' {U V : Π y : M, TangentSpace I y}
       (hU : CMDiff ∞ (T% U)) (hV : CMDiff ∞ (T% V)) :
       mlieBracket I U V x = cov V x (U x) - cov U x (V x) :=
-    (ht (hU.mdifferentiable (by simp) x) (hV.mdifferentiable (by simp) x)).symm
+    (ht'free (hU.mdifferentiable (by simp) x) (hV.mdifferentiable (by simp) x)).symm
   have hj := leibniz_identity_mlieBracket_apply
     (hX.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hY.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt
     (hZ.of_le (by simp [minSmoothness_of_isRCLikeNormedField])).contMDiffAt (x := x)
   rw [ht' hX (hbr hY hZ), ht' (hbr hX hY) hZ, ht' hY (hbr hX hZ),
-    apply_mlieBracket_eq_sub_of_torsion_free ht hY hZ x (X x),
-    apply_mlieBracket_eq_sub_of_torsion_free ht hX hY x (Z x),
-    apply_mlieBracket_eq_sub_of_torsion_free ht hX hZ x (Y x)] at hj
+    cov.mlieBracket_apply_eq_sub_of_torsion_free ht hY hZ x (X x),
+    cov.mlieBracket_apply_eq_sub_of_torsion_free ht hX hY x (Z x),
+    cov.mlieBracket_apply_eq_sub_of_torsion_free ht hX hZ x (Y x)] at hj
   simp only [curvatureOperator_apply]
   rw [mlieBracket_swap_apply (V := Z) (W := X), map_neg]
   convert sub_eq_zero.mpr hj using 1

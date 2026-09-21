@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
 # Torsion-free covariant derivatives
@@ -32,11 +33,53 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A covariant derivative on the tangent bundle is torsion-free when it evaluates the Lie
 bracket of differentiable vector fields as the difference of their two covariant derivatives. -/
-@[expose] def IsTorsionFree
+def IsTorsionFree
     (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) : Prop :=
   ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
     MDiffAt (T% X) x → MDiffAt (T% Y) x →
       cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x
+
+/-- The pointwise characterization of a torsion-free covariant derivative. -/
+theorem isTorsionFree_iff
+    (cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)) :
+    cov.IsTorsionFree ↔ ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
+      MDiffAt (T% X) x → MDiffAt (T% Y) x →
+        cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x := Iff.rfl
+
+section TorsionFree
+
+variable [CompleteSpace E]
+  {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)}
+  [cov.ContMDiffCovariantDerivative ∞]
+
+omit [CompleteSpace E] in
+/-- A torsion-free connection evaluates the Lie bracket of smooth vector fields as the
+difference of their two covariant derivatives. -/
+theorem mlieBracket_apply_eq_sub_of_torsion_free
+    (ht : cov.IsTorsionFree)
+    {Y Z : Π x : M, TangentSpace I x}
+    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
+    (x : M) (u : TangentSpace I x) :
+    cov (mlieBracket I Y Z) x u =
+      cov (fun y ↦ cov Z y (Y y)) x u - cov (fun y ↦ cov Y y (Z y)) x u := by
+  have hYZ := cov.contMDiff_apply hY hZ
+  have hZY := cov.contMDiff_apply hZ hY
+  have heq : mlieBracket I Y Z =
+      (fun y ↦ cov Z y (Y y)) - fun y ↦ cov Y y (Z y) := by
+    funext y
+    exact (ht (hY.mdifferentiable (by simp) y) (hZ.mdifferentiable (by simp) y)).symm
+  have hb : CMDiff ∞ (T% (mlieBracket I Y Z)) := by
+    rw [heq]
+    exact hYZ.sub_section hZY
+  have ha : (fun y ↦ cov Z y (Y y)) =
+      mlieBracket I Y Z + fun y ↦ cov Y y (Z y) := by
+    rw [heq, sub_add_cancel]
+  have hd := congrArg (fun s ↦ cov s x u) ha
+  rw [cov.isCovariantDerivativeOn.add (hb.mdifferentiable (by simp) x)
+    (hZY.mdifferentiable (by simp) x)] at hd
+  exact eq_sub_of_add_eq hd.symm
+
+end TorsionFree
 
 variable [CompleteSpace 𝕜] [CompleteSpace E] [FiniteDimensional 𝕜 E] [IsManifold I 2 M]
 
