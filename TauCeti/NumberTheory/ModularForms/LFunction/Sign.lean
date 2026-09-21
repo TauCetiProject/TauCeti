@@ -157,7 +157,8 @@ A nonzero form with trivial nebentypus has even weight, so `i^k` is `(-1) ^ (k /
 Fricke sign is itself `± 1`. -/
 theorem I_zpow_mul_frickeSign_eq_one_or_neg_one (f : Newform N k) (hχ : f.χ = 1) :
     Complex.I ^ k * f.frickeSign hχ = 1 ∨ Complex.I ^ k * f.frickeSign hχ = -1 := by
-  obtain ⟨m, hm⟩ := even_of_mem_cuspFormCharSpace_one (hχ ▸ f.mem_charSpace) f.ne_zero
+  obtain ⟨m, hm⟩ :=
+    even_of_mem_cuspFormCharSpace_one_of_ne_zero (hχ ▸ f.mem_charSpace) f.ne_zero
   have hI : Complex.I ^ k = (-1 : ℂ) ^ m := by
     rw [hm, ← two_mul m, zpow_mul, zpow_two, Complex.I_mul_I]
   rcases f.frickeSign_eq_one_or_neg_one hχ with hε | hε <;>
