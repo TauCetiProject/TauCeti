@@ -9,42 +9,50 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
 
 /-!
-# Fundamental cones for congruence subgroups of number-field units
+# Fundamental domains for congruence subgroups of number-field units
 
-For a modulus `𝔪`, its congruence units form a finite-index subgroup of the full unit group.
-Consequently a fundamental cone for the congruence units is obtained from Mathlib's
-`NumberField.mixedEmbedding.fundamentalCone` by taking one translate for every unit coset.
+A unit congruent to one modulo a modulus `𝔪` is constrained in two ways: it lies in a finite-index
+subgroup of `(𝓞 K)ˣ`, and it is positive at every real place selected by the infinite part of `𝔪`.
+The set `rayFundamentalDomain 𝔪` built here is cut out by the matching two conditions on the mixed
+space: the sign conditions prescribed by `𝔪`, recorded by `posRegion 𝔪`, together with membership
+in one of finitely many translates of Mathlib's `NumberField.mixedEmbedding.fundamentalCone`.
 
-The cosets are taken modulo `unitsCongruenceTorsionSubgroup 𝔪`, the congruence units *together
-with the roots of unity*, and not modulo the congruence units alone. Mathlib's cone is stable
-under the torsion, so translating it by two units differing by a root of unity gives the same set;
-indexing by the larger subgroup is what makes the translates meet each congruence-unit orbit the
-same number of times, independently of the point and of the chosen representatives.
+The translates are indexed by the cosets of `unitsCongruenceSubgroupSupTorsion 𝔪`, the congruence
+units *joined with the roots of unity*, and not by the cosets of the congruence units alone.
+Mathlib's cone is stable under the torsion, so translating it by two units differing by a root of
+unity gives the same set; only with the larger index group do the translates meet each
+congruence-unit orbit the same number of times, independently of the point and of the arbitrary
+choice of representatives.
 
-The resulting `rayFundamentalDomain 𝔪` is a measurable cone. Every point of nonzero mixed norm can
-be moved into it by a unit congruent to one modulo `𝔪`, and the congruence units moving a point of
-the domain back into the domain are exactly the roots of unity: the domain meets each
-congruence-unit orbit in exactly one point modulo `NumberField.Units.torsion K`. This is the same
-sense in which Mathlib's fundamental cone is fundamental for the full unit group, and indeed for
-the trivial modulus the domain *is* Mathlib's fundamental cone. These are the geometric properties
-needed to count algebraic integers in a fixed ray class; boundary regularity is developed
-separately.
+Consequently the domain is fundamental *modulo torsion*, in exactly the sense in which Mathlib's
+cone is fundamental for the full unit group. It is measurable and stable under positive real
+scalars — negative ones reverse the prescribed signs — every point of `posRegion 𝔪` of nonzero
+mixed norm is carried into it by a unit congruent to one modulo `𝔪`, and a congruence unit carries
+a point of the domain back into the domain exactly when that unit is a root of unity. So the
+domain meets each congruence-unit orbit inside `posRegion 𝔪` in one point, modulo the congruence
+units that are roots of unity. For the trivial modulus, whose infinite part is empty and whose
+congruence units are all of `(𝓞 K)ˣ`, the domain *is* Mathlib's fundamental cone.
+
+Boundary regularity — Lipschitz parametrizability of the frontier of the norm-one section — is
+developed separately; it is what upgrades the orbit description below to a count of the algebraic
+integers in a fixed ray class.
 
 ## Main definitions
 
-* `TauCeti.GlobalNumberFields.unitsCongruenceTorsionSubgroup`: the units congruent to one modulo
-  `𝔪` together with the roots of unity;
+* `TauCeti.GlobalNumberFields.unitsCongruenceSubgroupSupTorsion`: the join of the units congruent
+  to one modulo `𝔪` with the roots of unity;
+* `TauCeti.GlobalNumberFields.posRegion`: the sign conditions prescribed by the infinite part;
 * `TauCeti.GlobalNumberFields.rayUnitRepresentative`: a normalized representative of a coset of
   that subgroup;
-* `TauCeti.GlobalNumberFields.rayFundamentalDomain`: the finite union of the corresponding
-  translates of Mathlib's fundamental cone.
+* `TauCeti.GlobalNumberFields.rayFundamentalDomain`: the points of `posRegion 𝔪` lying in one of
+  the corresponding translates of Mathlib's fundamental cone.
 
 ## Main results
 
 * `TauCeti.GlobalNumberFields.exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain`:
-  every point of nonzero norm has a congruence-unit translate in the domain;
-* `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff`: that
-  translate is unique modulo the roots of unity;
+  every point of `posRegion 𝔪` of nonzero norm has a congruence-unit translate in the domain;
+* `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff_mem_torsion`
+  — that translate is unique modulo the congruence units that are roots of unity;
 * `TauCeti.GlobalNumberFields.rayFundamentalDomain_one`: the trivial modulus recovers Mathlib's
   fundamental cone;
 * `TauCeti.GlobalNumberFields.measurableSet_rayFundamentalDomain`: the domain is measurable.
@@ -59,37 +67,122 @@ public section
 
 open NumberField NumberField.mixedEmbedding
 
+open scoped Pointwise
+
 namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### The congruence units and the roots of unity -/
 
-/-- The subgroup generated by the units congruent to one modulo `𝔪` and the roots of unity.
+/-- The subgroup of `(𝓞 K)ˣ` generated by the units congruent to one modulo `𝔪` and the roots of
+unity.
 
 Mathlib's fundamental cone is a fundamental domain for the unit action only modulo torsion, so
-this is the subgroup whose cosets index the translates of the cone below. -/
-def unitsCongruenceTorsionSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
+this join, rather than `unitsCongruenceSubgroup 𝔪` itself, is the subgroup whose cosets index the
+translates of the cone below. -/
+def unitsCongruenceSubgroupSupTorsion (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
   unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K
 
-instance unitsCongruenceTorsionSubgroup_finiteIndex (𝔪 : Modulus K) :
-    (unitsCongruenceTorsionSubgroup 𝔪).FiniteIndex :=
+/-- `unitsCongruenceSubgroupSupTorsion 𝔪` is the join of the congruence units with the torsion.
+Membership and coset equality in the indexing group are obtained from this together with
+`Subgroup.mem_sup`, `le_sup_left` and `le_sup_right`. -/
+theorem unitsCongruenceSubgroupSupTorsion_def (𝔪 : Modulus K) :
+    unitsCongruenceSubgroupSupTorsion 𝔪 =
+      unitsCongruenceSubgroup 𝔪 ⊔ NumberField.Units.torsion K := by
+  rfl
+
+instance unitsCongruenceSubgroupSupTorsion_finiteIndex (𝔪 : Modulus K) :
+    (unitsCongruenceSubgroupSupTorsion 𝔪).FiniteIndex :=
   Subgroup.finiteIndex_of_le (H := unitsCongruenceSubgroup 𝔪) le_sup_left
 
-/-- For the trivial modulus every unit is congruent to one. -/
-@[simp] theorem unitsCongruenceTorsionSubgroup_one :
-    unitsCongruenceTorsionSubgroup (Modulus.one K) = ⊤ := by
-  simp [unitsCongruenceTorsionSubgroup]
+/-- For the trivial modulus the congruence units are already all of `(𝓞 K)ˣ`, so adjoining the
+roots of unity changes nothing and there is a single coset. -/
+@[simp] theorem unitsCongruenceSubgroupSupTorsion_one :
+    unitsCongruenceSubgroupSupTorsion (Modulus.one K) = ⊤ := by
+  simp [unitsCongruenceSubgroupSupTorsion]
+
+/-! ### The sign conditions prescribed by the infinite part -/
+
+/-- The **positivity region** of a modulus: the points of the mixed space whose coordinate at every
+real place in `𝔪.infinitePart` is positive.
+
+These are the sign conditions defining congruence to one modulo `𝔪`: the mixed embedding of an
+element congruent to one lies in this region, and the region is stable under the action of a unit
+congruent to one. -/
+def posRegion (𝔪 : Modulus K) : Set (mixedSpace K) :=
+  {x | ∀ w ∈ 𝔪.infinitePart, 0 < x.1 w}
+
+@[simp] theorem mem_posRegion {𝔪 : Modulus K} {x : mixedSpace K} :
+    x ∈ posRegion 𝔪 ↔ ∀ w ∈ 𝔪.infinitePart, 0 < x.1 w := Iff.rfl
+
+/-- The trivial modulus prescribes no sign at all: its infinite part is empty. -/
+@[simp] theorem posRegion_one : posRegion (Modulus.one K) = Set.univ := by
+  ext x
+  simp
+
+/-- The positivity region is open: it is a finite intersection of open half spaces. -/
+theorem isOpen_posRegion (𝔪 : Modulus K) : IsOpen (posRegion 𝔪) := by
+  have h : posRegion 𝔪 = ⋂ w ∈ 𝔪.infinitePart, {x : mixedSpace K | 0 < x.1 w} := by
+    ext x
+    simp
+  rw [h]
+  exact isOpen_biInter_finset fun w _ ↦
+    isOpen_lt continuous_const ((continuous_apply w).comp continuous_fst)
+
+theorem measurableSet_posRegion (𝔪 : Modulus K) : MeasurableSet (posRegion 𝔪) :=
+  (isOpen_posRegion 𝔪).measurableSet
+
+/-- The positivity region is stable under multiplication by a positive real scalar. -/
+theorem smul_mem_posRegion {𝔪 : Modulus K} {x : mixedSpace K} (hx : x ∈ posRegion 𝔪)
+    {c : ℝ} (hc : 0 < c) : c • x ∈ posRegion 𝔪 := by
+  refine fun w hw ↦ ?_
+  have hcoord : (c • x).1 w = c * x.1 w := by simp
+  rw [hcoord]
+  exact mul_pos hc (hx w hw)
+
+/-- The positivity region is stable under the action of a unit congruent to one modulo `𝔪`: such a
+unit is positive at every real place prescribed by `𝔪`. -/
+theorem unitSMul_mem_posRegion {𝔪 : Modulus K} {x : mixedSpace K} (hx : x ∈ posRegion 𝔪)
+    {u : (𝓞 K)ˣ} (hu : u ∈ unitsCongruenceSubgroup 𝔪) : u • x ∈ posRegion 𝔪 := by
+  refine fun w hw ↦ ?_
+  have hcoord : (u • x).1 w = InfinitePlace.embedding_of_isReal w.2 (u : K) * x.1 w := by
+    rw [unitSMul_smul]
+    simp
+  have hupos : 0 < InfinitePlace.embedding_of_isReal w.2 (u : K) := by
+    simpa using (mem_unitsCongruenceSubgroup.mp hu).pos hw
+  rw [hcoord]
+  exact mul_pos hupos (hx w hw)
+
+/-! ### The unit action on the mixed space -/
+
+omit [NumberField K] in
+/-- The unit action on the mixed space is commutative: it is multiplication by the mixed embedding
+of a unit, and the mixed space is a commutative ring. -/
+private theorem unitSMul_comm (u v : (𝓞 K)ˣ) (x : mixedSpace K) : u • v • x = v • u • x := by
+  rw [← mul_smul, ← mul_smul, mul_comm]
+
+omit [NumberField K] in
+/-- The unit action commutes with the real scalar action. -/
+private theorem unitSMul_real_smul (u : (𝓞 K)ˣ) (c : ℝ) (x : mixedSpace K) :
+    u • (c • x) = c • (u • x) := by
+  simpa only [unitSMul_smul] using mul_smul_comm c (mixedEmbedding K (u : K)) x
+
+/-- The action of a fixed unit on the mixed space is measurable. -/
+private theorem measurable_unitSMul (u : (𝓞 K)ˣ) :
+    Measurable fun x : mixedSpace K ↦ u • x := by
+  simpa only [unitSMul_smul] using
+    (continuous_const_mul (mixedEmbedding K (u : K))).measurable
 
 /-! ### The fundamental domain -/
 
-/-- A representative of a coset of `unitsCongruenceTorsionSubgroup 𝔪`.
+/-- A representative of a coset of `unitsCongruenceSubgroupSupTorsion 𝔪`.
 
 The identity coset is normalized to have representative `1`. This normalization makes the
 fundamental domain for the trivial modulus agree literally with Mathlib's fundamental cone, rather
 than with an unspecified unit translate of it. -/
 noncomputable def rayUnitRepresentative (𝔪 : Modulus K)
-    (q : (𝓞 K)ˣ ⧸ unitsCongruenceTorsionSubgroup 𝔪) : (𝓞 K)ˣ := by
+    (q : (𝓞 K)ˣ ⧸ unitsCongruenceSubgroupSupTorsion 𝔪) : (𝓞 K)ˣ := by
   classical
   exact if q = 1 then 1 else q.out
 
@@ -101,114 +194,118 @@ theorem rayUnitRepresentative_one (𝔪 : Modulus K) : rayUnitRepresentative �
 /-- The chosen representative maps back to the coset it represents. -/
 @[simp]
 theorem rayUnitRepresentative_mk (𝔪 : Modulus K)
-    (q : (𝓞 K)ˣ ⧸ unitsCongruenceTorsionSubgroup 𝔪) :
+    (q : (𝓞 K)ˣ ⧸ unitsCongruenceSubgroupSupTorsion 𝔪) :
     QuotientGroup.mk (rayUnitRepresentative 𝔪 q) = q := by
   by_cases hq : q = 1
   · subst q
     simp
   · simpa only [rayUnitRepresentative, hq, ↓reduceIte] using QuotientGroup.out_eq' q
 
-/-- The **ray fundamental domain** associated to a modulus. A point belongs when applying the
-inverse of one chosen unit-coset representative puts it in Mathlib's fundamental cone.
+/-- The **ray fundamental domain** associated to a modulus: the points of the mixed space that
+carry the signs prescribed by the infinite part of `𝔪` and that one chosen unit-coset
+representative moves into Mathlib's fundamental cone.
 
-Equivalently, this is the union of the translates
+Equivalently, this is the intersection of `posRegion 𝔪` with the union of the translates
 `rayUnitRepresentative 𝔪 q • fundamentalCone K` over the finite quotient of the unit group by
-`unitsCongruenceTorsionSubgroup 𝔪`. -/
+`unitsCongruenceSubgroupSupTorsion 𝔪`; see `rayFundamentalDomain_eq_iUnion`. -/
 def rayFundamentalDomain (𝔪 : Modulus K) : Set (mixedSpace K) :=
-  {x | ∃ q : (𝓞 K)ˣ ⧸ unitsCongruenceTorsionSubgroup 𝔪,
+  {x | x ∈ posRegion 𝔪 ∧ ∃ q : (𝓞 K)ˣ ⧸ unitsCongruenceSubgroupSupTorsion 𝔪,
     (rayUnitRepresentative 𝔪 q)⁻¹ • x ∈ fundamentalCone K}
 
-/-- Membership in the ray fundamental domain, unfolded to a chosen unit coset. -/
-@[simp]
+/-- Membership in the ray fundamental domain, unfolded to the sign conditions and a chosen unit
+coset. -/
 theorem mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedSpace K} :
     x ∈ rayFundamentalDomain 𝔪 ↔
-      ∃ q : (𝓞 K)ˣ ⧸ unitsCongruenceTorsionSubgroup 𝔪,
+      x ∈ posRegion 𝔪 ∧ ∃ q : (𝓞 K)ˣ ⧸ unitsCongruenceSubgroupSupTorsion 𝔪,
         (rayUnitRepresentative 𝔪 q)⁻¹ • x ∈ fundamentalCone K :=
   Iff.rfl
 
-/-- The ray fundamental domain is the finite union of the preimages of Mathlib's fundamental cone
-under the chosen representative actions. -/
-theorem rayFundamentalDomain_eq_iUnion (𝔪 : Modulus K) :
-    rayFundamentalDomain 𝔪 =
-      ⋃ q : (𝓞 K)ˣ ⧸ unitsCongruenceTorsionSubgroup 𝔪,
-        (fun x ↦ (rayUnitRepresentative 𝔪 q)⁻¹ • x) ⁻¹' fundamentalCone K := by
-  ext x
-  simp
+/-- A point of the ray fundamental domain carries the signs prescribed by `𝔪`. -/
+theorem mem_posRegion_of_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}
+    (hx : x ∈ rayFundamentalDomain 𝔪) : x ∈ posRegion 𝔪 :=
+  (mem_rayFundamentalDomain_iff.mp hx).1
 
-/-- The ray fundamental domain is measurable. It is a finite union of unit translates of
-Mathlib's measurable fundamental cone. -/
+/-- The ray fundamental domain is the positivity region intersected with the finite union of the
+translates of Mathlib's fundamental cone by the chosen coset representatives. -/
+theorem rayFundamentalDomain_eq_iUnion (𝔪 : Modulus K) :
+    rayFundamentalDomain 𝔪 = posRegion 𝔪 ∩
+      ⋃ q : (𝓞 K)ˣ ⧸ unitsCongruenceSubgroupSupTorsion 𝔪,
+        rayUnitRepresentative 𝔪 q • fundamentalCone K := by
+  ext x
+  simp only [mem_rayFundamentalDomain_iff, Set.mem_inter_iff, Set.mem_iUnion,
+    Set.mem_smul_set_iff_inv_smul_mem]
+
+/-- The ray fundamental domain is measurable: it is the intersection of an open region with a
+finite union of unit translates of Mathlib's measurable fundamental cone. -/
 theorem measurableSet_rayFundamentalDomain (𝔪 : Modulus K) :
     MeasurableSet (rayFundamentalDomain 𝔪) := by
-  let _ := (unitsCongruenceTorsionSubgroup 𝔪).fintypeQuotientOfFiniteIndex
+  let _ := (unitsCongruenceSubgroupSupTorsion 𝔪).fintypeQuotientOfFiniteIndex
   rw [rayFundamentalDomain_eq_iUnion]
-  exact MeasurableSet.iUnion fun q ↦
-    (measurableSet_fundamentalCone K).preimage
-      (by
-        simpa only [unitSMul_smul] using
-          (continuous_const_mul
-            (mixedEmbedding K
-              (algebraMap (𝓞 K) K ((rayUnitRepresentative 𝔪 q)⁻¹ : (𝓞 K)ˣ) : K))).measurable)
+  refine (measurableSet_posRegion 𝔪).inter (MeasurableSet.iUnion fun q ↦ ?_)
+  rw [← Set.preimage_smul_inv]
+  exact (measurableSet_fundamentalCone K).preimage (measurable_unitSMul _)
 
 /-- Every point of the ray fundamental domain has positive mixed norm. -/
 theorem norm_pos_of_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}
     (hx : x ∈ rayFundamentalDomain 𝔪) : 0 < mixedEmbedding.norm x := by
-  obtain ⟨q, hq⟩ := mem_rayFundamentalDomain_iff.mp hx
+  obtain ⟨q, hq⟩ := (mem_rayFundamentalDomain_iff.mp hx).2
   simpa only [norm_unit_smul] using fundamentalCone.norm_pos_of_mem hq
 
-/-- The ray fundamental domain is stable under multiplication by a nonzero real scalar. -/
+/-- The ray fundamental domain is stable under multiplication by a positive real scalar. Negative
+scalars are excluded: they reverse the signs prescribed by the infinite part of `𝔪`. -/
 theorem smul_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}
-    (hx : x ∈ rayFundamentalDomain 𝔪) {c : ℝ} (hc : c ≠ 0) :
+    (hx : x ∈ rayFundamentalDomain 𝔪) {c : ℝ} (hc : 0 < c) :
     c • x ∈ rayFundamentalDomain 𝔪 := by
-  obtain ⟨q, hq⟩ := mem_rayFundamentalDomain_iff.mp hx
-  refine mem_rayFundamentalDomain_iff.mpr ⟨q, ?_⟩
-  have heq :
-      (rayUnitRepresentative 𝔪 q)⁻¹ • (c • x) =
-        c • ((rayUnitRepresentative 𝔪 q)⁻¹ • x) := by
-    simpa only [unitSMul_smul] using
-      (mul_smul_comm c
-        (mixedEmbedding K
-          (algebraMap (𝓞 K) K ((rayUnitRepresentative 𝔪 q)⁻¹ : (𝓞 K)ˣ) : K)) x)
-  rw [heq]
-  exact fundamentalCone.smul_mem_of_mem hq hc
+  obtain ⟨hpos, q, hq⟩ := mem_rayFundamentalDomain_iff.mp hx
+  refine mem_rayFundamentalDomain_iff.mpr ⟨smul_mem_posRegion hpos hc, q, ?_⟩
+  rw [unitSMul_real_smul]
+  exact fundamentalCone.smul_mem_of_mem hq hc.ne'
 
-/-- Multiplication by a nonzero real scalar preserves membership in the ray fundamental domain. -/
+/-- Multiplication by a positive real scalar preserves membership in the ray fundamental domain. -/
+@[simp]
 theorem smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedSpace K}
-    {c : ℝ} (hc : c ≠ 0) :
+    {c : ℝ} (hc : 0 < c) :
     c • x ∈ rayFundamentalDomain 𝔪 ↔ x ∈ rayFundamentalDomain 𝔪 := by
   refine ⟨fun h ↦ ?_, fun h ↦ smul_mem_rayFundamentalDomain h hc⟩
-  convert smul_mem_rayFundamentalDomain h (inv_ne_zero hc)
-  rw [eq_inv_smul_iff₀ hc]
+  simpa only [inv_smul_smul₀ hc.ne'] using smul_mem_rayFundamentalDomain h (inv_pos.mpr hc)
 
-/-- Multiplication by a root of unity preserves membership in the ray fundamental domain. -/
+/-- Multiplication by a root of unity congruent to one modulo `𝔪` preserves membership in the ray
+fundamental domain: the cone translates are stable under the torsion, and the prescribed signs are
+preserved because the unit is a congruence unit.
+
+This is not a `simp` lemma: Mathlib's `NumberField.mixedEmbedding.unitSMul_smul` is itself `simp`
+and rewrites the left-hand side to a product, so the statement is not in `simp` normal form. -/
 theorem torsion_smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedSpace K}
-    {ζ : (𝓞 K)ˣ} (hζ : ζ ∈ NumberField.Units.torsion K) :
+    {ζ : (𝓞 K)ˣ} (hζ : ζ ∈ NumberField.Units.torsion K)
+    (hζ' : ζ ∈ unitsCongruenceSubgroup 𝔪) :
     ζ • x ∈ rayFundamentalDomain 𝔪 ↔ x ∈ rayFundamentalDomain 𝔪 := by
-  have mem_of_mem {y : mixedSpace K} (hy : y ∈ rayFundamentalDomain 𝔪)
-      {η : (𝓞 K)ˣ} (hη : η ∈ NumberField.Units.torsion K) :
+  have mem_of_mem {y : mixedSpace K} (hy : y ∈ rayFundamentalDomain 𝔪) {η : (𝓞 K)ˣ}
+      (hη : η ∈ NumberField.Units.torsion K) (hη' : η ∈ unitsCongruenceSubgroup 𝔪) :
       η • y ∈ rayFundamentalDomain 𝔪 := by
-    obtain ⟨q, hq⟩ := mem_rayFundamentalDomain_iff.mp hy
-    refine mem_rayFundamentalDomain_iff.mpr ⟨q, ?_⟩
-    have heq : (rayUnitRepresentative 𝔪 q)⁻¹ • (η • y) =
-        η • ((rayUnitRepresentative 𝔪 q)⁻¹ • y) := by
-      rw [← mul_smul, ← mul_smul, mul_comm]
-    rw [heq]
+    obtain ⟨hpos, q, hq⟩ := mem_rayFundamentalDomain_iff.mp hy
+    refine mem_rayFundamentalDomain_iff.mpr ⟨unitSMul_mem_posRegion hpos hη', q, ?_⟩
+    rw [unitSMul_comm]
     exact fundamentalCone.torsion_smul_mem_of_mem hq hη
-  refine ⟨fun h ↦ ?_, fun h ↦ mem_of_mem h hζ⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ mem_of_mem h hζ hζ'⟩
   have h := mem_of_mem h ((NumberField.Units.torsion K).inv_mem hζ)
+    ((unitsCongruenceSubgroup 𝔪).inv_mem hζ')
   rwa [inv_smul_smul] at h
 
-/-- Every point of nonzero mixed norm can be moved into the ray fundamental domain by a unit
-congruent to one modulo `𝔪`. -/
+/-- **Existence of a representative.** Every point carrying the signs prescribed by `𝔪` and of
+nonzero mixed norm is moved into the ray fundamental domain by a unit congruent to one modulo
+`𝔪`. -/
 theorem exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain (𝔪 : Modulus K)
-    {x : mixedSpace K} (hx : mixedEmbedding.norm x ≠ 0) :
+    {x : mixedSpace K} (hx : mixedEmbedding.norm x ≠ 0) (hpos : x ∈ posRegion 𝔪) :
     ∃ u : (𝓞 K)ˣ, u ∈ unitsCongruenceSubgroup 𝔪 ∧ u • x ∈ rayFundamentalDomain 𝔪 := by
   obtain ⟨u, hu⟩ := fundamentalCone.exists_unit_smul_mem hx
-  set q : (𝓞 K)ˣ ⧸ unitsCongruenceTorsionSubgroup 𝔪 := QuotientGroup.mk u⁻¹ with hq
+  set q : (𝓞 K)ˣ ⧸ unitsCongruenceSubgroupSupTorsion 𝔪 := QuotientGroup.mk u⁻¹ with hq
   set r : (𝓞 K)ˣ := rayUnitRepresentative 𝔪 q with hr
-  have hmem : r⁻¹ * u⁻¹ ∈ unitsCongruenceTorsionSubgroup 𝔪 :=
+  have hmem : r⁻¹ * u⁻¹ ∈ unitsCongruenceSubgroupSupTorsion 𝔪 :=
     QuotientGroup.eq.mp (by rw [hr, rayUnitRepresentative_mk, hq])
   obtain ⟨v, hv, ζ, hζ, hvζ⟩ := Subgroup.mem_sup.mp hmem
-  refine ⟨v⁻¹, (unitsCongruenceSubgroup 𝔪).inv_mem hv, mem_rayFundamentalDomain_iff.mpr ⟨q, ?_⟩⟩
+  have hv' : v⁻¹ ∈ unitsCongruenceSubgroup 𝔪 := (unitsCongruenceSubgroup 𝔪).inv_mem hv
+  refine ⟨v⁻¹, hv', mem_rayFundamentalDomain_iff.mpr
+    ⟨unitSMul_mem_posRegion hpos hv', q, ?_⟩⟩
   have hrinv : r⁻¹ = v * ζ * u := by rw [hvζ]; group
   have heq : r⁻¹ • (v⁻¹ • x) = ζ • (u • x) := by
     rw [← mul_smul, ← mul_smul, hrinv]
@@ -218,8 +315,8 @@ theorem exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain (𝔪 : Mod
   exact fundamentalCone.torsion_smul_mem_of_mem hu hζ
 
 /-- For the trivial modulus every unit coset is the identity coset. -/
-private theorem rayUnitQuotient_one_eq_one
-    (q : (𝓞 K)ˣ ⧸ unitsCongruenceTorsionSubgroup (Modulus.one K)) : q = 1 := by
+private theorem quotient_unitsCongruenceSubgroupSupTorsion_one_eq_one
+    (q : (𝓞 K)ˣ ⧸ unitsCongruenceSubgroupSupTorsion (Modulus.one K)) : q = 1 := by
   rw [← QuotientGroup.out_eq' q, ← QuotientGroup.mk_one]
   exact QuotientGroup.eq.mpr (by simp)
 
@@ -228,66 +325,60 @@ private theorem rayUnitQuotient_one_eq_one
 theorem rayFundamentalDomain_one :
     rayFundamentalDomain (Modulus.one K) = fundamentalCone K := by
   ext x
+  rw [mem_rayFundamentalDomain_iff]
   constructor
-  · rintro ⟨q, hq⟩
-    rw [rayUnitQuotient_one_eq_one q] at hq
+  · rintro ⟨-, q, hq⟩
+    rw [quotient_unitsCongruenceSubgroupSupTorsion_one_eq_one q] at hq
     simpa using hq
   · intro hx
-    exact mem_rayFundamentalDomain_iff.mpr ⟨1, by simpa using hx⟩
+    exact ⟨by simp, 1, by simpa using hx⟩
 
 /-- **Uniqueness of the representative, modulo roots of unity.** A unit congruent to one modulo
 `𝔪` carries a point of the ray fundamental domain back into the ray fundamental domain exactly
 when it is a root of unity.
 
 Together with `exists_unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain` this says that the
-domain meets each orbit of the congruence units in exactly one point modulo
-`NumberField.Units.torsion K`, which is the sense in which Mathlib's fundamental cone is
+domain meets each orbit of the congruence units inside `posRegion 𝔪` in one point, modulo the
+congruence units that are roots of unity: the sense in which Mathlib's fundamental cone is
 fundamental for the full unit group. -/
-theorem unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K}
+theorem unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff_mem_torsion {𝔪 : Modulus K}
     {x : mixedSpace K} (hx : x ∈ rayFundamentalDomain 𝔪) {u : (𝓞 K)ˣ}
     (hu : u ∈ unitsCongruenceSubgroup 𝔪) :
     u • x ∈ rayFundamentalDomain 𝔪 ↔ u ∈ NumberField.Units.torsion K := by
-  obtain ⟨q, hq⟩ := mem_rayFundamentalDomain_iff.mp hx
-  constructor
-  · rintro ⟨q', hq'⟩
-    have hsmul :
-        ((rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q) •
-            ((rayUnitRepresentative 𝔪 q)⁻¹ • x) =
-          (rayUnitRepresentative 𝔪 q')⁻¹ • (u • x) := by
-      rw [← mul_smul, ← mul_smul]
-      congr 1
-      group
-    have htor : (rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q ∈
-        NumberField.Units.torsion K :=
-      (fundamentalCone.unit_smul_mem_iff_mem_torsion hq _).mp (hsmul ▸ hq')
-    have hqq : q = q' := by
-      rw [← rayUnitRepresentative_mk 𝔪 q, ← rayUnitRepresentative_mk 𝔪 q']
-      refine QuotientGroup.eq.mpr ?_
-      have hsplit : (rayUnitRepresentative 𝔪 q)⁻¹ * rayUnitRepresentative 𝔪 q'
-          = ((rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q)⁻¹ * u := by
-        simp [mul_comm, mul_left_comm]
-      rw [hsplit]
-      exact mul_mem (inv_mem (Subgroup.mem_sup_right htor)) (Subgroup.mem_sup_left hu)
-    subst hqq
-    have : (rayUnitRepresentative 𝔪 q)⁻¹ * u * rayUnitRepresentative 𝔪 q = u := by
+  obtain ⟨q, hq⟩ := (mem_rayFundamentalDomain_iff.mp hx).2
+  refine ⟨fun h ↦ ?_, fun hut ↦ (torsion_smul_mem_rayFundamentalDomain_iff hut hu).mpr hx⟩
+  obtain ⟨q', hq'⟩ := (mem_rayFundamentalDomain_iff.mp h).2
+  have hsmul :
+      ((rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q) •
+          ((rayUnitRepresentative 𝔪 q)⁻¹ • x) =
+        (rayUnitRepresentative 𝔪 q')⁻¹ • (u • x) := by
+    rw [← mul_smul, ← mul_smul]
+    congr 1
+    group
+  rw [← hsmul] at hq'
+  have htor : (rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q ∈
+      NumberField.Units.torsion K :=
+    (fundamentalCone.unit_smul_mem_iff_mem_torsion hq _).mp hq'
+  have hqq : q = q' := by
+    rw [← rayUnitRepresentative_mk 𝔪 q, ← rayUnitRepresentative_mk 𝔪 q']
+    refine QuotientGroup.eq.mpr ?_
+    have hsplit : (rayUnitRepresentative 𝔪 q)⁻¹ * rayUnitRepresentative 𝔪 q'
+        = ((rayUnitRepresentative 𝔪 q')⁻¹ * u * rayUnitRepresentative 𝔪 q)⁻¹ * u := by
       simp [mul_comm, mul_left_comm]
-    rwa [this] at htor
-  · intro hut
-    refine mem_rayFundamentalDomain_iff.mpr ⟨q, ?_⟩
-    have heq : (rayUnitRepresentative 𝔪 q)⁻¹ • (u • x) =
-        u • ((rayUnitRepresentative 𝔪 q)⁻¹ • x) := by
-      rw [← mul_smul, ← mul_smul, mul_comm]
-    rw [heq]
-    exact fundamentalCone.torsion_smul_mem_of_mem hq hut
+    rw [hsplit]
+    exact mul_mem (inv_mem (Subgroup.mem_sup_right htor)) (Subgroup.mem_sup_left hu)
+  subst hqq
+  have hconj : (rayUnitRepresentative 𝔪 q)⁻¹ * u * rayUnitRepresentative 𝔪 q = u := by
+    simp [mul_comm, mul_left_comm]
+  rwa [hconj] at htor
 
-/-- Two congruence units carrying the same point into the ray fundamental domain differ by a root
-of unity. -/
+/-- Two units carrying the same point into the ray fundamental domain and differing by a unit
+congruent to one modulo `𝔪` differ by a root of unity. -/
 theorem mul_inv_mem_torsion_of_smul_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}
-    {u v : (𝓞 K)ˣ} (hu : u ∈ unitsCongruenceSubgroup 𝔪) (hv : v ∈ unitsCongruenceSubgroup 𝔪)
+    {u v : (𝓞 K)ˣ} (huv : v * u⁻¹ ∈ unitsCongruenceSubgroup 𝔪)
     (hux : u • x ∈ rayFundamentalDomain 𝔪) (hvx : v • x ∈ rayFundamentalDomain 𝔪) :
     v * u⁻¹ ∈ NumberField.Units.torsion K := by
-  refine (unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff hux
-    ((unitsCongruenceSubgroup 𝔪).mul_mem hv ((unitsCongruenceSubgroup 𝔪).inv_mem hu))).mp ?_
+  refine (unitsCongruenceSubgroup_smul_mem_rayFundamentalDomain_iff_mem_torsion hux huv).mp ?_
   rwa [← mul_smul, inv_mul_cancel_right]
 
 end TauCeti.GlobalNumberFields

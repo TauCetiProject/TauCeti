@@ -421,9 +421,7 @@ prime divides, and its infinite part is empty. -/
 /-- Every integer unit is congruent to one for the trivial modulus. -/
 @[simp] theorem unitsCongruenceSubgroup_one :
     unitsCongruenceSubgroup (Modulus.one K) = ⊤ := by
-  ext u
-  simp only [mem_unitsCongruenceSubgroup, Subgroup.mem_top, iff_true]
-  exact isCongrOne_one _
+  rw [unitsCongruenceSubgroup, congruenceSubgroup_one, Subgroup.comap_top]
 
 /-- **Congruence to one modulo the narrow modulus is total positivity.**  The finite part of
 `narrowModulus K` is the unit ideal, so only the sign conditions survive, and they are imposed at
