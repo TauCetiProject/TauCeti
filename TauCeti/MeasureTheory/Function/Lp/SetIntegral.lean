@@ -48,7 +48,7 @@ theorem enorm_setIntegral_le_eLpNorm_mul_rpow {f : α → F} {s : Set α} (hp : 
 
 /-- **Integration over a set of finite measure is Lipschitz on `Lᵖ`.**  Its Lipschitz constant
 is `μ s ^ (1 - 1 / p)`, the factor in `TauCeti.enorm_setIntegral_le_eLpNorm_mul_rpow`. -/
-theorem lipschitzWith_setIntegral [CompleteSpace F] [Fact (1 ≤ p)] {s : Set α} (hp : p ≠ ∞)
+theorem lipschitzWith_setIntegral [Fact (1 ≤ p)] {s : Set α} (hp : p ≠ ∞)
     (hs : μ s ≠ ∞) :
     LipschitzWith (μ s ^ (1 - 1 / p.toReal)).toNNReal fun f : Lp F p μ => ∫ y in s, f y ∂μ := by
   have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
