@@ -18,7 +18,8 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 A factor set `α : FactorSet G M` builds the group extension `1 → M → E_α → G → 1` whose underlying
 set is `M × G` and whose multiplication is twisted by `α`. When `G` and `M` are topological groups
 and `α` is continuous, the product topology on `M × G` makes `E_α` a topological group, the
-inclusion of `M` a closed embedding and the projection to `G` an open quotient map. For `G` a
+projection to `G` an open quotient map, and — as soon as `G` is `T1`, so that the range of the
+inclusion, the preimage of `{1}`, is closed — the inclusion of `M` a closed embedding. For `G` a
 profinite group and `M` a finite discrete module this exhibits `E_α` as a profinite group, which is
 the extension attached to a continuous `2`-cocycle.
 
@@ -44,9 +45,9 @@ continuous `2`-cocycle, so the two descriptions of the data are interchangeable.
 
 * `TauCeti.FactorSet.Extension.isTopologicalGroup`: a continuous factor set builds a topological
   group.
-* `TauCeti.FactorSet.isClosedEmbedding_inl` and `TauCeti.FactorSet.isQuotientMap_rightHom`: the
-  copy of `M` is a closed subgroup and the projection to `G` is an open quotient map, so
-  `1 → M → E_α → G → 1` is an extension of topological groups.
+* `TauCeti.FactorSet.isClosedEmbedding_inl` and `TauCeti.FactorSet.isQuotientMap_rightHom`: for
+  `G` a `T1` space the copy of `M` is a closed subgroup, and the projection to `G` is an open
+  quotient map, so `1 → M → E_α → G → 1` is an extension of topological groups.
 * `TauCeti.FactorSet.continuous_canonicalSection`: the canonical section is continuous, so the
   extension built from a continuous factor set carries a continuous normalized section.
 * `TauCeti.FactorSet.ofMul_mem_Z2_iff`: continuity of a factor set is membership of the explicit
