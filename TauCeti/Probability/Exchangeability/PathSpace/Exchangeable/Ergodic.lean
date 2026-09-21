@@ -43,6 +43,8 @@ the shift form and `ergodicSMul_infinitePi_const` below is the permutation form.
 
 ## Main results
 
+* `exchangeableLaw_iff_smulInvariantMeasure` — a finite law is exchangeable exactly when it is
+  invariant under the finitely supported permutation action.
 * `exists_measurableSet_exchangeableSigma_ae_eq` — an almost invariant event agrees almost
   everywhere with an `exchangeableSigma`-measurable one.
 * `exchangeableSigma_trivial_iff_ergodicSMul` — the zero-one law for `exchangeableSigma` is
@@ -103,6 +105,42 @@ theorem ExchangeableLaw.smulInvariantMeasure {ρ : Measure (ℕ → α)} (hρ : 
   ⟨fun g _ hs =>
     (hρ.measurePreserving_permReindex (FinitaryPerm.toPerm g)⁻¹).measure_preimage
       hs.nullMeasurableSet⟩
+
+/-- **Finitely supported permutations already test exchangeability.** A finite law on `ℕ → α`
+invariant under the finitary permutation action is exchangeable: invariant under the relabelling
+by every permutation of `ℕ`.
+
+The converse of `ExchangeableLaw.smulInvariantMeasure`; the sequence form of the reduction
+`jointlyExchangeable_of_smulInvariantMeasure` for arrays in `Arrays/Extreme.lean`. -/
+theorem exchangeableLaw_of_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ]
+    [SMulInvariantMeasure FinitaryPerm (ℕ → α) ρ] : ExchangeableLaw ρ := by
+  have hmeas : ∀ i : ℕ, AEMeasurable (fun x : ℕ → α => x i) ρ :=
+    fun i => (measurable_pi_apply i).aemeasurable
+  have hexch : Exchangeable ρ fun i (x : ℕ → α) => x i := by
+    intro n σ
+    -- a finitely supported permutation of `ℕ` acting as `σ` on `Fin n`
+    obtain ⟨π, hπfin, hπ⟩ := Equiv.Perm.exists_finite_compl_fixedBy_apply_eq
+      Fin.valEmbedding (σ.toEmbedding.trans Fin.valEmbedding)
+    have hinv : ρ.map (permReindex (α := α) π) = ρ := by
+      have hπ' : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
+        simpa only [MulAction.fixedBy_inv ℕ] using hπfin
+      have h := (measurePreserving_smul (FinitaryPerm.ofPerm π⁻¹ hπ') ρ).map_eq
+      simpa only [finitaryPerm_smul_path_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using h
+    rw [blockLaw_def, prefixLaw_def, blockLaw_def]
+    conv_rhs => rw [← hinv]
+    have hπm : Measurable (permReindex (α := α) π) := measurable_reindex π
+    rw [Measure.map_map (Measurable.of_eval fun i => measurable_pi_apply _) hπm]
+    congr 1
+    funext x i
+    simpa only [Function.comp_apply, permReindex_apply, Fin.valEmbedding_apply,
+      Function.Embedding.trans_apply, Equiv.coe_toEmbedding] using (congrArg x (hπ i)).symm
+  simpa only [pathLaw_coord] using (exchangeable_iff_exchangeableLaw_pathLaw hmeas).1 hexch
+
+/-- A finite law on `ℕ → α` is exchangeable if and only if it is invariant under the finitary
+permutation action. -/
+theorem exchangeableLaw_iff_smulInvariantMeasure {ρ : Measure (ℕ → α)} [IsFiniteMeasure ρ] :
+    ExchangeableLaw ρ ↔ SMulInvariantMeasure FinitaryPerm (ℕ → α) ρ :=
+  ⟨ExchangeableLaw.smulInvariantMeasure, fun _ => exchangeableLaw_of_smulInvariantMeasure⟩
 
 /-- **An almost invariant path event agrees almost everywhere with an exchangeable event.**
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gamma.Cdf
 public import TauCeti.Probability.Distributions.Measurability
+
+import TauCeti.Probability.Moments.IntegrableExpMul
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 
 /-!
@@ -422,19 +424,16 @@ theorem not_integrable_sq_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (h : a �
 theorem integrable_exp_mul_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (ht : t ≤ 0) :
     Integrable (fun x : ℝ ↦ Real.exp (t * x)) (inverseGammaMeasure a r) := by
   let _ := isProbabilityMeasure_inverseGammaMeasure ha hr
-  refine Integrable.mono' (integrable_const 1) (by fun_prop) ?_
-  filter_upwards [ae_pos_inverseGammaMeasure a r] with x hx
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_one_iff]
-  nlinarith [hx.le]
+  exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+    ((ae_pos_inverseGammaMeasure a r).mono fun _ hx ↦ hx.le)
 
 /-- **Positive exponential moments of a valid inverse-gamma law do not exist.** -/
 theorem not_integrable_exp_mul_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (ht : 0 < t) :
     ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x)) (inverseGammaMeasure a r) := by
-  intro hint
-  have hpow := integrable_pow_of_integrable_exp_mul ht.ne' hint
-    (integrable_exp_mul_inverseGammaMeasure ha hr (by linarith : -t ≤ 0)) ⌈a⌉₊
-  exact (not_lt_of_ge (Nat.le_ceil a))
-    ((integrable_pow_inverseGammaMeasure_iff ha hr ⌈a⌉₊).1 hpow)
+  let _ := isProbabilityMeasure_inverseGammaMeasure ha hr
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈a⌉₊ measurable_id.aemeasurable
+    ((ae_pos_inverseGammaMeasure a r).mono fun _ hx ↦ hx.le) (fun hpow ↦ ?_) ht
+  exact not_lt_of_ge (Nat.le_ceil a) ((integrable_pow_inverseGammaMeasure_iff ha hr ⌈a⌉₊).1 hpow)
 
 /-- **The exact exponential-integrability domain of a valid inverse-gamma law** is the
 nonpositive half-line. -/

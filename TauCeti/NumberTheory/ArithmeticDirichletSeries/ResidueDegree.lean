@@ -46,6 +46,11 @@ bound on the partial Dirichlet series that is *uniform* on `s ≥ 1`.
 * `TauCeti.primeTheta_higherDegreePrimes_isLittleO`: those primes carry weight `o(x)` in `ϑ_K`.
 * `TauCeti.primeIdealZetaSum_higherDegreePrimes_le`: that sum, in Mathlib's
   `NumberField.Set.primeIdealZetaSum` vocabulary, is at most `2 [K : ℚ]` for every `s ≥ 1`.
+* `TauCeti.sum_absNorm_rpow_le_finrank_mul_tsum` and
+  `TauCeti.tsum_absNorm_rpow_le_finrank_mul_tsum`: the same fibring over *all* height-one primes,
+  in finite and infinite form, for every `s > 1`.
+* `TauCeti.tsum_absNorm_rpow_neg_two_le`: at `s = 2` that becomes the explicit
+  `∑_𝔭 N(𝔭) ^ (-2) ≤ 2 [K : ℚ]`.
 
 No density-zero statement is proved here.  What this file supplies is the numerator half of
 one: `NumberField.Set.HasDirichletDensity (higherDegreePrimes K) 0` asks for
@@ -233,5 +238,51 @@ theorem primeIdealZetaSum_higherDegreePrimes_le {s : ℝ} (hs : 1 ≤ s) :
   rw [mul_comm (2 : ℝ) (Module.finrank ℚ K : ℝ)]
   exact mul_le_mul_of_nonneg_left (tsum_nat_rpow_neg_le_two (t := 2 * s) (by linarith))
     (Nat.cast_nonneg _)
+
+/-! ### All height-one primes -/
+
+/-- **A finite norm sum is at most `[K : ℚ]` times the sum of `m ^ (-s)` over `ℕ`.** Fibring a
+finite sum of `N(𝔭) ^ (-s)` over the rational primes below costs a factor `[K : ℚ]`. Without a
+residue-degree hypothesis only `p ≤ N(𝔭)` is available, so the exponent stays `-s` and the
+argument needs `1 < s`; the degree-above-one analogue
+`TauCeti.sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum` gains the exponent `-2s` and so
+reaches down to `s > 1/2`. -/
+theorem sum_absNorm_rpow_le_finrank_mul_tsum {s : ℝ} (hs : 1 < s)
+    (F : Finset (HeightOneSpectrum (𝓞 K))) :
+    ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤ Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
+  calc ∑ 𝔭 ∈ F, (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s)
+      ≤ ∑ 𝔭 ∈ F, (rationalPrimeBelow 𝔭 : ℝ) ^ (-s) :=
+        Finset.sum_le_sum fun 𝔭 _ ↦ by
+          have hpN : rationalPrimeBelow 𝔭 ≤ Ideal.absNorm 𝔭.asIdeal := by
+            simpa using rationalPrimeBelow_pow_le_absNorm (𝔭.asIdeal.inertiaDeg_pos ℤ)
+          exact Real.rpow_le_rpow_of_nonpos (mod_cast (prime_rationalPrimeBelow 𝔭).pos)
+            (mod_cast hpN) (by linarith)
+    _ ≤ Module.finrank ℚ K * ∑ m ∈ F.image rationalPrimeBelow, (m : ℝ) ^ (-s) :=
+        sum_comp_rationalPrimeBelow_le (fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _)
+          fun _ ↦ Finset.mem_image_of_mem rationalPrimeBelow
+    _ ≤ Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
+        mul_le_mul_of_nonneg_left ((Real.summable_nat_rpow.mpr (by linarith)).sum_le_tsum _
+          fun m _ ↦ Real.rpow_nonneg (Nat.cast_nonneg m) _) (Nat.cast_nonneg _)
+
+/-- **The prime ideal zeta sum is at most `[K : ℚ]` times the sum of `m ^ (-s)` over `ℕ`.** The
+finite-sum comparison passes to the limit on the whole range `1 < s` where both sides converge.
+Specializing the exponent is what buys an explicit constant, as in
+`TauCeti.tsum_absNorm_rpow_neg_two_le`. -/
+theorem tsum_absNorm_rpow_le_finrank_mul_tsum {s : ℝ} (hs : 1 < s) :
+    ∑' 𝔭 : HeightOneSpectrum (𝓞 K), (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s) ≤
+      Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-s) :=
+  Real.tsum_le_of_sum_le (fun _ ↦ Real.rpow_nonneg (Nat.cast_nonneg _) _)
+    (sum_absNorm_rpow_le_finrank_mul_tsum hs)
+
+/-- **The prime ideal zeta sum over all height-one primes at `s = 2` is at most `2 [K : ℚ]`.**
+At most `[K : ℚ]` primes lie over each rational prime, and `ζ (2) < 2`.  The same constant bounds
+the degree-above-one primes for every `s ≥ 1`: `TauCeti.primeIdealZetaSum_higherDegreePrimes_le`.
+The constant is available only from `s = 2` upwards: at `s` just above `1` the sum over `ℕ` is
+already larger than `2`, so only the `s`-dependent bound above survives there. -/
+theorem tsum_absNorm_rpow_neg_two_le :
+    ∑' 𝔭 : HeightOneSpectrum (𝓞 K), (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) ≤
+      2 * Module.finrank ℚ K :=
+  ((tsum_absNorm_rpow_le_finrank_mul_tsum one_lt_two).trans <| mul_le_mul_of_nonneg_left
+    (tsum_nat_rpow_neg_le_two le_rfl) (Nat.cast_nonneg _)).trans_eq (mul_comm _ _)
 
 end TauCeti

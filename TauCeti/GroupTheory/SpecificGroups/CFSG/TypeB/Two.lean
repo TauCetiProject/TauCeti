@@ -91,6 +91,8 @@ The same carrier-and-Frobenius material on the branches already assembled is in
   `Frob_p (x_i(u)) = x_i(u ^ p)`, the map an odd power of a half-Frobenius on this diagram is built
   over.
 
+* `TauCeti.RankTwoBLieIndex.frobenius_eq_primeFrobenius_pow`: the `q`-power Frobenius is the
+  `e`-th power of the prime-field one, for `e` the field exponent the index records.
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 14.
@@ -256,6 +258,15 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
       d.simpleRootSubgroup i
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints, pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.SpStd.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. On a Suzuki index that exponent is the odd number `2m+1`. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, SpStd.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
 lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Generation
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
+import TauCeti.LinearAlgebra.QuadraticForm.Real
 
 /-!
 # Path-connectedness of compact real Spin groups
@@ -33,36 +34,6 @@ namespace CliffordAlgebra
 
 open TauCeti
 
-private theorem sqrt_norm_ne_zero_realCliffordForm_zero {n : ℕ} (v : Fin n → ℝ)
-    [Invertible (realCliffordForm n 0 v)] :
-    Real.sqrt (realCliffordForm n 0 v) ≠ 0 := by
-  have hv0 : v ≠ 0 := by
-    intro hv
-    subst v
-    exact (isUnit_of_invertible
-      (realCliffordForm n 0 (0 : Fin n → ℝ))).ne_zero (by simp)
-  have hvpos : 0 < realCliffordForm n 0 v :=
-    posDef_realCliffordForm_zero n v hv0
-  exact ne_of_gt (Real.sqrt_pos.2 hvpos)
-
-private theorem normalized_norm_realCliffordForm_zero {n : ℕ} (v : Fin n → ℝ)
-    [Invertible (realCliffordForm n 0 v)] :
-    realCliffordForm n 0
-        ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v) = 1 := by
-  have hvpos : 0 < realCliffordForm n 0 v :=
-    Real.sqrt_pos.mp <| lt_of_le_of_ne (Real.sqrt_nonneg _)
-      (sqrt_norm_ne_zero_realCliffordForm_zero v).symm
-  have hsqrt := sqrt_norm_ne_zero_realCliffordForm_zero v
-  calc
-    realCliffordForm n 0 ((Real.sqrt (realCliffordForm n 0 v))⁻¹ • v) =
-        (Real.sqrt (realCliffordForm n 0 v))⁻¹ *
-          (Real.sqrt (realCliffordForm n 0 v))⁻¹ * realCliffordForm n 0 v := by
-      rw [QuadraticMap.map_smul]
-      rfl
-    _ = 1 := by
-      field_simp
-      simpa [pow_two] using (Real.sq_sqrt hvpos.le).symm
-
 /-- The compact real Spin group is path-connected in every dimension at least two. -/
 theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
     PathConnectedSpace (realCliffordSpinGroupZero (n + 2)) := by
@@ -74,18 +45,36 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
     · exact mem_pathComponent_iff.mpr
         (joined_one_negOne_realCliffordSpinGroupZero_add_two n)
     · intro v w _ _
+      have hv0 : v ≠ 0 := (posDef_realCliffordForm_zero (n + 2)).anisotropic.eq_zero_iff.not.mp
+        (isUnit_of_invertible (Q v)).ne_zero
+      have hw0 : w ≠ 0 := (posDef_realCliffordForm_zero (n + 2)).anisotropic.eq_zero_iff.not.mp
+        (isUnit_of_invertible (Q w)).ne_zero
+      have hvpos : 0 < Q v := by
+        simpa only [Q] using posDef_realCliffordForm_zero (n + 2) v hv0
+      have hwpos : 0 < Q w := by
+        simpa only [Q] using posDef_realCliffordForm_zero (n + 2) w hw0
       let a := (Real.sqrt (Q v))⁻¹
       let b := (Real.sqrt (Q w))⁻¹
-      have hva : a ≠ 0 :=
-        inv_ne_zero (sqrt_norm_ne_zero_realCliffordForm_zero v)
-      have hwb : b ≠ 0 :=
-        inv_ne_zero (sqrt_norm_ne_zero_realCliffordForm_zero w)
+      have hva : a ≠ 0 := by
+        simpa only [a] using inv_ne_zero (Real.sqrt_pos.mpr hvpos).ne'
+      have hwb : b ≠ 0 := by
+        simpa only [b] using inv_ne_zero (Real.sqrt_pos.mpr hwpos).ne'
       let _ : Invertible a := (isUnit_iff_ne_zero.mpr hva).invertible
       let _ : Invertible b := (isUnit_iff_ne_zero.mpr hwb).invertible
-      have hv : Q (a • v) = 1 := normalized_norm_realCliffordForm_zero v
-      have hw : Q (b • w) = 1 := normalized_norm_realCliffordForm_zero w
+      have hv : Q (a • v) = 1 := by
+        simpa only [Q, a] using QuadraticMap.map_inv_sqrt_smul_eq_one hvpos
+      have hw : Q (b • w) = 1 := by
+        simpa only [Q, b] using QuadraticMap.map_inv_sqrt_smul_eq_one hwpos
       let _ : Invertible (Q (a • v)) := hv.symm ▸ invertibleOne
       let _ : Invertible (Q (b • w)) := hw.symm ▸ invertibleOne
+      have reflection_smul_eq' (u : Fin (n + 2) → ℝ) (c : ℝ)
+          [Invertible (Q u)] [Invertible c] [Invertible (Q (c • u))] :
+          QuadraticMap.reflection Q (c • u) = QuadraticMap.reflection Q u := by
+        -- `reflection_smul_eq` creates its own norm instance; these `Invertible` instances
+        -- are propositionally equal, so align them through the subsingleton instance proof.
+        convert QuadraticMap.reflection_smul_eq Q u c using 1
+        congr 1
+        exact Subsingleton.elim _ _
       let x := spinReflectionPair Q (a • v) (b • w) hv hw
       refine ⟨x, ?_, ?_⟩
       · exact mem_pathComponent_iff.mpr
@@ -93,16 +82,8 @@ theorem pathConnectedSpace_realCliffordSpinGroupZero_add_two (n : ℕ) :
             (by omega) (a • v) (b • w) hv hw)
       · rw [coe_spinToSpecialOrthogonal_spinReflectionPair]
         simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal]
-        have hvref : QuadraticMap.reflection Q (a • v) =
-            QuadraticMap.reflection Q v := by
-          convert QuadraticMap.reflection_smul_eq Q v a using 1
-          congr 1
-          exact Subsingleton.elim _ _
-        have hwref : QuadraticMap.reflection Q (b • w) =
-            QuadraticMap.reflection Q w := by
-          convert QuadraticMap.reflection_smul_eq Q w b using 1
-          congr 1
-          exact Subsingleton.elim _ _
+        have hvref := reflection_smul_eq' v a
+        have hwref := reflection_smul_eq' w b
         rw [hvref, hwref]
   apply pathConnectedSpace_iff_eq.mpr
   refine ⟨1, ?_⟩
