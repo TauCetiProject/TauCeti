@@ -10,7 +10,7 @@ public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Distributions.Measurability
 public import Mathlib.Probability.Moments.Variance
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 
@@ -64,10 +64,9 @@ natural numbers, the cdf is the Gaussian cdf at `log x` because `exp ⁻¹' Iic 
 `0 < x`, and the boundary law is `Measure.map_dirac`.
 
 The density is the one genuine change of variables. Since `Real.exp` is injective with derivative
-`exp` and image `Set.Ioi 0`, Mathlib's one-dimensional Jacobian formula
-`MeasureTheory.lintegral_image_eq_lintegral_abs_deriv_mul` turns the mass that the pushforward
-assigns to a measurable set `s` — an integral of the Gaussian density over `exp ⁻¹' s` — into an
-integral of `logNormalPDF` over `s ∩ Set.Ioi 0`, and `logNormalPDF` vanishes off `Set.Ioi 0`.
+`exp` and image `Set.Ioi 0`, the one-dimensional change of variables
+`TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul` carries the Gaussian law to Lebesgue measure
+on `Set.Ioi 0` weighted by `logNormalPDF`, and `logNormalPDF` vanishes off `Set.Ioi 0`.
 
 The failure of the exponential moments for `t > 0` is a growth statement:
 `t * exp x - (x - m) ^ 2 / (2 * v)` tends to `atTop`, so the integrand of the moment-generating
@@ -225,23 +224,13 @@ private lemma ofReal_abs_exp_mul_logNormalPDF (m : ℝ) (v : ℝ≥0) (x : ℝ) 
 `volume.withDensity logNormalPDF`. -/
 theorem logNormalMeasure_eq_withDensity (m : ℝ) (hv : v ≠ 0) :
     logNormalMeasure m v = volume.withDensity (logNormalPDF m v) := by
-  ext s hs
-  have hpre : MeasurableSet (Real.exp ⁻¹' s) := measurable_exp hs
-  have himage : Real.exp '' (Real.exp ⁻¹' s) = Ioi 0 ∩ s := by
-    rw [Set.image_preimage_eq_inter_range, Real.range_exp, Set.inter_comm]
-  calc logNormalMeasure m v s
-      = ∫⁻ y in Real.exp ⁻¹' s, gaussianPDF m v y := by
-        rw [logNormalMeasure_map_exp, Measure.map_apply measurable_exp hs,
-          gaussianReal_of_var_ne_zero m hv, withDensity_apply _ hpre]
-    _ = ∫⁻ y in Real.exp ⁻¹' s, ENNReal.ofReal |Real.exp y| * logNormalPDF m v (Real.exp y) := by
-        simp only [ofReal_abs_exp_mul_logNormalPDF]
-    _ = ∫⁻ y in Ioi 0 ∩ s, logNormalPDF m v y := by
-        rw [← himage,
-          lintegral_image_eq_lintegral_abs_deriv_mul hpre
-            (fun y _ => (Real.hasDerivAt_exp y).hasDerivWithinAt) Real.exp_injective.injOn]
-    _ = volume.withDensity (logNormalPDF m v) s := by
-        rw [withDensity_apply _ hs, ← setLIntegral_indicator measurableSet_Ioi,
-          indicator_Ioi_logNormalPDF]
+  have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logNormalPDF m v)
+    MeasurableSet.univ measurable_exp (fun x _ ↦ (Real.hasDerivAt_exp x).hasDerivWithinAt)
+    Real.exp_injective.injOn
+  simp only [Measure.restrict_univ, ofReal_abs_exp_mul_logNormalPDF, image_univ,
+    Real.range_exp] at hmap
+  rw [logNormalMeasure_map_exp, gaussianReal_of_var_ne_zero m hv, hmap,
+    ← withDensity_indicator measurableSet_Ioi, indicator_Ioi_logNormalPDF]
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
