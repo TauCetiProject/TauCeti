@@ -150,9 +150,8 @@ variable {M : QuiverRep.{u, v, w, max v w x} k Q} {i : Q}
 variable [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
 
 /-- **A nonnegative reflected dimension vector forces the outgoing map to be injective.** For an
-indecomposable representation, failure of injectivity at a source forces the representation to be
-concentrated on a one-dimensional space there, whose reflected dimension vector has value `-1` at
-that source. -/
+indecomposable representation `M` and a source `i`, if the dimension vector of `M` reflected at
+`i` is nonnegative, then the outgoing map of `M` at `i` is injective. -/
 theorem outgoingMap_injective_of_vertexPreReflection_nonneg [DecidableEq Q]
     (hi : IsSource i) (hM : Indecomposable M)
     (h : 0 ≤ vertexPreReflection Q i fun j ↦ (dimVector M j : ℤ)) :
