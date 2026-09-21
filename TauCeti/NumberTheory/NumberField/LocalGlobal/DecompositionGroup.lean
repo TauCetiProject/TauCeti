@@ -65,9 +65,10 @@ available in the `AdicCompletionExtension` scope.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_surjective` and
   `IsDedekindDomain.HeightOneSpectrum.decompositionEquiv`: for `L/K` Galois the decomposition
   group of `w` is the Galois group of `L_w/K_v`.
-* `IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion` and
-  `IsDedekindDomain.HeightOneSpectrum.card_algEquiv_adicCompletion`: for `L/K` Galois the local
-  extension `L_w/K_v` is Galois, with `e(w ∣ v) · f(w ∣ v)` automorphisms.
+* `IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion`: for `L/K` Galois the local
+  extension `L_w/K_v` is Galois; and
+  `IsDedekindDomain.HeightOneSpectrum.card_algEquiv_adicCompletion`: a locally Galois completion
+  has `e(w ∣ v) · f(w ∣ v)` automorphisms.
 * `IsDedekindDomain.HeightOneSpectrum.isCyclic_algEquiv_adicCompletion_of_isUnramifiedAt`: at an
   unramified place the local Galois group is cyclic of order `f(w ∣ v)`.
 
@@ -307,27 +308,38 @@ theorem isGalois_adicCompletion : IsGalois (v.adicCompletion K) (w.adicCompletio
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.isGalois_adicCompletion
 
+end IsGalois
+
+section IsGaloisAdicCompletion
+
+variable (v w) [IsGalois (v.adicCompletion K) (w.adicCompletion L)]
+
 /-- **The local Galois group at `w` has order `e(w ∣ v) · f(w ∣ v)`.** -/
 theorem card_algEquiv_adicCompletion :
     Nat.card (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L) =
       w.asIdeal.ramificationIdx (𝒪 K) * w.asIdeal.inertiaDeg (𝒪 K) := by
-  have : Finite (𝒪 L ⧸ w.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient w.ne_bot
-  rw [← Nat.card_congr (decompositionEquiv v w).toEquiv,
-    card_stabilizer_eq_finrank_adicCompletion v w, finrank_adicCompletion v w]
+  rw [IsGalois.card_aut_eq_finrank, finrank_adicCompletion v w]
 
-end IsGalois
+end IsGaloisAdicCompletion
 
 /-! ### The local Galois group at an unramified place -/
 
 section IsUnramifiedAt
 
-variable (v w) [IsGalois K L] [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal]
+variable (v w) [IsGalois (v.adicCompletion K) (w.adicCompletion L)]
+  [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal]
 
 /-- **The local Galois group at an unramified place has order `f(w ∣ v)`.** -/
 theorem card_algEquiv_adicCompletion_of_isUnramifiedAt :
     Nat.card (w.adicCompletion L ≃ₐ[v.adicCompletion K] w.adicCompletion L) =
       w.asIdeal.inertiaDeg (𝒪 K) := by
   rw [card_algEquiv_adicCompletion v w, Ideal.ramificationIdx_eq_one w.asIdeal (𝒪 K), one_mul]
+
+end IsUnramifiedAt
+
+section IsGaloisUnramifiedAt
+
+variable (v w) [IsGalois K L] [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal]
 
 /-- **The local Galois group at an unramified place is cyclic.** -/
 -- It is the image of the decomposition group of `w`, which an arithmetic Frobenius generates.
@@ -336,6 +348,6 @@ theorem isCyclic_algEquiv_adicCompletion_of_isUnramifiedAt :
   have := Ideal.isCyclic_stabilizer_of_isUnramifiedAt (K := K) w.asIdeal w.ne_bot
   isCyclic_of_surjective _ (decompositionHom_surjective v w)
 
-end IsUnramifiedAt
+end IsGaloisUnramifiedAt
 
 end IsDedekindDomain.HeightOneSpectrum
