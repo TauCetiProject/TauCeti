@@ -53,8 +53,9 @@ theorem realCliffordSpinOrbitHomeomorph_mk (n : ℕ) (hn : 2 ≤ n)
     realCliffordSpinOrbitHomeomorph n hn x (QuotientGroup.mk s) = s • x := by
   let _ : MulAction.IsPretransitive (realCliffordSpinGroupZero n)
       (realCliffordUnitLevel n) := isPretransitive_realCliffordUnitLevel n hn
-  exact TauCeti.quotientStabilizerHomeomorph_mk (realCliffordSpinGroupZero n) x
-    (continuous_realCliffordSpinOrbitMap_action n x) s
+  simpa only [realCliffordSpinOrbitHomeomorph] using
+    TauCeti.quotientStabilizerHomeomorph_mk (realCliffordSpinGroupZero n) x
+      (continuous_realCliffordSpinOrbitMap_action n x) s
 
 /-- The compact Spin orbit homeomorphism is equivariant for left multiplication. -/
 theorem realCliffordSpinOrbitHomeomorph_smul (n : ℕ) (hn : 2 ≤ n)
@@ -64,8 +65,9 @@ theorem realCliffordSpinOrbitHomeomorph_smul (n : ℕ) (hn : 2 ≤ n)
       s • realCliffordSpinOrbitHomeomorph n hn x q := by
   let _ : MulAction.IsPretransitive (realCliffordSpinGroupZero n)
       (realCliffordUnitLevel n) := isPretransitive_realCliffordUnitLevel n hn
-  exact TauCeti.quotientStabilizerHomeomorph_smul (realCliffordSpinGroupZero n) x
-    (continuous_realCliffordSpinOrbitMap_action n x) s q
+  simpa only [realCliffordSpinOrbitHomeomorph] using
+    TauCeti.quotientStabilizerHomeomorph_smul (realCliffordSpinGroupZero n) x
+      (continuous_realCliffordSpinOrbitMap_action n x) s q
 
 end
 
