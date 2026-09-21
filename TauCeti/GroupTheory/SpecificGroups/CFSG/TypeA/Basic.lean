@@ -83,10 +83,9 @@ constructed group is finite or simple.
   `TauCeti.TypeALieIndex.steinberg_ofTwistedA`: Frobenius on `A_r(q)` and graph-twisted Frobenius
   on `²A_r(q)`.
 * `TauCeti.TypeALieIndex.steinberg_simpleRootSubgroup`: the pinned simple-root-subgroup equation.
-* `TauCeti.TypeALieIndex.frobenius`, with `TauCeti.TypeALieIndex.frobenius_ofA` and
-  `TauCeti.TypeALieIndex.frobenius_ofTwistedA`, and
-  `TauCeti.TypeALieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius factor, its branch
-  equations, and its pinned equation.
+* `TauCeti.TypeALieIndex.frobenius` and
+  `TauCeti.TypeALieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius factor and its
+  pinned equation.
 * `TauCeti.TypeALieIndex.graphAut`, with `TauCeti.TypeALieIndex.graphAut_ofA` and
   `TauCeti.TypeALieIndex.graphAut_ofTwistedA`: the pinned graph automorphism factor.
 * `TauCeti.TypeALieIndex.graphAut_simpleRootSubgroup`: its pinned simple-root-subgroup equation
@@ -208,25 +207,12 @@ map composes with this one. -/
 noncomputable def frobenius (d : TypeALieIndex) : d.AmbientGroup →* d.AmbientGroup :=
   SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure
 
-/-- On `A_r(q)`, the Frobenius factor is the `q`-power Frobenius of the standard carrier. -/
-theorem frobenius_ofA (rank : ℕ) (q : PrimePower)
-    (hvalid : (LieTypeIndex.A rank q).Valid) :
-    (ofA rank q hvalid).frobenius =
-      SlStd.frobenius (ofA rank q hvalid).1.rank
-        (ofA rank q hvalid).1.characteristic (ofA rank q hvalid).1.fieldExponent
-        (ofA rank q hvalid).1.Closure := by
-  rw [frobenius]
-
-/-- On `²A_r(q)`, the Frobenius factor is the same `q`-power Frobenius of the standard
-carrier; the graph twist belongs to `graphAut`. -/
-theorem frobenius_ofTwistedA (rank : ℕ) (q : PrimePower)
-    (hvalid : (LieTypeIndex.twistedA rank q).Valid) :
-    (ofTwistedA rank q hvalid).frobenius =
-      SlStd.frobenius (ofTwistedA rank q hvalid).1.rank
-        (ofTwistedA rank q hvalid).1.characteristic
-        (ofTwistedA rank q hvalid).1.fieldExponent
-        (ofTwistedA rank q hvalid).1.Closure := by
-  rw [frobenius]
+/-- The type-A Frobenius is the standard carrier's Frobenius at the characteristic and field
+exponent recorded by the index. -/
+theorem frobenius_def (d : TypeALieIndex) :
+    d.frobenius =
+      SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure :=
+  (rfl)
 
 /-- **The Frobenius fixes the Bourbaki numbering of a positive simple-root subgroup and raises its
 parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/

@@ -243,12 +243,8 @@ theorem carrierEquivSpecialLinear_frobenius (d : TypeALieIndex)
     (g : d.AmbientGroup) :
     d.carrierEquivSpecialLinear (d.frobenius g) =
       d.specialLinearFrobenius (d.carrierEquivSpecialLinear g) := by
-  rcases d.exists_eq_ofA_or_exists_eq_ofTwistedA with
-    ⟨rank, q, hvalid, rfl⟩ | ⟨rank, q, hvalid, rfl⟩
-  · rw [frobenius_ofA, carrierEquivSpecialLinear, specialLinearFrobenius,
-      SlStd.specialLinearMulEquiv_frobenius]
-  · rw [frobenius_ofTwistedA, carrierEquivSpecialLinear, specialLinearFrobenius,
-      SlStd.specialLinearMulEquiv_frobenius]
+  rw [frobenius_def, carrierEquivSpecialLinear, specialLinearFrobenius,
+    SlStd.specialLinearMulEquiv_frobenius]
 
 /-- The carrier-to-pinned equivalence intertwines the Frobenius factors. -/
 @[simp]

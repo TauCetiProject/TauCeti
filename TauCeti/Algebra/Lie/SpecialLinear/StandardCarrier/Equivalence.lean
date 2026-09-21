@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.SpecialLinear
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.TwistedFrobenius
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.GraphAutomorphism
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 
 /-!
 # Comparing the type-A standard carrier with special linear matrices
@@ -71,7 +70,7 @@ noncomputable def specialLinearMulEquiv :
 /-- Applying the carrier equivalence and then including into `GL` leaves a carrier point
 unchanged. -/
 @[simp]
-theorem specialLinearMulEquiv_toGL (g : points r K) :
+theorem toGL_specialLinearMulEquiv (g : points r K) :
     Matrix.SpecialLinearGroup.toGL (specialLinearMulEquiv r g) = g := by
   apply Matrix.GeneralLinearGroup.ext
   intro i j
@@ -96,7 +95,7 @@ theorem specialLinearMulEquiv_rootSubgroupPoints
       Matrix.SpecialLinearGroup.transvection
         (rootTarget_ne_rootSource r i) (Multiplicative.toAdd a) := by
   apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [specialLinearMulEquiv_toGL, coe_rootSubgroupPoints]
+  rw [toGL_specialLinearMulEquiv, coe_rootSubgroupPoints]
   rw [kostantRootSubgroupMatrix_eq_transvection, MulEquiv.apply_symm_apply,
     ← TauCeti.toGL_transvection_eq_transvectionUnit]
 
@@ -110,7 +109,7 @@ theorem specialLinearMulEquiv_frobenius (g : points r K) :
       Matrix.SpecialLinearGroup.map (iterateFrobenius K p k)
         (specialLinearMulEquiv r g) := by
   apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [specialLinearMulEquiv_toGL, coe_frobenius]
+  rw [toGL_specialLinearMulEquiv, coe_frobenius]
   apply Matrix.GeneralLinearGroup.ext
   intro i j
   rfl
@@ -124,8 +123,8 @@ theorem specialLinearMulEquiv_graphAutomorphismPoints
       Matrix.SpecialLinearGroup.typeAGraphAutomorphism r F
         (specialLinearMulEquiv r g) := by
   apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [specialLinearMulEquiv_toGL, coe_graphAutomorphismPoints,
+  rw [toGL_specialLinearMulEquiv, coe_graphAutomorphismPoints,
     Matrix.SpecialLinearGroup.toGL_typeAGraphAutomorphism,
-    specialLinearMulEquiv_toGL]
+    toGL_specialLinearMulEquiv]
 
 end TauCeti.SlStd
