@@ -84,7 +84,6 @@ noncomputable def coneChartedSpace (g : AddGeneratingFamily (dualSemigroup hi σ
   exact h.singletonChartedSpace
 
 /-- The source of the cone chart is the whole affine complex-point space. -/
-@[simp]
 theorem coneChartedSpace_chartAt_source
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
@@ -94,7 +93,6 @@ theorem coneChartedSpace_chartAt_source
   rfl
 
 /-- The chart map of the cone charted-space structure is the ambient mixed-coordinate chart. -/
-@[simp]
 theorem coneChartedSpace_chartAt_apply
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (x y : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
@@ -104,7 +102,6 @@ theorem coneChartedSpace_chartAt_apply
   rfl
 
 /-- The chart map of the cone charted-space structure, as a function, is the ambient cone chart. -/
-@[simp]
 theorem coe_coneChartedSpace_chartAt
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
@@ -115,7 +112,6 @@ theorem coe_coneChartedSpace_chartAt
   exact coneChartedSpace_chartAt_apply hi hσ hB κ g x y
 
 /-- The target of every chart in the cone charted-space structure is the mixed-coordinate locus. -/
-@[simp]
 theorem coneChartedSpace_chartAt_target
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
