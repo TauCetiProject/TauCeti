@@ -49,7 +49,7 @@ theorem isUniformizer_iff_exists_irreducible (π : Kˣ) :
   · intro hπ
     have hπval : Ring.ordFrac 𝒪[K] (π : K) = WithZero.exp 1 := by
       rw [← normalizedValuationWithZero_eq_ordFrac, normalizedValuationWithZero_coe, hπ]
-      rfl
+      simp only [WithZero.exp_eq_coe_ofAdd]
     obtain ⟨u, hu⟩ := Ring.associated_of_ordFrac_eq (R := 𝒪[K]) (π : K) (ϖ : K)
       (hπval.trans hϖval.symm)
     let ϖ' : 𝒪[K] := (↑(u⁻¹) : 𝒪[K]) * ϖ
