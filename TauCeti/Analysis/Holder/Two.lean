@@ -129,10 +129,6 @@ private theorem toBoundedContinuousFunction_eq_fst (f : C2HolderSpace α E F) :
 private theorem fderivC1_eq_snd (f : C2HolderSpace α E F) :
     f.1.2 = (toJet f).2 := rfl
 
-@[simp]
-theorem toBoundedContinuousFunction_apply (f : C2HolderSpace α E F) (x : E) :
-    f.toBoundedContinuousFunction x = f x := rfl
-
 /-- Construct a bounded `C^{2,α}` map from a function and two compatible derivative fields. -/
 def mk (f : E →ᵇ F) (f' : E →ᵇ (E →L[ℝ] F))
     (f'' : HolderSpace α E (E →L[ℝ] E →L[ℝ] F))
@@ -178,7 +174,7 @@ def const (c : F) : C2HolderSpace α E F :=
 
 @[simp]
 theorem const_apply (c : F) (x : E) : const (α := α) (E := E) c x = c := by
-  rw [← toBoundedContinuousFunction_apply, const, toBoundedContinuousFunction_mk]
+  rw [const, toBoundedContinuousFunction_mk]
   exact BoundedContinuousFunction.const_apply' x c
 
 @[simp]
@@ -274,7 +270,7 @@ theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
 theorem ext {f g : C2HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
   have hvalue : f.toBoundedContinuousFunction = g.toBoundedContinuousFunction := by
     ext x
-    simpa only [toBoundedContinuousFunction_apply] using h x
+    exact h x
   have hfirst : f.fderiv = g.fderiv := by
     apply DFunLike.ext _ _
     intro x
@@ -384,22 +380,6 @@ theorem secondFDeriv_smul (c : ℝ) (f : C2HolderSpace α E F) :
     secondFDeriv (c • f) = c • f.secondFDeriv := by
   simpa only [secondFDerivL_apply] using
     (secondFDerivL (α := α) (E := E) (F := F)).map_smul c f
-
-@[simp]
-theorem zero_apply (x : E) : (0 : C2HolderSpace α E F) x = 0 := by
-  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_zero]
-  rfl
-
-@[simp]
-theorem add_apply (f g : C2HolderSpace α E F) (x : E) : (f + g) x = f x + g x := by
-  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add]
-  rfl
-
-@[simp]
-theorem smul_apply (c : ℝ) (f : C2HolderSpace α E F) (x : E) :
-    (c • f) x = c • f x := by
-  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul]
-  rfl
 
 /-- The `C^{2,α}` norm is the maximum of the two supremum norms and the second-derivative
 Hölder norm. -/
