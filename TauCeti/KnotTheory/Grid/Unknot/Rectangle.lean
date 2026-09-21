@@ -17,8 +17,8 @@ off column by column.
 
 In grid number three the characterization leaves no freedom at all: both the column arc and the
 row arc must be single, the row arc must be the one row the column arc does not forbid, and the
-source state is pinned down to the *subdiagonal* state `GridState.subdiagonal 3`, the only
-diagonal state of a `3 × 3` grid carrying no marking.
+avoidance conditions force the source state to equal the *subdiagonal* state
+`GridState.subdiagonal 3`.
 
 ## Main results
 
@@ -62,8 +62,10 @@ every column it covers, neither the diagonal row of that column nor the row abov
 theorem avoidsMarkings_unknot_iff (R : GridRectangleBetween x y) :
     R.AvoidsMarkings (GridDiagram.unknot n) ↔
       ∀ c ∈ Grid.cIco R.left R.right,
-        c ∉ Grid.cIco (x R.left) (x R.right) ∧ c + 1 ∉ Grid.cIco (x R.left) (x R.right) :=
-  R.toGridRectangle.avoidsMarkings_unknot_iff
+        c ∉ Grid.cIco (x R.left) (x R.right) ∧ c + 1 ∉ Grid.cIco (x R.left) (x R.right) := by
+  simpa only [AvoidsMarkings, toGridRectangle_left, toGridRectangle_right,
+    toGridRectangle_bottom, toGridRectangle_top, bottom_def, top_def] using
+    R.toGridRectangle.avoidsMarkings_unknot_iff
 
 end GridRectangleBetween
 

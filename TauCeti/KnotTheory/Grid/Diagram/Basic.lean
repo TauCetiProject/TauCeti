@@ -131,6 +131,7 @@ theorem subdiagonal_apply_add_one {n : ℕ} [NeZero n] (c : Fin n) :
   rw [← finRotate_apply, subdiagonal_apply, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
 
 /-- The subdiagonal state sends each column to the preceding row. -/
+@[simp]
 theorem subdiagonal_apply_eq_sub_one {n : ℕ} [NeZero n] (c : Fin n) :
     subdiagonal n c = c - 1 :=
   eq_sub_iff_add_eq.mpr (subdiagonal_apply_add_one c)

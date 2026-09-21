@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
@@ -28,8 +26,8 @@ its row arc misses the arc `[l, r]`, which is one row longer than its column arc
 In grid number three this leaves no freedom at all. Both arcs must be single, the row arc must
 be the one row the column arc does not forbid, and the source state is pinned down to the
 *subdiagonal* state `GridState.subdiagonal 3`, whose point in each column lies one row below the
-diagonal: the only diagonal state of a `3 × 3` grid carrying no marking. Conversely every
-rectangle leaving that state through a pair of cyclically consecutive columns is fully blocked
+diagonal. Conversely every rectangle leaving that state through a pair of cyclically consecutive
+columns is fully blocked
 (`GridRectangleBetween.avoidsMarkings_unknot_one_iff`). So the fully blocked differential of the
 `3 × 3` unknot grid kills all five other grid states and sends the subdiagonal state to the sum
 of its three cyclically consecutive column transpositions.
