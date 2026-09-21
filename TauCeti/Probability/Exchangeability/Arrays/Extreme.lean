@@ -42,7 +42,9 @@ using pairs of finitely supported axis permutations.
   `jointlyDissociated_of_mem_extremePoints` reading dissociation off an extreme point;
 * `TauCeti.Probability.jointlyExchangeableProbabilityMeasuresOn` — the jointly exchangeable
   probability laws carried by a set of arrays, a face of the whole set, so that
-  `jointlyDissociated_iff_mem_extremePoints_on` restricts the characterisation to them;
+  `jointlyDissociated_iff_mem_extremePoints_on` restricts the characterisation to them, and
+  `jointlyExchangeableProbabilityMeasuresOnSymmetric` the case of the symmetric arrays with a
+  fixed diagonal, the adjacency arrays of graphs when `α = Bool`;
 * `TauCeti.Probability.JointlyDissociated.ae_eq_of_comp_eq` — the integral form: a jointly
   dissociated law written as a mixture of jointly exchangeable laws has almost every component
   equal to itself.
@@ -52,6 +54,9 @@ using pairs of finitely supported axis permutations.
 * D. Aldous, "Representations for partially exchangeable arrays of random variables", *Journal of
   Multivariate Analysis* 11 (1981), 581--598.
 * O. Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Springer, 2005, Chapter 7.
+* P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
+  (2008), 33–61, Section 5: exchangeable random graphs as symmetric zero-diagonal arrays, and
+  dissociated laws as the extreme ones.
 -/
 
 public section
@@ -273,6 +278,21 @@ theorem jointlyDissociated_of_mem_extremePoints_on {s : Set (ℕ × ℕ → α)}
     JointlyDissociated ρ fun p x => x p :=
   jointlyDissociated_of_mem_extremePoints
     ((extremePoints_jointlyExchangeableProbabilityMeasuresOn s ▸ h).2)
+
+/-- The jointly exchangeable probability laws carried by the symmetric arrays with diagonal `d`.
+For `α = Bool` and `d = false` the carrier is the adjacency arrays of the simple graphs on `ℕ`,
+and these are the laws of exchangeable random graphs read as arrays. -/
+def jointlyExchangeableProbabilityMeasuresOnSymmetric (α : Type*) [MeasurableSpace α] (d : α) :
+    Set (Measure (ℕ × ℕ → α)) :=
+  jointlyExchangeableProbabilityMeasuresOn α (symmetricArraysWithDiag α d)
+
+/-- Membership in the jointly exchangeable laws carried by the symmetric arrays. -/
+@[simp]
+theorem mem_jointlyExchangeableProbabilityMeasuresOnSymmetric_iff {d : α}
+    {ν : Measure (ℕ × ℕ → α)} :
+    ν ∈ jointlyExchangeableProbabilityMeasuresOnSymmetric α d
+      ↔ ν ∈ jointlyExchangeableProbabilityMeasures α ∧ ν (symmetricArraysWithDiag α d)ᶜ = 0 :=
+  Iff.rfl
 
 open ProbabilityTheory in
 /-- **A jointly dissociated array law is not a nontrivial mixture of jointly exchangeable
