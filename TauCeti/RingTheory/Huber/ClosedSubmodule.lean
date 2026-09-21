@@ -41,7 +41,7 @@ the closure, that is `N.topologicalClosure = N`, and `N` is closed because its c
 
 ## References
 
-* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch_guntzer_remmert], §3.7.2/1.
+* [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §3.7.2/1.
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Propositions 6.17–6.18 and Remark 8.29.
 
 ## Provenance

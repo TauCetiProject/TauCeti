@@ -50,6 +50,8 @@ sits *inside* the derived ideal and the two are not complementary.
   `TauCeti.derivedSeries_one_toLieSubalgebra_eq_sl` reads this as `LieAlgebra.SpecialLinear.sl n R`.
 * `TauCeti.isCompl_center_derivedSeries_one_matrix`: when `Fintype.card n` is invertible in `R`,
   the centre and the derived ideal are complementary submodules of `gl n R`.
+* `TauCeti.exists_sl_add_smul_one_eq`: every matrix is a trace-zero matrix plus a scalar matrix
+  when the cardinality is a unit, with the empty case included.
 * `TauCeti.derivedSeries_one_matrix_ne_top`: for nonempty `n` over a nontrivial `R`, `gl n R` is
   not perfect.
 * `TauCeti.not_hasTrivialRadical_matrix`: for nonempty `n` over a nontrivial `R`, `gl n R` is not
@@ -58,8 +60,9 @@ sits *inside* the derived ideal and the two are not complementary.
 ## Implementation notes
 
 Every result about `gl n R` is stated over an arbitrary commutative ring `R`; no field,
-characteristic, or algebraic closure hypothesis is used, and the invertibility of `Fintype.card n`
-is carried as an `Invertible` hypothesis only on the one result that needs it. Two groups of
+characteristic, or algebraic closure hypothesis is used. The bundled complement carries
+invertibility of `Fintype.card n` as an `Invertible` hypothesis, while its elementwise consequence
+asks only that the cardinality be a unit when the index type is nonempty. Two groups of
 declarations ask for less: the matrix-unit bracket identities and the spanning theorem for
 trace-zero matrices need only a ring, and the decomposition of a trace-zero matrix into matrix units
 needs only an additive commutative group, no multiplication at all.
@@ -320,6 +323,28 @@ theorem isCompl_center_derivedSeries_one_matrix [Invertible (Fintype.card n : R)
         ← mul_assoc, invOf_mul_self, one_mul]
     rw [derivedSeries_one_eq_slIdeal R n, LieSubmodule.mem_toSubmodule, mem_slIdeal_iff,
       Matrix.trace_sub, htr, sub_self]
+
+/-- Every square matrix is the sum of a trace-zero matrix and a scalar matrix, as soon as the rank
+is a unit in `R`. This is the elementwise form of
+`TauCeti.isCompl_center_derivedSeries_one_matrix`; the separate rank-zero branch is why the
+hypothesis is an implication rather than a global invertibility assumption. -/
+theorem exists_sl_add_smul_one_eq
+    (hn : Nonempty n → IsUnit (Fintype.card n : R)) (A : Matrix n n R) :
+    ∃ (X : LieAlgebra.SpecialLinear.sl n R) (r : R), (X : Matrix n n R) + r • 1 = A := by
+  cases isEmpty_or_nonempty n with
+  | inl h =>
+      let _ := h
+      exact ⟨0, 0, Subsingleton.elim _ _⟩
+  | inr h =>
+      let _ := h
+      let _ : Invertible (Fintype.card n : R) := (hn h).invertible
+      obtain ⟨Z, X, hZ, hX, hZX⟩ := Submodule.codisjoint_iff_exists_add_eq.mp
+        (isCompl_center_derivedSeries_one_matrix R n).codisjoint A
+      obtain ⟨r, rfl⟩ := mem_center_matrix_iff.mp hZ
+      have hXsl : X ∈ LieAlgebra.SpecialLinear.sl n R := by
+        rw [← derivedSeries_one_toLieSubalgebra_eq_sl R n]
+        exact hX
+      exact ⟨⟨X, hXsl⟩, r, (add_comm X (r • 1)).trans hZX⟩
 
 variable (R n) in
 /-- `gl n R` is not perfect: for nonempty `n` over a nontrivial ring its derived ideal misses the

@@ -5,21 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
-# Complementary submodules induced on a subspace
+# Complementary submodules under restriction, quotients and products
 
-Mathlib's `Submodule.isCompl_comap_subtype_of_isCompl_of_le` restricts a complementary pair to a
-subspace that contains one of the two. This file records the variant that applies when neither
-member of the pair lies in the subspace: a disjoint pair cuts a subspace `U` into a complementary
-pair as soon as the two intersections with `U` span `U` — for a general `U` a genuine hypothesis,
-not a consequence of spanning the ambient module.
+Three ways complementarity of a pair of submodules survives a construction.
+
+**Restriction to a subspace.** Mathlib's `Submodule.isCompl_comap_subtype_of_isCompl_of_le`
+restricts a complementary pair to a subspace that contains one of the two. This file records the
+variant that applies when neither member of the pair lies in the subspace: a disjoint pair cuts a
+subspace `U` into a complementary pair as soon as the two intersections with `U` span `U` — for a
+general `U` a genuine hypothesis, not a consequence of spanning the ambient module.
+
+**Quotients.** The images of two submodules `A` and `B` in `M ⧸ p` are complementary exactly when
+`A ⊔ p` and `B ⊔ p` meet in `p` and `A`, `B` and `p` together span `M`. This is the form in which
+opposedness of filtrations induced on a graded piece is checked in the ambient module.
+
+**Products.** Complementarity is also preserved by products: a complementary pair in `E` and one in
+`F` give a complementary pair in `E × F`. This is what lets a direct-sum decomposition be built
+factor by factor, and it is used that way for the doubled totally real modules in
+`TauCeti/LinearAlgebra/TotallyReal/Basic.lean`.
 
 ## Main results
 
 * `TauCeti.Submodule.isCompl_comap_subtype`: a disjoint pair of submodules whose intersections with
   `U` span `U` restricts to a complementary pair of submodules of `U`.
+* `Submodule.isCompl_map_mkQ_iff`: complementarity of images in a quotient, read in the
+  ambient module.
+* `IsCompl.prod`: a product of complementary pairs is complementary.
 -/
 
 public section
@@ -46,6 +61,31 @@ theorem isCompl_comap_subtype {U A B : Submodule R M} (hAB : Disjoint A B)
       Submodule.map_subtype_top]
     exact le_antisymm (sup_le inf_le_left inf_le_left) hU
 
+/-- The images of two submodules in the quotient by `p` are complementary exactly when, after
+adding `p`, they meet in `p`, and together with `p` they span the whole module. -/
+theorem _root_.Submodule.isCompl_map_mkQ_iff {R : Type u} {M : Type v} [Ring R]
+    [AddCommGroup M] [Module R M]
+    {p A B : Submodule R M} :
+    IsCompl (A.map p.mkQ) (B.map p.mkQ) ↔ (p ⊔ A) ⊓ (p ⊔ B) ≤ p ∧ p ⊔ (A ⊔ B) = ⊤ := by
+  rw [isCompl_iff, disjoint_iff, codisjoint_iff, ← Submodule.map_sup, Submodule.map_mkQ_eq_top,
+    ← (Submodule.comap_injective_of_surjective p.mkQ_surjective).eq_iff, Submodule.comap_inf,
+    Submodule.comap_map_mkQ, Submodule.comap_map_mkQ, Submodule.comap_bot, Submodule.ker_mkQ]
+  exact and_congr_left' ⟨le_of_eq, fun h ↦ le_antisymm h (le_inf le_sup_left le_sup_left)⟩
+
 end Submodule
+
+section Prod
+
+variable {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E] [AddCommMonoid F] [Module R F]
+variable {L₁ L₂ : Submodule R E} {M₁ M₂ : Submodule R F}
+
+/-- Products of complementary submodules are complementary. -/
+theorem _root_.IsCompl.prod (hL : IsCompl L₁ L₂) (hM : IsCompl M₁ M₂) :
+    IsCompl (L₁.prod M₁) (L₂.prod M₂) := by
+  refine IsCompl.of_eq ?_ ?_
+  · rw [Submodule.prod_inf_prod, hL.inf_eq_bot, hM.inf_eq_bot, Submodule.prod_bot]
+  · rw [Submodule.prod_sup_prod, hL.sup_eq_top, hM.sup_eq_top, Submodule.prod_top]
+
+end Prod
 
 end TauCeti

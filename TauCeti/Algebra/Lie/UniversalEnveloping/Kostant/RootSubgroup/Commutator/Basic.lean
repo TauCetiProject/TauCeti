@@ -51,7 +51,7 @@ x_α(t) x_β(u) x_α(t)⁻¹ = x_β(u) x_{α+β}(c t u) x_{2α+β}(d t² u).
 
 Type `G₂` additionally needs the longer chain with factors at `3α + β` and `3α + 2β`; its
 transport to Kostant root subgroups is in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.G2`.
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.G2.Basic`.
 
 The general statements about integral nilpotent exponentials are
 `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and

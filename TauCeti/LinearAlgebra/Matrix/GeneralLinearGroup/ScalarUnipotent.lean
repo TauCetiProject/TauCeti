@@ -13,8 +13,11 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 -- must be `public`: `TauCeti.scalarUnipotentHom` is compiled, and the code generator rejects a
 -- non-public import of a module whose declarations the compiled body uses.
 public import Mathlib.GroupTheory.NoncommCoprod
--- Non-public: `Nat.card_units` is used only inside the order computation.
+-- Non-public: the finite-field unit count, the order of `GL₂`, and cancellation in the
+-- order-index formula compute the subgroup order and index.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # The Jordan normal form of `GL₂` and its centralizing subgroup
@@ -70,7 +73,10 @@ ones.
   a block a regular element of `GL₂`.
 * `TauCeti.isConj_jordanGL`: a Jordan block whose off-diagonal entry is a unit is conjugate to
   `!![a, 1; 0, a]`.
+* `TauCeti.GL2ScalarUnipotent.scalar_mem`: `Z U` contains the centre of `GL₂`, and
+  `TauCeti.GL2ScalarUnipotent.le_gl2Borel`: it sits inside the Borel subgroup.
 * `TauCeti.natCard_gl2ScalarUnipotent`: over a field with `q` elements, `|Z U| = (q - 1) q`.
+* `TauCeti.index_gl2ScalarUnipotent`: over a finite field, `[GL₂(F) : Z U] = q² - 1`.
 
 ## References
 
@@ -267,6 +273,19 @@ theorem jordanGL_mem_gl2ScalarUnipotent (x : Rˣ) (y : R) :
     jordanGL x y ∈ GL2ScalarUnipotent R :=
   mem_gl2ScalarUnipotent_iff.mpr ⟨x, y, rfl⟩
 
+/-- **The scalar–unipotent subgroup contains the centre** of `GL₂`: a scalar matrix is the
+degenerate Jordan block with zero off-diagonal entry. -/
+theorem GL2ScalarUnipotent.scalar_mem (x : Rˣ) :
+    Matrix.GeneralLinearGroup.scalar (Fin 2) x ∈ GL2ScalarUnipotent R :=
+  jordanGL_zero x ▸ jordanGL_mem_gl2ScalarUnipotent x (0 : R)
+
+/-- **The scalar–unipotent subgroup lies inside the Borel subgroup**: its elements are the upper
+triangular matrices whose two diagonal entries agree. -/
+theorem GL2ScalarUnipotent.le_gl2Borel : GL2ScalarUnipotent R ≤ GL2Borel R := by
+  rintro g hg
+  obtain ⟨x, y, rfl⟩ := mem_gl2ScalarUnipotent_iff.mp hg
+  exact jordanGL_mem_gl2Borel x y
+
 variable (R) in
 /-- **The scalar–unipotent subgroup is `Gₘ × Gₐ`**: the multiplicative group of `R` times its
 additive group, the scalar and unipotent coordinates. This is the isomorphism the order count runs
@@ -300,5 +319,16 @@ theorem natCard_gl2ScalarUnipotent (F : Type u) [Field F] :
     Nat.card (GL2ScalarUnipotent F) = (Nat.card F - 1) * Nat.card F := by
   rw [← Nat.card_congr (GL2ScalarUnipotent.mulEquiv F).toEquiv, Nat.card_prod, Nat.card_units,
     Nat.card_congr Multiplicative.toAdd]
+
+/-- **The index of the scalar–unipotent subgroup** in `GL₂(F)` is `q² - 1` over a finite
+field with `q` elements. -/
+theorem index_gl2ScalarUnipotent (F : Type u) [Field F] [Fintype F] :
+    (GL2ScalarUnipotent F).index = Fintype.card F ^ 2 - 1 := by
+  have hpos : 0 < (Fintype.card F - 1) * Fintype.card F :=
+    Nat.mul_pos (Nat.sub_pos_of_lt (Fintype.one_lt_card (α := F))) Fintype.card_pos
+  refine index_eq_of_natCard_eq_mul hpos ?_ ?_
+  · rw [natCard_gl2ScalarUnipotent, Nat.card_eq_fintype_card]
+  · rw [natCard_GL_fin_two_eq_sq_sub_one_mul]
+    ac_rfl
 
 end TauCeti

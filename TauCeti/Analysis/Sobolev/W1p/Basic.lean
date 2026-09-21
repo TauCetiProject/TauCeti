@@ -50,6 +50,9 @@ boundary regularity of `Ω` is used.
 * `TauCeti.W1p.valueL` and `TauCeti.W1p.gradientL`: the two components as continuous linear
   projections from the Sobolev space, with `TauCeti.W1p.value_coe` and
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
+* `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
+* `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
+  the value vanishes on an open subset.
 
 ## References
 
@@ -479,6 +482,27 @@ theorem W1p.hasWeakFDerivOn (u : W1p mu Omega p) :
       (fun x => innerSL ℝ (W1p.gradient u x)) :=
   (mem_w1pSubmodule_iff_hasWeakFDerivOn u.1).mp u.2
 
+/-- The weak gradient of a Sobolev function is locally integrable on the domain, as its value
+component is. -/
+theorem W1p.locallyIntegrableOn_gradient (u : W1p mu Omega p) :
+    LocallyIntegrableOn (W1p.gradient u : E → E) (Omega : Set E) mu :=
+  locallyIntegrableOn_of_locallyIntegrable_restrict
+    ((Lp.memLp (W1p.gradient u)).locallyIntegrable Fact.out)
+
+/-- **A Sobolev function vanishing on an open subset has vanishing weak gradient there.** The
+weak gradient is determined almost everywhere by the function on every open set
+(`TauCeti.HasWeakFDerivOn.ae_eq`), and the zero function has zero weak gradient. -/
+theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Omega)
+    {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0) :
+    ∀ᵐ x ∂mu.restrict (V : Set E), W1p.gradient u x = 0 := by
+  have hzero : HasWeakFDerivOn mu V (W1p.value u) 0 :=
+    hasWeakFDerivOn_zero.congr_ae (by filter_upwards [hu] with x hx; exact hx.symm)
+  filter_upwards [((W1p.hasWeakFDerivOn u).mono hV).ae_eq hzero] with x hx
+  have h0 : innerSL ℝ (W1p.gradient u x) = innerSL ℝ (0 : E) := by
+    rw [map_zero]
+    simpa using hx
+  exact innerSL_inj.1 h0
+
 /-- Two Sobolev functions are equal when their `Lᵖ` value components are equal.  Uniqueness of
 weak derivatives determines the gradient component. -/
 @[ext]
@@ -547,6 +571,14 @@ theorem W1p.integral_value_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
   rw [← integral_norm_sq_eq_norm_sq (W1p.value u)]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [Real.norm_eq_abs, sq_abs])
+
+omit [FiniteDimensional ℝ E] in
+/-- The `L²` pairing of the value components of two Sobolev functions, as an integral over `Ω`. -/
+theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
+    ⟪W1p.value u, W1p.value v⟫_ℝ = ∫ x in Omega, W1p.value u x * W1p.value v x ∂mu := by
+  rw [L2.inner_def]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
+    simp [RCLike.inner_apply, mul_comm])
 
 /-- `W^{1,p}(Ω)` is complete in its value-gradient graph norm. -/
 instance : CompleteSpace (W1p mu Omega p) :=

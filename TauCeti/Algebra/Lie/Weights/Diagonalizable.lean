@@ -9,8 +9,6 @@ public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
-public section
-
 /-!
 # The Cartan subalgebra acts diagonalizably, and weight spaces are honest
 
@@ -46,6 +44,8 @@ to honest.
 * `TauCeti.isInternal_genWeightSpace`: a finite-dimensional triangularizable module is the internal
   direct sum of its *generalized* weight spaces. This needs no diagonalizability and is the form
   the dimension counts consume; the honest-weight-space refinement is below.
+* `TauCeti.eq_zero_of_forall_genWeightSpace`: a linear functional vanishing on every generalized
+  weight space is zero.
 * `TauCeti.isSemisimple_toEnd_coroot`: a coroot acts semisimply on a finite-dimensional module.
 * `TauCeti.isSemisimple_toEnd_cartan`: **every element of the Cartan subalgebra acts semisimply.**
 * `TauCeti.genWeightSpace_eq_weightSpace`: **the generalized weight spaces are honest weight
@@ -54,6 +54,9 @@ to honest.
 * `TauCeti.iSup_weightSpace_eq_top` and `TauCeti.isInternal_weightSpace`: the honest weight spaces
   span `M`, and `M` is their internal direct sum, so `χ ↦ finrank (weightSpace M χ)` counts honest
   multiplicities.
+* `TauCeti.eq_zero_of_genWeightSpace_ne_bot_of_isTrivial`: a trivial module has no weight but
+  zero. This needs neither diagonalizability nor the Cartan hypothesis, and is stated for an
+  arbitrary nilpotent Lie algebra acting trivially.
 
 ## References
 
@@ -63,6 +66,8 @@ This is the "honest weight spaces (the diagonalizability theorem)" item of Layer
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §6.4 and §20.1.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -104,7 +109,45 @@ theorem isInternal_genWeightSpace [IsTriangularizable K L M] [DecidableEq (Weigh
   · rw [← LieSubmodule.iSup_toSubmodule, iSup_genWeightSpace_eq_top' K L M]
     simp
 
+variable {K L M} in
+/-- **A functional vanishing on every generalized weight space is zero.** The generalized weight
+spaces of a finite-dimensional triangularizable module span it
+(`LieModule.iSup_genWeightSpace_eq_top`), so a linear functional killing each of them kills `M`. -/
+theorem eq_zero_of_forall_genWeightSpace [IsTriangularizable K L M] {g : Dual K M}
+    (hg : ∀ χ : L → K, ∀ m ∈ genWeightSpace M χ, g m = 0) : g = 0 := by
+  refine LinearMap.ker_eq_top.mp (top_le_iff.mp ?_)
+  rw [← LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top K L M)]
+  exact iSup_le fun χ m hm => hg χ m hm
+
 end Triangularizable
+
+/-! ### Trivial modules -/
+
+section Trivial
+
+variable {K : Type u} {L : Type v} {M : Type w} [Field K] [LieRing L] [LieAlgebra K L]
+  [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [LieModule.IsTrivial L M]
+
+/-- **A trivial module has no weight but zero**: the only linear form with a nonzero generalized
+weight space in a module on which the Lie algebra acts by zero is the zero form. -/
+theorem eq_zero_of_genWeightSpace_ne_bot_of_isTrivial {chi : L → K}
+    (hchi : genWeightSpace M chi ≠ ⊥) : chi = 0 := by
+  rw [ne_eq, ← LieSubmodule.toSubmodule_eq_bot] at hchi
+  obtain ⟨m, hm, hmne⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hchi
+  rw [LieSubmodule.mem_toSubmodule, mem_genWeightSpace] at hm
+  funext x
+  obtain ⟨k, hk⟩ := hm x
+  have hx : toEnd K L M x = 0 := LinearMap.ext fun y ↦ LieModule.IsTrivial.trivial x y
+  rw [hx, zero_sub, ← neg_smul, smul_pow, one_pow, LinearMap.smul_apply,
+    Module.End.one_apply] at hk
+  rcases smul_eq_zero.mp hk with h | h
+  · rcases Nat.eq_zero_or_pos k with rfl | hk0
+    · simp at h
+    · simpa using (pow_eq_zero_iff hk0.ne').mp h
+  · exact absurd h hmne
+
+end Trivial
 
 /-! ### Semisimplicity of the Cartan action -/
 

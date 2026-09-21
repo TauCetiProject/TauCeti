@@ -63,10 +63,6 @@ def replaceMarginal (π : ProbabilityMeasure (∀ j, X j)) (i : ι)
     dsimp only [γ]
     infer_instance
   letI := Classical.decEq ι
-  let hu : AEMeasurable (fun q : (∀ j, X j) × X i × X i ↦
-      Function.update q.1 i q.2.2) γ :=
-    (measurable_update'.comp
-      (measurable_fst.prodMk (measurable_snd.comp measurable_snd))).aemeasurable
   exact (⟨γ.map (fun q ↦ Function.update q.1 i q.2.2),
     inferInstance⟩ : ProbabilityMeasure (∀ j, X j))
 
@@ -143,7 +139,7 @@ theorem map_project_replaceMarginal_of_forall_ne {κ : Type w}
       π.toMeasure.map (fun x k ↦ x (e k)) := by
   classical
   apply map_replaceMarginal_eq_of_update_eq π i σ (fun x k ↦ x (e k))
-    (measurable_pi_lambda _ fun k ↦ measurable_pi_apply (e k))
+    (Measurable.of_eval fun k ↦ measurable_pi_apply (e k))
   intro x y
   funext k
   simp [he k]

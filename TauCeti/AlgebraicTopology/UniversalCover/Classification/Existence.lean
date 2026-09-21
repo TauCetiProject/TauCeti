@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.SubgroupQu
 public import TauCeti.Topology.Covering.Category
 public import TauCeti.Topology.Covering.Quotient
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
+import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # The covering associated to a subgroup
@@ -20,7 +21,7 @@ covering map.
 
 The two inputs are that `UniversalCover.proj` and `UniversalCover.subgroupQuotientMap` are
 quotient covering maps, for `π₁(X, x₀)` and for `H` respectively, and that the first factors
-through the second. `TauCeti.IsQuotientCoveringMap.isCoveringMap_of_comp` turns exactly that
+through the second. `IsQuotientCoveringMap.isCoveringMap_of_comp` turns exactly that
 data into a covering map: the sheets of the descended projection over the image of a locally
 disjoint set `U` are the images of the translates of `U`. Nothing about good neighbourhoods of
 the base, their path-connectedness, or the transport of a sheet of `proj` along the
@@ -38,6 +39,8 @@ itself a quotient covering map for any group.
   `H ≤ π₁(X, x₀)` is a covering space of `X`.
 * `TauCeti.UniversalCover.subgroupCover`: the same cover, bundled as a connected covering space.
 * `TauCeti.UniversalCover.subgroupCoverBasepointFiber`: its distinguished fibre point.
+* `TauCeti.UniversalCover.subgroupQuotientTopHomeomorph`: the cover associated to the whole
+  fundamental group is `X` itself.
 
 ## References
 
@@ -65,6 +68,13 @@ theorem isCoveringMap_subgroupQuotientProj [LocallyPathConnectedSpace X]
   IsQuotientCoveringMap.isCoveringMap_of_comp (isQuotientCoveringMap (x₀ := x₀))
     (isQuotientCoveringMap_subgroupQuotientMap x₀ H)
     (subgroupQuotientProj_comp_subgroupQuotientMap x₀ H)
+
+/-- The quotient of the universal cover by a subgroup is locally path-connected, being the total
+space of a covering space of the locally path-connected base `X`. -/
+theorem locallyPathConnectedSpace_subgroupQuotient [LocallyPathConnectedSpace X]
+    [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x₀ : X)
+    (H : Subgroup (FundamentalGroup X x₀)) : LocallyPathConnectedSpace (SubgroupQuotient x₀ H) :=
+  (isCoveringMap_subgroupQuotientProj x₀ H).isLocalHomeomorph.locallyPathConnectedSpace
 
 /-- The connected covering space associated to a subgroup `H ≤ π₁(X, x₀)`, obtained by
 quotienting the universal cover by `H`. -/
@@ -144,17 +154,17 @@ theorem subgroupCoverFiberEquivSubgroupQuotient_apply_monodromy
         ((subgroupCover x₀ H).isCoveringMap_proj.monodromy g e) =
       (isCoveringMap_subgroupQuotientProj x₀ H).monodromy g
         (subgroupCoverFiberEquivSubgroupQuotient x₀ H e) := by
-  have hmonodromy := TauCeti.IsCoveringMap.fiberMap_monodromy
+  have hmonodromy := IsCoveringMap.fiberMap_monodromy
     (subgroupCover x₀ H).isCoveringMap_proj
     (isCoveringMap_subgroupQuotientProj x₀ H)
     (subgroupCoverTotalSpaceHomeomorph x₀ H)
     (funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)) g e
   have hfiberMap (e' : ⇑(subgroupCover x₀ H).proj ⁻¹' {x₀}) :
-      TauCeti.IsCoveringMap.fiberMap (subgroupCoverTotalSpaceHomeomorph x₀ H)
+      Function.fiberMap (subgroupCoverTotalSpaceHomeomorph x₀ H : C(_, _))
           (funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)) x₀ e' =
         subgroupCoverFiberEquivSubgroupQuotient x₀ H e' := by
     apply Subtype.ext
-    rw [TauCeti.IsCoveringMap.fiberMap_apply_coe]
+    rw [Function.fiberMap_apply_coe]
     exact (subgroupCoverFiberEquivSubgroupQuotient_apply_coe x₀ H e').symm
   simpa only [hfiberMap] using hmonodromy
 
@@ -174,5 +184,22 @@ theorem subgroupCoverFiberEquivSubgroupQuotient_apply_basepoint
     subgroupCoverFiberEquivSubgroupQuotient x₀ H (subgroupCoverBasepointFiber x₀ H) =
       SubgroupQuotient.basepointFiber x₀ H :=
   Equiv.apply_symm_apply _ _
+
+/-- **The cover associated to the whole fundamental group is `X` itself.** The comparison is the
+descended endpoint projection, so this cover is the trivial one-sheeted cover. -/
+def subgroupQuotientTopHomeomorph [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+    SubgroupQuotient x₀ (⊤ : Subgroup (FundamentalGroup X x₀)) ≃ₜ X :=
+  (Equiv.ofBijective (subgroupQuotientProj x₀ ⊤) ⟨subgroupQuotientProj_top_injective x₀,
+    subgroupQuotientProj_surjective x₀ ⊤⟩).toHomeomorphOfContinuousOpen
+      (continuous_subgroupQuotientProj x₀ ⊤)
+      (isCoveringMap_subgroupQuotientProj x₀ ⊤).isLocalHomeomorph.isOpenMap
+
+@[simp]
+theorem coe_subgroupQuotientTopHomeomorph [LocallyPathConnectedSpace X] [PathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] (x₀ : X) :
+    ⇑(subgroupQuotientTopHomeomorph x₀) =
+      subgroupQuotientProj x₀ (⊤ : Subgroup (FundamentalGroup X x₀)) :=
+  (rfl)
 
 end TauCeti.UniversalCover

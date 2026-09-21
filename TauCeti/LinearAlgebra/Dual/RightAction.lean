@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 
 /-!
@@ -17,10 +18,20 @@ Precomposition reverses composition, which is exactly what exchanges the two sid
 
 This file records that action as the ring homomorphism `TauCeti.dualRightAction`.
 
+On the other side, a `k`-algebra `A` acts on the right of the dual of its left regular module by
+`(ψ · c) b = ψ (c * b)`, which Mathlib writes as the domain action `DomMulAct.mk c • ψ`. A
+`k`-linear map `A → Module.Dual k A` that is right `A`-linear for this action is determined by its
+value at `1`; this is `TauCeti.dualLinearMap_apply_apply`.
+
 ## Main definitions
 
 * `TauCeti.dualRightAction`: the left action of `A` on the `k`-dual of a right `A`-module, as a ring
   homomorphism into the `k`-linear endomorphisms of the dual.
+
+## Main results
+
+* `TauCeti.dualLinearMap_apply_apply`: a right `A`-linear map from `A` to its dual is determined by
+  its value at `1`.
 
 ## Implementation notes
 
@@ -62,5 +73,17 @@ theorem dualRightAction_apply_apply (a : A) (φ : Module.Dual k N) (x : N) :
   -- unfolding `dualRightAction` leaves `LinearMap.dualMap` of multiplication by `a`, evaluated by
   -- `LinearMap.dualMap_apply`
   simp [dualRightAction, LinearMap.dualMap_apply]
+
+section DomMulAct
+
+variable {k} [Algebra k A]
+
+/-- A `k`-linear map from `A` to its dual that is right `A`-linear, for the action
+`DomMulAct.mk c • ψ = ψ (c * ·)` on the dual, is determined by its value at `1`. -/
+theorem dualLinearMap_apply_apply {e : A →ₗ[k] Module.Dual k A}
+    (he : ∀ a c : A, e (a * c) = DomMulAct.mk c • e a) (a b : A) : e a b = e 1 (a * b) := by
+  simpa [DomMulAct.smul_linearMap_apply] using LinearMap.congr_fun (he 1 a) b
+
+end DomMulAct
 
 end TauCeti

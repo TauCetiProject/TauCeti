@@ -25,3 +25,11 @@
 # bypasses code-owner review for a direct merge, but not at enqueue time), so they are AI-gated.
 /lake-manifest.json
 /lean-toolchain
+
+# The bibliography doc-gen4 resolves docstring citations against. pr-build.yml already permits it
+# for the same reason it permits the pins, and states that reasoning at length: filling in an entry
+# is the same work as writing the docstring that cites it, and it is BibTeX read only by the pages
+# build, never by Lake or the harness. Leaving it human-owned here left the two definitions of
+# "in scope" disagreeing, and #4029 sat fully green for six days as a result. The rest of docbuild/
+# stays human-owned; its lakefile, pin and generator scripts feed the docs build itself.
+/docbuild/docs/references.bib

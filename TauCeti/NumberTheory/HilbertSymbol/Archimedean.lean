@@ -1,0 +1,126 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Real.Sqrt
+public import TauCeti.NumberTheory.HilbertSymbol.Basic
+
+/-!
+# The Hilbert symbol over `ℝ`
+
+This file computes the norm-equation Hilbert symbol `TauCeti.hilbertSymbol` over `ℝ`.
+
+Over `ℝ` the equation `b = x² - a y²` is solvable unless both `a` and `b` are negative, because
+`x² - a y²` is then positive for every nonzero `(x, y)`. Hence `(a, b) = -1` exactly when
+`a < 0` and `b < 0`. Bimultiplicativity over `ℝ` is read off this formula, and so is the value of
+the product `∏_{i<j} (a_i, a_j)` attached to a diagonal real form: it is `(-1)^(q(q-1)/2)`,
+where `q` is the number of negative coefficients.
+
+## Main results
+
+* `TauCeti.hilbertSymbol_real`: the closed formula for the real symbol.
+* `TauCeti.hilbertSymbol_real_mul_left`, `TauCeti.hilbertSymbol_real_mul_right`:
+  bimultiplicativity over `ℝ`.
+* `TauCeti.exists_hilbertSymbol_real_eq_neg_one`: every real nonsquare has a partner with symbol
+  `-1`.
+* `TauCeti.prod_hilbertSymbol_real`: the product of the symbols over ordered pairs of a finite
+  family of real units.
+
+## References
+
+* J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1.1.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, 71:18.
+-/
+
+public section
+
+namespace TauCeti
+
+open Finset
+
+section Real
+
+/-- The real Hilbert symbol is `-1` exactly when both parameters are negative. -/
+theorem hilbertSymbol_real (a b : ℝˣ) :
+    hilbertSymbol a b = if (a : ℝ) < 0 ∧ (b : ℝ) < 0 then -1 else 1 := by
+  classical
+  rw [hilbertSymbol_def]
+  split_ifs with h hab hab
+  · -- `x² - a y²` is nonnegative when `a < 0`, so it never equals `b < 0`.
+    obtain ⟨x, y, h⟩ := h
+    nlinarith [sq_nonneg x, sq_nonneg y, hab.1, hab.2]
+  · rfl
+  · rfl
+  · refine absurd ?_ h
+    rcases (b.ne_zero).lt_or_gt with hb | hb
+    · -- Here `a > 0`, and `b = 0² - a (√(-b/a))²`.
+      have ha : 0 < (a : ℝ) := (a.ne_zero).lt_or_gt.resolve_left fun ha => hab ⟨ha, hb⟩
+      refine ⟨0, √(-b / a), ?_⟩
+      rw [Real.sq_sqrt (div_nonneg (neg_nonneg.mpr hb.le) ha.le)]
+      field_simp
+      ring
+    · exact ⟨√b, 0, by rw [Real.sq_sqrt hb.le]; ring⟩
+
+/-- The real Hilbert symbol is `-1` exactly when both parameters are negative. -/
+theorem hilbertSymbol_real_eq_neg_one_iff (a b : ℝˣ) :
+    hilbertSymbol a b = -1 ↔ (a : ℝ) < 0 ∧ (b : ℝ) < 0 := by
+  rw [hilbertSymbol_real]
+  split_ifs with h <;> simp [h]
+
+/-- The real Hilbert symbol is `1` exactly when one of the parameters is positive. -/
+theorem hilbertSymbol_real_eq_one_iff (a b : ℝˣ) :
+    hilbertSymbol a b = 1 ↔ 0 < (a : ℝ) ∨ 0 < (b : ℝ) := by
+  have ha := a.ne_zero
+  have hb := b.ne_zero
+  rw [hilbertSymbol_real]
+  split_ifs with h
+  · exact ⟨fun h' => absurd h' (by decide), fun h' => by grind⟩
+  · simp only [true_iff]
+    grind
+
+/-- The real Hilbert symbol is multiplicative in its first parameter. -/
+theorem hilbertSymbol_real_mul_left (a a' b : ℝˣ) :
+    hilbertSymbol (a * a') b = hilbertSymbol a b * hilbertSymbol a' b := by
+  simp only [hilbertSymbol_real, Units.val_mul, mul_neg_iff]
+  have := a.ne_zero
+  have := a'.ne_zero
+  split_ifs <;> (try simp) <;> grind
+
+/-- The real Hilbert symbol is multiplicative in its second parameter. -/
+theorem hilbertSymbol_real_mul_right (a b b' : ℝˣ) :
+    hilbertSymbol a (b * b') = hilbertSymbol a b * hilbertSymbol a b' := by
+  let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  calc
+    hilbertSymbol a (b * b') = hilbertSymbol (b * b') a := hilbertSymbol_comm _ _
+    _ = hilbertSymbol b a * hilbertSymbol b' a := hilbertSymbol_real_mul_left _ _ _
+    _ = hilbertSymbol a b * hilbertSymbol a b' := by
+      rw [hilbertSymbol_comm b a, hilbertSymbol_comm b' a]
+
+/-- Every real nonsquare `b` has a partner `a` with `(a, b) = -1`; one may take `a = -1`. -/
+theorem exists_hilbertSymbol_real_eq_neg_one {b : ℝˣ} (hb : ¬IsSquare b) :
+    ∃ a : ℝˣ, hilbertSymbol a b = -1 := by
+  refine ⟨-1, (hilbertSymbol_real_eq_neg_one_iff _ _).mpr ⟨by simp, ?_⟩⟩
+  refine (b.ne_zero).lt_or_gt.resolve_right fun hpos => hb ?_
+  have hs : √(b : ℝ) ≠ 0 := (Real.sqrt_pos.mpr hpos).ne'
+  exact ⟨Units.mk0 _ hs, Units.ext <| by simp [Real.mul_self_sqrt hpos.le]⟩
+
+/-- The product of the real Hilbert symbols `(a_i, a_j)` over the pairs `i < j` of a finite
+family is `(-1)^(q(q-1)/2)`, where `q` is the number of negative members of the family. -/
+theorem prod_hilbertSymbol_real {ι : Type*} [Fintype ι] [LinearOrder ι] (a : ι → ℝˣ) :
+    ∏ ij ∈ univ.filter (fun ij : ι × ι => ij.1 < ij.2), hilbertSymbol (a ij.1) (a ij.2) =
+      (-1) ^ (#{i | (a i : ℝ) < 0}).choose 2 := by
+  classical
+  simp_rw [hilbertSymbol_real]
+  rw [prod_ite, prod_const_one, mul_one, prod_const, filter_filter,
+    ← card_product_filter_lt]
+  congr 2
+  ext ij
+  simp only [mem_filter, mem_univ, mem_product, true_and]
+  tauto
+
+end Real
+
+end TauCeti

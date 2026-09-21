@@ -34,7 +34,8 @@ variable [NormedSpace 𝕜 β] {μ : Measure α} {g : α → β}
 
 /-- Multiplication by `exp (a * ‖x‖)` preserves integrability on a measure whose support is
 essentially contained in a closed ball. -/
-protected theorem Integrable.exp_norm_smul_of_ae_norm_le (hg : Integrable g μ) (a R : ℝ)
+protected theorem _root_.MeasureTheory.Integrable.exp_norm_smul_of_ae_norm_le
+    (hg : Integrable g μ) (a R : ℝ)
     (hR : ∀ᵐ x ∂μ, ‖x‖ ≤ R) :
     Integrable (fun x : α => (Real.exp (a * ‖x‖) : 𝕜) • g x) μ := by
   have h_exp : AEStronglyMeasurable (fun x : α => (Real.exp (a * ‖x‖) : 𝕜)) μ := by
@@ -52,7 +53,8 @@ protected theorem Integrable.exp_norm_smul_of_ae_norm_le (hg : Integrable g μ) 
     Real.exp_le_exp.mpr (hmul_left.trans hmul_right)
 
 /-- Real-line version of `Integrable.exp_norm_smul_of_ae_norm_le`, stated with `|x|`. -/
-protected theorem Integrable.exp_abs_smul_of_ae_abs_le {μ : Measure ℝ} {g : ℝ → β}
+protected theorem _root_.MeasureTheory.Integrable.exp_abs_smul_of_ae_abs_le {μ : Measure ℝ}
+    {g : ℝ → β}
     (hg : Integrable g μ) (a R : ℝ) (hR : ∀ᵐ x ∂μ, |x| ≤ R) :
     Integrable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜) • g x) μ := by
   simpa [Real.norm_eq_abs] using

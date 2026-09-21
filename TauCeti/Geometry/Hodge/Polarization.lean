@@ -100,12 +100,8 @@ theorem flip_eq (h : IsPolarization hℂ hs Q) : Q.flip = (n.negOnePow : ℤ) �
 
 /-- The complexification of a polarizing form obeys the same weight symmetry. -/
 theorem complex_symm_weight (h : IsPolarization hℂ hs Q) (x y : Vℂ) :
-    integralFormBaseChange hℂ Q y x = (n.negOnePow : ℤ) * integralFormBaseChange hℂ Q x y := by
-  have hforms : (integralFormBaseChange hℂ Q).flip =
-      (n.negOnePow : ℤ) • integralFormBaseChange hℂ Q := by
-    rw [integralFormBaseChange_flip, h.flip_eq, integralFormBaseChange_zsmul]
-  have hxy := DFunLike.congr_fun (DFunLike.congr_fun hforms x) y
-  simpa only [LinearMap.BilinForm.flip_apply, LinearMap.smul_apply, zsmul_eq_mul] using hxy
+    integralFormBaseChange hℂ Q y x = (n.negOnePow : ℤ) * integralFormBaseChange hℂ Q x y :=
+  integralFormBaseChange_apply_symm hℂ Q h.symm_weight x y
 
 /-- The complexification of a polarizing form is nondegenerate. -/
 theorem complex_nondegenerate (h : IsPolarization hℂ hs Q) :

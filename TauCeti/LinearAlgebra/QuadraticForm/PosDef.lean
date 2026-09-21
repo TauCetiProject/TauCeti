@@ -26,8 +26,8 @@ the one that turns an orbit lying in a level set into a periodic orbit.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
   value exactly `n`.
 
-Both live in the root `QuadraticMap.PosDef` namespace so that they are available by dot notation
-on a `QuadraticForm.PosDef` hypothesis.
+These results live in the root `QuadraticMap.PosDef` namespace so that they are available by dot
+notation on a `QuadraticForm.PosDef` hypothesis.
 
 ## Implementation notes
 

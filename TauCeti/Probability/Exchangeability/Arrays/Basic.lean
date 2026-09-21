@@ -50,7 +50,9 @@ this subtree meets the representation theory; the value space of the sequence is
 * `TauCeti.Probability.SeparatelyExchangeable.jointlyExchangeable` — the implication between the
   two symmetries.
 * `TauCeti.Probability.separatelyExchangeable_iff_map_pairReindex` — the bridge to the array law:
-  separate exchangeability is invariance of the law on `ℕ × ℕ → α` under every pair reindexing.
+  separate exchangeability is invariance of the law on `ℕ × ℕ → α` under every pair reindexing,
+  with `TauCeti.Probability.SeparatelyExchangeable.measurePreserving_pairReindex` its
+  measure-preserving form.
 * `TauCeti.Probability.map_uncurry_pathLaw_arrayRow` — the array law is the uncurried path law of
   the row process.
 * `TauCeti.Probability.separatelyExchangeable_iff_axes` — separate exchangeability splits into
@@ -118,6 +120,12 @@ theorem pairReindex_apply (σ τ : Equiv.Perm ℕ) (x : ℕ × ℕ → α) (p : 
     pairReindex σ τ x p = x (σ p.1, τ p.2) :=
   (rfl)
 
+/-- The function form of `pairReindex`. -/
+theorem pairReindex_def (σ τ : Equiv.Perm ℕ) :
+    pairReindex (α := α) σ τ = fun x p => x (σ p.1, τ p.2) := by
+  funext x p
+  exact pairReindex_apply σ τ x p
+
 /-- Reindexing both axes twice composes the corresponding permutations on each axis. -/
 @[simp]
 theorem pairReindex_comp (σ₁ τ₁ σ₂ τ₂ : Equiv.Perm ℕ) :
@@ -164,15 +172,15 @@ variable [MeasurableSpace α] [MeasurableSpace Ω]
 @[fun_prop]
 theorem measurable_pairReindex (σ τ : Equiv.Perm ℕ) :
     Measurable (pairReindex (α := α) σ τ) :=
-  measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  Measurable.of_eval fun _ => measurable_pi_apply _
 
 theorem aemeasurable_arrayRow {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (hX : ∀ p, AEMeasurable (X p) μ) (i : ℕ) : AEMeasurable (arrayRow X i) μ :=
-  aemeasurable_pi_lambda _ fun j => hX (i, j)
+  AEMeasurable.of_eval fun j => hX (i, j)
 
 theorem aemeasurable_arrayCol {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (hX : ∀ p, AEMeasurable (X p) μ) (j : ℕ) : AEMeasurable (arrayCol X j) μ :=
-  aemeasurable_pi_lambda _ fun i => hX (i, j)
+  AEMeasurable.of_eval fun i => hX (i, j)
 
 /-- **Entry measurability from row measurability**, the converse of `aemeasurable_arrayRow`.  The
 entries are the coordinates of the rows, so this needs no probabilistic structure; a caller holding
@@ -236,7 +244,7 @@ single entry. -/
 theorem map_map_array {β : Type*} [MeasurableSpace β] {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (hX : ∀ p, AEMeasurable (X p) μ) {F : (ℕ × ℕ → α) → β} (hF : Measurable F) :
     (μ.map fun ω p => X p ω).map F = μ.map fun ω => F fun p => X p ω :=
-  AEMeasurable.map_map_of_aemeasurable hF.aemeasurable (aemeasurable_pi_lambda _ hX)
+  AEMeasurable.map_map_of_aemeasurable hF.aemeasurable (AEMeasurable.of_eval hX)
 
 /-- Separate exchangeability, transported to any measurable read-off `F` of the array's sample
 path. -/
@@ -272,13 +280,35 @@ theorem separatelyExchangeable_iff_map_pairReindex {μ : Measure Ω} {X : ℕ ×
       rw [pairReindex_apply]
     rw [map_map_array hX (measurable_pairReindex σ τ), hread]
 
+/-- **A separately exchangeable array law is preserved by every pair reindexing** of array path
+space. This is the measure-preserving form of `separatelyExchangeable_iff_map_pairReindex` for the
+coordinate array. -/
+theorem SeparatelyExchangeable.measurePreserving_pairReindex
+    {ρ : Measure (ℕ × ℕ → α)} (hρ : SeparatelyExchangeable ρ fun p x => x p)
+    (σ τ : Equiv.Perm ℕ) : MeasurePreserving (pairReindex σ τ) ρ ρ := by
+  refine ⟨measurable_pairReindex σ τ, ?_⟩
+  simpa only [← pairReindex_def, Measure.map_id'] using hρ σ τ
+
+/-- **Joint exchangeability is a property of the array law**: an array is jointly exchangeable
+exactly when the coordinate array under its law on `ℕ × ℕ → α` is. -/
+theorem jointlyExchangeable_map_iff {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
+    (hX : ∀ p, AEMeasurable (X p) μ) :
+    JointlyExchangeable (μ.map fun ω p => X p ω) (fun p x => x p) ↔ JointlyExchangeable μ X :=
+  forall_congr' fun σ => by
+    have hread : (fun ω => pairReindex σ σ fun p => X p ω) = fun ω p => X (σ p.1, σ p.2) ω := by
+      funext ω p
+      rw [pairReindex_apply]
+    beta_reduce
+    rw [← pairReindex_def, map_map_array hX (measurable_pairReindex σ σ), hread,
+      Measure.map_id']
+
 /-- **An array law is the uncurried path law of its row process.** A statement about the law of the
 row process therefore transports to one about the law of the array. -/
 theorem map_uncurry_pathLaw_arrayRow {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (hX : ∀ p, AEMeasurable (X p) μ) :
     (pathLaw μ (arrayRow X)).map Function.uncurry = μ.map fun ω p => X p ω := by
   rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable measurable_uncurry.aemeasurable
-    (aemeasurable_pi_lambda _ fun i => aemeasurable_arrayRow hX i)]
+    (AEMeasurable.of_eval fun i => aemeasurable_arrayRow hX i)]
   refine congrArg (Measure.map · _) ?_
   funext ω ⟨i, j⟩
   simp
@@ -333,7 +363,7 @@ theorem SeparatelyExchangeable.fullyExchangeable_arrayCol {μ : Measure Ω} {X :
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     FullyExchangeable μ (arrayCol X) := fun τ =>
   h.map_comp hX 1 τ (F := fun x j i => x (i, j))
-    (measurable_pi_lambda _ fun _ => measurable_pi_lambda _ fun _ => measurable_pi_apply _)
+    (Measurable.of_eval fun _ => Measurable.of_eval fun _ => measurable_pi_apply _)
 
 /-- **The columns of a separately exchangeable array form an exchangeable sequence** of random
 paths. -/
@@ -347,14 +377,14 @@ is the column half of the symmetry, read off at one row index. -/
 theorem SeparatelyExchangeable.fullyExchangeable_row {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) (i : ℕ) :
     FullyExchangeable μ fun j => X (i, j) := fun τ =>
-  h.map_comp hX 1 τ (F := fun x j => x (i, j)) (measurable_pi_lambda _ fun _ =>
+  h.map_comp hX 1 τ (F := fun x j => x (i, j)) (Measurable.of_eval fun _ =>
     measurable_pi_apply _)
 
 /-- **Each single column of a separately exchangeable array is a fully exchangeable sequence.** -/
 theorem SeparatelyExchangeable.fullyExchangeable_col {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) (j : ℕ) :
     FullyExchangeable μ fun i => X (i, j) := fun σ =>
-  h.map_comp hX σ 1 (F := fun x i => x (i, j)) (measurable_pi_lambda _ fun _ =>
+  h.map_comp hX σ 1 (F := fun x i => x (i, j)) (Measurable.of_eval fun _ =>
     measurable_pi_apply _)
 
 /-- **The entries of a separately exchangeable array are identically distributed.** -/
@@ -373,7 +403,7 @@ is what makes it a useful hypothesis on a jointly exchangeable symmetric array. 
 theorem JointlyExchangeable.fullyExchangeable_arrayDiag {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
     (h : JointlyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     FullyExchangeable μ (arrayDiag X) := fun σ =>
-  h.map_comp hX σ (F := fun x i => x (i, i)) (measurable_pi_lambda _ fun _ =>
+  h.map_comp hX σ (F := fun x i => x (i, i)) (Measurable.of_eval fun _ =>
     measurable_pi_apply _)
 
 /-- **The diagonal of a jointly exchangeable array is an exchangeable sequence.** -/

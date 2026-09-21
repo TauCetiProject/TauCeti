@@ -31,6 +31,9 @@ this file names those two parts and records that they multiply to the degree.
   algebra structure induced by the pullback, rather than over the field range — the separable
   analogues of `degree_eq_finrank`, and how a caller relates these numbers to
   `W₂.FunctionField`.
+* `TauCeti.Isogeny.isSeparable_functionField`: separability of `φ`, which is stated over the
+  field range, read over `W₂.FunctionField` itself — the separability counterpart of
+  `Isogeny.finiteDimensional_functionField`.
 * `TauCeti.Isogeny.separableDegree_mul_inseparableDegree`: the two multiply to `degree`.
 * `TauCeti.Isogeny.separableDegree_pos` and `TauCeti.Isogeny.inseparableDegree_pos`: both are
   positive, so neither factor is degenerate.
@@ -135,6 +138,20 @@ theorem inseparableDegree_eq_finInsepDegree (φ : Isogeny W₁ W₂)
     (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z) :
     φ.inseparableDegree = Field.finInsepDegree W₂.FunctionField W₁.FunctionField :=
   (φ.inseparableDegree_def).trans (TauCeti.AlgHom.finInsepDegree_fieldRange φ.fieldPullback h)
+
+/-- **A separable isogeny induces a separable extension of function fields**, for any algebra
+structure whose structure map is the pullback.
+
+Separability of `φ` is stated over `φ.fieldPullback.fieldRange`, but the theorems about the
+extension `F(W₁)/F(W₂)` — the fundamental identity, the different divisor, the Hurwitz genus
+formula — take it over `W₂.FunctionField` itself. This is the transport between the two, the
+separability counterpart of `Isogeny.finiteDimensional_functionField`. -/
+theorem isSeparable_functionField (φ : Isogeny W₁ W₂)
+    [Algebra W₂.FunctionField W₁.FunctionField]
+    (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
+    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
+    Algebra.IsSeparable W₂.FunctionField W₁.FunctionField :=
+  φ.fieldPullback.isSeparable_of_fieldRange h
 
 /-- **The degree factors as separable times inseparable.** This is the field-theoretic
 factorisation transported to isogenies; it is what makes "the inseparable part is a Frobenius

@@ -28,9 +28,9 @@ argument holds grid points and the right argument names squares, so there is no 
 since shifting *both* point sets by `(1/2, 1/2)` preserves every strict comparison; those keep
 using `GridPoint.J`.
 
-This file corrects the grading pairing only. The older `GridRectangle.AvoidsMarkings` predicate
-still interprets marking indices using the open grid-line interior; aligning that Lane G.3
-differential convention with square-centered markings is a separate rectangle correction.
+The grid differential reads marking indices the same way: its marking-avoidance predicate
+`GridRectangle.AvoidsMarkings` tests the squares a rectangle covers, so a marking index names a
+square there too.
 
 ## Main definitions
 

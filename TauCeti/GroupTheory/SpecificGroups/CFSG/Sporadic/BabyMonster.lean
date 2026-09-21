@@ -445,7 +445,7 @@ def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
   presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
-    presentation_transcribed_append
+    (congrArg Subgroup.normalClosure (congrArg Relator.relatorSet presentation_transcribed_append))
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
@@ -453,6 +453,7 @@ generator. -/
 theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.generatorCount) :
     mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
   GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
-    presentation_transcribed_append i
+    (congrArg Subgroup.normalClosure
+      (congrArg Relator.relatorSet presentation_transcribed_append)) i
 
 end TauCeti.Sporadic.BabyMonster

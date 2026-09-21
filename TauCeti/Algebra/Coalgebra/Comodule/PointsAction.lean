@@ -56,7 +56,7 @@ namespace TauCeti
 
 namespace Comodule
 
-open Coalgebra WithConv TensorProduct
+open Coalgebra WithConv _root_.TensorProduct
 
 section Coalgebra
 

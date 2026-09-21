@@ -49,7 +49,8 @@ on the empty diagram both hold, and there `Sₙ` is trivial and so are both char
 states them, as the action formula together with the dimension: a line on which `σ` acts by `1`
 resp. by `sgn σ`.  No isomorphism with a separately constructed model object is built here.  The
 third named small irreducible, the standard representation `S^{(n-1,1)}`, is not treated here
-either; it is not a line and needs the tabloid combinatorics of the two-row shape.
+either; it is not a line and needs the tabloid combinatorics of the two-row shape, which is
+`TauCeti.RepresentationTheory.Symmetric.Specht.SingletonSecondRow`.
 
 ## Main results
 
@@ -318,15 +319,11 @@ theorem spechtCharValue_ones (n : ℕ) (ν : n.Partition) :
     spechtCharValue (Nat.Partition.ones n) ν = (-1) ^ (n + Multiset.card ν.parts) := by
   obtain ⟨σ, hσ⟩ := ConjClasses.mk_surjective (partitionEquivConjClasses n ν)
   have hparts : Multiset.card σ.partition.parts = Multiset.card ν.parts := by
-    have hcast : ∀ {m : ℕ} (e : n = m) (p : n.Partition),
-        (Equiv.cast (congrArg Nat.Partition e) p).parts = p.parts := by
-      rintro m rfl p
-      rfl
     have hσpart : σ.partition =
         Equiv.cast (congrArg Nat.Partition (Fintype.card_fin n).symm) ν := by
       rw [← permConjClassPartition_mk, hσ, permConjClassPartition_partitionEquivConjClasses]
     rw [hσpart]
-    exact congrArg Multiset.card (hcast (Fintype.card_fin n).symm ν)
+    exact congrArg Multiset.card (parts_equivCast (Fintype.card_fin n).symm ν)
   rw [spechtCharValue_eq_spechtChar _ _ hσ, spechtChar_ones,
     Equiv.Perm.sign_of_parts_partition, hparts, Fintype.card_fin]
   simp

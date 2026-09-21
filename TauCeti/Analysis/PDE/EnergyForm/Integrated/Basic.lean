@@ -388,7 +388,7 @@ lemma garding_energyFormIntegral_self_of_bounds (hlam : 0 < lam)
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
   exact garding_energyIntegrand_self_of_bounds hlam
-    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
+    (fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hax ξ) hbx hcx (U x)
 
 /-- Integrated Gårding lower bound with a mass floor from a.e. lower ellipticity and a.e.
 lower-order coefficient hypotheses. -/
@@ -407,7 +407,7 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < 
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
   exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam
-    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
+    (fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hax ξ) hbx hcx (U x)
 
 /-- Integrated zero-drift diagonal lower bound from an a.e. principal quadratic lower bound
 and a.e. nonnegative mass coefficient. -/
@@ -423,7 +423,7 @@ lemma integral_min_lam_mass_mul_norm_sq_le_energyFormIntegral_zero_drift_self (h
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hc] with x hax hcx
   exact min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self hlam
-    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hcx (U x)
+    (fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hax ξ) hcx (U x)
 
 /-- An integrated zero-drift energy form dominates the integral of the squared gradient
 component under an a.e. principal quadratic lower bound and nonnegative mass coefficient. -/
@@ -438,7 +438,7 @@ lemma integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hc] with x hax hcx
   exact mul_norm_snd_sq_le_energyIntegrand_zero_drift_self
-    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hcx (U x)
+    (fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hax ξ) hcx (U x)
 
 /-- A zero-drift diagonal integrated energy form is nonnegative when the principal quadratic
 form and mass coefficient are a.e. nonnegative. -/
@@ -450,7 +450,7 @@ lemma energyFormIntegral_zero_drift_self_nonneg
   filter_upwards [ha, hc] with x hax hcx
   have hpoint :=
     min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self (lam := 0) (c₀ := c x)
-      le_rfl (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ)
+      le_rfl (fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hax ξ)
       hcx (U x)
   simpa [min_eq_left hcx] using hpoint
 
@@ -470,7 +470,7 @@ lemma integral_min_diagonal_lower_bound_mul_norm_sq_le_energyFormIntegral_self_o
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
   exact min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self hlam
-    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx hmu (U x)
+    (fun ξ => by simpa [Matrix.toQuadraticForm'_apply] using hax ξ) hbx hcx hmu (U x)
 
 namespace UniformlyEllipticOn
 
@@ -502,7 +502,7 @@ lemma garding_energyFormIntegral_self_on (h : UniformlyEllipticOn Ω a lam Lam)
     (U := U) h.pos ?_ hb hc hlower henergy
   filter_upwards [hΩ] with x hx
   intro ξ
-  simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx ξ
+  simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx ξ
 
 /-- Integrated Gårding lower bound with a mass floor from uniform ellipticity and a.e.
 coefficient hypotheses. -/
@@ -518,7 +518,7 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_on
     (b := b) (c := c) (U := U) h.pos ?_ hb hc hlower henergy
   filter_upwards [hΩ] with x hx
   intro ξ
-  simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx ξ
+  simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx ξ
 
 /-- Integrated explicit diagonal lower bound from uniform ellipticity, a.e.
 coefficient hypotheses, and a mass floor that dominates the drift defect. -/
@@ -533,7 +533,7 @@ lemma integral_min_diagonal_lower_bound_mul_norm_sq_le_energyFormIntegral_self_o
     (μ := μ) (a := a) (b := b) (c := c) (U := U) h.pos ?_ hb hc hmu hlower henergy
   filter_upwards [hΩ] with x hx
   intro ξ
-  simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx ξ
+  simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx ξ
 
 end UniformlyEllipticOn
 

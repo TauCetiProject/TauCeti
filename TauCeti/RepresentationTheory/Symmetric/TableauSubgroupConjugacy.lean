@@ -36,8 +36,7 @@ private abbrev rowBlocks (l : List ℕ) : Type :=
 private noncomputable def rowCellsEquiv (μ : YoungDiagram) :
     rowBlocks μ.rowLens ≃ ↥μ.cells where
   toFun x := ⟨(x.1, x.2), by
-    rw [YoungDiagram.mem_cells, YoungDiagram.mem_iff_lt_rowLen]
-    rw [← YoungDiagram.get_rowLens]
+    rw [YoungDiagram.mem_cells, YoungDiagram.mem_iff_lt_rowLen, ← YoungDiagram.get_rowLens]
     exact x.2.2⟩
   invFun c :=
     ⟨⟨c.1.1, by

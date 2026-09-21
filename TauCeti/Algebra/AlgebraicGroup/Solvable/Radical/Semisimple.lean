@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Construction
+import TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.BaseChange
 
 /-!
 # The solvable radical and semisimplicity
@@ -15,11 +16,13 @@ This file connects the solvable-radical construction to the definition of a semi
 finite-type affine group. Semisimplicity is equivalent to smoothness, geometric connectedness,
 and triviality of the solvable radical after base change to an algebraic closure.
 
-## Main declaration
+## Main declarations
 
 * `semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation`:
   semisimplicity is equivalent to smoothness, geometric connectedness, and triviality of the
   geometric solvable radical.
+* `TauCeti.semisimpleCommHopfAlgProperty.solvableRadicalDefiningIdeal_eq_augmentation`: the
+  solvable radical over the ground field of a semisimple group is trivial.
 
 ## References
 
@@ -27,8 +30,8 @@ and triviality of the solvable radical after base change to an algebraic closure
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 
 The equivalence follows the formal pattern of
-`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive`, applied to the existing universal
-definition of semisimplicity.
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic`, applied to the existing
+universal definition of semisimplicity.
 
 This completes the connection between the solvable radical and semisimplicity in Layer 6,
 "Reductive and semisimple groups", of the ReductiveGroups roadmap.
@@ -66,6 +69,24 @@ theorem semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChang
     exact (FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_augmentation_iff
       (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)).mp hradical I
         (HopfIdeal.IsSolvableRadicalCandidate.mk hnormal hIconnected hIsmooth hIsolvable)
+
+namespace semisimpleCommHopfAlgProperty
+
+open FiniteTypeCommHopfAlgCat
+
+variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
+
+/-- The solvable radical of a semisimple finite-type affine group over its ground field is the
+identity subgroup. -/
+theorem solvableRadicalDefiningIdeal_eq_augmentation
+    (hH : semisimpleCommHopfAlgProperty k H) :
+    FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H =
+      HopfIdeal.augmentation k H :=
+  solvableRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation
+    ((semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation
+      k H).mp hH |>.2.2)
+
+end semisimpleCommHopfAlgProperty
 
 end
 

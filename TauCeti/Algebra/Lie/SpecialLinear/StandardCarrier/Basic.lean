@@ -139,6 +139,19 @@ theorem rootTarget_ne_rootSource (k : Fin r ⊕ Fin r) : rootTarget r k ≠ root
   | inl i => exact (Fin.castSucc_lt_succ (i := i)).ne
   | inr i => exact (Fin.castSucc_lt_succ (i := i)).ne'
 
+/-- The two coordinates of a numbered root generator are adjacent, so their indices have odd
+sum. -/
+theorem odd_rootTarget_add_rootSource (k : Fin r ⊕ Fin r) :
+    Odd ((rootTarget r k : ℕ) + (rootSource r k : ℕ)) := by
+  rw [Nat.odd_iff]
+  cases k with
+  | inl i =>
+    simp only [rootTarget_inl, rootSource_inl, Fin.val_castSucc, Fin.val_succ]
+    omega
+  | inr i =>
+    simp only [rootTarget_inr, rootSource_inr, Fin.val_castSucc, Fin.val_succ]
+    omega
+
 /-! ## The pinned Chevalley generators -/
 
 /-- The Bourbaki-numbered raising and lowering generators of `sl_{r+1}`: the matrix unit
@@ -235,6 +248,37 @@ theorem weight_def (k : Fin (r + 1)) (i : Fin r) :
     weight r k i =
       (if k = i.castSucc then 1 else 0) - (if k = i.succ then 1 else 0) :=
   by rw [weight]
+
+/-- A standard-module weight as the difference of its possible adjacent basis characters. -/
+theorem weight_eq_ite_single_sub_ite_single (k : Fin (r + 1)) :
+    weight r k =
+      (if hk : (k : ℕ) < r then Pi.single ⟨k, hk⟩ 1 else 0) -
+        (if hk : 0 < (k : ℕ) then Pi.single ⟨k - 1, by omega⟩ 1 else 0) := by
+  classical
+  funext i
+  simp only [weight_def, Pi.sub_apply]
+  split_ifs
+  all_goals simp only [Pi.single_apply, Pi.zero_apply]
+  all_goals try split_ifs
+  all_goals simp only [Fin.ext_iff, Fin.val_castSucc, Fin.val_succ] at *
+  all_goals omega
+
+/-- The weights of the standard representation of `sl_{r+1}` are pairwise distinct. -/
+theorem weight_injective : Function.Injective (weight r) := by
+  intro k l hkl
+  by_contra hne
+  have aux {a b : Fin (r + 1)} (hab : (a : ℕ) < b)
+      (hweight : weight r a = weight r b) : False := by
+    have ha : (a : ℕ) < r := by omega
+    let i : Fin r := ⟨a, ha⟩
+    have hvalue := congrFun hweight i
+    simp only [weight_def, Fin.ext_iff, Fin.val_castSucc, Fin.val_succ] at hvalue
+    dsimp only [i] at hvalue
+    split_ifs at hvalue <;> omega
+  have hval : (k : ℕ) ≠ l := fun h ↦ hne (Fin.ext h)
+  rcases lt_or_gt_of_ne hval with hlt | hgt
+  · exact aux hlt hkl
+  · exact aux hgt hkl.symm
 
 /-- The weights of the standard representation sum to zero. -/
 theorem sum_weight_eq_zero : ∑ k, weight r k = 0 := by

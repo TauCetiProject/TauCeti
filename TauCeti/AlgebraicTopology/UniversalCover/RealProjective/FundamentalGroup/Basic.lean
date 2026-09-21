@@ -40,7 +40,7 @@ group, is not simply connected, not contractible, and not homeomorphic to `ℝ`.
   iff monodromy fixes lift.
 * `TauCeti.RealProjectiveSpace.fundamentalGroupMulEquivAt`: basepoint-unconscious version
   for any `x`.
-* `TauCeti.RealProjectiveSpace.card_fundamentalGroup`:
+* `TauCeti.RealProjectiveSpace.card_fundamentalGroup_of_two_le`:
   `Nat.card (FundamentalGroup (RealProjectiveSpace n) x) = 2`.
 * `TauCeti.RealProjectiveSpace.nontrivial_fundamentalGroup`: the fundamental group is nontrivial.
 * `TauCeti.RealProjectiveSpace.not_simplyConnectedSpace`: `RPⁿ` is not simply connected.
@@ -49,13 +49,13 @@ group, is not simply connected, not contractible, and not homeomorphic to `ℝ`.
 
 ## References
 
-This is the deck-to-fundamental-group part of the `π₁(RPⁿ)` milestone in
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13. It consumes
+This is the deck-to-fundamental-group part of the computation of `π₁(RPⁿ)`. It consumes
 `TauCeti.RealProjectiveSpace.isQuotientCoveringMap_mk` and
 `TauCeti.RealProjectiveSpace.deckMulEquiv` from
 `TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Deck`, the simple connectivity of the
 covering sphere from `TauCeti.AlgebraicTopology.Sphere.SimplyConnected`, and the regular-cover
-comparison of Stage 1. The equivalence construction and monodromy proof pattern are adapted from
+comparison `TauCeti.Deck.IsRegular.fundamentalGroupEquiv`. The equivalence construction and
+monodromy proof pattern are adapted from
 `TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup` for the antipodal cover.
 -/
 
@@ -78,7 +78,7 @@ def fundamentalGroupMulEquiv (hn : 2 ≤ n)
     {x : RealProjectiveSpace n} (e : (mk n) ⁻¹' {x}) :
     FundamentalGroup (RealProjectiveSpace n) x ≃* ℤˣ :=
   haveI := simplyConnectedSpace_sphere_euclideanSpace hn
-  have hcomm : ∀ a b : Deck (mk n), a * b = b * a := by
+  have hcomm : ∀ a b : deck (mk n), a * b = b * a := by
     intro a b
     obtain rfl | rfl := eq_one_or_eq_antipode n (by omega) a
     · simp
@@ -100,7 +100,7 @@ lemma fundamentalGroupMulEquiv_apply_eq_iff (hn : 2 ≤ n)
         u • (e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=by
   have := simplyConnectedSpace_sphere_euclideanSpace hn
   rw [fundamentalGroupMulEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_eq,
-    Deck.IsRegular.fundamentalGroupDeckEquiv_apply_eq_iff, Deck.smul_eq_apply,
+    Deck.IsRegular.fundamentalGroupDeckEquiv_apply_eq_iff, deck.smul_eq_apply,
     deckMulEquiv_apply, eq_comm]
 
 /-- The inverse equivalence sends an integer unit `u` to the loop class whose monodromy
@@ -139,7 +139,7 @@ def fundamentalGroupMulEquivAt (hn : 2 ≤ n)
 
 /-- For `2 ≤ n`, the fundamental group of `RPⁿ` has
 exactly two elements. -/
-theorem card_fundamentalGroup (hn : 2 ≤ n)
+theorem card_fundamentalGroup_of_two_le (hn : 2 ≤ n)
     (x : RealProjectiveSpace n) :
     Nat.card (FundamentalGroup (RealProjectiveSpace n) x) = 2 := by
   rw [Nat.card_congr (fundamentalGroupMulEquivAt n hn x).toEquiv, Nat.card_eq_fintype_card,

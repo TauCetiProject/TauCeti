@@ -34,6 +34,8 @@ it rather than at `Q`.
 
 * `AlgHom.IsArithFrobAt.apply_eq_pow_absNorm_of_pow_eq_one`: an arithmetic Frobenius at an ideal
   of `𝓞 F` over `𝔭` raises an `m`-th root of unity to the power `𝔑𝔭`, when `𝔭 ∤ m`.
+* `AlgHom.IsArithFrobAt.autToPow_eq_absNorm`: equivalently, the cyclotomic character
+  `IsPrimitiveRoot.autToPow` sends such a Frobenius to `𝔑𝔭 mod m`.
 
 ## Implementation notes
 
@@ -119,5 +121,25 @@ theorem apply_eq_pow_absNorm_of_pow_eq_one {m : ℕ} {ζ : F} (hζ : ζ ^ m = 1)
   -- The two sides of `key` map to the two sides of the goal.
   have hmap := congrArg (algebraMap (𝓞 F) F) key
   rwa [map_pow, hval, hact] at hmap
+
+/-- **The cyclotomic character of an arithmetic Frobenius is the norm.** Let `ζ` be a primitive
+`m`-th root of unity in an extension field `F` of a number field `K`, let `𝔭` be a height-one
+prime of `𝓞 K` not dividing `m`, and let `σ` be an arithmetic Frobenius at an ideal `Q` of `𝓞 F`
+lying over `𝔭`. Then the cyclotomic character `IsPrimitiveRoot.autToPow` sends `σ` to the residue
+of `𝔑𝔭` modulo `m`.
+
+This is `apply_eq_pow_absNorm_of_pow_eq_one` read through the character: over `ℚ` it says that
+the Frobenius at `p` corresponds to `p mod m`, not to its inverse. -/
+theorem autToPow_eq_absNorm {m : ℕ} [NeZero m] {ζ : F} (hζ : IsPrimitiveRoot ζ m)
+    (𝔭 : HeightOneSpectrum (𝓞 K)) (hm : (m : 𝓞 K) ∉ 𝔭.asIdeal)
+    (Q : Ideal (𝓞 F)) [Q.LiesOver 𝔭.asIdeal]
+    {σ : F ≃ₐ[K] F} (hσ : _root_.IsArithFrobAt (𝓞 K) σ Q) :
+    (hζ.autToPow K σ : ZMod m) = Ideal.absNorm 𝔭.asIdeal := by
+  -- Both exponents send `ζ` to `σ ζ`, so they agree modulo the order `m` of `ζ`.
+  have h := hσ.apply_eq_pow_absNorm_of_pow_eq_one hζ.pow_eq_one 𝔭 hm Q
+  rw [← hζ.autToPow_spec K σ, (hζ.isOfFinOrder (NeZero.ne m)).pow_eq_pow_iff_modEq,
+    ← hζ.eq_orderOf] at h
+  rw [← ZMod.natCast_zmod_val (hζ.autToPow K σ : ZMod m)]
+  exact (ZMod.natCast_eq_natCast_iff _ _ _).mpr h
 
 end AlgHom.IsArithFrobAt
