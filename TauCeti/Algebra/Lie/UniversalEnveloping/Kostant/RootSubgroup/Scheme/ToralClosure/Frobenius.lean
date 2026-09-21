@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
+public import TauCeti.Algebra.CharP.Frobenius.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
 /-!
@@ -126,10 +127,7 @@ the `p ^ k`-th power. -/
 theorem map_iterateFrobenius_kostantTorusMatrix (s : κ → Aˣ) :
     Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) (kostantTorusMatrix M b wt s) =
       kostantTorusMatrix M b wt (s ^ p ^ k) := by
-  rw [map_kostantTorusMatrix]
-  refine congrArg (kostantTorusMatrix M b wt) (funext fun j => Units.ext ?_)
-  rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Pi.pow_apply,
-    Units.val_pow_eq_pow_val]
+  rw [map_kostantTorusMatrix, map_iterateFrobenius_units_eq_pow]
 
 end Generators
 
@@ -148,12 +146,10 @@ identity. -/
 noncomputable def kostantToralFrobenius :
     kostantToralPointsSubgroup e h ρ M hM hnil b wt A →*
       kostantToralPointsSubgroup e h ρ M hM hnil b wt A :=
-  ((MulEquiv.subgroupCongr
-        (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A)).symm.toMonoidHom).comp
-    (((GeneralLinear.iterateFrobeniusHopfIdealPoints n p k
-          (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A)).comp
-      (MulEquiv.subgroupCongr
-        (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A)).toMonoidHom)
+  (GeneralLinear.iterateFrobeniusHopfIdealPoints n p k
+        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A).subgroupCongr
+    (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A)
+    (kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A)
 
 /-- The Frobenius endomorphism of the points of a toral closure acts by the entrywise
 Frobenius. -/
@@ -162,9 +158,8 @@ theorem coe_kostantToralFrobenius (g : kostantToralPointsSubgroup e h ρ M hM hn
     (kostantToralFrobenius e h ρ M hM hnil b wt p k A g :
         Matrix.GeneralLinearGroup (Fin n) A) =
       Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
-  rw [kostantToralFrobenius]
-  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.subgroupCongr_symm_apply,
-    GeneralLinear.coe_iterateFrobeniusHopfIdealPoints, MulEquiv.subgroupCongr_apply]
+  rw [kostantToralFrobenius, MonoidHom.coe_subgroupCongr_apply,
+    GeneralLinear.coe_iterateFrobeniusHopfIdealPoints]
 
 /-- Entrywise, the Frobenius endomorphism of the points of a toral closure raises each entry to
 the `p ^ k`-th power. -/

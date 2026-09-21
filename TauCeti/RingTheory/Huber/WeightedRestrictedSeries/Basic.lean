@@ -48,7 +48,11 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
 * `TauCeti.Huber.weightedTopology`: the ring topology they generate. `A⟨X⟩_T` also carries the
   group uniformity of that topology, with its `IsUniformAddGroup` and
   `UniformContinuousConstSMul` instances, so that its separated completion can be formed.
-* `TauCeti.Huber.weightedC` and `TauCeti.Huber.weightedX`: the constant series and the variables.
+* `TauCeti.Huber.weightedC` and `TauCeti.Huber.weightedX`: the constant series and the
+  variables. `TauCeti.Huber.weightedC_injective`, with its `simp` form
+  `TauCeti.Huber.weightedC_inj`, reads a constant series off its coefficient in degree `0`;
+  `TauCeti.Huber.algebraMap_weightedRestrictedSubring_injective` and its product counterpart
+  state the resulting injectivity for the canonical algebra maps.
 * `TauCeti.Huber.weightedMap`: the morphism `A⟨X⟩_T → B⟨X⟩_S` induced by a continuous ring map
   carrying each weight into the corresponding one; `continuous_weightedMap` makes it a morphism of
   topological rings, and `weightedMap_id` with `weightedMap_comp` are the functor laws.
@@ -72,7 +76,10 @@ counterexample in `IsWeightFamily`'s docstring shows the hypothesis is not autom
   soon as its value does, and `TauCeti.Huber.isOpen_weightedNhd` that `U⟨X⟩` is open whenever `U`
   is.
 * `TauCeti.Huber.weightedRestrictedSubring_one_weight`: for the trivial weight this is the ordinary
-  ring of restricted power series (Wedhorn Example 5.54).
+  ring of restricted power series (Wedhorn Example 5.54), with
+  `TauCeti.Huber.subringCongr_one_weight_weightedX` and
+  `TauCeti.Huber.subringCongr_one_weight_weightedC` saying where that identification sends the
+  generators — to `restrictedX` and to the algebra map.
 * `TauCeti.Huber.weightedPolynomials`, the polynomials as a subring of `A⟨X⟩_T`, with
   `mem_weightedPolynomials_iff` identifying it with finite support and the generators
   `weightedC`/`weightedX` in it; `TauCeti.Huber.dense_weightedPolynomials` is Wedhorn 5.49(1),
@@ -715,6 +722,19 @@ noncomputable def weightedC [NonarchimedeanRing A] (T : Fin k → Set A) (hT : I
 theorem coe_weightedC [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T} (a : A) :
     (weightedC T hT a : MvPowerSeries (Fin k) A) = MvPowerSeries.C a := (rfl)
 
+/-- **The constant-series embedding is injective**: a constant series is read off as its
+coefficient in degree `0`. -/
+theorem weightedC_injective [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T) :
+    Function.Injective (weightedC T hT) := fun _ _ h ↦ by
+  simpa using congrArg Subtype.val h
+
+/-- **Equality of constant series is equality of constants**: the `iff` form of
+`TauCeti.Huber.weightedC_injective`. -/
+@[simp]
+theorem weightedC_inj [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
+    {a b : A} : weightedC T hT a = weightedC T hT b ↔ a = b :=
+  (weightedC_injective T hT).eq_iff
+
 /-- The variable `Xᵢ`, as an element of `A⟨X⟩_T`. -/
 noncomputable def weightedX [NonarchimedeanRing A] (T : Fin k → Set A) (hT : IsWeightFamily T)
     (i : Fin k) :
@@ -731,11 +751,29 @@ noncomputable instance weightedRestrictedSubring.instAlgebra [NonarchimedeanRing
     (T : Fin k → Set A) (hT : IsWeightFamily T) : Algebra A (weightedRestrictedSubring T hT) :=
   (weightedC T hT).toAlgebra
 
+/-- The structure map of the `A`-algebra `A⟨X⟩_T` is the constant-series embedding. -/
 @[simp]
-theorem coe_algebraMap_weightedRestrictedSubring [NonarchimedeanRing A] {T : Fin k → Set A}
-    {hT : IsWeightFamily T} (a : A) :
-    ((algebraMap A (weightedRestrictedSubring T hT) a : weightedRestrictedSubring T hT) :
-      MvPowerSeries (Fin k) A) = MvPowerSeries.C a := (rfl)
+theorem algebraMap_weightedRestrictedSubring [NonarchimedeanRing A] (T : Fin k → Set A)
+    (hT : IsWeightFamily T) : algebraMap A (weightedRestrictedSubring T hT) = weightedC T hT :=
+  (rfl)
+
+/-- **The structure map into a weighted restricted-series ring is injective**, since it is the
+constant-series embedding. -/
+theorem algebraMap_weightedRestrictedSubring_injective [NonarchimedeanRing A]
+    (T : Fin k → Set A) (hT : IsWeightFamily T) :
+    Function.Injective (algebraMap A (weightedRestrictedSubring T hT)) := by
+  rw [algebraMap_weightedRestrictedSubring]
+  exact weightedC_injective T hT
+
+/-- **The diagonal structure map into a product of weighted restricted-series rings is
+injective.** -/
+theorem algebraMap_prod_weightedRestrictedSubring_injective [NonarchimedeanRing A] {m : ℕ}
+    (T : Fin k → Set A) (S : Fin m → Set A) (hT : IsWeightFamily T) (hS : IsWeightFamily S) :
+    Function.Injective (algebraMap A
+      (weightedRestrictedSubring T hT × weightedRestrictedSubring S hS)) :=
+  fun _ _ h ↦ algebraMap_weightedRestrictedSubring_injective T hT (by
+    simpa using congrArg Prod.fst h)
+
 
 /-- **Wedhorn's neighbourhood subgroups** `U⟨X⟩`: the series all of whose coefficients — not
 merely almost all — satisfy the `U` bound. These are the fundamental system of neighbourhoods of
@@ -762,6 +800,29 @@ theorem weightedRestrictedSubring_one_weight [NonarchimedeanRing A] :
   ext f
   rw [mem_weightedRestrictedSubring, mem_restrictedMvPowerSeriesSubring,
     isWeightedRestricted_one_weight_iff, isRestricted_iff_coeff]
+
+/-- **The weighted variable is the restricted variable.** Transporting `weightedX` along the
+identification above gives `restrictedX`.
+
+`weightedRestrictedSubring_one_weight` is an equality of subrings, so it transports elements along
+`RingEquiv.subringCongr`; what it does not say is where the generators go. This and the companion
+below say it, so that a generator-level statement proved over one of the two subrings can be read
+over the other instead of being re-transported at each use site. -/
+@[simp]
+theorem subringCongr_one_weight_weightedX [NonarchimedeanRing A] (i : Fin k) :
+    RingEquiv.subringCongr (weightedRestrictedSubring_one_weight (k := k) (A := A))
+        (weightedX _ isWeightFamily_one_weight i)
+      = restrictedX i :=
+  Subtype.ext (by simp)
+
+/-- **The weighted constant is the algebra map.** Transporting `weightedC a` along the same
+identification gives the image of `a` under the structure map of the restricted subring. -/
+@[simp]
+theorem subringCongr_one_weight_weightedC [NonarchimedeanRing A] (a : A) :
+    RingEquiv.subringCongr (weightedRestrictedSubring_one_weight (k := k) (A := A))
+        (weightedC _ isWeightFamily_one_weight a)
+      = algebraMap A (restrictedMvPowerSeriesSubring k A) a :=
+  Subtype.ext (by simp [MvPowerSeries.algebraMap_apply])
 
 /-- The neighbourhood subgroups are monotone in `U`. -/
 theorem weightedNhd_mono [NonarchimedeanRing A] {T : Fin k → Set A} {hT : IsWeightFamily T}
@@ -973,10 +1034,40 @@ theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
   Subtype.ext (by simp [coe_weightedX])
 
+/-- **The inclusion of the polynomials is injective**: a polynomial is determined by its
+coefficients, and the inclusion changes none of them.
+
+This is what makes `TauCeti.Huber.weightedPolynomials` a faithful copy of `MvPolynomial (Fin k) A`
+inside `A⟨X⟩_T`, so that a map defined on polynomials transfers to it. -/
+theorem weightedPolynomialHom_injective [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) : Function.Injective (weightedPolynomialHom T hT) := by
+  intro p q h
+  have hcoe : (p : MvPowerSeries (Fin k) A) = (q : MvPowerSeries (Fin k) A) := by
+    simpa only [coe_weightedPolynomialHom] using congrArg Subtype.val h
+  exact MvPolynomial.coe_injective (Fin k) A hcoe
+
 /-- `A[X] ⊆ A⟨X⟩_T`, as a subring. -/
 noncomputable def weightedPolynomials [NonarchimedeanRing A] (T : Fin k → Set A)
     (hT : IsWeightFamily T) : Subring (weightedRestrictedSubring T hT) :=
   (weightedPolynomialHom T hT).range
+
+/-- **`A[X]` and its copy inside `A⟨X⟩_T` are the same ring.** The inclusion is injective by
+`TauCeti.Huber.weightedPolynomialHom_injective` and surjective onto its range by construction.
+
+This is what lets a homomorphism defined on `MvPolynomial (Fin k) A` — an evaluation, say — be
+read as one defined on the subring of `A⟨X⟩_T`, which is where the uniformity lives. -/
+noncomputable def weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k → Set A}
+    (hT : IsWeightFamily T) : MvPolynomial (Fin k) A ≃+* weightedPolynomials T hT :=
+  RingEquiv.ofBijective (weightedPolynomialHom T hT).rangeRestrict
+    ⟨fun _ _ h ↦ weightedPolynomialHom_injective hT (congrArg Subtype.val h),
+      (weightedPolynomialHom T hT).rangeRestrict_surjective⟩
+
+@[simp]
+theorem coe_weightedPolynomialsEquiv [NonarchimedeanRing A] {T : Fin k → Set A}
+    {hT : IsWeightFamily T} (p : MvPolynomial (Fin k) A) :
+    (weightedPolynomialsEquiv hT p : weightedRestrictedSubring T hT)
+      = weightedPolynomialHom T hT p :=
+  (rfl)
 
 /-- Membership in `weightedPolynomials` is exactly having finitely many nonzero coefficients.
 
@@ -1100,8 +1191,7 @@ noncomputable def weightedPolynomialEquiv [NonarchimedeanRing A] [DiscreteTopolo
     (T : Fin k → Set A) (hT : IsWeightFamily T) :
     MvPolynomial (Fin k) A ≃+* weightedRestrictedSubring T hT :=
   RingEquiv.ofBijective (weightedPolynomialHom T hT)
-    ⟨fun p q hpq ↦ MvPolynomial.coe_injective _ _ (by
-        simpa only [coe_weightedPolynomialHom] using congrArg Subtype.val hpq),
+    ⟨weightedPolynomialHom_injective hT,
       fun f ↦ by
         have hmem : f ∈ weightedPolynomials T hT := by
           rw [weightedPolynomials_eq_top (hT := hT)]
@@ -1224,7 +1314,7 @@ omit [TopologicalSpace A] in
 /-- The weight is monotone in the family. -/
 theorem weightPow_mono {T S : Fin k → Set A} (h : ∀ i, T i ⊆ S i) (ν : Fin k →₀ ℕ) :
     weightPow T ν ⊆ weightPow S ν :=
-  Finset.prod_le_prod' fun i _ ↦ Set.pow_subset_pow_left (h i)
+  Finset.prod_le_prod fun i _ ↦ Set.pow_subset_pow_left (h i)
 
 omit [TopologicalSpace A] [TopologicalSpace B] in
 /-- A ring map carries the weight `Tν` onto the weight of the image family. -/

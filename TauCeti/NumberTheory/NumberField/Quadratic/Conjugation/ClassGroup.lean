@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient
 public import TauCeti.NumberTheory.ClassGroup.Equiv
-public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm
+public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.Basic
 
 /-!
 # Quadratic conjugation acts on the class group by inversion
@@ -23,9 +23,9 @@ The reduction has two moves. First the general **bridge** `ClassGroup.mulEquiv_m
 `ClassGroup.mulEquiv f` sends the class of an ideal to the class of its pushforward `Ideal.map f`.
 Second the **inversion**: the ideal class of `σI` is the inverse of the class of `I` because
 `I · σI` is principal — the norm-principality theorem
-`isPrincipal_mul_map_ringOfIntegersQuadraticConj` (in `Quadratic/Conjugation/Norm.lean`) combined
-with `ClassGroup.mk0_eq_mk0_inv_iff`. Since each `C⁻¹` and `C` differ by a square, inversion is
-trivial on the elementary-2 quotient, giving the identity on `Cl/Cl²`.
+`isPrincipal_mul_map_ringOfIntegersQuadraticConj` (in `Quadratic/Conjugation/Norm/Basic.lean`)
+combined with `ClassGroup.mk0_eq_mk0_inv_iff`. Since each `C⁻¹` and `C` differ by a square,
+inversion is trivial on the elementary-2 quotient, giving the identity on `Cl/Cl²`.
 
 This is Layer 3 of the multiquadratic roadmap: the summit isomorphism
 `Gal(K_gen/K) ≅ Cl(K)/Cl(K)²` factors the conjugation action through its triviality on `Cl/Cl²`.

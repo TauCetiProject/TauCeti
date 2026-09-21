@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The numbered simple-root generators of the split type-D Lie algebra
@@ -38,9 +39,9 @@ The lowering generators are their transposes. The resulting matrices lie in the 
 Lie algebra and are square-zero in its standard representation.
 
 These are the carrier-specific numbered root vectors needed to feed the type-`D` spin lattice
-into Tau Ceti's existing Kostant-form and toral-closure machinery. Identifying their action with
-quadratic Clifford elements, and then proving the divided-power stability needed by the full-weight
-spin lattice, are deliberately left to the next carrier step.
+into Tau Ceti's existing Kostant-form and toral-closure machinery. Their images under the
+even-polarization quadratic equivalence are computed by
+`SpinPolarizationData.typeDQuadraticEquiv_rootGenerator`.
 
 ## Main definitions and results
 
@@ -95,8 +96,24 @@ def forkLeft : Fin n := ⟨n - 2, by omega⟩
 /-- The terminal coordinate in the standard type-`Dₙ` realization. -/
 def forkRight : Fin n := ⟨n - 1, by omega⟩
 
+/-- The underlying index of `forkLeft`. -/
+@[simp]
+theorem forkLeft_val : (forkLeft n hn : ℕ) = n - 2 := by
+  simp [forkLeft]
+
+/-- The underlying index of `forkRight`. -/
+@[simp]
+theorem forkRight_val : (forkRight n hn : ℕ) = n - 1 := by
+  simp [forkRight]
+
 /-- The successor of a nonterminal simple-root index. -/
 def chainNext (i : Fin n) (hi : (i : ℕ) + 1 < n) : Fin n := ⟨(i : ℕ) + 1, hi⟩
+
+/-- The underlying index of `chainNext`. -/
+@[simp]
+theorem chainNext_val (i : Fin n) (hi : (i : ℕ) + 1 < n) :
+    (chainNext n i hi : ℕ) = (i : ℕ) + 1 := by
+  simp [chainNext]
 
 /-- A chain node and its successor are distinct. -/
 theorem ne_chainNext (i : Fin n) (hi : (i : ℕ) + 1 < n) : i ≠ chainNext n i hi := by
@@ -179,6 +196,74 @@ theorem loweringMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
   change Matrix.fromBlocks 0 0 (forkBlock (K := K) n hn).transpose 0 = _
   rw [forkBlock_transpose]
   rfl
+
+/-- A chain raising matrix sends a coordinate basis vector to the difference of its two
+selected coordinates. -/
+theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_chain {K M : Type*} [CommRing K]
+    [AddCommGroup M] [Module K M] (bas : Module.Basis (Fin n ⊕ Fin n) K M) {i : Fin n}
+    (hi : (i : ℕ) + 1 < n) (c : Fin n ⊕ Fin n) :
+    Matrix.toLinAlgEquiv bas (raisingMatrix n hn i) (bas c) =
+      (if Sum.inl (chainNext n i hi) = c then bas (.inl i) else 0) -
+        if Sum.inr i = c then bas (.inr (chainNext n i hi)) else 0 := by
+  have hmat : raisingMatrix (K := K) n hn i =
+      Matrix.single (.inl i) (.inl (chainNext n i hi)) 1 -
+        Matrix.single (.inr (chainNext n i hi)) (.inr i) 1 := by
+    rw [raisingMatrix_of_chain n hn hi]
+    ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
+  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
+    TauCeti.toLinAlgEquiv_single_apply_basis]
+  simp
+
+/-- The fork raising matrix sends a coordinate basis vector to the alternating pair selected by
+the fork coordinates. -/
+theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_fork {K M : Type*} [CommRing K]
+    [AddCommGroup M] [Module K M] (bas : Module.Basis (Fin n ⊕ Fin n) K M) {i : Fin n}
+    (hi : ¬(i : ℕ) + 1 < n) (c : Fin n ⊕ Fin n) :
+    Matrix.toLinAlgEquiv bas (raisingMatrix n hn i) (bas c) =
+      (if Sum.inr (forkRight n hn) = c then bas (.inl (forkLeft n hn)) else 0) -
+        if Sum.inr (forkLeft n hn) = c then bas (.inl (forkRight n hn)) else 0 := by
+  have hmat : raisingMatrix (K := K) n hn i =
+      Matrix.single (.inl (forkLeft n hn)) (.inr (forkRight n hn)) 1 -
+        Matrix.single (.inl (forkRight n hn)) (.inr (forkLeft n hn)) 1 := by
+    rw [raisingMatrix_of_fork n hn hi]
+    ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
+  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
+    TauCeti.toLinAlgEquiv_single_apply_basis]
+  simp
+
+/-- A chain lowering matrix sends a coordinate basis vector to the difference of its two
+selected coordinates. -/
+theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_chain {K M : Type*} [CommRing K]
+    [AddCommGroup M] [Module K M] (bas : Module.Basis (Fin n ⊕ Fin n) K M) {i : Fin n}
+    (hi : (i : ℕ) + 1 < n) (c : Fin n ⊕ Fin n) :
+    Matrix.toLinAlgEquiv bas (loweringMatrix n hn i) (bas c) =
+      (if Sum.inl i = c then bas (.inl (chainNext n i hi)) else 0) -
+        if Sum.inr (chainNext n i hi) = c then bas (.inr i) else 0 := by
+  have hmat : loweringMatrix (K := K) n hn i =
+      Matrix.single (.inl (chainNext n i hi)) (.inl i) 1 -
+        Matrix.single (.inr i) (.inr (chainNext n i hi)) 1 := by
+    rw [loweringMatrix_of_chain n hn hi]
+    ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
+  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
+    TauCeti.toLinAlgEquiv_single_apply_basis]
+  simp
+
+/-- The fork lowering matrix sends a coordinate basis vector to the alternating pair selected by
+the fork coordinates. -/
+theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_fork {K M : Type*} [CommRing K]
+    [AddCommGroup M] [Module K M] (bas : Module.Basis (Fin n ⊕ Fin n) K M) {i : Fin n}
+    (hi : ¬(i : ℕ) + 1 < n) (c : Fin n ⊕ Fin n) :
+    Matrix.toLinAlgEquiv bas (loweringMatrix n hn i) (bas c) =
+      (if Sum.inl (forkLeft n hn) = c then bas (.inr (forkRight n hn)) else 0) -
+        if Sum.inl (forkRight n hn) = c then bas (.inr (forkLeft n hn)) else 0 := by
+  have hmat : loweringMatrix (K := K) n hn i =
+      Matrix.single (.inr (forkRight n hn)) (.inl (forkLeft n hn)) 1 -
+        Matrix.single (.inr (forkLeft n hn)) (.inl (forkRight n hn)) 1 := by
+    rw [loweringMatrix_of_fork n hn hi]
+    ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
+  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
+    TauCeti.toLinAlgEquiv_single_apply_basis]
+  simp
 
 private theorem fromBlocks_mem_typeD {K : Type*} [CommRing K]
     (A B C : Matrix (Fin n) (Fin n) K) (hB : B.transpose = -B) (hC : C.transpose = -C) :

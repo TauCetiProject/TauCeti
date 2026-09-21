@@ -50,7 +50,8 @@ and both are natural in conflation-exact functors.
   instance of the latter for a transported exact structure.
 * `TauCeti.ExactK0.ofLE` and `TauCeti.ExactK0.fromSplit`: the comparison induced by the identity
   functor towards an exact structure with more conflations, and its instance out of the split
-  Grothendieck group.
+  Grothendieck group; `TauCeti.ExactK0.ofLEEquiv` is the comparison isomorphism between exact
+  structures with the same conflations.
 
 ## Main results
 
@@ -67,6 +68,8 @@ and both are natural in conflation-exact functors.
 * `TauCeti.ExactK0.ofLE_unique` and `TauCeti.ExactK0.ofLE_surjective`: the comparison map is the
   unique homomorphism preserving object classes, and it is surjective, so exact `K₀` is a
   quotient of the exact `K₀` of any smaller exact structure.
+* `TauCeti.ExactK0.fromSplitEquiv`: if every conflation splits, the canonical comparison from
+  split `K₀` is an equivalence.
 * `TauCeti.ExactK0.map_comp_ofLE`: naturality of the comparison in a conflation-exact functor.
 
 ## References
@@ -509,6 +512,23 @@ lemma ofLE_of (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflation S) 
     ofLE h (of X) = (of X : ExactK0 E'') :=
   PresentedK0.ofLE_of _ X
 
+/-- **The comparison isomorphism** between two exact structures with the same conflations: the
+comparison maps `TauCeti.ExactK0.ofLE` in both directions are mutually inverse. -/
+noncomputable def ofLEEquiv (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) :
+    ExactK0 E ≃+ ExactK0 E'' :=
+  AddMonoidHom.toAddEquiv (ofLE fun S => (h S).mp) (ofLE fun S => (h S).mpr)
+    (hom_ext fun X => by simp) (hom_ext fun X => by simp)
+
+@[simp]
+lemma ofLEEquiv_of (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) (X : C) :
+    ofLEEquiv h (of X) = (of X : ExactK0 E'') :=
+  ofLE_of _ X
+
+@[simp]
+lemma ofLEEquiv_symm_of (h : ∀ S : ShortComplex C, E.Conflation S ↔ E''.Conflation S) (X : C) :
+    (ofLEEquiv h).symm (of X) = (of X : ExactK0 E) :=
+  ofLE_of _ X
+
 /-- **The universal characterization of the comparison map**: it is the unique homomorphism
 preserving the classes of objects. -/
 theorem ofLE_unique (h : ∀ S : ShortComplex C, E.Conflation S → E''.Conflation S)
@@ -588,6 +608,43 @@ theorem fromSplit_surjective : Function.Surjective (fromSplit E) := by
   | neg a ha =>
     obtain ⟨a', rfl⟩ := ha
     exact ⟨-a', map_neg _ _⟩
+
+/-- The canonical comparison from split `K₀` to exact `K₀` is an equivalence when every
+conflation splits. -/
+noncomputable def fromSplitEquiv
+    (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) :
+    SplitK0 C ≃+ ExactK0 E := by
+  let a : AdditiveInvariant E (SplitK0 C) :=
+    { obj := SplitK0.of
+      map_iso := fun _ _ e ↦ SplitK0.of_congr e
+      map_conflation := fun {S} hS ↦ by
+        obtain ⟨s⟩ := h hS
+        rw [SplitK0.of_congr s.isoBinaryBiproduct, SplitK0.of_biprod] }
+  apply AddEquiv.ofBijective (fromSplit E)
+  constructor
+  · intro x y hxy
+    have hleft : (lift a).comp (fromSplit E) = AddMonoidHom.id (SplitK0 C) := by
+      apply SplitK0.hom_ext
+      intro X
+      rw [AddMonoidHom.comp_apply, fromSplit_of, lift_of, AddMonoidHom.id_apply]
+    apply_fun lift a at hxy
+    simpa only [← AddMonoidHom.comp_apply, hleft, AddMonoidHom.id_apply] using hxy
+  · exact fromSplit_surjective
+
+/-- The split-to-exact equivalence acts by the canonical comparison homomorphism. -/
+@[simp]
+lemma fromSplitEquiv_apply
+    (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (x : SplitK0 C) :
+    fromSplitEquiv h x = fromSplit E x :=
+  AddEquiv.ofBijective_apply _ _ _
+
+/-- The inverse split-to-exact equivalence sends an object class to its split class. -/
+@[simp]
+lemma fromSplitEquiv_symm_of
+    (h : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (X : C) :
+    (fromSplitEquiv h).symm (of X) = SplitK0.of X := by
+  apply (fromSplitEquiv h).injective
+  simp
 
 /-- The canonical comparison out of split `K₀` is natural in a conflation-exact functor: every
 additive functor is conflation-exact for the split exact structures. -/

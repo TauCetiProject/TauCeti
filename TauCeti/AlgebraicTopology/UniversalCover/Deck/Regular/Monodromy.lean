@@ -24,8 +24,8 @@ regularity to a condition at a single chosen fibre.
 ## References
 
 The proof uses Junyan Xu's path-lifting and monodromy API in
-`Mathlib.Topology.Homotopy.Lifting`. It supplies the fibre-transport step needed for the regular
-cover criterion in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8.
+`Mathlib.Topology.Homotopy.Lifting`. It supplies the fibre-transport step of the regular cover
+criterion.
 -/
 
 public section
@@ -44,7 +44,7 @@ Monodromy transports transitivity to every other fibre. The chosen point also tr
 every fibre, proving the surjectivity required by `Deck.IsRegular`. -/
 theorem isRegular_iff_fiber_isPretransitive [PathConnectedSpace X]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
-    IsRegular p ↔ MulAction.IsPretransitive (Deck p) (p ⁻¹' {x}) := by
+    IsRegular p ↔ MulAction.IsPretransitive (deck p) (p ⁻¹' {x}) := by
   constructor
   · intro hreg
     exact hreg.fiber_isPretransitive x
@@ -60,7 +60,7 @@ theorem isRegular_iff_fiber_isPretransitive [PathConnectedSpace X]
         Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x y)
       obtain ⟨u₀, hu₀⟩ := (hp.monodromy_bijective γ).2 u
       obtain ⟨v₀, hv₀⟩ := (hp.monodromy_bijective γ).2 v
-      obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) u₀ v₀
+      obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (deck p) u₀ v₀
       refine ⟨φ, ?_⟩
       rw [← hu₀, ← hv₀, ← monodromy_smul hp γ φ u₀, hφ]
 

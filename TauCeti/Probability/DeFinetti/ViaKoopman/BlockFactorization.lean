@@ -109,7 +109,7 @@ theorem setIntegral_weight_mul_blockIndicatorProd_prefix_eq_prod_condExp
       have h0 : (0 : ℝ) ≤ ∏ i : Fin r, (B i.castSucc).indicator (fun _ => (1 : ℝ)) (y i) :=
         Finset.prod_nonneg fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one
       have h1 : ∏ i : Fin r, (B i.castSucc).indicator (fun _ => (1 : ℝ)) (y i) ≤ 1 :=
-        Finset.prod_le_one (fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one)
+        Finset.prod_le_one₀ (fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one)
           fun i _ => Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
       rw [hgdef, abs_of_nonneg h0]
       exact h1

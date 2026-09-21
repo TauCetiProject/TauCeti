@@ -49,7 +49,7 @@ element of the Chevalley group rather than only by an automorphism of the Lie al
 This is the normaliser-of-the-torus half of the pinning data of Layer 9 of the ReductiveGroups
 roadmap: the Chevalley commutator relations in
 `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Commutator/Basic.lean` and
-`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Commutator/G2.lean` describe how
+`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Commutator/G2/Basic.lean` describe how
 two root subgroups interact, and the relations here describe how the reflection permutes them.
 
 ## Main definitions

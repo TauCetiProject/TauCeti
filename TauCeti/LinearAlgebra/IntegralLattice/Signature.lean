@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Rat.Star
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
@@ -33,6 +35,8 @@ definiteness predicate.
 * `TauCeti.IntegralLattice.radical`: the kernel of the rational bilinear form.
 * `TauCeti.IntegralLattice.signature`: the positive, null, and negative indices.
 * `TauCeti.IntegralLattice.IsPosSemidef` and related definiteness predicates.
+* `TauCeti.IntegralLattice.isPosDef_ofGramMatrix_iff`: a lattice presented by a Gram matrix is
+  positive definite exactly when the matrix is, read over `ℚ`.
 * `TauCeti.IntegralLattice.Isometry.map_radical` and the `Isometry.sigPos_eq`, `sigNull_eq`, and
   `sigNeg_eq` theorems: isometry invariance of the signature.
 -/
@@ -116,6 +120,19 @@ theorem radical_eq_bot_iff_sigNull_eq_zero : L.radical = ⊥ ↔ L.sigNull = 0 :
 theorem isPosDef_iff :
     L.IsPosDef ↔ ∀ x : V, x ≠ 0 → 0 < L.form x x := by
   simp only [IsPosDef, QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply]
+
+open Classical in
+/-- **A lattice presented by a Gram matrix is positive definite exactly when the matrix is**,
+read over `ℚ`. The form of `ofGramMatrix b G hG` is the bilinear form of `G` in the coordinates
+of `b`, so this is Mathlib's comparison of a quadratic map with the matrix of its bilinear form
+in a basis. -/
+theorem isPosDef_ofGramMatrix_iff {ι : Type*} [Fintype ι] (b : Module.Basis ι ℚ V)
+    (G : Matrix ι ι ℤ) (hG : G.IsSymm) :
+    (ofGramMatrix b G hG).IsPosDef ↔ (G.map (Int.cast : ℤ → ℚ)).PosDef := by
+  rw [IsPosDef,
+    LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix b _ (ofGramMatrix b G hG).isSymm,
+    ofGramMatrix_form, LinearMap.BilinForm.toMatrix_toBilin]
+  simp only [algebraMap_int_eq, Int.coe_castRingHom]
 
 /-- Positive-semidefiniteness has its usual elementwise characterization. -/
 @[grind =]

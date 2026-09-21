@@ -323,13 +323,13 @@ lemma measurable_chafaiRescaling (n : ℕ) :
     Measurable (chafaiRescaling n) :=
   continuous_real_toNNReal.measurable.comp (measurable_const.div measurable_id)
 
-/-- On the positive part of the source, the `ℝ≥0` rescaling coerces back to `(n-1)/t`. -/
+/-- On the nonnegative part of the source, the `ℝ≥0` rescaling coerces back to `(n-1)/t`. -/
 @[simp]
-lemma chafaiRescaling_coe_of_pos {n : ℕ} (hn : 1 ≤ n) {t : ℝ} (ht : 0 < t) :
+lemma chafaiRescaling_coe_of_nonneg {n : ℕ} (hn : 1 ≤ n) {t : ℝ} (ht : 0 ≤ t) :
     (chafaiRescaling n t : ℝ) = ((n : ℝ) - 1) / t := by
   have hnum : 0 ≤ (n : ℝ) - 1 := by
     exact sub_nonneg.mpr (by exact_mod_cast hn)
-  have hnonneg : 0 ≤ ((n : ℝ) - 1) / t := div_nonneg hnum ht.le
+  have hnonneg : 0 ≤ ((n : ℝ) - 1) / t := div_nonneg hnum ht
   simp [chafaiRescaling, Real.coe_toNNReal', max_eq_left hnonneg]
 
 /-- The rescaled measure `σ̃_n`: pushforward of `chafaiMeasure f n` under the `ℝ≥0` rescaling. -/
@@ -361,7 +361,7 @@ gives the classical finite-order kernel `(max (1 - x / t) 0) ^ (n - 1)`. -/
 lemma bernsteinKernel_chafaiRescaling_of_pos {n : ℕ} (hn : 2 ≤ n) (x : ℝ) {t : ℝ} (ht : 0 < t) :
     bernsteinKernel n x (chafaiRescaling n t : ℝ) = (max (1 - x / t) 0) ^ (n - 1) := by
   rw [bernsteinKernel_of_two_le hn]
-  rw [chafaiRescaling_coe_of_pos (by omega : 1 ≤ n) ht]
+  rw [chafaiRescaling_coe_of_nonneg (by omega : 1 ≤ n) ht.le]
   congr 2
   have hcast : ((n : ℝ) - 1) = (↑(n - 1) : ℝ) := by
     norm_num [Nat.cast_sub (by omega : 1 ≤ n)]
@@ -494,7 +494,7 @@ private lemma chafaiRescaled_lintegral_coe_eq_chafaiMeasure_neg_derivWithin
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
   have htpos : 0 < t := ht
   have hscale : (chafaiRescaling n t : ℝ) = ((n : ℝ) - 1) / t :=
-    chafaiRescaling_coe_of_pos (by omega : 1 ≤ n) htpos
+    chafaiRescaling_coe_of_nonneg (by omega : 1 ≤ n) htpos.le
   have hdens_nonneg : 0 ≤ chafaiDensity f n t :=
     chafaiDensity_nonneg htpos.le (hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg n htpos.le)
   have hdens_eq := chafaiDensity_neg_derivWithin_pred f hn htpos
@@ -595,13 +595,13 @@ lemma chafaiRescaled_zero (f : ℝ → ℝ) : chafaiRescaled f 0 = 0 := by
   rw [chafaiRescaled_eq_map, chafaiMeasure_zero, Measure.map_zero]
 
 private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
-    (T : ℝ) (hT : 0 < T) :
+    (T : ℝ) (hT : 0 ≤ T) :
     ∫ t in (0 : ℝ)..T, chafaiDensity f 1 t = f 0 - f T := by
   have h1 : ∫ t in (0 : ℝ)..T, chafaiDensity f 1 t =
       ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
     intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
   rw [h1]
-  exact IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm le_rfl hT.le
+  exact IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm le_rfl hT
 
 private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (j : ℕ) (hj : 1 ≤ j) (T : ℝ) (hT : 0 < T) :
@@ -611,7 +611,7 @@ private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletel
   | succ p ih =>
     by_cases hp : p = 0
     · subst hp
-      exact le_of_eq (integral_chafaiDensity_one_eq f hcm T hT)
+      exact le_of_eq (integral_chafaiDensity_one_eq f hcm T hT.le)
     · calc ∫ t in (0 : ℝ)..T, chafaiDensity f (p + 1) t
           ≤ ∫ t in (0 : ℝ)..T, chafaiDensity f p t := by
             exact integral_chafaiDensity_le_pred f (k := p + 1) (by omega)
@@ -782,7 +782,7 @@ private lemma chafai_kernel_density_eq (f : ℝ → ℝ) (n : ℕ) (hn : 2 ≤ n
       bernsteinKernel n x (((n : ℝ) - 1) / t) * chafaiDensity f n t = 0 := by
     intro t ht
     simp only [Set.mem_sdiff, mem_Ioi, not_lt] at ht
-    rw [← chafaiRescaling_coe_of_pos (by omega : 1 ≤ n) ht.1,
+    rw [← chafaiRescaling_coe_of_nonneg (by omega : 1 ≤ n) ht.1.le,
       bernsteinKernel_chafaiRescaling_of_pos hn x ht.1,
       max_eq_right (by rw [sub_nonpos, le_div_iff₀ ht.1]; linarith)]
     rw [zero_pow (by omega : n - 1 ≠ 0), zero_mul]
@@ -792,7 +792,7 @@ private lemma chafai_kernel_density_eq (f : ℝ → ℝ) (n : ℕ) (hn : 2 ≤ n
   simp only [mem_Ioi] at ht
   have ht_pos : 0 < t := lt_of_le_of_lt hx ht
   dsimp only
-  rw [← chafaiRescaling_coe_of_pos (by omega : 1 ≤ n) ht_pos,
+  rw [← chafaiRescaling_coe_of_nonneg (by omega : 1 ≤ n) ht_pos.le,
     bernsteinKernel_chafaiRescaling_of_pos hn x ht_pos,
     max_eq_left (by rw [sub_nonneg, div_le_one₀ ht_pos]; linarith)]
   rw [chafaiDensity_of_ne_zero hn0]
@@ -1215,7 +1215,7 @@ lemma chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop
     exact setIntegral_congr_ae measurableSet_Ioi
       (ae_of_all _ fun t ht => by
         simp only [smul_eq_mul, mem_Ioi] at ht ⊢
-        rw [chafaiRescaling_coe_of_pos (by omega : 1 ≤ n) ht]
+        rw [chafaiRescaling_coe_of_nonneg (by omega : 1 ≤ n) ht.le]
         rw [ENNReal.toReal_ofReal
           (chafaiDensity_nonneg ht.le
             (hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht.le))]

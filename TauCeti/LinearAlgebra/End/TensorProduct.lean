@@ -22,11 +22,11 @@ one-sided tensor endomorphism acts componentwise.
 
 ## Main declarations
 
-* `TauCeti.Module.End.IsSemisimple.rTensor`: `f ⊗ 1` is semisimple when `f` is.
-* `TauCeti.Module.End.IsSemisimple.lTensor`: `1 ⊗ f` is semisimple when `f` is.
-* `TauCeti.Module.End.commute_rTensor_lTensor`: one-sided tensor endomorphisms on different factors
+* `Module.End.IsSemisimple.rTensor`: `f ⊗ 1` is semisimple when `f` is.
+* `Module.End.IsSemisimple.lTensor`: `1 ⊗ f` is semisimple when `f` is.
+* `Module.End.commute_rTensor_lTensor`: one-sided tensor endomorphisms on different factors
   commute.
-* `TauCeti.Module.End.IsSemisimple.tensorProduct`: tensor products of semisimple endomorphisms are
+* `Module.End.IsSemisimple.tensorProduct`: tensor products of semisimple endomorphisms are
   semisimple.
 * `IsNilpotent.tensorProduct_map_sub_one`: `TensorProduct.map f g - 1` is nilpotent when
   `f - 1` and `g - 1` are nilpotent.
@@ -39,28 +39,30 @@ namespace TauCeti
 open Polynomial
 open scoped TensorProduct
 
-namespace Module.End
+section
 
 universe u v w
 
 variable {K : Type u} {V : Type v} {W : Type w}
 
 /-- The right-tensor algebra homomorphism sends `f` to `f.rTensor W`. -/
-theorem rTensorAlgHom_apply [CommSemiring K] [AddCommMonoid V] [Module K V]
+@[simp]
+theorem _root_.Module.End.rTensorAlgHom_apply [CommSemiring K] [AddCommMonoid V] [Module K V]
     [AddCommMonoid W] [Module K W] (f : _root_.Module.End K V) :
     (_root_.Module.End.rTensorAlgHom K V W) f = f.rTensor W := by
   apply LinearMap.ext
   exact _root_.Module.End.rTensorAlgHom_apply_apply K V W f
 
 /-- The left-tensor algebra homomorphism sends `f` to `f.lTensor V`. -/
-theorem lTensorAlgHom_apply [CommSemiring K] [AddCommMonoid V] [Module K V]
+@[simp]
+theorem _root_.Module.End.lTensorAlgHom_apply [CommSemiring K] [AddCommMonoid V] [Module K V]
     [AddCommMonoid W] [Module K W] (f : _root_.Module.End K W) :
     (_root_.Module.End.lTensorAlgHom K W V) f = f.lTensor V := by
   apply LinearMap.ext
   exact _root_.Module.End.lTensorAlgHom_apply_apply K W V f
 
 /-- One-sided tensor endomorphisms acting on different factors commute. -/
-theorem commute_rTensor_lTensor [CommSemiring K] [AddCommMonoid V] [Module K V]
+theorem _root_.Module.End.commute_rTensor_lTensor [CommSemiring K] [AddCommMonoid V] [Module K V]
     [AddCommMonoid W] [Module K W] (f : _root_.Module.End K V)
     (g : _root_.Module.End K W) : Commute (f.rTensor W) (g.lTensor V) := by
   rw [commute_iff_eq, _root_.Module.End.mul_eq_comp, _root_.Module.End.mul_eq_comp]
@@ -77,7 +79,8 @@ variable [Module.Projective K W]
 
 /-- Tensoring a semisimple endomorphism on the right with the identity of a *free* module
 preserves semisimplicity. -/
-private theorem isSemisimple_rTensor_of_free {N : Type*} [AddCommGroup N] [Module K N]
+private theorem _root_.Module.End.isSemisimple_rTensor_of_free {N : Type*} [AddCommGroup N]
+    [Module K N]
     [Module.Free K N] {f : _root_.Module.End K V} (hf : f.IsSemisimple) :
     _root_.Module.End.IsSemisimple (f.rTensor N) := by
   classical
@@ -106,14 +109,14 @@ private theorem isSemisimple_rTensor_of_free {N : Type*} [AddCommGroup N] [Modul
 
 /-- Tensoring a semisimple endomorphism on the right with an identity endomorphism preserves
 semisimplicity. -/
-theorem IsSemisimple.rTensor {f : _root_.Module.End K V} (hf : f.IsSemisimple) :
+theorem _root_.Module.End.IsSemisimple.rTensor {f : _root_.Module.End K V} (hf : f.IsSemisimple) :
     _root_.Module.End.IsSemisimple (f.rTensor W) := by
   -- Split `W` off a free module `M`; the free case then transfers back along `i.lTensor V`.
   obtain ⟨M, _, _, _, i, s, his⟩ :=
     (Module.Projective.iff_split (R := K) (P := W)).mp inferInstance
   -- `iff_split` only supplies `AddCommMonoid M`; over a ring the module structure promotes it.
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup K
-  refine IsSemisimple.of_injective (isSemisimple_rTensor_of_free (N := M) hf)
+  refine Module.End.IsSemisimple.of_injective (Module.End.isSemisimple_rTensor_of_free (N := M) hf)
     (i.lTensor V) ?_ ?_
   · apply LinearMap.injective_of_comp_eq_id (i.lTensor V) (s.lTensor V)
     rw [← LinearMap.lTensor_comp, his, LinearMap.lTensor_id]
@@ -128,11 +131,11 @@ variable [Module.Projective K V]
 
 /-- Tensoring a semisimple endomorphism on the left with an identity endomorphism preserves
 semisimplicity. -/
-theorem IsSemisimple.lTensor {f : _root_.Module.End K W} (hf : f.IsSemisimple) :
+theorem _root_.Module.End.IsSemisimple.lTensor {f : _root_.Module.End K W} (hf : f.IsSemisimple) :
     _root_.Module.End.IsSemisimple (f.lTensor V) := by
   exact ((TensorProduct.comm K V W).isSemisimple_iff (f.lTensor V) (f.rTensor V)
     (LinearMap.rTensor_comp_comm f).symm).mpr
-      (IsSemisimple.rTensor (W := V) hf)
+      (Module.End.IsSemisimple.rTensor (W := V) hf)
 
 end Left
 
@@ -150,13 +153,13 @@ theorem _root_.IsNilpotent.tensorProduct_map_sub_one {f : _root_.Module.End K V}
   let m : _root_.Module.End K (V ⊗[K] W) := g.lTensor V - 1
   have hn : IsNilpotent n := by
     have hn' := hf.map (_root_.Module.End.rTensorAlgHom K V W)
-    rw [map_sub, map_one, rTensorAlgHom_apply] at hn'
+    rw [map_sub, map_one, Module.End.rTensorAlgHom_apply] at hn'
     exact hn'
   have hm : IsNilpotent m := by
     have hm' := hg.map (_root_.Module.End.lTensorAlgHom K W V)
-    rw [map_sub, map_one, lTensorAlgHom_apply] at hm'
+    rw [map_sub, map_one, Module.End.lTensorAlgHom_apply] at hm'
     exact hm'
-  have hab := commute_rTensor_lTensor f g
+  have hab := Module.End.commute_rTensor_lTensor f g
   have hnm : Commute n m := by
     dsimp only [n, m]
     exact (hab.sub_right (Commute.one_right _)).sub_left (Commute.one_left _)
@@ -179,15 +182,16 @@ variable [Field K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
 variable [PerfectField K] [FiniteDimensional K V] [FiniteDimensional K W]
 
 /-- The tensor product of two semisimple endomorphisms is semisimple. -/
-theorem IsSemisimple.tensorProduct {f : _root_.Module.End K V} {g : _root_.Module.End K W}
+theorem _root_.Module.End.IsSemisimple.tensorProduct {f : _root_.Module.End K V}
+    {g : _root_.Module.End K W}
     (hf : f.IsSemisimple) (hg : g.IsSemisimple) :
     _root_.Module.End.IsSemisimple (TensorProduct.map f g) := by
   rw [← LinearMap.lTensor_comp_rTensor, ← _root_.Module.End.mul_eq_comp]
-  exact _root_.Module.End.IsSemisimple.mul_of_commute (commute_rTensor_lTensor f g).symm
-    (IsSemisimple.lTensor hg) (IsSemisimple.rTensor hf)
+  exact _root_.Module.End.IsSemisimple.mul_of_commute (Module.End.commute_rTensor_lTensor f g).symm
+    (Module.End.IsSemisimple.lTensor hg) (Module.End.IsSemisimple.rTensor hf)
 
 end PerfectField
 
-end Module.End
+end
 
 end TauCeti

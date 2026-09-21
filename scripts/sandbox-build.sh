@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# sandbox-build.sh — the offline, landrun-sandboxed build + audits + environment lint of
+# sandbox-build.sh — the offline, bwrap-sandboxed build + audits + environment lint of
 # the candidate TauCeti sources, factored out of .github/workflows/pr-build.yml.
 #
-# pr-build.yml invokes this workflow-pinned copy inside landrun with a fixed, comment-free
+# pr-build.yml invokes this workflow-pinned copy inside the bwrap sandbox with a fixed, comment-free
 # one-liner, so the workflow's `bash -c` payload
 # can no longer be broken by an apostrophe or a stray quote in a comment: all the prose
 # and its punctuation live here, in a file the shell reads as a script rather than as a
@@ -22,15 +22,15 @@ test -d "$TRUSTED_SCRIPTS"
 
 # Lake normally invokes Lean directly. Route every compiler process through a
 # trusted wall-clock watchdog instead. This script and the wrapper are the
-# workflow-pinned copies, and landrun does not pass timeout-control variables,
+# workflow-pinned copies, and the sandbox does not pass timeout-control variables,
 # so candidate code cannot raise or disable the 300s
-# deadline. The wrapper and Lean both remain inside the same landrun sandbox.
+# deadline. The wrapper and Lean both remain inside the same bwrap sandbox.
 test -n "${WATCHDOG_TOOLCHAIN:-}"
 test -x "$WATCHDOG_TOOLCHAIN/bin/lean"
 export LAKE_OVERRIDE_LEAN=true
 export LEAN="$WATCHDOG_TOOLCHAIN/bin/lean"
 
-# Build the exact candidate against its attested Lake config. landrun keeps this offline and
+# Build the exact candidate against its attested Lake config. bwrap keeps this offline and
 # confines writes to the candidate's .lake directory.
 #
 # --iofail requires a SILENT build, the way Mathlib does (its CI runs `lake build --iofail`): it is
@@ -38,6 +38,10 @@ export LEAN="$WATCHDOG_TOOLCHAIN/bin/lean"
 # #check/#eval, a `simp?`/`ring_nf?`-style "Try this: …" suggestion, a linter note. A clean elaboration
 # logs nothing above trace, so this is exit-code enforcement, not output scraping.
 lake build --iofail
+
+# Reject duplicate declaration ownership before merging imported environments can hide it.
+# This also checks orphan modules and runs on the exact merge-group candidate before landing.
+lake env "$WATCHDOG_TOOLCHAIN/bin/lean" --run "$TRUSTED_SCRIPTS/DuplicateDeclarations.lean"
 
 # Axiom audit: inspect the built environment and reject any axiom outside
 # {propext, Classical.choice, Quot.sound} — catching sorry, native_decide, and
@@ -62,7 +66,7 @@ bash "$TRUSTED_SCRIPTS/lint-env.sh"
 bash "$TRUSTED_SCRIPTS/lint-style.sh"
 
 # A merge-group commit that passes every audit is the exact commit GitHub will land. Pack its
-# root-package outputs while still inside landrun, after the final operation that executes
+# root-package outputs while still inside the bwrap sandbox, after the final operation that executes
 # candidate code. The host uploads only this data-only staging tree to a fresh, secret-isolated
 # publisher job. Ordinary PRs and installations without upload endpoints leave this disabled.
 if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
@@ -80,7 +84,10 @@ if [ "${STAGE_LAKE_CACHE:-}" = "1" ]; then
   export LAKE_NO_CACHE=true
   export LAKE_CACHE_DIR="$PWD/.lake/cache"
   lake build >/dev/null
-  lake build --no-build -o .lake/outputs.jsonl
+  python3 "$TRUSTED_SCRIPTS/lake_cache_reuse.py" reconnect . "$TRUSTED_SCRIPTS/../lake-cache-reuse.json"
+  # Linked archives may have stale or candidate-written .ltar.hash sidecars.
+  # --rehash makes Lake hash the archive bytes instead of trusting those sidecars.
+  lake build --no-build --rehash -o .lake/outputs.jsonl
   echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
   rm -rf .lake/cache-staging
   lake cache stage .lake/outputs.jsonl .lake/cache-staging

@@ -29,8 +29,10 @@ unit.
 * `Scheme.toRationalUnitSheaf` is the monomorphism `𝒪_X^× ⟶ 𝒦_X^×`;
 * `Scheme.cartierDivisorSheaf` is its cokernel in sheaves of abelian groups;
 * `Scheme.CartierDivisor` is the additive group of global sections of that cokernel;
+* `Scheme.rationalUnitClass` sends a nonzero rational function to its class in the
+  Cartier-divisor sheaf over a nonempty open subset, its *local equation* there;
 * `Scheme.principalCartierDivisor` sends a nonzero rational function to its principal Cartier
-  divisor.
+  divisor, the case of the whole space.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Cartier divisors; the
 dictionaries `Cartier ≃ line bundles` and (smooth curve) `Weil ≃ Cartier`". The rational-function
@@ -149,68 +151,149 @@ lemma toRationalUnitSheaf_app_comp_toCartierDivisor :
 local instance : Nonempty (⊤ : X.Opens) :=
   ⟨⟨Classical.choice (inferInstanceAs (Nonempty X)), by simp⟩⟩
 
-/-- On the whole space, the units of the rational-function sheaf are the units of the function
-field. -/
-def rationalUnitSectionsEquiv :
-    Additive (((rationalFunctionsRing X).presheaf.obj (op (⊤ : X.Opens)))ˣ) ≃+
+/-- Over a nonempty open subset, the units of the rational-function sheaf are the units of the
+function field. -/
+def rationalUnitSectionsEquiv (U : X.Opens) [Nonempty U] :
+    Additive (((rationalFunctionsRing X).presheaf.obj (op U))ˣ) ≃+
       Additive X.functionFieldˣ := by
-  exact (Units.mapEquiv (rationalFunctionsRingEquiv (⊤ : X.Opens)).toMulEquiv).toAdditive
+  exact (Units.mapEquiv (rationalFunctionsRingEquiv U).toMulEquiv).toAdditive
 
-/-- The global rational-unit equivalence applies the rational-functions equivalence to a
-unit. -/
+/-- The rational-unit equivalence applies the rational-functions equivalence to a unit. -/
 @[simp]
-lemma rationalUnitSectionsEquiv_apply
-    (f : ((rationalFunctionsRing X).presheaf.obj (op (⊤ : X.Opens)))ˣ) :
-    rationalUnitSectionsEquiv X (Additive.ofMul f) =
+lemma rationalUnitSectionsEquiv_apply (U : X.Opens) [Nonempty U]
+    (f : ((rationalFunctionsRing X).presheaf.obj (op U))ˣ) :
+    rationalUnitSectionsEquiv X U (Additive.ofMul f) =
       Additive.ofMul (Units.map
-        (rationalFunctionsRingEquiv (⊤ : X.Opens)).toMonoidHom f) := by
+        (rationalFunctionsRingEquiv U).toMonoidHom f) := by
   rfl
 
-/-- The homomorphism from global regular units to units of the function field induced by the
-germ map. -/
-noncomputable def regularUnitToFunctionField :
-    ((X.presheaf.obj (op (⊤ : X.Opens))) : Type u)ˣ →* X.functionFieldˣ := by
-  exact Units.map (X.germToFunctionField (⊤ : X.Opens)).hom.toMonoidHom
+/-- The homomorphism from regular units on `U` to units of the function field induced by the
+germ map at the generic point. -/
+noncomputable def regularUnitToFunctionField (U : X.Opens) [Nonempty U] :
+    ((X.presheaf.obj (op U)) : Type u)ˣ →* X.functionFieldˣ := by
+  exact Units.map (X.germToFunctionField U).hom.toMonoidHom
 
 /-- The map on regular units applies the germ map to the underlying section. -/
 @[simp]
-lemma regularUnitToFunctionField_apply
-    (f : ((X.presheaf.obj (op (⊤ : X.Opens))) : Type u)ˣ) :
-    regularUnitToFunctionField X f =
-      Units.map (X.germToFunctionField (⊤ : X.Opens)).hom.toMonoidHom f := by
+lemma regularUnitToFunctionField_apply (U : X.Opens) [Nonempty U]
+    (f : ((X.presheaf.obj (op U)) : Type u)ˣ) :
+    regularUnitToFunctionField X U f =
+      Units.map (X.germToFunctionField U).hom.toMonoidHom f := by
   rfl
 
-/-- The equivalence from global rational units to function-field units carries the image of a
-global regular unit to the unit induced by its germ in the function field. -/
-lemma rationalUnitSectionsEquiv_toRationalUnitSheaf_app
-    (f : ((X.presheaf.obj (op (⊤ : X.Opens))) : Type u)ˣ) :
-    rationalUnitSectionsEquiv X
-        (((toRationalUnitSheaf X).hom.app (op (⊤ : X.Opens))).hom (Additive.ofMul f)) =
-      Additive.ofMul (regularUnitToFunctionField X f) := by
+/-- The equivalence from rational units to function-field units carries the image of a regular
+unit to the unit induced by its germ in the function field. -/
+lemma rationalUnitSectionsEquiv_toRationalUnitSheaf_app (U : X.Opens) [Nonempty U]
+    (f : ((X.presheaf.obj (op U)) : Type u)ˣ) :
+    rationalUnitSectionsEquiv X U
+        (((toRationalUnitSheaf X).hom.app (op U)).hom (Additive.ofMul f)) =
+      Additive.ofMul (regularUnitToFunctionField X U f) := by
   have hunit :
-      ((toRationalUnitSheaf X).hom.app (op (⊤ : X.Opens))).hom (Additive.ofMul f) =
+      ((toRationalUnitSheaf X).hom.app (op U)).hom (Additive.ofMul f) =
         Additive.ofMul (Units.map
           ((toRationalFunctionsRing X).hom.app
-            (op (⊤ : X.Opens))).hom.toMonoidHom f) :=
+            (op U)).hom.toMonoidHom f) :=
     CategoryTheory.Sheaf.additiveUnitsFunctor_map_app_apply
       (Opens.grothendieckTopology X) (toRationalFunctionsRing X)
-        (op (⊤ : X.Opens)) (Additive.ofMul f)
+        (op U) (Additive.ofMul f)
   rw [hunit, rationalUnitSectionsEquiv_apply, regularUnitToFunctionField_apply]
   apply congrArg Additive.ofMul
   apply Units.ext
   simp only [Units.coe_map]
   -- The units API exposes underlying values, while the rational-functions comparison
   -- theorems use the definitionally equal module-sheaf section type.
-  change rationalFunctionsRingEquiv (⊤ : X.Opens)
-      ((toRationalFunctionsRing X).hom.app (op (⊤ : X.Opens)) (f : Γ(X, ⊤))) =
-    X.germToFunctionField (⊤ : X.Opens) f
+  change rationalFunctionsRingEquiv U
+      ((toRationalFunctionsRing X).hom.app (op U) (f : Γ(X, U))) =
+    X.germToFunctionField U f
   rw [← toRationalFunctionsRing_app, ← rationalFunctionsEquiv_apply,
     rationalFunctionsEquiv_toRationalFunctions_app]
+
+/-- The class in the Cartier-divisor sheaf over a nonempty open subset `U` of a nonzero rational
+function, regarded as a local equation there. The multiplicative group of the function field is
+written additively in the domain. -/
+def rationalUnitClass (U : X.Opens) [Nonempty U] :
+    Additive X.functionFieldˣ →+ ((cartierDivisorSheaf X).obj.obj (op U) : Type u) :=
+  (((toCartierDivisorSheaf X).hom.app (op U)).hom).comp
+    (rationalUnitSectionsEquiv X U).symm.toAddMonoidHom
+
+/-- Evaluating the rational-unit class applies the quotient map to the corresponding rational
+unit section. -/
+lemma rationalUnitClass_apply (U : X.Opens) [Nonempty U] (g : Additive X.functionFieldˣ) :
+    rationalUnitClass X U g = ((toCartierDivisorSheaf X).hom.app (op U)).hom
+      ((rationalUnitSectionsEquiv X U).symm g) :=
+  AddMonoidHom.comp_apply _ _ _
+
+/-- Restricting a rational unit to a smaller nonempty open subset does not change the underlying
+nonzero rational function. -/
+@[simp]
+lemma rationalUnitSectionsEquiv_symm_restrict {U V : X.Opens} [Nonempty U] [Nonempty V]
+    (h : V ≤ U) (g : Additive X.functionFieldˣ) :
+    TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).obj)
+        ((rationalUnitSectionsEquiv X U).symm g) V h =
+      (rationalUnitSectionsEquiv X V).symm g := by
+  apply (rationalUnitSectionsEquiv X V).injective
+  rw [AddEquiv.apply_symm_apply]
+  set t := (rationalUnitSectionsEquiv X U).symm g with ht
+  have hgt : rationalUnitSectionsEquiv X U t = g := by
+    rw [ht, AddEquiv.apply_symm_apply]
+  have hgt' : g = Additive.ofMul (Units.map
+      (rationalFunctionsRingEquiv U).toMonoidHom (Additive.toMul t)) := by
+    rw [← hgt]
+    exact rationalUnitSectionsEquiv_apply X U (Additive.toMul t)
+  -- Restricting a unit of the rational-function sheaf restricts its underlying section.
+  have hrestrict :
+      TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).obj) t V h =
+        Additive.ofMul (Units.map
+          ((rationalFunctionsRing X).presheaf.map (homOfLE h).op).hom.toMonoidHom
+            (Additive.toMul t)) :=
+    CategoryTheory.Sheaf.additiveUnitsFunctor_obj_map_apply
+      (Opens.grothendieckTopology X) (rationalFunctionsRing X) (homOfLE h).op t
+  rw [hrestrict, hgt', rationalUnitSectionsEquiv_apply]
+  refine congrArg Additive.ofMul (Units.ext ?_)
+  simp
+
+/-- The class of a nonzero rational function commutes with restriction to a smaller nonempty
+open subset: a local equation stays a local equation. -/
+@[simp]
+lemma rationalUnitClass_restrict {U V : X.Opens} [Nonempty U] [Nonempty V] (h : V ≤ U)
+    (g : Additive X.functionFieldˣ) :
+    rationalUnitClass X U g |_ V = rationalUnitClass X V g := by
+  rw [rationalUnitClass_apply]
+  calc
+    _ = ((toCartierDivisorSheaf X).hom.app (op V)).hom
+          (TopCat.Presheaf.restrictOpen (F := (rationalUnitSheaf X).obj)
+            ((rationalUnitSectionsEquiv X U).symm g) V h) :=
+      (TopCat.Presheaf.map_restrict (toCartierDivisorSheaf X).hom h _).symm
+    _ = _ := by rw [rationalUnitSectionsEquiv_symm_restrict, ← rationalUnitClass_apply]
+
+/-- A regular unit on `U` has zero Cartier-divisor class over `U`. -/
+@[simp]
+lemma rationalUnitClass_germToFunctionField_eq_zero (U : X.Opens) [Nonempty U]
+    (f : ((X.presheaf.obj (op U)) : Type u)ˣ) :
+    rationalUnitClass X U
+      (Additive.ofMul (Units.map (X.germToFunctionField U).hom f)) = 0 := by
+  have hsymm :
+      (rationalUnitSectionsEquiv X U).symm
+          (Additive.ofMul (regularUnitToFunctionField X U f)) =
+        ((toRationalUnitSheaf X).hom.app (op U)).hom (Additive.ofMul f) := by
+    apply (rationalUnitSectionsEquiv X U).injective
+    rw [AddEquiv.apply_symm_apply]
+    exact (rationalUnitSectionsEquiv_toRationalUnitSheaf_app X U f).symm
+  have hzero :
+      ((toCartierDivisorSheaf X).hom.app (op U)).hom
+        (((toRationalUnitSheaf X).hom.app (op U)).hom (Additive.ofMul f)) = 0 := by
+    have hcomp := toRationalUnitSheaf_comp_toCartierDivisorSheaf X
+    have happ := congrArg (fun k ↦ k.hom.app (op U)) hcomp
+    exact ConcreteCategory.congr_hom happ (Additive.ofMul f)
+  refine (congrArg (rationalUnitClass X U)
+    (congrArg Additive.ofMul (regularUnitToFunctionField_apply X U f).symm)).trans ?_
+  rw [rationalUnitClass_apply, hsymm]
+  exact hzero
 
 /-- A nonzero rational function determines its principal Cartier divisor. The multiplicative
 group of the function field is written additively in the domain. -/
 def principalCartierDivisorAddHom : Additive X.functionFieldˣ →+ CartierDivisor X :=
-  (toCartierDivisor X).comp (rationalUnitSectionsEquiv X).symm.toAddMonoidHom
+  rationalUnitClass X ⊤
 
 /-- The principal Cartier divisor of a nonzero rational function. -/
 def principalCartierDivisor (f : X.functionFieldˣ) : CartierDivisor X :=
@@ -240,33 +323,23 @@ lemma principalCartierDivisor_inv (f : X.functionFieldˣ) :
 lemma principalCartierDivisor_regularUnitToFunctionField
     (f : ((X.presheaf.obj (op (⊤ : X.Opens))) : Type u)ˣ) :
     principalCartierDivisor X
-      (Units.map (X.germToFunctionField (⊤ : X.Opens)).hom f) = 0 := by
-  refine (congrArg (principalCartierDivisor X)
-    (regularUnitToFunctionField_apply X f).symm).trans ?_
-  have hsymm :
-      (rationalUnitSectionsEquiv X).symm
-          (Additive.ofMul (regularUnitToFunctionField X f)) =
-        ((toRationalUnitSheaf X).hom.app
-          (op (⊤ : X.Opens))).hom (Additive.ofMul f) := by
-    apply (rationalUnitSectionsEquiv X).injective
-    rw [AddEquiv.apply_symm_apply]
-    exact (rationalUnitSectionsEquiv_toRationalUnitSheaf_app X f).symm
-  calc
-    principalCartierDivisor X (regularUnitToFunctionField X f) =
-        (toCartierDivisor X) ((rationalUnitSectionsEquiv X).symm
-          (Additive.ofMul (regularUnitToFunctionField X f))) := rfl
-    _ = (toCartierDivisor X)
-        (((toRationalUnitSheaf X).hom.app
-          (op (⊤ : X.Opens))).hom (Additive.ofMul f)) := congrArg _ hsymm
-    _ = 0 := by
-      have hzero := DFunLike.congr_fun
-        (toRationalUnitSheaf_app_comp_toCartierDivisor X) (Additive.ofMul f)
-      -- Evaluating the categorical composite gives the definitionally equal composite of
-      -- the underlying additive homomorphisms.
-      change (toCartierDivisor X)
-        (((toRationalUnitSheaf X).hom.app
-          (op (⊤ : X.Opens))).hom (Additive.ofMul f)) = 0 at hzero
-      exact hzero
+      (Units.map (X.germToFunctionField (⊤ : X.Opens)).hom f) = 0 :=
+  rationalUnitClass_germToFunctionField_eq_zero X ⊤ f
+
+/-- Restricting a principal Cartier divisor to a nonempty open subset gives the class of the same
+rational function there: a principal divisor has a global equation. -/
+@[simp]
+lemma principalCartierDivisorAddHom_restrict (g : Additive X.functionFieldˣ) (U : X.Opens)
+    [Nonempty U] :
+    (principalCartierDivisorAddHom X g) |_ U = rationalUnitClass X U g :=
+  rationalUnitClass_restrict X le_top g
+
+/-- Restricting a principal Cartier divisor to a nonempty open subset gives the class of the same
+rational function there. -/
+@[simp]
+lemma principalCartierDivisor_restrict (f : X.functionFieldˣ) (U : X.Opens) [Nonempty U] :
+    (principalCartierDivisor X f) |_ U = rationalUnitClass X U (Additive.ofMul f) :=
+  principalCartierDivisorAddHom_restrict X (Additive.ofMul f) U
 
 end Scheme
 

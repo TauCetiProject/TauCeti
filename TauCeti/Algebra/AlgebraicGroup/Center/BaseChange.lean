@@ -30,6 +30,8 @@ point of `H`, so it kills every equation of the original center.
   center commutes with extension of the ground field.
 * `TauCeti.CommHopfAlgCat.centerDefiningIdeal_baseChange_eq_augmentation_iff`: a field extension
   preserves and reflects triviality of the center.
+* `TauCeti.CommHopfAlgCat.centerCoordinateBaseChangeIso`: the coordinate isomorphism between
+  the center after base change and the base change of the center.
 
 ## References
 
@@ -42,6 +44,7 @@ This supplies the base-change compatibility of the center `Z(G)` required in Lay
 
 public section
 
+open CategoryTheory
 open WithConv
 
 namespace TauCeti.CommHopfAlgCat
@@ -96,5 +99,36 @@ theorem centerDefiningIdeal_baseChange_eq_augmentation_iff
   rw [← baseChangeHopfIdeal_centerDefiningIdeal,
     ← baseChangeHopfIdeal_augmentation]
   exact baseChangeHopfIdeal_injective.eq_iff
+
+/-- The center after a field extension has the base change of the original center as its
+coordinate Hopf algebra. -/
+noncomputable def centerCoordinateBaseChangeIso (H : _root_.CommHopfAlgCat.{v} k) :
+    centerCoordinateHopfAlgebra (baseChange (K := K) H) ≅
+      baseChange (K := K) (centerCoordinateHopfAlgebra H) :=
+  eqToIso (congrArg (quotient (baseChange (K := K) H))
+    (baseChangeHopfIdeal_centerDefiningIdeal (K := K) H).symm) ≪≫
+      quotientBaseChangeIso (K := K) (centerDefiningIdeal H)
+
+/-- The center base-change comparison respects the quotient coordinate maps. -/
+@[simp]
+theorem mkQuotient_comp_centerCoordinateBaseChangeIso_hom
+    (H : _root_.CommHopfAlgCat.{v} k) :
+    mkQuotient (baseChange (K := K) H) (centerDefiningIdeal (baseChange (K := K) H)) ≫
+        (centerCoordinateBaseChangeIso (K := K) H).hom =
+      baseChangeMap (K := K) (mkQuotient H (centerDefiningIdeal H)) := by
+  rw [centerCoordinateBaseChangeIso, Iso.trans_hom, eqToIso.hom, ← Category.assoc,
+    mkQuotient_comp_eqToHom (baseChangeHopfIdeal_centerDefiningIdeal (K := K) H),
+    mkQuotient_comp_quotientBaseChangeIso_hom]
+
+/-- The inverse center base-change comparison respects the quotient coordinate maps. -/
+@[simp]
+theorem baseChangeMap_mkQuotient_comp_centerCoordinateBaseChangeIso_inv
+    (H : _root_.CommHopfAlgCat.{v} k) :
+    baseChangeMap (K := K) (mkQuotient H (centerDefiningIdeal H)) ≫
+        (centerCoordinateBaseChangeIso (K := K) H).inv =
+      mkQuotient (baseChange (K := K) H)
+        (centerDefiningIdeal (baseChange (K := K) H)) := by
+  rw [← mkQuotient_comp_centerCoordinateBaseChangeIso_hom, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
 
 end TauCeti.CommHopfAlgCat

@@ -42,8 +42,9 @@ structure.
   explicitly in the biproduct decomposition.
 * `TauCeti.ExactStructure.conflation_of_splitting`: a split short complex is a conflation of
   every exact structure, so `ExactStructure.split C` is the smallest one.
-* `TauCeti.ExactStructure.conflation_zero_id`: the trivial conflation `0 ↪ X ↠ X`, split by the
-  identity, is a conflation of every exact structure.
+* `TauCeti.ExactStructure.conflation_zero_id` and
+  `TauCeti.ExactStructure.conflation_id_zero`: the two trivial conflations, split by the identity,
+  are conflations of every exact structure.
 * `TauCeti.ExactStructure.split_isInflation_iff` and
   `TauCeti.ExactStructure.split_isDeflation_iff`: the characteristic API of
   `TauCeti.ExactStructure.split`.
@@ -233,7 +234,6 @@ theorem split_isDeflation_comp {X Y Z : C} {p : X ⟶ Y} {q : Y ⟶ Z}
   obtain ⟨t₂⟩ := (split_conflation_iff _).mp hS₂
   have hi₁r : i₁ ≫ t₁.r = 𝟙 K₁ := t₁.f_r
   have hsp : t₁.s ≫ p = 𝟙 Y := t₁.s_g
-  have hsr : t₁.s ≫ t₁.r = 0 := t₁.s_r
   have hid₁ : t₁.r ≫ i₁ + p ≫ t₁.s = 𝟙 X := t₁.id
   have hi₂r : i₂ ≫ t₂.r = 𝟙 K₂ := t₂.f_r
   have hsq : t₂.s ≫ q = 𝟙 Z := t₂.s_g
@@ -389,6 +389,11 @@ theorem conflation_of_splitting (E : ExactStructure C) {S : ShortComplex C} (s :
 theorem conflation_zero_id (E : ExactStructure C) (X : C) :
     E.Conflation (ShortComplex.mk (0 : (0 : C) ⟶ X) (𝟙 X) (by simp)) :=
   E.conflation_of_splitting { r := 0, s := 𝟙 X, f_r := (isZero_zero C).eq_of_src _ _ }
+
+/-- The trivial conflation `X → X → 0`, dual to `conflation_zero_id`. -/
+theorem conflation_id_zero (E : ExactStructure C) (X : C) :
+    E.Conflation (ShortComplex.mk (𝟙 X) (0 : X ⟶ (0 : C)) (by simp)) :=
+  E.conflation_of_splitting { r := 𝟙 X, s := 0 }
 
 /-- A conflation of the split exact structure is a conflation of every exact structure. -/
 theorem conflation_of_split_conflation (E : ExactStructure C) {S : ShortComplex C}

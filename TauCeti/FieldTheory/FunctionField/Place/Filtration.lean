@@ -128,6 +128,16 @@ theorem mem_filtration_one_iff {z : F} : z ∈ P.filtration 1 ↔ P.valuation z 
   · rw [P.mem_filtration_iff_le_ord hz, P.valuation_lt_one_iff_ord_pos hz]
     omega
 
+/-- Two functions integral at `P` have the same value at `P` exactly when they differ by a
+function of positive order: `𝔪_P^1` is the maximal ideal of `𝒪_P`, seen inside `F`. -/
+theorem residue_eq_iff_sub_mem_filtration_one {y z : P.integers} :
+    IsLocalRing.residue P.integers y = IsLocalRing.residue P.integers z ↔
+      (y : F) - (z : F) ∈ P.filtration 1 := by
+  -- Expose subtraction in the valuation subring as subtraction in its fraction field.
+  rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff,
+    mem_maximalIdeal_iff_valuation_lt_one, ← mem_filtration_one_iff,
+    show ((y - z : P.integers) : F) = (y : F) - (z : F) from rfl]
+
 /-- The filtration decreases: vanishing to higher order is a stronger condition. -/
 theorem filtration_antitone : Antitone P.filtration := fun a b hab z hz ↦
   P.mem_filtration_iff.mpr
@@ -139,6 +149,20 @@ theorem mul_mem_filtration {a b : ℤ} {z w : F} (hz : z ∈ P.filtration a)
     (hw : w ∈ P.filtration b) : z * w ∈ P.filtration (a + b) := by
   rw [mem_filtration_iff, map_mul, neg_add, WithZero.exp_add]
   exact mul_le_mul' (P.mem_filtration_iff.mp hz) (P.mem_filtration_iff.mp hw)
+
+/-- A function integral at `P` and congruent to `1` to order `a` stays congruent to `1` to
+order `a` after being raised to a power. -/
+theorem pow_sub_one_mem_filtration {a : ℤ} {u : F} (hu : u ∈ P.integers)
+    (h : u - 1 ∈ P.filtration a) (n : ℕ) : u ^ n - 1 ∈ P.filtration a := by
+  induction n with
+  | zero =>
+    rw [pow_zero, sub_self]
+    exact Submodule.zero_mem (P.filtration a)
+  | succ n ih =>
+    -- Split the successor power difference into the induction term and `u - 1`.
+    rw [show u ^ (n + 1) - 1 = u * (u ^ n - 1) + (u - 1) by ring]
+    refine Submodule.add_mem _ ?_ h
+    simpa using P.mul_mem_filtration (P.mem_filtration_zero_iff.mpr hu) ih
 
 /-- A function lies in the step of the filtration cut out by its own order.  At `z = 0` this
 reads `0 ∈ 𝔪_P^0`, the junk value `ord_P 0 = 0` doing no harm. -/

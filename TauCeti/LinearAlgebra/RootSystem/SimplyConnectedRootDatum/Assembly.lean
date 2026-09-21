@@ -16,8 +16,6 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Basic
 
-public section
-
 /-!
 # The pinned simply connected root datum of a Dynkin type
 
@@ -50,6 +48,8 @@ make this explicit data available without requiring downstream users to unfold t
 * `TauCeti.DynkinType.card_support_simplyConnectedBase`: the pinned base has `t.rank` elements.
 * `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum`: the pinned pairing is the dot
   product, uniformly in the type.
+* `TauCeti.DynkinType.coroot'_simpleIndex_apply`: evaluation at a simple coroot extracts the
+  corresponding fundamental-weight coordinate.
 * `TauCeti.DynkinType.simpleIndex_B`, `simpleIndex_F4` and `simpleIndex_G2`: the simple-root
   index of the dispatcher is the family module's own simple-root index, for the three families
   carrying a special isogeny.
@@ -62,6 +62,8 @@ Chapter 11. This assembles the target "a named datum per valid type" in Layer 6 
 `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md` for its consumer,
 `CFSGStatement` milestone L0.
 -/
+
+public section
 
 namespace TauCeti.DynkinType
 
@@ -459,6 +461,18 @@ theorem toLinearMap_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid)
   | G2 =>
     rw [simplyConnectedRootDatum_G2]
     exact g2SimplyConnectedRootDatum_toLinearMap x y
+
+/-- Evaluation at the `i`-th simple coroot extracts the `i`-th fundamental-weight coordinate.
+
+Not a `simp` lemma: `RootPairing.coroot'` is an abbreviation for a `LinearMap.flip`, so `simp`
+rewrites the left-hand side with `LinearMap.flip_apply` before this could fire. -/
+theorem coroot'_simpleIndex_apply (t : DynkinType) (ht : t.Valid)
+    (i : Fin t.rank) (mu : Fin t.rank → ℤ) :
+    (t.simplyConnectedRootDatum ht).coroot' (t.simpleIndex ht i) mu = mu i := by
+  change (t.simplyConnectedRootDatum ht).toLinearMap mu
+    ((t.simplyConnectedRootDatum ht).coroot (t.simpleIndex ht i)) = mu i
+  rw [t.coroot_simpleIndex ht, t.toLinearMap_simplyConnectedRootDatum ht,
+    dotProduct_single, mul_one]
 
 /-- **The Cartan integers of the pinned datum at the simple indices are the entries of its
 Bourbaki-numbered Cartan matrix.** The simple root is a row of the Cartan matrix and the simple

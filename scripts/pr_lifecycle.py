@@ -26,12 +26,14 @@ from datetime import datetime, timezone
 
 STATE_REVIEW = {"awaiting-review", "review-in-progress"}
 # The two states that put the ball in the author's court.
-STATE_AUTHOR_ACTION = {"awaiting-author", "ci-failed"}
+STATE_AUTHOR_ACTION = {"awaiting-author", "ci-failed", "merge-check-failed"}
 STATE_LABELS = {*STATE_AUTHOR_ACTION, *STATE_REVIEW}
 # States in which the pull request has left the review queue: the author owns it,
 # or CI is judging a new commit before review resumes.
 STATE_AUTHOR = {*STATE_AUTHOR_ACTION, "awaiting-CI"}
-LIFECYCLE_LABELS = {*STATE_REVIEW, *STATE_AUTHOR, "ready-to-merge"}
+STATE_INACTIVE = {"on-hold", "awaiting-dependency"}
+LIFECYCLE_LABELS = {*STATE_REVIEW, *STATE_AUTHOR, *STATE_INACTIVE,
+                    "ready-to-merge", "needs-human-review"}
 # The lifecycle-label workflow first landed on 2026-07-22. A pull request closed
 # before that UTC day cannot contain one of its label events.
 LIFECYCLE_EPOCH = datetime(2026, 7, 22, tzinfo=timezone.utc)
@@ -43,7 +45,11 @@ STAGE_ORDER = [
     "awaiting-review",
     "review-in-progress",
     "ready-to-merge",
+    "needs-human-review",
+    "awaiting-dependency",
+    "on-hold",
     "ci-failed",
+    "merge-check-failed",
     "awaiting-author",
 ]
 

@@ -68,8 +68,7 @@ private theorem simplePole_hypotheses {f : ℂ → ℂ}
   refine ⟨by simpa using hf, ?_, ?_⟩ <;>
     · intro s hs
       have hs0 : s = 0 := by simpa using hs
-      rw [hs0]
-      assumption
+      rwa [hs0]
 
 /-- **The half-residue theorem on the half-disc boundary.** If `f` is holomorphic off the origin
 and has at worst a simple pole there (the hypotheses also permit a removable singularity, or

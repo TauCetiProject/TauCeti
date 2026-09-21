@@ -76,7 +76,7 @@ theorem baseChange (H : FiniteTypeCommHopfAlgCat.{u, u} k)
   let MK : FGComoduleCat.{u, u, u} K (K ⊗[k] H) :=
     FGComoduleCat.of (R := K) (C := K ⊗[k] H) (K ⊗[k] M)
   let _ : Algebra.Smooth k H := hH'.1
-  let _ : IsReduced H := isReduced_of_smooth_of_field k H
+  let _ : IsReduced H := isReduced_of_smooth k H
   have hgeom : geometricallyUnipotentPointsCommHopfAlgProperty k H.obj := by
     rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff]
     exact hH'.2

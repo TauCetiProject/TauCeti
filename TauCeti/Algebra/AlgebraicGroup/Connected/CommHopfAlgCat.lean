@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import Mathlib.RingTheory.Flat.Basic
@@ -42,40 +43,51 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- A Hopf algebra remains nontrivial after extension of its base field. -/
 private theorem nontrivial_tensorProduct
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{u} k)
+    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k)
     (K : Type u) [Field K] [Algebra k K] :
-    Nontrivial ((H : Type u) ⊗[k] K) := by
-  let : Nontrivial (H : Type u) := Bialgebra.nontrivial k
+    Nontrivial ((H : Type v) ⊗[k] K) := by
+  let : Nontrivial (H : Type v) := Bialgebra.nontrivial k
   exact Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_flat_left
     k H K (algebraMap k K).injective
 
 /-- A commutative Hopf algebra over a field is geometrically connected when the spectrum of its
 coordinate ring remains connected after every extension of the base field. -/
 def geometricallyConnectedCommHopfAlgProperty (k : Type u) [Field k] :
-    ObjectProperty (CommHopfAlgCat.{u} k) :=
+    ObjectProperty (CommHopfAlgCat.{v} k) :=
   fun H ↦ ∀ (K : Type u) [Field K] [Algebra k K],
-    ConnectedSpace (PrimeSpectrum ((H : Type u) ⊗[k] K))
+    ConnectedSpace (PrimeSpectrum ((H : Type v) ⊗[k] K))
 
 /-- Membership in the geometrically connected commutative-Hopf-algebra object property. -/
 @[simp]
 theorem geometricallyConnectedCommHopfAlgProperty_iff
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{u} k) :
+    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k) :
     geometricallyConnectedCommHopfAlgProperty k H ↔
       ∀ (K : Type u) [Field K] [Algebra k K],
-        ConnectedSpace (PrimeSpectrum ((H : Type u) ⊗[k] K)) :=
+        ConnectedSpace (PrimeSpectrum ((H : Type v) ⊗[k] K)) :=
   Iff.rfl
 
 /-- A geometrically connected commutative Hopf algebra has connected prime spectrum. -/
 theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{u} k)
+    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k)
     (h : geometricallyConnectedCommHopfAlgProperty k H) :
-    ConnectedSpace (PrimeSpectrum (H : Type u)) :=
+    ConnectedSpace (PrimeSpectrum (H : Type v)) :=
   (PrimeSpectrum.homeomorphOfRingEquiv
     (Algebra.TensorProduct.rid k k H).toRingEquiv).connectedSpace_iff.mp (h k)
+
+/-- The geometric fibre of a geometrically connected commutative Hopf algebra has connected prime
+spectrum, written with the algebraic closure on the left. This is the orientation used by the
+geometric character group. -/
+theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace_algebraicClosureBaseChange
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k}
+    (h : geometricallyConnectedCommHopfAlgProperty k H) :
+    ConnectedSpace (PrimeSpectrum (AlgebraicClosure k ⊗[k] (H : Type v))) :=
+  let e := Algebra.TensorProduct.comm k (AlgebraicClosure k) (H : Type v)
+  have _ := h (AlgebraicClosure k)
+  connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
 
 /-- Geometric connectedness is invariant under isomorphisms of commutative Hopf algebras. -/
 instance (k : Type u) [Field k] :
@@ -90,9 +102,9 @@ instance (k : Type u) [Field k] :
 /-- **A commutative Hopf algebra is geometrically connected exactly when, after every extension
 `K / k` of the base field, every idempotent of `H ⊗[k] K` is zero or one.** -/
 theorem geometricallyConnectedCommHopfAlgProperty_iff_idempotent_eq_zero_or_one
-    (k : Type u) [Field k] (H : CommHopfAlgCat.{u} k) :
+    (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k) :
     geometricallyConnectedCommHopfAlgProperty k H ↔
-      ∀ (K : Type u) [Field K] [Algebra k K] (e : (H : Type u) ⊗[k] K),
+      ∀ (K : Type u) [Field K] [Algebra k K] (e : (H : Type v) ⊗[k] K),
         IsIdempotentElem e → e = 0 ∨ e = 1 := by
   rw [geometricallyConnectedCommHopfAlgProperty_iff]
   constructor

@@ -30,9 +30,9 @@ come from Geck's construction in [Geck](Geck2017).
 
 ## Main declarations
 
-* `TauCeti.RootPairing.GeckConstruction.exists_intCast_dividedPower_e_apply`: divided powers of
+* `RootPairing.GeckConstruction.exists_intCast_dividedPower_e_apply`: divided powers of
   raising matrices have integer entries.
-* `TauCeti.RootPairing.GeckConstruction.exists_intCast_dividedPower_f_apply`: divided powers of
+* `RootPairing.GeckConstruction.exists_intCast_dividedPower_f_apply`: divided powers of
   lowering matrices have integer entries.
 -/
 
@@ -320,11 +320,12 @@ private theorem exists_intCast_dividedPower_f_mulVec_single (s : b.support) (n :
   · exact exists_intCast_dividedPower_e_mulVec_single s n (.inr (-j)) (.inl q)
   · exact exists_intCast_dividedPower_e_mulVec_single s n (.inr (-j)) (.inr (-q))
 
-namespace RootPairing.GeckConstruction
+section
 
 /-- The distinguished upper-right coordinate of a divided power of a Geck raising generator.
 It is `1` in degree one and vanishes in every other degree. -/
-theorem dividedPower_e_apply_inl_inr_neg (s : b.support) (n : ℕ) :
+theorem _root_.RootPairing.GeckConstruction.dividedPower_e_apply_inl_inr_neg
+    (s : b.support) (n : ℕ) :
     let _i := P.indexNeg
     TauCeti.Associative.dividedPower n (e s) (Sum.inl s) (Sum.inr (-s : ι)) =
       if n = 1 then 1 else 0 := by
@@ -345,7 +346,7 @@ theorem dividedPower_e_apply_inl_inr_neg (s : b.support) (n : ℕ) :
 /-- The distinguished upper-right coordinate of a divided power of a Geck lowering generator.
 It is `1` in degree one and vanishes in every other degree. -/
 @[simp]
-theorem dividedPower_f_apply_inl_inr (s : b.support) (n : ℕ) :
+theorem _root_.RootPairing.GeckConstruction.dividedPower_f_apply_inl_inr (s : b.support) (n : ℕ) :
     TauCeti.Associative.dividedPower n (f s) (Sum.inl s) (Sum.inr (s : ι)) =
       if n = 1 then 1 else 0 := by
   let _i := P.indexNeg
@@ -357,11 +358,12 @@ theorem dividedPower_f_apply_inl_inr (s : b.support) (n : ℕ) :
     ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, omega_mulVec_single, omega_mulVec_apply,
     Matrix.mulVec_single_one]
   simp only [Matrix.col_apply]
-  exact dividedPower_e_apply_inl_inr_neg s n
+  exact RootPairing.GeckConstruction.dividedPower_e_apply_inl_inr_neg s n
 
 /-- Every entry of a divided power of a numbered raising operator in Geck's representation is
 an integer. -/
-theorem exists_intCast_dividedPower_e_apply (s : b.support) (n : ℕ)
+theorem _root_.RootPairing.GeckConstruction.exists_intCast_dividedPower_e_apply
+    (s : b.support) (n : ℕ)
     (i j : b.support ⊕ ι) :
     ∃ z : ℤ, (z : ℚ) = TauCeti.Associative.dividedPower n (e s) i j := by
   obtain ⟨z, hz⟩ := exists_intCast_dividedPower_e_mulVec_single s n j i
@@ -370,14 +372,15 @@ theorem exists_intCast_dividedPower_e_apply (s : b.support) (n : ℕ)
 
 /-- Every entry of a divided power of a numbered lowering operator in Geck's representation is
 an integer. -/
-theorem exists_intCast_dividedPower_f_apply (s : b.support) (n : ℕ)
+theorem _root_.RootPairing.GeckConstruction.exists_intCast_dividedPower_f_apply
+    (s : b.support) (n : ℕ)
     (i j : b.support ⊕ ι) :
     ∃ z : ℤ, (z : ℚ) = TauCeti.Associative.dividedPower n (f s) i j := by
   obtain ⟨z, hz⟩ := exists_intCast_dividedPower_f_mulVec_single s n j i
   rw [Matrix.mulVec_single_one] at hz
   exact ⟨z, hz⟩
 
-end RootPairing.GeckConstruction
+end
 
 end
 end
