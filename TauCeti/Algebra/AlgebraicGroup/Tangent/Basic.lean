@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.Module.TransferInstance
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Convolution
-public import TauCeti.Algebra.DualNumber.Convolution
+import TauCeti.Algebra.DualNumber.Convolution
 public import TauCeti.RingTheory.Derivation.DualNumber
 
 /-!

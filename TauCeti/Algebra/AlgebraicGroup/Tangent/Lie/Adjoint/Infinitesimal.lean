@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.CounitPoints
-public import TauCeti.Algebra.DualNumber.Convolution
+import TauCeti.Algebra.DualNumber.Convolution
 
 /-!
 # The infinitesimal adjoint action
