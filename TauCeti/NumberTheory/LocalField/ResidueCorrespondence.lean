@@ -18,9 +18,9 @@ an isomorphism from the Galois group of `L / K` to the Galois group of the resid
 extension. Its inverse carries the finite-field Frobenius to the Frobenius automorphism of
 `L / K`.
 
-The kernel of reduction is the inertia group. Unramifiedness makes this group trivial, and the
-equality of the two finite group orders then gives the residue correspondence. This also shows
-that Frobenius generates the Galois group and has order equal to the inertia degree.
+The residue action is surjective, and its kernel is the inertia group. Unramifiedness makes this
+kernel trivial, giving the residue correspondence. This also shows that Frobenius generates the
+Galois group and has order equal to the inertia degree.
 
 ## Main definitions
 
@@ -107,26 +107,30 @@ theorem IsUnramified.inertia_eq_bot [IsUnramified K L] :
   rw [Ideal.card_inertia_eq_ramificationIdx 𝒪[K] (L ≃ₐ[K] L) 𝓂[L],
     ← ramificationIndex_eq_ramificationIdx, IsUnramified.ramificationIndex_eq_one]
 
+/-- Reduction from the Galois group to the residue-field Galois group is surjective. -/
+theorem residueField_toAlgAut_surjective :
+    Function.Surjective (MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]) := by
+  intro τ
+  obtain ⟨σ, hσ⟩ := Ideal.Quotient.stabilizerHom_surjective
+    (L ≃ₐ[K] L) 𝓂[K] 𝓂[L] τ
+  refine ⟨σ.1, ?_⟩
+  ext x
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  have hx := DFunLike.congr_fun hσ (IsLocalRing.residue 𝒪[L] x)
+  -- Identify the quotient in `stabilizerHom` with the local ring's residue field.
+  change IsLocalRing.residue 𝒪[L] (σ.1 • x) =
+    τ (IsLocalRing.residue 𝒪[L] x) at hx
+  rw [IsLocalRing.ResidueField.residue_smul] at hx
+  rw [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply]
+  exact hx
+
 /-- Reduction is a bijection from the Galois group of an unramified extension to the Galois
 group of its residue-field extension. -/
 theorem residueField_toAlgAut_bijective [IsUnramified K L] :
     Function.Bijective (MulSemiringAction.toAlgAut (L ≃ₐ[K] L) 𝓀[K] 𝓀[L]) := by
-  constructor
-  · rw [← MonoidHom.ker_eq_bot_iff, ker_residueField_toAlgAut,
-      IsUnramified.inertia_eq_bot]
-  · intro τ
-    obtain ⟨σ, hσ⟩ := Ideal.Quotient.stabilizerHom_surjective
-      (L ≃ₐ[K] L) 𝓂[K] 𝓂[L] τ
-    refine ⟨σ.1, ?_⟩
-    ext x
-    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-    have hx := DFunLike.congr_fun hσ (IsLocalRing.residue 𝒪[L] x)
-    -- Identify the quotient in `stabilizerHom` with the local ring's residue field.
-    change IsLocalRing.residue 𝒪[L] (σ.1 • x) =
-      τ (IsLocalRing.residue 𝒪[L] x) at hx
-    rw [IsLocalRing.ResidueField.residue_smul] at hx
-    rw [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply]
-    exact hx
+  refine ⟨?_, residueField_toAlgAut_surjective⟩
+  rw [← MonoidHom.ker_eq_bot_iff, ker_residueField_toAlgAut,
+    IsUnramified.inertia_eq_bot]
 
 /-- The residue correspondence between the Galois groups of an unramified local extension and
 its residue-field extension. -/
@@ -177,7 +181,7 @@ noncomputable instance galoisGroupIsCyclic [IsUnramified K L] : IsCyclic (L ≃�
   (residueFieldAutEquiv (K := K) (L := L)).isCyclic.mpr inferInstance
 
 /-- Frobenius satisfies its characteristic congruence modulo the maximal ideal. -/
-theorem valuation_frobeniusAlgEquiv_sub_pow_lt_one [IsUnramified K L] (y : 𝒪[L]) :
+theorem valuation_frobeniusAlgEquiv_sub_pow [IsUnramified K L] (y : 𝒪[L]) :
     valuation L (frobeniusAlgEquiv (K := K) (L := L) (y : L) -
       (y : L) ^ Nat.card 𝓀[K]) < 1 := by
   let z : 𝒪[L] :=
