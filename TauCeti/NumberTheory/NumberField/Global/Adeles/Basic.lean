@@ -37,7 +37,7 @@ instance InfiniteAdeleRing.instT2Space : T2Space (InfiniteAdeleRing K) :=
 open scoped Classical in
 /-- The infinite adele ring is homeomorphic to the Minkowski mixed space.  This is the topological
 form of `InfiniteAdeleRing.ringEquiv_mixedSpace`. -/
-noncomputable def InfiniteAdeleRing.homeomorph_mixedSpace :
+noncomputable def InfiniteAdeleRing.homeomorphMixedSpace :
     InfiniteAdeleRing K ≃ₜ mixedEmbedding.mixedSpace K :=
   (Homeomorph.piEquivPiSubtypeProd (fun v : InfinitePlace K ↦ v.IsReal)
       (fun v ↦ v.Completion)).trans
@@ -52,7 +52,7 @@ noncomputable def InfiniteAdeleRing.homeomorph_mixedSpace :
 @[simp]
 theorem InfiniteAdeleRing.homeomorph_mixedSpace_apply
     (x : InfiniteAdeleRing K) :
-    InfiniteAdeleRing.homeomorph_mixedSpace K x =
+    InfiniteAdeleRing.homeomorphMixedSpace K x =
       InfiniteAdeleRing.ringEquiv_mixedSpace K x :=
   by
     ext v <;> rfl
@@ -60,9 +60,9 @@ theorem InfiniteAdeleRing.homeomorph_mixedSpace_apply
 @[simp]
 theorem InfiniteAdeleRing.homeomorph_mixedSpace_symm_apply
     (x : mixedEmbedding.mixedSpace K) :
-    (InfiniteAdeleRing.homeomorph_mixedSpace K).symm x =
+    (InfiniteAdeleRing.homeomorphMixedSpace K).symm x =
       (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm x := by
-  apply (InfiniteAdeleRing.homeomorph_mixedSpace K).injective
+  apply (InfiniteAdeleRing.homeomorphMixedSpace K).injective
   rw [Homeomorph.apply_symm_apply, InfiniteAdeleRing.homeomorph_mixedSpace_apply,
     RingEquiv.apply_symm_apply]
 
@@ -70,14 +70,14 @@ theorem InfiniteAdeleRing.homeomorph_mixedSpace_symm_apply
 continuous. -/
 theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace :
     Continuous (InfiniteAdeleRing.ringEquiv_mixedSpace K) := by
-  exact (InfiniteAdeleRing.homeomorph_mixedSpace K).continuous.congr fun x ↦
+  exact (InfiniteAdeleRing.homeomorphMixedSpace K).continuous.congr fun x ↦
     InfiniteAdeleRing.homeomorph_mixedSpace_apply K x
 
 /-- The inverse of the standard ring equivalence from the Minkowski mixed space to the infinite
 adele ring is continuous. -/
 theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
     Continuous (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm := by
-  exact (InfiniteAdeleRing.homeomorph_mixedSpace K).symm.continuous.congr fun x ↦
+  exact (InfiniteAdeleRing.homeomorphMixedSpace K).symm.continuous.congr fun x ↦
     InfiniteAdeleRing.homeomorph_mixedSpace_symm_apply K x
 
 /-- The adele ring is Hausdorff, as the product of the infinite and the finite adele rings. -/
