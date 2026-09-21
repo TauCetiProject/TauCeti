@@ -10,11 +10,12 @@ public import TauCeti.AlgebraicGeometry.TangentSpace.Affine
 /-!
 # Dimension and regularity at a rational point
 
-For an augmentation `f : A →ₐ[k] k`, the dimension of `ker(f) / ker(f)²` over `k`
-is the embedding dimension of the local ring at the corresponding rational point.
-When this local ring is Noetherian, this bounds its Krull dimension, with equality exactly when
-the local ring is regular. These statements allow tangent-space calculations in the
-coordinate algebra to detect regularity of the affine scheme.
+For an augmentation `f : A →ₐ[k] k`, the `Module.finrank` of `ker(f) / ker(f)²` over `k`
+equals the `Module.finrank` of the local ring's cotangent space over its native residue field.
+When this local ring is Noetherian, this common value is its embedding dimension and bounds
+its Krull dimension, with equality exactly when the local ring is regular. These statements
+allow tangent-space calculations in the coordinate algebra to detect regularity of the affine
+scheme.
 
 ## References
 
@@ -31,8 +32,8 @@ open TauCeti.AlgHom
 
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (f : A →ₐ[k] k)
 
-/-- The dimension of the augmentation cotangent space over the ground field equals the
-embedding dimension at its rational point, computed over the native residue field. -/
+/-- The `Module.finrank` of the augmentation cotangent space over the ground field equals
+the `Module.finrank` of the local cotangent space over the native residue field. -/
 @[simp]
 theorem finrank_kernelCotangent_eq_finrank_residueFieldCotangent :
     Module.finrank k (RingHom.ker (f : A →+* k)).Cotangent =
