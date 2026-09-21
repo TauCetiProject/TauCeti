@@ -74,10 +74,6 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
 noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
   BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)])
 
-/-- The defining equation for `quaternionClass`. -/
-theorem quaternionClass_def (a b : Kˣ) :
-    quaternionClass a b = BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)]) := (rfl)
-
 end BrauerGroup
 
 namespace Quaternion

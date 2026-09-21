@@ -15,17 +15,18 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Central simple quaternion symbol algebras
 
-For a field `K` with `2` invertible, this file proves centrality and simplicity for the general
-quaternion algebra `ℍ[K,a,b,c]` when `c * (b ^ 2 + 4 * a) ≠ 0`. Completing the square reduces this
-case to a unit-parameter symbol, for which the norm criterion gives either a division algebra or a
-two-by-two matrix algebra. The two-parameter symbol `ℍ[K,a,b]` is the specialization used by the
-Brauer-valued invariants.
+For a field `K` with `2` invertible, this file proves centrality for the general quaternion algebra
+`ℍ[K,a,b,c]` when `c ≠ 0`, and simplicity when `c * (b ^ 2 + 4 * a) ≠ 0`. Completing the square
+reduces these cases to a unit-parameter symbol, for which the norm criterion gives either a
+division algebra or a two-by-two matrix algebra. The two-parameter symbol `ℍ[K,a,b]` is the
+specialization used by the Brauer-valued invariants.
 
 ## Main results
 
-* `TauCeti.QuaternionAlgebra.isCentral_of_coeff_ne_zero`: a quaternion algebra with nonzero
+* `TauCeti.QuaternionAlgebra.isCentral_of_j_sq_ne_zero`: a quaternion algebra with nonzero
   `j`-square is central.
-* `TauCeti.QuaternionAlgebra.isSimpleRing_of_mul_discr_ne_zero`: the same algebra is simple.
+* `TauCeti.QuaternionAlgebra.isSimpleRing_of_mul_discr_ne_zero`: a quaternion algebra with
+  nonzero `j`-square and nonzero discriminant is simple.
 * `TauCeti.QuaternionAlgebra.mem_center_iff`: a central element of a unit-parameter symbol has
   zero imaginary coordinates.
 * `TauCeti.QuaternionAlgebra.instIsCentral`: unit-parameter symbol algebras are central.
@@ -225,7 +226,7 @@ instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] :=
   isSimpleRing_of_isUnit_or_split a b
 
 /-- A quaternion algebra with nonzero `j`-square is central. -/
-theorem isCentral_of_coeff_ne_zero {a b c : K}
+theorem isCentral_of_j_sq_ne_zero {a b c : K}
     (hc : c ≠ 0) :
     Algebra.IsCentral K ℍ[K,a,b,c] := by
   let v : Kˣ := Units.mk0 c hc
