@@ -69,9 +69,12 @@ pinned group; and its order is the superscript in the printed family name, recor
 * `TauCeti.TypeE7LieIndex.diagramPerm_toGraphTwistedIndex`: the single family on the `E₇` diagram
   takes the identity, that diagram having no symmetry to twist by.
 * `TauCeti.TypeDLieIndex.diagramPerm_toGraphTwistedIndex`,
-  `TauCeti.TypeTwistedDLieIndex.twistOrder_toGraphTwistedIndex` and
+  `TauCeti.TypeTwistedDLieIndex.diagramPerm_toGraphTwistedIndex`,
+  `TauCeti.TypeTwistedDLieIndex.twistOrder_toGraphTwistedIndex`,
+  `TauCeti.TypeTrialityD4LieIndex.diagramPerm_toGraphTwistedIndex` and
   `TauCeti.TypeTrialityD4LieIndex.twistOrder_toGraphTwistedIndex`: the three families on a type-`D`
-  diagram are told apart by an untwisted permutation and by twist orders two and three.
+  diagram are told apart by an untwisted permutation, by the fork exchange, and by triality, of
+  twist orders two and three.
 
 ## Roadmap
 
@@ -498,12 +501,11 @@ end TypeE7LieIndex
 The three classification-list families on a `Dₙ` diagram all take an ordinary Steinberg map, and
 they are told apart by the permutation it composes with: the identity, the fork exchange, and
 triality. What is recorded below of an abstract index of each subtype is the family-defining
-reading: the permutation itself on the untwisted family, where it is the identity at every rank,
-and its order on the two twisted families, where the permutation lives on `Fin d.1.rank` and the
-pinned `TauCeti.graphPermD` and `TauCeti.trialityPermD4` on `Fin n` and `Fin 4`. Those two
-permutations are named on the constructor form by `GraphTwistedIndex.diagramPerm_twistedD` and
-`GraphTwistedIndex.diagramPerm_trialityD4`, which the eliminators `exists_eq_ofTwistedD` and
-`exists_eq_of` reduce an abstract index to. -/
+reading: the permutation itself on each family, the identity at every rank on the untwisted
+family, the pinned `TauCeti.graphPermD` at the index's own rank on the graph-twisted family, and
+triality on `³D₄(q)`; and its order on the two twisted families. Triality lives on `Fin 4` while
+the permutation of an abstract index lives on `Fin d.1.rank`, so on `³D₄(q)` it is read through
+the two `finCongr` casts along `TauCeti.TypeTrialityD4LieIndex.rank_eq_four`. -/
 
 namespace TypeDDiagramLieIndex
 
@@ -531,6 +533,20 @@ end TypeDLieIndex
 
 namespace TypeTwistedDLieIndex
 
+/-- **The diagram permutation of the graph-twisted family `²Dₙ(q)` is the fork exchange
+`TauCeti.graphPermD`**, the involution of the `Dₙ` diagram exchanging its two fork nodes, read at
+the index's own rank. The rank is at least four by `TauCeti.TypeDDiagramLieIndex.four_le_rank`, so
+the fork exchange is defined at it. -/
+@[simp]
+theorem diagramPerm_toGraphTwistedIndex (d : TypeTwistedDLieIndex) :
+    d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm =
+      graphPermD d.1.rank ((by norm_num : 2 ≤ 4).trans d.toTypeDDiagramLieIndex.four_le_rank) := by
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofTwistedD
+  rw [GraphTwistedIndex.diagramPerm_twistedD hvalid]
+  -- On the introduction form the index's rank unfolds to the constructor's `rank`, and the two
+  -- rank proofs passed to `graphPermD` are identified by proof irrelevance.
+  rfl
+
 /-- **The family `²Dₙ(q)` has twist order two**, its diagram permutation being the exchange of the
 two fork nodes of the `Dₙ` diagram. -/
 @[simp]
@@ -542,6 +558,20 @@ theorem twistOrder_toGraphTwistedIndex (d : TypeTwistedDLieIndex) :
 end TypeTwistedDLieIndex
 
 namespace TypeTrialityD4LieIndex
+
+/-- **The diagram permutation of the triality-twisted family `³D₄(q)` is
+`TauCeti.trialityPermD4`**, the order-three symmetry of the `D₄` diagram, read in the index's own
+copy `Fin d.1.rank` of the Bourbaki index type. It is the permutation of the simple-root subgroups
+that the Steinberg map `γ₃ ∘ Frob_q` of the family realizes. -/
+@[simp]
+theorem diagramPerm_toGraphTwistedIndex (d : TypeTrialityD4LieIndex) (i : Fin d.1.rank) :
+    d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i =
+      finCongr d.rank_eq_four.symm (trialityPermD4 (finCongr d.rank_eq_four i)) := by
+  obtain ⟨q, rfl⟩ := d.exists_eq_of
+  rw [GraphTwistedIndex.diagramPerm_trialityD4 (LieTypeIndex.valid_trialityD4 q)]
+  -- On the introduction form the rank is the literal `4`, so both `finCongr` casts are the
+  -- identity map of `Fin 4` and no `Fin.cast` lemma is needed to remove them.
+  rfl
 
 /-- **The family `³D₄(q)` has twist order three**, its diagram permutation being triality, the
 order-three symmetry of the `D₄` diagram that three-cycles the outer nodes and fixes the centre. It

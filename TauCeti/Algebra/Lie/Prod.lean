@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Basic
+public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Lie.Prod
+public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
 
 /-!
@@ -31,6 +33,8 @@ product.
 * `TauCeti.LieModuleHom.prod`: the pairing of two morphisms with the same domain.
 * `TauCeti.LieModuleEquiv.prodComm`: swapping the factors is an equivalence.
 * `TauCeti.lie_prod_apply`: the componentwise bracket on a product.
+* `LieHom.prodRepresentation`: the product of two explicit Lie representations.
+* `LieHom.piRepresentation`: the product of a family of explicit Lie representations.
 -/
 
 public section
@@ -139,3 +143,111 @@ theorem coe_prodComm_apply (p : M × N) :
 end LieModuleEquiv
 
 end TauCeti
+
+namespace LieHom
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+universe u v w w₁
+
+variable {R : Type u} {L : Type v} {M : Type w} {N : Type w₁}
+variable [CommRing R] [LieRing L] [LieAlgebra R L]
+variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The product of two Lie representations, acting componentwise on the product of their
+carriers. -/
+def prodRepresentation (rho : L →ₗ⁅R⁆ Module.End R M)
+    (sigma : L →ₗ⁅R⁆ Module.End R N) : L →ₗ⁅R⁆ Module.End R (M × N) :=
+  (LinearMap.prodMapAlgHom R M N).toLieHom.comp (LieHom.prod rho sigma)
+
+/-- The product representation acts componentwise. -/
+@[simp, grind =]
+theorem prodRepresentation_apply (rho : L →ₗ⁅R⁆ Module.End R M)
+    (sigma : L →ₗ⁅R⁆ Module.End R N) (x : L) (p : M × N) :
+    rho.prodRepresentation sigma x p = (rho x p.1, sigma x p.2) :=
+  (rfl)
+
+/-- The kernel of a product representation is the intersection of the two kernels. -/
+@[simp]
+theorem ker_prodRepresentation (rho : L →ₗ⁅R⁆ Module.End R M)
+    (sigma : L →ₗ⁅R⁆ Module.End R N) :
+    (rho.prodRepresentation sigma).ker = rho.ker ⊓ sigma.ker := by
+  ext x
+  simp only [LieHom.mem_ker, LieSubmodule.mem_inf, LinearMap.ext_iff, prodRepresentation_apply,
+    LinearMap.zero_apply, Prod.forall, Prod.mk_eq_zero]
+  exact ⟨fun h ↦ ⟨fun m ↦ (h m 0).1, fun n ↦ (h 0 n).2⟩, fun h m n ↦ ⟨h.1 m, h.2 n⟩⟩
+
+/-- A product representation is faithful exactly when the kernels of its factors are disjoint. -/
+theorem prodRepresentation_injective_iff (rho : L →ₗ⁅R⁆ Module.End R M)
+    (sigma : L →ₗ⁅R⁆ Module.End R N) :
+    Function.Injective (rho.prodRepresentation sigma) ↔ Disjoint rho.ker sigma.ker := by
+  rw [← LieHom.ker_eq_bot, ker_prodRepresentation, disjoint_iff]
+
+section Pi
+
+universe i w₂
+
+variable {I : Type i} {V : I → Type w₂}
+variable [(j : I) → AddCommGroup (V j)] [(j : I) → Module R (V j)]
+
+/-- The product of a family of Lie representations, acting coordinatewise on the dependent
+function space. For a finite index type, this product representation is canonically equivalent to
+the corresponding finite direct-sum representation. -/
+def piRepresentation (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j)) :
+    L →ₗ⁅R⁆ Module.End R ((j : I) → V j) where
+  toFun x :=
+    { toFun := fun m j ↦ rho j x (m j)
+      map_add' := fun m n ↦ by ext j; exact (rho j x).map_add (m j) (n j)
+      map_smul' := fun r m ↦ by ext j; exact (rho j x).map_smul r (m j) }
+  map_add' x y := by ext m j; exact LinearMap.congr_fun (map_add (rho j) x y) (m j)
+  map_smul' r x := by ext m j; exact LinearMap.congr_fun (map_smul (rho j) r x) (m j)
+  map_lie' {x y} := by
+    ext m j
+    -- The action is a nested linear-map structure literal; expose its coordinatewise
+    -- composition so that the corresponding coordinate representation law applies.
+    change rho j ⁅x, y⁆ (m j) =
+      rho j x (rho j y (m j)) - rho j y (rho j x (m j))
+    simpa only [LieRing.of_associative_ring_bracket, Module.End.mul_apply,
+      LinearMap.sub_apply] using LinearMap.congr_fun (map_lie (rho j) x y) (m j)
+
+/-- A product representation acts coordinatewise. -/
+@[simp, grind =]
+theorem piRepresentation_apply (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j))
+    (x : L) (m : (j : I) → V j) (j : I) :
+    piRepresentation rho x m j = rho j x (m j) :=
+  (rfl)
+
+/-- The kernel of a family product representation is the intersection of the kernels of its
+coordinates. -/
+@[simp]
+theorem ker_piRepresentation (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j)) :
+    (piRepresentation rho).ker = ⨅ j, (rho j).ker := by
+  classical
+  apply le_antisymm
+  · refine le_iInf fun j x hx ↦ ?_
+    rw [LieHom.mem_ker] at hx ⊢
+    apply LinearMap.ext
+    intro v
+    have h := congrArg (fun f : Module.End R ((j : I) → V j) ↦
+      f (Function.update 0 j v) j) hx
+    simpa [piRepresentation_apply] using h
+  · intro x hx
+    rw [LieHom.mem_ker]
+    apply LinearMap.ext
+    intro m
+    funext j
+    have hxj : x ∈ (rho j).ker := (iInf_le (fun k ↦ (rho k).ker) j) hx
+    rw [LieHom.mem_ker] at hxj
+    simpa only [piRepresentation_apply, LinearMap.zero_apply, Pi.zero_apply] using
+      LinearMap.congr_fun hxj (m j)
+
+/-- A family product representation is faithful exactly when its coordinate kernels have trivial
+intersection. -/
+theorem piRepresentation_injective_iff
+    (rho : (j : I) → L →ₗ⁅R⁆ Module.End R (V j)) :
+    Function.Injective (piRepresentation rho) ↔ (⨅ j, (rho j).ker) = ⊥ := by
+  rw [← LieHom.ker_eq_bot, ker_piRepresentation]
+
+end Pi
+
+end LieHom

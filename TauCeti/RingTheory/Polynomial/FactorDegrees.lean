@@ -34,6 +34,8 @@ and its relationship with irreducibility. Worked examples for `X ^ 5 - X - 1` ar
   factor degrees sum to the degree after reduction, which for monic `f` is `f.natDegree`.
 * `Polynomial.factorDegrees_eq_singleton_iff`: the factor degrees are `{n}` exactly when the
   reduction is irreducible of degree `n`.
+* `Polynomial.squarefree_map_of_nodup_factorDegrees`: pairwise distinct factor degrees force the
+  reduction to be squarefree.
 
 ## References
 
@@ -160,5 +162,13 @@ theorem _root_.Polynomial.Monic.factorDegrees_eq_singleton_iff_irreducible {f : 
     (hf : f.Monic) (p : ℕ) [Fact p.Prime] :
     f.factorDegrees p = {f.natDegree} ↔ Irreducible (f.map (Int.castRingHom (ZMod p))) := by
   rw [factorDegrees_eq_singleton_iff, hf.natDegree_map, and_iff_left rfl]
+
+/-- A nonzero reduction whose irreducible factors have pairwise distinct degrees is squarefree:
+no irreducible factor can then occur twice. -/
+theorem _root_.Polynomial.squarefree_map_of_nodup_factorDegrees {f : ℤ[X]} {p : ℕ}
+    [Fact p.Prime] (hf : f.map (Int.castRingHom (ZMod p)) ≠ 0)
+    (h : (f.factorDegrees p).Nodup) : Squarefree (f.map (Int.castRingHom (ZMod p))) := by
+  rw [factorDegrees_def] at h
+  exact (squarefree_iff_nodup_normalizedFactors hf).mpr (h.of_map _)
 
 end TauCeti

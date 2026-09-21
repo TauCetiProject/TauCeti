@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # The residue degree of a height-one prime over `ℚ`
@@ -34,10 +35,15 @@ objects that description involves and records their elementary theory.
   below it raised to the residue degree.
 * `TauCeti.mem_higherDegreePrimes_iff_not_prime_absNorm`: a height-one prime has residue degree
   above one exactly when its absolute norm is not a prime number.
-* `TauCeti.sq_rationalPrimeBelow_le_absNorm`: such a prime has norm at least the square of the
-  rational prime below it.
+* `TauCeti.rationalPrimeBelow_pow_le_absNorm`: the norm of `𝔭` is at least the rational prime
+  below it raised to any power at most the residue degree.
+* `TauCeti.mem_higherDegreePrimes_of_one_lt_inertiaDeg`: residue degree above one over an
+  intermediate number field forces residue degree above one over `ℚ`.
 * `TauCeti.card_filter_rationalPrimeBelow_le_finrank`: at most `[K : ℚ]` height-one primes have
   a given rational prime below them.
+* `IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finrank`: at most `[E : K]`
+  height-one primes of `E` contract to a given height-one prime of an intermediate number field
+  `K`.
 * `IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`: the absolute
   norm of `𝔭` divides `p ^ [K : ℚ]`, so the residue degree is at most the degree of the field.
 * `TauCeti.asIdeal_eq_span_singleton_of_absNorm_eq_pow_finrank`: a prime of full residue degree
@@ -104,7 +110,6 @@ omit [NumberField K] in
 /-- The rational prime below a height-one prime really is a prime number. -/
 theorem prime_rationalPrimeBelow (𝔭 : HeightOneSpectrum (𝓞 K)) :
     (rationalPrimeBelow 𝔭).Prime := by
-  have := 𝔭.isPrime
   have : NeZero 𝔭.asIdeal := ⟨𝔭.ne_bot⟩
   exact Nat.absNorm_under_prime 𝔭.asIdeal
 
@@ -112,27 +117,37 @@ theorem prime_rationalPrimeBelow (𝔭 : HeightOneSpectrum (𝓞 K)) :
 degree. -/
 theorem absNorm_eq_rationalPrimeBelow_pow (𝔭 : HeightOneSpectrum (𝓞 K)) :
     Ideal.absNorm 𝔭.asIdeal =
-      rationalPrimeBelow 𝔭 ^ Ideal.inertiaDeg 𝔭.asIdeal ℤ := by
-  have := 𝔭.isPrime
-  exact (Ideal.absNorm_pow_inertiaDeg (Ideal.under ℤ 𝔭.asIdeal) 𝔭.asIdeal).symm
+      rationalPrimeBelow 𝔭 ^ Ideal.inertiaDeg 𝔭.asIdeal ℤ :=
+  (Ideal.absNorm_pow_inertiaDeg (Ideal.under ℤ 𝔭.asIdeal) 𝔭.asIdeal).symm
 
 /-- A height-one prime has residue degree above one exactly when its absolute norm is not a prime
 number: the norm is `p ^ f`, which is prime precisely for `f = 1`. -/
 theorem mem_higherDegreePrimes_iff_not_prime_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)} :
     𝔭 ∈ higherDegreePrimes K ↔ ¬ (Ideal.absNorm 𝔭.asIdeal).Prime := by
-  have := 𝔭.isPrime
   have hpos := Ideal.inertiaDeg_pos 𝔭.asIdeal ℤ
   rw [mem_higherDegreePrimes, absNorm_eq_rationalPrimeBelow_pow 𝔭, Nat.prime_iff, prime_pow_iff,
     ← Nat.prime_iff, not_and_or, or_iff_right (not_not_intro (prime_rationalPrimeBelow 𝔭))]
   omega
 
-/-- A prime of residue degree above one has norm at least the square of the rational prime below
-it. -/
-theorem sq_rationalPrimeBelow_le_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)}
-    (h𝔭 : 𝔭 ∈ higherDegreePrimes K) :
-    rationalPrimeBelow 𝔭 ^ 2 ≤ Ideal.absNorm 𝔭.asIdeal := by
-  rw [absNorm_eq_rationalPrimeBelow_pow 𝔭]
-  exact Nat.pow_le_pow_right (prime_rationalPrimeBelow 𝔭).one_lt.le h𝔭
+/-- The absolute norm of a height-one prime is at least the rational prime below it raised to any
+exponent bounded by the residue degree.  The matching bound from above is the divisibility
+`IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`.  Use
+`TauCeti.absNorm_eq_rationalPrimeBelow_pow` for the exact value instead, and
+`TauCeti.mem_higherDegreePrimes` to supply the hypothesis at the common instance `n = 2`. -/
+theorem rationalPrimeBelow_pow_le_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)} {n : ℕ}
+    (hn : n ≤ Ideal.inertiaDeg 𝔭.asIdeal ℤ) : rationalPrimeBelow 𝔭 ^ n ≤ Ideal.absNorm 𝔭.asIdeal :=
+  -- the norm is `p ^ f`, and `p` is at least `2`, so the power is monotone in the exponent
+  absNorm_eq_rationalPrimeBelow_pow 𝔭 ▸
+    Nat.pow_le_pow_right (prime_rationalPrimeBelow 𝔭).one_lt.le hn
+
+/-- A height-one prime of `𝓞 E` whose residue degree over a number field `K` below `E` exceeds one
+has residue degree above one over `ℚ`, since residue degrees multiply along `ℤ → 𝓞 K → 𝓞 E`. -/
+theorem mem_higherDegreePrimes_of_one_lt_inertiaDeg {E : Type*} [Field E] [Algebra K E]
+    {𝔓 : HeightOneSpectrum (𝓞 E)} (h : 1 < 𝔓.asIdeal.inertiaDeg (𝓞 K)) :
+    𝔓 ∈ higherDegreePrimes E := by
+  rw [mem_higherDegreePrimes, Ideal.inertiaDeg_tower (R := ℤ) (𝔓.asIdeal.under (𝓞 K)) 𝔓.asIdeal]
+  have := Ideal.inertiaDeg_pos (𝔓.asIdeal.under (𝓞 K)) ℤ
+  nlinarith
 
 /-! ### Fibring the primes over the rational primes below them -/
 
@@ -150,7 +165,6 @@ theorem card_filter_rationalPrimeBelow_le_finrank (F : Finset (HeightOneSpectrum
       Ideal.under ℤ 𝔮.asIdeal = Ideal.span {(m : ℤ)} := by
     intro 𝔮 h𝔮
     rw [← (Finset.mem_filter.mp h𝔮).2, under_eq_span_rationalPrimeBelow]
-  have h𝔭' := 𝔭.isPrime
   have hspan : (Ideal.span {(m : ℤ)}).IsPrime := key 𝔭 h𝔭 ▸ Ideal.IsPrime.under ℤ 𝔭.asIdeal
   have hne : (Ideal.span {(m : ℤ)} : Ideal ℤ) ≠ ⊥ :=
     key 𝔭 h𝔭 ▸ Ideal.under_ne_bot (A := ℤ) 𝔭.ne_bot
@@ -159,6 +173,32 @@ theorem card_filter_rationalPrimeBelow_le_finrank (F : Finset (HeightOneSpectrum
     (fun 𝔮 _ 𝔮' _ h ↦ HeightOneSpectrum.ext h))
     (NumberField.card_primesOverFinset_le_finrank (K := K) hne)
   exact (IsDedekindDomain.mem_primesOverFinset_iff hne (𝓞 K)).mpr ⟨𝔮.isPrime, ⟨(key 𝔮 h𝔮).symm⟩⟩
+
+/-- At most `[E : K]` height-one primes of `E` contract to a given height-one prime of `K`. -/
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finrank
+    {E : Type*} [Field E] [NumberField E] [Algebra K E]
+    (p : HeightOneSpectrum (𝓞 K)) :
+    {P : HeightOneSpectrum (𝓞 E) | P.under (𝓞 K) = p}.encard ≤ Module.finrank K E := by
+  let hdiv : ∀ P : HeightOneSpectrum (𝓞 E),
+      P.under (𝓞 K) = p ↔
+        P.asIdeal ∣ Ideal.map (algebraMap (𝓞 K) (𝓞 E)) p.asIdeal := fun P ↦ by
+    rw [← Ideal.liesOver_iff_dvd_map P.isPrime.ne_top]
+    exact ⟨fun h ↦ ⟨(congrArg HeightOneSpectrum.asIdeal h).symm⟩,
+      fun h ↦ HeightOneSpectrum.ext h.over.symm⟩
+  let e : {P : HeightOneSpectrum (𝓞 E) // P.under (𝓞 K) = p} ≃
+      p.asIdeal.primesOver (𝓞 E) :=
+    (Equiv.subtypeEquivRight hdiv).trans
+      (HeightOneSpectrum.equivPrimesOver (𝓞 E) p.ne_bot)
+  have hfin : (p.asIdeal.primesOver (𝓞 E)).Finite :=
+    Algebra.QuasiFinite.finite_primesOver p.asIdeal
+  calc
+    {P : HeightOneSpectrum (𝓞 E) | P.under (𝓞 K) = p}.encard =
+        (p.asIdeal.primesOver (𝓞 E)).encard := Set.encard_congr e
+    _ = (p.asIdeal.primesOver (𝓞 E)).ncard := hfin.cast_ncard_eq.symm
+    _ ≤ Module.finrank K E := by
+      exact ENat.natCast_le_natCast.mpr <| by
+        simpa only [IsFractionRing.finrank_eq (𝓞 K) K (𝓞 E) E] using
+          TauCeti.RamificationInertia.ncard_primesOver_le_finrank (S := 𝓞 E) p.asIdeal
 
 /-! ### Inert primes -/
 

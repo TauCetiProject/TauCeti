@@ -41,7 +41,7 @@ that any fixed-point group is finite or simple.
 
 * `TauCeti.SpStd.coe_frobenius` and `TauCeti.SpStd.coe_frobenius_apply`: the endomorphism acts by
   entrywise Frobenius.
-* `TauCeti.SpStd.frobenius_eq_pointsMap`: Frobenius is the functorial point map induced by the
+* `TauCeti.SpStd.frobenius_eq_map`: Frobenius is the functorial point map induced by the
   iterated Frobenius endomorphism of the value ring.
 * `TauCeti.SpStd.frobenius_rootSubgroupPoints` and `TauCeti.SpStd.frobenius_weightTorusPoints`: the
   equations on the pinned generating root subgroups and split torus.
@@ -75,7 +75,7 @@ variable (n p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p]
 For `p` prime, `0 < k`, and `A` an algebraic closure of `ZMod p`, this is the Frobenius component
 intended for a future construction of the `C_(n+1)(p ^ k)` Steinberg map. -/
 def frobenius : points n A →* points n A :=
-  pointsMap n (iterateFrobenius A p k)
+  (pointsPresentation n A).map (pointsPresentation n A) (iterateFrobenius A p k)
 
 /-- The Frobenius endomorphism of the type-`C_(n+1)` carrier acts by entrywise Frobenius.
 
@@ -84,12 +84,13 @@ normal form. -/
 theorem coe_frobenius (g : points n A) :
     (frobenius n p k A g : _root_.Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
       _root_.Matrix.GeneralLinearGroup.map (iterateFrobenius A p k) g := by
-  rw [frobenius, coe_pointsMap]
+  rw [frobenius, GeneralLinear.IntegralPointsPresentation.coe_map]
 
 /-- The carrier Frobenius is the functorial map on points induced by the iterated Frobenius
 endomorphism of the value ring. -/
-theorem frobenius_eq_pointsMap :
-    frobenius n p k A = pointsMap n (iterateFrobenius A p k) := by
+theorem frobenius_eq_map :
+    frobenius n p k A =
+      (pointsPresentation n A).map (pointsPresentation n A) (iterateFrobenius A p k) := by
   rw [frobenius]
 
 /-- Entrywise, the Frobenius endomorphism raises each matrix coefficient to its
@@ -109,24 +110,25 @@ theorem frobenius_rootSubgroupPoints (i : Fin (n + 1) ⊕ Fin (n + 1)) (u : Mult
     frobenius n p k A (rootSubgroupPoints n i A u) =
       rootSubgroupPoints n i A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) := by
-  rw [frobenius, pointsMap_rootSubgroupPoints]
+  rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
 
 /-- **Frobenius raises every coordinate of the pinned split torus to its `p ^ k`-th power.** -/
 @[simp]
 theorem frobenius_weightTorusPoints (s : Fin (n + 1) → Aˣ) :
     frobenius n p k A (weightTorusPoints n A s) = weightTorusPoints n A (s ^ p ^ k) := by
-  rw [frobenius, pointsMap_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
+  rw [frobenius, map_weightTorusPoints, map_iterateFrobenius_units_eq_pow]
 
 /-- The zeroth Frobenius iterate is the identity on the type-`C_(n+1)` point group. -/
 @[simp]
 theorem frobenius_zero : frobenius n p 0 A = MonoidHom.id _ := by
-  rw [frobenius, iterateFrobenius_zero, pointsMap_id]
+  rw [frobenius, iterateFrobenius_zero, GeneralLinear.IntegralPointsPresentation.map_id]
 
 /-- Frobenius iterates add under composition on the type-`C_(n+1)` point group. -/
 theorem frobenius_add (m : ℕ) :
     frobenius n p (k + m) A = (frobenius n p k A).comp (frobenius n p m A) := by
-  rw [frobenius, frobenius, frobenius, iterateFrobenius_add, pointsMap_comp]
+  rw [frobenius, frobenius, frobenius, iterateFrobenius_add,
+    GeneralLinear.IntegralPointsPresentation.map_comp (Q := pointsPresentation n A)]
 
 /-- A type-`C_(n+1)` carrier point is fixed by Frobenius exactly when all of its matrix entries lie
 in the Frobenius-fixed subring. -/

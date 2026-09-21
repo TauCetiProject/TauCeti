@@ -378,7 +378,7 @@ other is Mathlib's `LinearMap.BilinForm.Nondegenerate.ne_zero`, once the space a
 representation acts on is known to be nonzero. -/
 theorem IsInvariantForm.nondegenerate_iff_ne_zero [ρ.IsIrreducible] (hB : IsInvariantForm ρ B) :
     B.Nondegenerate ↔ B ≠ 0 := by
-  have : Nontrivial V := IsIrreducible.nontrivial ‹ρ.IsIrreducible›
+  have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
   exact ⟨fun h => h.ne_zero, hB.nondegenerate⟩
 
 variable [FiniteDimensional k V] [IsAlgClosed k] [ρ.IsIrreducible]

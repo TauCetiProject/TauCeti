@@ -43,6 +43,10 @@ on:
       - 'scripts/participant_graph.py'
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
+      - 'scripts/roadmap_progress.py'
+      - 'scripts/roadmap_topics.json'
+      - 'scripts/roadmap_coverage.json'
+      - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'
   schedule:
     - cron: "23 */3 * * *"   # Every three hours (UTC): refresh the charts and API docs
@@ -56,6 +60,7 @@ permissions:
   id-token: write
   issues: read      # issue participants in this repository
   pull-requests: read # roadmap labels and PR participants
+  statuses: read      # exact-head merge-readiness audit
 
 concurrency:
   group: pages
@@ -226,12 +231,29 @@ jobs:
       # requests and the dominant cost of this job. Publishing the result means
       # anything asking "where is the queue stuck" reads a file instead of
       # repeating the fetch.
+      - name: Checkout the pinned merge policy (read-only)
+        id: merge-policy
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiReview
+          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
+          path: .tauceti-review
+          sparse-checkout: runner
+          persist-credentials: false
+
       - name: Derive pipeline health from the same snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
         working-directory: ${{ github.workspace }}
         run: |
+          if [ "${{ steps.merge-policy.outcome }}" != "success" ]; then
+            echo "::warning::merge policy unavailable; publishing unverified readiness"
+            echo "merge readiness policy" >> "$RUNNER_TEMP/data-failures"
+          fi
           if [ -s "$RUNNER_TEMP/pr-snapshot.json" ]; then
             python3 scripts/pipeline_health.py \
-              --data "$RUNNER_TEMP/pr-snapshot.json" \
+              --data "$RUNNER_TEMP/pr-snapshot.json" --verify-readiness \
               --out web/static_files/pipeline-health.json \
               --json > /dev/null \
             || {
@@ -247,6 +269,30 @@ jobs:
           if [ ! -s web/static_files/pipeline-health.json ]; then
             echo "::warning::pipeline-health.json was not written"
           fi
+
+      # The Progress page's board: one row per roadmap, one segment per layer, from the roadmap
+      # clone above plus the roadmap labels on merged pull requests. It reads the PR snapshot the
+      # statistics step just fetched rather than walking GitHub again; without one it pages the
+      # merged pull requests itself, which is a few dozen requests. As with the charts, a failure
+      # keeps the committed fallback JSON in place rather than sinking the deploy.
+      - name: Regenerate the roadmap progress board into static_files
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          data_arg=()
+          if [ -s "$RUNNER_TEMP/pr-snapshot.json" ]; then
+            data_arg=(--data "$RUNNER_TEMP/pr-snapshot.json")
+          fi
+          python3 scripts/roadmap_progress.py \
+            --roadmap-dir /tmp/roadmap \
+            --repo "${{ github.repository }}" \
+            "${data_arg[@]}" \
+            --out web/static_files/progress.json \
+          || {
+            echo "::warning::roadmap progress generation failed; keeping the committed fallback JSON"
+            echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
+          }
 
       - name: Collect which data assets could not be regenerated
         id: data-failures

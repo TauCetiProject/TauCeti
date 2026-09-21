@@ -33,6 +33,9 @@ Gram matrices.
   `chiSquaredMeasure 1`;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_sq_gaussian` — a finite sum of independent squared
   standard Gaussian variables has the corresponding chi-squared law;
+* `TauCeti.Probability.map_sum_sq_pi_gaussianReal` — the same statement at the level of measures
+  and for an arbitrary common variance `v`: the sum of squares of the coordinates of a product of
+  `gaussianReal 0 v` laws is the chi-squared law scaled by `v`;
 * `TauCeti.Probability.mem_integrableExpSet_mul_sq_gaussianReal_iff` and
   `TauCeti.Probability.mgf_mul_sq_gaussianReal` — the exponential moments of `w * x ^ 2` are
   finite exactly when `2 * t * w < 1`, where the moment-generating function is
@@ -52,7 +55,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Real Set
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -183,6 +186,38 @@ theorem iIndepFun.hasLaw_sum_sq_gaussian (hindep : iIndepFun X P)
     simpa [Function.comp_def] using
       hindep.comp (fun (_ : iota) (x : ℝ) ↦ x ^ 2) (fun _ ↦ by fun_prop)
   simpa using iIndepFun.hasLaw_sum_chiSquared hindepSq (fun _ ↦ zero_le_one) hlawSq
+
+/-- **The law of a sum of squared centred Gaussian coordinates of common variance.** Pushing a
+finite product of `gaussianReal 0 v` laws forward by the sum of the squared coordinates gives the
+chi-squared law with one degree of freedom per coordinate, scaled by `v`. For an empty index type
+both sides are the point mass at zero. -/
+theorem map_sum_sq_pi_gaussianReal {ι : Type*} [Fintype ι] (v : ℝ≥0) :
+    (Measure.pi fun _ : ι ↦ gaussianReal 0 v).map (fun y ↦ ∑ i, y i ^ 2) =
+      (chiSquaredMeasure (Fintype.card ι)).map ((v : ℝ) * ·) := by
+  have hstd : (Measure.pi fun _ : ι ↦ gaussianReal (0 : ℝ) 1).map (fun y ↦ ∑ i, y i ^ 2) =
+      chiSquaredMeasure (Fintype.card ι) := by
+    have hindep : iIndepFun (fun (i : ι) (y : ι → ℝ) ↦ y i)
+        (Measure.pi fun _ : ι ↦ gaussianReal (0 : ℝ) 1) :=
+      iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id
+    exact (iIndepFun.hasLaw_sum_sq_gaussian hindep fun i ↦
+      ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval _ i).map_eq⟩).map_eq
+  have hv : gaussianReal 0 v = (gaussianReal (0 : ℝ) 1).map (√(v : ℝ) * ·) := by
+    rw [gaussianReal_map_const_mul, mul_zero, mul_one]
+    congr 1
+    exact NNReal.coe_injective (Real.sq_sqrt v.coe_nonneg).symm
+  have hpi : (Measure.pi fun _ : ι ↦ gaussianReal (0 : ℝ) v) =
+      (Measure.pi fun _ : ι ↦ gaussianReal (0 : ℝ) 1).map (fun y i ↦ √(v : ℝ) * y i) := by
+    -- `Measure.pi_map_pi` asks for σ-finiteness of the pushed-forward factors.
+    have : ∀ _ : ι, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (√(v : ℝ) * ·)) := fun _ ↦ by
+      rw [← hv]; infer_instance
+    simp only [hv]
+    exact (Measure.pi_map_pi fun _ ↦ (measurable_const_mul (√(v : ℝ))).aemeasurable).symm
+  have hcomp : (fun y : ι → ℝ ↦ ∑ i, y i ^ 2) ∘ (fun (y : ι → ℝ) i ↦ √(v : ℝ) * y i) =
+      ((v : ℝ) * ·) ∘ fun y : ι → ℝ ↦ ∑ i, y i ^ 2 := by
+    funext y
+    simp only [Function.comp_apply, mul_pow, Real.sq_sqrt v.coe_nonneg, Finset.mul_sum]
+  rw [hpi, Measure.map_map (by fun_prop) (by fun_prop), hcomp,
+    ← Measure.map_map (by fun_prop) (by fun_prop), hstd]
 
 end Probability
 

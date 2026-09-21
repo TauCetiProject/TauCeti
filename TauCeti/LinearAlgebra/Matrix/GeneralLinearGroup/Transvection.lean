@@ -84,6 +84,8 @@ elementary matrices against the diagonal torus.
 * `TauCeti.commute_transvectionUnit_transvectionWeylElement` and
   `TauCeti.transvectionWeylElement_mul_transvectionUnit_mul_inv_of_ne`: a transvection whose two
   indices avoid `i` and `j` commutes with `nᵢⱼ`, so conjugation by `nᵢⱼ` fixes it.
+* `TauCeti.transvectionWeylElement_mul_diagGL_mul_inv`: conjugation by `nᵢⱼ` exchanges the
+  two corresponding diagonal coordinates.
 
 ## References
 
@@ -559,6 +561,20 @@ theorem diagGL_mul_transvectionUnit_mul_inv (hij : i ≠ j) (t : Fin N → Aˣ) 
   refine Units.ext ?_
   rw [Units.val_mul, Units.val_mul, coe_transvectionUnit, coe_transvectionUnit, diagGL_coe, hval,
     diagonal_mul_transvection_mul_diagonal (fun a => (t a).mul_inv)]
+
+/-- Conjugating an invertible diagonal matrix by the Weyl representative for `εᵢ - εⱼ`
+exchanges its `i`-th and `j`-th diagonal entries. -/
+@[simp]
+theorem transvectionWeylElement_mul_diagGL_mul_inv (hij : i ≠ j) (t : Fin N → Aˣ) :
+    transvectionWeylElement hij * diagGL t * transvectionWeylElement hij.symm =
+      diagGL (t ∘ Equiv.swap i j) := by
+  apply Units.ext
+  ext a b
+  simp only [Units.val_mul, diagGL_coe]
+  rw [coe_transvectionWeylElement_conj_apply]
+  by_cases hai : a = i <;> by_cases haj : a = j <;>
+    by_cases hbi : b = i <;> by_cases hbj : b = j <;>
+      subst_vars <;> simp_all [Matrix.diagonal_apply, Equiv.swap_apply_def, eq_comm]
 
 end Torus
 

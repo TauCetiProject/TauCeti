@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Sets.Opens
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -26,19 +27,19 @@ compact exhaustions in domain arguments.
 public section
 
 open Function Set TopologicalSpace
-open scoped ContDiff Topology
+open scoped ContDiff Gradient InnerProductSpace Topology
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E]
 
 /-- A compact set contained in an open set admits a smooth cutoff equal to one on a neighborhood
 of the compact set.
 
 The cutoff takes values in `[0, 1]`, has compact support, and its topological support is contained
 in the prescribed open set. -/
-theorem _root_.IsCompact.exists_contDiff_cutoff {K U : Set E} (hK : IsCompact K) (hU : IsOpen U)
+theorem _root_.IsCompact.exists_contDiff_cutoff [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {K U : Set E} (hK : IsCompact K) (hU : IsOpen U)
     (hKU : K ⊆ U) :
     ∃ ψ : E → ℝ,
       ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
@@ -69,10 +70,48 @@ theorem _root_.IsCompact.exists_contDiff_cutoff {K U : Set E} (hK : IsCompact K)
     exact hf_range x
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
 
+/-- A compact set contained in an open set admits a smooth cutoff whose value and gradient are
+bounded by a common nonnegative constant. -/
+theorem _root_.IsCompact.exists_contDiff_cutoff_with_bounds [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E]
+    {K U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ ψ : E → ℝ, ∃ M : ℝ,
+      ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
+        K ⊆ interior (ψ ⁻¹' {1}) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U ∧
+          0 ≤ M ∧ (∀ x, |ψ x| ≤ M) ∧ ∀ x, ‖∇ ψ x‖ ≤ M := by
+  obtain ⟨ψ, hψ, hψ_range, hψ_one_nhds, hψ_cpt, hψ_ts⟩ :=
+    hK.exists_contDiff_cutoff hU hKU
+  have hψ_mem : ∀ x, ψ x ∈ Icc (0 : ℝ) 1 := fun x => hψ_range (mem_range_self x)
+  obtain ⟨C, hC⟩ := (hψ.continuous_fderiv (by simp)).norm.bddAbove_range_of_hasCompactSupport
+    ((hψ_cpt.fderiv ℝ).norm)
+  let M : ℝ := max 1 C
+  have hM0 : (0 : ℝ) ≤ M := zero_le_one.trans (le_max_left _ _)
+  have hψM : ∀ x, |ψ x| ≤ M := fun x => by
+    rw [abs_of_nonneg (hψ_mem x).1]
+    exact (hψ_mem x).2.trans (le_max_left _ _)
+  have hgradψM : ∀ x, ‖∇ ψ x‖ ≤ M := fun x => by
+    rw [_root_.gradient, LinearIsometryEquiv.norm_map]
+    exact (hC ⟨x, rfl⟩).trans (le_max_right _ _)
+  exact ⟨ψ, M, hψ, hψ_range, hψ_one_nhds, hψ_cpt, hψ_ts, hM0, hψM, hgradψM⟩
+
+/-- A compactly supported `C¹` function and its gradient are bounded by a common nonnegative
+constant. -/
+theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le [InnerProductSpace ℝ E]
+    [CompleteSpace E] {ψ : E → ℝ} (hψ : ContDiff ℝ 1 ψ) (hcpt : HasCompactSupport ψ) :
+    ∃ M : ℝ, 0 ≤ M ∧ (∀ x, |ψ x| ≤ M) ∧ ∀ x, ‖∇ ψ x‖ ≤ M := by
+  obtain ⟨C, hC⟩ := hψ.continuous.norm.bddAbove_range_of_hasCompactSupport hcpt.norm
+  obtain ⟨D, hD⟩ := (hψ.continuous_fderiv one_ne_zero).norm.bddAbove_range_of_hasCompactSupport
+    (hcpt.fderiv ℝ).norm
+  refine ⟨max 0 (max C D), le_max_left _ _, fun x => ?_, fun x => ?_⟩
+  · rw [← Real.norm_eq_abs]
+    exact (hC ⟨x, rfl⟩).trans ((le_max_left _ _).trans (le_max_right _ _))
+  · rw [_root_.gradient, LinearIsometryEquiv.norm_map]
+    exact (hD ⟨x, rfl⟩).trans ((le_max_right _ _).trans (le_max_right _ _))
+
 /-- A compact-exhaustion term in an open set admits a smooth cutoff supported in the interior of
 the next term. -/
-theorem _root_.CompactExhaustion.exists_contDiff_cutoff {Omega : Opens E}
-    (K : CompactExhaustion Omega) (n : ℕ) :
+theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {Omega : Opens E} (K : CompactExhaustion Omega) (n : ℕ) :
     ∃ ψ : E → ℝ,
       ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         (Subtype.val : Omega → E) '' K n ⊆ interior (ψ ⁻¹' {1}) ∧

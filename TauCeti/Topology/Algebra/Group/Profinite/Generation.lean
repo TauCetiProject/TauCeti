@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!
 # Topological generation of profinite groups
@@ -28,6 +29,12 @@ the minimal number of generators of its finite quotients is bounded
 (`isTopologicallyFinitelyGenerated_iff_exists_rank_le`). A bound on `Group.rank (G ⧸ U)` for
 each open normal `U` separately says nothing, since each such quotient is finite.
 
+A possibly infinite subset *converges to one* when only finitely many of its elements lie outside
+each neighborhood of `1`; in a profinite group it suffices to test open normal subgroups. This
+condition is inherited by subsets and carried to images by continuous maps preserving `1`. It is
+the finiteness condition on generating sets used to define the cardinal-valued generator rank of a
+profinite group.
+
 ## Main results
 
 * `Subgroup.topologicalClosure_eq_top_iff_forall_map_mk'`: a subgroup of a profinite group is
@@ -40,15 +47,121 @@ each open normal `U` separately says nothing, since each such quotient is finite
   generating set bounds the rank of every quotient by an open normal subgroup.
 * `TauCeti.isTopologicallyFinitelyGenerated_iff_exists_rank_le`: topological finite generation
   is exactly a uniform bound on the ranks of the finite quotients.
+* `TauCeti.ConvergesToOne`: a set has only finitely many elements outside every neighborhood of
+  `1`.
+* `TauCeti.convergesToOne_iff_openNormalSubgroup`: in a profinite group, the same holds for
+  every open normal subgroup.
+* `TauCeti.ConvergesToOne.image`: a continuous map preserving `1` carries a set converging to one
+  to another such set.
+* `Subgroup.exists_convergesToOne_lift_quotient`: a converging set in a quotient by a closed
+  normal subgroup has a converging set of representatives upstairs.
+* `Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates`: if the set generates the
+  quotient, its representatives together with the kernel generate upstairs.
+* `Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates`: converging generators of a
+  closed normal subgroup and its quotient combine to generate the ambient profinite group.
+* `TauCeti.exists_convergesToOne_topologicallyGenerates`: every profinite group has a
+  topological generating set converging to one.
 
 ## References
 
-* L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.5.
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Sections 2.5 and 2.6.
 -/
 
 public section
 
 namespace TauCeti
+
+section ConvergesToOne
+
+open Filter
+open scoped Topology
+
+variable {G : Type*} [TopologicalSpace G]
+
+section One
+
+variable [One G]
+
+/-- A subset of a topological space with a distinguished point `1` **converges to one** when its
+inclusion tends to `1` along the cofinite filter, that is when every neighborhood of `1` omits only
+finitely many of its elements (`TauCeti.convergesToOne_iff`). For a profinite group this says that
+every open normal subgroup omits only finitely many elements
+(`TauCeti.convergesToOne_iff_openNormalSubgroup`); it is the finiteness condition imposed on
+generating sets in the cardinal-valued topological generator rank of a profinite group. -/
+def ConvergesToOne (s : Set G) : Prop :=
+  Tendsto ((↑) : s → G) cofinite (𝓝 1)
+
+/-- A set converges to one exactly when only finitely many of its elements lie outside each
+neighborhood of `1`. -/
+theorem convergesToOne_iff {s : Set G} :
+    ConvergesToOne s ↔ ∀ U ∈ 𝓝 (1 : G), {x ∈ s | x ∉ U}.Finite := by
+  refine tendsto_def.trans ?_
+  refine forall₂_congr fun U _ ↦ ?_
+  rw [mem_cofinite, ← Set.finite_image_iff Subtype.val_injective.injOn]
+  congr!
+  ext x
+  simp
+
+/-- Every finite subset converges to one. -/
+theorem _root_.Set.Finite.convergesToOne {s : Set G} (hs : s.Finite) : ConvergesToOne s := by
+  have := hs.to_subtype
+  rw [ConvergesToOne, cofinite_eq_bot]
+  exact tendsto_bot
+
+/-- Every subset of a set converging to one also converges to one. -/
+theorem ConvergesToOne.mono {s t : Set G} (hs : ConvergesToOne s) (hts : t ⊆ s) :
+    ConvergesToOne t :=
+  hs.comp (Set.inclusion_injective hts).tendsto_cofinite
+
+/-- The union of two sets converging to one again converges to one. -/
+theorem ConvergesToOne.union {s t : Set G} (hs : ConvergesToOne s) (ht : ConvergesToOne t) :
+    ConvergesToOne (s ∪ t) := by
+  rw [convergesToOne_iff] at hs ht ⊢
+  intro U hU
+  apply ((hs U hU).union (ht U hU)).subset
+  intro x hx
+  simp only [Set.mem_ofPred_eq, Set.mem_union] at hx ⊢
+  rcases hx.1 with hxs | hxt
+  · exact Or.inl ⟨hxs, hx.2⟩
+  · exact Or.inr ⟨hxt, hx.2⟩
+
+end One
+
+/-- In a profinite group, a set converges to one exactly when only finitely many of its elements
+lie outside each open normal subgroup. -/
+theorem convergesToOne_iff_openNormalSubgroup [Group G] [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G] {s : Set G} :
+    ConvergesToOne s ↔ ∀ U : OpenNormalSubgroup G, {x ∈ s | x ∉ U.toSubgroup}.Finite := by
+  rw [convergesToOne_iff]
+  refine ⟨fun hs U ↦ hs _ (U.isOpen.mem_nhds U.one_mem), fun hs U hU ↦ ?_⟩
+  obtain ⟨V, hVU, hVopen, hV1⟩ := mem_nhds_iff.mp hU
+  obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hVopen hV1
+  exact (hs N).subset fun x hx ↦ ⟨hx.1, fun hxN ↦ hx.2 (hVU (hN hxN))⟩
+
+variable {H : Type*} [TopologicalSpace H]
+
+/-- The image of a set converging to one under a continuous map preserving `1` also converges to
+one. The map may be any `OneHomClass` morphism; `OneHomClass` only asks `f 1 = 1`, so no
+compatibility with multiplication is needed. -/
+theorem ConvergesToOne.image [One G] [One H] {F : Type*} [FunLike F G H] [OneHomClass F G H]
+    {s : Set G} (hs : ConvergesToOne s) (f : F) (hf : Continuous f) :
+    ConvergesToOne (f '' s) := by
+  rw [convergesToOne_iff] at hs ⊢
+  intro U hU
+  have hV : f ⁻¹' U ∈ 𝓝 (1 : G) := hf.continuousAt.preimage_mem_nhds (by rwa [map_one])
+  refine ((hs _ hV).image f).subset ?_
+  rintro y ⟨⟨x, hxs, rfl⟩, hyU⟩
+  exact ⟨x, ⟨hxs, hyU⟩, rfl⟩
+
+/-- A continuous multiplicative equivalence carries a set converging to one exactly to a set
+converging to one. -/
+@[simp]
+theorem _root_.ContinuousMulEquiv.convergesToOne_image_iff [MulOneClass G] [MulOneClass H]
+    (e : G ≃ₜ* H) {s : Set G} : ConvergesToOne (e '' s) ↔ ConvergesToOne s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.image e e.continuous⟩
+  simpa [Set.image_image] using h.image e.symm e.symm.continuous
+
+end ConvergesToOne
 
 section DenseSubgroups
 
@@ -192,5 +305,549 @@ theorem isTopologicallyFinitelyGenerated_iff_exists_rank_le :
   exact ⟨s, hs⟩
 
 end FiniteQuotients
+
+section QuotientLifts
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G]
+
+/-- A set converging to one in the quotient by a closed normal subgroup has a set of
+representatives converging to one upstairs. The representatives come from the normalized
+continuous section of the quotient map. -/
+theorem _root_.Subgroup.exists_convergesToOne_lift_quotient (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G))
+    {s : Set (G ⧸ N)} (hs : ConvergesToOne s) :
+    ∃ t : Set G, ConvergesToOne t ∧ (QuotientGroup.mk' N) '' t = s := by
+  obtain ⟨f, hf, hsection, hf_one⟩ := exists_continuous_section N hN
+  let f₁ : OneHom (G ⧸ N) G := ⟨f, hf_one⟩
+  have hsection₁ (q : G ⧸ N) : QuotientGroup.mk' N (f₁ q) = q := by
+    simpa only [f₁, OneHom.coe_mk, QuotientGroup.mk'_apply] using hsection q
+  refine ⟨f₁ '' s, hs.image f₁ ?_, ?_⟩
+  · simpa only [f₁, OneHom.coe_mk] using hf
+  · ext q
+    constructor
+    · rintro ⟨_, ⟨q', hq', rfl⟩, rfl⟩
+      rw [hsection₁ q']
+      exact hq'
+    · intro hq
+      exact ⟨f₁ q, ⟨q, hq, rfl⟩, hsection₁ q⟩
+
+/-- If a converging set topologically generates a quotient by a closed normal subgroup, it has a
+converging set of representatives which, together with the kernel, topologically generates the
+ambient profinite group. This is the extension step needed when constructing converging generators
+through successively finer quotients. -/
+theorem _root_.Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates
+    (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G)) {s : Set (G ⧸ N)} (hs : ConvergesToOne s)
+    (hsg : (Subgroup.closure s).topologicalClosure = ⊤) :
+    ∃ t : Set G, ConvergesToOne t ∧ (QuotientGroup.mk' N) '' t = s ∧
+      (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure = ⊤ := by
+  obtain ⟨t, ht, ht_image⟩ := N.exists_convergesToOne_lift_quotient hN hs
+  refine ⟨t, ht, ht_image, ?_⟩
+  let q : G →* G ⧸ N := QuotientGroup.mk' N
+  let H : Subgroup G := (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure
+  have hN_le : N ≤ H := fun x hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inr hx))
+  have ht_le : t ⊆ H := fun x hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inl hx))
+  have hmap_closed : IsClosed (H.map q : Set (G ⧸ N)) := by
+    apply IsCompact.isClosed
+    rw [Subgroup.coe_map]
+    have hH_closed : IsClosed (H : Set G) := by
+      dsimp only [H]
+      exact Subgroup.isClosed_topologicalClosure _
+    convert hH_closed.isCompact.image (QuotientGroup.continuous_mk (N := N)) using 1
+    apply Set.image_congr
+    intro x _
+    exact QuotientGroup.mk'_apply N x
+  have hmap_top : H.map q = ⊤ := by
+    apply eq_top_iff.mpr
+    rw [← hsg]
+    apply Subgroup.topologicalClosure_minimal
+    · apply (Subgroup.closure_le _).mpr
+      intro y hy
+      rw [← ht_image] at hy
+      obtain ⟨x, hx, rfl⟩ := hy
+      exact Subgroup.mem_map.mpr ⟨x, ht_le hx, rfl⟩
+    · exact hmap_closed
+  apply eq_top_iff.mpr
+  intro x _
+  have hxmap : q x ∈ H.map q := hmap_top.symm ▸ Subgroup.mem_top (q x)
+  obtain ⟨y, hyH, hyx⟩ := Subgroup.mem_map.mp hxmap
+  have hyxN : y⁻¹ * x ∈ N := by
+    apply (QuotientGroup.eq_one_iff (N := N) (y⁻¹ * x)).mp
+    have hq_apply (z : G) : (z : G ⧸ N) = q z := by
+      simp only [q, QuotientGroup.mk'_apply]
+    rw [hq_apply, map_mul, map_inv, hyx, inv_mul_cancel]
+  have := H.mul_mem hyH (hN_le hyxN)
+  simpa using this
+
+/-- **Converging generators combine across a closed normal subgroup.** If both a closed normal
+subgroup and the corresponding quotient have converging topological generating sets, then the
+ambient profinite group has one obtained by lifting the quotient generators and adjoining the
+subgroup generators. The lifted set still maps exactly to the prescribed quotient set.
+
+This is the compositional form of
+`Subgroup.exists_convergesToOne_lift_quotient_topologicallyGenerates`: it replaces the whole
+kernel by a dense generating subset, so it can be iterated along a series of closed normal
+subgroups. -/
+theorem _root_.Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates
+    (N : Subgroup G) [N.Normal]
+    (hN : IsClosed (N : Set G)) {s : Set (G ⧸ N)} (hs : ConvergesToOne s)
+    (hsg : (Subgroup.closure s).topologicalClosure = ⊤) {u : Set N} (hu : ConvergesToOne u)
+    (hug : (Subgroup.closure u).topologicalClosure = ⊤) :
+    ∃ t : Set G, (QuotientGroup.mk' N) '' t = s ∧
+      ConvergesToOne (t ∪ N.subtype '' u) ∧
+      (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure = ⊤ := by
+  obtain ⟨t, ht, ht_image, htN⟩ :=
+    N.exists_convergesToOne_lift_quotient_topologicallyGenerates hN hs hsg
+  refine ⟨t, ht_image, ht.union (hu.image N.subtype continuous_subtype_val), ?_⟩
+  let K : Subgroup G := (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure
+  have hK_closed : IsClosed (K : Set G) := by
+    dsimp only [K]
+    exact Subgroup.isClosed_topologicalClosure _
+  have ht_le : t ⊆ K := fun x hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure (Or.inl hx))
+  have hu_le : u ⊆ K.comap N.subtype := by
+    intro x hx
+    exact Subgroup.le_topologicalClosure _
+      (Subgroup.subset_closure (Or.inr ⟨x, hx, rfl⟩))
+  have hcomap_closed : IsClosed (K.comap N.subtype : Set N) :=
+    hK_closed.preimage continuous_subtype_val
+  have hcomap_top : K.comap N.subtype = ⊤ := by
+    apply eq_top_iff.mpr
+    rw [← hug]
+    exact Subgroup.topologicalClosure_minimal _
+      ((Subgroup.closure_le _).mpr hu_le) hcomap_closed
+  have hN_le : N ≤ K := by
+    intro x hx
+    have : (⟨x, hx⟩ : N) ∈ K.comap N.subtype :=
+      hcomap_top.symm ▸ Subgroup.mem_top (⟨x, hx⟩ : N)
+    exact this
+  have hlarge_le : (Subgroup.closure (t ∪ (N : Set G))).topologicalClosure ≤ K := by
+    apply Subgroup.topologicalClosure_minimal
+    · exact (Subgroup.closure_le _).mpr (Set.union_subset ht_le hN_le)
+    · exact hK_closed
+  exact eq_top_iff.mpr (htN.ge.trans hlarge_le)
+
+end QuotientLifts
+
+section ExistsConvergesToOne
+
+open scoped Pointwise
+
+/-! ### Every profinite group has a generating set converging to one
+
+Every profinite group admits a set that converges to `1` and generates a dense subgroup
+(Ribes–Zalesskii, Proposition 2.6.2). This makes the family used to define the cardinal-valued
+topological generator rank nonempty. -/
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- A partial solution to the problem of finding a generating set converging to one: a closed
+subgroup `K` and a closed, right `K`-saturated set `S ⊇ K`, generating a dense subgroup, with
+only finitely many `K`-cosets of `S` outside each open subgroup containing `K`. -/
+private structure ConvergingGenData (G : Type*) [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] where
+  /-- The subgroup modulo which the set converges to one. -/
+  K : Subgroup G
+  /-- The candidate generating set, a union of left cosets of `K`. -/
+  S : Set G
+  isClosed_K : IsClosed (K : Set G)
+  isClosed_S : IsClosed S
+  K_subset : (K : Set G) ⊆ S
+  mul_mem : ∀ s ∈ S, ∀ k ∈ K, s * k ∈ S
+  dense : (Subgroup.closure S).topologicalClosure = ⊤
+  finite : ∀ V : Subgroup G, IsOpen (V : Set G) → K ≤ V →
+    (((↑) : G → G ⧸ K) '' (S \ V)).Finite
+
+namespace ConvergingGenData
+
+/-- Refinement of partial solutions: `b` refines `a`. -/
+private structure Le (a b : ConvergingGenData G) : Prop where
+  K_le : b.K ≤ a.K
+  S_subset : b.S ⊆ a.S
+  exists_mem : ∀ x ∈ a.S, ∃ y ∈ b.S, y⁻¹ * x ∈ a.K
+  mem_K : ∀ y ∈ b.S, ∀ y' ∈ b.S, y ∉ a.K → y⁻¹ * y' ∈ a.K → y⁻¹ * y' ∈ b.K
+
+private theorem le_refl (a : ConvergingGenData G) : Le a a :=
+  ⟨le_rfl, subset_rfl, fun x hx ↦ ⟨x, hx, by simp⟩, fun _ _ _ _ _ h ↦ h⟩
+
+private theorem le_trans {a b c : ConvergingGenData G} (hab : Le a b) (hbc : Le b c) :
+    Le a c := by
+  refine ⟨hbc.K_le.trans hab.K_le, hbc.S_subset.trans hab.S_subset, fun x hx ↦ ?_,
+    fun y hy y' hy' hya h ↦ ?_⟩
+  · obtain ⟨y, hy, hyx⟩ := hab.exists_mem x hx
+    obtain ⟨z, hz, hzy⟩ := hbc.exists_mem y hy
+    exact ⟨z, hz, by simpa [mul_assoc] using a.K.mul_mem (hab.K_le hzy) hyx⟩
+  · exact hbc.mem_K y hy y' hy' (fun h' ↦ hya (hab.K_le h'))
+      (hab.mem_K y (hbc.S_subset hy) y' (hbc.S_subset hy') hya h)
+
+/-- The trivial partial solution `K = ⊤`, `S = univ`. -/
+private def top : ConvergingGenData G where
+  K := ⊤
+  S := Set.univ
+  isClosed_K := by simp
+  isClosed_S := isClosed_univ
+  K_subset := Set.subset_univ _
+  mul_mem _ _ _ _ := Set.mem_univ _
+  dense := by
+    rw [Subgroup.closure_univ]
+    exact eq_top_iff.mpr (⊤ : Subgroup G).le_topologicalClosure
+  finite _ _ _ := by
+    have := QuotientGroup.subsingleton_quotient_top (G := G)
+    exact Set.toFinite _
+
+section Chain
+
+private theorem chain_total {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
+    {a b : ConvergingGenData G} (ha : a ∈ c) (hb : b ∈ c) : Le a b ∨ Le b a := by
+  by_cases h : a = b
+  · exact Or.inl (h ▸ le_refl a)
+  · exact hc ha hb h
+
+private theorem directed_K {c : Set (ConvergingGenData G)} (hc : IsChain Le c) :
+    Directed (· ⊇ ·) fun a : c ↦ (a.1.K : Set G) := fun a b ↦ by
+  obtain h | h := chain_total hc a.2 b.2
+  · exact ⟨b, h.K_le, subset_rfl⟩
+  · exact ⟨a, subset_rfl, h.K_le⟩
+
+private theorem directed_S {c : Set (ConvergingGenData G)} (hc : IsChain Le c) :
+    Directed (· ⊇ ·) fun a : c ↦ a.1.S := fun a b ↦ by
+  obtain h | h := chain_total hc a.2 b.2
+  · exact ⟨b, h.S_subset, subset_rfl⟩
+  · exact ⟨a, subset_rfl, h.S_subset⟩
+
+/-- Elements of the intersection of a chain that agree modulo one member's subgroup, and lie
+outside it, agree modulo every member's subgroup. -/
+private theorem mem_K_of_mem_iInter {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
+    {a : ConvergingGenData G} (ha : a ∈ c) {y y' : G}
+    (hy : ∀ b : c, y ∈ b.1.S) (hy' : ∀ b : c, y' ∈ b.1.S) (hya : y ∉ a.K)
+    (h : y⁻¹ * y' ∈ a.K) (b : c) : y⁻¹ * y' ∈ b.1.K := by
+  rcases chain_total hc ha b.2 with hab | hba
+  · exact hab.mem_K y (hy b) y' (hy' b) hya h
+  · exact hba.K_le h
+
+variable [CompactSpace G]
+
+/-- An open set containing the intersection of the subgroups of a nonempty chain contains one of
+them. -/
+private theorem exists_K_subset {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
+    (hne : c.Nonempty) {O : Set G} (hO : IsOpen O)
+    (hKO : ∀ x : G, (∀ a : c, x ∈ a.1.K) → x ∈ O) : ∃ a : c, (a.1.K : Set G) ⊆ O := by
+  have : Nonempty c := hne.to_subtype
+  refine exists_subset_nhds_of_compactSpace (directed_K hc) (fun a ↦ a.1.isClosed_K) ?_
+  exact hO.mem_nhdsSet.mpr fun x hx ↦ hKO x (Set.mem_iInter.mp hx)
+
+/-- Every element of a member of a chain is congruent, modulo that member's subgroup, to an
+element of the intersection of the chain. This is the compactness step. -/
+private theorem exists_mem_iInter {c : Set (ConvergingGenData G)} (hc : IsChain Le c)
+    {a : ConvergingGenData G} (ha : a ∈ c) {x : G} (hx : x ∈ a.S) :
+    ∃ y, (∀ b : c, y ∈ b.1.S) ∧ y⁻¹ * x ∈ a.K := by
+  have : Nonempty c := ⟨⟨a, ha⟩⟩
+  let C : c → Set G := fun b ↦ {y | y⁻¹ * x ∈ a.K} ∩ b.1.S
+  have hdir : Directed (· ⊇ ·) C := fun b b' ↦ by
+    obtain ⟨d, hbd, hb'd⟩ := directed_S hc b b'
+    exact ⟨d, Set.inter_subset_inter_right _ hbd, Set.inter_subset_inter_right _ hb'd⟩
+  have hne : ∀ b, (C b).Nonempty := fun b ↦ by
+    rcases chain_total hc ha b.2 with hab | hba
+    · obtain ⟨y, hy, hyx⟩ := hab.exists_mem x hx
+      exact ⟨y, hyx, hy⟩
+    · exact ⟨x, by simp, hba.S_subset hx⟩
+  have hclosed : ∀ b, IsClosed (C b) := fun b ↦
+    (a.isClosed_K.preimage (continuous_inv.mul continuous_const)).inter b.1.isClosed_S
+  obtain ⟨y, hy⟩ := nonempty_iInter_of_directed_nonempty_isClosed C hdir hne hclosed
+  rw [Set.mem_iInter] at hy
+  exact ⟨y, fun b ↦ (hy b).2, (hy ⟨a, ha⟩).1⟩
+
+variable [TotallyDisconnectedSpace G]
+
+/-- The limit of a nonempty chain of partial solutions: the intersection of the subgroups and
+of the sets. -/
+private def limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.Nonempty) :
+    ConvergingGenData G where
+  K := ⨅ a : c, a.1.K
+  S := ⋂ a : c, a.1.S
+  isClosed_K := by
+    rw [Subgroup.coe_iInf]
+    exact isClosed_iInter fun a ↦ a.1.isClosed_K
+  isClosed_S := isClosed_iInter fun a ↦ a.1.isClosed_S
+  K_subset x hx := Set.mem_iInter.mpr fun a ↦ a.1.K_subset (Subgroup.mem_iInf.mp hx a)
+  mul_mem s hs k hk := Set.mem_iInter.mpr fun a ↦
+    a.1.mul_mem s (Set.mem_iInter.mp hs a) k (Subgroup.mem_iInf.mp hk a)
+  dense := by
+    set H := (Subgroup.closure (⋂ a : c, a.1.S)).topologicalClosure
+    have hSH : (⋂ a : c, a.1.S) ⊆ H := fun x hx ↦
+      Subgroup.le_topologicalClosure _ (Subgroup.subset_closure hx)
+    have hKH : ∀ x, (∀ a : c, x ∈ a.1.K) → x ∈ H := fun x hx ↦
+      hSH (Set.mem_iInter.mpr fun a ↦ a.1.K_subset (hx a))
+    -- `H` is closed, so it is the intersection of its joins with the open normal subgroups;
+    -- each join is open, hence contains some member's subgroup, hence all of `G`.
+    refine (Subgroup.eq_iInf_sup_openNormalSubgroup H
+      (Subgroup.isClosed_topologicalClosure _)).trans (eq_top_iff.mpr (le_iInf fun U ↦ ?_))
+    have hopen : IsOpen ((H ⊔ U.toSubgroup : Subgroup G) : Set G) :=
+      Subgroup.isOpen_mono le_sup_right U.isOpen
+    obtain ⟨a, haU⟩ := exists_K_subset hc hne hopen fun x hx ↦
+      Subgroup.mem_sup_left (hKH x hx)
+    have hS : a.1.S ⊆ ((H ⊔ U.toSubgroup : Subgroup G) : Set G) := fun x hx ↦ by
+      obtain ⟨y, hy, hyx⟩ := exists_mem_iInter hc a.2 hx
+      simpa only [SetLike.mem_coe, mul_inv_cancel_left] using (H ⊔ U.toSubgroup).mul_mem
+        (Subgroup.mem_sup_left (hSH (Set.mem_iInter.mpr hy))) (haU hyx)
+    rw [← a.1.dense]
+    exact Subgroup.topologicalClosure_minimal _ ((Subgroup.closure_le _).mpr hS)
+      (Subgroup.isClosed_of_isOpen _ hopen)
+  finite V hV hKV := by
+    obtain ⟨a, haV⟩ := exists_K_subset hc hne hV fun x hx ↦ hKV (Subgroup.mem_iInf.mpr hx)
+    have hle : (⨅ b : c, b.1.K) ≤ a.1.K := iInf_le _ a
+    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE hle) ?_ ?_
+    · rw [Set.image_image]
+      refine (a.1.finite V hV haV).subset ?_
+      rintro _ ⟨x, hx, rfl⟩
+      exact ⟨x, ⟨Set.mem_iInter.mp hx.1 a, hx.2⟩, rfl⟩
+    · rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
+      simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
+      exact Subgroup.mem_iInf.mpr <| mem_K_of_mem_iInter hc a.2 (Set.mem_iInter.mp hx.1)
+        (Set.mem_iInter.mp hx'.1) (fun h' ↦ hx.2 (haV h')) h
+
+private theorem le_limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.Nonempty)
+    {a : ConvergingGenData G} (ha : a ∈ c) : Le a (limit hc hne) := by
+  refine ⟨iInf_le (fun b : c ↦ b.1.K) ⟨a, ha⟩, Set.iInter_subset (fun b : c ↦ b.1.S) ⟨a, ha⟩,
+    fun x hx ↦ ?_, fun y hy y' hy' hya h ↦ ?_⟩
+  · obtain ⟨y, hy, hyx⟩ := exists_mem_iInter hc ha hx
+    exact ⟨y, Set.mem_iInter.mpr hy, hyx⟩
+  · exact Subgroup.mem_iInf.mpr <| mem_K_of_mem_iInter hc ha (Set.mem_iInter.mp hy)
+      (Set.mem_iInter.mp hy') hya h
+
+end Chain
+
+/-! #### Refining a partial solution
+
+Fix a partial solution `a` and an open normal subgroup `U`. The refinement has subgroup
+`K ⊓ U` and keeps, inside `S`, the subgroup `K`, the points lying in `U`, and the set
+`a.reps U`: one `K ⊓ U`-coset in each of the finitely many `K`-cosets of `S` outside `K ⊔ U`. -/
+
+section Refine
+
+/-- One `K ⊓ U`-coset in each `K`-coset of `S` outside `K ⊔ U`, through the chosen coset
+representatives. -/
+private noncomputable def reps (a : ConvergingGenData G) (U : OpenNormalSubgroup G) : Set G :=
+  ⋃ q ∈ ((↑) : G → G ⧸ a.K) '' (a.S \ (a.K ⊔ U.toSubgroup : Subgroup G)),
+    q.out • ((a.K ⊓ U.toSubgroup : Subgroup G) : Set G)
+
+/-- The chosen representative of a `K`-coset of `S` outside `K ⊔ U` lies in `S` and outside
+`K ⊔ U`. -/
+private theorem out_mem (a : ConvergingGenData G) (U : OpenNormalSubgroup G) {q : G ⧸ a.K}
+    (hq : q ∈ ((↑) : G → G ⧸ a.K) '' (a.S \ (a.K ⊔ U.toSubgroup : Subgroup G))) :
+    q.out ∈ a.S ∧ q.out ∉ a.K ⊔ U.toSubgroup := by
+  obtain ⟨z, hz, rfl⟩ := hq
+  have h := QuotientGroup.eq.mp (QuotientGroup.out_eq' (z : G ⧸ a.K)).symm
+  refine ⟨by simpa only [mul_inv_cancel_left] using a.mul_mem z hz.1 _ h, fun hmem ↦ hz.2 ?_⟩
+  simpa only [SetLike.mem_coe, mul_inv_rev, inv_inv, mul_inv_cancel_left] using
+    (a.K ⊔ U.toSubgroup).mul_mem hmem ((a.K ⊔ U.toSubgroup).inv_mem (le_sup_left (a := a.K) h))
+
+private theorem exists_of_mem_reps (a : ConvergingGenData G) (U : OpenNormalSubgroup G) {r : G}
+    (hr : r ∈ a.reps U) :
+    ∃ q ∈ ((↑) : G → G ⧸ a.K) '' (a.S \ (a.K ⊔ U.toSubgroup : Subgroup G)),
+      (q.out)⁻¹ * r ∈ a.K ⊓ U.toSubgroup := by
+  obtain ⟨q, hq, hr⟩ := Set.mem_iUnion₂.mp hr
+  exact ⟨q, hq, (mem_leftCoset_iff _).mp hr⟩
+
+/-- The `K`-coset of a point of `a.reps U` lies outside `K ⊔ U`. -/
+private theorem mul_notMem_of_mem_reps (a : ConvergingGenData G) (U : OpenNormalSubgroup G)
+    {r k : G} (hr : r ∈ a.reps U) (hk : k ∈ a.K) :
+    r * k ∉ a.K ⊔ U.toSubgroup := by
+  intro hmem
+  obtain ⟨q, hq, hrq⟩ := a.exists_of_mem_reps U hr
+  refine (a.out_mem U hq).2 ?_
+  have h1 : (q.out)⁻¹ * r ∈ a.K ⊔ U.toSubgroup :=
+    le_sup_left (a := a.K) (Subgroup.mem_inf.mp hrq).1
+  have h2 : k⁻¹ ∈ a.K ⊔ U.toSubgroup := le_sup_left (a := a.K) (a.K.inv_mem hk)
+  simpa only [mul_assoc, mul_inv_cancel_left, mul_inv_rev, inv_inv] using
+    (a.K ⊔ U.toSubgroup).mul_mem hmem
+      ((a.K ⊔ U.toSubgroup).mul_mem h2 ((a.K ⊔ U.toSubgroup).inv_mem h1))
+
+/-- The set kept by the refinement. -/
+private def refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G) : Set G :=
+  a.S ∩ ((a.K : Set G) ∪ U.toSubgroup ∪ a.reps U)
+
+/-- Every point of `S` is congruent modulo `K` to a point kept by the refinement. -/
+private theorem exists_mem_refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G) {x : G}
+    (hx : x ∈ a.S) :
+    ∃ y ∈ a.refineSet U, y⁻¹ * x ∈ a.K := by
+  by_cases hxW : x ∈ a.K ⊔ U.toSubgroup
+  · rw [sup_comm] at hxW
+    obtain ⟨u, hu, k, hk, rfl⟩ := Subgroup.mem_sup_of_normal_left.mp hxW
+    refine ⟨u, ⟨?_, Or.inl (Or.inr hu)⟩, by simpa only [inv_mul_cancel_left] using hk⟩
+    simpa only [mul_inv_cancel_right] using a.mul_mem _ hx _ (a.K.inv_mem hk)
+  · have hq : (x : G ⧸ a.K) ∈ ((↑) : G → G ⧸ a.K) '' (a.S \ (a.K ⊔ U.toSubgroup : Subgroup G)) :=
+      ⟨x, ⟨hx, hxW⟩, rfl⟩
+    refine ⟨(x : G ⧸ a.K).out, ⟨(a.out_mem U hq).1, Or.inr ?_⟩, ?_⟩
+    · exact Set.mem_iUnion₂.mpr ⟨_, hq, (mem_leftCoset_iff _).mpr (by simp)⟩
+    · exact QuotientGroup.eq.mp (QuotientGroup.out_eq' _)
+
+/-- Two kept points outside `K` that are congruent modulo `K` are congruent modulo `K ⊓ U`. -/
+private theorem mem_inf_of_mem_refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G)
+    {y y' : G} (hy : y ∈ a.refineSet U)
+    (hy' : y' ∈ a.refineSet U) (hya : y ∉ a.K) (h : y⁻¹ * y' ∈ a.K) :
+    y⁻¹ * y' ∈ a.K ⊓ U.toSubgroup := by
+  refine Subgroup.mem_inf.mpr ⟨h, ?_⟩
+  have hy'a : y' ∉ a.K := fun hy' ↦ hya <| by
+    simpa only [mul_inv_rev, inv_inv, mul_inv_cancel_left] using
+      a.K.mul_mem hy' (a.K.inv_mem h)
+  have hUW : ∀ z ∈ U.toSubgroup, z ∈ a.K ⊔ U.toSubgroup := fun z hz ↦ le_sup_right (a := a.K) hz
+  -- Points of `U` and points of `reps` are never congruent modulo `K`, and within `reps` the
+  -- `K`-coset determines the `K ⊓ U`-coset.
+  obtain ⟨-, (hyK | hyU) | hyR⟩ := hy
+  · exact absurd hyK hya
+  · obtain ⟨-, (hy'K | hy'U) | hy'R⟩ := hy'
+    · exact absurd hy'K hy'a
+    · exact U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hyU) hy'U
+    · refine absurd (hUW y hyU) ?_
+      simpa only [mul_inv_rev, inv_inv, mul_inv_cancel_left] using
+        a.mul_notMem_of_mem_reps U hy'R (a.K.inv_mem h)
+  · obtain ⟨-, (hy'K | hy'U) | hy'R⟩ := hy'
+    · exact absurd hy'K hy'a
+    · refine absurd (hUW y' hy'U) ?_
+      simpa only [mul_inv_cancel_left] using a.mul_notMem_of_mem_reps U hyR h
+    · obtain ⟨q, hq, hyq⟩ := a.exists_of_mem_reps U hyR
+      obtain ⟨q', hq', hy'q⟩ := a.exists_of_mem_reps U hy'R
+      have hqy : (y : G ⧸ a.K) = q :=
+        ((QuotientGroup.eq.mpr (Subgroup.mem_inf.mp hyq).1).symm).trans (QuotientGroup.out_eq' q)
+      have hq'y : (y' : G ⧸ a.K) = q' :=
+        ((QuotientGroup.eq.mpr (Subgroup.mem_inf.mp hy'q).1).symm).trans (QuotientGroup.out_eq' q')
+      obtain rfl : q = q' := hqy.symm.trans ((QuotientGroup.eq.mpr h).trans hq'y)
+      have := (a.K ⊓ U.toSubgroup).mul_mem ((a.K ⊓ U.toSubgroup).inv_mem hyq) hy'q
+      simp only [mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left] at this
+      exact (Subgroup.mem_inf.mp this).2
+
+variable [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- The kept set has only finitely many `K ⊓ U`-cosets outside each open subgroup `V ⊇ K ⊓ U`:
+`K` has finitely many such cosets, `reps` is finitely many of them, and a point of `S ∩ U`
+outside `V` lies outside the open subgroup `(N ⊓ U) ⊔ K`, for an open normal `N ≤ V`. -/
+private theorem finite_refineSet (a : ConvergingGenData G) (U : OpenNormalSubgroup G)
+    (V : Subgroup G) (hV : IsOpen (V : Set G))
+    (hLV : a.K ⊓ U.toSubgroup ≤ V) :
+    (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' (a.refineSet U \ V)).Finite := by
+  obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hV V.one_mem
+  set W := N.toSubgroup ⊓ U.toSubgroup ⊔ a.K
+  have hWopen : IsOpen (W : Set G) := by
+    refine Subgroup.isOpen_mono le_sup_left ?_
+    rw [Subgroup.coe_inf]
+    exact N.isOpen.inter U.isOpen
+  have hUW : (a.S ∩ U.toSubgroup) \ V ⊆ a.S \ W := by
+    rintro x ⟨⟨hxS, hxU⟩, hxV⟩
+    refine ⟨hxS, fun hxW ↦ hxV ?_⟩
+    obtain ⟨m, hm, k, hk, rfl⟩ := Subgroup.mem_sup_of_normal_left.mp hxW
+    obtain ⟨hmN, hmU⟩ := Subgroup.mem_inf.mp hm
+    have hkU : k ∈ U.toSubgroup := by
+      simpa only [inv_mul_cancel_left] using
+        U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hmU) hxU
+    exact V.mul_mem (hN hmN) (hLV (Subgroup.mem_inf.mpr ⟨hk, hkU⟩))
+  have hA : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.K).Finite := by
+    have := Subgroup.quotient_finite_of_isOpen U.toSubgroup U.isOpen
+    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE inf_le_right)
+      (Set.toFinite _) ?_
+    rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
+    simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
+    exact Subgroup.mem_inf.mpr ⟨a.K.mul_mem (a.K.inv_mem hx) hx', h⟩
+  have hB : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' ((a.S ∩ U.toSubgroup) \ V)).Finite := by
+    refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE inf_le_left) ?_ ?_
+    · rw [Set.image_image]
+      refine (a.finite W hWopen le_sup_right).subset ?_
+      rintro _ ⟨x, hx, rfl⟩
+      exact ⟨x, hUW hx, rfl⟩
+    · rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
+      simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
+      exact Subgroup.mem_inf.mpr ⟨h, U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hx.1.2) hx'.1.2⟩
+  have hC : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.reps U).Finite := by
+    refine ((a.finite _ (Subgroup.isOpen_mono le_sup_right U.isOpen) le_sup_left).image
+      fun q ↦ ((q.out : G) : G ⧸ (a.K ⊓ U.toSubgroup))).subset ?_
+    rintro _ ⟨r, hr, rfl⟩
+    obtain ⟨q, hq, hrq⟩ := a.exists_of_mem_reps U hr
+    exact ⟨q, hq, QuotientGroup.eq.mpr hrq⟩
+  refine ((hA.union hB).union hC).subset ?_
+  rintro _ ⟨x, ⟨⟨hxS, (hxK | hxU) | hxR⟩, hxV⟩, rfl⟩
+  · exact Or.inl (Or.inl ⟨x, hxK, rfl⟩)
+  · exact Or.inl (Or.inr ⟨x, ⟨⟨hxS, hxU⟩, hxV⟩, rfl⟩)
+  · exact Or.inr ⟨x, hxR, rfl⟩
+
+/-- The refinement of `a` along `U`, with subgroup `K ⊓ U`. -/
+private noncomputable def refine (a : ConvergingGenData G) (U : OpenNormalSubgroup G) :
+    ConvergingGenData G where
+  K := a.K ⊓ U.toSubgroup
+  S := a.refineSet U
+  isClosed_K := by
+    rw [Subgroup.coe_inf]
+    exact a.isClosed_K.inter U.isClosed
+  isClosed_S := by
+    refine a.isClosed_S.inter ((a.isClosed_K.union U.isClosed).union ?_)
+    refine Set.Finite.isClosed_biUnion
+      (a.finite _ (Subgroup.isOpen_mono le_sup_right U.isOpen) le_sup_left) fun q _ ↦ ?_
+    rw [Subgroup.coe_inf]
+    exact (a.isClosed_K.inter U.isClosed).leftCoset q.out
+  K_subset x hx :=
+    ⟨a.K_subset (Subgroup.mem_inf.mp hx).1, Or.inl (Or.inl (Subgroup.mem_inf.mp hx).1)⟩
+  mul_mem := by
+    rintro s ⟨hs, (hsK | hsU) | hsR⟩ k hk
+    all_goals obtain ⟨hkK, hkU⟩ := Subgroup.mem_inf.mp hk
+    · exact ⟨a.mul_mem s hs k hkK, Or.inl (Or.inl (a.K.mul_mem hsK hkK))⟩
+    · exact ⟨a.mul_mem s hs k hkK, Or.inl (Or.inr (U.toSubgroup.mul_mem hsU hkU))⟩
+    · obtain ⟨q, hq, hsq⟩ := Set.mem_iUnion₂.mp hsR
+      refine ⟨a.mul_mem s hs k hkK,
+        Or.inr (Set.mem_iUnion₂.mpr ⟨q, hq, (mem_leftCoset_iff _).mpr ?_⟩)⟩
+      simpa only [SetLike.mem_coe, mul_assoc] using
+        (a.K ⊓ U.toSubgroup).mul_mem ((mem_leftCoset_iff _).mp hsq) hk
+  dense := by
+    refine eq_top_iff.mpr (a.dense ▸ Subgroup.topologicalClosure_minimal _ ?_
+      (Subgroup.isClosed_topologicalClosure _))
+    refine (Subgroup.closure_le _).mpr fun x hx ↦ ?_
+    obtain ⟨y, hy, hyx⟩ := a.exists_mem_refineSet U hx
+    have hmem : ∀ z ∈ a.refineSet U, z ∈ (Subgroup.closure (a.refineSet U)).topologicalClosure :=
+      fun z hz ↦ Subgroup.le_topologicalClosure _ (Subgroup.subset_closure hz)
+    simpa only [SetLike.mem_coe, mul_inv_cancel_left] using Subgroup.mul_mem _ (hmem y hy)
+      (hmem _ ⟨a.K_subset hyx, Or.inl (Or.inl hyx)⟩)
+  finite := a.finite_refineSet U
+
+private theorem le_refine (a : ConvergingGenData G) (U : OpenNormalSubgroup G) :
+    Le a (a.refine U) :=
+  ⟨inf_le_left, Set.inter_subset_left, fun _ ↦ a.exists_mem_refineSet U,
+    fun _ hy _ hy' hya h ↦ a.mem_inf_of_mem_refineSet U hy hy' hya h⟩
+
+end Refine
+
+variable [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- Every chain of partial solutions has an upper bound. -/
+private theorem exists_upperBound {c : Set (ConvergingGenData G)} (hc : IsChain Le c) :
+    ∃ b, ∀ a ∈ c, Le a b := by
+  rcases c.eq_empty_or_nonempty with rfl | hne
+  · exact ⟨top, fun _ h ↦ h.elim⟩
+  · exact ⟨limit hc hne, fun _ ↦ le_limit hc hne⟩
+
+
+end ConvergingGenData
+
+variable [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **Every profinite group has a generating set converging to one** (Ribes–Zalesskii,
+Proposition 2.6.2). Such a set has only finitely many elements outside each open normal subgroup
+and generates a dense subgroup, so the least cardinality of a topological generating set converging
+to one is an infimum over a nonempty family. -/
+theorem exists_convergesToOne_topologicallyGenerates :
+    ∃ s : Set G, ConvergesToOne s ∧ (Subgroup.closure s).topologicalClosure = ⊤ := by
+  obtain ⟨m, hm⟩ := exists_maximal_of_chains_bounded (r := ConvergingGenData.Le (G := G))
+    (fun _ hc ↦ ConvergingGenData.exists_upperBound hc) ConvergingGenData.le_trans
+  -- A maximal partial solution has trivial subgroup.
+  have hK : ∀ x ∈ m.K, x = 1 := fun x hx ↦
+    Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun U ↦ ((hm _ (m.le_refine U)).K_le hx).2
+  refine ⟨m.S, convergesToOne_iff_openNormalSubgroup.mpr fun U ↦ ?_, m.dense⟩
+  have hfin := m.finite U.toSubgroup U.isOpen fun x hx ↦ by
+    rw [hK x hx]
+    exact U.toSubgroup.one_mem
+  refine (hfin.of_finite_image fun x _ y _ hxy ↦ ?_).subset fun x hx ↦ ⟨hx.1, hx.2⟩
+  exact inv_mul_eq_one.mp (hK _ (QuotientGroup.eq.mp hxy))
+
+end ExistsConvergesToOne
 
 end TauCeti

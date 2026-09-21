@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
+public import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The long exact cohomology sequence of a short exact sequence of sheaves of modules
@@ -35,6 +36,10 @@ varies the coefficients.
   cohomology group of `M₁` vanishes;
 * `Scheme.Modules.subsingleton_cohomology_X₂`, `Scheme.Modules.subsingleton_cohomology_X₃` and
   `Scheme.Modules.subsingleton_cohomology_X₁`, the vanishing consequences;
+* `Scheme.Modules.finiteDimensional_cohomology_X₂`: in a short exact sequence, `Hⁱ(X, M₂)` is
+  finite-dimensional when `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)` are, and
+  `Scheme.Modules.finiteDimensional_cohomology_X₁`: `Hⁱ⁺¹(X, M₁)` is finite-dimensional when
+  `Hⁱ(X, M₃)` and `Hⁱ⁺¹(X, M₂)` are;
 * `Scheme.Modules.exact_sections` and `Scheme.Modules.sections_injective`: global sections are
   left exact, and `Scheme.Modules.sections_surjective`: they are exact on the right as soon as
   `H¹(X, M₁)` vanishes. This last statement is the form in which the sequence is normally used;
@@ -255,6 +260,46 @@ lemma cohomologyδBaseLinear_apply (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n�
   (rfl)
 
 end Base
+
+section Field
+
+variable (k : Type u) [Field k] (X : Scheme.{u}) [X.Over (Spec (.of k))]
+  {S : ShortComplex X.Modules}
+
+omit hS in
+/-- `Hⁱ(X, M₂)` is squeezed by the exact sequence between `Hⁱ(X, M₁)` and `Hⁱ(X, M₃)`, so it is
+finite-dimensional as soon as those two are. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X₂
+    (hS : S.ShortExact) (i : ℕ) [FiniteDimensional k (Cohomology S.X₁ i)]
+    [FiniteDimensional k (Cohomology S.X₃ i)] :
+    FiniteDimensional k (Cohomology S.X₂ i) := by
+  have hex : Function.Exact (cohomologyMapBaseLinear k X S.f i)
+      (cohomologyMapBaseLinear k X S.g i) := by
+    have coe_map : ∀ {M N : X.Modules} (f : M ⟶ N),
+        ⇑(cohomologyMapBaseLinear k X f i) = ⇑(cohomologyMap f i) := by
+      intro M N f
+      funext x
+      rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
+      rfl
+    rw [coe_map, coe_map]
+    exact exact_cohomologyMap_cohomologyMap hS i
+  exact finiteDimensional_of_exact hex
+
+omit hS in
+/-- `Hⁿ¹(X, M₁)` is squeezed by the exact sequence between `Hⁿ⁰(X, M₃)` and `Hⁿ¹(X, M₂)`, where
+`n₀ + 1 = n₁`, so it is finite-dimensional as soon as those two are. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X₁
+    (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁)
+    [FiniteDimensional k (Cohomology S.X₃ n₀)] [FiniteDimensional k (Cohomology S.X₂ n₁)] :
+    FiniteDimensional k (Cohomology S.X₁ n₁) := by
+  have hex : Function.Exact (cohomologyδBaseLinear k X hS n₀ n₁ h)
+      (cohomologyMapBaseLinear k X S.f n₁) := by
+    intro x
+    rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
+    exact exact_cohomologyδ_cohomologyMap hS n₀ n₁ h x
+  exact finiteDimensional_of_exact hex
+
+end Field
 
 end Scheme.Modules
 

@@ -8,10 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Immersion
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 
 /-!
-# Composing immersions with diffeomorphisms
+# Composing immersions with diffeomorphisms, and immersions into finite dimensions
 
 Mathlib defines `Manifold.IsImmersion` by a normal form in charts — `f` looks like `u ↦ (u, 0)`
 for suitable charts of the source and the target — and lists `IsImmersion.comp` as a `TODO` in
@@ -39,6 +40,15 @@ both sides, in order to apply the rule to `e.symm` as well.
   `Manifold.IsImmersionOfComplement` counterparts and the `_iff` companions of all of them:
   immersions are stable under composition with a diffeomorphism on either side.
 * `TauCeti.isImmersion_diffeomorph`: a diffeomorphism is an immersion.
+* `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
+  an immersion exactly when it is an immersion at every point.
+
+`Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
+local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
+converse of that lemma fails for infinite-dimensional targets. When the target model is
+finite-dimensional, every complement of the source model has the same finite dimension, so any
+two of them are isomorphic and pointwise immersions assemble to an immersion. This makes being
+an immersion local, as needed to glue immersions defined on the pieces of an open cover.
 
 ## References
 
@@ -279,5 +289,45 @@ namespace nested in `TauCeti` would break dot notation on Mathlib's type. -/
 theorem isImmersion_diffeomorph [IsManifold I n M] [IsManifold I n M'] (e : M ≃ₘ^n⟮I, I⟯ M') :
     IsImmersion I I n e :=
   (isImmersion_diffeomorph_comp (IsImmersion.id (I := I) (n := n) (M := M)) e).congr rfl
+
+/-! ### Immersions into finite-dimensional models -/
+
+section FiniteDimensional
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
+
+/-- Over a complete field, two complements of the same normed space `E` in a finite-dimensional
+normed space `E'` are continuously linearly isomorphic: both have dimension
+`finrank E' - finrank E`. -/
+theorem nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    (e : (E × F) ≃L[𝕜] E') (e' : (E × F') ≃L[𝕜] E') : Nonempty (F ≃L[𝕜] F') := by
+  have : FiniteDimensional 𝕜 (E × F) := e.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional 𝕜 (E × F') := e'.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional 𝕜 F :=
+    .of_injective (LinearMap.inr 𝕜 E F) LinearMap.inr_injective
+  have : FiniteDimensional 𝕜 F' :=
+    .of_injective (LinearMap.inr 𝕜 E F') LinearMap.inr_injective
+  have : FiniteDimensional 𝕜 E :=
+    .of_injective (LinearMap.inl 𝕜 E F) LinearMap.inl_injective
+  apply FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
+  have h := e.toLinearEquiv.finrank_eq.trans e'.toLinearEquiv.finrank_eq.symm
+  rw [Module.finrank_prod, Module.finrank_prod] at h
+  omega
+
+/-- For a finite-dimensional target model, being an immersion is a pointwise condition: the
+complements at different points are isomorphic, so they can be replaced by a single one. -/
+theorem isImmersion_iff_forall_isImmersionAt :
+    IsImmersion I J n f ↔ ∀ x, IsImmersionAt I J n f x := by
+  refine ⟨fun h x => h.isImmersionAt x, fun h => ?_⟩
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · exact IsImmersionOfComplement.isImmersion (F := E') fun x => isEmptyElim x
+  refine IsImmersionOfComplement.isImmersion (F := (h x₀).complement) fun x => ?_
+  obtain ⟨e⟩ := nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv
+    (h x).isImmersionAtOfComplement_complement.equiv
+    (h x₀).isImmersionAtOfComplement_complement.equiv
+  exact (h x).isImmersionAtOfComplement_complement.trans_F e
+
+end FiniteDimensional
 
 end TauCeti

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.Petersson.Basic
-public import TauCeti.GroupTheory.Index
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.NumberTheory.ModularForms.WithCenter
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
@@ -48,6 +48,8 @@ positive-definite Hermitian form is all that the adjoint theory downstream needs
   every form by one and the same unimodular constant.
 * `CuspForm.peterssonInner_slash_of_mem_withCenter`: the summand is independent of the coset
   representative, which is what makes the sum well defined.
+* `CuspForm.peterssonInner_slash_inv_out`: the same, for the chosen representative of the coset of
+  an arbitrary `δ`, the form in which the sum is reindexed.
 * `CuspForm.peterssonInnerCosets_conj_symm`: Hermitian symmetry.
 * `CuspForm.peterssonInnerCosets_add_left`/`_right`, `_smul_right`, `_smul_left`:
   sesquilinearity.
@@ -171,6 +173,23 @@ theorem peterssonInner_slash_of_mem_withCenter
     UpperHalfPlane.peterssonInner k fd (⇑f ∣[k] γ) (⇑g ∣[k] γ) = peterssonInnerFd f g := by
   simpa [SlashAction.slash_one, peterssonInnerFd_def] using
     peterssonInner_slash_slash_of_mem_withCenter f g hγ 1
+
+omit [Γ.FiniteIndex] in
+/-- **The summand of the Petersson product is a function of the coset.** Replacing the chosen
+representative `q.out` of a coset by any other element of it does not change the level-one-domain
+pairing of the correspondingly slashed forms. This is the form in which the defining sum of
+`peterssonInnerCosets` is reindexed along a bijection onto the coset space. -/
+theorem peterssonInner_slash_inv_out (f g : CuspForm (Γ.map (mapGL ℝ)) k) (δ : SL(2, ℤ)) :
+    UpperHalfPlane.peterssonInner k fd
+        (⇑f ∣[k] ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹)
+        (⇑g ∣[k] ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹) =
+      UpperHalfPlane.peterssonInner k fd (⇑f ∣[k] δ⁻¹) (⇑g ∣[k] δ⁻¹) := by
+  have hmem : ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ * δ ∈ Γ.withCenter :=
+    QuotientGroup.eq.mp (Quotient.out_eq _)
+  have h := peterssonInner_slash_slash_of_mem_withCenter f g hmem δ⁻¹
+  have hcancel : ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ * δ * δ⁻¹ =
+      ((QuotientGroup.mk δ : SL(2, ℤ) ⧸ Γ.withCenter).out)⁻¹ := by group
+  rwa [← SlashAction.slash_mul, ← SlashAction.slash_mul, hcancel] at h
 
 omit [Γ.FiniteIndex] in
 /-- Each summand of the self-pairing is a non-negative real: the integrand is

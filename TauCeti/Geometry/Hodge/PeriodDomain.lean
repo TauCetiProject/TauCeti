@@ -113,14 +113,14 @@ prescribed Hodge numbers sum to the dimension of the complexification.
 This is the numerical shadow of the Hodge decomposition `V_ℂ = ⨁_p H^{p,n-p}`. -/
 theorem finsum_h_eq_finrank (D : PeriodDomain.Point hℂ n Qint htype) :
     ∑ᶠ p, htype.h p = Module.finrank ℂ Vℂ := by
-  have := finite_of_isBaseChange hℂ
+  have := hℂ.finite
   rw [← HodgeStructureOn.finsum_hodgeNumber_eq_finrank D.hs]
   exact finsum_congr fun p ↦ (D.hodge_numbers p).symm
 
 /-- The prescribed Hodge numbers of a point of the period domain sum to the rank of the lattice. -/
 theorem finsum_h_eq_finrank_lattice (D : PeriodDomain.Point hℂ n Qint htype) :
     ∑ᶠ p, htype.h p = Module.finrank ℤ V := by
-  rw [D.finsum_h_eq_finrank, finrank_of_isBaseChange hℂ]
+  rw [D.finsum_h_eq_finrank, hℂ.finrank_eq_of_free]
 
 end PeriodDomain.Point
 

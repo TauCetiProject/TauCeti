@@ -63,6 +63,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.card_le_card_elementaryTwoQuotient_of_forall_sq_eq_one` and
   `TauCeti.le_twoRank_of_card_eq_two_pow`: a subgroup of exponent dividing two bounds the
   elementary-2 quotient, hence the 2-rank, from below.
+* `TauCeti.sq_eq_one_of_card_elementaryTwoQuotient_eq_card`: a finite group as large as `G/G²`
+  has exponent dividing two.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`, and `TauCeti.twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow` its
   inversion (`|G/G²| = 2 ^ n → twoRank G = n`).
@@ -75,6 +77,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow`: a surjection with a kernel of order at
   most `2 ^ n` drops the 2-rank by at most `n`, via
   `MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker`.
+* `MonoidHom.twoRank_eq_twoRank_iff_ker_le_square`: a surjection keeps the 2-rank exactly when its
+  kernel consists of squares.
 -/
 
 public section
@@ -459,6 +463,16 @@ theorem le_twoRank_of_card_eq_two_pow {H : Subgroup G} {r : ℕ} (hH : ∀ x ∈
   rw [hcard, card_elementaryTwoQuotient_eq_two_pow_twoRank] at h
   exact (Nat.pow_le_pow_iff_right one_lt_two).mp h
 
+variable {G} in
+/-- **A finite commutative group as large as its maximal elementary-2 quotient has exponent
+dividing two.** The 2-torsion `{g | g² = 1}` is equinumerous with `G / G²`
+(`card_elementaryTwoQuotient_eq_card_twoTorsion`), so it then exhausts `G`. -/
+theorem sq_eq_one_of_card_elementaryTwoQuotient_eq_card
+    (h : Nat.card (ElementaryTwoQuotient G) = Nat.card G) (g : G) : g ^ 2 = 1 := by
+  rw [card_elementaryTwoQuotient_eq_card_twoTorsion, ← Set.coe_ofPred, Nat.card_coe_set_eq,
+    ← Set.eq_univ_iff_ncard] at h
+  simpa only [Set.mem_ofPred_eq] using Set.eq_univ_iff_forall.mp h g
+
 end FiniteCardinality
 
 variable {G}
@@ -531,5 +545,25 @@ theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
   rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
   rw [twoRank_def, twoRank_def, ← hrn]
   omega
+
+/-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a
+surjective `f : G →* H`, the groups `G` and `H` have the same 2-rank if and only if every element
+of `ker f` is a square in `G`. -/
+theorem _root_.MonoidHom.twoRank_eq_twoRank_iff_ker_le_square
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H)
+    (hf : Function.Surjective f) :
+    twoRank H = twoRank G ↔ MonoidHom.ker f ≤ Subgroup.square G := by
+  have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
+  rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
+  rw [twoRank_def, twoRank_def, ← hrn, left_eq_add, Submodule.finrank_eq_zero,
+    LinearMap.ker_eq_bot']
+  constructor
+  · intro h g hg
+    rw [Subgroup.mem_square, ← elementaryTwoQuotientMk_eq_zero_iff]
+    apply h
+    rw [elementaryTwoQuotientMap_mk, MonoidHom.mem_ker.mp hg, elementaryTwoQuotientMk_one]
+  · intro h x hx
+    obtain ⟨g, hg, rfl⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf hx
+    exact (elementaryTwoQuotientMk_eq_zero_iff g).mpr (h hg)
 
 end TauCeti

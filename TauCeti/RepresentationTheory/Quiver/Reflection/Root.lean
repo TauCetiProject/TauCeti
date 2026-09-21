@@ -144,7 +144,8 @@ theorem titsForm_dimVector_eq_one_of_isZero_reflectionFunctorList :
               (titsForm_reflect (V := V) i _).symm
           _ = 1 := ih
       · -- The stage annihilates: the representation is the vertex simple at the sink.
-        obtain ⟨y, hy, hspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hi hM hsub
+        obtain ⟨y, hy, hspan⟩ :=
+          exists_ne_zero_span_eq_top_of_forall_subsingleton hi.path_self_eq_nil hM hsub
         have hone : @dimVector k V fld q M i = 1 := by
           rw [dimVector_apply]
           exact (finrank_eq_one_iff_of_nonzero (K := k) y hy).mpr hspan

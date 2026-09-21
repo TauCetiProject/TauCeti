@@ -48,6 +48,8 @@ to Eisenstein*, §2.2.
 * `TauCeti.Multiquadratic.primeDiscriminantCharFun_mod_right'`: it is a character modulo `|P|`.
 * `TauCeti.Multiquadratic.primeDiscriminantCharFun_eq_legendreSym`: at an odd prime `q` its value
   is the Legendre symbol `legendreSym q P`.
+* `TauCeti.Multiquadratic.primeDiscriminantCharFun_two`: its value at `2` is `χ₈ P`.
+* `TauCeti.Multiquadratic.primeDiscriminantCharFun_neg_one`: its value at `-1` is the sign of `P`.
 * `TauCeti.Multiquadratic.exists_primeDiscriminantCharFun_eq_neg_one` and
   `TauCeti.Multiquadratic.exists_primeDiscriminantCharFun_eq`: the character is nontrivial, so it
   takes each of the values `±1` at some natural number.
@@ -227,6 +229,39 @@ theorem primeDiscriminantCharFun_eq_legendreSym {P : ℤ} (hP : IsPrimeDiscrimin
     rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd,
       legendreSym_oddPrimeDiscriminant_eq_legendreSym hp2 hq,
       jacobiSym.legendreSym.to_jacobiSym]
+
+/-- **The character of a prime discriminant at `2` is `χ₈` of the discriminant.** This is the
+supplementary law `(2 / p) = χ₈ p` rewritten in terms of `p* = ±p`, using that `χ₈` is even; at
+the even prime discriminants both sides vanish. For odd `P`, whose residue modulo `4` is `1`, it
+says that the character is `1` at `2` exactly when `P ≡ 1 (mod 8)`. -/
+theorem primeDiscriminantCharFun_two {P : ℤ} (hP : IsPrimeDiscriminant P) :
+    primeDiscriminantCharFun P 2 = ZMod.χ₈ (P : ZMod 8) := by
+  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, hp, hodd, rfl⟩
+  · rcases hev with rfl | rfl | rfl <;> decide
+  · rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd, jacobiSym.at_two hodd,
+      ZMod.χ₈_nat_eq_if_mod_eight, ZMod.χ₈_int_eq_if_mod_eight, oddPrimeDiscriminant_def]
+    split_ifs <;> omega
+
+/-- **The character of a prime discriminant at `-1` is the sign of the discriminant.** In
+particular, the character attached to `P` is odd exactly when `P` is negative. -/
+theorem primeDiscriminantCharFun_neg_one {P : ℤ} (hP : IsPrimeDiscriminant P) :
+    primeDiscriminantCharFun P (-1) = P.sign := by
+  rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, hp, hodd, rfl⟩
+  · rcases hev with rfl | rfl | rfl
+    · rw [primeDiscriminantCharFun_neg_four, ZMod.χ₄_int_eq_if_mod_four]
+      rfl
+    · rw [primeDiscriminantCharFun_eight, ZMod.χ₈_int_eq_if_mod_eight]
+      rfl
+    · rw [primeDiscriminantCharFun_neg_eight, ZMod.χ₈'_int_eq_if_mod_eight]
+      rfl
+  · rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd, jacobiSym.at_neg_one hodd,
+      ZMod.χ₄_nat_eq_if_mod_four, oddPrimeDiscriminant_def]
+    have hp0 : (0 : ℤ) < p := by exact_mod_cast hp.pos
+    have h2 : p % 2 ≠ 0 := by have := Nat.odd_iff.mp hodd; omega
+    simp only [h2, ↓reduceIte]
+    split_ifs
+    · rw [Int.sign_eq_one_of_pos hp0]
+    · rw [Int.sign_neg, Int.sign_eq_one_of_pos hp0]
 
 /-! ### Nontriviality -/
 

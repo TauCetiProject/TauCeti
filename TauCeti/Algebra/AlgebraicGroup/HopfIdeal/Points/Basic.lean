@@ -89,6 +89,18 @@ lemma quotientPointsHom_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
   rw [quotientPointsHom_apply, ofConv_toConv, AlgHom.comp_apply]
   exact congrArg f.ofConv (mkQuotient_apply H I h)
 
+/-- Mapping a point along a coordinate morphism that factors through a Hopf-ideal quotient is
+the same as first mapping it to the quotient and then including the quotient point into the
+ambient point group. -/
+lemma mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+    {H K : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
+    (f : quotient H I ⟶ K) (g : H ⟶ K) (hfg : mkQuotient H I ≫ f = g)
+    (A : CommAlgCat.{w} R) (q : HopfAlgebra.points (R := R) (H := K) A) :
+    (mapPointsFunctor g).app A q =
+      quotientPointsHom H I A ((mapPointsFunctor f).app A q) := by
+  rw [quotientPointsHom, ← hfg, mapPointsFunctor_comp]
+  rfl
+
 /-- The map from quotient points to ambient points is injective. -/
 lemma quotientPointsHom_injective (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :

@@ -184,7 +184,7 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
   have halg : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z :=
     RingHom.congr_fun (RingHom.algebraMap_toAlgebra φ.fieldPullback.toRingHom)
   have : IsScalarTower F W₂.FunctionField W₁.FunctionField :=
-    IsScalarTower.of_algebraMap_eq fun c ↦ (φ.fieldPullback.commutes c).symm
+    φ.isScalarTower_of_algebraMap_eq_fieldPullback halg
   have : FiniteDimensional W₂.FunctionField W₁.FunctionField :=
     φ.finiteDimensional_functionField halg
   -- Under this algebra structure, `KaehlerDifferential.map` is the pullback of differentials.

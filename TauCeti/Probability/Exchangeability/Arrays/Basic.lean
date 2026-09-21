@@ -50,7 +50,9 @@ this subtree meets the representation theory; the value space of the sequence is
 * `TauCeti.Probability.SeparatelyExchangeable.jointlyExchangeable` — the implication between the
   two symmetries.
 * `TauCeti.Probability.separatelyExchangeable_iff_map_pairReindex` — the bridge to the array law:
-  separate exchangeability is invariance of the law on `ℕ × ℕ → α` under every pair reindexing.
+  separate exchangeability is invariance of the law on `ℕ × ℕ → α` under every pair reindexing,
+  with `TauCeti.Probability.SeparatelyExchangeable.measurePreserving_pairReindex` its
+  measure-preserving form.
 * `TauCeti.Probability.map_uncurry_pathLaw_arrayRow` — the array law is the uncurried path law of
   the row process.
 * `TauCeti.Probability.separatelyExchangeable_iff_axes` — separate exchangeability splits into
@@ -117,6 +119,12 @@ def pairReindex (σ τ : Equiv.Perm ℕ) (x : ℕ × ℕ → α) : ℕ × ℕ �
 theorem pairReindex_apply (σ τ : Equiv.Perm ℕ) (x : ℕ × ℕ → α) (p : ℕ × ℕ) :
     pairReindex σ τ x p = x (σ p.1, τ p.2) :=
   (rfl)
+
+/-- The function form of `pairReindex`. -/
+theorem pairReindex_def (σ τ : Equiv.Perm ℕ) :
+    pairReindex (α := α) σ τ = fun x p => x (σ p.1, τ p.2) := by
+  funext x p
+  exact pairReindex_apply σ τ x p
 
 /-- Reindexing both axes twice composes the corresponding permutations on each axis. -/
 @[simp]
@@ -271,6 +279,28 @@ theorem separatelyExchangeable_iff_map_pairReindex {μ : Measure Ω} {X : ℕ ×
       funext ω p
       rw [pairReindex_apply]
     rw [map_map_array hX (measurable_pairReindex σ τ), hread]
+
+/-- **A separately exchangeable array law is preserved by every pair reindexing** of array path
+space. This is the measure-preserving form of `separatelyExchangeable_iff_map_pairReindex` for the
+coordinate array. -/
+theorem SeparatelyExchangeable.measurePreserving_pairReindex
+    {ρ : Measure (ℕ × ℕ → α)} (hρ : SeparatelyExchangeable ρ fun p x => x p)
+    (σ τ : Equiv.Perm ℕ) : MeasurePreserving (pairReindex σ τ) ρ ρ := by
+  refine ⟨measurable_pairReindex σ τ, ?_⟩
+  simpa only [← pairReindex_def, Measure.map_id'] using hρ σ τ
+
+/-- **Joint exchangeability is a property of the array law**: an array is jointly exchangeable
+exactly when the coordinate array under its law on `ℕ × ℕ → α` is. -/
+theorem jointlyExchangeable_map_iff {μ : Measure Ω} {X : ℕ × ℕ → Ω → α}
+    (hX : ∀ p, AEMeasurable (X p) μ) :
+    JointlyExchangeable (μ.map fun ω p => X p ω) (fun p x => x p) ↔ JointlyExchangeable μ X :=
+  forall_congr' fun σ => by
+    have hread : (fun ω => pairReindex σ σ fun p => X p ω) = fun ω p => X (σ p.1, σ p.2) ω := by
+      funext ω p
+      rw [pairReindex_apply]
+    beta_reduce
+    rw [← pairReindex_def, map_map_array hX (measurable_pairReindex σ σ), hread,
+      Measure.map_id']
 
 /-- **An array law is the uncurried path law of its row process.** A statement about the law of the
 row process therefore transports to one about the law of the array. -/

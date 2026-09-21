@@ -29,6 +29,8 @@ Lie-algebra theory.
 
 ## Main results
 
+* `Matrix.BlockTriangular.det_eq_prod_diag` — a matrix that is block triangular for an injective
+  ranking of its indices has the product of its diagonal entries as determinant.
 * `Matrix.mul_apply_diag_of_isUpperTriangular` — the diagonal of a product of upper-triangular
   matrices is the pointwise product of the diagonals.
 * `Matrix.mul_apply_diag_of_isLowerTriangular` — the corresponding formula for lower-triangular
@@ -37,6 +39,8 @@ Lie-algebra theory.
   matrix with nonnegative diagonal is the identity.
 * `Matrix.IsLowerTriangular.eq_of_mul_transpose_self_eq` — lower-triangular matrices with positive
   diagonal are determined by their product with their transpose.
+* `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
+  lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
   matrix is the corresponding power of the diagonal entry.
 * `Matrix.isUpperUnitriangular_geom_sum_of_isUpperTriangular_of_diag_eq_zero` — the geometric
@@ -65,6 +69,16 @@ public section
 namespace Matrix
 
 variable {R : Type*} {m : Type*}
+
+/-- A matrix that is block triangular for an injective ranking of its indices has the product of
+its diagonal entries as determinant: an injective ranking cuts it into singleton blocks. -/
+theorem BlockTriangular.det_eq_prod_diag {ι α S : Type*} [Fintype ι] [DecidableEq ι]
+    [LinearOrder α] [CommRing S] {N : Matrix ι ι S} {b : ι → α} (hN : N.BlockTriangular b)
+    (hb : Function.Injective b) : N.det = ∏ i, N i i := by
+  rw [hN.det, Finset.prod_image fun x _ y _ hxy ↦ hb hxy]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.2)⟩
+  exact Matrix.det_unique _
 
 /-- A square matrix is upper unitriangular when it is upper triangular and every diagonal entry
 is one. -/
@@ -206,10 +220,38 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
 
-/-- A lower-triangular matrix over an ordered field with nonnegative diagonal whose product with
-its transpose is the identity is itself the identity. -/
+/-- **The leading principal submatrix of a lower-triangular Gram matrix is a Gram matrix.** The
+first `q` rows of a lower-triangular matrix vanish outside their first `q` columns, so the leading
+`q × q` block of `L * Lᵀ` sees only the leading `q × q` block of `L`. -/
+theorem IsLowerTriangular.submatrix_castLE_mul_transpose {p q : ℕ}
+    {L : Matrix (Fin p) (Fin p) R} (hL : L.IsLowerTriangular) (hqp : q ≤ p) :
+    (L * Lᵀ).submatrix (Fin.castLE hqp) (Fin.castLE hqp) =
+      L.submatrix (Fin.castLE hqp) (Fin.castLE hqp) *
+        (L.submatrix (Fin.castLE hqp) (Fin.castLE hqp))ᵀ := by
+  ext i j
+  simp only [Matrix.submatrix_apply, Matrix.mul_apply, Matrix.transpose_apply]
+  have hvanish : ∀ k ∈ (Finset.univ : Finset (Fin p)),
+      k ∉ Finset.univ.image (Fin.castLE hqp) →
+      L (Fin.castLE hqp i) k * L (Fin.castLE hqp j) k = 0 := by
+    intro k _ hk
+    have hkq : q ≤ (k : ℕ) := by
+      by_contra hcon
+      exact hk (Finset.mem_image.2
+        ⟨⟨(k : ℕ), not_le.1 hcon⟩, Finset.mem_univ _, by ext; simp⟩)
+    have hlt : Fin.castLE hqp i < k := by
+      have hi : ((Fin.castLE hqp i : Fin p) : ℕ) = (i : ℕ) := rfl
+      have := i.isLt
+      simp only [Fin.lt_def, hi]
+      omega
+    have h0 : L (Fin.castLE hqp i) k = 0 := hL hlt
+    rw [h0, zero_mul]
+  rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.image (Fin.castLE hqp))) hvanish,
+    Finset.sum_image fun x _ y _ hxy => Fin.castLE_injective hqp hxy]
+
+/-- A lower-triangular matrix over a linearly ordered commutative ring with nonnegative diagonal
+whose product with its transpose is the identity is itself the identity. -/
 theorem IsLowerTriangular.eq_one_of_mul_transpose_self_eq_one
-    {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K]
     {Q : Matrix n n K} (hQ : Q.IsLowerTriangular) (hQnonneg : ∀ i, 0 ≤ Q i i)
     (hQorth : Q * Qᵀ = 1) : Q = 1 := by
   let _ : Invertible Q := invertibleOfRightInverse Q Qᵀ hQorth

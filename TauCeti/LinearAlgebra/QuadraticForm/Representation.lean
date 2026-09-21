@@ -14,7 +14,8 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 This file defines both representation of values by a quadratic map and representation of one
 quadratic map by another through an injective isometry.  It gives the latter relation its basic
-reflexivity, transitivity, and equivalence-invariance API.
+reflexivity, transitivity, and equivalence-invariance API, from which anisotropy is read off as
+an isometry invariant.
 
 For scalar values, it defines the represented-unit value set, proves its elementary square-class
 invariance, and gives the criterion that, for a form with trivial radical, representing a unit is
@@ -54,6 +55,11 @@ theorem _root_.QuadraticMap.isRepresentedBy_iff {M' : Type*}
     exact ⟨f.toLinearMap, hf, f.map_app⟩
   · rintro ⟨f, hf, hQ⟩
     exact ⟨⟨f, hQ⟩, hf⟩
+
+/-- The restriction of a quadratic map to a submodule is represented by the ambient map. -/
+theorem _root_.QuadraticMap.restrict_isRepresentedBy (Q : QuadraticMap R M N)
+    (U : Submodule R M) : (Q.restrict U).IsRepresentedBy Q :=
+  (isRepresentedBy_iff _ _).mpr ⟨U.subtype, Subtype.coe_injective, fun _ ↦ rfl⟩
 
 /-- Every quadratic map is represented by itself. -/
 @[refl]
@@ -102,6 +108,15 @@ theorem _root_.QuadraticMap.IsRepresentedBy.not_anisotropic
   rw [QuadraticMap.not_anisotropic_iff_exists] at hQ₁ ⊢
   obtain ⟨x, hx, hQx⟩ := hQ₁
   exact ⟨f x, fun hzero ↦ hx (hf (by simpa using hzero)), (f.map_app x).trans hQx⟩
+
+/-- Anisotropy is an invariant of isometry. -/
+theorem _root_.QuadraticMap.Equivalent.anisotropic_iff
+    {M₁ M₂ : Type*} [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N} (h : Q₁.Equivalent Q₂) :
+    Q₁.Anisotropic ↔ Q₂.Anisotropic :=
+  ⟨fun h₁ => not_not.mp fun h₂ => h.symm.isRepresentedBy.not_anisotropic h₂ h₁,
+    fun h₂ => not_not.mp fun h₁ => h.isRepresentedBy.not_anisotropic h₁ h₂⟩
 
 /-- Replacing either quadratic map by an equivalent one preserves representation. -/
 theorem _root_.QuadraticMap.Equivalent.isRepresentedBy_congr
@@ -236,6 +251,13 @@ theorem _root_.QuadraticMap.represents_of_nondegenerate_of_not_anisotropic
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
     Represents Q a :=
   represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
+
+/-- Over a field, a quadratic form representing a nonzero scalar `a` represents every `b` for
+which `b / a` is a square. -/
+theorem _root_.QuadraticMap.Represents.of_isSquare_div {Q : QuadraticForm K V} {a b : K}
+    (h : Represents Q a) (ha : a ≠ 0) (hab : IsSquare (b / a)) : Represents Q b := by
+  obtain ⟨r, hr⟩ := hab
+  simpa only [← hr, smul_eq_mul, div_mul_cancel₀ b ha] using h.smul_mul_self r
 
 /-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
 is one. -/

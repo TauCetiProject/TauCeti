@@ -127,7 +127,7 @@ theorem algebraMap_completion_weightedRestrictedSubring_apply {T : Fin k → Set
       = ((weightedC T hT a : weightedRestrictedSubring T hT) :
         UniformSpace.Completion (weightedRestrictedSubring T hT)) := by
   rw [UniformSpace.Completion.algebraMap_def]
-  exact congrArg _ (Subtype.ext (by rw [coe_algebraMap_weightedRestrictedSubring, coe_weightedC]))
+  exact congrArg _ (Subtype.ext (by simp))
 
 /-- **Scalar multiplication on the completion of a weighted restricted power-series ring is
 jointly continuous**: `A⟨X⟩_T` is a topological `A`-algebra. Results about topological modules

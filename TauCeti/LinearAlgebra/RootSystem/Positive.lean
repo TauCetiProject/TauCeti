@@ -50,7 +50,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   indecomposable positive roots: those that are not the sum of two positive roots.
 * `RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
   coroot is positive for that base, and `TauCeti.posRoots_flip` restates it for the sets.
-* `TauCeti.root_mem_posRootCone_of_mem_posRoots` says the positive roots lie in `Q⁺`,
+* `TauCeti.mem_posRoots_iff_root_mem_posRootCone` says the positive roots are exactly the roots
+  lying in `Q⁺`,
   `TauCeti.isPointed_posRootCone` says `Q⁺` is pointed,
   `TauCeti.eq_zero_of_add_eq_zero_of_mem_posRootCone` is the same fact as a cancellation rule,
   `TauCeti.root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone` specializes that to a positive root
@@ -69,7 +70,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
-  nonnegative integer combination of the simple coroots.
+  nonnegative integer combination of the simple coroots, and
+  `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
 
 ## Implementation notes
 
@@ -291,6 +293,16 @@ theorem root_mem_posRootCone_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) 
     P.root i ∈ posRootCone P b :=
   let ⟨f, _, hf⟩ := exists_root_eq_sum_nat_of_mem_posRoots P b hi
   (mem_posRootCone P b).mpr ⟨f, hf⟩
+
+/-- **A root is positive exactly when it lies in the positive root cone.** -/
+theorem mem_posRoots_iff_root_mem_posRootCone {i : ι} :
+    i ∈ posRoots P b ↔ P.root i ∈ posRootCone P b := by
+  refine ⟨root_mem_posRootCone_of_mem_posRoots P b, fun hi => ?_⟩
+  obtain ⟨f, hf⟩ := (mem_posRootCone P b).mp hi
+  have hroot : P.root i = ∑ j ∈ b.support, (f j : ℤ) • P.root j := by
+    simp only [hf, natCast_zsmul]
+  rw [mem_posRoots, RootPairing.Base.isPos_iff', b.height_eq_sum hroot]
+  exact Finset.sum_nonneg fun j _ => Int.natCast_nonneg (f j)
 
 omit [CharZero R] in
 /-- **The height of a nonnegative integer combination of the simple roots** is the total number of
@@ -672,5 +684,24 @@ theorem exists_coroot_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P
   obtain ⟨f, hf, hsum⟩ := exists_root_eq_sum_nat_of_mem_posRoots P.flip b.flip
     (by rw [posRoots_flip]; exact hi)
   exact ⟨f, by simpa using hf, by simpa using hsum⟩
+
+/-- A positive coroot functional is a nonnegative integer combination of the simple coroot
+functionals, with at least one simple coroot genuinely occurring. -/
+theorem exists_coroot'_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
+    ∃ f : ι → ℕ, (∃ j ∈ b.support, f j ≠ 0) ∧
+      P.coroot' i = ∑ j ∈ b.support, (f j : R) • P.coroot' j := by
+  obtain ⟨f, -, hsum⟩ := exists_coroot_eq_sum_nat_of_mem_posRoots P b hi
+  refine ⟨f, ?_, ?_⟩
+  · by_contra hcon
+    push Not at hcon
+    have : NeZero (2 : R) := ⟨by exact_mod_cast (by norm_num : (2 : ℕ) ≠ 0)⟩
+    refine P.ne_zero' i ?_
+    rw [hsum]
+    exact Finset.sum_eq_zero fun j hj ↦ by simp [hcon j hj]
+  · -- `RootPairing.coroot'` is an abbreviation for the transpose of `P.toLinearMap` applied to a
+    -- coroot, so unfolding it is what carries the expansion of `P.coroot i` to the dual side.
+    simp only [_root_.RootPairing.coroot']
+    rw [hsum, map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by simp [Nat.cast_smul_eq_nsmul]
 
 end TauCeti

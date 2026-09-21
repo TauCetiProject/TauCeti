@@ -48,9 +48,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   torsion subgroup.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
-* `AddCircle.nsmul_coe_period_div`: scaling the class of `p / n` by a divisor `d` of `n` gives
-  the class of `p / (n / d)`; for positive `n` these are the canonical generators of the `n`- and
-  the `n / d`-torsion.
+* `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
+  class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`; for positive `n`
+  these are the canonical generators of the `n`- and the `n / d`-torsion.
 * `AddCircle.natCard_eq_of_injective_of_range_eq_torsionBy`,
   `AddCircle.existsUnique_apply_eq_coe_period_div`,
   `AddCircle.exists_zsmul_eq_of_apply_eq_coe_period_div`,
@@ -60,6 +60,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / n` as a distinguished generator.
 * `AddCircle.isAddTorsion_rat`: a rational circle is a torsion group, so its torsion subgroups
   exhaust it (`AddCircle.exists_mem_torsionBy_rat`).
+* `ZMod.toRatAddCircle` and `ZMod.toRatAddCircle_range`: the homomorphism from `ℤ/n` to `ℚ/ℤ`
+  sending the class of an integer `k` to the class of `k / n`; for nonzero `n`, it is an
+  injection onto the `n`-torsion.
 
 ## References
 
@@ -96,6 +99,22 @@ theorem zsmul_coe_eq_zero {k c : ℤ} {x : ℚ} (h : (k : ℚ) * x = c) :
   refine Submodule.mem_one.mpr ⟨c, ?_⟩
   rw [zsmul_eq_mul, h]
   exact eq_intCast (algebraMap ℤ ℚ) c
+
+/-- A fraction with nonzero natural denominator vanishes in `ℚ/ℤ` exactly when the denominator
+divides the numerator. -/
+theorem coe_intCast_div_natCast_eq_zero_iff {n : ℕ} (hn : n ≠ 0) (k : ℤ) :
+    ((k / n : ℚ) : AddCircle (1 : ℚ)) = 0 ↔ (n : ℤ) ∣ k := by
+  have hn' : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  rw [coe_eq_zero_iff_mem_one, Submodule.mem_one]
+  simp only [eq_intCast]
+  constructor
+  · rintro ⟨c, hc⟩
+    refine ⟨c, ?_⟩
+    field_simp at hc
+    have : (k : ℚ) = n * c := by rw [← hc]; ring
+    exact_mod_cast this
+  · rintro ⟨c, rfl⟩
+    exact ⟨c, by push_cast; field_simp⟩
 
 section Finiteness
 
@@ -196,6 +215,12 @@ theorem nsmul_coe_period_div {d : ℕ} (hd : d ∣ n) :
   have key : (d : 𝕜) * (p / n) = p / ((n / d : ℕ) : 𝕜) := by
     rw [Nat.cast_div hd hd0', div_div_eq_mul_div, ← mul_div_assoc, (Nat.cast_commute d p).eq]
   rw [← coe_nsmul, nsmul_eq_mul, key]
+
+/-- If `a * d = b` with `d` positive, scaling the class of `p / b` by `d` gives the class of
+`p / a`. -/
+theorem nsmul_coe_period_div_of_mul_eq {a b d : ℕ} (h : a * d = b) (hd : 0 < d) :
+    d • ((p / b : 𝕜) : AddCircle p) = ((p / a : 𝕜) : AddCircle p) := by
+  rw [nsmul_coe_period_div p (Dvd.intro_left _ h), ← h, Nat.mul_div_cancel _ hd]
 
 end PeriodDiv
 
@@ -311,3 +336,70 @@ theorem exists_mem_torsionBy_rat (u : AddCircle p) :
 end Rat
 
 end AddCircle
+
+namespace ZMod
+
+variable (n : ℕ)
+
+/-- The homomorphism from `ℤ/n` to `ℚ/ℤ` sending the class of an integer `k` to the class of
+`k / n`. For nonzero `n`, it is an injection onto the `n`-torsion; for `n = 0`, it is the zero map.
+
+Mathlib's `ZMod.toAddCircle` is this map into the real circle `ℝ/ℤ`.  Discriminant forms and
+character modules take rational values, so the rational circle is the target used here. -/
+def toRatAddCircle : ZMod n →+ AddCircle (1 : ℚ) :=
+  ZMod.lift n ⟨zmultiplesHom (AddCircle (1 : ℚ)) (((1 / n : ℚ) : AddCircle (1 : ℚ))), by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    · exact AddCircle.zsmul_coe_eq_zero (c := 1) (by push_cast; field_simp)⟩
+
+/-- The class of an integer maps to the class of that integer divided by `n`. -/
+@[simp]
+theorem toRatAddCircle_intCast (k : ℤ) :
+    toRatAddCircle n (k : ZMod n) = ((k / n : ℚ) : AddCircle (1 : ℚ)) := by
+  have h : ((k : ℚ) / n) = k • ((1 : ℚ) / n) := by rw [zsmul_eq_mul]; ring
+  rw [toRatAddCircle, ZMod.lift_coe, zmultiplesHom_apply, h, AddCircle.coe_zsmul]
+
+/-- The class of a natural number maps to the class of that number divided by `n`. -/
+@[simp]
+theorem toRatAddCircle_natCast (k : ℕ) :
+    toRatAddCircle n (k : ZMod n) = ((k / n : ℚ) : AddCircle (1 : ℚ)) := by
+  simpa using toRatAddCircle_intCast n (k : ℤ)
+
+/-- The value of `ZMod.toRatAddCircle` on the canonical representative of a residue class. -/
+theorem toRatAddCircle_apply [NeZero n] (x : ZMod n) :
+    toRatAddCircle n x = ((x.val / n : ℚ) : AddCircle (1 : ℚ)) := by
+  have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
+  conv_lhs => rw [← hx]
+  rw [toRatAddCircle_natCast]
+
+/-- Only the zero residue has integral image in `ℚ/ℤ`. -/
+@[simp]
+theorem toRatAddCircle_eq_zero [NeZero n] {x : ZMod n} : toRatAddCircle n x = 0 ↔ x = 0 := by
+  obtain ⟨k, rfl⟩ := ZMod.intCast_surjective x
+  rw [toRatAddCircle_intCast,
+    AddCircle.coe_intCast_div_natCast_eq_zero_iff (NeZero.ne n) k,
+    ZMod.intCast_zmod_eq_zero_iff_dvd]
+
+/-- For a nonzero modulus the rational-circle character of `ℤ/n` is injective. -/
+theorem toRatAddCircle_injective [NeZero n] : Function.Injective (toRatAddCircle n) :=
+  (injective_iff_map_eq_zero (toRatAddCircle n)).mpr fun _ h ↦
+    (toRatAddCircle_eq_zero n).mp h
+
+/-- For a nonzero modulus, the image of the rational-circle character of `ℤ/n` is exactly the
+`n`-torsion of `ℚ/ℤ`. -/
+theorem toRatAddCircle_range [NeZero n] :
+    (toRatAddCircle n).range = (AddCircle (1 : ℚ))[(n : ℤ)] := by
+  ext u
+  constructor
+  · rintro ⟨x, rfl⟩
+    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul]
+    simp
+  · intro hu
+    obtain ⟨k, hk⟩ :=
+      AddCircle.exists_zsmul_eq_of_mem_torsionBy (1 : ℚ) (Nat.pos_of_ne_zero (NeZero.ne n)) hu
+    refine AddMonoidHom.mem_range.mpr ⟨(k : ZMod n), ?_⟩
+    rw [toRatAddCircle_intCast, ← hk, ← AddCircle.coe_zsmul, zsmul_eq_mul]
+    congr 1
+    ring
+
+end ZMod

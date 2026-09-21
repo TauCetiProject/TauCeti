@@ -81,7 +81,18 @@ representation is far too large for that construction.
 * `TauCeti.Sporadic.Monster.coxeterMatrix`: the explicitly numbered `Y₄₄₃` Coxeter matrix.
 * `TauCeti.Sporadic.Monster.spiderRelator`: the `Y₄₄₃` spider relation.
 * `TauCeti.Sporadic.Monster.centralInvolutionRelator`: Ivanov's element `f₃₁₂`.
+* `TauCeti.Sporadic.Monster.adjoinedRelators`: the two relators the sources adjoin to the `Y₄₄₃`
+  Coxeter relations.
 * `TauCeti.Sporadic.Monster.presentation`: the resulting finite presentation of `M`.
+
+## Main results
+
+* `TauCeti.Sporadic.Monster.length_relatorList`,
+  `TauCeti.Sporadic.Monster.presentation_matchesMetadata`,
+  `TauCeti.Sporadic.Monster.presentation_totalLength` and
+  `TauCeti.Sporadic.Monster.presentation_relatorsCyclicallyReduced`: the transcription checks.
+* `TauCeti.Sporadic.Monster.mulEquivPresentedGroupCoxeterAppend`: the row presents the Coxeter
+  group of the `Y₄₄₃` diagram cut down by the spider and central relations.
 
 ## References
 
@@ -166,15 +177,26 @@ theorem centralInvolutionRelator_def : centralInvolutionRelator =
     .pow (.gen 0 ⬝ .gen 9 ⬝ .gen 10 ⬝ .gen 11 ⬝ .gen 1 ⬝ .gen 2 ⬝ .gen 5) 9 := by
   rw [centralInvolutionRelator]
 
+/-- The two relators the sources adjoin to the `Y₄₄₃` Coxeter relations: Bray's spider relator,
+which cuts the Coxeter group down to `M × 2`, and Ivanov's central relator, which cuts that down
+to `M`. -/
+def adjoinedRelators : List (Relator (Fin 12)) := [spiderRelator, centralInvolutionRelator]
+
+/-- The adjoined-relator list, in source order. The body is sealed, so this equation is what lets
+a consumer see that the two words adjoined to the Coxeter relations are exactly Bray's spider
+relator and Ivanov's central relator. -/
+@[simp]
+theorem adjoinedRelators_def : adjoinedRelators = [spiderRelator, centralInvolutionRelator] := by
+  rw [adjoinedRelators]
+
 /-- The eighty relators of the Monster presentation: the `Y₄₄₃` Coxeter relations, followed by
 the spider and central-involution relators. -/
 def relatorList : List (Relator (Fin 12)) :=
-  coxeterRelators coxeterMatrix ++ [spiderRelator, centralInvolutionRelator]
+  coxeterRelators coxeterMatrix ++ adjoinedRelators
 
-/-- The relator list decomposes into the `Y₄₄₃` Coxeter relations, the spider relator, and the
-central-involution relator. This is the unfolding lemma for the sealed body. -/
-theorem relatorList_def : relatorList =
-    coxeterRelators coxeterMatrix ++ [spiderRelator, centralInvolutionRelator] := by
+/-- The relator list decomposes into the `Y₄₄₃` Coxeter relations and the two adjoined relators.
+This is the unfolding lemma for the sealed body. -/
+theorem relatorList_def : relatorList = coxeterRelators coxeterMatrix ++ adjoinedRelators := by
   rw [relatorList]
 
 /-! ### The presentation row and its audit interface -/
@@ -273,7 +295,7 @@ theorem length_coxeterRelators : (coxeterRelators coxeterMatrix).length = 78 := 
 
 /-- The full Monster presentation has eighty relators. -/
 theorem length_relatorList : relatorList.length = 80 := by
-  simp [relatorList_def]
+  simp [relatorList_def, adjoinedRelators_def]
   norm_num [Nat.choose]
 
 /-- The generator and relator counts recorded for the Monster agree with the transcribed data. -/
@@ -310,8 +332,8 @@ theorem length_centralInvolutionRelator : centralInvolutionRelator.toWord.length
 /-- The compiled relators of the Monster presentation contain `463` signed letters in total. -/
 theorem presentation_totalLength : presentation.totalLength = 463 := by
   have h : (relatorList.map fun r => r.toWord.length).sum = 463 := by
-    rw [relatorList_def, ← List.singleton_append, ← List.append_assoc, List.map_append,
-      List.sum_append]
+    rw [relatorList_def, adjoinedRelators_def, ← List.singleton_append, ← List.append_assoc,
+      List.map_append, List.sum_append]
     simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
     rw [coxeterAndSpider_totalLength, length_centralInvolutionRelator]
   rw [← GroupPresentation.sum_map_length_relatorLetters, presentation_relatorLetters,
@@ -326,7 +348,7 @@ theorem isCyclicallyReduced_toWord_of_mem_relatorList (r : Relator (Fin 12))
   · rw [mem_coxeterRelators_iff] at hr
     obtain ⟨i, j, rfl⟩ := hr
     exact isCyclicallyReduced_toWord_coxeterRelator coxeterMatrix _ _
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [adjoinedRelators_def, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;>
       simp [spiderRelator, centralInvolutionRelator, FreeGroup.IsCyclicallyReduced,
         FreeGroup.IsReduced]
@@ -337,5 +359,47 @@ theorem presentation_relatorsCyclicallyReduced :
     presentation.relatorsCyclicallyReduced := by
   simpa [GroupPresentation.relatorsCyclicallyReduced_iff, GroupPresentation.relators_def,
     presentation] using isCyclicallyReduced_toWord_of_mem_relatorList
+
+/-! ### The row against the Coxeter group of its diagram -/
+
+/-- **The relators of the row are the `Y₄₄₃` Coxeter relators followed by the two adjoined
+relators.** -/
+theorem presentation_transcribed_append :
+    presentation.transcribed = cast (by simp)
+      (coxeterRelators coxeterMatrix ++ adjoinedRelators) := by
+  rw [presentation_transcribed, relatorList_def]
+
+/-- **The row presents the Coxeter group of the `Y₄₄₃` diagram cut down by the spider and central
+relations**, which is the shape in which Bray and Ivanov state the presentation.
+
+This is an identification of the presented group with a quotient built from Mathlib's
+`CoxeterMatrix.relationsSet`; it asserts nothing about the order or the structure of either
+side. -/
+def mulEquivPresentedGroupCoxeterAppend :
+    presentation.Group ≃*
+      PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) := by
+  -- The generic equivalence indexes its Coxeter matrix and extra relators by
+  -- `Fin presentation.generatorCount`. That is `Fin 12` by definition but not syntactically,
+  -- because the row is sealed, so the row is unfolded here — in the goal and in the transcription
+  -- equation alike — to make the two index types meet.
+  have h := presentation_transcribed_append
+  unfold presentation at h ⊢
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend
+  -- The cast in `h` transports along an equality of a type with itself, so it is the identity and
+  -- the two relator lists are literally the same list.
+  exact congrArg Subgroup.normalClosure (congrArg Relator.relatorSet h)
+
+/-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
+generator. -/
+@[simp]
+theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 12) :
+    mulEquivPresentedGroupCoxeterAppend
+        (PresentedGroup.of
+          (Fin.cast (by simp [GroupPresentation.generatorCount, presentation]) i)) =
+      PresentedGroup.of i := by
+  -- Same reduction as in the equivalence itself: `Fin.cast` moves the index from `Fin 12` to
+  -- `Fin presentation.generatorCount`, and unfolding the sealed row identifies the two.
+  unfold mulEquivPresentedGroupCoxeterAppend presentation
+  apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of
 
 end TauCeti.Sporadic.Monster

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Submonoid.MulAction
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
@@ -15,13 +16,19 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 This file records generic instances for actions on a topological space that typeclass search
 cannot otherwise reach. A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
+It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
+countable.
 
 ## Main results
 
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
+* `SubMulAction.properlyDiscontinuousSMul`: proper discontinuity is inherited by every invariant
+  subspace.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
+* `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
+  nonempty σ-compact space is countable.
 -/
 
 public section
@@ -46,6 +53,24 @@ instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul 
 
 end Subgroup
 
+end TauCeti
+
+namespace SubMulAction
+
+/-- A group action remains properly discontinuous on every invariant subspace. -/
+theorem properlyDiscontinuousSMul {G X : Type*} [Group G] [TopologicalSpace X] [MulAction G X]
+    [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image
+      (hK.image continuous_subtype_val) (hL.image continuous_subtype_val)).subset ?_
+    rintro g ⟨y, ⟨x, hx, hxy⟩, hy⟩
+    exact
+      ⟨(y : X), ⟨(x : X), ⟨x, hx, rfl⟩, congrArg Subtype.val hxy⟩, ⟨y, hy, rfl⟩⟩
+
+end SubMulAction
+
+namespace TauCeti
+
 /-- **A properly discontinuous action has finite point stabilisers**, as a `Finite` instance.
 
 Mathlib's `ProperlyDiscontinuousSMul.finite_stabilizer` (Alex Kontorovich and Heather Macbeth,
@@ -69,5 +94,24 @@ instance finite_stabilizer_of_properlyDiscontinuousSMul {G T : Type*} [Group G]
     [TopologicalSpace T] [MulAction G T] [ProperlyDiscontinuousSMul G T] (x : T) :
     Finite (MulAction.stabilizer G x) :=
   (ProperlyDiscontinuousSMul.finite_stabilizer x).to_subtype
+
+open Set in
+/-- **A properly discontinuous scalar family on a nonempty σ-compact space is countable.**
+Each element carries a chosen point `x₀` into one of countably many compact sets `Kₙ ∋ x₀`, and
+only finitely many elements move a given `Kₙ` to meet itself. -/
+@[to_additive
+/-- **A properly discontinuous additive scalar family on a nonempty σ-compact space is
+countable.** -/]
+theorem countable_of_properlyDiscontinuousSMul (G : Type*) {T : Type*} [TopologicalSpace T]
+    [SMul G T] [ProperlyDiscontinuousSMul G T] [SigmaCompactSpace T]
+    [Nonempty T] : Countable G := by
+  obtain ⟨x₀⟩ := ‹Nonempty T›
+  let K : ℕ → Set T := fun n ↦ insert x₀ (compactCovering T n)
+  have hK : ∀ n, IsCompact (K n) := fun n ↦ (isCompact_compactCovering T n).insert x₀
+  refine countable_univ_iff.mp <| (countable_iUnion fun n ↦
+    (ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := G) (hK n) (hK n)).countable).mono
+      fun g _ ↦ ?_
+  obtain ⟨n, hn⟩ := mem_iUnion.mp (iUnion_compactCovering T ▸ mem_univ (g • x₀))
+  exact mem_iUnion.mpr ⟨n, g • x₀, ⟨x₀, mem_insert _ _, rfl⟩, mem_insert_of_mem _ hn⟩
 
 end TauCeti

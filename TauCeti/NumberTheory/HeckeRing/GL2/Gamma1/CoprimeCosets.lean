@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.UpperTriCosets
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 
 import Mathlib.Algebra.CharP.Invertible
 import TauCeti.Data.ZMod.Divisibility
@@ -61,6 +62,9 @@ Disjointness of the last coset from the others uses only `1 < p` and integrality
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none`:
   `diag(1, p) · !![m p, n; N, 1] = σ · diag(p, 1)` with `!![m p, n; N, 1] ∈ Γ₁(N)` — the reverse
   inclusion for the twisted coset.
+* `HeckeRing.GL2.exists_adjugateGL_natDiagGL_eq`: for an index coprime to the level, the
+  adjugate of `diag(1, n)` factors on either side through `diag(1, n)`, a `Γ₁(N)` element,
+  and a `Γ₀(N)` element whose diamond label is `n⁻¹`.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_primeRep`: for prime `p`, every
   `diag(1, p) · γ` with `γ ∈ Γ₁(N)` lies in one of the `p + 1` right cosets.
 * `HeckeRing.GL2.op_primeRep_smul_injective`: the `p + 1` right cosets are pairwise distinct.
@@ -81,7 +85,7 @@ the coset statement below is what identifies the two, and is proved from the gro
 ## References
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
-  Proposition 5.2.1.
+  Proposition 5.2.1 and §5.5.
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
   §3.4–3.5.
 -/
@@ -95,6 +99,60 @@ open scoped MatrixGroups Pointwise
 namespace HeckeRing.GL2
 
 variable {N p : ℕ} {σ : SL(2, ℤ)}
+
+local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
+
+/-- **The adjugate of `diag(1, n)` is an inverse-diamond translate of its double coset, on
+either side.** The translating matrix `A ∈ Γ₀(N)` has diamond label `⟨n⟩⁻¹` (its lower-right
+entry is `n⁻¹ mod N`), while `B ∈ Γ₁(N)` moves `diag(1, n)` within its double coset. -/
+lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
+    ∃ A : SL(2, ℤ), ∃ hA : A ∈ Gamma0 N,
+      (Gamma0Map N).toHomUnits ⟨A, hA⟩ = (ZMod.unitOfCoprime n hn)⁻¹ ∧
+      ∃ B ∈ Gamma1 N, TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
+  obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
+  let A : SL(2, ℤ) :=
+    ⟨!![(n : ℤ), -v; (N : ℤ), u], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
+  let B : SL(2, ℤ) :=
+    ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
+  have hZ := congrArg (Int.cast : ℤ → ZMod N) huv
+  push_cast at hZ
+  rw [ZMod.natCast_self, mul_zero, add_zero] at hZ
+  have hA : A ∈ Gamma0 N := by rw [Gamma0_mem]; simp [A]
+  have hR := congrArg (Int.cast : ℤ → ℝ) huv
+  push_cast at hR
+  have hAcoe : ((mapGL ℝ A : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![(n : ℝ), -v; (N : ℝ), u] := by
+    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [A]
+  have hBcoe : ((mapGL ℝ B : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![(u : ℝ) * n, v; -(N : ℝ), 1] := by
+    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [B]
+  have hfactor :
+      TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
+    constructor <;>
+      refine Units.ext ?_ <;>
+      rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
+        Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one, hAcoe, hBcoe,
+        Matrix.adjugate_fin_two] <;>
+      ext i j <;>
+      fin_cases i <;> fin_cases j <;>
+      simp [Matrix.mul_apply, Fin.sum_univ_two]
+    all_goals nlinarith [hR]
+  refine ⟨A, hA, ?_, B, ?_, hfactor.1, hfactor.2⟩
+  · rw [eq_inv_iff_mul_eq_one]
+    refine Units.ext ?_
+    simpa [A, Gamma0Map] using hZ
+  · rw [Gamma1_mem]
+    simpa [B] using hZ
 
 /-- **The family of `p + 1` matrices out of which the good-prime `Tₚ` is built.** The `p`
 upper-triangular matrices `!![1, b; 0, p]`, indexed by `some b`, together with the twisted
@@ -156,28 +214,6 @@ private lemma natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries (hp : 0 
   · linear_combination (-(p : ℚ) * ((γ 1 0 : ℤ) : ℚ)) * hσdetQ
   · linear_combination (-(p : ℚ) * ((γ 1 1 : ℤ) : ℚ)) * hσdetQ
 
-/-- The sheared left factor lies in `Γ₁(N)`. Only its bottom row is needed: `mem_Gamma1_iff`
-reduces membership to `Γ₀(N)` plus the lower-right congruence, so the lower-left entry being
-`0` and the lower-right `1` mod `N` suffice — the upper-left congruence is forced by the
-determinant. -/
-private lemma mem_Gamma1_of_lowerRow_eq {γ δ : SL(2, ℤ)}
-    (h10 : (δ 1 0 : ℤ) = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)))
-    (h11 : (δ 1 1 : ℤ) = (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1)
-    (hd : ((γ 1 1 : ℤ) : ZMod N) = 1)
-    (hc : ((γ 1 0 : ℤ) : ZMod N) = 0) (hmp : ((σ 0 0 * (p : ℤ) : ℤ) : ZMod N) = 1) :
-    δ ∈ Gamma1 N := by
-  refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩
-  · have h : (((p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) : ℤ) : ZMod N) = 0 := by
-      push_cast
-      rw [hc, ZMod.natCast_self]
-      ring
-    simpa [h10] using h
-  · have h : (((p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 : ℤ) : ZMod N) = 1 := by
-      push_cast at hmp ⊢
-      rw [hc]
-      linear_combination (((γ 1 1 : ℤ) : ZMod N)) * hmp + hd
-    simpa [h11] using h
-
 /-- **The forward factorisation through the twisted coset.** For `γ = !![a, b; c, d] ∈ Γ₁(N)`
 with `p ∣ a`, the product `diag(1, p) · γ` lies in the right coset `Γ₁(N) · σ · diag(p, 1)`:
 
@@ -191,76 +227,58 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p)
     ∃ δ : SL(2, ℤ), δ ∈ Gamma1 N ∧
       natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * primeRep σ p none := by
   obtain ⟨-, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
+  replace hc : (N : ℤ) ∣ γ 1 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp hc
+  replace hd : (N : ℤ) ∣ γ 1 1 - 1 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp <| by simp [hd]
   obtain ⟨a', ha'⟩ := hpa
-  have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 :=
-    mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
-  have hγdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 :=
-    Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  -- the new left factor
-  have hdet : (!![γ 0 0 - γ 0 1 * (N : ℤ), γ 0 1 * σ 0 0 - a' * σ 0 1;
-      (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)), (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1] :
-      Matrix (Fin 2) (Fin 2) ℤ).det = 1 := by
-    rw [Matrix.det_fin_two_of]
-    linear_combination hγdet + (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0) * hσdet +
-      (σ 0 1 * (γ 1 1 * (N : ℤ) - γ 1 0)) * ha'
+  have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 := mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
+  -- the new left factor; its determinant is `1` by those of `γ` and `σ`
   obtain ⟨δ, hδmat⟩ : ∃ δ : SL(2, ℤ), (δ : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0 - γ 0 1 * (N : ℤ), γ 0 1 * σ 0 0 - a' * σ 0 1;
         (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)), (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1] :=
-    ⟨⟨_, hdet⟩, rfl⟩
-  -- `m p ≡ 1 (mod N)`, the congruence that puts the left factor in `Γ₁(N)`
-  have hmp : ((σ 0 0 * (p : ℤ) : ℤ) : ZMod N) = 1 := by
-    have hσΓ0 : σ ∈ Gamma0 N := Gamma0_mem.mpr (by rw [hσ10]; simp)
-    simpa [hσ11] using intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hσΓ0
-  have e00 : (δ 0 0 : ℤ) = γ 0 0 - γ 0 1 * (N : ℤ) := by rw [hδmat]; simp
-  have e01 : (δ 0 1 : ℤ) = γ 0 1 * σ 0 0 - a' * σ 0 1 := by rw [hδmat]; simp
-  have e10 : (δ 1 0 : ℤ) = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) := by rw [hδmat]; simp
-  have e11 : (δ 1 1 : ℤ) = (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 := by rw [hδmat]; simp
-  exact ⟨δ, mem_Gamma1_of_lowerRow_eq e10 e11 hd hc hmp,
-    natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries hp hσ10 hσ11 ha'
-      e00 e01 e10 e11⟩
+    ⟨⟨_, by
+      rw [Matrix.det_fin_two_of]
+      linear_combination γ.fin_two_mul_sub_mul_eq_one + (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0) * hσdet +
+        (σ 0 1 * (γ 1 1 * (N : ℤ) - γ 1 0)) * ha'⟩, rfl⟩
+  have e00 : (δ 0 0 : ℤ) = γ 0 0 - γ 0 1 * (N : ℤ) := by simp [hδmat]
+  have e01 : (δ 0 1 : ℤ) = γ 0 1 * σ 0 0 - a' * σ 0 1 := by simp [hδmat]
+  have e10 : (δ 1 0 : ℤ) = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) := by simp [hδmat]
+  have e11 : (δ 1 1 : ℤ) = (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 := by simp [hδmat]
+  have hδ11_sub_one :
+      (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 - 1 =
+        γ 1 1 - 1 + (N : ℤ) * (γ 1 1 * σ 0 1) - γ 1 0 * σ 0 1 := by
+    linear_combination γ 1 1 * hσdet
+  have hδΓ1 : δ ∈ Gamma1 N := by
+    refine mem_Gamma1_of_dvd_lowerRow ?_ ?_
+    · rw [e10]
+      exact (hc.sub (dvd_mul_left _ _)).mul_left _
+    -- `m p ≡ 1 (mod N)`, from the Bézout relation, is what puts the left factor in `Γ₁(N)`
+    · rw [e11, hδ11_sub_one]
+      exact (hd.add (dvd_mul_right _ _)).sub (hc.mul_right _)
+  exact ⟨δ, hδΓ1,
+    natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries hp hσ10 hσ11 ha' e00 e01 e10 e11⟩
 
 /-- **The witness for the reverse inclusion.** The matrix `!![m p, n; N, 1]` lies in `Γ₁(N)` —
-its determinant is the Bézout relation and `m p ≡ 1 (mod N)` — and moving it across
-`diag(1, p)` produces exactly the twisted representative. -/
+its lower row is `(N, 1)`, and its determinant is the Bézout relation `m p − n N = 1` — and
+moving it across `diag(1, p)` produces exactly the twisted representative. -/
 lemma exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (hp : 0 < p) (hσ10 : σ 1 0 = (N : ℤ))
     (hσ11 : σ 1 1 = (p : ℤ)) :
     ∃ γ : SL(2, ℤ), γ ∈ Gamma1 N ∧
       natDiagGL 2 ![1, p] * mapGL ℚ γ = primeRep σ p none := by
   have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 :=
     mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
-  have hdet : (!![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1] : Matrix (Fin 2) (Fin 2) ℤ).det = 1 := by
-    rw [Matrix.det_fin_two_of]
-    linear_combination hσdet
   obtain ⟨γ, hγmat⟩ : ∃ γ : SL(2, ℤ), (γ : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1] := ⟨⟨_, hdet⟩, rfl⟩
-  have hmp : ((σ 0 0 * (p : ℤ) : ℤ) : ZMod N) = 1 := by
-    have hσΓ0 : σ ∈ Gamma0 N := Gamma0_mem.mpr (by rw [hσ10]; simp)
-    simpa [hσ11] using intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hσΓ0
-  refine ⟨γ, (Gamma1_mem N γ).mpr ⟨?_, ?_, ?_⟩, ?_⟩
-  · simpa [hγmat] using hmp
-  · simp [hγmat]
-  · simp [hγmat]
-  · have e00 : (γ 0 0 : ℤ) = σ 0 0 * (p : ℤ) := by rw [hγmat]; simp
-    have e01 : (γ 0 1 : ℤ) = σ 0 1 := by rw [hγmat]; simp
-    have e10 : (γ 1 0 : ℤ) = (N : ℤ) := by rw [hγmat]; simp
-    have e11 : (γ 1 1 : ℤ) = 1 := by rw [hγmat]; simp
-    have ha' : γ 0 0 = (p : ℤ) * σ 0 0 := by rw [e00]; ring
-    have h00 : (1 : SL(2, ℤ)) 0 0 = γ 0 0 - γ 0 1 * (N : ℤ) := by
-      rw [e00, e01]
-      simpa using hσdet.symm
-    have h01 : (1 : SL(2, ℤ)) 0 1 = γ 0 1 * σ 0 0 - σ 0 0 * σ 0 1 := by
-      rw [e01]
-      simp [mul_comm]
-    have h10 : (1 : SL(2, ℤ)) 1 0 = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) := by
-      rw [e10, e11]
-      simp
-    have h11 : (1 : SL(2, ℤ)) 1 1 =
-        (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 := by
-      rw [e10, e11]
-      simpa [mul_comm] using hσdet.symm
-    simpa using
-      natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries (σ := σ) hp hσ10 hσ11
-        (δ := (1 : SL(2, ℤ))) (a' := σ 0 0) ha' h00 h01 h10 h11
+      !![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1] :=
+    ⟨⟨_, by simpa [Matrix.det_fin_two_of] using hσdet⟩, rfl⟩
+  refine ⟨γ, mem_Gamma1_of_dvd_lowerRow (by simp [hγmat]) (by simp [hγmat]), ?_⟩
+  -- the left factor is trivial here, so the entrywise lemma is fed the entries of `γ` at `δ = 1`
+  have ha' : γ 0 0 = (p : ℤ) * σ 0 0 := by simp [hγmat, mul_comm]
+  have h00 : (1 : SL(2, ℤ)) 0 0 = γ 0 0 - γ 0 1 * (N : ℤ) := by simpa [hγmat] using hσdet.symm
+  have h01 : (1 : SL(2, ℤ)) 0 1 = γ 0 1 * σ 0 0 - σ 0 0 * σ 0 1 := by simp [hγmat, mul_comm]
+  have h10 : (1 : SL(2, ℤ)) 1 0 = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) := by simp [hγmat]
+  have h11 : (1 : SL(2, ℤ)) 1 1 = (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 := by
+    simpa [hγmat, mul_comm] using hσdet.symm
+  simpa using natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries (σ := σ) hp hσ10 hσ11
+    (δ := 1) (a' := σ 0 0) ha' h00 h01 h10 h11
 
 /-- **The forward inclusion.** For a prime `p` and `γ ∈ Γ₁(N)`, the product `diag(1, p) · γ` lies
 in one of the `p + 1` right cosets: an upper-triangular one when `p ∤ a`, where the congruence

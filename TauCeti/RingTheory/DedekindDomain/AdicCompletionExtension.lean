@@ -96,7 +96,7 @@ out as `ringChar_residueField_adicCompletionIntegers_ne_two`, which the source k
 
 The Henselian and completeness chain from that same Stoll file lives in
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion`, with the single-completion
-valuation and residue-field results it rests on — among them `exists_valued_sub_lt_one` and
+valuation and residue-field results it rests on — among them
 `residueFieldEquivAdicCompletionIntegers`, which this file uses.
 
 ## Implementation notes
@@ -332,6 +332,16 @@ lemma adicCompletionExtension_coe (x : K) :
   rw [WithVal.algebraMap_left_apply, WithVal.algebraMap_right_apply]
   rfl
 
+/-- The square with sides `R → K_v → L_w` and `R → B → L_w` commutes. -/
+@[simp]
+lemma adicCompletionExtension_algebraMap (a : R) :
+    adicCompletionExtension K L v w (algebraMap R (v.adicCompletion K) a) =
+      algebraMap B (w.adicCompletion L) (algebraMap R B a) := by
+  rw [IsScalarTower.algebraMap_apply R K (v.adicCompletion K)]
+  simp only [algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self,
+    RingHom.id_apply, adicCompletionExtension_coe, ← IsScalarTower.algebraMap_apply R K L,
+    ← IsScalarTower.algebraMap_apply R B L]
+
 /-- `adicCompletionExtension` is continuous. -/
 theorem continuous_adicCompletionExtension :
     Continuous (adicCompletionExtension K L v w) := by
@@ -415,8 +425,9 @@ of integers of `K_v`.
 
 Stated with `Ideal.comap` of the explicit ring homomorphism, not `Ideal.under`: `Ideal.under A` is
 `Ideal.comap (algebraMap A B)` and so needs an `Algebra (v.adicCompletionIntegers K)
-(w.adicCompletionIntegers L)` instance, which does not exist — the extension is a bare `RingHom`.
-Naming it `under_` would assert a contraction along an `algebraMap` that is not there. -/
+(w.adicCompletionIntegers L)` instance, which is only installed in the `AdicCompletionExtension`
+scope. The `Ideal.LiesOver` form for that scoped algebra is
+`maximalIdeal_adicCompletionIntegers_liesOver`. -/
 @[simp]
 lemma comap_maximalIdeal_adicCompletionIntegersExtension :
     (IsLocalRing.maximalIdeal (w.adicCompletionIntegers L)).comap

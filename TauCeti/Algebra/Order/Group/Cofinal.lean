@@ -254,7 +254,7 @@ theorem IsCofinalElement.quotientMk {Δ : ConvexSubgroup Γ} (hΔ : Δ ≠ ⊤) 
   refine ⟨n, not_le.mp ?_⟩
   rw [← map_pow]
   simp only [QuotientGroup.mk'_apply, quotient_le_iff, not_or]
-  exact ⟨not_le.mpr (hd1.trans hkey), Δ.not_mem_of_not_mem_of_one_lt_le hdΔ hd1 hkey.le⟩
+  exact ⟨not_le.mpr (hd1.trans hkey), Δ.notMem_of_notMem_of_one_le_le hdΔ hd1.le hkey.le⟩
 
 
 end TauCeti

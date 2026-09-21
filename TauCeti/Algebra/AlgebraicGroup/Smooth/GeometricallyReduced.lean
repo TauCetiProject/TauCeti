@@ -40,9 +40,8 @@ reducedness nor smoothness is built into the category of commutative Hopf algebr
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 1.26 and Corollary 1.27.
 
-This advances Layer 2, "Smoothness and dimension tools via `Lie(G)`", of the ReductiveGroups
-roadmap. The forward implication uses Mathlib's `AlgebraicGeometry.smooth_of_grpObj`; the reverse
-uses `TauCeti.isReduced_of_smooth_of_field` after arbitrary field extension.
+The forward implication uses Mathlib's `AlgebraicGeometry.smooth_of_grpObj`; the reverse
+uses `TauCeti.isReduced_of_smooth` after arbitrary field extension.
 -/
 
 public section
@@ -61,7 +60,7 @@ noncomputable section
 /-- **A smooth commutative Hopf algebra over a field is geometrically reduced.**
 
 Smoothness is preserved by extension of the ground field. The resulting tensor product is
-reduced by `TauCeti.isReduced_of_smooth_of_field`; commuting the tensor factors puts the result
+reduced by `TauCeti.isReduced_of_smooth`; commuting the tensor factors puts the result
 in the orientation used by `geometricallyReducedCommHopfAlgProperty`. -/
 theorem geometricallyReducedCommHopfAlgProperty_of_smooth
     (k : Type u) [Field k] (H : CommHopfAlgCat.{v} k)
@@ -71,7 +70,7 @@ theorem geometricallyReducedCommHopfAlgProperty_of_smooth
   intro K _ _
   let _ : Algebra.Smooth k H := (smoothCommHopfAlgProperty_iff H).mp hH
   let _ : Algebra.Smooth K (K ⊗[k] H) := Algebra.Smooth.baseChange k H K
-  let _ : IsReduced (K ⊗[k] H) := isReduced_of_smooth_of_field K (K ⊗[k] H)
+  let _ : IsReduced (K ⊗[k] H) := isReduced_of_smooth K (K ⊗[k] H)
   exact isReduced_of_injective (Algebra.TensorProduct.comm k H K).toRingHom
     (Algebra.TensorProduct.comm k H K).injective
 

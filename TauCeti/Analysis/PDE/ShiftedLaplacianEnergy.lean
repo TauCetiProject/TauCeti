@@ -68,7 +68,7 @@ lemma integral_min_one_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
     hlower henergy
   filter_upwards with x
   intro ξ
-  rw [← toQuadraticForm'_eq_dotProduct, toQuadraticForm'_one]
+  rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   simp
 
 /-- The shifted-Laplacian diagonal form is nonnegative when the mass is a.e. nonnegative. -/
@@ -78,7 +78,7 @@ lemma energyFormIntegral_one_zero_mass_self_nonneg (hm : ∀ᵐ x ∂μ, 0 ≤ m
     (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) ?_ hm
   filter_upwards with x
   intro ξ
-  rw [← toQuadraticForm'_eq_dotProduct, toQuadraticForm'_one]
+  rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   exact sq_nonneg ‖ξ‖
 
 /-- The Dirichlet model `-Δ` has nonnegative diagonal energy. -/

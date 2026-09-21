@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 
@@ -119,6 +120,25 @@ theorem coefficientMatrix_isUpperUnitriangular_iff [One H] (b : Basis (Fin n) k 
   rw [Matrix.isUpperUnitriangular_def]
   exact coefficientMatrix_isUpperTriangular_and_diag_iff b fun _ ↦ 1
 
+/-- The initial spans of a basis with upper-triangular coefficient matrix, bundled as
+subcomodules. -/
+def flagSubcomodule (b : Basis (Fin n) k M)
+    (h : (coefficientMatrix (C := H) b).IsUpperTriangular) (r : Fin (n + 1)) :
+    Subcomodule k H M :=
+  b.coordinateSpanSubcomodule {i | i.castSucc < r} <|
+    (b.coordinateSpanIsStable_iff (C := H) _).2 <| by
+    intro i hi j hj
+    apply h
+    exact Fin.castSucc_lt_castSucc_iff.mp (lt_of_lt_of_le hj (le_of_not_gt hi))
+
+/-- The underlying submodule of `flagSubcomodule` is the corresponding basis flag. -/
+@[simp]
+theorem flagSubcomodule_toSubmodule (b : Basis (Fin n) k M)
+    (h : (coefficientMatrix (C := H) b).IsUpperTriangular) (r : Fin (n + 1)) :
+    (flagSubcomodule (H := H) b h r).toSubmodule = b.flag r := by
+  rw [flagSubcomodule, Basis.coordinateSpanSubcomodule_toSubmodule]
+  rfl
+
 /-- The coaction of a basis vector in a stable initial segment belongs to the tensor product of
 that initial segment with the coalgebra. -/
 theorem coact_basis_mem_flag (b : Basis (Fin n) k M)
@@ -127,41 +147,11 @@ theorem coact_basis_mem_flag (b : Basis (Fin n) k M)
     coact (C := H) (b i) ∈
       LinearMap.range
         (TensorProduct.map (b.flag r).subtype (LinearMap.id : H →ₗ[k] H)) := by
-  classical
-  refine ⟨∑ j, if hjr : j.castSucc < r then
-      (⟨b j, b.self_mem_flag hjr⟩ : b.flag r) ⊗ₜ[k]
-        coefficientMatrix (C := H) b j i else 0, ?_⟩
-  rw [coact_basis_eq_sum_coefficientMatrix, map_sum]
-  apply Finset.sum_congr rfl
-  intro j _
-  by_cases hjr : j.castSucc < r
-  · simp [hjr]
-  · have hij : i < j := Fin.castSucc_lt_castSucc_iff.mp
-      (lt_of_lt_of_le hir (le_of_not_gt hjr))
-    simp [hjr, h hij]
-
-/-- The initial spans of a basis with upper-triangular coefficient matrix, bundled as
-subcomodules. -/
-def flagSubcomodule (b : Basis (Fin n) k M)
-    (h : (coefficientMatrix (C := H) b).IsUpperTriangular) (r : Fin (n + 1)) :
-    Subcomodule k H M :=
-  Subcomodule.ofSubmodule (b.flag r) fun m hm ↦ by
-    have hle : b.flag r ≤
-        (LinearMap.range
-          (TensorProduct.map (b.flag r).subtype (LinearMap.id : H →ₗ[k] H))).comap
-            (coact (C := H) (M := M)) := by
-      rw [b.flag_le_iff]
-      intro i hir
-      exact coact_basis_mem_flag b h hir
-    exact hle hm
-
-/-- The underlying submodule of `flagSubcomodule` is the corresponding basis flag. -/
-@[simp]
-theorem flagSubcomodule_toSubmodule (b : Basis (Fin n) k M)
-    (h : (coefficientMatrix (C := H) b).IsUpperTriangular) (r : Fin (n + 1)) :
-    (flagSubcomodule (H := H) b h r).toSubmodule = b.flag r := by
-  rw [flagSubcomodule, Subcomodule.toSubmodule_carrier]
-  exact Subcomodule.ofSubmodule_carrier _ _
+  have hbi : b i ∈ flagSubcomodule (H := H) b h r := by
+    rw [← Subcomodule.mem_toSubmodule, flagSubcomodule_toSubmodule]
+    exact b.self_mem_flag hir
+  rw [← flagSubcomodule_toSubmodule b h r]
+  exact (flagSubcomodule (H := H) b h r).coact_mem hbi
 
 /-- The first term of the bundled basis flag is the zero subcomodule. -/
 @[simp]

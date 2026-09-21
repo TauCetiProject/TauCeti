@@ -9,8 +9,12 @@ public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Set.Card
+public import Mathlib.GroupTheory.Complement
+public import Mathlib.GroupTheory.FixedPointFree
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
+public import TauCeti.GroupTheory.TrivialIntersection
 
 /-!
 # The two subgroups of the symmetric group on three points
@@ -22,13 +26,17 @@ stabilizer -- by membership, as a set, as a cyclic subgroup and by its order -- 
 it is not normal, conjugating its transposition by one that moves `a` off the stabilizer. The
 alternating subgroup `A₃` is the other one, and what is recorded of it here is that it has order
 three and that nothing outside it centralizes it, so that `S₃` is as far from abelian along `A₃`
-as it could be.
+as it could be.  The two sit together as a semidirect decomposition `S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩` whose
+complement acts on `A₃` without nonidentity fixed points, which exhibits the stabilizer as a
+Frobenius complement and `S₃` as the smallest Frobenius group.
 
 All the facts about `Fin 3` that the arguments need are settled by `decide` over the six
 permutations.
 
 ## Main statements
 
+* `Equiv.Perm.fin_three_cases`: every permutation of three points is the identity, one of the
+  three transpositions, or one of the two rotations.
 * `TauCeti.mem_stabilizer_perm_fin_three_iff`: a permutation of three points fixes `a` exactly
   when it is the identity or the transposition of the other two points.
 * `TauCeti.coe_stabilizer_perm_fin_three`: the same, as an equality of sets.
@@ -43,9 +51,30 @@ permutations.
 * `TauCeti.card_alternatingGroup_fin_three`: the alternating subgroup has order three.
 * `TauCeti.centralizer_alternatingGroup_fin_three_le`: only the alternating subgroup centralizes
   the alternating subgroup.
+* `TauCeti.fixedPointFree_conjNormal_alternatingGroup_fin_three`: a point stabilizer acts on the
+  alternating subgroup by conjugation without nonidentity fixed points, a transposition inverting
+  each of the two rotations.
+* `TauCeti.isComplement'_alternatingGroup_stabilizer_perm_fin_three`: the two subgroups are
+  complementary, `S₃ = A₃ ⋊ ⟨(a+1 a+2)⟩`.
+* `TauCeti.isTISubgroup_stabilizer_perm_fin_three`: a point stabilizer is a trivial-intersection
+  subgroup.
+* `TauCeti.isFrobeniusComplement_stabilizer_perm_fin_three`: `S₃` is a Frobenius group with
+  complement a point stabilizer.
 -/
 
 public section
+
+namespace Equiv.Perm
+
+/-- The six permutations of `Fin 3`: the identity, the three transpositions, and the two
+rotations. -/
+theorem fin_three_cases (ρ : Equiv.Perm (Fin 3)) :
+    ρ = 1 ∨ ρ = Equiv.swap 0 1 ∨ ρ = Equiv.swap 1 2 ∨ ρ = Equiv.swap 0 2 ∨
+      ρ = finRotate 3 ∨ ρ = (finRotate 3)⁻¹ := by
+  revert ρ
+  decide
+
+end Equiv.Perm
 
 namespace TauCeti
 
@@ -152,5 +181,63 @@ theorem centralizer_alternatingGroup_fin_three_le :
   revert g
   simp only [SetLike.mem_coe, Equiv.Perm.mem_alternatingGroup]
   decide
+
+/-- **A point stabilizer of `S₃` acts on `A₃` without nonidentity fixed points**: conjugation by
+a nonidentity element of the stabilizer of `a` fixes no nonidentity element of the alternating
+subgroup.  This is the fixed-point hypothesis of
+`TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree`. -/
+theorem fixedPointFree_conjNormal_alternatingGroup_fin_three (a : Fin 3) :
+    ∀ h : MulAction.stabilizer (Equiv.Perm (Fin 3)) a, h ≠ 1 →
+      MonoidHom.FixedPointFree
+        (MulAut.conjNormal (h : Equiv.Perm (Fin 3)) : MulAut (alternatingGroup (Fin 3))) := by
+  -- the stabilizer of `a` is `{1, (a+1 a+2)}`, and that transposition inverts each of the two
+  -- rotations, neither of which is its own inverse
+  have key : ∀ b : Fin 3, ∀ m : Equiv.Perm (Fin 3), Equiv.Perm.sign m = 1 →
+      Equiv.swap (b + 1) (b + 2) * m * (Equiv.swap (b + 1) (b + 2))⁻¹ = m → m = 1 := by decide
+  intro h hh1 n hfix
+  have hfix' : (h : Equiv.Perm (Fin 3)) * (n : Equiv.Perm (Fin 3)) * (h : Equiv.Perm (Fin 3))⁻¹
+      = (n : Equiv.Perm (Fin 3)) :=
+    (MulAut.conjNormal_apply _ _).symm.trans (congrArg Subtype.val hfix)
+  refine Subtype.ext ?_
+  rcases (mem_stabilizer_perm_fin_three_iff a _).mp h.2 with h1 | h1
+  · exact absurd (Subtype.ext h1 : h = 1) hh1
+  · rw [h1] at hfix'
+    exact key a n (Equiv.Perm.mem_alternatingGroup.mp n.2) hfix'
+
+/-- **`A₃` is a normal complement to a point stabilizer in `S₃`**: the two have orders `3` and `2`,
+which are coprime and multiply to `3! = 6`. -/
+theorem isComplement'_alternatingGroup_stabilizer_perm_fin_three (a : Fin 3) :
+    (alternatingGroup (Fin 3)).IsComplement'
+      (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
+  refine Subgroup.isComplement'_of_coprime ?_ ?_ <;>
+    rw [card_alternatingGroup_fin_three, card_stabilizer_perm_fin_three]
+  · rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
+    decide
+  · decide
+
+/-- **A point stabilizer of `S₃` is a trivial-intersection subgroup**, by the fixed-point-free
+action of `TauCeti.isTISubgroup_of_isComplement'_of_fixedPointFree` on the alternating
+complement. -/
+theorem isTISubgroup_stabilizer_perm_fin_three (a : Fin 3) :
+    IsTISubgroup (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) :=
+  isTISubgroup_of_isComplement'_of_fixedPointFree
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a)
+    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
+
+/-- **`S₃` is a Frobenius group with complement a point stabilizer.**  Properness and
+nontriviality come from the stabilizer not being normal, which `⊥` and `⊤` both are. -/
+theorem isFrobeniusComplement_stabilizer_perm_fin_three (a : Fin 3) :
+    IsFrobeniusComplement (MulAction.stabilizer (Equiv.Perm (Fin 3)) a) := by
+  refine isFrobeniusComplement_of_isComplement'_of_fixedPointFree
+    (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) ?_ ?_
+    (fixedPointFree_conjNormal_alternatingGroup_fin_three a)
+  · intro hbot
+    refine not_normal_stabilizer_perm_fin_three a ?_
+    rw [hbot]
+    infer_instance
+  · intro htop
+    refine not_normal_stabilizer_perm_fin_three a ?_
+    rw [htop]
+    infer_instance
 
 end TauCeti

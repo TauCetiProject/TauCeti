@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.Sort
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 
 /-!
 # Permuting PBW words modulo lower filtration
@@ -30,6 +31,8 @@ an arbitrary permutation.
 
 * `TauCeti.UniversalEnvelopingAlgebra.pbwMonomial`: the product of a word in a chosen family of
   Lie-algebra elements.
+* `TauCeti.UniversalEnvelopingAlgebra.map_pbwMonomial`: induced maps act factorwise on PBW
+  monomials.
 * `TauCeti.UniversalEnvelopingAlgebra.prod_map_ι_sub_prod_map_ι_mem_pbwFiltrationPrevious_of_perm`:
   permuted words in canonical generators differ by a lower-filtration term.
 * `pbwMonomial_sub_pbwMonomial_mem_pbwFiltrationPrevious_of_perm`:
@@ -50,7 +53,7 @@ associated graded of `U(L)`.
 
 public section
 
-universe u v w
+universe u v w x
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -115,6 +118,27 @@ theorem pbwMonomial_def (e : ιIndex → L) (word : List ιIndex) :
   induction word with
   | nil => exact pbwMonomial_nil R L e
   | cons i word ih => simp only [pbwMonomial_cons, List.map_cons, List.prod_cons, ih]
+
+section Map
+
+variable (S : Type u) [CommRing S]
+variable {A : Type v} {B : Type x}
+variable [LieRing A] [LieAlgebra S A]
+variable [LieRing B] [LieAlgebra S B]
+
+/-- An induced enveloping-algebra map applies the Lie homomorphism to every factor of a PBW
+monomial. -/
+@[simp]
+theorem map_pbwMonomial (f : LieHom S A B) (e : ιIndex → A) (word : List ιIndex) :
+    map S f (pbwMonomial S A e word) = pbwMonomial S B (fun i ↦ f (e i)) word := by
+  rw [pbwMonomial_def, pbwMonomial_def, map_list_prod]
+  apply congrArg List.prod
+  simp only [List.map_map]
+  apply List.map_congr_left
+  intro i _
+  exact map_ι S f (e i)
+
+end Map
 
 @[simp]
 theorem pbwMonomial_append (e : ιIndex → L) (word₁ word₂ : List ιIndex) :

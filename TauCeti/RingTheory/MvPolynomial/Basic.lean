@@ -52,11 +52,11 @@ theorem MvPolynomial.finite_map {σ R S : Type*} [CommRing R] [CommRing S] {f : 
   let _ : Algebra R S := f.toAlgebra
   have _ : Module.Finite R S := hf
   -- `MvPolynomial σ S` is the base change of `S` along `R → MvPolynomial σ R`. Stating that as a
-  -- `have` is load-bearing: unifying `finite_of_isBaseChange` against the goal directly forces the
+  -- `have` is load-bearing: unifying `IsBaseChange.finite` against the goal directly forces the
   -- `MvPolynomial σ R`-algebra structure to be `(MvPolynomial.map f).toAlgebra`, for which the
   -- scalar tower is not an instance, whereas Mathlib's pushout is stated for `algebraMvPolynomial`.
   have h : Module.Finite (MvPolynomial σ R) (MvPolynomial σ S) :=
-    TauCeti.finite_of_isBaseChange
+    IsBaseChange.finite
       (Algebra.IsPushout.out (R := R) (S := MvPolynomial σ R) (R' := S) (S' := MvPolynomial σ S))
   exact h
 

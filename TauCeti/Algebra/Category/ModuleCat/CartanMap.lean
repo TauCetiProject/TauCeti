@@ -74,6 +74,8 @@ Krull--Schmidt hypotheses of a finite-dimensional algebra.
   structures are the short exact sequences of modules with terms in the subcategory.
 * `TauCeti.finiteProjectiveModulesExactStructure_eq_split`: the exact structure of the finitely
   generated projectives is the split one.
+* `TauCeti.finiteModulesExactK0Equiv`: the explicit comparison between the named finite-module
+  exact structure and the structure induced directly from all modules.
 * `TauCeti.cartanMap_apply`: the Cartan map factors through the Grothendieck group of the modules
   admitting finite resolutions by finitely generated projectives, by the resolution theorem.
 * `TauCeti.moduleEulerClassOf_eq`: every finite projective resolution computes the module Euler
@@ -111,6 +113,16 @@ variable {R}
 
 @[simp] theorem finiteProjectiveModules_iff {M : ModuleCat.{u} R} :
     finiteProjectiveModules R M ↔ Module.Finite R M ∧ Module.Projective R M := Iff.rfl
+
+/-- The underlying module of an object of the subcategory of finitely generated projectives is
+finitely generated. -/
+instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Finite R X.obj :=
+  (finiteProjectiveModules_iff.mp X.property).1
+
+/-- The underlying module of an object of the subcategory of finitely generated projectives is
+projective. -/
+instance (X : (finiteProjectiveModules R).FullSubcategory) : Module.Projective R X.obj :=
+  (finiteProjectiveModules_iff.mp X.property).2
 
 variable (R)
 
@@ -214,6 +226,22 @@ whose three terms are finitely generated. -/
   (ExactStructure.fullSubcategory_conflation_iff (E := ExactStructure.abelian (ModuleCat.{u} R))
     (P := ModuleCat.isFG R) (isExtensionClosed_finiteModules R) S).trans
     (ExactStructure.abelian_conflation _)
+
+/-- The exact Grothendieck group defined using `finiteModulesExactStructure` agrees with the one
+defined directly from the exact structure induced from all modules. This explicit bridge keeps
+the implementation of `finiteModulesExactStructure` opaque. -/
+noncomputable def finiteModulesExactK0Equiv :
+    ExactK0.{u} (finiteModulesExactStructure R) ≃+
+      ExactK0.{u} ((ExactStructure.abelian (ModuleCat.{u} R)).fullSubcategory _
+        (isExtensionClosed_finiteModules R)) :=
+  ExactK0.ofLEEquiv fun S ↦ by
+    rw [finiteModulesExactStructure_conflation_iff,
+      ExactStructure.fullSubcategory_conflation_iff, ExactStructure.abelian_conflation]
+
+@[simp]
+theorem finiteModulesExactK0Equiv_of (X : FGModuleCat.{u} R) :
+    finiteModulesExactK0Equiv R (ExactK0.of X) = ExactK0.of X :=
+  ExactK0.ofLEEquiv_of _ X
 
 /-- The conflations of finitely generated projective modules are the short exact sequences of
 `R`-modules whose three terms are finitely generated projective; by

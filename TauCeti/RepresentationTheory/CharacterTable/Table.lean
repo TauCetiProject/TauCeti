@@ -400,6 +400,39 @@ theorem sum_characterTable_mul_characterTable_inv (g h : G) :
     (fun i : Fin (Nat.card (ConjClasses G)) => irreducibleRepresentation k i)
     (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) g h
 
+/-- **Second (column) orthogonality at a class and its inverse**, indexed by the conjugacy classes
+themselves: the column at `C` against the column at `C⁻¹`, weighted by the class size `|C|`,
+is `|G|`.
+
+This is `TauCeti.card_conjClass_mul_sum_characterTable_mul_characterTable_inv` at a pair of
+conjugate elements, restated without a choice of representative. -/
+theorem card_carrier_mul_sum_characterTable_mul_characterTable_inv (C : ConjClasses G) :
+    (Nat.card C.carrier : k) *
+        ∑ i : Fin (Nat.card (ConjClasses G)),
+          characterTable k G i C * characterTable k G i C⁻¹ = (Nat.card G : k) := by
+  obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
+  rw [ConjClasses.inv_mk]
+  exact (card_conjClass_mul_sum_characterTable_mul_characterTable_inv g g).trans
+    (ite_eq_left (IsConj.refl g))
+
+/-- **Second (column) orthogonality at two distinct classes**, indexed by the conjugacy classes
+themselves: for `C ≠ D` the column at `C` pairs with the column at `D⁻¹` to `0`.
+
+The weight `|C|` of
+`TauCeti.card_carrier_mul_sum_characterTable_mul_characterTable_inv` cancels here, being nonzero
+in `k`: it divides the invertible `|G|`. -/
+theorem sum_characterTable_mul_characterTable_inv_of_ne {C D : ConjClasses G} (h : C ≠ D) :
+    ∑ i : Fin (Nat.card (ConjClasses G)),
+        characterTable k G i C * characterTable k G i D⁻¹ = 0 := by
+  obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
+  obtain ⟨x, rfl⟩ := ConjClasses.exists_rep D
+  have hconj : ¬ IsConj g x := fun hc => h (ConjClasses.mk_eq_mk_iff_isConj.2 hc)
+  have hzero := (card_conjClass_mul_sum_characterTable_mul_characterTable_inv (k := k) g x).trans
+    (ite_eq_right hconj)
+  rw [ConjClasses.inv_mk]
+  exact (mul_eq_zero.1 hzero).resolve_left
+    (ConjClasses.card_carrier_cast_ne_zero _ (Invertible.ne_zero (Nat.card G : k)))
+
 end ColumnOrthogonality
 
 section Complex

@@ -11,8 +11,9 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Probability.Moments.ComplexMGF
 import TauCeti.Probability.Distributions.PDFInstances
+import TauCeti.Probability.Moments.Basic
+import TauCeti.Probability.Moments.Determinacy
 
 /-!
 # Elementary theory of the gamma distribution
@@ -55,6 +56,8 @@ the inverse-moment threshold `n < a`.
 * `TauCeti.gammaMeasure_conv_gammaMeasure` — convolution at a common rate adds the shape
   parameters;
 * `TauCeti.gammaMeasure_map_const_mul` — scaling by `c > 0` sends the rate `r` to `r / c`;
+* `TauCeti.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against Lebesgue
+  measure on `Ioi 0`;
 
 The cumulative distribution function is computed in
 `TauCeti/Probability/Distributions/Gamma/Cdf.lean`.
@@ -71,9 +74,16 @@ public section
 namespace TauCeti
 
 open MeasureTheory ProbabilityTheory Real Set
-open scoped MeasureTheory
+open scoped MeasureTheory Topology
 
 variable {a r : ℝ}
+
+/-- A Gamma measure is sigma-finite for all parameter values. -/
+instance (a r : ℝ) : SigmaFinite (gammaMeasure a r) := by
+  rw [gammaMeasure]
+  exact SigmaFinite.withDensity_of_ne_top' fun x ↦ by
+    rw [gammaPDF_eq]
+    exact ENNReal.ofReal_ne_top
 
 /-! ### Reduction to the positive half-line -/
 
@@ -84,6 +94,14 @@ theorem ae_pos_gammaMeasure (a r : ℝ) :
   filter_upwards [(volume : Measure ℝ).ae_ne 0] with x hx hpdf
   by_contra hxpos
   exact hpdf (gammaPDF_of_neg (lt_of_le_of_ne (le_of_not_gt hxpos) hx))
+
+/-- The gamma law is its density against Lebesgue measure on the open positive half-line: the
+density vanishes below the origin, and the origin itself is null. -/
+theorem gammaMeasure_eq_withDensity_restrict_Ioi (a r : ℝ) :
+    gammaMeasure a r = (volume.restrict (Ioi (0 : ℝ))).withDensity (gammaPDF a r) := by
+  have hae : ∀ᵐ x ∂gammaMeasure a r, x ∈ Ioi (0 : ℝ) := ae_pos_gammaMeasure a r
+  rw [← restrict_withDensity measurableSet_Ioi, ← gammaMeasure,
+    Measure.restrict_eq_self_of_ae_mem hae]
 
 /-- Almost every point of a product of two gamma laws with positive parameters lies in the
 open positive quadrant. -/
@@ -97,10 +115,11 @@ theorem ae_mem_prod_Ioi_gammaMeasure {b s : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
   filter_upwards [ae_pos_gammaMeasure b s] with y hy
   exact ⟨hx, hy⟩
 
-/-- On the positive half-line the gamma density is given by its closed formula. -/
-private lemma gammaPDFReal_of_pos {x : ℝ} (hx : 0 < x) :
+/-- Off the negative half-line the gamma density is given by its closed formula. -/
+@[simp]
+theorem gammaPDFReal_of_nonneg {x : ℝ} (hx : 0 ≤ x) :
     gammaPDFReal a r x = r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) := by
-  rw [gammaPDFReal, ite_eq_left hx.le]
+  rw [gammaPDFReal, ite_eq_left hx]
 
 /-- An integral against the gamma law is the set integral of the weighted integrand over
 `(0, ∞)`. -/
@@ -115,7 +134,7 @@ theorem integral_gammaMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace
     (Probability.measurable_gammaPDF a r) (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) f]
   simp_rw [gammaPDF, ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr _)]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hcompl, integral_Ici_eq_integral_Ioi]
-  exact setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by rw [gammaPDFReal_of_pos hx]
+  exact setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by rw [gammaPDFReal_of_nonneg hx.le]
 
 /-- Integrability against the gamma law is integrability of the weighted integrand over
 `(0, ∞)`. -/
@@ -125,7 +144,7 @@ private lemma integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (f : ℝ →
         (fun x ↦ r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) * f x) (Ioi 0) := by
   have hpos : ∀ x ∈ Ioi (0 : ℝ), f x * gammaPDFReal a r x =
       r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) * f x := fun x hx ↦ by
-    rw [gammaPDFReal_of_pos hx, mul_comm]
+    rw [gammaPDFReal_of_nonneg hx.le, mul_comm]
   have hneg : IntegrableOn (fun x ↦ f x * gammaPDFReal a r x) (Iio 0) := by
     refine integrableOn_zero.congr_fun (fun x hx ↦ ?_) measurableSet_Iio
     rw [gammaPDFReal, ite_eq_right (not_le.mpr hx), mul_zero]
@@ -407,25 +426,6 @@ theorem variance_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) :
 
 /-! ### Convolution -/
 
-/-- The moment-generating function of a convolution is the product of the two
-moment-generating functions. This private form is specialized to real probability measures, as
-needed for gamma laws. -/
-private lemma mgf_id_conv {μ ν : Measure ℝ}
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
-    mgf id (μ ∗ ν) = mgf id μ * mgf id ν := by
-  ext t
-  rw [Measure.conv, mgf_id_map (by fun_prop)]
-  -- `mgf_id_map` leaves addition under a lambda, while `IndepFun.mgf_add'` expects the
-  -- definitionally equal pointwise sum of the two projection functions.
-  change mgf ((fun p : ℝ × ℝ ↦ p.1) + fun p ↦ p.2) (μ.prod ν) t =
-    mgf id μ t * mgf id ν t
-  rw [(indepFun_prod measurable_id measurable_id).mgf_add'
-    (X := fun p : ℝ × ℝ ↦ p.1) (Y := fun p ↦ p.2)]
-  · rw [← mgf_id_map (μ := μ.prod ν) measurable_fst.aemeasurable,
-      ← mgf_id_map (μ := μ.prod ν) measurable_snd.aemeasurable]
-    simp
-  all_goals fun_prop
-
 /-- The convolution of two gamma laws with a common positive rate is a gamma law whose shape is
 the sum of the two positive shapes. -/
 @[simp]
@@ -435,34 +435,20 @@ theorem gammaMeasure_conv_gammaMeasure {b : ℝ} (ha : 0 < a) (hb : 0 < b) (hr :
   let _ := isProbabilityMeasure_gammaMeasure ha hr
   let _ := isProbabilityMeasure_gammaMeasure hb hr
   let _ := isProbabilityMeasure_gammaMeasure hab hr
-  have hmgf : mgf id (gammaMeasure (a + b) r) =
+  have hmgf : mgf id (gammaMeasure (a + b) r) =ᶠ[𝓝 0]
       mgf id (gammaMeasure a r ∗ gammaMeasure b r) := by
     rw [mgf_id_conv]
-    ext t
+    filter_upwards [Iio_mem_nhds hr] with t ht
     simp only [Pi.mul_apply]
-    rcases lt_or_ge t r with ht | ht
-    · rw [mgf_id_gammaMeasure hab hr ht, mgf_id_gammaMeasure ha hr ht,
-        mgf_id_gammaMeasure hb hr ht, ← Real.rpow_add]
-      · congr 1
-        ring
-      · rw [sub_pos, div_lt_one hr]
-        exact ht
-    · rw [mgf_undef (by simpa [id_eq] using
-          not_integrable_exp_mul_id_gammaMeasure hab hr ht),
-        mgf_undef (by simpa [id_eq] using
-          not_integrable_exp_mul_id_gammaMeasure ha hr ht),
-        mgf_undef (by simpa [id_eq] using
-          not_integrable_exp_mul_id_gammaMeasure hb hr ht)]
-      simp
-  symm
-  apply Measure.ext_of_charFun
-  ext t
-  have ht : ((t : ℂ) * Complex.I).re ∈ interior
-      (integrableExpSet id (gammaMeasure (a + b) r)) := by
-    rw [integrableExpSet_id_gammaMeasure hab hr]
-    simpa using hr
-  have h := eqOn_complexMGF_of_mgf hmgf ht
-  rwa [complexMGF_id_mul_I, complexMGF_id_mul_I] at h
+    rw [mgf_id_gammaMeasure hab hr ht, mgf_id_gammaMeasure ha hr ht,
+      mgf_id_gammaMeasure hb hr ht, ← Real.rpow_add]
+    · congr 1
+      ring
+    · rw [sub_pos, div_lt_one hr]
+      exact ht
+  refine (Measure.ext_of_mgf ?_ hmgf).symm
+  rw [integrableExpSet_id_gammaMeasure hab hr]
+  simpa using hr
 
 /-! ### Scaling -/
 

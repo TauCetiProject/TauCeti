@@ -40,6 +40,8 @@ derived from `CuspForm.peterssonInnerCosetsCore`; see the note on that definitio
 
 * `TauCeti.CuspForm.mem_peterssonOrthogonal_iff'`: orthogonality may equivalently be tested in
   the other argument of the pairing, by Hermitian symmetry.
+* `TauCeti.CuspForm.map_mem_peterssonOrthogonal`: a map whose Petersson adjoint preserves a
+  subspace preserves its orthogonal complement.
 * `TauCeti.CuspForm.peterssonOrthogonal_disjoint`: a subspace and its complement meet only in
   `0`; this is positive definiteness.
 * `TauCeti.CuspForm.peterssonOrthogonal_peterssonOrthogonal`: taking the complement twice
@@ -110,6 +112,17 @@ theorem mem_peterssonOrthogonal_iff' :
   refine ⟨fun h g hg ↦ ?_, fun h g hg ↦ ?_⟩
   · rw [← peterssonInnerCosets_conj_symm f g, h g hg, map_zero]
   · rw [← peterssonInnerCosets_conj_symm g f, h g hg, map_zero]
+
+/-- **A map preserves the orthogonal complement of a subspace its adjoint preserves.** If
+`⟪T f, g⟫ = ⟪f, S g⟫` for all `f, g` and `S` maps `V` into itself, then `T` maps
+`peterssonOrthogonal V` into itself. -/
+theorem map_mem_peterssonOrthogonal
+    {T S : CuspForm (Γ.map (mapGL ℝ)) k → CuspForm (Γ.map (mapGL ℝ)) k}
+    (hTS : ∀ f g, peterssonInnerCosets (T f) g = peterssonInnerCosets f (S g))
+    (hV : ∀ g ∈ V, S g ∈ V) (hf : f ∈ peterssonOrthogonal V) :
+    T f ∈ peterssonOrthogonal V :=
+  mem_peterssonOrthogonal_iff'.mpr fun g hg ↦ by
+    rw [hTS, mem_peterssonOrthogonal_iff'.mp hf _ (hV g hg)]
 
 /-- The Petersson-orthogonal complement reverses inclusions. -/
 @[gcongr]

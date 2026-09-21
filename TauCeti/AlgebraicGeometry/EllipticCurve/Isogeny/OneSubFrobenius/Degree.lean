@@ -7,7 +7,7 @@ module
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Kernel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Kernel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Separable
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.TautologicalPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
@@ -36,6 +36,8 @@ separable, so the degree is at most the point count.
   the point count.
 * `TauCeti.Isogeny.degree_oneSubFrobeniusIsogeny_eq_pointCount`: with the reverse bound,
   `deg (1 − π_q) = #E(𝔽_q)`.
+* `TauCeti.Isogeny.card_ker_oneSubFrobeniusIsogeny_eq_degree`: equivalently, the kernel of
+  `1 − π_q` has `deg (1 − π_q)` points.
 
 ## References
 
@@ -78,17 +80,10 @@ theorem card_emb_oneSubFrobeniusIsogeny_le_pointCount :
   choose f hf using fun σ : Field.Emb L W.FunctionField ↦
     exists_baseChange_eq_sub_map_genericPoint W (σ.restrictScalars F) (σ₀.restrictScalars F)
       (hagree σ σ₀)
-  refine Nat.card_le_card_of_injective f ?_
-  intro σ τ h
-  have hQ : Point.map (σ.restrictScalars F) (genericPoint W) =
-      Point.map (τ.restrictScalars F) (genericPoint W) := by
-    have h2 : Point.map (σ.restrictScalars F) (genericPoint W) -
-          Point.map (σ₀.restrictScalars F) (genericPoint W) =
-        Point.map (τ.restrictScalars F) (genericPoint W) -
-          Point.map (σ₀.restrictScalars F) (genericPoint W) := by
-      rw [← hf σ, ← hf τ, h]
-    exact sub_left_inj.1 h2
-  exact AlgHom.restrictScalars_injective F (map_genericPoint_injective W hQ)
+  refine Nat.card_le_card_of_injective f fun σ τ h ↦
+    AlgHom.restrictScalars_injective F
+      (eq_of_baseChange_eq_sub_map_genericPoint W
+        (fun σ : Field.Emb L W.FunctionField ↦ σ.restrictScalars F) (σ₀.restrictScalars F) hf h)
 
 /-- **The degree of `1 − π_q` is at most the number of rational points**, the isogeny being
 separable, so that its degree is the number of embeddings counted above. -/
@@ -104,6 +99,15 @@ theorem degree_oneSubFrobeniusIsogeny_eq_pointCount :
     (oneSubFrobeniusIsogeny W).degree = W.pointCount :=
   le_antisymm (degree_oneSubFrobeniusIsogeny_le_pointCount W)
     (pointCount_le_degree_oneSubFrobeniusIsogeny W)
+
+/-- **The kernel of `1 − π_q` has `deg (1 − π_q)` points**, both numbers being `#E(𝔽_q)`. -/
+theorem card_ker_oneSubFrobeniusIsogeny_eq_degree [DecidableEq F] :
+    Nat.card (oneSubFrobeniusIsogeny W).ker = (oneSubFrobeniusIsogeny W).degree := by
+  rw [degree_oneSubFrobeniusIsogeny_eq_pointCount, WeierstrassCurve.pointCount_eq_card_point]
+  calc
+    Nat.card (oneSubFrobeniusIsogeny W).ker = Nat.card (W⁄F).toAffine.Point :=
+      card_ker_oneSubFrobeniusIsogeny W
+    _ = Nat.card W.Point := by rw [WeierstrassCurve.Affine.baseChange_self]
 
 end TauCeti.Isogeny
 

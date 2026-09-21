@@ -39,6 +39,8 @@ Ported from the AINTLIB `LeanModularForms` project
 
 * `HeckeRing.GL2.Gamma0_map_le_SLnZ`: `Γ₀(N) ≤ SL₂(ℤ)` inside `GL₂(ℚ)`.
 * `HeckeRing.GL2.doubleCoset_Gamma0_map_le_doubleCoset_SLnZ`: `Γ₀(N) α Γ₀(N) ⊆ Γ α Γ`.
+* `HeckeRing.GL2.gcd_apply_one_one_eq_one`: for an integral matrix with `N ∣ c` and determinant
+  coprime to `N`, the lower-right entry is coprime to `N`.
 * `HeckeRing.GL2.doubleCoset_SLnZ_inter_Delta0_eq_doubleCoset_Gamma0_map`: the equality above.
 
 ## References
@@ -79,7 +81,7 @@ lemma doubleCoset_Gamma0_map_le_doubleCoset_SLnZ (α : GL (Fin 2) ℚ) :
 
 /-- If `N ∣ c` and `det` is coprime to `N`, then so is the lower-right entry: modulo `N` the
 determinant is `a * d`, so `d` divides a unit. -/
-private lemma gcd_apply_one_one_eq_one (A : Matrix (Fin 2) (Fin 2) ℤ) (hAN : (N : ℤ) ∣ A 1 0)
+lemma gcd_apply_one_one_eq_one (A : Matrix (Fin 2) (Fin 2) ℤ) (hAN : (N : ℤ) ∣ A 1 0)
     (hdet : Int.gcd A.det N = 1) : Int.gcd (A 1 1) N = 1 := by
   rw [← Int.isCoprime_iff_gcd_eq_one] at hdet ⊢
   obtain ⟨k, hk⟩ := hAN
@@ -137,7 +139,7 @@ private lemma mem_Gamma0_of_mul_mem_Delta0 (α : GL (Fin 2) ℚ) (A : Matrix (Fi
   have hB_eq : B = (τ_N : Matrix (Fin 2) (Fin 2) ℤ) * A * (γ₂' : Matrix (Fin 2) (Fin 2) ℤ) :=
     Matrix.map_injective Int.cast_injective
       (hB.symm.trans (mapGL_mul_coe_eq_intMatrix 2 τ_N γ₂' α A hA))
-  rw [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  rw [mem_Gamma0_iff_dvd]
   exact dvd_apply_one_zero_of_dvd_mul N _ (γ₂' : Matrix (Fin 2) (Fin 2) ℤ)
     (hB_eq ▸ hBN) hCN hC11
 
@@ -164,7 +166,7 @@ private lemma mem_doubleCoset_Gamma0Image_of_mem_Delta0
     Subgroup.mem_sup_of_normal_left.mp (h_top ▸ Subgroup.mem_top σ₁)
   have hτ_N_Gamma0 : τ_N ∈ Gamma0 N := Gamma_le_Gamma0 N hτ_N
   have hτ10 : (N : ℤ) ∣ (τ_N : Matrix (Fin 2) (Fin 2) ℤ) 1 0 :=
-    (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma0_mem.mp hτ_N_Gamma0)
+    mem_Gamma0_iff_dvd.mp hτ_N_Gamma0
   have hτ11 : (N : ℤ) ∣ ((τ_N : Matrix (Fin 2) (Fin 2) ℤ) 1 1 - 1) :=
     (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (by push_cast; simp [(Gamma_mem.mp hτ_N).2.2.2])
   -- the `Γ(det α)` factor crosses `α` and lands back in `SL₂(ℤ)`
