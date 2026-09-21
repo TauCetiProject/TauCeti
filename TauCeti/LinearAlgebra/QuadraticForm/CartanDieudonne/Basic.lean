@@ -446,6 +446,38 @@ private theorem exceptional_det_eq_one
   rw [hneg, LinearMap.det_smul, heven.neg_one_pow, one_mul] at heval
   exact heval.symm
 
+/-- A nondegenerate quadratic space of dimension at least two has an anisotropic vector
+orthogonal to any given anisotropic vector. -/
+theorem exists_orthogonal_anisotropic [FiniteDimensional K V] [NeZero (2 : K)]
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hrank : 2 ≤ Module.finrank K V) {y : V}
+    (hy : Q y ≠ 0) : ∃ z : V, Q.IsOrtho z y ∧ Q z ≠ 0 := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let B : LinearMap.BilinForm K V := Q.polarBilin
+  let W : Submodule K V := B.orthogonal (K ∙ y)
+  have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ
+  have hBsymm : B.IsSymm := ⟨fun x y => QuadraticMap.polar_comm Q x y⟩
+  have hByy : B y y ≠ 0 := by
+    simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
+      Nat.cast_ofNat] using mul_ne_zero (NeZero.ne (2 : K)) hy
+  have hWnondeg : (B.restrict W).Nondegenerate :=
+    B.restrict_nondegenerate_orthogonal_spanSingleton hB hBsymm.isRefl hByy
+  have hWrank : 0 < Module.finrank K W := by
+    dsimp only [W]
+    rw [B.finrank_orthogonal hB]
+    rw [finrank_span_singleton (fun h => hy (by simp [h]))]
+    omega
+  let _ : Nontrivial W := Module.nontrivial_of_finrank_pos hWrank
+  obtain ⟨z, hz⟩ := LinearMap.BilinForm.exists_bilinForm_self_ne_zero
+    hWnondeg.ne_zero (LinearMap.BilinForm.isSymm_iff.mp (hBsymm.restrict W))
+  refine ⟨z, ?_, ?_⟩
+  · apply QuadraticMap.isOrtho_polarBilin.mp
+    simpa only [B, W, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using
+      z.2 y (Submodule.mem_span_singleton_self y)
+  · have hz' : B (z : V) (z : V) ≠ 0 := by
+      simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using hz
+    simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
+      Nat.cast_ofNat, mul_ne_zero_iff_left (NeZero.ne (2 : K))] using hz'
+
 private theorem exists_reflectionWord_of_finrank_eq
     [FiniteDimensional K V] [Invertible (2 : K)]
     (n : ℕ) (hn : Module.finrank K V = n)
