@@ -172,7 +172,7 @@ theorem map_Ico_eq_of_forall {σ : Equiv.Perm ℕ} {J : Finset ℕ} {k l : ℕ} 
 /-- **Consecutive windows suffice.** For a jointly exchangeable probability law, block
 independence at every pair of consecutive windows `[0, k)`, `[k, k + l)` gives block independence
 at every pair of disjoint finite sets. -/
-theorem indepFun_blockRestrict_of_forall_Ico {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
+theorem indepFun_blockRestrict_of_forall_Ico {ρ : Measure (ℕ × ℕ → α)}
     (hρ : JointlyExchangeable ρ fun p x => x p)
     (h : ∀ k l : ℕ, IndepFun (blockRestrict (Finset.Ico 0 (0 + k)))
       (blockRestrict (Finset.Ico k (k + l))) ρ)
