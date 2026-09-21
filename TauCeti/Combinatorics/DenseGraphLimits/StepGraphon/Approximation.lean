@@ -17,14 +17,14 @@ refining finite partitions converge to the graphon in `L¹`. The finite partitio
 ambient σ-algebra, so this is Lévy's upward theorem after identifying each block average with the
 corresponding conditional expectation.
 
-This gives a strict, finite-step approximation while stating convergence in the almost-everywhere
-language used by analytic limit arguments.
+This gives a strict, finite-step approximation with convergence stated as vanishing `eLpNorm` at
+exponent one.
 
 ## Main result
 
 * `TauCeti.DenseGraphLimits.countableStepGraphonAvg` is the canonical sequence of block-average
   step graphons, characterized by `TauCeti.DenseGraphLimits.countableStepGraphonAvg_def`.
-* `TauCeti.DenseGraphLimits.tendsto_eLpNorm_stepGraphonAvg_countablePartition` gives `L¹`
+* `TauCeti.DenseGraphLimits.tendsto_eLpNorm_countableStepGraphonAvg` gives `L¹`
   convergence of canonical block averages.
 
 ## References
@@ -73,7 +73,7 @@ theorem countableStepGraphonAvg_apply (W : Graphon Ω μ) (n : ℕ) (x y : Ω) :
 
 /-- The block-average step graphons along the canonical refining finite partitions converge to the
 original graphon in `L¹` on the product space. -/
-theorem tendsto_eLpNorm_stepGraphonAvg_countablePartition (W : Graphon Ω μ) :
+theorem tendsto_eLpNorm_countableStepGraphonAvg (W : Graphon Ω μ) :
     Tendsto
       (fun n => eLpNorm
         ((fun z : Ω × Ω => countableStepGraphonAvg W n z.1 z.2) -

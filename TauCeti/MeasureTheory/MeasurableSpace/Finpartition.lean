@@ -90,6 +90,25 @@ theorem parts_countablePartition (Ω : Type*) [MeasurableSpace Ω]
       (MeasurableSpace.finite_countablePartition Ω n).toFinset.erase ∅ := by
   rfl
 
+/-- The canonical finite partitions become finer as the level increases. -/
+theorem countablePartition_antitone (Ω : Type*) [MeasurableSpace Ω]
+    [MeasurableSpace.CountablyGenerated Ω] : Antitone (countablePartition Ω) := by
+  apply antitone_nat_of_succ_le
+  intro n s hs
+  rw [parts_countablePartition, Finset.mem_erase] at hs
+  have hs' : s ∈ MeasurableSpace.countablePartition Ω (n + 1) :=
+    (MeasurableSpace.finite_countablePartition Ω (n + 1)).mem_toFinset.mp hs.2
+  rw [MeasurableSpace.countablePartition, memPartition_succ] at hs'
+  obtain ⟨u, hu, rfl | rfl⟩ := hs'
+  · refine ⟨u, ?_, Set.inter_subset_left⟩
+    rw [parts_countablePartition, Finset.mem_erase]
+    exact ⟨fun h => hs.1 (by simp [h]),
+      (MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mpr hu⟩
+  · refine ⟨u, ?_, Set.sdiff_subset⟩
+    rw [parts_countablePartition, Finset.mem_erase]
+    exact ⟨fun h => hs.1 (by simp [h]),
+      (MeasurableSpace.finite_countablePartition Ω n).mem_toFinset.mpr hu⟩
+
 /-- Every part of the canonical finite partition of a countably generated measurable space is
 measurable. -/
 theorem measurableSet_of_mem_countablePartition (Ω : Type*) [MeasurableSpace Ω]
