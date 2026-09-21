@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Lie.Multiplicity
 -- Non-public: these declarations support the internal-decomposition proof.
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Lie.Submodule.Decomposition
-import TauCeti.Algebra.Lie.Submodule.DirectSum
 import TauCeti.Algebra.Lie.Submodule.Finrank
 import TauCeti.LinearAlgebra.Dimension.DirectSum
 
