@@ -378,7 +378,7 @@ theorem characterPairing_GL2ScalarUnipotentInduction_GL2EllipticInduction
 @[simp]
 theorem characterPairing_GL2CuspidalVirtualCharacter_self (theta : Eˣ →* ℂˣ)
     {psi : AddChar F ℂ} (hpsi : psi ≠ 1)
-    (htheta : theta.comp (powMonoidHom (Nat.card F)) ≠ theta) :
+    (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) :
     ClassFunction.characterPairing (GL2CuspidalVirtualCharacter F E hE theta psi)
       (GL2CuspidalVirtualCharacter F E hE theta psi) = 1 := by
   rw [GL2CuspidalVirtualCharacter_def]
@@ -394,7 +394,8 @@ theorem characterPairing_GL2CuspidalVirtualCharacter_self (theta : Eˣ →* ℂ�
   rw [characterPairing_GL2ScalarUnipotentInduction_self
       (theta.comp (Units.map (algebraMap F E : F →* E))) hpsi,
     characterPairing_GL2ScalarUnipotentInduction_GL2EllipticInduction hE theta psi,
-    hcross, characterPairing_GL2EllipticInduction_self hE theta htheta]
+    hcross, characterPairing_GL2EllipticInduction_self hE theta (by
+      simpa only [Nat.card_eq_fintype_card] using htheta)]
   ring
 
 omit [DecidableEq F] in
@@ -411,7 +412,8 @@ theorem GL2CuspidalVirtualCharacter_mem_irreducibleCharacters (theta : Eˣ →* 
     invertibleOfNonzero card_gl2_ne_zero
   obtain ⟨i, hi⟩ := exists_eq_irreducibleCharacter_or_neg
     (GL2CuspidalVirtualCharacter_mem_virtualCharacters hE theta psi)
-    (characterPairing_GL2CuspidalVirtualCharacter_self hE theta hpsi htheta)
+    (characterPairing_GL2CuspidalVirtualCharacter_self hE theta hpsi (by
+      simpa only [Nat.card_eq_fintype_card] using htheta))
   rcases hi with hi | hi
   · rw [hi]
     exact irreducibleCharacter_mem ℂ i
