@@ -81,11 +81,10 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
-/-- An exponential law on `ℝ` is nonnegative almost surely, for every rate. -/
-theorem ae_nonneg_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 ≤ x := by
+/-- An exponential law on `ℝ` is positive almost surely, for every rate. -/
+theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   rw [expMeasure]
-  filter_upwards [ae_pos_gammaMeasure 1 r] with x hx
-  exact hx.le
+  exact ae_pos_gammaMeasure 1 r
 
 /-- `expMeasure r` presented by its real-valued density, the form in which the shared density
 bridge of `TauCeti/Probability/Density.lean` applies. -/
