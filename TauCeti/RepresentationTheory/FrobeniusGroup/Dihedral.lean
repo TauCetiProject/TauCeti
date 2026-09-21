@@ -64,6 +64,7 @@ theorem frobeniusKernelSubgroup_zpowers_sr (hn : Odd n) (i : ZMod n) :
 together with the identity, exactly the rotations.** This is
 `TauCeti.frobeniusKernelSubgroup_zpowers_sr` read on the underlying set, where the Frobenius
 kernel is defined. -/
+@[simp]
 theorem coe_frobeniusKernelSubgroup_zpowers_sr (hn : Odd n) (i : ZMod n) :
     frobeniusKernel (Subgroup.zpowers (DihedralGroup.sr i)) = (dihedralRotations n : Set _) := by
   rw [← coe_frobeniusKernelSubgroup (isTISubgroup_zpowers_sr hn i),
