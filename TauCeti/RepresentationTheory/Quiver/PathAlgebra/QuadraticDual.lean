@@ -18,8 +18,9 @@ public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 A quadratic algebra presented on a quiver `Q` is `kQ / (R)` for a space `R` of `k`-linear
 combinations of paths of length two. Its **quadratic dual** is presented on the opposite quiver by
 the orthogonal complement `R^⊥` of `R` for the pairing which makes the paths of length two an
-orthonormal family: the dual of the arrow space of `Q` is the arrow space of the opposite quiver,
-and the induced pairing of length-two paths is the diagonal one.
+orthonormal family: the arrow space of the opposite quiver is dual to the arrow space of `Q`
+through the dual basis of the arrows, and the induced pairing of length-two paths is the diagonal
+one.
 
 The path algebra of the opposite quiver is the opposite algebra `(kQ)ᵐᵒᵖ`, and this file uses the
 latter directly, so that the orthogonal complement `R^⊥` is a space of length-two elements of `kQ`
@@ -46,6 +47,19 @@ pairing with that path. Restricting the orthogonality condition to degree two is
 equality of paths fixed classically. Fixing it is what keeps `DecidableEq (Quiver.TotalPath Q)` out
 of the signatures below, which no quiver supplies; the pairing itself does not depend on the
 choice.
+
+Duality here is taken through the path basis: `R^⊥` is the annihilator of `R` inside the
+degree-two part of `kQ` itself, and the degree-one part of `(kQ)ᵐᵒᵖ` is the span of the dual
+arrows. That span is *all* of the dual of the arrow module exactly when the quiver has finitely
+many arrows, `[∀ a b : Q, Finite (a ⟶ b)]` on top of the `[Finite Q]` the path algebra already
+asks for: a free module is identified with its full linear dual by its dual basis only in finite
+rank. With infinitely many arrows the full dual is a product of which the opposite quiver spans
+only the direct sum, so the construction below is then the graded (dual-basis) variant rather than
+the classical quadratic dual, and a biduality statement `(A^!)^! = A` — which this file does not
+make — would have to assume the arrows finite. The definitions themselves are stated for an
+arbitrary quiver and carry no finiteness beyond what the path algebra needs, as
+`Submodule.dualAnnihilator` carries none; the quivers they are applied to, the doubled quivers of
+finite simple graphs, have finitely many arrows.
 
 ## Main definitions
 
@@ -189,7 +203,9 @@ theorem op_mem_quadraticDualIdeal {f : pathAlgebra k Q} (hf : f ∈ quadraticOrt
 variable (k Q R)
 
 /-- The **quadratic dual algebra** of the quadratic algebra `kQ / (R)`: the opposite path algebra
-modulo the orthogonal complement of `R`. -/
+modulo the orthogonal complement of `R`. The dual relations are read through the path basis; see
+the implementation notes for the finiteness of the arrows under which this is the classical
+quadratic dual rather than its graded variant. -/
 noncomputable abbrev quadraticDual : Type _ :=
   (pathAlgebra k Q)ᵐᵒᵖ ⧸ (quadraticDualIdeal k Q R).asIdeal
 
