@@ -185,8 +185,7 @@ private theorem mem_Ioc_min_max_iff {a b t : ℝ} :
 
 /-- The `L¹ (0, 1)` distance of the two quantile functions is the area between the two cumulative
 distribution functions. -/
-theorem lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ)
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+theorem lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ) :
     ∫⁻ t, ‖μ.quantile t - ν.quantile t‖ₑ ∂volume.restrict (Ioo (0 : ℝ) 1)
       = ∫⁻ s, ‖cdf μ s - cdf ν s‖ₑ := by
   rw [lintegral_enorm_sub_eq_lintegral_measure_symmDiff _ (Measure.measurable_quantile μ)
