@@ -111,13 +111,17 @@ private theorem norm_toJet (f : C2HolderSpace α E F) : ‖toJet f‖ = ‖f‖ 
 /-- The underlying bounded continuous function. -/
 def toBoundedContinuousFunction (f : C2HolderSpace α E F) : E →ᵇ F := f.1.1
 
-/-- A bounded `C^{2,α}` element coerces to its underlying function. -/
-instance : CoeFun (C2HolderSpace α E F) fun _ ↦ E → F :=
-  ⟨fun f ↦ f.toBoundedContinuousFunction⟩
+/-- A bounded `C^{2,α}` element coerces to its underlying function from `E` to `F`. -/
+instance instCoeFun : CoeFun (C2HolderSpace α E F) fun _ ↦ E → F :=
+  ⟨fun f ↦ f.1.1⟩
+
+attribute [irreducible] instCoeFun
 
 @[simp]
 theorem toBoundedContinuousFunction_apply (f : C2HolderSpace α E F) (x : E) :
-    f.toBoundedContinuousFunction x = f x := rfl
+    f.toBoundedContinuousFunction x = f x := by
+  rw [instCoeFun]
+  rfl
 
 /-- The first derivative field, retaining its `C^{1,α}` structure. -/
 def fderivC1 (f : C2HolderSpace α E F) : C1HolderSpace α E (E →L[ℝ] F) := f.1.2
@@ -197,7 +201,7 @@ def const (c : F) : C2HolderSpace α E F :=
 
 @[simp]
 theorem const_apply (c : F) (x : E) : const (α := α) (E := E) c x = c := by
-  rw [const, toBoundedContinuousFunction_mk]
+  rw [← toBoundedContinuousFunction_apply, const, toBoundedContinuousFunction_mk]
   exact BoundedContinuousFunction.const_apply' x c
 
 @[simp]
@@ -213,8 +217,9 @@ theorem secondFDeriv_const (c : F) : secondFDeriv (const (α := α) (E := E) c) 
 
 /-- The recorded first derivative is the Fréchet derivative of the underlying function. -/
 theorem hasFDerivAt (f : C2HolderSpace α E F) (x : E) :
-    HasFDerivAt (f : E → F) (f.fderiv x) x :=
-  f.2 x
+    HasFDerivAt (f : E → F) (f.fderiv x) x := by
+  rw [instCoeFun, fderiv]
+  exact f.2 x
 
 /-- The first derivative accessor agrees with Mathlib's `fderiv`. -/
 @[simp]
@@ -295,6 +300,7 @@ theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
 theorem ext {f g : C2HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
   have hvalue : f.toBoundedContinuousFunction = g.toBoundedContinuousFunction := by
     ext x
+    rw [toBoundedContinuousFunction_apply, toBoundedContinuousFunction_apply]
     exact h x
   have hfirst : f.fderiv = g.fderiv := by
     apply DFunLike.ext _ _
@@ -303,7 +309,7 @@ theorem ext {f g : C2HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
       f.fderiv x = _root_.fderiv ℝ (f : E → F) x := (f.fderiv_eq x).symm
       _ = _root_.fderiv ℝ (g : E → F) x := by
         congr 1
-        exact congrArg DFunLike.coe hvalue
+        exact funext h
       _ = g.fderiv x := g.fderiv_eq x
   have hderivative : f.fderivC1 = g.fderivC1 := by
     apply C1HolderSpace.ext
