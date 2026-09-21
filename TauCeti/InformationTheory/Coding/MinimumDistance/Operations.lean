@@ -181,9 +181,9 @@ theorem hammingMinDist_directSum (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
   obtain ⟨x, hx, x', hx', hxx', hxd⟩ := exists_hammingDist_eq_hammingMinDist hC'
   obtain ⟨y, hy, y', hy', hyy', hyd⟩ := exists_hammingDist_eq_hammingMinDist hD'
   have hxmem : Sum.elim x 0 ∈ C.directSum D :=
-    Submodule.sumElim_zero_mem_directSum D hx
+    Submodule.sumElim_zero_right_mem_directSum D hx
   have hxmem' : Sum.elim x' 0 ∈ C.directSum D :=
-    Submodule.sumElim_zero_mem_directSum D hx'
+    Submodule.sumElim_zero_right_mem_directSum D hx'
   have hxne : Sum.elim x (0 : κ → R) ≠ Sum.elim x' 0 := by
     intro h
     exact hxx' (funext fun i ↦ congrFun h (.inl i))
@@ -193,9 +193,9 @@ theorem hammingMinDist_directSum (hC : C ≠ ⊥) (hD : D ≠ ⊥) :
     · simpa only [hammingDist_sumElim, hammingDist_self, add_zero, hxd] using
         hammingMinDist_le hxmem hxmem' hxne
     · have hymem : Sum.elim (0 : ι → R) y ∈ C.directSum D :=
-        Submodule.zero_sumElim_mem_directSum C hy
+        Submodule.sumElim_zero_left_mem_directSum C hy
       have hymem' : Sum.elim (0 : ι → R) y' ∈ C.directSum D :=
-        Submodule.zero_sumElim_mem_directSum C hy'
+        Submodule.sumElim_zero_left_mem_directSum C hy'
       have hyne : Sum.elim (0 : ι → R) y ≠ Sum.elim (0 : ι → R) y' := by
         intro h
         exact hyy' (funext fun i ↦ congrFun h (.inr i))
@@ -251,7 +251,7 @@ theorem hammingMinDist_directSum_bot :
       | inl i => rfl
       | inr i => exact (congrFun hy0 i).symm
     · rintro ⟨x, hx, rfl⟩
-      exact Submodule.sumElim_zero_mem_directSum _ hx
+      exact Submodule.sumElim_zero_right_mem_directSum _ hx
   rw [hset]
   apply hammingMinDist_image
   intro x _ y _ _

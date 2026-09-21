@@ -53,12 +53,12 @@ theorem mem_directSum_iff {C : Submodule R (ι → R)} {D : Submodule R (κ → 
   rfl
 
 /-- A word of the first code, extended by zeros, belongs to a direct sum. -/
-theorem sumElim_zero_mem_directSum {C : Submodule R (ι → R)} (D : Submodule R (κ → R))
+theorem sumElim_zero_right_mem_directSum {C : Submodule R (ι → R)} (D : Submodule R (κ → R))
     {x : ι → R} (hx : x ∈ C) : Sum.elim x (0 : κ → R) ∈ directSum C D :=
   mem_directSum_iff.mpr ⟨hx, D.zero_mem⟩
 
 /-- A word of the second code, extended by zeros, belongs to a direct sum. -/
-theorem zero_sumElim_mem_directSum (C : Submodule R (ι → R)) {D : Submodule R (κ → R)}
+theorem sumElim_zero_left_mem_directSum (C : Submodule R (ι → R)) {D : Submodule R (κ → R)}
     {y : κ → R} (hy : y ∈ D) : Sum.elim (0 : ι → R) y ∈ directSum C D :=
   mem_directSum_iff.mpr ⟨C.zero_mem, hy⟩
 
@@ -192,8 +192,8 @@ theorem forall_dvd_hammingNorm_directSum_iff (C : Submodule R (ι → R))
       (∀ x ∈ C, k ∣ hammingNorm x) ∧ ∀ y ∈ D, k ∣ hammingNorm y := by
   constructor
   · refine fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩
-    · simpa using h _ (sumElim_zero_mem_directSum D hx)
-    · simpa using h _ (zero_sumElim_mem_directSum C hy)
+    · simpa using h _ (sumElim_zero_right_mem_directSum D hx)
+    · simpa using h _ (sumElim_zero_left_mem_directSum C hy)
   · rintro ⟨hC, hD⟩ z hz
     rw [mem_directSum_iff] at hz
     rw [← Sum.elim_comp_inl_inr z, TauCeti.hammingNorm_sumElim]
