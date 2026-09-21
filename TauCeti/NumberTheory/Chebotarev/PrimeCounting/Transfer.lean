@@ -23,10 +23,11 @@ unweighted count using the canonical Frobenius prime-counting carrier.
 
 * `frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO` removes higher prime powers
   from a Frobenius asymptotic.
-* `tendsto_frobeniusTheta_of_tendsto_frobeniusPsi_div` is the corresponding quotient form.
+* `tendsto_frobeniusTheta_div_id_of_tendsto_frobeniusPsi_div_id` is the corresponding quotient
+  form.
 * `frobeniusPrimeCount_asymptotic_of_tendsto_frobeniusPsi_div` and
-  `tendsto_frobeniusPrimeCount_of_tendsto_frobeniusPsi_div` transfer the result to the unweighted
-  count.
+  `tendsto_frobeniusPrimeCount_div_div_log_of_tendsto_frobeniusPsi_div_id` transfer the result to
+  the unweighted count.
 
 The transfer statements are parameterized by their analytic asymptotic hypotheses, separating the
 elementary counting deductions from the theorem that supplies those hypotheses.
@@ -58,7 +59,7 @@ theorem frobeniusPrimeCount_apply (C : ConjClasses (L ≃ₐ[K] L))
   simp [frobeniusPrimeCount]
 
 /-- The real coercion of the Frobenius prime count is the generic prime count of its fibre. -/
-theorem frobeniusPrimeCount_eq_primeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
+@[simp] theorem frobeniusPrimeCount_eq_primeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     (frobeniusPrimeCount K L C x : ℝ) = primeCount K (frobeniusPrimeSet K L C) x := by
   classical
   simpa [frobeniusPrimeCount] using
@@ -77,13 +78,14 @@ theorem frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO
     (fun x ↦ ?_) fun _ ↦ rfl)
   ring
 
-private theorem frobeniusTheta_eq_primeTheta (C : ConjClasses (L ≃ₐ[K] L)) :
+/-- The Frobenius `ϑ` function is the generic prime `ϑ` function of its fibre. -/
+@[simp] theorem frobeniusTheta_eq_primeTheta (C : ConjClasses (L ≃ₐ[K] L)) :
     frobeniusTheta K L C = primeTheta K (frobeniusPrimeSet K L C) := by
   funext x
   rw [frobeniusTheta_apply, primeTheta_apply]
 
 /-- A quotient-form Frobenius `ϑ` asymptotic follows from the corresponding `ψ` asymptotic. -/
-theorem tendsto_frobeniusTheta_of_tendsto_frobeniusPsi_div
+theorem tendsto_frobeniusTheta_div_id_of_tendsto_frobeniusPsi_div_id
     (C : ConjClasses (L ≃ₐ[K] L)) {δ : ℝ}
     (hψ : Tendsto (fun x : ℝ ↦ frobeniusPsi K L C x / x) atTop (𝓝 δ)) :
     Tendsto (fun x : ℝ ↦ frobeniusTheta K L C x / x) atTop (𝓝 δ) := by
@@ -123,7 +125,7 @@ theorem frobeniusPrimeCount_asymptotic_of_tendsto_frobeniusPsi_div
       (K := K) (S := frobeniusPrimeSet K L C) hδ hθeq)
 
 /-- The prime-counting quotient form obtained from a Frobenius `ψ` quotient limit. -/
-theorem tendsto_frobeniusPrimeCount_of_tendsto_frobeniusPsi_div
+theorem tendsto_frobeniusPrimeCount_div_div_log_of_tendsto_frobeniusPsi_div_id
     (C : ConjClasses (L ≃ₐ[K] L)) {δ : ℝ}
     (hψ : Tendsto (fun x : ℝ ↦ frobeniusPsi K L C x / x) atTop (𝓝 δ)) :
     Tendsto
@@ -132,11 +134,15 @@ theorem tendsto_frobeniusPrimeCount_of_tendsto_frobeniusPsi_div
   have hψ' := isLittleO_sub_mul_id_of_tendsto_div hψ
   have hθ : (fun x : ℝ ↦ frobeniusTheta K L C x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
     frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO C hψ'
+  have hθ' : (fun x : ℝ ↦ primeTheta K (frobeniusPrimeSet K L C) x - δ * x) =o[atTop]
+      id := by
+    refine hθ.congr' ?_ ?_
+    · filter_upwards [] with x
+      simp only [frobeniusTheta_eq_primeTheta]
+    · exact Eventually.of_forall fun _ ↦ rfl
   have hcount := primeCount_sub_mul_logIntegral_isLittleO
-    (K := K) (S := frobeniusPrimeSet K L C) (δ := δ) (by
-      change (fun x : ℝ ↦ primeTheta K (frobeniusPrimeSet K L C) x - δ * x) =o[atTop]
-        fun x : ℝ ↦ x
-      simpa only [frobeniusTheta_eq_primeTheta] using hθ)
+    (K := K) (S := frobeniusPrimeSet K L C) (δ := δ)
+    hθ'
   have herror := hcount.tendsto_div_nhds_zero
   have hli : Tendsto
     (fun x : ℝ ↦ Real.logIntegral x / (x / Real.log x)) atTop (𝓝 1) :=
