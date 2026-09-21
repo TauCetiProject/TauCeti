@@ -155,9 +155,8 @@ theorem lift_surjective {f : X → P}
   have hle : Subgroup.closure (Set.range f) ≤ (lift f).toMonoidHom.range :=
     Subgroup.closure_le _ |>.2 (by rintro _ ⟨x, rfl⟩; exact ⟨of x, lift_of f x⟩)
   have hdense : Dense (Set.range (lift f)) := hf.mono hle
-  have hclosed : IsClosed (Set.range (lift f)) :=
-    (isCompact_range (map_continuous (lift f))).isClosed
-  rw [← Set.range_eq_univ, ← hclosed.closure_eq, hdense.closure_eq]
+  rw [← Set.range_eq_univ, ← (map_continuous (lift f)).isClosedMap.isClosed_range.closure_eq,
+    hdense.closure_eq]
 
 end Lift
 
@@ -192,14 +191,8 @@ theorem map_surjective {u : X → Y} (hu : Function.Surjective u) :
 end Map
 
 /-- The free profinite group on an empty type is trivial. -/
-instance [IsEmpty X] : Subsingleton (freeProfiniteGroup X) := by
-  have h := dense_closure_range_of X
-  rw [Set.range_eq_empty, Subgroup.closure_empty, Subgroup.coe_bot] at h
-  refine ⟨fun a b => ?_⟩
-  have hmem : ∀ c : freeProfiniteGroup X, c ∈ ({1} : Set (freeProfiniteGroup X)) := fun c => by
-    rw [← isClosed_singleton.closure_eq, h.closure_eq]
-    trivial
-  rw [hmem a, hmem b]
+instance [IsEmpty X] : Subsingleton (freeProfiniteGroup X) :=
+  (ProfiniteCompletion.etaFn_bijective_of_finite (G := FreeGroup X)).2.subsingleton
 
 section Uniqueness
 
