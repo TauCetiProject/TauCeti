@@ -31,8 +31,8 @@ open scoped ENNReal Topology
 /-- **On a finite measure space, `Lᵖ` convergence implies `L¹` convergence.** -/
 theorem tendsto_lintegral_enorm_sub_of_tendsto_Lp {α G ι : Type*} [MeasurableSpace α]
     {ν : Measure α} [IsFiniteMeasure ν] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [CompleteSpace G] {q : ℝ≥0∞} [Fact (1 ≤ q)] {l : Filter ι}
-    {f : ι → Lp G q ν} {g : Lp G q ν} (h : Tendsto f l (𝓝 g)) :
+    {q : ℝ≥0∞} [Fact (1 ≤ q)] {l : Filter ι} {f : ι → Lp G q ν} {g : Lp G q ν}
+    (h : Tendsto f l (𝓝 g)) :
     Tendsto (fun i => ∫⁻ x, ‖f i x - g x‖ₑ ∂ν) l (𝓝 0) := by
   have hL1 : Tendsto
       (fun i => Measure.LpToL1CLM (𝕜 := ℝ) ν q (f i)) l
