@@ -183,8 +183,9 @@ carries the subspace topology of its image: the factor set is continuous exactly
 under the inclusion, the failure `σ g * σ h * (σ (g * h))⁻¹` of the section to be a homomorphism, is
 continuous. In the profinite dictionary the hypothesis comes for free, the kernel being compact and
 the extension Hausdorff: a continuous inclusion is then a closed embedding by
-`Continuous.isClosedEmbedding`. -/
-theorem continuous_factorSet [IsTopologicalGroup E] [ContinuousMul G]
+`Continuous.isClosedEmbedding`. Of `E` only the multiplication and the inversion are asked to be
+continuous. -/
+theorem continuous_factorSet [ContinuousMul E] [ContinuousInv E] [ContinuousMul G]
     (hinl : Topology.IsEmbedding ⇑S.inl)
     {σ : S.Section} (hσc : Continuous ⇑σ) (hσ : σ 1 = 1) (hact : InducesAction S) :
     Continuous ⇑(factorSet σ hσ hact) := by
