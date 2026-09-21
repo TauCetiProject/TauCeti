@@ -31,9 +31,9 @@ Local freeness is also shown to be invariant under isomorphism, by transporting 
 an isomorphism (`SheafOfModules.LocalGeneratorsData.ofIsIso`).
 
 Finally, local freeness descends along a covering family: local bases chosen after restricting to
-every member of a covering family can be combined into local bases on the original site. The
-construction follows the one proposed in Brian Nugent's
-[Mathlib PR #39553](https://github.com/leanprover-community/mathlib4/pull/39553).
+every member of a covering family can be combined into local bases on the original site. This
+descent construction is adapted from
+[Brian Nugent's implementation](https://github.com/leanprover-community/mathlib4/blob/d58ff62e7a9df910516798545083fcd91b20dda6/Mathlib/Algebra/Category/ModuleCat/Sheaf/LocallyFree.lean).
 
 ## Main declarations
 

@@ -15,9 +15,9 @@ This file provides a general transport for generating sections: first carry them
 colimit-preserving functor, then read them through an isomorphism of the resulting sheaf. The
 transport preserves the indexing type, invertibility of the generating morphism, and finiteness.
 
-The iterated-slice specialization follows the construction proposed in Brian Nugent's
-[Mathlib PR #39553](https://github.com/leanprover-community/mathlib4/pull/39553), adapted to the
-pinned Mathlib API.
+The iterated-slice specialization provides the transport used to combine local bases over a
+refinement. It is adapted from
+[Brian Nugent's implementation](https://github.com/leanprover-community/mathlib4/blob/d58ff62e7a9df910516798545083fcd91b20dda6/Mathlib/Algebra/Category/ModuleCat/Sheaf/Generators.lean).
 
 ## Main declarations
 

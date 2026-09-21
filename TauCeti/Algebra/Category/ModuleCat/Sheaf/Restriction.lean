@@ -28,10 +28,10 @@ that comparison: the ingredients are Mathlib's `PresheafOfModules.sheafification
 `PresheafOfModules.inverseImage_W_toPresheaf_eq_inverseImage_isomorphisms`, and
 `Presheaf.isLocallyInjective_whisker`/`Presheaf.isLocallySurjective_whisker`.
 
-The iterated-slice comparison `iteratedSliceEquivalence` and the two isomorphisms derived from it
-follow the construction proposed in Brian Nugent's
-[Mathlib PR #39553](https://github.com/leanprover-community/mathlib4/pull/39553), adapted to the
-pinned Mathlib API.
+The iterated-slice comparison `iteratedSliceEquivalence` identifies two successive restrictions
+with restriction to the underlying object; its unit-sheaf and restricted-object isomorphisms make
+that identification usable for transporting local bases. The construction is adapted from
+[Brian Nugent's implementation](https://github.com/leanprover-community/mathlib4/blob/d58ff62e7a9df910516798545083fcd91b20dda6/Mathlib/Algebra/Category/ModuleCat/Sheaf/Generators.lean).
 
 ## Main declarations
 
