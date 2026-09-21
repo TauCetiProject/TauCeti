@@ -30,6 +30,8 @@ Stieltjes/Bernstein-function correspondences requested by the one-parameter-semi
 * `TauCeti.RepresentsStieltjes`: a measure and two nonnegative coefficients represent a function
   by the Stieltjes formula on `(0, ∞)`.
 * `TauCeti.IsStieltjesFunction`: existence of a Stieltjes representation.
+* `TauCeti.measurable_stieltjesWeight` and `TauCeti.integrable_stieltjesWeight`: the weight is
+  measurable, and every finite measure satisfies the weight condition.
 * `TauCeti.IsStieltjesFunction.add`, `TauCeti.IsStieltjesFunction.smul`: Stieltjes functions form
   a convex cone.
 * `TauCeti.isStieltjesFunction_const`, `TauCeti.isStieltjesFunction_inv`,
@@ -72,6 +74,20 @@ theorem representsStieltjes_iff {μ : Measure ℝ≥0} {a b : ℝ≥0} {f : ℝ 
       μ {0} = 0 ∧ Integrable stieltjesWeight μ ∧
         ∀ t : ℝ, 0 < t → f t = (a : ℝ) / t + (b : ℝ) + ∫ x, (t + (x : ℝ))⁻¹ ∂μ :=
   Iff.rfl
+
+/-- The standard Stieltjes weight is bounded by `1`, so it is integrable against every finite
+measure. -/
+@[fun_prop]
+theorem measurable_stieltjesWeight : Measurable stieltjesWeight := by
+  rw [funext stieltjesWeight_apply]
+  fun_prop
+
+theorem integrable_stieltjesWeight (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
+    Integrable stieltjesWeight μ := by
+  refine (integrable_const (1 : ℝ)).mono' (by fun_prop) (.of_forall fun x => ?_)
+  have h1x : (0 : ℝ) < 1 + (x : ℝ) := by positivity
+  rw [stieltjesWeight_apply, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr h1x)]
+  exact inv_le_one_of_one_le₀ (by simp [x.coe_nonneg])
 
 /-- The Stieltjes kernel is integrable at every positive parameter when its standard weight is. -/
 theorem integrable_inv_add {μ : Measure ℝ≥0} (hμ : Integrable stieltjesWeight μ)
