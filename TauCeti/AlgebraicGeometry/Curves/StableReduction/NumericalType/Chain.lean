@@ -39,10 +39,10 @@ obtained by dropping one end agree on all interior weights, which leaves only th
 the two ends, and a chain with both ends exceptional is again excluded by an explicit vector.
 
 In both exclusions the offending configuration is the diagram of an affine generalized Cartan
-matrix, `Ã_{t-1}` for the cycle and `D̃_{t-1}` or one of its variants for the doubly exceptional
-chain. The vector spanning the kernel of that matrix is positive and makes every row of the
-intersection form vanish, which negative definiteness of the form on the vectors supported on a
-proper subset of the components forbids.
+matrix, affine `A_{t-1}` for the cycle and affine `D_{t-1}` or one of its variants for the doubly
+exceptional chain. The vector spanning the kernel of that matrix is positive and makes every row
+of the intersection form vanish, which negative definiteness of the form on the vectors supported
+on a proper subset of the components forbids.
 
 ## Main results
 
