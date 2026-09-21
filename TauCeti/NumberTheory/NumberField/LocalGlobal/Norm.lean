@@ -21,10 +21,6 @@ formula for extension of scalars.
 * `TauCeti.prod_norm_adicCompletionExtension_eq_norm_pow`: the product of the normalized
   absolute values of the images in all completions above a finite place.
 
-The local norm formula is
-`TauCeti.norm_adicCompletionExtension`; the degrees sum
-to the global degree by `TauCeti.sum_finrank_adicCompletion_eq_finrank`.
-
 ## References
 
 * [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II, §8.
