@@ -109,8 +109,11 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
     have h_borelUpper :
         (b.borelUpper : Submodule K L) =
           (LieSubalgebra.lieSpan K L (Set.range b.e) : Submodule K L) := by
-      ext y
-      simp only [LieAlgebra.Basis.borelUpper, LieSubalgebra.mem_toSubmodule]
+      -- Mathlib's `borelUpper` definition inherits the `LieSubmodule.lieSpan`
+      -- carrier, whose coercion here is definitionally the carrier of the
+      -- corresponding `LieSubalgebra.lieSpan`; name that transport explicitly
+      -- instead of hiding it in the membership proof below.
+      rfl
     rw [← LieSubalgebra.mem_toSubmodule]
     rw [← h_borelUpper]
     exact (LieSubmodule.mem_toSubmodule b.borelUpper).mpr hx'
