@@ -1,0 +1,140 @@
+import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+
+/-!
+# Integral subgroups of restricted products
+
+This file packages the everywhere-integral part of a restricted product of topological
+groups.  The reference family used to form the restricted product and a second family of
+subgroups are kept separate, so changing the integral model at finitely many indices is
+represented without changing the ambient restricted product.  The resulting openness and
+compactness statements are the point-set input for maps and decompositions of restricted
+products.
+-/
+
+namespace TauCeti
+
+open Filter
+open scoped RestrictedProduct
+
+universe u v
+
+variable {ι : Type u} {G : ι → Type v}
+variable [∀ i, Group (G i)]
+
+/-- The subgroup of a restricted product cut out by a second family of subgroups. -/
+def integralSubgroupOf (U V : ∀ i, Subgroup (G i)) :
+    Subgroup (Πʳ i, [G i, (U i : Set (G i))]) where
+  carrier := {x | ∀ i, x i ∈ V i}
+  one_mem' := fun i ↦ (V i).one_mem
+  mul_mem' := fun hx hy i ↦ (V i).mul_mem (hx i) (hy i)
+  inv_mem' := fun hx i ↦ (V i).inv_mem (hx i)
+
+@[simp]
+theorem mem_integralSubgroupOf (U V : ∀ i, Subgroup (G i))
+    (x : Πʳ i, [G i, (U i : Set (G i))]) :
+    x ∈ integralSubgroupOf U V ↔ ∀ i, x i ∈ V i := Iff.rfl
+
+/-- The subgroup whose coordinates lie in the reference subgroup at every index. -/
+def integralSubgroup (U : ∀ i, Subgroup (G i)) :
+    Subgroup (Πʳ i, [G i, (U i : Set (G i))]) :=
+  integralSubgroupOf U U
+
+@[simp]
+theorem mem_integralSubgroup (U : ∀ i, Subgroup (G i))
+    (x : Πʳ i, [G i, (U i : Set (G i))]) :
+    x ∈ integralSubgroup U ↔ ∀ i, x i ∈ U i := Iff.rfl
+
+variable [∀ i, TopologicalSpace (G i)]
+
+/-- Openness when the second family agrees with the reference family eventually. -/
+theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
+    (hU : ∀ i, IsOpen (U i : Set (G i))) (hV : ∀ i, IsOpen (V i : Set (G i)))
+    (hUV : ∀ᶠ i in cofinite, U i = V i) :
+    IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
+  classical
+  let S : Set ι := {i | U i = V i}
+  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
+  have hopenU : IsOpen {x : Πʳ i, [G i, (U i : Set (G i))] |
+      ∀ i, i ∈ S → x i ∈ U i} :=
+    RestrictedProduct.isOpen_forall_imp_mem hU
+  have hopenV : IsOpen ((Sᶜ : Set ι).pi fun i ↦ (V i : Set (G i)) :
+      Set (∀ i, G i)) :=
+    isOpen_set_pi (mem_cofinite.mp hUV) (fun i hi ↦ hV i)
+  have hopen := hopenU.inter (hopenV.preimage RestrictedProduct.continuous_coe)
+  convert hopen using 1
+  ext x
+  constructor
+  · intro hx
+    constructor
+    · exact fun i hi ↦ hi ▸ hx i
+    · exact fun i hi ↦ hx i
+  · rintro ⟨hxS, hxSc⟩ i
+    by_cases hi : i ∈ S
+    · exact hi ▸ hxS i hi
+    · exact hxSc i hi
+
+/-- Compactness when the second family is eventually contained in the reference family. -/
+theorem isCompact_forall_mem_of_eventually_subset (U V : ∀ i, Subgroup (G i))
+    (hV : ∀ i, IsCompact (V i : Set (G i)))
+    (hUV : ∀ᶠ i in cofinite, (V i : Set (G i)) ⊆ (U i : Set (G i))) :
+    IsCompact (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
+  classical
+  let S : Set ι := {i | (V i : Set (G i)) ⊆ (U i : Set (G i))}
+  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hUV
+  let Q : Set (∀ i, G i) := Set.univ.pi fun i ↦ (V i : Set (G i))
+  have hQ : IsCompact Q := isCompact_univ_pi hV
+  have hQrange : Q ⊆ Set.range
+      ((↑) : (Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S]) → (∀ i : ι, G i)) := by
+    rw [RestrictedProduct.range_coe_principal]
+    intro x hx i hi
+    exact hi (hx i trivial)
+  have hK : IsCompact (((↑) :
+      (Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S]) → (∀ i : ι, G i)) ⁻¹' Q) :=
+    (RestrictedProduct.isEmbedding_coe_of_principal (S := S)).isCompact_preimage' hQ hQrange
+  have himage :
+      (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) =
+        RestrictedProduct.inclusion (fun i ↦ G i) (fun i ↦ (U i : Set (G i))) hS ''
+          (((↑) : (Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S]) → (∀ i : ι, G i)) ⁻¹' Q) := by
+    ext x
+    constructor
+    · intro hx
+      refine ⟨⟨x, ?_⟩, ?_, rfl⟩
+      · exact fun i hi ↦ hi (hx i)
+      · exact fun i _ ↦ hx i
+    · rintro ⟨y, hy, rfl⟩
+      exact fun i ↦ hy i trivial
+  rw [himage]
+  exact hK.image (RestrictedProduct.continuous_inclusion hS)
+
+/-- Openness of the everywhere-integral subgroup from coordinatewise openness. -/
+theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
+    (hU : ∀ i, IsOpen (U i : Set (G i))) :
+    IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
+  -- The explicit coercions expose the carrier predicate in Mathlib's normal form.
+  change IsOpen {x : Πʳ i, [G i, (U i : Set (G i))] |
+    ∀ i, (x i : G i) ∈ (U i : Set (G i))}
+  exact RestrictedProduct.isOpen_forall_mem (A := fun i ↦ (U i : Set (G i))) hU
+
+/-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
+theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
+    (hK : ∀ i, IsCompact (U i : Set (G i))) :
+    IsCompact (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
+  have hU : IsCompact (Set.univ : Set (∀ i, U i)) := by
+    rw [← Set.pi_univ Set.univ]
+    exact isCompact_univ_pi fun i ↦ isCompact_iff_compactSpace.mp (hK i) |>.isCompact_univ
+  have hrange := hU.image (RestrictedProduct.isEmbedding_structureMap
+    (R := fun i ↦ G i) (A := fun i ↦ (U i : Set (G i))) (𝓕 := cofinite)).continuous
+  rw [Set.image_univ, RestrictedProduct.range_structureMap] at hrange
+  -- The image of the structure map is exactly the everywhere-integral carrier.
+  change IsCompact {x : Πʳ i, [G i, (U i : Set (G i))] |
+    ∀ i, (x i : G i) ∈ (U i : Set (G i))}
+  exact hrange
+
+/-- A family of compact open subgroups, one in each factor. -/
+structure CompactOpenSubgroups (G : ι → Type v) [∀ i, Group (G i)]
+    [∀ i, TopologicalSpace (G i)] where
+  subgroup : ∀ i, Subgroup (G i)
+  isOpen_subgroup : ∀ i, IsOpen (subgroup i : Set (G i))
+  isCompact_subgroup : ∀ i, IsCompact (subgroup i : Set (G i))
+
+end TauCeti
