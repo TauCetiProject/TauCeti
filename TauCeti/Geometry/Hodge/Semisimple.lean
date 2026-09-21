@@ -140,14 +140,10 @@ noncomputable instance instSplitMonoCategory :
       apply Hom.ext
       rw [comp_toRatLinearMap, substructureInclusion_toRatLinearMap, hfWQ]
       exact LinearMap.subtype_comp_codRestrict _ _ _
-    obtain ⟨P⟩ := isPolarizable_iff_nonempty.1 Y.isPolarizable
-    apply IsSplitMono.mk'
-    refine ⟨substructureRetraction Y W P ≫ inv fW, ?_⟩
+    let _ : IsSplitMono (substructureInclusion Y W) :=
+      isSplitMono_substructureInclusion Y W
     rw [← hfactor]
-    rw [Category.assoc fW (substructureInclusion Y W)
-        (substructureRetraction Y W P ≫ inv fW),
-      ← Category.assoc (substructureInclusion Y W) (substructureRetraction Y W P) (inv fW),
-      substructureInclusion_comp_substructureRetraction, Category.id_comp, IsIso.hom_inv_id]
+    infer_instance
 
 end PolarizableHodgeStructureCat
 
