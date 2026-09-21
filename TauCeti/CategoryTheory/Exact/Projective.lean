@@ -295,6 +295,9 @@ section Comparison
 
 variable {X Y : C}
 
+/- The comparison maps in this section are dual to those for injective presentations in
+`TauCeti.CategoryTheory.Exact.Injective`. -/
+
 /-- The lift of `f : X ⟶ Y` to the projective middle terms of relative projective
 presentations `P` of `X` and `Q` of `Y`, chosen by relative projectivity of `P.P`. -/
 noncomputable def middleMap (P : E.ProjectivePresentation X) (Q : E.ProjectivePresentation Y)

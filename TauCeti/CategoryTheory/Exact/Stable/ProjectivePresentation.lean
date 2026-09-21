@@ -39,6 +39,8 @@ before it is descended to an endofunctor of the stable category.
 
 ## References
 
+* `TauCeti.CategoryTheory.Exact.Stable.Presentation`, whose injective-presentation comparison
+  API is the dual template for this projective-presentation construction.
 * Dieter Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
   Algebras*, Chapter I, Section 2.
 * Bernhard Keller, *Chain complexes and stable categories*, Manuscripta Mathematica **67**
