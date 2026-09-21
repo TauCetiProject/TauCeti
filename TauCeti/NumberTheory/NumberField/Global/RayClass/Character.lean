@@ -85,16 +85,8 @@ theorem ext {χ ψ : RayClassCharacter 𝔪}
   simpa only [onIdeals_apply] using h I
 
 /-- Pullback of ray class characters from a modulus `𝔪` to a multiple `𝔫` of that modulus. -/
-noncomputable def induced (h : 𝔪 ∣ 𝔫) : RayClassCharacter 𝔪 →* RayClassCharacter 𝔫 where
-  toFun χ := χ.comp (classMap h)
-  map_one' := by
-    apply MonoidHom.ext
-    intro c
-    simp
-  map_mul' χ ψ := by
-    apply MonoidHom.ext
-    intro c
-    simp
+noncomputable def induced (h : 𝔪 ∣ 𝔫) : RayClassCharacter 𝔪 →* RayClassCharacter 𝔫 :=
+  (classMap h).compHom'
 
 /-- A character induced to a larger modulus is evaluated through the transition map. -/
 @[simp]
