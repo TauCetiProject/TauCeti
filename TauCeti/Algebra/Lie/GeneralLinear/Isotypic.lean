@@ -115,15 +115,15 @@ variable {S : Type w} [AddCommGroup S] [Module K S]
   [LieModule K (Matrix (Fin N) (Fin N) K) S]
 variable {mu : Fin N → K}
 
-/-- Every nonzero submodule of a finite-dimensional `gl_N`-module over an algebraically closed
-field contains a highest-weight vector of weight `mu`, when all ambient highest-weight vectors have
-that weight. -/
+/-- Every nonzero finite-dimensional submodule of a `gl_N`-module over an algebraically closed field
+contains a highest-weight vector of weight `mu`, when all ambient highest-weight vectors have that
+weight. -/
 theorem exists_isGlHighestWeightVector_submodule_of_forall
-    [IsAlgClosed K] [FiniteDimensional K M]
+    [IsAlgClosed K]
     (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
-    ∀ (P : LieSubmodule K (Matrix (Fin N) (Fin N) K) M) (_hP : P ≠ ⊥),
+    ∀ (P : LieSubmodule K (Matrix (Fin N) (Fin N) K) M) [FiniteDimensional K P] (_hP : P ≠ ⊥),
       ∃ v : P, IsGlHighestWeightVector mu v := by
-  intro P hP
+  intro P _instP hP
   let _ : Nontrivial P := (LieSubmodule.nontrivial_iff_ne_bot K
     (Matrix (Fin N) (Fin N) K) M).mpr hP
   obtain ⟨nu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (N := N) (M := P)
