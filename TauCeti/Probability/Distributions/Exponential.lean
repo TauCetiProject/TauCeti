@@ -81,7 +81,9 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
-/-- An exponential law on `ℝ` is positive almost surely, for every rate. -/
+/-- The measure `expMeasure r` is concentrated on the positive reals, for every `r`. For `0 < r`
+this says an exponential random variable is almost surely positive; for `r ≤ 0` the measure is
+zero and the statement holds trivially. -/
 theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   rw [expMeasure]
   exact ae_pos_gammaMeasure 1 r
