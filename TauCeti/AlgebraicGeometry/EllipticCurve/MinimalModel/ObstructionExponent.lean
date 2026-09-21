@@ -19,8 +19,8 @@ let `W` be an elliptic Weierstrass equation over `K`. The **local obstruction ex
 
 The numerator is divisible by twelve because an admissible change of variables scales the
 discriminant by the inverse twelfth power of its `u`-parameter. It is useful to define the
-exponent for every rational equation, with values in `ℤ`: local integrality is precisely the
-hypothesis that makes it nonnegative, while a nonintegral equation may have negative defect.
+exponent for every rational equation, with values in `ℤ`: local integrality is a sufficient
+hypothesis for nonnegativity, while a nonintegral equation may have negative defect.
 
 These exponents are the local data assembled by the defect ideal of an integral equation. The
 reconstruction formula in this file is the interface that construction needs; it avoids relying
@@ -44,6 +44,8 @@ on integer division or unfolding the definition.
   equation, vanishing of the obstruction exponent is equivalent to local minimality.
 * `WeierstrassCurve.isGlobalMinimal_iff_obstructionExponentAt_eq_zero`: an integral equation is
   globally minimal exactly when all its local obstruction exponents vanish.
+* `WeierstrassCurve.IsSharpSemiGlobalMinimalAt.isSemiGlobalMinimal`: sharp semi-global minimality
+  implies the weak semi-global predicate.
 
 ## References
 
@@ -59,6 +61,30 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 variable (O : Type*) [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
+/-- **A change of variables subtracts twelve times the order of its scaling parameter from the
+order of the discriminant.** -/
+theorem ord_Δ_smul (v : HeightOneSpectrum O) (C : VariableChange K)
+    (W : WeierstrassCurve K) [W.IsElliptic] :
+    (v.valuation K).ord (C • W).Δ =
+      (v.valuation K).ord W.Δ - 12 * (v.valuation K).ord (C.u : K) := by
+  rw [variableChange_Δ,
+    Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
+    Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv]
+  ring
+
+/-- **A minimal equation computes the local minimal discriminant valuation in additive
+notation.** -/
+theorem ord_Δ_eq_localMinimalDiscriminantValuation (v : HeightOneSpectrum O)
+    (W : WeierstrassCurve K) [W.IsElliptic] {W' : WeierstrassCurve K}
+    [IsMinimal (Localization.AtPrime v.asIdeal) W'] (D : VariableChange K) (hD : D • W = W') :
+    (v.valuation K).ord W'.Δ =
+      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
+  have hΔ : W'.Δ ≠ 0 := by
+    rw [← hD, variableChange_Δ]
+    exact mul_ne_zero (pow_ne_zero _ D.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero
+  apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ hΔ).2
+  exact valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v D hD
+
 /-- **The difference between the discriminant valuation of an equation and the local minimal
 valuation is divisible by twelve.** An admissible change of variables scales the discriminant by
 the inverse twelfth power of its `u`-parameter. -/
@@ -68,18 +94,9 @@ theorem twelve_dvd_ord_Δ_sub_localMinimalDiscriminantValuation
     (12 : ℤ) ∣ (v.valuation K).ord W.Δ -
       W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
-  let _ : (W.minimal (Localization.AtPrime v.asIdeal)).IsElliptic := hC ▸ inferInstance
-  have hmin : (v.valuation K).ord (W.minimal (Localization.AtPrime v.asIdeal)).Δ =
-      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
-    apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _
-      (W.minimal (Localization.AtPrime v.asIdeal)).isUnit_Δ.ne_zero).2
-    exact valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC
-  have hord : (v.valuation K).ord (W.minimal (Localization.AtPrime v.asIdeal)).Δ =
-      -(12 : ℤ) * (v.valuation K).ord (C.u : K) + (v.valuation K).ord W.Δ := by
-    rw [← hC, variableChange_Δ,
-      Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
-      Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv]
-    ring
+  have hmin := ord_Δ_eq_localMinimalDiscriminantValuation O v W C hC
+  have hord := ord_Δ_smul O v C W
+  rw [hC] at hord
   refine ⟨(v.valuation K).ord (C.u : K), ?_⟩
   omega
 
@@ -123,29 +140,57 @@ theorem obstructionExponentAt_smul (v : HeightOneSpectrum O) (C : VariableChange
       obstructionExponentAt O v W - (v.valuation K).ord (C.u : K) := by
   have hC := twelve_mul_obstructionExponentAt O v (C • W)
   have hW := twelve_mul_obstructionExponentAt O v W
-  rw [variableChange_Δ,
-    Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
-    Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv,
-    localMinimalDiscriminantValuation_smul] at hC
+  rw [ord_Δ_smul, localMinimalDiscriminantValuation_smul] at hC
   omega
 
-/-- **Local integrality makes the local obstruction exponent nonnegative.** Without integrality
-the exponent remains defined but may be negative. -/
-theorem obstructionExponentAt_nonneg_of_isIntegral (v : HeightOneSpectrum O)
+/-- **The local minimal discriminant valuation bounds the order of the discriminant of every
+integral equation.** -/
+theorem localMinimalDiscriminantValuation_le_ord_Δ (v : HeightOneSpectrum O)
     (W : WeierstrassCurve K) [W.IsElliptic]
-    (_hW : IsIntegral (Localization.AtPrime v.asIdeal) W) :
-    0 ≤ obstructionExponentAt O v W := by
-  let _ := _hW
+    [IsIntegral (Localization.AtPrime v.asIdeal) W] :
+    W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) ≤
+      (v.valuation K).ord W.Δ := by
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
   have hCinv : C⁻¹ • W.minimal (Localization.AtPrime v.asIdeal) = W := by
     rw [← hC, inv_smul_smul]
   have hle := valuation_Δ_le_of_isMinimal_smul
     (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
-  rw [v.valuation_maximalIdeal_localizationAtPrime,
-    v.valuation_maximalIdeal_localizationAtPrime,
-    Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero,
+  simp only [v.valuation_maximalIdeal_localizationAtPrime] at hle
+  rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero,
     valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC,
     WithZero.exp_le_exp] at hle
+  omega
+
+/-- **An integral equation attains the local minimal discriminant valuation exactly when it is
+minimal.** -/
+theorem ord_Δ_eq_localMinimalDiscriminantValuation_iff_isMinimal (v : HeightOneSpectrum O)
+    (W : WeierstrassCurve K) [W.IsElliptic]
+    [IsIntegral (Localization.AtPrime v.asIdeal) W] :
+    (v.valuation K).ord W.Δ =
+        W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) ↔
+      IsMinimal (Localization.AtPrime v.asIdeal) W := by
+  constructor
+  · intro h
+    obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
+    have hCinv : C⁻¹ • W.minimal (Localization.AtPrime v.asIdeal) = W := by
+      rw [← hC, inv_smul_smul]
+    apply isMinimal_of_valuation_Δ_eq_of_isMinimal_smul
+      (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
+    simp only [v.valuation_maximalIdeal_localizationAtPrime]
+    rw [Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero,
+      valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC, WithZero.exp_inj]
+    exact congrArg Neg.neg h
+  · intro hmin
+    have := hmin -- expose minimality to instance synthesis for the ord-level comparison
+    exact ord_Δ_eq_localMinimalDiscriminantValuation O v W (1 : VariableChange K) (one_smul _ W)
+
+/-- **Local integrality makes the local obstruction exponent nonnegative.** Without integrality
+the exponent remains defined but may be negative. -/
+theorem obstructionExponentAt_nonneg_of_isIntegral (v : HeightOneSpectrum O)
+    (W : WeierstrassCurve K) [W.IsElliptic]
+    [IsIntegral (Localization.AtPrime v.asIdeal) W] :
+    0 ≤ obstructionExponentAt O v W := by
+  have hle := localMinimalDiscriminantValuation_le_ord_Δ O v W
   have hdef := twelve_mul_obstructionExponentAt O v W
   omega
 
@@ -154,34 +199,12 @@ equation is minimal at that prime.** -/
 @[simp]
 theorem obstructionExponentAt_eq_zero_iff_isMinimal (v : HeightOneSpectrum O)
     (W : WeierstrassCurve K) [W.IsElliptic]
-    (_hW : IsIntegral (Localization.AtPrime v.asIdeal) W) :
+    [IsIntegral (Localization.AtPrime v.asIdeal) W] :
     obstructionExponentAt O v W = 0 ↔
       IsMinimal (Localization.AtPrime v.asIdeal) W := by
-  let _ := _hW
-  constructor
-  · intro hzero
-    obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
-    have hCinv : C⁻¹ • W.minimal (Localization.AtPrime v.asIdeal) = W := by
-      rw [← hC, inv_smul_smul]
-    apply isMinimal_of_valuation_Δ_eq_of_isMinimal_smul
-      (Localization.AtPrime v.asIdeal) C⁻¹ hCinv
-    rw [v.valuation_maximalIdeal_localizationAtPrime,
-      v.valuation_maximalIdeal_localizationAtPrime,
-      Valuation.valuation_eq_exp_neg_ord _ W.isUnit_Δ.ne_zero,
-      valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC,
-      WithZero.exp_inj]
-    have hdef := twelve_mul_obstructionExponentAt O v W
-    omega
-  · intro hmin
-    let _ := hmin
-    have hord : (v.valuation K).ord W.Δ =
-        W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
-      apply (Valuation.ord_eq_iff_valuation_eq_exp_neg _ W.isUnit_Δ.ne_zero).2
-      rw [← v.valuation_maximalIdeal_localizationAtPrime]
-      exact W.valuation_Δ_eq_exp_neg_of_isMinimal_smul
-        (Localization.AtPrime v.asIdeal) 1 (one_smul _ W)
-    have hdef := twelve_mul_obstructionExponentAt O v W
-    omega
+  rw [← ord_Δ_eq_localMinimalDiscriminantValuation_iff_isMinimal O v W]
+  have hdef := twelve_mul_obstructionExponentAt O v W
+  omega
 
 /-- **An integral equation is globally minimal exactly when all of its local obstruction
 exponents vanish.** -/
@@ -190,11 +213,15 @@ theorem isGlobalMinimal_iff_obstructionExponentAt_eq_zero
     IsGlobalMinimal O W ↔ ∀ v : HeightOneSpectrum O, obstructionExponentAt O v W = 0 := by
   rw [isGlobalMinimal_iff]
   refine forall_congr' fun v ↦ ?_
-  exact (obstructionExponentAt_eq_zero_iff_isMinimal O v W
-    (IsIntegral.of_isScalarTower (R := O) W)).symm
+  let hW : IsIntegral (Localization.AtPrime v.asIdeal) W :=
+    IsIntegral.of_isScalarTower (R := O) W
+  have := hW -- expose local integrality to instance synthesis for the local criterion
+  exact (obstructionExponentAt_eq_zero_iff_isMinimal O v W).symm
 
 /-- **A sharply semi-global model at `v₀`** is integral at `v₀`, minimal at every other
-height-one prime, and has discriminant defect exactly twelve at `v₀`. -/
+height-one prime, and has discriminant defect exactly twelve at `v₀`. Unlike weak semi-global
+minimality, which permits any defect at its exceptional prime, this pins the defect to the
+smallest positive value, so the model's defect ideal is exactly `𝔭_{v₀}`. -/
 def IsSharpSemiGlobalMinimalAt (v₀ : HeightOneSpectrum O)
     (W : WeierstrassCurve K) [W.IsElliptic] : Prop :=
   IsIntegral (Localization.AtPrime v₀.asIdeal) W ∧
@@ -213,11 +240,50 @@ theorem isSharpSemiGlobalMinimalAt_iff (v₀ : HeightOneSpectrum O)
         obstructionExponentAt O v₀ W = 1 :=
   (Iff.rfl)
 
+variable {O} in
+/-- A sharply semi-global model is integral at its exceptional prime. -/
+theorem IsSharpSemiGlobalMinimalAt.isIntegral {v₀ : HeightOneSpectrum O}
+    {W : WeierstrassCurve K} [W.IsElliptic]
+    (hW : IsSharpSemiGlobalMinimalAt O v₀ W) :
+    IsIntegral (Localization.AtPrime v₀.asIdeal) W :=
+  hW.1
+
+variable {O} in
+/-- A sharply semi-global model is minimal away from its exceptional prime. -/
+theorem IsSharpSemiGlobalMinimalAt.isMinimal {v₀ v : HeightOneSpectrum O}
+    {W : WeierstrassCurve K} [W.IsElliptic]
+    (hW : IsSharpSemiGlobalMinimalAt O v₀ W) (hv : v ≠ v₀) :
+    IsMinimal (Localization.AtPrime v.asIdeal) W :=
+  hW.2.1 v hv
+
+variable {O} in
+/-- The obstruction exponent of a sharply semi-global model at its exceptional prime is one. -/
+theorem IsSharpSemiGlobalMinimalAt.obstructionExponentAt_eq_one {v₀ : HeightOneSpectrum O}
+    {W : WeierstrassCurve K} [W.IsElliptic]
+    (hW : IsSharpSemiGlobalMinimalAt O v₀ W) :
+    obstructionExponentAt O v₀ W = 1 :=
+  hW.2.2
+
+variable {O} in
+/-- An equation integral at `v₀`, minimal away from `v₀`, and with obstruction exponent one at
+`v₀` is sharply semi-global there. -/
+theorem IsSharpSemiGlobalMinimalAt.of_isIntegral_of_isMinimal
+    {v₀ : HeightOneSpectrum O} {W : WeierstrassCurve K} [W.IsElliptic]
+    (h₀ : IsIntegral (Localization.AtPrime v₀.asIdeal) W)
+    (hmin : ∀ v : HeightOneSpectrum O, v ≠ v₀ →
+      IsMinimal (Localization.AtPrime v.asIdeal) W)
+    (hobs : obstructionExponentAt O v₀ W = 1) :
+    IsSharpSemiGlobalMinimalAt O v₀ W :=
+  ⟨h₀, hmin, hobs⟩
+
+variable {O} in
 /-- Every sharply semi-global model is semi-global in the weak, consumer-facing sense. -/
 theorem IsSharpSemiGlobalMinimalAt.isSemiGlobalMinimal {v₀ : HeightOneSpectrum O}
     {W : WeierstrassCurve K} [W.IsElliptic]
     (hW : IsSharpSemiGlobalMinimalAt O v₀ W) : IsSemiGlobalMinimal O W :=
-  IsSemiGlobalMinimal.of_isIntegral_of_isMinimal hW.1 hW.2.1
+  IsSemiGlobalMinimal.of_isIntegral_of_isMinimal
+    (IsSharpSemiGlobalMinimalAt.isIntegral hW) fun _ hv =>
+      IsSharpSemiGlobalMinimalAt.isMinimal hW hv
 
 end WeierstrassCurve
 
