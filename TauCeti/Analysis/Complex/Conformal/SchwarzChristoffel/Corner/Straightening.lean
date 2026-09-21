@@ -176,8 +176,7 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
       h z = (f z - w) ^ ((β⁻¹ : ℝ) : ℂ) := by
     dsimp only [h]
     rw [hG_eq_g hz.2.le]
-    dsimp only [g]
-    rw [← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
+    simp [g, ← mul_assoc]
   refine ⟨h, hhd, hhx, hdh, ?_, ?_⟩
   · intro z hz
     have hzclosed : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} :=
