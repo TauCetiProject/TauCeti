@@ -40,7 +40,7 @@ variable {Ω : Set ℂ} {g : ℂ → ℂ}
 
 /-- At a straight boundary edge in the inverse coordinate, the pre-Schwarzian has the
 asymptotic `z * f'' / f' → -2`. The edge is normalized to the real axis. -/
-theorem tendsto_mul_logDeriv_deriv_comp_neg_inv_of_reflection
+theorem tendsto_mul_logDeriv_deriv_comp_neg_inv_upperHalfPlaneSet
     (hΩopen : IsOpen Ω) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hzero : (0 : ℂ) ∈ Ω)
     (hcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ g (Ω ∩ upperHalfPlaneSet))
@@ -70,7 +70,7 @@ theorem tendsto_mul_logDeriv_deriv_comp_neg_inv_of_reflection
 tends to zero there when the inverse coordinate maps a neighborhood of zero to a straight edge.
 Continuity near infinity holds, in particular, for a continuation holomorphic off finitely many
 prevertices. -/
-theorem tendsto_preSchwarzian_continuation_of_reflection
+theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv
     (hΩopen : IsOpen Ω) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hzero : (0 : ℂ) ∈ Ω)
     (hcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ g (Ω ∩ upperHalfPlaneSet))
@@ -82,7 +82,7 @@ theorem tendsto_preSchwarzian_continuation_of_reflection
     (hφ : EqOn φ (logDeriv (deriv (fun w => g (-w⁻¹)))) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
   apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
-  have ht := (tendsto_mul_logDeriv_deriv_comp_neg_inv_of_reflection
+  have ht := (tendsto_mul_logDeriv_deriv_comp_neg_inv_upperHalfPlaneSet
     hΩopen hΩ hzero hcont hholo hreal hupper hinj).mul
       ((tendsto_inv₀_cobounded (α := ℂ)).mono_left
         (inf_le_left : cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet ≤ cobounded ℂ))
