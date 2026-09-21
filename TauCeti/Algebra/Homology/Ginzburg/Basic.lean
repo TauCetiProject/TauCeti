@@ -101,7 +101,8 @@ theorem ginzburgOf_map {i j : Symmetrify Q} (a : i ⟶ j) :
 @[simp]
 theorem ginzburgOf_obj (v : Symmetrify Q) : ginzburgOf.obj v = v := rfl
 
-@[simp]
+/-- The doubled-quiver inclusion is the identity on the image of a vertex of `Q`.  Not a `simp`
+lemma: `TauCeti.ginzburgOf_obj` already rewrites the left-hand side. -/
 private theorem ginzburgOf_obj_of (v : Q) : ginzburgOf.obj (Symmetrify.of.obj v) = v := rfl
 
 /-- The inclusion of the doubled quiver in the Ginzburg quiver is bijective on vertices. -/
