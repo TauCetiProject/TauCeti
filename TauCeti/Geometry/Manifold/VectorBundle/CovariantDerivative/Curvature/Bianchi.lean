@@ -25,8 +25,7 @@ pair-interchange symmetry of the Riemann tensor and symmetry of its Ricci contra
 
 The sign convention and identity follow J. M. Lee, *Introduction to Riemannian
 Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 7 (curvature symmetries).
-The formalization uses Mathlib's `CovariantDerivative.torsion_eq_zero_iff` and
-`VectorField.leibniz_identity_mlieBracket_apply`.
+The identities use the torsion-free equation and the Jacobi identity for vector fields.
 -/
 
 public section
