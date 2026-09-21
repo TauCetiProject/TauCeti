@@ -198,7 +198,14 @@ theorem laurentCoverLeToOverlap_mk (f : A) (a : R₁) :
           (weightedRename Fin.castSuccEmb isWeightFamily_one_weight
             isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
   by
-    change laurentCoverLeMap A f a = _
+    have h := DFunLike.congr_fun
+      (Ideal.Quotient.liftₐ_comp (laurentCoverLeIdeal A f) (laurentCoverLeMap A f)
+        (fun _ ha ↦ (RingHom.mem_ker).1 (laurentCoverLeIdeal_le_ker A f ha))) a
+    have h' : laurentCoverLeToOverlap A f
+        (Ideal.Quotient.mk (laurentCoverLeIdeal A f) a) = laurentCoverLeMap A f a := by
+      simpa only [laurentCoverLeToOverlap, AlgHom.comp_apply,
+        Ideal.Quotient.mkₐ_eq_mk] using h
+    rw [h']
     simp only [laurentCoverLeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
       weightedRenameAlgHom_apply]
 
@@ -211,7 +218,14 @@ theorem laurentCoverGeToOverlap_mk (f : A) (a : R₁) :
           (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight
             isWeightFamily_one_weight (fun _ ↦ subset_rfl) a)) :=
   by
-    change laurentCoverGeMap A f a = _
+    have h := DFunLike.congr_fun
+      (Ideal.Quotient.liftₐ_comp (laurentCoverGeIdeal A f) (laurentCoverGeMap A f)
+        (fun _ ha ↦ (RingHom.mem_ker).1 (laurentCoverGeIdeal_le_ker A f ha))) a
+    have h' : laurentCoverGeToOverlap A f
+        (Ideal.Quotient.mk (laurentCoverGeIdeal A f) a) = laurentCoverGeMap A f a := by
+      simpa only [laurentCoverGeToOverlap, AlgHom.comp_apply,
+        Ideal.Quotient.mkₐ_eq_mk] using h
+    rw [h']
     simp only [laurentCoverGeMap, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
       weightedRenameAlgHom_apply]
 
