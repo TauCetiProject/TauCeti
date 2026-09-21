@@ -78,12 +78,6 @@ theorem frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO
     (fun x ↦ ?_) fun _ ↦ rfl)
   ring
 
-/-- The Frobenius `ϑ` function is the generic prime `ϑ` function of its fibre. -/
-@[simp] theorem frobeniusTheta_eq_primeTheta (C : ConjClasses (L ≃ₐ[K] L)) :
-    frobeniusTheta K L C = primeTheta K (frobeniusPrimeSet K L C) := by
-  funext x
-  rw [frobeniusTheta_apply, primeTheta_apply]
-
 /-- A quotient-form Frobenius `ϑ` asymptotic follows from the corresponding `ψ` asymptotic. -/
 theorem tendsto_frobeniusTheta_div_id_of_tendsto_frobeniusPsi_div_id
     (C : ConjClasses (L ≃ₐ[K] L)) {δ : ℝ}
