@@ -85,26 +85,20 @@ end Integers
 
 section AffineModel
 
-variable {R : Type w} [CommRing R] [IsDedekindDomain R] [Algebra R F] [IsFractionRing R F]
-  (hR : ∀ r : R, algebraMap R F r ∈ P.integers)
+variable {R : Type w} [CommRing R] [Algebra R F] [IsFractionRing R F]
+
+section Center
+
+variable (hR : ∀ r : R, algebraMap R F r ∈ P.integers)
 
 include hR
 
-omit [IsDedekindDomain R] in
 /-- The **centre** on `R` of a place `P` finite on `R`: the nonzero prime ideal consisting of
 the elements with a zero at `P`, bundled as a `HeightOneSpectrum R`. For a Dedekind affine model,
 this is a height one prime. -/
 def center : HeightOneSpectrum R :=
   P.valuation.heightOneSpectrum R fun r ↦ P.mem_integers_iff.mp (hR r)
 
-/-- **The valuation of a place finite on an affine model is the adic valuation of its centre.**
-This is the exact, not merely up-to-equivalence, form of the correspondence between places and
-height one primes. -/
-@[simp]
-theorem valuation_center : (P.center hR).valuation F = P.valuation :=
-  Valuation.valuation_heightOneSpectrum P.valuation_surjective _
-
-omit [IsDedekindDomain R] in
 /-- The centre of `P` on `R` consists of the elements of `R` at which the valuation of `P` is
 `< 1`. -/
 @[simp]
@@ -112,7 +106,6 @@ theorem mem_center_asIdeal {r : R} :
     r ∈ (P.center hR).asIdeal ↔ P.valuation (algebraMap R F r) < 1 := by
   rw [center, Valuation.asIdeal_heightOneSpectrum, Valuation.mem_centerIdeal]
 
-omit [IsDedekindDomain R] in
 /-- The additive form of `TauCeti.Place.mem_center_asIdeal`: the centre of `P` on `R` consists of
 the elements of `R` with a zero at `P`. The hypothesis `r ≠ 0` guards the junk value
 `ord_P 0 = 0`. -/
@@ -122,6 +115,17 @@ theorem mem_center_asIdeal_iff_ord_pos {r : R} (hr : r ≠ 0) :
   rw [mem_center_asIdeal, P.valuation_eq_exp_neg_ord hr', ← WithZero.exp_zero (M := ℤ),
     WithZero.exp_lt_exp]
   omega
+
+section Dedekind
+
+variable [IsDedekindDomain R]
+
+/-- **The valuation of a place finite on an affine model is the adic valuation of its centre.**
+This is the exact, not merely up-to-equivalence, form of the correspondence between places and
+height one primes. -/
+@[simp]
+theorem valuation_center : (P.center hR).valuation F = P.valuation :=
+  Valuation.valuation_heightOneSpectrum P.valuation_surjective _
 
 /-- **The coefficient formula at a place finite on an affine model**: the order at `P` of a
 nonzero element of the model is the multiplicity of the centre of `P` in the ideal it generates.
@@ -159,7 +163,12 @@ theorem center_injective {Q : Place k F} (hQ : ∀ r : R, algebraMap R F r ∈ Q
     (h : P.center hR = Q.center hQ) : P = Q :=
   Place.ext (by rw [← P.valuation_center hR, ← Q.valuation_center hQ, h])
 
-omit hR in
+end Dedekind
+
+end Center
+
+variable [IsDedekindDomain R]
+
 /-- A place at which `x` has no pole is the adic place of a unique height one prime of any affine
 model integral over `k[x]`: the finite chart of `x` is covered by the height one primes of the
 model. -/
