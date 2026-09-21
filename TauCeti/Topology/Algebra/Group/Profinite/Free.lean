@@ -19,9 +19,10 @@ group extends uniquely to a continuous homomorphism, and the resulting functoria
 The universal property is stated for an unbundled profinite target, so that it applies without
 first packaging the target as an object of `ProfiniteGrp`; the target must nevertheless live in
 the same universe as `X`, because the completion of a group in `Type u` is again in `Type u`.
-Uniqueness is separated into `freeProfiniteGroup.hom_ext`, which needs only a Hausdorff
-topological group as target: two continuous homomorphisms that agree on the generators agree on
-the dense subgroup the generators generate.
+Uniqueness is separated into `freeProfiniteGroup.hom_ext`, whose target need only be a Hausdorff
+topological space carrying a group structure, with no `IsTopologicalGroup` instance required:
+two continuous homomorphisms that agree on the generators agree on the dense subgroup the
+generators generate.
 
 ## Main definitions
 
@@ -73,6 +74,7 @@ noncomputable def fromFreeGroup (X : Type u) : FreeGroup X →* freeProfiniteGro
 noncomputable def of (x : X) : freeProfiniteGroup X :=
   fromFreeGroup X (FreeGroup.of x)
 
+/-- `fromFreeGroup` carries the free-group generator at `x` to the generator `of x`. -/
 @[simp]
 theorem fromFreeGroup_of (x : X) : fromFreeGroup X (FreeGroup.of x) = of x :=
   (rfl)
@@ -100,7 +102,8 @@ section HomExt
 variable {Q : Type v} [Group Q] [TopologicalSpace Q] [T2Space Q]
 
 /-- Two continuous homomorphisms out of the free profinite group that agree on the generators
-are equal. The target need only be a Hausdorff topological group. -/
+are equal. The target need only be a Hausdorff topological space carrying a group structure; no
+`IsTopologicalGroup Q` instance is required. -/
 @[ext]
 theorem hom_ext {φ ψ : freeProfiniteGroup X →ₜ* Q} (h : ∀ x : X, φ (of x) = ψ (of x)) :
     φ = ψ := by
@@ -164,6 +167,7 @@ section Map
 noncomputable def map (u : X → Y) : freeProfiniteGroup X →ₜ* freeProfiniteGroup Y :=
   lift (of ∘ u)
 
+/-- `map u` carries the generator at `x` to the generator at `u x`. -/
 @[simp]
 theorem map_of (u : X → Y) (x : X) : map u (of x) = of (u x) :=
   lift_of _ x
