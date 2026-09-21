@@ -148,14 +148,22 @@ section Relabelling
 
 variable {ι κ R : Type*} [Semiring R]
 
-/-- A relabelling of finite coordinate spaces preserves Hamming weight. -/
+/-- A relabelling of finite coordinate spaces preserves Hamming weight.
+
+This states `Equiv.hammingNorm_comp` for `LinearMap.funLeft`, the simp normal form of a
+coordinate relabelling of a module of functions. The composition form cannot be used by `simp`
+there: `LinearMap.funLeft_apply` rewrites a relabelled word pointwise, so it is blocked under
+`hammingNorm`. -/
 @[simp]
 theorem hammingNorm_funLeft [DecidableEq R] [Fintype ι] [Fintype κ]
     (e : κ ≃ ι) (x : ι → R) :
     hammingNorm (LinearMap.funLeft R R e x) = hammingNorm x :=
   Equiv.hammingNorm_comp e x
 
-/-- A relabelling of finite coordinate spaces preserves Hamming distance. -/
+/-- A relabelling of finite coordinate spaces preserves Hamming distance.
+
+As with `Equiv.hammingNorm_funLeft`, this states `Equiv.hammingDist_comp` in the
+`LinearMap.funLeft` simp normal form, which the composition form cannot reach. -/
 @[simp]
 theorem hammingDist_funLeft [DecidableEq R] [Fintype ι] [Fintype κ]
     (e : κ ≃ ι) (x y : ι → R) :
