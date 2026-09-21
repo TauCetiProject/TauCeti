@@ -57,8 +57,6 @@ namespace Probability
 
 variable {p : unitInterval}
 
-private lemma coe_pos (hp : p ≠ 0) : (0 : ℝ) < p := by grind
-
 /-- The exponential integrand for the cast geometric law is integrable exactly below the pole of
 its geometric series. -/
 theorem integrable_exp_mul_id_map_cast_geometricMeasure_iff (hp : p ≠ 0) (t : ℝ) :
@@ -66,14 +64,16 @@ theorem integrable_exp_mul_id_map_cast_geometricMeasure_iff (hp : p ≠ 0) (t : 
         ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) ↔
       (1 - (p : ℝ)) * exp t < 1 := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
-  exact integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff one_pos (coe_pos hp) p.2.2 t
+  exact integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff one_pos
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 t
 
 /-- The exact moment-generating domain of the real cast of a nonzero-parameter geometric law. -/
 theorem integrableExpSet_id_map_cast_geometricMeasure (hp : p ≠ 0) :
     integrableExpSet id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) =
       {t | (1 - (p : ℝ)) * exp t < 1} := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
-  exact integrableExpSet_id_map_cast_negativeBinomialMeasure one_pos (coe_pos hp) p.2.2
+  exact integrableExpSet_id_map_cast_negativeBinomialMeasure one_pos
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2
 
 /-- The moment-generating function of the real cast of a nonzero-parameter geometric law. -/
 theorem mgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
@@ -81,7 +81,8 @@ theorem mgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
     mgf id ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) t =
       (p : ℝ) / (1 - (1 - (p : ℝ)) * exp t) := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
-    mgf_id_map_cast_negativeBinomialMeasure zero_le_one (coe_pos hp) p.2.2 ht]
+    mgf_id_map_cast_negativeBinomialMeasure zero_le_one
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 ht]
   exact Real.rpow_one _
 
 /-- The cumulant-generating function of the real cast of a nonzero-parameter geometric law. -/
@@ -99,7 +100,8 @@ theorem integral_id_map_cast_geometricMeasure :
   · subst p
     norm_num [geometricMeasure]
   · rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
-      integral_id_map_cast_negativeBinomialMeasure zero_le_one (coe_pos hp) p.2.2, one_mul]
+      integral_id_map_cast_negativeBinomialMeasure zero_le_one
+        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2, one_mul]
 
 /-- The variance of the real cast of a geometric law. -/
 theorem variance_id_map_cast_geometricMeasure :
@@ -109,14 +111,16 @@ theorem variance_id_map_cast_geometricMeasure :
   · subst p
     norm_num [geometricMeasure]
   · rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
-      variance_id_map_cast_negativeBinomialMeasure zero_le_one (coe_pos hp) p.2.2, one_mul]
+      variance_id_map_cast_negativeBinomialMeasure zero_le_one
+        (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2, one_mul]
 
 /-- The characteristic function of the real cast of a nonzero-parameter geometric law. -/
 theorem charFun_map_cast_geometricMeasure (hp : p ≠ 0) (t : ℝ) :
     charFun ((geometricMeasure p).map (Nat.cast : ℕ → ℝ)) t =
       (p : ℂ) / (1 - (1 - (p : ℂ)) * Complex.exp (Complex.I * t)) := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
-    charFun_map_cast_negativeBinomialMeasure zero_le_one (coe_pos hp) p.2.2,
+    charFun_map_cast_negativeBinomialMeasure zero_le_one
+      (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2,
     Complex.ofReal_one, Complex.cpow_one]
 
 /-- The cumulative mass of a nonzero-parameter geometric law on its native carrier. -/
