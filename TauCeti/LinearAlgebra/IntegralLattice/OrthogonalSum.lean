@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry
@@ -56,7 +55,8 @@ variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 /-- The block-diagonal bilinear form on a product, with the two factors orthogonal. -/
 def orthogonalSumForm (L : IntegralLattice V) (M : IntegralLattice W) :
     LinearMap.BilinForm ℚ (V × W) :=
-  L.form.prod M.form
+  L.form.comp (LinearMap.fst ℚ V W) (LinearMap.fst ℚ V W) +
+    M.form.comp (LinearMap.snd ℚ V W) (LinearMap.snd ℚ V W)
 
 /-- Evaluation of the block-diagonal form is the sum of the component pairings. -/
 @[simp]
@@ -312,7 +312,25 @@ nondegenerate. -/
 @[simp]
 theorem nondegenerate_orthogonalSumForm_iff (L : IntegralLattice V) (M : IntegralLattice W) :
     (orthogonalSumForm L M).Nondegenerate ↔ L.form.Nondegenerate ∧ M.form.Nondegenerate := by
-  exact LinearMap.BilinForm.nondegenerate_prod_iff
+  constructor
+  · rintro ⟨hleft, hright⟩
+    constructor
+    · exact ⟨
+        fun a ha ↦ congrArg Prod.fst (hleft (a, 0) fun p ↦ by simpa using ha p.1),
+        fun b hb ↦ congrArg Prod.fst (hright (b, 0) fun p ↦ by simpa using hb p.1)⟩
+    · exact ⟨
+        fun a ha ↦ congrArg Prod.snd (hleft (0, a) fun p ↦ by simpa using ha p.2),
+        fun b hb ↦ congrArg Prod.snd (hright (0, b) fun p ↦ by simpa using hb p.2)⟩
+  · rintro ⟨hL, hM⟩
+    constructor
+    · intro p hp
+      apply Prod.ext
+      · exact hL.1 p.1 fun a ↦ by simpa using hp (a, 0)
+      · exact hM.1 p.2 fun b ↦ by simpa using hp (0, b)
+    · intro q hq
+      apply Prod.ext
+      · exact hL.2 q.1 fun a ↦ by simpa using hq (a, 0)
+      · exact hM.2 q.2 fun b ↦ by simpa using hq (0, b)
 
 /-- The ambient form of an orthogonal sum is nondegenerate exactly when both summand forms are. -/
 theorem nondegenerate_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
