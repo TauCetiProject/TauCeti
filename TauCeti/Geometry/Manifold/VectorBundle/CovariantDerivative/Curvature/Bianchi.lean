@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
-public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -42,9 +42,7 @@ local notation "curvature" => cov.curvatureOperator (I := I) (M := M) (F := E)
 
 omit [CompleteSpace E] in
 private theorem apply_mlieBracket_eq_sub_of_torsion_free
-    (ht : ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
-      MDiffAt (T% X) x → MDiffAt (T% Y) x →
-      cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x)
+    (ht : cov.IsTorsionFree)
     {Y Z : Π x : M, TangentSpace I x}
     (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
     (x : M) (u : TangentSpace I x) :
@@ -70,9 +68,7 @@ private theorem apply_mlieBracket_eq_sub_of_torsion_free
 /-- The first Bianchi identity for smooth vector fields and a torsion-free smooth
 connection on the tangent bundle. -/
 theorem curvatureOperator_cyclic_eq_zero
-    (ht : ∀ {X Y : Π x : M, TangentSpace I x} {x : M},
-      MDiffAt (T% X) x → MDiffAt (T% Y) x →
-      cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x)
+    (ht : cov.IsTorsionFree)
     {X Y Z : Π x : M, TangentSpace I x}
     (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
     (x : M) :
@@ -119,6 +115,7 @@ theorem curvatureTensor_cyclic_eq_zero (ht : cov.torsion = 0)
   rw [curvatureTensor_apply cov x hX hY hZ,
     curvatureTensor_apply cov x hY hZ hX,
     curvatureTensor_apply cov x hZ hX hY]
-  exact curvatureOperator_cyclic_eq_zero (cov.torsion_eq_zero_iff.mp ht) hX hY hZ x
+  exact curvatureOperator_cyclic_eq_zero
+    ((isTorsionFree_iff_torsion_eq_zero cov).mpr ht) hX hY hZ x
 
 end CovariantDerivative
