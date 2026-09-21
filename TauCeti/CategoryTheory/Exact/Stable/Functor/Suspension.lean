@@ -52,7 +52,7 @@ variable {F : Functor C D} [F.Additive]
 
 /-- Applying a stable conflation-exact functor to the chosen suspension presentation of `X`
 gives an injective presentation of `F.obj X` in the target exact category. -/
-noncomputable abbrev mapSuspensionPresentation (hF : StableConflationExact E E' F)
+noncomputable def mapSuspensionPresentation (hF : StableConflationExact E E' F)
     (hE : E.IsFrobenius) (X : C) :
     E'.InjectivePresentation (F.obj X) where
   I := F.obj (hE.suspensionInjective X)
@@ -65,6 +65,36 @@ noncomputable abbrev mapSuspensionPresentation (hF : StableConflationExact E E' 
     (E.projectiveInjective_iff _).2
       ⟨hE.isProjective_I (hE.suspensionPresentation X),
         (hE.suspensionPresentation X).isInjective⟩).2
+
+/-- The middle term of the mapped suspension presentation is the image of the chosen middle
+term. -/
+@[simp]
+theorem mapSuspensionPresentation_I (hF : StableConflationExact E E' F)
+    (hE : E.IsFrobenius) (X : C) :
+    (hF.mapSuspensionPresentation hE X).I = F.obj (hE.suspensionInjective X) := by
+  simp [mapSuspensionPresentation]
+
+/-- The cokernel term of the mapped suspension presentation is the image of the chosen
+suspension object. -/
+@[simp]
+theorem mapSuspensionPresentation_K (hF : StableConflationExact E E' F)
+    (hE : E.IsFrobenius) (X : C) :
+    (hF.mapSuspensionPresentation hE X).K = F.obj (hE.suspensionObj X) := by
+  simp [mapSuspensionPresentation]
+
+/-- The inflation in the mapped suspension presentation is the image of the chosen inflation. -/
+@[simp]
+theorem mapSuspensionPresentation_i (hF : StableConflationExact E E' F)
+    (hE : E.IsFrobenius) (X : C) :
+    HEq (hF.mapSuspensionPresentation hE X).i (F.map (hE.suspensionInflation X)) := by
+  simp [mapSuspensionPresentation]
+
+/-- The deflation in the mapped suspension presentation is the image of the chosen deflation. -/
+@[simp]
+theorem mapSuspensionPresentation_p (hF : StableConflationExact E E' F)
+    (hE : E.IsFrobenius) (X : C) :
+    HEq (hF.mapSuspensionPresentation hE X).p (F.map (hE.suspensionDeflation X)) := by
+  simp [mapSuspensionPresentation]
 
 /-- The middle term of the mapped suspension presentation remains projective. -/
 theorem isProjective_I_mapSuspensionPresentation (hF : StableConflationExact E E' F)
@@ -80,35 +110,46 @@ the image of the map induced between the original suspension presentations. -/
 private theorem projectiveStableFunctor_map_mapSuspensionPresentation_cokernelMap
     (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) {X Y : C} (f : X ⟶ Y) :
     E'.projectiveStableFunctor.map
-        ((hF.mapSuspensionPresentation hE X).cokernelMap
-          (hF.mapSuspensionPresentation hE Y) (F.map f)) =
-      E'.projectiveStableFunctor.map
         (F.map ((hE.suspensionPresentation X).cokernelMap
-          (hE.suspensionPresentation Y) f)) := by
-  apply E'.projectiveStableFunctor_map_cokernelMap_eq
-    (hF.mapSuspensionPresentation hE X)
-    (hF.mapSuspensionPresentation hE Y)
-    (hF.isProjective_I_mapSuspensionPresentation hE Y)
-    (F.map f)
-    (F.map ((hE.suspensionPresentation X).middleMap
-      (hE.suspensionPresentation Y) f))
-    (F.map ((hE.suspensionPresentation X).cokernelMap
-      (hE.suspensionPresentation Y) f))
-  · -- Expose the bundled presentation maps through their defining component formulas.
-    change F.map (hE.suspensionInflation X) ≫
-      F.map ((hE.suspensionPresentation X).middleMap
-        (hE.suspensionPresentation Y) f) =
-        F.map f ≫ F.map (hE.suspensionInflation Y)
-    rw [← F.map_comp, ← F.map_comp,
-      (hE.suspensionPresentation X).i_comp_middleMap]
-  · -- Expose the bundled presentation maps through their defining component formulas.
-    change F.map (hE.suspensionDeflation X) ≫
-      F.map ((hE.suspensionPresentation X).cokernelMap
-        (hE.suspensionPresentation Y) f) =
-        F.map ((hE.suspensionPresentation X).middleMap
-          (hE.suspensionPresentation Y) f) ≫ F.map (hE.suspensionDeflation Y)
-    rw [← F.map_comp, ← F.map_comp,
-      (hE.suspensionPresentation X).p_comp_cokernelMap]
+          (hE.suspensionPresentation Y) f)) ≫
+          eqToHom (congrArg E'.projectiveStableFunctor.obj
+            (hF.mapSuspensionPresentation_K hE Y).symm) =
+      eqToHom (congrArg E'.projectiveStableFunctor.obj
+          (hF.mapSuspensionPresentation_K hE X).symm) ≫
+        E'.projectiveStableFunctor.map
+          ((hF.mapSuspensionPresentation hE X).cokernelMap
+            (hF.mapSuspensionPresentation hE Y) (F.map f)) := by
+  have h := E'.projectiveStableFunctor_map_cokernelMap_eq
+      (hF.mapSuspensionPresentation hE X)
+      (hF.mapSuspensionPresentation hE Y)
+      (hF.isProjective_I_mapSuspensionPresentation hE Y)
+      (F.map f)
+      (F.map ((hE.suspensionPresentation X).middleMap
+        (hE.suspensionPresentation Y) f))
+      (F.map ((hE.suspensionPresentation X).cokernelMap
+        (hE.suspensionPresentation Y) f))
+      (by
+        -- Expose the bundled presentation maps through their characteristic component formulas.
+        change F.map (hE.suspensionInflation X) ≫
+          F.map ((hE.suspensionPresentation X).middleMap
+            (hE.suspensionPresentation Y) f) =
+            F.map f ≫ F.map (hE.suspensionInflation Y)
+        rw [← F.map_comp, ← F.map_comp,
+          (hE.suspensionPresentation X).i_comp_middleMap])
+      (by
+        -- Expose the bundled presentation maps through their characteristic component formulas.
+        change F.map (hE.suspensionDeflation X) ≫
+          F.map ((hE.suspensionPresentation X).cokernelMap
+            (hE.suspensionPresentation Y) f) =
+            F.map ((hE.suspensionPresentation X).middleMap
+              (hE.suspensionPresentation Y) f) ≫ F.map (hE.suspensionDeflation Y)
+        rw [← F.map_comp, ← F.map_comp,
+          (hE.suspensionPresentation X).p_comp_cokernelMap])
+  -- The `K` projection equalities change both endpoints; heterogeneous equality inserts exactly
+  -- those transports without unfolding the now-opaque presentation.
+  apply eq_of_heq
+  exact (comp_eqToHom_heq _ _).trans <|
+    (heq_of_eq h.symm).trans (eqToHom_comp_heq _ _).symm
 
 /-- Naturality of the comparison with the suspension, at the mapped suspension presentations:
 the image under `F` of the map induced by `f` between the chosen suspension presentations is
@@ -120,14 +161,20 @@ private theorem projectiveStableIsoSuspensionObj_hom_naturality_mapSuspensionPre
     {X Y : C} (f : X ⟶ Y) :
     E'.projectiveStableFunctor.map
           (F.map ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f)) ≫
-        (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE Y)).hom =
-      (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE X)).hom ≫
+        eqToHom (congrArg E'.projectiveStableFunctor.obj
+          (hF.mapSuspensionPresentation_K hE Y).symm) ≫
+          (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE Y)).hom =
+      eqToHom (congrArg E'.projectiveStableFunctor.obj
+          (hF.mapSuspensionPresentation_K hE X).symm) ≫
+        (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE X)).hom ≫
         E'.projectiveStableFunctor.map ((hE'.suspensionPresentation (F.obj X)).cokernelMap
           (hE'.suspensionPresentation (F.obj Y)) (F.map f)) := by
   have h := hE'.projectiveStableIsoSuspensionObj_hom_naturality
     (hF.mapSuspensionPresentation hE X) (hF.mapSuspensionPresentation hE Y) (F.map f)
-  rwa [projectiveStableFunctor_map_mapSuspensionPresentation_cokernelMap
-    (hF := hF) (hE := hE) f] at h
+  rw [← Category.assoc,
+    projectiveStableFunctor_map_mapSuspensionPresentation_cokernelMap
+      (hF := hF) (hE := hE) f]
+  rw [Category.assoc, h]
 
 /-- The stable functor induced by a stable conflation-exact functor commutes with suspension.
 Its component at `X` is the canonical comparison from the image of the chosen suspension
@@ -140,36 +187,35 @@ noncomputable def stableSuspensionCompStableFunctorIso (hF : StableConflationExa
     eqToIso (congrArg (hF.stableFunctor hE).obj
       (hE.stableSuspension_obj_projectiveStableFunctor_obj X)) ≪≫
     eqToIso (hF.stableFunctor_obj_projectiveStableFunctor_obj hE (hE.suspensionObj X)) ≪≫
+    eqToIso (congrArg E'.projectiveStableFunctor.obj
+      (hF.mapSuspensionPresentation_K hE X).symm) ≪≫
       hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE X) ≪≫
     eqToIso (hE'.stableSuspension_obj_projectiveStableFunctor_obj (F.obj X)).symm ≪≫
     eqToIso (congrArg hE'.stableSuspension.obj
       (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X)).symm) (fun {X Y} f ↦ by
-          have hmapF :
-              (hF.stableFunctor hE).map (E.projectiveStableFunctor.map f) =
-                eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X) ≫
-                  E'.projectiveStableFunctor.map (F.map f) ≫
-                    eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE Y).symm := by
+          have hmapF {A B : C} (g : A ⟶ B) :
+              (hF.stableFunctor hE).map (E.projectiveStableFunctor.map g) =
+                eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE A) ≫
+                  E'.projectiveStableFunctor.map (F.map g) ≫
+                    eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE B).symm := by
             apply (cancel_mono
-              (eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE Y))).1
+              (eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE B))).1
             simpa only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id] using
-              hF.stableFunctor_map_projectiveStableFunctor_map hE f
+              hF.stableFunctor_map_projectiveStableFunctor_map hE g
           simp only [Functor.comp_map, Functor.map_comp, Iso.trans_hom,
             eqToIso.hom, eqToHom_map, eqToHom_trans, eqToHom_trans_assoc,
             Category.assoc,
             ExactStructure.IsFrobenius.stableSuspension_map_projectiveStableFunctor_map]
-          rw [hmapF]
+          rw [hmapF f]
           simp only [Functor.map_comp, eqToHom_map, Category.assoc,
             ExactStructure.IsFrobenius.stableSuspension_map_projectiveStableFunctor_map,
             eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-          rw [← Category.assoc (f := (hF.stableFunctor hE).map
-            (E.projectiveStableFunctor.map
-              ((hE.suspensionPresentation X).cokernelMap
-                (hE.suspensionPresentation Y) f)))]
-          rw [hF.stableFunctor_map_projectiveStableFunctor_map hE]
+          rw [hmapF ((hE.suspensionPresentation X).cokernelMap
+            (hE.suspensionPresentation Y) f)]
           simp only [Category.assoc, eqToHom_trans_assoc]
           rw [projectiveStableIsoSuspensionObj_hom_naturality_mapSuspensionPresentation_assoc
             (hF := hF) (hE := hE) (hE' := hE') f]
-          simp only [eqToHom_trans])
+          simp only [eqToHom_trans, eqToHom_trans_assoc])
 
 /-- On an object represented by `X`, the suspension comparison is the canonical comparison
 between the mapped suspension presentation and the chosen presentation of `F.obj X`. -/
@@ -181,6 +227,8 @@ theorem stableSuspensionCompStableFunctorIso_hom_app
       eqToHom (congrArg (hF.stableFunctor hE).obj
         (hE.stableSuspension_obj_projectiveStableFunctor_obj X)) ≫
       eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE (hE.suspensionObj X)) ≫
+      eqToHom (congrArg E'.projectiveStableFunctor.obj
+        (hF.mapSuspensionPresentation_K hE X).symm) ≫
       (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE X)).hom ≫
       eqToHom (hE'.stableSuspension_obj_projectiveStableFunctor_obj (F.obj X)).symm ≫
       eqToHom (congrArg hE'.stableSuspension.obj
@@ -198,6 +246,8 @@ theorem stableSuspensionCompStableFunctorIso_inv_app
         (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X)) ≫
       eqToHom (hE'.stableSuspension_obj_projectiveStableFunctor_obj (F.obj X)) ≫
       (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE X)).inv ≫
+      eqToHom (congrArg E'.projectiveStableFunctor.obj
+        (hF.mapSuspensionPresentation_K hE X)) ≫
       eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE (hE.suspensionObj X)).symm ≫
       eqToHom (congrArg (hF.stableFunctor hE).obj
         (hE.stableSuspension_obj_projectiveStableFunctor_obj X)).symm := by
