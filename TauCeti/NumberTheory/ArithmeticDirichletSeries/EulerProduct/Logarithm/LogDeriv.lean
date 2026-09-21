@@ -29,7 +29,7 @@ Differentiating an infinite product is not a formal consequence of the pointwise
 it needs the convergence to be locally uniform, and that is what absolute convergence at a real
 point `σ` further left supplies.  On the half-plane `Re z > σ` the deviation of the local factor at
 `P` from `1` is bounded, uniformly in `z`, by the prime-power tail
-`∑_{e ≥ 1} ‖D(P ^ (e + 1))‖ N(P) ^ (-(e + 1) σ)`, and those tails are summable over the primes.
+`∑_{e ≥ 1} ‖D(P ^ e)‖ N(P) ^ (-e σ)`, and those tails are summable over the primes.
 Outside a finite set of primes that bound is at most `1 / 2`, so there the local factor stays in
 the slit plane, its principal logarithm is holomorphic on the whole half-plane, and those
 logarithms are dominated by a summable function of `P`.  Weierstrass' theorem, in the form
