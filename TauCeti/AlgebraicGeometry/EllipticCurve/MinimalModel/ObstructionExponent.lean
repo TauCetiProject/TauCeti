@@ -37,6 +37,7 @@ on integer division or unfolding the definition.
 * `WeierstrassCurve.twelve_dvd_ord_Δ_sub_localMinimalDiscriminantValuation`: the discriminant
   defect of every rational equation is divisible by twelve.
 * `WeierstrassCurve.twelve_mul_obstructionExponentAt`: the exact reconstruction formula.
+* `WeierstrassCurve.obstructionExponentAt_smul`: the change-of-variables formula.
 * `WeierstrassCurve.obstructionExponentAt_nonneg_of_isIntegral`: local integrality makes the
   obstruction exponent nonnegative.
 * `WeierstrassCurve.obstructionExponentAt_eq_zero_iff_isMinimal`: for a locally integral
@@ -113,14 +114,19 @@ theorem twelve_mul_obstructionExponentAt (v : HeightOneSpectrum O)
   exact Int.ediv_mul_cancel
     (twelve_dvd_ord_Δ_sub_localMinimalDiscriminantValuation O v W)
 
-/-- **The valuation of the discriminant is the local minimal valuation plus twelve times the
-obstruction exponent.** -/
-theorem ord_Δ_eq_localMinimalDiscriminantValuation_add (v : HeightOneSpectrum O)
+/-- **Changing variables subtracts the order of the scaling parameter from the local obstruction
+exponent.** -/
+@[simp]
+theorem obstructionExponentAt_smul (v : HeightOneSpectrum O) (C : VariableChange K)
     (W : WeierstrassCurve K) [W.IsElliptic] :
-    (v.valuation K).ord W.Δ =
-      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) +
-        12 * obstructionExponentAt O v W := by
-  rw [twelve_mul_obstructionExponentAt]
+    obstructionExponentAt O v (C • W) =
+      obstructionExponentAt O v W - (v.valuation K).ord (C.u : K) := by
+  have hC := twelve_mul_obstructionExponentAt O v (C • W)
+  have hW := twelve_mul_obstructionExponentAt O v W
+  rw [variableChange_Δ,
+    Valuation.ord_mul _ (pow_ne_zero _ C.u⁻¹.ne_zero) W.isUnit_Δ.ne_zero,
+    Valuation.ord_pow, Units.val_inv_eq_inv_val, Valuation.ord_inv,
+    localMinimalDiscriminantValuation_smul] at hC
   omega
 
 /-- **Local integrality makes the local obstruction exponent nonnegative.** Without integrality
@@ -145,6 +151,7 @@ theorem obstructionExponentAt_nonneg_of_isIntegral (v : HeightOneSpectrum O)
 
 /-- **For a locally integral equation, the obstruction exponent vanishes exactly when the
 equation is minimal at that prime.** -/
+@[simp]
 theorem obstructionExponentAt_eq_zero_iff_isMinimal (v : HeightOneSpectrum O)
     (W : WeierstrassCurve K) [W.IsElliptic]
     (_hW : IsIntegral (Localization.AtPrime v.asIdeal) W) :
