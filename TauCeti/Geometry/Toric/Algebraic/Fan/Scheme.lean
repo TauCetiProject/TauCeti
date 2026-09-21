@@ -294,14 +294,23 @@ noncomputable def affineToricChartMap (f : FanHom Φ Ψ) (σ : Φ.cones) :
     (show Set.MapsTo f.realMap (σ.1 : Set V) (f.leastCone σ.2 : Set V') from
       fun x hx ↦ f.map_le_leastCone σ.2 ⟨x, hx, rfl⟩)
 
+/-- The affine chart map is induced by the fan morphism's lattice and real maps. -/
+theorem affineToricChartMap_def (f : FanHom Φ Ψ) (σ : Φ.cones) :
+    f.affineToricChartMap σ =
+      affineToricSchemeMap (σ := σ.1) (τ := f.leastCone σ.2)
+        Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
+        (show Set.MapsTo f.realMap (σ.1 : Set V) (f.leastCone σ.2 : Set V') from
+          fun x hx ↦ f.map_le_leastCone σ.2 ⟨x, hx, rfl⟩) := by
+  rfl
+
 /-- The affine chart maps induced by a fan morphism commute with face inclusions. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem faceAffineToricSchemeMap_comp_affineToricChartMap (f : FanHom Φ Ψ)
     {τ σ : Φ.cones} (h : τ.1.IsFaceOf σ.1) :
     faceAffineToricSchemeMap Φ.lattice h ≫ f.affineToricChartMap σ =
       f.affineToricChartMap τ ≫ faceAffineToricSchemeMap Ψ.lattice
         (f.leastCone_isFaceOf (τ := τ.1) (σ := σ.1) σ.2 h) := by
-  rw [affineToricChartMap, affineToricChartMap]
+  rw [affineToricChartMap_def, affineToricChartMap_def]
   rw [faceAffineToricSchemeMap_eq_affineToricSchemeMap,
     faceAffineToricSchemeMap_eq_affineToricSchemeMap]
   rw [affineToricSchemeMap_comp, affineToricSchemeMap_comp]
@@ -356,7 +365,7 @@ theorem algebraicMap_id (Φ : Fan i) (hΦ : Φ.IsRegular) :
         (FanHom.id Φ).map_le_leastCone σ.2)
   have hmap : (FanHom.id Φ).affineToricChartMap σ =
       faceAffineToricSchemeMap Φ.lattice hσleast := by
-    rw [affineToricChartMap, faceAffineToricSchemeMap_eq_affineToricSchemeMap]
+    rw [affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap]
     simp only [FanHom.id_latticeMap, FanHom.id_realMap]
   rw [hmap, Fan.faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ) hΦ
     (τ := σ) (σ := ⟨(FanHom.id Φ).leastCone σ.2, (FanHom.id Φ).leastCone_mem σ.2⟩)
@@ -385,7 +394,7 @@ theorem algebraicMap_comp (g : FanHom Ψ Ω) (f : FanHom Φ Ψ)
   have hchart :
       (g.comp f).affineToricChartMap σ ≫ faceAffineToricSchemeMap Ω.lattice hκυ =
         f.affineToricChartMap σ ≫ g.affineToricChartMap τ := by
-    rw [affineToricChartMap, affineToricChartMap, affineToricChartMap,
+    rw [affineToricChartMap_def, affineToricChartMap_def, affineToricChartMap_def,
       faceAffineToricSchemeMap_eq_affineToricSchemeMap]
     rw [affineToricSchemeMap_comp, affineToricSchemeMap_comp]
     simp [FanHom.comp_latticeMap, FanHom.comp_realMap]
