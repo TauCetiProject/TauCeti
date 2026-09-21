@@ -60,7 +60,14 @@ namespace TauCeti.TypeCLieIndex
 noncomputable abbrev StandardGroup (d : TypeCLieIndex) :=
   GLSymplecticFin (d.carrierRank + 1) d.1.Closure
 
-/-- The algebraic-closure-valued points of the pinned symplectic group scheme over `ℤ`. -/
+/-- The algebraic-closure-valued points of the pinned symplectic group scheme over `ℤ`.
+
+`TauCeti.Symplectic.groupScheme ℤ (d.carrierRank + 1)` carries the pinning of the simply connected
+group scheme of type `C_{d.carrierRank + 1}`: its diagonal torus is a maximal torus, the root datum
+`TauCeti.Symplectic.diagonalRootDatum` is `TauCeti.DynkinType.typeCSimplyConnectedRootDatum`
+transported along the classical coordinates, `TauCeti.Symplectic.diagonalRootBase` is its
+Bourbaki-numbered base, and `TauCeti.Symplectic.rootSubgroup` supplies the root subgroup morphism
+of every root. -/
 noncomputable abbrev PinnedGroup (d : TypeCLieIndex) :=
   ((Spec (CommRingCat.of d.1.Closure)).asOver (Spec (CommRingCat.of ℤ)) ⟶
     (Symplectic.groupScheme ℤ (d.carrierRank + 1)).X)
