@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Average
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import TauCeti.MeasureTheory.MeasurableSpace.Finpartition
 
 /-!
 # Block averages as conditional expectations
@@ -51,9 +52,12 @@ theorem stepGraphonAvg_ae_eq_condExp (P : Finpartition (Set.univ : Set Ω))
     simp only [mem_preimage, mem_singleton_iff, X, Prod.map_apply, Prod.mk.injEq,
       mem_prod, P.indexedPartition.mem_iff_index_eq]
   have hX : Measurable X := by
-    refine measurable_to_countable' fun pq => ?_
-    rw [hfiber]
-    exact (hP _ pq.1.property).prod (hP _ pq.2.property)
+    let : MeasurableSpace P.parts := ⊤
+    let : MeasurableSpace (P.parts × P.parts) := .prod ⊤ ⊤
+    have hindex := P.measurable_indexedPartition_index hP
+    have hpair := (hindex.comp measurable_fst).prodMk (hindex.comp measurable_snd)
+    -- Every set in the finite product is measurable, so its σ-algebra is discrete.
+    exact hpair.mono le_rfl (fun s _ => s.to_countable.measurableSet)
   have hvalue : (fun z : Ω × Ω => stepGraphonAvg P hP W z.1 z.2) =
       (fun pq : P.parts × P.parts => (blockAverage P W pq.1 pq.2 : ℝ)) ∘ X := by
     funext z
