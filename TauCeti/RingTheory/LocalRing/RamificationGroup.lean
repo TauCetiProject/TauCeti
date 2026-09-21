@@ -47,8 +47,10 @@ integer indexing that Herbrand theory uses.
   `TauCeti.IsLocalRing.exists_ramificationGroup_eq_bot`: for a faithful action on a Noetherian
   local ring the filtration separates points, and it is trivial from some index on when `G` is
   finite.
-* `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_eq_top`: when `S` is monogenic over a
-  base ring `R` whose elements `G` fixes, membership in `G_i` is decided at the generator alone.
+* `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_eq_top`: when `S` is generated over a
+  base ring `R` whose elements `G` fixes by a set `s`, membership in `G_i` is decided on `s`
+  alone; `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top` is the
+  monogenic case, where a single generator decides it.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_le_addVal`: over a discrete valuation ring the
   defining condition is the valuation inequality `v (σ x - x) ≥ i + 1`.
 
@@ -76,9 +78,17 @@ total and constantly `⊤` for `i ≤ -1`. -/
 def ramificationGroup (i : ℤ) : Subgroup G :=
   Ideal.inertia G (maximalIdeal S ^ (i + 1).toNat)
 
+/-- The ramification groups are the inertia subgroups of the powers of the maximal ideal. -/
+theorem ramificationGroup_def (i : ℤ) :
+    ramificationGroup G S i = Ideal.inertia G (maximalIdeal S ^ (i + 1).toNat) :=
+  -- `(rfl)`, not `rfl`: the body of `ramificationGroup` is not `@[expose]`d, so a bare `rfl`
+  -- proof would be rechecked against the exported environment, where it is opaque.
+  (rfl)
+
 variable {G S}
 
 /-- The defining membership criterion of the ramification groups. -/
+@[simp]
 theorem mem_ramificationGroup_iff {i : ℤ} {σ : G} :
     σ ∈ ramificationGroup G S i ↔ ∀ x : S, σ • x - x ∈ maximalIdeal S ^ (i + 1).toNat :=
   Ideal.mem_inertia
@@ -116,20 +126,19 @@ end Defs
 section Adjoin
 
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-variable {R : Type*} [CommRing R] [Algebra R S] [SMulCommClass G R S]
+variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
 
-/-- **Serre's criterion.** When `S` is generated over `R` by a single element `ξ` and `G` acts by
-`R`-algebra automorphisms, membership in `G_i` is decided at `ξ` alone: the elements moved into
-`𝔪 ^ (i + 1)` form an `R`-subalgebra. This is what makes the filtration computable, and it applies
-to the integer ring of a finite separable extension of local fields through local monogenicity. -/
-theorem mem_ramificationGroup_iff_of_adjoin_eq_top {ξ : S} (hξ : Algebra.adjoin R {ξ} = ⊤)
+/-- **Serre's criterion.** When `S` is generated over `R` by a set `s` and `G` acts by `R`-algebra
+automorphisms, membership in `G_i` is decided on `s` alone: the elements moved into `𝔪 ^ (i + 1)`
+form an `R`-subalgebra. -/
+theorem mem_ramificationGroup_iff_of_adjoin_eq_top {s : Set S} (hs : Algebra.adjoin R s = ⊤)
     {i : ℤ} {σ : G} :
-    σ ∈ ramificationGroup G S i ↔ σ • ξ - ξ ∈ maximalIdeal S ^ (i + 1).toNat := by
+    σ ∈ ramificationGroup G S i ↔ ∀ x ∈ s, σ • x - x ∈ maximalIdeal S ^ (i + 1).toNat := by
   rw [mem_ramificationGroup_iff]
-  refine ⟨fun h ↦ h ξ, fun h x ↦ ?_⟩
-  have hx : x ∈ Algebra.adjoin R {ξ} := hξ ▸ Algebra.mem_top
+  refine ⟨fun h x _ ↦ h x, fun h x ↦ ?_⟩
+  have hx : x ∈ Algebra.adjoin R s := hs ▸ Algebra.mem_top
   induction hx using Algebra.adjoin_induction with
-  | mem y hy => rw [Set.mem_singleton_iff.1 hy]; exact h
+  | mem y hy => exact h y hy
   | algebraMap r =>
       have hr : σ • algebraMap R S r = algebraMap R S r := by simp
       rw [hr, sub_self]
@@ -144,6 +153,15 @@ theorem mem_ramificationGroup_iff_of_adjoin_eq_top {ξ : S} (hξ : Algebra.adjoi
         rw [smul_mul']; ring
       rw [hyz]
       exact add_mem (Ideal.mul_mem_left _ _ hz) (Ideal.mul_mem_right _ _ hy)
+
+/-- The monogenic case of **Serre's criterion**: when `S` is generated over `R` by a single
+element `ξ`, membership in `G_i` is decided at `ξ` alone. This is what makes the filtration
+computable, and it applies to the integer ring of a finite separable extension of local fields
+through local monogenicity. -/
+theorem mem_ramificationGroup_iff_of_adjoin_singleton_eq_top {ξ : S}
+    (hξ : Algebra.adjoin R {ξ} = ⊤) {i : ℤ} {σ : G} :
+    σ ∈ ramificationGroup G S i ↔ σ • ξ - ξ ∈ maximalIdeal S ^ (i + 1).toNat := by
+  simp [mem_ramificationGroup_iff_of_adjoin_eq_top hξ]
 
 end Adjoin
 
@@ -283,6 +301,7 @@ variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemi
 
 /-- The ramification filtration of a subgroup is the trace on it of the ramification filtration of
 the ambient group. -/
+@[simp]
 theorem subgroupOf_ramificationGroup (H : Subgroup G) (i : ℤ) :
     (ramificationGroup G S i).subgroupOf H = ramificationGroup H S i :=
   AddSubgroup.subgroupOf_inertia _ H
@@ -297,6 +316,12 @@ variable (G : Type*) [Group G] (S : Type*) [CommRing S] [IsLocalRing S] [MulSemi
 indexing convention of Herbrand theory: the resulting step function is constant on `(i - 1, i]`. -/
 noncomputable def ramificationGroupReal (u : ℝ) : Subgroup G :=
   ramificationGroup G S ⌈u⌉
+
+/-- The real-indexed filtration at `u` is the integer-indexed one at `⌈u⌉`. -/
+theorem ramificationGroupReal_def (u : ℝ) :
+    ramificationGroupReal G S u = ramificationGroup G S ⌈u⌉ :=
+  -- `(rfl)` for the same reason as in `ramificationGroup_def`.
+  (rfl)
 
 @[simp]
 theorem ramificationGroupReal_intCast (i : ℤ) :
