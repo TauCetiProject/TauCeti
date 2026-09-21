@@ -115,6 +115,10 @@ def toBoundedContinuousFunction (f : C2HolderSpace α E F) : E →ᵇ F := f.1.1
 instance : CoeFun (C2HolderSpace α E F) fun _ ↦ E → F :=
   ⟨fun f ↦ f.toBoundedContinuousFunction⟩
 
+@[simp]
+theorem toBoundedContinuousFunction_apply (f : C2HolderSpace α E F) (x : E) :
+    f.toBoundedContinuousFunction x = f x := rfl
+
 /-- The first derivative field, retaining its `C^{1,α}` structure. -/
 def fderivC1 (f : C2HolderSpace α E F) : C1HolderSpace α E (E →L[ℝ] F) := f.1.2
 
@@ -401,6 +405,24 @@ theorem secondFDeriv_smul (c : ℝ) (f : C2HolderSpace α E F) :
     secondFDeriv (c • f) = c • f.secondFDeriv := by
   simpa only [secondFDerivL_apply] using
     (secondFDerivL (α := α) (E := E) (F := F)).map_smul c f
+
+@[simp]
+theorem zero_apply (x : E) : (0 : C2HolderSpace α E F) x = 0 := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_zero]
+  rfl
+
+@[simp]
+theorem add_apply (f g : C2HolderSpace α E F) (x : E) :
+    (f + g) x = f x + g x := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add,
+    BoundedContinuousFunction.add_apply, toBoundedContinuousFunction_apply,
+    toBoundedContinuousFunction_apply]
+
+@[simp]
+theorem smul_apply (c : ℝ) (f : C2HolderSpace α E F) (x : E) :
+    (c • f) x = c • f x := by
+  rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul,
+    BoundedContinuousFunction.smul_apply, toBoundedContinuousFunction_apply]
 
 /-- The `C^{2,α}` norm is the maximum of the two supremum norms and the second-derivative
 Hölder norm. -/
