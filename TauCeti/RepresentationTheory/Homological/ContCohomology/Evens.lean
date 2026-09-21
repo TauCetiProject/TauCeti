@@ -58,8 +58,8 @@ element `s` chosen outside `U`.
   trivial-action form.
 * `TauCeti.ContCohomology.continuous_evensGraphCochain`: continuity of `ν`, for `U` open.
 * `TauCeti.ContCohomology.evensGraphCochain_sub_evensGraphCochain`: two elements outside `U` give
-  graph cochains differing by the explicit coboundary of `γ ↦ α (s⁻¹ s') * ᾱ γ`, so the class of
-  `ν` depends on `U` and `α` alone.
+  graph cochains differing by the explicit coboundary of
+  `γ ↦ α (s⁻¹ s') * evensExtend U α γ`, so the class of `ν` depends on `U` and `α` alone.
 * `TauCeti.ContCohomology.evensGraphCochain_apply_of_mem_of_mem`: on `U × U` the graph cochain is
   the cup-product cochain of `α` with its conjugate `η ↦ α (s⁻¹ η s)`.
 
@@ -485,9 +485,10 @@ theorem evensBs_eq_of_mem (hU : U.index = 2) (hs : s ∉ U) (hs' : s' ∉ U) {γ
 
 /-- **The graph cochain does not depend on the element chosen outside `U`, up to a coboundary.**
 Two elements `s` and `s'` outside an index-two subgroup give graph cochains differing by the
-coboundary of `γ ↦ α (s⁻¹ s') * ᾱ γ`, where `ᾱ` is the extension by zero
-`TauCeti.ContCohomology.evensExtend`. That `1`-cochain is continuous whenever `α` is and `U` is
-open, by `TauCeti.ContCohomology.continuous_evensExtend`, so the class of the graph cochain in
+coboundary of `γ ↦ α (s⁻¹ s') * evensExtend U α γ`, where
+`TauCeti.ContCohomology.evensExtend` is the extension of `α` by zero. That `1`-cochain is
+continuous whenever `α` is and `U` is open, by
+`TauCeti.ContCohomology.continuous_evensExtend`, so the class of the graph cochain in
 `H²(G, 𝔽₂)` depends on `U` and `α` alone. -/
 theorem evensGraphCochain_sub_evensGraphCochain (hU : U.index = 2) (hs : s ∉ U) (hs' : s' ∉ U)
     (γ η : G) :
