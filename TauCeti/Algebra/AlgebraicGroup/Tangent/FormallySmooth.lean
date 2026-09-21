@@ -77,7 +77,9 @@ theorem derivationComp_surjective_of_formallySmooth (φ : A' →ₐc[R] A)
   ext a
   rw [derivationComp_apply]
   rw [derivationToDualNumberEquivLift_symm_apply]
-  have hla := l.commutes a
+  have hla : lR (φ a) = ψ a := by
+    simpa only [lR, AlgHom.restrictScalars_apply, RingHom.algebraMap_toAlgebra,
+      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom] using l.commutes a
   exact (congrArg snd hla).trans (derivationToDualNumberEquivLift_apply_snd d a)
 
 end TauCeti
