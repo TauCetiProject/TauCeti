@@ -177,7 +177,7 @@ theorem zpowers_frobeniusAlgEquiv [IsUnramified K L] :
     IsUnramified.inertiaDegree_eq_finrank]
 
 /-- The Galois group of an unramified local extension is cyclic. -/
-noncomputable instance galoisGroupIsCyclic [IsUnramified K L] : IsCyclic (L ≃ₐ[K] L) :=
+noncomputable instance isCyclic_algEquiv [IsUnramified K L] : IsCyclic (L ≃ₐ[K] L) :=
   (residueFieldAutEquiv (K := K) (L := L)).isCyclic.mpr inferInstance
 
 /-- Frobenius satisfies its characteristic congruence modulo the maximal ideal. -/
