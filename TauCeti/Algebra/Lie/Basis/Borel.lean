@@ -106,9 +106,12 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
     have hx' : x ∈ b.borelUpper := by
       rw [b.borelUpper_eq]
       exact hle hx
+    have h_borelUpper :
+        (b.borelUpper : Submodule K L) =
+          (LieSubalgebra.lieSpan K L (Set.range b.e) : Submodule K L) := rfl
     rw [← LieSubalgebra.mem_toSubmodule]
-    rw [← LieSubmodule.mem_toSubmodule] at hx'
-    simpa only [LieAlgebra.Basis.borelUpper] using hx'
+    rw [← h_borelUpper]
+    exact (LieSubmodule.mem_toSubmodule b.borelUpper).mpr hx'
   · rw [LieSubalgebra.lieSpan_le, Set.range_subset_iff]
     intro i
     exact TauCeti.mem_positiveNilradical_of_mem_rootSpace H b.base
