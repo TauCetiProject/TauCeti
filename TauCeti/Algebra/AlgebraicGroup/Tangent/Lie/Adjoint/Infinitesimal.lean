@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.CounitPoints
+public import TauCeti.Algebra.DualNumber.Convolution
 
 /-!
 # The infinitesimal adjoint action
@@ -19,7 +20,7 @@ with the infinitesimal change of the group adjoint action, over any commutative 
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), §10.a.
+* J. S. Milne, *Algebraic Groups* (2017), §10.d, 10.18–10.23.
 -/
 
 public section
@@ -117,14 +118,13 @@ theorem adDerivation_dualNumber
     exact AlgEquiv.apply_symm_apply _ _
   rw [Derivation.adDerivation_apply]
   -- Postcompose convolution by the coefficient equivalence to calculate in actual dual numbers.
-  change (c.toLinearMap ∘ₗ _) a = _
+  rw [← AlgEquiv.toAlgHom_apply, ← AlgHom.toLinearMap_apply, ← LinearMap.comp_apply]
   simp only [LinearMap.algHom_comp_convMul_distrib, toConv_ofConv]
   erw [← map_inv (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm (p d)]
   rw [hc, hc]
   rw [hinv]
-  -- Fold the local names for the point and the transported constant tangent vector.
-  change (toConv (p d).ofConv.toLinearMap * toConv E *
-    toConv (p (-d)).ofConv.toLinearMap).ofConv a = _
+  -- Expand the local coefficient transport in the computed product coefficients.
+  dsimp only [E, c] at hprodF hprodS
   apply TrivSqZeroExt.ext
   · simpa only [F, LinearMap.comp_apply, AlgHom.toLinearMap_apply, fstHom_apply,
       Derivation.coeFn_coe, fst_add, fst_inl, fst_inr, add_zero] using
