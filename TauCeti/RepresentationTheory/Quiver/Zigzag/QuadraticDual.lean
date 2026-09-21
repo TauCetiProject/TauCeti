@@ -35,21 +35,25 @@ Quadratic duality presents the dual algebra on the opposite quiver, hence — th
 `TauCeti.PathAlgebra.reverseOpAlgEquiv` — on the opposite of the doubled path algebra. Every
 backtrack is a palindrome, so reversal carries the signless relation to itself and the quadratic
 dual is presented back on the doubled quiver itself:
-`TauCeti.quadraticDualZigzagEquivSignless`.
+`TauCeti.quadraticDualQuadraticZigzagEquivSignless`.
 
-This is a statement about the quadratic presentation, so it says nothing about the one-vertex and
-two-vertex graphs, whose zigzag algebras are the dual numbers and a radical-cube-zero algebra and
-are not presented by their quadratic relations. The computation of the orthogonal complement below
-is nevertheless valid for every finite simple graph; it is the comparison of the span of the
-quadratic relators with the zigzag ideal, `TauCeti.zigzagIdeal_eq_quadraticZigzagIdeal`, which
-needs connectedness and at least three vertices.
+That equivalence is a statement about the quadratic *presentation*, and holds for every finite
+simple graph. The graph enters only through the identification of the presented algebra with the
+zigzag algebra, `TauCeti.quadraticZigzagPresentationEquivZigzagQuotient`, which carries the
+hypotheses of `TauCeti.zigzagIdeal_eq_quadraticZigzagIdeal`: connectedness and at least three
+vertices. It is for such a graph, and only there, that the algebra computed here is the quadratic
+dual of the zigzag algebra. The one-vertex and two-vertex graphs, whose zigzag algebras are the
+dual numbers and a radical-cube-zero algebra, are not presented by their quadratic relations and
+are excluded.
 
 ## Main definitions
 
 * `TauCeti.quadraticZigzagRelations`: the `k`-span of the quadratic zigzag relators, the degree-two
   relation space of the quadratic presentation.
-* `TauCeti.quadraticDualZigzagEquivSignless`: **the quadratic dual of the zigzag algebra is the
-  signless preprojective algebra of the doubled quiver**.
+* `TauCeti.quadraticZigzagPresentationEquivZigzagQuotient`: for a connected graph with at least
+  three vertices that relation space presents the zigzag algebra.
+* `TauCeti.quadraticDualQuadraticZigzagEquivSignless`: **the quadratic dual of that presentation is
+  the signless preprojective algebra of the doubled quiver**.
 
 ## Main results
 
@@ -212,6 +216,21 @@ theorem twoSidedIdeal_span_quadraticZigzagRelations_eq_zigzagIdeal (hconn : G.Co
   rw [twoSidedIdeal_span_quadraticZigzagRelations_eq_quadraticZigzagIdeal,
     zigzagIdeal_eq_quadraticZigzagIdeal k G hconn hcard]
 
+/-- **For a connected graph with at least three vertices the quadratic relation space presents the
+zigzag algebra**: the quotient of the path algebra of the doubled quiver by the ideal it generates
+is the zigzag relation quotient. This is what makes the algebra dualised below the zigzag algebra
+rather than the quadratic presentation alone, and it carries the hypotheses of
+`TauCeti.twoSidedIdeal_span_quadraticZigzagRelations_eq_zigzagIdeal`. -/
+noncomputable def quadraticZigzagPresentationEquivZigzagQuotient (hconn : G.Connected)
+    (hcard : 3 ≤ Nat.card V) :
+    (pathAlgebra k (DoubledQuiver G) ⧸
+        (TwoSidedIdeal.span
+          (quadraticZigzagRelations k G : Set (pathAlgebra k (DoubledQuiver G)))).asIdeal) ≃ₐ[k]
+      nonisolatedZigzagQuotient k G :=
+  Ideal.quotientEquivAlgOfEq k
+    (congrArg TwoSidedIdeal.asIdeal
+      (twoSidedIdeal_span_quadraticZigzagRelations_eq_zigzagIdeal k G hconn hcard))
+
 /-! ### The orthogonal complement -/
 
 section Orthogonal
@@ -366,11 +385,15 @@ private theorem quadraticDualOfPath_signlessPreprojectiveRelator (v : DoubledQui
   rw [quadraticDualOfPath_apply, reverseOpAlgEquiv_signlessPreprojectiveRelator]
   exact quadraticDualMk_op_eq_zero (signlessPreprojectiveRelator_mem_quadraticOrthogonal k G v)
 
-/-- **The quadratic dual of the zigzag algebra of a finite simple graph is the signless
-preprojective algebra of its doubled quiver**. The quadratic dual is presented on the opposite
+/-- **The quadratic dual of the quadratic presentation of a zigzag algebra is the signless
+preprojective algebra of the doubled quiver**. The quadratic dual is presented on the opposite
 path algebra; path reversal carries it back to the doubled quiver, fixing every backtrack and
-hence every signless relator. -/
-noncomputable def quadraticDualZigzagEquivSignless :
+hence every signless relator.
+
+The relation space dualised here presents the zigzag algebra for the graphs of
+`TauCeti.quadraticZigzagPresentationEquivZigzagQuotient`, connected with at least three vertices,
+and it is for those graphs that this computes the quadratic dual of the zigzag algebra itself. -/
+noncomputable def quadraticDualQuadraticZigzagEquivSignless :
     quadraticDual k (DoubledQuiver G) (quadraticZigzagRelations k G) ≃ₐ[k]
       signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
   AlgEquiv.ofAlgHom
@@ -392,13 +415,13 @@ noncomputable def quadraticDualZigzagEquivSignless :
 /-- The identification of the quadratic dual with the signless algebra is induced by path
 reversal. -/
 @[simp]
-theorem quadraticDualZigzagEquivSignless_quadraticDualMk
+theorem quadraticDualQuadraticZigzagEquivSignless_quadraticDualMk
     (x : (pathAlgebra k (DoubledQuiver G))ᵐᵒᵖ) :
-    quadraticDualZigzagEquivSignless k G
+    quadraticDualQuadraticZigzagEquivSignless k G
         (quadraticDualMk k (DoubledQuiver G) (quadraticZigzagRelations k G) x) =
       signlessPreprojectiveMk k (DoubledQuiver G)
         ((reverseOpAlgEquiv k (DoubledQuiver G)).symm x) := by
-  rw [quadraticDualZigzagEquivSignless, AlgEquiv.ofAlgHom_apply,
+  rw [quadraticDualQuadraticZigzagEquivSignless, AlgEquiv.ofAlgHom_apply,
     quadraticDualLift_quadraticDualMk, signlessOfOp_apply]
 
 end Algebra
