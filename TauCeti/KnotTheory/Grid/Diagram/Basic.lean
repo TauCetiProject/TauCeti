@@ -135,12 +135,6 @@ theorem subdiagonal_apply_eq_sub_one {n : ℕ} [NeZero n] (c : Fin n) :
     subdiagonal n c = c - 1 :=
   eq_sub_iff_add_eq.mpr (subdiagonal_apply_add_one c)
 
-/-- In three columns the subdiagonal state sends each column to the row two above it. -/
-theorem subdiagonal_three_apply (c : Fin 3) : subdiagonal 3 c = c + 2 := by
-  rw [subdiagonal_apply_eq_sub_one]
-  revert c
-  decide
-
 /-- The finite set of occupied grid points of a grid state. The first coordinate is the column and
 the second coordinate is the row. -/
 def pointSet (x : GridState n) : Finset (Fin n × Fin n) :=
