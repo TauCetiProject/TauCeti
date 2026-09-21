@@ -75,13 +75,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
-/-- The applied form of Mathlib's `LieAlgebra.ad_eq_lmul_left_sub_lmul_right`, which is stated as
-an equality of functions. -/
-private theorem ad_eq_mulLeft_sub_mulRight (a : A) :
-    LieAlgebra.ad R A a = LinearMap.mulLeft R a - LinearMap.mulRight R a := by
-  have h := congrFun (LieAlgebra.ad_eq_lmul_left_sub_lmul_right (R := R) A) a
-  simpa using h
-
 /-- Right multiplication by `-a` is the negative of right multiplication by `a`.  Absorbing the
 sign of the binomial expansion this way keeps `ad_pow_apply` free of a separate `(-1) ^ k`. -/
 private theorem mulRight_neg (a : A) :
@@ -98,7 +91,8 @@ theorem ad_pow_eq_sum (a : A) (n : ℕ) :
         n.choose m • (LinearMap.mulLeft R (a ^ m) * LinearMap.mulRight R ((-a) ^ (n - m))) := by
   have hcomm : Commute (LinearMap.mulLeft R a) (LinearMap.mulRight R (-a)) :=
     LinearMap.commute_mulLeft_right a (-a)
-  rw [ad_eq_mulLeft_sub_mulRight, sub_eq_add_neg, ← mulRight_neg, hcomm.add_pow n]
+  rw [LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply, sub_eq_add_neg, ← mulRight_neg,
+    hcomm.add_pow n]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
   rw [LinearMap.pow_mulLeft, LinearMap.pow_mulRight, nsmul_eq_mul]
   exact (Nat.cast_commute (n.choose m) _).eq.symm
@@ -122,7 +116,7 @@ theorem ad_pow_expChar_pow (p : ℕ) [ExpChar A p] (a : A) (n : ℕ) :
   have : ExpChar (Module.End R A) p :=
     expChar_of_injective_ringHom
       (f := (Algebra.lmul R A : A →ₐ[R] Module.End R A).toRingHom) Algebra.lmul_injective p
-  rw [ad_eq_mulLeft_sub_mulRight, ad_eq_mulLeft_sub_mulRight,
+  rw [LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply, Pi.sub_apply,
     sub_pow_expChar_pow_of_commute p n (LinearMap.commute_mulLeft_right a a),
     LinearMap.pow_mulLeft, LinearMap.pow_mulRight]
 
