@@ -504,6 +504,7 @@ theorem isStrict_iff_exists_eq_toAInfinityHom (f : AInfinityHom AA BB) :
 
 /-- If the outer factor of a composite is strict, its linear part is applied to each component of
 the inner factor. -/
+@[simp]
 theorem component_comp_of_isStrict_outer {CC : AInfinityAlgebra R C}
     {g : AInfinityHom BB CC} {f : AInfinityHom AA BB} (hg : g.IsStrict) (n : ℕ) :
     (g.comp f).component n = g.linearPart.compMultilinearMap (f.component n) := by
@@ -517,6 +518,7 @@ theorem component_comp_of_isStrict_outer {CC : AInfinityAlgebra R C}
 /-- If the inner factor of a composite is strict, its linear part is applied to every input of
 each component of the outer factor.  Degree-zero homogeneity makes the linear part commute with
 the Koszul twists, so no additional sign occurs. -/
+@[simp]
 theorem component_comp_of_isStrict_inner {CC : AInfinityAlgebra R C}
     {g : AInfinityHom BB CC} {f : AInfinityHom AA BB} (hf : f.IsStrict) (n : ℕ) :
     (g.comp f).component n =
