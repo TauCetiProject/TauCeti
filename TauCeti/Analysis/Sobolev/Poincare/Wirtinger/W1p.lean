@@ -19,8 +19,8 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
 
 Let `Ω` be a bounded convex open subset of a finite-dimensional real inner product space `E` of
-dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have positive measure.  This
-file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
+dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` be null-measurable and have
+positive measure.  This file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
 
 `‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖∇u‖_{Lᵖ(Ω)}`,
 
@@ -185,9 +185,10 @@ private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) 
 /-! ### The inequality on the whole domain -/
 
 /-- **The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`.**  Let `Ω` be a bounded convex open set
-in a finite-dimensional real inner product space of dimension `n`, and let `S ⊆ Ω` be measurable
-of positive measure.  For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(Ω)` deviates from its mean over `S` by
-at most `μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak gradient. -/
+in a finite-dimensional real inner product space of dimension `n`, and let `S ⊆ Ω` be
+null-measurable of positive measure.  For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(Ω)` deviates from its
+mean over `S` by at most `μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak
+gradient. -/
 theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
     (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
     (hSm : NullMeasurableSet S mu) (hS : S ⊆ (Omega : Set E)) (hS0 : mu S ≠ 0)
