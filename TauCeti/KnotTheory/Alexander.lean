@@ -211,10 +211,6 @@ enlargement, that is the block matrix
 def enlargeRow (V : Matrix ι ι R) (η : ι → R) : Matrix (ι ⊕ Fin 2) (ι ⊕ Fin 2) R :=
   (enlargeColumn Vᵀ η)ᵀ
 
-/-- A row enlargement is the transpose of the column enlargement of the transpose. -/
-theorem enlargeRow_def (V : Matrix ι ι R) (η : ι → R) :
-    enlargeRow V η = (enlargeColumn Vᵀ η)ᵀ := (rfl)
-
 /-- The old block of a row enlargement is the original matrix. -/
 @[simp]
 theorem enlargeRow_apply_inl_inl (V : Matrix ι ι R) (η : ι → R) (i j : ι) :

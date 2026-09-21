@@ -107,7 +107,13 @@ theorem tristramLevineSignature_enlargeColumn (V : Matrix ι ι ℝ) (ξ : ι �
 @[simp]
 theorem tristramLevineSignature_enlargeRow (V : Matrix ι ι ℝ) (η : ι → ℝ) (ω : ℂ) :
     tristramLevineSignature (enlargeRow V η) ω = tristramLevineSignature V ω := by
-  rw [enlargeRow_def, tristramLevineSignature_transpose,
+  have hrow : enlargeRow V η = (enlargeColumn Vᵀ η)ᵀ := by
+    ext (i | i) (j | j)
+    · simp [Matrix.transpose_apply]
+    · fin_cases j <;> simp [Matrix.transpose_apply]
+    · fin_cases i <;> simp [Matrix.transpose_apply]
+    · fin_cases i <;> fin_cases j <;> simp [Matrix.transpose_apply]
+  rw [hrow, tristramLevineSignature_transpose,
     tristramLevineSignature_enlargeColumn, tristramLevineSignature_transpose]
 
 end TauCeti.KnotTheory
