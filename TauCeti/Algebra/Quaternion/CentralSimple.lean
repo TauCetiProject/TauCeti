@@ -176,7 +176,6 @@ private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
 
 /-- An element of a unit-parameter quaternion symbol is central if and only if all three imaginary
 coordinates vanish. -/
-@[simp]
 theorem mem_center_iff (a : K) (b : Kˣ) {x : ℍ[K,a,(b : K)]} :
     x ∈ Subalgebra.center K ℍ[K,a,(b : K)] ↔
       x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
