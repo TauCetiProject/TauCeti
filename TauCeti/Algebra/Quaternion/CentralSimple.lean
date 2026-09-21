@@ -48,30 +48,31 @@ namespace TauCeti
 
 namespace QuaternionAlgebra
 
-variable {K : Type*} [Field K] [Invertible (2 : K)] (a b : Kˣ)
+section CompleteSquare
 
-private def completeSquareBasis (a b c : K) :
-    _root_.QuaternionAlgebra.Basis ℍ[K,b ^ 2 + 4 * a,0,c] a b c where
-  i := ⟨b / 2, 1 / 2, 0, 0⟩
+variable {R : Type*} [CommRing R] [Invertible (2 : R)]
+
+private def completeSquareBasis (a b c : R) :
+    _root_.QuaternionAlgebra.Basis ℍ[R,b ^ 2 + 4 * a,0,c] a b c where
+  i := ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩
   j := ⟨0, 0, 1, 0⟩
-  k := ⟨0, 0, b / 2, 1 / 2⟩
+  k := ⟨0, 0, ⅟ (2 : R) * b, ⅟ (2 : R)⟩
   i_mul_i := by
-    ext <;> simp [div_eq_mul_inv]
-    all_goals
-      field_simp [show (2 : K) ≠ 0 from two_ne_zero]
-      ring
+    ext <;> simp [mul_assoc]
+    · linear_combination
+        (⅟ (2 : R) * b ^ 2 + a * (2 * ⅟ (2 : R) + 1)) *
+          (invOf_mul_self (2 : R))
+    · linear_combination (⅟ (2 : R) * b) * (invOf_mul_self (2 : R))
   j_mul_j := by
     ext <;> simp
   i_mul_j := by
-    ext <;> simp [div_eq_mul_inv]
+    ext <;> simp
   j_mul_i := by
-    ext <;> simp [div_eq_mul_inv]
-    all_goals
-      field_simp [show (2 : K) ≠ 0 from two_ne_zero]
-      ring
+    ext <;> simp
+    linear_combination b * (invOf_mul_self (2 : R))
 
-private def completeSquareInvBasis (a b c : K) :
-    _root_.QuaternionAlgebra.Basis ℍ[K,a,b,c] (b ^ 2 + 4 * a) 0 c where
+private def completeSquareInvBasis (a b c : R) :
+    _root_.QuaternionAlgebra.Basis ℍ[R,a,b,c] (b ^ 2 + 4 * a) 0 c where
   i := ⟨-b, 2, 0, 0⟩
   j := ⟨0, 0, 1, 0⟩
   k := ⟨0, 0, -b, 2⟩
@@ -85,95 +86,94 @@ private def completeSquareInvBasis (a b c : K) :
     ext <;> simp
     all_goals ring
 
-private theorem completeSquareBasis_lift_apply_i (a b c : K) :
-    (completeSquareBasis a b c).liftHom (⟨0, 1, 0, 0⟩ : ℍ[K,a,b,c]) =
-      ⟨b / 2, 1 / 2, 0, 0⟩ := by
+private theorem completeSquareBasis_lift_apply_i (a b c : R) :
+    (completeSquareBasis a b c).liftHom (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c]) =
+      ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ := by
   simp [completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
 
-private theorem completeSquareBasis_lift_apply_j (a b c : K) :
-    (completeSquareBasis a b c).liftHom (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c]) =
+private theorem completeSquareBasis_lift_apply_j (a b c : R) :
+    (completeSquareBasis a b c).liftHom (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c]) =
       ⟨0, 0, 1, 0⟩ := by
   simp [completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
 
-omit [Invertible (2 : K)] in
-private theorem completeSquareInvBasis_lift_apply_i (a b c : K) :
+omit [Invertible (2 : R)] in
+private theorem completeSquareInvBasis_lift_apply_i (a b c : R) :
     (completeSquareInvBasis a b c).liftHom
-        (⟨0, 1, 0, 0⟩ : ℍ[K,b ^ 2 + 4 * a,0,c]) =
+        (⟨0, 1, 0, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c]) =
       ⟨-b, 2, 0, 0⟩ := by
   simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
-omit [Invertible (2 : K)] in
-private theorem completeSquareInvBasis_lift_apply_j (a b c : K) :
+omit [Invertible (2 : R)] in
+private theorem completeSquareInvBasis_lift_apply_j (a b c : R) :
     (completeSquareInvBasis a b c).liftHom
-        (⟨0, 0, 1, 0⟩ : ℍ[K,b ^ 2 + 4 * a,0,c]) =
+        (⟨0, 0, 1, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c]) =
       ⟨0, 0, 1, 0⟩ := by
   simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 /-- **Completing the square in a quaternion algebra.** The change of generators
-`i ↦ (b + i) / 2` identifies `ℍ[K,a,b,c]` with the unit-parameter presentation
-`ℍ[K,b² + 4a,0,c]`. -/
-def completeSquareEquiv (a b c : K) :
-    ℍ[K,a,b,c] ≃ₐ[K] ℍ[K,b ^ 2 + 4 * a,0,c] :=
+`i ↦ ⅟ 2 * (b + i)` identifies `ℍ[R,a,b,c]` with the unit-parameter presentation
+`ℍ[R,b² + 4a,0,c]`. -/
+def completeSquareEquiv (a b c : R) :
+    ℍ[R,a,b,c] ≃ₐ[R] ℍ[R,b ^ 2 + 4 * a,0,c] :=
   AlgEquiv.ofAlgHom (completeSquareBasis a b c).liftHom
     (completeSquareInvBasis a b c).liftHom (by
       apply _root_.QuaternionAlgebra.hom_ext
       · -- Expose the standard generator before applying the two change-of-basis formulas.
         change (completeSquareBasis a b c).liftHom
             ((completeSquareInvBasis a b c).liftHom
-              (⟨0, 1, 0, 0⟩ : ℍ[K,b ^ 2 + 4 * a,0,c])) =
-          (⟨0, 1, 0, 0⟩ : ℍ[K,b ^ 2 + 4 * a,0,c])
+              (⟨0, 1, 0, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])) =
+          (⟨0, 1, 0, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])
         rw [completeSquareInvBasis_lift_apply_i]
         simp only [_root_.QuaternionAlgebra.Basis.liftHom_apply]
         simp only [completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
         ext <;> simp
-        all_goals
-          field_simp [show (2 : K) ≠ 0 from two_ne_zero]
-          ring
       · -- The second generator is fixed by both changes of basis.
         change (completeSquareBasis a b c).liftHom
             ((completeSquareInvBasis a b c).liftHom
-              (⟨0, 0, 1, 0⟩ : ℍ[K,b ^ 2 + 4 * a,0,c])) =
-          (⟨0, 0, 1, 0⟩ : ℍ[K,b ^ 2 + 4 * a,0,c])
+              (⟨0, 0, 1, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])) =
+          (⟨0, 0, 1, 0⟩ : ℍ[R,b ^ 2 + 4 * a,0,c])
         rw [completeSquareInvBasis_lift_apply_j, completeSquareBasis_lift_apply_j]) (by
       apply _root_.QuaternionAlgebra.hom_ext
       · -- The inverse change sends the completed-square generator back to the original one.
         change (completeSquareInvBasis a b c).liftHom
             ((completeSquareBasis a b c).liftHom
-              (⟨0, 1, 0, 0⟩ : ℍ[K,a,b,c])) =
-          (⟨0, 1, 0, 0⟩ : ℍ[K,a,b,c])
+              (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c])) =
+          (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c])
         rw [completeSquareBasis_lift_apply_i]
-        simp only [one_div, _root_.QuaternionAlgebra.Basis.liftHom_apply]
+        simp only [_root_.QuaternionAlgebra.Basis.liftHom_apply]
         simp only [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
         ext <;> simp
-        all_goals
-          field_simp [show (2 : K) ≠ 0 from two_ne_zero]
-          ring
       · -- Both changes fix the second quaternion generator.
         change (completeSquareInvBasis a b c).liftHom
             ((completeSquareBasis a b c).liftHom
-              (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c])) =
-          (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c])
+              (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])) =
+          (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])
         rw [completeSquareBasis_lift_apply_j, completeSquareInvBasis_lift_apply_j])
 
 @[simp]
-theorem completeSquareEquiv_apply_i (a b c : K) :
-    completeSquareEquiv a b c ⟨0, 1, 0, 0⟩ = ⟨b / 2, 1 / 2, 0, 0⟩ := by
+theorem completeSquareEquiv_apply_i (a b c : R) :
+    completeSquareEquiv a b c ⟨0, 1, 0, 0⟩ =
+      ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ := by
   simp [completeSquareEquiv, completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
-theorem completeSquareEquiv_apply_j (a b c : K) :
+theorem completeSquareEquiv_apply_j (a b c : R) :
     completeSquareEquiv a b c ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ := by
   simp [completeSquareEquiv, completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
-theorem completeSquareEquiv_symm_apply_i (a b c : K) :
+theorem completeSquareEquiv_symm_apply_i (a b c : R) :
     (completeSquareEquiv a b c).symm ⟨0, 1, 0, 0⟩ = ⟨-b, 2, 0, 0⟩ := by
   simp [completeSquareEquiv, completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
-theorem completeSquareEquiv_symm_apply_j (a b c : K) :
+theorem completeSquareEquiv_symm_apply_j (a b c : R) :
     (completeSquareEquiv a b c).symm ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ := by
   simp [completeSquareEquiv, completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
+
+end CompleteSquare
+
+variable {K : Type*} [Field K] [Invertible (2 : K)] (a b : Kˣ)
 
 private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
     {x : ℍ[K,a,(b : K)]}
@@ -232,6 +232,7 @@ instance instIsCentral (a : K) (b : Kˣ) : Algebra.IsCentral K ℍ[K,a,(b : K)] 
     · simpa using ((mem_center_iff a b).mp hx |>.2.1).symm
     · simpa using ((mem_center_iff a b).mp hx |>.2.2).symm⟩⟩
 
+/-- A quaternion symbol with both parameters units is a simple ring. -/
 instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] := by
   rcases QuaternionAlgebra.forall_isUnit_or_nonempty_algEquiv_matrix a b with hdiv | hsplit
   · let divisionRing : DivisionRing ℍ[K,(a : K),(b : K)] :=
