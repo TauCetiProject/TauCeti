@@ -144,28 +144,19 @@ section Relabelling
 
 variable [Semiring R]
 
-/-- A relabelling of coordinate spaces transports the support of a word. -/
-@[simp]
-theorem support_funLeft (e : ι ≃ κ) (x : ι → R) :
-    support (LinearMap.funLeft R R e.symm x) = e '' support x := by
-  rw [Equiv.image_eq_preimage_symm]
-  ext j
-  simp [Function.mem_support]
-
 /-- A relabelling of finite coordinate spaces preserves Hamming weight. -/
 @[simp]
 theorem hammingNorm_funLeft [DecidableEq R] [Fintype ι] [Fintype κ]
-    (e : ι ≃ κ) (x : ι → R) :
-    hammingNorm (LinearMap.funLeft R R e.symm x) = hammingNorm x :=
-  Equiv.hammingNorm_comp e.symm x
+    (e : κ ≃ ι) (x : ι → R) :
+    hammingNorm (LinearMap.funLeft R R e x) = hammingNorm x :=
+  Equiv.hammingNorm_comp e x
 
 /-- A relabelling of finite coordinate spaces preserves Hamming distance. -/
 @[simp]
 theorem hammingDist_funLeft [DecidableEq R] [Fintype ι] [Fintype κ]
-    (e : ι ≃ κ) (x y : ι → R) :
-    hammingDist (LinearMap.funLeft R R e.symm x) (LinearMap.funLeft R R e.symm y) =
-      hammingDist x y :=
-  Equiv.hammingDist_comp e.symm x y
+    (e : κ ≃ ι) (x y : ι → R) :
+    hammingDist (LinearMap.funLeft R R e x) (LinearMap.funLeft R R e y) = hammingDist x y :=
+  Equiv.hammingDist_comp e x y
 
 end Relabelling
 
@@ -503,14 +494,14 @@ theorem hammingNorm_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x : ι → R) :
     hammingNorm (f x) = hammingNorm x := by
   obtain ⟨e, rfl⟩ := hf
-  exact hammingNorm_funLeft e x
+  exact hammingNorm_funLeft e.symm x
 
 /-- A permutation-group element preserves Hamming distance. -/
 theorem hammingDist_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x y : ι → R) :
     hammingDist (f x) (f y) = hammingDist x y := by
   obtain ⟨e, rfl⟩ := hf
-  exact hammingDist_funLeft e x y
+  exact hammingDist_funLeft e.symm x y
 
 variable (C : Submodule R (ι → R))
 

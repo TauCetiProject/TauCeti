@@ -61,9 +61,9 @@ theorem euclideanDual_directSum (C : Submodule R (ι → R)) (D : Submodule R (�
   constructor
   · intro hy
     refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-    · have h := hy (Sum.elim x 0) (mem_directSum_iff.mpr ⟨hx, D.zero_mem⟩)
+    · have h := hy (Sum.elim x 0) (sumElim_zero_mem_directSum D hx)
       simpa [hdot] using h
-    · have h := hy (Sum.elim 0 x) (mem_directSum_iff.mpr ⟨C.zero_mem, hx⟩)
+    · have h := hy (Sum.elim 0 x) (zero_sumElim_mem_directSum C hx)
       simpa [hdot] using h
   · rintro ⟨hC, hD⟩ x hx
     obtain ⟨hxC, hxD⟩ := mem_directSum_iff.mp hx
