@@ -29,17 +29,13 @@ applications provide those analytic inputs separately.
   `0`, `1`, and `2` with weights `3`, `4`, and `1`.
 * `TauCeti.LSeries.threeFourOne_re_neg_log_one_sub_nonneg` is the corresponding inequality for
   logarithms of Euler factors in the open unit disk.
-* `TauCeti.LSeries.threeFourOne_re_neg_log_one_sub_div_cpow_nonneg` reads that inequality on the
-  local factors of a Dirichlet series at a real base `x > 1`.
 
 ## Provenance
 
 The `3-4-1` argument is classical; see Davenport, *Multiplicative Number Theory*, Chapter 4.
 The logarithmic form specializes the private lemma `DirichletCharacter.re_log_comb_nonneg'` in
 Mathlib's `Mathlib/NumberTheory/LSeries/Nonvanishing.lean`, by Michael Stoll and David Loeffler,
-through `TauCeti.sum_re_neg_log_one_sub_nonneg`. The local-factor form below generalizes the
-private lemma `DirichletCharacter.re_log_comb_nonneg` of the same file, which fixes the base to a
-rational prime and the coefficient to a Dirichlet character value.
+through `TauCeti.sum_re_neg_log_one_sub_nonneg`.
 -/
 
 public section
@@ -129,48 +125,6 @@ theorem threeFourOne_re_neg_log_one_sub_nonneg {a : ℝ} (ha₀ : 0 ≤ a) (ha�
     threeFourOneWeight_one, threeFourOneWeight_two, threeFourOneFrequency_zero,
     threeFourOneFrequency_one, threeFourOneFrequency_two, pow_zero, pow_one, mul_one,
     one_mul] using h
-
-/-! ### Dirichlet local-factor form -/
-
-/-- **The `3-4-1` inequality for the local factors of a Dirichlet series.** At a real base
-`x > 1`, the three local ratios of the family `1, c, c ^ 2` read at the points `σ`, `σ + it` and
-`σ + 2it` are `x ^ (-σ)` times the phases `1`, `z` and `z ^ 2`, where `z = c * x ^ (-it)` has
-modulus at most one; so the `3-4-1` combination of their logarithms is nonnegative.
-
-This is the shape in which an Euler product over the primes of a number field, or over the
-rational primes, meets the inequality: `x` is the absolute norm of a prime and `c` is the value
-there of a weight of modulus at most one. -/
-theorem threeFourOne_re_neg_log_one_sub_div_cpow_nonneg {x : ℝ} (hx : 1 < x) {σ : ℝ}
-    (hσ : 0 < σ) (t : ℝ) {c : ℂ} (hc : ‖c‖ ≤ 1) :
-    0 ≤ 3 * (-log (1 - 1 / (x : ℂ) ^ (σ : ℂ))).re +
-        4 * (-log (1 - c / (x : ℂ) ^ ((σ : ℂ) + I * t))).re +
-        (-log (1 - c ^ 2 / (x : ℂ) ^ ((σ : ℂ) + 2 * I * t))).re := by
-  have hx0 : (0 : ℝ) < x := zero_lt_one.trans hx
-  have hxC : (x : ℂ) ≠ 0 := by exact_mod_cast hx0.ne'
-  have hdiv (d w : ℂ) : d / (x : ℂ) ^ w = d * (x : ℂ) ^ (-w) := by
-    rw [cpow_neg, div_eq_mul_inv]
-  have hphase : ‖c * (x : ℂ) ^ (-(I * t))‖ ≤ 1 := by
-    rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hx0]
-    simpa using hc
-  have hA : ((x ^ (-σ) : ℝ) : ℂ) = (x : ℂ) ^ (-(σ : ℂ)) := by
-    rw [ofReal_cpow hx0.le, ofReal_neg]
-  have hsq : ((x : ℂ) ^ (-(I * (t : ℂ)))) ^ 2 = (x : ℂ) ^ (-(2 * I * (t : ℂ))) := by
-    rw [sq, ← cpow_add _ _ hxC]
-    congr 1
-    ring
-  have h0 : 1 / (x : ℂ) ^ (σ : ℂ) = ((x ^ (-σ) : ℝ) : ℂ) := by
-    rw [hA, hdiv, one_mul]
-  have h1 : c / (x : ℂ) ^ ((σ : ℂ) + I * t) =
-      ((x ^ (-σ) : ℝ) : ℂ) * (c * (x : ℂ) ^ (-(I * t))) := by
-    rw [hA, hdiv, neg_add, cpow_add _ _ hxC]
-    ring
-  have h2 : c ^ 2 / (x : ℂ) ^ ((σ : ℂ) + 2 * I * t) =
-      ((x ^ (-σ) : ℝ) : ℂ) * (c * (x : ℂ) ^ (-(I * t))) ^ 2 := by
-    rw [hA, hdiv, neg_add, cpow_add _ _ hxC, mul_pow, hsq]
-    ring
-  rw [h0, h1, h2]
-  exact threeFourOne_re_neg_log_one_sub_nonneg (Real.rpow_nonneg hx0.le _)
-    (Real.rpow_lt_one_of_one_lt_of_neg hx (neg_neg_iff_pos.mpr hσ)) hphase
 
 end
 

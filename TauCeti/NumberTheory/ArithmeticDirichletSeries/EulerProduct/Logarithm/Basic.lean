@@ -35,8 +35,6 @@ a simply connected zero-free region on which to choose one — and is not constr
   exponential of a sum of principal logarithms over the primes.
 * `TauCeti.MultiplicativeIdealWeight.tsum_prime_pow_eq_tsum_neg_log_one_sub`: that sum re-indexed
   by a prime and an exponent, as an identity of complex numbers.
-* `TauCeti.MultiplicativeIdealWeight.norm_LSeries_eq_exp_tsum_re_neg_log_one_sub`: the modulus
-  of the `L`-series as the real exponential of the sum of the real parts.
 * `TauCeti.MultiplicativeIdealWeight.exp_tsum_prime_pow_eq_LSeries`: the exponential form of the
   re-indexed sum.
 -/
@@ -55,22 +53,6 @@ open IdealArithmeticFunction
 
 variable {K : Type*} [Field K] [NumberField K] (χ : MultiplicativeIdealWeight K) {s : ℂ}
 
-/-- **The local logarithms are summable.** Absolute convergence of the ideal-indexed series
-puts every local ratio inside the open unit disc and makes the family of principal logarithms
-`-log (1 - χ(P) N(P)⁻ˢ)` summable over the height-one primes. -/
-theorem summable_neg_log_one_sub
-    (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) :
-    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
-      -log (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s) :=
-  (Summable.clog_one_sub (χ.summable_div_of_summable_idealTerm hs)).neg
-
-/-- The real parts of the local logarithms are summable. -/
-theorem summable_re_neg_log_one_sub
-    (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) :
-    Summable fun P : HeightOneSpectrum (𝓞 K) ↦
-      (-log (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)).re :=
-  (hasSum_re (χ.summable_neg_log_one_sub hs).hasSum).summable
-
 /-- **The Euler product in exponential form.** For a completely multiplicative ideal weight whose
 ideal-indexed series converges absolutely at `s`, the `L`-series is the exponential of the sum of
 principal logarithms `-log (1 - χ(P) N(P)⁻ˢ)` over the height-one primes.
@@ -84,7 +66,8 @@ theorem exp_tsum_neg_log_one_sub_eq_LSeries
         -log (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)) =
       LSeries (normCoeff K χ.toIdealArithmeticFunction) s := by
   have hne := χ.one_sub_div_ne_zero_of_summable_idealTerm hs
-  have H := (χ.summable_neg_log_one_sub hs).hasSum.cexp.tprod_eq
+  have H := (Summable.clog_one_sub
+    (χ.summable_div_of_summable_idealTerm hs)).neg.hasSum.cexp.tprod_eq
   simp only [Function.comp_apply, exp_neg, exp_log (hne _)] at H
   exact H.symm.trans (χ.hasProd_eulerFactor hs).tprod_eq
 
@@ -101,18 +84,6 @@ theorem tsum_prime_pow_eq_tsum_neg_log_one_sub
   tsum_taylorSeries_neg_log
     (r := fun P : HeightOneSpectrum (𝓞 K) ↦ χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)
     (χ.summable_div_of_summable_idealTerm hs) (χ.norm_div_lt_one_of_summable_idealTerm hs)
-
-/-- **The modulus of the `L`-series as an exponential.** Taking norms in the exponential form of
-the Euler product turns the `L`-series into the real exponential of the sum of the real parts of
-the local logarithms, which is the shape a termwise inequality between Euler products is read
-in. -/
-theorem norm_LSeries_eq_exp_tsum_re_neg_log_one_sub
-    (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) :
-    ‖LSeries (normCoeff K χ.toIdealArithmeticFunction) s‖ =
-      Real.exp (∑' P : HeightOneSpectrum (𝓞 K),
-        (-log (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s)).re) := by
-  rw [← χ.exp_tsum_neg_log_one_sub_eq_LSeries hs, norm_exp,
-    re_tsum (χ.summable_neg_log_one_sub hs)]
 
 /-- **The Euler product expanded over prime powers.**  The `L`-series is the exponential of the
 sum over pairs `(P, e)` of a prime and an exponent.  The caveat above applies unchanged: `exp` is
