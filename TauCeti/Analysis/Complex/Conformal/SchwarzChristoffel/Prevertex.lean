@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 -- for a power with a real base point, and partial fractions are used only in proofs.
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
+import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
@@ -37,6 +38,8 @@ image of the Schwarz--Christoffel primitive.
 * `TauCeti.tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow` -- the continuation of the pre-Schwarzian
   derivative of a map with a corner power form has residue asymptotic `β - 1` at the
   corner.
+* `TauCeti.tendsto_sub_mul_nhdsNE_of_sector` -- the same residue, derived from the geometric
+  sector and boundary-ray conditions at a polygonal corner.
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto` -- a map of the upper
   half-plane whose pre-Schwarzian derivative continues with at most simple poles of residues
   `e i` at the prevertices `a i` and decays at infinity is an affine image of the
@@ -96,6 +99,52 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow {φ f h : ℂ → ℂ} {x r : �
           rw [Complex.conj_ofReal x, hφconj z hz]
       _ = (starRingEnd ℂ) ((z - (x : ℂ)) * φ z) := by rw [← map_sub, ← map_mul]
   exact tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hmul hconj hcornerφ
+
+/-- **The pre-Schwarzian residue at a polygonal corner is its normalized angle minus one.**
+After translating the vertex `f x` and rotating and scaling by `b`, suppose a holomorphic
+injection takes the upper part of a neighborhood of `x` into the sector
+`|arg w| < β * π / 2`, with continuous boundary values on its two rays.
+If its pre-Schwarzian has a conjugation-symmetric holomorphic continuation `φ` to a punctured
+disc about `x`, then `(z - x) * φ z → β - 1` from every direction. Both convex and reentrant
+corners are allowed. No power representation or boundary differentiability is assumed. -/
+theorem tendsto_sub_mul_nhdsNE_of_sector {φ f : ℂ → ℂ} {x r β : ℝ} {Ω : Set ℂ} {b : ℂ}
+    (hr : 0 < r) (hφ : DifferentiableOn ℂ φ (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Ω))
+    (hβ : β ∈ Ioo (0 : ℝ) 2) (hb : b ≠ 0) (hΩopen : IsOpen Ω)
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hx : (x : ℂ) ∈ Ω)
+    (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
+    (hinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hsector : ∀ z ∈ Ω, 0 < z.im → |((f z - f x) / b).arg| < β * Real.pi / 2)
+    (hrays : ∀ z ∈ Ω, z.im = 0 → f z ≠ f x →
+      |((f z - f x) / b).arg| = β * Real.pi / 2) :
+    Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 ((β : ℂ) - 1)) := by
+  let g : ℂ → ℂ := fun z => (f z - f x) / b
+  have hginj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
+    intro z hz w hw hzw
+    exact hinj hz hw (by simpa [g, div_left_inj' hb] using hzw)
+  obtain ⟨h, hh, -, hhx, hdh, hpow, hright⟩ :=
+    exists_differentiableOn_injOn_cpow_eq_of_sector (f := g) hβ hΩopen hΩ hx
+      (by simp [g]) ((hcont.sub continuousOn_const).div_const b)
+      ((hholo.sub_const (f x)).div_const b) hginj hsector
+      (fun z hz hzim hgz => hrays z hz hzim (fun heq => hgz (by simp [g, heq])))
+  have hderiv : deriv g = fun z => deriv f z / b := by
+    ext z
+    simp only [g, deriv_div_const, deriv_sub_const]
+  have hφg : EqOn φ (logDeriv (deriv g)) (upperHalfPlaneSet ∩ Ω) := by
+    intro z hz
+    rw [hderiv, hφf hz]
+    simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+  apply tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow (f := g) (h := h) (w := 0)
+    hr hφ hφconj hφg hΩopen hx hh hhx hdh
+  · intro z hz
+    exact mem_slitPlane_iff.mpr (Or.inl (hright z hz.2 hz.1))
+  · exact ofReal_ne_zero.mpr hβ.1.ne'
+  · intro z hz
+    have hz0 : 0 < z.im := hz.1
+    simpa only [zero_add] using (hpow ⟨hz.2, hz0.le⟩).symm
 
 /-! ### Assembling the Schwarz--Christoffel formula -/
 
