@@ -12,17 +12,15 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 # Principal powers on an angular sector
 
 The principal power `z ^ (1 / β)` straightens the sector of opening `βπ` centred on the
-positive real axis into the right half-plane.  This file records the three pointwise facts needed
-for that construction: the sector avoids the branch cut when its opening is less than `2π`, the
-straightened point has positive real part, and raising it back to the power `β` recovers `z`.
+positive real axis into the right half-plane.  This file records the two pointwise power facts
+needed for that construction: the straightened point has positive real part, and raising it back
+to the power `β` recovers `z`.
 
 These facts are useful when a polygonal corner is normalized to a symmetric sector.  Multiplication
 by `I` then carries the right half-plane to the upper half-plane, where Schwarz reflection applies.
 
 ## Main results
 
-* `Complex.mem_slitPlane_of_arg_mem_sector` -- a nonzero point in a sector of opening less than
-  `2π` avoids the principal branch cut.
 * `Complex.cpow_inv_re_pos_of_arg_mem_sector` -- the inverse power maps the sector into the right
   half-plane.
 * `Complex.cpow_inv_cpow_eq_of_arg_mem_closed_sector` -- the inverse power is a genuine inverse on
@@ -34,16 +32,6 @@ public section
 open Set
 
 namespace Complex
-
-private theorem mem_slitPlane_of_ne_zero_of_arg_lt_pi {z : ℂ} (hz : z ≠ 0)
-    (harg : z.arg < Real.pi) : z ∈ slitPlane := by
-  rw [mem_slitPlane_iff]
-  by_contra h
-  push Not at h
-  have hre0 : z.re ≠ 0 := fun hre0 => hz (ext hre0 h.2)
-  have hre : z.re < 0 := lt_of_le_of_ne h.1 hre0
-  rw [arg_eq_pi_iff.mpr ⟨hre, h.2⟩] at harg
-  exact harg.false
 
 private theorem mul_inv_mem_Ioo_of_mem_sector {x β : ℝ} (hβ : 0 < β)
     (hx : x ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2)) :
@@ -68,22 +56,6 @@ private theorem mul_inv_mem_Icc_of_mem_closed_sector {x β : ℝ} (hβ : 0 < β)
   · have h := mul_le_mul_of_nonneg_right hx.2 hβinv.le
     convert h using 1
     field_simp
-
-/-- A nonzero point in a sector of opening `βπ < 2π`, centred on the positive real axis,
-belongs to the slit plane. -/
-theorem mem_slitPlane_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : β < 2) (hz : z ≠ 0)
-    (harg : z.arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2)) : z ∈ slitPlane := by
-  have hlt : Real.pi * β / 2 < Real.pi := by
-    nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ)]
-  exact mem_slitPlane_of_ne_zero_of_arg_lt_pi hz (harg.2.trans hlt)
-
-/-- A nonzero point in the corresponding closed sector also belongs to the slit plane, provided
-the opening is strictly less than `2π`. -/
-theorem mem_slitPlane_of_arg_mem_closed_sector {z : ℂ} {β : ℝ} (hβ : β < 2) (hz : z ≠ 0)
-    (harg : z.arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2)) : z ∈ slitPlane := by
-  have hlt : Real.pi * β / 2 < Real.pi := by
-    nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ)]
-  exact mem_slitPlane_of_ne_zero_of_arg_lt_pi hz (harg.2.trans_lt hlt)
 
 /-- The principal inverse power maps the sector of opening `βπ` into the open right
 half-plane. -/
