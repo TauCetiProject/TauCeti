@@ -21,8 +21,9 @@ components are of Dynkin-diagram shape, and
 those on at most six components. This file treats the one infinite family, a chain
 `i₁ - i₂ - ⋯ - i_t` of any length, packaged as `TauCeti.NumericalType.IsMinusTwoChain`.
 
-Such a chain in a numerical type with more components is an `A_t` diagram: no two of its
-components meet except along the chain, so in particular the chain never closes up into a cycle.
+The underlying adjacency graph of such a chain in a numerical type with more components is a
+path: no two of its components meet except along the chain, so in particular the chain never
+closes up into a cycle.
 From five components on, it also has at most one nonsimple edge, and that edge is at an end: all
 its weights are equal except possibly at one end, where the weight may be the double or the half
 of the common weight, and every edge has intersection number the larger of the weights of its two
@@ -317,7 +318,8 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
 
 /-- Two components of a chain of components of self-intersection `-2w` which are not consecutive
 in the chain do not meet, as soon as the numerical type has more components than the chain has
-length. In particular such a chain is never a cycle and has no chords: it is an `A_t` diagram.
+length. In particular such a chain is never a cycle and has no chords: its underlying adjacency
+graph is a path.
 This is the graph-shape half of
 [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89). -/
 theorem IsMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
