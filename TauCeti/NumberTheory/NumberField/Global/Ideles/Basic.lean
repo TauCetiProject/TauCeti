@@ -45,11 +45,11 @@ namespace NumberField.IdeleGroup
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- An idele is principal exactly when its underlying adele belongs to the diagonal copy of the
-number field.  In the reverse direction, invertibility of the adele forces the diagonal element
-to be nonzero, hence a field unit. -/
+/-- An idele comes from a field unit exactly when its underlying adele belongs to the diagonal copy
+of the number field.  In the reverse direction, invertibility of the adele forces the diagonal
+element to be nonzero, hence a field unit. -/
 @[simp] theorem mem_principalSubgroup_iff (x : IdeleGroup (𝓞 K) K) :
-    x ∈ principalSubgroup (𝓞 K) K ↔
+    (∃ u, unitEmbedding (𝓞 K) K u = x) ↔
       (x : AdeleRing (𝓞 K) K) ∈ AdeleRing.principalSubgroup (𝓞 K) K := by
   constructor
   · rintro ⟨u, rfl⟩
@@ -69,6 +69,7 @@ theorem isClosed_principalSubgroup :
         ((fun x : IdeleGroup (𝓞 K) K => (x : AdeleRing (𝓞 K) K)) ⁻¹'
           (AdeleRing.principalSubgroup (𝓞 K) K : Set (AdeleRing (𝓞 K) K))) := by
     ext x
+    change (∃ u, unitEmbedding (𝓞 K) K u = x) ↔ _
     exact mem_principalSubgroup_iff x
   rw [hpreimage]
   exact (TauCeti.GlobalNumberFields.isClosed_principalSubgroup K).preimage Units.continuous_val
