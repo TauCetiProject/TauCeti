@@ -7,7 +7,6 @@ module
 
 public import TauCeti.KnotTheory.PDCode.Components
 public import TauCeti.Combinatorics.RibbonGraph.OfPermutationTriple
-public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Planar rotation systems for PD-codes

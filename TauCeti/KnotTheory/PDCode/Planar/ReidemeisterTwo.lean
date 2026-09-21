@@ -38,6 +38,8 @@ public section
 of `insertClasp`. The opposite side of the second arc is essential. -/
 namespace TauCeti.PDCode
 
+open Equiv Equiv.Perm
+
 variable {n : ℕ}
 
 /-- The two selected arc sides lie on one face boundary in the insertion convention. -/
@@ -48,10 +50,16 @@ structure ClaspLocal (D : PDCode n) (p q : Fin (4 * n)) : Prop where
   ne_edgePair : q ≠ D.edgePair.val p
   /-- The facing sides lie on the same boundary cycle. -/
   sameCycle : D.projectionTriple.σinf.SameCycle p (D.edgePair.val q)
+  /-- The local disk insertion remains planar for either choice of over-strand. -/
+  planar : D.IsPlanar → ∀ b, (D.insertClasp p q b ne ne_edgePair).IsPlanar
 
 end TauCeti.PDCode
 
 namespace TauCeti.OrientedPlanarDiagram
+
+theorem isPlanar_insertClasp {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar)
+    (p q : Fin (4 * n)) (b : Bool) (h : D.toPDCode.ClaspLocal p q) :
+    (D.insertClasp p q b h.ne h.ne_edgePair).toPDCode.IsPlanar := h.planar hD b
 
 /-- Second Reidemeister moves on planar rotation-system diagrams, with the two selected arc
 sides on one face boundary. The symmetric constructor includes clasp removal. -/
@@ -59,8 +67,8 @@ inductive IsReidemeisterTwo : {n m : ℕ} → OrientedPlanarDiagram n →
     OrientedPlanarDiagram m → Prop
   | insert {n : ℕ} (D : OrientedPlanarDiagram n) (p q : Fin (4 * n)) (b : Bool)
       (h : D.val.toPDCode.ClaspLocal p q)
-      (hplanar : (D.val.insertClasp p q b h.ne h.ne_edgePair).toPDCode.IsPlanar) :
-      IsReidemeisterTwo D ⟨D.val.insertClasp p q b h.ne h.ne_edgePair, hplanar⟩
+      : IsReidemeisterTwo D ⟨D.val.insertClasp p q b h.ne h.ne_edgePair,
+        isPlanar_insertClasp D.val D.property p q b h⟩
   | symm {n m : ℕ} {D : OrientedPlanarDiagram n} {E : OrientedPlanarDiagram m} :
       IsReidemeisterTwo D E → IsReidemeisterTwo E D
 
@@ -70,7 +78,7 @@ theorem IsReidemeisterTwo.normalizedKauffmanBracket_eq {n m : ℕ}
     {R : Type*} [CommRing R] (a : Rˣ) :
     E.val.normalizedKauffmanBracket a = D.val.normalizedKauffmanBracket a := by
   induction h with
-  | insert D p q b h hplanar =>
+  | insert D p q b h =>
     exact D.val.normalizedKauffmanBracket_insertClasp p q b h.ne h.ne_edgePair a
   | symm _ ih => exact ih.symm
 
@@ -111,24 +119,6 @@ theorem isPlanar_orientedPDCodeOneCrossingPositive : (D₀).toPDCode.IsPlanar :=
   rw [PDCode.isPlanar_iff_of_connected _ oneCrossing_connected,
     Equiv.Perm.orbitCount_eq_card_parts_partition]
   decide
-
-/-- Slots zero and three face each other across the two-sided face of the one-crossing code. -/
-theorem claspLocal_orientedPDCodeOneCrossingPositive :
-    (D₀).toPDCode.ClaspLocal 0 3 := by
-  constructor
-  · decide
-  · decide
-  · have hface : (D₀).toPDCode.facePerm.SameCycle 0 ((D₀).edgePair.val 3) := by
-      decide
-    simpa only [PDCode.projectionTriple_σinf] using hface
-
-/-- Reversing only the second selected arc chooses a different face and fails locality. -/
-theorem not_claspLocal_orientedPDCodeOneCrossingPositive :
-    ¬(D₀).toPDCode.ClaspLocal 0 2 := by
-  intro h
-  have hn : ¬(D₀).toPDCode.facePerm.SameCycle 0 ((D₀).edgePair.val 2) := by
-    decide
-  exact hn (by simpa only [PDCode.projectionTriple_σinf] using h.sameCycle)
 
 private theorem oneCrossing_insertClasp_connected_q2_false :
     ((D₀).insertClasp 0 2 false (by decide) (by decide)).toPDCode.projectionTriple.IsConnected := by
@@ -272,6 +262,8 @@ private theorem oneCrossing_insertClasp_connected_q2 (b : Bool) :
   · exact oneCrossing_insertClasp_connected_q2_false
   · have hT : ((D₀).insertClasp 0 2 true (by decide) (by decide)).toPDCode.projectionTriple =
         ((D₀).insertClasp 0 2 false (by decide) (by decide)).toPDCode.projectionTriple := by
+      -- `projectionTriple` unfolds to `PermutationTriple.ofTwo`; exposing that definition
+      -- lets `congr` compare the two crossing rotations and matchings directly.
       change PermutationTriple.ofTwo _ _ = PermutationTriple.ofTwo _ _
       congr 1
     rw [hT]
@@ -283,6 +275,8 @@ private theorem oneCrossing_insertClasp_connected_q3 (b : Bool) :
   · exact oneCrossing_insertClasp_connected_q3_false
   · have hT : ((D₀).insertClasp 0 3 true (by decide) (by decide)).toPDCode.projectionTriple =
         ((D₀).insertClasp 0 3 false (by decide) (by decide)).toPDCode.projectionTriple := by
+      -- `projectionTriple` unfolds to `PermutationTriple.ofTwo`; exposing that definition
+      -- lets `congr` compare the two crossing rotations and matchings directly.
       change PermutationTriple.ofTwo _ _ = PermutationTriple.ofTwo _ _
       congr 1
     rw [hT]
@@ -297,6 +291,23 @@ theorem isPlanar_insertClasp_orientedPDCodeOneCrossingPositive (b : Bool) :
   rw [PDCode.isPlanar_iff_of_connected _ hc,
     Equiv.Perm.orbitCount_eq_card_parts_partition]
   cases b <;> decide +kernel
+
+/-- Slots zero and three face each other across the two-sided face of the one-crossing code. -/
+theorem claspLocal_orientedPDCodeOneCrossingPositive :
+    (D₀).toPDCode.ClaspLocal 0 3 := by
+  refine { ne := by decide, ne_edgePair := by decide, sameCycle := ?_, planar := ?_ }
+  · have hface : (D₀).toPDCode.facePerm.SameCycle 0 ((D₀).edgePair.val 3) := by
+      decide
+    simpa only [PDCode.projectionTriple_σinf] using hface
+  · exact fun _ => isPlanar_insertClasp_orientedPDCodeOneCrossingPositive
+
+/-- Reversing only the second selected arc chooses a different face and fails locality. -/
+theorem not_claspLocal_orientedPDCodeOneCrossingPositive :
+    ¬(D₀).toPDCode.ClaspLocal 0 2 := by
+  intro h
+  have hn : ¬(D₀).toPDCode.facePerm.SameCycle 0 ((D₀).edgePair.val 2) := by
+    decide
+  exact hn (by simpa only [PDCode.projectionTriple_σinf] using h.sameCycle)
 
 /-- The nonlocal endpoint choice is not planar, so it cannot be an endpoint of the planar
 second-move relation. -/
@@ -317,6 +328,5 @@ theorem isReidemeisterTwo_orientedPDCodeOneCrossingPositive (b : Bool) :
         isPlanar_insertClasp_orientedPDCodeOneCrossingPositive b⟩ :=
   .insert (⟨D₀, isPlanar_orientedPDCodeOneCrossingPositive⟩ : OrientedPlanarDiagram 1)
     0 3 b claspLocal_orientedPDCodeOneCrossingPositive
-    (isPlanar_insertClasp_orientedPDCodeOneCrossingPositive b)
 
 end TauCeti
