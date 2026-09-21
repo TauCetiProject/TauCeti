@@ -41,32 +41,25 @@ open CategoryTheory MonoidalCategory
 
 universe v
 
-namespace TauCeti
+namespace HomologicalComplex
 
-variable (R : Type v) [CommRing R]
+variable {R : Type v} [CommRing R]
 
 /-- Left whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the identity and
 the given morphism.  Mathlib defines the monoidal structure on homological complexes through
 `HomologicalComplex.mapBifunctorMap`, but states no component lemma for `◁`. -/
 lemma whiskerLeft_eq_mapBifunctorMap (X : CochainComplex (ModuleCat.{v} R) ℤ)
     {Y Z : CochainComplex (ModuleCat.{v} R) ℤ} (g : Y ⟶ Z) :
-    X ◁ g = HomologicalComplex.mapBifunctorMap (𝟙 X) g
-      (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
+    X ◁ g = mapBifunctorMap (𝟙 X) g (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
   rfl
 
 /-- Right whiskering in `CochainComplex (ModuleCat R) ℤ` is the totalization of the given
-morphism and the identity; the counterpart of `TauCeti.whiskerLeft_eq_mapBifunctorMap`. -/
+morphism and the identity; the counterpart of
+`HomologicalComplex.whiskerLeft_eq_mapBifunctorMap`. -/
 lemma whiskerRight_eq_mapBifunctorMap {X Y : CochainComplex (ModuleCat.{v} R) ℤ} (f : X ⟶ Y)
     (Z : CochainComplex (ModuleCat.{v} R) ℤ) :
-    f ▷ Z = HomologicalComplex.mapBifunctorMap f (𝟙 Z)
-      (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
+    f ▷ Z = mapBifunctorMap f (𝟙 Z) (curriedTensor (ModuleCat.{v} R)) (ComplexShape.up ℤ) :=
   rfl
-
-end TauCeti
-
-namespace HomologicalComplex
-
-variable {R : Type v} [CommRing R]
 
 /-- Left whiskering of cochain complexes of modules, restricted to a homogeneous summand, is left
 whiskering of the summand. -/
@@ -74,7 +67,7 @@ whiskering of the summand. -/
 lemma ι_whiskerLeft (X : CochainComplex (ModuleCat.{v} R) ℤ)
     {Y Z : CochainComplex (ModuleCat.{v} R) ℤ} (g : Y ⟶ Z) (p q j : ℤ) (h : p + q = j) :
     ιTensorObj X Y p q j h ≫ (X ◁ g).f j = (X.X p ◁ g.f q) ≫ ιTensorObj X Z p q j h := by
-  rw [TauCeti.whiskerLeft_eq_mapBifunctorMap, ι_mapBifunctorMap]
+  rw [whiskerLeft_eq_mapBifunctorMap, ι_mapBifunctorMap]
   simp
 
 /-- Right whiskering of cochain complexes of modules, restricted to a homogeneous summand, is
@@ -83,7 +76,7 @@ right whiskering of the summand. -/
 lemma ι_whiskerRight {X Y : CochainComplex (ModuleCat.{v} R) ℤ} (f : X ⟶ Y)
     (Z : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ) (h : p + q = j) :
     ιTensorObj X Z p q j h ≫ (f ▷ Z).f j = (f.f p ▷ Z.X q) ≫ ιTensorObj Y Z p q j h := by
-  rw [TauCeti.whiskerRight_eq_mapBifunctorMap, ι_mapBifunctorMap]
+  rw [whiskerRight_eq_mapBifunctorMap, ι_mapBifunctorMap]
   simp
 
 /-- The degreewise component of the inverse left unitor of cochain complexes of modules is the
