@@ -69,7 +69,8 @@ variable [∀ i, TopologicalSpace (G i)]
 
 /-- Openness when the second family agrees with the reference family eventually. -/
 theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
-    (hU : ∀ i, IsOpen (U i : Set (G i))) (hV : ∀ i, IsOpen (V i : Set (G i)))
+    (hU : ∀ i, IsOpen (U i : Set (G i)))
+    (hV : ∀ i, U i ≠ V i → IsOpen (V i : Set (G i)))
     (hUV : ∀ᶠ i in cofinite, U i = V i) :
     IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   classical
@@ -80,7 +81,7 @@ theorem isOpen_forall_mem_of_eventually_eq (U V : ∀ i, Subgroup (G i))
     RestrictedProduct.isOpen_forall_imp_mem hU
   have hopenV : IsOpen ((Sᶜ : Set ι).pi fun i ↦ (V i : Set (G i)) :
       Set (∀ i, G i)) :=
-    isOpen_set_pi (mem_cofinite.mp hUV) (fun i hi ↦ hV i)
+    isOpen_set_pi (mem_cofinite.mp hUV) (fun i hi ↦ hV i (fun h ↦ hi h))
   have hopen := hopenU.inter (hopenV.preimage RestrictedProduct.continuous_coe)
   convert hopen using 1
   ext x
@@ -137,7 +138,7 @@ theorem isOpen_integralSubgroup (U : ∀ i, Subgroup (G i))
     (hU : ∀ i, IsOpen (U i : Set (G i))) :
     IsOpen (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
   simpa [integralSubgroup] using
-    isOpen_forall_mem_of_eventually_eq U U hU hU (.of_forall fun _ ↦ rfl)
+    isOpen_forall_mem_of_eventually_eq U U hU (fun i _ ↦ hU i) (.of_forall fun _ ↦ rfl)
 
 /-- Compactness of the everywhere-integral subgroup needs only coordinatewise compactness. -/
 theorem isCompact_integralSubgroup (U : ∀ i, Subgroup (G i))
