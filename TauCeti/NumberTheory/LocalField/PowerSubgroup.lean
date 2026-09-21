@@ -161,15 +161,17 @@ theorem unitsMap_subtype_mem_range_powMonoidHom_iff {n : ℕ} (hn : IsUnit (n : 
     obtain ⟨z, hz⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hn
       (integerUnitsEquivProd u).2.2
     rw [powMonoidHom_apply] at hz
-    have hpow : teichmuller K α ^ n = teichmuller K (α ^ n) :=
-      (map_pow (teichmuller K) α n).symm
-    have hu' : teichmuller K (α ^ n) *
+    have hpow : TauCeti.IsLocalRing.teichmuller 𝒪[K] α ^ n =
+        TauCeti.IsLocalRing.teichmuller 𝒪[K] (α ^ n) :=
+      (map_pow (TauCeti.IsLocalRing.teichmuller 𝒪[K]) α n).symm
+    have hu' : TauCeti.IsLocalRing.teichmuller 𝒪[K] (α ^ n) *
         unitFiltrationToIntegerUnits 1 (integerUnitsEquivProd u).2 = u := by
       calc
         _ = integerUnitsProdHom (K := K) (α ^ n, (integerUnitsEquivProd u).2) :=
           (integerUnitsProdHom_apply (K := K) _).symm
         _ = u := hu
-    refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (teichmuller K α) * z, ?_⟩
+    refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K)
+      (TauCeti.IsLocalRing.teichmuller 𝒪[K] α) * z, ?_⟩
     rw [powMonoidHom_apply, mul_pow, hz, ← map_pow,
       ← unitsMap_subtype_unitFiltrationToIntegerUnits, ← map_mul,
       hpow, hu']
@@ -245,7 +247,9 @@ theorem card_powerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
   obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
   set μ := rootsOfUnity (Nat.card 𝓀[K] - 1) K
   set V := unitFiltration K 1
-  have : Finite μ := .of_equiv _ (rootsOfUnityFieldEquivResidueFieldUnits K).symm.toEquiv
+  have : Finite μ := .of_equiv _
+    (TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField
+      𝒪[K] K).symm.toEquiv
   have hn0 : n ≠ 0 := by
     rintro rfl
     simp at hn
