@@ -31,6 +31,8 @@ Everything here concerns one completion. The comparison of two completions along
   valuation bound `≤ exp (-n)`, identifying the ideal filtration with the valuation filtration.
 * `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
   ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
+* `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
+  around the origin is open.
 * `IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`: the subspace
   topology on `𝒪_v` is the `𝔪`-adic one.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
@@ -52,7 +54,8 @@ placement of a `NumberTheory` import inside `RingTheory` is not mistaken for a l
 ## Motivation
 
 These results are consumed by a semilocal comparison in explicit `2`-descent, which matches a
-square class of a global étale algebra with its images in the completions. Nothing here mentions
+square class of a global étale algebra with its images in the completions, and by the local
+valuation conditions that cut out congruence subgroups of the ideles. Nothing here mentions
 a curve — each statement is about a Dedekind domain and one of its completions.
 
 ## Provenance
@@ -189,27 +192,34 @@ instance isTopologicalRing_adicCompletionIntegers :
   inferInstanceAs (IsTopologicalRing
     (Valued.v (R := v.adicCompletion K)).valuationSubring.toSubring)
 
+/-- **A closed valuation ball of `K_v` around the origin is open.**  The valuation of `K_v` is
+surjective onto `ℤᵐ⁰`, so every nonzero bound is attained and the ball is the closed ball around a
+point, which `Valued.isOpen_closedBall` shows is open. -/
+theorem isOpen_setOf_valued_le {γ : ℤᵐ⁰} (hγ : γ ≠ 0) :
+    IsOpen {z : v.adicCompletion K | Valued.v z ≤ γ} := by
+  obtain ⟨z, hz⟩ := v.valuedAdicCompletion_surjective K γ
+  have hr0 : Valued.v.restrict z ≠ 0 := by
+    rw [ne_eq, Valuation.restrict_eq_zero_iff, hz]
+    exact hγ
+  have h : {y : v.adicCompletion K | Valued.v y ≤ γ} =
+      {y : v.adicCompletion K | Valued.v.restrict y ≤ Valued.v.restrict z} := by
+    ext y
+    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, Valuation.restrict_le_iff, hz]
+  rw [h]
+  exact Valued.isOpen_closedBall _ hr0
+
 /-- **Each power of the maximal ideal of `𝒪_v` is open**: `𝔪 ^ n` is the preimage under the
 inclusion `𝒪_v → K_v` of a closed valuation ball, and those are open. -/
 theorem isOpen_maximalIdeal_pow_adicCompletionIntegers (n : ℕ) :
     IsOpen ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
       Ideal (v.adicCompletionIntegers K)) : Set (v.adicCompletionIntegers K)) := by
-  obtain ⟨z, hz⟩ := v.valuedAdicCompletion_surjective K (exp (-(n : ℤ)))
-  have hr0 : Valued.v.restrict z ≠ 0 := by
-    intro h
-    have h0 : Valued.v z = 0 := by rw [← Valuation.embedding_restrict, h, map_zero]
-    rw [hz] at h0
-    exact exp_ne_zero h0
-  have : ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
+  have h : ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
         Ideal (v.adicCompletionIntegers K)) : Set (v.adicCompletionIntegers K)) =
       (fun x : v.adicCompletionIntegers K ↦ (x : v.adicCompletion K)) ⁻¹'
-        {y | Valued.v.restrict y ≤ Valued.v.restrict z} := by
-    ext x
-    rw [Set.mem_preimage, Set.mem_ofPred, Valuation.restrict_le_iff_le_embedding,
-      Valuation.embedding_restrict, hz]
-    exact v.mem_maximalIdeal_pow_iff (K := K)
-  rw [this]
-  exact (Valued.isOpen_closedBall _ hr0).preimage continuous_subtype_val
+        {y : v.adicCompletion K | Valued.v y ≤ exp (-(n : ℤ))} :=
+    Set.ext fun x ↦ v.mem_maximalIdeal_pow_iff (K := K)
+  rw [h]
+  exact (v.isOpen_setOf_valued_le (K := K) exp_ne_zero).preimage continuous_subtype_val
 
 /-- **Every neighbourhood of `0` in `𝒪_v` contains a power of the maximal ideal.** A neighbourhood
 is cut out by a valuation bound, and `exp` takes some integer below that bound; the corresponding
