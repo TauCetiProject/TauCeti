@@ -333,7 +333,7 @@ theorem unitEmbedding_mem_ideleCongruenceSubgroup_iff {𝔪 : Modulus K} {x : K�
 /-- **The trivial modulus gives the ideles that are units at every finite place.**  No prime
 divides the unit ideal and the infinite part is empty, so only the local unit conditions
 survive. -/
-@[simp] theorem mem_ideleCongruenceSubgroup_one_iff {x : IdeleGroup (𝓞 K) K} :
+theorem mem_ideleCongruenceSubgroup_one_iff {x : IdeleGroup (𝓞 K) K} :
     x ∈ ideleCongruenceSubgroup (Modulus.one K) ↔
       ∀ v : HeightOneSpectrum (𝓞 K),
         Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
