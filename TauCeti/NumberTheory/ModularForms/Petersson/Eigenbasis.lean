@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.EigenFromPrimes
 public import TauCeti.NumberTheory.ModularForms.Petersson.Normal
 import Mathlib.Analysis.InnerProductSpace.JointEigenspace
 import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.NumberTheory.ModularForms.SturmBound
 
 /-!
 # A simultaneous eigenbasis for the good Hecke operators
@@ -64,12 +65,16 @@ private noncomputable def goodPrimeHeckeFamily :
     GoodPrimeIndex N → Module.End ℂ (cuspFormCharSpace k χ) :=
   fun i ↦ heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N i.1)
 
+/-- The family at the index `i` is the Hecke-ring action of `T_p` for the prime `p = i`. -/
+private theorem goodPrimeHeckeFamily_apply (i : GoodPrimeIndex N) :
+    goodPrimeHeckeFamily k χ i =
+      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N i.1) :=
+  rfl
+
 private theorem goodPrimeHeckeFamily_pairwise_commute :
     Pairwise (Commute on goodPrimeHeckeFamily k χ) := by
   intro i j _
-  change Commute
-    (heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N i.1))
-    (heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N j.1))
+  rw [Function.onFun_apply, goodPrimeHeckeFamily_apply, goodPrimeHeckeFamily_apply]
   exact Commute.map
     (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (atkinLehnerAntiInvolution N)
       (atkinLehnerAntiInvolution_onHeckeCoset_eq_self N) _ _)
@@ -96,52 +101,40 @@ private theorem inner_charSpace_apply (f g : cuspFormCharSpace k χ) :
   rw [Submodule.coe_inner]
   exact CuspForm.peterssonInnerCosetsCore_inner _ _
 
-/-- A good prime Hecke operator becomes symmetric after multiplication by a nonzero scalar.
-
-The adjoint of `T_p` on the `χ`-space is `χ(p)⁻¹ T_p`.  Choose `c² = χ(p)⁻¹`;
-because character values have norm one, `conj(c) c = 1`, and hence `c T_p` is symmetric. -/
+/-- A good prime Hecke operator becomes symmetric after multiplication by a nonzero scalar. -/
 private theorem exists_symmetric_smul_goodPrimeHeckeFamily (i : GoodPrimeIndex N) :
     ∃ c : ℂ, c ≠ 0 ∧ (c • goodPrimeHeckeFamily k χ i).IsSymmetric := by
-  let _ : NeZero i.1 := ⟨i.2.1.ne_zero⟩
-  let q : ℂ := (χ (ZMod.unitOfCoprime i.1 i.2.2) : ℂ)⁻¹
-  obtain ⟨c, hc_sq⟩ := IsAlgClosed.exists_pow_nat_eq q (show 0 < 2 by omega)
-  have hq_ne : q ≠ 0 := by
-    simp only [q]
-    exact inv_ne_zero (mod_cast Units.ne_zero (χ (ZMod.unitOfCoprime i.1 i.2.2)))
+  -- The Petersson adjoint of `T_p` on the `χ`-space is `χ(p)⁻¹ T_p`, so rescale by a square
+  -- root `c` of `χ(p)⁻¹`.
+  obtain ⟨c, hc_sq⟩ := IsAlgClosed.exists_pow_nat_eq
+    ((χ (ZMod.unitOfCoprime i.1 i.2.2) : ℂ)⁻¹) (show 0 < 2 by omega)
   have hc_ne : c ≠ 0 := by
     intro hc
     rw [hc, zero_pow (by omega)] at hc_sq
-    exact hq_ne hc_sq.symm
+    exact inv_ne_zero (mod_cast Units.ne_zero (χ (ZMod.unitOfCoprime i.1 i.2.2))) hc_sq.symm
+  -- A character value has finite order, hence norm one, so `c` is a unit complex number.
   have hconj_mul : starRingEnd ℂ c * c = 1 := by
     have hnorm_sq : ‖c‖ ^ 2 = 1 := by
       rw [← norm_pow, hc_sq]
-      change ‖((χ (ZMod.unitOfCoprime i.1 i.2.2) : ℂ))⁻¹‖ = 1
       simpa only [map_inv, Units.coeHom_apply] using ((Units.coeHom ℂ).isOfFinOrder
         (MonoidHom.isOfFinOrder χ
           (isOfFinOrder_of_finite (ZMod.unitOfCoprime i.1 i.2.2))).inv).norm_eq_one
     rw [← Complex.normSq_eq_conj_mul_self, Complex.normSq_eq_norm_sq, hnorm_sq,
       Complex.ofReal_one]
-  refine ⟨c, hc_ne, ?_⟩
-  intro f g
+  refine ⟨c, hc_ne, fun f g ↦ ?_⟩
+  -- The adjoint pair, read in the second argument: `⟪f, T_p g⟫ = conj (χ(p)⁻¹) ⟪T_p f, g⟫`.
+  have hadj := isAdjointPair_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0
+    (χ := χ) k i.2.1 i.2.2 g f
+  simp only [LinearMap.flip_apply,
+    TauCeti.CuspForm.peterssonInnerCosetsCharSpaceₛₗ_apply_apply, Pi.smul_apply,
+    Submodule.coe_smul, CuspForm.peterssonInnerCosets_smul_left] at hadj
   rw [inner_charSpace_apply k χ, inner_charSpace_apply k χ]
-  simp only [LinearMap.smul_apply, Submodule.coe_smul,
-    CuspForm.peterssonInnerCosets_smul_left,
-    CuspForm.peterssonInnerCosets_smul_right]
-  rw [goodPrimeHeckeFamily, heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ i.2.1]
-  change starRingEnd ℂ c * CuspForm.peterssonInnerCosets
-      (heckeTCuspNat k i.1 (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) g =
-    c * CuspForm.peterssonInnerCosets f
-      (heckeTCuspNat k i.1 (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k))
-  rw [peterssonInnerCosets_heckeTCuspNat_left_of_mem_cuspFormCharSpace k i.2.2 _ g.2,
-    CuspForm.peterssonInnerCosets_smul_right]
-  let P := CuspForm.peterssonInnerCosets
-    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)
-    (heckeTCuspNat k i.1 (g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k))
-  change starRingEnd ℂ c * (q * P) = c * P
-  rw [← hc_sq, pow_two]
-  calc
-    starRingEnd ℂ c * (c * c * P) = (starRingEnd ℂ c * c) * (c * P) := by ac_rfl
-    _ = c * P := by rw [hconj_mul, one_mul]
+  simp only [goodPrimeHeckeFamily_apply, LinearMap.smul_apply, Submodule.coe_smul,
+    CuspForm.peterssonInnerCosets_smul_left, CuspForm.peterssonInnerCosets_smul_right]
+  -- Scalar algebra: `c * conj c ^ 2 = conj c` because `conj c * c = 1`.
+  have hcc : c * starRingEnd ℂ c ^ 2 = starRingEnd ℂ c := by
+    rw [pow_two, ← mul_assoc, mul_comm c (starRingEnd ℂ c), hconj_mul, one_mul]
+  rw [hadj, ← hc_sq, map_pow, ← mul_assoc, hcc]
 
 /-- A chosen nonzero scalar making each good prime Hecke operator symmetric. -/
 private noncomputable def goodPrimeHeckeScale (i : GoodPrimeIndex N) : ℂ :=
@@ -173,8 +166,7 @@ More precisely, the fixed-nebentypus cusp space has a finite algebraic basis `b`
 `<b_i, b_j>_Pet = δ_ij`, and every `b_i` is the underlying form of a bundled
 `EigenformAwayFromLevel` with nebentypus `χ`.  The explicit Petersson equation avoids changing
 the globally installed function-space norm on cusp forms. -/
-theorem exists_peterssonOrthonormalBasis_eigenformAwayFromLevel
-    [FiniteDimensional ℂ (cuspFormCharSpace k χ)] :
+theorem exists_peterssonOrthonormalBasis_eigenformAwayFromLevel :
     ∃ (I : Type) (b : Module.Basis I ℂ (cuspFormCharSpace k χ)),
       Finite I ∧
       (∀ i, CuspForm.peterssonInnerCosets
