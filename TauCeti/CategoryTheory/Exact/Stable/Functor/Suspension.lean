@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Stable.Autoequivalence
-public import TauCeti.CategoryTheory.Exact.Stable.Functor
+public import TauCeti.CategoryTheory.Exact.Stable.Functor.Basic
 
 /-!
 # Stable functors commute with suspension
@@ -110,6 +110,25 @@ private theorem projectiveStableFunctor_map_mapSuspensionPresentation_cokernelMa
     rw [← F.map_comp, ← F.map_comp,
       (hE.suspensionPresentation X).p_comp_cokernelMap]
 
+/-- Naturality of the comparison with the suspension, at the mapped suspension presentations:
+the image under `F` of the map induced by `f` between the chosen suspension presentations is
+carried to the map induced by `F.map f` between the chosen suspension presentations of the
+images. -/
+@[reassoc]
+private theorem projectiveStableIsoSuspensionObj_hom_naturality_mapSuspensionPresentation
+    (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) (hE' : E'.IsFrobenius)
+    {X Y : C} (f : X ⟶ Y) :
+    E'.projectiveStableFunctor.map
+          (F.map ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f)) ≫
+        (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE Y)).hom =
+      (hE'.projectiveStableIsoSuspensionObj (hF.mapSuspensionPresentation hE X)).hom ≫
+        E'.projectiveStableFunctor.map ((hE'.suspensionPresentation (F.obj X)).cokernelMap
+          (hE'.suspensionPresentation (F.obj Y)) (F.map f)) := by
+  have h := hE'.projectiveStableIsoSuspensionObj_hom_naturality
+    (hF.mapSuspensionPresentation hE X) (hF.mapSuspensionPresentation hE Y) (F.map f)
+  rwa [projectiveStableFunctor_map_mapSuspensionPresentation_cokernelMap
+    (hF := hF) (hE := hE) f] at h
+
 /-- The stable functor induced by a stable conflation-exact functor commutes with suspension.
 Its component at `X` is the canonical comparison from the image of the chosen suspension
 presentation of `X` to the chosen suspension presentation of `F.obj X`. -/
@@ -146,26 +165,11 @@ noncomputable def stableSuspensionCompStableFunctorIso (hF : StableConflationExa
             (E.projectiveStableFunctor.map
               ((hE.suspensionPresentation X).cokernelMap
                 (hE.suspensionPresentation Y) f)))]
-          erw [hF.stableFunctor_map_projectiveStableFunctor_map hE]
-          erw [← projectiveStableFunctor_map_mapSuspensionPresentation_cokernelMap
-            (hF := hF) (hE := hE) f]
-          convert hE'.projectiveStableIsoSuspensionObj_hom_naturality
-            (hF.mapSuspensionPresentation hE X)
-            (hF.mapSuspensionPresentation hE Y) (F.map f) using 1
-          · simp only [Functor.comp_obj,
-              ExactStructure.IsFrobenius.stableSuspension_obj_projectiveStableFunctor_obj,
-              stableFunctor_obj_projectiveStableFunctor_obj]
-          · apply HEq.trans (eqToHom_comp_heq _ _)
-            rw [← Category.assoc]
-            apply HEq.trans (comp_eqToHom_heq _ _)
-            exact heq_comp
-              (hF.stableFunctor_obj_projectiveStableFunctor_obj hE (hE.suspensionObj X)) rfl rfl
-              (eqToHom_comp_heq _ _) (HEq.refl _)
-          · apply HEq.trans (eqToHom_comp_heq _ _)
-            simp only [eqToHom_trans]
-            rw [← Category.assoc]
-            apply HEq.trans (comp_eqToHom_heq _ _)
-            exact HEq.refl _)
+          rw [hF.stableFunctor_map_projectiveStableFunctor_map hE]
+          simp only [Category.assoc, eqToHom_trans_assoc]
+          rw [projectiveStableIsoSuspensionObj_hom_naturality_mapSuspensionPresentation_assoc
+            (hF := hF) (hE := hE) (hE' := hE') f]
+          simp only [eqToHom_trans])
 
 /-- On an object represented by `X`, the suspension comparison is the canonical comparison
 between the mapped suspension presentation and the chosen presentation of `F.obj X`. -/
