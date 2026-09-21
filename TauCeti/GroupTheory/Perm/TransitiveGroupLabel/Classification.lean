@@ -57,7 +57,9 @@ of the rotation group `5T1`.
 * `TauCeti.referenceSubgroup_five_two_eq_normalizer_referenceSubgroup_five_zero`: the reference
   subgroup of `5T3` is the normalizer of that of `5T1`.
 * `TauCeti.referenceSubgroup_three_zero_le_alternatingGroup`,
-  `TauCeti.not_referenceSubgroup_three_one_le_alternatingGroup`: the parities of `3T1` and `3T2`.
+  `TauCeti.not_referenceSubgroup_three_one_le_alternatingGroup`: the parities of `3T1` and `3T2`,
+  and `TauCeti.referenceSubgroup_five_le_alternatingGroup_iff`: the parities of the five quintic
+  labels.
 * `TauCeti.TransitiveGroupLabel.eq_of_three`, `TauCeti.TransitiveGroupLabel.eq_of_four`,
   `TauCeti.TransitiveGroupLabel.eq_of_five`: in degrees three, four and five a subgroup carries
   at most one label.
@@ -525,6 +527,41 @@ theorem natCard_referenceSubgroup_five_four :
     Nat.card (referenceSubgroup 5 ⟨4, by simp⟩) = 120 := by
   rw [referenceSubgroup_five_four, Subgroup.card_top, Nat.card_perm, Nat.card_fin]
   norm_num [Nat.factorial]
+
+/-- The reference subgroup of `5T1`, the rotation group, consists of even permutations: it lies
+in the dihedral group of `5T2`. -/
+theorem referenceSubgroup_five_zero_le_alternatingGroup :
+    referenceSubgroup 5 ⟨0, by simp⟩ ≤ alternatingGroup (Fin 5) :=
+  referenceSubgroup_five_zero_le_referenceSubgroup_five_one.trans
+    referenceSubgroup_five_one_le_alternatingGroup
+
+/-- The reference subgroup of `5T4` consists of even permutations: it is the alternating group. -/
+theorem referenceSubgroup_five_three_le_alternatingGroup :
+    referenceSubgroup 5 ⟨3, by simp⟩ ≤ alternatingGroup (Fin 5) :=
+  le_of_eq referenceSubgroup_five_three
+
+/-- The reference subgroup of `5T5` is not contained in the alternating group: it is the whole
+symmetric group, which contains the odd permutations of `5T3`. -/
+theorem not_referenceSubgroup_five_four_le_alternatingGroup :
+    ¬ referenceSubgroup 5 ⟨4, by simp⟩ ≤ alternatingGroup (Fin 5) := fun h =>
+  not_referenceSubgroup_five_two_le_alternatingGroup
+    (le_top.trans (referenceSubgroup_five_four ▸ h))
+
+/-- **The parities of the quintic labels.** Of the five transitive subgroups of the symmetric
+group on five points, the cyclic group of `5T1`, the dihedral group of `5T2` and the alternating
+group of `5T4` consist of even permutations, and the Frobenius group of `5T3` and the symmetric
+group of `5T5` do not. -/
+theorem referenceSubgroup_five_le_alternatingGroup_iff (j : TransitiveGroupIndex 5) :
+    referenceSubgroup 5 j ≤ alternatingGroup (Fin 5) ↔
+      (j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3 := by
+  obtain ⟨a, ha⟩ := j
+  rw [numTransitiveGroups_five] at ha
+  interval_cases a
+  · exact iff_of_true referenceSubgroup_five_zero_le_alternatingGroup (by simp)
+  · exact iff_of_true referenceSubgroup_five_one_le_alternatingGroup (by simp)
+  · exact iff_of_false not_referenceSubgroup_five_two_le_alternatingGroup (by simp)
+  · exact iff_of_true referenceSubgroup_five_three_le_alternatingGroup (by simp)
+  · exact iff_of_false not_referenceSubgroup_five_four_le_alternatingGroup (by simp)
 
 /-- A subgroup of the symmetric group on five points carries at most one label. -/
 theorem TransitiveGroupLabel.eq_of_five {j k : TransitiveGroupIndex 5}
