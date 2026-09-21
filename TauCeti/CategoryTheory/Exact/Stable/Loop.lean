@@ -87,24 +87,49 @@ theorem conflation_loopInflation_loopDeflation (X : C) :
   (hE.projectivePresentation X).conflation
 
 /-- The chosen lift of `f : X ⟶ Y` between the projective middle terms. -/
-noncomputable abbrev loopMiddleMap {X Y : C} (f : X ⟶ Y) :
+noncomputable def loopMiddleMap {X Y : C} (f : X ⟶ Y) :
     hE.loopProjective X ⟶ hE.loopProjective Y :=
   (hE.projectivePresentation X).middleMap (hE.projectivePresentation Y) f
 
+/-- The middle map lifts `f` along the loop deflations. -/
+@[reassoc (attr := simp)]
+theorem loopMiddleMap_comp_loopDeflation {X Y : C} (f : X ⟶ Y) :
+    hE.loopMiddleMap f ≫ hE.loopDeflation Y = hE.loopDeflation X ≫ f :=
+  (hE.projectivePresentation X).middleMap_comp_p (hE.projectivePresentation Y) f
+
 /-- The induced map on loop objects. Its class modulo projectives is independent of the lift. -/
-noncomputable abbrev loopMap {X Y : C} (f : X ⟶ Y) : hE.loopObj X ⟶ hE.loopObj Y :=
+noncomputable def loopMap {X Y : C} (f : X ⟶ Y) : hE.loopObj X ⟶ hE.loopObj Y :=
   (hE.projectivePresentation X).kernelMap (hE.projectivePresentation Y) f
 
+/-- The induced loop map makes the square on the inflations commute. -/
+@[reassoc (attr := simp)]
+theorem loopMap_comp_loopInflation {X Y : C} (f : X ⟶ Y) :
+    hE.loopMap f ≫ hE.loopInflation Y = hE.loopInflation X ≫ hE.loopMiddleMap f :=
+  (hE.projectivePresentation X).kernelMap_comp_i (hE.projectivePresentation Y) f
+
+/-- Any compatible maps between the chosen loop presentations inducing `f` give the same
+morphism as `loopMap f` in the projective stable quotient. -/
+theorem projectiveStableFunctor_map_loopMap_eq {X Y : C} (f : X ⟶ Y)
+    (a : hE.loopProjective X ⟶ hE.loopProjective Y)
+    (g : hE.loopObj X ⟶ hE.loopObj Y)
+    (ha : a ≫ hE.loopDeflation Y = hE.loopDeflation X ≫ f)
+    (hg : g ≫ hE.loopInflation Y = hE.loopInflation X ≫ a) :
+    E.projectiveStableFunctor.map (hE.loopMap f) = E.projectiveStableFunctor.map g :=
+  E.projectiveStableFunctor_map_kernelMap_eq
+    (hE.projectivePresentation X) (hE.projectivePresentation Y) f a g ha hg
+
 /-- Loops from the exact category to its projective stable quotient. -/
-noncomputable abbrev loopToStable : C ⥤ E.ProjectiveStableCategory :=
+noncomputable def loopToStable : C ⥤ E.ProjectiveStableCategory :=
   E.loopToStableOfPresentations hE.projectivePresentation
 
 /-- The object formula for loops to the projective stable category. -/
+@[simp]
 theorem loopToStable_obj (X : C) :
     hE.loopToStable.obj X = E.projectiveStableFunctor.obj (hE.loopObj X) :=
   E.loopToStableOfPresentations_obj hE.projectivePresentation X
 
 /-- The morphism formula for loops to the projective stable category. -/
+@[simp]
 theorem loopToStable_map {X Y : C} (f : X ⟶ Y) :
     hE.loopToStable.map f = eqToHom (hE.loopToStable_obj X) ≫
       E.projectiveStableFunctor.map (hE.loopMap f) ≫ eqToHom (hE.loopToStable_obj Y).symm :=
