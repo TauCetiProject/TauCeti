@@ -105,10 +105,22 @@ private theorem leftToRight_leibniz
       exact leftToRight_leibniz_of_mem G H hA hM
         ((GradedOpposite.mem_piece_iff G _ b).1 b.property) hx
 
+end TauCeti.GradedOpposite
+
+namespace TauCeti.IsDGLeftModule
+
+open GradedOpposite
+
+universe uR uA uM
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+
 /-- A differential graded left module over `A` is a differential graded right module over the
-Koszul-signed graded opposite of `A`, with action `leftToRightModule`. -/
-theorem IsDGLeftModule.gradedOppositeRight
-    (G : InternalGrading R A) (H : InternalGrading R M)
+Koszul-signed graded opposite of `A`, with action `GradedOpposite.leftToRightModule`. -/
+theorem gradedOppositeRight
+    {G : InternalGrading R A} {H : InternalGrading R M}
     [GradedAlgebra G.piece] [SetLike.GradedSMul G.piece H.piece]
     {d : A →ₗ[R] A} {hA : IsDGAlgebra G.piece d}
     {dM : M →ₗ[R] M}
@@ -126,6 +138,6 @@ theorem IsDGLeftModule.gradedOppositeRight
     (leftToRightModule G H) (grading G).piece inferInstance _
     (leftToRight_isScalarTower G H) hA.gradedOpposite H.piece
     (leftToRight_gradedSMul G H) inferInstance dM hM.isHomogeneous hM.sq_zero
-    (fun hx b ↦ leftToRight_leibniz G H hA hM hx b)
+    (fun hx b ↦ GradedOpposite.leftToRight_leibniz G H hA hM hx b)
 
-end TauCeti.GradedOpposite
+end TauCeti.IsDGLeftModule

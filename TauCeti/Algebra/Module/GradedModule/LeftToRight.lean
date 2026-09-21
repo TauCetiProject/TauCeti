@@ -32,8 +32,8 @@ tower and the module grading.
   `GradedOpposite.leftToRight_gradedSMul`: compatibility with the ground-ring action and the
   module grading.
 
-This supplies the left/right module convention in Layer 1 of the `DGAInfinity` roadmap. The sign
-convention follows B. Keller, *Introduction to A-infinity algebras and modules*, Section 3.1.
+The sign convention follows B. Keller, *Introduction to A-infinity algebras and modules*,
+Section 3.1.
 -/
 
 public section
@@ -65,6 +65,7 @@ theorem leftToRight_smul (G : InternalGrading R A) (H : InternalGrading R M)
     s • x = H.quadraticTwist
       (opAlgEquiv G s • H.quadraticTwist x) := by
   unfold leftToRightModule
+  -- Normalize the transferred `AddEquiv` action to the corresponding `LinearEquiv` maps.
   change H.quadraticTwistEquiv.symm
       (opAlgEquiv G s • H.quadraticTwistEquiv x) = _
   rw [H.quadraticTwistEquiv_symm_apply, H.quadraticTwistEquiv_apply]
@@ -78,6 +79,7 @@ theorem leftToRight_isScalarTower (G : InternalGrading R A)
     Module.compHom M (opAlgEquiv G).toRingHom
   let _ : IsScalarTower R (GradedOpposite G)ᵐᵒᵖ M :=
     ⟨fun r s x ↦ by
+      -- Normalize only the action on `M` supplied by `Module.compHom`.
       change opAlgEquiv G (r • s) • x = r • (opAlgEquiv G s • x)
       rw [map_smul, smul_assoc]⟩
   exact H.quadraticTwistEquiv.isScalarTower (GradedOpposite G)ᵐᵒᵖ
