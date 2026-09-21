@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.Henselian
-public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import TauCeti.RingTheory.RootsOfUnity.IntegrallyClosed
 
 /-!
 # The Teichmüller lift of a Henselian local ring with finite residue field
@@ -31,9 +31,17 @@ below are the content of this milestone, and they are the simple-root uniqueness
 `X ^ (q - 1) - 1`, so nothing is gained by routing the construction through the perfection; the
 Henselian hypothesis used here is also weaker than adic completeness.
 
+A ring `R` that is moreover integrally closed in a fraction ring `K` has the same `q - 1`-st roots
+of unity as `K` does, since a root of unity is integral, so the identification of `μ_{q-1}(R)` with
+`kˣ` is one of `μ_{q-1}(K)` with `kˣ` as well.
+
 The hypotheses hold for the integers `𝒪[K]` of a nonarchimedean local field `K`: Mathlib's
 `IsNonarchimedeanLocalField` provides `IsAdicComplete 𝓂[K] 𝒪[K]`, hence `HenselianLocalRing 𝒪[K]`
-through `TauCeti.IsAdicComplete.henselianLocalRing`, together with `Finite 𝓀[K]`.
+through `TauCeti.IsAdicComplete.henselianLocalRing`, together with `Finite 𝓀[K]`; and `𝒪[K]` is a
+valuation ring, so it is integrally closed in its fraction field `K`. Since `𝓀[K]` is notation for
+`IsLocalRing.ResidueField 𝒪[K]`, `teichmuller 𝒪[K] : 𝓀[K]ˣ →* 𝒪[K]ˣ` is the Teichmüller section
+`ω` of a local field and `rootsOfUnityFractionRingMulEquivUnitsResidueField 𝒪[K] K` is the
+isomorphism `μ_{q-1}(K) ≃* 𝓀[K]ˣ`, with no wrapper in between.
 
 ## Main results
 
@@ -47,6 +55,8 @@ through `TauCeti.IsAdicComplete.henselianLocalRing`, together with `Finite 𝓀[
 * `TauCeti.IsLocalRing.rootsOfUnityMulEquivUnitsResidueField`: reduction is an isomorphism
   `μ_{q-1}(R) ≃* kˣ`.
 * `TauCeti.IsLocalRing.card_rootsOfUnity`: consequently `μ_{q-1}(R)` has exactly `q - 1` elements.
+* `TauCeti.IsLocalRing.rootsOfUnityFractionRingMulEquivUnitsResidueField`: if `R` is integrally
+  closed in a fraction ring `K`, then already `μ_{q-1}(K) ≃* kˣ`.
 
 ## References
 
@@ -62,6 +72,13 @@ open Polynomial _root_.IsLocalRing
 
 variable (R : Type*) [CommRing R] [HenselianLocalRing R] [Finite (ResidueField R)]
 
+/-- A finite field has at least two elements, so the exponent `q - 1` is nonzero. -/
+theorem card_residueField_sub_one_ne_zero : Nat.card (ResidueField R) - 1 ≠ 0 := by
+  have := Fintype.ofFinite (ResidueField R)
+  have hcard : Nat.card (ResidueField R) = Fintype.card (ResidueField R) := Nat.card_eq_fintype_card
+  have := Fintype.one_lt_card (α := ResidueField R)
+  omega
+
 /-- Over a Henselian local ring with finite residue field of cardinality `q`, each unit `x` of the
 residue field is the residue of exactly one solution of `y ^ (q - 1) = 1`. -/
 theorem existsUnique_pow_card_sub_one_eq_one_and_residue_eq (x : (ResidueField R)ˣ) :
@@ -69,9 +86,7 @@ theorem existsUnique_pow_card_sub_one_eq_one_and_residue_eq (x : (ResidueField R
   have := Fintype.ofFinite (ResidueField R)
   have hcard : Nat.card (ResidueField R) = Fintype.card (ResidueField R) := Nat.card_eq_fintype_card
   set n := Nat.card (ResidueField R) - 1 with hn
-  have hn0 : n ≠ 0 := by
-    have := Fintype.one_lt_card (α := ResidueField R)
-    omega
+  have hn0 : n ≠ 0 := card_residueField_sub_one_ne_zero R
   set f : R[X] := X ^ n - 1 with hf
   have hfmonic : f.Monic := by simpa [hf] using monic_X_pow_sub_C (1 : R) hn0
   have heval : ∀ a : R, eval a f = a ^ n - 1 := by intro a; simp [hf]
@@ -213,5 +228,30 @@ theorem card_rootsOfUnity :
     Nat.card (rootsOfUnity (Nat.card (ResidueField R) - 1) R) =
       Nat.card (ResidueField R) - 1 := by
   rw [Nat.card_congr (rootsOfUnityMulEquivUnitsResidueField R).toEquiv, Nat.card_units]
+
+section FractionRing
+
+variable (K : Type*) [CommRing K] [Algebra R K] [IsFractionRing R K] [IsIntegrallyClosed R]
+
+/-- Over a Henselian local ring `R` that is integrally closed in a fraction ring `K`, reduction is
+an isomorphism from the group `μ_{q-1}(K)` of `q - 1`-st roots of unity of `K` onto the unit group
+of the residue field: every such root of unity of `K` is already one of `R`.
+
+For `R` the integers `𝒪[K]` of a nonarchimedean local field `K`, this is the isomorphism
+`μ_{q-1}(K) ≃* 𝓀[K]ˣ`. -/
+noncomputable def rootsOfUnityFractionRingMulEquivUnitsResidueField :
+    rootsOfUnity (Nat.card (ResidueField R) - 1) K ≃* (ResidueField R)ˣ :=
+  haveI : NeZero (Nat.card (ResidueField R) - 1) := ⟨card_residueField_sub_one_ne_zero R⟩
+  (IsIntegrallyClosedIn.rootsOfUnityMulEquiv R K _).symm.trans
+    (rootsOfUnityMulEquivUnitsResidueField R)
+
+@[simp] theorem rootsOfUnityFractionRingMulEquivUnitsResidueField_symm_apply
+    (x : (ResidueField R)ˣ) :
+    (((rootsOfUnityFractionRingMulEquivUnitsResidueField R K).symm x : Kˣ) : K) =
+      algebraMap R K (teichmuller R x : R) := by
+  have : NeZero (Nat.card (ResidueField R) - 1) := ⟨card_residueField_sub_one_ne_zero R⟩
+  simp [rootsOfUnityFractionRingMulEquivUnitsResidueField]
+
+end FractionRing
 
 end TauCeti.IsLocalRing
