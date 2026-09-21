@@ -139,11 +139,11 @@ private theorem residue_comp_algebraMap :
   RingHom.ext fun x => ResidueField.algebraMap_residue x
 
 /-- If the residue of `β` generates the residue field extension, then `R[β]` meets every residue
-class of `S` modulo the maximal ideal.  The proof is the forward half of Mathlib's
-`IsLocalRing.adjoin_residue_eq_top_iff_adjoin_eq_top`, stopped one step earlier: that lemma
-concludes with `𝓂(R) S` in place of `𝓂(S)`, which needs `S` unramified over `R` so that the two
-ideals agree.  Here they do not, and the gap between them is closed instead by
-`TauCeti.Subalgebra.sup_pow_eq_top`. -/
+class of `S` modulo the maximal ideal: `R[β]` and `𝓂(S)` together span `S` over `R`.  This is the
+residue-class step of the generation criterion
+`TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal`.  It is the ramified counterpart
+of the forward half of Mathlib's `IsLocalRing.adjoin_residue_eq_top_iff_adjoin_eq_top`, which
+spans modulo `𝓂(R) S` instead and so is available only when the two ideals agree. -/
 theorem sup_maximalIdeal_eq_top_of_adjoin_residue_eq_top {β : S}
     (hβ : Algebra.adjoin (ResidueField R) {residue S β} = ⊤) :
     (Algebra.adjoin R {β}).toSubmodule ⊔ (maximalIdeal S).restrictScalars R = ⊤ := by
