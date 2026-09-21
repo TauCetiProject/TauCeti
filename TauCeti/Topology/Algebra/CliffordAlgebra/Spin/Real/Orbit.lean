@@ -13,8 +13,8 @@ import TauCeti.GroupTheory.GroupAction.Transitive
 # Continuous orbits of compact real Spin groups
 
 For `n ≥ 2` and a chosen point on the unit level, the compact real Spin action gives a continuous
-surjection onto that level. This is the sphere-orbit input for the compact Spin sphere-bundle and
-universal-cover construction.
+surjection onto that level. The map records the continuous action on the unit level set, and its
+surjectivity is the orbit form of the algebraic transitivity theorem.
 
 The construction follows Lawson--Michelsohn, *Spin Geometry*, Chapter I, Section 2; its algebraic
 prerequisites are supplied by `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Orbit`.
@@ -43,18 +43,11 @@ theorem realCliffordSpinOrbitMap_apply (n : ℕ) (x : realCliffordUnitLevel n)
     realCliffordSpinOrbitMap n x s = s • x :=
   by simp only [realCliffordSpinOrbitMap, ContinuousMap.coe_mk]
 
-theorem realCliffordSpinOrbitMap_val_apply (n : ℕ) (x : realCliffordUnitLevel n)
-    (s : realCliffordSpinGroupZero n) :
-    (realCliffordSpinOrbitMap n x s : Fin n → ℝ) =
-      spinVectorAction (realCliffordForm n 0) s x := by
-  simp only [realCliffordSpinOrbitMap, ContinuousMap.coe_mk, SubMulAction.val_smul,
-    spinGroup_smul_apply]
-
 /-- The compact real Spin orbit map is onto the unit level set in dimension at least two. -/
 theorem realCliffordSpinOrbitMap_surjective (n : ℕ) (hn : 2 ≤ n)
     (x : realCliffordUnitLevel n) : Function.Surjective (realCliffordSpinOrbitMap n x) := by
   have h := @MulAction.surjective_smul _ _ _
-    (realCliffordUnitLevel_isPretransitive n hn) x
+    (isPretransitive_realCliffordUnitLevel n hn) x
   simpa only [realCliffordSpinOrbitMap, ContinuousMap.coe_mk] using h
 
 end

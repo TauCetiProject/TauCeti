@@ -11,13 +11,9 @@ public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
 # Orbits of nondegenerate special orthogonal groups
 
 A special orthogonal transformation carries any vector of a fixed nonzero norm to any other,
-provided the nondegenerate quadratic space has dimension at least two. The proof uses a pair of
-reflections: one moves the vector, and the second corrects the determinant while fixing its image.
-
-This is the linear-algebra input for the transitive action of a compact real Spin group on a
-positive quadratic level set. The reflection and orthogonal-complement arguments reuse the
-preceding Cartan--Dieudonne and orthogonal-group developments, following Lawson--Michelsohn,
-*Spin Geometry*, Chapter I, Section 2.
+provided the nondegenerate quadratic space has dimension at least two. This is the linear-algebra
+input for transitive actions on nonzero quadratic levels; see Lawson--Michelsohn, *Spin Geometry*,
+Chapter I, Section 2.
 -/
 
 public section

@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Orbit
 For `n ≥ 2`, the compact real Spin group acts transitively on the unit level set of its
 positive-definite quadratic form. This is the algebraic input for its continuous sphere orbit.
 
-This realizes the compact-orbit boundary using the orthogonal and Cartan--Dieudonne developments
-above and the Lawson--Michelsohn construction.
+The transitivity statement follows by lifting special orthogonal transformations through the
+surjection from the positive-definite Spin group, as in Lawson--Michelsohn, *Spin Geometry*,
+Chapter I, Section 2.
 -/
 
 public section
@@ -67,7 +68,7 @@ theorem exists_realCliffordSpinGroupZero_spinVectorAction_eq (n : ℕ) (hn : 2 �
   · simp [hy]
 
 /-- The compact real Spin action on the unit level is transitive in dimension at least two. -/
-theorem realCliffordUnitLevel_isPretransitive (n : ℕ) (hn : 2 ≤ n) :
+theorem isPretransitive_realCliffordUnitLevel (n : ℕ) (hn : 2 ≤ n) :
     MulAction.IsPretransitive (realCliffordSpinGroupZero n) (realCliffordUnitLevel n) where
   exists_smul_eq x y := by
     obtain ⟨s, hs⟩ :=
