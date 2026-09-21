@@ -26,7 +26,8 @@ group is both locally compact and Hausdorff.
 * `NumberField.IdeleGroup.instLocallyCompactSpace`: the idele group is locally compact.
 * `NumberField.IdeleGroup.isClosed_principalSubgroup`: the principal ideles form a closed subgroup.
 * `NumberField.IdeleClassGroup.instLocallyCompactSpace` and
-  `NumberField.IdeleClassGroup.instT2Space`: the idele class group is locally compact Hausdorff.
+  `NumberField.IdeleClassGroup.instT3Space`: the idele class group is locally compact, Hausdorff,
+  and regular.
 
 ## References
 
@@ -74,8 +75,8 @@ theorem isClosed_principalSubgroup :
 
 end IdeleGroup
 
-/-- The idele class group of a number field is Hausdorff. -/
-instance IdeleClassGroup.instT2Space : T2Space (IdeleClassGroup (𝓞 K) K) := by
+/-- The idele class group of a number field is Hausdorff and regular. -/
+instance IdeleClassGroup.instT3Space : T3Space (IdeleClassGroup (𝓞 K) K) := by
   let _ : IsClosed (IdeleGroup.principalSubgroup (𝓞 K) K : Set (IdeleGroup (𝓞 K) K)) :=
     IdeleGroup.isClosed_principalSubgroup K
   infer_instance
