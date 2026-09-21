@@ -25,7 +25,7 @@ all of them is integral over `𝒪_P`.
 
 The proof dominates the local valuation ring of the original place by a valuation subring of the
 larger function field. Locality ensures that the resulting valuation subring is proper. Since
-valuation subrings are integrally closed, it contains the enlarged constant field, so it defines a
+valuation subrings are integrally closed, it contains the enlarged base field, so it defines a
 place whose restriction is the original place.
 
 ## Main results
@@ -62,7 +62,7 @@ section Integral
 variable [Algebra.IsIntegral k k'] [Algebra.IsIntegral F F']
 
 /-- **Existence of extensions of places** (Stichtenoth, Proposition 3.1.7): if both the field
-extension and the extension of constants are integral, every place of `F / k` is the restriction
+extension and the base-field extension are integral, every place of `F / k` is the restriction
 of a place of `F' / k'`. -/
 theorem restrict_surjective (hF' : IsFunctionField k' F') :
     Function.Surjective (fun P' : Place k' F' ↦ restrict k F P') := by
@@ -116,8 +116,8 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 `P` of `F / k` exactly when it is regular at every place of `F' / k'` lying over `P`.
 
 An element outside the integral closure is separated from it by a valuation subring of `F'`; that
-subring contains the constants `k'`, which are integral over `k`, and it contains `𝒪_P`, so it is
-the valuation ring of a place lying over `P`. -/
+subring contains the base field `k'`, whose elements are integral over `k`, and it contains
+`𝒪_P`, so it is the valuation ring of a place lying over `P`. -/
 theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k' F')
     (P : Place k F) {x : F'} :
     IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
