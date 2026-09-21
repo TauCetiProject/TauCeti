@@ -33,8 +33,8 @@ supplies: it serves the underlying complex of a DG algebra and of a DG module on
 
 ## Implementation notes
 
-`gradedCochainComplex` is opaque.  Its component, differential, and element-level differential
-lemmas below are the public interface to the construction.
+The component, differential, and element-level differential lemmas below are the intended public
+interface to `gradedCochainComplex`.
 -/
 
 public section
