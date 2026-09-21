@@ -47,8 +47,7 @@ variable {R K : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
   [IsFractionRing R K]
 
 /-- An idele is principal exactly when its underlying adele belongs to the diagonal copy of the
-fraction field.  In the reverse direction, invertibility of the adele forces the diagonal element
-to be nonzero, hence a field unit. -/
+fraction field. -/
 theorem mem_principalSubgroup_iff (x : IdeleGroup R K) :
     x ∈ principalSubgroup R K ↔
       (x : AdeleRing R K) ∈ AdeleRing.principalSubgroup R K := by
