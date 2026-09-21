@@ -14,8 +14,9 @@ public import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.Orbit
 For `n ≥ 2`, the compact real Spin group acts transitively on the unit level set of its
 positive-definite quadratic form. This is the algebraic input for its continuous sphere orbit.
 
-The transitivity statement follows by lifting special orthogonal transformations through the
-surjection from the positive-definite Spin group, as in Lawson--Michelsohn, *Spin Geometry*,
+The transitivity result identifies the unit level as a homogeneous space for the compact Spin
+action, providing the algebraic boundary needed for the subsequent sphere-orbit construction.
+The underlying compact Spin geometry is discussed in Lawson--Michelsohn, *Spin Geometry*,
 Chapter I, Section 2.
 -/
 

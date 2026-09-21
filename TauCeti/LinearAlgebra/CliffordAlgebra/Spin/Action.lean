@@ -172,6 +172,7 @@ theorem coe_spinToOrthogonal_apply (x : spinGroup Q) (m : M) :
 noncomputable instance instMulActionSpinGroup : MulAction (spinGroup Q) M :=
   MulAction.compHom _ (spinToOrthogonal Q)
 
+/-- The induced `MulAction` agrees pointwise with the transported Clifford-conjugation action. -/
 @[simp]
 theorem spinGroup_smul_apply (s : spinGroup Q) (x : M) :
     s • x = spinVectorAction Q s x := by
