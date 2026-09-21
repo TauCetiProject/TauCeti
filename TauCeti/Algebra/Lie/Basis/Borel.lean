@@ -23,6 +23,8 @@ Humphreys, *Introduction to Lie Algebras and Representation Theory*, §10.
 
 * `LieAlgebra.Basis.positiveNilradical_eq_lieSpan_e` identifies the positive nilradical with the
   Lie span of the raising operators.
+* `LieAlgebra.Basis.mem_borelUpper_iff_mem_lieSpan` exposes the carrier bridge between Mathlib's
+  upper Borel and that Lie span.
 * `LieAlgebra.Basis.borelSubalgebra_eq_sup_lieSpan_e` gives the corresponding Borel.
 -/
 
@@ -41,6 +43,16 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 section
 
 variable {ι : Type*} [Finite ι]
+
+omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] in
+/-- Membership in the upper Borel's nilpotent part is membership in the Lie span of its raising
+operators. The equivalence is expressed through the public universal property of `lieSpan` so
+consumers do not depend on the implementation of `Basis.borelUpper`. -/
+theorem mem_borelUpper_iff_mem_lieSpan (b : LieAlgebra.Basis ι H) {x : L} :
+    x ∈ b.borelUpper ↔ x ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := by
+  constructor <;> intro hx
+  · exact LieSubalgebra.mem_lieSpan.mpr (LieSubalgebra.mem_lieSpan.mp hx)
+  · exact LieSubalgebra.mem_lieSpan.mpr (LieSubalgebra.mem_lieSpan.mp hx)
 
 /-- The positive nilradical associated to a Lie algebra basis is the Lie span of its raising
 operators. -/
@@ -67,25 +79,8 @@ theorem positiveNilradical_eq_lieSpan_e (b : LieAlgebra.Basis ι H) :
     have hx' : x ∈ b.borelUpper := by
       rw [b.borelUpper_eq]
       exact hle hx
-    have h_borelUpper :
-        (b.borelUpper : Submodule K L) =
-          (LieSubalgebra.lieSpan K L (Set.range b.e) : Submodule K L) := by
-      apply le_antisymm
-      · intro y hy
-        have hy' : y ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := by
-          simpa only [LieAlgebra.Basis.borelUpper, LieSubalgebra.mem_toSubmodule] using hy
-        apply LieSubalgebra.mem_lieSpan.mpr
-        intro S hS
-        exact LieSubalgebra.mem_lieSpan.mp hy' S hS
-      · intro y hy
-        have hy' : y ∈ LieSubalgebra.lieSpan K L (Set.range b.e) := hy
-        have : y ∈ LieSubalgebra.lieSpan K L (Set.range b.e) :=
-          LieSubalgebra.mem_lieSpan.mpr fun S hS =>
-            LieSubalgebra.mem_lieSpan.mp hy' S hS
-        simpa only [LieAlgebra.Basis.borelUpper, LieSubalgebra.mem_toSubmodule] using this
     rw [← LieSubalgebra.mem_toSubmodule]
-    rw [← h_borelUpper]
-    exact (LieSubmodule.mem_toSubmodule b.borelUpper).mpr hx'
+    exact b.mem_borelUpper_iff_mem_lieSpan.mp hx'
   · rw [LieSubalgebra.lieSpan_le, Set.range_subset_iff]
     intro i
     exact TauCeti.mem_positiveNilradical_of_mem_rootSpace H b.base
