@@ -128,18 +128,12 @@ theorem blockSplitEquiv_symm_apply (m n : ℕ) (x : Fin n → Fin m → α) (k :
     (blockSplitEquiv α m n).symm x k =
       x (finProdFinEquiv.symm k).1 (finProdFinEquiv.symm k).2 :=
   by
-    have h := blockSplitEquiv_apply m n ((blockSplitEquiv α m n).symm x)
-      (finProdFinEquiv.symm k).1 (finProdFinEquiv.symm k).2
-    have hfun := congrFun (congrFun (Equiv.apply_symm_apply (blockSplitEquiv α m n).toEquiv x)
-      (finProdFinEquiv.symm k).1) (finProdFinEquiv.symm k).2
-    have hk : finProdFinEquiv ((finProdFinEquiv.symm k).1, (finProdFinEquiv.symm k).2) = k :=
-      Equiv.apply_symm_apply finProdFinEquiv k
-    calc
-      (blockSplitEquiv α m n).symm x k =
-          (blockSplitEquiv α m n).symm x
-            (finProdFinEquiv ((finProdFinEquiv.symm k).1, (finProdFinEquiv.symm k).2)) :=
-        congrArg ((blockSplitEquiv α m n).symm x) hk.symm
-      _ = x (finProdFinEquiv.symm k).1 (finProdFinEquiv.symm k).2 := h.symm.trans hfun
+    change
+      MeasurableEquiv.piCongrLeft (fun _ : Fin (n * m) => α) finProdFinEquiv
+          ((MeasurableEquiv.curry (Fin n) (Fin m) α).symm x) k = _
+    rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply,
+      MeasurableEquiv.coe_curry_symm]
+    simp
 
 /-- Restriction of a block of width `n * m` to its `r`-th consecutive subblock of width `m`. -/
 def blockRestriction (m n : ℕ) (r : Fin n) : (Fin (n * m) → α) → (Fin m → α) :=
@@ -167,6 +161,7 @@ private theorem blockIndex_mul (m n : ℕ) [NeZero m] [NeZero n]
 /-- **A large block is the joint law of its consecutive smaller blocks.** Splitting the `i`-th
 block of width `n * m` gives the `n` consecutive width-`m` blocks numbered
 `i * n, ..., i * n + n - 1`, with their dependence retained. -/
+@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSplitEquiv
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n] (i : ℕ) :
     (P.blockMarginals (n * m) i).map (blockSplitEquiv α m n) =
@@ -182,19 +177,28 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSpli
 
 /-- **Restriction compatibility for block marginals.** The `r`-th width-`m` subblock of the
 `i`-th width-`n * m` block is the width-`m` block numbered `i * n + r`. -/
+@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockRestriction
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n]
     (i : ℕ) (r : Fin n) :
     (P.blockMarginals (n * m) i).map (blockRestriction (α := α) m n r) =
       P.blockMarginals m (i * n + r) := by
   apply ProbabilityMeasure.toMeasure_injective
-  simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply]
-  rw [Measure.map_map]
-  · congr 1
-    funext x j
-    exact congrArg x (blockIndex_mul m n i r j)
-  · exact measurable_blockRestriction m n r
-  · exact Measurable.of_eval fun j => measurable_pi_apply (blockIndex (n * m) i j)
+  have h := congrArg
+    (fun Q : ProbabilityMeasure (Fin n → Fin m → α) =>
+      (Q.map fun x => x r).toMeasure)
+    (P.blockMarginals_mul_map_blockSplitEquiv m n i)
+  simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply] at h ⊢
+  rw [Measure.map_map (measurable_pi_apply r) (blockSplitEquiv α m n).measurable] at h
+  rw [Measure.map_map (μ := P.toMeasure) (g := fun x => x r)
+    (f := fun x (r : Fin n) j => x ((Nat.divModEquiv m).symm (i * n + r, j)))
+    (measurable_pi_apply r) (Measurable.of_eval fun r => Measurable.of_eval fun j =>
+      measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
+  change
+    Measure.map (fun x => blockSplitEquiv α m n x r)
+        (Measure.map (fun x j => x ((Nat.divModEquiv (n * m)).symm (i, j))) P.toMeasure) =
+      Measure.map (fun x j => x ((Nat.divModEquiv m).symm (i * n + r, j))) P.toMeasure
+  simpa only [Function.comp_def] using h
 
 /-- The permutation of path coordinates induced by permuting blocks and preserving the position
 inside each block. -/
