@@ -128,15 +128,16 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}} {M : SheafOfModules.{u} R}
 
 /-- Generating sections of the twice-restricted sheaf `(M.over Z).over Y`, read along
-`iteratedSliceEquivalence` as generating sections of the restriction of `M` to `Y.left`. -/
+`Sheaf.iteratedSliceEquivalence` as generating sections of the restriction of `M` to `Y.left`. -/
 noncomputable def _root_.SheafOfModules.GeneratingSections.ofIteratedSlice {Z : C} {Y : Over Z}
     [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
     [(J.over Y.left).WEqualsLocallyBijective AddCommGrpCat.{u}]
     [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
     [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
     (σ : ((M.over Z).over Y).GeneratingSections) : (M.over Y.left).GeneratingSections :=
-  σ.mapIso (iteratedSliceEquivalence R Y).inverse (iteratedSliceEquivalenceUnitSheafIso R Y)
-    (iteratedSliceEquivalenceInverseObjIso R Y M)
+  σ.mapIso (Sheaf.iteratedSliceEquivalence R Y).inverse
+    (Sheaf.iteratedSliceEquivalenceUnitSheafIso R Y)
+    (Sheaf.iteratedSliceEquivalenceInverseObjIso R Y M)
 
 /-- Transporting generating sections off an iterated slice preserves their index type. -/
 @[simp]
@@ -148,9 +149,9 @@ theorem _root_.SheafOfModules.GeneratingSections.ofIteratedSlice_I {Z : C} {Y : 
     (σ : ((M.over Z).over Y).GeneratingSections) : σ.ofIteratedSlice.I = σ.I :=
   (by
     simpa only [GeneratingSections.ofIteratedSlice] using
-      GeneratingSections.mapIso_I σ (iteratedSliceEquivalence R Y).inverse
-        (iteratedSliceEquivalenceUnitSheafIso R Y)
-        (iteratedSliceEquivalenceInverseObjIso R Y M))
+      GeneratingSections.mapIso_I σ (Sheaf.iteratedSliceEquivalence R Y).inverse
+        (Sheaf.iteratedSliceEquivalenceUnitSheafIso R Y)
+        (Sheaf.iteratedSliceEquivalenceInverseObjIso R Y M))
 
 /-- The generating morphism after transport off an iterated slice is the mapped generating
 morphism followed by the comparison with restriction to `Y.left`, read along the identification
@@ -164,17 +165,17 @@ theorem _root_.SheafOfModules.GeneratingSections.ofIteratedSlice_π {Z : C} {Y :
     (σ : ((M.over Z).over Y).GeneratingSections) :
     eqToHom (congrArg free (GeneratingSections.ofIteratedSlice_I σ).symm) ≫
         σ.ofIteratedSlice.π =
-      ((mapFreeIso (iteratedSliceEquivalence R Y).inverse σ.I
-          (iteratedSliceEquivalenceUnitSheafIso R Y)).hom ≫
-        (iteratedSliceEquivalence R Y).inverse.map σ.π) ≫
-          (iteratedSliceEquivalenceInverseObjIso R Y M).hom :=
+      ((mapFreeIso (Sheaf.iteratedSliceEquivalence R Y).inverse σ.I
+          (Sheaf.iteratedSliceEquivalenceUnitSheafIso R Y)).hom ≫
+        (Sheaf.iteratedSliceEquivalence R Y).inverse.map σ.π) ≫
+          (Sheaf.iteratedSliceEquivalenceInverseObjIso R Y M).hom :=
   (by
     simpa only [GeneratingSections.ofIteratedSlice] using
-      GeneratingSections.mapIso_π σ (iteratedSliceEquivalence R Y).inverse
-        (iteratedSliceEquivalenceUnitSheafIso R Y)
-        (iteratedSliceEquivalenceInverseObjIso R Y M))
+      GeneratingSections.mapIso_π σ (Sheaf.iteratedSliceEquivalence R Y).inverse
+        (Sheaf.iteratedSliceEquivalenceUnitSheafIso R Y)
+        (Sheaf.iteratedSliceEquivalenceInverseObjIso R Y M))
 
-/-- Reading a local basis through `iteratedSliceEquivalence` again gives a local basis. -/
+/-- Reading a local basis through `Sheaf.iteratedSliceEquivalence` again gives a local basis. -/
 instance _root_.SheafOfModules.GeneratingSections.isIso_ofIteratedSlice_π
     {Z : C} {Y : Over Z}
     [HasSheafify (J.over Y.left) AddCommGrpCat.{u}]
@@ -183,9 +184,9 @@ instance _root_.SheafOfModules.GeneratingSections.isIso_ofIteratedSlice_π
     [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
     (σ : ((M.over Z).over Y).GeneratingSections) [IsIso σ.π] :
     IsIso σ.ofIteratedSlice.π :=
-  GeneratingSections.isIso_mapIso_π σ (iteratedSliceEquivalence R Y).inverse
-    (iteratedSliceEquivalenceUnitSheafIso R Y)
-    (iteratedSliceEquivalenceInverseObjIso R Y M)
+  GeneratingSections.isIso_mapIso_π σ (Sheaf.iteratedSliceEquivalence R Y).inverse
+    (Sheaf.iteratedSliceEquivalenceUnitSheafIso R Y)
+    (Sheaf.iteratedSliceEquivalenceInverseObjIso R Y M)
 
 /-- Transporting generating sections off an iterated slice preserves finiteness. -/
 instance _root_.SheafOfModules.GeneratingSections.isFiniteType_ofIteratedSlice
@@ -196,9 +197,9 @@ instance _root_.SheafOfModules.GeneratingSections.isFiniteType_ofIteratedSlice
     [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
     (σ : ((M.over Z).over Y).GeneratingSections) [hσ : σ.IsFiniteType] :
     σ.ofIteratedSlice.IsFiniteType :=
-  GeneratingSections.isFiniteType_mapIso σ (iteratedSliceEquivalence R Y).inverse
-    (iteratedSliceEquivalenceUnitSheafIso R Y)
-    (iteratedSliceEquivalenceInverseObjIso R Y M)
+  GeneratingSections.isFiniteType_mapIso σ (Sheaf.iteratedSliceEquivalence R Y).inverse
+    (Sheaf.iteratedSliceEquivalenceUnitSheafIso R Y)
+    (Sheaf.iteratedSliceEquivalenceInverseObjIso R Y M)
 
 end IteratedSlice
 
