@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Group.IterateOneParameter
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Basic
 
 /-!
 # The Steinberg endomorphism and candidate group of the Suzuki family
@@ -220,21 +220,6 @@ private theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.C
     one_eq_last]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
 
-/-- **The final carrier node is the long simple root.** The `B₂` diagram's long simple root is
-Bourbaki node zero, and `carrierNode` swaps the two numberings. -/
-private theorem carrierNode_eq_one_iff (i : Fin d.1.rank) :
-    d.toRankTwoBLieIndex.carrierNode i = 1 ↔ d.1.dynkinType.IsLongSimpleRoot i := by
-  have hcarrier : d.toRankTwoBLieIndex.carrierNode i = 1 ↔ (i : ℕ) = 0 := by
-    rw [RankTwoBLieIndex.carrierNode_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right]
-    simp [Fin.ext_iff]
-  have hlong : d.1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) = 0 := by
-    obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
-    simp only [ValidLieTypeIndex.dynkinType]
-    rw [DynkinType.isLongSimpleRoot_congr (LieTypeIndex.dynkinType_suzuki m)]
-    simp only [DynkinType.isLongSimpleRoot_B, finCongr_apply, Fin.val_cast]
-    omega
-  exact hcarrier.trans hlong.symm
-
 /-- The length permutation of the index exchanges the two carrier nodes. -/
 private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
     d.toRankTwoBLieIndex.carrierNode (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) =
@@ -242,9 +227,9 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
   have hswap : d.toRankTwoBLieIndex.carrierNode
         (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) = 1 ↔
       ¬d.toRankTwoBLieIndex.carrierNode i = 1 :=
-    (d.carrierNode_eq_one_iff _).trans
+    (d.toRankTwoBLieIndex.carrierNode_eq_one_iff _).trans
       ((SuzukiReeIndex.isLongSimpleRoot_lengthPerm d.toSuzukiReeIndex i).trans
-        (not_congr (d.carrierNode_eq_one_iff i)).symm)
+        (not_congr (d.toRankTwoBLieIndex.carrierNode_eq_one_iff i)).symm)
   revert hswap
   generalize d.toRankTwoBLieIndex.carrierNode
     (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) = a
@@ -256,7 +241,7 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
 private theorem exponent_eq (i : Fin d.1.rank) :
     SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
       if d.toRankTwoBLieIndex.carrierNode i = 1 then 1 else 2 := by
-  have hnode := d.carrierNode_eq_one_iff i
+  have hnode := d.toRankTwoBLieIndex.carrierNode_eq_one_iff i
   by_cases hi : d.1.dynkinType.IsLongSimpleRoot i
   · rw [SuzukiReeIndex.exponent_of_isLongSimpleRoot _ _ hi]
     simp [hnode.mpr hi]

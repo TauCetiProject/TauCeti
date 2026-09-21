@@ -286,6 +286,21 @@ theorem coneChartAmbientHomeomorph_apply (g : AddGeneratingFamily (dualSemigroup
       rfl
     simpa [coneChartAmbientHomeomorph] using hPair
 
+/-- The range of the ambient cone chart is exactly the mixed-chart locus. -/
+@[simp]
+theorem range_coneChartAmbient :
+    Set.range (coneChartAmbient hi hσ hB κ) = mixedChartDomain k l := by
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact coneChartAmbient_mem_mixedChartDomain hi hσ hB κ x
+  · intro hz
+    refine ⟨(coneChartEquiv hi hσ hB).symm
+      (fun ρ ↦ z.1 (κ ρ), fun c ↦ Units.mk0 (z.2 c) (mem_mixedChartDomain.1 hz c)), ?_⟩
+    rw [coneChartAmbient]
+    simp only [Equiv.apply_symm_apply]
+    exact Prod.ext (funext fun a ↦ by simp) (funext fun c ↦ rfl)
+
 @[simp]
 theorem coneChartAmbientHomeomorph_symm_apply
     (g : AddGeneratingFamily (dualSemigroup hi σ) s) (z : {z // z ∈ mixedChartDomain k l}) :

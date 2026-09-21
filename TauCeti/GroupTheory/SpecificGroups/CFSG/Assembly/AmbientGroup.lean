@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.GraphTwisted
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.ReeF4.Carrier
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.ReeG2.Carrier
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Tits.Carrier
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Basic
 
 /-!
 # The ambient group of an arbitrary valid Lie-type index

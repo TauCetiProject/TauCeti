@@ -42,7 +42,7 @@ of the `i`-th raising subgroup as the `i`-th simple root of the type-`B` root da
 The spin carrier takes no rank hypothesis beyond the one the subtype supplies, so everything below
 is stated for every validated type-`B` index, the rank-two members `B₂(q)` included. Those members
 are also served, beside the Suzuki family that shares their diagram, by the rank-two type-`C`
-carrier of `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean`, reached through
+carrier of `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Basic.lean`, reached through
 `TauCeti.TypeB2LieIndex`; the two carriers of the `B₂` diagram are not identified with each other
 here.
 

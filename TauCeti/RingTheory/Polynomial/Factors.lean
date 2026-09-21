@@ -46,19 +46,10 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil): the `2`-descent of the weak
-Mordell–Weil theorem works with the étale algebra `K[X] ⧸ (f)` of a Weierstrass cubic `f`, which it
-splits into fields along the monic irreducible factors of `f`; this file is that index type and the
-coprimality that makes the splitting a Chinese Remainder decomposition. Nothing here mentions a
-curve, so it is stated for an arbitrary polynomial over a field.
-
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`, section `EtaleDecomposition`. The source is written against
 Lean `v4.32.0`; this is a forward port.
 -/
@@ -189,13 +180,13 @@ lemma span_eq_iInf_span (hf : f ≠ 0) (hsq : Squarefree f) :
   rw [Ideal.iInf_span_singleton fun _ _ hpq ↦ isCoprime hpq]
   exact (Ideal.span_singleton_eq_span_singleton.mpr (associated_prod hf hsq)).symm
 
-/-- A prime factor of the image of `f` under a field embedding divides the image of one of the
-monic irreducible factors of `f`.
+/-- A prime factor of the image of `f` under a ring homomorphism to a commutative semiring
+divides the image of one of the monic irreducible factors of `f`.
 
-This is what lets a local computation be indexed by the factors of `f` over the base field: every
-prime of the extension divides the image of at least one of them. -/
-lemma exists_dvd_map {L : Type*} [Field L] (σ : K →+* L) (hf : f ≠ 0) {q : L[X]} (hq : Prime q)
-    (hdvd : q ∣ f.map σ) : ∃ p : f.Factors, q ∣ (p : K[X]).map σ := by
+This lets computations after changing coefficients be indexed by the factors over the base
+field, including when the target is a nonfield ring such as a product of fields. -/
+lemma exists_dvd_map {L : Type*} [CommSemiring L] (σ : K →+* L) (hf : f ≠ 0) {q : L[X]}
+    (hq : Prime q) (hdvd : q ∣ f.map σ) : ∃ p : f.Factors, q ∣ (p : K[X]).map σ := by
   classical
   have h1 : Associated ((normalizedFactors f).map (Polynomial.map σ)).prod (f.map σ) := by
     have h2 := (prod_normalizedFactors hf).map (mapRingHom σ)

@@ -40,6 +40,8 @@ the inverse-moment threshold `n < a`.
 
 ## Main results
 
+* `TauCeti.integrable_gammaMeasure_iff` and `TauCeti.integral_gammaMeasure_eq` — integrability
+  and integration against the gamma law, transferred to the real density;
 * `TauCeti.integral_pow_gammaMeasure` — the natural raw moments, `Γ (a + n) / (Γ a * r ^ n)`, with
   `TauCeti.integral_id_gammaMeasure` and `TauCeti.integral_sq_gammaMeasure` as the first two cases;
 * `TauCeti.integrable_inv_pow_gammaMeasure_iff` — the `n`th inverse power is integrable exactly
@@ -121,24 +123,50 @@ theorem gammaPDFReal_of_nonneg {x : ℝ} (hx : 0 ≤ x) :
     gammaPDFReal a r x = r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) := by
   rw [gammaPDFReal, ite_eq_left hx]
 
+/-- The gamma law presented by its real-valued density. -/
+theorem gammaMeasure_eq_withDensity_ofReal (a r : ℝ) :
+    gammaMeasure a r = volume.withDensity fun x ↦ ENNReal.ofReal (gammaPDFReal a r x) :=
+  (rfl)
+
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against a gamma law with positive shape
+and rate exactly when its density-weighted version is Lebesgue integrable. -/
+theorem integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) {g : ℝ → E} :
+    Integrable g (gammaMeasure a r) ↔ Integrable fun x ↦ gammaPDFReal a r x • g x := by
+  rw [gammaMeasure_eq_withDensity_ofReal]
+  exact Probability.integrable_withDensity_ofReal_iff
+    (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
+    (ae_of_all _ (gammaPDFReal_nonneg ha hr))
+
+/-- **Integral transfer.** An integral against a gamma law with positive shape and rate is the
+density-weighted Lebesgue integral. -/
+theorem integral_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (g : ℝ → E) :
+    ∫ x, g x ∂gammaMeasure a r = ∫ x, gammaPDFReal a r x • g x := by
+  rw [gammaMeasure_eq_withDensity_ofReal]
+  exact Probability.integral_withDensity_ofReal
+    (ProbabilityTheory.measurable_gammaPDFReal a r).aemeasurable
+    (ae_of_all _ (gammaPDFReal_nonneg ha hr)) g
+
 /-- An integral against the gamma law is the set integral of the weighted integrand over
 `(0, ∞)`. -/
-theorem integral_gammaMeasure_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (ha : 0 < a) (hr : 0 < r) (f : ℝ → E) :
+theorem integral_gammaMeasure_eq_integral_Ioi (ha : 0 < a) (hr : 0 < r) (f : ℝ → E) :
     ∫ x, f x ∂gammaMeasure a r =
       ∫ x in Ioi 0, (r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x))) • f x := by
   have hcompl : ∀ x ∉ Ici (0 : ℝ), gammaPDFReal a r x • f x = 0 := by
     intro x hx
     rw [gammaPDFReal, ite_eq_right (by simpa using hx), zero_smul]
-  rw [gammaMeasure, integral_withDensity_eq_integral_toReal_smul
-    (Probability.measurable_gammaPDF a r) (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top) f]
-  simp_rw [gammaPDF, ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr _)]
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hcompl, integral_Ici_eq_integral_Ioi]
+  rw [integral_gammaMeasure_eq ha hr,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero hcompl, integral_Ici_eq_integral_Ioi]
   exact setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by rw [gammaPDFReal_of_nonneg hx.le]
+
+end Transfer
 
 /-- Integrability against the gamma law is integrability of the weighted integrand over
 `(0, ∞)`. -/
-private lemma integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (f : ℝ → ℝ) :
+private lemma integrable_gammaMeasure_iff_integrableOn_Ioi (ha : 0 < a) (hr : 0 < r) (f : ℝ → ℝ) :
     Integrable f (gammaMeasure a r) ↔
       IntegrableOn
         (fun x ↦ r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x)) * f x) (Ioi 0) := by
@@ -148,9 +176,9 @@ private lemma integrable_gammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (f : ℝ →
   have hneg : IntegrableOn (fun x ↦ f x * gammaPDFReal a r x) (Iio 0) := by
     refine integrableOn_zero.congr_fun (fun x hx ↦ ?_) measurableSet_Iio
     rw [gammaPDFReal, ite_eq_right (not_le.mpr hx), mul_zero]
-  rw [gammaMeasure, integrable_withDensity_iff
-    (Probability.measurable_gammaPDF a r) (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
-  simp_rw [gammaPDF, ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr _)]
+  rw [integrable_gammaMeasure_iff ha hr]
+  simp_rw [smul_eq_mul]
+  rw [integrable_congr (.of_forall fun x ↦ mul_comm (gammaPDFReal a r x) (f x))]
   rw [← integrableOn_univ, ← Iio_union_Ici (a := (0 : ℝ)), integrableOn_union,
     integrableOn_Ici_iff_integrableOn_Ioi]
   exact ⟨fun h ↦ h.2.congr_fun hpos measurableSet_Ioi,
@@ -185,7 +213,7 @@ theorem integral_pow_gammaMeasure (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
   have hGa := (Real.Gamma_pos_of_pos ha).ne'
   have hra := (Real.rpow_pos_of_pos hr a).ne'
   have hrn := (pow_pos hr n).ne'
-  rw [integral_gammaMeasure_eq ha hr]
+  rw [integral_gammaMeasure_eq_integral_Ioi ha hr]
   -- In this real-valued specialization, scalar multiplication is ordinary multiplication.
   change (∫ x in Ioi 0,
     (r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x))) * x ^ n) = _
@@ -214,7 +242,7 @@ private lemma gammaWeight_mul_inv_pow (n : ℕ) {x : ℝ} (hx : 0 < x) :
 private theorem integrable_inv_pow_gammaMeasure (hr : 0 < r) (n : ℕ)
     (hn : (n : ℝ) < a) : Integrable (fun x : ℝ ↦ (x ^ n)⁻¹) (gammaMeasure a r) := by
   have ha : 0 < a := lt_of_le_of_lt (Nat.cast_nonneg n) hn
-  rw [integrable_gammaMeasure_iff ha hr]
+  rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
   refine IntegrableOn.congr_fun ?_ (fun x hx ↦ (gammaWeight_mul_inv_pow n hx).symm)
     measurableSet_Ioi
   have hkernel : IntegrableOn
@@ -229,7 +257,7 @@ private theorem integrable_inv_pow_gammaMeasure (hr : 0 < r) (n : ℕ)
 /-- At or above the shape threshold, inverse powers are not integrable under a Gamma law. -/
 private theorem not_integrable_inv_pow_gammaMeasure (ha : 0 < a) (hr : 0 < r) (n : ℕ)
     (hn : a ≤ n) : ¬ Integrable (fun x : ℝ ↦ (x ^ n)⁻¹) (gammaMeasure a r) := by
-  rw [integrable_gammaMeasure_iff ha hr]
+  rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
   intro hint
   have hC : 0 < r ^ a / Real.Gamma a := by positivity
   have hsmall := hint.mono_set (Ioo_subset_Ioi_self : Ioo (0 : ℝ) 1 ⊆ Ioi 0)
@@ -274,7 +302,7 @@ theorem integral_inv_pow_gammaMeasure (hr : 0 < r) (n : ℕ)
     (hn : (n : ℝ) < a) :
     ∫ x, (x ^ n)⁻¹ ∂gammaMeasure a r = r ^ n * Real.Gamma (a - n) / Real.Gamma a := by
   have ha : 0 < a := lt_of_le_of_lt (Nat.cast_nonneg n) hn
-  rw [integral_gammaMeasure_eq ha hr]
+  rw [integral_gammaMeasure_eq_integral_Ioi ha hr]
   -- In this real-valued specialization, scalar multiplication is ordinary multiplication.
   change (∫ x in Ioi 0,
     (r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x))) * (x ^ n)⁻¹) = _
@@ -319,7 +347,7 @@ private lemma gammaWeight_mul_exp (a r t x : ℝ) :
 /-- Below the rate of a gamma law, its exponential moments exist. -/
 theorem integrable_exp_mul_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :
     Integrable (fun x ↦ exp (t * x)) (gammaMeasure a r) := by
-  rw [integrable_gammaMeasure_iff ha hr]
+  rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
   refine IntegrableOn.congr_fun ?_ (fun x _ ↦ (gammaWeight_mul_exp a r t x).symm)
     measurableSet_Ioi
   have h : IntegrableOn (fun x : ℝ ↦ x ^ (a - 1) * exp (-((r - t) * x))) (Ioi 0) := by
@@ -346,7 +374,7 @@ theorem not_integrable_exp_mul_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : �
     ¬ Integrable (fun x ↦ exp (t * x)) (gammaMeasure a r) := by
   have hGa := Real.Gamma_pos_of_pos ha
   have hC : (0 : ℝ) < r ^ a / Real.Gamma a := by positivity
-  rw [integrable_gammaMeasure_iff ha hr]
+  rw [integrable_gammaMeasure_iff_integrableOn_Ioi ha hr]
   intro h
   have hmono : IntegrableOn (fun x : ℝ ↦ r ^ a / Real.Gamma a * x ^ (a - 1)) (Ioi 1) := by
     have h1 : IntegrableOn
@@ -394,7 +422,7 @@ theorem mgf_id_gammaMeasure (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :
   have hone_sub : (1 : ℝ) - t / r = (r - t) / r := by field_simp
   rw [mgf]
   simp only [id_eq]
-  rw [integral_gammaMeasure_eq ha hr]
+  rw [integral_gammaMeasure_eq_integral_Ioi ha hr]
   -- In this real-valued specialization, scalar multiplication is ordinary multiplication.
   change (∫ x in Ioi 0,
     (r ^ a / Real.Gamma a * x ^ (a - 1) * exp (-(r * x))) * exp (t * x)) = _

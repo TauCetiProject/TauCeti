@@ -236,19 +236,17 @@ measure included, and is the form in which downstream files should meet `weibull
 theorem integrable_weibullMeasure_iff (k lam : ℝ) {g : ℝ → E} :
     Integrable g (weibullMeasure k lam) ↔
       Integrable (fun x ↦ weibullPDFReal k lam x • g x) := by
-  rw [weibullMeasure_def, integrable_withDensity_iff_integrable_smul'
-    (measurable_weibullPDF k lam)
-    (ae_of_all _ fun x ↦ by rw [weibullPDF_eq_ofReal]; exact ENNReal.ofReal_lt_top)]
-  simp_rw [toReal_weibullPDF]
+  rw [weibullMeasure_def, funext (weibullPDF_eq_ofReal k lam)]
+  exact Probability.integrable_withDensity_ofReal_iff (measurable_weibullPDFReal k lam).aemeasurable
+    (ae_of_all _ (weibullPDFReal_nonneg k lam))
 
 /-- **Integral transfer.** An integral against a Weibull measure is the density-weighted Lebesgue
 integral. This holds at every parameter, the zero measure included. -/
 theorem integral_weibullMeasure_eq (k lam : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂weibullMeasure k lam = ∫ x, weibullPDFReal k lam x • g x := by
-  rw [weibullMeasure_def, integral_withDensity_eq_integral_toReal_smul
-    (measurable_weibullPDF k lam)
-    (ae_of_all _ fun x ↦ by rw [weibullPDF_eq_ofReal]; exact ENNReal.ofReal_lt_top)]
-  simp_rw [toReal_weibullPDF]
+  rw [weibullMeasure_def, funext (weibullPDF_eq_ofReal k lam)]
+  exact Probability.integral_withDensity_ofReal (measurable_weibullPDFReal k lam).aemeasurable
+    (ae_of_all _ (weibullPDFReal_nonneg k lam)) g
 
 end Transfer
 
@@ -419,11 +417,9 @@ theorem rnDeriv_weibullMeasure (k lam : ℝ) :
 /-- Integrating the density computes the real mass of a measurable set. -/
 private lemma measureReal_weibullMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (weibullMeasure k lam).real s = ∫ y in s, weibullPDFReal k lam y := by
-  rw [measureReal_def, weibullMeasure, withDensity_apply _ hs]
-  simp_rw [weibullPDF_eq_ofReal]
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_weibullPDFReal k lam).integrableOn
-      (ae_of_all _ fun y ↦ weibullPDFReal_nonneg k lam y),
-    ENNReal.toReal_ofReal (integral_nonneg fun y ↦ weibullPDFReal_nonneg k lam y)]
+  rw [weibullMeasure_def, funext (weibullPDF_eq_ofReal k lam)]
+  exact Probability.measureReal_withDensity_ofReal (ae_of_all _ (weibullPDFReal_nonneg k lam)) hs
+    (integrable_weibullPDFReal k lam).integrableOn
 
 /-- The real upper-tail mass of a valid Weibull law. -/
 theorem measureReal_Ioi_weibullMeasure (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x) :

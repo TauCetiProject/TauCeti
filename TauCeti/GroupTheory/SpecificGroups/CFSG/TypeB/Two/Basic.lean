@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
+public import TauCeti.LinearAlgebra.RootSystem.RootLength
 
 /-!
 # The two families on the rank-two diagram `B₂`
@@ -54,16 +55,16 @@ what it is: `TauCeti.RankTwoBLieIndex.frobenius` is the Frobenius of this carrie
 points whose matrix entries lie in the field of definition `𝔽_q`.
 
 The Suzuki branch's Steinberg endomorphism and candidate group are stated on this carrier in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. The carrier is not identified with
-the pinned simply connected group scheme of the diagram, and constructions on it transfer to that
-pinned group only along such an identification, once one is proved.
+`TauCeti/GroupTheory/SpecificGroups/CFSG/Suzuki/Basic.lean`. Its identification with the pinned
+simply connected group scheme is supplied separately in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Agreement.lean`.
 
-Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
-the symplectic group scheme, or that any group below is finite, perfect, or simple. In particular
-the carrier is not claimed to be *the* simply connected Chevalley--Demazure group scheme of type
-`B₂`: no pinning datum is constructed for it here or in the files it imports, which say so
-themselves. The identification with the `B₂` diagram proved below is the one on numbered root
-characters stated in `rootGeneratorWeight_carrierNode_eq_root_simpleIndex`.
+Nothing here asserts that the carrier is reductive, that its weight torus is maximal, or that any
+group below is finite, perfect, or simple. This foundational module does not construct a pinning or
+identify the carrier with the simply connected Chevalley--Demazure group scheme of type `B₂`;
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Agreement.lean` proves that later comparison.
+The identification with the `B₂` diagram proved below is the one on numbered root characters stated
+in `rootGeneratorWeight_carrierNode_eq_root_simpleIndex`.
 
 The same carrier-and-Frobenius material on the branches already assembled is in
 `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean`,
@@ -130,6 +131,20 @@ def carrierNode : Fin d.1.rank ≃ Fin 2 :=
 @[simp] theorem carrierNode_apply (i : Fin d.1.rank) :
     d.carrierNode i = Equiv.swap 0 1 (finCongr d.rank_eq_two i) :=
   (rfl)
+
+/-- **The final carrier node is the long simple root.** The `B₂` diagram's long simple root is
+Bourbaki node zero, and `carrierNode` swaps the two numberings, so the long simple root is the one
+the node correspondence sends to the final node of the rank-two type-`C` carrier. -/
+theorem carrierNode_eq_one_iff (i : Fin d.1.rank) :
+    d.carrierNode i = 1 ↔ d.1.dynkinType.IsLongSimpleRoot i := by
+  have hcarrier : d.carrierNode i = 1 ↔ (i : ℕ) = 0 := by
+    rw [carrierNode_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right]
+    simp [Fin.ext_iff]
+  have hlong : d.1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) = 0 := by
+    rw [DynkinType.isLongSimpleRoot_congr d.dynkinType_eq]
+    simp only [DynkinType.isLongSimpleRoot_B, finCongr_apply, Fin.val_cast]
+    omega
+  exact hcarrier.trans hlong.symm
 
 /-! ## The ambient group and its simple root subgroups -/
 

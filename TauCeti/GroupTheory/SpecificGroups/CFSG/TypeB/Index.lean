@@ -24,7 +24,7 @@ diagram are separated instead by `TauCeti.RankTwoBLieIndex` and `TauCeti.TypeB2L
 This file is diagram-level indexing data only: it attaches no carrier, no endomorphism and no
 group, and nothing here asserts that a named group is finite or simple. The rank-two members are
 also served, beside the Suzuki family, in
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean`.
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Basic.lean`.
 
 ## Main declarations
 

@@ -128,8 +128,7 @@ theorem two_dvd_two_sub_eulerChar (t : PermutationTriple n) : (2 : ℤ) ∣ 2 - 
 
 /-! ### The Euler bound and genus -/
 
--- Source: Layer 0.6 of the Tau Ceti `BelyiMaps` roadmap, step 4 ("the general bound"). The proof
--- follows that roadmap's combinatorial transposition route, applied componentwise through
+-- The proof applies the combinatorial transposition route componentwise, through
 -- `TauCeti.card_add_orbitCount_le_length_add_two_mul_card_orbits`.
 /-- The Euler characteristic of a permutation triple is at most twice the number of orbits of
 its monodromy group. For a connected triple the orbit quotient has one element, recovering

@@ -86,7 +86,7 @@ that any group below is finite, perfect, or simple.
 -- The declaration order and the shape of the Frobenius API follow the sibling carrier
 -- attachments `TauCeti.TypeE6LieIndex` and `TauCeti.RankTwoBLieIndex`, in
 -- `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6.lean` and
--- `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean`.
+-- `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Basic.lean`.
 
 public section
 

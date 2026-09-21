@@ -37,6 +37,8 @@ evaluates `∫ t in Ioi 0, t ^ n * exp (-(a * t))` as `n ! / a ^ (n + 1)`,
 
 ## Main results
 
+* `integrable_expMeasure_iff`, `integral_expMeasure_eq` — integrability and integration against
+  the exponential law, transferred to the real density;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
@@ -85,12 +87,6 @@ private theorem exponentialPDFReal_apply (x : ℝ) :
     ring
   · rfl
 
-/-- The `ℝ≥0∞` density at rate `r`, read as a real number, is `exponentialPDFReal`. -/
-private theorem toReal_gammaPDF_one (hr : 0 < r) (x : ℝ) :
-    (gammaPDF 1 r x).toReal = exponentialPDFReal r x := by
-  unfold gammaPDF exponentialPDFReal
-  rw [ENNReal.toReal_ofReal (gammaPDFReal_nonneg one_pos hr x)]
-
 /-- `expMeasure r` is the Lebesgue measure weighted by its exponential density. -/
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
@@ -107,13 +103,11 @@ theorem ae_nonneg_expMeasure {r : ℝ} (hr : 0 < r) :
   filter_upwards [measure_eq_zero_iff_ae_notMem.mp hIio] with x hx
   exact not_lt.mp hx
 
-/-- `expMeasure r` is the Lebesgue measure weighted by the Gamma density of shape `1`.
-
-`rfl` closes this because both steps it crosses are definitional unfoldings: `expMeasure r` is
-`gammaMeasure 1 r`, which is `volume.withDensity (gammaPDF 1 r)`. The density is left in its
-`gammaPDF` spelling, the one `measurable_gammaPDF` and `toReal_gammaPDF_one` are stated in. -/
-private lemma expMeasure_eq_withDensity_gammaPDF (r : ℝ) :
-    expMeasure r = volume.withDensity (gammaPDF 1 r) := rfl
+/-- `expMeasure r` presented by its real-valued density, the form in which the shared density
+bridge of `TauCeti/Probability/Density.lean` applies. -/
+private lemma expMeasure_eq_withDensity_ofReal (r : ℝ) :
+    expMeasure r = volume.withDensity fun x => ENNReal.ofReal (exponentialPDFReal r x) :=
+  (rfl)
 
 /-- The density weight against `exp (t * x)`. This one identity is the integrand algebra behind
 both the moment-generating function and the exact integrability domain below. -/
@@ -122,27 +116,45 @@ private lemma density_mul_exp (r t x : ℝ) :
   have hexponent : -(r * x) + t * x = (t - r) * x := by ring
   rw [mul_assoc, ← exp_add, hexponent]
 
+section Transfer
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Integrability transfer.** A function is integrable against an exponential law with positive
+rate exactly when its density-weighted version is Lebesgue integrable. -/
+theorem integrable_expMeasure_iff (hr : 0 < r) {g : ℝ → E} :
+    Integrable g (expMeasure r) ↔ Integrable fun x => exponentialPDFReal r x • g x := by
+  rw [expMeasure_eq_withDensity_ofReal]
+  exact Probability.integrable_withDensity_ofReal_iff
+    (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr))
+
+/-- **Integral transfer.** An integral against an exponential law with positive rate is the
+density-weighted Lebesgue integral. -/
+theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
+    ∫ x, g x ∂expMeasure r = ∫ x, exponentialPDFReal r x • g x := by
+  rw [expMeasure_eq_withDensity_ofReal]
+  exact Probability.integral_withDensity_ofReal
+    (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr)) g
+
 /-- Every integral against `expMeasure r` is the half-line integral of the integrand weighted by
 the exponential density. This is the single reduction used by the moment and transform
 computations below. -/
-private lemma integral_expMeasure_Ioi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (hr : 0 < r) (f : ℝ → E) :
+private lemma integral_expMeasure_Ioi (hr : 0 < r) (f : ℝ → E) :
     ∫ x, f x ∂(expMeasure r) = ∫ x in Ioi 0, (r * exp (-(r * x))) • f x := by
-  rw [expMeasure_eq_withDensity_gammaPDF,
-    integral_withDensity_eq_integral_toReal_smul (measurable_gammaPDF 1 r)
-      (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
+  rw [integral_expMeasure_eq hr]
   have hIci :
-      ∫ x, (gammaPDF 1 r x).toReal • f x =
-        ∫ x in Ici 0, (gammaPDF 1 r x).toReal • f x :=
+      ∫ x, exponentialPDFReal r x • f x =
+        ∫ x in Ici 0, exponentialPDFReal r x • f x :=
     (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-      rw [toReal_gammaPDF_one hr, exponentialPDFReal_apply,
-        ite_eq_right (by simpa [mem_Ici] using hx), zero_smul]).symm
+      rw [exponentialPDFReal_apply, ite_eq_right (by simpa [mem_Ici] using hx), zero_smul]).symm
   have hdens :
-      ∫ x in Ici 0, (gammaPDF 1 r x).toReal • f x =
+      ∫ x in Ici 0, exponentialPDFReal r x • f x =
         ∫ x in Ici 0, (r * exp (-(r * x))) • f x :=
     setIntegral_congr_fun measurableSet_Ici fun x hx => by
-      rw [toReal_gammaPDF_one hr, exponentialPDFReal_apply, ite_eq_left (mem_Ici.mp hx)]
+      rw [exponentialPDFReal_apply, ite_eq_left (mem_Ici.mp hx)]
   rw [hIci, hdens, integral_Ici_eq_integral_Ioi]
+
+end Transfer
 
 /-- The moment integrand is the Gamma integrand supported on `Ioi 0`. This is used to prove
 integrability; `integral_expMeasure_Ioi` only identifies integral values. This needs `n ≠ 0`:
@@ -163,19 +175,6 @@ private theorem integrand_eq_indicator (hn : n ≠ 0) :
       rw [hx0, zero_pow hn, mul_zero]
     · ring
 
-/-- Integrability against `expMeasure` is integrability of the density product against `volume`. -/
-private theorem integrable_expMeasure_iff (hr : 0 < r) (g : ℝ → ℝ) :
-    Integrable g (expMeasure r)
-      ↔ Integrable (fun x => exponentialPDFReal r x * g x) volume := by
-  have htoReal : ∀ x : ℝ, g x * (gammaPDF 1 r x).toReal = exponentialPDFReal r x * g x := by
-    intro x
-    rw [toReal_gammaPDF_one hr]
-    ring
-  rw [expMeasure_eq_withDensity_gammaPDF,
-    integrable_withDensity_iff (measurable_gammaPDF 1 r)
-      (ae_of_all _ fun _ => ENNReal.ofReal_lt_top),
-    funext htoReal]
-
 /-- **Every moment of the exponential law is integrable.** This is not implied by the moment
 formula below: Lean's integral is defined for non-integrable functions too, so an integral equality
 alone says nothing about finiteness. -/
@@ -185,7 +184,9 @@ theorem integrable_pow_expMeasure (hr : 0 < r) (n : ℕ) :
   have hprob : IsProbabilityMeasure (expMeasure r) := isProbabilityMeasure_expMeasure hr
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rw [integrable_expMeasure_iff hr, integrand_eq_indicator hn,
+  rw [integrable_expMeasure_iff hr]
+  simp only [smul_eq_mul]
+  rw [integrand_eq_indicator hn,
     integrable_indicator_iff measurableSet_Ioi]
   exact (integrableOn_pow_mul_exp_neg_mul_Ioi n hr).const_mul r
 
@@ -235,6 +236,7 @@ against an exponential law with positive rate `r` exactly when `t < r`. -/
 lemma integrable_exp_mul_expMeasure_iff (hr : 0 < r) :
     Integrable (fun x => exp (t * x)) (expMeasure r) ↔ t < r := by
   rw [integrable_expMeasure_iff hr]
+  simp only [smul_eq_mul]
   have hfun : (fun x : ℝ => exponentialPDFReal r x * exp (t * x)) =
       (Set.Ici (0 : ℝ)).indicator (fun x => r * exp ((t - r) * x)) := by
     funext x
