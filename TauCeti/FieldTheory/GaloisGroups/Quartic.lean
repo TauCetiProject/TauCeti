@@ -48,8 +48,8 @@ rows for an irreducible resolvent cubic.
 * `TauCeti.hasGaloisLabel_four_four_iff`, `TauCeti.hasGaloisLabel_four_three_iff`,
   `TauCeti.hasGaloisLabel_four_one_iff`, `TauCeti.hasGaloisLabel_four_zero_or_two_iff`: **the
   quartic root-test table**, one theorem for each of its four rows.
-* The corresponding theorems suffixed `_resolvent_irreducible`, `_resolvent_splits`, or
-  `_resolvent_existsUnique_isRoot` state the classical decision table using the resolvent
+* The corresponding theorems suffixed `_irreducible_resolvent`, `_splits_resolvent`, or
+  `_existsUnique_isRoot_resolvent` state the classical decision table using the resolvent
   predicates from the roadmap.
 
 ## References
@@ -210,7 +210,7 @@ theorem hasGaloisLabel_four_zero_or_two_iff :
 /-- **The irreducible-resolvent row for `4T5`.** Away from characteristic `2`, a monic
 polynomial has label `4T5` exactly when it is an irreducible quartic with non-square
 discriminant and irreducible resolvent cubic. -/
-theorem hasGaloisLabel_four_four_iff_resolvent_irreducible :
+theorem hasGaloisLabel_four_four_iff_irreducible_resolvent :
     HasGaloisLabel f (⟨4, by simp⟩ : TransitiveGroupIndex 4) ↔
       Irreducible f ∧ f.natDegree = 4 ∧ ¬ IsSquare f.discr ∧
         Irreducible (quarticD4Spec.specialize F f) := by
@@ -222,7 +222,7 @@ theorem hasGaloisLabel_four_four_iff_resolvent_irreducible :
 /-- **The irreducible-resolvent row for `4T4`.** Away from characteristic `2`, a monic
 polynomial has label `4T4` exactly when it is an irreducible quartic with square discriminant
 and irreducible resolvent cubic. -/
-theorem hasGaloisLabel_four_three_iff_resolvent_irreducible :
+theorem hasGaloisLabel_four_three_iff_irreducible_resolvent :
     HasGaloisLabel f (⟨3, by simp⟩ : TransitiveGroupIndex 4) ↔
       Irreducible f ∧ f.natDegree = 4 ∧ IsSquare f.discr ∧
         Irreducible (quarticD4Spec.specialize F f) := by
@@ -234,7 +234,7 @@ theorem hasGaloisLabel_four_three_iff_resolvent_irreducible :
 /-- **The split-resolvent row for `4T2`.** Away from characteristic `2`, a monic polynomial
 has label `4T2` exactly when it is an irreducible quartic whose resolvent cubic splits completely
 over the base field. The square-discriminant condition follows from splitting. -/
-theorem hasGaloisLabel_four_one_iff_resolvent_splits :
+theorem hasGaloisLabel_four_one_iff_splits_resolvent :
     HasGaloisLabel f (⟨1, by simp⟩ : TransitiveGroupIndex 4) ↔
       Irreducible f ∧ f.natDegree = 4 ∧ (quarticD4Spec.specialize F f).Splits := by
   constructor
@@ -265,7 +265,7 @@ theorem hasGaloisLabel_four_one_iff_resolvent_splits :
 polynomial has label `4T1` or `4T3` exactly when it is an irreducible quartic whose resolvent
 cubic has exactly one root in the base field. The non-square-discriminant condition follows from
 the uniqueness of the root. -/
-theorem hasGaloisLabel_four_zero_or_two_iff_resolvent_existsUnique_isRoot :
+theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
     (HasGaloisLabel f (⟨0, by simp⟩ : TransitiveGroupIndex 4) ∨
         HasGaloisLabel f (⟨2, by simp⟩ : TransitiveGroupIndex 4)) ↔
       Irreducible f ∧ f.natDegree = 4 ∧
