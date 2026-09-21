@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.BrauerGroup.Group
+public import Mathlib.Algebra.Central.Basic
+public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
+import Mathlib.RingTheory.SimpleRing.Congr
+import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -20,18 +23,16 @@ Brauer-valued invariants.
 
 ## Main results
 
-* `TauCeti.QuaternionAlgebra.isCentral_of_mul_discr_ne_zero`: the general nondegenerate
-  quaternion algebra is central.
+* `TauCeti.QuaternionAlgebra.isCentral_of_coeff_ne_zero`: a quaternion algebra with nonzero
+  `j`-square is central.
 * `TauCeti.QuaternionAlgebra.isSimpleRing_of_mul_discr_ne_zero`: the same algebra is simple.
 * `TauCeti.QuaternionAlgebra.mem_center_iff`: a central element of a unit-parameter symbol has
   zero imaginary coordinates.
 * `TauCeti.QuaternionAlgebra.instIsCentral`: unit-parameter symbol algebras are central.
 * `TauCeti.QuaternionAlgebra.instIsSimpleRing`: unit-parameter symbol algebras are simple.
-* `TauCeti.BrauerGroup.quaternionClass`: the Brauer class of a unit-parameter symbol algebra.
 
 The split/division dichotomy used here is the norm-equation criterion in
-`TauCeti.Algebra.Quaternion.SplittingCriterion`; the Brauer-group constructions are those of
-`TauCeti.Algebra.BrauerGroup.Group`.
+`TauCeti.Algebra.Quaternion.SplittingCriterion`.
 -/
 
 public section
@@ -146,7 +147,8 @@ private def completeSquareEquiv (a b c : K) :
           (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c])
         rw [completeSquareBasis_lift_apply_j, completeSquareInvBasis_lift_apply_j])
 
-private theorem center_coordinates_eq_zero {x : ℍ[K,(a : K),(b : K)]}
+private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
+    {x : ℍ[K,a,(b : K)]}
     (hx : x ∈ Subalgebra.center K ℍ[K,(a : K),(b : K)]) :
     x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
   rw [Subalgebra.mem_center_iff] at hx
@@ -170,8 +172,8 @@ private theorem center_coordinates_eq_zero {x : ℍ[K,(a : K),(b : K)]}
   · exact (mul_eq_zero.mp hK).resolve_left (mul_ne_zero h2 hb)
 
 /-- A central element of a unit-parameter quaternion symbol has no imaginary part. -/
-theorem mem_center_iff {x : ℍ[K,(a : K),(b : K)]} :
-    x ∈ Subalgebra.center K ℍ[K,(a : K),(b : K)] ↔
+theorem mem_center_iff (a : K) (b : Kˣ) {x : ℍ[K,a,(b : K)]} :
+    x ∈ Subalgebra.center K ℍ[K,a,(b : K)] ↔
       x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
   constructor
   · exact center_coordinates_eq_zero a b
@@ -192,10 +194,10 @@ theorem mem_center_iff {x : ℍ[K,(a : K),(b : K)]} :
       ring
 
 /-- A unit-parameter quaternion symbol is central over its base field. -/
-instance instIsCentral : Algebra.IsCentral K ℍ[K,(a : K),(b : K)] :=
+instance instIsCentral (a : K) (b : Kˣ) : Algebra.IsCentral K ℍ[K,a,(b : K)] :=
   ⟨fun x hx ↦ Algebra.mem_bot.mpr ⟨x.re, by
     -- The algebra map is the scalar inclusion; expose it before comparing coordinates.
-    change (x.re : ℍ[K,(a : K),(b : K)]) = x
+    change (x.re : ℍ[K,a,(b : K)]) = x
     refine _root_.QuaternionAlgebra.ext rfl ?_ ?_ ?_
     · simpa using ((mem_center_iff a b).mp hx |>.1).symm
     · simpa using ((mem_center_iff a b).mp hx |>.2.1).symm
@@ -222,50 +224,25 @@ private theorem isSimpleRing_of_isUnit_or_split :
 instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] :=
   isSimpleRing_of_isUnit_or_split a b
 
-omit [Invertible (2 : K)] in
-private theorem discr_ne_zero_of_mul_ne_zero {a b c : K}
-    (h : c * (b ^ 2 + 4 * a) ≠ 0) : b ^ 2 + 4 * a ≠ 0 := by
-  intro hd
-  exact h (by simp [hd])
-
-omit [Invertible (2 : K)] in
-private theorem coeff_ne_zero_of_mul_ne_zero {a b c : K}
-    (h : c * (b ^ 2 + 4 * a) ≠ 0) : c ≠ 0 := by
-  intro hc
-  exact h (by simp [hc])
-
-/-- A quaternion algebra with nonzero discriminant and nonzero `j`-square is central. -/
-theorem isCentral_of_mul_discr_ne_zero {a b c : K}
-    (h : c * (b ^ 2 + 4 * a) ≠ 0) :
+/-- A quaternion algebra with nonzero `j`-square is central. -/
+theorem isCentral_of_coeff_ne_zero {a b c : K}
+    (hc : c ≠ 0) :
     Algebra.IsCentral K ℍ[K,a,b,c] := by
-  have hd := discr_ne_zero_of_mul_ne_zero h
-  have hc := coeff_ne_zero_of_mul_ne_zero h
-  let u : Kˣ := Units.mk0 (b ^ 2 + 4 * a) hd
   let v : Kˣ := Units.mk0 c hc
-  have htarget : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,c] := instIsCentral u v
+  have htarget : Algebra.IsCentral K ℍ[K,b ^ 2 + 4 * a,0,c] :=
+    instIsCentral (b ^ 2 + 4 * a) v
   exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,b ^ 2 + 4 * a,0,c])
     (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
 
 /-- A quaternion algebra with nonzero discriminant and nonzero `j`-square is simple. -/
 theorem isSimpleRing_of_mul_discr_ne_zero {a b c : K}
     (h : c * (b ^ 2 + 4 * a) ≠ 0) : IsSimpleRing ℍ[K,a,b,c] := by
-  have hd := discr_ne_zero_of_mul_ne_zero h
-  have hc := coeff_ne_zero_of_mul_ne_zero h
+  have ⟨hc, hd⟩ := mul_ne_zero_iff.mp h
   let u : Kˣ := Units.mk0 (b ^ 2 + 4 * a) hd
   let v : Kˣ := Units.mk0 c hc
   have htarget : IsSimpleRing ℍ[K,b ^ 2 + 4 * a,0,c] := instIsSimpleRing u v
   exact IsSimpleRing.of_ringEquiv (completeSquareEquiv a b c).symm.toRingEquiv htarget
 
 end QuaternionAlgebra
-
-namespace BrauerGroup
-
-variable {K : Type*} [Field K] [Invertible (2 : K)]
-
-/-- The Brauer class of the quaternion symbol `(a,b)`. -/
-noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
-  BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)])
-
-end BrauerGroup
 
 end TauCeti

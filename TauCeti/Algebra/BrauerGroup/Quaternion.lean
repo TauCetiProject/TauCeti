@@ -19,6 +19,9 @@ public import TauCeti.Algebra.BrauerGroup.Splitting
 -- quaternion conjugation `Quaternion.starAe`, and `TauCeti.Quaternion.instIsCentral`, which is what
 -- puts `ℍ[ℝ]` in the scope of the Brauer-group API at all.
 public import TauCeti.Algebra.CentralSimple.Quaternion
+-- `TauCeti.Algebra.Quaternion.CentralSimple` supplies centrality and simplicity for the general
+-- symbol algebra, which are the instances needed by `CSA.of K ℍ[K,a,b]` below.
+public import TauCeti.Algebra.Quaternion.CentralSimple
 -- Non-public: the base-change homomorphism and the fundamental theorem of algebra are used only by
 -- the worked examples closing the file, so downstream importers do not pay for them.
 import Mathlib.Analysis.Complex.Polynomial.Basic
@@ -42,6 +45,8 @@ classification of the finite-dimensional real division algebras with centre `ℝ
 
 ## Main results
 
+* `TauCeti.BrauerGroup.quaternionClass`: the Brauer class of a quaternion symbol over a field with
+  `2` invertible.
 * `TauCeti.Quaternion.mk_ne_one`: the Brauer class of `ℍ[ℝ]` is not the identity.
 * `TauCeti.Quaternion.orderOf_mk_eq_two`: **that class has order exactly `2`**, so `BrauerGroup ℝ`
   contains a copy of `ℤ/2`; `TauCeti.Quaternion.nontrivial_brauerGroup` is the qualitative form.
@@ -60,6 +65,20 @@ public section
 open scoped Quaternion
 
 namespace TauCeti
+
+namespace BrauerGroup
+
+variable {K : Type*} [Field K] [Invertible (2 : K)]
+
+/-- The Brauer class of the quaternion symbol `(a,b)`. -/
+noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
+  BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)])
+
+/-- The defining equation for `quaternionClass`. -/
+theorem quaternionClass_def (a b : Kˣ) :
+    quaternionClass a b = BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)]) := (rfl)
+
+end BrauerGroup
 
 namespace Quaternion
 
