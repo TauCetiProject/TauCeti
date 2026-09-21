@@ -89,9 +89,8 @@ private abbrev C1HolderJet := (E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)
 
 `max ‖f‖_∞ (‖Df‖_∞ + [Df]_α)`.
 -/
--- The graph representation stays exposed because the higher-order `C^{k,α}` spaces recursively
--- use this type as an ambient factor; its inherited normed-space instances must remain reducible
--- when those product spaces are constructed.
+-- The module system requires exposure while the declarations below construct and project through
+-- this graph alias. The final `irreducible` attribute restores the abstraction boundary.
 @[expose] def _root_.TauCeti.C1HolderSpace : Type _ :=
   let graph : Submodule ℝ ((E →ᵇ F) × HolderSpace α E (E →L[ℝ] F)) :=
     { carrier := {J | ∀ x, HasFDerivAt (J.1 : E → F) (J.2 x) x}
@@ -137,8 +136,10 @@ private theorem norm_toJet (f : C1HolderSpace α E F) : ‖toJet f‖ = ‖f‖ 
   Submodule.norm_coe f
 
 /-- A bounded `C^{1,α}` element coerces to its underlying function from `E` to `F`. -/
-instance : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
+instance instCoeFun : CoeFun (C1HolderSpace α E F) fun _ ↦ E → F :=
   ⟨fun f ↦ f.1.1⟩
+
+attribute [irreducible] instCoeFun
 
 /-- The underlying bounded continuous function of a bounded `C^{1,α}` map. -/
 def toBoundedContinuousFunction (f : C1HolderSpace α E F) : E →ᵇ F := f.1.1
@@ -155,7 +156,9 @@ private theorem fderiv_eq_snd (f : C1HolderSpace α E F) :
 
 @[simp]
 theorem toBoundedContinuousFunction_apply (f : C1HolderSpace α E F) (x : E) :
-    toBoundedContinuousFunction f x = f x := (rfl)
+    toBoundedContinuousFunction f x = f x := by
+  rw [instCoeFun]
+  rfl
 
 /-- Construct a bounded `C^{1,α}` map from a function, its Hölder derivative, and the derivative
 identity. -/
@@ -180,7 +183,9 @@ def const (c : F) : C1HolderSpace α E F :=
     exact hasFDerivAt_const (x := x) (c := c)
 
 @[simp]
-theorem const_apply (c : F) (x : E) : const (α := α) (E := E) c x = c := (rfl)
+theorem const_apply (c : F) (x : E) : const (α := α) (E := E) c x = c := by
+  rw [← toBoundedContinuousFunction_apply, const, toBoundedContinuousFunction_mk]
+  exact BoundedContinuousFunction.const_apply' x c
 
 /-- A constant bounded `C^{1,α}` map has zero derivative. -/
 @[simp]
@@ -190,7 +195,9 @@ theorem fderiv_const (c : F) : fderiv (const (α := α) (E := E) c) = 0 := by
 /-- The recorded derivative is the Fréchet derivative of the underlying function. -/
 theorem hasFDerivAt (f : C1HolderSpace α E F) (x : E) :
     HasFDerivAt (f : E → F) (fderiv f x) x :=
-  f.2 x
+  by
+    rw [instCoeFun, fderiv]
+    exact f.2 x
 
 /-- The derivative accessor agrees with Mathlib's `fderiv`. -/
 @[simp]
@@ -230,17 +237,18 @@ theorem memHolder_fderiv (f : C1HolderSpace α E F) :
 theorem ext {f g : C1HolderSpace α E F} (h : ∀ x, f x = g x) : f = g := by
   have hvalue : toBoundedContinuousFunction f = toBoundedContinuousFunction g := by
     ext x
+    rw [toBoundedContinuousFunction_apply, toBoundedContinuousFunction_apply]
     exact h x
   apply Subtype.ext
   apply Prod.ext hvalue
   apply HolderSpace.ext
   intro x
   calc
-    fderiv f x = _root_.fderiv ℝ (f : E → F) x := (fderiv_eq f x).symm
-    _ = _root_.fderiv ℝ (g : E → F) x := by
-      congr 1
-      exact congrArg DFunLike.coe hvalue
-    _ = fderiv g x := fderiv_eq g x
+      fderiv f x = _root_.fderiv ℝ (f : E → F) x := (fderiv_eq f x).symm
+      _ = _root_.fderiv ℝ (g : E → F) x := by
+        congr 1
+        exact funext h
+      _ = fderiv g x := fderiv_eq g x
 
 /-- Forgetting the derivative defines a continuous linear map to bounded continuous functions. -/
 def valueL : C1HolderSpace α E F →L[ℝ] (E →ᵇ F) :=
@@ -301,13 +309,15 @@ theorem zero_apply (x : E) : (0 : C1HolderSpace α E F) x = 0 := by
 theorem add_apply (f g : C1HolderSpace α E F) (x : E) :
     (f + g) x = f x + g x := by
   rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_add]
-  rfl
+  change toBoundedContinuousFunction f x + toBoundedContinuousFunction g x = f x + g x
+  rw [toBoundedContinuousFunction_apply, toBoundedContinuousFunction_apply]
 
 @[simp]
 theorem smul_apply (c : ℝ) (f : C1HolderSpace α E F) (x : E) :
     (c • f) x = c • f x := by
   rw [← toBoundedContinuousFunction_apply, toBoundedContinuousFunction_smul]
-  rfl
+  change c • toBoundedContinuousFunction f x = c • f x
+  rw [toBoundedContinuousFunction_apply]
 
 /-- The `C^{1,α}` norm is the maximum of the supremum norm of the function and the
 supremum-plus-Hölder norm of its derivative. -/
@@ -358,6 +368,9 @@ noncomputable instance instCompleteSpace [CompleteSpace F] :
     CompleteSpace (C1HolderSpace α E F) := by
   unfold C1HolderSpace
   exact (isClosed_c1HolderSpace (α := α) (E := E) (F := F)).completeSpace_coe
+
+attribute [irreducible] instNormedAddCommGroup instNormedSpace
+  _root_.TauCeti.C1HolderSpace
 
 end C1HolderSpace
 
