@@ -40,8 +40,8 @@ abelian pro-`p` groups is stated.
 * `TauCeti.IsProP.padicPow_natCast`, `TauCeti.IsProP.padicPow_intCast`: the power extends the
   natural and integer powers.
 * `TauCeti.IsProP.padicPow_add`, `TauCeti.IsProP.padicPow_mul`: the exponent laws; and
-  `TauCeti.IsProP.inv_padicPow`, `TauCeti.IsProP.mul_padicPow` in the base, the latter for an
-  abelian group.
+  `TauCeti.IsProP.inv_padicPow`, `TauCeti.IsProP.mul_padicPow` in the base, the latter for
+  commuting elements.
 * `TauCeti.IsProP.continuous_padicPow`: the action `ℤ_[p] × A → A` is jointly continuous.
 * `TauCeti.IsProP.eq_padicPow_of_continuous`: the power is the unique continuous extension of
   the natural powers.
@@ -119,15 +119,15 @@ private theorem mk_padicPow_padicPowIdx (hA : IsProP p A) (a : A) (l : ℤ_[p])
   (existsUnique_forall_mk_eq (hA.padicPowFamily a l) (hA.padicPow_compat a l)).choose_spec.1 U
 
 /-- **The defining description of the `p`-adic power.** In the quotient by an open normal
-subgroup killed by `p ^ n`, the `p`-adic power of `a` by `l` is the ordinary power of `a` by
-the truncation `l.appr n`. -/
+subgroup where the image of `a` is killed by `p ^ n`, the `p`-adic power of `a` by `l` is the
+ordinary power of `a` by the truncation `l.appr n`. -/
 theorem mk_padicPow (hA : IsProP p A) (a : A) (l : ℤ_[p]) {U : OpenNormalSubgroup A} {n : ℕ}
-    (hn : ∀ g : A ⧸ U.toSubgroup, g ^ p ^ n = 1) :
+    (hn : (a : A ⧸ U.toSubgroup) ^ p ^ n = 1) :
     ((hA.padicPow a l : A) : A ⧸ U.toSubgroup) = (a : A ⧸ U.toSubgroup) ^ l.appr n := by
   rw [hA.mk_padicPow_padicPowIdx a l U]
   refine (PadicInt.pow_appr_eq_pow_appr (n := max (hA.padicPowIdx U) n) l
     (hA.pow_pow_padicPowIdx_eq_one U _) (le_max_left _ _)).symm.trans ?_
-  exact PadicInt.pow_appr_eq_pow_appr (n := max (hA.padicPowIdx U) n) l (hn _)
+  exact PadicInt.pow_appr_eq_pow_appr (n := max (hA.padicPowIdx U) n) l hn
     (le_max_right _ _)
 
 /-- The `p`-adic power extends the natural-number powers. -/
@@ -136,7 +136,7 @@ theorem padicPow_natCast (hA : IsProP p A) (a : A) (k : ℕ) :
     hA.padicPow a (k : ℤ_[p]) = a ^ k := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
-  rw [hA.mk_padicPow a _ hn, QuotientGroup.mk_pow]
+  rw [hA.mk_padicPow a _ (hn _), QuotientGroup.mk_pow]
   exact pow_eq_pow_of_modEq (PadicInt.appr_natCast_modEq k n) (hn _)
 
 /-- The `p`-adic power by `0` is trivial. -/
@@ -154,8 +154,8 @@ theorem padicPow_add (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
     hA.padicPow a (l + l') = hA.padicPow a l * hA.padicPow a l' := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
-  rw [QuotientGroup.mk_mul, hA.mk_padicPow a (l + l') hn, hA.mk_padicPow a l hn,
-    hA.mk_padicPow a l' hn, ← pow_add]
+  rw [QuotientGroup.mk_mul, hA.mk_padicPow a (l + l') (hn _),
+    hA.mk_padicPow a l (hn _), hA.mk_padicPow a l' (hn _), ← pow_add]
   exact pow_eq_pow_of_modEq (PadicInt.appr_add_modEq l l' n) (hn _)
 
 /-- Iterating the `p`-adic power multiplies the exponents. -/
@@ -163,8 +163,8 @@ theorem padicPow_mul (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
     hA.padicPow a (l * l') = hA.padicPow (hA.padicPow a l) l' := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
-  rw [hA.mk_padicPow a (l * l') hn, hA.mk_padicPow (hA.padicPow a l) l' hn,
-    hA.mk_padicPow a l hn, ← pow_mul]
+  rw [hA.mk_padicPow a (l * l') (hn _),
+    hA.mk_padicPow (hA.padicPow a l) l' (hn _), hA.mk_padicPow a l (hn _), ← pow_mul]
   exact pow_eq_pow_of_modEq (PadicInt.appr_mul_modEq l l' n) (hn _)
 
 /-- Every `p`-adic power of `1` is `1`. -/
@@ -172,7 +172,7 @@ theorem padicPow_mul (hA : IsProP p A) (a : A) (l l' : ℤ_[p]) :
 theorem one_padicPow (hA : IsProP p A) (l : ℤ_[p]) : hA.padicPow (1 : A) l = 1 := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
-  rw [hA.mk_padicPow 1 l hn]
+  rw [hA.mk_padicPow 1 l (hn _)]
   simp
 
 /-- The `p`-adic power of an inverse is the inverse of the `p`-adic power. -/
@@ -181,7 +181,7 @@ theorem inv_padicPow (hA : IsProP p A) (a : A) (l : ℤ_[p]) :
     hA.padicPow a⁻¹ l = (hA.padicPow a l)⁻¹ := by
   refine eq_of_forall_mk_eq fun U ↦ ?_
   obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
-  rw [QuotientGroup.mk_inv, hA.mk_padicPow a⁻¹ l hn, hA.mk_padicPow a l hn,
+  rw [QuotientGroup.mk_inv, hA.mk_padicPow a⁻¹ l (hn _), hA.mk_padicPow a l (hn _),
     QuotientGroup.mk_inv, inv_pow]
 
 /-- Negating the exponent inverts the `p`-adic power. -/
@@ -210,7 +210,7 @@ theorem continuous_padicPow (hA : IsProP p A) :
       = (fun cg : ZMod (p ^ n) × (A ⧸ U.toSubgroup) ↦ cg.2 ^ cg.1.val) ∘
         fun q : ℤ_[p] × A ↦ (PadicInt.toZModPow n q.1, (q.2 : A ⧸ U.toSubgroup)) := by
     funext q
-    simpa [PadicInt.val_toZModPow_eq_appr] using hA.mk_padicPow q.2 q.1 hn
+    simpa [PadicInt.val_toZModPow_eq_appr] using hA.mk_padicPow q.2 q.1 (hn _)
   rw [hfun]
   exact continuous_of_discreteTopology.comp
     (((PadicInt.continuous_toZModPow n).comp continuous_fst).prodMk
@@ -225,6 +225,16 @@ theorem eq_padicPow_of_continuous (hA : IsProP p A) {a : A} {f : ℤ_[p] → A} 
   exact congrFun (PadicInt.denseRange_natCast.equalizer hf hcont
     (funext fun k ↦ by simp [hnat k])) l
 
+/-- The `p`-adic power is multiplicative on commuting base elements. -/
+@[simp]
+theorem mul_padicPow (hA : IsProP p A) (a b : A) (hab : Commute a b) (l : ℤ_[p]) :
+    hA.padicPow (a * b) l = hA.padicPow a l * hA.padicPow b l := by
+  refine eq_of_forall_mk_eq fun U ↦ ?_
+  obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
+  rw [QuotientGroup.mk_mul, hA.mk_padicPow (a * b) l (hn _),
+    hA.mk_padicPow a l (hn _), hA.mk_padicPow b l (hn _), QuotientGroup.mk_mul]
+  exact (hab.map (QuotientGroup.mk' U.toSubgroup)).mul_pow (l.appr n)
+
 end Group
 
 section CommGroup
@@ -232,26 +242,18 @@ section CommGroup
 variable {p : ℕ} [hp : Fact p.Prime] {A : Type u} [CommGroup A] [TopologicalSpace A]
   [IsTopologicalGroup A] [CompactSpace A] [TotallyDisconnectedSpace A]
 
-/-- In an abelian pro-`p` group the `p`-adic power is multiplicative in the base. -/
-@[simp]
-theorem mul_padicPow (hA : IsProP p A) (a b : A) (l : ℤ_[p]) :
-    hA.padicPow (a * b) l = hA.padicPow a l * hA.padicPow b l := by
-  refine eq_of_forall_mk_eq fun U ↦ ?_
-  obtain ⟨n, hn⟩ := hA.exists_forall_pow_pow_eq_one U
-  rw [QuotientGroup.mk_mul, hA.mk_padicPow (a * b) l hn, hA.mk_padicPow a l hn,
-    hA.mk_padicPow b l hn, QuotientGroup.mk_mul, mul_pow]
-
 /-- **An abelian pro-`p` group is a `ℤ_[p]`-module**, with `l` acting as the `p`-adic power
 by `l`. The prime is not determined by `A`, so this is a definition rather than an instance;
 consumers introduce it with `letI := hA.module`. -/
-@[instance_reducible]
+@[reducible]
 noncomputable def module (hA : IsProP p A) : Module ℤ_[p] (Additive A) where
   smul l x := Additive.ofMul (hA.padicPow x.toMul l)
   one_smul x := congrArg Additive.ofMul (hA.padicPow_one x.toMul)
   mul_smul l l' x := congrArg Additive.ofMul
     ((congrArg (hA.padicPow x.toMul) (mul_comm l l')).trans (hA.padicPow_mul x.toMul l' l))
   smul_zero l := congrArg Additive.ofMul (hA.one_padicPow l)
-  smul_add l x y := congrArg Additive.ofMul (hA.mul_padicPow x.toMul y.toMul l)
+  smul_add l x y := congrArg Additive.ofMul
+    (hA.mul_padicPow x.toMul y.toMul (Commute.all _ _) l)
   add_smul l l' x := congrArg Additive.ofMul (hA.padicPow_add x.toMul l l')
   zero_smul x := congrArg Additive.ofMul (hA.padicPow_zero x.toMul)
 
