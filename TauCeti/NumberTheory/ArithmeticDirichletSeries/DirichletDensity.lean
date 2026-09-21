@@ -16,11 +16,11 @@ import all Mathlib.NumberTheory.NumberField.DirichletDensity
 /-!
 # Convergence of the prime-ideal zeta sum, and the calculus of Dirichlet density
 
-Mathlib defines the partial sum `NumberField.Set.primeIdealZetaSum S s = ∑_{𝔭 ∈ S} N(𝔭) ^ (-s)`
-over a set `S` of height-one primes of `𝓞 K`, and says that `S` has Dirichlet density `δ` when the
-ratio `primeIdealZetaSum S s / primeIdealZetaSum univ s` tends to `δ` as `s → 1⁺`. What Mathlib
-does not record is that those sums converge at all: their summability is exactly the convergence
-of the Dedekind zeta series to the right of `1`, which is
+Mathlib defines the prime-ideal zeta sum `NumberField.Set.primeIdealZetaSum S s` as the Dirichlet
+series `∑_{𝔭 ∈ S} N(𝔭) ^ (-s)` over a set `S` of height-one primes of `𝓞 K`, and says that `S` has
+Dirichlet density `δ` when the ratio `primeIdealZetaSum S s / primeIdealZetaSum univ s` tends to
+`δ` as `s → 1⁺`. What Mathlib does not record is that those sums converge at all: their
+summability is exactly the convergence of the Dedekind zeta series to the right of `1`, which is
 `TauCeti.summable_absNorm_rpow_neg_iff`. This file restricts that convergence to the prime family
 and spends it on the part of the density calculus that does not need the all-prime asymptotic of
 the denominator.
@@ -32,7 +32,7 @@ the denominator.
 * `NumberField.Set.primeIdealZetaSum_mono`, `NumberField.Set.primeIdealZetaSum_union`,
   `NumberField.Set.primeIdealZetaSum_add_primeIdealZetaSum_compl` and
   `NumberField.Set.primeIdealZetaSum_univ_pos`: monotonicity, additivity over a disjoint union,
-  complementation, and positivity of the partial sums at `s > 1`.
+  complementation, and positivity of the prime-ideal zeta sums at `s > 1`.
 * `NumberField.Set.IsLowerDirichletDensityBound` and
   `NumberField.Set.IsUpperDirichletDensityBound`: the one-sided epsilon bounds on the density
   ratio, characterized by `NumberField.Set.isLowerDirichletDensityBound_iff` and
@@ -53,9 +53,9 @@ The one-sided bounds are deliberately *bounds*: every `δ' ≤ δ` is again a lo
 `δ` is exactly one with density `δ`. Genuine lower and upper densities would be the `liminf` and
 `limsup` of the ratio, are unique, and are not defined here.
 
-Every statement about the partial sums carries the hypothesis `1 < s`, without which the family is
-not summable and `tsum` returns its junk value `0`. The density laws need it only on a right
-neighbourhood of `1`, where it is automatic.
+Every statement about the prime-ideal zeta sums carries the hypothesis `1 < s`, without which the
+family is not summable and `tsum` returns its junk value `0`. The density laws need it only on a
+right neighbourhood of `1`, where it is automatic.
 
 ## References
 
@@ -95,10 +95,9 @@ theorem summable_absNorm_rpow_neg (S : Set (HeightOneSpectrum (𝓞 K))) {s : �
     Summable fun 𝔭 : S ↦ (Ideal.absNorm (𝔭 : HeightOneSpectrum (𝓞 K)).asIdeal : ℝ) ^ (-s) :=
   (_root_.NumberField.summable_absNorm_rpow_neg hs).subtype _
 
-/-! ### Elementary algebra of the partial sums -/
+/-! ### Elementary algebra of the prime-ideal zeta sums -/
 
-/-- The partial sums of the prime-ideal zeta series are monotone in the set of primes, at every
-real `s > 1`. -/
+/-- The prime-ideal zeta sums are monotone in the set of primes, at every real `s > 1`. -/
 theorem primeIdealZetaSum_mono (hST : S ⊆ T) (hs : 1 < s) :
     S.primeIdealZetaSum s ≤ T.primeIdealZetaSum s := by
   rw [primeIdealZetaSum_def, primeIdealZetaSum_def]
@@ -107,8 +106,8 @@ theorem primeIdealZetaSum_mono (hST : S ⊆ T) (hs : 1 < s) :
     (fun _ _ ↦ by positivity) (fun _ ↦ le_rfl)
     (S.summable_absNorm_rpow_neg hs) (T.summable_absNorm_rpow_neg hs)
 
-/-- The partial sums of the prime-ideal zeta series are additive over a disjoint union of sets of
-primes, at every real `s > 1`. -/
+/-- The prime-ideal zeta sums are additive over a disjoint union of sets of primes, at every real
+`s > 1`. -/
 theorem primeIdealZetaSum_union (hd : Disjoint S T) (hs : 1 < s) :
     (S ∪ T).primeIdealZetaSum s = S.primeIdealZetaSum s + T.primeIdealZetaSum s := by
   rw [primeIdealZetaSum_def, primeIdealZetaSum_def, primeIdealZetaSum_def]
