@@ -110,7 +110,6 @@ theorem isIsotropic_codeInBaseDiscriminant (C : AdditiveCode (ZMod m) ι) :
     map_codeInBaseDiscriminant]
 
 /-- A code is isotropic in the actual discriminant group exactly when it is self-orthogonal. -/
-@[simp]
 theorem isIsotropic_codeInBaseDiscriminant_iff (C : AdditiveCode (ZMod m) ι) :
     (zeroLattice m ι).discriminantBilinearModule.IsIsotropic
         (codeInBaseDiscriminant m ι C) ↔
