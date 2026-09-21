@@ -34,7 +34,9 @@ transitive-groups table. The reference family is empty outside degrees one throu
 * `Subgroup.transitiveGroupLabel_map_permCongrHom_iff`: the label of a permutation group on an
   arbitrary set of `n` points does not depend on the numbering by `Fin n` used to read it.
 * `TauCeti.TransitiveGroupLabel.exists_le_map_conj_of_le`: inclusion of a reference subgroup in
-  a larger subgroup transports to inclusion of the labelled subgroup in a conjugate.
+  a larger subgroup transports to inclusion of the labelled subgroup in a conjugate, and
+  `TauCeti.TransitiveGroupLabel.exists_le_map_conj_iff`: a labelled subgroup lies in a conjugate
+  of a fixed subgroup exactly when its reference subgroup does.
 * `TauCeti.TransitiveGroupLabel.natCard_eq`, `TauCeti.TransitiveGroupLabel.le_alternatingGroup_iff`,
   `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`:
   a labelled subgroup has the order, parity, primitivity, and solvability of its reference.
@@ -414,6 +416,31 @@ theorem TransitiveGroupLabel.exists_le_map_conj_of_le {n : ℕ} {j : TransitiveG
   have hcomp : (MulAut.conj τ⁻¹).toMonoidHom.comp (MulAut.conj τ).toMonoidHom =
       MonoidHom.id (Perm (Fin n)) := by ext; simp
   rwa [hcomp, Subgroup.map_id] at hmap
+
+/-- **Conjugating into a subgroup depends only on the label.** A subgroup with the label `j` lies
+in a conjugate of `H` exactly when the reference subgroup of `j` does. This is what lets a
+criterion that confines a permutation group to a conjugate of a fixed subgroup, such as the
+existence of a root of a resolvent, be read as a condition on the label. -/
+theorem TransitiveGroupLabel.exists_le_map_conj_iff {n : ℕ} {j : TransitiveGroupIndex n}
+    {G H : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    (∃ τ : Perm (Fin n), G ≤ H.map (MulAut.conj τ).toMonoidHom) ↔
+      ∃ τ : Perm (Fin n), referenceSubgroup n j ≤ H.map (MulAut.conj τ).toMonoidHom := by
+  constructor
+  · rintro ⟨τ, hτ⟩
+    obtain ⟨ρ, hρ⟩ := (transitiveGroupLabel_iff _ _).1 h
+    refine ⟨ρ * τ, ?_⟩
+    have hmap := Subgroup.map_mono (f := (MulAut.conj ρ).toMonoidHom) hτ
+    rw [hρ, Subgroup.map_map] at hmap
+    convert hmap using 2
+    ext σ
+    simp [mul_assoc]
+  · rintro ⟨τ, hτ⟩
+    obtain ⟨ρ, hρ⟩ := h.exists_le_map_conj_of_le hτ
+    refine ⟨ρ * τ, ?_⟩
+    rw [Subgroup.map_map] at hρ
+    convert hρ using 2
+    ext σ
+    simp [mul_assoc]
 
 /-- Reading a permutation group on `n` points through two numberings by `Fin n` gives the same
 transitive-group labels. -/

@@ -238,6 +238,96 @@ theorem referenceSubgroup_four_one_le_alternatingGroup :
   rw [referenceSubgroup_four_one]
   exact Subgroup.map_subtype_le _
 
+/-- The reference subgroup of `4T1`, the cyclic group of the rotation of four points, lies in
+that of `4T3`. -/
+theorem referenceSubgroup_four_zero_le_referenceSubgroup_four_two :
+    referenceSubgroup 4 ⟨0, by simp⟩ ≤ referenceSubgroup 4 ⟨2, by simp⟩ := by
+  rw [referenceSubgroup_four_zero, referenceSubgroup_four_two]
+  exact Subgroup.closure_mono (by simp)
+
+/-- The reference subgroup of `4T2`, the Klein four-group, lies in that of `4T3`: its nontrivial
+elements are the three double transpositions, and each of them commutes with the double
+transposition `finRotate 4 ^ 2`. -/
+theorem referenceSubgroup_four_one_le_referenceSubgroup_four_two :
+    referenceSubgroup 4 ⟨1, by simp⟩ ≤ referenceSubgroup 4 ⟨2, by simp⟩ := by
+  have hcomm : ∀ σ : Perm (Fin 4), σ.cycleType = {2, 2} →
+      σ * finRotate 4 ^ 2 = finRotate 4 ^ 2 * σ := by decide +kernel
+  rw [referenceSubgroup_four_one, referenceSubgroup_four_two,
+    closure_finRotate_four_swap_eq_centralizer, Subgroup.map_le_iff_le_comap]
+  intro g hg
+  rw [← SetLike.mem_coe, alternatingGroup.coe_kleinFour_of_card_eq_four (by simp)] at hg
+  simp only [Subgroup.mem_comap, Subgroup.subtype_apply, Subgroup.mem_centralizer_singleton_iff]
+  rcases hg with hg | hg
+  · simp [Set.mem_singleton_iff.1 hg]
+  · exact hcomm _ hg
+
+/-- The reference subgroup of `4T3` is not contained in the alternating group: it contains the
+odd permutation `finRotate 4`. -/
+theorem not_referenceSubgroup_four_two_le_alternatingGroup :
+    ¬ referenceSubgroup 4 ⟨2, by simp⟩ ≤ alternatingGroup (Fin 4) := fun h =>
+  not_referenceSubgroup_four_zero_le_alternatingGroup
+    (referenceSubgroup_four_zero_le_referenceSubgroup_four_two.trans h)
+
+/-- The reference subgroup of `4T4` consists of even permutations. -/
+theorem referenceSubgroup_four_three_le_alternatingGroup :
+    referenceSubgroup 4 ⟨3, by simp⟩ ≤ alternatingGroup (Fin 4) :=
+  le_of_eq referenceSubgroup_four_three
+
+/-- The reference subgroup of `4T5` is not contained in the alternating group. -/
+theorem not_referenceSubgroup_four_four_le_alternatingGroup :
+    ¬ referenceSubgroup 4 ⟨4, by simp⟩ ≤ alternatingGroup (Fin 4) := fun h =>
+  not_referenceSubgroup_four_zero_le_alternatingGroup
+    (le_top.trans (referenceSubgroup_four_four ▸ h))
+
+/-- **The parities of the quartic labels.** Of the five transitive subgroups of the symmetric
+group on four points, the Klein four-group of `4T2` and the alternating group of `4T4` consist of
+even permutations, and the cyclic, dihedral and symmetric groups of `4T1`, `4T3` and `4T5` do
+not. -/
+theorem referenceSubgroup_four_le_alternatingGroup_iff (j : TransitiveGroupIndex 4) :
+    referenceSubgroup 4 j ≤ alternatingGroup (Fin 4) ↔ (j : ℕ) = 1 ∨ (j : ℕ) = 3 := by
+  obtain ⟨a, ha⟩ := j
+  rw [numTransitiveGroups_four] at ha
+  interval_cases a
+  · exact iff_of_false not_referenceSubgroup_four_zero_le_alternatingGroup (by simp)
+  · exact iff_of_true referenceSubgroup_four_one_le_alternatingGroup (by simp)
+  · exact iff_of_false not_referenceSubgroup_four_two_le_alternatingGroup (by simp)
+  · exact iff_of_true referenceSubgroup_four_three_le_alternatingGroup (by simp)
+  · exact iff_of_false not_referenceSubgroup_four_four_le_alternatingGroup (by simp)
+
+/-- **Which quartic labels a dihedral group of order eight contains.** A reference subgroup of
+degree four lies in a conjugate of the reference subgroup of `4T3` exactly for the labels `4T1`,
+`4T2` and `4T3`; the alternating group of `4T4` and the symmetric group of `4T5` have order `12`
+and `24`, which do not divide `8`. -/
+theorem exists_le_map_conj_referenceSubgroup_four_two_iff (j : TransitiveGroupIndex 4) :
+    (∃ τ : Perm (Fin 4), referenceSubgroup 4 j ≤
+        (referenceSubgroup 4 ⟨2, by simp⟩).map (MulAut.conj τ).toMonoidHom) ↔ (j : ℕ) ≤ 2 := by
+  have hone : ∀ H : Subgroup (Perm (Fin 4)),
+      H.map (MulAut.conj (1 : Perm (Fin 4))).toMonoidHom = H := by
+    intro H
+    ext σ
+    simp [Subgroup.mem_map]
+  have hcard : ∀ τ : Perm (Fin 4),
+      Nat.card ((referenceSubgroup 4 ⟨2, by simp⟩).map (MulAut.conj τ).toMonoidHom) = 8 := by
+    intro τ
+    rw [Subgroup.card_map_of_injective (MulAut.conj τ).injective,
+      natCard_referenceSubgroup_four_two]
+  obtain ⟨a, ha⟩ := j
+  rw [numTransitiveGroups_four] at ha
+  interval_cases a
+  · exact iff_of_true
+      ⟨1, referenceSubgroup_four_zero_le_referenceSubgroup_four_two.trans (hone _).ge⟩ (by simp)
+  · exact iff_of_true
+      ⟨1, referenceSubgroup_four_one_le_referenceSubgroup_four_two.trans (hone _).ge⟩ (by simp)
+  · exact iff_of_true ⟨1, (hone _).ge⟩ (by simp)
+  · refine iff_of_false (fun ⟨τ, hτ⟩ => ?_) (by simp)
+    have hdvd := Subgroup.card_dvd_of_le hτ
+    rw [natCard_referenceSubgroup_four_three, hcard] at hdvd
+    omega
+  · refine iff_of_false (fun ⟨τ, hτ⟩ => ?_) (by simp)
+    have hdvd := Subgroup.card_dvd_of_le hτ
+    rw [natCard_referenceSubgroup_four_four, hcard] at hdvd
+    omega
+
 /-- A subgroup of the symmetric group on four points carries at most one label. -/
 theorem TransitiveGroupLabel.eq_of_four {j k : TransitiveGroupIndex 4}
     {G : Subgroup (Perm (Fin 4))} (hj : TransitiveGroupLabel j G)
