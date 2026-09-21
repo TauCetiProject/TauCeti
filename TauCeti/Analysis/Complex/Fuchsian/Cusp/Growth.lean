@@ -127,18 +127,13 @@ theorem cuspExtension_eventuallyEq_zpow_mul_poleRemovedExtension (D : Γ.CuspDat
       (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one), self_mem_nhdsWithin]
     with q hq hq_ne
   have hq_norm : ‖q‖ < 1 := by simpa only [Metric.mem_ball, dist_zero_right] using hq
-  let q' : {q : 𝔻 // q ≠ 0} :=
-    ⟨Complex.UnitDisc.mk q hq_norm, fun h ↦ hq_ne (congrArg ((↑) : 𝔻 → ℂ) h)⟩
-  let z := D.scaling⁻¹ • TauCeti.UpperHalfPlane.invQParamUpperHalfPlane
-    D.width D.width_pos q'
-  have hz : coordinate D z = q := by
-    have h := congrArg (fun p : {q : 𝔻 // q ≠ 0} ↦ ((p : 𝔻) : ℂ))
-      (qCoordinate_smul_invQParamUpperHalfPlane D q')
-    have hq'_coe : ((q' : 𝔻) : ℂ) = q := rfl
-    have hzq' : coordinate D z = ((q' : 𝔻) : ℂ) := by
-      simpa only [z, coe_qCoordinate] using h
-    exact hzq'.trans hq'_coe
-  rw [← hz, cuspExtension_coordinate D f hf,
+  obtain ⟨z, hz⟩ := (isOpenQuotientMap_qCoordinate D).surjective
+    (⟨Complex.UnitDisc.mk q hq_norm, fun h ↦ hq_ne (congrArg ((↑) : 𝔻 → ℂ) h)⟩ :
+      {q : 𝔻 // q ≠ 0})
+  have hzq : coordinate D z = q := by
+    rw [← coe_qCoordinate, hz]
+    exact Complex.UnitDisc.coe_mk q hq_norm
+  rw [← hzq, cuspExtension_coordinate D f hf,
     poleRemovedExtension_coordinate D n f hf]
   rw [← mul_assoc, ← zpow_natCast, ← zpow_add₀ (coordinate_ne_zero D z)]
   simp
@@ -151,12 +146,11 @@ theorem meromorphicAt_cuspExtension_zero (D : Γ.CuspDatum) (n : ℕ) (f : ℍ �
     (hgrowth : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
       fun z ↦ Real.exp (2 * Real.pi * n * z.im / D.width)) :
     MeromorphicAt (cuspExtension D f) 0 := by
-  have han := analyticAt_poleRemovedExtension_zero D n f hf hhol hgrowth
-  have hbase : MeromorphicAt
-      (fun q : ℂ ↦ q ^ (-(n : ℤ)) * poleRemovedExtension D n f q) 0 := by
-    fun_prop
-  exact hbase.congr
-    (cuspExtension_eventuallyEq_zpow_mul_poleRemovedExtension D n f hf).symm
+  rw [MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt]
+  exact ⟨-(n : ℤ), poleRemovedExtension D n f,
+    analyticAt_poleRemovedExtension_zero D n f hf hhol hgrowth,
+    (cuspExtension_eventuallyEq_zpow_mul_poleRemovedExtension D n f hf).mono
+      fun q hq ↦ by simpa only [sub_zero, smul_eq_mul] using hq⟩
 
 /-- The meromorphic order of a cusp extension is at least `-n` when the function has exponential
 growth of rate at most `2πn / w`; equivalently, its pole order is at most `n`. -/
