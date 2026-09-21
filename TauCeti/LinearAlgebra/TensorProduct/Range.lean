@@ -10,10 +10,9 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 /-!
 # Ranges after extension of scalars
 
-Extension of scalars carries the range of a linear map to the extension of its range.  If the
-coefficient algebra is faithfully flat, membership of a vector in that range can be checked after
-extension of scalars.  This is the linear-algebraic descent step used when an equation acquires a
-solution after passing to a larger field.
+If the coefficient algebra is faithfully flat, membership of a vector in the range of a linear map
+can be checked after extension of scalars.  This is the linear-algebraic descent step used when an
+equation acquires a solution after passing to a larger field.
 
 This builds on `Submodule.baseChange` from
 `Mathlib/LinearAlgebra/TensorProduct/Tower.lean` and
@@ -24,7 +23,6 @@ This builds on `Submodule.baseChange` from
 
 ## Main results
 
-* `LinearMap.range_baseChange`: the range of an extended linear map is the extension of its range.
 * `LinearMap.one_tmul_mem_range_baseChange_iff`: a vector belongs to a range exactly when its
   canonical image belongs to the extended range, for a faithfully flat coefficient algebra.
 -/
@@ -70,22 +68,6 @@ universe u v w x
 
 variable {R : Type u} {A : Type v} {M : Type w} {N : Type x}
 
-section Range
-
-variable [CommSemiring R] [Semiring A] [Algebra R A]
-variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-/-- Extension of scalars carries the range of a linear map to the extension of its range. -/
-@[simp]
-theorem range_baseChange (f : M →ₗ[R] N) :
-    range (f.baseChange A) = (range f).baseChange A := by
-  rw [Submodule.baseChange]
-  ext z
-  simpa only [mem_range, baseChange_eq_ltensor] using
-    SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) z
-
-end Range
-
 section Descent
 
 variable [CommRing R] [Ring A] [Algebra R A]
@@ -96,7 +78,12 @@ and only if its canonical image belongs to the range after extension of scalars.
 theorem one_tmul_mem_range_baseChange_iff [Module.FaithfullyFlat R A]
     (f : M →ₗ[R] N) (y : N) :
     (1 : A) ⊗ₜ[R] y ∈ range (f.baseChange A) ↔ y ∈ range f := by
-  rw [range_baseChange, Submodule.one_tmul_mem_baseChange_iff]
+  calc
+    _ ↔ (1 : A) ⊗ₜ[R] y ∈ range ((range f).subtype.baseChange A) := by
+      simpa only [mem_range, baseChange_eq_ltensor] using
+        SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) ((1 : A) ⊗ₜ[R] y)
+    _ ↔ y ∈ range f := by
+      rw [← Submodule.baseChange, Submodule.one_tmul_mem_baseChange_iff]
 
 end Descent
 
