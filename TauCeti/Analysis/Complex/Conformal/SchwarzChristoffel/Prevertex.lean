@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 -- Non-public: the corner asymptotic, the conjugation-symmetric limit transfer, the branch facts
 -- for a power with a real base point, and partial fractions are used only in proofs.
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
-import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
