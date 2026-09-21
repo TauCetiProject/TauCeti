@@ -11,15 +11,17 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 # Principal powers on an angular sector
 
 The principal power `z ^ (1 / β)` straightens the sector of opening `βπ` centred on the
-positive real axis into the right half-plane.  This file records the two pointwise power facts
-needed for that construction: the straightened point has positive real part, and raising it back
-to the power `β` recovers `z`.
+positive real axis into the right half-plane.  This file records the pointwise facts needed for
+that construction: a closed symmetric sector is cut out by a single linear inequality, the
+straightened point has positive real part, and raising it back to the power `β` recovers `z`.
 
 These facts are useful when a polygonal corner is normalized to a symmetric sector.  Multiplication
 by `I` then carries the right half-plane to the upper half-plane, where Schwarz reflection applies.
 
 ## Main results
 
+* `Complex.arg_mem_Icc_iff_norm_mul_cos_le_re` -- a closed symmetric sector of half-opening `a` is
+  the set where `‖z‖ * cos a ≤ z.re`, a description free of the argument branch cut.
 * `Complex.cpow_inv_re_pos_of_arg_mem_sector` -- the inverse power maps the sector into the right
   half-plane.
 * `Complex.cpow_inv_cpow_eq_of_arg_mem` -- the inverse power is a genuine inverse throughout the
@@ -31,6 +33,28 @@ public section
 open Set
 
 namespace Complex
+
+/-- A complex number lies in the closed sector of half-opening `a ≤ π` around the positive real
+axis exactly when `‖z‖ * cos a ≤ z.re`.  The right-hand side is continuous in `z`, so this
+characterization passes to limits, unlike the argument itself.  For `a = π / 2` this specializes
+to `Complex.abs_arg_le_pi_div_two_iff`. -/
+theorem arg_mem_Icc_iff_norm_mul_cos_le_re {z : ℂ} {a : ℝ} (ha : a ∈ Icc (0 : ℝ) Real.pi) :
+    z.arg ∈ Icc (-a) a ↔ ‖z‖ * Real.cos a ≤ z.re := by
+  simp only [mem_Icc]
+  rw [← abs_le]
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp [ha.1]
+  constructor
+  · intro harg
+    have hcos := Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg z.arg) ha.2 harg
+    rw [Real.cos_abs] at hcos
+    nlinarith [norm_nonneg z, norm_mul_cos_arg z]
+  · intro hsector
+    by_contra harg
+    have harg' : a < |z.arg| := lt_of_not_ge harg
+    have hcos := Real.cos_lt_cos_of_nonneg_of_le_pi ha.1 (abs_arg_le_pi z) harg'
+    rw [Real.cos_abs] at hcos
+    nlinarith [norm_pos_iff.mpr hz, norm_mul_cos_arg z]
 
 /-- The principal inverse power maps the sector of opening `βπ` into the open right
 half-plane. -/

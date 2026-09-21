@@ -46,25 +46,6 @@ open scoped ComplexConjugate
 
 namespace TauCeti
 
-private theorem arg_mem_Icc_iff_norm_mul_cos_le_re {z : ℂ} {a : ℝ}
-    (ha : a ∈ Icc (0 : ℝ) Real.pi) :
-    z.arg ∈ Icc (-a) a ↔ ‖z‖ * Real.cos a ≤ z.re := by
-  simp only [mem_Icc]
-  rw [← abs_le]
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp [ha.1]
-  constructor
-  · intro harg
-    have hcos := Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg z.arg) ha.2 harg
-    rw [Real.cos_abs] at hcos
-    nlinarith [norm_nonneg z, Complex.norm_mul_cos_arg z]
-  · intro hsector
-    by_contra harg
-    have harg' : a < |z.arg| := lt_of_not_ge harg
-    have hcos := Real.cos_lt_cos_of_nonneg_of_le_pi ha.1 (Complex.abs_arg_le_pi z) harg'
-    rw [Real.cos_abs] at hcos
-    nlinarith [norm_pos_iff.mpr hz, Complex.norm_mul_cos_arg z]
-
 /-- **Power-map straightening of a conformal corner.**  Let `f` be continuous and injective on
 the closed upper part of a conjugation-symmetric neighbourhood `Ω`, holomorphic on its open upper
 part, and send a real point `x` to the corner `w`.  Assume the translated interior values lie
