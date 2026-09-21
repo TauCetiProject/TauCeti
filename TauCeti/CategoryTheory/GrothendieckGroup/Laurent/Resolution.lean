@@ -144,6 +144,7 @@ noncomputable def laurentResolutionEquiv :
 
 /-- The forward map of the graded resolution isomorphism is the map induced by the graded
 conflation-exact inclusion of `P` into the objects of finite `P`-dimension. -/
+@[simp]
 theorem laurentResolutionEquiv_toLinearMap :
     (E.laurentResolutionEquiv hproj hshift).toLinearMap =
       LaurentK0.map (GradedConflationExact.ιOfLE E P hP hR hshift hRshift
@@ -188,8 +189,8 @@ theorem foldAlternating_shift_eq_T_one_smul {X : C} (r : E.toExactStructure.Fini
   have e : (E.fullSubcategoryShift _ hRshift).functor.obj ⟨X, hX⟩ ≅
       ⟨E.shift.functor.obj X, hX'⟩ :=
     ObjectProperty.isoMk _ ((E.fullSubcategoryShiftFunctorCompιIso _ hRshift).app ⟨X, hX⟩)
-  apply foldAlternating_shift_eq_T_one_smul_of_linearEquiv E P hP hshift
-    (E.laurentResolutionEquiv hproj hshift) r s
+  apply foldAlternating_shift_eq_T_one_smul_of_linearMap E P hP hshift
+    (E.laurentResolutionEquiv hproj hshift).symm.toLinearMap r s
     (LaurentK0.of _ ⟨X, hX⟩) (LaurentK0.of _ ⟨E.shift.functor.obj X, hX'⟩)
   · exact E.laurentResolutionEquiv_symm_of hproj hshift hX r
   · exact E.laurentResolutionEquiv_symm_of hproj hshift hX' s

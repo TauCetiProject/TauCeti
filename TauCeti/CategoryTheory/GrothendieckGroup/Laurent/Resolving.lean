@@ -128,6 +128,7 @@ noncomputable def laurentResolutionEquiv :
 
 /-- The forward map of the graded resolution theorem is induced by the graded conflation-exact
 inclusion of the resolving subcategory. -/
+@[simp]
 theorem laurentResolutionEquiv_toLinearMap :
     (laurentResolutionEquiv E P hshift).toLinearMap =
       LaurentK0.map (GradedConflationExact.ι E P hP hshift) := by
@@ -173,8 +174,8 @@ theorem foldAlternating_shift_eq_T_one_smul {X : C}
       (T 1 : LaurentPolynomial ℤ) •
         r.foldAlternating
           (fun Z hZ => LaurentK0.of (E.fullSubcategory P hP hshift) ⟨Z, hZ⟩) := by
-  apply GradedExactStructure.foldAlternating_shift_eq_T_one_smul_of_linearEquiv E P hP hshift
-    (laurentResolutionEquiv E P hshift) r s (LaurentK0.of E X)
+  apply GradedExactStructure.foldAlternating_shift_eq_T_one_smul_of_linearMap E P hP hshift
+    (laurentResolutionEquiv E P hshift).symm.toLinearMap r s (LaurentK0.of E X)
     (LaurentK0.of E (E.shift.functor.obj X))
   · exact laurentResolutionEquiv_symm_of E P hshift r
   · exact laurentResolutionEquiv_symm_of E P hshift s

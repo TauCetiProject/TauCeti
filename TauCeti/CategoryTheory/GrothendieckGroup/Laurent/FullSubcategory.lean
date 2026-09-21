@@ -63,16 +63,16 @@ lemma ofExactK0_toUngraded_symm_eulerClassFullSubcategory {X : C}
   | base hX => simp
   | step hQ i p zero hp r ih => simp [ih]
 
-/-- A linear equivalence transports shift covariance from two target classes to the Euler classes
-of finite resolutions that its inverse computes. -/
-theorem foldAlternating_shift_eq_T_one_smul_of_linearEquiv
+/-- A linear map transports shift covariance from two target classes to the Euler classes of
+finite resolutions that it computes. -/
+theorem foldAlternating_shift_eq_T_one_smul_of_linearMap
     {N : Type*} [AddCommGroup N] [Module (LaurentPolynomial ℤ) N]
-    (e : LaurentK0 (E.fullSubcategory R hR hRshift) ≃ₗ[LaurentPolynomial ℤ] N)
+    (f : N →ₗ[LaurentPolynomial ℤ] LaurentK0 (E.fullSubcategory R hR hRshift))
     {X : C} (r : E.toExactStructure.FiniteResolution R X)
     (s : E.toExactStructure.FiniteResolution R (E.shift.functor.obj X)) (x x' : N)
-    (hr : e.symm x = r.foldAlternating fun Z hZ =>
+    (hr : f x = r.foldAlternating fun Z hZ =>
       LaurentK0.of (E.fullSubcategory R hR hRshift) ⟨Z, hZ⟩)
-    (hs : e.symm x' = s.foldAlternating fun Z hZ =>
+    (hs : f x' = s.foldAlternating fun Z hZ =>
       LaurentK0.of (E.fullSubcategory R hR hRshift) ⟨Z, hZ⟩)
     (hshift : x' = (T 1 : LaurentPolynomial ℤ) • x) :
     s.foldAlternating
