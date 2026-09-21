@@ -54,7 +54,13 @@ theorem tendsto_unitsLieAlgebraCoordinates :
         (unitsLieAlgebraEquiv p.1, unitsLieAlgebraEquiv p.2))
       (nhds (0, 0)) (nhds (0, 0)) := by
   let e := unitsLieAlgebraEquiv (R := R)
-  change Tendsto (Prod.map e e) (nhds (0, 0)) (nhds (0, 0))
+  have hcoord :
+      (fun p : LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ×
+          LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ↦
+        (e p.1, e p.2)) = Prod.map e e := by
+    funext p
+    rfl
+  rw [hcoord]
   simpa only [Prod.map, Prod.map_apply, Function.comp_apply,
     LinearEquiv.coe_toContinuousLinearEquiv',
     map_zero] using
@@ -104,10 +110,12 @@ theorem unitsLocalBCH_map_unitsLieAlgebraEquiv :
           (unitsLieAlgebraEquiv p.1, unitsLieAlgebraEquiv p.2))
         (tendsto_unitsLieAlgebraCoordinates R) := by
   rw [unitsLocalBCH, Germ.map_map]
-  rw [show (unitsLieAlgebraEquiv (R := R)) ∘
-      (unitsLieAlgebraEquiv (R := R)).symm = id by
+  have hcomp :
+      (unitsLieAlgebraEquiv (R := R)) ∘
+          (unitsLieAlgebraEquiv (R := R)).symm = id := by
     funext x
-    exact (unitsLieAlgebraEquiv (R := R)).apply_symm_apply x, Germ.map_id]
+    exact (unitsLieAlgebraEquiv (R := R)).apply_symm_apply x
+  rw [hcomp, Germ.map_id]
   rfl
 
 /-- The local Baker--Campbell--Hausdorff germ on the Lie algebra of `Rˣ` takes the value zero at
@@ -242,7 +250,11 @@ theorem eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq
           e.toContinuousLinearEquiv.continuous.tendsto 0
       have hc : Tendsto (fun p : R × R ↦ (e.symm p.1, e.symm p.2))
           (nhds (0, 0)) (nhds (0, 0)) := by
-        change Tendsto (Prod.map e.symm e.symm) (nhds (0, 0)) (nhds (0, 0))
+        have hcoord :
+            (fun p : R × R ↦ (e.symm p.1, e.symm p.2)) = Prod.map e.symm e.symm := by
+          funext p
+          rfl
+        rw [hcoord]
         simpa only [Prod.map, Prod.map_apply, Function.comp_apply,
           LinearEquiv.coe_toContinuousLinearEquiv',
           map_zero] using
