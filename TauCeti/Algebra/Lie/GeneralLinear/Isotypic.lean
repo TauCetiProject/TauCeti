@@ -38,6 +38,8 @@ algebra unless its centre acts semisimply.
   irreducible type from one highest-weight vector.
 * `isGlDominantIntegral_of_forall_isGlHighestWeightVector`: the dominance consequence of the
   finite-dimensional single-weight hypothesis for a nonzero module.
+* `exists_submodule_isGlHighestWeightVector_of_forall`: the highest-weight existence criterion
+  for a nonzero submodule.
 * `isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector`: the fixed-carrier criterion.
 * `nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_isGlHighestWeightVector`: the counted
   direct-sum criterion for a completely reducible module.
@@ -113,16 +115,17 @@ variable {S : Type w} [AddCommGroup S] [Module K S]
   [LieModule K (Matrix (Fin N) (Fin N) K) S]
 variable {mu : Fin N → K}
 
-private theorem exists_submodule_isGlHighestWeightVector_of_forall
+/-- Every nonzero submodule of a finite-dimensional `gl_N`-module over an algebraically closed
+field contains a highest-weight vector of weight `mu`, when all ambient highest-weight vectors have
+that weight. -/
+theorem exists_submodule_isGlHighestWeightVector_of_forall
     [IsAlgClosed K] [FiniteDimensional K M]
     (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
-    ∀ (P : LieSubmodule K (Matrix (Fin N) (Fin N) K) M)
-      [_root_.LieModule.IsIrreducible K (Matrix (Fin N) (Fin N) K) P],
+    ∀ (P : LieSubmodule K (Matrix (Fin N) (Fin N) K) M) (_hP : P ≠ ⊥),
       ∃ v : P, IsGlHighestWeightVector mu v := by
-  intro P _
-  let _ : Nontrivial P :=
-    _root_.LieModule.nontrivial_of_isIrreducible
-      (R := K) (L := Matrix (Fin N) (Fin N) K) (M := P)
+  intro P hP
+  let _ : Nontrivial P := (LieSubmodule.nontrivial_iff_ne_bot K
+    (Matrix (Fin N) (Fin N) K) M).mpr hP
   obtain ⟨nu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (N := N) (M := P)
   have hnu : nu = mu := h nu (v : M) (isGlHighestWeightVector_coe_iff.mpr hv)
   subst nu
@@ -134,8 +137,12 @@ pair of irreducible submodules is equivalent. -/
 theorem isIsotypic_of_forall_isGlHighestWeightVector [IsAlgClosed K] [FiniteDimensional K M]
     (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
     _root_.LieModule.IsIsotypic K (Matrix (Fin N) (Fin N) K) M :=
-  isIsotypic_of_forall_irreducible_exists_isGlHighestWeightVector
-    (exists_submodule_isGlHighestWeightVector_of_forall h)
+  isIsotypic_of_forall_irreducible_exists_isGlHighestWeightVector (by
+    intro P _
+    exact exists_submodule_isGlHighestWeightVector_of_forall h P
+      ((LieSubmodule.nontrivial_iff_ne_bot K (Matrix (Fin N) (Fin N) K) M).mp
+        (_root_.LieModule.nontrivial_of_isIrreducible
+          (R := K) (L := Matrix (Fin N) (Fin N) K) (M := P))))
 
 /-- If an irreducible `gl_N`-module `S` carries a highest-weight vector of weight `mu`, then a
 finite-dimensional module over an algebraically closed field whose highest-weight vectors all have
@@ -147,7 +154,12 @@ theorem isIsotypicOfType_of_forall_isGlHighestWeightVector
     (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
     _root_.LieModule.IsIsotypicOfType K (Matrix (Fin N) (Fin N) K) M S :=
   isIsotypicOfType_of_forall_irreducible_exists_isGlHighestWeightVector hw
-    (exists_submodule_isGlHighestWeightVector_of_forall h)
+    (by
+      intro P _
+      exact exists_submodule_isGlHighestWeightVector_of_forall h P
+        ((LieSubmodule.nontrivial_iff_ne_bot K (Matrix (Fin N) (Fin N) K) M).mp
+          (_root_.LieModule.nontrivial_of_isIrreducible
+            (R := K) (L := Matrix (Fin N) (Fin N) K) (M := P))))
 
 /-- If all highest-weight vectors in a nonzero finite-dimensional `gl_N`-module over an
 algebraically closed field have weight `mu`, then `mu` is dominant integral. -/
