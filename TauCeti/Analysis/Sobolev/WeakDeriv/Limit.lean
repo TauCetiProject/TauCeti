@@ -52,8 +52,8 @@ private theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {c : E → 
     (hb : Integrable (fun x => c x • b x) μ)
     (hab : Tendsto (fun i => ∫⁻ x in (Ω : Set E), ‖a i x - b x‖ₑ ∂μ) l (𝓝 0)) :
     Tendsto (fun i => ∫ x, c x • a i x ∂μ) l (𝓝 (∫ x, c x • b x ∂μ)) := by
-  have hK0 : (0 : ℝ) ≤ K := le_trans (norm_nonneg _) (hK 0)
-  rw [tendsto_iff_edist_tendsto_0]
+  refine tendsto_integral_of_L1 (fun x => c x • b x) hb.1
+    (Filter.Eventually.of_forall ha) ?_
   have hlim : Tendsto (fun i => ENNReal.ofReal K * ∫⁻ x in (Ω : Set E), ‖a i x - b x‖ₑ ∂μ) l
       (𝓝 0) := by
     simpa using ENNReal.Tendsto.const_mul (a := ENNReal.ofReal K) hab
@@ -64,11 +64,10 @@ private theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {c : E → 
     intro x hx
     by_contra hxΩ
     exact hx (by simp [hcsupp x hxΩ])
-  calc edist (∫ x, c x • a i x ∂μ) (∫ x, c x • b x ∂μ)
-      = ‖∫ x, c x • (a i x - b x) ∂μ‖ₑ := by
-        rw [edist_eq_enorm_sub, ← integral_sub (ha i) hb]
-        simp only [smul_sub]
-    _ ≤ ∫⁻ x, ‖c x • (a i x - b x)‖ₑ ∂μ := enorm_integral_le_lintegral_enorm _
+  calc ∫⁻ x, ‖c x • a i x - c x • b x‖ₑ ∂μ
+      = ∫⁻ x, ‖c x • (a i x - b x)‖ₑ ∂μ := by
+        congr with x
+        rw [smul_sub]
     _ = ∫⁻ x in (Ω : Set E), ‖c x • (a i x - b x)‖ₑ ∂μ :=
         (setLIntegral_eq_of_support_subset hsupp).symm
     _ ≤ ∫⁻ x in (Ω : Set E), ENNReal.ofReal K * ‖a i x - b x‖ₑ ∂μ := by

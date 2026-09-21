@@ -143,11 +143,21 @@ private theorem memLp_deriv_smul_gradient (hF : ContDiff ℝ 1 F) (hM : ∀ t, �
     rw [norm_smul, Pi.smul_apply, norm_smul, Real.norm_of_nonneg M.coe_nonneg]
     exact mul_le_mul_of_nonneg_right hb (norm_nonneg _)
 
-private theorem locallyIntegrableOn_comp_value (hlip : LipschitzWith M F) (hF0 : F 0 = 0)
+private theorem locallyIntegrableOn_comp_value (hlip : LipschitzWith M F)
     (u : W1p mu Omega p) :
-    LocallyIntegrableOn (fun x => F (W1p.value u x)) Omega mu :=
-  locallyIntegrableOn_of_locallyIntegrable_restrict
-    ((memLp_comp_value hlip hF0 u).locallyIntegrable Fact.out)
+    LocallyIntegrableOn (fun x => F (W1p.value u x)) Omega mu := by
+  have hzero : LipschitzWith M (fun t => F t - F 0) :=
+    LipschitzWith.of_dist_le_mul fun x y => by
+      simpa only [dist_sub_right] using hlip.dist_le_mul x y
+  have hloc : LocallyIntegrableOn (fun x => F (W1p.value u x) - F 0) Omega mu :=
+    locallyIntegrableOn_of_locallyIntegrable_restrict
+      ((memLp_comp_value hzero (by simp) u).locallyIntegrable Fact.out)
+  have heq : (fun x => F (W1p.value u x)) =
+      (fun x => F (W1p.value u x) - F 0) + fun _ => F 0 := by
+    funext x
+    simp
+  rw [heq]
+  exact hloc.add (locallyIntegrableOn_const (F 0))
 
 private theorem locallyIntegrableOn_deriv_smul_gradient (hF : ContDiff ℝ 1 F)
     (hM : ∀ t, ‖deriv F t‖₊ ≤ M) (u : W1p mu Omega p) (v : E) :
@@ -163,7 +173,7 @@ private theorem locallyIntegrableOn_deriv_smul_gradient (hF : ContDiff ℝ 1 F)
 /-- The chain rule on a subdomain relatively compact in `Ω`, where test functions on `Ω` are
 dense and the measure is finite. -/
 private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
-    (hM : ∀ t, ‖deriv F t‖₊ ≤ M) (hF0 : F 0 = 0) (u : W1p mu Omega p)
+    (hM : ∀ t, ‖deriv F t‖₊ ≤ M) (u : W1p mu Omega p)
     {V : Opens E} (hVc : IsCompact (closure (V : Set E)))
     (hVO : closure (V : Set E) ⊆ (Omega : Set E)) :
     HasWeakFDerivOn mu V (fun x => F (W1p.value u x))
@@ -336,20 +346,20 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
               ‖gu x‖ₑ ∂mu := by
           rw [lintegral_add_left' (hmeas i), lintegral_const_mul' _ _ ENNReal.coe_ne_top]
   exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
-    ((locallyIntegrableOn_comp_value hlip hF0 u).mono_set hVsub)
+    ((locallyIntegrableOn_comp_value hlip u).mono_set hVsub)
     (fun v => (locallyIntegrableOn_deriv_smul_gradient hF hM u v).mono_set hVsub)
     hchain hconv1 hconv2
 
-/-- **The chain rule in `W^{1,p}(Ω)` for `1 ≤ p < ∞`.**  If `F` is `C¹` with derivative bounded
-by `M` and `F 0 = 0`, then `F ∘ u` has the weak gradient `F'(u) ∇u` on `Ω`.  No boundary
+/-- **The local chain rule for `W^{1,p}(Ω)` when `1 ≤ p < ∞`.** If `F` is `C¹` with
+derivative bounded by `M`, then `F ∘ u` has the weak gradient `F'(u) ∇u` on `Ω`. No boundary
 regularity of `Ω` is needed: the statement is local, and the approximation happens on subdomains
 relatively compact in `Ω`. -/
 theorem W1p.hasWeakFDerivOn_comp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
-    (hM : ∀ t, ‖deriv F t‖₊ ≤ M) (hF0 : F 0 = 0) (u : W1p mu Omega p) :
+    (hM : ∀ t, ‖deriv F t‖₊ ≤ M) (u : W1p mu Omega p) :
     HasWeakFDerivOn mu Omega (fun x => F (W1p.value u x))
       fun x => innerSL ℝ (deriv F (W1p.value u x) • W1p.gradient u x) :=
   hasWeakFDerivOn_iff_forall_isCompact_closure.2 fun _ hVc hVO =>
-    hasWeakFDerivOn_comp_aux hp hF hM hF0 u hVc hVO
+    hasWeakFDerivOn_comp_aux hp hF hM u hVc hVO
 
 /-- **For `1 ≤ p < ∞`, `W^{1,p}(Ω)` is stable under composition with a Lipschitz `C¹` function
 vanishing at `0`.**  Its value and weak gradient are `F ∘ u` and `F'(u) ∇u`, by
@@ -360,7 +370,7 @@ def W1p.contDiffComp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F) (hM : ∀ t, ‖de
     ((memLp_comp_value (lipschitzWith_of_nnnorm_deriv_le (hF.differentiable one_ne_zero) hM)
       hF0 u).toLp _)
     ((memLp_deriv_smul_gradient hF hM u).toLp _)
-    (((W1p.hasWeakFDerivOn_comp hp hF hM hF0 u).congr_ae
+    (((W1p.hasWeakFDerivOn_comp hp hF hM u).congr_ae
       (MemLp.coeFn_toLp _).symm).congr_ae_deriv (by
         filter_upwards [MemLp.coeFn_toLp (memLp_deriv_smul_gradient hF hM u)] with x hx
         rw [hx]))
@@ -554,19 +564,21 @@ private theorem memLp_posPartAboveValue {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Ome
       MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
   exact hlip.comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
 
-/-- **For `1 ≤ p < ∞`, truncation above a nonnegative level is weakly differentiable**, with
+/-- **For `1 ≤ p < ∞`, truncation above any real level is weakly differentiable**, with
 weak gradient `1_{u > k} ∇u`. -/
-theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
-    (u : W1p mu Omega p) :
+theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu Omega p) :
     HasWeakFDerivOn mu Omega (fun x => max (W1p.value u x - k) 0)
       fun x => innerSL ℝ ({x | k < W1p.value u x}.indicator (⇑(W1p.gradient u)) x) := by
   set d : ℕ → ℝ := fun n => 1 / (n + 1 : ℝ)
   have hdpos : ∀ n, 0 < d n := fun n => by positivity
   have hd0 : Tendsto d atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
   -- local integrability of the two limits
+  have hlip : LipschitzWith 1 (fun t : ℝ => max (t - k) 0) := by
+    refine LipschitzWith.of_dist_le_mul fun x y => ?_
+    simpa only [NNReal.coe_one, one_mul, dist_sub_right] using
+      MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
   have hvalLoc : LocallyIntegrableOn (fun x => max (W1p.value u x - k) 0) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict
-      ((memLp_posPartAboveValue hk u).locallyIntegrable Fact.out)
+    locallyIntegrableOn_comp_value hlip u
   have hgradLoc : ∀ v : E, LocallyIntegrableOn
       (fun x => innerSL ℝ (posPartAboveGradient k u x) v) Omega mu := by
     intro v
@@ -591,8 +603,7 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ 
     have hM : ∀ t, ‖deriv F t‖₊ ≤ 1 := fun t => by
       rw [hderiv]
       exact nnnorm_deriv_posPartApprox_le (d n) (t - k)
-    have hF0 : F 0 = 0 := posPartApprox_of_nonpos (hdpos n) (by simpa using hk)
-    simpa only [F, hderiv] using W1p.hasWeakFDerivOn_comp hp hF hM hF0 u
+    simpa only [F, hderiv] using W1p.hasWeakFDerivOn_comp hp hF hM u
   rw [hasWeakFDerivOn_iff_forall_isCompact_closure]
   intro V hVc hVO
   have hVΩ : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
@@ -690,7 +701,7 @@ weak gradient `1_{u > 0} ∇u`. -/
 theorem W1p.hasWeakFDerivOn_posPart (hp : p ≠ ∞) (u : W1p mu Omega p) :
     HasWeakFDerivOn mu Omega (fun x => max (W1p.value u x) 0)
       fun x => innerSL ℝ ({x | 0 < W1p.value u x}.indicator (⇑(W1p.gradient u)) x) := by
-  simpa using W1p.hasWeakFDerivOn_posPartAbove hp (k := 0) le_rfl u
+  simpa using W1p.hasWeakFDerivOn_posPartAbove hp 0 u
 
 /-- **For `1 ≤ p < ∞`, truncation above a nonnegative level preserves `W^{1,p}(Ω)`.**
 The value of `W1p.posPartAbove hp hk u` is `(u - k)⁺`, and its weak gradient is
@@ -699,7 +710,7 @@ def W1p.posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega
     W1p mu Omega p :=
   W1p.mk ((memLp_posPartAboveValue hk u).toLp _)
     ((memLp_posPartAboveGradient k u).toLp _)
-    (((W1p.hasWeakFDerivOn_posPartAbove hp hk u).congr_ae
+    (((W1p.hasWeakFDerivOn_posPartAbove hp k u).congr_ae
       (MemLp.coeFn_toLp (memLp_posPartAboveValue hk u)).symm).congr_ae_deriv (by
         filter_upwards [MemLp.coeFn_toLp (memLp_posPartAboveGradient k u)] with x hx
         rw [hx]
