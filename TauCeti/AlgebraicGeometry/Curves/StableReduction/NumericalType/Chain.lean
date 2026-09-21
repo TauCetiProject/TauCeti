@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
+import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -28,21 +29,6 @@ of the common weight, and every edge has intersection number the larger of the w
 endpoints by `TauCeti.NumericalType.intersection_eq_max_weight`. This is
 [Stacks, Lemma 55.5.8](https://stacks.math.columbia.edu/tag/0C89), whose source statement is
 restricted to more than five components because the five-component case is its Lemma 55.5.5.
-
-Both halves are proved by strong induction on the length. For the graph shape, every chord of
-the chain other than the one joining its two ends is a chord joining the ends of a shorter
-subchain, so only that one chord has to be excluded; if it were present the chain would close up
-into a cycle, and reading the simply-laced middle of the five-component windows of that cycle —
-including the two windows that wrap around the closing edge — shows that all `t` weights agree
-and that each of the `t` edges has that common weight. For the weights, the two subchains
-obtained by dropping one end agree on all interior weights, which leaves only the behaviour at
-the two ends, and a chain with both ends exceptional is again excluded by an explicit vector.
-
-In both exclusions the offending configuration is the diagram of an affine generalized Cartan
-matrix, affine `A_{t-1}` for the cycle and affine `D_{t-1}` or one of its variants for the doubly
-exceptional chain. The vector spanning the kernel of that matrix is positive and makes every row
-of the intersection form vanish, which negative definiteness of the form on the vectors supported
-on a proper subset of the components forbids.
 
 ## Main results
 
@@ -118,37 +104,6 @@ lemma shift (hc : T.IsMinusTwoChain t c) {r s : ℕ} (hrs : r + s ≤ t) :
 
 end IsMinusTwoChain
 
-/-- A sum over `Finset.range t` whose terms vanish outside three given positions is the sum of
-the terms at those three positions. -/
-private lemma sum_range_eq_of_eq_zero_triple {t : ℕ} {f : ℕ → ℤ} {a b d : ℕ} {v : ℤ} (ha : a < t)
-    (hb : b < t) (hd : d < t) (hab : a ≠ b) (had : a ≠ d) (hbd : b ≠ d)
-    (hz : ∀ j < t, j ≠ a → j ≠ b → j ≠ d → f j = 0) (hv : f a + f b + f d = v) :
-    ∑ j ∈ range t, f j = v := by
-  classical
-  rw [← Finset.sum_subset (s₁ := ({a, b, d} : Finset ℕ)) (s₂ := range t)
-    (fun x hx ↦ by
-      simp only [mem_insert, mem_singleton] at hx
-      rcases hx with rfl | rfl | rfl <;> simpa using by omega)
-    (fun x hx hx' ↦ by
-      simp only [mem_insert, mem_singleton, not_or] at hx'
-      exact hz x (mem_range.mp hx) hx'.1 hx'.2.1 hx'.2.2),
-    Finset.sum_insert (by simp [hab, had]), Finset.sum_pair hbd, ← add_assoc, hv]
-
-/-- A sum over `Finset.range t` whose terms vanish outside two given positions is the sum of the
-terms at those two positions. -/
-private lemma sum_range_eq_of_eq_zero_pair {t : ℕ} {f : ℕ → ℤ} {a b : ℕ} {v : ℤ} (ha : a < t)
-    (hb : b < t) (hab : a ≠ b) (hz : ∀ j < t, j ≠ a → j ≠ b → f j = 0) (hv : f a + f b = v) :
-    ∑ j ∈ range t, f j = v := by
-  classical
-  rw [← Finset.sum_subset (s₁ := ({a, b} : Finset ℕ)) (s₂ := range t)
-    (fun x hx ↦ by
-      simp only [mem_insert, mem_singleton] at hx
-      rcases hx with rfl | rfl <;> simpa using by omega)
-    (fun x hx hx' ↦ by
-      simp only [mem_insert, mem_singleton, not_or] at hx'
-      exact hz x (mem_range.mp hx) hx'.1 hx'.2),
-    Finset.sum_pair hab, hv]
-
 /-- If two meeting components of a numerical type have intersection number `aᵢⱼ = wᵢp = wⱼq`
 with `pq = 1`, then they have equal weights. -/
 private lemma weight_eq_of_ratio_eq_one {i j : T.Component} {p q : ℤ}
@@ -190,47 +145,6 @@ private lemma weight_eq_of_ratio_eq_two {i j : T.Component} {p q : ℤ}
     exact Or.inr (by rw [← hq, hp]; ring)
   · exact absurd hpq (by norm_num)
 
-/-- A family of `t` distinct components of a numerical type with more than `t` components carries
-no positive integral vector all of whose rows of the intersection form are nonnegative: the
-intersection form is negative definite on the vectors supported on a proper subset of the
-components, whereas such a vector would make it nonnegative. This is how an affine configuration
-is excluded, applied to the vector spanning the kernel of its intersection matrix. -/
-private lemma false_of_row_sum_nonneg {t : ℕ} {c : ℕ → T.Component} (ht : 0 < t)
-    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j) (hcard : t < Fintype.card T.Component)
-    {y : ℕ → ℤ} (hy : ∀ i < t, 0 < y i)
-    (hrow : ∀ i < t, 0 ≤ ∑ j ∈ range t, T.intersection (c i) (c j) * y j) : False := by
-  classical
-  set x : T.Component → ℤ := fun k ↦ ∑ j ∈ range t, if c j = k then y j else 0 with hxdef
-  have hxc : ∀ i < t, x (c i) = y i := by
-    intro i hi
-    rw [hxdef]
-    refine (Finset.sum_eq_single i (fun j hj hji ↦ ?_) (fun hj ↦ ?_)).trans (by simp)
-    · exact ite_eq_right_iff.mpr fun h ↦ absurd (hinj j (mem_range.mp hj) i hi h) hji
-    · exact absurd (mem_range.mpr hi) hj
-  have hinjOn : ∀ i ∈ range t, ∀ j ∈ range t, c i = c j → i = j :=
-    fun i hi j hj h ↦ hinj i (mem_range.mp hi) j (mem_range.mp hj) h
-  have hcards : ((range t).image c).card = t := by
-    rw [Finset.card_image_of_injOn (fun i hi j hj h ↦ hinjOn i (by simpa using hi) j
-      (by simpa using hj) h), card_range]
-  have hs : (range t).image c ≠ univ := by
-    intro h
-    rw [h, card_univ] at hcards
-    omega
-  have hne : ∃ i ∈ (range t).image c, x i ≠ 0 :=
-    ⟨c 0, Finset.mem_image_of_mem c (mem_range.mpr ht), by rw [hxc 0 ht]; exact (hy 0 ht).ne'⟩
-  have key := T.sum_sum_intersection_mul_neg hs hne
-  simp only [Finset.sum_image hinjOn] at key
-  have heq : ∑ i ∈ range t, ∑ j ∈ range t, T.intersection (c i) (c j) * x (c i) * x (c j)
-      = ∑ i ∈ range t, y i * ∑ j ∈ range t, T.intersection (c i) (c j) * y j := by
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [hxc i (mem_range.mp hi), hxc j (mem_range.mp hj)]
-    ring
-  rw [heq] at key
-  exact absurd key (not_lt.mpr (Finset.sum_nonneg fun i hi ↦
-    mul_nonneg (hy i (mem_range.mp hi)).le (hrow i (mem_range.mp hi))))
-
 /-- The two ends of a chain of components of self-intersection `-2w` do not meet, as soon as the
 numerical type has more components than the chain has length. -/
 private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
@@ -245,7 +159,8 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
     intro p q hpq hq hne
     have key := IH (q - p + 1) (by omega) (fun k ↦ c (p + k)) (hc.shift (by omega)) (by omega)
       (by omega)
-    rwa [show p + (q - p + 1 - 1) = q by omega, Nat.add_zero] at key
+    have hend : p + (q - p + 1 - 1) = q := by omega
+    rwa [hend, Nat.add_zero] at key
   rcases lt_or_ge t 7 with h7 | h7
   · -- Up to six components the classification of proper subgraphs applies directly.
     interval_cases t
@@ -349,7 +264,8 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
       rcases Nat.eq_zero_or_pos i with rfl | hi0
       · exact hwt0
       rcases eq_or_lt_of_le (Nat.succ_le_of_lt hi) with h | h
-      · rw [show i = t - 1 by omega]
+      · have hi_last : i = t - 1 := by omega
+        rw [hi_last]
         exact hwtm1
       · exact hwt i hi0 (by omega)
     have hclose : T.intersection (c (t - 1)) (c 0) = W := by rw [hwrap₁.2.2.1, hwtm1]
@@ -358,7 +274,9 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
       rcases Nat.eq_zero_or_pos i with rfl | hi0
       · rw [hwrap₂.2.2.1, hwt0]
       rcases eq_or_lt_of_le (Nat.succ_le_of_lt hi) with h | h
-      · rw [show i = t - 2 by omega, show t - 2 + 1 = t - 1 by omega, hwrap₁.1, hwtm2]
+      · have hi_penultimate : i = t - 2 := by omega
+        have hsucc_penultimate : t - 2 + 1 = t - 1 := by omega
+        rw [hi_penultimate, hsucc_penultimate, hwrap₁.1, hwtm2]
       · rw [(hstep i hi0 (by omega)).1, hwtall i (by omega)]
     have hedgeW : ∀ i j, j = i + 1 → j < t → T.intersection (c i) (c j) = W := by
       intro i j hij hj
@@ -366,19 +284,19 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
       exact hedge i hj
     -- The cycle is affine: the all-ones vector makes every row of the intersection form vanish,
     -- which negative definiteness on a proper subset of the components forbids.
-    refine T.false_of_row_sum_nonneg (c := c) (by omega) hc.injOn hcard
+    refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) (by omega) hc.injOn hcard
       (y := fun _ ↦ (1 : ℤ)) (fun i _ ↦ one_pos) ?_
     intro i hi
     simp only [mul_one]
     rcases Nat.eq_zero_or_pos i with rfl | hi0
-    · exact Eq.ge (sum_range_eq_of_eq_zero_triple (a := 0) (b := 1) (d := t - 1) (by omega)
+    · exact Eq.ge (sum_range_eq_of_eq_zero_off_triple (a := 0) (b := 1) (d := t - 1) (by omega)
         (by omega) (by omega) (by omega) (by omega) (by omega)
         (fun j hj _ _ hjt ↦ hsub 0 j (by omega) hj (Or.inr hjt))
         (by rw [hc.intersection_self 0 (by omega), hedgeW 0 1 rfl (by omega),
           T.intersection_comm (c 0) (c (t - 1)), hclose, hwt0]; ring))
     rcases eq_or_lt_of_le (Nat.succ_le_of_lt hi) with h | h
     · obtain rfl : i = t - 1 := by omega
-      exact Eq.ge (sum_range_eq_of_eq_zero_triple (a := 0) (b := t - 2) (d := t - 1) (by omega)
+      exact Eq.ge (sum_range_eq_of_eq_zero_off_triple (a := 0) (b := t - 2) (d := t - 1) (by omega)
         (by omega) (by omega) (by omega) (by omega) (by omega)
         (fun j hj hj0 _ _ ↦ by
           rw [T.intersection_comm]
@@ -386,7 +304,7 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
         (by rw [hclose, T.intersection_comm (c (t - 1)) (c (t - 2)),
           hedgeW (t - 2) (t - 1) (by omega) (by omega), hc.intersection_self (t - 1) (by omega),
           hwtm1]; ring))
-    · exact Eq.ge (sum_range_eq_of_eq_zero_triple (a := i - 1) (b := i) (d := i + 1) (by omega)
+    · exact Eq.ge (sum_range_eq_of_eq_zero_off_triple (a := i - 1) (b := i) (d := i + 1) (by omega)
         (by omega) (by omega) (by omega) (by omega) (by omega)
         (fun j hj _ _ _ ↦ by
           rcases lt_or_ge j i with hji | hji
@@ -407,7 +325,8 @@ theorem IsMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
     (hpq : p + 1 < q) (hq : q < t) : T.intersection (c p) (c q) = 0 := by
   have key := T.intersection_ends_eq_zero (q - p + 1) (fun k ↦ c (p + k)) (hc.shift (by omega))
     (by omega) (by omega)
-  rwa [show p + (q - p + 1 - 1) = q by omega, Nat.add_zero] at key
+  have hend : p + (q - p + 1 - 1) = q := by omega
+  rwa [hend, Nat.add_zero] at key
 
 
 /-- The weight classification of a chain of components of self-intersection `-2w`. -/
@@ -424,7 +343,8 @@ private lemma exists_weight_eq_aux (T : NumericalType.{u}) (t : ℕ) :
   intro c hc hcard ht
   rcases eq_or_lt_of_le (Nat.succ_le_of_lt ht) with rfl | h6
   · -- Five components: the five-component classification already lists the three patterns.
-    rw [show (5 : ℕ) - 1 = 4 by norm_num]
+    have hfive_pred : (5 : ℕ) - 1 = 4 := by norm_num
+    rw [hfive_pred]
     obtain ⟨p₁, q₁, p₂, q₂, p₃, q₃, p₄, q₄, e₁p, e₁q, e₂p, e₂q, e₃p, e₃q, e₄p, e₄q, hmem⟩ :=
       T.exists_intersection_ratio_chain_five_mem (by omega)
       (hc.intersection_self 0 (by omega)) (hc.intersection_self 1 (by omega))
@@ -484,11 +404,13 @@ private lemma exists_weight_eq_aux (T : NumericalType.{u}) (t : ℕ) :
       rcases lt_or_ge (i + 1) (t - 1) with h | h
       · exact hWint i h1 h
       · have key := hW'int (i - 1) (by omega) (by omega)
-        rw [show 1 + (i - 1) = i by omega] at key
+        have hshift : 1 + (i - 1) = i := by omega
+        rw [hshift] at key
         rw [key, hWW]
     have hend : (T.weight (c (t - 1)) : ℤ) = W ∨ (T.weight (c (t - 1)) : ℤ) = 2 * W ∨
         2 * (T.weight (c (t - 1)) : ℤ) = W := by
-      rw [show (1 : ℕ) + (t - 1 - 1) = t - 1 by omega] at hW'end
+      have hlast : (1 : ℕ) + (t - 1 - 1) = t - 1 := by omega
+      rw [hlast] at hW'end
       rw [hWW]
       exact hW'end
     refine ⟨W, hWpos, hint, hW0, hend, ?_⟩
@@ -536,29 +458,32 @@ private lemma exists_weight_eq_aux (T : NumericalType.{u}) (t : ℕ) :
       have e₁ : j ≠ 0 := by omega
       have e₂ : j ≠ t - 1 := by omega
       simp [hydef, e₁, e₂]
-    refine T.false_of_row_sum_nonneg (c := c) (by omega) hc.injOn hcard (y := y) ?_ ?_
+    refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) (by omega) hc.injOn hcard
+      (y := y) ?_ ?_
     · intro i hi
       rcases Nat.eq_zero_or_pos i with rfl | h1
       · rw [hy₀]; exact hα
       rcases lt_or_ge i (t - 1) with h2 | h2
       · rw [hy₂ i h1 h2]; norm_num
-      · rw [show i = t - 1 by omega, hyₗ]; exact hγ
+      · have hi_last : i = t - 1 := by omega
+        rw [hi_last, hyₗ]
+        exact hγ
     intro i hi
     rcases Nat.eq_zero_or_pos i with rfl | h1
-    · refine Eq.ge (sum_range_eq_of_eq_zero_pair (a := 0) (b := 1) (by omega) (by omega)
+    · refine Eq.ge (sum_range_eq_of_eq_zero_off_pair (a := 0) (b := 1) (by omega) (by omega)
         (by omega) (fun j hj _ hj₁ ↦ by rw [hchord 0 j (by omega) hj, zero_mul]) ?_)
       rw [hy₀, hy₂ 1 (by omega) (by omega), hc.intersection_self 0 (by omega)]
       linarith [hα₁]
     rcases eq_or_lt_of_le (Nat.succ_le_of_lt h1) with rfl | h2
-    · refine Eq.ge (sum_range_eq_of_eq_zero_triple (a := 0) (b := 1) (d := 2) (by omega) (by omega)
-        (by omega) (by omega) (by omega) (by omega)
+    · refine Eq.ge (sum_range_eq_of_eq_zero_off_triple (a := 0) (b := 1) (d := 2)
+        (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
         (fun j hj _ _ hj₂ ↦ by rw [hchord 1 j (by omega) hj, zero_mul]) ?_)
       rw [T.intersection_comm (c 1) (c 0), hy₀, hy₂ 1 (by omega) (by omega),
         hy₂ 2 (by omega) (by omega), hc.intersection_self 1 (by omega),
         hint 1 (by omega) (by omega), hmidedge 1 2 (by omega) (by omega) (by omega)]
       linarith [hα₂]
     rcases lt_or_ge i (t - 2) with h3 | h3
-    · refine Eq.ge (sum_range_eq_of_eq_zero_triple (a := i - 1) (b := i) (d := i + 1) (by omega)
+    · refine Eq.ge (sum_range_eq_of_eq_zero_off_triple (a := i - 1) (b := i) (d := i + 1) (by omega)
         (by omega) (by omega) (by omega) (by omega) (by omega)
         (fun j hj _ _ _ ↦ by
           rcases lt_or_ge j i with hji | hji
@@ -572,8 +497,9 @@ private lemma exists_weight_eq_aux (T : NumericalType.{u}) (t : ℕ) :
       ring
     rcases eq_or_lt_of_le h3 with h4 | h4
     · obtain rfl : i = t - 2 := h4.symm
-      refine Eq.ge (sum_range_eq_of_eq_zero_triple (a := t - 3) (b := t - 2) (d := t - 1) (by omega)
-        (by omega) (by omega) (by omega) (by omega) (by omega)
+      refine Eq.ge (sum_range_eq_of_eq_zero_off_triple
+        (a := t - 3) (b := t - 2) (d := t - 1) (by omega) (by omega) (by omega)
+        (by omega) (by omega) (by omega)
         (fun j hj _ _ _ ↦ by
           rw [T.intersection_comm, hchord j (t - 2) (by omega) (by omega), zero_mul]) ?_)
       rw [T.intersection_comm (c (t - 2)) (c (t - 3)), T.intersection_comm (c (t - 2)) (c (t - 1)),
@@ -582,7 +508,7 @@ private lemma exists_weight_eq_aux (T : NumericalType.{u}) (t : ℕ) :
         hc.intersection_self (t - 2) (by omega), hint (t - 2) (by omega) (by omega)]
       linarith [hγ₂]
     · obtain rfl : i = t - 1 := by omega
-      refine Eq.ge (sum_range_eq_of_eq_zero_pair (a := t - 2) (b := t - 1) (by omega) (by omega)
+      refine Eq.ge (sum_range_eq_of_eq_zero_off_pair (a := t - 2) (b := t - 1) (by omega) (by omega)
         (by omega) (fun j hj _ _ ↦ by
           rw [T.intersection_comm, hchord j (t - 1) (by omega) (by omega), zero_mul]) ?_)
       rw [hy₂ (t - 2) (by omega) (by omega), hyₗ, hc.intersection_self (t - 1) (by omega)]

@@ -44,6 +44,8 @@ multiplicities of a minimal numerical type.
   over the principal submatrix carrying the support of `x`.
 * `TauCeti.NumericalType.sum_sum_intersection_mul_neg`: the same sum is negative for a nonzero
   vector on a proper finite set of components.
+* `TauCeti.NumericalType.not_forall_sum_intersection_mul_nonneg_of_pos`: a positive vector on a
+  proper family of distinct components has a row with negative intersection sum.
 * `TauCeti.NumericalType.intersection_sq_lt_intersection_mul_intersection`: `aᵢⱼ² < aᵢᵢ aⱼⱼ` for
   distinct components when there are more than two components.
 * `TauCeti.NumericalType.intersection_det_triple_neg`: the determinant of the principal `3 × 3`
@@ -172,6 +174,46 @@ theorem sum_sum_intersection_mul_neg {s : Finset T.Component} (hs : s ≠ univ)
     sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦ by simp [hxdef, hi, hj]
   have hneg := T.dotProduct_intersection_mulVec_neg hxne (hx m hm)
   rwa [T.dotProduct_intersection_mulVec_of_support_subset hx, heq] at hneg
+
+/-- A positive integral vector on a proper family of distinct components cannot have every row
+of the intersection form nonnegative. This excludes affine configurations whose intersection
+matrix has a positive kernel vector. -/
+theorem not_forall_sum_intersection_mul_nonneg_of_pos {t : ℕ} {c : ℕ → T.Component}
+    (ht : 0 < t) (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
+    (hcard : t < Fintype.card T.Component) {y : ℕ → ℤ} (hy : ∀ i < t, 0 < y i) :
+    ¬ ∀ i < t, 0 ≤ ∑ j ∈ range t, T.intersection (c i) (c j) * y j := by
+  classical
+  intro hrow
+  set x : T.Component → ℤ := fun k ↦ ∑ j ∈ range t, if c j = k then y j else 0 with hxdef
+  have hxc : ∀ i < t, x (c i) = y i := by
+    intro i hi
+    rw [hxdef]
+    refine (Finset.sum_eq_single i (fun j hj hji ↦ ?_) (fun hj ↦ ?_)).trans (by simp)
+    · exact ite_eq_right_iff.mpr fun h ↦ absurd (hinj j (mem_range.mp hj) i hi h) hji
+    · exact absurd (mem_range.mpr hi) hj
+  have hinjOn : ∀ i ∈ range t, ∀ j ∈ range t, c i = c j → i = j :=
+    fun i hi j hj h ↦ hinj i (mem_range.mp hi) j (mem_range.mp hj) h
+  have hcards : ((range t).image c).card = t := by
+    rw [Finset.card_image_of_injOn (fun i hi j hj h ↦ hinjOn i (by simpa using hi) j
+      (by simpa using hj) h), card_range]
+  have hs : (range t).image c ≠ univ := by
+    intro h
+    rw [h, card_univ] at hcards
+    omega
+  have hne : ∃ i ∈ (range t).image c, x i ≠ 0 :=
+    ⟨c 0, Finset.mem_image_of_mem c (mem_range.mpr ht), by rw [hxc 0 ht]; exact (hy 0 ht).ne'⟩
+  have key := T.sum_sum_intersection_mul_neg hs hne
+  simp only [Finset.sum_image hinjOn] at key
+  have heq : ∑ i ∈ range t, ∑ j ∈ range t, T.intersection (c i) (c j) * x (c i) * x (c j)
+      = ∑ i ∈ range t, y i * ∑ j ∈ range t, T.intersection (c i) (c j) * y j := by
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j hj ↦ ?_
+    rw [hxc i (mem_range.mp hi), hxc j (mem_range.mp hj)]
+    ring
+  rw [heq] at key
+  exact absurd key (not_lt.mpr (Finset.sum_nonneg fun i hi ↦
+    mul_nonneg (hy i (mem_range.mp hi)).le (hrow i (mem_range.mp hi))))
 
 /-! ### Two components -/
 

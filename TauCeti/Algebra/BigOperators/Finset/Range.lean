@@ -29,6 +29,8 @@ which reindex a sum over antidiagonals to a rectangle.
   the rectangle `range k × range l` when the summand vanishes outside that rectangle.
 * `sum_sum_range_eq_of_eq_zero_right`: enlarging both ranges of a double sum that vanishes outside
   a rectangle.
+* `sum_range_eq_of_eq_zero_off_pair`: evaluating a range sum supported at two positions.
+* `sum_range_eq_of_eq_zero_off_triple`: evaluating a range sum supported at three positions.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
 * `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
   `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
@@ -129,6 +131,38 @@ theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : �
       simp only [mem_range, not_lt] at hp
       exact sum_eq_zero fun d _ ↦ hg p d (Or.inl hp)
   rw [← outer, ← sum_congr rfl fun p _ ↦ inner p]
+
+/-- A sum over `Finset.range t` whose terms vanish outside two distinct positions is the sum of
+the terms at those positions. -/
+theorem sum_range_eq_of_eq_zero_off_pair {N : Type*} [AddCommMonoid N] {t : ℕ} {f : ℕ → N}
+    {a b : ℕ} {v : N} (ha : a < t) (hb : b < t) (hab : a ≠ b)
+    (hz : ∀ j < t, j ≠ a → j ≠ b → f j = 0) (hv : f a + f b = v) :
+    ∑ j ∈ range t, f j = v := by
+  classical
+  rw [← Finset.sum_subset (s₁ := ({a, b} : Finset ℕ)) (s₂ := range t)
+    (fun x hx ↦ by
+      simp only [mem_insert, mem_singleton] at hx
+      rcases hx with rfl | rfl <;> simpa using by omega)
+    (fun x hx hx' ↦ by
+      simp only [mem_insert, mem_singleton, not_or] at hx'
+      exact hz x (mem_range.mp hx) hx'.1 hx'.2),
+    Finset.sum_pair hab, hv]
+
+/-- A sum over `Finset.range t` whose terms vanish outside three pairwise distinct positions is
+the sum of the terms at those positions. -/
+theorem sum_range_eq_of_eq_zero_off_triple {N : Type*} [AddCommMonoid N] {t : ℕ} {f : ℕ → N}
+    {a b d : ℕ} {v : N} (ha : a < t) (hb : b < t) (hd : d < t) (hab : a ≠ b) (had : a ≠ d)
+    (hbd : b ≠ d) (hz : ∀ j < t, j ≠ a → j ≠ b → j ≠ d → f j = 0)
+    (hv : f a + f b + f d = v) : ∑ j ∈ range t, f j = v := by
+  classical
+  rw [← Finset.sum_subset (s₁ := ({a, b, d} : Finset ℕ)) (s₂ := range t)
+    (fun x hx ↦ by
+      simp only [mem_insert, mem_singleton] at hx
+      rcases hx with rfl | rfl | rfl <;> simpa using by omega)
+    (fun x hx hx' ↦ by
+      simp only [mem_insert, mem_singleton, not_or] at hx'
+      exact hz x (mem_range.mp hx) hx'.1 hx'.2.1 hx'.2.2),
+    Finset.sum_insert (by simp [hab, had]), Finset.sum_pair hbd, ← add_assoc, hv]
 
 /-- Splitting a sum over `range n` into a prefix of length `p`, a block of length `d`, and the
 remaining suffix. -/
