@@ -17,6 +17,8 @@ solution after passing to a larger field.
 
 This builds on `Submodule.baseChange` from
 `Mathlib/LinearAlgebra/TensorProduct/Tower.lean` and
+`lTensor_mkQ` and `LinearMap.lTensor_range` from
+`Mathlib/LinearAlgebra/TensorProduct/RightExactness.lean`, as well as
 `Module.FaithfullyFlat.one_tmul_eq_zero_iff` from
 `Mathlib/RingTheory/Flat/FaithfullyFlat/Basic.lean`.
 
@@ -79,12 +81,8 @@ theorem range_baseChange (f : M →ₗ[R] N) :
     range (f.baseChange A) = (range f).baseChange A := by
   rw [Submodule.baseChange]
   ext z
-  change (∃ x, f.baseChange A x = z) ↔
-    ∃ x, (range f).subtype.baseChange A x = z
-  have h := SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) z
-  change (∃ x, f.lTensor A x = z) ↔
-    ∃ x, (range f).subtype.lTensor A x = z at h
-  simpa only [baseChange_eq_ltensor] using h
+  simpa only [mem_range, baseChange_eq_ltensor] using
+    SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) z
 
 end Range
 
