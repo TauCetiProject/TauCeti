@@ -77,9 +77,7 @@ noncomputable def of (x : X) : freeProfiniteGroup X :=
 theorem fromFreeGroup_of (x : X) : fromFreeGroup X (FreeGroup.of x) = of x :=
   (rfl)
 
-/-- `fromFreeGroup` is the underlying function of Mathlib's unit of the profinite completion.
-Mathlib bundles that unit as a morphism of `GrpCat` and provides no forward computation rule for
-it, so this opaque theorem isolates the one definitional reduction through `GrpCat.ofHom`. -/
+/-- The underlying function of `fromFreeGroup` is the unit map into the profinite completion. -/
 theorem coe_fromFreeGroup (X : Type u) :
     ⇑(fromFreeGroup X) = ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of (FreeGroup X)) :=
   (rfl)
@@ -131,6 +129,7 @@ generators. -/
 noncomputable def lift (f : X → P) : freeProfiniteGroup X →ₜ* P :=
   (ProfiniteCompletion.continuousMonoidHomEquiv (FreeGroup X) P).symm (FreeGroup.lift f)
 
+/-- The lift of `f` agrees with `f` on each canonical generator. -/
 @[simp]
 theorem lift_of (f : X → P) (x : X) : lift f (of x) = f x := by
   rw [← fromFreeGroup_of, lift, coe_fromFreeGroup,
@@ -148,6 +147,7 @@ theorem existsUnique_lift (f : X → P) :
   ⟨lift f, lift_of f, fun φ hφ => lift_unique f φ hφ⟩
 
 /-- The lift is natural in the target. -/
+@[simp]
 theorem comp_lift {Q : Type u} [Group Q] [TopologicalSpace Q] [IsTopologicalGroup Q]
     [CompactSpace Q] [TotallyDisconnectedSpace Q] (g : P →ₜ* Q) (f : X → P) :
     g.comp (lift f) = lift (⇑g ∘ f) :=
@@ -182,6 +182,7 @@ theorem map_id : map (id : X → X) = ContinuousMonoidHom.id (freeProfiniteGroup
   hom_ext fun x => by simp
 
 /-- `map` is functorial in the generating type. -/
+@[simp]
 theorem map_comp (u : X → Y) (v : Y → Z) : map (v ∘ u) = (map v).comp (map u) :=
   (hom_ext fun x => by simp).symm
 
