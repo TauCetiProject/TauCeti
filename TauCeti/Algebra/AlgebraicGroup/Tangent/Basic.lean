@@ -534,7 +534,7 @@ private lemma snd_convMul_apply
         (1 : WithConv (A →ₗ[R] CounitAlgebra R A B)).ofConv := by
     ext x
     exact fst_apply_of_mem_tangentKer h x
-  have hprod := LinearMap.snd_comp_convMul
+  have hprod := WithConv.snd_comp_convMul
     (toConv ψ₁.ofConv.toLinearMap) (toConv ψ₂.ofConv.toLinearMap)
   rw [hfst h₁, hfst h₂] at hprod
   rw [← AlgHom.toLinearMap_convMul] at hprod

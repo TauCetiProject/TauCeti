@@ -11,17 +11,17 @@ public import TauCeti.Algebra.DualNumber.Basic
 /-!
 # Convolution with dual-number coefficients
 
-`TauCeti.LinearMap.snd_comp_convMul` computes the first-order coefficient of a convolution
+`WithConv.snd_comp_convMul` computes the first-order coefficient of a convolution
 product. This product rule is used to differentiate the adjoint action.
 -/
 
 public section
 
-namespace TauCeti
+namespace WithConv
 
 /-- The infinitesimal coefficient of a convolution product of dual-number-valued maps
 satisfies the product rule. No counit or coassociativity assumption is needed. -/
-theorem LinearMap.snd_comp_convMul
+theorem snd_comp_convMul
     {R C B : Type*} [CommSemiring R] [AddCommMonoid C] [Module R C]
     [CoalgebraStruct R C] [Semiring B] [Algebra R B]
     (f g : WithConv (C →ₗ[R] DualNumber B)) :
@@ -34,4 +34,4 @@ theorem LinearMap.snd_comp_convMul
   simp [Coalgebra.Repr.convMul_apply (Coalgebra.Repr.arbitrary R c),
     Finset.sum_add_distrib]
 
-end TauCeti
+end WithConv
