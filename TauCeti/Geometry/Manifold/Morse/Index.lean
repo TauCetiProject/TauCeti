@@ -34,10 +34,10 @@ to the dimension of the model space.
   vector space.
 * `TauCeti.manifoldMorseIndex_transContinuousLinearEquiv`: invariance under an equivalent choice
   of model space.
-* `TauCeti.manifoldMorseIndex_neg_add_eq_finrank`: the complementary-index formula under
-  nondegeneracy of the preferred-chart Hessian.
-* `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_add_eq_finrank`: the
-  critical-point specialization.
+* `TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`: the complementary-index
+  formula under nondegeneracy of the preferred-chart Hessian.
+* `IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`:
+  the critical-point specialization.
 
 ## References
 
@@ -137,7 +137,7 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv
 
 /-- If the preferred-chart Hessian is nondegenerate, the manifold Morse indices of a function and
 its negation add to the dimension of the model space. -/
-theorem manifoldMorseIndex_neg_add_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
     (h : (hessianQuadraticForm (f ∘ (extChartAt I x).symm)
       (extChartAt I x x)).Nondegenerate) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
@@ -151,10 +151,10 @@ namespace IsManifoldNondegenerateCriticalPoint
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
 the dimension of the manifold. -/
-theorem manifoldMorseIndex_neg_add_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
-  exact TauCeti.manifoldMorseIndex_neg_add_eq_finrank
+  exact TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (((isManifoldNondegenerateCriticalPoint_iff I).mp h).hessianQuadraticForm_nondegenerate)
 
 end IsManifoldNondegenerateCriticalPoint
