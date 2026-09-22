@@ -106,7 +106,7 @@ theorem mem_center_iff (a : K) (b : Kˣ) {x : ℍ[K,a,(b : K)]} :
       simp [hx.1, hx.2.1, hx.2.2]
       ring
 
-/-- A unit-parameter quaternion symbol is central over its base field. -/
+/-- A unit-parameter quaternion symbol is central over its base ring. -/
 instance instIsCentral (a : K) (b : Kˣ) : Algebra.IsCentral K ℍ[K,a,(b : K)] :=
   ⟨fun x hx ↦ Algebra.mem_bot.mpr ⟨x.re, by
     -- The algebra map is the scalar inclusion; expose it before comparing coordinates.
