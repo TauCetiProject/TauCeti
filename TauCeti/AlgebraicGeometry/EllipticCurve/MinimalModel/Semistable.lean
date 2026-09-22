@@ -55,7 +55,8 @@ variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 /-! ### The local criterion -/
 
 /-- A minimal equation is not additively reduced exactly when its discriminant or its `c₄` is a
-unit at the place. These are respectively the good- and multiplicative-reduction cases.
+unit at the place. A unit discriminant gives good reduction; a unit `c₄` gives multiplicative
+reduction when the discriminant is not a unit.
 
 This is valuation arithmetic on the equation itself, so no ellipticity is needed; `IsSemistable`
 adds that hypothesis where the trichotomy is read as a reduction type. -/
@@ -138,8 +139,8 @@ theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
     · exact hmult.not_hasAdditiveReduction
 
 /-- **The valuation criterion for semistability**: at every height-one prime, a local minimal
-equation has discriminant of valuation one (good reduction) or `c₄` of valuation one
-(multiplicative reduction). -/
+equation has a unit discriminant or a unit `c₄`; the latter gives multiplicative reduction when
+the discriminant is not a unit. -/
 theorem isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one
     (W : WeierstrassCurve F) [W.IsElliptic] :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
