@@ -16,7 +16,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 The Gauss lemma controls the radial part of the differential of the Riemannian exponential map.
 Its Cauchy--Schwarz consequence says that the radial derivative of a polar lift is no larger than
 the speed of its image under the exponential map.  Integrating this estimate shows that a curve
-inside a normal neighbourhood has length at least the increase in the norm of its logarithm.
+inside a normal neighbourhood has length at least the absolute change in the norm of its logarithm.
 
 The norm is not differentiable at the origin.  As in the usual proof of radial minimization, the
 argument first uses the smooth radii `sqrt (‖v‖ ^ 2 + δ)` for `δ > 0` and then lets `δ` tend to
@@ -26,7 +26,7 @@ zero.  This formulation includes curves passing through the centre of the normal
 
 * `TauCeti.Manifold.abs_inner_le_norm_mul_norm_mfderiv_riemannianExp`: the pointwise radial
   differential estimate.
-* `TauCeti.Manifold.IsNormalDomain.ofReal_norm_riemannianLog_sub_le_pathELength`: the polar
+* `IsNormalDomain.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength`: the polar
   length comparison for a `C¹` curve in a normal neighbourhood.
 
 ## References
@@ -88,21 +88,21 @@ theorem abs_inner_le_norm_mul_norm_mfderiv_riemannianExp {p : M}
 
 /-- **Polar length comparison for the exponential map.** If a `C¹` path `w` in the tangent
 space stays in the natural domain of `exp_p`, then the length of `exp_p ∘ w` is at least the
-increase in the radial norm of `w`.
+absolute change in the radial norm of `w`.
 
 No nonvanishing hypothesis is imposed on `w`: the proof differentiates the smooth approximation
 `sqrt (‖w‖² + δ)` and lets `δ` tend to zero. -/
-theorem ofReal_norm_sub_norm_le_pathELength_riemannianExp {p : M}
+theorem ofReal_abs_norm_sub_norm_le_pathELength_riemannianExp {p : M}
     {w : ℝ → TangentSpace I p} {a b : ℝ} (hab : a ≤ b)
     (hw : ContDiffOn ℝ 1 w (Icc a b))
     (hdom : MapsTo w (Icc a b) (expDomain I M p)) :
-    ENNReal.ofReal (‖w b‖ - ‖w a‖) ≤
+    ENNReal.ofReal |‖w b‖ - ‖w a‖| ≤
       Manifold.pathELength I (riemannianExp I M p ∘ w) a b := by
   let c : ℝ → M := riemannianExp I M p ∘ w
   have hkey : ∀ δ : ℝ, 0 < δ →
       ENNReal.ofReal
-          (Real.sqrt (inner ℝ (w b) (w b) + δ) -
-            Real.sqrt (inner ℝ (w a) (w a) + δ)) ≤
+          |Real.sqrt (inner ℝ (w b) (w b) + δ) -
+            Real.sqrt (inner ℝ (w a) (w a) + δ)| ≤
         Manifold.pathELength I c a b := by
     intro δ hδ
     let r : TangentSpace I p → ℝ := fun v ↦ Real.sqrt (inner ℝ v v + δ)
@@ -116,16 +116,13 @@ theorem ofReal_norm_sub_norm_le_pathELength_riemannianExp {p : M}
     have hdisplacement : ‖r (w b) - r (w a)‖ₑ ≤
         ∫⁻ t in Icc a b, ‖derivWithin (r ∘ w) (Icc a b) t‖ₑ :=
       enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hrw hab
-    have hleft : ENNReal.ofReal (r (w b) - r (w a)) ≤ ‖r (w b) - r (w a)‖ₑ := by
-      rw [← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal (le_abs_self _)
     calc
       ENNReal.ofReal
-          (Real.sqrt (inner ℝ (w b) (w b) + δ) -
-            Real.sqrt (inner ℝ (w a) (w a) + δ)) =
-          ENNReal.ofReal (r (w b) - r (w a)) := rfl
-      _ ≤ ∫⁻ t in Icc a b, ‖derivWithin (r ∘ w) (Icc a b) t‖ₑ :=
-        hleft.trans hdisplacement
+          |Real.sqrt (inner ℝ (w b) (w b) + δ) -
+            Real.sqrt (inner ℝ (w a) (w a) + δ)| =
+          ‖r (w b) - r (w a)‖ₑ := by
+        rw [← ofReal_norm, Real.norm_eq_abs]
+      _ ≤ ∫⁻ t in Icc a b, ‖derivWithin (r ∘ w) (Icc a b) t‖ₑ := hdisplacement
       _ = ∫⁻ t in Ioo a b, ‖derivWithin (r ∘ w) (Icc a b) t‖ₑ := by
         rw [restrict_Ioo_eq_restrict_Icc]
       _ ≤ ∫⁻ t in Ioo a b,
@@ -186,31 +183,43 @@ theorem ofReal_norm_sub_norm_le_pathELength_riemannianExp {p : M}
         exact Manifold.pathELength_eq_lintegral_mfderiv_Ioo.symm
   have htend : Tendsto
       (fun δ : ℝ ↦ ENNReal.ofReal
-        (Real.sqrt (inner ℝ (w b) (w b) + δ) -
-          Real.sqrt (inner ℝ (w a) (w a) + δ)))
+        |Real.sqrt (inner ℝ (w b) (w b) + δ) -
+          Real.sqrt (inner ℝ (w a) (w a) + δ)|)
       (𝓝[>] (0 : ℝ))
-      (𝓝 (ENNReal.ofReal (‖w b‖ - ‖w a‖))) := by
+      (𝓝 (ENNReal.ofReal |‖w b‖ - ‖w a‖|)) := by
     have hcont : Continuous (fun δ : ℝ ↦ ENNReal.ofReal
-        (Real.sqrt (inner ℝ (w b) (w b) + δ) -
-          Real.sqrt (inner ℝ (w a) (w a) + δ))) := by
+        |Real.sqrt (inner ℝ (w b) (w b) + δ) -
+          Real.sqrt (inner ℝ (w a) (w a) + δ)|) := by
       exact ENNReal.continuous_ofReal.comp
-        ((Real.continuous_sqrt.comp (continuous_const.add continuous_id)).sub
-          (Real.continuous_sqrt.comp (continuous_const.add continuous_id)))
+        (continuous_abs.comp
+          ((Real.continuous_sqrt.comp (continuous_const.add continuous_id)).sub
+            (Real.continuous_sqrt.comp (continuous_const.add continuous_id))))
     have hzero := hcont.tendsto 0
     simpa only [add_zero, norm_eq_sqrt_real_inner] using
       hzero.mono_left (nhdsWithin_le_nhds (s := Ioi (0 : ℝ)))
   exact le_of_tendsto htend (eventually_mem_nhdsWithin.mono fun δ hδ ↦ hkey δ hδ)
 
+/-- The increase in radial norm along a `C¹` path in the natural domain of `exp_p` is at most
+the length of its image under `exp_p`. -/
+theorem ofReal_norm_sub_norm_le_pathELength_riemannianExp {p : M}
+    {w : ℝ → TangentSpace I p} {a b : ℝ} (hab : a ≤ b)
+    (hw : ContDiffOn ℝ 1 w (Icc a b))
+    (hdom : MapsTo w (Icc a b) (expDomain I M p)) :
+    ENNReal.ofReal (‖w b‖ - ‖w a‖) ≤
+      Manifold.pathELength I (riemannianExp I M p ∘ w) a b :=
+  (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
+    (ofReal_abs_norm_sub_norm_le_pathELength_riemannianExp hab hw hdom)
+
 /-- **Polar length comparison in a normal neighbourhood.** Along a `C¹` curve contained in the
-image of a normal domain, the increase of the norm of its Riemannian logarithm is at most the
-length of the curve. -/
-theorem IsNormalDomain.ofReal_norm_riemannianLog_sub_le_pathELength
+image of a normal domain, the absolute change in the norm of its Riemannian logarithm is at most
+the length of the curve. -/
+theorem IsNormalDomain.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength
     {p : M} {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U)
     {γ : ℝ → M} {a b : ℝ} (hab : a ≤ b)
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b))
     (hγU : MapsTo γ (Icc a b) (riemannianExp I M p '' U)) :
     ENNReal.ofReal
-        (‖riemannianLog I M p U (γ b)‖ - ‖riemannianLog I M p U (γ a)‖) ≤
+        |‖riemannianLog I M p U (γ b)‖ - ‖riemannianLog I M p U (γ a)‖| ≤
       Manifold.pathELength I γ a b := by
   let w : ℝ → TangentSpace I p := riemannianLog I M p U ∘ γ
   have hw : ContDiffOn ℝ 1 w (Icc a b) := by
@@ -218,12 +227,25 @@ theorem IsNormalDomain.ofReal_norm_riemannianLog_sub_le_pathELength
     exact (h.contMDiffOn_riemannianLog.of_le (by simp)).comp hγ hγU
   have hdom : MapsTo w (Icc a b) (expDomain I M p) := fun t ht ↦
     h.subset_expDomain (h.riemannianLog_mem (hγU ht))
-  have hpolar := ofReal_norm_sub_norm_le_pathELength_riemannianExp
+  have hpolar := ofReal_abs_norm_sub_norm_le_pathELength_riemannianExp
     (I := I) (M := M) hab hw hdom
   have hc : EqOn (riemannianExp I M p ∘ w) γ (Icc a b) := fun t ht ↦ by
     exact h.riemannianExp_riemannianLog (hγU ht)
   rw [Manifold.pathELength_congr hc] at hpolar
   exact hpolar
+
+/-- Along a `C¹` curve contained in the image of a normal domain, the increase in the norm of its
+Riemannian logarithm is at most the length of the curve. -/
+theorem IsNormalDomain.ofReal_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength
+    {p : M} {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U)
+    {γ : ℝ → M} {a b : ℝ} (hab : a ≤ b)
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b))
+    (hγU : MapsTo γ (Icc a b) (riemannianExp I M p '' U)) :
+    ENNReal.ofReal
+        (‖riemannianLog I M p U (γ b)‖ - ‖riemannianLog I M p U (γ a)‖) ≤
+      Manifold.pathELength I γ a b :=
+  (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
+    (h.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength hab hγ hγU)
 
 /-- A `C¹` curve from the centre of a normal neighbourhood to a point `q` has length at least
 the norm of `log_p q`. -/
@@ -235,7 +257,7 @@ theorem IsNormalDomain.ofReal_norm_riemannianLog_le_pathELength
     ENNReal.ofReal ‖riemannianLog I M p U (γ b)‖ ≤
       Manifold.pathELength I γ a b := by
   simpa only [hγa, h.riemannianLog_self, norm_zero, sub_zero] using
-    h.ofReal_norm_riemannianLog_sub_le_pathELength hab hγ hγU
+    h.ofReal_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength hab hγ hγU
 
 end TauCeti.Manifold
 
