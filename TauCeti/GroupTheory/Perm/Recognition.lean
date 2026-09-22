@@ -38,6 +38,10 @@ subgroups in the low-degree classification, where the order of a subgroup bounds
   of prime degree contains a full cycle.
 * `TauCeti.subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem`: a transitive
   permutation group of prime degree that contains a transposition is the full symmetric group.
+* `TauCeti.alternatingGroup_le_of_isPretransitive_of_orderOf_eq_three`: a transitive subgroup of
+  `S₅` containing an element of order `3` contains `A₅`.
+* `TauCeti.subgroup_eq_top_of_isPretransitive_of_orderOf_eq_six`: a transitive subgroup of `S₅`
+  containing an element of order `6` is the full symmetric group.
 * `TauCeti.alternatingGroup_le_of_index_lt`: a subgroup of `Sₙ`, `n ≥ 5`, of index less than
   `n` contains `Aₙ`.
 * `Equiv.Perm.isSwap_pow_prod_erase_two_cycleType_and_odd`: if a permutation has exactly one
@@ -173,5 +177,135 @@ theorem _root_.Equiv.Perm.exists_odd_isSwap_pow {σ : Equiv.Perm α}
     ∃ k, Odd k ∧ (σ ^ k).IsSwap := by
   have h := σ.isSwap_pow_prod_erase_two_cycleType_and_odd htwo hodd
   exact ⟨(σ.cycleType.erase 2).prod, h.2, h.1⟩
+
+/-- A permutation of order `6` on five points has cycle type `(2, 3)`: it is the product of a
+transposition and a three-cycle. -/
+private theorem cycleType_eq_two_three_of_orderOf_eq_six {σ : Equiv.Perm α}
+    (hcard : Fintype.card α = 5) (hσ : orderOf σ = 6) : σ.cycleType = {2, 3} := by
+  have hsum : σ.cycleType.sum ≤ 5 := by
+    have := σ.sum_cycleType_le
+    rwa [hcard] at this
+  have hdvd : ∀ n ∈ σ.cycleType, n = 2 ∨ n = 3 := by
+    intro n hn
+    have hn2 : 2 ≤ n := Equiv.Perm.two_le_of_mem_cycleType hn
+    have hnd : n ∣ 6 := by
+      have := Equiv.Perm.dvd_of_mem_cycleType hn
+      rwa [hσ] at this
+    have hn6 : n ≤ 6 := Nat.le_of_dvd (by omega) hnd
+    interval_cases n
+    · exact Or.inl rfl
+    · exact Or.inr rfl
+    · exact absurd hnd (by decide)
+    · exact absurd hnd (by decide)
+    · obtain ⟨t, ht⟩ := Multiset.exists_cons_of_mem hn
+      rw [ht, Multiset.sum_cons] at hsum
+      omega
+  have hex2 : (2 : ℕ) ∈ σ.cycleType := by
+    by_contra h
+    have hall : ∀ n ∈ σ.cycleType, n ∣ 3 := by
+      intro n hn
+      obtain rfl | rfl := hdvd n hn
+      · exact absurd hn h
+      · exact dvd_rfl
+    have h3 : σ.cycleType.lcm ∣ 3 := Multiset.lcm_dvd.mpr hall
+    rw [Equiv.Perm.lcm_cycleType, hσ] at h3
+    omega
+  have hex3 : (3 : ℕ) ∈ σ.cycleType := by
+    by_contra h
+    have hall : ∀ n ∈ σ.cycleType, n ∣ 2 := by
+      intro n hn
+      obtain rfl | rfl := hdvd n hn
+      · exact dvd_rfl
+      · exact absurd hn h
+    have h2 : σ.cycleType.lcm ∣ 2 := Multiset.lcm_dvd.mpr hall
+    rw [Equiv.Perm.lcm_cycleType, hσ] at h2
+    omega
+  obtain ⟨m1, hm1⟩ := Multiset.exists_cons_of_mem hex3
+  have h2mem : (2 : ℕ) ∈ m1 := by
+    rw [hm1] at hex2
+    simpa using hex2
+  obtain ⟨m2, hm2⟩ := Multiset.exists_cons_of_mem h2mem
+  have hm2' : m2 = 0 := by
+    by_contra hne
+    obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hne
+    obtain ⟨t, ht⟩ := Multiset.exists_cons_of_mem hx
+    have hx2 : 2 ≤ x := Equiv.Perm.two_le_of_mem_cycleType (by rw [hm1, hm2]; simp [hx])
+    rw [hm1, hm2, ht] at hsum
+    simp only [Multiset.sum_cons] at hsum
+    omega
+  rw [hm1, hm2, hm2']
+  exact Multiset.pair_comm 3 2
+
+/-- A permutation of order `3` on five points is a three-cycle. -/
+private theorem isThreeCycle_of_orderOf_eq_three {σ : Equiv.Perm α}
+    (hcard : Fintype.card α = 5) (hσ : orderOf σ = 3) : Equiv.Perm.IsThreeCycle σ := by
+  have hsum : σ.cycleType.sum ≤ 5 := by
+    have := σ.sum_cycleType_le
+    rwa [hcard] at this
+  have hdvd : ∀ n ∈ σ.cycleType, n = 3 := by
+    intro n hn
+    have hn2 : 2 ≤ n := Equiv.Perm.two_le_of_mem_cycleType hn
+    have hnd : n ∣ 3 := by
+      have := Equiv.Perm.dvd_of_mem_cycleType hn
+      rwa [hσ] at this
+    have hn3 : n ≤ 3 := Nat.le_of_dvd (by omega) hnd
+    interval_cases n <;> first
+      | exact rfl
+      | exact absurd hnd (by decide)
+  have hex3 : (3 : ℕ) ∈ σ.cycleType := by
+    by_contra h
+    have hall : ∀ n ∈ σ.cycleType, n ∣ 1 := by
+      intro n hn
+      obtain rfl := hdvd n hn
+      exact absurd hn h
+    have h1 : σ.cycleType.lcm ∣ 1 := Multiset.lcm_dvd.mpr hall
+    rw [Equiv.Perm.lcm_cycleType, hσ] at h1
+    omega
+  obtain ⟨m, hm⟩ := Multiset.exists_cons_of_mem hex3
+  have hm0 : m = 0 := by
+    by_contra hne
+    obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hne
+    obtain ⟨t, ht⟩ := Multiset.exists_cons_of_mem hx
+    have hx3 : x = 3 := hdvd x (by rw [hm]; simp [hx])
+    rw [hm, ht] at hsum
+    simp only [Multiset.sum_cons] at hsum
+    omega
+  change σ.cycleType = {3}
+  rw [hm, hm0]
+  rfl
+
+/-- **A transitive subgroup of `S₅` containing an element of order `3` contains the alternating
+group.** On five points an element of order `3` is a three-cycle, so a primitive criterion
+applies: a primitive subgroup of `Sₙ`, `n ≥ 3`, containing a three-cycle contains `Aₙ`. -/
+theorem alternatingGroup_le_of_isPretransitive_of_orderOf_eq_three
+    (hcard : Fintype.card α = 5) {G : Subgroup (Equiv.Perm α)} (hG : IsPretransitive G α)
+    {σ : Equiv.Perm α} (hσ : orderOf σ = 3) (hg : σ ∈ G) : alternatingGroup α ≤ G := by
+  let _ : IsPretransitive G α := hG
+  refine Equiv.Perm.alternatingGroup_le_of_isPreprimitive_of_isThreeCycle_mem
+    (IsPreprimitive.of_prime_card ?_) (isThreeCycle_of_orderOf_eq_three hcard hσ) hg
+  rw [Nat.card_eq_fintype_card, hcard]
+  exact Nat.prime_five
+
+omit [DecidableEq α] in
+/-- **A transitive subgroup of `S₅` containing an element of order `6` is the full symmetric
+group.** On five points an element of order `6` is the product of a transposition and a
+three-cycle, so some odd power of it is a transposition and the transposition criterion
+applies. -/
+theorem subgroup_eq_top_of_isPretransitive_of_orderOf_eq_six
+    (hcard : Fintype.card α = 5) {G : Subgroup (Equiv.Perm α)} (hG : IsPretransitive G α)
+    {σ : Equiv.Perm α} (hσ : orderOf σ = 6) (hg : σ ∈ G) : G = ⊤ := by
+  classical
+  have hct : σ.cycleType = {2, 3} := cycleType_eq_two_three_of_orderOf_eq_six hcard hσ
+  obtain ⟨k, -, hswap⟩ := Equiv.Perm.exists_odd_isSwap_pow (σ := σ) (by simp [hct])
+    fun n hn hn2 => by
+    rw [hct] at hn
+    simp only [Multiset.insert_eq_cons, Multiset.mem_cons, Multiset.mem_singleton] at hn
+    obtain rfl | rfl := hn
+    · exact absurd rfl hn2
+    · exact ⟨1, by omega⟩
+  refine subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem hG ?_ (σ ^ k) hswap
+    (pow_mem hg k)
+  rw [Nat.card_eq_fintype_card, hcard]
+  exact Nat.prime_five
 
 end TauCeti

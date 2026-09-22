@@ -36,8 +36,10 @@ transitive-groups table. The reference family is empty outside degrees one throu
 * `TauCeti.TransitiveGroupLabel.exists_le_map_conj_of_le`: inclusion of a reference subgroup in
   a larger subgroup transports to inclusion of the labelled subgroup in a conjugate.
 * `TauCeti.TransitiveGroupLabel.natCard_eq`, `TauCeti.TransitiveGroupLabel.le_alternatingGroup_iff`,
-  `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`:
-  a labelled subgroup has the order, parity, primitivity, and solvability of its reference.
+  `TauCeti.TransitiveGroupLabel.isPreprimitive_iff`, `TauCeti.TransitiveGroupLabel.isSolvable_iff`,
+  `TauCeti.TransitiveGroupLabel.isCyclic_iff`:
+  a labelled subgroup has the order, parity, primitivity, solvability, and cyclicity of its
+  reference.
 * `TauCeti.transitiveGroupLabel_one`, `TauCeti.transitiveGroupLabel_two_iff`: in degrees one and
   two, a subgroup carries the unique label exactly when it is transitive.
 
@@ -460,6 +462,15 @@ theorem TransitiveGroupLabel.isSolvable_iff {n : ℕ} {j : TransitiveGroupIndex 
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
   rw [← hτ, MulEquiv.toMonoidHom_eq_coe]
   exact (τ.permCongrHom.subgroupMap G).isSolvable_congr
+
+/-- A subgroup carrying a transitive-group label is cyclic exactly when its reference subgroup
+is. -/
+theorem TransitiveGroupLabel.isCyclic_iff {n : ℕ} {j : TransitiveGroupIndex n}
+    {G : Subgroup (Perm (Fin n))} (h : TransitiveGroupLabel j G) :
+    IsCyclic G ↔ IsCyclic (referenceSubgroup n j) := by
+  obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
+  rw [← hτ, MulEquiv.toMonoidHom_eq_coe]
+  exact MulEquiv.isCyclic (τ.permCongrHom.subgroupMap G)
 
 /-- In degree one every subgroup carries the label `1T1`. -/
 @[simp]
