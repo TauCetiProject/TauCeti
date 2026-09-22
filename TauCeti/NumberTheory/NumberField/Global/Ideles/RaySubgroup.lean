@@ -86,8 +86,9 @@ theorem comap_RaySubgroup (𝔪 : Modulus K) :
 /-- **Membership of an idele representative in a ray subgroup.**  The class of an idele lies in
 `RaySubgroup 𝔪` exactly when the idele differs from a congruence idele by a principal idele. -/
 @[simp] theorem mk_mem_RaySubgroup_iff {𝔪 : Modulus K} {x : IdeleGroup (𝓞 K) K} :
-    QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x ∈ RaySubgroup 𝔪 ↔
+    (x : IdeleClassGroup (𝓞 K) K) ∈ RaySubgroup 𝔪 ↔
       x ∈ ideleCongruenceSubgroup 𝔪 ⊔ IdeleGroup.principalSubgroup (𝓞 K) K := by
+  change QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x ∈ RaySubgroup 𝔪 ↔ _
   rw [← Subgroup.mem_comap, comap_RaySubgroup]
 
 /-- **Ray subgroups decrease when the modulus grows.** -/
