@@ -155,6 +155,17 @@ theorem normalizedCharEisensteinSeriesMFRaise_apply (hk : 3 ≤ (k : ℤ))
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharEisensteinSeriesMFRaise, ModularForm.levelRaise_apply]
 
+/-- At `t = 1`, the raised normalized series is the base series restricted from level `uv` to
+level `N`. -/
+@[simp]
+theorem normalizedCharEisensteinSeriesMFRaise_one (hk : 3 ≤ (k : ℤ))
+    (huv : u * v ∣ N) :
+    haveI : NeZero (u * v) := NeZero.of_dvd huv
+    normalizedCharEisensteinSeriesMFRaise psi phi 1 hk (by simpa using huv) =
+      ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd huv)
+        (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl) := by
+  rw [normalizedCharEisensteinSeriesMFRaise, ModularForm.levelRaise_one]
+
 /-- The `q`-expansion of a raised normalized character Eisenstein series is obtained by
 substituting `q ↦ q^t` in the `q`-expansion of the base series. -/
 @[simp]
@@ -170,6 +181,21 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise (hk : 3 ≤ (k : ℤ))
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharEisensteinSeriesMFRaise]
   exact ModularForm.qExpansion_levelRaise
+    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
+    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+    (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
+
+/-- The `q`-expansion of a raised normalized Eisenstein series is supported on the multiples of
+`t`. -/
+theorem isSupportedOnDvd_qExpansion_normalizedCharEisensteinSeriesMFRaise
+    (hk : 3 ≤ (k : ℤ)) (htuv : t * (u * v) ∣ N) :
+    haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+    PowerSeries.IsSupportedOnDvd t
+      (qExpansion 1 (normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv)) := by
+  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+  let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
+  rw [normalizedCharEisensteinSeriesMFRaise]
+  exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
     (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
