@@ -19,9 +19,6 @@ public import TauCeti.Algebra.BrauerGroup.Splitting
 -- quaternion conjugation `Quaternion.starAe`, and `TauCeti.Quaternion.instIsCentral`, which is what
 -- puts `ℍ[ℝ]` in the scope of the Brauer-group API at all.
 public import TauCeti.Algebra.CentralSimple.Quaternion
--- `TauCeti.Algebra.Quaternion.CentralSimple` supplies centrality and simplicity for the general
--- symbol algebra, which are the instances needed by `CSA.of K ℍ[K,a,b]` below.
-public import TauCeti.Algebra.Quaternion.CentralSimple
 -- Non-public: the base-change homomorphism and the fundamental theorem of algebra are used only by
 -- the worked examples closing the file, so downstream importers do not pay for them.
 import Mathlib.Analysis.Complex.Polynomial.Basic
@@ -30,9 +27,7 @@ import TauCeti.Algebra.BrauerGroup.BaseChange
 /-!
 # Quaternion-symbol classes and the Brauer class of the real quaternions
 
-For a field `K` with `2` invertible, this file defines the Brauer class of each quaternion symbol
-`ℍ[K,a,b]`. It then applies the general Brauer-group API to the real quaternions. Quaternion
-conjugation
+This file applies the general Brauer-group API to the real quaternions. Quaternion conjugation
 identifies `ℍ[ℝ]` with its opposite algebra, so its Brauer class is self-inverse; and `ℍ[ℝ]` is a
 central division algebra of dimension `4`, so that class is not the identity
 (`TauCeti.BrauerGroup.mk_eq_one_iff_finrank_eq_one`). Together these say the class has order exactly
@@ -47,8 +42,6 @@ classification of the finite-dimensional real division algebras with centre `ℝ
 
 ## Main results
 
-* `TauCeti.BrauerGroup.quaternionClass`: the Brauer class of a quaternion symbol over a field with
-  `2` invertible.
 * `TauCeti.Quaternion.mk_ne_one`: the Brauer class of `ℍ[ℝ]` is not the identity.
 * `TauCeti.Quaternion.orderOf_mk_eq_two`: **that class has order exactly `2`**, so `BrauerGroup ℝ`
   contains a copy of `ℤ/2`; `TauCeti.Quaternion.nontrivial_brauerGroup` is the qualitative form.
@@ -67,27 +60,6 @@ public section
 open scoped Quaternion
 
 namespace TauCeti
-
-namespace BrauerGroup
-
-variable {K : Type*} [Field K] [Invertible (2 : K)]
-
-/-- The bundled central simple algebra underlying the quaternion symbol `(a,b)`. -/
-noncomputable def quaternionCSA (a b : Kˣ) : CSA K :=
-  CSA.of K ℍ[K,(a : K),(b : K)]
-
-/-- The bundled algebra underlying `quaternionCSA` is the corresponding quaternion symbol. -/
-@[simp] theorem quaternionCSA_def (a b : Kˣ) :
-    quaternionCSA a b = CSA.of K ℍ[K,(a : K),(b : K)] := (rfl)
-
-/-- The Brauer class of the quaternion symbol `(a,b)`. -/
-noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
-  BrauerGroup.mk (quaternionCSA a b)
-
-@[simp] theorem quaternionClass_def (a b : Kˣ) :
-    quaternionClass a b = BrauerGroup.mk (quaternionCSA a b) := (rfl)
-
-end BrauerGroup
 
 namespace Quaternion
 
