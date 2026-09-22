@@ -6,10 +6,13 @@ Authors: Claude, Codex
 module
 
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.GroupTheory.Index
 public import Mathlib.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Group.Profinite.Section
+
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 
 /-!
 # The coinduced discrete module of a subgroup
@@ -39,6 +42,9 @@ argument consume:
   cohomology of Layer 2 takes;
 * scalar multiplication is continuous on that discrete carrier for compact `G`, and coefficient
   maps induce linear maps (`TauCeti.DiscreteCoind.map`);
+* for finite-index `U`, the trace `TauCeti.coindTrace` is additive, `G`-equivariant and natural in
+  the coefficients; `TauCeti.DiscreteCoind.trace` and `TauCeti.coindTraceHom` package it on the
+  discrete carrier and as a morphism of smooth discrete representations;
 * it is packaged as the functor `TauCeti.coindFunctor` between categories of smooth discrete
   representations;
 * for an open subgroup, every algebraically coinduced function is automatically locally constant,
@@ -69,6 +75,21 @@ of each orbit map. It is also not used because the roadmap fixes the unbundled c
 `[DistribMulAction U A]`, `[DiscreteTopology A]`, `[ContinuousSMul U A]` for this layer, with local
 constancy as a predicate on plain functions rather than a bundled `C(G, A)`. The final construction
 uses the smooth-discrete dictionary to transport this unbundled module to the categorical language.
+
+For finite-index subgroups, Mathlib's algebraic `Rep.coindResAdjunction` has the trace as its
+counit. Its coinduced object consists of all equivariant functions in `Rep k G`, whereas this file
+uses locally constant functions and only identifies the two for an open subgroup of a compact
+group (`TauCeti.topologicalCoindIsoAlgebraic`). Mathlib's element formula is recorded in
+`Subgroup.coindResAdjunction_counit_app_hom_apply`, and
+`TauCeti.groupCohomology.corestriction` builds the corresponding algebraic all-degree
+corestriction. Those use the right-coset convention `∑ g, g⁻¹ • f g`; the continuous trace here
+uses the equivalent left-coset convention `∑ x, x • f x⁻¹`. They cannot be reused directly
+because their coefficients live in the purely algebraic category `Rep k G`, while continuous
+cohomology uses this file's locally constant coinduction on discrete modules.
+
+The trace construction follows Brown, *Cohomology of Groups*, III §9. It implements milestone 1
+of Layer 10's “Corestriction in every degree, through coinduction” target in
+`TauCetiRoadmap/ProfiniteCohomology/README.md`.
 
 This is the "coinduced module" milestone of Layer 7 of the human-authored roadmap at
 `TauCetiRoadmap/ProfiniteCohomology/README.md`.
@@ -253,6 +274,110 @@ theorem coindMap_smul [ContinuousMul G] (φ : A →+ B)
   ext x; simp
 
 end Functoriality
+
+section Trace
+
+variable {G : Type*} [Group G] [TopologicalSpace G] {U : Subgroup G}
+  {M : Type*} [AddCommGroup M] [DistribMulAction G M]
+
+variable (U) in
+/-- The summand `x • f x⁻¹` of the trace of a coinduced element, as a function of the coset
+`x U` rather than of `x`. It is well defined because `f` is `U`-equivariant: replacing a
+representative `x` by `x * u` multiplies the value of `f` by `u⁻¹` and the outer action by `u`. -/
+def coindTraceTerm (f : coind G U M) (x : G ⧸ U) : M :=
+  x.liftOn (fun g => g • (f : G → M) g⁻¹) fun a b hab => by
+    obtain ⟨u, rfl⟩ : ∃ u : U, b = a * (u : G) :=
+      ⟨⟨a⁻¹ * b, QuotientGroup.leftRel_apply.1 hab⟩, by simp⟩
+    have h : (f : G → M) ((a * (u : G))⁻¹) = ((u : G))⁻¹ • (f : G → M) a⁻¹ := by
+      rw [mul_inv_rev]
+      exact coind_apply_mul f u⁻¹ a⁻¹
+    rw [h, smul_smul, mul_inv_cancel_right]
+
+@[simp]
+theorem coindTraceTerm_mk (f : coind G U M) (g : G) :
+    coindTraceTerm U f (g : G ⧸ U) = g • (f : G → M) g⁻¹ := (rfl)
+
+/-- The summand of the trace, computed at the canonical representative of a coset. -/
+theorem coindTraceTerm_out (f : coind G U M) (x : G ⧸ U) :
+    coindTraceTerm U f x = x.out • (f : G → M) x.out⁻¹ := by
+  conv_lhs => rw [← QuotientGroup.out_eq' x]
+  rw [coindTraceTerm_mk]
+
+@[simp]
+theorem coindTraceTerm_zero (x : G ⧸ U) : coindTraceTerm U (0 : coind G U M) x = 0 := by
+  rw [coindTraceTerm_out]
+  simp
+
+@[simp]
+theorem coindTraceTerm_add (f f' : coind G U M) (x : G ⧸ U) :
+    coindTraceTerm U (f + f') x = coindTraceTerm U f x + coindTraceTerm U f' x := by
+  rw [coindTraceTerm_out, coindTraceTerm_out, coindTraceTerm_out]
+  simp [smul_add]
+
+/-- The effect of right translation on a summand of the trace: translating the coinduced element
+by `g` translates the coset index by `g⁻¹` and multiplies the summand by `g`. -/
+theorem coindTraceTerm_smul [ContinuousMul G] (g : G) (f : coind G U M) (x : G ⧸ U) :
+    coindTraceTerm U (g • f) x = g • coindTraceTerm U f (g⁻¹ • x) := by
+  have hx : g⁻¹ • x = ((g⁻¹ * x.out : G) : G ⧸ U) := by
+    rw [← MulAction.Quotient.coe_smul_out U g⁻¹ x, smul_eq_mul]
+  conv_lhs => rw [← QuotientGroup.out_eq' x]
+  rw [hx, coindTraceTerm_mk, coindTraceTerm_mk, coind_smul_apply, smul_smul,
+    mul_inv_cancel_left, mul_inv_rev, inv_inv]
+
+variable [U.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+variable (G U) in
+/-- **The trace of the coinduced module**, `f ↦ ∑ x : G ⧸ U, x • f x⁻¹`. This is the coefficient
+map used after Shapiro's isomorphism in the coinduction construction of corestriction. -/
+noncomputable def coindTrace : coind G U M →+ M where
+  toFun f := ∑ x : G ⧸ U, coindTraceTerm U f x
+  map_zero' := by simp
+  map_add' f f' := by simp [Finset.sum_add_distrib]
+
+@[simp]
+theorem coindTrace_apply (f : coind G U M) :
+    coindTrace G U f = ∑ x : G ⧸ U, coindTraceTerm U f x := (rfl)
+
+/-- The trace computed along an arbitrary transversal `t : G ⧸ U → G`. -/
+theorem coindTrace_eq_sum_transversal (t : G ⧸ U → G)
+    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x) (f : coind G U M) :
+    coindTrace G U f = ∑ x : G ⧸ U, t x • (f : G → M) (t x)⁻¹ := by
+  rw [coindTrace_apply]
+  exact Finset.sum_congr rfl fun x _ => by rw [← coindTraceTerm_mk f (t x), ht x]
+
+/-- The trace is `G`-equivariant for the right-translation action on the coinduced module. -/
+theorem coindTrace_smul [ContinuousMul G] (g : G) (f : coind G U M) :
+    coindTrace G U (g • f) = g • coindTrace G U f := by
+  rw [coindTrace_apply, coindTrace_apply, Finset.smul_sum]
+  calc
+    ∑ x : G ⧸ U, coindTraceTerm U (g • f) x
+        = ∑ x : G ⧸ U, g • coindTraceTerm U f (g⁻¹ • x) :=
+      Finset.sum_congr rfl fun x _ => coindTraceTerm_smul g f x
+    _ = ∑ x : G ⧸ U, g • coindTraceTerm U f x :=
+      Fintype.sum_equiv (MulAction.toPerm g⁻¹) _ _ fun x =>
+        congrArg (fun y => g • coindTraceTerm U f y) (MulAction.toPerm_apply g⁻¹ x).symm
+
+/-- The trace is natural in the coefficient module: a `G`-equivariant map of coefficients
+commutes with it. -/
+theorem coindTrace_coindMap {N : Type*} [AddCommGroup N] [DistribMulAction G N] (φ : M →+ N)
+    (hφ : ∀ (g : G) (m : M), φ (g • m) = g • φ m) (f : coind G U M) :
+    coindTrace G U (coindMap G U φ (fun u m => hφ (u : G) m) f) = φ (coindTrace G U f) := by
+  rw [coindTrace_apply, coindTrace_apply, map_sum]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [coindTraceTerm_out, coindTraceTerm_out, coindMap_apply, hφ]
+
+/-- The trace of the whole group is evaluation at `1`: the only coset is `U` itself. -/
+theorem coindTrace_top_eq_coindEval (f : coind G ⊤ M) :
+    coindTrace G ⊤ f = coindEval G ⊤ f := by
+  have : Subsingleton (G ⧸ (⊤ : Subgroup G)) := QuotientGroup.subsingleton_quotient_top
+  rw [coindTrace_apply,
+    Fintype.sum_subsingleton (coindTraceTerm (⊤ : Subgroup G) f) ((1 : G) : G ⧸ (⊤ : Subgroup G)),
+    coindTraceTerm_mk]
+  simp
+
+end Trace
 
 section Exactness
 
@@ -582,6 +707,78 @@ theorem evalLinear_apply (f : DiscreteCoind G U A) : evalLinear (R := R) G U A f
 
 end Map
 
+section Trace
+
+variable [ContinuousMul G] [U.FiniteIndex]
+  {M : Type*} [AddCommGroup M] [DistribMulAction G M]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+variable (G U M) in
+/-- The `G`-equivariant additive trace `DiscreteCoind G U M →+[G] M`. -/
+noncomputable def trace : DiscreteCoind G U M →+[G] M where
+  toFun f := coindTrace G U (toCoind G U M f)
+  map_zero' := map_zero _
+  map_add' _ _ := map_add _ _ _
+  map_smul' g f := coindTrace_smul g (toCoind G U M f)
+
+/-- The discrete-carrier trace is the unbundled trace after forgetting the discrete topology. -/
+@[simp]
+theorem trace_toCoind (f : DiscreteCoind G U M) :
+    coindTrace G U (toCoind G U M f) = trace G U M f := (rfl)
+
+@[simp]
+theorem trace_apply (f : DiscreteCoind G U M) :
+    trace G U M f = ∑ x : G ⧸ U, x.out • f x.out⁻¹ :=
+  (coindTrace_apply (toCoind G U M f)).trans
+    (Finset.sum_congr rfl fun x _ => coindTraceTerm_out (toCoind G U M f) x)
+
+/-- The discrete-carrier trace computed along an arbitrary transversal. -/
+theorem trace_eq_sum_transversal (t : G ⧸ U → G)
+    (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
+    (f : DiscreteCoind G U M) : trace G U M f = ∑ x : G ⧸ U, t x • f (t x)⁻¹ := by
+  rw [← trace_toCoind]
+  simpa only [coe_toCoind] using coindTrace_eq_sum_transversal t ht (toCoind G U M f)
+
+/-- The discrete-carrier trace is natural in `G`-equivariant linear coefficient maps. -/
+theorem trace_map {R N : Type*} [Semiring R] [AddCommGroup N] [DistribMulAction G N]
+    [Module R M] [SMulCommClass G R M] [Module R N] [SMulCommClass G R N]
+    (φ : M →ₗ[R] N) (hφ : ∀ (g : G) (m : M), φ (g • m) = g • φ m)
+    (f : DiscreteCoind G U M) :
+    trace G U N (map φ (fun u m => hφ (u : G) m) f) = φ (trace G U M f) := by
+  rw [trace_apply, trace_apply, map_sum]
+  exact Finset.sum_congr rfl fun x _ => by rw [map_apply, hφ]
+
+/-- The trace is continuous, the source being discrete. -/
+theorem continuous_trace [TopologicalSpace M] : Continuous (trace G U M) :=
+  continuous_of_discreteTopology
+
+section Scalar
+
+variable {R : Type*} [Semiring R] [Module R M] [SMulCommClass G R M]
+
+variable (R G U M) in
+/-- The trace on the discrete carrier as an `R`-linear map. -/
+noncomputable def traceLinear : DiscreteCoind G U M →ₗ[R] M where
+  toAddHom := (trace G U M).toAddHom
+  map_smul' r f := by
+    -- Expose the additive trace under the linear-map coercion before using its sum formula.
+    change trace G U M (r • f) = r • trace G U M f
+    rw [trace_apply, trace_apply, Finset.smul_sum]
+    simp only [coe_smul_scalar]
+    exact Finset.sum_congr rfl fun x _ => smul_comm x.out r (f x.out⁻¹)
+
+private theorem traceLinear_apply_impl (f : DiscreteCoind G U M) :
+    traceLinear (R := R) G U M f = trace G U M f := rfl
+
+@[simp]
+theorem traceLinear_apply (f : DiscreteCoind G U M) :
+    traceLinear (R := R) G U M f = trace G U M f := traceLinear_apply_impl f
+
+end Scalar
+
+end Trace
+
 /-- **`Coind_U^G A` is a discrete `G`-module over a compact group**: the right-translation action
 on the discrete carrier is continuous, because a locally constant function on a compact group is
 uniformly locally constant. -/
@@ -705,6 +902,35 @@ private theorem coindCounit_apply_impl (A : SmoothDiscreteTopRep.{u, v, w} R U)
 theorem coindCounit_apply (A : SmoothDiscreteTopRep.{u, v, w} R U)
     (f : DiscreteCoind G U A.obj.V) : coindCounit R G U A f = f 1 :=
   coindCounit_apply_impl R G U A f
+
+/-- The trace packaged as a morphism of smooth discrete `G`-representations for a finite-index
+subgroup `U`. -/
+noncomputable def coindTraceHom [U.FiniteIndex]
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    (coindTopRep R G U
+      (⟨TopRep.res (U.subtype : U →* G) A.obj,
+        A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)).obj ⟶ A.obj := by
+  letI : DiscreteTopology A.obj.V := A.property.discreteTopology
+  letI : ContinuousSMul G A.obj.V := A.property.continuousSMul
+  let X := coindTopRep R G U
+    (⟨TopRep.res (U.subtype : U →* G) A.obj,
+      A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)
+  letI : DiscreteTopology X.obj.V := X.property.discreteTopology
+  exact CategoryTheory.ConcreteCategory.ofHom
+    { toContinuousLinearMap :=
+        ⟨DiscreteCoind.traceLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩
+      isIntertwining' g := by
+        ext f
+        exact map_smul (DiscreteCoind.trace G U A.obj.V) g f }
+
+@[simp]
+theorem coindTraceHom_apply [U.FiniteIndex]
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (f : DiscreteCoind G U A.obj.V) :
+    coindTraceHom R G U A f = DiscreteCoind.trace G U A.obj.V f := by
+  -- Remove the categorical and continuous-linear-map wrappers; the remaining computation is
+  -- exactly the public computation lemma for `DiscreteCoind.traceLinear`.
+  change DiscreteCoind.traceLinear (R := R) G U A.obj.V f = _
+  exact DiscreteCoind.traceLinear_apply f
 
 /-- Coinduction from smooth discrete `U`-representations to smooth discrete
 `G`-representations. -/
