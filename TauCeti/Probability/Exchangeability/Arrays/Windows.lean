@@ -15,7 +15,7 @@ import Mathlib.Order.Interval.Finset.Nat
 
 Joint dissociation of the coordinate array of a law on `ℕ × ℕ → α` is independence of the
 `Finset` restrictions of the array to every pair of disjoint finite square blocks `I ×ˢ I`,
-`J ×ˢ J` (`jointlyDissociated_coord_iff_indepFun_restrict`). For a jointly exchangeable law the
+`J ×ˢ J` (`jointlyDissociated_iff_indepFun_restrict`). For a jointly exchangeable law the
 blocks may be taken consecutive: independence of the
 windows `[0, k)²` and `[k, k + l)²` for all `k, l` already gives independence of all disjoint
 blocks, since a finitely supported permutation carries any two disjoint finite sets onto two

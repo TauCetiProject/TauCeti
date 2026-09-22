@@ -328,33 +328,15 @@ theorem exists_finite_compl_fixedBy_castAdd_natAdd (I J : Finset ℕ) (hIJ : Dis
       (∀ i : Fin k, σ (Fin.castAdd l i) = I.orderEmbOfFin hI i) ∧
       ∀ j : Fin l, σ (Fin.natAdd k j) = J.orderEmbOfFin hJ j := by
   let f : Fin (k + l) → ℕ :=
-    Fin.addCases (fun i => I.orderEmbOfFin hI i) (fun j => J.orderEmbOfFin hJ j)
-  have hf : Function.Injective f := by
-    intro a b hab
-    induction a using Fin.addCases with
-    | left a =>
-      induction b using Fin.addCases with
-      | left b =>
-        simp only [f, Fin.addCases_left] at hab
-        exact congrArg _ ((I.orderEmbOfFin hI).injective hab)
-      | right b =>
-        simp only [f, Fin.addCases_left, Fin.addCases_right] at hab
-        exact absurd hab
-          (hIJ.forall_ne_finset (I.orderEmbOfFin_mem hI a) (J.orderEmbOfFin_mem hJ b))
-    | right a =>
-      induction b using Fin.addCases with
-      | left b =>
-        simp only [f, Fin.addCases_left, Fin.addCases_right] at hab
-        exact absurd hab.symm
-          (hIJ.forall_ne_finset (I.orderEmbOfFin_mem hI b) (J.orderEmbOfFin_mem hJ a))
-      | right b =>
-        simp only [f, Fin.addCases_right] at hab
-        exact congrArg _ ((J.orderEmbOfFin hJ).injective hab)
+    Fin.append (fun i => I.orderEmbOfFin hI i) (fun j => J.orderEmbOfFin hJ j)
+  have hf : Function.Injective f :=
+    Fin.append_injective_iff.2 ⟨(I.orderEmbOfFin hI).injective, (J.orderEmbOfFin hJ).injective,
+      fun i j => hIJ.forall_ne_finset (I.orderEmbOfFin_mem hI i) (J.orderEmbOfFin_mem hJ j)⟩
   obtain ⟨σ, hσfin, hσ⟩ :=
     exists_finite_compl_fixedBy_apply_eq Fin.valEmbedding ⟨f, hf⟩
   refine ⟨σ, hσfin, fun i => ?_, fun j => ?_⟩
-  · simpa [f] using hσ (Fin.castAdd l i)
-  · simpa [f] using hσ (Fin.natAdd k j)
+  · simpa [f, Fin.append_left] using hσ (Fin.castAdd l i)
+  · simpa [f, Fin.append_right] using hσ (Fin.natAdd k j)
 
 /-- A permutation agreeing on the window `[k, k + l)` with the enumeration of `J` maps the window
 onto `J`. -/

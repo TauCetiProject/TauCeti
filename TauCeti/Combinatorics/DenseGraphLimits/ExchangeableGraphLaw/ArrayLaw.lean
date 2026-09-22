@@ -38,14 +38,18 @@ speak about graph laws.
   its array law (`isDissociated_iff_arrayLaw_mem_extremePoints`).
 
 The carrier-level bridge, the adjacency array of a graph and the graph of an array, is
-`ExchangeableGraphLaw/AdjArray.lean`. The finite graphs on `Fin n` are read on the block
-`[k, k + n)²` in the proofs.
+`ExchangeableGraphLaw/AdjArray.lean`. In the proofs a window of a graph is read on its block as
+the adjacency array of the finite graph, which determines it.
 
 ## Main results
 
 * `TauCeti.DenseGraphLimits.arrayLaw`, `graphLawOfArray`, `infiniteGraphLawOfArray` — the
-  law-level adapter with its two pushforward identities, and `graphLawArrayLawEquiv`, the bundled
-  equivalence.
+  law-level adapter with its defining pushforwards (`arrayLaw_def`, `graphLawOfArray_def`,
+  `infiniteGraphLawOfArray_law`) and the round trips (`graphLawOfArray_arrayLaw`,
+  `arrayLaw_graphLawOfArray`, `arrayLaw_infiniteGraphLawOfArray`), and
+  `graphLawArrayLawEquiv`, the bundled equivalence.
+* `TauCeti.DenseGraphLimits.isDissociated_iff_forall_indepFun_restrict` — dissociation of the
+  finite law is block independence of the array law at consecutive windows.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_jointlyDissociated` — dissociation compatibility.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_arrayLaw_mem_extremePoints` — dissociation of a
   graph law is extremality of its array law.
@@ -181,6 +185,7 @@ noncomputable def infiniteGraphLawOfArray
     exact graphLawOfArray_map_comap σ (hexch.map_pairReindex σ)
 
 /-- The law of the bundled graph law of an array law. -/
+@[simp]
 theorem infiniteGraphLawOfArray_law
     (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
       ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
@@ -225,42 +230,39 @@ theorem graphLawArrayLawEquiv_symm_apply
 
 /-! ### Dissociation -/
 
-open Classical in
-/-- A graph on `Fin n` read on the block `[k, m)²`, where `m = k + n`. -/
-private noncomputable def finGraphBlockAt (k n m : ℕ) (hm : k + n = m) (H : SimpleGraph (Fin n)) :
-    (Finset.Ico k m ×ˢ Finset.Ico k m : Finset (ℕ × ℕ)) → Bool :=
-  fun p => decide (H.Adj
-    ⟨p.1.1 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.2).1); omega⟩
+/-- A block of `[k, m)²`, `m = k + n`, read as a pair of labels in `Fin n`. -/
+private def blockToFin (k n m : ℕ) (hm : k + n = m)
+    (p : (Finset.Ico k m ×ˢ Finset.Ico k m : Finset (ℕ × ℕ))) : Fin n × Fin n :=
+  (⟨p.1.1 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.2).1); omega⟩,
     ⟨p.1.2 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.2).2); omega⟩)
 
-open Classical in
-/-- The value of the block reading at the pair `(k + a, k + b)`. -/
-private theorem finGraphBlockAt_apply (k n m : ℕ) (hm : k + n = m) (H : SimpleGraph (Fin n))
-    (a b : Fin n) (h : ((k + a : ℕ), (k + b : ℕ)) ∈ (Finset.Ico k m ×ˢ Finset.Ico k m)) :
-    finGraphBlockAt k n m hm H ⟨((k + a : ℕ), (k + b : ℕ)), h⟩ = decide (H.Adj a b) := by
-  simp [finGraphBlockAt]
+private theorem blockToFin_surjective (k n m : ℕ) (hm : k + n = m) :
+    Function.Surjective (blockToFin k n m hm) := fun ⟨a, b⟩ =>
+  ⟨⟨((k + a : ℕ), (k + b : ℕ)), Finset.mem_product.2
+    ⟨Finset.mem_Ico.2 ⟨by omega, by omega⟩, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩⟩, by
+    simp [blockToFin]⟩
 
-private theorem mem_block_add (k n m : ℕ) (hm : k + n = m) (a b : Fin n) :
-    ((k + a : ℕ), (k + b : ℕ)) ∈ (Finset.Ico k m ×ˢ Finset.Ico k m) :=
-  Finset.mem_product.2
-    ⟨Finset.mem_Ico.2 ⟨by omega, by omega⟩, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩
+/-- A graph on `Fin n` read on the block `[k, m)²`: its adjacency array along `blockToFin`. -/
+private noncomputable def finGraphBlockAt (k n m : ℕ) (hm : k + n = m) (H : SimpleGraph (Fin n)) :
+    (Finset.Ico k m ×ˢ Finset.Ico k m : Finset (ℕ × ℕ)) → Bool :=
+  H.adjArray ∘ blockToFin k n m hm
 
 private theorem measurableEmbedding_finGraphBlockAt (k n m : ℕ) (hm : k + n = m) :
     MeasurableEmbedding (finGraphBlockAt k n m hm) :=
-  MeasurableEmbedding.of_injective_of_countable (measurable_of_countable _) fun H H' h => by
-    ext a b
-    have := congrFun h ⟨_, mem_block_add k n m hm a b⟩
-    rwa [finGraphBlockAt_apply, finGraphBlockAt_apply, decide_eq_decide] at this
+  MeasurableEmbedding.of_injective_of_countable (measurable_of_countable _) fun H H' h =>
+    SimpleGraph.adjArray_injective
+      (funext fun q => by obtain ⟨p, rfl⟩ := blockToFin_surjective k n m hm q; exact congrFun h p)
 
 /-- The block restriction of the adjacency array on `[k, m)²` is the window at offset `k`. -/
 private theorem restrict_adjArray (k n m : ℕ) (hm : k + n = m) (G : SimpleGraph ℕ) :
     (Finset.Ico k m ×ˢ Finset.Ico k m).restrict G.adjArray
       = finGraphBlockAt k n m hm (SimpleGraph.comap (fun i : Fin n => k + (i : ℕ)) G) := by
   funext ⟨⟨a, b⟩, hab⟩
-  have ha := Finset.mem_Ico.1 (Finset.mem_product.1 hab).1
-  have hb := Finset.mem_Ico.1 (Finset.mem_product.1 hab).2
-  simp only [Finset.restrict, finGraphBlockAt, SimpleGraph.adjArray_apply, SimpleGraph.comap_adj]
-  congr 1; simp [Nat.add_sub_cancel' ha.1, Nat.add_sub_cancel' hb.1]
+  obtain ⟨ha, hb⟩ := Finset.mem_product.1 hab
+  simp only [Finset.mem_Ico] at ha hb
+  simp only [Finset.restrict, finGraphBlockAt, Function.comp, blockToFin,
+    SimpleGraph.adjArray_apply, SimpleGraph.comap_adj]
+  congr 2 <;> simp only [] <;> omega
 
 /-- The block restriction of the adjacency array on `[0, n)²` is the window of length `n`: the
 general lemma at offset `0`. -/
