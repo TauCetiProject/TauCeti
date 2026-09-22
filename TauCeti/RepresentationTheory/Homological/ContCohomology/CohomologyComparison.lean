@@ -332,7 +332,7 @@ theorem explicitIso_map
     (discreteH1Equiv G M x)
 
 /-- **Transport of restriction in degree one.** The comparison carries restriction of
-explicit cocycles to canonical restriction along the subgroup inclusion. -/
+explicit cohomology classes to canonical restriction along the subgroup inclusion. -/
 theorem explicitIso_res (S : Subgroup G) [CompactSpace S] (x : DiscreteH1 G M) :
     TauCeti.ContinuousCohomology.res S (ofDiscreteModule ℤ G M) 1
         ((explicitH1IsoContinuousCohomology G M).hom x) =
