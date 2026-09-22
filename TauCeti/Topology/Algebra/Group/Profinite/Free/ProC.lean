@@ -6,29 +6,40 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
 public import TauCeti.Topology.Algebra.Group.Profinite.ProC
 
 /-!
-# Free pro-`C` and free pro-`p` groups on a type
+# Free pro-`C` groups on a type
 
 For a class `C` of finite groups, the free pro-`C` group on `X` is the pro-`C` completion of
-the free profinite group on `X`. The free pro-`p` group is defined directly as the maximal
-pro-`p` quotient of that free profinite group. The comparison between the pro-`C` completion
-for the class of finite `p`-groups and the maximal pro-`p` quotient identifies the two
+the free profinite group on `X`. The comparison between the pro-`C` completion for the class
+of finite `p`-groups and the directly constructed free pro-`p` group identifies the two
 constructions.
 
-Both constructions are characterized by the expected universal property: an arbitrary map from
-`X` to a profinite group of the relevant class extends uniquely to a continuous homomorphism.
-The file also records functoriality in `X` and the fact that a surjection of generating types
-induces a surjection of free groups.
+The construction has the expected universal property: a map from `X` to a pro-`C` profinite
+group in the same universe extends uniquely to a continuous homomorphism. Extensionality for
+homomorphisms out of the free pro-`C` group only requires a Hausdorff group target, which may live
+in any universe. The file also records functoriality in `X` and the fact that a surjection of
+generating types induces a surjection of free groups.
 
 ## Main definitions
 
 * `TauCeti.freeProC`: the free pro-`C` group on a type.
-* `TauCeti.freeProP`: the free pro-`p` group on a type.
-* `TauCeti.freeProC.of`, `TauCeti.freeProP.of`: their canonical generators.
-* `TauCeti.freeProC.lift`, `TauCeti.freeProP.lift`: extension from the generators.
-* `TauCeti.freeProC.map`, `TauCeti.freeProP.map`: functoriality in the generating type.
+* `TauCeti.freeProC.of`: its canonical generators.
+* `TauCeti.freeProC.lift`: extension from the generators.
+* `TauCeti.freeProC.map`: functoriality in the generating type.
+* `TauCeti.freeProC.equivFreeProP`: comparison with the directly constructed free pro-`p` group.
+
+## Main results
+
+* `TauCeti.isProC_freeProC`: a free pro-`C` group is pro-`C`.
+* `TauCeti.freeProC.hom_ext`: homomorphisms agreeing on the generators are equal.
+* `TauCeti.freeProC.existsUnique_lift`: the universal property.
+* `TauCeti.freeProC.map_surjective`: a surjection of generating types induces a surjection.
+* `TauCeti.freeProC.existsUnique_continuousMulEquiv`: the free pro-`C` group is unique up to a
+  unique topological isomorphism matching the generators.
+* `TauCeti.freeProC.equivFreeProP_of`: the comparison preserves the generators.
 
 ## References
 
@@ -39,28 +50,34 @@ public section
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 /-! ## Free pro-`C` groups -/
 
 /-- The **free pro-`C` group** on `X`, obtained by taking the pro-`C` completion of the free
 profinite group on `X`. -/
-noncomputable abbrev freeProC (C : FiniteGroupClass.{u}) (X : Type u) : Type u :=
+noncomputable abbrev freeProC (C : FiniteGroupClass.{w}) (X : Type u) : Type u :=
   proCCompletion C (freeProfiniteGroup X)
 
 /-- A free pro-`C` group is pro-`C`. -/
-theorem isProC_freeProC (C : FiniteGroupClass.{u}) (X : Type u) : IsProC C (freeProC C X) :=
+theorem isProC_freeProC (C : FiniteGroupClass.{w}) (X : Type u) : IsProC C (freeProC C X) :=
   isProC_proCCompletion
 
 namespace freeProC
 
-variable {C : FiniteGroupClass.{u}} {X Y Z : Type u}
+variable {C : FiniteGroupClass.{w}} {X Y Z : Type u}
 
 /-- The canonical continuous quotient map from the free profinite group to the free pro-`C`
 group. -/
-noncomputable def fromFreeProfiniteGroup (C : FiniteGroupClass.{u}) (X : Type u) :
+@[expose] noncomputable def fromFreeProfiniteGroup (C : FiniteGroupClass.{w}) (X : Type u) :
     freeProfiniteGroup X →ₜ* freeProC C X :=
   ⟨proCCompletion.mk C (freeProfiniteGroup X), proCCompletion.continuous_mk C _⟩
+
+/-- Evaluation of the canonical quotient map agrees with the underlying quotient homomorphism. -/
+theorem fromFreeProfiniteGroup_apply (C : FiniteGroupClass.{w}) (X : Type u)
+    (x : freeProfiniteGroup X) :
+    fromFreeProfiniteGroup C X x = proCCompletion.mk C (freeProfiniteGroup X) x :=
+  rfl
 
 /-- The canonical map from the generating type into the free pro-`C` group. -/
 noncomputable def of (x : X) : freeProC C X :=
@@ -108,12 +125,24 @@ noncomputable def lift (hP : IsProC C P) (f : X → P) : freeProC C X →ₜ* P 
     proCCompletion.continuous_lift hP (freeProfiniteGroup.lift f).toMonoidHom
       (freeProfiniteGroup.lift f).continuous⟩
 
+/-- The free pro-`C` lift recovers the free profinite lift along the quotient map. -/
+@[simp]
+theorem lift_comp_fromFreeProfiniteGroup (hP : IsProC C P) (f : X → P) :
+    (lift hP f).comp (fromFreeProfiniteGroup C X) = freeProfiniteGroup.lift f := by
+  apply ContinuousMonoidHom.ext
+  intro x
+  exact proCCompletion.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
+    (freeProfiniteGroup.lift f).continuous x
+
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]
 theorem lift_of (hP : IsProC C P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
-  exact (proCCompletion.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
-    (freeProfiniteGroup.lift f).continuous (freeProfiniteGroup.of x)).trans
-      (freeProfiniteGroup.lift_of f x)
+  calc
+    lift hP f (of x) =
+        ((lift hP f).comp (fromFreeProfiniteGroup C X)) (freeProfiniteGroup.of x) := rfl
+    _ = freeProfiniteGroup.lift f (freeProfiniteGroup.of x) :=
+      DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) _
+    _ = f x := freeProfiniteGroup.lift_of f x
 
 /-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
 `f`. -/
@@ -147,6 +176,13 @@ noncomputable def map (f : X → Y) : freeProC C X →ₜ* freeProC C Y :=
 theorem map_of (f : X → Y) (x : X) : map (C := C) f (of x) = of (f x) :=
   lift_of _ _ _
 
+/-- The free pro-`C` lift is natural in the generating type. -/
+@[simp]
+theorem lift_comp_map {P : Type u} [Group P] [TopologicalSpace P] [IsTopologicalGroup P]
+    [CompactSpace P] [TotallyDisconnectedSpace P] (hP : IsProC C P) (f : Y → P)
+    (g : X → Y) : (lift hP f).comp (map (C := C) g) = lift hP (f ∘ g) :=
+  hom_ext fun x ↦ by simp
+
 /-- Mapping the generating type by the identity induces the identity homomorphism. -/
 @[simp]
 theorem map_id : map (C := C) (id : X → X) = ContinuousMonoidHom.id (freeProC C X) :=
@@ -177,145 +213,37 @@ theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
 
 end Map
 
+section Uniqueness
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  [TotallyDisconnectedSpace G]
+
+/-- **The free pro-`C` group is unique up to a unique isomorphism.** A pro-`C` group `G` with
+a map `ι : X → G` through which every map from `X` to a pro-`C` profinite group factors uniquely
+is topologically isomorphic to `freeProC C X` by a unique isomorphism matching the two families
+of generators. -/
+theorem existsUnique_continuousMulEquiv (hG : IsProC C G) (ι : X → G)
+    (h : ∀ (P : Type u) [Group P] [TopologicalSpace P] [IsTopologicalGroup P] [CompactSpace P]
+      [TotallyDisconnectedSpace P] (_hP : IsProC C P) (f : X → P),
+        ∃! φ : G →ₜ* P, ∀ x : X, φ (ι x) = f x) :
+    ∃! e : freeProC C X ≃ₜ* G, ∀ x : X, e (of x) = ι x := by
+  obtain ⟨ψ, hψ, -⟩ := h (freeProC C X) (isProC_freeProC C X) of
+  have hleft : ψ.comp (lift hG ι) = ContinuousMonoidHom.id (freeProC C X) :=
+    hom_ext fun x ↦ by simp [hψ x]
+  have hright : (lift hG ι).comp ψ = ContinuousMonoidHom.id G :=
+    (h G hG ι).unique (fun x ↦ by simp [hψ x]) (fun _ ↦ rfl)
+  refine ⟨{ toFun := lift hG ι, invFun := ψ
+            left_inv := fun a ↦ congrArg (fun φ : freeProC C X →ₜ* _ ↦ φ a) hleft
+            right_inv := fun g ↦ congrArg (fun φ : G →ₜ* G ↦ φ g) hright
+            map_mul' := map_mul (lift hG ι)
+            continuous_toFun := map_continuous (lift hG ι)
+            continuous_invFun := map_continuous ψ }, lift_of hG ι, fun e he ↦ ?_⟩
+  have hcoe : (e : freeProC C X →ₜ* G) = lift hG ι := hom_ext fun x ↦ by simp [he x]
+  exact ContinuousMulEquiv.ext fun a ↦ congrArg (fun φ : freeProC C X →ₜ* G ↦ φ a) hcoe
+
+end Uniqueness
+
 end freeProC
-
-/-! ## Free pro-`p` groups -/
-
-/-- The **free pro-`p` group** on `X`, obtained directly as the maximal pro-`p` quotient of the
-free profinite group on `X`. -/
-noncomputable abbrev freeProP (p : ℕ) (X : Type u) : Type u :=
-  maximalProPQuotient p (freeProfiniteGroup X)
-
-/-- A free pro-`p` group is pro-`p`. -/
-theorem isProP_freeProP (p : ℕ) (X : Type u) : IsProP p (freeProP p X) :=
-  isProP_maximalProPQuotient
-
-namespace freeProP
-
-variable {p : ℕ} {X Y Z : Type u}
-
-/-- The canonical continuous quotient map from the free profinite group to the free pro-`p`
-group. -/
-noncomputable def fromFreeProfiniteGroup (p : ℕ) (X : Type u) :
-    freeProfiniteGroup X →ₜ* freeProP p X :=
-  ⟨maximalProPQuotient.mk p (freeProfiniteGroup X), maximalProPQuotient.continuous_mk p _⟩
-
-/-- The canonical map from the generating type into the free pro-`p` group. -/
-noncomputable def of (x : X) : freeProP p X :=
-  fromFreeProfiniteGroup p X (freeProfiniteGroup.of x)
-
-/-- The canonical quotient map sends a free profinite generator to the corresponding free
-pro-`p` generator. -/
-@[simp]
-theorem fromFreeProfiniteGroup_of (x : X) :
-    fromFreeProfiniteGroup p X (freeProfiniteGroup.of x) = of x :=
-  (rfl)
-
-/-- The canonical map from the free profinite group to the free pro-`p` group is surjective. -/
-theorem fromFreeProfiniteGroup_surjective :
-    Function.Surjective (fromFreeProfiniteGroup p X) :=
-  maximalProPQuotient.mk_surjective p (freeProfiniteGroup X)
-
-section HomExt
-
-variable {Q : Type v} [Group Q] [TopologicalSpace Q] [T2Space Q]
-
-/-- Two continuous homomorphisms out of a free pro-`p` group that agree on the generators are
-equal. -/
-@[ext]
-theorem hom_ext {f g : freeProP p X →ₜ* Q} (h : ∀ x : X, f (of x) = g (of x)) : f = g := by
-  apply ContinuousMonoidHom.ext
-  intro y
-  obtain ⟨y, rfl⟩ := fromFreeProfiniteGroup_surjective (p := p) (X := X) y
-  have hcomp : f.comp (fromFreeProfiniteGroup p X) =
-      g.comp (fromFreeProfiniteGroup p X) :=
-    freeProfiniteGroup.hom_ext fun x ↦ by simpa using h x
-  exact DFunLike.congr_fun hcomp y
-
-end HomExt
-
-section Lift
-
-variable {P : Type u} [Group P] [TopologicalSpace P] [IsTopologicalGroup P] [CompactSpace P]
-  [TotallyDisconnectedSpace P]
-
-/-- The continuous homomorphism from a free pro-`p` group extending a map on its generators. -/
-noncomputable def lift (hP : IsProP p P) (f : X → P) : freeProP p X →ₜ* P :=
-  ⟨maximalProPQuotient.lift hP (freeProfiniteGroup.lift f).toMonoidHom
-      (freeProfiniteGroup.lift f).continuous,
-    maximalProPQuotient.continuous_lift hP (freeProfiniteGroup.lift f).toMonoidHom
-      (freeProfiniteGroup.lift f).continuous⟩
-
-/-- The lift of `f` agrees with `f` on every canonical generator. -/
-@[simp]
-theorem lift_of (hP : IsProP p P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
-  exact (maximalProPQuotient.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
-    (freeProfiniteGroup.lift f).continuous (freeProfiniteGroup.of x)).trans
-      (freeProfiniteGroup.lift_of f x)
-
-/-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
-`f`. -/
-theorem lift_unique (hP : IsProP p P) (f : X → P) (g : freeProP p X →ₜ* P)
-    (hg : ∀ x : X, g (of x) = f x) : g = lift hP f :=
-  hom_ext fun x ↦ by rw [hg, lift_of]
-
-/-- **The universal property of the free pro-`p` group.** Every map from `X` to a profinite
-pro-`p` group extends uniquely to a continuous homomorphism from `freeProP p X`. -/
-theorem existsUnique_lift (hP : IsProP p P) (f : X → P) :
-    ∃! g : freeProP p X →ₜ* P, ∀ x : X, g (of x) = f x :=
-  ⟨lift hP f, lift_of hP f, fun g hg ↦ lift_unique hP f g hg⟩
-
-/-- The free pro-`p` lift is natural in its target. -/
-@[simp]
-theorem comp_lift {Q : Type u} [Group Q] [TopologicalSpace Q] [IsTopologicalGroup Q]
-    [CompactSpace Q] [TotallyDisconnectedSpace Q] (hP : IsProP p P) (hQ : IsProP p Q)
-    (g : P →ₜ* Q) (f : X → P) : g.comp (lift hP f) = lift hQ (⇑g ∘ f) :=
-  hom_ext fun x ↦ by simp
-
-end Lift
-
-section Map
-
-/-- The continuous homomorphism of free pro-`p` groups induced by a map of generating types. -/
-noncomputable def map (f : X → Y) : freeProP p X →ₜ* freeProP p Y :=
-  lift (isProP_freeProP p Y) (of ∘ f)
-
-/-- `map f` carries the generator at `x` to the generator at `f x`. -/
-@[simp]
-theorem map_of (f : X → Y) (x : X) : map (p := p) f (of x) = of (f x) :=
-  lift_of _ _ _
-
-/-- Mapping the generating type by the identity induces the identity homomorphism. -/
-@[simp]
-theorem map_id : map (p := p) (id : X → X) = ContinuousMonoidHom.id (freeProP p X) :=
-  hom_ext fun x ↦ by simp
-
-/-- The maps induced by maps of generating types compose functorially. -/
-@[simp]
-theorem map_comp (f : X → Y) (g : Y → Z) :
-    map (p := p) (g ∘ f) = (map g).comp (map f) :=
-  (hom_ext fun x ↦ by simp).symm
-
-/-- The map induced on free pro-`p` groups commutes with the canonical maps from the free
-profinite groups. -/
-@[simp]
-theorem map_comp_fromFreeProfiniteGroup (f : X → Y) :
-    (map (p := p) f).comp (fromFreeProfiniteGroup p X) =
-      (fromFreeProfiniteGroup p Y).comp (freeProfiniteGroup.map f) :=
-  freeProfiniteGroup.hom_ext fun x ↦ by simp
-
-/-- A surjection of generating types induces a surjection of free pro-`p` groups. -/
-theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
-    Function.Surjective (map (p := p) f) := by
-  intro y
-  obtain ⟨y, rfl⟩ := fromFreeProfiniteGroup_surjective (p := p) (X := Y) y
-  obtain ⟨x, rfl⟩ := freeProfiniteGroup.map_surjective hf y
-  refine ⟨fromFreeProfiniteGroup p X x, ?_⟩
-  exact DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (p := p) f) x
-
-end Map
-
-end freeProP
 
 /-! ## Comparison -/
 
@@ -331,8 +259,39 @@ noncomputable def equivFreeProP (p : ℕ) (X : Type u) :
 @[simp]
 theorem equivFreeProP_of (p : ℕ) (x : X) :
     equivFreeProP p X (of x) = freeProP.of x := by
+  rw [← fromFreeProfiniteGroup_of, ← freeProP.fromFreeProfiniteGroup_of,
+    fromFreeProfiniteGroup_apply, freeProP.fromFreeProfiniteGroup_apply]
   exact proCCompletion.equivMaximalProPQuotient_mk (p := p)
     (G := freeProfiniteGroup X) (freeProfiniteGroup.of x)
+
+/-- The inverse comparison with the free pro-`p` group preserves each canonical generator. -/
+@[simp]
+theorem equivFreeProP_symm_of (p : ℕ) (x : X) :
+    (equivFreeProP p X).symm (freeProP.of x) = of x := by
+  apply (equivFreeProP p X).injective
+  simp
+
+/-- The comparison between the two free pro-`p` constructions is natural in the generators. -/
+@[simp]
+theorem equivFreeProP_comp_map (p : ℕ) (f : X → Y) :
+    ((equivFreeProP p Y : freeProC (finiteGroupClassP.{u} p) Y ≃ₜ* freeProP p Y) :
+        freeProC (finiteGroupClassP.{u} p) Y →ₜ* freeProP p Y).comp
+          (map (C := finiteGroupClassP.{u} p) f) =
+      (freeProP.map f).comp
+        ((equivFreeProP p X : freeProC (finiteGroupClassP.{u} p) X ≃ₜ* freeProP p X) :
+          freeProC (finiteGroupClassP.{u} p) X →ₜ* freeProP p X) :=
+  hom_ext fun x ↦ by simp
+
+/-- Lifting from either construction of a free pro-`p` group gives the same homomorphism. -/
+@[simp]
+theorem freeProP_lift_comp_equivFreeProP {P : Type u} [Group P] [TopologicalSpace P]
+    [IsTopologicalGroup P] [CompactSpace P] [TotallyDisconnectedSpace P] (hP : IsProP p P)
+    (f : X → P) :
+    (freeProP.lift hP f).comp
+        ((equivFreeProP p X : freeProC (finiteGroupClassP.{u} p) X ≃ₜ* freeProP p X) :
+          freeProC (finiteGroupClassP.{u} p) X →ₜ* freeProP p X) =
+      lift (isProC_finiteGroupClassP_iff.mpr hP) f :=
+  hom_ext fun x ↦ by simp
 
 end freeProC
 
