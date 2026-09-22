@@ -18,6 +18,12 @@ is strictly larger than Mathlib's `LieAlgebra.maxNilpotentIdeal`: its ideal of t
 abelian, so it is the whole nilradical, while `⁅x, y⁆ = y` says the ambient algebra acts on it by an
 invertible, hence non-nilpotent, operator, so `maxNilpotentIdeal` is `⊥`.
 
+The adjoint action of an element `u` is computed here too: it sends the dilation direction into
+the translation line and scales that line by the dilation coordinate `u.1`, so all of its positive
+powers are scalar multiples of it.  Over a field of positive characteristic that monic relation is
+what produces the explicit central `p`-polynomials of
+`TauCeti.Algebra.Lie.UniversalEnveloping.AffineLine`.
+
 ## Main definitions
 
 * `TauCeti.LieAlgebra.AffineLine`: the two-dimensional nonabelian Lie algebra, with its `dilation`
@@ -25,6 +31,8 @@ invertible, hence non-nilpotent, operator, so `maxNilpotentIdeal` is `⊥`.
 
 ## Main statements
 
+* `TauCeti.LieAlgebra.AffineLine.ad_pow`: every positive power of the adjoint action of an
+  element is a scalar multiple of it, the scalar being a power of the dilation coordinate.
 * `TauCeti.LieAlgebra.AffineLine.nilradical_eq_translationIdeal`: the nilradical is the ideal of
   translations, the span of `y`.
 * `TauCeti.LieAlgebra.AffineLine.maxNilpotentIdeal_eq_bot`: Mathlib's `maxNilpotentIdeal` is `⊥`.
@@ -154,6 +162,48 @@ instance isNilpotentTranslationIdeal : LieRing.IsNilpotent (translationIdeal K) 
   refine (LieSubmodule.mono_lie_right _ ?_).trans lie_translationIdeal_translationIdeal.le
   rw [LieIdeal.lcs_succ, LieIdeal.lcs_zero]
   exact LieSubmodule.lie_le_left _ _
+
+/-- **The adjoint action of any element squares to its dilation coordinate times itself.**  The
+operator `LieAlgebra.ad K (AffineLine K) u` sends the dilation direction into the translation
+line and scales that line by `u.1`, so composing it with itself only multiplies it by `u.1`.  In
+particular it is idempotent at the dilation `x`, where `u.1 = 1`, and squares to zero at the
+translation `y`, where `u.1 = 0`. -/
+theorem ad_mul_ad_self (u : AffineLine K) :
+    LieAlgebra.ad K (AffineLine K) u * LieAlgebra.ad K (AffineLine K) u =
+      u.1 • LieAlgebra.ad K (AffineLine K) u := by
+  refine LinearMap.ext fun v => ?_
+  rw [Module.End.mul_apply]
+  ext <;> simp
+
+/-- Every positive power of `LieAlgebra.ad K (AffineLine K) u` is a scalar multiple of it, the
+scalar being a power of the dilation coordinate of `u`. -/
+theorem ad_pow_succ (u : AffineLine K) (n : ℕ) :
+    LieAlgebra.ad K (AffineLine K) u ^ (n + 1) =
+      u.1 ^ n • LieAlgebra.ad K (AffineLine K) u := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, ih, smul_mul_assoc, ad_mul_ad_self, smul_smul, pow_succ]
+
+/-- **The monic relation satisfied by the adjoint action**: `T ^ n = u.1 ^ (n - 1) • T` for every
+`n ≠ 0`, where `T = LieAlgebra.ad K (AffineLine K) u`.  Taking `n` to be a power of the
+characteristic turns this into a linearized relation, which is what produces a central
+`p`-polynomial in the universal enveloping algebra. -/
+theorem ad_pow (u : AffineLine K) {n : ℕ} (hn : n ≠ 0) :
+    LieAlgebra.ad K (AffineLine K) u ^ n = u.1 ^ (n - 1) • LieAlgebra.ad K (AffineLine K) u := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  simpa using ad_pow_succ u m
+
+variable (K)
+
+/-- The adjoint action of the translation `y` is nonzero: it sends the dilation `x` to `-y`. -/
+theorem ad_translation_ne_zero [Nontrivial K] :
+    LieAlgebra.ad K (AffineLine K) (translation K) ≠ 0 := by
+  intro h
+  have hx : LieAlgebra.ad K (AffineLine K) (translation K) (dilation K) = -translation K := by
+    ext <;> simp
+  rw [h, LinearMap.zero_apply, eq_comm, neg_eq_zero] at hx
+  exact translation_ne_zero K hx
 
 section Field
 
