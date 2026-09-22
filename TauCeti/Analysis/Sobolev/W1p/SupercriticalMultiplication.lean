@@ -510,7 +510,6 @@ theorem W1p.norm_mul_le (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (
 bound is `TauCeti.W1p.norm_mul_le`, and multiplication by a fixed factor is a bounded operator by
 `TauCeti.W1p.norm_mulL_apply_le`. This is the form the nonlinear estimates use, where a product
 must be differentiated and estimated in the Sobolev norm at once. -/
-@[reducible]
 def W1p.mulL (hp : (finrank ℝ E : ℝ≥0) < p) :
     W1p mu ⊤ (p : ℝ≥0∞) →L[ℝ] W1p mu ⊤ (p : ℝ≥0∞) →L[ℝ] W1p mu ⊤ (p : ℝ≥0∞) :=
   let f := LinearMap.mkContinuous₂
@@ -533,6 +532,6 @@ times the operator norm of Morrey's embedding times `‖u‖`. -/
 theorem W1p.norm_mulL_apply_le (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) :
     ‖W1p.mulL hp u‖ ≤ 3 * ‖W1p.morreyEmbedding (mu := mu) hp‖ * ‖u‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => by
-    simpa using W1p.norm_mul_le hp u v
+    simpa only [W1p.mulL_apply] using W1p.norm_mul_le hp u v
 
 end TauCeti
