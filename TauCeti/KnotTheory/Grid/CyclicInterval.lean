@@ -633,7 +633,6 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
 
 /-- Swapping two cyclically consecutive points preserves membership in a half-open cyclic
 interval when the second point is not an endpoint. -/
-@[simp]
 theorem mem_cIco_swap_finRotate_iff_of_ne {a b c x : Fin n}
     (ha : a ≠ finRotate n c) (hb : b ≠ finRotate n c) :
     Equiv.swap c (finRotate n c) x ∈ cIco a b ↔ x ∈ cIco a b := by

@@ -58,7 +58,6 @@ theorem mem_coveredSquares_swap_finRotate_iff_of_ne (r : GridRectangle n) {a : F
 
 /-- Avoidance of the `X`-markings is unchanged by swapping two cyclically consecutive columns
 when the second column is not a vertical side of the rectangle. -/
-@[simp]
 theorem disjoint_coveredSquares_XSet_swapColumns_iff_of_ne (r : GridRectangle n)
     (G : GridDiagram n) {a : Fin n} (hleft : r.left ≠ finRotate n a)
     (hright : r.right ≠ finRotate n a) :
