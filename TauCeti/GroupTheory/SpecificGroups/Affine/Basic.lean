@@ -125,16 +125,16 @@ theorem isComplement'_affineTranslationSubgroup_affineLinearSubgroup
 theorem card_affineTranslationSubgroup (F : Type*) [DivisionRing F] :
     Nat.card (affineTranslationSubgroup F) = Nat.card F := by
   unfold affineTranslationSubgroup
-  rw [← Nat.card_congr
-    (MonoidHom.ofInjective SemidirectProduct.inl_injective).toEquiv]
+  change Nat.card (Set.range (SemidirectProduct.inl : Multiplicative F → AffineGroup F)) = _
+  rw [Nat.card_range_of_injective SemidirectProduct.inl_injective]
   rfl
 
 /-- The linear factor of an affine group has natural cardinality one less than the ring. -/
 theorem card_affineLinearSubgroup (F : Type*) [DivisionRing F] :
     Nat.card (affineLinearSubgroup F) = Nat.card F - 1 := by
   unfold affineLinearSubgroup
-  rw [← Nat.card_congr
-    (MonoidHom.ofInjective SemidirectProduct.inr_injective).toEquiv]
+  change Nat.card (Set.range (SemidirectProduct.inr : Fˣ → AffineGroup F)) = _
+  rw [Nat.card_range_of_injective SemidirectProduct.inr_injective]
   exact Nat.card_units F
 
 /-- A one-dimensional affine group has natural cardinality `|F| (|F| - 1)`. -/
@@ -142,14 +142,6 @@ theorem card_affineGroup (F : Type*) [DivisionRing F] :
     Nat.card (AffineGroup F) = Nat.card F * (Nat.card F - 1) := by
   rw [SemidirectProduct.card, Nat.card_units]
   rfl
-
-/-- Conjugating a translation by a linear affine transformation multiplies its displacement by
-the corresponding unit. -/
-theorem conj_affineTranslation_eq_smul {F : Type*} [DivisionRing F] (u : Fˣ)
-    (x : Multiplicative F) :
-    SemidirectProduct.inr u * SemidirectProduct.inl x * SemidirectProduct.inr u⁻¹ =
-      (SemidirectProduct.inl (affineAction F u x) : AffineGroup F) := by
-  rw [SemidirectProduct.inl_aut]
 
 /-- A nonidentity element of the linear factor acts without nonidentity fixed points on the
 translation subgroup. -/
@@ -170,7 +162,7 @@ theorem fixedPointFree_conjNormal_affineTranslationSubgroup
     have hconj : (h : AffineGroup F) * (n : AffineGroup F) * (h : AffineGroup F)⁻¹ = n :=
       (MulAut.conjNormal_apply _ _).symm.trans (congrArg Subtype.val hn)
     rw [← hu, ← hx] at hconj
-    rw [← map_inv, conj_affineTranslation_eq_smul] at hconj
+    rw [← map_inv, ← SemidirectProduct.inl_aut] at hconj
     exact congrArg (fun y : AffineGroup F ↦ y.left.toAdd) hconj
   have hx_zero : x.toAdd = 0 := by
     have hzero : ((u : F) - 1) * x.toAdd = 0 := by
