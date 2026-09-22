@@ -27,10 +27,18 @@ that is isotropic at one finite place is already isotropic over the number field
 represented at one finite place is either zero or represented by a nonzero form.  Representation
 is stated for regular forms, where dimension is the only complex invariant.
 
+The complex half of the archimedean classification is therefore stated here as well: through a
+complex embedding a regular form is classified by its rank alone, and it is isometric to the
+standard sum of squares on `Fin n` exactly when its rank is `n`.  The predicate results below are
+consequences.  The real half, which needs the real-signature theory, lives in
+`TauCeti.NumberTheory.QuadraticForm.Global.Signature`.
+
 ## Main results
 
-* `QuadraticForm.equivalent_atComplexEmbedding_iff_finrank_eq`
-* `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one_iff`
+* `QuadraticForm.equivalent_atComplexEmbedding_iff_finrank_eq`: through a complex embedding
+  regular forms are classified by their rank.
+* `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one_iff`: the localization is
+  the standard sum of squares on `Fin n` exactly when the rank is `n`.
 * `QuadraticForm.IsLocallyIsotropic.not_anisotropic_atComplexEmbedding`
 * `QuadraticForm.LocallyRepresentsScalar.represents_atComplexEmbedding`
 * `QuadraticForm.LocallyRepresents.isRepresentedBy_atComplexEmbedding`
@@ -73,20 +81,8 @@ theorem equivalent_atComplexEmbedding_weightedSumSquares_one_iff [FiniteDimensio
     (Q.atComplexEmbedding w).Equivalent (weightedSumSquares ℂ (1 : Fin n → ℂ)) ↔
       Module.finrank K V = n := by
   let _ : Algebra K ℂ := w.embedding.toAlgebra
-  constructor
-  · rintro ⟨e⟩
-    calc
-      Module.finrank K V = Module.finrank ℂ (w.ComplexScalarExtension (V := V)) :=
-        Module.finrank_baseChange.symm
-      _ = Module.finrank ℂ (Fin n → ℂ) := e.toLinearEquiv.finrank_eq
-      _ = n := by simp
-  · intro hrank
-    have hrank' : Module.finrank ℂ (w.ComplexScalarExtension (V := V)) =
-        Module.finrank K V := Module.finrank_baseChange
-    have hsep : (associated (Q.atComplexEmbedding w)).SeparatingLeft :=
-      (nondegenerate_associated_iff.mpr (Nondegenerate.atComplexEmbedding hQ w)).1
-    rw [← hrank, ← hrank']
-    exact equivalent_weightedSumSquares_of_isAlgClosed (Q.atComplexEmbedding w) hsep
+  rw [equivalent_weightedSumSquares_one_iff_finrank_eq _ (Nondegenerate.atComplexEmbedding hQ w),
+    Module.finrank_baseChange]
 
 /-- A locally isotropic quadratic form is isotropic after scalar extension along the complex
 embedding of every infinite place. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 
@@ -19,6 +20,13 @@ The signature is invariant under equivalence, additive under orthogonal products
 components under negation or negative scaling, and is unchanged by positive scaling.  For a
 nondegenerate form, the two indices add to the global rank.
 
+Sylvester's law of inertia turns that invariant into a complete one: at a real place regular
+forms are isometric exactly when their signatures agree, so at a fixed global rank the positive
+index alone separates them, and the localization is isometric to the normal form
+`QuadraticForm.realSignatureForm p q` exactly when `(p, q)` is its signature.  This is the real
+half of the archimedean classification; the complex half is in
+`TauCeti.NumberTheory.QuadraticForm.Global.ComplexPlaces`.
+
 ## Main definitions
 
 * `QuadraticForm.realSignature`: the positive and negative indices at a real place.
@@ -32,6 +40,19 @@ nondegenerate form, the two indices add to the global rank.
 * `QuadraticMap.Equivalent.realSignature_eq`: equivalent forms have equal real signatures.
 * `QuadraticForm.realSignature_prod`: real-place signatures are additive under orthogonal
   products.
+* `QuadraticForm.equivalent_atRealPlace_iff_realSignature_eq`: at a real place regular forms are
+  classified by their signature.
+* `QuadraticForm.equivalent_atRealPlace_iff_realPositiveIndex_eq_of_finrank_eq`: at a fixed
+  global rank the positive index alone classifies them.
+* `QuadraticForm.equivalent_atRealPlace_realSignatureForm_iff` and
+  `QuadraticForm.equivalent_atRealPlace_realSignatureForm`: the localization is the normal form
+  `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature, hence is always the normal form of its
+  own signature.
+
+## References
+
+* O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), §61 for the archimedean
+  classification.
 -/
 
 public section
@@ -75,6 +96,13 @@ theorem realSignature_snd (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.realSignature w).2 = Q.realNegativeIndex w := by
   simp [realNegativeIndex]
+
+/-- The real signature is a prescribed pair exactly when the two indices are its components. -/
+@[simp]
+theorem realSignature_eq_iff (Q : _root_.QuadraticForm K V)
+    (w : {w : InfinitePlace K // w.IsReal}) (p q : ℕ) :
+    Q.realSignature w = (p, q) ↔ Q.realPositiveIndex w = p ∧ Q.realNegativeIndex w = q := by
+  rw [Prod.ext_iff, realSignature_fst, realSignature_snd]
 
 /-- The positive index at a real place is Mathlib's positive index of the localized form. -/
 theorem realPositiveIndex_eq_sigPos (Q : _root_.QuadraticForm K V)
@@ -276,5 +304,52 @@ theorem realSignature_smul_of_neg (ha : embedding_of_isReal w.2 a < 0) :
   · simpa only [realSignature_snd] using realNegativeIndex_smul_of_neg Q w a ha
 
 end Scaling
+
+section Classification
+
+variable [FiniteDimensional K V] [FiniteDimensional K W]
+
+/-- **Sylvester's law of inertia at a real place.** Two regular quadratic forms become isometric
+at a real place exactly when their signatures there agree. -/
+@[simp]
+theorem equivalent_atRealPlace_iff_realSignature_eq (hQ : Q.Nondegenerate) (hR : R.Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Equivalent (R.atRealPlace w) ↔ Q.realSignature w = R.realSignature w := by
+  rw [equivalent_iff_sigPos_eq_and_sigNeg_eq (Nondegenerate.atRealPlace hQ w)
+    (Nondegenerate.atRealPlace hR w)]
+  simp only [Prod.ext_iff, realSignature_fst, realSignature_snd, realPositiveIndex_eq_sigPos,
+    realNegativeIndex_eq_sigNeg]
+
+/-- At a real place the positive index is already a complete invariant of regular forms of equal
+global rank, because the negative index is the rank minus the positive index. -/
+theorem equivalent_atRealPlace_iff_realPositiveIndex_eq_of_finrank_eq (hQ : Q.Nondegenerate)
+    (hR : R.Nondegenerate) (hrank : Module.finrank K V = Module.finrank K W)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Equivalent (R.atRealPlace w) ↔
+      Q.realPositiveIndex w = R.realPositiveIndex w := by
+  have hQsum := realPositiveIndex_add_realNegativeIndex_eq_finrank hQ w
+  have hRsum := realPositiveIndex_add_realNegativeIndex_eq_finrank hR w
+  rw [equivalent_atRealPlace_iff_realSignature_eq hQ hR w]
+  simp only [Prod.ext_iff, realSignature_fst, realSignature_snd]
+  omega
+
+/-- A regular quadratic form is isometric at a real place to the normal form `p⟨1⟩ ⊥ q⟨-1⟩`
+exactly when `(p, q)` is its signature there. -/
+theorem equivalent_atRealPlace_realSignatureForm_iff (hQ : Q.Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) (p q : ℕ) :
+    (Q.atRealPlace w).Equivalent (realSignatureForm p q) ↔ Q.realSignature w = (p, q) := by
+  rw [equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq
+    (Nondegenerate.atRealPlace hQ w), realSignature_eq_iff, realPositiveIndex_eq_sigPos,
+    realNegativeIndex_eq_sigNeg]
+
+/-- A regular quadratic form is isometric at a real place to the normal form of its signature
+there. -/
+theorem equivalent_atRealPlace_realSignatureForm (hQ : Q.Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Equivalent
+      (realSignatureForm (Q.realPositiveIndex w) (Q.realNegativeIndex w)) :=
+  (equivalent_atRealPlace_realSignatureForm_iff hQ w _ _).mpr (by simp)
+
+end Classification
 
 end QuadraticForm

@@ -37,8 +37,10 @@ the normal form `p⟨1⟩ ⊥ q⟨-1⟩` gives the archimedean Hasse sign `(-1)^
 * `TauCeti.prod_hilbertSymbol_real_of_equiv_weightedSumSquares`: that product is `(-1)^(q(q-1)/2)`
   for the negative index `q` of any real form the family diagonalizes, so it depends only on the
   isometry class.
-* `TauCeti.prod_hilbertSymbol_realSignatureForm`: the archimedean Hasse sign of the normal form
-  `QuadraticForm.realSignatureForm p q` is `(-1)^(q(q-1)/2)`.
+* `TauCeti.prod_hilbertSymbol_real_ite_lt`: for the weights that are `1` on the first `p` indices
+  of `Fin (p + q)` and `-1` on the remaining `q`, that product is `(-1)^(q(q-1)/2)`; those weights
+  diagonalize `QuadraticForm.realSignatureForm p q`, so this is the archimedean Hasse sign of the
+  normal form.
 
 ## References
 
@@ -146,10 +148,11 @@ theorem prod_hilbertSymbol_real_of_equiv_weightedSumSquares {M : Type*} [AddComm
   rw [prod_hilbertSymbol_real, _root_.QuadraticForm.sigNeg_of_equiv_weightedSumSquares h,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
 
-/-- **The archimedean Hasse sign of the normal form.** For the diagonalization whose first `p`
-weights are `1` and whose remaining `q` weights are `-1`, the product of the real Hilbert symbols
-over the ordered pairs is `(-1)^(q(q-1)/2)`. -/
-theorem prod_hilbertSymbol_realSignatureForm (p q : ℕ) :
+/-- **The archimedean Hasse sign of the normal form.** For the weights on `Fin (p + q)` that are
+`1` on the first `p` indices and `-1` on the remaining `q`, the product of the real Hilbert
+symbols over the ordered pairs is `(-1)^(q(q-1)/2)`.  These weights diagonalize the normal form
+`QuadraticForm.realSignatureForm p q`, so this is that form's archimedean Hasse sign. -/
+theorem prod_hilbertSymbol_real_ite_lt (p q : ℕ) :
     ∏ ij ∈ univ.filter (fun ij : Fin (p + q) × Fin (p + q) => ij.1 < ij.2),
         hilbertSymbol (if (ij.1 : ℕ) < p then (1 : ℝˣ) else -1)
           (if (ij.2 : ℕ) < p then (1 : ℝˣ) else -1) = (-1) ^ q.choose 2 := by
