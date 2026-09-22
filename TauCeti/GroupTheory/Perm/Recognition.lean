@@ -44,6 +44,10 @@ subgroups in the low-degree classification, where the order of a subgroup bounds
   containing an element of order `6` is the full symmetric group.
 * `TauCeti.alternatingGroup_le_of_index_lt`: a subgroup of `Sₙ`, `n ≥ 5`, of index less than
   `n` contains `Aₙ`.
+* `Equiv.Perm.cycleType_eq_two_three_of_orderOf_eq_six`: an order-six permutation on five points
+  has cycle type `(2, 3)`.
+* `Equiv.Perm.isThreeCycle_of_orderOf_eq_three`: an order-three permutation on five points is a
+  three-cycle.
 * `Equiv.Perm.isSwap_pow_prod_erase_two_cycleType_and_odd`: if a permutation has exactly one
   2-cycle and all its other cycles have odd length, an explicit odd power is a transposition.
 * `Equiv.Perm.exists_odd_isSwap_pow`: the corresponding existential form.
@@ -180,7 +184,7 @@ theorem _root_.Equiv.Perm.exists_odd_isSwap_pow {σ : Equiv.Perm α}
 
 /-- A permutation of order `6` on five points has cycle type `(2, 3)`: it is the product of a
 transposition and a three-cycle. -/
-private theorem cycleType_eq_two_three_of_orderOf_eq_six {σ : Equiv.Perm α}
+theorem _root_.Equiv.Perm.cycleType_eq_two_three_of_orderOf_eq_six {σ : Equiv.Perm α}
     (hcard : Fintype.card α = 5) (hσ : orderOf σ = 6) : σ.cycleType = {2, 3} := by
   have hsum : σ.cycleType.sum ≤ 5 := by
     have := σ.sum_cycleType_le
@@ -237,7 +241,7 @@ private theorem cycleType_eq_two_three_of_orderOf_eq_six {σ : Equiv.Perm α}
   exact Multiset.pair_comm 3 2
 
 /-- A permutation of order `3` on five points is a three-cycle. -/
-private theorem isThreeCycle_of_orderOf_eq_three {σ : Equiv.Perm α}
+theorem _root_.Equiv.Perm.isThreeCycle_of_orderOf_eq_three {σ : Equiv.Perm α}
     (hcard : Fintype.card α = 5) (hσ : orderOf σ = 3) : Equiv.Perm.IsThreeCycle σ := by
   obtain ⟨n, hn⟩ := Equiv.Perm.cycleType_prime_order (hσ ▸ Nat.prime_three)
   have hn0 : n = 0 := by
@@ -254,20 +258,24 @@ theorem alternatingGroup_le_of_isPretransitive_of_orderOf_eq_three
     {σ : Equiv.Perm α} (hσ : orderOf σ = 3) (hg : σ ∈ G) : alternatingGroup α ≤ G := by
   let _ : IsPretransitive G α := hG
   refine Equiv.Perm.alternatingGroup_le_of_isPreprimitive_of_isThreeCycle_mem
-    (IsPreprimitive.of_prime_card ?_) (isThreeCycle_of_orderOf_eq_three hcard hσ) hg
+    (IsPreprimitive.of_prime_card ?_)
+    (Equiv.Perm.isThreeCycle_of_orderOf_eq_three hcard hσ) hg
   rw [Nat.card_eq_fintype_card, hcard]
   exact Nat.prime_five
 
-omit [DecidableEq α] in
 /-- **A transitive subgroup of `S₅` containing an element of order `6` is the full symmetric
 group.** On five points an element of order `6` is the product of a transposition and a
 three-cycle, so some odd power of it is a transposition and the transposition criterion
 applies. -/
 theorem subgroup_eq_top_of_isPretransitive_of_orderOf_eq_six
-    (hcard : Fintype.card α = 5) {G : Subgroup (Equiv.Perm α)} (hG : IsPretransitive G α)
-    {σ : Equiv.Perm α} (hσ : orderOf σ = 6) (hg : σ ∈ G) : G = ⊤ := by
+    {β : Type*} (hcard : Nat.card β = 5) {G : Subgroup (Equiv.Perm β)}
+    (hG : IsPretransitive G β) {σ : Equiv.Perm β} (hσ : orderOf σ = 6) (hg : σ ∈ G) :
+    G = ⊤ := by
   classical
-  have hct : σ.cycleType = {2, 3} := cycleType_eq_two_three_of_orderOf_eq_six hcard hσ
+  let _ : Finite β := Nat.finite_of_card_ne_zero (by omega)
+  let _ : Fintype β := Fintype.ofFinite β
+  have hct : σ.cycleType = {2, 3} :=
+    Equiv.Perm.cycleType_eq_two_three_of_orderOf_eq_six (by simpa using hcard) hσ
   obtain ⟨k, -, hswap⟩ := Equiv.Perm.exists_odd_isSwap_pow (σ := σ) (by simp [hct])
     fun n hn hn2 => by
     rw [hct] at hn
@@ -277,7 +285,6 @@ theorem subgroup_eq_top_of_isPretransitive_of_orderOf_eq_six
     · exact ⟨1, by omega⟩
   refine subgroup_eq_top_of_isPretransitive_of_prime_card_of_isSwap_mem hG ?_ (σ ^ k) hswap
     (pow_mem hg k)
-  rw [Nat.card_eq_fintype_card, hcard]
-  exact Nat.prime_five
+  exact hcard ▸ Nat.prime_five
 
 end TauCeti

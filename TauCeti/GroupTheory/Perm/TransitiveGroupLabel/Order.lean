@@ -77,6 +77,7 @@ theorem TransitiveGroupLabel.natCard_mem_four {j : TransitiveGroupIndex 4}
 
 /-- **Order recognition in degree three.** A transitive subgroup of `S₃` is labelled `3Tj`
 exactly when its order is that of `3Tj`: the orders `3, 6` of `3T1` and `3T2` are distinct. -/
+@[simp]
 theorem transitiveGroupLabel_three_iff_natCard_eq (j : TransitiveGroupIndex 3)
     (G : Subgroup (Perm (Fin 3))) [IsPretransitive G (Fin 3)] :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 3 j) :=
@@ -99,6 +100,7 @@ theorem transitiveGroupLabel_three_iff_natCard_eq (j : TransitiveGroupIndex 3)
 /-- **Order recognition in degree five.** A transitive subgroup of `S₅` is labelled `5Tj` exactly
 when its order is that of `5Tj`: the orders `5, 10, 20, 60, 120` of `5T1` through `5T5` are
 pairwise distinct. -/
+@[simp]
 theorem transitiveGroupLabel_five_iff_natCard_eq (j : TransitiveGroupIndex 5)
     (G : Subgroup (Perm (Fin 5))) [IsPretransitive G (Fin 5)] :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 5 j) :=
@@ -122,6 +124,7 @@ theorem transitiveGroupLabel_five_iff_natCard_eq (j : TransitiveGroupIndex 5)
 /-- **`4T1` is recognized by its order and cyclicity.** A transitive subgroup of `S₄` is
 labelled `4T1` exactly when it has order four and is cyclic. The hypothesis `IsCyclic G` cannot
 be dropped: `4T2` also has order four. -/
+@[simp]
 theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4)))
     [IsPretransitive G (Fin 4)] :
     TransitiveGroupLabel (⟨0, by simp⟩ : TransitiveGroupIndex 4) G ↔
@@ -148,6 +151,7 @@ theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4)))
 /-- **`4T2` is recognized by its order and non-cyclicity.** A transitive subgroup of `S₄` is
 labelled `4T2` exactly when it has order four and is not cyclic, that is, exactly when it is a
 Klein four-group up to conjugacy. -/
+@[simp]
 theorem transitiveGroupLabel_four_one_iff (G : Subgroup (Perm (Fin 4)))
     [IsPretransitive G (Fin 4)] :
     TransitiveGroupLabel (⟨1, by simp⟩ : TransitiveGroupIndex 4) G ↔
@@ -174,6 +178,7 @@ theorem transitiveGroupLabel_four_one_iff (G : Subgroup (Perm (Fin 4)))
 /-- **Order recognition in degree four away from order four.** A transitive subgroup of `S₄` is
 labelled `4Tj`, `2 ≤ j`, exactly when its order is that of `4Tj`: the orders `8, 12, 24` of
 `4T3`, `4T4` and `4T5` are pairwise distinct and differ from the order four of `4T1` and `4T2`. -/
+@[simp]
 theorem transitiveGroupLabel_four_iff_natCard_eq_of_two_le (j : TransitiveGroupIndex 4)
     (hj : 2 ≤ (j : ℕ)) (G : Subgroup (Perm (Fin 4))) [IsPretransitive G (Fin 4)] :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 4 j) :=
