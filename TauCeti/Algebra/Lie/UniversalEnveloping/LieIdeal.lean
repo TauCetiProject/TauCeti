@@ -288,8 +288,19 @@ theorem _root_.LieIdeal.exists_envelopingIdeal_pow_le_of_forall_isNilpotent
     apply LinearMap.ext
     intro m
     rw [LieModule.toEnd_apply_apply, LieIdeal.coe_bracket_of_module,
-      UniversalEnvelopingAlgebra.asLieRingModule_bracket]
-    rfl
+      UniversalEnvelopingAlgebra.asLieRingModule_bracket, Algebra.coe_lmul_eq_mul]
+    induction m using Quotient.inductionOn' with
+    | _ m =>
+      rw [LinearMap.mul_apply']
+      change (UniversalEnvelopingAlgebra.ι K (x : L')) • Ideal.Quotient.mk J m =
+        Ideal.Quotient.mk J (UniversalEnvelopingAlgebra.ι K (x : L')) *
+          Ideal.Quotient.mk J m
+      calc
+        _ = Ideal.Quotient.mk J (UniversalEnvelopingAlgebra.ι K (x : L') * m) := by
+          simpa only [smul_eq_mul, Ideal.Quotient.mk_eq_mk] using
+            (Submodule.Quotient.mk_smul J
+              (UniversalEnvelopingAlgebra.ι K (x : L')) m).symm
+        _ = _ := (Ideal.Quotient.mk J).map_mul _ _
   have hnil : LieModule.IsNilpotent (↥I) (UK ⧸ J) :=
     (LieModule.isNilpotent_iff_forall' (R := K)).mpr fun x ↦ by
       rw [htoEnd]
