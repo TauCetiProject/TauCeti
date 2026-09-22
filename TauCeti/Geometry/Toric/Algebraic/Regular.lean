@@ -49,6 +49,8 @@ boundary coordinates, twists them by `B`, and acts on the torus coordinates by `
   map.
 * `TauCeti.Toric.IsRegularCone.card_toricRay_le_finrank`: a regular cone has at most as many rays
   as the rank of the lattice, which is the count that gives the dimensions of its mixed chart.
+* `TauCeti.Toric.IsRegularCone.exists_basis_sum`: an extending basis indexed by the rays followed
+  by a finite complementary type, as required by regular affine coordinates.
 * `TauCeti.Toric.IsExtendingBasis.basis_apply_eq`,
   `TauCeti.Toric.IsExtendingBasis.repr_basis_apply` and
   `TauCeti.Toric.IsExtendingBasis.toMatrix_apply`: the salient ray columns of the transition matrix
@@ -346,6 +348,14 @@ theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
   exact isUnit_det_toMatrix_submatrix_inr hi hσ (hb.isPrimitiveGenerator_reindex e he)
     (hb'.isPrimitiveGenerator_reindex e' he')
 
+private theorem exists_sum_equiv_toricRay {m : ℕ} (s : ToricRay σ ↪ Fin m) :
+    ∃ (l : ℕ) (f : ToricRay σ ⊕ Fin l ≃ Fin m), ∀ ρ, f (Sum.inl ρ) = s ρ := by
+  classical
+  have _ : Fintype (ToricRay σ) := Fintype.ofInjective s s.injective
+  exact ⟨Fintype.card {j : Fin m // j ∉ Set.range s},
+    (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
+      (Equiv.sumCompl fun j : Fin m ↦ j ∈ Set.range s), fun ρ ↦ rfl⟩
+
 /-- Two extending bases of the same cone admit compatible splittings of their index sets into the
 rays of the cone and a common complement `Fin l`, in which the transition matrix has the block form
 `[[1, B], [0, D]]` with `D` unimodular. The two index sets have the same size, both being the rank
@@ -358,20 +368,12 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
         IsUnit ((b'.toMatrix b).submatrix (fun j : Fin l ↦ e' (Sum.inr j))
           (fun k : Fin l ↦ e (Sum.inr k))).det := by
   classical
-  -- The rays sit inside the index set of an extending basis, so they split off a complement.
-  have key : ∀ {m : ℕ} (s : ToricRay σ ↪ Fin m),
-      ∃ (l : ℕ) (f : ToricRay σ ⊕ Fin l ≃ Fin m), ∀ ρ, f (Sum.inl ρ) = s ρ := by
-    intro m s
-    have _ : Fintype (ToricRay σ) := Fintype.ofInjective s s.injective
-    exact ⟨Fintype.card {j : Fin m // j ∉ Set.range s},
-      (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
-        (Equiv.sumCompl fun j : Fin m ↦ j ∈ Set.range s), fun ρ ↦ rfl⟩
   have hcard : ∀ {m l : ℕ} (f : ToricRay σ ⊕ Fin l ≃ Fin m), Nat.card (ToricRay σ) + l = m := by
     intro m l f
     have _ : Finite (ToricRay σ) := Finite.of_injective _ (f.injective.comp Sum.inl_injective)
     simpa [Nat.card_sum] using (Nat.card_congr f)
-  obtain ⟨l, e, he⟩ := key r
-  obtain ⟨l', e', he'⟩ := key r'
+  obtain ⟨l, e, he⟩ := IsExtendingBasis.exists_sum_equiv_toricRay r
+  obtain ⟨l', e', he'⟩ := exists_sum_equiv_toricRay r'
   have hn : Module.finrank ℤ N = n := by simpa using Module.finrank_eq_card_basis b
   have hn' : Module.finrank ℤ N = n' := by simpa using Module.finrank_eq_card_basis b'
   obtain rfl : l' = l := by
@@ -381,6 +383,20 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
   exact ⟨_, e, e', he, he', isUnit_det_toMatrix_compl hi hσ hb hb' e e' he he'⟩
 
 end IsExtendingBasis
+
+namespace IsRegularCone
+
+/-- The primitive ray generators of a regular cone can be placed at the left summand of a basis
+indexed by the rays and a finite complementary type.  This is the indexing shape used by the
+regular affine-coordinate equivalence. -/
+theorem exists_basis_sum (h : IsRegularCone i σ) :
+    ∃ (l : ℕ) (b : Module.Basis (ToricRay σ ⊕ Fin l) ℤ N),
+  ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ)) := by
+  obtain ⟨n, b, r, hb⟩ := h.exists_basis
+  obtain ⟨l, e, he⟩ := IsExtendingBasis.exists_sum_equiv_toricRay r
+  exact ⟨l, b.reindex e.symm, hb.isPrimitiveGenerator_reindex e he⟩
+
+end IsRegularCone
 
 /-! ### Regular fans -/
 

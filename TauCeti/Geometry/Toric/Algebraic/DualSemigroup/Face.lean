@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Convex.Cone.Face.Exposed
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Regular
+public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Regular
+public import TauCeti.Geometry.Toric.Algebraic.Ray.Face
 import TauCeti.Geometry.Toric.Algebraic.Ray.Generation
 
 /-!
@@ -30,6 +31,8 @@ obtained from that of the cone by adjoining the negative of a single character.
 * `TauCeti.Toric.exists_add_nsmul_mem_dualSemigroup` and
   `TauCeti.Toric.dualSemigroup_inf_ker_eq_sup`: the dual semigroup of the face cut out by a
   character `m` of a finitely generated cone `σ` is the dual semigroup of `σ` with `-m` adjoined.
+* `TauCeti.Toric.IsRegularCone.realCharacter_eq_zero_on_face_iff`: vanishing of a dual-semigroup
+  character on a face in terms of its regular ray coordinates.
 
 ## References
 
@@ -113,5 +116,41 @@ theorem IsRegularCone.exists_mem_dualSemigroup_inf_ker_eq (hi : IsIntegralLattic
   · rintro _ ⟨ρ, rfl⟩
     rw [hi.realCharacter_apply, hm]
     split_ifs with h <;> simp [h]
+
+/-- A character in the dual semigroup vanishes on a face of a regular cone exactly when all of
+its regular ray coordinates indexed by rays of that face vanish. -/
+theorem IsRegularCone.realCharacter_eq_zero_on_face_iff {I : Type*}
+    (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
+    {b : Module.Basis (ToricRay σ ⊕ I) ℤ N}
+    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
+    (m : dualSemigroup hi σ) :
+    (∀ y, y ∈ F → hi.realCharacter (m : N →+ ℤ) y = 0) ↔
+      ∀ ρ ∈ hσ.faceOrderIso hi F,
+        (regularDualSemigroupEquiv hi hσ.toIsToricCone hb m).1 ρ = 0 := by
+  constructor
+  · intro hm ρ hρ
+    have hmem : i (primitiveGenerator hi hσ.toIsToricCone ρ) ∈ F :=
+      (hσ.mem_faceOrderIso_iff hi F ρ).mp hρ
+    have hzero := hm _ hmem
+    rw [hi.realCharacter_apply, ← (hb ρ).eq_primitiveGenerator hi hσ.toIsToricCone,
+      ← coe_regularDualSemigroupEquiv_fst_apply hi hσ.toIsToricCone hb] at hzero
+    exact_mod_cast hzero
+  · intro hm y hy
+    have hF : F.toPointedCone = PointedCone.hull ℝ
+        (i '' (primitiveGenerator hi hσ.toIsToricCone '' hσ.faceOrderIso hi F)) := by
+      rw [← hσ.faceOrderIso_symm_apply_toPointedCone hi (hσ.faceOrderIso hi F),
+        OrderIso.symm_apply_apply]
+    have hle : PointedCone.hull ℝ
+        (i '' (primitiveGenerator hi hσ.toIsToricCone '' hσ.faceOrderIso hi F)) ≤
+        PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter (m : N →+ ℤ))) := by
+      apply Submodule.span_le.2
+      rintro _ ⟨_, ⟨ρ, hρ, rfl⟩, rfl⟩
+      change hi.realCharacter (m : N →+ ℤ)
+        (i (primitiveGenerator hi hσ.toIsToricCone ρ)) = 0
+      rw [hi.realCharacter_apply,
+        ← (hb ρ).eq_primitiveGenerator hi hσ.toIsToricCone,
+        ← coe_regularDualSemigroupEquiv_fst_apply hi hσ.toIsToricCone hb]
+      exact_mod_cast hm ρ hρ
+    exact LinearMap.mem_ker.mp (hle (hF ▸ hy))
 
 end TauCeti.Toric
