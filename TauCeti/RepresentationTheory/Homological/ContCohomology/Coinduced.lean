@@ -744,8 +744,7 @@ theorem trace_map {R N : Type*} [Semiring R] [AddCommGroup N] [DistribMulAction 
     (φ : M →ₗ[R] N) (hφ : ∀ (g : G) (m : M), φ (g • m) = g • φ m)
     (f : DiscreteCoind G U M) :
     trace G U N (map φ (fun u m => hφ (u : G) m) f) = φ (trace G U M f) := by
-  rw [trace_apply, trace_apply, map_sum]
-  exact Finset.sum_congr rfl fun x _ => by rw [map_apply, hφ]
+  exact coindTrace_coindMap (G := G) (U := U) φ.toAddMonoidHom hφ (toCoind G U M f)
 
 /-- The trace is continuous, the source being discrete. -/
 theorem continuous_trace [TopologicalSpace M] : Continuous (trace G U M) :=
