@@ -16,9 +16,8 @@ the flattened index `finProdFinEquiv (r, j) = j + m * r` is position `j` of bloc
 records that reindexing as a measurable equivalence, together with the restriction to one fixed
 subblock.
 
-Nothing here mentions a measure or a process: these are general measurable finite-product
-constructions, obtained by transporting Mathlib's `MeasurableEquiv.piCongrLeft` along
-`finProdFinEquiv` and currying the result.
+These are general measurable finite-product constructions, independent of any measure or
+stochastic process.
 
 ## Main definitions
 
@@ -47,11 +46,7 @@ def blockSplitEquiv (α : Type*) [MeasurableSpace α] (m n : ℕ) :
       (MeasurableEquiv.curry (Fin n) (Fin m) α)
 
 /-- Splitting a finite block reads its `(r, j)` coordinate at the flattened index
-`j + m * r`.
-
-Everything else about the equivalence is derived from here. The proof goes through the coercion
-lemmas of `MeasurableEquiv.piCongrLeft` and `MeasurableEquiv.curry` rather than unfolding their
-definitions, so it does not depend on how those wrappers are implemented upstream. -/
+`j + m * r`. -/
 @[simp]
 theorem blockSplitEquiv_apply (m n : ℕ) (x : Fin (n * m) → α) (r : Fin n) (j : Fin m) :
     blockSplitEquiv α m n x r j = x (finProdFinEquiv (r, j)) := by
