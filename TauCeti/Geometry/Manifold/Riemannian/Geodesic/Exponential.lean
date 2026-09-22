@@ -236,6 +236,15 @@ theorem contMDiffAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}
   (contMDiffOn_riemannianExp (I := I) (M := M) p v hv).contMDiffAt
     (isOpen_expDomain (I := I) (M := M) p |>.mem_nhds hv)
 
+/-- The velocity of the exponential image of a path is the differential of the exponential map
+applied to the derivative of the path in the tangent space. -/
+theorem curveVelocity_riemannianExp_comp [T2Space (TangentBundle I M)]
+    {p : M} {w : ℝ → TangentSpace I p} {w' : TangentSpace I p} {t : ℝ}
+    (hw : HasDerivAt w w' t) (hwt : w t ∈ expDomain I M p) :
+    curveVelocity I (riemannianExp I M p ∘ w) t =
+      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t) w' :=
+  ((contMDiffAt_riemannianExp hwt).mdifferentiableAt (by simp)).curveVelocity_comp_mfderiv hw
+
 /-- The velocity of an affine curve through the exponential map is its differential in the
 affine direction. -/
 theorem curveVelocity_riemannianExp_add_smul [T2Space (TangentBundle I M)]
@@ -244,8 +253,7 @@ theorem curveVelocity_riemannianExp_add_smul [T2Space (TangentBundle I M)]
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (v + u • w) w := by
   have hg : HasDerivAt (fun s : ℝ ↦ v + s • w) w u := by
     simpa using (hasDerivAt_id u).smul_const w |>.const_add v
-  exact ((contMDiffAt_riemannianExp (I := I) (M := M) hu).mdifferentiableAt (by simp))
-    |>.curveVelocity_comp_mfderiv (g := fun s : ℝ ↦ v + s • w) hg
+  exact curveVelocity_riemannianExp_comp (I := I) (M := M) hg hu
 
 /-- The velocity of a radial curve through the exponential map is its differential in the
 radial direction. -/
