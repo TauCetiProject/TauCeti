@@ -64,7 +64,9 @@ dividing `q - 1`, where `q` is the cardinality of the residue field.
 The ramification groups are indexed by `ℤ` and the unit filtration by `ℕ`. Every statement below
 therefore fixes a natural index `i` and reads the ramification group at `(i : ℤ)`, including at
 depth zero, where the index is spelled `((0 : ℕ) : ℤ)` so that the general lemmas apply to the
-tame character without a cast.
+tame character without a cast. That spelling is not `simp`-normal, so the depth-zero
+`QuotientGroup.mk` lemma is left off the `simp` set; the general lemma at index `(i : ℤ)` is on
+it.
 
 ## References
 
@@ -320,7 +322,10 @@ def tameCharacterGraded (hϖ : Irreducible ϖ) :
   (unitFiltrationGradedZeroEquivResidueFieldUnits (K := L)).toMonoidHom.comp
     (ramificationGroupGradedToUnitFiltrationGraded 0 hϖ)
 
-@[simp]
+-- Not a `simp` lemma: the depth-zero index is spelled `((0 : ℕ) : ℤ)` so that the general
+-- lemmas apply, and that spelling is not `simp`-normal, so the left-hand side would simplify
+-- further. The general `TauCeti.ramificationGroupGradedToUnitFiltrationGraded_mk` is the `simp`
+-- lemma for the underlying map.
 theorem tameCharacterGraded_mk (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G 𝒪[L] ((0 : ℕ) : ℤ)) :
     tameCharacterGraded hϖ (QuotientGroup.mk σ) = tameCharacter hϖ σ := (rfl)
