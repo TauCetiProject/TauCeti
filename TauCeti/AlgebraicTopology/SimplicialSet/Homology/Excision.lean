@@ -47,45 +47,66 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
     (e n x).1 = f.right.app (Opposite.op (SimplexCategory.mk n)) x.1)
 
 open Classical in
-/-- On ambient simplices, the prospective inverse to the relative chain map sends a simplex from
-the subspace to zero and every other simplex through the inverse bijection of complementary
+/-- The degree-`n` relative chains identify with the coproduct indexed by the complementary
 simplices. -/
-private def relativeChainComplexMapInvLift (n : ℕ) :
-    (P'.right.chainComplex R).X n ⟶ (P.chainComplex R).X n :=
-  Sigma.desc fun y ↦
-    if hy : y ∈ Set.range (P'.hom.app (Opposite.op (SimplexCategory.mk n))) then 0
-    else P.right.ιChainComplex ((e n).symm ⟨y, hy⟩).1 ≫ (P.chainComplexπ R).f n
-
-open Classical in
-@[reassoc]
-private lemma ιChainComplex_relativeChainComplexMapInvLift (n : ℕ)
-    (y : P'.right.obj (Opposite.op (SimplexCategory.mk n))) :
-    P'.right.ιChainComplex y ≫
-        relativeChainComplexMapInvLift (P := P) (P' := P') R e n =
-      if hy : y ∈ Set.range (P'.hom.app (Opposite.op (SimplexCategory.mk n))) then 0
-      else P.right.ιChainComplex ((e n).symm ⟨y, hy⟩).1 ≫ (P.chainComplexπ R).f n :=
-  by simp [relativeChainComplexMapInvLift, SSet.ιChainComplex]
-
-open Classical in
-/-- The degreewise inverse to a map on relative chains that bijects the complementary
-simplices. -/
-private def relativeChainComplexMapInvX (n : ℕ) :
-    (P'.chainComplex R).X n ⟶ (P.chainComplex R).X n :=
-  (P'.isColimitCokernelCoforkChainComplexX R n).desc
-    (CokernelCofork.ofπ (relativeChainComplexMapInvLift (P := P) (P' := P') R e n) (by
-      ext x
-      rw [← Category.assoc, SSet.ι_chainComplexMap_f]
-      simp [relativeChainComplexMapInvLift, SSet.ιChainComplex]))
+private noncomputable def relativeChainComplexXIso (P : SSetPair.{w}) (n : ℕ) :
+    (P.chainComplex R).X n ≅ ∐ fun (_ : P.RelativeSimplex n) ↦ R :=
+  IsColimit.coconePointUniqueUpToIso
+    (P.isColimitCokernelCoforkChainComplexX R n)
+    (isColimitSigmaConstCokernelCofork R
+      (P.hom.app (Opposite.op (SimplexCategory.mk n))))
 
 @[reassoc]
-private lemma chainComplexπ_f_relativeChainComplexMapInvX (n : ℕ) :
-    (P'.chainComplexπ R).f n ≫
-        relativeChainComplexMapInvX (P := P) (P' := P') R e n =
-      relativeChainComplexMapInvLift (P := P) (P' := P') R e n :=
-  by
-    classical
-    rw [relativeChainComplexMapInvX]
-    exact (P'.isColimitCokernelCoforkChainComplexX R n).fac _ WalkingParallelPair.one
+private lemma chainComplexπ_f_relativeChainComplexXIso_hom (P : SSetPair.{w}) (n : ℕ) :
+    (P.chainComplexπ R).f n ≫ (relativeChainComplexXIso R P n).hom =
+      (sigmaConstCokernelCofork R
+        (P.hom.app (Opposite.op (SimplexCategory.mk n)))).π := by
+  exact IsColimit.comp_coconePointUniqueUpToIso_hom
+    (P.isColimitCokernelCoforkChainComplexX R n)
+    (isColimitSigmaConstCokernelCofork R
+      (P.hom.app (Opposite.op (SimplexCategory.mk n)))) WalkingParallelPair.one
+
+@[reassoc]
+private lemma sigmaConstCokernelCofork_π_relativeChainComplexXIso_inv
+    (P : SSetPair.{w}) (n : ℕ) :
+    (sigmaConstCokernelCofork R
+          (P.hom.app (Opposite.op (SimplexCategory.mk n)))).π ≫
+        (relativeChainComplexXIso R P n).inv =
+      (P.chainComplexπ R).f n := by
+  exact IsColimit.comp_coconePointUniqueUpToIso_inv
+    (P.isColimitCokernelCoforkChainComplexX R n)
+    (isColimitSigmaConstCokernelCofork R
+      (P.hom.app (Opposite.op (SimplexCategory.mk n)))) WalkingParallelPair.one
+
+@[reassoc]
+private lemma ιChainComplex_chainComplexπ_f_relativeChainComplexXIso_hom (P : SSetPair.{w})
+    (n : ℕ) (x : P.right.obj (Opposite.op (SimplexCategory.mk n)))
+    (hx : x ∉ Set.range (P.hom.app (Opposite.op (SimplexCategory.mk n)))) :
+    P.right.ιChainComplex x ≫ (P.chainComplexπ R).f n ≫
+        (relativeChainComplexXIso R P n).hom =
+      Sigma.ι (fun (_ : P.RelativeSimplex n) ↦ R) ⟨x, hx⟩ := by
+  rw [chainComplexπ_f_relativeChainComplexXIso_hom]
+  exact ι_sigmaConstCokernelCofork_π R _ x hx
+
+@[reassoc]
+private lemma ι_relativeChainComplexXIso_inv (P : SSetPair.{w}) (n : ℕ)
+    (x : P.RelativeSimplex n) :
+    Sigma.ι (fun (_ : P.RelativeSimplex n) ↦ R) x ≫
+        (relativeChainComplexXIso R P n).inv =
+      P.right.ιChainComplex x.1 ≫ (P.chainComplexπ R).f n := by
+  rw [← ι_sigmaConstCokernelCofork_π_assoc R _ x.1 x.2,
+    sigmaConstCokernelCofork_π_relativeChainComplexXIso_inv]
+  rfl
+
+omit [Preadditive C] in
+@[reassoc]
+private lemma ι_reindex_relativeSimplexEquiv (n : ℕ) (x : P.RelativeSimplex n) :
+    Sigma.ι (fun (_ : P.RelativeSimplex n) ↦ R) x ≫
+        (Sigma.reindex (e n) (fun _ ↦ R)).hom =
+      Sigma.ι (fun (_ : P'.RelativeSimplex n) ↦ R) (e n x) := by
+  change Sigma.ι ((fun (_ : P'.RelativeSimplex n) ↦ R) ∘ e n) x ≫
+      (Sigma.reindex (e n) (fun _ ↦ R)).hom = _
+  exact Sigma.ι_reindex_hom (e n) (fun (_ : P'.RelativeSimplex n) ↦ R) x
 
 @[reassoc]
 private lemma chainComplexπ_f_comp_chainComplexMap_f (n : ℕ) :
@@ -94,55 +115,40 @@ private lemma chainComplexπ_f_comp_chainComplexMap_f (n : ℕ) :
   congrArg (fun g ↦ g.f n) (((chainComplexFunctorπ C).app R).naturality f).symm
 
 include he in
-private lemma relativeChainComplexMapInvX_isInverse (n : ℕ) :
-    (SSetPair.chainComplexMap f R).f n ≫
-          relativeChainComplexMapInvX (P := P) (P' := P') R e n = 𝟙 _ ∧
-      relativeChainComplexMapInvX (P := P) (P' := P') R e n ≫
-          (SSetPair.chainComplexMap f R).f n = 𝟙 _ := by
+private lemma chainComplexMap_f_eq (n : ℕ) :
+    (SSetPair.chainComplexMap f R).f n =
+      (relativeChainComplexXIso R P n).hom ≫
+        (Sigma.reindex (e n) (fun _ ↦ R)).hom ≫
+        (relativeChainComplexXIso R P' n).inv := by
   classical
-  constructor
-  · apply (cancel_epi ((P.chainComplexπ R).f n)).1
-    rw [← Category.assoc, chainComplexπ_f_comp_chainComplexMap_f, Category.assoc,
-      chainComplexπ_f_relativeChainComplexMapInvX]
-    ext x
-    rw [← Category.assoc, SSet.ι_chainComplexMap_f,
-      ιChainComplex_relativeChainComplexMapInvLift]
-    by_cases hx : x ∈ Set.range (P.hom.app (Opposite.op (SimplexCategory.mk n)))
-    · obtain ⟨a, rfl⟩ := hx
-      have hx' : f.right.app (Opposite.op (SimplexCategory.mk n))
-          (P.hom.app (Opposite.op (SimplexCategory.mk n)) a) ∈
-            Set.range (P'.hom.app (Opposite.op (SimplexCategory.mk n))) := by
-        refine ⟨f.left.app (Opposite.op (SimplexCategory.mk n)) a, ?_⟩
-        simpa using ConcreteCategory.congr_hom (NatTrans.congr_app f.w _) a
-      rw [dite_eq_left hx']
-      rw [Category.comp_id, ← SSet.ι_chainComplexMap_f,
-        Category.assoc, P.chainComplex_condition_f, comp_zero]
-    · have hx' : f.right.app (Opposite.op (SimplexCategory.mk n)) x ∉
-          Set.range (P'.hom.app (Opposite.op (SimplexCategory.mk n))) := by
-        intro hmem
-        apply (e n ⟨x, hx⟩).2
-        rw [he n ⟨x, hx⟩]
-        exact hmem
-      rw [dite_eq_right hx']
-      have hinv : (e n).symm
-          ⟨f.right.app (Opposite.op (SimplexCategory.mk n)) x, hx'⟩ = ⟨x, hx⟩ := by
-        apply (e n).injective
-        rw [Equiv.apply_symm_apply]
-        exact Subtype.ext (he n ⟨x, hx⟩).symm
-      rw [hinv, Category.comp_id]
-  · apply (cancel_epi ((P'.chainComplexπ R).f n)).1
-    rw [← Category.assoc, chainComplexπ_f_relativeChainComplexMapInvX]
-    ext y
-    rw [← Category.assoc, ιChainComplex_relativeChainComplexMapInvLift]
-    by_cases hy : y ∈ Set.range (P'.hom.app (Opposite.op (SimplexCategory.mk n)))
-    · obtain ⟨a, rfl⟩ := hy
-      rw [dite_eq_left ⟨a, rfl⟩, zero_comp, Category.comp_id]
+  apply (cancel_epi ((P.chainComplexπ R).f n)).1
+  rw [chainComplexπ_f_comp_chainComplexMap_f]
+  ext x
+  rw [← Category.assoc, SSet.ι_chainComplexMap_f]
+  by_cases hx : x ∈ Set.range (P.hom.app (Opposite.op (SimplexCategory.mk n)))
+  · obtain ⟨a, rfl⟩ := hx
+    have hval : f.right.app (Opposite.op (SimplexCategory.mk n))
+        (P.hom.app (Opposite.op (SimplexCategory.mk n)) a) =
+          P'.hom.app (Opposite.op (SimplexCategory.mk n))
+            (f.left.app (Opposite.op (SimplexCategory.mk n)) a) :=
+      by simpa using (ConcreteCategory.congr_hom (NatTrans.congr_app f.w _) a).symm
+    rw [hval, ← SSet.ι_chainComplexMap_f, Category.assoc,
+      P'.chainComplex_condition_f, comp_zero]
+    have hz : P.right.ιChainComplex
+          (P.hom.app (Opposite.op (SimplexCategory.mk n)) a) ≫
+            (P.chainComplexπ R).f n = 0 := by
       rw [← SSet.ι_chainComplexMap_f, Category.assoc,
-        P'.chainComplex_condition_f, comp_zero]
-    · rw [dite_eq_right hy, Category.assoc,
-        chainComplexπ_f_comp_chainComplexMap_f,
-        ← Category.assoc, SSet.ι_chainComplexMap_f]
-      rw [← he n ((e n).symm ⟨y, hy⟩), Equiv.apply_symm_apply, Category.comp_id]
+        P.chainComplex_condition_f, comp_zero]
+    rw [← Category.assoc, hz, zero_comp]
+  · have hx' : f.right.app (Opposite.op (SimplexCategory.mk n)) x ∉
+        Set.range (P'.hom.app (Opposite.op (SimplexCategory.mk n))) := by
+      intro hmem
+      apply (e n ⟨x, hx⟩).2
+      rw [he n ⟨x, hx⟩]
+      exact hmem
+    rw [ιChainComplex_chainComplexπ_f_relativeChainComplexXIso_hom_assoc R P n x hx,
+      ι_reindex_relativeSimplexEquiv_assoc, ι_relativeChainComplexXIso_inv]
+    rw [← he n ⟨x, hx⟩]
 
 include e he
 
@@ -151,8 +157,7 @@ every degree induces an isomorphism of relative chain complexes. -/
 theorem isIso_chainComplexMap_of_relativeSimplex_equiv :
     IsIso (SSetPair.chainComplexMap f R) := by
   let _ : ∀ n, IsIso ((SSetPair.chainComplexMap f R).f n) := fun n ↦
-    IsIso.mk ⟨relativeChainComplexMapInvX (P := P) (P' := P') R e n,
-      relativeChainComplexMapInvX_isInverse f R e he n⟩
+    chainComplexMap_f_eq f R e he n ▸ inferInstance
   exact HomologicalComplex.Hom.isIso_of_components _
 
 variable [CategoryWithHomology C]
@@ -235,7 +240,10 @@ an isomorphism from the chains of `(A, A ∩ B)` to the chains of `(X, B)`. -/
 theorem isIso_chainComplexMap_excisionMap (h : A ⊔ B = ⊤) :
     IsIso (SSetPair.chainComplexMap (excisionMap A B) R) :=
   SSetPair.isIso_chainComplexMap_of_relativeSimplex_equiv (excisionMap A B) R
-    (excisionRelativeSimplexEquiv h) (fun _ _ ↦ rfl)
+    (excisionRelativeSimplexEquiv h) (by
+      intro n x
+      rw [excisionRelativeSimplexEquiv_apply_val, excisionMap_right]
+      rfl)
 
 variable [CategoryWithHomology C]
 
