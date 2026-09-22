@@ -197,11 +197,10 @@ profinite lift. -/
 theorem lift_fromFreeProfiniteGroup (hP : IsProP p P) (f : X → P)
     (x : freeProfiniteGroup X) :
     lift hP f (x : freeProP p X) = freeProfiniteGroup.lift f x := by
-  calc
-    lift hP f (x : freeProP p X) =
-        ((lift hP f).comp (fromFreeProfiniteGroup p X)) x := rfl
-    _ = freeProfiniteGroup.lift f x :=
-      DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) x
+  change freeProC.lift (isProC_finiteGroupClassP_iff.mpr hP) f
+      ((freeProC.equivFreeProP p X).symm (x : freeProP p X)) = _
+  rw [freeProC.equivFreeProP_symm_fromFreeProfiniteGroup,
+    freeProC.lift_fromFreeProfiniteGroup]
 
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]

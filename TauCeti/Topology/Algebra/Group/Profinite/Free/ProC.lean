@@ -145,12 +145,10 @@ theorem lift_fromFreeProfiniteGroup (hP : IsProC C P) (f : X → P)
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]
 theorem lift_of (hP : IsProC C P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
-  calc
-    lift hP f (of x) =
-        ((lift hP f).comp (fromFreeProfiniteGroup C X)) (freeProfiniteGroup.of x) := rfl
-    _ = freeProfiniteGroup.lift f (freeProfiniteGroup.of x) :=
-      DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) (freeProfiniteGroup.of x)
-    _ = f x := freeProfiniteGroup.lift_of f x
+  rw [← fromFreeProfiniteGroup_of]
+  simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+    freeProfiniteGroup.lift_of] using
+    DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) (freeProfiniteGroup.of x)
 
 /-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
 `f`. -/
