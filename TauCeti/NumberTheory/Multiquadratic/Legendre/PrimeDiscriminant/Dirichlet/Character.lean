@@ -34,6 +34,8 @@ Number Theory*, Chapter 6.
   attached to the prime discriminant `P`.
 * `TauCeti.Multiquadratic.primeDiscriminantChar_apply_int`: its value on an integer is
   `primeDiscriminantCharFun P`.
+* `TauCeti.Multiquadratic.isQuadratic_primeDiscriminantChar`: it takes only the values
+  `0`, `1`, `-1`.
 * `TauCeti.Multiquadratic.isPrimitive_primeDiscriminantChar`: its conductor is `|P|`.
 -/
 
@@ -106,10 +108,11 @@ theorem isQuadratic_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P)
   let _ : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
   intro a
   by_cases ha : IsUnit a
-  · have hcop : IsCoprime (a.val : ℤ) P := by
-      rw [Int.isCoprime_iff_nat_coprime]
-      apply (ZMod.isUnit_iff_coprime a.val P.natAbs).mp
+  · have haunit : IsUnit ((a.val : ℕ) : ZMod P.natAbs) := by
       simpa only [ZMod.natCast_zmod_val] using ha
+    have hcop : IsCoprime (a.val : ℤ) P := by
+      simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using
+        (ZMod.isUnit_iff_coprime a.val P.natAbs).mp haunit
     have hval : primeDiscriminantChar P hP a =
         primeDiscriminantCharFun P (a.val : ℤ) := by
       calc

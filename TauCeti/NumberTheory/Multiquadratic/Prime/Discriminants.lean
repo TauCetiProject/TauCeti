@@ -41,6 +41,9 @@ discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cas
   the only prime divisor.
 * `TauCeti.Multiquadratic.isCoprime_primeDiscriminant_of_ne_of_not_both_even`: distinct prime
   discriminants are coprime, unless both are even.
+* `TauCeti.Multiquadratic.prod_ne_zero_of_forall_isPrimeDiscriminant` and
+  `TauCeti.Multiquadratic.neZero_natAbs_prod_of_forall_isPrimeDiscriminant`: a product of prime
+  discriminants is nonzero, so its absolute value is a legitimate Dirichlet character level.
 -/
 
 public section
@@ -488,6 +491,21 @@ theorem IsPrimeDiscriminant.ne_zero {D : ℤ} (hD : IsPrimeDiscriminant D) : D �
   rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, _, rfl⟩
   · rcases hev with rfl | rfl | rfl <;> norm_num
   · exact oddPrimeDiscriminant_ne_zero.mpr hp.ne_zero
+
+/-- A product of prime discriminants is nonzero. -/
+theorem prod_ne_zero_of_forall_isPrimeDiscriminant {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) : ∏ P ∈ s, P ≠ 0 :=
+  Finset.prod_ne_zero_iff.mpr fun P hP ↦ (hs P hP).ne_zero
+
+/-- A product of the absolute values of prime discriminants is nonzero. -/
+theorem prod_natAbs_ne_zero_of_forall_isPrimeDiscriminant {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) : ∏ P ∈ s, P.natAbs ≠ 0 :=
+  Finset.prod_ne_zero_iff.mpr fun P hP ↦ Int.natAbs_ne_zero.mpr (hs P hP).ne_zero
+
+/-- The absolute value of a product of prime discriminants is a nonzero level. -/
+theorem neZero_natAbs_prod_of_forall_isPrimeDiscriminant {s : Finset ℤ}
+    (hs : ∀ P ∈ s, IsPrimeDiscriminant P) : NeZero (∏ P ∈ s, P).natAbs :=
+  ⟨Int.natAbs_ne_zero.mpr (prod_ne_zero_of_forall_isPrimeDiscriminant hs)⟩
 
 /-- An even prime discriminant is coprime to every odd prime discriminant. -/
 theorem isCoprime_evenPrimeDiscriminant_oddPrimeDiscriminant {D : ℤ} {p : ℕ}

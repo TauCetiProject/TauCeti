@@ -83,8 +83,7 @@ theorem exists_prime_gt_forall_primeDiscriminantCharFun_eq {s : Finset ℤ}
     ∃ q : ℕ, N < q ∧ q.Prime ∧ q ≠ 2 ∧ ∀ P ∈ s, primeDiscriminantCharFun P q = ε P := by
   classical
   obtain ⟨a, ha⟩ := exists_forall_primeDiscriminantCharFun_eq hs heven ε
-  have hM0 : (∏ P ∈ s, P.natAbs) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun P hP =>
-    Int.natAbs_ne_zero.mpr (hs P hP).ne_zero
+  have hM0 : (∏ P ∈ s, P.natAbs) ≠ 0 := prod_natAbs_ne_zero_of_forall_isPrimeDiscriminant hs
   have hcop : IsCoprime (a : ℤ) ((∏ P ∈ s, P.natAbs : ℕ) : ℤ) := by
     rw [Nat.cast_prod]
     refine IsCoprime.prod_right fun P hP => ?_
