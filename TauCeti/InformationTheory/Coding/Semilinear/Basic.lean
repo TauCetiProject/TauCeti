@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.InformationTheory.Coding.Equivalence
-public import TauCeti.InformationTheory.Coding.MinimumDistance
+public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
 
 /-!
 # Semilinear equivalence of codes

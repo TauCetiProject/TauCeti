@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.InformationTheory.Coding.Semilinear.Basic
-public import TauCeti.InformationTheory.Coding.WeightEnumerator
+public import TauCeti.InformationTheory.Coding.Weight.Enumerator
 
 /-!
 # Weight enumerators of semilinearly equivalent codes
