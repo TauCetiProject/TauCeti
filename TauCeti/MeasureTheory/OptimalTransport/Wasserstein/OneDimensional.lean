@@ -8,6 +8,8 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile
 public import TauCeti.MeasureTheory.Integral.LayerCake
 
+import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
+
 /-!
 # The Wasserstein distance of two real laws at exponent one
 

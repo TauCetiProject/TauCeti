@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Layercake
-public import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
+public import Mathlib.Data.Set.SymmDiff
 
 /-!
 # A layer-cake formula for the distance between real functions
