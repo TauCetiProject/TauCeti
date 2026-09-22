@@ -48,17 +48,13 @@ theorem _root_.ContinuousMonoidHom.proPFrattini_le_ker
     change f x = 1
     exact hf x
   · push Not at hf
-    have hcard : Nat.card (Multiplicative (ZMod p)) = p := by
-      calc Nat.card (Multiplicative (ZMod p)) = Nat.card (ZMod p) :=
-            Nat.card_congr Multiplicative.toAdd
-        _ = p := Nat.card_zmod p
     have hrange : f.toMonoidHom.range = ⊤ := by
       rcases (f.toMonoidHom.range).eq_bot_or_eq_top_of_prime_card with hbot | htop
       · obtain ⟨x, hx⟩ := hf
-        have hxrange : f x ∈ f.toMonoidHom.range :=
-          MonoidHom.mem_range.mpr ⟨x, rfl⟩
-        rw [hbot] at hxrange
-        exact (hx (Subgroup.mem_bot.mp hxrange)).elim
+        rw [MonoidHom.range_eq_bot_iff] at hbot
+        have hfx : f x = 1 := by
+          simpa using congrArg (fun k : G →* Multiplicative (ZMod p) => k x) hbot
+        exact (hx hfx).elim
       · exact htop
     have hopen : IsOpen (f.ker : Set G) := by
       -- The kernel is the preimage of the identity in the discrete target.
@@ -84,14 +80,12 @@ theorem _root_.ContinuousMonoidHom.existsUnique_frattiniQuotient_lift
   let g₀ := QuotientGroup.lift (proPFrattini p G) f.toMonoidHom hker
   have hcomp : g₀.comp (QuotientGroup.mk' (proPFrattini p G)) = f.toMonoidHom :=
     QuotientGroup.lift_comp_mk' _ _ _
-  have hcomp_fun : (fun x : G ↦ g₀ (QuotientGroup.mk' (proPFrattini p G) x)) = f := by
-    funext x
-    exact congrArg (fun k : G →* Multiplicative (ZMod p) => k x) hcomp
   have hcontinuous : Continuous g₀ := by
     apply QuotientGroup.isOpenQuotientMap_mk.continuous_comp_iff.mp
     -- The quotient lift composes back to `f` along the quotient map.
-    change Continuous (fun x : G ↦ g₀ (QuotientGroup.mk' (proPFrattini p G) x))
-    rw [hcomp_fun]
+    change Continuous (fun x : G ↦
+      QuotientGroup.lift (proPFrattini p G) f.toMonoidHom hker (QuotientGroup.mk x))
+    simp only [QuotientGroup.lift_mk']
     exact f.continuous
   let g : (G ⧸ proPFrattini p G) →ₜ* Multiplicative (ZMod p) := ⟨g₀, hcontinuous⟩
   refine ⟨g, hcomp, ?_⟩
