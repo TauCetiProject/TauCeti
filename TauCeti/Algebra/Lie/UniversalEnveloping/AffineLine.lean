@@ -117,13 +117,6 @@ theorem ι_dilation_pow_sub_ι_dilation_mem_center (p : ℕ) [ExpChar K p] (hp :
       Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K (AffineLine K)) := by
   simpa using ι_pow_sub_smul_ι_mem_center p hp (dilation K)
 
-/-- The central `p`-polynomial of the dilation lies in the augmentation ideal. -/
-theorem ι_dilation_pow_sub_ι_dilation_mem_augmentation_toIdeal {p : ℕ} (hp : 1 < p) :
-    _root_.UniversalEnvelopingAlgebra.ι K (dilation K) ^ p -
-        _root_.UniversalEnvelopingAlgebra.ι K (dilation K) ∈
-      (HopfIdeal.augmentation K (_root_.UniversalEnvelopingAlgebra K (AffineLine K))).toIdeal := by
-  simpa using ι_pow_sub_smul_ι_mem_augmentation_toIdeal hp (dilation K)
-
 /-- **The central `p`-polynomial of the translation** `y` is the single Frobenius power
 `ι y ^ p`: the adjoint action of `y` squares to zero, so already `T ^ p = 0` in positive
 characteristic.  This is the shape
@@ -134,12 +127,6 @@ theorem ι_translation_pow_mem_center (p : ℕ) [ExpChar K p] (hp : p ≠ 1) :
       Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K (AffineLine K)) := by
   have hp1 : p - 1 ≠ 0 := by have := expChar_pos K p; omega
   simpa [zero_pow hp1] using ι_pow_sub_smul_ι_mem_center p hp (translation K)
-
-/-- The central `p`-polynomial of the translation lies in the augmentation ideal. -/
-theorem ι_translation_pow_mem_augmentation_toIdeal {p : ℕ} (hp : p ≠ 0) :
-    _root_.UniversalEnvelopingAlgebra.ι K (translation K) ^ p ∈
-      (HopfIdeal.augmentation K (_root_.UniversalEnvelopingAlgebra K (AffineLine K))).toIdeal :=
-  UniversalEnvelopingAlgebra.pow_ι_mem_augmentation_toIdeal K (AffineLine K) (translation K) hp
 
 /-- The canonical Lie generator attached to the translation `y` is nonzero: the adjoint
 representation of `U(L)` sends it to `LieAlgebra.ad K (AffineLine K) y`, which moves the
