@@ -67,6 +67,11 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
   of a root vector of weight `α` raises the weight of a weight vector by a multiple of `α`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_of_isCartanWeightVector`: a torus
   point acts on a weight vector by the value of its character.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantCoordinateCocharacter_tmul_basis`: the coordinate
+  cocharacter scales a weight vector by the corresponding coordinate of its weight.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_mul_inv_weylReflectTorusPoint`: a torus
+  point divided by its Weyl reflection is a value of the cocharacter supported at the reflecting
+  index.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_injective`: weights generating the whole
   character lattice make the torus a monomorphism on points.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantTorusPoints`: naturality in the value ring.
@@ -409,6 +414,9 @@ private theorem kostantCoordinateCocharacter_apply_def (c : κ) (u : Aˣ) :
 
 omit [Module ℚ V] in
 /-- Evaluating the coordinate cocharacter at `u` gives the torus point supported at `c`. -/
+-- Not `@[simp]`: it would rewrite under `kostantCoordinateCocharacter_tmul_basis`, whose left-hand
+-- side simp would then reach through `kostantTorusPoints_tmul_basis`, so `simpNF` rejects that
+-- lemma. This mirrors `kostantTorusPoints_apply`, which is not `@[simp]` either.
 theorem kostantCoordinateCocharacter_apply (c : κ) (u : Aˣ) :
     kostantCoordinateCocharacter M b wt A c u =
       kostantTorusPoints M b wt A (Pi.mulSingle c u) :=
@@ -426,20 +434,14 @@ omit [Module ℚ V] in
 omit [Module ℚ V] in
 /-- **A torus point divided by its Weyl reflection is a coordinate-cocharacter value.** The
 reflection `s_α` changes only the `c`-th coordinate of a point, dividing it by the value `α(s)`, so
-the quotient is the value at `α(s)` of the cocharacter supported at `c`. -/
+the quotient is the value at `α(s)` of the cocharacter supported at `c`. This is the image under
+the torus of `TauCeti.mul_inv_weylReflectTorusPoint`, the same identity in `κ → Aˣ`. -/
 theorem kostantTorusPoints_mul_inv_weylReflectTorusPoint (α : κ → ℤ)
     (c : κ) (s : κ → Aˣ) :
     kostantTorusPoints M b wt A s *
         (kostantTorusPoints M b wt A (weylReflectTorusPoint α c s))⁻¹ =
       kostantCoordinateCocharacter M b wt A c (torusCharacter s α) := by
-  rw [kostantCoordinateCocharacter_apply, ← map_inv, ← map_mul]
-  congr 1
-  funext j
-  rcases eq_or_ne j c with rfl | hj
-  · simp only [Pi.mul_apply, Pi.inv_apply, weylReflectTorusPoint_apply_same,
-      Pi.mulSingle_eq_same, mul_inv_rev, inv_inv]
-    simp [mul_comm (s j), mul_assoc]
-  · simp [weylReflectTorusPoint_apply_of_ne _ hj, Pi.mulSingle_eq_of_ne hj]
+  rw [kostantCoordinateCocharacter_apply, ← map_inv, ← map_mul, mul_inv_weylReflectTorusPoint]
 
 end CoordinateCocharacter
 

@@ -56,6 +56,8 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
   conjugates represented torus points by coordinate reindexing.
 * `TauCeti.map_basisWeightTorus_range_conj_of_map_basis`: such an automorphism normalizes the
   represented weight torus.
+* `TauCeti.mul_inv_weylReflectTorusPoint`: a point divided by its reflection is supported at the
+  reflecting coordinate, with value there the root character.
 * `TauCeti.torusCharacter_weylReflectTorusPoint`: evaluation at a reflected point agrees with
   evaluation of the reflected character.
 * `TauCeti.exists_torusCharacter_eq_of_sum_mul_eq_one`: a weight whose coordinates have a
@@ -234,6 +236,13 @@ theorem weylReflectTorusPoint_apply_of_ne (α : κ → ℤ) {c j : κ} (hcj : j 
     (s : κ → Rˣ) : weylReflectTorusPoint α c s j = s j := by
   rw [weylReflectTorusPoint_apply]
   simp [hcj]
+
+/-- **A point divided by its reflection is supported at the reflecting coordinate.** The reflection
+changes only the `c`-th coordinate, dividing it by the value `α(s)`, so the quotient is the point
+with `c`-th coordinate `α(s)` and all others `1`. -/
+theorem mul_inv_weylReflectTorusPoint (α : κ → ℤ) (c : κ) (s : κ → Rˣ) :
+    s * (weylReflectTorusPoint α c s)⁻¹ = Pi.mulSingle c (torusCharacter s α) := by
+  rw [weylReflectTorusPoint_apply, mul_inv, mul_inv_cancel_left, Pi.mulSingle_inv, inv_inv]
 
 /-- **The reflected point computes the reflected character.** The character `μ` takes at the
 reflected point the value that `μ - μ(c) α`, the reflection `s_α μ`, takes at the original one. -/
