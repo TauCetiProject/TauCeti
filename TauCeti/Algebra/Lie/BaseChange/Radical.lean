@@ -25,9 +25,9 @@ IsSolvable ↥(I.baseChange A) ↔ IsSolvable ↥I,   IsNilpotent ↥(I.baseChan
 ```
 
 The forward implications ask nothing of `A`.  The reverse implications are exactly where faithful
-flatness enters, through `Module.FaithfullyFlat.one_tmul_eq_zero_iff`: a term of either series can
-vanish after extending scalars only if it vanished already.  Applied to the two largest ideals,
-the forward implications give
+flatness enters, through `Submodule.baseChange_inj`: a term of either series can vanish after
+extending scalars only if it vanished already.  Applied to the two largest ideals, the forward
+implications give
 
 ```text
 (radical R L).baseChange A ≤ radical A (A ⊗[R] L),
@@ -72,25 +72,6 @@ checked after extension and descended.
 public section
 
 open TensorProduct
-
-namespace LieSubmodule
-
-variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
-variable (A : Type*) [CommRing A] [Algebra R A]
-
-/-- **A faithfully flat extension of scalars detects the zero submodule.**  Over a general
-`R`-algebra the extension of a nonzero submodule can collapse; faithful flatness is exactly what
-rules that out. -/
-@[simp]
-theorem baseChange_eq_bot_iff [Module.FaithfullyFlat R A] (N : LieSubmodule R L M) :
-    N.baseChange A = ⊥ ↔ N = ⊥ := by
-  refine ⟨fun h ↦ _root_.eq_bot_iff.mpr fun x hx ↦ ?_, fun h ↦ by rw [h, baseChange_bot]⟩
-  have hx' : (1 : A) ⊗ₜ[R] x ∈ N.baseChange A := tmul_mem_baseChange_of_mem 1 hx
-  rw [h, mem_bot, Module.FaithfullyFlat.one_tmul_eq_zero_iff] at hx'
-  rw [mem_bot, hx']
-
-end LieSubmodule
 
 namespace LieIdeal
 
@@ -139,14 +120,19 @@ theorem isSolvable_baseChange_iff [Module.FaithfullyFlat R A] :
   refine ⟨fun h ↦ ?_, fun _ ↦ isSolvable_baseChange A I⟩
   obtain ⟨k, hk⟩ := (LieAlgebra.isSolvable_iff A ↥(I.baseChange A)).mp h
   rw [derivedSeries_eq_bot_iff, LieAlgebra.derivedSeriesOfIdeal_baseChange,
-    LieSubmodule.baseChange_eq_bot_iff] at hk
+    ← LieSubmodule.toSubmodule_eq_bot, LieSubmodule.coe_baseChange,
+    ← Submodule.baseChange_bot (R := R) (M := L) (A := A), Submodule.baseChange_inj,
+    LieSubmodule.toSubmodule_eq_bot] at hk
   exact (LieAlgebra.isSolvable_iff R ↥I).mpr ⟨k, (derivedSeries_eq_bot_iff I k).mpr hk⟩
 
 /-- **An ideal is nilpotent exactly when its faithfully flat extension of scalars is nilpotent.** -/
 theorem isNilpotent_baseChange_iff [Module.FaithfullyFlat R A] :
     LieRing.IsNilpotent (I.baseChange A) ↔ LieRing.IsNilpotent I := by
   rw [isNilpotent_iff_exists_lcs_eq_bot, isNilpotent_iff_exists_lcs_eq_bot]
-  simp only [lcs_baseChange, LieSubmodule.baseChange_eq_bot_iff]
+  refine exists_congr fun k ↦ ?_
+  rw [lcs_baseChange, ← LieSubmodule.toSubmodule_eq_bot, LieSubmodule.coe_baseChange,
+    ← Submodule.baseChange_bot (R := R) (M := L) (A := A), Submodule.baseChange_inj,
+    LieSubmodule.toSubmodule_eq_bot]
 
 end LieIdeal
 
