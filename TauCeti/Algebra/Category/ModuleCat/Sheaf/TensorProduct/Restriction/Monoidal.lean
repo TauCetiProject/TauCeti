@@ -75,18 +75,22 @@ def overSheafificationLifting : CategoryTheory.Localization.Lifting
     (overSheafification R X) (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) where
   iso := overSheafificationNatIso (ringCatSheaf R) X
 
+/-- The monoidal structure on sheaves of modules on the slice site. -/
 local instance : MonoidalCategory
     (_root_.SheafOfModules.{u} ((ringCatSheaf R).over X)) :=
   monoidalCategory (R.over X)
 
+/-- The symmetric structure on sheaves of modules on the slice site. -/
 local instance : SymmetricCategory
     (_root_.SheafOfModules.{u} ((ringCatSheaf R).over X)) :=
   symmetricCategory (R.over X)
 
+/-- The monoidal structure on presheaves of modules on the slice site. -/
 local instance : MonoidalCategory
     (PresheafOfModules.{u} ((ringCatSheaf R).over X).obj) :=
   PresheafOfModules.monoidalCategory (R := (R.over X).obj)
 
+/-- The symmetric structure on presheaves of modules on the slice site. -/
 local instance : SymmetricCategory
     (PresheafOfModules.{u} ((ringCatSheaf R).over X).obj) :=
   PresheafOfModules.symmetricCategory (R := (R.over X).obj)
