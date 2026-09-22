@@ -52,46 +52,6 @@ variable {ι : Type*} [Fintype ι]
 
 /-! ## The `A₂` coordinate quadratic form -/
 
-namespace IntegralLattice
-
-/-- In the standard `A₂` discriminant module, the quadratic value of a symbol is `0` at zero
-and `1/3` at either nonzero symbol. -/
-theorem typeAStandardQuadraticModule_two_quadratic (a : ZMod 3) :
-    (typeAStandardQuadraticModule 2).quadratic a =
-      (((if a ≠ 0 then 1 else 0 : ℚ) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
-  have ha : (((a.val : ℤ) : ZMod 3)) = a := by
-    exact_mod_cast ZMod.natCast_rightInverse a
-  conv_lhs => rw [← ha]
-  rw [typeAStandardQuadraticModule_quadratic_intCast]
-  have ha_le : a.val < 3 := a.isLt
-  interval_cases hval : a.val
-  · rw [← ha]
-    simp
-  · have ha0 : a ≠ 0 := by
-      intro ha0
-      rw [ha0] at hval
-      norm_num at hval
-    rw [ite_eq_left ha0]
-    norm_num
-  · have ha0 : a ≠ 0 := by
-      intro ha0
-      rw [ha0] at hval
-      norm_num at hval
-    rw [ite_eq_left ha0]
-    norm_num only [Nat.cast_ofNat]
-    rw [show (4 / 3 : ℚ) = 1 + 1 / 3 by norm_num, AddCircle.coe_add]
-    norm_num
-
-/-- The polar pairing of the `A₂` discriminant form on integer representatives is `2ab/3`. -/
-theorem typeAStandardQuadraticModule_two_pairing_intCast (a b : ℤ) :
-    (typeAStandardQuadraticModule 2).toFiniteBilinearModule.pairing
-        (a : ZMod 3) (b : ZMod 3) =
-      (((2 * (a : ℚ) * (b : ℚ)) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
-  convert typeAStandardQuadraticModule_pairing_intCast 2 a b using 1
-  ring_nf
-
-end IntegralLattice
-
 /-- The quadratic value of a ternary word in the `A₂` coordinate alphabet is its Hamming
 weight divided by three. -/
 theorem coordinatePower_typeAStandardQuadraticModule_two_quadratic (x : ι → ZMod 3) :
@@ -117,6 +77,7 @@ theorem coordinatePower_typeAStandardQuadraticModule_two_quadratic (x : ι → Z
 
 /-- A ternary additive code is quadratic-isotropic in the `A₂` coordinate alphabet exactly
 when all of its Hamming weights are divisible by three. -/
+@[simp]
 theorem isIsotropic_coordinatePower_typeAStandardQuadraticModule_two_iff
     (C : AdditiveCode (ZMod 3) ι) :
     ((IntegralLattice.typeAStandardQuadraticModule 2).coordinatePower ι).IsIsotropic C ↔
@@ -145,6 +106,25 @@ classes in the `A₂` discriminant groups. -/
 noncomputable def typeA2CoordinateDiscriminantEquiv :
     (ι → ZMod 3) ≃+ (ι → (IntegralLattice.typeARootLattice 2).DiscriminantGroup) :=
   AddEquiv.piCongrRight fun _ ↦ IntegralLattice.typeADiscriminantGroupEquiv 2
+
+omit [Fintype ι] in
+/-- The coordinatewise `A₂` discriminant equivalence applies the scalar equivalence in each
+coordinate. -/
+@[simp]
+theorem typeA2CoordinateDiscriminantEquiv_apply (x : ι → ZMod 3) (i : ι) :
+    typeA2CoordinateDiscriminantEquiv x i =
+      IntegralLattice.typeADiscriminantGroupEquiv 2 (x i) := by
+  rw [typeA2CoordinateDiscriminantEquiv, AddEquiv.piCongrRight_apply]
+
+omit [Fintype ι] in
+/-- The constant word with symbol `1` maps coordinatewise to the first fundamental-weight
+class. -/
+@[simp]
+theorem typeA2CoordinateDiscriminantEquiv_one :
+    typeA2CoordinateDiscriminantEquiv (fun _ : ι ↦ 1) =
+      fun _ ↦ IntegralLattice.typeAFundamentalWeightClass 2 := by
+  ext i
+  simp
 
 /-- The additive equivalence underlying the canonical coordinatewise `A₂` quadratic isometry
 is the explicit coordinatewise discriminant-group equivalence. -/

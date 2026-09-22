@@ -613,16 +613,8 @@ when its squared order is the order of the ambient module. -/
 theorem IsIsotropic.isLagrangian_of_card_sq_eq {H : AddSubgroup A}
     (hH : A.IsIsotropic H) (hA : A.IsNondegenerate)
     (hcard : Nat.card H ^ 2 = Nat.card A) : A.IsLagrangian H := by
-  refine ⟨hH, A.toFiniteBilinearModule.isLagrangian_def H |>.mpr ?_⟩
-  apply AddSubgroup.eq_of_le_of_card_ge hH.le_orthogonalComplement
-  have hmul := FiniteBilinearModule.IsNondegenerate.card_mul_card_orthogonalComplement
-    A.toFiniteBilinearModule hA H
-  rw [pow_two] at hcard
-  have hcard' : Nat.card H =
-      Nat.card (A.toFiniteBilinearModule.orthogonalComplement H) := by
-    apply Nat.mul_left_cancel (Nat.card_pos (α := H))
-    exact hcard.trans hmul.symm
-  exact hcard'.ge
+  exact ⟨hH, FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq
+    A.toFiniteBilinearModule hH.toFiniteBilinearModule hA hcard⟩
 
 /-! ## Quotients by isotropic subgroups -/
 
