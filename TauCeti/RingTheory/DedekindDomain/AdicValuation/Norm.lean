@@ -22,7 +22,7 @@ related by
 
 ## Main results
 
-* `TauCeti.norm_adicCompletionExtension`: the normalized
+* `IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension`: the normalized
   absolute value under the canonical extension of completions.
 
 ## References
@@ -48,7 +48,8 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 /-- The normalized absolute value of the image in `L_w` is the normalized absolute value in
 `K_v` raised to the local degree `[L_w : K_v]`. No Galois hypothesis is needed. -/
 @[simp]
-theorem norm_adicCompletionExtension (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension
+    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
     [w.asIdeal.LiesOver v.asIdeal] (x : v.adicCompletion K) :
     ‖v.adicCompletionExtension K L w x‖ =
       ‖x‖ ^ Module.finrank (v.adicCompletion K) (w.adicCompletion L) := by

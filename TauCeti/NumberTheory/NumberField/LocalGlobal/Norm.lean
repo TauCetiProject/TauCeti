@@ -45,7 +45,7 @@ theorem prod_norm_adicCompletionExtension_eq_norm_pow
     ∏ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
         ‖v.adicCompletionExtension K L w.1 x‖ =
       ‖x‖ ^ Module.finrank K L := by
-  simp_rw [norm_adicCompletionExtension]
+  simp_rw [IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension]
   rw [Finset.prod_pow_eq_pow_sum, sum_finrank_adicCompletion_eq_finrank]
 
 end TauCeti
