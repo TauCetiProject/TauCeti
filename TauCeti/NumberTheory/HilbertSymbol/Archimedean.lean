@@ -149,12 +149,6 @@ theorem prod_hilbertSymbol_real_of_equiv_weightedSumSquares {M : Type*} [AddComm
   rw [prod_hilbertSymbol_real, _root_.QuadraticForm.sigNeg_of_equiv_weightedSumSquares h,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
 
-private theorem realCliffordForm_eq_weightedSumSquares (p q : ℕ) :
-    realCliffordForm p q =
-      QuadraticMap.weightedSumSquares ℝ (realCliffordWeight p q) := by
-  ext x
-  simp only [realCliffordForm_apply, QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
-
 /-- The orthogonal-sum and coordinate presentations of the real normal form of signature `(p, q)`
 are isometric. -/
 theorem _root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
@@ -163,13 +157,7 @@ theorem _root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm (p q 
       Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
     funext x
     cases x <;> simp
-  have hsignature : _root_.QuadraticForm.realSignatureForm p q =
-      QuadraticMap.weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) := by
-    ext x
-    rw [_root_.QuadraticForm.realSignatureForm_apply]
-    simp [QuadraticMap.weightedSumSquares_apply, Fintype.sum_sum_type, _root_.sq,
-      sub_eq_add_neg]
-  rw [hsignature, realCliffordForm_eq_weightedSumSquares]
+  rw [_root_.QuadraticForm.realSignatureForm_def, realCliffordForm_def]
   exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv hweight
 
 /-- **The archimedean Hasse sign of the normal form.** The product of the real Hilbert symbols
@@ -184,13 +172,7 @@ theorem prod_hilbertSymbol_realCliffordWeight (p q : ℕ) :
   have hdiag : (realCliffordForm p q).Equivalent
       (QuadraticMap.weightedSumSquares ℝ fun i : Fin (p + q) ↦
         ((Units.mk0 (realCliffordWeight p q i) (realCliffordWeight_ne_zero p q i) : ℝˣ) : ℝ)) := by
-    have hweight : (fun i : Fin (p + q) ↦
-        ((Units.mk0 (realCliffordWeight p q i) (realCliffordWeight_ne_zero p q i) : ℝˣ) : ℝ)) =
-        realCliffordWeight p q := by
-      funext i
-      rfl
-    rw [hweight]
-    rw [← realCliffordForm_eq_weightedSumSquares]
+    simp only [Units.val_mk0, ← realCliffordForm_def]
     exact QuadraticMap.Equivalent.refl _
   rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares hdiag,
     ← (_root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm p q).sigNeg_eq,

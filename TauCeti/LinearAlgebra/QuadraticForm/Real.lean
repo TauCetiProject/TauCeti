@@ -167,6 +167,11 @@ copies of `⟨-1⟩`. -/
 def realSignatureForm (p q : ℕ) : _root_.QuadraticForm ℝ (Fin p ⊕ Fin q → ℝ) :=
   weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1)
 
+/-- The normal form is the weighted sum of squares with `p` positive and `q` negative weights. -/
+theorem realSignatureForm_def (p q : ℕ) :
+    realSignatureForm p q =
+      weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) := (rfl)
+
 @[simp]
 theorem realSignatureForm_apply (p q : ℕ) (x : Fin p ⊕ Fin q → ℝ) :
     realSignatureForm p q x =

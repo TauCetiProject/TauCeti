@@ -118,6 +118,10 @@ Clifford algebra `Cliff(p, q)`. -/
 def realCliffordForm (p q : ℕ) : QuadraticForm ℝ (Fin (p + q) → ℝ) :=
   weightedSumSquares ℝ (realCliffordWeight p q)
 
+/-- The coordinate signature form is the weighted sum of squares for `realCliffordWeight`. -/
+theorem realCliffordForm_def (p q : ℕ) :
+    realCliffordForm p q = weightedSumSquares ℝ (realCliffordWeight p q) := (rfl)
+
 @[simp]
 theorem realCliffordWeight_of_lt {p q : ℕ} {i : Fin (p + q)} (hi : (i : ℕ) < p) :
     realCliffordWeight p q i = 1 :=
