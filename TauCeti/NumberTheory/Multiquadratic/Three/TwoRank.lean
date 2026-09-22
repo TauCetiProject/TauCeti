@@ -111,30 +111,13 @@ theorem natCard_narrowClassGroup_eq_two_of_minpoly_eq_X_sq_sub_three
     (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     Nat.card (NumberField.NarrowClassGroup K) = 2 := by
   have hclass := TauCeti.NumberField.classNumber_eq_one_of_minpoly_eq_X_sq_sub_three hmin hgen
-  have _ : Subsingleton (ClassGroup (𝓞 K)) :=
-    Fintype.card_le_one_iff_subsingleton.mp hclass.le
-  -- Every narrow class lies in the kernel of `Cl⁺(K) → Cl(K)`, hence is a principal class.
-  have hsq : ∀ C : NumberField.NarrowClassGroup K, C ^ 2 = 1 := by
-    intro C
-    have hmem : C ∈ MonoidHom.ker (NumberField.NarrowClassGroup.toClassGroup (K := K)) :=
-      MonoidHom.mem_ker.mpr (Subsingleton.elim _ _)
-    rw [NumberField.NarrowClassGroup.toClassGroup_ker, MonoidHom.mem_range] at hmem
-    obtain ⟨x, rfl⟩ := hmem
-    exact NumberField.NarrowClassGroup.mkPrincipal_sq x
-  have hbot : Subgroup.square (NumberField.NarrowClassGroup K) = ⊥ := by
-    ext C
-    simp only [Subgroup.mem_square, Subgroup.mem_bot]
-    refine ⟨?_, fun h => h ▸ IsSquare.one⟩
-    rintro ⟨r, rfl⟩
-    rw [← pow_two]
-    exact hsq r
-  have hcard := NumberField.NarrowClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank K
-  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square, hbot, Subgroup.index_bot,
-    narrowTwoRank_eq_one_of_minpoly_eq_X_sq_sub_three hmin hgen] at hcard
-  simpa using hcard
+  rw [NumberField.NarrowClassGroup.card_eq_two_pow_twoRank_of_classNumber_eq_one K hclass,
+    narrowTwoRank_eq_one_of_minpoly_eq_X_sq_sub_three hmin hgen]
+  norm_num
 
 /-- **Worked example.** In the concrete number field `AdjoinRoot (X² - 3)`, modelling `ℚ(√3)`,
 two rational primes ramify. -/
+@[simp]
 theorem ncard_ramifiedPrimes_adjoinRoot_sqrt_three_eq_two :
     (ramifiedPrimes (AdjoinRoot (X ^ 2 - C (3 : ℚ)))).ncard = 2 := by
   obtain ⟨θ, hmin, hgen⟩ :=
@@ -159,6 +142,15 @@ theorem twoRank_adjoinRoot_sqrt_three_eq_zero :
   obtain ⟨θ, hmin, hgen⟩ :=
     TauCeti.NumberField.exists_minpoly_eq_X_sq_sub_three_and_adjoin_eq_top
   exact twoRank_eq_zero_of_minpoly_eq_X_sq_sub_three hmin hgen
+
+/-- **The `t - 1` formula fails in the concrete model of `ℚ(√3)`.** Its ordinary class-group
+`2`-rank is not one less than the number of ramified rational primes. -/
+theorem twoRank_ne_ncard_ramifiedPrimes_sub_one_adjoinRoot_sqrt_three :
+    TauCeti.ClassGroup.twoRank (𝓞 (AdjoinRoot (X ^ 2 - C (3 : ℚ)))) ≠
+      (ramifiedPrimes (AdjoinRoot (X ^ 2 - C (3 : ℚ)))).ncard - 1 := by
+  obtain ⟨θ, hmin, hgen⟩ :=
+    TauCeti.NumberField.exists_minpoly_eq_X_sq_sub_three_and_adjoin_eq_top
+  exact twoRank_ne_ncard_ramifiedPrimes_sub_one_of_minpoly_eq_X_sq_sub_three hmin hgen
 
 /-- **Worked example.** The concrete number field `AdjoinRoot (X² - 3)`, modelling `ℚ(√3)`, has
 narrow class number `2`, while its class number is `1`

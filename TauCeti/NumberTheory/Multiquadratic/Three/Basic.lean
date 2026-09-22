@@ -44,10 +44,7 @@ theorem not_isSquare_three_rat : ¬ IsSquare ((3 : ℤ) : ℚ) := by
   rw [Rat.isSquare_intCast_iff]
   exact Int.prime_three.not_isSquare
 
-/-- `X² - 3` is irreducible over `ℚ`, so `AdjoinRoot (X² - 3)` is a field. The instance carries an
-explicit, field-specific name because an anonymous `Fact (Irreducible …)` instance receives an
-auto-generated name that ignores the radicand, so the analogous instances for different radicands
-would collide under one name when the whole library is loaded for the axioms audit. -/
+/-- `X² - 3` is irreducible over `ℚ`, so `AdjoinRoot (X² - 3)` is a field. -/
 instance irreducible_X_sq_sub_three : Fact (Irreducible (X ^ 2 - C (3 : ℚ))) := ⟨by
   refine (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr fun q hq => ?_
   exact not_isSquare_three_rat ⟨q, by push_cast; rw [← hq]; ring⟩⟩

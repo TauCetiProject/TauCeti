@@ -22,7 +22,8 @@ integral representative of norm `1`, that is, the unit ideal. Mathlib's
 comparison, and `12 < 16` is the required numerical inequality.
 
 Total reality is what makes the bound small enough: an imaginary quadratic field of the same
-discriminant would carry the extra factor `4/π`, and `(4/π)·√12/2 ≈ 2.2` would not suffice.
+absolute discriminant would carry the extra factor `4/π`, and `(4/π)·√12/2 ≈ 2.2` would not
+suffice.
 
 The main theorem is stated for any number field with an integral generator of minimal polynomial
 `X² - 3`; the final theorem applies it to the `AdjoinRoot (X² - 3)` model.
