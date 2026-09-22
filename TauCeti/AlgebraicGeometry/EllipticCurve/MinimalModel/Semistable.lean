@@ -24,8 +24,8 @@ valuations.
 
 ## Main definitions
 
-* `WeierstrassCurve.IsSemistable`: the local minimal equation has no additive reduction at every
-  height-one prime.
+* `WeierstrassCurve.IsSemistable`: an elliptic equation whose local minimal equation has no
+  additive reduction at any height-one prime.
 
 ## Main results
 
@@ -80,7 +80,10 @@ theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve
 /-! ### The local criterion -/
 
 /-- A minimal equation is not additively reduced exactly when its discriminant or its `c₄` is a
-unit at the place. These are respectively the good- and multiplicative-reduction cases. -/
+unit at the place. These are respectively the good- and multiplicative-reduction cases.
+
+This is valuation arithmetic on the equation itself, so no ellipticity is needed; `IsSemistable`
+adds that hypothesis where the trichotomy is read as a reduction type. -/
 theorem not_hasAdditiveReduction_iff_valuation_Δ_eq_one_or_valuation_c₄_eq_one
     (W : WeierstrassCurve K) [IsMinimal R W] :
     ¬ W.HasAdditiveReduction R ↔
@@ -105,9 +108,10 @@ variable (O : Type*) [CommRing O] [IsDedekindDomain O]
 /-- **Semistability over a Dedekind domain**: at every height-one prime, a local minimal equation
 has no additive reduction. Equivalently, the reduction is good or multiplicative everywhere.
 
-The predicate is stated on an equation but depends only on its `F`-isomorphism class, as proved by
-`isSemistable_smul`. -/
-def IsSemistable (W : WeierstrassCurve F) : Prop :=
+The predicate is stated on an elliptic equation but depends only on its `F`-isomorphism class, as
+proved by `isSemistable_smul`. Ellipticity is part of the notion: a singular cubic has no
+reduction type in the good/multiplicative/additive trichotomy of elliptic curves. -/
+def IsSemistable (W : WeierstrassCurve F) [W.IsElliptic] : Prop :=
   ∀ v : HeightOneSpectrum O,
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal)
@@ -115,14 +119,14 @@ def IsSemistable (W : WeierstrassCurve F) : Prop :=
 variable {O}
 
 /-- Semistability, unfolded. -/
-theorem isSemistable_iff {W : WeierstrassCurve F} :
+theorem isSemistable_iff {W : WeierstrassCurve F} [W.IsElliptic] :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
         (Localization.AtPrime v.asIdeal) :=
   Iff.rfl
 
 /-- A semistable curve has no additive reduction at any height-one prime. -/
-theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F}
+theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F} [W.IsElliptic]
     (hW : IsSemistable O W) (v : HeightOneSpectrum O) :
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal) :=
@@ -130,7 +134,7 @@ theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F}
 
 /-- A curve with no additive reduction at any height-one prime is semistable. -/
 theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F}
-    (hW : ∀ v : HeightOneSpectrum O,
+    [W.IsElliptic] (hW : ∀ v : HeightOneSpectrum O,
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
         (Localization.AtPrime v.asIdeal)) :
     IsSemistable O W :=
@@ -139,7 +143,7 @@ theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F}
 /-- **A curve is semistable exactly when it has good or multiplicative reduction at every
 height-one prime.** -/
 theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
-    (W : WeierstrassCurve F) :
+    (W : WeierstrassCurve F) [W.IsElliptic] :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       (W.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
           (Localization.AtPrime v.asIdeal) ∨
@@ -163,7 +167,7 @@ theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
 equation has discriminant of valuation one (good reduction) or `c₄` of valuation one
 (multiplicative reduction). -/
 theorem isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one
-    (W : WeierstrassCurve F) :
+    (W : WeierstrassCurve F) [W.IsElliptic] :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       valuation F (maximalIdeal (Localization.AtPrime v.asIdeal))
           (W.minimal (Localization.AtPrime v.asIdeal)).Δ = 1 ∨
