@@ -28,15 +28,15 @@ bases are positive, so Mathlib's improper-integral criterion for real powers app
 
 ## Main results
 
-* `ProbabilityTheory.integrable_paretoMeasure_iff` and
-  `ProbabilityTheory.integral_paretoMeasure_eq` transfer integrability and integration to the
+* `TauCeti.Probability.integrable_paretoMeasure_iff` and
+  `TauCeti.Probability.integral_paretoMeasure_eq` transfer integrability and integration to the
   real density.
-* `ProbabilityTheory.integrable_rpow_paretoMeasure_iff` and
-  `ProbabilityTheory.integral_rpow_paretoMeasure` give the sharp moment criterion and value.
-* `ProbabilityTheory.integral_id_paretoMeasure` and
-  `ProbabilityTheory.variance_id_paretoMeasure` compute the mean and variance.
-* `ProbabilityTheory.cdf_paretoMeasure_eq` computes the cdf.
-* `ProbabilityTheory.integrableExpSet_id_paretoMeasure` identifies the exponential-moment
+* `TauCeti.Probability.integrable_rpow_paretoMeasure_iff` and
+  `TauCeti.Probability.integral_rpow_paretoMeasure` give the sharp moment criterion and value.
+* `TauCeti.Probability.integral_id_paretoMeasure` and
+  `TauCeti.Probability.variance_id_paretoMeasure` compute the mean and variance.
+* `TauCeti.Probability.cdf_paretoMeasure_eq` computes the cdf.
+* `TauCeti.Probability.integrableExpSet_id_paretoMeasure` identifies the exponential-moment
   domain as `Set.Iic 0`.
 
 ## References
@@ -53,10 +53,10 @@ public section
 
 noncomputable section
 
-open MeasureTheory Real Set
+open MeasureTheory ProbabilityTheory Real Set
 open scoped ENNReal Interval
 
-namespace ProbabilityTheory
+namespace TauCeti.Probability
 
 variable {t r q : ℝ}
 
@@ -282,7 +282,7 @@ theorem integrableExpSet_id_paretoMeasure (ht : 0 < t) (hr : 0 < r) :
   ext u
   simpa [integrableExpSet, id_eq] using integrable_exp_mul_id_paretoMeasure_iff ht hr u
 
-end ProbabilityTheory
+end TauCeti.Probability
 
 end
 
