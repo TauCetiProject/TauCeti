@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.CompleteLattice.Defs
+public import Mathlib.Order.CompleteLattice.Basic
 public import Mathlib.Order.Minimal
 
 /-!
@@ -40,7 +40,10 @@ theorem Directed.exists_eq_iInf {α : Type*} [CompleteSemilatticeInf α] [WellFo
     {ι : Sort*} [Nonempty ι] {f : ι → α} (hf : Directed (· ≥ ·) f) : ∃ i, f i = ⨅ j, f j := by
   obtain ⟨a, hmin⟩ := exists_minimal_of_wellFoundedLT (· ∈ Set.range f) (Set.range_nonempty f)
   obtain ⟨i, rfl⟩ := hmin.1
+  refine ⟨i, ?_⟩
+  -- The indexed infimum is the infimum of the range, which is the set a minimal member lives in.
+  rw [← sInf_range]
   -- A minimal member of a downward-directed family is below every member of it.
-  refine ⟨i, le_antisymm (le_sInf ?_) (sInf_le ⟨i, rfl⟩)⟩
+  refine le_antisymm (le_sInf ?_) (sInf_le (Set.mem_range_self i))
   rintro _ ⟨j, rfl⟩
   exact hf.directedOn_range.le_of_minimal hmin ⟨j, rfl⟩
