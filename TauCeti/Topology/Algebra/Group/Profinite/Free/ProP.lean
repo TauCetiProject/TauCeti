@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.Profinite.Free.Basic
-public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
+public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProC
 
 /-!
 # Free pro-`p` groups on a type
@@ -16,8 +15,9 @@ profinite group on `X`. A map from `X` to a pro-`p` profinite group in the same 
 uniquely to a continuous homomorphism. Extensionality for homomorphisms out of the free pro-`p`
 group only requires a Hausdorff group target, which may live in any universe.
 
-The file also records functoriality in `X` and the fact that a surjection of generating types
-induces a surjection of free pro-`p` groups.
+The canonical comparison with the free pro-`C` group for the class of finite `p`-groups is used
+to derive the universal property and functoriality. The file also records that a surjection of
+generating types induces a surjection of free pro-`p` groups.
 
 ## Main definitions
 
@@ -25,6 +25,7 @@ induces a surjection of free pro-`p` groups.
 * `TauCeti.freeProP.of`: its canonical generators.
 * `TauCeti.freeProP.lift`: extension from the generators.
 * `TauCeti.freeProP.map`: functoriality in the generating type.
+* `TauCeti.freeProC.equivFreeProP`: comparison with the finite-`p` specialization of `freeProC`.
 
 ## Main results
 
@@ -35,6 +36,7 @@ induces a surjection of free pro-`p` groups.
 * `TauCeti.freeProP.map_surjective`: a surjection of generating types induces a surjection.
 * `TauCeti.freeProP.existsUnique_continuousMulEquiv`: the free pro-`p` group is unique up to a
   unique topological isomorphism matching the generators.
+* `TauCeti.freeProC.equivFreeProP_of`: the comparison preserves the generators.
 
 ## References
 
@@ -90,6 +92,68 @@ theorem fromFreeProfiniteGroup_surjective :
     Function.Surjective (fromFreeProfiniteGroup p X) :=
   maximalProPQuotient.mk_surjective p (freeProfiniteGroup X)
 
+end freeProP
+
+/-! ## Comparison with free pro-`C` groups -/
+
+namespace freeProC
+
+variable {p : ℕ} {X Y Z : Type u}
+
+/-- For the class of finite `p`-groups, the free pro-`C` group is canonically isomorphic to the
+free pro-`p` group. -/
+noncomputable def equivFreeProP (p : ℕ) (X : Type u) :
+    freeProC (finiteGroupClassP.{u} p) X ≃ₜ* freeProP p X :=
+  proCCompletion.equivMaximalProPQuotient p (freeProfiniteGroup X)
+
+/-- The comparison with the free pro-`p` group commutes with the canonical quotient maps. -/
+@[simp]
+theorem equivFreeProP_fromFreeProfiniteGroup (p : ℕ) (X : Type u)
+    (x : freeProfiniteGroup X) :
+    equivFreeProP p X (x : freeProC (finiteGroupClassP p) X) =
+      freeProP.fromFreeProfiniteGroup p X x := by
+  rw [freeProP.fromFreeProfiniteGroup_apply]
+  exact proCCompletion.equivMaximalProPQuotient_mk (p := p)
+    (G := freeProfiniteGroup X) x
+
+/-- The comparison with the free pro-`p` group preserves each canonical generator. -/
+@[simp]
+theorem equivFreeProP_of (p : ℕ) (x : X) :
+    equivFreeProP p X (of x) = freeProP.of x := by
+  calc
+    equivFreeProP p X (of x) =
+        equivFreeProP p X (freeProfiniteGroup.of x :
+          freeProC (finiteGroupClassP p) X) := by
+      congr 1
+      rw [← freeProC.fromFreeProfiniteGroup_of,
+        freeProC.fromFreeProfiniteGroup_apply]
+      rfl
+    _ = freeProP.fromFreeProfiniteGroup p X (freeProfiniteGroup.of x) :=
+      equivFreeProP_fromFreeProfiniteGroup p X (freeProfiniteGroup.of x)
+    _ = freeProP.of x := freeProP.fromFreeProfiniteGroup_of x
+
+/-- The inverse comparison with the free pro-`p` group preserves each canonical generator. -/
+@[simp]
+theorem equivFreeProP_symm_of (p : ℕ) (x : X) :
+    (equivFreeProP p X).symm (freeProP.of x) = of x := by
+  apply (equivFreeProP p X).injective
+  simp
+
+/-- The inverse comparison commutes with the canonical quotient maps. -/
+@[simp]
+theorem equivFreeProP_symm_fromFreeProfiniteGroup (p : ℕ) (X : Type u)
+    (x : freeProfiniteGroup X) :
+    (equivFreeProP p X).symm (freeProP.fromFreeProfiniteGroup p X x) =
+      (x : freeProC (finiteGroupClassP p) X) := by
+  apply (equivFreeProP p X).injective
+  simp
+
+end freeProC
+
+namespace freeProP
+
+variable {p : ℕ} {X Y Z : Type u}
+
 section HomExt
 
 variable {Q : Type v} [Group Q] [TopologicalSpace Q] [T2Space Q]
@@ -98,13 +162,13 @@ variable {Q : Type v} [Group Q] [TopologicalSpace Q] [T2Space Q]
 equal. -/
 @[ext]
 theorem hom_ext {f g : freeProP p X →ₜ* Q} (h : ∀ x : X, f (of x) = g (of x)) : f = g := by
+  let e := freeProC.equivFreeProP p X
+  have hcomp : f.comp (e : freeProC (finiteGroupClassP p) X →ₜ* freeProP p X) =
+      g.comp (e : freeProC (finiteGroupClassP p) X →ₜ* freeProP p X) :=
+    freeProC.hom_ext fun x ↦ by simpa [e] using h x
   apply ContinuousMonoidHom.ext
   intro y
-  obtain ⟨y, rfl⟩ := fromFreeProfiniteGroup_surjective (p := p) (X := X) y
-  have hcomp : f.comp (fromFreeProfiniteGroup p X) =
-      g.comp (fromFreeProfiniteGroup p X) :=
-    freeProfiniteGroup.hom_ext fun x ↦ by simpa using h x
-  exact DFunLike.congr_fun hcomp y
+  simpa [e] using DFunLike.congr_fun hcomp (e.symm y)
 
 end HomExt
 
@@ -115,19 +179,17 @@ variable {P : Type u} [Group P] [TopologicalSpace P] [IsTopologicalGroup P] [Com
 
 /-- The continuous homomorphism from a free pro-`p` group extending a map on its generators. -/
 noncomputable def lift (hP : IsProP p P) (f : X → P) : freeProP p X →ₜ* P :=
-  ⟨maximalProPQuotient.lift hP (freeProfiniteGroup.lift f).toMonoidHom
-      (freeProfiniteGroup.lift f).continuous,
-    maximalProPQuotient.continuous_lift hP (freeProfiniteGroup.lift f).toMonoidHom
-      (freeProfiniteGroup.lift f).continuous⟩
+  (freeProC.lift (isProC_finiteGroupClassP_iff.mpr hP) f).comp
+    ((freeProC.equivFreeProP p X).symm :
+      freeProP p X →ₜ* freeProC (finiteGroupClassP p) X)
 
 /-- The free pro-`p` lift recovers the free profinite lift along the quotient map. -/
 @[simp]
 theorem lift_comp_fromFreeProfiniteGroup (hP : IsProP p P) (f : X → P) :
     (lift hP f).comp (fromFreeProfiniteGroup p X) = freeProfiniteGroup.lift f := by
-  apply ContinuousMonoidHom.ext
+  apply freeProfiniteGroup.hom_ext
   intro x
-  exact maximalProPQuotient.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
-    (freeProfiniteGroup.lift f).continuous x
+  simp [lift]
 
 /-- The free pro-`p` lift evaluates on the image of the free profinite group as the free
 profinite lift. -/
@@ -135,14 +197,16 @@ profinite lift. -/
 theorem lift_fromFreeProfiniteGroup (hP : IsProP p P) (f : X → P)
     (x : freeProfiniteGroup X) :
     lift hP f (x : freeProP p X) = freeProfiniteGroup.lift f x := by
-  exact maximalProPQuotient.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
-    (freeProfiniteGroup.lift f).continuous x
+  calc
+    lift hP f (x : freeProP p X) =
+        ((lift hP f).comp (fromFreeProfiniteGroup p X)) x := rfl
+    _ = freeProfiniteGroup.lift f x :=
+      DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) x
 
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]
 theorem lift_of (hP : IsProP p P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
-  change lift hP f (freeProfiniteGroup.of x : freeProP p X) = f x
-  rw [lift_fromFreeProfiniteGroup, freeProfiniteGroup.lift_of]
+  simp [lift]
 
 /-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
 `f`. -/
@@ -154,7 +218,8 @@ theorem lift_unique (hP : IsProP p P) (f : X → P) (g : freeProP p X →ₜ* P)
 pro-`p` group extends uniquely to a continuous homomorphism from `freeProP p X`. -/
 theorem existsUnique_lift (hP : IsProP p P) (f : X → P) :
     ∃! g : freeProP p X →ₜ* P, ∀ x : X, g (of x) = f x :=
-  ⟨lift hP f, lift_of hP f, fun g hg ↦ lift_unique hP f g hg⟩
+  ⟨lift hP f, lift_of hP f,
+    fun g hg ↦ lift_unique (p := p) (X := X) (P := P) hP f g hg⟩
 
 /-- The free pro-`p` lift is natural in its target. -/
 @[simp]
@@ -166,23 +231,50 @@ theorem comp_lift {Q : Type u} [Group Q] [TopologicalSpace Q] [IsTopologicalGrou
 /-- A map whose range generates the target topologically lifts to a surjection. -/
 theorem lift_surjective (hP : IsProP p P) {f : X → P}
     (hf : Dense ((Subgroup.closure (Set.range f) : Subgroup P) : Set P)) :
-    Function.Surjective (lift hP f) := by
-  intro y
-  obtain ⟨x, rfl⟩ := freeProfiniteGroup.lift_surjective hf y
-  exact ⟨(x : freeProP p X), lift_fromFreeProfiniteGroup hP f x⟩
+    Function.Surjective (lift hP f) :=
+  (freeProC.lift_surjective (isProC_finiteGroupClassP_iff.mpr hP) hf).comp
+    (freeProC.equivFreeProP p X).symm.surjective
 
 end Lift
+
+end freeProP
+
+namespace freeProC
+
+variable {p : ℕ} {X Y Z : Type u}
+
+/-- Lifting from either construction of a free pro-`p` group gives the same homomorphism. -/
+@[simp]
+theorem freeProP_lift_comp_equivFreeProP {P : Type u} [Group P] [TopologicalSpace P]
+    [IsTopologicalGroup P] [CompactSpace P] [TotallyDisconnectedSpace P] (hP : IsProP p P)
+    (f : X → P) :
+    (freeProP.lift hP f).comp
+        ((equivFreeProP p X : freeProC (finiteGroupClassP.{u} p) X ≃ₜ* freeProP p X) :
+          freeProC (finiteGroupClassP.{u} p) X →ₜ* freeProP p X) =
+      lift (isProC_finiteGroupClassP_iff.mpr hP) f :=
+  hom_ext fun x ↦ by simp
+
+end freeProC
+
+namespace freeProP
+
+variable {p : ℕ} {X Y Z : Type u}
 
 section Map
 
 /-- The continuous homomorphism of free pro-`p` groups induced by a map of generating types. -/
 noncomputable def map (f : X → Y) : freeProP p X →ₜ* freeProP p Y :=
-  lift (isProP_freeProP p Y) (of ∘ f)
+  ((freeProC.equivFreeProP p Y :
+      freeProC (finiteGroupClassP.{u} p) Y ≃ₜ* freeProP p Y) :
+      freeProC (finiteGroupClassP.{u} p) Y →ₜ* freeProP p Y).comp
+    ((freeProC.map (C := finiteGroupClassP.{u} p) f).comp
+      ((freeProC.equivFreeProP p X).symm :
+        freeProP p X →ₜ* freeProC (finiteGroupClassP.{u} p) X))
 
 /-- `map f` carries the generator at `x` to the generator at `f x`. -/
 @[simp]
 theorem map_of (f : X → Y) (x : X) : map (p := p) f (of x) = of (f x) :=
-  lift_of _ _ _
+  by simp [map]
 
 /-- The free pro-`p` lift is natural in the generating type. -/
 @[simp]
@@ -207,8 +299,9 @@ profinite groups. -/
 @[simp]
 theorem map_comp_fromFreeProfiniteGroup (f : X → Y) :
     (map (p := p) f).comp (fromFreeProfiniteGroup p X) =
-      (fromFreeProfiniteGroup p Y).comp (freeProfiniteGroup.map f) :=
-  freeProfiniteGroup.hom_ext fun x ↦ by simp
+      (fromFreeProfiniteGroup p Y).comp (freeProfiniteGroup.map f) := by
+  ext x
+  simp [map]
 
 /-- The map induced on free pro-`p` groups evaluates compatibly with the map induced on free
 profinite groups. -/
@@ -216,34 +309,49 @@ profinite groups. -/
 theorem map_fromFreeProfiniteGroup (f : X → Y) (x : freeProfiniteGroup X) :
     map (p := p) f (x : freeProP p X) =
       fromFreeProfiniteGroup p Y (freeProfiniteGroup.map f x) :=
-  by
-    change ((map (p := p) f).comp (fromFreeProfiniteGroup p X)) x = _
-    exact DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (p := p) f) x
+  DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (p := p) f) x
 
 /-- A surjection of generating types induces a surjection of free pro-`p` groups. -/
 theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
     Function.Surjective (map (p := p) f) := by
-  apply lift_surjective
-  rw [hf.range_comp (of : Y → freeProP p Y)]
-  apply (fromFreeProfiniteGroup_surjective (p := p) (X := Y)).denseRange.dense_of_mapsTo
-    (map_continuous (fromFreeProfiniteGroup p Y))
-    (freeProfiniteGroup.dense_closure_range_of Y)
-  intro y hy
-  have hle : Subgroup.closure (Set.range (freeProfiniteGroup.of : Y → freeProfiniteGroup Y)) ≤
-      (Subgroup.closure (Set.range (of : Y → freeProP p Y))).comap
-        (fromFreeProfiniteGroup p Y).toMonoidHom := by
-    apply (Subgroup.closure_le _).2
-    exact Set.range_subset_iff.mpr fun x ↦ by
-      rw [SetLike.mem_coe, Subgroup.mem_comap]
-      -- `Subgroup.mem_comap` exposes the underlying monoid hom; align its coercion with the
-      -- continuous hom before applying the public generator equation.
-      change fromFreeProfiniteGroup p Y (freeProfiniteGroup.of x) ∈
-        Subgroup.closure (Set.range (of : Y → freeProP p Y))
-      rw [fromFreeProfiniteGroup_of]
-      exact Subgroup.subset_closure ⟨x, rfl⟩
-  exact hle hy
+  intro y
+  obtain ⟨cy, rfl⟩ := (freeProC.equivFreeProP p Y).surjective y
+  obtain ⟨cx, rfl⟩ := freeProC.map_surjective hf cy
+  obtain ⟨x, rfl⟩ := (freeProC.equivFreeProP p X).symm.surjective cx
+  exact ⟨x, rfl⟩
 
 end Map
+
+end freeProP
+
+namespace freeProC
+
+variable {p : ℕ} {X Y Z : Type u}
+
+/-- The comparison between the two free pro-`p` constructions is natural in the generators. -/
+@[simp]
+theorem equivFreeProP_comp_map (p : ℕ) (f : X → Y) :
+    ((equivFreeProP p Y : freeProC (finiteGroupClassP.{u} p) Y ≃ₜ* freeProP p Y) :
+        freeProC (finiteGroupClassP.{u} p) Y →ₜ* freeProP p Y).comp
+          (map (C := finiteGroupClassP.{u} p) f) =
+      (freeProP.map f).comp
+        ((equivFreeProP p X : freeProC (finiteGroupClassP.{u} p) X ≃ₜ* freeProP p X) :
+          freeProC (finiteGroupClassP.{u} p) X →ₜ* freeProP p X) :=
+  hom_ext fun x ↦ by simp
+
+/-- The comparison between the two free pro-`p` constructions evaluates naturally on maps of
+generators. -/
+@[simp]
+theorem equivFreeProP_map (p : ℕ) (f : X → Y) (x : freeProC (finiteGroupClassP.{u} p) X) :
+    equivFreeProP p Y (map (C := finiteGroupClassP.{u} p) f x) =
+      freeProP.map f (equivFreeProP p X x) :=
+  DFunLike.congr_fun (equivFreeProP_comp_map p f) x
+
+end freeProC
+
+namespace freeProP
+
+variable {p : ℕ} {X Y Z : Type u}
 
 section Uniqueness
 
@@ -259,19 +367,23 @@ theorem existsUnique_continuousMulEquiv (hG : IsProP p G) (ι : X → G)
       [TotallyDisconnectedSpace P] (_hP : IsProP p P) (f : X → P),
         ∃! φ : G →ₜ* P, ∀ x : X, φ (ι x) = f x) :
     ∃! e : freeProP p X ≃ₜ* G, ∀ x : X, e (of x) = ι x := by
-  obtain ⟨ψ, hψ, -⟩ := h (freeProP p X) (isProP_freeProP p X) of
-  have hleft : ψ.comp (lift hG ι) = ContinuousMonoidHom.id (freeProP p X) :=
-    hom_ext fun x ↦ by simp [hψ x]
-  have hright : (lift hG ι).comp ψ = ContinuousMonoidHom.id G :=
-    (h G hG ι).unique (fun x ↦ by simp [hψ x]) (fun _ ↦ rfl)
-  refine ⟨{ toFun := lift hG ι, invFun := ψ
-            left_inv := fun a ↦ congrArg (fun φ : freeProP p X →ₜ* _ ↦ φ a) hleft
-            right_inv := fun g ↦ congrArg (fun φ : G →ₜ* G ↦ φ g) hright
-            map_mul' := map_mul (lift hG ι)
-            continuous_toFun := map_continuous (lift hG ι)
-            continuous_invFun := map_continuous ψ }, lift_of hG ι, fun e he ↦ ?_⟩
-  have hcoe : (e : freeProP p X →ₜ* G) = lift hG ι := hom_ext fun x ↦ by simp [he x]
-  exact ContinuousMulEquiv.ext fun a ↦ congrArg (fun φ : freeProP p X →ₜ* G ↦ φ a) hcoe
+  have hC : ∀ (P : Type u) [Group P] [TopologicalSpace P] [IsTopologicalGroup P]
+      [CompactSpace P] [TotallyDisconnectedSpace P]
+      (_hP : IsProC (finiteGroupClassP.{u} p) P) (f : X → P),
+        ∃! φ : G →ₜ* P, ∀ x : X, φ (ι x) = f x :=
+    fun P _ _ _ _ _ hP f ↦ h P (isProC_finiteGroupClassP_iff.mp hP) f
+  obtain ⟨e, he, he_unique⟩ := freeProC.existsUnique_continuousMulEquiv
+    (C := finiteGroupClassP.{u} p) (X := X) (G := G)
+      (isProC_finiteGroupClassP_iff.mpr hG) ι hC
+  let c := freeProC.equivFreeProP p X
+  refine ⟨c.symm.trans e, fun x ↦ by simp [c, he x], fun e' he' ↦ ?_⟩
+  have hc : c.trans e' = e := he_unique (c.trans e') fun x ↦ by simp [c, he' x]
+  apply ContinuousMulEquiv.ext
+  intro y
+  calc
+    e' y = (c.trans e') (c.symm y) := by simp
+    _ = e (c.symm y) := by rw [hc]
+    _ = (c.symm.trans e) y := rfl
 
 end Uniqueness
 
