@@ -270,12 +270,15 @@ theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
     intro t ht
     by_cases ht_half : t ≤ (1 / 2 : ℝ)
     · left
-      rw [show η t = f t by exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_mem f g ht_half]
-      exact hαmaps ⟨by linarith [ht.1], by linarith⟩
+      have hηt : η t = f t := by
+        simpa only [η] using (Iic (1 / 2 : ℝ)).piecewise_eq_of_mem f g ht_half
+      rw [hηt]
+      simpa only [f] using hαmaps ⟨by linarith [ht.1], by linarith⟩
     · right
-      rw [show η t = g t by
-        exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem f g ht_half]
-      exact hβmaps ⟨by linarith, by linarith [ht.2]⟩
+      have hηt : η t = g t := by
+        simpa only [η] using (Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem f g ht_half
+      rw [hηt]
+      simpa only [g] using hβmaps ⟨by linarith, by linarith [ht.2]⟩
   exact ⟨η, hη, hη₀, hη₁, hηlen, hηconst₀, hηconst₁, hηmaps⟩
 
 namespace Manifold
