@@ -105,15 +105,6 @@ theorem isCharacteristicVector_canonicalCharacteristic :
   rw [canonicalCharacteristic_apply]
   exact Int.modEq_iff_dvd.mpr ⟨P.weight v + 1, by ring⟩
 
-/-- The characteristic-vector subtype built from the canonical covector has the canonical
-covector as its value. -/
-@[simp]
-theorem canonicalCharacteristicVector_val :
-    (⟨P.canonicalCharacteristic,
-      P.isCharacteristicVector_canonicalCharacteristic⟩ : P.characteristicVectors).val =
-      P.canonicalCharacteristic :=
-  rfl
-
 section Form
 
 variable [DecidableEq V] [Fintype V]

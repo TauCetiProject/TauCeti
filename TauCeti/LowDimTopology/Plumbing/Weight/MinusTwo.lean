@@ -55,8 +55,7 @@ theorem characteristicWeight_canonical_of_weight_eq_neg_two
     P.characteristicWeight
         ⟨P.canonicalCharacteristic, P.isCharacteristicVector_canonicalCharacteristic⟩ x =
       -(P.intersectionForm x x / 2) := by
-  rw [P.characteristicWeight_def, P.characteristicWeightNumerator_def,
-    P.canonicalCharacteristicVector_val]
+  rw [P.characteristicWeight_def, P.characteristicWeightNumerator_def]
   simp_rw [congrFun (P.canonicalCharacteristic_eq_zero_of_weight_eq_neg_two hweight)]
   simp
 
@@ -67,8 +66,7 @@ theorem two_mul_characteristicWeight_canonical_of_weight_eq_neg_two
     2 * P.characteristicWeight
         ⟨P.canonicalCharacteristic, P.isCharacteristicVector_canonicalCharacteristic⟩ x =
       -P.intersectionForm x x := by
-  rw [P.two_mul_characteristicWeight, P.characteristicWeightNumerator_def,
-    P.canonicalCharacteristicVector_val]
+  rw [P.two_mul_characteristicWeight, P.characteristicWeightNumerator_def]
   simp_rw [congrFun (P.canonicalCharacteristic_eq_zero_of_weight_eq_neg_two hweight)]
   simp
 
