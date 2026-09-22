@@ -77,15 +77,15 @@ theorem pPolynomial_ι_mem_centralAugmentation {p : ℕ} (hp : p ≠ 0) (e : ℕ
   rw [mem_centralAugmentation]
   exact ⟨hcentral, pPolynomial_ι_mem_augmentation_toIdeal R L hp e a x⟩
 
+variable (R L) in
 /-- Every element has a central `p`-polynomial in the central augmentation submodule as soon as
 `Module.End R L` is Noetherian. -/
 theorem exists_pCentralPolynomial_mem_centralAugmentation_of_isNoetherian
-    (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
     (p : ℕ) [ExpChar R p] [IsNoetherian R (Module.End R L)] (x : L) :
     ∃ (e : ℕ) (a : Fin e → R),
       _root_.UniversalEnvelopingAlgebra.ι R x ^ p ^ e +
           ∑ i : Fin e, a i • _root_.UniversalEnvelopingAlgebra.ι R x ^ p ^ (i : ℕ) ∈
-        centralAugmentation R (_root_.UniversalEnvelopingAlgebra R L) := by
+        centralAugmentation R U := by
   obtain ⟨e, a, hcentral⟩ := exists_pCentralPolynomial_of_isNoetherian R L p x
   exact ⟨e, a, pPolynomial_ι_mem_centralAugmentation (expChar_ne_zero R p) e a x hcentral⟩
 

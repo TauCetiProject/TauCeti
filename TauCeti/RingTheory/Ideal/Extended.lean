@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Filtration
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
 # Ideals of a noncommutative algebra extended from the base ring
 
@@ -32,7 +34,6 @@ from `R`, so the Krull intersection theorem applies to its powers.
 
 ## Main results
 
-* `Ideal.isTwoSided_span_of_subset_center`: an ideal spanned by central elements is two-sided.
 * `Ideal.smul_top_eq_restrictScalars_map`: **the extended ideal is `I • ⊤`**, the identity
   `I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A))`.
 * `Ideal.instIsTwoSidedMapAlgebraMap`: the extended ideal is two-sided.
@@ -63,26 +64,6 @@ for an ideal of a commutative ring acting on a module; it is not restated here.
 public section
 
 namespace Ideal
-
-section Span
-
-variable {A : Type*} [Semiring A] {S : Set A}
-
-/-- A left ideal spanned by central elements is two-sided. -/
-theorem isTwoSided_span_of_subset_center (hS : S ⊆ Set.center A) :
-    (Ideal.span S).IsTwoSided where
-  mul_mem_of_left b ha := by
-    refine Submodule.span_induction (p := fun a _ ↦ a * b ∈ Ideal.span S)
-      (fun a ha ↦ ?_) (by simp) (fun x y _ _ hx hy ↦ ?_)
-      (fun c x _ hx ↦ ?_) ha
-    · rw [← (Semigroup.mem_center_iff.mp (hS ha) b)]
-      exact Ideal.mul_mem_left _ b (Ideal.subset_span ha)
-    · rw [add_mul]
-      exact Ideal.add_mem _ hx hy
-    · rw [smul_eq_mul, mul_assoc]
-      exact Ideal.mul_mem_left _ c hx
-
-end Span
 
 section Semiring
 
@@ -132,20 +113,10 @@ theorem mem_map_algebraMap_iff {x : A} :
     x ∈ I.map (algebraMap R A) ↔ x ∈ I • (⊤ : Submodule R A) := by
   rw [smul_top_eq_restrictScalars_map, Submodule.restrictScalars_mem]
 
-/-- The `R`-submodule `I • ⊤` of `A` is stable under right multiplication by `A`; unlike the
-left-hand statement above this needs no centrality, only the scalar tower. -/
-private theorem smul_top_mul_mem (a : A) {x : A} (hx : x ∈ I • (⊤ : Submodule R A)) :
-    x * a ∈ I • (⊤ : Submodule R A) := by
-  refine Submodule.smul_induction_on hx (fun r hr y _ ↦ ?_) fun y z hy hz ↦ ?_
-  · rw [smul_mul_assoc]
-    exact Submodule.smul_mem_smul hr Submodule.mem_top
-  · rw [add_mul]
-    exact Submodule.add_mem _ hy hz
-
-/-- **An extended ideal is two-sided**, because the image of `algebraMap R A` is central. -/
-instance instIsTwoSidedMapAlgebraMap : (I.map (algebraMap R A)).IsTwoSided where
-  mul_mem_of_left b hx :=
-    mem_map_algebraMap_iff I |>.mpr (smul_top_mul_mem I b (mem_map_algebraMap_iff I |>.mp hx))
+/-- **An extended ideal is two-sided**, because the image of `algebraMap R A` is central. The
+extended ideal is by definition the span of that image. -/
+instance instIsTwoSidedMapAlgebraMap : (I.map (algebraMap R A)).IsTwoSided :=
+  isTwoSided_span_of_subset_center (by rintro _ ⟨r, -, rfl⟩; exact Set.algebraMap_mem_center r)
 
 /-- **Extension along `algebraMap R A` is multiplicative.** -/
 theorem map_algebraMap_mul :
