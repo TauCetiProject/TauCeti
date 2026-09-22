@@ -25,9 +25,11 @@ in particular over fields, where every module is flat.
 
 * `TauCeti.HopfIdeal.kerOfSurjective`: the Hopf ideal given by the kernel of a surjective bialgebra
   morphism.
+* `TauCeti.HopfIdeal.kerOfSurjective_le_kerOfSurjective_comp`: a surjective Hopf kernel grows under
+  postcomposition.
 * `TauCeti.HopfIdeal.ker`: the kernel Hopf ideal of a bialgebra morphism with flat codomain and
   flat kernel quotient.
-* `TauCeti.HopfIdeal.ker_le_ker_comp`: a Hopf kernel grows under postcomposition.
+* `TauCeti.HopfIdeal.ker_le_ker_comp`: a flat Hopf kernel grows under postcomposition.
 * `TauCeti.HopfIdeal.kerOfSurjective_eq_ker`: comparison of the two constructions when both apply.
 * `TauCeti.HopfIdeal.kerOfSurjective_toIdeal` and
   `TauCeti.HopfIdeal.mem_kerOfSurjective`: its characteristic API.
@@ -59,12 +61,14 @@ namespace TauCeti
 
 namespace HopfIdeal
 
-variable {R : Type u} {H : Type v} {K : Type w}
-variable [CommRing R] [Ring H] [Ring K]
+section TensorIdeal
+
+variable {R : Type u}
+variable [CommRing R]
 
 /-- Tensoring on the left by a flat algebra carries the kernel of an algebra map to the
 corresponding right tensor ideal. -/
-theorem ker_lTensor_eq_rightTensorIdeal {A B : Type*} [CommRing A] [CommRing B]
+theorem ker_lTensor_eq_rightTensorIdeal {A B : Type*} [Ring A] [Ring B]
     [Algebra R A] [Algebra R B] [Module.Flat R A] (f : A →ₐ[R] B) :
     RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R A) f) =
       rightTensorIdeal (R := R) (H := A) (RingHom.ker f) := by
@@ -99,7 +103,14 @@ theorem ker_lTensor_eq_rightTensorIdeal {A B : Type*} [CommRing A] [CommRing B]
   exact TensorProduct.AlgebraTensorModule.range_lTensor_idealMap
     (R := R) A R (RingHom.ker f)
 
-variable [HopfAlgebra R H] [HopfAlgebra R K]
+end TensorIdeal
+
+section BialgScaffolding
+
+variable {R : Type u} {H : Type v} {K : Type w}
+variable [CommSemiring R] [Semiring H] [Semiring K]
+variable [Algebra R H] [CoalgebraStruct R H]
+variable [Algebra R K] [CoalgebraStruct R K]
 
 /-- The tensor-square map sends the comultiplication of an element in the kernel of a
 bialgebra morphism to zero. -/
@@ -123,13 +134,34 @@ private theorem counit_eq_zero_of_mem_ker (f : H →ₐc[R] K) {x : H}
   have hfx : f x = 0 := RingHom.mem_ker.mp hx
   simpa [hfx] using h.symm
 
+end BialgScaffolding
+
+/-- The tensor square of the injective factor through `H / ker f` is injective. -/
+private theorem tensor_kerLiftAlg_injective {R : Type u} [CommSemiring R] {H K : Type*}
+    [Ring H] [Semiring K] [Algebra R H] [Algebra R K] [Module.Flat R K]
+    (f : H →ₐ[R] K) [Module.Flat R (H ⧸ RingHom.ker f)] :
+    Function.Injective
+      (Algebra.TensorProduct.map (Ideal.kerLiftAlg f) (Ideal.kerLiftAlg f)) := by
+  let f' : (H ⧸ RingHom.ker f) →ₐ[R] K := Ideal.kerLiftAlg f
+  have hf' : Function.Injective f' := Ideal.kerLiftAlg_injective f
+  -- Expose the underlying linear map to apply Mathlib's flat tensor-injectivity theorem.
+  change Function.Injective (Algebra.TensorProduct.map f' f').toLinearMap
+  rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq]
+  exact TensorProduct.map_injective_of_flat_flat f'.toLinearMap f'.toLinearMap hf' hf'
+
+section Hopf
+
+variable {R : Type u} {H : Type v} {K : Type w}
+variable [CommRing R] [Ring H] [Ring K]
+variable [HopfAlgebra R H] [HopfAlgebra R K]
+
 /-- The antipode preserves the ordinary kernel of a bialgebra morphism. -/
 private theorem antipode_mem_ker (f : H →ₐc[R] K) {x : H}
     (hx : x ∈ RingHom.ker (f : H →ₐ[R] K)) :
     HopfAlgebra.antipode R x ∈ RingHom.ker (f : H →ₐ[R] K) := by
   rw [RingHom.mem_ker]
   have hfx : f x = 0 := RingHom.mem_ker.mp hx
-  simp [hfx, BialgHomClass.map_antipode f x]
+  simp [hfx]
 
 /-- Build a Hopf ideal from the only kernel condition that is not automatic. -/
 private def ofKerComul (f : H →ₐc[R] K)
@@ -139,8 +171,8 @@ private def ofKerComul (f : H →ₐc[R] K)
           rightTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K))) :
     HopfIdeal R H :=
   ofIdeal (RingHom.ker (f : H →ₐ[R] K)) hcomul
-    (fun x hx ↦ counit_eq_zero_of_mem_ker (R := R) f (x := x) hx)
-    (fun x hx ↦ antipode_mem_ker (R := R) f (x := x) hx)
+    (fun _ hx ↦ counit_eq_zero_of_mem_ker f hx)
+    (fun _ hx ↦ antipode_mem_ker f hx)
 
 @[simp]
 private theorem ofKerComul_toIdeal (f : H →ₐc[R] K) (hcomul) :
@@ -194,120 +226,111 @@ theorem mem_kerOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) {x
   mem_ofKerComul f _
 
 /-- The kernel Hopf ideal is bottom exactly when the morphism is injective. -/
+@[simp]
 theorem kerOfSurjective_eq_bot_iff (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     kerOfSurjective f hf = ⊥ ↔ Function.Injective f :=
   eq_bot_iff_injective f (kerOfSurjective_toIdeal f hf)
 
+/-- The surjective kernel Hopf ideal of a morphism is contained in the kernel after
+postcomposition. -/
+theorem kerOfSurjective_le_kerOfSurjective_comp {L : Type x} [Ring L] [HopfAlgebra R L]
+    (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (g : K →ₐc[R] L) (hgf : Function.Surjective (g.comp f)) :
+    kerOfSurjective f hf ≤ kerOfSurjective (g.comp f) hgf := by
+  intro x hx
+  simp_all [mem_kerOfSurjective]
+
 section Flat
 
-variable {k : Type u} [CommRing k]
-variable [HopfAlgebra k H] [HopfAlgebra k K]
-variable [Module.Flat k K]
-
-/-- The tensor square of the injective factor through `H / ker f` is injective. -/
-private theorem tensor_kerLiftAlg_injective (f : H →ₐ[k] K)
-    [Module.Flat k (H ⧸ RingHom.ker f)] :
-    Function.Injective
-      (Algebra.TensorProduct.map (Ideal.kerLiftAlg f) (Ideal.kerLiftAlg f)) := by
-  let f' : (H ⧸ RingHom.ker f) →ₐ[k] K := Ideal.kerLiftAlg f
-  have hf' : Function.Injective f' := Ideal.kerLiftAlg_injective f
-  -- Expose the underlying linear map to apply Mathlib's flat tensor-injectivity theorem.
-  change Function.Injective (Algebra.TensorProduct.map f' f').toLinearMap
-  rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq]
-  exact TensorProduct.map_injective_of_flat_flat f'.toLinearMap f'.toLinearMap hf' hf'
+variable [Module.Flat R K]
 
 /-- With flat codomain and kernel quotient, comultiplication carries the ordinary kernel into
 `ker f ⊗ H + H ⊗ ker f`. -/
-private theorem comul_mem_left_sup_right_of_mem_ker (f : H →ₐc[k] K)
-    [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)] {x : H}
-    (hx : x ∈ RingHom.ker (f : H →ₐ[k] K)) :
-    Coalgebra.comul (R := k) x ∈
-      leftTensorIdeal (R := k) (H := H) (RingHom.ker (f : H →ₐ[k] K)) ⊔
-        rightTensorIdeal (R := k) (H := H) (RingHom.ker (f : H →ₐ[k] K)) := by
-  let I := RingHom.ker (f : H →ₐ[k] K)
-  let q : H →ₐ[k] H ⧸ I := Ideal.Quotient.mkₐ k I
-  let f' : (H ⧸ I) →ₐ[k] K := Ideal.kerLiftAlg f.toAlgHom
+private theorem comul_mem_left_sup_right_of_mem_ker (f : H →ₐc[R] K)
+    [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] {x : H}
+    (hx : x ∈ RingHom.ker (f : H →ₐ[R] K)) :
+    Coalgebra.comul (R := R) x ∈
+      leftTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K)) ⊔
+        rightTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K)) := by
+  let I := RingHom.ker (f : H →ₐ[R] K)
+  let q : H →ₐ[R] H ⧸ I := Ideal.Quotient.mkₐ R I
+  let f' : (H ⧸ I) →ₐ[R] K := Ideal.kerLiftAlg f.toAlgHom
   have hcomp : f'.comp q = f.toAlgHom := by
     ext y
     exact Ideal.kerLiftAlg_mk f.toAlgHom y
   have hzero :
-      Algebra.TensorProduct.map f.toAlgHom f.toAlgHom (Coalgebra.comul (R := k) x) = 0 := by
-    calc
-      Algebra.TensorProduct.map f.toAlgHom f.toAlgHom (Coalgebra.comul (R := k) x) =
-          Coalgebra.comul (R := k) (f x) := CoalgHomClass.map_comp_comul_apply f x
-      _ = 0 := by
-        have hfx : f x = 0 := RingHom.mem_ker.mp hx
-        simp [hfx]
+      Algebra.TensorProduct.map f.toAlgHom f.toAlgHom (Coalgebra.comul (R := R) x) = 0 :=
+    RingHom.mem_ker.mp (comul_mem_tensor_map_ker f hx)
   have hfactor :
       Algebra.TensorProduct.map f' f'
-          (Algebra.TensorProduct.map q q (Coalgebra.comul (R := k) x)) = 0 := by
+          (Algebra.TensorProduct.map q q (Coalgebra.comul (R := R) x)) = 0 := by
     calc
       Algebra.TensorProduct.map f' f'
-          (Algebra.TensorProduct.map q q (Coalgebra.comul (R := k) x)) =
+          (Algebra.TensorProduct.map q q (Coalgebra.comul (R := R) x)) =
           Algebra.TensorProduct.map (f'.comp q) (f'.comp q)
-            (Coalgebra.comul (R := k) x) := by
+            (Coalgebra.comul (R := R) x) := by
               rw [Algebra.TensorProduct.map_comp, AlgHom.comp_apply]
       _ = Algebra.TensorProduct.map f.toAlgHom f.toAlgHom
-            (Coalgebra.comul (R := k) x) := by rw [hcomp]
+            (Coalgebra.comul (R := R) x) := by rw [hcomp]
       _ = 0 := hzero
   have hqzero :
-      Algebra.TensorProduct.map q q (Coalgebra.comul (R := k) x) = 0 :=
+      Algebra.TensorProduct.map q q (Coalgebra.comul (R := R) x) = 0 :=
     tensor_kerLiftAlg_injective f.toAlgHom hfactor
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
-      leftTensorIdeal (R := k) (H := H) I ⊔ rightTensorIdeal (R := k) (H := H) I := by
+      leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I := by
     simpa only [q, AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_ker] using
-      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (R := k) q q
-        (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
+      HopfIdeal.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal (R := R) q q
+        (Ideal.Quotient.mkₐ_surjective R I) (Ideal.Quotient.mkₐ_surjective R I)
   rw [← hker, RingHom.mem_ker]
   exact hqzero
 
 /-- The ordinary kernel of a morphism of Hopf algebras with flat codomain and flat kernel
 quotient, as a Hopf ideal. In particular, these hypotheses hold over a field. -/
-def ker (f : H →ₐc[k] K) [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)] : HopfIdeal k H :=
-  ofKerComul (R := k) f
-    (fun x hx ↦ comul_mem_left_sup_right_of_mem_ker (k := k) f (x := x) hx)
+def ker (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] : HopfIdeal R H :=
+  ofKerComul (R := R) f
+    (fun x hx ↦ comul_mem_left_sup_right_of_mem_ker (R := R) f (x := x) hx)
 
 /-- The underlying ideal of the kernel Hopf ideal is the ordinary ring-hom kernel. -/
 @[simp]
-theorem ker_toIdeal (f : H →ₐc[k] K) [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)] :
-    (ker f).toIdeal = RingHom.ker (f : H →ₐ[k] K) :=
+theorem ker_toIdeal (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] :
+    (ker f).toIdeal = RingHom.ker (f : H →ₐ[R] K) :=
   ofKerComul_toIdeal f _
 
 /-- Membership in the kernel Hopf ideal is vanishing under the morphism. -/
 @[simp]
-theorem mem_ker (f : H →ₐc[k] K) [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)] {x : H} :
+theorem mem_ker (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] {x : H} :
     x ∈ ker f ↔ f x = 0 :=
   mem_ofKerComul f _
 
 /-- The kernel Hopf ideal of a morphism is contained in the kernel after postcomposition. -/
-theorem ker_le_ker_comp {L : Type x} [Ring L] [HopfAlgebra k L]
-    (f : H →ₐc[k] K) (g : K →ₐc[k] L)
-    [Module.Flat k L] [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)]
-    [Module.Flat k (H ⧸ RingHom.ker (g.comp f).toAlgHom)] : ker f ≤ ker (g.comp f) := by
+theorem ker_le_ker_comp {L : Type x} [Ring L] [HopfAlgebra R L]
+    (f : H →ₐc[R] K) (g : K →ₐc[R] L)
+    [Module.Flat R L] [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)]
+    [Module.Flat R (H ⧸ RingHom.ker (g.comp f).toAlgHom)] : ker f ≤ ker (g.comp f) := by
   intro h hh
   rw [mem_ker] at hh ⊢
   rw [BialgHom.comp_apply, hh, map_zero]
 
 /-- The surjective and flat kernel constructions agree whenever both apply. -/
 @[simp]
-theorem kerOfSurjective_eq_ker (f : H →ₐc[k] K)
-    [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)] (hf : Function.Surjective f) :
+theorem kerOfSurjective_eq_ker (f : H →ₐc[R] K)
+    [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] (hf : Function.Surjective f) :
     kerOfSurjective f hf = ker f := by
   ext x
   rw [mem_kerOfSurjective, mem_ker]
 
 /-- The kernel Hopf ideal is bottom exactly when the morphism is injective. -/
 @[simp]
-theorem ker_eq_bot_iff (f : H →ₐc[k] K) [Module.Flat k (H ⧸ RingHom.ker f.toAlgHom)] :
+theorem ker_eq_bot_iff (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] :
     ker f = ⊥ ↔ Function.Injective f :=
   eq_bot_iff_injective f (ker_toIdeal f)
 
 /-- The kernel of the quotient bialgebra morphism by `I` is `I`. -/
 @[simp]
-theorem ker_mkBialgHom (I : HopfIdeal k H)
-    [Module.Flat k (H ⧸ I.toIdeal)] :
-    haveI : Module.Flat k
-        (H ⧸ RingHom.ker (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal).toAlgHom) := by
+theorem ker_mkBialgHom (I : HopfIdeal R H)
+    [Module.Flat R (H ⧸ I.toIdeal)] :
+    haveI : Module.Flat R
+        (H ⧸ RingHom.ker (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal).toAlgHom) := by
       rwa [Bialgebra.Quotient.mkBialgHom_toAlgHom, AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker]
     ker (Bialgebra.Quotient.mkBialgHom I.toIdeal) = I := by
   ext x
@@ -393,6 +416,8 @@ theorem kerOfSurjective_mkBialgHom (I : HopfIdeal R H) :
   -- spells that out because the kernel is a bundled structure.
   change Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal x = 0 ↔ x ∈ I
   rw [Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
+
+end Hopf
 
 end HopfIdeal
 
