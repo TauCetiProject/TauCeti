@@ -31,6 +31,7 @@ reflection tables.
 
 * `TauCeti.E7Minuscule.cartanMatrix`, `raisingMatrix`, and `loweringMatrix`: the integral Cartan,
   raising, and lowering matrices.
+* `TauCeti.E7Minuscule.isSl2Triple`: the three matrices at a simple node form an `sl₂` triple.
 * `TauCeti.E7Minuscule.isSerreSystem`: the Chevalley--Serre relations between them over `ℤ`.
 * `TauCeti.E7Minuscule.serreRepresentation`: the induced representation of the type-`E₇` Serre
   Lie algebra.
@@ -135,6 +136,11 @@ theorem loweringMatrix_apply (i : Fin 7) (a b : Fin 56) :
     weightTable.loweringMatrix_apply i a b
 
 /-! ## Chevalley--Serre relations -/
+
+/-- At each simple node, the three integral minuscule generator matrices form an `sl₂` triple. -/
+theorem isSl2Triple (i : Fin 7) :
+    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) :=
+  weightTable.isSl2Triple i (exists_e7MinusculeWeight_apply_eq_neg_one i)
 
 /-- The integral minuscule generator matrices satisfy the Chevalley--Serre relations of type
 `E₇`, in Bourbaki numbering. -/
