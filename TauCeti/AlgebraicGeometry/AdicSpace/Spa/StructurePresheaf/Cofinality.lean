@@ -78,6 +78,7 @@ theorem rationalSubsetIndex_le_iff (U W : RationalSubsetIndex Aplus V) :
     U ≤ W ↔ ∀ x, x ∈ (OrderDual.ofDual W).1 → x ∈ (OrderDual.ofDual U).1 :=
   Iff.rfl
 
+omit [IsTopologicalRing A] in
 /-- Forget an admissible presentation and retain the rational subset it presents. Refinement
 becomes reverse inclusion by `rationalSubset_subset_rationalSubset_of_le`. -/
 noncomputable def presentationToRationalSubsetIndex (Aplus : Subring A)
