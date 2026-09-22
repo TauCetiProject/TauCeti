@@ -374,6 +374,9 @@ theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
       Multiplicative.ofAdd
         (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e he
           continuous_of_discreteTopology hequiv (Multiplicative.toAdd (kummerIso K n hn x))) :=
-  (rfl)
+  by
+    rw [kummerIsoTransport, MulEquiv.trans_apply,
+      AddEquiv.toMultiplicative_apply_apply, AddMonoidHom.toMultiplicative_apply_apply,
+      AddEquiv.coe_toAddMonoidHom]
 
 end TauCeti

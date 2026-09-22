@@ -658,6 +658,9 @@ noncomputable def explicitCoeff1Equiv {N : Type uN} [AddCommGroup N] [Topologica
     { e.symm.toAddMonoidHom with
       map_smul' := fun g n => by
         apply e.injective
+        -- Expose the coercions from the bundled equivariant homomorphism and
+        -- `e.symm.toAddMonoidHom` so that the inverse laws for `e` and the stated equivariance of
+        -- `e` can rewrite the goal.
         change e (e.symm (g • n)) = e (g • e.symm n)
         rw [e.apply_symm_apply, hequiv, e.apply_symm_apply] }
   have hf : Continuous f := he
@@ -666,14 +669,12 @@ noncomputable def explicitCoeff1Equiv {N : Type uN} [AddCommGroup N] [Topologica
     { toFun := explicitCoeff1 G M f hf
       invFun := explicitCoeff1 G N q hq
       left_inv := fun x => by
-        change explicitCoeff1 G N q hq (explicitCoeff1 G M f hf x) = x
         rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp G M f q hf hq]
         have hqf : q.comp f = DistribMulActionHom.id G := by
           ext m
           exact e.symm_apply_apply m
         simp [hqf]
       right_inv := fun x => by
-        change explicitCoeff1 G M f hf (explicitCoeff1 G N q hq x) = x
         rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp G N q f hq hf]
         have hfq : f.comp q = DistribMulActionHom.id G := by
           ext n
@@ -692,6 +693,25 @@ theorem explicitCoeff1Equiv_apply {N : Type uN} [AddCommGroup N] [TopologicalSpa
       explicitCoeff1 G M { e.toAddMonoidHom with map_smul' := hequiv } he x :=
   (rfl)
 
+/-- The inverse coefficient equivalence on `H¹` is the coefficient map induced by the inverse
+equivariant additive homomorphism. -/
+@[simp]
+theorem explicitCoeff1Equiv_symm_apply {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+    [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
+    (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
+    (hequiv : ∀ (g : G) (m : M), e (g • m) = g • e m) (x : H1 G N) :
+    (explicitCoeff1Equiv G M e he he' hequiv).symm x =
+      explicitCoeff1 G N
+        { e.symm.toAddMonoidHom with
+          map_smul' := fun g n => by
+            apply e.injective
+            -- Expose the same bundled coercions as in `explicitCoeff1Equiv` so that the
+            -- inverse laws for `e` and its forward equivariance can rewrite the goal.
+            change e (e.symm (g • n)) = e (g • e.symm n)
+            rw [e.apply_symm_apply, hequiv, e.apply_symm_apply] }
+        he' x :=
+  (rfl)
+
 /-- On cocycle classes, the coefficient equivalence postcomposes the cocycle with the given
 equivalence of coefficients. -/
 theorem explicitCoeff1Equiv_mk {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
@@ -703,9 +723,7 @@ theorem explicitCoeff1Equiv_mk {N : Type uN} [AddCommGroup N] [TopologicalSpace 
         ({ e.toAddMonoidHom with map_smul' := hequiv } : M →+[G] N) he
         (fun g m => hequiv g m) c : H1 G N) := by
   let f : M →+[G] N := { e.toAddMonoidHom with map_smul' := hequiv }
-  change explicitCoeff1 G M f he (c : H1 G M) =
-    (cocyclesMap1 G M G N (ContinuousMonoidHom.id G) f he
-      (fun g m => f.map_smul g m) c : H1 G N)
+  rw [explicitCoeff1Equiv_apply]
   exact explicitCoeff1_mk G M f he c
 
 /-- The coefficient map on explicit `H²` induced by a continuous equivariant additive
