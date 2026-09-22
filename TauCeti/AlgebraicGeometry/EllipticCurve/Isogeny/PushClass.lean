@@ -29,6 +29,8 @@ of class groups.
 
 ## Main results
 
+* `TauCeti.Isogeny.pushClassMonoidHom_apply`: the map on a class is the relative norm of that
+  class extended into the intermediate ring.
 * `TauCeti.Isogeny.pushClassMonoidHom_mk0`: when the source coordinate ring is normal, the map on
   the class of an integral ideal is the relative norm of its extension.
 * `TauCeti.Isogeny.pushClass_apply`: the additive form is the multiplicative one transported
@@ -186,6 +188,51 @@ theorem pushClassMonoidHom_mk0 [IsIntegrallyClosed W₁.CoordinateRing]
     Module.isTorsionFree_iff_algebraMap_injective.mpr φ.pullbackToIntermediateRing_injective
   exact ClassGroup.extendedRelNormHom_mk0 _ _ _ I
 
+/-- **The induced map on a class** is the relative norm, down to `W₂.CoordinateRing`, of that
+class extended into the intermediate ring. This is `ClassGroup.extendedRelNormHom_apply` for the
+structures the definition builds, so that consumers never have to unfold `pushClassMonoidHom`
+itself. -/
+-- The algebra structures are built by the definition rather than taken from the caller, so the
+-- statement restates them — verbatim, so that the two elaborate to the same terms.
+theorem pushClassMonoidHom_apply (c : ClassGroup W₁.CoordinateRing) :
+    haveI := _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed W₂
+    letI : Algebra W₂.CoordinateRing W₁.FunctionField := φ.pullback.toRingHom.toAlgebra
+    letI : Algebra W₂.FunctionField W₁.FunctionField := φ.fieldPullback.toRingHom.toAlgebra
+    haveI : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
+      .of_algebraMap_eq fun x ↦ (φ.fieldPullback_algebraMap x).symm
+    letI : Algebra W₁.CoordinateRing φ.intermediateRing := φ.toIntermediateRing.toAlgebra
+    letI : Algebra W₂.CoordinateRing φ.intermediateRing := φ.pullbackToIntermediateRing.toAlgebra
+    haveI : IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField :=
+      φ.isScalarTower_intermediateRing rfl fun _ ↦ rfl
+    haveI := φ.isDedekindDomain_intermediateRing fun _ ↦ rfl
+    haveI : Module.Finite W₂.CoordinateRing φ.intermediateRing :=
+      φ.moduleFinite_intermediateRing fun _ ↦ rfl
+    haveI : Module.IsTorsionFree W₁.CoordinateRing φ.intermediateRing :=
+      Module.isTorsionFree_iff_algebraMap_injective.mpr φ.toIntermediateRing_injective
+    haveI : Module.IsTorsionFree W₂.CoordinateRing φ.intermediateRing :=
+      Module.isTorsionFree_iff_algebraMap_injective.mpr φ.pullbackToIntermediateRing_injective
+    φ.pushClassMonoidHom c =
+      ClassGroup.relNorm (ClassGroup.extendedHom W₁.CoordinateRing φ.intermediateRing c) := by
+  -- the `letI`s above bind inside the statement only, so the same instances are re-introduced
+  -- here to bring them into scope for the proof term
+  have := _root_.WeierstrassCurve.Affine.isDedekindDomain_coordinateRing_of_isIntegrallyClosed W₂
+  let _ : Algebra W₂.CoordinateRing W₁.FunctionField := φ.pullback.toRingHom.toAlgebra
+  let _ : Algebra W₂.FunctionField W₁.FunctionField := φ.fieldPullback.toRingHom.toAlgebra
+  have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
+    .of_algebraMap_eq fun x ↦ (φ.fieldPullback_algebraMap x).symm
+  let _ : Algebra W₁.CoordinateRing φ.intermediateRing := φ.toIntermediateRing.toAlgebra
+  let _ : Algebra W₂.CoordinateRing φ.intermediateRing := φ.pullbackToIntermediateRing.toAlgebra
+  have : IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField :=
+    φ.isScalarTower_intermediateRing rfl fun _ ↦ rfl
+  have := φ.isDedekindDomain_intermediateRing fun _ ↦ rfl
+  have : Module.Finite W₂.CoordinateRing φ.intermediateRing :=
+    φ.moduleFinite_intermediateRing fun _ ↦ rfl
+  have : Module.IsTorsionFree W₁.CoordinateRing φ.intermediateRing :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr φ.toIntermediateRing_injective
+  have : Module.IsTorsionFree W₂.CoordinateRing φ.intermediateRing :=
+    Module.isTorsionFree_iff_algebraMap_injective.mpr φ.pullbackToIntermediateRing_injective
+  exact ClassGroup.extendedRelNormHom_apply _ _ _ c
+
 /-- **The additive form of `Isogeny.pushClassMonoidHom`.** The point group is described additively
 by its class group, so this is the shape the induced map on points is built from. -/
 noncomputable def pushClass :
@@ -200,9 +247,7 @@ theorem pushClass_apply (x : Additive (ClassGroup W₁.CoordinateRing)) :
 
 /-- **The identity isogeny induces the identity on class groups.** Its intermediate ring is the
 coordinate ring itself, so extending a class into it and norming it back down leaves the class
-unchanged: the norm of an extension is the `Module.finrank`-th power
-(`ClassGroup.relNorm_extendedHom`), and that rank is one
-(`Isogeny.finrank_intermediateRing_id_eq_one`). -/
+unchanged. -/
 @[simp]
 theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
     [IsIntegrallyClosed W.CoordinateRing] :
@@ -211,27 +256,26 @@ theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
   -- extend and norm along the single map `toIntermediateRing`; the definition norms along
   -- `pullbackToIntermediateRing`, which `id_pullbackToIntermediateRing` says is the same map
   let _ := (Isogeny.id W).toIntermediateRing.toAlgebra
-  have h : ∀ x, algebraMap W.CoordinateRing W.FunctionField x = (Isogeny.id W).pullback x :=
-    fun x ↦ by rw [Isogeny.id_pullback, CoordinatePullback.id_apply]
   have : IsScalarTower W.CoordinateRing (Isogeny.id W).intermediateRing W.FunctionField :=
     (Isogeny.id W).isScalarTower_intermediateRing
-      (congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)).symm h
+      (id_pullbackToIntermediateRing_toAlgebra W).symm (id_algebraMap_eq_pullback W)
   have : IsDedekindDomain (Isogeny.id W).intermediateRing :=
-    (Isogeny.id W).isDedekindDomain_intermediateRing h
+    (Isogeny.id W).isDedekindDomain_intermediateRing (id_algebraMap_eq_pullback W)
   have : Module.Finite W.CoordinateRing (Isogeny.id W).intermediateRing :=
-    (Isogeny.id W).moduleFinite_intermediateRing h
+    (Isogeny.id W).moduleFinite_intermediateRing (id_algebraMap_eq_pullback W)
   have : Module.IsTorsionFree W.CoordinateRing (Isogeny.id W).intermediateRing :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (toIntermediateRing_injective _)
   refine MonoidHom.ext fun c ↦ ?_
+  -- the norm of an extension is the `Module.finrank`-th power, and here that rank is one
   have key : ClassGroup.relNorm (R := W.CoordinateRing)
       (ClassGroup.extendedHom W.CoordinateRing (Isogeny.id W).intermediateRing c) = c := by
     rw [ClassGroup.relNorm_extendedHom, finrank_intermediateRing_id_eq_one, pow_one]
-  rw [pushClassMonoidHom, ClassGroup.extendedRelNormHom_apply, MonoidHom.id_apply]
+  rw [pushClassMonoidHom_apply, MonoidHom.id_apply]
   -- `key` norms along `toIntermediateRing`, the goal along `pullbackToIntermediateRing`; the two
   -- sides agree once those algebra structures are identified, which is the single goal `convert`
   -- leaves behind (`rw` cannot do it: the norm's scalar-tower argument depends on the structure)
   convert key using 3
-  exact congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)
+  exact id_pullbackToIntermediateRing_toAlgebra W
 
 /-- **The identity isogeny induces the identity**, additively. -/
 @[simp]

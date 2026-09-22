@@ -41,7 +41,8 @@ comparison, and functoriality in `φ` beyond the identity, are separate statemen
   the pushed-forward class.
 * `TauCeti.Isogeny.toPointHom_eq_iff`: a point is the image of `P` exactly when its class is the
   pushed-forward class of `P`, the point–class dictionary being injective.
-* `TauCeti.Isogeny.toPointHom_id`: the class-group map for the identity isogeny is the identity.
+* `TauCeti.Isogeny.toPointHom_id`: the map on points induced by the identity isogeny is the
+  identity.
 
 ## Provenance
 
@@ -53,7 +54,9 @@ Angdinata, declaration `toPointHom`, restated in the coordinate-ring form this r
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.3 (the pushforward of
+  divisors along a map of curves, dual to the pullback and computed by the norm) and III.3.4-3.5
+  (the identification of the points of an elliptic curve with a divisor class group).
 -/
 
 public section
@@ -75,9 +78,11 @@ noncomputable def toPointHom : W₁.Point →+ W₂.Point :=
   ((Point.toClassEquiv (W := W₂)).symm.toAddMonoidHom.comp φ.pushClass).comp
     (Point.toClassEquiv (W := W₁)).toAddMonoidHom
 
-/-- The class-group-defined map sends `P` to the point corresponding to its pushed-forward
-class. -/
-@[simp]
+/-- The class-group-defined map sends `P` to the point corresponding to its pushed-forward class.
+
+**Deliberately not `@[simp]`**: it would put `toPointHom` into a `Point.toClassEquiv.symm` normal
+form that no further lemma consumes, and block the characteristic rule `toClass_toPointHom`
+below. -/
 theorem toPointHom_apply (P : W₁.Point) :
     φ.toPointHom P = Point.toClassEquiv.symm (φ.pushClass P.toClass) := by
   -- `toClassEquiv` is not exposed, so its application is rewritten rather than unfolded; what is
@@ -87,6 +92,7 @@ theorem toPointHom_apply (P : W₁.Point) :
 
 /-- **The class of the image point is the pushed-forward class.** This characterises `toPointHom`,
 since `WeierstrassCurve.Affine.Point.toClass` is injective. -/
+@[simp]
 theorem toClass_toPointHom (P : W₁.Point) :
     (φ.toPointHom P).toClass = φ.pushClass P.toClass := by
   rw [toPointHom_apply, ← Point.toClassEquiv_apply, AddEquiv.apply_symm_apply]
@@ -97,7 +103,7 @@ theorem toPointHom_eq_iff {P : W₁.Point} {Q : W₂.Point} :
   rw [← toClass_toPointHom]
   exact Point.toClass_injective.eq_iff.symm
 
-/-- **The class-group map for the identity isogeny is the identity on points.** -/
+/-- **The map on points induced by the identity isogeny is the identity.** -/
 @[simp]
 theorem toPointHom_id (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed W.CoordinateRing] :
     (Isogeny.id W).toPointHom = AddMonoidHom.id W.Point := by
