@@ -215,6 +215,10 @@ theorem e8Plumbing_canonicalCharacteristic_eq_zero :
     e8Plumbing.canonicalCharacteristic = 0 :=
   e8Plumbing.canonicalCharacteristic_eq_zero_of_weight_eq_neg_two e8Plumbing_weight
 
+-- The canonical-weight lemmas below are deliberately not `@[simp]`: their left-hand sides mention
+-- `e8Plumbing.canonicalCharacteristic`, which `e8Plumbing_canonicalCharacteristic_eq_zero` already
+-- rewrites to `0`, so they would never be in `simp` normal form. Use them by name.
+
 /-- The canonical characteristic weight of the `E₈` plumbing is half the negative
 intersection-form self-pairing. -/
 theorem e8Plumbing_characteristicWeight_canonical (x : Fin 8 → ℤ) :
@@ -225,7 +229,6 @@ theorem e8Plumbing_characteristicWeight_canonical (x : Fin 8 → ℤ) :
   e8Plumbing.characteristicWeight_canonical_of_weight_eq_neg_two e8Plumbing_weight x
 
 /-- The canonical characteristic weight of the `E₈` plumbing is nonnegative. -/
-@[simp]
 theorem e8Plumbing_characteristicWeight_canonical_nonneg (x : Fin 8 → ℤ) :
     0 ≤ e8Plumbing.characteristicWeight
       ⟨e8Plumbing.canonicalCharacteristic,
@@ -235,7 +238,6 @@ theorem e8Plumbing_characteristicWeight_canonical_nonneg (x : Fin 8 → ℤ) :
 
 /-- The canonical characteristic weight of the `E₈` plumbing vanishes only at the zero
 lattice point. -/
-@[simp]
 theorem e8Plumbing_characteristicWeight_canonical_eq_zero_iff (x : Fin 8 → ℤ) :
     e8Plumbing.characteristicWeight
         ⟨e8Plumbing.canonicalCharacteristic,
@@ -245,7 +247,6 @@ theorem e8Plumbing_characteristicWeight_canonical_eq_zero_iff (x : Fin 8 → ℤ
     e8Plumbing_isNegativeDefinite e8Plumbing_weight x
 
 /-- The canonical characteristic weight of the `E₈` plumbing has minimum zero. -/
-@[simp]
 theorem e8Plumbing_sInfCharacteristicWeight_canonical :
     e8Plumbing.sInfCharacteristicWeight
       ⟨e8Plumbing.canonicalCharacteristic,
