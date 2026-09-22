@@ -29,7 +29,8 @@ operators that act on `S_k(Γ₁(N))` away from the level.
 The new subspace is the Petersson-orthogonal complement of the old subspace. The Petersson
 adjoint of `Tₚ` is `⟨p⟩⁻¹ Tₚ`; both factors preserve the old subspace, so `Tₚ` preserves its
 orthogonal complement. This is the invariant-subspace input for restricting the simultaneous
-good-Hecke diagonalization to the newspace.
+good-Hecke diagonalization to the newspace. The stability of both old and new subspaces is
+Diamond–Shurman, *A First Course in Modular Forms*, Proposition 5.6.2.
 
 Both stability statements also hold for the Hecke-ring *generator*
 `heckeTGeneratorGamma0 N p` at a good prime, acting on a character space — the form eigenform
@@ -133,11 +134,7 @@ theorem cuspFormsOld_map_heckeTCuspNat_le [NeZero N] (hp : p.Prime)
 /-! ### The new subspace -/
 
 /-- **The new subspace is Hecke-stable** at a prime `p` coprime to the level: `Tₚ` maps
-`S_k(Γ₁(N))ⁿᵉᵂ` into itself.
-
-Indeed, the Petersson adjoint of `Tₚ` is `⟨p⟩⁻¹ Tₚ`. The old subspace is stable under
-both `Tₚ` and every diamond operator, so its Petersson-orthogonal complement is stable under
-`Tₚ`. -/
+`S_k(Γ₁(N))ⁿᵉᵂ` into itself. -/
 theorem heckeTCuspNat_mem_cuspFormsNew [NeZero N] (hp : p.Prime)
     (hpN : Nat.Coprime p N) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ cuspFormsNew N k) :
