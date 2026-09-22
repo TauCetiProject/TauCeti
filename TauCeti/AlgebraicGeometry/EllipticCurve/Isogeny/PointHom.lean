@@ -91,8 +91,11 @@ theorem toPointHom_apply (P : W₁.Point) :
   rfl
 
 /-- **The class of the image point is the pushed-forward class.** This characterises `toPointHom`,
-since `WeierstrassCurve.Affine.Point.toClass` is injective. -/
-@[simp]
+since `WeierstrassCurve.Affine.Point.toClass` is injective.
+
+This is deliberately not a simp lemma: `Point.toClass_apply` simplifies its left-hand side to a
+match on the image point, which is a worse public-facing normal form than this characteristic
+equation. -/
 theorem toClass_toPointHom (P : W₁.Point) :
     (φ.toPointHom P).toClass = φ.pushClass P.toClass := by
   rw [toPointHom_apply, ← Point.toClassEquiv_apply, AddEquiv.apply_symm_apply]
