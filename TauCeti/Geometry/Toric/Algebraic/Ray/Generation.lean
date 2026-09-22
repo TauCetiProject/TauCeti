@@ -24,12 +24,15 @@ integral basis, hence linearly independent, so a regular cone is simplicial.
 
 * `TauCeti.Toric.ToricRay.iSup_toPointedCone`: a salient finitely generated cone is the join of
   its rays.
-* `TauCeti.Toric.IsToricCone.hull_primitiveGenerator`: a toric cone is the cone hull of its
+* `TauCeti.Toric.IsToricCone.hull_primitiveGenerator` and
+  `TauCeti.Toric.IsToricCone.hull_range_primitiveGenerator`: a toric cone is the cone hull of its
   primitive ray generators.
 * `TauCeti.Toric.mem_dualSemigroup_iff_primitiveGenerator`: an integral character lies in the dual
   semigroup of a toric cone exactly when it is nonnegative on every primitive ray generator.
 * `TauCeti.Toric.mem_dualSemigroup_iff_of_isPrimitiveGenerator`: the same criterion for any
   chosen primitive generator of each ray.
+* `TauCeti.Toric.IsRegularCone.linearIndependent_primitiveGenerator`: the images of the primitive
+  ray generators of a regular cone are linearly independent.
 * `TauCeti.Toric.IsRegularCone.isSimplicial`: a regular cone is simplicial.
 
 ## References
@@ -68,6 +71,17 @@ theorem IsToricCone.hull_primitiveGenerator (hi : IsIntegralLattice i) (hσ : Is
       (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ ρ))]
     exact Submodule.span_mono (Set.singleton_subset_iff.2 ⟨_, ⟨ρ, rfl⟩, rfl⟩)
 
+/-- A toric cone in an integral lattice is the cone hull of the range of the family of images of
+its primitive ray generators. This is the form indexed by `TauCeti.Toric.ToricRay` in which a
+description of the cone by a family of vectors consumes the generation statement. -/
+theorem IsToricCone.hull_range_primitiveGenerator (hi : IsIntegralLattice i)
+    (hσ : IsToricCone i σ) :
+    PointedCone.hull ℝ (Set.range fun ρ : ToricRay σ ↦ i (primitiveGenerator hi hσ ρ)) = σ := by
+  have h : (Set.range fun ρ : ToricRay σ ↦ i (primitiveGenerator hi hσ ρ)) =
+      i '' Set.range (primitiveGenerator hi hσ) := Set.range_comp _ _
+  rw [h]
+  exact hσ.hull_primitiveGenerator hi
+
 /-- An integral character lies in the dual semigroup of a toric cone exactly when it is
 nonnegative on every primitive ray generator. -/
 theorem mem_dualSemigroup_iff_primitiveGenerator (hi : IsIntegralLattice i)
@@ -83,26 +97,31 @@ theorem mem_dualSemigroup_iff_of_isPrimitiveGenerator (hi : IsIntegralLattice i)
     (m : N →+ ℤ) : m ∈ dualSemigroup hi σ ↔ ∀ ρ : ToricRay σ, 0 ≤ m (v ρ) := by
   simp only [mem_dualSemigroup_iff_primitiveGenerator hi hσ, ← (hv _).eq_primitiveGenerator hi hσ]
 
+/-- The images of the primitive ray generators of a regular cone are linearly independent over
+the reals: they are part of an integral basis of the lattice, whose image is a real basis of the
+ambient space. -/
+theorem IsRegularCone.linearIndependent_primitiveGenerator (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) :
+    LinearIndependent ℝ fun ρ : ToricRay σ ↦ i (primitiveGenerator hi hσ.toIsToricCone ρ) := by
+  obtain ⟨n, b, r, hb⟩ := hσ.exists_basis
+  -- The images of the integral basis vectors form a real basis of `V`.
+  have heq : (fun ρ : ToricRay σ ↦ i (primitiveGenerator hi hσ.toIsToricCone ρ)) =
+      hi.isBaseChange.basis b ∘ r := by
+    refine funext fun ρ ↦ ?_
+    rw [Function.comp_apply, hi.isBaseChange.basis_apply b (r ρ),
+      ((hb.isPrimitiveGenerator_apply ρ).eq_primitiveGenerator hi hσ.toIsToricCone)]
+    rfl
+  rw [heq]
+  exact (hi.isBaseChange.basis b).linearIndependent.comp r r.injective
+
 /-- A regular cone is simplicial: it is the cone hull of its primitive ray generators, which are
 part of an integral basis and hence linearly independent over the reals. -/
 theorem IsRegularCone.isSimplicial (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ) :
     σ.IsSimplicial := by
-  obtain ⟨n, b, r, hb⟩ := hσ.exists_basis
-  have hprim : ∀ ρ, primitiveGenerator hi hσ.toIsToricCone ρ = b (r ρ) := fun ρ ↦
-    ((hb.isPrimitiveGenerator_apply ρ).eq_primitiveGenerator hi hσ.toIsToricCone).symm
-  -- The images of the integral basis vectors form a real basis of `V`.
-  let c := hi.isBaseChange.basis b
-  have hc : ∀ j, c j = i (b j) := fun j ↦ hi.isBaseChange.basis_apply b j
-  have hrange : i '' Set.range (primitiveGenerator hi hσ.toIsToricCone) =
-      Set.range (c ∘ r) := by
-    rw [← Set.range_comp]
-    exact congrArg Set.range (funext fun ρ ↦ by simp [hprim, hc])
-  have _ := ToricRay.finite_of_fg hσ.fg
-  have hli : LinearIndepOn ℝ id (i '' Set.range (primitiveGenerator hi hσ.toIsToricCone)) := by
-    rw [hrange]
-    exact (linearIndepOn_id_range_iff (c.injective.comp r.injective)).2
-      (c.linearIndependent.comp r r.injective)
-  have h := PointedCone.IsSimplicial.hull ((Set.finite_range _).image i) hli
-  rwa [hσ.toIsToricCone.hull_primitiveGenerator hi] at h
+  have hli := hσ.linearIndependent_primitiveGenerator hi
+  have := ToricRay.finite_of_fg hσ.fg
+  refine ⟨_, (Set.finite_range _).image i, ?_, hσ.toIsToricCone.hull_primitiveGenerator hi⟩
+  rw [← Set.range_comp]
+  exact (linearIndepOn_id_range_iff hli.injective).2 hli
 
 end TauCeti.Toric
