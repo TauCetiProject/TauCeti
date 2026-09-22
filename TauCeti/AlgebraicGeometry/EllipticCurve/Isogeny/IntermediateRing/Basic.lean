@@ -40,8 +40,7 @@ because `mapsInfinity` is precisely the assertion that it lands there.
 * `TauCeti.Isogeny.id_intermediateRing`: an identity isogeny's intermediate ring is the
   coordinate ring itself, sitting inside its own fraction field, and
   `TauCeti.Isogeny.id_pullbackToIntermediateRing`: its two corestrictions into that ring
-  coincide, hence so do the algebra structures they induce
-  (`TauCeti.Isogeny.id_pullbackToIntermediateRing_toAlgebra`).
+  coincide.
 * `TauCeti.Isogeny.id_algebraMap_eq_pullback`: the identity isogeny's pullback is the coordinate
   ring's own embedding into its function field, in the form the consumers above take.
 
@@ -291,13 +290,6 @@ theorem id_pullbackToIntermediateRing (W : WeierstrassCurve.Affine F) :
     (id W).pullbackToIntermediateRing = (id W).toIntermediateRing := by
   refine RingHom.ext fun x ↦ Subtype.ext ?_
   rw [coe_pullbackToIntermediateRing, coe_toIntermediateRing, ← id_algebraMap_eq_pullback]
-
-/-- **The identity isogeny's two corestrictions induce the same algebra structure** on its
-intermediate ring, being the same map. This is the `halg` input of
-`Isogeny.isScalarTower_intermediateRing` at the identity. -/
-theorem id_pullbackToIntermediateRing_toAlgebra (W : WeierstrassCurve.Affine F) :
-    (id W).pullbackToIntermediateRing.toAlgebra = (id W).toIntermediateRing.toAlgebra :=
-  congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)
 
 end Isogeny
 

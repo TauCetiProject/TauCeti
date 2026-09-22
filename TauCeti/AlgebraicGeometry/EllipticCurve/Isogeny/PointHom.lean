@@ -50,7 +50,7 @@ comparison, and functoriality in `φ` beyond the identity, are separate statemen
 class-group map induced by extension and relative norm by the point--class dictionary — is
 adapted from D. Angdinata's shared isogeny development, `Isogeny.lean`, by David Kurniadi
 Angdinata, declaration `toPointHom`, restated in the coordinate-ring form this repository gives
-`pushClass`. The identity law is proved here, from `Isogeny.pushClass_id`.
+`pushClass`. The identity law is not in that source; it is original here.
 
 ## References
 
@@ -78,11 +78,11 @@ noncomputable def toPointHom : W₁.Point →+ W₂.Point :=
   ((Point.toClassEquiv (W := W₂)).symm.toAddMonoidHom.comp φ.pushClass).comp
     (Point.toClassEquiv (W := W₁)).toAddMonoidHom
 
-/-- The class-group-defined map sends `P` to the point corresponding to its pushed-forward class.
-
-**Deliberately not `@[simp]`**: it would put `toPointHom` into a `Point.toClassEquiv.symm` normal
-form that no further lemma consumes, and block the characteristic rule `toClass_toPointHom`
-below. -/
+/-- The class-group-defined map sends `P` to the point corresponding to its pushed-forward
+class. -/
+-- Deliberately not `@[simp]`: it would put `toPointHom` into a `Point.toClassEquiv.symm` normal
+-- form that no further lemma consumes, and block the characteristic rule `toClass_toPointHom`
+-- below.
 theorem toPointHom_apply (P : W₁.Point) :
     φ.toPointHom P = Point.toClassEquiv.symm (φ.pushClass P.toClass) := by
   -- `toClassEquiv` is not exposed, so its application is rewritten rather than unfolded; what is
@@ -91,13 +91,12 @@ theorem toPointHom_apply (P : W₁.Point) :
   rfl
 
 /-- **The class of the image point is the pushed-forward class.** This characterises `toPointHom`,
-since `WeierstrassCurve.Affine.Point.toClass` is injective.
-
-**Deliberately not `@[simp]`**: Mathlib's `@[simps]` on `Point.toClass` already publishes
-`Point.toClass_apply`, a simp lemma rewriting `Point.toClass Q` to a match on `Q` for *every* `Q`.
-So this statement's left-hand side is not in simp normal form, and tagging it `@[simp]` is a
-`simpNF` linter violation, not merely a matter of taste. The characteristic equation is the useful
-public form, so it is kept as a named rewrite. -/
+since `WeierstrassCurve.Affine.Point.toClass` is injective. -/
+-- Deliberately not `@[simp]`: Mathlib's `@[simps]` on `Point.toClass` already publishes
+-- `Point.toClass_apply`, a simp lemma rewriting `Point.toClass Q` to a match on `Q` for *every*
+-- `Q`. So this statement's left-hand side is not in simp normal form, and tagging it `@[simp]`
+-- is a `simpNF` linter violation, not merely a matter of taste. The characteristic equation is
+-- the useful public form, so it is kept as a named rewrite.
 theorem toClass_toPointHom (P : W₁.Point) :
     (φ.toPointHom P).toClass = φ.pushClass P.toClass := by
   rw [toPointHom_apply, ← Point.toClassEquiv_apply, AddEquiv.apply_symm_apply]

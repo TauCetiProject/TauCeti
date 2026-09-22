@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Dedekind
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Rank
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Finite
+-- Private: `finrank_intermediateRing_id_eq_one` is used only inside the proof of
+-- `pushClassMonoidHom_id`; no exported statement here mentions the rank API.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Rank
 public import TauCeti.RingTheory.ClassGroup.ExtendedRelNorm
 -- Public: `isDedekindDomain_coordinateRing_of_isIntegrallyClosed` turns target normality into the
 -- Dedekind instance, and `pushClassMonoidHom_mk0` also uses it for the source inside its statement.
@@ -258,7 +260,8 @@ theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
   let _ := (Isogeny.id W).toIntermediateRing.toAlgebra
   have : IsScalarTower W.CoordinateRing (Isogeny.id W).intermediateRing W.FunctionField :=
     (Isogeny.id W).isScalarTower_intermediateRing
-      (id_pullbackToIntermediateRing_toAlgebra W).symm (id_algebraMap_eq_pullback W)
+      (congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)).symm
+      (id_algebraMap_eq_pullback W)
   have : IsDedekindDomain (Isogeny.id W).intermediateRing :=
     (Isogeny.id W).isDedekindDomain_intermediateRing (id_algebraMap_eq_pullback W)
   have : Module.Finite W.CoordinateRing (Isogeny.id W).intermediateRing :=
@@ -275,7 +278,7 @@ theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
   -- sides agree once those algebra structures are identified, which is the single goal `convert`
   -- leaves behind (`rw` cannot do it: the norm's scalar-tower argument depends on the structure)
   convert key using 3
-  exact id_pullbackToIntermediateRing_toAlgebra W
+  exact congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)
 
 /-- **The identity isogeny induces the identity**, additively. -/
 @[simp]
@@ -283,7 +286,7 @@ theorem pushClass_id (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed W.Coord
     (Isogeny.id W).pushClass = AddMonoidHom.id (Additive (ClassGroup W.CoordinateRing)) := by
   refine AddMonoidHom.ext fun c ↦ ?_
   rw [pushClass_apply, pushClassMonoidHom_id, MonoidHom.id_apply, AddMonoidHom.id_apply]
-  rfl
+  exact ofMul_toMul c
 
 end PushClass
 
