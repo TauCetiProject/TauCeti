@@ -44,7 +44,7 @@ half of the archimedean classification; the complex half is in
   classified by their signature.
 * `QuadraticForm.equivalent_atRealPlace_iff_realPositiveIndex_eq_of_finrank_eq`: at a fixed
   global rank the positive index alone classifies them.
-* `QuadraticForm.equivalent_atRealPlace_realSignatureForm_iff` and
+* `QuadraticForm.equivalent_atRealPlace_realSignatureForm_iff_realSignature_eq` and
   `QuadraticForm.equivalent_atRealPlace_realSignatureForm`: the localization is the normal form
   `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature, hence is always the normal form of its
   own signature.
@@ -335,7 +335,8 @@ theorem equivalent_atRealPlace_iff_realPositiveIndex_eq_of_finrank_eq (hQ : Q.No
 
 /-- A regular quadratic form is isometric at a real place to the normal form `p⟨1⟩ ⊥ q⟨-1⟩`
 exactly when `(p, q)` is its signature there. -/
-theorem equivalent_atRealPlace_realSignatureForm_iff (hQ : Q.Nondegenerate)
+@[simp]
+theorem equivalent_atRealPlace_realSignatureForm_iff_realSignature_eq (hQ : Q.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) (p q : ℕ) :
     (Q.atRealPlace w).Equivalent (realSignatureForm p q) ↔ Q.realSignature w = (p, q) := by
   rw [equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq
@@ -348,7 +349,7 @@ theorem equivalent_atRealPlace_realSignatureForm (hQ : Q.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Equivalent
       (realSignatureForm (Q.realPositiveIndex w) (Q.realNegativeIndex w)) :=
-  (equivalent_atRealPlace_realSignatureForm_iff hQ w _ _).mpr (by simp)
+  (equivalent_atRealPlace_realSignatureForm_iff_realSignature_eq hQ w _ _).mpr (by simp)
 
 end Classification
 

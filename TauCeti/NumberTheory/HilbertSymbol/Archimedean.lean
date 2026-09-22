@@ -156,8 +156,12 @@ theorem prod_hilbertSymbol_real_ite_lt (p q : ℕ) :
     ∏ ij ∈ univ.filter (fun ij : Fin (p + q) × Fin (p + q) => ij.1 < ij.2),
         hilbertSymbol (if (ij.1 : ℕ) < p then (1 : ℝˣ) else -1)
           (if (ij.2 : ℕ) < p then (1 : ℝˣ) else -1) = (-1) ^ q.choose 2 := by
-  rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares
-      (_root_.QuadraticForm.equivalent_realSignatureForm_weightedSumSquares p q),
+  have hdiag : (_root_.QuadraticForm.realSignatureForm p q).Equivalent
+      (QuadraticMap.weightedSumSquares ℝ fun i : Fin (p + q) ↦
+        (((if (i : ℕ) < p then (1 : ℝˣ) else -1) : ℝˣ) : ℝ)) := by
+    simpa [apply_ite (Units.val (α := ℝ))] using
+      _root_.QuadraticForm.equivalent_realSignatureForm_weightedSumSquares p q
+  rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares hdiag,
     _root_.QuadraticForm.sigNeg_realSignatureForm]
 
 end Real

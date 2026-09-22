@@ -106,6 +106,7 @@ their dimensions agree. -/
 
 /-- Over an algebraically closed field a regular quadratic form is isometric to the standard sum
 of squares on `Fin n` exactly when its space has dimension `n`. -/
+@[simp]
 theorem _root_.QuadraticForm.equivalent_weightedSumSquares_one_iff_finrank_eq
     {K W : Type*} [Field K] [IsAlgClosed K] [Invertible (2 : K)]
     [AddCommGroup W] [Module K W] [FiniteDimensional K W]

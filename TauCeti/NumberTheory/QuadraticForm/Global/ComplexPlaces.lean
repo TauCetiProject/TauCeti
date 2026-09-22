@@ -37,8 +37,8 @@ consequences.  The real half, which needs the real-signature theory, lives in
 
 * `QuadraticForm.equivalent_atComplexEmbedding_iff_finrank_eq`: through a complex embedding
   regular forms are classified by their rank.
-* `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one_iff`: the localization is
-  the standard sum of squares on `Fin n` exactly when the rank is `n`.
+* `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one_iff_finrank_eq`: the
+  localization is the standard sum of squares on `Fin n` exactly when the rank is `n`.
 * `QuadraticForm.IsLocallyIsotropic.not_anisotropic_atComplexEmbedding`
 * `QuadraticForm.LocallyRepresentsScalar.represents_atComplexEmbedding`
 * `QuadraticForm.LocallyRepresents.isRepresentedBy_atComplexEmbedding`
@@ -76,7 +76,8 @@ omit [NumberField K] in
 /-- Through a complex embedding a regular quadratic form is isometric to the standard sum of
 squares on `Fin n` exactly when its global rank is `n`. -/
 @[simp]
-theorem equivalent_atComplexEmbedding_weightedSumSquares_one_iff [FiniteDimensional K V]
+theorem equivalent_atComplexEmbedding_weightedSumSquares_one_iff_finrank_eq
+    [FiniteDimensional K V]
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) (n : ℕ) :
     (Q.atComplexEmbedding w).Equivalent (weightedSumSquares ℂ (1 : Fin n → ℂ)) ↔
       Module.finrank K V = n := by

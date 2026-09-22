@@ -173,10 +173,8 @@ def realSignatureForm (p q : ℕ) : _root_.QuadraticForm ℝ (Fin p ⊕ Fin q �
 `p` weights are `1` and whose remaining `q` weights are `-1`. -/
 theorem equivalent_realSignatureForm_weightedSumSquares (p q : ℕ) :
     (realSignatureForm p q).Equivalent
-      (weightedSumSquares ℝ fun i : Fin (p + q) ↦
-        ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) := by
-  have hweight : (fun i : Fin (p + q) ↦
-      ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) ∘
+      (weightedSumSquares ℝ fun i : Fin (p + q) ↦ if (i : ℕ) < p then (1 : ℝ) else -1) := by
+  have hweight : (fun i : Fin (p + q) ↦ if (i : ℕ) < p then (1 : ℝ) else -1) ∘
       finSumFinEquiv = Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
     funext x
     cases x <;> simp
