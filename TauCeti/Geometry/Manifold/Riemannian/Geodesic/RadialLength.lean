@@ -62,7 +62,6 @@ theorem IsNormalDomain.pathELength_radialSegment {p : M} {U : Set (TangentSpace 
 
 /-- In particular, the radial segment from `p` to `exp_p v` has length equal to `‖v‖` for every
 vector `v` in a normal domain at `p`. -/
-@[simp]
 theorem IsNormalDomain.pathELength_radialSegment_zero_one {p : M}
     {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) {v : TangentSpace I p}
     (hv : v ∈ U) :
