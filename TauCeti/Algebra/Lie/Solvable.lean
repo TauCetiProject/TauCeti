@@ -35,7 +35,7 @@ whole algebra.
 
 ## Main statements
 
-* `LieIdeal.map_derivedSeriesOfIdeal_le` and `LieIdeal.map_derivedSeriesOfIdeal_eq`: the derived
+* `LieIdeal.derivedSeriesOfIdeal_map_le` and `LieIdeal.derivedSeriesOfIdeal_map_eq`: the derived
   series of an ideal maps into, and for a surjective homomorphism onto, the derived series of the
   image.
 * `LieIdeal.isSolvable_map`: the image of a solvable ideal under a surjective homomorphism is
@@ -70,7 +70,7 @@ variable (f : L →ₗ⁅R⁆ L') (I : LieIdeal R L)
 of the derived series of the image.
 
 This is `LieIdeal.derivedSeries_map_le` with `⊤` replaced by an arbitrary ideal. -/
-theorem map_derivedSeriesOfIdeal_le (k : ℕ) :
+theorem derivedSeriesOfIdeal_map_le (k : ℕ) :
     (derivedSeriesOfIdeal R L k I).map f ≤ derivedSeriesOfIdeal R L' k (I.map f) := by
   induction k with
   | zero => simp
@@ -82,7 +82,7 @@ theorem map_derivedSeriesOfIdeal_le (k : ℕ) :
 of the image.
 
 This is `LieIdeal.derivedSeries_map_eq` with `⊤` replaced by an arbitrary ideal. -/
-theorem map_derivedSeriesOfIdeal_eq (h : Function.Surjective f) (k : ℕ) :
+theorem derivedSeriesOfIdeal_map_eq (h : Function.Surjective f) (k : ℕ) :
     (derivedSeriesOfIdeal R L k I).map f = derivedSeriesOfIdeal R L' k (I.map f) := by
   induction k with
   | zero => simp
@@ -94,7 +94,7 @@ theorem isSolvable_map (h : Function.Surjective f) [IsSolvable ↥I] : IsSolvabl
   obtain ⟨k, hk⟩ := IsSolvable.solvable (R := R) (L := ↥I)
   rw [derivedSeries_eq_bot_iff] at hk
   refine IsSolvable.mk (R := R) (k := k) ?_
-  rw [derivedSeries_eq_bot_iff, ← map_derivedSeriesOfIdeal_eq f I h, map_eq_bot_iff, hk]
+  rw [derivedSeries_eq_bot_iff, ← derivedSeriesOfIdeal_map_eq f I h, map_eq_bot_iff, hk]
   exact bot_le
 
 /-- **Solvability descends along a Lie homomorphism.** An ideal is solvable as soon as its image
@@ -111,7 +111,7 @@ theorem isSolvable_of_isSolvable_map (h₁ : IsSolvable ↥(I ⊓ f.ker))
   -- After `k` steps the derived series of `I` has died in the image, so it lies in the kernel.
   have hle : derivedSeriesOfIdeal R L k I ≤ I ⊓ f.ker :=
     le_inf (derivedSeriesOfIdeal_le_self I k)
-      (map_eq_bot_iff.mp (le_bot_iff.mp ((map_derivedSeriesOfIdeal_le f I k).trans hk.le)))
+      (map_eq_bot_iff.mp (le_bot_iff.mp ((derivedSeriesOfIdeal_map_le f I k).trans hk.le)))
   refine IsSolvable.mk (R := R) (k := l + k) ?_
   rw [derivedSeries_eq_bot_iff, derivedSeriesOfIdeal_add]
   exact le_bot_iff.mp ((derivedSeriesOfIdeal_mono hle l).trans hl.le)
