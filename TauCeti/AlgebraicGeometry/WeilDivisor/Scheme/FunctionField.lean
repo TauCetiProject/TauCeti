@@ -79,11 +79,9 @@ theorem coeff_equivFunctionFieldDivisor
     simp only [equivFunctionFieldDivisor, Finsupp.domCongr_apply, WeilDivisor.coeff,
       Finsupp.equivMapDomain_apply]
 
-/-- The coefficient at the place attached to `x` is the coefficient at `x`.
-
-This is a named rewrite lemma rather than a simp lemma: the `simpNF` linter rejects the attribute
-because `coeff_equivFunctionFieldDivisor` first simplifies its left-hand side to the inverse image
-of the place. -/
+/-- The coefficient at the place attached to `x` is the coefficient at `x`. -/
+-- Not `@[simp]`: `coeff_equivFunctionFieldDivisor` first simplifies the left-hand side, so the
+-- `simpNF` linter rejects this specialized rule.
 theorem coeff_equivFunctionFieldDivisor_toPlace
     (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
     (hdim : ∀ x : X, coheight x ≤ 1) (D : SchemeWeilDivisor X)
@@ -96,6 +94,20 @@ theorem coeff_equivFunctionFieldDivisor_toPlace
   rw [coeff_equivFunctionFieldDivisor, ← hx,
     (CodimensionOnePoint.equivPlace hex hdim).symm_apply_apply]
 
+/-- Pulling a function-field divisor back to the curve preserves the coefficient at each
+codimension-one point. -/
+@[simp]
+theorem coeff_equivFunctionFieldDivisor_symm
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (D : Divisor k X.functionField)
+    (x : CodimensionOnePoint X) :
+    WeilDivisor.coeff ((equivFunctionFieldDivisor hex hdim).symm D) x =
+      WeilDivisor.coeff D (X.toPlace (k := k) (x : X)) := by
+  rw [equivFunctionFieldDivisor, Finsupp.domCongr_symm, Finsupp.domCongr_apply,
+    WeilDivisor.coeff, Finsupp.equivMapDomain_apply, Equiv.symm_symm,
+    CodimensionOnePoint.equivPlace_apply]
+  rfl
+
 /-- Reindexing sends the prime divisor at a codimension-one point to the divisor of its place. -/
 @[simp]
 theorem equivFunctionFieldDivisor_ofPoint
@@ -103,23 +115,25 @@ theorem equivFunctionFieldDivisor_ofPoint
     (hdim : ∀ x : X, coheight x ≤ 1) (x : CodimensionOnePoint X) :
     equivFunctionFieldDivisor hex hdim (WeilDivisor.ofPoint x) =
       WeilDivisor.ofPoint (X.toPlace (k := k) (x : X)) := by
-  have hx : CodimensionOnePoint.equivPlace (k := k) hex hdim x =
-      X.toPlace (k := k) (x : X) :=
-    CodimensionOnePoint.equivPlace_apply (k := k) hex hdim x
-  apply WeilDivisor.ext
-  intro P
-  rw [coeff_equivFunctionFieldDivisor, ← hx]
-  by_cases hP : (CodimensionOnePoint.equivPlace hex hdim).symm P = x
-  · have hP' : P = CodimensionOnePoint.equivPlace hex hdim x := by
-      rw [← (CodimensionOnePoint.equivPlace hex hdim).apply_symm_apply P, hP]
-    subst P
-    rw [(CodimensionOnePoint.equivPlace hex hdim).symm_apply_apply,
-      WeilDivisor.coeff_ofPoint_self, WeilDivisor.coeff_ofPoint_self]
-  · have hP' : P ≠ CodimensionOnePoint.equivPlace hex hdim x := by
-      intro h
-      apply hP
-      rw [h, (CodimensionOnePoint.equivPlace hex hdim).symm_apply_apply]
-    rw [WeilDivisor.coeff_ofPoint_of_ne hP, WeilDivisor.coeff_ofPoint_of_ne hP']
+  rw [equivFunctionFieldDivisor, Finsupp.domCongr_apply,
+    Finsupp.equivMapDomain_eq_mapDomain, ← WeilDivisor.pushforward_apply,
+    WeilDivisor.pushforward_ofPoint, CodimensionOnePoint.equivPlace_apply]
+
+/-- Pulling back a prime function-field divisor gives the prime divisor at the corresponding
+codimension-one point. -/
+@[simp]
+theorem equivFunctionFieldDivisor_symm_ofPoint
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (P : Place k X.functionField) :
+    (equivFunctionFieldDivisor hex hdim).symm (WeilDivisor.ofPoint P) =
+      WeilDivisor.ofPoint ((CodimensionOnePoint.equivPlace hex hdim).symm P) := by
+  have hP : X.toPlace (k := k)
+      ((CodimensionOnePoint.equivPlace hex hdim).symm P : X) = P := by
+    rw [← CodimensionOnePoint.equivPlace_apply (k := k) hex hdim,
+      (CodimensionOnePoint.equivPlace hex hdim).apply_symm_apply]
+  apply (equivFunctionFieldDivisor hex hdim).injective
+  rw [(equivFunctionFieldDivisor hex hdim).apply_symm_apply,
+    equivFunctionFieldDivisor_ofPoint, hP]
 
 /-- The divisor equivalence is the formal pushforward along the point-to-place map. -/
 theorem equivFunctionFieldDivisor_apply
@@ -140,9 +154,10 @@ theorem equivFunctionFieldDivisor_le_iff
     (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
     (hdim : ∀ x : X, coheight x ≤ 1) {D E : SchemeWeilDivisor X} :
     equivFunctionFieldDivisor hex hdim D ≤ equivFunctionFieldDivisor hex hdim E ↔ D ≤ E := by
-  simp only [WeilDivisor.le_iff, coeff_equivFunctionFieldDivisor]
-  exact (CodimensionOnePoint.equivPlace hex hdim).symm.forall_congr
-    (fun _ ↦ Iff.rfl)
+  simpa only [equivFunctionFieldDivisor, Finsupp.domCongr_apply,
+    Finsupp.equivMapDomain_eq_mapDomain] using
+    Finsupp.mapDomain_le_mapDomain_iff_le
+      (CodimensionOnePoint.equivPlace hex hdim).injective D E
 
 /-- Reindexing along the point-to-place equivalence preserves effectivity. -/
 @[simp]
@@ -154,6 +169,17 @@ theorem isEffective_equivFunctionFieldDivisor_iff
   rw [WeilDivisor.isEffective_iff_zero_le, WeilDivisor.isEffective_iff_zero_le,
     ← map_zero (equivFunctionFieldDivisor hex hdim), equivFunctionFieldDivisor_le_iff]
 
+/-- Pulling a function-field divisor back to the curve preserves effectivity. -/
+@[simp]
+theorem isEffective_equivFunctionFieldDivisor_symm_iff
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) {D : Divisor k X.functionField} :
+    WeilDivisor.IsEffective ((equivFunctionFieldDivisor hex hdim).symm D) ↔
+      WeilDivisor.IsEffective D := by
+  rw [← isEffective_equivFunctionFieldDivisor_iff (hex := hex) (hdim := hdim)
+    (D := (equivFunctionFieldDivisor hex hdim).symm D),
+    (equivFunctionFieldDivisor hex hdim).apply_symm_apply]
+
 /-- The function-field degree of a reindexed divisor is its scheme-theoretic relative degree. -/
 @[simp]
 theorem degree_equivFunctionFieldDivisor
@@ -161,26 +187,26 @@ theorem degree_equivFunctionFieldDivisor
     (hdim : ∀ x : X, coheight x ≤ 1) (D : SchemeWeilDivisor X) :
     Divisor.degree (equivFunctionFieldDivisor hex hdim D) =
       relativeDegree (X ↘ Spec (.of k)) D := by
-  induction D using Finsupp.induction with
-  | zero => simp
-  | single_add x n D hx hn ih =>
-      have hsingle :
-          Divisor.degree (equivFunctionFieldDivisor hex hdim (Finsupp.single x n)) =
-            relativeDegree (X ↘ Spec (.of k)) (Finsupp.single x n) := by
-        rw [WeilDivisor.single_eq_zsmul_ofPoint, map_zsmul, map_zsmul,
-          map_zsmul, equivFunctionFieldDivisor_ofPoint, Divisor.degree_ofPoint,
-          relativeDegree_ofPoint]
-        congr 1
-        exact_mod_cast X.toPlace_degree_eq_residueDegree (k := k) (x : X)
-      calc
-        Divisor.degree
-              (equivFunctionFieldDivisor hex hdim (Finsupp.single x n + D)) =
-            Divisor.degree (equivFunctionFieldDivisor hex hdim (Finsupp.single x n)) +
-              Divisor.degree (equivFunctionFieldDivisor hex hdim D) := by rw [map_add, map_add]
-        _ = relativeDegree (X ↘ Spec (.of k)) (Finsupp.single x n) +
-              relativeDegree (X ↘ Spec (.of k)) D := by rw [hsingle, ih]
-        _ = relativeDegree (X ↘ Spec (.of k)) (Finsupp.single x n + D) :=
-          (map_add _ _ _).symm
+  rw [equivFunctionFieldDivisor_apply, Divisor.degree_eq_weightedDegree,
+    WeilDivisor.weightedDegree_pushforward, WeilDivisor.weightedDegree_apply,
+    relativeDegree_apply]
+  apply Finsupp.sum_congr
+  intro x _
+  congr 1
+  change ((X.toPlace (k := k) (x : X)).degree : ℤ) =
+    ((X ↘ Spec (.of k)).residueDegree x : ℤ)
+  exact_mod_cast X.toPlace_degree_eq_residueDegree (k := k) (x : X)
+
+/-- The scheme-theoretic degree of a pulled-back function-field divisor is its function-field
+degree. -/
+@[simp]
+theorem relativeDegree_equivFunctionFieldDivisor_symm
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (D : Divisor k X.functionField) :
+    relativeDegree (X ↘ Spec (.of k)) ((equivFunctionFieldDivisor hex hdim).symm D) =
+      Divisor.degree D := by
+  rw [← degree_equivFunctionFieldDivisor (hex := hex) (hdim := hdim),
+    (equivFunctionFieldDivisor hex hdim).apply_symm_apply]
 
 variable [IsNoetherian X]
 
@@ -205,11 +231,10 @@ theorem equivFunctionFieldDivisor_principalHom
   rw [he, coeff_equivFunctionFieldDivisor_toPlace,
     WeilDivisor.OrderSystem.coeff_principalDivisor,
     WeilDivisor.OrderSystem.coeff_principalDivisor,
-    WeilDivisor.OrderSystem.ofScheme_ord, ← ofMul_toMul g,
-    Place.orderSystem_ord, orderAt_apply]
-  rw [toMul_ofMul]
-  exact (CodimensionOnePoint.toPlace_ord (k := k) x
-    ((Additive.toMul g : X.functionFieldˣ) : X.functionField)).symm
+    WeilDivisor.OrderSystem.ofScheme_ord, ← ofMul_toMul g, Place.orderSystem_ord]
+  simpa only [Place.ordAddMonoidHom_apply, toMul_ofMul] using
+    DFunLike.congr_fun (CodimensionOnePoint.toPlace_ordAddMonoidHom (k := k) x).symm
+      (Additive.ofMul (Additive.toMul g))
 
 /-- Scheme-theoretic principal divisors become the corresponding function-field principal
 divisors under the point-to-place equivalence. -/
