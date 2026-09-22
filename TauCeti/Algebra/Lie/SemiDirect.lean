@@ -43,10 +43,10 @@ the other, and a theorem may be stated against the external form without loss.
 * `LieIdeal.nonempty_lieEquiv_semiDirectSum` and `LieIdeal.exists_lieEquiv_semiDirectSum`:
   **the recognition theorem**, in the `Nonempty (L ≃ₗ⁅R⁆ ↥S ⋊⁅ψ⁆ ↥H)` form that consumers of a
   splitting hypothesis take as input.
-* `LieIdeal.right_semiDirectSumEquiv_symm_eq_zero_iff` and
-  `LieIdeal.left_semiDirectSumEquiv_symm_eq_zero_iff`: the recognition isomorphism carries `S` and
-  `H` onto the two factors, which is what lets a statement about the left factor be read back as a
-  statement about the ideal.
+* `LieIdeal.semiDirectSumEquiv_symm_apply_right_eq_zero_iff` and
+  `LieIdeal.semiDirectSumEquiv_symm_apply_left_eq_zero_iff`: the recognition isomorphism carries
+  `S` and `H` onto the two factors, which is what lets a statement about the left factor be read
+  back as a statement about the ideal.
 * `LieAlgebra.SemiDirectSum.isCompl_ker_projr_range_inr`: the converse, that an external semidirect
   sum is internally presented by the kernel of `projr` and the range of `inr`, with
   `LieAlgebra.SemiDirectSum.exists_lieEquiv_semiDirectSum_ker_projr` the resulting
@@ -206,7 +206,7 @@ theorem semiDirectSumEquiv_symm_apply (h : IsCompl S.toSubmodule H.toSubmodule) 
 /-- The recognition isomorphism identifies the ideal `S` with the left factor: an element of `L`
 lies in `S` exactly when its preimage has vanishing right component. -/
 @[simp]
-theorem right_semiDirectSumEquiv_symm_eq_zero_iff (h : IsCompl S.toSubmodule H.toSubmodule)
+theorem semiDirectSumEquiv_symm_apply_right_eq_zero_iff (h : IsCompl S.toSubmodule H.toSubmodule)
     {x : L} : ((semiDirectSumEquiv S H h).symm x).right = 0 ↔ x ∈ S := by
   rw [semiDirectSumEquiv_symm_apply]
   exact Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero _ _ h
@@ -214,7 +214,7 @@ theorem right_semiDirectSumEquiv_symm_eq_zero_iff (h : IsCompl S.toSubmodule H.t
 /-- The recognition isomorphism identifies the Lie subalgebra `H` with the right factor: an element
 of `L` lies in `H` exactly when its preimage has vanishing left component. -/
 @[simp]
-theorem left_semiDirectSumEquiv_symm_eq_zero_iff (h : IsCompl S.toSubmodule H.toSubmodule)
+theorem semiDirectSumEquiv_symm_apply_left_eq_zero_iff (h : IsCompl S.toSubmodule H.toSubmodule)
     {x : L} : ((semiDirectSumEquiv S H h).symm x).left = 0 ↔ x ∈ H := by
   rw [semiDirectSumEquiv_symm_apply]
   exact Submodule.prodEquivOfIsCompl_symm_apply_fst_eq_zero _ _ h
