@@ -152,8 +152,8 @@ theorem IsRecutOfLeftEqLeft.recut_rights {D E : GridRectangleDecomposition x z}
     (h : D.IsRecutOfLeftEqLeft E) :
     E.first.right = D.second.right ∧ E.second.right = D.first.right := ⟨h.2.1, h.2.2.1⟩
 
-/-- The two possible row configurations for the recut in the left-left orientation. -/
-theorem IsRecutOfLeftEqLeft.recut_rows {D E : GridRectangleDecomposition x z}
+/-- The two possible column configurations for the recut in the left-left orientation. -/
+theorem IsRecutOfLeftEqLeft.recut_columns {D E : GridRectangleDecomposition x z}
     (h : D.IsRecutOfLeftEqLeft E) :
     (D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
         E.middle = x.swapColumns D.first.right D.second.right ∧
@@ -161,6 +161,51 @@ theorem IsRecutOfLeftEqLeft.recut_rows {D E : GridRectangleDecomposition x z}
       (D.second.right ∈ Grid.cIoo D.first.left D.first.right ∧
         E.middle = x.swapColumns D.first.left D.second.right ∧
           E.first.left = D.first.left ∧ E.second.left = D.second.right) := h.2.2.2
+
+/-- The recut preserves the two opposing initial sides in the right-right orientation. -/
+theorem IsRecutOfRightEqRight.recut_lefts {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfRightEqRight E) :
+    E.first.left = D.second.left ∧ E.second.left = D.first.left := ⟨h.2.1, h.2.2.1⟩
+
+/-- The two possible column configurations for the recut in the right-right orientation. -/
+theorem IsRecutOfRightEqRight.recut_columns {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfRightEqRight E) :
+    (D.first.left ∈ Grid.cIoo D.second.left D.first.right ∧
+        E.middle = x.swapColumns D.second.left D.first.left ∧
+          E.first.right = D.first.left ∧ E.second.right = D.first.right) ∨
+      (D.second.left ∈ Grid.cIoo D.first.left D.first.right ∧
+        E.middle = x.swapColumns D.second.left D.first.right ∧
+          E.first.right = D.first.right ∧ E.second.right = D.second.left) := h.2.2.2
+
+/-- The recut preserves the two opposing initial rows in the left-right orientation. -/
+theorem IsRecutOfLeftEqRight.recut_bottoms {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfLeftEqRight E) :
+    E.first.bottom = D.second.bottom ∧ E.second.bottom = D.first.bottom := ⟨h.2.1, h.2.2.1⟩
+
+/-- The two possible row configurations for the recut in the left-right orientation. -/
+theorem IsRecutOfLeftEqRight.recut_rows {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfLeftEqRight E) :
+    (D.first.bottom ∈ Grid.cIoo D.second.bottom D.first.top ∧
+        E.middle = x.swapRows D.second.bottom D.first.bottom ∧
+          E.first.top = D.first.bottom ∧ E.second.top = D.first.top) ∨
+      (D.second.bottom ∈ Grid.cIoo D.first.bottom D.first.top ∧
+        E.middle = x.swapRows D.second.bottom D.first.top ∧
+          E.first.top = D.first.top ∧ E.second.top = D.second.bottom) := h.2.2.2
+
+/-- The recut preserves the two opposing terminal rows in the right-left orientation. -/
+theorem IsRecutOfRightEqLeft.recut_tops {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfRightEqLeft E) :
+    E.first.top = D.second.top ∧ E.second.top = D.first.top := ⟨h.2.1, h.2.2.1⟩
+
+/-- The two possible row configurations for the recut in the right-left orientation. -/
+theorem IsRecutOfRightEqLeft.recut_rows {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfRightEqLeft E) :
+    (D.first.top ∈ Grid.cIoo D.first.bottom D.second.top ∧
+        E.middle = x.swapRows D.first.top D.second.top ∧
+          E.first.bottom = D.first.top ∧ E.second.bottom = D.first.bottom) ∨
+      (D.second.top ∈ Grid.cIoo D.first.bottom D.first.top ∧
+        E.middle = x.swapRows D.first.bottom D.second.top ∧
+          E.first.bottom = D.first.bottom ∧ E.second.bottom = D.second.top) := h.2.2.2
 
 /-- `E` is the recut of the two-step decomposition `D`: it repartitions the same domain into two
 empty rectangles, passes through a different intermediate state, and carries the side data

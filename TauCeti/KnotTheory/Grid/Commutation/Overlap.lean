@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Commutation.Disjoint
+public import TauCeti.KnotTheory.Grid.Commutation.Decomposition
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
 
 /-!
@@ -72,32 +72,19 @@ private theorem right_ne_right_of_left_eq_left
   · exact (h.2 hcommon').elim
 
 /-- Emptiness of the two typed domains remains emptiness after forgetting the pentagon turn row. -/
-private theorem toRectangleDecomposition_isEmpty
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
-    D.toRectangleDecomposition.first.IsEmpty ∧ D.toRectangleDecomposition.second.IsEmpty :=
-  ⟨D.isEmpty_toRectangleDecomposition_first hrectangle,
-    D.isEmpty_toRectangleDecomposition_second hpentagon⟩
-
-/-- The underlying rectangle recut of a rectangle--pentagon decomposition, transporting the
-empty-rectangle evidence from the typed pentagon to its forgotten rectangle. -/
-noncomputable def recutUnderlying
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (hone : D.toRectangleDecomposition.HasOneCommonSide)
-    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
-    GridRectangleDecomposition x z :=
-  D.toRectangleDecomposition.recut hone
-    (D.toRectangleDecomposition_isEmpty hrectangle hpentagon).1
-    (D.toRectangleDecomposition_isEmpty hrectangle hpentagon).2
-
 private theorem isRecutOfLeftEqLeft_recut
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     D.toRectangleDecomposition.IsRecutOfLeftEqLeft
-      (recutUnderlying D hone hrectangle hpentagon) := by
-  have hempty := D.toRectangleDecomposition_isEmpty hrectangle hpentagon
+      (D.toRectangleDecomposition.recut hone
+        (D.isEmpty_toRectangleDecomposition_first hrectangle)
+        (D.isEmpty_toRectangleDecomposition_second hpentagon)) := by
+  have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
+      D.toRectangleDecomposition.second.IsEmpty :=
+    ⟨D.isEmpty_toRectangleDecomposition_first hrectangle,
+    D.isEmpty_toRectangleDecomposition_second hpentagon⟩
   have hcommon' : D.toRectangleDecomposition.first.left =
       D.toRectangleDecomposition.second.left := by
     simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_second_left] using
@@ -119,7 +106,9 @@ theorem recut_first_right_of_left_eq_left
     (hcommon : D.rectangle.left = D.pentagon.left)
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
-    (recutUnderlying D hone hrectangle hpentagon).first.right = finRotate n a := by
+    (D.toRectangleDecomposition.recut hone
+      (D.isEmpty_toRectangleDecomposition_first hrectangle)
+      (D.isEmpty_toRectangleDecomposition_second hpentagon)).first.right = finRotate n a := by
   have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hrectangle hpentagon
   calc
     _ = D.toRectangleDecomposition.second.right := hdata.recut_rights.1
@@ -134,9 +123,16 @@ theorem turn_mem_recut_first_of_left_eq_left
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     s ∈ Grid.cIco
-      (recutUnderlying D hone hrectangle hpentagon).first.bottom
-      (recutUnderlying D hone hrectangle hpentagon).first.top := by
-  have hempty := D.toRectangleDecomposition_isEmpty hrectangle hpentagon
+      (D.toRectangleDecomposition.recut hone
+        (D.isEmpty_toRectangleDecomposition_first hrectangle)
+        (D.isEmpty_toRectangleDecomposition_second hpentagon)).first.bottom
+      (D.toRectangleDecomposition.recut hone
+        (D.isEmpty_toRectangleDecomposition_first hrectangle)
+        (D.isEmpty_toRectangleDecomposition_second hpentagon)).first.top := by
+  have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
+      D.toRectangleDecomposition.second.IsEmpty :=
+    ⟨D.isEmpty_toRectangleDecomposition_first hrectangle,
+    D.isEmpty_toRectangleDecomposition_second hpentagon⟩
   have hcommon' : D.toRectangleDecomposition.first.left =
       D.toRectangleDecomposition.second.left := by
     simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_second_left] using
@@ -167,7 +163,7 @@ theorem turn_mem_recut_first_of_left_eq_left
       D.toRectangleDecomposition.second.top := D.turn_mem_toRectangleDecomposition_second
   have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hrectangle hpentagon
   have hrecutRight := hdata.recut_rights.1
-  have hbranch := hdata.recut_rows
+  have hbranch := hdata.recut_columns
   rcases hbranch with ⟨-, -, hrecutLeft, -⟩ | ⟨-, -, hrecutLeft, -⟩
   · rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hrecutLeft,
       hrecutRight, ← hsecondBottom, ← hsecondTop]
@@ -191,7 +187,9 @@ noncomputable def recutLeftEqLeft
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     GridPentagonRectangleDecomposition a s x z := by
-  let E := recutUnderlying D hone hrectangle hpentagon
+  let E := D.toRectangleDecomposition.recut hone
+    (D.isEmpty_toRectangleDecomposition_first hrectangle)
+    (D.isEmpty_toRectangleDecomposition_second hpentagon)
   exact {
     middle := E.middle
     pentagon := GridPentagonBetween.ofRightEq E.first
@@ -208,8 +206,12 @@ theorem recutLeftEqLeft_toRectangleDecomposition
     (hone : D.toRectangleDecomposition.HasOneCommonSide)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).toRectangleDecomposition =
-      recutUnderlying D hone hrectangle hpentagon := by
-  let E := recutUnderlying D hone hrectangle hpentagon
+      D.toRectangleDecomposition.recut hone
+        (D.isEmpty_toRectangleDecomposition_first hrectangle)
+        (D.isEmpty_toRectangleDecomposition_second hpentagon) := by
+  let E := D.toRectangleDecomposition.recut hone
+    (D.isEmpty_toRectangleDecomposition_first hrectangle)
+    (D.isEmpty_toRectangleDecomposition_second hpentagon)
   have hpentagon := GridPentagonBetween.ofRightEq_toGridRectangleBetween E.first
     (D.recut_first_right_of_left_eq_left hcommon hone hrectangle hpentagon)
     (D.turn_mem_recut_first_of_left_eq_left hcommon hone hrectangle hpentagon)
@@ -237,8 +239,8 @@ theorem isRecut_recutLeftEqLeft
       (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).toRectangleDecomposition := by
   rw [D.recutLeftEqLeft_toRectangleDecomposition hcommon hone hrectangle hpentagon]
   exact D.toRectangleDecomposition.isRecut_recut
-    hone (D.toRectangleDecomposition_isEmpty hrectangle hpentagon).1
-    (D.toRectangleDecomposition_isEmpty hrectangle hpentagon).2
+    hone (D.isEmpty_toRectangleDecomposition_first hrectangle)
+    (D.isEmpty_toRectangleDecomposition_second hpentagon)
 
 /-- The underlying rectangles of the promoted overlap recut cover the same squares as the
 original rectangle and the rectangle underlying the original pentagon. -/
