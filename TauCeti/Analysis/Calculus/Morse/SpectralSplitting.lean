@@ -288,10 +288,7 @@ theorem unstableProjection_def (hf : ContDiffAt ℝ 2 f x)
     hf.unstableProjection hker = ContinuousLinearMap.id ℝ E - hf.stableProjection hker := by
   rw [unstableProjection]
 
-/-- The unstable projection subtracts the stable component. This is deliberately not a `simp`
-lemma: unfolding it would keep `ContDiffAt.unstableProjection` out of simp normal form and so
-defeat `ContDiffAt.unstableProjection_apply_eq_zero_iff` and
-`ContDiffAt.unstableProjection_apply_eq_self_iff`. -/
+/-- The unstable projection subtracts the stable component. -/
 theorem unstableProjection_apply (hf : ContDiffAt ℝ 2 f x)
     (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
     hf.unstableProjection hker v = v - hf.stableProjection hker v := by
@@ -404,9 +401,7 @@ theorem unstableProjection_def (h : IsNondegenerateCriticalPoint f x) :
     h.unstableProjection = ContinuousLinearMap.id ℝ E - h.stableProjection := by
   rw [unstableProjection]
 
-/-- The unstable projection is the identity minus the stable projection. This is deliberately
-not a `simp` lemma: unfolding it would keep `unstableProjection` out of simp normal form and
-so defeat `unstableProjection_apply_eq_zero_iff` and `unstableProjection_apply_eq_self_iff`. -/
+/-- The unstable projection is the identity minus the stable projection. -/
 theorem unstableProjection_apply (h : IsNondegenerateCriticalPoint f x) (v : E) :
     h.unstableProjection v = v - h.stableProjection v := by
   simp [unstableProjection]
