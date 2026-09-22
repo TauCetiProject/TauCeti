@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
 
 /-!
@@ -15,7 +17,9 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
 
 The real line covers every real additive circle `AddCircle p`. This file combines that
 covering with the invariance of higher homotopy groups under covering maps to show that all
-homotopy groups of a circle in dimensions at least two are trivial.
+homotopy groups of a circle in dimensions at least two are trivial. The complex unit circle
+`Circle` is homeomorphic to `AddCircle (2 * π)`, so its higher homotopy groups vanish as
+well.
 
 The only calculation needed in the total space is elementary: any two generalized loops in a
 real topological vector space are homotopic relative to the cube boundary, so all homotopy
@@ -32,6 +36,8 @@ This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
   elements; instance resolution specializes it to `π_(n + 2)`.
 * `AddCircle.homotopyGroup_eq_one`, `AddCircle.homotopyGroupPi_eq_one`: the corresponding
   equalities.
+* `Circle.subsingleton_homotopyGroup`, `Circle.homotopyGroup_eq_one` and
+  `Circle.homotopyGroupPi_eq_one`: the same statements for the complex unit circle.
 
 The covering map is Junyan Xu's `AddCircle.isCoveringMap_coe` in
 `Mathlib.Topology.Covering.AddCircle`.
@@ -63,3 +69,25 @@ theorem homotopyGroupPi_eq_one (n : ℕ) (a : π_ (n + 2) (AddCircle p) x) : a =
   homotopyGroup_eq_one p x a
 
 end AddCircle
+
+namespace Circle
+
+variable {N : Type*} [Nontrivial N] (z : Circle)
+
+/-- Every higher homotopy group of the complex unit circle is trivial. It is transported from
+`AddCircle (2 * π)` along `AddCircle.homeomorphCircle`. -/
+instance subsingleton_homotopyGroup : Subsingleton (HomotopyGroup N Circle z) :=
+  (HomotopyGroup.homeomorphEquivOfEq (N := N)
+      (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne')
+      ((AddCircle.homeomorphCircle (T := 2 * Real.pi)
+        Real.two_pi_pos.ne').apply_symm_apply z)).subsingleton_congr.mp inferInstance
+
+/-- Every higher homotopy class of the complex unit circle is the identity. -/
+theorem homotopyGroup_eq_one [DecidableEq N] (a : HomotopyGroup N Circle z) : a = 1 :=
+  Subsingleton.elim _ _
+
+/-- Every element of `π_(n + 2)` of the complex unit circle is the identity. -/
+theorem homotopyGroupPi_eq_one (n : ℕ) (a : π_ (n + 2) Circle z) : a = 1 :=
+  homotopyGroup_eq_one z a
+
+end Circle
