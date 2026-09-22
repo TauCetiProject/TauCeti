@@ -33,7 +33,9 @@ Frobenius carrier and the generic prime-counting API.
   unweighted count.
 
 The transfer statements are deliberately parameterized by their analytic asymptotic hypotheses:
-they do not assume the Chebotarev theorem they are intended to support.
+they do not assume the Chebotarev theorem they are intended to support. Thus this is the conditional
+Layer 13 transfer interface; the separate Layer 12.5 theorem `tendsto_frobeniusPsi` supplies the
+hypothesis for the later unconditional conclusions.
 -/
 
 public section
