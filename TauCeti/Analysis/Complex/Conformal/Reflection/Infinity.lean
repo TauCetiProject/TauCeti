@@ -115,15 +115,15 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
     (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
     (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
-    (hφconj : ∀ z, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφconj : Filter.Eventually
+      (fun z => φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z)) (cobounded ℂ))
     (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]
     exact hz
   refine tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv Metric.isOpen_ball hball
-    (Metric.mem_ball_self hr) hcont hholo hreal hupper hinj hφcont
-    (Eventually.of_forall hφconj) fun z hz => ?_
+    (Metric.mem_ball_self hr) hcont hholo hreal hupper hinj hφcont hφconj fun z hz => ?_
   have hz0 : z ≠ 0 := fun h => by simp [h] at hz
   -- Off the origin, the inverse coordinate of the inverse coordinate is the original map.
   have heq : (fun w : ℂ => g (-w⁻¹)) =ᶠ[𝓝 z] fun w : ℂ => (f w - q) / b := by
