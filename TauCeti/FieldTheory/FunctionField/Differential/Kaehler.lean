@@ -24,7 +24,7 @@ An algebraic function field of one variable with a separating element is the mot
 there `F` is moreover finite over `k(x)`, which the basis construction does not need. Separability
 is not cosmetic — it is what the base-change argument runs on — so the general basis results carry
 it as a hypothesis. For a one-variable function field over a perfect field, the final theorem also
-proves the converse: a transcendental `x` is separating exactly when `d x` is nonzero.
+proves the converse: `x` is separating exactly when `d x` is nonzero.
 
 The proof is the base-change route: `k(x)/k` is a localization of the polynomial ring, whose
 differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence formally étale
@@ -39,8 +39,11 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
 * `TauCeti.derivativeOfSeparating`: differentiation `y ↦ dy/dx` with respect to `x`, as a
   `k`-derivation of `F`, with `TauCeti.derivativeOfSeparating_smul_D` the identity
   `d y = (dy/dx) · dx` and `TauCeti.eq_derivativeOfSeparating` its uniqueness.
-* `TauCeti.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a fixed
-  transcendental parameter over a perfect field.
+* `TauCeti.D_eq_zero_of_isSeparable`: a separable algebraic element has vanishing differential,
+  so over a perfect field `TauCeti.transcendental_of_D_ne_zero` reads a nonzero differential as
+  transcendence.
+* `TauCeti.IsFunctionField.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a
+  fixed parameter over a perfect field.
 
 ## References
 
@@ -151,13 +154,43 @@ theorem derivativeOfSeparating_self : derivativeOfSeparating hx x = 1 :=
 
 end Separating
 
+/-- **A separable algebraic element has vanishing differential**: differentiating the relation
+`(minpoly k x)(x) = 0` gives `(minpoly k x)'(x) • d x = 0`, and separability makes the scalar
+nonzero. -/
+theorem D_eq_zero_of_isSeparable (hx : IsSeparable k x) : D k F x = 0 := by
+  have hcoeff : aeval x (minpoly k x).derivative ≠ 0 :=
+    Separable.aeval_derivative_ne_zero hx (minpoly.aeval k x)
+  have hder := (D k F).map_aeval (minpoly k x) x
+  rw [minpoly.aeval, map_zero] at hder
+  exact (smul_eq_zero.mp hder.symm).resolve_left hcoeff
+
 variable [PerfectField k]
 
-/-- A transcendental element of a one-variable function field over a perfect field is
-separating exactly when its universal differential is nonzero. -/
-theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F)
-    (hx : Transcendental k x) :
+/-- Over a perfect base field, an element with nonzero universal differential is transcendental:
+an algebraic element is separable, hence has vanishing differential. -/
+theorem transcendental_of_D_ne_zero (hx : D k F x ≠ 0) : Transcendental k x := by
+  intro halg
+  exact hx (D_eq_zero_of_isSeparable
+    (PerfectField.separable_of_irreducible (minpoly.irreducible halg.isIntegral)))
+
+namespace IsFunctionField
+
+/-- An element of a one-variable function field over a perfect field is separating exactly when
+its universal differential is nonzero. Both sides fail for an algebraic `x`: its differential
+vanishes, while separability of `F / k⟮x⟯` would make the function field algebraic over `k`. -/
+theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
     Algebra.IsSeparable k⟮x⟯ F ↔ D k F x ≠ 0 := by
+  by_cases hx : Transcendental k x
+  case neg =>
+    have halg : IsAlgebraic k x := not_not.mp hx
+    have hD : D k F x = 0 := D_eq_zero_of_isSeparable
+      (PerfectField.separable_of_irreducible (minpoly.irreducible halg.isIntegral))
+    refine iff_of_false (fun hsep ↦ ?_) (not_not.mpr hD)
+    let _ := hsep
+    let _ : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
+    have halgF : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮x⟯ F
+    obtain ⟨y, hy⟩ := hF.exists_transcendental
+    exact hy (halgF.1 y)
   let _ := hF.finiteDimensional_adjoin hx
   have hunr : Algebra.IsSeparable k⟮x⟯ F ↔ Subsingleton Ω[F⁄k⟮x⟯] := by
     rw [← Algebra.FormallyUnramified.iff_isSeparable, Algebra.formallyUnramified_iff]
@@ -171,6 +204,7 @@ theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F)
   have hrange : (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range =
       Submodule.span F {D k F x} := by
     let x' : k⟮x⟯ := ⟨x, IntermediateField.subset_adjoin k {x} rfl⟩
+    have hx'val : algebraMap k⟮x⟯ F x' = x := rfl
     have hx' : Transcendental k x' :=
       (Subalgebra.transcendental_iff_transcendental_val
         (S := k⟮x⟯.toSubalgebra)).mpr hx
@@ -197,10 +231,9 @@ theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F)
           (Submodule.mem_span_singleton_self _))
       | add a b ha hb => rw [map_add]; exact Submodule.add_mem _ ha hb
     · rw [Submodule.span_le, Set.singleton_subset_iff]
-      exact ⟨1 ⊗ₜ D k k⟮x⟯ x', by
-        rw [KaehlerDifferential.mapBaseChange_tmul, one_smul,
-          KaehlerDifferential.map_D]
-        rfl⟩
+      refine ⟨1 ⊗ₜ D k k⟮x⟯ x', ?_⟩
+      rw [KaehlerDifferential.mapBaseChange_tmul, one_smul, KaehlerDifferential.map_D]
+      exact congrArg (D k F) hx'val
   have hdim : finrank F Ω[F⁄k] = 1 := by
     obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
     let _ := hsep
@@ -214,5 +247,7 @@ theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F)
       exact D_ne_zero_of_separating hy ((Submodule.mem_bot _).1 (h ▸ Submodule.mem_top))
     · exact fun hdx ↦ (finrank_eq_one_iff_of_nonzero _ hdx).mp hdim
   rw [hunr, hmap, hrange, hspan]
+
+end IsFunctionField
 
 end TauCeti
