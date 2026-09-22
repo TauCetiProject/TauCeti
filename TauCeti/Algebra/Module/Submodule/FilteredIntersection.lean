@@ -131,11 +131,12 @@ filtration, which is how a faithful representation on a quotient is obtained. -/
 theorem exists_mkQ_comp_injective_of_directed [Nonempty ι] [IsArtinian R N] (f : N →ₗ[R] M)
     (hf : Function.Injective f) (F : ι → Submodule R M) (hF : Directed (· ≥ ·) F)
     (h : ⨅ j, F j = ⊥) : ∃ i, Function.Injective ((F i).mkQ ∘ₗ f) := by
-  obtain ⟨i, hi⟩ := Directed.exists_eq_iInf (f := fun j ↦ Submodule.comap f (F j))
-    fun j k ↦ (hF j k).imp fun _ hl ↦ ⟨Submodule.comap_mono hl.1, Submodule.comap_mono hl.2⟩
+  obtain ⟨i, hi⟩ := Submodule.exists_disjoint_of_directed (range f) F hF (h ▸ disjoint_bot_right)
   refine ⟨i, ker_eq_bot.mp ?_⟩
-  rw [ker_comp, Submodule.ker_mkQ, hi, ← Submodule.comap_iInf, h, Submodule.comap_bot]
-  exact ker_eq_bot.mpr hf
+  rw [ker_comp, Submodule.ker_mkQ, eq_bot_iff]
+  intro x hx
+  have hx0 : f x = 0 := Submodule.disjoint_def.mp hi (f x) (mem_range_self f x) hx
+  exact (Submodule.mem_bot R).mpr (hf (by rw [map_zero]; exact hx0))
 
 end LinearMap
 
