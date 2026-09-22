@@ -25,11 +25,9 @@ in particular over fields, where every module is flat.
 
 * `TauCeti.HopfIdeal.kerOfSurjective`: the Hopf ideal given by the kernel of a surjective bialgebra
   morphism.
-* `TauCeti.HopfIdeal.kerOfSurjective_le_kerOfSurjective_comp`: a surjective Hopf kernel grows under
-  postcomposition.
 * `TauCeti.HopfIdeal.ker`: the kernel Hopf ideal of a bialgebra morphism with flat codomain and
   flat kernel quotient.
-* `TauCeti.HopfIdeal.ker_le_ker_comp`: a flat Hopf kernel grows under postcomposition.
+* `TauCeti.HopfIdeal.ker_le_ker_comp`: a Hopf kernel grows under postcomposition.
 * `TauCeti.HopfIdeal.kerOfSurjective_eq_ker`: comparison of the two constructions when both apply.
 * `TauCeti.HopfIdeal.kerOfSurjective_toIdeal` and
   `TauCeti.HopfIdeal.mem_kerOfSurjective`: its characteristic API.
@@ -230,15 +228,6 @@ theorem mem_kerOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) {x
 theorem kerOfSurjective_eq_bot_iff (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     kerOfSurjective f hf = ⊥ ↔ Function.Injective f :=
   eq_bot_iff_injective f (kerOfSurjective_toIdeal f hf)
-
-/-- The surjective kernel Hopf ideal of a morphism is contained in the kernel after
-postcomposition. -/
-theorem kerOfSurjective_le_kerOfSurjective_comp {L : Type x} [Ring L] [HopfAlgebra R L]
-    (f : H →ₐc[R] K) (hf : Function.Surjective f)
-    (g : K →ₐc[R] L) (hgf : Function.Surjective (g.comp f)) :
-    kerOfSurjective f hf ≤ kerOfSurjective (g.comp f) hgf := by
-  intro x hx
-  simp_all [mem_kerOfSurjective]
 
 section Flat
 
