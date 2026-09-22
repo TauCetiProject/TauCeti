@@ -55,6 +55,10 @@ theorem _root_.CategoryTheory.ObjectProperty.exactPairingFullSubcategory_coevalu
     (X Y : P.FullSubcategory) [ExactPairing X.obj Y.obj] :
     (@ExactPairing.coevaluation P.FullSubcategory _ _ X Y
       (exactPairingFullSubcategory X Y)).hom = η_ X.obj Y.obj := by
+  -- `ofFullyFaithful` defines this pairing by taking the preimage of the ambient coevaluation.
+  -- After exposing that definition, `map_preimage` cancels the fully faithful lift. The pinned
+  -- subcategory API has no correctly typed simp lemma for the oplax unit `η P.ι`, so its
+  -- identity constraint must be discharged by its stable definitional equality.
   change P.ι.map (P.ι.preimage (Functor.OplaxMonoidal.η P.ι ≫ η_ X.obj Y.obj ≫
     Functor.LaxMonoidal.μ P.ι X Y)) = _
   rw [Functor.map_preimage]
@@ -67,6 +71,8 @@ theorem _root_.CategoryTheory.ObjectProperty.exactPairingFullSubcategory_evaluat
     (X Y : P.FullSubcategory) [ExactPairing X.obj Y.obj] :
     (@ExactPairing.evaluation P.FullSubcategory _ _ X Y
       (exactPairingFullSubcategory X Y)).hom = ε_ X.obj Y.obj := by
+  -- As above, unfolding `ofFullyFaithful` exposes the preimage construction; `map_preimage`
+  -- and the inclusion functor's public constraint simp lemmas then recover the ambient map.
   change P.ι.map (P.ι.preimage (Functor.OplaxMonoidal.δ P.ι Y X ≫ ε_ X.obj Y.obj ≫
     Functor.LaxMonoidal.ε P.ι)) = _
   rw [Functor.map_preimage]
