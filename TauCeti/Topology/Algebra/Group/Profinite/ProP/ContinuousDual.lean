@@ -35,10 +35,7 @@ variable [TopologicalSpace (Multiplicative (ZMod p))]
 variable {G : Type u} [Group G] [TopologicalSpace G]
 
 local instance : Fact (Nat.card (Multiplicative (ZMod p))).Prime := ⟨by
-  rw [show Nat.card (Multiplicative (ZMod p)) = p from by
-    calc Nat.card (Multiplicative (ZMod p)) = Nat.card (ZMod p) :=
-          Nat.card_congr Multiplicative.toAdd
-      _ = p := Nat.card_zmod p]
+  rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod p]
   exact Fact.out⟩
 
 /-- The pro-`p` Frattini subgroup lies in the kernel of every continuous character to
@@ -85,27 +82,22 @@ theorem _root_.ContinuousMonoidHom.existsUnique_frattiniQuotient_lift
       g.toMonoidHom.comp (QuotientGroup.mk' (proPFrattini p G)) = f.toMonoidHom := by
   have hker := ContinuousMonoidHom.proPFrattini_le_ker f
   let g₀ := QuotientGroup.lift (proPFrattini p G) f.toMonoidHom hker
-  have hcomp : (fun x : G ↦ g₀ (QuotientGroup.mk' (proPFrattini p G) x)) = f := by
+  have hcomp : g₀.comp (QuotientGroup.mk' (proPFrattini p G)) = f.toMonoidHom :=
+    QuotientGroup.lift_comp_mk' _ _ _
+  have hcomp_fun : (fun x : G ↦ g₀ (QuotientGroup.mk' (proPFrattini p G) x)) = f := by
     funext x
-    simp [g₀]
+    exact congrArg (fun k : G →* Multiplicative (ZMod p) => k x) hcomp
   have hcontinuous : Continuous g₀ := by
     apply QuotientGroup.isOpenQuotientMap_mk.continuous_comp_iff.mp
     -- The quotient lift composes back to `f` along the quotient map.
     change Continuous (fun x : G ↦ g₀ (QuotientGroup.mk' (proPFrattini p G) x))
-    rw [hcomp]
+    rw [hcomp_fun]
     exact f.continuous
   let g : (G ⧸ proPFrattini p G) →ₜ* Multiplicative (ZMod p) := ⟨g₀, hcontinuous⟩
-  have hgf : g.toMonoidHom.comp (QuotientGroup.mk' (proPFrattini p G)) = f.toMonoidHom := by
-    apply MonoidHom.ext
-    intro x
-    exact congrFun hcomp x
-  refine ⟨g, hgf, ?_⟩
+  refine ⟨g, hcomp, ?_⟩
   intro g' hg'
-  apply ContinuousMonoidHom.ext
-  intro y
-  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (proPFrattini p G) y
-  have hx' := congrArg (fun k : G →* Multiplicative (ZMod p) => k x) hg'
-  have hx := congrArg (fun k : G →* Multiplicative (ZMod p) => k x) hgf
-  simpa using hx'.trans hx.symm
+  apply ContinuousMonoidHom.toMonoidHom_injective
+  apply QuotientGroup.monoidHom_ext
+  exact hg'.trans hcomp.symm
 
 end TauCeti
