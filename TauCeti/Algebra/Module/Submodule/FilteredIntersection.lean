@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Artinian.Module
-public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.Algebra.Module.Submodule.RestrictScalars
-public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Order.Directed
 
 /-!
@@ -132,11 +130,10 @@ theorem exists_mkQ_comp_injective_of_directed [Nonempty ι] [IsArtinian R N] (f 
     (hf : Function.Injective f) (F : ι → Submodule R M) (hF : Directed (· ≥ ·) F)
     (h : ⨅ j, F j = ⊥) : ∃ i, Function.Injective ((F i).mkQ ∘ₗ f) := by
   obtain ⟨i, hi⟩ := Submodule.exists_disjoint_of_directed (range f) F hF (h ▸ disjoint_bot_right)
-  refine ⟨i, ker_eq_bot.mp ?_⟩
-  rw [ker_comp, Submodule.ker_mkQ, eq_bot_iff]
-  intro x hx
-  have hx0 : f x = 0 := Submodule.disjoint_def.mp hi (f x) (mem_range_self f x) hx
-  exact (Submodule.mem_bot R).mpr (hf (by rw [map_zero]; exact hx0))
+  rw [← Submodule.ker_mkQ (F i)] at hi
+  -- The quotient map is injective on `range f`, and `f` is injective onto its range.
+  exact ⟨i, fun x y hxy ↦
+    hf (disjoint_ker_iff_injOn.mp hi (mem_range_self f x) (mem_range_self f y) hxy)⟩
 
 end LinearMap
 
