@@ -135,7 +135,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
       · intro w hw
         have hw0 : w ≠ 0 := fun h => by simp [h] at hw
         have hnegInv : -w⁻¹ ∈ upperHalfPlaneSet := by
-          change 0 < (-w⁻¹).im
+          simp only [upperHalfPlaneSet, mem_ofPred_eq]
           simp only [neg_im, inv_im, neg_div, neg_neg]
           exact div_pos hw.2 (Complex.normSq_pos.mpr hw0)
         exact (((hf (-w⁻¹) hnegInv).differentiableAt
