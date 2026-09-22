@@ -24,7 +24,7 @@ come later.
 ## Main definitions
 
 * `TauCeti.HeegaardIntersectionSystem`: a finite set of intersection points with
-  their two curve labels.
+  its enumeration and two curve labels.
 * `TauCeti.HeegaardIntersectionSystem.Generator`: the matching type from
   `TauCeti.Sym.piInterEquiv`, specialized to the system's `α`- and `β`-label fibers.
 
@@ -40,9 +40,12 @@ namespace TauCeti
 
 universe u
 
-/-- Finite intersection data for two equally sized curve systems. A point has one `α`-curve label
-and one `β`-curve label; geometric surface and region data are additional structure. -/
+/-- Finite intersection data for two equally sized curve systems. The finite enumeration records
+the point set, and each point has one `α`-curve label and one `β`-curve label; geometric surface
+and region data are additional structure. -/
 structure HeegaardIntersectionSystem (n : ℕ) (Point : Type u) where
+  /-- The finite enumeration of intersection points. -/
+  pointFintype : Fintype Point
   /-- The `α`-curve containing an intersection point. -/
   alpha : Point → Fin n
   /-- The `β`-curve containing an intersection point. -/
@@ -62,6 +65,7 @@ abbrev Generator : Type u :=
 curves, and its identity choice is a generator. This supplies a concrete nonempty example of the
 generator predicate. -/
 abbrev diagonal (n : ℕ) : HeegaardIntersectionSystem n (Fin n) where
+  pointFintype := inferInstance
   alpha := id
   beta := id
 
