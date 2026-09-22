@@ -101,7 +101,7 @@ theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
   norm_num
 
 /-- The Dirichlet character attached to a prime discriminant is quadratic. -/
-theorem primeDiscriminantChar_isQuadratic (P : ℤ) (hP : IsPrimeDiscriminant P) :
+theorem isQuadratic_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
     (primeDiscriminantChar P hP).IsQuadratic := by
   let _ : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
   intro a

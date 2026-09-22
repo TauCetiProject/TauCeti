@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Subgroup.TwoTorsionClosure
-public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Dirichlet
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Character
 public import Mathlib.Data.Fintype.Sets
 
 /-!
@@ -61,6 +62,13 @@ noncomputable def primeDiscriminantCharAt (P : s) :
   changeLevel (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem id P.property))
     (primeDiscriminantChar P (hs P P.property))
 
+/-- At an integer coprime to the common level, a lifted prime-discriminant character agrees with
+the character attached to its factor. -/
+theorem primeDiscriminantCharAt_apply_int (P : s) (n : ℤ)
+    (hn : IsCoprime n (∏ Q ∈ s, Q).natAbs) :
+    primeDiscriminantCharAt s hs P n = primeDiscriminantChar P (hs P P.property) n := by
+  rw [primeDiscriminantCharAt, changeLevel_eq_cast_of_dvd' _ _ hn]
+
 /-- The conductor of a lifted prime-discriminant character is the absolute value of its factor. -/
 @[simp] theorem conductor_primeDiscriminantCharAt (P : s) :
     (primeDiscriminantCharAt s hs P).conductor = P.val.natAbs := by
@@ -69,16 +77,16 @@ noncomputable def primeDiscriminantCharAt (P : s) :
   exact isPrimitive_primeDiscriminantChar P (hs P P.property)
 
 /-- A lifted prime-discriminant character is quadratic. -/
-theorem primeDiscriminantCharAt_isQuadratic (P : s) :
+theorem isQuadratic_primeDiscriminantCharAt (P : s) :
     (primeDiscriminantCharAt s hs P).IsQuadratic := by
   apply MulChar.isQuadratic_iff_sq_eq_one.mpr
-  have hquad := primeDiscriminantChar_isQuadratic P (hs P P.property)
+  have hquad := isQuadratic_primeDiscriminantChar P (hs P P.property)
   rw [primeDiscriminantCharAt, ← map_pow, hquad.sq_eq_one, map_one]
 
 /-- A lifted prime-discriminant character is an involution. -/
 @[simp] theorem primeDiscriminantCharAt_sq (P : s) :
     primeDiscriminantCharAt s hs P ^ 2 = 1 :=
-  (primeDiscriminantCharAt_isQuadratic s hs P).sq_eq_one
+  (isQuadratic_primeDiscriminantCharAt s hs P).sq_eq_one
 
 /-- The common-level genus character indexed by a subset of the prime-discriminant factors. -/
 noncomputable def genusCharAt (t : Finset s) :
@@ -92,6 +100,12 @@ noncomputable def genusCharAt (t : Finset s) :
     genusCharAt s hs {P} = primeDiscriminantCharAt s hs P := by
   simp [genusCharAt]
 
+/-- Inserting a new factor multiplies its character into the subset character. -/
+@[simp] theorem genusCharAt_insert {P : s} {t : Finset s} (hP : P ∉ t) :
+    genusCharAt s hs (insert P t) =
+      primeDiscriminantCharAt s hs P * genusCharAt s hs t := by
+  simp [genusCharAt, hP]
+
 /-- Multiplication of subset characters corresponds to symmetric difference of the subsets. -/
 @[simp] theorem genusCharAt_symmDiff (t u : Finset s) :
     genusCharAt s hs (t ∆ u) = genusCharAt s hs t * genusCharAt s hs u := by
@@ -99,25 +113,25 @@ noncomputable def genusCharAt (t : Finset s) :
   exact TauCeti.prod_sdiff_union_sdiff _ fun P _ ↦ primeDiscriminantCharAt_sq s hs P
 
 /-- Every subset character is quadratic. -/
-theorem genusCharAt_isQuadratic (t : Finset s) : (genusCharAt s hs t).IsQuadratic := by
+theorem isQuadratic_genusCharAt (t : Finset s) : (genusCharAt s hs t).IsQuadratic := by
   rw [MulChar.isQuadratic_iff_sq_eq_one, genusCharAt, ← Finset.prod_pow]
   exact Finset.prod_eq_one fun P _ ↦ primeDiscriminantCharAt_sq s hs P
 
 /-- The conductor of a subset character is the product of the absolute values of its factors. -/
 theorem conductor_genusCharAt
-    (heven : ∀ P ∈ s, ∀ Q ∈ s,
-      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q)
-    (t : Finset s) :
+    (t : Finset s)
+    (heven : ∀ P ∈ t, ∀ Q ∈ t,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     (genusCharAt s hs t).conductor = ∏ P ∈ t, P.val.natAbs := by
   let _ := prodNatAbsNeZero s hs
   rw [genusCharAt, TauCeti.conductor_prod_eq_prod_of_pairwise_coprime]
   · simp
-  · intro P _ Q _ hPQ
+  · intro P hPt Q hQt hPQ
     simp only [conductor_primeDiscriminantCharAt]
     exact Int.isCoprime_iff_nat_coprime.mp
       (isCoprime_primeDiscriminant_of_ne_of_not_both_even
         (hs P P.property) (hs Q Q.property) (fun h ↦ hPQ (Subtype.ext h))
-        (fun h ↦ hPQ (Subtype.ext (heven P P.property Q Q.property h.1 h.2))))
+        (fun h ↦ hPQ (heven P hPt Q hQt h.1 h.2)))
   · exact Or.inr (NeZero.ne _)
 
 private theorem one_lt_natAbs (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (P : s) :
@@ -139,9 +153,12 @@ theorem genusCharAt_injective
   by_contra hne
   have hchar : genusCharAt s hs (t ∆ u) = 1 := by
     rw [genusCharAt_symmDiff, htu, ← pow_two,
-      (genusCharAt_isQuadratic s hs u).sq_eq_one]
+      (isQuadratic_genusCharAt s hs u).sq_eq_one]
   have hcond := congrArg conductor hchar
-  rw [conductor_genusCharAt s hs heven, conductor_one] at hcond
+  have heven' : ∀ P ∈ t ∆ u, ∀ Q ∈ t ∆ u,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q :=
+    fun P _ Q _ hP hQ ↦ Subtype.ext (heven P P.property Q Q.property hP hQ)
+  rw [conductor_genusCharAt s hs (t ∆ u) heven', conductor_one] at hcond
   obtain ⟨P, hP⟩ := Finset.nonempty_iff_ne_empty.mpr hne
   have hpos : 0 < ∏ Q ∈ t ∆ u, Q.val.natAbs :=
     Finset.prod_pos fun Q _ ↦ Int.natAbs_pos.mpr (hs Q Q.property).ne_zero
@@ -162,7 +179,7 @@ noncomputable def genusCharacterGroup :
   inv_mem' := by
     rintro _ ⟨t, rfl⟩
     refine ⟨t, ?_⟩
-    exact (genusCharAt_isQuadratic s hs t).inv.symm
+    exact (isQuadratic_genusCharAt s hs t).inv.symm
 
 /-- Membership in the prime-discriminant character group means being the character of a subset. -/
 @[simp] theorem mem_genusCharacterGroup_iff {chi : DirichletCharacter ℤ (∏ P ∈ s, P).natAbs} :
@@ -186,12 +203,8 @@ theorem genusCharacterGroup_eq_closure :
 noncomputable def genusCharAtEquiv
     (heven : ∀ P ∈ s, ∀ Q ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
-    Finset s ≃ genusCharacterGroup s hs where
-  toFun t := ⟨genusCharAt s hs t, ⟨t, rfl⟩⟩
-  invFun chi := Classical.choose chi.property
-  left_inv t := (genusCharAt_injective s hs heven) (Classical.choose_spec
-    (show ∃ u : Finset s, genusCharAt s hs u = genusCharAt s hs t from ⟨t, rfl⟩))
-  right_inv chi := Subtype.ext (Classical.choose_spec chi.property)
+    Finset s ≃ genusCharacterGroup s hs :=
+  Equiv.ofInjective (genusCharAt s hs) (genusCharAt_injective s hs heven)
 
 /-- The character group of `s` has one element for each subset of `s`. -/
 theorem natCard_genusCharacterGroup
