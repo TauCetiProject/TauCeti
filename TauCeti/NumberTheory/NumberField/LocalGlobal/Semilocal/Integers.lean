@@ -316,7 +316,6 @@ theorem integralSemilocalComponent_apply
   simp [integralSemilocalComponent]
 
 /-- A component projection of the integral semi-local decomposition on a pure tensor. -/
-@[simp]
 theorem integralSemilocalComponent_tmul
     (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal})
     (a : v.adicCompletionIntegers K) (x : 𝒪 L) :
