@@ -10,10 +10,10 @@ public import TauCeti.FieldTheory.GaloisGroups.Degree
 /-!
 # Polynomials with full symmetric Galois group
 
-`TauCeti.Polynomial.HasFullSymmetricGaloisGroup f` requires separability and surjectivity of
+`Polynomial.HasFullSymmetricGaloisGroup f` requires separability and surjectivity of
 the Galois action on the roots in the splitting field. Separability ensures that this is the
 symmetric group on `f.natDegree` points, rather than on a smaller set of distinct roots.
-With `open TauCeti`, the predicate is also available as `f.HasFullSymmetricGaloisGroup`.
+The predicate is also available as `f.HasFullSymmetricGaloisGroup` by dot notation.
 
 The property can be checked in any field where `f` splits, or by checking that the Galois
 group has order `f.natDegree!`. A numbering of the roots gives an explicit group isomorphism
@@ -23,9 +23,7 @@ for Galois groups with realizations of symmetric groups over the rational number
 
 public section
 
-open Polynomial
-
-namespace TauCeti.Polynomial
+namespace Polynomial
 
 variable {F : Type*} [Field F] {f : F[X]}
 
@@ -88,7 +86,7 @@ theorem hasFullSymmetricGaloisGroup_iff_separable_and_surjective_galActionHom
 points as its degree. No numbering of its roots is fixed globally. -/
 theorem HasFullSymmetricGaloisGroup.nonempty_mulEquiv (hf : HasFullSymmetricGaloisGroup f) :
     Nonempty (f.Gal ≃* Equiv.Perm (Fin f.natDegree)) := by
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hf.separable
+  obtain ⟨e⟩ := TauCeti.nonempty_rootSet_splittingField_equiv_fin f hf.separable
   exact ⟨(MulEquiv.ofBijective (Gal.galActionHom f f.SplittingField)
     ⟨Gal.galActionHom_injective f _, hf.surjective_galActionHom⟩).trans (Equiv.permCongrHom e)⟩
 
@@ -108,4 +106,4 @@ theorem not_hasFullSymmetricGaloisGroup_X_pow (n : ℕ) (hn : 2 ≤ n) :
     ¬ HasFullSymmetricGaloisGroup (X ^ n : F[X]) :=
   not_hasFullSymmetricGaloisGroup_pow_of_not_isUnit not_isUnit_X n hn
 
-end TauCeti.Polynomial
+end Polynomial

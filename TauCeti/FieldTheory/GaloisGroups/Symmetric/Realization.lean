@@ -33,7 +33,7 @@ lifting already provided by Tau Ceti, and the criterion
 
 public section
 
-open Polynomial TauCeti.Polynomial
+open Polynomial
 
 namespace TauCeti
 
