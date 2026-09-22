@@ -109,7 +109,8 @@ prevertices, so it is automatically continuous near infinity, and the hypotheses
 the point at infinity is an interior point of a side of the polygon. -/
 theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b : ℂ} {r : ℝ}
     (hr : 0 < r) (hb : b ≠ 0)
-    (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b) upperHalfPlaneSet)
+    (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b)
+      (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
@@ -123,8 +124,17 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]
     exact hz
-  refine tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv Metric.isOpen_ball hball
-    (Metric.mem_ball_self hr) hcont hholo hreal hupper hinj hφcont hφconj fun z hz => ?_
+  apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
+  have ht := (tendsto_mul_logDeriv_deriv_comp_neg_inv_upperHalfPlaneSet Metric.isOpen_ball
+    hball (Metric.mem_ball_self hr) hcont hholo hreal hupper hinj).mul
+      ((tendsto_inv₀_cobounded (α := ℂ)).mono_left
+        (inf_le_left : cobounded ℂ ⊓ principal upperHalfPlaneSet ≤ cobounded ℂ))
+  simp only [mul_zero] at ht
+  apply ht.congr'
+  rw [eventuallyEq_inf_principal_iff]
+  have hinv : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ) (nhds 0) := by
+    simpa only [neg_zero] using (tendsto_inv₀_cobounded (α := ℂ)).neg
+  filter_upwards [hinv.eventually (Metric.ball_mem_nhds (0 : ℂ) hr)] with z hzball hz
   have hz0 : z ≠ 0 := fun h => by simp [h] at hz
   have hnegInv : -z⁻¹ ∈ upperHalfPlaneSet := by
     simp only [upperHalfPlaneSet, mem_ofPred_eq] at hz ⊢
@@ -133,7 +143,8 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
   -- Off the origin, the inverse coordinate of the inverse coordinate is the original map.
   have heq : (fun w : ℂ => g (-w⁻¹)) =ᶠ[𝓝 z] fun w : ℂ => (f w - q) / b := by
     filter_upwards [((continuousAt_inv₀ hz0).neg).preimage_mem_nhds
-      (isOpen_upperHalfPlaneSet.mem_nhds hnegInv)] with w hw
+      ((Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet).mem_nhds
+        ⟨hzball, hnegInv⟩)] with w hw
     calc
       g (-w⁻¹) = (f (-(-w⁻¹)⁻¹) - q) / b := hgf hw
       _ = (f w - q) / b := by rw [inv_neg, inv_inv, neg_neg]
@@ -142,5 +153,6 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
     simp only [deriv_div_const, deriv_sub_const]
   rw [hφf hz, (logDeriv_congr_nhds heq.deriv).eq_of_nhds, hderiv]
   simp only [div_eq_mul_inv, logDeriv_mul_const z b⁻¹ (inv_ne_zero hb)]
+  field_simp
 
 end TauCeti

@@ -89,7 +89,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
       ∀ z ∈ Metric.ball ((a i : ℝ) : ℂ) r, z.im = 0 → f z ≠ f (a i : ℂ) →
         |((f z - f (a i : ℂ)) / b).arg| = (e i + 1) * Real.pi / 2)
     (hinfty : ∃ r > 0, ∃ g : ℂ → ℂ, ∃ q b : ℂ, b ≠ 0 ∧
-      EqOn g (fun w => (f (-w⁻¹) - q) / b) upperHalfPlaneSet ∧
+      EqOn g (fun w => (f (-w⁻¹) - q) / b) (Metric.ball 0 r ∩ upperHalfPlaneSet) ∧
       ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) ∧
       (∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0) ∧
       MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet ∧
@@ -131,7 +131,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
   have hdecay : Tendsto φ (cobounded ℂ) (𝓝 0) := by
     obtain ⟨r, hr, g, q, b, hb, hgf, hgcont, hgreal, hgupper, hginj⟩ := hinfty
     have hgholo : DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet) := by
-      refine DifferentiableOn.congr ?_ fun w hw => hgf hw.2
+      refine DifferentiableOn.congr ?_ fun w hw => hgf hw
       · intro w hw
         have hw0 : w ≠ 0 := fun h => by simp [h] at hw
         have hnegInv : -w⁻¹ ∈ upperHalfPlaneSet := by
