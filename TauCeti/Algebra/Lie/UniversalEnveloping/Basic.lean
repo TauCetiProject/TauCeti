@@ -245,8 +245,8 @@ variable {R L}
 
 /-- **The iterated commutator with a Lie generator, read on the Lie generators.**  Bracketing
 `n` times with `ι x` inside `U(L)` sends `ι y` to the image of the `n`-fold adjoint action of `x`
-on `y`; the canonical Lie generators therefore span a subspace on which the inner derivation
-attached to `ι x` is a copy of `LieAlgebra.ad R L x`. -/
+on `y`; that is, `ι` intertwines `LieAlgebra.ad R L x` with the inner derivation of `U(L)`
+attached to `ι x`. -/
 theorem ad_ι_pow_apply_ι (x y : L) (n : ℕ) :
     (LieAlgebra.ad R U (_root_.UniversalEnvelopingAlgebra.ι R x) ^ n)
         (_root_.UniversalEnvelopingAlgebra.ι R y) =
