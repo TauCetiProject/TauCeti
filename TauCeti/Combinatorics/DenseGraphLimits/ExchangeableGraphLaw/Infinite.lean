@@ -305,6 +305,18 @@ theorem exchangeableGraphLawEquivInfinite_symm_law (L : InfiniteExchangeableGrap
     (exchangeableGraphLawEquivInfinite.symm L).law k = L.law.map (·.restrictFin k) :=
   (rfl)
 
+/-- **The window at an offset has the law of the initial window.** The second of two consecutive
+windows of an exchangeable law on infinite graphs has the law of the window of its length. -/
+theorem InfiniteExchangeableGraphLaw.map_comap_natAdd_restrictFin (L : InfiniteExchangeableGraphLaw)
+    (k l : ℕ) :
+    L.law.map (fun G : SimpleGraph ℕ => SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l)))
+      = L.law.map (·.restrictFin l) := by
+  have := (exchangeableGraphLawEquivInfinite.symm L).consistent
+    (⟨Fin.natAdd k, fun a b h => by simpa using h⟩ : Fin l ↪ Fin (k + l))
+  simp only [exchangeableGraphLawEquivInfinite_symm_law] at this
+  rwa [Measure.map_map (SimpleGraph.measurable_comap _) (SimpleGraph.measurable_restrictFin _)]
+    at this
+
 end DenseGraphLimits
 
 end TauCeti

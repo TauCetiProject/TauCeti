@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
-public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Coordinates
+public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 
 /-!
 # The adjacency array of a graph and the graph of an array
 
-A graph on `ℕ` is read as a `Bool`-valued array through its edge coordinates: the adjacency array
-`SimpleGraph.adjArray G` is `graphCoordEquiv G` placed on the off-diagonal pairs, with `false` on
-the diagonal, so it is `true` exactly on edges. An array is read back as a graph by
+A graph on `ℕ` is read as a `Bool`-valued array: the adjacency array `SimpleGraph.adjArray G` is
+`true` exactly on edges. An array is read back as a graph by
 `graphOfArray`, the `SimpleGraph.fromRel` of the array: `i` and `j` are adjacent when they are
 distinct and the array is `true` at `(i, j)` or at `(j, i)`. The two are measurable, mutually
 inverse on the symmetric arrays with `false` diagonal, and intertwine relabelling of the graph
@@ -27,6 +27,14 @@ with the diagonal relabelling of the array.
   `graphOfArray_pairReindex`.
 * `SimpleGraph.graphOfArray_adjArray`, `TauCeti.DenseGraphLimits.adjArray_graphOfArray` — the
   two round trips.
+
+## References
+
+* P. Diaconis, S. Janson, *Graph limits and exchangeable random graphs*, Rend. Mat. Appl. (7) 28
+  (2008), 33–61, Section 5: exchangeable random graphs as symmetric zero-diagonal arrays.
+
+No material is adapted from `cameronfreer/graphon`; the adjacency array is read directly from
+Mathlib's adjacency relation, and the relabelling square is `SimpleGraph.comap_adj`.
 -/
 
 public section
@@ -37,75 +45,37 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-/-- Edge coordinates read as an array: `false` on the diagonal, the coordinate at `s(i, j)`
-elsewhere. -/
-noncomputable def edgeCoordToArray (f : EdgeIndex → Bool) : ℕ × ℕ → Bool := fun p =>
-  if h : s(p.1, p.2).IsDiag then false else f ⟨s(p.1, p.2), h⟩
-
-/-- Off the diagonal, edge coordinates read as an array are the coordinates. -/
-theorem edgeCoordToArray_apply_of_not_isDiag (f : EdgeIndex → Bool) {i j : ℕ}
-    (h : ¬ s(i, j).IsDiag) : edgeCoordToArray f (i, j) = f ⟨s(i, j), h⟩ := by
-  simp [edgeCoordToArray, h]
-
-/-- On the diagonal, edge coordinates read as an array are `false`. -/
-@[simp]
-theorem edgeCoordToArray_diag (f : EdgeIndex → Bool) (i : ℕ) :
-    edgeCoordToArray f (i, i) = false := by
-  simp [edgeCoordToArray]
-
-/-- Edge coordinates read as an array land in the symmetric arrays with `false` diagonal. -/
-theorem edgeCoordToArray_mem_symmetricArraysWithDiag (f : EdgeIndex → Bool) :
-    edgeCoordToArray f ∈ symmetricArraysWithDiag Bool false :=
-  mem_symmetricArraysWithDiag_iff.2
-    ⟨fun i j => by simp only [edgeCoordToArray, Sym2.eq_swap], fun i => edgeCoordToArray_diag f i⟩
-
-/-- The adjacency array of a graph on `ℕ`, through its edge coordinates. -/
+open Classical in
+/-- The adjacency array of a graph on `ℕ`: `true` exactly on edges. -/
 noncomputable def _root_.SimpleGraph.adjArray (G : SimpleGraph ℕ) : ℕ × ℕ → Bool :=
-  edgeCoordToArray (graphCoordEquiv G)
+  fun p => decide (G.Adj p.1 p.2)
 
 open Classical in
 /-- The adjacency array is `true` exactly on edges. -/
 @[simp]
 theorem _root_.SimpleGraph.adjArray_apply (G : SimpleGraph ℕ) (i j : ℕ) :
-    G.adjArray (i, j) = decide (G.Adj i j) := by
-  simp only [SimpleGraph.adjArray, edgeCoordToArray]
-  by_cases h : s(i, j).IsDiag
-  · have : i = j := Sym2.mk_isDiag_iff.mp h
-    subst this; simp [h]
-  · simp only [h, dite_false]
-    rw [Bool.eq_iff_iff, SimpleGraph.graphCoordEquiv_apply]
-    simp [SimpleGraph.mem_edgeSet]
+    G.adjArray (i, j) = decide (G.Adj i j) :=
+  (rfl)
 
 open Classical in
 /-- Reading a graph as an array is measurable. -/
-theorem _root_.SimpleGraph.measurable_adjArray : Measurable SimpleGraph.adjArray := by
-  refine Measurable.of_eval fun p => ?_
-  obtain ⟨i, j⟩ := p
-  simp only [SimpleGraph.adjArray_apply]
-  exact (measurable_of_countable (fun q : Prop => decide q)).comp
-    (measurable_iff_adj.1 measurable_id i j)
+@[fun_prop]
+theorem _root_.SimpleGraph.measurable_adjArray : Measurable SimpleGraph.adjArray :=
+  Measurable.of_eval fun p =>
+    (measurable_of_countable (fun q : Prop => decide q)).comp
+      (measurable_iff_adj.1 measurable_id p.1 p.2)
 
 /-- The adjacency array of a graph is symmetric with `false` diagonal. -/
 theorem _root_.SimpleGraph.adjArray_mem_symmetricArraysWithDiag (G : SimpleGraph ℕ) :
     G.adjArray ∈ symmetricArraysWithDiag Bool false :=
-  edgeCoordToArray_mem_symmetricArraysWithDiag _
+  mem_symmetricArraysWithDiag_iff.2
+    ⟨fun i j => by simp [SimpleGraph.adjArray_apply, G.adj_comm], fun i => by simp⟩
 
 /-- Relabelling the graph is relabelling both axes of its adjacency array. -/
 theorem _root_.SimpleGraph.adjArray_comap (σ : Equiv.Perm ℕ) (G : SimpleGraph ℕ) :
     (SimpleGraph.comap ⇑σ G).adjArray = pairReindex σ σ G.adjArray := by
   funext ⟨i, j⟩
-  simp only [SimpleGraph.adjArray, edgeCoordToArray, pairReindex_apply]
-  by_cases h : s(i, j).IsDiag
-  · have h' : s(σ i, σ j).IsDiag := by
-      simpa [Sym2.mk_isDiag_iff] using congrArg σ (Sym2.mk_isDiag_iff.mp h)
-    simp [h, h']
-  · have h' : ¬ s(σ i, σ j).IsDiag := fun h' =>
-      h (Sym2.mk_isDiag_iff.mpr (σ.injective (Sym2.mk_isDiag_iff.mp h')))
-    simp only [h, h', dite_false]
-    rw [Equiv.Perm.graphCoordEquiv_comap]
-    -- the relabelled edge coordinate is the coordinate of the relabelled pair
-    exact congrArg (graphCoordEquiv G)
-      (Subtype.ext (by simp only [Equiv.Perm.edgeIndexMap_val, Sym2.map_mk]))
+  simp [SimpleGraph.adjArray_apply, SimpleGraph.comap_adj, pairReindex_apply]
 
 /-- The graph of an array: `i` and `j` are adjacent when they are distinct and the array is
 `true` at `(i, j)` or at `(j, i)`, so on a symmetric array at either. -/
@@ -119,19 +89,13 @@ theorem graphOfArray_adj (x : ℕ × ℕ → Bool) (i j : ℕ) :
   SimpleGraph.fromRel_adj _ _ _
 
 /-- Reading an array as a graph is measurable. -/
-theorem measurable_graphOfArray : Measurable graphOfArray := by
-  refine measurable_iff_adj.2 fun i j => ?_
-  simp only [graphOfArray_adj]
-  refine measurable_to_prop ?_
-  by_cases hij : i = j
-  · simp [hij]
-  · have : (fun x : ℕ × ℕ → Bool => i ≠ j ∧ (x (i, j) = true ∨ x (j, i) = true)) ⁻¹' {True}
-        = (fun x : ℕ × ℕ → Bool => x (i, j)) ⁻¹' {true} ∪
-            (fun x : ℕ × ℕ → Bool => x (j, i)) ⁻¹' {true} := by
-      ext x; simp [hij]
-    rw [this]
-    exact ((measurable_pi_apply _) (measurableSet_singleton _)).union
-      ((measurable_pi_apply _) (measurableSet_singleton _))
+@[fun_prop]
+theorem measurable_graphOfArray : Measurable graphOfArray :=
+  measurable_iff_adj.2 fun i j => by
+    simp only [graphOfArray_adj]
+    have hij : Measurable fun x : ℕ × ℕ → Bool => x (i, j) := measurable_pi_apply (i, j)
+    have hji : Measurable fun x : ℕ × ℕ → Bool => x (j, i) := measurable_pi_apply (j, i)
+    exact measurable_const.and ((hij.eq_const true).or (hji.eq_const true))
 
 /-- The graph of the adjacency array of a graph is the graph. -/
 @[simp]

@@ -65,17 +65,29 @@ def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
 theorem restrictFin_adj {n : ℕ} (G : SimpleGraph ℕ) (a b : Fin n) :
     (G.restrictFin n).Adj a b ↔ G.Adj a b := Iff.rfl
 
+/-- Pulling a window back along a map of finite labels is pulling the graph back along the
+composite labels. -/
+theorem comap_restrictFin {m n : ℕ} (G : SimpleGraph ℕ) (f : Fin m → Fin n) :
+    SimpleGraph.comap f (G.restrictFin n) = SimpleGraph.comap (fun i => (f i : ℕ)) G := by
+  ext a b; simp [restrictFin_adj]
+
 /-- The first of two consecutive windows of a window is the window. -/
 @[simp]
 theorem restrictFin_comap_castAdd (G : SimpleGraph ℕ) (k l : ℕ) :
     SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)) = G.restrictFin k := by
-  ext a b; simp [restrictFin_adj]
+  rw [comap_restrictFin]; ext a b; simp [restrictFin_adj]
 
 /-- The second of two consecutive windows of a window is the window at the offset. -/
 @[simp]
 theorem restrictFin_comap_natAdd (G : SimpleGraph ℕ) (k l : ℕ) :
     SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))
       = SimpleGraph.comap (fun i : Fin l => k + (i : ℕ)) G := by
+  rw [comap_restrictFin]; simp
+
+/-- The window at offset `0` is the initial window. -/
+@[simp]
+theorem comap_zero_add (G : SimpleGraph ℕ) (n : ℕ) :
+    SimpleGraph.comap (fun i : Fin n => 0 + (i : ℕ)) G = G.restrictFin n := by
   ext a b; simp [restrictFin_adj]
 
 end SimpleGraph

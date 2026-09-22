@@ -41,7 +41,7 @@ over `J` into the `n`-th corner-tail family. The conditional form of Lévy's dow
 conditionally independent given the tail. Mathlib's description of conditional independence through
 `condExpKernel` turns this into independence under almost every conditional law. Countably many
 pairs `I`, `J` share one null set, and independence of finite square blocks gives joint
-dissociation (`jointlyDissociated_of_indep_blockSigma_finset`).
+dissociation (`jointlyDissociated_iff_indepFun_restrict`).
 
 ## Main results
 
@@ -227,6 +227,6 @@ theorem JointlyExchangeable.ae_jointlyDissociated_condExpKernel_arrayTail
     simp only [ae_all_iff, Filter.eventually_imp_distrib_left]
     exact hfin
   filter_upwards [hall] with x hx
-  exact (jointlyDissociated_coord_iff_indepFun_restrict _).2 hx
+  exact (jointlyDissociated_iff_indepFun_restrict fun p => measurable_pi_apply p).2 hx
 
 end TauCeti.Probability

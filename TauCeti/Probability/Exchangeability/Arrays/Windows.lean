@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Arrays.Dissociated
+public import TauCeti.Probability.Exchangeability.Arrays.Basic
 public import TauCeti.Probability.Independence.Map
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 import Mathlib.Order.Interval.Finset.Nat
-import Mathlib.Data.Finset.Sort
 
 /-!
 # Joint dissociation through finite square blocks
@@ -74,75 +73,29 @@ theorem indepFun_restrict_map_of_map_pairReindex_eq {ρ : Measure (ℕ × ℕ �
     (Finset.measurable_restrict _), hρ]
   exact h
 
-/-- Two disjoint finite sets of cardinalities `k` and `l` are the images of the two windows of
-`Fin (k + l)` under a finitely supported permutation of `ℕ`. -/
-theorem exists_finite_compl_fixedBy_castAdd_natAdd (I J : Finset ℕ) (hIJ : Disjoint I J)
-    {k l : ℕ} (hI : I.card = k) (hJ : J.card = l) :
-    ∃ σ : Equiv.Perm ℕ, (MulAction.fixedBy ℕ σ)ᶜ.Finite ∧
-      (∀ i : Fin k, σ (Fin.castAdd l i) = I.orderEmbOfFin hI i) ∧
-      ∀ j : Fin l, σ (Fin.natAdd k j) = J.orderEmbOfFin hJ j := by
-  let f : Fin (k + l) → ℕ :=
-    Fin.addCases (fun i => I.orderEmbOfFin hI i) (fun j => J.orderEmbOfFin hJ j)
-  have hf : Function.Injective f := by
-    intro a b hab
-    induction a using Fin.addCases with
-    | left a =>
-      induction b using Fin.addCases with
-      | left b =>
-        simp only [f, Fin.addCases_left] at hab
-        exact congrArg _ ((I.orderEmbOfFin hI).injective hab)
-      | right b =>
-        simp only [f, Fin.addCases_left, Fin.addCases_right] at hab
-        exact absurd hab
-          (hIJ.forall_ne_finset (I.orderEmbOfFin_mem hI a) (J.orderEmbOfFin_mem hJ b))
-    | right a =>
-      induction b using Fin.addCases with
-      | left b =>
-        simp only [f, Fin.addCases_left, Fin.addCases_right] at hab
-        exact absurd hab.symm
-          (hIJ.forall_ne_finset (I.orderEmbOfFin_mem hI b) (J.orderEmbOfFin_mem hJ a))
-      | right b =>
-        simp only [f, Fin.addCases_right] at hab
-        exact congrArg _ ((J.orderEmbOfFin hJ).injective hab)
-  obtain ⟨σ, hσfin, hσ⟩ :=
-    Equiv.Perm.exists_finite_compl_fixedBy_apply_eq Fin.valEmbedding ⟨f, hf⟩
-  refine ⟨σ, hσfin, fun i => ?_, fun j => ?_⟩
-  · simpa [f] using hσ (Fin.castAdd l i)
-  · simpa [f] using hσ (Fin.natAdd k j)
-
-/-- A permutation agreeing on the window `[k, k + l)` with the enumeration of `J` maps the window
-onto `J`. -/
-theorem map_Ico_eq_of_forall_apply_eq_orderEmbOfFin {σ : Equiv.Perm ℕ} {J : Finset ℕ} {k l : ℕ}
-    (hJ : J.card = l) (h : ∀ j : Fin l, σ (k + j) = J.orderEmbOfFin hJ j) :
-    (Finset.Ico k (k + l)).map σ.toEmbedding = J := by
-  ext n; simp only [Finset.mem_map, Finset.mem_Ico, Equiv.coe_toEmbedding]
-  constructor
-  · rintro ⟨i, ⟨hki, hik⟩, rfl⟩
-    have := h ⟨i - k, by omega⟩
-    simp only [Nat.add_sub_cancel' hki] at this
-    rw [this]; exact J.orderEmbOfFin_mem hJ _
-  · intro hn
-    obtain ⟨j, hj⟩ := Set.mem_range.mp ((J.range_orderEmbOfFin hJ) ▸ (Finset.mem_coe.mpr hn))
-    exact ⟨k + j, ⟨by omega, by omega⟩, by rw [h j, hj]⟩
-
-/-- **Consecutive windows suffice.** For a jointly exchangeable law, block independence at every
-pair of consecutive windows `[0, k)²`, `[k, k + l)²` gives block independence at every pair of
-disjoint finite sets. -/
+/-- **Consecutive windows suffice.** For a jointly exchangeable law, block independence at the
+consecutive windows `[0, |I|)²`, `[|I|, |I| + |J|)²` gives block independence at the disjoint
+finite sets `I`, `J`. -/
 theorem indepFun_restrict_of_forall_Ico {ρ : Measure (ℕ × ℕ → α)}
     (hρ : JointlyExchangeable ρ fun p x => x p)
-    (h : ∀ k l : ℕ, IndepFun (fun x : ℕ × ℕ → α => (Finset.Ico 0 k ×ˢ Finset.Ico 0 k).restrict x)
-      (fun x : ℕ × ℕ → α => (Finset.Ico k (k + l) ×ˢ Finset.Ico k (k + l)).restrict x) ρ)
-    (I J : Finset ℕ) (hIJ : Disjoint I J) :
+    (I J : Finset ℕ) (hIJ : Disjoint I J)
+    (h : IndepFun
+      (fun x : ℕ × ℕ → α => (Finset.Ico 0 I.card ×ˢ Finset.Ico 0 I.card).restrict x)
+      (fun x : ℕ × ℕ → α =>
+        (Finset.Ico I.card (I.card + J.card) ×ˢ Finset.Ico I.card (I.card + J.card)).restrict x)
+      ρ) :
     IndepFun (fun x : ℕ × ℕ → α => (I ×ˢ I).restrict x)
       (fun x : ℕ × ℕ → α => (J ×ˢ J).restrict x) ρ := by
-  obtain ⟨σ, -, hσI, hσJ⟩ := exists_finite_compl_fixedBy_castAdd_natAdd I J hIJ rfl rfl
+  obtain ⟨σ, -, hσI, hσJ⟩ :=
+    Equiv.Perm.exists_finite_compl_fixedBy_castAdd_natAdd I J hIJ rfl rfl
   have hI : (Finset.Ico 0 I.card).map σ.toEmbedding = I := by
-    have := map_Ico_eq_of_forall_apply_eq_orderEmbOfFin (k := 0) rfl fun i => by simpa using hσI i
+    have := Equiv.Perm.map_Ico_eq_of_forall_apply_eq_orderEmbOfFin (k := 0) rfl fun i => by
+      simpa using hσI i
     rwa [Nat.zero_add] at this
   have hJ : (Finset.Ico I.card (I.card + J.card)).map σ.toEmbedding = J :=
-    map_Ico_eq_of_forall_apply_eq_orderEmbOfFin rfl fun j => by simpa using hσJ j
+    Equiv.Perm.map_Ico_eq_of_forall_apply_eq_orderEmbOfFin rfl fun j => by simpa using hσJ j
   rw [← hI, ← hJ]
-  exact indepFun_restrict_map_of_map_pairReindex_eq σ (hρ.map_pairReindex σ) (h _ _)
+  exact indepFun_restrict_map_of_map_pairReindex_eq σ (hρ.map_pairReindex σ) h
 
 end Probability
 

@@ -40,17 +40,7 @@ theorem indepFun_map_iff_comp {m : Ω → Ω'} (hm : Measurable m) {f : Ω' → 
     rw [Measure.map_apply hm (hf hs₁), Measure.map_apply hm (hg hs₂),
       Measure.map_apply hm ((hf hs₁).inter (hg hs₂)), Set.preimage_inter, Set.preimage_comp,
       Set.preimage_comp]
-  rw [IndepFun_iff, IndepFun_iff]
-  constructor
-  · intro h t₁ t₂ ht₁ ht₂
-    obtain ⟨s₁, hs₁, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₁
-    obtain ⟨s₂, hs₂, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₂
-    exact (key s₁ s₂ hs₁ hs₂).1 (h _ _ (MeasurableSpace.measurableSet_comap.2 ⟨s₁, hs₁, rfl⟩)
-      (MeasurableSpace.measurableSet_comap.2 ⟨s₂, hs₂, rfl⟩))
-  · intro h t₁ t₂ ht₁ ht₂
-    obtain ⟨s₁, hs₁, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₁
-    obtain ⟨s₂, hs₂, rfl⟩ := MeasurableSpace.measurableSet_comap.1 ht₂
-    exact (key s₁ s₂ hs₁ hs₂).2 (h _ _ (MeasurableSpace.measurableSet_comap.2 ⟨s₁, hs₁, rfl⟩)
-      (MeasurableSpace.measurableSet_comap.2 ⟨s₂, hs₂, rfl⟩))
+  rw [indepFun_iff_measure_inter_preimage_eq_mul, indepFun_iff_measure_inter_preimage_eq_mul]
+  exact forall₄_congr key
 
 end ProbabilityTheory

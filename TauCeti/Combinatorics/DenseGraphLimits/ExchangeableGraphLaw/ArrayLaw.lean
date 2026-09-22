@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.AdjArr
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
+import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Exchangeable graph laws as jointly exchangeable array laws
@@ -90,9 +91,10 @@ theorem arrayLaw_compl_symmetricArraysWithDiag_eq_zero (μ : Measure (SimpleGrap
     exact G.adjArray_mem_symmetricArraysWithDiag
   simp [this]
 
-/-- The array law of an exchangeable law on infinite graphs is jointly exchangeable. -/
-theorem jointlyExchangeable_arrayLaw (L : InfiniteExchangeableGraphLaw) :
-    JointlyExchangeable (arrayLaw L.law) fun p x => x p := by
+/-- The array law of a relabelling-invariant law on graphs is jointly exchangeable. -/
+theorem jointlyExchangeable_arrayLaw {μ : Measure (SimpleGraph ℕ)}
+    (hμ : ∀ σ : Equiv.Perm ℕ, μ.map (SimpleGraph.comap ⇑σ) = μ) :
+    JointlyExchangeable (arrayLaw μ) fun p x => x p := by
   rw [jointlyExchangeable_iff]
   intro σ
   rw [arrayLaw_def, Measure.map_map (by fun_prop) SimpleGraph.measurable_adjArray,
@@ -101,7 +103,7 @@ theorem jointlyExchangeable_arrayLaw (L : InfiniteExchangeableGraphLaw) :
       = SimpleGraph.adjArray ∘ SimpleGraph.comap ⇑σ := by
     funext G; simp only [Function.comp, SimpleGraph.adjArray_comap, pairReindex_def]
   rw [this, ← Measure.map_map SimpleGraph.measurable_adjArray (SimpleGraph.measurable_comap _),
-    L.exchangeable σ]
+    hμ σ]
   rfl
 
 /-- The array law of an exchangeable law on infinite graphs is a jointly exchangeable probability
@@ -111,7 +113,7 @@ theorem arrayLaw_mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWith
     arrayLaw L.law ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false :=
   mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.2
     ⟨mem_jointlyExchangeableProbabilityMeasures_iff.2
-      ⟨jointlyExchangeable_arrayLaw L, inferInstance⟩,
+      ⟨jointlyExchangeable_arrayLaw L.exchangeable, inferInstance⟩,
       arrayLaw_compl_symmetricArraysWithDiag_eq_zero _⟩
 
 /-- The graph law of a law on arrays: its pushforward along the graph of an array. -/
@@ -227,41 +229,45 @@ open Classical in
 /-- A graph on `Fin n` read on the block `[k, m)²`, where `m = k + n`. -/
 private noncomputable def finGraphBlockAt (k n m : ℕ) (hm : k + n = m) (H : SimpleGraph (Fin n)) :
     (Finset.Ico k m ×ˢ Finset.Ico k m : Finset (ℕ × ℕ)) → Bool :=
-  fun p => decide (H.Adj ⟨p.1.1 - k, by have := (Finset.mem_product.1 p.2).1; simp at this; omega⟩
-    ⟨p.1.2 - k, by have := (Finset.mem_product.1 p.2).2; simp at this; omega⟩)
+  fun p => decide (H.Adj
+    ⟨p.1.1 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.2).1); omega⟩
+    ⟨p.1.2 - k, by have := (Finset.mem_Ico.1 (Finset.mem_product.1 p.2).2); omega⟩)
 
 open Classical in
+/-- The value of the block reading at the pair `(k + a, k + b)`. -/
+private theorem finGraphBlockAt_apply (k n m : ℕ) (hm : k + n = m) (H : SimpleGraph (Fin n))
+    (a b : Fin n) (h : ((k + a : ℕ), (k + b : ℕ)) ∈ (Finset.Ico k m ×ˢ Finset.Ico k m)) :
+    finGraphBlockAt k n m hm H ⟨((k + a : ℕ), (k + b : ℕ)), h⟩ = decide (H.Adj a b) := by
+  simp [finGraphBlockAt]
+
+private theorem mem_block_add (k n m : ℕ) (hm : k + n = m) (a b : Fin n) :
+    ((k + a : ℕ), (k + b : ℕ)) ∈ (Finset.Ico k m ×ˢ Finset.Ico k m) :=
+  Finset.mem_product.2
+    ⟨Finset.mem_Ico.2 ⟨by omega, by omega⟩, Finset.mem_Ico.2 ⟨by omega, by omega⟩⟩
+
 private theorem measurableEmbedding_finGraphBlockAt (k n m : ℕ) (hm : k + n = m) :
     MeasurableEmbedding (finGraphBlockAt k n m hm) :=
-  MeasurableEmbedding.of_injective_of_countable
-    (Measurable.of_eval fun _ => (measurable_of_countable (fun q : Prop => decide q)).comp
-      (measurable_iff_adj.1 measurable_id _ _))
-    (fun H H' h => by
-      ext a b
-      have := congrFun h ⟨(k + a, k + b), by simp; omega⟩
-      simpa [finGraphBlockAt] using this)
+  MeasurableEmbedding.of_injective_of_countable (measurable_of_countable _) fun H H' h => by
+    ext a b
+    have := congrFun h ⟨_, mem_block_add k n m hm a b⟩
+    rwa [finGraphBlockAt_apply, finGraphBlockAt_apply, decide_eq_decide] at this
 
-/-- The block restriction of the adjacency array on `[k, k + n)²` is the window at offset `k`. -/
+/-- The block restriction of the adjacency array on `[k, m)²` is the window at offset `k`. -/
 private theorem restrict_adjArray (k n m : ℕ) (hm : k + n = m) (G : SimpleGraph ℕ) :
     (Finset.Ico k m ×ˢ Finset.Ico k m).restrict G.adjArray
       = finGraphBlockAt k n m hm (SimpleGraph.comap (fun i : Fin n => k + (i : ℕ)) G) := by
   funext ⟨⟨a, b⟩, hab⟩
+  have ha := Finset.mem_Ico.1 (Finset.mem_product.1 hab).1
+  have hb := Finset.mem_Ico.1 (Finset.mem_product.1 hab).2
   simp only [Finset.restrict, finGraphBlockAt, SimpleGraph.adjArray_apply, SimpleGraph.comap_adj]
-  have ha : k ≤ a := by have := (Finset.mem_product.1 hab).1; simp at this; omega
-  have hb : k ≤ b := by have := (Finset.mem_product.1 hab).2; simp at this; omega
-  congr 1; simp [Nat.add_sub_cancel' ha, Nat.add_sub_cancel' hb]
-
-/-- The window at offset `0` is the initial window. -/
-private theorem comap_zero_add (n : ℕ) (G : SimpleGraph ℕ) :
-    SimpleGraph.comap (fun i : Fin n => 0 + (i : ℕ)) G = G.restrictFin n := by
-  ext a b; simp [restrictFin_adj]
+  congr 1; simp [Nat.add_sub_cancel' ha.1, Nat.add_sub_cancel' hb.1]
 
 /-- The block restriction of the adjacency array on `[0, n)²` is the window of length `n`: the
 general lemma at offset `0`. -/
 private theorem restrict_adjArray_zero (n : ℕ) (G : SimpleGraph ℕ) :
     (Finset.Ico 0 n ×ˢ Finset.Ico 0 n).restrict G.adjArray
       = finGraphBlockAt 0 n n (Nat.zero_add n) (G.restrictFin n) := by
-  rw [restrict_adjArray 0 n n (Nat.zero_add n), comap_zero_add]
+  rw [restrict_adjArray 0 n n (Nat.zero_add n), SimpleGraph.comap_zero_add]
 
 /-- The dissociation identity of the finite law at `(k, l)` is block independence of the array
 law at the windows `[0, k)²` and `[k, k + l)²`. -/
@@ -318,25 +324,18 @@ theorem isDissociated_iff_forall_indepFun_restrict (L : InfiniteExchangeableGrap
   rw [e1, e2, e3, ← Measure.map_map hemb.measurable hw, ← Measure.map_map hf (by fun_prop),
     ← Measure.map_map hg (by fun_prop), Measure.map_prod_map _ _ hf hg,
     hemb.map_injective.eq_iff]
-  -- the second window at offset `k` has the law of the initial window, by consistency
-  have hsecond : L.law.map (fun G : SimpleGraph ℕ =>
-      SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))) = L.law.map (·.restrictFin l) := by
-    have := (exchangeableGraphLawEquivInfinite.symm L).consistent
-      (⟨Fin.natAdd k, fun a b h => by simpa using h⟩ : Fin l ↪ Fin (k + l))
-    simp only [exchangeableGraphLawEquivInfinite_symm_law] at this
-    rw [Measure.map_map (SimpleGraph.measurable_comap _) (SimpleGraph.measurable_restrictFin _)]
-      at this
-    exact this
-  rw [hsecond, Measure.map_map (by fun_prop) (SimpleGraph.measurable_restrictFin _)]
+  rw [L.map_comap_natAdd_restrictFin,
+    Measure.map_map (by fun_prop) (SimpleGraph.measurable_restrictFin _)]
   simp only [Function.comp_def, restrictFin_comap_castAdd]
 
 /-- **Dissociation is joint dissociation of the array law.** -/
 theorem isDissociated_iff_jointlyDissociated (L : InfiniteExchangeableGraphLaw) :
     (exchangeableGraphLawEquivInfinite.symm L).IsDissociated ↔
       JointlyDissociated (arrayLaw L.law) fun p x => x p := by
-  rw [isDissociated_iff_forall_indepFun_restrict, jointlyDissociated_coord_iff_indepFun_restrict]
-  refine ⟨fun h => indepFun_restrict_of_forall_Ico (jointlyExchangeable_arrayLaw L) h,
-    fun h k l => h _ _ ?_⟩
+  rw [isDissociated_iff_forall_indepFun_restrict,
+    jointlyDissociated_iff_indepFun_restrict fun p => measurable_pi_apply p]
+  refine ⟨fun h I J hIJ => indepFun_restrict_of_forall_Ico
+    (jointlyExchangeable_arrayLaw L.exchangeable) I J hIJ (h _ _), fun h k l => h _ _ ?_⟩
   rw [Finset.disjoint_left]
   intro n hn hn'
   simp only [Finset.mem_Ico] at hn hn'
@@ -349,13 +348,9 @@ theorem isDissociated_iff_arrayLaw_mem_extremePoints (L : InfiniteExchangeableGr
       arrayLaw L.law ∈ extremePoints ℝ≥0∞
         (jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false) := by
   rw [isDissociated_iff_jointlyDissociated,
-    jointlyDissociated_iff_mem_extremePoints_on (jointlyExchangeable_arrayLaw L)
+    jointlyDissociated_iff_mem_extremePoints_on (jointlyExchangeable_arrayLaw L.exchangeable)
       (arrayLaw_compl_symmetricArraysWithDiag_eq_zero _)]
-  -- the symmetric carried-law set is the carried-law set at the symmetric carrier; its body is
-  -- not exposed across the module boundary, so the identity is read off the membership lemmas
-  exact Iff.of_eq (congrArg (arrayLaw L.law ∈ extremePoints ℝ≥0∞ ·) (Set.ext fun _ =>
-    mem_jointlyExchangeableProbabilityMeasuresOn_iff.trans
-      mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.symm))
+  rw [jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_eq]
 
 end DenseGraphLimits
 
