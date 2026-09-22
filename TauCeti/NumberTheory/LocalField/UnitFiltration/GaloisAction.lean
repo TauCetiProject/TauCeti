@@ -79,13 +79,13 @@ noncomputable instance unitFiltrationMulDistribMulAction (i : ℕ) :
   exact Subtype.coe_injective.mulDistribMulAction (unitFiltration L i).subtype fun _ _ ↦ rfl
 
 /-- The action on a step of the unit filtration agrees with the ambient action on `Lˣ`. -/
+@[simp]
 theorem coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltration L i) :
     ((σ • x : unitFiltration L i) : Lˣ) = σ • (x : Lˣ) :=
   (rfl)
 
 /-- The value in `L` of the action on a step of the unit filtration is obtained by applying the
 automorphism. -/
-@[simp]
 theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltration L i) :
     (((σ • x : unitFiltration L i) : Lˣ) : L) = σ ((x : Lˣ) : L) :=
   (rfl)
