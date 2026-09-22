@@ -26,6 +26,8 @@ a separate compatible inverse-limit argument.
 ## Main definitions and results
 
 * `IsProPSylow`: the predicate for a Sylow pro-`p` subgroup.
+* `IsProPSylow.toSylow`: the image in a quotient by an open normal subgroup, as a Mathlib
+  `Sylow` subgroup of that quotient.
 * `IsProPSylow.map_continuousMulEquiv`, `IsProPSylow.map_conj`: the predicate is preserved by
   isomorphisms of topological groups, in particular by conjugation.
 * `IsProP.isProPSylow_top`: a pro-`p` group is its own Sylow pro-`p` subgroup.
@@ -83,6 +85,20 @@ index prime to `p`. -/
 theorem not_dvd_index (hP : IsProPSylow p P) (U : OpenNormalSubgroup G) :
     ¬ p ∣ (P.map (QuotientGroup.mk' U.toSubgroup)).index :=
   (isProPSylow_iff.mp hP).2.2 U
+
+/-- The image of a Sylow pro-`p` subgroup in the quotient by an open normal subgroup, packaged
+as a Mathlib `Sylow` subgroup of that quotient: it is a `p`-group of index prime to `p`. -/
+def toSylow [Fact p.Prime] [IsTopologicalGroup G] (hP : IsProPSylow p P)
+    (U : OpenNormalSubgroup G) : Sylow p (G ⧸ U.toSubgroup) :=
+  (hP.isProP.isPGroup_map_mk' U).toSylow (hP.not_dvd_index U)
+
+/-- The underlying subgroup of `IsProPSylow.toSylow` is the image of `P` in the quotient. -/
+@[simp]
+theorem coe_toSylow [Fact p.Prime] [IsTopologicalGroup G] (hP : IsProPSylow p P)
+    (U : OpenNormalSubgroup G) :
+    (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup)) =
+      P.map (QuotientGroup.mk' U.toSubgroup) :=
+  IsPGroup.toSylow_coe _ _
 
 /-- The image of a Sylow pro-`p` subgroup under an isomorphism of topological groups is a Sylow
 pro-`p` subgroup. -/

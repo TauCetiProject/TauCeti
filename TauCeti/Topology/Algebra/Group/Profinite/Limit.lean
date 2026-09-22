@@ -30,7 +30,8 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
 * The same for subgroups: a family `H` of subgroups of the quotients `G ⧸ U` cuts out the closed
   subgroup `limitSubgroup H` of `G` (`isClosed_limitSubgroup`), and when `H` is compatible along
   the quotient maps and `G` is compact, its image in every `G ⧸ U` is exactly `H U`
-  (`map_mk'_limitSubgroup`).
+  (`map_mk'_limitSubgroup`). Conversely a closed subgroup is cut out by its own images
+  (`limitSubgroup_map_mk'`), so the two constructions are mutually inverse.
 -/
 
 public section
@@ -137,6 +138,16 @@ theorem isClosed_limitSubgroup (H : ∀ U : OpenNormalSubgroup G, Subgroup (G �
     IsClosed (limitSubgroup H : Set G) := by
   rw [limitSubgroup, Subgroup.coe_iInf]
   exact isClosed_iInter fun U ↦ (isClosed_discrete _).preimage QuotientGroup.continuous_mk
+
+/-- A closed subgroup of a profinite group is cut out by the family of its images in the finite
+quotients. Together with `map_mk'_limitSubgroup` this identifies the closed subgroups of `G` with
+the compatible families of subgroups of the quotients `G ⧸ U`. -/
+theorem limitSubgroup_map_mk' [CompactSpace G] [TotallyDisconnectedSpace G] (P : Subgroup G)
+    (hP : IsClosed (P : Set G)) :
+    limitSubgroup (fun U ↦ P.map (QuotientGroup.mk' U.toSubgroup)) = P := by
+  rw [limitSubgroup]
+  refine (iInf_congr fun U ↦ ?_).trans (P.eq_iInf_sup_openNormalSubgroup hP).symm
+  rw [Subgroup.comap_map_eq, QuotientGroup.ker_mk']
 
 /-- A family of subgroups of the quotients of a compact group by its open normal subgroups that
 is compatible along the quotient maps is the family of images of the subgroup it cuts out. -/
