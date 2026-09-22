@@ -54,12 +54,12 @@ namespace TauCeti.EisensteinSeries
 variable {u v N t k : ℕ} [NeZero N]
   (psi : DirichletCharacter ℂ u) (phi : DirichletCharacter ℂ v)
 
-/-- The character Eisenstein series normalized so that its first Fourier coefficient is `1`.
+/-- The character Eisenstein series scaled by the inverse of its expected first coefficient.
 
 The scalar is the inverse of the first coefficient of `charEisensteinSeriesMF`; its Gauss-sum
-factor is nonzero when `phi` is primitive. -/
-def normalizedCharEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N)
-    (_hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ)) (_hphi : phi.IsPrimitive) :
+factor is nonzero when `phi` is primitive, in which case the parity condition implies that the
+result has first Fourier coefficient `1`. -/
+def normalizedCharEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) :
     ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) := by
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
   exact
@@ -72,17 +72,18 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ))
     (huv : u * v ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
     (hphi : phi.IsPrimitive)
     {n : ℕ} (hn : n ≠ 0) :
-    (qExpansion 1 (normalizedCharEisensteinSeriesMF psi phi hk huv hpar hphi)).coeff n =
+    (qExpansion 1 (normalizedCharEisensteinSeriesMF psi phi hk huv)).coeff n =
       DirichletCharacter.twistedDivisorSum (k - 1) psi phi n := by
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans huv)
   have hphiInv : (phi⁻¹).IsPrimitive := by
     rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
     exact hphi
-  have hgauss : gaussSum phi⁻¹ stdAddChar ≠ 0 :=
-    DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hphiInv
-      (isPrimitive_stdAddChar v) (by
-        rw [ZMod.card]
-        exact Nat.cast_ne_zero.mpr (NeZero.ne v))
+  have hgauss : gaussSum phi⁻¹ stdAddChar ≠ 0 := by
+    intro hzero
+    have hprod := DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive
+      hphiInv (isPrimitive_stdAddChar v)
+    rw [hzero, zero_mul, ZMod.card] at hprod
+    exact Nat.cast_ne_zero.mpr (NeZero.ne v) hprod.symm
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
   have hfactorial : ((k - 1).factorial : ℂ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
@@ -105,7 +106,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ))
 theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff_one (hk : 3 ≤ (k : ℤ))
     (huv : u * v ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
     (hphi : phi.IsPrimitive) :
-    (qExpansion 1 (normalizedCharEisensteinSeriesMF psi phi hk huv hpar hphi)).coeff 1 = 1 := by
+    (qExpansion 1 (normalizedCharEisensteinSeriesMF psi phi hk huv)).coeff 1 = 1 := by
   rw [qExpansion_normalizedCharEisensteinSeriesMF_coeff psi phi hk huv hpar hphi one_ne_zero,
     DirichletCharacter.twistedDivisorSum_one]
 
@@ -113,7 +114,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff_one (hk : 3 ≤ (k : �
 theorem normalizedCharEisensteinSeriesMF_ne_zero (hk : 3 ≤ (k : ℤ))
     (huv : u * v ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
     (hphi : phi.IsPrimitive) :
-    normalizedCharEisensteinSeriesMF psi phi hk huv hpar hphi ≠ 0 := by
+    normalizedCharEisensteinSeriesMF psi phi hk huv ≠ 0 := by
   intro hzero
   have hcoeff := qExpansion_normalizedCharEisensteinSeriesMF_coeff_one
     psi phi hk huv hpar hphi
@@ -124,9 +125,8 @@ theorem normalizedCharEisensteinSeriesMF_ne_zero (hk : 3 ≤ (k : ℤ))
 
 /-- The normalized series has the same nebentypus as the raw character Eisenstein series. -/
 theorem normalizedCharEisensteinSeriesMF_mem_modFormCharSpace (hk : 3 ≤ (k : ℤ))
-    (huv : u * v ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
-    (hphi : phi.IsPrimitive) :
-    normalizedCharEisensteinSeriesMF psi phi hk huv hpar hphi ∈ modFormCharSpace k
+    (huv : u * v ∣ N) :
+    normalizedCharEisensteinSeriesMF psi phi hk huv ∈ modFormCharSpace k
       (psi.changeLevel ((dvd_mul_right u v).trans huv) *
         phi.changeLevel ((dvd_mul_left v u).trans huv)).toUnitHom := by
   rw [normalizedCharEisensteinSeriesMF]
@@ -136,22 +136,20 @@ theorem normalizedCharEisensteinSeriesMF_mem_modFormCharSpace (hk : 3 ≤ (k : �
 /-- The normalized character Eisenstein series with raising parameter `t`:
 `E_k^(psi,phi,t) = V_t E_k^(psi,phi)`. -/
 def normalizedCharEisensteinSeriesMFRaise (t : ℕ) (hk : 3 ≤ (k : ℤ))
-    (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
-    (hphi : phi.IsPrimitive) : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) := by
+    (htuv : t * (u * v) ∣ N) : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   exact ModularForm.levelRaise t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)
-    (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl hpar hphi)
+    (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl)
 
 /-- The raised normalized character Eisenstein series is the base series evaluated at `t z`. -/
 @[simp]
 theorem normalizedCharEisensteinSeriesMFRaise_apply (hk : 3 ≤ (k : ℤ))
-    (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
-    (hphi : phi.IsPrimitive) (z : ℍ) :
+    (htuv : t * (u * v) ∣ N) (z : ℍ) :
     haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
     haveI : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-    normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv hpar hphi z =
-      normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl hpar hphi (scaleGL t • z) := by
+    normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv z =
+      normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl (scaleGL t • z) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [normalizedCharEisensteinSeriesMFRaise, ModularForm.levelRaise_apply]
@@ -160,13 +158,12 @@ theorem normalizedCharEisensteinSeriesMFRaise_apply (hk : 3 ≤ (k : ℤ))
 substituting `q ↦ q^t` in the `q`-expansion of the base series. -/
 @[simp]
 theorem qExpansion_normalizedCharEisensteinSeriesMFRaise (hk : 3 ≤ (k : ℤ))
-    (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
-    (hphi : phi.IsPrimitive) :
+    (htuv : t * (u * v) ∣ N) :
     haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
     haveI : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
-    qExpansion 1 (normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv hpar hphi) =
+    qExpansion 1 (normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv) =
       (qExpansion 1
-        (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl hpar hphi)).expand t
+        (normalizedCharEisensteinSeriesMF psi phi hk dvd_rfl)).expand t
           (NeZero.ne t) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
@@ -182,7 +179,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff (hk : 3 ≤ (k : 
     (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
     (hphi : phi.IsPrimitive) {n : ℕ} (hn : n ≠ 0) :
     (qExpansion 1
-      (normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv hpar hphi)).coeff n =
+      (normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv)).coeff n =
       if t ∣ n then DirichletCharacter.twistedDivisorSum (k - 1) psi phi (n / t) else 0 := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
@@ -202,7 +199,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff_self (hk : 3 ≤ 
     (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
     (hphi : phi.IsPrimitive) :
     (qExpansion 1
-      (normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv hpar hphi)).coeff t = 1 := by
+      (normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv)).coeff t = 1 := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   rw [qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff psi phi hk htuv hpar hphi
       (NeZero.ne t)]
@@ -212,7 +209,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff_self (hk : 3 ≤ 
 theorem normalizedCharEisensteinSeriesMFRaise_ne_zero (hk : 3 ≤ (k : ℤ))
     (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
     (hphi : phi.IsPrimitive) :
-    normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv hpar hphi ≠ 0 := by
+    normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv ≠ 0 := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   intro hzero
@@ -223,9 +220,8 @@ theorem normalizedCharEisensteinSeriesMFRaise_ne_zero (hk : 3 ≤ (k : ℤ))
 
 /-- The raised normalized Eisenstein series belongs to the target nebentypus space. -/
 theorem normalizedCharEisensteinSeriesMFRaise_mem_modFormCharSpace (hk : 3 ≤ (k : ℤ))
-    (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
-    (hphi : phi.IsPrimitive) :
-    normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv hpar hphi ∈ modFormCharSpace k
+    (htuv : t * (u * v) ∣ N) :
+    normalizedCharEisensteinSeriesMFRaise psi phi t hk htuv ∈ modFormCharSpace k
       (psi.changeLevel ((dvd_mul_right u v).trans
           ((dvd_mul_left (u * v) t).trans htuv)) *
         phi.changeLevel ((dvd_mul_left v u).trans
