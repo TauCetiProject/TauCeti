@@ -58,8 +58,6 @@ the graph map takes its values in `range P`.
   `ContinuousLinearMap.norm_localUnstableGraphMap_le`, and
   `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image`:
   the corresponding graph and local-set characterization for backward solutions.
-* `isIntegralCurveOn_comp_neg_iff`: time reversal for an arbitrary time-dependent vector field,
-  the change of variables that the unstable construction runs on.
 
 ## References
 
@@ -76,17 +74,6 @@ open Filter Metric NormedSpace Set Topology
 open scoped NNReal
 
 noncomputable section
-
-open scoped Pointwise in
-/-- **Time reversal for integral curves.** Reflecting the time parameter turns an integral curve
-of a time-dependent vector field `v` into an integral curve of the field reflected in both time
-and sign, over the reflected domain. This is `isIntegralCurveOn_comp_mul_ne_zero` for the scaling
-factor `-1`. -/
-theorem isIntegralCurveOn_comp_neg_iff {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    {v : ℝ → X → X} {y : ℝ → X} {s : Set ℝ} :
-    IsIntegralCurveOn (fun t ↦ y (-t)) (fun t z ↦ -v (-t) z) (-s) ↔ IsIntegralCurveOn y v s := by
-  simpa [Function.comp_def, Pi.neg_def, one_smul] using
-    isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := v) (s := s) (a := -1) (by norm_num)
 
 namespace ContinuousLinearMap
 
@@ -363,16 +350,13 @@ theorem norm_localUnstableGraphMap_le (hN0 : N 0 = 0) (v : X) :
 
 omit [CompleteSpace X] in
 open scoped Pointwise in
-/-- Reversing time turns a backward solution into a forward solution of the negated equation:
-`isIntegralCurveOn_comp_neg_iff` for the autonomous field `A + N` on `Iic 0`. -/
+/-- Reversing time turns a backward solution into a forward solution of the negated equation. -/
 private theorem isIntegralCurveOn_comp_neg_Iic_iff {y : ℝ → X} :
     IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
       IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
-  rw [← isIntegralCurveOn_comp_neg_iff (v := fun _ z ↦ A z + N z) (y := y)]
-  simp only [neg_apply, Pi.neg_apply, neg_add]
-  congr! 1
-  ext t
-  simp
+  simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
+    (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
+      (s := Iic 0) (a := -1) (by norm_num)).symm
 
 /-- A backward solution confined to the ball on which the nonlinearity is small tends to the
 equilibrium in backward time. -/
