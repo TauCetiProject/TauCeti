@@ -95,7 +95,7 @@ theorem restrictedProductMap_id (U : ∀ i, Subgroup (G i)) :
         (.of_forall fun _ _ hx ↦ hx) =
       MonoidHom.id (Πʳ i, [G i, (U i : Set (G i))]) := by
   ext x i
-  rfl
+  rw [restrictedProductMap_apply, MonoidHom.id_apply, MonoidHom.id_apply]
 
 /-- Componentwise restricted-product homomorphisms compose coordinatewise. -/
 theorem restrictedProductMap_comp {H : ι → Type w} {K : ι → Type z}
@@ -110,7 +110,8 @@ theorem restrictedProductMap_comp {H : ι → Type w} {K : ι → Type z}
         (by filter_upwards [hφ, hψ] with i hφi hψi
             exact hψi.comp hφi) := by
   ext x i
-  rfl
+  rw [MonoidHom.comp_apply, restrictedProductMap_apply, restrictedProductMap_apply,
+    restrictedProductMap_apply, MonoidHom.comp_apply]
 
 /-- An everywhere-preserving componentwise map sends the integral subgroup into the target
 integral subgroup. -/
@@ -137,7 +138,8 @@ theorem not_forall_mapsTo_integralSubgroup :
   let U' : ℕ → Subgroup (Multiplicative ℤ) := fun i ↦ if i = 0 then ⊥ else ⊤
   let φ : ∀ _ : ℕ, Multiplicative ℤ →* Multiplicative ℤ := fun _ ↦ MonoidHom.id _
   have hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i) := by
-    filter_upwards [show ∀ᶠ i : ℕ in cofinite, i ≠ 0 by simp] with i hi
+    have hne : ∀ᶠ i : ℕ in cofinite, i ≠ 0 := by simp
+    filter_upwards [hne] with i hi
     simp [U, U', φ, hi]
   let x : Πʳ i, [Multiplicative ℤ, (U i : Set (Multiplicative ℤ))] :=
     ⟨fun _ ↦ Multiplicative.ofAdd 1, .of_forall fun i ↦ by simp [U]⟩
