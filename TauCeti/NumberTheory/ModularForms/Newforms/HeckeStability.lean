@@ -26,11 +26,10 @@ This mirrors the diamond half, `diamondOpCusp_mem_cuspFormsOld`, which is proved
 from `CuspForm.diamondOpCusp_levelRaise`. Together they say the old subspace is stable under the
 operators that act on `S_k(Γ₁(N))` away from the level.
 
-The new subspace is the Petersson-orthogonal complement of the old subspace. The Petersson
-adjoint of `Tₚ` is `⟨p⟩⁻¹ Tₚ`; both factors preserve the old subspace, so `Tₚ` preserves its
-orthogonal complement. This is the invariant-subspace input for restricting the simultaneous
-good-Hecke diagonalization to the newspace. The stability of both old and new subspaces is
-Diamond–Shurman, *A First Course in Modular Forms*, Proposition 5.6.2.
+The new subspace is the Petersson-orthogonal complement of the old subspace. Its stability is
+the invariant-subspace input for restricting the simultaneous good-Hecke diagonalization to the
+newspace. The stability of both old and new subspaces is Diamond–Shurman,
+*A First Course in Modular Forms*, Proposition 5.6.2.
 
 Both stability statements also hold for the Hecke-ring *generator*
 `heckeTGeneratorGamma0 N p` at a good prime, acting on a character space — the form eigenform
