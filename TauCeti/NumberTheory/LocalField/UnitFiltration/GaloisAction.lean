@@ -21,7 +21,7 @@ passing to successive quotients in ramification theory.
 
 ## Main results
 
-* `TauCeti.smul_mem_unitFiltration_iff`: membership in `U(L,i)` is invariant under an extension
+* `TauCeti.map_mem_unitFiltration_iff`: membership in `U(L,i)` is invariant under an extension
   automorphism.
 * `TauCeti.smul_unitFiltration`: an extension automorphism maps `U(L,i)` onto itself.
 * `TauCeti.coe_smul_unitFiltration`: the restricted action agrees with the action on `Lˣ`.
@@ -45,15 +45,16 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Module.Finite K L]
 
 /-- Membership in the unit filtration is invariant under every automorphism of a finite extension
-of a nonarchimedean local field. -/
+of a nonarchimedean local field. The action of `σ` on `Lˣ` is `Units.map σ`, so this is also the
+statement that `σ • x ∈ unitFiltration L i ↔ x ∈ unitFiltration L i`. -/
 @[simp]
-theorem smul_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ} :
-    σ • x ∈ unitFiltration L i ↔ x ∈ unitFiltration L i := by
+theorem map_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ} :
+    Units.map (σ : L →* L) x ∈ unitFiltration L i ↔ x ∈ unitFiltration L i := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[L])
   have hsub : valuation L (σ (x : L) - 1) = valuation L ((x : L) - 1) := by
     simpa only [map_sub, map_one] using σ.valuation_eq ((x : L) - 1)
   rw [mem_unitFiltration_iff_valuation_le hπ, mem_unitFiltration_iff_valuation_le hπ]
-  simp only [AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_coe]
+  simp only [Units.coe_map, MonoidHom.coe_coe]
   rw [σ.valuation_eq, hsub]
 
 /-- Every automorphism of a finite extension of a nonarchimedean local field maps each step of
@@ -62,13 +63,14 @@ the unit filtration onto itself. -/
 theorem smul_unitFiltration (σ : L ≃ₐ[K] L) (i : ℕ) :
     σ • unitFiltration L i = unitFiltration L i := by
   ext x
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, smul_mem_unitFiltration_iff]
+  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, AlgEquiv.smul_units_def,
+    map_mem_unitFiltration_iff]
 
 /-- The action of extension automorphisms on `Lˣ` restricts to every step `U(L,i)` of the unit
 filtration. -/
 noncomputable instance unitFiltrationMulDistribMulAction (i : ℕ) :
     MulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L i) where
-  smul σ x := ⟨σ • (x : Lˣ), (smul_mem_unitFiltration_iff σ).2 x.2⟩
+  smul σ x := ⟨σ • (x : Lˣ), (map_mem_unitFiltration_iff σ).2 x.2⟩
   one_smul _ := Subtype.ext (one_smul _ _)
   mul_smul _ _ _ := Subtype.ext (mul_smul _ _ _)
   smul_mul _ _ _ := Subtype.ext (smul_mul' _ _ _)
