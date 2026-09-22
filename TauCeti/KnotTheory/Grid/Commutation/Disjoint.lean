@@ -58,6 +58,7 @@ theorem mem_coveredSquares_swap_finRotate_iff_of_ne (r : GridRectangle n) {a : F
 
 /-- Avoidance of the `X`-markings is unchanged by swapping two cyclically consecutive columns
 when the second column is not a vertical side of the rectangle. -/
+@[simp]
 theorem disjoint_coveredSquares_XSet_swapColumns_iff_of_ne (r : GridRectangle n)
     (G : GridDiagram n) {a : Fin n} (hleft : r.left ≠ finRotate n a)
     (hright : r.right ≠ finRotate n a) :
@@ -144,6 +145,7 @@ def HasDisjointSides (D : GridPentagonRectangleDecomposition a s x z) : Prop :=
 
 /-- Disjointness of a pentagon and rectangle is disjointness of their underlying rectangle
 side pairs. -/
+@[simp]
 theorem hasDisjointSides_iff (D : GridPentagonRectangleDecomposition a s x z) :
     D.HasDisjointSides ↔ D.toRectangleDecomposition.HasDisjointSides :=
   Iff.rfl
@@ -168,6 +170,7 @@ def HasDisjointSides (D : GridRectanglePentagonDecomposition a s x z) : Prop :=
 
 /-- Disjointness of a rectangle and pentagon is disjointness of their underlying rectangle
 side pairs. -/
+@[simp]
 theorem hasDisjointSides_iff (D : GridRectanglePentagonDecomposition a s x z) :
     D.HasDisjointSides ↔ D.toRectangleDecomposition.HasDisjointSides :=
   Iff.rfl
