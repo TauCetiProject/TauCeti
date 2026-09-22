@@ -23,6 +23,13 @@ rational map of the retraction is the orthogonal projector with codomain restric
 substructure. Thus the composite in the ambient object is the Hodge projector, while the composite
 on the subobject is the identity. In particular, the inclusion is a split monomorphism.
 
+More generally, no polarization is needed once a complement is given: a rational Hodge
+substructure complementary to the chosen one already determines a retraction, namely the
+projection onto the substructure along that complement. Its rational map is a morphism of Hodge
+structures because it is idempotent with a Hodge structure as range and another as kernel. This is
+the form used to split a substructure off an independent family, where the complement is the
+supremum of the other members rather than an orthogonal complement.
+
 This is the categorical form of the orthogonal-complement argument proving semisimplicity of
 polarizable pure Hodge structures. See Voisin, *Hodge Theory and Complex Algebraic Geometry I*,
 §7.1.2, and Peters--Steenbrink, *Mixed Hodge Structures*, §2.
@@ -33,6 +40,8 @@ polarizable pure Hodge structures. See Voisin, *Hodge Theory and Complex Algebra
   rational Hodge substructure.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.substructureInclusion`: its inclusion into the
   ambient object.
+* `TauCeti.Hodge.PolarizableHodgeStructureCat.substructureRetractionOfIsCompl`: the retraction
+  supplied by a complementary rational Hodge substructure.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.substructureRetraction`: the retraction supplied by
   a polarization.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.isSplitMono_substructureInclusion`: the categorical

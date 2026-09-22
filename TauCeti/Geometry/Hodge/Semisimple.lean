@@ -167,12 +167,67 @@ noncomputable def substructureBiproductDesc
     (⨁ fun U : s ↦ ofSubstructure X U.1) ⟶ X :=
   biproduct.desc fun U ↦ substructureInclusion X U.1
 
+/-- The canonical map out of the biproduct restricts on each summand to the inclusion of the
+corresponding rational Hodge substructure. -/
 @[simp]
 theorem biproduct_ι_comp_substructureBiproductDesc
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs)) (U : s) :
     biproduct.ι (fun U : s ↦ ofSubstructure X U.1) U ≫
       substructureBiproductDesc X s = substructureInclusion X U.1 := by
   rw [substructureBiproductDesc, biproduct.ι_desc]
+
+/-- A nonzero morphism into the object induced by an atomic rational Hodge substructure is
+surjective on rational carriers.
+
+Its rational image is a rational Hodge substructure of the atom `U`, and it is not `⊥` because the
+morphism is nonzero, so it is all of `U`. -/
+theorem surjective_of_isAtom_of_ne_zero {Y : PolarizableHodgeStructureCat.{u'} n}
+    {U : RationalHodgeSubstructure X.isBaseChangeRat X.hs} (hU : IsAtom U)
+    {f : Y ⟶ ofSubstructure X U} (hf : f ≠ 0) :
+    Function.Surjective f.hom.toRatLinearMap := by
+  -- The composite with the inclusion has a rational image `V`, a substructure of the ambient `X`.
+  let g : Y ⟶ X := f ≫ substructureInclusion X U
+  have hg := Hom.isMorphism g
+  rw [MixedHodgeStructure.Hom.toLinearMap_def] at hg
+  let V : RationalHodgeSubstructure X.isBaseChangeRat X.hs :=
+    RationalHodgeSubstructure.ofRationalMorphismRange hg
+  -- It is contained in `U`, since `g` factors through the inclusion of `U`.
+  have hVU : V ≤ U := by
+    rw [RationalHodgeSubstructure.le_def,
+      RationalHodgeSubstructure.ofRationalMorphismRange_WQ]
+    rw [← Submodule.range_subtype U.WQ]
+    simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap] using
+      (LinearMap.range_comp_le_range f.hom.toRatLinearMap U.WQ.subtype)
+  -- It is nonzero, because the inclusion of `U` is injective and `f ≠ 0`.
+  have hVne : V ≠ ⊥ := by
+    intro hV
+    apply hf
+    apply Hom.ext
+    rw [zero_toRatLinearMap]
+    apply LinearMap.ext
+    intro y
+    apply Submodule.injective_subtype U.WQ
+    have hgzero : g.hom.toRatLinearMap = 0 := by
+      apply LinearMap.range_eq_bot.1
+      rw [← RationalHodgeSubstructure.ofRationalMorphismRange_WQ hg]
+      simpa only [V, RationalHodgeSubstructure.bot_WQ] using
+        congrArg RationalHodgeSubstructure.WQ hV
+    have := LinearMap.congr_fun hgzero y
+    simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap,
+      LinearMap.comp_apply, LinearMap.zero_apply, map_zero] using this
+  -- As `U` is an atom, the image is all of `U`, which is surjectivity of `f`.
+  have hVUeq : V = U := (hU.ne_bot_iff_eq hVU).1 hVne
+  intro y
+  let y' : U.WQ := y
+  have hy : U.WQ.subtype y' ∈ LinearMap.range g.hom.toRatLinearMap := by
+    rw [← RationalHodgeSubstructure.ofRationalMorphismRange_WQ hg]
+    have : U.WQ.subtype y' ∈ V.WQ := by rw [hVUeq]; exact y'.property
+    simpa only [V] using this
+  obtain ⟨x, hx⟩ := hy
+  refine ⟨x, ?_⟩
+  apply Submodule.injective_subtype U.WQ
+  simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap,
+    LinearMap.comp_apply] using hx
 
 /-- An atom of the lattice of rational Hodge substructures gives a simple object of the category
 of polarizable rational Hodge structures. -/
@@ -182,7 +237,8 @@ theorem simple_of_isAtom
   constructor
   intro Y f hf
   constructor
-  · intro hfiso hfzero
+  · -- An isomorphism is nonzero: were the zero morphism surjective, `U` would be `⊥`.
+    intro hfiso hfzero
     have hsurj := (isIso_iff_bijective f).1 hfiso |>.2
     apply hU.ne_bot
     apply RationalHodgeSubstructure.ext
@@ -198,64 +254,10 @@ theorem simple_of_isAtom
       exact congrArg Subtype.val this
     · rintro rfl
       exact U.WQ.zero_mem
-  · intro hfzero
-    apply (isIso_iff_bijective f).2
-    refine ⟨(mono_iff_injective f).1 inferInstance, ?_⟩
-    let g : Y ⟶ X := f ≫ substructureInclusion X U
-    have hg := Hom.isMorphism g
-    rw [MixedHodgeStructure.Hom.toLinearMap_def] at hg
-    let V : RationalHodgeSubstructure X.isBaseChangeRat X.hs :=
-      RationalHodgeSubstructure.ofRationalMorphismRange hg
-    have hVU : V ≤ U := by
-      rw [RationalHodgeSubstructure.le_def,
-        RationalHodgeSubstructure.ofRationalMorphismRange_WQ]
-      rw [← Submodule.range_subtype U.WQ]
-      simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap] using
-        (LinearMap.range_comp_le_range f.hom.toRatLinearMap U.WQ.subtype)
-    have hVne : V ≠ ⊥ := by
-      intro hV
-      apply hfzero
-      apply Hom.ext
-      rw [zero_toRatLinearMap]
-      apply LinearMap.ext
-      intro y
-      apply Submodule.injective_subtype U.WQ
-      have hgzero : g.hom.toRatLinearMap = 0 := by
-        apply LinearMap.range_eq_bot.1
-        rw [← RationalHodgeSubstructure.ofRationalMorphismRange_WQ hg]
-        simpa only [V, RationalHodgeSubstructure.bot_WQ] using
-          congrArg RationalHodgeSubstructure.WQ hV
-      have := LinearMap.congr_fun hgzero y
-      simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap,
-        LinearMap.comp_apply, LinearMap.zero_apply, map_zero] using this
-    have hVUeq : V = U := (hU.ne_bot_iff_eq hVU).1 hVne
-    intro y
-    let y' : U.WQ := y
-    have hy : U.WQ.subtype y' ∈ LinearMap.range g.hom.toRatLinearMap := by
-      rw [← RationalHodgeSubstructure.ofRationalMorphismRange_WQ hg]
-      have : U.WQ.subtype y' ∈ V.WQ := by rw [hVUeq]; exact y'.property
-      simpa only [V] using this
-    obtain ⟨x, hx⟩ := hy
-    refine ⟨x, ?_⟩
-    apply Submodule.injective_subtype U.WQ
-    simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap,
-      LinearMap.comp_apply] using hx
-
-private theorem isCompl_finsetSup_erase
-    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
-    [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
-    (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
-    IsCompl U.1 ((s.erase U.1).sup id) := by
-  classical
-  constructor
-  · exact (Finset.supIndep_iff_disjoint_erase.1 hind U.1 U.2)
-  · rw [codisjoint_iff]
-    calc
-      U.1 ⊔ (s.erase U.1).sup id = (insert U.1 (s.erase U.1)).sup id :=
-        (Finset.sup_insert
-          (f := fun W : RationalHodgeSubstructure X.isBaseChangeRat X.hs ↦ W)).symm
-      _ = s.sup id := by rw [Finset.insert_erase U.2]
-      _ = ⊤ := htop
+  · -- A nonzero monomorphism is injective by assumption and surjective by the range argument.
+    intro hfzero
+    exact (isIso_iff_bijective f).2
+      ⟨(mono_iff_injective f).1 inferInstance, surjective_of_isAtom_of_ne_zero X hU hfzero⟩
 
 /-- An independent finite family of rational Hodge substructures spanning the ambient structure
 gives an isomorphism from their biproduct to the ambient object. -/
@@ -267,7 +269,7 @@ noncomputable def substructureBiproductIso
   let complement : s → RationalHodgeSubstructure X.isBaseChangeRat X.hs :=
     fun U ↦ (s.erase U.1).sup id
   let hcompl : ∀ U, IsCompl U.1 (complement U) :=
-    fun U ↦ isCompl_finsetSup_erase X s hind htop U
+    fun U ↦ hind.isCompl_sup_erase htop U.2
   let r : X ⟶ (⨁ fun U : s ↦ ofSubstructure X U.1) :=
     biproduct.lift fun U ↦ substructureRetractionOfIsCompl X U.1 (complement U) (hcompl U)
   let d := substructureBiproductDesc X s
