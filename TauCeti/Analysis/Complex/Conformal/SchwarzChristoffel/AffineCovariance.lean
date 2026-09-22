@@ -48,18 +48,15 @@ variable {ι : Type*} [Fintype ι]
 /-- The Schwarz--Christoffel integrand is covariant under a positive affine change of all its
 prevertices.  The exponent of the scale factor is the total turning exponent. -/
 theorem schwarzChristoffelIntegrand_affine_prevertices (a e : ι → ℝ) {c : ℝ} (hc : 0 < c)
-    (d : ℝ) {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
+    (d : ℝ) {z : ℂ} (hz : ∀ i, z - (a i : ℂ) ≠ 0) :
     schwarzChristoffelIntegrand (fun i ↦ c * a i + d) e ((c : ℂ) * z + (d : ℂ)) =
       (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) * schwarzChristoffelIntegrand a e z := by
   rw [schwarzChristoffelIntegrand_def, schwarzChristoffelIntegrand_def]
-  simp_rw [show ∀ i, (c : ℂ) * z + (d : ℂ) - ((c * a i + d : ℝ) : ℂ) =
-      (c : ℂ) * (z - (a i : ℂ)) by
-    intro i
+  have h_affine (i : ι) : (c : ℂ) * z + (d : ℂ) - ((c * a i + d : ℝ) : ℂ) =
+      (c : ℂ) * (z - (a i : ℂ)) := by
     push_cast
-    ring]
-  have hne (i : ι) : z - (a i : ℂ) ≠ 0 :=
-    fun h ↦ hz.ne' (by simpa using congr_arg Complex.im h)
-  simp_rw [Complex.ofReal_mul_cpow hc (hne _), Finset.prod_mul_distrib]
+    ring
+  simp_rw [h_affine, Complex.ofReal_mul_cpow hc (hz _), Finset.prod_mul_distrib]
   congr 1
   calc
     ∏ i, (c : ℂ) ^ (e i : ℂ) = ∏ i, ((c ^ e i : ℝ) : ℂ) := by
@@ -85,9 +82,10 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
   have hc₀ : (c : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hc.ne'
   have hC : C = (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) * (c : ℂ) := by
     dsimp only [C]
-    rw [show (((∑ i, e i) + 1 : ℝ) : ℂ) =
-        ((∑ i, e i : ℝ) : ℂ) + 1 by push_cast; ring,
-      Complex.cpow_add _ _ hc₀, Complex.cpow_one]
+    have h_exp : (((∑ i, e i) + 1 : ℝ) : ℂ) = ((∑ i, e i : ℝ) : ℂ) + 1 := by
+      push_cast
+      ring
+    rw [h_exp, Complex.cpow_add _ _ hc₀, Complex.cpow_one]
   have hleft : ∀ w ∈ upperHalfPlaneSet,
       HasDerivAt
         (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e (z₀.affine c d hc) ∘
@@ -103,7 +101,9 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
         schwarzChristoffelIntegrand (fun i ↦ c * a i + d) e
             ((c : ℂ) * w + (d : ℂ)) * (c : ℂ) =
           C * schwarzChristoffelIntegrand a e w := by
-      rw [schwarzChristoffelIntegrand_affine_prevertices a e hc d hw, hC]
+      have hne (i : ι) : w - (a i : ℂ) ≠ 0 :=
+        fun h ↦ hw.ne' (by simpa using congr_arg Complex.im h)
+      rw [schwarzChristoffelIntegrand_affine_prevertices a e hc d hne, hC]
       ring
     exact hcomp.congr_deriv hderiv
   have hright : ∀ w ∈ upperHalfPlaneSet,
