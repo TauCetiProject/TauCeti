@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.SpecialFunctions.Exp
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
 # Exponential decay on the upper half-plane
@@ -36,5 +37,16 @@ theorem isZeroAtImInfty_of_isBigO_exp_neg {E : Type*} [NormedAddCommGroup E] {f 
     IsZeroAtImInfty f := by
   refine hf.trans_tendsto <| (Real.tendsto_exp_atBot.comp ?_).comp tendsto_comap
   exact tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.mpr hc)
+
+/-- An exponential growth bound at `i∞` remains valid after increasing its integer rate. -/
+theorem isBigO_exp_of_le (w : ℝ) (hw : 0 < w) {k k' : ℤ} (hkk' : k ≤ k') {f : ℍ → ℂ}
+    (hf : f =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w)) :
+    f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * (k' : ℝ) * z.im / w) := by
+  refine hf.trans (Asymptotics.isBigO_of_le _ fun z ↦ ?_)
+  simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+  apply (div_le_div_iff_of_pos_right hw).2
+  exact mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left (by exact_mod_cast hkk') (by positivity)) z.im_pos.le
 
 end TauCeti.UpperHalfPlane

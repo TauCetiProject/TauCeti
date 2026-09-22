@@ -57,6 +57,7 @@ theorem coordinate_apply (D : Γ.CuspDatum) (z : ℍ) :
     coordinate D z = Function.Periodic.qParam D.width (↑(D.scaling • z) : ℂ) := (rfl)
 
 /-- Applying the inverse scaling before the cusp coordinate recovers the ordinary q-parameter. -/
+@[simp]
 theorem coordinate_inv_smul (D : Γ.CuspDatum) (z : ℍ) :
     coordinate D (D.scaling⁻¹ • z) = Function.Periodic.qParam D.width z := by
   rw [coordinate_apply, smul_inv_smul]
