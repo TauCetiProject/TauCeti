@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
@@ -51,15 +51,19 @@ local instance extChartAtBorelSpaceM : BorelSpace M := ⟨rfl⟩
 measurable spaces. -/
 theorem measurableEmbedding_extChartAt_restrict (x : M) :
     MeasurableEmbedding ((extChartAt I x).source.domRestrict (extChartAt I x)) := by
+  -- The extended chart is continuous in both directions, so it is a partial homeomorphism onto
+  -- its (not necessarily open) target. `e` is built on the very `PartialEquiv` `extChartAt I x`,
+  -- so `e.isEmbedding_restrict` is a statement about the map appearing in the goal.
   let e : PartialHomeomorph M E :=
     { toPartialEquiv := extChartAt I x
       continuousOn_toFun := continuousOn_extChartAt x
       continuousOn_invFun := continuousOn_extChartAt_symm x }
-  apply e.isEmbedding_restrict.measurableEmbedding
-  change MeasurableSet (Set.range ((extChartAt I x).source.domRestrict (extChartAt I x)))
-  rw [Set.range_domRestrict, PartialEquiv.image_source_eq_target, extChartAt_target]
-  exact ((chartAt H x).open_target.preimage I.continuous_symm).measurableSet.inter
-    I.isClosed_range.measurableSet
+  have hrange :
+      MeasurableSet (Set.range ((extChartAt I x).source.domRestrict (extChartAt I x))) := by
+    rw [Set.range_domRestrict, PartialEquiv.image_source_eq_target, extChartAt_target]
+    exact ((chartAt H x).open_target.preimage I.continuous_symm).measurableSet.inter
+      I.isClosed_range.measurableSet
+  exact e.isEmbedding_restrict.measurableEmbedding hrange
 
 /-- The image of a measurable subset of an extended chart's source is measurable in the model
 space. -/

@@ -116,10 +116,11 @@ theorem chartRiemannianVolume_restrict_overlap (α β : M) :
     chartRiemannianVolume_apply β (hs.inter hU)]
   have hUα : U ⊆ (extChartAt I α).source := inter_subset_left
   have hUβ : U ⊆ (extChartAt I β).source := inter_subset_right
-  rw [show (s ∩ U) ∩ (extChartAt I α).source = s ∩ U from
-      inter_eq_left.mpr (inter_subset_right.trans hUα),
-    show (s ∩ U) ∩ (extChartAt I β).source = s ∩ U from
-      inter_eq_left.mpr (inter_subset_right.trans hUβ)]
+  have hsα : (s ∩ U) ∩ (extChartAt I α).source = s ∩ U :=
+    inter_eq_left.mpr (inter_subset_right.trans hUα)
+  have hsβ : (s ∩ U) ∩ (extChartAt I β).source = s ∩ U :=
+    inter_eq_left.mpr (inter_subset_right.trans hUβ)
+  rw [hsα, hsβ]
   -- Work on the α-coordinate image of the measurable part of the overlap.
   let A := (extChartAt I α) '' (s ∩ U)
   let e := (extChartAt I α).symm ≫ extChartAt I β
@@ -132,14 +133,11 @@ theorem chartRiemannianVolume_restrict_overlap (α β : M) :
   have hA_range : A ⊆ Set.range I := hA_target.trans (extChartAt_target_subset_range α)
   have hA_source : A ⊆ e.source := by
     rintro y ⟨x, hx, rfl⟩
-    rw [PartialEquiv.trans_source]
-    exact ⟨(extChartAt I α).map_source (hsUα hx), by
-      change (extChartAt I α).symm ((extChartAt I α) x) ∈ (extChartAt I β).source
-      rw [(extChartAt I α).left_inv (hsUα hx)]
-      exact hsUβ hx⟩
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
+      (extChartAt I α).left_inv (hsUα hx)]
+    exact ⟨(extChartAt I α).map_source (hsUα hx), hsUβ hx⟩
   have himage : e '' A = (extChartAt I β) '' (s ∩ U) := by
-    change e '' ((extChartAt I α) '' (s ∩ U)) = (extChartAt I β) '' (s ∩ U)
-    rw [image_image]
+    simp only [A, image_image]
     apply image_congr
     intro x hx
     simp only [e, PartialEquiv.trans_apply, (extChartAt I α).left_inv (hsUα hx)]
@@ -148,8 +146,7 @@ theorem chartRiemannianVolume_restrict_overlap (α β : M) :
         (fderivWithin ℝ ((extChartAt I β) ∘ (extChartAt I α).symm) (Set.range I) y) A y := by
     rintro y ⟨x, hx, rfl⟩
     exact (hasFDerivWithinAt_tangentCoordChange (I := I)
-      (show x ∈ (extChartAt I α).source ∩ (extChartAt I β).source from
-        ⟨hsUα hx, hsUβ hx⟩)).mono hA_range
+      (mem_inter (hsUα hx) (hsUβ hx))).mono hA_range
   -- Change variables to β-coordinates, then use the density's Jacobian transformation law.
   rw [← himage, lintegral_image_eq_lintegral_abs_det_fderiv_mul
     (Module.finBasis ℝ E).addHaar hA hderiv (e.injOn.mono hA_source)]
@@ -178,9 +175,7 @@ theorem chartRiemannianVolume_restrict_overlap (α β : M) :
         ENNReal.ofReal (chartVolumeDensity (I := I) β
           ((extChartAt I β).symm (e ((extChartAt I α) x)))) := by
       have he_apply : e ((extChartAt I α) x) = (extChartAt I β) x := by
-        change (extChartAt I β) ((extChartAt I α).symm ((extChartAt I α) x)) =
-          (extChartAt I β) x
-        rw [(extChartAt I α).left_inv (hsUα hx)]
+        simp only [e, PartialEquiv.trans_apply, (extChartAt I α).left_inv (hsUα hx)]
       rw [he_apply, (extChartAt I β).left_inv (hsUβ hx),
         (extChartAt I α).left_inv (hsUα hx)]
 
