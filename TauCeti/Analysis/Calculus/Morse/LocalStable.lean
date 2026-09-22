@@ -281,12 +281,12 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
     exact (hg v w).trans (by gcongr)
   · exact ContinuousLinearMap.localUnstableGraphMap_zero hs hu hr.le hN hsmall hN0
   · intro v
-    simpa only [g, P, h.unstableProjection_eq_sub] using
-      ContinuousLinearMap.sub_apply_localUnstableGraphMap hs hu hr.le hN hsmall
-        h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v
+    have hgP := ContinuousLinearMap.apply_localUnstableGraphMap hs hu hr.le hN hsmall
+      h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v
+    simpa only [g, P, h.unstableProjection_apply, sub_eq_zero] using hgP.symm
   · intro v
-    simpa only [g, P, h.unstableProjection_eq_sub] using
-      ContinuousLinearMap.localUnstableGraphMap_sub_apply hs hu hr.le hN hsmall
+    simpa only [g, P, h.unstableProjection_apply] using
+      ContinuousLinearMap.localUnstableGraphMap_sub_map hs hu hr.le hN hsmall
         h.isIdempotentElem_stableProjection v
   · have hrange : Set.range h.unstableProjection =
         (h.contDiffAt.unstableLinearSubspace : Set E) := by

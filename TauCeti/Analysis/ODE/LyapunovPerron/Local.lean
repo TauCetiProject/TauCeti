@@ -296,23 +296,29 @@ def localUnstableGraphMap : X → X :=
 
 variable {A P N r}
 
-/-- The local unstable graph map takes values in the kernel of the complementary projection. -/
+/-- The local unstable graph map takes values in the kernel of the complementary projection,
+that is, `P` fixes them. -/
 @[simp]
-theorem sub_apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P) (v : X) :
-    (ContinuousLinearMap.id ℝ X - P)
-      (localUnstableGraphMap A P N r hs hu hr hN hsmall v) = 0 := by
-  exact apply_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
+theorem apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P) (v : X) :
+    P (localUnstableGraphMap A P N r hs hu hr hN hsmall v) =
+      localUnstableGraphMap A P N r hs hu hr hN hsmall v := by
+  have h0 := apply_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hP.one_sub
       ((Commute.one_right (-A)).sub_right hAP.neg_left) v
+  rw [sub_apply, ContinuousLinearMap.id_apply, sub_eq_zero] at h0
+  rw [localUnstableGraphMap]
+  exact h0.symm
 
 /-- The local unstable graph map depends only on the component in `range (1 - P)`. -/
 @[simp]
-theorem localUnstableGraphMap_sub_apply (hP : IsIdempotentElem P) (v : X) :
-    localUnstableGraphMap A P N r hs hu hr hN hsmall
-        ((ContinuousLinearMap.id ℝ X - P) v) =
+theorem localUnstableGraphMap_sub_map (hP : IsIdempotentElem P) (v : X) :
+    localUnstableGraphMap A P N r hs hu hr hN hsmall (v - P v) =
       localUnstableGraphMap A P N r hs hu hr hN hsmall v := by
-  exact localStableGraphMap_map (reversed_stable_bound (A := A) (P := P) hu)
+  have h0 := localStableGraphMap_map (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hP.one_sub v
+  rw [sub_apply, ContinuousLinearMap.id_apply] at h0
+  rw [localUnstableGraphMap]
+  exact h0
 
 /-- If the nonlinearity fixes the equilibrium, so does the local unstable graph map. -/
 @[simp]

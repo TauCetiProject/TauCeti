@@ -316,8 +316,9 @@ theorem unstableProjection_eq_sub (h : IsNondegenerateCriticalPoint f x) :
     h.unstableProjection = ContinuousLinearMap.id ℝ E - h.stableProjection := by
   rw [unstableProjection]
 
-/-- The unstable projection is the identity minus the stable projection. -/
-@[simp]
+/-- The unstable projection is the identity minus the stable projection. This is deliberately
+not a `simp` lemma: unfolding it would keep `unstableProjection` out of simp normal form and
+so defeat `unstableProjection_apply_eq_zero_iff` and `unstableProjection_apply_eq_self_iff`. -/
 theorem unstableProjection_apply (h : IsNondegenerateCriticalPoint f x) (v : E) :
     h.unstableProjection v = v - h.stableProjection v := by
   simp [unstableProjection]
