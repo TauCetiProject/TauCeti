@@ -79,8 +79,11 @@ theorem coeff_equivFunctionFieldDivisor
     simp only [equivFunctionFieldDivisor, Finsupp.domCongr_apply, WeilDivisor.coeff,
       Finsupp.equivMapDomain_apply]
 
-/-- The coefficient at the place attached to `x` is the coefficient at `x`. -/
-@[simp]
+/-- The coefficient at the place attached to `x` is the coefficient at `x`.
+
+This is a named rewrite lemma rather than a simp lemma because
+`coeff_equivFunctionFieldDivisor` first simplifies its left-hand side to the inverse image of
+the place. -/
 theorem coeff_equivFunctionFieldDivisor_toPlace
     (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
     (hdim : ∀ x : X, coheight x ≤ 1) (D : SchemeWeilDivisor X)
