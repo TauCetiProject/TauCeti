@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Diffeomorphism.Topology
-public import Mathlib.Topology.Homotopy.Path
+public import Mathlib.Topology.Path
 
 /-!
 # The path traced by a diffeotopy
@@ -19,9 +19,9 @@ continuous curve in `TauCeti.Diff` for the weak Whitney topology. Since a diffeo
 the identity, that curve is a path from `1` to the final diffeomorphism: a self-diffeomorphism
 diffeotopic to the identity lies in the path component of `1`.
 
-This is the first consumer of the weak Whitney topology on diffeomorphisms; it is kept apart
-from `TauCeti.Geometry.Diffeomorphism.Topology` so that the topology itself does not drag in
-diffeotopy theory and the real-manifold structure of the unit interval.
+This application is kept apart from `TauCeti.Geometry.Diffeomorphism.Topology` so that the
+topology itself does not drag in diffeotopy theory and the real-manifold structure of the unit
+interval.
 
 ## Main definitions
 
@@ -30,6 +30,7 @@ diffeotopy theory and the real-manifold structure of the unit interval.
 ## Main results
 
 * `TauCeti.Diffeotopy.continuous_timeSlice`: the time slices of a diffeotopy move continuously.
+* `TauCeti.Diffeotopy.joined_one_final`: the identity is joined to the final diffeomorphism.
 
 ## References
 
@@ -52,8 +53,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [IsManifold J n M]
 
 /-- The time slices of a diffeotopy move continuously in the weak Whitney topology. -/
-theorem continuous_timeSlice : Continuous Φ.timeSlice :=
-  Φ.contMDiff_timeSlice.continuous_diffeomorphWeakWhitney
+theorem continuous_timeSlice : Continuous Φ.timeSlice := by
+  apply ContMDiff.continuous_diffeomorphWeakWhitney (I' := 𝓡∂ 1)
+  simpa only [timeSlice_apply, Prod.mk.eta] using Φ.contMDiff
 
 /-- A diffeotopy is a path in `TauCeti.Diff` from the identity to its final diffeomorphism; in
 particular a self-diffeomorphism diffeotopic to the identity lies in the path component of
@@ -67,5 +69,9 @@ noncomputable def toPath : Path (1 : Diff J M n) Φ.final where
 /-- The path traced by a diffeotopy is its family of time slices. -/
 @[simp]
 theorem toPath_apply (t : I) : Φ.toPath t = Φ.timeSlice t := (rfl)
+
+/-- The identity diffeomorphism is joined to the final diffeomorphism of a diffeotopy. -/
+theorem joined_one_final : Joined (1 : Diff J M n) Φ.final :=
+  ⟨Φ.toPath⟩
 
 end TauCeti.Diffeotopy

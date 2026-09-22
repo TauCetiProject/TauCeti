@@ -14,8 +14,8 @@ Mathlib equips a product of model vector spaces both with the product of their s
 with the self-model of the product. This file provides the `C^n` bridge between those
 definitionally distinct presentations.
 
-This supplies reusable two-parameter calculus infrastructure for Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
+These bridges are useful when transporting `C^n` and `C^n`-on-a-set statements between product
+chart coordinates and the self-model of the product model space.
 
 ## Main results
 
@@ -23,10 +23,6 @@ This supplies reusable two-parameter calculus infrastructure for Deliverable A, 
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
 * `contMDiffOn_prod_modelWithCornersSelf_iff`: the same bridge for `C^n` maps on a set.
 
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The infinitesimal adjoint".
 -/
 
 public section

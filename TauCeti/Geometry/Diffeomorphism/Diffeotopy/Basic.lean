@@ -42,7 +42,6 @@ bundled smooth embeddings, used for geometric knot presentations, is in
 
 ## Main results
 
-* `TauCeti.Diffeotopy.contMDiff_timeSlice`: the time slices are jointly `C^n` in time and space.
 * `TauCeti.Diffeotopy.timeSlice_trans` and `timeSlice_symm`: time slices commute with composition
   and inversion.
 * `TauCeti.Diffeotopy.final_trans` and `final_symm`: the corresponding calculus for final
@@ -176,11 +175,6 @@ def timeSlice (t : I) : M ≃ₘ^n⟮J, J⟯ M where
 @[simp]
 theorem timeSlice_apply (t : I) (x : M) : Φ.timeSlice t x = Φ (t, x) :=
   (rfl)
-
-/-- The time slices of a diffeotopy form a jointly `C^n` family of self-diffeomorphisms. -/
-theorem contMDiff_timeSlice :
-    ContMDiff ((𝓡∂ 1).prod J) J n fun z : I × M ↦ Φ.timeSlice z.1 z.2 := by
-  simpa only [timeSlice_apply, Prod.mk.eta] using Φ.contMDiff
 
 /-- The time-zero slice of a diffeotopy is the identity diffeomorphism. -/
 @[simp]
