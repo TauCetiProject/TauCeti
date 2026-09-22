@@ -85,7 +85,10 @@ theorem manifoldMorseIndex_congr_of_eventuallyEq {g : M → ℝ} (hfg : f =ᶠ[�
     manifoldMorseIndex I f x = manifoldMorseIndex I g x := by
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def]
   have hfg' := hfg
-  rw [show 𝓝 x = 𝓝 ((extChartAt I x).symm (extChartAt I x x)) by simp] at hfg'
+  have hchart : (extChartAt I x).symm (extChartAt I x x) = x := by simp
+  have hnhds : 𝓝 x = 𝓝 ((extChartAt I x).symm (extChartAt I x x)) :=
+    (congrArg 𝓝 hchart).symm
+  rw [hnhds] at hfg'
   exact morseIndex_congr_of_eventuallyEq
     (hfg'.comp_tendsto (continuousAt_extChartAt_symm (I := I) x))
 
