@@ -59,22 +59,10 @@ public section
 namespace TauCeti
 
 open Asymptotics Filter MeasureTheory
-open scoped nonZeroDivisors NumberField Topology
+open scoped nonZeroDivisors NumberField
 open IsDedekindDomain
 
 variable {K : Type*} [Field K] [NumberField K] {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
-
-/-- A quotient limit for a function gives the corresponding linear little-`o` remainder. -/
-theorem isLittleO_sub_mul_id_of_tendsto_div {f : ℝ → ℝ} {δ : ℝ}
-    (h : Tendsto (fun x : ℝ ↦ f x / x) atTop (𝓝 δ)) :
-    (fun x : ℝ ↦ f x - δ * x) =o[atTop] fun x : ℝ ↦ x := by
-  refine (isLittleO_iff_tendsto'
-    ((eventually_ne_atTop (0 : ℝ)).mono fun _ hx hzero ↦ (hx hzero).elim)).2 ?_
-  have h' := h.sub_const δ
-  rw [sub_self] at h'
-  refine h'.congr' ?_
-  filter_upwards [eventually_ne_atTop (0 : ℝ)] with x hx
-  field_simp
 
 /-- The error term `ϑ(t) - δ t` is interval integrable: `ϑ` is monotone and `t ↦ δ t` is
 continuous. -/

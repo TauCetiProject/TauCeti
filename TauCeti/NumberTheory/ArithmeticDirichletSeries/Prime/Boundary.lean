@@ -142,8 +142,13 @@ end PrimeBoundaryRemainder
 imply `ψ(x) = δx + o(x)`. -/
 theorem primePsi_asymptotic_of_boundary (B : PrimeBoundaryRemainder K S δ) :
     (fun x ↦ primePsi K S x - δ * x) =o[atTop] fun x : ℝ ↦ x := by
-  apply isLittleO_sub_mul_id_of_tendsto_div
-  simpa [div_eq_mul_inv, mul_comm] using B.tendsto_inv_mul_primePsi
+  refine (isLittleO_iff_tendsto' ((eventually_ne_atTop (0 : ℝ)).mono fun _ hx hzero ↦
+    (hx hzero).elim)).2 ?_
+  have h := B.tendsto_inv_mul_primePsi.sub_const δ
+  rw [sub_self] at h
+  refine h.congr' ?_
+  filter_upwards [eventually_ne_atTop (0 : ℝ)] with x hx
+  field_simp
 
 /-- **Prime-number-theorem transfer from exact boundary data.**  The three conclusions are,
 respectively, the von Mangoldt-weighted prime-power asymptotic, the logarithmically weighted prime
