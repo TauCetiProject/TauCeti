@@ -254,12 +254,11 @@ theorem IsGlobalMinimal.weierstrassClass_eq_one {W : WeierstrassCurve O}
 
 /-- Triviality is unchanged by passing between the positive defect convention and Silverman's
 inverse convention. -/
-@[simp]
 theorem weierstrassClass_eq_one_iff (W : WeierstrassCurve O)
     [(W.baseChange K).IsElliptic] :
     weierstrassClass (K := K) O W = 1 ↔
       weierstrassDefectClass (K := K) O W = 1 := by
-  rw [weierstrassClass_eq_inv_weierstrassDefectClass, inv_eq_one]
+  simp only [weierstrassClass_eq_inv_weierstrassDefectClass, inv_eq_one]
 
 end WeierstrassCurve
 
