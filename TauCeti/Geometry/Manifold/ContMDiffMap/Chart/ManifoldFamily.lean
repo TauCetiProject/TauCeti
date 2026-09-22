@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Analysis.Calculus.TangentCone.Prod
 
 /-!
@@ -32,7 +33,7 @@ Use `open scoped TauCeti.ManifoldWeakWhitney` to select the topology these state
 ## Main results
 
 * `Continuous.isOpen_setOf_mem_extChartAt_source`: the parameters and chart points at which a
-  continuous family is visible in a target chart form an open set.
+  continuous map on `P × M` is visible in a target chart form an open set.
 * `ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt`: there the coordinate derivative of
   the family depends continuously on the parameter and the chart point jointly.
 * `ContMDiff.continuous_manifoldWeakWhitney`: joint `C^n` regularity gives continuity into the
@@ -59,32 +60,33 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : WithTop ℕ∞} [IsManifold I n M] [IsManifold I' n P] [IsManifold J n N]
 
-omit [IsManifold I n M] [IsManifold J n N] in
-/-- The parameters and source-chart points at which a continuous family of maps is visible in
-the extended chart around `y` form an open set. Exactly there is the coordinate representative
-of the family, and hence the derivative tested by `ContMDiffMap.chartJetSet`, defined. -/
-theorem Continuous.isOpen_setOf_mem_extChartAt_source {f : P → C^n⟮I, M; J, N⟯}
-    (hf : Continuous fun z : P × M ↦ f z.1 z.2) (x : M) (y : N) :
+omit [ChartedSpace H' P] [IsManifold I n M] [IsManifold I' n P] [IsManifold J n N] in
+/-- The parameters and source-chart points at which a continuous map on `P × M`, read as a
+family of maps `M → N`, is visible in the extended chart around `y` form an open set. Exactly
+there is the coordinate representative of the family, and hence the derivative tested by
+`ContMDiffMap.chartJetSet`, defined. -/
+theorem Continuous.isOpen_setOf_mem_extChartAt_source {g : P × M → N} (hg : Continuous g)
+    (x : M) (y : N) :
     IsOpen {z : P × (extChartAt I x).target |
-      f z.1 ((extChartAt I x).symm ↑z.2) ∈ (extChartAt J y).source} := by
-  refine (isOpen_extChartAt_source (I := J) y).preimage (hf.comp (continuous_fst.prodMk ?_))
+      g (z.1, (extChartAt I x).symm ↑z.2) ∈ (extChartAt J y).source} := by
+  refine (isOpen_extChartAt_source (I := J) y).preimage (hg.comp (continuous_fst.prodMk ?_))
   exact ((continuousOn_extChartAt_symm x).domRestrict).comp continuous_snd
 
-/-- On the open set where a jointly `C^n` family is visible in the extended chart around `y`,
-the `m`-th coordinate derivative of the family depends continuously on the parameter and the
-source-chart point jointly. The derivative is taken within the whole extended source chart
-target, as the weak Whitney tests take it, so boundary and corner points are covered. -/
-theorem ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt {f : P → C^n⟮I, M; J, N⟯}
-    (hf : ContMDiff (I'.prod I) J n fun z : P × M ↦ f z.1 z.2) (x : M) (y : N) (m : ℕ)
-    (hm : m ≤ n) :
+/-- On the open set where a jointly `C^n` map on `P × M`, read as a family of maps `M → N`, is
+visible in the extended chart around `y`, the `m`-th coordinate derivative of the family depends
+continuously on the parameter and the source-chart point jointly. The derivative is taken within
+the whole extended source chart target, as the weak Whitney tests take it, so boundary and corner
+points are covered. -/
+theorem ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt {g : P × M → N}
+    (hg : ContMDiff (I'.prod I) J n g) (x : M) (y : N) (m : ℕ) (hm : m ≤ n) :
     ContinuousOn (fun z : P × (extChartAt I x).target ↦ iteratedFDerivWithin 𝕜 m
-        (fun b ↦ extChartAt J y (f z.1 ((extChartAt I x).symm b))) (extChartAt I x).target ↑z.2)
+        (fun b ↦ extChartAt J y (g (z.1, (extChartAt I x).symm b))) (extChartAt I x).target ↑z.2)
       {z : P × (extChartAt I x).target |
-        f z.1 ((extChartAt I x).symm ↑z.2) ∈ (extChartAt J y).source} := by
+        g (z.1, (extChartAt I x).symm ↑z.2) ∈ (extChartAt J y).source} := by
   set d : P × (extChartAt I x).target → E [×m]→L[𝕜] F := fun z ↦ iteratedFDerivWithin 𝕜 m
-    (fun b ↦ extChartAt J y (f z.1 ((extChartAt I x).symm b))) (extChartAt I x).target ↑z.2
+    (fun b ↦ extChartAt J y (g (z.1, (extChartAt I x).symm b))) (extChartAt I x).target ↑z.2
     with hd_def
-  have hA := hf.continuous.isOpen_setOf_mem_extChartAt_source x y
+  have hA := hg.continuous.isOpen_setOf_mem_extChartAt_source (I := I) (J := J) x y
   rintro ⟨p₀, z₀⟩ hp₀
   refine ContinuousAt.continuousWithinAt ?_
   obtain ⟨W, U, hWo, hUo, hpW, hzU, hWU⟩ := isOpen_prod_iff.mp hA p₀ z₀ hp₀
@@ -100,7 +102,7 @@ theorem ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt {f : P → C^n⟮
   set T : Set E := (extChartAt I x).target ∩ U' with hT_def
   -- The coordinate representative is `C^n` on `S ×ˢ T`.
   have hmapsTo : MapsTo
-      (fun w : E' × E ↦ f ((extChartAt I' p₀).symm w.1) ((extChartAt I x).symm w.2))
+      (fun w : E' × E ↦ g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))
       (S ×ˢ T) (chartAt G y).source := by
     rintro ⟨a, b⟩ ⟨ha, hb⟩
     have hpa : (extChartAt I' p₀).symm a ∈ W := by
@@ -112,14 +114,12 @@ theorem ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt {f : P → C^n⟮
     rw [Set.mem_ofPred_eq, extChartAt_source] at this
     exact this
   have h1 : ContMDiffOn 𝓘(𝕜, E' × E) J n
-      (fun w : E' × E ↦ f ((extChartAt I' p₀).symm w.1) ((extChartAt I x).symm w.2))
-      ((extChartAt I' p₀).target ×ˢ (extChartAt I x).target) := by
-    have h := hf.comp_contMDiffOn
+      (fun w : E' × E ↦ g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))
+      ((extChartAt I' p₀).target ×ˢ (extChartAt I x).target) :=
+    contMDiffOn_prod_modelWithCornersSelf_iff.mp <| hg.comp_contMDiffOn
       ((contMDiffOn_extChartAt_symm p₀).prodMap (contMDiffOn_extChartAt_symm x))
-    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
-    exact h
   have h2 : ContDiffOn 𝕜 n (fun w : E' × E ↦ extChartAt J y
-      (f ((extChartAt I' p₀).symm w.1) ((extChartAt I x).symm w.2))) (S ×ˢ T) :=
+      (g ((extChartAt I' p₀).symm w.1, (extChartAt I x).symm w.2))) (S ×ˢ T) :=
     ((contMDiffOn_extChartAt (I := J) (n := n) (x := y)).comp
       (h1.mono (prod_mono inter_subset_left inter_subset_left)) hmapsTo).contDiffOn
   have hST : UniqueDiffOn 𝕜 (S ×ˢ T) :=
@@ -165,7 +165,7 @@ theorem ContMDiff.continuous_manifoldWeakWhitney {f : P → C^n⟮I, M; J, N⟯}
   -- neighbourhood on which the whole compact test set stays inside it.
   obtain ⟨u, v, huo, hvo, hpu, hKv, huv⟩ := generalized_tube_lemma isCompact_singleton hK
     ((hf.continuousOn_iteratedFDerivWithin_extChartAt x y m hm).isOpen_inter_preimage
-      (hf.continuous.isOpen_setOf_mem_extChartAt_source x y) hV)
+      (hf.continuous.isOpen_setOf_mem_extChartAt_source (I := I) (J := J) x y) hV)
     (by
       rintro ⟨p, z⟩ ⟨hp, hz⟩
       obtain rfl := hp

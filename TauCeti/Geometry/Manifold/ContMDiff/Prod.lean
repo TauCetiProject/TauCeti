@@ -17,10 +17,11 @@ definitionally distinct presentations.
 This supplies reusable two-parameter calculus infrastructure for Deliverable A, Layer 1 of
 `TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
-## Main result
+## Main results
 
 * `contMDiff_prod_modelWithCornersSelf_iff`: a map from a product of model vector spaces is `C^n`
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
+* `contMDiffOn_prod_modelWithCornersSelf_iff`: the same bridge for `C^n` maps on a set.
 
 ## References
 
@@ -38,11 +39,18 @@ variable {𝕜 E₁ E₂ E' H' M : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   [TopologicalSpace M] [ChartedSpace H' M]
-  {n : WithTop ℕ∞} {f : E₁ × E₂ → M}
+  {n : WithTop ℕ∞} {f : E₁ × E₂ → M} {s : Set (E₁ × E₂)}
 
 /-- A map from a product of model vector spaces is `C^n` for the product of the self-models if and
 only if it is `C^n` for the self-model of the product. -/
 theorem contMDiff_prod_modelWithCornersSelf_iff :
     ContMDiff (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f ↔
       ContMDiff 𝓘(𝕜, E₁ × E₂) I' n f := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+/-- A map from a product of model vector spaces is `C^n` on a set for the product of the
+self-models if and only if it is `C^n` on that set for the self-model of the product. -/
+theorem contMDiffOn_prod_modelWithCornersSelf_iff :
+    ContMDiffOn (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f s ↔
+      ContMDiffOn 𝓘(𝕜, E₁ × E₂) I' n f s := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
