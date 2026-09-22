@@ -45,7 +45,7 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 /-- **In degree zero the trace is the corestriction norm.** A `G`-invariant element of
 `Coind_U^G M` is constant, so the trace sends it to the norm `∑ x, x • m` of the `U`-invariant
 value `m` that Shapiro's isomorphism `TauCeti.ContCohomology.explicitShapiro0` reads off it. This
-is the delivered degree-zero factorization through Shapiro's isomorphism and the trace. -/
+is the degree-zero factorization through Shapiro's isomorphism and the trace. -/
 theorem explicitCoeff0_trace_eq_explicitCor0_comp_explicitShapiro0 :
     explicitCoeff0 G (DiscreteCoind G U M) (DiscreteCoind.trace G U M) =
       (explicitCor0 G M U).comp (explicitShapiro0 G U M).toAddMonoidHom := by

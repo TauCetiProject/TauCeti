@@ -87,9 +87,7 @@ uses the equivalent left-coset convention `∑ x, x • f x⁻¹`. They cannot b
 because their coefficients live in the purely algebraic category `Rep k G`, while continuous
 cohomology uses this file's locally constant coinduction on discrete modules.
 
-The trace construction follows Brown, *Cohomology of Groups*, III §9. It implements milestone 1
-of Layer 10's “Corestriction in every degree, through coinduction” target in
-`TauCetiRoadmap/ProfiniteCohomology/README.md`.
+The trace construction follows Brown, *Cohomology of Groups*, III §9.
 
 This is the "coinduced module" milestone of Layer 7 of the human-authored roadmap at
 `TauCetiRoadmap/ProfiniteCohomology/README.md`.
@@ -369,6 +367,7 @@ theorem coindTrace_coindMap {N : Type*} [AddCommGroup N] [DistribMulAction G N] 
   rw [coindTraceTerm_out, coindTraceTerm_out, coindMap_apply, hφ]
 
 /-- The trace of the whole group is evaluation at `1`: the only coset is `U` itself. -/
+@[simp]
 theorem coindTrace_top_eq_coindEval (f : coind G ⊤ M) :
     coindTrace G ⊤ f = coindEval G ⊤ f := by
   have : Subsingleton (G ⧸ (⊤ : Subgroup G)) := QuotientGroup.subsingleton_quotient_top
@@ -724,8 +723,8 @@ noncomputable def trace : DiscreteCoind G U M →+[G] M where
 
 /-- The discrete-carrier trace is the unbundled trace after forgetting the discrete topology. -/
 @[simp]
-theorem trace_toCoind (f : DiscreteCoind G U M) :
-    ∑ x : G ⧸ U, coindTraceTerm U (toCoind G U M f) x = trace G U M f := (rfl)
+theorem coindTrace_toCoind (f : DiscreteCoind G U M) :
+    coindTrace G U (toCoind G U M f) = trace G U M f := (rfl)
 
 @[simp]
 theorem trace_apply (f : DiscreteCoind G U M) :
@@ -737,8 +736,8 @@ theorem trace_apply (f : DiscreteCoind G U M) :
 theorem trace_eq_sum_transversal (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
     (f : DiscreteCoind G U M) : trace G U M f = ∑ x : G ⧸ U, t x • f (t x)⁻¹ := by
-  rw [← trace_toCoind]
-  simpa only [coindTrace_apply, coe_toCoind] using
+  rw [← coindTrace_toCoind]
+  simpa only [coe_toCoind] using
     coindTrace_eq_sum_transversal t ht (toCoind G U M f)
 
 /-- The discrete-carrier trace is natural in `G`-equivariant linear coefficient maps. -/
@@ -769,12 +768,12 @@ noncomputable def traceLinear : DiscreteCoind G U M →ₗ[R] M where
     simp only [coe_smul_scalar]
     exact Finset.sum_congr rfl fun x _ => smul_comm x.out r (f x.out⁻¹)
 
-private theorem traceLinear_apply_impl (f : DiscreteCoind G U M) :
-    traceLinear (R := R) G U M f = trace G U M f := rfl
-
 @[simp]
 theorem traceLinear_apply (f : DiscreteCoind G U M) :
-    traceLinear (R := R) G U M f = trace G U M f := traceLinear_apply_impl f
+    traceLinear (R := R) G U M f = trace G U M f := by
+  -- Expose the additive trace under the linear-map coercion.
+  change trace G U M f = trace G U M f
+  rfl
 
 end Scalar
 
