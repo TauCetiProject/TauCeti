@@ -71,6 +71,12 @@ from a rational open to a smaller one, in the direction of restriction maps. -/
 abbrev RationalSubsetIndex (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :=
   { U : Opens (spa Aplus) // U ∈ spaRationalOpens Aplus ∧ U ≤ V }ᵒᵈ
 
+omit [IsTopologicalRing A] in
+/-- The order on rational-subset indices is reverse inclusion of their underlying opens. -/
+private theorem rationalSubsetIndex_le_iff (U W : RationalSubsetIndex Aplus V) :
+    U ≤ W ↔ (OrderDual.ofDual W).1 ≤ (OrderDual.ofDual U).1 :=
+  Iff.rfl
+
 /-- Forget an admissible presentation and retain the rational subset it presents. Refinement
 becomes reverse inclusion by `rationalSubset_subset_rationalSubset_of_le`. -/
 noncomputable def presentationToRationalSubsetIndex (Aplus : Subring A)
@@ -109,20 +115,18 @@ theorem exists_presentationToRationalSubsetIndex_obj_eq
     { num := T
       den := s
       hasDenominatorPower := P.hasDenominatorPower_of_isOpen_span T s _ hT }
+  have hopen : spaBasicOpen Aplus p.num p.den = (OrderDual.ofDual U).1 := by
+    apply Opens.ext
+    exact (Set.ext fun _ ↦ mem_spaBasicOpen).trans hU.symm
   let i : PresentationIndex (P := P) Aplus V :=
     { pres := p
       isOpen_span := hT
-      le_open := by
-        apply le_trans ?_ U.2.2
-        intro x hx
-        change x ∈ (OrderDual.ofDual U).1
-        exact (Set.ext_iff.mp hU x).mpr (by simpa [p] using mem_spaBasicOpen.mp hx) }
+      le_open := hopen.le.trans U.2.2 }
   refine ⟨i, ?_⟩
   apply OrderDual.ofDual.injective
   apply Subtype.ext
   rw [presentationToRationalSubsetIndex_obj_open]
-  apply Opens.ext
-  exact (Set.ext fun _ ↦ mem_spaBasicOpen).trans hU.symm
+  exact hopen
 
 /-- The functor from presentations to rational subsets is final: every rational subset is in its
 image, and the presentation index is filtered by common refinement. This is the categorical
@@ -143,9 +147,7 @@ private noncomputable def commonCostructuredArrow
     CostructuredArrow (presentationToRationalSubsetIndex (P := P) Aplus V) U := by
   let k := i.left.commonRefinement j.left
   have hk : (presentationToRationalSubsetIndex (P := P) Aplus V).obj k ≤ U := by
-    change (OrderDual.ofDual U).1 ≤
-      (OrderDual.ofDual ((presentationToRationalSubsetIndex Aplus V).obj k)).1
-    rw [presentationToRationalSubsetIndex_obj_open]
+    rw [rationalSubsetIndex_le_iff, presentationToRationalSubsetIndex_obj_open]
     intro x hx
     rw [PresentationIndex.commonRefinement_pres, mem_spaBasicOpen,
       rationalSubset_commonRefinement, Set.mem_inter_iff]
