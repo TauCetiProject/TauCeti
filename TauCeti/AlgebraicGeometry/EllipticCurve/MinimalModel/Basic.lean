@@ -45,7 +45,8 @@ scaling factor of valuation `1`.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
-The third is what the last one runs on, though it is only half of what the descent needs.
+`valuation_u_eq_one_of_isMinimal_smul` is what the last one runs on, though it is only half of
+what the descent needs.
 `v (u) = 1` over a discrete valuation ring says `u` is a unit of `R`; turning that into a change of
 variables actually *defined* over `R` is the job of
 `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_smul_eq`, which also consumes integrality
