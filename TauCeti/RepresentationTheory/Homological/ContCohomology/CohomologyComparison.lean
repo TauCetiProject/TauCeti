@@ -130,7 +130,7 @@ theorem explicitH1AddEquivContinuousCohomology_symm_apply
   rw [AddEquiv.apply_symm_apply, explicitH1AddEquivContinuousCohomology_apply,
     AddEquiv.apply_symm_apply]
 
-/-- **Layer 3, naturality of the degree-one comparison.** The comparison carries the explicit
+/-- **Naturality of the degree-one comparison.** The comparison carries the explicit
 pullback along a compatible pair to Mathlib's canonical continuous-cohomology map along the same
 pair. Restriction and coefficient maps below are specializations of this square. -/
 theorem explicitH1AddEquivContinuousCohomology_map
@@ -311,7 +311,7 @@ theorem explicitH1IsoContinuousCohomology_inv_apply
 
 /-! ### Transport in degree one -/
 
-/-- **Layer 3, transport of compatible-pair pullback in degree one.** The isomorphisms of
+/-- **Transport of compatible-pair pullback in degree one.** The isomorphisms of
 topological modules carry the explicit pullback to Mathlib's canonical map. Compactness is needed
 only to equip the canonical cohomology objects with their discrete topology. -/
 theorem explicitIso_map
@@ -331,7 +331,7 @@ theorem explicitIso_map
   exact explicitH1AddEquivContinuousCohomology_map G M H N φ f hf
     (discreteH1Equiv G M x)
 
-/-- **Layer 3, transport of restriction in degree one.** The comparison carries restriction of
+/-- **Transport of restriction in degree one.** The comparison carries restriction of
 explicit cocycles to canonical restriction along the subgroup inclusion. -/
 theorem explicitIso_res (S : Subgroup G) [CompactSpace S] (x : DiscreteH1 G M) :
     TauCeti.ContinuousCohomology.res S (ofDiscreteModule ℤ G M) 1
@@ -347,7 +347,7 @@ theorem explicitIso_res (S : Subgroup G) [CompactSpace S] (x : DiscreteH1 G M) :
   exact explicitIso_map G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
     (fun _ _ ↦ rfl) x
 
-/-- **Layer 3, transport of coefficient maps in degree one.** The comparison carries the
+/-- **Transport of coefficient maps in degree one.** The comparison carries the
 explicit coefficient map to the canonical map induced by the same equivariant homomorphism. -/
 theorem explicitIso_coeffMap
     (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
