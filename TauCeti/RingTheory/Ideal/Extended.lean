@@ -32,6 +32,7 @@ from `R`, so the Krull intersection theorem applies to its powers.
 
 ## Main results
 
+* `Ideal.isTwoSided_span_of_subset_center`: an ideal spanned by central elements is two-sided.
 * `Ideal.smul_top_eq_restrictScalars_map`: **the extended ideal is `I • ⊤`**, the identity
   `I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A))`.
 * `Ideal.instIsTwoSidedMapAlgebraMap`: the extended ideal is two-sided.
@@ -62,6 +63,26 @@ for an ideal of a commutative ring acting on a module; it is not restated here.
 public section
 
 namespace Ideal
+
+section Span
+
+variable {A : Type*} [Ring A] {S : Set A}
+
+/-- A left ideal spanned by central elements is two-sided. -/
+theorem isTwoSided_span_of_subset_center (hS : S ⊆ Set.center A) :
+    (Ideal.span S).IsTwoSided where
+  mul_mem_of_left b ha := by
+    refine Submodule.span_induction (p := fun a _ ↦ a * b ∈ Ideal.span S)
+      (fun a ha ↦ ?_) (by simp) (fun x y _ _ hx hy ↦ ?_)
+      (fun c x _ hx ↦ ?_) ha
+    · rw [← (Semigroup.mem_center_iff.mp (hS ha) b)]
+      exact Ideal.mul_mem_left _ b (Ideal.subset_span ha)
+    · rw [add_mul]
+      exact Ideal.add_mem _ hx hy
+    · rw [smul_eq_mul, mul_assoc]
+      exact Ideal.mul_mem_left _ c hx
+
+end Span
 
 section Semiring
 
