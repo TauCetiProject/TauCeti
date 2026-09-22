@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Matrix.IntegralCast
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Basic
+import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # The rational form of a minuscule weight table
@@ -195,21 +196,19 @@ theorem isSl2TripleQ (i : B) (hi : ∃ a, T.weight a i ≠ 0) :
       (T.cartanGeneratorMatrixQ i) (T.raisingMatrixQ i) (T.loweringMatrixQ i) := by
   classical
   obtain ⟨a, ha⟩ := hi
-  refine
-    { h_ne_zero := ?_
-      lie_e_f := T.isSerreSystemQ.lie_E_F_self i
-      lie_h_e_nsmul := ?_
-      lie_h_f_nsmul := ?_ }
-  · intro hzero
-    have h := congrFun (congrFun hzero a) a
-    have hweight : T.weight a i = 0 := by
-      simpa only [cartanGeneratorMatrixQ_apply, eq_self, ite_true, Matrix.zero_apply,
-        Int.cast_eq_zero] using h
-    exact ha hweight
-  · rw [T.isSerreSystemQ.lie_H_E, T.cartanMatrix_diag]
-    simp
-  · rw [T.isSerreSystemQ.lie_H_F, T.cartanMatrix_diag]
-    simp
+  have hneg : ∃ b, T.weight b i = -1 := by
+    rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
+    · exact ⟨a, h⟩
+    · exact (ha h).elim
+    · refine ⟨T.reflection i a, ?_⟩
+      rw [T.weight_reflection_self, h]
+  apply (T.isSl2Triple i hneg).map (matrixIntCastLieHom ℚ)
+  intro hzero
+  obtain ⟨b, hb⟩ := hneg
+  have h := congrFun (congrFun hzero b) b
+  simp only [matrixIntCastLieHom_apply, T.cartanGeneratorMatrix_apply, eq_self, ite_true,
+    Matrix.zero_apply, hb, Int.cast_neg, Int.cast_one, neg_eq_zero] at h
+  exact one_ne_zero h
 
 /-- The rational representation of the Serre presentation named by a minuscule weight table. -/
 noncomputable def rationalSerreRepresentation :
