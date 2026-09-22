@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Artinian.Module
-public import Mathlib.Algebra.Module.Submodule.RestrictScalars
 public import TauCeti.Order.Directed
 
 /-!
