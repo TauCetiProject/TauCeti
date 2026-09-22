@@ -160,7 +160,6 @@ width `n * m` to one of its consecutive width-`m` subblocks.  This is the code-v
 conditional-i.i.d. factorizations at different block widths. -/
 theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_map_blockRestriction_mul
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m]
-    [MeasurableSpace.CountablyGenerated (Fin (n * m) → α)]
     [MeasurableSpace.CountablyGenerated (Fin m → α)] (i : ℕ) (r : Fin n) :
     probabilityMeasureCode
         ((@ProbabilityMeasure.blockMarginals α _ P (n * m)

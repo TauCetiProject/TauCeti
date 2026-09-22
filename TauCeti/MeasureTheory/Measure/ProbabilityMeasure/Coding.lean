@@ -93,7 +93,6 @@ theorem probabilityMeasureCode_injective :
 omit [CountablyGenerated α] in
 /-- Coding commutes with pushing a probability measure forward, coordinate by coordinate: the
 value at a generating set is the original measure of its preimage. -/
-@[simp]
 theorem probabilityMeasureCode_map_apply {β : Type*} [MeasurableSpace β]
     [CountablyGenerated β] (P : ProbabilityMeasure α) (f : α → β) (hf : Measurable f)
     (s : ProbabilityMeasureCodeIndex β) :
