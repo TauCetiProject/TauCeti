@@ -72,8 +72,9 @@ section RealLaws
 the level `s` has mass at least the gap between the two cumulative distribution functions at
 `s`. -/
 theorem enorm_cdf_sub_le_measure_symmDiff {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] {π : Measure (ℝ × ℝ)} (hπ : IsCoupling π μ ν) (s : ℝ) :
+    {π : Measure (ℝ × ℝ)} (hπ : IsCoupling π μ ν) (s : ℝ) :
     ‖cdf μ s - cdf ν s‖ₑ ≤ π ({z : ℝ × ℝ | z.1 ≤ s} ∆ {z : ℝ × ℝ | z.2 ≤ s}) := by
+  let : IsProbabilityMeasure ν := ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
   have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
   have hfst : {z : ℝ × ℝ | z.1 ≤ s} = Iic s ×ˢ univ := by ext z; simp
   have hsnd : {z : ℝ × ℝ | z.2 ≤ s} = univ ×ˢ Iic s := by ext z; simp
