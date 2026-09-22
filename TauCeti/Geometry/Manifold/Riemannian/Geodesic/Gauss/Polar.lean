@@ -18,9 +18,8 @@ Its Cauchy--Schwarz consequence says that the radial derivative of a polar lift 
 the speed of its image under the exponential map.  Integrating this estimate shows that a curve
 inside a normal neighbourhood has length at least the absolute change in the norm of its logarithm.
 
-The norm is not differentiable at the origin.  As in the usual proof of radial minimization, the
-argument first uses the smooth radii `sqrt (‖v‖ ^ 2 + δ)` for `δ > 0` and then lets `δ` tend to
-zero.  This formulation includes curves passing through the centre of the normal neighbourhood.
+The comparison needs no nonvanishing hypothesis, so it also covers curves passing through the
+centre of the normal neighbourhood.
 
 ## Main results
 
@@ -86,101 +85,121 @@ theorem abs_inner_le_norm_mul_norm_mfderiv_riemannianExp {p : M}
     _ = ‖v‖ * ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ := by
       rw [hnorm]
 
+/-- The derivative of the smoothed radius `√(⟪w ·, w ·⟫ + δ)`, for `δ > 0`, along a `C¹` path `w`
+in the natural domain of `exp_p` is dominated by the speed of `exp_p ∘ w`.
+
+This is the pointwise polar inequality divided by a radius that has been smoothed at the origin,
+where the norm itself is not differentiable. -/
+private theorem enorm_derivWithin_sqrt_real_inner_add_le_enorm_mfderiv {p : M}
+    {w : ℝ → TangentSpace I p} {a b δ : ℝ} (hδ : 0 < δ)
+    (hw : ContDiffOn ℝ 1 w (Icc a b))
+    (hdom : MapsTo w (Icc a b) (expDomain I M p)) {t : ℝ} (ht : t ∈ Ioo a b) :
+    ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ₑ ≤
+      ‖mfderiv 𝓘(ℝ, ℝ) I (riemannianExp I M p ∘ w) t (1 : ℝ)‖ₑ := by
+  have htIcc : t ∈ Icc a b := Ioo_subset_Icc_self ht
+  have htN : Icc a b ∈ 𝓝 t := Icc_mem_nhds ht.1 ht.2
+  have hwt : HasDerivAt w (derivWithin w (Icc a b) t) t := by
+    have hdiff := ((hw t htIcc).contDiffAt htN).differentiableAt one_ne_zero
+    simpa only [derivWithin_of_mem_nhds htN] using hdiff.hasDerivAt
+  have hQ : HasDerivAt (fun u ↦ inner ℝ (w u) (w u))
+      (2 * inner ℝ (w t) (derivWithin w (Icc a b) t)) t := by
+    have hinner := hwt.inner ℝ hwt
+    refine hinner.congr_deriv ?_
+    rw [real_inner_comm (derivWithin w (Icc a b) t) (w t)]
+    ring
+  have hQδ : HasDerivAt (fun u ↦ inner ℝ (w u) (w u) + δ)
+      (2 * inner ℝ (w t) (derivWithin w (Icc a b) t)) t := hQ.add_const δ
+  have hpos : 0 < inner ℝ (w t) (w t) + δ := by
+    have : 0 ≤ inner ℝ (w t) (w t) := real_inner_self_nonneg
+    positivity
+  have hsqrt : HasDerivAt (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ))
+      (inner ℝ (w t) (derivWithin w (Icc a b) t) /
+        Real.sqrt (inner ℝ (w t) (w t) + δ)) t := by
+    have h := (Real.hasDerivAt_sqrt hpos.ne').comp t hQδ
+    refine h.congr_deriv ?_
+    have hsqrt_pos : 0 < Real.sqrt (inner ℝ (w t) (w t) + δ) :=
+      Real.sqrt_pos.mpr hpos
+    field_simp
+  rw [derivWithin_of_mem_nhds htN, hsqrt.deriv]
+  rw [← ofReal_norm]
+  rw [← curveVelocity_apply,
+    curveVelocity_riemannianExp_comp hwt (hdom htIcc)]
+  rw [← ofReal_norm]
+  apply ENNReal.ofReal_le_ofReal
+  rw [Real.norm_eq_abs, abs_div,
+    abs_of_pos (Real.sqrt_pos.mpr hpos)]
+  apply (div_le_iff₀ (Real.sqrt_pos.mpr hpos)).2
+  have hpolar := abs_inner_le_norm_mul_norm_mfderiv_riemannianExp
+    (I := I) (M := M) (v := w t) (w := derivWithin w (Icc a b) t) (hdom htIcc)
+  calc
+    |inner ℝ (w t) (derivWithin w (Icc a b) t)| ≤
+        ‖w t‖ *
+          ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+            (derivWithin w (Icc a b) t)‖ := hpolar
+    _ ≤ Real.sqrt (inner ℝ (w t) (w t) + δ) *
+          ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+            (derivWithin w (Icc a b) t)‖ := by
+      apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+      rw [norm_eq_sqrt_real_inner]
+      exact Real.sqrt_le_sqrt (le_add_of_nonneg_right hδ.le)
+    _ = ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+            (derivWithin w (Icc a b) t)‖ *
+          Real.sqrt (inner ℝ (w t) (w t) + δ) := by
+      rw [mul_comm]
+
+/-- The smoothed radius `√(⟪w ·, w ·⟫ + δ)`, for `δ > 0`, changes along a `C¹` path `w` in the
+natural domain of `exp_p` by at most the length of `exp_p ∘ w`. -/
+private theorem ofReal_abs_sqrt_real_inner_add_sub_le_pathELength_riemannianExp {p : M}
+    {w : ℝ → TangentSpace I p} {a b δ : ℝ} (hab : a ≤ b) (hδ : 0 < δ)
+    (hw : ContDiffOn ℝ 1 w (Icc a b))
+    (hdom : MapsTo w (Icc a b) (expDomain I M p)) :
+    ENNReal.ofReal
+        |Real.sqrt (inner ℝ (w b) (w b) + δ) -
+          Real.sqrt (inner ℝ (w a) (w a) + δ)| ≤
+      Manifold.pathELength I (riemannianExp I M p ∘ w) a b := by
+  have hr : ContDiff ℝ 1 fun v : TangentSpace I p ↦ Real.sqrt (inner ℝ v v + δ) := by
+    apply ContDiff.sqrt
+    · exact (contDiff_id.inner ℝ contDiff_id).add contDiff_const
+    · intro v
+      have hv : 0 ≤ inner ℝ v v := real_inner_self_nonneg
+      positivity
+  have hrw : ContDiffOn ℝ 1 (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) :=
+    hr.comp_contDiffOn hw
+  have hdisplacement :
+      ‖Real.sqrt (inner ℝ (w b) (w b) + δ) - Real.sqrt (inner ℝ (w a) (w a) + δ)‖ₑ ≤
+        ∫⁻ t in Icc a b,
+          ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ₑ :=
+    enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hrw hab
+  calc
+    ENNReal.ofReal
+        |Real.sqrt (inner ℝ (w b) (w b) + δ) -
+          Real.sqrt (inner ℝ (w a) (w a) + δ)| =
+        ‖Real.sqrt (inner ℝ (w b) (w b) + δ) - Real.sqrt (inner ℝ (w a) (w a) + δ)‖ₑ := by
+      rw [← ofReal_norm, Real.norm_eq_abs]
+    _ ≤ ∫⁻ t in Icc a b,
+        ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ₑ :=
+      hdisplacement
+    _ = ∫⁻ t in Ioo a b,
+        ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ₑ := by
+      rw [restrict_Ioo_eq_restrict_Icc]
+    _ ≤ ∫⁻ t in Ioo a b, ‖mfderiv 𝓘(ℝ, ℝ) I (riemannianExp I M p ∘ w) t (1 : ℝ)‖ₑ :=
+      setLIntegral_mono' measurableSet_Ioo fun t ht ↦
+        enorm_derivWithin_sqrt_real_inner_add_le_enorm_mfderiv hδ hw hdom ht
+    _ = Manifold.pathELength I (riemannianExp I M p ∘ w) a b :=
+      Manifold.pathELength_eq_lintegral_mfderiv_Ioo.symm
+
 /-- **Polar length comparison for the exponential map.** If a `C¹` path `w` in the tangent
 space stays in the natural domain of `exp_p`, then the length of `exp_p ∘ w` is at least the
 absolute change in the radial norm of `w`.
 
-No nonvanishing hypothesis is imposed on `w`: the proof differentiates the smooth approximation
-`sqrt (‖w‖² + δ)` and lets `δ` tend to zero. -/
+No nonvanishing hypothesis is imposed on `w`, so the bound also applies to paths through the
+origin. -/
 theorem ofReal_abs_norm_sub_norm_le_pathELength_riemannianExp {p : M}
     {w : ℝ → TangentSpace I p} {a b : ℝ} (hab : a ≤ b)
     (hw : ContDiffOn ℝ 1 w (Icc a b))
     (hdom : MapsTo w (Icc a b) (expDomain I M p)) :
     ENNReal.ofReal |‖w b‖ - ‖w a‖| ≤
       Manifold.pathELength I (riemannianExp I M p ∘ w) a b := by
-  let c : ℝ → M := riemannianExp I M p ∘ w
-  have hkey : ∀ δ : ℝ, 0 < δ →
-      ENNReal.ofReal
-          |Real.sqrt (inner ℝ (w b) (w b) + δ) -
-            Real.sqrt (inner ℝ (w a) (w a) + δ)| ≤
-        Manifold.pathELength I c a b := by
-    intro δ hδ
-    let r : TangentSpace I p → ℝ := fun v ↦ Real.sqrt (inner ℝ v v + δ)
-    have hr : ContDiff ℝ 1 r := by
-      apply ContDiff.sqrt
-      · exact (contDiff_id.inner ℝ contDiff_id).add contDiff_const
-      · intro v
-        have hv : 0 ≤ inner ℝ v v := real_inner_self_nonneg
-        positivity
-    have hrw : ContDiffOn ℝ 1 (r ∘ w) (Icc a b) := hr.comp_contDiffOn hw
-    have hdisplacement : ‖r (w b) - r (w a)‖ₑ ≤
-        ∫⁻ t in Icc a b, ‖derivWithin (r ∘ w) (Icc a b) t‖ₑ :=
-      enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hrw hab
-    calc
-      ENNReal.ofReal
-          |Real.sqrt (inner ℝ (w b) (w b) + δ) -
-            Real.sqrt (inner ℝ (w a) (w a) + δ)| =
-          ‖r (w b) - r (w a)‖ₑ := by
-        rw [← ofReal_norm, Real.norm_eq_abs]
-      _ ≤ ∫⁻ t in Icc a b, ‖derivWithin (r ∘ w) (Icc a b) t‖ₑ := hdisplacement
-      _ = ∫⁻ t in Ioo a b, ‖derivWithin (r ∘ w) (Icc a b) t‖ₑ := by
-        rw [restrict_Ioo_eq_restrict_Icc]
-      _ ≤ ∫⁻ t in Ioo a b,
-          ‖mfderiv 𝓘(ℝ, ℝ) I c t (1 : ℝ)‖ₑ := by
-        apply setLIntegral_mono' measurableSet_Ioo
-        intro t ht
-        have htIcc : t ∈ Icc a b := Ioo_subset_Icc_self ht
-        have htN : Icc a b ∈ 𝓝 t := Icc_mem_nhds ht.1 ht.2
-        have hwt : HasDerivAt w (derivWithin w (Icc a b) t) t := by
-          have hdiff := ((hw t htIcc).contDiffAt htN).differentiableAt one_ne_zero
-          simpa only [derivWithin_of_mem_nhds htN] using hdiff.hasDerivAt
-        have hQ : HasDerivAt (fun u ↦ inner ℝ (w u) (w u))
-            (2 * inner ℝ (w t) (derivWithin w (Icc a b) t)) t := by
-          have hinner := hwt.inner ℝ hwt
-          refine hinner.congr_deriv ?_
-          rw [real_inner_comm (derivWithin w (Icc a b) t) (w t)]
-          ring
-        have hQδ : HasDerivAt (fun u ↦ inner ℝ (w u) (w u) + δ)
-            (2 * inner ℝ (w t) (derivWithin w (Icc a b) t)) t := hQ.add_const δ
-        have hpos : 0 < inner ℝ (w t) (w t) + δ := by
-          have : 0 ≤ inner ℝ (w t) (w t) := real_inner_self_nonneg
-          positivity
-        have hsqrt : HasDerivAt (r ∘ w)
-            (inner ℝ (w t) (derivWithin w (Icc a b) t) /
-              Real.sqrt (inner ℝ (w t) (w t) + δ)) t := by
-          have h := (Real.hasDerivAt_sqrt hpos.ne').comp t hQδ
-          refine h.congr_deriv ?_
-          have hsqrt_pos : 0 < Real.sqrt (inner ℝ (w t) (w t) + δ) :=
-            Real.sqrt_pos.mpr hpos
-          field_simp
-        rw [derivWithin_of_mem_nhds htN, hsqrt.deriv]
-        rw [← ofReal_norm]
-        rw [← curveVelocity_apply,
-          curveVelocity_riemannianExp_comp hwt (hdom htIcc)]
-        rw [← ofReal_norm]
-        apply ENNReal.ofReal_le_ofReal
-        rw [Real.norm_eq_abs, abs_div,
-          abs_of_pos (Real.sqrt_pos.mpr hpos)]
-        apply (div_le_iff₀ (Real.sqrt_pos.mpr hpos)).2
-        have hpolar := abs_inner_le_norm_mul_norm_mfderiv_riemannianExp
-          (I := I) (M := M) (v := w t) (w := derivWithin w (Icc a b) t) (hdom htIcc)
-        calc
-          |inner ℝ (w t) (derivWithin w (Icc a b) t)| ≤
-              ‖w t‖ *
-                ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
-                  (derivWithin w (Icc a b) t)‖ := hpolar
-          _ ≤ Real.sqrt (inner ℝ (w t) (w t) + δ) *
-                ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
-                  (derivWithin w (Icc a b) t)‖ := by
-            apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
-            rw [norm_eq_sqrt_real_inner]
-            exact Real.sqrt_le_sqrt (le_add_of_nonneg_right hδ.le)
-          _ = ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
-                  (derivWithin w (Icc a b) t)‖ *
-                Real.sqrt (inner ℝ (w t) (w t) + δ) := by
-            rw [mul_comm]
-      _ = Manifold.pathELength I c a b := by
-        exact Manifold.pathELength_eq_lintegral_mfderiv_Ioo.symm
   have htend : Tendsto
       (fun δ : ℝ ↦ ENNReal.ofReal
         |Real.sqrt (inner ℝ (w b) (w b) + δ) -
@@ -197,18 +216,8 @@ theorem ofReal_abs_norm_sub_norm_le_pathELength_riemannianExp {p : M}
     have hzero := hcont.tendsto 0
     simpa only [add_zero, norm_eq_sqrt_real_inner] using
       hzero.mono_left (nhdsWithin_le_nhds (s := Ioi (0 : ℝ)))
-  exact le_of_tendsto htend (eventually_mem_nhdsWithin.mono fun δ hδ ↦ hkey δ hδ)
-
-/-- The increase in radial norm along a `C¹` path in the natural domain of `exp_p` is at most
-the length of its image under `exp_p`. -/
-theorem ofReal_norm_sub_norm_le_pathELength_riemannianExp {p : M}
-    {w : ℝ → TangentSpace I p} {a b : ℝ} (hab : a ≤ b)
-    (hw : ContDiffOn ℝ 1 w (Icc a b))
-    (hdom : MapsTo w (Icc a b) (expDomain I M p)) :
-    ENNReal.ofReal (‖w b‖ - ‖w a‖) ≤
-      Manifold.pathELength I (riemannianExp I M p ∘ w) a b :=
-  (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
-    (ofReal_abs_norm_sub_norm_le_pathELength_riemannianExp hab hw hdom)
+  exact le_of_tendsto htend (eventually_mem_nhdsWithin.mono fun δ hδ ↦
+    ofReal_abs_sqrt_real_inner_add_sub_le_pathELength_riemannianExp hab hδ hw hdom)
 
 /-- **Polar length comparison in a normal neighbourhood.** Along a `C¹` curve contained in the
 image of a normal domain, the absolute change in the norm of its Riemannian logarithm is at most
@@ -234,19 +243,6 @@ theorem IsNormalDomain.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_p
   rw [Manifold.pathELength_congr hc] at hpolar
   exact hpolar
 
-/-- Along a `C¹` curve contained in the image of a normal domain, the increase in the norm of its
-Riemannian logarithm is at most the length of the curve. -/
-theorem IsNormalDomain.ofReal_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength
-    {p : M} {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U)
-    {γ : ℝ → M} {a b : ℝ} (hab : a ≤ b)
-    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b))
-    (hγU : MapsTo γ (Icc a b) (riemannianExp I M p '' U)) :
-    ENNReal.ofReal
-        (‖riemannianLog I M p U (γ b)‖ - ‖riemannianLog I M p U (γ a)‖) ≤
-      Manifold.pathELength I γ a b :=
-  (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans
-    (h.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength hab hγ hγU)
-
 /-- A `C¹` curve from the centre of a normal neighbourhood to a point `q` has length at least
 the norm of `log_p q`. -/
 theorem IsNormalDomain.ofReal_norm_riemannianLog_le_pathELength
@@ -256,8 +252,8 @@ theorem IsNormalDomain.ofReal_norm_riemannianLog_le_pathELength
     (hγU : MapsTo γ (Icc a b) (riemannianExp I M p '' U)) (hγa : γ a = p) :
     ENNReal.ofReal ‖riemannianLog I M p U (γ b)‖ ≤
       Manifold.pathELength I γ a b := by
-  simpa only [hγa, h.riemannianLog_self, norm_zero, sub_zero] using
-    h.ofReal_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength hab hγ hγU
+  simpa only [hγa, h.riemannianLog_self, norm_zero, sub_zero, abs_norm] using
+    h.ofReal_abs_norm_riemannianLog_sub_norm_riemannianLog_le_pathELength hab hγ hγU
 
 end TauCeti.Manifold
 
