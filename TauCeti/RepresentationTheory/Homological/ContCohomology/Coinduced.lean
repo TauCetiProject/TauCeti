@@ -367,7 +367,6 @@ theorem coindTrace_coindMap {N : Type*} [AddCommGroup N] [DistribMulAction G N] 
   rw [coindTraceTerm_out, coindTraceTerm_out, coindMap_apply, hφ]
 
 /-- The trace of the whole group is evaluation at `1`: the only coset is `U` itself. -/
-@[simp]
 theorem coindTrace_top_eq_coindEval (f : coind G ⊤ M) :
     coindTrace G ⊤ f = coindEval G ⊤ f := by
   have : Subsingleton (G ⧸ (⊤ : Subgroup G)) := QuotientGroup.subsingleton_quotient_top
@@ -722,7 +721,6 @@ noncomputable def trace : DiscreteCoind G U M →+[G] M where
   map_smul' g f := coindTrace_smul g (toCoind G U M f)
 
 /-- The discrete-carrier trace is the unbundled trace after forgetting the discrete topology. -/
-@[simp]
 theorem coindTrace_toCoind (f : DiscreteCoind G U M) :
     coindTrace G U (toCoind G U M f) = trace G U M f := (rfl)
 
