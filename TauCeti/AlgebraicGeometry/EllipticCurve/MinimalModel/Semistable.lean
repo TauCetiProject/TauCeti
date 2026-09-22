@@ -107,7 +107,7 @@ has no additive reduction. Equivalently, the reduction is good or multiplicative
 
 The predicate is stated on an equation but depends only on its `F`-isomorphism class, as proved by
 `isSemistable_smul`. -/
-def IsSemistable (W : WeierstrassCurve F) [W.IsElliptic] : Prop :=
+def IsSemistable (W : WeierstrassCurve F) : Prop :=
   ∀ v : HeightOneSpectrum O,
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal)
@@ -115,22 +115,21 @@ def IsSemistable (W : WeierstrassCurve F) [W.IsElliptic] : Prop :=
 variable {O}
 
 /-- Semistability, unfolded. -/
-@[simp]
-theorem isSemistable_iff {W : WeierstrassCurve F} [W.IsElliptic] :
+theorem isSemistable_iff {W : WeierstrassCurve F} :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
         (Localization.AtPrime v.asIdeal) :=
   Iff.rfl
 
 /-- A semistable curve has no additive reduction at any height-one prime. -/
-theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F} [W.IsElliptic]
+theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F}
     (hW : IsSemistable O W) (v : HeightOneSpectrum O) :
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal) :=
   hW v
 
 /-- A curve with no additive reduction at any height-one prime is semistable. -/
-theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F} [W.IsElliptic]
+theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F}
     (hW : ∀ v : HeightOneSpectrum O,
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
         (Localization.AtPrime v.asIdeal)) :
@@ -140,7 +139,7 @@ theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F}
 /-- **A curve is semistable exactly when it has good or multiplicative reduction at every
 height-one prime.** -/
 theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
-    (W : WeierstrassCurve F) [W.IsElliptic] :
+    (W : WeierstrassCurve F) :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       (W.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
           (Localization.AtPrime v.asIdeal) ∨
@@ -164,7 +163,7 @@ theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
 equation has discriminant of valuation one (good reduction) or `c₄` of valuation one
 (multiplicative reduction). -/
 theorem isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one
-    (W : WeierstrassCurve F) [W.IsElliptic] :
+    (W : WeierstrassCurve F) :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       valuation F (maximalIdeal (Localization.AtPrime v.asIdeal))
           (W.minimal (Localization.AtPrime v.asIdeal)).Δ = 1 ∨
