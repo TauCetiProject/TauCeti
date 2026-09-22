@@ -100,6 +100,27 @@ theorem primeDiscriminantChar_ne_one (P : ℤ) (hP : IsPrimeDiscriminant P) :
   rw [IsUnit.unit_spec, primeDiscriminantChar_apply_int, ha]
   norm_num
 
+/-- The Dirichlet character attached to a prime discriminant is quadratic. -/
+theorem primeDiscriminantChar_isQuadratic (P : ℤ) (hP : IsPrimeDiscriminant P) :
+    (primeDiscriminantChar P hP).IsQuadratic := by
+  let _ : NeZero P.natAbs := ⟨Int.natAbs_ne_zero.mpr hP.ne_zero⟩
+  intro a
+  by_cases ha : IsUnit a
+  · have hcop : IsCoprime (a.val : ℤ) P := by
+      rw [Int.isCoprime_iff_nat_coprime]
+      apply (ZMod.isUnit_iff_coprime a.val P.natAbs).mp
+      simpa only [ZMod.natCast_zmod_val] using ha
+    have hval : primeDiscriminantChar P hP a =
+        primeDiscriminantCharFun P (a.val : ℤ) := by
+      calc
+        _ = primeDiscriminantChar P hP (a.val : ZMod P.natAbs) :=
+          congrArg _ (ZMod.natCast_zmod_val a).symm
+        _ = _ := by simpa only [Int.cast_natCast] using
+          primeDiscriminantChar_apply_int P hP (a.val : ℤ)
+    rw [hval]
+    exact Or.inr (primeDiscriminantCharFun_eq_one_or_eq_neg_one hP hcop)
+  · exact Or.inl (MulChar.map_nonunit _ ha)
+
 /-- **The Dirichlet character of a prime discriminant is primitive.** Its conductor is exactly
 the absolute value of the prime discriminant. -/
 theorem isPrimitive_primeDiscriminantChar (P : ℤ) (hP : IsPrimeDiscriminant P) :
