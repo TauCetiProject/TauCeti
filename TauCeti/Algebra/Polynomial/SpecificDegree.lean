@@ -13,14 +13,13 @@ public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 /-!
 # Polynomials of degree three and four
 
-Three criteria for cubics and one for quartics, all read off the coefficients.
+Splitting criteria for low-degree polynomials and a separability criterion, all read off the
+coefficients.
 
-* A cubic is irreducible exactly when it has no root in its coefficient field, since a proper
-  factor of a cubic has degree one.
-* Away from characteristic two, a *monic* cubic that already has one root splits exactly when its
+* Away from characteristic two, a cubic that already has one root splits exactly when its
   discriminant is a square: the root splits off a quadratic factor whose discriminant differs from
   that of the cubic by a square, and a quadratic splits exactly when its discriminant is a square.
-  Characteristic two is excluded because that last step fails there.
+  Normalization by the leading coefficient reduces the statement to the monic case.
 * A cubic with two distinct roots in its coefficient field splits there, and conversely a
   separable split polynomial of degree at least two has two distinct roots.
 * An irreducible polynomial is separable as soon as its degree is nonzero in the coefficient
@@ -34,8 +33,9 @@ field" into the classical resolvent conditions — irreducible, splits completel
 
 * `Polynomial.Irreducible.separable_of_natDegree_cast_ne_zero` and
   `Polynomial.separable_of_irreducible_of_natDegree_eq_four`
-* `Polynomial.irreducible_iff_not_exists_isRoot_of_degree_le_three`
-* `Polynomial.Monic.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot`
+* `Polynomial.exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot`
+* `Polynomial.splits_iff_isSquare_discr_of_natDegree_eq_two` and
+  `Polynomial.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot`
 * `Polynomial.Splits.of_natDegree_eq_three_of_isRoot_of_isRoot_of_ne` and
   `Polynomial.Splits.exists_isRoot_ne`
 -/
@@ -67,12 +67,13 @@ theorem separable_of_irreducible_of_natDegree_eq_four {f : F[X]} (hchar : ringCh
     (hirr : Irreducible f) (hdeg : f.natDegree = 4) : f.Separable := by
   refine hirr.separable_of_natDegree_cast_ne_zero ?_
   have htwo : (2 : F) ≠ 0 := Ring.two_ne_zero hchar
-  rw [hdeg, show ((4 : ℕ) : F) = 2 * 2 by norm_num]
+  have hfour : ((4 : ℕ) : F) = 2 * 2 := by norm_num
+  rw [hdeg, hfour]
   exact mul_ne_zero htwo htwo
 
 /-- A cubic with a root `a` in its coefficient field is `(X - a)` times a quadratic. This is the
 one factorization step shared by the two splitting criteria below. -/
-private theorem exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot {g : F[X]}
+theorem exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot {g : F[X]}
     (hdeg : g.natDegree = 3) {a : F} (ha : g.IsRoot a) :
     ∃ q : F[X], q.natDegree = 2 ∧ g = (X - C a) * q := by
   obtain ⟨q, hq⟩ := dvd_iff_isRoot.2 ha
@@ -94,7 +95,7 @@ private theorem isSquare_of_isSquare_mul_sq {d s : F} (hs : s ≠ 0) (h : IsSqua
 /-- Away from characteristic two, a quadratic splits over its coefficient field exactly when its
 discriminant is a square. This is `Polynomial.splits_quadratic_iff_isSquare` read on `discr`
 rather than on a coefficient triple. -/
-private theorem splits_iff_isSquare_discr_of_natDegree_eq_two {q : F[X]} (hchar : ringChar F ≠ 2)
+theorem splits_iff_isSquare_discr_of_natDegree_eq_two {q : F[X]} (hchar : ringChar F ≠ 2)
     (hdeg : q.natDegree = 2) : q.Splits ↔ IsSquare q.discr := by
   have : NeZero (2 : F) := ⟨Ring.two_ne_zero hchar⟩
   have hq0 : q ≠ 0 := fun h0 => by simp [h0] at hdeg
@@ -112,22 +113,12 @@ private theorem splits_iff_isSquare_discr_of_natDegree_eq_two {q : F[X]} (hchar 
   conv_lhs => rw [eq_quadratic_of_degree_le_two hdeg2.le]
   exact splits_quadratic_iff_isSquare hlc
 
-/-- A cubic is irreducible exactly when it has no root in its coefficient field. The degree
-hypotheses are those of `Polynomial.irreducible_iff_roots_eq_zero_of_degree_le_three`, so the
-statement covers quadratics too. -/
-theorem irreducible_iff_not_exists_isRoot_of_degree_le_three {g : F[X]} (h2 : 2 ≤ g.natDegree)
-    (h3 : g.natDegree ≤ 3) : Irreducible g ↔ ¬ ∃ a : F, g.IsRoot a := by
-  have hg : g ≠ 0 := ne_zero_of_natDegree_gt (p := g) (n := 0) (by omega)
-  rw [irreducible_iff_roots_eq_zero_of_degree_le_three h2 h3,
-    Multiset.eq_zero_iff_forall_notMem]
-  simp only [mem_roots hg]
-  simp
-
 /-- **Away from characteristic two, a monic cubic with a root in its coefficient field splits
 there exactly when its discriminant is a square.** The root splits off a quadratic factor whose
 discriminant differs from that of the cubic by the square of the value of the factor at the
 root. -/
-theorem Monic.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot {g : F[X]} (hg : g.Monic)
+private theorem Monic.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot {g : F[X]}
+    (hg : g.Monic)
     (hdeg : g.natDegree = 3) (hchar : ringChar F ≠ 2) {a : F} (ha : g.IsRoot a) :
     g.Splits ↔ IsSquare g.discr := by
   obtain ⟨q, hqdeg, hfactor⟩ :=
@@ -147,6 +138,44 @@ theorem Monic.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot {g : F[X
   by_cases hr : q.eval a = 0
   · exact Splits.of_natDegree_eq_two hqdeg hr
   · exact hquad.2 (isSquare_of_isSquare_mul_sq hr h)
+
+/-- **Away from characteristic two, a cubic with a root in its coefficient field splits there
+exactly when its discriminant is a square.** Multiplication by the inverse leading coefficient
+reduces to the monic criterion, and changes the discriminant by a nonzero fourth power. -/
+theorem splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot {g : F[X]}
+    (hdeg : g.natDegree = 3) (hchar : ringChar F ≠ 2) {a : F} (ha : g.IsRoot a) :
+    g.Splits ↔ IsSquare g.discr := by
+  have hg0 : g ≠ 0 := fun h0 => by simp [h0] at hdeg
+  have hlc : g.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hg0
+  let g' := C g.leadingCoeff⁻¹ * g
+  have hg'monic : g'.Monic := by
+    dsimp [g']
+    rw [mul_comm]
+    exact monic_mul_leadingCoeff_inv hg0
+  have hg'deg : g'.natDegree = 3 := by
+    dsimp [g']
+    rw [natDegree_C_mul (inv_ne_zero hlc), hdeg]
+  have hg'root : g'.IsRoot a := by
+    dsimp [g', IsRoot]
+    rw [eval_mul, eval_C, ha, mul_zero]
+  have hcriterion := hg'monic.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot
+    hg'deg hchar hg'root
+  have hscale : C g.leadingCoeff * g' = g := by
+    dsimp [g']
+    rw [← mul_assoc, ← C_mul]
+    simp [hlc]
+  have hsplits : g.Splits ↔ g'.Splits := by
+    refine ⟨fun h => h.C_mul g.leadingCoeff⁻¹, fun h => ?_⟩
+    rw [← hscale]
+    exact h.C_mul g.leadingCoeff
+  have hdiscr : g'.discr = g.discr * (g.leadingCoeff⁻¹ ^ 2) ^ 2 := by
+    dsimp [g']
+    rw [TauCeti.discr_C_mul _ (inv_ne_zero hlc), hdeg]
+    norm_num
+    ring
+  rw [hsplits, hcriterion, hdiscr]
+  exact ⟨isSquare_of_isSquare_mul_sq (pow_ne_zero 2 (inv_ne_zero hlc)),
+    fun h => h.mul (Even.isSquare_pow even_two _)⟩
 
 /-- A cubic with two distinct roots in its coefficient field splits there. -/
 theorem Splits.of_natDegree_eq_three_of_isRoot_of_isRoot_of_ne {g : F[X]} (hdeg : g.natDegree = 3)
