@@ -225,7 +225,7 @@ variable (G : Type*) [Group G]
 variable (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M]
 
-private def fixedPointsToCanonicalInvariants (H : Subgroup G) [H.Normal] :
+private def fixedPointsToCanonicalInvariants (H : Subgroup G) :
     FixedPoints.addSubgroup H M →L[ℤ]
       ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype).invariants :=
   { toLinearMap :=
@@ -238,7 +238,7 @@ private def fixedPointsToCanonicalInvariants (H : Subgroup G) [H.Normal] :
         map_smul' := fun _ _ => rfl }
     cont := continuous_of_discreteTopology }
 
-private theorem fixedPointsToCanonicalInvariants_apply (H : Subgroup G) [H.Normal]
+private theorem fixedPointsToCanonicalInvariants_apply (H : Subgroup G)
     (m : FixedPoints.addSubgroup H M) :
     (fixedPointsToCanonicalInvariants G M H m).1 = (m : M) :=
   rfl
