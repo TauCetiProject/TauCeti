@@ -81,7 +81,6 @@ theorem injective (x : D.Generator) : Function.Injective x.1 := by
 noncomputable abbrev betaEquiv (x : D.Generator) : Fin g ≃ Fin g :=
   Equiv.ofBijective (D.beta ∘ x.1) (D.beta_bijective x)
 
-@[simp]
 theorem betaEquiv_apply (x : D.Generator) (a : Fin g) :
     D.betaEquiv x a = D.beta (x.1 a) :=
   by simp [betaEquiv, Function.comp_apply]
