@@ -50,7 +50,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
   (Φ : Diffeotopy J n M)
 
-variable [IsManifold J n M]
+variable [CompactSpace M] [IsManifold J n M]
 
 /-- The time slices of a diffeotopy move continuously in the weak Whitney topology. -/
 theorem continuous_timeSlice : Continuous Φ.timeSlice := by
