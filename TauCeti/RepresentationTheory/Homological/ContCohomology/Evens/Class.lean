@@ -126,6 +126,18 @@ noncomputable def evensGraphCochainClass [LocallyCompactSpace G] (U : OpenSubgro
     (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V
       (evensGraphCocycle U s α hU hs hα))
 
+/-- The class of the graph cochain is obtained by applying the explicit degree-two comparison,
+then identifying its discrete coefficient object with `trivialF2 G`. -/
+theorem evensGraphCochainClass_def [LocallyCompactSpace G] (U : OpenSubgroup G) (s : G)
+    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hU : U.toSubgroup.index = 2)
+    (hs : s ∉ U) (hα : Continuous α) :
+    evensGraphCochainClass U s α hU hs hα =
+      (eqToHom (congrArg (continuousCohomology 2)
+        (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V
+          (evensGraphCocycle U s α hU hs hα)) :=
+  (rfl)
+
 private theorem evensGraphCochainClass_eq [LocallyCompactSpace G] (U : OpenSubgroup G)
     (s s' : G) (α : U.toSubgroup →* Multiplicative (ZMod 2))
     (hU : U.toSubgroup.index = 2) (hs : s ∉ U) (hs' : s' ∉ U) (hα : Continuous α) :
@@ -146,7 +158,7 @@ private theorem evensGraphCochainClass_eq [LocallyCompactSpace G] (U : OpenSubgr
       simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply, map_sub, map_add,
         AddEquiv.apply_symm_apply, coe_evensGraphCocycle, Pi.sub_apply]
       exact (evensGraphCochain_sub_evensGraphCochain hU hs hs' g h).symm
-  unfold evensGraphCochainClass
+  rw [evensGraphCochainClass_def, evensGraphCochainClass_def]
   apply congrArg _
   exact congrArg (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V) hcocycle
 
