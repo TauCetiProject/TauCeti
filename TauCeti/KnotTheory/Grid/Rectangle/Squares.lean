@@ -141,6 +141,35 @@ theorem mem_coveredSquares (p : Fin n × Fin n) :
     p ∈ R.coveredSquares ↔ p.1 ∈ R.coveredColumns ∧ p.2 ∈ R.coveredRows := by
   simp [coveredSquares]
 
+/-- Swapping two cyclically consecutive columns preserves a rectangle's covered squares when
+the second column is not a vertical side of the rectangle. -/
+theorem mem_coveredSquares_swap_finRotate_iff_of_ne {a : Fin n}
+    (hleft : R.left ≠ finRotate n a) (hright : R.right ≠ finRotate n a)
+    (p : Fin n × Fin n) :
+    (Equiv.swap a (finRotate n a) p.1, p.2) ∈ R.coveredSquares ↔
+      p ∈ R.coveredSquares := by
+  simp only [mem_coveredSquares, mem_coveredColumns, mem_coveredRows]
+  rw [Grid.mem_cIco_swap_finRotate_iff_of_ne hleft hright]
+
+/-- Avoidance of the `X`-markings is unchanged by swapping two cyclically consecutive columns
+when the second column is not a vertical side of the rectangle. -/
+theorem disjoint_coveredSquares_XSet_swapColumns_iff_of_ne (G : GridDiagram n) {a : Fin n}
+    (hleft : R.left ≠ finRotate n a) (hright : R.right ≠ finRotate n a) :
+    Disjoint R.coveredSquares (G.swapColumns a (finRotate n a)).XSet ↔
+      Disjoint R.coveredSquares G.XSet := by
+  rw [Finset.disjoint_left, Finset.disjoint_left]
+  constructor
+  · intro h p hp hpX
+    apply h
+    · exact (R.mem_coveredSquares_swap_finRotate_iff_of_ne hleft hright p).mpr hp
+    · rw [G.mem_XSet_swapColumns]
+      simpa only [Equiv.swap_apply_self] using hpX
+  · intro h p hp hpX
+    rw [G.mem_XSet_swapColumns] at hpX
+    apply h
+    · exact (R.mem_coveredSquares_swap_finRotate_iff_of_ne hleft hright p).mpr hp
+    · exact hpX
+
 /-- Two rectangles have disjoint covered-square domains exactly when their covered columns or
 their covered rows are disjoint. -/
 theorem disjoint_coveredSquares_iff (R S : GridRectangle n) :

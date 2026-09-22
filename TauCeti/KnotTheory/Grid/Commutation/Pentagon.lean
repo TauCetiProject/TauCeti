@@ -183,6 +183,59 @@ def ofSwapColumns (x : GridState n) (j : Fin n) (hj : j ≠ finRotate n a)
   right_eq := rfl
   turn_mem := hs
 
+/-- Regard a rectangle between possibly different endpoint states as a pentagon when its
+underlying toroidal rectangle agrees with that of an existing pentagon. -/
+def ofToGridRectangle_eq {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    GridPentagonBetween a s u v where
+  toGridRectangleBetween := r
+  right_eq := by
+    have hright := congrArg GridRectangle.right h
+    simpa only [GridRectangleBetween.toGridRectangle_right] using hright.trans P.right_eq
+  turn_mem := by
+    have hbottom := congrArg GridRectangle.bottom h
+    have htop := congrArg GridRectangle.top h
+    simp only [GridRectangleBetween.toGridRectangle_bottom,
+      GridRectangleBetween.toGridRectangle_top] at hbottom htop
+    have hs : s ∈ Grid.cIco r.bottom r.top := by
+      rw [hbottom, htop]
+      exact P.turn_mem
+    simpa only [GridRectangleBetween.bottom, GridRectangleBetween.top] using hs
+
+/-- The rectangle underlying `ofToGridRectangle_eq` is the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangle_eq_toGridRectangleBetween {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridPentagonBetween a s x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangle_eq r P h).toGridRectangleBetween = r := by
+  unfold ofToGridRectangle_eq
+  rfl
+
+/-- The initial side of `ofToGridRectangle_eq` is that of the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangle_eq_left {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangle_eq r P h).left = r.left := by
+  unfold ofToGridRectangle_eq
+  rfl
+
+/-- The terminal side of `ofToGridRectangle_eq` is that of the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangle_eq_right {u v : GridState n} (r : GridRectangleBetween u v)
+    (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangle_eq r P h).right = r.right := by
+  unfold ofToGridRectangle_eq
+  rfl
+
+/-- `ofToGridRectangle_eq` preserves emptiness of the supplied rectangle. -/
+@[simp]
+theorem ofToGridRectangle_eq_isEmpty_iff {u v : GridState n}
+    (r : GridRectangleBetween u v) (P : GridPentagonBetween a s x y)
+    (h : r.toGridRectangle = P.toGridRectangle) :
+    (ofToGridRectangle_eq r P h).IsEmpty ↔ r.IsEmpty := by
+  unfold ofToGridRectangle_eq
+  rfl
+
 /-- The initial side of the pentagon built from a column swap. -/
 @[simp]
 theorem ofSwapColumns_left (x : GridState n) (j : Fin n) (hj : j ≠ finRotate n a)
@@ -228,6 +281,20 @@ theorem mem_coveredSquares (P : GridPentagonBetween a s x y) (p : Fin n × Fin n
           (p.1 = finRotate n a ∧ p.2 ∈ Grid.cIco P.bottom s) := by
   simp only [coveredSquares, Finset.mem_union, Finset.mem_product, Finset.mem_erase,
     Finset.mem_singleton, and_assoc]
+
+/-- Pentagons with the same underlying toroidal rectangle cover the same squares. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridPentagonBetween a s x y) (Q : GridPentagonBetween a s u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  have hleft := congrArg GridRectangle.left h
+  have hbottom := congrArg GridRectangle.bottom h
+  have htop := congrArg GridRectangle.top h
+  simp only [GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top] at hleft hbottom htop
+  ext p
+  rw [P.mem_coveredSquares, Q.mem_coveredSquares]
+  simp only [hleft, hbottom, htop]
 
 /-- Away from the two columns next to the replaced line, a pentagon covers the squares of its
 underlying rectangle. -/
