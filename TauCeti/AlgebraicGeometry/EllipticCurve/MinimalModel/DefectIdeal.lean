@@ -65,7 +65,8 @@ variable (O : Type*) [CommRing O] [IsDedekindDomain O]
 /-- **The defect ideal** `𝔍_W = ∏ᵥ 𝔭ᵥ ^ fᵥ(W)` of a Weierstrass equation.
 For integral equations the local obstruction exponents are nonnegative, so their natural-number
 parts lose no information. -/
-noncomputable def weierstrassDefectIdeal (W : WeierstrassCurve K) [W.IsElliptic] : Ideal O :=
+noncomputable def weierstrassDefectIdeal (W : WeierstrassCurve K) [W.IsElliptic]
+    [IsIntegral O W] : Ideal O :=
   ∏ᶠ v : HeightOneSpectrum O, v.asIdeal ^ (obstructionExponentAt O v W).toNat
 
 /-- **Only finitely many local obstruction exponents of an integral equation are nonzero.**
