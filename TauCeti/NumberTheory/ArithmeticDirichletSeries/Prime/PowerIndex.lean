@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 
 /-!
 # Indexing the prime-power ideals by a prime and an exponent
@@ -31,7 +30,7 @@ series indexed by ideals — the shape a von Mangoldt coefficient identity needs
 
 * `TauCeti.summable_comp_idealPrimePowerOf`: a summable family on all nonzero ideals remains
   summable after restriction to the positive prime powers.
-* `TauCeti.summable_tsum_norm_primeIdealPow_succ`: the prime-power tails of an absolutely
+* `TauCeti.summable_tsum_norm_idealPrimePowerOf`: the prime-power tails of an absolutely
   summable ideal-indexed family are summable over the primes.
 * `TauCeti.tsum_idealPrimePower_eq`: a summable family on the prime-power ideals has the same sum
   as the iterated sum over primes and exponents.
@@ -134,16 +133,10 @@ variable {β : Type*} [NormedAddCommGroup β] {g : (Ideal (𝓞 K))⁰ → β}
 /-- **The prime-power tails of an absolutely summable ideal-indexed family are summable over the
 primes.**  Restricting the norms to the pairs `(P, e)` and then summing out the exponent leaves a
 summable family on the height-one primes. -/
-theorem summable_tsum_norm_primeIdealPow_succ (hg : Summable fun I ↦ ‖g I‖) :
+theorem summable_tsum_norm_idealPrimePowerOf (hg : Summable fun I ↦ ‖g I‖) :
     Summable fun P : HeightOneSpectrum (𝓞 K) ↦
-      ∑' e : ℕ, ‖g (P.primeIdealPow (e + 1))‖ := by
-  have htails : Summable fun Pk : HeightOneSpectrum (𝓞 K) × ℕ ↦
-      ‖g (Pk.1.primeIdealPow (Pk.2 + 1))‖ :=
-    (summable_comp_idealPrimePowerOf (f := fun I ↦ ‖g I‖) hg).congr fun ⟨P, k⟩ ↦
-      congrArg (fun I ↦ ‖g I‖)
-        (Subtype.ext (by simp) : (P.idealPrimePowerOf k : (Ideal (𝓞 K))⁰)
-          = P.primeIdealPow (k + 1))
-  exact htails.prod
+      ∑' e : ℕ, ‖g (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰)‖ :=
+  (summable_comp_idealPrimePowerOf (f := fun I ↦ ‖g I‖) hg).prod
 
 end Norm
 

@@ -101,9 +101,17 @@ theorem hasSum_logDeriv_eulerFactor {s : ℂ}
     (D.hasDerivAt_eulerFactor P
       ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt (habs z hz))).differentiableAt
   -- the uniform majorant for the deviations of the local factors from `1`
+  have hbsumIdeal : Summable fun P : HeightOneSpectrum (𝓞 K) ↦ ∑' e : ℕ,
+      ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ)
+        (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰)‖ :=
+    summable_tsum_norm_idealPrimePowerOf (summable_norm_iff.mpr hσconv)
   have hbsum : Summable fun P : HeightOneSpectrum (𝓞 K) ↦ ∑' e : ℕ,
       ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) (P.primeIdealPow (e + 1))‖ :=
-    summable_tsum_norm_primeIdealPow_succ (summable_norm_iff.mpr hσconv)
+    hbsumIdeal.congr fun P ↦ tsum_congr fun e ↦
+      congrArg
+        (fun I : (Ideal (𝓞 K))⁰ ↦ ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) I‖)
+        (Subtype.ext (by simp) :
+          (P.idealPrimePowerOf e : (Ideal (𝓞 K))⁰) = P.primeIdealPow (e + 1))
   have hble : ∀ P : HeightOneSpectrum (𝓞 K), ∀ z ∈ U, ‖D.eulerFactor P z - 1‖ ≤ ∑' e : ℕ,
       ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) (P.primeIdealPow (e + 1))‖ :=
     fun P z hz ↦ D.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re
