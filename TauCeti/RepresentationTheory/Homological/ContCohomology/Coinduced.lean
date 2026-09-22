@@ -367,6 +367,7 @@ theorem coindTrace_coindMap {N : Type*} [AddCommGroup N] [DistribMulAction G N] 
   rw [coindTraceTerm_out, coindTraceTerm_out, coindMap_apply, hφ]
 
 /-- The trace of the whole group is evaluation at `1`: the only coset is `U` itself. -/
+@[simp]
 theorem coindTrace_top_eq_coindEval (f : coind G ⊤ M) :
     coindTrace G ⊤ f = coindEval G ⊤ f := by
   have : Subsingleton (G ⧸ (⊤ : Subgroup G)) := QuotientGroup.subsingleton_quotient_top
