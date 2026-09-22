@@ -143,14 +143,15 @@ profinite lift. -/
 @[simp]
 theorem lift_fromFreeProfiniteGroup (hP : IsProC C P) (f : X → P)
     (x : freeProfiniteGroup X) :
-    lift hP f (fromFreeProfiniteGroup C X x) = freeProfiniteGroup.lift f x :=
-  DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) x
+    lift hP f (x : freeProC C X) = freeProfiniteGroup.lift f x := by
+  exact proCCompletion.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
+    (freeProfiniteGroup.lift f).continuous x
 
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]
 theorem lift_of (hP : IsProC C P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
-  rw [← fromFreeProfiniteGroup_of, lift_fromFreeProfiniteGroup,
-    freeProfiniteGroup.lift_of]
+  change lift hP f (freeProfiniteGroup.of x : freeProC C X) = f x
+  rw [lift_fromFreeProfiniteGroup, freeProfiniteGroup.lift_of]
 
 /-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
 `f`. -/
@@ -177,7 +178,7 @@ theorem lift_surjective (hP : IsProC C P) {f : X → P}
     Function.Surjective (lift hP f) := by
   intro y
   obtain ⟨x, rfl⟩ := freeProfiniteGroup.lift_surjective hf y
-  exact ⟨fromFreeProfiniteGroup C X x, lift_fromFreeProfiniteGroup hP f x⟩
+  exact ⟨(x : freeProC C X), lift_fromFreeProfiniteGroup hP f x⟩
 
 end Lift
 
@@ -222,9 +223,11 @@ theorem map_comp_fromFreeProfiniteGroup (f : X → Y) :
 profinite groups. -/
 @[simp]
 theorem map_fromFreeProfiniteGroup (f : X → Y) (x : freeProfiniteGroup X) :
-    map (C := C) f (fromFreeProfiniteGroup C X x) =
+    map (C := C) f (x : freeProC C X) =
       fromFreeProfiniteGroup C Y (freeProfiniteGroup.map f x) :=
-  DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (C := C) f) x
+  by
+    change ((map (C := C) f).comp (fromFreeProfiniteGroup C X)) x = _
+    exact DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (C := C) f) x
 
 /-- A surjection of generating types induces a surjection of free pro-`C` groups. -/
 theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
@@ -297,9 +300,9 @@ noncomputable def equivFreeProP (p : ℕ) (X : Type u) :
 @[simp]
 theorem equivFreeProP_fromFreeProfiniteGroup (p : ℕ) (X : Type u)
     (x : freeProfiniteGroup X) :
-    equivFreeProP p X (fromFreeProfiniteGroup (finiteGroupClassP p) X x) =
+    equivFreeProP p X (x : freeProC (finiteGroupClassP p) X) =
       freeProP.fromFreeProfiniteGroup p X x := by
-  rw [fromFreeProfiniteGroup_apply, freeProP.fromFreeProfiniteGroup_apply]
+  rw [freeProP.fromFreeProfiniteGroup_apply]
   exact proCCompletion.equivMaximalProPQuotient_mk (p := p)
     (G := freeProfiniteGroup X) x
 
@@ -307,8 +310,9 @@ theorem equivFreeProP_fromFreeProfiniteGroup (p : ℕ) (X : Type u)
 @[simp]
 theorem equivFreeProP_of (p : ℕ) (x : X) :
     equivFreeProP p X (of x) = freeProP.of x := by
-  rw [← fromFreeProfiniteGroup_of, equivFreeProP_fromFreeProfiniteGroup,
-    freeProP.fromFreeProfiniteGroup_of]
+  change equivFreeProP p X
+    (freeProfiniteGroup.of x : freeProC (finiteGroupClassP p) X) = freeProP.of x
+  rw [equivFreeProP_fromFreeProfiniteGroup, freeProP.fromFreeProfiniteGroup_of]
 
 /-- The inverse comparison with the free pro-`p` group preserves each canonical generator. -/
 @[simp]

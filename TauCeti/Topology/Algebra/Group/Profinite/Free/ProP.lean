@@ -134,14 +134,15 @@ profinite lift. -/
 @[simp]
 theorem lift_fromFreeProfiniteGroup (hP : IsProP p P) (f : X → P)
     (x : freeProfiniteGroup X) :
-    lift hP f (fromFreeProfiniteGroup p X x) = freeProfiniteGroup.lift f x :=
-  DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) x
+    lift hP f (x : freeProP p X) = freeProfiniteGroup.lift f x := by
+  exact maximalProPQuotient.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
+    (freeProfiniteGroup.lift f).continuous x
 
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]
 theorem lift_of (hP : IsProP p P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
-  rw [← fromFreeProfiniteGroup_of, lift_fromFreeProfiniteGroup,
-    freeProfiniteGroup.lift_of]
+  change lift hP f (freeProfiniteGroup.of x : freeProP p X) = f x
+  rw [lift_fromFreeProfiniteGroup, freeProfiniteGroup.lift_of]
 
 /-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
 `f`. -/
@@ -168,7 +169,7 @@ theorem lift_surjective (hP : IsProP p P) {f : X → P}
     Function.Surjective (lift hP f) := by
   intro y
   obtain ⟨x, rfl⟩ := freeProfiniteGroup.lift_surjective hf y
-  exact ⟨fromFreeProfiniteGroup p X x, lift_fromFreeProfiniteGroup hP f x⟩
+  exact ⟨(x : freeProP p X), lift_fromFreeProfiniteGroup hP f x⟩
 
 end Lift
 
@@ -213,9 +214,11 @@ theorem map_comp_fromFreeProfiniteGroup (f : X → Y) :
 profinite groups. -/
 @[simp]
 theorem map_fromFreeProfiniteGroup (f : X → Y) (x : freeProfiniteGroup X) :
-    map (p := p) f (fromFreeProfiniteGroup p X x) =
+    map (p := p) f (x : freeProP p X) =
       fromFreeProfiniteGroup p Y (freeProfiniteGroup.map f x) :=
-  DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (p := p) f) x
+  by
+    change ((map (p := p) f).comp (fromFreeProfiniteGroup p X)) x = _
+    exact DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (p := p) f) x
 
 /-- A surjection of generating types induces a surjection of free pro-`p` groups. -/
 theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
