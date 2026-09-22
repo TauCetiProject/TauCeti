@@ -9,19 +9,18 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.ToClass
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PushClass
 
 /-!
-# The map on points induced by an isogeny
+# A class-group map on points associated to an isogeny
 
 An isogeny `φ : W₁ → W₂` is a map of function fields, backwards, and carries no map of points with
-it. It does induce one, through the ideal class groups: `Isogeny.pushClass` extends an ideal of
-`W₁.CoordinateRing` into the intermediate ring and norms it down to `W₂.CoordinateRing`, and
-`Point.toClassEquiv` identifies the points of a Weierstrass curve with the classes of its
-coordinate ring. Conjugating the first by the second gives
+it. The ideal class groups nevertheless define a map on points: `Isogeny.pushClass` extends an
+ideal of `W₁.CoordinateRing` into the intermediate ring and norms it down to
+`W₂.CoordinateRing`, and `Point.toClassEquiv` identifies the points of a Weierstrass curve with
+the classes of its coordinate ring. Conjugating the first by the second gives
 
 `Isogeny.toPointHom : W₁.Point →+ W₂.Point`,
 
-the map `φ` induces on rational points. It is a homomorphism **by construction** — the class-group
-map is one and the point–class dictionary is additive — so the classical statement that a pointed
-morphism of elliptic curves respects the group law needs no separate rigidity argument here.
+a homomorphism **by construction**, since the class-group map and the point–class dictionary are
+additive.
 
 The normality hypothesis `IsIntegrallyClosed W₂.CoordinateRing` is the one `pushClass` already
 asks of the target; for an elliptic curve it is supplied by
@@ -34,7 +33,7 @@ comparison, and functoriality in `φ` beyond the identity, are separate statemen
 
 ## Main definitions
 
-* `TauCeti.Isogeny.toPointHom`: the induced additive map on points.
+* `TauCeti.Isogeny.toPointHom`: the class-group-defined additive map on points.
 
 ## Main results
 
@@ -42,8 +41,7 @@ comparison, and functoriality in `φ` beyond the identity, are separate statemen
   the pushed-forward class.
 * `TauCeti.Isogeny.toPointHom_eq_iff`: a point is the image of `P` exactly when its class is the
   pushed-forward class of `P`, the point–class dictionary being injective.
-* `TauCeti.Isogeny.toPointHom_eq_zero_iff`: the kernel of the induced map, in class-group terms.
-* `TauCeti.Isogeny.toPointHom_id`: the identity isogeny induces the identity on points.
+* `TauCeti.Isogeny.toPointHom_id`: the class-group map for the identity isogeny is the identity.
 
 ## Provenance
 
@@ -55,7 +53,7 @@ Angdinata, declaration `toPointHom`, restated in the coordinate-ring form this r
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2 and III.4.8.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.
 -/
 
 public section
@@ -69,20 +67,16 @@ open WeierstrassCurve.Affine
 variable {F : Type*} [Field F] [DecidableEq F] {W₁ W₂ : WeierstrassCurve.Affine F}
   (φ : Isogeny W₁ W₂) [IsIntegrallyClosed W₂.CoordinateRing]
 
-/-- **The map on points induced by an isogeny**: the class-group map `Isogeny.pushClass`, read
+/-- **The class-group-defined map on points associated to an isogeny**: the map
+`Isogeny.pushClass`, read
 through the identification `WeierstrassCurve.Affine.Point.toClassEquiv` of the points of a
-Weierstrass curve with the ideal classes of its coordinate ring.
-
-Additive by construction, so Silverman III.4.8 — a morphism of elliptic curves taking `O` to `O`
-is a homomorphism — is built in rather than proved separately. -/
+Weierstrass curve with the ideal classes of its coordinate ring. -/
 noncomputable def toPointHom : W₁.Point →+ W₂.Point :=
   ((Point.toClassEquiv (W := W₂)).symm.toAddMonoidHom.comp φ.pushClass).comp
     (Point.toClassEquiv (W := W₁)).toAddMonoidHom
 
-/-- The induced map, unfolded: push the class of `P` forward and read the result as a point. The
-definition's body is not exposed across the module boundary, so this is how a downstream module
-computes with it — and, being `@[simp]`, the only way `simp` can reach inside `toPointHom` at
-all; `toClass_toPointHom` is the form that avoids the inverse equivalence. -/
+/-- The class-group-defined map sends `P` to the point corresponding to its pushed-forward
+class. -/
 @[simp]
 theorem toPointHom_apply (P : W₁.Point) :
     φ.toPointHom P = Point.toClassEquiv.symm (φ.pushClass P.toClass) := by
@@ -92,10 +86,7 @@ theorem toPointHom_apply (P : W₁.Point) :
   rfl
 
 /-- **The class of the image point is the pushed-forward class.** This characterises `toPointHom`,
-since `WeierstrassCurve.Affine.Point.toClass` is injective.
-
-Not `@[simp]`: `WeierstrassCurve.Affine.Point.toClass_apply` is, and it splits the left-hand side
-into the two cases of a point, so this lemma is not in simp-normal form. -/
+since `WeierstrassCurve.Affine.Point.toClass` is injective. -/
 theorem toClass_toPointHom (P : W₁.Point) :
     (φ.toPointHom P).toClass = φ.pushClass P.toClass := by
   rw [toPointHom_apply, ← Point.toClassEquiv_apply, AddEquiv.apply_symm_apply]
@@ -106,17 +97,7 @@ theorem toPointHom_eq_iff {P : W₁.Point} {Q : W₂.Point} :
   rw [← toClass_toPointHom]
   exact Point.toClass_injective.eq_iff.symm
 
-/-- **A point lands at infinity exactly when its class dies in the target.** This is the kernel of
-the induced map, in class-group terms.
-
-Not `@[simp]`: `toPointHom_apply` is, and through it `simp` already rewrites both sides of this
-iff to the same normal form, so tagging this too makes it a lemma `simp` can prove — which the
-`simpNF` linter rejects. -/
-theorem toPointHom_eq_zero_iff {P : W₁.Point} :
-    φ.toPointHom P = 0 ↔ φ.pushClass P.toClass = 0 := by
-  rw [toPointHom_eq_iff, map_zero]
-
-/-- **The identity isogeny induces the identity on points.** -/
+/-- **The class-group map for the identity isogeny is the identity on points.** -/
 @[simp]
 theorem toPointHom_id (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed W.CoordinateRing] :
     (Isogeny.id W).toPointHom = AddMonoidHom.id W.Point := by
