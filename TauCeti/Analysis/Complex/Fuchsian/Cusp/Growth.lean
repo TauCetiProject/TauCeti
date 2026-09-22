@@ -88,10 +88,7 @@ q-parameter. -/
 theorem cuspTwist_inv_smul (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) (z : ℍ) :
     cuspTwist D k f (D.scaling⁻¹ • z) =
       Function.Periodic.qParam D.width z ^ k * f (D.scaling⁻¹ • z) := by
-  have hcoordinate : coordinate D (D.scaling⁻¹ • z) =
-      Function.Periodic.qParam D.width z := by
-    rw [coordinate_apply, smul_inv_smul]
-  rw [cuspTwist_apply, hcoordinate]
+  rw [cuspTwist_apply, coordinate_inv_smul]
 
 /-- Multiplying by the cusp coordinate to the power `k` cancels the corresponding exponential
 growth in the scaling coordinate. In particular, the twisted function is bounded at the cusp. -/

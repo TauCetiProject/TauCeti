@@ -159,6 +159,17 @@ theorem isBoundedAtImInfty_qParam_zpow_mul_of_isBigO (w : ℝ) (k : ℤ) {f : �
   convert Real.exp_zero using 1
   ring_nf
 
+/-- An exponential growth bound at `i∞` remains valid after increasing its integer rate. -/
+theorem isBigO_exp_of_le (w : ℝ) (hw : 0 < w) {k k' : ℤ} (hkk' : k ≤ k') {f : ℍ → ℂ}
+    (hf : f =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w)) :
+    f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * (k' : ℝ) * z.im / w) := by
+  refine hf.trans (Asymptotics.isBigO_of_le _ fun z ↦ ?_)
+  simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+  apply (div_le_div_iff_of_pos_right hw).2
+  exact mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left (by exact_mod_cast hkk') (by positivity)) z.im_pos.le
+
 /-- Two points of the upper half-plane have the same width-`w` q-parameter exactly when one is
 an integral-width translate of the other. -/
 theorem qParamPuncturedUnitDisc_eq_iff (w : ℝ) (hw : 0 < w) (z z' : ℍ) :

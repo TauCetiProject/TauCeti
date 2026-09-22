@@ -159,6 +159,31 @@ theorem hasSum_laurentQExpansion_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : �
   rw [hterms]
   exact hsum
 
+/-- Reindex a Laurent q-expansion supported in exponents at least `-k` by `n - k'`, for any
+`k'` at least `k`. -/
+theorem hasSum_laurentQExpansion_natCast_sub_iff (D : Γ.CuspDatum) {k k' : ℤ}
+    (hkk' : k ≤ k') (f : ℍ → ℂ) {q s : ℂ} :
+    HasSum (fun j : ℤ ↦ (laurentQExpansion D k f).coeff j * q ^ j) s ↔
+      HasSum (fun n : ℕ ↦
+        (laurentQExpansion D k f).coeff ((n : ℤ) - k') * q ^ ((n : ℤ) - k')) s := by
+  let g : ℕ → ℤ := fun n ↦ (n : ℤ) - k'
+  have hg : Function.Injective g := by
+    intro m n hmn
+    simp only [g] at hmn
+    omega
+  have hoff : ∀ j ∉ Set.range g,
+      (laurentQExpansion D k f).coeff j * q ^ j = 0 := by
+    intro j hj
+    have hjlt : j < -k' := by
+      by_contra hjlt
+      apply hj
+      use (j + k').toNat
+      simp only [g]
+      omega
+    rw [laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (lt_of_lt_of_le hjlt (by omega)),
+      zero_mul]
+  simpa only [Function.comp_def, g] using (hg.hasSum_iff hoff).symm
+
 /-- The Laurent q-expansion, summed over all integer exponents, converges to the cusp extension
 throughout the punctured unit disc. -/
 theorem hasSum_laurentQExpansion (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
@@ -169,23 +194,8 @@ theorem hasSum_laurentQExpansion (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
     {q : ℂ} (hq : q ≠ 0) (hq_norm : ‖q‖ < 1) :
     HasSum (fun j : ℤ ↦ (laurentQExpansion D k f).coeff j * q ^ j)
       (cuspExtension D f q) := by
-  let g : ℕ → ℤ := fun n ↦ (n : ℤ) - k
-  have hg : Function.Injective g := by
-    intro m n hmn
-    simp only [g] at hmn
-    omega
-  apply (hg.hasSum_iff ?_).mp
-  · change HasSum (fun n : ℕ ↦
-      (laurentQExpansion D k f).coeff ((n : ℤ) - k) * q ^ ((n : ℤ) - k)) _
-    exact hasSum_laurentQExpansion_natCast_sub D k f hf hhol hbound hq hq_norm
-  · intro j hj
-    have hjlt : j < -k := by
-      by_contra hjlt
-      apply hj
-      use (j + k).toNat
-      simp only [g]
-      omega
-    rw [laurentQExpansion_coeff_eq_zero_of_lt_neg D k f hjlt, zero_mul]
+  apply (hasSum_laurentQExpansion_natCast_sub_iff D (le_refl k) f).mpr
+  exact hasSum_laurentQExpansion_natCast_sub D k f hf hhol hbound hq hq_norm
 
 /-- Pulling the Laurent q-expansion back by the normalized cusp coordinate gives the original
 function on the upper half-plane, when reindexed over its potentially nonzero coefficients. -/
@@ -216,76 +226,63 @@ theorem hasSum_laurentQExpansion_coordinate (D : Γ.CuspDatum) (k : ℤ) (f : �
     hasSum_laurentQExpansion D k f hf hhol hbound (coordinate_ne_zero D z)
       (norm_coordinate_lt_one D z)
 
-private theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : ℍ → ℂ)
+/-- If `k ≤ k'`, the coefficients of the Laurent expansion constructed using the `k`-bound,
+reindexed by `n - k'`, are the Taylor coefficients of the `k'`-twisted extension. -/
+theorem laurentQExpansion_coeff_natCast_sub_of_le (D : Γ.CuspDatum) {k k' : ℤ}
+    (hkk' : k ≤ k') (f : ℍ → ℂ)
+    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
+    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
+    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) (n : ℕ) :
+    (laurentQExpansion D k f).coeff ((n : ℤ) - k') =
+      (twistedQExpansion D k' f).coeff n := by
+  rw [twistedQExpansion_def]
+  -- Keep the generic Fuchsian layer independent of the modular-forms layer containing the
+  -- raw-function variant; Mathlib's theorem instead accepts this continuous-map wrapper.
+  let F : C(ℍ, ℂ) := ⟨fun z ↦ cuspTwist D k' f (D.scaling⁻¹ • z),
+    (mdifferentiable_inv_smul D (cuspTwist D k' f)
+      (mdifferentiable_cuspTwist D k' f hhol)).continuous⟩
+  refine UpperHalfPlane.qExpansion_coeff_unique F
+    (c := fun m ↦ (laurentQExpansion D k f).coeff ((m : ℤ) - k')) D.width_pos ?_ ?_ n
+  · have hbound' := TauCeti.UpperHalfPlane.isBigO_exp_of_le
+      D.width D.width_pos hkk' hbound
+    simpa only [F, ContinuousMap.coe_mk, twistedExtension_def, cuspExtension_def] using
+      analyticAt_twistedExtension_zero D k' f hf hhol hbound'
+  · intro z
+    have hsum := hasSum_laurentQExpansion_coordinate D k f hf hhol hbound
+      (D.scaling⁻¹ • z)
+    rw [coordinate_inv_smul] at hsum
+    have hreindexed := (hasSum_laurentQExpansion_natCast_sub_iff D hkk' f).mp hsum
+    have hscaled := hreindexed.mul_left (Function.Periodic.qParam D.width z ^ k')
+    simp only [F, ContinuousMap.coe_mk]
+    rw [cuspTwist_inv_smul D k' f z]
+    simp only [smul_eq_mul]
+    have hterms :
+        (fun m : ℕ ↦ (laurentQExpansion D k f).coeff ((m : ℤ) - k') *
+          Function.Periodic.qParam D.width z ^ m) =
+        fun m : ℕ ↦ Function.Periodic.qParam D.width z ^ k' *
+          ((laurentQExpansion D k f).coeff ((m : ℤ) - k') *
+            Function.Periodic.qParam D.width z ^ ((m : ℤ) - k')) := by
+      funext m
+      have hq : Function.Periodic.qParam D.width z ≠ 0 :=
+        Function.Periodic.qParam_ne_zero z
+      have hpow : Function.Periodic.qParam D.width z ^ m =
+          Function.Periodic.qParam D.width z ^ ((m : ℤ) - k') *
+            Function.Periodic.qParam D.width z ^ k' := by
+        rw [← zpow_add₀ hq, sub_add_cancel, zpow_natCast]
+      rw [hpow]
+      ring
+    rw [hterms]
+    exact hscaled
+
+/-- Increasing a valid exponential growth rate does not change the Laurent q-expansion. -/
+theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : ℍ → ℂ)
     (hkk' : k ≤ k')
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
     (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width))
-    (hbound' : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k' : ℝ) * z.im / D.width)) :
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
     laurentQExpansion D k f = laurentQExpansion D k' f := by
-  have hcoeff (n : ℕ) :
-      (laurentQExpansion D k f).coeff ((n : ℤ) - k') =
-        (twistedQExpansion D k' f).coeff n := by
-    rw [twistedQExpansion_def]
-    let F : C(ℍ, ℂ) := ⟨fun z ↦ cuspTwist D k' f (D.scaling⁻¹ • z),
-      (mdifferentiable_inv_smul D (cuspTwist D k' f)
-        (mdifferentiable_cuspTwist D k' f hhol)).continuous⟩
-    change (laurentQExpansion D k f).coeff ((n : ℤ) - k') =
-      (UpperHalfPlane.qExpansion D.width F).coeff n
-    refine UpperHalfPlane.qExpansion_coeff_unique F
-      (c := fun m ↦ (laurentQExpansion D k f).coeff ((m : ℤ) - k'))
-      D.width_pos ?_ ?_ n
-    · simpa only [F, ContinuousMap.coe_mk, twistedExtension_def, cuspExtension_def] using
-        analyticAt_twistedExtension_zero D k' f hf hhol hbound'
-    · intro z
-      have hcoord : coordinate D (D.scaling⁻¹ • z) =
-          Function.Periodic.qParam D.width z := by
-        rw [coordinate_apply, smul_inv_smul]
-      have hsum := (hasSum_laurentQExpansion_coordinate D k f hf hhol hbound
-        (D.scaling⁻¹ • z)).mul_left (Function.Periodic.qParam D.width z ^ k')
-      rw [hcoord] at hsum
-      let g : ℕ → ℤ := fun m ↦ (m : ℤ) - k'
-      have hg : Function.Injective g := by
-        intro m n hmn
-        simp only [g] at hmn
-        omega
-      have hoff : ∀ j ∉ Set.range g,
-          Function.Periodic.qParam D.width z ^ k' *
-            ((laurentQExpansion D k f).coeff j *
-              Function.Periodic.qParam D.width z ^ j) = 0 := by
-        intro j hj
-        have hjlt : j < -k' := by
-          by_contra hjlt
-          apply hj
-          use (j + k').toNat
-          simp only [g]
-          omega
-        rw [laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (lt_of_lt_of_le hjlt (by omega)),
-          zero_mul, mul_zero]
-      have hsum' := (hg.hasSum_iff hoff).mpr hsum
-      change HasSum (fun m : ℕ ↦
-          (laurentQExpansion D k f).coeff ((m : ℤ) - k') •
-            Function.Periodic.qParam D.width z ^ m)
-        (cuspTwist D k' f (D.scaling⁻¹ • z))
-      rw [cuspTwist_inv_smul D k' f z]
-      simp only [smul_eq_mul]
-      have hterms :
-          (fun m : ℕ ↦ (laurentQExpansion D k f).coeff ((m : ℤ) - k') *
-            Function.Periodic.qParam D.width z ^ m) =
-          (fun x ↦ Function.Periodic.qParam D.width z ^ k' *
-            ((laurentQExpansion D k f).coeff x *
-              Function.Periodic.qParam D.width z ^ x)) ∘ g := by
-        funext m
-        simp only [Function.comp_apply, g]
-        have hq : Function.Periodic.qParam D.width z ≠ 0 :=
-          Function.Periodic.qParam_ne_zero z
-        have hindex : (m : ℤ) = ((m : ℤ) - k') + k' := by omega
-        rw [← zpow_natCast, hindex, zpow_add₀ hq]
-        ring_nf
-      rw [hterms]
-      exact hsum'
   apply HahnSeries.ext
   funext j
   by_cases hj : j < -k'
@@ -295,7 +292,8 @@ private theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : 
     have hn : (n : ℤ) - k' = j := by
       simp only [n]
       omega
-    rw [← hn, laurentQExpansion_coeff_natCast_sub, hcoeff]
+    rw [← hn, laurentQExpansion_coeff_natCast_sub,
+      laurentQExpansion_coeff_natCast_sub_of_le D hkk' f hf hhol hbound]
 
 /-- The Laurent q-expansion is independent of which valid exponential growth bound is used to
 construct it. -/
@@ -308,7 +306,7 @@ theorem laurentQExpansion_eq (D : Γ.CuspDatum) (k k' : ℤ) (f : ℍ → ℂ)
       fun z ↦ Real.exp (2 * Real.pi * (k' : ℝ) * z.im / D.width)) :
     laurentQExpansion D k f = laurentQExpansion D k' f := by
   rcases le_total k k' with hkk' | hk'k
-  · exact laurentQExpansion_eq_of_le D f hkk' hf hhol hbound hbound'
-  · exact (laurentQExpansion_eq_of_le D f hk'k hf hhol hbound' hbound).symm
+  · exact laurentQExpansion_eq_of_le D f hkk' hf hhol hbound
+  · exact (laurentQExpansion_eq_of_le D f hk'k hf hhol hbound').symm
 
 end TauCeti.Subgroup.CuspDatum
