@@ -24,8 +24,8 @@ Ginzburg DG algebra with the additive preprojective algebra.
 
 ## Main results
 
-* `TauCeti.addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount`: the two weights of a
-  Ginzburg path differ by sign.
+* `Quiver.Path.addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount`: the two weights
+  of a Ginzburg path differ by sign.
 * `TauCeti.gradeBy_ginzburgTwoDegree_neg_eq_gradeBy_ginzburgLoopCount`: the degree `-n`
   cohomological piece is the piece containing exactly `n` adjoined loops.
 * `TauCeti.gradeBy_ginzburgTwoDegree_eq_bot_of_pos`: positive cohomological pieces vanish.
@@ -73,7 +73,7 @@ theorem ginzburgTwoDegree_eq_neg_ginzburgLoopCount :
       simp
 
 /-- The cohomological degree of a Ginzburg path is the negative of its number of adjoined loops. -/
-theorem addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount
+theorem _root_.Quiver.Path.addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount
     {i j : GinzburgQuiver Q} (p : Path i j) :
     p.addWeight ginzburgTwoDegree = -((p.addWeight ginzburgLoopCount : ℕ) : ℤ) := by
   induction p with
@@ -85,31 +85,41 @@ theorem addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount
       omega
 
 /-- A Ginzburg path has cohomological degree `-n` exactly when it contains `n` adjoined loops. -/
-theorem addWeight_ginzburgTwoDegree_eq_neg_iff {i j : GinzburgQuiver Q} (p : Path i j) (n : ℕ) :
+@[simp]
+theorem _root_.Quiver.Path.addWeight_ginzburgTwoDegree_eq_neg_iff {i j : GinzburgQuiver Q}
+    (p : Path i j) (n : ℕ) :
     p.addWeight ginzburgTwoDegree = -(n : ℤ) ↔ p.addWeight ginzburgLoopCount = n := by
-  rw [addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount]
+  rw [p.addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount]
   exact neg_inj.trans Int.ofNat_inj
 
 /-- A Ginzburg path has cohomological degree zero exactly when it contains no adjoined loop. -/
-theorem addWeight_ginzburgTwoDegree_eq_zero_iff {i j : GinzburgQuiver Q} (p : Path i j) :
+@[simp]
+theorem _root_.Quiver.Path.addWeight_ginzburgTwoDegree_eq_zero_iff {i j : GinzburgQuiver Q}
+    (p : Path i j) :
     p.addWeight ginzburgTwoDegree = 0 ↔ p.addWeight ginzburgLoopCount = 0 := by
-  simpa using addWeight_ginzburgTwoDegree_eq_neg_iff p 0
+  simpa using p.addWeight_ginzburgTwoDegree_eq_neg_iff 0
 
 /-- Every Ginzburg path has nonpositive cohomological degree. -/
-theorem addWeight_ginzburgTwoDegree_nonpos {i j : GinzburgQuiver Q} (p : Path i j) :
+theorem _root_.Quiver.Path.addWeight_ginzburgTwoDegree_nonpos {i j : GinzburgQuiver Q}
+    (p : Path i j) :
     p.addWeight ginzburgTwoDegree ≤ 0 := by
-  rw [addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount]
+  rw [p.addWeight_ginzburgTwoDegree_eq_neg_addWeight_ginzburgLoopCount]
   exact neg_nonpos.mpr (Int.natCast_nonneg _)
+
+/-- The loop count pulled back along `TauCeti.ginzburgOf` is the constant weight `0`.  This is
+`TauCeti.ginzburgLoopCount_double` for an arrow of `Quiver.Symmetrify Q`, whose type is
+definitionally the sum type but does not match it syntactically. -/
+private theorem ginzburgLoopCount_ginzburgOf_map {a b : Symmetrify Q} (e : a ⟶ b) :
+    ginzburgLoopCount (ginzburgOf.map e) = 0 :=
+  ginzburgLoopCount_double e
 
 /-- The inclusion of the doubled quiver contributes no adjoined loops to a path. -/
 @[simp]
-theorem addWeight_ginzburgLoopCount_mapPath {i j : Symmetrify Q} (p : Path i j) :
+theorem _root_.Quiver.Path.addWeight_ginzburgLoopCount_mapPath {i j : Symmetrify Q}
+    (p : Path i j) :
     (ginzburgOf.mapPath p).addWeight ginzburgLoopCount = 0 := by
-  induction p with
-  | nil => rw [ginzburgOf.mapPath_nil, Path.addWeight_nil]
-  | cons p e ih =>
-      rw [ginzburgOf.mapPath_cons, Path.addWeight_cons, ih, zero_add]
-      simp [ginzburgOf_map, ginzburgLoopCount]
+  simp only [ginzburgOf.addWeight_mapPath, ginzburgLoopCount_ginzburgOf_map,
+    Quiver.Path.addWeight_const, smul_zero]
 
 section Pieces
 
@@ -124,9 +134,9 @@ theorem gradeBy_ginzburgTwoDegree_neg_eq_gradeBy_ginzburgLoopCount (n : ℕ) :
   simp only [mem_gradeBy_iff]
   constructor
   · intro hx p hp
-    exact (addWeight_ginzburgTwoDegree_eq_neg_iff p.2.2 n).mp (hx p hp)
+    exact (p.2.2.addWeight_ginzburgTwoDegree_eq_neg_iff n).mp (hx p hp)
   · intro hx p hp
-    exact (addWeight_ginzburgTwoDegree_eq_neg_iff p.2.2 n).mpr (hx p hp)
+    exact (p.2.2.addWeight_ginzburgTwoDegree_eq_neg_iff n).mpr (hx p hp)
 
 /-- The degree-zero cohomological piece consists exactly of linear combinations of paths with no
 adjoined loop. -/
@@ -145,7 +155,7 @@ theorem gradeBy_ginzburgTwoDegree_eq_bot_of_pos {m : ℤ} (hm : 0 < m) :
   ext p
   by_cases hp : p ∈ ((pathAlgebraBasis k (GinzburgQuiver Q)).repr x).support
   · have hdegree := hx p hp
-    have hnonpos := addWeight_ginzburgTwoDegree_nonpos p.2.2
+    have hnonpos := p.2.2.addWeight_ginzburgTwoDegree_nonpos
     omega
   · rw [Finsupp.notMem_support_iff.mp hp]
     simp
