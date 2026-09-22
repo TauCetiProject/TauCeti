@@ -59,10 +59,10 @@ theorem mem_quadraticNormSubgroup_iff (a b : Kˣ) :
   rw [quadraticNormSubgroup, MonoidHom.mem_range]
   constructor
   · rintro ⟨z, rfl⟩
-    exact ⟨z, rfl⟩
+    exact ⟨z, (quadraticNormHom_apply a z).symm⟩
   · rintro ⟨z, hz⟩
     refine ⟨z, Units.ext ?_⟩
-    exact hz
+    exact (quadraticNormHom_apply a z).trans hz
 
 /-- The Hilbert symbol is positive exactly on the quadratic norm subgroup. -/
 @[simp]
@@ -70,22 +70,17 @@ theorem hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup (a b : Kˣ) :
     hilbertSymbol a b = 1 ↔ b ∈ quadraticNormSubgroup a := by
   rw [mem_quadraticNormSubgroup_iff, hilbertSymbol_eq_one_iff_exists_unit_norm_eq]
 
-/-- The Hilbert symbol is negative exactly off the quadratic norm subgroup. -/
-@[simp]
-theorem hilbertSymbol_eq_neg_one_iff_not_mem_quadraticNormSubgroup (a b : Kˣ) :
-    hilbertSymbol a b = -1 ↔ b ∉ quadraticNormSubgroup a := by
-  rw [← not_congr (hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a b)]
-  simpa using
-    (Int.units_ne_iff_eq_neg (u := hilbertSymbol a b) (v := (1 : ℤˣ))).symm
-
 /-- The Hilbert symbol is the sign indicator of the quadratic norm subgroup. -/
 theorem hilbertSymbol_eq_signIndicator (a b : Kˣ) :
     hilbertSymbol a b = (quadraticNormSubgroup a).signIndicator b := by
   by_cases hb : b ∈ quadraticNormSubgroup a
   · rw [(hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a b).mpr hb,
       Subgroup.signIndicator_of_mem _ hb]
-  · rw [(hilbertSymbol_eq_neg_one_iff_not_mem_quadraticNormSubgroup a b).mpr hb,
-      Subgroup.signIndicator_of_notMem _ hb]
+  · have hhilbert : hilbertSymbol a b ≠ 1 :=
+      fun h ↦ hb ((hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup a b).mp h)
+    have hindicator : (quadraticNormSubgroup a).signIndicator b ≠ 1 :=
+      fun h ↦ hb ((quadraticNormSubgroup a).signIndicator_eq_one_iff.mp h)
+    rw [Int.units_ne_iff_eq_neg.mp hhilbert, Int.units_ne_iff_eq_neg.mp hindicator]
 
 /-- Every square is a norm from a quadratic algebra. -/
 theorem square_le_quadraticNormSubgroup (a : Kˣ) :
