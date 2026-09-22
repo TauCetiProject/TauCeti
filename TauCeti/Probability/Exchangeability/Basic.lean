@@ -24,11 +24,12 @@ hypotheses enter only in lemmas that compose `Measure.map`s.
 definitions here are about the order structure of `ℕ` (prefixes, shifts, strictly increasing
 selections) and stay sequence-level.
 
-The prefix/tail measurable equivalence `prefixSplitEquiv` is an exception on both counts: it is
-neither a roadmap signature nor adapted from the pinned sources, but general infrastructure that
-several exchangeability arguments need in order to reindex a sequence as a length-`r` prefix paired
-with the tail from index `r`. It lives here because it is stated purely in terms of the order
-structure of `ℕ`, with no measure and no process.
+The reindexing measurable equivalences `prefixSplitEquiv` and `blockSplitEquiv` are exceptions on
+both counts: they are neither roadmap signatures nor adapted from the pinned sources, but general
+infrastructure that several exchangeability arguments need, the first to reindex a sequence as a
+length-`r` prefix paired with the tail from index `r`, the second to split a block of width
+`n * m` into `n` consecutive blocks of width `m`. They live here because they are stated purely in
+terms of the index combinatorics, with no measure and no process.
 
 The remaining declarations follow the roadmap signatures in
 `TauCetiRoadmap/Exchangeability/README.md` and
@@ -224,6 +225,45 @@ theorem prefixSplitEquiv_symm_apply (r : ℕ) (p : (Fin r → α) × (ℕ → α
     · have h : ¬ (r + j < r) := Nat.not_lt.mpr (Nat.le_add_right r j)
       simp only [dite_eq_right h, Nat.add_sub_cancel_left]
   rw [key]
+
+/-- The measurable equivalence that splits a block of width `n * m` into `n` consecutive blocks
+of width `m`. The outer coordinate chooses the small block and the inner coordinate chooses a
+position within it. -/
+def blockSplitEquiv (α : Type*) [MeasurableSpace α] (m n : ℕ) :
+    (Fin (n * m) → α) ≃ᵐ (Fin n → Fin m → α) :=
+  (MeasurableEquiv.piCongrLeft (fun _ : Fin (n * m) => α)
+    (finProdFinEquiv : Fin n × Fin m ≃ Fin (n * m))).symm.trans
+      (MeasurableEquiv.curry (Fin n) (Fin m) α)
+
+/-- Splitting a finite block reads its `(r, j)` coordinate at the flattened index
+`j + m * r`. -/
+@[simp]
+theorem blockSplitEquiv_apply (m n : ℕ) (x : Fin (n * m) → α) (r : Fin n) (j : Fin m) :
+    blockSplitEquiv α m n x r j = x (finProdFinEquiv (r, j)) :=
+  (rfl)
+
+/-- Joining split blocks reads a flattened coordinate from its quotient and remainder. -/
+@[simp]
+theorem blockSplitEquiv_symm_apply (m n : ℕ) (x : Fin n → Fin m → α) (k : Fin (n * m)) :
+    (blockSplitEquiv α m n).symm x k =
+      x (finProdFinEquiv.symm k).1 (finProdFinEquiv.symm k).2 := by
+  conv_rhs => rw [← (blockSplitEquiv α m n).apply_symm_apply x]
+  rw [blockSplitEquiv_apply, Prod.mk.eta, Equiv.apply_symm_apply]
+
+/-- Restriction of a block of width `n * m` to its `r`-th consecutive subblock of width `m`. -/
+def blockRestriction (m n : ℕ) (r : Fin n) : (Fin (n * m) → α) → (Fin m → α) :=
+  fun x => blockSplitEquiv α m n x r
+
+/-- Restricting a finite block reads the corresponding flattened coordinate. -/
+@[simp]
+theorem blockRestriction_apply (m n : ℕ) (r : Fin n) (x : Fin (n * m) → α) (j : Fin m) :
+    blockRestriction (α := α) m n r x j = x (finProdFinEquiv (r, j)) :=
+  (rfl)
+
+/-- Restriction to a fixed subblock is measurable. -/
+theorem measurable_blockRestriction (m n : ℕ) (r : Fin n) :
+    Measurable (blockRestriction (α := α) m n r) :=
+  (measurable_pi_apply r).comp (blockSplitEquiv α m n).measurable
 
 /-- The prefix law is the pushforward of the path law by `prefixProj`. -/
 theorem map_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
