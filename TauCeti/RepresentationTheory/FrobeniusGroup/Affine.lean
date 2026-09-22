@@ -19,7 +19,7 @@ the Frobenius kernel.  The general Frobenius theorem constructs the kernel from 
 alone; the main result here identifies that abstractly constructed subgroup with the visible
 translation factor.
 
-The specialization to `ZMod 5` gives the roadmap's group of order twenty, with kernel of order
+The specialization to `ZMod 5` gives the affine group of order twenty, with kernel of order
 five and complement of order four.
 
 ## Main results
