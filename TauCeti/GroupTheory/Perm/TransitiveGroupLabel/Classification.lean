@@ -58,8 +58,12 @@ of the rotation group `5T1`.
   subgroup of `5T3` is the normalizer of that of `5T1`.
 * `TauCeti.referenceSubgroup_three_zero_le_alternatingGroup`,
   `TauCeti.not_referenceSubgroup_three_one_le_alternatingGroup`: the parities of `3T1` and `3T2`,
+  `TauCeti.referenceSubgroup_four_le_alternatingGroup_iff`: the parities of the five quartic labels,
   and `TauCeti.referenceSubgroup_five_le_alternatingGroup_iff`: the parities of the five quintic
   labels.
+* `TauCeti.exists_le_map_conj_referenceSubgroup_four_two_iff`: a reference subgroup of degree four
+  lies in a conjugate of the dihedral group of `4T3` exactly for the labels `4T1`, `4T2` and
+  `4T3`.
 * `TauCeti.TransitiveGroupLabel.eq_of_three`, `TauCeti.TransitiveGroupLabel.eq_of_four`,
   `TauCeti.TransitiveGroupLabel.eq_of_five`: in degrees three, four and five a subgroup carries
   at most one label.
