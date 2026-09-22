@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -74,7 +73,8 @@ exponent. -/
 theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {c : ℝ} (hc : 0 < c) (d : ℝ) {z : ℂ}
     (hz : z ∈ upperHalfPlaneSet) :
-    schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e (z₀.affine c d hc)
+    schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
+        (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀))
         ((c : ℂ) * z + (d : ℂ)) =
       (c : ℂ) ^ (((∑ i, e i) + 1 : ℝ) : ℂ) *
         schwarzChristoffelPrimitive a e z₀ z := by
@@ -88,7 +88,8 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
     rw [h_exp, Complex.cpow_add _ _ hc₀, Complex.cpow_one]
   have hleft : ∀ w ∈ upperHalfPlaneSet,
       HasDerivAt
-        (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e (z₀.affine c d hc) ∘
+        (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
+            (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀)) ∘
           fun ζ : ℂ ↦ (c : ℂ) * ζ + (d : ℂ))
         (C * schwarzChristoffelIntegrand a e w) w := by
     intro w hw
@@ -96,7 +97,8 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
       simpa using ((hasDerivAt_id w).const_mul (c : ℂ)).add_const (d : ℂ)
     have hcomp :=
       (hasDerivAt_schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
-        (z₀.affine c d hc) (affine_mem_upperHalfPlaneSet hc hw)).comp w hinner
+        (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀))
+        (by simpa [upperHalfPlaneSet, mul_im] using mul_pos hc hw)).comp w hinner
     have hderiv :
         schwarzChristoffelIntegrand (fun i ↦ c * a i + d) e
             ((c : ℂ) * w + (d : ℂ)) * (c : ℂ) =
@@ -111,7 +113,8 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
         (C * schwarzChristoffelIntegrand a e w) w :=
     fun w hw ↦ (hasDerivAt_schwarzChristoffelPrimitive a e z₀ hw).const_mul C
   have heq : EqOn
-      (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e (z₀.affine c d hc) ∘
+      (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
+          (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀)) ∘
         fun w : ℂ ↦ (c : ℂ) * w + (d : ℂ))
       (fun w : ℂ ↦ C * schwarzChristoffelPrimitive a e z₀ w) upperHalfPlaneSet := by
     apply isOpen_upperHalfPlaneSet.eqOn_of_deriv_eq
@@ -122,8 +125,10 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
       z₀.coe_im_pos
     rw [Function.comp_apply, schwarzChristoffelPrimitive_apply_base, mul_zero]
     exact (congr_arg
-      (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e (z₀.affine c d hc))
-      (UpperHalfPlane.coe_affine z₀ c d hc).symm).trans
+      (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
+        (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀)))
+      (by simp [UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_pos_real_smul,
+        Complex.real_smul, add_comm])).trans
         (schwarzChristoffelPrimitive_apply_base _ _ _)
   exact heq hz
 
@@ -132,7 +137,8 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
 theorem schwarzChristoffelPrimitive_affine_prevertices_of_sum_eq_neg_two (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {c : ℝ} (hc : 0 < c) (d : ℝ) (hsum : ∑ i, e i = -2)
     {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
-    schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e (z₀.affine c d hc)
+    schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
+        (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀))
         ((c : ℂ) * z + (d : ℂ)) =
       (c : ℂ)⁻¹ * schwarzChristoffelPrimitive a e z₀ z := by
   rw [schwarzChristoffelPrimitive_affine_prevertices a e z₀ hc d hz, hsum]
