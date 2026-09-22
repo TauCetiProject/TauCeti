@@ -98,21 +98,10 @@ theorem admitsFiniteProjectiveResolution_inverseImage_shift :
 theorem admitsFiniteProjectiveResolution_inverseImage_inverseShift :
     (E.admitsFiniteResolution E.isProjective).inverseImage E.shift.inverse =
       E.admitsFiniteResolution E.isProjective := by
-  apply le_antisymm
-  · intro X hX
-    rw [ObjectProperty.prop_inverseImage_iff] at hX
-    rw [← E.admitsFiniteProjectiveResolution_inverseImage_shift,
-      ObjectProperty.prop_inverseImage_iff] at hX
-    exact (E.admitsFiniteResolution E.isProjective).prop_of_iso (E.shift.counitIso.app X) hX
-  · intro X hX
-    rw [ObjectProperty.prop_inverseImage_iff]
-    have hX' : ((E.admitsFiniteResolution E.isProjective).inverseImage E.shift.functor)
-        (E.shift.inverse.obj X) := by
-      rw [ObjectProperty.prop_inverseImage_iff]
-      exact (E.admitsFiniteResolution E.isProjective).prop_of_iso
-        (E.shift.counitIso.app X).symm hX
-    rw [E.admitsFiniteProjectiveResolution_inverseImage_shift] at hX'
-    exact hX'
+  simpa only [Equivalence.symm_inverse, Equivalence.symm_functor,
+    E.admitsFiniteProjectiveResolution_inverseImage_shift] using
+    ObjectProperty.inverseImage_functor_inverseImage_inverse
+      (E.admitsFiniteResolution E.isProjective) E.shift.symm
 
 end GradedExactStructure
 

@@ -67,9 +67,8 @@ by the projectives themselves.
   calibrations.
 * `TauCeti.ExactStructure.isProjective_map_adjoint`: a left adjoint preserves relative
   projectives when its right adjoint is conflation-exact.
-* `TauCeti.ExactStructure.isProjective_map_equivalence_iff` and
-  `TauCeti.ExactStructure.enoughProjectives_equivalence_iff`: conflation-exact equivalences
-  preserve and reflect projectivity and the existence of enough projectives.
+* `TauCeti.ExactStructure.isProjective_map_equivalence_iff`: conflation-exact equivalences
+  preserve and reflect projectivity.
 * `TauCeti.ExactStructure.nonempty_iso_biprod_of_projective`: **Schanuel's lemma**, that two
   conflations over the same object with projective middle terms have stably isomorphic kernels.
 * `TauCeti.ExactStructure.exists_conflation_biprod_of_conflation_of_projective`: **the horseshoe
@@ -283,37 +282,6 @@ structure EnoughProjectives (E : ExactStructure C) : Prop where
 
 namespace ProjectivePresentation
 
-section Iso
-
-variable {X Y : C}
-
-/-- Transport a relative projective presentation along an isomorphism of its presented object. -/
-def ofIso (P : E.ProjectivePresentation X) (e : X ≅ Y) : E.ProjectivePresentation Y where
-  K := P.K
-  P := P.P
-  i := P.i
-  p := P.p ≫ e.hom
-  zero := by rw [← Category.assoc, P.zero, zero_comp]
-  conflation := E.conflation_of_iso (S := ShortComplex.mk P.i P.p P.zero)
-    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) e (by simp) (by simp)) P.conflation
-  isProjective := P.isProjective
-
-@[simp] theorem ofIso_K (P : E.ProjectivePresentation X) (e : X ≅ Y) : (P.ofIso e).K = P.K :=
-  by simp [ofIso]
-
-@[simp] theorem ofIso_P (P : E.ProjectivePresentation X) (e : X ≅ Y) : (P.ofIso e).P = P.P :=
-  by simp [ofIso]
-
-@[simp] theorem ofIso_i (P : E.ProjectivePresentation X) (e : X ≅ Y) :
-    HEq (P.ofIso e).i P.i :=
-  by simp [ofIso]
-
-@[simp] theorem ofIso_p (P : E.ProjectivePresentation X) (e : X ≅ Y) :
-    HEq (P.ofIso e).p (P.p ≫ e.hom) :=
-  by simp [ofIso]
-
-end Iso
-
 section Functor
 
 variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
@@ -457,29 +425,7 @@ noncomputable def projectivePresentation (h : E.EnoughProjectives) (X : C) :
     E.ProjectivePresentation X :=
   (h.presentation X).some
 
-/-- A conflation-exact equivalence transports enough relative projectives. -/
-theorem mapEquivalence (h : E.EnoughProjectives) {D : Type u'} [Category.{v'} D]
-    [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D] (E' : ExactStructure D)
-    (e : C ≌ D) [e.functor.Additive]
-    (hF : E.IsConflationExact E' e.functor)
-    (hG : E'.IsConflationExact E e.inverse) : E'.EnoughProjectives where
-  presentation Y := by
-    let P := h.projectivePresentation (e.inverse.obj Y)
-    exact ⟨(P.mapAdjunction e.toAdjunction hF hG).ofIso (e.counitIso.app Y)⟩
-
 end EnoughProjectives
-
-/-- Exact structures related by a conflation-exact equivalence have enough projectives
-simultaneously. -/
-theorem enoughProjectives_equivalence_iff {D : Type u'} [Category.{v'} D] [Preadditive D]
-    [HasZeroObject D] [HasBinaryBiproducts D] (E : ExactStructure C) (E' : ExactStructure D)
-    (e : C ≌ D) [e.functor.Additive]
-    (hF : E.IsConflationExact E' e.functor)
-    (hG : E'.IsConflationExact E e.inverse) :
-    E.EnoughProjectives ↔ E'.EnoughProjectives := by
-  let _ : e.symm.functor.Additive := inferInstanceAs e.inverse.Additive
-  exact ⟨fun h ↦ h.mapEquivalence E' e hF hG,
-    fun h ↦ h.mapEquivalence E e.symm hG hF⟩
 
 /-- **Schanuel's lemma.** Two conflations `K ↪ Q ↠ X` and `K' ↪ Q' ↠ X` with projective middle
 terms have stably isomorphic kernels: `K ⊞ Q' ≅ K' ⊞ Q`.
