@@ -17,7 +17,8 @@ embedding `k(X) → F` which sends `X` to `x` carries the normalized Weil differ
 `k(X)` to a nonzero differential of `F` by cotrace.  This differential, written
 `TauCeti.weilDifferentialOfSeparating`, is the Weil-theoretic `dx`.
 
-Both the Kähler and Weil differential spaces are one-dimensional over `F`.  Sending the Kähler
+Assume in addition that `k` is algebraically closed in `F` (`IsIntegrallyClosedIn k F`).  Both
+the Kähler and Weil differential spaces are then one-dimensional over `F`.  Sending the Kähler
 differential `D k F x` to this cotrace therefore determines an `F`-linear equivalence
 
 `Ω[F⁄k] ≃ₗ[F] weilDifferentialSpace k F`.
