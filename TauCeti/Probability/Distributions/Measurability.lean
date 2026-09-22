@@ -12,7 +12,6 @@ public import Mathlib.Probability.Distributions.Beta
 public import Mathlib.Probability.Distributions.Binomial
 public import Mathlib.Probability.Distributions.Cauchy
 public import Mathlib.Probability.Distributions.Exponential
-public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Distributions.Geometric
 public import Mathlib.Probability.Distributions.Pareto
 public import Mathlib.Probability.Distributions.Poisson.Basic
@@ -22,8 +21,8 @@ public import Mathlib.Probability.Distributions.Poisson.Basic
 
 A distribution is a family of measures indexed by its parameters, and `MeasureTheory.Measure α`
 carries the Giry measurable structure. This file proves parameter measurability for Mathlib's
-Gamma, exponential, Beta, Pareto, Gaussian, Cauchy, Poisson, geometric, Bernoulli and binomial
-scalar laws, which is exactly what a consumer needs in order to package them as
+Gamma, exponential, Beta, Pareto, Cauchy, Poisson, geometric, Bernoulli and binomial scalar laws,
+which is exactly what a consumer needs in order to package them as
 `ProbabilityTheory.Kernel`s.
 
 ## Two mechanisms
@@ -32,24 +31,25 @@ The absolutely continuous families are all `volume.withDensity` of their density
 handled once and for all by Mathlib's `MeasureTheory.measurable_withDensity`: it is enough
 to know that the density is measurable **jointly** in the parameters and the point. That is the
 content of the `measurable_uncurry_...` lemmas below, and it is a genuinely stronger statement than
-the per-parameter measurability Mathlib already provides -- `Real.Gamma` and
-`ProbabilityTheory.beta` now vary too, which is why `Real.measurable_Gamma` is needed.
+the per-parameter measurability Mathlib provides for most of these families -- `Real.Gamma` and
+`ProbabilityTheory.beta` now vary too, which is why `Real.measurable_Gamma` is needed. Mathlib
+already provides the joint Gaussian density and parameter measurability results.
 
 The discrete families are weighted sums of Dirac measures, and are handled by the shared
 `TauCeti.MeasureTheory.measurable_sum_smul_dirac`, which evaluates such a measure on a set as a
 `tsum` of the weights. The binomial law is the finite such sum
 `ProbabilityTheory.binomial_eq_sum_dirac`, and is evaluated directly.
 
-Three families are defined by a case split at a degenerate parameter — `gaussianReal μ 0` and
-`cauchyMeasure x₀ 0` are Dirac measures, `geometricMeasure 0` is `Measure.dirac 0` — and their
-proofs go through `Measurable.ite`: the degenerate parameter set is closed, and `Measure.dirac` is
-itself measurable.
+Two families are defined by a case split at a degenerate parameter — `cauchyMeasure x₀ 0` and
+`geometricMeasure 0` are Dirac measures — and their proofs go through `Measurable.ite`: the
+degenerate parameter set is closed, and `Measure.dirac` is itself measurable.
 
 ## Main results
 
 * `measurable_gammaMeasure`, `measurable_expMeasure`, `measurable_betaMeasure`,
-  `measurable_paretoMeasure`, `measurable_gaussianReal`, `measurable_cauchyMeasure` — the six
-  continuous families of `TauCeti/Probability/Distributions/PDFInstances.lean`;
+  `measurable_paretoMeasure`, `measurable_cauchyMeasure` — five continuous families of
+  `TauCeti/Probability/Distributions/PDFInstances.lean`; Mathlib provides
+  `ProbabilityTheory.measurable_gaussianReal` for the Gaussian family;
 * `measurable_poissonMeasure`, `measurable_geometricMeasure`, `measurable_bernoulliMeasure`,
   `measurable_binomial` — the discrete families;
 * `measurable_beta` — the Beta normalizing constant `ProbabilityTheory.beta`, needed on the way and
@@ -120,16 +120,6 @@ theorem measurable_uncurry_paretoPDF :
   exact (Measurable.ite (measurableSet_le measurable_fst.fst measurable_snd)
     (by fun_prop) measurable_const).ennreal_ofReal
 
-/-- The Gaussian density is measurable jointly in its mean, its variance and the point.
-
-At `v = 0` the formula returns `0`, which is the junk value of `gaussianPDF`; the measure
-`gaussianReal μ 0` is a Dirac measure and is handled separately in `measurable_gaussianReal`. -/
-@[fun_prop]
-theorem measurable_uncurry_gaussianPDF :
-    Measurable fun q : (ℝ × ℝ≥0) × ℝ => gaussianPDF q.1.1 q.1.2 q.2 := by
-  simp only [gaussianPDF, gaussianPDFReal]
-  fun_prop
-
 /-- The Cauchy density is measurable jointly in its location, its scale and the point. -/
 @[fun_prop]
 theorem measurable_uncurry_cauchyPDF :
@@ -165,20 +155,9 @@ theorem measurable_betaMeasure : Measurable fun p : ℝ × ℝ => betaMeasure p.
 theorem measurable_paretoMeasure : Measurable fun p : ℝ × ℝ => paretoMeasure p.1 p.2 :=
   measurable_withDensity (μ := volume) measurable_uncurry_paretoPDF
 
-/-- **The real Gaussian family is measurable in its mean and variance.**
-
-The variance `0` fibre is a Dirac measure rather than a `withDensity` measure, so the proof splits
-along the measurable set `{p | p.2 = 0}` and uses `MeasureTheory.Measure.measurable_dirac` there. -/
-@[fun_prop]
-theorem measurable_gaussianReal : Measurable fun p : ℝ × ℝ≥0 => gaussianReal p.1 p.2 := by
-  simp only [gaussianReal]
-  refine Measurable.ite ?_ (Measure.measurable_dirac.comp measurable_fst)
-    (measurable_withDensity (μ := volume) measurable_uncurry_gaussianPDF)
-  exact measurable_snd (measurableSet_singleton 0)
-
 /-- **The Cauchy family is measurable in its location and scale.**
 
-As for the Gaussian, the zero-scale fibre is a Dirac measure and is split off. -/
+The zero-scale fibre is a Dirac measure and is split off. -/
 @[fun_prop]
 theorem measurable_cauchyMeasure : Measurable fun p : ℝ × ℝ≥0 => cauchyMeasure p.1 p.2 := by
   simp only [cauchyMeasure]
