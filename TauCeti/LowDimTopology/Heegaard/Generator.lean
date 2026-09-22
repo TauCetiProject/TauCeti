@@ -11,10 +11,11 @@ public import Mathlib.Data.Fintype.Basic
 /-!
 # Generators from finite Heegaard intersection data
 
-The generators of a genus-`g` Heegaard Floer complex choose one intersection point on each
-`α`-curve and each `β`-curve. This file records just that finite incidence data: a set of
-intersection points with their `α`- and `β`-curve labels. A generator is a choice over the
-`α`-curves for which the `β` labels form a permutation.
+The generators of a pointed Heegaard diagram choose one intersection point on each `α`-curve
+and each `β`-curve. This file records just that finite incidence data: a set of intersection
+points with their `α`- and `β`-curve labels. A generator is a choice over the `α`-curves for
+which the `β` labels form a permutation. The curve count is independent of surface genus; the
+diagram data relates it to genus and basepoint count.
 
 This is the generator layer of the combinatorial Heegaard diagram. Surface regions, basepoints,
 domains, and admissibility are not encoded here; they are needed to define the differential and
@@ -40,31 +41,31 @@ namespace TauCeti
 
 universe u
 
-/-- Finite-genus-indexed intersection data for two curve systems. A point has one `α`-curve label
+/-- Finite intersection data for two equally sized curve systems. A point has one `α`-curve label
 and one `β`-curve label; geometric surface and region data are additional structure. -/
-structure HeegaardIntersectionSystem (g : ℕ) (Point : Type u) [Fintype Point] where
+structure HeegaardIntersectionSystem (n : ℕ) (Point : Type u) [Fintype Point] where
   /-- The `α`-curve containing an intersection point. -/
-  alpha : Point → Fin g
+  alpha : Point → Fin n
   /-- The `β`-curve containing an intersection point. -/
-  beta : Point → Fin g
+  beta : Point → Fin n
 
 namespace HeegaardIntersectionSystem
 
-variable {g : ℕ} {Point : Type u} [Fintype Point]
-  (D : HeegaardIntersectionSystem g Point)
+variable {n : ℕ} {Point : Type u} [Fintype Point]
+  (D : HeegaardIntersectionSystem n Point)
 
 /-- A choice of intersection points is a generator when it chooses a point on each `α`-curve
-and the chosen points lie on distinct `β`-curves. Since there are `g` choices and `g` `β`-curves,
+and the chosen points lie on distinct `β`-curves. Since there are `n` choices and `n` `β`-curves,
 the latter condition is expressed by bijectivity. -/
-def IsGenerator (x : Fin g → Point) : Prop :=
+def IsGenerator (x : Fin n → Point) : Prop :=
   (∀ a, D.alpha (x a) = a) ∧ Function.Bijective (D.beta ∘ x)
 
 /-- The generators determined by finite Heegaard intersection data. -/
-abbrev Generator : Type u := {x : Fin g → Point // D.IsGenerator x}
+abbrev Generator : Type u := {x : Fin n → Point // D.IsGenerator x}
 
 /-- The chosen point of a generator lies on its indexed `α`-curve. -/
 @[simp]
-theorem alpha_apply (x : D.Generator) (a : Fin g) : D.alpha (x.1 a) = a :=
+theorem alpha_apply (x : D.Generator) (a : Fin n) : D.alpha (x.1 a) = a :=
   x.property.1 a
 
 /-- The `β`-curve labels of a generator form a bijection. -/
@@ -78,27 +79,27 @@ theorem injective (x : D.Generator) : Function.Injective x.1 := by
   simpa only [D.alpha_apply x] using h
 
 /-- The `β`-curve selected by a generator, as an equivalence of curve indices. -/
-noncomputable abbrev betaEquiv (x : D.Generator) : Fin g ≃ Fin g :=
+noncomputable abbrev betaEquiv (x : D.Generator) : Fin n ≃ Fin n :=
   Equiv.ofBijective (D.beta ∘ x.1) (D.beta_bijective x)
 
-theorem betaEquiv_apply (x : D.Generator) (a : Fin g) :
+theorem betaEquiv_apply (x : D.Generator) (a : Fin n) :
     D.betaEquiv x a = D.beta (x.1 a) :=
   by simp [betaEquiv, Function.comp_apply]
 
 /-- Construct a generator from a point choice with bijective `β` labels. -/
-def generatorOfPointChoice (x : Fin g → Point) (hα : ∀ a, D.alpha (x a) = a)
+def generatorOfPointChoice (x : Fin n → Point) (hα : ∀ a, D.alpha (x a) = a)
     (hβ : Function.Bijective (D.beta ∘ x)) : D.Generator :=
   ⟨x, ⟨hα, hβ⟩⟩
 
 /-- A diagonal incidence system has one intersection point for each corresponding pair of
 curves, and its identity choice is a generator. This supplies a concrete nonempty example of the
 generator predicate. -/
-abbrev diagonal (g : ℕ) : HeegaardIntersectionSystem g (Fin g) where
+abbrev diagonal (n : ℕ) : HeegaardIntersectionSystem n (Fin n) where
   alpha := id
   beta := id
 
 /-- The identity choice is a generator of the diagonal incidence system. -/
-def diagonalGenerator (g : ℕ) : (diagonal g).Generator :=
+def diagonalGenerator (n : ℕ) : (diagonal n).Generator :=
   ⟨id, ⟨fun _ => rfl, Equiv.bijective (Equiv.refl _)⟩⟩
 
 end HeegaardIntersectionSystem
