@@ -17,9 +17,8 @@ powers whose powered Artin class is the chosen conjugacy class, while `frobenius
 the underlying primes. The higher-prime-power estimate already proved for the former is therefore
 the precise input needed to transfer a linear asymptotic from `ψ` to `ϑ`.
 
-The later analytic theorem supplies the `ψ` asymptotic; these results isolate the elementary
-`ψ → ϑ → π` part from that analytic input. The unweighted count is expressed using the canonical
-Frobenius carrier and the generic prime-counting API.
+These results isolate the elementary `ψ → ϑ → π` transfer from its analytic input. The unweighted
+count is expressed using the canonical Frobenius carrier and the generic prime-counting API.
 
 ## Main results
 
@@ -32,10 +31,8 @@ Frobenius carrier and the generic prime-counting API.
   `tendsto_frobeniusPrimeCount_div_log_of_tendsto_frobeniusPsi_div` transfer the result to the
   unweighted count.
 
-The transfer statements are deliberately parameterized by their analytic asymptotic hypotheses:
-they do not assume the Chebotarev theorem they are intended to support. Thus this is the conditional
-Layer 13 transfer interface; the separate Layer 12.5 theorem `tendsto_frobeniusPsi` supplies the
-hypothesis for the later unconditional conclusions.
+The transfer statements take the weighted quotient asymptotic as an explicit hypothesis and deduce
+the corresponding asymptotics for the prime-only weighted count and the unweighted count.
 -/
 
 public section
@@ -47,17 +44,6 @@ open scoped Asymptotics NumberField Topology
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
-
-private theorem isLittleO_sub_mul_id_of_tendsto_div {f : ℝ → ℝ} {δ : ℝ}
-    (h : Tendsto (fun x : ℝ ↦ f x / x) atTop (𝓝 δ)) :
-    (fun x : ℝ ↦ f x - δ * x) =o[atTop] fun x : ℝ ↦ x := by
-  refine (isLittleO_iff_tendsto'
-    ((eventually_ne_atTop (0 : ℝ)).mono fun _ hx hzero ↦ (hx hzero).elim)).2 ?_
-  have h' := h.sub_const δ
-  rw [sub_self] at h'
-  refine h'.congr' ?_
-  filter_upwards [eventually_ne_atTop (0 : ℝ)] with x hx
-  field_simp
 
 /-- Removing higher prime powers transfers a linear little-`o` asymptotic from `ψ` to `ϑ`. -/
 theorem frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO
@@ -73,7 +59,7 @@ theorem tendsto_frobeniusTheta_div_of_tendsto_frobeniusPsi_div
     (C : ConjClasses (L ≃ₐ[K] L)) {δ : ℝ}
     (hψ : Tendsto (fun x : ℝ ↦ frobeniusPsi K L C x / x) atTop (𝓝 δ)) :
     Tendsto (fun x : ℝ ↦ frobeniusTheta K L C x / x) atTop (𝓝 δ) := by
-  have hψ' := isLittleO_sub_mul_id_of_tendsto_div hψ
+  have hψ' := TauCeti.isLittleO_sub_mul_id_of_tendsto_div hψ
   have hsmall := frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO C hψ'
   have hθ := hsmall.tendsto_div_nhds_zero
   have hlim : Tendsto
@@ -92,12 +78,10 @@ theorem frobeniusPrimeCount_sub_mul_logIntegral_isLittleO
       fun x : ℝ ↦ x / Real.log x := by
   have hcount := primeCount_sub_mul_logIntegral_isLittleO
     (K := K) (S := frobeniusPrimeSet K L C) (δ := δ) (by
-      have heq : ∀ x : ℝ, frobeniusTheta K L C x =
-          primeTheta K (frobeniusPrimeSet K L C) x := by
-        intro x
-        rw [frobeniusTheta_apply, primeTheta_apply]
-      exact hθ.congr' (Eventually.of_forall fun x ↦ by
-        simpa only [Pi.sub_apply] using congrArg (fun t ↦ t - δ * x) (heq x)) EventuallyEq.rfl)
+      refine hθ.congr' ?_ ?_
+      · filter_upwards [] with x
+        simp only [frobeniusTheta_eq_primeTheta]
+      · exact Eventually.of_forall fun _ ↦ rfl)
   refine hcount.congr' ?_ EventuallyEq.rfl
   filter_upwards [] with x
   rw [frobeniusPrimeCount_eq_primeCount]
@@ -108,17 +92,12 @@ theorem frobeniusPrimeCount_asymptotic_of_tendsto_frobeniusPsi_div
     (hψ : Tendsto (fun x : ℝ ↦ frobeniusPsi K L C x / x) atTop (𝓝 δ)) :
     (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ)) ~[atTop]
       fun x : ℝ ↦ δ * Real.logIntegral x := by
-  have hψ' := isLittleO_sub_mul_id_of_tendsto_div hψ
+  have hψ' := TauCeti.isLittleO_sub_mul_id_of_tendsto_div hψ
   have hθ : (fun x : ℝ ↦ frobeniusTheta K L C x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
     frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO C hψ'
   have hθ' : (fun x : ℝ ↦ primeTheta K (frobeniusPrimeSet K L C) x - δ * x) =o[atTop]
       fun x : ℝ ↦ x := by
-    have heq : ∀ x : ℝ, frobeniusTheta K L C x =
-        primeTheta K (frobeniusPrimeSet K L C) x := by
-      intro x
-      rw [frobeniusTheta_apply, primeTheta_apply]
-    exact hθ.congr' (Eventually.of_forall fun x ↦ by
-      simpa only [Pi.sub_apply] using congrArg (fun t ↦ t - δ * x) (heq x)) EventuallyEq.rfl
+    simpa only [frobeniusTheta_eq_primeTheta] using hθ
   have hθeq : primeTheta K (frobeniusPrimeSet K L C) ~[atTop]
       fun x : ℝ ↦ δ * x := by
     rw [Asymptotics.IsEquivalent]
@@ -135,7 +114,7 @@ theorem tendsto_frobeniusPrimeCount_div_log_of_tendsto_frobeniusPsi_div
     Tendsto
       (fun x : ℝ ↦ (frobeniusPrimeCount K L C x : ℝ) / (x / Real.log x)) atTop
         (𝓝 δ) := by
-  have hψ' := isLittleO_sub_mul_id_of_tendsto_div hψ
+  have hψ' := TauCeti.isLittleO_sub_mul_id_of_tendsto_div hψ
   have hθ : (fun x : ℝ ↦ frobeniusTheta K L C x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
     frobeniusTheta_sub_mul_isLittleO_of_frobeniusPsi_sub_mul_isLittleO C hψ'
   have hcount := frobeniusPrimeCount_sub_mul_logIntegral_isLittleO C hθ

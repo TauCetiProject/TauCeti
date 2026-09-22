@@ -160,6 +160,11 @@ variable (K L) in
 noncomputable def frobeniusTheta (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℝ :=
   primeTheta K (frobeniusPrimeSet K L C) x
 
+/-- The Frobenius `ϑ` function is the generic prime `ϑ` function of its fibre. -/
+@[simp] theorem frobeniusTheta_eq_primeTheta (C : ConjClasses (L ≃ₐ[K] L)) :
+    frobeniusTheta K L C = primeTheta K (frobeniusPrimeSet K L C) := by
+  rfl
+
 /-- `frobeniusPsi` as an explicit sum over the inclusive prime-power carrier. -/
 theorem frobeniusPsi_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     frobeniusPsi K L C x =
