@@ -15,7 +15,7 @@ public import TauCeti.FieldTheory.FunctionField.Differential.RatFunc
 Let `F / k` be an algebraic function field and let `x ∈ F` be a separating element.  The
 embedding `k(X) → F` which sends `X` to `x` carries the normalized Weil differential `dX` of
 `k(X)` to a nonzero differential of `F` by cotrace.  This differential, written
-`TauCeti.separatingWeilDifferential`, is the Weil-theoretic `dx`.
+`TauCeti.weilDifferentialOfSeparating`, is the Weil-theoretic `dx`.
 
 Both the Kähler and Weil differential spaces are one-dimensional over `F`.  Sending the Kähler
 differential `D k F x` to this cotrace therefore determines an `F`-linear equivalence
@@ -23,19 +23,19 @@ differential `D k F x` to this cotrace therefore determines an `F`-linear equiva
 `Ω[F⁄k] ≃ₗ[F] weilDifferentialSpace k F`.
 
 For every `y ∈ F`, the equivalence sends `dy` to `(dy/dx) dx`.  This is the linear comparison in
-Stichtenoth, Theorem 4.3.2.  Its compatibility with local components and residues is developed
-separately; those results make the equivalence independent of the separating parameter.
+Stichtenoth, Theorem 4.3.2.  Compatibility with local components and residues, and independence
+from the separating parameter, remain to be proved.
 
 ## Main definitions
 
-* `TauCeti.separatingWeilDifferential`: the cotrace of the normalized differential of `k(X)`
+* `TauCeti.weilDifferentialOfSeparating`: the cotrace of the normalized differential of `k(X)`
   along the embedding `X ↦ x`.
 * `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating`: the comparison equivalence
   determined by a separating element.
 
 ## Main results
 
-* `TauCeti.separatingWeilDifferential_ne_zero`: `dx` is nonzero.
+* `TauCeti.weilDifferentialOfSeparating_ne_zero`: `dx` is nonzero.
 * `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_D`: the comparison sends `dx`
   to its Weil counterpart.
 * `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_apply`: the comparison sends
@@ -65,7 +65,7 @@ normalized differential `dX` on the rational function field, along the embedding
 
 The result belongs to the intrinsic Weil differential space, so the chosen rational-function
 algebra structure used in its construction is not exposed in the type. -/
-noncomputable def separatingWeilDifferential (hF : IsFunctionField k F)
+noncomputable def weilDifferentialOfSeparating (hF : IsFunctionField k F)
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
     ↥(weilDifferentialSpace k F) := by
   let e : RatFunc k ≃ₐ[k] k⟮x⟯ := RatFunc.algEquivOfTranscendental x hx
@@ -81,9 +81,9 @@ noncomputable def separatingWeilDifferential (hF : IsFunctionField k F)
     ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩
 
 /-- The Weil differential `dx` attached to a separating element is nonzero. -/
-theorem separatingWeilDifferential_ne_zero (hF : IsFunctionField k F)
+theorem weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
-    separatingWeilDifferential hF hx ≠ 0 := by
+    weilDifferentialOfSeparating hF hx ≠ 0 := by
   let e : RatFunc k ≃ₐ[k] k⟮x⟯ := RatFunc.algEquivOfTranscendental x hx
   let : Algebra (RatFunc k) F := (k⟮x⟯.val.comp e.toAlgHom).toRingHom.toAlgebra
   have halg (r : RatFunc k) : algebraMap (RatFunc k) F r = (e r : F) := rfl
@@ -93,7 +93,7 @@ theorem separatingWeilDifferential_ne_zero (hF : IsFunctionField k F)
   let : Algebra.IsSeparable (RatFunc k) F :=
     Algebra.IsSeparable.of_equiv_equiv e.symm.toRingEquiv (RingEquiv.refl F)
       (by ext r; simp [halg])
-  rw [separatingWeilDifferential]
+  rw [weilDifferentialOfSeparating]
   intro hzero
   have hsource :=
     (weilDifferentialCotrace_eq_zero_iff (IsFunctionField.ratFunc k) hF).mp hzero
@@ -108,14 +108,14 @@ noncomputable def weilDifferentialBasisOfSeparating (hF : IsFunctionField k F)
     Basis Unit F ↥(weilDifferentialSpace k F) := by
   letI := weilDifferentialSpaceModule hF
   exact FiniteDimensional.basisSingleton Unit (finrank_weilDifferentialSpace hF hex)
-    (separatingWeilDifferential hF hx) (separatingWeilDifferential_ne_zero hF hx)
+    (weilDifferentialOfSeparating hF hx) (weilDifferentialOfSeparating_ne_zero hF hx)
 
 @[simp]
 theorem weilDifferentialBasisOfSeparating_apply (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hx : Transcendental k x)
     [Algebra.IsSeparable k⟮x⟯ F] (i : Unit) :
     letI := weilDifferentialSpaceModule hF
-    weilDifferentialBasisOfSeparating hF hex hx i = separatingWeilDifferential hF hx := by
+    weilDifferentialBasisOfSeparating hF hex hx i = weilDifferentialOfSeparating hF hx := by
   let := weilDifferentialSpaceModule hF
   rw [weilDifferentialBasisOfSeparating]
   exact FiniteDimensional.basisSingleton_apply _ _ _ _ i
@@ -140,7 +140,7 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_D
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
     letI := weilDifferentialSpaceModule hF
     kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx (D k F x) =
-      separatingWeilDifferential hF hx := by
+      weilDifferentialOfSeparating hF hx := by
   let := weilDifferentialSpaceModule hF
   rw [← kaehlerBasisOfSeparating_apply hx (),
     kaehlerDifferentialEquivWeilDifferentialOfSeparating, Basis.equiv_apply]
@@ -154,7 +154,7 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_apply
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (y : F) :
     letI := weilDifferentialSpaceModule hF
     kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx (D k F y) =
-      derivativeOfSeparating hx y • separatingWeilDifferential hF hx := by
+      derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
   let := weilDifferentialSpaceModule hF
   rw [← derivativeOfSeparating_smul_D hx y, map_smul,
     kaehlerDifferentialEquivWeilDifferentialOfSeparating_D]
