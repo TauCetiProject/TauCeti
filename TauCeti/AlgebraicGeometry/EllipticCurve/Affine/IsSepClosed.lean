@@ -35,6 +35,9 @@ closed field also extracts the inseparable square root.
 * `WeierstrassCurve.Affine.exists_point_on_curve_of_isSepClosed`: over a separably closed field,
   an element at which the quadratic in `y` is separable is the `x`-coordinate of a solution of
   `W.Equation`.
+* `WeierstrassCurve.mem_range_y_of_equation_of_mem_range_x_of_exists_point`: over any field, a
+  solution whose `x`-coordinate is rational has rational `y`-coordinate as soon as the equation
+  at that `x` has one rational solution.
 * `WeierstrassCurve.mem_range_y_of_equation_of_mem_range_x_of_isSepClosed`: such a solution over an
   extension, with `x`-coordinate in the image of the base field, has its `y`-coordinate there too.
 -/
@@ -59,19 +62,18 @@ theorem exists_point_on_curve_of_isSepClosed (a : F) (h : (2 : F) ≠ 0 ∨ W.a�
 
 end Affine
 
-variable {F : Type*} [Field F] [IsSepClosed F] (W : WeierstrassCurve F)
+variable {F : Type*} [Field F] (W : WeierstrassCurve F)
   {Ω : Type*} [Field Ω] [Algebra F Ω] {x y : Ω}
 
-/-- **The `y`-coordinate of a point with rational `x` is rational** over a separably closed field,
-under the same separability side condition as `Affine.exists_point_on_curve_of_isSepClosed`: the
-quadratic in `y` at `x₀` then has a rational root, and the two roots of a monic quadratic sum to
-minus its linear coefficient, so the other one is rational as well. -/
-theorem mem_range_y_of_equation_of_mem_range_x_of_isSepClosed
+/-- **The `y`-coordinate of a point with rational `x` is rational** whenever the Weierstrass
+equation at that `x` has one rational solution: the two roots of the resulting monic quadratic
+sum to minus its linear coefficient, so the other one is rational as well. -/
+theorem mem_range_y_of_equation_of_mem_range_x_of_exists_point
     (heq : (W.baseChange Ω).toAffine.Equation x y) {x₀ : F} (hx : algebraMap F Ω x₀ = x)
-    (h : (2 : F) ≠ 0 ∨ W.a₁ * x₀ + W.a₃ ≠ 0) :
+    (hex : ∃ y₀ : F, W.toAffine.Equation x₀ y₀) :
     y ∈ Set.range (algebraMap F Ω) := by
   subst hx
-  obtain ⟨y₀, hy₀⟩ := W.toAffine.exists_point_on_curve_of_isSepClosed x₀ h
+  obtain ⟨y₀, hy₀⟩ := hex
   rw [Affine.equation_iff] at heq hy₀
   simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at heq
   have hy₀' := congrArg (algebraMap F Ω) hy₀
@@ -85,6 +87,15 @@ theorem mem_range_y_of_equation_of_mem_range_x_of_isSepClosed
   · refine ⟨-y₀ - W.a₁ * x₀ - W.a₃, ?_⟩
     simp only [map_sub, map_neg, map_mul]
     linear_combination -hk
+
+/-- **The `y`-coordinate of a point with rational `x` is rational** over a separably closed field,
+under the same separability side condition as `Affine.exists_point_on_curve_of_isSepClosed`. -/
+theorem mem_range_y_of_equation_of_mem_range_x_of_isSepClosed [IsSepClosed F]
+    (heq : (W.baseChange Ω).toAffine.Equation x y) {x₀ : F} (hx : algebraMap F Ω x₀ = x)
+    (h : (2 : F) ≠ 0 ∨ W.a₁ * x₀ + W.a₃ ≠ 0) :
+    y ∈ Set.range (algebraMap F Ω) :=
+  W.mem_range_y_of_equation_of_mem_range_x_of_exists_point heq hx
+    (W.toAffine.exists_point_on_curve_of_isSepClosed x₀ h)
 
 end WeierstrassCurve
 
