@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 
@@ -37,10 +38,10 @@ the normal form `p⟨1⟩ ⊥ q⟨-1⟩` gives the archimedean Hasse sign `(-1)^
 * `TauCeti.prod_hilbertSymbol_real_of_equiv_weightedSumSquares`: that product is `(-1)^(q(q-1)/2)`
   for the negative index `q` of any real form the family diagonalizes, so it depends only on the
   isometry class.
-* `TauCeti.prod_hilbertSymbol_real_ite_lt`: for the weights that are `1` on the first `p` indices
-  of `Fin (p + q)` and `-1` on the remaining `q`, that product is `(-1)^(q(q-1)/2)`; those weights
-  diagonalize `QuadraticForm.realSignatureForm p q`, so this is the archimedean Hasse sign of the
-  normal form.
+* `QuadraticForm.equivalent_realSignatureForm_realCliffordForm`: the orthogonal-sum and coordinate
+  presentations of the real normal form are isometric.
+* `TauCeti.prod_hilbertSymbol_realCliffordWeight`: the archimedean Hasse sign of the coordinate
+  normal form is `(-1)^(q(q-1)/2)`.
 
 ## References
 
@@ -148,20 +149,51 @@ theorem prod_hilbertSymbol_real_of_equiv_weightedSumSquares {M : Type*} [AddComm
   rw [prod_hilbertSymbol_real, _root_.QuadraticForm.sigNeg_of_equiv_weightedSumSquares h,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
 
-/-- **The archimedean Hasse sign of the normal form.** For the weights on `Fin (p + q)` that are
-`1` on the first `p` indices and `-1` on the remaining `q`, the product of the real Hilbert
-symbols over the ordered pairs is `(-1)^(q(q-1)/2)`.  These weights diagonalize the normal form
-`QuadraticForm.realSignatureForm p q`, so this is that form's archimedean Hasse sign. -/
-theorem prod_hilbertSymbol_real_ite_lt (p q : ℕ) :
+private theorem realCliffordForm_eq_weightedSumSquares (p q : ℕ) :
+    realCliffordForm p q =
+      QuadraticMap.weightedSumSquares ℝ (realCliffordWeight p q) := by
+  ext x
+  simp only [realCliffordForm_apply, QuadraticMap.weightedSumSquares_apply, smul_eq_mul]
+
+/-- The orthogonal-sum and coordinate presentations of the real normal form of signature `(p, q)`
+are isometric. -/
+theorem _root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
+    (_root_.QuadraticForm.realSignatureForm p q).Equivalent (realCliffordForm p q) := by
+  have hweight : realCliffordWeight p q ∘ finSumFinEquiv =
+      Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
+    funext x
+    cases x <;> simp
+  have hsignature : _root_.QuadraticForm.realSignatureForm p q =
+      QuadraticMap.weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) := by
+    ext x
+    rw [_root_.QuadraticForm.realSignatureForm_apply]
+    simp [QuadraticMap.weightedSumSquares_apply, Fintype.sum_sum_type, _root_.sq,
+      sub_eq_add_neg]
+  rw [hsignature, realCliffordForm_eq_weightedSumSquares]
+  exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv hweight
+
+/-- **The archimedean Hasse sign of the normal form.** The product of the real Hilbert symbols
+over the ordered pairs of the coordinate weights of `realCliffordForm p q` is
+`(-1)^(q(q-1)/2)`. -/
+theorem prod_hilbertSymbol_realCliffordWeight (p q : ℕ) :
     ∏ ij ∈ univ.filter (fun ij : Fin (p + q) × Fin (p + q) => ij.1 < ij.2),
-        hilbertSymbol (if (ij.1 : ℕ) < p then (1 : ℝˣ) else -1)
-          (if (ij.2 : ℕ) < p then (1 : ℝˣ) else -1) = (-1) ^ q.choose 2 := by
-  have hdiag : (_root_.QuadraticForm.realSignatureForm p q).Equivalent
+        hilbertSymbol
+          (Units.mk0 (realCliffordWeight p q ij.1) (realCliffordWeight_ne_zero p q ij.1))
+          (Units.mk0 (realCliffordWeight p q ij.2) (realCliffordWeight_ne_zero p q ij.2)) =
+      (-1) ^ q.choose 2 := by
+  have hdiag : (realCliffordForm p q).Equivalent
       (QuadraticMap.weightedSumSquares ℝ fun i : Fin (p + q) ↦
-        (((if (i : ℕ) < p then (1 : ℝˣ) else -1) : ℝˣ) : ℝ)) := by
-    simpa [apply_ite (Units.val (α := ℝ))] using
-      _root_.QuadraticForm.equivalent_realSignatureForm_weightedSumSquares p q
+        ((Units.mk0 (realCliffordWeight p q i) (realCliffordWeight_ne_zero p q i) : ℝˣ) : ℝ)) := by
+    have hweight : (fun i : Fin (p + q) ↦
+        ((Units.mk0 (realCliffordWeight p q i) (realCliffordWeight_ne_zero p q i) : ℝˣ) : ℝ)) =
+        realCliffordWeight p q := by
+      funext i
+      rfl
+    rw [hweight]
+    rw [← realCliffordForm_eq_weightedSumSquares]
+    exact QuadraticMap.Equivalent.refl _
   rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares hdiag,
+    ← (_root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm p q).sigNeg_eq,
     _root_.QuadraticForm.sigNeg_realSignatureForm]
 
 end Real
