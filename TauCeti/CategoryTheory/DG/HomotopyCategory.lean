@@ -273,24 +273,29 @@ theorem dgHomotopyComp_assoc {W X Y Z : C}
 
 /-- The homotopy category of a differential graded category. It has the same objects as C and
 the zeroth cohomology of each DG Hom complex as its morphisms. -/
-@[expose]
-def DGHomotopyCategory (C : Type u) [DGCategory R C] := C
+structure DGHomotopyCategory (R : Type v) (C : Type u) where
+  /-- The underlying object of the differential graded category. -/
+  obj : C
 
 namespace DGHomotopyCategory
 
 /-- Regard an object of a DG category as an object of its homotopy category. -/
 @[expose]
-def of (X : C) : DGHomotopyCategory R C := X
+def of (X : C) : DGHomotopyCategory R C := ⟨X⟩
 
 /-- Regard an object of a DG homotopy category as an object of the underlying DG category. -/
 @[expose]
-def underlying (X : DGHomotopyCategory R C) : C := X
+def underlying (X : DGHomotopyCategory R C) : C := X.obj
 
+omit [CommRing R] [DGCategory R C] in
 @[simp]
 theorem underlying_of (X : C) : underlying R (of R X) = X := rfl
 
+omit [CommRing R] [DGCategory R C] in
 @[simp]
-theorem of_underlying (X : DGHomotopyCategory R C) : of R (underlying R X) = X := rfl
+theorem of_underlying (X : DGHomotopyCategory R C) : of R (underlying R X) = X := by
+  cases X
+  rfl
 
 instance : Quiver (DGHomotopyCategory R C) where
   Hom X Y := DGHomotopyClass R (underlying R X) (underlying R Y)
