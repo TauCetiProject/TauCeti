@@ -50,7 +50,8 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
     (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ)
     (hne : ∀ z : ℂ,
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
-        (D.localPowerSeries P).analyticSum z ≠ 0)
+        FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+          (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0)
     (hs : σ < s.re) :
     Summable fun e : ℕ ↦
       PowerSeries.coeff e (D.localLogDerivSeries P) *
@@ -78,8 +79,11 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
     refine hlocal.norm.congr fun e ↦ ?_
     rw [D.coeff_localPowerSeries, norm_mul, norm_pow]
     rfl
-  have hr : (r : ENNReal) ≤ (D.localPowerSeries P).toFormalMultilinearSeries.radius :=
-    PowerSeries.le_radius_toFormalMultilinearSeries _ hcoeff
+  have hr : (r : ENNReal) ≤
+      (FormalMultilinearSeries.ofScalars ℂ fun n ↦
+        PowerSeries.coeff n (D.localPowerSeries P)).radius := by
+    apply FormalMultilinearSeries.le_radius_of_summable
+    simpa [FormalMultilinearSeries.ofScalars_norm] using hcoeff
   have hq0 : q ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl P.natCast_absNorm_ne_zero)
   have hr0 : 0 < (r : ENNReal) := by simp [r, hq0]
   have hz : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
@@ -114,7 +118,8 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries_of_ze
     (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ)
     (hne : ∀ z : ℂ,
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
-        (D.localPowerSeries P).analyticSum z ≠ 0)
+        FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+          (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0)
     (hs : σ < s.re) :
     logDeriv (D.eulerFactor P) s =
       -Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
@@ -131,9 +136,10 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries_of_ze
         exact Real.rpow_lt_rpow_of_exponent_lt (by
           exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
       have heval :
-          (D.localPowerSeries P).analyticSum
+          FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+              (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
               ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) = D.eulerFactor P s := by
-        rw [PowerSeries.analyticSum_eq_tsum, D.eulerFactor_eq_tsum]
+        rw [FormalMultilinearSeries.ofScalars_sum_eq, D.eulerFactor_eq_tsum]
         exact tsum_congr fun e ↦ by
           rw [D.coeff_localPowerSeries]
           exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
