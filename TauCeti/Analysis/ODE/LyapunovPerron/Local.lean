@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.Analysis.ODE.LyapunovPerron.Graph
+import Mathlib.Analysis.ODE.Transform
 
 /-!
-# The local stable set at a hyperbolic equilibrium
+# Local stable and unstable sets at a hyperbolic equilibrium
 
 `TauCeti/Analysis/ODE/LyapunovPerron/Graph.lean` describes the stable set of the equilibrium `0`
 of `y' = A y + N y` for a nonlinearity `N` that is **globally** Lipschitz with a constant small
@@ -35,6 +36,10 @@ conversely a point of the graph whose `P`-component `v` is small enough that the
 carries a confined solution. This is the Lipschitz half of the local stable-manifold theorem; the
 differentiability of the graph map and its tangency to the range of `P` are not established here.
 
+Time reversal applies the same construction to `-A`, `-N`, and the complementary projection
+`1 - P`. This gives the local unstable set as a Lipschitz graph over `range (1 - P)`, without
+duplicating the fixed-point argument.
+
 ## Main declarations
 
 * `ContinuousLinearMap.localStableGraphMap`: the Lyapunov--Perron graph map of the cut-off
@@ -47,6 +52,9 @@ differentiability of the graph map and its tangency to the range of `P` are not 
   over the closed ball of radius `ρ` in the range of `P`, for every `ρ` small enough.
 * `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: such a
   `ρ` exists as soon as the ball of confinement has positive radius.
+* `ContinuousLinearMap.localUnstableGraphMap` and
+  `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image`:
+  the corresponding graph and local-set characterization for backward solutions.
 
 ## References
 
@@ -251,6 +259,167 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image (hr0 : 
   nlinarith
 
 end LocalStable
+
+section LocalUnstable
+
+variable (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
+  (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+  (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+  (hr : 0 ≤ r) (hN : LipschitzOnWith ε N (closedBall 0 r))
+  (hsmall : 2 * K * (ε * 2) < α)
+
+omit [CompleteSpace X] in
+private theorem reversed_stable_bound (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
+    ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+    (t : ℝ) (ht : 0 ≤ t) (v : X) :
+    ‖exp (t • (-A)) ((ContinuousLinearMap.id ℝ X - P) v)‖ ≤
+      K * Real.exp (-α * t) * ‖v‖ := by
+  simpa only [sub_apply, ContinuousLinearMap.id_apply, smul_neg, neg_smul, neg_neg, mul_neg,
+    neg_mul] using hu (-t) (neg_nonpos.mpr ht) v
+
+omit [CompleteSpace X] in
+private theorem reversed_unstable_bound (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
+    ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+    (t : ℝ) (ht : t ≤ 0) (v : X) :
+    ‖exp (t • (-A)) (v - (ContinuousLinearMap.id ℝ X - P) v)‖ ≤
+      K * Real.exp (α * t) * ‖v‖ := by
+  simpa only [sub_apply, ContinuousLinearMap.id_apply, sub_sub_cancel, smul_neg, neg_smul,
+    neg_neg, mul_neg, neg_mul] using hs (-t) (neg_nonneg.mpr ht) v
+
+/-- The **local unstable graph map**, obtained by applying the local stable construction to the
+time-reversed equation. Its parameter space is the range of the complementary projection
+`1 - P`, and its values lie in the range of `P`. -/
+def localUnstableGraphMap : X → X :=
+  localStableGraphMap (-A) (ContinuousLinearMap.id ℝ X - P) (-N) r
+    (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+
+variable {A P N r}
+
+/-- The local unstable graph map takes values in the kernel of the complementary projection. -/
+@[simp]
+theorem sub_apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P) (v : X) :
+    (ContinuousLinearMap.id ℝ X - P)
+      (localUnstableGraphMap A P N r hs hu hr hN hsmall v) = 0 := by
+  exact apply_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hP.one_sub
+      ((Commute.one_right (-A)).sub_right hAP.neg_left) v
+
+/-- The local unstable graph map depends only on the component in `range (1 - P)`. -/
+@[simp]
+theorem localUnstableGraphMap_sub_apply (hP : IsIdempotentElem P) (v : X) :
+    localUnstableGraphMap A P N r hs hu hr hN hsmall
+        ((ContinuousLinearMap.id ℝ X - P) v) =
+      localUnstableGraphMap A P N r hs hu hr hN hsmall v := by
+  exact localStableGraphMap_map (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hP.one_sub v
+
+/-- If the nonlinearity fixes the equilibrium, so does the local unstable graph map. -/
+@[simp]
+theorem localUnstableGraphMap_zero (hN0 : N 0 = 0) :
+    localUnstableGraphMap A P N r hs hu hr hN hsmall 0 = 0 := by
+  exact localStableGraphMap_zero (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0])
+
+/-- The local unstable graph map has the same Lipschitz bound as the stable graph map. -/
+theorem lipschitzWith_localUnstableGraphMap :
+    LipschitzWith (2 * K * (ε * 2) / α * (K / (1 - 2 * K * (ε * 2) / α)))
+      (localUnstableGraphMap A P N r hs hu hr hN hsmall) := by
+  exact lipschitzWith_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+
+omit [CompleteSpace X] in
+/-- Reversing time turns a backward solution into a forward solution of the negated equation. -/
+theorem isIntegralCurveOn_comp_neg_iff {y : ℝ → X} :
+    IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
+      IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+  have forward : ∀ {B : X →L[ℝ] X} {R : X → X} {z : ℝ → X},
+      IsIntegralCurveOn z (fun _ w ↦ B w + R w) (Iic 0) →
+        IsIntegralCurveOn (fun t ↦ z (-t)) (fun _ w ↦ (-B) w + (-R) w) (Ici 0) := by
+    intro B R z hz
+    have hdomain : {t : ℝ | t * (-1) ∈ Iic 0} = Ici 0 := by ext t; simp
+    have hfield : ((-1 : ℝ) • (fun _ : ℝ ↦ fun w ↦ B w + R w)) ∘
+        (fun t : ℝ ↦ t * (-1)) = fun _ w ↦ (-B) w + (-R) w := by
+      funext t w
+      simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, neg_apply]
+      abel
+    have hcurve : z ∘ (fun t : ℝ ↦ t * (-1)) = fun t ↦ z (-t) := by
+      funext t
+      simp
+    rw [← hcurve, ← hfield, ← hdomain]
+    exact hz.comp_mul (-1)
+  constructor
+  · exact forward
+  · intro hy
+    have hdomain : {t : ℝ | t * (-1) ∈ Ici 0} = Iic 0 := by ext t; simp
+    have hfield : ((-1 : ℝ) • (fun _ : ℝ ↦ fun w ↦ (-A) w + (-N) w)) ∘
+        (fun t : ℝ ↦ t * (-1)) = fun _ w ↦ A w + N w := by
+      funext t w
+      simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, neg_apply]
+      abel
+    have hcurve : (fun t ↦ y (-t)) ∘ (fun t : ℝ ↦ t * (-1)) = y := by
+      funext t
+      simp
+    rw [← hcurve, ← hfield, ← hdomain]
+    exact hy.comp_mul (-1)
+
+/-- A backward solution confined to the ball on which the nonlinearity is small tends to the
+equilibrium in backward time. -/
+theorem tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
+    (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
+    (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+    (hr : 0 ≤ r) (hN : LipschitzOnWith ε N (closedBall 0 r))
+    (hsmall : 2 * K * (ε * 2) < α) (hN0 : N 0 = 0)
+    (hP : IsIdempotentElem P) (hAP : Commute A P) {y : ℝ → X}
+    (hy : IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0))
+    (hmaps : MapsTo y (Iic 0) (closedBall 0 r)) :
+    Tendsto y atBot (nhds 0) := by
+  have hmaps' : MapsTo (fun t ↦ y (-t)) (Ici 0) (closedBall 0 r) := by
+    intro t ht
+    exact hmaps (by simpa using ht)
+  have hforward := tendsto_of_isIntegralCurveOn_mapsTo_closedBall
+    (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+    (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left)
+    (isIntegralCurveOn_comp_neg_iff.mp hy) hmaps'
+  simpa only [Function.comp_def, neg_neg] using hforward.comp tendsto_neg_atBot_atTop
+
+omit hr in
+/-- **The local unstable-manifold theorem, Lipschitz form.** Near a hyperbolic equilibrium the
+initial values of backward solutions confined to a fixed small ball, truncated by the norm of
+their `1 - P` component, form a graph over a ball in `range (1 - P)`. -/
+theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image
+    (hN0 : N 0 = 0) (hP : IsIdempotentElem P) (hAP : Commute A P) (hr0 : 0 < r) :
+    ∃ ρ > 0,
+      {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ∧ y 0 = x ∧
+          MapsTo y (Iic 0) (closedBall 0 r)) ∧
+          ‖(ContinuousLinearMap.id ℝ X - P) x‖ ≤ ρ} =
+        (fun v ↦ v + localUnstableGraphMap A P N r hs hu hr0.le hN hsmall v) ''
+          (range (ContinuousLinearMap.id ℝ X - P) ∩ closedBall 0 ρ) := by
+  obtain ⟨ρ, hρ, hset⟩ :=
+    exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
+      (reversed_stable_bound (A := A) (P := P) hu)
+      (reversed_unstable_bound (A := A) (P := P) hs) hN.neg hsmall
+      (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left) hr0
+  refine ⟨ρ, hρ, ?_⟩
+  rw [localUnstableGraphMap]
+  rw [← hset]
+  ext x
+  simp only [mem_ofPred_eq]
+  constructor
+  · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
+    refine ⟨⟨fun t ↦ y (-t), isIntegralCurveOn_comp_neg_iff.mp hy, by simp, ?_⟩, hx⟩
+    intro t ht
+    exact hmaps (by simpa using ht)
+  · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
+    have hy' : IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ A z + N z) (Iic 0) := by
+      apply isIntegralCurveOn_comp_neg_iff.mpr
+      simpa only [neg_neg] using hy
+    refine ⟨⟨fun t ↦ y (-t), hy', by simp, ?_⟩, hx⟩
+    intro t ht
+    exact hmaps (by simpa using ht)
+
+end LocalUnstable
 
 end ContinuousLinearMap
 
