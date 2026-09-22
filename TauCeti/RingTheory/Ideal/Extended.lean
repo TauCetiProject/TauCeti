@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Ideal.Maps
-public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Ideals of a noncommutative algebra extended from the base ring
@@ -88,6 +87,7 @@ private def smulTopIdeal : Ideal A where
 /-- **The extension of an ideal along `algebraMap R A` is `I • ⊤`.** This is
 `Ideal.smul_top_eq_map` with the commutativity of `A` removed: what replaces it is that the image
 of `algebraMap R A` is central. -/
+@[simp]
 theorem smul_top_eq_restrictScalars_map :
     I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A)) := by
   refine le_antisymm (Submodule.smul_le.mpr fun r hr a _ ↦ ?_) fun x hx ↦ ?_
@@ -96,6 +96,9 @@ theorem smul_top_eq_restrictScalars_map :
   · have h : I.map (algebraMap R A) ≤ smulTopIdeal I := by
       refine Ideal.span_le.mpr ?_
       rintro - ⟨r, hr, rfl⟩
+      -- `smulTopIdeal I` carries `I • ⊤` verbatim, so `Ideal A`-membership in it and
+      -- `Submodule R A`-membership in `I • ⊤` are the same proposition; there is no lemma to
+      -- rewrite with, because the two `SetLike` memberships differ only by that carrier field.
       change algebraMap R A r ∈ I • (⊤ : Submodule R A)
       rw [← mul_one (algebraMap R A r), ← Algebra.smul_def]
       exact Submodule.smul_mem_smul hr Submodule.mem_top
@@ -187,8 +190,9 @@ theorem mem_iInf_map_algebraMap_pow_iff [IsNoetherianRing R] [Module.Finite R A]
     fun ⟨r, hrI, hr⟩ ↦ ⟨⟨r, hrI⟩, by rwa [Algebra.smul_def]⟩⟩
 
 /-- **The powers of an extended ideal meet in zero** when `A` has no zero divisors and no scalar in
-`I` becomes `1` in `A`. The second hypothesis is what an augmentation supplies: it sends `1 - r` to
-`1`, so `1 - r` cannot vanish.
+`I` becomes `1` in `A`. The second hypothesis is what an augmentation supplies in the intended
+application, where the image of every `r ∈ I` lies in its kernel: such an augmentation sends
+`algebraMap R A r` to `0` and `1` to `1`, so the two cannot be equal.
 
 Together with `Ideal.mem_iInf_map_algebraMap_pow_iff` this is the passage from the commutative
 Krull intersection theorem to a two-sided ideal of a noncommutative ring. -/
