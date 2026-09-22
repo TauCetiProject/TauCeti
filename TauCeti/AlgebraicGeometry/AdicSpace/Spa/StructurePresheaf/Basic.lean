@@ -68,7 +68,9 @@ priori on presentation data. Two results close the gap:
   `TauCeti.ValuationSpectrum.presentationRingEquivOfEq` when `A⁺` consists of power-bounded
   elements; and
 * the presentation index is then cofinal in the subset index, so the two limits agree. This one is
-  not yet available.
+  `TauCeti.ValuationSpectrum.presentationToRationalSubsetIndex` in
+  `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality`; its `Initial` instance is
+  the categorical comparison for limits.
 
 Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
 restriction along a containment is reindexing, and the two functor laws hold. On a rational open
