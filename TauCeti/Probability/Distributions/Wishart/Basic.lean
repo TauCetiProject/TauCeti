@@ -43,8 +43,8 @@ a density definition cannot.
 * `TauCeti.Probability.trace_mul_coe_wishartGram` — the trace statistic of a Gram sum is the sum of
   the
   quadratic forms of its vectors.
-* `TauCeti.isProbabilityMeasure_wishartGramMeasure` — it is a probability measure, at every
-  degree and every scale matrix.
+* `TauCeti.Probability.isProbabilityMeasure_wishartGramMeasure` — it is a probability measure,
+  at every degree and every scale matrix.
 * `TauCeti.Probability.hasLaw_wishartGram_gaussian` — the Gram sum of an independent centred
   Gaussian
   family has this law.
