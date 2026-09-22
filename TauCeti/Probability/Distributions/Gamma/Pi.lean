@@ -104,8 +104,8 @@ theorem map_sum_pi_gammaMeasure [Nonempty ι] {a : ι → ℝ} {r : ℝ} (ha : �
       gammaMeasure (∑ i, a i) r := by
   let _ (i : ι) : IsProbabilityMeasure (gammaMeasure (a i) r) :=
     isProbabilityMeasure_gammaMeasure (ha i) hr
-  exact (iIndepFun.hasLaw_sum_gammaMeasure (s := Finset.univ)
-    (iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id) hr Finset.univ_nonempty
+  exact ((iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id).hasLaw_sum_gammaMeasure
+    (s := Finset.univ) hr Finset.univ_nonempty
     (fun i _ ↦ ha i)
     fun i _ ↦ ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval _ i).map_eq⟩).map_eq
 

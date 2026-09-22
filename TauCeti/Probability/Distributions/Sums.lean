@@ -153,8 +153,8 @@ theorem iIndepFun.hasLaw_sum_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι]
     {X : ι → Ω → ℝ} {r : ℝ} (hindep : iIndepFun X P) (hr : 0 < r)
     (hlaw : ∀ i, HasLaw (X i) (expMeasure r) P) :
     HasLaw (fun ω => ∑ i, X i ω) (gammaMeasure (Fintype.card ι) r) P := by
-  have h := iIndepFun.hasLaw_sum_gammaMeasure (a := fun _ => (1 : ℝ)) (s := Finset.univ)
-    hindep hr Finset.univ_nonempty (fun i _ => one_pos)
+  have h := hindep.hasLaw_sum_gammaMeasure (a := fun _ => (1 : ℝ)) (s := Finset.univ)
+    hr Finset.univ_nonempty (fun i _ => one_pos)
     (fun i _ => by simpa only [expMeasure] using hlaw i)
   simpa only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] using h
 

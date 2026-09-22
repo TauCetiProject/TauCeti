@@ -23,7 +23,7 @@ coordinate marginals of the Dirichlet distribution.
 
 ## Main result
 
-* `TauCeti.Probability.iIndepFun.hasLaw_sum_gammaMeasure` — a nonempty finite sum of independent
+* `ProbabilityTheory.iIndepFun.hasLaw_sum_gammaMeasure` — a nonempty finite sum of independent
   gamma
   variables with a common rate is gamma with the summed shape.
 
@@ -35,9 +35,9 @@ coordinate marginals of the Dirichlet distribution.
 
 public section
 
-namespace TauCeti.Probability
+namespace ProbabilityTheory
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory TauCeti.Probability
 
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → ℝ} {a : ι → ℝ} {r : ℝ}
 
@@ -76,4 +76,4 @@ theorem iIndepFun.hasLaw_sum_gammaMeasure {s : Finset ι} (hindep : iIndepFun X 
   rw [hfun, ← Finset.sum_coe_sort s a]
   exact key Finset.univ Finset.univ_nonempty
 
-end TauCeti.Probability
+end ProbabilityTheory
