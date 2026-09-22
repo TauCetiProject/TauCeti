@@ -160,16 +160,46 @@ theorem dgHomotopyClass_eq_zero_iff {X Y : C} {f : DGHom R 0 X Y}
 /-! ### Composition on homotopy classes -/
 
 /-- Composition of two degree-zero DG morphisms. -/
-@[expose]
 def dgCompZero {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z) :
     DGHom R 0 X Z :=
   dgComp R f g (zero_add 0)
+
+/-- Composition of degree-zero DG morphisms is homogeneous DG composition in degree zero. -/
+theorem dgCompZero_def {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z) :
+    dgCompZero R f g = dgComp R f g (zero_add 0) :=
+  (rfl)
+
+/-- Composition of degree-zero DG morphisms is additive in its first argument. -/
+@[simp]
+theorem add_dgCompZero {X Y Z : C} (f f' : DGHom R 0 X Y) (g : DGHom R 0 Y Z) :
+    dgCompZero R (f + f') g = dgCompZero R f g + dgCompZero R f' g := by
+  simp only [dgCompZero_def, add_dgComp]
+
+/-- Composition of degree-zero DG morphisms respects scalar multiplication in its first
+argument. -/
+@[simp]
+theorem smul_dgCompZero {X Y Z : C} (r : R) (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z) :
+    dgCompZero R (r • f) g = r • dgCompZero R f g := by
+  simp only [dgCompZero_def, smul_dgComp]
+
+/-- Composition of degree-zero DG morphisms is additive in its second argument. -/
+@[simp]
+theorem dgCompZero_add {X Y Z : C} (f : DGHom R 0 X Y) (g g' : DGHom R 0 Y Z) :
+    dgCompZero R f (g + g') = dgCompZero R f g + dgCompZero R f g' := by
+  simp only [dgCompZero_def, dgComp_add]
+
+/-- Composition of degree-zero DG morphisms respects scalar multiplication in its second
+argument. -/
+@[simp]
+theorem dgCompZero_smul {X Y Z : C} (r : R) (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z) :
+    dgCompZero R f (r • g) = r • dgCompZero R f g := by
+  simp only [dgCompZero_def, dgComp_smul]
 
 /-- The composite of two degree-zero cocycles is a degree-zero cocycle. -/
 theorem dgCompZero_mem_dgCycles {X Y Z : C} {f : DGHom R 0 X Y} {g : DGHom R 0 Y Z}
     (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z) :
     dgCompZero R f g ∈ dgCycles R X Z := by
-  rw [dgCompZero, mem_dgCycles, dgDifferential_dgComp,
+  rw [dgCompZero_def, mem_dgCycles, dgDifferential_dgComp,
     (mem_dgCycles R).mp hf, (mem_dgCycles R).mp hg]
   simp
 
@@ -181,7 +211,7 @@ theorem dgCompZero_mem_dgBoundaries_of_left {X Y Z : C}
   obtain ⟨h, rfl⟩ := hf
   refine ⟨dgComp R h g (add_zero (-1)), ?_⟩
   rw [dgDifferential_dgComp, (mem_dgCycles R).mp hg]
-  simp only [dgComp_zero, smul_zero, add_zero, dgCompZero]
+  simp only [dgComp_zero, smul_zero, add_zero, dgCompZero_def]
 
 /-- Composing a degree-zero cocycle on the left with a degree-zero boundary gives a boundary. -/
 theorem dgCompZero_mem_dgBoundaries_of_right {X Y Z : C}
@@ -191,7 +221,7 @@ theorem dgCompZero_mem_dgBoundaries_of_right {X Y Z : C}
   obtain ⟨h, rfl⟩ := hg
   refine ⟨dgComp R f h (zero_add (-1)), ?_⟩
   rw [dgDifferential_dgComp, (mem_dgCycles R).mp hf]
-  simp only [zero_dgComp, zero_add, Int.negOnePow_zero, one_smul, dgCompZero]
+  simp only [zero_dgComp, zero_add, Int.negOnePow_zero, one_smul, dgCompZero_def]
 
 /-- Composition restricted to degree-zero cocycles. -/
 def dgCyclesComp (X Y Z : C) :
@@ -202,28 +232,16 @@ def dgCyclesComp (X Y Z : C) :
         (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z), dgCompZero_mem_dgCycles R f.2 g.2⟩)
     (fun (f f' : dgCycles R X Y) (g : dgCycles R Y Z) ↦ by
       apply Subtype.ext
-      simp only [Submodule.coe_add]
-      change dgComp R ((f + f' : dgCycles R X Y) : DGHom R 0 X Y)
-          (g : DGHom R 0 Y Z) _ = _
-      simp only [Submodule.coe_add, add_dgComp, dgCompZero])
+      simp only [Submodule.coe_add, add_dgCompZero])
     (fun r (f : dgCycles R X Y) (g : dgCycles R Y Z) ↦ by
       apply Subtype.ext
-      simp only [Submodule.coe_smul]
-      change dgComp R ((r • f : dgCycles R X Y) : DGHom R 0 X Y)
-          (g : DGHom R 0 Y Z) _ = _
-      simp only [Submodule.coe_smul, smul_dgComp, dgCompZero])
+      simp only [Submodule.coe_smul, smul_dgCompZero])
     (fun (f : dgCycles R X Y) (g g' : dgCycles R Y Z) ↦ by
       apply Subtype.ext
-      simp only [Submodule.coe_add]
-      change dgComp R (f : DGHom R 0 X Y)
-          ((g + g' : dgCycles R Y Z) : DGHom R 0 Y Z) _ = _
-      simp only [Submodule.coe_add, dgComp_add, dgCompZero])
+      simp only [Submodule.coe_add, dgCompZero_add])
     (fun r (f : dgCycles R X Y) (g : dgCycles R Y Z) ↦ by
       apply Subtype.ext
-      simp only [Submodule.coe_smul]
-      change dgComp R (f : DGHom R 0 X Y)
-          ((r • g : dgCycles R Y Z) : DGHom R 0 Y Z) _ = _
-      simp only [Submodule.coe_smul, dgComp_smul, dgCompZero])
+      simp only [Submodule.coe_smul, dgCompZero_smul])
 
 /-- The underlying morphism of the composite of two cocycles is their DG composition. -/
 @[simp]
