@@ -25,6 +25,7 @@ a closed subset of `ℝ`.
 
 * `TauCeti.RealOpenUnitBall.isRiemannianManifold`: the ambient metric is the Riemannian distance
   of the restricted Euclidean metric.
+* `TauCeti.RealOpenUnitBall.radialSegment`: the concrete radial segment from the centre to a point.
 * `TauCeti.RealOpenUnitBall.exists_pathELength_eq_edist`: every point is joined to the centre by
   a `C¹` path whose Riemannian length realizes the distance.
 * `TauCeti.RealOpenUnitBall.not_completeSpace`: the open unit ball is not complete.
@@ -73,13 +74,46 @@ restricted Euclidean metric. -/
 theorem isRiemannianManifold : IsRiemannianManifold 𝓘(ℝ, ℝ) realOpenUnitBall :=
   Manifold.isRiemannianManifold_of_convex realOpenUnitBall (convex_ball (0 : ℝ) 1)
 
-/-- Every point of the real open unit ball is joined to its centre by a `C¹` path whose
-Riemannian length is exactly the distance between its endpoints. -/
+/-- The radial segment from the centre to `q`, affinely parametrized on `[0, 1]` and clamped
+outside that interval. -/
+def radialSegment (q : realOpenUnitBall) : ℝ → realOpenUnitBall :=
+  Manifold.convexSegment realOpenUnitBall (convex_ball (0 : ℝ) 1) center q
+
+/-- On `[0, 1]`, the radial segment from the centre to `q` is `t ↦ t * q`. -/
+theorem coe_radialSegment (q : realOpenUnitBall) (t : ℝ) (ht : t ∈ Icc 0 1) :
+    (radialSegment q t : ℝ) = t * (q : ℝ) := by
+  calc
+    (radialSegment q t : ℝ) =
+        ⇑(ContinuousAffineMap.lineMap (R := ℝ) (center : ℝ) (q : ℝ)) t := by
+      simpa only [radialSegment, Function.comp_apply] using
+        Manifold.convexSegment_val_eqOn realOpenUnitBall
+          (convex_ball (0 : ℝ) 1) center q t ht
+    _ = t * (q : ℝ) := by
+      simp [ContinuousAffineMap.coe_lineMap_eq, AffineMap.lineMap_apply_module]
+
+/-- The radial segment has the centre and `q` as its endpoints. -/
+theorem radialSegment_endpoints (q : realOpenUnitBall) :
+    radialSegment q 0 = center ∧ radialSegment q 1 = q :=
+  Manifold.convexSegment_endpoints realOpenUnitBall (convex_ball (0 : ℝ) 1) center q
+
+/-- The radial segment is `C¹` on `[0, 1]`. -/
+theorem contMDiffOn_radialSegment (q : realOpenUnitBall) :
+    CMDiff[Icc 0 1] 1 (radialSegment q) :=
+  Manifold.contMDiffOn_convexSegment realOpenUnitBall (convex_ball (0 : ℝ) 1) center q
+
+/-- The radial segment realizes the distance from the centre to `q`. -/
+theorem pathELength_radialSegment (q : realOpenUnitBall) :
+    pathELength 𝓘(ℝ, ℝ) (radialSegment q) 0 1 = edist center q :=
+  Manifold.pathELength_convexSegment_eq_edist realOpenUnitBall
+    (convex_ball (0 : ℝ) 1) center q
+
+/-- Every point of the real open unit ball is joined to its centre by its radial `C¹` segment,
+whose Riemannian length is exactly the distance between its endpoints. -/
 theorem exists_pathELength_eq_edist (q : realOpenUnitBall) :
     ∃ γ : ℝ → realOpenUnitBall, CMDiff[Icc 0 1] 1 γ ∧ γ 0 = center ∧ γ 1 = q ∧
       pathELength 𝓘(ℝ, ℝ) γ 0 1 = edist center q := by
-  exact Manifold.exists_pathELength_eq_edist_of_convex realOpenUnitBall
-    (convex_ball (0 : ℝ) 1) center q
+  exact ⟨radialSegment q, contMDiffOn_radialSegment q, (radialSegment_endpoints q).1,
+    (radialSegment_endpoints q).2, pathELength_radialSegment q⟩
 
 /-- The real open unit ball is not complete. -/
 theorem not_completeSpace : ¬ CompleteSpace realOpenUnitBall := by
