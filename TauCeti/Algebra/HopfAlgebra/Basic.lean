@@ -172,6 +172,7 @@ private lemma _root_.BialgHomClass.coe_toBialgHom_toLinearMap (φ : F) :
 
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
+@[simp]
 theorem _root_.BialgHomClass.coe_comp_antipode (φ : F) :
     (φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) := by
