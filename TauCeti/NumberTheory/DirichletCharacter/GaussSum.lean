@@ -107,14 +107,6 @@ noncomputable def gaussSumOfPrimitiveRoot (χ : DirichletCharacter ℤ N) {ζ : 
     (hζ : IsPrimitiveRoot ζ N) : L :=
   gaussSum (χ.ringHomComp (Int.castRingHom L)) (AddChar.zmodChar N hζ.pow_eq_one)
 
-omit [CharZero L] in
-/-- Expresses `gaussSumOfPrimitiveRoot` using the underlying Dirichlet Gauss sum. -/
-theorem gaussSumOfPrimitiveRoot_def (χ : DirichletCharacter ℤ N) {ζ : L}
-    (hζ : IsPrimitiveRoot ζ N) :
-    gaussSumOfPrimitiveRoot χ hζ =
-      gaussSum (χ.ringHomComp (Int.castRingHom L)) (AddChar.zmodChar N hζ.pow_eq_one) := by
-  rw [gaussSumOfPrimitiveRoot]
-
 /-- The square formula for the Gauss sum formed from a primitive root of unity. -/
 theorem gaussSumOfPrimitiveRoot_sq (χ : DirichletCharacter ℤ N) (hχ : IsPrimitive χ)
     (hquad : χ.IsQuadratic) {ζ : L} (hζ : IsPrimitiveRoot ζ N) :
