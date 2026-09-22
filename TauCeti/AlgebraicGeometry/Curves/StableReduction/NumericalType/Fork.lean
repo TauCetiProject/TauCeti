@@ -16,13 +16,13 @@ import Mathlib.Tactic.Ring
 
 A fork consists of a chain of components of self-intersection `-2w` together with a second leaf
 at the component indexed by `t - 2`.  The raw predicate allows every chain length, so this index
-uses truncated subtraction for short chains.  When the chain has at least five components and
+uses truncated subtraction for short chains.  When the chain has at least three components and
 the numerical type has components outside the fork, every component in the fork has the same
 weight, the displayed intersections equal that weight, and all other intersections between the
 branch and the chain vanish.  Together with the chain's no-chord theorem, this identifies the
 induced intersection graph with a simply-laced fork.
 
-This is [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8A).  It is one of the
+This is [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8D).  It is one of the
 families in the classification of proper connected subgraphs of `(-2)`-indices used to bound the
 multiplicities of a minimal numerical type.
 
@@ -31,7 +31,7 @@ multiplicities of a minimal numerical type.
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork`: a chain with a second leaf at its
   component indexed by `t - 2`, with no lower bound on the chain length.
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.exists_weight_intersection_eq`: the
-  weights and intersections of a proper fork whose chain has length at least five are all the
+  weights and intersections of a proper fork whose chain has length at least three are all the
   simply-laced ones.
 -/
 
@@ -49,7 +49,7 @@ variable (T : NumericalType.{u})
 
 /-- A chain `c 0 - ... - c (t - 1)` of components of self-intersection `-2w`, together with a
 second leaf `branch` meeting `c (t - 2)`.  This structure imposes no lower bound on `t`, so the
-index `t - 2` is truncated when `t < 2`; the classification theorem assumes `4 < t`. -/
+index `t - 2` is truncated when `t < 2`; the classification theorem assumes `2 < t`. -/
 structure IsSelfIntersectionMinusTwoFork (t : ℕ) (c : ℕ → T.Component)
     (branch : T.Component) : Prop extends T.IsSelfIntersectionMinusTwoChain t c where
   /-- The extra leaf is not one of the chain components. -/
@@ -64,10 +64,10 @@ variable {T : NumericalType.{u}} {t : ℕ} {c : ℕ → T.Component} {branch : T
 
 namespace IsSelfIntersectionMinusTwoFork
 
-/-- The extra leaf of a fork whose chain has length at least five meets no chain component other
+/-- The extra leaf of a fork whose chain has length at least three meets no chain component other
 than the one indexed by `t - 2`. -/
 lemma branch_intersection_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
-    (ht : 4 < t) {i : ℕ} (hi : i < t) (hne : i ≠ t - 2) :
+    (ht : 2 < t) {i : ℕ} (hi : i < t) (hne : i ≠ t - 2) :
     T.intersection (c i) branch = 0 := by
   let e : Fin (t + 1) → T.Component := fun j ↦ if (j : ℕ) = t then branch else c j
   have he : Function.Injective e := by
@@ -127,20 +127,12 @@ lemma branch_intersection_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork t c bra
         exact hf.toIsSelfIntersectionMinusTwoChain.intersection_succ_pos j hj }
   by_cases hil : i = t - 1
   · subst i
-    obtain ⟨w, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hzero⟩ :=
-      T.exists_weight_intersection_fork_five_eq (by omega)
-        (hf.intersection_self (t - 4) (by omega))
-        (hf.intersection_self (t - 3) (by omega))
-        (hf.intersection_self (t - 2) (by omega))
-        (hf.intersection_self (t - 1) (by omega)) hf.branch_intersection_self
-        (hf.ne (by omega) (by omega) (by omega))
-        (hf.ne (by omega) (by omega) (by omega)) (hf.branch_ne (t - 4) (by omega)).symm
-        (hf.ne (by omega) (by omega) (by omega)) (hf.branch_ne (t - 3) (by omega)).symm
-        (hf.branch_ne (t - 1) (by omega)).symm
-        (hf.intersection_pos (by omega) (by omega))
-        (hf.intersection_pos (by omega) (by omega))
-        (hf.intersection_pos (by omega) (by omega)) hf.branch_intersection_pos
-    exact hzero
+    exact T.intersection_eq_zero_of_intersection_pos_of_intersection_pos (by omega)
+      (hf.intersection_self (t - 1) (by omega))
+      (hf.intersection_self (t - 2) (by omega)) hf.branch_intersection_self
+      (hf.branch_ne (t - 1) (by omega)).symm
+      (T.intersection_comm (c (t - 2)) (c (t - 1)) ▸
+        hf.intersection_pos (by omega) (by omega)) hf.branch_intersection_pos
   · have hi' : i < t - 1 := by omega
     have h := hd.intersection_eq_zero (by omega) (p := i) (q := t - 1) (by omega) (by omega)
       (by omega) (by omega) (by omega)
@@ -324,12 +316,8 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
       (y := y) (fun i hi ↦ by simp only [y]; split_ifs <;> omega)
       ⟨0, by omega, by rw [hy0]; exact hαpos⟩) hrow
 
-/-- A proper fork whose chain has length at least five (and hence has at least six fork
-components) is simply laced: all its component weights agree, each displayed intersection is
-that common weight, and the extra leaf has no other intersection with the chain.  Together with
-`TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.intersection_eq_zero`, this is the full
-classification of [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8A). -/
-theorem exists_weight_intersection_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+private theorem exists_weight_intersection_eq_of_four_lt
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
     (hcard : t + 1 < Fintype.card T.Component) (ht : 4 < t) :
     ∃ w : ℕ+, (∀ i < t, (T.weight (c i) : ℤ) = w) ∧ (T.weight branch : ℤ) = w ∧
       (∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = w) ∧
@@ -354,7 +342,7 @@ theorem exists_weight_intersection_eq (hf : T.IsSelfIntersectionMinusTwoFork t c
   subst W
   have hinterior : ∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = w := hWinterior
   have hbranchZero : ∀ i < t, i ≠ t - 2 → T.intersection (c i) branch = 0 :=
-    fun i hi hne ↦ hf.branch_intersection_eq_zero ht hi hne
+    fun i hi hne ↦ hf.branch_intersection_eq_zero (by omega) hi hne
   have hedge : ∀ i, 0 < i → i + 1 < t → T.intersection (c i) (c (i + 1)) = w := by
     intro i hi hit
     have hmax := T.intersection_eq_max_weight (by omega)
@@ -382,6 +370,78 @@ theorem exists_weight_intersection_eq (hf : T.IsSelfIntersectionMinusTwoFork t c
         (hf.intersection_succ_pos 0 hi), hleft, hinterior 1 (by omega) (by omega)]
       simp only [max_self]
     exact hedge i hi0 hi
+
+/-- A proper fork whose chain has length at least three is simply laced: all its component
+weights agree, each displayed intersection is that common weight, and the extra leaf has no
+other intersection with the chain.  Together with
+`TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.intersection_eq_zero`, this is the full
+classification of [Stacks, Lemma 55.5.9](https://stacks.math.columbia.edu/tag/0C8D). -/
+theorem exists_weight_intersection_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : t + 1 < Fintype.card T.Component) (ht : 2 < t) :
+    ∃ w : ℕ+, (∀ i < t, (T.weight (c i) : ℤ) = w) ∧ (T.weight branch : ℤ) = w ∧
+      (∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = w) ∧
+      T.intersection (c (t - 2)) branch = w ∧
+      ∀ i < t, i ≠ t - 2 → T.intersection (c i) branch = 0 := by
+  rcases lt_or_ge t 5 with ht5 | ht5
+  · have ht_cases : t = 3 ∨ t = 4 := by omega
+    rcases ht_cases with rfl | rfl
+    · obtain ⟨w, hw₁, hw₀, hw₂, hwb, ha₁₀, ha₁₂, ha₁b, -, ha₀b, ha₂b⟩ :=
+        T.exists_weight_intersection_star_four_eq (by omega)
+          (hf.intersection_self 1 (by omega)) (hf.intersection_self 0 (by omega))
+          (hf.intersection_self 2 (by omega)) hf.branch_intersection_self
+          (hf.ne (by omega) (by omega) (by omega)) (hf.branch_ne 0 (by omega)).symm
+          (hf.branch_ne 2 (by omega)).symm
+          (T.intersection_comm (c 0) (c 1) ▸ hf.intersection_succ_pos 0 (by omega))
+          (hf.intersection_succ_pos 1 (by omega)) hf.branch_intersection_pos
+      refine ⟨w, ?_, hwb, ?_, ha₁b, ?_⟩
+      · intro i hi
+        have hi_cases : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+        rcases hi_cases with rfl | rfl | rfl
+        · exact hw₀
+        · exact hw₁
+        · exact hw₂
+      · intro i hi
+        have hi_cases : i = 0 ∨ i = 1 := by omega
+        rcases hi_cases with rfl | rfl
+        · exact T.intersection_comm (c 1) (c 0) ▸ ha₁₀
+        · exact ha₁₂
+      · intro i hi hne
+        have hi_cases : i = 0 ∨ i = 2 := by omega
+        rcases hi_cases with rfl | rfl
+        · exact ha₀b
+        · exact ha₂b
+    · obtain ⟨w, hw₀, hw₁, hw₂, hw₃, hwb, ha₀₁, ha₁₂, ha₂₃, ha₂b,
+          -, -, ha₀b, -, ha₁b, ha₃b⟩ :=
+        T.exists_weight_intersection_fork_five_eq (by omega)
+          (hf.intersection_self 0 (by omega)) (hf.intersection_self 1 (by omega))
+          (hf.intersection_self 2 (by omega)) (hf.intersection_self 3 (by omega))
+          hf.branch_intersection_self (hf.ne (by omega) (by omega) (by omega))
+          (hf.ne (by omega) (by omega) (by omega)) (hf.branch_ne 0 (by omega)).symm
+          (hf.ne (by omega) (by omega) (by omega)) (hf.branch_ne 1 (by omega)).symm
+          (hf.branch_ne 3 (by omega)).symm (hf.intersection_succ_pos 0 (by omega))
+          (hf.intersection_succ_pos 1 (by omega)) (hf.intersection_succ_pos 2 (by omega))
+          hf.branch_intersection_pos
+      refine ⟨w, ?_, hwb, ?_, ha₂b, ?_⟩
+      · intro i hi
+        have hi_cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega
+        rcases hi_cases with rfl | rfl | rfl | rfl
+        · exact hw₀
+        · exact hw₁
+        · exact hw₂
+        · exact hw₃
+      · intro i hi
+        have hi_cases : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+        rcases hi_cases with rfl | rfl | rfl
+        · exact ha₀₁
+        · exact ha₁₂
+        · exact ha₂₃
+      · intro i hi hne
+        have hi_cases : i = 0 ∨ i = 1 ∨ i = 3 := by omega
+        rcases hi_cases with rfl | rfl | rfl
+        · exact ha₀b
+        · exact ha₁b
+        · exact ha₃b
+  · exact exists_weight_intersection_eq_of_four_lt hf hcard (by omega)
 
 end IsSelfIntersectionMinusTwoFork
 
