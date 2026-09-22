@@ -36,7 +36,10 @@ noncomputable section
 
 variable (X : Scheme.{u})
 
-local instance : MonoidalCategory
+/-- The monoidal structure of `X.Modules`, stated for the unfolded type
+`SheafOfModules X.ringCatSheaf`, which typeclass search does not see through the definition of
+`Scheme.Modules`. -/
+local instance monoidalCategorySheafOfModules : MonoidalCategory
     (_root_.SheafOfModules X.ringCatSheaf) :=
   _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalCategory X
 

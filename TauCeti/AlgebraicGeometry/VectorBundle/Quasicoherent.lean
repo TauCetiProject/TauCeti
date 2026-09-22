@@ -46,15 +46,17 @@ noncomputable section
 
 variable (X : Scheme.{u})
 
-local instance : MonoidalCategory
-    (_root_.SheafOfModules X.ringCatSheaf) :=
-  _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalCategory X
+attribute [local instance] monoidalCategorySheafOfModules
 
-local instance : SymmetricCategory
+/-- The symmetry of `X.Modules`, stated for the unfolded type `SheafOfModules X.ringCatSheaf`,
+which typeclass search does not see through the definition of `Scheme.Modules`. -/
+local instance symmetricCategorySheafOfModules : SymmetricCategory
     (_root_.SheafOfModules X.ringCatSheaf) :=
   _root_.AlgebraicGeometry.Scheme.Modules.instSymmetricCategory X
 
-local instance : ObjectProperty.IsMonoidal
+/-- Quasi-coherence is a monoidal property of `SheafOfModules X.ringCatSheaf`, stated for that
+unfolded type rather than for `X.Modules`. -/
+local instance isMonoidalIsQuasicoherent : ObjectProperty.IsMonoidal
     (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf) :=
   _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent X
 
