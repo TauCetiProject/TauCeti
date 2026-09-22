@@ -204,23 +204,25 @@ theorem quinticPairSumSpec_H : quinticPairSumSpec.H = quinticPairSumStabilizer :
 theorem quinticPairSumSpec_Φ : quinticPairSumSpec.Φ = quinticPairSumInvariant :=
   ResolventSpec.mk'_Φ _ _ _
 
+attribute [local instance] Fintype.ofFinite in
 /-- The pair-sum stabilizer has order twelve: independently permuting the pair and its
 three-element complement gives `2! · 3! = 12` elements. -/
 @[simp]
-theorem natCard_quinticPairSumStabilizer : Nat.card quinticPairSumStabilizer = 12 := by
+theorem card_quinticPairSumStabilizer : Fintype.card quinticPairSumStabilizer = 12 := by
   unfold quinticPairSumStabilizer
   have htwo : Fintype.card {i : Fin 5 // i < 2} = 2 := by decide
   have hthree : Fintype.card {i : Fin 5 // 2 ≤ i} = 3 := by decide
-  rw [Nat.card_congr
+  rw [Fintype.card_congr
     (fiberSubgroupMulEquivPiPerm (fun i : Fin 5 => decide (i < 2))).toEquiv]
-  norm_num [Nat.card_pi, Nat.card_eq_fintype_card, Fintype.card_perm, Nat.factorial, htwo,
-    hthree]
+  norm_num [Fintype.card_pi, Fintype.card_perm, Nat.factorial, htwo, hthree]
 
 /-- The pair-sum stabilizer has index ten in `S₅`, one coset for each unordered pair. -/
 @[simp]
 theorem index_quinticPairSumStabilizer : quinticPairSumStabilizer.index = 10 := by
   have h := quinticPairSumStabilizer.index_mul_card
-  rw [natCard_quinticPairSumStabilizer, Nat.card_eq_fintype_card, Fintype.card_perm] at h
+  have hcard : Nat.card quinticPairSumStabilizer = 12 := by
+    rw [@Nat.card_eq_fintype_card _ (Fintype.ofFinite _), card_quinticPairSumStabilizer]
+  rw [hcard, Nat.card_eq_fintype_card, Fintype.card_perm] at h
   norm_num [Nat.factorial] at h
   omega
 
@@ -232,7 +234,6 @@ theorem card_renameOrbit_quinticPairSumInvariant :
     index_quinticPairSumStabilizer]
 
 /-- Every specialization of the quintic pair-sum specification has degree ten. -/
-@[simp]
 theorem natDegree_specialize_quinticPairSumSpec (R : Type*) [CommRing R] [Nontrivial R]
     (f : R[X]) : (quinticPairSumSpec.specialize R f).natDegree = 10 := by
   rw [ResolventSpec.natDegree_specialize, quinticPairSumSpec_H,
