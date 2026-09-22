@@ -39,6 +39,9 @@ scaling factor of valuation `1`.
   attaining that valuation is minimal.
 * `WeierstrassCurve.valuation_u_eq_one_of_isMinimal_smul`: for an elliptic curve, the scaling
   factor of such a change of variables satisfies `v (u) = 1`.
+* `WeierstrassCurve.valuation_Δ_minimal_smul` and
+  `WeierstrassCurve.valuation_c₄_minimal_smul`: the chosen minimal equations of isomorphic curves
+  have the same discriminant and `c₄` valuations.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
 
@@ -236,6 +239,30 @@ theorem valuation_u_eq_one_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K} [I
     rw [inv_pow] at h1
     exact inv_eq_one.mp h1
   exact (pow_eq_one_iff_of_nonneg zero_le (by norm_num)).mp h12
+
+/-- The discriminants of the chosen minimal equations have the same valuation after a change of
+variables. -/
+@[simp]
+theorem valuation_Δ_minimal_smul (D : VariableChange K) (W : WeierstrassCurve K) :
+    valuation K (maximalIdeal R) ((D • W).minimal R).Δ =
+      valuation K (maximalIdeal R) (W.minimal R).Δ := by
+  obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
+  exact valuation_Δ_eq_of_isMinimal_smul R C hC
+
+/-- The `c₄` invariants of the chosen minimal equations have the same valuation after a change of
+variables. -/
+@[simp]
+theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve K)
+    [W.IsElliptic] :
+    valuation K (maximalIdeal R) ((D • W).minimal R).c₄ =
+      valuation K (maximalIdeal R) (W.minimal R).c₄ := by
+  obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal R
+  let hEll : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
+  obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
+  have hu := @valuation_u_eq_one_of_isMinimal_smul R _ _ _ K _ _ _
+    (W.minimal R) ((D • W).minimal R) _ _ hEll C hC
+  rw [← hC, variableChange_c₄, map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀, hu]
+  simp
 
 /-- **Split multiplicative reduction is an isomorphism invariant of minimal models.** If two
 minimal Weierstrass models of an elliptic curve over `K` are related by a change of variables

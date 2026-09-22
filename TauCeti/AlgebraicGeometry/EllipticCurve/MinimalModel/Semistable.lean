@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 
 /-!
 # Semistable elliptic curves over a Dedekind domain
@@ -48,34 +49,8 @@ namespace WeierstrassCurve
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum IsDiscreteValuationRing IsLocalRing
 
-/-! ### Invariance of the local valuations -/
-
 variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-
-/-- The discriminants of the chosen minimal equations have the same valuation after a change of
-variables. -/
-@[simp]
-theorem valuation_Δ_minimal_smul (D : VariableChange K) (W : WeierstrassCurve K) :
-    valuation K (maximalIdeal R) ((D • W).minimal R).Δ =
-      valuation K (maximalIdeal R) (W.minimal R).Δ := by
-  obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
-  exact valuation_Δ_eq_of_isMinimal_smul R C hC
-
-/-- The `c₄` invariants of the chosen minimal equations have the same valuation after a change of
-variables. -/
-@[simp]
-theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve K)
-    [W.IsElliptic] :
-    valuation K (maximalIdeal R) ((D • W).minimal R).c₄ =
-      valuation K (maximalIdeal R) (W.minimal R).c₄ := by
-  obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal R
-  let hEll : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
-  obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
-  have hu := @valuation_u_eq_one_of_isMinimal_smul R _ _ _ K _ _ _
-    (W.minimal R) ((D • W).minimal R) _ _ hEll C hC
-  rw [← hC, variableChange_c₄, map_mul, map_pow, Units.val_inv_eq_inv_val, map_inv₀, hu]
-  simp
 
 /-! ### The local criterion -/
 
@@ -109,48 +84,25 @@ variable (O : Type*) [CommRing O] [IsDedekindDomain O]
 has no additive reduction. Equivalently, the reduction is good or multiplicative everywhere.
 
 The predicate is stated on an elliptic equation but depends only on its `F`-isomorphism class, as
-proved by `isSemistable_smul`. Ellipticity is part of the notion: a singular cubic has no
+proved by `isSemistable_smul`. The ellipticity instance excludes singular cubics, which have no
 reduction type in the good/multiplicative/additive trichotomy of elliptic curves. -/
-def IsSemistable (W : WeierstrassCurve F) : Prop :=
-  W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
+def IsSemistable (W : WeierstrassCurve F) [W.IsElliptic] : Prop :=
+  ∀ v : HeightOneSpectrum O,
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal)
 
 variable {O}
 
-/-- Semistability, unfolded. -/
-theorem isSemistable_iff {W : WeierstrassCurve F} :
-    IsSemistable O W ↔ W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
-      ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
-        (Localization.AtPrime v.asIdeal) :=
-  Iff.rfl
-
-/-- A semistable curve has no additive reduction at any height-one prime. -/
-theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F}
-    (hW : IsSemistable O W) (v : HeightOneSpectrum O) :
-    ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
-      (Localization.AtPrime v.asIdeal) :=
-  hW.2 v
-
-/-- A curve with no additive reduction at any height-one prime is semistable. -/
-theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F}
-    (hEll : W.IsElliptic) (hW : ∀ v : HeightOneSpectrum O,
-      ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
-        (Localization.AtPrime v.asIdeal)) :
-    IsSemistable O W :=
-  ⟨hEll, hW⟩
-
 /-- **A curve is semistable exactly when it has good or multiplicative reduction at every
 height-one prime.** -/
 theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
-    (W : WeierstrassCurve F) :
-    IsSemistable O W ↔ W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
+    (W : WeierstrassCurve F) [W.IsElliptic] :
+    IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       (W.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
           (Localization.AtPrime v.asIdeal) ∨
         (W.minimal (Localization.AtPrime v.asIdeal)).HasMultiplicativeReduction
           (Localization.AtPrime v.asIdeal) := by
-  rw [isSemistable_iff]
-  refine and_congr Iff.rfl <| forall_congr' fun v ↦ ?_
+  refine forall_congr' fun v ↦ ?_
   constructor
   · intro h
     rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction
@@ -167,36 +119,24 @@ theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
 equation has discriminant of valuation one (good reduction) or `c₄` of valuation one
 (multiplicative reduction). -/
 theorem isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one
-    (W : WeierstrassCurve F) :
-    IsSemistable O W ↔ W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
+    (W : WeierstrassCurve F) [W.IsElliptic] :
+    IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       valuation F (maximalIdeal (Localization.AtPrime v.asIdeal))
           (W.minimal (Localization.AtPrime v.asIdeal)).Δ = 1 ∨
         valuation F (maximalIdeal (Localization.AtPrime v.asIdeal))
           (W.minimal (Localization.AtPrime v.asIdeal)).c₄ = 1 := by
-  rw [isSemistable_iff]
-  refine and_congr Iff.rfl <| forall_congr' fun v ↦
+  exact forall_congr' fun v ↦
     not_hasAdditiveReduction_iff_valuation_Δ_eq_one_or_valuation_c₄_eq_one
       (Localization.AtPrime v.asIdeal) (W.minimal (Localization.AtPrime v.asIdeal))
 
 /-- **Semistability is invariant under a change of variables.** -/
 @[simp]
-theorem isSemistable_smul (D : VariableChange F) (W : WeierstrassCurve F) :
+theorem isSemistable_smul (D : VariableChange F) (W : WeierstrassCurve F) [W.IsElliptic] :
     IsSemistable O (D • W) ↔ IsSemistable O W := by
   rw [isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one,
     isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one]
-  constructor
-  · rintro ⟨hEll, h⟩
-    let _ : (D • W).IsElliptic := hEll
-    have hEll' : W.IsElliptic := by
-      simpa only [inv_smul_smul] using
-        (inferInstance : (D⁻¹ • (D • W)).IsElliptic)
-    let _ : W.IsElliptic := hEll'
-    refine ⟨hEll', fun v ↦ ?_⟩
-    simpa only [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul] using h v
-  · rintro ⟨hEll, h⟩
-    let _ : W.IsElliptic := hEll
-    refine ⟨inferInstance, fun v ↦ ?_⟩
-    simpa only [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul] using h v
+  refine forall_congr' fun v ↦ ?_
+  rw [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul]
 
 end WeierstrassCurve
 
