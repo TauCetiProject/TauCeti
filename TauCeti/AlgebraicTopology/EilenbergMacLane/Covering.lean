@@ -49,6 +49,8 @@ and torus examples were proved directly.
 
 * `IsCoveringMap.subsingleton_homotopyGroup_iff`: a cover and its base have the same
   higher homotopy groups.
+* `IsCoveringMap.isAspherical_iff`: **a path-connected base is aspherical exactly when the
+  higher homotopy groups of a cover of it vanish**.
 * `IsCoveringMap.isAspherical`: **the base of a surjective covering map with aspherical
   total space is aspherical**.
 * `IsCoveringMap.isAspherical_totalSpace`: **a path-connected covering space of an
@@ -121,6 +123,16 @@ theorem isAspherical_of_subsingleton_homotopyGroup (hp : IsCoveringMap p)
     (hp' : Function.Surjective p) [PathConnectedSpace E] (he : p e = x)
     (h : ∀ n : ℕ, Subsingleton (π_ (n + 2) E e)) : IsAspherical X x :=
   hp.isAspherical hp' he (IsAspherical.mk inferInstance h)
+
+/-- **A path-connected base is aspherical exactly when the higher homotopy groups of a cover of
+it vanish.** This is the two-way form of
+`IsCoveringMap.isAspherical_of_subsingleton_homotopyGroup`, with path-connectedness of the base
+assumed outright rather than deduced from surjectivity of the covering map. -/
+theorem isAspherical_iff (hp : IsCoveringMap p) (he : p e = x) [PathConnectedSpace X] :
+    IsAspherical X x ↔ ∀ n : ℕ, Subsingleton (π_ (n + 2) E e) :=
+  ⟨fun h n ↦ (hp.subsingleton_homotopyGroup_iff he n).mpr (h.subsingleton_homotopyGroup n),
+    fun h ↦ IsAspherical.mk inferInstance fun n ↦
+      (hp.subsingleton_homotopyGroup_iff he n).mp (h n)⟩
 
 /-- **A path-connected covering space of a `K(G, 1)` is a `K(H, 1)`**, for `H` the subgroup of
 the fundamental group of the base that the cover recovers.

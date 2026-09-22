@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
+public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
@@ -18,8 +19,9 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalVectorSpace
 The real line covers every real additive circle `AddCircle p`. This file combines that
 covering with the invariance of higher homotopy groups under covering maps to show that all
 homotopy groups of a circle in dimensions at least two are trivial. The complex unit circle
-`Circle` is homeomorphic to `AddCircle (2 * π)`, so its higher homotopy groups vanish as
-well.
+`Circle` is homeomorphic to `AddCircle (2 * π)`, and the unit circle of
+`EuclideanSpace ℝ (Fin 2)` is homeomorphic to `Circle`, so the higher homotopy groups of those
+two models vanish as well.
 
 The only calculation needed in the total space is elementary: any two generalized loops in a
 real topological vector space are homotopic relative to the cube boundary, so all homotopy
@@ -38,6 +40,8 @@ This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
   equalities.
 * `Circle.subsingleton_homotopyGroup`, `Circle.homotopyGroup_eq_one` and
   `Circle.homotopyGroupPi_eq_one`: the same statements for the complex unit circle.
+* `TauCeti.EuclideanSpace.subsingleton_homotopyGroup_sphere`: the same vanishing for the unit
+  circle of `EuclideanSpace ℝ (Fin 2)`, the model in which the Euclidean spheres are stated.
 
 The covering map is Junyan Xu's `AddCircle.isCoveringMap_coe` in
 `Mathlib.Topology.Covering.AddCircle`.
@@ -91,3 +95,22 @@ theorem homotopyGroupPi_eq_one (n : ℕ) (a : π_ (n + 2) Circle z) : a = 1 :=
   homotopyGroup_eq_one z a
 
 end Circle
+
+namespace TauCeti
+
+namespace EuclideanSpace
+
+open Metric
+
+variable {N : Type*} [Nontrivial N] (y : sphere (0 : EuclideanSpace ℝ (Fin 2)) 1)
+
+/-- Every higher homotopy group of the unit circle of `EuclideanSpace ℝ (Fin 2)` is trivial. It
+is transported from `Circle` along `TauCeti.EuclideanSpace.sphereHomeomorphCircle`. -/
+instance subsingleton_homotopyGroup_sphere :
+    Subsingleton (HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) y) :=
+  (HomotopyGroup.homeomorphEquiv (N := N) sphereHomeomorphCircle y).subsingleton_congr.mpr
+    inferInstance
+
+end EuclideanSpace
+
+end TauCeti

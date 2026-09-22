@@ -20,13 +20,14 @@ two.
 For `n = 1` this happens: the projective line is homeomorphic to the circle, so it is aspherical
 and, its fundamental group being infinite cyclic, it is a `K(ℤ, 1)`. This adds the projective
 line to the circles and tori already recorded as Eilenberg--Mac Lane spaces. For `n ≥ 2` the
-criterion turns on the higher homotopy groups of `Sⁿ`, whose computation rests on a degree or
-Hurewicz argument.
+criterion fails and `RPⁿ` is not aspherical, because `π_n(Sⁿ) ≅ ℤ` (Hatcher, Corollary 4.25); that
+computation is not available in this repository, so the negative conclusion is not recorded
+here.
 
 ## Main declarations
 
-* `TauCeti.RealProjectiveSpace.isAspherical_iff`: **`RPⁿ` is aspherical exactly when the higher
-  homotopy groups of the covering sphere vanish.**
+* `TauCeti.RealProjectiveSpace.isAspherical_iff_subsingleton_homotopyGroup_sphere`: **`RPⁿ` is
+  aspherical exactly when the higher homotopy groups of the covering sphere vanish.**
 * `TauCeti.RealProjectiveSpace.Line.isAspherical`: **the real projective line is aspherical.**
 * `TauCeti.RealProjectiveSpace.Line.isEilenbergMacLaneSpaceOne`: **the real projective line is a
   `K(ℤ, 1)`**, with `ℤ` written multiplicatively to match the fundamental group.
@@ -48,13 +49,11 @@ open scoped Topology Topology.Homotopy
 /-- **Real projective space is aspherical exactly when its covering sphere has vanishing
 homotopy groups in dimensions at least two.** The two spaces have the same homotopy groups in
 those dimensions, and `RPⁿ` is path connected for every `n`. -/
-theorem isAspherical_iff (n : ℕ) (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+theorem isAspherical_iff_subsingleton_homotopyGroup_sphere (n : ℕ)
+    (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     IsAspherical (RealProjectiveSpace n) (mk n y) ↔
       ∀ k : ℕ, Subsingleton (π_ (k + 2) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) y) :=
-  ⟨fun h k ↦ ((isCoveringMap_mk n).subsingleton_homotopyGroup_iff (e := y) rfl k).mpr
-      (h.subsingleton_homotopyGroup k),
-    fun h ↦ IsAspherical.mk inferInstance fun k ↦
-      ((isCoveringMap_mk n).subsingleton_homotopyGroup_iff (e := y) rfl k).mp (h k)⟩
+  (isCoveringMap_mk n).isAspherical_iff rfl
 
 namespace Line
 

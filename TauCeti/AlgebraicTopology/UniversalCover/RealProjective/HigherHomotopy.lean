@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
-public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Circle
+public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 
 /-!
@@ -18,21 +18,22 @@ homotopy groups in every dimension at least two. So in those dimensions the homo
 
   `π_k(Sⁿ, y) ≃* π_k(RPⁿ, ⟦y⟧)`   for `k ≥ 2`.
 
-Because `RPⁿ` is path connected, the isomorphism class of the right-hand side does not depend on
-the base point, and for `1 ≤ n` neither does that of the left-hand side.
+Real projective space is path connected in every dimension, so the isomorphism class of the
+right-hand side does not depend on the base point and the two base points may be chosen
+independently.
 
-The projective line is settled outright: it is homeomorphic to the circle, whose higher homotopy
+The projective line is settled outright: it is covered by the circle `S¹`, whose higher homotopy
 groups vanish, so every higher homotopy group of `RP¹` is trivial. In every dimension `n ≥ 2` the
-answer is that of `Sⁿ`, whose computation is a separate matter, resting on a degree or Hurewicz
-argument.
+answer is that of `Sⁿ`, which is a separate matter: a degree or Hurewicz argument gives
+`π_k(Sⁿ) = 0` for `2 ≤ k < n` and `π_n(Sⁿ) ≅ ℤ`, while the groups `π_k(Sⁿ)` with `k > n` are not
+reached by either argument and are not treated here.
 
 ## Main declarations
 
-* `TauCeti.RealProjectiveSpace.homotopyGroupMulEquiv`: **the antipodal covering induces
-  `π_N(Sⁿ, y) ≃* π_N(RPⁿ, ⟦y⟧)`** for an index type with at least two elements, and
-  `TauCeti.RealProjectiveSpace.homotopyGroupPiMulEquiv` is its `π_(k + 2)` form.
-* `TauCeti.RealProjectiveSpace.nonempty_homotopyGroupMulEquiv_sphere`: for `1 ≤ n` the same
-  isomorphism at an arbitrary base point of `RPⁿ` and an arbitrary base point of `Sⁿ`.
+* `TauCeti.RealProjectiveSpace.sphereHomotopyGroupMulEquiv`: **the antipodal covering induces
+  `π_N(Sⁿ, y) ≃* π_N(RPⁿ, ⟦y⟧)`** for an index type with at least two elements.
+* `TauCeti.RealProjectiveSpace.nonempty_homotopyGroupMulEquiv_sphere`: the same isomorphism at
+  an arbitrary base point of `RPⁿ` and an arbitrary base point of `Sⁿ`.
 * `TauCeti.RealProjectiveSpace.Line.subsingleton_homotopyGroup`: **every higher homotopy group
   of `RP¹` is trivial**, with `TauCeti.RealProjectiveSpace.Line.homotopyGroup_eq_one` and
   `TauCeti.RealProjectiveSpace.Line.homotopyGroupPi_eq_one` the equality forms.
@@ -58,43 +59,27 @@ variable {N : Type*} [DecidableEq N] [Nontrivial N] (n : ℕ)
 /-- **The antipodal covering identifies the higher homotopy groups of `Sⁿ` and of `RPⁿ`.**
 Postcomposition with the quotient map `Sⁿ → RPⁿ` is an isomorphism `π_N(Sⁿ, y) ≃* π_N(RPⁿ, ⟦y⟧)`
 whenever the index type `N` has at least two elements. -/
-def homotopyGroupMulEquiv (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+def sphereHomotopyGroupMulEquiv (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
     HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) y ≃*
       HomotopyGroup N (RealProjectiveSpace n) (mk n y) :=
   (isCoveringMap_mk n).homotopyGroupMulEquiv y
 
 @[simp]
-theorem homotopyGroupMulEquiv_apply (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
+theorem sphereHomotopyGroupMulEquiv_apply (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
     (a : HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) y) :
-    homotopyGroupMulEquiv n y a =
+    sphereHomotopyGroupMulEquiv n y a =
       HomotopyGroup.map (⟨mk n, continuous_mk n⟩ : C(_, RealProjectiveSpace n)) rfl a :=
   (isCoveringMap_mk n).homotopyGroupMulEquiv_apply y a
 
-/-- The `π_(k + 2)` form of `TauCeti.RealProjectiveSpace.homotopyGroupMulEquiv`. -/
-def homotopyGroupPiMulEquiv (k : ℕ) (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
-    π_ (k + 2) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) y ≃*
-      π_ (k + 2) (RealProjectiveSpace n) (mk n y) :=
-  homotopyGroupMulEquiv n y
-
-@[simp]
-theorem homotopyGroupPiMulEquiv_apply (k : ℕ)
-    (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-    (a : π_ (k + 2) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) y) :
-    homotopyGroupPiMulEquiv n k y a =
-      HomotopyGroup.map (⟨mk n, continuous_mk n⟩ : C(_, RealProjectiveSpace n)) rfl a :=
-  (isCoveringMap_mk n).homotopyGroupMulEquiv_apply y a
-
-/-- **The higher homotopy groups of `RPⁿ` are those of `Sⁿ`, at any base points.** For `1 ≤ n`
-both spaces are path connected, so the base points of the previous isomorphism may be chosen
-independently. -/
-theorem nonempty_homotopyGroupMulEquiv_sphere [Finite N] (hn : 1 ≤ n)
+/-- **The higher homotopy groups of `RPⁿ` are those of `Sⁿ`, at any base points.** Real
+projective space is path connected in every dimension, so the base point on the projective side
+may be moved freely; no hypothesis on `n` is needed. -/
+theorem nonempty_homotopyGroupMulEquiv_sphere [Finite N]
     (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (x : RealProjectiveSpace n) :
     Nonempty (HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) y ≃*
       HomotopyGroup N (RealProjectiveSpace n) x) := by
-  obtain ⟨y', rfl⟩ := mk_surjective n x
-  have := pathConnectedSpace_sphere n hn
-  obtain ⟨φ⟩ := TauCeti.nonempty_homotopyGroupMulEquiv (N := N) (x := y) (y := y')
-  exact ⟨φ.trans (homotopyGroupMulEquiv n y')⟩
+  obtain ⟨φ⟩ := TauCeti.nonempty_homotopyGroupMulEquiv (N := N) (x := mk n y) (y := x)
+  exact ⟨(sphereHomotopyGroupMulEquiv n y).trans φ⟩
 
 end
 
@@ -102,12 +87,15 @@ namespace Line
 
 variable {N : Type*} [Nontrivial N] (x : RealProjectiveSpace 1)
 
-/-- **Every higher homotopy group of the real projective line is trivial.** It is transported
-from the circle along `TauCeti.RealProjectiveSpace.Line.homeomorphCircle`. -/
+/-- **Every higher homotopy group of the real projective line is trivial.** The projective line
+is covered by the unit circle of `EuclideanSpace ℝ (Fin 2)`, whose higher homotopy groups
+vanish. -/
 instance subsingleton_homotopyGroup :
-    Subsingleton (HomotopyGroup N (RealProjectiveSpace 1) x) :=
-  (HomotopyGroup.homeomorphEquiv (N := N) homeomorphCircle x).subsingleton_congr.mpr
-    inferInstance
+    Subsingleton (HomotopyGroup N (RealProjectiveSpace 1) x) := by
+  classical
+  obtain ⟨y, rfl⟩ := mk_surjective 1 x
+  exact (sphereHomotopyGroupMulEquiv 1 y).toEquiv.subsingleton_congr.mp
+    (EuclideanSpace.subsingleton_homotopyGroup_sphere y)
 
 /-- Every higher homotopy class of the real projective line is the identity. -/
 theorem homotopyGroup_eq_one [DecidableEq N]
