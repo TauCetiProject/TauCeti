@@ -62,20 +62,34 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 variable (O : Type*) [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
-/-- **The exponent of `𝔭ᵥ` in the discriminant ideal of an integral equation is the local minimal
-exponent plus twelve times the local obstruction exponent.** This is the primewise form of the
-identity `(Δ W) = 𝔇_{E/K} · 𝔍_W ^ 12`; here `d` is a global integral representative of `Δ W`. -/
+/-- **The exponent of `𝔭ᵥ` in the discriminant ideal is the local minimal exponent plus twelve
+times the local obstruction exponent.** This integer-valued identity holds for any elliptic
+equation with a global integral representative `d` of its discriminant; the equation itself need
+not be integral. -/
 theorem count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt
-    (W : WeierstrassCurve K) (v : HeightOneSpectrum O) [W.IsElliptic] [IsIntegral O W] {d : O}
+    (W : WeierstrassCurve K) (v : HeightOneSpectrum O) [W.IsElliptic] {d : O}
     (hd : algebraMap O K d = W.Δ) :
+    ((Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors : ℤ) =
+      (W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) : ℤ) +
+        12 * obstructionExponentAt O v W := by
+  have hcount := count_span_Δ_eq_ord_Δ W v hd
+  have hdef := twelve_mul_obstructionExponentAt O v W
+  omega
+
+/-- **For an equation integral at `v`, the primewise discriminant-defect identity in natural
+exponents.** Local integrality makes the obstruction exponent nonnegative, so taking `toNat`
+loses no information. -/
+theorem
+    count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt_toNat
+    (W : WeierstrassCurve K) (v : HeightOneSpectrum O) [W.IsElliptic]
+    [IsIntegral (Localization.AtPrime v.asIdeal) W] {d : O} (hd : algebraMap O K d = W.Δ) :
     (Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors =
       W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) +
         12 * (obstructionExponentAt O v W).toNat := by
-  have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
-    IsIntegral.of_isScalarTower (R := O) W
   have hnonneg := obstructionExponentAt_nonneg_of_isIntegral O v W
-  have hcount := count_span_Δ_eq_ord_Δ W v hd
-  have hdef := twelve_mul_obstructionExponentAt O v W
+  have hsplit :=
+    count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt
+      O W v hd
   omega
 
 /-- **Only finitely many local obstruction exponents of an integral equation are nonzero.**
@@ -90,8 +104,10 @@ theorem hasFiniteMulSupport_pow_obstructionExponentAt_toNat (W : WeierstrassCurv
     Submodule.span_singleton_eq_bot.mp.mt fun h =>
       W.isUnit_Δ.ne_zero (by rw [← hd, h, map_zero])
   refine Ideal.hasFiniteMulSupport_asIdeal_pow_of_le_count hspan _ fun v => ?_
+  have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
+    IsIntegral.of_isScalarTower (R := O) W
   have hsplit :=
-    count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt
+    count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt_toNat
       O W v hd
   omega
 
@@ -172,8 +188,10 @@ theorem span_Δ_eq_minimalDiscriminantIdeal_mul_weierstrassDefectIdeal_pow_twelv
       intro v
       rw [HeightOneSpectrum.maxPowDividing, ← pow_mul, ← pow_add]
       congr 1
+      have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
+        IsIntegral.of_isScalarTower (R := O) W
       have hsplit :=
-        count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt
+        count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt_toNat
           O W v hd
       omega
     _ = (∏ᶠ v : HeightOneSpectrum O,
