@@ -121,7 +121,7 @@ theorem hessianQuadraticForm_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 
   simp only [ContinuousLinearMap.coe_coe]
 
 /-- The Hessian quadratic form pulls back along a continuous linear map. -/
-theorem hessianQuadraticForm_comp_continuousLinearMap (L : F →L[ℝ] E) {b : F}
+theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp (L : F →L[ℝ] E) {b : F}
     (hf : ContDiffAt ℝ 2 f (L b)) :
     hessianQuadraticForm (f ∘ L) b = (hessianQuadraticForm f (L b)).comp L.toLinearMap := by
   ext v

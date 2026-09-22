@@ -128,7 +128,7 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv
   have hquad : hessianQuadraticForm
       (g ∘ (e.symm.toContinuousLinearMap : E' → E)) (e a) =
       (hessianQuadraticForm g (e.symm (e a))).comp e.symm.toLinearMap :=
-    hessianQuadraticForm_comp_continuousLinearMap e.symm.toContinuousLinearMap hgreg
+    e.symm.toContinuousLinearMap.hessianQuadraticForm_comp hgreg
   rw [hquad]
   simpa only [ContinuousLinearEquiv.symm_apply_apply, g, a] using
     (QuadraticMap.Equivalent.sigNeg_eq
