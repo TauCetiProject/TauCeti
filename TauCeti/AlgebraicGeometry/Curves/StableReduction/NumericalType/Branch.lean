@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
+import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -28,13 +29,6 @@ singular ([Stacks, Lemma 55.5.12](https://stacks.math.columbia.edu/tag/0C8I)). T
 the value three at the trivalent component `c₃`, two at its three neighbours and one at the three
 ends spans the kernel, so the intersection form vanishes at it, which negative definiteness on
 the vectors supported on a proper subset of the components forbids.
-
-Both proofs read the configuration as an overlapping union of five-component forks and chains,
-classified in
-`TauCeti/AlgebraicGeometry/Curves/StableReduction/NumericalType/ProperSubgraph.lean`. Neither uses
-the genera of the components, only their self-intersections. The inequalities on the
-multiplicities listed alongside the source statements are instances of
-`TauCeti.NumericalType.multiplicity_mul_intersection_le`.
 
 ## Main results
 
@@ -157,15 +151,42 @@ theorem intersection_eq_zero_of_branch_six (hcard : 7 < Fintype.card T.Component
   have hw₇ : (T.weight c₇ : ℤ) = w := hw₇'.trans hww
   have a₆₇' : T.intersection c₆ c₇ = w := by rw [a₆₇, hww]
   have z₄₇ : T.intersection c₄ c₇ = 0 := by rw [T.intersection_comm c₄ c₇]; exact z₇₄
-  -- The configuration is now the affine diagram of type `E₆` scaled by `w`, and the marks of
-  -- that diagram give an integral vector at which its intersection form vanishes.
-  have key := T.intersection_seven_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₁₆ h₁₇ h₂₃ h₂₄ h₂₅ h₂₆ h₂₇
-    h₃₄ h₃₅ h₃₆ h₃₇ h₄₅ h₄₆ h₄₇ h₅₆ h₅₇ h₆₇ (y₁ := 1) (y₂ := 2) (y₃ := 3) (y₄ := 2)
-    (y₅ := 1) (y₆ := 2) (y₇ := 1) (by omega)
-  rw [h₁, h₂, h₃, h₄, h₅, h₆, h₇, hw₁, hw₂, hw₃, hw₄, hw₅, hw₆, hw₇,
-    a₁₂, a₂₃, a₃₄, a₄₅, a₃₆, a₆₇', z₁₃, z₁₄, z₁₅, z₁₆, z₁₇, z₂₄, z₂₅, z₂₆, z₂₇,
-    z₃₅, z₃₇, z₄₆, z₄₇, z₅₆, z₅₇] at key
-  linarith
+  -- The configuration is now the affine diagram of type `E₆` scaled by `w`. Its marks give a
+  -- positive vector for which every row sum vanishes, contradicting negative definiteness.
+  let c : ℕ → T.Component := fun i ↦
+    if i = 0 then c₁ else if i = 1 then c₂ else if i = 2 then c₃ else if i = 3 then c₄
+      else if i = 4 then c₅ else if i = 5 then c₆ else c₇
+  let y : ℕ → ℤ := fun i ↦
+    if i = 0 then 1 else if i = 1 then 2 else if i = 2 then 3 else if i = 3 then 2
+      else if i = 4 then 1 else if i = 5 then 2 else 1
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) ?_ hcard (y := y) ?_
+    ⟨0, by omega, by simp [y]⟩ ?_
+  · intro i hi j hj hij
+    interval_cases i <;> interval_cases j <;>
+      simp [c, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₂₃, h₂₄, h₂₅, h₂₆, h₂₇, h₃₄,
+        h₃₅, h₃₆, h₃₇, h₄₅, h₄₆, h₄₇, h₅₆, h₅₇, h₆₇, h₁₂.symm, h₁₃.symm,
+        h₁₄.symm, h₁₅.symm, h₁₆.symm, h₁₇.symm, h₂₃.symm, h₂₄.symm, h₂₅.symm,
+        h₂₆.symm, h₂₇.symm, h₃₄.symm, h₃₅.symm, h₃₆.symm, h₃₇.symm, h₄₅.symm,
+        h₄₆.symm, h₄₇.symm, h₅₆.symm, h₅₇.symm, h₆₇.symm] at hij ⊢
+  · intro i hi
+    interval_cases i <;> norm_num [y]
+  · intro i hi
+    interval_cases i <;> norm_num [Finset.sum_range_succ, c, y] <;>
+      simp only [h₁, h₂, h₃, h₄, h₅, h₆, h₇, hw₁, hw₂, hw₃, hw₄, hw₅, hw₆, hw₇,
+        T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
+        T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁,
+        T.intersection_comm c₄ c₂, T.intersection_comm c₄ c₃,
+        T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
+        T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
+        T.intersection_comm c₆ c₁, T.intersection_comm c₆ c₂,
+        T.intersection_comm c₆ c₃, T.intersection_comm c₆ c₄,
+        T.intersection_comm c₆ c₅, T.intersection_comm c₇ c₁,
+        T.intersection_comm c₇ c₂, T.intersection_comm c₇ c₃,
+        T.intersection_comm c₇ c₄, T.intersection_comm c₇ c₅,
+        T.intersection_comm c₇ c₆, a₁₂, a₂₃, a₃₄, a₄₅, a₃₆, a₆₇', z₁₃, z₁₄,
+        z₁₅, z₁₆, z₁₇, z₂₄, z₂₅, z₂₆, z₂₇, z₃₅, z₃₇, z₄₆, z₄₇, z₅₆,
+        z₅₇] <;>
+      omega
 
 end NumericalType
 
