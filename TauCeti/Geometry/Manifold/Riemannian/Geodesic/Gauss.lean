@@ -141,8 +141,8 @@ private theorem inner_alongCurve_curveVelocity_radialVariation
     contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)
   have hbase : F 0 t ∈ (trivializationAt E (TangentSpace I) (F 0 t)).baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F 0 t)
-  have hfield := differentiableAt_sectionCoord_curveVelocity_snd
-    (f := F) (hsurface.of_le (by simp)) hbase
+  have hfield := (hsurface.of_le (by simp))
+    |>.differentiableAt_sectionCoord_curveVelocity_snd (f := F) hbase
   have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) 0 :=
     (hsurface.comp 0 (contMDiff_iff_contDiff.mpr
       (contDiff_prodMk_left (n := ∞) t)).contMDiffAt).mdifferentiableAt (by simp)
@@ -210,8 +210,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     have hDuP_inner : inner ℝ (alongCurve cov (fun q ↦ F q t) (fun q ↦ P q t) 0) (P 0 t) =
         inner ℝ v w :=
       inner_alongCurve_curveVelocity_radialVariation hF htJ
-    have hQcoord := differentiableAt_sectionCoord_curveVelocity_fst
-      (f := F) (hsurface.of_le (by simp)) hbase
+    have hQcoord := (hsurface.of_le (by simp))
+      |>.differentiableAt_sectionCoord_curveVelocity_fst (f := F) hbase
     have hPcoord : DifferentiableAt ℝ
         (sectionCoord (F := E) (F 0) (curveVelocity I (F 0)) (F 0 t)) t := by
       have hFzero : F 0 = maximalGeodesic I M p v := by
@@ -236,13 +236,11 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
       have hfun : (fun q : ℝ ↦ F q 0) = fun _ ↦ p := by
         funext q
         simp only [F, zero_smul, riemannianExp_zero]
+      have hbase : F 0 0 = p := by
+        simp only [F, zero_smul, riemannianExp_zero]
       dsimp only [Q]
+      rw [hbase]
       rw [hfun, curveVelocity_const]
-      -- `curveVelocity_const` produces the zero vector of `T_p M`, while the right-hand side is
-      -- the zero vector of `T_{F 0 0} M`.  The two base points agree (`F 0 0 = p`, by
-      -- `riemannianExp_zero`), and `TangentSpace I x` is by definition the model space `E` at
-      -- every base point `x`, so the two zeros are the same term.
-      rfl
     rw [hQzero, inner_zero_left]
   -- The preceding derivative identity makes `⟪∂ᵤ F, ∂ₜ F⟩ - t ⟨v,w⟩` constant on
   -- `[0,1]`; its value at zero is zero.

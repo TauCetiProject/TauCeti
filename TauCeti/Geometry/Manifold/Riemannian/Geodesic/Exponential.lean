@@ -244,9 +244,8 @@ theorem curveVelocity_riemannianExp_add_smul [T2Space (TangentBundle I M)]
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (v + u • w) w := by
   have hg : HasDerivAt (fun s : ℝ ↦ v + s • w) w u := by
     simpa using (hasDerivAt_id u).smul_const w |>.const_add v
-  exact curveVelocity_comp_mfderiv (f := riemannianExp I M p)
-    (g := fun s : ℝ ↦ v + s • w)
-    ((contMDiffAt_riemannianExp (I := I) (M := M) hu).mdifferentiableAt (by simp)) hg
+  exact ((contMDiffAt_riemannianExp (I := I) (M := M) hu).mdifferentiableAt (by simp))
+    |>.curveVelocity_comp_mfderiv (g := fun s : ℝ ↦ v + s • w) hg
 
 /-- The velocity of a radial curve through the exponential map is its differential in the
 radial direction. -/
@@ -254,11 +253,14 @@ theorem curveVelocity_riemannianExp_smul [T2Space (TangentBundle I M)]
     {p : M} {v : TangentSpace I p} {t : ℝ} (ht : t • v ∈ expDomain I M p) :
     curveVelocity I (fun s : ℝ ↦ riemannianExp I M p (s • v)) t =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) v := by
-  have hg : HasDerivAt (fun s : ℝ ↦ s • v) v t := by
-    simpa only [id_eq, one_smul] using (hasDerivAt_id t).smul_const v
-  exact curveVelocity_comp_mfderiv (f := riemannianExp I M p)
-    (g := fun s : ℝ ↦ s • v)
-    ((contMDiffAt_riemannianExp (I := I) (M := M) ht).mdifferentiableAt (by simp)) hg
+  have h := curveVelocity_riemannianExp_add_smul
+    (I := I) (M := M) (v := 0) (w := v) (u := t) (by simpa only [zero_add] using ht)
+  have hcurve : (fun s : ℝ ↦ riemannianExp I M p (0 + s • v)) =
+      fun s : ℝ ↦ riemannianExp I M p (s • v) := by
+    funext s
+    rw [zero_add]
+  rw [hcurve, zero_add] at h
+  exact h
 
 /-- The Riemannian exponential map is continuous at every point of its natural domain. -/
 theorem continuousAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}

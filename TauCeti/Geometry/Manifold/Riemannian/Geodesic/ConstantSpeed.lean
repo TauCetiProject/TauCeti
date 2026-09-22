@@ -27,9 +27,8 @@ directly with `curveVelocity`.
   same squared speed at any two parameters.
 * `TauCeti.Manifold.IsGeodesicCurve.norm_curveVelocity_eq`: an all-time geodesic has the same
   speed at any two parameters.
-* `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self` and
-  `TauCeti.Manifold.norm_curveVelocity_maximalGeodesic`: the squared speed and the speed of a
-  maximal geodesic are those of its initial velocity.
+* `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: the squared speed of a maximal
+  geodesic is that of its initial velocity.
 
 ## References
 
@@ -156,15 +155,6 @@ theorem inner_curveVelocity_maximalGeodesic_self [T2Space (TangentBundle I M)]
   have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.2 z.2) hgeo.initial_eq
   rw [curveVelocityWithin_of_mem_nhds hzero_nhds] at hinitial
   exact hsquared.trans hinitial
-
-/-- The speed of a maximal geodesic equals the norm of its initial velocity at every point of its
-maximal interval. -/
-theorem norm_curveVelocity_maximalGeodesic [T2Space (TangentBundle I M)]
-    {p : M} {v : TangentSpace I p} {t : ℝ}
-    (ht : t ∈ geodesicInterval I M p v) :
-    ‖curveVelocity I (maximalGeodesic I M p v) t‖ = ‖v‖ := by
-  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
-    inner_curveVelocity_maximalGeodesic_self ht]
 
 end TauCeti.Manifold
 

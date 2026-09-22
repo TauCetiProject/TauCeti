@@ -38,8 +38,8 @@ first-variation formula for the energy of a curve.
   formula for the field of first-parameter velocities along a second-parameter curve is the
   classical expression `∂²f/∂v∂u + Γ (∂f/∂u, ∂f/∂v)`, and symmetrically with the two parameters
   exchanged.
-* `TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity_fst` and
-  `TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity_snd`: the corresponding
+* `ContMDiffAt.differentiableAt_sectionCoord_curveVelocity_fst` and
+  `ContMDiffAt.differentiableAt_sectionCoord_curveVelocity_snd`: the corresponding
   coordinate readings are differentiable when the surface is `C²`.
 * `CovariantDerivative.alongCurve_curveVelocity_comm`: **the symmetry lemma**, that for a
   torsion-free connection the two mixed covariant derivatives of a `C²` parametrized surface
@@ -185,9 +185,10 @@ theorem alongCurve_curveVelocity_comm
 
 end CovariantDerivative
 
-namespace TauCeti.Manifold
+namespace ContMDiffAt
 
 open CovariantDerivative
+open TauCeti.Manifold
 
 variable
   {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -219,7 +220,7 @@ theorem differentiableAt_sectionCoord_curveVelocity_fst [IsManifold I 2 M]
       fun r ↦ fderiv 𝕜 (fun z : 𝕜 × 𝕜 ↦ extChartAt I x (f z.1 z.2))
         (u, r) ((1 : 𝕜), 0) := by
     simpa only [timeFDeriv_eq] using
-      deriv_parameterCurve_eventuallyEq_timeFDeriv (hchart.of_le (by norm_num))
+      (hchart.of_le (by norm_num)).deriv_parameterCurve_eventuallyEq_timeFDeriv
   exact (hpartial.congr_of_eventuallyEq heq).congr_of_eventuallyEq hcoord
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
@@ -231,9 +232,10 @@ theorem differentiableAt_sectionCoord_curveVelocity_snd [IsManifold I 2 M]
     (hx : f u v ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     DifferentiableAt 𝕜 (sectionCoord (F := E) (fun q ↦ f q v)
       (fun q ↦ curveVelocity I (f q) v) x) u :=
-  differentiableAt_sectionCoord_curveVelocity_fst (f := fun a b ↦ f b a)
+  (hf.comp (v, u) (contMDiff_iff_contDiff.mpr
+    (by fun_prop : ContDiff 𝕜 2 fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt)
+  |>.differentiableAt_sectionCoord_curveVelocity_fst (f := fun a b ↦ f b a)
     (u := v) (v := u) (x := x)
-    (hf.comp (v, u) (contMDiff_iff_contDiff.mpr
-      (by fun_prop : ContDiff 𝕜 2 fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt) hx
+    hx
 
-end TauCeti.Manifold
+end ContMDiffAt
