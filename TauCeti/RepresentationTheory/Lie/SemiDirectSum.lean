@@ -22,9 +22,10 @@ quotient algebra `U(S) ⧸ J` a representation of the semidirect sum `S ⋊⁅ψ
 
 An element of `S` acts by left multiplication by its canonical generator, and an element of `H`
 acts by the derivation of `U(S) ⧸ J` that `(ψ z)ᵁ` descends to. Three commutator identities make
-this a Lie homomorphism, one for each pair of summands: two multiplications commute up to the
-multiplication by their bracket, two lifted derivations up to the lifted derivation of their
-bracket, and -- the identity that produces the twist -- a derivation and a multiplication satisfy
+this a Lie homomorphism, one for each pair of summands. Two of them are the bracket laws of the
+two halves themselves -- multiplication by `ι` and the descended lift are each Lie homomorphisms
+-- and the third, the identity that produces the twist, says that a derivation and a
+multiplication satisfy
 
 `⁅Dᵁ, ι y · -⁆ = ι (D y) · -`,
 
@@ -45,10 +46,8 @@ of `S` acts by zero exactly when `ι y ∈ J`.
 ## Main results
 
 * `TauCeti.semiDirectEnvelopingRep_apply_mk`: the action, on a class of `U(S) ⧸ J`.
-* `TauCeti.lie_semiDirectEnvelopingRep_inl_inl`,
-  `TauCeti.lie_semiDirectEnvelopingRep_inr_inr` and
-  `TauCeti.lie_semiDirectEnvelopingRep_inr_inl`: the three commutator identities, one for each
-  pair of summands.
+* `TauCeti.lie_semiDirectEnvelopingRep_inr_inl`: the mixed commutator identity, the one of the
+  three that is not the bracket law of a single summand.
 * `TauCeti.semiDirectEnvelopingRep_comp_inl`: the construction extends the left-regular
   representation of `S` on `U(S) ⧸ J`.
 * `TauCeti.inl_mem_ker_semiDirectEnvelopingRep_iff`: **kernel control**, `y : S` acts by zero
@@ -252,24 +251,7 @@ theorem semiDirectEnvelopingRep_inr_apply_mk (z : H) (a : U) :
         ((UniversalEnvelopingAlgebra.envelopingDerivation R S (ψ z) : Module.End R U) a) := by
   rw [semiDirectEnvelopingRep_inr, envelopingQuotientDer_apply_mk]
 
-/-! ### The commutator identities -/
-
-/-- **Two multiplication operators.** The ideal summand acts by a Lie homomorphism, so the
-bracket of two multiplications is the multiplication by the bracket. -/
-theorem lie_semiDirectEnvelopingRep_inl_inl (y₁ y₂ : S) :
-    ⁅semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inl ψ y₁),
-        semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inl ψ y₂)⁆
-      = semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inl ψ ⁅y₁, y₂⁆) := by
-  rw [← LieHom.map_lie, ← LieHom.map_lie]
-
-/-- **Two lifted derivations.** Descending the lift of a Lie derivation is a homomorphism of Lie
-algebras at each of its two stages, so the bracket of two lifted derivations is the lift attached
-to the bracket. -/
-theorem lie_semiDirectEnvelopingRep_inr_inr (z₁ z₂ : H) :
-    ⁅semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inr ψ z₁),
-        semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inr ψ z₂)⁆
-      = semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inr ψ ⁅z₁, z₂⁆) := by
-  rw [← LieHom.map_lie, ← LieHom.map_lie]
+/-! ### The mixed commutator identity -/
 
 /-- **A lifted derivation against a multiplication.** This is the identity that produces the
 twist: differentiating a product and cancelling the summand in which the multiplier is untouched
@@ -285,7 +267,7 @@ theorem lie_semiDirectEnvelopingRep_inr_inl (z : H) (y : S) :
 
 /-- The complementary summand acts by **derivations** of the quotient algebra, where the ideal
 summand acts by **multiplications**; this is the shape of the construction, and it is what the
-three commutator identities above are computing. -/
+commutator identities are computing. -/
 theorem semiDirectEnvelopingRep_inr_mem_derivationLieAlgebra (z : H) :
     semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inr ψ z)
       ∈ derivationLieAlgebra R (U ⧸ J) := by
