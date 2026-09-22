@@ -86,7 +86,6 @@ theorem coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltrati
 
 /-- The value in `L` of the action on a step of the unit filtration is obtained by applying the
 automorphism. -/
-@[simp]
 theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltration L i) :
     (((σ • x : unitFiltration L i) : Lˣ) : L) = σ ((x : Lˣ) : L) :=
   (rfl)
