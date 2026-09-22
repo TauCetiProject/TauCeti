@@ -19,9 +19,9 @@ that preserve the pair `{0, 1}`. Its stabilizer is the intransitive subgroup
 `(3 4)`. The orbit consists of the ten sums `xᵢ + xⱼ` indexed by unordered pairs of distinct
 indices, so the associated resolvent has degree ten.
 
-This is the basic linear-resolvent example: specializing the universal specification at a
-quintic produces the polynomial whose roots are the pairwise sums of the roots, whenever those
-roots are enumerated in a splitting extension.
+This is the basic linear-resolvent example: specializing the universal specification at a monic
+quintic of degree five produces the polynomial whose roots are the pairwise sums of the roots,
+whenever those roots are enumerated in a splitting extension.
 
 ## Main definitions
 
