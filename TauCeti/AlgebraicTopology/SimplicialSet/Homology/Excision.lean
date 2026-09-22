@@ -98,16 +98,6 @@ private lemma ι_relativeChainComplexXIso_inv (P : SSetPair.{w}) (n : ℕ)
     sigmaConstCokernelCofork_π_relativeChainComplexXIso_inv]
   rfl
 
-omit [Preadditive C] in
-@[reassoc]
-private lemma ι_reindex_relativeSimplexEquiv (n : ℕ) (x : P.RelativeSimplex n) :
-    Sigma.ι (fun (_ : P.RelativeSimplex n) ↦ R) x ≫
-        (Sigma.reindex (e n) (fun _ ↦ R)).hom =
-      Sigma.ι (fun (_ : P'.RelativeSimplex n) ↦ R) (e n x) := by
-  change Sigma.ι ((fun (_ : P'.RelativeSimplex n) ↦ R) ∘ e n) x ≫
-      (Sigma.reindex (e n) (fun _ ↦ R)).hom = _
-  exact Sigma.ι_reindex_hom (e n) (fun (_ : P'.RelativeSimplex n) ↦ R) x
-
 @[reassoc]
 private lemma chainComplexπ_f_comp_chainComplexMap_f (n : ℕ) :
     (P.chainComplexπ R).f n ≫ (SSetPair.chainComplexMap f R).f n =
@@ -140,15 +130,12 @@ private lemma chainComplexMap_f_eq (n : ℕ) :
       rw [← SSet.ι_chainComplexMap_f, Category.assoc,
         P.chainComplex_condition_f, comp_zero]
     rw [← Category.assoc, hz, zero_comp]
-  · have hx' : f.right.app (Opposite.op (SimplexCategory.mk n)) x ∉
-        Set.range (P'.hom.app (Opposite.op (SimplexCategory.mk n))) := by
-      intro hmem
-      apply (e n ⟨x, hx⟩).2
-      rw [he n ⟨x, hx⟩]
-      exact hmem
-    rw [ιChainComplex_chainComplexπ_f_relativeChainComplexXIso_hom_assoc R P n x hx,
-      ι_reindex_relativeSimplexEquiv_assoc, ι_relativeChainComplexXIso_inv]
-    rw [← he n ⟨x, hx⟩]
+  · rw [ιChainComplex_chainComplexπ_f_relativeChainComplexXIso_hom_assoc R P n x hx,
+      ← he n ⟨x, hx⟩, ← ι_relativeChainComplexXIso_inv R P' n (e n ⟨x, hx⟩)]
+    -- The constant family `fun _ ↦ R` on `P.RelativeSimplex n` is the composite of the one on
+    -- `P'.RelativeSimplex n` with `e n` only up to unfolding `Function.comp`, so Mathlib's
+    -- reindexing lemma has to be applied as a term rather than rewritten with.
+    exact (Sigma.ι_reindex_hom_assoc (e n) (fun (_ : P'.RelativeSimplex n) ↦ R) ⟨x, hx⟩ _).symm
 
 include e he
 
