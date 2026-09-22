@@ -192,8 +192,8 @@ theorem infiniteGraphLawOfArray_law
     (infiniteGraphLawOfArray ρ).law = graphLawOfArray ρ.1 :=
   (rfl)
 
-/-- The array law of the bundled graph law of an array law is the array law. -/
-@[simp]
+/-- The array law of the bundled graph law of an array law is the array law; `simp` reaches it
+through `infiniteGraphLawOfArray_law` and `arrayLaw_graphLawOfArray`. -/
 theorem arrayLaw_infiniteGraphLawOfArray
     (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
       ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
