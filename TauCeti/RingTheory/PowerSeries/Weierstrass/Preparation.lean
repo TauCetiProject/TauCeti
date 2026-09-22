@@ -85,8 +85,8 @@ theorem isDistinguished_zero_of_isUnit (hc : 0 < c)
     intro h
     rw [h, mul_zero] at hxy'
     exact zero_ne_one hxy'
-  obtain ⟨i, hi⟩ := exists_isDistinguished hc (mem_isRestricted_subring_iff.mp x.2) hx0
-  obtain ⟨j, hj⟩ := exists_isDistinguished hc (mem_isRestricted_subring_iff.mp y.2) hy0
+  obtain ⟨i, hi⟩ := exists_isDistinguished hc x.2 hx0
+  obtain ⟨j, hj⟩ := exists_isDistinguished hc y.2 hy0
   -- The dominant coefficient of the product `x * y = 1` sits in degree `i + j`.
   have hdom := hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc
   rw [hxy'] at hdom
@@ -130,10 +130,10 @@ theorem isUnit_iff_isDistinguished_zero [CompleteSpace K] (hc : 0 < c)
   refine ⟨isDistinguished_zero_of_isUnit hc, fun hx ↦ ?_⟩
   -- Dividing `1` by `x` leaves a remainder vanishing in every degree.
   obtain ⟨q, r, hq, hr, hqr⟩ :=
-    hx.exists_mul_add_eq hc (mem_isRestricted_subring_iff.mp x.2) (PowerSeries.isRestricted_one c)
+    hx.exists_mul_add_eq hc x.2 (PowerSeries.isRestricted_one c)
   have hr0 : r = 0 := PowerSeries.ext fun m ↦ by rw [hr m (Nat.zero_le m), map_zero]
   rw [hr0, add_zero] at hqr
-  refine IsUnit.of_mul_eq_one ⟨q, mem_isRestricted_subring_iff.mpr hq⟩ (Subtype.ext ?_)
+  refine IsUnit.of_mul_eq_one ⟨q, hq⟩ (Subtype.ext ?_)
   rw [Subring.coe_mul, Subring.coe_one, mul_comm]
   exact hqr
 
@@ -186,16 +186,17 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K]
   have hωc : (ω : PowerSeries K) = PowerSeries.X ^ s - r := by
     rw [hω, Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_X, hpc]
   have hωq : (ω : PowerSeries K) = q * f := by rw [hωc, ← hqr]; ring
-  have hωs : ω.coeff s = 1 := by
-    rw [hω, Polynomial.coeff_sub, Polynomial.coeff_X_pow, ite_eq_left rfl,
-      PowerSeries.coeff_trunc, ite_eq_right (lt_irrefl s), sub_zero]
-  have hωgt : ∀ m, s < m → ω.coeff m = 0 := fun m hm ↦ by
-    rw [hω, Polynomial.coeff_sub, Polynomial.coeff_X_pow, ite_eq_right (by omega : ¬(m = s)),
-      PowerSeries.coeff_trunc, ite_eq_right (by omega : ¬(m < s)), sub_zero]
-  have hωdeg : ω.natDegree ≤ s := Polynomial.natDegree_le_iff_coeff_eq_zero.mpr hωgt
+  have hωm : ω.IsMonicOfDegree s := by
+    rcases s with _ | s
+    · simp [hω]
+    · simpa [Nat.succ_eq_add_one] using
+        (Polynomial.isMonicOfDegree_X_pow K (s + 1)).sub
+          (PowerSeries.natDegree_trunc_lt r s)
   -- `ω` is distinguished of degree `s`: its leading coefficient `1` dominates.
   have hcs : ‖(ω : PowerSeries K).coeff s‖ * c ^ s = c ^ s := by
-    rw [Polynomial.coeff_coe, hωs, norm_one, one_mul]
+    rw [Polynomial.coeff_coe,
+      hωm.coeff_eq (Polynomial.isMonicOfDegree_X_pow K s) le_rfl,
+      Polynomial.coeff_X_pow, ite_eq_left rfl, norm_one, one_mul]
   have hbound : ∀ m, ‖(ω : PowerSeries K).coeff m‖ * c ^ m ≤ c ^ s := fun m ↦ by
     rcases eq_or_ne m s with rfl | hm
     · exact hcs.le
@@ -207,7 +208,9 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K]
     rw [gaussNorm_eq_of_forall_le (s := s) fun m ↦ (hbound m).trans hcs.ge, hcs]
   have hωd : IsDistinguished c s (ω : PowerSeries K) :=
     ⟨by rw [hcs, hωnorm], fun m hm ↦ by
-      rw [Polynomial.coeff_coe, hωgt m hm, norm_zero, zero_mul, hωnorm]
+      rw [Polynomial.coeff_coe,
+        hωm.coeff_eq (Polynomial.isMonicOfDegree_X_pow K s) hm.le,
+        Polynomial.coeff_X_pow, ite_eq_right hm.ne', norm_zero, zero_mul, hωnorm]
       exact pow_pos hc s⟩
   -- Comparing distinguished degrees in `ω = q * f` makes `q` distinguished of degree `0`.
   have hq0 : q ≠ 0 := by
@@ -222,12 +225,10 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K]
     omega
   rw [hn0] at hn
   obtain ⟨e, he⟩ :=
-    ((isUnit_iff_isDistinguished_zero hc ⟨q, mem_isRestricted_subring_iff.mpr hq⟩).mpr
-      hn).exists_right_inv
+    ((isUnit_iff_isDistinguished_zero hc ⟨q, hq⟩).mpr hn).exists_right_inv
   have hcoe : q * (e : PowerSeries K) = 1 := by
     simpa using congrArg (Subring.subtype _) he
-  refine ⟨e, ω, IsUnit.of_mul_eq_one_right _ he,
-    (Polynomial.isMonicOfDegree_iff ω s).mpr ⟨hωdeg, hωs⟩, ?_⟩
+  refine ⟨e, ω, IsUnit.of_mul_eq_one_right _ he, hωm, ?_⟩
   calc (e : PowerSeries K) * (ω : PowerSeries K) = q * (e : PowerSeries K) * f := by
         rw [hωq]; ring
     _ = f := by rw [hcoe, one_mul]
@@ -252,19 +253,13 @@ theorem IsDistinguished.eq_and_eq_of_mul_eq_mul (hf : IsDistinguished c s f) (hc
       * (ω : PowerSeries K) = (ω' : PowerSeries K) := by
     rw [Subring.coe_mul, mul_assoc, h, ← h', ← mul_assoc, mul_comm (v : PowerSeries K), hv',
       one_mul]
-  obtain ⟨hdeg, hone⟩ := (Polynomial.isMonicOfDegree_iff ω s).mp hω
-  obtain ⟨hdeg', hone'⟩ := (Polynomial.isMonicOfDegree_iff ω' s).mp hω'
   have hdiff : ∀ m, s ≤ m → ((ω' : PowerSeries K) - (ω : PowerSeries K)).coeff m = 0 := by
     intro m hm
-    rw [map_sub, Polynomial.coeff_coe, Polynomial.coeff_coe]
-    rcases eq_or_lt_of_le hm with rfl | hlt
-    · rw [hone, hone', sub_self]
-    · rw [Polynomial.coeff_eq_zero_of_natDegree_lt (hdeg'.trans_lt hlt),
-        Polynomial.coeff_eq_zero_of_natDegree_lt (hdeg.trans_lt hlt), sub_self]
+    rw [map_sub, Polynomial.coeff_coe, Polynomial.coeff_coe, hω'.coeff_eq hω hm, sub_self]
   obtain ⟨hq1, hr1⟩ := hωd.eq_and_eq_of_mul_add_eq_mul_add hc
     (q := ((v * e : PowerSeries.IsRestricted.subring (R := K) c) : PowerSeries K)) (r := 0)
     (q' := 1) (r' := (ω' : PowerSeries K) - (ω : PowerSeries K))
-    (mem_isRestricted_subring_iff.mp (v * e).2) (PowerSeries.isRestricted_one c)
+    (v * e).2 (PowerSeries.isRestricted_one c)
     (fun m _ ↦ by simp) hdiff (by rw [hquot]; ring)
   refine ⟨?_, (Polynomial.coe_inj.mp (sub_eq_zero.mp hr1.symm)).symm⟩
   -- The quotient `v * e` is `1`, so `e` and `e'` are the same inverse of `v`.
