@@ -29,6 +29,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
   belongs to `S'`.
+* `TauCeti.Ideal.sup_pow_le_sup_pow_right`: modulo a two-sided ideal `I`, powers of
+  `I ⊔ J` are controlled by the corresponding power of the two-sided ideal `J`.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: a subalgebra meeting every
   residue class modulo a principal ideal and containing a generator of it meets every residue
   class modulo each power of that ideal.
@@ -100,6 +102,37 @@ theorem span_insert_eq_top_of_subset (hsub : S ⊆ insert a S')
 end Span
 
 end Ideal
+
+namespace TauCeti
+
+universe u
+
+/-- For two-sided ideals, the `n`-th power of a supremum is contained in the first ideal
+plus the `n`-th power of the second. -/
+theorem Ideal.sup_pow_le_sup_pow_right {R : Type u} [Semiring R] (I J : Ideal R)
+    [I.IsTwoSided] [J.IsTwoSided] (n : ℕ) :
+    (I ⊔ J) ^ n ≤ I ⊔ J ^ n := by
+  let : (I ⊔ J).IsTwoSided :=
+    ⟨fun b ha ↦ by
+      obtain ⟨i, hi, j, hj, rfl⟩ := Submodule.mem_sup.mp ha
+      rw [add_mul]
+      exact Submodule.add_mem _ (Ideal.mem_sup_left (I.mul_mem_right b hi))
+        (Ideal.mem_sup_right (J.mul_mem_right b hj))⟩
+  induction n with
+  | zero =>
+      rw [Submodule.pow_zero, Submodule.pow_zero]
+      exact le_sup_right
+  | succ n ih =>
+      rw [Ideal.IsTwoSided.pow_succ (I := I ⊔ J),
+        Ideal.IsTwoSided.pow_succ (I := J)]
+      refine (Ideal.mul_mono_right ih).trans ?_
+      rw [Ideal.mul_sup, Ideal.sup_mul, Ideal.sup_mul]
+      exact sup_le
+        (sup_le (Ideal.mul_le_left.trans le_sup_left)
+          (Ideal.mul_le_right.trans le_sup_left))
+        (sup_le (Ideal.mul_le_left.trans le_sup_left) le_sup_right)
+
+end TauCeti
 
 namespace Subalgebra
 
