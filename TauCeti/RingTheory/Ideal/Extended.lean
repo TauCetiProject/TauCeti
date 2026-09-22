@@ -66,7 +66,7 @@ namespace Ideal
 
 section Span
 
-variable {A : Type*} [Ring A] {S : Set A}
+variable {A : Type*} [Semiring A] {S : Set A}
 
 /-- A left ideal spanned by central elements is two-sided. -/
 theorem isTwoSided_span_of_subset_center (hS : S ⊆ Set.center A) :
