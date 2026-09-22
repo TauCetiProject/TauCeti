@@ -105,103 +105,70 @@ private theorem integrable_id_studentTMeasure_of_one_lt (hν : 1 < ν) :
     (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)))
   exact h.congr (ae_of_all _ fun x => by ring)
 
-private theorem studentTPDFReal_tail_lower_bound (hν : 0 < ν) (q : ℕ)
-    (hνq : ν ≤ (q : ℝ)) :
-    ∀ᶠ x : ℝ in atTop,
-      (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2))) *
-          (1 + ν⁻¹) ^ (-(((q : ℝ) + 1) / 2)) * x⁻¹ ≤
-        x ^ q * studentTPDFReal ν x := by
-  filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
-  have hx0 : 0 < x := zero_lt_one.trans_le hx
-  -- On the right tail, compare the kernel base with a constant multiple of `x²`, then use
-  -- `ν ≤ q` to compare the two negative exponents.
-  have hbase_pos : 0 < 1 + x ^ 2 / ν := by positivity
-  have hbase_one : 1 ≤ 1 + x ^ 2 / ν :=
-    le_add_of_nonneg_right (div_nonneg (sq_nonneg x) hν.le)
-  have hconst_pos : 0 < 1 + ν⁻¹ := by positivity
-  have hdensity_pos :
-      0 < Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)) :=
-    studentT_const_pos hν
-  have hbase_le : 1 + x ^ 2 / ν ≤ (1 + ν⁻¹) * x ^ 2 := by
-    have hx_sq : 1 ≤ x ^ 2 := (one_le_sq_iff₀ hx0.le).2 hx
-    rw [div_eq_mul_inv]
-    nlinarith [mul_nonneg (zero_le_one.trans hx_sq) (inv_nonneg.mpr hν.le)]
-  have hexp : -(((q : ℝ) + 1) / 2) ≤ -((ν + 1) / 2) := by
-    norm_num at hνq ⊢
-    linarith
-  have hpow₁ : (1 + x ^ 2 / ν) ^ (-(((q : ℝ) + 1) / 2)) ≤
-      (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2)) :=
-    Real.rpow_le_rpow_of_exponent_le hbase_one hexp
-  have hpow₂ : ((1 + ν⁻¹) * x ^ 2) ^ (-(((q : ℝ) + 1) / 2)) ≤
-      (1 + x ^ 2 / ν) ^ (-(((q : ℝ) + 1) / 2)) :=
-    Real.rpow_le_rpow_of_nonpos hbase_pos hbase_le (by
-      have hq : 0 ≤ (q : ℝ) := Nat.cast_nonneg q
-      linarith)
-  -- Splitting the comparison kernel exposes exactly `x ^ q * x ^ (-(q + 1)) = x⁻¹`.
-  have hsplit : ((1 + ν⁻¹) * x ^ 2) ^ (-(((q : ℝ) + 1) / 2)) =
-      (1 + ν⁻¹) ^ (-(((q : ℝ) + 1) / 2)) * x ^ (-((q : ℝ) + 1)) := by
-    rw [Real.mul_rpow hconst_pos.le (sq_nonneg x), ← Real.rpow_two x,
-      ← Real.rpow_mul hx0.le]
-    congr 2
-    ring
-  have hxpow : x ^ (q : ℝ) * x ^ (-((q : ℝ) + 1)) = x⁻¹ := by
-    rw [← Real.rpow_add hx0]
-    have hexponent : (q : ℝ) + -((q : ℝ) + 1) = -1 := by ring
-    rw [hexponent, Real.rpow_neg_one]
-  rw [studentTPDFReal_of_pos hν]
-  calc
-    (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2))) *
-          (1 + ν⁻¹) ^ (-(((q : ℝ) + 1) / 2)) * x⁻¹ =
-        (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2))) *
-          (x ^ q * ((1 + ν⁻¹) * x ^ 2) ^ (-(((q : ℝ) + 1) / 2))) := by
-            rw [hsplit, ← Real.rpow_natCast x q, ← hxpow]
-            ring
-    _ ≤ (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2))) *
-          (x ^ q * (1 + x ^ 2 / ν) ^ (-(((q : ℝ) + 1) / 2))) := by
-            exact mul_le_mul_of_nonneg_left
-              (mul_le_mul_of_nonneg_left hpow₂ (pow_nonneg hx0.le q)) hdensity_pos.le
-    _ ≤ x ^ q *
-          (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)) *
-            (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2))) := by
-            calc
-              _ ≤ (Real.Gamma ((ν + 1) / 2) /
-                    (√(ν * π) * Real.Gamma (ν / 2))) *
-                  (x ^ q * (1 + x ^ 2 / ν) ^ (-((ν + 1) / 2))) :=
-                mul_le_mul_of_nonneg_left
-                  (mul_le_mul_of_nonneg_left hpow₁ (pow_nonneg hx0.le q))
-                  hdensity_pos.le
-              _ = _ := by ring
-    _ = _ := by ring
+/-- The beta kernel is integrable on the positive half-line precisely for `-1 < q < ν`: the
+exponent at `0` is `(q - 1) / 2` and the tail exponent is `(q - ν - 2) / 2`. -/
+private lemma integrableOn_studentTBetaKernel_Ioi_iff (hq : -1 < q) :
+    IntegrableOn (studentTBetaKernel ν q) (Ioi (0 : ℝ)) ↔ q < ν := by
+  have h := integrableOn_rpow_mul_one_add_rpow_iff
+    (a := (q + 1) / 2) (b := (ν - q) / 2) (by linarith)
+  have hleft : (q + 1) / 2 - 1 = (q - 1) / 2 := by ring
+  have hsum : (q + 1) / 2 + (ν - q) / 2 = (ν + 1) / 2 := by ring
+  have htail : 0 < (ν - q) / 2 ↔ q < ν := by
+    constructor <;> intro hh <;> linarith
+  simpa only [studentTBetaKernel, hleft, hsum, htail] using h
+
+/-- The weighted Student t density `studentTPDFReal ν x * x ^ q` is integrable on the positive
+half-line exactly for `-1 < q < ν`. -/
+private theorem integrableOn_pow_mul_studentTPDFReal_Ioi_iff (hν : 0 < ν) (hq : -1 < q) :
+    IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) ↔ q < ν := by
+  set C := Real.Gamma ((ν + 1) / 2) / (Real.sqrt (ν * Real.pi) * Real.Gamma (ν / 2))
+  let g : ℝ → ℝ := fun w => C * ν ^ ((q + 1) / 2) / 2 * studentTBetaKernel ν q w
+  have hderiv : ∀ z ∈ Ioi (0 : ℝ),
+      HasDerivWithinAt (fun z : ℝ => z ^ 2 / ν) (2 * z / ν) (Ioi (0 : ℝ)) z :=
+    fun z _ => (hasDerivAt_sq_div_const ν z).hasDerivWithinAt
+  have hiff : IntegrableOn g (Ioi (0 : ℝ)) ↔
+      IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
+    have himg0 : (fun z : ℝ => z ^ 2 / ν) '' Ioi (0 : ℝ) = Ioi (0 ^ 2 / ν) :=
+      image_sq_div_const_Ioi hν (y := 0) le_rfl
+    have himg : (fun z : ℝ => z ^ 2 / ν) '' Ioi (0 : ℝ) = Ioi (0 : ℝ) := by
+      rw [himg0]
+      simp
+    have h_g_eq : ∀ z : ℝ, 0 < z → |2 * z / ν| • g (z ^ 2 / ν) =
+        studentTPDFReal ν z * z ^ q := by
+      intro z hz
+      simpa [g] using abs_deriv_smul_studentTPDFReal hν q hz
+    have h_g_eq' : EqOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν))
+        (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
+      intro z hz
+      exact h_g_eq z hz
+    have himg1 : IntegrableOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν)) (Ioi (0 : ℝ)) ↔
+        IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
+      refine ⟨fun h => h.congr_fun h_g_eq' measurableSet_Ioi,
+        fun h => h.congr_fun (fun z hz => (h_g_eq' hz).symm) measurableSet_Ioi⟩
+    have hpre : IntegrableOn g ((fun z : ℝ => z ^ 2 / ν) '' Ioi (0 : ℝ)) ↔
+        IntegrableOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν)) (Ioi (0 : ℝ)) :=
+      integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi hderiv
+        (injOn_sq_div_const_Ioi hν.ne') g
+    rw [himg] at hpre
+    exact hpre.trans himg1
+  have hC_ne : C ≠ 0 := (studentT_const_pos hν).ne'
+  have hc : IsUnit (C * ν ^ ((q + 1) / 2) / 2) := isUnit_iff_ne_zero.mpr <|
+    div_ne_zero (mul_ne_zero hC_ne (Real.rpow_pos_of_pos hν _).ne') (by norm_num)
+  rw [← hiff]
+  simpa [g, IntegrableOn, integrable_const_mul_iff hc] using
+    integrableOn_studentTBetaKernel_Ioi_iff hq
 
 private theorem not_integrable_pow_studentTMeasure (hν : 0 < ν) (q : ℕ)
     (hνq : ν ≤ (q : ℝ)) :
     ¬ Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) := by
   intro hint
-  rw [integrable_studentTMeasure_iff] at hint
-  simp_rw [smul_eq_mul] at hint
-  let c : ℝ :=
-    (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2))) *
-      (1 + ν⁻¹) ^ (-(((q : ℝ) + 1) / 2))
-  have hc : 0 < c := by
-    dsimp [c]
-    positivity
-  have hbound : ∀ᶠ x : ℝ in atTop,
-      c * x⁻¹ ≤ x ^ q * studentTPDFReal ν x := by
-    simpa only [c] using studentTPDFReal_tail_lower_bound hν q hνq
-  obtain ⟨a, ha⟩ := eventually_atTop.mp
-    (hbound.and (eventually_ge_atTop (1 : ℝ)))
-  have hinv : IntegrableOn (fun x : ℝ => x⁻¹) (Ioi a) volume := by
-    refine Integrable.mono' (hint.const_mul c⁻¹).integrableOn (by fun_prop) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
-    rcases ha x hx.le with ⟨hpdf, hx1⟩
-    have hx0 : 0 < x := zero_lt_one.trans_le hx1
-    calc
-      ‖x⁻¹‖ = x⁻¹ := by rw [Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hx0)]
-      _ = c⁻¹ * (c * x⁻¹) := by field_simp
-      _ ≤ c⁻¹ * (x ^ q * studentTPDFReal ν x) :=
-        mul_le_mul_of_nonneg_left hpdf (inv_nonneg.mpr hc.le)
-      _ = c⁻¹ * (studentTPDFReal ν x * x ^ q) := by rw [mul_comm (x ^ q)]
-  exact not_integrableOn_Ioi_inv hinv
+  have hden := (integrable_studentTMeasure_iff (ν := ν)
+    (f := fun x : ℝ => x ^ q)).mp hint
+  have hIoi : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ (q : ℝ))
+      (Ioi (0 : ℝ)) := by
+    simpa only [Real.rpow_natCast, smul_eq_mul] using hden.integrableOn (s := Ioi (0 : ℝ))
+  exact (not_lt_of_ge hνq) ((integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
+    (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).mp hIoi)
 
 /-- The identity is integrable under a nondegenerate Student t law exactly when the number of
 degrees of freedom exceeds one. -/
@@ -416,59 +383,6 @@ theorem variance_id_studentTMeasure (hν : 2 < ν) :
   simp only [Pi.pow_apply, id_eq]
   rw [integral_sq_studentTMeasure hν, integral_id_studentTMeasure]
   ring
-
-/-- The beta kernel is integrable on the positive half-line precisely for `-1 < q < ν`: the
-exponent at `0` is `(q - 1) / 2` and the tail exponent is `(q - ν - 2) / 2`. -/
-private lemma integrableOn_studentTBetaKernel_Ioi_iff (hq : -1 < q) :
-    IntegrableOn (studentTBetaKernel ν q) (Ioi (0 : ℝ)) ↔ q < ν := by
-  have h := integrableOn_rpow_mul_one_add_rpow_iff
-    (a := (q + 1) / 2) (b := (ν - q) / 2) (by linarith)
-  have hleft : (q + 1) / 2 - 1 = (q - 1) / 2 := by ring
-  have hsum : (q + 1) / 2 + (ν - q) / 2 = (ν + 1) / 2 := by ring
-  have htail : 0 < (ν - q) / 2 ↔ q < ν := by
-    constructor <;> intro hh <;> linarith
-  simpa only [studentTBetaKernel, hleft, hsum, htail] using h
-
-/-- The weighted Student t density `studentTPDFReal ν x * x ^ q` is integrable on the positive
-half-line exactly for `-1 < q < ν`. -/
-private theorem integrableOn_pow_mul_studentTPDFReal_Ioi_iff (hν : 0 < ν) (hq : -1 < q) :
-    IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) ↔ q < ν := by
-  set C := Real.Gamma ((ν + 1) / 2) / (Real.sqrt (ν * Real.pi) * Real.Gamma (ν / 2))
-  let g : ℝ → ℝ := fun w => C * ν ^ ((q + 1) / 2) / 2 * studentTBetaKernel ν q w
-  have hderiv : ∀ z ∈ Ioi (0 : ℝ),
-      HasDerivWithinAt (fun z : ℝ => z ^ 2 / ν) (2 * z / ν) (Ioi (0 : ℝ)) z :=
-    fun z _ => (hasDerivAt_sq_div_const ν z).hasDerivWithinAt
-  have hiff : IntegrableOn g (Ioi (0 : ℝ)) ↔
-      IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
-    have himg0 : (fun z : ℝ => z ^ 2 / ν) '' Ioi (0 : ℝ) = Ioi (0 ^ 2 / ν) :=
-      image_sq_div_const_Ioi hν (y := 0) le_rfl
-    have himg : (fun z : ℝ => z ^ 2 / ν) '' Ioi (0 : ℝ) = Ioi (0 : ℝ) := by
-      rw [himg0]
-      simp
-    have h_g_eq : ∀ z : ℝ, 0 < z → |2 * z / ν| • g (z ^ 2 / ν) =
-        studentTPDFReal ν z * z ^ q := by
-      intro z hz
-      simpa [g] using abs_deriv_smul_studentTPDFReal hν q hz
-    have h_g_eq' : EqOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν))
-        (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
-      intro z hz
-      exact h_g_eq z hz
-    have himg1 : IntegrableOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν)) (Ioi (0 : ℝ)) ↔
-        IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ q) (Ioi (0 : ℝ)) := by
-      refine ⟨fun h => h.congr_fun h_g_eq' measurableSet_Ioi,
-        fun h => h.congr_fun (fun z hz => (h_g_eq' hz).symm) measurableSet_Ioi⟩
-    have hpre : IntegrableOn g ((fun z : ℝ => z ^ 2 / ν) '' Ioi (0 : ℝ)) ↔
-        IntegrableOn (fun z : ℝ => |2 * z / ν| • g (z ^ 2 / ν)) (Ioi (0 : ℝ)) :=
-      integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioi hderiv
-        (injOn_sq_div_const_Ioi hν.ne') g
-    rw [himg] at hpre
-    exact hpre.trans himg1
-  have hC_ne : C ≠ 0 := (studentT_const_pos hν).ne'
-  have hc : IsUnit (C * ν ^ ((q + 1) / 2) / 2) := isUnit_iff_ne_zero.mpr <|
-    div_ne_zero (mul_ne_zero hC_ne (Real.rpow_pos_of_pos hν _).ne') (by norm_num)
-  rw [← hiff]
-  simpa [g, IntegrableOn, integrable_const_mul_iff hc] using
-    integrableOn_studentTBetaKernel_Ioi_iff hq
 
 /-! ### Exponential moments -/
 
