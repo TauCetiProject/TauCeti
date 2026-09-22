@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.Place.Basic
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
 
@@ -17,8 +18,10 @@ places identifies their valuation rings inside the function field. The uniquenes
 valuative criterion then identifies the two maps from the spectrum of this ring to the scheme,
 and hence their closed-point images.
 
-This is the injectivity step in comparing the points of a nonsingular proper curve with the
-places of its function field, needed to compare divisor and principal-parts constructions.
+In particular the map sending a codimension-one point to its place is injective
+(`CodimensionOnePoint.toPlace_injective`). This is the injectivity step in comparing the points
+of a nonsingular proper curve with the places of its function field, needed to compare divisor
+and principal-parts constructions.
 
 ## References
 
@@ -108,5 +111,13 @@ theorem toPlace_eq_iff {x y : X}
           Scheme.fromSpecStalk_closedPoint
   · rintro rfl
     rfl
+
+/-- Distinct codimension-one points of a separated integral scheme give distinct function-field
+places, provided their local rings are discrete valuation rings. -/
+theorem CodimensionOnePoint.toPlace_injective
+    [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] :
+    Function.Injective (fun x : CodimensionOnePoint X ↦ X.toPlace (k := k) (x : X)) := by
+  intro x y h
+  exact Subtype.ext (toPlace_eq_iff.mp h)
 
 end TauCeti.AlgebraicGeometry

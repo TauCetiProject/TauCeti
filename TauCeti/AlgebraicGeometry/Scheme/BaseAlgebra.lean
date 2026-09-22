@@ -147,25 +147,22 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_comp_over (x : X) :
     rw [hring, Spec.map_comp, ← Category.assoc, ← Scheme.toSpecΓ_naturality,
       ← SpecMap_ΓSpecIso_hom, Category.assoc, ← Spec.map_comp, Iso.inv_hom_id,
       Spec.map_id, Category.comp_id]
-  rw [hbase, ← Category.assoc, Scheme.fromSpecStalk_toSpecΓ, ← Spec.map_comp]
-  rw [Spec.map_inj]
-  ext c
-  change X.presheaf.germ ⊤ x trivial (Scheme.Modules.baseRingToGlobalSections k X c) =
-    algebraMap k (X.presheaf.stalk x) c
-  rw [Scheme.algebraMap_stalk_eq_baseRingToStalk]
-  rfl
+  rw [hbase, ← Category.assoc, Scheme.fromSpecStalk_toSpecΓ, ← Spec.map_comp, Spec.map_inj,
+    Scheme.algebraMap_stalk_eq_baseRingToStalk, Scheme.baseRingToStalk,
+    CommRingCat.ofHom_comp, CommRingCat.ofHom_hom]
 
 /-- At the generic point of an integral scheme, `fromSpecStalk` is a morphism from the spectrum
 of the function field over the affine base. -/
 theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_genericPoint_comp_over [IsIntegral X] :
     X.fromSpecStalk (genericPoint X) ≫ (X ↘ Spec (.of k)) =
       Spec.map (CommRingCat.ofHom (algebraMap k X.functionField)) := by
-  rw [X.fromSpecStalk_comp_over (k := k), Spec.map_inj]
-  ext c
   let _ : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
-  change Scheme.baseRingToStalk k X (genericPoint X) c =
-    Scheme.baseRingToFunctionField k X c
-  simp only [Scheme.baseRingToFunctionField, Scheme.baseRingToStalk, RingHom.comp_apply]
+  -- Both base-ring maps are the global-sections map followed by a germ at the generic point:
+  -- `Scheme.germToFunctionField ⊤` is by definition that germ.
+  rw [X.fromSpecStalk_comp_over (k := k), Spec.map_inj,
+    Scheme.algebraMap_stalk_eq_baseRingToStalk,
+    Scheme.algebraMap_functionField_eq_baseRingToFunctionField, Scheme.baseRingToStalk,
+    Scheme.baseRingToFunctionField]
 
 end CommRing
 
