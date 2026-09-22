@@ -62,6 +62,22 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 variable (O : Type*) [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
+/-- **The exponent of `𝔭ᵥ` in the discriminant ideal of an integral equation is the local minimal
+exponent plus twelve times the local obstruction exponent.** This is the primewise form of the
+identity `(Δ W) = 𝔇_{E/K} · 𝔍_W ^ 12`; here `d` is a global integral representative of `Δ W`. -/
+theorem count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt
+    (W : WeierstrassCurve K) (v : HeightOneSpectrum O) [W.IsElliptic] [IsIntegral O W] {d : O}
+    (hd : algebraMap O K d = W.Δ) :
+    (Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {d})).factors =
+      W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) +
+        12 * (obstructionExponentAt O v W).toNat := by
+  have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
+    IsIntegral.of_isScalarTower (R := O) W
+  have hnonneg := obstructionExponentAt_nonneg_of_isIntegral O v W
+  have hcount := count_span_Δ_eq_ord_Δ W v hd
+  have hdef := twelve_mul_obstructionExponentAt O v W
+  omega
+
 /-- **Only finitely many local obstruction exponents of an integral equation are nonzero.**
 Equivalently, the prime-power family defining the defect ideal has finite multiplicative
 support. -/
@@ -74,23 +90,23 @@ theorem hasFiniteMulSupport_pow_obstructionExponentAt_toNat (W : WeierstrassCurv
     Submodule.span_singleton_eq_bot.mp.mt fun h =>
       W.isUnit_Δ.ne_zero (by rw [← hd, h, map_zero])
   refine Ideal.hasFiniteMulSupport_asIdeal_pow_of_le_count hspan _ fun v => ?_
-  have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
-    IsIntegral.of_isScalarTower (R := O) W
-  have hnonneg := obstructionExponentAt_nonneg_of_isIntegral O v W
-  have hcount := count_span_Δ_eq_ord_Δ W v hd
-  have hdef := twelve_mul_obstructionExponentAt O v W
-  have hmin : 0 ≤ (W.localMinimalDiscriminantValuation
-      (Localization.AtPrime v.asIdeal) : ℤ) := by positivity
+  have hsplit :=
+    count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt
+      O W v hd
   omega
 
 /-- **The defect ideal** `𝔍_W = ∏ᵥ 𝔭ᵥ ^ fᵥ(W)` of an integral Weierstrass equation.
-The finite product is taken over its nontrivial local obstruction factors. -/
+Integrality makes every local obstruction exponent nonnegative, so its natural-number part loses
+no information. The product ranges over the finite support certified by
+`hasFiniteMulSupport_pow_obstructionExponentAt_toNat`, which is how the construction consumes
+integrality; `weierstrassDefectIdeal_def` recovers the `finprod` over all height-one primes. -/
 noncomputable def weierstrassDefectIdeal (W : WeierstrassCurve K) [W.IsElliptic]
     [IsIntegral O W] : Ideal O :=
   let h := hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W
   ∏ v ∈ h.toFinset, v.asIdeal ^ (obstructionExponentAt O v W).toNat
 
-/-- The defining prime-power factorisation of the defect ideal. -/
+/-- The defining prime-power factorisation of the defect ideal, as a product over all height-one
+primes. -/
 theorem weierstrassDefectIdeal_def (W : WeierstrassCurve K) [W.IsElliptic]
     [IsIntegral O W] :
     weierstrassDefectIdeal O W =
@@ -156,11 +172,9 @@ theorem span_Δ_eq_minimalDiscriminantIdeal_mul_weierstrassDefectIdeal_pow_twelv
       intro v
       rw [HeightOneSpectrum.maxPowDividing, ← pow_mul, ← pow_add]
       congr 1
-      have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
-        IsIntegral.of_isScalarTower (R := O) W
-      have hnonneg := obstructionExponentAt_nonneg_of_isIntegral O v W
-      have hcount := count_span_Δ_eq_ord_Δ W v hd
-      have hdef := twelve_mul_obstructionExponentAt O v W
+      have hsplit :=
+        count_span_Δ_eq_localMinimalDiscriminantValuation_add_twelve_mul_obstructionExponentAt
+          O W v hd
       omega
     _ = (∏ᶠ v : HeightOneSpectrum O,
           v.asIdeal ^ W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal)) *
@@ -168,10 +182,11 @@ theorem span_Δ_eq_minimalDiscriminantIdeal_mul_weierstrassDefectIdeal_pow_twelv
           (v.asIdeal ^ (obstructionExponentAt O v W).toNat) ^ 12 :=
       finprod_mul_distrib hminSupport hdefectPowSupport
     _ = minimalDiscriminantIdeal O W * weierstrassDefectIdeal O W ^ 12 := by
-      rw [minimalDiscriminantIdeal_def, weierstrassDefectIdeal_def]
-      rw [finprod_pow hdefectSupport 12]
+      rw [minimalDiscriminantIdeal_def, weierstrassDefectIdeal_def,
+        finprod_pow hdefectSupport 12]
 
 /-- **An integral equation has trivial defect ideal exactly when it is globally minimal.** -/
+@[simp]
 theorem weierstrassDefectIdeal_eq_top_iff_isGlobalMinimal (W : WeierstrassCurve K)
     [W.IsElliptic] [IsIntegral O W] :
     weierstrassDefectIdeal O W = ⊤ ↔ IsGlobalMinimal O W := by

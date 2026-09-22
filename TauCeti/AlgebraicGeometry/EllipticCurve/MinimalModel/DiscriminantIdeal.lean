@@ -208,13 +208,13 @@ theorem count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation
   simp_rw [FractionalIdeal.coeIdeal_pow, ← zpow_natCast]
   exact FractionalIdeal.count_finprod K v _ hexp
 
-/-- The defining prime-power factorisation of the minimal discriminant ideal. -/
+/-- The defining prime-power factorisation of the minimal discriminant ideal. Outside this module
+the body of `minimalDiscriminantIdeal` is not exposed, so this is the interface for unfolding
+it. -/
 theorem minimalDiscriminantIdeal_def (W : WeierstrassCurve K) [W.IsElliptic] :
     minimalDiscriminantIdeal O W = ∏ᶠ v : HeightOneSpectrum O,
       v.asIdeal ^ W.localMinimalDiscriminantValuation (Localization.AtPrime v.asIdeal) := by
-  rw [← Ideal.finprod_heightOneSpectrum_factorization (minimalDiscriminantIdeal_ne_bot O W)]
-  exact finprod_congr fun v => congrArg (v.asIdeal ^ ·)
-    (count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation O W v)
+  rw [minimalDiscriminantIdeal]
 
 variable {O}
 
