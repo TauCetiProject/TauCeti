@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.GroupTheory.Perm.Support
 public import TauCeti.KnotTheory.Grid.Differential.Square.Disjoint
 
 /-!
@@ -45,6 +46,11 @@ disjoint rectangles or rectangles sharing exactly one side column.
   side column means the two side pairs differ.
 * `TauCeti.GridRectangleDecomposition.hasOneCommonSide_of_mem_commonSideColumns`: a nondiagonal
   decomposition with a common side column has exactly one.
+* `TauCeti.GridRectangleDecomposition.target_apply_ne_iff_mem_sideColumns_union`: when exactly
+  one side is common, the three side columns are precisely the columns moved between the endpoint
+  states.
+* `TauCeti.GridRectangleDecomposition.sideColumns_union_eq_of_hasOneCommonSide`: any two
+  one-common-side decompositions between the same endpoint states use the same three columns.
 
 ## References
 
@@ -117,6 +123,88 @@ theorem side_eq_cases_of_hasOneCommonSide (D : GridRectangleDecomposition x z)
     refine ⟨hcfirst.symm.trans hcsecond, fun hother => ?_⟩
     have := hunique D.first.left ⟨by simp, by simp [← hother]⟩
     exact D.first.left_ne_right (this.trans hcfirst)
+
+/-- If two rectangles share exactly one side column, their union of side columns has cardinality
+three. -/
+theorem card_sideColumns_union_eq_three (D : GridRectangleDecomposition x z)
+    (h : D.HasOneCommonSide) :
+    (D.first.sideColumns ∪ D.second.sideColumns).card = 3 := by
+  have hcard := Finset.card_union_add_card_inter D.first.sideColumns D.second.sideColumns
+  have hinter : D.first.sideColumns ∩ D.second.sideColumns = D.commonSideColumns := rfl
+  rw [D.first.card_sideColumns, D.second.card_sideColumns, hinter, h] at hcard
+  omega
+
+private theorem support_swaps_eq_sideColumns_union (D : GridRectangleDecomposition x z)
+    (h : D.HasOneCommonSide) :
+    (Equiv.swap D.first.left D.first.right *
+        Equiv.swap D.second.left D.second.right).support =
+      D.first.sideColumns ∪ D.second.sideColumns := by
+  rcases D.side_eq_cases_of_hasOneCommonSide h with
+      ⟨hcommon, hother⟩ | ⟨hcommon, hother⟩ | ⟨hcommon, hother⟩ | ⟨hcommon, hother⟩
+  · have h₁ : D.first.right ≠ D.second.left := by
+      rw [← hcommon]
+      exact D.first.left_ne_right.symm
+    have hnodup : List.Nodup [D.first.right, D.second.left, D.second.right] := by
+      simp [h₁, hother, D.second.left_ne_right]
+    rw [Equiv.swap_comm D.first.left D.first.right, hcommon,
+      Equiv.Perm.support_swap_mul_swap hnodup]
+    ext c
+    simp [GridRectangleBetween.sideColumns, hcommon, or_left_comm]
+  · have h₁ : D.first.right ≠ D.second.right := by
+      rw [← hcommon]
+      exact D.first.left_ne_right.symm
+    have hnodup : List.Nodup [D.first.right, D.second.right, D.second.left] := by
+      simp [h₁, hother, D.second.left_ne_right.symm]
+    rw [Equiv.swap_comm D.first.left D.first.right,
+      Equiv.swap_comm D.second.left D.second.right, hcommon,
+      Equiv.Perm.support_swap_mul_swap hnodup]
+    ext c
+    simp [GridRectangleBetween.sideColumns, hcommon, or_comm, or_left_comm]
+  · have h₁ : D.first.left ≠ D.second.left := by
+      rw [← hcommon]
+      exact D.first.left_ne_right
+    have hnodup : List.Nodup [D.first.left, D.second.left, D.second.right] := by
+      simp [h₁, hother, D.second.left_ne_right]
+    rw [hcommon, Equiv.Perm.support_swap_mul_swap hnodup]
+    ext c
+    simp [GridRectangleBetween.sideColumns, hcommon, or_comm]
+  · have h₁ : D.first.left ≠ D.second.right := by
+      rw [← hcommon]
+      exact D.first.left_ne_right
+    have hnodup : List.Nodup [D.first.left, D.second.right, D.second.left] := by
+      simp [h₁, hother, D.second.left_ne_right.symm]
+    rw [Equiv.swap_comm D.second.left D.second.right, hcommon,
+      Equiv.Perm.support_swap_mul_swap hnodup]
+    ext c
+    simp [GridRectangleBetween.sideColumns, hcommon, or_comm, or_left_comm]
+
+/-- When two rectangles share exactly one side column, their three side columns are precisely
+the columns on which the target state differs from the source state. -/
+theorem target_apply_ne_iff_mem_sideColumns_union (D : GridRectangleDecomposition x z)
+    (h : D.HasOneCommonSide) (c : Fin n) :
+    z c ≠ x c ↔ c ∈ D.first.sideColumns ∪ D.second.sideColumns := by
+  constructor
+  · intro hne
+    contrapose! hne
+    rw [Finset.mem_union, not_or] at hne
+    exact D.target_apply_of_notMem_sideColumns hne.1 hne.2
+  · intro hc
+    rw [D.second.target_apply, D.first.target_apply]
+    rw [ne_eq, Equiv.apply_eq_iff_eq]
+    rw [← Equiv.Perm.mul_apply]
+    apply Equiv.Perm.mem_support.mp
+    rwa [support_swaps_eq_sideColumns_union D h]
+
+/-- Any two decompositions between the same endpoint states which each have one common side use
+the same three side columns. -/
+theorem sideColumns_union_eq_of_hasOneCommonSide
+    (D E : GridRectangleDecomposition x z) (hD : D.HasOneCommonSide)
+    (hE : E.HasOneCommonSide) :
+    D.first.sideColumns ∪ D.second.sideColumns =
+      E.first.sideColumns ∪ E.second.sideColumns := by
+  ext c
+  rw [← D.target_apply_ne_iff_mem_sideColumns_union hD,
+    ← E.target_apply_ne_iff_mem_sideColumns_union hE]
 
 /-- The two side pairs are disjoint exactly when their common-side set is empty. -/
 @[simp]

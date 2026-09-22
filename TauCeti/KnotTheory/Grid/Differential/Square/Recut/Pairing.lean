@@ -65,6 +65,8 @@ the recut's own side data holds.
 * `TauCeti.GridRectangleDecomposition.recut_ne`: it has no fixed point.
 * `TauCeti.GridRectangleDecomposition.hasOneCommonSide_recut`: the recut again shares exactly one
   side column, so the involution stays inside the one-common-side terms.
+* `TauCeti.GridRectangleDecomposition.sideColumns_union_recut`: recutting preserves the three
+  columns used by the composite domain.
 
 ## References
 
@@ -509,6 +511,17 @@ theorem hasOneCommonSide_recut (D : GridRectangleDecomposition x z) (hone : D.Ha
     (D.recut hone hfirst hsecond).HasOneCommonSide :=
   hasOneCommonSide_of_isRecut ((D.isRecut_recut hone hfirst hsecond).symm hone hfirst hsecond)
     (D.target_ne_source_of_hasOneCommonSide hone)
+
+/-- Recutting a decomposition with one common side preserves the union of its three side
+columns. -/
+@[simp]
+theorem sideColumns_union_recut (D : GridRectangleDecomposition x z)
+    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    (D.recut hone hfirst hsecond).first.sideColumns ∪
+        (D.recut hone hfirst hsecond).second.sideColumns =
+      D.first.sideColumns ∪ D.second.sideColumns :=
+  sideColumns_union_eq_of_hasOneCommonSide _ _
+    (D.hasOneCommonSide_recut hone hfirst hsecond) hone
 
 /-- The recut of a decomposition is different from it: the two pass through different
 intermediate grid states. -/
