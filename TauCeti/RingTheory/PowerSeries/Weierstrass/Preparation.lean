@@ -17,8 +17,9 @@ the closed disc of radius `c`. This file describes its units and factors a disti
 through a monic polynomial.
 
 A restricted series is a unit of that subring exactly when it is distinguished of degree `0`, that
-is, when its constant coefficient dominates every other weighted coefficient. Weierstrass
-preparation then says that a restricted series `f` distinguished of degree `s` factors as
+is, when its constant coefficient strictly dominates every positive-degree weighted coefficient
+and attains the Gauss norm. Weierstrass preparation then says that a restricted series `f`
+distinguished of degree `s` factors as
 
 ```text
 f = e * ω,    e a unit of the ring of restricted series,    ω monic of degree s,
@@ -70,7 +71,8 @@ variable {R : Type*} [NormedRing R] [IsUltrametricDist R] [NormMulClass R] [Nont
   {c : ℝ} {s : ℕ}
 
 /-- A unit of the ring of restricted power series at a positive radius is distinguished of
-degree `0`: its constant coefficient dominates every other weighted coefficient. -/
+degree `0`: its constant coefficient strictly dominates every positive-degree weighted coefficient
+and attains the Gauss norm. -/
 theorem isDistinguished_zero_of_isUnit (hc : 0 < c)
     {x : PowerSeries.IsRestricted.subring (R := R) c} (hx : IsUnit x) :
     IsDistinguished c 0 (x : PowerSeries R) := by
