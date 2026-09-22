@@ -70,13 +70,6 @@ ambient space, that is, the pullback of the system along the inclusion. -/
 abbrev subspaceSystem : LocalCoefficientSystem.{u, v, max v w} R P.snd :=
   (LocalCoefficientSystem.pullback P.map.hom).obj L
 
-instance (k : ℕ) :
-    Mono ((LocalCoefficientSystem.twistedChainComplexMap P.map L).f k) :=
-  LocalCoefficientSystem.mono_twistedChainComplexMap_f _ _ _
-
-instance : Mono (LocalCoefficientSystem.twistedChainComplexMap P.map L) :=
-  LocalCoefficientSystem.mono_twistedChainComplexMap _ _
-
 /-- The relative twisted singular chain complex of a topological pair `(X, A)` with coefficients
 in a local coefficient system `L` on `X`: the quotient of the twisted chains of `X` by the
 twisted chains of `A`. -/
@@ -132,6 +125,9 @@ def isColimitCokernelCoforkTwistedChainComplexX (k : ℕ) :
     IsColimit (P.cokernelCoforkTwistedChainComplexX L k) :=
   CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkTwistedChainComplex L)
     (HomologicalComplex.eval _ _ k)
+
+instance (k : ℕ) : Epi ((P.twistedChainComplexπ L).f k) :=
+  Cofork.IsColimit.epi (P.isColimitCokernelCoforkTwistedChainComplexX L k)
 
 /-- The twisted chain sequence of a topological pair: the twisted chains of the subspace, of the
 ambient space, and of the pair. -/
@@ -214,16 +210,31 @@ def twistedChainComplexConstantIso :
   IsColimit.coconePointsIsoOfNatIso
     (P.isColimitCokernelCoforkTwistedChainComplex _)
     (P.isColimitCokernelCoforkSingularChainComplex M)
-    -- The two commutation conditions are stated in terms of `(parallelPair _ _).map`, which is
-    -- only definitionally the map itself; they are given as terms because rewriting through that
-    -- reduction leaves a goal that is not type-correct at the transparency `rw` checks with.
     (parallelPair.ext
       (LocalCoefficientSystem.twistedChainComplexCoefficientIso
           (LocalCoefficientSystem.pullbackConstantIso P.map.hom M) ≪≫
         LocalCoefficientSystem.twistedChainComplexConstantIso P.snd M)
       (LocalCoefficientSystem.twistedChainComplexConstantIso P.fst M)
-      ((LocalCoefficientSystem.twistedChainComplexConstantIso_hom_space_naturality P.map M).trans
-        (Category.assoc _ _ _).symm)
+      -- The commutation condition for `left` is stated through `(parallelPair _ _).map`, whose
+      -- reduction to the map itself is definitional but is not visible to `rw`.  It is therefore
+      -- proved below in its reduced form, which leaves exactly two definitional identifications
+      -- for the final `exact`s: the `parallelPair` reduction itself, and the identification of
+      -- `((AlgebraicTopology.singularChainComplexFunctor _).obj M).map P.map` with
+      -- `SSet.chainComplexMap (toSSetPair.obj P).hom M`, the singular chain complex functor being
+      -- the simplicial one precomposed with `TopCat.toSSet`.
+      (by
+        have h : LocalCoefficientSystem.twistedChainComplexMap P.map
+                ((LocalCoefficientSystem.constantFunctor P.fst).obj M) ≫
+              (LocalCoefficientSystem.twistedChainComplexConstantIso P.fst M).hom =
+            (LocalCoefficientSystem.twistedChainComplexCoefficientIso
+                  (LocalCoefficientSystem.pullbackConstantIso P.map.hom M) ≪≫
+                LocalCoefficientSystem.twistedChainComplexConstantIso P.snd M).hom ≫
+              SSet.chainComplexMap (toSSetPair.obj P).hom M := by
+          rw [Iso.trans_hom, LocalCoefficientSystem.twistedChainComplexCoefficientIso_hom]
+          exact (LocalCoefficientSystem.twistedChainComplexConstantIso_hom_space_naturality
+            P.map M).trans (Category.assoc _ _ _).symm
+        exact h)
+      -- Both composites are with the zero map of the `parallelPair`, hence zero.
       (zero_comp.trans comp_zero.symm))
 
 /-- The comparison of relative twisted chains with ordinary relative singular chains is
@@ -240,25 +251,47 @@ lemma twistedChainComplexπ_comp_twistedChainComplexConstantIso_hom :
 
 /-- For a constant local coefficient system, relative twisted homology is ordinary relative
 singular homology. -/
-abbrev twistedHomologyConstantIso (k : ℕ) :
+-- The body is exposed only so that the two component lemmas below can be stated as definitional
+-- equalities; both of their right hand sides are already public.
+@[expose]
+def twistedHomologyConstantIso (k : ℕ) :
     P.twistedHomology ((LocalCoefficientSystem.constantFunctor P.fst).obj M) k ≅
       P.singularHomology M k :=
   (HomologicalComplex.homologyFunctor _ _ k).mapIso (P.twistedChainComplexConstantIso M)
 
+-- Not `simp` lemmas, as for the absolute comparison in
+-- `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`: the comparison isomorphism is the simp
+-- normal form, so that `twistedHomologyπ_comp_twistedHomologyConstantIso_hom` below can be `simp`.
+/-- The comparison of relative twisted homology with ordinary relative singular homology is the
+map induced on homology by the comparison of the relative chain complexes. -/
+lemma twistedHomologyConstantIso_hom (k : ℕ) :
+    (P.twistedHomologyConstantIso M k).hom =
+      HomologicalComplex.homologyMap (P.twistedChainComplexConstantIso M).hom k :=
+  rfl
+
+/-- The inverse of the comparison of relative twisted homology with ordinary relative singular
+homology is the map induced on homology by the inverse comparison of the relative chain
+complexes. -/
+lemma twistedHomologyConstantIso_inv (k : ℕ) :
+    (P.twistedHomologyConstantIso M k).inv =
+      HomologicalComplex.homologyMap (P.twistedChainComplexConstantIso M).inv k :=
+  rfl
+
 /-- The comparison of relative twisted homology with ordinary relative singular homology is
 compatible with the maps from the homology of the ambient space. -/
--- Not a `simp` lemma: both homology comparisons abbreviate applications of the homology functor,
--- which `simp` unfolds, so the left-hand side is not in simp-normal form.
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma twistedHomologyπ_comp_twistedHomologyConstantIso_hom (k : ℕ) :
     P.twistedHomologyπ ((LocalCoefficientSystem.constantFunctor P.fst).obj M) k ≫
         (P.twistedHomologyConstantIso M k).hom =
       (LocalCoefficientSystem.twistedHomologyConstantIso P.fst M k).hom ≫
-        P.singularHomologyπ M k :=
-  (HomologicalComplex.homologyMap_comp _ _ k).symm.trans
-    ((congrArg (HomologicalComplex.homologyMap · k)
-        (P.twistedChainComplexπ_comp_twistedChainComplexConstantIso_hom M)).trans
-      (HomologicalComplex.homologyMap_comp _ _ k))
+        P.singularHomologyπ M k := by
+  rw [twistedHomologyConstantIso_hom, LocalCoefficientSystem.twistedHomologyConstantIso_hom,
+    ← HomologicalComplex.homologyMap_comp,
+    P.twistedChainComplexπ_comp_twistedChainComplexConstantIso_hom M]
+  -- `P.singularHomologyπ M k` is `HomologicalComplex.homologyMap (P.singularChainComplexπ M) k`,
+  -- but only after unfolding the relative singular homology abbreviations, so the last step is
+  -- an `exact` rather than a further rewrite.
+  exact HomologicalComplex.homologyMap_comp _ _ k
 
 end Constant
 
