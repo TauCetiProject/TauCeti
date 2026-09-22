@@ -20,7 +20,8 @@ and corner points; values outside the target chart never enter a test.
 For a vector-space target, and assuming the source is a `C^n` manifold, this agrees with the
 source-chart topology of `Chart.Jet`.
 Evaluation is continuous, so the map space is Hausdorff when the target is Hausdorff.
-The topology is provided explicitly, without selecting a global function-space instance.
+The topology is not a global function-space instance; use `open scoped
+TauCeti.ManifoldWeakWhitney` to select it, which also supplies the Hausdorff instance.
 
 The construction follows M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §1,
 pp. 34–36: the compact-open tests on each derivative generate the weak topology.
@@ -199,3 +200,15 @@ theorem manifoldWeakWhitneyTopology_self_target :
 end VectorTarget
 
 end ContMDiffMap
+
+namespace TauCeti
+
+-- When selected, prefer this topology to the source-chart instance on a vector-space target.
+scoped[TauCeti.ManifoldWeakWhitney] attribute [instance 1100]
+  ContMDiffMap.manifoldWeakWhitneyTopology
+
+-- Separation travels with the topology the scope selects.
+scoped[TauCeti.ManifoldWeakWhitney] attribute [instance]
+  ContMDiffMap.t2Space_manifoldWeakWhitney
+
+end TauCeti

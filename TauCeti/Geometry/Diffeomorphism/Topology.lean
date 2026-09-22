@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy
-public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.ManifoldFamily
-public import Mathlib.Topology.Homotopy.Path
+public import Mathlib.Geometry.Manifold.Diffeomorph
 
 /-!
 # The weak Whitney topology on diffeomorphisms
@@ -20,23 +18,21 @@ compact source this is the `C^n` topology in the usual sense, the weak and the s
 topologies agreeing there. Only the forward map is topologized; no continuity is claimed for
 inversion, which needs an inverse-function estimate that is not developed here.
 
-Use `open scoped TauCeti.WeakWhitney` to select this topology, for instance when forming
-continuous maps into a diffeomorphism group.
+Use `open scoped TauCeti.DiffeomorphWeakWhitney` to select this topology, for instance when
+forming continuous maps into the space of diffeomorphisms.
 
 The reason to have the topology is to turn a *smooth family* of diffeomorphisms, which is what a
-geometric construction produces, into a *continuous map into the diffeomorphism group*, which is
-what a homotopy-theoretic statement about that group needs. `Diffeomorph.ofSmoothFamily` is that
-map, and `TauCeti.Diffeotopy.toPath` is its first use: a smooth ambient isotopy of `M` is a path
-from the identity to its final diffeomorphism in `Diff(M)`, so diffeotopic diffeomorphisms lie in
-one path component.
+geometric construction produces, into a *continuous map into the space of diffeomorphisms*, which
+is what a homotopy-theoretic statement about that space needs. `Diffeomorph.ofSmoothFamily` is
+that map; `TauCeti.Diffeotopy.toPath` in `TauCeti.Geometry.Diffeomorphism.Diffeotopy.Path` is its
+first use.
 
 ## Main definitions
 
 * `Diffeomorph.weakWhitneyTopology`: the topology induced from the weak Whitney topology on
   `C^n⟮I, M; J, N⟯`.
 * `Diffeomorph.ofSmoothFamily`: a jointly `C^n` family of diffeomorphisms, as a continuous map
-  into the diffeomorphism group.
-* `TauCeti.Diffeotopy.toPath`: the path traced in `TauCeti.Diff` by a diffeotopy.
+  into the space of diffeomorphisms `M ≃ₘ^n⟮I, J⟯ N`.
 
 ## Main results
 
@@ -44,11 +40,10 @@ one path component.
   embedding.
 * `Diffeomorph.continuous_weakWhitney_iff`: a family of diffeomorphisms is continuous exactly
   when the underlying family of `C^n` maps is.
-* `Diffeomorph.continuous_eval`: evaluation at a point of the source is continuous.
+* `Diffeomorph.continuous_eval_const`: evaluation at a fixed point of the source is continuous.
 * `Diffeomorph.t2Space_weakWhitney`: a Hausdorff target gives a Hausdorff diffeomorphism space.
 * `ContMDiff.continuous_diffeomorphWeakWhitney`: joint `C^n` regularity of a family of
   diffeomorphisms gives continuity of the family.
-* `TauCeti.Diffeotopy.continuous_timeSlice`: the time slices of a diffeotopy move continuously.
 
 The weak topology convention follows M. Hirsch, *Differential Topology*, GTM 33, Chapter 2, §1.
 -/
@@ -56,7 +51,7 @@ The weak topology convention follows M. Hirsch, *Differential Topology*, GTM 33,
 public section
 
 open Topology
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff TauCeti.ManifoldWeakWhitney
 
 namespace Diffeomorph
 
@@ -85,9 +80,9 @@ along the forgetful map to `C^n⟮I, M; J, N⟯`. -/
 noncomputable def weakWhitneyTopology : TopologicalSpace (M ≃ₘ^n⟮I, J⟯ N) :=
   .induced toContMDiffMap ContMDiffMap.manifoldWeakWhitneyTopology
 
-scoped[TauCeti.WeakWhitney] attribute [instance 1100] Diffeomorph.weakWhitneyTopology
+scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance 1100] Diffeomorph.weakWhitneyTopology
 
-attribute [local instance] ContMDiffMap.manifoldWeakWhitneyTopology weakWhitneyTopology
+open scoped TauCeti.DiffeomorphWeakWhitney
 
 /-- The forgetful map to `C^n⟮I, M; J, N⟯` realizes the diffeomorphisms as a subspace of the
 weak Whitney map space. -/
@@ -107,13 +102,14 @@ theorem continuous_weakWhitney_iff {Q : Type*} [TopologicalSpace Q] {f : Q → M
   isEmbedding_toContMDiffMap.continuous_iff
 
 /-- Evaluation at a fixed point of the source is continuous. -/
-theorem continuous_eval (x : M) : Continuous fun f : M ≃ₘ^n⟮I, J⟯ N ↦ f x :=
+theorem continuous_eval_const (x : M) : Continuous fun f : M ≃ₘ^n⟮I, J⟯ N ↦ f x :=
   (ContMDiffMap.continuous_eval_manifoldWeakWhitney x).comp continuous_toContMDiffMap
 
 /-- A Hausdorff target gives a Hausdorff space of diffeomorphisms. -/
 theorem t2Space_weakWhitney [T2Space N] : T2Space (M ≃ₘ^n⟮I, J⟯ N) :=
-  have : T2Space C^n⟮I, M; J, N⟯ := ContMDiffMap.t2Space_manifoldWeakWhitney
   isEmbedding_toContMDiffMap.t2Space
+
+scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance] Diffeomorph.t2Space_weakWhitney
 
 variable [IsManifold I' n P]
 
@@ -140,33 +136,3 @@ theorem ofSmoothFamily_apply (f : P → M ≃ₘ^n⟮I, J⟯ N)
     ofSmoothFamily f hf p = f p := (rfl)
 
 end Diffeomorph
-
-namespace TauCeti.Diffeotopy
-
-open unitInterval
-open scoped TauCeti.WeakWhitney
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {J : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
-  (Φ : Diffeotopy J n M)
-
-variable [IsManifold J n M]
-
-/-- The time slices of a diffeotopy move continuously in the weak Whitney topology. -/
-theorem continuous_timeSlice : Continuous Φ.timeSlice :=
-  Φ.contMDiff_timeSlice.continuous_diffeomorphWeakWhitney
-
-/-- A diffeotopy is a path in `TauCeti.Diff` from the identity to its final diffeomorphism; in
-particular diffeotopic self-diffeomorphisms lie in the same path component. -/
-noncomputable def toPath : Path (1 : Diff J M n) Φ.final where
-  toFun := Φ.timeSlice
-  continuous_toFun := Φ.continuous_timeSlice
-  source' := (Φ.timeSlice_zero).trans _root_.Diffeomorph.one_def.symm
-  target' := Φ.final_def.symm
-
-/-- The path traced by a diffeotopy is its family of time slices. -/
-@[simp]
-theorem toPath_apply (t : I) : Φ.toPath t = Φ.timeSlice t := (rfl)
-
-end TauCeti.Diffeotopy
