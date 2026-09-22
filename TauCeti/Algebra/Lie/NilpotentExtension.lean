@@ -46,9 +46,12 @@ Mathlib type elaborates, as do the corresponding statements in `TauCeti.Algebra.
 * `LieSubalgebra.lieModule_isNilpotent_lieSpan_insert`: **the nilpotent-extension lemma**.  If `H`
   acts nilpotently on `M` and a normalizing element `y` acts nilpotently on `M`, then the Lie span
   of `y` and `H` acts nilpotently on `M`.
+* `LieSubalgebra.mem_lieSpan_insert_iff`: the elements of that Lie span are exactly the
+  `t • y + h` with `h ∈ H`, with intro form `LieSubalgebra.smul_add_mem_lieSpan_insert`.
 * `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert` and
   `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall`: the pointwise readings, the
-  second one taking the pointwise hypothesis on `H` as well.
+  second one taking the pointwise hypothesis on `H` as well, together with the `t • y + h` reading
+  `LieSubalgebra.isNilpotent_toEnd_smul_add_of_mem`.
 * `LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup`: the special case of an ideal, where the
   normalizing hypothesis is automatic and the conclusion can be read off the submodule
   `R ∙ y ⊔ I.toSubmodule` directly, together with its `t • y + x` reading
@@ -87,6 +90,24 @@ theorem lieSpan_insert_toSubmodule (H : LieSubalgebra R L) {y : L} (hy : y ∈ H
   · exact Submodule.span_le.mpr <|
       Set.singleton_subset_iff.mpr <| subset_lieSpan (Set.mem_insert _ _)
   · exact fun _ hz => subset_lieSpan (Set.mem_insert_of_mem _ hz)
+
+/-- When `y` normalizes a Lie subalgebra `H`, the elements of the Lie subalgebra spanned by `H`
+together with `y` are exactly the `t • y + h` with `t : R` and `h ∈ H`. -/
+theorem mem_lieSpan_insert_iff (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer) {z : L} :
+    z ∈ lieSpan R L (insert y (H : Set L)) ↔ ∃ t : R, ∃ h ∈ H, z = t • y + h := by
+  rw [← mem_toSubmodule, lieSpan_insert_toSubmodule H hy, Submodule.mem_sup]
+  constructor
+  · rintro ⟨u, hu, h, hh, rfl⟩
+    obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp hu
+    exact ⟨t, h, hh, rfl⟩
+  · rintro ⟨t, h, hh, rfl⟩
+    exact ⟨t • y, Submodule.smul_mem _ t (Submodule.mem_span_singleton_self y), h, hh, rfl⟩
+
+/-- When `y` normalizes a Lie subalgebra `H`, every `t • y + h` with `h ∈ H` lies in the Lie
+subalgebra spanned by `H` together with `y`. -/
+theorem smul_add_mem_lieSpan_insert (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer)
+    (t : R) {h : L} (hh : h ∈ H) : t • y + h ∈ lieSpan R L (insert y (H : Set L)) :=
+  (H.mem_lieSpan_insert_iff hy).mpr ⟨t, h, hh, rfl⟩
 
 /-- **The nilpotent-extension lemma.**  If a Lie subalgebra `H` acts nilpotently on `M`, and an
 element `y` normalizing `H` acts nilpotently on `M`, then the Lie subalgebra spanned by `y` and `H`
@@ -137,6 +158,15 @@ theorem isNilpotent_toEnd_of_mem_lieSpan_insert (H : LieSubalgebra R L) {y : L}
   exact LieModule.isNilpotent_toEnd_of_isNilpotent R (lieSpan R L (insert y (H : Set L))) M
     ⟨z, hz⟩
 
+/-- The `t • y + h` reading of `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert`: if `H` acts
+nilpotently on `M` and a normalizing element `y` acts nilpotently on `M`, then so does every
+`t • y + h` with `h ∈ H`. -/
+theorem isNilpotent_toEnd_smul_add_of_mem (H : LieSubalgebra R L) {y : L}
+    (hy : y ∈ H.normalizer) [LieModule.IsNilpotent H M]
+    (hyM : IsNilpotent (LieModule.toEnd R L M y)) (t : R) {h : L} (hh : h ∈ H) :
+    IsNilpotent (LieModule.toEnd R L M (t • y + h)) :=
+  H.isNilpotent_toEnd_of_mem_lieSpan_insert hy hyM (H.smul_add_mem_lieSpan_insert hy t hh)
+
 /-- The pointwise form of the nilpotent-extension lemma: if every element of `H` acts nilpotently on
 a Noetherian module `M`, and so does a normalizing element `y`, then so does every element of the
 Lie subalgebra spanned by `y` and `H`.  Engel's theorem turns the hypothesis on `H` into nilpotency
@@ -148,7 +178,10 @@ theorem isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall [IsNoetherian R M]
     (hz : z ∈ lieSpan R L (insert y (H : Set L))) :
     IsNilpotent (LieModule.toEnd R L M z) := by
   have : LieModule.IsNilpotent H M :=
-    (LieModule.isNilpotent_iff_forall' (R := R)).mpr fun x => hH x x.2
+    -- `LieSubalgebra.toEnd_mk`: the action of `⟨x, hx⟩` through `H` is that of `x` through `L`
+    (LieModule.isNilpotent_iff_forall' (R := R)).mpr fun ⟨x, hx⟩ => by
+      rw [toEnd_mk R L M H hx]
+      exact hH x hx
   exact H.isNilpotent_toEnd_of_mem_lieSpan_insert hy hyM hz
 
 end LieSubalgebra
