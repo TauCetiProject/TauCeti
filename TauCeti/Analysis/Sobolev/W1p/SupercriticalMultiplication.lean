@@ -546,7 +546,10 @@ def W1p.mulL (hp : (finrank ℝ E : ℝ≥0) < p) :
       (W1p.mul_smul_comm hp))
     (3 * ‖W1p.morreyEmbedding (mu := mu) hp‖) (W1p.norm_mul_le hp)
 
-@[simp]
+-- Deliberately not a `@[simp]` lemma: the carrier of `W1p mu ⊤ p` mentions `mu.restrict ↑⊤`, which
+-- `simp` normalizes to `mu.restrict Set.univ` inside the coercion's implicit arguments, so this
+-- left-hand side is not in simp-normal form and the rewrite never fires in a full `simp` run.
+-- Use it through `simp only`/`rw`, as `TauCeti.W1p.norm_mulL_apply_le` does.
 theorem W1p.mulL_apply (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
     W1p.mulL hp u v = W1p.mul hp u v :=
   (rfl)
