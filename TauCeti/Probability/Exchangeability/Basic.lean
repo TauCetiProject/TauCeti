@@ -24,12 +24,11 @@ hypotheses enter only in lemmas that compose `Measure.map`s.
 definitions here are about the order structure of `ℕ` (prefixes, shifts, strictly increasing
 selections) and stay sequence-level.
 
-The reindexing measurable equivalences `prefixSplitEquiv` and `blockSplitEquiv` are exceptions on
-both counts: they are neither roadmap signatures nor adapted from the pinned sources, but general
-infrastructure that several exchangeability arguments need, the first to reindex a sequence as a
-length-`r` prefix paired with the tail from index `r`, the second to split a block of width
-`n * m` into `n` consecutive blocks of width `m`. They live here because they are stated purely in
-terms of the index combinatorics, with no measure and no process.
+The reindexing measurable equivalences `prefixSplitEquiv` and `blockSplitEquiv` are general
+infrastructure for exchangeability arguments: the first reindexes a sequence as a length-`r`
+prefix paired with the tail from index `r`, while the second splits a block of width `n * m` into
+`n` consecutive blocks of width `m`. They live here because they are stated purely in terms of the
+index combinatorics, with no measure and no process.
 
 The remaining declarations follow the roadmap signatures in
 `TauCetiRoadmap/Exchangeability/README.md` and
