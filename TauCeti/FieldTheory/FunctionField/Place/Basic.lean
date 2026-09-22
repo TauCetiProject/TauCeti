@@ -308,6 +308,17 @@ theorem ord_eq_zero_of_isAlgebraic {f : F} (hf : IsAlgebraic k f) : P.ord f = 0 
 theorem transcendental_of_ord_ne_zero {f : F} (hf : P.ord f ≠ 0) : Transcendental k f :=
   fun h => hf (P.ord_eq_zero_of_isAlgebraic h)
 
+/-- An element whose order at one place is not divisible by an integer `d` is transcendental over
+the constants.  Indeed, every algebraic element has order zero, which is divisible by every
+integer. -/
+theorem transcendental_of_not_dvd_ord (d : ℤ) {f : F} (hf : ¬ d ∣ P.ord f) :
+    Transcendental k f := by
+  apply P.transcendental_of_ord_ne_zero
+  intro hzero
+  apply hf
+  rw [hzero]
+  exact dvd_zero _
+
 /-- The constant field `algebraicClosure k F` is contained in the valuation ring of every
 place: constants are everywhere regular. -/
 theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosure k F) :

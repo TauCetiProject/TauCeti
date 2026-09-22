@@ -18,10 +18,10 @@ Let `F / k` be a field extension of exponential characteristic `p`, and let `P` 
 `ord_P(z) = p ^ n * ord_P(y)`.
 
 Consequently an element whose order at one place is not divisible by `p` cannot be a `p`-th
-power.  It is also transcendental over the constant field, since algebraic elements have order
-zero at every place.  These are the valuation-theoretic inputs to the separating-element
-criterion in positive characteristic: over a perfect constant field, an element of a function
-field with order prime to the characteristic is separating.
+power.  Together with `TauCeti.Place.transcendental_of_not_dvd_ord`, which makes such an element
+transcendental over the constant field, this is the valuation-theoretic input to the
+separating-element criterion in positive characteristic: over a perfect constant field, an
+element of a function field with order prime to the characteristic is separating.
 
 ## Main results
 
@@ -30,8 +30,6 @@ field with order prime to the characteristic is separating.
   `p ^ n`-power subfield forces divisibility of the order by `p ^ n`.
 * `TauCeti.Place.not_mem_fieldRange_iterateFrobenius_of_not_dvd_ord`: a non-`p ^ n`-divisible
   order obstructs membership in the iterated Frobenius image.
-* `TauCeti.Place.transcendental_of_not_dvd_ord`: the same order condition makes the element
-  transcendental over the constant field.
 
 ## References
 
@@ -69,17 +67,6 @@ theorem not_mem_fieldRange_iterateFrobenius_of_not_dvd_ord (n : ℕ) {z : F}
     (hz : ¬ (p ^ n : ℤ) ∣ P.ord z) :
     z ∉ RingHom.fieldRange (iterateFrobenius F p n) :=
   fun h ↦ hz (P.natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius p n h)
-
-/-- An element whose order at one place is not divisible by an integer `d` is transcendental over
-the constant field.  Indeed, every algebraic element has order zero, which is divisible by every
-integer. -/
-theorem transcendental_of_not_dvd_ord (d : ℤ) {z : F} (hz : ¬ d ∣ P.ord z) :
-    Transcendental k z := by
-  apply P.transcendental_of_ord_ne_zero
-  intro hzero
-  apply hz
-  rw [hzero]
-  exact dvd_zero _
 
 end TauCeti.Place
 
