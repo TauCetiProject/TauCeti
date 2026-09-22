@@ -396,7 +396,8 @@ theorem commute_rectangle_toGridRectangle
     hforget.trans (D.toRectangleDecomposition.commute_second_toGridRectangle
       (D.hasDisjointSides_def.mp h))
 
-private theorem isEmpty_commute_pentagon
+/-- Reordering preserves emptiness of the pentagon when both original domains are empty. -/
+theorem isEmpty_commute_pentagon
     (D : GridRectanglePentagonDecomposition a s x z) (h : D.HasDisjointSides)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.commute h).pentagon.IsEmpty := by
@@ -405,7 +406,8 @@ private theorem isEmpty_commute_pentagon
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
     hrectangle hpentagon
 
-private theorem isEmpty_commute_rectangle
+/-- Reordering preserves emptiness of the rectangle when both original domains are empty. -/
+theorem isEmpty_commute_rectangle
     (D : GridRectanglePentagonDecomposition a s x z) (h : D.HasDisjointSides)
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.commute h).rectangle.IsEmpty := by
@@ -548,7 +550,8 @@ theorem commute_rectangle_toGridRectangle
     hforget.trans (D.toRectangleDecomposition.commute_first_toGridRectangle
       (D.hasDisjointSides_def.mp h))
 
-private theorem isEmpty_commute_rectangle
+/-- Reordering preserves emptiness of the rectangle when both original domains are empty. -/
+theorem isEmpty_commute_rectangle
     (D : GridPentagonRectangleDecomposition a s x z) (h : D.HasDisjointSides)
     (hpentagon : D.pentagon.IsEmpty) (hrectangle : D.rectangle.IsEmpty) :
     (D.commute h).rectangle.IsEmpty := by
@@ -556,7 +559,8 @@ private theorem isEmpty_commute_rectangle
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
     hpentagon hrectangle
 
-private theorem isEmpty_commute_pentagon
+/-- Reordering preserves emptiness of the pentagon when both original domains are empty. -/
+theorem isEmpty_commute_pentagon
     (D : GridPentagonRectangleDecomposition a s x z) (h : D.HasDisjointSides)
     (hpentagon : D.pentagon.IsEmpty) (hrectangle : D.rectangle.IsEmpty) :
     (D.commute h).pentagon.IsEmpty := by
