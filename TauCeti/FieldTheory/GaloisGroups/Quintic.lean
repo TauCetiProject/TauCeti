@@ -15,14 +15,15 @@ import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 # The Galois group of a quintic, from its discriminant and its resolvent sextic
 
 An irreducible separable quintic over a field carries exactly one of the five transitive-group
-labels `5T1`, …, `5T5`, and two data constrain it. Away from characteristic `2` the discriminant
-reads the parity of the label: it is a square exactly for the even labels `5T1`, `5T2` and `5T4`.
-Dummit's `F₂₀` resolvent sextic gives an unconditional implication from solvability to having a
-root in the base field; when its specialization is separable, the converse holds as well, so a root
-is then equivalent to one of the labels `5T1`, `5T2` and `5T3`.
+labels `5T1`, …, `5T5`. For a monic such quintic, two data constrain the label. Away from
+characteristic `2` the discriminant reads its parity: it is a square exactly for the even labels
+`5T1`, `5T2` and `5T4`. Dummit's `F₂₀` resolvent sextic gives an unconditional implication from
+solvability to having a root in the base field; when its specialization is separable, the converse
+holds as well, so a root is then equivalent to one of the labels `5T1`, `5T2` and `5T3`.
 
-The two data together separate `5T3`, `5T4` and `5T5` from each other and from the rest, and this
-file proves those three identifications, together with a fourth branch concluding `5T1` or `5T2`:
+For monic quintics, the two data together separate `5T3`, `5T4` and `5T5` from each other and from
+the rest, and this file proves those three identifications, together with a fourth branch
+concluding `5T1` or `5T2`:
 
 | discriminant | resolvent sextic | label |
 |---|---|---|
