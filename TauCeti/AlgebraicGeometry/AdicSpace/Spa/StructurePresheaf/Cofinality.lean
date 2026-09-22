@@ -73,7 +73,8 @@ abbrev RationalSubsetIndex (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :=
 
 omit [IsTopologicalRing A] in
 /-- The order on rational-subset indices is reverse inclusion of their underlying opens. -/
-private theorem rationalSubsetIndex_le_iff (U W : RationalSubsetIndex Aplus V) :
+@[simp]
+theorem rationalSubsetIndex_le_iff (U W : RationalSubsetIndex Aplus V) :
     U ≤ W ↔ (OrderDual.ofDual W).1 ≤ (OrderDual.ofDual U).1 :=
   Iff.rfl
 
