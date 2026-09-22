@@ -164,11 +164,7 @@ theorem norm_localStableGraphMap_le (hN0 : N 0 = 0) (ξ : X) :
 the equilibrium and has derivative zero there, then the local stable graph map also has derivative
 zero at the origin. When `P` is the commuting projection of an exponential dichotomy,
 `ContinuousLinearMap.apply_localStableGraphMap` then identifies this as tangency of the graph to
-`range P`.
-
-The radial cutoff need not be differentiable on the boundary sphere. This does not affect the
-result: it agrees with the original remainder near zero, while the uniform Lyapunov--Perron bound
-forces the whole solution into that neighbourhood as the input parameter tends to zero. -/
+`range P`. -/
 theorem hasFDerivAt_localStableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
     (hN' : HasFDerivAt N (0 : X →L[ℝ] X) 0) :
     HasFDerivAt (localStableGraphMap A P N r hs hu hr hN hsmall)

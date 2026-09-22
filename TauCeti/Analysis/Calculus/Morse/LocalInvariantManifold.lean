@@ -172,7 +172,7 @@ theorem exists_localStableSet_eq_lipschitzGraph
     have houter : HasFDerivAt (negativeGradientRemainder f x) (0 : E →L[ℝ] E) (x + 0) := by
       simpa only [add_zero] using h.contDiffAt.hasFDerivAt_negativeGradientRemainder
     have hcomp := (houter.comp 0 hshift).congr_fderiv (ContinuousLinearMap.zero_comp _)
-    exact hcomp.congr_of_eventuallyEq (Eventually.of_forall fun _ ↦ rfl)
+    simpa only [hNdef, Function.comp_def] using hcomp
   have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
     exact neg_gradient_centered_eq
