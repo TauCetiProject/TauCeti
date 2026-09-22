@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 
 /-!
 # Primitive Dirichlet Gauss sums in characteristic zero
@@ -32,52 +33,12 @@ open AddChar
 
 namespace DirichletCharacter
 
-/-! ### Injective changes of the coefficient ring -/
-
-/-- Factoring a Dirichlet character through a lower level is unchanged by an injective change of
-coefficient ring. -/
-theorem factorsThrough_ringHomComp_iff {R R' : Type*} [CommRing R] [CommRing R']
-    {n d : ℕ} [NeZero n] (χ : DirichletCharacter R n) (f : R →+* R')
-    (hf : Function.Injective f) :
-    FactorsThrough (χ.ringHomComp f) d ↔ FactorsThrough χ d := by
-  by_cases hd : d ∣ n
-  · rw [factorsThrough_iff_ker_unitsMap hd, factorsThrough_iff_ker_unitsMap hd]
-    constructor
-    · intro h u hu
-      specialize h hu
-      rw [MonoidHom.mem_ker] at h ⊢
-      apply Units.ext
-      apply hf
-      simpa using congrArg ((↑) : R'ˣ → R') h
-    · intro h u hu
-      specialize h hu
-      rw [MonoidHom.mem_ker] at h ⊢
-      apply Units.ext
-      simpa using congrArg f (congrArg ((↑) : Rˣ → R) h)
-  · exact ⟨fun h ↦ (hd h.dvd).elim, fun h ↦ (hd h.dvd).elim⟩
-
-/-- An injective change of coefficient ring preserves the conductor of a Dirichlet character. -/
-theorem conductor_ringHomComp {R R' : Type*} [CommRing R] [CommRing R']
-    {n : ℕ} [NeZero n] (χ : DirichletCharacter R n) (f : R →+* R')
-    (hf : Function.Injective f) : conductor (χ.ringHomComp f) = conductor χ := by
-  apply congrArg sInf
-  ext d
-  exact factorsThrough_ringHomComp_iff χ f hf
-
-/-- An injective change of coefficient ring preserves primitivity of a Dirichlet character. -/
-theorem isPrimitive_ringHomComp_iff {R R' : Type*} [CommRing R] [CommRing R']
-    {n : ℕ} [NeZero n] (χ : DirichletCharacter R n) (f : R →+* R')
-    (hf : Function.Injective f) : IsPrimitive (χ.ringHomComp f) ↔ IsPrimitive χ := by
-  rw [isPrimitive_def, isPrimitive_def, conductor_ringHomComp χ f hf]
-
 /-! ### Gauss sums of primitive Dirichlet characters -/
 
 /-- The Gauss sums of a primitive Dirichlet character and its inverse, taken against inverse
 additive characters, multiply to the level. This holds for composite levels, unlike the
 finite-field result `gaussSum_mul_gaussSum_eq_card`.
-
-The proof uses primitivity twice: multiplication of the additive character by a unit records the
-value of `χ⁻¹`, while summing over every multiplier uses additive-character orthogonality. -/
+-/
 theorem gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive
     {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
@@ -145,6 +106,14 @@ defined by a primitive root of unity in a characteristic-zero field. -/
 noncomputable def gaussSumOfPrimitiveRoot (χ : DirichletCharacter ℤ N) {ζ : L}
     (hζ : IsPrimitiveRoot ζ N) : L :=
   gaussSum (χ.ringHomComp (Int.castRingHom L)) (AddChar.zmodChar N hζ.pow_eq_one)
+
+omit [CharZero L] in
+/-- Expresses `gaussSumOfPrimitiveRoot` using the underlying Dirichlet Gauss sum. -/
+theorem gaussSumOfPrimitiveRoot_def (χ : DirichletCharacter ℤ N) {ζ : L}
+    (hζ : IsPrimitiveRoot ζ N) :
+    gaussSumOfPrimitiveRoot χ hζ =
+      gaussSum (χ.ringHomComp (Int.castRingHom L)) (AddChar.zmodChar N hζ.pow_eq_one) := by
+  rw [gaussSumOfPrimitiveRoot]
 
 /-- The square formula for the Gauss sum formed from a primitive root of unity. -/
 theorem gaussSumOfPrimitiveRoot_sq (χ : DirichletCharacter ℤ N) (hχ : IsPrimitive χ)

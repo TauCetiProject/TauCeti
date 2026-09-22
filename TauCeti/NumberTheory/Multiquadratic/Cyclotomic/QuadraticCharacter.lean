@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.FixedField
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.Square
 public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
@@ -64,6 +65,22 @@ noncomputable def fundamentalDiscriminantCharacterSubgroup (D : ℤ)
   let hζ := IsCyclotomicExtension.zeta_spec D.natAbs ℚ (CyclotomicField D.natAbs ℚ)
   exact ((fundamentalDiscriminantChar D hD).toUnitHom.comp (hζ.autToPow ℚ)).ker
 
+/-- Membership in the fundamental-discriminant character subgroup means that the character is
+trivial on the corresponding cyclotomic automorphism. -/
+@[simp] theorem mem_fundamentalDiscriminantCharacterSubgroup_iff (D : ℤ)
+    (hD : IsFundamentalDiscriminant D) (σ : Gal(CyclotomicField D.natAbs ℚ/ℚ)) :
+    let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+    let _ : NeZero (D.natAbs : ℚ) :=
+      ⟨by exact_mod_cast Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+    let _ : IsCyclotomicExtension {D.natAbs} ℚ (CyclotomicField D.natAbs ℚ) :=
+      CyclotomicField.isCyclotomicExtension D.natAbs ℚ
+    σ ∈ fundamentalDiscriminantCharacterSubgroup D hD ↔
+      fundamentalDiscriminantChar D hD
+        ((IsCyclotomicExtension.zeta_spec D.natAbs ℚ
+          (CyclotomicField D.natAbs ℚ)).autToPow ℚ σ) = 1 := by
+  simp only [fundamentalDiscriminantCharacterSubgroup, MonoidHom.mem_ker,
+    MonoidHom.comp_apply, Units.ext_iff, MulChar.coe_toUnitHom, Units.val_one]
+
 /-- The Gauss sum of a fundamental discriminant is a square root of that discriminant. -/
 theorem fundamentalDiscriminantGaussSum_sq (D : ℤ) (hD : IsFundamentalDiscriminant D) :
     fundamentalDiscriminantGaussSum D hD ^ 2 =
@@ -113,14 +130,11 @@ theorem fixedField_fundamentalDiscriminantCharacterSubgroup_eq_adjoin_of_sq_eq
     (hx : x ^ 2 = (D : CyclotomicField D.natAbs ℚ)) :
     fixedField (fundamentalDiscriminantCharacterSubgroup D hD) = ℚ⟮x⟯ := by
   rw [fixedField_fundamentalDiscriminantCharacterSubgroup]
-  have hsq := fundamentalDiscriminantGaussSum_sq D hD
-  rcases eq_or_eq_neg_of_sq_eq_sq _ _ (hsq.trans hx.symm) with h | h
-  · rw [h]
-  · apply le_antisymm
-    · rw [adjoin_simple_le_iff, h]
-      exact neg_mem (mem_adjoin_simple_self ℚ x)
-    · have hxg : x = -fundamentalDiscriminantGaussSum D hD := by rw [h, neg_neg]
-      rw [adjoin_simple_le_iff, hxg]
-      exact neg_mem (mem_adjoin_simple_self ℚ (fundamentalDiscriminantGaussSum D hD))
+  apply TauCeti.IntermediateField.adjoin_eq_adjoin_of_forall_sq_eq
+  · rintro _ rfl
+    exact ⟨x, Set.mem_singleton x, (fundamentalDiscriminantGaussSum_sq D hD).trans hx.symm⟩
+  · rintro _ rfl
+    exact ⟨fundamentalDiscriminantGaussSum D hD, Set.mem_singleton _,
+      hx.trans (fundamentalDiscriminantGaussSum_sq D hD).symm⟩
 
 end TauCeti.Multiquadratic

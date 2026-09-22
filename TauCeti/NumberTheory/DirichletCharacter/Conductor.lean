@@ -9,15 +9,58 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.GCD.BigOperators
 
 /-!
-# Products of characters with coprime conductors
+# Dirichlet character conductors
 
-The conductor of a product of Dirichlet characters with pairwise coprime conductors is the
-product of their conductors. In particular, primitive characters at pairwise coprime levels
-remain primitive after lifting to the product level and multiplying. This applies to the
-quadratic characters attached to the prime factors of a fundamental discriminant.
+An injective change of coefficient ring preserves the conductor and primitivity of a Dirichlet
+character. The conductor of a product of Dirichlet characters with pairwise coprime conductors is
+the product of their conductors. In particular, primitive characters at pairwise coprime levels
+remain primitive after lifting to the product level and multiplying. This applies to the quadratic
+characters attached to the prime factors of a fundamental discriminant.
 -/
 
 public section
+
+namespace DirichletCharacter
+
+/-! ### Injective changes of the coefficient ring -/
+
+/-- Factoring a Dirichlet character through a lower level is unchanged by an injective change of
+coefficient ring. -/
+theorem factorsThrough_ringHomComp_iff {R R' : Type*} [CommRing R] [CommRing R']
+    {n d : ℕ} [NeZero n] (χ : DirichletCharacter R n) (f : R →+* R')
+    (hf : Function.Injective f) :
+    FactorsThrough (χ.ringHomComp f) d ↔ FactorsThrough χ d := by
+  by_cases hd : d ∣ n
+  · rw [factorsThrough_iff_ker_unitsMap hd, factorsThrough_iff_ker_unitsMap hd]
+    constructor
+    · intro h u hu
+      specialize h hu
+      rw [MonoidHom.mem_ker] at h ⊢
+      apply Units.ext
+      apply hf
+      simpa using congrArg ((↑) : R'ˣ → R') h
+    · intro h u hu
+      specialize h hu
+      rw [MonoidHom.mem_ker] at h ⊢
+      apply Units.ext
+      simpa using congrArg f (congrArg ((↑) : Rˣ → R) h)
+  · exact ⟨fun h ↦ (hd h.dvd).elim, fun h ↦ (hd h.dvd).elim⟩
+
+/-- An injective change of coefficient ring preserves the conductor of a Dirichlet character. -/
+theorem conductor_ringHomComp {R R' : Type*} [CommRing R] [CommRing R']
+    {n : ℕ} [NeZero n] (χ : DirichletCharacter R n) (f : R →+* R')
+    (hf : Function.Injective f) : conductor (χ.ringHomComp f) = conductor χ := by
+  apply congrArg sInf
+  ext d
+  exact factorsThrough_ringHomComp_iff χ f hf
+
+/-- An injective change of coefficient ring preserves primitivity of a Dirichlet character. -/
+theorem isPrimitive_ringHomComp_iff {R R' : Type*} [CommRing R] [CommRing R']
+    {n : ℕ} [NeZero n] (χ : DirichletCharacter R n) (f : R →+* R')
+    (hf : Function.Injective f) : IsPrimitive (χ.ringHomComp f) ↔ IsPrimitive χ := by
+  rw [isPrimitive_def, isPrimitive_def, conductor_ringHomComp χ f hf]
+
+end DirichletCharacter
 
 namespace TauCeti
 
