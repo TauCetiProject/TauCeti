@@ -353,12 +353,8 @@ theorem norm_localUnstableGraphMap_le (hN0 : N 0 = 0) (v : X) :
 omit [CompleteSpace X] in
 open scoped Pointwise in
 /-- **Reversing time turns a backward solution into a forward solution of the negated equation.**
-
-Beyond Mathlib's scaling equivalence `isIntegralCurveOn_comp_mul_ne_zero` at `a = -1`, this
-normalizes the reflected domain `-Iic 0` to `Ici 0` and the reflected field to the `-A`, `-N`
-shape that `ContinuousLinearMap.localStableGraphMap` consumes. It stays private: that
-normalization is bookkeeping internal to the backward-time proofs below, which would otherwise
-each repeat it. -/
+Reflection by `t ↦ -t` identifies solutions on `Iic 0` with solutions of the negated equation
+on `Ici 0`, normalizing the reflected domain from `-Iic 0` to `Ici 0`. -/
 private theorem isIntegralCurveOn_comp_neg_Iic_iff {y : ℝ → X} :
     IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
       IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
