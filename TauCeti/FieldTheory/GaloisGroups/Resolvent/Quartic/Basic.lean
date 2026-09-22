@@ -238,15 +238,6 @@ theorem quarticD4Spec_specialize (R : Type*) [CommRing R] (f : R[X]) :
     Nat.reduceAdd, Nat.reduceSub]
   ring
 
-/-- The specialization of the quartic resolvent specification, expressed as a `Cubic`. -/
-theorem quarticD4Spec_specialize_eq_toPoly (R : Type*) [CommRing R] (f : R[X]) :
-    quarticD4Spec.specialize R f =
-      Cubic.toPoly ⟨1, -f.coeff 2, f.coeff 3 * f.coeff 1 - 4 * f.coeff 0,
-        -(f.coeff 3 ^ 2 * f.coeff 0 + f.coeff 1 ^ 2 - 4 * f.coeff 2 * f.coeff 0)⟩ := by
-  rw [quarticD4Spec_specialize]
-  simp only [Cubic.toPoly, C_neg, C_1, one_mul]
-  ring
-
 /-- The **resolvent cubic** `X³ - pX² - 4rX + (4pr - q²)` of the depressed quartic
 `X⁴ + pX² + qX + r`: the specialization of the quartic resolvent specification at the
 depressed quartic (`TauCeti.quarticD4Spec_specialize_depressed`). -/

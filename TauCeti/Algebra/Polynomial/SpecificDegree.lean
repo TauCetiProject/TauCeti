@@ -18,6 +18,7 @@ separability criterion for irreducible quartics away from characteristic two.
 ## Main results
 
 * `Polynomial.separable_of_irreducible_of_natDegree_eq_four`
+* `Polynomial.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three`
 * `Polynomial.splits_iff_isSquare_discr_of_isRoot_of_monic_cubic`
 * `Polynomial.Splits.of_natDegree_eq_three_of_two_isRoot`
 -/
@@ -56,7 +57,7 @@ private theorem cubic_discr_factor (a b c : F) :
 
 private theorem splits_iff_isSquare_discr_of_isRoot_of_eq_cubic {g : F[X]}
     (hchar : ringChar F ≠ 2) (b c d a : F) (hg : g = Cubic.toPoly ⟨1, b, c, d⟩)
-    (hsep : g.Separable) (ha : g.IsRoot a) : g.Splits ↔ IsSquare g.discr := by
+    (ha : g.IsRoot a) : g.Splits ↔ IsSquare g.discr := by
   have hroot : a ^ 3 + b * a ^ 2 + c * a + d = 0 := by
     rw [IsRoot, hg] at ha
     simpa only [Cubic.toPoly, eval_add, eval_mul, eval_pow, eval_C, eval_X, one_mul] using ha
@@ -83,27 +84,36 @@ private theorem splits_iff_isSquare_discr_of_isRoot_of_eq_cubic {g : F[X]}
     rw [hdisc]
     exact hsq.mul (Even.isSquare_pow (by simp) _)
   · intro hsq
-    have hgmonic : g.Monic := hg ▸ Cubic.monic_of_a_eq_one' (b := b) (c := c) (d := d)
-    have hdiscne : g.discr ≠ 0 := hgmonic.discr_ne_zero_iff.2 hsep
-    have hr : a ^ 2 + (b + a) * a + (c + b * a + a ^ 2) ≠ 0 := by
-      intro hr
-      apply hdiscne
-      rw [hdisc, hr]
-      simp
-    have hquot := hsq.div (Even.isSquare_pow even_two (a ^ 2 + (b + a) * a +
-      (c + b * a + a ^ 2)))
-    rw [hdisc] at hquot
-    have heq : discrim 1 (b + a) (c + b * a + a ^ 2) =
-        discrim 1 (b + a) (c + b * a + a ^ 2) *
-          (a ^ 2 + (b + a) * a + (c + b * a + a ^ 2)) ^ 2 /
-            (a ^ 2 + (b + a) * a + (c + b * a + a ^ 2)) ^ 2 := by
-      exact (mul_div_cancel_right₀ _ (pow_ne_zero 2 hr)).symm
-    rw [heq]
-    exact hquot
+    by_cases hr : a ^ 2 + (b + a) * a + (c + b * a + a ^ 2) = 0
+    · apply hqsplit.mp
+      have hquad : (C 1 * X ^ 2 + C (b + a) * X +
+          C (c + b * a + a ^ 2) : F[X]).Splits :=
+        (splits_quadratic_iff_exists_root one_ne_zero).2 ⟨a, by
+          simpa only [eval_add, eval_mul, eval_pow, eval_X, eval_C, one_mul] using hr⟩
+      simpa only [C_1, one_mul] using hquad
+    · have hquot := hsq.div (Even.isSquare_pow even_two (a ^ 2 + (b + a) * a +
+        (c + b * a + a ^ 2)))
+      rw [hdisc] at hquot
+      have heq : discrim 1 (b + a) (c + b * a + a ^ 2) =
+          discrim 1 (b + a) (c + b * a + a ^ 2) *
+            (a ^ 2 + (b + a) * a + (c + b * a + a ^ 2)) ^ 2 /
+              (a ^ 2 + (b + a) * a + (c + b * a + a ^ 2)) ^ 2 := by
+        exact (mul_div_cancel_right₀ _ (pow_ne_zero 2 hr)).symm
+      rw [heq]
+      exact hquot
 
-/-- A separable monic cubic with a root splits exactly when its discriminant is a square. -/
+/-- A cubic is irreducible exactly when it has no root in its coefficient field. -/
+theorem irreducible_iff_not_exists_isRoot_of_natDegree_eq_three {g : F[X]}
+    (hdeg : g.natDegree = 3) : Irreducible g ↔ ¬ ∃ a : F, g.IsRoot a := by
+  have hg : g ≠ 0 := ne_zero_of_natDegree_gt (p := g) (n := 0) (by omega)
+  rw [irreducible_iff_roots_eq_zero_of_degree_le_three (by omega) (by omega),
+    Multiset.eq_zero_iff_forall_notMem]
+  simp only [mem_roots hg]
+  simp
+
+/-- A monic cubic with a root splits exactly when its discriminant is a square. -/
 theorem splits_iff_isSquare_discr_of_isRoot_of_monic_cubic {g : F[X]} (hg : g.Monic)
-    (hdeg : g.natDegree = 3) (hchar : ringChar F ≠ 2) (hsep : g.Separable) {a : F}
+    (hdeg : g.natDegree = 3) (hchar : ringChar F ≠ 2) {a : F}
     (ha : g.IsRoot a) : g.Splits ↔ IsSquare g.discr := by
   have hcubic : g = Cubic.toPoly ⟨1, g.coeff 2, g.coeff 1, g.coeff 0⟩ := by
     ext n
@@ -115,7 +125,7 @@ theorem splits_iff_isSquare_discr_of_isRoot_of_monic_cubic {g : F[X]} (hg : g.Mo
       · simpa [hdeg] using hg.coeff_natDegree
     · have hn' : g.natDegree < n := by omega
       rw [coeff_eq_zero_of_natDegree_lt hn', Cubic.coeff_eq_zero (by omega)]
-  exact splits_iff_isSquare_discr_of_isRoot_of_eq_cubic hchar _ _ _ a hcubic hsep ha
+  exact splits_iff_isSquare_discr_of_isRoot_of_eq_cubic hchar _ _ _ a hcubic ha
 
 /-- A cubic with two distinct roots over its coefficient field splits there. -/
 theorem Splits.of_natDegree_eq_three_of_two_isRoot {g : F[X]} (hdeg : g.natDegree = 3)

@@ -215,13 +215,9 @@ theorem hasGaloisLabel_four_four_iff_irreducible_resolvent :
       Irreducible f ∧ f.natDegree = 4 ∧ ¬ IsSquare f.discr ∧
         Irreducible (quarticD4Spec.specialize F f) := by
   rw [hasGaloisLabel_four_four_iff hchar hf]
-  have hres := (quarticD4Spec.monic_specialize F f).irreducible_iff_roots_eq_zero_of_degree_le_three
-    (by rw [Polynomial.natDegree_specialize_quarticD4Spec]; omega)
-    (by rw [Polynomial.natDegree_specialize_quarticD4Spec])
-  rw [Multiset.eq_zero_iff_forall_notMem] at hres
-  simp only [mem_roots (quarticD4Spec.monic_specialize F f).ne_zero] at hres
-  simp only [not_exists]
-  tauto
+  have hres := Polynomial.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three
+    (Polynomial.natDegree_specialize_quarticD4Spec f)
+  rw [hres]
 
 /-- **The irreducible-resolvent row for `4T4`.** Away from characteristic `2`, a monic
 polynomial has label `4T4` exactly when it is an irreducible quartic with square discriminant
@@ -231,13 +227,9 @@ theorem hasGaloisLabel_four_three_iff_irreducible_resolvent :
       Irreducible f ∧ f.natDegree = 4 ∧ IsSquare f.discr ∧
         Irreducible (quarticD4Spec.specialize F f) := by
   rw [hasGaloisLabel_four_three_iff hchar hf]
-  have hres := (quarticD4Spec.monic_specialize F f).irreducible_iff_roots_eq_zero_of_degree_le_three
-    (by rw [Polynomial.natDegree_specialize_quarticD4Spec]; omega)
-    (by rw [Polynomial.natDegree_specialize_quarticD4Spec])
-  rw [Multiset.eq_zero_iff_forall_notMem] at hres
-  simp only [mem_roots (quarticD4Spec.monic_specialize F f).ne_zero] at hres
-  simp only [not_exists]
-  tauto
+  have hres := Polynomial.irreducible_iff_not_exists_isRoot_of_natDegree_eq_three
+    (Polynomial.natDegree_specialize_quarticD4Spec f)
+  rw [hres]
 
 /-- **The split-resolvent row for `4T2`.** Away from characteristic `2`, a monic polynomial
 has label `4T2` exactly when it is an irreducible quartic whose resolvent cubic splits completely
@@ -248,21 +240,17 @@ theorem hasGaloisLabel_four_one_iff_splits_resolvent :
   constructor
   · intro h
     obtain ⟨hirr, hdeg, hsq, a, ha⟩ := (hasGaloisLabel_four_one_iff hchar hf).1 h
-    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
-    have hressep := (separable_quarticD4Spec_specialize_iff hf hdeg).2 hsep
     refine ⟨hirr, hdeg, ?_⟩
     apply (splits_iff_isSquare_discr_of_isRoot_of_monic_cubic
       (quarticD4Spec.monic_specialize F f) (Polynomial.natDegree_specialize_quarticD4Spec f)
-      hchar hressep ha).2
+      hchar ha).2
     rwa [← discr_quarticD4Spec_specialize hf hdeg]
   · rintro ⟨hirr, hdeg, hsplit⟩
-    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
-    have hressep := (separable_quarticD4Spec_specialize_iff hf hdeg).2 hsep
     have hresdeg := Polynomial.natDegree_specialize_quarticD4Spec f
     obtain ⟨a, ha⟩ := hsplit.exists_eval_eq_zero
       (degree_ne_of_natDegree_ne (hresdeg ▸ by decide))
     have hressq := (splits_iff_isSquare_discr_of_isRoot_of_monic_cubic
-      (quarticD4Spec.monic_specialize F f) hresdeg hchar hressep ha).1 hsplit
+      (quarticD4Spec.monic_specialize F f) hresdeg hchar ha).1 hsplit
     have hsq : IsSquare f.discr := by
       rw [discr_quarticD4Spec_specialize hf hdeg]
       exact hressq
@@ -281,8 +269,6 @@ theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
   constructor
   · intro h
     obtain ⟨hirr, hdeg, hsq, a, ha⟩ := (hasGaloisLabel_four_zero_or_two_iff hchar hf).1 h
-    have hsep := Polynomial.separable_of_irreducible_of_natDegree_eq_four hchar hirr hdeg
-    have hressep := (separable_quarticD4Spec_specialize_iff hf hdeg).2 hsep
     refine ⟨hirr, hdeg, a, ha, ?_⟩
     intro x hx
     by_contra hxa
@@ -290,7 +276,7 @@ theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
       (Polynomial.natDegree_specialize_quarticD4Spec f) ha hx hxa
     have hressq := (splits_iff_isSquare_discr_of_isRoot_of_monic_cubic
       (quarticD4Spec.monic_specialize F f) (Polynomial.natDegree_specialize_quarticD4Spec f)
-      hchar hressep ha).1 hsplit
+      hchar ha).1 hsplit
     apply hsq
     rw [discr_quarticD4Spec_specialize hf hdeg]
     exact hressq
@@ -303,7 +289,7 @@ theorem hasGaloisLabel_four_zero_or_two_iff_existsUnique_isRoot_resolvent :
       have hressq : IsSquare (quarticD4Spec.specialize F f).discr := by
         rwa [← discr_quarticD4Spec_specialize hf hdeg]
       have hsplit := (splits_iff_isSquare_discr_of_isRoot_of_monic_cubic
-        (quarticD4Spec.monic_specialize F f) hresdeg hchar hressep ha).2 hressq
+        (quarticD4Spec.monic_specialize F f) hresdeg hchar ha).2 hressq
       have hsplit' : ((quarticD4Spec.specialize F f).map (algebraMap F F)).Splits := by
         simpa using hsplit
       have hcard : Fintype.card ((quarticD4Spec.specialize F f).rootSet F) = 3 := by

@@ -65,7 +65,9 @@ theorem discr_quarticD4Spec_specialize {f : R[X]} (hmonic : f.Monic)
         ⟨1, -f.coeff 2, f.coeff 3 * f.coeff 1 - 4 * f.coeff 0,
           -(f.coeff 3 ^ 2 * f.coeff 0 + f.coeff 1 ^ 2 -
             4 * f.coeff 2 * f.coeff 0)⟩ : R[X]) := by
-    exact quarticD4Spec_specialize_eq_toPoly R f
+    rw [quarticD4Spec_specialize]
+    simp only [Cubic.toPoly, C_neg, C_1, one_mul]
+    ring
   rw [hres, Cubic.toPoly_discr one_ne_zero, Cubic.discr,
     hmonic.discr_of_natDegree_eq_four hf]
   ring
