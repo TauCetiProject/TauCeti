@@ -7,7 +7,7 @@ module
 
 import TauCeti.MeasureTheory.Measure.ProductKernel
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
-import TauCeti.Probability.Distributions.Measurability
+import TauCeti.Probability.Distributions.Gamma.Measurability
 
 /-!
 # Parameter measurability of the Dirichlet distribution

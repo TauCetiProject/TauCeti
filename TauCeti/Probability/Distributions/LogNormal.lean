@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
-public import TauCeti.Probability.Distributions.Measurability
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic

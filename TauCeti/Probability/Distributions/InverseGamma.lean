@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gamma.Cdf
-public import TauCeti.Probability.Distributions.Measurability
+public import TauCeti.Probability.Distributions.Gamma.Measurability
 
 import TauCeti.Probability.Moments.IntegrableExpMul
 import TauCeti.MeasureTheory.Measure.WithDensity

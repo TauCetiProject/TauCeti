@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
-public import TauCeti.Probability.Distributions.PDFInstances
+public import TauCeti.Probability.Distributions.Pareto.PDF
 
 import TauCeti.Probability.Moments.IntegrableExpMul
 
