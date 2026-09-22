@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.SpecificDegree
 public import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 public import TauCeti.Algebra.Polynomial.QuadraticDiscriminant
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
+import TauCeti.Algebra.Squarefree
 
 /-!
 # Polynomials of degree three and four
@@ -86,12 +87,6 @@ theorem exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot {g : F[X]}
   rw [hq, natDegree_mul (X_sub_C_ne_zero a) hq0, natDegree_X_sub_C] at hdeg
   omega
 
-/-- A nonzero square factor does not affect squareness. -/
-private theorem isSquare_of_isSquare_mul_sq {d s : F} (hs : s ≠ 0) (h : IsSquare (d * s ^ 2)) :
-    IsSquare d := by
-  rw [← mul_div_cancel_right₀ d (pow_ne_zero 2 hs)]
-  exact h.div (Even.isSquare_pow even_two s)
-
 /-- Away from characteristic two, a quadratic splits over its coefficient field exactly when its
 discriminant is a square. This is `Polynomial.splits_quadratic_iff_isSquare` read on `discr`
 rather than on a coefficient triple. -/
@@ -137,7 +132,7 @@ private theorem Monic.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot 
   refine ⟨fun h => (hquad.1 h).mul (Even.isSquare_pow even_two _), fun h => ?_⟩
   by_cases hr : q.eval a = 0
   · exact Splits.of_natDegree_eq_two hqdeg hr
-  · exact hquad.2 (isSquare_of_isSquare_mul_sq hr h)
+  · exact hquad.2 ((isSquare_mul_sq_iff hr).mp h)
 
 /-- **Away from characteristic two, a cubic with a root in its coefficient field splits there
 exactly when its discriminant is a square.** Multiplication by the inverse leading coefficient
@@ -174,7 +169,7 @@ theorem splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot {g : F[X]}
     norm_num
     ring
   rw [hsplits, hcriterion, hdiscr]
-  exact ⟨isSquare_of_isSquare_mul_sq (pow_ne_zero 2 (inv_ne_zero hlc)),
+  exact ⟨(isSquare_mul_sq_iff (pow_ne_zero 2 (inv_ne_zero hlc))).mp,
     fun h => h.mul (Even.isSquare_pow even_two _)⟩
 
 /-- A cubic with two distinct roots in its coefficient field splits there. -/
