@@ -99,9 +99,8 @@ private lemma integrable_id_mul_studentTKernel (hν : 1 < ν) :
 private theorem integrable_id_studentTMeasure_of_one_lt (hν : 1 < ν) :
     Integrable id (studentTMeasure ν) := by
   have hνpos : 0 < ν := lt_trans zero_lt_one hν
-  rw [studentTMeasure_def, integrable_withDensity_iff (measurable_studentTPDF ν)
-    (ae_of_all _ fun x => studentTPDF_lt_top ν x)]
-  simp_rw [id_eq, toReal_studentTPDF, studentTPDFReal_of_pos hνpos]
+  rw [integrable_studentTMeasure_iff]
+  simp_rw [id_eq, smul_eq_mul, studentTPDFReal_of_pos hνpos]
   have h := (integrable_id_mul_studentTKernel hν).const_mul
     (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)))
   exact h.congr (ae_of_all _ fun x => by ring)
@@ -178,9 +177,8 @@ private theorem not_integrable_pow_studentTMeasure (hν : 0 < ν) (q : ℕ)
     (hνq : ν ≤ (q : ℝ)) :
     ¬ Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) := by
   intro hint
-  rw [studentTMeasure_def, integrable_withDensity_iff (measurable_studentTPDF ν)
-    (ae_of_all _ fun x => studentTPDF_lt_top ν x)] at hint
-  simp_rw [toReal_studentTPDF] at hint
+  rw [integrable_studentTMeasure_iff] at hint
+  simp_rw [smul_eq_mul] at hint
   let c : ℝ :=
     (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2))) *
       (1 + ν⁻¹) ^ (-(((q : ℝ) + 1) / 2))
@@ -202,6 +200,7 @@ private theorem not_integrable_pow_studentTMeasure (hν : 0 < ν) (q : ℕ)
       _ = c⁻¹ * (c * x⁻¹) := by field_simp
       _ ≤ c⁻¹ * (x ^ q * studentTPDFReal ν x) :=
         mul_le_mul_of_nonneg_left hpdf (inv_nonneg.mpr hc.le)
+      _ = c⁻¹ * (studentTPDFReal ν x * x ^ q) := by rw [mul_comm (x ^ q)]
   exact not_integrableOn_Ioi_inv hinv
 
 /-- The identity is integrable under a nondegenerate Student t law exactly when the number of
@@ -277,9 +276,8 @@ private lemma integrable_sq_mul_studentTKernel (hν : 2 < ν) :
 private theorem integrable_sq_studentTMeasure_of_two_lt (hν : 2 < ν) :
     Integrable (fun x : ℝ => x ^ 2) (studentTMeasure ν) := by
   have hνpos : 0 < ν := lt_trans zero_lt_two hν
-  rw [studentTMeasure_def, integrable_withDensity_iff (measurable_studentTPDF ν)
-    (ae_of_all _ fun x => studentTPDF_lt_top ν x)]
-  simp_rw [toReal_studentTPDF, studentTPDFReal_of_pos hνpos]
+  rw [integrable_studentTMeasure_iff]
+  simp_rw [smul_eq_mul, studentTPDFReal_of_pos hνpos]
   have h := (integrable_sq_mul_studentTKernel hν).const_mul
     (Real.Gamma ((ν + 1) / 2) / (√(ν * π) * Real.Gamma (ν / 2)))
   exact h.congr (ae_of_all _ fun x => by ring)
@@ -362,9 +360,8 @@ theorem integral_sq_studentTMeasure (hν : 2 < ν) :
   have hthree : (3 : ℝ) / 2 = 1 / 2 + 1 := by ring
   have hgammaSum : (1 : ℝ) / 2 + 1 + (ν - 2) / 2 = (ν + 1) / 2 := by ring
   have hνhalf : ν / 2 = (ν - 2) / 2 + 1 := by ring
-  rw [studentTMeasure_def, integral_withDensity_eq_integral_toReal_smul
-    (measurable_studentTPDF ν) (ae_of_all _ fun x => studentTPDF_lt_top ν x)]
-  simp_rw [toReal_studentTPDF, smul_eq_mul, studentTPDFReal_of_pos hνpos]
+  rw [integral_studentTMeasure_eq]
+  simp_rw [smul_eq_mul, studentTPDFReal_of_pos hνpos]
   calc
     ∫ x : ℝ, (Real.Gamma ((ν + 1) / 2) /
           (√(ν * π) * Real.Gamma (ν / 2)) *

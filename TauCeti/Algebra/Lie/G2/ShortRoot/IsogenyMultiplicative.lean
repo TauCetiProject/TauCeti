@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct
+public import TauCeti.Algebra.Lie.G2.ShortRoot.CrossProduct.Basic
 public import TauCeti.Algebra.Lie.G2.ShortRoot.SpecialIsogeny
 
 /-!

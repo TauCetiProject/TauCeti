@@ -38,6 +38,8 @@ Frobenius hypothesis and choices of projective-injective conflations.
 * `TauCeti.ExactStructure.ProjectiveStableCategory`: the quotient by `projectiveStableIdeal`.
 * `TauCeti.ExactStructure.projectiveStableFunctor`: the quotient functor to the projective stable
   category.
+* `TauCeti.ExactStructure.projectiveStableIsoBiprod`: the isomorphism `Y ≅ P ⊞ Y` in the stable
+  category attached to a relatively projective `P`.
 
 ## References
 
@@ -182,6 +184,70 @@ theorem IsFrobenius.isZero_projectiveStableFunctor_obj_iff_isInjective {E : Exac
     IsZero (E.projectiveStableFunctor.obj X) ↔ E.isInjective X :=
   (ExactStructure.isZero_projectiveStableFunctor_obj_iff E X).trans
     (hE.projective_iff_injective X)
+
+/-- A relatively projective summand is invisible in the projective stable category: the
+biproduct inclusion `Y ⟶ P ⊞ Y` becomes an isomorphism there, with inverse the projection. -/
+noncomputable def projectiveStableIsoBiprod {P : C} (hP : E.isProjective P) (Y : C) :
+    E.projectiveStableFunctor.obj Y ≅ E.projectiveStableFunctor.obj (P ⊞ Y) where
+  hom := E.projectiveStableFunctor.map biprod.inr
+  inv := E.projectiveStableFunctor.map biprod.snd
+  hom_inv_id := by
+    rw [← Functor.map_comp, biprod.inr_snd, E.projectiveStableFunctor.map_id]
+  inv_hom_id := by
+    have hfst : E.projectiveStableFunctor.map
+        ((biprod.fst : P ⊞ Y ⟶ P) ≫ (biprod.inl : P ⟶ P ⊞ Y)) = 0 := by
+      rw [projectiveStableFunctor_map_eq_zero_iff]
+      exact ObjectProperty.factorsThrough_comp E.isProjective hP _ _
+    have hsplit : (biprod.snd : P ⊞ Y ⟶ Y) ≫ biprod.inr =
+        𝟙 (P ⊞ Y) - biprod.fst ≫ (biprod.inl : P ⟶ P ⊞ Y) := by
+      rw [← biprod.total]
+      abel
+    rw [← Functor.map_comp, hsplit, Functor.map_sub, hfst, sub_zero,
+      E.projectiveStableFunctor.map_id]
+
+/-- The comparison with a relatively projective summand is the biproduct inclusion. -/
+@[simp]
+theorem projectiveStableIsoBiprod_hom {P : C} (hP : E.isProjective P) (Y : C) :
+    (E.projectiveStableIsoBiprod hP Y).hom = E.projectiveStableFunctor.map biprod.inr :=
+  (rfl)
+
+/-- The inverse comparison with a relatively projective summand is the biproduct projection. -/
+@[simp]
+theorem projectiveStableIsoBiprod_inv {P : C} (hP : E.isProjective P) (Y : C) :
+    (E.projectiveStableIsoBiprod hP Y).inv = E.projectiveStableFunctor.map biprod.snd :=
+  (rfl)
+
+/-- Two morphisms `φ ψ : S ⟶ T` of short complexes out of a conflation `S`, agreeing on first
+terms, induce the same map on third terms in the projective stable category once the middle term
+of `T` is relatively projective: `φ.τ₃ - ψ.τ₃` factors through `T.X₂`. -/
+theorem projectiveStableFunctor_map_τ₃_eq_of_τ₁_eq {S T : ShortComplex C} (hS : E.Conflation S)
+    (hT : E.isProjective T.X₂) {φ ψ : S ⟶ T} (h : φ.τ₁ = ψ.τ₁) :
+    E.projectiveStableFunctor.map φ.τ₃ = E.projectiveStableFunctor.map ψ.τ₃ := by
+  have hkc := E.isKernelCokernelPair S hS
+  have := hkc.epi_g
+  have hb : S.f ≫ (φ.τ₂ - ψ.τ₂) = 0 := by
+    rw [Preadditive.comp_sub, ← φ.comm₁₂, ← ψ.comm₁₂, h, sub_self]
+  have hdiff : φ.τ₃ - ψ.τ₃ = hkc.desc _ hb ≫ T.g := by
+    rw [← cancel_epi S.g, Preadditive.comp_sub, ← φ.comm₂₃, ← ψ.comm₂₃, ← Preadditive.sub_comp,
+      ← Category.assoc, hkc.g_desc]
+  rw [← sub_eq_zero, ← Functor.map_sub, projectiveStableFunctor_map_eq_zero_iff, hdiff]
+  exact ObjectProperty.factorsThrough_comp E.isProjective hT _ _
+
+/-- Two morphisms `φ ψ : S ⟶ T` of short complexes into a conflation `T`, agreeing on third
+terms, induce the same map on first terms in the projective stable category once the middle term
+of `S` is relatively projective: `φ.τ₁ - ψ.τ₁` factors through `S.X₂`. -/
+theorem projectiveStableFunctor_map_τ₁_eq_of_τ₃_eq {S T : ShortComplex C} (hT : E.Conflation T)
+    (hS : E.isProjective S.X₂) {φ ψ : S ⟶ T} (h : φ.τ₃ = ψ.τ₃) :
+    E.projectiveStableFunctor.map φ.τ₁ = E.projectiveStableFunctor.map ψ.τ₁ := by
+  have hkc := E.isKernelCokernelPair T hT
+  have := hkc.mono_f
+  have hb : (φ.τ₂ - ψ.τ₂) ≫ T.g = 0 := by
+    rw [Preadditive.sub_comp, φ.comm₂₃, ψ.comm₂₃, h, sub_self]
+  have hdiff : φ.τ₁ - ψ.τ₁ = S.f ≫ hkc.lift _ hb := by
+    rw [← cancel_mono T.f, Preadditive.sub_comp, φ.comm₁₂, ψ.comm₁₂, ← Preadditive.comp_sub,
+      Category.assoc, hkc.lift_f]
+  rw [← sub_eq_zero, ← Functor.map_sub, projectiveStableFunctor_map_eq_zero_iff, hdiff]
+  exact ObjectProperty.factorsThrough_comp E.isProjective hS _ _
 
 end ExactStructure
 

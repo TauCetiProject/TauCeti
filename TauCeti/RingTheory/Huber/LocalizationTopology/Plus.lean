@@ -45,6 +45,8 @@ Wedhorn's Lemma 7.47(4) that this file needs.
 * `TauCeti.Huber.PairOfDefinition.isRingOfIntegralElements_completedPlusSubring`: when `A⁺`
   consists of power-bounded elements and contains the image of the ideal of definition, `A_U⁺` is
   a ring of integral elements of `A⟨T/s⟩`.
+* `TauCeti.Huber.PairOfDefinition.coeRingHom_mem_completedPlusSubring`: the completion map
+  carries `C` into `A_U⁺`, making it a morphism of pairs `(A(T/s), C) → (A⟨T/s⟩, A_U⁺)`.
 * `TauCeti.Huber.PairOfDefinition.toCompletionLoc_mem_completedPlusSubring` and
   `TauCeti.Huber.PairOfDefinition.divBy_mem_completedPlusSubring`: the image of `A⁺` and each
   fraction `t/s` lie in `A_U⁺`.
@@ -179,6 +181,25 @@ theorem isClosed_completedPlusSubring (P : PairOfDefinition A) (Aplus : Subring 
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   rw [coe_completedPlusSubring]
   exact isClosed_closure
+
+/-- **The image of `C` lies in `A_U⁺`.** The completion map `A(T/s) → A⟨T/s⟩` carries the
+integral closure `C` of `A⁺[T/s]` in `A(T/s)` into the plus ring of the completed localization,
+which is by definition the closure of that image. Together with
+`UniformSpace.Completion.continuous_coeRingHom` this makes the completion map a morphism of pairs
+`(A(T/s), C) → (A⟨T/s⟩, A_U⁺)`, the second factor of the structure map `ρ : A → A⟨T/s⟩`; the
+first factor is covered by `algebraMap_mem_integralClosure_adjoin_plus`. -/
+theorem coeRingHom_mem_completedPlusSubring (P : PairOfDefinition A) (Aplus : Subring A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {x : S}
+    (hx : x ∈ (integralClosure ↥(Algebra.adjoin Aplus
+      (Set.range fun t : T ↦ (divBy (t : A) s : S))) S).toSubring) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    UniformSpace.Completion.coeRingHom x ∈ completedPlusSubring P Aplus T s S hden := by
+  -- `A_U⁺` is the closure of the image of `C`, so the image itself is inside it
+  rw [mem_completedPlusSubring_iff]
+  exact subset_closure ⟨x, hx, rfl⟩
 
 /-- **The structure map `A → A⟨T/s⟩` carries `A⁺` into `A_U⁺`**, with no hypothesis on `Aplus`.
 Together with `continuous_toCompletionLoc`, this makes the structure map a morphism of pairs
@@ -350,6 +371,16 @@ theorem locIdealImage_one_le_adjoin_plus (P : PairOfDefinition A) (Aplus : Subri
   intro x hx
   obtain ⟨d, hd, rfl⟩ := (mem_locIdealImage_iff P T s S 1).mp hx
   exact Subring.mem_toAddSubgroup.mpr (Subalgebra.mem_toSubring.mpr (one_mul d ▸ hJ d hd 1))
+
+omit [TopologicalSpace A] [IsTopologicalRing A] in
+/-- **`A⁺` maps into `C`**, the integral closure of `A⁺[T/s]` in `Aₛ`: an element of `A⁺` lands in
+the adjoined subring already, hence in its integral closure. No topology is involved. -/
+lemma algebraMap_mem_integralClosure_adjoin_plus (Aplus : Subring A) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S] (a : A) (ha : a ∈ Aplus) :
+    algebraMap A S a ∈ (integralClosure ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦
+      (divBy (t : A) s : S))) S).toSubring :=
+  Subalgebra.algebraMap_mem _ (⟨_, Subalgebra.algebraMap_mem _ (⟨a, ha⟩ : Aplus)⟩ :
+    ↥(Algebra.adjoin Aplus _))
 
 /-- **When `A⁺` consists of power-bounded elements and contains the image of the ideal of
 definition, the integral closure of `A⁺[T/s]` in `Aₛ` is a ring of integral elements** of the

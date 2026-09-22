@@ -44,7 +44,7 @@ theorem zero_vlt_prod_iff : 0 <ᵥ ∏ i ∈ s, f i ↔ ∀ i ∈ s, 0 <ᵥ f i 
   simpa using (Ideal.IsPrime.prod_mem_iff (p := ValuativeRel.supp R)).not
 
 /-- Finite products are monotone for a valuative relation. This is the analogue of
-`Finset.prod_le_prod'`, and extends `ValuativeRel.mul_vle_mul` from two factors to finite
+`Finset.prod_le_prod`, and extends `ValuativeRel.mul_vle_mul` from two factors to finite
 products. -/
 @[gcongr]
 theorem prod_vle_prod (h : ∀ i ∈ s, f i ≤ᵥ g i) : ∏ i ∈ s, f i ≤ᵥ ∏ i ∈ s, g i := by

@@ -25,6 +25,8 @@ with that of its image.
 
 * `RootPairing.Equiv.indexHom_injective` says that an automorphism of a root system is
   determined by its permutation of the roots.
+* `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
+  when the coroots span, in particular for simply connected integral root data.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
 * `RootPairing.coroot'_smul` and `RootPairing.coroot'_weylGroupToPerm_smul` say an
@@ -81,6 +83,22 @@ theorem _root_.RootPairing.Equiv.indexHom_injective_of_span_eq_top
   simp only [_root_.RootPairing.Equiv.weightHom_apply, LinearEquiv.coe_coe,
     _root_.RootPairing.Equiv.weightEquiv_apply,
     _root_.RootPairing.Hom.root_weightMap_apply, hfg']
+
+/-- If the coroots span, an automorphism of a root pairing is determined by its permutation of
+the root indices. This applies to simply connected root data over the integers. -/
+theorem _root_.RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top
+    (hspan : P.corootSpan R = ⊤) :
+    Function.Injective (_root_.RootPairing.Equiv.indexHom P) := by
+  intro f g hfg
+  apply _root_.RootPairing.Equiv.coweightHom_injective P
+  apply MulOpposite.unop_injective
+  apply LinearEquiv.toLinearMap_injective
+  refine LinearMap.ext_on_range hspan fun i => ?_
+  have hi : f.indexEquiv.symm i = g.indexEquiv.symm i :=
+    congrArg (fun e : Equiv.Perm ι => e.symm i) hfg
+  simp only [_root_.RootPairing.Equiv.coweightHom_op, LinearEquiv.coe_coe,
+    _root_.RootPairing.Equiv.coweightEquiv_apply,
+    _root_.RootPairing.Hom.coroot_coweightMap_apply, hi]
 
 /-- An automorphism of a root system is determined by its permutation of the root indices. -/
 theorem _root_.RootPairing.Equiv.indexHom_injective [P.IsRootSystem] :

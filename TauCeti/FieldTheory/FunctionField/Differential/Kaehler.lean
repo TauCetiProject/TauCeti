@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Kaehler.Polynomial
+public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 
 /-!
@@ -84,19 +84,13 @@ private theorem exists_basis_unit_D (hx : Transcendental k x) [Algebra.IsSeparab
     ∃ b : Basis Unit F Ω[F⁄k], b () = D k F x := by
   -- Realize the rational function field inside `F` along `X ↦ x`, and let `F` carry the
   -- resulting `RatFunc k`-algebra structure; it is separable, hence formally étale.
-  let e : RatFunc k ≃ₐ[k] k⟮x⟯ := RatFunc.algEquivOfTranscendental x hx
-  let : Algebra (RatFunc k) F := (k⟮x⟯.val.comp e.toAlgHom).toRingHom.toAlgebra
-  have halg (r : RatFunc k) : algebraMap (RatFunc k) F r = (e r : F) := rfl
-  have hX : algebraMap (RatFunc k) F RatFunc.X = x := by
-    rw [halg]; exact RatFunc.algEquivOfTranscendental_X x hx
-  have : IsScalarTower k (RatFunc k) F :=
-    .of_algebraMap_eq fun c ↦ ((k⟮x⟯.val.comp e.toAlgHom).commutes c).symm
-  have : Algebra.IsSeparable (RatFunc k) F :=
-    Algebra.IsSeparable.of_equiv_equiv e.symm.toRingEquiv (RingEquiv.refl F)
-      (by ext r; simp [halg])
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
   have : Algebra.FormallyEtale (RatFunc k) F := .of_isSeparable _ _
   refine ⟨kaehlerBasisOfFormallyEtale k (RatFunc k) F (kaehlerBasisRatFunc k), ?_⟩
-  rw [kaehlerBasisOfFormallyEtale_apply, kaehlerBasisRatFunc_apply, KaehlerDifferential.map_D, hX]
+  rw [kaehlerBasisOfFormallyEtale_apply, kaehlerBasisRatFunc_apply, KaehlerDifferential.map_D,
+    algebraMap_ratFuncAlgebraOfTranscendental_X]
 
 variable [Algebra.IsSeparable k⟮x⟯ F] (hx : Transcendental k x)
 include hx

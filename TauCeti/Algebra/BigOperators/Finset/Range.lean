@@ -7,15 +7,17 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.Abel
 
 /-!
 # Range reindexing for finite sums
 
-Generic identities for sums indexed by `Finset.range` and `Finset.Ioo`. These are used by the
+Generic identities for sums indexed by `Finset.range` and `Finset.Ioo`. These are used by
 coderivation/Taylor expansions, which reindex a cut-and-collapse double sum over a triangle to a
-square and enlarge a vanishing-off-the-block range.
+square and enlarge a vanishing-off-the-block range, and by divided-power exponential calculations,
+which reindex a sum over antidiagonals to a rectangle.
 
 ## Main results
 
@@ -23,8 +25,12 @@ square and enlarge a vanishing-off-the-block range.
   `0` vanishes.
 * `sum_range_triangle`: summing over pairs `(c, p - c)` with `c ≤ p < K` equals the square
   `range K × range K` when the family vanishes off the triangle.
+* `sum_range_add_antidiagonal_of_support`: a sum over antidiagonals below `k + l` equals
+  the rectangle `range k × range l` when the summand vanishes outside that rectangle.
 * `sum_sum_range_eq_of_eq_zero_right`: enlarging both ranges of a double sum that vanishes outside
   a rectangle.
+* `sum_range_eq_of_eq_zero_off_pair` and `sum_range_eq_of_eq_zero_off_triple`: convenient
+  specializations to supports of size two and three.
 * `sum_range_add_add`: splitting a `range n` sum into a prefix, a block, and a suffix.
 * `sum_range_min_add_two`: the two-step recurrence satisfied by the sums
   `∑_{i ≤ min j r} c^i a (j + r − 2i)`.
@@ -63,6 +69,53 @@ theorem sum_range_triangle {N : Type*} [AddCommMonoid N] (K : ℕ) (g : ℕ → 
     simp only [mem_range, not_lt] at hq
     exact hg c q (by omega)
 
+/-- A sum over all antidiagonals below `k + l` equals the sum over the rectangle
+`range k × range l`, provided the summand vanishes whenever the first coordinate is at least
+`k` or the second coordinate is at least `l`. -/
+theorem sum_range_add_antidiagonal_of_support
+    {N : Type*} [AddCommMonoid N] (k l : ℕ) (f : ℕ × ℕ → N)
+    (hf : ∀ i j, k ≤ i ∨ l ≤ j → f (i, j) = 0) :
+    ∑ n ∈ range (k + l), ∑ ij ∈ antidiagonal n, f ij =
+      ∑ i ∈ range k, ∑ j ∈ range l, f (i, j) := by
+  classical
+  let s := (range (k + l)).sigma fun n => antidiagonal n
+  let t := s.filter fun q => q.2.1 < k ∧ q.2.2 < l
+  rw [Finset.sum_sigma']
+  -- `sum_sigma'` leaves the sigma index in the dependent pair `q`; unfolding the local
+  -- abbreviation is the only normalization needed to expose the original summand `f q.2`.
+  change (∑ q ∈ s, f q.2) = _
+  have hfilter : (∑ q ∈ t, f q.2) = ∑ q ∈ s, f q.2 := by
+    apply Finset.sum_subset (by simp [t])
+    intro q hqs hqt
+    rw [Finset.mem_filter] at hqt
+    simp only [hqs, true_and, not_and_or, not_lt] at hqt
+    exact hf q.2.1 q.2.2 hqt
+  rw [← hfilter, ← Finset.sum_product']
+  apply Finset.sum_bij (fun q _ => q.2)
+  · intro q hq
+    rw [Finset.mem_filter] at hq
+    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range]
+    exact hq.2
+  · intro q₁ hq₁ q₂ hq₂ hqq
+    rcases q₁ with ⟨n₁, ij₁⟩
+    rcases q₂ with ⟨n₂, ij₂⟩
+    dsimp only at hqq
+    subst ij₂
+    rw [Finset.mem_filter, Finset.mem_sigma, mem_antidiagonal] at hq₁ hq₂
+    have hn : n₁ = n₂ := hq₁.1.2.symm.trans hq₂.1.2
+    subst n₂
+    rfl
+  · intro ij hij
+    rw [Finset.mem_product, Finset.mem_range, Finset.mem_range] at hij
+    let q : (n : ℕ) × (ℕ × ℕ) := ⟨ij.1 + ij.2, ij⟩
+    have hsum : ij.1 + ij.2 < k + l := by omega
+    have hq : q ∈ t := by
+      rw [Finset.mem_filter, Finset.mem_sigma, Finset.mem_range, mem_antidiagonal]
+      exact ⟨⟨hsum, rfl⟩, hij⟩
+    exact ⟨q, hq, rfl⟩
+  · intro q _
+    rfl
+
 /-- Enlarging both ranges of a double sum that vanishes for `b ≤ p` or `b < d`. -/
 theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : ℕ} (hK : b ≤ K)
     (g : ℕ → ℕ → N) (hg : ∀ p d, b ≤ p ∨ b < d → g p d = 0) :
@@ -78,6 +131,38 @@ theorem sum_sum_range_eq_of_eq_zero_right {N : Type*} [AddCommMonoid N] {b K : �
       simp only [mem_range, not_lt] at hp
       exact sum_eq_zero fun d _ ↦ hg p d (Or.inl hp)
   rw [← outer, ← sum_congr rfl fun p _ ↦ inner p]
+
+/-- A sum over `Finset.range t` whose terms vanish outside two distinct positions is the sum of
+the terms at those positions. -/
+theorem sum_range_eq_of_eq_zero_off_pair {N : Type*} [AddCommMonoid N] {t : ℕ} {f : ℕ → N}
+    {a b : ℕ} {v : N} (ha : a < t) (hb : b < t) (hab : a ≠ b)
+    (hz : ∀ j < t, j ≠ a → j ≠ b → f j = 0) (hv : f a + f b = v) :
+    ∑ j ∈ range t, f j = v := by
+  classical
+  rw [← Finset.sum_subset (s₁ := ({a, b} : Finset ℕ)) (s₂ := range t)
+    (fun x hx ↦ by
+      simp only [mem_insert, mem_singleton] at hx
+      rcases hx with rfl | rfl <;> simpa using by omega)
+    (fun x hx hx' ↦ by
+      simp only [mem_insert, mem_singleton, not_or] at hx'
+      exact hz x (mem_range.mp hx) hx'.1 hx'.2),
+    Finset.sum_pair hab, hv]
+
+/-- A sum over `Finset.range t` whose terms vanish outside three pairwise distinct positions is
+the sum of the terms at those positions. -/
+theorem sum_range_eq_of_eq_zero_off_triple {N : Type*} [AddCommMonoid N] {t : ℕ} {f : ℕ → N}
+    {a b d : ℕ} {v : N} (ha : a < t) (hb : b < t) (hd : d < t) (hab : a ≠ b) (had : a ≠ d)
+    (hbd : b ≠ d) (hz : ∀ j < t, j ≠ a → j ≠ b → j ≠ d → f j = 0)
+    (hv : f a + f b + f d = v) : ∑ j ∈ range t, f j = v := by
+  classical
+  rw [← Finset.sum_subset (s₁ := ({a, b, d} : Finset ℕ)) (s₂ := range t)
+    (fun x hx ↦ by
+      simp only [mem_insert, mem_singleton] at hx
+      rcases hx with rfl | rfl | rfl <;> simpa using by omega)
+    (fun x hx hx' ↦ by
+      simp only [mem_insert, mem_singleton, not_or] at hx'
+      exact hz x (mem_range.mp hx) hx'.1 hx'.2.1 hx'.2.2),
+    Finset.sum_insert (by simp [hab, had]), Finset.sum_pair hbd, ← add_assoc, hv]
 
 /-- Splitting a sum over `range n` into a prefix of length `p`, a block of length `d`, and the
 remaining suffix. -/

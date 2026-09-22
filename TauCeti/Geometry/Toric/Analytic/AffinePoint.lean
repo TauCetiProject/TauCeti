@@ -79,6 +79,11 @@ carrier; no topology is part of the data. -/
 abbrev AffineSemigroupComplexPoint (S : Type*) [AddCommMonoid S] :=
   MonoidAlgebra ℂ (Multiplicative S) →ₐ[ℂ] ℂ
 
+/-- The complex points of every affine semigroup are inhabited: the distinguished point sends
+every monomial to `1`. -/
+noncomputable instance : Inhabited (AffineSemigroupComplexPoint S) where
+  default := MonoidAlgebra.lift ℂ ℂ (Multiplicative S) 1
+
 /-- Two complex points of `S` that agree on every monomial are equal. -/
 @[ext]
 theorem AffineSemigroupComplexPoint.ext {x y : AffineSemigroupComplexPoint S}

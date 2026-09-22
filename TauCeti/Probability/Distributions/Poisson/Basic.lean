@@ -7,18 +7,21 @@ module
 
 public import Mathlib.Probability.Distributions.Poisson.Basic
 public import Mathlib.Probability.Moments.MGFAnalytic
+public import TauCeti.Probability.GeneratingFunction
 
 /-!
-# Moments and moment-generating function of the Poisson distribution
+# Moments and generating functions of the Poisson distribution
 
-This file develops the elementary analytic API of the real-valued Poisson law. For a rate
+This file develops the probability-generating function of the native Poisson law and the elementary
+analytic API of the real-valued Poisson law. For a rate
 `r : ℝ≥0`, the cast law `Po(ℝ, r)` has all exponential moments, moment-generating function
 `exp (r * (exp t - 1))`, cumulant-generating function `r * (exp t - 1)`, and both mean and
 variance equal to `r`.
 
-The series calculation for the moment-generating function follows the calculation of
-`ProbabilityTheory.charFun_map_cast_poissonMeasure` in Mathlib. The moment formulas are then
-obtained by differentiating the moment-generating function.
+The series calculation for the probability-generating function follows the calculation of
+`ProbabilityTheory.charFun_map_cast_poissonMeasure` in Mathlib; the moment-generating function is
+its value at `exp t`. The moment formulas are then obtained by differentiating the
+moment-generating function.
 -/
 
 public section
@@ -28,26 +31,35 @@ open scoped NNReal Nat
 
 namespace TauCeti
 
+namespace Probability
+
+/-- The probability-generating function of a Poisson distribution. -/
+@[simp]
+theorem pgf_poissonMeasure (r : ℝ≥0) (t : ℝ) :
+    pgf id (poissonMeasure r) t = Real.exp ((r : ℝ) * (t - 1)) := by
+  rw [pgf_def, integral_poissonMeasure]
+  simp only [smul_eq_mul, id_eq]
+  calc
+    ∑' n : ℕ, (Real.exp (-r) * (r : ℝ) ^ n / n.factorial) * t ^ n =
+        Real.exp (-r) * ∑' n : ℕ, (((r : ℝ) * t) ^ n / n.factorial) := by
+      rw [← tsum_mul_left]
+      congr with n
+      rw [mul_pow]
+      ring
+    _ = Real.exp (-r) * Real.exp ((r : ℝ) * t) := by
+      rw [(NormedSpace.expSeries_div_hasSum_exp ((r : ℝ) * t)).tsum_eq, Real.exp_eq_exp_ℝ]
+    _ = Real.exp ((r : ℝ) * (t - 1)) := by
+      rw [← Real.exp_add]
+      congr 1
+      ring
+
 /-- The moment-generating function of a real-valued Poisson law of rate `r` is
 `t ↦ exp (r * (exp t - 1))`. -/
 @[simp]
 theorem mgf_id_map_cast_poissonMeasure (r : ℝ≥0) :
     mgf (fun x : ℝ ↦ x) Po(ℝ, r) = fun t ↦ exp ((r : ℝ) * (exp t - 1)) := by
   ext t
-  rw [mgf, integral_map .of_discrete (by fun_prop), integral_poissonMeasure r]
-  simp only [smul_eq_mul]
-  calc
-    ∑' n, (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) * exp (t * (n : ℝ))
-        = ∑' n, exp (-(r : ℝ)) * (((r : ℝ) * exp t) ^ n / n !) := by
-            congr with n
-            rw [mul_pow, ← exp_nat_mul]
-            ring_nf
-    _ = exp (-(r : ℝ)) * ∑' n, ((r : ℝ) * exp t) ^ n / n ! := tsum_mul_left
-    _ = exp (-(r : ℝ)) * exp ((r : ℝ) * exp t) := by
-      rw [(NormedSpace.expSeries_div_hasSum_exp ((r : ℝ) * exp t)).tsum_eq, exp_eq_exp_ℝ]
-    _ = exp ((r : ℝ) * (exp t - 1)) := by
-      rw [← exp_add]
-      ring_nf
+  exact (mgf_id_map_natCast _ t).trans (pgf_poissonMeasure r _)
 
 /-- Every exponential moment of a real-valued Poisson law is integrable. -/
 theorem integrable_exp_mul_id_map_cast_poissonMeasure (r : ℝ≥0) (t : ℝ) :
@@ -141,5 +153,7 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
     variance X P = r := by
   rw [hX.variance_eq]
   exact variance_id_map_cast_poissonMeasure r
+
+end Probability
 
 end TauCeti

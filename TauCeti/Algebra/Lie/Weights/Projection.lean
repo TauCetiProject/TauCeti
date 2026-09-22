@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.DirectSum.LinearMap
 public import TauCeti.Algebra.Lie.Weights.Diagonalizable
 public import TauCeti.Algebra.Lie.Weights.Killing
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # The projections attached to the weight-space decomposition
@@ -41,10 +41,10 @@ space, which for a root is `1`.
 
 ## Implementation notes
 
-The projection is built from `DirectSum.coeLinearMap`, whose bijectivity is exactly
-`DirectSum.IsInternal`, rather than from a choice of complement: that way
-`DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem` computes it on each summand directly, and
-the trace computation can go through `LinearMap.trace_eq_sum_trace_restrict`.
+The projection specializes `TauCeti.internalProjection` to the internal decomposition by
+generalized weight spaces. Its characteristic equations and sum formula therefore share the
+generic internal-summand projection API, while the trace computation uses
+`LinearMap.trace_eq_sum_trace_restrict`.
 
 `DirectSum` needs a `DecidableEq (Weight K L M)`. The projection is noncomputable in any case, so
 that choice is made classically inside the definition instead of being carried as a hypothesis:
@@ -81,11 +81,9 @@ open scoped Classical in
 for a finite-dimensional triangularizable module. -/
 noncomputable def genWeightSpaceProjection (χ : Weight K L M) : M →ₗ[K] M :=
   (genWeightSpace M (χ : L → K)).toSubmodule.subtype ∘ₗ
-    DirectSum.component K (Weight K L M)
-      (fun ψ : Weight K L M ↦ (genWeightSpace M (ψ : L → K)).toSubmodule) χ ∘ₗ
-    (LinearEquiv.ofBijective
-      (DirectSum.coeLinearMap fun ψ : Weight K L M ↦ (genWeightSpace M (ψ : L → K)).toSubmodule)
-      (isInternal_genWeightSpace K L M)).symm.toLinearMap
+    TauCeti.internalProjection
+      (isInternal_genWeightSpace K L M).submodule_iSupIndep
+      (isInternal_genWeightSpace K L M).submodule_iSup_eq_top χ
 
 variable {K L M}
 
@@ -99,9 +97,12 @@ theorem genWeightSpaceProjection_apply_mem (χ : Weight K L M) (m : M) :
 theorem genWeightSpaceProjection_apply_of_mem {χ : Weight K L M} {m : M}
     (hm : m ∈ genWeightSpace M (χ : L → K)) : genWeightSpaceProjection K L M χ m = m := by
   classical
-  have := DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem
-    (isInternal_genWeightSpace K L M) (i := χ) (x := m) hm
-  simpa [genWeightSpaceProjection, ← DirectSum.apply_eq_component] using congrArg Subtype.val this
+  rw [genWeightSpaceProjection, LinearMap.comp_apply,
+    TauCeti.internalProjection_apply_of_mem
+      (Q := fun ψ : Weight K L M ↦ (genWeightSpace M (ψ : L → K)).toSubmodule)
+      (isInternal_genWeightSpace K L M).submodule_iSupIndep
+      (isInternal_genWeightSpace K L M).submodule_iSup_eq_top hm]
+  rfl
 
 /-- A projection kills every other weight space.
 
@@ -110,9 +111,12 @@ The `simp`-usable consequence is `TauCeti.genWeightSpaceProjection_apply_apply_o
 theorem genWeightSpaceProjection_apply_of_mem_of_ne {χ ψ : Weight K L M} (h : ψ ≠ χ) {m : M}
     (hm : m ∈ genWeightSpace M (ψ : L → K)) : genWeightSpaceProjection K L M χ m = 0 := by
   classical
-  have := DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem_ne
-    (isInternal_genWeightSpace K L M) h hm
-  simpa [genWeightSpaceProjection, ← DirectSum.apply_eq_component] using congrArg Subtype.val this
+  rw [genWeightSpaceProjection, LinearMap.comp_apply,
+    TauCeti.internalProjection_apply_eq_zero_of_mem_of_ne
+      (Q := fun ω : Weight K L M ↦ (genWeightSpace M (ω : L → K)).toSubmodule)
+      (isInternal_genWeightSpace K L M).submodule_iSupIndep
+      (isInternal_genWeightSpace K L M).submodule_iSup_eq_top h hm]
+  rfl
 
 /-- The projections are idempotent. -/
 @[simp]
@@ -132,17 +136,10 @@ single vector. -/
 theorem sum_genWeightSpaceProjection_apply (m : M) :
     ∑ χ : Weight K L M, genWeightSpaceProjection K L M χ m = m := by
   classical
-  let A : Weight K L M → Submodule K M := fun ψ ↦ (genWeightSpace M (ψ : L → K)).toSubmodule
-  let e := LinearEquiv.ofBijective (DirectSum.coeLinearMap A) (isInternal_genWeightSpace K L M)
-  have hproj : ∀ χ : Weight K L M,
-      genWeightSpaceProjection K L M χ m = ((e.symm m χ : A χ) : M) := fun _ ↦ rfl
-  calc ∑ χ : Weight K L M, genWeightSpaceProjection K L M χ m
-      = ∑ χ : Weight K L M, ((e.symm m χ : A χ) : M) := by simp_rw [hproj]
-    _ = DirectSum.coeLinearMap A (e.symm m) := by
-        conv_rhs => rw [← DirectSum.sum_univ_of (e.symm m)]
-        rw [map_sum]
-        exact Finset.sum_congr rfl fun χ _ ↦ (DirectSum.coeLinearMap_of A χ _).symm
-    _ = m := e.apply_symm_apply m
+  simpa only [genWeightSpaceProjection, LinearMap.comp_apply, Submodule.coe_subtype] using
+    TauCeti.sum_coe_internalProjection
+      (isInternal_genWeightSpace K L M).submodule_iSupIndep
+      (isInternal_genWeightSpace K L M).submodule_iSup_eq_top m
 
 /-- A projection maps each weight space into itself: its own weight space identically, the others
 to zero. -/

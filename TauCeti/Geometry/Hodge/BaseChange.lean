@@ -49,6 +49,8 @@ imposed later as structure data.
 * `TauCeti.Hodge.range_rationalMapToComplex` and `TauCeti.Hodge.ker_rationalMapToComplex`: that
   scalar extension has the complexified range and the complexified kernel as its range and
   kernel.
+* `TauCeti.Hodge.isIdempotentElem_rationalMapToComplex`: that scalar extension preserves
+  idempotents.
 * `TauCeti.Hodge.disjoint_rationalToComplexSubmodule` and
   `TauCeti.Hodge.rationalToComplexSubmodule_inf`: complexification of rational subspaces preserves
   disjointness and meets.
@@ -533,6 +535,19 @@ theorem rationalMapToComplex_comp
   ext x
   simp [rationalMapToComplex, LinearMap.baseChange_comp]
 
+/-- Extension of scalars along `ℚ → ℂ` preserves idempotents: the complexification of an
+idempotent rational endomorphism is idempotent. -/
+theorem isIdempotentElem_rationalMapToComplex (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+    {e : Vℚ →ₗ[ℚ] Vℚ} (he : IsIdempotentElem e) :
+    IsIdempotentElem (rationalMapToComplex hℚ hℂ hℚ hℂ e) := by
+  have hcomp : e ∘ₗ e = e := by
+    rw [← Module.End.mul_eq_comp]
+    exact he
+  have hkey : rationalMapToComplex hℚ hℂ hℚ hℂ e * rationalMapToComplex hℚ hℂ hℚ hℂ e =
+      rationalMapToComplex hℚ hℂ hℚ hℂ e := by
+    rw [Module.End.mul_eq_comp, ← rationalMapToComplex_comp hℚ hℂ hℚ hℂ hℚ hℂ e e, hcomp]
+  exact hkey
+
 end Comp
 
 /-- Complexifying the image of a rational subspace is the image of its complexification. -/
@@ -643,5 +658,91 @@ theorem rationalToComplexSubmodule_inf (hℚ : IsBaseChange ℚ ιℚ)
           (disjoint_rationalToComplexSubmodule hℚ hℂ hdisj).eq_bot, sup_bot_eq]
 
 end Map
+
+section Prod
+
+attribute [local instance] moduleRatOfComplex
+
+variable {V'ℤ V'ℚ V'ℂ : Type*}
+variable [AddCommGroup V'ℤ] [AddCommGroup V'ℚ] [Module ℚ V'ℚ]
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
+variable (hℚ : IsBaseChange ℚ ιℚ) (hℂ : IsBaseChange ℂ ιℂ)
+variable (h'ℚ : IsBaseChange ℚ ι'ℚ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+
+local instance : IsScalarTower ℚ ℂ Vℂ := IsScalarTower.restrictScalars ℚ ℂ Vℂ
+local instance : IsScalarTower ℚ ℂ V'ℂ := IsScalarTower.restrictScalars ℚ ℂ V'ℂ
+
+/-- Rational-to-complex structure maps commute with products of base-change models. -/
+@[simp]
+theorem rationalToComplexMap_prodMap :
+    rationalToComplexMap (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ) (ιℂ.prodMap ι'ℂ) =
+      (rationalToComplexMap hℚ ιℂ).prodMap (rationalToComplexMap h'ℚ ι'ℂ) := by
+  apply (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ).algHom_ext
+  intro x
+  rw [rationalToComplexMap_apply_ι]
+  simp
+
+/-- Complexification commutes with products of rational subspaces. -/
+@[simp]
+theorem rationalToComplexSubmodule_prod (U : Submodule ℚ Vℚ) (U' : Submodule ℚ V'ℚ) :
+    rationalToComplexSubmodule (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
+        (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) (U.prod U') =
+      (rationalToComplexSubmodule hℚ hℂ U).prod
+        (rationalToComplexSubmodule h'ℚ h'ℂ U') := by
+  simp only [rationalToComplexSubmodule_eq_span, rationalToComplexLinearEquiv_one_tmul,
+    rationalToComplexMap_prodMap hℚ h'ℚ, LinearMap.coe_prodMap, Submodule.prod_coe,
+    Set.prodMap_image_prod]
+  apply Submodule.span_prod_eq
+  · exact ⟨0, U.zero_mem, map_zero _⟩
+  · exact ⟨0, U'.zero_mem, map_zero _⟩
+
+/-- Complexification sends the first rational projection to the first complex projection. -/
+@[simp]
+theorem rationalMapToComplex_fst :
+    rationalMapToComplex (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
+        (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) hℚ hℂ (LinearMap.fst ℚ Vℚ V'ℚ) =
+      LinearMap.fst ℂ Vℂ V'ℂ := by
+  apply (isBaseChange_rationalToComplexMap
+    (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ) (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ)).algHom_ext
+  intro x
+  rw [rationalMapToComplex_rationalToComplexMap]
+  simp [rationalToComplexMap_prodMap hℚ h'ℚ]
+
+/-- Complexification sends the second rational projection to the second complex projection. -/
+@[simp]
+theorem rationalMapToComplex_snd :
+    rationalMapToComplex (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
+        (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) h'ℚ h'ℂ (LinearMap.snd ℚ Vℚ V'ℚ) =
+      LinearMap.snd ℂ Vℂ V'ℂ := by
+  apply (isBaseChange_rationalToComplexMap
+    (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ) (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ)).algHom_ext
+  intro x
+  rw [rationalMapToComplex_rationalToComplexMap]
+  simp [rationalToComplexMap_prodMap hℚ h'ℚ]
+
+/-- Complexification sends the first rational inclusion to the first complex inclusion. -/
+@[simp]
+theorem rationalMapToComplex_inl :
+    rationalMapToComplex hℚ hℂ (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
+        (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) (LinearMap.inl ℚ Vℚ V'ℚ) =
+      LinearMap.inl ℂ Vℂ V'ℂ := by
+  apply (isBaseChange_rationalToComplexMap hℚ hℂ).algHom_ext
+  intro x
+  rw [rationalMapToComplex_rationalToComplexMap]
+  simp [rationalToComplexMap_prodMap hℚ h'ℚ]
+
+/-- Complexification sends the second rational inclusion to the second complex inclusion. -/
+@[simp]
+theorem rationalMapToComplex_inr :
+    rationalMapToComplex h'ℚ h'ℂ (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
+        (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) (LinearMap.inr ℚ Vℚ V'ℚ) =
+      LinearMap.inr ℂ Vℂ V'ℂ := by
+  apply (isBaseChange_rationalToComplexMap h'ℚ h'ℂ).algHom_ext
+  intro x
+  rw [rationalMapToComplex_rationalToComplexMap]
+  simp [rationalToComplexMap_prodMap hℚ h'ℚ]
+
+end Prod
 
 end TauCeti.Hodge

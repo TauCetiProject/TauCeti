@@ -19,7 +19,8 @@ together with its induction principle `Ideal.IsPrimeTo.induction_on` and its tra
 `Ideal.isPrimeTo_comap_iff` along a ring isomorphism.
 
 The predicate is closed under products (`Ideal.isPrimeTo_mul_iff`, its finite form
-`Ideal.isPrimeTo_prod_iff`) and powers (`Ideal.isPrimeTo_pow_iff`). Complementing a set of primes
+`Ideal.isPrimeTo_prod_iff`) and powers (`Ideal.isPrimeTo_pow_iff`), and forbidding one more
+prime is `Ideal.isPrimeTo_insert_iff`. Complementing a set of primes
 turns it into a *support* condition: `IsPrimeTo I Sᶜ` says that every prime factor of `I` lies in
 `S`. The two extreme cases are `Ideal.isPrimeTo_univ_iff` (no prime factor at all, so `I = ⊤`) and
 `Ideal.isPrimeTo_compl_singleton_iff` (a single allowed prime, so `I` is a prime power), and
@@ -294,6 +295,15 @@ theorem isPrimeTo_top : IsPrimeTo (⊤ : Ideal R) S := by
 omit [IsDedekindDomain R] in
 theorem IsPrimeTo.mono (hST : S ⊆ T) (h : IsPrimeTo I T) : IsPrimeTo I S :=
   ⟨h.ne_bot, fun _𝔭 h𝔭 ↦ h.not_dvd (hST h𝔭)⟩
+
+omit [IsDedekindDomain R] in
+/-- **Enlarging the set of forbidden primes by one.** An ideal is prime to `insert 𝔭 S` exactly
+when it is prime to `S` and not divisible by `𝔭`. -/
+@[simp]
+theorem isPrimeTo_insert_iff {𝔭 : HeightOneSpectrum R} :
+    IsPrimeTo I (insert 𝔭 S) ↔ IsPrimeTo I S ∧ ¬ 𝔭.asIdeal ∣ I := by
+  simp only [isPrimeTo_iff, Set.forall_mem_insert]
+  tauto
 
 /-- **Being prime to `S` is multiplicative.** A product of ideals is prime to `S` exactly when
 both factors are: neither factor may vanish, and a prime of `S` divides the product exactly when

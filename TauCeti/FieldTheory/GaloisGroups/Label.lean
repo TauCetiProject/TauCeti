@@ -53,7 +53,11 @@ by the degree alone, and in degree two by separability and irreducibility.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
   primitivity of the Galois image, respectively of the Galois group, on the roots.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
-* `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible.
+* `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible, and
+  `TauCeti.exists_hasGaloisLabel_of_irreducible`: conversely, an irreducible separable polynomial
+  has a label in every degree where each transitive subgroup has one.
+* `TauCeti.HasGaloisLabel.eq_of` and `TauCeti.existsUnique_hasGaloisLabel`: uniqueness of the
+  label, in every degree where a subgroup carries at most one.
 * `TauCeti.hasGaloisLabel_one_iff`, `TauCeti.hasGaloisLabel_two_iff`: the labels in degrees one
   and two.
 
@@ -94,6 +98,16 @@ def HasGaloisLabel (f : F[X]) {n : ℕ} (j : TransitiveGroupIndex n) : Prop :=
         ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)
 
 variable {f : F[X]} {n : ℕ} {j : TransitiveGroupIndex n}
+
+/-- The Galois image of a separable polynomial of positive degree, read through any numbering
+of its roots, is transitive exactly when the polynomial is irreducible. -/
+theorem isPretransitive_map_range_galActionHom_iff (hsep : f.Separable) (hdeg : 0 < f.natDegree)
+    (e : f.rootSet f.SplittingField ≃ Fin n) :
+    IsPretransitive ((Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom)
+      (Fin n) ↔ Irreducible f := by
+  rw [Equiv.isPretransitive_map_permCongrHom_iff, Gal.galActionHom,
+    isPretransitive_range_toPermHom_iff]
+  exact isPretransitive_iff_irreducible f.SplittingField hsep hdeg
 
 /-- Construct a Galois label from one numbering of the roots that exhibits it. -/
 theorem HasGaloisLabel.mk (hsep : f.Separable) (hdeg : f.natDegree = n)
@@ -152,10 +166,45 @@ There are no labels in degree zero, so no degree hypothesis is needed. -/
 theorem HasGaloisLabel.irreducible (h : HasGaloisLabel f j) : Irreducible f := by
   obtain ⟨hsep, rfl, e, he⟩ := h
   have := he.isPretransitive
-  rw [Equiv.isPretransitive_map_permCongrHom_iff, Gal.galActionHom,
-    isPretransitive_range_toPermHom_iff] at this
-  exact (isPretransitive_iff_irreducible f.SplittingField hsep
-    (pos_of_transitiveGroupIndex j)).mp this
+  exact (isPretransitive_map_range_galActionHom_iff hsep (pos_of_transitiveGroupIndex j) e).mp this
+
+/-- **A label exists as soon as the classification supplies one.** A separable irreducible
+polynomial of degree `n` carries a label in degree `n` provided every transitive subgroup of
+`Equiv.Perm (Fin n)` carries one, which the classification theorems of the low degrees prove. -/
+theorem exists_hasGaloisLabel_of_irreducible (hsep : f.Separable) (hirr : Irreducible f)
+    (hdeg : f.natDegree = n)
+    (h : ∀ G : Subgroup (Perm (Fin n)), IsPretransitive G (Fin n) →
+      ∃ j : TransitiveGroupIndex n, TransitiveGroupLabel j G) :
+    ∃ j : TransitiveGroupIndex n, HasGaloisLabel f j := by
+  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  obtain ⟨j, hj⟩ := h _ ((isPretransitive_map_range_galActionHom_iff hsep
+    (hdeg ▸ hirr.natDegree_pos) (e.trans (finCongr hdeg))).mpr hirr)
+  exact ⟨j, hsep, hdeg, e.trans (finCongr hdeg), hj⟩
+
+/-- **At most one label, as soon as the classification says so.** A polynomial carries at most one
+label in degree `n` provided a subgroup of `Equiv.Perm (Fin n)` does, which the classification
+theorems of the low degrees prove. Transporting uniqueness from subgroups to polynomials does not
+see the degree. -/
+theorem HasGaloisLabel.eq_of {k : TransitiveGroupIndex n}
+    (h : ∀ {i i' : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))},
+      TransitiveGroupLabel i G → TransitiveGroupLabel i' G → i = i')
+    (hj : HasGaloisLabel f j) (hk : HasGaloisLabel f k) : j = k := by
+  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hj.separable
+  exact h (hj.transitiveGroupLabel (e.trans (finCongr hj.natDegree_eq)))
+    (hk.transitiveGroupLabel _)
+
+/-- **Exactly one label, as soon as the classification supplies one and says it is unique.** A
+separable irreducible polynomial of degree `n` carries exactly one label in degree `n` provided
+every transitive subgroup of `Equiv.Perm (Fin n)` carries exactly one. -/
+theorem existsUnique_hasGaloisLabel (hsep : f.Separable) (hirr : Irreducible f)
+    (hdeg : f.natDegree = n)
+    (hex : ∀ G : Subgroup (Perm (Fin n)), IsPretransitive G (Fin n) →
+      ∃ i : TransitiveGroupIndex n, TransitiveGroupLabel i G)
+    (huniq : ∀ {i i' : TransitiveGroupIndex n} {G : Subgroup (Perm (Fin n))},
+      TransitiveGroupLabel i G → TransitiveGroupLabel i' G → i = i') :
+    ∃! i : TransitiveGroupIndex n, HasGaloisLabel f i :=
+  (exists_hasGaloisLabel_of_irreducible hsep hirr hdeg hex).elim fun i hi =>
+    ⟨i, hi, fun _ hk => hk.eq_of huniq hi⟩
 
 /-- The Galois image of a polynomial with a label acts primitively on the roots exactly when the
 reference subgroup acts primitively. -/
@@ -220,9 +269,8 @@ theorem hasGaloisLabel_two_iff (j : TransitiveGroupIndex 2) :
   refine ⟨fun h => ⟨h.separable, h.irreducible, h.natDegree_eq⟩, fun ⟨hsep, hirr, hdeg⟩ => ?_⟩
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
   refine ⟨hsep, hdeg, e.trans (finCongr hdeg), ?_⟩
-  rw [transitiveGroupLabel_two_iff, Equiv.isPretransitive_map_permCongrHom_iff, Gal.galActionHom,
-    isPretransitive_range_toPermHom_iff]
-  exact (isPretransitive_iff_irreducible f.SplittingField hsep (by omega)).mpr hirr
+  rw [transitiveGroupLabel_two_iff, isPretransitive_map_range_galActionHom_iff hsep (by omega)]
+  exact hirr
 
 end GalActionHom
 

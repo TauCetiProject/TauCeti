@@ -177,6 +177,14 @@ theorem IsPseudoUniformizer.isTopologicallyNilpotent {A : Type*} [MonoidWithZero
     [TopologicalSpace A] {a : A} (ha : IsPseudoUniformizer a) :
     IsTopologicallyNilpotent a := ha.2
 
+/-- **A continuous morphism of topological monoids with zero sends pseudouniformisers to
+pseudouniformisers.** -/
+theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalSpace A]
+    [MonoidWithZero B] [TopologicalSpace B] [FunLike F A B] [MonoidWithZeroHomClass F A B]
+    {φ : F} (hφ : Continuous φ) {a : A} (ha : IsPseudoUniformizer a) :
+    IsPseudoUniformizer (φ a) :=
+  isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
+
 /-- A *Tate ring* is a Huber ring containing a pseudouniformiser, that is, a topologically
 nilpotent unit. -/
 class IsTateRing (A : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] : Prop

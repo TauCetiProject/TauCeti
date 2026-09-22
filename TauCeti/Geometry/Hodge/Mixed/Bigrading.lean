@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Hodge.Mixed.Conjugation
 import TauCeti.LinearAlgebra.Submodule.Compl
+import TauCeti.LinearAlgebra.Submodule.Prod
 import TauCeti.Order.CompactlyGenerated
 
 /-!
@@ -87,6 +88,37 @@ structure IsHodgeBigrading (WQ : ℤ → Submodule ℚ Vℚ) (F : ℤ → Submod
   map_latticeConj_le (pq : ℤ × ℤ) :
     (I pq).map (latticeConj hℂ) ≤
       I pq.swap ⊔ rationalToComplexSubmodule hℚ hℂ (WQ (pq.1 + pq.2 - 1))
+
+section Prod
+
+variable {V'ℤ V'ℚ V'ℂ : Type*}
+variable [AddCommGroup V'ℤ] [AddCommGroup V'ℚ] [Module ℚ V'ℚ]
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
+variable {hℚ : IsBaseChange ℚ ιℚ} {hℂ : IsBaseChange ℂ ιℂ}
+variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
+
+/-- Products of Hodge bigradings are Hodge bigradings for the product filtrations. -/
+theorem IsHodgeBigrading.prod
+    {W : ℤ → Submodule ℚ Vℚ} {F : ℤ → Submodule ℂ Vℂ}
+    {W' : ℤ → Submodule ℚ V'ℚ} {F' : ℤ → Submodule ℂ V'ℂ}
+    {I : ℤ × ℤ → Submodule ℂ Vℂ} {I' : ℤ × ℤ → Submodule ℂ V'ℂ}
+    (h : IsHodgeBigrading hℚ hℂ W F I) (h' : IsHodgeBigrading h'ℚ h'ℂ W' F' I') :
+    IsHodgeBigrading (IsBaseChange.prodMap ιℚ ι'ℚ hℚ h'ℚ)
+      (IsBaseChange.prodMap ιℂ ι'ℂ hℂ h'ℂ) (fun k ↦ (W k).prod (W' k))
+      (fun p ↦ (F p).prod (F' p)) (fun pq ↦ (I pq).prod (I' pq)) where
+  iSupIndep := TauCeti.iSupIndep.prod h.iSupIndep h'.iSupIndep
+  rationalToComplexSubmodule_eq_iSup k := by
+    simp only [rationalToComplexSubmodule_prod hℚ hℂ h'ℚ h'ℂ, TauCeti.iSup_prod_submodule,
+      h.rationalToComplexSubmodule_eq_iSup, h'.rationalToComplexSubmodule_eq_iSup]
+  F_eq_iSup p := by
+    simp only [TauCeti.iSup_prod_submodule, h.F_eq_iSup, h'.F_eq_iSup]
+  map_latticeConj_le pq := by
+    rw [map_latticeConj_prod hℂ h'ℂ, rationalToComplexSubmodule_prod hℚ hℂ h'ℚ h'ℂ,
+      Submodule.prod_sup_prod]
+    exact Submodule.prod_mono (h.map_latticeConj_le pq) (h'.map_latticeConj_le pq)
+
+end Prod
 
 namespace IsHodgeBigrading
 

@@ -47,9 +47,13 @@ Its value at a nonzero `x` is `q ^ (-v_K(x))`, where `q` is the cardinality of t
 * `TauCeti.normalizedValuation_surjective`: the normalized value group is all of `ℤ`.
 * `TauCeti.normalizedValuation_irreducible`: an irreducible element of `𝒪[K]` has normalized
   valuation `1`; that is, uniformizers are exactly where the normalization is pinned.
+* `TauCeti.toAdd_normalizedValuation_eq_iff_valuation_eq_zpow` and its two one-sided forms: the
+  powers of a uniformizer translate the additive normalization into `ValuativeRel.valuation`.
 * `TauCeti.normalizedValuationWithZero_eq_ordFrac`: the zero-preserving normalized valuation is
   Mathlib's order-of-vanishing map `Ring.ordFrac 𝒪[K]`, which is where the discrete-valuation-ring
   API for it comes from.
+* `Valuation.normalizedValuationWithZero_eq_inv_of_surjective`: the zero-preserving normalized
+  valuation is the inverse of any surjective `ℤᵐ⁰`-valued valuation compatible with `K`.
 * `TauCeti.normalizedValuation_eq_one_of_isOfFinOrder`: the normalized valuation vanishes on the
   roots of unity of `K`.
 * `TauCeti.normalizedAbsoluteValue_apply_ne_zero`: the formula `|x|_K = q ^ (-v_K(x))`.
@@ -175,6 +179,20 @@ theorem normalizedValuationWithZero_eq_ordFrac :
   rw [Ring.ordFrac_eq_valuation_inv, ← intValuation_eq_maximalIdeal_valuation]
   simp [normalizedValuationWithZero, intValuation, invMonoidWithZeroHom]
 
+/-- The zero-preserving normalized valuation is the inverse of any surjective `ℤᵐ⁰`-valued
+valuation compatible with the valuative relation of `K`. This is how a concrete discrete
+valuation, such as the adic valuation of a completion, is read as the normalized one. -/
+theorem _root_.Valuation.normalizedValuationWithZero_eq_inv_of_surjective
+    (v : Valuation K ℤᵐ⁰) [v.Compatible]
+    (hv : Function.Surjective v) (x : K) :
+    normalizedValuationWithZero K x = (v x)⁻¹ := by
+  have h : intValuation (K := K) x = v x :=
+    DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective intValuation_surjective hv
+      ((Valuation.isEquiv_map_self_of_strictMono _ (valueGroupWithZeroIsoInt K).strictMono).trans
+        (ValuativeRel.isEquiv _ _))) x
+  rw [← h]
+  simp [normalizedValuationWithZero, intValuation, invMonoidWithZeroHom]
+
 /-- The translation between Mathlib's multiplicative valuation and the additive normalization:
 the normalized valuation is minus the logarithm of `ValuativeRel.valuation`, transported to
 `ℤᵐ⁰`. Every comparison of the two conventions goes through this lemma. -/
@@ -225,6 +243,46 @@ theorem toAdd_normalizedValuation_le_iff_valuation_le (x y : Kˣ) :
     WithZero.log_le_log (valueGroupWithZeroIsoInt_valuation_ne_zero y)
       (valueGroupWithZeroIsoInt_valuation_ne_zero x),
     OrderIsoClass.map_le_map_iff]
+
+/-- A uniformizer has normalized valuation `n` in its `n`-th power. -/
+theorem normalizedValuation_zpow_of_eq_ofAdd_one {ϖ : Kˣ}
+    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) :
+    normalizedValuation K (ϖ ^ n) = .ofAdd n := by
+  rw [map_zpow, hϖ, ← ofAdd_zsmul, smul_eq_mul, mul_one]
+
+/-- The powers of a uniformizer measure the normalized valuation: `n ≤ v_K(x)` exactly when the
+multiplicative valuation of `x` is at most that of `ϖ ^ n`. -/
+theorem le_toAdd_normalizedValuation_iff_valuation_le_zpow {ϖ : Kˣ}
+    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) (x : Kˣ) :
+    n ≤ (normalizedValuation K x).toAdd ↔ valuation K (x : K) ≤ valuation K (ϖ : K) ^ n :=
+  calc n ≤ (normalizedValuation K x).toAdd
+      ↔ (normalizedValuation K (ϖ ^ n)).toAdd ≤ (normalizedValuation K x).toAdd := by
+        rw [normalizedValuation_zpow_of_eq_ofAdd_one hϖ, toAdd_ofAdd]
+    _ ↔ valuation K (x : K) ≤ valuation K ((ϖ ^ n : Kˣ) : K) :=
+        toAdd_normalizedValuation_le_iff_valuation_le _ _
+    _ ↔ valuation K (x : K) ≤ valuation K (ϖ : K) ^ n := by
+        rw [Units.val_zpow_eq_zpow_val, map_zpow₀]
+
+/-- The powers of a uniformizer measure the normalized valuation, in the other direction. -/
+theorem toAdd_normalizedValuation_le_iff_valuation_zpow_le {ϖ : Kˣ}
+    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) (x : Kˣ) :
+    (normalizedValuation K x).toAdd ≤ n ↔ valuation K (ϖ : K) ^ n ≤ valuation K (x : K) :=
+  calc (normalizedValuation K x).toAdd ≤ n
+      ↔ (normalizedValuation K x).toAdd ≤ (normalizedValuation K (ϖ ^ n)).toAdd := by
+        rw [normalizedValuation_zpow_of_eq_ofAdd_one hϖ, toAdd_ofAdd]
+    _ ↔ valuation K ((ϖ ^ n : Kˣ) : K) ≤ valuation K (x : K) :=
+        toAdd_normalizedValuation_le_iff_valuation_le _ _
+    _ ↔ valuation K (ϖ : K) ^ n ≤ valuation K (x : K) := by
+        rw [Units.val_zpow_eq_zpow_val, map_zpow₀]
+
+/-- The normalized valuation of `x` is `n` exactly when `x` and `ϖ ^ n` have the same
+multiplicative valuation. -/
+theorem toAdd_normalizedValuation_eq_iff_valuation_eq_zpow {ϖ : Kˣ}
+    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (n : ℤ) (x : Kˣ) :
+    (normalizedValuation K x).toAdd = n ↔ valuation K (x : K) = valuation K (ϖ : K) ^ n := by
+  rw [le_antisymm_iff, le_antisymm_iff (a := valuation K (x : K)),
+    toAdd_normalizedValuation_le_iff_valuation_zpow_le hϖ,
+    le_toAdd_normalizedValuation_iff_valuation_le_zpow hϖ, and_comm]
 
 /-- A unit of `K` lies in the ring of integers exactly when its normalized valuation is
 nonnegative. -/

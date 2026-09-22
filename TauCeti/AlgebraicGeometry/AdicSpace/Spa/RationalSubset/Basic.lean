@@ -69,9 +69,10 @@ layer deferred above.
   presentation by a cofactor shrinks the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_le` : refinement of bundled
   presentations shrinks the rational subset.
-* `TauCeti.ValuationSpectrum.rationalSubset_insert_of_forall_vle` : a numerator already
+* `TauCeti.ValuationSpectrum.rationalSubset_union_of_forall_vle` and
+  `TauCeti.ValuationSpectrum.rationalSubset_insert_of_forall_vle` : numerators already
   dominated by the denominator throughout `R(T/s)` may be adjoined to `T` without changing the
-  subset.
+  subset, a finite set of them at a time or one at a time.
 * `TauCeti.ValuationSpectrum.rationalSubset_insert_self` : the denominator may be inserted
   among the numerators.
 * `TauCeti.ValuationSpectrum.rationalSubset_image_mul_right` : multiplying every numerator and
@@ -222,6 +223,19 @@ theorem rationalSubset_insert_self (Aplus : Subring A) (T : Finset A) (s : A) :
   rw [rationalSubset_def, rationalSubset_def, basicOpenFinset_insert_self]
 
 open scoped Classical in
+/-- **Numerators dominated by the denominator may be adjoined for free.** If every element of
+`T'` is dominated by `s` at every point of `R(T/s)`, then adjoining all of `T'` to the
+numerators leaves the rational subset unchanged.
+
+Only `T'` is constrained, and only where it has to be: nothing is asked of the ideal `T' · A`,
+and the domination is required at the points of `R(T/s)` alone rather than throughout
+`spa A⁺`. The one-numerator case is `rationalSubset_insert_of_forall_vle`. -/
+theorem rationalSubset_union_of_forall_vle (Aplus : Subring A) (T T' : Finset A) (s : A)
+    (hT' : ∀ u ∈ T', ∀ v ∈ rationalSubset Aplus T s, v.toValuativeRel.vle u s) :
+    rationalSubset Aplus (T ∪ T') s = rationalSubset Aplus T s := by
+  grind [mem_rationalSubset_iff]
+
+open scoped Classical in
 /-- **A numerator dominated by the denominator may be adjoined for free.** If every point of
 `R(T/s)` satisfies `v(u) ≤ v(s)`, then adjoining `u` to the numerators does not change the
 rational subset.
@@ -232,15 +246,8 @@ already satisfied there. -/
 theorem rationalSubset_insert_of_forall_vle (Aplus : Subring A) (T : Finset A) (s u : A)
     (hu : ∀ v ∈ rationalSubset Aplus T s, v.toValuativeRel.vle u s) :
     rationalSubset Aplus (insert u T) s = rationalSubset Aplus T s := by
-  refine Set.Subset.antisymm
-    (rationalSubset_subset_rationalSubset_of_subset Aplus (Finset.subset_insert u T) s)
-    fun v hv ↦ ?_
-  have hv' := (mem_rationalSubset_iff Aplus T s v).mp hv
-  refine (mem_rationalSubset_iff Aplus _ s v).mpr ⟨hv'.1, fun t ht ↦ ?_, hv'.2.2⟩
-  let _ := v.toValuativeRel
-  rcases Finset.mem_insert.mp ht with rfl | ht
-  · exact hu v hv
-  · exact hv'.2.1 t ht
+  rw [Finset.insert_eq, Finset.union_comm]
+  exact rationalSubset_union_of_forall_vle Aplus T {u} s (by simpa using hu)
 
 open scoped Classical in
 /-- **Multiplying a presentation by a unit changes nothing.** If `u` is a unit, then multiplying

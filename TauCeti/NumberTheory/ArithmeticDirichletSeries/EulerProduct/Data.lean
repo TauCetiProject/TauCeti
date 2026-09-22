@@ -89,6 +89,22 @@ theorem coeff_localPowerSeries (D : EulerProductData K)
       D (P.primeIdealPow n) :=
   IdealArithmeticFunction.coeff_localPowerSeries D.toIdealArithmeticFunction P n
 
+/-- The degree-zero prime-power coefficient is one. -/
+@[simp]
+theorem apply_primeIdealPow_zero (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) : D (P.primeIdealPow 0) = 1 := by
+  have hpow : P.primeIdealPow 0 = 1 := Subtype.ext (by simp)
+  rw [hpow]
+  exact D.isMultiplicative.map_one
+
+/-- The local power series has constant coefficient one. -/
+@[simp]
+theorem constantCoeff_localPowerSeries (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    PowerSeries.constantCoeff (D.localPowerSeries P) = 1 := by
+  rw [localPowerSeries, IdealArithmeticFunction.constantCoeff_localPowerSeries]
+  exact D.isMultiplicative.map_one
+
 /-- The canonical local arithmetic factor of bundled Euler-product data at a height-one prime. -/
 noncomputable def localArithmeticFactor (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) : ArithmeticFunction ℂ :=
@@ -180,9 +196,6 @@ noncomputable instance : CommMonoid (EulerProductData K) where
   one_mul D := by ext I; simp
   mul_one D := by ext I; simp
   mul_comm D E := by ext I; simp [mul_comm]
-  npow := npowRec
-  npow_zero := by intros; rfl
-  npow_succ := by intros; rfl
 
 /-- Complex conjugation makes Euler-product data a star monoid. -/
 noncomputable instance : StarMul (EulerProductData K) where

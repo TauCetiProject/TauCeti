@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Probability.Distributions.Beta.Basic
+import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
 # Moments of Fisher's F distribution
@@ -67,14 +69,12 @@ private lemma integrableOn_fisherMomentKernel_iff (hm : 0 < m) (q : ℝ)
     (1 + x) ^ (-((m + n) / 2))) (Ioi 0) ↔ q < n / 2
   simpa only [hsum, htail] using h
 
-private lemma integrable_fisherSnedecorMeasure_iff (f : ℝ → ℝ) :
+private lemma integrable_fisherSnedecorMeasure_iff_integrableOn_Ioi (f : ℝ → ℝ) :
     Integrable f (fisherSnedecorMeasure m n) ↔
       IntegrableOn (fun x ↦ f x * fisherSnedecorPDFReal m n x) (Ioi (0 : ℝ)) := by
-  rw [fisherSnedecorMeasure_eq_withDensity, integrable_withDensity_iff
-    (measurable_fisherSnedecorPDF m n) (ae_of_all _ fun x ↦ by
-      rw [fisherSnedecorPDF_eq_ofReal]
-      exact ENNReal.ofReal_lt_top)]
-  simp_rw [toReal_fisherSnedecorPDF]
+  rw [integrable_fisherSnedecorMeasure_iff]
+  simp_rw [smul_eq_mul]
+  rw [integrable_congr (.of_forall fun x ↦ mul_comm (fisherSnedecorPDFReal m n x) (f x))]
   have hzero : ∀ x ∉ Ioi (0 : ℝ), f x * fisherSnedecorPDFReal m n x = 0 := by
     intro x hx
     rw [fisherSnedecorPDFReal_of_nonpos (not_lt.mp hx), mul_zero]
@@ -150,7 +150,7 @@ private lemma integrableOn_scaled_fisherMomentKernel_iff (hm : 0 < m) (hn : 0 < 
 order is below the denominator degrees of freedom. -/
 private theorem integrable_pow_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) (q : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ q) (fisherSnedecorMeasure m n) ↔ 2 * q < n := by
-  rw [integrable_fisherSnedecorMeasure_iff]
+  rw [integrable_fisherSnedecorMeasure_iff_integrableOn_Ioi]
   have hC : IsUnit (Real.Gamma ((m + n) / 2) /
       (Real.Gamma (m / 2) * Real.Gamma (n / 2)) * (m / n) ^ (m / 2)) := by
     rw [isUnit_iff_ne_zero]
@@ -208,10 +208,8 @@ theorem integrable_exp_mul_id_fisherSnedecorMeasure_of_nonpos (m n : ℝ) {t : �
     Integrable (fun x : ℝ ↦ Real.exp (t * x)) (fisherSnedecorMeasure m n) := by
   by_cases hmn : 0 < m ∧ 0 < n
   · let _ := isProbabilityMeasure_fisherSnedecorMeasure hmn.1 hmn.2
-    have h := integrable_exp_mul_of_le (μ := fisherSnedecorMeasure m n) (X := fun x : ℝ ↦ -x)
-      (-t) 0 (neg_nonneg.mpr ht) measurable_id.neg.aemeasurable
-      ((ae_mem_Ioi_fisherSnedecorMeasure m n).mono fun _ hx ↦ neg_nonpos.mpr hx.le)
-    simpa only [neg_mul_neg] using h
+    exact integrable_exp_mul_of_ge t 0 ht measurable_id.aemeasurable
+      ((ae_mem_Ioi_fisherSnedecorMeasure m n).mono fun _ hx ↦ hx.le)
   · rw [fisherSnedecorMeasure_of_not_pos hmn]
     exact integrable_zero_measure
 
@@ -219,12 +217,11 @@ theorem integrable_exp_mul_id_fisherSnedecorMeasure_of_nonpos (m n : ℝ) {t : �
 theorem not_integrable_exp_mul_id_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n)
     {t : ℝ} (ht : 0 < t) :
     ¬ Integrable (fun x : ℝ ↦ Real.exp (t * x)) (fisherSnedecorMeasure m n) := by
-  intro hint
-  have hpow := integrable_pow_of_integrable_exp_mul ht.ne' hint
-    (integrable_exp_mul_id_fisherSnedecorMeasure_of_nonpos m n
-      (by linarith : -t ≤ 0)) ⌈n⌉₊
-  have hlt := (integrable_pow_fisherSnedecorMeasure_iff hm hn ⌈n⌉₊).1 hpow
-  exact (not_lt_of_ge (by nlinarith [Nat.le_ceil n])) hlt
+  let _ := isProbabilityMeasure_fisherSnedecorMeasure hm hn
+  refine not_integrable_exp_mul_of_not_integrable_pow ⌈n⌉₊ measurable_id.aemeasurable
+    ((ae_mem_Ioi_fisherSnedecorMeasure m n).mono fun _ hx ↦ hx.le) (fun hpow ↦ ?_) ht
+  exact not_lt_of_ge (by nlinarith [Nat.le_ceil n])
+    ((integrable_pow_fisherSnedecorMeasure_iff hm hn ⌈n⌉₊).1 hpow)
 
 /-- The exponential of a multiple of the identity is integrable under a valid
 Fisher--Snedecor law exactly when the rate is nonpositive. -/
@@ -282,18 +279,9 @@ private theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
       (n / m) ^ q * beta (m / 2 + q) (n / 2 - q) / beta (m / 2) (n / 2) := by
   have hn : 0 < n := lt_of_le_of_lt (mul_nonneg (by norm_num) (Nat.cast_nonneg q)) hq
   rw [fisherSnedecorMeasure_eq_map hm hn,
-    integral_map (measurable_fisherSnedecorMap m n).aemeasurable (by fun_prop), betaMeasure]
-  -- `integral_withDensity_eq_integral_toReal_smul` expects the defining `ofReal` form of the
-  -- beta density, while `betaPDF` is kept opaque by the public distribution API.
-  change (∫ x, fisherSnedecorMap m n x ^ q ∂volume.withDensity
-    (fun x ↦ ENNReal.ofReal (betaPDFReal (m / 2) (n / 2) x))) = _
-  rw [integral_withDensity_eq_integral_toReal_smul (by fun_prop)
-    (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
-  have htoReal : ∀ x : ℝ,
-      (ENNReal.ofReal (betaPDFReal (m / 2) (n / 2) x)).toReal =
-        betaPDFReal (m / 2) (n / 2) x := fun x ↦
-    ENNReal.toReal_ofReal (TauCeti.betaPDFReal_nonneg (by linarith) (by linarith) x)
-  simp_rw [htoReal, smul_eq_mul]
+    integral_map (measurable_fisherSnedecorMap m n).aemeasurable (by fun_prop),
+    TauCeti.integral_betaMeasure_eq (by linarith) (by linarith)]
+  simp_rw [smul_eq_mul]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioo (0 : ℝ) 1)]
   · rw [setIntegral_congr_fun measurableSet_Ioo
       (fun u hu ↦ betaMomentIntegrand_eq q hu), integral_const_mul,

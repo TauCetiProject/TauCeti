@@ -75,14 +75,17 @@ namespace PrimeBoundaryRemainder
 
 attribute [simp] remainder_eq
 
-/-- Construct prime boundary data from functions on the whole complex plane.  Only their
-restrictions to `Re s > 1` and `Re s ≥ 1` are retained. -/
-def ofFunctions (F G : ℂ → ℂ)
+section OfFunctions
+
+variable (F G : ℂ → ℂ)
     (hF : ∀ s : ℂ, 1 < s.re →
       LSeriesHasSum (fun n ↦ (primeVonMangoldtCoeff K S n : ℂ)) s (F s))
     (hG : ContinuousOn G {s : ℂ | 1 ≤ s.re})
-    (hGF : ∀ s : ℂ, 1 < s.re → G s = F s - δ / (s - 1)) :
-    PrimeBoundaryRemainder K S δ where
+    (hGF : ∀ s : ℂ, 1 < s.re → G s = F s - δ / (s - 1))
+
+/-- Construct prime boundary data from functions on the whole complex plane.  Only their
+restrictions to `Re s > 1` and `Re s ≥ 1` are retained. -/
+def ofFunctions : PrimeBoundaryRemainder K S δ where
   series s := F s
   remainder s := G s
   hasSum s := hF s s.property
@@ -90,24 +93,16 @@ def ofFunctions (F G : ℂ → ℂ)
   remainder_eq s := hGF s s.property
 
 @[simp]
-theorem ofFunctions_series (F G : ℂ → ℂ)
-    (hF : ∀ s : ℂ, 1 < s.re →
-      LSeriesHasSum (fun n ↦ (primeVonMangoldtCoeff K S n : ℂ)) s (F s))
-    (hG : ContinuousOn G {s : ℂ | 1 ≤ s.re})
-    (hGF : ∀ s : ℂ, 1 < s.re → G s = F s - δ / (s - 1))
-    (s : {s : ℂ // 1 < s.re}) :
+theorem ofFunctions_series (s : {s : ℂ // 1 < s.re}) :
     (ofFunctions F G hF hG hGF).series s = F s :=
   (rfl)
 
 @[simp]
-theorem ofFunctions_remainder (F G : ℂ → ℂ)
-    (hF : ∀ s : ℂ, 1 < s.re →
-      LSeriesHasSum (fun n ↦ (primeVonMangoldtCoeff K S n : ℂ)) s (F s))
-    (hG : ContinuousOn G {s : ℂ | 1 ≤ s.re})
-    (hGF : ∀ s : ℂ, 1 < s.re → G s = F s - δ / (s - 1))
-    (s : {s : ℂ // 1 ≤ s.re}) :
+theorem ofFunctions_remainder (s : {s : ℂ // 1 ≤ s.re}) :
     (ofFunctions F G hF hG hGF).remainder s = G s :=
   (rfl)
+
+end OfFunctions
 
 /-- Wiener--Ikehara applied to a prime boundary package: the normalized `ψ` function tends to
 the residue `δ`. -/

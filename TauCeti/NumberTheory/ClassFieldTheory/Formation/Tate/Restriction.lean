@@ -23,9 +23,10 @@ degrees at most minus two it is the transfer on group homology. In degrees at mo
 Galois group is identified with the image of its inclusion into the larger one, exactly as for
 `LayerRestriction.tateCor`.
 
-The comparison lemmas below identify each branch with the corresponding established map, and the
-degree-zero lemma reads restriction on norm quotients as the ground-level inclusion. Corestriction
-after restriction is multiplication by the relative degree `[E : F]` in every degree.
+The comparison lemmas below identify each branch with the corresponding established map. On
+representatives, degree-zero restriction is the ground-level inclusion, and restriction is
+functorial along a tower `F ⊆ E ⊆ E' ⊆ K` in every nonnegative degree. Corestriction after
+restriction is multiplication by the relative degree `[E : F]` in every degree.
 
 ## Main definitions
 
@@ -38,10 +39,13 @@ after restriction is multiplication by the relative degree `[E : F]` in every de
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_comp_tateHIsoH_hom` and
   `TauCeti.ClassFieldTheory.LayerRestriction.trivialTateRes_comp_isoGroupCohomology_hom`: in
   positive degrees, Tate restriction is ordinary cohomological restriction.
-* `TauCeti.ClassFieldTheory.LayerRestriction.tateHZeroEquivNormQuotient_tateRes_H0π`: in degree
-  zero, restriction is the ground-level inclusion read on norm quotients.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_zero_H0π` and
+  `TauCeti.ClassFieldTheory.LayerRestriction.tateHZeroEquivNormQuotient_tateRes_H0π`: in degree
+  zero, restriction is the ground-level inclusion on representatives and norm quotients.
 * `TauCeti.ClassFieldTheory.LayerRestriction.tateCor_tateRes`: `cor ∘ res = [E : F]` in every
   degree.
+* `TauCeti.ClassFieldTheory.LayerRestriction.tateRes_trans_of_nonneg`: Tate restriction is
+  functorial along towers in every nonnegative degree.
 
 ## References
 
@@ -139,6 +143,46 @@ theorem tateHZeroEquivNormQuotient_tateRes_H0π (T : LayerRestriction small big)
   rw [NormalLayer.groundLevelEquiv_apply_coe, groundInclusion_apply_coe,
     NormalLayer.groundLevelEquiv_apply_coe]
   exact T.repIso_inv_apply_coe F _
+
+/-- **In degree zero, restriction is the ground-level inclusion on representatives.** The
+representative of a class in the ground level `A^U` of `K/F` gives the class of the same element in
+the ground level `A^{U'}` of `K/E`. -/
+theorem tateRes_zero_H0π (T : LayerRestriction small big) (F : Formation G)
+    (x : (big.rep F).ρ.invariants) :
+    T.tateRes F 0 (TateCohomology.H0π (big.rep F) x) =
+      TateCohomology.H0π (small.rep F)
+        ((small.groundLevelEquiv F).symm (T.groundInclusion F (big.groundLevelEquiv F x))) := by
+  apply (small.tateHZeroEquivNormQuotient F).injective
+  rw [tateHZeroEquivNormQuotient_tateRes_H0π,
+    NormalLayer.tateHZeroEquivNormQuotient_H0π, LinearEquiv.apply_symm_apply]
+
+/-! ### Towers -/
+
+section Towers
+
+variable {a b c : NormalLayer G}
+
+/-- **Tate restriction is functorial along a tower in every nonnegative degree.** Restricting
+from `K/F` to `K/E` and then to `K/E'` agrees with direct restriction from `K/F` to `K/E'`. -/
+theorem tateRes_trans_of_nonneg (T : LayerRestriction a b) (T' : LayerRestriction b c)
+    (F : Formation G) (r : ℤ) (hr : 0 ≤ r) :
+    (T.trans T').tateRes F r = T'.tateRes F r ≫ T.tateRes F r := by
+  obtain rfl | ⟨n, rfl⟩ : r = 0 ∨ ∃ n : ℕ, r = n + 1 := by
+    rcases r with (_ | n) | (_ | n)
+    · exact .inl rfl
+    · exact .inr ⟨n, rfl⟩
+    · omega
+    · omega
+  · ext x
+    induction x using TauCeti.TateCohomology.H0_induction_on with
+    | h y =>
+      rw [ModuleCat.comp_apply, tateRes_zero_H0π, tateRes_zero_H0π, tateRes_zero_H0π,
+        LinearEquiv.apply_symm_apply, groundInclusion_trans T T', LinearMap.comp_apply]
+  · rw [tateRes_ofNat_succ, tateRes_ofNat_succ, tateRes_ofNat_succ,
+      cohomologyRes_trans T T']
+    simp only [Category.assoc, Iso.inv_hom_id_assoc]
+
+end Towers
 
 /-- **Corestriction after restriction is multiplication by the relative degree** `[E : F]`, in
 every Tate degree. -/

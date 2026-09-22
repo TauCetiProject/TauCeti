@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.FieldTheory.KrullTopology
+public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
 
@@ -43,12 +45,21 @@ its surjection. The fixed-point subfield it produces is the one underlying
 A simple extension `K⟮x⟯` is fixed pointwise by exactly those automorphisms that fix `x`, so
 its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M / K` at all.
 
+Two facts hold for every intermediate field `E` algebraic over `K`, with no separability anywhere
+and nothing asked of `M / K`: its fixing subgroup is closed in the Krull topology, being the
+intersection over the finite simple subextensions of their open fixing subgroups; and it is
+unchanged by cutting `E` down to its part inside `separableClosure K M`, because every element of
+`E` has a `q`-th power iterate there. The second is why a Galois correspondence over an
+inseparable extension can only be indexed by the intermediate fields of the separable closure.
+
 ## Main results
 
 * `Subgroup.fixedField_sup_eq_top_iff`
 * `Subgroup.fixedField_map_conj`
 * `IntermediateField.fixingSubgroup_inf`
 * `IntermediateField.fixingSubgroup_iSup`
+* `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
+* `IntermediateField.fixingSubgroup_inf_separableClosure`
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
@@ -116,6 +127,60 @@ theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
   rw [Subgroup.mem_iInf]
   exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
     by simp [← Subgroup.zpowers_le, ← IntermediateField.le_iff_le]⟩
+
+/-- **The fixing subgroup of an algebraic intermediate field is closed** for the Krull topology:
+`E` is the join of the simple extensions it contains, each of them finite over `K`, so
+`E.fixingSubgroup` is the intersection of the open subgroups `K⟮x⟯.fixingSubgroup`.
+
+Mathlib's `IntermediateField.fixingSubgroup_isClosed` is the case of a finite `E / K`, where the
+subgroup is even open, and `InfiniteGalois.fixingSubgroup_isClosed` is the case of a Galois
+`M / K`. Algebraicity of `E / K` alone suffices — nothing is asked of `M / K`, so `E` may be an
+algebraic subfield of a transcendental extension, and over an algebraic `M / K` the hypothesis is
+supplied by `IntermediateField.isAlgebraic_tower_bot`. The suffix names that hypothesis, as
+`MulAction.stabilizer_isOpen_of_isIntegral` does. -/
+theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
+    [Algebra.IsAlgebraic K E] : IsClosed (E.fixingSubgroup : Set (M ≃ₐ[K] M)) := by
+  have hE : E = ⨆ x : E, K⟮(x : M)⟯ := by
+    refine le_antisymm (fun x hx ↦ ?_) (iSup_le fun x ↦ adjoin_simple_le_iff.mpr x.2)
+    exact le_iSup (fun y : E ↦ K⟮(y : M)⟯) ⟨x, hx⟩ (mem_adjoin_simple_self K x)
+  rw [hE, fixingSubgroup_iSup, Subgroup.coe_iInf]
+  refine isClosed_iInter fun x ↦ ?_
+  have : FiniteDimensional K K⟮(x : M)⟯ :=
+    adjoin.finiteDimensional
+      (isAlgebraic_iff.mp (Algebra.IsAlgebraic.isAlgebraic (R := K) x)).isIntegral
+  exact fixingSubgroup_isClosed _
+
+/-- **A fixing subgroup sees only the separable closure.** For an intermediate field `E` algebraic
+over `K` a `K`-automorphism of `M` fixing `E ⊓ separableClosure K M` pointwise already fixes `E`
+pointwise, because every `x ∈ E` has a power `x ^ q ^ n` in that intersection, `q` the exponential
+characteristic of `K`.
+
+So an intermediate field outside the separable closure is invisible to the correspondence between
+fixing subgroups and fields: it has the same fixing subgroup as its separable part. Like
+`IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic` this asks nothing of `M / K`; the power
+is produced inside `E`, where `separableClosure K E` is what the elements of `E` are purely
+inseparable over. -/
+theorem fixingSubgroup_inf_separableClosure (E : IntermediateField K M)
+    [Algebra.IsAlgebraic K E] :
+    (E ⊓ separableClosure K M).fixingSubgroup = E.fixingSubgroup := by
+  have hM : ExpChar M (ringExpChar K) :=
+    expChar_of_injective_algebraMap (algebraMap K M).injective _
+  have hS : ExpChar (separableClosure K E) (ringExpChar K) :=
+    expChar_of_injective_algebraMap (algebraMap K (separableClosure K E)).injective _
+  refine le_antisymm (fun σ hσ ↦ ?_) (fixingSubgroup_antitone inf_le_left)
+  rw [mem_fixingSubgroup_iff] at hσ ⊢
+  intro x hx
+  obtain ⟨n, y, hy⟩ :=
+    IsPurelyInseparable.pow_mem (separableClosure K E) (ringExpChar K) (⟨x, hx⟩ : E)
+  have hyM : ((y : E) : M) = x ^ ringExpChar K ^ n := by
+    simpa using congrArg (algebraMap E M) hy
+  have hyS : x ^ ringExpChar K ^ n ∈ separableClosure K M := by
+    rw [← hyM]
+    exact (map_mem_separableClosure_iff (IsScalarTower.toAlgHom K E M)).mpr y.2
+  have hpow : σ x ^ ringExpChar K ^ n = x ^ ringExpChar K ^ n := by
+    rw [← map_pow]
+    exact hσ _ (mem_inf.mpr ⟨_root_.pow_mem hx _, hyS⟩)
+  exact iterateFrobenius_inj M (ringExpChar K) n hpow
 
 /-- **A finite group of automorphisms is the whole fixing subgroup of its fixed field.** Every
 `K`-automorphism of `M` that fixes `M ^ H` pointwise already lies in `H`.

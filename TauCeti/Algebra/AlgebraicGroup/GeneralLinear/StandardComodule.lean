@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
@@ -65,9 +66,7 @@ variable (R : Type u) [CommRing R] (n : ℕ)
 `j`-th column of the generic matrix. -/
 noncomputable def standardCoact :
     (Fin n → R) →ₗ[R] (Fin n → R) ⊗[R] coordinateHopfAlgebra R n :=
-  (Pi.basisFun R (Fin n)).constr R fun j ↦
-    ∑ i, (Pi.single i (1 : R) : Fin n → R) ⊗ₜ[R]
-      coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n (MvPolynomial.X (i, j)))
+  Comodule.matrixCoact R (genericMatrix R n)
 
 /-- The standard coaction on a basis vector is the corresponding column of the generic
 matrix. -/
@@ -76,52 +75,36 @@ theorem standardCoact_apply_basisFun (j : Fin n) :
     standardCoact R n (Pi.single j 1) =
       ∑ i, (Pi.single i (1 : R) : Fin n → R) ⊗ₜ[R]
         coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n (MvPolynomial.X (i, j))) := by
-  rw [standardCoact, ← Pi.basisFun_apply, Basis.constr_basis]
+  simpa only [← Pi.basisFun_apply, standardCoact, genericMatrix_apply] using
+    Comodule.matrixCoact_apply_basisFun R (genericMatrix R n) j
 
 /-- The standard right comodule of the general linear coordinate Hopf algebra. -/
 @[instance_reducible]
 noncomputable def standardComodule :
-    Comodule R (coordinateHopfAlgebra R n) (Fin n → R) where
-  coact := standardCoact R n
-  coassoc := by
-    apply (Pi.basisFun R (Fin n)).ext
-    intro j
-    simp only [LinearMap.coe_comp, Function.comp_apply]
-    rw [Pi.basisFun_apply, standardCoact_apply_basisFun]
-    simp only [map_sum, LinearMap.rTensor_tmul, standardCoact_apply_basisFun,
-      TensorProduct.sum_tmul, LinearEquiv.coe_coe, TensorProduct.assoc_tmul,
-      LinearMap.lTensor_tmul, coordinateHopfAlgebra_comul_X, TensorProduct.tmul_sum]
-    rw [Finset.sum_comm]
-  lTensor_counit_comp_coact := by
-    apply (Pi.basisFun R (Fin n)).ext
-    intro j
-    simp only [LinearMap.coe_comp, Function.comp_apply]
-    rw [Pi.basisFun_apply, standardCoact_apply_basisFun]
-    simp only [map_sum, LinearMap.lTensor_tmul, coordinateHopfAlgebra_counit_X]
-    rw [Finset.sum_eq_single j]
-    · simp
-    · intro i _ hij
-      simp [hij]
-    · simp
+    Comodule R (coordinateHopfAlgebra R n) (Fin n → R) :=
+  Comodule.matrixComodule R (genericMatrix R n) (map_comul_genericMatrix R n)
+    (Comodule.counit_basisFun_of_map_counit R (genericMatrix R n)
+      (map_counit_genericMatrix R n))
 
 /-- The coaction of the standard comodule is `standardCoact`. -/
-@[simp]
 theorem standardComodule_coact :
-    (standardComodule R n).coact = standardCoact R n :=
-  (rfl)
+    (standardComodule R n).coact = standardCoact R n := by
+  simpa only [standardComodule, standardCoact] using
+    Comodule.matrixComodule_coact R (genericMatrix R n) (map_comul_genericMatrix R n)
+      (Comodule.counit_basisFun_of_map_counit R (genericMatrix R n)
+        (map_counit_genericMatrix R n))
 
 attribute [local instance] standardComodule
 
 /-- The coefficient matrix of the standard comodule is the generic matrix. -/
-@[simp]
 theorem coefficientMatrix_basisFun :
     Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
-        (Pi.basisFun R (Fin n)) = fun i j ↦
-          coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n (MvPolynomial.X (i, j))) := by
-  ext i j
-  rw [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-    standardComodule_coact, Pi.basisFun_apply, standardCoact_apply_basisFun]
-  simp [Pi.single_apply]
+        (Pi.basisFun R (Fin n)) = genericMatrix R n := by
+  simpa only [standardComodule] using
+    Comodule.coefficientMatrix_matrixComodule R (genericMatrix R n)
+      (map_comul_genericMatrix R n)
+      (Comodule.counit_basisFun_of_map_counit R (genericMatrix R n)
+        (map_counit_genericMatrix R n))
 
 /-- The coordinate morphism of the standard comodule is the identity of `O(GLₙ)`. -/
 @[simp]
@@ -140,7 +123,9 @@ theorem coordinateBialgHom_basisFun :
       _ = Comodule.coefficientMatrix (C := coordinateHopfAlgebra R n)
             (Pi.basisFun R (Fin n)) i j :=
         Comodule.coordinateBialgHom_X (Pi.basisFun R (Fin n)) i j
-      _ = _ := by simp [coefficientMatrix_basisFun]
+      _ = _ := by
+        rw [coefficientMatrix_basisFun, genericMatrix_apply]
+        exact (_root_.BialgHom.id_apply R _ _).symm
   exact DFunLike.congr_fun hAlg x
 
 /-- **The standard comodule of `GLₙ` is faithful.** -/

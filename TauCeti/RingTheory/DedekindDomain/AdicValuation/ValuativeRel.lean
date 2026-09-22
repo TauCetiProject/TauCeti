@@ -22,7 +22,9 @@ and the residue field of the valuative relation with the ones `K_v` already has.
 ## Main results
 
 * `IsDedekindDomain.HeightOneSpectrum.integer_eq_adicCompletionIntegers`: the ring of integers of
-  the valuative relation is `𝒪_v`.
+  the valuative relation is `𝒪_v`; `mem_adicCompletionIntegers_iff_valuation_le_one` is the
+  membership form and `valuation_integers_adicCompletionIntegers` packages it as
+  `Valuation.Integers`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
@@ -30,6 +32,8 @@ and the residue field of the valuative relation with the ones `K_v` already has.
   infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
   completion with finite residue field is a nonarchimedean local field.
+* `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
+  of an adic completion carrying a nonarchimedean local-field structure is compact.
 
 ## Implementation notes
 
@@ -85,6 +89,49 @@ theorem integer_eq_adicCompletionIntegers :
   exact (Valuation.vle_one_iff (ValuativeRel.valuation (v.adicCompletion K))).symm.trans
     (Valuation.vle_one_iff (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰))
 
+/-- The ring of integers of the valuative relation of `K_v` is the canonical ring of integers
+`𝒪_v`, as a ring isomorphism: the two are the same subring of `K_v`, carrying different
+instances. The codomain is written as `v.adicCompletionIntegers K` and not as its `toSubring`,
+whose coercion is the same type but carries no `IsLocalRing` instance. -/
+def integerEquivAdicCompletionIntegers :
+    𝒪[v.adicCompletion K] ≃+* v.adicCompletionIntegers K :=
+  RingEquiv.subringCongr (integer_eq_adicCompletionIntegers v)
+
+/-- The identification of the two rings of integers is the identity on elements of `K_v`. -/
+@[simp]
+theorem coe_integerEquivAdicCompletionIntegers (x : 𝒪[v.adicCompletion K]) :
+    (v.integerEquivAdicCompletionIntegers (K := K) x : v.adicCompletion K) =
+      (x : v.adicCompletion K) := (rfl)
+
+/-- The inverse identification of the two rings of integers is the identity on elements of
+`K_v`. -/
+@[simp]
+theorem coe_integerEquivAdicCompletionIntegers_symm (x : v.adicCompletionIntegers K) :
+    ((v.integerEquivAdicCompletionIntegers (K := K)).symm x : v.adicCompletion K) =
+      (x : v.adicCompletion K) := (rfl)
+
+/-- An element of `K_v` lies in `𝒪_v` exactly when the valuation of the valuative relation is at
+most `1`. This is Mathlib's `mem_adicCompletionIntegers`, which is stated for the adic valuation
+`Valued.v`, read through the valuative relation. -/
+-- This is intentionally not a simp lemma: it would make the upstream theorem
+-- `adicCompletionExtension_mem_adicCompletionIntegers` fail the simp-normal-form linter, while
+-- that theorem's module cannot import this valuative adapter without creating an import cycle.
+theorem mem_adicCompletionIntegers_iff_valuation_le_one (x : v.adicCompletion K) :
+    x ∈ v.adicCompletionIntegers K ↔
+      ValuativeRel.valuation (v.adicCompletion K) x ≤ 1 := by
+  rw [← Valuation.mem_integer_iff, integer_eq_adicCompletionIntegers,
+    ValuationSubring.mem_toSubring]
+
+/-- **`𝒪_v` is a ring of integers of `K_v`.** The canonical ring of integers satisfies
+`Valuation.Integers` for the valuation of the valuative relation of `K_v`, which is the form in
+which the theory of local fields consumes a ring of integers. -/
+theorem valuation_integers_adicCompletionIntegers :
+    (ValuativeRel.valuation (v.adicCompletion K)).Integers (v.adicCompletionIntegers K) where
+  hom_inj := Subtype.val_injective
+  map_le_one x := (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) x.1).mp x.2
+  exists_of_le_one {r} hr :=
+    ⟨⟨r, (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) r).mpr hr⟩, rfl⟩
+
 /-- An element of `R` lands in the ring of integers of the valuative relation on `K_v`. -/
 theorem algebraMap_mem_integer_adicCompletion (a : R) :
     algebraMap R (v.adicCompletion K) a ∈ 𝒪[v.adicCompletion K] := by
@@ -94,12 +141,9 @@ theorem algebraMap_mem_integer_adicCompletion (a : R) :
 /-- The residue field of the valuative relation on `K_v` is the residue field `R ⧸ v` of `v`. -/
 noncomputable def residueFieldEquivAdicCompletion :
     (R ⧸ v.asIdeal) ≃+* 𝓀[v.adicCompletion K] :=
-  -- the ascription reads `RingEquiv.subringCongr` at `v.adicCompletionIntegers K` rather than at
-  -- its `toSubring`, whose coercion is the same type but carries no `IsLocalRing` instance
   (v.residueFieldEquivAdicCompletionIntegers (K := K)).trans
     (IsLocalRing.ResidueField.mapEquiv
-      ((RingEquiv.subringCongr (integer_eq_adicCompletionIntegers v)).symm :
-        v.adicCompletionIntegers K ≃+* 𝒪[v.adicCompletion K]))
+      (v.integerEquivAdicCompletionIntegers (K := K)).symm)
 
 /-- **The residue-field equivalence on a quotient representative.** This is the characterization
 consumers should use; the construction of the equivalence is an implementation detail and should
@@ -110,7 +154,7 @@ theorem residueFieldEquivAdicCompletion_apply_mk (a : R) :
       IsLocalRing.residue _ (⟨algebraMap R (v.adicCompletion K) a,
         v.algebraMap_mem_integer_adicCompletion (K := K) a⟩ : 𝒪[v.adicCompletion K]) := by
   let e : v.adicCompletionIntegers K ≃+* 𝒪[v.adicCompletion K] :=
-    (RingEquiv.subringCongr (integer_eq_adicCompletionIntegers v)).symm
+    (v.integerEquivAdicCompletionIntegers (K := K)).symm
   have hcomp : v.residueFieldEquivAdicCompletion (K := K)
       (Ideal.Quotient.mk v.asIdeal a) =
       IsLocalRing.ResidueField.mapEquiv e
@@ -162,6 +206,20 @@ instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
         inferInstanceAs (IsDiscreteValuationRing (v.adicCompletionIntegers K)),
         inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))⟩
   exact ⟨⟩
+
+/-- The ring of integers in an adic completion that is a nonarchimedean local field is compact. -/
+instance compactSpace_adicCompletionIntegers
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] :
+    CompactSpace (v.adicCompletionIntegers K) := by
+  let f : 𝒪[v.adicCompletion K] ≃ₜ v.adicCompletionIntegers K := {
+    toEquiv := (v.integerEquivAdicCompletionIntegers (K := K)).toEquiv
+    continuous_toFun := continuous_induced_rng.mpr <|
+      continuous_subtype_val.congr fun x ↦
+        (v.coe_integerEquivAdicCompletionIntegers (K := K) x).symm
+    continuous_invFun := continuous_induced_rng.mpr <|
+      continuous_subtype_val.congr fun x ↦
+        (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
+  exact f.compactSpace
 
 end IsDedekindDomain.HeightOneSpectrum
 

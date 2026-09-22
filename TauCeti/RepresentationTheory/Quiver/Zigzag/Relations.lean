@@ -263,8 +263,7 @@ private theorem ofPath_mem_quadraticZigzagIdeal (hconn : G.Connected)
   | nil => simp at hp
   | cons q e ih =>
     rw [_root_.Quiver.Path.length_cons] at hp
-    rw [← _root_.Quiver.Path.comp_toPath_eq_cons, ← ofPath_mul_ofPath_of_comp e.toPath q,
-      ← ofArrow_eq_ofPath]
+    rw [← ofArrow_mul_ofPath]
     rcases lt_or_ge q.length 3 with hlt | hge
     · exact ofArrow_mul_ofPath_mem k G hconn hcard q (by omega) e
     · exact (quadraticZigzagIdeal k G).mul_mem_left _ _ (ih hge)

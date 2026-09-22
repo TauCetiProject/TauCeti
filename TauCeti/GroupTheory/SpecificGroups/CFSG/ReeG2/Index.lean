@@ -30,6 +30,8 @@ that a named group is finite or simple.
 * `TauCeti.ReeG2LieIndex.exists_eq_of`: the eliminator matching the introduction form.
 * `TauCeti.ReeG2LieIndex.dynkinType_eq`, `TauCeti.ReeG2LieIndex.rank_eq_two` and
   `TauCeti.ReeG2LieIndex.characteristic_eq_three`: the diagram, rank and characteristic.
+* `TauCeti.ReeG2LieIndex.fieldOrder_eq_three_pow`: the field order is three to the recorded
+  exponent.
 ## References
 
 The family name, its parameter convention and the exclusion of `²G₂(3)` follow
@@ -111,6 +113,13 @@ theorem exists_eq_of (d : ReeG2LieIndex) :
 @[simp] theorem characteristic_eq_three (d : ReeG2LieIndex) : d.1.characteristic = 3 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.characteristic_reeG2 m
+
+/-- **The field order of a Ree index of type `G₂` is the recorded power of three.** This is the
+characteristic-three reading of `TauCeti.ValidLieTypeIndex.fieldOrder_eq_characteristic_pow`. It is
+the form a construction on a carrier defined over `𝔽₃` needs. -/
+theorem fieldOrder_eq_three_pow (d : ReeG2LieIndex) :
+    d.1.fieldOrder = 3 ^ d.1.fieldExponent := by
+  rw [d.1.fieldOrder_eq_characteristic_pow, d.characteristic_eq_three]
 
 /-- A Ree index of type `G₂` is a Suzuki--Ree index: its Steinberg map is an odd power of a
 half-Frobenius. -/

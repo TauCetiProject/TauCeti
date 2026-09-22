@@ -97,7 +97,7 @@ theorem two_pow_card_le_absNorm {I : Ideal (𝓞 K)} (hI : I ≠ 0)
   have hprod : (∏ P ∈ s, P) ∣ I := Finset.prod_primes_dvd I hprime hdvd
   calc 2 ^ s.card = ∏ _P ∈ s, 2 := by rw [Finset.prod_const]
     _ ≤ ∏ P ∈ s, Ideal.absNorm P :=
-        Finset.prod_le_prod' fun P hP ↦ one_lt_absNorm_of_prime (hprime P hP)
+        Finset.prod_le_prod fun P hP ↦ one_lt_absNorm_of_prime (hprime P hP)
     _ = Ideal.absNorm (∏ P ∈ s, P) := (map_prod Ideal.absNorm _ _).symm
     _ ≤ Ideal.absNorm I :=
         Nat.le_of_dvd (Nat.pos_of_ne_zero (Ideal.absNorm_eq_zero_iff.not.mpr hI))
@@ -263,10 +263,8 @@ theorem higherPrimePowerTheta_le_card_primesLE_mul_log
   have hmemT : ∀ A ∈ T, ((Ideal.absNorm (primePowerBase A).asIdeal : ℝ)) ^ primePowerExponent A
       ≤ x ∧ 2 ≤ primePowerExponent A := by
     intro A hA
-    rw [hTdef, Finset.mem_filter, mem_normLE] at hA
-    refine ⟨?_, hA.2⟩
-    rw [← Nat.cast_pow, ← absNorm_eq_absNorm_primePowerBase_pow]
-    exact hA.1
+    rw [hTdef, Finset.mem_filter] at hA
+    exact ⟨mem_primePowersLE_iff.mp hA.1, hA.2⟩
   have hsub : T ⊆ primePowersLE K x := Finset.filter_subset _ _
   have hzero : ∀ A ∈ primePowersLE K x, A ∉ T → higherPrimePowerWeight A = 0 := by
     intro A hA hAT

@@ -134,6 +134,11 @@ theorem studentTPDFReal_nonneg (ν x : ℝ) : 0 ≤ studentTPDFReal ν x := by
   · exact (studentTPDFReal_pos hν x).le
   · rw [studentTPDFReal_of_nonpos hν]
 
+/-- The `ℝ≥0∞`-valued density is the nonnegative coercion of the real density. -/
+theorem studentTPDF_eq_ofReal (ν x : ℝ) :
+    studentTPDF ν x = ENNReal.ofReal (studentTPDFReal ν x) := by
+  rw [studentTPDF]
+
 /-- The two Student t densities agree under `ENNReal.toReal`; the density is never infinite. -/
 @[simp]
 theorem toReal_studentTPDF (ν x : ℝ) : (studentTPDF ν x).toReal = studentTPDFReal ν x :=
@@ -268,23 +273,24 @@ theorem integrable_studentTMeasure_iff {F : Type*} [NormedAddCommGroup F] [Norme
     {f : ℝ → F} :
     Integrable f (studentTMeasure ν) ↔
       Integrable (fun x : ℝ => studentTPDFReal ν x • f x) := by
-  rw [studentTMeasure_def]
-  have hpdf : studentTPDF ν = fun x => ENNReal.ofReal (studentTPDFReal ν x) := rfl
-  rw [hpdf]
-  simpa using
-    (integrable_withDensity_ofReal_iff (μ := volume) (g := f) (ρ := studentTPDFReal ν)
-      (measurable_studentTPDFReal ν).aemeasurable
-      (ae_of_all _ fun x => studentTPDFReal_nonneg ν x))
+  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
+  exact integrable_withDensity_ofReal_iff (measurable_studentTPDFReal ν).aemeasurable
+    (ae_of_all _ (studentTPDFReal_nonneg ν))
+
+/-- An integral against a Student t law is the density-weighted Lebesgue integral. -/
+theorem integral_studentTMeasure_eq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (ν : ℝ) (f : ℝ → F) :
+    ∫ x, f x ∂studentTMeasure ν = ∫ x, studentTPDFReal ν x • f x := by
+  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
+  exact integral_withDensity_ofReal (measurable_studentTPDFReal ν).aemeasurable
+    (ae_of_all _ (studentTPDFReal_nonneg ν)) f
 
 /-- The real mass of a measurable set under a Student t law is the integral of its real-valued
 density. -/
 theorem measureReal_studentTMeasure {s : Set ℝ} (hs : MeasurableSet s)
     : (studentTMeasure ν).real s = ∫ z in s, studentTPDFReal ν z := by
-  rw [studentTMeasure_def]
-  have hpdf : studentTPDF ν = fun x => ENNReal.ofReal (studentTPDFReal ν x) := rfl
-  rw [hpdf]
-  exact measureReal_withDensity_ofReal
-    (ae_of_all _ fun x => studentTPDFReal_nonneg ν x) hs
+  rw [studentTMeasure_def, funext (studentTPDF_eq_ofReal ν)]
+  exact measureReal_withDensity_ofReal (ae_of_all _ (studentTPDFReal_nonneg ν)) hs
     (integrable_studentTPDFReal ν).integrableOn
 
 /-! ### Symmetry -/

@@ -47,6 +47,8 @@ Ported from the AINTLIB `LeanModularForms` project
   positive.
 * `HeckeRing.GL2.doubleCoset_out_diagCosetGamma0_const_eq_iUnion_rightCosets`: a scalar
   double coset is a single right coset.
+* `HeckeRing.GL2.coprimeDetCoset_diagCosetGamma0`: the coset of `diag(a)` has determinant prime
+  to `N` when `a₀ a₁` is.
 
 ## References
 
@@ -171,5 +173,20 @@ theorem degree_diagCosetGamma0_const (c : ℕ)
   rw [diagCosetGamma0_def, HeckeCoset.degree_mk]
   have hnorm := natDiagGL_const_mem_normalizer 2 c ((Gamma0 N).map (mapGL ℚ))
   rw [Subgroup.conjAct_pointwise_smul_eq_self hnorm, Subgroup.relIndex_self]
+
+/-- **A diagonal double coset has determinant prime to the level** as soon as `a₀ a₁` is: the
+determinant of `diag(a₀, a₁)` is `a₀ a₁`. This is the hypothesis `CoprimeDetCoset N N` under which
+the good Hecke operators `T(a₀, a₁)` commute with the Atkin–Lehner operators. -/
+theorem coprimeDetCoset_diagCosetGamma0 {a : Fin 2 → ℕ} (ha : ∀ i, 0 < a i)
+    (h : Nat.Coprime (a 0 * a 1) N) :
+    CoprimeDetCoset N N
+      (diagCosetGamma0 N a fun _ ↦ (Nat.coprime_mul_iff_left.mp h).1) := by
+  rw [diagCosetGamma0_def, coprimeDetCoset_self_mk,
+    coprimeDet_iff N (natDiagGL_coe_eq_map_intCast 2 a ha)]
+  simp only [Matrix.det_fin_two, Matrix.diagonal_apply_eq,
+    Matrix.diagonal_apply_ne _ (by decide : (0 : Fin 2) ≠ 1),
+    Matrix.diagonal_apply_ne _ (by decide : (1 : Fin 2) ≠ 0), mul_zero, sub_zero]
+  rw [← Nat.cast_mul, Int.gcd_natCast_natCast]
+  exact h
 
 end HeckeRing.GL2

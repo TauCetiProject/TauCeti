@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
-public import Mathlib.RingTheory.Henselian
+public import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # The ring of integers of a single adic completion
@@ -27,16 +27,20 @@ Everything here concerns one completion. The comparison of two completions along
   characteristic zero has characteristic zero.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
+  maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
   valuation bound `≤ exp (-n)`, identifying the ideal filtration with the valuation filtration.
 * `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
   ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
+* `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
+  around the origin is open.
 * `IsDedekindDomain.HeightOneSpectrum.isAdic_maximalIdeal_adicCompletionIntegers`: the subspace
   topology on `𝒪_v` is the `𝔪`-adic one.
-* `IsDedekindDomain.HeightOneSpectrum.henselianLocalRing_adicCompletionIntegers`: `𝒪_v` is a
-  Henselian local ring, being local and complete for its maximal ideal.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
   congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_adicCompletionIntegers`: the
+  corresponding density statement for the canonical map `R → 𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
@@ -54,7 +58,8 @@ placement of a `NumberTheory` import inside `RingTheory` is not mistaken for a l
 ## Motivation
 
 These results are consumed by a semilocal comparison in explicit `2`-descent, which matches a
-square class of a global étale algebra with its images in the completions. Nothing here mentions
+square class of a global étale algebra with its images in the completions, and by the local
+valuation conditions that cut out congruence subgroups of the ideles. Nothing here mentions
 a curve — each statement is about a Dedekind domain and one of its completions.
 
 ## Provenance
@@ -115,6 +120,40 @@ theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIn
   rwa [Valuation.IsUniformizer.iff,
     Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
       (v.valuedAdicCompletion_surjective K)] at huni
+
+/-- The height-one prime `v` generates the maximal ideal of the ring of integers of the
+completion at `v`. -/
+@[simp]
+theorem map_asIdeal_adicCompletionIntegers :
+    Ideal.map (algebraMap R (v.adicCompletionIntegers K)) v.asIdeal =
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) := by
+  apply le_antisymm
+  · rw [Ideal.map_le_iff_le_comap,
+      ← Ideal.under_def, v.under_maximalIdeal_adicCompletionIntegers]
+  · obtain ⟨π, hπ⟩ := v.intValuation_exists_uniformizer
+    have hπmem : π ∈ v.asIdeal := by
+      rw [← v.intValuation_lt_one_iff_mem, hπ]
+      simp
+    have hπval : Valued.v
+        (algebraMap R (v.adicCompletionIntegers K) π : v.adicCompletion K) = exp (-1) := by
+      rw [algebraMap_adicCompletionIntegers_apply, valuedAdicCompletion_eq_valuation',
+        valuation_of_algebraMap, hπ]
+    have hπuni : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).IsUniformizer
+        (algebraMap R (v.adicCompletionIntegers K) π : v.adicCompletion K) := by
+      rwa [Valuation.IsUniformizer.iff,
+        Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
+          (v.valuedAdicCompletion_surjective K)]
+    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible
+      (v.adicCompletionIntegers K)
+    have hϖuni : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).IsUniformizer
+        (ϖ : v.adicCompletion K) :=
+      Valuation.isUniformizer_of_maximalIdeal_eq_span _ hϖ.maximalIdeal_eq
+    rw [hϖ.maximalIdeal_eq]
+    have hassoc : Associated ϖ (algebraMap R (v.adicCompletionIntegers K) π) :=
+      Valuation.associated_of_isUniformizer hϖuni hπuni
+    rw [Ideal.span_singleton_eq_span_singleton.mpr hassoc]
+    exact Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
+      (Ideal.mem_map_of_mem _ hπmem))
 
 /-- An element of `𝒪_v` lies in the `n`-th power of the maximal ideal exactly when its valuation
 is at most `exp (-n)`.
@@ -191,27 +230,34 @@ instance isTopologicalRing_adicCompletionIntegers :
   inferInstanceAs (IsTopologicalRing
     (Valued.v (R := v.adicCompletion K)).valuationSubring.toSubring)
 
+/-- **A closed valuation ball of `K_v` around the origin is open.**  The valuation of `K_v` is
+surjective onto `ℤᵐ⁰`, so every nonzero bound is attained and the ball is the closed ball around a
+point, which `Valued.isOpen_closedBall` shows is open. -/
+theorem isOpen_setOf_valued_le {γ : ℤᵐ⁰} (hγ : γ ≠ 0) :
+    IsOpen {z : v.adicCompletion K | Valued.v z ≤ γ} := by
+  obtain ⟨z, hz⟩ := v.valuedAdicCompletion_surjective K γ
+  have hr0 : Valued.v.restrict z ≠ 0 := by
+    rw [ne_eq, Valuation.restrict_eq_zero_iff, hz]
+    exact hγ
+  have h : {y : v.adicCompletion K | Valued.v y ≤ γ} =
+      {y : v.adicCompletion K | Valued.v.restrict y ≤ Valued.v.restrict z} := by
+    ext y
+    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, Valuation.restrict_le_iff, hz]
+  rw [h]
+  exact Valued.isOpen_closedBall _ hr0
+
 /-- **Each power of the maximal ideal of `𝒪_v` is open**: `𝔪 ^ n` is the preimage under the
 inclusion `𝒪_v → K_v` of a closed valuation ball, and those are open. -/
 theorem isOpen_maximalIdeal_pow_adicCompletionIntegers (n : ℕ) :
     IsOpen ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
       Ideal (v.adicCompletionIntegers K)) : Set (v.adicCompletionIntegers K)) := by
-  obtain ⟨z, hz⟩ := v.valuedAdicCompletion_surjective K (exp (-(n : ℤ)))
-  have hr0 : Valued.v.restrict z ≠ 0 := by
-    intro h
-    have h0 : Valued.v z = 0 := by rw [← Valuation.embedding_restrict, h, map_zero]
-    rw [hz] at h0
-    exact exp_ne_zero h0
-  have : ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
+  have h : ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
         Ideal (v.adicCompletionIntegers K)) : Set (v.adicCompletionIntegers K)) =
       (fun x : v.adicCompletionIntegers K ↦ (x : v.adicCompletion K)) ⁻¹'
-        {y | Valued.v.restrict y ≤ Valued.v.restrict z} := by
-    ext x
-    rw [Set.mem_preimage, Set.mem_ofPred, Valuation.restrict_le_iff_le_embedding,
-      Valuation.embedding_restrict, hz]
-    exact v.mem_maximalIdeal_pow_iff (K := K)
-  rw [this]
-  exact (Valued.isOpen_closedBall _ hr0).preimage continuous_subtype_val
+        {y : v.adicCompletion K | Valued.v y ≤ exp (-(n : ℤ))} :=
+    Set.ext fun x ↦ v.mem_maximalIdeal_pow_iff (K := K)
+  rw [h]
+  exact (v.isOpen_setOf_valued_le (K := K) exp_ne_zero).preimage continuous_subtype_val
 
 /-- **Every neighbourhood of `0` in `𝒪_v` contains a power of the maximal ideal.** A neighbourhood
 is cut out by a valuation bound, and `exp` takes some integer below that bound; the corresponding
@@ -259,14 +305,6 @@ instance isAdicComplete_adicCompletionIntegers :
   (IsAdic.isAdicComplete_iff (v.isAdic_maximalIdeal_adicCompletionIntegers (K := K))).mpr
     ⟨inferInstance, inferInstance⟩
 
-/-- **The ring of integers of an adic completion is a Henselian local ring.** It is a local ring
-that is complete with respect to its maximal ideal, and such rings are Henselian. -/
-instance henselianLocalRing_adicCompletionIntegers :
-    HenselianLocalRing (v.adicCompletionIntegers K) where
-  is_henselian f hf a₀ h₁ h₂ :=
-    (IsAdicComplete.henselianRing _
-      (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))).is_henselian f hf a₀ h₁ (h₂.map _)
-
 /-- **`R` is dense in `𝒪_v`**: every element of the ring of integers of the completion is
 congruent to an element of `R` modulo any power `𝔪 ^ n` of the maximal ideal. -/
 theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
@@ -300,6 +338,29 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
     exact ha.le
   rw [← sub_add_sub_cancel _ (y : v.adicCompletion K)]
   exact Valuation.map_add_le _ hxy hza
+
+/-- **`R` is dense in the ring of integers of its completion at `v`.** Equivalently, every
+neighbourhood of an element of `𝒪_v` contains the image of an element of `R`. -/
+theorem denseRange_algebraMap_adicCompletionIntegers :
+    DenseRange (algebraMap R (v.adicCompletionIntegers K)) := by
+  rw [denseRange_iff_closure_range]
+  apply Set.eq_univ_of_forall
+  intro x
+  rw [mem_closure_iff_nhds']
+  intro U hU
+  have hzero : (fun z : v.adicCompletionIntegers K ↦ x - z) ⁻¹' U ∈ nhds 0 := by
+    apply (continuous_const.sub continuous_id).continuousAt.preimage_mem_nhds
+    simpa using hU
+  obtain ⟨n, hn⟩ := v.exists_maximalIdeal_pow_subset_of_mem_nhds (K := K) hzero
+  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
+  refine ⟨⟨algebraMap R (v.adicCompletionIntegers K) a, ⟨a, rfl⟩⟩, ?_⟩
+  have hdiff : x - algebraMap R (v.adicCompletionIntegers K) a ∈
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n := by
+    rw [v.mem_maximalIdeal_pow_iff (K := K)]
+    push_cast [IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
+      (v.adicCompletion K)]
+    exact ha
+  simpa only [Set.mem_preimage, sub_sub_cancel] using hn hdiff
 
 /-- The residue field of `v` maps isomorphically onto the residue field of the ring of integers of
 the completion at `v`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Quiver.Prefunctor
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 
 /-!
 # Path algebras are functorial in the quiver
@@ -38,6 +38,7 @@ algebra homomorphism, just not an injective one.
   `TauCeti.PathAlgebra.mapAlgHom_ofArrow`: the homomorphism on paths, vertex idempotents and
   arrows.
 * `TauCeti.PathAlgebra.mapAlgHom_id` and `TauCeti.PathAlgebra.mapAlgHom_comp`: **functoriality**.
+* `TauCeti.PathAlgebra.mapAlgHom_mem_gradeBy`: a map is graded for the pulled-back arrow weight.
 * `TauCeti.PathAlgebra.mapAlgEquiv_id`, `TauCeti.PathAlgebra.mapAlgEquiv_comp` and
   `TauCeti.PathAlgebra.mapAlgEquiv_symm`: the same laws for the induced isomorphism, together
   with the congruence lemma `TauCeti.PathAlgebra.mapAlgEquiv_congr`.
@@ -192,6 +193,25 @@ theorem mapAlgHom_ofArrow (φ : Q ⥤q R) (hφ : Function.Bijective φ.obj) {a b
     mapAlgHom k φ hφ (ofArrow e) = ofArrow (φ.map e) := by
   rw [ofArrow_eq_ofPath, mapAlgHom_ofPath, mapTotalPath_mk, Prefunctor.mapPath_toPath,
     ofArrow_eq_ofPath]
+
+variable {M : Type*} [AddCommMonoid M]
+
+/-- **A prefunctor-induced algebra map is graded for the pulled-back arrow weight.** If an element
+is homogeneous for the weight obtained by pulling `wt` back along `φ`, then its image is
+homogeneous of the same weight. -/
+theorem mapAlgHom_mem_gradeBy (φ : Q ⥤q R) (hφ : Function.Bijective φ.obj)
+    (wt : ∀ {a b : R}, (a ⟶ b) → M) {m : M} {x : pathAlgebra k Q}
+    (hx : x ∈ gradeBy k (fun e => wt (φ.map e)) m) :
+    mapAlgHom k φ hφ x ∈ gradeBy k wt m := by
+  rw [gradeBy_eq_span_range] at hx
+  induction hx using Submodule.span_induction with
+  | mem u hu =>
+      obtain ⟨⟨x, hx⟩, rfl⟩ := hu
+      rw [mapAlgHom_ofPath]
+      exact ofPath_mem_gradeBy_of_addWeight ((φ.addWeight_mapPath wt x.2.2).trans hx)
+  | zero => simp
+  | add u v _ _ ihu ihv => rw [map_add]; exact add_mem ihu ihv
+  | smul c u _ ih => rw [map_smul]; exact Submodule.smul_mem _ c ih
 
 /-- Equal prefunctors induce equal homomorphisms; the bijectivity hypotheses are propositions, so
 they need not be compared. -/

@@ -53,6 +53,10 @@ restrictions.
 * `TauCeti.groupCohomology.map_comp_corestriction`: corestriction is natural in the coefficients.
 * `TauCeti.groupCohomology.map_subtype_id_comp_corestriction`: corestriction after restriction is
   multiplication by `[G : S]`.
+* `TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero`: a class whose restriction to `S`
+  vanishes is killed by `[G : S]`.
+* `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
+  by the order of the group.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
 
@@ -151,6 +155,12 @@ theorem map_subtype_id_comp_corestriction (A : Rep.{u} k G) (n : ℕ) :
     TauCeti.Rep.resCoindAdjunction_unit_app_comp_coindResAdjunction_counit_app, hsmul,
     Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
   exact congrArg (S.index • ·) (CategoryTheory.Functor.map_id _ _)
+
+/-- A class in `Hⁿ(G, A)` whose restriction to the finite-index subgroup `S` vanishes is killed by
+the index of `S`. -/
+theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
+    (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
+  rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
 
 /-! ### Transitivity -/
 
@@ -381,3 +391,20 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
 end Transitivity
 
 end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G] [Finite G]
+
+open Limits
+
+/-- Positive-degree cohomology of a finite group is killed by the order of the group (Milne II
+1.31). -/
+theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n + 1)) :
+    Nat.card G • x = 0 := by
+  -- Restriction to the trivial subgroup lands in the vanishing cohomology of the trivial group.
+  simpa using TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero ⊥ <|
+    (ModuleCat.subsingleton_of_isZero
+      (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
+
+end groupCohomology

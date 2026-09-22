@@ -32,6 +32,11 @@ and likewise componentwise, `range f ⊓ H'^{p,n-p} = f (H^{p,n-p})`. The mechan
 morphism intertwines the Hodge projections of source and target, so it is a graded map for the
 two Hodge decompositions; strictness is then bookkeeping on degrees.
 
+Dually, a sub-Hodge structure that admits a complementary sub-Hodge structure is cut out by an
+endomorphism of the Hodge structure itself: an idempotent endomorphism of the ambient complex
+vector space whose range and kernel are sub-Hodge structures is automatically a morphism, and the
+Hodge components split along the resulting decomposition.
+
 Statements are given for the conjugation-parametric object `HodgeStructureOn` and for the
 unbundled morphism predicate `TauCeti.Hodge.HodgeStructureOn.IsMorphism`. The bundled integral
 morphisms of `TauCeti.Hodge.HodgeStructure.Hom` satisfy that predicate, so every result
@@ -62,6 +67,12 @@ and Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2.
 * `TauCeti.Hodge.HodgeStructureOn.IsMorphism.range_inf_F`: **strictness**, `range f ⊓ F'^p`
   is the image of `F^p`; `…range_inf_piece` and `…range_inf_conjF` are the componentwise and
   conjugate forms.
+* `TauCeti.Hodge.HodgeStructureOn.isMorphism_of_isIdempotentElem`: an idempotent endomorphism whose
+  range and kernel are sub-Hodge structures is a morphism of pure Hodge structures;
+  `…IsSubstructure.isMorphism_projection` is the projection onto a sub-Hodge structure along a
+  complementary one.
+* `TauCeti.Hodge.HodgeStructureOn.IsSubstructure.piece_eq_sup`: each Hodge component is the sum of
+  its intersections with two complementary sub-Hodge structures.
 -/
 
 public section
@@ -413,6 +424,98 @@ theorem IsSubstructure.quotient_piece (h : hs.IsSubstructure U) (p : ℤ) :
     h.quotient.piece p = (hs.piece p).map U.mkQ := by
   have hrange := h.isMorphism_mkQ.range_inf_piece p
   rwa [Submodule.range_mkQ, top_inf_eq] at hrange
+
+/-! ### Idempotent splittings
+
+An idempotent endomorphism of the ambient complex vector space whose range and kernel are both
+sub-Hodge structures is automatically a morphism of pure Hodge structures, so a sub-Hodge structure
+with a complementary sub-Hodge structure is cut out by an endomorphism of the Hodge structure
+itself. The Hodge decomposition is then compatible with the splitting: each Hodge component is the
+sum of its intersections with the two pieces.
+-/
+
+section Idempotent
+
+variable {e : W →ₗ[ℂ] W}
+
+/-- An idempotent endomorphism whose range and kernel are sub-Hodge structures maps every Hodge
+component into itself: on a component, the two summands of a vector are again of that degree. -/
+theorem map_piece_le_of_isIdempotentElem (he : IsIdempotentElem e)
+    (hrange : hs.IsSubstructure (LinearMap.range e))
+    (hker : hs.IsSubstructure (LinearMap.ker e)) (q : ℤ) :
+    (hs.piece q).map e ≤ hs.piece q := by
+  rintro _ ⟨x, hx, rfl⟩
+  have hmem : x - e x ∈ LinearMap.ker e := by
+    simp [LinearMap.mem_ker, map_sub, (LinearMap.IsIdempotentElem.mem_range_iff he).1 ⟨x, rfl⟩]
+  -- The difference between `e x` and its degree-`q` part is the negative of the corresponding
+  -- difference for `x - e x`, so it lies in both the range and the kernel, hence vanishes.
+  have hsum : e x - hs.proj q (e x) = -((x - e x) - hs.proj q (x - e x)) := by
+    have hx' : hs.proj q (e x) + hs.proj q (x - e x) = x := by
+      rw [← map_add, add_sub_cancel, hs.proj_apply_of_mem hx]
+    have hrearrange : (e x - hs.proj q (e x)) + ((x - e x) - hs.proj q (x - e x)) =
+        (e x + (x - e x)) - (hs.proj q (e x) + hs.proj q (x - e x)) := by abel
+    exact add_eq_zero_iff_eq_neg.1 (by rw [hrearrange, hx', add_sub_cancel, sub_self])
+  have hinf : e x - hs.proj q (e x) ∈ LinearMap.range e ⊓ LinearMap.ker e :=
+    Submodule.mem_inf.2 ⟨Submodule.sub_mem _ ⟨x, rfl⟩ (hrange.proj_mem ⟨x, rfl⟩ q), by
+      rw [hsum]
+      exact Submodule.neg_mem _ (Submodule.sub_mem _ hmem (hker.proj_mem hmem q))⟩
+  rw [disjoint_iff.1 (LinearMap.IsIdempotentElem.isCompl he).disjoint, Submodule.mem_bot,
+    sub_eq_zero] at hinf
+  rw [hinf]
+  exact hs.proj_mem q (e x)
+
+/-- **An idempotent endomorphism whose range and kernel are sub-Hodge structures is a morphism of
+pure Hodge structures.** -/
+theorem isMorphism_of_isIdempotentElem (he : IsIdempotentElem e)
+    (hrange : hs.IsSubstructure (LinearMap.range e))
+    (hker : hs.IsSubstructure (LinearMap.ker e)) : IsMorphism hs hs e where
+  commutes_conj x := by
+    have hmem : x - e x ∈ LinearMap.ker e := by
+      simp [LinearMap.mem_ker, map_sub, (LinearMap.IsIdempotentElem.mem_range_iff he).1 ⟨x, rfl⟩]
+    have hone : e (ω.toEquiv (e x)) = ω.toEquiv (e x) :=
+      (LinearMap.IsIdempotentElem.mem_range_iff he).1 (hrange.conj_mem _ ⟨x, rfl⟩)
+    have htwo : e (ω.toEquiv (x - e x)) = 0 :=
+      LinearMap.mem_ker.1 (hker.conj_mem _ hmem)
+    calc e (ω.toEquiv x) = e (ω.toEquiv (e x + (x - e x))) := by rw [add_sub_cancel]
+      _ = e (ω.toEquiv (e x)) + e (ω.toEquiv (x - e x)) := by rw [map_add, map_add]
+      _ = ω.toEquiv (e x) := by rw [hone, htwo, add_zero]
+  map_F_le p := by
+    refine (Submodule.map_mono (le_of_eq (hs.F_eq_iSup_piece p))).trans ?_
+    rw [Submodule.map_iSup]
+    refine iSup_le fun q ↦ ?_
+    rw [Submodule.map_iSup]
+    exact iSup_le fun hq ↦ (map_piece_le_of_isIdempotentElem he hrange hker q).trans
+      ((hs.piece_le_F q).trans (hs.F_antitone hq))
+
+end Idempotent
+
+namespace IsSubstructure
+
+variable {U U' : Submodule ℂ W}
+
+/-- **The projection onto a sub-Hodge structure along a complementary sub-Hodge structure is a
+morphism of pure Hodge structures**, so a split sub-Hodge structure is the image of an idempotent
+endomorphism of the Hodge structure. -/
+theorem isMorphism_projection (hU : hs.IsSubstructure U) (hU' : hs.IsSubstructure U')
+    (h : IsCompl U U') : IsMorphism hs hs (U.projection U' h) :=
+  isMorphism_of_isIdempotentElem (Submodule.isIdempotentElem_projection h)
+    (by rwa [Submodule.range_projection]) (by rwa [Submodule.ker_projection])
+
+/-- **The Hodge decomposition is compatible with a splitting into sub-Hodge structures**: each
+Hodge component is the sum of its intersections with two complementary sub-Hodge structures. -/
+theorem piece_eq_sup (hU : hs.IsSubstructure U) (hU' : hs.IsSubstructure U') (h : IsCompl U U')
+    (q : ℤ) : hs.piece q = U ⊓ hs.piece q ⊔ U' ⊓ hs.piece q := by
+  refine le_antisymm (fun x hx ↦ ?_) (sup_le inf_le_right inf_le_right)
+  have hleft : U.projection U' h x ∈ U ⊓ hs.piece q :=
+    Submodule.mem_inf.2 ⟨Submodule.projection_apply_mem h x,
+      (hU.isMorphism_projection hU' h).map_piece_le q ⟨x, hx, rfl⟩⟩
+  have hright : x - U.projection U' h x ∈ U' ⊓ hs.piece q :=
+    Submodule.mem_inf.2 ⟨Submodule.sub_projection_mem h x,
+      Submodule.sub_mem _ hx (Submodule.mem_inf.1 hleft).2⟩
+  have hsum := Submodule.add_mem_sup hleft hright
+  rwa [add_sub_cancel] at hsum
+
+end IsSubstructure
 
 end HodgeStructureOn
 

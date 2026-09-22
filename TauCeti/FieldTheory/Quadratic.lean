@@ -14,8 +14,8 @@ public import Mathlib.RingTheory.Norm.Defs
 import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
 -- Non-public: `basisOfLinearIndependentOfCardEqFinrank` builds that basis, inside a proof only.
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
--- Non-public: `linearIndependent_one_of_notMem_range_algebraMap` is the independence of `1` and
--- `x` that basis rests on; used in a proof only.
+-- Non-public: `TauCeti.linearIndependent_one_of_notMem_range_algebraMap` gives the
+-- independence of `1` and `x` that the basis rests on; used in a proof only.
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 -- Non-public: the extension theory of finite fields supplies the root of an irreducible quadratic,
 -- inside a proof only.
@@ -77,7 +77,7 @@ private noncomputable def oneRootBasis (hE : Module.finrank F E = 2) {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) : Module.Basis (Fin 2) F E :=
   have : FiniteDimensional F E := Module.finite_of_finrank_eq_succ (n := 1) hE
   basisOfLinearIndependentOfCardEqFinrank (b := ![1, x])
-    (linearIndependent_one_of_notMem_range_algebraMap F E hx) (by simp [hE])
+    (TauCeti.linearIndependent_one_of_notMem_range_algebraMap F E hx) (by simp [hE])
 
 private theorem coe_oneRootBasis (hE : Module.finrank F E = 2) {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) : ⇑(oneRootBasis hE hx) = ![1, x] := by

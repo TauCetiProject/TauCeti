@@ -43,6 +43,9 @@ the roadmap's formal companion
   Hodge structure, whose Hodge components are the intersections with the ambient ones.
 * `TauCeti.Hodge.RationalHodgeSubstructure.ofIsSubstructure`: conversely, a rational subspace whose
   complexification is a sub-Hodge structure is a rational Hodge substructure.
+* `TauCeti.Hodge.RationalHodgeSubstructure.ofRationalMorphismRange` and
+  `…ofRationalMorphismKer`: the image and kernel of a rational linear map whose complexification is
+  a morphism of pure Hodge structures, as rational Hodge substructures.
 * The `Lattice`, `BoundedOrder` and `IsModularLattice` instances: rational Hodge substructures
   form a modular lattice under inclusion.
 * `TauCeti.Hodge.RationalHodgeSubstructure.exists_isAtom_le`: over a finite-dimensional rational
@@ -53,7 +56,7 @@ public section
 
 namespace TauCeti.Hodge
 
-universe u v w
+universe u v w u' v' w'
 
 variable {Vℤ : Type u} {Vℚ : Type v} {Vℂ : Type w}
 variable [AddCommGroup Vℤ]
@@ -130,6 +133,57 @@ theorem ofIsSubstructure_WQ (A : Submodule ℚ Vℚ)
     (h : hs.IsSubstructure (rationalToComplexSubmodule hℚ hℂ A)) :
     (ofIsSubstructure A h).WQ = A :=
   (rfl)
+
+/-! ### Subobjects cut out by rational morphisms -/
+
+section Morphism
+
+variable {V'ℤ : Type u'} {V'ℚ : Type v'} {V'ℂ : Type w'}
+variable [AddCommGroup V'ℤ]
+variable [AddCommGroup V'ℚ] [Module ℚ V'ℚ]
+variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℚ : V'ℤ →ₗ[ℤ] V'ℚ} {ι'ℂ : V'ℤ →ₗ[ℤ] V'ℂ}
+variable {h'ℚ : IsBaseChange ℚ ι'ℚ} {h'ℂ : IsBaseChange ℂ ι'ℂ}
+variable {hs' : HodgeStructure h'ℂ n} {f : Vℚ →ₗ[ℚ] V'ℚ}
+variable (hf : HodgeStructureOn.IsMorphism hs hs' (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f))
+
+/-- **The image of a rational Hodge morphism**, as a rational Hodge substructure of the target: its
+complexification is the image of the complexified map, which is a sub-Hodge structure. -/
+def ofRationalMorphismRange : RationalHodgeSubstructure h'ℚ hs' :=
+  ofIsSubstructure (LinearMap.range f) <| by
+    rw [← range_rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f]
+    exact hf.isSubstructure_range
+
+@[simp]
+theorem ofRationalMorphismRange_WQ : (ofRationalMorphismRange hf).WQ = LinearMap.range f :=
+  ofIsSubstructure_WQ _ _
+
+/-- The complexification of the image of a rational Hodge morphism is the image of the
+complexified map. -/
+@[simp]
+theorem ofRationalMorphismRange_WC :
+    (ofRationalMorphismRange hf).WC = LinearMap.range (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f) := by
+  rw [WC_def, ofRationalMorphismRange_WQ, range_rationalMapToComplex]
+
+/-- **The kernel of a rational Hodge morphism**, as a rational Hodge substructure of the source:
+its complexification is the kernel of the complexified map, which is a sub-Hodge structure. -/
+def ofRationalMorphismKer : RationalHodgeSubstructure hℚ hs :=
+  ofIsSubstructure (LinearMap.ker f) <| by
+    rw [← ker_rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f]
+    exact hf.isSubstructure_ker
+
+@[simp]
+theorem ofRationalMorphismKer_WQ : (ofRationalMorphismKer hf).WQ = LinearMap.ker f :=
+  ofIsSubstructure_WQ _ _
+
+/-- The complexification of the kernel of a rational Hodge morphism is the kernel of the
+complexified map. -/
+@[simp]
+theorem ofRationalMorphismKer_WC :
+    (ofRationalMorphismKer hf).WC = LinearMap.ker (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f) := by
+  rw [WC_def, ofRationalMorphismKer_WQ, ker_rationalMapToComplex]
+
+end Morphism
 
 /-! ### The lattice of rational Hodge substructures
 

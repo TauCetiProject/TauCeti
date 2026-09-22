@@ -141,6 +141,21 @@ theorem mem_coveredSquares (p : Fin n × Fin n) :
     p ∈ R.coveredSquares ↔ p.1 ∈ R.coveredColumns ∧ p.2 ∈ R.coveredRows := by
   simp [coveredSquares]
 
+/-- Swapping two columns preserves a rectangle's covered squares when the rectangle either
+covers both columns or covers neither. -/
+theorem mem_coveredSquares_swap_iff_of_coveredColumns {a b : Fin n}
+    (h : a ∈ R.coveredColumns ↔ b ∈ R.coveredColumns) (p : Fin n × Fin n) :
+    (Equiv.swap a b p.1, p.2) ∈ R.coveredSquares ↔ p ∈ R.coveredSquares := by
+  have hcolumn (c : Fin n) : Equiv.swap a b c ∈ R.coveredColumns ↔ c ∈ R.coveredColumns := by
+    by_cases hca : c = a
+    · rw [hca, Equiv.swap_apply_left]
+      exact h.symm
+    · by_cases hcb : c = b
+      · rw [hcb, Equiv.swap_apply_right]
+        exact h
+      · rw [Equiv.swap_apply_of_ne_of_ne hca hcb]
+  simp only [mem_coveredSquares, hcolumn]
+
 /-- Two rectangles have disjoint covered-square domains exactly when their covered columns or
 their covered rows are disjoint. -/
 theorem disjoint_coveredSquares_iff (R S : GridRectangle n) :
@@ -168,5 +183,29 @@ theorem card_coveredSquares :
   simp [coveredSquares, Finset.card_product]
 
 end GridRectangle
+
+namespace GridDiagram
+
+variable {n : ℕ} (G : GridDiagram n)
+
+/-- Avoidance of the `X`-markings is unchanged by swapping two columns of the diagram when the
+rectangle either covers both columns or covers neither. -/
+theorem disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns (R : GridRectangle n)
+    {a b : Fin n} (h : a ∈ R.coveredColumns ↔ b ∈ R.coveredColumns) :
+    Disjoint R.coveredSquares (G.swapColumns a b).XSet ↔ Disjoint R.coveredSquares G.XSet := by
+  rw [Finset.disjoint_left, Finset.disjoint_left]
+  constructor
+  · intro hdisjoint p hp hpX
+    apply hdisjoint
+    · exact (R.mem_coveredSquares_swap_iff_of_coveredColumns h p).mpr hp
+    · rw [G.mem_XSet_swapColumns]
+      simpa only [Equiv.swap_apply_self] using hpX
+  · intro hdisjoint p hp hpX
+    rw [G.mem_XSet_swapColumns] at hpX
+    apply hdisjoint
+    · exact (R.mem_coveredSquares_swap_iff_of_coveredColumns h p).mpr hp
+    · exact hpX
+
+end GridDiagram
 
 end TauCeti

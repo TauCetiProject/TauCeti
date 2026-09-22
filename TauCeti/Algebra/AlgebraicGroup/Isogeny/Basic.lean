@@ -191,11 +191,6 @@ theorem isCentral_kernelHopfIdeal (hf : IsCentralIsogeny f) :
     (kernelHopfIdeal f).IsCentral :=
   hf.2
 
-/-- The kernel Hopf ideal of a central isogeny is normal. -/
-theorem isNormal_kernelHopfIdeal (hf : IsCentralIsogeny f) :
-    (kernelHopfIdeal f).IsNormal :=
-  hf.isCentral_kernelHopfIdeal.isNormal
-
 /-- The coordinate ring of the kernel of a central isogeny is cocommutative. Equivalently,
 the kernel group scheme is commutative. -/
 theorem isCocomm_quotient_kernelHopfIdeal (hf : IsCentralIsogeny f) :

@@ -54,6 +54,8 @@ away from a finite set of primes.
   `TauCeti.GlobalNumberFields.Modulus.mem_finitePart_of_forall_mem_pow_exponent`: the prime power
   prescribed by the exponent divides the finite part, and membership in the finite part is
   detected by those prime powers.
+* `TauCeti.GlobalNumberFields.Modulus.valued_eq_one_of_valued_sub_one_le`: an element of the
+  `v`-adic completion congruent to one at a divisor of the finite part is a unit there.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
@@ -65,6 +67,8 @@ away from a finite set of primes.
   with unit finite part and every real place is total positivity.
 * `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_narrowModulus`: the units congruent to one
   modulo the narrow modulus are the totally positive integer units.
+* `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_of_dvd_span_singleton`: a divisor of a principal
+  ideal whose generator is a unit at the finite part is prime to the modulus.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_iff_sup_eq_top`: being prime to the support is
   comaximality with the finite part.
 
@@ -200,6 +204,18 @@ theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOne
     𝔪.exponent v ≤ 𝔫.exponent v :=
   Associates.count_le_count_of_le (Associates.mk_ne_zero.mpr 𝔫.finitePart_ne_zero)
     (Associates.irreducible_mk.mpr v.irreducible) (Associates.mk_le_mk_of_dvd (dvd_iff.mp h).1)
+
+/-- **A congruent coordinate is a local unit.**  At a prime dividing the finite part of `𝔪` the
+prescribed exponent is positive, so an element of the `v`-adic completion congruent to one to that
+level has valuation one. -/
+theorem valued_eq_one_of_valued_sub_one_le (𝔪 : Modulus K) {v : HeightOneSpectrum (𝓞 K)}
+    (hv : v.asIdeal ∣ 𝔪.finitePart) {y : v.adicCompletion K}
+    (hy : Valued.v (y - 1) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) :
+    Valued.v y = 1 := by
+  have h : Valued.v (y - 1) < 1 :=
+    hy.trans_lt (WithZero.exp_lt_one_iff.mpr (by
+      simpa using exponent_pos_of_mem_support ((mem_support_iff 𝔪 v).mpr hv)))
+  simpa using Valuation.map_one_add_of_lt Valued.v h
 
 /-- The **trivial modulus**: unit finite part and no real places.  It imposes no condition, so its
 ray class group is the ordinary class group. -/
@@ -416,6 +432,11 @@ prime divides, and its infinite part is empty. -/
 @[simp] theorem congruenceSubgroup_one : congruenceSubgroup (Modulus.one K) = ⊤ :=
   Subgroup.eq_top_iff' _ |>.mpr fun x ↦ isCongrOne_one x
 
+/-- Every integer unit is congruent to one for the trivial modulus. -/
+@[simp] theorem unitsCongruenceSubgroup_one :
+    unitsCongruenceSubgroup (Modulus.one K) = ⊤ := by
+  rw [unitsCongruenceSubgroup, congruenceSubgroup_one, Subgroup.comap_top]
+
 /-- **Congruence to one modulo the narrow modulus is total positivity.**  The finite part of
 `narrowModulus K` is the unit ideal, so only the sign conditions survive, and they are imposed at
 every real place. -/
@@ -450,6 +471,23 @@ def Modulus.IsCoprimeTo (𝔪 : Modulus K) (I : Ideal (𝓞 K)) : Prop :=
 
 theorem Modulus.isCoprimeTo_iff {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ ∀ v ∈ 𝔪.support, ¬ v.asIdeal ∣ I := Ideal.isPrimeTo_iff
+
+/-- **A divisor of a principal ideal with a generator prime to the modulus is prime to the
+modulus.** -/
+theorem Modulus.isCoprimeTo_of_dvd_span_singleton {m : Modulus K} {J : Ideal (𝓞 K)}
+    {a : 𝓞 K} {x : Kˣ} (hxa : (x : K) = a) (hx : x ∈ primeToSubgroup m)
+    (hdvd : J ∣ Ideal.span {a}) : m.IsCoprimeTo J := by
+  have hJ : J ≠ ⊥ := by
+    rintro rfl
+    obtain ⟨I, hI⟩ := hdvd
+    rw [Ideal.bot_mul] at hI
+    exact x.ne_zero (by rw [hxa, Ideal.span_singleton_eq_bot.mp hI]; simp)
+  refine Modulus.isCoprimeTo_iff.mpr ⟨hJ, fun v hv hvJ ↦ ?_⟩
+  have hmem : a ∈ v.asIdeal := Ideal.dvd_span_singleton.mp (hvJ.trans hdvd)
+  have hlt : v.valuation K (x : K) < 1 := by
+    rw [hxa]
+    exact (valuation_lt_one_iff_mem (K := K) v a).mpr hmem
+  exact absurd (mem_primeToSubgroup.mp hx v ((Modulus.mem_support_iff m v).mp hv)) hlt.ne
 
 /-- **Being prime to the modulus is comaximality with its finite part.**  A prime dividing both `I`
 and the finite part is exactly a prime of the support dividing `I`, and such a prime exists as soon

@@ -12,6 +12,7 @@ public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Basis.SMul
 public import Mathlib.LinearAlgebra.Matrix.Basis
+public import TauCeti.Algebra.BigOperators.ZPow
 public import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
@@ -55,8 +56,12 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
   conjugates represented torus points by coordinate reindexing.
 * `TauCeti.map_basisWeightTorus_range_conj_of_map_basis`: such an automorphism normalizes the
   represented weight torus.
+* `TauCeti.mul_inv_weylReflectTorusPoint`: a point divided by its reflection is supported at the
+  reflecting coordinate, with value there the root character.
 * `TauCeti.torusCharacter_weylReflectTorusPoint`: evaluation at a reflected point agrees with
   evaluation of the reflected character.
+* `TauCeti.exists_torusCharacter_eq_of_sum_mul_eq_one`: a weight whose coordinates have a
+  `ℤ`-linear combination equal to one takes every unit as a value.
 * `TauCeti.weightChar_injective`: over an infinite field, distinct weights give distinct
   characters of the torus.
 * `TauCeti.eq_of_span_eq_top_of_torusCharacter_eq`: dually, weights generating the whole character
@@ -180,6 +185,23 @@ value there: the other coordinates contribute the factor `1`. -/
   rw [torusCharacter, prod_eq_single c (fun j _ hj => by rw [Pi.single_eq_of_ne hj, zpow_zero])
     fun hc => absurd (mem_univ c) hc, Pi.single_eq_same]
 
+/-- **A unimodular weight is surjective on points.** If the coordinates of `μ` have a `ℤ`-linear
+combination equal to one, then every unit is the value of the character `μ` at some point of the
+torus: the point whose `j`-th coordinate is `u ^ m j` works, because the character collapses the
+resulting product of powers to `u ^ ∑ j, μ j * m j`.
+
+The hypothesis says that the coordinates of `μ` are setwise coprime. It is needed: the weight `2`
+on a rank-one torus attains only the squares. -/
+theorem exists_torusCharacter_eq_of_sum_mul_eq_one {μ m : κ → ℤ} (hm : ∑ j, μ j * m j = 1)
+    (u : Rˣ) : ∃ s : κ → Rˣ, torusCharacter s μ = u := by
+  refine ⟨fun j => u ^ m j, ?_⟩
+  rw [torusCharacter_def]
+  calc ∏ j, (u ^ m j) ^ μ j = ∏ j, u ^ (m j * μ j) :=
+        Finset.prod_congr rfl fun j _ => (zpow_mul u (m j) (μ j)).symm
+    _ = u ^ ∑ j, m j * μ j := Finset.prod_zpow_eq_zpow_sum _ u _
+    _ = u := by
+        rw [Finset.sum_congr rfl fun j _ => mul_comm (m j) (μ j), hm, zpow_one]
+
 /-! ## Reflections of split-torus points -/
 
 section Reflect
@@ -214,6 +236,13 @@ theorem weylReflectTorusPoint_apply_of_ne (α : κ → ℤ) {c j : κ} (hcj : j 
     (s : κ → Rˣ) : weylReflectTorusPoint α c s j = s j := by
   rw [weylReflectTorusPoint_apply]
   simp [hcj]
+
+/-- **A point divided by its reflection is supported at the reflecting coordinate.** The reflection
+changes only the `c`-th coordinate, dividing it by the value `α(s)`, so the quotient is the point
+with `c`-th coordinate `α(s)` and all others `1`. -/
+theorem mul_inv_weylReflectTorusPoint (α : κ → ℤ) (c : κ) (s : κ → Rˣ) :
+    s * (weylReflectTorusPoint α c s)⁻¹ = Pi.mulSingle c (torusCharacter s α) := by
+  rw [weylReflectTorusPoint_apply, mul_inv, mul_inv_cancel_left, Pi.mulSingle_inv, inv_inv]
 
 /-- **The reflected point computes the reflected character.** The character `μ` takes at the
 reflected point the value that `μ - μ(c) α`, the reflection `s_α μ`, takes at the original one. -/

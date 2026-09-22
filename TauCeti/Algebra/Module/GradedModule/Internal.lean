@@ -51,6 +51,8 @@ the letterwise tuple operation that applies it on a half-open index interval.
   each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
 * `TauCeti.InternalGrading.quadraticTwist_involutive`: the quadratic twist is an involution.
+* `TauCeti.LinearMap.IsHomogeneous.linearEquiv_symm`: the inverse of a degree-zero homogeneous
+  linear equivalence is homogeneous.
 * `TauCeti.LinearMap.IsHomogeneous.koszulTwist_comp`: a homogeneous linear map commutes with
   Koszul twists up to the sign determined by its degree.
 * `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
@@ -260,6 +262,46 @@ theorem map_eq_map_decompose {N : Type w} [AddCommMonoid N] (G : InternalGrading
   · rw [DFinsupp.notMem_support_iff.mp hi, Submodule.coe_zero, map_zero]
 
 end InternalGrading
+
+namespace LinearMap.IsHomogeneous
+
+variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
+  [AddCommMonoid M] [Module R M] [Module S M] [AddCommMonoid N] [Module R N] [Module S N]
+
+/-- The inverse of a degree-zero homogeneous linear equivalence of internally graded modules is
+again homogeneous of degree zero. The equivalence may be linear over a ring `S` other than the
+ring `R` over which the homogeneous pieces are submodules. -/
+theorem linearEquiv_symm {G : InternalGrading R M} {H : InternalGrading R N} {e : M ≃ₗ[S] N}
+    (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) :
+    IsHomogeneous e.symm.toLinearMap H.piece G.piece 0 := by
+  -- The restrictions `ep p : G.piece p → H.piece p` assemble to a map of direct sums lying over
+  -- `e`; it is surjective because `e` and both decompositions are, hence so is each `ep p`.
+  let ep : (p : ℤ) → G.piece p →+ H.piece p := fun p ↦
+    { toFun := fun x ↦ ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem x.2⟩
+      map_zero' := Subtype.ext (map_zero e.toLinearMap)
+      map_add' := fun x y ↦ Subtype.ext (map_add e.toLinearMap (x : M) (y : M)) }
+  have hcomm : (DirectSum.coeAddMonoidHom H.piece).comp (DirectSum.map ep) =
+      e.toAddEquiv.toAddMonoidHom.comp (DirectSum.coeAddMonoidHom G.piece) := by
+    apply DirectSum.addHom_ext
+    intro p x
+    simp [ep]
+  have hmap_surj : Function.Surjective (DirectSum.map ep) := by
+    intro y
+    obtain ⟨x, hx⟩ := G.isInternal.surjective (e.symm (DirectSum.coeAddMonoidHom H.piece y))
+    refine ⟨x, H.isInternal.injective ?_⟩
+    have hc := DFunLike.congr_fun hcomm x
+    rw [AddMonoidHom.comp_apply, AddMonoidHom.comp_apply, hx] at hc
+    exact hc.trans (e.apply_symm_apply _)
+  -- A degree-`p` element `y` is `e x` for some `x` of degree `p`, so `e.symm y = x`.
+  rw [LinearMap.isHomogeneous_def]
+  intro p y hy
+  obtain ⟨x, hx⟩ := (DirectSum.map_surjective ep).mp hmap_surj p ⟨y, hy⟩
+  have hxy : e.symm y = x := by
+    rw [← e.symm_apply_apply (x : M)]
+    exact congrArg e.symm (congrArg Subtype.val hx).symm
+  simpa only [add_zero, LinearEquiv.coe_coe, hxy] using x.2
+
+end LinearMap.IsHomogeneous
 
 section FiniteSupport
 

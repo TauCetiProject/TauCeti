@@ -168,4 +168,15 @@ theorem coe_spinToOrthogonal_apply (x : spinGroup Q) (m : M) :
   rw [spinToOrthogonal]
   rfl
 
+/-- The Spin action on its quadratic space, for every quadratic form with `2` invertible. -/
+noncomputable instance instMulActionSpinGroup : MulAction (spinGroup Q) M :=
+  MulAction.compHom _ (spinToOrthogonal Q)
+
+/-- The induced `MulAction` agrees pointwise with the transported Clifford-conjugation action. -/
+@[simp]
+theorem spinGroup_smul_apply (s : spinGroup Q) (x : M) :
+    s • x = spinVectorAction Q s x := by
+  rw [MulAction.compHom_smul_def]
+  exact coe_spinToOrthogonal_apply Q s x
+
 end CliffordAlgebra

@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Idempotents
 public import TauCeti.RingTheory.Idempotents.Connected.Component
 public import TauCeti.Topology.ConnectedComponents
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
 # Decomposing a ring by its connected components
 
@@ -238,7 +240,7 @@ theorem primeSpectrumQuotientHomeomorphConnectedComponentsFiber_apply_coe
     (primeSpectrumQuotientHomeomorphConnectedComponentsFiber C y : PrimeSpectrum R) =
       comap (Ideal.Quotient.mk (connectedComponentsIdeal C)) y := by
   simp only [primeSpectrumQuotientHomeomorphConnectedComponentsFiber,
-    Homeomorph.trans_apply, Homeomorph.setCongr]
+    Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact quotientHomeomorphZeroLocus_apply_coe _ y
 
 end DiscreteConnectedComponents

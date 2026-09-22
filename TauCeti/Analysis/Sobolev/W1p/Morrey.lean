@@ -43,6 +43,8 @@ required representative.
 * `TauCeti.W1p.exists_holderWith_ae_eq_value`: Morrey's embedding; a function in `W^{1,p}(ℝⁿ)`,
   `n < p < ∞`, agrees almost everywhere with a Hölder continuous function of exponent `1 - n / p`,
   whose Hölder constant is controlled by `‖∇u‖_{Lᵖ}`.
+* `TauCeti.W1p.morreyRepresentative`: the canonical continuous representative supplied by
+  Morrey's estimate.
 
 ## References
 
@@ -140,5 +142,89 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
   obtain ⟨g, hg, hgA⟩ := hholder.extend_of_dense hα (mu.dense_of_ae hA)
   refine ⟨g, hg, ?_⟩
   filter_upwards [hA] with x hx using hgA hx
+
+/-- The canonical continuous representative of a whole-space Sobolev function in Morrey's
+supercritical range. It is canonical because two continuous representatives that agree almost
+everywhere for Haar measure agree everywhere. -/
+def W1p.morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞)) (hp : (finrank ℝ E : ℝ≥0) < p) :
+    E → ℝ :=
+  Classical.choose (W1p.exists_holderWith_ae_eq_value hp u)
+
+/-- Morrey's estimate for the canonical representative. -/
+theorem W1p.holderWith_morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞))
+    (hp : (finrank ℝ E : ℝ≥0) < p) :
+    HolderWith (Real.toNNReal (2 ^ (finrank ℝ E + 1) / (finrank ℝ E * mu.real (ball 0 1)) *
+        (finrank ℝ E * mu.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^
+          (1 - 1 / (p : ℝ)) * 2 ^ (1 - finrank ℝ E / (p : ℝ))) *
+          ‖W1p.gradient u‖₊)
+      (1 - finrank ℝ E / p) (W1p.morreyRepresentative u hp) :=
+  (Classical.choose_spec (W1p.exists_holderWith_ae_eq_value hp u)).1
+
+/-- The canonical Morrey representative agrees almost everywhere with the Sobolev value. -/
+theorem W1p.value_ae_eq_morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞))
+    (hp : (finrank ℝ E : ℝ≥0) < p) :
+    W1p.value u =ᵐ[mu] W1p.morreyRepresentative u hp :=
+  (Classical.choose_spec (W1p.exists_holderWith_ae_eq_value hp u)).2
+
+/-- The canonical Morrey representative is continuous. -/
+theorem W1p.continuous_morreyRepresentative (u : W1p mu ⊤ (p : ℝ≥0∞))
+    (hp : (finrank ℝ E : ℝ≥0) < p) : Continuous (W1p.morreyRepresentative u hp) :=
+  (W1p.holderWith_morreyRepresentative u hp).continuous
+    (tsub_pos_of_lt ((div_lt_one (zero_le.trans_lt hp)).2 hp))
+
+/-- The canonical Morrey representative of zero is zero. -/
+@[simp]
+theorem W1p.morreyRepresentative_zero (hp : (finrank ℝ E : ℝ≥0) < p) :
+    W1p.morreyRepresentative (0 : W1p mu ⊤ (p : ℝ≥0∞)) hp = 0 := by
+  apply (Continuous.ae_eq_iff_eq mu (W1p.continuous_morreyRepresentative 0 hp)
+    continuous_zero).1
+  refine (W1p.value_ae_eq_morreyRepresentative 0 hp).symm.trans ?_
+  have hvalue : W1p.value (0 : W1p mu ⊤ (p : ℝ≥0∞)) = 0 := by
+    simpa only [W1p.valueL_apply] using
+      (W1p.valueL (mu := mu) (Omega := (⊤ : Opens E)) (p := (p : ℝ≥0∞))).map_zero
+  rw [hvalue]
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    (Lp.coeFn_zero ℝ (p : ℝ≥0∞) (mu.restrict ((⊤ : Opens E) : Set E)))
+
+/-- The canonical Morrey representative preserves addition. -/
+@[simp]
+theorem W1p.morreyRepresentative_add (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.morreyRepresentative (u + v) hp =
+      W1p.morreyRepresentative u hp + W1p.morreyRepresentative v hp := by
+  apply (Continuous.ae_eq_iff_eq mu (W1p.continuous_morreyRepresentative (u + v) hp)
+    ((W1p.continuous_morreyRepresentative u hp).add
+      (W1p.continuous_morreyRepresentative v hp))).1
+  refine (W1p.value_ae_eq_morreyRepresentative (u + v) hp).symm.trans ?_
+  have hadd := Lp.coeFn_add (W1p.value u) (W1p.value v)
+  have hadd' : ((W1p.value u + W1p.value v :
+      Lp ℝ (p : ℝ≥0∞) (mu.restrict (⊤ : Opens E))) : E → ℝ) =ᵐ[mu]
+        W1p.value u + W1p.value v := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using hadd
+  have hvalue : W1p.value (u + v) = W1p.value u + W1p.value v := by
+    simpa only [W1p.valueL_apply] using W1p.valueL.map_add u v
+  rw [hvalue]
+  exact hadd'.trans
+      ((W1p.value_ae_eq_morreyRepresentative u hp).add
+        (W1p.value_ae_eq_morreyRepresentative v hp))
+
+/-- The canonical Morrey representative preserves real scalar multiplication. -/
+@[simp]
+theorem W1p.morreyRepresentative_smul (hp : (finrank ℝ E : ℝ≥0) < p) (c : ℝ)
+    (u : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.morreyRepresentative (c • u) hp = c • W1p.morreyRepresentative u hp := by
+  apply (Continuous.ae_eq_iff_eq mu (W1p.continuous_morreyRepresentative (c • u) hp)
+    ((W1p.continuous_morreyRepresentative u hp).const_smul c)).1
+  refine (W1p.value_ae_eq_morreyRepresentative (c • u) hp).symm.trans ?_
+  have hsmul := Lp.coeFn_smul c (W1p.value u)
+  have hsmul' : ((c • W1p.value u :
+      Lp ℝ (p : ℝ≥0∞) (mu.restrict (⊤ : Opens E))) : E → ℝ) =ᵐ[mu]
+        c • W1p.value u := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using hsmul
+  have hvalue : W1p.value (c • u) = c • W1p.value u := by
+    simpa only [W1p.valueL_apply] using W1p.valueL.map_smul c u
+  rw [hvalue]
+  exact hsmul'.trans
+      ((W1p.value_ae_eq_morreyRepresentative u hp).const_smul c)
 
 end TauCeti

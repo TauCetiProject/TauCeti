@@ -43,8 +43,6 @@ public section
 
 namespace IsCyclotomicExtension
 
--- Source: the ramification bound of `TauCetiRoadmap/Chebotarev/README.md`, §7.4, which asks that
--- the primes ramified in the cyclotomic crossing but not below all lie above the level.
 open NumberField Polynomial in
 /-- **The level lies in the different ideal.** For `M / K` an `m`-th cyclotomic extension of
 number fields, `m` belongs to the different ideal of `𝓞 M` over `𝓞 K`; equivalently that different

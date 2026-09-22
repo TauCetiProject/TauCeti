@@ -60,6 +60,10 @@ may be built by checking either.
 ## Main results
 
 * `TauCeti.sum_localPreprojectiveRelator`: the global relator is the sum of the local ones.
+* `TauCeti.linearIndependent_backtrackElem`: the head backtracks into a vertex and the tail
+  backtracks out of it are linearly independent.
+* `TauCeti.gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum`: the corner of the gauged
+  relator at a vertex.
 * `TauCeti.preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator`:
   conjugating the global relator by a vertex idempotent returns the local relator at that vertex.
 * `TauCeti.preprojectiveIdeal_eq_span_range_localPreprojectiveRelator`: **the global relation and
@@ -274,6 +278,63 @@ end
 
 end BacktrackProducts
 
+section BacktrackIndependence
+
+variable (k : Type w) {Q : Type u} [Semiring k] [Quiver.{v} Q]
+
+/-- **The backtracks at a vertex are linearly independent.** The head backtracks `a a*` of the
+arrows `a` into `v` and the tail backtracks `a* a` of the arrows out of `v` are pairwise distinct
+paths of the doubled quiver, so they are a linearly independent family in its path algebra. -/
+theorem linearIndependent_backtrackElem (v : Q) :
+    LinearIndependent k
+      (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => headBacktrackElem k x.2)
+        (fun x : Σ j : Q, (v ⟶ j) => tailBacktrackElem k x.2)) := by
+  -- This path-basis restriction argument is adapted from
+  -- `TauCeti.DoubledQuiver.linearIndependent_vertexIdempotent_ofArrow_backtrackElem`; the separate
+  -- indexing argument handles the symmetrification of an arbitrary quiver.
+  classical
+  set F : ((Σ i : Q, (i ⟶ v)) ⊕ (Σ j : Q, (v ⟶ j))) → Quiver.TotalPath (Symmetrify Q) :=
+    Sum.elim
+      (fun x : Σ i : Q, (i ⟶ v) => ⟨Symmetrify.of.obj v, Symmetrify.of.obj v,
+        (Quiver.Hom.toPath (Sum.inr x.2 :
+            Symmetrify.of.obj v ⟶ Symmetrify.of.obj x.1)).cons
+          (Sum.inl x.2 : Symmetrify.of.obj x.1 ⟶ Symmetrify.of.obj v)⟩)
+      (fun x : Σ j : Q, (v ⟶ j) => ⟨Symmetrify.of.obj v, Symmetrify.of.obj v,
+        (Quiver.Hom.toPath (Sum.inl x.2 :
+            Symmetrify.of.obj v ⟶ Symmetrify.of.obj x.1)).cons
+          (Sum.inr x.2 : Symmetrify.of.obj x.1 ⟶ Symmetrify.of.obj v)⟩)
+    with hF
+  have hinj : Function.Injective F := by
+    rintro (⟨i, a⟩ | ⟨i, a⟩) (⟨j, b⟩ | ⟨j, b⟩) hab <;>
+      simp only [hF, Sum.elim_inl, Sum.elim_inr, Sigma.mk.injEq, heq_eq_eq, true_and] at hab <;>
+      injection hab with hobj _ _ harr <;> subst hobj <;> replace harr := eq_of_heq harr
+    · -- Two head backtracks end in the arrow itself.
+      rw [Sum.inl.inj harr]
+      rfl
+    · -- A head and a tail backtrack end in arrows of opposite direction.
+      simp at harr
+    · simp at harr
+    · -- Two tail backtracks end in the formal reverse of the arrow.
+      rw [Sum.inr.inj harr]
+      rfl
+  have hfam : (Sum.elim (fun x : Σ i : Q, (i ⟶ v) => headBacktrackElem k x.2)
+      (fun x : Σ j : Q, (v ⟶ j) => tailBacktrackElem k x.2))
+      = fun x => (pathAlgebraBasis k (Symmetrify Q)) (F x) := by
+    funext x
+    cases x with
+    -- The formal reverse of `Sum.inl a` in the doubled quiver is `Sum.inr a`, since the reversal
+    -- of `Quiver.Symmetrify` is `Sum.swap`.
+    | inl x =>
+      simp only [hF, Sum.elim_inl, coe_pathAlgebraBasis]
+      exact (ofPath_headBacktrack_eq_headBacktrackElem k x.2).symm
+    | inr x =>
+      simp only [hF, Sum.elim_inr, coe_pathAlgebraBasis]
+      exact (ofPath_tailBacktrack_eq_tailBacktrackElem k x.2).symm
+  rw [hfam]
+  exact (pathAlgebraBasis k (Symmetrify Q)).linearIndependent.comp F hinj
+
+end BacktrackIndependence
+
 /-! ### The global and local preprojective relators -/
 
 section Relator
@@ -398,6 +459,57 @@ theorem preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator (v : Q) :
     exact absurd (Finset.mem_univ v) h
 
 end Relator
+
+section GaugedRelatorCorner
+
+variable (k : Type w) {Q : Type u} [CommRing k] [Quiver.{v} Q] [Fintype Q]
+  [∀ i j : Q, Fintype (i ⟶ j)]
+
+/-- **The corner of the gauged preprojective relator at a vertex**: conjugating `ρ_ε` by the
+idempotent at `v` keeps the weighted head backtracks of the arrows into `v` and the weighted tail
+backtracks of the arrows out of `v`. For the constant gauge this is
+`TauCeti.preprojectiveRelator_vertexCorner_eq_localPreprojectiveRelator`. -/
+theorem gaugedPreprojectiveRelator_vertexCorner_eq_sum_sub_sum
+    (ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) (v : Q) :
+    doubledVertexIdempotent k v * gaugedPreprojectiveRelator k ε *
+        doubledVertexIdempotent k v
+      = (∑ i : Q, ∑ a : (i ⟶ v), ε a • headBacktrackElem k a) -
+          ∑ j : Q, ∑ a : (v ⟶ j), ε a • tailBacktrackElem k a := by
+  classical
+  have key : ∀ (i j : Q) (a : i ⟶ j),
+      doubledVertexIdempotent k v * (ε a • (headBacktrackElem k a - tailBacktrackElem k a)) *
+          doubledVertexIdempotent k v
+        = (if j = v then ε a • headBacktrackElem k a else 0) -
+            if i = v then ε a • tailBacktrackElem k a else 0 := by
+    intro i j a
+    rw [mul_smul_comm, smul_mul_assoc, mul_sub, sub_mul, smul_sub]
+    congr 1
+    · by_cases h : j = v
+      · subst h
+        simp [doubledVertexIdempotent_mul_headBacktrackElem,
+          headBacktrackElem_mul_doubledVertexIdempotent]
+      · simp [h, doubledVertexIdempotent_mul_headBacktrackElem_of_ne k a (Ne.symm h)]
+    · by_cases h : i = v
+      · subst h
+        simp [doubledVertexIdempotent_mul_tailBacktrackElem,
+          tailBacktrackElem_mul_doubledVertexIdempotent]
+      · simp [h, doubledVertexIdempotent_mul_tailBacktrackElem_of_ne k a (Ne.symm h)]
+  rw [gaugedPreprojectiveRelator_def]
+  simp only [Finset.mul_sum, Finset.sum_mul, key, Finset.sum_sub_distrib]
+  congr 1
+  · -- At each tail vertex `i`, only the arrows whose head is `v` survive.
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [Finset.sum_eq_single v]
+    · exact Finset.sum_congr rfl fun a _ => by simp
+    · exact fun j _ hj => Finset.sum_eq_zero fun a _ => by simp [hj]
+    · exact fun h => absurd (Finset.mem_univ v) h
+  · -- Only the arrows whose tail is `v` survive, and their heads range over all vertices.
+    rw [Finset.sum_eq_single v]
+    · exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun a _ => by simp
+    · exact fun i _ hi => Finset.sum_eq_zero fun j _ => Finset.sum_eq_zero fun a _ => by simp [hi]
+    · exact fun h => absurd (Finset.mem_univ v) h
+
+end GaugedRelatorCorner
 
 /-! ### The relation ideal -/
 

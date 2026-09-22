@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Lie.DirectSum
+public import TauCeti.LinearAlgebra.Projection
 
 /-!
 # An internal direct sum of Lie submodules is an external one
@@ -42,6 +43,10 @@ and `m` is the multiplicity.
 
 * `DirectSum.coeLieModuleHom_toLinearMap` and `DirectSum.coeLieModuleHom_bijective_iff`: the sum
   map refines `DirectSum.coeLinearMap`, so its bijectivity is `DirectSum.IsInternal`.
+* `DirectSum.IsInternal.lieModuleProjection`: the canonical equivariant projection onto one
+  summand, included back into the ambient module.
+* `DirectSum.IsInternal.sum_lieModuleProjection_apply`: over a finite index type these projections
+  sum to the identity.
 * `DirectSum.nonempty_lieModuleEquiv_sigma_of_isInternal`: **an internal decomposition regrouped by
   the labels of its summands.**
 * `TauCeti.LieModule.finrank_lieModuleHom_eq_sum_of_isInternal`: the finrank of a morphism space
@@ -65,7 +70,7 @@ universe u v w w₁ w₂ w₃ w₄
 
 namespace DirectSum
 
-variable {R : Type u} {L : Type v} {M : Type w} {ι : Type w₁} [DecidableEq ι]
+variable {R : Type u} {L : Type v} {M : Type w} {ι : Type w₁} [dec_ι : DecidableEq ι]
 variable [CommRing R] [LieRing L] [AddCommGroup M] [Module R M] [LieRingModule L M]
 variable (N : ι → LieSubmodule R L M)
 
@@ -130,6 +135,108 @@ noncomputable def lieModuleEquivOfIsInternal (h : IsInternal fun i ↦ (N i).toS
 theorem lieModuleEquivOfIsInternal_apply (h : IsInternal fun i ↦ (N i).toSubmodule)
     (m : ⨁ i, N i) : lieModuleEquivOfIsInternal N h m = coeLieModuleHom N m :=
   TauCeti.LieModuleEquiv.ofBijective_apply _ _ _
+
+/-- The underlying linear equivalence of the internal Lie-module decomposition is the canonical
+equivalence supplied by `DirectSum.IsInternal`. -/
+theorem lieModuleEquivOfIsInternal_toLinearEquiv
+    (h : IsInternal fun i ↦ (N i).toSubmodule) :
+    (lieModuleEquivOfIsInternal N h : (⨁ i, N i) ≃ₗ[R] M) =
+      LinearEquiv.ofBijective (coeLinearMap fun i ↦ (N i).toSubmodule) h := by
+  ext m
+  exact lieModuleEquivOfIsInternal_apply N h m
+
+/-- **The canonical projection onto an internal Lie-module summand.** It extracts one component
+through the internal direct-sum equivalence and includes that component back into the ambient
+module. -/
+noncomputable def IsInternal.lieModuleProjection {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) : M →ₗ⁅R,L⁆ M :=
+  (N i).incl.comp
+    ((lieModuleComponent R ι L (fun j ↦ ↥(N j)) i).comp
+      (lieModuleEquivOfIsInternal N h).symm)
+
+/-- Applying the canonical projection returns the selected internal direct-sum component. -/
+theorem IsInternal.lieModuleProjection_apply {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) (m : M) :
+    h.lieModuleProjection i m =
+      (((LinearEquiv.ofBijective (coeLinearMap fun j ↦ (N j).toSubmodule)
+        h).symm m i : N i) : M) := by
+  simp only [IsInternal.lieModuleProjection, LieModuleHom.comp_apply,
+    LieSubmodule.incl_apply, lieModuleComponent_apply]
+  have he := congrArg LinearEquiv.symm (lieModuleEquivOfIsInternal_toLinearEquiv N h)
+  exact congrArg (fun z : ⨁ i, N i ↦ ((z i : N i) : M)) (DFunLike.congr_fun he m)
+
+/-- The underlying linear map of the equivariant summand projection is the canonical projection
+of the underlying internal direct sum, followed by the summand inclusion. -/
+theorem IsInternal.lieModuleProjection_toLinearMap {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) :
+    (h.lieModuleProjection i : M →ₗ[R] M) =
+      (N i).toSubmodule.subtype.comp
+        (TauCeti.internalProjection h.submodule_iSupIndep h.submodule_iSup_eq_top i) := by
+  apply LinearMap.ext
+  intro m
+  rw [LieModuleHom.coe_toLinearMap (h.lieModuleProjection i),
+    IsInternal.lieModuleProjection_apply h i m, LinearMap.comp_apply]
+  exact _root_.DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
+    h i m
+
+/-- Over a finite index type the equivariant projections onto the summands sum to the identity. -/
+theorem IsInternal.sum_lieModuleProjection_apply [Fintype ι]
+    {N : ι → LieSubmodule R L M} (h : IsInternal fun i ↦ (N i).toSubmodule) (m : M) :
+    ∑ i, h.lieModuleProjection i m = m := by
+  calc
+    ∑ i, h.lieModuleProjection i m =
+        ∑ i, ((TauCeti.internalProjection h.submodule_iSupIndep
+          h.submodule_iSup_eq_top i m : (N i).toSubmodule) : M) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      exact LinearMap.congr_fun (h.lieModuleProjection_toLinearMap i) m
+    _ = m := TauCeti.sum_coe_internalProjection
+      h.submodule_iSupIndep h.submodule_iSup_eq_top m
+
+/-- The canonical projection fixes every element of the selected summand. -/
+@[simp]
+theorem IsInternal.lieModuleProjection_apply_of_mem {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) {m : M} (hm : m ∈ N i) :
+    h.lieModuleProjection i m = m := by
+  have he := congrArg (fun f : M →ₗ[R] M ↦ f m)
+    (IsInternal.lieModuleProjection_toLinearMap h i)
+  rw [LinearMap.comp_apply,
+    TauCeti.internalProjection_apply_of_mem (Q := fun k ↦ (N k).toSubmodule)
+      h.submodule_iSupIndep h.submodule_iSup_eq_top hm] at he
+  exact he
+
+/-- The canonical projection vanishes on every other summand. -/
+@[simp]
+theorem IsInternal.lieModuleProjection_apply_of_ne {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) {i j : ι} (hji : j ≠ i)
+    (m : N j) : h.lieModuleProjection i (m : M) = 0 := by
+  have he := congrArg (fun f : M →ₗ[R] M ↦ f (m : M))
+    (IsInternal.lieModuleProjection_toLinearMap h i)
+  rw [LinearMap.comp_apply,
+    TauCeti.internalProjection_apply_of_ne (Q := fun k ↦ (N k).toSubmodule)
+      h.submodule_iSupIndep h.submodule_iSup_eq_top hji m] at he
+  exact he
+
+/-- The canonical projection is idempotent. -/
+@[simp]
+theorem IsInternal.lieModuleProjection_apply_apply {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) (m : M) :
+    h.lieModuleProjection i (h.lieModuleProjection i m) = h.lieModuleProjection i m := by
+  apply h.lieModuleProjection_apply_of_mem
+  rw [h.lieModuleProjection_apply]
+  exact Subtype.property _
+
+/-- The range of the canonical projection is exactly its selected summand. -/
+@[simp]
+theorem IsInternal.lieModuleProjection_range {N : ι → LieSubmodule R L M}
+    (h : IsInternal fun i ↦ (N i).toSubmodule) (i : ι) :
+    (h.lieModuleProjection i).range = N i := by
+  apply le_antisymm
+  · rintro _ ⟨m, rfl⟩
+    rw [h.lieModuleProjection_apply]
+    exact Subtype.property _
+  · intro m hm
+    exact ⟨m, h.lieModuleProjection_apply_of_mem i hm⟩
 
 /-- **An internal decomposition regrouped by the labels of its summands.** Suppose the Lie
 submodules `N i` decompose `M` internally, that each `N i` is equivalent to a member `S (c i)` of a

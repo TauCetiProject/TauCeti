@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.LocallyClosed
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
 # Locally flat embeddings
 
@@ -759,7 +761,7 @@ private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialH
     with hη
   refine ⟨σ ∘ Prod.map η id, hσe.comp (η.isOpenEmbedding.prodMap IsOpenEmbedding.id), fun y => ?_⟩
   have hy : e₂ (η y) = e₁ y := by
-    rw [hη, Homeomorph.trans_apply, Homeomorph.trans_apply, hkey]
+    rw [hη, Homeomorph.trans_apply, Homeomorph.trans_apply, hkey, Homeomorph.setCongr_apply]
     exact Topology.IsEmbedding.toHomeomorph_apply_coe hb₁ y
   simpa [he₁, he₂] using hy
 

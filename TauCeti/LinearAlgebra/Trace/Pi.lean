@@ -33,8 +33,8 @@ namespace TauCeti
 universe u v w
 
 variable {k : Type u} {ι : Type v} {M : Type w}
-  [Field k] [Fintype ι]
-  [AddCommGroup M] [Module k M] [FiniteDimensional k M]
+  [CommRing k] [Fintype ι]
+  [AddCommGroup M] [Module k M] [Module.Free k M] [Module.Finite k M]
 
 open scoped Classical in
 /-- The trace of a coordinate-reindexing endomorphism of a finite product is the sum of the
@@ -65,7 +65,8 @@ open scoped Classical in
 /-- The trace of a coordinatewise endomorphism of a finite dependent product is the sum of the
 traces on its factors. -/
 theorem _root_.LinearMap.trace_pi_of_apply_eq_dependent {M : ι → Type*}
-    [∀ i, AddCommGroup (M i)] [∀ i, Module k (M i)] [∀ i, FiniteDimensional k (M i)]
+    [∀ i, AddCommGroup (M i)] [∀ i, Module k (M i)] [∀ i, Module.Free k (M i)]
+    [∀ i, Module.Finite k (M i)]
     (T : ((i : ι) → M i) →ₗ[k] ((i : ι) → M i)) (f : ∀ i, M i →ₗ[k] M i)
     (hT : ∀ x i, T x i = f i (x i)) :
     LinearMap.trace k ((i : ι) → M i) T = ∑ i, LinearMap.trace k (M i) (f i) := by

@@ -38,7 +38,11 @@ because `mapsInfinity` is precisely the assertion that it lands there.
 * `TauCeti.Isogeny.isScalarTower_intermediateRing`: the corestricted pullback puts it in a scalar
   tower under `W₂.CoordinateRing`, which is the other half of a consumer's setup.
 * `TauCeti.Isogeny.id_intermediateRing`: an identity isogeny's intermediate ring is the
-  coordinate ring itself, sitting inside its own fraction field.
+  coordinate ring itself, sitting inside its own fraction field, and
+  `TauCeti.Isogeny.id_pullbackToIntermediateRing`: its two corestrictions into that ring
+  coincide.
+* `TauCeti.Isogeny.id_algebraMap_eq_pullback`: the identity isogeny's pullback is the coordinate
+  ring's own embedding into its function field, in the form the consumers above take.
 
 ## Design
 
@@ -61,17 +65,11 @@ one, which is all its proof uses; the elliptic case is that hypothesis discharge
 because nothing would consume it.
 
 The structural theory of this ring is not proved here. Module-finiteness over `W₂.CoordinateRing`
-is in the sibling `IntermediateRing/Finite.lean` as `moduleFinite_intermediateRing`, for a
-separable function-field extension; Dedekindness is in `IntermediateRing/Dedekind.lean` as
+is in the sibling `IntermediateRing/Finite.lean` as `moduleFinite_intermediateRing`, with no
+separability hypothesis; Dedekindness is in `IntermediateRing/Dedekind.lean` as
 `isDedekindDomain_intermediateRing` and integral closedness in
-`IntermediateRing/IntegrallyClosed.lean` as `isIntegrallyClosed_intermediateRing`, and neither of
-those two needs separability. Its fraction field, rank, projectivity, and prime-counting theory
-are in `IntermediateRing/Rank.lean`. Every Mathlib route to either of the first two
-(`IsIntegralClosure.finite`, `integralClosure.isDedekindDomain`) carries an `Algebra.IsSeparable`
-hypothesis, but for Dedekindness Mathlib is no longer the only route:
-`TauCeti.IsIntegralClosure.isDedekindDomain` obtains it from Krull–Akizuki instead. The
-module-finiteness half is expected to hold inseparably too, by Noether's finiteness theorem, and
-remains separate work.
+`IntermediateRing/IntegrallyClosed.lean` as `isIntegrallyClosed_intermediateRing`. Its fraction
+field, rank, projectivity, and prime-counting theory are in `IntermediateRing/Rank.lean`.
 
 This opens the "points come along" milestone of Layer 1 of
 `TauCetiRoadmap/EllipticCurves/README.md`, which names this object as "the **intermediate ring**
@@ -100,9 +98,9 @@ What is adapted here is the object and the observation that the integral closure
 *coordinate* ring — rather than over a localization — is the right home for the norm and
 class-group route to the induced map on points. Of the structural instances, module-finiteness and
 Dedekindness are ported, in the siblings `IntermediateRing/Finite.lean` and
-`IntermediateRing/Dedekind.lean` rather than here: module-finiteness under the source's own
-`[Algebra.IsSeparable K L]`, Dedekindness without it, since
-`TauCeti.IsIntegralClosure.isDedekindDomain` replaces the Mathlib route the source uses.
+`IntermediateRing/Dedekind.lean` rather than here, both without separability: the former uses
+separability-free finite normalization, and the latter uses
+`TauCeti.IsIntegralClosure.isDedekindDomain` in place of the Mathlib route the source uses.
 `IntermediateRing/IntegrallyClosed.lean` proves integral closedness without it either.
 `instFractionRingB` is ported in `IntermediateRing/Rank.lean` as
 `isFractionRing_intermediateRing`, with the pullback-induced algebra structures installed locally
@@ -275,6 +273,23 @@ theorem id_intermediateRing (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed 
     exact Algebra.mem_bot.1 hbot
   · rintro ⟨x, rfl⟩
     exact isIntegral_algebraMap
+
+/-- **The identity isogeny's pullback is the coordinate ring's own embedding** into its function
+field. This is the form in which `Isogeny.isScalarTower_intermediateRing` and its fellow
+consumers take their pinning hypothesis, so it is stated once here rather than reproved at each
+use. -/
+theorem id_algebraMap_eq_pullback (W : WeierstrassCurve.Affine F) (x : W.CoordinateRing) :
+    algebraMap W.CoordinateRing W.FunctionField x = (id W).pullback x := by
+  rw [id_pullback, CoordinatePullback.id_apply]
+
+/-- **The identity isogeny corestricts both coordinate rings the same way.** Its pullback is the
+coordinate ring's own embedding in its fraction field, so the map along which ideals are extended
+and the map along which the relative norm is taken are one and the same. -/
+@[simp]
+theorem id_pullbackToIntermediateRing (W : WeierstrassCurve.Affine F) :
+    (id W).pullbackToIntermediateRing = (id W).toIntermediateRing := by
+  refine RingHom.ext fun x ↦ Subtype.ext ?_
+  rw [coe_pullbackToIntermediateRing, coe_toIntermediateRing, ← id_algebraMap_eq_pullback]
 
 end Isogeny
 

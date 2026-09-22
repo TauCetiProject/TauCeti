@@ -1150,7 +1150,7 @@ abbrev toSuzukiReeIndex (d : SuzukiLieIndex) : SuzukiReeIndex :=
 
 /-- A Suzuki index is an index on the rank-two diagram `B₂`. This is the reading through which the
 Suzuki family reaches the carrier data that
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two.lean` attaches to that diagram and that it
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Basic.lean` attaches to that diagram and that it
 shares with the untwisted family `B₂(q)`, the two differing only in the endomorphism taken of it. -/
 abbrev toRankTwoBLieIndex (d : SuzukiLieIndex) : RankTwoBLieIndex :=
   ⟨d.1, d.dynkinType_eq⟩

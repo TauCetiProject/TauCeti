@@ -163,12 +163,34 @@ variable {n : ℕ} (G : GridDiagram n)
 
 /-! ### The `O`-monomial of a rectangle -/
 
+/-- The columns whose `O`-marking belongs to a given set of squares. -/
+noncomputable def OColumnsOfSquares (s : Finset (Fin n × Fin n)) : Finset (Fin n) :=
+  Finset.univ.filter fun c => (c, G.O c) ∈ s
+
+/-- A column belongs to `OColumnsOfSquares` exactly when its `O`-marking belongs to the given
+set of squares. -/
+@[simp]
+theorem mem_OColumnsOfSquares {s : Finset (Fin n × Fin n)} {c : Fin n} :
+    c ∈ G.OColumnsOfSquares s ↔ (c, G.O c) ∈ s := by
+  simp [OColumnsOfSquares]
+
+/-- The `O`-markings in a set of squares are exactly those indexed by its covered `O`-columns. -/
+theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
+    G.OSet ∩ s = (G.OColumnsOfSquares s).image fun c => (c, G.O c) := by
+  ext p
+  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumnsOfSquares, mem_OSet]
+  constructor
+  · rintro ⟨hp, hs⟩
+    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
+  · rintro ⟨c, hc, rfl⟩
+    exact ⟨rfl, hc⟩
+
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
 The `O`-markings of a grid diagram are indexed by their columns, so this finite set of columns is
 the index set of the variables occurring in the rectangle's weight. -/
 noncomputable def OColumns (r : GridRectangle n) : Finset (Fin n) :=
-  Finset.univ.filter fun c => (c, G.O c) ∈ r.coveredSquares
+  G.OColumnsOfSquares r.coveredSquares
 
 /-- A column is a covered `O`-column exactly when its `O`-marking is a covered square. -/
 @[simp]
@@ -176,16 +198,29 @@ theorem mem_OColumns {r : GridRectangle n} {c : Fin n} :
     c ∈ G.OColumns r ↔ (c, G.O c) ∈ r.coveredSquares := by
   simp [OColumns]
 
+/-- Swapping two columns carries the covered `O`-columns of a rectangle to their images under
+the same swap, provided the rectangle either covers both columns or covers neither. -/
+theorem OColumns_swapColumns_eq_image_of_coveredColumns (r : GridRectangle n) {a b : Fin n}
+    (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
+    (G.swapColumns a b).OColumns r = (G.OColumns r).image (Equiv.swap a b) := by
+  ext c
+  rw [(G.swapColumns a b).mem_OColumns, Finset.mem_image]
+  simp only [GridDiagram.swapColumns_O, GridState.swapColumns_apply]
+  constructor
+  · intro hc
+    refine ⟨Equiv.swap a b c, ?_, Equiv.swap_apply_self _ _ _⟩
+    rw [G.mem_OColumns]
+    exact (r.mem_coveredSquares_swap_iff_of_coveredColumns h
+      (c, G.O (Equiv.swap a b c))).mpr hc
+  · rintro ⟨d, hd, rfl⟩
+    rw [G.mem_OColumns] at hd
+    simpa only [Equiv.swap_apply_self] using
+      (r.mem_coveredSquares_swap_iff_of_coveredColumns h (d, G.O d)).mpr hd
+
 /-- The covered `O`-markings are exactly the markings of the covered `O`-columns. -/
 theorem OSet_inter_coveredSquares (r : GridRectangle n) :
     G.OSet ∩ r.coveredSquares = (G.OColumns r).image fun c => (c, G.O c) := by
-  ext p
-  simp only [Finset.mem_inter, Finset.mem_image, mem_OColumns, mem_OSet]
-  constructor
-  · rintro ⟨hp, hcov⟩
-    exact ⟨p.1, by rwa [hp], by rw [hp]⟩
-  · rintro ⟨c, hc, rfl⟩
-    exact ⟨rfl, hc⟩
+  exact G.OSet_inter_eq_image_OColumnsOfSquares r.coveredSquares
 
 /-- The number of covered `O`-columns is the number of `O`-markings among the covered squares:
 a grid diagram has exactly one `O`-marking in each column. -/
@@ -210,6 +245,17 @@ An embedded rectangle covers each marked square at most once, so every exponent 
 and the Heegaard Floer weight `V₀^{O₀(r)} ⋯ V_{n-1}^{O_{n-1}(r)}` reduces to this product. -/
 noncomputable def OMonomial (r : GridRectangle n) : MvPolynomial (Fin n) R :=
   ∏ c ∈ G.OColumns r, MvPolynomial.X c
+
+/-- The rectangle monomial of a column-swapped diagram renames the variables of the original
+monomial by the same swap, provided the rectangle either covers both columns or covers
+neither. -/
+theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) {a b : Fin n}
+    (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
+    (G.swapColumns a b).OMonomial R r =
+      MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) := by
+  unfold OMonomial
+  rw [G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
+  simp only [MvPolynomial.rename_X, Finset.prod_image (Equiv.swap a b).injective.injOn]
 
 /-- The weight of a rectangle covering no `O`-marking is `1`. -/
 theorem OMonomial_eq_one_of_disjoint {r : GridRectangle n}

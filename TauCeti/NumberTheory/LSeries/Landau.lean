@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.Meromorphic.Order
 import Mathlib.NumberTheory.LSeries.Positivity
 public import Mathlib.NumberTheory.LSeries.Deriv
+public import TauCeti.NumberTheory.LSeries.Convergence
 public import TauCeti.NumberTheory.LSeries.EntireExtension
 
 /-!
@@ -32,6 +33,9 @@ its own analytic continuation.
   `LSeries.abscissaOfAbsConv a = (σ : EReal)`, then `¬ HasAnalyticExtensionAt a σ`. The equality
   hypothesis is what makes `σ` the *actual* boundary and records its finiteness; convergence
   throughout `Re s > σ` alone would not suffice.
+* `TauCeti.LSeries.landau_of_abscissaOfConv`: the same conclusion from the equality
+  `LSeries.abscissaOfConv a = (σ : EReal)`, which for nonnegative coefficients is the same
+  hypothesis.
 * `TauCeti.LSeries.meromorphicOrderAt_lt_zero_of_eq_LSeries`: a meromorphic continuation at the
   actual abscissa has negative order there, so the singularity is a pole rather than removable.
 * `TauCeti.LSeries.abscissaOfAbsConv_le_of_differentiableOn`: the half-plane form. A nonnegative
@@ -43,9 +47,11 @@ its own analytic continuation.
 ## Implementation notes
 
 Mathlib formalizes only the abscissa of absolute convergence: `LSeriesSummable` is equivalent to
-absolute summability of the Dirichlet terms because `summable_norm_iff` holds in `ℂ`. It does not
-define the classical abscissa of conditional convergence, so the ordinary/absolute distinction
-does not arise in this development and no equality between those abscissae is proved here.
+absolute summability of the Dirichlet terms because `summable_norm_iff` holds in `ℂ`. The
+classical abscissa of ordinary convergence is `TauCeti.LSeries.abscissaOfConv`, and for the
+nonnegative coefficients considered here the two are equal
+(`TauCeti.LSeries.abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg`), so it does not matter which of
+them the hypothesis names.
 
 The proof follows the classical argument. Suppose `F` is analytic on a disc around `σ` and agrees
 with `LSeries a` to its right. Patching `F` with `LSeries a` produces a function `G` analytic on a
@@ -324,6 +330,26 @@ theorem landau (ha : 0 ≤ a) {σ : ℝ} (habs : LSeries.abscissaOfAbsConv a = (
   rw [habs, Complex.ofReal_re] at hle
   have hσx : σ ≤ x := mod_cast hle
   linarith
+
+/-- **Landau's theorem at the abscissa of ordinary convergence.**  A Dirichlet series whose
+coefficients away from the ignored index zero are nonnegative has a single abscissa of convergence,
+so the singularity may equally be located by the ordinary one. -/
+theorem landau_of_abscissaOfConv (ha : ∀ n, n ≠ 0 → 0 ≤ a n) {σ : ℝ}
+    (hconv : abscissaOfConv a = (σ : EReal)) : ¬ HasAnalyticExtensionAt a σ := by
+  let a' : ℕ → ℂ := fun n ↦ if n = 0 then 0 else a n
+  have ha' : 0 ≤ a' := fun n ↦ by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [a']
+    · simpa [a', hn] using ha n hn
+  have haa' : ∀ {n}, n ≠ 0 → a n = a' n := fun {n} hn ↦ by simp [a', hn]
+  have habs : _root_.LSeries.abscissaOfAbsConv a = (σ : EReal) :=
+    (abscissaOfConv_eq_abscissaOfAbsConv_of_nonneg ha).symm.trans hconv
+  have habs' : _root_.LSeries.abscissaOfAbsConv a' = (σ : EReal) :=
+    (_root_.LSeries.abscissaOfAbsConv_congr fun hn ↦ (haa' hn).symm).trans habs
+  intro h
+  apply landau ha' habs'
+  obtain ⟨r, hr, F, hF, hFeq⟩ := h
+  exact ⟨r, hr, F, hF, fun s hs hσ ↦ (hFeq s hs hσ).trans (LSeries_congr haa' s)⟩
 
 /-- **Meromorphic form of Landau's theorem.** Let `F` be a meromorphic continuation of a
 Dirichlet series with nonnegative coefficients to a neighborhood of its finite, actual abscissa

@@ -28,8 +28,13 @@ those classes generate exact `K₀` as soon as every object admits a finite `P`-
 For a property consisting of projectives, the second half — injectivity of the comparison map from
 the exact `K₀` of the full subcategory on `P` — is proved by Schanuel's and the horseshoe lemmas
 in `TauCeti/CategoryTheory/GrothendieckGroup/ProjectiveResolution.lean`; see
-`TauCeti.ExactStructure.resolutionEquiv`. The general resolving-subcategory case needs the packaged
-resolving hypotheses and Weibel's common-refinement argument, and is not proved here.
+`TauCeti.ExactStructure.resolutionEquiv`. For a resolving subcategory it is proved with pullbacks
+of deflations and dimension shifting in `TauCeti/CategoryTheory/GrothendieckGroup/Resolving.lean`;
+see `TauCeti.ExactStructure.IsResolving.resolutionEquiv`.
+
+The class of an object itself, as opposed to that of a resolution, is defined here by choosing one
+of its finite `P`-resolutions; each of those two files removes the choice from its own
+independence theorem.
 
 ## Main definitions
 
@@ -37,12 +42,20 @@ resolving hypotheses and Weibel's common-refinement argument, and is not proved 
   resolution in ambient exact `K₀`.
 * `TauCeti.ExactStructure.FiniteResolution.eulerClassFullSubcategory`: the alternating class in
   the exact `K₀` of an extension-closed full subcategory containing the resolution terms.
+* `TauCeti.ExactStructure.eulerClassOf`: the alternating class, in that same `K₀`, of a chosen
+  finite `P`-resolution of an object admitting one.
 
 ## Main results
 
 * `TauCeti.ExactStructure.FiniteResolution.eulerClass_eq_of`: the Euler class of a resolution of
   `X` is the class of `X`; `TauCeti.ExactStructure.FiniteResolution.eulerClass_eq_eulerClass` is
   the resulting independence of the resolution.
+* `TauCeti.ExactStructure.eulerClassOf_eq_of_forall_eulerClassFullSubcategory_eq`: a resolution
+  whose alternating class is shared by every finite `P`-resolution of the same object computes
+  `TauCeti.ExactStructure.eulerClassOf`.
+* `TauCeti.ExactStructure.FiniteResolution.eulerClassFullSubcategory_map`: the Euler class of the
+  image of a finite resolution under a conflation-exact functor is the alternating sum of the
+  classes of the images of its terms.
 * `TauCeti.ExactK0.mem_propClasses_iff`: membership in the generator set `propClasses E P` is
   being the class of an object satisfying `P`.
 * `TauCeti.ExactK0.closure_propClasses_eq_top`: if every object admits a finite `P`-resolution,
@@ -61,7 +74,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits ZeroObject
 
-universe w v u
+universe w w' v v' u u'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   {E : ExactStructure C} {P : ObjectProperty C}
@@ -219,9 +232,77 @@ class. -/
           rw [ih, ExactK0.of_biprod_fullSubcategory hP hQ hQ']
           abel
 
+variable [EssentiallySmall.{w} C]
+
+/-- Mapping the Euler class of a finite resolution along the full-subcategory inclusion gives its
+Euler class in the ambient exact Grothendieck group. -/
+@[simp] theorem map_eulerClassFullSubcategory (r : E.FiniteResolution P X) :
+    ExactK0.map P.ι (E.isConflationExact_ι hP) (r.eulerClassFullSubcategory hP) = r.eulerClass := by
+  induction r with
+  | base hX => rw [eulerClassFullSubcategory_base, ExactK0.map_of, eulerClass_base]; rfl
+  | step hQ i p zero hp r ih =>
+      rw [eulerClassFullSubcategory_step, map_sub, ExactK0.map_of, ih, eulerClass_step]
+      rfl
+
 end FullSubcategory
 
+section Map
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] [LocallySmall.{w'} D] {E' : ExactStructure D} {P' : ObjectProperty D}
+  [ObjectProperty.EssentiallySmall.{w'} P'] [P'.ContainsZero] [P'.IsClosedUnderBinaryProducts]
+  {F : C ⥤ D} [F.Additive] {X : C}
+
+/-- **The Euler class of an image resolution.** Applying a conflation-exact functor carrying `P`
+into `P'` to a finite `P`-resolution gives a finite `P'`-resolution whose Euler class is the
+alternating sum of the classes of the images of the terms. -/
+theorem eulerClassFullSubcategory_map (hP' : E'.IsExtensionClosed P')
+    (hF : E.IsConflationExact E' F) (hPP' : P ≤ P'.inverseImage F)
+    (r : E.FiniteResolution P X) :
+    (r.map hF hPP').eulerClassFullSubcategory hP' =
+      r.foldAlternating fun Z hZ => ExactK0.of (⟨F.obj Z, hPP' Z hZ⟩ : P'.FullSubcategory) := by
+  induction r with
+  | base hX => simp
+  | step hQ i p zero hp r ih => simp [ih]
+
+end Map
+
 end ExactStructure.FiniteResolution
+
+namespace ExactStructure
+
+section EulerClassOf
+
+variable [LocallySmall.{w} C] [ObjectProperty.EssentiallySmall.{w} P]
+  [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
+
+/-- A property containing a zero object and closed under binary products is automatically
+replete, by `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`. -/
+local instance : P.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
+
+variable (hP : E.IsExtensionClosed P)
+
+/-- **The Euler class of an object of finite `P`-dimension**, in the exact `K₀` of the structure
+induced on the full subcategory on `P`: the alternating class of some, hence when `P` consists of
+`E`-projectives, by `TauCeti.ExactStructure.eulerClassOf_eq`, or when `P` is resolving, by
+`TauCeti.ExactStructure.IsResolving.eulerClassOf_eq`, of any, finite `P`-resolution of it. -/
+noncomputable def eulerClassOf {X : C} (hX : E.admitsFiniteResolution P X) :
+    ExactK0 (E.fullSubcategory P hP) :=
+  ((E.admitsFiniteResolution_iff P).mp hX).some.eulerClassFullSubcategory hP
+
+/-- If every finite `P`-resolution of `X` has the same alternating class as the resolution `r`,
+then `r` computes `TauCeti.ExactStructure.eulerClassOf`. -/
+theorem eulerClassOf_eq_of_forall_eulerClassFullSubcategory_eq {X : C}
+    (hX : E.admitsFiniteResolution P X) (r : E.FiniteResolution P X)
+    (h : ∀ s : E.FiniteResolution P X,
+      s.eulerClassFullSubcategory hP = r.eulerClassFullSubcategory hP) :
+    E.eulerClassOf hP hX = r.eulerClassFullSubcategory hP :=
+  h _
+
+end EulerClassOf
+
+end ExactStructure
 
 namespace ExactK0
 

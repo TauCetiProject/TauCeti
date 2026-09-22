@@ -93,7 +93,7 @@ private theorem ker_projection_eq_augmentation
   let _ : Algebra.Smooth (AlgebraicClosure k) (FiniteTypeCommHopfAlgCat.quotient P I) :=
     hsource.1
   let _ : IsReduced (FiniteTypeCommHopfAlgCat.quotient P I) :=
-    isReduced_of_smooth_of_field (AlgebraicClosure k) _
+    isReduced_of_smooth (AlgebraicClosure k) _
   have himageUnipotent : geometricallyUnipotentPointsCommHopfAlgProperty (AlgebraicClosure k)
       (CommHopfAlgCat.image g) :=
     geometricallyUnipotentPointsCommHopfAlgProperty.image_of_reduced g

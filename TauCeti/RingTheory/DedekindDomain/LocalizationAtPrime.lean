@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import TauCeti.RingTheory.Localization.AtPrime
 
 /-!
@@ -21,13 +22,19 @@ Mathlib states over a discrete valuation ring `R` with fraction field `K` — in
 of integral and minimal Weierstrass equations — now applies to `Oᵥ ⊆ K` by instance search, for
 arbitrary `O` and `K`.
 
-The two lemmas are the bridge from the local rings back to `O`. An element of `K` that comes from
-`Oᵥ` has `v`-adic valuation at most one; hence, by Mathlib's
+The remaining results are the two bridges between `v` and `Oᵥ`. Downwards: an element of `K` that
+comes from `Oᵥ` has `v`-adic valuation at most one; hence, by Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one`, an element that comes from
 every `Oᵥ` comes from `O`. The latter is `O = ⋂ᵥ Oᵥ` inside `K`, and is what lets a property that
 holds over every localisation descend to `O`. The valuation bound is stated for any
 `IsLocalization.AtPrime` model of `Oᵥ` mapping to `K` over `O`, not only for
 `Localization.AtPrime v.asIdeal` itself.
+
+Sideways: `Oᵥ` is exactly the ring of integers of the `v`-adic valuation, and the discrete
+valuation `Oᵥ` carries as a discrete valuation ring — Mathlib's
+`IsDiscreteValuationRing.maximalIdeal Oᵥ`, the phrasing of every statement it makes over a discrete
+valuation ring — is the `v`-adic valuation itself. Without that identification a result proved at
+`Oᵥ` cannot be compared with the `v`-adic factorisation of an element of `O`.
 
 ## Main declarations
 
@@ -36,7 +43,13 @@ holds over every localisation descend to `O`. The valuation bound is stated for 
 * `IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_le_one_of_isLocalizationAtPrime`:
   `v (x) ≤ 1` for `x` in the image of the localisation at `v`;
 * `IsDedekindDomain.HeightOneSpectrum.isInteger_of_forall_isInteger_localizationAtPrime`:
-  an element of `K` lying in every `Localization.AtPrime v.asIdeal` lies in `O`.
+  an element of `K` lying in every `Localization.AtPrime v.asIdeal` lies in `O`;
+* `IsDedekindDomain.HeightOneSpectrum.integers_valuation_localizationAtPrime`:
+  `Oᵥ` is the ring of integers of the `v`-adic valuation on `K`;
+* `IsDedekindDomain.HeightOneSpectrum.irreducible_algebraMap_localizationAtPrime`:
+  a `v`-adic uniformiser of `O` is irreducible in `Oᵥ`;
+* `IsDedekindDomain.HeightOneSpectrum.valuation_maximalIdeal_localizationAtPrime`:
+  the valuation of `Oᵥ` as a discrete valuation ring is the `v`-adic valuation.
 -/
 
 public section
@@ -84,6 +97,90 @@ theorem isInteger_of_forall_isInteger_localizationAtPrime (x : K)
     (RingHom.mem_range.mp (mem_integers_of_valuation_le_one K x fun v => ?_))
   obtain ⟨r, rfl⟩ := RingHom.mem_rangeS.mp (h v)
   exact v.valuation_algebraMap_le_one_of_isLocalizationAtPrime r
+
+/-- **The localisation at `v` is the ring of integers of the `v`-adic valuation on `K`.** The
+result packages this identification as `Valuation.Integers`, making its unit and divisibility API
+available for the localisation. -/
+theorem integers_valuation_localizationAtPrime :
+    (v.valuation K).Integers (Localization.AtPrime v.asIdeal) where
+  hom_inj := IsFractionRing.injective _ K
+  map_le_one := v.valuation_algebraMap_le_one_of_isLocalizationAtPrime
+  exists_of_le_one := by
+    intro x hx
+    obtain ⟨a, s, hs, rfl⟩ : x ∈ valuationSubringAtPrime K v := by
+      rw [valuationSubringAtPrime_eq_valuationSubring]; exact hx
+    refine ⟨IsLocalization.mk' (Localization.AtPrime v.asIdeal) a ⟨s, hs⟩, ?_⟩
+    have hs₀ : algebraMap O K s ≠ 0 :=
+      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors
+        (v.asIdeal.primeCompl_le_nonZeroDivisors hs)
+    rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le
+        (S := Localization.AtPrime v.asIdeal) (T := K)
+        (h := v.asIdeal.primeCompl_le_nonZeroDivisors),
+      IsLocalization.mk'_eq_iff_eq_mul]
+    field_simp
+
+/-- **A `v`-adic uniformiser of `O` is irreducible in the localisation at `v`.** This is what
+identifies the discrete valuation of `Oᵥ` with the `v`-adic valuation in
+`valuation_maximalIdeal_localizationAtPrime`. -/
+theorem irreducible_algebraMap_localizationAtPrime {ϖ : O}
+    (hϖ : v.intValuation ϖ = WithZero.exp (-1 : ℤ)) :
+    Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) := by
+  have hv := v.integers_valuation_localizationAtPrime (K := FractionRing O)
+  have hϖL : v.valuation (FractionRing O)
+      (algebraMap (Localization.AtPrime v.asIdeal) (FractionRing O)
+        (algebraMap O (Localization.AtPrime v.asIdeal) ϖ)) = WithZero.exp (-1 : ℤ) := by
+    rw [← IsScalarTower.algebraMap_apply, valuation_of_algebraMap, hϖ]
+  rw [IsDiscreteValuationRing.irreducible_iff_uniformizer]
+  refine le_antisymm (fun y hy => Ideal.mem_span_singleton.2 (hv.le_iff_dvd.1 ?_)) ?_
+  · -- A nonunit of `Oᵥ` has image of valuation less than one, hence at most `exp (-1)`.
+    rw [hϖL]
+    refine (WithZero.lt_mul_exp_iff_le (by simp)).1 ?_
+    rw [← WithZero.exp_add, neg_add_cancel, WithZero.exp_zero]
+    exact lt_of_le_of_ne (hv.map_le_one y) fun h =>
+      (IsLocalRing.mem_maximalIdeal y).1 hy (hv.isUnit_iff_valuation_eq_one.2 h)
+  · rw [Ideal.span_le, Set.singleton_subset_iff, SetLike.mem_coe,
+      IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+    intro hu
+    rw [hv.isUnit_iff_valuation_eq_one, hϖL] at hu
+    simp at hu
+
+/-- **The valuation of the discrete valuation ring `Oᵥ` is the `v`-adic valuation.** Mathlib's
+theory of minimal Weierstrass equations, like every other statement it makes over a discrete
+valuation ring, is phrased through `IsDiscreteValuationRing.maximalIdeal Oᵥ`; this lemma reads such
+a statement as one about `v`, which is what lets the local data at the height-one primes of `O` be
+assembled into a single object over `O`. -/
+theorem valuation_maximalIdeal_localizationAtPrime (x : K) :
+    (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).valuation K x =
+      v.valuation K x := by
+  -- Both sides are valuations, so it suffices to compare them on `Oᵥ`.
+  suffices h : ∀ y : Localization.AtPrime v.asIdeal,
+      (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).valuation K
+        (algebraMap _ K y) = v.valuation K (algebraMap _ K y) by
+    obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (A := Localization.AtPrime v.asIdeal) x
+    rw [map_div₀, map_div₀, h, h]
+  intro y
+  obtain ⟨ϖ, hϖ⟩ := v.intValuation_exists_uniformizer
+  have hirr : Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) :=
+    v.irreducible_algebraMap_localizationAtPrime hϖ
+  have htower : algebraMap (Localization.AtPrime v.asIdeal) K
+      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) = algebraMap O K ϖ :=
+    (IsScalarTower.algebraMap_apply O (Localization.AtPrime v.asIdeal) K ϖ).symm
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  -- Write `y` as a unit times a power of the uniformiser and compute both valuations.
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hy hirr
+  have hleft : (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).intValuation
+      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) = WithZero.exp (-1 : ℤ) :=
+    (IsDiscreteValuationRing.maximalIdeal _).intValuation_singleton hirr.ne_zero
+      hirr.maximalIdeal_eq
+  have hu : (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).intValuation
+      (u : Localization.AtPrime v.asIdeal) = 1 := by
+    simp [IsDiscreteValuationRing.maximalIdeal]
+  have hϖK : v.valuation K (algebraMap O K ϖ) = WithZero.exp (-1 : ℤ) := by
+    rw [valuation_of_algebraMap, hϖ]
+  rw [valuation_of_algebraMap]
+  simp only [map_mul, map_pow, hleft, hu, htower, hϖK,
+    (v.integers_valuation_localizationAtPrime (K := K)).valuation_unit u]
 
 end IsDedekindDomain.HeightOneSpectrum
 

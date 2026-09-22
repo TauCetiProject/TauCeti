@@ -38,6 +38,14 @@ Ext-Euler characteristic descend to the graded Grothendieck groups of selected s
   category.
 * `TauCeti.GradedConflationExact.ιOfLE`: the graded conflation-exact inclusion between two nested
   shift-stable full subcategories.
+* `TauCeti.GradedExactStructure.liftCommShift`: the restriction to full subcategories of a
+  shift-commutation isomorphism `{1} ⋙ F ≅ F`.
+
+## Main results
+
+* `TauCeti.GradedExactStructure.isConflationExact_lift`: a conflation-exact functor carrying a
+  shift-stable extension-closed property into an extension-closed one restricts to a
+  conflation-exact functor of the induced structures.
 
 ## References
 
@@ -54,7 +62,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe v u
+universe v v' u u'
 
 namespace GradedExactStructure
 
@@ -172,6 +180,46 @@ theorem fullSubcategory_conflation_iff
     (fullSubcategory E P hP hshift).toExactStructure.Conflation S ↔
       E.toExactStructure.Conflation (S.map P.ι) := by
   rw [fullSubcategory_toExactStructure, ExactStructure.fullSubcategory_conflation_iff]
+
+section Lift
+
+variable {D : Type u'} [Category.{v'} D] {Q : ObjectProperty D} {F : C ⥤ D}
+  (hP : E.toExactStructure.IsExtensionClosed P)
+  (hshift : P.inverseImage E.shift.functor = P)
+  (hPQ : ∀ X : P.FullSubcategory, Q (F.obj X.obj))
+
+/-- **The restriction of a shift-commutation isomorphism to full subcategories.** A functor `F`
+out of a graded exact category with `{1} ⋙ F ≅ F` restricts, on a shift-stable full subcategory
+of its source and a full subcategory of its target containing the image, to a functor with the
+same commutation isomorphism: the restricted shift is the ambient one.
+
+This is the datum which, together with conflation-exactness, forgets the grading on the
+subcategory in `TauCeti.LaurentK0.forgetGrading`. -/
+noncomputable def liftCommShift (comm : E.shift.functor ⋙ F ≅ F) :
+    (E.fullSubcategory P hP hshift).shift.functor ⋙ Q.lift (P.ι ⋙ F) hPQ ≅
+      Q.lift (P.ι ⋙ F) hPQ := by
+  rw [fullSubcategory_shift]
+  exact (Q.fullyFaithfulι.whiskeringRight _).preimageIso
+    (Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft _ (Q.liftCompιIso (P.ι ⋙ F) hPQ) ≪≫
+      (Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight (E.fullSubcategoryShiftFunctorCompιIso P hshift) F ≪≫
+      Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft P.ι comm ≪≫
+      (Q.liftCompιIso (P.ι ⋙ F) hPQ).symm)
+
+/-- A conflation-exact functor carrying a shift-stable extension-closed property `P` into an
+extension-closed property `Q` restricts to a conflation-exact functor from the graded exact
+structure induced on `P` to the exact structure induced on `Q`. -/
+theorem isConflationExact_lift [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+    [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts] [F.Additive] {E' : ExactStructure D}
+    (hQ : E'.IsExtensionClosed Q) (hF : E.toExactStructure.IsConflationExact E' F) :
+    (E.fullSubcategory P hP hshift).toExactStructure.IsConflationExact
+      (E'.fullSubcategory Q hQ) (Q.lift (P.ι ⋙ F) hPQ) := by
+  rw [fullSubcategory_toExactStructure]
+  exact E.toExactStructure.isConflationExact_lift hP hQ F hF hPQ
+
+end Lift
 
 end FullSubcategory
 

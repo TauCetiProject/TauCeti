@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
-public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
+public import TauCeti.Analysis.Complex.UnitDisc.PuncturedManifold
 public import Mathlib.Topology.Maps.Strict.Basic
 
 /-!
@@ -41,8 +43,8 @@ of `2 π i / w` agrees with the local parameter used for modular-form q-expansio
 
 public noncomputable section
 
-open Complex Function MulAction UpperHalfPlane
-open scoped Complex.UnitDisc Real
+open Complex Filter Function MulAction UpperHalfPlane
+open scoped Complex.UnitDisc Manifold Real Topology
 
 namespace TauCeti.UpperHalfPlane
 
@@ -85,6 +87,77 @@ theorem qParamPuncturedUnitDisc_invQParamUpperHalfPlane (w : ℝ) (hw : 0 < w)
 theorem qParamPuncturedUnitDisc_surjective (w : ℝ) (hw : 0 < w) :
     Function.Surjective (qParamPuncturedUnitDisc w hw) := fun q ↦
   ⟨invQParamUpperHalfPlane w hw q, qParamPuncturedUnitDisc_invQParamUpperHalfPlane w hw q⟩
+
+private theorem continuous_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
+    Continuous (qParamPuncturedUnitDisc w hw) := by
+  apply Continuous.subtype_mk
+  apply Continuous.subtype_mk
+  exact ((Function.Periodic.continuous_qParam (h := w)).comp continuous_coe).congr
+    (fun z ↦ (coe_qParamPuncturedUnitDisc w hw z).symm)
+
+/-- The q-parameter is holomorphic as a map into the punctured unit disc. -/
+theorem mdifferentiable_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (qParamPuncturedUnitDisc w hw) := by
+  have h : MDiff (fun z : ℍ ↦ 𝔢 w z) :=
+    Function.Periodic.differentiable_qParam.mdifferentiable.comp
+    UpperHalfPlane.mdifferentiable_coe
+  intro z
+  apply mdifferentiableAt_iff_target.mpr
+  constructor
+  · exact (continuous_qParamPuncturedUnitDisc w hw).continuousAt
+  · simpa only [TauCeti.Complex.UnitDisc.extChartAt_coe_punctured,
+      Function.comp_def, coe_qParamPuncturedUnitDisc] using h z
+
+/-- A horodisc is the inverse image of the punctured disc of the corresponding radius. -/
+theorem norm_qParamPuncturedUnitDisc_lt_iff (w : ℝ) (hw : 0 < w) (A : ℝ) (z : ℍ) :
+    ‖((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ)‖ < Real.exp (-2 * Real.pi * A / w) ↔
+      A < z.im := by
+  rw [coe_qParamPuncturedUnitDisc]
+  exact Function.Periodic.norm_qParam_lt_iff hw A z
+
+/-- The image of a horodisc is the punctured disc of the corresponding exponential radius. -/
+theorem image_qParamPuncturedUnitDisc_setOf_lt_im (w : ℝ) (hw : 0 < w) (A : ℝ) :
+    qParamPuncturedUnitDisc w hw '' {z : ℍ | A < z.im} =
+      {q : {q : 𝔻 // q ≠ 0} | ‖((q : 𝔻) : ℂ)‖ < Real.exp (-2 * Real.pi * A / w)} := by
+  ext q
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact (norm_qParamPuncturedUnitDisc_lt_iff w hw A z).mpr hz
+  · intro hq
+    obtain ⟨z, rfl⟩ := qParamPuncturedUnitDisc_surjective w hw q
+    exact ⟨z, (norm_qParamPuncturedUnitDisc_lt_iff w hw A z).mp hq, rfl⟩
+
+/-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
+theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
+    Tendsto (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ))
+      atImInfty (𝓝[≠] 0) := by
+  simp only [coe_qParamPuncturedUnitDisc]
+  exact (Function.Periodic.qParam_tendsto hw).comp
+    (tendsto_comap_iff.mpr tendsto_comap)
+
+/-- Multiplying by the `k`th integer power of the q-parameter cancels the opposing exponential
+comparison and gives a function bounded at `i∞`. For positive width, nonnegative `k` controls
+growth, while negative `k` controls decay. -/
+theorem isBoundedAtImInfty_qParam_zpow_mul_of_isBigO (w : ℝ) (k : ℤ) {f : ℍ → ℂ}
+    (hf : f =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w)) :
+    IsBoundedAtImInfty fun z ↦ Function.Periodic.qParam w z ^ k * f z := by
+  have hq : (fun z : ℍ ↦ Function.Periodic.qParam w z ^ k) =O[atImInfty]
+      fun z ↦ Real.exp (-2 * Real.pi * (k : ℝ) * z.im / w) := by
+    apply Asymptotics.isBigO_of_le
+    intro z
+    simp only [norm_zpow, Function.Periodic.norm_qParam, Real.norm_eq_abs,
+      abs_of_pos (Real.exp_pos _)]
+    rw [← Real.rpow_intCast, ← Real.exp_mul]
+    apply le_of_eq
+    congr 1
+    simp only [UpperHalfPlane.coe_im]
+    ring
+  rw [IsBoundedAtImInfty, BoundedAtFilter]
+  refine (hq.mul hf).congr_right fun z ↦ ?_
+  simp only [Pi.one_apply, ← Real.exp_add]
+  convert Real.exp_zero using 1
+  ring_nf
 
 /-- Two points of the upper half-plane have the same width-`w` q-parameter exactly when one is
 an integral-width translate of the other. -/
@@ -133,13 +206,6 @@ theorem cuspTranslationOrbitRel_iff_qParam_eq (w : ℝ) (hw : 0 < w) (z z' : ℍ
   · rintro ⟨n, rfl⟩
     refine ⟨⟨(n : ℝ) * w, AddSubgroup.mem_zmultiples_iff.mpr ⟨n, by simp [zsmul_eq_mul]⟩⟩, ?_⟩
     rfl
-
-private theorem continuous_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
-    Continuous (qParamPuncturedUnitDisc w hw) := by
-  apply Continuous.subtype_mk
-  apply Continuous.subtype_mk
-  exact ((Function.Periodic.continuous_qParam (h := w)).comp continuous_coe).congr
-    (fun z ↦ (coe_qParamPuncturedUnitDisc w hw z).symm)
 
 private theorem isOpenMap_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
     IsOpenMap (qParamPuncturedUnitDisc w hw) := by

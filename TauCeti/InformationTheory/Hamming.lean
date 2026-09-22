@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.Hamming
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
-# Hamming data on disjoint unions and under coordinate reindexing
+# Hamming data under coordinate decompositions and reindexing
 
 This file records that Hamming weight and distance on a function whose domain is a disjoint union
-split as sums over the two coordinate types. These identities let constructions assembled from
+split as sums over the two coordinate types. Weight also splits over a retained coordinate set
+and its complement. These identities let constructions assembled from
 independent coordinate blocks reduce their Hamming data to the data of the blocks.
 
 It also proves that Hamming distance and Hamming weight are invariant under relabelling a finite
@@ -25,6 +27,12 @@ public section
 namespace TauCeti
 
 variable {ι κ : Type*} {β : ι ⊕ κ → Type*}
+
+/-- A constant word has full weight unless its constant value is zero. -/
+@[simp]
+theorem hammingNorm_const {A : Type*} [Fintype ι] [Zero A] [DecidableEq A] (a : A) :
+    hammingNorm (Function.const ι a) = if a = 0 then 0 else Fintype.card ι := by
+  by_cases ha : a = 0 <;> simp [hammingNorm, Function.const, ha]
 
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/
@@ -64,6 +72,14 @@ theorem hammingNorm_sumElim {A : Type*} [Fintype ι] [Fintype κ] [DecidableEq A
     hammingNorm (Sum.elim x y) = hammingNorm x + hammingNorm y :=
   hammingNorm_sumRec (β := fun _ ↦ A) x y
 
+/-- Hamming weight splits over a retained coordinate set and its complement. -/
+theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {ι : Type*} {A : ι → Type*}
+    [Fintype ι] [∀ i, Zero (A i)] [∀ i, DecidableEq (A i)]
+    (s : Set ι) [DecidablePred (· ∈ s)] (x : ∀ i, A i) :
+    hammingNorm x = hammingNorm (s.domRestrict x) + hammingNorm (sᶜ.domRestrict x) := by
+  simp only [hammingNorm, Finset.card_filter]
+  exact (Fintype.sum_subtype_add_sum_subtype (· ∈ s) _).symm
+
 /-- A product over the coordinates which takes the value `a` at the zero coordinates of a word
 and `b` elsewhere is `a ^ (n - wt x) * b ^ (wt x)`, where `n` is the length and `wt` is the
 Hamming weight. -/
@@ -91,5 +107,25 @@ theorem hammingNorm_comp [Zero α] (e : κ ≃ ι) (x : ι → α) :
     hammingNorm (x ∘ e) = hammingNorm x := by
   simp only [hammingNorm, Function.comp_apply]
   exact Finset.card_equiv e (by simp)
+
+section Relabelling
+
+variable {R : Type*} [Semiring R]
+
+/-- Relabelling a word along an equivalence of finite coordinate types preserves its Hamming
+weight, when the relabelling is expressed as a linear map between function spaces. -/
+@[simp]
+theorem hammingNorm_funLeft [DecidableEq R] (e : κ ≃ ι) (x : ι → R) :
+    hammingNorm (LinearMap.funLeft R R e x) = hammingNorm x :=
+  Equiv.hammingNorm_comp e x
+
+/-- Relabelling two words along an equivalence of finite coordinate types preserves their Hamming
+distance, when the relabelling is expressed as a linear map between function spaces. -/
+@[simp]
+theorem hammingDist_funLeft [DecidableEq R] (e : κ ≃ ι) (x y : ι → R) :
+    hammingDist (LinearMap.funLeft R R e x) (LinearMap.funLeft R R e y) = hammingDist x y :=
+  Equiv.hammingDist_comp e x y
+
+end Relabelling
 
 end Equiv

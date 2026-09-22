@@ -196,6 +196,15 @@ theorem scalar_mem (a : Fˣ) :
     Matrix.GeneralLinearGroup.scalar (Fin 2) a ∈ GL2NonSplitTorus F E hE :=
   ⟨_, gl2NonSplitTorusHom_map_algebraMap hE a⟩
 
+/-- A scalar matrix, read back through `TauCeti.GL2NonSplitTorus.unitsEquiv`, is the unit of `F`
+it came from, pushed into `E`. -/
+@[simp]
+theorem unitsEquiv_symm_scalar (a : Fˣ) :
+    (unitsEquiv hE).symm ⟨Matrix.GeneralLinearGroup.scalar (Fin 2) a, scalar_mem hE a⟩ =
+      Units.map (algebraMap F E : F →* E) a := by
+  rw [MulEquiv.symm_apply_eq]
+  exact Subtype.ext (by rw [coe_unitsEquiv_apply, gl2NonSplitTorusHom_map_algebraMap])
+
 /-- **The order of the non-split torus**: it has one element for each nonzero element of `E`, so
 over a field with `q` elements it has `q² - 1` of them. (Over an infinite `F` both sides are `0`,
 the `Nat.card` of an infinite type.) -/

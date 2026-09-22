@@ -41,7 +41,6 @@ The first summand is the higher-prime-power contribution in the Frobenius fibre.
 unrestricted weighted sums over all primes of absolute residue degree greater than one and all
 prime powers based at an exceptional prime.
 -/
--- Source: `TauCetiRoadmap/Chebotarev/Suggested.lean` and README §11.3(4).
 theorem frobeniusDiscard_isLittleO (C : ConjClasses (L ≃ₐ[K] L))
     (T : Finset (HeightOneSpectrum (𝓞 K))) :
     (fun x : ℝ ↦ frobeniusPsi K L C x - frobeniusTheta K L C x +

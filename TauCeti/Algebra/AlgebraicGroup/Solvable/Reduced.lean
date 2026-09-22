@@ -321,7 +321,7 @@ private theorem exists_universalDerivedWord_eq_one
   let _ : Algebra.Smooth k (derivedWordCoordinateAlgebra H n) :=
     derivedWordCoordinateAlgebra.smooth hH_smooth n
   let _ : IsReduced (derivedWordCoordinateAlgebra H n) :=
-    isReduced_of_smooth_of_field k (derivedWordCoordinateAlgebra H n)
+    isReduced_of_smooth k (derivedWordCoordinateAlgebra H n)
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro z

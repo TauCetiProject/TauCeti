@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
+public import TauCeti.Algebra.Lie.D4.Tripled.PointsFunctor
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
 
@@ -53,6 +53,8 @@ pinned simply connected group scheme of type `D₄` is asserted here.
   scheme-valued points is conjugation by `trialityMatrix`.
 * `TauCeti.D4Tripled.trialityPoints_pow_three` and `TauCeti.D4Tripled.trialityPoints_symm_apply`:
   its pointwise order-three relation.
+* `TauCeti.D4Tripled.pointsMap_comp_trialityPoints`: its naturality in the value ring, and so its
+  commutation with every Frobenius map.
 
 ## References
 
@@ -322,6 +324,17 @@ theorem schemePointsMulEquiv_trialityAutomorphism_comp_carrierι
       trialityModuleEquiv_rep_ι_serreRootGenerator trialitySymmetry.rootPerm.surjective
       d4TripledTrialityPerm (fun _ => 1) trialityModuleEquiv_latticeBasis trialityPermD4
       d4TripledWeight_d4TripledTrialityPerm_apply A p
+
+/-- **Triality on matrix-valued points is natural in the value ring**: it commutes with the map on
+points induced by any ring homomorphism, in particular with every Frobenius map of the carrier. -/
+theorem pointsMap_comp_trialityPoints {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) :
+    (pointsMap f).comp (trialityPoints A).toMonoidHom =
+      (trialityPoints B).toMonoidHom.comp (pointsMap f) :=
+  comp_kostantNumberedSymmetryPoints lattice.toAddSubgroup latticeBasis
+    trialitySymmetry.moduleEquiv trialityModuleEquiv_mem_lattice_iff
+    (points A) (map_points_conj_trialityMatrix A) (points B) (map_points_conj_trialityMatrix B) f
+    (pointsMap f) (coe_pointsMap f)
 
 /-- **Triality on matrix-valued points has order dividing three.** -/
 @[simp]

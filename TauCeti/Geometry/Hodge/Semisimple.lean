@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Hodge.EpiMono
 public import TauCeti.Geometry.Hodge.Orthogonal
+public import TauCeti.Geometry.Hodge.Retract
 public import TauCeti.Order.Atoms
 
 /-!
@@ -24,7 +26,10 @@ then the lattice-theoretic `TauCeti.exists_finset_isAtom_sup_eq`, which splits o
 time in any complemented modular lattice with the descending chain condition.
 Only *some* polarizing form is used, never a chosen one, so the statements are about
 `TauCeti.Hodge.IsPolarizable` structures: this is the semisimplicity of the polarizable Hodge
-structures, for which the choice of a form is not part of the object.
+structures, for which the choice of a form is not part of the object. Categorically, every
+monomorphism of polarizable rational Hodge structures corestricts to an isomorphism onto its
+rational image. The orthogonal retraction of that image therefore splits the original
+monomorphism, making `TauCeti.Hodge.PolarizableHodgeStructureCat` a `SplitMonoCategory`.
 
 Following Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink,
 *Mixed Hodge Structures*, §2.
@@ -37,6 +42,8 @@ Following Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and 
   substructure is the supremum of a finite independent family of simple substructures.
 * `TauCeti.Hodge.exists_finset_isAtom_sup_eq_top`: **semisimplicity**, a polarizable pure Hodge
   structure is the direct sum of finitely many simple rational Hodge substructures.
+* `TauCeti.Hodge.PolarizableHodgeStructureCat.instSplitMonoCategory`: every monomorphism of
+  polarizable rational Hodge structures splits.
 -/
 
 public section
@@ -88,5 +95,61 @@ theorem exists_finset_isAtom_sup_eq_top (hℚ : IsBaseChange ℚ ιℚ) (h : IsP
       (∀ U ∈ s, IsAtom U) ∧ s.SupIndep id ∧ s.sup id = ⊤ := by
   obtain ⟨P⟩ := isPolarizable_iff_nonempty.1 h
   exact RationalHodgeSubstructure.exists_finset_isAtom_sup_eq P ⊤
+
+namespace PolarizableHodgeStructureCat
+
+open CategoryTheory
+
+universe u'
+
+variable {n' : ℤ}
+
+/-- **Categorical semisimplicity of polarizable rational Hodge structures.** Every monomorphism
+splits. The splitting is obtained by identifying the source with the rational image and then
+using the orthogonal retraction of that image in the target. -/
+noncomputable instance instSplitMonoCategory :
+    SplitMonoCategory (PolarizableHodgeStructureCat.{u'} n') where
+  isSplitMono_of_mono {X Y} f := by
+    intro hf
+    let _ : Mono f := hf
+    have hfC := Hom.isMorphism f
+    rw [MixedHodgeStructure.Hom.toLinearMap_def] at hfC
+    let W := RationalHodgeSubstructure.ofRationalMorphismRange hfC
+    have hWQ : W.WQ = LinearMap.range f.hom.toRatLinearMap :=
+      RationalHodgeSubstructure.ofRationalMorphismRange_WQ hfC
+    let fWQ : X.ratCarrier →ₗ[ℚ] W.WQ :=
+      (LinearEquiv.ofEq _ _ hWQ.symm).toLinearMap.comp f.hom.toRatLinearMap.rangeRestrict
+    have hfWQ_codRestrict : fWQ =
+        f.hom.toRatLinearMap.codRestrict W.WQ fun x ↦ by
+          rw [hWQ]
+          exact LinearMap.mem_range_self f.hom.toRatLinearMap x := by
+      ext
+      rfl
+    let fW : X ⟶ ofSubstructure Y W :=
+      Hom.ofIsMorphism fWQ <| by
+        rw [hfWQ_codRestrict]
+        exact isMorphism_codRestrict W f.hom.toRatLinearMap hfC fun x ↦ by
+          rw [hWQ]
+          exact LinearMap.mem_range_self f.hom.toRatLinearMap x
+    have hfWQ : fW.hom.toRatLinearMap = fWQ :=
+      Hom.ofIsMorphism_toRatLinearMap _ _
+    have hfW_bijective : Function.Bijective fW.hom.toRatLinearMap := by
+      rw [hfWQ]
+      simpa only [fWQ, LinearMap.coe_comp, LinearEquiv.coe_toLinearMap] using
+        (LinearEquiv.ofEq _ _ hWQ.symm).bijective.comp
+          ⟨(LinearMap.injective_rangeRestrict_iff _).2 <| (mono_iff_injective f).1 inferInstance,
+            LinearMap.surjective_rangeRestrict _⟩
+    let _ : IsIso fW := (isIso_iff_bijective fW).2 hfW_bijective
+    have hfactor : fW ≫ substructureInclusion Y W = f := by
+      apply Hom.ext
+      rw [comp_toRatLinearMap, substructureInclusion_toRatLinearMap, hfWQ]
+      rw [hfWQ_codRestrict]
+      exact LinearMap.subtype_comp_codRestrict _ _ _
+    let _ : IsSplitMono (substructureInclusion Y W) :=
+      isSplitMono_substructureInclusion Y W
+    rw [← hfactor]
+    infer_instance
+
+end PolarizableHodgeStructureCat
 
 end TauCeti.Hodge

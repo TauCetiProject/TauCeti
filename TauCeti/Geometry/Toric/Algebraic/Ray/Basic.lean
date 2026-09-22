@@ -27,7 +27,8 @@ pointed cone.
 * `TauCeti.Toric.ToricRay.eq_hull_singleton`: every nonzero point of a salient ray generates
   that ray.
 * `TauCeti.Toric.ToricRay.instIsEmptyBot`: the zero cone has no rays.
-* `TauCeti.Toric.ToricRay.faceEmbedding`: the rays of a face of a cone are rays of the cone.
+* `TauCeti.Toric.ToricRay.faceEmbedding` and `TauCeti.Toric.ToricRay.range_faceEmbedding`: the
+  rays of a face of a cone are exactly the rays of the cone contained in that face.
 * `TauCeti.Toric.ToricRay.hullSingleton` and `TauCeti.Toric.ToricRay.eq_hullSingleton`: the cone
   spanned by a nonzero vector is its own only ray.
 * `TauCeti.Toric.ToricRay.map_fst_eq_bot_of_map_snd_ne_bot`,
@@ -131,6 +132,18 @@ theorem toPointedCone_faceEmbedding (hτ : τ.IsFaceOf σ) (ρ : ToricRay τ) :
 @[simp]
 theorem mem_faceEmbedding (hτ : τ.IsFaceOf σ) (ρ : ToricRay τ) {x : V} :
     x ∈ faceEmbedding hτ ρ ↔ x ∈ ρ := (Iff.rfl)
+
+/-- The rays of a face `τ` of `σ` are exactly the rays of `σ` that are contained in `τ`: a face of
+`σ` contained in `τ` is a face of `τ`, and one-dimensionality does not mention the ambient cone. -/
+@[simp]
+theorem range_faceEmbedding (hτ : τ.IsFaceOf σ) :
+    Set.range (faceEmbedding hτ) = {ρ : ToricRay σ | ρ.toPointedCone ≤ τ} := by
+  ext ρ
+  refine ⟨?_, fun hρ ↦ ?_⟩
+  · rintro ⟨ν, rfl⟩
+    exact ν.1.isFaceOf.le
+  · exact ⟨⟨⟨ρ.toPointedCone, (PointedCone.IsFaceOf.isFaceOf_iff_le ρ.1.isFaceOf hτ).2 hρ⟩, ρ.2⟩,
+      rfl⟩
 
 /-! ### The ray spanned by a vector -/
 

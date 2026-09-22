@@ -42,6 +42,8 @@ closure of the pulled-back field, so that is where the torsion difference lives.
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny_of_torsion_rational`: **`#ker [n] = n ²`** whenever the
   geometric `n`-torsion is rational and `n` is invertible.
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny`: the same over an algebraically closed field.
+* `WeierstrassCurve.Affine.natCard_torsionBy`: the count read on Mathlib's intrinsic torsion
+  subgroup.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny_of_torsion_rational`: the same at a prime, as `ℓ ²`
   rather than `(ℓ : ℤ).natAbs ^ 2`.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`: its algebraically closed corollary.
@@ -163,6 +165,48 @@ theorem card_ker_mulByIntIsogeny [IsAlgClosed F] {n : ℤ} {hn : psiFunctionFiel
   card_ker_mulByIntIsogeny_of_torsion_rational W
     (fun _ hP ↦ W.mem_range_baseChange_of_zsmul_eq_zero
       (ne_zero_of_psiFunctionField_ne_zero W hn) hP) hchar
+
+end TauCeti.Isogeny
+
+namespace WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [DecidableEq F] (W : Affine F) [W.IsElliptic]
+
+open scoped Classical in
+/-- **`#E[n] = n ²`** when the geometric `n`-torsion is rational and `n` is invertible: the
+count of `ker [n]` read on Mathlib's intrinsic torsion subgroup. -/
+theorem natCard_torsionBy_of_torsion_rational {n : ℤ}
+    (hrat : ∀ P : (W.baseChange (AlgebraicClosure W.FunctionField)).toAffine.Point,
+      n • P = 0 →
+        P ∈ Set.range (Point.baseChange (W' := W) F (AlgebraicClosure W.FunctionField)))
+    (hchar : (n : F) ≠ 0) :
+    Nat.card (AddSubgroup.torsionBy ((W⁄F).toAffine.Point) n) = n.natAbs ^ 2 := by
+  rw [← TauCeti.Isogeny.ker_mulByIntIsogeny_eq_torsionBy W
+      (TauCeti.Isogeny.psiFunctionField_ne_zero W hchar),
+    TauCeti.Isogeny.card_ker_mulByIntIsogeny_of_torsion_rational W hrat hchar]
+
+/-- **`#E[n] = n ²`** over an algebraically closed field in which `n` is invertible. -/
+theorem natCard_torsionBy [IsAlgClosed F] {n : ℤ} (hchar : (n : F) ≠ 0) :
+    Nat.card (AddSubgroup.torsionBy ((W⁄F).toAffine.Point) n) = n.natAbs ^ 2 := by
+  rw [← TauCeti.Isogeny.ker_mulByIntIsogeny_eq_torsionBy W
+      (TauCeti.Isogeny.psiFunctionField_ne_zero W hchar),
+    TauCeti.Isogeny.card_ker_mulByIntIsogeny W hchar]
+
+open scoped Classical in
+/-- The `n`-torsion of an elliptic curve is finite for every nonzero integer `n`. -/
+theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
+    Finite (AddSubgroup.torsionBy ((W⁄F).toAffine.Point) n) := by
+  rw [← TauCeti.Isogeny.ker_mulByIntIsogeny_eq_torsionBy W
+    (TauCeti.Isogeny.psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero hn)]
+  infer_instance
+
+end WeierstrassCurve.Affine
+
+namespace TauCeti.Isogeny
+
+open WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [DecidableEq F] (W : WeierstrassCurve.Affine F) [W.IsElliptic]
 
 open scoped Classical in
 /-- **`#E[ℓ] = ℓ ²` whenever the geometric `ℓ`-torsion is rational**, for a prime `ℓ` invertible in

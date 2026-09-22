@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
 import TauCeti.Analysis.Complex.PlaneSeparation.Basic
 import TauCeti.Topology.JordanCurve.SmallArc
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Preconnected approach regions for Jordan domains
@@ -230,7 +231,7 @@ theorem exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier {Ω : Set
   refine ⟨g, hgc, hgd, hgbij, (Homeomorph.setCongr hcl.symm).trans
     ((closureHomeomorph isBounded_ball hgc' (fun _ _ => rfl) hgi').trans
       (Homeomorph.setCongr himg')), fun z => ?_⟩
-  simp only [Homeomorph.trans_apply]
+  simp only [Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   exact coe_closureHomeomorph_apply isBounded_ball hgc' (fun _ _ => rfl) hgi' _
 
 end TauCeti

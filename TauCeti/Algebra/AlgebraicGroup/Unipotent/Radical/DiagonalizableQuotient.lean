@@ -65,7 +65,7 @@ theorem unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_geometricallySemisim
   let _ : Algebra.Smooth k (CommHopfAlgCat.image g) :=
     (smoothCommHopfAlgProperty_iff _).mp himageProperties.1
   let _ : IsReduced (CommHopfAlgCat.image g) :=
-    isReduced_of_smooth_of_field k (CommHopfAlgCat.image g)
+    isReduced_of_smooth k (CommHopfAlgCat.image g)
   have himage : geometricallyUnipotentPointsCommHopfAlgProperty k
       (CommHopfAlgCat.image g) :=
     himageProperties.2

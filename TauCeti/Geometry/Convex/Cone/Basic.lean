@@ -60,15 +60,24 @@ end ConvexCone.Salient
 
 namespace PointedCone
 
-variable {R V V' : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-  [AddCommGroup V] [Module R V] [AddCommGroup V'] [Module R V']
+section Hull
+
+variable {R V : Type*} [DivisionRing R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommGroup V] [Module R V]
 
 /-- The linear span of the cone hull of a nonzero vector is the line it spans, of dimension one.
 Passing from the cone hull to the linear span extends scalars from the nonnegative elements of the
-ordered field to the field itself. -/
+ordered division ring to the ring itself. -/
 theorem finrank_span_coe_hull_singleton {x : V} (hx : x ≠ 0) :
     Module.finrank R (Submodule.span R ((hull R {x} : PointedCone R V) : Set V)) = 1 := by
   rw [Submodule.span_span_of_tower (Nonneg R) R, finrank_span_singleton hx]
+
+end Hull
+
+section Prod
+
+variable {R V V' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid V'] [Module R V']
 
 /-- Multiplying a pointed cone by the zero cone in the second factor leaves the dimension of its
 span unchanged. In particular, a ray of the first factor remains one-dimensional in the product. -/
@@ -91,5 +100,7 @@ theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
     Submodule.bot_coe, Submodule.span_zero_singleton, ← Submodule.map_inr]
   exact (Submodule.equivMapOfInjective _ LinearMap.inr_injective
     (Submodule.span R (q : Set V'))).finrank_eq.symm
+
+end Prod
 
 end PointedCone

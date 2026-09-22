@@ -10,6 +10,7 @@ public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Circular.ZMod
 public import Mathlib.Order.Interval.Finset.Fin
+public import TauCeti.Data.Fin.Basic
 
 /-!
 # Complementary cyclic intervals in finite grids
@@ -67,6 +68,13 @@ directions before taking products.
 * `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
 * `TauCeti.Grid.noninterleaving_rev`: non-interleaving is preserved by reversing every endpoint
   with `Fin.rev`, exchanging the two endpoints within each pair.
+* `TauCeti.Grid.mem_cIoo_succAbove_succAbove`,
+  `TauCeti.Grid.mem_cIco_succAbove_succAbove`: inserting a point into the cycle with
+  `Fin.succAbove` preserves the arcs between old points, and
+  `TauCeti.Grid.mem_cIoo_succ_succAbove_succ_succAbove_iff` locates the inserted point.
+* `TauCeti.Grid.mem_cIco_succ_succAbove_succ_succAbove_iff`: after inserting a point immediately
+  after `i`, a half-open arc between old points is the preimage of the old arc under the collapse
+  `Fin.predAbove i`.
 
 ## References
 
@@ -623,6 +631,30 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
 
+/-- Replacing a point by its cyclic successor preserves membership in a half-open cyclic interval
+when the successor is not an endpoint. -/
+theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
+    (ha : a ≠ finRotate n c) (hb : b ≠ finRotate n c) :
+    finRotate n c ∈ cIco a b ↔ c ∈ cIco a b := by
+  cases n with
+  | zero => exact c.elim0
+  | succ n =>
+    rw [mem_cIco, mem_cIco]
+    have hc := c.isLt
+    have ha' := a.isLt
+    have hb' := b.isLt
+    have haVal : a.val ≠ (finRotate (n + 1) c).val := fun h => ha (Fin.ext h)
+    have hbVal : b.val ≠ (finRotate (n + 1) c).val := fun h => hb (Fin.ext h)
+    by_cases hlast : c = Fin.last n
+    · have hrot : (finRotate (n + 1) c).val = 0 := by simp [hlast]
+      have hlastVal : c.val = n := by simp [hlast]
+      rw [hrot] at haVal hbVal ⊢
+      split_ifs <;> omega
+    · have hrot : (finRotate (n + 1) c).val = c.val + 1 :=
+        coe_finRotate_of_ne_last hlast
+      rw [hrot] at haVal hbVal ⊢
+      split_ifs <;> omega
+
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
   cases n with
@@ -682,6 +714,49 @@ theorem noninterleaving_rev (a₀ a₁ b₀ b₁ : Fin n) :
   rw [Noninterleaving, Noninterleaving]
   simp only [mem_cIoo_rev_rev]
   tauto
+
+/-! ### Inserting a point into a cycle -/
+
+/-- Inserting a new point into the cycle `Fin n` preserves the clockwise open arcs between old
+points. -/
+theorem mem_cIoo_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
+    p.succAbove x ∈ cIoo (p.succAbove a) (p.succAbove b) ↔ x ∈ cIoo a b := by
+  simp only [mem_cIoo, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
+  split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
+
+/-- Inserting a new point into the cycle `Fin n` preserves the clockwise half-open arcs between
+old points. -/
+theorem mem_cIco_succAbove_succAbove (p : Fin (n + 1)) (a b x : Fin n) :
+    p.succAbove x ∈ cIco (p.succAbove a) (p.succAbove b) ↔ x ∈ cIco a b := by
+  simp only [mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
+  split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
+
+/-- A point inserted immediately after `i` lies strictly inside the arc between two old points
+exactly when the arc passes from `i` to its successor, that is, when `i` lies in the half-open
+arc. -/
+theorem mem_cIoo_succ_succAbove_succ_succAbove_iff (i a b : Fin n) :
+    i.succ ∈ cIoo (i.succ.succAbove a) (i.succ.succAbove b) ↔ i ∈ cIco a b := by
+  simp only [mem_cIoo, mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
+  split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
+
+/-- Collapsing the point inserted immediately after `i` back onto `i` with `Fin.predAbove`
+identifies the half-open arcs between old points before and after the insertion. -/
+theorem mem_cIco_succ_succAbove_succ_succAbove_iff (i a b : Fin n) (x : Fin (n + 1)) :
+    x ∈ cIco (i.succ.succAbove a) (i.succ.succAbove b) ↔ i.predAbove x ∈ cIco a b := by
+  induction x using Fin.succAboveCases i.succ with
+  | x =>
+    rw [Fin.predAbove_succ_self]
+    simp only [mem_cIco, ne_eq, Fin.succAbove, Fin.lt_def, ← Fin.val_inj]
+    split_ifs <;> simp only [Fin.val_castSucc, Fin.val_succ] at * <;> omega
+  | p c => rw [Fin.predAbove_succ_succAbove, mem_cIco_succAbove_succAbove]
+
+/-- The cyclic predecessor of the terminal endpoint `i.succ` lies in every nondegenerate
+half-open arc ending there. -/
+theorem castSucc_mem_cIco_succ {a : Fin (n + 1)} {i : Fin n} (h : a ≠ i.succ) :
+    i.castSucc ∈ cIco a i.succ := by
+  rw [ne_eq, ← Fin.val_inj, Fin.val_succ] at h
+  simp only [mem_cIco, ne_eq, ← Fin.val_inj, Fin.val_castSucc, Fin.val_succ]
+  split_ifs <;> omega
 
 end Grid
 

@@ -16,8 +16,8 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 # The three families on a type-`D` diagram, and the candidate groups of `Dₙ(q)` and `²Dₙ(q)`
 
 Three classification-list families are built on the diagram `Dₙ`: the untwisted `Dₙ(q)`, the
-graph-twisted `²Dₙ(q)`, and, at rank four, the triality-twisted `³D₄(q)`. They share a diagram, so
-they share a carrier, and `TauCeti.TypeDDiagramLieIndex` is the subtype that collects exactly them.
+graph-twisted `²Dₙ(q)`, and, at rank four, the triality-twisted `³D₄(q)`. They share a diagram, and
+`TauCeti.TypeDDiagramLieIndex` is the subtype that collects exactly them.
 This file attaches to such an index the group of algebraic-closure-valued points of Tau Ceti's
 explicit full-weight type-`D` spin Chevalley carrier at the index's own rank,
 `TauCeti.TypeDSpinCarrier.points`, together with that group's Bourbaki-numbered simple root
@@ -66,10 +66,15 @@ F = γ₂ ∘ Frob_q = Frob_q ∘ γ₂,        F (x_i(u)) = x_{σ i}(u ^ q).
 Frobenius fixed points are the points with entries in `𝔽_q`; the fixed points of the composite are
 not characterized here.
 
-The triality-twisted branch takes `γ₃ ∘ Frob_q` for an order-three symmetry that the spin carrier
-does not carry: triality permutes the three eight-dimensional representations of `D₄`, and the spin
-module `8ₛ ⊕ 8_c` is not stable under it. No Steinberg map and no candidate group is formed on that
-branch here; the Frobenius supplied on the shared carrier is the factor it composes with.
+The triality-twisted branch takes `γ₃ ∘ Frob_q` for an order-three symmetry that has no linear
+realization on the spin module: triality permutes the three eight-dimensional representations of
+`D₄`, so the spin module `8ₛ ⊕ 8_c` is not stable under it and no fixed linear automorphism of that
+module realizes it. (The spin representation is faithful, so triality does act on the spin carrier
+as an abstract automorphism; it is an explicit linear realization that is missing.) The `³D₄(q)`
+branch is therefore built on the tripled carrier `TauCeti.D4Tripled.groupScheme`, on which triality
+is a permutation of the weight basis, in `TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`;
+the spin-carrier points and Frobenius attached below to a triality-twisted index are not the
+ambient group and Frobenius of that branch.
 
 The spin carrier is not identified with the pinned simply connected Chevalley--Demazure group
 scheme of type `Dₙ`, and nothing here identifies the two: the constructions below transfer to that
@@ -109,6 +114,11 @@ or simple.
 * `TauCeti.TypeTwistedDLieIndex.FixedPoints` and `TauCeti.TypeTwistedDLieIndex.Group`: the fixed
   subgroup of that Steinberg map, and the candidate group of `²Dₙ(q)`.
 
+* `TauCeti.TypeDDiagramLieIndex.primeFrobenius`, with
+  `TauCeti.TypeDDiagramLieIndex.primeFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeDDiagramLieIndex.frobenius_eq_primeFrobenius_pow`: the prime-field Frobenius, its
+  pinned equation `Frob_p (x_i(u)) = x_i(u ^ p)`, and the `q`-power Frobenius as its `e`-th
+  power.
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*, Chapter II, for the spin representation the
@@ -137,11 +147,12 @@ variable (d : TypeDDiagramLieIndex)
 of the explicit full-weight type-`Dₙ` spin Chevalley carrier, at the rank the index names, over the
 algebraic closure of its prime field.
 
-It is infinite, and it is the same group for the untwisted, graph-twisted and triality-twisted
-families of a given rank and field order, those three differing only in the Steinberg map taken of
-it. No finiteness, reductivity, pinning or maximality statement is attached to it, and it is not
-identified with the points of the pinned simply connected `Dₙ` group scheme, as the module
-docstring describes. -/
+It is infinite, and it is the same group for every index on the diagram of a given rank and field
+order. The untwisted and graph-twisted families run their recipes inside it; the triality-twisted
+family's own branch is instead built on the tripled carrier, in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TrialityD4.lean`. No finiteness, reductivity, pinning or
+maximality statement is attached to it, and it is not identified with the points of the pinned
+simply connected `Dₙ` group scheme, as the module docstring describes. -/
 abbrev AmbientGroup : Type :=
   TypeDSpinCarrier.points d.1.rank d.four_le_rank d.1.Closure
 
@@ -238,6 +249,56 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The prime-field Frobenius of the spin carrier of an index on a type-`D` diagram**, the
+`p`-power map for `p` the defining characteristic. The `q`-power Frobenius is its `e`-th power, for
+`e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`. -/
+def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic 1 d.1.Closure
+
+/-- The prime-field Frobenius is the spin carrier's Frobenius at exponent one. -/
+-- Not a `simp` lemma, for the reason `frobenius_def` is not.
+theorem primeFrobenius_def :
+    d.primeFrobenius =
+      TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic 1 d.1.Closure :=
+  (rfl)
+
+/-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
+`p`-th power, for `p` the defining characteristic. -/
+@[simp]
+theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (TypeDSpinCarrier.dimension d.1.rank)) :
+    ((d.primeFrobenius g :
+        Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
+          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
+          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c ^
+            d.1.characteristic := by
+  rw [primeFrobenius_def]
+  simpa only [pow_one] using TypeDSpinCarrier.coe_frobenius_apply d.1.rank d.four_le_rank
+    d.1.characteristic 1 d.1.Closure g r c
+
+/-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
+its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
+@[simp]
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.primeFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+  rw [primeFrobenius_def, simpleRootSubgroup_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
+    pow_one]
+
+-- The `show` reads the prime-field Frobenius in the endomorphism monoid of the ambient group,
+-- there being no power operation on `MonoidHom` itself; this is the form
+-- `TauCeti.TypeDSpinCarrier.frobenius_pow` states the carrier's iteration law in.
+/-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
+exponent the index records. -/
+theorem frobenius_eq_primeFrobenius_pow :
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+  rw [primeFrobenius_def, frobenius_def, TypeDSpinCarrier.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
 lie in the field of definition.** Writing `𝔽_q` for `TauCeti.ValidLieTypeIndex.fixedField`, the copy

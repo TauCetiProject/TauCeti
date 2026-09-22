@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The corner minor of a doubly singular matrix
@@ -75,6 +76,43 @@ theorem submatrix_mul_of_mulVec_single (X Y : Matrix (Fin (n + 1)) (Fin (n + 1))
     Pi.single_eq_of_ne (Fin.castSucc_lt_last u).ne, zero_mul, add_zero]
   rfl
 
+/-! ### The two rectangular matrices that delete and restore the last coordinate -/
+
+/-- The `n × (n + 1)` matrix that deletes the last coordinate. -/
+private def projCastSucc (n : ℕ) (R : Type*) [NonAssocSemiring R] :
+    Matrix (Fin n) (Fin (n + 1)) R :=
+  (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix Fin.castSucc id
+
+/-- The `(n + 1) × n` matrix that includes the first `n` coordinates. -/
+private def inclCastSucc (n : ℕ) (R : Type*) [NonAssocSemiring R] :
+    Matrix (Fin (n + 1)) (Fin n) R :=
+  (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix id Fin.castSucc
+
+private theorem projCastSucc_apply (a : Fin n) (b : Fin (n + 1)) :
+    projCastSucc n R a b = if a.castSucc = b then 1 else 0 := by
+  rw [projCastSucc, Matrix.submatrix_apply, Matrix.one_apply]
+  rfl
+
+private theorem inclCastSucc_apply (a : Fin (n + 1)) (b : Fin n) :
+    inclCastSucc n R a b = if a = b.castSucc then 1 else 0 := by
+  rw [inclCastSucc, Matrix.submatrix_apply, Matrix.one_apply]
+  rfl
+
+private theorem projCastSucc_mul {m : Type*} (A : Matrix (Fin (n + 1)) m R) :
+    projCastSucc n R * A = A.submatrix Fin.castSucc id := by
+  have h := Matrix.one_submatrix_mul Fin.castSucc (Equiv.refl (Fin (n + 1))) A
+  simpa [projCastSucc] using h
+
+private theorem mul_inclCastSucc {m : Type*} (A : Matrix m (Fin (n + 1)) R) :
+    A * inclCastSucc n R = A.submatrix id Fin.castSucc := by
+  have h := Matrix.mul_submatrix_one (Equiv.refl (Fin (n + 1))) Fin.castSucc A
+  simpa [inclCastSucc] using h
+
+private theorem projCastSucc_mul_mul_inclCastSucc (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
+    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc := by
+  simpa only [projCastSucc, inclCastSucc] using
+    Matrix.submatrix_one_mul_mul_submatrix_one Fin.castSucc A
+
 end NonAssocSemiring
 
 variable [CommRing R]
@@ -124,41 +162,6 @@ theorem det_updateCol_last_smul_col_sub_single_of_det_sub_one_eq_zero
     split_ifs <;> ring
   rw [hfun, Matrix.det_updateCol_add, Matrix.det_updateCol_smul, Matrix.det_updateCol_smul,
     Matrix.updateCol_eq_self, hdet, Matrix.det_updateCol_last_single, mul_zero, zero_add]
-
-/-! ### The two rectangular matrices that delete and restore the last coordinate -/
-
-/-- The `n × (n + 1)` matrix that deletes the last coordinate. -/
-private def projCastSucc (n : ℕ) (R : Type*) [CommRing R] : Matrix (Fin n) (Fin (n + 1)) R :=
-  (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix Fin.castSucc id
-
-/-- The `(n + 1) × n` matrix that includes the first `n` coordinates. -/
-private def inclCastSucc (n : ℕ) (R : Type*) [CommRing R] : Matrix (Fin (n + 1)) (Fin n) R :=
-  (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).submatrix id Fin.castSucc
-
-private theorem projCastSucc_apply (a : Fin n) (b : Fin (n + 1)) :
-    projCastSucc n R a b = if a.castSucc = b then 1 else 0 := by
-  rw [projCastSucc, Matrix.submatrix_apply, Matrix.one_apply]
-  rfl
-
-private theorem inclCastSucc_apply (a : Fin (n + 1)) (b : Fin n) :
-    inclCastSucc n R a b = if a = b.castSucc then 1 else 0 := by
-  rw [inclCastSucc, Matrix.submatrix_apply, Matrix.one_apply]
-  rfl
-
-private theorem projCastSucc_mul {m : Type*} (A : Matrix (Fin (n + 1)) m R) :
-    projCastSucc n R * A = A.submatrix Fin.castSucc id := by
-  ext i k
-  simp [Matrix.mul_apply, projCastSucc_apply, ite_mul]
-
-private theorem mul_inclCastSucc {m : Type*} (A : Matrix m (Fin (n + 1)) R) :
-    A * inclCastSucc n R = A.submatrix id Fin.castSucc := by
-  ext i k
-  simp [Matrix.mul_apply, inclCastSucc_apply, mul_ite]
-
-private theorem projCastSucc_mul_mul_inclCastSucc (A : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    projCastSucc n R * A * inclCastSucc n R = A.submatrix Fin.castSucc Fin.castSucc := by
-  rw [Matrix.mul_assoc, mul_inclCastSucc, projCastSucc_mul, Matrix.submatrix_submatrix]
-  rfl
 
 /-! ### The two square matrices built from the annihilating vectors -/
 

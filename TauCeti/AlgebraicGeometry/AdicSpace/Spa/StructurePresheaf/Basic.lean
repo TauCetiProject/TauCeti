@@ -64,9 +64,9 @@ presupposes that `𝒪_X(U)` is well defined; here the index is presentations, s
 priori on presentation data. Two results close the gap:
 
 * refinement maps between two presentations of the *same* rational subset are isomorphisms, so that
-  `p ↦ A⟨p.num / p.den⟩` descends to a function of the subset. The isomorphism is supplied by
-  `TauCeti.ValuationSpectrum.presentationRingEquivOfEq` when `A⁺` consists of power-bounded
-  elements; and
+  `p ↦ A⟨p.num / p.den⟩` descends to a function of the subset. This is
+  `TauCeti.ValuationSpectrum.isIso_restrictionHom_of_rationalSubset_eq`, when `A⁺` consists of
+  power-bounded elements; and
 * the presentation index is then cofinal in the subset index, so the two limits agree. This one is
   not yet available.
 

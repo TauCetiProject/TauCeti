@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 A smooth morphism of schemes has geometrically reduced fibres. After base change to a field,
 smoothness is preserved, and an affine cover of the source has smooth coordinate algebras over
 the ring of global functions of the target. That ring is isomorphic to the field, so the
-coordinate algebras are reduced by `TauCeti.isReduced_of_smooth_of_field`.
+coordinate algebras are reduced by `TauCeti.isReduced_of_smooth`.
 
 The main result is the instance `AlgebraicGeometry.Smooth.geometricallyReduced`. It supplies the
 geometric-reducedness half of the Jacobian challenge's standing-hypotheses deduction that a
@@ -23,7 +23,7 @@ smooth, geometrically connected curve is geometrically integral. The remaining i
 half uses that the local rings of a smooth scheme over a field are regular domains.
 
 No formalization is vendored. The commutative-algebra input is
-`TauCeti.isReduced_of_smooth_of_field`; the passage from affine opens to the whole scheme uses
+`TauCeti.isReduced_of_smooth`; the passage from affine opens to the whole scheme uses
 Mathlib's `AlgebraicGeometry.IsReduced.of_openCover`.
 -/
 
@@ -49,7 +49,7 @@ private theorem isReduced_of_smooth_toSpec_field (K : Type u) [Field K]
       ((X.affineCover.f i ≫ f).appTop).hom.toAlgebra
     let _ : Algebra.Smooth Γ(Spec (.of K), ⊤) Γ(X.affineCover.X i, ⊤) := hf.toAlgebra
     let _ : _root_.IsReduced Γ(X.affineCover.X i, ⊤) :=
-      isReduced_of_smooth_of_field Γ(Spec (.of K), ⊤) Γ(X.affineCover.X i, ⊤)
+      isReduced_of_smooth Γ(Spec (.of K), ⊤) Γ(X.affineCover.X i, ⊤)
     exact isReduced_of_isAffine_isReduced (X.affineCover.X i)
   exact @IsReduced.of_openCover X X.affineCover hred
 
