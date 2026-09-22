@@ -76,6 +76,19 @@ noncomputable def weilDifferentialOfSeparating (hF : IsFunctionField k F)
   weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
     ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩
 
+/-- The Weil differential attached to `x` is the cotrace of the normalized differential on
+`k(X)` under the rational-function algebra structure induced by `X ↦ x`. -/
+theorem weilDifferentialOfSeparating_def (hF : IsFunctionField k F)
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    letI := ratFuncAlgebraOfTranscendental hx
+    let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+    let _ := isFunctionField_iff_functionField.mp hF
+    let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
+    weilDifferentialOfSeparating hF hx =
+      weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
+        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩ := by
+  rw [weilDifferentialOfSeparating]
+
 /-- The Weil differential `dx` attached to a separating element is nonzero. -/
 theorem weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
@@ -84,7 +97,7 @@ theorem weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
   let _ := isFunctionField_iff_functionField.mp hF
   let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
-  rw [weilDifferentialOfSeparating, ne_eq,
+  rw [weilDifferentialOfSeparating_def, ne_eq,
     weilDifferentialCotrace_eq_zero_iff, Submodule.mk_eq_zero]
   exact ratFuncWeilDifferential_ne_zero k
 
