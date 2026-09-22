@@ -34,8 +34,8 @@ exhaust the sixteen subsets of its rays.
   of subsets of its rays.
 * `TauCeti.Toric.IsRegularCone.faceOrderIso_apply`: the subset attached to a face is the set of
   rays of that face.
-* `TauCeti.Toric.IsRegularCone.toPointedCone_faceOrderIso_symm`: the face attached to a subset of
-  rays is the cone spanned by the corresponding primitive ray generators.
+* `TauCeti.Toric.IsRegularCone.faceOrderIso_symm_apply_toPointedCone`: the face attached to a
+  subset of rays is the cone spanned by the corresponding primitive ray generators.
 
 ## References
 
@@ -57,22 +57,30 @@ variable (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
 /-- The face lattice of a regular cone is the lattice of subsets of its rays: a face is recorded
 by the set of rays it contains, and a set of rays spans the corresponding face. -/
 noncomputable def faceOrderIso : σ.Face ≃o Set (ToricRay σ) :=
-  PointedCone.faceOrderIsoSet (hσ.linearIndependent_primitiveGenerator hi)
-    (hσ.toIsToricCone.hull_range_primitiveGenerator hi).symm
+  PointedCone.faceOrderIsoSet (hσ.linearIndependent_primitiveGenerator hi) <| by
+    have h : (Set.range fun ρ : ToricRay σ ↦ i (primitiveGenerator hi hσ.toIsToricCone ρ)) =
+        i '' Set.range (primitiveGenerator hi hσ.toIsToricCone) := Set.range_comp _ _
+    rw [h]
+    exact (hσ.toIsToricCone.hull_primitiveGenerator hi).symm
 
-@[simp]
+/-- A ray of a regular cone lies in the subset attached to a face exactly when the image of its
+primitive generator lies in that face. This is not a `simp` lemma: `faceOrderIso_apply` rewrites
+the left-hand side, whose `simp` normal form is containment of the ray in the face. -/
 theorem mem_faceOrderIso_iff (F : σ.Face) (ρ : ToricRay σ) :
     ρ ∈ faceOrderIso hi hσ F ↔ i (primitiveGenerator hi hσ.toIsToricCone ρ) ∈ F := by
   rw [faceOrderIso, PointedCone.faceOrderIsoSet_apply]
   exact Iff.rfl
 
+/-- The face of a regular cone attached to a subset of its rays is the cone spanned by the images
+of the primitive generators of those rays. -/
 @[simp]
-theorem toPointedCone_faceOrderIso_symm (A : Set (ToricRay σ)) :
+theorem faceOrderIso_symm_apply_toPointedCone (A : Set (ToricRay σ)) :
     ((faceOrderIso hi hσ).symm A).toPointedCone =
       PointedCone.hull ℝ (i '' (primitiveGenerator hi hσ.toIsToricCone '' A)) := by
-  rw [faceOrderIso, PointedCone.toPointedCone_faceOrderIsoSet_symm, Set.image_image]
+  rw [faceOrderIso, PointedCone.faceOrderIsoSet_symm_apply_toPointedCone, Set.image_image]
 
 /-- The subset of rays attached to a face of a regular cone is the set of rays of that face. -/
+@[simp]
 theorem faceOrderIso_apply (F : σ.Face) :
     faceOrderIso hi hσ F = Set.range (ToricRay.faceEmbedding F.isFaceOf) := by
   rw [ToricRay.range_faceEmbedding]

@@ -24,8 +24,7 @@ integral basis, hence linearly independent, so a regular cone is simplicial.
 
 * `TauCeti.Toric.ToricRay.iSup_toPointedCone`: a salient finitely generated cone is the join of
   its rays.
-* `TauCeti.Toric.IsToricCone.hull_primitiveGenerator` and
-  `TauCeti.Toric.IsToricCone.hull_range_primitiveGenerator`: a toric cone is the cone hull of its
+* `TauCeti.Toric.IsToricCone.hull_primitiveGenerator`: a toric cone is the cone hull of its
   primitive ray generators.
 * `TauCeti.Toric.mem_dualSemigroup_iff_primitiveGenerator`: an integral character lies in the dual
   semigroup of a toric cone exactly when it is nonnegative on every primitive ray generator.
@@ -70,17 +69,6 @@ theorem IsToricCone.hull_primitiveGenerator (hi : IsIntegralLattice i) (hσ : Is
     rw [ρ.eq_hull_singleton (hσ.salient.anti ρ.1.isFaceOf.le) (primitiveGenerator_mem hi hσ ρ)
       (by simpa using hi.injective.ne (primitiveGenerator_ne_zero hi hσ ρ))]
     exact Submodule.span_mono (Set.singleton_subset_iff.2 ⟨_, ⟨ρ, rfl⟩, rfl⟩)
-
-/-- A toric cone in an integral lattice is the cone hull of the range of the family of images of
-its primitive ray generators. This is the form indexed by `TauCeti.Toric.ToricRay` in which a
-description of the cone by a family of vectors consumes the generation statement. -/
-theorem IsToricCone.hull_range_primitiveGenerator (hi : IsIntegralLattice i)
-    (hσ : IsToricCone i σ) :
-    PointedCone.hull ℝ (Set.range fun ρ : ToricRay σ ↦ i (primitiveGenerator hi hσ ρ)) = σ := by
-  have h : (Set.range fun ρ : ToricRay σ ↦ i (primitiveGenerator hi hσ ρ)) =
-      i '' Set.range (primitiveGenerator hi hσ) := Set.range_comp _ _
-  rw [h]
-  exact hσ.hull_primitiveGenerator hi
 
 /-- An integral character lies in the dual semigroup of a toric cone exactly when it is
 nonnegative on every primitive ray generator. -/
