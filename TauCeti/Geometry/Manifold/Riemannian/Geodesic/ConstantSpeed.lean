@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 
 /-!
@@ -27,6 +27,10 @@ directly with `curveVelocity`.
   same squared speed at any two parameters.
 * `TauCeti.Manifold.IsGeodesicCurve.norm_curveVelocity_eq`: an all-time geodesic has the same
   speed at any two parameters.
+* `TauCeti.Manifold.alongCurve_curveVelocity_maximalGeodesic_eq_zero`: the unrestricted
+  acceleration of a maximal geodesic vanishes on its maximal interval.
+* `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: the squared speed of a maximal
+  geodesic is the squared norm of its initial velocity.
 
 ## References
 
@@ -121,6 +125,50 @@ theorem IsGeodesicCurve.norm_curveVelocity_eq
     IsGeodesicCurveOn.norm_curveVelocityWithin_eq
       ((isGeodesicCurveOn_univ (I := I) (γ := γ)).mpr h) isPreconnected_univ
       (Set.mem_univ a) (Set.mem_univ b)
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- The unrestricted covariant acceleration of a maximal geodesic vanishes at every point of its
+maximal interval. -/
+theorem alongCurve_curveVelocity_maximalGeodesic_eq_zero [T2Space (TangentBundle I M)]
+    {p : M} {v : TangentSpace I p} {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    alongCurve (leviCivitaConnection I M) (maximalGeodesic I M p v)
+      (curveVelocity I (maximalGeodesic I M p v)) t = 0 := by
+  rw [← alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivitaConnection I M)
+    (maximalGeodesic I M p v) isOpen_geodesicInterval ht]
+  exact (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).isGeodesicCurveOn
+    |>.alongCurveWithin_curveVelocityWithin_eq_zero t ht
+
+/-- The squared speed of a maximal geodesic equals the squared norm of its initial velocity at
+every point of its maximal interval. -/
+theorem inner_curveVelocity_maximalGeodesic_self [T2Space (TangentBundle I M)]
+    {p : M} {v : TangentSpace I p} {t : ℝ}
+    (ht : t ∈ geodesicInterval I M p v) :
+    inner ℝ (curveVelocity I (maximalGeodesic I M p v) t)
+        (curveVelocity I (maximalGeodesic I M p v) t) = inner ℝ v v := by
+  have hgeo := isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
+  have hsquared := hgeo.isGeodesicCurveOn.inner_curveVelocityWithin_self_eq
+    isPreconnected_geodesicInterval ht zero_mem_geodesicInterval
+  have ht_nhds := isOpen_geodesicInterval.mem_nhds ht
+  have hzero_nhds := isOpen_geodesicInterval.mem_nhds
+    (zero_mem_geodesicInterval (I := I) (M := M) (p := p) (v := v))
+  rw [curveVelocityWithin_of_mem_nhds ht_nhds,
+    curveVelocityWithin_of_mem_nhds hzero_nhds] at hsquared
+  have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.2 z.2) hgeo.initial_eq
+  rw [curveVelocityWithin_of_mem_nhds hzero_nhds] at hinitial
+  exact hsquared.trans hinitial
 
 end TauCeti.Manifold
 

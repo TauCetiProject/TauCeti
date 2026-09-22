@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 
@@ -68,7 +67,6 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w) =
       inner ℝ v w := by
   let _ : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
-  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   let F : ℝ → ℝ → M := fun u t ↦ riemannianExp I M p (t • (v + u • w))
   let P : (u t : ℝ) → TangentSpace I (F u t) := fun u ↦ curveVelocity I (F u)
   let Q : (t u : ℝ) → TangentSpace I (F u t) :=

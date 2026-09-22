@@ -149,20 +149,20 @@ private theorem hasDerivAt_spatialFDeriv_apply_mixed {F : 𝕜 × E → F'}
 
 /-- The parameter velocity has the spatial derivative obtained from the mixed second derivative. -/
 theorem hasFDerivAt_timeFDeriv_mixed {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
-    (hF : ContDiffAt 𝕜 2 F (t, x)) :
+    (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t, x)) :
     HasFDerivAt (timeFDeriv F t)
       ((fderiv 𝕜 (fderiv 𝕜 F) (t, x) ∘L ContinuousLinearMap.inr 𝕜 𝕜 E).flip (1, 0)) x := by
   have hDF : HasFDerivAt (fderiv 𝕜 F) (fderiv 𝕜 (fderiv 𝕜 F) (t, x)) (t, x) :=
-    ContDiffAt.hasFDerivAt_fderiv hF le_rfl
+    ContDiffAt.hasFDerivAt_fderiv hF le_minSmoothness
   have hSpatial := (hDF.comp x (hasFDerivAt_prodMk_right t x)).clm_apply_const (1, 0)
   rw [timeFDeriv_eq]
   exact hSpatial
 
 /-- Near `x`, the derivative of each parameter curve is the parameter-velocity field. -/
 theorem deriv_parameterCurve_eventuallyEq_timeFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
-    (hF : ContDiffAt 𝕜 2 F (t, x)) :
+    (hF : ContDiffAt 𝕜 1 F (t, x)) :
     (fun y ↦ _root_.deriv (fun s ↦ F (s, y)) t) =ᶠ[nhds x] timeFDeriv F t := by
-  obtain ⟨w, hw, hFw⟩ := hF.contDiffOn (m := 1) (by norm_num) (by simp)
+  obtain ⟨w, hw, hFw⟩ := hF.contDiffOn (m := 1) le_rfl (by simp)
   have hdiff : ∀ᶠ z in nhds ((t, x) : 𝕜 × E), DifferentiableAt 𝕜 F z :=
     (hFw.differentiableOn one_ne_zero).eventually_differentiableAt hw
   have hsnd : ∀ᶠ y in nhds x, DifferentiableAt 𝕜 F (t, y) :=
@@ -186,7 +186,7 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     apply ContinuousLinearMap.ext
     intro w
     have hParam := hasDerivAt_spatialFDeriv_apply_mixed hF (w := w)
-    have hSpatial := hasFDerivAt_timeFDeriv_mixed (hF.of_le le_minSmoothness)
+    have hSpatial := hasFDerivAt_timeFDeriv_mixed hF
     have hsymm := hF.isSymmSndFDerivAt le_rfl
     calc
       _ = _root_.deriv (fun s => spatialFDeriv F x s w) t := by
@@ -225,5 +225,6 @@ theorem deriv_deriv_comm {g : 𝕜 × 𝕜 → F'} {t x : 𝕜}
       fun s => spatialFDeriv g x s 1 := by
     filter_upwards [hfst] with s hs
     rw [← fderiv_timeSlice hs, fderiv_apply_one_eq_deriv]
-  have h₂ := deriv_parameterCurve_eventuallyEq_timeFDeriv (hg.of_le le_minSmoothness)
+  have h₂ := deriv_parameterCurve_eventuallyEq_timeFDeriv
+    (hg.of_le (le_trans (by norm_num) le_minSmoothness))
   rw [h₁.deriv_eq, h₂.deriv_eq, deriv_spatialFDeriv_apply hg, fderiv_apply_one_eq_deriv]

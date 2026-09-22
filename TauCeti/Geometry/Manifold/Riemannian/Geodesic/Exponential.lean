@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
 import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 import TauCeti.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -47,9 +46,6 @@ a local diffeomorphism at `0`, the input to normal neighbourhoods.  Finally, the
 * `TauCeti.Manifold.curveVelocity_riemannianExp_affine` and
   `TauCeti.Manifold.curveVelocity_riemannianExp_ray`: velocities of affine and radial curves
   through the exponential map.
-* `TauCeti.Manifold.alongCurve_curveVelocity_maximalGeodesic_eq_zero` and
-  `TauCeti.Manifold.inner_curveVelocity_maximalGeodesic_self`: the unrestricted acceleration of
-  a maximal geodesic vanishes and its squared speed is the squared norm of its initial velocity.
 * `TauCeti.Manifold.mfderiv_riemannianExp_zero`: the differential of the exponential map at `0`
   is the identity.
 * `TauCeti.Manifold.isLocalDiffeomorphAt_riemannianExp_zero`: the exponential map is a local
@@ -67,7 +63,7 @@ a local diffeomorphism at `0`, the input to normal neighbourhoods.  Finally, the
 
 public section
 
-open Bundle CovariantDerivative Manifold Set
+open Bundle Manifold Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -280,37 +276,6 @@ theorem curveVelocity_riemannianExp_ray [T2Space (TangentBundle I M)]
     hg
   rw [one_smul] at h
   exact h
-
-/-- The unrestricted covariant acceleration of a maximal geodesic vanishes at every point of its
-maximal interval. -/
-theorem alongCurve_curveVelocity_maximalGeodesic_eq_zero [T2Space (TangentBundle I M)]
-    {p : M} {v : TangentSpace I p} {t : ℝ}
-    (ht : t ∈ geodesicInterval I M p v) :
-    alongCurve (leviCivitaConnection I M) (maximalGeodesic I M p v)
-      (curveVelocity I (maximalGeodesic I M p v)) t = 0 := by
-  rw [← alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivitaConnection I M)
-    (maximalGeodesic I M p v) isOpen_geodesicInterval ht]
-  exact (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).isGeodesicCurveOn
-    |>.alongCurveWithin_curveVelocityWithin_eq_zero t ht
-
-/-- The squared speed of a maximal geodesic equals the squared norm of its initial velocity at
-every point of its maximal interval. -/
-theorem inner_curveVelocity_maximalGeodesic_self [T2Space (TangentBundle I M)]
-    {p : M} {v : TangentSpace I p} {t : ℝ}
-    (ht : t ∈ geodesicInterval I M p v) :
-    inner ℝ (curveVelocity I (maximalGeodesic I M p v) t)
-        (curveVelocity I (maximalGeodesic I M p v) t) = inner ℝ v v := by
-  have hgeo := isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
-  have hsquared := hgeo.isGeodesicCurveOn.inner_curveVelocityWithin_self_eq
-    isPreconnected_geodesicInterval ht zero_mem_geodesicInterval
-  have ht_nhds := isOpen_geodesicInterval.mem_nhds ht
-  have hzero_nhds := isOpen_geodesicInterval.mem_nhds
-    (zero_mem_geodesicInterval (I := I) (M := M) (p := p) (v := v))
-  rw [curveVelocityWithin_of_mem_nhds ht_nhds,
-    curveVelocityWithin_of_mem_nhds hzero_nhds] at hsquared
-  have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.2 z.2) hgeo.initial_eq
-  rw [curveVelocityWithin_of_mem_nhds hzero_nhds] at hinitial
-  exact hsquared.trans hinitial
 
 /-- The Riemannian exponential map is continuous at every point of its natural domain. -/
 theorem continuousAt_riemannianExp [T2Space (TangentBundle I M)] {p : M}

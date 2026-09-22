@@ -226,6 +226,8 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
   convert (mfderiv 𝓘(𝕜, 𝕜) I γ (φ t)).map_smul c (1 : 𝕜) using 1
   · rfl
   · congr 1
+    -- The tangent space of the scalar model is definitionally the scalar field, but `simp` cannot
+    -- see the scalar action until this identification is exposed.
     change c = c * 1
     rw [mul_one]
 
