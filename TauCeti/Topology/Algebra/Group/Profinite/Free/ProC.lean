@@ -76,11 +76,12 @@ noncomputable def fromFreeProfiniteGroup : (C : FiniteGroupClass.{w}) → (X : T
     ⟨proCCompletion.mk C (freeProfiniteGroup X), proCCompletion.continuous_mk C _⟩
 
 /-- Evaluation of the canonical quotient map agrees with the underlying quotient homomorphism. -/
+@[simp low]
 theorem fromFreeProfiniteGroup_apply (C : FiniteGroupClass.{w}) (X : Type u)
     (x : freeProfiniteGroup X) :
-    fromFreeProfiniteGroup C X x = proCCompletion.mk C (freeProfiniteGroup X) x :=
-  congrArg (fun f : freeProfiniteGroup X →ₜ* freeProC C X ↦ f x)
-    (fromFreeProfiniteGroup.eq_1 C X)
+    fromFreeProfiniteGroup C X x = proCCompletion.mk C (freeProfiniteGroup X) x := by
+  rw [fromFreeProfiniteGroup]
+  rfl
 
 /-- The canonical map from the generating type into the free pro-`C` group. -/
 noncomputable def of (x : X) : freeProC C X :=
@@ -292,14 +293,22 @@ noncomputable def equivFreeProP (p : ℕ) (X : Type u) :
     freeProC (finiteGroupClassP.{u} p) X ≃ₜ* freeProP p X :=
   proCCompletion.equivMaximalProPQuotient p (freeProfiniteGroup X)
 
+/-- The comparison with the free pro-`p` group commutes with the canonical quotient maps. -/
+@[simp]
+theorem equivFreeProP_fromFreeProfiniteGroup (p : ℕ) (X : Type u)
+    (x : freeProfiniteGroup X) :
+    equivFreeProP p X (fromFreeProfiniteGroup (finiteGroupClassP p) X x) =
+      freeProP.fromFreeProfiniteGroup p X x := by
+  rw [fromFreeProfiniteGroup_apply, freeProP.fromFreeProfiniteGroup_apply]
+  exact proCCompletion.equivMaximalProPQuotient_mk (p := p)
+    (G := freeProfiniteGroup X) x
+
 /-- The comparison with the free pro-`p` group preserves each canonical generator. -/
 @[simp]
 theorem equivFreeProP_of (p : ℕ) (x : X) :
     equivFreeProP p X (of x) = freeProP.of x := by
-  rw [← fromFreeProfiniteGroup_of, ← freeProP.fromFreeProfiniteGroup_of,
-    fromFreeProfiniteGroup_apply, freeProP.fromFreeProfiniteGroup_apply]
-  exact proCCompletion.equivMaximalProPQuotient_mk (p := p)
-    (G := freeProfiniteGroup X) (freeProfiniteGroup.of x)
+  rw [← fromFreeProfiniteGroup_of, equivFreeProP_fromFreeProfiniteGroup,
+    freeProP.fromFreeProfiniteGroup_of]
 
 /-- The inverse comparison with the free pro-`p` group preserves each canonical generator. -/
 @[simp]

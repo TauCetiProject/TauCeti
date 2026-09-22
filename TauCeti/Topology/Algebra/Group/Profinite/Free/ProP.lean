@@ -68,10 +68,11 @@ noncomputable def fromFreeProfiniteGroup : (p : ℕ) → (X : Type u) →
     ⟨maximalProPQuotient.mk p (freeProfiniteGroup X), maximalProPQuotient.continuous_mk p _⟩
 
 /-- Evaluation of the canonical quotient map agrees with the underlying quotient homomorphism. -/
+@[simp low]
 theorem fromFreeProfiniteGroup_apply (p : ℕ) (X : Type u) (x : freeProfiniteGroup X) :
-    fromFreeProfiniteGroup p X x = maximalProPQuotient.mk p (freeProfiniteGroup X) x :=
-  congrArg (fun f : freeProfiniteGroup X →ₜ* freeProP p X ↦ f x)
-    (fromFreeProfiniteGroup.eq_1 p X)
+    fromFreeProfiniteGroup p X x = maximalProPQuotient.mk p (freeProfiniteGroup X) x := by
+  rw [fromFreeProfiniteGroup]
+  rfl
 
 /-- The canonical map from the generating type into the free pro-`p` group. -/
 noncomputable def of (x : X) : freeProP p X :=
