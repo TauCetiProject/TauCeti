@@ -50,6 +50,7 @@ def realOpenUnitBall : Opens ℝ := ⟨Metric.ball 0 1, isOpen_ball⟩
 theorem coe_realOpenUnitBall : (realOpenUnitBall : Set ℝ) = Metric.ball 0 1 := by
   simp [realOpenUnitBall]
 
+/-- The Riemannian structure on the real open unit ball induced from `ℝ`. -/
 local instance : RiemannianBundle
     (fun x : realOpenUnitBall ↦ TangentSpace 𝓘(ℝ, ℝ) x) :=
   Manifold.instRiemannianBundleOpen realOpenUnitBall
