@@ -16,10 +16,10 @@ We prove that here by the uniqueness of inverses in the convolution monoid.
 
 ## Main results
 
-* `BialgHom.toLinearMap_comp_antipode` and `BialgHomClass.coe_comp_antipode`: a bialgebra morphism
-  between Hopf algebras commutes with the antipodes as underlying linear maps.
-* `BialgHom.map_antipode` and `BialgHomClass.map_antipode`: a bialgebra morphism
-  between Hopf algebras commutes with the antipodes, pointwise.
+* `BialgHomClass.coe_comp_antipode`: a bialgebra morphism between Hopf algebras commutes
+  with the antipodes as underlying linear maps.
+* `BialgHomClass.map_antipode`: a bialgebra morphism between Hopf algebras commutes with
+  the antipodes, pointwise.
 
 ## References
 
@@ -130,7 +130,7 @@ variable [Semiring A] [Semiring B] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra 
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
-theorem _root_.BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
+private lemma _root_.BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by
   let f : WithConv (A →ₗ[R] B) := toConv φ.toLinearMap
@@ -156,11 +156,6 @@ theorem _root_.BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     exact congr_arg (algebraMap R B) (CoalgHomClass.counit_comp_apply φ a)
   exact WithConv.toConv_injective (left_inv_eq_right_inv hg_left hh_right)
 
-/-- A bialgebra morphism between Hopf algebras commutes with the antipodes, pointwise. -/
-theorem _root_.BialgHom.map_antipode (φ : A →ₐc[R] B) (a : A) :
-    φ (HopfAlgebra.antipode R a) = HopfAlgebra.antipode R (φ a) :=
-  LinearMap.congr_fun (BialgHom.toLinearMap_comp_antipode φ) a
-
 end Main
 
 section Class
@@ -169,12 +164,19 @@ variable {R A B F : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra R B]
 variable [FunLike F A B] [BialgHomClass F R A B]
 
+/-- The linear-map coercion of a bialgebra-hom-like map coincides with the linear-map
+projection of its bundled bialgebra-hom coercion. -/
+private lemma _root_.BialgHomClass.coe_toBialgHom_toLinearMap (φ : F) :
+    (φ : A →ₐc[R] B).toLinearMap = (φ : A →ₗ[R] B) :=
+  rfl
+
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
 theorem _root_.BialgHomClass.coe_comp_antipode (φ : F) :
     (φ : A →ₗ[R] B).comp (HopfAlgebra.antipode R (A := A)) =
-      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) :=
-  BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B)
+      (HopfAlgebra.antipode R (A := B)).comp (φ : A →ₗ[R] B) := by
+  simpa only [BialgHomClass.coe_toBialgHom_toLinearMap] using
+    BialgHom.toLinearMap_comp_antipode (φ : A →ₐc[R] B)
 
 /-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, pointwise. -/
 @[simp]

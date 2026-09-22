@@ -159,7 +159,7 @@ private theorem antipode_mem_map (I : HopfIdeal R H) (f : H →ₐc[R] K) ⦃x :
     intro i hi
     simp only [Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       HopfAlgebra.antipodeAlgHom_apply]
-    rw [← BialgHom.map_antipode]
+    rw [← BialgHomClass.map_antipode]
     exact Ideal.mem_map_of_mem _ (I.antipode_mem hi)
   simpa using Ideal.mem_comap.mp (h hx)
 
