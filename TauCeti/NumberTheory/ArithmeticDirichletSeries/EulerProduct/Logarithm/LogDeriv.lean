@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Data
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Deriv
 
-import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-import Mathlib.Analysis.SpecialFunctions.Log.Summable
-import Mathlib.NumberTheory.LSeries.Deriv
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Deriv
+import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 
 /-!
 # The logarithmic derivative of an ideal Euler product
@@ -23,19 +20,19 @@ logarithmic derivative the sum of the logarithmic derivatives of its factors.  T
 that the same holds for the infinite product: at every point strictly to the right of the
 ideal-indexed abscissa of absolute convergence at which no local factor vanishes,
 `logDeriv` of the `L`-series is the sum over the height-one primes of `logDeriv` of the local
-factors.
+factors.  Each summand is in turn a prime-power series, by
+`TauCeti.EulerProductData.logDeriv_eulerFactor_eq`.
 
 Differentiating an infinite product is not a formal consequence of the pointwise product formula:
 it needs the convergence to be locally uniform, and that is what absolute convergence at a real
 point `σ` further left supplies.  On the half-plane `Re z > σ` the deviation of the local factor at
 `P` from `1` is bounded, uniformly in `z`, by the prime-power tail
-`∑_{e ≥ 1} ‖D(P ^ e)‖ N(P) ^ (-e σ)`, and those tails are summable over the primes.
-Outside a finite set of primes that bound is at most `1 / 2`, so there the local factor stays in
-the slit plane, its principal logarithm is holomorphic on the whole half-plane, and those
-logarithms are dominated by a summable function of `P`.  Weierstrass' theorem, in the form
-`Complex.hasSum_deriv_of_summable_norm`, differentiates their sum term by term.  The finitely many
-remaining factors are holomorphic, and nonzero at the point in question, so they contribute a
-finite sum of logarithmic derivatives.
+`∑_{e ≥ 1} ‖D(P ^ e)‖ N(P) ^ (-e σ)`, and those tails are summable over the primes.  That majorant
+is exactly what `Summable.hasProdLocallyUniformlyOn_one_add` asks for, so the partial Euler
+products converge to the `L`-series locally uniformly on the half-plane, and
+`Complex.logDeriv_tendsto` carries their logarithmic derivatives to that of the limit.  The
+logarithmic derivative of a partial product is the corresponding finite sum, by
+`logDeriv_fun_prod`, so the limit is the asserted infinite sum.
 
 The nonvanishing hypothesis is stated on the local factors, as for the logarithm itself in
 `TauCeti/NumberTheory/ArithmeticDirichletSeries/EulerProduct/Logarithm/Data.lean`; by
@@ -83,14 +80,10 @@ theorem hasSum_logDeriv_eulerFactor {s : ℂ}
     (hne : ∀ P : HeightOneSpectrum (𝓞 K), D.eulerFactor P s ≠ 0) :
     HasSum (fun P : HeightOneSpectrum (𝓞 K) ↦ logDeriv (D.eulerFactor P) s)
       (logDeriv (LSeries (normCoeff K D.toIdealArithmeticFunction)) s) := by
-  -- The proof splits the primes into those whose local factor is uniformly close to `1` on a
-  -- half-plane `U ∋ s` of absolute convergence and the finitely many others.  Over the first set
-  -- the principal logarithms of the local factors are holomorphic on `U` and dominated by a
-  -- summable function, so their sum differentiates term by term and exponentiates to the partial
-  -- Euler product over that set; the second set contributes a finite product.  Splitting
-  -- `logDeriv` along that factorisation of the `L`-series and recombining the two families gives
-  -- the result.
-  classical
+  -- On a half-plane `U ∋ s` of absolute convergence the local factors are `1` plus a family whose
+  -- norms are bounded, uniformly on `U`, by a summable function of the prime.  That is Mathlib's
+  -- criterion for the partial Euler products to converge locally uniformly on `U`, and a locally
+  -- uniform limit of nonvanishing holomorphic functions carries logarithmic derivatives along.
   obtain ⟨σ, hσabs, hσs⟩ := EReal.exists_between_coe_real hs
   have hσs' : σ < s.re := by exact_mod_cast hσs
   set U : Set ℂ := {z : ℂ | σ < z.re}
@@ -107,85 +100,33 @@ theorem hasSum_logDeriv_eulerFactor {s : ℂ}
     (D.hasDerivAt_eulerFactor P
       ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt (habs z hz))).differentiableAt
   -- the uniform majorant for the deviations of the local factors from `1`
-  set b : HeightOneSpectrum (𝓞 K) → ℝ := fun P ↦ ∑' e : ℕ,
-    ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) (P.primeIdealPow (e + 1))‖
-  have hbsum : Summable b := summable_tsum_norm_idealTerm_primeIdealPow_succ hσconv
-  have hble : ∀ P : HeightOneSpectrum (𝓞 K), ∀ z ∈ U, ‖D.eulerFactor P z - 1‖ ≤ b P :=
-    fun P z hz ↦ D.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re hσconv
-      (by simpa using hz.le) P
-  -- the primes at which the majorant does control the logarithm; the others are finite in number
-  set T : Set (HeightOneSpectrum (𝓞 K)) := {P | b P < 1 / 2}
-  have hfin : Tᶜ.Finite := Filter.eventually_cofinite.mp
-    (hbsum.tendsto_cofinite_zero.eventually (eventually_lt_nhds (by norm_num)))
-  have hTfin : Fintype (Tᶜ : Set (HeightOneSpectrum (𝓞 K))) := hfin.fintype
-  have hsmall : ∀ (P : T), ∀ z ∈ U, ‖D.eulerFactor P.1 z - 1‖ ≤ 1 / 2 :=
-    fun P z hz ↦ (hble P.1 z hz).trans P.2.le
-  have hslit : ∀ (P : T), ∀ z ∈ U, D.eulerFactor P.1 z ∈ slitPlane := by
-    intro P z hz
-    have h1 : ‖D.eulerFactor P.1 z - 1‖ < 1 := lt_of_le_of_lt (hsmall P z hz) (by norm_num)
-    simpa using Complex.mem_slitPlane_of_norm_lt_one h1
-  -- the controlled local logarithms are holomorphic and dominated by a summable function
-  have hgdiff : ∀ P : T, DifferentiableOn ℂ (fun z ↦ log (D.eulerFactor P.1 z)) U := by
-    intro P z hz
-    exact ((hdiffF P.1 z hz).clog (hslit P z hz)).differentiableWithinAt
-  have hgle : ∀ (P : T) (z : ℂ), z ∈ U → ‖log (D.eulerFactor P.1 z)‖ ≤ 3 / 2 * b P.1 := by
-    intro P z hz
-    have hone : D.eulerFactor P.1 z = 1 + (D.eulerFactor P.1 z - 1) := by ring
-    calc ‖log (D.eulerFactor P.1 z)‖
-        = ‖log (1 + (D.eulerFactor P.1 z - 1))‖ := by rw [← hone]
-      _ ≤ 3 / 2 * ‖D.eulerFactor P.1 z - 1‖ :=
-          Complex.norm_log_one_add_half_le_self (hsmall P z hz)
-      _ ≤ 3 / 2 * b P.1 := by gcongr; exact hble P.1 z hz
-  have hu : Summable fun P : T ↦ 3 / 2 * b P.1 :=
-    (hbsum.mul_left (3 / 2)).comp_injective Subtype.val_injective
-  -- Weierstrass: the sum of those logarithms differentiates term by term
-  have hderiv := Complex.hasSum_deriv_of_summable_norm hu hgdiff hUo hgle hsU
-  have hderiv_eq : ∀ P : T,
-      deriv (fun z ↦ log (D.eulerFactor P.1 z)) s = logDeriv (D.eulerFactor P.1) s := by
-    intro P
-    rw [logDeriv_apply, ((hdiffF P.1 s hsU).hasDerivAt.clog (hslit P s hsU)).deriv]
-  simp only [hderiv_eq] at hderiv
-  -- the sum of those logarithms exponentiates to the product over the controlled primes
-  have hlogsummable : ∀ z ∈ U, Summable fun P : T ↦ log (D.eulerFactor P.1 z) :=
-    fun z hz ↦ Summable.of_norm_bounded hu fun P ↦ hgle P z hz
-  have hdecomp : ∀ z ∈ U, LSeries (normCoeff K D.toIdealArithmeticFunction) z =
-      exp (∑' P : T, log (D.eulerFactor P.1 z)) *
-        ∏ P : (Tᶜ : Set (HeightOneSpectrum (𝓞 K))), D.eulerFactor P.1 z := by
-    intro z hz
-    refine (D.hasProd_eulerFactor (hconv z hz)).unique
-      (HasProd.mul_compl (f := fun P ↦ D.eulerFactor P z) (s := T) ?_ (hasProd_fintype _))
-    exact Complex.hasProd_of_hasSum_log (fun P ↦ slitPlane_ne_zero (hslit P z hz))
-      (hlogsummable z hz).hasSum
-  -- the logarithmic derivative of that decomposition
-  have hhdiff : DifferentiableAt ℂ (fun w ↦ ∑' P : T, log (D.eulerFactor P.1 w)) s :=
-    (Complex.differentiableOn_tsum_of_summable_norm hu hgdiff hUo hgle).differentiableAt
-      (hUo.mem_nhds hsU)
-  have hEdiff : DifferentiableAt ℂ (fun z ↦ exp (∑' P : T, log (D.eulerFactor P.1 z))) s :=
-    hhdiff.cexp
-  have hGdiff : DifferentiableAt ℂ
-      (∏ P : (Tᶜ : Set (HeightOneSpectrum (𝓞 K))), D.eulerFactor P.1) s :=
-    DifferentiableAt.finsetProd fun P _ ↦ hdiffF P.1 s hsU
-  have hGne : (∏ P : (Tᶜ : Set (HeightOneSpectrum (𝓞 K))), D.eulerFactor P.1) s ≠ 0 := by
-    rw [Finset.prod_apply]
-    exact Finset.prod_ne_zero_iff.mpr fun P _ ↦ hne P.1
-  have hEq : LSeries (normCoeff K D.toIdealArithmeticFunction) =ᶠ[nhds s]
-      (fun z ↦ exp (∑' P : T, log (D.eulerFactor P.1 z))) *
-        (∏ P : (Tᶜ : Set (HeightOneSpectrum (𝓞 K))), D.eulerFactor P.1) := by
-    filter_upwards [hUo.mem_nhds hsU] with z hz
-    simpa [Finset.prod_apply] using hdecomp z hz
-  have hlogE : logDeriv (fun z ↦ exp (∑' P : T, log (D.eulerFactor P.1 z))) s
-      = deriv (fun w ↦ ∑' P : T, log (D.eulerFactor P.1 w)) s := by
-    rw [logDeriv_apply, hhdiff.hasDerivAt.cexp.deriv, mul_comm, mul_div_assoc,
-      div_self (exp_ne_zero _), mul_one]
-  have hlog : logDeriv (LSeries (normCoeff K D.toIdealArithmeticFunction)) s
-      = deriv (fun w ↦ ∑' P : T, log (D.eulerFactor P.1 w)) s
-        + ∑ P : (Tᶜ : Set (HeightOneSpectrum (𝓞 K))), logDeriv (D.eulerFactor P.1) s := by
-    rw [(logDeriv_congr_nhds hEq).eq_of_nhds,
-      logDeriv_mul s (by simp [exp_ne_zero]) hGne hEdiff hGdiff, hlogE,
-      logDeriv_prod (fun P _ ↦ hne P.1) fun P _ ↦ hdiffF P.1 s hsU]
-  rw [hlog]
-  exact HasSum.add_compl (f := fun P ↦ logDeriv (D.eulerFactor P) s) (s := T) hderiv
-    (hasSum_fintype _)
+  have hbsum : Summable fun P : HeightOneSpectrum (𝓞 K) ↦ ∑' e : ℕ,
+      ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) (P.primeIdealPow (e + 1))‖ :=
+    summable_tsum_norm_primeIdealPow_succ (summable_norm_iff.mpr hσconv)
+  have hble : ∀ P : HeightOneSpectrum (𝓞 K), ∀ z ∈ U, ‖D.eulerFactor P z - 1‖ ≤ ∑' e : ℕ,
+      ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) (P.primeIdealPow (e + 1))‖ :=
+    fun P z hz ↦ D.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re
+      (hσconv.comp_injective P.primeIdealPow_injective) (by simpa using hz.le)
+  -- the partial Euler products converge to the `L`-series locally uniformly on `U`
+  have hone : TendstoLocallyUniformlyOn
+      (fun t : Finset (HeightOneSpectrum (𝓞 K)) ↦ fun z ↦
+        ∏ P ∈ t, (1 + (D.eulerFactor P z - 1)))
+      (fun z ↦ ∏' P : HeightOneSpectrum (𝓞 K), (1 + (D.eulerFactor P z - 1))) atTop U :=
+    Summable.hasProdLocallyUniformlyOn_one_add (f := fun P z ↦ D.eulerFactor P z - 1) hUo hbsum
+      (.of_forall hble) fun P z hz ↦ ((hdiffF P z hz).sub_const 1).continuousAt.continuousWithinAt
+  have hlu : TendstoLocallyUniformlyOn
+      (fun t : Finset (HeightOneSpectrum (𝓞 K)) ↦ fun z ↦ ∏ P ∈ t, D.eulerFactor P z)
+      (LSeries (normCoeff K D.toIdealArithmeticFunction)) atTop U :=
+    (hone.congr fun t z _ ↦ Finset.prod_congr rfl fun P _ ↦ by ring).congr_right fun z hz ↦
+      (tprod_congr fun P ↦ (by ring : 1 + (D.eulerFactor P z - 1) = D.eulerFactor P z)).trans
+        (D.tprod_eulerFactor (hconv z hz))
+  -- a locally uniform limit of holomorphic functions carries logarithmic derivatives along
+  have key := Complex.logDeriv_tendsto hUo hsU hlu
+    (.of_forall fun t ↦ DifferentiableOn.fun_finsetProd fun P _ z hz ↦
+      (hdiffF P z hz).differentiableWithinAt)
+    (D.LSeries_ne_zero_of_forall_eulerFactor_ne_zero (hconv s hsU) hne)
+  rw [HasSum]
+  exact key.congr fun t ↦ logDeriv_fun_prod (fun P _ ↦ hne P) fun P _ ↦ hdiffF P s hsU
 
 /-- **The logarithmic derivative of an ideal Euler product, as a sum over the primes.**  The
 `tsum` form of `TauCeti.EulerProductData.hasSum_logDeriv_eulerFactor`. -/
