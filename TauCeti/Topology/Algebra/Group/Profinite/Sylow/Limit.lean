@@ -56,14 +56,14 @@ variable [Fact p.Prime] [IsTopologicalGroup G] {P : Subgroup G}
 theorem map_mapOfLE_toSylow (hP : IsProPSylow p P) ⦃U V : OpenNormalSubgroup G⦄ (hUV : U ≤ V) :
     (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup)).map (QuotientGroup.mapOfLE hUV) =
       (hP.toSylow V : Subgroup (G ⧸ V.toSubgroup)) := by
-  rw [coe_toSylow, coe_toSylow, Subgroup.map_map, QuotientGroup.mapOfLE_comp_mk']
+  rw [toSylow_coe, toSylow_coe, Subgroup.map_map, QuotientGroup.mapOfLE_comp_mk']
 
 /-- A Sylow pro-`p` subgroup of a profinite group is cut out by its images in the finite
 quotients. -/
 theorem limitSubgroup_toSylow [CompactSpace G] [TotallyDisconnectedSpace G]
     (hP : IsProPSylow p P) :
     limitSubgroup (fun U ↦ (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup))) = P := by
-  simpa only [coe_toSylow] using limitSubgroup_map_mk' P hP.isClosed
+  simpa only [toSylow_coe] using limitSubgroup_map_mk' P hP.isClosed
 
 end IsProPSylow
 
@@ -94,6 +94,11 @@ theorem mem_subgroup_iff {S : SylowFamily p G} {g : G} :
     g ∈ S.subgroup ↔ ∀ U : OpenNormalSubgroup G, (g : G ⧸ U.toSubgroup) ∈ S.sylow U :=
   mem_limitSubgroup_iff
 
+/-- The subgroup cut out by a Sylow family is closed. -/
+theorem isClosed_subgroup [IsTopologicalGroup G] (S : SylowFamily p G) :
+    IsClosed (S.subgroup : Set G) :=
+  isClosed_limitSubgroup _
+
 variable [IsTopologicalGroup G] [CompactSpace G]
 
 /-- The subgroup cut out by a Sylow family has the chosen Sylow subgroup as its image in each
@@ -117,12 +122,12 @@ def equivIsProPSylow : SylowFamily p G ≃ {P : Subgroup G // IsProPSylow p P} w
   toFun S := ⟨S.subgroup, S.isProPSylow_subgroup⟩
   invFun P := ⟨fun U ↦ P.2.toSylow U, fun _ _ hUV ↦ P.2.map_mapOfLE_toSylow hUV⟩
   left_inv S := SylowFamily.ext <| funext fun U ↦
-    Sylow.ext <| by rw [IsProPSylow.coe_toSylow, map_mk'_subgroup]
+    Sylow.ext <| by rw [IsProPSylow.toSylow_coe, map_mk'_subgroup]
   right_inv P := Subtype.ext P.2.limitSubgroup_toSylow
 
 /-- The correspondence sends a Sylow family to the subgroup it cuts out. -/
 @[simp]
-theorem equivIsProPSylow_apply_coe (S : SylowFamily p G) :
+theorem coe_equivIsProPSylow_apply (S : SylowFamily p G) :
     (equivIsProPSylow S : Subgroup G) = S.subgroup :=
   (rfl)
 

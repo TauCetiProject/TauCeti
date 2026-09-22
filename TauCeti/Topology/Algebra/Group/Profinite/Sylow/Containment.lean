@@ -69,7 +69,7 @@ theorem IsProP.exists_le_map_conj (hQ : IsProP p Q) (hP : IsProPSylow p P) :
       Q.map (QuotientGroup.mk' U.toSubgroup) ≤
         (P.map (MulAut.conj g).toMonoidHom).map (QuotientGroup.mk' U.toSubgroup) := by
     simp only [t, conjugators, Set.mem_preimage, Set.mem_ofPred_eq, Sylow.coe_subgroup_smul,
-      QuotientGroup.mk'_apply, Subgroup.map_map_conj, IsProPSylow.coe_toSylow]
+      QuotientGroup.mk'_apply, Subgroup.map_map_conj, IsProPSylow.toSylow_coe]
     -- Mathlib defines the pointwise `MulAut` action on subgroups as `Subgroup.map`
     -- (`Subgroup.pointwise_smul_def` is `rfl`) and provides no rewrite lemma to `toMonoidHom`.
     exact Iff.rfl
@@ -131,10 +131,10 @@ theorem IsProPSylow.eq_of_le (hP : IsProPSylow p P) (hQ : IsProP p Q) (hPQ : P �
       P.map (QuotientGroup.mk' U.toSubgroup) := by
     have hle : (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup)) ≤
         Q.map (QuotientGroup.mk' U.toSubgroup) := by
-      rw [hP.coe_toSylow]
+      rw [hP.toSylow_coe]
       exact Subgroup.map_mono hPQ
     have hmax := (hP.toSylow U).is_maximal' (hQ.isPGroup_map_mk' U) hle
-    rwa [hP.coe_toSylow] at hmax
+    rwa [hP.toSylow_coe] at hmax
   calc Q ≤ (Q.map (QuotientGroup.mk' U.toSubgroup)).comap (QuotientGroup.mk' U.toSubgroup) :=
         Subgroup.le_comap_map _ _
     _ = P ⊔ U.toSubgroup := by

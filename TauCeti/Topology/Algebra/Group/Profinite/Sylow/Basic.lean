@@ -94,7 +94,7 @@ def toSylow [Fact p.Prime] [IsTopologicalGroup G] (hP : IsProPSylow p P)
 
 /-- The underlying subgroup of `IsProPSylow.toSylow` is the image of `P` in the quotient. -/
 @[simp]
-theorem coe_toSylow [Fact p.Prime] [IsTopologicalGroup G] (hP : IsProPSylow p P)
+theorem toSylow_coe [Fact p.Prime] [IsTopologicalGroup G] (hP : IsProPSylow p P)
     (U : OpenNormalSubgroup G) :
     (hP.toSylow U : Subgroup (G ⧸ U.toSubgroup)) =
       P.map (QuotientGroup.mk' U.toSubgroup) :=
