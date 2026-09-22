@@ -37,8 +37,8 @@ extensions.
 * `TauCeti.even_toAdd_normalizedValuation_of_isSquare`: a square has even valuation.
 * `TauCeti.isSquare_zpow_mul_iff`: for `w` of even valuation, `π ^ m * w` is a square exactly
   when `m` is even and `w` is a square.
-* `TauCeti.not_isSquare_mul_of_isUniformizer`: a uniformizer times an element of even valuation
-  is not a square.
+* `TauCeti.not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation`: a uniformizer
+  times an element of even valuation is not a square.
 * `TauCeti.natCard_squareClassGroup_of_isUnit_two`: away from residue characteristic two the
   square-class group has four elements.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two`: every element of `Kˣ` agrees, up to a square,
@@ -90,7 +90,8 @@ theorem isSquare_zpow_mul_iff {π w : Kˣ} (hπ : IsUniformizer K π)
 
 /-- A uniformizer times an element of even valuation has odd valuation, so it is not a
 square. -/
-theorem not_isSquare_mul_of_isUniformizer {π w : Kˣ} (hπ : IsUniformizer K π)
+theorem not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation {π w : Kˣ}
+    (hπ : IsUniformizer K π)
     (hw : Even (normalizedValuation K w).toAdd) : ¬IsSquare (w * π) := fun h ↦ by
   have hev := even_toAdd_normalizedValuation_of_isSquare h
   rw [map_mul, toAdd_mul, (isUniformizer_def π).mp hπ, toAdd_ofAdd] at hev
@@ -120,8 +121,11 @@ theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : K�
   have : Finite (SquareClassGroup K) := Nat.finite_of_card_ne_zero (by omega)
   have hfin : Fintype (SquareClassGroup K) := Fintype.ofFinite _
   -- The four listed classes are pairwise distinct.
-  have hπ' : ¬IsSquare π := by simpa using not_isSquare_mul_of_isUniformizer hπ (w := 1) (by simp)
-  have huπ : ¬IsSquare (u * π) := not_isSquare_mul_of_isUniformizer hπ hu
+  have hπ' : ¬IsSquare π := by
+    simpa using not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation
+      hπ (w := 1) (by simp)
+  have huπ : ¬IsSquare (u * π) :=
+    not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation hπ hu
   have h0u : (0 : SquareClassGroup K) ≠ squareClass u :=
     fun h ↦ hu' ((squareClass_eq_zero_iff u).mp h.symm)
   have h0π : (0 : SquareClassGroup K) ≠ squareClass π :=
@@ -167,9 +171,10 @@ theorem isSquare_or_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {u w 
   rcases hr with rfl | rfl | rfl | rfl
   · exact Or.inl (by simpa using hsq)
   · exact Or.inr hsq
-  · exact absurd hsq (not_isSquare_mul_of_isUniformizer hπ hw)
+  · exact absurd hsq
+      (not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation hπ hw)
   · rw [← mul_assoc] at hsq
-    exact absurd hsq (not_isSquare_mul_of_isUniformizer hπ
+    exact absurd hsq (not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation hπ
       (by rw [map_mul, toAdd_mul]; exact hw.add hu))
 
 end TauCeti
