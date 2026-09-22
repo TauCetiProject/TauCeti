@@ -20,24 +20,12 @@ Hochschild's proof of Ado's theorem enlarges a nilpotently-acting subalgebra one
 and it is applied there to two different modules, so it is stated once for a general module.
 
 Because `y` normalizes `H`, that Lie span is already spanned by `y` and `H` as a *module*: its
-underlying submodule is `R ∙ y ⊔ H.toSubmodule`, which is the content of
-`LieSubalgebra.lieSpan_insert_toSubmodule`.  Mathlib builds the same submodule anonymously inside
-the proof of `LieAlgebra.exists_engelian_lieSubalgebra_of_lt_normalizer` in
-`Mathlib/Algebra/Lie/Engel.lean`, which both that lemma and the `⊤`-membership computation inside
-`LieSubalgebra.lieModule_isNilpotent_lieSpan_insert` follow closely.  That proof also supplies the
-two facts that do the work: `LieSubalgebra.lie_mem_sup_of_mem_normalizer` closes the submodule under
-the bracket, and `LieSubmodule.isNilpotentOfIsNilpotentSpanSupEqTop` upgrades nilpotency of `M` as a
-module over an ideal `I` of a Lie algebra `K` to nilpotency of `M` as a module over `K`, as soon as
-`K = R ∙ x ⊔ I` with `x` acting nilpotently on `M`.  The step taken here is that `H` is an ideal of
-the Lie span, which is exactly the situation that theorem describes.
+underlying submodule is `R ∙ y ⊔ H.toSubmodule`.  Its elements are therefore exactly the `t • y + h`
+with `t : R` and `h ∈ H`, which is the form in which the extension lemma is used.
 
-Note that no Noetherian or finiteness hypothesis is needed for the subalgebra statement: it is a
-statement about lower central series, not an application of Engel's theorem.  Engel's theorem enters
-only in the variants whose hypothesis on `H` is the pointwise one, `∀ x ∈ H, IsNilpotent (toEnd x)`,
-and those carry `[IsNoetherian R M]`.
-
-The `H`-receiver statements live in the root `LieSubalgebra` namespace, where dot notation on that
-Mathlib type elaborates, as do the corresponding statements in `TauCeti.Algebra.Lie.Nilradical`.
+No Noetherian or finiteness hypothesis is needed for the subalgebra statement.  Engel's theorem
+enters only in the variants whose hypothesis on `H` is the pointwise one,
+`∀ x ∈ H, IsNilpotent (toEnd x)`, and those carry `[IsNoetherian R M]`.
 
 ## Main statements
 
@@ -65,6 +53,11 @@ Mathlib type elaborates, as do the corresponding statements in `TauCeti.Algebra.
 * G. Hochschild, *An addition to Ado's theorem*, Proc. Amer. Math. Soc. 17 (1966), 531-533.
 * [W. Fulton and J. Harris, *Representation Theory: A First Course*][fulton-harris1991],
   Appendix E, §E.2.
+* Mathlib's `LieAlgebra.exists_engelian_lieSubalgebra_of_lt_normalizer` in
+  `Mathlib/Algebra/Lie/Engel.lean`, which is followed closely here and from which
+  `LieSubalgebra.lie_mem_sup_of_mem_normalizer`,
+  `LieSubalgebra.exists_nested_lieIdeal_ofLe_normalizer` and
+  `LieSubmodule.isNilpotentOfIsNilpotentSpanSupEqTop` are reused.
 -/
 
 public section
@@ -169,8 +162,7 @@ theorem isNilpotent_toEnd_smul_add_of_mem (H : LieSubalgebra R L) {y : L}
 
 /-- The pointwise form of the nilpotent-extension lemma: if every element of `H` acts nilpotently on
 a Noetherian module `M`, and so does a normalizing element `y`, then so does every element of the
-Lie subalgebra spanned by `y` and `H`.  Engel's theorem turns the hypothesis on `H` into nilpotency
-of the action, which is what `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert` consumes. -/
+Lie subalgebra spanned by `y` and `H`. -/
 theorem isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall [IsNoetherian R M]
     (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer)
     (hH : ∀ x ∈ H, IsNilpotent (LieModule.toEnd R L M x))
@@ -229,9 +221,7 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 /-- The adjoint specialization of the nilpotent-extension lemma: if `y` is `ad`-nilpotent, then so
 is every element of `R ∙ y ⊔ nilradical R L`.  Every element of the nilradical is `ad`-nilpotent, so
-the hypothesis of `LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup` on the ideal is automatic
-here.  The adjoint action *is* the action of `L` on itself as a Lie module, so no transport between
-`LieAlgebra.ad` and `LieModule.toEnd` is needed. -/
+no nilpotency hypothesis on the ideal is needed. -/
 theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical [IsNoetherian R L] {y : L}
     (hy : IsNilpotent (_root_.LieAlgebra.ad R L y)) {z : L}
     (hz : z ∈ (R ∙ y) ⊔ LieSubmodule.toSubmodule (nilradical R L)) :
