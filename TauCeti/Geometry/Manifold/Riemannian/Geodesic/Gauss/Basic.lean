@@ -29,6 +29,8 @@ normal domain inherits it without choosing a smaller ball.
 
 * `TauCeti.Manifold.inner_mfderiv_riemannianExp_radial`: the differential of the exponential map
   preserves inner products with the radial direction.
+* `TauCeti.Manifold.norm_mfderiv_riemannianExp_radial`: the differential of the exponential map
+  preserves the norm of the radial direction.
 
 ## References
 
@@ -303,6 +305,16 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w)
     (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v))
   simpa only [F, zero_smul, add_zero, one_smul] using hsymm.trans hone
+
+/-- **Radial norm preservation.** The differential of the Riemannian exponential map preserves
+the norm of the radial direction at every vector in its natural domain. -/
+theorem norm_mfderiv_riemannianExp_radial [I.Boundaryless]
+    [T2Space (TangentBundle I M)] {p : M} {v : TangentSpace I p}
+    (hv : v ∈ expDomain I M p) :
+    ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v‖ = ‖v‖ := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), sq, sq,
+    ← real_inner_self_eq_norm_mul_norm, ← real_inner_self_eq_norm_mul_norm,
+    inner_mfderiv_riemannianExp_radial hv]
 
 end TauCeti.Manifold
 

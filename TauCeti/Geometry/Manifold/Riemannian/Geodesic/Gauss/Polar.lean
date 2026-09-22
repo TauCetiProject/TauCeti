@@ -63,16 +63,6 @@ theorem abs_inner_le_norm_mul_norm_mfderiv_riemannianExp {p : M}
     {v w : TangentSpace I p} (hv : v ∈ expDomain I M p) :
     |inner ℝ v w| ≤ ‖v‖ *
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ := by
-  have hradial :
-      inner ℝ
-          (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v)
-          (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v) =
-        inner ℝ v v :=
-    inner_mfderiv_riemannianExp_radial hv
-  have hnorm :
-      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v‖ = ‖v‖ := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), sq, sq,
-      ← real_inner_self_eq_norm_mul_norm, ← real_inner_self_eq_norm_mul_norm, hradial]
   calc
     |inner ℝ v w| =
         |inner ℝ
@@ -83,7 +73,7 @@ theorem abs_inner_le_norm_mul_norm_mfderiv_riemannianExp {p : M}
         ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ :=
       abs_real_inner_le_norm _ _
     _ = ‖v‖ * ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ := by
-      rw [hnorm]
+      rw [norm_mfderiv_riemannianExp_radial hv]
 
 /-- The derivative of the smoothed radius `√(⟪w ·, w ·⟫ + δ)`, for `δ > 0`, along a `C¹` path `w`
 in the natural domain of `exp_p` is dominated by the speed of `exp_p ∘ w`.
@@ -120,32 +110,44 @@ private theorem enorm_derivWithin_sqrt_real_inner_add_le_enorm_mfderiv {p : M}
     have hsqrt_pos : 0 < Real.sqrt (inner ℝ (w t) (w t) + δ) :=
       Real.sqrt_pos.mpr hpos
     field_simp
-  rw [derivWithin_of_mem_nhds htN, hsqrt.deriv]
-  rw [← ofReal_norm]
-  rw [← curveVelocity_apply,
-    curveVelocity_riemannianExp_comp hwt (hdom htIcc)]
-  rw [← ofReal_norm]
-  apply ENNReal.ofReal_le_ofReal
-  rw [Real.norm_eq_abs, abs_div,
-    abs_of_pos (Real.sqrt_pos.mpr hpos)]
-  apply (div_le_iff₀ (Real.sqrt_pos.mpr hpos)).2
-  have hpolar := abs_inner_le_norm_mul_norm_mfderiv_riemannianExp
-    (I := I) (M := M) (v := w t) (w := derivWithin w (Icc a b) t) (hdom htIcc)
+  have hreal :
+      ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ ≤
+        ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+          (derivWithin w (Icc a b) t)‖ := by
+    rw [derivWithin_of_mem_nhds htN, hsqrt.deriv, Real.norm_eq_abs, abs_div,
+      abs_of_pos (Real.sqrt_pos.mpr hpos)]
+    apply (div_le_iff₀ (Real.sqrt_pos.mpr hpos)).2
+    have hpolar := abs_inner_le_norm_mul_norm_mfderiv_riemannianExp
+      (I := I) (M := M) (v := w t) (w := derivWithin w (Icc a b) t) (hdom htIcc)
+    calc
+      |inner ℝ (w t) (derivWithin w (Icc a b) t)| ≤
+          ‖w t‖ *
+            ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+              (derivWithin w (Icc a b) t)‖ := hpolar
+      _ ≤ Real.sqrt (inner ℝ (w t) (w t) + δ) *
+            ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+              (derivWithin w (Icc a b) t)‖ := by
+        apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+        rw [norm_eq_sqrt_real_inner]
+        exact Real.sqrt_le_sqrt (le_add_of_nonneg_right hδ.le)
+      _ = ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+              (derivWithin w (Icc a b) t)‖ *
+            Real.sqrt (inner ℝ (w t) (w t) + δ) := by
+        rw [mul_comm]
   calc
-    |inner ℝ (w t) (derivWithin w (Icc a b) t)| ≤
-        ‖w t‖ *
-          ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
-            (derivWithin w (Icc a b) t)‖ := hpolar
-    _ ≤ Real.sqrt (inner ℝ (w t) (w t) + δ) *
-          ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
-            (derivWithin w (Icc a b) t)‖ := by
-      apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
-      rw [norm_eq_sqrt_real_inner]
-      exact Real.sqrt_le_sqrt (le_add_of_nonneg_right hδ.le)
+    ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ₑ =
+        ENNReal.ofReal
+          ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ :=
+      (ofReal_norm _).symm
+    _ ≤ ENNReal.ofReal
+        ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
+          (derivWithin w (Icc a b) t)‖ := ENNReal.ofReal_le_ofReal hreal
     _ = ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (w t)
-            (derivWithin w (Icc a b) t)‖ *
-          Real.sqrt (inner ℝ (w t) (w t) + δ) := by
-      rw [mul_comm]
+          (derivWithin w (Icc a b) t)‖ₑ := ofReal_norm _
+    _ = ‖mfderiv 𝓘(ℝ, ℝ) I (riemannianExp I M p ∘ w) t (1 : ℝ)‖ₑ := by
+      rw [← curveVelocity_apply,
+        curveVelocity_riemannianExp_comp hwt (hdom htIcc)]
+      rfl
 
 /-- The smoothed radius `√(⟪w ·, w ·⟫ + δ)`, for `δ > 0`, changes along a `C¹` path `w` in the
 natural domain of `exp_p` by at most the length of `exp_p ∘ w`. -/
