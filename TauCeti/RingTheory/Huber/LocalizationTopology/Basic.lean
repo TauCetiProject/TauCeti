@@ -49,6 +49,8 @@ universal property in `LocalizationTopology.UniversalProperty`, the completion `
   whole presentation by a unit — the second step of a change of presentation.
 * `hasDenominatorPower_of_idealOfDefinition_le_span`: numerators containing a subset of `A₀`
   whose span contains `I` supply the standing denominator-power hypothesis for every denominator.
+* `hasDenominatorPower_of_isOpen_span`: a finite numerator set spanning an open ideal supplies the
+  standing denominator-power hypothesis for every denominator.
 * `isHuberRing_locTopology`: `Aₛ` under `locTopology` is a Huber ring.
 * `locIdeal_eq_span_singleton`: when the ideal of definition is principal on `π`, so is `J`, on
   the image of `π` — `J` is by construction the image ideal.
@@ -398,6 +400,40 @@ theorem hasDenominatorPower_of_idealOfDefinition_le_span (P : PairOfDefinition A
     rw [← divBy_mul] at hmul
     rw [smul_eq_mul, MulMemClass.coe_mul]
     exact hmul
+
+/-- **An open numerator ideal supplies the standing denominator-power hypothesis.** If the ideal
+spanned by `T` is open, a sufficiently small basic neighbourhood `Iⁿ` consists of `T`-linear
+combinations whose coefficients lie in the ring of definition. Dividing such a combination by
+`s` therefore puts it in `A₀[T/s]`.
+
+This is the bridge from the admissibility condition on a rational subset, stated as openness of
+`T · A`, to the standing hypothesis needed to construct its topological coordinate ring. -/
+theorem hasDenominatorPower_of_isOpen_span [IsTopologicalRing A]
+    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    HasDenominatorPower P T s S := by
+  classical
+  obtain ⟨n, hn⟩ := P.exists_forall_mem_idealImage_exists_sum_eq T hT
+  rw [hasDenominatorPower_iff]
+  refine ⟨n, fun b hb ↦ ?_⟩
+  obtain ⟨w, hw, hsum⟩ := hn (b : A) ((P.mem_idealImage n).mpr ⟨b, hb, rfl⟩)
+  rw [← hsum]
+  have hterm : ∀ t ∈ T, divBy (t * w t) s ∈ locSubring P T s S := by
+    intro t ht
+    rw [mul_comm, divBy_mul]
+    exact (locSubring P T s S).mul_mem
+      (algebraMap_mem_locSubring P T s S (P.idealImage_le_ringOfDefinition 1 (hw t ht)))
+      (divBy_mem_locSubring P T s S ht)
+  let d : A →+ S :=
+    { toFun := fun a ↦ divBy a s
+      map_zero' := divBy_zero s
+      map_add' := fun a b ↦ divBy_add (t := a) (s := s) b }
+  have hsum_mem : d (∑ t ∈ T, t * w t) ∈ locSubring P T s S := by
+    rw [map_sum]
+    exact Subring.sum_mem _ fun t ht ↦ hterm t ht
+  exact hsum_mem
+
 /-! ### Passing to a denominator that is a multiple
 
 A localisation away from `u` maps to one away from a multiple `w = u * r`, and under that map `D`
