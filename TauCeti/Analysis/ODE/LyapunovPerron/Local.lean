@@ -33,8 +33,12 @@ The two descriptions match exactly where the cutoff is invisible. A confined for
 the original equation solves the cut-off equation as well, so it always lies on the graph; and
 conversely a point of the graph whose `P`-component `v` is small enough that the uniform bound
 `‖y t‖ ≤ K / (1 - 2 K (2 ε) / α) ‖v‖` on Lyapunov--Perron solutions keeps `y` inside the ball
-carries a confined solution. This is the Lipschitz half of the local stable-manifold theorem; the
-differentiability of the graph map and its tangency to the range of `P` are not established here.
+carries a confined solution. If `N` has derivative zero at the equilibrium, the graph map does too:
+although the radial cutoff need not be differentiable at the boundary sphere, it agrees with `N`
+near zero, and the Lyapunov--Perron solutions tend uniformly to zero with their input parameter.
+Together with `ContinuousLinearMap.apply_localStableGraphMap`, this makes the graph tangent to the
+range of `P` at the equilibrium whenever `P` is the commuting projection of an exponential
+dichotomy.
 
 Time reversal applies the same construction to `-A`, `-N`, and the complementary projection
 `1 - P`, without duplicating the fixed-point argument. When `P` is idempotent this gives the local
@@ -46,6 +50,8 @@ the graph map takes its values in `range P`.
 * `ContinuousLinearMap.localStableGraphMap`: the Lyapunov--Perron graph map of the cut-off
   nonlinearity, with `ContinuousLinearMap.lipschitzWith_localStableGraphMap` and
   `ContinuousLinearMap.norm_localStableGraphMap_le` for its Lipschitz constant and cone bound.
+* `ContinuousLinearMap.hasFDerivAt_localStableGraphMap_zero`: when the nonlinear remainder has
+  derivative zero at the equilibrium, so does the local stable graph map.
 * `ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall`: a forward solution that
   never leaves the ball of radius `r` tends to the equilibrium.
 * `ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: the local
@@ -153,6 +159,95 @@ theorem norm_localStableGraphMap_le (hN0 : N 0 = 0) (ξ : X) :
       ((2 * K * (ε * 2) / α * (K / (1 - 2 * K * (ε * 2) / α)) : ℝ≥0) : ℝ) * ‖ξ‖ :=
   norm_lyapunovPerronGraphMap_le hs hu (pos_of_two_mul_mul_lt hsmall)
     (hN.comp_radialRetraction hr) hsmall (by simp [hN0]) ξ
+
+/-- **The local stable graph map is flat at the equilibrium.** If the nonlinear remainder fixes
+the equilibrium and has derivative zero there, then the local stable graph map also has derivative
+zero at the origin. When `P` is the commuting projection of an exponential dichotomy,
+`ContinuousLinearMap.apply_localStableGraphMap` then identifies this as tangency of the graph to
+`range P`.
+
+The radial cutoff need not be differentiable on the boundary sphere. This does not affect the
+result: it agrees with the original remainder near zero, while the uniform Lyapunov--Perron bound
+forces the whole solution into that neighbourhood as the input parameter tends to zero. -/
+theorem hasFDerivAt_localStableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
+    (hN' : HasFDerivAt N (0 : X →L[ℝ] X) 0) :
+    HasFDerivAt (localStableGraphMap A P N r hs hu hr hN hsmall)
+      (0 : X →L[ℝ] X) 0 := by
+  have hα : (0 : ℝ) < α := by
+    exact_mod_cast pos_of_two_mul_mul_lt hsmall
+  let M : X → X := N ∘ TauCeti.radialRetraction r
+  have hM0 : M 0 = 0 := by simp [M, hN0]
+  have hMlip : LipschitzWith (ε * 2) M := by
+    exact hN.comp_radialRetraction hr
+  have hNlittle : N =o[𝓝 0] fun z : X ↦ z := by
+    simpa only [hN0, sub_zero, zero_apply] using hN'.isLittleO
+  have hM_eq : N =ᶠ[𝓝 0] M := by
+    filter_upwards [eventually_norm_sub_lt (0 : X) hr0] with z hz
+    simp only [sub_zero] at hz
+    simpa only [M, Function.comp_apply] using
+      congrArg N (TauCeti.radialRetraction_of_norm_le hz.le).symm
+  have hMlittle : M =o[𝓝 0] fun z : X ↦ z :=
+    hNlittle.congr' hM_eq (Eventually.of_forall fun _ ↦ rfl)
+  let B : ℝ := (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) + 1
+  have hbound_nonneg :
+      0 ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) :=
+    lyapunovPerronBound_nonneg hsmall
+  have hBpos : 0 < B := by dsimp only [B]; linarith
+  have hbound_lt_B :
+      (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) < B := by
+    dsimp only [B]
+    linarith
+  have hgraphLittle :
+      localStableGraphMap A P N r hs hu hr hN hsmall =o[𝓝 0] fun z : X ↦ z := by
+    refine Asymptotics.isLittleO_iff.2 fun c hc ↦ ?_
+    let d : ℝ := c * (α : ℝ) / (2 * ((K : ℝ) + 1) * B)
+    have hd : 0 < d := by
+      dsimp only [d]
+      positivity
+    have hcoefficient : 2 * (K : ℝ) * (d * B) / α ≤ c := by
+      have hKden : (0 : ℝ) < (K : ℝ) + 1 := by positivity
+      have heq : 2 * (K : ℝ) * (d * B) / α = c * K / (K + 1) := by
+        dsimp only [d]
+        field_simp
+      rw [heq]
+      apply (div_le_iff₀ hKden).2
+      nlinarith [K.coe_nonneg]
+    obtain ⟨q, hq, hqsub⟩ := Metric.mem_nhds_iff.1 (hMlittle.def hd)
+    filter_upwards [eventually_norm_sub_lt (0 : X) (div_pos hq hBpos)] with ξ hξ
+    simp only [sub_zero] at hξ
+    let γ := lyapunovPerronSolution A P M hs hu hα hMlip hsmall ξ
+    have hγnorm (t : ℝ≥0) : ‖γ t‖ ≤ B * ‖ξ‖ := by
+      have h := norm_lyapunovPerronSolution_le hs hu hα hMlip hsmall hM0
+        (hβ := le_rfl) (hβα := by
+          have : 2 * (K : ℝ) * ((ε : ℝ) * 2) < (α : ℝ) := by exact_mod_cast hsmall
+          simpa using this) ξ t
+      have h' : ‖γ t‖ ≤
+          (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖ξ‖ := by
+        simpa only [NNReal.coe_mul, NNReal.coe_ofNat, sub_zero, neg_zero, zero_mul,
+          Real.exp_zero, mul_one] using h
+      exact h'.trans (mul_le_mul_of_nonneg_right hbound_lt_B.le (norm_nonneg ξ))
+    have hγsmall (t : ℝ≥0) : ‖γ t‖ < q := by
+      calc
+        ‖γ t‖ ≤ B * ‖ξ‖ := hγnorm t
+        _ < q := by
+          apply (lt_div_iff₀ hBpos).1 at hξ
+          simpa only [mul_comm] using hξ
+    have hforcing (s : ℝ) : ‖M (γ s.toNNReal)‖ ≤ d * (B * ‖ξ‖) := by
+      calc
+        ‖M (γ s.toNNReal)‖ ≤ d * ‖γ s.toNNReal‖ :=
+          hqsub (by simpa only [mem_ball, dist_zero_right] using hγsmall s.toNNReal)
+        _ ≤ d * (B * ‖ξ‖) := mul_le_mul_of_nonneg_left (hγnorm _) hd.le
+    have hintegral := norm_lyapunovPerronIntegral_le hs hu hα hforcing le_rfl
+    calc
+      ‖localStableGraphMap A P N r hs hu hr hN hsmall ξ‖ =
+          ‖lyapunovPerronIntegral A P (fun s ↦ M (γ s.toNNReal)) 0‖ := by
+            rw [localStableGraphMap, lyapunovPerronGraphMap_eq_lyapunovPerronIntegral]
+      _ ≤ 2 * (K : ℝ) * (d * (B * ‖ξ‖)) / α := hintegral
+      _ = (2 * (K : ℝ) * (d * B) / α) * ‖ξ‖ := by ring
+      _ ≤ c * ‖ξ‖ := mul_le_mul_of_nonneg_right hcoefficient (norm_nonneg ξ)
+  apply HasFDerivAt.of_isLittleO
+  simpa only [localStableGraphMap_zero hs hu hr hN hsmall hN0, sub_zero, zero_apply] using
+    hgraphLittle
 
 omit [CompleteSpace X] in
 /-- **Cutting off is invisible to a confined solution.** A forward curve that never leaves the
