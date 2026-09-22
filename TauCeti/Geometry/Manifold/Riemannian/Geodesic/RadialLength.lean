@@ -11,9 +11,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 /-!
 # Length of radial geodesic segments
 
-The radial curve in a normal neighbourhood is a reparametrized maximal geodesic.  These results
-record its Riemannian length directly in exponential-map coordinates, so it can be compared with
-the length of a competing path in the normal neighbourhood.
+The radial curve is a reparametrized maximal geodesic wherever its parameters lie in the interval
+of existence.  These results record its Riemannian length directly in exponential-map coordinates,
+so it can be compared with the length of a competing path in a normal neighbourhood.
 
 The length calculation uses the constant-speed formula for maximal geodesics in
 `TauCeti.Manifold.pathELength_maximalGeodesic`.
@@ -43,30 +43,26 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [T2Space (TangentBundle I M)]
 
-/-- A radial segment through a vector of a normal domain has length equal to its constant speed
-times the elapsed time. -/
-theorem IsNormalDomain.pathELength_radialSegment {p : M} {U : Set (TangentSpace I p)}
-    (h : IsNormalDomain I M p U) {v : TangentSpace I p} (hv : v ∈ U) {s t : ℝ}
-    (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
+/-- A radial segment has length equal to its constant speed times the elapsed time whenever both
+parameters lie in the interval of existence. -/
+theorem pathELength_radialSegment {p : M} {v : TangentSpace I p} {s t : ℝ}
+    (hs : s ∈ geodesicInterval I M p v) (ht : t ∈ geodesicInterval I M p v) :
     pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) s t =
       ‖v‖ₑ * ENNReal.ofReal (t - s) := by
-  have hs' : s ∈ geodesicInterval I M p v :=
-    h.mem_geodesicInterval hv hs.1 hs.2
-  have ht' : t ∈ geodesicInterval I M p v :=
-    h.mem_geodesicInterval hv ht.1 ht.2
   have hcurve : (fun u : ℝ ↦ riemannianExp I M p (u • v)) = maximalGeodesic I M p v := by
     funext u
     exact riemannianExp_smul p v u
   rw [hcurve]
-  exact pathELength_maximalGeodesic hs' ht'
+  exact pathELength_maximalGeodesic hs ht
 
-/-- In particular, the radial segment from `p` to `exp_p v` has length equal to `‖v‖` for every
-vector `v` in a normal domain at `p`. -/
-theorem IsNormalDomain.pathELength_radialSegment_zero_one {p : M}
-    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) {v : TangentSpace I p}
-    (hv : v ∈ U) :
+/-- In particular, when `exp_p v` is defined, the radial segment from `p` to `exp_p v` has length
+equal to `‖v‖`. -/
+theorem pathELength_radialSegment_zero_one {p : M} {v : TangentSpace I p}
+    (hv : v ∈ expDomain I M p) :
     pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 = ‖v‖ₑ := by
-  rw [h.pathELength_radialSegment hv (by simp) (by simp)]
+  have hIcc : Icc (0 : ℝ) 1 ⊆ geodesicInterval I M p v :=
+    ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.mp hv)
+  rw [pathELength_radialSegment (hIcc (by simp)) (hIcc (by simp))]
   simp
 
 end TauCeti.Manifold
