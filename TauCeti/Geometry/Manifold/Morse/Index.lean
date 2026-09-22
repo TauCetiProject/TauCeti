@@ -16,9 +16,12 @@ The Morse index of a critical point is the negative index of inertia of its Hess
 lifts `TauCeti.morseIndex` from a normed vector space to a smooth manifold by applying it to the
 coordinate expression in the preferred extended chart.
 
-At a twice continuously differentiable critical point this number is intrinsic. In particular,
-`TauCeti.manifoldMorseIndex_transContinuousLinearEquiv` proves that it is unchanged when the
-model space is replaced through a continuous linear equivalence. The model-space comparison
+Following `TauCeti.IsManifoldNondegenerateCriticalPoint`, the definition itself assumes no
+smoothness and no boundarylessness; it is the intrinsic invariant of a `C²` critical point of a
+boundaryless `C²` manifold, and the invariance results state the hypotheses they use. In
+particular, `TauCeti.manifoldMorseIndex_transContinuousLinearEquiv` proves that the index is
+unchanged when the model space is replaced through a continuous linear equivalence, assuming
+exactly `C²` regularity and criticality of the chart expression. The model-space comparison
 theorem makes the construction reduce exactly to the existing calculus definition.
 
 The index supplies the grading of the Morse complex. Negating the function exchanges the stable
@@ -61,9 +64,16 @@ variable {f : M → ℝ} {x : M}
 /-- The **Morse index** of a real-valued function at a point of a smooth manifold: the negative
 index of inertia of the Hessian of its expression in the preferred extended chart.
 
-As with `TauCeti.morseIndex`, this is defined at every point. Its interpretation as the dimension
-of the unstable space assumes finite-dimensionality, while its coordinate invariance requires
-criticality. -/
+As with `TauCeti.morseIndex` and `TauCeti.IsManifoldNondegenerateCriticalPoint`, the definition
+carries no smoothness or boundary hypotheses and is available at every point; the results that
+give it intrinsic meaning carry the hypotheses they need explicitly. It is the intended
+chart-independent invariant when `I.Boundaryless` and `IsManifold I 2 M` hold and `x` is a `C²`
+critical point: only then does the unconstrained Hessian of the chart expression used here
+compute the intrinsic Hessian, because `range I` is then a neighbourhood of `extChartAt I x x`
+and the chart transitions are `C²`. For a model with boundary or corners the unconstrained
+Hessian can depend on the behaviour of the chart inverse off `range I`, and it is in any case
+not the boundary Morse condition, which is a different theory. Its interpretation as the
+dimension of the unstable space assumes finite-dimensionality. -/
 noncomputable def manifoldMorseIndex (I : ModelWithCorners ℝ E H) (f : M → ℝ) (x : M) : ℕ :=
   morseIndex (f ∘ (extChartAt I x).symm) (extChartAt I x x)
 
