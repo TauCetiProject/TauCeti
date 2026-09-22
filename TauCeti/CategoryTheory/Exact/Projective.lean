@@ -229,18 +229,28 @@ variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
   [HasBinaryBiproducts D]
 variable {F : C ⥤ D} {G : D ⥤ C} [F.Additive] [G.Additive]
 
-omit [F.Additive] in
-/-- A left adjoint carries relative projectives to relative projectives when its right adjoint is
-conflation-exact. Lifting a target morphism is adjoint to lifting its image under the right
-adjoint. -/
-theorem isProjective_map_adjoint (E : ExactStructure C) (E' : ExactStructure D)
-    (adj : F ⊣ G) (hG : E'.IsConflationExact E G) {Q : C} (hQ : E.isProjective Q) :
+omit [F.Additive] [G.Additive] in
+/-- A left adjoint carries relative projectives to relative projectives when its right adjoint
+carries deflations to deflations. -/
+theorem isProjective_map_adjoint_of_map_isDeflation (E : ExactStructure C)
+    (E' : ExactStructure D) (adj : F ⊣ G)
+    (hG : ∀ ⦃X Y : D⦄ (p : X ⟶ Y), E'.IsDeflation p → E.IsDeflation (G.map p))
+    {Q : C} (hQ : E.isProjective Q) :
     E'.isProjective (F.obj Q) := by
   intro X Y p hp f
-  obtain ⟨g, hg⟩ := hQ (hG.map_isDeflation hp) (adj.unit.app Q ≫ G.map f)
+  obtain ⟨g, hg⟩ := hQ (hG p hp) (adj.unit.app Q ≫ G.map f)
   refine ⟨F.map g ≫ adj.counit.app X, ?_⟩
   rw [Category.assoc, ← adj.counit_naturality, ← Category.assoc, ← F.map_comp, hg]
   simp
+
+omit [F.Additive] in
+/-- A left adjoint carries relative projectives to relative projectives when its right adjoint is
+conflation-exact. -/
+theorem isProjective_map_adjoint (E : ExactStructure C) (E' : ExactStructure D)
+    (adj : F ⊣ G) (hG : E'.IsConflationExact E G) {Q : C} (hQ : E.isProjective Q) :
+    E'.isProjective (F.obj Q) :=
+  E.isProjective_map_adjoint_of_map_isDeflation E' adj
+    (fun ⦃_ _⦄ _ hp ↦ hG.map_isDeflation hp) hQ
 
 /-- A conflation-exact equivalence preserves and reflects relative projectivity. -/
 theorem isProjective_map_equivalence_iff (E : ExactStructure C) (E' : ExactStructure D)
@@ -286,13 +296,12 @@ section Functor
 
 variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
   [HasBinaryBiproducts D]
-variable {E' : ExactStructure D} {X : C} {F : C ⥤ D} {G : D ⥤ C}
-  [F.Additive] [G.Additive]
+variable {E' : ExactStructure D} {X : C} {F : C ⥤ D} [F.Additive]
 
-/-- A conflation-exact left adjoint whose right adjoint is also conflation-exact sends a relative
-projective presentation to one of the image object. -/
-def mapAdjunction (P : E.ProjectivePresentation X) (adj : F ⊣ G)
-    (hF : E.IsConflationExact E' F) (hG : E'.IsConflationExact E G) :
+/-- The image of a relative projective presentation under a conflation-exact functor that carries
+relative projectives to relative projectives. -/
+def map (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
     E'.ProjectivePresentation (F.obj X) where
   K := F.obj P.K
   P := F.obj P.P
@@ -300,27 +309,27 @@ def mapAdjunction (P : E.ProjectivePresentation X) (adj : F ⊣ G)
   p := F.map P.p
   zero := by rw [← F.map_comp, P.zero, F.map_zero]
   conflation := hF.map_conflation P.conflation
-  isProjective := E.isProjective_map_adjoint E' adj hG P.isProjective
+  isProjective := (E'.isProjective.prop_inverseImage_iff F _).mp (hPP' _ P.isProjective)
 
-@[simp] theorem mapAdjunction_K (P : E.ProjectivePresentation X) (adj : F ⊣ G)
-    (hF : E.IsConflationExact E' F) (hG : E'.IsConflationExact E G) :
-    (P.mapAdjunction adj hF hG).K = F.obj P.K := by
-  simp [mapAdjunction]
+@[simp] theorem map_K (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    (P.map hF hPP').K = F.obj P.K := by
+  simp [map]
 
-@[simp] theorem mapAdjunction_P (P : E.ProjectivePresentation X) (adj : F ⊣ G)
-    (hF : E.IsConflationExact E' F) (hG : E'.IsConflationExact E G) :
-    (P.mapAdjunction adj hF hG).P = F.obj P.P := by
-  simp [mapAdjunction]
+@[simp] theorem map_P (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    (P.map hF hPP').P = F.obj P.P := by
+  simp [map]
 
-@[simp] theorem mapAdjunction_i (P : E.ProjectivePresentation X) (adj : F ⊣ G)
-    (hF : E.IsConflationExact E' F) (hG : E'.IsConflationExact E G) :
-    HEq (P.mapAdjunction adj hF hG).i (F.map P.i) := by
-  simp [mapAdjunction]
+@[simp] theorem map_i (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    HEq (P.map hF hPP').i (F.map P.i) := by
+  simp [map]
 
-@[simp] theorem mapAdjunction_p (P : E.ProjectivePresentation X) (adj : F ⊣ G)
-    (hF : E.IsConflationExact E' F) (hG : E'.IsConflationExact E G) :
-    HEq (P.mapAdjunction adj hF hG).p (F.map P.p) := by
-  simp [mapAdjunction]
+@[simp] theorem map_p (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
+    (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
+    HEq (P.map hF hPP').p (F.map P.p) := by
+  simp [map]
 
 end Functor
 

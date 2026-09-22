@@ -113,14 +113,18 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
 /-- Shift every object and morphism in a relative projective presentation. -/
 def shift (P : E.toExactStructure.ProjectivePresentation X) :
     E.toExactStructure.ProjectivePresentation (E.shift.functor.obj X) :=
-  P.mapAdjunction E.shift.toAdjunction E.shift_exact E.shift_inverse_exact
+  P.map E.shift_exact fun Q hQ ↦ by
+    rw [ObjectProperty.prop_inverseImage_iff]
+    exact (E.isProjective_shift_iff Q).2 hQ
 
 /-- Apply the inverse grading shift to every object and morphism in a relative projective
 presentation. -/
 def inverseShift (P : E.toExactStructure.ProjectivePresentation X) :
     E.toExactStructure.ProjectivePresentation (E.shift.inverse.obj X) :=
   let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
-  P.mapAdjunction E.shift.symm.toAdjunction E.shift_inverse_exact E.shift_exact
+  P.map E.shift_inverse_exact fun Q hQ ↦ by
+    rw [ObjectProperty.prop_inverseImage_iff]
+    exact (E.isProjective_inverseShift_iff Q).2 hQ
 
 @[simp] theorem shift_K (P : E.toExactStructure.ProjectivePresentation X) :
     P.shift.K = E.shift.functor.obj P.K := by
@@ -178,6 +182,38 @@ def inverseShiftProjective
   r.map E.shift_inverse_exact fun Q hQ ↦ by
       rw [ObjectProperty.prop_inverseImage_iff]
       exact (E.isProjective_inverseShift_iff Q).2 hQ
+
+@[simp] theorem shiftProjective_base {X : C} (hX : E.isProjective X) :
+    (FiniteResolution.base (E := E.toExactStructure) hX).shiftProjective =
+      FiniteResolution.base ((E.isProjective_shift_iff X).2 hX) := by
+  simp [shiftProjective]
+
+@[simp] theorem shiftProjective_step {K Q X : C} (hQ : E.isProjective Q)
+    (i : K ⟶ Q) (p : Q ⟶ X) (zero : i ≫ p = 0)
+    (hp : E.Conflation (ShortComplex.mk i p zero))
+    (r : E.toExactStructure.FiniteResolution E.isProjective K) :
+    (FiniteResolution.step hQ i p zero hp r).shiftProjective =
+      FiniteResolution.step ((E.isProjective_shift_iff Q).2 hQ)
+        (E.shift.functor.map i) (E.shift.functor.map p)
+        (by rw [← E.shift.functor.map_comp, zero, E.shift.functor.map_zero])
+        (E.shift_exact.map_conflation hp) r.shiftProjective := by
+  simp [shiftProjective]
+
+@[simp] theorem inverseShiftProjective_base {X : C} (hX : E.isProjective X) :
+    (FiniteResolution.base (E := E.toExactStructure) hX).inverseShiftProjective =
+      FiniteResolution.base ((E.isProjective_inverseShift_iff X).2 hX) := by
+  simp [inverseShiftProjective]
+
+@[simp] theorem inverseShiftProjective_step {K Q X : C} (hQ : E.isProjective Q)
+    (i : K ⟶ Q) (p : Q ⟶ X) (zero : i ≫ p = 0)
+    (hp : E.Conflation (ShortComplex.mk i p zero))
+    (r : E.toExactStructure.FiniteResolution E.isProjective K) :
+    (FiniteResolution.step hQ i p zero hp r).inverseShiftProjective =
+      FiniteResolution.step ((E.isProjective_inverseShift_iff Q).2 hQ)
+        (E.shift.inverse.map i) (E.shift.inverse.map p)
+        (by rw [← E.shift.inverse.map_comp, zero, E.shift.inverse.map_zero])
+        (E.shift_inverse_exact.map_conflation hp) r.inverseShiftProjective := by
+  simp [inverseShiftProjective]
 
 @[simp] theorem length_shiftProjective
     (r : E.toExactStructure.FiniteResolution E.isProjective X) :
