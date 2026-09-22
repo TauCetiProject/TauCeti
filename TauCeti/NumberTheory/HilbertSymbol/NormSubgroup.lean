@@ -13,11 +13,11 @@ public import TauCeti.NumberTheory.HilbertSymbol.Basic
 /-!
 # The quadratic norm subgroup
 
-For `a : Kˣ`, this file packages the nonzero norms from the quadratic algebra
-`K[√a] = QuadraticAlgebra K a 0` as a subgroup of `Kˣ`. The norm-equation Hilbert symbol
-is exactly the sign indicator of this subgroup.
+For `a : Rˣ` over a commutative ring `R`, this file packages the unit norms from the quadratic
+algebra `R[√a] = QuadraticAlgebra R a 0` as a subgroup of `Rˣ`. Over a field the norm-equation
+Hilbert symbol is exactly the sign indicator of this subgroup.
 
-This separates the field-generic group theory from the arithmetic input used over a
+This separates the ring-generic group theory from the arithmetic input used over a
 nonarchimedean local field. Once the quadratic norm subgroup is known to have index two, its
 sign indicator is multiplicative, which is the group-theoretic step in the
 bimultiplicativity of the local Hilbert symbol.
@@ -32,30 +32,32 @@ noncomputable section
 
 namespace TauCeti
 
-variable {K : Type*} [Field K]
+section CommRing
 
-/-- The norm on the units of the quadratic algebra `K[√a]`, with values in `Kˣ`. -/
-noncomputable def quadraticNormHom (a : Kˣ) :
-    (QuadraticAlgebra K (a : K) 0)ˣ →* Kˣ :=
-  Units.map (QuadraticAlgebra.norm (R := K) (a := (a : K)) (b := 0))
+variable {R : Type*} [CommRing R]
+
+/-- The norm on the units of the quadratic algebra `R[√a]`, with values in `Rˣ`. -/
+noncomputable def quadraticNormHom (a : Rˣ) :
+    (QuadraticAlgebra R (a : R) 0)ˣ →* Rˣ :=
+  Units.map (QuadraticAlgebra.norm (R := R) (a := (a : R)) (b := 0))
 
 /-- The quadratic norm homomorphism evaluates to the quadratic-algebra norm. -/
 @[simp]
-theorem quadraticNormHom_apply (a : Kˣ) (z : (QuadraticAlgebra K (a : K) 0)ˣ) :
-    ((quadraticNormHom a z : Kˣ) : K) =
-      (z : QuadraticAlgebra K (a : K) 0).norm :=
+theorem quadraticNormHom_apply (a : Rˣ) (z : (QuadraticAlgebra R (a : R) 0)ˣ) :
+    ((quadraticNormHom a z : Rˣ) : R) =
+      (z : QuadraticAlgebra R (a : R) 0).norm :=
   by simp [quadraticNormHom]
 
-/-- The subgroup of `Kˣ` consisting of nonzero norms from `K[√a]`. -/
-noncomputable def quadraticNormSubgroup (a : Kˣ) : Subgroup Kˣ :=
+/-- The subgroup of `Rˣ` consisting of unit norms from `R[√a]`. -/
+noncomputable def quadraticNormSubgroup (a : Rˣ) : Subgroup Rˣ :=
   (quadraticNormHom a).range
 
 /-- Membership in the quadratic norm subgroup is the existence of a unit with the given norm. -/
 @[simp]
-theorem mem_quadraticNormSubgroup_iff (a b : Kˣ) :
+theorem mem_quadraticNormSubgroup_iff (a b : Rˣ) :
     b ∈ quadraticNormSubgroup a ↔
-      ∃ z : (QuadraticAlgebra K (a : K) 0)ˣ,
-        (z : QuadraticAlgebra K (a : K) 0).norm = b := by
+      ∃ z : (QuadraticAlgebra R (a : R) 0)ˣ,
+        (z : QuadraticAlgebra R (a : R) 0).norm = b := by
   rw [quadraticNormSubgroup, MonoidHom.mem_range]
   constructor
   · rintro ⟨z, rfl⟩
@@ -63,6 +65,64 @@ theorem mem_quadraticNormSubgroup_iff (a b : Kˣ) :
   · rintro ⟨z, hz⟩
     refine ⟨z, Units.ext ?_⟩
     exact (quadraticNormHom_apply a z).trans hz
+
+/-- An element of `R[√a]` whose norm is a unit already witnesses membership in the quadratic
+norm subgroup, so no unit hypothesis on the witness is needed. -/
+theorem mem_quadraticNormSubgroup_iff_exists_norm_eq (a b : Rˣ) :
+    b ∈ quadraticNormSubgroup a ↔ ∃ z : QuadraticAlgebra R (a : R) 0, z.norm = b := by
+  rw [mem_quadraticNormSubgroup_iff]
+  constructor
+  · rintro ⟨z, hz⟩
+    exact ⟨z, hz⟩
+  · rintro ⟨z, hz⟩
+    have hz' : IsUnit z := QuadraticAlgebra.isUnit_iff_norm_isUnit.mpr (hz ▸ b.isUnit)
+    exact ⟨hz'.unit, by simpa using hz⟩
+
+/-- Every square is a norm from a quadratic algebra. -/
+theorem square_le_quadraticNormSubgroup (a : Rˣ) :
+    Subgroup.square Rˣ ≤ quadraticNormSubgroup a := by
+  intro b hb
+  obtain ⟨c, rfl⟩ := Subgroup.mem_square.mp hb
+  refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨c, 0⟩, ?_⟩
+  simp [QuadraticAlgebra.norm_def]
+
+/-- The index of the quadratic norm subgroup divides the number of square classes. -/
+theorem quadraticNormSubgroup_index_dvd_square_index (a : Rˣ) :
+    (quadraticNormSubgroup a).index ∣ (Subgroup.square Rˣ).index :=
+  Subgroup.index_dvd_of_le (square_le_quadraticNormSubgroup a)
+
+/-- Finiteness of the square-class group implies finite index for the quadratic norm subgroup. -/
+theorem finiteIndex_quadraticNormSubgroup (a : Rˣ) [(Subgroup.square Rˣ).FiniteIndex] :
+    (quadraticNormSubgroup a).FiniteIndex :=
+  Subgroup.finiteIndex_of_le (square_le_quadraticNormSubgroup a)
+
+/-- The element `-a` is the norm of the square-root generator of `R[√a]`. -/
+theorem neg_self_mem_quadraticNormSubgroup (a : Rˣ) :
+    -a ∈ quadraticNormSubgroup a := by
+  refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨0, 1⟩, ?_⟩
+  simp [QuadraticAlgebra.norm_def]
+
+/-- Rescaling the radicand by a square does not change the quadratic norm subgroup. -/
+@[simp]
+theorem quadraticNormSubgroup_mul_sq (a c : Rˣ) :
+    quadraticNormSubgroup (a * c ^ 2) = quadraticNormSubgroup a := by
+  have key : ∀ x y : Rˣ, quadraticNormSubgroup (x * y ^ 2) ≤ quadraticNormSubgroup x := by
+    intro x y b hb
+    obtain ⟨z, hz⟩ := (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mp hb
+    have hx : ((x * y ^ 2 : Rˣ) : R) = (x : R) * (y : R) ^ 2 := by push_cast; ring
+    refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨z.re, (y : R) * z.im⟩, ?_⟩
+    rw [← hz]
+    simp only [QuadraticAlgebra.norm_def]
+    linear_combination (z.im * z.im) * hx
+  refine le_antisymm (key a c) ?_
+  have h := key (a * c ^ 2) c⁻¹
+  rwa [show a * c ^ 2 * (c⁻¹ : Rˣ) ^ 2 = a by group] at h
+
+end CommRing
+
+section Field
+
+variable {K : Type*} [Field K]
 
 /-- The Hilbert symbol is positive exactly on the quadratic norm subgroup. -/
 @[simp]
@@ -81,37 +141,6 @@ theorem hilbertSymbol_eq_signIndicator (a b : Kˣ) :
     have hindicator : (quadraticNormSubgroup a).signIndicator b ≠ 1 :=
       fun h ↦ hb ((quadraticNormSubgroup a).signIndicator_eq_one_iff.mp h)
     rw [Int.units_ne_iff_eq_neg.mp hhilbert, Int.units_ne_iff_eq_neg.mp hindicator]
-
-/-- Every square is a norm from a quadratic algebra. -/
-theorem square_le_quadraticNormSubgroup (a : Kˣ) :
-    Subgroup.square Kˣ ≤ quadraticNormSubgroup a := by
-  intro b hb
-  rw [← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup]
-  exact hilbertSymbol_eq_one_of_isSquare_right a (Subgroup.mem_square.mp hb)
-
-/-- The index of the quadratic norm subgroup divides the number of square classes. -/
-theorem quadraticNormSubgroup_index_dvd_square_index (a : Kˣ) :
-    (quadraticNormSubgroup a).index ∣ (Subgroup.square Kˣ).index :=
-  Subgroup.index_dvd_of_le (square_le_quadraticNormSubgroup a)
-
-/-- Finiteness of the square-class group implies finite index for the quadratic norm subgroup. -/
-theorem finiteIndex_quadraticNormSubgroup (a : Kˣ) [(Subgroup.square Kˣ).FiniteIndex] :
-    (quadraticNormSubgroup a).FiniteIndex :=
-  Subgroup.finiteIndex_of_le (square_le_quadraticNormSubgroup a)
-
-/-- The element `-a` is the norm of the square-root generator of `K[√a]`. -/
-theorem neg_self_mem_quadraticNormSubgroup (a : Kˣ) :
-    -a ∈ quadraticNormSubgroup a := by
-  rw [← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup]
-  exact hilbertSymbol_neg_self a
-
-/-- Rescaling the radicand by a square does not change the quadratic norm subgroup. -/
-@[simp]
-theorem quadraticNormSubgroup_mul_sq (a c : Kˣ) :
-    quadraticNormSubgroup (a * c ^ 2) = quadraticNormSubgroup a := by
-  ext b
-  rw [← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup,
-    ← hilbertSymbol_eq_one_iff_mem_quadraticNormSubgroup, hilbertSymbol_mul_sq_left]
 
 /-- The Hilbert symbol is multiplicative in its second argument exactly when the quadratic norm
 subgroup has index dividing two. -/
@@ -140,5 +169,7 @@ theorem ker_hilbertSymbolHom (a : Kˣ)
     (hindex : (quadraticNormSubgroup a).index ∣ 2) :
     (hilbertSymbolHom a hindex).ker = quadraticNormSubgroup a := by
   rw [hilbertSymbolHom, Subgroup.ker_signIndicatorHom]
+
+end Field
 
 end TauCeti
