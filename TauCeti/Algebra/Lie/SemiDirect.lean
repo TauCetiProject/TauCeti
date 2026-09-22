@@ -20,7 +20,7 @@ two descriptions.
 The twisting homomorphism is the adjoint action.  An ideal `S` of `L` is stable under `⁅x, -⁆` for
 every `x : L`, and the Jacobi identity says exactly that the resulting endomorphism of `S` is a Lie
 derivation; the assignment is itself a homomorphism of Lie algebras, so it gives
-`LieIdeal.adDerivation S : L →ₗ⁅R⁆ LieDerivation R S S`.  Restricting it along the inclusion of a
+`LieIdeal.ad S : L →ₗ⁅R⁆ LieDerivation R S S`.  Restricting it along the inclusion of a
 Lie subalgebra `H` produces the `ψ` that a semidirect sum needs, and when `S` and `H` are
 complementary as submodules, `(s, h) ↦ s + h` is an isomorphism `↥S ⋊⁅ψ⁆ ↥H ≃ₗ⁅R⁆ L`.
 
@@ -31,9 +31,9 @@ the other, and a theorem may be stated against the external form without loss.
 
 ## Main definitions
 
-* `LieIdeal.adDerivation`: the adjoint action of `L` on an ideal `S`, as a Lie homomorphism
+* `LieIdeal.ad`: the adjoint action of `L` on an ideal `S`, as a Lie homomorphism
   `L →ₗ⁅R⁆ LieDerivation R S S`.  The `ψ` attached to a Lie subalgebra `H` is the composite
-  `(LieIdeal.adDerivation S).comp H.incl`.
+  `(LieIdeal.ad S).comp H.incl`.
 * `LieIdeal.semiDirectSumHom`: the Lie homomorphism `↥S ⋊⁅ψ⁆ ↥H →ₗ⁅R⁆ L` given by `(s, h) ↦ s + h`.
 * `LieIdeal.semiDirectSumEquiv`: that homomorphism as an isomorphism, when the underlying
   submodules of `S` and `H` are complementary.
@@ -65,7 +65,7 @@ namespace LieIdeal
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-section AdDerivation
+section Ad
 
 variable (S : LieIdeal R L)
 
@@ -73,7 +73,7 @@ variable (S : LieIdeal R L)
 algebra of Lie derivations of that ideal.  The ideal is stable under `⁅x, -⁆`, and the Jacobi
 identity is both the Leibniz rule for each `⁅x, -⁆` and the statement that `x ↦ ⁅x, -⁆` preserves
 brackets. -/
-def adDerivation : L →ₗ⁅R⁆ LieDerivation R S S where
+def ad : L →ₗ⁅R⁆ LieDerivation R S S where
   toFun x :=
     { toLinearMap := LieModule.toEnd R L S x
       leibniz' := fun a b => by
@@ -90,9 +90,9 @@ def adDerivation : L →ₗ⁅R⁆ LieDerivation R S S where
     abel_nf
 
 @[simp]
-theorem adDerivation_apply_apply (x : L) (a : S) : adDerivation S x a = ⁅x, a⁆ := (rfl)
+theorem ad_apply_apply (x : L) (a : S) : ad S x a = ⁅x, a⁆ := (rfl)
 
-end AdDerivation
+end Ad
 
 section Internal
 
@@ -101,7 +101,7 @@ variable (S : LieIdeal R L) (H : LieSubalgebra R L)
 /-- The canonical map from the semidirect sum of an ideal `S` and a Lie subalgebra `H` of `L`,
 twisted by the adjoint action of `H` on `S`, back to `L`: it adds the two components.  It is a
 homomorphism of Lie algebras because the twist is the adjoint action. -/
-def semiDirectSumHom : (↥S ⋊⁅(adDerivation S).comp H.incl⁆ ↥H) →ₗ⁅R⁆ L where
+def semiDirectSumHom : (↥S ⋊⁅(ad S).comp H.incl⁆ ↥H) →ₗ⁅R⁆ L where
   toFun z := (z.left : L) + (z.right : L)
   map_add' z w := by
     simp only [LieAlgebra.SemiDirectSum.add_eq_mk]
@@ -113,40 +113,37 @@ def semiDirectSumHom : (↥S ⋊⁅(adDerivation S).comp H.incl⁆ ↥H) →ₗ�
     rfl
   map_lie' {z w} := by
     simp only [LieAlgebra.SemiDirectSum.lie_eq_mk, LieHom.comp_apply, LieSubalgebra.coe_incl,
-      adDerivation_apply_apply, LieIdeal.coe_bracket_of_module, LieSubmodule.coe_add,
+      ad_apply_apply, LieIdeal.coe_bracket_of_module, LieSubmodule.coe_add,
       LieSubmodule.coe_sub, LieSubmodule.coe_bracket, LieSubalgebra.coe_bracket]
     rw [add_lie, lie_add, lie_add, ← lie_skew (z.left : L) (w.right : L)]
     abel_nf
 
 @[simp]
-theorem semiDirectSumHom_apply (z : ↥S ⋊⁅(adDerivation S).comp H.incl⁆ ↥H) :
+theorem semiDirectSumHom_apply (z : ↥S ⋊⁅(ad S).comp H.incl⁆ ↥H) :
     semiDirectSumHom S H z = (z.left : L) + (z.right : L) := (rfl)
 
 variable {S H}
 
+-- `semiDirectSumHom S H` is, as a map of sets, the coproduct of the two inclusions precomposed
+-- with `LieAlgebra.SemiDirectSum.toProdl`, so its injectivity and surjectivity are exactly
+-- Mathlib's kernel and range computations for `LinearMap.coprod`.
 theorem semiDirectSumHom_injective (h : Disjoint S.toSubmodule H.toSubmodule) :
     Function.Injective (semiDirectSumHom S H) := by
-  intro z w hzw
-  simp only [semiDirectSumHom_apply] at hzw
-  -- the difference of the two `S`-components equals the difference of the two `H`-components,
-  -- so both lie in `S ⊓ H` and hence vanish
-  have hswap : (z.left : L) - (w.left : L) = (w.right : L) - (z.right : L) := by
-    rw [sub_eq_sub_iff_add_eq_add, hzw]
-    abel
-  have hleft : (z.left : L) = (w.left : L) := by
-    rw [← sub_eq_zero]
-    refine Submodule.disjoint_def.mp h _ (Submodule.sub_mem _ z.left.2 w.left.2) ?_
-    rw [hswap]
-    exact Submodule.sub_mem _ w.right.2 z.right.2
-  refine LieAlgebra.SemiDirectSum.ext (Subtype.ext hleft) (Subtype.ext ?_)
-  rwa [hleft, add_right_inj] at hzw
+  have hd : Disjoint (LinearMap.range S.toSubmodule.subtype)
+      (LinearMap.range H.toSubmodule.subtype) := by
+    rwa [Submodule.range_subtype, Submodule.range_subtype]
+  have hcoprod : Function.Injective (S.toSubmodule.subtype.coprod H.toSubmodule.subtype) := by
+    rw [← LinearMap.ker_eq_bot, LinearMap.ker_coprod_of_disjoint_range _ _ hd,
+      Submodule.ker_subtype, Submodule.ker_subtype, Submodule.prod_bot]
+  exact hcoprod.comp (LieAlgebra.SemiDirectSum.toProdl ((ad S).comp H.incl)).injective
 
 theorem semiDirectSumHom_surjective (h : Codisjoint S.toSubmodule H.toSubmodule) :
     Function.Surjective (semiDirectSumHom S H) := by
-  intro x
-  obtain ⟨s, hs, t, ht, hst⟩ :=
-    Submodule.mem_sup.mp (by rw [h.eq_top]; trivial : x ∈ S.toSubmodule ⊔ H.toSubmodule)
-  exact ⟨⟨⟨s, hs⟩, ⟨t, ht⟩⟩, hst⟩
+  have hcoprod : Function.Surjective (S.toSubmodule.subtype.coprod H.toSubmodule.subtype) := by
+    rw [← LinearMap.range_eq_top, LinearMap.range_coprod, Submodule.range_subtype,
+      Submodule.range_subtype]
+    exact h.eq_top
+  exact hcoprod.comp (LieAlgebra.SemiDirectSum.toProdl ((ad S).comp H.incl)).surjective
 
 theorem semiDirectSumHom_bijective (h : IsCompl S.toSubmodule H.toSubmodule) :
     Function.Bijective (semiDirectSumHom S H) :=
@@ -158,13 +155,15 @@ variable (S H)
 whose underlying submodules are complementary exhibit `L` as the semidirect sum of `S` and `H`,
 twisted by the adjoint action of `H` on `S`. -/
 noncomputable def semiDirectSumEquiv (h : IsCompl S.toSubmodule H.toSubmodule) :
-    (↥S ⋊⁅(adDerivation S).comp H.incl⁆ ↥H) ≃ₗ⁅R⁆ L :=
+    (↥S ⋊⁅(ad S).comp H.incl⁆ ↥H) ≃ₗ⁅R⁆ L :=
   LieEquiv.ofBijective _ (semiDirectSumHom_bijective h)
 
 @[simp]
 theorem semiDirectSumEquiv_apply (h : IsCompl S.toSubmodule H.toSubmodule)
-    (z : ↥S ⋊⁅(adDerivation S).comp H.incl⁆ ↥H) :
-    semiDirectSumEquiv S H h z = (z.left : L) + (z.right : L) := (rfl)
+    (z : ↥S ⋊⁅(ad S).comp H.incl⁆ ↥H) :
+    semiDirectSumEquiv S H h z = (z.left : L) + (z.right : L) :=
+  (LieEquiv.ofBijective_toFun _ (semiDirectSumHom_bijective h) z).trans
+    (semiDirectSumHom_apply S H z)
 
 theorem semiDirectSumEquiv_inl (h : IsCompl S.toSubmodule H.toSubmodule) (s : S) :
     semiDirectSumEquiv S H h (LieAlgebra.SemiDirectSum.inl _ s) = (s : L) := by
@@ -194,28 +193,36 @@ theorem semiDirectSumEquiv_symm_of_mem_right (h : IsCompl S.toSubmodule H.toSubm
     (semiDirectSumEquiv S H h).symm x = LieAlgebra.SemiDirectSum.inr _ ⟨x, hx⟩ :=
   semiDirectSumEquiv_symm_coe_right S H h ⟨x, hx⟩
 
+/-- The inverse of the recognition isomorphism is Mathlib's decomposition of an element of `L`
+along the complementary pair `S.toSubmodule`, `H.toSubmodule`, read as an element of the
+semidirect sum. -/
+theorem semiDirectSumEquiv_symm_apply (h : IsCompl S.toSubmodule H.toSubmodule) (x : L) :
+    (semiDirectSumEquiv S H h).symm x =
+      ⟨((Submodule.prodEquivOfIsCompl _ _ h).symm x).1,
+        ((Submodule.prodEquivOfIsCompl _ _ h).symm x).2⟩ := by
+  rw [LieEquiv.symm_apply_eq, semiDirectSumEquiv_apply]
+  exact ((Submodule.prodEquivOfIsCompl S.toSubmodule H.toSubmodule h).apply_symm_apply x).symm
+
 /-- The recognition isomorphism identifies the ideal `S` with the left factor: an element of `L`
 lies in `S` exactly when its preimage has vanishing right component. -/
+@[simp]
 theorem right_semiDirectSumEquiv_symm_eq_zero_iff (h : IsCompl S.toSubmodule H.toSubmodule)
     {x : L} : ((semiDirectSumEquiv S H h).symm x).right = 0 ↔ x ∈ S := by
-  refine ⟨fun hx => ?_, fun hx => by rw [semiDirectSumEquiv_symm_of_mem_left S H h hx]; rfl⟩
-  have hxx := (semiDirectSumEquiv S H h).apply_symm_apply x
-  rw [semiDirectSumEquiv_apply, hx, ZeroMemClass.coe_zero, add_zero] at hxx
-  exact hxx ▸ ((semiDirectSumEquiv S H h).symm x).left.2
+  rw [semiDirectSumEquiv_symm_apply]
+  exact Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero _ _ h
 
 /-- The recognition isomorphism identifies the Lie subalgebra `H` with the right factor: an element
 of `L` lies in `H` exactly when its preimage has vanishing left component. -/
+@[simp]
 theorem left_semiDirectSumEquiv_symm_eq_zero_iff (h : IsCompl S.toSubmodule H.toSubmodule)
     {x : L} : ((semiDirectSumEquiv S H h).symm x).left = 0 ↔ x ∈ H := by
-  refine ⟨fun hx => ?_, fun hx => by rw [semiDirectSumEquiv_symm_of_mem_right S H h hx]; rfl⟩
-  have hxx := (semiDirectSumEquiv S H h).apply_symm_apply x
-  rw [semiDirectSumEquiv_apply, hx, ZeroMemClass.coe_zero, zero_add] at hxx
-  exact hxx ▸ ((semiDirectSumEquiv S H h).symm x).right.2
+  rw [semiDirectSumEquiv_symm_apply]
+  exact Submodule.prodEquivOfIsCompl_symm_apply_fst_eq_zero _ _ h
 
 /-- The recognition theorem in the external form a splitting hypothesis is stated in: an ideal and
 a complementary Lie subalgebra make `L` isomorphic to a semidirect sum. -/
 theorem nonempty_lieEquiv_semiDirectSum (h : IsCompl S.toSubmodule H.toSubmodule) :
-    Nonempty (L ≃ₗ⁅R⁆ (↥S ⋊⁅(adDerivation S).comp H.incl⁆ ↥H)) :=
+    Nonempty (L ≃ₗ⁅R⁆ (↥S ⋊⁅(ad S).comp H.incl⁆ ↥H)) :=
   ⟨(semiDirectSumEquiv S H h).symm⟩
 
 /-- The recognition theorem with the twisting homomorphism existentially quantified, the form in
@@ -234,7 +241,8 @@ variable {R K L : Type*} [CommRing R] [LieRing K] [LieAlgebra R K] [LieRing L] [
 variable (ψ : L →ₗ⁅R⁆ LieDerivation R K K)
 
 /-- The range of the inclusion of the right factor consists of the elements whose left component
-vanishes. -/
+vanishes.  This is not a `simp` lemma: Mathlib's `LieHom.mem_range` is already `@[simp]` and
+rewrites the left-hand side to `∃ y, inr ψ y = z`. -/
 theorem mem_range_inr {z : K ⋊⁅ψ⁆ L} : z ∈ (inr ψ).range ↔ z.left = 0 := by
   rw [LieHom.mem_range]
   exact ⟨fun ⟨y, hy⟩ => hy ▸ rfl, fun hz => ⟨z.right, by ext <;> simp [hz]⟩⟩
@@ -244,17 +252,21 @@ projection onto the right factor is an ideal, the range of the inclusion of the 
 Lie subalgebra, and their underlying submodules are complementary. -/
 theorem isCompl_ker_projr_range_inr :
     IsCompl (LieSubmodule.toSubmodule (projr ψ).ker) (inr ψ).range.toSubmodule := by
-  constructor
-  · refine Submodule.disjoint_def.mpr fun z hz hz' => ?_
-    rw [LieSubmodule.mem_toSubmodule, LieHom.mem_ker] at hz
-    rw [LieSubalgebra.mem_toSubmodule, mem_range_inr] at hz'
-    exact LieAlgebra.SemiDirectSum.ext hz' hz
-  · refine codisjoint_iff.mpr (eq_top_iff.mpr fun z _ => ?_)
-    refine Submodule.mem_sup.mpr ⟨⟨z.left, 0⟩, ?_, ⟨0, z.right⟩, ?_, ?_⟩
-    · rw [LieSubmodule.mem_toSubmodule, LieHom.mem_ker]
-      rfl
-    · rw [LieSubalgebra.mem_toSubmodule, mem_range_inr]
-    · ext <;> simp
+  -- both submodules are pulled back from the two coordinate summands of `K × L` along the
+  -- underlying linear equivalence, so this is Mathlib's product complement, transported
+  have hker : LieSubmodule.toSubmodule (projr ψ).ker =
+      Submodule.comap (toProdl ψ : (K ⋊⁅ψ⁆ L) →ₗ[R] K × L)
+        (LinearMap.range (LinearMap.inl R K L)) := by
+    ext z
+    simp [LinearMap.mem_range, Prod.ext_iff, eq_comm]
+  have hrange : (inr ψ).range.toSubmodule =
+      Submodule.comap (toProdl ψ : (K ⋊⁅ψ⁆ L) →ₗ[R] K × L)
+        (LinearMap.range (LinearMap.inr R K L)) := by
+    ext z
+    rw [LieSubalgebra.mem_toSubmodule, mem_range_inr]
+    simp [LinearMap.mem_range, eq_comm]
+  rw [hker, hrange]
+  exact (Submodule.orderIsoMapComap (toProdl ψ)).symm.isCompl LinearMap.isCompl_range_inl_inr
 
 /-- Every external semidirect sum is reconstructed by the internal recognition theorem applied to
 the kernel of `projr` and the range of `inr`.  Nothing is lost by stating a splitting hypothesis in
