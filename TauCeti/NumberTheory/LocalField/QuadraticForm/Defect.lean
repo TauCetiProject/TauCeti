@@ -350,8 +350,7 @@ private theorem valuation_le_valuation_sub_sq {a : Kˣ}
 theorem defectExponent_of_odd {a : Kˣ} (ha : Odd (normalizedValuation K a).toAdd) :
     defectExponent a = (normalizedValuation K a).toAdd := by
   have ha' : ¬Even (normalizedValuation K a).toAdd := Int.not_even_iff_odd.mpr ha
-  have hsq : ¬IsSquare a := fun ⟨r, hr⟩ => ha' ⟨(normalizedValuation K r).toAdd, by
-    rw [hr, map_mul, toAdd_mul]⟩
+  have hsq : ¬IsSquare a := fun ha => ha' (even_toAdd_normalizedValuation_of_isSquare ha)
   refine le_antisymm ?_ (toAdd_normalizedValuation_le_defectExponent a)
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
   rw [← hxd, WithTop.coe_le_coe, toAdd_normalizedValuation_le_iff_valuation_le, hx]
