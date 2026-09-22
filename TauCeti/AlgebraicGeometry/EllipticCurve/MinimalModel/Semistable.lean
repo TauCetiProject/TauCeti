@@ -93,6 +93,29 @@ def IsSemistable (W : WeierstrassCurve F) [_hE : W.IsElliptic] : Prop :=
 
 variable {O}
 
+/-- Semistability means that every local minimal equation has no additive reduction. -/
+@[simp]
+theorem isSemistable_iff {W : WeierstrassCurve F} [W.IsElliptic] :
+    IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
+      ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
+        (Localization.AtPrime v.asIdeal) :=
+  Iff.rfl
+
+/-- A semistable curve has no additive reduction at any height-one prime. -/
+theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F} [W.IsElliptic]
+    (h : IsSemistable O W) (v : HeightOneSpectrum O) :
+    ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
+      (Localization.AtPrime v.asIdeal) :=
+  h v
+
+/-- A curve with no additive reduction at every height-one prime is semistable. -/
+theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F} [W.IsElliptic]
+    (h : ∀ v : HeightOneSpectrum O,
+      ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
+        (Localization.AtPrime v.asIdeal)) :
+    IsSemistable O W :=
+  h
+
 /-- **A curve is semistable exactly when it has good or multiplicative reduction at every
 height-one prime.** -/
 theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
