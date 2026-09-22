@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
@@ -21,9 +20,10 @@ coefficient of `u ^ p ^ e` is `1` and no higher power occurs, and it has *zero c
 when the exponent `p ^ 0 = 1` is the smallest one allowed, so that the polynomial is divisible
 by `u`.
 
-The theorem of this file is that every `x : L` admits such a polynomial in `ι x` that is central
-in `U(L)`, and that it automatically lies in the augmentation ideal `U⁺(L)`.  These elements are
-Hochschild's central `p`-polynomials: the commutative subalgebra they generate is what makes
+The theorem of this file is that, as soon as `Module.End R L` is a Noetherian `R`-module — over a
+field, as soon as `L` is finite-dimensional — every `x : L` admits such a polynomial in `ι x` that
+is central in `U(L)`, and that it automatically lies in the augmentation ideal `U⁺(L)`.  These
+elements are Hochschild's central `p`-polynomials: the commutative subalgebra they generate makes
 `U(L)` a finite module over a Noetherian commutative ring, and the two-sided ideal they generate
 is what the Krull intersection theorem is eventually applied to.
 
