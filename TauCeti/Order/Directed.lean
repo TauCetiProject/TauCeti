@@ -16,9 +16,9 @@ family of elements contains its own infimum: a minimal member of the family is b
 member, by directedness, so it *is* the infimum.
 
 Mathlib's nearest statement is `CompleteLattice.IsSupClosedCompact`, which concludes `sSup s ∈ s`
-from `WellFoundedGT` for a set closed under binary suprema. Directedness is weaker than closure —
-a chain is directed but rarely closed — and it is what descending filtrations supply, so the two
-do not subsume one another.
+from `WellFoundedGT` for a set closed under binary suprema. It is phrased for sup-closed sets, so
+it does not directly cover an arbitrary directed family — a chain is directed but rarely closed —
+and a directed family is what a descending filtration supplies.
 
 ## Main results
 
