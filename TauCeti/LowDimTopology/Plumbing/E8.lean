@@ -8,6 +8,7 @@ module
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.LowDimTopology.Plumbing.Weight.MinusTwo
 public import TauCeti.LowDimTopology.Plumbing.NegativeDefinite
 public import TauCeti.LowDimTopology.Plumbing.Tower
 
@@ -207,6 +208,35 @@ theorem e8Plumbing_isNegativeDefinite : e8Plumbing.IsNegativeDefinite := by
       Finset.sum_nonneg fun i _ => e8SquareTerm_nonneg x i
     nlinarith
   exact hx (eq_zero_of_e8SquareTerm_sum_eq_zero x hR)
+
+/-- The canonical characteristic weight of the `E₈` plumbing is half the negative
+intersection-form self-pairing. -/
+theorem e8Plumbing_characteristicWeight_canonical (x : Fin 8 → ℤ) :
+    e8Plumbing.characteristicWeight
+        ⟨e8Plumbing.canonicalCharacteristic,
+          e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ x =
+      -(e8Plumbing.intersectionForm x x / 2) :=
+  e8Plumbing.characteristicWeight_canonical_of_weight_eq_neg_two e8Plumbing_weight x
+
+/-- The canonical characteristic weight of the `E₈` plumbing is nonnegative and vanishes only
+at the zero lattice point. -/
+@[simp]
+theorem e8Plumbing_characteristicWeight_canonical_eq_zero_iff (x : Fin 8 → ℤ) :
+    e8Plumbing.characteristicWeight
+        ⟨e8Plumbing.canonicalCharacteristic,
+          e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ x = 0 ↔
+      x = 0 :=
+  e8Plumbing.characteristicWeight_canonical_eq_zero_iff_of_weight_eq_neg_two
+    e8Plumbing_isNegativeDefinite e8Plumbing_weight x
+
+/-- The canonical characteristic weight of the `E₈` plumbing has minimum zero. -/
+@[simp]
+theorem e8Plumbing_sInfCharacteristicWeight_canonical :
+    e8Plumbing.sInfCharacteristicWeight
+      ⟨e8Plumbing.canonicalCharacteristic,
+        e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ = 0 :=
+  e8Plumbing.sInfCharacteristicWeight_canonical_eq_zero_of_weight_eq_neg_two
+    e8Plumbing_isNegativeDefinite e8Plumbing_weight
 
 /-- The characteristic-two lattice homology of the `E₈` plumbing is nonzero in every spin^c
 structure. This is the roadmap's concrete negative-definite plumbing, the one whose lattice
