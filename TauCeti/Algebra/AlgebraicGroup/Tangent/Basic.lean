@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.Module.TransferInstance
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Convolution
+import TauCeti.Algebra.DualNumber.Convolution
 public import TauCeti.RingTheory.Derivation.DualNumber
 
 /-!
@@ -477,19 +478,6 @@ lemma Bialgebra.CounitAlgebra.toAlgHom_eq_one_ofConv :
 
 end BialgebraCommTargetPoint
 
-/-- Mirror of `Coalgebra.sum_counit_smul`: summing the counit of the right factors
-against the left factors of a comultiplication representative recovers the element.
-Mathlib has the left identity in both forms (`Coalgebra.sum_counit_smul`, point-free
-`Coalgebra.lift_lsmul_comp_counit_comp_comul`, sending `x ⊗ y` to `ε x • y`); this
-right identity `∑ ε (a₂) • a₁ = a` exists in neither form there and is derived from
-the closest mirror, `Coalgebra.sum_tmul_counit_eq`. -/
-private lemma sum_smul_counit {R C : Type*} [CommSemiring R] [AddCommMonoid C]
-    [Module R C] [Coalgebra R C] {c : C} {ι : Type*} (𝓡 : Coalgebra.Repr R c ι) :
-    ∑ x ∈ 𝓡.index, Coalgebra.counit (R := R) (𝓡.right x) • 𝓡.left x = c := by
-  simpa only [map_sum, TensorProduct.lift.tmul, LinearMap.flip_apply, LinearMap.lsmul_apply,
-    one_smul] using congr(TensorProduct.lift (LinearMap.lsmul R C).flip
-      $(Coalgebra.sum_tmul_counit_eq (R := R) 𝓡))
-
 section Hopf
 
 open TrivSqZeroExt WithConv _root_.Bialgebra Bialgebra.CounitAlgebra
@@ -540,35 +528,19 @@ private lemma snd_convMul_apply
     snd (R := CounitAlgebra R A B) ((ψ₁ * ψ₂).ofConv a) =
       snd (R := CounitAlgebra R A B) (ψ₁.ofConv a) +
         snd (R := CounitAlgebra R A B) (ψ₂.ofConv a) := by
-  classical
-  have key : (ψ₁ * ψ₂).ofConv a =
-      ∑ i ∈ (ℛ R a).index, ψ₁.ofConv ((ℛ R a).left i) * ψ₂.ofConv ((ℛ R a).right i) :=
-    (ℛ R a).convMul_apply (toConv ψ₁.ofConv.toLinearMap) (toConv ψ₂.ofConv.toLinearMap)
-  rw [key, snd_sum]
-  have expand : ∀ i ∈ (ℛ R a).index,
-      snd (R := CounitAlgebra R A B)
-          (ψ₁.ofConv ((ℛ R a).left i) * ψ₂.ofConv ((ℛ R a).right i)) =
-        counit (R := R) ((ℛ R a).left i) • snd (R := CounitAlgebra R A B)
-            (ψ₂.ofConv ((ℛ R a).right i)) +
-          counit (R := R) ((ℛ R a).right i) • snd (R := CounitAlgebra R A B)
-            (ψ₁.ofConv ((ℛ R a).left i)) := by
-    intro i _
-    rw [snd_mul, fst_apply_of_mem_tangentKer h₁, fst_apply_of_mem_tangentKer h₂, op_smul_eq_smul,
-      algebraMap_smul, algebraMap_smul]
-  rw [Finset.sum_congr rfl expand, Finset.sum_add_distrib, add_comm]
-  congr 1
-  · calc ∑ i ∈ (ℛ R a).index, counit (R := R) ((ℛ R a).right i) •
-          snd (R := CounitAlgebra R A B) (ψ₁.ofConv ((ℛ R a).left i))
-        = snd (R := CounitAlgebra R A B) (ψ₁.ofConv
-            (∑ i ∈ (ℛ R a).index, counit (R := R) ((ℛ R a).right i) • (ℛ R a).left i)) := by
-          simp [map_sum, map_smul, snd_sum, snd_smul]
-      _ = _ := by rw [sum_smul_counit]
-  · calc ∑ i ∈ (ℛ R a).index, counit (R := R) ((ℛ R a).left i) •
-          snd (R := CounitAlgebra R A B) (ψ₂.ofConv ((ℛ R a).right i))
-        = snd (R := CounitAlgebra R A B) (ψ₂.ofConv
-            (∑ i ∈ (ℛ R a).index, counit (R := R) ((ℛ R a).left i) • (ℛ R a).right i)) := by
-          simp [map_sum, map_smul, snd_sum, snd_smul]
-      _ = _ := by rw [Coalgebra.sum_counit_smul]
+  have hfst {ψ : WithConv (A →ₐ[R] DualNumber (CounitAlgebra R A B))}
+      (h : ψ ∈ tangentKer R A B) :
+      (fstHom R _ _).toLinearMap ∘ₗ ψ.ofConv.toLinearMap =
+        (1 : WithConv (A →ₗ[R] CounitAlgebra R A B)).ofConv := by
+    ext x
+    exact fst_apply_of_mem_tangentKer h x
+  have hprod := WithConv.snd_comp_convMul
+    (toConv ψ₁.ofConv.toLinearMap) (toConv ψ₂.ofConv.toLinearMap)
+  rw [hfst h₁, hfst h₂] at hprod
+  rw [← AlgHom.toLinearMap_convMul] at hprod
+  simpa only [toConv_ofConv, one_mul, mul_one, ofConv_add, LinearMap.add_apply,
+    LinearMap.comp_apply, LinearMap.restrictScalars_apply, sndHom_apply,
+    AlgHom.toLinearMap_apply, add_comm] using DFunLike.congr_fun hprod a
 
 private lemma toConv_mem_ker_iff
     {ψ₀ : A →ₐ[R] DualNumber (Bialgebra.CounitAlgebra R A B)} :

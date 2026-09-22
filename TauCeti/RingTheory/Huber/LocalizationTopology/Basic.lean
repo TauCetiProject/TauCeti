@@ -433,6 +433,7 @@ theorem hasDenominatorPower_of_isOpen_span [IsTopologicalRing A]
     rw [map_sum]
     exact Subring.sum_mem _ fun t ht ↦ hterm t ht
   exact hsum_mem
+
 /-! ### Passing to a denominator that is a multiple
 
 A localisation away from `u` maps to one away from a multiple `w = u * r`, and under that map `D`

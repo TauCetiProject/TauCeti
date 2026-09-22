@@ -342,6 +342,48 @@ theorem IsSelfIntersectionMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ 
   · rw [T.intersection_comm]
     exact ends q p (by omega) hp
 
+/-- In a proper chain with at least two components, the left-end row of an intersection sum
+has only its diagonal and adjacent terms. -/
+theorem IsSelfIntersectionMinusTwoChain.left_sum_eq {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
+    (ht : 1 < t) (y : ℕ → ℤ) :
+    ∑ j ∈ range t, T.intersection (c 0) (c j) * y j =
+      T.intersection (c 0) (c 0) * y 0 + T.intersection (c 0) (c 1) * y 1 := by
+  exact sum_range_eq_of_eq_zero_off_pair (by omega) (by omega) (by omega)
+    (fun j hj hj0 hj1 ↦ by
+      rw [hc.intersection_eq_zero hcard (by omega) hj (by omega) (by omega) (by omega), zero_mul])
+    rfl
+
+/-- In a proper chain, an interior row of an intersection sum has only its two adjacent terms
+and its diagonal term. -/
+theorem IsSelfIntersectionMinusTwoChain.interior_sum_eq {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
+    (y : ℕ → ℤ) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t) :
+    ∑ j ∈ range t, T.intersection (c i) (c j) * y j =
+      T.intersection (c i) (c (i - 1)) * y (i - 1) +
+        T.intersection (c i) (c i) * y i + T.intersection (c i) (c (i + 1)) * y (i + 1) := by
+  exact sum_range_eq_of_eq_zero_off_triple (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) (fun j hj hprev hself hnext ↦ by
+      rcases lt_or_gt_of_ne hself with hji | hji
+      · rw [T.intersection_comm,
+          hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul]
+      · rw [hc.intersection_eq_zero hcard (by omega) hj (by omega) (by omega) (by omega), zero_mul])
+    rfl
+
+/-- In a proper chain with at least two components, the right-end row of an intersection sum
+has only its diagonal and adjacent terms. -/
+theorem IsSelfIntersectionMinusTwoChain.right_sum_eq {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
+    (ht : 1 < t) (y : ℕ → ℤ) :
+    ∑ j ∈ range t, T.intersection (c (t - 1)) (c j) * y j =
+      T.intersection (c (t - 1)) (c (t - 2)) * y (t - 2) +
+        T.intersection (c (t - 1)) (c (t - 1)) * y (t - 1) := by
+  exact sum_range_eq_of_eq_zero_off_pair (by omega) (by omega) (by omega)
+    (fun j hj hprev hself ↦ by
+      rw [T.intersection_comm,
+        hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul])
+    rfl
+
 
 /-- The weight classification of a chain of components of self-intersection `-2w`. -/
 private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : ℕ) :
@@ -461,9 +503,6 @@ private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : �
     obtain ⟨γ, hγ, hγ₁, hγ₂⟩ := hendfactor (t - 1) (t - 2) (by omega) (by omega)
       (hint (t - 2) (by omega) (by omega))
       (by rw [T.intersection_comm]; exact hc.intersection_pos (by omega) (by omega)) hcaseₗ
-    have hchord : ∀ p q, p + 1 < q → q < t → T.intersection (c p) (c q) = 0 :=
-      fun p q h1 h2 ↦
-        hc.intersection_eq_zero hcard (by omega) h2 (by omega) (by omega) (by omega)
     set y : ℕ → ℤ := fun j ↦ if j = 0 then α else if j = t - 1 then γ else 2 with hydef
     have hy₀ : y 0 = α := by simp [hydef]
     have hyₗ : y (t - 1) = γ := by
@@ -486,48 +525,39 @@ private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : �
         exact hγ.le
     intro i hi
     rcases Nat.eq_zero_or_pos i with rfl | h1
-    · refine Eq.ge (sum_range_eq_of_eq_zero_off_pair (a := 0) (b := 1) (by omega) (by omega)
-        (by omega) (fun j hj _ hj₁ ↦ by rw [hchord 0 j (by omega) hj, zero_mul]) ?_)
-      rw [hy₀, hy₂ 1 (by omega) (by omega), hc.intersection_self 0 (by omega)]
+    · rw [hc.left_sum_eq hcard (by omega) y, hy₀, hy₂ 1 (by omega) (by omega),
+        hc.intersection_self 0 (by omega)]
       linarith [hα₁]
     rcases eq_or_lt_of_le (Nat.succ_le_of_lt h1) with rfl | h2
-    · refine Eq.ge (sum_range_eq_of_eq_zero_off_triple (a := 0) (b := 1) (d := 2)
-        (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-        (fun j hj _ _ hj₂ ↦ by rw [hchord 1 j (by omega) hj, zero_mul]) ?_)
-      rw [T.intersection_comm (c 1) (c 0), hy₀, hy₂ 1 (by omega) (by omega),
+    · rw [hc.interior_sum_eq hcard y (i := 1) (by omega) (by omega),
+        T.intersection_comm (c 1) (c 0), hy₀, hy₂ 1 (by omega) (by omega),
         hy₂ 2 (by omega) (by omega), hc.intersection_self 1 (by omega),
         hint 1 (by omega) (by omega), hmidedge 1 2 (by omega) (by omega) (by omega)]
       linarith [hα₂]
     rcases lt_or_ge i (t - 2) with h3 | h3
-    · refine Eq.ge (sum_range_eq_of_eq_zero_off_triple (a := i - 1) (b := i) (d := i + 1) (by omega)
-        (by omega) (by omega) (by omega) (by omega) (by omega)
-        (fun j hj _ _ _ ↦ by
-          rcases lt_or_ge j i with hji | hji
-          · rw [T.intersection_comm, hchord j i (by omega) (by omega), zero_mul]
-          · rw [hchord i j (by omega) hj, zero_mul]) ?_)
-      rw [T.intersection_comm (c i) (c (i - 1)), hy₂ (i - 1) (by omega) (by omega),
+    · rw [hc.interior_sum_eq hcard y (i := i) (by omega) (by omega),
+        T.intersection_comm (c i) (c (i - 1)), hy₂ (i - 1) (by omega) (by omega),
         hy₂ i (by omega) (by omega), hy₂ (i + 1) (by omega) (by omega),
         hmidedge (i - 1) i (by omega) (by omega) (by omega),
         hmidedge i (i + 1) (by omega) (by omega) (by omega),
         hc.intersection_self i (by omega), hint i (by omega) (by omega)]
-      ring
+      ring_nf
+      exact le_rfl
     rcases eq_or_lt_of_le h3 with h4 | h4
     · obtain rfl : i = t - 2 := h4.symm
-      refine Eq.ge (sum_range_eq_of_eq_zero_off_triple
-        (a := t - 3) (b := t - 2) (d := t - 1) (by omega) (by omega) (by omega)
-        (by omega) (by omega) (by omega)
-        (fun j hj _ _ _ ↦ by
-          rw [T.intersection_comm, hchord j (t - 2) (by omega) (by omega), zero_mul]) ?_)
-      rw [T.intersection_comm (c (t - 2)) (c (t - 3)), T.intersection_comm (c (t - 2)) (c (t - 1)),
+      have hthird_last : t - 2 - 1 = t - 3 := by omega
+      have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
+      rw [hc.interior_sum_eq hcard y (i := t - 2) (by omega) (by omega),
+        hthird_last, hpenultimate_succ,
+        T.intersection_comm (c (t - 2)) (c (t - 3)),
+        T.intersection_comm (c (t - 2)) (c (t - 1)),
         hy₂ (t - 3) (by omega) (by omega), hy₂ (t - 2) (by omega) (by omega), hyₗ,
         hmidedge (t - 3) (t - 2) (by omega) (by omega) (by omega),
         hc.intersection_self (t - 2) (by omega), hint (t - 2) (by omega) (by omega)]
       linarith [hγ₂]
     · obtain rfl : i = t - 1 := by omega
-      refine Eq.ge (sum_range_eq_of_eq_zero_off_pair (a := t - 2) (b := t - 1) (by omega) (by omega)
-        (by omega) (fun j hj _ _ ↦ by
-          rw [T.intersection_comm, hchord j (t - 1) (by omega) (by omega), zero_mul]) ?_)
-      rw [hy₂ (t - 2) (by omega) (by omega), hyₗ, hc.intersection_self (t - 1) (by omega)]
+      rw [hc.right_sum_eq hcard (by omega) y, hy₂ (t - 2) (by omega) (by omega), hyₗ,
+        hc.intersection_self (t - 1) (by omega)]
       linarith [hγ₁]
 
 /-- The weights along a chain of components of self-intersection `-2w` in a numerical type with
