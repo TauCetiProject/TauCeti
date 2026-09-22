@@ -94,7 +94,6 @@ def IsSemistable (W : WeierstrassCurve F) [_hE : W.IsElliptic] : Prop :=
 variable {O}
 
 /-- Semistability means that every local minimal equation has no additive reduction. -/
-@[simp]
 theorem isSemistable_iff {W : WeierstrassCurve F} [W.IsElliptic] :
     IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
