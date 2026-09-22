@@ -77,15 +77,13 @@ theorem gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive
       · simp
 
 /-- The Gauss sum of a primitive Dirichlet character against a primitive additive character is
-nonzero in characteristic zero. -/
+nonzero when the level is nonzero in the coefficient ring. -/
 theorem gaussSum_ne_zero_of_isPrimitive
-    {R : Type*} [CommRing R] [IsDomain R] [CharZero R] {n : ℕ} [NeZero n]
+    {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
     {chi : DirichletCharacter R n} (hchi : IsPrimitive chi)
-    {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
+    {e : AddChar (ZMod n) R} (he : e.IsPrimitive)
+    (hcard : (Fintype.card (ZMod n) : R) ≠ 0) :
     gaussSum chi e ≠ 0 := by
-  have hcard : (Fintype.card (ZMod n) : R) ≠ 0 := by
-    rw [ZMod.card]
-    exact Nat.cast_ne_zero.mpr (NeZero.ne n)
   intro hzero
   apply hcard
   rw [← gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hchi he, hzero, zero_mul]
