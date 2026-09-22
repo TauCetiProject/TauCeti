@@ -545,8 +545,10 @@ private lemma exists_weight_eq_except_one_end_aux (T : NumericalType.{u}) (t : �
       exact le_rfl
     rcases eq_or_lt_of_le h3 with h4 | h4
     · obtain rfl : i = t - 2 := h4.symm
+      have hthird_last : t - 2 - 1 = t - 3 := by omega
+      have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
       rw [hc.interior_sum_eq hcard y (i := t - 2) (by omega) (by omega),
-        show t - 2 - 1 = t - 3 by omega, show t - 2 + 1 = t - 1 by omega,
+        hthird_last, hpenultimate_succ,
         T.intersection_comm (c (t - 2)) (c (t - 3)),
         T.intersection_comm (c (t - 2)) (c (t - 1)),
         hy₂ (t - 3) (by omega) (by omega), hy₂ (t - 2) (by omega) (by omega), hyₗ,

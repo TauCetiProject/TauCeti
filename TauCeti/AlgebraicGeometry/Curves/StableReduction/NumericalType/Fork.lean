@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Chain
-import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
@@ -118,11 +117,13 @@ private lemma chain_branch_last (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     by_cases hlast : j + 1 = t - 1
     · have hjc : j = t - 2 := by omega
       subst j
-      simp only [show t - 2 ≠ t - 1 by omega,
-        show t - 2 + 1 = t - 1 by omega, ↓reduceIte]
+      have hpenultimate_ne_last : t - 2 ≠ t - 1 := by omega
+      have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
+      simp only [hpenultimate_ne_last, hpenultimate_succ, ↓reduceIte]
       exact hf.branch_intersection_pos
     · have hj' : j + 1 < t - 1 := by omega
-      simp only [show j ≠ t - 1 by omega, ne_of_lt hj', ↓reduceIte]
+      have hj_ne_last : j ≠ t - 1 := by omega
+      simp only [hj_ne_last, ne_of_lt hj', ↓reduceIte]
       exact hf.toIsSelfIntersectionMinusTwoChain.intersection_succ_pos j hj
 
 /-- The extra leaf of a fork whose chain has length at least three meets no chain component other
@@ -165,7 +166,8 @@ private lemma affine_interior_sum_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork
       ∑ j ∈ range t, T.intersection (c i) (c j) * y j :=
     Finset.sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
   have hprev : T.intersection (c (i - 1)) (c i) = w := by
-    simpa only [show i - 1 + 1 = i by omega] using hedge (i - 1) (by omega) (by omega)
+    have hprev_succ : i - 1 + 1 = i := by omega
+    simpa only [hprev_succ] using hedge (i - 1) (by omega) (by omega)
   rw [sum_range_succ, hd_lt hit, hd_t, hprefix,
     hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y (by omega) (by omega),
     hyInterior (j := i - 1) (by omega) (by omega), hyInterior (j := i) (by omega) (by omega),
@@ -191,9 +193,11 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   have hchainCard : t < Fintype.card T.Component := by omega
   have hw₂ := hinterior (t - 2) (by omega) (by omega)
   have ha₃₂ : T.intersection (c (t - 3)) (c (t - 2)) = w := by
-    simpa only [show t - 3 + 1 = t - 2 by omega] using hedge (t - 3) (by omega) (by omega)
+    have hthird_last_succ : t - 3 + 1 = t - 2 := by omega
+    simpa only [hthird_last_succ] using hedge (t - 3) (by omega) (by omega)
   have ha₂₁ : T.intersection (c (t - 2)) (c (t - 1)) = w := by
-    simpa only [show t - 2 + 1 = t - 1 by omega] using hedge (t - 2) (by omega) (by omega)
+    have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
+    simpa only [hpenultimate_succ] using hedge (t - 2) (by omega) (by omega)
   have hchainSum {i : ℕ} (hi : i < t) :
       (∑ j ∈ range t, T.intersection (c i) (d j) * y j) =
         ∑ j ∈ range t, T.intersection (c i) (c j) * y j :=
@@ -232,10 +236,12 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     exact hrow1.ge
   have hforkRow :
       0 ≤ ∑ j ∈ range (t + 1), T.intersection (d (t - 2)) (d j) * y j := by
+    have hthird_last : t - 2 - 1 = t - 3 := by omega
+    have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
     rw [sum_range_succ, hd_lt (by omega), hd_t, hchainSum (by omega),
       hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y
         (i := t - 2) (by omega) (by omega),
-      show t - 2 - 1 = t - 3 by omega, show t - 2 + 1 = t - 1 by omega,
+      hthird_last, hpenultimate_succ,
       hyInterior (i := t - 3) (by omega) (by omega),
       hyInterior (i := t - 2) (by omega) (by omega), hyLast,
       T.intersection_comm (c (t - 2)) (c (t - 3)), ha₃₂,
@@ -324,8 +330,12 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
     have hyInterior {i : ℕ} (hi : 0 < i) (hit : i + 1 < t) : y i = 2 := by
       simp [y, ne_of_gt hi, hit]
     have hyLast : y (t - 1) = 1 := by
-      simp [y, show t - 1 ≠ 0 by omega, show ¬t - 1 + 1 < t by omega]
-    have hyt : y t = 1 := by simp [y, show t ≠ 0 by omega]
+      have hlast_ne_zero : t - 1 ≠ 0 := by omega
+      have hlast_not_interior : ¬ t - 1 + 1 < t := by omega
+      simp [y, hlast_ne_zero, hlast_not_interior]
+    have hyt : y t = 1 := by
+      have ht_ne_zero : t ≠ 0 := by omega
+      simp [y, ht_ne_zero]
     have hinj : ∀ i < t + 1, ∀ j < t + 1, d i = d j → i = j := by
       simpa only [d] using hf.injOn_snoc
     have hrow : ∀ i < t + 1,
