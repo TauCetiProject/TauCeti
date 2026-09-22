@@ -44,7 +44,7 @@ applicable.
 * `LinearMap.exists_mkQ_comp_injective_of_directed`: the form the applications use — an embedding
   of an Artinian module into `M` stays injective after passing to the quotient by a single member
   of a family whose infimum is `⊥`.
-* `Ideal.exists_inf_restrictScalars_pow_eq_bot`: the specialization to the powers of a
+* `Ideal.exists_forall_inf_restrictScalars_pow_eq_bot`: the specialization to the powers of a
   (one- or two-sided) ideal of an algebra, viewed as submodules over the base ring.
 -/
 
@@ -151,8 +151,8 @@ No commutativity of `A` and no two-sidedness of `I` is needed: the powers of a l
 antitone, and the statement concerns their underlying `R`-submodules. This is the shape taken by
 the separation of a finite-dimensional Lie algebra from the powers of the central ideal of its
 universal enveloping algebra. -/
-theorem exists_inf_restrictScalars_pow_eq_bot (I : Ideal A) (W : Submodule R A) [IsArtinian R W]
-    (h : ⨅ n : ℕ, I ^ n = ⊥) :
+theorem exists_forall_inf_restrictScalars_pow_eq_bot (I : Ideal A) (W : Submodule R A)
+    [IsArtinian R W] (h : ⨅ n : ℕ, I ^ n = ⊥) :
     ∃ n : ℕ, ∀ m : ℕ, n ≤ m → W ⊓ (I ^ m).restrictScalars R = ⊥ := by
   refine Submodule.exists_forall_inf_eq_bot_of_antitone W _
     (fun _ _ hmn ↦ Submodule.restrictScalars_mono R (pow_le_pow_right hmn)) ?_
