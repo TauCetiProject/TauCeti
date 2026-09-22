@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Growth
+public import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 public import Mathlib.RingTheory.LaurentSeries
 
 /-!
@@ -68,6 +69,7 @@ theorem twistedQExpansion_coeff (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) (
 
 /-- The constant coefficient of the twisted q-expansion is the value of the twisted extension
 at the cusp. -/
+@[simp]
 theorem twistedQExpansion_coeff_zero (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) :
     (twistedQExpansion D k f).coeff 0 = twistedExtension D k f 0 := by
   rw [twistedQExpansion_coeff]
@@ -108,6 +110,7 @@ theorem laurentQExpansion_coeff_eq_zero_of_lt_neg (D : Γ.CuspDatum) (k : ℤ) (
 
 /-- The coefficient at the lowest permitted exponent is the value of the twisted extension at
 the cusp. -/
+@[simp]
 theorem laurentQExpansion_coeff_neg (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) :
     (laurentQExpansion D k f).coeff (-k) = twistedExtension D k f 0 := by
   simpa using (laurentQExpansion_coeff_natCast_sub D k f 0).trans
@@ -176,24 +179,10 @@ theorem hasSum_laurentQExpansion_natCast_sub_iff (D : Γ.CuspDatum) {k k' : ℤ}
     (hkk' : k ≤ k') (f : ℍ → ℂ) {q s : ℂ} :
     HasSum (fun j : ℤ ↦ (laurentQExpansion D k f).coeff j * q ^ j) s ↔
       HasSum (fun n : ℕ ↦
-        (laurentQExpansion D k f).coeff ((n : ℤ) - k') * q ^ ((n : ℤ) - k')) s := by
-  let g : ℕ → ℤ := fun n ↦ (n : ℤ) - k'
-  have hg : Function.Injective g := by
-    intro m n hmn
-    simp only [g] at hmn
-    omega
-  have hoff : ∀ j ∉ Set.range g,
-      (laurentQExpansion D k f).coeff j * q ^ j = 0 := by
-    intro j hj
-    have hjlt : j < -k' := by
-      by_contra hjlt
-      apply hj
-      use (j + k').toNat
-      simp only [g]
-      omega
-    rw [laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (lt_of_lt_of_le hjlt (by omega)),
+        (laurentQExpansion D k f).coeff ((n : ℤ) - k') * q ^ ((n : ℤ) - k')) s :=
+  hasSum_int_iff_natCast_sub fun j hj ↦ by
+    rw [laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (lt_of_lt_of_le hj (by omega)),
       zero_mul]
-  simpa only [Function.comp_def, g] using (hg.hasSum_iff hoff).symm
 
 /-- The Laurent q-expansion, summed over all integer exponents, converges to the cusp extension
 throughout the punctured unit disc. -/
@@ -237,26 +226,6 @@ theorem hasSum_laurentQExpansion_coordinate (D : Γ.CuspDatum) (k : ℤ) (f : �
     hasSum_laurentQExpansion D k f hf hhol hbound (coordinate_ne_zero D z)
       (norm_coordinate_lt_one D z)
 
-private theorem hasSum_int_iff_natCast_sub {k : ℤ} {c : ℤ → ℂ}
-    (hc : ∀ j < -k, c j = 0) {q s : ℂ} :
-    HasSum (fun j : ℤ ↦ c j * q ^ j) s ↔
-      HasSum (fun n : ℕ ↦ c ((n : ℤ) - k) * q ^ ((n : ℤ) - k)) s := by
-  let g : ℕ → ℤ := fun n ↦ (n : ℤ) - k
-  have hg : Function.Injective g := by
-    intro m n hmn
-    simp only [g] at hmn
-    omega
-  have hoff : ∀ j ∉ Set.range g, c j * q ^ j = 0 := by
-    intro j hj
-    have hjlt : j < -k := by
-      by_contra hjlt
-      apply hj
-      use (j + k).toNat
-      simp only [g]
-      omega
-    rw [hc j hjlt, zero_mul]
-  simpa only [Function.comp_def, g] using (hg.hasSum_iff hoff).symm
-
 /-- A Laurent series supported in exponents at least `-k` and converging to `f` in the cusp
 coordinate has the coefficients of `laurentQExpansion D k f`. -/
 theorem laurentQExpansion_coeff_unique (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
@@ -286,7 +255,8 @@ theorem laurentQExpansion_coeff_unique (D : Γ.CuspDatum) (k : ℤ) (f : ℍ →
     · intro z
       have hsum' := hsum (D.scaling⁻¹ • z)
       rw [coordinate_inv_smul] at hsum'
-      have hreindexed := (hasSum_int_iff_natCast_sub hc).mp hsum'
+      have hreindexed := (hasSum_int_iff_natCast_sub fun j hj ↦ by
+        rw [hc j hj, zero_mul]).mp hsum'
       have hscaled := hreindexed.mul_left (Function.Periodic.qParam D.width z ^ k)
       simp only [F, ContinuousMap.coe_mk]
       rw [cuspTwist_inv_smul D k f z]
