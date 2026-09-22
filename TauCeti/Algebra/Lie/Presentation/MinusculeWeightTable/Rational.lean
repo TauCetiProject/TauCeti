@@ -37,6 +37,8 @@ a representation of the rational Serre algebra on the rational coordinate space 
   the one at the image node.
 * `TauCeti.MinusculeWeightTable.isSerreSystemQ`: the rational generators satisfy the Serre
   relations of the table's Cartan matrix.
+* `TauCeti.MinusculeWeightTable.isSl2TripleQ`: the rational generators at a nonzero node form an
+  `sl₂` triple.
 
 ## References
 
@@ -184,6 +186,27 @@ theorem isSerreSystemQ :
   have hF : matrixIntCastLieHom ℚ ∘ T.loweringMatrix = T.loweringMatrixQ := rfl
   rw [hH, hE, hF] at h
   exact h.changeScalars
+
+omit [DecidableEq B] in
+/-- At a node carrying a weight of coordinate `-1`, the rational Cartan, raising, and lowering
+matrices form an `sl₂` triple. -/
+theorem isSl2TripleQ (i : B) (hi : ∃ a, T.weight a i = -1) :
+    _root_.IsSl2Triple
+      (T.cartanGeneratorMatrixQ i) (T.raisingMatrixQ i) (T.loweringMatrixQ i) := by
+  classical
+  obtain ⟨a, ha⟩ := hi
+  refine
+    { h_ne_zero := ?_
+      lie_e_f := T.isSerreSystemQ.lie_E_F_self i
+      lie_h_e_nsmul := ?_
+      lie_h_f_nsmul := ?_ }
+  · intro hzero
+    have h := congrFun (congrFun hzero a) a
+    simp [ha] at h
+  · rw [T.isSerreSystemQ.lie_H_E, T.cartanMatrix_diag]
+    simp
+  · rw [T.isSerreSystemQ.lie_H_F, T.cartanMatrix_diag]
+    simp
 
 /-- The rational representation of the Serre presentation named by a minuscule weight table. -/
 noncomputable def rationalSerreRepresentation :
