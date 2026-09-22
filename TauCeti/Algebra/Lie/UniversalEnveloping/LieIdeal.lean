@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.Lie.Engel
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Module
-public import TauCeti.RingTheory.Ideal.Operations
-public import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 import TauCeti.Algebra.Lie.Nilradical
+import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Lie ideals in universal enveloping algebras
