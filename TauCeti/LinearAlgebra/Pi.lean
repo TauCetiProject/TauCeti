@@ -10,11 +10,12 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
-# Disjointness of `Submodule.pi` supports
+# Supports and determinants of finite dependent products
 
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `ι → M` consists of the families
 vanishing outside `s` — the `Pi` analogue of `Finsupp.supported`. This file records that
-complementary supports meet in `⊥`.
+complementary supports meet in `⊥`. It also records the determinant of a coordinatewise
+endomorphism of a finite dependent product, which is used in finite-product norm calculations.
 
 Mathlib has `Set.disjoint_pi`, but that is about `Set.pi` and characterises disjointness through
 the fibres; it says nothing about the submodules cut out by a support condition.
@@ -23,6 +24,8 @@ the fibres; it says nothing about the submodules cut out by a support condition.
 
 * `Submodule.disjoint_pi_compl_bot_of_disjoint`: disjoint index sets give disjoint submodules of
   families vanishing outside them.
+* `LinearMap.det_pi_of_apply_eq_dependent`: the determinant of a coordinatewise endomorphism of a
+  finite dependent product is the product of the determinants on its factors.
 -/
 
 namespace Submodule
