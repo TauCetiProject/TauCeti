@@ -62,11 +62,10 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 variable (O : Type*) [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
-/-- **The defect ideal** `𝔍_W = ∏ᵥ 𝔭ᵥ ^ fᵥ(W)` of an integral Weierstrass equation.
-The local obstruction exponents are nonnegative under the integrality hypothesis, so their
-natural-number parts lose no information. -/
-noncomputable def weierstrassDefectIdeal (W : WeierstrassCurve K) [W.IsElliptic]
-    [IsIntegral O W] : Ideal O :=
+/-- **The defect ideal** `𝔍_W = ∏ᵥ 𝔭ᵥ ^ fᵥ(W)` of a Weierstrass equation.
+For integral equations the local obstruction exponents are nonnegative, so their natural-number
+parts lose no information. -/
+noncomputable def weierstrassDefectIdeal (W : WeierstrassCurve K) [W.IsElliptic] : Ideal O :=
   ∏ᶠ v : HeightOneSpectrum O, v.asIdeal ^ (obstructionExponentAt O v W).toNat
 
 /-- **Only finitely many local obstruction exponents of an integral equation are nonzero.**
