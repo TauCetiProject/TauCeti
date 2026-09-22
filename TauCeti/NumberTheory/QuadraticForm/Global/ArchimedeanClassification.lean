@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 public import TauCeti.NumberTheory.QuadraticForm.Global.Signature
 
@@ -62,6 +61,7 @@ section RealPlace
 
 /-- **Sylvester's law of inertia at a real place.** Two regular quadratic forms become isometric
 at a real place exactly when their signatures there agree. -/
+@[simp]
 theorem equivalent_atRealPlace_iff_realSignature_eq (hQ : Q.Nondegenerate) (hR : R.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Equivalent (R.atRealPlace w) ↔ Q.realSignature w = R.realSignature w := by
