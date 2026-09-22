@@ -46,13 +46,6 @@ namespace PlumbingGraph
 
 variable {V : Type*} (P : PlumbingGraph V)
 
-/-- If every plumbing framing is `-2`, the canonical characteristic covector is zero. -/
-theorem canonicalCharacteristic_eq_zero_of_weight_eq_neg_two
-    (hweight : ∀ v : V, P.weight v = -2) : P.canonicalCharacteristic = 0 := by
-  funext v
-  rw [P.canonicalCharacteristic_apply, hweight]
-  simp
-
 variable [DecidableEq V] [Fintype V]
 
 /-- For an all-`-2` plumbing, the canonical characteristic weight is half the negative
@@ -63,9 +56,7 @@ theorem characteristicWeight_canonical_of_weight_eq_neg_two
         ⟨P.canonicalCharacteristic, P.isCharacteristicVector_canonicalCharacteristic⟩ x =
       -(P.intersectionForm x x / 2) := by
   rw [P.characteristicWeight_def, P.characteristicWeightNumerator_def,
-    show (↑(⟨P.canonicalCharacteristic,
-      P.isCharacteristicVector_canonicalCharacteristic⟩ : P.characteristicVectors) : V → ℤ) =
-        P.canonicalCharacteristic from rfl]
+    P.canonicalCharacteristicVector_val]
   simp_rw [congrFun (P.canonicalCharacteristic_eq_zero_of_weight_eq_neg_two hweight)]
   simp
 
@@ -77,9 +68,7 @@ theorem two_mul_characteristicWeight_canonical_of_weight_eq_neg_two
         ⟨P.canonicalCharacteristic, P.isCharacteristicVector_canonicalCharacteristic⟩ x =
       -P.intersectionForm x x := by
   rw [P.two_mul_characteristicWeight, P.characteristicWeightNumerator_def,
-    show (↑(⟨P.canonicalCharacteristic,
-      P.isCharacteristicVector_canonicalCharacteristic⟩ : P.characteristicVectors) : V → ℤ) =
-        P.canonicalCharacteristic from rfl]
+    P.canonicalCharacteristicVector_val]
   simp_rw [congrFun (P.canonicalCharacteristic_eq_zero_of_weight_eq_neg_two hweight)]
   simp
 
