@@ -9,7 +9,9 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
+public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
 # Invariants of a discrete module as a module over a quotient
@@ -28,7 +30,8 @@ inclusions and coefficient-map functoriality. What this file adds is the topolog
 finite-level facts the tower needs — directedness over the open normal subgroups and continuity of
 the discrete quotient action — together with the two facts inflation needs, namely continuity of
 the `G ⧸ H`-action for an *arbitrary* normal `H` over a continuously acting `G`, and continuity of
-the inclusion `M ^ H ↪ M`.
+the inclusion `M ^ H ↪ M`. It also identifies the explicit fixed-point coefficient object with
+the quotient invariants of the corresponding object in the discrete-module dictionary.
 
 The fixed-point functoriality and finite-level facts are first stated for an additive monoid with a
 distributive `G`-action, then specialized to `FixedPoints.addSubgroup` for additive groups; an
@@ -49,6 +52,9 @@ unbundled classes freely.
   `H` of a group with a topology acting continuously on a discrete module, the quotient `G ⧸ H`
   acts continuously on `M ^ H`; no compatibility of the topology of `G` with its group structure
   is used.
+* `TauCeti.ofDiscreteModuleQuotient`: the coefficient dictionary identifies the explicit
+  fixed-point module with `TopRep.quotientToInvariants`, compatibly with both inclusions into the
+  ambient coefficient module.
 * `TauCeti.ContCohomology.fixedPointsInclusion_continuousFiniteQuotientMap_smul`: the inclusion
   `M^U → M^V` for open normal subgroups `V ≤ U` commutes with the actions along the continuous
   quotient map `G ⧸ V → G ⧸ U`.
@@ -62,7 +68,7 @@ inclusion form the compatible pair used by finite-quotient cohomology transition
 
 public section
 
-open MulAction
+open CategoryTheory MulAction
 
 namespace TauCeti
 
@@ -212,5 +218,77 @@ instance continuousSMulQuotientFixedPointsOfContinuousSMul (H : Subgroup G) [H.N
     exact (continuous_id.smul continuous_const : Continuous fun g : G => g • (m : M))
 
 end ArbitraryNormalSubgroup
+
+section Dictionary
+
+variable (G : Type*) [Group G]
+variable (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M]
+
+private def fixedPointsToCanonicalInvariants (H : Subgroup G) [H.Normal] :
+    FixedPoints.addSubgroup H M →L[ℤ]
+      ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype).invariants :=
+  { toLinearMap :=
+      { toFun := fun m =>
+          ⟨(m : M), fun h => by
+            -- Normalize the canonical invariant condition to the fixed-point condition.
+            change (h : G) • (m : M) = (m : M)
+            exact (FixedPoints.mem_addSubgroup H M (m : M)).1 m.2 h⟩
+        map_add' := fun _ _ => rfl
+        map_smul' := fun _ _ => rfl }
+    cont := continuous_of_discreteTopology }
+
+private theorem fixedPointsToCanonicalInvariants_apply (H : Subgroup G) [H.Normal]
+    (m : FixedPoints.addSubgroup H M) :
+    (fixedPointsToCanonicalInvariants G M H m).1 = (m : M) :=
+  rfl
+
+/-- **The coefficient dictionary commutes with quotient invariants.** The explicit fixed-point
+module `M^H`, regarded as a discrete module over `G ⧸ H`, maps canonically to the invariants of
+the restricted canonical object. Its underlying function preserves the coefficient in `M`; only
+the two equivalent proofs of invariance differ.
+
+This is the coefficient morphism used to compare explicit and canonical inflation. -/
+def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
+    ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M) ⟶
+      TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H :=
+  TopRep.ofHom
+    { toContinuousLinearMap := fixedPointsToCanonicalInvariants G M H
+      isIntertwining' q := by
+        induction q using QuotientGroup.induction_on with
+        | H g =>
+          ext m
+          -- Evaluate both sides on a quotient representative and their underlying coefficients.
+          change
+            (fixedPointsToCanonicalInvariants G M H
+                ((ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M)).ρ
+                  (QuotientGroup.mk g) m)).1 =
+              (((ofDiscreteModule ℤ G M).ρ.quotientToInvariants H)
+                (QuotientGroup.mk g) (fixedPointsToCanonicalInvariants G M H m)).1
+          simp only [fixedPointsToCanonicalInvariants]
+          rw [ContRepresentation.coe_quotientToInvariants_mk_apply,
+            ofDiscreteModule_ρ_apply_apply]
+          exact congrArg (fun x : FixedPoints.addSubgroup H M => (x : M))
+            (coe_quotient_smul_fixedPoints_addSubgroup g m) }
+
+/-- The quotient-invariants dictionary morphism preserves the underlying coefficient. -/
+@[simp]
+theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
+    (m : FixedPoints.addSubgroup H M) :
+    (ofDiscreteModuleQuotient G M H m).1 = (m : M) :=
+  fixedPointsToCanonicalInvariants_apply G M H m
+
+/-- Including the quotient-invariants dictionary morphism into the ambient canonical object
+preserves the underlying coefficient. This is the pointwise coefficient identity in the
+compatible pair defining inflation. -/
+@[simp]
+theorem quotientToInvariantsι_ofDiscreteModuleQuotient_apply
+    (H : Subgroup G) [H.Normal] (m : FixedPoints.addSubgroup H M) :
+    TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) H
+        (ofDiscreteModuleQuotient G M H m) = (m : M) := by
+  rw [TopRep.quotientToInvariantsι_apply]
+  exact ofDiscreteModuleQuotient_apply G M H m
+
+end Dictionary
 
 end TauCeti
