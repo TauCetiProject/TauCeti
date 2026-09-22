@@ -35,10 +35,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-local instance : MeasurableSpace E := borel E
-local instance : MeasurableSpace M := borel M
-local instance : BorelSpace E := ⟨rfl⟩
-local instance : BorelSpace M := ⟨rfl⟩
+/-- The Borel measurable space on the model vector space, used in this file. -/
+local instance extChartAtMeasurableSpaceE : MeasurableSpace E := borel E
+
+/-- The Borel measurable space on the manifold, used in this file. -/
+local instance extChartAtMeasurableSpaceM : MeasurableSpace M := borel M
+
+/-- The model vector space's measurable space is its Borel measurable space. -/
+local instance extChartAtBorelSpaceE : BorelSpace E := ⟨rfl⟩
+
+/-- The manifold's measurable space is its Borel measurable space. -/
+local instance extChartAtBorelSpaceM : BorelSpace M := ⟨rfl⟩
 
 /-- The extended chart at `x`, restricted to its source, is a measurable embedding for the Borel
 measurable spaces. -/

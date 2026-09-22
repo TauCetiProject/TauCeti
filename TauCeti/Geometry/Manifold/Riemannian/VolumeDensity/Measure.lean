@@ -52,10 +52,17 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-local instance : MeasurableSpace E := borel E
-local instance : MeasurableSpace M := borel M
-local instance : BorelSpace E := ⟨rfl⟩
-local instance : BorelSpace M := ⟨rfl⟩
+/-- The Borel measurable space on the model vector space, used for chart volume. -/
+local instance chartVolumeMeasurableSpaceE : MeasurableSpace E := borel E
+
+/-- The Borel measurable space on the manifold, used for chart volume. -/
+local instance chartVolumeMeasurableSpaceM : MeasurableSpace M := borel M
+
+/-- The model vector space's measurable space is its Borel measurable space. -/
+local instance chartVolumeBorelSpaceE : BorelSpace E := ⟨rfl⟩
+
+/-- The manifold's measurable space is its Borel measurable space. -/
+local instance chartVolumeBorelSpaceM : BorelSpace M := ⟨rfl⟩
 
 /-- The local Riemannian volume measure supplied by the preferred chart at `α`. It is supported
 on the source of that chart. -/
@@ -85,13 +92,13 @@ theorem chartRiemannianVolume_apply (α : M) {s : Set M} (hs : MeasurableSet s) 
 /-- A chart volume measure is supported on the source of its chart. -/
 @[simp]
 theorem chartRiemannianVolume_restrict_source (α : M) :
-    (chartRiemannianVolume (I := I) α).restrict (extChartAt I α).source =
+    (chartRiemannianVolume (I := I) α).restrict (chartAt H α).source =
       chartRiemannianVolume (I := I) α := by
   ext s hs
   rw [Measure.restrict_apply hs, chartRiemannianVolume_apply α
-    (hs.inter (isOpen_extChartAt_source α).measurableSet), chartRiemannianVolume_apply α hs]
+    (hs.inter (chartAt H α).open_source.measurableSet), chartRiemannianVolume_apply α hs]
   congr 2
-  simp only [inter_assoc, inter_self]
+  simp only [extChartAt_source, inter_assoc, inter_self]
 
 /-- The local Riemannian volume measures supplied by two preferred charts agree on their overlap.
 This is the cocycle condition needed to descend the local coordinate measures to the manifold. -/
