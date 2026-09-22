@@ -505,6 +505,7 @@ theorem typeAStandardQuadraticModule_pairing_intCast (j k : ℤ) :
 
 /-- In the standard `A₂` discriminant module, the quadratic value of a symbol is `0` at zero
 and `1/3` at either nonzero symbol. -/
+@[simp]
 theorem typeAStandardQuadraticModule_two_quadratic (a : ZMod 3) :
     (typeAStandardQuadraticModule 2).quadratic a =
       (((if a ≠ 0 then 1 else 0 : ℚ) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
