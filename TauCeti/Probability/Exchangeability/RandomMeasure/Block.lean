@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.Probability.Exchangeability.RandomMeasure.Basic
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.Probability.Exchangeability.Basic
 import TauCeti.Probability.Exchangeability.FullyExchangeable
 import TauCeti.Probability.Exchangeability.Map
 
@@ -28,7 +28,7 @@ width.
 
 These block marginals retain each finite-dimensional marginal of the random path law, rather than
 only its one-coordinate marginals. A block of width `n * m` canonically splits into `n` consecutive
-blocks of width `m` along `TauCeti.Probability.blockSplitEquiv`; the restriction identities below
+blocks of width `m` along `TauCeti.MeasureTheory.blockSplitEquiv`; the restriction identities below
 make the finite-dimensional systems at different widths compatible. They are the input for
 comparing the conditional directing laws obtained at those widths.
 
@@ -38,9 +38,9 @@ comparing the conditional directing laws obtained at those widths.
   `m`-coordinate marginals;
 * `MeasureTheory.ProbabilityMeasure.codedBlockMarginals` -- those marginals in the canonical
   measurable code;
-* `MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSplitEquiv` -- the joint law of
+* `MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMarginals_mul` -- the joint law of
   the split large block is the law of the corresponding consecutive small blocks;
-* `MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockRestriction` -- each component of
+* `MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul` -- each component of
   that joint law is the corresponding small block marginal;
 * `TauCeti.Probability.fullyExchangeable_blockMarginals_of_invariant` -- invariance of the random
   path-measure law makes the block marginals fully exchangeable;
@@ -114,7 +114,7 @@ private theorem blockIndex_mul (m n : ℕ) [NeZero m] [NeZero n]
 /-- **A large block is the joint law of its consecutive smaller blocks.** Splitting the `i`-th
 block of width `n * m` gives the `n` consecutive width-`m` blocks numbered
 `i * n, ..., i * n + n - 1`, with their dependence retained. -/
-theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSplitEquiv
+theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMarginals_mul
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n] (i : ℕ) :
     (P.blockMarginals (n * m) i).map (blockSplitEquiv α m n) =
       P.map (fun x (r : Fin n) j => x ((Nat.divModEquiv m).symm (i * n + r, j))) := by
@@ -130,7 +130,7 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockSpli
 
 /-- **Restriction compatibility for block marginals.** The `r`-th width-`m` subblock of the
 `i`-th width-`n * m` block is the width-`m` block numbered `i * n + r`. -/
-theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockRestriction
+theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n]
     (i : ℕ) (r : Fin n) :
     (P.blockMarginals (n * m) i).map (blockRestriction (α := α) m n r) =
@@ -143,7 +143,7 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_mul_map_blockRest
   have h := congrArg
     (fun Q : ProbabilityMeasure (Fin n → Fin m → α) =>
       (Q.map fun x => x r).toMeasure)
-    (P.blockMarginals_mul_map_blockSplitEquiv m n i)
+    (P.map_blockSplitEquiv_blockMarginals_mul m n i)
   simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply] at h ⊢
   rw [Measure.map_map (measurable_pi_apply r) (blockSplitEquiv α m n).measurable] at h
   rw [Measure.map_map (μ := P.toMeasure) (g := fun x => x r)
