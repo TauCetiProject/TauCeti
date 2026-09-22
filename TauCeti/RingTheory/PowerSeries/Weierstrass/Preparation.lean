@@ -67,13 +67,12 @@ namespace TauCeti.PowerSeries
 
 section NormedRing
 
-variable {R : Type*} [NormedRing R] [IsUltrametricDist R] [NormMulClass R] [Nontrivial R]
-  {c : ℝ} {s : ℕ}
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {s : ℕ}
 
 /-- A unit of the ring of restricted power series at a positive radius is distinguished of
 degree `0`: its constant coefficient strictly dominates every positive-degree weighted coefficient
 and attains the Gauss norm. -/
-theorem isDistinguished_zero_of_isUnit (hc : 0 < c)
+theorem isDistinguished_zero_of_isUnit [Nontrivial R] (hc : 0 < c)
     {x : PowerSeries.IsRestricted.subring (R := R) c} (hx : IsUnit x) :
     IsDistinguished c 0 (x : PowerSeries R) := by
   obtain ⟨y, hxy⟩ := hx.exists_right_inv
@@ -104,6 +103,7 @@ unchanged. -/
 theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R := R) c}
     {g : PowerSeries R} (h : IsDistinguished c s ((u : PowerSeries R) * g)) (hc : 0 < c)
     (hu : IsUnit u) : IsDistinguished c s g := by
+  let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
   obtain ⟨w, rfl⟩ := hu
   obtain ⟨v, hv, hvu⟩ : ∃ v : PowerSeries.IsRestricted.subring (R := R) c, IsUnit v ∧
       (v : PowerSeries R) * ((w : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)
@@ -126,7 +126,7 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] {c : ℝ} {s : ℕ} {
 /-- **The units of the ring of restricted power series.** Over a complete nonarchimedean field, a
 restricted power series is a unit of the ring of series restricted at a positive radius `c`
 exactly when it is distinguished of degree `0` at `c`. -/
-theorem isUnit_iff_isDistinguished_zero [CompleteSpace K] (hc : 0 < c)
+@[simp] theorem isUnit_iff_isDistinguished_zero [CompleteSpace K] (hc : 0 < c)
     (x : PowerSeries.IsRestricted.subring (R := K) c) :
     IsUnit x ↔ IsDistinguished c 0 (x : PowerSeries K) := by
   refine ⟨isDistinguished_zero_of_isUnit hc, fun hx ↦ ?_⟩
