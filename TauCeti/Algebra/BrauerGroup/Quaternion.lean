@@ -77,7 +77,7 @@ noncomputable def quaternionCSA (a b : Kˣ) : CSA K :=
   CSA.of K ℍ[K,(a : K),(b : K)]
 
 /-- The bundled algebra underlying `quaternionCSA` is the corresponding quaternion symbol. -/
-theorem quaternionCSA_def (a b : Kˣ) :
+@[simp] theorem quaternionCSA_def (a b : Kˣ) :
     quaternionCSA a b = CSA.of K ℍ[K,(a : K),(b : K)] := (rfl)
 
 /-- The Brauer class of the quaternion symbol `(a,b)`. -/

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 public import Mathlib.Algebra.QuaternionBasis
 import Mathlib.Tactic.LinearCombination
@@ -110,7 +109,7 @@ private theorem completeSquareInvBasis_lift_apply_j (a b c : R) :
   simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 /-- **Completing the square in a quaternion algebra.** The change of generators
-`i ↦ ⅟ 2 * (b + i)` identifies `ℍ[R,a,b,c]` with the unit-parameter presentation
+`i ↦ ⅟ 2 * (b + i)` identifies `ℍ[R,a,b,c]` with the zero-linear-term presentation
 `ℍ[R,QuadraticAlgebra.discr a b,0,c]`. -/
 def completeSquareEquiv (a b c : R) :
     ℍ[R,a,b,c] ≃ₐ[R] ℍ[R,QuadraticAlgebra.discr a b,0,c] :=

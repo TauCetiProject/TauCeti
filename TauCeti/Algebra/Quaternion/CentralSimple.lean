@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Central.Basic
-public import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 public import Mathlib.RingTheory.SimpleRing.Basic
-public import TauCeti.Algebra.Quaternion.SymbolEquiv
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
