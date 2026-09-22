@@ -199,9 +199,10 @@ theorem pushClass_apply (x : Additive (ClassGroup W₁.CoordinateRing)) :
   (rfl)
 
 /-- **The identity isogeny induces the identity on class groups.** Its intermediate ring is the
-coordinate ring itself, so extending an ideal into it and norming it back down leaves the ideal's
-class unchanged: the norm of an extension is the `Module.finrank`-th power, and that rank is
-one. -/
+coordinate ring itself, so extending a class into it and norming it back down leaves the class
+unchanged: the norm of an extension is the `Module.finrank`-th power
+(`ClassGroup.relNorm_extendedHom`), and that rank is one
+(`Isogeny.finrank_intermediateRing_id_eq_one`). -/
 @[simp]
 theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
     [IsIntegrallyClosed W.CoordinateRing] :
@@ -221,17 +222,15 @@ theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
     (Isogeny.id W).moduleFinite_intermediateRing h
   have : Module.IsTorsionFree W.CoordinateRing (Isogeny.id W).intermediateRing :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (toIntermediateRing_injective _)
-  have key := Ideal.relNorm0_extendedIdeal (R := W.CoordinateRing)
-    (S := (Isogeny.id W).intermediateRing)
-  rw [finrank_intermediateRing_id_eq_one] at key
-  simp only [pow_one] at key
   refine MonoidHom.ext fun c ↦ ?_
-  obtain ⟨I, rfl⟩ := ClassGroup.mk0_surjective c
-  rw [pushClassMonoidHom_mk0, MonoidHom.id_apply]
+  have key : ClassGroup.relNorm (R := W.CoordinateRing)
+      (ClassGroup.extendedHom W.CoordinateRing (Isogeny.id W).intermediateRing c) = c := by
+    rw [ClassGroup.relNorm_extendedHom, finrank_intermediateRing_id_eq_one, pow_one]
+  rw [pushClassMonoidHom, ClassGroup.extendedRelNormHom_apply, MonoidHom.id_apply]
   -- `key` norms along `toIntermediateRing`, the goal along `pullbackToIntermediateRing`; the two
   -- sides agree once those algebra structures are identified, which is the single goal `convert`
   -- leaves behind (`rw` cannot do it: the norm's scalar-tower argument depends on the structure)
-  convert congrArg ClassGroup.mk0 (key I) using 4
+  convert key using 3
   exact congrArg RingHom.toAlgebra (id_pullbackToIntermediateRing W)
 
 /-- **The identity isogeny induces the identity**, additively. -/

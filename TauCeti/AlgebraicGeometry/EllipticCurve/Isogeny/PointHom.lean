@@ -49,8 +49,9 @@ comparison, and functoriality in `φ` beyond the identity, are separate statemen
 
 ⚠ *mathlib-track*, as for `Isogeny.pushClass` below it: the construction — conjugate the
 class-group map induced by extension and relative norm by the point--class dictionary — is
-D. Angdinata's shared isogeny development's `toPointHom`, built here until its PRs land. The
-identity law is proved here, from `Isogeny.pushClass_id`.
+adapted from D. Angdinata's shared isogeny development, `Isogeny.lean`, by David Kurniadi
+Angdinata, declaration `toPointHom`, restated in the coordinate-ring form this repository gives
+`pushClass`. The identity law is proved here, from `Isogeny.pushClass_id`.
 
 ## References
 
@@ -80,7 +81,9 @@ noncomputable def toPointHom : W₁.Point →+ W₂.Point :=
 
 /-- The induced map, unfolded: push the class of `P` forward and read the result as a point. The
 definition's body is not exposed across the module boundary, so this is how a downstream module
-computes with it; `toClass_toPointHom` is the form that avoids the inverse equivalence. -/
+computes with it — and, being `@[simp]`, the only way `simp` can reach inside `toPointHom` at
+all; `toClass_toPointHom` is the form that avoids the inverse equivalence. -/
+@[simp]
 theorem toPointHom_apply (P : W₁.Point) :
     φ.toPointHom P = Point.toClassEquiv.symm (φ.pushClass P.toClass) := by
   -- `toClassEquiv` is not exposed, so its application is rewritten rather than unfolded; what is
@@ -104,7 +107,11 @@ theorem toPointHom_eq_iff {P : W₁.Point} {Q : W₂.Point} :
   exact Point.toClass_injective.eq_iff.symm
 
 /-- **A point lands at infinity exactly when its class dies in the target.** This is the kernel of
-the induced map, in class-group terms. -/
+the induced map, in class-group terms.
+
+Not `@[simp]`: `toPointHom_apply` is, and through it `simp` already rewrites both sides of this
+iff to the same normal form, so tagging this too makes it a lemma `simp` can prove — which the
+`simpNF` linter rejects. -/
 theorem toPointHom_eq_zero_iff {P : W₁.Point} :
     φ.toPointHom P = 0 ↔ φ.pushClass P.toClass = 0 := by
   rw [toPointHom_eq_iff, map_zero]
