@@ -73,6 +73,26 @@ theorem localizationToCompletionIntegers_algebraMap (v : HeightOneSpectrum R) (x
       algebraMap R (v.adicCompletionIntegers K) x :=
   by simp [localizationToCompletionIntegers]
 
+/-- The map `R_v → 𝒪_v` sends a fraction to its numerator times the inverse of its denominator. -/
+@[simp]
+theorem localizationToCompletionIntegers_mk' (v : HeightOneSpectrum R) (x : R)
+    (y : v.asIdeal.primeCompl) :
+    (v.localizationToCompletionIntegers (K := K)
+        (IsLocalization.mk' (Localization.AtPrime v.asIdeal) x y) : v.adicCompletion K) =
+      (algebraMap R (v.adicCompletionIntegers K) x : v.adicCompletion K) *
+        (algebraMap R (v.adicCompletionIntegers K) y : v.adicCompletion K)⁻¹ := by
+  have hy : (algebraMap R (v.adicCompletionIntegers K) y : v.adicCompletion K) ≠ 0 := by
+    intro hy
+    have hy' : algebraMap R (v.adicCompletionIntegers K) y = 0 := Subtype.ext hy
+    have : (y : R) = 0 :=
+      (FaithfulSMul.algebraMap_injective R (v.adicCompletionIntegers K)) (by simpa using hy')
+    exact (Ideal.mem_primeCompl_iff.mp y.2) (this ▸ v.asIdeal.zero_mem)
+  apply (eq_mul_inv_iff_mul_eq₀ hy).2
+  have h := congrArg (v.localizationToCompletionIntegers (K := K))
+    (IsLocalization.mk'_spec (Localization.AtPrime v.asIdeal) x y)
+  simp only [map_mul, localizationToCompletionIntegers_algebraMap] at h
+  exact congrArg Subtype.val h
+
 /-- The canonical map `R_v → 𝒪_v` is injective. -/
 theorem localizationToCompletionIntegers_injective (v : HeightOneSpectrum R) :
     Function.Injective (v.localizationToCompletionIntegers (K := K)) := by
