@@ -18,9 +18,11 @@ degree four.
 
 ## Main results
 
-* `TauCeti.TransitiveGroupLabel.natCard_mem_three`, `TauCeti.TransitiveGroupLabel.natCard_mem_four`,
-  `TauCeti.TransitiveGroupLabel.natCard_mem_five`: the order of a subgroup labelled `3Tj`, `4Tj`,
-  respectively `5Tj`, is one of `3, 6`, `4, 8, 12, 24`, and `5, 10, 20, 60, 120`.
+* `TauCeti.TransitiveGroupLabel.natCard_mem_three`,
+  `TauCeti.TransitiveGroupLabel.natCard_mem_four`: the order of a subgroup labelled `3Tj` or
+  `4Tj` is one of `3, 6` or `4, 8, 12, 24`, respectively. In degree five the corresponding
+  fact follows from `TauCeti.natCard_mem_of_natCard_eq_five_of_isPretransitive` and
+  `TauCeti.TransitiveGroupLabel.isPretransitive`.
 * `TauCeti.transitiveGroupLabel_three_iff_natCard_eq`,
   `TauCeti.transitiveGroupLabel_five_iff_natCard_eq`: in degrees three and five the order
   recognizes the label.
@@ -71,25 +73,6 @@ theorem TransitiveGroupLabel.natCard_mem_four {j : TransitiveGroupIndex 4}
   · rw [h.natCard_eq, natCard_referenceSubgroup_four_three]
     simp
   · rw [h.natCard_eq, natCard_referenceSubgroup_four_four]
-    simp
-
-/-- **The order of a labelled subgroup of `S₅` is one of `5, 10, 20, 60, 120`.** These are the
-orders `5, 10, 20, 60, 120` of the labels `5T1` through `5T5`. -/
-theorem TransitiveGroupLabel.natCard_mem_five {j : TransitiveGroupIndex 5}
-    {G : Subgroup (Perm (Fin 5))} (h : TransitiveGroupLabel j G) :
-    Nat.card G ∈ ({5, 10, 20, 60, 120} : Finset ℕ) := by
-  obtain ⟨a, ha⟩ := j
-  rw [numTransitiveGroups_five] at ha
-  interval_cases a
-  · rw [h.natCard_eq, natCard_referenceSubgroup_five_zero]
-    simp
-  · rw [h.natCard_eq, natCard_referenceSubgroup_five_one]
-    simp
-  · rw [h.natCard_eq, natCard_referenceSubgroup_five_two]
-    simp
-  · rw [h.natCard_eq, natCard_referenceSubgroup_five_three]
-    simp
-  · rw [h.natCard_eq, natCard_referenceSubgroup_five_four]
     simp
 
 /-- **Order recognition in degree three.** A transitive subgroup of `S₃` is labelled `3Tj`

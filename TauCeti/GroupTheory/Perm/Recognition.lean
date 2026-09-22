@@ -239,40 +239,12 @@ private theorem cycleType_eq_two_three_of_orderOf_eq_six {σ : Equiv.Perm α}
 /-- A permutation of order `3` on five points is a three-cycle. -/
 private theorem isThreeCycle_of_orderOf_eq_three {σ : Equiv.Perm α}
     (hcard : Fintype.card α = 5) (hσ : orderOf σ = 3) : Equiv.Perm.IsThreeCycle σ := by
-  have hsum : σ.cycleType.sum ≤ 5 := by
-    have := σ.sum_cycleType_le
-    rwa [hcard] at this
-  have hdvd : ∀ n ∈ σ.cycleType, n = 3 := by
-    intro n hn
-    have hn2 : 2 ≤ n := Equiv.Perm.two_le_of_mem_cycleType hn
-    have hnd : n ∣ 3 := by
-      have := Equiv.Perm.dvd_of_mem_cycleType hn
-      rwa [hσ] at this
-    have hn3 : n ≤ 3 := Nat.le_of_dvd (by omega) hnd
-    interval_cases n <;> first
-      | exact rfl
-      | exact absurd hnd (by decide)
-  have hex3 : (3 : ℕ) ∈ σ.cycleType := by
-    by_contra h
-    have hall : ∀ n ∈ σ.cycleType, n ∣ 1 := by
-      intro n hn
-      obtain rfl := hdvd n hn
-      exact absurd hn h
-    have h1 : σ.cycleType.lcm ∣ 1 := Multiset.lcm_dvd.mpr hall
-    rw [Equiv.Perm.lcm_cycleType, hσ] at h1
+  obtain ⟨n, hn⟩ := Equiv.Perm.cycleType_prime_order (hσ ▸ Nat.prime_three)
+  have hn0 : n = 0 := by
+    have hsum := σ.sum_cycleType_le
+    rw [hn, hσ, Multiset.sum_replicate, nsmul_eq_mul, Nat.cast_id, hcard] at hsum
     omega
-  obtain ⟨m, hm⟩ := Multiset.exists_cons_of_mem hex3
-  have hm0 : m = 0 := by
-    by_contra hne
-    obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hne
-    obtain ⟨t, ht⟩ := Multiset.exists_cons_of_mem hx
-    have hx3 : x = 3 := hdvd x (by rw [hm]; simp [hx])
-    rw [hm, ht] at hsum
-    simp only [Multiset.sum_cons] at hsum
-    omega
-  change σ.cycleType = {3}
-  rw [hm, hm0]
-  rfl
+  simp [Equiv.Perm.IsThreeCycle, hn, hσ, hn0]
 
 /-- **A transitive subgroup of `S₅` containing an element of order `3` contains the alternating
 group.** On five points an element of order `3` is a three-cycle, so a primitive criterion
