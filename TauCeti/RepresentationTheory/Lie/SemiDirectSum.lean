@@ -80,6 +80,9 @@ nilradicals of `S` and of the ambient algebra.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Appendix E, Proposition E.5.
+* S. Asgarli, [*Ado's Theorem*](https://personal.math.ubc.ca/~reichst/Ado%27s-Theorem.pdf) --
+  the extension of a representation of the ideal across a split extension, and the kernel
+  control that makes the extension iterable.
 -/
 
 public section
