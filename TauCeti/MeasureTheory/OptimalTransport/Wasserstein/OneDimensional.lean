@@ -95,16 +95,16 @@ theorem lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub (μ ν : Measure
   rw [lintegral_enorm_sub_eq_lintegral_measure_symmDiff _
     (Measure.measurable_quantile μ).aemeasurable (Measure.measurable_quantile ν).aemeasurable]
   refine lintegral_congr fun s ↦ ?_
+  have huIoc : Set.uIoc (cdf μ s) (cdf ν s)
+      = Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s)) := by rw [Set.uIoc]
   have hset : ({t | μ.quantile t ≤ s} ∆ {t | ν.quantile t ≤ s}) ∩ Ioo (0 : ℝ) 1
       = Ioc (min (cdf μ s) (cdf ν s)) (max (cdf μ s) (cdf ν s)) ∩ Ioo (0 : ℝ) 1 := by
     ext t
-    simp only [mem_inter_iff, Set.mem_symmDiff, Set.mem_ofPred_eq, mem_Ioc, mem_Ioo,
+    simp only [mem_inter_iff, Set.mem_symmDiff, Set.mem_ofPred_eq, ← huIoc, Set.mem_uIoc, mem_Ioo,
       and_congr_left_iff]
     rintro ⟨ht0, ht1⟩
     rw [Measure.quantile_le_iff μ ht0 ht1, Measure.quantile_le_iff ν ht0 ht1]
-    change ((t ≤ cdf μ s ∧ ¬t ≤ cdf ν s) ∨ (t ≤ cdf ν s ∧ ¬t ≤ cdf μ s)) ↔
-      t ∈ Set.uIoc (cdf μ s) (cdf ν s)
-    simp only [Set.mem_uIoc, not_le, and_comm, or_comm]
+    simp only [not_le, and_comm, or_comm]
   have hmeas : MeasurableSet ({t | μ.quantile t ≤ s} ∆ {t | ν.quantile t ≤ s}) :=
     (measurableSet_le (Measure.measurable_quantile μ) measurable_const).symmDiff
       (measurableSet_le (Measure.measurable_quantile ν) measurable_const)
