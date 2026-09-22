@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Data
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.NumberTheory.LSeries.Deriv
 
 /-!
 # The analytic Euler product of an ideal arithmetic function

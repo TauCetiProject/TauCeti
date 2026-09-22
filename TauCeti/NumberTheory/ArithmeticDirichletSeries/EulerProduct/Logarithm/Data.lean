@@ -42,7 +42,7 @@ vanishes for some `s`.
 
 * `TauCeti.EulerProductData.summable_eulerFactor_sub_one`: the local Euler factors differ from `1`
   by a summable error.
-* `TauCeti.EulerProductData.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le`: the deviation of a
+* `TauCeti.EulerProductData.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re`: the deviation of a
   local factor from `1` is uniformly bounded on a right half-plane by a prime-power tail.
 * `TauCeti.EulerProductData.eulerFactor_ne_zero_of_tsum_norm_lt_one` and
   `TauCeti.EulerProductData.finite_setOf_eulerFactor_eq_zero`: a local factor whose prime-power
@@ -119,7 +119,7 @@ theorem norm_eulerFactor_sub_one_le {P : HeightOneSpectrum (𝓞 K)}
 /-- **The local Euler factors approach `1` uniformly on a half-plane of absolute convergence.**
 To the right of a point `w` of absolute convergence, the deviation of the local factor at `P` from
 `1` is bounded, independently of the point, by the prime-power tail at `P` computed at `w`. -/
-theorem norm_eulerFactor_sub_one_le_tsum_norm_of_re_le {w z : ℂ}
+theorem norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re {w z : ℂ}
     (hw : Summable (idealTerm K D.toIdealArithmeticFunction w)) (hz : w.re ≤ z.re)
     (P : HeightOneSpectrum (𝓞 K)) :
     ‖D.eulerFactor P z - 1‖ ≤ ∑' e : ℕ,

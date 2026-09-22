@@ -111,7 +111,8 @@ theorem hasSum_logDeriv_eulerFactor {s : ℂ}
     ‖idealTerm K D.toIdealArithmeticFunction (σ : ℂ) (P.primeIdealPow (e + 1))‖
   have hbsum : Summable b := summable_tsum_norm_idealTerm_primeIdealPow_succ hσconv
   have hble : ∀ P : HeightOneSpectrum (𝓞 K), ∀ z ∈ U, ‖D.eulerFactor P z - 1‖ ≤ b P :=
-    fun P z hz ↦ D.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le hσconv (by simpa using hz.le) P
+    fun P z hz ↦ D.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re hσconv
+      (by simpa using hz.le) P
   -- the primes at which the majorant does control the logarithm; the others are finite in number
   set T : Set (HeightOneSpectrum (𝓞 K)) := {P | b P < 1 / 2}
   have hfin : Tᶜ.Finite := Filter.eventually_cofinite.mp
