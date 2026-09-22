@@ -608,6 +608,22 @@ theorem IsLagrangian.eq_orthogonalComplement {H : AddSubgroup A} (hH : A.IsLagra
     H = A.toFiniteBilinearModule.orthogonalComplement H :=
   A.toFiniteBilinearModule.isLagrangian_def H |>.mp hH.2
 
+/-- A quadratically isotropic subgroup of a nondegenerate finite quadratic module is Lagrangian
+when its squared order is the order of the ambient module. -/
+theorem IsIsotropic.isLagrangian_of_card_sq_eq {H : AddSubgroup A}
+    (hH : A.IsIsotropic H) (hA : A.IsNondegenerate)
+    (hcard : Nat.card H ^ 2 = Nat.card A) : A.IsLagrangian H := by
+  refine ⟨hH, A.toFiniteBilinearModule.isLagrangian_def H |>.mpr ?_⟩
+  apply AddSubgroup.eq_of_le_of_card_ge hH.le_orthogonalComplement
+  have hmul := FiniteBilinearModule.IsNondegenerate.card_mul_card_orthogonalComplement
+    A.toFiniteBilinearModule hA H
+  rw [pow_two] at hcard
+  have hcard' : Nat.card H =
+      Nat.card (A.toFiniteBilinearModule.orthogonalComplement H) := by
+    apply Nat.mul_left_cancel (Nat.card_pos (α := H))
+    exact hcard.trans hmul.symm
+  exact hcard'.ge
+
 /-! ## Quotients by isotropic subgroups -/
 
 /-- A quadratic-isotropic subgroup contained in the radical of the polar pairing lies in the
