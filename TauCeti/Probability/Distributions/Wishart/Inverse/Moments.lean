@@ -368,8 +368,8 @@ theorem integrable_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 
       fun i j => integrable_coe_apply_inverseWishartMeasure_one hn i j)
 
 /-- **The mean of an inverse-Wishart law** of degree `n` and positive-definite scale `S` is
-`(n - p - 1)⁻¹ • S`, for a degree above the threshold `p + 1`; at a valid degree at or below the
-threshold the identity is no longer integrable. -/
+`(n - p - 1)⁻¹ • S`, for a degree above the threshold `p + 1`; in positive dimension, at a valid
+degree at or below the threshold the identity is no longer integrable. -/
 theorem integral_id_inverseWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) + 1 < n) :
     ∫ B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ), B ∂inverseWishartMeasure n S =
       (n - (p : ℝ) - 1)⁻¹ •
