@@ -83,6 +83,14 @@ theorem isPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ} (hp : p.Prime) (hodd 
     IsPrimeDiscriminant (oddPrimeDiscriminant p) :=
   Or.inr ⟨p, hp, hodd, rfl⟩
 
+/-- The absolute value of a prime discriminant is greater than one. -/
+theorem IsPrimeDiscriminant.one_lt_natAbs {D : ℤ} (hD : IsPrimeDiscriminant D) :
+    1 < D.natAbs := by
+  rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, hp, _, rfl⟩
+  · rcases hD with rfl | rfl | rfl <;> norm_num
+  · rw [oddPrimeDiscriminant_natAbs]
+    exact hp.one_lt
+
 /-- An odd prime discriminant is not one of the even prime discriminants. -/
 theorem not_isEvenPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ} (hodd : Odd p) :
     ¬ IsEvenPrimeDiscriminant (oddPrimeDiscriminant p) := by

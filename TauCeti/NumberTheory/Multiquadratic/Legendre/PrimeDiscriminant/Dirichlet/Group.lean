@@ -134,13 +134,6 @@ theorem conductor_genusCharAt
         (fun h ↦ hPQ (heven P hPt Q hQt h.1 h.2)))
   · exact Or.inr (NeZero.ne _)
 
-private theorem one_lt_natAbs (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (P : s) :
-    1 < P.val.natAbs := by
-  rcases isPrimeDiscriminant_iff.mp (hs P P.property) with hP | ⟨p, hp, _, hP⟩
-  · rcases hP with hP | hP | hP <;> rw [hP] <;> norm_num
-  · rw [hP, oddPrimeDiscriminant_natAbs]
-    exact hp.one_lt
-
 /-- Different subsets of a prime-discriminant factorization give different common-level
 characters. The conductor detects a nonempty symmetric difference. -/
 theorem genusCharAt_injective
@@ -163,7 +156,7 @@ theorem genusCharAt_injective
   have hpos : 0 < ∏ Q ∈ t ∆ u, Q.val.natAbs :=
     Finset.prod_pos fun Q _ ↦ Int.natAbs_pos.mpr (hs Q Q.property).ne_zero
   have hlt : 1 < ∏ Q ∈ t ∆ u, Q.val.natAbs :=
-    (one_lt_natAbs s hs P).trans_le
+    (hs P P.property).one_lt_natAbs.trans_le
       (Nat.le_of_dvd hpos (Finset.dvd_prod_of_mem (fun Q : s ↦ Q.val.natAbs) hP))
   omega
 
@@ -196,15 +189,27 @@ theorem genusCharacterGroup_eq_closure :
   rw [TauCeti.closure_image_eq_image_powerset (Finset.univ : Finset s)
     (primeDiscriminantCharAt s hs) (fun P _ ↦ primeDiscriminantCharAt_sq s hs P)]
   ext chi
-  simp only [Set.mem_image, Finset.mem_coe, Finset.mem_powerset, Finset.subset_univ, true_and]
-  rfl
+  simp only [SetLike.mem_coe, mem_genusCharacterGroup_iff, Set.mem_image,
+    Finset.mem_powerset, Finset.subset_univ, true_and, genusCharAt]
 
 /-- The subsets of a prime-discriminant family are in bijection with its character group. -/
 noncomputable def genusCharAtEquiv
     (heven : ∀ P ∈ s, ∀ Q ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     Finset s ≃ genusCharacterGroup s hs :=
-  Equiv.ofInjective (genusCharAt s hs) (genusCharAt_injective s hs heven)
+  Equiv.ofBijective
+    (fun t ↦ ⟨genusCharAt s hs t,
+      (mem_genusCharacterGroup_iff s hs).2 ⟨t, rfl⟩⟩)
+    ⟨fun _ _ h ↦ genusCharAt_injective s hs heven (congrArg Subtype.val h), fun chi ↦ by
+      obtain ⟨t, ht⟩ := (mem_genusCharacterGroup_iff s hs).1 chi.property
+      exact ⟨t, Subtype.ext ht⟩⟩
+
+/-- The subset equivalence sends a subset to its corresponding common-level genus character. -/
+@[simp] theorem coe_genusCharAtEquiv_apply
+    (heven : ∀ P ∈ s, ∀ Q ∈ s,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) (t : Finset s) :
+    ↑(genusCharAtEquiv s hs heven t) = genusCharAt s hs t := by
+  rfl
 
 /-- The character group of `s` has one element for each subset of `s`. -/
 theorem natCard_genusCharacterGroup
