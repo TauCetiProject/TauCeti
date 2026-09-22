@@ -143,7 +143,7 @@ theorem equivFreeProP_symm_of (p : ℕ) (x : X) :
 @[simp]
 theorem equivFreeProP_symm_fromFreeProfiniteGroup (p : ℕ) (X : Type u)
     (x : freeProfiniteGroup X) :
-    (equivFreeProP p X).symm (freeProP.fromFreeProfiniteGroup p X x) =
+    (equivFreeProP p X).symm (x : freeProP p X) =
       (x : freeProC (finiteGroupClassP p) X) := by
   apply (equivFreeProP p X).injective
   simp
