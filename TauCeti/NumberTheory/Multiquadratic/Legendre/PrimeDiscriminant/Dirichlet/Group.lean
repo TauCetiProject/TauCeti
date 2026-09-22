@@ -194,7 +194,7 @@ noncomputable def genusCharAtEquiv
   right_inv chi := Subtype.ext (Classical.choose_spec chi.property)
 
 /-- The character group of `s` has one element for each subset of `s`. -/
-@[simp] theorem natCard_genusCharacterGroup
+theorem natCard_genusCharacterGroup
     (heven : ∀ P ∈ s, ∀ Q ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     Nat.card (genusCharacterGroup s hs) = 2 ^ s.card := by
