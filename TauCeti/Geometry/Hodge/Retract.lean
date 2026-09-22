@@ -241,6 +241,7 @@ theorem substructureInclusion_comp_substructureRetractionOfIsCompl (h : IsCompl 
   exact Submodule.projection_apply_of_mem_left _ x.property
 
 /-- A substructure contained in the complementary summand is annihilated by the retraction. -/
+@[simp]
 theorem substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero
     {U : RationalHodgeSubstructure X.isBaseChangeRat X.hs} (h : IsCompl W W') (hU : U ≤ W') :
     substructureInclusion X U ≫ substructureRetractionOfIsCompl X W W' h = 0 := by

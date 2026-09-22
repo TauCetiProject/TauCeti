@@ -177,14 +177,13 @@ theorem biproduct_ι_comp_substructureBiproductDesc
   rw [substructureBiproductDesc, biproduct.ι_desc]
 
 /-- A nonzero morphism into the object induced by an atomic rational Hodge substructure is
-surjective on rational carriers.
-
-Its rational image is a rational Hodge substructure of the atom `U`, and it is not `⊥` because the
-morphism is nonzero, so it is all of `U`. -/
+surjective on rational carriers. -/
 theorem surjective_of_isAtom_of_ne_zero {Y : PolarizableHodgeStructureCat.{u'} n}
     {U : RationalHodgeSubstructure X.isBaseChangeRat X.hs} (hU : IsAtom U)
     {f : Y ⟶ ofSubstructure X U} (hf : f ≠ 0) :
     Function.Surjective f.hom.toRatLinearMap := by
+  -- Its rational image is a nonzero rational Hodge substructure of the atom `U`,
+  -- hence is all of it.
   -- The composite with the inclusion has a rational image `V`, a substructure of the ambient `X`.
   let g : Y ⟶ X := f ≫ substructureInclusion X U
   have hg := Hom.isMorphism g
@@ -322,6 +321,35 @@ theorem biproduct_ι_comp_substructureBiproductIso_hom
       (substructureBiproductIso X s hind htop).hom = substructureInclusion X U.1 := by
   rw [substructureBiproductIso, asIso_hom,
     biproduct_ι_comp_substructureBiproductDesc]
+
+attribute [local instance] Classical.decEq
+
+/-- Each component of the inverse of the biproduct isomorphism is projection along the supremum of
+the other substructures. -/
+@[simp]
+theorem substructureBiproductIso_inv_comp_biproduct_π
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
+    (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
+    (substructureBiproductIso X s hind htop).inv ≫
+        biproduct.π (fun U : s ↦ ofSubstructure X U.1) U =
+      substructureRetractionOfIsCompl X U.1 ((s.erase U.1).sup id)
+        (hind.isCompl_sup_erase htop U.2) := by
+  classical
+  apply (cancel_epi (substructureBiproductIso X s hind htop).hom).1
+  rw [← Category.assoc, Iso.hom_inv_id, Category.id_comp]
+  apply biproduct.hom_ext'
+  intro T
+  rw [← Category.assoc, biproduct_ι_comp_substructureBiproductIso_hom]
+  by_cases hTU : T = U
+  · subst U
+    rw [substructureInclusion_comp_substructureRetractionOfIsCompl,
+      biproduct.ι_π_self]
+  · rw [substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero,
+      biproduct.ι_π_ne _ hTU]
+    exact (Finset.le_sup (f := fun W : RationalHodgeSubstructure
+      X.isBaseChangeRat X.hs ↦ W)
+      (Finset.mem_erase.2 ⟨fun h ↦ hTU (Subtype.ext h), T.2⟩) :
+        T.1 ≤ (s.erase U.1).sup id)
 
 /-- **Categorical semisimplicity of polarizable rational Hodge structures.** Every object is
 isomorphic to a finite biproduct of simple objects induced by rational Hodge substructures. -/
