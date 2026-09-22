@@ -24,10 +24,10 @@ transfer principles:
 IsSolvable ↥(I.baseChange A) ↔ IsSolvable ↥I,   IsNilpotent ↥(I.baseChange A) ↔ IsNilpotent ↥I
 ```
 
-The forward implications ask nothing of `A`.  The reverse implications are exactly where faithful
-flatness enters, through `Submodule.baseChange_inj`: a term of either series can vanish after
-extending scalars only if it vanished already.  Applied to the two largest ideals, the forward
-implications give
+Ascent — transferring either property from `I` to `I.baseChange A` — asks nothing of `A`.  Descent,
+the `→` direction of the equivalences as displayed, is exactly where faithful flatness enters,
+through `Submodule.baseChange_inj`: a term of either series can vanish after extending scalars
+only if it vanished already.  Applied to the two largest ideals, ascent gives
 
 ```text
 (radical R L).baseChange A ≤ radical A (A ⊗[R] L),
@@ -56,13 +56,6 @@ transport in both directions.
 * `LieAlgebra.hasTrivialRadical_baseChange_iff`: **in characteristic zero a finite-dimensional Lie
   algebra has trivial radical exactly when its extension to a field extension does.**
 
-## Roadmap
-
-This is part of the "scalar extension and descent" milestone of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/AdoIwasawa/README.md`, which asks for the behaviour of `nil`
-and `radical` under base change to an algebraic closure so that a containment of ideals may be
-checked after extension and descended.
-
 ## References
 
 * [N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 1--3*][bourbaki1975], Chapter I, §5 and §6,
@@ -83,8 +76,7 @@ section Module
 variable (M : Type*) [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
 
 /-- **The series `⁅I, ⁅I, … ⁅I, M⁆…⁆⁆` commutes with extension of scalars.**  This is the
-nilpotency counterpart of Mathlib's `LieAlgebra.derivedSeriesOfIdeal_baseChange`, and as there the
-whole content is that `LieSubmodule.lie_baseChange` extends a bracket of submodules. -/
+nilpotency counterpart of Mathlib's `LieAlgebra.derivedSeriesOfIdeal_baseChange`. -/
 @[simp]
 theorem lcs_baseChange (I : LieIdeal R L) (k : ℕ) :
     lcs (I.baseChange A) (A ⊗[R] M) k = (I.lcs M k).baseChange A := by
@@ -115,6 +107,7 @@ theorem isNilpotent_baseChange [LieRing.IsNilpotent I] :
     ⟨k, by rw [lcs_baseChange, hk, LieSubmodule.baseChange_bot]⟩
 
 /-- **An ideal is solvable exactly when its faithfully flat extension of scalars is solvable.** -/
+@[simp]
 theorem isSolvable_baseChange_iff [Module.FaithfullyFlat R A] :
     LieAlgebra.IsSolvable (I.baseChange A) ↔ LieAlgebra.IsSolvable I := by
   refine ⟨fun h ↦ ?_, fun _ ↦ isSolvable_baseChange A I⟩
@@ -126,6 +119,7 @@ theorem isSolvable_baseChange_iff [Module.FaithfullyFlat R A] :
   exact (LieAlgebra.isSolvable_iff R ↥I).mpr ⟨k, (derivedSeries_eq_bot_iff I k).mpr hk⟩
 
 /-- **An ideal is nilpotent exactly when its faithfully flat extension of scalars is nilpotent.** -/
+@[simp]
 theorem isNilpotent_baseChange_iff [Module.FaithfullyFlat R A] :
     LieRing.IsNilpotent (I.baseChange A) ↔ LieRing.IsNilpotent I := by
   rw [isNilpotent_iff_exists_lcs_eq_bot, isNilpotent_iff_exists_lcs_eq_bot]
@@ -149,10 +143,9 @@ variable (A : Type*) [CommRing A] [Algebra R A]
 containment is not an equality for formal reasons, since an ideal of `A ⊗[R] L` need not be
 extended from `L`; `LieAlgebra.hasTrivialRadical_baseChange_iff` settles the case where both
 sides vanish. -/
-theorem baseChange_radical_le [IsNoetherian R L] [IsNoetherian A (A ⊗[R] L)] :
+theorem baseChange_radical_le [IsNoetherian R L] :
     (radical R L).baseChange A ≤ radical A (A ⊗[R] L) :=
-  (LieIdeal.solvable_iff_le_radical A (A ⊗[R] L) _).mp
-    (LieIdeal.isSolvable_baseChange A (radical R L))
+  le_sSup (LieIdeal.isSolvable_baseChange A (radical R L))
 
 /-- **The extension of scalars of the nilradical lands in the nilradical.** -/
 theorem baseChange_nilradical_le [IsNoetherian R L] :
@@ -172,12 +165,8 @@ field extension does.
 
 The `←` direction is the substantive one: it says that extending scalars cannot *create* a
 solvable ideal.  Neither direction follows from `LieIdeal.isSolvable_baseChange_iff`, which only
-speaks of ideals extended from `L`.  Both run through Cartan's criterion instead, which trades
-triviality of the radical for nondegeneracy of the Killing form, and nondegeneracy is a statement
-about a Gram determinant, so `TauCeti.isKilling_baseChange_iff` transports it in both directions.
-
-Characteristic zero is not decoration: the passage from a trivial radical to a nondegenerate
-Killing form fails over fields of positive characteristic. -/
+speaks of ideals extended from `L`.  Characteristic zero is a genuine hypothesis here, not a
+convenience. -/
 @[simp]
 theorem hasTrivialRadical_baseChange_iff :
     HasTrivialRadical A (A ⊗[K] L) ↔ HasTrivialRadical K L := by
