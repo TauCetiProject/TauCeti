@@ -43,12 +43,13 @@ noncomputable def genusChar (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscrimin
 
 /-- The character indexed by the whole family is the genus character of that family. -/
 @[simp] theorem genusCharAtLevel_univ (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
-    genusCharAtLevel s hs Finset.univ = genusChar s hs := (rfl)
+    genusCharAtLevel s hs s.attach = genusChar s hs := (rfl)
 
 /-- The expression for `genusChar` in terms of prime-discriminant characters at a common level. -/
 theorem genusChar_def (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
     genusChar s hs = ∏ P : s, primeDiscriminantCharAtLevel s hs P := by
   rw [← genusCharAtLevel_univ, genusCharAtLevel_def]
+  simp only [← Finset.univ_eq_attach]
 
 /-- The bundled genus character agrees with the existing character function on every integer,
 including integers not coprime to the level. -/
@@ -57,9 +58,10 @@ including integers not coprime to the level. -/
   by_cases hn : IsCoprime n (∏ P ∈ s, P)
   · have hn' : IsCoprime n ((∏ P ∈ s, P).natAbs : ℤ) := by
       simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using hn
-    rw [← genusCharAtLevel_univ, genusCharAtLevel_apply_int s hs Finset.univ n hn',
+    rw [← genusCharAtLevel_univ, genusCharAtLevel_apply_int s hs s.attach n hn',
       genusCharFun_def]
-    exact Finset.prod_coe_sort s fun P ↦ primeDiscriminantCharFun P n
+    simpa only [Finset.univ_eq_attach] using
+      Finset.prod_coe_sort s fun P ↦ primeDiscriminantCharFun P n
   · rw [(genusCharFun_eq_zero_iff hs).mpr hn, apply_eq_zero_iff]
     simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using hn
 
@@ -69,9 +71,9 @@ theorem isPrimitive_genusChar {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscrim
     (heven : ∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     IsPrimitive (genusChar s hs) := by
   rw [isPrimitive_def, ← genusCharAtLevel_univ,
-    conductor_genusCharAtLevel s hs Finset.univ
+    conductor_genusCharAtLevel s hs s.attach
       (fun P _ Q _ hP hQ ↦ Subtype.ext (heven P P.property Q Q.property hP hQ)),
-    Finset.prod_coe_sort s fun P ↦ P.natAbs]
+    ← Finset.univ_eq_attach s, Finset.prod_coe_sort s fun P ↦ P.natAbs]
   exact (map_prod Int.natAbsHom (fun P ↦ P) s).symm
 
 end TauCeti.Multiquadratic
