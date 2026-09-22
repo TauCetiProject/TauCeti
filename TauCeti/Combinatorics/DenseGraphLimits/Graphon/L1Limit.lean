@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun
 
 /-!
@@ -24,6 +25,7 @@ subsequence have been realigned, this result supplies the limiting strict grapho
 
 * `TauCeti.DenseGraphLimits.exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound` constructs a
   strict graphon `L¹` limit from an `L¹` Cauchy modulus tending to zero.
+* `TauCeti.DenseGraphLimits.cutDist_le_eLpNorm_one_toReal` bounds cut distance by `L¹` distance.
 * `TauCeti.DenseGraphLimits.exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound` is the
   resulting cut-distance convergence.
 
@@ -56,7 +58,7 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
     (hCauchy : ∀ N n m, N ≤ n → N ≤ m →
       eLpNorm
         ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ W m z.1 z.2)
-        1 (μ.prod μ) < B N) :
+        1 (μ.prod μ) ≤ B N) :
     ∃ Wlim : Graphon Ω μ,
       Tendsto
         (fun n ↦ eLpNorm
@@ -66,7 +68,7 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
   have hf : ∀ n, AEStronglyMeasurable (f n) (μ.prod μ) :=
     fun n ↦ (W n).measurable.aestronglyMeasurable
   have hCauchy' : ∀ N n m, N ≤ n → N ≤ m →
-      eLpNorm (f n - f m) 1 (μ.prod μ) < B N := by
+      eLpNorm (f n - f m) 1 (μ.prod μ) ≤ B N := by
     simpa only [f] using hCauchy
   let Bfast : ℕ → ℝ≥0∞ := fun n ↦ 2⁻¹ ^ n
   have hBfast : ∑' n, Bfast n ≠ ∞ := by simp [Bfast]
@@ -80,7 +82,8 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
   have hCauchySub : ∀ N n m, N ≤ n → N ≤ m →
       eLpNorm (fSub n - fSub m) 1 (μ.prod μ) < Bfast N := by
     intro N n m hn hm
-    exact (hCauchy' (φ N) (φ n) (φ m) (hφ.monotone hn) (hφ.monotone hm)).trans (hφB N)
+    exact (hCauchy' (φ N) (φ n) (φ m) (hφ.monotone hn) (hφ.monotone hm)).trans_lt
+      (hφB N)
   have haeLimit : ∀ᵐ z ∂(μ.prod μ), ∃ a : ℝ, Tendsto (fun n ↦ fSub n z) atTop (𝓝 a) :=
     Lp.ae_tendsto_of_cauchy_eLpNorm hfSub le_rfl hBfast hCauchySub
   obtain ⟨fLim, hfLimMeas, hfLim⟩ :=
@@ -98,7 +101,7 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
     refine hliminf.trans ((liminf_le_of_frequently_le' ?_).trans (hN N le_rfl))
     apply Eventually.frequently
     filter_upwards [hφ.tendsto_atTop (eventually_ge_atTop N)] with m hm
-    exact (hCauchy' N n (φ m) hn hm).le
+    exact hCauchy' N n (φ m) hn hm
   have hfLimRange : ∀ᵐ z ∂(μ.prod μ), fLim z ∈ Set.Icc (0 : ℝ) 1 := by
     filter_upwards [hfLim] with z hz
     exact isClosed_Icc.mem_of_tendsto hz
@@ -138,6 +141,28 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
   filter_upwards [hWlimAE] with z hz
   simp only [Pi.sub_apply, f, hz]
 
+/-- The cut distance between two graphons on the same probability space is bounded by the real
+`L¹` seminorm of the difference of their uncurried functions. -/
+theorem cutDist_le_eLpNorm_one_toReal (U W : Graphon Ω μ) :
+    cutDist U W ≤ (eLpNorm
+      ((fun z : Ω × Ω ↦ U z.1 z.2) - fun z : Ω × Ω ↦ W z.1 z.2)
+      1 (μ.prod μ)).toReal := by
+  refine (cutDist_le_cutNorm_sub U W).trans ?_
+  refine (cutNorm_le_integral_abs μ (U.toSymmKernel - W.toSymmKernel)).trans ?_
+  have hmeas : AEStronglyMeasurable
+      ((fun z : Ω × Ω ↦ U z.1 z.2) - fun z : Ω × Ω ↦ W z.1 z.2) (μ.prod μ) :=
+    U.measurable.aestronglyMeasurable.sub W.measurable.aestronglyMeasurable
+  exact le_of_eq (calc
+    ∫ z, |(U.toSymmKernel - W.toSymmKernel) z.1 z.2| ∂(μ.prod μ) =
+        ∫ z, ‖U z.1 z.2 - W z.1 z.2‖ ∂(μ.prod μ) := by
+      simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, Real.norm_eq_abs]
+    _ = lpNorm
+        ((fun z : Ω × Ω ↦ U z.1 z.2) - fun z : Ω × Ω ↦ W z.1 z.2)
+        1 (μ.prod μ) := (lpNorm_one_eq_integral_norm hmeas).symm
+    _ = (eLpNorm
+        ((fun z : Ω × Ω ↦ U z.1 z.2) - fun z : Ω × Ω ↦ W z.1 z.2)
+        1 (μ.prod μ)).toReal := (toReal_eLpNorm hmeas).symm)
+
 /-- A graphon sequence with an `L¹` Cauchy modulus tending to zero converges in cut distance to a
 strict graphon. This is the cut-distance consequence of
 `exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound`. -/
@@ -146,7 +171,7 @@ theorem exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound
     (hCauchy : ∀ N n m, N ≤ n → N ≤ m →
       eLpNorm
         ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ W m z.1 z.2)
-        1 (μ.prod μ) < B N) :
+        1 (μ.prod μ) ≤ B N) :
     ∃ Wlim : Graphon Ω μ, Tendsto (fun n ↦ cutDist (W n) Wlim) atTop (𝓝 0) := by
   obtain ⟨Wlim, hLp⟩ :=
     exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound W hB hCauchy
@@ -156,20 +181,7 @@ theorem exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound
       1 (μ.prod μ)).toReal)
     (fun n ↦ cutDist_nonneg (W n) Wlim) ?_ ?_⟩
   · intro n
-    refine (cutDist_le_cutNorm_sub (W n) Wlim).trans ?_
-    refine (cutNorm_le_integral_abs μ ((W n).toSymmKernel - Wlim.toSymmKernel)).trans ?_
-    refine le_of_eq (calc
-      ∫ z, |((W n).toSymmKernel - Wlim.toSymmKernel) z.1 z.2| ∂(μ.prod μ) =
-          ∫ z, ‖W n z.1 z.2 - Wlim z.1 z.2‖ ∂(μ.prod μ) := by
-        simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, Real.norm_eq_abs]
-      _ = (∫⁻ z, ‖W n z.1 z.2 - Wlim z.1 z.2‖ₑ ∂(μ.prod μ)).toReal :=
-        integral_norm_eq_lintegral_enorm
-          ((W n).measurable.aestronglyMeasurable.sub Wlim.measurable.aestronglyMeasurable)
-      _ = (eLpNorm
-          ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ Wlim z.1 z.2)
-          1 (μ.prod μ)).toReal := by
-        rw [eLpNorm_one_eq_lintegral_enorm]
-        rfl)
+    exact cutDist_le_eLpNorm_one_toReal (W n) Wlim
   · exact (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hLp
 
 end TauCeti.DenseGraphLimits
