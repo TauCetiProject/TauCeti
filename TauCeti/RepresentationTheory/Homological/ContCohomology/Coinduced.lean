@@ -725,7 +725,7 @@ noncomputable def trace : DiscreteCoind G U M →+[G] M where
 /-- The discrete-carrier trace is the unbundled trace after forgetting the discrete topology. -/
 @[simp]
 theorem trace_toCoind (f : DiscreteCoind G U M) :
-    coindTrace G U (toCoind G U M f) = trace G U M f := (rfl)
+    ∑ x : G ⧸ U, coindTraceTerm U (toCoind G U M f) x = trace G U M f := (rfl)
 
 @[simp]
 theorem trace_apply (f : DiscreteCoind G U M) :
@@ -738,7 +738,8 @@ theorem trace_eq_sum_transversal (t : G ⧸ U → G)
     (ht : ∀ x : G ⧸ U, (QuotientGroup.mk (t x) : G ⧸ U) = x)
     (f : DiscreteCoind G U M) : trace G U M f = ∑ x : G ⧸ U, t x • f (t x)⁻¹ := by
   rw [← trace_toCoind]
-  simpa only [coe_toCoind] using coindTrace_eq_sum_transversal t ht (toCoind G U M f)
+  simpa only [coindTrace_apply, coe_toCoind] using
+    coindTrace_eq_sum_transversal t ht (toCoind G U M f)
 
 /-- The discrete-carrier trace is natural in `G`-equivariant linear coefficient maps. -/
 theorem trace_map {R N : Type*} [Semiring R] [AddCommGroup N] [DistribMulAction G N]
