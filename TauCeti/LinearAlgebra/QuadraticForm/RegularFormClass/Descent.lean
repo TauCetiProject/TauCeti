@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.WittChain
 
 /-!
@@ -37,7 +36,7 @@ private theorem diagonalChain_invariant {α : Type v}
       f ⟨n, w⟩ = f ⟨n, w'⟩)
     {n : ℕ} {w w' : Fin n → Kˣ} (h : DiagonalChain w w') :
     f ⟨n, w⟩ = f ⟨n, w'⟩ := by
-  apply h.inductionOn (P := fun v => f ⟨n, w⟩ = f ⟨n, v⟩) rfl
+  apply h.induction_on (P := fun v => f ⟨n, w⟩ = f ⟨n, v⟩) rfl
   intro v v' hstep hv
   exact hstep.elim (fun hp => hv.trans (hperm hp)) (fun hb => hv.trans (hbin hb))
 

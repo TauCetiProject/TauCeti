@@ -199,8 +199,7 @@ theorem binary {w w' : Fin n → Rˣ} (h : BinaryStep w w') : DiagonalStep w w' 
 /-- Eliminate an elementary diagonal step by handling its permutation and binary cases. -/
 theorem elim {w w' : Fin n → Rˣ} (h : DiagonalStep w w') {P : Prop}
     (hperm : PermutationStep w w' → P) (hbin : BinaryStep w w' → P) : P := by
-  change PermutationStep w w' ∨ BinaryStep w w' at h
-  exact h.elim hperm hbin
+  exact Or.elim h hperm hbin
 
 /-- Elementary diagonal steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalStep w' w :=
@@ -236,15 +235,22 @@ theorem trans {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
 
 /-- Induct over a diagonal chain from a property of its initial coefficient family, provided the
 property is preserved by each permutation or binary replacement. -/
-theorem inductionOn {w w' : Fin n → Rˣ} (h : DiagonalChain w w')
+theorem induction_on {w w' : Fin n → Rˣ} (h : DiagonalChain w w')
     {P : (Fin n → Rˣ) → Prop} (hw : P w)
     (hstep : ∀ {v v'}, DiagonalStep v v' → P v → P v') : P w' := by
   -- The relation is intentionally not exposed; unfold it here to use its standard induction.
   change Relation.ReflTransGen DiagonalStep w w' at h
-  induction h using Relation.ReflTransGen.trans_induction_on with
-  | refl => exact hw
-  | single hstep' => exact hstep hstep' hw
-  | trans _ _ ih ih' => exact ih' (ih hw)
+  let p : (Fin n → Rˣ) → (Fin n → Rˣ) → Prop := fun v v' => P v → P v'
+  let hRefl : Std.Refl p := ⟨fun _ hp => hp⟩
+  let hTrans : IsTrans (Fin n → Rˣ) p := ⟨fun _ _ _ hpq hqr hp => hqr (hpq hp)⟩
+  have hlift : Relation.ReflTransGen p w w' := by
+    have hrel := Relation.ReflTransGen.lift (r := DiagonalStep)
+      (p := p) id (by
+        intro v v' hstep' hv
+        exact hstep hstep' hv)
+    simpa only [Function.onFun, id_eq] using (hrel w w') h
+  rw [@Relation.reflTransGen_eq_self _ p hRefl hTrans] at hlift
+  exact hlift hw
 
 /-- Diagonal chains may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalChain w w') : DiagonalChain w' w := by
