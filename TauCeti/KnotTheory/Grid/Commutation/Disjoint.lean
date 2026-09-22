@@ -47,6 +47,12 @@ public section
 
 namespace TauCeti
 
+private theorem rectangleDecomposition_fields_heq {n : ℕ} {x z : GridState n}
+    {D E : GridRectangleDecomposition x z} (h : D = E) :
+    HEq D.first E.first ∧ HEq D.second E.second := by
+  subst E
+  exact ⟨HEq.rfl, HEq.rfl⟩
+
 namespace GridPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
@@ -117,7 +123,7 @@ theorem toRectangleDecomposition_injective :
   intro D E h
   have hmiddle := congrArg GridRectangleDecomposition.middle h
   have hrectangle : HEq D.rectangle E.rectangle :=
-    GridRectangleDecomposition.second_heq_of_eq h
+    (rectangleDecomposition_fields_heq h).2
   have hpentagon : HEq D.pentagon E.pentagon :=
     Subsingleton.helim
       (congrArg (fun y => GridPentagonBetween a s x y) hmiddle) D.pentagon E.pentagon
@@ -414,7 +420,7 @@ theorem toRectangleDecomposition_injective :
   intro D E h
   have hmiddle := congrArg GridRectangleDecomposition.middle h
   have hrectangle : HEq D.rectangle E.rectangle :=
-    GridRectangleDecomposition.first_heq_of_eq h
+    (rectangleDecomposition_fields_heq h).1
   have hpentagon : HEq D.pentagon E.pentagon :=
     Subsingleton.helim
       (congrArg (fun y => GridPentagonBetween a s y z) hmiddle) D.pentagon E.pentagon

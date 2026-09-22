@@ -65,20 +65,6 @@ namespace GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
-/-- Equality of rectangle decompositions identifies their first rectangles, including across the
-induced equality of intermediate states. -/
-theorem first_heq_of_eq {D E : GridRectangleDecomposition x z} (h : D = E) :
-    HEq D.first E.first := by
-  subst E
-  rfl
-
-/-- Equality of rectangle decompositions identifies their second rectangles, including across
-the induced equality of intermediate states. -/
-theorem second_heq_of_eq {D E : GridRectangleDecomposition x z} (h : D = E) :
-    HEq D.second E.second := by
-  subst E
-  rfl
-
 /-- Two rectangle decompositions are equal when their ordered side columns agree: the first pair
 already determines the intermediate state. -/
 @[ext]

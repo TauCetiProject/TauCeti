@@ -246,12 +246,6 @@ and the Heegaard Floer weight `V₀^{O₀(r)} ⋯ V_{n-1}^{O_{n-1}(r)}` reduces 
 noncomputable def OMonomial (r : GridRectangle n) : MvPolynomial (Fin n) R :=
   ∏ c ∈ G.OColumns r, MvPolynomial.X c
 
-/-- The rectangle monomial is the product of the variables indexed by its covered
-`O`-columns. -/
-theorem OMonomial_def (r : GridRectangle n) :
-    G.OMonomial R r = ∏ c ∈ G.OColumns r, MvPolynomial.X c :=
-  (rfl)
-
 /-- The rectangle monomial of a column-swapped diagram renames the variables of the original
 monomial by the same swap, provided the rectangle either covers both columns or covers
 neither. -/
@@ -259,8 +253,8 @@ theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) 
     (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
     (G.swapColumns a b).OMonomial R r =
       MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) := by
-  rw [G.OMonomial_def R r, (G.swapColumns a b).OMonomial_def R r,
-    G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
+  unfold OMonomial
+  rw [G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
   simp only [MvPolynomial.rename_X, Finset.prod_image (Equiv.swap a b).injective.injOn]
 
 /-- The weight of a rectangle covering no `O`-marking is `1`. -/
