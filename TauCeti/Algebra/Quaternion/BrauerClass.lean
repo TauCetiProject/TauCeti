@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BrauerGroup.Group
-public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Algebra.Quaternion.CentralSimple
 
 /-!
@@ -14,8 +13,7 @@ public import TauCeti.Algebra.Quaternion.CentralSimple
 
 For a field `K` with `2` invertible, this file bundles the quaternion symbol with unit parameters
 `a b : Kˣ` as a central simple algebra and defines its Brauer class. The general centrality and
-simplicity results used here are in `TauCeti.Algebra.Central.Quaternion` and
-`TauCeti.Algebra.Quaternion.CentralSimple`.
+simplicity results used here are in `TauCeti.Algebra.Quaternion.CentralSimple`.
 
 ## Main results
 
@@ -25,10 +23,9 @@ simplicity results used here are in `TauCeti.Algebra.Central.Quaternion` and
 
 ## References
 
-This is the quaternion-symbol API required by the QuadraticFormInvariants roadmap. The classical
-central-simple background is in T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005),
-Chapter III, §2, and P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology*
-(2006), §1.1.
+The classical central-simple background is in T. Y. Lam, *Introduction to Quadratic Forms over
+Fields* (2005), Chapter III, §2, and P. Gille and T. Szamuely, *Central Simple Algebras and Galois
+Cohomology* (2006), §1.1.
 -/
 
 public section
@@ -54,7 +51,7 @@ noncomputable def quaternionClass (a b : Kˣ) : BrauerGroup K :=
   BrauerGroup.mk (quaternionCSA a b)
 
 /-- The defining equation for `quaternionClass`. -/
-theorem quaternionClass_def (a b : Kˣ) :
+@[simp] theorem quaternionClass_def (a b : Kˣ) :
     quaternionClass a b = BrauerGroup.mk (CSA.of K ℍ[K,(a : K),(b : K)]) := (rfl)
 
 end BrauerGroup

@@ -55,29 +55,17 @@ private def completeSquareBasis (a b c : R) :
   k := ⟨0, 0, ⅟ (2 : R) * b, ⅟ (2 : R)⟩
   i_mul_i := by
     rw [QuadraticAlgebra.discr_def]
-    ext <;> simp only [QuaternionAlgebra.mk_mul_mk, mul_assoc, mul_zero, add_zero, zero_mul,
-      sub_zero, sub_self, QuaternionAlgebra.smul_mk, smul_eq_mul, QuaternionAlgebra.re_add,
-      QuaternionAlgebra.re_smul, QuaternionAlgebra.re_one, mul_one, QuaternionAlgebra.imI_add,
-      QuaternionAlgebra.imI_smul, QuaternionAlgebra.imI_one, zero_add, QuaternionAlgebra.imJ_add,
-      QuaternionAlgebra.imJ_smul, QuaternionAlgebra.imJ_one, QuaternionAlgebra.imK_add,
-      QuaternionAlgebra.imK_smul, QuaternionAlgebra.imK_one]
+    ext <;> simp [mul_assoc]
     · linear_combination
         (⅟ (2 : R) * b ^ 2 + a * (2 * ⅟ (2 : R) + 1)) *
           (invOf_mul_self (2 : R))
     · linear_combination (⅟ (2 : R) * b) * (invOf_mul_self (2 : R))
   j_mul_j := by
-    ext <;> simp only [QuaternionAlgebra.mk_mul_mk, mul_zero, add_zero, mul_one, zero_add,
-      zero_mul, sub_zero, sub_self, QuaternionAlgebra.re_smul, QuaternionAlgebra.re_one,
-      smul_eq_mul, QuaternionAlgebra.imI_smul, QuaternionAlgebra.imI_one,
-      QuaternionAlgebra.imJ_smul, QuaternionAlgebra.imJ_one, QuaternionAlgebra.imK_smul,
-      QuaternionAlgebra.imK_one]
+    ext <;> simp
   i_mul_j := by
-    ext <;> simp only [QuaternionAlgebra.mk_mul_mk, mul_zero, add_zero, mul_one, zero_mul,
-      sub_self, sub_zero, zero_add]
+    ext <;> simp
   j_mul_i := by
-    ext <;> simp only [QuaternionAlgebra.mk_mul_mk, zero_mul, mul_zero, add_zero, mul_one,
-      sub_self, one_mul, zero_add, sub_zero, zero_sub, QuaternionAlgebra.smul_mk, smul_eq_mul,
-      QuaternionAlgebra.mk_sub_mk]
+    ext <;> simp
     linear_combination b * (invOf_mul_self (2 : R))
 
 private def completeSquareInvBasis (a b c : R) :
@@ -93,34 +81,8 @@ private def completeSquareInvBasis (a b c : R) :
   i_mul_j := by
     ext <;> simp
   j_mul_i := by
-    ext <;> simp only [QuaternionAlgebra.mk_mul_mk, mul_neg, zero_mul, neg_zero, mul_zero,
-      add_zero, mul_one, sub_self, one_mul, zero_add, sub_zero, zero_sub, zero_smul,
-      QuaternionAlgebra.neg_mk, neg_neg]
-    all_goals ring
-
-private theorem completeSquareBasis_lift_apply_i (a b c : R) :
-    (completeSquareBasis a b c).liftHom (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c]) =
-      ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ := by
-  simp [completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
-
-private theorem completeSquareBasis_lift_apply_j (a b c : R) :
-    (completeSquareBasis a b c).liftHom (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c]) =
-      ⟨0, 0, 1, 0⟩ := by
-  simp [completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
-
-omit [Invertible (2 : R)] in
-private theorem completeSquareInvBasis_lift_apply_i (a b c : R) :
-    (completeSquareInvBasis a b c).liftHom
-        (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
-      ⟨-b, 2, 0, 0⟩ := by
-  simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
-
-omit [Invertible (2 : R)] in
-private theorem completeSquareInvBasis_lift_apply_j (a b c : R) :
-    (completeSquareInvBasis a b c).liftHom
-        (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
-      ⟨0, 0, 1, 0⟩ := by
-  simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
+    ext <;> simp
+    all_goals try ring
 
 /-- The lift associated with `completeSquareBasis`, in coordinates. -/
 private theorem completeSquareBasis_liftHom_apply (a b c : R) (x : ℍ[R,a,b,c]) :
@@ -136,6 +98,32 @@ private theorem completeSquareInvBasis_liftHom_apply (a b c : R)
     (completeSquareInvBasis a b c).liftHom x =
       ⟨x.re - b * x.imI, 2 * x.imI, x.imJ - b * x.imK, 2 * x.imK⟩ := by
   ext <;> simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift] <;> ring
+
+private theorem completeSquareBasis_lift_apply_i (a b c : R) :
+    (completeSquareBasis a b c).liftHom (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c]) =
+      ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ := by
+  simpa using completeSquareBasis_liftHom_apply a b c (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c])
+
+private theorem completeSquareBasis_lift_apply_j (a b c : R) :
+    (completeSquareBasis a b c).liftHom (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c]) =
+      ⟨0, 0, 1, 0⟩ := by
+  simpa using completeSquareBasis_liftHom_apply a b c (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])
+
+omit [Invertible (2 : R)] in
+private theorem completeSquareInvBasis_lift_apply_i (a b c : R) :
+    (completeSquareInvBasis a b c).liftHom
+        (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
+      ⟨-b, 2, 0, 0⟩ := by
+  simpa using completeSquareInvBasis_liftHom_apply a b c
+    (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
+
+omit [Invertible (2 : R)] in
+private theorem completeSquareInvBasis_lift_apply_j (a b c : R) :
+    (completeSquareInvBasis a b c).liftHom
+        (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
+      ⟨0, 0, 1, 0⟩ := by
+  simpa using completeSquareInvBasis_liftHom_apply a b c
+    (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
 
 /-- **Completing the square in a quaternion algebra.** The change of generators
 `i ↦ ⅟ 2 * (b + i)` identifies `ℍ[R,a,b,c]` with the zero-linear-term presentation

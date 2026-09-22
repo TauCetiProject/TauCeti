@@ -8,8 +8,6 @@ module
 public import Mathlib.Algebra.Central.Defs
 public import Mathlib.Algebra.Quaternion
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.Algebra.Central.Basic
-public import TauCeti.Algebra.Quaternion.SymbolEquiv
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -41,20 +39,15 @@ than excluding it.
   image of `R`.
 * `TauCeti.Quaternion.instIsCentral`: `ℍ[R]` is a central `R`-algebra when `R` has no zero divisors
   and `2 ≠ 0` in `R`. This is the roadmap's `quaternion_isCentral` at `R = ℝ`.
-* `TauCeti.QuaternionAlgebra.mem_center_iff` and
-  `TauCeti.QuaternionAlgebra.isCentral_of_isUnit_j_sq_or_isUnit_discr`: the corresponding centre
-  and centrality results for a general quaternion symbol with a unit parameter.
 * `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: over a linearly ordered commutative ring, `ℍ[R]` is
   not isomorphic to a matrix algebra of size at least two, so over a field its Brauer class is
   nontrivial.
 
 ## Implementation notes
 
-Everything is stated for `Quaternion R = ℍ[R]`; the corresponding centre computation for the
-general `QuaternionAlgebra R c₁ c₂ c₃` with a unit parameter is in
-`TauCeti.Algebra.Quaternion.CentralSimple`. The Hamilton computation here is its specialization to
-`i² = j² = k² = -1`. The centre genuinely depends on the structure constants, and the general
-algebra need not be central even over `ℝ`. For instance in
+The Hamilton computation here is for `Quaternion R = ℍ[R]`, with `i² = j² = k² = -1`. The centre
+genuinely depends on the structure constants, and the general algebra need not be central even over
+`ℝ`. For instance in
 `ℍ[ℝ, 0, 0, 0]` the products of `k` with each imaginary unit all vanish (`i * k = k * i = 0`,
 `j * k = k * j = 0` and `k * k = 0`), so `k` is a central element outside the image of `ℝ`; the
 other products of imaginary units are not all zero there, since `i * j = k` and `j * i = -k`.
@@ -71,8 +64,6 @@ This file implements the Hamilton-quaternion worked example of Layer 6 in
 as `quaternion_isCentral`. The centrality of `ℍ` and the nonsplitting statement are the two halves
 of the classical computation of the Brauer group of `ℝ`; see for instance P. Gille and
 T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §1.1 and §2.1.
-The general symbol calculation follows T. Y. Lam, *Introduction to Quadratic Forms over Fields*
-(2005), Chapter III, §2.
 -/
 
 public section
@@ -175,127 +166,6 @@ instance instIsCentral [NoZeroDivisors R] [NeZero (2 : R)] : Algebra.IsCentral R
   ⟨(center_eq_bot fun _ _ h ↦ mul_left_cancel₀ (NeZero.ne (2 : R)) h).le⟩
 
 end CommRing
-
-end Quaternion
-
-namespace QuaternionAlgebra
-
-variable {K : Type*}
-
-section UnitParameter
-
-variable [CommRing K] [Invertible (2 : K)]
-
-private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
-    {x : ℍ[K,a,(b : K)]}
-    (hx : x ∈ Subalgebra.center K ℍ[K,(a : K),(b : K)]) :
-    x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
-  rw [Subalgebra.mem_center_iff] at hx
-  have hi := hx (⟨0, 1, 0, 0⟩ : ℍ[K,(a : K),(b : K)])
-  have hj := hx (⟨0, 0, 1, 0⟩ : ℍ[K,(a : K),(b : K)])
-  have hiK := congrArg _root_.QuaternionAlgebra.imK hi
-  have hjI := congrArg _root_.QuaternionAlgebra.imI hj
-  have hjK := congrArg _root_.QuaternionAlgebra.imK hj
-  simp only [_root_.QuaternionAlgebra.imI_mul, _root_.QuaternionAlgebra.imK_mul] at hiK hjI hjK
-  have hI : (2 : K) * x.imI = 0 := by
-    linear_combination -hjK
-  have hJ : (2 : K) * (b : K) * x.imJ = 0 := by
-    linear_combination (b : K) * hiK
-  have hK : (2 : K) * (b : K) * x.imK = 0 := by
-    linear_combination -hjI
-  have hcancel : ∀ (u y : K) [Invertible u], u * y = 0 → y = 0 := by
-    intro u y _ h
-    apply (mul_right_inj_of_invertible (c := u)).mp
-    simpa using h
-  refine ⟨?_, ?_, ?_⟩
-  · exact hcancel 2 x.imI hI
-  · apply hcancel (b : K) x.imJ
-    apply hcancel 2 ((b : K) * x.imJ)
-    simpa [mul_assoc] using hJ
-  · apply hcancel (b : K) x.imK
-    apply hcancel 2 ((b : K) * x.imK)
-    simpa [mul_assoc] using hK
-
-/-- A quaternion symbol whose second parameter `b` is a unit is central exactly when all three
-imaginary coordinates vanish. This generalizes the centre computation in
-`TauCeti.Algebra.Central.Quaternion` from `ℍ[R]` to a unit-parameter symbol. -/
-theorem mem_center_iff (a : K) (b : Kˣ) {x : ℍ[K,a,(b : K)]} :
-    x ∈ Subalgebra.center K ℍ[K,a,(b : K)] ↔
-      x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
-  constructor
-  · exact center_coordinates_eq_zero a b
-  · intro hx
-    rw [Subalgebra.mem_center_iff (R := K)]
-    intro y
-    refine _root_.QuaternionAlgebra.ext ?_ ?_ ?_ ?_
-    · simp only [_root_.QuaternionAlgebra.re_mul]
-      ring
-    · simp only [_root_.QuaternionAlgebra.imI_mul]
-      simp only [hx.1, hx.2.1, hx.2.2, zero_mul, mul_zero, zero_add, add_zero, sub_zero]
-      ring
-    · simp only [_root_.QuaternionAlgebra.imJ_mul]
-      simp only [hx.1, hx.2.1, hx.2.2, zero_mul, mul_zero, zero_add, add_zero, sub_zero]
-      ring
-    · simp only [_root_.QuaternionAlgebra.imK_mul]
-      simp only [hx.1, hx.2.1, hx.2.2, zero_mul, mul_zero, zero_add, add_zero, sub_zero]
-      ring
-
-/-- A quaternion symbol whose second parameter `b` is a unit is central over its base ring. -/
-instance instIsCentral (a : K) (b : Kˣ) : Algebra.IsCentral K ℍ[K,a,(b : K)] :=
-  ⟨fun x hx ↦ Algebra.mem_bot.mpr ⟨x.re, by
-    -- The algebra map is the scalar inclusion; expose it before comparing coordinates.
-    rw [_root_.QuaternionAlgebra.coe_algebraMap]
-    refine _root_.QuaternionAlgebra.ext rfl ?_ ?_ ?_
-    · simpa using ((mem_center_iff a b).mp hx |>.1).symm
-    · simpa using ((mem_center_iff a b).mp hx |>.2.1).symm
-    · simpa using ((mem_center_iff a b).mp hx |>.2.2).symm⟩⟩
-
-end UnitParameter
-
-section Centrality
-
-variable [CommRing K] [Invertible (2 : K)]
-
-/-- A quaternion algebra with unit `j`-square or unit discriminant is central. -/
-theorem isCentral_of_isUnit_j_sq_or_isUnit_discr {a b c : K}
-    (h : IsUnit c ∨ IsUnit (QuadraticAlgebra.discr a b)) :
-    Algebra.IsCentral K ℍ[K,a,b,c] := by
-  rcases h with hc | hd
-  · let v : Kˣ := hc.unit
-    have htarget : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
-      instIsCentral (QuadraticAlgebra.discr a b) v
-    exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,c])
-      (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
-  · let u : Kˣ := hd.unit
-    have htarget : Algebra.IsCentral K ℍ[K,c,0,(QuadraticAlgebra.discr a b : K)] :=
-      instIsCentral c u
-    have hsource : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
-      Algebra.IsCentral.of_algEquiv (K := K)
-        (D := ℍ[K,c,0,(QuadraticAlgebra.discr a b : K)])
-        (D' := ℍ[K,(QuadraticAlgebra.discr a b : K),0,c]) (h := htarget)
-        (_root_.QuaternionAlgebra.swapEquiv c (QuadraticAlgebra.discr a b))
-    exact Algebra.IsCentral.of_algEquiv (K := K)
-      (D := ℍ[K,QuadraticAlgebra.discr a b,0,c]) (D' := ℍ[K,a,b,c]) (h := hsource)
-      (completeSquareEquiv a b c).symm
-
-end Centrality
-
-section Field
-
-variable [Field K] [Invertible (2 : K)]
-
-/-- A quaternion algebra with nonzero `j`-square or discriminant is central. -/
-theorem isCentral_of_j_sq_ne_zero_or_discr_ne_zero {a b c : K}
-    (h : c ≠ 0 ∨ QuadraticAlgebra.discr a b ≠ 0) :
-    Algebra.IsCentral K ℍ[K,a,b,c] := by
-  apply isCentral_of_isUnit_j_sq_or_isUnit_discr
-  exact h.imp isUnit_iff_ne_zero.mpr isUnit_iff_ne_zero.mpr
-
-end Field
-
-end QuaternionAlgebra
-
-namespace Quaternion
 
 section LinearOrderedCommRing
 

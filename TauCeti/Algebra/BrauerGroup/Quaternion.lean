@@ -25,7 +25,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.BrauerGroup.BaseChange
 
 /-!
-# Quaternion-symbol classes and the Brauer class of the real quaternions
+# The Brauer class of the real quaternions has order two
 
 This file applies the general Brauer-group API to the real quaternions. Quaternion conjugation
 identifies `ℍ[ℝ]` with its opposite algebra, so its Brauer class is self-inverse; and `ℍ[ℝ]` is a
