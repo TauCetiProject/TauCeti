@@ -14,20 +14,22 @@ public import TauCeti.Algebra.Lie.Nilradical
 
 Let `M` be a Lie module over `L`, let `H` be a Lie subalgebra of `L` acting nilpotently on `M`, and
 let `y : L` normalize `H` and act nilpotently on `M`.  This file proves that the Lie subalgebra
-spanned by `y` and `H` again acts nilpotently on `M`, so that in particular every element
-`t • y + h` acts nilpotently.
+`LieSubalgebra.lieSpan R L (insert y ↑H)` spanned by `y` and `H` again acts nilpotently on `M`, so
+that in particular every element `t • y + h` acts nilpotently.  This is the step by which
+Hochschild's proof of Ado's theorem enlarges a nilpotently-acting subalgebra one element at a time,
+and it is applied there to two different modules, so it is stated once for a general module.
 
-The subalgebra in question is `LieSubalgebra.spanSingletonSup`, whose underlying submodule is
-`R ∙ y ⊔ H.toSubmodule`; it is a Lie subalgebra exactly because `y` normalizes `H`.  Mathlib builds
-the same submodule anonymously inside the proof of
-`LieAlgebra.exists_engelian_lieSubalgebra_of_lt_normalizer` in `Mathlib/Algebra/Lie/Engel.lean`,
-which both the construction here and the `⊤`-membership computation inside
-`LieSubalgebra.lieModule_isNilpotent_spanSingletonSup` follow closely.  That proof also supplies the
+Because `y` normalizes `H`, that Lie span is already spanned by `y` and `H` as a *module*: its
+underlying submodule is `R ∙ y ⊔ H.toSubmodule`, which is the content of
+`LieSubalgebra.lieSpan_insert_toSubmodule`.  Mathlib builds the same submodule anonymously inside
+the proof of `LieAlgebra.exists_engelian_lieSubalgebra_of_lt_normalizer` in
+`Mathlib/Algebra/Lie/Engel.lean`, which both that lemma and the `⊤`-membership computation inside
+`LieSubalgebra.lieModule_isNilpotent_lieSpan_insert` follow closely.  That proof also supplies the
 two facts that do the work: `LieSubalgebra.lie_mem_sup_of_mem_normalizer` closes the submodule under
 the bracket, and `LieSubmodule.isNilpotentOfIsNilpotentSpanSupEqTop` upgrades nilpotency of `M` as a
 module over an ideal `I` of a Lie algebra `K` to nilpotency of `M` as a module over `K`, as soon as
 `K = R ∙ x ⊔ I` with `x` acting nilpotently on `M`.  The step taken here is that `H` is an ideal of
-`H.spanSingletonSup hy`, which is exactly the situation that theorem describes.
+the Lie span, which is exactly the situation that theorem describes.
 
 Note that no Noetherian or finiteness hypothesis is needed for the subalgebra statement: it is a
 statement about lower central series, not an application of Engel's theorem.  Engel's theorem enters
@@ -37,19 +39,15 @@ and those carry `[IsNoetherian R M]`.
 The `H`-receiver statements live in the root `LieSubalgebra` namespace, where dot notation on that
 Mathlib type elaborates, as do the corresponding statements in `TauCeti.Algebra.Lie.Nilradical`.
 
-## Main definitions
-
-* `LieSubalgebra.spanSingletonSup`: the Lie subalgebra spanned by an element of the normalizer of a
-  Lie subalgebra `H` together with `H`, identified with `LieSubalgebra.lieSpan` of the two in
-  `LieSubalgebra.spanSingletonSup_eq_lieSpan`.
-
 ## Main statements
 
-* `LieSubalgebra.lieModule_isNilpotent_spanSingletonSup`: **the nilpotent-extension lemma**.  If `H`
-  acts nilpotently on `M` and a normalizing element `y` acts nilpotently on `M`, then
-  `H.spanSingletonSup hy` acts nilpotently on `M`.
-* `LieSubalgebra.isNilpotent_toEnd_of_mem_spanSingletonSup` and
-  `LieSubalgebra.isNilpotent_toEnd_of_mem_spanSingletonSup_of_forall`: the pointwise readings, the
+* `LieSubalgebra.lieSpan_insert_toSubmodule`: the Lie span of `insert y ↑H` has underlying submodule
+  `R ∙ y ⊔ H.toSubmodule`, when `y` normalizes `H`.
+* `LieSubalgebra.lieModule_isNilpotent_lieSpan_insert`: **the nilpotent-extension lemma**.  If `H`
+  acts nilpotently on `M` and a normalizing element `y` acts nilpotently on `M`, then the Lie span
+  of `y` and `H` acts nilpotently on `M`.
+* `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert` and
+  `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall`: the pointwise readings, the
   second one taking the pointwise hypothesis on `H` as well.
 * `LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup`: the special case of an ideal, where the
   normalizing hypothesis is automatic and the conclusion can be read off the submodule
@@ -72,121 +70,86 @@ namespace LieSubalgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 variable {M : Type*} [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
-variable (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer)
 
-/-- The Lie subalgebra spanned by an element `y` of the normalizer of a Lie subalgebra `H` together
-with `H`: its underlying submodule is `R ∙ y ⊔ H.toSubmodule`, which is closed under the bracket
-precisely because `y` normalizes `H`. -/
-def spanSingletonSup : LieSubalgebra R L :=
-  { R ∙ y ⊔ H.toSubmodule with
-    lie_mem' := fun {_ _} => LieSubalgebra.lie_mem_sup_of_mem_normalizer hy }
-
-@[simp]
-theorem toSubmodule_spanSingletonSup :
-    (H.spanSingletonSup hy).toSubmodule = R ∙ y ⊔ H.toSubmodule :=
-  (rfl)
-
-/-- Membership in `H.spanSingletonSup hy` unfolds to membership in `R ∙ y ⊔ H.toSubmodule`.  This is
-the bridge that every other lemma in this file goes through; it is deliberately *not* a `simp`
-lemma, so that `simp` leaves the `spanSingletonSup` head in place for the characteristic lemmas
-below. -/
-theorem mem_spanSingletonSup {z : L} :
-    z ∈ H.spanSingletonSup hy ↔ z ∈ R ∙ y ⊔ H.toSubmodule :=
-  (Iff.rfl)
-
-theorem mem_spanSingletonSup_iff_exists {z : L} :
-    z ∈ H.spanSingletonSup hy ↔ ∃ t : R, ∃ h ∈ H, z = t • y + h := by
-  rw [mem_spanSingletonSup, Submodule.mem_sup]
-  constructor
-  · rintro ⟨u, hu, v, hv, rfl⟩
-    obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp hu
-    exact ⟨t, v, hv, rfl⟩
-  · rintro ⟨t, h, hh, rfl⟩
-    exact ⟨t • y, Submodule.smul_mem _ t (Submodule.mem_span_singleton_self y), h, hh, rfl⟩
-
-theorem self_mem_spanSingletonSup : y ∈ H.spanSingletonSup hy :=
-  (H.mem_spanSingletonSup hy).mpr (Submodule.mem_sup_left (Submodule.mem_span_singleton_self y))
-
-theorem le_spanSingletonSup : H ≤ H.spanSingletonSup hy :=
-  fun _ hx => (H.mem_spanSingletonSup hy).mpr (Submodule.mem_sup_right hx)
-
-theorem spanSingletonSup_le {K : LieSubalgebra R L} (hHK : H ≤ K) (hyK : y ∈ K) :
-    H.spanSingletonSup hy ≤ K := fun _ hz => by
-  obtain ⟨t, h, hh, rfl⟩ := (H.mem_spanSingletonSup_iff_exists hy).mp hz
-  exact K.add_mem (K.smul_mem t hyK) (hHK hh)
-
-theorem spanSingletonSup_le_normalizer : H.spanSingletonSup hy ≤ H.normalizer :=
-  H.spanSingletonSup_le hy H.le_normalizer hy
-
-/-- `H.spanSingletonSup hy` really is the Lie subalgebra generated by `H` together with `y`: taking
-the sum of submodules is enough, because `y` normalizes `H`. -/
-theorem spanSingletonSup_eq_lieSpan :
-    H.spanSingletonSup hy = LieSubalgebra.lieSpan R L (insert y (H : Set L)) := by
-  refine le_antisymm ?_ (LieSubalgebra.lieSpan_le.mpr ?_)
-  · refine H.spanSingletonSup_le hy (fun z hz => ?_) ?_
-    · exact LieSubalgebra.subset_lieSpan (Set.mem_insert_of_mem _ hz)
-    · exact LieSubalgebra.subset_lieSpan (Set.mem_insert _ _)
-  · rintro z (rfl | hz)
-    · exact H.self_mem_spanSingletonSup hy
-    · exact H.le_spanSingletonSup hy hz
-
-/-- Adjoining an element that `H` already contains changes nothing. -/
-@[simp]
-theorem spanSingletonSup_eq_self (hyH : y ∈ H) : H.spanSingletonSup hy = H :=
-  le_antisymm (H.spanSingletonSup_le hy le_rfl hyH) (H.le_spanSingletonSup hy)
+/-- When `y` normalizes a Lie subalgebra `H`, the Lie subalgebra generated by `H` together with `y`
+is already spanned by them as a module: its underlying submodule is `R ∙ y ⊔ H.toSubmodule`. -/
+theorem lieSpan_insert_toSubmodule (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer) :
+    (lieSpan R L (insert y (H : Set L))).toSubmodule = R ∙ y ⊔ H.toSubmodule := by
+  -- the submodule `R ∙ y ⊔ H.toSubmodule` is already closed under the bracket, so it underlies a
+  -- Lie subalgebra `K`, which the Lie span is then squeezed between on both sides
+  let K : LieSubalgebra R L :=
+    { R ∙ y ⊔ H.toSubmodule with
+      lie_mem' := fun {_ _} => lie_mem_sup_of_mem_normalizer hy }
+  refine le_antisymm ?_ (sup_le ?_ ?_)
+  · exact (toSubmodule_le_toSubmodule _ K).mpr <| lieSpan_le.mpr <| Set.insert_subset
+      (Submodule.mem_sup_left (Submodule.mem_span_singleton_self y))
+      fun _ hz => Submodule.mem_sup_right hz
+  · exact Submodule.span_le.mpr <|
+      Set.singleton_subset_iff.mpr <| subset_lieSpan (Set.mem_insert _ _)
+  · exact fun _ hz => subset_lieSpan (Set.mem_insert_of_mem _ hz)
 
 /-- **The nilpotent-extension lemma.**  If a Lie subalgebra `H` acts nilpotently on `M`, and an
 element `y` normalizing `H` acts nilpotently on `M`, then the Lie subalgebra spanned by `y` and `H`
 acts nilpotently on `M`. -/
-theorem lieModule_isNilpotent_spanSingletonSup [LieModule.IsNilpotent H M]
+theorem lieModule_isNilpotent_lieSpan_insert (H : LieSubalgebra R L) {y : L}
+    (hy : y ∈ H.normalizer) [LieModule.IsNilpotent H M]
     (hyM : IsNilpotent (LieModule.toEnd R L M y)) :
-    LieModule.IsNilpotent (H.spanSingletonSup hy) M := by
-  have hHK : H ≤ H.spanSingletonSup hy := H.le_spanSingletonSup hy
-  have hyK : y ∈ H.spanSingletonSup hy := H.self_mem_spanSingletonSup hy
-  obtain ⟨I, hI⟩ :=
-    LieSubalgebra.exists_nested_lieIdeal_ofLe_normalizer hHK (H.spanSingletonSup_le_normalizer hy)
+    LieModule.IsNilpotent (lieSpan R L (insert y (H : Set L))) M := by
+  have hHK : H ≤ lieSpan R L (insert y (H : Set L)) :=
+    fun _ hx => subset_lieSpan (Set.mem_insert_of_mem _ hx)
+  have hyK : y ∈ lieSpan R L (insert y (H : Set L)) := subset_lieSpan (Set.mem_insert _ _)
+  have hKN : lieSpan R L (insert y (H : Set L)) ≤ H.normalizer :=
+    lieSpan_le.mpr <| Set.insert_subset hy H.le_normalizer
+  obtain ⟨I, hI⟩ := exists_nested_lieIdeal_ofLe_normalizer hHK hKN
   -- `LieSubmodule.isNilpotentOfIsNilpotentSpanSupEqTop` needs the spanning equation *inside* the
-  -- larger subalgebra.  Both sides are submodules of `↥(H.spanSingletonSup hy)`, and the subtype
-  -- inclusion of that submodule is injective, so it suffices to check the equation after pushing it
-  -- forward into `L`, where it is exactly `toSubmodule_spanSingletonSup`.
-  have hI₂ :
-      R ∙ (⟨y, hyK⟩ : H.spanSingletonSup hy) ⊔ LieSubmodule.toSubmodule I = ⊤ := by
-    rw [← LieIdeal.toLieSubalgebra_toSubmodule R (H.spanSingletonSup hy) I, hI]
+  -- larger subalgebra.  Both sides are submodules of the Lie span, and the subtype inclusion of
+  -- that submodule is injective, so it suffices to check the equation after pushing it forward
+  -- into `L`, where it is exactly `lieSpan_insert_toSubmodule`.
+  have hI₂ : R ∙ (⟨y, hyK⟩ : lieSpan R L (insert y (H : Set L))) ⊔
+      LieSubmodule.toSubmodule I = ⊤ := by
+    rw [← LieIdeal.toLieSubalgebra_toSubmodule R (lieSpan R L (insert y (H : Set L))) I, hI]
     apply Submodule.map_injective_of_injective
-      ((H.spanSingletonSup hy : Submodule R L).injective_subtype)
-    simp only [LieSubalgebra.coe_ofLe, Submodule.map_sup, Submodule.map_subtype_range_inclusion,
+      ((lieSpan R L (insert y (H : Set L)) : Submodule R L).injective_subtype)
+    simp only [coe_ofLe, Submodule.map_sup, Submodule.map_subtype_range_inclusion,
       Submodule.map_top, Submodule.range_subtype]
     rw [Submodule.map_subtype_span_singleton]
-    exact (H.toSubmodule_spanSingletonSup hy).symm
+    exact (lieSpan_insert_toSubmodule H hy).symm
+  -- both equivalences only re-wrap the carrier: `H`, `ofLe hHK` and `I` have the same elements of
+  -- `L`, so `⁅f x, m⁆` and `⁅x, m⁆` are literally the same bracket of `L` on `M`, and the
+  -- bracket-compatibility hypothesis is definitional
   have hIM : LieModule.IsNilpotent I M :=
     (Equiv.lieModule_isNilpotent_iff
-        ((LieSubalgebra.equivOfLe hHK).trans
-          (LieEquiv.ofEq _ _ ((LieSubalgebra.coe_set_eq _ _).mpr hI.symm)))
+        ((equivOfLe hHK).trans (LieEquiv.ofEq _ _ ((coe_set_eq _ _).mpr hI.symm)))
         (1 : M ≃ₗ[R] M) fun _ _ => rfl).mp ‹_›
   exact LieSubmodule.isNilpotentOfIsNilpotentSpanSupEqTop hI₂ hyM hIM
 
 /-- Every element of the Lie subalgebra spanned by a normalizing element `y` and `H` acts
 nilpotently on `M`, as soon as `H` does and `y` does. -/
-theorem isNilpotent_toEnd_of_mem_spanSingletonSup [LieModule.IsNilpotent H M]
-    (hyM : IsNilpotent (LieModule.toEnd R L M y)) {z : L} (hz : z ∈ H.spanSingletonSup hy) :
+theorem isNilpotent_toEnd_of_mem_lieSpan_insert (H : LieSubalgebra R L) {y : L}
+    (hy : y ∈ H.normalizer) [LieModule.IsNilpotent H M]
+    (hyM : IsNilpotent (LieModule.toEnd R L M y)) {z : L}
+    (hz : z ∈ lieSpan R L (insert y (H : Set L))) :
     IsNilpotent (LieModule.toEnd R L M z) := by
-  have : LieModule.IsNilpotent (H.spanSingletonSup hy) M :=
-    H.lieModule_isNilpotent_spanSingletonSup hy hyM
+  have : LieModule.IsNilpotent (lieSpan R L (insert y (H : Set L))) M :=
+    H.lieModule_isNilpotent_lieSpan_insert hy hyM
   -- the action of `⟨z, hz⟩` through the subalgebra is the action of `z` through `L`
-  rw [← LieSubalgebra.toEnd_mk R L M (H.spanSingletonSup hy) hz]
-  exact LieModule.isNilpotent_toEnd_of_isNilpotent R (H.spanSingletonSup hy) M ⟨z, hz⟩
+  rw [← toEnd_mk R L M (lieSpan R L (insert y (H : Set L))) hz]
+  exact LieModule.isNilpotent_toEnd_of_isNilpotent R (lieSpan R L (insert y (H : Set L))) M
+    ⟨z, hz⟩
 
 /-- The pointwise form of the nilpotent-extension lemma: if every element of `H` acts nilpotently on
 a Noetherian module `M`, and so does a normalizing element `y`, then so does every element of the
 Lie subalgebra spanned by `y` and `H`.  Engel's theorem turns the hypothesis on `H` into nilpotency
-of the action, which is what `LieSubalgebra.isNilpotent_toEnd_of_mem_spanSingletonSup` consumes. -/
-theorem isNilpotent_toEnd_of_mem_spanSingletonSup_of_forall [IsNoetherian R M]
+of the action, which is what `LieSubalgebra.isNilpotent_toEnd_of_mem_lieSpan_insert` consumes. -/
+theorem isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall [IsNoetherian R M]
+    (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer)
     (hH : ∀ x ∈ H, IsNilpotent (LieModule.toEnd R L M x))
-    (hyM : IsNilpotent (LieModule.toEnd R L M y)) {z : L} (hz : z ∈ H.spanSingletonSup hy) :
+    (hyM : IsNilpotent (LieModule.toEnd R L M y)) {z : L}
+    (hz : z ∈ lieSpan R L (insert y (H : Set L))) :
     IsNilpotent (LieModule.toEnd R L M z) := by
   have : LieModule.IsNilpotent H M :=
     (LieModule.isNilpotent_iff_forall' (R := R)).mpr fun x => hH x x.2
-  exact H.isNilpotent_toEnd_of_mem_spanSingletonSup hy hyM hz
+  exact H.isNilpotent_toEnd_of_mem_lieSpan_insert hy hyM hz
 
 end LieSubalgebra
 
@@ -207,10 +170,11 @@ theorem isNilpotent_toEnd_of_mem_span_singleton_sup [IsNoetherian R M] (I : LieI
   have hyN : y ∈ (I : LieSubalgebra R L).normalizer := by
     rw [I.normalizer_eq_top]
     exact LieSubalgebra.mem_top y
-  have hz' : z ∈ (I : LieSubalgebra R L).spanSingletonSup hyN := by
-    rw [LieSubalgebra.mem_spanSingletonSup, LieIdeal.toLieSubalgebra_toSubmodule R L I]
+  have hz' : z ∈ LieSubalgebra.lieSpan R L (insert y ((I : LieSubalgebra R L) : Set L)) := by
+    rw [← LieSubalgebra.mem_toSubmodule, LieSubalgebra.lieSpan_insert_toSubmodule _ hyN,
+      LieIdeal.toLieSubalgebra_toSubmodule R L I]
     exact hz
-  exact (I : LieSubalgebra R L).isNilpotent_toEnd_of_mem_spanSingletonSup_of_forall hyN
+  exact (I : LieSubalgebra R L).isNilpotent_toEnd_of_mem_lieSpan_insert_of_forall hyN
     (fun x hx => hI x ((mem_toLieSubalgebra R L I x).mp hx)) hy hz'
 
 /-- The `t • y + x` reading of `LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup`: for an ideal
@@ -230,35 +194,24 @@ namespace TauCeti.LieAlgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- The adjoint action is the action of `L` on itself as a Lie module. -/
-private theorem ad_eq_toEnd (x : L) :
-    _root_.LieAlgebra.ad R L x = LieModule.toEnd R L L x :=
-  LinearMap.ext fun _ => rfl
-
 /-- The adjoint specialization of the nilpotent-extension lemma: if `y` is `ad`-nilpotent, then so
 is every element of `R ∙ y ⊔ nilradical R L`.  Every element of the nilradical is `ad`-nilpotent, so
 the hypothesis of `LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup` on the ideal is automatic
-here. -/
+here.  The adjoint action *is* the action of `L` on itself as a Lie module, so no transport between
+`LieAlgebra.ad` and `LieModule.toEnd` is needed. -/
 theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical [IsNoetherian R L] {y : L}
     (hy : IsNilpotent (_root_.LieAlgebra.ad R L y)) {z : L}
     (hz : z ∈ (R ∙ y) ⊔ LieSubmodule.toSubmodule (nilradical R L)) :
-    IsNilpotent (_root_.LieAlgebra.ad R L z) := by
-  have hN : ∀ x ∈ nilradical R L, IsNilpotent (LieModule.toEnd R L L x) := fun x hx => by
-    rw [← ad_eq_toEnd (R := R) x]
-    exact isNilpotent_ad_of_mem_nilradical hx
-  have hy' : IsNilpotent (LieModule.toEnd R L L y) := by
-    rw [← ad_eq_toEnd (R := R) y]
-    exact hy
-  rw [ad_eq_toEnd (R := R) z]
-  exact LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup (nilradical R L) hN hy' hz
+    IsNilpotent (_root_.LieAlgebra.ad R L z) :=
+  LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup (nilradical R L)
+    (fun _ hx => isNilpotent_ad_of_mem_nilradical hx) hy hz
 
 /-- The `t • y + n` reading of `isNilpotent_ad_of_mem_span_singleton_sup_nilradical`: if `y` is
 `ad`-nilpotent, then so is `t • y + n` for every `n` in the nilradical. -/
 theorem isNilpotent_ad_smul_add_of_mem_nilradical [IsNoetherian R L] {y : L}
     (hy : IsNilpotent (_root_.LieAlgebra.ad R L y)) (t : R) {n : L} (hn : n ∈ nilradical R L) :
     IsNilpotent (_root_.LieAlgebra.ad R L (t • y + n)) :=
-  isNilpotent_ad_of_mem_span_singleton_sup_nilradical hy <| Submodule.add_mem _
-    (Submodule.mem_sup_left (Submodule.smul_mem _ t (Submodule.mem_span_singleton_self y)))
-    (Submodule.mem_sup_right ((LieSubmodule.mem_toSubmodule (nilradical R L)).mpr hn))
+  LieIdeal.isNilpotent_toEnd_smul_add_of_mem (nilradical R L)
+    (fun _ hx => isNilpotent_ad_of_mem_nilradical hx) hy t hn
 
 end TauCeti.LieAlgebra
