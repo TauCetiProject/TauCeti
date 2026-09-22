@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
-# Inverting a principal complex power on a sector
+# Principal complex powers and positive real scaling
+
+Multiplication of a nonzero complex number by a positive real scalar does not cross the branch cut
+of the principal logarithm.  Consequently, principal complex powers split across such a product.
 
 Taking the principal power `u ^ (r⁻¹ : ℝ)` of a nonzero `u` divides its argument by `r`, so
 raising the result back to the power `r` returns `u` — but only as long as the intermediate
@@ -18,6 +21,7 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 
 ## Main result
 
+* `Complex.ofReal_mul_cpow` -- a principal power splits across a positive real factor.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`
 -/
 
@@ -26,6 +30,16 @@ public section
 open Complex
 
 namespace TauCeti
+
+/-- A principal complex power splits across multiplication by a positive real scalar.  Positivity
+ensures that multiplication by `r` does not change the argument of `z`, so the principal logarithm
+is additive on this product. -/
+theorem _root_.Complex.ofReal_mul_cpow {r : ℝ} (hr : 0 < r) {z : ℂ} (hz : z ≠ 0) (w : ℂ) :
+    ((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w := by
+  rw [Complex.cpow_def_of_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr hr.ne') hz),
+    Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr.ne'),
+    Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr hz, add_mul, Complex.exp_add]
+  rw [Complex.ofReal_log hr.le]
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate
