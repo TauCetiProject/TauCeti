@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Length
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 
 /-!
@@ -43,9 +43,9 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [T2Space (TangentBundle I M)]
 
-/-- A radial segment has length equal to its constant speed times the elapsed time whenever both
-parameters lie in the interval of existence. -/
-theorem pathELength_radialSegment {p : M} {v : TangentSpace I p} {s t : ℝ}
+/-- The radial exponential curve has length equal to its constant speed times the elapsed time
+whenever both parameters lie in the interval of existence. -/
+theorem pathELength_riemannianExp_smul {p : M} {v : TangentSpace I p} {s t : ℝ}
     (hs : s ∈ geodesicInterval I M p v) (ht : t ∈ geodesicInterval I M p v) :
     pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) s t =
       ‖v‖ₑ * ENNReal.ofReal (t - s) := by
@@ -54,16 +54,6 @@ theorem pathELength_radialSegment {p : M} {v : TangentSpace I p} {s t : ℝ}
     exact riemannianExp_smul p v u
   rw [hcurve]
   exact pathELength_maximalGeodesic hs ht
-
-/-- In particular, when `exp_p v` is defined, the radial segment from `p` to `exp_p v` has length
-equal to `‖v‖`. -/
-theorem pathELength_radialSegment_zero_one {p : M} {v : TangentSpace I p}
-    (hv : v ∈ expDomain I M p) :
-    pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 = ‖v‖ₑ := by
-  have hIcc : Icc (0 : ℝ) 1 ⊆ geodesicInterval I M p v :=
-    ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.mp hv)
-  rw [pathELength_radialSegment (hIcc (by simp)) (hIcc (by simp))]
-  simp
 
 end TauCeti.Manifold
 
