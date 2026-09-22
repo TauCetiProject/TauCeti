@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import TauCeti.Algebra.Lie.Derivation.Ideal
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 -- Private: the dual numbers appear only in the construction below, never in a statement.
 import Mathlib.Algebra.DualNumber
+-- Private: descent along a two-sided ideal is used only in the proof of
+-- `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_ad_mem_stableDerivations`.
+import TauCeti.Algebra.Lie.Derivation.Quotient
 
 /-!
 # Lifting a Lie derivation to the enveloping algebra
@@ -68,6 +72,8 @@ agree are closed under products and contain the scalars; this is
   lifted derivations.
 * `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_mem_stableDerivations_pow`: under the
   same generator condition, every power of the ideal is stable under the lifted derivation.
+* `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_ad_mem_stableDerivations`: the lift of
+  an adjoint derivation preserves *every* two-sided ideal, because it is inner.
 
 ## Implementation notes
 
@@ -372,6 +378,22 @@ theorem envelopingDerivation_inner_apply (x : L) (a : U) :
   rw [envelopingDerivation_inner, NegMemClass.coe_neg, LinearMap.neg_apply, coe_innerDerivation,
     LieAlgebra.ad_apply]
   exact lie_skew a (_root_.UniversalEnvelopingAlgebra.ι R x)
+
+/-- **The lift of an adjoint derivation preserves every two-sided ideal.** The lift of `ad z` is
+the inner derivation of `U(L)` at `ι z`, by
+`TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_inner` and the sign relating the two
+conventions, and an inner derivation preserves every two-sided ideal.  So a descent along a
+two-sided ideal of `U(L)` needs nothing checked in the adjoint case. -/
+theorem envelopingDerivation_ad_mem_stableDerivations (I : Ideal U) [I.IsTwoSided] (x : L) :
+    envelopingDerivation R L (LieDerivation.ad R L x)
+      ∈ stableDerivations R (I.restrictScalars R) := by
+  have hd : LieDerivation.ad R L x = -LieDerivation.inner R L L x := by ext y; simp
+  have h : envelopingDerivation R L (LieDerivation.ad R L x)
+      = innerDerivation R (_root_.UniversalEnvelopingAlgebra.ι R x) := by
+    rw [hd, ← envelopingDerivationHom_apply, map_neg, envelopingDerivationHom_apply,
+      envelopingDerivation_inner, neg_neg]
+  rw [h]
+  exact innerDerivation_mem_stableDerivations R I (_root_.UniversalEnvelopingAlgebra.ι R x)
 
 end UniversalEnvelopingAlgebra
 

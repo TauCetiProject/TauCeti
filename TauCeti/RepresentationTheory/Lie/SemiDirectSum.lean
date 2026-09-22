@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import Mathlib.Algebra.Lie.SemiDirect
 public import TauCeti.Algebra.Lie.Derivation.Quotient
 public import TauCeti.Algebra.Lie.OfAssociative
@@ -33,11 +32,11 @@ which is nothing but the Leibniz rule with the second summand cancelled. Matchin
 the bracket `⁅(y₁, z₁), (y₂, z₂)⁆ = (⁅y₁, y₂⁆ + ψ z₁ y₂ - ψ z₂ y₁, ⁅z₁, z₂⁆)` of the semidirect
 sum is exactly what the twist in `LieAlgebra.SemiDirectSum` was designed for.
 
-The construction is the extension step of the Ado–Iwasawa argument: `S` is a solvable ideal of a
+The construction is the extension step of the Ado--Iwasawa argument: `S` is a solvable ideal of a
 Lie algebra `L`, `H` is a complementary subalgebra, and `J` is a derivation-stable cofinite ideal
 chosen so that `U(S) ⧸ J` is finite-dimensional. The representation of `S` one starts from is
 visible through the ideal alone, which is why the kernel statement below is sharp: an element `y`
-of `S` acts by zero exactly when `ι y ∈ J`. That is what makes the extension iterable.
+of `S` acts by zero exactly when `ι y ∈ J`.
 
 ## Main definitions
 
@@ -54,11 +53,9 @@ of `S` acts by zero exactly when `ι y ∈ J`. That is what makes the extension 
   representation of `S` on `U(S) ⧸ J`.
 * `TauCeti.inl_mem_ker_semiDirectEnvelopingRep_iff`: **kernel control**, `y : S` acts by zero
   exactly when `ι y ∈ J`.
-* `TauCeti.apply_eq_zero_of_inl_mem_ker_semiDirectEnvelopingRep`: the consequence used to iterate
-  the construction: if `J` is contained in the kernel of the enveloping extension of a
-  representation `σ` of `S`, then `ker ρ ∩ S ≤ ker σ`.
-* `TauCeti.envelopingDerivation_ad_mem_stableDerivations`: for the adjoint action of `S` on
-  itself the stability hypothesis holds for every two-sided ideal.
+* `TauCeti.apply_eq_zero_of_inl_mem_ker_semiDirectEnvelopingRep`: if `J` is contained in the
+  kernel of the enveloping extension of a representation `σ` of `S`, then every `y : S` killed by
+  the construction is already killed by `σ`.
 
 ## Implementation notes
 
@@ -67,24 +64,23 @@ The split hypothesis on the ambient Lie algebra is stated externally, through Ma
 phrased as membership in `TauCeti.stableDerivations`, the form in which
 `TauCeti.derivationQuotientHom` consumes it;
 `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_range_le_iff` reduces the stronger
-range condition that the Ado argument supplies to a condition on `S` alone.
+range condition to a condition on `S` alone. For the adjoint action `ψ = LieDerivation.ad` the
+hypothesis holds for every two-sided ideal, by
+`TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_ad_mem_stableDerivations`.
 
 The two halves of the action are `private`: as terms they are `TauCeti.LieHom.leftRegularRep` and
 `TauCeti.derivationQuotientHom` applied to data already in the library, so naming them publicly
 would add a layer without adding content. The characterisations on a class `Ideal.Quotient.mk J a`
-are the public interface, and they are deliberately *not* `simp` lemmas: `Ideal.Quotient.mk J` is
-a ring homomorphism, so `simp` distributes it over the sums and products on their right-hand
-sides, and no formulation of them is a `simp` normal form.
+are the public interface. Only the general one, `TauCeti.semiDirectEnvelopingRep_apply_mk`, is a
+`simp` lemma: with it in the default set `simp` already reduces the two summand-wise
+specialisations and the kernel criterion, so tagging those as well is what the `simpNF` linter
+rejects.
 
 Nilpotence of the constructed operators is *not* proved here: it needs hypotheses relating the
-nilradicals of `S` and of the ambient algebra, and is a separate milestone of the same roadmap
-layer.
+nilradicals of `S` and of the ambient algebra.
 
 ## References
 
-* The Ado--Iwasawa roadmap, `TauCetiRoadmap/RepresentationTheory/AdoIwasawa/README.md`,
-  Layer 4, the "multiplication-plus-derivation action", "representation law" and "kernel control"
-  milestones.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Appendix E, Proposition E.5.
 -/
 
@@ -160,15 +156,21 @@ private theorem coe_envelopingQuotientStable (z : H) :
       = ((UniversalEnvelopingAlgebra.envelopingDerivationHom R S).comp ψ) z := rfl
   rw [h, LieHom.comp_apply, UniversalEnvelopingAlgebra.envelopingDerivationHom_apply]
 
+-- `TauCeti.envelopingQuotientDer` is `TauCeti.derivationQuotientHom` composed with the inclusion
+-- of the derivation subalgebra, so its value is the underlying endomorphism of the descended
+-- derivation.  Composing with `LieSubalgebra.incl` is the coercion on the nose, and this lemma is
+-- the single place that is used; everything below rewrites with it.
+private theorem envelopingQuotientDer_apply (z : H) :
+    envelopingQuotientDer R S ψ J hψ z
+      = (derivationQuotientHom R J (envelopingQuotientStable R S ψ J hψ z) :
+          Module.End R (_root_.UniversalEnvelopingAlgebra R S ⧸ J)) :=
+  (rfl)
+
 private theorem envelopingQuotientDer_apply_mk (z : H) (a : U) :
     envelopingQuotientDer R S ψ J hψ z (Ideal.Quotient.mk J a)
       = Ideal.Quotient.mk J
         ((UniversalEnvelopingAlgebra.envelopingDerivation R S (ψ z) : Module.End R U) a) := by
-  have h : (envelopingQuotientDer R S ψ J hψ z : Module.End R
-        (_root_.UniversalEnvelopingAlgebra R S ⧸ J))
-      = (derivationQuotientHom R J (envelopingQuotientStable R S ψ J hψ z) :
-          Module.End R (_root_.UniversalEnvelopingAlgebra R S ⧸ J)) := rfl
-  rw [h, derivationQuotientHom_apply_mk, coe_envelopingQuotientStable]
+  rw [envelopingQuotientDer_apply, derivationQuotientHom_apply_mk, coe_envelopingQuotientStable]
 
 /-- **The mixed commutator identity.** Bracketing the descended derivation attached to `z : H`
 with multiplication by `y : S` is multiplication by `ψ z y`: the Leibniz rule produces two
@@ -193,17 +195,12 @@ descended lift of the derivation `ψ z`. -/
 noncomputable def semiDirectEnvelopingRep : (S ⋊⁅ψ⁆ H) →ₗ⁅R⁆ Module.End R (U ⧸ J) where
   toFun x := envelopingQuotientMul R S J x.left + envelopingQuotientDer R S ψ J hψ x.right
   map_add' x y := by
-    change envelopingQuotientMul R S J (x.left + y.left)
-        + envelopingQuotientDer R S ψ J hψ (x.right + y.right) = _
-    rw [map_add, map_add]
+    simp only [LieAlgebra.SemiDirectSum.add_eq_mk, map_add]
     abel
   map_smul' t x := by
-    change envelopingQuotientMul R S J (t • x.left)
-        + envelopingQuotientDer R S ψ J hψ (t • x.right) = _
-    rw [map_smul, map_smul, RingHom.id_apply, smul_add]
+    simp only [LieAlgebra.SemiDirectSum.smul_eq_mk, map_smul, RingHom.id_apply, smul_add]
   map_lie' {x y} := by
-    change envelopingQuotientMul R S J (⁅x.left, y.left⁆ + ψ x.right y.left - ψ y.right x.left)
-        + envelopingQuotientDer R S ψ J hψ ⁅x.right, y.right⁆ = ⁅_, _⁆
+    simp only [LieAlgebra.SemiDirectSum.lie_eq_mk]
     rw [add_lie, lie_add, lie_add, map_sub, map_add,
       (envelopingQuotientMul R S J).map_lie, (envelopingQuotientDer R S ψ J hψ).map_lie,
       lie_envelopingQuotientDer_envelopingQuotientMul,
@@ -211,24 +208,40 @@ noncomputable def semiDirectEnvelopingRep : (S ⋊⁅ψ⁆ H) →ₗ⁅R⁆ Modu
       lie_envelopingQuotientDer_envelopingQuotientMul]
     abel
 
+-- The defining description of the action.  `TauCeti.semiDirectEnvelopingRep` is built from its
+-- `toFun`, so this is the one lemma that has to see through the structure; the public
+-- characterisations below are rewritten from it.
+private theorem semiDirectEnvelopingRep_apply (x : S ⋊⁅ψ⁆ H) :
+    semiDirectEnvelopingRep R S ψ J hψ x
+      = envelopingQuotientMul R S J x.left + envelopingQuotientDer R S ψ J hψ x.right :=
+  (rfl)
+
+private theorem semiDirectEnvelopingRep_inl (y : S) :
+    semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inl ψ y)
+      = envelopingQuotientMul R S J y := by
+  simp only [semiDirectEnvelopingRep_apply, LieAlgebra.SemiDirectSum.inl_eq_mk, map_zero, add_zero]
+
+private theorem semiDirectEnvelopingRep_inr (z : H) :
+    semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inr ψ z)
+      = envelopingQuotientDer R S ψ J hψ z := by
+  simp only [semiDirectEnvelopingRep_apply, LieAlgebra.SemiDirectSum.inr_eq_mk, map_zero, zero_add]
+
 /-- The action of a general element of the semidirect sum on a class of `U(S) ⧸ J`. -/
+@[simp]
 theorem semiDirectEnvelopingRep_apply_mk (x : S ⋊⁅ψ⁆ H) (a : U) :
     semiDirectEnvelopingRep R S ψ J hψ x (Ideal.Quotient.mk J a)
       = Ideal.Quotient.mk J (_root_.UniversalEnvelopingAlgebra.ι R x.left * a
           + (UniversalEnvelopingAlgebra.envelopingDerivation R S (ψ x.right) :
               Module.End R U) a) := by
-  change envelopingQuotientMul R S J x.left (Ideal.Quotient.mk J a)
-      + envelopingQuotientDer R S ψ J hψ x.right (Ideal.Quotient.mk J a) = _
-  rw [envelopingQuotientMul_apply_mk, envelopingQuotientDer_apply_mk, map_add]
+  rw [semiDirectEnvelopingRep_apply, LinearMap.add_apply, envelopingQuotientMul_apply_mk,
+    envelopingQuotientDer_apply_mk, map_add]
 
 /-- On the ideal summand the representation is left multiplication by the canonical generator. -/
 theorem semiDirectEnvelopingRep_inl_apply_mk (y : S) (a : U) :
     semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inl ψ y)
         (Ideal.Quotient.mk J a)
       = Ideal.Quotient.mk J (_root_.UniversalEnvelopingAlgebra.ι R y * a) := by
-  change envelopingQuotientMul R S J y (Ideal.Quotient.mk J a)
-      + envelopingQuotientDer R S ψ J hψ 0 (Ideal.Quotient.mk J a) = _
-  rw [envelopingQuotientMul_apply_mk, map_zero, LinearMap.zero_apply, add_zero]
+  rw [semiDirectEnvelopingRep_inl, envelopingQuotientMul_apply_mk]
 
 /-- On the complementary summand the representation is the descended lifted derivation. -/
 theorem semiDirectEnvelopingRep_inr_apply_mk (z : H) (a : U) :
@@ -236,9 +249,7 @@ theorem semiDirectEnvelopingRep_inr_apply_mk (z : H) (a : U) :
         (Ideal.Quotient.mk J a)
       = Ideal.Quotient.mk J
         ((UniversalEnvelopingAlgebra.envelopingDerivation R S (ψ z) : Module.End R U) a) := by
-  change envelopingQuotientMul R S J 0 (Ideal.Quotient.mk J a)
-      + envelopingQuotientDer R S ψ J hψ z (Ideal.Quotient.mk J a) = _
-  rw [map_zero, LinearMap.zero_apply, zero_add, envelopingQuotientDer_apply_mk]
+  rw [semiDirectEnvelopingRep_inr, envelopingQuotientDer_apply_mk]
 
 /-! ### The commutator identities -/
 
@@ -277,16 +288,12 @@ three commutator identities above are computing. -/
 theorem semiDirectEnvelopingRep_inr_mem_derivationLieAlgebra (z : H) :
     semiDirectEnvelopingRep R S ψ J hψ (LieAlgebra.SemiDirectSum.inr ψ z)
       ∈ derivationLieAlgebra R (U ⧸ J) := by
-  refine mem_derivationLieAlgebra.2 fun q₁ q₂ => ?_
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q₁
-  obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective q₂
-  rw [← map_mul, semiDirectEnvelopingRep_inr_apply_mk, semiDirectEnvelopingRep_inr_apply_mk,
-    semiDirectEnvelopingRep_inr_apply_mk, UniversalEnvelopingAlgebra.envelopingDerivation_mul,
-    map_add, map_mul, map_mul]
+  rw [semiDirectEnvelopingRep_inr, envelopingQuotientDer_apply]
+  exact SetLike.coe_mem _
 
 /-- **The construction extends the left-regular representation of the ideal.** Restricted along
 the canonical inclusion of `S`, the representation is left multiplication by the image of the
-canonical generator; in particular, the starting representation of `S` is not disturbed. -/
+canonical generator. -/
 theorem semiDirectEnvelopingRep_comp_inl :
     (semiDirectEnvelopingRep R S ψ J hψ).comp (LieAlgebra.SemiDirectSum.inl ψ)
       = LieHom.leftRegularRep
@@ -300,7 +307,7 @@ theorem semiDirectEnvelopingRep_comp_inl :
 
 /-- **Kernel control.** An element of the ideal summand acts by zero exactly when its canonical
 generator already lies in `J`: the action is faithful on `S` to precisely the extent that `J`
-avoids `ι(S)`. Nothing is lost in passing from `S` to `S ⋊⁅ψ⁆ H`. -/
+avoids `ι(S)`. -/
 theorem inl_mem_ker_semiDirectEnvelopingRep_iff (y : S) :
     LieAlgebra.SemiDirectSum.inl ψ y ∈ (semiDirectEnvelopingRep R S ψ J hψ).ker
       ↔ _root_.UniversalEnvelopingAlgebra.ι R y ∈ J := by
@@ -309,8 +316,7 @@ theorem inl_mem_ker_semiDirectEnvelopingRep_iff (y : S) :
   · intro h
     have := congrArg (fun f : Module.End R (U ⧸ J) => f 1) h
     simp only [LinearMap.zero_apply] at this
-    rw [show (1 : U ⧸ J) = Ideal.Quotient.mk J 1 from rfl,
-      semiDirectEnvelopingRep_inl_apply_mk, mul_one] at this
+    rw [← map_one (Ideal.Quotient.mk J), semiDirectEnvelopingRep_inl_apply_mk, mul_one] at this
     exact (Ideal.Quotient.eq_zero_iff_mem).mp this
   · intro h
     refine LinearMap.ext fun q => ?_
@@ -321,8 +327,7 @@ theorem inl_mem_ker_semiDirectEnvelopingRep_iff (y : S) :
 
 /-- **The invariant that lets the extension be iterated.** If `J` is contained in the kernel of
 the enveloping extension of a representation `σ` of `S`, then every element of `S` killed by the
-extended representation is already killed by `σ`; in the notation of the roadmap,
-`ker ρ ∩ S ≤ ker σ`. -/
+extended representation is already killed by `σ`. -/
 theorem apply_eq_zero_of_inl_mem_ker_semiDirectEnvelopingRep {A : Type*} [Ring A] [Algebra R A]
     (σ : S →ₗ⁅R⁆ A) (hJ : J ≤ RingHom.ker (_root_.UniversalEnvelopingAlgebra.lift R σ))
     {y : S} (hy : LieAlgebra.SemiDirectSum.inl ψ y ∈ (semiDirectEnvelopingRep R S ψ J hψ).ker) :
@@ -331,25 +336,5 @@ theorem apply_eq_zero_of_inl_mem_ker_semiDirectEnvelopingRep {A : Type*} [Ring A
   rwa [RingHom.mem_ker, _root_.UniversalEnvelopingAlgebra.lift_ι_apply] at h
 
 end Construction
-
-/-! ### The adjoint action -/
-
-/-- **The adjoint action always satisfies the stability hypothesis.** The lift of `ad z` to
-`U(S)` is the inner derivation at `ι z`, and an inner derivation preserves every two-sided ideal.
-So `S ⋊⁅ad⁆ S` acts on `U(S) ⧸ J` for *every* two-sided ideal `J`, with nothing to check; this is
-the case in which the construction reduces to the two commuting halves of the regular
-representation of `U(S)`, and it witnesses that the hypothesis of
-`TauCeti.semiDirectEnvelopingRep` is satisfiable. -/
-theorem envelopingDerivation_ad_mem_stableDerivations (z : S) :
-    UniversalEnvelopingAlgebra.envelopingDerivation R S (LieDerivation.ad R S z)
-      ∈ stableDerivations R (J.restrictScalars R) := by
-  have hd : LieDerivation.ad R S z = -LieDerivation.inner R S S z := by ext y; simp
-  have h : UniversalEnvelopingAlgebra.envelopingDerivation R S (LieDerivation.ad R S z)
-      = innerDerivation R (_root_.UniversalEnvelopingAlgebra.ι R z) := by
-    rw [hd, ← UniversalEnvelopingAlgebra.envelopingDerivationHom_apply, map_neg,
-      UniversalEnvelopingAlgebra.envelopingDerivationHom_apply,
-      UniversalEnvelopingAlgebra.envelopingDerivation_inner, neg_neg]
-  rw [h]
-  exact innerDerivation_mem_stableDerivations R J (_root_.UniversalEnvelopingAlgebra.ι R z)
 
 end TauCeti
