@@ -98,6 +98,7 @@ theorem restrictedProductMap_id (U : ∀ i, Subgroup (G i)) :
   rw [restrictedProductMap_apply, MonoidHom.id_apply, MonoidHom.id_apply]
 
 /-- Componentwise restricted-product homomorphisms compose coordinatewise. -/
+@[simp]
 theorem restrictedProductMap_comp {H : ι → Type w} {K : ι → Type z}
     [∀ i, Group (H i)] [∀ i, Group (K i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
