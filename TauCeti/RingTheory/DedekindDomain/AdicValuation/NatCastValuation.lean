@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
 # Natural-number valuations in adic completions
 
-Let `v` be a height-one prime of a Dedekind domain `R`, with fraction field `K`. For a natural
-number whose image in the completion `K_v` is nonzero, its normalized additive valuation there is
-the exponent of `v` in the principal ideal that the number generates in `R`.
+Let `v` be a height-one prime of a Dedekind domain `R`, with finite residue field and fraction
+field `K`. For a natural number whose image in the completion `K_v` is nonzero, its normalized
+additive valuation there is the exponent of `v` in the principal ideal that the number generates
+in `R`.
 
 This identifies the local-field normalization, in which a uniformizer has valuation one, with
 the global ideal-theoretic normalization by prime multiplicity. It is the bridge needed when a
@@ -23,8 +24,8 @@ global prime.
 ## Main result
 
 * `IsDedekindDomain.HeightOneSpectrum.natCastValuation_completion_eq_multiplicity_span`:
-  if the image of `n` in `K_v` is nonzero, its normalized valuation there is the multiplicity of
-  `v` in `(n)`.
+  for `v` with finite residue field, if the image of `n` in `K_v` is nonzero, its normalized
+  valuation there is the multiplicity of `v` in `(n)`.
 -/
 
 public section
@@ -37,8 +38,9 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- If a natural number has nonzero image in an adic completion, its normalized valuation there is
-its multiplicity in the corresponding global principal ideal. -/
+/-- If a height-one prime has finite residue field and a natural number has nonzero image in its
+adic completion, the normalized valuation there is its multiplicity in the corresponding global
+principal ideal. -/
 @[simp] theorem natCastValuation_completion_eq_multiplicity_span
     (v : HeightOneSpectrum R) [Finite (R ⧸ v.asIdeal)] (n : ℕ)
     (hn : (n : v.adicCompletion K) ≠ 0) :
