@@ -183,24 +183,39 @@ def ofSwapColumns (x : GridState n) (j : Fin n) (hj : j ≠ finRotate n a)
   right_eq := rfl
   turn_mem := hs
 
+/-- Regard an oriented rectangle as a pentagon: its terminal side must be the grid line replaced
+by `γ`, and the turn row must lie among the rows that side spans. -/
+def ofRightEq {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    GridPentagonBetween a s u v where
+  toGridRectangleBetween := r
+  right_eq := hright
+  turn_mem := hs
+
+/-- The rectangle underlying `ofRightEq` is the supplied rectangle. -/
+@[simp]
+theorem ofRightEq_toGridRectangleBetween {u v : GridState n} (r : GridRectangleBetween u v)
+    (hright : r.right = finRotate n a) (hs : s ∈ Grid.cIco r.bottom r.top) :
+    (ofRightEq r hright hs : GridPentagonBetween a s u v).toGridRectangleBetween = r := by
+  unfold ofRightEq
+  rfl
+
 /-- Regard a rectangle between possibly different endpoint states as a pentagon when its
 underlying toroidal rectangle agrees with that of an existing pentagon. -/
 def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
     (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
-    GridPentagonBetween a s u v where
-  toGridRectangleBetween := r
-  right_eq := by
-    have hright := congrArg GridRectangle.right h
-    simpa only [GridRectangleBetween.toGridRectangle_right] using hright.trans P.right_eq
-  turn_mem := by
-    have hbottom := congrArg GridRectangle.bottom h
-    have htop := congrArg GridRectangle.top h
-    simp only [GridRectangleBetween.toGridRectangle_bottom,
-      GridRectangleBetween.toGridRectangle_top] at hbottom htop
-    have hs : s ∈ Grid.cIco r.bottom r.top := by
+    GridPentagonBetween a s u v :=
+  ofRightEq r
+    (by
+      have hright := congrArg GridRectangle.right h
+      simpa only [GridRectangleBetween.toGridRectangle_right] using hright.trans P.right_eq)
+    (by
+      have hbottom := congrArg GridRectangle.bottom h
+      have htop := congrArg GridRectangle.top h
+      simp only [GridRectangleBetween.toGridRectangle_bottom,
+        GridRectangleBetween.toGridRectangle_top] at hbottom htop
       rw [hbottom, htop]
-      exact P.turn_mem
-    simpa only [GridRectangleBetween.bottom, GridRectangleBetween.top] using hs
+      exact P.turn_mem)
 
 /-- The rectangle underlying `ofToGridRectangleEq` is the supplied rectangle. -/
 @[simp]
@@ -209,7 +224,7 @@ theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
     (h : r.toGridRectangle = P.toGridRectangle) :
     (ofToGridRectangleEq r P h).toGridRectangleBetween = r := by
   unfold ofToGridRectangleEq
-  rfl
+  exact ofRightEq_toGridRectangleBetween r _ _
 
 /-- The initial side of the pentagon built from a column swap. -/
 @[simp]

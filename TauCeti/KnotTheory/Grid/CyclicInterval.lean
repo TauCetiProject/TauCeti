@@ -655,20 +655,6 @@ theorem mem_cIco_finRotate_iff_of_ne {a b c : Fin n}
       rw [hrot] at haVal hbVal ⊢
       split_ifs <;> omega
 
-/-- Swapping two cyclically consecutive points preserves membership in a half-open cyclic
-interval when the second point is not an endpoint. -/
-theorem mem_cIco_swap_finRotate_iff_of_ne {a b c x : Fin n}
-    (ha : a ≠ finRotate n c) (hb : b ≠ finRotate n c) :
-    Equiv.swap c (finRotate n c) x ∈ cIco a b ↔ x ∈ cIco a b := by
-  have hadj := mem_cIco_finRotate_iff_of_ne ha hb
-  by_cases hxc : x = c
-  · subst x
-    simpa only [Equiv.swap_apply_left] using hadj
-  · by_cases hx : x = finRotate n c
-    · subst x
-      simpa only [Equiv.swap_apply_right] using hadj.symm
-    · rw [Equiv.swap_apply_of_ne_of_ne hxc hx]
-
 /-- On a cycle of length at least two, no point is fixed by the cyclic successor `finRotate n`. -/
 theorem finRotate_ne_self (hn : 1 < n) (a : Fin n) : finRotate n a ≠ a := by
   cases n with

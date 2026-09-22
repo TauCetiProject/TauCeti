@@ -198,25 +198,24 @@ theorem mem_OColumns {r : GridRectangle n} {c : Fin n} :
     c ∈ G.OColumns r ↔ (c, G.O c) ∈ r.coveredSquares := by
   simp [OColumns]
 
-/-- Swapping two cyclically consecutive columns carries the covered `O`-columns of a rectangle
-to their images under the same swap, provided the second column is not a rectangle side. -/
-theorem OColumns_swapColumns_eq_image_of_ne (r : GridRectangle n) {a : Fin n}
-    (hleft : r.left ≠ finRotate n a) (hright : r.right ≠ finRotate n a) :
-    (G.swapColumns a (finRotate n a)).OColumns r =
-      (G.OColumns r).image (Equiv.swap a (finRotate n a)) := by
+/-- Swapping two columns carries the covered `O`-columns of a rectangle to their images under
+the same swap, provided the rectangle either covers both columns or covers neither. -/
+theorem OColumns_swapColumns_eq_image_of_coveredColumns (r : GridRectangle n) {a b : Fin n}
+    (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
+    (G.swapColumns a b).OColumns r = (G.OColumns r).image (Equiv.swap a b) := by
   ext c
-  rw [(G.swapColumns a (finRotate n a)).mem_OColumns, Finset.mem_image]
+  rw [(G.swapColumns a b).mem_OColumns, Finset.mem_image]
   simp only [GridDiagram.swapColumns_O, GridState.swapColumns_apply]
   constructor
   · intro hc
-    refine ⟨Equiv.swap a (finRotate n a) c, ?_, Equiv.swap_apply_self _ _ _⟩
+    refine ⟨Equiv.swap a b c, ?_, Equiv.swap_apply_self _ _ _⟩
     rw [G.mem_OColumns]
-    exact (r.mem_coveredSquares_swap_finRotate_iff_of_ne hleft hright
-      (c, G.O (Equiv.swap a (finRotate n a) c))).mpr hc
+    exact (r.mem_coveredSquares_swap_iff_of_coveredColumns h
+      (c, G.O (Equiv.swap a b c))).mpr hc
   · rintro ⟨d, hd, rfl⟩
     rw [G.mem_OColumns] at hd
     simpa only [Equiv.swap_apply_self] using
-      (r.mem_coveredSquares_swap_finRotate_iff_of_ne hleft hright (d, G.O d)).mpr hd
+      (r.mem_coveredSquares_swap_iff_of_coveredColumns h (d, G.O d)).mpr hd
 
 /-- The covered `O`-markings are exactly the markings of the covered `O`-columns. -/
 theorem OSet_inter_coveredSquares (r : GridRectangle n) :
@@ -253,16 +252,16 @@ theorem OMonomial_def (r : GridRectangle n) :
     G.OMonomial R r = ∏ c ∈ G.OColumns r, MvPolynomial.X c :=
   (rfl)
 
-/-- Renaming the variables in a rectangle monomial agrees with swapping two cyclically
-consecutive columns of the diagram when the second column is not a rectangle side. -/
-theorem rename_OMonomial_eq_swapColumns_of_ne (r : GridRectangle n) {a : Fin n}
-    (hleft : r.left ≠ finRotate n a) (hright : r.right ≠ finRotate n a) :
-    MvPolynomial.rename (Equiv.swap a (finRotate n a)) (G.OMonomial R r) =
-      (G.swapColumns a (finRotate n a)).OMonomial R r := by
-  rw [G.OMonomial_def R r, (G.swapColumns a (finRotate n a)).OMonomial_def R r,
-    G.OColumns_swapColumns_eq_image_of_ne r hleft hright, map_prod]
-  simp only [MvPolynomial.rename_X,
-    Finset.prod_image (Equiv.swap a (finRotate n a)).injective.injOn]
+/-- The rectangle monomial of a column-swapped diagram renames the variables of the original
+monomial by the same swap, provided the rectangle either covers both columns or covers
+neither. -/
+theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) {a b : Fin n}
+    (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
+    (G.swapColumns a b).OMonomial R r =
+      MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) := by
+  rw [G.OMonomial_def R r, (G.swapColumns a b).OMonomial_def R r,
+    G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
+  simp only [MvPolynomial.rename_X, Finset.prod_image (Equiv.swap a b).injective.injOn]
 
 /-- The weight of a rectangle covering no `O`-marking is `1`. -/
 theorem OMonomial_eq_one_of_disjoint {r : GridRectangle n}

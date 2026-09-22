@@ -142,6 +142,30 @@ theorem hasDisjointSides_iff (D : GridPentagonRectangleDecomposition a s x z) :
     simp only [toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
       toRectangleDecomposition_second_left, toRectangleDecomposition_second_right]
 
+/-- Disjointness puts the initial side of the rectangle off the replaced grid line, which is the
+terminal side of the pentagon. -/
+theorem rectangle_left_ne (D : GridPentagonRectangleDecomposition a s x z)
+    (h : D.HasDisjointSides) : D.rectangle.left ≠ finRotate n a := by
+  rw [← D.pentagon.right_eq]
+  exact (D.hasDisjointSides_iff.mp h).2.2.1.symm
+
+/-- Disjointness puts the terminal side of the rectangle off the replaced grid line, which is the
+terminal side of the pentagon. -/
+theorem rectangle_right_ne (D : GridPentagonRectangleDecomposition a s x z)
+    (h : D.HasDisjointSides) : D.rectangle.right ≠ finRotate n a := by
+  rw [← D.pentagon.right_eq]
+  exact (D.hasDisjointSides_iff.mp h).2.2.2.symm
+
+/-- Disjointness makes the rectangle cover the commuted column exactly when it covers the
+replaced grid line: neither is one of its sides, and they are cyclically consecutive. -/
+theorem rectangle_mem_coveredColumns_iff (D : GridPentagonRectangleDecomposition a s x z)
+    (h : D.HasDisjointSides) :
+    a ∈ D.rectangle.toGridRectangle.coveredColumns ↔
+      finRotate n a ∈ D.rectangle.toGridRectangle.coveredColumns := by
+  simp only [GridRectangle.mem_coveredColumns]
+  exact (Grid.mem_cIco_finRotate_iff_of_ne (by simpa using D.rectangle_left_ne h)
+    (by simpa using D.rectangle_right_ne h)).symm
+
 end GridPentagonRectangleDecomposition
 
 namespace GridRectanglePentagonDecomposition
@@ -225,6 +249,30 @@ theorem hasDisjointSides_iff (D : GridRectanglePentagonDecomposition a s x z) :
     rw [hasDisjointSides_def, D.toRectangleDecomposition.hasDisjointSides_iff]
     simp only [toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
       toRectangleDecomposition_second_left, toRectangleDecomposition_second_right]
+
+/-- Disjointness puts the initial side of the rectangle off the replaced grid line, which is the
+terminal side of the pentagon. -/
+theorem rectangle_left_ne (D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.HasDisjointSides) : D.rectangle.left ≠ finRotate n a := by
+  rw [← D.pentagon.right_eq]
+  exact (D.hasDisjointSides_iff.mp h).2.1
+
+/-- Disjointness puts the terminal side of the rectangle off the replaced grid line, which is the
+terminal side of the pentagon. -/
+theorem rectangle_right_ne (D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.HasDisjointSides) : D.rectangle.right ≠ finRotate n a := by
+  rw [← D.pentagon.right_eq]
+  exact (D.hasDisjointSides_iff.mp h).2.2.2
+
+/-- Disjointness makes the rectangle cover the commuted column exactly when it covers the
+replaced grid line: neither is one of its sides, and they are cyclically consecutive. -/
+theorem rectangle_mem_coveredColumns_iff (D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.HasDisjointSides) :
+    a ∈ D.rectangle.toGridRectangle.coveredColumns ↔
+      finRotate n a ∈ D.rectangle.toGridRectangle.coveredColumns := by
+  simp only [GridRectangle.mem_coveredColumns]
+  exact (Grid.mem_cIco_finRotate_iff_of_ne (by simpa using D.rectangle_left_ne h)
+    (by simpa using D.rectangle_right_ne h)).symm
 
 /-- Reorder a rectangle followed by a pentagon when their vertical side pairs are disjoint. -/
 def commute (D : GridRectanglePentagonDecomposition a s x z) (h : D.HasDisjointSides) :
@@ -310,16 +358,25 @@ theorem hasDisjointSides_commute (D : GridRectanglePentagonDecomposition a s x z
     D.commute_toRectangleDecomposition h]
   exact D.toRectangleDecomposition.hasDisjointSides_commute (D.hasDisjointSides_def.mp h)
 
+/-- Reordering leaves the underlying toroidal rectangle of the pentagon unchanged. -/
+@[simp]
+theorem commute_pentagon_toGridRectangle (D : GridRectanglePentagonDecomposition a s x z)
+    (h : D.HasDisjointSides) :
+    (D.commute h).pentagon.toGridRectangle = D.pentagon.toGridRectangle := by
+  have hforget := congrArg (fun E : GridRectangleDecomposition x z =>
+    E.first.toGridRectangle) (D.commute_toRectangleDecomposition h)
+  simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle] using
+    hforget.trans (D.toRectangleDecomposition.commute_first_toGridRectangle
+      (D.hasDisjointSides_def.mp h))
+
 /-- The pentagon after reordering covers the same squares as the original pentagon. -/
 @[simp]
 theorem commute_pentagon_coveredSquares (D : GridRectanglePentagonDecomposition a s x z)
     (h : D.HasDisjointSides) :
-    (D.commute h).pentagon.coveredSquares = D.pentagon.coveredSquares := by
-  apply GridPentagonBetween.coveredSquares_eq_of_toGridRectangle_eq
-  have hforget := congrArg (fun E : GridRectangleDecomposition x z =>
-    E.first.toGridRectangle) (D.commute_toRectangleDecomposition h)
-  exact hforget.trans ((D.toRectangleDecomposition.commute_first_toGridRectangle
-    (D.hasDisjointSides_def.mp h)).trans D.toRectangleDecomposition_second_toGridRectangle)
+    (D.commute h).pentagon.coveredSquares = D.pentagon.coveredSquares :=
+  GridPentagonBetween.coveredSquares_eq_of_toGridRectangle_eq _ _
+    (D.commute_pentagon_toGridRectangle h)
 
 /-- Reordering leaves the underlying toroidal rectangle unchanged. -/
 @[simp]
@@ -328,8 +385,8 @@ theorem commute_rectangle_toGridRectangle
     (D.commute h).rectangle.toGridRectangle = D.rectangle.toGridRectangle := by
   have hforget := congrArg (fun E : GridRectangleDecomposition x z =>
     E.second.toGridRectangle) (D.commute_toRectangleDecomposition h)
-  simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition,
-    GridRectanglePentagonDecomposition.toRectangleDecomposition] using
+  simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle,
+    GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle] using
     hforget.trans (D.toRectangleDecomposition.commute_second_toGridRectangle
       (D.hasDisjointSides_def.mp h))
 
@@ -453,16 +510,25 @@ theorem hasDisjointSides_commute (D : GridPentagonRectangleDecomposition a s x z
     D.commute_toRectangleDecomposition h]
   exact D.toRectangleDecomposition.hasDisjointSides_commute (D.hasDisjointSides_def.mp h)
 
+/-- Reordering leaves the underlying toroidal rectangle of the pentagon unchanged. -/
+@[simp]
+theorem commute_pentagon_toGridRectangle (D : GridPentagonRectangleDecomposition a s x z)
+    (h : D.HasDisjointSides) :
+    (D.commute h).pentagon.toGridRectangle = D.pentagon.toGridRectangle := by
+  have hforget := congrArg (fun E : GridRectangleDecomposition x z =>
+    E.second.toGridRectangle) (D.commute_toRectangleDecomposition h)
+  simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle,
+    GridPentagonRectangleDecomposition.toRectangleDecomposition_first_toGridRectangle] using
+    hforget.trans (D.toRectangleDecomposition.commute_second_toGridRectangle
+      (D.hasDisjointSides_def.mp h))
+
 /-- The pentagon after reordering covers the same squares as the original pentagon. -/
 @[simp]
 theorem commute_pentagon_coveredSquares (D : GridPentagonRectangleDecomposition a s x z)
     (h : D.HasDisjointSides) :
-    (D.commute h).pentagon.coveredSquares = D.pentagon.coveredSquares := by
-  apply GridPentagonBetween.coveredSquares_eq_of_toGridRectangle_eq
-  have hforget := congrArg (fun E : GridRectangleDecomposition x z =>
-    E.second.toGridRectangle) (D.commute_toRectangleDecomposition h)
-  exact hforget.trans ((D.toRectangleDecomposition.commute_second_toGridRectangle
-    (D.hasDisjointSides_def.mp h)).trans D.toRectangleDecomposition_first_toGridRectangle)
+    (D.commute h).pentagon.coveredSquares = D.pentagon.coveredSquares :=
+  GridPentagonBetween.coveredSquares_eq_of_toGridRectangle_eq _ _
+    (D.commute_pentagon_toGridRectangle h)
 
 /-- Reordering leaves the underlying toroidal rectangle unchanged. -/
 @[simp]
@@ -471,8 +537,8 @@ theorem commute_rectangle_toGridRectangle
     (D.commute h).rectangle.toGridRectangle = D.rectangle.toGridRectangle := by
   have hforget := congrArg (fun E : GridRectangleDecomposition x z =>
     E.first.toGridRectangle) (D.commute_toRectangleDecomposition h)
-  simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition,
-    GridPentagonRectangleDecomposition.toRectangleDecomposition] using
+  simpa only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle,
+    GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle] using
     hforget.trans (D.toRectangleDecomposition.commute_first_toGridRectangle
       (D.hasDisjointSides_def.mp h))
 
@@ -541,13 +607,6 @@ theorem commute_mem_pentagonRectangleDecompositions {x z : GridState n}
   rw [G.mem_pentagonRectangleDecompositions C (D.commute h)]
   rw [G.mem_unblockedRectangles] at hD
   rw [G.mem_pentagons] at hD
-  obtain ⟨hll, hlr, hrl, hrr⟩ := D.hasDisjointSides_iff.mp h
-  have hleft : D.rectangle.left ≠ b := by
-    rw [← D.pentagon.right_eq]
-    exact hlr
-  have hright : D.rectangle.right ≠ b := by
-    rw [← D.pentagon.right_eq]
-    exact hrr
   refine ⟨?_, ?_⟩
   · rw [G.mem_pentagons]
     refine ⟨D.isEmpty_commute_pentagon h hD.1.1 hD.2.1, ?_⟩
@@ -556,8 +615,8 @@ theorem commute_mem_pentagonRectangleDecompositions {x z : GridState n}
   · rw [(G.swapColumns C.column b).mem_unblockedRectangles]
     refine ⟨D.isEmpty_commute_rectangle h hD.1.1 hD.2.1, ?_⟩
     rw [D.commute_rectangle_toGridRectangle h]
-    exact (D.rectangle.toGridRectangle.disjoint_coveredSquares_XSet_swapColumns_iff_of_ne G
-      (by simpa using hleft) (by simpa using hright)).mpr hD.1.2
+    exact (G.disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns
+      D.rectangle.toGridRectangle (D.rectangle_mem_coveredColumns_iff h)).mpr hD.1.2
 
 /-- Reordering a counted pentagon--rectangle decomposition with disjoint side pairs produces a
 counted rectangle--pentagon decomposition. -/
@@ -569,19 +628,12 @@ theorem commute_mem_rectanglePentagonDecompositions {x z : GridState n}
   rw [G.mem_rectanglePentagonDecompositions C (D.commute h)]
   rw [G.mem_pentagons] at hD
   rw [(G.swapColumns C.column b).mem_unblockedRectangles] at hD
-  obtain ⟨hll, hlr, hrl, hrr⟩ := D.hasDisjointSides_iff.mp h
-  have hleft : D.rectangle.left ≠ b := by
-    rw [← D.pentagon.right_eq]
-    exact hrl.symm
-  have hright : D.rectangle.right ≠ b := by
-    rw [← D.pentagon.right_eq]
-    exact hrr.symm
   refine ⟨?_, ?_⟩
   · rw [G.mem_unblockedRectangles]
     refine ⟨D.isEmpty_commute_rectangle h hD.1.1 hD.2.1, ?_⟩
     rw [D.commute_rectangle_toGridRectangle h]
-    exact (D.rectangle.toGridRectangle.disjoint_coveredSquares_XSet_swapColumns_iff_of_ne G
-      (by simpa using hleft) (by simpa using hright)).mp hD.2.2
+    exact (G.disjoint_coveredSquares_XSet_swapColumns_iff_of_coveredColumns
+      D.rectangle.toGridRectangle (D.rectangle_mem_coveredColumns_iff h)).mp hD.2.2
   · rw [G.mem_pentagons]
     refine ⟨D.isEmpty_commute_pentagon h hD.1.1 hD.2.1, ?_⟩
     rw [D.commute_pentagon_coveredSquares h]
@@ -596,21 +648,14 @@ theorem pentagonRectangleWeight_commute_rectanglePentagon {x z : GridState n}
     (h : D.HasDisjointSides) :
     G.pentagonRectangleWeight C R (D.commute h) =
       G.rectanglePentagonWeight C R D := by
-  obtain ⟨hll, hlr, hrl, hrr⟩ := D.hasDisjointSides_iff.mp h
-  have hleft : D.rectangle.left ≠ b := by
-    rw [← D.pentagon.right_eq]
-    exact hlr
-  have hright : D.rectangle.right ≠ b := by
-    rw [← D.pentagon.right_eq]
-    exact hrr
   rw [G.pentagonRectangleWeight_def C R, G.rectanglePentagonWeight_def C R,
     D.commute_rectangle_toGridRectangle h]
   have hpentagon : G.pentagonWeight R C (D.commute h).pentagon =
       G.pentagonWeight R C D.pentagon := by
     rw [G.pentagonWeight_eq_prod_coveredSquares R C,
       G.pentagonWeight_eq_prod_coveredSquares R C, D.commute_pentagon_coveredSquares h]
-  rw [hpentagon, G.rename_OMonomial_eq_swapColumns_of_ne R D.rectangle.toGridRectangle
-    (by simpa using hleft) (by simpa using hright), mul_comm]
+  rw [hpentagon, ← G.OMonomial_swapColumns_eq_rename_of_coveredColumns R
+    D.rectangle.toGridRectangle (D.rectangle_mem_coveredColumns_iff h), mul_comm]
 
 /-- Reordering a pentagon--rectangle decomposition with disjoint side pairs preserves its
 weight in the commutation chain-map equation. -/
