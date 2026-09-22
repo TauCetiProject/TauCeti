@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.AffineLine
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PCenter
-import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -26,7 +25,9 @@ into a monic linearized relation of degree `p`, so
 
 `ι u ^ p - u.1 ^ (p - 1) • ι u`
 
-is central in `U(L)` and lies in the augmentation ideal.  At the two generators this reads
+is central in `U(L)`; having zero constant term it also lies in the augmentation ideal, by
+`TauCeti.UniversalEnvelopingAlgebra.pPolynomial_ι_mem_augmentation_toIdeal`, so it belongs to
+Hochschild's `Z(U(L)) ∩ U⁺(L)`.  At the two generators this reads
 `ι x ^ p - ι x` and `ι y ^ p`, the two shapes a linearized polynomial can take: the adjoint action
 of the dilation is idempotent, and that of the translation squares to zero.
 
@@ -46,8 +47,6 @@ element central and `ι x` is itself a central `p`-polynomial.
 
 * `TauCeti.LieAlgebra.AffineLine.ι_pow_sub_smul_ι_mem_center`: the explicit central
   `p`-polynomial of an arbitrary element.
-* `TauCeti.LieAlgebra.AffineLine.ι_pow_sub_smul_ι_mem_augmentation_toIdeal`: it lies in the
-  augmentation ideal, so it belongs to Hochschild's `Z(U(L)) ∩ U⁺(L)`.
 * `TauCeti.LieAlgebra.AffineLine.ι_dilation_pow_sub_ι_dilation_mem_center` and
   `TauCeti.LieAlgebra.AffineLine.ι_translation_pow_mem_center`: the two generators.
 * `TauCeti.LieAlgebra.AffineLine.ι_mem_center_iff_eq_zero`: over a field, the canonical copy of
@@ -92,19 +91,6 @@ theorem ι_pow_sub_smul_ι_mem_center (p : ℕ) [ExpChar K p] (hp : p ≠ 1) (u 
   · simpa [Fin.sum_univ_one, neg_smul, sub_eq_add_neg] using key
   · simp only [pow_one, Fin.sum_univ_one, Fin.val_zero, pow_zero, neg_smul]
     rw [ad_pow u hp0, add_neg_cancel]
-
-/-- The central `p`-polynomial of `TauCeti.LieAlgebra.AffineLine.ι_pow_sub_smul_ι_mem_center` has
-zero constant term, so it lies in the augmentation ideal `U⁺(L)`.  Together with centrality this
-places it in Hochschild's `Z(U(L)) ∩ U⁺(L)`.  As there, the characteristic is positive: for
-`p = 1` the element is `0` and nothing is asserted. -/
-theorem ι_pow_sub_smul_ι_mem_augmentation_toIdeal {p : ℕ} (hp : 1 < p) (u : AffineLine K) :
-    _root_.UniversalEnvelopingAlgebra.ι K u ^ p -
-        u.1 ^ (p - 1) • _root_.UniversalEnvelopingAlgebra.ι K u ∈
-      (HopfIdeal.augmentation K (_root_.UniversalEnvelopingAlgebra K (AffineLine K))).toIdeal := by
-  have hp0 : p ≠ 0 := by omega
-  have key := UniversalEnvelopingAlgebra.pPolynomial_ι_mem_augmentation_toIdeal K (AffineLine K)
-    hp0 1 (fun _ => -(u.1 ^ (p - 1))) u
-  simpa [Fin.sum_univ_one, neg_smul, sub_eq_add_neg] using key
 
 variable (K)
 

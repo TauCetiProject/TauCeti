@@ -175,24 +175,22 @@ theorem ad_mul_ad_self (u : AffineLine K) :
   rw [Module.End.mul_apply]
   ext <;> simp
 
-/-- Every positive power of `LieAlgebra.ad K (AffineLine K) u` is a scalar multiple of it, the
-scalar being a power of the dilation coordinate of `u`. -/
-theorem ad_pow_succ (u : AffineLine K) (n : ℕ) :
-    LieAlgebra.ad K (AffineLine K) u ^ (n + 1) =
-      u.1 ^ n • LieAlgebra.ad K (AffineLine K) u := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ, ih, smul_mul_assoc, ad_mul_ad_self, smul_smul, pow_succ]
-
 /-- **The monic relation satisfied by the adjoint action**: `T ^ n = u.1 ^ (n - 1) • T` for every
-`n ≠ 0`, where `T = LieAlgebra.ad K (AffineLine K) u`.  Taking `n` to be a power of the
-characteristic turns this into a linearized relation, which is what produces a central
-`p`-polynomial in the universal enveloping algebra. -/
+`n ≠ 0`, where `T = LieAlgebra.ad K (AffineLine K) u`.  Every positive power of `T` is therefore a
+scalar multiple of it, the scalar being a power of the dilation coordinate.  Taking `n` to be a
+power of the characteristic turns this into a linearized relation, which is what produces a
+central `p`-polynomial in the universal enveloping algebra. -/
 theorem ad_pow (u : AffineLine K) {n : ℕ} (hn : n ≠ 0) :
     LieAlgebra.ad K (AffineLine K) u ^ n = u.1 ^ (n - 1) • LieAlgebra.ad K (AffineLine K) u := by
+  have key : ∀ m : ℕ, LieAlgebra.ad K (AffineLine K) u ^ (m + 1) =
+      u.1 ^ m • LieAlgebra.ad K (AffineLine K) u := by
+    intro m
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [pow_succ, ih, smul_mul_assoc, ad_mul_ad_self, smul_smul, pow_succ]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  simpa using ad_pow_succ u m
+  simpa using key m
 
 variable (K)
 
