@@ -120,6 +120,34 @@ instance instIsCentral (a : K) (b : Kˣ) : Algebra.IsCentral K ℍ[K,a,(b : K)] 
 
 end UnitParameter
 
+section Centrality
+
+variable [CommRing K] [Invertible (2 : K)]
+
+/-- A quaternion algebra with unit `j`-square or unit discriminant is central. -/
+theorem isCentral_of_j_sq_isUnit_or_discr_isUnit {a b c : K}
+    (h : IsUnit c ∨ IsUnit (QuadraticAlgebra.discr a b)) :
+    Algebra.IsCentral K ℍ[K,a,b,c] := by
+  rcases h with hc | hd
+  · let v : Kˣ := hc.unit
+    have htarget : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
+      instIsCentral (QuadraticAlgebra.discr a b) v
+    exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,c])
+      (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
+  · let u : Kˣ := hd.unit
+    have htarget : Algebra.IsCentral K ℍ[K,c,0,(QuadraticAlgebra.discr a b : K)] :=
+      instIsCentral c u
+    have hsource : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
+      Algebra.IsCentral.of_algEquiv (K := K)
+        (D := ℍ[K,c,0,(QuadraticAlgebra.discr a b : K)])
+        (D' := ℍ[K,(QuadraticAlgebra.discr a b : K),0,c]) (h := htarget)
+        (_root_.QuaternionAlgebra.swapEquiv c (QuadraticAlgebra.discr a b))
+    exact Algebra.IsCentral.of_algEquiv (K := K)
+      (D := ℍ[K,QuadraticAlgebra.discr a b,0,c]) (D' := ℍ[K,a,b,c]) (h := hsource)
+      (completeSquareEquiv a b c).symm
+
+end Centrality
+
 section Field
 
 variable [Field K] [Invertible (2 : K)] (a b : Kˣ)
@@ -140,28 +168,8 @@ instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] := by
 theorem isCentral_of_j_sq_ne_zero_or_discr_ne_zero {a b c : K}
     (h : c ≠ 0 ∨ QuadraticAlgebra.discr a b ≠ 0) :
     Algebra.IsCentral K ℍ[K,a,b,c] := by
-  rcases h with hc | hd
-  · let v : Kˣ := Units.mk0 c hc
-    have htarget : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
-      instIsCentral (QuadraticAlgebra.discr a b) v
-    exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,c])
-      (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
-  · by_cases hc : c = 0
-    · subst c
-      let v : Kˣ := Units.mk0 (QuadraticAlgebra.discr a b) hd
-      have htarget : Algebra.IsCentral K ℍ[K,0,0,QuadraticAlgebra.discr a b] :=
-        instIsCentral 0 v
-      have hsource : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,0] :=
-        Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,0,0,QuadraticAlgebra.discr a b])
-          (D' := ℍ[K,QuadraticAlgebra.discr a b,0,0]) (h := htarget)
-          (_root_.QuaternionAlgebra.swapEquiv (QuadraticAlgebra.discr a b) 0).symm
-      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,0])
-        (D' := ℍ[K,a,b,0]) (h := hsource) (completeSquareEquiv a b 0).symm
-    · let v : Kˣ := Units.mk0 c hc
-      have htarget : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] :=
-        instIsCentral (QuadraticAlgebra.discr a b) v
-      exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,c])
-        (D' := ℍ[K,a,b,c]) (h := htarget) (completeSquareEquiv a b c).symm
+  apply isCentral_of_j_sq_isUnit_or_discr_isUnit
+  exact h.imp isUnit_iff_ne_zero.mpr isUnit_iff_ne_zero.mpr
 
 /-- A quaternion algebra with nonzero `j`-square is central. -/
 theorem isCentral_of_j_sq_ne_zero {a b c : K}

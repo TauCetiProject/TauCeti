@@ -161,6 +161,12 @@ theorem completeSquareEquiv_apply_j (a b c : R) :
   simp [completeSquareEquiv, completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 @[simp]
+theorem completeSquareEquiv_apply_k (a b c : R) :
+    completeSquareEquiv a b c ⟨0, 0, 0, 1⟩ =
+      ⟨0, 0, ⅟ (2 : R) * b, ⅟ (2 : R)⟩ := by
+  simp [completeSquareEquiv, completeSquareBasis, _root_.QuaternionAlgebra.Basis.lift]
+
+@[simp]
 theorem completeSquareEquiv_symm_apply_i (a b c : R) :
     (completeSquareEquiv a b c).symm ⟨0, 1, 0, 0⟩ = ⟨-b, 2, 0, 0⟩ := by
   simp [completeSquareEquiv, completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
@@ -168,6 +174,11 @@ theorem completeSquareEquiv_symm_apply_i (a b c : R) :
 @[simp]
 theorem completeSquareEquiv_symm_apply_j (a b c : R) :
     (completeSquareEquiv a b c).symm ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ := by
+  simp [completeSquareEquiv, completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
+
+@[simp]
+theorem completeSquareEquiv_symm_apply_k (a b c : R) :
+    (completeSquareEquiv a b c).symm ⟨0, 0, 0, 1⟩ = ⟨0, 0, -b, 2⟩ := by
   simp [completeSquareEquiv, completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift]
 
 end CompleteSquare
