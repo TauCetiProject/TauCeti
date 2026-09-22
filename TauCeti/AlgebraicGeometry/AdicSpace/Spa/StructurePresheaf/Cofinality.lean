@@ -66,41 +66,10 @@ universe v
 variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   {P : PairOfDefinition A} {Aplus : Subring A} {V : Opens ↥(spa Aplus)}
 
-/-- A rational subset contained in an open `V`, ordered by reverse inclusion so that arrows point
-from a rational subset to a smaller one, in the direction of restriction maps. -/
-structure RationalSubsetIndex (Aplus : Subring A) (V : Opens ↥(spa Aplus)) where
-  /-- The underlying subset of the adic spectrum. -/
-  carrier : Set (spa Aplus)
-  /-- The subset has an admissible rational presentation. -/
-  isRational : carrier ∈ spaRationalFamily Aplus
-  /-- The rational subset is contained in the ambient open. -/
-  le_open : carrier ⊆ V
-
-omit [IsTopologicalRing A] in
-/-- Equality of rational subset indices is equality of their underlying subsets; the remaining
-fields are propositions. -/
-@[ext]
-theorem RationalSubsetIndex.ext {U W : RationalSubsetIndex Aplus V}
-    (h : U.carrier = W.carrier) : U = W := by
-  cases U
-  cases W
-  subst h
-  rfl
-
-/-- Rational subset indices are ordered by reverse inclusion, matching the direction of
-restriction maps. -/
-instance : PartialOrder (RationalSubsetIndex Aplus V) where
-  le U W := W.carrier ⊆ U.carrier
-  le_refl _ := Set.Subset.rfl
-  le_trans _ _ _ hUW hWZ := hWZ.trans hUW
-  le_antisymm U W hUW hWU := RationalSubsetIndex.ext (Set.Subset.antisymm hWU hUW)
-
-omit [IsTopologicalRing A] in
-/-- The order on rational subset indices is reverse inclusion. -/
-@[simp]
-theorem RationalSubsetIndex.le_iff {U W : RationalSubsetIndex Aplus V} :
-    U ≤ W ↔ W.carrier ⊆ U.carrier :=
-  Iff.rfl
+/-- A rational open contained in an open `V`, ordered by reverse inclusion so that arrows point
+from a rational open to a smaller one, in the direction of restriction maps. -/
+abbrev RationalSubsetIndex (Aplus : Subring A) (V : Opens ↥(spa Aplus)) :=
+  { U : Opens (spa Aplus) // U ∈ spaRationalOpens Aplus ∧ U ≤ V }ᵒᵈ
 
 /-- Forget an admissible presentation and retain the rational subset it presents. Refinement
 becomes reverse inclusion by `rationalSubset_subset_rationalSubset_of_le`. -/
@@ -108,22 +77,23 @@ noncomputable def presentationToRationalSubsetIndex (Aplus : Subring A)
     (V : Opens ↥(spa Aplus)) :
     PresentationIndex (P := P) Aplus V ⥤ RationalSubsetIndex Aplus V where
   obj i :=
-    { carrier := Subtype.val ⁻¹' rationalSubset Aplus i.pres.num i.pres.den
-      isRational := mem_spaRationalFamily_iff.mpr
-        ⟨i.pres.num, i.pres.den, i.isOpen_span, rfl⟩
-      le_open := fun _ hx ↦ i.le_open (mem_spaBasicOpen.mpr hx) }
-  map {i j} f := homOfLE fun _ hx ↦
-    rationalSubset_subset_rationalSubset_of_le Aplus f.le hx
+    OrderDual.toDual
+      ⟨spaBasicOpen Aplus i.pres.num i.pres.den,
+        mem_spaRationalOpens.mpr <| mem_spaRationalFamily_iff.mpr
+          ⟨i.pres.num, i.pres.den, i.isOpen_span, Set.ext fun _ ↦ mem_spaBasicOpen⟩,
+        i.le_open⟩
+  map {i j} f := homOfLE <| spaBasicOpen_le_spaBasicOpen_iff.mpr <|
+    rationalSubset_subset_rationalSubset_of_le Aplus f.le
   map_id _ := by subsingleton
   map_comp _ _ := by subsingleton
 
 omit [IsTopologicalRing A] in
-/-- The subset underlying the image of a presentation is the rational subset it presents. -/
+/-- The open underlying the image of a presentation is the rational open it presents. -/
 @[simp]
-theorem presentationToRationalSubsetIndex_obj_carrier (Aplus : Subring A)
+theorem presentationToRationalSubsetIndex_obj_open (Aplus : Subring A)
     (V : Opens ↥(spa Aplus)) (i : PresentationIndex (P := P) Aplus V) :
-    ((presentationToRationalSubsetIndex Aplus V).obj i).carrier =
-      Subtype.val ⁻¹' rationalSubset Aplus i.pres.num i.pres.den :=
+    (OrderDual.ofDual ((presentationToRationalSubsetIndex Aplus V).obj i)).1 =
+      spaBasicOpen Aplus i.pres.num i.pres.den :=
   (rfl)
 
 /-- **Every rational subset index has an admissible presentation.** The open numerator ideal in
@@ -133,7 +103,8 @@ theorem exists_presentationToRationalSubsetIndex_obj_eq
     (U : RationalSubsetIndex Aplus V) :
     ∃ i : PresentationIndex (P := P) Aplus V,
       (presentationToRationalSubsetIndex Aplus V).obj i = U := by
-  obtain ⟨T, s, hT, hU⟩ := mem_spaRationalFamily_iff.mp U.isRational
+  obtain ⟨T, s, hT, hU⟩ :=
+    mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp U.2.1)
   let p : P.Presentation :=
     { num := T
       den := s
@@ -142,11 +113,16 @@ theorem exists_presentationToRationalSubsetIndex_obj_eq
     { pres := p
       isOpen_span := hT
       le_open := by
+        apply le_trans ?_ U.2.2
         intro x hx
-        apply U.le_open
-        rw [hU]
-        simpa [p] using mem_spaBasicOpen.mp hx }
-  exact ⟨i, RationalSubsetIndex.ext hU.symm⟩
+        change x ∈ (OrderDual.ofDual U).1
+        exact (Set.ext_iff.mp hU x).mpr (by simpa [p] using mem_spaBasicOpen.mp hx) }
+  refine ⟨i, ?_⟩
+  apply OrderDual.ofDual.injective
+  apply Subtype.ext
+  rw [presentationToRationalSubsetIndex_obj_open]
+  apply Opens.ext
+  exact (Set.ext fun _ ↦ mem_spaBasicOpen).trans hU.symm
 
 /-- The functor from presentations to rational subsets is final: every rational subset is in its
 image, and the presentation index is filtered by common refinement. This is the categorical
@@ -167,11 +143,19 @@ private noncomputable def commonCostructuredArrow
     CostructuredArrow (presentationToRationalSubsetIndex (P := P) Aplus V) U := by
   let k := i.left.commonRefinement j.left
   have hk : (presentationToRationalSubsetIndex (P := P) Aplus V).obj k ≤ U := by
+    change (OrderDual.ofDual U).1 ≤
+      (OrderDual.ofDual ((presentationToRationalSubsetIndex Aplus V).obj k)).1
+    rw [presentationToRationalSubsetIndex_obj_open]
     intro x hx
-    rw [presentationToRationalSubsetIndex_obj_carrier,
-      PresentationIndex.commonRefinement_pres, rationalSubset_commonRefinement,
-      Set.preimage_inter, Set.mem_inter_iff]
-    exact ⟨i.hom.le hx, j.hom.le hx⟩
+    rw [PresentationIndex.commonRefinement_pres, mem_spaBasicOpen,
+      rationalSubset_commonRefinement, Set.mem_inter_iff]
+    constructor
+    · apply mem_spaBasicOpen.mp
+      rw [← presentationToRationalSubsetIndex_obj_open]
+      exact i.hom.le hx
+    · apply mem_spaBasicOpen.mp
+      rw [← presentationToRationalSubsetIndex_obj_open]
+      exact j.hom.le hx
   exact CostructuredArrow.mk (homOfLE hk)
 
 /-- The left presentation maps to the common object in the costructured arrow category. -/
