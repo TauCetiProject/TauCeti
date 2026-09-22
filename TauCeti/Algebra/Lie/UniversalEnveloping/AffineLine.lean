@@ -30,6 +30,9 @@ is central in `U(L)` and lies in the augmentation ideal.  At the two generators 
 `ι x ^ p - ι x` and `ι y ^ p`, the two shapes a linearized polynomial can take: the adjoint action
 of the dilation is idempotent, and that of the translation squares to zero.
 
+The characteristic is assumed positive throughout, that is `p ≠ 1`: in characteristic zero the
+displayed polynomial is `ι u - ι u = 0` and the statements below would say nothing.
+
 The exponent is genuinely needed.  No nonzero element of `AffineLine K` becomes central in `U(L)`
 (`TauCeti.LieAlgebra.AffineLine.ι_mem_center_iff_eq_zero`), so the polynomials above are not
 central for the trivial reason that their linear parts already are.
@@ -77,27 +80,30 @@ variable {K : Type*} [CommRing K]
 `U(L)`, where `u.1` is the dilation coordinate of `u`.  It is monic of degree `p` and has zero
 constant term, so it is a central `p`-polynomial in the sense of
 `TauCeti.UniversalEnvelopingAlgebra.exists_pCentralPolynomial`, exhibited here with no
-Noetherian search. -/
-theorem ι_pow_sub_smul_ι_mem_center (p : ℕ) [ExpChar K p] (u : AffineLine K) :
+Noetherian search.  The characteristic is positive: for `p = 1` the polynomial `T ^ p - T` is the
+zero polynomial and the statement would be empty. -/
+theorem ι_pow_sub_smul_ι_mem_center (p : ℕ) [ExpChar K p] (hp : p ≠ 1) (u : AffineLine K) :
     _root_.UniversalEnvelopingAlgebra.ι K u ^ p -
         u.1 ^ (p - 1) • _root_.UniversalEnvelopingAlgebra.ι K u ∈
       Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K (AffineLine K)) := by
-  have hp : p ≠ 0 := (expChar_pos K p).ne'
+  have hp0 : p ≠ 0 := ((expChar_is_prime_or_one K p).resolve_right hp).ne_zero
   have key := UniversalEnvelopingAlgebra.mem_center_of_ad_pPolynomial_eq_zero
     (R := K) (L := AffineLine K) (e := 1) (a := fun _ => -(u.1 ^ (p - 1))) (x := u) p ?_
   · simpa [Fin.sum_univ_one, neg_smul, sub_eq_add_neg] using key
   · simp only [pow_one, Fin.sum_univ_one, Fin.val_zero, pow_zero, neg_smul]
-    rw [ad_pow u hp, add_neg_cancel]
+    rw [ad_pow u hp0, add_neg_cancel]
 
 /-- The central `p`-polynomial of `TauCeti.LieAlgebra.AffineLine.ι_pow_sub_smul_ι_mem_center` has
 zero constant term, so it lies in the augmentation ideal `U⁺(L)`.  Together with centrality this
-places it in Hochschild's `Z(U(L)) ∩ U⁺(L)`. -/
-theorem ι_pow_sub_smul_ι_mem_augmentation_toIdeal {p : ℕ} (hp : p ≠ 0) (u : AffineLine K) :
+places it in Hochschild's `Z(U(L)) ∩ U⁺(L)`.  As there, the characteristic is positive: for
+`p = 1` the element is `0` and nothing is asserted. -/
+theorem ι_pow_sub_smul_ι_mem_augmentation_toIdeal {p : ℕ} (hp : 1 < p) (u : AffineLine K) :
     _root_.UniversalEnvelopingAlgebra.ι K u ^ p -
         u.1 ^ (p - 1) • _root_.UniversalEnvelopingAlgebra.ι K u ∈
       (HopfIdeal.augmentation K (_root_.UniversalEnvelopingAlgebra K (AffineLine K))).toIdeal := by
+  have hp0 : p ≠ 0 := by omega
   have key := UniversalEnvelopingAlgebra.pPolynomial_ι_mem_augmentation_toIdeal K (AffineLine K)
-    hp 1 (fun _ => -(u.1 ^ (p - 1))) u
+    hp0 1 (fun _ => -(u.1 ^ (p - 1))) u
   simpa [Fin.sum_univ_one, neg_smul, sub_eq_add_neg] using key
 
 variable (K)
@@ -105,14 +111,14 @@ variable (K)
 /-- **The central `p`-polynomial of the dilation** `x` is `ι x ^ p - ι x`: the adjoint action of
 `x` is the projection onto the translation line, hence idempotent, so the linearized relation it
 satisfies is `T ^ p = T`. -/
-theorem ι_dilation_pow_sub_ι_dilation_mem_center (p : ℕ) [ExpChar K p] :
+theorem ι_dilation_pow_sub_ι_dilation_mem_center (p : ℕ) [ExpChar K p] (hp : p ≠ 1) :
     _root_.UniversalEnvelopingAlgebra.ι K (dilation K) ^ p -
         _root_.UniversalEnvelopingAlgebra.ι K (dilation K) ∈
       Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K (AffineLine K)) := by
-  simpa using ι_pow_sub_smul_ι_mem_center p (dilation K)
+  simpa using ι_pow_sub_smul_ι_mem_center p hp (dilation K)
 
 /-- The central `p`-polynomial of the dilation lies in the augmentation ideal. -/
-theorem ι_dilation_pow_sub_ι_dilation_mem_augmentation_toIdeal {p : ℕ} (hp : p ≠ 0) :
+theorem ι_dilation_pow_sub_ι_dilation_mem_augmentation_toIdeal {p : ℕ} (hp : 1 < p) :
     _root_.UniversalEnvelopingAlgebra.ι K (dilation K) ^ p -
         _root_.UniversalEnvelopingAlgebra.ι K (dilation K) ∈
       (HopfIdeal.augmentation K (_root_.UniversalEnvelopingAlgebra K (AffineLine K))).toIdeal := by
@@ -127,7 +133,7 @@ theorem ι_translation_pow_mem_center (p : ℕ) [ExpChar K p] (hp : p ≠ 1) :
     _root_.UniversalEnvelopingAlgebra.ι K (translation K) ^ p ∈
       Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K (AffineLine K)) := by
   have hp1 : p - 1 ≠ 0 := by have := expChar_pos K p; omega
-  simpa [zero_pow hp1] using ι_pow_sub_smul_ι_mem_center p (translation K)
+  simpa [zero_pow hp1] using ι_pow_sub_smul_ι_mem_center p hp (translation K)
 
 /-- The central `p`-polynomial of the translation lies in the augmentation ideal. -/
 theorem ι_translation_pow_mem_augmentation_toIdeal {p : ℕ} (hp : p ≠ 0) :
@@ -193,7 +199,7 @@ example :
         _root_.UniversalEnvelopingAlgebra.ι (ZMod 2) (dilation (ZMod 2)) ∈
       Subalgebra.center (ZMod 2)
         (_root_.UniversalEnvelopingAlgebra (ZMod 2) (AffineLine (ZMod 2))) :=
-  ι_dilation_pow_sub_ι_dilation_mem_center (ZMod 2) 2
+  ι_dilation_pow_sub_ι_dilation_mem_center (ZMod 2) 2 (by norm_num)
 
 example :
     _root_.UniversalEnvelopingAlgebra.ι (ZMod 2) (translation (ZMod 2)) ^ 2 ∈
@@ -206,7 +212,7 @@ example :
         _root_.UniversalEnvelopingAlgebra.ι (ZMod 3) (dilation (ZMod 3)) ∈
       Subalgebra.center (ZMod 3)
         (_root_.UniversalEnvelopingAlgebra (ZMod 3) (AffineLine (ZMod 3))) :=
-  ι_dilation_pow_sub_ι_dilation_mem_center (ZMod 3) 3
+  ι_dilation_pow_sub_ι_dilation_mem_center (ZMod 3) 3 (by norm_num)
 
 example :
     _root_.UniversalEnvelopingAlgebra.ι (ZMod 3) (translation (ZMod 3)) ^ 3 ∈
