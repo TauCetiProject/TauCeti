@@ -48,12 +48,10 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] {f : F[X]} {n : ℕ} {j : TransitiveGroupIndex n}
 
-/- The Galois action on the roots in the splitting field, which `Polynomial.Gal.galActionHom`
-asks for; it stays local, as in `TauCeti.HasGaloisLabel`, because as a global instance it would
-compete with Mathlib's intrinsic action. -/
-local instance factSplitsSplittingFieldResolvent (f : F[X]) :
-    Fact ((f.map (algebraMap F f.SplittingField)).Splits) :=
-  ⟨SplittingField.splits f⟩
+-- The `Fact` that `Polynomial.Gal.galActionHom` asks for. It is an instance only locally, as in
+-- `TauCeti.FieldTheory.GaloisGroups.Label`, because as a global instance it would compete with
+-- Mathlib's intrinsic action on the roots.
+attribute [local instance] factSplitsSplittingField
 
 /-- **A label confined to the subgroup of a specification gives the resolvent a root.** If the
 reference subgroup of the label of a monic `f` lies in a conjugate of the subgroup of a resolvent

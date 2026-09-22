@@ -59,16 +59,14 @@ variable {F : Type*} [Field F] {f : F[X]}
 
 /-- A polynomial carries at most one label in degree three. -/
 theorem HasGaloisLabel.eq_of_three {j k : TransitiveGroupIndex 3} (hj : HasGaloisLabel f j)
-    (hk : HasGaloisLabel f k) : j = k := by
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hj.separable
-  exact (hj.transitiveGroupLabel (e.trans (finCongr hj.natDegree_eq))).eq_of_three
-    (hk.transitiveGroupLabel _)
+    (hk : HasGaloisLabel f k) : j = k :=
+  hj.eq_of (fun h h' => h.eq_of_three h') hk
 
 /-- **An irreducible separable cubic carries exactly one label**, `3T1` or `3T2`. -/
 theorem existsUnique_hasGaloisLabel_three (hsep : f.Separable) (hirr : Irreducible f)
     (hdeg : f.natDegree = 3) : ∃! j : TransitiveGroupIndex 3, HasGaloisLabel f j :=
-  (exists_hasGaloisLabel_of_irreducible hsep hirr hdeg fun G _ =>
-    exists_transitiveGroupLabel_three G).elim fun j hj => ⟨j, hj, fun _ hk => hk.eq_of_three hj⟩
+  existsUnique_hasGaloisLabel hsep hirr hdeg (fun G _ => exists_transitiveGroupLabel_three G)
+    fun h h' => h.eq_of_three h'
 
 private theorem HasGaloisLabel.isSquare_discr_iff_three {j : TransitiveGroupIndex 3}
     (h : HasGaloisLabel f j) (hchar : ringChar F ≠ 2) :

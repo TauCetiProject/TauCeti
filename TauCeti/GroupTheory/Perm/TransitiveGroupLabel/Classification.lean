@@ -287,6 +287,7 @@ theorem not_referenceSubgroup_four_four_le_alternatingGroup :
 group on four points, the Klein four-group of `4T2` and the alternating group of `4T4` consist of
 even permutations, and the cyclic, dihedral and symmetric groups of `4T1`, `4T3` and `4T5` do
 not. -/
+@[simp]
 theorem referenceSubgroup_four_le_alternatingGroup_iff (j : TransitiveGroupIndex 4) :
     referenceSubgroup 4 j ≤ alternatingGroup (Fin 4) ↔ (j : ℕ) = 1 ∨ (j : ℕ) = 3 := by
   obtain ⟨a, ha⟩ := j

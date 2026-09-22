@@ -78,16 +78,14 @@ variable {F : Type u} [Field F] {f : F[X]} {j : TransitiveGroupIndex 5}
 
 /-- A polynomial carries at most one label in degree five. -/
 theorem HasGaloisLabel.eq_of_five {j k : TransitiveGroupIndex 5} (hj : HasGaloisLabel f j)
-    (hk : HasGaloisLabel f k) : j = k := by
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hj.separable
-  exact (hj.transitiveGroupLabel (e.trans (finCongr hj.natDegree_eq))).eq_of_five
-    (hk.transitiveGroupLabel _)
+    (hk : HasGaloisLabel f k) : j = k :=
+  hj.eq_of (fun h h' => h.eq_of_five h') hk
 
 /-- **An irreducible separable quintic carries exactly one label**, one of `5T1`, …, `5T5`. -/
 theorem existsUnique_hasGaloisLabel_five (hsep : f.Separable) (hirr : Irreducible f)
     (hdeg : f.natDegree = 5) : ∃! j : TransitiveGroupIndex 5, HasGaloisLabel f j :=
-  (exists_hasGaloisLabel_of_irreducible hsep hirr hdeg fun G _ =>
-    exists_transitiveGroupLabel_five G).elim fun j hj => ⟨j, hj, fun _ hk => hk.eq_of_five hj⟩
+  existsUnique_hasGaloisLabel hsep hirr hdeg (fun G _ => exists_transitiveGroupLabel_five G)
+    fun h h' => h.eq_of_five h'
 
 /-- **Solvability and the quintic labels.** The Galois group of a quintic with a label is solvable
 exactly for the labels `5T1`, `5T2` and `5T3`, the cyclic, dihedral and Frobenius groups. This is a

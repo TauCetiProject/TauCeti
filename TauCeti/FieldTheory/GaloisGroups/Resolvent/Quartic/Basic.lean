@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CubicDiscriminant
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Spec
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
@@ -54,7 +53,7 @@ stabilizers and the same resolvent.
   coefficients of degree at most three.
 * `TauCeti.quarticD4Spec_specialize_depressed`: the resolvent of a depressed quartic is
   `resolventCubic p q r`.
-* `Polynomial.natDegree_specialize_quarticD4Spec`: the resolvent of a quartic is a cubic.
+* `TauCeti.natDegree_quarticD4Spec_specialize`: the resolvent of a quartic is a cubic.
 
 ## References
 
@@ -264,28 +263,20 @@ theorem monic_resolventCubic {R : Type*} [CommRing R] (p q r : R) :
   rw [← quarticD4Spec_specialize_depressed]
   exact quarticD4Spec.monic_specialize R _
 
-end TauCeti
-
-namespace Polynomial
-
 /-- The resolvent of the quartic specification is a cubic over every nonzero ring, since the
 orbit of the `D₄`-invariant has three elements.
 
 This is not a `simp` lemma: `TauCeti.ResolventSpec.natDegree_specialize` already rewrites the
 left-hand side, to the index of the subgroup of the specification. -/
-theorem natDegree_specialize_quarticD4Spec {R : Type*} [CommRing R] [Nontrivial R] (f : R[X]) :
-    (TauCeti.quarticD4Spec.specialize R f).natDegree = 3 := by
-  rw [TauCeti.ResolventSpec.natDegree_specialize, ← TauCeti.ResolventSpec.card_renameOrbit,
-    TauCeti.quarticD4Spec_Φ, TauCeti.card_renameOrbit_quarticD4Invariant]
-
-end Polynomial
-
-namespace TauCeti
+theorem natDegree_quarticD4Spec_specialize {R : Type*} [CommRing R] [Nontrivial R] (f : R[X]) :
+    (quarticD4Spec.specialize R f).natDegree = 3 := by
+  rw [ResolventSpec.natDegree_specialize, ← ResolventSpec.card_renameOrbit, quarticD4Spec_Φ,
+    card_renameOrbit_quarticD4Invariant]
 
 /-- The resolvent cubic has degree `3` over every nonzero ring. -/
 @[simp]
 theorem natDegree_resolventCubic {R : Type*} [CommRing R] [Nontrivial R] (p q r : R) :
     (resolventCubic p q r).natDegree = 3 := by
-  rw [← quarticD4Spec_specialize_depressed, Polynomial.natDegree_specialize_quarticD4Spec]
+  rw [← quarticD4Spec_specialize_depressed, natDegree_quarticD4Spec_specialize]
 
 end TauCeti
