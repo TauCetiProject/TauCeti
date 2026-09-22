@@ -38,9 +38,9 @@ applicable.
   the ambient module.
 * `Submodule.exists_disjoint_of_directed`: consequently `W` is disjoint from a single member of the
   family as soon as it is disjoint from their infimum.
-* `Submodule.exists_inf_eq_inf_iInf_of_antitone` and `Submodule.exists_inf_eq_bot_of_antitone`: for
-  an antitone filtration indexed by a directed order the trace is *eventually* constant, not merely
-  constant at one index.
+* `Submodule.exists_forall_inf_eq_inf_iInf_of_antitone` and
+  `Submodule.exists_forall_inf_eq_bot_of_antitone`: for an antitone filtration indexed by a
+  directed order the trace is *eventually* constant, not merely constant at one index.
 * `LinearMap.exists_mkQ_comp_injective_of_directed`: the form the applications use — an embedding
   of an Artinian module into `M` stays injective after passing to the quotient by a single member
   of a family whose infimum is `⊥`.
@@ -93,7 +93,7 @@ intersection.**
 
 Unlike `Submodule.exists_inf_eq_inf_iInf_of_directed`, which produces one index, monotonicity makes
 the conclusion hold from that index onwards. -/
-theorem exists_inf_eq_inf_iInf_of_antitone (W : Submodule R M) [IsArtinian R W]
+theorem exists_forall_inf_eq_inf_iInf_of_antitone (W : Submodule R M) [IsArtinian R W]
     (F : ι → Submodule R M) (hF : Antitone F) :
     ∃ i, ∀ j, i ≤ j → W ⊓ F j = W ⊓ ⨅ k, F k := by
   obtain ⟨i, hi⟩ := exists_inf_eq_inf_iInf_of_directed W F
@@ -106,10 +106,10 @@ theorem exists_inf_eq_inf_iInf_of_antitone (W : Submodule R M) [IsArtinian R W]
 This is the separation step in the form its consumers use: `W` is a finite-dimensional subspace,
 `F` is a filtration of the ambient module by submodules with `⨅ k, F k = ⊥`, and the conclusion
 exhibits a stage at which `W` is separated. -/
-theorem exists_inf_eq_bot_of_antitone (W : Submodule R M) [IsArtinian R W]
+theorem exists_forall_inf_eq_bot_of_antitone (W : Submodule R M) [IsArtinian R W]
     (F : ι → Submodule R M) (hF : Antitone F) (h : ⨅ k, F k = ⊥) :
     ∃ i, ∀ j, i ≤ j → W ⊓ F j = ⊥ := by
-  obtain ⟨i, hi⟩ := exists_inf_eq_inf_iInf_of_antitone W F hF
+  obtain ⟨i, hi⟩ := exists_forall_inf_eq_inf_iInf_of_antitone W F hF
   exact ⟨i, fun j hij ↦ by rw [hi j hij, h, inf_bot_eq]⟩
 
 end Antitone
@@ -154,7 +154,7 @@ universal enveloping algebra. -/
 theorem exists_inf_restrictScalars_pow_eq_bot (I : Ideal A) (W : Submodule R A) [IsArtinian R W]
     (h : ⨅ n : ℕ, I ^ n = ⊥) :
     ∃ n : ℕ, ∀ m : ℕ, n ≤ m → W ⊓ (I ^ m).restrictScalars R = ⊥ := by
-  refine Submodule.exists_inf_eq_bot_of_antitone W _
+  refine Submodule.exists_forall_inf_eq_bot_of_antitone W _
     (fun _ _ hmn ↦ Submodule.restrictScalars_mono R (pow_le_pow_right hmn)) ?_
   rw [← Submodule.restrictScalars_iInf, h, Submodule.restrictScalars_bot]
 
