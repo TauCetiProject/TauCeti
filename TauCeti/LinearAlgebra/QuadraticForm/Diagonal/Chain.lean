@@ -196,6 +196,12 @@ namespace DiagonalStep
 theorem binary {w w' : Fin n → Rˣ} (h : BinaryStep w w') : DiagonalStep w w' :=
   Or.inr h
 
+/-- Eliminate an elementary diagonal step by handling its permutation and binary cases. -/
+theorem elim {w w' : Fin n → Rˣ} (h : DiagonalStep w w') {P : Prop}
+    (hperm : PermutationStep w w' → P) (hbin : BinaryStep w w' → P) : P := by
+  change PermutationStep w w' ∨ BinaryStep w w' at h
+  exact h.elim hperm hbin
+
 /-- Elementary diagonal steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalStep w w') : DiagonalStep w' w :=
   Or.elim h (Or.inl ∘ PermutationStep.symm) (Or.inr ∘ BinaryStep.symm)
@@ -227,6 +233,18 @@ theorem tail {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
 theorem trans {w w' w'' : Fin n → Rˣ} (h : DiagonalChain w w')
     (h' : DiagonalChain w' w'') : DiagonalChain w w'' :=
   Relation.ReflTransGen.trans h h'
+
+/-- Induct over a diagonal chain from a property of its initial coefficient family, provided the
+property is preserved by each permutation or binary replacement. -/
+theorem inductionOn {w w' : Fin n → Rˣ} (h : DiagonalChain w w')
+    {P : (Fin n → Rˣ) → Prop} (hw : P w)
+    (hstep : ∀ {v v'}, DiagonalStep v v' → P v → P v') : P w' := by
+  -- The relation is intentionally not exposed; unfold it here to use its standard induction.
+  change Relation.ReflTransGen DiagonalStep w w' at h
+  induction h using Relation.ReflTransGen.trans_induction_on with
+  | refl => exact hw
+  | single hstep' => exact hstep hstep' hw
+  | trans _ _ ih ih' => exact ih' (ih hw)
 
 /-- Diagonal chains may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalChain w w') : DiagonalChain w' w := by
