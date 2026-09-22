@@ -26,9 +26,12 @@ inclusion `Fin n ↪ Fin (n + 1)`, and the identity with its last column replace
 same on the other side. A conjugation `A ↦ N * A * N⁻¹` by a matrix fixing `u` and `w` therefore
 multiplies the corner minor by `N.det` on one side and by `N.det⁻¹` on the other.
 
-The two Laplace expansions along the last row and the last column, in the sparse case used
-throughout, are recorded first, together with the description of the corner minor as an ordinary
-determinant after the last column is replaced by the last standard basis vector.
+The rectangular deletion and inclusion matrices and the row and column framing matrices are
+recorded first under `[Zero R] [One R]`, followed by their interaction with matrix
+multiplication under `[NonAssocSemiring R]`. The sparse Laplace expansions along the last row
+and column, the description of the corner minor as an ordinary determinant after replacing the
+last column by the last standard basis vector, and the conjugation invariance formula are
+proved under `[CommRing R]`.
 
 The intended source of such a matrix is `burau b - 1` for a braid `b`, where `u` is the all-ones
 vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
