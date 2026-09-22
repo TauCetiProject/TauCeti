@@ -113,9 +113,9 @@ theorem mem_map_algebraMap_iff {x : A} :
     x ∈ I.map (algebraMap R A) ↔ x ∈ I • (⊤ : Submodule R A) := by
   rw [smul_top_eq_restrictScalars_map, Submodule.restrictScalars_mem]
 
-/-- **An extended ideal is two-sided**, because the image of `algebraMap R A` is central. The
-extended ideal is by definition the span of that image. -/
+/-- **An extended ideal is two-sided**, because the image of `algebraMap R A` is central. -/
 instance instIsTwoSidedMapAlgebraMap : (I.map (algebraMap R A)).IsTwoSided :=
+  -- `I.map (algebraMap R A)` is by definition the span of the image of `I`.
   isTwoSided_span_of_subset_center (by rintro _ ⟨r, -, rfl⟩; exact Set.algebraMap_mem_center r)
 
 /-- **Extension along `algebraMap R A` is multiplicative.** -/

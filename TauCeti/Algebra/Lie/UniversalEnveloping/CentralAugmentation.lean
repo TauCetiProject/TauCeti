@@ -16,8 +16,9 @@ algebra.  The general Hopf-algebra construction of the intersection
 `C(H) = Z(H) ∩ H⁺`
 
 of the centre with the augmentation ideal, and of the ideal `H C(H)` it generates, lives in
-`TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation`.  This file specialises that construction
-to `H = U(L)` by supplying the elements that make it nonzero in exponential characteristic `p`.
+`TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation`.  This file specialises that construction to
+`H = U(L)` by exhibiting explicit elements of it in exponential characteristic `p`: central
+`p`-polynomials and, for adjoint-nilpotent `x`, Frobenius powers of `ι x`.
 
 As soon as `Module.End R L` is Noetherian, the central `p`-polynomial attached to each element of
 `L` belongs to `C(U(L))`; over a field, finite-dimensionality of `L` supplies this hypothesis.  If
