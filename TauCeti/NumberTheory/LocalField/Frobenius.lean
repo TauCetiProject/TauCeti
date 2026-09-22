@@ -38,13 +38,16 @@ variable {K L M : Type*}
   [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
   [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
-  [ValuativeExtension K L] [ValuativeExtension L M] [ValuativeExtension K M]
-  [FiniteDimensional K M] [Normal K L] [IsGalois K M] [IsUnramified K M]
+  [ValuativeExtension K L] [ValuativeExtension L M]
+
+variable [FiniteDimensional K M] [Normal K L] [IsGalois K M]
 
 /-- Arithmetic Frobenius restricts to arithmetic Frobenius through a normal intermediate field
 of a finite unramified extension of nonarchimedean local fields. -/
 @[simp]
 theorem frobeniusAlgEquiv_restrictNormal :
+    letI : ValuativeExtension K M := ValuativeExtension.trans K L M
+    ∀ [IsUnramified K M],
     letI : FiniteDimensional K L :=
       FiniteDimensional.of_injective (IsScalarTower.toAlgHom K L M).toLinearMap
         (IsScalarTower.toAlgHom K L M).injective
@@ -54,6 +57,8 @@ theorem frobeniusAlgEquiv_restrictNormal :
     letI := IsUnramified.tower_bot K L M
     (frobeniusAlgEquiv (K := K) (L := M)).restrictNormal L =
       frobeniusAlgEquiv (K := K) (L := L) := by
+  let _ : ValuativeExtension K M := ValuativeExtension.trans K L M
+  intro
   let _ : FiniteDimensional K L :=
     FiniteDimensional.of_injective (IsScalarTower.toAlgHom K L M).toLinearMap
       (IsScalarTower.toAlgHom K L M).injective
