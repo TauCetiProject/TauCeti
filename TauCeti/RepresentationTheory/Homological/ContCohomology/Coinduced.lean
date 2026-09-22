@@ -334,7 +334,6 @@ noncomputable def coindTrace : coind G U M →+ M where
   map_zero' := by simp
   map_add' f f' := by simp [Finset.sum_add_distrib]
 
-@[simp]
 theorem coindTrace_apply (f : coind G U M) :
     coindTrace G U f = ∑ x : G ⧸ U, coindTraceTerm U f x := (rfl)
 
