@@ -54,6 +54,7 @@ variable {ι : Type*} [Fintype ι]
 
 /-- The quadratic value of a ternary word in the `A₂` coordinate alphabet is its Hamming
 weight divided by three. -/
+@[simp↓]
 theorem coordinatePower_typeAStandardQuadraticModule_two_quadratic (x : ι → ZMod 3) :
     ((IntegralLattice.typeAStandardQuadraticModule 2).coordinatePower ι).quadratic x =
       (((hammingNorm x : ℚ) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
@@ -115,6 +116,16 @@ theorem typeA2CoordinateDiscriminantEquiv_apply (x : ι → ZMod 3) (i : ι) :
     typeA2CoordinateDiscriminantEquiv x i =
       IntegralLattice.typeADiscriminantGroupEquiv 2 (x i) := by
   rw [typeA2CoordinateDiscriminantEquiv, AddEquiv.piCongrRight_apply]
+
+omit [Fintype ι] in
+/-- The inverse coordinatewise `A₂` discriminant equivalence applies the inverse scalar
+equivalence in each coordinate. -/
+@[simp]
+theorem typeA2CoordinateDiscriminantEquiv_symm_apply
+    (x : ι → (IntegralLattice.typeARootLattice 2).DiscriminantGroup) (i : ι) :
+    (typeA2CoordinateDiscriminantEquiv (ι := ι)).symm x i =
+      (IntegralLattice.typeADiscriminantGroupEquiv 2).symm (x i) := by
+  rfl
 
 omit [Fintype ι] in
 /-- The constant word with symbol `1` maps coordinatewise to the first fundamental-weight
