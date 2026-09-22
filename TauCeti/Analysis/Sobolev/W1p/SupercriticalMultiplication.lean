@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.L1Convergence
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Multiplication in supercritical first-order Sobolev spaces
@@ -441,36 +442,6 @@ theorem W1p.smul_mul_assoc (hp : (finrank ℝ E : ℝ≥0) < p) (c : ℝ)
 
 /-! ### The multiplication estimate -/
 
-/-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other `Lᵖ`
-functions obeys the same bound in norm.
-
-Kept `private`: the natural home for this generic `Lp` fact is the root `MeasureTheory.Lp`
-namespace, which is unreachable from inside `namespace TauCeti`, and its only use is the
-multiplication estimate below. -/
-private theorem norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alpha]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H] {m : Measure alpha}
-    {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp F q m} {g : Lp G q m} {h : Lp H q m} {a b : ℝ}
-    (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
-    ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
-  obtain ⟨A, hAnorm, hAcoe⟩ : ∃ A : Lp ℝ q m, ‖A‖ = ‖g‖ ∧ ∀ᵐ z ∂m, A z = ‖g z‖ :=
-    ⟨(Lp.memLp g).norm.toLp _, by rw [Lp.norm_toLp, eLpNorm_norm, ← Lp.norm_def],
-      (Lp.memLp g).norm.coeFn_toLp⟩
-  obtain ⟨B, hBnorm, hBcoe⟩ : ∃ B : Lp ℝ q m, ‖B‖ = ‖h‖ ∧ ∀ᵐ z ∂m, B z = ‖h z‖ :=
-    ⟨(Lp.memLp h).norm.toLp _, by rw [Lp.norm_toLp, eLpNorm_norm, ← Lp.norm_def],
-      (Lp.memLp h).norm.coeFn_toLp⟩
-  calc ‖f‖ ≤ ‖a • A + b • B‖ := by
-        refine Lp.norm_le_norm_of_ae_le ?_
-        filter_upwards [hle, hAcoe, hBcoe, Lp.coeFn_add (a • A) (b • B), Lp.coeFn_smul a A,
-          Lp.coeFn_smul b B] with z hz hA hB hadd hsA hsB
-        rw [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, Pi.smul_apply, hA, hB, smul_eq_mul,
-          smul_eq_mul, Real.norm_of_nonneg (add_nonneg (mul_nonneg ha (norm_nonneg _))
-            (mul_nonneg hb (norm_nonneg _)))]
-        exact hz
-    _ ≤ ‖a • A‖ + ‖b • B‖ := norm_add_le _ _
-    _ = a * ‖g‖ + b * ‖h‖ := by
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, hAnorm, hBnorm]
-
 /-- The pointwise bound behind the multiplication estimate: the value-gradient jet of a product is
 dominated by the supremum norms of the Morrey representatives against the jets of the factors. -/
 private theorem W1p.norm_coe_mul_le_ae (hp : (finrank ℝ E : ℝ≥0) < p)
@@ -528,7 +499,7 @@ theorem W1p.norm_mul_le (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (
     ‖W1p.mul hp u v‖ ≤ 3 * ‖W1p.morreyEmbedding (mu := mu) hp‖ * ‖u‖ * ‖v‖ := by
   calc ‖W1p.mul hp u v‖
       ≤ 2 * ‖W1p.morreyEmbedding hp u‖ * ‖v‖ + ‖W1p.morreyEmbedding hp v‖ * ‖u‖ :=
-        norm_le_add_of_ae_norm_le (by positivity) (norm_nonneg _)
+        Lp.norm_le_add_of_ae_norm_le (by positivity) (norm_nonneg _)
           (W1p.norm_coe_mul_le_ae hp u v)
     _ ≤ 2 * (‖W1p.morreyEmbedding (mu := mu) hp‖ * ‖u‖) * ‖v‖ +
         ‖W1p.morreyEmbedding (mu := mu) hp‖ * ‖v‖ * ‖u‖ := by
