@@ -137,12 +137,8 @@ theorem lift_fromFreeProfiniteGroup (hP : IsProP p P) (f : X → P)
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]
 theorem lift_of (hP : IsProP p P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
-  calc
-    lift hP f (of x) =
-        ((lift hP f).comp (fromFreeProfiniteGroup p X)) (freeProfiniteGroup.of x) := rfl
-    _ = freeProfiniteGroup.lift f (freeProfiniteGroup.of x) :=
-      lift_fromFreeProfiniteGroup hP f _
-    _ = f x := freeProfiniteGroup.lift_of f x
+  rw [← fromFreeProfiniteGroup_of, lift_fromFreeProfiniteGroup,
+    freeProfiniteGroup.lift_of]
 
 /-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
 `f`. -/
@@ -232,6 +228,9 @@ theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
         (fromFreeProfiniteGroup p Y).toMonoidHom := by
     apply (Subgroup.closure_le _).2
     exact Set.range_subset_iff.mpr fun x ↦ by
+      rw [SetLike.mem_coe, Subgroup.mem_comap]
+      -- `Subgroup.mem_comap` exposes the underlying monoid hom; align its coercion with the
+      -- continuous hom before applying the public generator equation.
       change fromFreeProfiniteGroup p Y (freeProfiniteGroup.of x) ∈
         Subgroup.closure (Set.range (of : Y → freeProP p Y))
       rw [fromFreeProfiniteGroup_of]
