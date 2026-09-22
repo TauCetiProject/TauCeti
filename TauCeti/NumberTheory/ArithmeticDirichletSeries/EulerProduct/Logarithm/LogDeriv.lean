@@ -20,7 +20,8 @@ logarithmic derivative the sum of the logarithmic derivatives of its factors.  T
 that the same holds for the infinite product: at every point strictly to the right of the
 ideal-indexed abscissa of absolute convergence at which no local factor vanishes,
 `logDeriv` of the `L`-series is the sum over the height-one primes of `logDeriv` of the local
-factors.  Each summand is in turn a prime-power series, by
+factors.  Each summand is the negative quotient of a log-weighted prime-power series by its local
+factor, by
 `TauCeti.EulerProductData.logDeriv_eulerFactor_eq`.
 
 Differentiating an infinite product is not a formal consequence of the pointwise product formula:
