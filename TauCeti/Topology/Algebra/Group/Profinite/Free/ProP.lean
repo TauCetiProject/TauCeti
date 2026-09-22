@@ -31,6 +31,7 @@ induces a surjection of free pro-`p` groups.
 * `TauCeti.isProP_freeProP`: a free pro-`p` group is pro-`p`.
 * `TauCeti.freeProP.hom_ext`: homomorphisms agreeing on the generators are equal.
 * `TauCeti.freeProP.existsUnique_lift`: the universal property.
+* `TauCeti.freeProP.lift_surjective`: a topologically generating map lifts to a surjection.
 * `TauCeti.freeProP.map_surjective`: a surjection of generating types induces a surjection.
 * `TauCeti.freeProP.existsUnique_continuousMulEquiv`: the free pro-`p` group is unique up to a
   unique topological isomorphism matching the generators.
@@ -125,6 +126,14 @@ theorem lift_comp_fromFreeProfiniteGroup (hP : IsProP p P) (f : X → P) :
   exact maximalProPQuotient.lift_mk hP (freeProfiniteGroup.lift f).toMonoidHom
     (freeProfiniteGroup.lift f).continuous x
 
+/-- The free pro-`p` lift evaluates on the image of the free profinite group as the free
+profinite lift. -/
+@[simp]
+theorem lift_fromFreeProfiniteGroup (hP : IsProP p P) (f : X → P)
+    (x : freeProfiniteGroup X) :
+    lift hP f (fromFreeProfiniteGroup p X x) = freeProfiniteGroup.lift f x :=
+  DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) x
+
 /-- The lift of `f` agrees with `f` on every canonical generator. -/
 @[simp]
 theorem lift_of (hP : IsProP p P) (f : X → P) (x : X) : lift hP f (of x) = f x := by
@@ -132,7 +141,7 @@ theorem lift_of (hP : IsProP p P) (f : X → P) (x : X) : lift hP f (of x) = f x
     lift hP f (of x) =
         ((lift hP f).comp (fromFreeProfiniteGroup p X)) (freeProfiniteGroup.of x) := rfl
     _ = freeProfiniteGroup.lift f (freeProfiniteGroup.of x) :=
-      DFunLike.congr_fun (lift_comp_fromFreeProfiniteGroup hP f) _
+      lift_fromFreeProfiniteGroup hP f _
     _ = f x := freeProfiniteGroup.lift_of f x
 
 /-- A continuous homomorphism restricting to `f` on the generators is the canonical lift of
@@ -153,6 +162,14 @@ theorem comp_lift {Q : Type u} [Group Q] [TopologicalSpace Q] [IsTopologicalGrou
     [CompactSpace Q] [TotallyDisconnectedSpace Q] (hP : IsProP p P) (hQ : IsProP p Q)
     (g : P →ₜ* Q) (f : X → P) : g.comp (lift hP f) = lift hQ (⇑g ∘ f) :=
   hom_ext fun x ↦ by simp
+
+/-- A map whose range generates the target topologically lifts to a surjection. -/
+theorem lift_surjective (hP : IsProP p P) {f : X → P}
+    (hf : Dense ((Subgroup.closure (Set.range f) : Subgroup P) : Set P)) :
+    Function.Surjective (lift hP f) := by
+  intro y
+  obtain ⟨x, rfl⟩ := freeProfiniteGroup.lift_surjective hf y
+  exact ⟨fromFreeProfiniteGroup p X x, lift_fromFreeProfiniteGroup hP f x⟩
 
 end Lift
 
@@ -193,14 +210,33 @@ theorem map_comp_fromFreeProfiniteGroup (f : X → Y) :
       (fromFreeProfiniteGroup p Y).comp (freeProfiniteGroup.map f) :=
   freeProfiniteGroup.hom_ext fun x ↦ by simp
 
+/-- The map induced on free pro-`p` groups evaluates compatibly with the map induced on free
+profinite groups. -/
+@[simp]
+theorem map_fromFreeProfiniteGroup (f : X → Y) (x : freeProfiniteGroup X) :
+    map (p := p) f (fromFreeProfiniteGroup p X x) =
+      fromFreeProfiniteGroup p Y (freeProfiniteGroup.map f x) :=
+  DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (p := p) f) x
+
 /-- A surjection of generating types induces a surjection of free pro-`p` groups. -/
 theorem map_surjective {f : X → Y} (hf : Function.Surjective f) :
     Function.Surjective (map (p := p) f) := by
-  intro y
-  obtain ⟨y, rfl⟩ := fromFreeProfiniteGroup_surjective (p := p) (X := Y) y
-  obtain ⟨x, rfl⟩ := freeProfiniteGroup.map_surjective hf y
-  refine ⟨fromFreeProfiniteGroup p X x, ?_⟩
-  exact DFunLike.congr_fun (map_comp_fromFreeProfiniteGroup (p := p) f) x
+  apply lift_surjective
+  rw [hf.range_comp (of : Y → freeProP p Y)]
+  apply (fromFreeProfiniteGroup_surjective (p := p) (X := Y)).denseRange.dense_of_mapsTo
+    (map_continuous (fromFreeProfiniteGroup p Y))
+    (freeProfiniteGroup.dense_closure_range_of Y)
+  intro y hy
+  have hle : Subgroup.closure (Set.range (freeProfiniteGroup.of : Y → freeProfiniteGroup Y)) ≤
+      (Subgroup.closure (Set.range (of : Y → freeProP p Y))).comap
+        (fromFreeProfiniteGroup p Y).toMonoidHom := by
+    apply (Subgroup.closure_le _).2
+    exact Set.range_subset_iff.mpr fun x ↦ by
+      change fromFreeProfiniteGroup p Y (freeProfiniteGroup.of x) ∈
+        Subgroup.closure (Set.range (of : Y → freeProP p Y))
+      rw [fromFreeProfiniteGroup_of]
+      exact Subgroup.subset_closure ⟨x, rfl⟩
+  exact hle hy
 
 end Map
 
