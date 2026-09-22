@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Kaehler.Polynomial
+public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 
 /-!
@@ -77,51 +78,6 @@ theorem kaehlerBasisRatFunc_apply (i : Unit) :
   simp [KaehlerDifferential.map_D, RatFunc.algebraMap_X]
 
 variable {k} {F : Type*} [Field F] [Algebra k F] {x : F}
-
-/-- The `RatFunc k`-algebra structure on `F` induced by a transcendental element `x`, with
-`RatFunc.X` acting as `x`. -/
-@[instance_reducible]
-noncomputable def ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
-    Algebra (RatFunc k) F :=
-  (k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom).toRingHom.toAlgebra
-
-/-- The structure map of `ratFuncAlgebraOfTranscendental hx` is the embedding through `k(x)`. -/
-theorem algebraMap_ratFuncAlgebraOfTranscendental (hx : Transcendental k x) (r : RatFunc k) :
-    letI := ratFuncAlgebraOfTranscendental hx
-    algebraMap (RatFunc k) F r = ((RatFunc.algEquivOfTranscendental x hx r : k⟮x⟯) : F) := by
-  let _ := ratFuncAlgebraOfTranscendental hx
-  rw [RingHom.algebraMap_toAlgebra]
-  rfl
-
-/-- Under `ratFuncAlgebraOfTranscendental hx`, the rational-function variable maps to `x`. -/
-@[simp]
-theorem algebraMap_ratFuncAlgebraOfTranscendental_X (hx : Transcendental k x) :
-    letI := ratFuncAlgebraOfTranscendental hx
-    algebraMap (RatFunc k) F RatFunc.X = x := by
-  let _ := ratFuncAlgebraOfTranscendental hx
-  rw [algebraMap_ratFuncAlgebraOfTranscendental,
-    RatFunc.algEquivOfTranscendental_X]
-
-/-- The `RatFunc k`-algebra structure induced by `x` extends the given `k`-algebra structure. -/
-theorem isScalarTower_ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
-    letI := ratFuncAlgebraOfTranscendental hx
-    IsScalarTower k (RatFunc k) F := by
-  let _ := ratFuncAlgebraOfTranscendental hx
-  exact .of_algebraMap_eq fun c ↦
-    ((k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom).commutes c).symm
-
-/-- Separability over `k(x)` transfers to the rational-function algebra structure induced by
-`x`. -/
-theorem isSeparable_ratFuncAlgebraOfTranscendental (hx : Transcendental k x)
-    [Algebra.IsSeparable k⟮x⟯ F] :
-    letI := ratFuncAlgebraOfTranscendental hx
-    Algebra.IsSeparable (RatFunc k) F := by
-  let _ := ratFuncAlgebraOfTranscendental hx
-  let e : RatFunc k ≃ₐ[k] k⟮x⟯ := RatFunc.algEquivOfTranscendental x hx
-  exact Algebra.IsSeparable.of_equiv_equiv e.symm.toRingEquiv (RingEquiv.refl F) <| by
-    ext r
-    change algebraMap (RatFunc k) F (e.symm r) = (r : F)
-    rw [algebraMap_ratFuncAlgebraOfTranscendental, e.apply_symm_apply]
 
 /-- The differentials of `F` over `k` are free of rank one on `d x`, for `x` a separating
 element. This is the whole content of the file; the public statements below are read off it. -/
