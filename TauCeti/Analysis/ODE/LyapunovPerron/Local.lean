@@ -37,8 +37,9 @@ carries a confined solution. This is the Lipschitz half of the local stable-mani
 differentiability of the graph map and its tangency to the range of `P` are not established here.
 
 Time reversal applies the same construction to `-A`, `-N`, and the complementary projection
-`1 - P`. This gives the local unstable set as a Lipschitz graph over `range (1 - P)`, without
-duplicating the fixed-point argument.
+`1 - P`, without duplicating the fixed-point argument. When `P` is idempotent this gives the local
+unstable set as a Lipschitz graph over `range (1 - P)`, and when `P` moreover commutes with `A`
+the graph map takes its values in `range P`.
 
 ## Main declarations
 
@@ -52,9 +53,13 @@ duplicating the fixed-point argument.
   over the closed ball of radius `ρ` in the range of `P`, for every `ρ` small enough.
 * `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image`: such a
   `ρ` exists as soon as the ball of confinement has positive radius.
-* `ContinuousLinearMap.localUnstableGraphMap` and
+* `ContinuousLinearMap.localUnstableGraphMap`, with
+  `ContinuousLinearMap.lipschitzWith_localUnstableGraphMap` and
+  `ContinuousLinearMap.norm_localUnstableGraphMap_le`, and
   `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image`:
   the corresponding graph and local-set characterization for backward solutions.
+* `isIntegralCurveOn_comp_neg_iff`: time reversal for an arbitrary time-dependent vector field,
+  the change of variables that the unstable construction runs on.
 
 ## References
 
@@ -71,6 +76,17 @@ open Filter Metric NormedSpace Set Topology
 open scoped NNReal
 
 noncomputable section
+
+open scoped Pointwise in
+/-- **Time reversal for integral curves.** Reflecting the time parameter turns an integral curve
+of a time-dependent vector field `v` into an integral curve of the field reflected in both time
+and sign, over the reflected domain. This is `isIntegralCurveOn_comp_mul_ne_zero` for the scaling
+factor `-1`. -/
+theorem isIntegralCurveOn_comp_neg_iff {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    {v : ℝ → X → X} {y : ℝ → X} {s : Set ℝ} :
+    IsIntegralCurveOn (fun t ↦ y (-t)) (fun t z ↦ -v (-t) z) (-s) ↔ IsIntegralCurveOn y v s := by
+  simpa [Function.comp_def, Pi.neg_def, one_smul] using
+    isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := v) (s := s) (a := -1) (by norm_num)
 
 namespace ContinuousLinearMap
 
@@ -287,8 +303,10 @@ private theorem reversed_unstable_bound (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X
     neg_neg, mul_neg, neg_mul] using hs (-t) (neg_nonneg.mpr ht) v
 
 /-- The **local unstable graph map**, obtained by applying the local stable construction to the
-time-reversed equation. Its parameter space is the range of the complementary projection
-`1 - P`, and its values lie in the range of `P`. -/
+time-reversed equation. When `P` is idempotent it depends only on the component in the range of
+the complementary projection `1 - P`, by
+`ContinuousLinearMap.localUnstableGraphMap_sub_map`; when `P` moreover commutes with `A` its
+values lie in the range of `P`, by `ContinuousLinearMap.apply_localUnstableGraphMap`. -/
 def localUnstableGraphMap : X → X :=
   localStableGraphMap (-A) (ContinuousLinearMap.id ℝ X - P) (-N) r
     (reversed_stable_bound (A := A) (P := P) hu)
@@ -334,40 +352,27 @@ theorem lipschitzWith_localUnstableGraphMap :
   exact lipschitzWith_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
 
+/-- If the nonlinearity fixes the equilibrium, the local unstable set lies in a cone around
+`range (1 - P)` whose opening tends to `0` with the Lipschitz constant of the nonlinearity. This
+is the unstable counterpart of `ContinuousLinearMap.norm_localStableGraphMap_le`. -/
+theorem norm_localUnstableGraphMap_le (hN0 : N 0 = 0) (v : X) :
+    ‖localUnstableGraphMap A P N r hs hu hr hN hsmall v‖ ≤
+      ((2 * K * (ε * 2) / α * (K / (1 - 2 * K * (ε * 2) / α)) : ℝ≥0) : ℝ) * ‖v‖ :=
+  norm_localStableGraphMap_le (reversed_stable_bound (A := A) (P := P) hu)
+    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0]) v
+
 omit [CompleteSpace X] in
-/-- Reversing time turns a backward solution into a forward solution of the negated equation. -/
-theorem isIntegralCurveOn_comp_neg_iff {y : ℝ → X} :
+open scoped Pointwise in
+/-- Reversing time turns a backward solution into a forward solution of the negated equation:
+`isIntegralCurveOn_comp_neg_iff` for the autonomous field `A + N` on `Iic 0`. -/
+private theorem isIntegralCurveOn_comp_neg_Iic_iff {y : ℝ → X} :
     IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
       IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
-  have forward : ∀ {B : X →L[ℝ] X} {R : X → X} {z : ℝ → X},
-      IsIntegralCurveOn z (fun _ w ↦ B w + R w) (Iic 0) →
-        IsIntegralCurveOn (fun t ↦ z (-t)) (fun _ w ↦ (-B) w + (-R) w) (Ici 0) := by
-    intro B R z hz
-    have hdomain : {t : ℝ | t * (-1) ∈ Iic 0} = Ici 0 := by ext t; simp
-    have hfield : ((-1 : ℝ) • (fun _ : ℝ ↦ fun w ↦ B w + R w)) ∘
-        (fun t : ℝ ↦ t * (-1)) = fun _ w ↦ (-B) w + (-R) w := by
-      funext t w
-      simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, neg_apply]
-      abel
-    have hcurve : z ∘ (fun t : ℝ ↦ t * (-1)) = fun t ↦ z (-t) := by
-      funext t
-      simp
-    rw [← hcurve, ← hfield, ← hdomain]
-    exact hz.comp_mul (-1)
-  constructor
-  · exact forward
-  · intro hy
-    have hdomain : {t : ℝ | t * (-1) ∈ Ici 0} = Iic 0 := by ext t; simp
-    have hfield : ((-1 : ℝ) • (fun _ : ℝ ↦ fun w ↦ (-A) w + (-N) w)) ∘
-        (fun t : ℝ ↦ t * (-1)) = fun _ w ↦ A w + N w := by
-      funext t w
-      simp only [Function.comp_apply, neg_one_smul, Pi.neg_apply, neg_apply]
-      abel
-    have hcurve : (fun t ↦ y (-t)) ∘ (fun t : ℝ ↦ t * (-1)) = y := by
-      funext t
-      simp
-    rw [← hcurve, ← hfield, ← hdomain]
-    exact hy.comp_mul (-1)
+  rw [← isIntegralCurveOn_comp_neg_iff (v := fun _ z ↦ A z + N z) (y := y)]
+  simp only [neg_apply, Pi.neg_apply, neg_add]
+  congr! 1
+  ext t
+  simp
 
 /-- A backward solution confined to the ball on which the nonlinearity is small tends to the
 equilibrium in backward time. -/
@@ -387,7 +392,7 @@ theorem tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
     (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
     (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left)
-    (isIntegralCurveOn_comp_neg_iff.mp hy) hmaps'
+    (isIntegralCurveOn_comp_neg_Iic_iff.mp hy) hmaps'
   simpa only [Function.comp_def, neg_neg] using hforward.comp tendsto_neg_atBot_atTop
 
 omit hr in
@@ -414,12 +419,12 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image
   simp only [mem_ofPred_eq]
   constructor
   · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
-    refine ⟨⟨fun t ↦ y (-t), isIntegralCurveOn_comp_neg_iff.mp hy, by simp, ?_⟩, hx⟩
+    refine ⟨⟨fun t ↦ y (-t), isIntegralCurveOn_comp_neg_Iic_iff.mp hy, by simp, ?_⟩, hx⟩
     intro t ht
     exact hmaps (by simpa using ht)
   · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
     have hy' : IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ A z + N z) (Iic 0) := by
-      apply isIntegralCurveOn_comp_neg_iff.mpr
+      apply isIntegralCurveOn_comp_neg_Iic_iff.mpr
       simpa only [neg_neg] using hy
     refine ⟨⟨fun t ↦ y (-t), hy', by simp, ?_⟩, hx⟩
     intro t ht

@@ -30,7 +30,7 @@ established here.
 Applying the same construction after reversing time gives the corresponding local unstable set
 as a Lipschitz graph over the unstable Hessian spectral subspace.
 
-## Main declaration
+## Main declarations
 
 * `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`: confined forward
   trajectories in coordinates centred at a nondegenerate critical point form a Lipschitz graph
@@ -60,6 +60,80 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 namespace IsNondegenerateCriticalPoint
 
+/-- The nonlinear remainder of the centred negative-gradient field fixes the origin. -/
+private theorem negativeGradientRemainder_centred_zero (h : IsNondegenerateCriticalPoint f x) :
+    (fun z ↦ negativeGradientRemainder f x (x + z)) 0 = 0 := by
+  simp only [add_zero, negativeGradientRemainder_self h.gradient_eq_zero]
+
+/-- In displacement coordinates the negative-gradient field is the linearization
+`-hessianOperator f x` plus the nonlinear remainder. -/
+private theorem neg_gradient_centred_eq :
+    (fun z ↦ (-hessianOperator f x) z + negativeGradientRemainder f x (x + z)) =
+      fun z ↦ (-∇ f) (x + z) := by
+  funext z
+  simpa only [add_sub_cancel_left, neg_apply] using
+    (neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder f x (x + z)).symm
+
+/-- **The Lyapunov--Perron data of a Morse critical point.** For every positive `C` there are
+exponential dichotomy constants `K`, `alpha` for the linearization `-hessianOperator f x` along
+the stable projection, and a radius `r` on which the nonlinear remainder of the centred
+negative-gradient field is Lipschitz with a constant `epsilon` small enough both for the
+Lyapunov--Perron machinery and to make the resulting graph constant at most `C`.
+
+This is the setup shared by `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`
+and `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph`. -/
+private theorem exists_lyapunovPerronData (h : IsNondegenerateCriticalPoint f x) (C : ℝ≥0)
+    (hC : 0 < C) :
+    ∃ (K alpha epsilon : ℝ≥0) (r : ℝ), 0 < r ∧
+      (∀ t : ℝ, 0 ≤ t → ∀ v : E,
+        ‖NormedSpace.exp (t • (-hessianOperator f x)) (h.stableProjection v)‖ ≤
+          K * Real.exp (-alpha * t) * ‖v‖) ∧
+      (∀ t : ℝ, t ≤ 0 → ∀ v : E,
+        ‖NormedSpace.exp (t • (-hessianOperator f x)) (v - h.stableProjection v)‖ ≤
+          K * Real.exp (alpha * t) * ‖v‖) ∧
+      LipschitzOnWith epsilon (fun z ↦ negativeGradientRemainder f x (x + z)) (closedBall 0 r) ∧
+      2 * K * (epsilon * 2) < alpha ∧
+      2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha)) ≤ C := by
+  obtain ⟨K, alpha, hK, halpha, hs, hu⟩ := h.exists_stableProjection_exponential_bounds
+  have hK' : (0 : ℝ) < K := by exact_mod_cast hK
+  have halpha' : (0 : ℝ) < alpha := by exact_mod_cast halpha
+  have hC' : (0 : ℝ) < C := by exact_mod_cast hC
+  let epsilon : ℝ≥0 := alpha * C / (8 * K * (K + C))
+  have hepsilon : 0 < epsilon := by
+    dsimp only [epsilon]
+    positivity
+  have hsmall : 2 * K * (epsilon * 2) < alpha := by
+    have hsmall' : (2 : ℝ) * K * (((epsilon : ℝ≥0) : ℝ) * 2) < alpha := by
+      dsimp only [epsilon]
+      push_cast
+      field_simp
+      nlinarith
+    exact_mod_cast hsmall'
+  obtain ⟨r, hr, hrem⟩ :=
+    h.contDiffAt.exists_lipschitzOnWith_negativeGradientRemainder epsilon hepsilon
+  refine ⟨K, alpha, epsilon, r, hr, hs, hu, ?_, hsmall, ?_⟩
+  · intro z hz w hw
+    have hz' : x + z ∈ closedBall x r := by
+      simpa only [mem_closedBall, ← dist_add_left x z 0, add_zero] using hz
+    have hw' : x + w ∈ closedBall x r := by
+      simpa only [mem_closedBall, ← dist_add_left x w 0, add_zero] using hw
+    simpa only [edist_dist, dist_add_left] using hrem hz' hw'
+  · have hq : 2 * K * (epsilon * 2) / alpha < 1 := (div_lt_one halpha).2 hsmall
+    apply NNReal.coe_le_coe.1
+    have heq : ((2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha)) :
+        ℝ≥0) : ℝ) = (C : ℝ) * K / (2 * K + C) := by
+      push_cast [NNReal.coe_sub hq.le]
+      dsimp only [epsilon]
+      push_cast
+      field_simp
+      ring_nf
+      have hden : (K : ℝ) * 8 + (C : ℝ) * 4 ≠ 0 := by positivity
+      rw [← mul_inv_cancel₀ hden]
+      ring
+    rw [heq]
+    apply (div_le_iff₀ (by positivity : (0 : ℝ) < 2 * K + C)).2
+    nlinarith
+
 /-- **Confined trajectories at a Morse critical point form a Lipschitz graph.** For every
 positive Lipschitz constant `C`, there are positive radii `r` and `rho` such that the initial
 displacements of forward solutions of the centred negative-gradient equation that remain in
@@ -84,78 +158,25 @@ theorem exists_localStableSet_eq_lipschitzGraph
       (∀ y : ℝ → E,
         IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
         MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
-  let P := h.stableProjection
-  obtain ⟨K, alpha, hK, halpha, hs, hu⟩ :=
-    h.exists_stableProjection_exponential_bounds
-  let epsilon : ℝ≥0 := alpha * C / (8 * K * (K + C))
-  have hepsilon : 0 < epsilon := by
-    dsimp only [epsilon]
-    positivity
-  have hsmall : 2 * K * (epsilon * 2) < alpha := by
-    have hK' : (0 : ℝ) < K := by exact_mod_cast hK
-    have halpha' : (0 : ℝ) < alpha := by exact_mod_cast halpha
-    have hC' : (0 : ℝ) < C := by exact_mod_cast hC
-    have hsmall' : (2 : ℝ) * K * (((epsilon : ℝ≥0) : ℝ) * 2) < alpha := by
-      dsimp only [epsilon]
-      push_cast
-      field_simp
-      nlinarith
-    exact_mod_cast hsmall'
-  obtain ⟨r, hr, hrem⟩ :=
-    h.contDiffAt.exists_lipschitzOnWith_negativeGradientRemainder epsilon hepsilon
-  let N : E → E := fun z ↦ negativeGradientRemainder f x (x + z)
-  have hN : LipschitzOnWith epsilon N (closedBall 0 r) := by
-    intro z hz w hw
-    have hz' : x + z ∈ closedBall x r := by
-      simpa only [mem_closedBall, ← dist_add_left x z 0, add_zero] using hz
-    have hw' : x + w ∈ closedBall x r := by
-      simpa only [mem_closedBall, ← dist_add_left x w 0, add_zero] using hw
-    dsimp only [N]
-    simpa only [edist_dist, dist_add_left] using hrem hz' hw'
+  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀⟩ := h.exists_lyapunovPerronData C hC
+  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
   have hN0 : N 0 = 0 := by
-    simp only [N, add_zero, negativeGradientRemainder_self h.gradient_eq_zero]
+    rw [hNdef]
+    exact h.negativeGradientRemainder_centred_zero
+  have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
+    rw [hNdef]
+    exact neg_gradient_centred_eq
   obtain ⟨rho, hrho, hset⟩ :=
     ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
-      (A := -hessianOperator f x) (P := P) (N := N)
+      (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
       (K := K) (α := alpha) (ε := epsilon) hs hu hN hsmall hN0
       h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection hr
   let g : E → E := ContinuousLinearMap.localStableGraphMap
-    (-hessianOperator f x) P N r hs hu hr.le hN hsmall
-  let C₀ : ℝ≥0 :=
-    2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))
-  have hC₀ : C₀ ≤ C := by
-    have hK' : (0 : ℝ) < K := by exact_mod_cast hK
-    have halpha' : (0 : ℝ) < alpha := by exact_mod_cast halpha
-    have hC' : (0 : ℝ) < C := by exact_mod_cast hC
-    have hq : 2 * K * (epsilon * 2) / alpha < 1 :=
-      (div_lt_one halpha).2 hsmall
-    apply NNReal.coe_le_coe.1
-    have heq : (C₀ : ℝ) = (C : ℝ) * K / (2 * K + C) := by
-      dsimp only [C₀]
-      push_cast [NNReal.coe_sub hq.le]
-      dsimp only [epsilon]
-      push_cast
-      field_simp
-      ring_nf
-      have hden : (K : ℝ) * 8 + (C : ℝ) * 4 ≠ 0 := by positivity
-      rw [← mul_inv_cancel₀ hden]
-      ring
-    rw [heq]
-    apply (div_le_iff₀ (by positivity : (0 : ℝ) < 2 * K + C)).2
-    nlinarith
-  have hfield :
-      (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
-    funext z
-    dsimp only [N]
-    simpa only [add_sub_cancel_left, neg_apply] using
-      (neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder f x (x + z)).symm
-  have hfield' : (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-      fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
-    funext _
-    exact hfield
+    (-hessianOperator f x) h.stableProjection N r hs hu hr.le hN hsmall
   refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · have hg : LipschitzWith C₀ g :=
+  · have hg : LipschitzWith
+        (2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))) g :=
       ContinuousLinearMap.lipschitzWith_localStableGraphMap hs hu hr.le hN hsmall
     intro v w
     exact (hg v w).trans (by gcongr)
@@ -166,8 +187,8 @@ theorem exists_localStableSet_eq_lipschitzGraph
   · intro v
     exact ContinuousLinearMap.localStableGraphMap_map hs hu hr.le hN hsmall
       h.isIdempotentElem_stableProjection v
-  · have hrange : Set.range P = (h.contDiffAt.stableLinearSubspace : Set E) := by
-      dsimp only [P]
+  · have hrange : Set.range (h.stableProjection : E → E) =
+        (h.contDiffAt.stableLinearSubspace : Set E) := by
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_stableProjection
     dsimp only [g]
@@ -177,7 +198,8 @@ theorem exists_localStableSet_eq_lipschitzGraph
     apply ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall
       hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
-    · rw [hfield']
+    · rw [show (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
+        fun (_ : ℝ) z ↦ (-∇ f) (x + z) from funext fun _ ↦ hfield]
       exact hy
     · exact hmaps
 
@@ -205,77 +227,24 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
       (∀ y : ℝ → E,
         IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) →
         MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) := by
-  let P := h.stableProjection
-  obtain ⟨K, alpha, hK, halpha, hs, hu⟩ :=
-    h.exists_stableProjection_exponential_bounds
-  let epsilon : ℝ≥0 := alpha * C / (8 * K * (K + C))
-  have hepsilon : 0 < epsilon := by
-    dsimp only [epsilon]
-    positivity
-  have hsmall : 2 * K * (epsilon * 2) < alpha := by
-    have hK' : (0 : ℝ) < K := by exact_mod_cast hK
-    have halpha' : (0 : ℝ) < alpha := by exact_mod_cast halpha
-    have hC' : (0 : ℝ) < C := by exact_mod_cast hC
-    have hsmall' : (2 : ℝ) * K * (((epsilon : ℝ≥0) : ℝ) * 2) < alpha := by
-      dsimp only [epsilon]
-      push_cast
-      field_simp
-      nlinarith
-    exact_mod_cast hsmall'
-  obtain ⟨r, hr, hrem⟩ :=
-    h.contDiffAt.exists_lipschitzOnWith_negativeGradientRemainder epsilon hepsilon
-  let N : E → E := fun z ↦ negativeGradientRemainder f x (x + z)
-  have hN : LipschitzOnWith epsilon N (closedBall 0 r) := by
-    intro z hz w hw
-    have hz' : x + z ∈ closedBall x r := by
-      simpa only [mem_closedBall, ← dist_add_left x z 0, add_zero] using hz
-    have hw' : x + w ∈ closedBall x r := by
-      simpa only [mem_closedBall, ← dist_add_left x w 0, add_zero] using hw
-    dsimp only [N]
-    simpa only [edist_dist, dist_add_left] using hrem hz' hw'
+  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀⟩ := h.exists_lyapunovPerronData C hC
+  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
   have hN0 : N 0 = 0 := by
-    simp only [N, add_zero, negativeGradientRemainder_self h.gradient_eq_zero]
+    rw [hNdef]
+    exact h.negativeGradientRemainder_centred_zero
+  have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
+    rw [hNdef]
+    exact neg_gradient_centred_eq
   obtain ⟨rho, hrho, hset⟩ :=
     ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image
-      (A := -hessianOperator f x) (P := P) (N := N)
+      (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
       (K := K) (α := alpha) (ε := epsilon) hs hu hN hsmall hN0
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection hr
   let g : E → E := ContinuousLinearMap.localUnstableGraphMap
-    (-hessianOperator f x) P N r hs hu hr.le hN hsmall
-  let C₀ : ℝ≥0 :=
-    2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))
-  have hC₀ : C₀ ≤ C := by
-    have hK' : (0 : ℝ) < K := by exact_mod_cast hK
-    have halpha' : (0 : ℝ) < alpha := by exact_mod_cast halpha
-    have hC' : (0 : ℝ) < C := by exact_mod_cast hC
-    have hq : 2 * K * (epsilon * 2) / alpha < 1 :=
-      (div_lt_one halpha).2 hsmall
-    apply NNReal.coe_le_coe.1
-    have heq : (C₀ : ℝ) = (C : ℝ) * K / (2 * K + C) := by
-      dsimp only [C₀]
-      push_cast [NNReal.coe_sub hq.le]
-      dsimp only [epsilon]
-      push_cast
-      field_simp
-      ring_nf
-      have hden : (K : ℝ) * 8 + (C : ℝ) * 4 ≠ 0 := by positivity
-      rw [← mul_inv_cancel₀ hden]
-      ring
-    rw [heq]
-    apply (div_le_iff₀ (by positivity : (0 : ℝ) < 2 * K + C)).2
-    nlinarith
-  have hfield :
-      (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
-    funext z
-    dsimp only [N]
-    simpa only [add_sub_cancel_left, neg_apply] using
-      (neg_gradient_eq_neg_hessianOperator_add_negativeGradientRemainder f x (x + z)).symm
-  have hfield' : (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-      fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
-    funext _
-    exact hfield
+    (-hessianOperator f x) h.stableProjection N r hs hu hr.le hN hsmall
   refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · have hg : LipschitzWith C₀ g :=
+  · have hg : LipschitzWith
+        (2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))) g :=
       ContinuousLinearMap.lipschitzWith_localUnstableGraphMap hs hu hr.le hN hsmall
     intro v w
     exact (hg v w).trans (by gcongr)
@@ -283,23 +252,24 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
   · intro v
     have hgP := ContinuousLinearMap.apply_localUnstableGraphMap hs hu hr.le hN hsmall
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v
-    simpa only [g, P, h.unstableProjection_apply, sub_eq_zero] using hgP.symm
+    simpa only [g, h.unstableProjection_apply, sub_eq_zero] using hgP.symm
   · intro v
-    simpa only [g, P, h.unstableProjection_apply] using
+    simpa only [g, h.unstableProjection_apply] using
       ContinuousLinearMap.localUnstableGraphMap_sub_map hs hu hr.le hN hsmall
         h.isIdempotentElem_stableProjection v
-  · have hrange : Set.range h.unstableProjection =
+  · have hrange : Set.range (h.unstableProjection : E → E) =
         (h.contDiffAt.unstableLinearSubspace : Set E) := by
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_unstableProjection
     rw [hfield] at hset
-    rw [← h.unstableProjection_eq_sub] at hset
-    simpa only [g, P, hrange] using hset
+    rw [← h.unstableProjection_def] at hset
+    simpa only [g, hrange] using hset
   · intro y hy hmaps
     apply ContinuousLinearMap.tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
       hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
-    · rw [hfield']
+    · rw [show (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
+        fun (_ : ℝ) z ↦ (-∇ f) (x + z) from funext fun _ ↦ hfield]
       exact hy
     · exact hmaps
 

@@ -49,10 +49,11 @@ remainder of the negative-gradient field, supplied by
   results stated for a nondegenerate critical point, which supplies the Hessian injectivity.
 * `ContDiffAt.stableProjection`: when the Hessian is injective, the continuous projection onto
   the stable linear subspace along the unstable linear subspace.
-* `TauCeti.IsNondegenerateCriticalPoint.stableProjection`: the same projection specialized to a
-  nondegenerate critical point, which supplies Hessian injectivity.
-* `TauCeti.IsNondegenerateCriticalPoint.unstableProjection`: the complementary projection onto
-  the unstable linear subspace.
+* `ContDiffAt.unstableProjection`: the complementary projection onto the unstable linear
+  subspace along the stable linear subspace.
+* `TauCeti.IsNondegenerateCriticalPoint.stableProjection` and
+  `TauCeti.IsNondegenerateCriticalPoint.unstableProjection`: the same two projections specialized
+  to a nondegenerate critical point, which supplies Hessian injectivity.
 
 ## References
 
@@ -275,6 +276,93 @@ theorem commute_neg_hessianOperator_stableProjection (hf : ContDiffAt ℝ 2 f x)
   · intro v hv
     exact hf.map_neg_hessianOperator_unstableLinearSubspace_le ⟨v, hv, rfl⟩
 
+/-- When the Hessian is injective, the continuous projection onto the unstable linear subspace
+along the stable linear subspace: the projection complementary to `ContDiffAt.stableProjection`. -/
+noncomputable def unstableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) : E →L[ℝ] E :=
+  ContinuousLinearMap.id ℝ E - hf.stableProjection hker
+
+/-- The unstable projection is the identity minus the stable projection. -/
+theorem unstableProjection_def (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    hf.unstableProjection hker = ContinuousLinearMap.id ℝ E - hf.stableProjection hker := by
+  rw [unstableProjection]
+
+/-- The unstable projection subtracts the stable component. This is deliberately not a `simp`
+lemma: unfolding it would keep `ContDiffAt.unstableProjection` out of simp normal form and so
+defeat `ContDiffAt.unstableProjection_apply_eq_zero_iff` and
+`ContDiffAt.unstableProjection_apply_eq_self_iff`. -/
+theorem unstableProjection_apply (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
+    hf.unstableProjection hker v = v - hf.stableProjection hker v := by
+  simp [unstableProjection]
+
+/-- The unstable projection is idempotent. -/
+theorem isIdempotentElem_unstableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    IsIdempotentElem (hf.unstableProjection hker) := by
+  rw [unstableProjection]
+  exact (hf.isIdempotentElem_stableProjection hker).one_sub
+
+/-- The range of the unstable projection is the unstable linear subspace. -/
+@[simp]
+theorem range_unstableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    (hf.unstableProjection hker).range = hf.unstableLinearSubspace := by
+  rw [← hf.ker_stableProjection hker]
+  have hP : IsIdempotentElem (hf.stableProjection hker).toLinearMap :=
+    congrArg ContinuousLinearMap.toLinearMap (hf.isIdempotentElem_stableProjection hker).eq
+  -- The complementary-range lemma is stated for linear maps, so expose the underlying maps.
+  change LinearMap.range (LinearMap.id - (hf.stableProjection hker).toLinearMap) =
+    LinearMap.ker (hf.stableProjection hker).toLinearMap
+  exact (LinearMap.IsIdempotentElem.ker_eq_range_one_sub hP).symm
+
+/-- The kernel of the unstable projection is the stable linear subspace. -/
+@[simp]
+theorem ker_unstableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    (hf.unstableProjection hker).ker = hf.stableLinearSubspace := by
+  rw [← hf.range_stableProjection hker]
+  have hP : IsIdempotentElem (hf.stableProjection hker).toLinearMap :=
+    congrArg ContinuousLinearMap.toLinearMap (hf.isIdempotentElem_stableProjection hker).eq
+  -- The complementary-kernel lemma is stated for linear maps, so expose the underlying maps.
+  change LinearMap.ker (LinearMap.id - (hf.stableProjection hker).toLinearMap) =
+    LinearMap.range (hf.stableProjection hker).toLinearMap
+  exact (LinearMap.IsIdempotentElem.range_eq_ker_one_sub hP).symm
+
+/-- A vector is killed by the unstable projection exactly when it is stable. -/
+@[simp]
+theorem unstableProjection_apply_eq_zero_iff (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E} :
+    hf.unstableProjection hker v = 0 ↔ v ∈ hf.stableLinearSubspace := by
+  rw [← hf.ker_unstableProjection hker]
+  exact (LinearMap.mem_ker (f := (hf.unstableProjection hker).toLinearMap)).symm
+
+/-- A vector is fixed by the unstable projection exactly when it is unstable. -/
+@[simp]
+theorem unstableProjection_apply_eq_self_iff (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) {v : E} :
+    hf.unstableProjection hker v = v ↔ v ∈ hf.unstableLinearSubspace := by
+  rw [← hf.range_unstableProjection hker]
+  exact (LinearMap.IsIdempotentElem.mem_range_iff
+    (congrArg ContinuousLinearMap.toLinearMap
+      (hf.isIdempotentElem_unstableProjection hker).eq)).symm
+
+/-- The unstable projection takes every vector into the unstable linear subspace. -/
+theorem unstableProjection_apply_mem (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) (v : E) :
+    hf.unstableProjection hker v ∈ hf.unstableLinearSubspace := by
+  rw [← hf.range_unstableProjection hker]
+  exact LinearMap.mem_range_self _ v
+
+/-- The negative Hessian operator commutes with the projection onto its unstable linear
+subspace. -/
+theorem commute_neg_hessianOperator_unstableProjection (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    Commute (-hessianOperator f x) (hf.unstableProjection hker) := by
+  rw [unstableProjection]
+  exact (Commute.one_right _).sub_right (hf.commute_neg_hessianOperator_stableProjection hker)
+
 end ContDiffAt
 
 namespace TauCeti
@@ -312,7 +400,7 @@ noncomputable def unstableProjection (h : IsNondegenerateCriticalPoint f x) : E 
   ContinuousLinearMap.id ℝ E - h.stableProjection
 
 /-- The unstable projection is the complementary projection to the stable projection. -/
-theorem unstableProjection_eq_sub (h : IsNondegenerateCriticalPoint f x) :
+theorem unstableProjection_def (h : IsNondegenerateCriticalPoint f x) :
     h.unstableProjection = ContinuousLinearMap.id ℝ E - h.stableProjection := by
   rw [unstableProjection]
 
@@ -329,6 +417,13 @@ theorem stableProjection_eq_contDiffAt (h : IsNondegenerateCriticalPoint f x) :
     h.stableProjection = h.contDiffAt.stableProjection
       (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) := by
   rw [stableProjection]
+
+/-- The unstable projection at a nondegenerate critical point is the general unstable projection
+formed using the Hessian injectivity supplied by nondegeneracy. -/
+theorem unstableProjection_eq_contDiffAt (h : IsNondegenerateCriticalPoint f x) :
+    h.unstableProjection = h.contDiffAt.unstableProjection
+      (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective) := by
+  rw [unstableProjection, ContDiffAt.unstableProjection, stableProjection]
 
 /-- The range of the stable projection at a nondegenerate critical point is the stable linear
 subspace. -/
@@ -356,33 +451,19 @@ theorem isIdempotentElem_stableProjection (h : IsNondegenerateCriticalPoint f x)
 @[simp]
 theorem range_unstableProjection (h : IsNondegenerateCriticalPoint f x) :
     h.unstableProjection.range = h.contDiffAt.unstableLinearSubspace := by
-  rw [← h.ker_stableProjection]
-  have hPclm : IsIdempotentElem h.stableProjection := h.isIdempotentElem_stableProjection
-  have hP : IsIdempotentElem h.stableProjection.toLinearMap :=
-    congrArg ContinuousLinearMap.toLinearMap hPclm.eq
-  -- The complementary-range lemma is stated for linear maps, so expose the underlying maps.
-  change LinearMap.range (LinearMap.id - h.stableProjection.toLinearMap) =
-    LinearMap.ker h.stableProjection.toLinearMap
-  exact (LinearMap.IsIdempotentElem.ker_eq_range_one_sub hP).symm
+  rw [h.unstableProjection_eq_contDiffAt, ContDiffAt.range_unstableProjection]
 
 /-- The kernel of the unstable projection is the stable linear subspace. -/
 @[simp]
 theorem ker_unstableProjection (h : IsNondegenerateCriticalPoint f x) :
     h.unstableProjection.ker = h.contDiffAt.stableLinearSubspace := by
-  rw [← h.range_stableProjection]
-  have hPclm : IsIdempotentElem h.stableProjection := h.isIdempotentElem_stableProjection
-  have hP : IsIdempotentElem h.stableProjection.toLinearMap :=
-    congrArg ContinuousLinearMap.toLinearMap hPclm.eq
-  -- The complementary-kernel lemma is stated for linear maps, so expose the underlying maps.
-  change LinearMap.ker (LinearMap.id - h.stableProjection.toLinearMap) =
-    LinearMap.range h.stableProjection.toLinearMap
-  exact (LinearMap.IsIdempotentElem.range_eq_ker_one_sub hP).symm
+  rw [h.unstableProjection_eq_contDiffAt, ContDiffAt.ker_unstableProjection]
 
 /-- The unstable projection is idempotent. -/
 theorem isIdempotentElem_unstableProjection (h : IsNondegenerateCriticalPoint f x) :
     IsIdempotentElem h.unstableProjection := by
-  rw [unstableProjection]
-  exact h.isIdempotentElem_stableProjection.one_sub
+  rw [h.unstableProjection_eq_contDiffAt]
+  exact h.contDiffAt.isIdempotentElem_unstableProjection _
 
 /-- A vector is killed by the stable projection at a nondegenerate critical point exactly when it
 is unstable. -/
@@ -404,28 +485,19 @@ theorem stableProjection_apply_eq_self_iff (h : IsNondegenerateCriticalPoint f x
 @[simp]
 theorem unstableProjection_apply_eq_zero_iff (h : IsNondegenerateCriticalPoint f x) {v : E} :
     h.unstableProjection v = 0 ↔ v ∈ h.contDiffAt.stableLinearSubspace := by
-  rw [← h.ker_unstableProjection]
-  constructor <;> exact fun hv ↦ hv
+  rw [h.unstableProjection_eq_contDiffAt, ContDiffAt.unstableProjection_apply_eq_zero_iff]
 
 /-- A vector is fixed by the unstable projection exactly when it is unstable. -/
 @[simp]
 theorem unstableProjection_apply_eq_self_iff (h : IsNondegenerateCriticalPoint f x) {v : E} :
     h.unstableProjection v = v ↔ v ∈ h.contDiffAt.unstableLinearSubspace := by
-  constructor
-  · intro hv
-    rw [← h.range_unstableProjection]
-    exact ⟨v, hv⟩
-  · rw [← h.range_unstableProjection]
-    rintro ⟨w, rfl⟩
-    -- `mul_apply_eq_comp` bridges the bundled projection product to pointwise composition.
-    change h.unstableProjection (h.unstableProjection w) = h.unstableProjection w
-    rw [← mul_apply_eq_comp, h.isIdempotentElem_unstableProjection.eq]
+  rw [h.unstableProjection_eq_contDiffAt, ContDiffAt.unstableProjection_apply_eq_self_iff]
 
 /-- The unstable projection takes every vector into the unstable linear subspace. -/
 theorem unstableProjection_apply_mem (h : IsNondegenerateCriticalPoint f x) (v : E) :
     h.unstableProjection v ∈ h.contDiffAt.unstableLinearSubspace := by
-  apply h.unstableProjection_apply_eq_self_iff.mp
-  rw [← mul_apply_eq_comp, h.isIdempotentElem_unstableProjection.eq]
+  rw [h.unstableProjection_eq_contDiffAt]
+  exact h.contDiffAt.unstableProjection_apply_mem _ v
 
 /-- The stable projection at a nondegenerate critical point takes every vector into the stable
 linear subspace. -/
@@ -440,6 +512,13 @@ theorem commute_neg_hessianOperator_stableProjection (h : IsNondegenerateCritica
     Commute (-hessianOperator f x) h.stableProjection := by
   simpa only [stableProjection] using h.contDiffAt.commute_neg_hessianOperator_stableProjection
     (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+/-- The negative Hessian operator commutes with the unstable projection at a nondegenerate
+critical point. -/
+theorem commute_neg_hessianOperator_unstableProjection (h : IsNondegenerateCriticalPoint f x) :
+    Commute (-hessianOperator f x) h.unstableProjection := by
+  rw [h.unstableProjection_eq_contDiffAt]
+  exact h.contDiffAt.commute_neg_hessianOperator_unstableProjection _
 
 end IsNondegenerateCriticalPoint
 
