@@ -10,9 +10,22 @@ public import TauCeti.Probability.Distributions.Wishart.Inverse.Basic
 /-!
 # Parameter measurability of the inverse-Wishart family
 
-The inverse-Wishart law is measurable jointly in its real degree and scale matrix.
-One result uses coordinates for matrix-parameterized kernels.
-Another lets the scale range over symmetric matrices.
+This file proves that `TauCeti.inverseWishartMeasure` is measurable jointly in its real degree
+and scale matrix.
+The scale is first presented by all its coordinates,
+as required for a matrix-parameterized probability kernel.
+A second theorem restricts the scale to the symmetric-matrix carrier.
+
+These results are what is needed to use the inverse-Wishart law as a probability kernel
+whose degree and scale are themselves random, for instance as a conjugate prior in hierarchical
+models.
+
+## Main results
+
+* `TauCeti.measurable_inverseWishartMeasure` gives joint measurability in the degree and all
+  coordinates of the scale matrix.
+* `TauCeti.measurable_inverseWishartMeasure_selfAdjoint` gives the corresponding result when the
+  scale ranges over the symmetric-matrix carrier.
 -/
 
 public section

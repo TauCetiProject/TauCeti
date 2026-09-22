@@ -25,9 +25,11 @@ Orthogonal congruence transports this law to every diagonal entry.
 It also makes the off-diagonal means vanish.
 Congruence by a square root carries the standard mean to a positive-definite scale.
 
-The mean is `(n - p - 1)⁻¹ • S` above the degree threshold `p + 1`.
-This threshold is sharp within the valid family.
-In positive dimension the matrix is not integrable when `p - 1 < n ≤ p + 1`.
+For a positive-definite scale `S` and degree above the threshold `p + 1`,
+the mean is `(n - p - 1)⁻¹ • S`.
+This threshold is sharp within the valid family:
+for a positive-definite scale in positive dimension,
+the matrix is not integrable when `p - 1 < n ≤ p + 1`.
 
 ## Main results
 
