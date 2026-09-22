@@ -111,46 +111,46 @@ has no additive reduction. Equivalently, the reduction is good or multiplicative
 The predicate is stated on an elliptic equation but depends only on its `F`-isomorphism class, as
 proved by `isSemistable_smul`. Ellipticity is part of the notion: a singular cubic has no
 reduction type in the good/multiplicative/additive trichotomy of elliptic curves. -/
-def IsSemistable (W : WeierstrassCurve F) [W.IsElliptic] : Prop :=
-  ∀ v : HeightOneSpectrum O,
+def IsSemistable (W : WeierstrassCurve F) : Prop :=
+  W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal)
 
 variable {O}
 
 /-- Semistability, unfolded. -/
-theorem isSemistable_iff {W : WeierstrassCurve F} [W.IsElliptic] :
-    IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
+theorem isSemistable_iff {W : WeierstrassCurve F} :
+    IsSemistable O W ↔ W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
         (Localization.AtPrime v.asIdeal) :=
   Iff.rfl
 
 /-- A semistable curve has no additive reduction at any height-one prime. -/
-theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F} [W.IsElliptic]
+theorem IsSemistable.not_hasAdditiveReduction {W : WeierstrassCurve F}
     (hW : IsSemistable O W) (v : HeightOneSpectrum O) :
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal) :=
-  hW v
+  hW.2 v
 
 /-- A curve with no additive reduction at any height-one prime is semistable. -/
 theorem IsSemistable.of_forall_not_hasAdditiveReduction {W : WeierstrassCurve F}
-    [W.IsElliptic] (hW : ∀ v : HeightOneSpectrum O,
+    (hEll : W.IsElliptic) (hW : ∀ v : HeightOneSpectrum O,
       ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
         (Localization.AtPrime v.asIdeal)) :
     IsSemistable O W :=
-  hW
+  ⟨hEll, hW⟩
 
 /-- **A curve is semistable exactly when it has good or multiplicative reduction at every
 height-one prime.** -/
 theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
-    (W : WeierstrassCurve F) [W.IsElliptic] :
-    IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
+    (W : WeierstrassCurve F) :
+    IsSemistable O W ↔ W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
       (W.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
           (Localization.AtPrime v.asIdeal) ∨
         (W.minimal (Localization.AtPrime v.asIdeal)).HasMultiplicativeReduction
           (Localization.AtPrime v.asIdeal) := by
   rw [isSemistable_iff]
-  refine forall_congr' fun v ↦ ?_
+  refine and_congr Iff.rfl <| forall_congr' fun v ↦ ?_
   constructor
   · intro h
     rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction
@@ -167,25 +167,36 @@ theorem isSemistable_iff_forall_hasGoodReduction_or_hasMultiplicativeReduction
 equation has discriminant of valuation one (good reduction) or `c₄` of valuation one
 (multiplicative reduction). -/
 theorem isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one
-    (W : WeierstrassCurve F) [W.IsElliptic] :
-    IsSemistable O W ↔ ∀ v : HeightOneSpectrum O,
+    (W : WeierstrassCurve F) :
+    IsSemistable O W ↔ W.IsElliptic ∧ ∀ v : HeightOneSpectrum O,
       valuation F (maximalIdeal (Localization.AtPrime v.asIdeal))
           (W.minimal (Localization.AtPrime v.asIdeal)).Δ = 1 ∨
         valuation F (maximalIdeal (Localization.AtPrime v.asIdeal))
           (W.minimal (Localization.AtPrime v.asIdeal)).c₄ = 1 := by
   rw [isSemistable_iff]
-  exact forall_congr' fun v ↦
+  refine and_congr Iff.rfl <| forall_congr' fun v ↦
     not_hasAdditiveReduction_iff_valuation_Δ_eq_one_or_valuation_c₄_eq_one
       (Localization.AtPrime v.asIdeal) (W.minimal (Localization.AtPrime v.asIdeal))
 
 /-- **Semistability is invariant under a change of variables.** -/
 @[simp]
-theorem isSemistable_smul (D : VariableChange F) (W : WeierstrassCurve F) [W.IsElliptic] :
+theorem isSemistable_smul (D : VariableChange F) (W : WeierstrassCurve F) :
     IsSemistable O (D • W) ↔ IsSemistable O W := by
   rw [isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one,
     isSemistable_iff_forall_valuation_Δ_eq_one_or_valuation_c₄_eq_one]
-  refine forall_congr' fun v ↦ ?_
-  rw [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul]
+  constructor
+  · rintro ⟨hEll, h⟩
+    let _ : (D • W).IsElliptic := hEll
+    have hEll' : W.IsElliptic := by
+      simpa only [inv_smul_smul] using
+        (inferInstance : (D⁻¹ • (D • W)).IsElliptic)
+    let _ : W.IsElliptic := hEll'
+    refine ⟨hEll', fun v ↦ ?_⟩
+    simpa only [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul] using h v
+  · rintro ⟨hEll, h⟩
+    let _ : W.IsElliptic := hEll
+    refine ⟨inferInstance, fun v ↦ ?_⟩
+    simpa only [valuation_Δ_minimal_smul, valuation_c₄_minimal_smul] using h v
 
 end WeierstrassCurve
 
