@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 
 /-!
 # Polar length comparison in a normal domain

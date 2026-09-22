@@ -308,7 +308,7 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
 
 /-- **Radial norm preservation.** The differential of the Riemannian exponential map preserves
 the norm of the radial direction at every vector in its natural domain. -/
-theorem norm_mfderiv_riemannianExp_radial [I.Boundaryless]
+@[simp] theorem norm_mfderiv_riemannianExp_radial [I.Boundaryless]
     [T2Space (TangentBundle I M)] {p : M} {v : TangentSpace I p}
     (hv : v ∈ expDomain I M p) :
     ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v‖ = ‖v‖ := by
