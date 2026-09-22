@@ -29,10 +29,9 @@ provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`.
 ## Main declarations
 
 * `TauCeti.RealProjectiveSpace`: real projective `n`-space as an antipodal quotient of `Sⁿ`.
-* `TauCeti.RealProjectiveSpace.instNonemptySphere`,
-  `TauCeti.RealProjectiveSpace.pathConnectedSpace_sphere` and
+* `TauCeti.RealProjectiveSpace.instNonemptySphere` and
   `TauCeti.RealProjectiveSpace.connectedSpace_sphere`: the covering sphere `Sⁿ` is nonempty, and
-  path connected, hence connected, once `1 ≤ n`.
+  connected once `1 ≤ n`.
 * `TauCeti.RealProjectiveSpace.instCompactSpace`: real projective space is compact.
 * `TauCeti.RealProjectiveSpace.inductionOn`, `TauCeti.RealProjectiveSpace.lift`, and
   `TauCeti.RealProjectiveSpace.lift_unique`: elimination principles for the antipodal quotient.
@@ -70,21 +69,14 @@ instance instNonemptySphere :
     Nonempty (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
   (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
 
-/-- The unit sphere of `EuclideanSpace ℝ (Fin (n + 1))` is path connected once `1 ≤ n`, that is,
-from the circle `S¹` on. -/
-theorem pathConnectedSpace_sphere (hn : 1 ≤ n) :
-    PathConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
-  refine isPathConnected_iff_pathConnectedSpace.mp (isPathConnected_sphere ?_ 0 zero_le_one)
-  rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin, Nat.one_lt_cast]
-  omega
-
 /-- The unit sphere of `EuclideanSpace ℝ (Fin (n + 1))` is connected once `1 ≤ n`, that is,
 from the circle `S¹` on. This is the standing hypothesis behind the identification of the
 deck group of the antipodal cover. -/
 theorem connectedSpace_sphere (hn : 1 ≤ n) :
-    ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-  have := pathConnectedSpace_sphere n hn
-  inferInstance
+    ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
+  refine Subtype.connectedSpace (isConnected_sphere ?_ 0 zero_le_one)
+  rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin, Nat.one_lt_cast]
+  omega
 
 /-- The quotient topology on real projective space. -/
 instance instTopologicalSpace : TopologicalSpace (RealProjectiveSpace n) :=
@@ -246,7 +238,12 @@ instance instPathConnectedSpace :
     PathConnectedSpace (RealProjectiveSpace n) := by
   rcases n with _ | n
   · infer_instance
-  · have := pathConnectedSpace_sphere (n + 1) (by omega)
+  · have hrank : 1 < Module.rank ℝ (EuclideanSpace ℝ (Fin (n + 1 + 1))) := by
+      rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin, Nat.one_lt_cast]
+      omega
+    have hpc := isPathConnected_iff_pathConnectedSpace.mp
+      (isPathConnected_sphere hrank (0 : EuclideanSpace ℝ (Fin (n + 1 + 1))) zero_le_one)
+    have : PathConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1 + 1))) 1) := hpc
     exact Quotient.instPathConnectedSpace
 
 /-- The unit-sphere projection onto real projective space is a covering map. -/

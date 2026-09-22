@@ -73,7 +73,11 @@ theorem isAspherical_iff :
     IsAspherical X x₀ ↔
       ∀ n : ℕ,
         Subsingleton (π_ (n + 2) (UniversalCover x₀) (basepointLift x₀ : UniversalCover x₀)) :=
-  (isCoveringMap x₀).isAspherical_iff (proj_basepointLift x₀)
+  ⟨fun h n ↦ ((isCoveringMap x₀).subsingleton_homotopyGroup_iff
+      (proj_basepointLift x₀) n).mpr (h.subsingleton_homotopyGroup n),
+    fun h ↦
+      (isCoveringMap x₀).isAspherical_of_subsingleton_homotopyGroup proj_surjective
+        (proj_basepointLift x₀) h⟩
 
 /-- **A space whose universal cover has vanishing higher homotopy groups is a `K(G, 1)`**, for
 any group `G` isomorphic to its fundamental group. -/
