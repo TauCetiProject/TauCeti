@@ -24,8 +24,8 @@ Mathlib's `presheafHomSectionsEquiv` supplies the underlying global-sections ide
 
 The equivalences `linearHomObjEquiv` and `linearHomSectionsEquiv` identify local and global
 sections with module-sheaf morphisms, and `linearHomObjEquiv_map_app` describes restriction.
-After opening `TauCeti`, these declarations support dot notation directly, for example
-`M.linearHom N` and `M.linearHomObjEquiv N U`.
+These declarations support dot notation directly, for example `M.linearHom N` and
+`M.linearHomObjEquiv N U`.
 
 This file constructs the underlying sheaf of sets; it does not equip it with a module
 structure or identify it with a categorical internal Hom.
@@ -95,10 +95,20 @@ private theorem isSheaf_linearHomSubfunctor :
   intro U φ hφ
   exact mem_linearHomSubfunctor_of_cover M N φ _ hφ (fun _ _ hf => hf)
 
+end SheafOfModules
+end TauCeti
+
+namespace SheafOfModules
+
+universe u v w w'
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  {R : Sheaf J RingCat.{w}} (M N : SheafOfModules.{w'} R)
+
 /-- The sheaf of sets of local linear morphisms between two sheaves of modules. -/
 def linearHom : Sheaf J (Type (max u v w')) where
-  obj := (linearHomSubfunctor M N).toFunctor
-  property := isSheaf_linearHomSubfunctor M N
+  obj := (TauCeti.SheafOfModules.linearHomSubfunctor M N).toFunctor
+  property := TauCeti.SheafOfModules.isSheaf_linearHomSubfunctor M N
 
 /-- Sections of the linear Hom sheaf over an object are precisely morphisms between the
 restricted sheaves of modules.
@@ -187,4 +197,3 @@ theorem linearHomSectionsEquiv_symm_apply (φ : M ⟶ N) (U : Cᵒᵖ) :
       (linearHomObjEquiv M N U.unop).symm (φ.over U.unop) := by rfl
 
 end SheafOfModules
-end TauCeti
