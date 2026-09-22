@@ -108,7 +108,8 @@ This is the form the Schwarz--Christoffel converse uses: `φ` is holomorphic off
 prevertices, so it is automatically continuous near infinity, and the hypotheses on `g` say that
 the point at infinity is an interior point of a side of the polygon. -/
 theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b : ℂ} {r : ℝ}
-    (hr : 0 < r) (hb : b ≠ 0) (hgf : ∀ w : ℂ, w ≠ 0 → g w = (f (-w⁻¹) - q) / b)
+    (hr : 0 < r) (hb : b ≠ 0)
+    (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b) upperHalfPlaneSet)
     (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
@@ -125,11 +126,17 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
   refine tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv Metric.isOpen_ball hball
     (Metric.mem_ball_self hr) hcont hholo hreal hupper hinj hφcont hφconj fun z hz => ?_
   have hz0 : z ≠ 0 := fun h => by simp [h] at hz
+  have hnegInv : -z⁻¹ ∈ upperHalfPlaneSet := by
+    simp only [upperHalfPlaneSet, mem_ofPred_eq] at hz ⊢
+    simp only [neg_im, inv_im, neg_div, neg_neg]
+    exact div_pos hz (Complex.normSq_pos.mpr hz0)
   -- Off the origin, the inverse coordinate of the inverse coordinate is the original map.
   have heq : (fun w : ℂ => g (-w⁻¹)) =ᶠ[𝓝 z] fun w : ℂ => (f w - q) / b := by
-    filter_upwards [isOpen_compl_singleton.mem_nhds (by simpa using hz0)] with w hw
-    have hw0 : w ≠ 0 := hw
-    rw [hgf _ (by simpa using hw0), inv_neg, inv_inv, neg_neg]
+    filter_upwards [((continuousAt_inv₀ hz0).neg).preimage_mem_nhds
+      (isOpen_upperHalfPlaneSet.mem_nhds hnegInv)] with w hw
+    calc
+      g (-w⁻¹) = (f (-(-w⁻¹)⁻¹) - q) / b := hgf hw
+      _ = (f w - q) / b := by rw [inv_neg, inv_inv, neg_neg]
   have hderiv : (deriv fun w : ℂ => (f w - q) / b) = fun w => deriv f w / b := by
     ext w
     simp only [deriv_div_const, deriv_sub_const]
