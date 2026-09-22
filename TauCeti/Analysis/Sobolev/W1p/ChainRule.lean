@@ -61,7 +61,8 @@ by approximation, and the *order* of the two limits matters.
   level, assuming its value is globally in `Lᵖ`.
 * `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
-  `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
+  `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.  The
+  two constructions agree at the level `0`: `TauCeti.W1p.posPartAbove_zero`.
 
 ## References
 
@@ -785,6 +786,15 @@ def W1p.posPart (hp : p ≠ ∞) (u : W1p mu Omega p) : W1p mu Omega p :=
 theorem W1p.value_posPart (hp : p ≠ ∞) (u : W1p mu Omega p) :
     W1p.value (W1p.posPart hp u) = Lp.posPart (W1p.value u) :=
   W1p.value_mk _ _ _
+
+/-- Truncation above the level `0` is the positive part. -/
+@[simp]
+theorem W1p.posPartAbove_zero (hp : p ≠ ∞) (u : W1p mu Omega p) :
+    W1p.posPartAbove hp le_rfl u = W1p.posPart hp u := by
+  refine W1p.ext_value (Lp.ext ?_)
+  filter_upwards [W1p.value_posPartAbove_ae hp le_rfl u, Lp.coeFn_posPart (W1p.value u)]
+    with x hx hpos
+  rw [hx, W1p.value_posPart, hpos, sub_zero]
 
 /-- The weak gradient of `u⁺` is `1_{u > 0} ∇u` almost everywhere. -/
 @[simp]
