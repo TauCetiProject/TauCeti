@@ -33,7 +33,7 @@ Cambridge University Press (2003), §7.2.
 
 public section
 
-namespace TauCeti
+namespace Submodule
 
 open _root_.MvPolynomial
 
@@ -51,8 +51,8 @@ theorem aeval_weightEnumerator_euclideanDual_of_isPrimitive
       (Nat.card C : ℚ)⁻¹ •
         aeval ![x + (Nat.card R - 1 : A) * y, x - y] (C : Set (ι → R)).weightEnumerator := by
   rw [eq_inv_smul_iff₀ (Nat.cast_ne_zero.mpr Nat.card_pos.ne' : (Nat.card C : ℚ) ≠ 0)]
-  simpa only [Algebra.smul_def, map_natCast] using aeval_macWilliams_identity
-    (Submodule.natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive hψ C) x y
+  simpa only [Algebra.smul_def, map_natCast] using TauCeti.aeval_macWilliams_identity
+    (natCard_mul_weightEnumerator_euclideanDual_of_isPrimitive hψ C) x y
 
 variable {F : Type*} [Field F] [Finite F] [DecidableEq F]
   (C : Submodule F (ι → F))
@@ -66,8 +66,8 @@ theorem aeval_weightEnumerator_euclideanDual {A : Type*} [CommRing A] [Algebra �
       (Nat.card C : ℚ)⁻¹ •
         aeval ![x + (Nat.card F - 1 : A) * y, x - y] (C : Set (ι → F)).weightEnumerator := by
   rw [eq_inv_smul_iff₀ (Nat.cast_ne_zero.mpr Nat.card_pos.ne' : (Nat.card C : ℚ) ≠ 0)]
-  simpa only [Algebra.smul_def, map_natCast] using aeval_macWilliams_identity
-    (Submodule.natCard_mul_weightEnumerator_euclideanDual C) x y
+  simpa only [Algebra.smul_def, map_natCast] using TauCeti.aeval_macWilliams_identity
+    (natCard_mul_weightEnumerator_euclideanDual C) x y
 
 /-- A self-dual code's weight enumerator is fixed by the MacWilliams substitution
 normalized by any invertible square root `s` of the alphabet size, with inverse `t`.
@@ -92,9 +92,9 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual_of_mul_self
           aeval ![x + (Nat.card F - 1 : A) * y, x - y]
             (C : Set (ι → F)).weightEnumerator := by
     simpa only [Matrix.smul_vec2, smul_eq_mul] using
-      aeval_smul_of_isHomogeneous (C : Set (ι → F)).isHomogeneous_weightEnumerator
+      (C : Set (ι → F)).isHomogeneous_weightEnumerator.aeval_smul
         ![x + (Nat.card F - 1 : A) * y, x - y] t
-  have hmac := aeval_macWilliams_identity
+  have hmac := TauCeti.aeval_macWilliams_identity
     (natCard_mul_weightEnumerator_of_eq_euclideanDual C hC) x y
   have hcancel : t ^ Fintype.card ι * (Nat.card C : A) = 1 := by
     calc
@@ -127,4 +127,4 @@ theorem aeval_weightEnumerator_normalized_of_eq_euclideanDual
       (by rw [← map_mul, Real.mul_self_sqrt (Nat.cast_nonneg _), map_natCast])
       (by rw [← map_mul, inv_mul_cancel₀ hsqrt, map_one]) x y
 
-end TauCeti
+end Submodule

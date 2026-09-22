@@ -42,7 +42,7 @@ to `AddChar.FiniteField.primitiveChar`.
   field.
 * `TauCeti.aeval_macWilliams_identity`: evaluation of a division-free MacWilliams identity
   in any commutative ring.
-* `TauCeti.natCard_mul_weightEnumerator_of_eq_euclideanDual`: the division-free MacWilliams
+* `Submodule.natCard_mul_weightEnumerator_of_eq_euclideanDual`: the division-free MacWilliams
   identity for a self-dual code.
 
 ## References
@@ -141,6 +141,10 @@ theorem aeval_macWilliams_identity
   have heval := congrArg (aeval ![x, y]) h
   simpa only [map_mul, map_natCast, aeval_eq_bind₁, aeval_bind₁, hvec] using heval
 
+end TauCeti
+
+namespace Submodule
+
 /-- A self-dual code over a finite field satisfies the division-free MacWilliams
 identity in `ℤ[X, Y]`. -/
 theorem natCard_mul_weightEnumerator_of_eq_euclideanDual
@@ -149,6 +153,6 @@ theorem natCard_mul_weightEnumerator_of_eq_euclideanDual
     (Nat.card C : MvPolynomial (Fin 2) ℤ) * (C : Set (ι → F)).weightEnumerator =
       aeval ![X 0 + (Nat.card F - 1 : MvPolynomial (Fin 2) ℤ) * X 1, X 0 - X 1]
         (C : Set (ι → F)).weightEnumerator := by
-  simpa only [← hC] using Submodule.natCard_mul_weightEnumerator_euclideanDual C
+  simpa only [← hC] using natCard_mul_weightEnumerator_euclideanDual C
 
-end TauCeti
+end Submodule
