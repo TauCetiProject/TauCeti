@@ -129,6 +129,39 @@ def IsRecutOfRightEqLeft (D E : GridRectangleDecomposition x z) : Prop :=
           E.middle = x.swapRows D.first.bottom D.second.top ∧
             E.first.bottom = D.first.bottom ∧ E.second.bottom = D.second.top))
 
+/-- The common side of a left-left recut is the initial side of both original rectangles. -/
+theorem IsRecutOfLeftEqLeft.side_eq {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfLeftEqLeft E) : D.first.left = D.second.left := h.1
+
+/-- The common side of a right-right recut is the terminal side of both original rectangles. -/
+theorem IsRecutOfRightEqRight.side_eq {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfRightEqRight E) : D.first.right = D.second.right := h.1
+
+/-- The common side of a left-right recut is initial for the first rectangle and terminal for the
+second. -/
+theorem IsRecutOfLeftEqRight.side_eq {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfLeftEqRight E) : D.first.left = D.second.right := h.1
+
+/-- The common side of a right-left recut is terminal for the first rectangle and initial for the
+second. -/
+theorem IsRecutOfRightEqLeft.side_eq {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfRightEqLeft E) : D.first.right = D.second.left := h.1
+
+/-- The recut preserves the two opposing terminal sides in the left-left orientation. -/
+theorem IsRecutOfLeftEqLeft.recut_rights {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfLeftEqLeft E) :
+    E.first.right = D.second.right ∧ E.second.right = D.first.right := ⟨h.2.1, h.2.2.1⟩
+
+/-- The two possible row configurations for the recut in the left-left orientation. -/
+theorem IsRecutOfLeftEqLeft.recut_rows {D E : GridRectangleDecomposition x z}
+    (h : D.IsRecutOfLeftEqLeft E) :
+    (D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
+        E.middle = x.swapColumns D.first.right D.second.right ∧
+          E.first.left = D.first.right ∧ E.second.left = D.first.left) ∨
+      (D.second.right ∈ Grid.cIoo D.first.left D.first.right ∧
+        E.middle = x.swapColumns D.first.left D.second.right ∧
+          E.first.left = D.first.left ∧ E.second.left = D.second.right) := h.2.2.2
+
 /-- `E` is the recut of the two-step decomposition `D`: it repartitions the same domain into two
 empty rectangles, passes through a different intermediate state, and carries the side data
 computed for the orientation of the common side column of `D`. -/
@@ -141,46 +174,9 @@ def IsRecut (D E : GridRectangleDecomposition x z) : Prop :=
 This lets consumers classify the recut geometry without unfolding `IsRecut` or its case
 predicates. -/
 theorem IsRecut.sideData {D E : GridRectangleDecomposition x z} (h : D.IsRecut E) :
-    (D.first.left = D.second.left ∧ E.first.right = D.second.right ∧
-      E.second.right = D.first.right ∧
-        ((D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
-            E.middle = x.swapColumns D.first.right D.second.right ∧
-              E.first.left = D.first.right ∧ E.second.left = D.first.left) ∨
-          (D.second.right ∈ Grid.cIoo D.first.left D.first.right ∧
-            E.middle = x.swapColumns D.first.left D.second.right ∧
-              E.first.left = D.first.left ∧ E.second.left = D.second.right))) ∨
-    (D.first.right = D.second.right ∧ E.first.left = D.second.left ∧
-      E.second.left = D.first.left ∧
-        ((D.first.left ∈ Grid.cIoo D.second.left D.first.right ∧
-            E.middle = x.swapColumns D.second.left D.first.left ∧
-              E.first.right = D.first.left ∧ E.second.right = D.first.right) ∨
-          (D.second.left ∈ Grid.cIoo D.first.left D.first.right ∧
-            E.middle = x.swapColumns D.second.left D.first.right ∧
-              E.first.right = D.first.right ∧ E.second.right = D.second.left))) ∨
-    (D.first.left = D.second.right ∧ E.first.bottom = D.second.bottom ∧
-      E.second.bottom = D.first.bottom ∧
-        ((D.first.bottom ∈ Grid.cIoo D.second.bottom D.first.top ∧
-            E.middle = x.swapRows D.second.bottom D.first.bottom ∧
-              E.first.top = D.first.bottom ∧ E.second.top = D.first.top) ∨
-          (D.second.bottom ∈ Grid.cIoo D.first.bottom D.first.top ∧
-            E.middle = x.swapRows D.second.bottom D.first.top ∧
-              E.first.top = D.first.top ∧ E.second.top = D.second.bottom))) ∨
-    (D.first.right = D.second.left ∧ E.first.top = D.second.top ∧
-      E.second.top = D.first.top ∧
-        ((D.first.top ∈ Grid.cIoo D.first.bottom D.second.top ∧
-            E.middle = x.swapRows D.first.top D.second.top ∧
-              E.first.bottom = D.first.top ∧ E.second.bottom = D.first.bottom) ∨
-          (D.second.top ∈ Grid.cIoo D.first.bottom D.first.top ∧
-            E.middle = x.swapRows D.first.bottom D.second.top ∧
-              E.first.bottom = D.first.bottom ∧ E.second.bottom = D.second.top))) := by
-  -- The predicate is stored as the first four decomposition facts followed by these side data.
-  change _ ∧ _ ∧ _ ∧ _ ∧ _ at h
-  have hdata := h.2.2.2.2
-  rcases hdata with hleft | hright | hleftRight | hrightLeft
-  · exact Or.inl hleft
-  · exact Or.inr (Or.inl hright)
-  · exact Or.inr (Or.inr (Or.inl hleftRight))
-  · exact Or.inr (Or.inr (Or.inr hrightLeft))
+    D.IsRecutOfLeftEqLeft E ∨ D.IsRecutOfRightEqRight E ∨
+      D.IsRecutOfLeftEqRight E ∨ D.IsRecutOfRightEqLeft E := by
+  exact h.2.2.2.2
 
 /-! ### Existence and uniqueness of the recut -/
 

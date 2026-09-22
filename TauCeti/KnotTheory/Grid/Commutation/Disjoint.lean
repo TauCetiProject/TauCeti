@@ -201,7 +201,7 @@ theorem toRectangleDecomposition_first_left (D : GridRectanglePentagonDecomposit
   rfl
 
 /-- Emptiness of the rectangle is preserved when forgetting the pentagon turn point. -/
-theorem toRectangleDecomposition_first_isEmpty (D : GridRectanglePentagonDecomposition a s x z)
+theorem isEmpty_toRectangleDecomposition_first (D : GridRectanglePentagonDecomposition a s x z)
     (h : D.rectangle.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
   cases D with
   | mk middle rectangle pentagon =>
@@ -209,7 +209,7 @@ theorem toRectangleDecomposition_first_isEmpty (D : GridRectanglePentagonDecompo
       exact h
 
 /-- Emptiness of the pentagon's underlying rectangle is preserved when forgetting its turn row. -/
-theorem toRectangleDecomposition_second_isEmpty
+theorem isEmpty_toRectangleDecomposition_second
     (D : GridRectanglePentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
     D.toRectangleDecomposition.second.IsEmpty := by
   cases D with
@@ -218,7 +218,7 @@ theorem toRectangleDecomposition_second_isEmpty
       exact h
 
 /-- The pentagon's turn row lies between the sides of the second forgotten rectangle. -/
-theorem toRectangleDecomposition_second_turn_mem
+theorem turn_mem_toRectangleDecomposition_second
     (D : GridRectanglePentagonDecomposition a s x z) :
     s ∈ Grid.cIco D.toRectangleDecomposition.second.bottom
       D.toRectangleDecomposition.second.top := by
