@@ -79,6 +79,8 @@ def integralSemilocalHom :
     (AlgHom.pi fun w ↦
       { algebraMap (𝒪 L) (w.1.adicCompletionIntegers L) with
         commutes' := fun r ↦ by
+          -- Expose the composite algebra structure installed just above so the two named
+          -- compatibility lemmas apply.
           change algebraMap (𝒪 L) (w.1.adicCompletionIntegers L)
               (algebraMap (𝒪 K) (𝒪 L) r) =
             algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L)
@@ -106,40 +108,8 @@ rings at the places above `v`. -/
 theorem denseRange_algebraMap_integers_pi_liesOver :
     DenseRange fun (x : 𝒪 L)
       (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) ↦
-        algebraMap (𝒪 L) (w.1.adicCompletionIntegers L) x := by
-  classical
-  intro y
-  refine mem_closure_iff_nhds.mpr fun U hU ↦ ?_
-  rw [nhds_pi, Filter.mem_pi] at hU
-  obtain ⟨I, hI, t, ht, hIt⟩ := hU
-  have hzero (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
-      (fun z : w.1.adicCompletionIntegers L ↦ y w - z) ⁻¹' t w ∈ nhds 0 :=
-    (continuous_const.sub continuous_id).continuousAt.preimage_mem_nhds (by simpa using ht w)
-  let n : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} → ℕ := fun w ↦
-    (w.1.exists_maximalIdeal_pow_subset_of_mem_nhds (K := L) (hzero w)).choose
-  have hn (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :=
-    (w.1.exists_maximalIdeal_pow_subset_of_mem_nhds (K := L) (hzero w)).choose_spec
-  let x : ∀ z : HeightOneSpectrum (𝒪 L), z.adicCompletionIntegers L := fun z ↦
-    if hz : z.asIdeal.LiesOver v.asIdeal then y ⟨z, hz⟩ else 0
-  let m : HeightOneSpectrum (𝒪 L) → ℕ := fun z ↦
-    if hz : z.asIdeal.LiesOver v.asIdeal then n ⟨z, hz⟩ else 0
-  obtain ⟨r, hr⟩ := exists_forall_valued_sub_le
-    (K := L) (hI.toFinset.image fun w ↦ w.1) x m
-  refine ⟨(fun w ↦ algebraMap (𝒪 L) (w.1.adicCompletionIntegers L) r), ?_, r, rfl⟩
-  apply hIt
-  intro w hw
-  have happ := hr w.1 (Finset.mem_image.mpr ⟨w, hI.mem_toFinset.mpr hw, rfl⟩)
-  have hmem : y w - algebraMap (𝒪 L) (w.1.adicCompletionIntegers L) r ∈
-      IsLocalRing.maximalIdeal (w.1.adicCompletionIntegers L) ^ n w := by
-    rw [w.1.mem_maximalIdeal_pow_iff (K := L)]
-    change Valued.v ((y w : w.1.adicCompletion L) -
-      algebraMap (𝒪 L) (w.1.adicCompletion L) r) ≤ WithZero.exp (-(n w : ℤ))
-    have hxw : x w.1 = y w := by simp only [x, dite_eq_left w.2]
-    have hmw : m w.1 = n w := by simp only [m, dite_eq_left w.2]
-    rw [hxw, hmw] at happ
-    exact happ
-  have := hn w hmem
-  simpa only [Set.mem_preimage, sub_sub_cancel] using this
+        algebraMap (𝒪 L) (w.1.adicCompletionIntegers L) x :=
+  denseRange_algebraMap_pi_subtype (K := L) (fun w ↦ w.asIdeal.LiesOver v.asIdeal)
 
 /-- The integral semi-local map is surjective. -/
 theorem integralSemilocalHom_surjective : Function.Surjective (integralSemilocalHom L v) := by
@@ -171,42 +141,41 @@ private def integralFieldBaseChangeEquiv :
     (Algebra.TensorProduct.congr (.refl : v.adicCompletion K ≃ₐ[v.adicCompletion K]
       v.adicCompletion K) (Algebra.IsPushout.equiv (𝒪 K) K (𝒪 L) L))
 
+@[simp]
+private theorem integralFieldBaseChangeEquiv_tmul (a : v.adicCompletion K) (x : 𝒪 L) :
+    integralFieldBaseChangeEquiv L v (a ⊗ₜ x) = a ⊗ₜ (x : L) := by
+  simp [integralFieldBaseChangeEquiv, Algebra.IsPushout.equiv_tmul]
+
 private def integralFieldBaseChangeAlgHom :
     v.adicCompletion K ⊗[𝒪 K] 𝒪 L →ₐ[𝒪 K]
       v.adicCompletion K ⊗[K] L :=
   { (integralFieldBaseChangeEquiv L v).toRingEquiv.toRingHom with
     commutes' := fun r ↦ by
+      -- The source uses its tensor-product algebra over `𝒪 K`, whereas the equivalence is
+      -- linear over the completion. Exposing both algebra maps lets the pure-tensor lemma bridge
+      -- these non-definitionally-equal structures.
       change integralFieldBaseChangeEquiv L v
           (algebraMap (𝒪 K) (v.adicCompletion K) r ⊗ₜ[𝒪 K] (1 : 𝒪 L)) =
         algebraMap (𝒪 K) (v.adicCompletion K) r ⊗ₜ[K] (1 : L)
-      simp [integralFieldBaseChangeEquiv, Algebra.IsPushout.equiv_tmul] }
-
-private theorem integralFieldBaseChangeAlgHom_apply
-    (z : v.adicCompletion K ⊗[𝒪 K] 𝒪 L) :
-    integralFieldBaseChangeAlgHom L v z = integralFieldBaseChangeEquiv L v z := rfl
-
-private theorem integralFieldBaseChangeAlgHom_injective :
-    Function.Injective (integralFieldBaseChangeAlgHom L v) :=
-  (integralFieldBaseChangeEquiv L v).injective
+      rw [integralFieldBaseChangeEquiv_tmul]
+      rfl }
 
 private def adicCompletionIntegersToCompletion :
     v.adicCompletionIntegers K →ₐ[𝒪 K] v.adicCompletion K :=
-  { algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) with
-    commutes' := fun r ↦ by
-      change (algebraMap (𝒪 K) (v.adicCompletionIntegers K) r : v.adicCompletion K) =
-        algebraMap (𝒪 K) (v.adicCompletion K) r
-      rw [algebraMap_adicCompletionIntegers_apply]
-      rfl }
+  @AlgHom.restrictScalars (𝒪 K) (v.adicCompletionIntegers K)
+    (v.adicCompletionIntegers K) (v.adicCompletion K) _ _ _ _ _ _ _ _ _
+    (@IsScalarTower.of_algebraMap_eq (𝒪 K) (v.adicCompletionIntegers K)
+      (v.adicCompletionIntegers K) _ _ _ _ _ _ fun _ ↦ rfl)
+    (@IsScalarTower.of_algebraMap_eq (𝒪 K) (v.adicCompletionIntegers K)
+      (v.adicCompletion K) _ _ _ _ _ _ fun _ ↦ rfl)
+    (Algebra.ofId (v.adicCompletionIntegers K) (v.adicCompletion K))
 
 private def integralTensorToBaseChange :
     v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L →ₐ[𝒪 K]
       v.adicCompletion K ⊗[𝒪 K] 𝒪 L :=
   { (Algebra.TensorProduct.map (adicCompletionIntegersToCompletion v)
       (AlgHom.id (𝒪 K) (𝒪 L))).toRingHom with
-    commutes' := fun r ↦ by
-      change algebraMap (𝒪 K) (v.adicCompletion K) r ⊗ₜ[𝒪 K] (1 : 𝒪 L) =
-        algebraMap (𝒪 K) (v.adicCompletion K) r ⊗ₜ[𝒪 K] (1 : 𝒪 L)
-      rfl }
+    commutes' := fun _ ↦ rfl }
 
 omit [NumberField L] in
 @[simp]
@@ -217,6 +186,8 @@ private theorem integralTensorToBaseChange_tmul
 omit [NumberField L] in
 private theorem integralTensorToBaseChange_injective :
     Function.Injective (integralTensorToBaseChange L v) := by
+  -- Expose the underlying linear tensor map; the bundled algebra structures differ, but the
+  -- functions are definitionally the same.
   change Function.Injective (TensorProduct.map
     (adicCompletionIntegersToCompletion v).toLinearMap
     (AlgHom.id (𝒪 K) (𝒪 L)).toLinearMap)
@@ -226,8 +197,7 @@ private theorem integralTensorToBaseChange_injective :
 def integralSemilocalToField :
     v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L →ₐ[𝒪 K]
       v.adicCompletion K ⊗[K] L :=
-  (integralFieldBaseChangeAlgHom L v).comp
-    (integralTensorToBaseChange L v)
+  (integralFieldBaseChangeAlgHom L v).comp (integralTensorToBaseChange L v)
 
 variable {L v}
 
@@ -236,12 +206,25 @@ variable {L v}
 theorem integralSemilocalToField_tmul (a : v.adicCompletionIntegers K) (x : 𝒪 L) :
     integralSemilocalToField L v (a ⊗ₜ x) =
       (a : v.adicCompletion K) ⊗ₜ (x : L) := by
-  rw [integralSemilocalToField, AlgHom.comp_apply,
-    integralTensorToBaseChange_tmul, integralFieldBaseChangeAlgHom_apply]
-  rw [integralFieldBaseChangeEquiv, AlgEquiv.trans_apply,
-    Algebra.TensorProduct.cancelBaseChange_symm_tmul,
-    Algebra.TensorProduct.congr_apply, Algebra.TensorProduct.map_tmul]
-  simp [Algebra.IsPushout.equiv_tmul]
+  rw [integralSemilocalToField, AlgHom.comp_apply, integralTensorToBaseChange_tmul]
+  exact integralFieldBaseChangeEquiv_tmul (L := L) (v := v) (a : v.adicCompletion K) x
+
+private theorem algebraMap_adicCompletionExtension_coe
+    (a : v.adicCompletionIntegers K)
+    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    algebraMap (v.adicCompletion K) (w.1.adicCompletion L) (a : v.adicCompletion K) =
+      (algebraMap (v.adicCompletionIntegers K) (w.1.adicCompletionIntegers L) a :
+        w.1.adicCompletion L) := by
+  rw [algebraMap_adicCompletionIntegersExtensionAlgebra,
+    algebraMap_adicCompletionExtensionAlgebra, coe_adicCompletionIntegersExtension]
+
+private theorem algebraMap_ringOfIntegers_adicCompletion_eq_coe
+    (x : 𝒪 L) (w : HeightOneSpectrum (𝒪 L)) :
+    algebraMap (𝒪 L) (w.adicCompletion L) x =
+      (algebraMap (𝒪 L) (w.adicCompletionIntegers L) x : w.adicCompletion L) := by
+  rw [algebraMap_adicCompletionIntegers_apply,
+    IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L),
+    algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
 
 /-- The integral and field semi-local maps agree after inclusion in the completions. -/
 theorem integralSemilocalHom_fieldCompatibility
@@ -255,25 +238,14 @@ theorem integralSemilocalHom_fieldCompatibility
   | add x y hx hy =>
       funext w
       simp only [map_add, Pi.add_apply]
-      change (semilocalEquiv L v (integralSemilocalToField L v x)) w +
-          (semilocalEquiv L v (integralSemilocalToField L v y)) w =
-        (integralSemilocalHom L v x w : w.1.adicCompletion L) +
-          (integralSemilocalHom L v y w : w.1.adicCompletion L)
       exact congrArg₂ (fun a b ↦ a + b) (congrFun hx w) (congrFun hy w)
   | tmul a x =>
       funext w
       simp only [integralSemilocalToField_tmul, semilocalEquiv_tmul,
         integralSemilocalHom_tmul]
-      rw [algebraMap_adicCompletionIntegersExtensionAlgebra]
-      rw [algebraMap_adicCompletionExtensionAlgebra,
-        ← coe_adicCompletionIntegersExtension]
       rw [← IsScalarTower.algebraMap_apply (𝒪 L) L (w.1.adicCompletion L),
-        show algebraMap (𝒪 L) (w.1.adicCompletion L) x =
-          (algebraMap (𝒪 L) (w.1.adicCompletionIntegers L) x :
-            w.1.adicCompletion L) by
-          rw [algebraMap_adicCompletionIntegers_apply,
-            IsScalarTower.algebraMap_apply (𝒪 L) L (w.1.adicCompletion L),
-            algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]]
+        algebraMap_adicCompletionExtension_coe,
+        algebraMap_ringOfIntegers_adicCompletion_eq_coe]
       rfl
 
 variable (L v)
@@ -281,8 +253,10 @@ variable (L v)
 /-- The canonical inclusion of the integral tensor product in the field tensor product is
 injective. -/
 theorem integralSemilocalToField_injective : Function.Injective (integralSemilocalToField L v) := by
-  exact integralFieldBaseChangeAlgHom_injective L v |>.comp
-    (integralTensorToBaseChange_injective L v)
+  intro x y hxy
+  apply integralTensorToBaseChange_injective L v
+  apply (integralFieldBaseChangeEquiv L v).injective
+  exact hxy
 
 /-- The integral semi-local map is injective. -/
 theorem integralSemilocalHom_injective : Function.Injective (integralSemilocalHom L v) := by
@@ -298,6 +272,8 @@ def integralSemilocalEquiv :
     v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L ≃ₐ[v.adicCompletionIntegers K]
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
         w.1.adicCompletionIntegers L) :=
+  -- Keep the `Bijective` ascription explicit: without it Lean exports the generated proof as a
+  -- bare conjunction, which is not transparent enough when downstream lemmas unfold this def.
   AlgEquiv.ofBijective (integralSemilocalHom L v)
     (show Function.Bijective (integralSemilocalHom L v) from
       ⟨integralSemilocalHom_injective L v, integralSemilocalHom_surjective L v⟩)
@@ -330,6 +306,14 @@ def integralSemilocalComponent
       w.1.adicCompletionIntegers L :=
   (Pi.evalAlgHom (v.adicCompletionIntegers K) (fun w ↦
     w.1.adicCompletionIntegers L) w).comp (integralSemilocalEquiv L v).toAlgHom
+
+/-- A component projection is evaluation of the integral semi-local decomposition. -/
+@[simp]
+theorem integralSemilocalComponent_apply
+    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal})
+    (z : v.adicCompletionIntegers K ⊗[𝒪 K] 𝒪 L) :
+    integralSemilocalComponent (L := L) (v := v) w z = integralSemilocalEquiv L v z w := by
+  simp [integralSemilocalComponent]
 
 /-- A component projection of the integral semi-local decomposition on a pure tensor. -/
 @[simp]
