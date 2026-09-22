@@ -48,7 +48,11 @@ namespace TauCeti
 
 namespace QuaternionAlgebra
 
-variable {K : Type*} [Field K] [Invertible (2 : K)] (a b : Kˣ)
+variable {K : Type*}
+
+section UnitParameter
+
+variable [CommRing K] [Invertible (2 : K)]
 
 private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
     {x : ℍ[K,a,(b : K)]}
@@ -61,8 +65,6 @@ private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
   have hjI := congrArg _root_.QuaternionAlgebra.imI hj
   have hjK := congrArg _root_.QuaternionAlgebra.imK hj
   simp only [_root_.QuaternionAlgebra.imI_mul, _root_.QuaternionAlgebra.imK_mul] at hiK hjI hjK
-  have h2 : (2 : K) ≠ 0 := two_ne_zero
-  have hb : (b : K) ≠ 0 := b.ne_zero
   have hI : (2 : K) * x.imI = 0 := by
     linear_combination -hjK
   have hJ : (2 : K) * (b : K) * x.imJ = 0 := by
@@ -70,9 +72,18 @@ private theorem center_coordinates_eq_zero (a : K) (b : Kˣ)
   have hK : (2 : K) * (b : K) * x.imK = 0 := by
     linear_combination -hjI
   refine ⟨?_, ?_, ?_⟩
-  · exact (mul_eq_zero.mp hI).resolve_left h2
-  · exact (mul_eq_zero.mp hJ).resolve_left (mul_ne_zero h2 hb)
-  · exact (mul_eq_zero.mp hK).resolve_left (mul_ne_zero h2 hb)
+  · apply (mul_right_inj_of_invertible (c := (2 : K))).mp
+    simpa [mul_comm] using hI
+  · have hJ' : (b : K) * x.imJ = 0 := by
+      apply (mul_right_inj_of_invertible (c := (2 : K))).mp
+      simpa [mul_assoc, mul_comm, mul_left_comm] using hJ
+    apply (mul_right_inj_of_invertible (c := (b : K))).mp
+    simpa using hJ'
+  · have hK' : (b : K) * x.imK = 0 := by
+      apply (mul_right_inj_of_invertible (c := (2 : K))).mp
+      simpa [mul_assoc, mul_comm, mul_left_comm] using hK
+    apply (mul_right_inj_of_invertible (c := (b : K))).mp
+    simpa using hK'
 
 /-- An element of a unit-parameter quaternion symbol is central if and only if all three imaginary
 coordinates vanish. -/
@@ -106,6 +117,12 @@ instance instIsCentral (a : K) (b : Kˣ) : Algebra.IsCentral K ℍ[K,a,(b : K)] 
     · simpa using ((mem_center_iff a b).mp hx |>.1).symm
     · simpa using ((mem_center_iff a b).mp hx |>.2.1).symm
     · simpa using ((mem_center_iff a b).mp hx |>.2.2).symm⟩⟩
+
+end UnitParameter
+
+section Field
+
+variable [Field K] [Invertible (2 : K)] (a b : Kˣ)
 
 /-- A quaternion symbol with both parameters units is a simple ring. -/
 instance instIsSimpleRing : IsSimpleRing ℍ[K,(a : K),(b : K)] := by
@@ -160,6 +177,8 @@ theorem isSimpleRing_of_mul_discr_ne_zero {a b c : K}
   let v : Kˣ := Units.mk0 c hc
   have htarget : IsSimpleRing ℍ[K,QuadraticAlgebra.discr a b,0,c] := instIsSimpleRing u v
   exact IsSimpleRing.of_ringEquiv (completeSquareEquiv a b c).symm.toRingEquiv htarget
+
+end Field
 
 end QuaternionAlgebra
 
