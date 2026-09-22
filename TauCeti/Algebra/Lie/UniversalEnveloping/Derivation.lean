@@ -384,7 +384,7 @@ the inner derivation of `U(L)` at `ι z`, by
 `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_inner` and the sign relating the two
 conventions, and an inner derivation preserves every two-sided ideal.  So a descent along a
 two-sided ideal of `U(L)` needs nothing checked in the adjoint case. -/
-theorem envelopingDerivation_ad_mem_stableDerivations (I : Ideal U) [I.IsTwoSided] (x : L) :
+theorem envelopingDerivation_ad_mem_stableDerivations (x : L) (I : Ideal U) [I.IsTwoSided] :
     envelopingDerivation R L (LieDerivation.ad R L x)
       ∈ stableDerivations R (I.restrictScalars R) := by
   have hd : LieDerivation.ad R L x = -LieDerivation.inner R L L x := by ext y; simp

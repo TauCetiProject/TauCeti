@@ -68,13 +68,11 @@ range condition to a condition on `S` alone. For the adjoint action `ψ = LieDer
 hypothesis holds for every two-sided ideal, by
 `TauCeti.UniversalEnvelopingAlgebra.envelopingDerivation_ad_mem_stableDerivations`.
 
-The two halves of the action are `private`: as terms they are `TauCeti.LieHom.leftRegularRep` and
-`TauCeti.derivationQuotientHom` applied to data already in the library, so naming them publicly
-would add a layer without adding content. The characterisations on a class `Ideal.Quotient.mk J a`
-are the public interface. Only the general one, `TauCeti.semiDirectEnvelopingRep_apply_mk`, is a
-`simp` lemma: with it in the default set `simp` already reduces the two summand-wise
-specialisations and the kernel criterion, so tagging those as well is what the `simpNF` linter
-rejects.
+The action is characterised on a class `Ideal.Quotient.mk J a`, which is how the representation
+is meant to be evaluated: `TauCeti.semiDirectEnvelopingRep_apply_mk` is the general formula and
+the `simp`-normal form, and the two summand-wise formulas
+`TauCeti.semiDirectEnvelopingRep_inl_apply_mk` and
+`TauCeti.semiDirectEnvelopingRep_inr_apply_mk` specialise it along the two inclusions.
 
 Nilpotence of the constructed operators is *not* proved here: it needs hypotheses relating the
 nilradicals of `S` and of the ambient algebra.
