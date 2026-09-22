@@ -52,20 +52,6 @@ noncomputable def fundamentalDiscriminantGaussSum (D : ℤ)
   exact DirichletCharacter.gaussSumOfPrimitiveRoot (fundamentalDiscriminantChar D hD)
     (IsCyclotomicExtension.zeta_spec D.natAbs ℚ (CyclotomicField D.natAbs ℚ))
 
-/-- The fundamental-discriminant Gauss sum is the Gauss sum of the primitive quadratic character
-of level `|D|`, taken against the canonical primitive `|D|`-th root of unity. -/
-theorem fundamentalDiscriminantGaussSum_def (D : ℤ) (hD : IsFundamentalDiscriminant D) :
-    let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
-    let _ : NeZero (D.natAbs : ℚ) :=
-      ⟨by exact_mod_cast Int.natAbs_ne_zero.mpr hD.ne_zero⟩
-    let _ : IsCyclotomicExtension {D.natAbs} ℚ (CyclotomicField D.natAbs ℚ) :=
-      CyclotomicField.isCyclotomicExtension D.natAbs ℚ
-    fundamentalDiscriminantGaussSum D hD =
-      DirichletCharacter.gaussSumOfPrimitiveRoot (fundamentalDiscriminantChar D hD)
-        (IsCyclotomicExtension.zeta_spec D.natAbs ℚ (CyclotomicField D.natAbs ℚ)) := by
-  unfold fundamentalDiscriminantGaussSum
-  rfl
-
 /-- The subgroup of the cyclotomic Galois group on which the fundamental-discriminant character
 is trivial. -/
 noncomputable def fundamentalDiscriminantCharacterSubgroup (D : ℤ)
@@ -110,7 +96,7 @@ trivial on the corresponding cyclotomic automorphism. -/
   have hsq := DirichletCharacter.gaussSumOfPrimitiveRoot_sq χ
     (isPrimitive_fundamentalDiscriminantChar hD)
     (fundamentalDiscriminantChar_isQuadratic hD) hζ
-  simp only [fundamentalDiscriminantGaussSum_def, L, χ] at hsq ⊢
+  simp only [fundamentalDiscriminantGaussSum, L, χ] at hsq ⊢
   rw [MulChar.ringHomComp_apply, fundamentalDiscriminantChar_neg_one, ZMod.card] at hsq
   convert hsq using 1
   rw [eq_intCast]
@@ -135,7 +121,7 @@ theorem fixedField_fundamentalDiscriminantCharacterSubgroup (D : ℤ)
   have hstab := DirichletCharacter.stabilizer_gaussSumOfPrimitiveRoot
     (fundamentalDiscriminantChar D hD) (isPrimitive_fundamentalDiscriminantChar hD) hζ
   rw [fundamentalDiscriminantCharacterSubgroup, ← hstab]
-  simp only [fundamentalDiscriminantGaussSum_def, L]
+  simp only [fundamentalDiscriminantGaussSum, L]
   exact fixedField_stabilizer_eq_adjoin_simple _
 
 /-- A square root of a fundamental discriminant generates the fixed field cut out by its
