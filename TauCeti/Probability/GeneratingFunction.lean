@@ -127,7 +127,7 @@ probability-generating function evaluated at `exp t`. -/
 theorem mgf_id_map_natCast (ν : Measure ℕ) (t : ℝ) :
     mgf id (ν.map (Nat.cast : ℕ → ℝ)) t = pgf id ν (Real.exp t) := by
   rw [pgf_exp, mgf_id_map .of_discrete]
-  rfl
+  simp only [id_eq]
 
 /-- For a finite measure, the integrand of a probability-generating function is integrable on
 `[-1, 1]`. -/

@@ -61,7 +61,7 @@ variable {p : unitInterval}
 
 /-- For a nonzero success probability, the geometric probability-generating-function integrand
 is integrable exactly on the open interval determined by the geometric-series ratio. -/
-theorem integrable_pow_geometricMeasure_iff {p : unitInterval} (hp : p ≠ 0) (t : ℝ) :
+theorem integrable_pow_geometricMeasure_iff (hp : p ≠ 0) (t : ℝ) :
     Integrable (fun n : ℕ => t ^ n) (geometricMeasure p) ↔
       |(1 - (p : ℝ)) * t| < 1 := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
@@ -71,7 +71,7 @@ theorem integrable_pow_geometricMeasure_iff {p : unitInterval} (hp : p ≠ 0) (t
 /-- The probability-generating function of a geometric distribution with nonzero parameter, on its
 exact integrability domain.  The boundary case `p = 1`, whose law is a Dirac mass at zero, is
 included. -/
-theorem pgf_geometricMeasure {p : unitInterval} (hp : p ≠ 0) {t : ℝ}
+theorem pgf_geometricMeasure (hp : p ≠ 0) {t : ℝ}
     (ht : |(1 - (p : ℝ)) * t| < 1) :
     pgf id (geometricMeasure p) t = (p : ℝ) / (1 - (1 - (p : ℝ)) * t) := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp,
