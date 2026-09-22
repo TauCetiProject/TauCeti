@@ -56,7 +56,7 @@ the graph map takes its values in `range P`.
 * `ContinuousLinearMap.localUnstableGraphMap`, with
   `ContinuousLinearMap.lipschitzWith_localUnstableGraphMap` and
   `ContinuousLinearMap.norm_localUnstableGraphMap_le`, and
-  `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image`:
+  `ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image`:
   the corresponding graph and local-set characterization for backward solutions.
 
 ## References
@@ -348,15 +348,7 @@ theorem norm_localUnstableGraphMap_le (hN0 : N 0 = 0) (v : X) :
   norm_localStableGraphMap_le (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0]) v
 
-omit [CompleteSpace X] in
-open scoped Pointwise in
-/-- Reversing time turns a backward solution into a forward solution of the negated equation. -/
-private theorem isIntegralCurveOn_comp_neg_Iic_iff {y : ℝ → X} :
-    IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
-      IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
-  simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
-    (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
-      (s := Iic 0) (a := -1) (by norm_num)).symm
+open scoped Pointwise
 
 /-- A backward solution confined to the ball on which the nonlinearity is small tends to the
 equilibrium in backward time. -/
@@ -372,18 +364,27 @@ theorem tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
   have hmaps' : MapsTo (fun t ↦ y (-t)) (Ici 0) (closedBall 0 r) := by
     intro t ht
     exact hmaps (by simpa using ht)
+  have hy' :
+      IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+    have hreverse :
+        IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
+          IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+      simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
+        (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
+          (s := Iic 0) (a := -1) (by norm_num)).symm
+    exact hreverse.mp hy
   have hforward := tendsto_of_isIntegralCurveOn_mapsTo_closedBall
     (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
     (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left)
-    (isIntegralCurveOn_comp_neg_Iic_iff.mp hy) hmaps'
+    hy' hmaps'
   simpa only [Function.comp_def, neg_neg] using hforward.comp tendsto_neg_atBot_atTop
 
 omit hr in
 /-- **The local unstable-manifold theorem, Lipschitz form.** Near a hyperbolic equilibrium the
 initial values of backward solutions confined to a fixed small ball, truncated by the norm of
 their `1 - P` component, form a graph over a ball in `range (1 - P)`. -/
-theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image
+theorem exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
     (hN0 : N 0 = 0) (hP : IsIdempotentElem P) (hAP : Commute A P) (hr0 : 0 < r) :
     ∃ ρ > 0,
       {x : X | (∃ y : ℝ → X, IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ∧ y 0 = x ∧
@@ -403,12 +404,29 @@ theorem exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image
   simp only [mem_ofPred_eq]
   constructor
   · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
-    refine ⟨⟨fun t ↦ y (-t), isIntegralCurveOn_comp_neg_Iic_iff.mp hy, by simp, ?_⟩, hx⟩
+    have hy' :
+        IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+      have hreverse :
+          IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
+            IsIntegralCurveOn (fun t ↦ y (-t))
+              (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+        simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
+          (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
+            (s := Iic 0) (a := -1) (by norm_num)).symm
+      exact hreverse.mp hy
+    refine ⟨⟨fun t ↦ y (-t), hy', by simp, ?_⟩, hx⟩
     intro t ht
     exact hmaps (by simpa using ht)
   · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
     have hy' : IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ A z + N z) (Iic 0) := by
-      apply isIntegralCurveOn_comp_neg_Iic_iff.mpr
+      have hreverse :
+          IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ A z + N z) (Iic 0) ↔
+            IsIntegralCurveOn (fun t ↦ y (-(-t)))
+              (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+        simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
+          (isIntegralCurveOn_comp_mul_ne_zero (γ := fun t ↦ y (-t))
+            (v := fun _ z ↦ A z + N z) (s := Iic 0) (a := -1) (by norm_num)).symm
+      apply hreverse.mpr
       simpa only [neg_neg] using hy
     refine ⟨⟨fun t ↦ y (-t), hy', by simp, ?_⟩, hx⟩
     intro t ht

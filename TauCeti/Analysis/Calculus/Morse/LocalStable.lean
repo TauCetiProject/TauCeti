@@ -166,6 +166,10 @@ theorem exists_localStableSet_eq_lipschitzGraph
   have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
     exact neg_gradient_centred_eq
+  have hfield_time :
+      (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
+        fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
+    congrArg (fun F : E → E ↦ fun (_ : ℝ) ↦ F) hfield
   obtain ⟨rho, hrho, hset⟩ :=
     ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
       (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
@@ -192,14 +196,13 @@ theorem exists_localStableSet_eq_lipschitzGraph
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_stableProjection
     dsimp only [g]
-    rw [hfield] at hset
+    rw [hfield_time] at hset
     simpa only [hrange] using hset
   · intro y hy hmaps
     apply ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall
       hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
-    · rw [show (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-        fun (_ : ℝ) z ↦ (-∇ f) (x + z) from funext fun _ ↦ hfield]
+    · rw [hfield_time]
       exact hy
     · exact hmaps
 
@@ -235,8 +238,12 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
   have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
     exact neg_gradient_centred_eq
+  have hfield_time :
+      (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
+        fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
+    congrArg (fun F : E → E ↦ fun (_ : ℝ) ↦ F) hfield
   obtain ⟨rho, hrho, hset⟩ :=
-    ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_atBot_eq_image
+    ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
       (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
       (K := K) (α := alpha) (ε := epsilon) hs hu hN hsmall hN0
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection hr
@@ -261,15 +268,14 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
         (h.contDiffAt.unstableLinearSubspace : Set E) := by
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_unstableProjection
-    rw [hfield] at hset
+    rw [hfield_time] at hset
     rw [← h.unstableProjection_def] at hset
     simpa only [g, hrange] using hset
   · intro y hy hmaps
     apply ContinuousLinearMap.tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
       hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
-    · rw [show (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-        fun (_ : ℝ) z ↦ (-∇ f) (x + z) from funext fun _ ↦ hfield]
+    · rw [hfield_time]
       exact hy
     · exact hmaps
 
