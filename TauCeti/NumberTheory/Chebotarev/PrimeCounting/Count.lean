@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
-public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
+public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 
 /-!
 # Frobenius prime counts
@@ -44,10 +44,10 @@ noncomputable def frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ
   exact ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card
 
 /-- The Frobenius prime count as the cardinality of its filtered prime carrier. -/
-theorem frobeniusPrimeCount_apply (C : ConjClasses (L ≃ₐ[K] L))
-    [DecidablePred (fun v ↦ v ∈ frobeniusPrimeSet K L C)] (x : ℝ) :
+theorem frobeniusPrimeCount_apply (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
     frobeniusPrimeCount K L C x =
-      ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card := by
+      (@Finset.filter _ (fun v ↦ v ∈ frobeniusPrimeSet K L C) (Classical.decPred _)
+        (primesLE K x)).card := by
   classical
   simp [frobeniusPrimeCount]
 
