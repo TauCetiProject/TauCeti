@@ -16,6 +16,11 @@ paths with a common endpoint, there likewise exists a globally `C¹` path betwee
 endpoints whose length is the sum of their lengths. These are the basic existential properties
 needed to compare piecewise-`C¹` and `C¹` definitions of Riemannian distance.
 
+The reparametrizations do not introduce new points: the smoothed path stays in the image of the
+original path, and a smoothed concatenation stays in the union of the two original images. This
+range control allows local length estimates to be applied after smoothing a path inside a fixed
+open set.
+
 A path on an arbitrary compact interval can first be reparametrized affinely onto `[0, 1]`
 without changing its endpoints or length.
 
@@ -25,7 +30,7 @@ The construction uses Mathlib's `Real.smoothTransition` and
 ## Main results
 
 * `TauCeti.exists_contMDiff_pathELength_eq`: obtain a globally `C¹` path, constant near its
-  endpoints, with the same endpoints and length as a given `C¹` path.
+  endpoints, with the same endpoints, length, and image containment as a given `C¹` path.
 * `TauCeti.Manifold.exists_contMDiff_pathELength_eq_of_le`: reparametrize a `C¹` path from an
   arbitrary compact interval onto `[0, 1]`, preserving its endpoints and length.
 * `TauCeti.exists_contMDiff_pathELength_eq_add`: obtain a globally `C¹` path between the outer
@@ -55,7 +60,7 @@ variable
   [∀ x : M, ENormSMulClass ℝ (TangentSpace I x)]
 
 /-- A `C¹` path on `[0, 1]` admits a globally `C¹` path which is constant near both endpoints,
-has the same endpoints, and has exactly the same length. -/
+has the same endpoints and length, and stays in the image of the original path. -/
 theorem exists_contMDiff_pathELength_eq {γ : ℝ → M} (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc 0 1)) :
     ∃ η : ℝ → M,
       ContMDiff 𝓘(ℝ, ℝ) I 1 η ∧
@@ -63,7 +68,8 @@ theorem exists_contMDiff_pathELength_eq {γ : ℝ → M} (hγ : ContMDiffOn 𝓘
       η 1 = γ 1 ∧
       Manifold.pathELength I η 0 1 = Manifold.pathELength I γ 0 1 ∧
       η =ᶠ[𝓝 0] (fun _ ↦ γ 0) ∧
-      η =ᶠ[𝓝 1] (fun _ ↦ γ 1) := by
+      η =ᶠ[𝓝 1] (fun _ ↦ γ 1) ∧
+      MapsTo η (Icc 0 1) (γ '' Icc 0 1) := by
   let f : ℝ → ℝ := fun t ↦ Real.smoothTransition (3 * t - 1)
   have hf_smooth : ContDiff ℝ 1 f := by
     apply Real.smoothTransition.contDiff.comp
@@ -82,7 +88,7 @@ theorem exists_contMDiff_pathELength_eq {γ : ℝ → M} (hγ : ContMDiffOn 𝓘
   have hcomp : ContMDiff 𝓘(ℝ, ℝ) I 1 (γ ∘ f) := by
     rw [← contMDiffOn_univ]
     exact hγ.comp hf_smooth.contMDiff.contMDiffOn fun t _ ↦ hf_range t
-  refine ⟨γ ∘ f, hcomp, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨γ ∘ f, hcomp, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [hf_zero]
   · simp [hf_one]
   · have hlength := Manifold.pathELength_comp_of_monotoneOn (I := I) (γ := γ) (f := f)
@@ -102,16 +108,20 @@ theorem exists_contMDiff_pathELength_eq {γ : ℝ → M} (hγ : ContMDiffOn 𝓘
       apply Real.smoothTransition.one_of_one_le
       norm_num at ht ⊢
       linarith]
+  · intro t _
+    exact ⟨f t, hf_range t, rfl⟩
 
 namespace Manifold
 
 /-- A `C¹` path on a compact interval admits a globally `C¹` path on `[0, 1]` with the same
-endpoints and the same length. This is the single-piece case of corner smoothing; the
-reparametrization is affine, so it changes neither the endpoints nor the length. -/
+endpoints and length, whose image stays in the original path's image. This is the single-piece
+case of corner smoothing; the reparametrization is affine, so it changes neither the endpoints
+nor the length. -/
 theorem exists_contMDiff_pathELength_eq_of_le {γ : ℝ → M} {a b : ℝ} (hab : a ≤ b)
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b)) :
     ∃ η : ℝ → M, ContMDiff 𝓘(ℝ, ℝ) I 1 η ∧ η 0 = γ a ∧ η 1 = γ b ∧
-      Manifold.pathELength I η 0 1 = Manifold.pathELength I γ a b := by
+      Manifold.pathELength I η 0 1 = Manifold.pathELength I γ a b ∧
+      MapsTo η (Icc 0 1) (γ '' Icc a b) := by
   set f := ContinuousAffineMap.lineMap (R := ℝ) a b with hf
   have hmaps : f '' Icc 0 1 ⊆ Icc a b := by
     rw [hf, ContinuousAffineMap.coe_lineMap_eq, ← segment_eq_image_lineMap]
@@ -122,8 +132,9 @@ theorem exists_contMDiff_pathELength_eq_of_le {γ : ℝ → M} {a b : ℝ} (hab 
       exact f.contDiff.contDiffOn
     · rw [← image_subset_iff]
       exact hmaps
-  obtain ⟨η, hη, hη₀, hη₁, hlen, -, -⟩ := TauCeti.exists_contMDiff_pathELength_eq hcomp
-  refine ⟨η, hη, ?_, ?_, ?_⟩
+  obtain ⟨η, hη, hη₀, hη₁, hlen, -, -, hηmaps⟩ :=
+    TauCeti.exists_contMDiff_pathELength_eq hcomp
+  refine ⟨η, hη, ?_, ?_, ?_, ?_⟩
   · simpa [hf, ContinuousAffineMap.coe_lineMap_eq] using hη₀
   · simpa [hf, ContinuousAffineMap.coe_lineMap_eq] using hη₁
   · rw [hlen, hf]
@@ -137,12 +148,15 @@ theorem exists_contMDiff_pathELength_eq_of_le {γ : ℝ → M} {a b : ℝ} (hab 
         simpa [ContinuousAffineMap.coe_lineMap_eq] using
           hγ.mdifferentiableOn one_ne_zero)
     simpa [ContinuousAffineMap.coe_lineMap_eq] using key
+  · intro t ht
+    obtain ⟨s, hs, hst⟩ := hηmaps ht
+    exact ⟨f s, hmaps ⟨s, hs, rfl⟩, hst⟩
 
 end Manifold
 
 /-- Given two `C¹` paths on `[0, 1]` whose endpoints match, there is a globally `C¹` path with
-their outer endpoints which is constant near those endpoints and whose length is the sum of the
-two original lengths. -/
+their outer endpoints which is constant near those endpoints, whose length is the sum of the two
+original lengths, and whose image stays in the union of the two original path images. -/
 theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
     (hγ₁ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ₁ (Icc 0 1))
     (hγ₂ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ₂ (Icc 0 1)) (h₁₂ : γ₁ 1 = γ₂ 0) :
@@ -153,10 +167,11 @@ theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
       Manifold.pathELength I η 0 1 =
         Manifold.pathELength I γ₁ 0 1 + Manifold.pathELength I γ₂ 0 1 ∧
       η =ᶠ[𝓝 0] (fun _ ↦ γ₁ 0) ∧
-      η =ᶠ[𝓝 1] (fun _ ↦ γ₂ 1) := by
-  obtain ⟨α, hα, hα₀, hα₁, hαlen, hαconst₀, hαconst₁⟩ :=
+      η =ᶠ[𝓝 1] (fun _ ↦ γ₂ 1) ∧
+      MapsTo η (Icc 0 1) (γ₁ '' Icc 0 1 ∪ γ₂ '' Icc 0 1) := by
+  obtain ⟨α, hα, hα₀, hα₁, hαlen, hαconst₀, hαconst₁, hαmaps⟩ :=
     exists_contMDiff_pathELength_eq hγ₁
-  obtain ⟨β, hβ, hβ₀, hβ₁, hβlen, hβconst₀, hβconst₁⟩ :=
+  obtain ⟨β, hβ, hβ₀, hβ₁, hβlen, hβconst₀, hβconst₁, hβmaps⟩ :=
     exists_contMDiff_pathELength_eq hγ₂
   let f : ℝ → M := fun t ↦ α (2 * t)
   let g : ℝ → M := fun t ↦ β (2 * t - 1)
@@ -251,7 +266,17 @@ theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
     rw [show η t = g t by
       exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem f g (not_le_of_gt ht')]
     simpa only [g, Function.comp_apply] using htβ
-  exact ⟨η, hη, hη₀, hη₁, hηlen, hηconst₀, hηconst₁⟩
+  have hηmaps : MapsTo η (Icc 0 1) (γ₁ '' Icc 0 1 ∪ γ₂ '' Icc 0 1) := by
+    intro t ht
+    by_cases ht_half : t ≤ (1 / 2 : ℝ)
+    · left
+      rw [show η t = f t by exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_mem f g ht_half]
+      exact hαmaps ⟨by linarith [ht.1], by linarith⟩
+    · right
+      rw [show η t = g t by
+        exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem f g ht_half]
+      exact hβmaps ⟨by linarith, by linarith [ht.2]⟩
+  exact ⟨η, hη, hη₀, hη₁, hηlen, hηconst₀, hηconst₁, hηmaps⟩
 
 namespace Manifold
 
