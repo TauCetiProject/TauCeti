@@ -27,6 +27,8 @@ characteristic.
 * `Valuation.ord_iterateFrobenius`: the order of an iterated Frobenius image.
 * `Valuation.natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius`: membership in the
   `p ^ n`-power subfield forces divisibility of the order by `p ^ n`.
+* `Valuation.not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord`: the
+  contrapositive, eliminating membership in the `p ^ n`-power subfield.
 
 ## References
 
@@ -61,6 +63,13 @@ theorem natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius (n : ℕ) {z : F}
   obtain ⟨y, rfl⟩ := hz
   rw [ord_iterateFrobenius]
   exact dvd_mul_right _ _
+
+/-- An element whose order under a discrete valuation is not divisible by `p ^ n` does not lie
+in the image of the `n`-fold Frobenius. -/
+theorem not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord (n : ℕ) {z : F}
+    (hz : ¬(p ^ n : ℤ) ∣ _root_.Valuation.ord v z) :
+    z ∉ RingHom.fieldRange (iterateFrobenius F p n) := fun h =>
+  hz (natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius v p n h)
 
 end Valuation
 
