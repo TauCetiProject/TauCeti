@@ -86,7 +86,7 @@ has no additive reduction. Equivalently, the reduction is good or multiplicative
 The predicate is stated on an elliptic equation but depends only on its `F`-isomorphism class, as
 proved by `isSemistable_smul`. The ellipticity instance excludes singular cubics, which have no
 reduction type in the good/multiplicative/additive trichotomy of elliptic curves. -/
-def IsSemistable (W : WeierstrassCurve F) [W.IsElliptic] : Prop :=
+def IsSemistable (W : WeierstrassCurve F) [_hE : W.IsElliptic] : Prop :=
   ∀ v : HeightOneSpectrum O,
     ¬ (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal)
