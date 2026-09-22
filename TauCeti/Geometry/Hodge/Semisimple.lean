@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Hodge.EpiMono
 public import TauCeti.Geometry.Hodge.Orthogonal
+public import TauCeti.Geometry.Hodge.Prod
 public import TauCeti.Geometry.Hodge.Retract
 public import TauCeti.Order.Atoms
+public import Mathlib.CategoryTheory.Simple
 
 /-!
 # Polarizable pure Hodge structures are semisimple
@@ -30,6 +32,8 @@ structures, for which the choice of a form is not part of the object. Categorica
 monomorphism of polarizable rational Hodge structures corestricts to an isomorphism onto its
 rational image. The orthogonal retraction of that image therefore splits the original
 monomorphism, making `TauCeti.Hodge.PolarizableHodgeStructureCat` a `SplitMonoCategory`.
+The finite independent family of atoms also assembles through categorical biproducts, so every
+object is isomorphic to a finite biproduct of simple objects.
 
 Following Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and Peters–Steenbrink,
 *Mixed Hodge Structures*, §2.
@@ -44,6 +48,8 @@ Following Voisin, *Hodge Theory and Complex Algebraic Geometry I*, §7.1.2, and 
   structure is the direct sum of finitely many simple rational Hodge substructures.
 * `TauCeti.Hodge.PolarizableHodgeStructureCat.instSplitMonoCategory`: every monomorphism of
   polarizable rational Hodge structures splits.
+* `TauCeti.Hodge.PolarizableHodgeStructureCat.exists_iso_biproduct_simple`: every object is
+  isomorphic to a finite biproduct of simple objects.
 -/
 
 public section
@@ -98,7 +104,7 @@ theorem exists_finset_isAtom_sup_eq_top (hℚ : IsBaseChange ℚ ιℚ) (h : IsP
 
 namespace PolarizableHodgeStructureCat
 
-open CategoryTheory
+open CategoryTheory Limits
 
 universe u'
 
@@ -149,6 +155,182 @@ noncomputable instance instSplitMonoCategory :
       isSplitMono_substructureInclusion Y W
     rw [← hfactor]
     infer_instance
+
+/-! ### Decomposition into simple objects -/
+
+variable {n : ℤ} (X : PolarizableHodgeStructureCat.{u'} n)
+
+/-- The canonical map from the biproduct of a finite family of rational Hodge substructures to
+the ambient Hodge structure. -/
+noncomputable def substructureBiproductDesc
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs)) :
+    (⨁ fun U : s ↦ ofSubstructure X U.1) ⟶ X :=
+  biproduct.desc fun U ↦ substructureInclusion X U.1
+
+@[simp]
+theorem biproduct_ι_comp_substructureBiproductDesc
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs)) (U : s) :
+    biproduct.ι (fun U : s ↦ ofSubstructure X U.1) U ≫
+      substructureBiproductDesc X s = substructureInclusion X U.1 := by
+  rw [substructureBiproductDesc, biproduct.ι_desc]
+
+/-- An atom of the lattice of rational Hodge substructures gives a simple object of the category
+of polarizable rational Hodge structures. -/
+theorem simple_of_isAtom
+    {U : RationalHodgeSubstructure X.isBaseChangeRat X.hs} (hU : IsAtom U) :
+    Simple (ofSubstructure X U) := by
+  constructor
+  intro Y f hf
+  constructor
+  · intro hfiso hfzero
+    have hsurj := (isIso_iff_bijective f).1 hfiso |>.2
+    apply hU.ne_bot
+    apply RationalHodgeSubstructure.ext
+    ext x
+    simp only [RationalHodgeSubstructure.bot_WQ, Submodule.mem_bot]
+    constructor
+    · intro hx
+      obtain ⟨y, hy⟩ := hsurj (⟨x, hx⟩ : (ofSubstructure X U).ratCarrier)
+      have hfmap : f.hom.toRatLinearMap = 0 := by
+        rw [hfzero, zero_toRatLinearMap]
+      have : (⟨x, hx⟩ : (ofSubstructure X U).ratCarrier) = 0 := by
+        rw [← hy, hfmap, LinearMap.zero_apply]
+      exact congrArg Subtype.val this
+    · rintro rfl
+      exact U.WQ.zero_mem
+  · intro hfzero
+    apply (isIso_iff_bijective f).2
+    refine ⟨(mono_iff_injective f).1 inferInstance, ?_⟩
+    let g : Y ⟶ X := f ≫ substructureInclusion X U
+    have hg := Hom.isMorphism g
+    rw [MixedHodgeStructure.Hom.toLinearMap_def] at hg
+    let V : RationalHodgeSubstructure X.isBaseChangeRat X.hs :=
+      RationalHodgeSubstructure.ofRationalMorphismRange hg
+    have hVU : V ≤ U := by
+      rw [RationalHodgeSubstructure.le_def,
+        RationalHodgeSubstructure.ofRationalMorphismRange_WQ]
+      rw [← Submodule.range_subtype U.WQ]
+      simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap] using
+        (LinearMap.range_comp_le_range f.hom.toRatLinearMap U.WQ.subtype)
+    have hVne : V ≠ ⊥ := by
+      intro hV
+      apply hfzero
+      apply Hom.ext
+      rw [zero_toRatLinearMap]
+      apply LinearMap.ext
+      intro y
+      apply Submodule.injective_subtype U.WQ
+      have hgzero : g.hom.toRatLinearMap = 0 := by
+        apply LinearMap.range_eq_bot.1
+        rw [← RationalHodgeSubstructure.ofRationalMorphismRange_WQ hg]
+        simpa only [V, RationalHodgeSubstructure.bot_WQ] using
+          congrArg RationalHodgeSubstructure.WQ hV
+      have := LinearMap.congr_fun hgzero y
+      simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap,
+        LinearMap.comp_apply, LinearMap.zero_apply, map_zero] using this
+    have hVUeq : V = U := (hU.ne_bot_iff_eq hVU).1 hVne
+    intro y
+    let y' : U.WQ := y
+    have hy : U.WQ.subtype y' ∈ LinearMap.range g.hom.toRatLinearMap := by
+      rw [← RationalHodgeSubstructure.ofRationalMorphismRange_WQ hg]
+      have : U.WQ.subtype y' ∈ V.WQ := by rw [hVUeq]; exact y'.property
+      simpa only [V] using this
+    obtain ⟨x, hx⟩ := hy
+    refine ⟨x, ?_⟩
+    apply Submodule.injective_subtype U.WQ
+    simpa only [g, comp_toRatLinearMap, substructureInclusion_toRatLinearMap,
+      LinearMap.comp_apply] using hx
+
+private theorem isCompl_finsetSup_erase
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
+    [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
+    (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
+    IsCompl U.1 ((s.erase U.1).sup id) := by
+  classical
+  constructor
+  · exact (Finset.supIndep_iff_disjoint_erase.1 hind U.1 U.2)
+  · rw [codisjoint_iff]
+    calc
+      U.1 ⊔ (s.erase U.1).sup id = (insert U.1 (s.erase U.1)).sup id :=
+        (Finset.sup_insert
+          (f := fun W : RationalHodgeSubstructure X.isBaseChangeRat X.hs ↦ W)).symm
+      _ = s.sup id := by rw [Finset.insert_erase U.2]
+      _ = ⊤ := htop
+
+/-- An independent finite family of rational Hodge substructures spanning the ambient structure
+gives an isomorphism from their biproduct to the ambient object. -/
+noncomputable def substructureBiproductIso
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
+    (hind : s.SupIndep id) (htop : s.sup id = ⊤) :
+    (⨁ fun U : s ↦ ofSubstructure X U.1) ≅ X := by
+  classical
+  let complement : s → RationalHodgeSubstructure X.isBaseChangeRat X.hs :=
+    fun U ↦ (s.erase U.1).sup id
+  let hcompl : ∀ U, IsCompl U.1 (complement U) :=
+    fun U ↦ isCompl_finsetSup_erase X s hind htop U
+  let r : X ⟶ (⨁ fun U : s ↦ ofSubstructure X U.1) :=
+    biproduct.lift fun U ↦ substructureRetractionOfIsCompl X U.1 (complement U) (hcompl U)
+  let d := substructureBiproductDesc X s
+  have hdr : d ≫ r = 𝟙 _ := by
+    apply biproduct.hom_ext'
+    intro U
+    apply biproduct.hom_ext
+    intro T
+    simp only [d, r, substructureBiproductDesc, biproduct.ι_desc_assoc]
+    rw [Category.assoc, biproduct.lift_π, Category.comp_id, biproduct.ι_π]
+    by_cases hUT : U = T
+    · subst T
+      rw [substructureInclusion_comp_substructureRetractionOfIsCompl]
+      simp
+    · rw [substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero X T.1
+        (complement T) (U := U.1) (hcompl T)]
+      · simp [hUT]
+      · exact (Finset.le_sup (f := fun W : RationalHodgeSubstructure
+          X.isBaseChangeRat X.hs ↦ W)
+          (Finset.mem_erase.2 ⟨fun h ↦ hUT (Subtype.ext h), U.2⟩) :
+            U.1 ≤ (s.erase T.1).sup id)
+  let _ : IsSplitMono d := IsSplitMono.mk' ⟨r, hdr⟩
+  let _ : Mono d := inferInstance
+  have hd_surjective : Function.Surjective d.hom.toRatLinearMap := by
+    rw [← LinearMap.range_eq_top]
+    apply top_unique
+    have hWQtop : (s.sup id).WQ = ⊤ := by rw [htop, RationalHodgeSubstructure.top_WQ]
+    rw [← hWQtop, RationalHodgeSubstructure.finsetSup_WQ]
+    apply Finset.sup_le
+    rintro U hU x hx
+    let i : (ofSubstructure X U).ratCarrier →ₗ[ℚ]
+        (⨁ fun T : s ↦ ofSubstructure X T.1).ratCarrier :=
+      (biproduct.ι (fun T : s ↦ ofSubstructure X T.1) ⟨U, hU⟩).hom.toRatLinearMap
+    refine ⟨i ⟨x, hx⟩, ?_⟩
+    have hmap := congrArg (fun f ↦ f.hom.toRatLinearMap)
+      (biproduct_ι_comp_substructureBiproductDesc X s ⟨U, hU⟩)
+    rw [comp_toRatLinearMap, substructureInclusion_toRatLinearMap] at hmap
+    exact LinearMap.congr_fun hmap ⟨x, hx⟩
+  let _ : Epi d := (epi_iff_surjective d).2 hd_surjective
+  let _ : IsIso d := isIso_of_mono_of_epi d
+  exact asIso d
+
+/-- The isomorphism from an independent spanning family restricts on each summand to its
+substructure inclusion. -/
+@[simp]
+theorem biproduct_ι_comp_substructureBiproductIso_hom
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
+    (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
+    biproduct.ι (fun U : s ↦ ofSubstructure X U.1) U ≫
+      (substructureBiproductIso X s hind htop).hom = substructureInclusion X U.1 := by
+  rw [substructureBiproductIso, asIso_hom,
+    biproduct_ι_comp_substructureBiproductDesc]
+
+/-- **Categorical semisimplicity of polarizable rational Hodge structures.** Every object is
+isomorphic to a finite biproduct of simple objects induced by rational Hodge substructures. -/
+theorem exists_iso_biproduct_simple :
+    ∃ s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs),
+      (∀ U ∈ s, Simple (ofSubstructure X U)) ∧
+        Nonempty ((⨁ fun U : s ↦ ofSubstructure X U.1) ≅ X) := by
+  obtain ⟨s, hatom, hind, htop⟩ :=
+    exists_finset_isAtom_sup_eq_top X.isBaseChangeRat X.isPolarizable
+  exact ⟨s, fun U hU ↦ simple_of_isAtom X (hatom U hU),
+    ⟨substructureBiproductIso X s hind htop⟩⟩
 
 end PolarizableHodgeStructureCat
 

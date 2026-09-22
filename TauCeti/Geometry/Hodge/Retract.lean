@@ -171,6 +171,77 @@ theorem isMorphism_codRestrict
     rw [W.hodgeStructure_F, Submodule.mem_comap, ← LinearMap.comp_apply, hcomp]
     exact hf.map_F_le p ⟨x, hx, rfl⟩
 
+/-! ### Retractions along complementary Hodge substructures -/
+
+variable (W' : RationalHodgeSubstructure X.isBaseChangeRat X.hs)
+
+/-- The rational projection onto `W` along a complementary rational Hodge substructure `W'`,
+with codomain restricted to `W`. -/
+noncomputable def substructureRetractionOfIsComplRat (h : IsCompl W W') :
+    X.ratCarrier →ₗ[ℚ] W.WQ :=
+  (W.WQ.projection W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)).codRestrict W.WQ
+    fun x ↦ Submodule.projection_apply_mem _ x
+
+/-- Projection along complementary rational Hodge substructures is a morphism of the ambient
+pure Hodge structure. -/
+theorem isMorphism_substructureRetractionOfIsComplRat (h : IsCompl W W') :
+    HodgeStructureOn.IsMorphism X.hs W.hodgeStructure
+      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        (isBaseChange_integralSubmoduleToRational X.isBaseChangeRat W.WQ)
+        (isBaseChange_integralSubmoduleToComplex X.isBaseChangeRat X.isBaseChangeComplex W.WQ)
+        (substructureRetractionOfIsComplRat X W W' h)) := by
+  have hp : HodgeStructureOn.IsMorphism X.hs X.hs
+      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        X.isBaseChangeRat X.isBaseChangeComplex
+        (W.WQ.projection W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h))) := by
+    apply HodgeStructureOn.isMorphism_of_isIdempotentElem
+      (isIdempotentElem_rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
+        (Submodule.isIdempotentElem_projection
+          (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)))
+    · rw [range_rationalMapToComplex, Submodule.range_projection, ← W.WC_def]
+      exact W.isSubstructure
+    · rw [ker_rationalMapToComplex, Submodule.ker_projection, ← W'.WC_def]
+      exact W'.isSubstructure
+  exact isMorphism_codRestrict W _ hp fun x ↦ Submodule.projection_apply_mem _ x
+
+/-- The categorical retraction onto `W` along a complementary rational Hodge substructure
+`W'`. -/
+noncomputable def substructureRetractionOfIsCompl (h : IsCompl W W') :
+    X ⟶ ofSubstructure X W :=
+  Hom.ofIsMorphism (substructureRetractionOfIsComplRat X W W' h)
+    (isMorphism_substructureRetractionOfIsComplRat X W W' h)
+
+/-- The rational map of the retraction along a complement is the corresponding subspace
+projection with codomain restricted to `W`. -/
+@[simp]
+theorem substructureRetractionOfIsCompl_toRatLinearMap (h : IsCompl W W') :
+    (substructureRetractionOfIsCompl X W W' h).hom.toRatLinearMap =
+      substructureRetractionOfIsComplRat X W W' h := by
+  rw [substructureRetractionOfIsCompl, Hom.ofIsMorphism_toRatLinearMap]
+
+/-- Inclusion followed by retraction along a complementary substructure is the identity. -/
+@[simp]
+theorem substructureInclusion_comp_substructureRetractionOfIsCompl (h : IsCompl W W') :
+    substructureInclusion X W ≫ substructureRetractionOfIsCompl X W W' h =
+      𝟙 (ofSubstructure X W) := by
+  apply Hom.ext
+  rw [comp_toRatLinearMap, id_toRatLinearMap,
+    substructureRetractionOfIsCompl_toRatLinearMap, substructureInclusion_toRatLinearMap]
+  ext x
+  apply Subtype.ext
+  exact Submodule.projection_apply_of_mem_left _ x.property
+
+/-- A substructure contained in the complementary summand is annihilated by the retraction. -/
+theorem substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero
+    {U : RationalHodgeSubstructure X.isBaseChangeRat X.hs} (h : IsCompl W W') (hU : U ≤ W') :
+    substructureInclusion X U ≫ substructureRetractionOfIsCompl X W W' h = 0 := by
+  apply Hom.ext
+  rw [comp_toRatLinearMap, zero_toRatLinearMap,
+    substructureRetractionOfIsCompl_toRatLinearMap, substructureInclusion_toRatLinearMap]
+  ext x
+  apply Subtype.ext
+  exact Submodule.projection_apply_of_mem_right _ (hU x.property)
+
 variable (P : Polarization X.isBaseChangeComplex X.hs)
 
 /-- The rational retraction onto a rational Hodge substructure: the orthogonal projector with its
