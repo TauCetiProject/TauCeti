@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.HolderEmbedding
 
-import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -22,11 +21,8 @@ product of two Sobolev functions is again Sobolev, with the weak Leibniz rule
 
 `grad (u * v) = u * grad v + v * grad u`.
 
-This file packages that product on the whole-space Sobolev type. The proof first establishes the
-weak Leibniz rule. One factor is approximated in `W^{1,p}` by test functions; continuity of the
-Morrey embedding upgrades this to uniform convergence of their values, while the gradients
-converge in `L^p`. On each relatively compact open set these two convergences give `L¹` convergence
-of the products and their proposed weak gradients, so the weak-derivative limit theorem applies.
+This file packages that product on the whole-space Sobolev type, together with its representative-
+and gradient-level characterizations and its basic algebraic laws.
 
 In dimension two this is the Sobolev multiplication input used for nonlinear Cauchy--Riemann
 operators on strips and surfaces. The dimension restriction is load-bearing: without an
@@ -60,18 +56,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
 
-private theorem W1p.morreyRepresentative_sub (hp : (finrank ℝ E : ℝ≥0) < p)
-    (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
-    W1p.morreyRepresentative (u - v) hp =
-      W1p.morreyRepresentative u hp - W1p.morreyRepresentative v hp := by
-  have hneg : W1p.morreyRepresentative (-v) hp =
-      -W1p.morreyRepresentative v hp := by
-    convert W1p.morreyRepresentative_smul hp (-1) v using 1
-    · exact congrArg (fun w => W1p.morreyRepresentative w hp) (neg_one_smul ℝ v).symm
-    · exact (neg_one_smul ℝ (W1p.morreyRepresentative v hp)).symm
-  rw [sub_eq_add_neg, W1p.morreyRepresentative_add, hneg]
-  rfl
-
 private theorem W1p.enorm_morreyRepresentative_le_embedding
     (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     ‖W1p.morreyRepresentative u hp x‖ₑ ≤ ‖W1p.morreyEmbedding hp u‖ₑ := by
@@ -81,6 +65,21 @@ private theorem W1p.enorm_morreyRepresentative_le_embedding
   exact ENNReal.ofReal_le_ofReal ((BoundedContinuousFunction.norm_coe_le_norm
     (W1p.morreyEmbedding hp u).toBoundedContinuousFunction x).trans
       (HolderSpace.norm_toBoundedContinuousFunction_le (W1p.morreyEmbedding hp u)))
+
+private theorem W1p.enorm_morreyRepresentative_sub_le_embedding_sub
+    (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
+    ‖W1p.morreyRepresentative u hp x - W1p.morreyRepresentative v hp x‖ₑ ≤
+      ‖W1p.morreyEmbedding hp u - W1p.morreyEmbedding hp v‖ₑ := by
+  calc
+    _ = ‖(W1p.morreyEmbedding hp u - W1p.morreyEmbedding hp v) x‖ₑ := by
+      rw [← W1p.morreyEmbedding_apply_apply hp u x,
+        ← W1p.morreyEmbedding_apply_apply hp v x]
+      rfl
+    _ = ‖W1p.morreyRepresentative (u - v) hp x‖ₑ := by
+      rw [← map_sub, W1p.morreyEmbedding_apply_apply]
+    _ ≤ ‖W1p.morreyEmbedding hp (u - v)‖ₑ :=
+      W1p.enorm_morreyRepresentative_le_embedding hp (u - v) x
+    _ = ‖W1p.morreyEmbedding hp u - W1p.morreyEmbedding hp v‖ₑ := by rw [map_sub]
 
 private theorem W1p.memLp_top_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p)
     (u : W1p mu ⊤ (p : ℝ≥0∞)) :
@@ -162,9 +161,7 @@ theorem W1p.hasWeakFDerivOn_mul_morreyRepresentative
     have hsub : Tendsto (fun n => W1p.morreyEmbedding hp (a n) -
         W1p.morreyEmbedding hp u) atTop (𝓝 0) := by
       simpa only [sub_self] using ha_morrey.sub_const (W1p.morreyEmbedding hp u)
-    change Tendsto (enorm ∘ fun n => W1p.morreyEmbedding hp (a n) -
-      W1p.morreyEmbedding hp u) atTop (𝓝 0)
-    simpa only [Function.comp_apply, enorm_zero] using (continuous_enorm.tendsto 0).comp hsub
+    simpa only [Function.comp_def, enorm_zero] using (continuous_enorm.tendsto 0).comp hsub
   have hgrad : Tendsto (fun n => W1p.gradient (W1p.restrictL hVle (a n))) atTop
       (𝓝 (W1p.gradient (W1p.restrictL hVle u))) := by
     simpa only [Function.comp_def, W1p.gradientL_apply] using
@@ -212,15 +209,8 @@ theorem W1p.hasWeakFDerivOn_mul_morreyRepresentative
         (ae_mono Measure.restrict_le_self)] with x hv
       rw [← hv, ← sub_mul, enorm_mul]
       gcongr
-      rw [← W1p.morreyRepresentative_ofTestFunction (mu := mu) hp (phi n), hphi n,
-        ← W1p.morreyEmbedding_apply_apply]
-      rw [← map_sub, W1p.morreyEmbedding_apply_apply]
-      have hsub : W1p.morreyRepresentative (a n - u) hp x =
-          W1p.morreyRepresentative (a n) hp x - W1p.morreyRepresentative u hp x := by
-        simpa only [Pi.sub_apply] using
-          congrFun (W1p.morreyRepresentative_sub hp (a n) u) x
-      rw [← hsub]
-      exact W1p.enorm_morreyRepresentative_le_embedding hp (a n - u) x
+      rw [← W1p.morreyRepresentative_ofTestFunction (mu := mu) hp (phi n), hphi n]
+      exact W1p.enorm_morreyRepresentative_sub_le_embedding_sub hp (a n) u x
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
       (fun _ => zero_le) hb
     simpa using ENNReal.Tendsto.mul_const ha_uniform (Or.inr hvVal)
@@ -271,15 +261,8 @@ theorem W1p.hasWeakFDerivOn_mul_morreyRepresentative
       refine (enorm_add_le _ _).trans (add_le_add ?_ ?_)
       · rw [enorm_smul]
         gcongr
-        rw [← W1p.morreyRepresentative_ofTestFunction (mu := mu) hp (phi n), hphi n,
-          ← W1p.morreyEmbedding_apply_apply]
-        rw [← map_sub, W1p.morreyEmbedding_apply_apply]
-        have hsub : W1p.morreyRepresentative (a n - u) hp x =
-            W1p.morreyRepresentative (a n) hp x - W1p.morreyRepresentative u hp x := by
-          simpa only [Pi.sub_apply] using
-            congrFun (W1p.morreyRepresentative_sub hp (a n) u) x
-        rw [← hsub]
-        exact W1p.enorm_morreyRepresentative_le_embedding hp (a n - u) x
+        rw [← W1p.morreyRepresentative_ofTestFunction (mu := mu) hp (phi n), hphi n]
+        exact W1p.enorm_morreyRepresentative_sub_le_embedding_sub hp (a n) u x
       · rw [enorm_smul]
         gcongr
         exact hvBound x
@@ -326,6 +309,21 @@ theorem W1p.value_mul_ae (hp : (finrank ℝ E : ℝ≥0) < p)
   rw [W1p.mul, W1p.value_mk]
   simpa only [Opens.coe_top, Measure.restrict_univ] using MemLp.coeFn_toLp
     (W1p.memLp_mul_morreyRepresentative hp u v)
+
+/-- The canonical Morrey representative of a supercritical Sobolev product is the pointwise
+product of the representatives. -/
+@[simp]
+theorem W1p.morreyRepresentative_mul (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.morreyRepresentative (W1p.mul hp u v) hp =
+      W1p.morreyRepresentative u hp * W1p.morreyRepresentative v hp := by
+  apply (Continuous.ae_eq_iff_eq mu
+    (W1p.continuous_morreyRepresentative (W1p.mul hp u v) hp)
+    ((W1p.continuous_morreyRepresentative u hp).mul
+      (W1p.continuous_morreyRepresentative v hp))).1
+  refine (W1p.value_ae_eq_morreyRepresentative (W1p.mul hp u v) hp).symm.trans ?_
+  filter_upwards [W1p.value_mul_ae hp u v] with x hx
+  simpa only [Pi.mul_apply] using hx
 
 /-- The weak gradient of the supercritical Sobolev product satisfies the Leibniz rule. -/
 theorem W1p.gradient_mul_ae (hp : (finrank ℝ E : ℝ≥0) < p)
@@ -374,5 +372,47 @@ theorem W1p.add_mul (hp : (finrank ℝ E : ℝ≥0) < p)
     (u v w : W1p mu ⊤ (p : ℝ≥0∞)) :
     W1p.mul hp (u + v) w = W1p.mul hp u w + W1p.mul hp v w := by
   rw [W1p.mul_comm hp (u + v), W1p.mul_add, W1p.mul_comm hp w u, W1p.mul_comm hp w v]
+
+/-- Supercritical Sobolev multiplication is associative. -/
+theorem W1p.mul_assoc (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u v w : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.mul hp (W1p.mul hp u v) w = W1p.mul hp u (W1p.mul hp v w) := by
+  apply W1p.morreyEmbedding_injective hp
+  ext x
+  simp only [W1p.morreyEmbedding_apply_apply, W1p.morreyRepresentative_mul, Pi.mul_apply,
+    _root_.mul_assoc]
+
+/-- Multiplication by zero on the right is zero. -/
+@[simp]
+theorem W1p.mul_zero (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.mul hp u 0 = 0 := by
+  apply W1p.morreyEmbedding_injective hp
+  ext x
+  rw [W1p.morreyEmbedding_apply_apply, W1p.morreyEmbedding_apply_apply,
+    W1p.morreyRepresentative_mul, W1p.morreyRepresentative_zero]
+  simp only [Pi.mul_apply, Pi.zero_apply]
+  ring
+
+/-- Multiplication by zero on the left is zero. -/
+@[simp]
+theorem W1p.zero_mul (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.mul hp 0 u = 0 := by
+  rw [W1p.mul_comm, W1p.mul_zero]
+
+/-- Scalar multiplication can be pulled out of the right factor. -/
+theorem W1p.mul_smul (hp : (finrank ℝ E : ℝ≥0) < p) (c : ℝ)
+    (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.mul hp u (c • v) = c • W1p.mul hp u v := by
+  apply W1p.morreyEmbedding_injective hp
+  ext x
+  simp only [W1p.morreyEmbedding_apply_apply, W1p.morreyRepresentative_mul,
+    W1p.morreyRepresentative_smul, Pi.mul_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+/-- Scalar multiplication can be pulled out of the left factor. -/
+theorem W1p.smul_mul (hp : (finrank ℝ E : ℝ≥0) < p) (c : ℝ)
+    (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
+    W1p.mul hp (c • u) v = c • W1p.mul hp u v := by
+  rw [W1p.mul_comm hp (c • u), W1p.mul_smul, W1p.mul_comm hp v u]
 
 end TauCeti
