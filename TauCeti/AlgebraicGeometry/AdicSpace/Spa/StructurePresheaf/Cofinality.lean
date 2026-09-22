@@ -12,13 +12,13 @@ public import Mathlib.CategoryTheory.Filtered.Final
 /-!
 # Presentations are cofinal among rational subsets
 
-The structure presheaf on `Spa(A,A⁺)` is defined on an open `V` as the limit of the coordinate
-rings of the rational subsets contained in `V`. The existing construction
+Wedhorn defines the structure presheaf on `Spa(A,A⁺)` at an open `V` as the limit of the
+coordinate rings of the rational subsets contained in `V`. The existing construction
 `TauCeti.ValuationSpectrum.presentationLimit` instead indexes the limit by admissible
-*presentations* `(T,s)` of those subsets. This file supplies the categorical comparison between
-the two indices.
+*presentations* `(T,s)` of those subsets. This file supplies the categorical comparison of the
+two indices needed once the coordinate rings are assembled into a diagram on rational subsets.
 
-`RationalSubsetIndex Aplus V` is the preorder of rational subsets contained in `V`, ordered by
+`RationalSubsetIndex Aplus V` is the partial order of rational subsets contained in `V`, ordered by
 reverse inclusion, so a morphism points in the direction of restriction. The functor
 `presentationToRationalSubsetIndex` forgets a presentation and remembers its subset. Every
 rational subset has a presentation in this functor's image: openness of its numerator ideal gives
@@ -28,8 +28,9 @@ the standing denominator-power condition by
 The forgetful functor is both final and initial. Finality records the usual meaning of cofinality
 for a basis ordered by refinement. Initiality is the form needed for limits: the costructured
 arrow category over a rational subset is connected because two presentations containing it have
-a common refinement which still contains it. Consequently a limit over rational subsets can be
-computed over presentations without choosing a preferred presentation.
+a common refinement which still contains it. Consequently, once a compatible coordinate-ring
+diagram on rational subsets is constructed, its limit can be computed over presentations without
+choosing a preferred presentation.
 
 ## Main definitions
 
@@ -46,8 +47,8 @@ computed over presentations without choosing a preferred presentation.
     (TauCeti.ValuationSpectrum.presentationToRationalSubsetIndex Aplus V)`: presentations are
   cofinal among rational subsets.
 * `CategoryTheory.Functor.Initial
-    (TauCeti.ValuationSpectrum.presentationToRationalSubsetIndex Aplus V)`: restriction along the
-  presentation functor preserves limits.
+    (TauCeti.ValuationSpectrum.presentationToRationalSubsetIndex Aplus V)`: the cofinality
+  condition that will preserve the rational-subset-indexed limit once its diagram is constructed.
 
 ## References
 
@@ -75,13 +76,6 @@ structure RationalSubsetIndex (Aplus : Subring A) (V : Opens ↥(spa Aplus)) whe
   /-- The rational subset is contained in the ambient open. -/
   le_open : carrier ⊆ V
 
-/-- Rational subset indices are ordered by reverse inclusion, matching the direction of
-restriction maps. -/
-instance : Preorder (RationalSubsetIndex Aplus V) where
-  le U W := W.carrier ⊆ U.carrier
-  le_refl _ := Set.Subset.rfl
-  le_trans _ _ _ hUW hWZ := hWZ.trans hUW
-
 omit [IsTopologicalRing A] in
 /-- Equality of rational subset indices is equality of their underlying subsets; the remaining
 fields are propositions. -/
@@ -93,8 +87,17 @@ theorem RationalSubsetIndex.ext {U W : RationalSubsetIndex Aplus V}
   subst h
   rfl
 
+/-- Rational subset indices are ordered by reverse inclusion, matching the direction of
+restriction maps. -/
+instance : PartialOrder (RationalSubsetIndex Aplus V) where
+  le U W := W.carrier ⊆ U.carrier
+  le_refl _ := Set.Subset.rfl
+  le_trans _ _ _ hUW hWZ := hWZ.trans hUW
+  le_antisymm U W hUW hWU := RationalSubsetIndex.ext (Set.Subset.antisymm hWU hUW)
+
 omit [IsTopologicalRing A] in
 /-- The order on rational subset indices is reverse inclusion. -/
+@[simp]
 theorem RationalSubsetIndex.le_iff {U W : RationalSubsetIndex Aplus V} :
     U ≤ W ↔ W.carrier ⊆ U.carrier :=
   Iff.rfl
