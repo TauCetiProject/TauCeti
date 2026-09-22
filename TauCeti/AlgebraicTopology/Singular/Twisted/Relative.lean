@@ -89,12 +89,6 @@ lemma twistedChainComplexMap_comp_twistedChainComplexπ :
     LocalCoefficientSystem.twistedChainComplexMap P.map L ≫ P.twistedChainComplexπ L = 0 :=
   cokernel.condition _
 
-@[reassoc (attr := simp)]
-lemma twistedChainComplexMap_f_comp_twistedChainComplexπ_f (k : ℕ) :
-    (LocalCoefficientSystem.twistedChainComplexMap P.map L).f k ≫
-      (P.twistedChainComplexπ L).f k = 0 := by
-  simp [← HomologicalComplex.comp_f]
-
 /-- The cokernel cofork presenting the relative twisted chain complex of a pair as the quotient
 of the ambient twisted chains by the twisted chains of the subspace. -/
 def cokernelCoforkTwistedChainComplex :
@@ -106,28 +100,6 @@ chains of its subspace. -/
 def isColimitCokernelCoforkTwistedChainComplex :
     IsColimit (P.cokernelCoforkTwistedChainComplex L) :=
   cokernelIsCokernel _
-
-instance (k : ℕ) :
-    PreservesColimit
-      (parallelPair (LocalCoefficientSystem.twistedChainComplexMap P.map L) 0)
-      (HomologicalComplex.eval (ModuleCat.{max v w} R) (ComplexShape.down ℕ) k) :=
-  HomologicalComplex.eval_preservesColimit_of_hasCokernel_f ..
-
-/-- The degreewise cokernel cofork presenting the relative twisted chains of a pair in degree `k`
-as the quotient of the twisted `k`-chains of the ambient space. -/
-def cokernelCoforkTwistedChainComplexX (k : ℕ) :
-    CokernelCofork ((LocalCoefficientSystem.twistedChainComplexMap P.map L).f k) :=
-  CokernelCofork.ofπ _ (P.twistedChainComplexMap_f_comp_twistedChainComplexπ_f L k)
-
-/-- In each degree, the relative twisted chains of a pair are the cokernel of the inclusion of
-the twisted chains of its subspace. -/
-def isColimitCokernelCoforkTwistedChainComplexX (k : ℕ) :
-    IsColimit (P.cokernelCoforkTwistedChainComplexX L k) :=
-  CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkTwistedChainComplex L)
-    (HomologicalComplex.eval _ _ k)
-
-instance (k : ℕ) : Epi ((P.twistedChainComplexπ L).f k) :=
-  Cofork.IsColimit.epi (P.isColimitCokernelCoforkTwistedChainComplexX L k)
 
 /-- The twisted chain sequence of a topological pair: the twisted chains of the subspace, of the
 ambient space, and of the pair. -/
@@ -251,9 +223,6 @@ lemma twistedChainComplexπ_comp_twistedChainComplexConstantIso_hom :
 
 /-- For a constant local coefficient system, relative twisted homology is ordinary relative
 singular homology. -/
--- The body is exposed only so that the two component lemmas below can be stated as definitional
--- equalities; both of their right hand sides are already public.
-@[expose]
 def twistedHomologyConstantIso (k : ℕ) :
     P.twistedHomology ((LocalCoefficientSystem.constantFunctor P.fst).obj M) k ≅
       P.singularHomology M k :=
@@ -267,7 +236,7 @@ map induced on homology by the comparison of the relative chain complexes. -/
 lemma twistedHomologyConstantIso_hom (k : ℕ) :
     (P.twistedHomologyConstantIso M k).hom =
       HomologicalComplex.homologyMap (P.twistedChainComplexConstantIso M).hom k :=
-  rfl
+  (rfl)
 
 /-- The inverse of the comparison of relative twisted homology with ordinary relative singular
 homology is the map induced on homology by the inverse comparison of the relative chain
@@ -275,7 +244,7 @@ complexes. -/
 lemma twistedHomologyConstantIso_inv (k : ℕ) :
     (P.twistedHomologyConstantIso M k).inv =
       HomologicalComplex.homologyMap (P.twistedChainComplexConstantIso M).inv k :=
-  rfl
+  (rfl)
 
 /-- The comparison of relative twisted homology with ordinary relative singular homology is
 compatible with the maps from the homology of the ambient space. -/
