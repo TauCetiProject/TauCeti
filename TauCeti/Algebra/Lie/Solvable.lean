@@ -42,8 +42,8 @@ whole algebra.
   solvable.
 * `LieIdeal.isSolvable_of_isSolvable_map`: solvability descends from the image together with the
   part of the ideal lying in the kernel.
-* `LieAlgebra.isSolvable_of_surjective` and `LieAlgebra.isSolvable_iff_isSolvable_quotient`:
-  solvability is an extension property.
+* `LieAlgebra.isSolvable_of_isSolvable_ker_of_surjective` and
+  `LieAlgebra.isSolvable_iff_ideal_quotient`: solvability is an extension property.
 * `LieIdeal.radical_map_eq`: a surjective homomorphism with solvable kernel carries the radical
   onto the radical.
 * `LieAlgebra.hasTrivialRadical_quotient_radical`: **the quotient of a Noetherian Lie algebra by
@@ -102,7 +102,7 @@ is solvable and the part of it lying in the kernel is.
 
 Taking `f` to be the quotient map by a solvable ideal and `I` to be `⊤` recovers the statement
 that an extension of a solvable Lie algebra by a solvable ideal is solvable, which is
-`LieAlgebra.isSolvable_of_surjective` below. -/
+`LieAlgebra.isSolvable_of_isSolvable_ker_of_surjective` below. -/
 theorem isSolvable_of_isSolvable_map (h₁ : IsSolvable ↥(I ⊓ f.ker))
     (h₂ : IsSolvable ↥(I.map f)) : IsSolvable ↥I := by
   obtain ⟨k, hk⟩ := IsSolvable.solvable (R := R) (L := ↥(I.map f))
@@ -139,7 +139,7 @@ namespace LieAlgebra
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 
 /-- **An extension of a solvable Lie algebra by a solvable ideal is solvable.** -/
-theorem isSolvable_of_surjective {f : L →ₗ⁅R⁆ L'} (h : Function.Surjective f)
+theorem isSolvable_of_isSolvable_ker_of_surjective {f : L →ₗ⁅R⁆ L'} (h : Function.Surjective f)
     (h₁ : IsSolvable ↥f.ker) (h₂ : IsSolvable L') : IsSolvable L := by
   have h₃ : IsSolvable ↥(⊤ : LieIdeal R L) := by
     refine LieIdeal.isSolvable_of_isSolvable_map f ⊤
@@ -150,11 +150,11 @@ theorem isSolvable_of_surjective {f : L →ₗ⁅R⁆ L'} (h : Function.Surjecti
 
 /-- **Solvability is an extension property**: a Lie algebra is solvable exactly when both an ideal
 and the quotient by it are. -/
-theorem isSolvable_iff_isSolvable_quotient (I : LieIdeal R L) :
+theorem isSolvable_iff_ideal_quotient (I : LieIdeal R L) :
     IsSolvable L ↔ IsSolvable ↥I ∧ IsSolvable (L ⧸ I) := by
   refine ⟨fun _ => ⟨inferInstance, I.mkQ_surjective.lieAlgebra_isSolvable⟩, fun h => ?_⟩
   obtain ⟨h₁, h₂⟩ := h
-  exact isSolvable_of_surjective I.mkQ_surjective (by rwa [I.ker_mkQ]) h₂
+  exact isSolvable_of_isSolvable_ker_of_surjective I.mkQ_surjective (by rwa [I.ker_mkQ]) h₂
 
 variable (R L)
 
@@ -181,6 +181,7 @@ theorem radical_le_of_hasTrivialRadical_quotient [IsNoetherian R L] (I : LieIdea
   rwa [LieIdeal.map_eq_bot_iff, I.ker_mkQ] at hbot
 
 /-- **The radical is the unique solvable ideal whose quotient has trivial radical.** -/
+@[simp]
 theorem hasTrivialRadical_quotient_iff [IsNoetherian R L] (I : LieIdeal R L) [IsSolvable ↥I] :
     HasTrivialRadical R (L ⧸ I) ↔ I = radical R L :=
   ⟨fun _ => le_antisymm ((LieIdeal.solvable_iff_le_radical R L I).mp ‹_›)
