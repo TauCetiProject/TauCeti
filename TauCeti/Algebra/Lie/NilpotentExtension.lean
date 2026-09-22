@@ -54,10 +54,7 @@ enters only in the variants whose hypothesis on `H` is the pointwise one,
 * [W. Fulton and J. Harris, *Representation Theory: A First Course*][fulton-harris1991],
   Appendix E, §E.2.
 * Mathlib's `LieAlgebra.exists_engelian_lieSubalgebra_of_lt_normalizer` in
-  `Mathlib/Algebra/Lie/Engel.lean`, which is followed closely here and from which
-  `LieSubalgebra.lie_mem_sup_of_mem_normalizer`,
-  `LieSubalgebra.exists_nested_lieIdeal_ofLe_normalizer` and
-  `LieSubmodule.isNilpotentOfIsNilpotentSpanSupEqTop` are reused.
+  `Mathlib/Algebra/Lie/Engel.lean`, the source this file follows.
 -/
 
 public section
