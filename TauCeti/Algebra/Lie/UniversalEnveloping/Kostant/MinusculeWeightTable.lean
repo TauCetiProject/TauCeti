@@ -132,10 +132,9 @@ theorem isSl2Triple_rep_serreRootGenerator (i : B) (hi : ∃ a, T.weight a i ≠
   let toEnd : Matrix ι ι ℚ →ₗ⁅ℚ⁆ Module.End ℚ (ι → ℚ) :=
     (Matrix.toLinAlgEquiv' (R := ℚ) (n := ι)).toAlgHom.toLieHom
   have hEnd : toEnd (T.cartanGeneratorMatrixQ i) ≠ 0 := by
-    intro hzero
-    have hz := DFunLike.congr_fun hzero (Pi.single a 1)
-    have hza := congrFun hz a
-    simp [toEnd, Matrix.mulVec, dotProduct, Pi.single_apply, ha] at hza
+    simpa only [toEnd, AlgHom.toLieHom_apply, AlgEquiv.toAlgHom_apply, map_zero] using
+      (Matrix.toLinAlgEquiv' (R := ℚ) (n := ι)).injective.ne
+        (T.isSl2TripleQ i ⟨a, ha⟩).h_ne_zero
   have h := (T.isSl2TripleQ i ⟨a, ha⟩).map toEnd hEnd
   -- `IsSl2Triple.map` retains the bundled Lie-hom application; expose the equivalent matrix
   -- action so the three representation equations below can rewrite it.
