@@ -41,6 +41,8 @@ prevertex `a i` rotates the edge direction by `-π · e i`, which for the classi
 
 ## Main definitions
 
+* `TauCeti.schwarzChristoffelDensity` -- the positive real density obtained by taking the norm
+  of the Schwarz--Christoffel integrand on the boundary.
 * `TauCeti.schwarzChristoffelContinuedIntegrand` -- the Schwarz--Christoffel integrand with the
   branch of every factor to the right of a reference point reflected, so that, as long as no
   prevertex equals that point, it continues holomorphically across the real axis near it.
@@ -81,6 +83,30 @@ namespace TauCeti
 open Complex Filter MeasureTheory Set Topology UpperHalfPlane
 
 variable {ι : Type*} [Fintype ι]
+
+/-- The real Schwarz--Christoffel density on the boundary. -/
+noncomputable def schwarzChristoffelDensity (a e : ι → ℝ) (x : ℝ) : ℝ :=
+  ∏ k, |x - a k| ^ e k
+
+/-- The Schwarz--Christoffel density is its defining product. -/
+theorem schwarzChristoffelDensity_def (a e : ι → ℝ) (x : ℝ) :
+    schwarzChristoffelDensity a e x = ∏ k, |x - a k| ^ e k :=
+  (rfl)
+
+/-- Zero turning exponents give constant boundary density one. -/
+@[simp]
+theorem schwarzChristoffelDensity_zero (a : ι → ℝ) :
+    schwarzChristoffelDensity a 0 = 1 := by
+  ext x
+  simp [schwarzChristoffelDensity]
+
+/-- The boundary density is the norm of the Schwarz--Christoffel integrand at a real point. -/
+theorem schwarzChristoffelDensity_eq_norm_integrand (a e : ι → ℝ) (x : ℝ) :
+    schwarzChristoffelDensity a e x = ‖schwarzChristoffelIntegrand a e (x : ℂ)‖ := by
+  rw [norm_schwarzChristoffelIntegrand, schwarzChristoffelDensity]
+  apply Finset.prod_congr rfl
+  intro k _
+  rw [Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
 
 /-- The **Schwarz--Christoffel integrand continued across a reference point** `c`.
 
@@ -235,8 +261,10 @@ exponent, the continued Schwarz--Christoffel integrand takes the positive real v
 with zero exponent is `1` on both sides. -/
 theorem schwarzChristoffelContinuedIntegrand_ofReal (a e : ι → ℝ) {c x : ℝ}
     (hlo : ∀ i, e i ≠ 0 → a i ≤ c → a i < x) (hhi : ∀ i, e i ≠ 0 → c < a i → x < a i) :
-    schwarzChristoffelContinuedIntegrand a e c (x : ℂ) = ((∏ i, |x - a i| ^ e i : ℝ) : ℂ) := by
-  rw [schwarzChristoffelContinuedIntegrand_def, Complex.ofReal_prod]
+    schwarzChristoffelContinuedIntegrand a e c (x : ℂ) =
+      (schwarzChristoffelDensity a e x : ℂ) := by
+  rw [schwarzChristoffelContinuedIntegrand_def, schwarzChristoffelDensity,
+    Complex.ofReal_prod]
   refine Finset.prod_congr rfl fun i _ => ?_
   rcases eq_or_ne (e i) 0 with he | he
   · simp [he]
@@ -256,12 +284,12 @@ theorem tendsto_schwarzChristoffelIntegrand_nhdsWithin (a e : ι → ℝ) {p q x
     (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
     Tendsto (schwarzChristoffelIntegrand a e) (𝓝[upperHalfPlaneSet] (x : ℂ))
       (𝓝 (Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
-        ((∏ i, |x - a i| ^ e i : ℝ) : ℂ))) := by
+        (schwarzChristoffelDensity a e x : ℂ))) := by
   have hstrip : IsOpen {z : ℂ | z.re ∈ Ioo p q} :=
     isOpen_Ioo.preimage Complex.continuous_re
   have hmem : (x : ℂ) ∈ {z : ℂ | z.re ∈ Ioo p q} := by simpa using hx
   have hval : schwarzChristoffelContinuedIntegrand a e p (x : ℂ) =
-      ((∏ i, |x - a i| ^ e i : ℝ) : ℂ) :=
+      (schwarzChristoffelDensity a e x : ℂ) :=
     schwarzChristoffelContinuedIntegrand_ofReal a e (fun i _ hi => hi.trans_lt hx.1)
       fun i he hi => hx.2.trans_le (not_lt.mp fun h => ha i he ⟨hi, h⟩)
   have hcont : ContinuousAt (schwarzChristoffelContinuedIntegrand a e p) (x : ℂ) :=
@@ -270,7 +298,7 @@ theorem tendsto_schwarzChristoffelIntegrand_nhdsWithin (a e : ι → ℝ) {p q x
   have hlim : Tendsto (fun z : ℂ => Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
       schwarzChristoffelContinuedIntegrand a e p z) (𝓝[upperHalfPlaneSet] (x : ℂ))
       (𝓝 (Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
-        ((∏ i, |x - a i| ^ e i : ℝ) : ℂ))) := by
+        (schwarzChristoffelDensity a e x : ℂ))) := by
     rw [← hval]
     exact (tendsto_const_nhds.mul hcont.tendsto).mono_left nhdsWithin_le_nhds
   refine hlim.congr' ?_
@@ -291,7 +319,7 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z�
         (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (L x))) ∧
       ContinuousOn L (Ioo p q) ∧
       ∀ x ∈ Ioo p q, ∀ y ∈ Ioo p q,
-        L x - L y = ((∫ t in y..x, ∏ i, |t - a i| ^ e i : ℝ) : ℂ) *
+        L x - L y = ((∫ t in y..x, schwarzChristoffelDensity a e t : ℝ) : ℂ) *
           Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
   set C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   set g : ℂ → ℂ := fun z => C * schwarzChristoffelContinuedIntegrand a e p z with hg
@@ -345,7 +373,7 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z�
     have hint : IntervalIntegrable (fun t : ℝ => g (t : ℂ)) volume y x :=
       hgcont.intervalIntegrable
     have hval : EqOn (fun t : ℝ => g (t : ℂ))
-        (fun t : ℝ => ((∏ i, |t - a i| ^ e i : ℝ) : ℂ) * C) (uIcc y x) := by
+        (fun t : ℝ => (schwarzChristoffelDensity a e t : ℂ) * C) (uIcc y x) := by
       intro t ht
       have h := schwarzChristoffelContinuedIntegrand_ofReal a e (c := p)
         (fun i _ hi => hi.trans_lt (hsub ht).1)
@@ -354,10 +382,11 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_sub_eq (a e : ι → ℝ) (z�
       ring
     calc P (x : ℂ) + k - (P (y : ℂ) + k) = ∫ t in y..x, g (t : ℂ) := by
           rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint]; ring
-      _ = ∫ t in y..x, ((∏ i, |t - a i| ^ e i : ℝ) : ℂ) * C := intervalIntegral.integral_congr hval
-      _ = (∫ t in y..x, ((∏ i, |t - a i| ^ e i : ℝ) : ℂ)) * C :=
+      _ = ∫ t in y..x, (schwarzChristoffelDensity a e t : ℂ) * C :=
+          intervalIntegral.integral_congr hval
+      _ = (∫ t in y..x, (schwarzChristoffelDensity a e t : ℂ)) * C :=
           intervalIntegral.integral_mul_const _ _
-      _ = ((∫ t in y..x, ∏ i, |t - a i| ^ e i : ℝ) : ℂ) * C := by
+      _ = ((∫ t in y..x, schwarzChristoffelDensity a e t : ℝ) : ℂ) * C := by
           rw [intervalIntegral.integral_ofReal]
 
 /-- **The Schwarz--Christoffel map carries a boundary interval free of prevertices with nonzero
@@ -374,14 +403,18 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear (a e : ι →
       InjOn L (Ioo p q) ∧ Collinear ℝ (L '' Ioo p q) := by
   obtain ⟨L, hL, hLcont, hdiff⟩ := exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀ ha
   have hne : ∀ t ∈ Ioo p q, ∀ i, e i ≠ 0 → t ≠ a i := fun t ht i he h => ha i he (h ▸ ht)
-  have hfcont : ContinuousOn (fun t : ℝ => ∏ i, |t - a i| ^ e i) (Ioo p q) := by
+  have hfcont : ContinuousOn (schwarzChristoffelDensity a e) (Ioo p q) := by
+    unfold schwarzChristoffelDensity
     refine continuousOn_finsetProd _ fun i _ t ht => ?_
     rcases eq_or_ne (e i) 0 with he | he
     · simpa [he] using continuousWithinAt_const
     · exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
         (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne (hne t ht i he))))).continuousWithinAt
-  have hprodpos : ∀ t : ℝ, (∀ i, e i ≠ 0 → t ≠ a i) → 0 < ∏ i, |t - a i| ^ e i := by
-    refine fun t ht => Finset.prod_pos fun i _ => ?_
+  have hprodpos : ∀ t : ℝ, (∀ i, e i ≠ 0 → t ≠ a i) →
+      0 < schwarzChristoffelDensity a e t := by
+    intro t ht
+    rw [schwarzChristoffelDensity]
+    refine Finset.prod_pos fun i _ => ?_
     rcases eq_or_ne (e i) 0 with he | he
     · simp [he]
     · exact Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero_of_ne (ht i he))) _
@@ -389,7 +422,7 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear (a e : ι →
     intro x hx y hy hyx
     rw [hdiff x hx y hy]
     have hsub' : uIcc y x ⊆ Ioo p q := Set.ordConnected_Ioo.uIcc_subset hy hx
-    have hpos : 0 < ∫ t in y..x, ∏ i, |t - a i| ^ e i :=
+    have hpos : 0 < ∫ t in y..x, schwarzChristoffelDensity a e t :=
       intervalIntegral.intervalIntegral_pos_of_pos_on (hfcont.mono hsub').intervalIntegrable
         (fun t ht => hprodpos t
           (hne t (hsub' (Set.Icc_subset_uIcc (Set.Ioo_subset_Icc_self ht))))) hyx
@@ -407,7 +440,7 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear (a e : ι →
   refine (collinear_iff_of_mem (Set.mem_image_of_mem L hm)).mpr
     ⟨Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I), ?_⟩
   rintro - ⟨x, hx, rfl⟩
-  refine ⟨∫ t in m..x, ∏ i, |t - a i| ^ e i, ?_⟩
+  refine ⟨∫ t in m..x, schwarzChristoffelDensity a e t, ?_⟩
   have := hdiff x hx _ hm
   simp only [Complex.real_smul, vadd_eq_add]
   linear_combination this

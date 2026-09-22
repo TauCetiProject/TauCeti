@@ -56,7 +56,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Set Topology UpperHalfPlane
+open Complex Filter MeasureTheory Set Topology UpperHalfPlane
 
 namespace TauCeti
 
@@ -170,13 +170,51 @@ theorem schwarzChristoffelBoundary_sub_eq (a e : ι → ℝ) (z₀ : UpperHalfPl
     {p q : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) {x y : ℝ}
     (hx : x ∈ Ioo p q) (hy : y ∈ Ioo p q) :
     schwarzChristoffelBoundary a e z₀ x - schwarzChristoffelBoundary a e z₀ y =
-      ((∫ t in y..x, ∏ i, |t - a i| ^ e i : ℝ) : ℂ) *
+      ((∫ t in y..x, schwarzChristoffelDensity a e t : ℝ) : ℂ) *
         Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) := by
   obtain ⟨L, hL, -, hsub⟩ :=
     exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀ ha
   rw [schwarzChristoffelBoundary_eq_of_tendsto a e z₀ x (hL x hx),
     schwarzChristoffelBoundary_eq_of_tendsto a e z₀ y (hL y hy)]
   exact hsub x hx y hy
+
+/-- On an open boundary interval containing no nonzero prevertex, the derivative of the
+Schwarz--Christoffel boundary map is the positive density times the fixed edge direction. -/
+theorem hasDerivAt_schwarzChristoffelBoundary (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) {p q x : ℝ} (ha : ∀ k, e k ≠ 0 → a k ∉ Ioo p q)
+    (hx : x ∈ Ioo p q) :
+    HasDerivAt (schwarzChristoffelBoundary a e z₀)
+      ((schwarzChristoffelDensity a e x : ℂ) *
+        Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) x := by
+  let d : ℝ → ℝ := schwarzChristoffelDensity a e
+  let C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
+  have hdcontOn : ContinuousOn d (Ioo p q) := by
+    rw [show d = fun y : ℝ => ∏ k, |y - a k| ^ e k by
+      ext y
+      exact schwarzChristoffelDensity_def a e y]
+    refine continuousOn_finsetProd _ fun k _ y hy ↦ ?_
+    rcases eq_or_ne (e k) 0 with hk | hk
+    · simpa [d, schwarzChristoffelDensity_def, hk] using continuousWithinAt_const
+    · have hyk : y ≠ a k := fun h ↦ ha k hk (h ▸ hy)
+      exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
+        (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hyk)))).continuousWithinAt
+  have hdcont : ContinuousAt d x :=
+    (hdcontOn x hx).continuousAt (isOpen_Ioo.mem_nhds hx)
+  have hInt : HasDerivAt (fun y : ℝ ↦ ∫ t in x..y, d t) (d x) x :=
+    intervalIntegral.integral_hasDerivAt_right (by simp)
+      (ContinuousAt.stronglyMeasurableAtFilter isOpen_Ioo
+        (fun y hy ↦ (hdcontOn y hy).continuousAt (isOpen_Ioo.mem_nhds hy)) x hx) hdcont
+  have hcast : HasDerivAt (fun y : ℝ ↦ ((∫ t in x..y, d t : ℝ) : ℂ)) (d x : ℂ) x := by
+    simpa [Function.comp_def] using Complex.ofRealCLM.hasDerivAt.scomp x hInt
+  have hmodel : HasDerivAt
+      (fun y : ℝ ↦ schwarzChristoffelBoundary a e z₀ x +
+        ((∫ t in x..y, d t : ℝ) : ℂ) * C) ((d x : ℂ) * C) x :=
+    (hcast.mul_const C).const_add _
+  apply hmodel.congr_of_eventuallyEq
+  filter_upwards [Ioo_mem_nhds hx.1 hx.2] with y hy
+  have h := schwarzChristoffelBoundary_sub_eq a e z₀ ha hy hx
+  simp only [d, C] at h ⊢
+  linear_combination h
 
 /-- The canonical Schwarz--Christoffel boundary map is injective on every real interval free of
 prevertices with nonzero exponent. -/

@@ -46,101 +46,61 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- The real Schwarz--Christoffel density on the boundary. -/
-noncomputable def schwarzChristoffelDensity {ι : Type*} [Fintype ι]
-    (a e : ι → ℝ) (x : ℝ) : ℝ :=
-  ∏ k, |x - a k| ^ e k
-
-/-- The boundary density is the norm of the Schwarz--Christoffel integrand at a real point. -/
-theorem schwarzChristoffelDensity_eq_norm_integrand {ι : Type*} [Fintype ι]
-    (a e : ι → ℝ) (x : ℝ) :
-    schwarzChristoffelDensity a e x = ‖schwarzChristoffelIntegrand a e (x : ℂ)‖ := by
-  rw [norm_schwarzChristoffelIntegrand, schwarzChristoffelDensity]
-  apply Finset.prod_congr rfl
-  intro k _
-  rw [Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
-
 /-- The length assigned by the Schwarz--Christoffel formula to the bounded side between the
 consecutive prevertices `a i` and `a (i + 1)`. -/
 noncomputable def schwarzChristoffelSideLength (a e : Fin (n + 1) → ℝ) (i : Fin n) : ℝ :=
   ∫ x in a i.castSucc..a i.succ, schwarzChristoffelDensity a e x
 
-/-- The Schwarz--Christoffel side length is the integral of the boundary density between its
-consecutive prevertices. -/
-theorem schwarzChristoffelSideLength_def (a e : Fin (n + 1) → ℝ) (i : Fin n) :
-    schwarzChristoffelSideLength a e i =
-      ∫ x in a i.castSucc..a i.succ, schwarzChristoffelDensity a e x :=
-  (rfl)
-
-private lemma density_eq_endpoint_mul (a e : Fin (n + 1) → ℝ) (i : Fin n)
-    (x : ℝ) :
-    schwarzChristoffelDensity a e x =
-      |x - a i.castSucc| ^ e i.castSucc * |x - a i.succ| ^ e i.succ *
-        (∏ k ∈ (Finset.univ.erase i.castSucc).erase i.succ, |x - a k| ^ e k) := by
+/-- The Schwarz--Christoffel density is interval integrable between two distinct endpoints when
+there is no nonzero-exponent prevertex in the open interval and the total exponent at each
+endpoint is greater than `-1`. -/
+theorem intervalIntegrable_schwarzChristoffelDensity {ι : Type*} [Fintype ι]
+    (a e : ι → ℝ) {p q : ℝ} (hpq : p < q)
+    (ha : ∀ k, e k ≠ 0 → a k ∉ Ioo p q)
+    (hleft : -1 < ∑ k with a k = p, e k)
+    (hright : -1 < ∑ k with a k = q, e k) :
+    IntervalIntegrable (schwarzChristoffelDensity a e) volume p q := by
   classical
-  rw [schwarzChristoffelDensity]
-  have hne : i.castSucc ≠ i.succ := ne_of_lt i.castSucc_lt_succ
-  let f : Fin (n + 1) → ℝ := fun k ↦ |x - a k| ^ e k
-  calc
-    ∏ k, |x - a k| ^ e k = f i.castSucc * ∏ k ∈ Finset.univ.erase i.castSucc, f k :=
-      (Finset.mul_prod_erase Finset.univ f (Finset.mem_univ _)).symm
-    _ = f i.castSucc *
-        (f i.succ * ∏ k ∈ (Finset.univ.erase i.castSucc).erase i.succ, f k) := by
-      rw [Finset.mul_prod_erase (Finset.univ.erase i.castSucc) f
-        (Finset.mem_erase.mpr ⟨hne.symm, Finset.mem_univ _⟩)]
-    _ = _ := by simp only [f]; ring
-
-/-- The Schwarz--Christoffel density is interval integrable between consecutive, distinct
-prevertices when the two endpoint exponents are greater than `-1`. -/
-theorem intervalIntegrable_schwarzChristoffelDensity (a e : Fin (n + 1) → ℝ)
-    (ha : StrictMono a) (i : Fin n) (hleft : -1 < e i.castSucc)
-    (hright : -1 < e i.succ) :
-    IntervalIntegrable (schwarzChristoffelDensity a e) volume
-      (a i.castSucc) (a i.succ) := by
-  classical
-  let p := a i.castSucc
-  let q := a i.succ
   let L := q - p
-  have hpq : p < q := ha i.castSucc_lt_succ
   have hL : 0 < L := sub_pos.mpr hpq
   let g : ℝ → ℝ := fun x ↦
-    ∏ k ∈ (Finset.univ.erase i.castSucc).erase i.succ, |x - a k| ^ e k
+    ∏ k ∈ Finset.univ.filter (fun k ↦ a k ≠ p ∧ a k ≠ q), |x - a k| ^ e k
   have hg : ContinuousOn g (Icc p q) := by
     refine continuousOn_finsetProd _ fun k hk x hx ↦ ?_
-    have hkleft : k ≠ i.castSucc := by
-      exact fun h ↦ (Finset.mem_erase.mp (Finset.mem_erase.mp hk).2).1 h
-    have hkright : k ≠ i.succ := (Finset.mem_erase.mp hk).1
-    have hxne : x ≠ a k := by
-      intro hxk
-      have hlik : i.castSucc ≤ k := (ha.le_iff_le).mp (by simpa [p, hxk] using hx.1)
-      have hkir : k ≤ i.succ := (ha.le_iff_le).mp (by simpa [q, hxk] using hx.2)
-      have hk : k = i.castSucc ∨ k = i.succ := by
-        have hlik' := Fin.mk_le_mk.mp hlik
-        have hkir' := Fin.mk_le_mk.mp hkir
-        have hkval : k.val = i.val ∨ k.val = i.val + 1 := by omega
-        exact hkval.imp (fun h ↦ Fin.ext h) (fun h ↦ Fin.ext (by simpa using h))
-      exact hk.elim hkleft hkright
-    exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
-      (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hxne)))).continuousWithinAt
+    rcases eq_or_ne (e k) 0 with hek | hek
+    · simpa [hek] using continuousWithinAt_const
+    · have hk' := (Finset.mem_filter.mp hk).2
+      have hxne : x ≠ a k := by
+        intro hxk
+        subst x
+        apply ha k hek
+        exact ⟨lt_of_le_of_ne hx.1 hk'.1.symm, lt_of_le_of_ne hx.2 hk'.2⟩
+      exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
+        (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hxne)))).continuousWithinAt
   have hbeta : IntervalIntegrable
-      (fun t : ℝ ↦ t ^ e i.castSucc * (1 - t) ^ e i.succ) volume 0 1 := by
+      (fun t : ℝ ↦ t ^ (∑ k with a k = p, e k) *
+        (1 - t) ^ (∑ k with a k = q, e k)) volume 0 1 := by
     simpa only [add_sub_cancel_right] using
-      intervalIntegrable_rpow_mul_one_sub_rpow (a := e i.castSucc + 1)
-        (b := e i.succ + 1) (by linarith) (by linarith)
+      intervalIntegrable_rpow_mul_one_sub_rpow
+        (a := (∑ k with a k = p, e k) + 1)
+        (b := (∑ k with a k = q, e k) + 1) (by linarith) (by linarith)
         (u := 0) (v := 1) (by simp) (by simp)
   have hscaled : IntervalIntegrable
-      (fun x : ℝ ↦ (x / L) ^ e i.castSucc * (1 - x / L) ^ e i.succ)
+      (fun x : ℝ ↦ (x / L) ^ (∑ k with a k = p, e k) *
+        (1 - x / L) ^ (∑ k with a k = q, e k))
       volume 0 L := by
     have h := hbeta.comp_mul_right (c := L⁻¹)
     simpa [div_eq_mul_inv, hL.ne'] using h
   have hshifted : IntervalIntegrable
-      (fun x : ℝ ↦ ((x - p) / L) ^ e i.castSucc *
-        (1 - (x - p) / L) ^ e i.succ) volume p q := by
+      (fun x : ℝ ↦ ((x - p) / L) ^ (∑ k with a k = p, e k) *
+        (1 - (x - p) / L) ^ (∑ k with a k = q, e k)) volume p q := by
     have h := hscaled.comp_sub_right p
-    simpa [q, L] using h
+    simpa [L] using h
   have hkernel : IntervalIntegrable
-      (fun x : ℝ ↦ |x - p| ^ e i.castSucc * |x - q| ^ e i.succ) volume p q := by
-    refine (hshifted.const_mul (L ^ (e i.castSucc + e i.succ))).congr fun x hx ↦ ?_
+      (fun x : ℝ ↦ |x - p| ^ (∑ k with a k = p, e k) *
+        |x - q| ^ (∑ k with a k = q, e k)) volume p q := by
+    refine (hshifted.const_mul
+      (L ^ ((∑ k with a k = p, e k) + ∑ k with a k = q, e k))).congr fun x hx ↦ ?_
     rw [uIoc_of_le hpq.le] at hx
     have hxp : 0 < x - p := sub_pos.mpr hx.1
     have hqx : 0 ≤ q - x := sub_nonneg.mpr hx.2
@@ -152,43 +112,53 @@ theorem intervalIntegrable_schwarzChristoffelDensity (a e : Fin (n + 1) → ℝ)
     rw [Real.rpow_add hL]
     field_simp [(Real.rpow_pos_of_pos hL _).ne']
   have hg' : ContinuousOn g (uIcc p q) := by simpa [uIcc_of_le hpq.le] using hg
-  refine (hkernel.mul_continuousOn hg').congr fun x _ ↦ ?_
-  rw [density_eq_endpoint_mul]
+  refine (hkernel.mul_continuousOn hg').congr_ae ?_
+  filter_upwards [MeasureTheory.ae_restrict_of_ae (volume.ae_ne p),
+    MeasureTheory.ae_restrict_of_ae (volume.ae_ne q)] with x hxp hxq
+  rw [schwarzChristoffelDensity_def]
+  have hxp' : 0 < |x - p| := abs_pos.mpr (sub_ne_zero.mpr hxp)
+  have hxq' : 0 < |x - q| := abs_pos.mpr (sub_ne_zero.mpr hxq)
+  have hp_prod : |x - p| ^ (∑ k with a k = p, e k) =
+      ∏ k ∈ Finset.univ.filter (fun k ↦ a k = p), |x - a k| ^ e k := by
+    rw [Real.rpow_sum_of_pos hxp']
+    apply Finset.prod_congr rfl
+    intro k hk
+    rw [(Finset.mem_filter.mp hk).2]
+  have hq_prod : |x - q| ^ (∑ k with a k = q, e k) =
+      ∏ k ∈ Finset.univ.filter (fun k ↦ a k = q), |x - a k| ^ e k := by
+    rw [Real.rpow_sum_of_pos hxq']
+    apply Finset.prod_congr rfl
+    intro k hk
+    rw [(Finset.mem_filter.mp hk).2]
+  rw [hp_prod, hq_prod]
+  simp only [g, Finset.prod_filter]
+  rw [← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+  apply Finset.prod_congr rfl
+  intro k _
+  by_cases hkp : a k = p
+  · simp [hkp, hpq.ne]
+  by_cases hkq : a k = q
+  · simp [hkq, hpq.ne']
+  · simp [hkp, hkq]
 
-/-- On an open boundary interval containing no nonzero prevertex, the derivative of the
-Schwarz--Christoffel boundary map is the positive density times the fixed edge direction. -/
-theorem hasDerivAt_schwarzChristoffelBoundary {ι : Type*} [Fintype ι] (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) {p q x : ℝ} (ha : ∀ k, e k ≠ 0 → a k ∉ Ioo p q)
-    (hx : x ∈ Ioo p q) :
-    HasDerivAt (schwarzChristoffelBoundary a e z₀)
-      ((schwarzChristoffelDensity a e x : ℂ) *
-        Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) x := by
-  let d : ℝ → ℝ := schwarzChristoffelDensity a e
-  let C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
-  have hdcontOn : ContinuousOn d (Ioo p q) := by
-    refine continuousOn_finsetProd _ fun k _ y hy ↦ ?_
-    rcases eq_or_ne (e k) 0 with hk | hk
-    · simpa [d, schwarzChristoffelDensity, hk] using continuousWithinAt_const
-    · have hyk : y ≠ a k := fun h ↦ ha k hk (h ▸ hy)
-      exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
-        (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hyk)))).continuousWithinAt
-  have hdcont : ContinuousAt d x :=
-    (hdcontOn x hx).continuousAt (isOpen_Ioo.mem_nhds hx)
-  have hInt : HasDerivAt (fun y : ℝ ↦ ∫ t in x..y, d t) (d x) x :=
-    intervalIntegral.integral_hasDerivAt_right (by simp)
-      (ContinuousAt.stronglyMeasurableAtFilter isOpen_Ioo
-        (fun y hy ↦ (hdcontOn y hy).continuousAt (isOpen_Ioo.mem_nhds hy)) x hx) hdcont
-  have hcast : HasDerivAt (fun y : ℝ ↦ ((∫ t in x..y, d t : ℝ) : ℂ)) (d x : ℂ) x := by
-    simpa [Function.comp_def] using Complex.ofRealCLM.hasDerivAt.scomp x hInt
-  have hmodel : HasDerivAt
-      (fun y : ℝ ↦ schwarzChristoffelBoundary a e z₀ x +
-        ((∫ t in x..y, d t : ℝ) : ℂ) * C) ((d x : ℂ) * C) x :=
-    (hcast.mul_const C).const_add _
-  apply hmodel.congr_of_eventuallyEq
-  filter_upwards [Ioo_mem_nhds hx.1 hx.2] with y hy
-  have h := schwarzChristoffelBoundary_sub_eq a e z₀ ha hy hx
-  simp only [d, C, schwarzChristoffelDensity] at h ⊢
-  linear_combination h
+private lemma not_mem_Ioo_prevertices_succ (a : Fin (n + 1) → ℝ) (ha : StrictMono a)
+    (i : Fin n) (k : Fin (n + 1)) : a k ∉ Ioo (a i.castSucc) (a i.succ) := by
+  intro hk
+  have hik : i.castSucc < k := (ha.lt_iff_lt).mp hk.1
+  have hki : k < i.succ := (ha.lt_iff_lt).mp hk.2
+  exact (Fin.le_of_castSucc_lt_of_succ_lt hik hki).false
+
+/-- For strictly ordered prevertices, the density is integrable between consecutive prevertices
+when the two endpoint exponents are greater than `-1`. -/
+theorem intervalIntegrable_schwarzChristoffelDensity_succ (a e : Fin (n + 1) → ℝ)
+    (ha : StrictMono a) (i : Fin n) (hleft : -1 < e i.castSucc)
+    (hright : -1 < e i.succ) :
+    IntervalIntegrable (schwarzChristoffelDensity a e) volume
+      (a i.castSucc) (a i.succ) := by
+  apply intervalIntegrable_schwarzChristoffelDensity a e (ha i.castSucc_lt_succ)
+    (fun k _ ↦ not_mem_Ioo_prevertices_succ a ha i k)
+  · simpa [ha.injective.eq_iff, Finset.filter_eq'] using hleft
+  · simpa [ha.injective.eq_iff, Finset.filter_eq'] using hright
 
 /-- The vector of a bounded Schwarz--Christoffel side is its density integral times the unit
 vector in the side's fixed direction. -/
@@ -205,24 +175,17 @@ theorem schwarzChristoffelVertex_succ_sub_eq_sideLength_mul (a e : Fin (n + 1) �
   let C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
   have hpq : p < q := ha i.castSucc_lt_succ
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo p q := by
-    intro k _ hk
-    have hik : i.castSucc < k := (ha.lt_iff_lt).mp hk.1
-    have hki : k < i.succ := (ha.lt_iff_lt).mp hk.2
-    have hik' := Fin.mk_lt_mk.mp hik
-    have hki' := Fin.mk_lt_mk.mp hki
-    omega
+    exact fun k _ ↦ not_mem_Ioo_prevertices_succ a ha i k
   have hsum (k : Fin (n + 1)) : ∑ l with a l = a k, e l = e k := by
     simp [ha.injective.eq_iff, Finset.filter_eq']
   have hleftsum : -1 < ∑ k with a k = p, e k := by
-    rw [show p = a i.castSucc from rfl, hsum]
-    exact hleft
+    simpa [p, hsum] using hleft
   have hrightsum : -1 < ∑ k with a k = q, e k := by
-    rw [show q = a i.succ from rfl, hsum]
-    exact hright
+    simpa [q, hsum] using hright
   have hcont : ContinuousOn (schwarzChristoffelBoundary a e z₀) (Icc p q) :=
     continuousOn_schwarzChristoffelBoundary_Icc a e z₀ hfree
       hleftsum hrightsum
-  have hdensity := intervalIntegrable_schwarzChristoffelDensity a e ha i hleft hright
+  have hdensity := intervalIntegrable_schwarzChristoffelDensity_succ a e ha i hleft hright
   have hcast : IntervalIntegrable (fun x : ℝ ↦ (schwarzChristoffelDensity a e x : ℂ))
       volume p q :=
     ⟨hdensity.1.ofReal, hdensity.2.ofReal⟩
@@ -243,17 +206,15 @@ theorem schwarzChristoffelSideLength_pos (a e : Fin (n + 1) → ℝ) (ha : Stric
     (i : Fin n) (hleft : -1 < e i.castSucc) (hright : -1 < e i.succ) :
     0 < schwarzChristoffelSideLength a e i := by
   apply intervalIntegral.intervalIntegral_pos_of_pos_on
-    (intervalIntegrable_schwarzChristoffelDensity a e ha i hleft hright) _
+    (intervalIntegrable_schwarzChristoffelDensity_succ a e ha i hleft hright) _
     (ha i.castSucc_lt_succ)
   intro x hx
-  exact Finset.prod_pos fun k _ ↦ Real.rpow_pos_of_pos
-    (abs_pos.mpr (sub_ne_zero.mpr fun h ↦ by
-      have hxk : a k ∈ Ioo (a i.castSucc) (a i.succ) := by simpa [h] using hx
-      have hik : i.castSucc < k := (ha.lt_iff_lt).mp hxk.1
-      have hki : k < i.succ := (ha.lt_iff_lt).mp hxk.2
-      have hik' := Fin.mk_lt_mk.mp hik
-      have hki' := Fin.mk_lt_mk.mp hki
-      omega)) _
+  rw [schwarzChristoffelDensity_def]
+  refine Finset.prod_pos fun (k : Fin (n + 1)) _ ↦ Real.rpow_pos_of_pos
+    (abs_pos.mpr (sub_ne_zero.mpr ?_)) _
+  intro hxk
+  apply not_mem_Ioo_prevertices_succ a ha i k
+  simpa only [← hxk] using hx
 
 /-- The side-length integral is the Euclidean distance between the corresponding consecutive
 Schwarz--Christoffel vertices. -/
