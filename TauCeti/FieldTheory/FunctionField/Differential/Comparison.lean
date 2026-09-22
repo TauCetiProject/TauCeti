@@ -76,19 +76,6 @@ noncomputable def weilDifferentialOfSeparating (hF : IsFunctionField k F)
   weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
     ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩
 
-/-- The Weil differential attached to `x` is the cotrace of the normalized differential on
-`k(X)` under the rational-function algebra structure induced by `X ↦ x`. -/
-theorem weilDifferentialOfSeparating_eq_weilDifferentialCotrace (hF : IsFunctionField k F)
-    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
-    letI := ratFuncAlgebraOfTranscendental hx
-    let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
-    let _ := isFunctionField_iff_functionField.mp hF
-    let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
-    weilDifferentialOfSeparating hF hx =
-      weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩ := by
-  rw [weilDifferentialOfSeparating]
-
 /-- The Weil differential `dx` attached to a separating element is nonzero. -/
 theorem weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
@@ -97,7 +84,7 @@ theorem weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
   let _ := isFunctionField_iff_functionField.mp hF
   let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
-  rw [weilDifferentialOfSeparating_eq_weilDifferentialCotrace, ne_eq,
+  rw [weilDifferentialOfSeparating, ne_eq,
     weilDifferentialCotrace_eq_zero_iff, Submodule.mk_eq_zero]
   exact ratFuncWeilDifferential_ne_zero k
 
@@ -147,6 +134,20 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self
   rw [← kaehlerBasisOfSeparating_apply hx (),
     kaehlerDifferentialEquivWeilDifferentialOfSeparating, Basis.equiv_apply]
   exact weilDifferentialBasisOfSeparating_apply hF hex hx ()
+
+/-- The inverse Kähler–Weil comparison sends the Weil differential attached to the chosen
+separating element back to its Kähler differential. -/
+@[simp]
+theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_symm_weilDifferentialOfSeparating
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    letI := weilDifferentialSpaceModule hF
+    (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm
+        (weilDifferentialOfSeparating hF hx) = D k F x := by
+  let _ := weilDifferentialSpaceModule hF
+  apply (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).injective
+  rw [LinearEquiv.apply_symm_apply,
+    kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self]
 
 /-- Under the Kähler–Weil comparison determined by `x`, the differential `dy` is
 `(dy/dx) dx`. -/

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import TauCeti.FieldTheory.RatFunc.Transcendental
