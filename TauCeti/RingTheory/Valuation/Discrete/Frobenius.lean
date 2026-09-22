@@ -24,8 +24,8 @@ characteristic.
 
 ## Main results
 
-* `TauCeti.Valuation.ord_iterateFrobenius`: the order of an iterated Frobenius image.
-* `TauCeti.Valuation.natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius`: membership in the
+* `Valuation.ord_iterateFrobenius`: the order of an iterated Frobenius image.
+* `Valuation.natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius`: membership in the
   `p ^ n`-power subfield forces divisibility of the order by `p ^ n`.
 
 ## References
@@ -37,7 +37,7 @@ public section
 
 open scoped WithZero
 
-namespace TauCeti.Valuation
+namespace Valuation
 
 universe u
 
@@ -62,6 +62,6 @@ theorem natCast_pow_dvd_ord_of_mem_fieldRange_iterateFrobenius (n : ℕ) {z : F}
   rw [ord_iterateFrobenius]
   exact dvd_mul_right _ _
 
-end TauCeti.Valuation
+end Valuation
 
 end
