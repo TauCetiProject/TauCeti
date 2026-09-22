@@ -75,7 +75,7 @@ omit [IsTopologicalRing A] in
 /-- The order on rational-subset indices is reverse inclusion of their underlying opens. -/
 @[simp]
 theorem rationalSubsetIndex_le_iff (U W : RationalSubsetIndex Aplus V) :
-    U ≤ W ↔ (OrderDual.ofDual W).1 ≤ (OrderDual.ofDual U).1 :=
+    U ≤ W ↔ ∀ x, x ∈ (OrderDual.ofDual W).1 → x ∈ (OrderDual.ofDual U).1 :=
   Iff.rfl
 
 /-- Forget an admissible presentation and retain the rational subset it presents. Refinement
