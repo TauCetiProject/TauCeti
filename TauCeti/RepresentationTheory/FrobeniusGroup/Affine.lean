@@ -13,11 +13,11 @@ public import TauCeti.RepresentationTheory.FrobeniusGroup.Basic
 /-!
 # Finite affine groups as Frobenius groups
 
-For a finite division ring `F` with at least three elements, the affine group `F ⋊ Fˣ` is a
-Frobenius group.  Its linear factor `Fˣ` is the Frobenius complement and its translations form
-the Frobenius kernel.  The general Frobenius theorem constructs the kernel from the complement
-alone; the main result here identifies that abstractly constructed subgroup with the visible
-translation factor.
+For a finite ring `F` without zero divisors, the translations form the Frobenius kernel associated
+to the linear factor.  When `F` is a division ring with at least three elements, its linear factor
+is a Frobenius complement, so the affine group `F ⋊ Fˣ` is a Frobenius group.  The general Frobenius
+theorem constructs the kernel from the complement alone; the main result here identifies that
+abstractly constructed subgroup with the visible translation factor.
 
 The specialization to `ZMod 5` gives the affine group of order twenty, with kernel of order
 five and complement of order four.
@@ -41,7 +41,7 @@ namespace TauCeti
 /-- The Frobenius kernel constructed from the linear factor of a finite affine group is exactly
 its translation subgroup. -/
 theorem frobeniusKernelSubgroup_affineLinearSubgroup
-    (F : Type*) [DivisionRing F] [Finite F] :
+    (F : Type*) [Ring F] [NoZeroDivisors F] [Finite F] :
     frobeniusKernelSubgroup (isTISubgroup_affineLinearSubgroup F) =
       affineTranslationSubgroup F :=
   frobeniusKernelSubgroup_eq_of_isComplement'
@@ -50,7 +50,7 @@ theorem frobeniusKernelSubgroup_affineLinearSubgroup
 
 /-- The Frobenius kernel of a finite affine group has `|F|` elements. -/
 theorem card_frobeniusKernelSubgroup_affineLinearSubgroup
-    (F : Type*) [DivisionRing F] [Finite F] :
+    (F : Type*) [Ring F] [NoZeroDivisors F] [Finite F] :
     Nat.card (frobeniusKernelSubgroup (isTISubgroup_affineLinearSubgroup F)) =
       Nat.card F := by
   rw [frobeniusKernelSubgroup_affineLinearSubgroup F,

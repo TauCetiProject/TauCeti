@@ -18,10 +18,10 @@ Mathlib's multiplicative semidirect product can be used directly.  An element `(
 `F` by `x ↦ b + a * x`.
 
 This file identifies the translation and linear-factor subgroups and proves that they are
-complementary, all over an arbitrary ring.  Over a division ring it computes the cardinalities of
-the two factors and verifies that every nonidentity linear factor acts without nonidentity fixed
-points on the translations.  Thus finite affine groups with at least three elements are
-Frobenius groups; their Frobenius kernels are identified in
+complementary, all over an arbitrary ring.  Over a ring without zero divisors, every nonidentity
+linear factor acts without nonidentity fixed points on the translations.  Over a division ring it
+also computes the cardinalities of the two factors.  Thus finite affine groups with at least three
+elements are Frobenius groups; their Frobenius kernels are identified in
 `TauCeti.RepresentationTheory.FrobeniusGroup.Affine`.
 
 ## Main definitions and results
@@ -146,7 +146,8 @@ theorem card_affineGroup (F : Type*) [DivisionRing F] :
 /-- A nonidentity element of the linear factor acts without nonidentity fixed points on the
 translation subgroup. -/
 theorem fixedPointFree_conjNormal_affineTranslationSubgroup
-    {F : Type*} [DivisionRing F] (h : affineLinearSubgroup F) (hh : h ≠ 1) :
+    {F : Type*} [Ring F] [NoZeroDivisors F]
+    (h : affineLinearSubgroup F) (hh : h ≠ 1) :
     MonoidHom.FixedPointFree
       (MulAut.conjNormal (h : AffineGroup F) : MulAut (affineTranslationSubgroup F)) := by
   rintro n hn
@@ -176,7 +177,7 @@ theorem fixedPointFree_conjNormal_affineTranslationSubgroup
 
 /-- The linear factor in an affine group is a trivial-intersection subgroup. -/
 theorem isTISubgroup_affineLinearSubgroup
-    (F : Type*) [DivisionRing F] :
+    (F : Type*) [Ring F] [NoZeroDivisors F] :
     IsTISubgroup (affineLinearSubgroup F) := by
   apply isTISubgroup_of_isComplement'_of_fixedPointFree
     (isComplement'_affineTranslationSubgroup_affineLinearSubgroup F)
