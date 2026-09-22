@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfCoordinates
 public import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!
 # Riemannian volume in a chart
@@ -64,12 +65,50 @@ local instance chartVolumeBorelSpaceE : BorelSpace E := ⟨rfl⟩
 /-- The manifold's measurable space is its Borel measurable space. -/
 local instance chartVolumeBorelSpaceM : BorelSpace M := ⟨rfl⟩
 
+/-- The coordinate density in a chart, extended measurably by zero off the chart target. -/
+private structure ChartVolumeDensityData (I : ModelWithCorners ℝ E H) (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (alpha : M) where
+  toFun : E → ℝ≥0∞
+  measurable_toFun : Measurable toFun
+  eq_on_target : Set.EqOn toFun
+    (fun y ↦ ENNReal.ofReal (chartVolumeDensity (I := I) alpha ((extChartAt I alpha).symm y)))
+    (extChartAt I alpha).target
+
+private def chartVolumeDensityData
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (alpha : M) :
+    ChartVolumeDensityData I M alpha := by
+  letI : IsManifold I (0 + 1) M := by
+    simpa using (inferInstance : IsManifold I 1 M)
+  letI : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
+    IsContinuousRiemannianBundle.toIsContMDiffZero
+  let target := (extChartAt I alpha).target
+  let density := fun y ↦
+    ENNReal.ofReal (chartVolumeDensity (I := I) alpha ((extChartAt I alpha).symm y))
+  have htarget : MeasurableSet target := by
+    simpa only [target, Set.range_domRestrict, PartialEquiv.image_source_eq_target] using
+      (measurableEmbedding_extChartAt_restrict (I := I) alpha).measurableSet_range
+  have hdensity : ContinuousOn density target := by
+    apply ENNReal.continuous_ofReal.comp_continuousOn
+    apply (contMDiffOn_chartVolumeDensity (I := I) (n := 0) alpha).continuousOn.comp
+      (continuousOn_extChartAt_symm alpha)
+    intro y hy
+    simpa only [TangentBundle.trivializationAt_baseSet, extChartAt_source,
+      PartialEquiv.symm_target] using
+      (extChartAt I alpha).symm.map_source hy
+  classical
+  refine
+    { toFun := target.piecewise density 0
+      measurable_toFun := hdensity.measurable_piecewise continuousOn_const htarget
+      eq_on_target := by
+        intro y hy
+        exact Set.piecewise_eq_of_mem _ _ _ hy }
+
 /-- The local Riemannian volume measure supplied by the preferred chart at `α`. It is supported
 on the source of that chart. -/
 def chartRiemannianVolume
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) : Measure M :=
-  (((Module.finBasis ℝ E).addHaar.withDensity fun y =>
-      ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))).comap
+  (((Module.finBasis ℝ E).addHaar.withDensity (chartVolumeDensityData (I := I) α).toFun).comap
         ((extChartAt I α).source.domRestrict (extChartAt I α))).map Subtype.val
 
 /-- A chart volume measure evaluates a measurable set by integrating the chart density over its
@@ -87,10 +126,15 @@ theorem chartRiemannianVolume_apply
       (extChartAt I α).source.domRestrict (extChartAt I α) '' Subtype.val ⁻¹' s =
         (extChartAt I α) '' (s ∩ (extChartAt I α).source) :=
     Set.image_domRestrict _ _ _
-  rw [hset, withDensity_apply]
-  rw [← hset]
-  exact (measurableEmbedding_extChartAt_restrict (I := I) α).measurableSet_image.mpr
-    (hs.preimage measurable_subtype_coe)
+  have himage : MeasurableSet ((extChartAt I α) '' (s ∩ (extChartAt I α).source)) := by
+    rw [← hset]
+    exact (measurableEmbedding_extChartAt_restrict (I := I) α).measurableSet_image.mpr
+      (hs.preimage measurable_subtype_coe)
+  rw [hset, withDensity_apply _ himage]
+  apply setLIntegral_congr_fun himage
+  intro y hy
+  exact (chartVolumeDensityData (I := I) α).eq_on_target
+    ((extChartAt I α).image_source_eq_target.subset (Set.image_mono inter_subset_right hy))
 
 /-- A chart volume measure is supported on the source of its chart. -/
 @[simp]
