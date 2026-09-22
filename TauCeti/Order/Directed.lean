@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Bounds.Basic
 public import Mathlib.Order.CompleteLattice.Basic
 public import Mathlib.Order.Directed
-public import Mathlib.Order.WellFounded
+public import Mathlib.Order.Minimal
 
 /-!
 # A directed family in a well-founded lattice attains its bound
@@ -36,11 +37,8 @@ Nonemptiness of the index is needed: over an empty index the infimum is `⊤` an
 it. -/
 theorem Directed.exists_eq_iInf {α : Type*} [CompleteLattice α] [WellFoundedLT α] {ι : Sort*}
     [Nonempty ι] {f : ι → α} (hf : Directed (· ≥ ·) f) : ∃ i, f i = ⨅ j, f j := by
-  obtain ⟨-, ⟨i, rfl⟩, hmin⟩ :=
-    (IsWellFounded.wf (r := (· < · : α → α → Prop))).has_min (Set.range f) (Set.range_nonempty f)
-  refine ⟨i, le_antisymm (le_iInf fun j ↦ ?_) (iInf_le _ _)⟩
-  -- Directedness supplies `f k` below both `f i` and `f j`; minimality identifies it with `f i`.
-  obtain ⟨k, hki, hkj⟩ := hf i j
-  rcases hki.lt_or_eq with hlt | heq
-  · exact absurd hlt (hmin (f k) ⟨k, rfl⟩)
-  · exact heq ▸ hkj
+  obtain ⟨a, hmin⟩ := exists_minimal_of_wellFoundedLT (· ∈ Set.range f) (Set.range_nonempty f)
+  obtain ⟨i, rfl⟩ := hmin.1
+  -- A minimal member of a downward-directed family is below every member of it.
+  exact ⟨i, le_antisymm (le_iInf fun j ↦ hf.directedOn_range.le_of_minimal hmin ⟨j, rfl⟩)
+    (iInf_le _ _)⟩

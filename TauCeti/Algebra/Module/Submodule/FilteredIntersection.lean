@@ -41,19 +41,11 @@ applicable.
 * `Submodule.exists_inf_eq_inf_iInf_of_antitone` and `Submodule.exists_inf_eq_bot_of_antitone`: for
   an antitone filtration indexed by a directed order the trace is *eventually* constant, not merely
   constant at one index.
-* `Submodule.exists_injective_mkQ_comp_of_directed`: the form the applications use — an embedding
+* `LinearMap.exists_mkQ_comp_injective_of_directed`: the form the applications use — an embedding
   of an Artinian module into `M` stays injective after passing to the quotient by a single member
   of a family whose infimum is `⊥`.
 * `Ideal.exists_inf_restrictScalars_pow_eq_bot`: the specialization to the powers of a
   (one- or two-sided) ideal of an algebra, viewed as submodules over the base ring.
-
-## References
-
-This is the reusable form of the separation step of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/AdoIwasawa/README.md`: "The descending subspaces
-`L ∩ (UC)^n` have zero intersection. Since `L` is finite-dimensional, one is zero. Make the
-stabilization argument a reusable lemma about a finite-dimensional subspace meeting a filtered
-intersection."
 -/
 
 public section
@@ -94,7 +86,7 @@ end Semiring
 section Antitone
 
 variable {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
-variable {ι : Type w} [SemilatticeSup ι] [Nonempty ι]
+variable {ι : Type w} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι]
 
 /-- **The trace of an antitone filtration on an Artinian submodule is eventually the trace of the
 intersection.**
@@ -105,7 +97,7 @@ theorem exists_inf_eq_inf_iInf_of_antitone (W : Submodule R M) [IsArtinian R W]
     (F : ι → Submodule R M) (hF : Antitone F) :
     ∃ i, ∀ j, i ≤ j → W ⊓ F j = W ⊓ ⨅ k, F k := by
   obtain ⟨i, hi⟩ := exists_inf_eq_inf_iInf_of_directed W F
-    fun j k ↦ ⟨j ⊔ k, hF le_sup_left, hF le_sup_right⟩
+    fun j k ↦ (exists_ge_ge j k).imp fun _ h ↦ ⟨hF h.1, hF h.2⟩
   refine ⟨i, fun j hij ↦ le_antisymm ?_ (inf_le_inf_left W (iInf_le F j))⟩
   exact hi ▸ inf_le_inf_left W (hF hij)
 
@@ -122,7 +114,9 @@ theorem exists_inf_eq_bot_of_antitone (W : Submodule R M) [IsArtinian R W]
 
 end Antitone
 
-section Ring
+end Submodule
+
+namespace LinearMap
 
 variable {R : Type u} {M : Type v} {N : Type w}
 variable [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -134,18 +128,16 @@ intersection is zero.**
 Applied to the canonical embedding of a finite-dimensional Lie algebra into its universal
 enveloping algebra, this is the statement that the algebra is separated by one finite stage of a
 filtration, which is how a faithful representation on a quotient is obtained. -/
-theorem exists_injective_mkQ_comp_of_directed [Nonempty ι] [IsArtinian R N] (f : N →ₗ[R] M)
+theorem exists_mkQ_comp_injective_of_directed [Nonempty ι] [IsArtinian R N] (f : N →ₗ[R] M)
     (hf : Function.Injective f) (F : ι → Submodule R M) (hF : Directed (· ≥ ·) F)
     (h : ⨅ j, F j = ⊥) : ∃ i, Function.Injective ((F i).mkQ ∘ₗ f) := by
-  obtain ⟨i, hi⟩ := Directed.exists_eq_iInf (f := fun j ↦ comap f (F j))
-    fun j k ↦ (hF j k).imp fun _ hl ↦ ⟨comap_mono hl.1, comap_mono hl.2⟩
-  refine ⟨i, LinearMap.ker_eq_bot.mp ?_⟩
-  rw [LinearMap.ker_comp, ker_mkQ, hi, ← comap_iInf, h, comap_bot]
-  exact LinearMap.ker_eq_bot.mpr hf
+  obtain ⟨i, hi⟩ := Directed.exists_eq_iInf (f := fun j ↦ Submodule.comap f (F j))
+    fun j k ↦ (hF j k).imp fun _ hl ↦ ⟨Submodule.comap_mono hl.1, Submodule.comap_mono hl.2⟩
+  refine ⟨i, ker_eq_bot.mp ?_⟩
+  rw [ker_comp, Submodule.ker_mkQ, hi, ← Submodule.comap_iInf, h, Submodule.comap_bot]
+  exact ker_eq_bot.mpr hf
 
-end Ring
-
-end Submodule
+end LinearMap
 
 namespace Ideal
 
@@ -158,7 +150,7 @@ No commutativity of `A` and no two-sidedness of `I` is needed: the powers of a l
 antitone, and the statement concerns their underlying `R`-submodules. This is the shape taken by
 the separation of a finite-dimensional Lie algebra from the powers of the central ideal of its
 universal enveloping algebra. -/
-theorem exists_inf_restrictScalars_pow_eq_bot (W : Submodule R A) [IsArtinian R W] (I : Ideal A)
+theorem exists_inf_restrictScalars_pow_eq_bot (I : Ideal A) (W : Submodule R A) [IsArtinian R W]
     (h : ⨅ n : ℕ, I ^ n = ⊥) :
     ∃ n : ℕ, ∀ m : ℕ, n ≤ m → W ⊓ (I ^ m).restrictScalars R = ⊥ := by
   refine Submodule.exists_inf_eq_bot_of_antitone W _
