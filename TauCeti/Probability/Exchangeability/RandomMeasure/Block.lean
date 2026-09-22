@@ -154,6 +154,22 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMargin
       measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
   simpa only [hcomp, Function.comp_def] using h
 
+/-- The canonical measurable codes of block marginals respect the restriction from a block of
+width `n * m` to one of its consecutive width-`m` subblocks.  This is the code-valued form of
+`ProbabilityMeasure.map_blockRestriction_blockMarginals_mul`, used when comparing the
+conditional-i.i.d. factorizations at different block widths. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.codedBlockMarginals_map_blockRestriction_mul
+    (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m]
+    [MeasurableSpace.CountablyGenerated (Fin (n * m) → α)]
+    [MeasurableSpace.CountablyGenerated (Fin m → α)] (i : ℕ) (r : Fin n) :
+    probabilityMeasureCode
+        ((@ProbabilityMeasure.blockMarginals α _ P (n * m)
+          ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
+            (blockRestriction (α := α) m n r)) =
+      probabilityMeasureCode (P.blockMarginals m (i * n + r)) := by
+  congr 1
+  exact P.map_blockRestriction_blockMarginals_mul m n i r
+
 /-- The permutation of path coordinates induced by permuting blocks and preserving the position
 inside each block. -/
 private def blockPerm (m : ℕ) [NeZero m] (τ : Equiv.Perm ℕ) : Equiv.Perm ℕ :=
