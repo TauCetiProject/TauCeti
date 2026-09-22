@@ -99,32 +99,6 @@ private theorem completeSquareInvBasis_liftHom_apply (a b c : R)
       ⟨x.re - b * x.imI, 2 * x.imI, x.imJ - b * x.imK, 2 * x.imK⟩ := by
   ext <;> simp [completeSquareInvBasis, _root_.QuaternionAlgebra.Basis.lift] <;> ring
 
-private theorem completeSquareBasis_lift_apply_i (a b c : R) :
-    (completeSquareBasis a b c).liftHom (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c]) =
-      ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ := by
-  simpa using completeSquareBasis_liftHom_apply a b c (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c])
-
-private theorem completeSquareBasis_lift_apply_j (a b c : R) :
-    (completeSquareBasis a b c).liftHom (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c]) =
-      ⟨0, 0, 1, 0⟩ := by
-  simpa using completeSquareBasis_liftHom_apply a b c (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])
-
-omit [Invertible (2 : R)] in
-private theorem completeSquareInvBasis_lift_apply_i (a b c : R) :
-    (completeSquareInvBasis a b c).liftHom
-        (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
-      ⟨-b, 2, 0, 0⟩ := by
-  simpa using completeSquareInvBasis_liftHom_apply a b c
-    (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
-
-omit [Invertible (2 : R)] in
-private theorem completeSquareInvBasis_lift_apply_j (a b c : R) :
-    (completeSquareInvBasis a b c).liftHom
-        (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c]) =
-      ⟨0, 0, 1, 0⟩ := by
-  simpa using completeSquareInvBasis_liftHom_apply a b c
-    (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
-
 /-- **Completing the square in a quaternion algebra.** The change of generators
 `i ↦ ⅟ 2 * (b + i)` identifies `ℍ[R,a,b,c]` with the zero-linear-term presentation
 `ℍ[R,QuadraticAlgebra.discr a b,0,c]`. -/
@@ -135,34 +109,51 @@ def completeSquareEquiv (a b c : R) :
       apply _root_.QuaternionAlgebra.hom_ext
       · -- Expose the standard generator before applying the two change-of-basis formulas.
         simp only [AlgHom.comp_apply, AlgHom.id_apply, _root_.QuaternionAlgebra.Basis.i_self]
-        rw [completeSquareInvBasis_lift_apply_i]
-        rw [completeSquareBasis_liftHom_apply]
+        rw [completeSquareInvBasis_liftHom_apply a b c
+          (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])]
+        simp only [zero_sub, mul_one, mul_zero, sub_zero]
+        rw [completeSquareBasis_liftHom_apply a b c (⟨-b, 2, 0, 0⟩ : ℍ[R,a,b,c])]
         ext <;> simp
       · -- The second generator is fixed by both changes of basis.
         simp only [AlgHom.comp_apply, AlgHom.id_apply, _root_.QuaternionAlgebra.Basis.j_self]
-        rw [completeSquareInvBasis_lift_apply_j, completeSquareBasis_lift_apply_j]) (by
+        rw [completeSquareInvBasis_liftHom_apply a b c
+          (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])]
+        simp only [mul_zero, sub_zero]
+        rw [completeSquareBasis_liftHom_apply a b c (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])]
+        ext <;> simp) (by
       apply _root_.QuaternionAlgebra.hom_ext
       · -- The inverse change sends the completed-square generator back to the original one.
         simp only [AlgHom.comp_apply, AlgHom.id_apply, _root_.QuaternionAlgebra.Basis.i_self]
-        rw [completeSquareBasis_lift_apply_i]
-        rw [completeSquareInvBasis_liftHom_apply]
+        rw [completeSquareBasis_liftHom_apply a b c (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c])]
+        simp only [zero_add, one_mul, zero_mul]
+        rw [completeSquareInvBasis_liftHom_apply a b c
+          (⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])]
         ext <;> simp only [mul_invOf_self', mul_zero, sub_self]
         all_goals ring
       · -- Both changes fix the second quaternion generator.
         simp only [AlgHom.comp_apply, AlgHom.id_apply, _root_.QuaternionAlgebra.Basis.j_self]
-        rw [completeSquareBasis_lift_apply_j, completeSquareInvBasis_lift_apply_j])
+        rw [completeSquareBasis_liftHom_apply a b c (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])]
+        simp only [zero_mul, add_zero]
+        rw [completeSquareInvBasis_liftHom_apply a b c
+          (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])]
+        ext <;> simp)
 
+/-- The image of the standard generator `i` under the completing-square equivalence. -/
 @[simp]
 theorem completeSquareEquiv_apply_i (a b c : R) :
     completeSquareEquiv a b c ⟨0, 1, 0, 0⟩ =
       ⟨⅟ (2 : R) * b, ⅟ (2 : R), 0, 0⟩ := by
-  simpa [completeSquareEquiv] using completeSquareBasis_lift_apply_i a b c
+  simpa [completeSquareEquiv] using
+    completeSquareBasis_liftHom_apply a b c (⟨0, 1, 0, 0⟩ : ℍ[R,a,b,c])
 
+/-- The image of the standard generator `j` under the completing-square equivalence. -/
 @[simp]
 theorem completeSquareEquiv_apply_j (a b c : R) :
     completeSquareEquiv a b c ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ := by
-  simpa [completeSquareEquiv] using completeSquareBasis_lift_apply_j a b c
+  simpa [completeSquareEquiv] using
+    completeSquareBasis_liftHom_apply a b c (⟨0, 0, 1, 0⟩ : ℍ[R,a,b,c])
 
+/-- The image of the standard generator `k` under the completing-square equivalence. -/
 @[simp]
 theorem completeSquareEquiv_apply_k (a b c : R) :
     completeSquareEquiv a b c ⟨0, 0, 0, 1⟩ =
@@ -170,16 +161,23 @@ theorem completeSquareEquiv_apply_k (a b c : R) :
   simpa [completeSquareEquiv] using
     completeSquareBasis_liftHom_apply a b c (⟨0, 0, 0, 1⟩ : ℍ[R,a,b,c])
 
+/-- The image of the standard generator `i` under the inverse completing-square equivalence. -/
 @[simp]
 theorem completeSquareEquiv_symm_apply_i (a b c : R) :
     (completeSquareEquiv a b c).symm ⟨0, 1, 0, 0⟩ = ⟨-b, 2, 0, 0⟩ := by
-  simpa [completeSquareEquiv] using completeSquareInvBasis_lift_apply_i a b c
+  simpa [completeSquareEquiv] using
+    completeSquareInvBasis_liftHom_apply a b c
+      (⟨0, 1, 0, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
 
+/-- The image of the standard generator `j` under the inverse completing-square equivalence. -/
 @[simp]
 theorem completeSquareEquiv_symm_apply_j (a b c : R) :
     (completeSquareEquiv a b c).symm ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ := by
-  simpa [completeSquareEquiv] using completeSquareInvBasis_lift_apply_j a b c
+  simpa [completeSquareEquiv] using
+    completeSquareInvBasis_liftHom_apply a b c
+      (⟨0, 0, 1, 0⟩ : ℍ[R,QuadraticAlgebra.discr a b,0,c])
 
+/-- The image of the standard generator `k` under the inverse completing-square equivalence. -/
 @[simp]
 theorem completeSquareEquiv_symm_apply_k (a b c : R) :
     (completeSquareEquiv a b c).symm ⟨0, 0, 0, 1⟩ = ⟨0, 0, -b, 2⟩ := by
