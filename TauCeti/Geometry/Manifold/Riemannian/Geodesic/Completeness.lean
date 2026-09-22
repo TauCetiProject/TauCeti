@@ -73,10 +73,9 @@ variable {p : M} {v : TangentSpace I p}
 the maximal geodesic from `p` with initial velocity `v` has velocity of norm `‖v‖`. -/
 theorem norm_curveVelocityWithin_maximalGeodesic {t : ℝ} (ht : t ∈ geodesicInterval I M p v) :
     ‖curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) t‖ = ‖v‖ := by
-  have h := isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
-  rw [h.isGeodesicCurveOn.norm_curveVelocityWithin_eq isPreconnected_geodesicInterval ht
-    zero_mem_geodesicInterval]
-  exact congrArg (fun z : TangentBundle I M ↦ ‖z.2‖) h.initial_eq
+  rw [curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds ht),
+    norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner,
+    inner_curveVelocity_maximalGeodesic_self ht]
 
 /-- **The length of a maximal geodesic is its speed times the elapsed time.**  Between two
 parameters of its maximal interval, the Riemannian length of the maximal geodesic from `p` with

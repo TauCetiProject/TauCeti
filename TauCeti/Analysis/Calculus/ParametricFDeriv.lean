@@ -33,6 +33,8 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `hasFDerivAt_timeSlice`: the spatial Jacobian differentiates the corresponding fixed-parameter
   slice.
 * `fderiv_timeSlice`: the derivative of a fixed-parameter slice is its spatial Jacobian.
+* `hasFDerivAt_timeFDeriv_mixed` and `deriv_parameterCurve_eventuallyEq_timeFDeriv`: derivatives
+  of the parameter velocity and its local description by derivatives of parameter curves.
 * `hasDerivAt_spatialFDeriv`: the spatial Jacobian differentiates to the spatial derivative of the
   parameter velocity.
 * `deriv_spatialFDeriv_apply`: the parameter derivative of the spatial Jacobian equals the
@@ -145,15 +147,28 @@ private theorem hasDerivAt_spatialFDeriv_apply_mixed {F : 𝕜 × E → F'}
     (hDF.comp_hasDerivAt t (hasFDerivAt_prodMk_left t x).hasDerivAt).clm_apply_const (0, w)
   simpa only [spatialFDeriv_apply, Function.comp_apply, ContinuousLinearMap.inl_apply] using hParam
 
-private theorem hasFDerivAt_timeFDeriv_mixed {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
-    (hF : ContDiffAt 𝕜 (minSmoothness 𝕜 2) F (t, x)) :
+/-- The parameter velocity has the spatial derivative obtained from the mixed second derivative. -/
+theorem hasFDerivAt_timeFDeriv_mixed {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
+    (hF : ContDiffAt 𝕜 2 F (t, x)) :
     HasFDerivAt (timeFDeriv F t)
       ((fderiv 𝕜 (fderiv 𝕜 F) (t, x) ∘L ContinuousLinearMap.inr 𝕜 𝕜 E).flip (1, 0)) x := by
   have hDF : HasFDerivAt (fderiv 𝕜 F) (fderiv 𝕜 (fderiv 𝕜 F) (t, x)) (t, x) :=
-    ContDiffAt.hasFDerivAt_fderiv hF le_minSmoothness
+    ContDiffAt.hasFDerivAt_fderiv hF le_rfl
   have hSpatial := (hDF.comp x (hasFDerivAt_prodMk_right t x)).clm_apply_const (1, 0)
   rw [timeFDeriv_eq]
   exact hSpatial
+
+/-- Near `x`, the derivative of each parameter curve is the parameter-velocity field. -/
+theorem deriv_parameterCurve_eventuallyEq_timeFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
+    (hF : ContDiffAt 𝕜 2 F (t, x)) :
+    (fun y ↦ _root_.deriv (fun s ↦ F (s, y)) t) =ᶠ[nhds x] timeFDeriv F t := by
+  obtain ⟨w, hw, hFw⟩ := hF.contDiffOn (m := 1) (by norm_num) (by simp)
+  have hdiff : ∀ᶠ z in nhds ((t, x) : 𝕜 × E), DifferentiableAt 𝕜 F z :=
+    (hFw.differentiableOn one_ne_zero).eventually_differentiableAt hw
+  have hsnd : ∀ᶠ y in nhds x, DifferentiableAt 𝕜 F (t, y) :=
+    (continuous_const.prodMk continuous_id).continuousAt.eventually hdiff
+  filter_upwards [hsnd] with y hy
+  exact (hasDerivAt_parameterCurve hy).deriv
 
 /-- At `t`, the spatial Jacobian has derivative the spatial derivative of the parameter velocity. -/
 theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
@@ -171,7 +186,7 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     apply ContinuousLinearMap.ext
     intro w
     have hParam := hasDerivAt_spatialFDeriv_apply_mixed hF (w := w)
-    have hSpatial := hasFDerivAt_timeFDeriv_mixed hF
+    have hSpatial := hasFDerivAt_timeFDeriv_mixed (hF.of_le le_minSmoothness)
     have hsymm := hF.isSymmSndFDerivAt le_rfl
     calc
       _ = _root_.deriv (fun s => spatialFDeriv F x s w) t := by
@@ -206,13 +221,9 @@ theorem deriv_deriv_comm {g : 𝕜 × 𝕜 → F'} {t x : 𝕜}
     (hgw.differentiableOn one_ne_zero).eventually_differentiableAt hw
   have hfst : ∀ᶠ s in 𝓝 t, DifferentiableAt 𝕜 g (s, x) :=
     (continuous_id.prodMk continuous_const).continuousAt.eventually hdiff
-  have hsnd : ∀ᶠ r in 𝓝 x, DifferentiableAt 𝕜 g (t, r) :=
-    (continuous_const.prodMk continuous_id).continuousAt.eventually hdiff
   have h₁ : (fun s => _root_.deriv (fun r => g (s, r)) x) =ᶠ[𝓝 t]
       fun s => spatialFDeriv g x s 1 := by
     filter_upwards [hfst] with s hs
     rw [← fderiv_timeSlice hs, fderiv_apply_one_eq_deriv]
-  have h₂ : (fun r => _root_.deriv (fun s => g (s, r)) t) =ᶠ[𝓝 x] timeFDeriv g t := by
-    filter_upwards [hsnd] with r hr
-    exact (hasDerivAt_parameterCurve hr).deriv
+  have h₂ := deriv_parameterCurve_eventuallyEq_timeFDeriv (hg.of_le le_minSmoothness)
   rw [h₁.deriv_eq, h₂.deriv_eq, deriv_spatialFDeriv_apply hg, fderiv_apply_one_eq_deriv]

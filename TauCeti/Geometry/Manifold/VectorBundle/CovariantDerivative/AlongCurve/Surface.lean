@@ -141,33 +141,35 @@ theorem alongCurveInChartWithin_curveVelocity_snd
     (hf.comp (v, u) (contMDiff_iff_contDiff.mpr
       (by fun_prop : ContDiff 𝕜 1 fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt) hx
 
-variable [IsManifold I (minSmoothness 𝕜 2) M]
+section
+
+variable [IsManifold I 2 M]
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I] in
 /-- The coordinate reading of the first-parameter velocity field of a sufficiently smooth
 parametrized surface is differentiable along the second-parameter curve. -/
 theorem differentiableAt_sectionCoord_curveVelocity_fst
-    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I (minSmoothness 𝕜 2)
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2
       (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v))
     (hx : f u v ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     DifferentiableAt 𝕜
       (sectionCoord (F := E) (f u) (fun r ↦ curveVelocity I (fun q ↦ f q r) u) x) v := by
   have hone : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 1 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v) :=
-    hf.of_le (le_trans (by norm_num) le_minSmoothness)
+    hf.of_le (by norm_num)
   have hcoord := sectionCoord_curveVelocity_fst_eventuallyEq hone hx
-  have hchart : ContDiffAt 𝕜 (minSmoothness 𝕜 2)
+  have hchart : ContDiffAt 𝕜 2
       (fun z : 𝕜 × 𝕜 ↦ extChartAt I x (f z.1 z.2)) (u, v) := by
     have hxsrc : f u v ∈ (chartAt H x).source := by
       rwa [TangentBundle.trivializationAt_baseSet] at hx
-    have hcomp : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) 𝓘(𝕜, E) (minSmoothness 𝕜 2)
+    have hcomp : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) 𝓘(𝕜, E) 2
         (extChartAt I x ∘ fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v) :=
-      (contMDiffAt_extChartAt' (I := I) (n := minSmoothness 𝕜 2) hxsrc).comp (u, v) hf
+      (contMDiffAt_extChartAt' (I := I) (n := 2) hxsrc).comp (u, v) hf
     rw [Function.comp_def] at hcomp
     exact contMDiffAt_iff_contDiffAt.mp hcomp
   have hDf : DifferentiableAt 𝕜 (fderiv 𝕜
       (fun z : 𝕜 × 𝕜 ↦ extChartAt I x (f z.1 z.2))) (u, v) :=
-    (ContDiffAt.hasFDerivAt_fderiv hchart le_minSmoothness).differentiableAt
+    (ContDiffAt.hasFDerivAt_fderiv hchart le_rfl).differentiableAt
   have hpartial : DifferentiableAt 𝕜
       (fun r ↦ fderiv 𝕜 (fun z : 𝕜 × 𝕜 ↦ extChartAt I x (f z.1 z.2))
         (u, r) ((1 : 𝕜), 0)) v := by
@@ -175,17 +177,8 @@ theorem differentiableAt_sectionCoord_curveVelocity_fst
   have heq : (fun r ↦ deriv (fun q ↦ extChartAt I x (f q r)) u) =ᶠ[nhds v]
       fun r ↦ fderiv 𝕜 (fun z : 𝕜 × 𝕜 ↦ extChartAt I x (f z.1 z.2))
         (u, r) ((1 : 𝕜), 0) := by
-    obtain ⟨s, hs, hgs⟩ :=
-      hchart.contDiffOn (m := 1) (le_trans (by norm_num) le_minSmoothness) (by simp)
-    have hdiff' : ∀ᶠ z in nhds (u, v), DifferentiableAt 𝕜
-        (fun z : 𝕜 × 𝕜 ↦ extChartAt I x (f z.1 z.2)) z :=
-      (hgs.differentiableOn one_ne_zero).eventually_differentiableAt hs
-    have hdiff : ∀ᶠ r in nhds v, DifferentiableAt 𝕜
-        (fun z : 𝕜 × 𝕜 ↦ extChartAt I x (f z.1 z.2)) (u, r) :=
-      (continuous_const.prodMk continuous_id).continuousAt.eventually hdiff'
-    filter_upwards [hdiff] with r hr
-    simpa only [timeFDeriv_apply, Function.comp_def, ContinuousLinearMap.inl_apply] using
-      (hasDerivAt_parameterCurve hr).deriv
+    simpa only [timeFDeriv_eq] using
+      deriv_parameterCurve_eventuallyEq_timeFDeriv hchart
   exact (hpartial.congr_of_eventuallyEq heq).congr_of_eventuallyEq hcoord
 
 omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
@@ -193,7 +186,7 @@ omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 /-- The coordinate reading of the second-parameter velocity field of a sufficiently smooth
 parametrized surface is differentiable along the first-parameter curve. -/
 theorem differentiableAt_sectionCoord_curveVelocity_snd
-    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I (minSmoothness 𝕜 2)
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 2
       (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v))
     (hx : f u v ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     DifferentiableAt 𝕜 (sectionCoord (F := E) (fun q ↦ f q v)
@@ -201,7 +194,11 @@ theorem differentiableAt_sectionCoord_curveVelocity_snd
   differentiableAt_sectionCoord_curveVelocity_fst (f := fun a b ↦ f b a)
     (u := v) (v := u) (x := x)
     (hf.comp (v, u) (contMDiff_iff_contDiff.mpr
-      (by fun_prop : ContDiff 𝕜 (minSmoothness 𝕜 2) fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt) hx
+      (by fun_prop : ContDiff 𝕜 2 fun z : 𝕜 × 𝕜 ↦ (z.2, z.1))).contMDiffAt) hx
+
+end
+
+variable [IsManifold I (minSmoothness 𝕜 2) M]
 
 /-- **The symmetry lemma.**  For a torsion-free connection and a parametrized surface `f` which is
 smooth enough at `(u, v)` for its chart reading to have a symmetric second derivative, the

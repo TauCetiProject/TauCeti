@@ -58,61 +58,6 @@ variable [FiniteDimensional ℝ E]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-omit [FiniteDimensional ℝ E]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-private theorem curveVelocity_comp_apply
-    {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace ℝ F₀]
-    {f : F₀ → M} {g : ℝ → F₀} {t : ℝ} {w : F₀}
-    (hf : MDifferentiableAt 𝓘(ℝ, F₀) I f (g t))
-    (hg : HasDerivAt g w t) :
-    curveVelocity I (f ∘ g) t = mfderiv 𝓘(ℝ, F₀) I f (g t) w := by
-  have hcomp := hf.hasMFDerivAt.comp t hg.hasFDerivAt.hasMFDerivAt
-  have hwithin : curveVelocityWithin I (f ∘ g) univ t =
-      mfderiv 𝓘(ℝ, F₀) I f (g t) w := by
-    apply curveVelocityWithin_eq_of_hasMFDerivWithinAt
-      (w := mfderiv 𝓘(ℝ, F₀) I f (g t) w) _ uniqueDiffWithinAt_univ
-    apply hcomp.hasMFDerivWithinAt.congr_mfderiv
-    apply ContinuousLinearMap.ext
-    intro z
-    -- The source model of a real curve is one-dimensional; exposing its scalar coordinate lets
-    -- linearity identify the derivative on `z` with its value on `1`.
-    change mfderiv 𝓘(ℝ, F₀) I f (g t) ((show ℝ from z) • w) =
-      (show ℝ from z) • mfderiv 𝓘(ℝ, F₀) I f (g t) w
-    exact map_smul _ _ _
-  simpa only [curveVelocityWithin_univ] using hwithin
-
-private theorem curveVelocity_riemannianExp_affine
-    [I.Boundaryless] [T2Space (TangentBundle I M)]
-    {p : M} {v w : TangentSpace I p} (hv : v ∈ expDomain I M p) :
-    curveVelocity I (fun u : ℝ ↦ riemannianExp I M p (v + u • w)) 0 =
-      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w := by
-  have hg : HasDerivAt (fun u : ℝ ↦ v + u • w) w 0 := by
-    simpa using (hasDerivAt_id (0 : ℝ)).smul_const w |>.const_add v
-  have h := curveVelocity_comp_apply (f := riemannianExp I M p)
-    (g := fun u : ℝ ↦ v + u • w)
-    (by simpa using
-      (contMDiffAt_riemannianExp (I := I) (M := M) hv).mdifferentiableAt (by simp))
-    hg
-  have hzero : v + (0 : ℝ) • w = v := by simp
-  rw [hzero] at h
-  exact h
-
-private theorem curveVelocity_riemannianExp_ray
-    [I.Boundaryless] [T2Space (TangentBundle I M)]
-    {p : M} {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
-    curveVelocity I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 1 =
-      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
-  have hg : HasDerivAt (fun t : ℝ ↦ t • v) v 1 := by
-    simpa only [id_eq, one_smul] using (hasDerivAt_id (1 : ℝ)).smul_const v
-  have h := curveVelocity_comp_apply (f := riemannianExp I M p)
-    (g := fun t : ℝ ↦ t • v)
-    (by simpa using
-      (contMDiffAt_riemannianExp (I := I) (M := M) hv).mdifferentiableAt (by simp))
-    hg
-  rw [one_smul] at h
-  exact h
-
 /-- **The Gauss lemma.** The differential of the Riemannian exponential map preserves the inner
 product with the radial direction at every vector in its natural domain. -/
 theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
@@ -139,36 +84,20 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
   have hF_eq_maximal (u : ℝ) :
       F u = maximalGeodesic I M p (v + u • w) := by
     funext t
-    by_cases ht : t ∈ geodesicInterval I M p (v + u • w)
-    · exact riemannianExp_smul ht
-    · dsimp only [F]
-      rw [riemannianExp_of_notMem_expDomain
-          (mt mem_geodesicInterval_iff_smul_mem_expDomain.mpr ht),
-        maximalGeodesic_eq_of_not_mem ht]
+    exact riemannianExp_smul_eq_maximalGeodesic p (v + u • w) t
   have haccel {u t : ℝ} (ht : t ∈ geodesicInterval I M p (v + u • w)) :
       alongCurve cov (F u) (curveVelocity I (F u)) t = 0 := by
-    rw [hF_eq_maximal u, ← alongCurveWithin_curveVelocityWithin_of_isOpen cov
-      (maximalGeodesic I M p (v + u • w)) isOpen_geodesicInterval ht]
-    exact (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p (v + u • w))
-      |>.isGeodesicCurveOn.alongCurveWithin_curveVelocityWithin_eq_zero t ht
+    rw [hF_eq_maximal u]
+    exact alongCurve_curveVelocity_maximalGeodesic_eq_zero ht
   have hspeed {u t : ℝ} (ht : t ∈ geodesicInterval I M p (v + u • w)) :
       inner ℝ (P u t) (P u t) = inner ℝ (v + u • w) (v + u • w) := by
-    have hgeo := isGeodesicCurveOnFrom_maximalGeodesic
-      (I := I) (M := M) p (v + u • w)
-    have hsquared := hgeo.isGeodesicCurveOn.inner_curveVelocityWithin_self_eq
-      isPreconnected_geodesicInterval ht zero_mem_geodesicInterval
-    have ht_nhds := isOpen_geodesicInterval.mem_nhds ht
-    have hzero_nhds := isOpen_geodesicInterval.mem_nhds
-      (zero_mem_geodesicInterval (I := I) (M := M) (p := p) (v := v + u • w))
-    rw [curveVelocityWithin_of_mem_nhds ht_nhds,
-      curveVelocityWithin_of_mem_nhds hzero_nhds] at hsquared
-    have hinitial := congrArg (fun z : TangentBundle I M ↦ inner ℝ z.2 z.2) hgeo.initial_eq
-    rw [curveVelocityWithin_of_mem_nhds hzero_nhds] at hinitial
     dsimp only [P]
     rw [hF_eq_maximal u]
-    exact hsquared.trans hinitial
+    exact inner_curveVelocity_maximalGeodesic_self ht
   have hIcc : Icc (0 : ℝ) 1 ⊆ geodesicInterval I M p v :=
     ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.mp hv)
+  -- Metric compatibility and symmetry of mixed covariant derivatives compute the derivative of
+  -- `⟨∂ᵤ F, ∂ₜ F⟩` along each radial geodesic.
   have hmain : ∀ t ∈ Icc (0 : ℝ) 1,
       HasDerivAt (fun r ↦ inner ℝ (Q r 0) (P 0 r)) (inner ℝ v w) t := by
     intro t ht
@@ -183,20 +112,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
       have hfield := CovariantDerivative.differentiableAt_sectionCoord_curveVelocity_snd
         (f := F) (hsurface.of_le (by simp)) hbase
       have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) 0 :=
-        by
-          have hinput : ContMDiffAt 𝓘(ℝ, ℝ) 𝓘(ℝ, TangentSpace I p) ∞
-              (fun q : ℝ ↦ t • (v + q • w)) 0 :=
-            (contMDiff_iff_contDiff.mpr
-              (by fun_prop : ContDiff ℝ ∞ (fun q : ℝ ↦ t • (v + q • w)))).contMDiffAt
-          have hzeroExp : t • (v + (0 : ℝ) • w) ∈ expDomain I M p := by
-            simpa using htExp
-          have hs : ContMDiffAt 𝓘(ℝ, ℝ) I ∞
-              (fun q : ℝ ↦ riemannianExp I M p (t • (v + q • w))) 0 :=
-            (contMDiffAt_riemannianExp (I := I) (M := M) hzeroExp).comp 0 hinput
-          -- Unfold the local name `F` so the exponential-map chain rule has the expected curve.
-          change MDifferentiableAt 𝓘(ℝ, ℝ) I
-            (fun q : ℝ ↦ riemannianExp I M p (t • (v + q • w))) 0
-          exact hs.mdifferentiableAt (by simp)
+        (hsurface.comp 0 (contMDiff_iff_contDiff.mpr
+          (contDiff_prodMk_left (n := ∞) t)).contMDiffAt).mdifferentiableAt (by simp)
       have hmetric := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
       have hleft := hmetric.hasDerivAt_inner_alongCurve hcurve hfield hfield
       have hnear : ∀ᶠ u in nhds (0 : ℝ),
@@ -233,19 +150,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
           |>.isGeodesicCurveOn.contMDiffOn.congr fun r _ ↦ congrFun hFzero r)
         isOpen_geodesicInterval htJ
     have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (F 0) t :=
-      by
-        have hinput : ContMDiffAt 𝓘(ℝ, ℝ) 𝓘(ℝ, TangentSpace I p) ∞
-            (fun r : ℝ ↦ r • v) t :=
-          (contMDiff_iff_contDiff.mpr
-            (by fun_prop : ContDiff ℝ ∞ (fun r : ℝ ↦ r • v))).contMDiffAt
-        have hs : ContMDiffAt 𝓘(ℝ, ℝ) I ∞
-            (fun r ↦ riemannianExp I M p (r • v)) t :=
-          (contMDiffAt_riemannianExp (I := I) (M := M) htExp).comp t hinput
-        have hFzero : F 0 = fun r : ℝ ↦ riemannianExp I M p (r • v) := by
-          funext r
-          simp only [F, zero_smul, add_zero]
-        rw [hFzero]
-        exact hs.mdifferentiableAt (by simp)
+      (hsurface.comp t (contMDiff_iff_contDiff.mpr
+        (contDiff_prodMk_right (n := ∞) 0)).contMDiffAt).mdifferentiableAt (by simp)
     have hprod := (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
       |>.hasDerivAt_inner_alongCurve hcurve hQcoord hPcoord
     have hswap := CovariantDerivative.alongCurve_curveVelocity_comm cov
@@ -264,6 +170,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
       rw [hfun, curveVelocity_const]
       rfl
     rw [hQzero, inner_zero_left]
+  -- The preceding derivative identity makes `⟨∂ᵤ F, ∂ₜ F⟩ - t ⟨v,w⟩` constant on
+  -- `[0,1]`; its value at zero is zero.
   have hconst : ∀ t ∈ Icc (0 : ℝ) 1,
       inner ℝ (Q t 0) (P 0 t) - t * inner ℝ v w = 0 := by
     let g : ℝ → ℝ := fun t ↦ inner ℝ (Q t 0) (P 0 t) - t * inner ℝ v w
@@ -286,6 +194,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     have hgt := constant_of_has_deriv_right_zero hcont hderiv t ht
     have hg0 : g 0 = 0 := by simp only [g, hzero, zero_mul, sub_zero]
     rwa [hg0] at hgt
+  -- Evaluate the constant identity at one and identify both velocities with differentials of
+  -- the exponential map.
   have hone := hconst 1 (by simp)
   have hPone : P 0 1 =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
