@@ -89,10 +89,11 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 /-- Applying the discrete coefficient dictionary to the carrier of `trivialF2` recovers the
 coefficient object itself.
 
-This specialization bridges an instance mismatch hidden by the opaque definition: the explicit
-cohomology comparison uses `AddCommGroup.toIntModule`, while `ofDiscreteModule_eq_self` uses the
-module structure stored in `trivialF2`. These structures are definitionally equal here, where the
-body of `trivialF2` is visible, but not at downstream use sites. -/
+Comparisons between explicit cocycle groups and continuous cohomology are stated for the
+coefficient object `ofDiscreteModule ℤ G M` attached to a discrete module `M`. Taking
+`M := (trivialF2 G).V`, this equality identifies that object with `trivialF2 G`, so such a
+comparison carries a class computed from explicit cochains into continuous cohomology with
+trivial `𝔽₂` coefficients. -/
 @[simp]
 theorem ofDiscreteModule_trivialF2 :
     ofDiscreteModule ℤ G (trivialF2 G).V = trivialF2 G :=
