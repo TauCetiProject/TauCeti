@@ -42,7 +42,7 @@ noncomputable def genusChar (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscrimin
   genusCharAtLevel s hs Finset.univ
 
 /-- The character indexed by the whole family is the genus character of that family. -/
-theorem genusCharAtLevel_univ (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
+@[simp] theorem genusCharAtLevel_univ (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
     genusCharAtLevel s hs Finset.univ = genusChar s hs := (rfl)
 
 /-- The expression for `genusChar` in terms of prime-discriminant characters at a common level. -/
