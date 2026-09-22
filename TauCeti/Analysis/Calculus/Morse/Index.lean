@@ -99,6 +99,16 @@ theorem hessianQuadraticForm_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hessianQuadraticForm f x = hessianQuadraticForm g x := by
   rw [hessianQuadraticForm, hessianQuadraticForm, hfg.fderiv.fderiv_eq]
 
+/-- Negating a function negates its Hessian quadratic form. -/
+@[simp]
+theorem hessianQuadraticForm_neg (f : E → ℝ) (x : E) :
+    hessianQuadraticForm (-f) x = -hessianQuadraticForm f x := by
+  ext v
+  have hfd : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
+  simp only [hessianQuadraticForm_apply, neg_apply]
+  rw [hfd, fderiv_neg]
+  rfl
+
 /-- At a critical point the Hessian quadratic form pulls back along the derivative of a `C²`
 change of variables. -/
 theorem hessianQuadraticForm_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
@@ -161,6 +171,14 @@ theorem IsNondegenerateCriticalPoint.sigPos_hessianQuadraticForm_add_morseIndex_
     (Q := hessianQuadraticForm f x)
   rw [h.hessianQuadraticForm_nondegenerate.radical_eq_bot, finrank_bot, add_zero] at hsig
   simpa only [morseIndex_def] using hsig
+
+/-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
+the dimension of the ambient space. -/
+theorem IsNondegenerateCriticalPoint.morseIndex_neg_add_morseIndex_eq_finrank
+    [FiniteDimensional ℝ E] (h : IsNondegenerateCriticalPoint f x) :
+    morseIndex (-f) x + morseIndex f x = Module.finrank ℝ E := by
+  simpa only [morseIndex_def, hessianQuadraticForm_neg, sigNeg_neg] using
+    h.sigPos_hessianQuadraticForm_add_morseIndex_eq_finrank
 
 /-- At a nondegenerate critical point, the Hessian is positive-definite exactly when the Morse
 index is zero. -/
