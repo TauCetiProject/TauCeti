@@ -62,14 +62,16 @@ variable {p : ℕ} {X Y Z : Type u}
 
 /-- The canonical continuous quotient map from the free profinite group to the free pro-`p`
 group. -/
-@[expose] noncomputable def fromFreeProfiniteGroup (p : ℕ) (X : Type u) :
-    freeProfiniteGroup X →ₜ* freeProP p X :=
-  ⟨maximalProPQuotient.mk p (freeProfiniteGroup X), maximalProPQuotient.continuous_mk p _⟩
+noncomputable def fromFreeProfiniteGroup : (p : ℕ) → (X : Type u) →
+    freeProfiniteGroup X →ₜ* freeProP p X
+  | p, X =>
+    ⟨maximalProPQuotient.mk p (freeProfiniteGroup X), maximalProPQuotient.continuous_mk p _⟩
 
 /-- Evaluation of the canonical quotient map agrees with the underlying quotient homomorphism. -/
 theorem fromFreeProfiniteGroup_apply (p : ℕ) (X : Type u) (x : freeProfiniteGroup X) :
     fromFreeProfiniteGroup p X x = maximalProPQuotient.mk p (freeProfiniteGroup X) x :=
-  rfl
+  congrArg (fun f : freeProfiniteGroup X →ₜ* freeProP p X ↦ f x)
+    (fromFreeProfiniteGroup.eq_1 p X)
 
 /-- The canonical map from the generating type into the free pro-`p` group. -/
 noncomputable def of (x : X) : freeProP p X :=

@@ -70,15 +70,17 @@ variable {C : FiniteGroupClass.{w}} {X Y Z : Type u}
 
 /-- The canonical continuous quotient map from the free profinite group to the free pro-`C`
 group. -/
-@[expose] noncomputable def fromFreeProfiniteGroup (C : FiniteGroupClass.{w}) (X : Type u) :
-    freeProfiniteGroup X →ₜ* freeProC C X :=
-  ⟨proCCompletion.mk C (freeProfiniteGroup X), proCCompletion.continuous_mk C _⟩
+noncomputable def fromFreeProfiniteGroup : (C : FiniteGroupClass.{w}) → (X : Type u) →
+    freeProfiniteGroup X →ₜ* freeProC C X
+  | C, X =>
+    ⟨proCCompletion.mk C (freeProfiniteGroup X), proCCompletion.continuous_mk C _⟩
 
 /-- Evaluation of the canonical quotient map agrees with the underlying quotient homomorphism. -/
 theorem fromFreeProfiniteGroup_apply (C : FiniteGroupClass.{w}) (X : Type u)
     (x : freeProfiniteGroup X) :
     fromFreeProfiniteGroup C X x = proCCompletion.mk C (freeProfiniteGroup X) x :=
-  rfl
+  congrArg (fun f : freeProfiniteGroup X →ₜ* freeProC C X ↦ f x)
+    (fromFreeProfiniteGroup.eq_1 C X)
 
 /-- The canonical map from the generating type into the free pro-`C` group. -/
 noncomputable def of (x : X) : freeProC C X :=
