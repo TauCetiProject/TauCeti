@@ -185,7 +185,7 @@ def ofSwapColumns (x : GridState n) (j : Fin n) (hj : j ≠ finRotate n a)
 
 /-- Regard a rectangle between possibly different endpoint states as a pentagon when its
 underlying toroidal rectangle agrees with that of an existing pentagon. -/
-def ofToGridRectangle_eq {u v : GridState n} (r : GridRectangleBetween u v)
+def ofToGridRectangleEq {u v : GridState n} (r : GridRectangleBetween u v)
     (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
     GridPentagonBetween a s u v where
   toGridRectangleBetween := r
@@ -202,38 +202,13 @@ def ofToGridRectangle_eq {u v : GridState n} (r : GridRectangleBetween u v)
       exact P.turn_mem
     simpa only [GridRectangleBetween.bottom, GridRectangleBetween.top] using hs
 
-/-- The rectangle underlying `ofToGridRectangle_eq` is the supplied rectangle. -/
+/-- The rectangle underlying `ofToGridRectangleEq` is the supplied rectangle. -/
 @[simp]
-theorem ofToGridRectangle_eq_toGridRectangleBetween {u v : GridState n}
+theorem ofToGridRectangleEq_toGridRectangleBetween {u v : GridState n}
     (r : GridRectangleBetween u v) (P : GridPentagonBetween a s x y)
     (h : r.toGridRectangle = P.toGridRectangle) :
-    (ofToGridRectangle_eq r P h).toGridRectangleBetween = r := by
-  unfold ofToGridRectangle_eq
-  rfl
-
-/-- The initial side of `ofToGridRectangle_eq` is that of the supplied rectangle. -/
-@[simp]
-theorem ofToGridRectangle_eq_left {u v : GridState n} (r : GridRectangleBetween u v)
-    (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
-    (ofToGridRectangle_eq r P h).left = r.left := by
-  unfold ofToGridRectangle_eq
-  rfl
-
-/-- The terminal side of `ofToGridRectangle_eq` is that of the supplied rectangle. -/
-@[simp]
-theorem ofToGridRectangle_eq_right {u v : GridState n} (r : GridRectangleBetween u v)
-    (P : GridPentagonBetween a s x y) (h : r.toGridRectangle = P.toGridRectangle) :
-    (ofToGridRectangle_eq r P h).right = r.right := by
-  unfold ofToGridRectangle_eq
-  rfl
-
-/-- `ofToGridRectangle_eq` preserves emptiness of the supplied rectangle. -/
-@[simp]
-theorem ofToGridRectangle_eq_isEmpty_iff {u v : GridState n}
-    (r : GridRectangleBetween u v) (P : GridPentagonBetween a s x y)
-    (h : r.toGridRectangle = P.toGridRectangle) :
-    (ofToGridRectangle_eq r P h).IsEmpty ↔ r.IsEmpty := by
-  unfold ofToGridRectangle_eq
+    (ofToGridRectangleEq r P h).toGridRectangleBetween = r := by
+  unfold ofToGridRectangleEq
   rfl
 
 /-- The initial side of the pentagon built from a column swap. -/

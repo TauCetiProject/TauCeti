@@ -230,7 +230,7 @@ theorem hasDisjointSides_iff (D : GridRectanglePentagonDecomposition a s x z) :
 def commute (D : GridRectanglePentagonDecomposition a s x z) (h : D.HasDisjointSides) :
     GridPentagonRectangleDecomposition a s x z where
   middle := (D.toRectangleDecomposition.commute (D.hasDisjointSides_def.mp h)).middle
-  pentagon := GridPentagonBetween.ofToGridRectangle_eq
+  pentagon := GridPentagonBetween.ofToGridRectangleEq
     (D.toRectangleDecomposition.commute (D.hasDisjointSides_def.mp h)).first D.pentagon
       ((D.toRectangleDecomposition.commute_first_toGridRectangle
         (D.hasDisjointSides_def.mp h)).trans D.toRectangleDecomposition_second_toGridRectangle)
@@ -245,10 +245,10 @@ theorem commute_toRectangleDecomposition (D : GridRectanglePentagonDecomposition
       D.toRectangleDecomposition.commute (D.hasDisjointSides_def.mp h) := by
   apply GridRectangleDecomposition.ext
   · simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
-      commute, GridPentagonBetween.ofToGridRectangle_eq_left,
+      commute, GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween,
       GridRectangleDecomposition.commute_first_left, toRectangleDecomposition_second_left]
   · simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
-      commute, GridPentagonBetween.ofToGridRectangle_eq_right,
+      commute, GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween,
       GridRectangleDecomposition.commute_first_right, toRectangleDecomposition_second_right]
   · simp only [GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
       commute, GridRectangleDecomposition.commute_second_left,
@@ -338,7 +338,7 @@ private theorem isEmpty_commute_pentagon
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     (D.commute h).pentagon.IsEmpty := by
   unfold commute
-  rw [GridPentagonBetween.ofToGridRectangle_eq_isEmpty_iff]
+  simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
     hrectangle hpentagon
 
@@ -374,7 +374,7 @@ def commute (D : GridPentagonRectangleDecomposition a s x z) (h : D.HasDisjointS
     GridRectanglePentagonDecomposition a s x z where
   middle := (D.toRectangleDecomposition.commute (D.hasDisjointSides_def.mp h)).middle
   rectangle := (D.toRectangleDecomposition.commute (D.hasDisjointSides_def.mp h)).first
-  pentagon := GridPentagonBetween.ofToGridRectangle_eq
+  pentagon := GridPentagonBetween.ofToGridRectangleEq
     (D.toRectangleDecomposition.commute (D.hasDisjointSides_def.mp h)).second D.pentagon
       ((D.toRectangleDecomposition.commute_second_toGridRectangle
         (D.hasDisjointSides_def.mp h)).trans D.toRectangleDecomposition_first_toGridRectangle)
@@ -394,10 +394,10 @@ theorem commute_toRectangleDecomposition (D : GridPentagonRectangleDecomposition
       commute, GridRectangleDecomposition.commute_first_right,
       toRectangleDecomposition_second_right]
   · simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left,
-      commute, GridPentagonBetween.ofToGridRectangle_eq_left,
+      commute, GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween,
       GridRectangleDecomposition.commute_second_left, toRectangleDecomposition_first_left]
   · simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_second_right,
-      commute, GridPentagonBetween.ofToGridRectangle_eq_right,
+      commute, GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween,
       GridRectangleDecomposition.commute_second_right, toRectangleDecomposition_first_right]
 
 /-- The initial side of the reordered rectangle. -/
@@ -489,7 +489,7 @@ private theorem isEmpty_commute_pentagon
     (hpentagon : D.pentagon.IsEmpty) (hrectangle : D.rectangle.IsEmpty) :
     (D.commute h).pentagon.IsEmpty := by
   unfold commute
-  rw [GridPentagonBetween.ofToGridRectangle_eq_isEmpty_iff]
+  simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_second (D.hasDisjointSides_def.mp h)
     hpentagon hrectangle
 
