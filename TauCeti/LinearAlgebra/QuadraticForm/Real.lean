@@ -39,9 +39,9 @@ to the normal form of its own signature.
   inertia agree.
 * `QuadraticForm.equivalent_iff_sigPos_eq_and_sigNeg_eq`: two nondegenerate real quadratic forms
   are isometric exactly when their signatures agree.
-* `QuadraticForm.realSignatureForm` and
+* `QuadraticForm.realSignatureForm`, `QuadraticForm.realSignatureForm_def`, and
   `QuadraticForm.equivalent_realSignatureForm_weightedSumSquares`: the normal form of signature
-  `(p, q)`, and its diagonalization over `Fin (p + q)`.
+  `(p, q)`, its defining weighted sum, and its diagonalization over `Fin (p + q)`.
 * `QuadraticForm.sigPos_realSignatureForm`, `QuadraticForm.sigNeg_realSignatureForm` and
   `QuadraticForm.nondegenerate_realSignatureForm`: every signature is realized by a regular form.
 * `QuadraticForm.equivalent_realSignatureForm`: a regular real quadratic form is isometric to the
@@ -116,8 +116,7 @@ private theorem equivalent_weightedSumSquares_of_ncard_fiber_eq (u : ι → Sign
   have hcomp : (fun i' ↦ ((u' i' : ℝ))) ∘ σ = fun i ↦ ((u i : ℝ)) := by
     funext i
     exact congrArg (fun s : SignType ↦ ((s : ℝ))) (hσ i)
-  exact ⟨((isometryEquivWeightedSumSquaresReindex (R := ℝ) (fun i' ↦ ((u' i' : ℝ))) σ).trans
-    (weightedSumSquaresCongr hcomp)).symm⟩
+  exact equivalent_weightedSumSquares_of_comp_eq σ hcomp
 
 end Fibers
 
@@ -170,19 +169,26 @@ copies of `⟨-1⟩`. -/
 def realSignatureForm (p q : ℕ) : _root_.QuadraticForm ℝ (Fin p ⊕ Fin q → ℝ) :=
   weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1)
 
+/-- The normal form is definitionally the weighted sum with `p` positive and `q` negative
+weights. -/
+theorem realSignatureForm_def (p q : ℕ) :
+    realSignatureForm p q =
+      weightedSumSquares ℝ (Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1) :=
+  (rfl)
+
 /-- The normal form of signature `(p, q)` has a diagonalization over `Fin (p + q)` whose first
 `p` weights are `1` and whose remaining `q` weights are `-1`. -/
 theorem equivalent_realSignatureForm_weightedSumSquares (p q : ℕ) :
     (realSignatureForm p q).Equivalent
       (weightedSumSquares ℝ fun i : Fin (p + q) ↦
-        if (i : ℕ) < p then (1 : ℝ) else (-1 : ℝ)) := by
-  have hweight : (fun i : Fin (p + q) ↦ if (i : ℕ) < p then (1 : ℝ) else -1) ∘
+        ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) := by
+  have hweight : (fun i : Fin (p + q) ↦
+      ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) ∘
       finSumFinEquiv = Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
     funext x
     cases x <;> simp
-  rw [realSignatureForm]
-  exact ⟨((isometryEquivWeightedSumSquaresReindex (R := ℝ) _ finSumFinEquiv).trans
-    (weightedSumSquaresCongr hweight)).symm⟩
+  rw [realSignatureForm_def]
+  exact equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv hweight
 
 @[simp]
 theorem realSignatureForm_apply (p q : ℕ) (x : Fin p ⊕ Fin q → ℝ) :

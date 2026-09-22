@@ -175,18 +175,6 @@ theorem _root_.QuadraticMap.Equivalent.atRealPlace {W : Type v'} [AddCommGroup W
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   simpa only [atRealPlace_def] using h.baseChange ℝ
 
-/-- A global isometry of quadratic forms stays an isometry after scalar extension through a
-complex embedding. -/
-theorem _root_.QuadraticMap.Equivalent.atComplexEmbedding
-    {W : Type v'} [AddCommGroup W] [Module K W]
-    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W} (h : Q.Equivalent R)
-    (w : InfinitePlace K) :
-    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) := by
-  let : CharZero K := RingHom.charZero w.embedding
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℂ := w.embedding.toAlgebra
-  simpa only [atComplexEmbedding_def] using h.baseChange ℂ
-
 section Diagonal
 
 variable {ι : Type*} [Fintype ι]

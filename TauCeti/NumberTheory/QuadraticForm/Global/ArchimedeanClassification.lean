@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Complex
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 public import TauCeti.NumberTheory.QuadraticForm.Global.Signature
@@ -13,10 +12,9 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.Signature
 /-!
 # Classification of quadratic forms at the archimedean places of a number field
 
-A regular quadratic form over a number field has a complete system of invariants at each
-archimedean place: the signature at a real place, and the rank alone at a complex one.  This file
-states those two classifications for the localizations `QuadraticForm.atRealPlace` and
-`QuadraticForm.atComplexEmbedding`, together with the archimedean normal forms they single out.
+A regular quadratic form over a number field is classified at a real place by its signature.
+This file states that classification for `QuadraticForm.atRealPlace` and computes the real
+Hilbert-symbol product of a global diagonalization.
 
 At a real place the invariants are the positive and negative indices, and the normal form is
 `QuadraticForm.realSignatureForm p q`, the orthogonal sum of `p` copies of `⟨1⟩` and `q` copies of
@@ -29,24 +27,16 @@ the product of the real Hilbert symbols `(a_i, a_j)` over the ordered pairs of c
 diagonalization of a form is `(-1)^(q(q-1)/2)` for its negative index `q` at that place.  It is
 the archimedean factor of the product over all places of the Hasse signs of a global form.
 
-Through a complex embedding the only invariant is the rank, and the normal form is the standard
-sum of squares.  For regular forms this is what makes the complex clause of the local-global
-predicates automatic; the degenerate cases need the finite-place clauses instead, as
-`TauCeti/NumberTheory/QuadraticForm/Global/ComplexPlaces.lean` shows.
-
 ## Main results
 
 * `QuadraticForm.equivalent_atRealPlace_iff_realSignature_eq`: at a real place regular forms are
   classified by their signature.
-* `QuadraticForm.equivalent_atRealPlace_iff_realPositiveIndex_eq`: at a fixed global rank the
-  positive index alone classifies them.
+* `QuadraticForm.equivalent_atRealPlace_iff_realPositiveIndex_eq_of_finrank_eq`: at a fixed global
+  rank the positive index alone classifies them.
 * `QuadraticForm.equivalent_atRealPlace_realSignatureForm_iff`: the localization is the normal
   form `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature.
-* `TauCeti.prod_hilbertSymbol_unitAtRealPlace`: the archimedean Hasse sign of a diagonalization.
-* `QuadraticForm.equivalent_atComplexEmbedding_iff_finrank_eq`: through a complex embedding
-  regular forms are classified by their rank.
-* `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one`: through a complex
-  embedding the normal form is the standard sum of squares.
+* `TauCeti.prod_hilbertSymbol_unitAtRealPlace_of_equiv_weightedSumSquares`: the archimedean Hasse
+  sign of a diagonalization.
 
 ## References
 
@@ -82,7 +72,7 @@ theorem equivalent_atRealPlace_iff_realSignature_eq (hQ : Q.Nondegenerate) (hR :
 
 /-- At a real place the positive index is already a complete invariant of regular forms of equal
 global rank, because the negative index is the rank minus the positive index. -/
-theorem equivalent_atRealPlace_iff_realPositiveIndex_eq (hQ : Q.Nondegenerate)
+theorem equivalent_atRealPlace_iff_realPositiveIndex_eq_of_finrank_eq (hQ : Q.Nondegenerate)
     (hR : R.Nondegenerate) (hrank : Module.finrank K V = Module.finrank K W)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Equivalent (R.atRealPlace w) ↔
@@ -109,7 +99,8 @@ omit [FiniteDimensional K V] in
 product of the real Hilbert symbols of the localized coefficients over the ordered pairs `i < j`
 is `(-1)^(q(q-1)/2)`, where `q` is the negative index of `Q` at the real place.  In particular
 the product depends on `Q` and the place alone, not on the chosen diagonalization. -/
-theorem _root_.TauCeti.prod_hilbertSymbol_unitAtRealPlace {ι : Type*} [Fintype ι] [LinearOrder ι]
+theorem _root_.TauCeti.prod_hilbertSymbol_unitAtRealPlace_of_equiv_weightedSumSquares
+    {ι : Type*} [Fintype ι] [LinearOrder ι]
     {a : ι → Kˣ} (h : Q.Equivalent (weightedSumSquares K fun i ↦ (a i : K)))
     (w : {w : InfinitePlace K // w.IsReal}) :
     ∏ ij ∈ univ.filter (fun ij : ι × ι => ij.1 < ij.2),
@@ -128,34 +119,5 @@ theorem _root_.TauCeti.prod_hilbertSymbol_unitAtRealPlace {ι : Type*} [Fintype 
     realNegativeIndex_eq_sigNeg]
 
 end RealPlace
-
-section ComplexEmbedding
-
-/-- Through a complex embedding regular quadratic forms are classified by their rank alone. -/
-@[simp]
-theorem equivalent_atComplexEmbedding_iff_finrank_eq (hQ : Q.Nondegenerate)
-    (hR : R.Nondegenerate) (w : InfinitePlace K) :
-    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) ↔
-      Module.finrank K V = Module.finrank K W := by
-  let _ : Algebra K ℂ := w.embedding.toAlgebra
-  rw [equivalent_iff_finrank_eq_of_isAlgClosed _ _ (Nondegenerate.atComplexEmbedding hQ w)
-      (Nondegenerate.atComplexEmbedding hR w), Module.finrank_baseChange,
-    Module.finrank_baseChange]
-
-/-- Through a complex embedding a regular quadratic form is isometric to the standard sum of
-squares of its global rank. -/
-theorem equivalent_atComplexEmbedding_weightedSumSquares_one (hQ : Q.Nondegenerate)
-    (w : InfinitePlace K) :
-    (Q.atComplexEmbedding w).Equivalent
-      (weightedSumSquares ℂ (1 : Fin (Module.finrank K V) → ℂ)) := by
-  let _ : Algebra K ℂ := w.embedding.toAlgebra
-  have hrank : Module.finrank ℂ (w.ComplexScalarExtension (V := V)) = Module.finrank K V :=
-    Module.finrank_baseChange
-  have hsep : (associated (Q.atComplexEmbedding w)).SeparatingLeft :=
-    (nondegenerate_associated_iff.mpr (Nondegenerate.atComplexEmbedding hQ w)).1
-  rw [← hrank]
-  exact equivalent_weightedSumSquares_of_isAlgClosed (Q.atComplexEmbedding w) hsep
-
-end ComplexEmbedding
 
 end QuadraticForm
