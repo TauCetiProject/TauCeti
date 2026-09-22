@@ -76,6 +76,12 @@ theorem coe_weierstrassDefectIdeal_smul_mul_toPrincipalIdeal
   let J : (FractionalIdeal O⁰ K)ˣ := FractionalIdeal.mk0 K
     ⟨weierstrassDefectIdeal O W,
       mem_nonZeroDivisors_iff_ne_zero.mpr (weierstrassDefectIdeal_ne_bot O W)⟩
+  have hI : (I : FractionalIdeal O⁰ K) =
+      (weierstrassDefectIdeal O (C • W) : FractionalIdeal O⁰ K) := by
+    rfl
+  have hJ : (J : FractionalIdeal O⁰ K) =
+      (weierstrassDefectIdeal O W : FractionalIdeal O⁰ K) := by
+    rfl
   have hcount (v : HeightOneSpectrum O) :
       FractionalIdeal.count K v
           ((I * toPrincipalIdeal O K C.u : (FractionalIdeal O⁰ K)ˣ) :
@@ -83,12 +89,8 @@ theorem coe_weierstrassDefectIdeal_smul_mul_toPrincipalIdeal
         FractionalIdeal.count K v (J : FractionalIdeal O⁰ K) := by
     rw [Units.val_mul, FractionalIdeal.count_mul K v I.ne_zero
       (toPrincipalIdeal O K C.u).ne_zero,
-      FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation]
-    change FractionalIdeal.count K v
-          (weierstrassDefectIdeal O (C • W) : FractionalIdeal O⁰ K) + _ =
-        FractionalIdeal.count K v
-          (weierstrassDefectIdeal O W : FractionalIdeal O⁰ K)
-    rw [FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O (C • W)),
+      FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation, hI, hJ,
+      FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O (C • W)),
       FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
@@ -140,6 +142,17 @@ noncomputable def weierstrassDefectClass (W : WeierstrassCurve O)
   let _ : IsIntegral O (W.baseChange K) := ⟨⟨W, rfl⟩⟩
   exact defectClassOfIsIntegral O (W.baseChange K)
 
+/-- The positive Weierstrass defect class is the ideal class of the defect ideal. -/
+@[simp]
+theorem weierstrassDefectClass_def (W : WeierstrassCurve O)
+    [(W.baseChange K).IsElliptic] :
+    let _ : IsIntegral O (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+    weierstrassDefectClass (K := K) O W =
+      ClassGroup.mk0 ⟨weierstrassDefectIdeal O (W.baseChange K),
+        mem_nonZeroDivisors_iff_ne_zero.mpr
+          (weierstrassDefectIdeal_ne_bot O (W.baseChange K))⟩ := by
+  rw [weierstrassDefectClass, defectClassOfIsIntegral]
+
 /-- **The Weierstrass class in Silverman's orientation**, namely the inverse `[𝔍_W]⁻¹` of the
 positive defect class. -/
 noncomputable def weierstrassClass (W : WeierstrassCurve O)
@@ -168,10 +181,11 @@ private theorem globalMinimalityClass_eq_defectClassOfIsIntegral_smul
   let D := Classical.choose (exists_smul_isIntegral O E)
   have hD : IsIntegral O (D • E) := Classical.choose_spec (exists_smul_isIntegral O E)
   let _ : IsIntegral O (D • E) := hD
-  change defectClassOfIsIntegral O (D • E) = defectClassOfIsIntegral O (C • E)
+  unfold globalMinimalityClass
   exact defectClassOfIsIntegral_smul_eq_smul O E D C
 
 /-- The curve-level obstruction agrees with the defect class of every integral model. -/
+@[simp]
 theorem globalMinimalityClass_eq_weierstrassDefectClass (W : WeierstrassCurve O)
     [(W.baseChange K).IsElliptic] :
     globalMinimalityClass (K := K) O (W.baseChange K) =
@@ -185,6 +199,7 @@ theorem globalMinimalityClass_eq_weierstrassDefectClass (W : WeierstrassCurve O)
       (1 : VariableChange K)
 
 /-- The global-minimality obstruction is invariant under an admissible change of variables. -/
+@[simp]
 theorem globalMinimalityClass_variableChange (E : WeierstrassCurve K) [E.IsElliptic]
     (C : VariableChange K) :
     globalMinimalityClass O (C • E) = globalMinimalityClass O E := by
