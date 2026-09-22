@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Dedekind
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Finite
--- Private: `finrank_intermediateRing_id_eq_one` is used only inside the proof of
--- `pushClassMonoidHom_id`; no exported statement here mentions the rank API.
+-- Private: the intermediate-ring rank API is used only inside the proof of
+-- `pushClassMonoidHom_id`; no exported statement here mentions it.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.IntermediateRing.Rank
 public import TauCeti.RingTheory.ClassGroup.ExtendedRelNorm
 -- Public: `isDedekindDomain_coordinateRing_of_isIntegrallyClosed` turns target normality into the
@@ -272,7 +272,8 @@ theorem pushClassMonoidHom_id (W : WeierstrassCurve.Affine F)
   -- the norm of an extension is the `Module.finrank`-th power, and here that rank is one
   have key : ClassGroup.relNorm (R := W.CoordinateRing)
       (ClassGroup.extendedHom W.CoordinateRing (Isogeny.id W).intermediateRing c) = c := by
-    rw [ClassGroup.relNorm_extendedHom, finrank_intermediateRing_id_eq_one, pow_one]
+    rw [ClassGroup.relNorm_extendedHom,
+      (id W).finrank_intermediateRing_eq_degree (id_algebraMap_eq_pullback W), degree_id, pow_one]
   rw [pushClassMonoidHom_apply, MonoidHom.id_apply]
   -- `key` norms along `toIntermediateRing`, the goal along `pullbackToIntermediateRing`; the two
   -- sides agree once those algebra structures are identified, which is the single goal `convert`

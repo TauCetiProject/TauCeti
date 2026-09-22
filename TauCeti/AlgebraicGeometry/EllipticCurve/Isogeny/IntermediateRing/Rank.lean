@@ -48,8 +48,6 @@ statement below assumes that, and none of them is stated in terms of points.
   the intermediate ring.
 * `TauCeti.Isogeny.finrank_intermediateRing_eq_degree`: the intermediate ring has rank `φ.degree`
   over `W₂.CoordinateRing`.
-* `TauCeti.Isogeny.finrank_intermediateRing_id_eq_one`: hence the identity isogeny's intermediate
-  ring has rank one.
 * `TauCeti.Isogeny.moduleProjective_intermediateRing`: it is projective, hence locally free, over a
   Dedekind `W₂.CoordinateRing` once it is module-finite.
 * `TauCeti.Isogeny.sum_ramificationIdx_mul_inertiaDeg_eq_degree`: the **fundamental identity** for
@@ -190,20 +188,6 @@ theorem finrank_intermediateRing_eq_degree (φ : Isogeny W₁ W₂)
   rw [φ.degree_eq_finrank (φ.algebraMap_functionField_eq_fieldPullback h)]
   exact (IsFractionRing.finrank_eq W₂.CoordinateRing W₂.FunctionField φ.intermediateRing
     W₁.FunctionField).symm
-
-/-- **The identity isogeny's intermediate ring has rank one** over the coordinate ring: that ring
-is the coordinate ring itself, sitting inside its own fraction field, so there is nothing to
-adjoin.
-
-Stated, like `finrank_intermediateRing_eq_degree` above, for an arbitrary algebra structure in a
-scalar tower under the function field, so that both of the identity's corestrictions into the
-intermediate ring are accepted. -/
-theorem finrank_intermediateRing_id_eq_one (W : WeierstrassCurve.Affine F)
-    [Algebra W.CoordinateRing (id W).intermediateRing]
-    [IsScalarTower W.CoordinateRing (id W).intermediateRing W.FunctionField] :
-    Module.finrank W.CoordinateRing (id W).intermediateRing = 1 := by
-  -- `finrank_intermediateRing_eq_degree` at the identity, whose degree is one
-  rw [(id W).finrank_intermediateRing_eq_degree (id_algebraMap_eq_pullback W), degree_id]
 
 /-- **The intermediate ring is projective, hence locally free, over the Dedekind target coordinate
 ring.** Once the function-field algebra structures and scalar towers required by
