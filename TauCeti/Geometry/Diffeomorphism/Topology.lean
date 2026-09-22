@@ -94,7 +94,7 @@ open scoped TauCeti.DiffeomorphWeakWhitney
 weak Whitney map space. -/
 theorem isEmbedding_toContMDiffMap :
     Topology.IsEmbedding (toContMDiffMap : (M ≃ₘ^n⟮I, J⟯ N) → C^n⟮I, M; J, N⟯) :=
-  ⟨⟨rfl⟩, toContMDiffMap_injective⟩
+  toContMDiffMap_injective.isEmbedding_induced
 
 /-- The forgetful map to `C^n⟮I, M; J, N⟯` is continuous. -/
 theorem continuous_toContMDiffMap :

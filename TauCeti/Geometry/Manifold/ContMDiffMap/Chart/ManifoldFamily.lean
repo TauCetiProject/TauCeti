@@ -25,8 +25,8 @@ coordinate representative of the family is defined only on the open set of param
 points at which the family is visible in that chart. The representative is differentiated there
 by `ContMDiff.continuousOn_iteratedFDerivWithin_extChartAt`, and the continuity statement then
 follows from a tube lemma turning pointwise membership in a derivative test into a parameter
-neighbourhood. Taking `J = 𝓘(𝕜, F)` recovers the vector-valued case, the two topologies being
-identified by `ContMDiffMap.manifoldWeakWhitneyTopology_self_target`.
+neighbourhood. When both source and target are normed spaces, this topology is identified with
+the global-derivative topology by `ContMDiffMap.manifoldWeakWhitneyTopology_self`.
 
 Use `open scoped TauCeti.ManifoldWeakWhitney` to select the topology these statements are about.
 
