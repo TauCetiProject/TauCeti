@@ -151,7 +151,7 @@ the underlying finite free sheaf of modules. -/
 theorem evaluation_free_hom (I : Type u) [Finite I] :
     (ε_ (free X I) (free X I)).hom =
       ε_ (free X I).obj (free X I).obj :=
-  rfl
+  ObjectProperty.exactPairingFullSubcategory_evaluation_hom _ _
 
 /-- The coevaluation of the self-duality of a finite free quasicoherent sheaf is the
 coevaluation of the underlying finite free sheaf of modules. -/
@@ -159,7 +159,7 @@ coevaluation of the underlying finite free sheaf of modules. -/
 theorem coevaluation_free_hom (I : Type u) [Finite I] :
     (η_ (free X I) (free X I)).hom =
       η_ (free X I).obj (free X I).obj :=
-  rfl
+  ObjectProperty.exactPairingFullSubcategory_coevaluation_hom _ _
 
 end QuasicoherentSheaf
 
