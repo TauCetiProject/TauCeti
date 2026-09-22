@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
 public import TauCeti.Probability.Independence.Map
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
-import Mathlib.Order.Interval.Finset.Nat
 
 /-!
 # Joint dissociation through finite square blocks

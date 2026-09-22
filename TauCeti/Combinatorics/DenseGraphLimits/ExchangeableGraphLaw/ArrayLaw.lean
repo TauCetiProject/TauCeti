@@ -219,14 +219,6 @@ theorem graphLawArrayLawEquiv_apply_coe (L : InfiniteExchangeableGraphLaw) :
     (graphLawArrayLawEquiv L : Measure (ℕ × ℕ → Bool)) = arrayLaw L.law :=
   (rfl)
 
-/-- The inverse direction of the adapter is the bundled graph law of the array law. -/
-@[simp]
-theorem graphLawArrayLawEquiv_symm_apply
-    (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
-      ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
-    graphLawArrayLawEquiv.symm ρ = infiniteGraphLawOfArray ρ :=
-  (rfl)
-
 /-! ### Dissociation -/
 
 /-- A block of `[k, m)²`, `m = k + n`, read as a pair of labels in `Fin n`. -/
