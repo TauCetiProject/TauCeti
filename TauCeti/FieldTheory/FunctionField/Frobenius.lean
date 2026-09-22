@@ -98,7 +98,7 @@ private theorem relfinrank_adjoin_pow_adjoin {x : F} (hx : Transcendental k x) (
 /-- The degree of a one-variable function field over its subfield of `p`-th powers is `p`.
 This is the degree computation underlying the fixed-parameter separability criterion. -/
 theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionField k F)
-    (p : ℕ) [ExpChar F p] [Fact p.Prime] :
+    (p : ℕ) [ExpChar F p] :
     Module.finrank (frobenius F p).fieldRange F = p := by
   let _ : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
   obtain ⟨y, hy⟩ := hF.exists_transcendental
