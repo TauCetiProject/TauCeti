@@ -267,7 +267,8 @@ general lemma at offset `0`. -/
 private theorem restrict_adjArray_zero (n : ℕ) (G : SimpleGraph ℕ) :
     (Finset.Ico 0 n ×ˢ Finset.Ico 0 n).restrict G.adjArray
       = finGraphBlockAt 0 n n (Nat.zero_add n) (G.restrictFin n) := by
-  rw [restrict_adjArray 0 n n (Nat.zero_add n), SimpleGraph.comap_zero_add]
+  rw [restrict_adjArray 0 n n (Nat.zero_add n)]
+  simp only [Nat.zero_add, SimpleGraph.comap_val]
 
 /-- The dissociation identity of the finite law at `(k, l)` is block independence of the array
 law at the windows `[0, k)²` and `[k, k + l)²`. -/

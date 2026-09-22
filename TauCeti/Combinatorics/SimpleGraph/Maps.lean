@@ -84,10 +84,10 @@ theorem restrictFin_comap_natAdd (G : SimpleGraph ℕ) (k l : ℕ) :
       = SimpleGraph.comap (fun i : Fin l => k + (i : ℕ)) G := by
   rw [comap_restrictFin]; simp
 
-/-- The window at offset `0` is the initial window. -/
+/-- Pulling back along the coercion of finite labels is taking the window. -/
 @[simp]
-theorem comap_zero_add (G : SimpleGraph ℕ) (n : ℕ) :
-    SimpleGraph.comap (fun i : Fin n => 0 + (i : ℕ)) G = G.restrictFin n := by
+theorem comap_val (G : SimpleGraph ℕ) (n : ℕ) :
+    SimpleGraph.comap (fun i : Fin n => (i : ℕ)) G = G.restrictFin n := by
   ext a b; simp [restrictFin_adj]
 
 end SimpleGraph
