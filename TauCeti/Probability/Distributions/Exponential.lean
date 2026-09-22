@@ -44,8 +44,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
-* `integrableExpSet_id_expMeasure`, `integrableExpSet_fun_id_expMeasure` — exact domain `(-∞, r)`;
-* `mgf_id_expMeasure`, `mgf_fun_id_expMeasure` — moment-generating function `r / (r - t)`;
+* `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
+* `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
@@ -157,34 +157,19 @@ lemma integrable_exp_mul_expMeasure_iff (hr : 0 < r) :
     integrable_exp_mul_id_gammaMeasure one_pos hr⟩
 
 /-- **The exact exponential-integrability domain** of an exponential law with positive rate is
-`(-∞, r)`. This is the `id` spelling, the form a `HasLaw` consumer meets; use
-`integrableExpSet_fun_id_expMeasure` for goals in which the identity is eta-expanded. -/
+`(-∞, r)`. -/
 @[simp]
 theorem integrableExpSet_id_expMeasure (hr : 0 < r) :
     integrableExpSet id (expMeasure r) = Set.Iio r := by
   rw [expMeasure, integrableExpSet_id_gammaMeasure one_pos hr]
 
-/-- **The exact exponential-integrability domain** of an exponential law with positive rate is
-`(-∞, r)`. This is the `fun x => x` spelling of `integrableExpSet_id_expMeasure`. -/
-@[simp]
-theorem integrableExpSet_fun_id_expMeasure (hr : 0 < r) :
-    integrableExpSet (fun x : ℝ => x) (expMeasure r) = Set.Iio r :=
-  integrableExpSet_id_expMeasure hr
-
 /-- **The moment-generating function of an exponential law** with positive rate, on its finiteness
-domain `t < r`. This is the `id` spelling, the form the `cgf` below and a `HasLaw` consumer meet;
-`mgf_fun_id_expMeasure` is the same statement with `fun x => x`. -/
+domain `t < r`. -/
 @[simp]
 theorem mgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
     mgf id (expMeasure r) t = r / (r - t) := by
   rw [expMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
     one_sub_div hr.ne', inv_div]
-
-/-- **The moment-generating function of an exponential law** with positive rate, on its finiteness
-domain `t < r`. This is the `fun x => x` spelling of `mgf_id_expMeasure`. -/
-theorem mgf_fun_id_expMeasure (hr : 0 < r) (ht : t < r) :
-    mgf (fun x : ℝ => x) (expMeasure r) t = r / (r - t) :=
-  mgf_id_expMeasure hr ht
 
 /-- The cumulant-generating function of an exponential law with positive rate. -/
 @[simp]
