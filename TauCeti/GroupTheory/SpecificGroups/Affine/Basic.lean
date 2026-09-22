@@ -69,11 +69,11 @@ instance {F : Type*} [DivisionRing F] [Finite F] : Finite (AffineGroup F) :=
   Finite.of_equiv (Multiplicative F × Fˣ) SemidirectProduct.equivProd.symm
 
 /-- The normal subgroup of translations in the affine group. -/
-abbrev affineTranslationSubgroup (F : Type*) [DivisionRing F] : Subgroup (AffineGroup F) :=
+def affineTranslationSubgroup (F : Type*) [DivisionRing F] : Subgroup (AffineGroup F) :=
   (SemidirectProduct.inl : Multiplicative F →* AffineGroup F).range
 
 /-- The subgroup of linear maps fixing zero in the affine group. -/
-abbrev affineLinearSubgroup (F : Type*) [DivisionRing F] : Subgroup (AffineGroup F) :=
+def affineLinearSubgroup (F : Type*) [DivisionRing F] : Subgroup (AffineGroup F) :=
   (SemidirectProduct.inr : Fˣ →* AffineGroup F).range
 
 /-- An affine transformation is a translation exactly when its linear coordinate is one. -/
@@ -121,22 +121,24 @@ theorem isComplement'_affineTranslationSubgroup_affineLinearSubgroup
       SemidirectProduct.inr g.right, ⟨g.right, rfl⟩,
       SemidirectProduct.inl_left_mul_inr_right g⟩
 
-/-- The translation subgroup of a finite affine group has as many elements as the field. -/
-theorem card_affineTranslationSubgroup (F : Type*) [DivisionRing F] [Finite F] :
+/-- The translation subgroup of an affine group has the same natural cardinality as the ring. -/
+theorem card_affineTranslationSubgroup (F : Type*) [DivisionRing F] :
     Nat.card (affineTranslationSubgroup F) = Nat.card F := by
+  unfold affineTranslationSubgroup
   rw [← Nat.card_congr
     (MonoidHom.ofInjective SemidirectProduct.inl_injective).toEquiv]
   rfl
 
-/-- The linear factor of a finite affine group has one fewer element than the field. -/
-theorem card_affineLinearSubgroup (F : Type*) [DivisionRing F] [Finite F] :
+/-- The linear factor of an affine group has natural cardinality one less than the ring. -/
+theorem card_affineLinearSubgroup (F : Type*) [DivisionRing F] :
     Nat.card (affineLinearSubgroup F) = Nat.card F - 1 := by
+  unfold affineLinearSubgroup
   rw [← Nat.card_congr
     (MonoidHom.ofInjective SemidirectProduct.inr_injective).toEquiv]
   exact Nat.card_units F
 
-/-- A finite one-dimensional affine group has order `|F| (|F| - 1)`. -/
-theorem card_affineGroup (F : Type*) [DivisionRing F] [Finite F] :
+/-- A one-dimensional affine group has natural cardinality `|F| (|F| - 1)`. -/
+theorem card_affineGroup (F : Type*) [DivisionRing F] :
     Nat.card (AffineGroup F) = Nat.card F * (Nat.card F - 1) := by
   rw [SemidirectProduct.card, Nat.card_units]
   rfl
@@ -191,7 +193,7 @@ theorem isTISubgroup_affineLinearSubgroup
 /-- For a finite division ring of order at least three, its affine group is a Frobenius group
 with the linear factor as a Frobenius complement. -/
 theorem isFrobeniusComplement_affineLinearSubgroup
-    (F : Type*) [DivisionRing F] [Finite F] (hF : 3 ≤ Nat.card F) :
+    (F : Type*) [DivisionRing F] (hF : 3 ≤ Nat.card F) :
     IsFrobeniusComplement (affineLinearSubgroup F) := by
   refine isFrobeniusComplement_of_isComplement'_of_fixedPointFree
     (isComplement'_affineTranslationSubgroup_affineLinearSubgroup F) ?_ ?_

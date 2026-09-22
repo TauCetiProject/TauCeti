@@ -58,7 +58,7 @@ theorem card_frobeniusKernelSubgroup_affineLinearSubgroup
 
 section ZModFive
 
-local instance : Fact (Nat.Prime 5) := ⟨by decide⟩
+local instance instFactPrimeFiveAffine : Fact (Nat.Prime 5) := ⟨by decide⟩
 
 /-- The linear factor of the affine group over `F₅` is a Frobenius complement. -/
 theorem isFrobeniusComplement_affineLinearSubgroup_zmod_five :
