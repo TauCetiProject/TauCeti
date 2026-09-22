@@ -27,6 +27,8 @@ Everything here concerns one completion. The comparison of two completions along
   characteristic zero has characteristic zero.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
+  maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
   valuation bound `≤ exp (-n)`, identifying the ideal filtration with the valuation filtration.
 * `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
@@ -37,6 +39,8 @@ Everything here concerns one completion. The comparison of two completions along
   topology on `𝒪_v` is the `𝔪`-adic one.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
   congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_adicCompletionIntegers`: the
+  corresponding density statement for the canonical map `R → 𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
@@ -116,6 +120,40 @@ theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIn
   rwa [Valuation.IsUniformizer.iff,
     Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
       (v.valuedAdicCompletion_surjective K)] at huni
+
+/-- The height-one prime `v` generates the maximal ideal of the ring of integers of the
+completion at `v`. -/
+@[simp]
+theorem map_asIdeal_adicCompletionIntegers :
+    Ideal.map (algebraMap R (v.adicCompletionIntegers K)) v.asIdeal =
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) := by
+  apply le_antisymm
+  · rw [Ideal.map_le_iff_le_comap,
+      ← Ideal.under_def, v.under_maximalIdeal_adicCompletionIntegers]
+  · obtain ⟨π, hπ⟩ := v.intValuation_exists_uniformizer
+    have hπmem : π ∈ v.asIdeal := by
+      rw [← v.intValuation_lt_one_iff_mem, hπ]
+      simp
+    have hπval : Valued.v
+        (algebraMap R (v.adicCompletionIntegers K) π : v.adicCompletion K) = exp (-1) := by
+      rw [algebraMap_adicCompletionIntegers_apply, valuedAdicCompletion_eq_valuation',
+        valuation_of_algebraMap, hπ]
+    have hπuni : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).IsUniformizer
+        (algebraMap R (v.adicCompletionIntegers K) π : v.adicCompletion K) := by
+      rwa [Valuation.IsUniformizer.iff,
+        Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
+          (v.valuedAdicCompletion_surjective K)]
+    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible
+      (v.adicCompletionIntegers K)
+    have hϖuni : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).IsUniformizer
+        (ϖ : v.adicCompletion K) :=
+      Valuation.isUniformizer_of_maximalIdeal_eq_span _ hϖ.maximalIdeal_eq
+    rw [hϖ.maximalIdeal_eq]
+    have hassoc : Associated ϖ (algebraMap R (v.adicCompletionIntegers K) π) :=
+      Valuation.associated_of_isUniformizer hϖuni hπuni
+    rw [Ideal.span_singleton_eq_span_singleton.mpr hassoc]
+    exact Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
+      (Ideal.mem_map_of_mem _ hπmem))
 
 /-- An element of `𝒪_v` lies in the `n`-th power of the maximal ideal exactly when its valuation
 is at most `exp (-n)`.
@@ -300,6 +338,29 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
     exact ha.le
   rw [← sub_add_sub_cancel _ (y : v.adicCompletion K)]
   exact Valuation.map_add_le _ hxy hza
+
+/-- **`R` is dense in the ring of integers of its completion at `v`.** Equivalently, every
+neighbourhood of an element of `𝒪_v` contains the image of an element of `R`. -/
+theorem denseRange_algebraMap_adicCompletionIntegers :
+    DenseRange (algebraMap R (v.adicCompletionIntegers K)) := by
+  rw [denseRange_iff_closure_range]
+  apply Set.eq_univ_of_forall
+  intro x
+  rw [mem_closure_iff_nhds']
+  intro U hU
+  have hzero : (fun z : v.adicCompletionIntegers K ↦ x - z) ⁻¹' U ∈ nhds 0 := by
+    apply (continuous_const.sub continuous_id).continuousAt.preimage_mem_nhds
+    simpa using hU
+  obtain ⟨n, hn⟩ := v.exists_maximalIdeal_pow_subset_of_mem_nhds (K := K) hzero
+  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
+  refine ⟨⟨algebraMap R (v.adicCompletionIntegers K) a, ⟨a, rfl⟩⟩, ?_⟩
+  have hdiff : x - algebraMap R (v.adicCompletionIntegers K) a ∈
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n := by
+    rw [v.mem_maximalIdeal_pow_iff (K := K)]
+    push_cast [IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
+      (v.adicCompletion K)]
+    exact ha
+  simpa only [Set.mem_preimage, sub_sub_cancel] using hn hdiff
 
 /-- The residue field of `v` maps isomorphically onto the residue field of the ring of integers of
 the completion at `v`. -/
