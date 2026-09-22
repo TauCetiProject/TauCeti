@@ -61,13 +61,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 namespace IsNondegenerateCriticalPoint
 
 /-- The nonlinear remainder of the centred negative-gradient field fixes the origin. -/
-private theorem negativeGradientRemainder_centred_zero (h : IsNondegenerateCriticalPoint f x) :
+private theorem negativeGradientRemainder_centered_zero (h : IsNondegenerateCriticalPoint f x) :
     (fun z ↦ negativeGradientRemainder f x (x + z)) 0 = 0 := by
   simp only [add_zero, negativeGradientRemainder_self h.gradient_eq_zero]
 
 /-- In displacement coordinates the negative-gradient field is the linearization
 `-hessianOperator f x` plus the nonlinear remainder. -/
-private theorem neg_gradient_centred_eq :
+private theorem neg_gradient_centered_eq :
     (fun z ↦ (-hessianOperator f x) z + negativeGradientRemainder f x (x + z)) =
       fun z ↦ (-∇ f) (x + z) := by
   funext z
@@ -162,10 +162,10 @@ theorem exists_localStableSet_eq_lipschitzGraph
   set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
   have hN0 : N 0 = 0 := by
     rw [hNdef]
-    exact h.negativeGradientRemainder_centred_zero
+    exact h.negativeGradientRemainder_centered_zero
   have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
-    exact neg_gradient_centred_eq
+    exact neg_gradient_centered_eq
   have hfield_time :
       (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
         fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
@@ -234,10 +234,10 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
   set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
   have hN0 : N 0 = 0 := by
     rw [hNdef]
-    exact h.negativeGradientRemainder_centred_zero
+    exact h.negativeGradientRemainder_centered_zero
   have hfield : (fun z ↦ (-hessianOperator f x) z + N z) = fun z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
-    exact neg_gradient_centred_eq
+    exact neg_gradient_centered_eq
   have hfield_time :
       (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
         fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
