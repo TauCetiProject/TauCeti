@@ -23,10 +23,10 @@ quadratic field-norm computation).
 `Algebra.IsQuadraticExtension.exists_ne_zero_eq_algebraMap_add_algebraMap_mul`: for a *second*
 generator the `θ`-coefficient is nonzero, so any two generators differ by `θ' = b + aθ` with
 `a ≠ 0` and a statement proved for one transfers to every other.
-`linearIndependent_one_of_notMem_range_algebraMap` is the linear-algebra step behind them.
+`TauCeti.linearIndependent_one_of_notMem_range_algebraMap` is the linear-algebra step behind them.
 
 None asks for a field on `L`: each theorem needs only a semiring, with the ring structure required
-by linear independence obtained locally through `Algebra.semiringToRing`. Generator existence is
+by linear independence obtained locally through `Algebra.semiringToRing`. Non-scalar existence is
 stated over the commutative semirings admitted by Mathlib's `IsQuadraticExtension`; the strong rank
 condition also forces the base to be nontrivial. The coordinate results require a field base:
 over `ℤ`, the element `(0, 2)` lies outside the diagonal copy of `ℤ` in `ℤ × ℤ` but does not span
@@ -81,7 +81,7 @@ variable (K L : Type*) [Field K]
 /-- `1` and any element lying outside the base field are linearly independent over the base
 field. The ambient algebra needs only a semiring structure: its field-algebra structure supplies
 a ring structure, and the hypothesis on `θ` implies that the algebra is nontrivial. -/
-theorem linearIndependent_one_of_notMem_range_algebraMap [Semiring L] [Algebra K L]
+theorem TauCeti.linearIndependent_one_of_notMem_range_algebraMap [Semiring L] [Algebra K L]
     {θ : L} (hθ : θ ∉ Set.range (algebraMap K L)) : LinearIndependent K ![(1 : L), θ] := by
   let _ : Ring L := Algebra.semiringToRing K
   have : Nontrivial L := by
@@ -102,7 +102,7 @@ theorem Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul [Se
   let _ : Ring L := Algebra.semiringToRing K
   have h2 := Algebra.IsQuadraticExtension.finrank_eq_two K L
   have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := K) (by rw [h2]; norm_num)
-  have hli := linearIndependent_one_of_notMem_range_algebraMap K L hθ
+  have hli := TauCeti.linearIndependent_one_of_notMem_range_algebraMap K L hθ
   have hmem : x ∈ Submodule.span K (Set.range ![(1 : L), θ]) := by
     rw [hli.span_eq_top_of_card_eq_finrank (by rw [Fintype.card_fin]; exact h2.symm)]
     trivial
