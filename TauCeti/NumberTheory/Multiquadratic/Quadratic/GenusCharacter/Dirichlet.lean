@@ -47,7 +47,8 @@ theorem genusCharAtLevel_univ (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscrim
 
 /-- The expression for `genusChar` in terms of prime-discriminant characters at a common level. -/
 theorem genusChar_def (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
-    genusChar s hs = ∏ P : s, primeDiscriminantCharAtLevel s hs P := (rfl)
+    genusChar s hs = ∏ P : s, primeDiscriminantCharAtLevel s hs P := by
+  rw [← genusCharAtLevel_univ, genusCharAtLevel_def]
 
 /-- The bundled genus character agrees with the existing character function on every integer,
 including integers not coprime to the level. -/

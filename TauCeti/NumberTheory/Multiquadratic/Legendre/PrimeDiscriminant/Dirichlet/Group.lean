@@ -63,7 +63,7 @@ variable (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
 
 /-- The character of a prime-discriminant factor, lifted to the common level
 `|∏ P ∈ s, P|`. -/
-@[expose] noncomputable def primeDiscriminantCharAtLevel (P : s) :
+noncomputable def primeDiscriminantCharAtLevel (P : s) :
     DirichletCharacter ℤ (∏ Q ∈ s, Q).natAbs :=
   changeLevel (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem id P.property))
     (primeDiscriminantChar P (hs P P.property))
@@ -73,7 +73,7 @@ variable (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
 theorem primeDiscriminantCharAtLevel_def (P : s) :
     primeDiscriminantCharAtLevel s hs P =
       changeLevel (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem id P.property))
-        (primeDiscriminantChar P (hs P P.property)) := rfl
+        (primeDiscriminantChar P (hs P P.property)) := (rfl)
 
 /-- At an integer coprime to the common level, a lifted prime-discriminant character agrees with
 the character attached to its factor. -/
@@ -100,27 +100,27 @@ theorem isQuadratic_primeDiscriminantCharAtLevel (P : s) :
   (isQuadratic_primeDiscriminantCharAtLevel s hs P).sq_eq_one
 
 /-- The common-level genus character indexed by a subset of the prime-discriminant factors. -/
-@[expose] noncomputable def genusCharAtLevel (t : Finset s) :
+noncomputable def genusCharAtLevel (t : Finset s) :
     DirichletCharacter ℤ (∏ P ∈ s, P).natAbs :=
   ∏ P ∈ t, primeDiscriminantCharAtLevel s hs P
 
 /-- The defining equation of `genusCharAtLevel`: the product of the lifted characters of the
 factors in the subset. -/
 theorem genusCharAtLevel_def (t : Finset s) :
-    genusCharAtLevel s hs t = ∏ P ∈ t, primeDiscriminantCharAtLevel s hs P := rfl
+    genusCharAtLevel s hs t = ∏ P ∈ t, primeDiscriminantCharAtLevel s hs P := (rfl)
 
 @[simp] theorem genusCharAtLevel_empty : genusCharAtLevel s hs ∅ = 1 := by
-  simp [genusCharAtLevel]
+  simp [genusCharAtLevel_def]
 
 @[simp] theorem genusCharAtLevel_singleton (P : s) :
     genusCharAtLevel s hs {P} = primeDiscriminantCharAtLevel s hs P := by
-  simp [genusCharAtLevel]
+  simp [genusCharAtLevel_def]
 
 /-- Inserting a new factor multiplies its character into the subset character. -/
 @[simp] theorem genusCharAtLevel_insert {P : s} {t : Finset s} (hP : P ∉ t) :
     genusCharAtLevel s hs (insert P t) =
       primeDiscriminantCharAtLevel s hs P * genusCharAtLevel s hs t := by
-  simp [genusCharAtLevel, hP]
+  simp [genusCharAtLevel_def, hP]
 
 /-- At an integer coprime to the common level, a subset character is the product of the
 prime-discriminant character functions of its factors. -/
@@ -138,7 +138,7 @@ theorem genusCharAtLevel_apply_int (t : Finset s) (n : ℤ)
 /-- Multiplication of subset characters corresponds to symmetric difference of the subsets. -/
 @[simp] theorem genusCharAtLevel_symmDiff (t u : Finset s) :
     genusCharAtLevel s hs (t ∆ u) = genusCharAtLevel s hs t * genusCharAtLevel s hs u := by
-  rw [genusCharAtLevel, genusCharAtLevel, genusCharAtLevel, Finset.symmDiff_def]
+  rw [genusCharAtLevel_def, genusCharAtLevel_def, genusCharAtLevel_def, Finset.symmDiff_def]
   exact TauCeti.prod_sdiff_union_sdiff _ fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P
 
 /-- Every subset character is quadratic. -/
@@ -152,7 +152,7 @@ theorem conductor_genusCharAtLevel
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     (genusCharAtLevel s hs t).conductor = ∏ P ∈ t, P.val.natAbs := by
   let _ := neZero_natAbs_prod_of_forall_isPrimeDiscriminant hs
-  rw [genusCharAtLevel, TauCeti.conductor_prod_eq_prod_of_pairwise_coprime]
+  rw [genusCharAtLevel_def, TauCeti.conductor_prod_eq_prod_of_pairwise_coprime]
   · simp
   · intro P hPt Q hQt hPQ
     simp only [conductor_primeDiscriminantCharAtLevel]
@@ -217,19 +217,14 @@ theorem genusCharGroup_eq_closure :
       (primeDiscriminantCharAtLevel s hs) (fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P)]
   ext chi
   simp only [SetLike.mem_coe, mem_genusCharGroup_iff, Set.mem_image,
-    Finset.mem_powerset, Finset.subset_univ, true_and, genusCharAtLevel]
+    Finset.mem_powerset, Finset.subset_univ, true_and, genusCharAtLevel_def]
 
 /-- The subsets of a prime-discriminant family are in bijection with its character group. -/
 noncomputable def genusCharGroupEquiv
     (heven : ∀ P ∈ s, ∀ Q ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     Finset s ≃ genusCharGroup s hs :=
-  Equiv.ofBijective
-    (fun t ↦ ⟨genusCharAtLevel s hs t,
-      (mem_genusCharGroup_iff s hs).2 ⟨t, rfl⟩⟩)
-    ⟨fun _ _ h ↦ genusCharAtLevel_injective s hs heven (congrArg Subtype.val h), fun chi ↦ by
-      obtain ⟨t, ht⟩ := (mem_genusCharGroup_iff s hs).1 chi.property
-      exact ⟨t, Subtype.ext ht⟩⟩
+  Equiv.ofInjective (genusCharAtLevel s hs) (genusCharAtLevel_injective s hs heven)
 
 /-- The subset equivalence sends a subset to its corresponding common-level genus character. -/
 @[simp] theorem coe_genusCharGroupEquiv_apply
@@ -243,10 +238,7 @@ theorem natCard_genusCharGroup
     (heven : ∀ P ∈ s, ∀ Q ∈ s,
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     Nat.card (genusCharGroup s hs) = 2 ^ s.card := by
-  have hcard := TauCeti.natCard_closure_image_eq_two_pow (Finset.univ : Finset s)
-    (primeDiscriminantCharAtLevel s hs) (fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P)
-    (fun t _ u _ h ↦ genusCharAtLevel_injective s hs heven h)
-  rwa [Finset.coe_univ, Set.image_univ, ← genusCharGroup_eq_closure, Finset.card_univ,
-    Fintype.card_coe] at hcard
+  rw [← Nat.card_congr (genusCharGroupEquiv s hs heven), Nat.card_eq_fintype_card,
+    Fintype.card_finset, Fintype.card_coe]
 
 end TauCeti.Multiquadratic
