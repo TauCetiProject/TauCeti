@@ -44,6 +44,7 @@ namespace IsProP
 
 /-- For a topologically finitely generated pro-`p` group, the natural-number topological
 generator rank is the dimension of its Frattini quotient over `ZMod p`. -/
+@[simp]
 theorem topologicalGeneratorRankNat_eq_finrank_quotient_proPFrattini
     (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) :
     topologicalGeneratorRankNat G hfg =
@@ -86,6 +87,7 @@ theorem topologicalGeneratorRankNat_eq_finrank_quotient_proPFrattini
 
 /-- The Frattini quotient of a topologically finitely generated pro-`p` group has order `p`
 raised to the natural-number topological generator rank. -/
+@[simp]
 theorem natCard_quotient_proPFrattini (hG : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) :
     Nat.card (G ⧸ proPFrattini p G) = p ^ topologicalGeneratorRankNat G hfg := by
