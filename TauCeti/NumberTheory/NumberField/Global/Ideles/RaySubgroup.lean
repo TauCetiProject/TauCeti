@@ -60,19 +60,12 @@ def RaySubgroup (𝔪 : Modulus K) : Subgroup (IdeleClassGroup (𝓞 K) K) :=
   Subgroup.map (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K))
     (ideleCongruenceSubgroup 𝔪)
 
-/-- A ray subgroup is the image of the corresponding idele congruence subgroup. -/
-theorem RaySubgroup_eq_map (𝔪 : Modulus K) :
-    RaySubgroup 𝔪 =
-      Subgroup.map (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K))
-        (ideleCongruenceSubgroup 𝔪) :=
-  (rfl)
-
 /-- **Membership in a ray subgroup is represented by a congruence idele.** -/
 theorem mem_RaySubgroup_iff {𝔪 : Modulus K} {c : IdeleClassGroup (𝓞 K) K} :
     c ∈ RaySubgroup 𝔪 ↔
       ∃ x : IdeleGroup (𝓞 K) K, x ∈ ideleCongruenceSubgroup 𝔪 ∧
         QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x = c := by
-  rw [RaySubgroup_eq_map, Subgroup.mem_map]
+  rw [RaySubgroup, Subgroup.mem_map]
 
 /-- **The pullback of a ray subgroup to the ideles.**  An idele represents a class in
 `RaySubgroup 𝔪` exactly when it belongs to the join of the congruence subgroup and the principal
@@ -81,26 +74,25 @@ theorem comap_RaySubgroup (𝔪 : Modulus K) :
     (RaySubgroup 𝔪).comap
         (QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)) =
       ideleCongruenceSubgroup 𝔪 ⊔ IdeleGroup.principalSubgroup (𝓞 K) K := by
-  rw [RaySubgroup_eq_map, Subgroup.comap_map_eq, QuotientGroup.ker_mk']
+  rw [RaySubgroup, Subgroup.comap_map_eq, QuotientGroup.ker_mk']
 
 /-- **Membership of an idele representative in a ray subgroup.**  The class of an idele lies in
 `RaySubgroup 𝔪` exactly when the idele differs from a congruence idele by a principal idele. -/
 @[simp] theorem mk_mem_RaySubgroup_iff {𝔪 : Modulus K} {x : IdeleGroup (𝓞 K) K} :
     (x : IdeleClassGroup (𝓞 K) K) ∈ RaySubgroup 𝔪 ↔
       x ∈ ideleCongruenceSubgroup 𝔪 ⊔ IdeleGroup.principalSubgroup (𝓞 K) K := by
-  change QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x ∈ RaySubgroup 𝔪 ↔ _
-  rw [← Subgroup.mem_comap, comap_RaySubgroup]
+  rw [← QuotientGroup.mk'_apply, ← Subgroup.mem_comap, comap_RaySubgroup]
 
 /-- **Ray subgroups decrease when the modulus grows.** -/
 theorem RaySubgroup_antitone {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     RaySubgroup 𝔫 ≤ RaySubgroup 𝔪 := by
-  rw [RaySubgroup_eq_map, RaySubgroup_eq_map]
+  rw [RaySubgroup, RaySubgroup]
   exact Subgroup.map_mono (ideleCongruenceSubgroup_antitone h)
 
 /-- **Every ray subgroup is open in the idele class group.** -/
 theorem isOpen_RaySubgroup (𝔪 : Modulus K) :
     IsOpen (RaySubgroup 𝔪 : Set (IdeleClassGroup (𝓞 K) K)) := by
-  rw [RaySubgroup_eq_map, Subgroup.coe_map, QuotientGroup.coe_mk']
+  rw [RaySubgroup, Subgroup.coe_map, QuotientGroup.coe_mk']
   exact QuotientGroup.isOpenMap_coe _ (isOpen_ideleCongruenceSubgroup 𝔪)
 
 end TauCeti.GlobalNumberFields
