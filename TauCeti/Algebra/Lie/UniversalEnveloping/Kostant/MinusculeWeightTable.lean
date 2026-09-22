@@ -120,8 +120,8 @@ theorem isNilpotent_rep_serreRootGenerator (k : B ⊕ B) :
   ⟨2, T.rep_serreRootGenerator_pow_two k⟩
 
 /-- The represented Cartan, positive, and negative Serre generators at a node form an `sl₂`
-triple whenever the weight table contains a weight of coordinate `-1` at that node. -/
-theorem isSl2Triple_rep_serreRootGenerator (i : B) (hi : ∃ a, T.weight a i = -1) :
+triple whenever the weight table contains a weight of nonzero coordinate at that node. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : B) (hi : ∃ a, T.weight a i ≠ 0) :
     _root_.IsSl2Triple
       (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ T.cartanMatrix i)))
       (T.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ

@@ -188,9 +188,9 @@ theorem isSerreSystemQ :
   exact h.changeScalars
 
 omit [DecidableEq B] in
-/-- At a node carrying a weight of coordinate `-1`, the rational Cartan, raising, and lowering
+/-- At a node carrying a weight of nonzero coordinate, the rational Cartan, raising, and lowering
 matrices form an `sl₂` triple. -/
-theorem isSl2TripleQ (i : B) (hi : ∃ a, T.weight a i = -1) :
+theorem isSl2TripleQ (i : B) (hi : ∃ a, T.weight a i ≠ 0) :
     _root_.IsSl2Triple
       (T.cartanGeneratorMatrixQ i) (T.raisingMatrixQ i) (T.loweringMatrixQ i) := by
   classical
@@ -202,7 +202,10 @@ theorem isSl2TripleQ (i : B) (hi : ∃ a, T.weight a i = -1) :
       lie_h_f_nsmul := ?_ }
   · intro hzero
     have h := congrFun (congrFun hzero a) a
-    simp [ha] at h
+    have hweight : T.weight a i = 0 := by
+      simpa only [cartanGeneratorMatrixQ_apply, eq_self, ite_true, Matrix.zero_apply,
+        Int.cast_eq_zero] using h
+    exact ha hweight
   · rw [T.isSerreSystemQ.lie_H_E, T.cartanMatrix_diag]
     simp
   · rw [T.isSerreSystemQ.lie_H_F, T.cartanMatrix_diag]

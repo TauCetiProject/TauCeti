@@ -37,10 +37,6 @@ that is a separate scheme-theoretic comparison.
 
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
 * R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.1.
-
-The specialization pattern follows the type-`E₇` carrier generation formalization in
-[TauCetiProject/TauCeti#8045](https://github.com/TauCetiProject/TauCeti/pull/8045), with the
-represented `sl₂` input factored into the general minuscule-weight-table API.
 -/
 
 public section
@@ -94,7 +90,9 @@ theorem weightTorusSubgroup_le_elementarySubgroup (A : CommAlgCat.{v} ℤ) :
     𝓑 weightTable.weight weightTable.isCartanWeightVector_coordinateLatticeBasis
     rootGeneratorWeight lie_serreH_rootGenerator Sum.inl Sum.inr
     (fun i ↦ weightTable.isSl2Triple_rep_serreRootGenerator i
-      (by simpa only [weightTable_weight] using exists_e6MinusculeWeight_apply_eq_neg_one i))
+      (by
+        obtain ⟨a, ha⟩ := exists_e6MinusculeWeight_apply_eq_neg_one i
+        exact ⟨a, by simp only [weightTable_weight, ha]; omega⟩))
     rootGeneratorWeight_inr_eq_neg_inl cartanBezout rootGeneratorWeight_sum_mul_bezout A
 
 /-- Over every commutative ring, adjoining the type-`E₆` minuscule weight torus to all twelve
