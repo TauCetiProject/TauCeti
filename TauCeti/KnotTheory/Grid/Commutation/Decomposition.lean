@@ -278,7 +278,7 @@ theorem isEmpty_toRectangleDecomposition_first
   cases D with
   | mk middle pentagon rectangle =>
       unfold toRectangleDecomposition
-      exact (GridPentagonBetween.isEmpty_toGridRectangleBetween pentagon).2 h
+      exact h
 
 /-- Emptiness of the rectangle is preserved when forgetting the pentagon turn point. -/
 theorem isEmpty_toRectangleDecomposition_second
@@ -344,7 +344,7 @@ theorem isEmpty_toRectangleDecomposition_second
   cases D with
   | mk middle rectangle pentagon =>
       unfold toRectangleDecomposition
-      exact (GridPentagonBetween.isEmpty_toGridRectangleBetween pentagon).2 h
+      exact h
 
 /-- The pentagon's turn row lies between the sides of the second forgotten rectangle. -/
 theorem turn_mem_toRectangleDecomposition_second
