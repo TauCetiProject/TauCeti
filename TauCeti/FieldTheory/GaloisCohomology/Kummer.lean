@@ -53,6 +53,8 @@ isomorphism** `TauCeti.kummerIso`.
   `Kˣ →* Multiplicative (H¹(G_K, μₙ))`.
 * `TauCeti.kummerClassMap`: the induced map on the power classes `Kˣ ⧸ (Kˣ)ⁿ`.
 * `TauCeti.kummerIso`: the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≃* H¹(G_K, μₙ)`.
+* `TauCeti.kummerIsoTransport`: the Kummer isomorphism after a continuous equivariant
+  identification of the roots of unity with another discrete coefficient module.
 
 ## Main results
 
@@ -341,5 +343,37 @@ theorem kummerIso_apply (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
 theorem kummerIso_mk (hn : IsUnit (n : K)) (a : Kˣ) :
     kummerIso K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
   rw [kummerIso_apply, kummerClassMap_mk]
+
+/-! ### Transport to another coefficient model -/
+
+/-- **The Kummer isomorphism transported to another model of `μₙ`.** The identification of
+coefficients must be continuous and `G_K`-equivariant; a bare additive equivalence would not
+determine the same Galois module and hence would not induce an equivalence on cohomology. -/
+def kummerIsoTransport (hn : IsUnit (n : K))
+    (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ] [IsTopologicalAddGroup μ]
+    [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
+    [ContinuousSMul (AbsoluteGaloisGroup K) μ]
+    (e : KummerCoeff K n ≃+ μ) (he : Continuous e)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
+    powerClassQuotient Kˣ n ≃* Multiplicative (H1 (AbsoluteGaloisGroup K) μ) :=
+  (kummerIso K n hn).trans <| AddEquiv.toMultiplicative <|
+    explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e he
+      continuous_of_discreteTopology hequiv
+
+/-- Transporting the Kummer isomorphism applies the original Kummer isomorphism and then the
+coefficient equivalence on `H¹`. -/
+@[simp]
+theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
+    (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ] [IsTopologicalAddGroup μ]
+    [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
+    [ContinuousSMul (AbsoluteGaloisGroup K) μ]
+    (e : KummerCoeff K n ≃+ μ) (he : Continuous e)
+    (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x)
+    (x : powerClassQuotient Kˣ n) :
+    kummerIsoTransport K n hn μ e he hequiv x =
+      Multiplicative.ofAdd
+        (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e he
+          continuous_of_discreteTopology hequiv (Multiplicative.toAdd (kummerIso K n hn x))) :=
+  (rfl)
 
 end TauCeti
