@@ -29,6 +29,8 @@ scaling factor of valuation `1`.
   valuation ring, an integral Weierstrass equation with `v (c₄) = 1` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
+* `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
+  equations are related by a change of variables.
 * `WeierstrassCurve.valuation_Δ_le_of_isMinimal_smul`: no integral model in the orbit of a minimal
   model has larger `v (Δ)`.
 * `WeierstrassCurve.valuation_Δ_eq_of_isMinimal_smul`: two minimal models related by a change of
@@ -153,6 +155,15 @@ theorem isMinimal_of_valuation_c₄_eq_one (W : WeierstrassCurve K) [IsIntegral 
 theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, C • W = W.minimal R :=
   ⟨_, rfl⟩
+
+/-- The chosen minimal equations of two equations related by a change of variables are themselves
+related by a change of variables. -/
+theorem exists_smul_minimal_eq_minimal (D : VariableChange K) (W : WeierstrassCurve K) :
+    ∃ C : VariableChange K, C • W.minimal R = (D • W).minimal R := by
+  obtain ⟨C₁, hC₁⟩ := W.exists_smul_eq_minimal R
+  obtain ⟨C₂, hC₂⟩ := (D • W).exists_smul_eq_minimal R
+  refine ⟨C₂ * D * C₁⁻¹, ?_⟩
+  rw [mul_smul, mul_smul, ← hC₁, inv_smul_smul, hC₂]
 
 /-! ### Comparing two minimal models
 
