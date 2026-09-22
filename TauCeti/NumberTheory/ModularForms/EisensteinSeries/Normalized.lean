@@ -135,7 +135,7 @@ theorem normalizedCharEisensteinSeriesMF_mem_modFormCharSpace (hk : 3 ≤ (k : �
 
 /-- The level raise by `t` of the character Eisenstein series scaled by the inverse of its
 expected first coefficient: `E_k^(psi,phi,t) = V_t E_k^(psi,phi)`. Under the parity and
-primitivity hypotheses, its first supported coefficient is `1`. -/
+primitivity hypotheses, its coefficient at index `t` is `1`. -/
 def normalizedCharEisensteinSeriesMFRaise (t : ℕ) (hk : 3 ≤ (k : ℤ))
     (htuv : t * (u * v) ∣ N) : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
@@ -195,7 +195,8 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff (hk : 3 ≤ (k : 
       ⟨NeZero.ne t, Nat.le_of_dvd (Nat.pos_of_ne_zero hn) htn⟩
   · rfl
 
-/-- The first nonzero supported coefficient of a raised normalized Eisenstein series is `1`. -/
+/-- The first positive supported coefficient of a raised normalized Eisenstein series is `1`. -/
+@[simp]
 theorem qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff_self (hk : 3 ≤ (k : ℤ))
     (htuv : t * (u * v) ∣ N) (hpar : psi (-1) * phi (-1) = (-1) ^ (k : ℤ))
     (hphi : phi.IsPrimitive) :
