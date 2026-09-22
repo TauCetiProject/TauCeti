@@ -21,10 +21,12 @@ passing to successive quotients in ramification theory.
 
 ## Main results
 
-* `TauCeti.map_mem_unitFiltration_iff`: membership in `U(L,i)` is invariant under an extension
-  automorphism.
+* `TauCeti.unitsMap_algEquiv_mem_unitFiltration_iff`: membership in `U(L,i)` is invariant under an
+  extension automorphism.
 * `TauCeti.smul_unitFiltration`: an extension automorphism maps `U(L,i)` onto itself.
 * `TauCeti.coe_smul_unitFiltration`: the restricted action agrees with the action on `Lˣ`.
+* `TauCeti.val_coe_smul_unitFiltration`: the restricted action agrees with applying the
+  automorphism on `L`.
 
 ## References
 
@@ -48,7 +50,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 of a nonarchimedean local field. The action of `σ` on `Lˣ` is `Units.map σ`, so this is also the
 statement that `σ • x ∈ unitFiltration L i ↔ x ∈ unitFiltration L i`. -/
 @[simp]
-theorem map_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ} :
+theorem unitsMap_algEquiv_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ} :
     Units.map (σ : L →* L) x ∈ unitFiltration L i ↔ x ∈ unitFiltration L i := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[L])
   have hsub : valuation L (σ (x : L) - 1) = valuation L ((x : L) - 1) := by
@@ -64,22 +66,29 @@ theorem smul_unitFiltration (σ : L ≃ₐ[K] L) (i : ℕ) :
     σ • unitFiltration L i = unitFiltration L i := by
   ext x
   rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, AlgEquiv.smul_units_def,
-    map_mem_unitFiltration_iff]
+    unitsMap_algEquiv_mem_unitFiltration_iff]
 
 /-- The action of extension automorphisms on `Lˣ` restricts to every step `U(L,i)` of the unit
 filtration. -/
 noncomputable instance unitFiltrationMulDistribMulAction (i : ℕ) :
-    MulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L i) where
-  smul σ x := ⟨σ • (x : Lˣ), (map_mem_unitFiltration_iff σ).2 x.2⟩
-  one_smul _ := Subtype.ext (one_smul _ _)
-  mul_smul _ _ _ := Subtype.ext (mul_smul _ _ _)
-  smul_mul _ _ _ := Subtype.ext (smul_mul' _ _ _)
-  smul_one _ := Subtype.ext (smul_one _)
+    MulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L i) := by
+  letI : SMul (L ≃ₐ[K] L) (unitFiltration L i) :=
+    ⟨fun σ x ↦ ⟨σ • (x : Lˣ), by
+      simpa only [AlgEquiv.smul_units_def] using
+        (unitsMap_algEquiv_mem_unitFiltration_iff σ).2 x.2⟩⟩
+  exact Subtype.coe_injective.mulDistribMulAction (unitFiltration L i).subtype fun _ _ ↦ rfl
 
 /-- The action on a step of the unit filtration agrees with the ambient action on `Lˣ`. -/
 @[simp]
-theorem coe_smul_unitFiltration (σ : L ≃ₐ[K] L) (x : unitFiltration L i) :
+theorem coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltration L i) :
     ((σ • x : unitFiltration L i) : Lˣ) = σ • (x : Lˣ) :=
-  rfl
+  (rfl)
+
+/-- The value in `L` of the action on a step of the unit filtration is obtained by applying the
+automorphism. -/
+@[simp]
+theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltration L i) :
+    (((σ • x : unitFiltration L i) : Lˣ) : L) = σ ((x : Lˣ) : L) :=
+  (rfl)
 
 end TauCeti
