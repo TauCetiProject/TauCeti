@@ -12,11 +12,11 @@ public import Mathlib.MeasureTheory.Function.Jacobian
 /-!
 # Riemannian volume in a chart
 
-A Riemannian metric determines a measure locally by weighting coordinate Lebesgue measure with
-the positive square root of the metric Gram determinant. This file constructs that measure on the
-source of each preferred manifold chart and proves that the resulting measures agree on chart
-overlaps. The compatibility theorem is the descent input for assembling the Riemannian volume
-measure on the whole manifold.
+A continuous Riemannian metric determines a measure locally by weighting coordinate Lebesgue
+measure with the positive square root of the metric Gram determinant. This file constructs that
+measure on the source of each preferred manifold chart and proves that the resulting measures
+agree on chart overlaps. The compatibility theorem is the descent input for assembling the
+Riemannian volume measure on the whole manifold.
 
 The coordinate Lebesgue measure is `Module.finBasis ℝ E |>.addHaar`, matching the basis used by
 `TauCeti.chartVolumeDensity`. The overlap proof applies Mathlib's change-of-variables theorem to
@@ -66,14 +66,17 @@ local instance chartVolumeBorelSpaceM : BorelSpace M := ⟨rfl⟩
 
 /-- The local Riemannian volume measure supplied by the preferred chart at `α`. It is supported
 on the source of that chart. -/
-def chartRiemannianVolume (α : M) : Measure M :=
+def chartRiemannianVolume
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) : Measure M :=
   (((Module.finBasis ℝ E).addHaar.withDensity fun y =>
       ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))).comap
         ((extChartAt I α).source.domRestrict (extChartAt I α))).map Subtype.val
 
 /-- A chart volume measure evaluates a measurable set by integrating the chart density over its
 coordinate image inside the chart source. -/
-theorem chartRiemannianVolume_apply (α : M) {s : Set M} (hs : MeasurableSet s) :
+theorem chartRiemannianVolume_apply
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (α : M) {s : Set M} (hs : MeasurableSet s) :
     chartRiemannianVolume (I := I) α s =
       ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
@@ -91,7 +94,8 @@ theorem chartRiemannianVolume_apply (α : M) {s : Set M} (hs : MeasurableSet s) 
 
 /-- A chart volume measure is supported on the source of its chart. -/
 @[simp]
-theorem chartRiemannianVolume_restrict_source (α : M) :
+theorem chartRiemannianVolume_restrict_source
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) :
     (chartRiemannianVolume (I := I) α).restrict (chartAt H α).source =
       chartRiemannianVolume (I := I) α := by
   ext s hs
@@ -102,7 +106,8 @@ theorem chartRiemannianVolume_restrict_source (α : M) :
 
 /-- The local Riemannian volume measures supplied by two preferred charts agree on their overlap.
 This is the cocycle condition needed to descend the local coordinate measures to the manifold. -/
-theorem chartRiemannianVolume_restrict_overlap (α β : M) :
+theorem chartRiemannianVolume_restrict_overlap
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α β : M) :
     (chartRiemannianVolume (I := I) α).restrict
         ((extChartAt I α).source ∩ (extChartAt I β).source) =
       (chartRiemannianVolume (I := I) β).restrict
