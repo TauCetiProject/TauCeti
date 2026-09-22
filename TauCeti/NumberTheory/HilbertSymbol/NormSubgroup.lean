@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Even
+public import Mathlib.Algebra.QuadraticAlgebra.AlgHom
 
 public import TauCeti.GroupTheory.Index.Indicator
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
@@ -52,6 +53,11 @@ theorem quadraticNormHom_apply (a : Rˣ) (z : (QuadraticAlgebra R (a : R) 0)ˣ) 
 noncomputable def quadraticNormSubgroup (a : Rˣ) : Subgroup Rˣ :=
   (quadraticNormHom a).range
 
+/-- The quadratic norm subgroup is the range of the norm homomorphism on units. -/
+theorem quadraticNormSubgroup_def (a : Rˣ) :
+    quadraticNormSubgroup a = (quadraticNormHom a).range :=
+  (rfl)
+
 /-- Membership in the quadratic norm subgroup is the existence of a unit with the given norm. -/
 @[simp]
 theorem mem_quadraticNormSubgroup_iff (a b : Rˣ) :
@@ -83,8 +89,10 @@ theorem square_le_quadraticNormSubgroup (a : Rˣ) :
     Subgroup.square Rˣ ≤ quadraticNormSubgroup a := by
   intro b hb
   obtain ⟨c, rfl⟩ := Subgroup.mem_square.mp hb
-  refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨c, 0⟩, ?_⟩
-  simp [QuadraticAlgebra.norm_def]
+  refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr
+    ⟨algebraMap R (QuadraticAlgebra R (a : R) 0) (c : R), ?_⟩
+  rw [QuadraticAlgebra.norm_algebraMap, pow_two]
+  exact (Units.val_mul c c).symm
 
 /-- The index of the quadratic norm subgroup divides the number of square classes. -/
 theorem quadraticNormSubgroup_index_dvd_square_index (a : Rˣ) :
@@ -108,15 +116,16 @@ theorem quadraticNormSubgroup_mul_sq (a c : Rˣ) :
     quadraticNormSubgroup (a * c ^ 2) = quadraticNormSubgroup a := by
   have key : ∀ x y : Rˣ, quadraticNormSubgroup (x * y ^ 2) ≤ quadraticNormSubgroup x := by
     intro x y b hb
-    obtain ⟨z, hz⟩ := (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mp hb
-    have hx : ((x * y ^ 2 : Rˣ) : R) = (x : R) * (y : R) ^ 2 := by push_cast; ring
-    refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨z.re, (y : R) * z.im⟩, ?_⟩
-    rw [← hz]
-    simp only [QuadraticAlgebra.norm_def]
-    linear_combination (z.im * z.im) * hx
+    obtain ⟨z, hz⟩ := (mem_quadraticNormSubgroup_iff _ _).mp hb
+    let e : QuadraticAlgebra R ((x * y ^ 2 : Rˣ) : R) 0 ≃ₐ[R]
+        QuadraticAlgebra R (x : R) 0 :=
+      QuadraticAlgebra.changeGeneratorEquiv (x : R) 0 y 0 (by push_cast; ring) (by simp)
+    refine (mem_quadraticNormSubgroup_iff _ _).mpr ⟨Units.map e.toMonoidHom z, ?_⟩
+    exact (QuadraticAlgebra.norm_algHom e.toAlgHom e.injective z).trans hz
   refine le_antisymm (key a c) ?_
   have h := key (a * c ^ 2) c⁻¹
-  rwa [show a * c ^ 2 * (c⁻¹ : Rˣ) ^ 2 = a by group] at h
+  convert h using 1
+  group
 
 end CommRing
 
