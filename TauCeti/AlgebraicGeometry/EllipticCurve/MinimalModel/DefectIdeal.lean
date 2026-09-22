@@ -62,13 +62,6 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 variable (O : Type*) [CommRing O] [IsDedekindDomain O]
   {K : Type*} [Field K] [Algebra O K] [IsFractionRing O K]
 
-/-- **The defect ideal** `𝔍_W = ∏ᵥ 𝔭ᵥ ^ fᵥ(W)` of a Weierstrass equation.
-For integral equations the local obstruction exponents are nonnegative, so their natural-number
-parts lose no information. -/
-noncomputable def weierstrassDefectIdeal (W : WeierstrassCurve K) [W.IsElliptic]
-    [IsIntegral O W] : Ideal O :=
-  ∏ᶠ v : HeightOneSpectrum O, v.asIdeal ^ (obstructionExponentAt O v W).toNat
-
 /-- **Only finitely many local obstruction exponents of an integral equation are nonzero.**
 Equivalently, the prime-power family defining the defect ideal has finite multiplicative
 support. -/
@@ -90,10 +83,25 @@ theorem hasFiniteMulSupport_pow_obstructionExponentAt_toNat (W : WeierstrassCurv
       (Localization.AtPrime v.asIdeal) : ℤ) := by positivity
   omega
 
+/-- **The defect ideal** `𝔍_W = ∏ᵥ 𝔭ᵥ ^ fᵥ(W)` of an integral Weierstrass equation.
+The finite product is taken over its nontrivial local obstruction factors. -/
+noncomputable def weierstrassDefectIdeal (W : WeierstrassCurve K) [W.IsElliptic]
+    [IsIntegral O W] : Ideal O :=
+  let h := hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W
+  ∏ v ∈ h.toFinset, v.asIdeal ^ (obstructionExponentAt O v W).toNat
+
+/-- The defining prime-power factorisation of the defect ideal. -/
+theorem weierstrassDefectIdeal_def (W : WeierstrassCurve K) [W.IsElliptic]
+    [IsIntegral O W] :
+    weierstrassDefectIdeal O W =
+      ∏ᶠ v : HeightOneSpectrum O, v.asIdeal ^ (obstructionExponentAt O v W).toNat := by
+  rw [weierstrassDefectIdeal,
+    finprod_eq_prod _ (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W)]
+
 /-- **The defect ideal is nonzero.** -/
 theorem weierstrassDefectIdeal_ne_bot (W : WeierstrassCurve K) [W.IsElliptic]
     [IsIntegral O W] : weierstrassDefectIdeal O W ≠ 0 := by
-  rw [weierstrassDefectIdeal,
+  rw [weierstrassDefectIdeal_def,
     finprod_eq_prod _ (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W)]
   exact Finset.prod_ne_zero_iff.2 fun v _ => pow_ne_zero _ v.ne_bot
 
@@ -114,28 +122,12 @@ theorem count_weierstrassDefectIdeal_eq_obstructionExponentAt
       Ideal.one_eq_top, Ideal.pow_eq_top_iff, w.isPrime.ne_top, false_or] at hw ⊢
     exact hw
   rw [← FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
-    weierstrassDefectIdeal, FractionalIdeal.coeIdeal_finprod (nonZeroDivisors O) K le_rfl]
+    weierstrassDefectIdeal_def, FractionalIdeal.coeIdeal_finprod (nonZeroDivisors O) K le_rfl]
   simp_rw [FractionalIdeal.coeIdeal_pow, ← zpow_natCast]
   rw [FractionalIdeal.count_finprod K v _ hexp]
   have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
     IsIntegral.of_isScalarTower (R := O) W
   exact Int.toNat_of_nonneg (obstructionExponentAt_nonneg_of_isIntegral O v W)
-
-/-- The defining prime-power factorisation of the defect ideal. -/
-theorem weierstrassDefectIdeal_def (W : WeierstrassCurve K) [W.IsElliptic]
-    [IsIntegral O W] :
-    weierstrassDefectIdeal O W =
-      ∏ᶠ v : HeightOneSpectrum O, v.asIdeal ^ (obstructionExponentAt O v W).toNat := by
-  rw [← Ideal.finprod_heightOneSpectrum_factorization (weierstrassDefectIdeal_ne_bot O W)]
-  apply finprod_congr
-  intro v
-  rw [HeightOneSpectrum.maxPowDividing]
-  congr 1
-  have : IsIntegral (Localization.AtPrime v.asIdeal) W :=
-    IsIntegral.of_isScalarTower (R := O) W
-  have hnonneg := obstructionExponentAt_nonneg_of_isIntegral O v W
-  have hcount := count_weierstrassDefectIdeal_eq_obstructionExponentAt O W v
-  omega
 
 variable {O}
 
