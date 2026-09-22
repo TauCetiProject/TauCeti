@@ -9,23 +9,22 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun
 
 /-!
-# Limits of graphons with a summable L¹ Cauchy modulus
+# Limits of L¹-Cauchy graphon sequences
 
-A sequence of graphons whose kernels have a summable `L¹` Cauchy modulus converges in cut
-distance to a graphon. Mathlib's completeness machinery for `eLpNorm` produces an almost-everywhere
-pointwise limit and convergence in `L¹`. The pointwise limit remains symmetric and `[0, 1]`-valued,
-so `exists_graphon_repr` turns its almost-everywhere class back into a strict graphon. Finally, the
-cut norm is bounded by the `L¹` norm.
+A sequence of graphons whose kernels have an `L¹` Cauchy modulus tending to zero converges in cut
+distance to a graphon. A summably fast subsequence and Mathlib's completeness machinery for
+`eLpNorm` produce an almost-everywhere pointwise limit. The pointwise limit remains symmetric and
+`[0, 1]`-valued, so `exists_graphon_repr` turns its almost-everywhere class back into a strict
+graphon. Finally, the cut norm is bounded by the `L¹` norm.
 
-The summable-modulus form is designed for graphon compactness arguments: after representatives of
-a fast Cauchy subsequence have been realigned, their errors can be chosen summable, and this result
-supplies the limiting strict graphon.
+This form is designed for graphon compactness arguments: after representatives of a Cauchy
+subsequence have been realigned, this result supplies the limiting strict graphon.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.exists_graphon_tendsto_eLpNorm_of_summable_eLpNorm_bound` constructs a
-  strict graphon `L¹` limit from a summable `L¹` Cauchy modulus.
-* `TauCeti.DenseGraphLimits.exists_graphon_tendsto_cutDist_of_summable_eLpNorm_bound` is the
+* `TauCeti.DenseGraphLimits.exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound` constructs a
+  strict graphon `L¹` limit from an `L¹` Cauchy modulus tending to zero.
+* `TauCeti.DenseGraphLimits.exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound` is the
   resulting cut-distance convergence.
 
 ## References
@@ -46,13 +45,14 @@ namespace TauCeti.DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
-/-- A graphon sequence with a summable `L¹` Cauchy modulus has a strict graphon limit in `L¹`.
+/-- A graphon sequence with an `L¹` Cauchy modulus tending to zero has a strict graphon limit in
+`L¹`.
 
-The bound `B N` controls every pair of terms whose indices are at least `N`. Summability of `B`
-gives an almost-everywhere pointwise limit through Mathlib's `Lp` completeness machinery; the
-closed conditions of symmetry and range `[0, 1]` pass to that limit. -/
-theorem exists_graphon_tendsto_eLpNorm_of_summable_eLpNorm_bound
-    (W : ℕ → Graphon Ω μ) {B : ℕ → ℝ≥0∞} (hB : ∑' n, B n ≠ ∞)
+The bound `B N` controls every pair of terms whose indices are at least `N`. A summably fast
+subsequence gives an almost-everywhere pointwise limit through Mathlib's `Lp` completeness
+machinery; the closed conditions of symmetry and range `[0, 1]` pass to that limit. -/
+theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
+    (W : ℕ → Graphon Ω μ) {B : ℕ → ℝ≥0∞} (hB : Tendsto B atTop (𝓝 0))
     (hCauchy : ∀ N n m, N ≤ n → N ≤ m →
       eLpNorm
         ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ W m z.1 z.2)
@@ -68,28 +68,53 @@ theorem exists_graphon_tendsto_eLpNorm_of_summable_eLpNorm_bound
   have hCauchy' : ∀ N n m, N ≤ n → N ≤ m →
       eLpNorm (f n - f m) 1 (μ.prod μ) < B N := by
     simpa only [f] using hCauchy
-  have haeLimit : ∀ᵐ z ∂(μ.prod μ), ∃ a : ℝ, Tendsto (fun n ↦ f n z) atTop (𝓝 a) :=
-    Lp.ae_tendsto_of_cauchy_eLpNorm hf le_rfl hB hCauchy'
+  let Bfast : ℕ → ℝ≥0∞ := fun n ↦ 2⁻¹ ^ n
+  have hBfast : ∑' n, Bfast n ≠ ∞ := by simp [Bfast]
+  have hB_eventually : ∀ n, ∀ᶠ k in atTop, B k < Bfast n := by
+    intro n
+    exact (tendsto_order.1 hB).2 _
+      (ENNReal.pow_pos (ENNReal.inv_pos.2 ENNReal.ofNat_ne_top) n)
+  obtain ⟨φ, hφ, hφB⟩ := Filter.extraction_forall_of_eventually hB_eventually
+  let fSub : ℕ → Ω × Ω → ℝ := fun n ↦ f (φ n)
+  have hfSub : ∀ n, AEStronglyMeasurable (fSub n) (μ.prod μ) := fun n ↦ hf (φ n)
+  have hCauchySub : ∀ N n m, N ≤ n → N ≤ m →
+      eLpNorm (fSub n - fSub m) 1 (μ.prod μ) < Bfast N := by
+    intro N n m hn hm
+    exact (hCauchy' (φ N) (φ n) (φ m) (hφ.monotone hn) (hφ.monotone hm)).trans (hφB N)
+  have haeLimit : ∀ᵐ z ∂(μ.prod μ), ∃ a : ℝ, Tendsto (fun n ↦ fSub n z) atTop (𝓝 a) :=
+    Lp.ae_tendsto_of_cauchy_eLpNorm hfSub le_rfl hBfast hCauchySub
   obtain ⟨fLim, hfLimMeas, hfLim⟩ :=
-    exists_stronglyMeasurable_limit_of_tendsto_ae hf haeLimit
-  have hLp : Tendsto (fun n ↦ eLpNorm (f n - fLim) 1 (μ.prod μ)) atTop (𝓝 0) :=
-    Lp.cauchy_tendsto_of_tendsto hf fLim hB hCauchy' hfLim
+    exists_stronglyMeasurable_limit_of_tendsto_ae hfSub haeLimit
+  have hLp : Tendsto (fun n ↦ eLpNorm (f n - fLim) 1 (μ.prod μ)) atTop (𝓝 0) := by
+    rw [ENNReal.tendsto_atTop_zero]
+    intro ε hε
+    obtain ⟨N, hN⟩ := (ENNReal.tendsto_atTop_zero.mp hB) ε hε
+    refine ⟨N, fun n hn ↦ ?_⟩
+    have hliminf : eLpNorm (f n - fLim) 1 (μ.prod μ) ≤
+        atTop.liminf fun m ↦ eLpNorm (f n - fSub m) 1 (μ.prod μ) := by
+      refine Lp.eLpNorm_lim_le_liminf_eLpNorm (fun m ↦ (hf n).sub (hfSub m)) (f n - fLim) ?_
+      refine hfLim.mono fun z hz ↦ ?_
+      simpa only [Pi.sub_apply] using tendsto_const_nhds.sub hz
+    refine hliminf.trans ((liminf_le_of_frequently_le' ?_).trans (hN N le_rfl))
+    apply Eventually.frequently
+    filter_upwards [hφ.tendsto_atTop (eventually_ge_atTop N)] with m hm
+    exact (hCauchy' N n (φ m) hn hm).le
   have hfLimRange : ∀ᵐ z ∂(μ.prod μ), fLim z ∈ Set.Icc (0 : ℝ) 1 := by
     filter_upwards [hfLim] with z hz
     exact isClosed_Icc.mem_of_tendsto hz
-      (Eventually.of_forall fun n ↦ (W n).mem_Icc z.1 z.2)
+      (Eventually.of_forall fun n ↦ (W (φ n)).mem_Icc z.1 z.2)
   have hfLimSwap : ∀ᵐ z ∂(μ.prod μ),
-      Tendsto (fun n ↦ f n z.swap) atTop (𝓝 (fLim z.swap)) :=
+      Tendsto (fun n ↦ fSub n z.swap) atTop (𝓝 (fLim z.swap)) :=
     (Measure.measurePreserving_swap (μ := μ) (ν := μ)).quasiMeasurePreserving.ae hfLim
   have hfLimSymm : ∀ᵐ z ∂(μ.prod μ), fLim z = fLim z.swap := by
     filter_upwards [hfLim, hfLimSwap] with z hz hzswap
     rcases z with ⟨x, y⟩
-    have hzswap' : Tendsto (fun n ↦ f n (y, x)) atTop (𝓝 (fLim (y, x))) := by
+    have hzswap' : Tendsto (fun n ↦ fSub n (y, x)) atTop (𝓝 (fLim (y, x))) := by
       simpa only [Prod.swap_prod_mk] using hzswap
-    have hz' : Tendsto (fun n ↦ f n (x, y)) atTop (𝓝 (fLim (y, x))) := by
+    have hz' : Tendsto (fun n ↦ fSub n (x, y)) atTop (𝓝 (fLim (y, x))) := by
       convert hzswap' using 1
       funext n
-      simpa only [f, Prod.swap_prod_mk] using (W n).symm x y
+      simpa only [fSub, f, Prod.swap_prod_mk] using (W (φ n)).symm x y
     simpa only [Prod.swap_prod_mk] using tendsto_nhds_unique hz hz'
   let fLimAE : (Ω × Ω) →ₘ[μ.prod μ] ℝ := AEEqFun.mk fLim hfLimMeas.aestronglyMeasurable
   have hfLimAE_coe : ⇑fLimAE =ᵐ[μ.prod μ] fLim := AEEqFun.coeFn_mk _ _
@@ -113,18 +138,18 @@ theorem exists_graphon_tendsto_eLpNorm_of_summable_eLpNorm_bound
   filter_upwards [hWlimAE] with z hz
   simp only [Pi.sub_apply, f, hz]
 
-/-- A graphon sequence with a summable `L¹` Cauchy modulus converges in cut distance to a strict
-graphon. This is the cut-distance consequence of
-`exists_graphon_tendsto_eLpNorm_of_summable_eLpNorm_bound`. -/
-theorem exists_graphon_tendsto_cutDist_of_summable_eLpNorm_bound
-    (W : ℕ → Graphon Ω μ) {B : ℕ → ℝ≥0∞} (hB : ∑' n, B n ≠ ∞)
+/-- A graphon sequence with an `L¹` Cauchy modulus tending to zero converges in cut distance to a
+strict graphon. This is the cut-distance consequence of
+`exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound`. -/
+theorem exists_graphon_tendsto_cutDist_of_tendsto_eLpNorm_bound
+    (W : ℕ → Graphon Ω μ) {B : ℕ → ℝ≥0∞} (hB : Tendsto B atTop (𝓝 0))
     (hCauchy : ∀ N n m, N ≤ n → N ≤ m →
       eLpNorm
         ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ W m z.1 z.2)
         1 (μ.prod μ) < B N) :
     ∃ Wlim : Graphon Ω μ, Tendsto (fun n ↦ cutDist (W n) Wlim) atTop (𝓝 0) := by
   obtain ⟨Wlim, hLp⟩ :=
-    exists_graphon_tendsto_eLpNorm_of_summable_eLpNorm_bound W hB hCauchy
+    exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound W hB hCauchy
   refine ⟨Wlim, squeeze_zero
     (g := fun n ↦ (eLpNorm
       ((fun z : Ω × Ω ↦ W n z.1 z.2) - fun z : Ω × Ω ↦ Wlim z.1 z.2)
@@ -135,7 +160,8 @@ theorem exists_graphon_tendsto_cutDist_of_summable_eLpNorm_bound
     refine (cutNorm_le_integral_abs μ ((W n).toSymmKernel - Wlim.toSymmKernel)).trans ?_
     refine le_of_eq (calc
       ∫ z, |((W n).toSymmKernel - Wlim.toSymmKernel) z.1 z.2| ∂(μ.prod μ) =
-          ∫ z, ‖W n z.1 z.2 - Wlim z.1 z.2‖ ∂(μ.prod μ) := by rfl
+          ∫ z, ‖W n z.1 z.2 - Wlim z.1 z.2‖ ∂(μ.prod μ) := by
+        simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, Real.norm_eq_abs]
       _ = (∫⁻ z, ‖W n z.1 z.2 - Wlim z.1 z.2‖ₑ ∂(μ.prod μ)).toReal :=
         integral_norm_eq_lintegral_enorm
           ((W n).measurable.aestronglyMeasurable.sub Wlim.measurable.aestronglyMeasurable)
