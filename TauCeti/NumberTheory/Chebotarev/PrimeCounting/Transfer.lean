@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Transfer
-public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
+public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Count
 
 /-!
 # Transferring Frobenius weighted counts
@@ -43,27 +43,6 @@ open IsDedekindDomain (HeightOneSpectrum)
 
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L] [IsGalois K L]
-
-variable (K L) in
-/-- The number of primes in the Frobenius fibre with absolute norm at most `x`. -/
-noncomputable def frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) : ℕ := by
-  classical
-  exact ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card
-
-/-- The Frobenius prime count as the cardinality of its filtered prime carrier. -/
-theorem frobeniusPrimeCount_apply (C : ConjClasses (L ≃ₐ[K] L))
-    [DecidablePred (fun v ↦ v ∈ frobeniusPrimeSet K L C)] (x : ℝ) :
-    frobeniusPrimeCount K L C x =
-      ((primesLE K x).filter (· ∈ frobeniusPrimeSet K L C)).card := by
-  classical
-  simp [frobeniusPrimeCount]
-
-/-- The real coercion of the Frobenius prime count is the generic prime count of its fibre. -/
-@[simp] theorem frobeniusPrimeCount_eq_primeCount (C : ConjClasses (L ≃ₐ[K] L)) (x : ℝ) :
-    (frobeniusPrimeCount K L C x : ℝ) = primeCount K (frobeniusPrimeSet K L C) x := by
-  classical
-  simpa [frobeniusPrimeCount] using
-    (primeCount_eq_card (K := K) (S := frobeniusPrimeSet K L C) x).symm
 
 /-- The little-`o` asymptotic for a Frobenius `ϑ` fibre obtained by removing its higher prime
 powers.
