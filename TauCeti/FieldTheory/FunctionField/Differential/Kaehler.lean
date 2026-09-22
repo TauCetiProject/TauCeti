@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Kaehler.Polynomial
+public import TauCeti.FieldTheory.FunctionField.SeparablyGenerated
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 
 /-!
@@ -20,10 +21,10 @@ subfield `k(x)` it generates. This file proves that the module of Kähler differ
 differential is `(dy/dx) · dx` for a unique scalar.
 
 An algebraic function field of one variable with a separating element is the motivating case:
-there `F` is moreover finite over `k(x)`, which none of the proofs below needs, so finiteness is
-not assumed. Separability is not cosmetic — it is what the base-change argument runs on, and
-Stichtenoth's one-dimensional differential module is identified with the Kähler module only
-under it — so it is carried as a hypothesis rather than bought with a blanket `PerfectField k`.
+there `F` is moreover finite over `k(x)`, which the basis construction does not need. Separability
+is not cosmetic — it is what the base-change argument runs on — so the general basis results carry
+it as a hypothesis. For a one-variable function field over a perfect field, the final theorem also
+proves the converse: a transcendental `x` is separating exactly when `d x` is nonzero.
 
 The proof is the base-change route: `k(x)/k` is a localization of the polynomial ring, whose
 differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence formally étale
@@ -38,6 +39,8 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
 * `TauCeti.derivativeOfSeparating`: differentiation `y ↦ dy/dx` with respect to `x`, as a
   `k`-derivation of `F`, with `TauCeti.derivativeOfSeparating_smul_D` the identity
   `d y = (dy/dx) · dx` and `TauCeti.eq_derivativeOfSeparating` its uniqueness.
+* `TauCeti.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a fixed
+  transcendental parameter over a perfect field.
 
 ## References
 
@@ -98,6 +101,8 @@ private theorem exists_basis_unit_D (hx : Transcendental k x) [Algebra.IsSeparab
   refine ⟨kaehlerBasisOfFormallyEtale k (RatFunc k) F (kaehlerBasisRatFunc k), ?_⟩
   rw [kaehlerBasisOfFormallyEtale_apply, kaehlerBasisRatFunc_apply, KaehlerDifferential.map_D, hX]
 
+section Separating
+
 variable [Algebra.IsSeparable k⟮x⟯ F] (hx : Transcendental k x)
 include hx
 
@@ -149,5 +154,71 @@ theorem eq_derivativeOfSeparating (y c : F) (hc : c • D k F x = D k F y) :
 @[simp]
 theorem derivativeOfSeparating_self : derivativeOfSeparating hx x = 1 :=
   (eq_derivativeOfSeparating hx x 1 (one_smul _ _)).symm
+
+end Separating
+
+variable [PerfectField k]
+
+/-- A transcendental element of a one-variable function field over a perfect field is
+separating exactly when its universal differential is nonzero. -/
+theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F)
+    (hx : Transcendental k x) :
+    Algebra.IsSeparable k⟮x⟯ F ↔ D k F x ≠ 0 := by
+  let _ := hF.finiteDimensional_adjoin hx
+  have hunr : Algebra.IsSeparable k⟮x⟯ F ↔ Subsingleton Ω[F⁄k⟮x⟯] := by
+    rw [← Algebra.FormallyUnramified.iff_isSeparable, Algebra.formallyUnramified_iff]
+  have hmap : Subsingleton Ω[F⁄k⟮x⟯] ↔
+      (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range = ⊤ := by
+    rw [KaehlerDifferential.range_mapBaseChange, LinearMap.ker_eq_top]
+    refine ⟨fun h ↦ LinearMap.ext fun a ↦ Subsingleton.elim _ _, fun h ↦ ⟨fun a b ↦ ?_⟩⟩
+    obtain ⟨a, rfl⟩ := KaehlerDifferential.map_surjective k k⟮x⟯ F a
+    obtain ⟨b, rfl⟩ := KaehlerDifferential.map_surjective k k⟮x⟯ F b
+    rw [h, LinearMap.zero_apply, LinearMap.zero_apply]
+  have hrange : (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range =
+      Submodule.span F {D k F x} := by
+    let x' : k⟮x⟯ := ⟨x, IntermediateField.subset_adjoin k {x} rfl⟩
+    have hx' : Transcendental k x' :=
+      (Subalgebra.transcendental_iff_transcendental_val
+        (S := k⟮x⟯.toSubalgebra)).mpr hx
+    have htop : k⟮x'⟯ = ⊤ := by
+      apply IntermediateField.lift_injective k⟮x⟯
+      rw [IntermediateField.lift_adjoin_simple, IntermediateField.lift_top]
+    let e : k⟮x'⟯ ≃ₐ[k] k⟮x⟯ :=
+      (IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv
+    let _ : Algebra.IsSeparable k⟮x'⟯ k⟮x⟯ :=
+      Algebra.IsSeparable.of_equiv_equiv e.symm.toRingEquiv (RingEquiv.refl k⟮x⟯) (by
+        ext z
+        simp [e])
+    obtain ⟨b, hb⟩ := exists_basis_unit_D hx'
+    refine le_antisymm ?_ ?_
+    · rintro v ⟨t, rfl⟩
+      induction t using TensorProduct.induction_on with
+      | zero => rw [map_zero]; exact Submodule.zero_mem _
+      | tmul c η =>
+        let a := b.repr η ()
+        have hη : a • b () = η := by simpa [a] using b.sum_repr η
+        rw [← hη, KaehlerDifferential.mapBaseChange_tmul, map_smul, hb,
+          KaehlerDifferential.map_D]
+        exact Submodule.smul_mem _ _ (Submodule.smul_of_tower_mem _ _
+          (Submodule.mem_span_singleton_self _))
+      | add a b ha hb => rw [map_add]; exact Submodule.add_mem _ ha hb
+    · rw [Submodule.span_le, Set.singleton_subset_iff]
+      exact ⟨1 ⊗ₜ D k k⟮x⟯ x', by
+        rw [KaehlerDifferential.mapBaseChange_tmul, one_smul,
+          KaehlerDifferential.map_D]
+        rfl⟩
+  have hdim : finrank F Ω[F⁄k] = 1 := by
+    obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+    let _ := hsep
+    exact finrank_kaehlerDifferential_eq_one_of_separating hy
+  have hspan : Submodule.span F {D k F x} = ⊤ ↔ D k F x ≠ 0 := by
+    constructor
+    · intro h hdx
+      rw [hdx, Submodule.span_zero_singleton] at h
+      obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+      let _ := hsep
+      exact D_ne_zero_of_separating hy ((Submodule.mem_bot _).1 (h ▸ Submodule.mem_top))
+    · exact fun hdx ↦ (finrank_eq_one_iff_of_nonzero _ hdx).mp hdim
+  rw [hunr, hmap, hrange, hspan]
 
 end TauCeti
