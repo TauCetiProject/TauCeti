@@ -93,9 +93,11 @@ theorem toPointHom_apply (P : W₁.Point) :
 /-- **The class of the image point is the pushed-forward class.** This characterises `toPointHom`,
 since `WeierstrassCurve.Affine.Point.toClass` is injective.
 
-This is deliberately not a simp lemma: `Point.toClass_apply` simplifies its left-hand side to a
-match on the image point, which is a worse public-facing normal form than this characteristic
-equation. -/
+**Deliberately not `@[simp]`**: Mathlib's `@[simps]` on `Point.toClass` already publishes
+`Point.toClass_apply`, a simp lemma rewriting `Point.toClass Q` to a match on `Q` for *every* `Q`.
+So this statement's left-hand side is not in simp normal form, and tagging it `@[simp]` is a
+`simpNF` linter violation, not merely a matter of taste. The characteristic equation is the useful
+public form, so it is kept as a named rewrite. -/
 theorem toClass_toPointHom (P : W₁.Point) :
     (φ.toPointHom P).toClass = φ.pushClass P.toClass := by
   rw [toPointHom_apply, ← Point.toClassEquiv_apply, AddEquiv.apply_symm_apply]
