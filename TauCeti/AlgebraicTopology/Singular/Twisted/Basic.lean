@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
@@ -240,7 +241,7 @@ lemma ιTwistedChainComplex_d (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌
   rfl
 
 /-- Singular homology of `X` with coefficients in the local coefficient system `L`. -/
-def twistedHomology (k : ℕ) : ModuleCat.{max v w} R := (twistedChainComplex L).homology k
+abbrev twistedHomology (k : ℕ) : ModuleCat.{max v w} R := (twistedChainComplex L).homology k
 
 end Chains
 
@@ -335,6 +336,22 @@ lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
       twistedChainComplexCoefficientMap η ≫ twistedChainComplexCoefficientMap θ :=
   (congrArg (fun φ ↦ (AlgebraicTopology.alternatingFaceMapComplex _).map φ)
     (twistedChainsCoefficientMap_comp η θ)).trans (CategoryTheory.Functor.map_comp _ _ _)
+
+/-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
+complexes. -/
+-- The body is exposed only so that `@[simps]` can record the two components as definitional
+-- equalities; both of them are the already public `twistedChainComplexCoefficientMap`.
+@[expose, simps]
+def twistedChainComplexCoefficientIso (e : L ≅ K) :
+    twistedChainComplex L ≅ twistedChainComplex K where
+  hom := twistedChainComplexCoefficientMap e.hom
+  inv := twistedChainComplexCoefficientMap e.inv
+  hom_inv_id := by
+    rw [← twistedChainComplexCoefficientMap_comp, e.hom_inv_id,
+      twistedChainComplexCoefficientMap_id]
+  inv_hom_id := by
+    rw [← twistedChainComplexCoefficientMap_comp, e.inv_hom_id,
+      twistedChainComplexCoefficientMap_id]
 
 /-- The map on twisted homology induced by a morphism of local coefficient systems. -/
 def twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
@@ -465,7 +482,7 @@ lemma twistedChainComplexConstantIso_hom_naturality {M N : ModuleCat.{max v w} R
 
 variable (X) in
 /-- For a constant local coefficient system, twisted homology is ordinary singular homology. -/
-def twistedHomologyConstantIso (M : ModuleCat.{max v w} R) (k : ℕ) :
+abbrev twistedHomologyConstantIso (M : ModuleCat.{max v w} R) (k : ℕ) :
     twistedHomology ((constantFunctor X).obj M) k ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{max v w} R) k).obj M).obj X :=
   (HomologicalComplex.homologyFunctor _ _ k).mapIso (twistedChainComplexConstantIso X M)
@@ -542,9 +559,28 @@ lemma ιTwistedChainComplex_twistedChainComplexMap (k : ℕ)
 
 /-- The map on twisted homology induced by a continuous map, from the homology of `X` twisted by
 the pullback system to the homology of `Y` twisted by `L`. -/
-def twistedHomologyMap (k : ℕ) :
+abbrev twistedHomologyMap (k : ℕ) :
     twistedHomology ((pullback f.hom).obj L) k ⟶ twistedHomology L k :=
-  (HomologicalComplex.homologyFunctor _ _ k).map (twistedChainComplexMap f L)
+  HomologicalComplex.homologyMap (twistedChainComplexMap f L) k
+
+/-- A monomorphism of spaces, that is, a continuous map with injective underlying function,
+induces a monomorphism of twisted chains in every degree: it reindexes the summands along an
+injection of singular simplices. -/
+lemma mono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
+    Mono ((twistedChainsMap f L).app k) :=
+  MonoCoprod.mono_map'_of_injective (fun σ ↦ L.obj (initialVertex σ))
+    ((TopCat.toSSet.map f).app k)
+    ((CategoryTheory.mono_iff_injective ((TopCat.toSSet.map f).app k)).mp inferInstance)
+
+/-- A monomorphism of spaces induces a monomorphism of twisted chain complexes in every
+degree. -/
+lemma mono_twistedChainComplexMap_f [Mono f] (k : ℕ) :
+    Mono ((twistedChainComplexMap f L).f k) :=
+  mono_twistedChainsMap_app f L _
+
+/-- A monomorphism of spaces induces a monomorphism of twisted chain complexes. -/
+lemma mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
+  HomologicalComplex.mono_of_mono_f _ fun k ↦ mono_twistedChainComplexMap_f f L k
 
 end Map
 
