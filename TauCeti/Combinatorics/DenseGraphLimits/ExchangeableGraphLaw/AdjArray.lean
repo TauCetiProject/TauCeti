@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
-public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 
 /-!
 # The adjacency array of a graph and the graph of an array
@@ -23,7 +22,7 @@ the diagonal relabelling of the array.
 ## Main results
 
 * `SimpleGraph.adjArray`, `SimpleGraph.adjArray_apply`, `SimpleGraph.measurable_adjArray`,
-  `SimpleGraph.adjArray_injective`, `SimpleGraph.adjArray_comap_apply`, over any vertex type;
+  `SimpleGraph.adjArray_injective`, over any vertex type;
   `SimpleGraph.adjArray_mem_symmetricArraysWithDiag`, `SimpleGraph.adjArray_comap` on `ℕ`.
 * `TauCeti.DenseGraphLimits.graphOfArray`, `graphOfArray_adj`, `measurable_graphOfArray`,
   `graphOfArray_pairReindex`.
@@ -74,11 +73,6 @@ theorem _root_.SimpleGraph.adjArray_injective {V : Type*} :
   ext i j
   have := congrFun h (i, j)
   simpa only [SimpleGraph.adjArray_apply, decide_eq_decide] using this
-
-/-- The adjacency array of a window is the restriction of the adjacency array along the labels. -/
-theorem _root_.SimpleGraph.adjArray_comap_apply {V W : Type*} (f : V → W) (G : SimpleGraph W)
-    (p : V × V) : (SimpleGraph.comap f G).adjArray p = G.adjArray (f p.1, f p.2) :=
-  (rfl)
 
 /-- The adjacency array of a graph is symmetric with `false` diagonal. -/
 theorem _root_.SimpleGraph.adjArray_mem_symmetricArraysWithDiag (G : SimpleGraph ℕ) :

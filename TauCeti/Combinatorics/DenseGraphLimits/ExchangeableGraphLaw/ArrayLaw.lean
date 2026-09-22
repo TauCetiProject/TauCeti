@@ -11,7 +11,6 @@ public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.AdjArr
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
-import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Exchangeable graph laws as jointly exchangeable array laws
