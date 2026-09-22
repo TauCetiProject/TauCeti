@@ -24,8 +24,8 @@ Mathlib's `presheafHomSectionsEquiv` supplies the underlying global-sections ide
 
 The equivalences `linearHomObjEquiv` and `linearHomSectionsEquiv` identify local and global
 sections with module-sheaf morphisms, and `linearHomObjEquiv_map_app` describes restriction.
-These declarations support dot notation directly, for example `M.linearHom N` and
-`M.linearHomObjEquiv N U`.
+After opening `TauCeti`, these declarations support dot notation directly, for example
+`M.linearHom N` and `M.linearHomObjEquiv N U`.
 
 This file constructs the underlying sheaf of sets; it does not equip it with a module
 structure or identify it with a categorical internal Hom.
@@ -37,6 +37,7 @@ open CategoryTheory Opposite
 
 noncomputable section
 
+namespace TauCeti
 namespace SheafOfModules
 
 universe u v w w'
@@ -186,3 +187,4 @@ theorem linearHomSectionsEquiv_symm_apply (φ : M ⟶ N) (U : Cᵒᵖ) :
       (linearHomObjEquiv M N U.unop).symm (φ.over U.unop) := by rfl
 
 end SheafOfModules
+end TauCeti
