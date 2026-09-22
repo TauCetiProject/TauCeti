@@ -131,10 +131,12 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMargina
 /-- **Restriction compatibility for block marginals.** The `r`-th width-`m` subblock of the
 `i`-th width-`n * m` block is the width-`m` block numbered `i * n + r`. -/
 theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul
-    (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] [NeZero n]
-    (i : ℕ) (r : Fin n) :
-    (P.blockMarginals (n * m) i).map (blockRestriction (α := α) m n r) =
+    (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] (i : ℕ) (r : Fin n) :
+    (@ProbabilityMeasure.blockMarginals α _ P (n * m)
+      ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
+        (blockRestriction (α := α) m n r) =
       P.blockMarginals m (i * n + r) := by
+  let _ : NeZero n := r.neZero
   have hcomp : blockRestriction (α := α) m n r =
       (fun x : Fin n → Fin m → α => x r) ∘ blockSplitEquiv α m n := by
     funext x j
