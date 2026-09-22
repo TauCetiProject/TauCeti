@@ -42,8 +42,9 @@ value. That identification is `TauCeti.ContCohomology.explicitCoeff0_trace`.
 * `TauCeti.coindTrace`: the trace `Coind_U^G M →+ M`.
 * `TauCeti.coindTrace_smul`: the trace is `G`-equivariant.
 * `TauCeti.coindTrace_coindMap`: the trace is natural in the coefficient module.
-* `TauCeti.DiscreteCoind.trace`: the trace on the discrete carrier, as a morphism of
-  `G`-modules.
+* `TauCeti.DiscreteCoind.trace`: the additive trace on the discrete carrier.
+* `TauCeti.coindTraceTopRep`: the trace as a morphism of smooth discrete topological
+  representations.
 * `TauCeti.ContCohomology.explicitCoeff0_trace` and
   `TauCeti.ContCohomology.explicitCor0_eq_explicitCoeff0_trace`: in degree zero the trace
   induces the corestriction norm, and corestriction is Shapiro's isomorphism followed by it.
@@ -191,9 +192,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgr
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
 variable (G U M) in
-/-- **The trace on the discrete carrier** of the coinduced module, as a morphism of `G`-modules.
-Together with `TauCeti.DiscreteCoind.continuous_trace` this is the coefficient morphism of
-discrete `G`-modules that corestriction is the induced map of. -/
+/-- **The additive trace on the discrete carrier** of the coinduced module. -/
 noncomputable def trace : DiscreteCoind G U M →+[G] M where
   toFun f := coindTrace G U (toCoind G U M f)
   map_zero' := map_zero _
@@ -209,7 +208,83 @@ theorem trace_apply (f : DiscreteCoind G U M) :
 theorem continuous_trace [TopologicalSpace M] : Continuous (trace G U M) :=
   continuous_of_discreteTopology
 
+section Scalar
+
+variable {R : Type*} [Semiring R] [Module R M] [SMulCommClass G R M]
+
+variable (R G U M) in
+/-- The trace on the discrete carrier as an `R`-linear map. -/
+noncomputable def traceLinear : DiscreteCoind G U M →ₗ[R] M where
+  toAddHom := (trace G U M).toAddHom
+  map_smul' r f := by
+    change trace G U M (r • f) = r • trace G U M f
+    rw [trace_apply, trace_apply, Finset.smul_sum]
+    simp only [coe_smul_scalar]
+    exact Finset.sum_congr rfl fun x _ => smul_comm x.out r (f x.out⁻¹)
+
+private theorem traceLinear_apply_impl (f : DiscreteCoind G U M) :
+    traceLinear (R := R) G U M f = trace G U M f := rfl
+
+@[simp]
+theorem traceLinear_apply (f : DiscreteCoind G U M) :
+    traceLinear (R := R) G U M f = trace G U M f := traceLinear_apply_impl f
+
+end Scalar
+
 end DiscreteCoind
+
+section BundledTrace
+
+universe u v w
+
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+variable (R : Type u) [Ring R] [TopologicalSpace R]
+  (G : Type v) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (U : Subgroup G)
+
+/-- **The trace as a morphism of smooth discrete `G`-representations.** For an open subgroup
+`U`, this is the coefficient morphism whose image under continuous cohomology is the second map
+in the Shapiro-then-trace construction of all-degree corestriction. -/
+noncomputable def coindTraceTopRep (hU : IsOpen (U : Set G))
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    (coindTopRep R G U
+      (⟨TopRep.res (U.subtype : U →* G) A.obj,
+        A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)).obj ⟶ A.obj := by
+  letI : DiscreteTopology A.obj.V := A.property.discreteTopology
+  letI : ContinuousSMul G A.obj.V := A.property.continuousSMul
+  letI : Finite (G ⧸ U) := Subgroup.quotient_finite_of_isOpen U hU
+  letI : U.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  let X := coindTopRep R G U
+    (⟨TopRep.res (U.subtype : U →* G) A.obj,
+      A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)
+  letI : DiscreteTopology X.obj.V := X.property.discreteTopology
+  exact CategoryTheory.ConcreteCategory.ofHom
+    { toContinuousLinearMap :=
+        { toFun := DiscreteCoind.trace G U A.obj.V
+          map_add' := map_add (DiscreteCoind.trace G U A.obj.V)
+          map_smul' := by
+            intro r f
+            exact map_smul (DiscreteCoind.traceLinear (R := R) G U A.obj.V) r f
+          cont := continuous_of_discreteTopology }
+      isIntertwining' g := by
+        ext f
+        exact map_smul (DiscreteCoind.trace G U A.obj.V) g f }
+
+private theorem coindTraceTopRep_apply_impl [U.FiniteIndex] (hU : IsOpen (U : Set G))
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (f : DiscreteCoind G U A.obj.V) :
+    coindTraceTopRep R G U hU A f = DiscreteCoind.trace G U A.obj.V f := by
+  change DiscreteCoind.trace G U A.obj.V f = _
+  rfl
+
+@[simp]
+theorem coindTraceTopRep_apply [U.FiniteIndex] (hU : IsOpen (U : Set G))
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (f : DiscreteCoind G U A.obj.V) :
+    coindTraceTopRep R G U hU A f = DiscreteCoind.trace G U A.obj.V f := by
+  exact coindTraceTopRep_apply_impl R G U hU A f
+
+end BundledTrace
 
 namespace ContCohomology
 
