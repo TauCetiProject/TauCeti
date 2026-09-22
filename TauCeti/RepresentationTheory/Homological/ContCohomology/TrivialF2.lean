@@ -35,7 +35,7 @@ trivial coefficient object for that subgroup.
 * `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
-* `TauCeti.trivialF2_isSmoothDiscrete`: the coefficient object is smooth discrete.
+* `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
 -/
 
 public section
@@ -96,8 +96,8 @@ theorem trivialF2_ρ_apply_apply (g : G) (x : (trivialF2 G).V) :
 variable [TopologicalSpace G]
 
 /-- The trivial `𝔽₂` coefficient object is smooth discrete. -/
-theorem trivialF2_isSmoothDiscrete : IsSmoothDiscrete ℤ (trivialF2 G) :=
-  trivial_isSmoothDiscrete ℤ (ULift.{u} (ZMod 2))
+theorem isSmoothDiscrete_trivialF2 : IsSmoothDiscrete ℤ (trivialF2 G) :=
+  isSmoothDiscrete_trivial ℤ (ULift.{u} (ZMod 2))
 
 end Monoid
 

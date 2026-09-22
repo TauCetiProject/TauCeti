@@ -80,7 +80,7 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   discrete.
 * `TauCeti.IsSmoothDiscrete.res`: smoothness is inherited by restriction along a continuous
   homomorphism.
-* `TauCeti.trivial_isSmoothDiscrete`: a trivial representation on a discrete module is smooth
+* `TauCeti.isSmoothDiscrete_trivial`: a trivial representation on a discrete module is smooth
   discrete.
 * `TauCeti.discreteRepEquivSmoothTopRep`: the two translations are an equivalence of categories
   between `TauCeti.DiscreteRep R G` and `TauCeti.SmoothDiscreteTopRep R G`.
@@ -284,7 +284,7 @@ lemma isSmoothDiscrete_of_ρ_apply_eq_self (X : TopRep R G) [DiscreteTopology X.
 
 /-- A trivial representation on a discrete module is smooth discrete: every point stabilizer is
 the whole monoid. -/
-lemma trivial_isSmoothDiscrete (M : Type w) [AddCommGroup M] [Module R M]
+lemma isSmoothDiscrete_trivial (M : Type w) [AddCommGroup M] [Module R M]
     [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul R M] :
     IsSmoothDiscrete R (TopRep.of (ContRepresentation.trivial R G M)) :=
   isSmoothDiscrete_of_ρ_apply_eq_self R _ fun g x ↦ ContRepresentation.trivial_apply g x
