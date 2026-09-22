@@ -115,7 +115,8 @@ theorem mem_center_of_ad_pPolynomial_eq_zero (p : ℕ) [ExpChar K p] {e : ℕ} {
     _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ e +
         ∑ i : Fin e, a i • _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ (i : ℕ) ∈
       Subalgebra.center K U := by
-  have : ExpChar U p := expChar_of_injective_algebraMap (algebraMap_injective K L) p
+  have : ExpChar U p :=
+    expChar_of_injective_algebraMap (Bialgebra.algebraMap_injective (R := K) U) p
   rw [mem_center_iff_forall_lie_ι K L]
   intro y
   -- Bracketing with the polynomial in `ι x` is the polynomial in the inner derivation of `ι x`.
@@ -205,7 +206,8 @@ iterated-commutator expansion would give. -/
 theorem isNilpotent_ad_ι_of_isNilpotent_ad (p : ℕ) [ExpChar K p] (hp : p ≠ 1) {x : L}
     (h : IsNilpotent (LieAlgebra.ad K L x)) :
     IsNilpotent (LieAlgebra.ad K U (_root_.UniversalEnvelopingAlgebra.ι K x)) := by
-  have : ExpChar U p := expChar_of_injective_algebraMap (algebraMap_injective K L) p
+  have : ExpChar U p :=
+    expChar_of_injective_algebraMap (Bialgebra.algebraMap_injective (R := K) U) p
   obtain ⟨e, he⟩ := exists_pow_ι_mem_center_of_isNilpotent_ad p hp h
   exact LieAlgebra.isNilpotent_ad_of_pow_expChar_pow_mem_center p he
 
