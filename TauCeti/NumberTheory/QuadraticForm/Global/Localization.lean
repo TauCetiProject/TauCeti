@@ -156,6 +156,15 @@ theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
   rw [atComplexEmbedding_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
+/-- A global isometry of quadratic forms localizes to an isometry at every finite place. -/
+theorem _root_.QuadraticMap.Equivalent.atFinitePlace [NumberField K]
+    {W : Type v'} [AddCommGroup W] [Module K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W} (h : Q.Equivalent R)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    (Q.atFinitePlace v).Equivalent (R.atFinitePlace v) := by
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  simpa only [atFinitePlace_def] using h.baseChange (v.adicCompletion K)
+
 /-- A global isometry of quadratic forms localizes to an isometry at every real place. -/
 theorem _root_.QuadraticMap.Equivalent.atRealPlace {W : Type v'} [AddCommGroup W] [Module K W]
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W} (h : Q.Equivalent R)
@@ -165,6 +174,18 @@ theorem _root_.QuadraticMap.Equivalent.atRealPlace {W : Type v'} [AddCommGroup W
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   simpa only [atRealPlace_def] using h.baseChange ℝ
+
+/-- A global isometry of quadratic forms stays an isometry after scalar extension through a
+complex embedding. -/
+theorem _root_.QuadraticMap.Equivalent.atComplexEmbedding
+    {W : Type v'} [AddCommGroup W] [Module K W]
+    {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W} (h : Q.Equivalent R)
+    (w : InfinitePlace K) :
+    (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) := by
+  let : CharZero K := RingHom.charZero w.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  simpa only [atComplexEmbedding_def] using h.baseChange ℂ
 
 section Diagonal
 

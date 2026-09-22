@@ -146,25 +146,16 @@ theorem prod_hilbertSymbol_real_of_equiv_weightedSumSquares {M : Type*} [AddComm
   rw [prod_hilbertSymbol_real, _root_.QuadraticForm.sigNeg_of_equiv_weightedSumSquares h,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
 
-/-- **The archimedean Hasse sign of the normal form.**  Listing the weights of
-`QuadraticForm.realSignatureForm p q` as `fun i : Fin (p + q) ↦ if i < p then 1 else -1`, the
-product of the real Hilbert symbols over the ordered pairs `i < j` is `(-1)^(q(q-1)/2)`. -/
-theorem prod_hilbertSymbol_realSignatureForm (p q : ℕ) :
-    ∏ ij ∈ univ.filter (fun ij : Fin (p + q) × Fin (p + q) => ij.1 < ij.2),
-        hilbertSymbol (if (ij.1 : ℕ) < p then (1 : ℝˣ) else -1)
-          (if (ij.2 : ℕ) < p then (1 : ℝˣ) else -1) =
-      (-1) ^ q.choose 2 := by
-  have hweight : (fun i : Fin (p + q) ↦ ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) ∘
-      finSumFinEquiv = Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
-    funext x
-    cases x <;> simp
-  have hdiag : (_root_.QuadraticForm.realSignatureForm p q).Equivalent
-      (QuadraticMap.weightedSumSquares ℝ fun i : Fin (p + q) ↦
-        ((if (i : ℕ) < p then (1 : ℝˣ) else -1 : ℝˣ) : ℝ)) := by
-    rw [_root_.QuadraticForm.realSignatureForm_def]
-    exact ⟨((_root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (R := ℝ) _
-      finSumFinEquiv).trans (_root_.QuadraticForm.weightedSumSquaresCongr hweight)).symm⟩
-  rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares hdiag,
+/-- **The archimedean Hasse sign of the normal form.** For any diagonalization of
+`QuadraticForm.realSignatureForm p q`, the product of the real Hilbert symbols over the ordered
+pairs `i < j` is `(-1)^(q(q-1)/2)`. -/
+theorem prod_hilbertSymbol_realSignatureForm (p q : ℕ) {ι : Type*} [Fintype ι] [LinearOrder ι]
+    {a : ι → ℝˣ}
+    (h : (_root_.QuadraticForm.realSignatureForm p q).Equivalent
+      (QuadraticMap.weightedSumSquares ℝ fun i ↦ (a i : ℝ))) :
+    ∏ ij ∈ univ.filter (fun ij : ι × ι => ij.1 < ij.2),
+        hilbertSymbol (a ij.1) (a ij.2) = (-1) ^ q.choose 2 := by
+  rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares h,
     _root_.QuadraticForm.sigNeg_realSignatureForm]
 
 end Real

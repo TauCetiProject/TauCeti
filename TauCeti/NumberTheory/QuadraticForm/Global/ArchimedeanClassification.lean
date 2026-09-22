@@ -42,7 +42,7 @@ predicates automatic; the degenerate cases need the finite-place clauses instead
   positive index alone classifies them.
 * `QuadraticForm.equivalent_atRealPlace_realSignatureForm_iff`: the localization is the normal
   form `p⟨1⟩ ⊥ q⟨-1⟩` exactly when `(p, q)` is its signature.
-* `TauCeti.prod_hilbertSymbol_atRealPlace`: the archimedean Hasse sign of a diagonalization.
+* `TauCeti.prod_hilbertSymbol_unitAtRealPlace`: the archimedean Hasse sign of a diagonalization.
 * `QuadraticForm.equivalent_atComplexEmbedding_iff_finrank_eq`: through a complex embedding
   regular forms are classified by their rank.
 * `QuadraticForm.equivalent_atComplexEmbedding_weightedSumSquares_one`: through a complex
@@ -95,12 +95,13 @@ theorem equivalent_atRealPlace_iff_realPositiveIndex_eq (hQ : Q.Nondegenerate)
 
 /-- A regular quadratic form is isometric at a real place to the normal form `p⟨1⟩ ⊥ q⟨-1⟩`
 exactly when `(p, q)` is its signature there. -/
+@[simp]
 theorem equivalent_atRealPlace_realSignatureForm_iff (hQ : Q.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) (p q : ℕ) :
     (Q.atRealPlace w).Equivalent (realSignatureForm p q) ↔ Q.realSignature w = (p, q) := by
-  rw [equivalent_iff_sigPos_eq_and_sigNeg_eq (Nondegenerate.atRealPlace hQ w)
-      (nondegenerate_realSignatureForm p q), sigPos_realSignatureForm, sigNeg_realSignatureForm,
-    Prod.ext_iff, realSignature_fst, realSignature_snd, realPositiveIndex_eq_sigPos,
+  rw [equivalent_realSignatureForm_iff_sigPos_eq_and_sigNeg_eq
+    (Nondegenerate.atRealPlace hQ w)]
+  simp only [Prod.ext_iff, realSignature_fst, realSignature_snd, realPositiveIndex_eq_sigPos,
     realNegativeIndex_eq_sigNeg]
 
 omit [FiniteDimensional K V] in
@@ -108,7 +109,7 @@ omit [FiniteDimensional K V] in
 product of the real Hilbert symbols of the localized coefficients over the ordered pairs `i < j`
 is `(-1)^(q(q-1)/2)`, where `q` is the negative index of `Q` at the real place.  In particular
 the product depends on `Q` and the place alone, not on the chosen diagonalization. -/
-theorem _root_.TauCeti.prod_hilbertSymbol_atRealPlace {ι : Type*} [Fintype ι] [LinearOrder ι]
+theorem _root_.TauCeti.prod_hilbertSymbol_unitAtRealPlace {ι : Type*} [Fintype ι] [LinearOrder ι]
     {a : ι → Kˣ} (h : Q.Equivalent (weightedSumSquares K fun i ↦ (a i : K)))
     (w : {w : InfinitePlace K // w.IsReal}) :
     ∏ ij ∈ univ.filter (fun ij : ι × ι => ij.1 < ij.2),
@@ -131,12 +132,11 @@ end RealPlace
 section ComplexEmbedding
 
 /-- Through a complex embedding regular quadratic forms are classified by their rank alone. -/
+@[simp]
 theorem equivalent_atComplexEmbedding_iff_finrank_eq (hQ : Q.Nondegenerate)
     (hR : R.Nondegenerate) (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).Equivalent (R.atComplexEmbedding w) ↔
       Module.finrank K V = Module.finrank K W := by
-  let _ : CharZero K := RingHom.charZero w.embedding
-  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let _ : Algebra K ℂ := w.embedding.toAlgebra
   rw [equivalent_iff_finrank_eq_of_isAlgClosed _ _ (Nondegenerate.atComplexEmbedding hQ w)
       (Nondegenerate.atComplexEmbedding hR w), Module.finrank_baseChange,
@@ -148,8 +148,6 @@ theorem equivalent_atComplexEmbedding_weightedSumSquares_one (hQ : Q.Nondegenera
     (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).Equivalent
       (weightedSumSquares ℂ (1 : Fin (Module.finrank K V) → ℂ)) := by
-  let _ : CharZero K := RingHom.charZero w.embedding
-  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let _ : Algebra K ℂ := w.embedding.toAlgebra
   have hrank : Module.finrank ℂ (w.ComplexScalarExtension (V := V)) = Module.finrank K V :=
     Module.finrank_baseChange
