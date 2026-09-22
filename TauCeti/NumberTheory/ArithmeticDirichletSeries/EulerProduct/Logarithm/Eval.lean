@@ -30,8 +30,8 @@ coefficient convergence is known at every prime, the logarithmic derivative of t
 
 ## Main results
 
-* `TauCeti.EulerProductData.logDeriv_eulerFactor_eq_tsum_coeff_localLogDerivSeries`: evaluation of
-  one local formal logarithmic derivative.
+* `TauCeti.EulerProductData.logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries`:
+  evaluation of one local formal logarithmic derivative.
 * `TauCeti.EulerProductData.hasSum_tsum_coeff_localLogDerivSeries`: the corresponding expansion of
   the logarithmic derivative of the global `L`-series.
 
@@ -55,23 +55,13 @@ open IdealArithmeticFunction
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- An ideal term at a power of `P` is the corresponding coefficient times the matching power of
-`N(P) ^ (-s)`. -/
-theorem idealTerm_primeIdealPow_eq_mul_cpow_neg (D : EulerProductData K)
-    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) (e : ℕ) :
-    idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e) =
-      D (P.primeIdealPow e) * ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
-  rw [idealTerm_def, P.absNorm_primeIdealPow, Nat.cast_pow,
-    ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg]
-  ring
-
 /-- **Evaluation of a local formal logarithmic derivative.** If the coefficient series of
 `X F_P'(X) / F_P(X)` converges at `X = N(P) ^ (-s)` and the local Euler factor does not vanish at
 `s`, then the analytic logarithmic derivative is `-log N(P)` times that sum.
 
 The explicit convergence hypothesis is necessary: convergence and nonvanishing of `F_P` at one
 point do not imply convergence there of the Taylor series of `F_P'/F_P` about zero. -/
-theorem logDeriv_eulerFactor_eq_tsum_coeff_localLogDerivSeries
+theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries
     (D : EulerProductData K) (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
     (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re)
     (hne : D.eulerFactor P s ≠ 0)
@@ -97,10 +87,12 @@ theorem logDeriv_eulerFactor_eq_tsum_coeff_localLogDerivSeries
         (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
       D.localArithmeticFactor_apply_pow, idealTerm_def, P.absNorm_primeIdealPow]
   have ha : Summable fun e : ℕ ↦ a e * x ^ e :=
-    hlocal.congr fun e ↦ D.idealTerm_primeIdealPow_eq_mul_cpow_neg P s e
+    hlocal.congr fun e ↦
+      idealTerm_primeIdealPow_eq_mul_cpow_neg D.toIdealArithmeticFunction P s e
   have hfactor : ∑' e : ℕ, a e * x ^ e = D.eulerFactor P s := by
     rw [D.eulerFactor_eq_tsum]
-    exact tsum_congr fun e ↦ (D.idealTerm_primeIdealPow_eq_mul_cpow_neg P s e).symm
+    exact tsum_congr fun e ↦
+      (idealTerm_primeIdealPow_eq_mul_cpow_neg D.toIdealArithmeticFunction P s e).symm
   have hcauchy :
       (∑' e : ℕ, b e * x ^ e) * ∑' e : ℕ, a e * x ^ e =
         ∑' n : ℕ, ∑ ij ∈ Finset.antidiagonal n,
@@ -131,7 +123,7 @@ theorem logDeriv_eulerFactor_eq_tsum_coeff_localLogDerivSeries
       Complex.log (Ideal.absNorm P.asIdeal : ℂ) * ((n : ℂ) * a n * x ^ n) =
         Complex.log (Ideal.absNorm (P.primeIdealPow n : Ideal (𝓞 K)) : ℂ) *
           idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow n) := by
-    rw [D.idealTerm_primeIdealPow_eq_mul_cpow_neg]
+    rw [idealTerm_primeIdealPow_eq_mul_cpow_neg]
     rw [P.absNorm_primeIdealPow, ← Complex.natCast_log, ← Complex.natCast_log]
     push_cast [Real.log_pow]
     ring
@@ -163,7 +155,7 @@ theorem hasSum_tsum_coeff_localLogDerivSeries (D : EulerProductData K) {s : ℂ}
             ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e)
       (logDeriv (LSeries (normCoeff K D.toIdealArithmeticFunction)) s) := by
   refine HasSum.congr_fun (D.hasSum_logDeriv_eulerFactor hs hne) fun P ↦ ?_
-  exact (D.logDeriv_eulerFactor_eq_tsum_coeff_localLogDerivSeries P
+  exact (D.logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries P
     ((D.abscissaOfAbsConv_localArithmeticFactor_le P).trans_lt hs) (hne P) (hcoeff P)).symm
 
 /-- The `tsum` form of

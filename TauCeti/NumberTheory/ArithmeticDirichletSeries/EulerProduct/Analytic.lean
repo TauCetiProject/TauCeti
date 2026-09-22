@@ -194,6 +194,16 @@ theorem coe_normCoeff_supportedPart_empty (hf : f 1 = 1) :
   funext n
   simp [ArithmeticFunction.one_apply, LSeries.delta]
 
+/-- An ideal term at a power of `P` is the corresponding coefficient times the matching power of
+`N(P) ^ (-s)`. -/
+theorem idealTerm_primeIdealPow_eq_mul_cpow_neg (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) (e : ℕ) :
+    idealTerm K f s (P.primeIdealPow e) =
+      f (P.primeIdealPow e) * ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
+  rw [idealTerm_def, P.absNorm_primeIdealPow, Nat.cast_pow,
+    ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg]
+  ring
+
 /-- **The prime terms are a subseries of the ideal terms.** Each height-one prime contributes its
 own ideal as the `e = 1` member of its power series, and distinct primes give distinct ideals, so
 absolute convergence over ideals restricts to the primes. Multiplicativity plays no part. -/
