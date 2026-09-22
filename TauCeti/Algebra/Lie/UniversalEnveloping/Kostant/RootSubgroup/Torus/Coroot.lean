@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Elementary
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Torus
 
@@ -36,12 +36,13 @@ cocharacter, and the identity puts its value at `α(s)` in the elementary group 
 
 What is left is a question about the integers alone: which values `u` arise as `α(s)`? Writing
 `α` in the coordinates of the designated Cartan vectors, `α(s) = ∏ⱼ s(j) ^ α(j)`, so every unit
-arises as soon as the integers `α(j)` are setwise coprime. For a simple root of a Dynkin diagram
-those integers are its row of the Cartan matrix, and coprimality holds as soon as some
-off-diagonal entry of that row is `-1`; among the simple roots of an irreducible diagram the only
-rows without one are the rank-one row `(2)` and the rows of the long simple roots of `B₂` and of
-`Cₙ`. When the condition holds at every Cartan index the whole torus lies in the elementary group,
-and the Borel-type join of the torus with all root subgroups collapses to the elementary group.
+arises as soon as the integers `α(j)` are setwise coprime. For a simple root of an irreducible
+finite Dynkin diagram those integers are its row of the Cartan matrix, which is coprime precisely
+when it contains an odd entry: equivalently, an off-diagonal `-1` or `-3`. The rows that are not
+coprime are the rank-one row `(2)` and the long-simple-root rows of `B₂` and `Cₙ`; the long row
+`(-3, 2)` of `G₂` has no `-1` but is nevertheless coprime. When the condition holds at every
+Cartan index the whole torus lies in the elementary group, and the Borel-type join of the torus
+with all root subgroups collapses to the elementary group.
 
 Nothing here identifies the elementary group with the points of the toral closure group scheme,
 which is a separate statement that this file does not use or prove: the comparison is between two
@@ -95,78 +96,12 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
 attribute [local instance high] Algebra.toModule
 
-/-! ## Coordinate cocharacters and coroot values -/
+/-! ## Coroot values in the elementary group -/
 
 section Coroot
 
 variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 variable [Fintype κ] [DecidableEq κ]
-
-/-- The cocharacter of the Kostant weight torus supported at the coordinate `c`. Its value at `u`
-scales a weight vector of weight `μ` by `u ^ μ(c)`. When `h c` is the Cartan element of an
-`sl₂`-triple, this is the associated coroot cocharacter. -/
-noncomputable def kostantCoordinateCocharacter (A : CommAlgCat.{w} ℤ) (c : κ) :
-    Aˣ →* LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M) :=
-  (kostantTorusPoints M b wt A).comp (MonoidHom.mulSingle (fun _ : κ ↦ Aˣ) c)
-
--- The public evaluation equation below cannot unfold `kostantCoordinateCocharacter` itself: the
--- module system only lets an exported theorem unfold exposed definitions.
-omit [Module ℚ V] in
-private theorem kostantCoordinateCocharacter_apply_def (A : CommAlgCat.{w} ℤ) (c : κ) (u : Aˣ) :
-    kostantCoordinateCocharacter M b wt A c u =
-      kostantTorusPoints M b wt A (Pi.mulSingle c u) := rfl
-
-omit [Module ℚ V] in
-/-- Evaluating the coordinate cocharacter at `u` gives the torus point supported at `c`. -/
-theorem kostantCoordinateCocharacter_apply (A : CommAlgCat.{w} ℤ) (c : κ) (u : Aˣ) :
-    kostantCoordinateCocharacter M b wt A c u =
-      kostantTorusPoints M b wt A (Pi.mulSingle c u) :=
-  kostantCoordinateCocharacter_apply_def M b wt A c u
-
-omit [Module ℚ V] in
-/-- The coordinate cocharacter takes `1` to the identity torus point. -/
-@[simp] theorem kostantCoordinateCocharacter_one (A : CommAlgCat.{w} ℤ) (c : κ) :
-    kostantCoordinateCocharacter M b wt A c 1 = 1 := map_one _
-
-omit [Module ℚ V] in
-/-- The coordinate cocharacter preserves multiplication. -/
-@[simp] theorem kostantCoordinateCocharacter_mul (A : CommAlgCat.{w} ℤ) (c : κ) (u v : Aˣ) :
-    kostantCoordinateCocharacter M b wt A c (u * v) =
-      kostantCoordinateCocharacter M b wt A c u *
-        kostantCoordinateCocharacter M b wt A c v := map_mul _ _ _
-
-omit [Module ℚ V] in
-/-- The coordinate cocharacter preserves inversion. -/
-@[simp] theorem kostantCoordinateCocharacter_inv (A : CommAlgCat.{w} ℤ) (c : κ) (u : Aˣ) :
-    kostantCoordinateCocharacter M b wt A c u⁻¹ =
-      (kostantCoordinateCocharacter M b wt A c u)⁻¹ := map_inv _ _
-
-omit [Module ℚ V] in
-/-- The coordinate cocharacter scales a weight vector by the corresponding weight coordinate. -/
-@[simp] theorem kostantCoordinateCocharacter_tmul_basis (A : CommAlgCat.{w} ℤ) (c : κ)
-    (u : Aˣ) (a : A) (x : η) :
-    (kostantCoordinateCocharacter M b wt A c u).val (a ⊗ₜ[ℤ] b x) =
-      (((u ^ wt x c : Aˣ) : A) * a) ⊗ₜ[ℤ] b x := by
-  rw [kostantCoordinateCocharacter_apply, kostantTorusPoints_tmul_basis,
-    torusCharacter_mulSingle]
-
-omit [Module ℚ V] in
-/-- **A torus point divided by its Weyl reflection is a coordinate-cocharacter value.** The
-reflection `s_α` changes only the `c`-th coordinate of a point, dividing it by the value `α(s)`, so
-the quotient is the value at `α(s)` of the cocharacter supported at `c`. -/
-theorem kostantTorusPoints_mul_inv_weylReflectTorusPoint (A : CommAlgCat.{w} ℤ) (α : κ → ℤ)
-    (c : κ) (s : κ → Aˣ) :
-    kostantTorusPoints M b wt A s *
-        (kostantTorusPoints M b wt A (weylReflectTorusPoint α c s))⁻¹ =
-      kostantCoordinateCocharacter M b wt A c (torusCharacter s α) := by
-  rw [kostantCoordinateCocharacter_apply, ← map_inv, ← map_mul]
-  congr 1
-  funext j
-  rcases eq_or_ne j c with rfl | hj
-  · simp only [Pi.mul_apply, Pi.inv_apply, weylReflectTorusPoint_apply_same,
-      Pi.mulSingle_eq_same, mul_inv_rev, inv_inv]
-    simp [mul_comm (s j), mul_assoc]
-  · simp [weylReflectTorusPoint_apply_of_ne _ hj, Pi.mulSingle_eq_of_ne hj]
 
 /-- **A coroot element at a value of the root lies in the elementary group.** For every torus
 point `s`, the coroot element at the Cartan index `c` with value `α(s)` is the commutator

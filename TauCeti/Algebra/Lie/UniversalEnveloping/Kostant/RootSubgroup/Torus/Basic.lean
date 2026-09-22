@@ -55,6 +55,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
   integral operator on a Kostant-stable subgroup — the pinning's `X_α`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints`: the split torus of rank `κ` on the
   points of a Kostant-stable lattice presented in a weight basis.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantCoordinateCocharacter`: the cocharacter supported at
+  one coordinate of the split torus.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubgroup`: the image of that torus in the general
   linear group of the base-changed lattice.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusMatrix`: the same action in matrix coordinates.
@@ -384,6 +386,62 @@ omit [Module ℚ V] in
     smul_tmul', smul_eq_mul]
 
 end Pointwise
+
+/-! ### Coordinate cocharacters -/
+
+section CoordinateCocharacter
+
+variable [DecidableEq κ]
+variable (A : Type*) [CommRing A] [Algebra ℤ A]
+
+/-- The cocharacter of the Kostant weight torus supported at the coordinate `c`. Its value at `u`
+scales a weight vector of weight `μ` by `u ^ μ(c)`. -/
+noncomputable def kostantCoordinateCocharacter (c : κ) :
+    Aˣ →* LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M) :=
+  (kostantTorusPoints M b wt A).comp (MonoidHom.mulSingle (fun _ : κ ↦ Aˣ) c)
+
+-- The public evaluation equation below cannot unfold `kostantCoordinateCocharacter` itself: the
+-- module system only lets an exported theorem unfold exposed definitions.
+omit [Module ℚ V] in
+private theorem kostantCoordinateCocharacter_apply_def (c : κ) (u : Aˣ) :
+    kostantCoordinateCocharacter M b wt A c u =
+      kostantTorusPoints M b wt A (Pi.mulSingle c u) := rfl
+
+omit [Module ℚ V] in
+/-- Evaluating the coordinate cocharacter at `u` gives the torus point supported at `c`. -/
+theorem kostantCoordinateCocharacter_apply (c : κ) (u : Aˣ) :
+    kostantCoordinateCocharacter M b wt A c u =
+      kostantTorusPoints M b wt A (Pi.mulSingle c u) :=
+  kostantCoordinateCocharacter_apply_def M b wt A c u
+
+omit [Module ℚ V] in
+/-- The coordinate cocharacter scales a weight vector by the corresponding weight coordinate. -/
+@[simp] theorem kostantCoordinateCocharacter_tmul_basis (c : κ)
+    (u : Aˣ) (a : A) (x : η) :
+    (kostantCoordinateCocharacter M b wt A c u).val (a ⊗ₜ[ℤ] b x) =
+      (((u ^ wt x c : Aˣ) : A) * a) ⊗ₜ[ℤ] b x := by
+  rw [kostantCoordinateCocharacter_apply, kostantTorusPoints_tmul_basis,
+    torusCharacter_mulSingle]
+
+omit [Module ℚ V] in
+/-- **A torus point divided by its Weyl reflection is a coordinate-cocharacter value.** The
+reflection `s_α` changes only the `c`-th coordinate of a point, dividing it by the value `α(s)`, so
+the quotient is the value at `α(s)` of the cocharacter supported at `c`. -/
+theorem kostantTorusPoints_mul_inv_weylReflectTorusPoint (α : κ → ℤ)
+    (c : κ) (s : κ → Aˣ) :
+    kostantTorusPoints M b wt A s *
+        (kostantTorusPoints M b wt A (weylReflectTorusPoint α c s))⁻¹ =
+      kostantCoordinateCocharacter M b wt A c (torusCharacter s α) := by
+  rw [kostantCoordinateCocharacter_apply, ← map_inv, ← map_mul]
+  congr 1
+  funext j
+  rcases eq_or_ne j c with rfl | hj
+  · simp only [Pi.mul_apply, Pi.inv_apply, weylReflectTorusPoint_apply_same,
+      Pi.mulSingle_eq_same, mul_inv_rev, inv_inv]
+    simp [mul_comm (s j), mul_assoc]
+  · simp [weylReflectTorusPoint_apply_of_ne _ hj, Pi.mulSingle_eq_of_ne hj]
+
+end CoordinateCocharacter
 
 section Naturality
 

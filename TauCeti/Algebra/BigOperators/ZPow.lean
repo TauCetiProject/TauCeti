@@ -41,6 +41,8 @@ variable {ι κ M G G₀ : Type*}
 power. This is the integral-exponent analogue of `Finset.prod_pow_eq_pow_sum`. -/
 theorem prod_zpow_eq_zpow_sum [CommGroup G] (s : Finset ι) (y : G) (e : ι → ℤ) :
     ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
+  -- `zpowersHom` packages the fixed-base power map; `.ofAdd` is the definitional bridge from
+  -- additive integers to its multiplicative integer domain.
   change ∏ i ∈ s, zpowersHom G y (.ofAdd (e i)) =
     zpowersHom G y (.ofAdd (∑ i ∈ s, e i))
   rw [← map_prod]
@@ -51,12 +53,7 @@ collapses to a single power. -/
 theorem prod_zpow_eq_zpow_sum₀ [CommGroupWithZero G₀] (s : Finset ι) {y : G₀} (hy : y ≠ 0)
     (e : ι → ℤ) : ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
   let u : G₀ˣ := Units.mk0 y hy
-  simpa [u] using congrArg Units.val
-    (show ∏ i ∈ s, u ^ e i = u ^ ∑ i ∈ s, e i from by
-      change ∏ i ∈ s, zpowersHom G₀ˣ u (.ofAdd (e i)) =
-        zpowersHom G₀ˣ u (.ofAdd (∑ i ∈ s, e i))
-      rw [← map_prod]
-      simp)
+  simpa [u] using congrArg Units.val (prod_zpow_eq_zpow_sum s u e)
 
 /-- Substituting the monomials `∏ b ∈ t, x b ^ e a b` into the monomial with natural exponents
 `g` produces the monomial whose exponent matrix is the product `∑ a ∈ s, g a * e a b`. -/
