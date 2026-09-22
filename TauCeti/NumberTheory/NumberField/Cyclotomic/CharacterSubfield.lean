@@ -36,14 +36,14 @@ namespace Subgroup
 variable {n m : ℕ} [NeZero n] [NeZero m]
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
   [IsAbelianGalois ℚ K]
-variable {R : Type*} [CommRing R] [Finite (DirichletCharacter R n)]
+variable {R : Type*} [CommRing R]
   [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)]
 
 /-- A character subfield of the `n`-th cyclotomic field lies in its cyclotomic subfield of level
 `m` exactly when every character in the group factors through level `m`, equivalently when the
 group conductor divides `m`. -/
 theorem characterSubfield_le_iff_dirichletConductor_dvd
-    (Y : Subgroup (DirichletCharacter R n)) (F : IntermediateField ℚ K)
+    (Y : Subgroup (DirichletCharacter R n)) [Finite Y] (F : IntermediateField ℚ K)
     [IsGalois ℚ F] [IsCyclotomicExtension {m} ℚ F] (hmn : m ∣ n) :
     (IsCyclotomicExtension.Rat.intermediateFieldEquivSubgroupChar n K R).symm Y ≤ F ↔
       Y.dirichletConductor ∣ m := by
