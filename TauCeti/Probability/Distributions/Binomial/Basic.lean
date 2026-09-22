@@ -69,8 +69,7 @@ theorem pgf_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
 /-- The moment generating function of the real-valued binomial law. -/
 theorem mgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :
     mgf id Bin(ℝ, n, p) t = (1 - (p : ℝ) + (p : ℝ) * Real.exp t) ^ n := by
-  rw [← pgf_binomial, pgf_exp]
-  exact congrFun (mgf_id_map (X := (Nat.cast : ℕ → ℝ)) .of_discrete) t
+  rw [mgf_id_map_natCast, pgf_binomial]
 
 /-- The cumulant generating function of the real-valued binomial law. -/
 theorem cgf_id_map_cast_binomial (n : ℕ) (p : unitInterval) (t : ℝ) :

@@ -36,8 +36,8 @@ specializations of the negative-binomial ones.
   mean and variance of the real cast of a geometric law.
 * `integrableExpSet_id_map_cast_geometricMeasure` and `mgf_id_map_cast_geometricMeasure` give its
   exact moment-generating domain and moment-generating function.
-* `integrable_pow_geometricMeasure_iff` and `pgf_geometricMeasure` give its exact
-  probability-generating domain and probability-generating function.
+* `integrable_pow_geometricMeasure_iff` and `pgf_geometricMeasure` give the exact
+  probability-generating domain and probability-generating function on the native carrier.
 * `charFun_map_cast_geometricMeasure` computes its characteristic function.
 * `geometricMeasure_real_Iic` and `geometricMeasure_memoryless` give the cumulative mass and the
   division-free memoryless identity on the native carrier.

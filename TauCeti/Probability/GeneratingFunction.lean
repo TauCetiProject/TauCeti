@@ -29,7 +29,8 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
 ## Main declarations
 
 * `TauCeti.Probability.pgf` — the probability-generating function.
-* `TauCeti.Probability.pgf_exp` — evaluation at `exp t` is a moment-generating function.
+* `TauCeti.Probability.pgf_exp` — evaluation at `exp t` is a moment-generating function, and
+  `TauCeti.Probability.mgf_id_map_natCast` restates this for the real cast of a law on `ℕ`.
 * `TauCeti.Probability.integrable_pow_of_abs_le_one` — on `[-1, 1]` the integrand is
   integrable under a finite measure.
 * `TauCeti.Probability.IndepFun.pgf_add` and `TauCeti.Probability.iIndepFun.pgf_sum` —
@@ -120,6 +121,13 @@ theorem pgf_exp (X : Ω → ℕ) (μ : Measure Ω) (t : ℝ) :
   congr 1
   funext ω
   rw [Nat.cast_comm, mul_comm]
+
+/-- The moment-generating function of the real cast of a law on `ℕ` is its
+probability-generating function evaluated at `exp t`. -/
+theorem mgf_id_map_natCast (ν : Measure ℕ) (t : ℝ) :
+    mgf id (ν.map (Nat.cast : ℕ → ℝ)) t = pgf id ν (Real.exp t) := by
+  rw [pgf_exp, mgf_id_map .of_discrete]
+  rfl
 
 /-- For a finite measure, the integrand of a probability-generating function is integrable on
 `[-1, 1]`. -/

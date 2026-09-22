@@ -59,8 +59,7 @@ theorem pgf_poissonMeasure (r : ℝ≥0) (t : ℝ) :
 theorem mgf_id_map_cast_poissonMeasure (r : ℝ≥0) :
     mgf (fun x : ℝ ↦ x) Po(ℝ, r) = fun t ↦ exp ((r : ℝ) * (exp t - 1)) := by
   ext t
-  rw [← pgf_poissonMeasure, pgf_exp]
-  exact congrFun (mgf_id_map (X := (Nat.cast : ℕ → ℝ)) .of_discrete) t
+  exact (mgf_id_map_natCast _ t).trans (pgf_poissonMeasure r _)
 
 /-- Every exponential moment of a real-valued Poisson law is integrable. -/
 theorem integrable_exp_mul_id_map_cast_poissonMeasure (r : ℝ≥0) (t : ℝ) :
