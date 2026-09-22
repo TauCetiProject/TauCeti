@@ -29,7 +29,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
   belongs to `S'`.
-* `TauCeti.Ideal.sup_pow_le_sup_pow_right`: modulo a two-sided ideal `I`, powers of
+* `Ideal.sup_pow_le_sup_pow_right`: modulo a two-sided ideal `I`, powers of
   `I ⊔ J` are controlled by the corresponding power of the two-sided ideal `J`.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: a subalgebra meeting every
   residue class modulo a principal ideal and containing a generator of it meets every residue
@@ -103,8 +103,6 @@ end Span
 
 end Ideal
 
-namespace TauCeti
-
 universe u
 
 /-- For two-sided ideals, the `n`-th power of a supremum is contained in the first ideal
@@ -131,8 +129,6 @@ theorem Ideal.sup_pow_le_sup_pow_right {R : Type u} [Semiring R] (I J : Ideal R)
         (sup_le (Ideal.mul_le_left.trans le_sup_left)
           (Ideal.mul_le_right.trans le_sup_left))
         (sup_le (Ideal.mul_le_left.trans le_sup_left) le_sup_right)
-
-end TauCeti
 
 namespace Subalgebra
 

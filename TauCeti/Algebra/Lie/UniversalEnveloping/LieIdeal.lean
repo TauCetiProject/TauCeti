@@ -330,7 +330,7 @@ theorem _root_.LieIdeal.exists_sup_envelopingIdeal_pow_le_of_forall_isNilpotent
       IsNilpotent (Ideal.Quotient.mk J (UniversalEnvelopingAlgebra.ι K x))) :
     ∃ n : ℕ, (J ⊔ I.envelopingIdeal) ^ n ≤ J := by
   obtain ⟨n, hn⟩ := I.exists_envelopingIdeal_pow_le_of_forall_isNilpotent J hI
-  exact ⟨n, (TauCeti.Ideal.sup_pow_le_sup_pow_right J I.envelopingIdeal n).trans
+  exact ⟨n, (Ideal.sup_pow_le_sup_pow_right J I.envelopingIdeal n).trans
     (sup_le le_rfl hn)⟩
 
 end CofiniteQuotient
