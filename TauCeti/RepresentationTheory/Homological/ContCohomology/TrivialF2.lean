@@ -87,7 +87,12 @@ instance : DiscreteTopology (trivialF2 G).V :=
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-- Applying the discrete coefficient dictionary to the carrier of `trivialF2` recovers the
-coefficient object itself. -/
+coefficient object itself.
+
+This specialization bridges an instance mismatch hidden by the opaque definition: the explicit
+cohomology comparison uses `AddCommGroup.toIntModule`, while `ofDiscreteModule_eq_self` uses the
+module structure stored in `trivialF2`. These structures are definitionally equal here, where the
+body of `trivialF2` is visible, but not at downstream use sites. -/
 @[simp]
 theorem ofDiscreteModule_trivialF2 :
     ofDiscreteModule ℤ G (trivialF2 G).V = trivialF2 G :=
