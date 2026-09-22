@@ -16,7 +16,7 @@ connects topological generation in a group with additive generation on its `Addi
 
 public section
 
-namespace TauCeti
+namespace Subgroup
 
 /-- Converting a subgroup to an additive subgroup commutes with topological closure. -/
 @[simp]
@@ -28,4 +28,4 @@ theorem toAddSubgroup_topologicalClosure {G : Type*} [Group G] [TopologicalSpace
   -- to this bridge so consumers can rewrite without unfolding these representations.
   (rfl)
 
-end TauCeti
+end Subgroup

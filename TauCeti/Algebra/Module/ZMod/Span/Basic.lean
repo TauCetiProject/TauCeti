@@ -18,7 +18,7 @@ criterion in its associated vector space.
 
 public section
 
-namespace TauCeti
+namespace Set
 
 /-- The span over `ℤ/nℤ` has the same underlying additive subgroup as the subgroup generated
 by the set. This also includes `n = 0`, where `ZMod 0 = ℤ`. -/
@@ -31,4 +31,4 @@ theorem span_zmod_eq_addSubgroupClosure {n : ℕ} {M : Type*} [AddCommGroup M] [
       AddSubgroup.subset_closure
   · exact (AddSubgroup.closure_le _).mpr Submodule.subset_span
 
-end TauCeti
+end Set
