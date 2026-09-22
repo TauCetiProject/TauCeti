@@ -45,11 +45,12 @@ open scoped Classical NumberField in
 embedding of norm at most `r`.
 
 The estimate is uniform over all infinite places, including the distinguished place omitted from
-`logSpace`: the product formula bounds its logarithm in terms of the other components. The proof
-follows Mathlib's `NumberField.Units.dirichletUnitTheorem.unitLattice_inter_ball_finite`. -/
+`logSpace`: the product formula bounds its logarithm in terms of the other components. -/
 theorem finite_setOf_norm_logEmbedding_le (r : ℝ) :
     {u : (𝓞 K)ˣ |
       ‖NumberField.Units.logEmbedding K (Additive.ofMul u)‖ ≤ r}.Finite := by
+  -- The argument follows Mathlib's
+  -- `NumberField.Units.dirichletUnitTheorem.unitLattice_inter_ball_finite`.
   by_cases hr : 0 ≤ r
   · refine (finite_setOf_forall_apply_le (K := K)
       (Real.exp (Fintype.card (InfinitePlace K) * r))).subset ?_
