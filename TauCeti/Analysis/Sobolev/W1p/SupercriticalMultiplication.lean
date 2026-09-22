@@ -510,17 +510,20 @@ theorem W1p.norm_mul_le (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (
 bound is `TauCeti.W1p.norm_mul_le`, and multiplication by a fixed factor is a bounded operator by
 `TauCeti.W1p.norm_mulL_apply_le`. This is the form the nonlinear estimates use, where a product
 must be differentiated and estimated in the Sobolev norm at once. -/
+@[reducible]
 def W1p.mulL (hp : (finrank ℝ E : ℝ≥0) < p) :
     W1p mu ⊤ (p : ℝ≥0∞) →L[ℝ] W1p mu ⊤ (p : ℝ≥0∞) →L[ℝ] W1p mu ⊤ (p : ℝ≥0∞) :=
-  LinearMap.mkContinuous₂
+  let f := LinearMap.mkContinuous₂
     (LinearMap.mk₂ ℝ (W1p.mul hp) (W1p.add_mul hp) (W1p.smul_mul_assoc hp) (W1p.mul_add hp)
       (W1p.mul_smul_comm hp))
     (3 * ‖W1p.morreyEmbedding (mu := mu) hp‖) (W1p.norm_mul_le hp)
+  -- Expose the application before `simp` normalizes the hidden whole-space measure in `W1p`.
+  f.copy (fun u => (f u).copy (fun v => W1p.mul hp u v) rfl) (by
+    funext u
+    ext v
+    rfl)
 
--- Deliberately not a `@[simp]` lemma: the carrier of `W1p mu ⊤ p` mentions `mu.restrict ↑⊤`, which
--- `simp` normalizes to `mu.restrict Set.univ` inside the coercion's implicit arguments, so this
--- left-hand side is not in simp-normal form and the rewrite never fires in a full `simp` run.
--- Use it through `simp only`/`rw`, as `TauCeti.W1p.norm_mulL_apply_le` does.
+/-- Evaluating the bundled multiplication recovers supercritical Sobolev multiplication. -/
 theorem W1p.mulL_apply (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
     W1p.mulL hp u v = W1p.mul hp u v :=
   (rfl)
@@ -530,6 +533,6 @@ times the operator norm of Morrey's embedding times `‖u‖`. -/
 theorem W1p.norm_mulL_apply_le (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) :
     ‖W1p.mulL hp u‖ ≤ 3 * ‖W1p.morreyEmbedding (mu := mu) hp‖ * ‖u‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => by
-    simpa only [W1p.mulL_apply] using W1p.norm_mul_le hp u v
+    simpa using W1p.norm_mul_le hp u v
 
 end TauCeti
