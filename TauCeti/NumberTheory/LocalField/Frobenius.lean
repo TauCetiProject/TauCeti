@@ -39,15 +39,27 @@ variable {K L M : Type*}
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
   [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
   [ValuativeExtension K L] [ValuativeExtension L M] [ValuativeExtension K M]
-  [FiniteDimensional K L] [FiniteDimensional K M]
-  [IsGalois K L] [IsGalois K M] [IsUnramified K M]
+  [FiniteDimensional K M] [Normal K L] [IsGalois K M] [IsUnramified K M]
 
 /-- Arithmetic Frobenius restricts to arithmetic Frobenius through a normal intermediate field
 of a finite unramified extension of nonarchimedean local fields. -/
+@[simp]
 theorem frobeniusAlgEquiv_restrictNormal :
+    letI : FiniteDimensional K L :=
+      FiniteDimensional.of_injective (IsScalarTower.toAlgHom K L M).toLinearMap
+        (IsScalarTower.toAlgHom K L M).injective
+    letI : Algebra.IsSeparable K L :=
+      Algebra.isSeparable_tower_bot_of_isSeparable K L M
+    letI : IsGalois K L := ⟨⟩
     letI := IsUnramified.tower_bot K L M
     (frobeniusAlgEquiv (K := K) (L := M)).restrictNormal L =
       frobeniusAlgEquiv (K := K) (L := L) := by
+  let _ : FiniteDimensional K L :=
+    FiniteDimensional.of_injective (IsScalarTower.toAlgHom K L M).toLinearMap
+      (IsScalarTower.toAlgHom K L M).injective
+  let _ : Algebra.IsSeparable K L :=
+    Algebra.isSeparable_tower_bot_of_isSeparable K L M
+  let _ : IsGalois K L := ⟨⟩
   let _ : IsUnramified K L := IsUnramified.tower_bot K L M
   let σ := frobeniusAlgEquiv (K := K) (L := M)
   apply eq_frobeniusAlgEquiv_of_valuation_sub_pow_lt_one
@@ -67,10 +79,8 @@ theorem frobeniusAlgEquiv_restrictNormal :
       rw [coe_algebraMap_integerRing, hdcoe, map_sub, map_pow,
         AlgEquiv.restrictNormal_commutes]
       exact hσ
-    have hdUnder : d ∈ (IsLocalRing.maximalIdeal 𝒪[M]).under 𝒪[L] := hdM
-    rw [← Ideal.LiesOver.over (A := 𝒪[L]) (B := 𝒪[M])
-      (p := IsLocalRing.maximalIdeal 𝒪[L]) (P := IsLocalRing.maximalIdeal 𝒪[M])] at hdUnder
-    exact hdUnder
+    exact (Valuation.HasExtension.algebraMap_mem_maximalIdeal_iff
+      (valuation L) (valuation M)).mp hdM
   have hv := (Valuation.mem_maximalIdeal_iff (v := valuation L)).1 hd
   rw [hdcoe] at hv
   simpa only [σ] using hv
