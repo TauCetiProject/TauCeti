@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Length
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 
 /-!
 # Length of radial geodesic segments
 
 The radial curve is a reparametrized maximal geodesic wherever its parameters lie in the interval
-of existence.  These results record its Riemannian length directly in exponential-map coordinates,
-so it can be compared with the length of a competing path in a normal neighbourhood.
+of existence. Its directed length from parameter `s` to `t` is its speed times
+`ENNReal.ofReal (t - s)`, so it is zero when `t < s`. These results record this length directly in
+exponential-map coordinates, so it can be compared with the length of a competing path in a normal
+neighbourhood.
 
 The length calculation uses the constant-speed formula for maximal geodesics in
 `TauCeti.Manifold.pathELength_maximalGeodesic`.
@@ -43,8 +46,9 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [T2Space (TangentBundle I M)]
 
-/-- The radial exponential curve has length equal to its constant speed times the elapsed time
-whenever both parameters lie in the interval of existence. -/
+/-- The directed length from `s` to `t` of the radial exponential curve equals its constant speed
+times `ENNReal.ofReal (t - s)` whenever both parameters lie in the interval of existence. In
+particular, it is zero when `t < s`. -/
 theorem pathELength_riemannianExp_smul {p : M} {v : TangentSpace I p} {s t : ℝ}
     (hs : s ∈ geodesicInterval I M p v) (ht : t ∈ geodesicInterval I M p v) :
     pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) s t =
@@ -54,6 +58,15 @@ theorem pathELength_riemannianExp_smul {p : M} {v : TangentSpace I p} {s t : ℝ
     exact riemannianExp_smul p v u
   rw [hcurve]
   exact pathELength_maximalGeodesic hs ht
+
+/-- In a normal domain, the radial exponential curve from `0` to `1` has length `‖v‖`. -/
+@[simp] theorem pathELength_riemannianExp_smul_zero_one {p : M} {U : Set (TangentSpace I p)}
+    (h : IsNormalDomain I M p U) {v : TangentSpace I p} (hv : v ∈ U) :
+    pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) 0 1 = ‖v‖ₑ := by
+  rw [pathELength_riemannianExp_smul
+    (h.mem_geodesicInterval hv (by norm_num) (by norm_num))
+    (h.mem_geodesicInterval hv (by norm_num) (by norm_num)), sub_zero, ENNReal.ofReal_one,
+    mul_one]
 
 end TauCeti.Manifold
 

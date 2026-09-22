@@ -6,22 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.PathELength
 
 /-!
 # Length of maximal geodesics
 
-A maximal geodesic has constant speed on its maximal interval, so its Riemannian length between
-any two parameters in that interval is its initial speed times the elapsed time. This gives the
-Lipschitz bound used in the metric-completeness argument for geodesic completeness.
+A maximal geodesic has constant speed on its maximal interval. Its directed Riemannian length from
+parameter `s` to `t` is its initial speed times `ENNReal.ofReal (t - s)`, so the length is zero
+when `t < s`. This gives the Lipschitz bound used in the metric-completeness argument for geodesic
+completeness.
 
 ## Main results
 
 * `TauCeti.Manifold.norm_curveVelocityWithin_maximalGeodesic`: the velocity of a maximal geodesic
   has the norm of its initial velocity throughout its interval.
-* `TauCeti.Manifold.pathELength_maximalGeodesic`: its length between two parameters is its initial
-  speed times the elapsed time.
+* `TauCeti.Manifold.pathELength_maximalGeodesic`: its directed length from `s` to `t` is its
+  initial speed times `ENNReal.ofReal (t - s)`.
 
 ## References
 
@@ -59,8 +59,8 @@ theorem norm_curveVelocityWithin_maximalGeodesic {t : ℝ} (ht : t ∈ geodesicI
     zero_mem_geodesicInterval]
   exact congrArg (fun z : TangentBundle I M ↦ ‖z.2‖) h.initial_eq
 
-/-- Between two parameters of its maximal interval, the maximal geodesic from `p` with initial
-velocity `v` has length `‖v‖ * (t - s)`. -/
+/-- The directed length from `s` to `t` of the maximal geodesic from `p` with initial velocity `v`
+is `‖v‖ * ENNReal.ofReal (t - s)`, and hence is zero when `t < s`. -/
 theorem pathELength_maximalGeodesic {s t : ℝ} (hs : s ∈ geodesicInterval I M p v)
     (ht : t ∈ geodesicInterval I M p v) :
     pathELength I (maximalGeodesic I M p v) s t = ‖v‖ₑ * ENNReal.ofReal (t - s) := by
