@@ -92,6 +92,14 @@ namespace Subgroup
 
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
 
+private theorem fixingSubgroup_fixedField_gc :
+    GaloisConnection
+      (OrderDual.toDual ∘
+        (IntermediateField.fixingSubgroup : IntermediateField K M → Subgroup (M ≃ₐ[K] M)))
+      ((IntermediateField.fixedField : Subgroup (M ≃ₐ[K] M) → IntermediateField K M) ∘
+        OrderDual.ofDual) :=
+  fun E H ↦ (IntermediateField.le_iff_le H.ofDual E).symm
+
 /-- **The fixed field of an intersection is the compositum of the fixed fields.** For a finite
 Galois extension, the Galois correspondence reverses binary meets and joins. -/
 @[simp]
@@ -108,12 +116,8 @@ direction needs no finiteness or Galois hypothesis: fixing every generator is ex
 subgroup they generate. At the level of carriers, this is `fixedPoints_subgroup_sup`. -/
 @[simp]
 theorem fixedField_sup (H H' : Subgroup (M ≃ₐ[K] M)) :
-    fixedField (H ⊔ H') = fixedField H ⊓ fixedField H' := by
-  apply SetLike.coe_injective
-  rw [IntermediateField.coe_inf]
-  change MulAction.fixedPoints (↑(H ⊔ H')) M =
-    MulAction.fixedPoints (↑H) M ∩ MulAction.fixedPoints (↑H') M
-  exact fixedPoints_subgroup_sup (M := M ≃ₐ[K] M) (α := M)
+    fixedField (H ⊔ H') = fixedField H ⊓ fixedField H' :=
+  (fixingSubgroup_fixedField_gc (K := K) (M := M)).u_inf
 
 /-- **The fixed field of a common intersection is the compositum of the fixed fields.** This is
 the indexed Galois-lattice law: an element fixed by every automorphism common to all `H i` lies in
@@ -132,11 +136,8 @@ direction, like `Subgroup.fixedField_sup`, needs no finiteness or Galois hypothe
 of carriers, this is `fixedPoints_subgroup_iSup`. -/
 @[simp]
 theorem fixedField_iSup {I : Sort*} (H : I → Subgroup (M ≃ₐ[K] M)) :
-    fixedField (⨆ i, H i) = ⨅ i, fixedField (H i) := by
-  apply SetLike.coe_injective
-  rw [IntermediateField.coe_iInf]
-  change MulAction.fixedPoints (↑(⨆ i, H i)) M = ⋂ i, MulAction.fixedPoints (↑(H i)) M
-  exact fixedPoints_subgroup_iSup (M := M ≃ₐ[K] M) (α := M)
+    fixedField (⨆ i, H i) = ⨅ i, fixedField (H i) :=
+  (fixingSubgroup_fixedField_gc (K := K) (M := M)).u_iInf
 
 /-- **The fixed field of the infimum of a set of subgroups is the compositum of their fixed
 fields.** This is the set-indexed form of `Subgroup.fixedField_iInf`. -/
