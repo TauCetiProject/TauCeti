@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Engel
+public import Mathlib.Algebra.Lie.Nilpotent
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
+import Mathlib.Algebra.Lie.Engel
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Lie.Nilradical
 import TauCeti.RingTheory.Ideal.Operations
