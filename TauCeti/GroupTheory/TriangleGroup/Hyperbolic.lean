@@ -7,9 +7,11 @@ module
 
 public import TauCeti.GroupTheory.TriangleGroup.Basic
 import Mathlib.Analysis.SpecialFunctions.Arcosh
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.PiDiv
+import TauCeti.Data.Nat.ReciprocalSum
 import TauCeti.GroupTheory.TriangleGroup.Euclidean
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.OrderOf
-import TauCeti.LinearAlgebra.Matrix.TraceFinTwo
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Hyperbolic triangle groups are infinite
@@ -107,10 +109,6 @@ private theorem trace_commutator_ellipticSL (θ₁ θ₂ t : ℝ) :
   linear_combination 4 * (1 - cos θ₂ ^ 2) * cos_sq_add_sin_sq θ₁ +
     4 * sin θ₁ ^ 2 * cos_sq_add_sin_sq θ₂ + 4 * (sin θ₁ * sin θ₂) ^ 2 * cosh_sq t
 
-private theorem sin_pi_div_pos {k : ℕ} (hk : 2 ≤ k) : 0 < sin (π / k) := by
-  have hk₁ : (1 : ℝ) < k := by exact_mod_cast hk
-  exact sin_pos_of_pos_of_lt_pi (by positivity) (div_lt_self pi_pos hk₁)
-
 /-- For a hyperbolic parameter triple there is a nonzero `t` with
 `cosh t * (sin θ₁ * sin θ₂) = cos θ₁ * cos θ₂ + cos θ₃`, namely `t = arcosh κ` in the notation of
 the module docstring. -/
@@ -134,16 +132,6 @@ private theorem exists_cosh_mul_eq {a b c : ℕ} (ha : 2 ≤ a) (hb : 2 ≤ b)
     linarith
   refine ⟨arcosh κ, (arcosh_pos hκ).ne', ?_⟩
   rw [cosh_arcosh hκ.le, div_mul_cancel₀ _ hs.ne']
-
-/-- If `1/a + 1/b + 1/c < 1` then none of `a`, `b`, `c` is `1`, since the other two reciprocals
-are nonnegative. -/
-private theorem two_le_of_inv_add_inv_add_inv_lt_one {p q r : ℕ} (hp : p ≠ 0)
-    (h : (p : ℚ)⁻¹ + (q : ℚ)⁻¹ + (r : ℚ)⁻¹ < 1) : 2 ≤ p := by
-  by_contra hp₂
-  obtain rfl : p = 1 := by omega
-  have : (0 : ℚ) ≤ (q : ℚ)⁻¹ + (r : ℚ)⁻¹ := by positivity
-  norm_num at h
-  linarith
 
 /-- **Hyperbolic triangle groups have elements of infinite order.** If `1/a + 1/b + 1/c < 1` with
 `a, b, c` nonzero, then the commutator of the generators `x` and `y` of the triangle group

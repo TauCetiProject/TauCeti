@@ -102,18 +102,20 @@ theorem sin_smul_pow_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ} {θ : ℝ} (hdet :
     have e₁ := hsin ((n + 1 : ℕ) : ℝ)
     have e₂ := hsin (n : ℝ)
     push_cast at e₁ e₂ ⊢
+    -- Normalize the predecessor indices so the sine recurrence matches the casted goal.
     rw [show (n : ℝ) + 1 + 1 - 1 = n + 1 by ring, show (n : ℝ) + 1 - 1 = n by ring] at *
     rw [e₁, e₂]
     module
 
 /-- A real `2 × 2` matrix of determinant one and trace `2 cos (π / k)`, with `2 ≤ k`, has `k`-th
-power `-1`. As a Möbius transformation it is an elliptic element of order `k` of `PSL(2, ℝ)`. -/
+power `-1`. Its image in `PSL(2, ℝ)` has order dividing `k`. -/
 theorem pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div {A : Matrix (Fin 2) (Fin 2) ℝ} {k : ℕ}
     (hdet : A.det = 1) (hk : 2 ≤ k) (htr : A.trace = 2 * cos (π / k)) : A ^ k = -1 := by
   have hk₀ : (k : ℝ) ≠ 0 := by positivity
   have hk₁ : (1 : ℝ) < k := by exact_mod_cast hk
   have hs : 0 < sin (π / k) := sin_pos_of_pos_of_lt_pi (by positivity) (div_lt_self pi_pos hk₁)
   have h := sin_smul_pow_fin_two hdet htr k
+  -- Normalize the two sine arguments before using `sin_pi` and `sin_pi_sub`.
   rw [show (k : ℝ) * (π / k) = π by field_simp, show ((k : ℝ) - 1) * (π / k) = π - π / k by
     field_simp, sin_pi, sin_pi_sub, zero_smul, zero_sub, ← smul_neg] at h
   exact smul_right_injective _ hs.ne' h

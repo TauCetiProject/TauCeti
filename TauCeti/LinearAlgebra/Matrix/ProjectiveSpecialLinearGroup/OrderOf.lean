@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
-import TauCeti.LinearAlgebra.Matrix.TraceFinTwo
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -22,7 +22,7 @@ The trace of a matrix of `SL(2, R)` is determined up to sign by its class in
 * over a linearly ordered commutative ring, an element of `PSL(2, R)` whose representatives have
   trace of absolute value greater than `2` — a hyperbolic element — has infinite order.
 
-The matrix computations behind both statements are in `TauCeti.LinearAlgebra.Matrix.TraceFinTwo`.
+The matrix computations behind both statements are in `TauCeti.LinearAlgebra.Matrix.Trace.FinTwo`.
 
 ## Main results
 
