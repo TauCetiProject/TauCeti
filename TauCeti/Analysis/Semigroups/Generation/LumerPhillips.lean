@@ -31,9 +31,8 @@ resolvent point `1`. Thus the generator of the limit semigroup is `A`.
   **Lumer--Phillips generation theorem**.
 * `TauCeti.Semigroups.exists_contractionSemigroup_generator_eq_iff`: an operator generates a
   contraction semigroup exactly when it is densely defined and m-dissipative.
-* `TauCeti.Semigroups.exists_contractionSemigroup_generator_eq_iff_forall_mem_dualitySet`: the
-  same characterization with dissipativity in duality-map form, `x' (A x) ≤ 0` for every element
-  `x'` of the duality set of every `x ∈ D(A)`.
+* The duality-set characterization with a nonpositive witness for each `x ∈ D(A)`.
+* The equivalent universal sign condition for every member of each duality set.
 
 ## References
 
@@ -113,16 +112,25 @@ theorem exists_contractionSemigroup_generator_eq_iff (A : X →ₗ.[ℝ] X) :
   · rw [← hS]
     exact ContractionSemigroup.isMDissipative_generator S
 
-/-- **Lumer--Phillips in duality-map form.** An unbounded operator on a real Banach space is the
-generator of a strongly continuous contraction semigroup if and only if it is densely defined,
-satisfies `x' (A x) ≤ 0` for **every** element `x'` of the duality set of every `x ∈ D(A)`, and
-`lambda • I - A` maps `D(A)` onto `X` for some `lambda > 0`.
+/-- **Lumer--Phillips in duality-map form.** An unbounded operator on a real Banach space
+generates a contraction semigroup exactly when it is densely defined, each `x ∈ D(A)` has a
+duality-set member `f` with `f (A x) ≤ 0`, and `lambda • I - A` maps `D(A)` onto `X` for some
+`lambda > 0`. -/
+theorem exists_contractionSemigroup_generator_eq_iff_exists_mem_dualitySet_apply_nonpos
+    (A : X →ₗ.[ℝ] X) :
+    (∃ S : ContractionSemigroup X, S.toStronglyContinuousSemigroup.generator = A) ↔
+      Dense (A.domain : Set X) ∧
+        (∀ x : A.domain, ∃ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0) ∧
+        ∃ lambda : ℝ, 0 < lambda ∧
+          Function.Surjective fun x : A.domain => lambda • (x : X) - A x := by
+  rw [exists_contractionSemigroup_generator_eq_iff, isMDissipative_iff,
+    isDissipative_iff_exists_mem_dualitySet_apply_nonpos]
 
-Since duality sets are nonempty, the universal sign condition implies the existential one that
-characterizes dissipativity (`isDissipative_iff_exists_mem_dualitySet`), so this is
-`exists_contractionSemigroup_generator_eq_iff` with the sign condition strengthened by
-`ContractionSemigroup.apply_generator_nonpos_of_mem_dualitySet`. -/
-theorem exists_contractionSemigroup_generator_eq_iff_forall_mem_dualitySet (A : X →ₗ.[ℝ] X) :
+/-- **Lumer--Phillips with the universal duality-set sign condition.** A densely defined
+operator generates a contraction semigroup exactly when every member of the duality set of
+each `x ∈ D(A)` is nonpositive on `A x`, and the positive resolvent range condition holds. -/
+theorem exists_contractionSemigroup_generator_eq_iff_forall_mem_dualitySet_apply_nonpos
+    (A : X →ₗ.[ℝ] X) :
     (∃ S : ContractionSemigroup X, S.toStronglyContinuousSemigroup.generator = A) ↔
       Dense (A.domain : Set X) ∧ (∀ x : A.domain, ∀ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0) ∧
         ∃ lambda : ℝ, 0 < lambda ∧
@@ -133,7 +141,7 @@ theorem exists_contractionSemigroup_generator_eq_iff_forall_mem_dualitySet (A : 
     exact ⟨hdense, fun x f hf => S.apply_generator_nonpos_of_mem_dualitySet x hf,
       hA.exists_smul_sub_surjective⟩
   · refine (exists_contractionSemigroup_generator_eq_iff A).mpr ⟨hdense, ?_, hrange⟩
-    refine (isDissipative_iff_exists_mem_dualitySet A).mpr fun x => ?_
+    refine (isDissipative_iff_exists_mem_dualitySet_apply_nonpos A).mpr fun x => ?_
     obtain ⟨f, hf⟩ := dualitySet_nonempty ℝ (x : X)
     exact ⟨f, hf, hsign x f hf⟩
 

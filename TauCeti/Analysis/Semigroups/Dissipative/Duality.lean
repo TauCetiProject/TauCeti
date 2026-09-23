@@ -20,20 +20,12 @@ resolvent-range sense of `TauCeti.Semigroups.IsDissipative`,
 
 exactly when for every `x ∈ D(A)` **some** element `x'` of the duality set
 `J(x) = {x' | x' x = ‖x‖², ‖x'‖ = ‖x‖}` satisfies `x' (A x) ≤ 0`
-(`isDissipative_iff_exists_mem_dualitySet`). This is the Banach-space counterpart of the Hilbert
-condition `⟪A x, x⟫ ≤ 0` of `TauCeti/Analysis/Semigroups/Dissipative/Hilbert.lean`, and the form in
-which dissipativity is usually verified for concrete operators on `Lᵖ`, `C₀` or `ℓᵖ`, where the
-duality set is explicit.
-
-One direction is a one-line estimate. For the other, dissipativity at `lambda` provides a norming
-functional `g_lambda` of `lambda x - A x` of norm at most one, and the dissipativity inequality
-forces `g_lambda (A x) ≤ 0` and `g_lambda x ≥ ‖x‖ - ‖A x‖ / lambda`. A weak-* cluster point of
-these functionals as `lambda → ∞`, which exists by the Banach--Alaoglu theorem, satisfies
-`g x = ‖x‖` and `g (A x) ≤ 0`, and `‖x‖ • g` is the required element of `J(x)`.
+(`isDissipative_iff_exists_mem_dualitySet_apply_nonpos`). This is the Banach-space counterpart
+of the Hilbert condition `⟪A x, x⟫ ≤ 0` and the form in which dissipativity is usually verified
+for concrete operators on `Lᵖ`, `C₀` or `ℓᵖ`, where the duality set is explicit.
 
 For the generator of a contraction semigroup the inequality holds for **every** element of the
-duality set (`ContractionSemigroup.apply_generator_nonpos_of_mem_dualitySet`), since
-`x' (S(t) x - x) ≤ ‖x‖ ‖S(t) x‖ - ‖x‖² ≤ 0` for `x' ∈ J(x)`.
+duality set (`ContractionSemigroup.apply_generator_nonpos_of_mem_dualitySet`).
 
 ## References
 
@@ -70,13 +62,11 @@ private theorem IsDissipative.exists_norm_le_one_apply_nonpos {A : X →ₗ.[ℝ
   linarith
 
 /-- **Dissipative operators are dissipative in the duality-map sense.** If `A` is dissipative,
-then every `x ∈ D(A)` has an element `x'` of its duality set with `x' (A x) ≤ 0`.
-
-The functional is a weak-* cluster point, supplied by the Banach--Alaoglu theorem, of norming
-functionals of `lambda • x - A x` as `lambda → ∞`. -/
+then every `x ∈ D(A)` has an element `x'` of its duality set with `x' (A x) ≤ 0`. -/
 theorem IsDissipative.exists_mem_dualitySet_apply_nonpos {A : X →ₗ.[ℝ] X}
     (hA : IsDissipative A) (x : A.domain) :
     ∃ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0 := by
+  -- Norming functionals for `lambda • x - A x` have a weak-* cluster point by Banach--Alaoglu.
   let K : ℕ → Set (WeakDual ℝ X) := fun n =>
     WeakDual.toStrongDual ⁻¹' Metric.closedBall 0 1 ∩ {w | w (A x) ≤ 0} ∩
       {w | ‖(x : X)‖ - ‖A x‖ * (1 / ((n : ℝ) + 1)) ≤ w x}
@@ -120,7 +110,7 @@ theorem IsDissipative.exists_mem_dualitySet_apply_nonpos {A : X →ₗ.[ℝ] X}
 /-- **The duality-map characterization of dissipativity.** An unbounded operator on a real normed
 space is dissipative exactly when every `x ∈ D(A)` has an element `x'` of its duality set
 `J(x)` with `x' (A x) ≤ 0`. -/
-theorem isDissipative_iff_exists_mem_dualitySet (A : X →ₗ.[ℝ] X) :
+theorem isDissipative_iff_exists_mem_dualitySet_apply_nonpos (A : X →ₗ.[ℝ] X) :
     IsDissipative A ↔ ∀ x : A.domain, ∃ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0 := by
   refine ⟨fun hA => hA.exists_mem_dualitySet_apply_nonpos, fun h lambda _ x => ?_⟩
   -- `‖x‖ ‖lambda x - A x‖ ≥ x' (lambda x - A x) = lambda ‖x‖² - x' (A x) ≥ lambda ‖x‖²`.
@@ -140,7 +130,7 @@ namespace ContractionSemigroup
 /-- **The generator of a contraction semigroup is dissipative for every element of the duality
 set**: `x' (A x) ≤ 0` whenever `x ∈ D(A)` and `x' ∈ J(x)`. This strengthens the existential
 condition that characterizes general dissipative operators
-(`isDissipative_iff_exists_mem_dualitySet`). -/
+(`isDissipative_iff_exists_mem_dualitySet_apply_nonpos`). -/
 theorem apply_generator_nonpos_of_mem_dualitySet (S : ContractionSemigroup X)
     (x : S.toStronglyContinuousSemigroup.generator.domain) {f : StrongDual ℝ X}
     (hf : f ∈ dualitySet ℝ (x : X)) :
