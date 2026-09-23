@@ -15,7 +15,7 @@ The tensorator of a lax monoidal functor is natural in its right argument, givin
 square between left tensoring and the functor.
 -/
 
-@[expose] public section
+public section
 
 namespace CategoryTheory.Functor
 
@@ -30,5 +30,12 @@ def laxCommTensorLeft (F : C ⥤ D) [F.LaxMonoidal] (A : C) :
       (MonoidalCategory.tensorLeft (F.obj A)) F :=
   .mk _ _ _ _ { app := fun B => Functor.LaxMonoidal.μ F A B
                 naturality := fun _ _ f => Functor.LaxMonoidal.μ_natural_right F A f }
+
+/-- The component of the tensorator square is the tensorator. -/
+@[simp]
+theorem laxCommTensorLeft_app (F : C ⥤ D) [F.LaxMonoidal] (A B : C) :
+    (laxCommTensorLeft F A).app B = Functor.LaxMonoidal.μ F A B := by
+  unfold laxCommTensorLeft
+  rfl
 
 end CategoryTheory.Functor

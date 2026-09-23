@@ -66,9 +66,9 @@ theorem ihomComparison_ev (A B : C) [Closed A] [Closed (F.obj A)] :
     F.obj A ◁ (ihomComparison F A).natTrans.app B ≫
         (ihom.ev (F.obj A)).app (F.obj B) =
       Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫ F.map ((ihom.ev A).app B) := by
-  -- The mate lemma uses `tensorLeft.map` and adjunction counits, while the public
-  -- formula uses tensor whiskering and `ihom.ev`. These are definitionally the
-  -- same components, so `change` puts the goal in the mate lemma's form.
+  -- The mate lemma uses the square component, tensorLeft.map, and adjunction counits.
+  -- Rewrite the tensorator first; the remaining terms match definitionally.
+  rw [← laxCommTensorLeft_app F A ((ihom A).obj B)]
   change (tensorLeft (F.obj A)).map ((ihomComparison F A).app B) ≫
       (ihom.adjunction (F.obj A)).counit.app (F.obj B) =
     (laxCommTensorLeft F A).app ((ihom A).obj B) ≫
@@ -84,9 +84,9 @@ theorem coev_ihomComparison (A B : C) [Closed A] [Closed (F.obj A)] :
         (ihomComparison F A).natTrans.app (A ⊗ B) =
       (ihom.coev (F.obj A)).app (F.obj B) ≫
         (ihom (F.obj A)).map (Functor.LaxMonoidal.μ F A B) := by
-  -- The mate lemma states its unit formula using `tensorLeft.obj`, `𝟭 C`,
-  -- and `TwoSquare.app`; these unfold to the tensor product, `B`, and the
-  -- natural-transformation component used in the public formula.
+  -- The mate lemma uses the square component, tensorLeft.obj, and adjunction units.
+  -- Rewrite the tensorator first; the remaining terms match definitionally.
+  rw [← laxCommTensorLeft_app F A B]
   change F.map ((ihom.adjunction A).unit.app B) ≫
       (ihomComparison F A).app ((tensorLeft A).obj B) =
     (ihom.adjunction (F.obj A)).unit.app (F.obj ((𝟭 C).obj B)) ≫
@@ -129,7 +129,7 @@ theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
   ext B
   simp only [Functor.comp_obj, curriedTensor_obj_obj, NatTrans.comp_app,
     Functor.whiskerLeft_app, curriedTensor_map_app, Functor.whiskerRight_app,
-    laxCommTensorLeft]
+    laxCommTensorLeft_app]
   rw [Functor.LaxMonoidal.μ_natural_left]
 
 end CategoryTheory.Functor
