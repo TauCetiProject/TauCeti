@@ -63,7 +63,7 @@ variable {D : ℕ} [NeZero D]
 `a x² + b x y + c y²` of discriminant `-D`. -/
 noncomputable def root (f : posDef D) : ℍ :=
   ⟨⟨-(f.1.b : ℝ) / (2 * f.1.a), √(D : ℝ) / (2 * f.1.a)⟩,
-    by have := NeZero.pos D; have := f.2.2; positivity⟩
+    by have := NeZero.pos D; have := (mem_posDef.1 f.2).2; positivity⟩
 
 /-- The real part of the root of `a x² + b x y + c y²` is `-b / (2 a)`. -/
 @[simp]
@@ -83,13 +83,14 @@ theorem coe_root (f : posDef D) : (root f : ℂ) = (-(f.1.b : ℂ) + √(D : ℝ
 other root `(-b - i √D) / (2 a)` lies in the lower half-plane. -/
 theorem eq_root_iff (f : posDef D) (z : ℍ) :
     z = root f ↔ (f.1.a : ℂ) * z ^ 2 + f.1.b * z + f.1.c = 0 := by
+  obtain ⟨hD, ha⟩ := mem_posDef.1 f.2
   -- Over `ℂ` the discriminant `-D` of a form in `posDef D` is the square of `i √D`.
   have hd : discrim (f.1.a : ℂ) f.1.b f.1.c = (√(D : ℝ) * I) * (√(D : ℝ) * I) := by
     rw [mul_mul_mul_comm, ← ofReal_mul, Real.mul_self_sqrt D.cast_nonneg]
-    simpa [discrim, discrim_def] using congrArg (Int.cast : ℤ → ℂ) f.2.1
-  rw [sq, quadratic_eq_zero_iff (mod_cast f.2.2.ne') hd, ← coe_root, UpperHalfPlane.ext_iff,
+    simpa [discrim, discrim_def] using congrArg (Int.cast : ℤ → ℂ) hD
+  rw [sq, quadratic_eq_zero_iff (mod_cast ha.ne') hd, ← coe_root, UpperHalfPlane.ext_iff,
     or_iff_left fun h ↦ z.coe_im_pos.not_ge ?_]
-  simp [h, div_im, div_nonpos_iff, f.2.2.le, mul_nonneg]
+  simp [h, div_im, div_nonpos_iff, ha.le, mul_nonneg]
 
 /-- The root map is `SL(2, ℤ)`-equivariant: `root (γ • f) = γ • root f`, with the action
 `γ • f = f ∘ γ⁻¹` on forms and the Möbius action on `ℍ`. -/
@@ -111,8 +112,10 @@ theorem root_smul (γ : SL(2, ℤ)) (f : posDef D) : root (γ • f) = γ • ro
 root gives `a`, the real part then gives `b`, and the discriminant gives `c`. -/
 theorem root_injective : Function.Injective (root (D := D)) := by
   intro f g h
-  have ha : (f.1.a : ℝ) ≠ 0 := by exact_mod_cast f.2.2.ne'
-  have hga : (g.1.a : ℝ) ≠ 0 := by exact_mod_cast g.2.2.ne'
+  obtain ⟨hdf, hfa⟩ := mem_posDef.1 f.2
+  obtain ⟨hdg, hga'⟩ := mem_posDef.1 g.2
+  have ha : (f.1.a : ℝ) ≠ 0 := by exact_mod_cast hfa.ne'
+  have hga : (g.1.a : ℝ) ≠ 0 := by exact_mod_cast hga'.ne'
   have him := congrArg UpperHalfPlane.im h
   have hre := congrArg UpperHalfPlane.re h
   simp only [im_root, re_root] at him hre
@@ -125,21 +128,19 @@ theorem root_injective : Function.Injective (root (D := D)) := by
     have := mul_right_cancel₀ (by positivity : (2 * f.1.a : ℝ) ≠ 0) hre
     exact_mod_cast neg_inj.1 this
   have hcc : f.1.c = g.1.c := by
-    have hdf := f.2.1
-    have hdg := g.2.1
-    rw [discrim_def, haa, hbb] at hdf
-    rw [discrim_def] at hdg
+    rw [discrim_def, discrim, haa, hbb] at hdf
+    rw [discrim_def, discrim] at hdg
     have : (4 * g.1.a) * (f.1.c - g.1.c) = 0 := by linear_combination hdg - hdf
-    exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left (by have := g.2.2; omega))
+    exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left (by omega))
   exact Subtype.ext (BinaryQuadraticForm.ext haa hbb hcc)
 
 /-- The squared absolute value of the root of `a x² + b x y + c y²` is `c / a`. -/
 theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := by
-  have ha : (f.1.a : ℝ) ≠ 0 := by exact_mod_cast f.2.2.ne'
+  obtain ⟨hdf, hfa⟩ := mem_posDef.1 f.2
+  have ha : (f.1.a : ℝ) ≠ 0 := by exact_mod_cast hfa.ne'
   have hD : ((f.1.b : ℝ) ^ 2 - 4 * f.1.a * f.1.c) = -D := by
-    have := f.2.1
-    rw [discrim_def] at this
-    exact_mod_cast this
+    rw [discrim_def, discrim] at hdf
+    exact_mod_cast hdf
   rw [Complex.normSq_apply, coe_re, coe_im, re_root, im_root]
   field_simp
   rw [Real.sq_sqrt (Nat.cast_nonneg _)]
