@@ -65,6 +65,7 @@ noncomputable def root (f : posDef D) : ℍ :=
   ⟨⟨-(f.1.b : ℝ) / (2 * f.1.a), √(D : ℝ) / (2 * f.1.a)⟩,
     by have := NeZero.pos D; have := f.2.2; positivity⟩
 
+/-- The real part of the root of `a x² + b x y + c y²` is `-b / (2 a)`. -/
 @[simp]
 theorem re_root (f : posDef D) : (root f).re = -(f.1.b : ℝ) / (2 * f.1.a) :=
   rfl
