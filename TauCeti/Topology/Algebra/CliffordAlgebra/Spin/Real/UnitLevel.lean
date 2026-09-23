@@ -14,8 +14,9 @@ public import Mathlib.Analysis.Normed.Module.Connected
 
 The positive-definite quadratic form defining the compact real Spin group is the squared
 Euclidean norm in Euclidean coordinates. This file packages the resulting homeomorphism between
-the Spin action's unit level and the standard Euclidean unit sphere, together with the first
-topological consumer needed by the compact sphere-bundle construction.
+the Spin action's unit level and the standard Euclidean unit sphere. The resulting
+path-connectedness theorem supplies paths between points of the unit level in dimensions at least
+two.
 
 ## Main declarations
 
