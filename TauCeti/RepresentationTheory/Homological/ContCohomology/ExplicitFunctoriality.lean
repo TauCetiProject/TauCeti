@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.Equiv
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom
 
@@ -645,16 +646,6 @@ theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     (fun g n => q.map_smul g n) (fun g m => (q.comp f).map_smul g m) using 1 <;>
     ext <;> rfl
 
-omit [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [ContinuousSMul G M] in
-/-- The inverse of an equivariant additive equivalence is equivariant. -/
-theorem symm_map_smul_of_map_smul
-    {N : Type uN} [AddCommGroup N] [DistribMulAction G N]
-    (e : M ≃+ N) (hequiv : ∀ (g : G) (m : M), e (g • m) = g • e m) (g : G) (n : N) :
-    e.symm (g • n) = g • e.symm n := by
-  apply e.injective
-  rw [e.apply_symm_apply, hequiv, e.apply_symm_apply]
-
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit first continuous cohomology. Both directions are required to be
 continuous; for discrete coefficient modules this follows automatically from discreteness. -/
@@ -666,7 +657,7 @@ noncomputable def explicitCoeff1Equiv {N : Type uN} [AddCommGroup N] [Topologica
     { e.toAddMonoidHom with map_smul' := hequiv }
   let q : N →+[G] M :=
     { e.symm.toAddMonoidHom with
-      map_smul' := symm_map_smul_of_map_smul G M e hequiv }
+      map_smul' := AddEquiv.symm_map_smul_of_map_smul e hequiv }
   have hf : Continuous f := he
   have hq : Continuous q := he'
   exact
@@ -707,7 +698,7 @@ theorem explicitCoeff1Equiv_symm_apply {N : Type uN} [AddCommGroup N] [Topologic
     (explicitCoeff1Equiv G M e he he' hequiv).symm x =
       explicitCoeff1 G N
         { e.symm.toAddMonoidHom with
-          map_smul' := symm_map_smul_of_map_smul G M e hequiv }
+          map_smul' := AddEquiv.symm_map_smul_of_map_smul e hequiv }
         he' x :=
   (rfl)
 
