@@ -223,6 +223,38 @@ theorem IsFunctionField.finite_extension {E : Type*} [Field E] [Algebra k E] [Al
   rw [isFunctionField_iff_trdeg_eq_one]
   exact hF.trdeg_eq_one_of_isAlgebraic
 
+/-- If `F / k` is a function field and `F / E` is finite, then `E / k` is a function field.
+The finite extension preserves transcendence degree, and a transcendental element of `E` is a
+rational parameter for both `F` and `E`. -/
+theorem IsFunctionField.intermediateField_of_finite (hF : IsFunctionField k F)
+    (E : IntermediateField k F) [FiniteDimensional E F] : IsFunctionField k E := by
+  have htr : Algebra.trdeg k E = 1 := by
+    have h := trdeg_add_eq k E (A := F)
+    rw [trdeg_eq_zero_iff.mpr (Algebra.IsAlgebraic.of_finite E F), hF.trdeg_eq_one] at h
+    simpa using h
+  have htrans : Algebra.Transcendental k E := trdeg_ne_zero_iff.mp (htr ▸ one_ne_zero)
+  obtain ⟨x, hx⟩ := htrans.transcendental
+  have hxF : Transcendental k (x : F) :=
+    (transcendental_algebraMap_iff (algebraMap E F).injective).2 hx
+  let hfinite : FiniteDimensional k⟮(x : F)⟯ F := hF.finiteDimensional_adjoin hxF
+  let e : k⟮x⟯ ≃ₐ[k] k⟮(x : F)⟯ :=
+    ((k⟮x⟯).equivMap E.val).trans
+      (IntermediateField.equivOfEq (IntermediateField.lift_adjoin_simple k E x))
+  have he (c : k⟮x⟯) : (e c : F) = algebraMap k⟮x⟯ F c := rfl
+  have hfiniteF : FiniteDimensional k⟮x⟯ F := by
+    let b := Module.finBasis k⟮(x : F)⟯ F
+    refine (b.mapCoeffs e.symm ?_).finiteDimensional_of_finite
+    intro c z
+    rw [Algebra.smul_def, Algebra.smul_def]
+    congr 1
+    -- `mapCoeffs` writes the inverse equivalence through its ring-equivalence coercion.
+    change (algebraMap k⟮x⟯ F (e.symm c)) = (c : F)
+    rw [← he (e.symm c), e.apply_symm_apply]
+  have hfiniteE : FiniteDimensional k⟮x⟯ E := by
+    exact FiniteDimensional.of_injective (IsScalarTower.toAlgHom k⟮x⟯ E F).toLinearMap
+      (algebraMap E F).injective
+  exact ⟨x, hx, hfiniteE⟩
+
 /-! ### Change of base field -/
 
 section BaseChange
