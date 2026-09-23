@@ -53,7 +53,9 @@ namespace TauCeti.Contour
 
 open Filter Set Topology
 
-variable {E : Type*} [NormedAddCommGroup E]
+section Seminormed
+
+variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- **First exit time at radius `ε` (right side)**: the `sInf` of the times
 `t ∈ [t₀, t₀ + δ]` with `ε ≤ ‖γ t - s‖`; the junk value is `sInf ∅` when the curve never
@@ -228,6 +230,12 @@ theorem le_firstExitTimeLeft_of_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
     t₁ ≤ firstExitTimeLeft γ t₀ δ s ε :=
   le_csSup ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩ ⟨ht₁, h_far⟩
 
+end Seminormed
+
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E]
+
 /-- **The right exit time tends to `t₀` from above as `ε → 0⁺`**, provided `γ` leaves `s` on
 `(t₀, t₀ + δ]`. -/
 theorem firstExitTimeRight_tendsto {γ : ℝ → E} {t₀ δ : ℝ} {s : E} (hδ : 0 < δ)
@@ -307,6 +315,8 @@ theorem eventually_norm_at_firstExitTimeLeft_eq {γ : ℝ → E} {t₀ δ : ℝ}
     norm_pos_iff.mpr (sub_ne_zero.mpr (h_leave _ ⟨le_rfl, by linarith⟩))
   filter_upwards [Ioo_mem_nhdsGT h_far_pos] with ε hε
   exact norm_at_firstExitTimeLeft_eq hδ hγ_cont h_s hε.1 hε.2.le
+
+end Normed
 
 end TauCeti.Contour
 

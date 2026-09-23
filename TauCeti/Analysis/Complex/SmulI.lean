@@ -18,7 +18,7 @@ real-linear map is tested.
 ## Main definitions and results
 
 * `Complex.I_smul_neg_I_smul` and `Complex.neg_I_smul_I_smul`: multiplication by `i` and by `-i`
-  are mutually inverse on a complex module.
+  are mutually inverse on any type with a complex multiplication action.
 * `Complex.smulIEquiv`: multiplication by `i` as a real continuous linear equivalence, with
   `smulIEquiv_apply` and `smulIEquiv_symm_apply`.
 -/
@@ -27,9 +27,9 @@ public section
 
 namespace Complex
 
-section Module
+section MulAction
 
-variable {X : Type*} [AddCommGroup X] [Module ℂ X]
+variable {X : Type*} [MulAction ℂ X]
 
 theorem I_smul_neg_I_smul (x : X) : I • (-I • x) = x := by
   rw [smul_smul, mul_neg, I_mul_I, neg_neg, one_smul]
@@ -37,7 +37,7 @@ theorem I_smul_neg_I_smul (x : X) : I • (-I • x) = x := by
 theorem neg_I_smul_I_smul (x : X) : -I • (I • x) = x := by
   rw [smul_smul, neg_mul, I_mul_I, neg_neg, one_smul]
 
-end Module
+end MulAction
 
 section Normed
 

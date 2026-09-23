@@ -29,7 +29,7 @@ namespace MultilinearMap
 
 variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [Finite ι] [∀ i, NormedAddCommGroup (M i)] [∀ i, NormedSpace 𝕜 (M i)]
-  [∀ i, FiniteDimensional 𝕜 (M i)] [NormedAddCommGroup N] [NormedSpace 𝕜 N]
+  [∀ i, FiniteDimensional 𝕜 (M i)] [SeminormedAddCommGroup N] [NormedSpace 𝕜 N]
 
 /-- **A multilinear map on finitely many finite-dimensional spaces is continuous.** Over a
 complete field, no bound need be assumed: expanding every argument in a basis exhibits the map as

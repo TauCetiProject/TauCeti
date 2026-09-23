@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 Surjectivity onto a finite-dimensional space is stable under small perturbations in the operator
 norm: the surjective maps form an open subset of the space of continuous linear maps. The source
-is an arbitrary normed space over a complete nontrivially normed field.
+is an arbitrary seminormed space over a complete nontrivially normed field.
 
 Mathlib records the companion fact that a surjective continuous linear map between Banach spaces
 is an open map, in `ContinuousLinearMap.isOpenMap`; the openness proved here is openness of the
@@ -31,7 +31,7 @@ open Function
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
 /-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear maps.

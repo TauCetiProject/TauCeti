@@ -48,7 +48,7 @@ open RealInnerProductSpace
 
 section Normed
 
-variable {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] {s : Set E} {g : E → F}
+variable {E F : Type*} [SeminormedAddGroup E] [SeminormedAddGroup F] {s : Set E} {g : E → F}
 
 /-- **A distance-preserving map fixing the origin preserves norms.** The norm is the distance to
 the origin, which is a fixed point lying in `s`. Only the metric structure is involved, so this
@@ -62,8 +62,8 @@ end Normed
 
 section InnerProduct
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
-  [InnerProductSpace ℝ F] {s : Set E} {g : E → F}
+variable {E F : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [SeminormedAddCommGroup F] [InnerProductSpace ℝ F] {s : Set E} {g : E → F}
 
 /-- **A distance-preserving map fixing the origin preserves the real inner product.** Polarisation:
 by `norm_sub_sq_real` the inner product `⟪z, w⟫_ℝ` is determined by the three quantities `‖z‖`,

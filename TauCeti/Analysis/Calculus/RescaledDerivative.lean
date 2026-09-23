@@ -29,7 +29,7 @@ open Filter
 /-- If `f` passes through zero with derivative `f'`, then `n • f (t / n)` tends to `t • f'`. -/
 theorem tendsto_nsmul_apply_div_of_hasDerivAt
     {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ≥0 𝕜]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : 𝕜 → F} {f' : F} (hf : HasDerivAt f f' 0) (hf0 : f 0 = 0) (t : 𝕜) :
     Tendsto (fun n : ℕ => n • f (t / n)) atTop (nhds (t • f')) := by
   have hscaled : Tendsto (fun n : ℕ => (n : 𝕜) • (t / n)) atTop (nhds t) := by

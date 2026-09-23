@@ -59,13 +59,16 @@ variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [TopologicalSpace A]
 
 variable {a b x : A}
 
+omit [IsSemitopologicalRing A] in
 /-- Conjugation by a square root preserves nonnegativity. -/
-theorem conjSqrt_nonneg (c : A) (hb : 0 ≤ b := by cfc_tac) : 0 ≤ conjSqrt c b := by
+theorem conjSqrt_nonneg [SeparatelyContinuousMul A] (c : A) (hb : 0 ≤ b := by cfc_tac) :
+    0 ≤ conjSqrt c b := by
   simpa using conjSqrt_monotone (c := c) hb
 
+omit [IsSemitopologicalRing A] in
 /-- Moving a factor across a pair of square-root conjugations. This is pure associativity, and it
 is the only computation behind the Riccati identities below. -/
-theorem conjSqrt_mul_mul_conjSqrt (c y w z : A) :
+theorem conjSqrt_mul_mul_conjSqrt [SeparatelyContinuousMul A] (c y w z : A) :
     conjSqrt c y * w * conjSqrt c z = conjSqrt c (y * conjSqrt c w * z) := by
   simp only [conjSqrt_apply, mul_assoc]
 
