@@ -33,7 +33,7 @@ open DirichletCharacter IsCyclotomicExtension
 
 namespace Subgroup
 
-variable {n m : ℕ} [NeZero n] [NeZero m]
+variable {n m : ℕ} [NeZero n]
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
   [IsAbelianGalois ℚ K]
 variable {R : Type*} [CommRing R]
@@ -47,6 +47,7 @@ theorem characterSubfield_le_iff_dirichletConductor_dvd
     [IsGalois ℚ F] [IsCyclotomicExtension {m} ℚ F] (hmn : m ∣ n) :
     (IsCyclotomicExtension.Rat.intermediateFieldEquivSubgroupChar n K R).symm Y ≤ F ↔
       Y.dirichletConductor ∣ m := by
+  let _ : NeZero m := ⟨fun h ↦ NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hmn))⟩
   rw [← (IsCyclotomicExtension.Rat.intermediateFieldEquivSubgroupChar n K R).le_iff_le,
     (IsCyclotomicExtension.Rat.intermediateFieldEquivSubgroupChar n K R).apply_symm_apply,
     dirichletConductor_dvd_iff]
