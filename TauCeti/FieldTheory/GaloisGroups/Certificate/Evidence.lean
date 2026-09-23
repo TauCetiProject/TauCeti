@@ -25,8 +25,6 @@ The predicates contain only finite data. They do not search for a suitable prime
 or second root. Their elimination lemmas expose the mathematical consequences used by quintic
 certificates, while keeping the proof of primality bundled with the factor-degree computation.
 
-This follows the degree-five certificate target in the `PolynomialGaloisGroups` roadmap, Layer 6.
-
 ## Main definitions
 
 * `TauCeti.IsGoodPrime`: a prime candidate does not divide the polynomial discriminant.

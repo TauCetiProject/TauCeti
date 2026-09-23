@@ -42,8 +42,6 @@ primitive group containing a transposition is everything. This is the criterion 
 Waerden's construction of integral polynomials of every degree with Galois group `Sₙ`, where the
 three reductions are prescribed modulo `2`, `3` and `5`.
 
-The good-prime condition follows the `PolynomialGaloisGroups` roadmap, Layer 5.
-
 ## Main results
 
 * `TauCeti.exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees`: the factor degrees of

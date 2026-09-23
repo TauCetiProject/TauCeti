@@ -16,8 +16,6 @@ This module records an explicit modular second-root witness for
 `X⁵ + X⁴ - 4X³ - 3X² + 3X + 1`. This witness supplies the extra datum that distinguishes its
 cyclic Galois group from the dihedral possibility.
 
-The witness is specified in the `PolynomialGaloisGroups` roadmap, Layer 6 worked examples.
-
 ## Main results
 
 * `TauCeti.hasSecondRootInRootField_cyclicQuintic`: the second-root evidence used by the cyclic
@@ -44,30 +42,29 @@ theorem hasSecondRootInRootField_cyclicQuintic :
   have hf : f.Monic := by
     dsimp [f]
     monicity!
-  -- Name the mapped polynomial so the two modular-reduction arguments share the same monicity
-  -- witness; `norm_num` above has already reduced the coefficient map to this expression.
-  change (f.comp (X ^ 2 - 2)) %ₘ f = 0 ∧ (X ^ 2 - 2) %ₘ f ≠ X %ₘ f
-  constructor
-  · rw [modByMonic_eq_zero_iff_dvd hf]
-    refine ⟨X ^ 5 - X ^ 4 - 4 * X ^ 3 + 3 * X ^ 2 + 3 * X - 1, ?_⟩
-    dsimp [f]
-    simp
-    ring_nf
-  · have hb : (X ^ 2 - 2 : ℚ[X]) %ₘ f = X ^ 2 - 2 :=
-      (modByMonic_eq_self_iff hf).mpr (by
-        have hfdeg : f.degree = 5 := by dsimp [f]; compute_degree!
-        have hbdeg : (X ^ 2 - 2 : ℚ[X]).degree = 2 := by compute_degree!
-        rw [hfdeg, hbdeg]
-        decide)
-    have hX : (X : ℚ[X]) %ₘ f = X :=
-      (modByMonic_eq_self_iff hf).mpr (by
-        have hfdeg : f.degree = 5 := by dsimp [f]; compute_degree!
-        have hXdeg : (X : ℚ[X]).degree = 1 := by compute_degree!
-        rw [hfdeg, hXdeg]
-        decide)
-    rw [hb, hX]
-    intro h
-    have := congrArg (fun q : ℚ[X] ↦ q.coeff 0) h
-    norm_num at this
+  have hsecond : (f.comp (X ^ 2 - 2)) %ₘ f = 0 ∧ (X ^ 2 - 2) %ₘ f ≠ X %ₘ f := by
+    constructor
+    · rw [modByMonic_eq_zero_iff_dvd hf]
+      refine ⟨X ^ 5 - X ^ 4 - 4 * X ^ 3 + 3 * X ^ 2 + 3 * X - 1, ?_⟩
+      dsimp [f]
+      simp
+      ring_nf
+    · have hb : (X ^ 2 - 2 : ℚ[X]) %ₘ f = X ^ 2 - 2 :=
+        (modByMonic_eq_self_iff hf).mpr (by
+          have hfdeg : f.degree = 5 := by dsimp [f]; compute_degree!
+          have hbdeg : (X ^ 2 - 2 : ℚ[X]).degree = 2 := by compute_degree!
+          rw [hfdeg, hbdeg]
+          decide)
+      have hX : (X : ℚ[X]) %ₘ f = X :=
+        (modByMonic_eq_self_iff hf).mpr (by
+          have hfdeg : f.degree = 5 := by dsimp [f]; compute_degree!
+          have hXdeg : (X : ℚ[X]).degree = 1 := by compute_degree!
+          rw [hfdeg, hXdeg]
+          decide)
+      rw [hb, hX]
+      intro h
+      have := congrArg (fun q : ℚ[X] ↦ q.coeff 0) h
+      norm_num at this
+  simpa only [f] using hsecond
 
 end TauCeti
