@@ -10,13 +10,12 @@ public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 /-!
 # Reindexing restricted products
 
-An equivalence of index types reindexes a restricted product by precomposition.  The two
-orientations below give the coordinate equations needed to transport maps and decompositions.
+An equivalence of index types transports restricted products between reindexed families.  The
+coordinate equations make the correspondence available for transporting maps and decompositions.
 
 The algebraic equivalence follows the construction in FLT,
 `FLT/Mathlib/Topology/Algebra/RestrictedProduct/Equiv.lean`, at commit
 `a9efe585de92be60be84ac1d14ced5a1b0944333` (Apache 2.0), specialized to the cofinite filter.
-The continuity proofs use Mathlib's `RestrictedProduct.mapAlong_continuous`.
 -/
 
 public section
@@ -26,9 +25,9 @@ namespace TauCeti
 open Filter
 open scoped RestrictedProduct
 
-universe u v
+universe u v w
 
-variable {ι ι' : Type u} {G : ι → Type v} {U : ∀ i, Set (G i)}
+variable {ι : Type u} {ι' : Type v} {G : ι → Type w} {U : ∀ i, Set (G i)}
 
 /-- Reindex a restricted product along an equivalence, in the orientation from `ι'` to `ι`.
 At the index `e i`, the output has the same coordinate as the input at `i`. -/
@@ -67,6 +66,15 @@ theorem restrictedProductCongrLeft_apply_apply (e : ι' ≃ ι)
   change (e.piCongrLeft G x) (e i) = x i
   exact Equiv.piCongrLeft_apply_apply G e x i
 
+/-- Evaluation at any target index, with the dependent coordinate transported along
+`e (e.symm j) = j`. This also describes the inverse of `restrictedProductReindex`. -/
+@[simp]
+theorem restrictedProductCongrLeft_apply (e : ι' ≃ ι)
+    (x : Πʳ i, [G (e i), U (e i)]) (j : ι) :
+    restrictedProductCongrLeft e x j =
+      cast (congrArg G (e.apply_symm_apply j)) (x (e.symm j)) := by
+  exact Equiv.piCongrLeft_apply_eq_cast x j
+
 /-- The inverse reindexing equivalence evaluates at the corresponding original index. -/
 @[simp]
 theorem restrictedProductCongrLeft_symm_apply (e : ι' ≃ ι)
@@ -93,7 +101,7 @@ theorem restrictedProductReindex_apply (e : ι' ≃ ι)
 theorem restrictedProductReindex_symm_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     (restrictedProductReindex e).symm x (e i) = x i := by
-  simp [restrictedProductReindex]
+  simpa [restrictedProductReindex] using restrictedProductCongrLeft_apply_apply e x i
 
 variable [∀ i, TopologicalSpace (G i)]
 
@@ -129,7 +137,12 @@ theorem continuous_restrictedProductCongrLeft (e : ι' ≃ ι) :
     funext x
     apply RestrictedProduct.ext
     intro i
-    rfl
+    change restrictedProductCongrLeft e (RestrictedProduct.inclusion _ _ hS x) i =
+      RestrictedProduct.inclusion _ _ hT (f x) i
+    rw [restrictedProductCongrLeft_apply, RestrictedProduct.inclusion_apply]
+    change cast (congrArg G (e.apply_symm_apply i)) (x (e.symm i)) =
+      (e.piCongrLeft G (x : Πʳ i, [G (e i), U (e i)]_[𝓟 S])) i
+    exact (Equiv.piCongrLeft_apply_eq_cast _ _).symm
   rw [hfac]
   exact (RestrictedProduct.continuous_inclusion hT).comp hf
 
@@ -165,7 +178,11 @@ theorem continuous_restrictedProductCongrLeft_symm (e : ι' ≃ ι) :
     funext x
     apply RestrictedProduct.ext
     intro i
-    rfl
+    change (restrictedProductCongrLeft e).symm (RestrictedProduct.inclusion _ _ hS x) i =
+      RestrictedProduct.inclusion _ _ hT (f x) i
+    change x (e i) =
+      (e.piCongrLeft G).symm (x : Πʳ i, [G i, U i]_[𝓟 S]) i
+    exact (Equiv.piCongrLeft_symm_apply G e x i).symm
   rw [hfac]
   exact (RestrictedProduct.continuous_inclusion hT).comp hf
 
