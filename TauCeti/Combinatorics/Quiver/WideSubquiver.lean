@@ -35,4 +35,15 @@ def totalEquivSet (H : _root_.WideSubquiver V) :
   left_inv e := by cases e; rfl
   right_inv e := by cases e; rfl
 
+/-- The forward map of `totalEquivSet` sends an arrow to its ambient arrow. -/
+@[simp] theorem totalEquivSet_apply (H : _root_.WideSubquiver V) (e : Quiver.Total H) :
+    totalEquivSet H e = ⟨⟨e.left, e.right, e.hom.val⟩, e.hom.property⟩ := by
+  simp only [totalEquivSet, Equiv.coe_fn_mk]
+
+/-- The inverse map of `totalEquivSet` recovers the arrow in the wide subquiver. -/
+@[simp] theorem totalEquivSet_symm_apply (H : _root_.WideSubquiver V)
+    (e : {e : Quiver.Total V // e ∈ wideSubquiverEquivSetTotal H}) :
+    (totalEquivSet H).symm e = ⟨e.1.left, e.1.right, ⟨e.1.hom, e.2⟩⟩ := by
+  simp only [totalEquivSet, Equiv.coe_fn_symm_mk]
+
 end TauCeti.WideSubquiver
