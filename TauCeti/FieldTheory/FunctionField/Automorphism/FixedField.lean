@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Basic
-public import Mathlib.FieldTheory.Galois.Basic
+public import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # Fixed fields of finite automorphism groups of function fields
@@ -16,8 +16,10 @@ is again an algebraic function field over `k`. The extension of the fixed field 
 and its Galois group is the acting group. This is the field-theoretic input to applying
 Riemann--Hurwitz to a quotient by a finite automorphism group.
 
-Finite-extension descent is `TauCeti.IsFunctionField.intermediateField_of_finite`. Mathlib's
-fixed-point theory gives the degree, Galois extension, and Galois-group identification.
+Algebraic-extension descent is `TauCeti.IsFunctionField.of_isAlgebraic_top`.
+`IntermediateField.finrank_fixedField_eq_card_of_finite` gives the degree,
+`IntermediateField.isGalois_fixedField_of_finite` gives the Galois extension, and Mathlib's
+`FixedPoints.toAlgAutMulEquiv` identifies the Galois group.
 
 ## References
 
@@ -31,14 +33,11 @@ namespace TauCeti
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- The fixed field of a finite group of `k`-automorphisms of a function field is itself a
-function field over `k`. Mathlib's `IsGalois.of_fixed_field` makes `F` Galois over this field,
-and `FixedPoints.toAlgAutMulEquiv` identifies its Galois group with `H`. -/
+function field over `k`. `IntermediateField.isGalois_fixedField_of_finite` makes `F` Galois over
+this field, and `FixedPoints.toAlgAutMulEquiv` identifies its Galois group with `H`. -/
 theorem IsFunctionField.fixedField (hF : IsFunctionField k F)
     (H : Subgroup (F ≃ₐ[k] F)) [Finite H] :
     IsFunctionField k (IntermediateField.fixedField H) := by
-  have hfinite : FiniteDimensional (IntermediateField.fixedField H) F :=
-    (inferInstance : FiniteDimensional (FixedPoints.subfield H F) F)
-  exact @IsFunctionField.intermediateField_of_finite k F _ _ _ hF
-    (IntermediateField.fixedField H) hfinite
+  exact hF.of_isAlgebraic_top (E := IntermediateField.fixedField H)
 
 end TauCeti

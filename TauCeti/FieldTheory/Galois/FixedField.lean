@@ -70,6 +70,9 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
 * `IntermediateField.fixingSubgroup_inf_separableClosure`
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
+* `IntermediateField.finiteDimensional_fixedField_of_finite`,
+  `IntermediateField.isGalois_fixedField_of_finite`, and
+  `IntermediateField.finrank_fixedField_eq_card_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
@@ -261,6 +264,25 @@ theorem fixingSubgroup_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Fini
     (AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) fun x ↦ hσ x x.2)
   have hgσ : (g : M ≃ₐ[K] M) = σ := AlgEquiv.ext fun z ↦ congrArg (fun τ ↦ τ z) hg
   exact hgσ ▸ g.2
+
+/-- The fixed field of a finite group of automorphisms has finite degree in the ambient field.
+`fixedField H` is definitionally the subfield `FixedPoints.subfield H M`. -/
+instance finiteDimensional_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+    FiniteDimensional (fixedField H) M :=
+  (inferInstance : FiniteDimensional (FixedPoints.subfield H M) M)
+
+/-- The extension over the fixed field of a finite group of automorphisms is Galois. -/
+instance isGalois_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+    IsGalois (fixedField H) M :=
+  (inferInstance : IsGalois (FixedPoints.subfield H M) M)
+
+/-- The degree over the fixed field of a finite group equals the group order. -/
+theorem finrank_fixedField_eq_card_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+    Module.finrank (fixedField H) M = Nat.card H := by
+  classical
+  let := Fintype.ofFinite H
+  change Module.finrank (FixedPoints.subfield H M) M = Nat.card H
+  simpa only [Nat.card_eq_fintype_card] using FixedPoints.finrank_eq_card H M
 
 /-- **An intermediate field of finite degree has a finite fixing subgroup**, being a copy of the
 automorphism group of a finite extension. -/
