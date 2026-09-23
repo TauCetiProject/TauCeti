@@ -119,8 +119,8 @@ theorem reducedForms_eq_empty_of_mod_four_eq_one_or_two {D : ℕ} (hD : D % 4 = 
     lia
 
 /-- The weight with which a reduced form `f = a x² + b x y + c y²` counts in the Hurwitz class
-number: `1/2` for the multiples `⟨a, 0, a⟩` of `x² + y²`, `1/3` for the multiples `⟨a, a, a⟩` of
-`x² + x y + y²`, and `1` for every other form. -/
+number: `1/2` for the multiples `⟨a, 0, a⟩` of `x² + y²`, `1/3` for the nonzero multiples
+`⟨a, a, a⟩` of `x² + x y + y²`, and `1` for every other form. -/
 def reducedFormWeight (f : BinaryQuadraticForm ℤ) : ℚ :=
   if f.b = 0 ∧ f.a = f.c then 1 / 2
   else if f.a = f.b ∧ f.b = f.c then 1 / 3
@@ -132,13 +132,14 @@ def reducedFormWeight (f : BinaryQuadraticForm ℤ) : ℚ :=
 
 /-- The nonzero multiples `⟨a, a, a⟩` of `x² + x y + y²` count `1/3`. -/
 @[simp] theorem reducedFormWeight_self_self_self {a : ℤ} (ha : a ≠ 0) :
-    reducedFormWeight ⟨a, a, a⟩ = 1 / 3 := by
-  simp [reducedFormWeight, ha]
+    reducedFormWeight ⟨a, a, a⟩ = 1 / 3 :=
+  (ite_eq_right fun h ↦ ha h.1).trans <| ite_eq_left ⟨rfl, rfl⟩
 
-/-- Every other form counts `1`. -/
+/-- Every form `⟨a, b, c⟩` other than the multiples `⟨a, 0, a⟩` of `x² + y²` and `⟨a, a, a⟩` of
+`x² + x y + y²` counts `1`. -/
 @[simp] theorem reducedFormWeight_eq_one {a b c : ℤ} (h₁ : ¬(b = 0 ∧ a = c))
-    (h₂ : ¬(a = b ∧ b = c)) : reducedFormWeight ⟨a, b, c⟩ = 1 := by
-  simp [reducedFormWeight, h₁, h₂]
+    (h₂ : ¬(a = b ∧ b = c)) : reducedFormWeight ⟨a, b, c⟩ = 1 :=
+  (ite_eq_right h₁).trans <| ite_eq_right h₂
 
 /-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `D ≠ 0` the number of reduced forms
 of discriminant `-D`, primitive or not, each counted with its `reducedFormWeight`.
