@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Germ
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import Mathlib.Data.DFinsupp.Module
+public import TauCeti.Data.DFinsupp.Basic
 public import Mathlib.Topology.Sheaves.LocallySurjective
 public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
@@ -132,26 +132,6 @@ abbrev PrincipalPart (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) : Typ
 `U`. -/
 abbrev principalPartsSections (D : SchemeWeilDivisor X) (U : X.Opens) :=
   Π₀ x : {x : CodimensionOnePoint X // (x : X) ∈ U}, PrincipalPart D x.1
-
-/-- A dependent function with finite support, regarded as a dependent finitely supported
-function. -/
-def dfinsuppOfFiniteSupport {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
-    (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) : Π₀ i, β i := by
-  classical
-  exact DFinsupp.mk hf.toFinset fun i ↦ f i
-
-/-- Evaluating `dfinsuppOfFiniteSupport f hf` returns the original function `f`. -/
-@[simp]
-lemma dfinsuppOfFiniteSupport_apply {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
-    (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) (i : I) :
-    dfinsuppOfFiniteSupport f hf i = f i := by
-  classical
-  simp only [dfinsuppOfFiniteSupport, DFinsupp.mk_apply]
-  split_ifs with hi
-  · rfl
-  · have : f i = 0 := not_ne_iff.mp (by
-      simpa only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using hi)
-    exact this.symm
 
 /-- Restriction of a finitely supported family of principal parts to a smaller open subset. -/
 def principalPartsRestrict (D : SchemeWeilDivisor X) {U V : X.Opens} (i : V ⟶ U) :
