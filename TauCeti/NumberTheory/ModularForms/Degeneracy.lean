@@ -476,16 +476,16 @@ lemma mapGL_conjScale [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * 
 /-- The lower-left entry of a matrix `γ ∈ Γ₀(dM)` is divisible by `d`, its `diag(d, 1)`-conjugate
 `conjScale d γ` again lies in `Γ₀(M)`, and the conjugation leaves the lower-right entry alone: the
 diamond label of `γ` is read along the reduction `(ZMod (dM))ˣ → (ZMod M)ˣ`. The level transports
-`Gamma1_map_le_conjAct_scaleGL` and `Gamma0_map_le_conjAct_scaleGL` are read off from it. -/
+`Gamma1_map_le_conjAct_scaleGL` and `Gamma0_map_le_conjAct_scaleGL` are built on it, and
+`exists_conjScale_mem_Gamma0_of_dvd` is the same statement at any level `N` divisible by `dM`. -/
 lemma exists_conjScale_mem_Gamma0 (d M : ℕ) (γ : ↥(Gamma0 (d * M))) :
     ∃ (c : ℤ) (hc : (γ : SL(2, ℤ)) 1 0 = d * c) (hm : conjScale d γ c hc ∈ Gamma0 M),
       (Gamma0Map M).toHomUnits ⟨conjScale d γ c hc, hm⟩ =
         ZMod.unitsMap (Dvd.intro_left d rfl : M ∣ d * M) ((Gamma0Map (d * M)).toHomUnits γ) := by
-  obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp γ.2
-  have hc : (γ : SL(2, ℤ)) 1 0 = d * ((M : ℤ) * t) := by rw [ht, Nat.cast_mul, mul_assoc]
-  refine ⟨_, hc, mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _), ?_⟩
+  obtain ⟨t, ht⟩ := Int.natCast_mul d M ▸ mem_Gamma0_iff_dvd.mp γ.2
+  refine ⟨_, ht.trans (mul_assoc _ _ _), mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _), ?_⟩
   ext
-  simp [Gamma0Map_apply, ZMod.unitsMap_def]
+  simp [Gamma0Map_apply, ZMod.unitsMap_val]
 
 /-- **Level transport for `Γ₁`**: conjugation by `diag(d, 1)` carries `Γ₁(dM)` into `Γ₁(M)`.
 This is what makes `V_d` a map `M_k(Γ₁(M)) → M_k(Γ₁(dM))`. -/
