@@ -22,7 +22,9 @@ injective for fixed `D`, it identifies the stabiliser of `f` with that of `τ`.
 This is how the reduction theory of positive definite forms is transported to the upper half-plane:
 `f` is reduced exactly when `τ` lies in the standard fundamental domain (up to the boundary
 identifications), and the automorphism group of `f` is the stabiliser of `τ`, of order `4` when `τ`
-lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2` otherwise.
+lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2` otherwise
+(`TauCeti.ModularGroup.card_stabilizer_of_orbit_eq_I`, `card_stabilizer_of_orbit_eq_ρ` and
+`card_stabilizer_eq_two_of_orbit_ne_I_of_orbit_ne_ρ`).
 
 ## Main definitions
 
@@ -46,7 +48,7 @@ lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2`
 * D. Zagier, *Zetafunktionen und quadratische Körper*, Springer, 1981, §8.
 -/
 
-@[expose] public section
+public section
 
 open Complex
 open UpperHalfPlane hiding I
@@ -67,12 +69,12 @@ noncomputable def root (f : posDef D) : ℍ :=
 /-- The real part of the root of `a x² + b x y + c y²` is `-b / (2 a)`. -/
 @[simp]
 theorem re_root (f : posDef D) : (root f).re = -(f.1.b : ℝ) / (2 * f.1.a) :=
-  rfl
+  (rfl)
 
 /-- The imaginary part of the root of `a x² + b x y + c y²` is `√D / (2 a)`. -/
 @[simp]
 theorem im_root (f : posDef D) : (root f).im = √(D : ℝ) / (2 * f.1.a) :=
-  rfl
+  (rfl)
 
 /-- As a complex number, the root of `a x² + b x y + c y²` is `(-b + i √D) / (2 a)`. -/
 theorem coe_root (f : posDef D) : (root f : ℂ) = (-(f.1.b : ℂ) + √(D : ℝ) * I) / (2 * f.1.a) := by
