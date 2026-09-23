@@ -130,6 +130,7 @@ noncomputable def prodEquiv : SplitK0 (C × D) ≃+ SplitK0 C × SplitK0 D where
   right_inv x := DFunLike.congr_fun toProd_fromProd x
 
 /-- The forward product equivalence is induced by the two projection functors. -/
+@[simp]
 lemma prodEquiv_apply (x : SplitK0 (C × D)) :
     prodEquiv x =
       (map (CategoryTheory.Prod.fst C D) x, map (CategoryTheory.Prod.snd C D) x) := by
@@ -137,6 +138,7 @@ lemma prodEquiv_apply (x : SplitK0 (C × D)) :
 
 /-- The inverse product equivalence is the sum of the maps induced by inserting a zero object in
 each coordinate. -/
+@[simp]
 lemma prodEquiv_symm_apply (x : SplitK0 C × SplitK0 D) :
     (prodEquiv (C := C) (D := D)).symm x =
       map (CategoryTheory.Prod.sectL C (0 : D)) x.1 +

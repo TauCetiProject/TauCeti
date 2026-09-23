@@ -69,6 +69,9 @@ private noncomputable def prodBinaryBicone (P Q : C × D) : BinaryBicone P Q whe
 
 private noncomputable def prodBinaryBiconeIsBilimit (P Q : C × D) :
     (prodBinaryBicone P Q).IsBilimit where
+  -- `BinaryFan` and `BinaryCofan` express their equations through the walking-pair diagram.
+  -- After selecting a product coordinate, `change` unfolds those diagram maps to the bicone
+  -- fields, which are definitionally the displayed componentwise biproduct maps.
   isLimit := BinaryFan.IsLimit.mk _
     (fun f g => (biprod.lift f.1 g.1, biprod.lift f.2 g.2))
     (fun _ _ => by ext <;> simp [prodBinaryBicone])
