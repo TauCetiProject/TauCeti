@@ -50,13 +50,34 @@ principal ideal. -/
     intro h
     apply hn
     rw [← map_natCast (algebraMap R (v.adicCompletion K)) n, h, map_zero]
-  have h := v.normalizedValuationWithZero_adicCompletion (K := K)
-    (n : v.adicCompletion K)
-  rw [TauCeti.normalizedValuationWithZero_natCast (v.adicCompletion K) n hn,
-    ← map_natCast (algebraMap R (v.adicCompletion K)) n, valuedAdicCompletion_eq_valuation,
-    valuation_of_algebraMap,
-    v.intValuation_eq_exp_neg_multiplicity hnR, ← WithZero.exp_neg, neg_neg] at h
-  exact_mod_cast WithZero.exp_inj.mp h
+  have hCompletion :
+      WithZero.exp (TauCeti.natCastValuation (v.adicCompletion K) n hn : ℤ) =
+        (Valued.v (n : v.adicCompletion K))⁻¹ := by
+    exact (TauCeti.normalizedValuationWithZero_natCast (v.adicCompletion K) n hn).symm.trans
+      (v.normalizedValuationWithZero_adicCompletion (K := K) (n : v.adicCompletion K))
+  have hAlgebraMap :
+      Valued.v (n : v.adicCompletion K) = v.intValuation (n : R) := by
+    calc
+      Valued.v (n : v.adicCompletion K) =
+          Valued.v (algebraMap R (v.adicCompletion K) (n : R)) := by simp only [map_natCast]
+      _ = v.valuation K (n : R) := v.valuedAdicCompletion_eq_valuation (K := K) (n : R)
+      _ = v.intValuation (n : R) := v.valuation_of_algebraMap (K := K) (n : R)
+  have hMultiplicity :
+      v.intValuation (n : R) =
+        WithZero.exp (-(multiplicity v.asIdeal (Ideal.span {(n : R)}) : ℤ)) :=
+    v.intValuation_eq_exp_neg_multiplicity hnR
+  have hExp :
+      WithZero.exp (TauCeti.natCastValuation (v.adicCompletion K) n hn : ℤ) =
+        WithZero.exp (multiplicity v.asIdeal (Ideal.span {(n : R)}) : ℤ) := by
+    calc
+      _ = (Valued.v (n : v.adicCompletion K))⁻¹ := hCompletion
+      _ = (v.intValuation (n : R))⁻¹ := congrArg Inv.inv hAlgebraMap
+      _ = (WithZero.exp
+          (-(multiplicity v.asIdeal (Ideal.span {(n : R)}) : ℤ)))⁻¹ :=
+        congrArg Inv.inv hMultiplicity
+      _ = WithZero.exp (multiplicity v.asIdeal (Ideal.span {(n : R)}) : ℤ) := by
+        simp only [← WithZero.exp_neg, neg_neg]
+  exact_mod_cast WithZero.exp_injective hExp
 
 end IsDedekindDomain.HeightOneSpectrum
 
