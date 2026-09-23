@@ -119,10 +119,13 @@ the normal subgroup. -/
 @[expose] def quotientLift {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
     [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) : (G ⧸ N) →ₜ* H where
   toMonoidHom := QuotientGroup.lift N f.toMonoidHom hf
-  continuous_toFun := (QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr (by
-    convert f.continuous using 1
-    funext x
-    exact QuotientGroup.lift_mk' _ _ _)
+  continuous_toFun := (QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr f.continuous
+
+@[simp]
+theorem coe_quotientLift {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
+    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) :
+    (quotientLift N f hf : (G ⧸ N) →* H) = QuotientGroup.lift N f.toMonoidHom hf :=
+  rfl
 
 /-- Evaluation of the quotient lift on a class represented by `x`. -/
 @[simp]
@@ -147,41 +150,31 @@ theorem quotientLift_unique {H : Type*} [Group H] [TopologicalSpace H] (N : Subg
   obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective N q
   exact hg x
 
+/-- The kernel of precomposition with the quotient projection contains the subgroup. -/
+theorem le_ker_comp_quotientMk {H : Type*} [Group H] [TopologicalSpace H]
+    (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
+    N ≤ ((g.comp (quotientMk N) : G →* H)).ker :=
+  fun x hx => by simp [MonoidHom.mem_ker, (QuotientGroup.eq_one_iff x).mpr hx]
+
 /-- Precomposition with the quotient projection identifies continuous homomorphisms on the
 quotient with continuous homomorphisms whose kernels contain the normal subgroup. -/
 @[expose] def quotientHomEquiv {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
     [N.Normal] :
     ((G ⧸ N) →ₜ* H) ≃ {f : G →ₜ* H // N ≤ (f : G →* H).ker} where
-  toFun g := ⟨g.comp (quotientMk N), by
-    intro x hx
-    apply MonoidHom.mem_ker.mpr
-    change g (quotientMk N x) = 1
-    rw [quotientMk_apply, (QuotientGroup.eq_one_iff x).mpr hx]
-    simp⟩
+  toFun g := ⟨g.comp (quotientMk N), le_ker_comp_quotientMk N g⟩
   invFun f := quotientLift N f.val f.property
-  left_inv g := by
-    apply (quotientLift_unique N (g.comp (quotientMk N))
-      (by
-        intro x hx
-        exact MonoidHom.mem_ker.mpr (by
-          change g (x : G ⧸ N) = 1
-          simpa using congrArg g ((QuotientGroup.eq_one_iff x).mpr hx))) g
-      (by intro x; simp)).symm
+  left_inv g := (quotientLift_unique N (g.comp (quotientMk N))
+    (le_ker_comp_quotientMk N g) g (by intro x; simp)).symm
   right_inv f := by
     apply Subtype.ext
     exact quotientLift_comp_quotientMk N f.val f.property
 
 /-- Evaluation of the forward quotient homomorphism equivalence. -/
 @[simp]
-theorem quotientHomEquiv_apply {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
-    [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    (quotientHomEquiv N g : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) =
-      ⟨g.comp (quotientMk N), by
-      intro x hx
-      apply MonoidHom.mem_ker.mpr
-      change g (quotientMk N x) = 1
-      rw [quotientMk_apply, (QuotientGroup.eq_one_iff x).mpr hx]
-      simp⟩ := rfl
+theorem quotientHomEquiv_apply_coe {H : Type*} [Group H] [TopologicalSpace H]
+    (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
+    ((quotientHomEquiv N g : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
+      g.comp (quotientMk N) := rfl
 
 /-- Evaluation of the inverse quotient homomorphism equivalence. -/
 @[simp]
