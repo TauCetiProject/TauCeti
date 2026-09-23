@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Finite.RootsOfUnity
+public import TauCeti.RingTheory.RootsOfUnity.Finite
 public import TauCeti.RingTheory.RootsOfUnity.Henselian
 public import TauCeti.RingTheory.RootsOfUnity.IntegrallyClosed
 

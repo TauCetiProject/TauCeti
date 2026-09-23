@@ -9,13 +9,14 @@ public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 
 /-!
-# The unit group of a finite field is its group of roots of unity
+# The units of a finite group with zero are its roots of unity
 
-For a finite field `F` with `q` elements, every unit satisfies `x ^ (q - 1) = 1`, so the group
-`μ_{q-1}` of `(q-1)`-st roots of unity is all of `Fˣ`. This file records that identification.
+For a finite commutative group with zero `F` with `q` elements, every unit satisfies
+`x ^ (q - 1) = 1`, so the group `μ_{q-1}` of `(q-1)`-st roots of unity is all of `Fˣ`. This file
+records that identification. The main example is the multiplicative structure of a finite field.
 
 Mathlib has the statement for the prime fields (`ZMod.rootsOfUnity_eq_top`); the version here is
-for an arbitrary finite field and is indexed by `Nat.card`.
+for an arbitrary finite commutative group with zero and is indexed by `Nat.card`.
 
 ## Main results
 
