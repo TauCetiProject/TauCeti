@@ -24,9 +24,6 @@ topological consumer needed by the compact sphere-bundle construction.
 * `CliffordAlgebra.pathConnectedSpace_realCliffordUnitLevel_add_two` transfers the standard
   path-connectedness theorem for spheres to the unit level in dimensions at least two.
 
-The carrier equations reuse the positive-definite real-form identities in
-`TauCeti.Topology.Algebra.CliffordAlgebra.RealForm`; no new coordinate calculation is hidden in
-the topology construction.
 -/
 
 public section
@@ -39,33 +36,25 @@ noncomputable section
 
 /-- The compact real Spin unit level is homeomorphic to the Euclidean unit sphere. -/
 def realCliffordUnitLevelHomeomorphSphere (n : ℕ) :
-    realCliffordUnitLevel n ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin n)) 1 where
-  toFun x :=
-    ⟨(EuclideanSpace.equiv (Fin n) ℝ).symm x.1,
-      by
-        rw [mem_sphere, dist_zero_right]
-        exact norm_euclideanSpaceEquiv_symm_eq_one_of_realCliffordForm_zero_eq_one
-          ((mem_realCliffordUnitLevel n x.1).mp x.2)⟩
-  invFun u :=
-    ⟨EuclideanSpace.equiv (Fin n) ℝ u,
-      (mem_realCliffordUnitLevel n _).mpr (realCliffordForm_zero_euclideanSpaceEquiv_eq_one u)⟩
-  left_inv x := by
-    apply Subtype.ext
-    exact ContinuousLinearEquiv.apply_symm_apply _ x.1
-  right_inv u := by
-    apply Subtype.ext
-    exact ContinuousLinearEquiv.symm_apply_apply _ u.1
-  continuous_toFun := by
-    apply continuous_induced_rng.mpr
-    exact (EuclideanSpace.equiv (Fin n) ℝ).symm.continuous.comp continuous_subtype_val
-  continuous_invFun := by
-    apply continuous_induced_rng.mpr
-    exact (EuclideanSpace.equiv (Fin n) ℝ).continuous.comp continuous_subtype_val
+    realCliffordUnitLevel n ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
+  (EuclideanSpace.equiv (Fin n) ℝ).symm.toHomeomorph.subtype fun v => by
+    rw [mem_realCliffordUnitLevel, mem_sphere, dist_zero_right]
+    constructor
+    · exact norm_euclideanSpaceEquiv_symm_eq_one_of_realCliffordForm_zero_eq_one
+    · intro hv
+      change ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖ = 1 at hv
+      calc
+        realCliffordForm n 0 v =
+            ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖ ^ 2 := by
+          simpa only [ContinuousLinearEquiv.apply_symm_apply] using
+            realCliffordForm_zero_euclideanSpaceEquiv_eq_norm_sq
+              ((EuclideanSpace.equiv (Fin n) ℝ).symm v)
+        _ = 1 := by rw [hv]; norm_num
 
 /-- The forward map of `realCliffordUnitLevelHomeomorphSphere` is Euclidean coordinate
 conversion. -/
 @[simp]
-theorem realCliffordUnitLevelHomeomorphSphere_apply (n : ℕ)
+theorem coe_realCliffordUnitLevelHomeomorphSphere_apply (n : ℕ)
     (x : realCliffordUnitLevel n) :
     (realCliffordUnitLevelHomeomorphSphere n x : EuclideanSpace ℝ (Fin n)) =
       (EuclideanSpace.equiv (Fin n) ℝ).symm x.1 :=
@@ -73,7 +62,7 @@ theorem realCliffordUnitLevelHomeomorphSphere_apply (n : ℕ)
 
 /-- The inverse map of `realCliffordUnitLevelHomeomorphSphere` returns function coordinates. -/
 @[simp]
-theorem realCliffordUnitLevelHomeomorphSphere_symm_apply (n : ℕ)
+theorem coe_realCliffordUnitLevelHomeomorphSphere_symm_apply (n : ℕ)
     (u : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) :
     ((realCliffordUnitLevelHomeomorphSphere n).symm u : Fin n → ℝ) =
       EuclideanSpace.equiv (Fin n) ℝ u :=
