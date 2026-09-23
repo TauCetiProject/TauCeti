@@ -22,6 +22,7 @@ This is the affine input for gluing the torus action on the analytic realization
 regular fan.  It is stated for arbitrary presentations of the character lattice and arbitrary
 finite monomial presentations of the affine complex points, so later gluing does not depend on
 either coordinate choice.
+The statement concerns one cone and uses no finite fan or glued analytic realization.
 
 ## Main declarations
 
