@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
+public import TauCeti.CategoryTheory.Monoidal.Functor
 
 /-!
 # Internal Hom comparison for monoidal functors
@@ -30,6 +31,7 @@ definition and characteristic formulas follow the mate-based development in
 * `CategoryTheory.Functor.ihomComparison`: the internal Hom comparison of a lax monoidal
   functor;
 * `CategoryTheory.Functor.ihomComparison_ev`: its characteristic equation against evaluation;
+* `CategoryTheory.Functor.ihomComparison_app_eq_curry`: its componentwise curry formula;
 * `CategoryTheory.Functor.coev_ihomComparison`: its characteristic equation against
   coevaluation;
 * `CategoryTheory.Functor.ihomComparison_whiskerLeft`: its naturality in the source of the
@@ -50,11 +52,6 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 variable (F : C ⥤ D) [F.LaxMonoidal]
 
-private def laxCommTensorLeft (A : C) :
-    TwoSquare F (tensorLeft A) (tensorLeft (F.obj A)) F :=
-  .mk _ _ _ _ { app := fun B => Functor.LaxMonoidal.μ F A B
-                naturality := fun _ _ f => Functor.LaxMonoidal.μ_natural_right F A f }
-
 /-- The canonical comparison from the image of an internal Hom to the internal Hom of the
 images under a lax monoidal functor. It is natural in the target of the internal Hom. -/
 def ihomComparison (A : C) [Closed A] [Closed (F.obj A)] :
@@ -69,8 +66,9 @@ theorem ihomComparison_ev (A B : C) [Closed A] [Closed (F.obj A)] :
     F.obj A ◁ (ihomComparison F A).natTrans.app B ≫
         (ihom.ev (F.obj A)).app (F.obj B) =
       Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫ F.map ((ihom.ev A).app B) := by
-  -- `ihom.ev` is the counit of `ihom.adjunction`; `TwoSquare.app` is its
-  -- underlying natural transformation, and tensor whiskering is `tensorLeft.map`.
+  -- The mate lemma uses `tensorLeft.map` and adjunction counits, while the public
+  -- formula uses tensor whiskering and `ihom.ev`. These are definitionally the
+  -- same components, so `change` puts the goal in the mate lemma's form.
   change (tensorLeft (F.obj A)).map ((ihomComparison F A).app B) ≫
       (ihom.adjunction (F.obj A)).counit.app (F.obj B) =
     (laxCommTensorLeft F A).app ((ihom A).obj B) ≫
@@ -86,8 +84,9 @@ theorem coev_ihomComparison (A B : C) [Closed A] [Closed (F.obj A)] :
         (ihomComparison F A).natTrans.app (A ⊗ B) =
       (ihom.coev (F.obj A)).app (F.obj B) ≫
         (ihom (F.obj A)).map (Functor.LaxMonoidal.μ F A B) := by
-  -- `ihom.coev` is the unit of `ihom.adjunction`; the functor compositions
-  -- and `TwoSquare.app` elaborate to the corresponding displayed components.
+  -- The mate lemma states its unit formula using `tensorLeft.obj`, `𝟭 C`,
+  -- and `TwoSquare.app`; these unfold to the tensor product, `B`, and the
+  -- natural-transformation component used in the public formula.
   change F.map ((ihom.adjunction A).unit.app B) ≫
       (ihomComparison F A).app ((tensorLeft A).obj B) =
     (ihom.adjunction (F.obj A)).unit.app (F.obj ((𝟭 C).obj B)) ≫
@@ -102,6 +101,14 @@ theorem uncurry_ihomComparison (A B : C) [Closed A] [Closed (F.obj A)] :
     uncurry ((ihomComparison F A).natTrans.app B) =
       Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫ F.map ((ihom.ev A).app B) := by
   rw [uncurry_eq, ihomComparison_ev]
+
+/-- Each component of the internal Hom comparison is the curry of the tensorator followed by
+the image of evaluation. -/
+theorem ihomComparison_app_eq_curry (A B : C) [Closed A] [Closed (F.obj A)] :
+    (ihomComparison F A).natTrans.app B =
+      curry (Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫
+        F.map ((ihom.ev A).app B)) := by
+  rw [← uncurry_ihomComparison F A B, curry_uncurry]
 
 /-- The internal Hom comparison is contravariantly natural in the source of the internal Hom. -/
 theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
