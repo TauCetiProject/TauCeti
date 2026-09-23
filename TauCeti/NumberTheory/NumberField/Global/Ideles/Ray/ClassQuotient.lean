@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Away
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.RaySubgroup
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.Subgroup
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 
 /-!
@@ -126,14 +127,6 @@ theorem toFractionalIdeal_toFiniteIdele_mem_idealsPrimeTo {x : IdeleGroup (𝓞 
     rw [adicOrd_eq_zero_iff, IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord]
     exact ideleCongrOneSubgroup.valued_ideleFiniteCoord_eq_one hx
       ((Modulus.mem_support_iff 𝔪 v).mp hv)
-
-/-- The fractional ideal of the finite component of an idele is trivial exactly when the idele is a
-unit at every finite place. -/
-private theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup (𝓞 K) K} :
-    toFractionalIdeal (IdeleGroup.toFiniteIdele (𝓞 K) K x) = 1 ↔
-      ∀ v : HeightOneSpectrum (𝓞 K), Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
-  simp only [toFractionalIdeal_eq_one_iff, adicOrd_eq_zero_iff, IdeleGroup.coe_toFiniteIdele,
-    HeightOneSpectrum.coe_ideleFiniteCoord]
 
 /-- The ray class of an idele congruent to one: the class of the fractional ideal of its finite
 component. -/
