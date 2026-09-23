@@ -29,9 +29,6 @@ of the finite semigroup generating family used to present the affine complex poi
 * `TauCeti.Toric.isOpenEmbedding_coneChartAmbient`: the ambient cone chart is an open embedding.
 * `TauCeti.Toric.coneChartedSpace`: the complex charted-space structure induced by one system of
   regular cone coordinates.
-* `TauCeti.Toric.contMDiff_coneChartAmbient` and
-  `TauCeti.Toric.contMDiff_of_comp_coneChartAmbient`: the chart is holomorphic and lifts
-  ambient holomorphy to maps into the affine cone chart.
 * `TauCeti.Toric.isManifold_coneChartedSpace`: this charted space is a complex manifold.
 * `TauCeti.Toric.contMDiff_id_coneChartedSpace`: changing the extending basis or the generating
   family preserves the complex structure.
@@ -84,34 +81,6 @@ noncomputable def coneChartedSpace (g : AddGeneratingFamily (dualSemigroup hi σ
   let _ := affinePointTopology g
   let h := isOpenEmbedding_coneChartAmbient hi hσ hB κ g
   exact h.singletonChartedSpace
-
-/-- The ambient mixed-coordinate chart of a regular cone is holomorphic for the complex
-structure that it induces. -/
-theorem contMDiff_coneChartAmbient (g : AddGeneratingFamily (dualSemigroup hi σ) s)
-    (n : ℕ∞ω) :
-    let _ := affinePointTopology g
-    let _ := coneChartedSpace hi hσ hB κ g
-    ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ))
-      𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (coneChartAmbient hi hσ hB κ) := by
-  let _ := affinePointTopology g
-  let _ := coneChartedSpace hi hσ hB κ g
-  exact contMDiff_isOpenEmbedding (isOpenEmbedding_coneChartAmbient hi hσ hB κ g)
-
-/-- A map into a regular affine toric chart is holomorphic if its composite with the ambient cone
-chart is holomorphic. -/
-theorem contMDiff_of_comp_coneChartAmbient
-    {E H X : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
-    [TopologicalSpace X] [ChartedSpace H X] (I : ModelWithCorners ℂ E H)
-    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
-    (f : X → AffineSemigroupComplexPoint (dualSemigroup hi σ)) (n : ℕ∞ω)
-    (hf : ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
-      (coneChartAmbient hi hσ hB κ ∘ f)) :
-    let _ := affinePointTopology g
-    let _ := coneChartedSpace hi hσ hB κ g
-    ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n f := by
-  let _ := affinePointTopology g
-  let _ := coneChartedSpace hi hσ hB κ g
-  exact ContMDiff.of_comp_isOpenEmbedding (isOpenEmbedding_coneChartAmbient hi hσ hB κ g) hf
 
 /-- The target of every chart in the cone charted-space structure is the mixed-coordinate locus. -/
 theorem coneChartedSpace_chartAt_target
