@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.EssentiallySmall
 public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.Products.Basic
 
 /-!
 # Products of preadditive categories
 
 This file equips the Cartesian product of two preadditive categories with its componentwise
-preadditive structure. Zero objects and binary biproducts are also constructed componentwise,
-and the standard projection and product functors are shown to be additive.
+preadditive structure and binary biproducts, and shows that the standard projection and product
+functors are additive.
 -/
 
 public section
@@ -29,28 +29,11 @@ universe w₁ w₂ v₁ v₂ u₁ u₂
 
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
-/-- The product of essentially small categories is essentially small. -/
-noncomputable instance [EssentiallySmall.{w₁} C] [EssentiallySmall.{w₂} D] :
-    EssentiallySmall.{max w₁ w₂} (C × D) :=
-  EssentiallySmall.mk' ((equivSmallModel C).prod (equivSmallModel D))
-
 /-- The componentwise preadditive structure on a product category. -/
 instance instPreadditiveProd [Preadditive C] [Preadditive D] : Preadditive (C × D) where
   homGroup X Y := inferInstanceAs (AddCommGroup ((X.1 ⟶ Y.1) × (X.2 ⟶ Y.2)))
   add_comp _ _ _ _ _ _ := by ext <;> simp
   comp_add _ _ _ _ _ _ := by ext <;> simp
-
-/-- A pair of zero objects is a zero object of the product category. -/
-instance [HasZeroObject C] [HasZeroObject D] : HasZeroObject (C × D) where
-  zero := ⟨(0, 0),
-    { unique_to := fun X =>
-        ⟨⟨⟨(isZero_zero C).to_ X.1, (isZero_zero D).to_ X.2⟩, fun f => by
-            exact Prod.hom_ext ((isZero_zero C).eq_of_src _ _)
-              ((isZero_zero D).eq_of_src _ _)⟩⟩
-      unique_from := fun X =>
-        ⟨⟨⟨(isZero_zero C).from_ X.1, (isZero_zero D).from_ X.2⟩, fun f => by
-            exact Prod.hom_ext ((isZero_zero C).eq_of_tgt _ _)
-              ((isZero_zero D).eq_of_tgt _ _)⟩⟩ } ⟩
 
 section BinaryBiproducts
 
@@ -68,11 +51,11 @@ private noncomputable def prodBinaryBicone (P Q : C × D) : BinaryBicone P Q whe
   inr_snd := by ext <;> simp
 
 private noncomputable def prodBinaryBiconeIsBilimit (P Q : C × D) :
-    (prodBinaryBicone P Q).IsBilimit where
+    (prodBinaryBicone P Q).IsBilimit :=
   -- `BinaryFan` and `BinaryCofan` express their equations through the walking-pair diagram.
   -- After selecting a product coordinate, `change` unfolds those diagram maps to the bicone
   -- fields, which are definitionally the displayed componentwise biproduct maps.
-  isLimit := BinaryFan.IsLimit.mk _
+  isBinaryBilimitOfIsLimit _ <| BinaryFan.IsLimit.mk _
     (fun f g => (biprod.lift f.1 g.1, biprod.lift f.2 g.2))
     (fun _ _ => by ext <;> simp [prodBinaryBicone])
     (fun _ _ => by ext <;> simp [prodBinaryBicone])
@@ -95,30 +78,6 @@ private noncomputable def prodBinaryBiconeIsBilimit (P Q : C × D) :
         · rw [biprod.lift_snd]
           have h := congrArg (fun p => p.2) h₂
           change m.2 ≫ biprod.snd = g.2 at h
-          exact h)
-  isColimit := BinaryCofan.IsColimit.mk _
-    (fun f g => (biprod.desc f.1 g.1, biprod.desc f.2 g.2))
-    (fun _ _ => by ext <;> simp [prodBinaryBicone])
-    (fun _ _ => by ext <;> simp [prodBinaryBicone])
-    (fun f g m h₁ h₂ => by
-      apply Prod.hom_ext
-      · apply biprod.hom_ext'
-        · rw [biprod.inl_desc]
-          have h := congrArg (fun p => p.1) h₁
-          change biprod.inl ≫ m.1 = f.1 at h
-          exact h
-        · rw [biprod.inr_desc]
-          have h := congrArg (fun p => p.1) h₂
-          change biprod.inr ≫ m.1 = g.1 at h
-          exact h
-      · apply biprod.hom_ext'
-        · rw [biprod.inl_desc]
-          have h := congrArg (fun p => p.2) h₁
-          change biprod.inl ≫ m.2 = f.2 at h
-          exact h
-        · rw [biprod.inr_desc]
-          have h := congrArg (fun p => p.2) h₂
-          change biprod.inr ≫ m.2 = g.2 at h
           exact h)
 
 /-- Binary biproducts in a product category are computed componentwise. -/
@@ -149,6 +108,7 @@ instance [HasZeroObject D] : (_root_.CategoryTheory.Prod.sectL C (0 : D)).Additi
     · rw [Prod.fst_add]
       rfl
     · rw [Prod.snd_add]
+      -- The constant component of `sectL.map` is the identity of the inserted zero object.
       change 𝟙 (0 : D) = 𝟙 (0 : D) + 𝟙 (0 : D)
       simp
 
@@ -158,6 +118,7 @@ instance [HasZeroObject C] : (_root_.CategoryTheory.Prod.sectR (0 : C) D).Additi
     intro X Y f g
     apply Prod.hom_ext
     · rw [Prod.fst_add]
+      -- The constant component of `sectR.map` is the identity of the inserted zero object.
       change 𝟙 (0 : C) = 𝟙 (0 : C) + 𝟙 (0 : C)
       simp
     · rw [Prod.snd_add]
