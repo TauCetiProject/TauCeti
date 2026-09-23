@@ -49,6 +49,7 @@ variable {R : Type u} {L : Type w} [CommRing R] [LieRing L] [LieAlgebra R L]
 variable (A : Type v) [CommRing A] [Algebra R A] (I : LieIdeal R L)
 
 /-- The extension of scalars of the quotient map of `I` kills exactly the extension of `I`. -/
+@[simp]
 theorem ker_baseChange_mkQ : (LieHom.baseChange A I.mkQ).ker = I.baseChange A := by
   rw [LieHom.ker_baseChange_of_surjective A I.mkQ I.mkQ_surjective, ker_mkQ]
 

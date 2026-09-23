@@ -32,6 +32,7 @@ Surjectivity itself is right-exactness of the tensor product and asks nothing of
 
 ## Main results
 
+* `LieHom.baseChange_id` and `LieHom.baseChange_comp`: extension of scalars is functorial.
 * `LieHom.baseChange_surjective`: extension of scalars preserves surjectivity.
 * `LieHom.ker_baseChange` and `LieHom.ker_baseChange_of_surjective`: **the kernel of an extended
   homomorphism is the extension of its kernel**, over a flat coefficient algebra, respectively for
@@ -44,10 +45,11 @@ open TensorProduct
 
 namespace LieHom
 
-universe u v w x
+universe u v w x y
 
-variable {R : Type u} {L : Type w} {L' : Type x}
+variable {R : Type u} {L : Type w} {L' : Type x} {L'' : Type y}
 variable [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+variable [LieRing L''] [LieAlgebra R L'']
 variable (A : Type v) [CommRing A] [Algebra R A] (f : L →ₗ⁅R⁆ L')
 
 /-- **The extension of scalars of a homomorphism of Lie algebras**, as a homomorphism of Lie
@@ -70,6 +72,19 @@ theorem coe_baseChange :
 theorem baseChange_tmul (a : A) (x : L) : baseChange A f (a ⊗ₜ[R] x) = a ⊗ₜ[R] f x :=
   LinearMap.baseChange_tmul (f : L →ₗ[R] L') a x
 
+/-- Extension of scalars is functorial: it takes the identity to the identity. -/
+@[simp]
+theorem baseChange_id : baseChange A (LieHom.id : L →ₗ⁅R⁆ L) = LieHom.id := by
+  ext x
+  exact DFunLike.congr_fun (LinearMap.baseChange_id (R := R) (A := A) (M := L)) x
+
+/-- Extension of scalars is functorial: it takes a composition to the composition. -/
+theorem baseChange_comp (g : L' →ₗ⁅R⁆ L'') :
+    baseChange A (g.comp f) = (baseChange A g).comp (baseChange A f) := by
+  ext x
+  exact DFunLike.congr_fun (LinearMap.baseChange_comp (A := A) (f := (f : L →ₗ[R] L'))
+    (g := (g : L' →ₗ[R] L''))) x
+
 /-- Extension of scalars preserves surjectivity: the tensor product is right exact. -/
 theorem baseChange_surjective (hf : Function.Surjective f) :
     Function.Surjective (baseChange A f) :=
@@ -78,6 +93,7 @@ theorem baseChange_surjective (hf : Function.Surjective f) :
 /-- **Over a flat coefficient algebra, extension of scalars commutes with kernels.**  The kernel
 of the extended homomorphism is the extension of the kernel, because tensoring with a flat module
 carries the exact pair `ker f ↪ L → L'` to an exact pair. -/
+@[simp]
 theorem ker_baseChange [Module.Flat R A] : (baseChange A f).ker = f.ker.baseChange A := by
   rw [← LieSubmodule.toSubmodule_inj, LieSubmodule.coe_baseChange, ker_toSubmodule,
     ker_toSubmodule, coe_baseChange]
@@ -87,6 +103,7 @@ theorem ker_baseChange [Module.Flat R A] : (baseChange A f).ker = f.ker.baseChan
 
 /-- **For a surjective homomorphism, extension of scalars commutes with kernels over an arbitrary
 coefficient algebra.**  Right-exactness of the tensor product replaces flatness here. -/
+@[simp]
 theorem ker_baseChange_of_surjective (hf : Function.Surjective f) :
     (baseChange A f).ker = f.ker.baseChange A := by
   rw [← LieSubmodule.toSubmodule_inj, LieSubmodule.coe_baseChange, ker_toSubmodule,
