@@ -53,27 +53,13 @@ theorem f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis
   simp only [f4SpecialIsogenyIndexEquiv_apply]
   exact (f4SpecialIsogenyIndex_involutive γ).symm
 
-/-- The long simple-coroot lift `h₀` is quotient coordinate `13`. -/
-theorem f4ShortRootSubspace_mkQ_simpleCoroot_zero_eq_quotientBasis :
-    f4ShortRootSubspace.mkQ
-        (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (0 : Fin 4))) =
-      f4ShortRootQuotientBasis 13 := by
-  exact f4ShortRootQuotientBasis_thirteen.symm
-
-/-- The long simple-coroot lift `h₁` is quotient coordinate `12`. -/
-theorem f4ShortRootSubspace_mkQ_simpleCoroot_one_eq_quotientBasis :
-    f4ShortRootSubspace.mkQ
-        (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (1 : Fin 4))) =
-      f4ShortRootQuotientBasis 12 := by
-  exact f4ShortRootQuotientBasis_twelve.symm
-
 /-- The positive long simple-root `0` has coroot quotient coordinate `13`. -/
 theorem f4ShortRootSubspace_mkQ_modularCoroot_inl_zero_eq_quotientBasis :
     f4ShortRootSubspace.mkQ
         (f4ModularCoroot (f4SignedSimpleRootIndex (.inl 0))) =
       f4ShortRootQuotientBasis 13 := by
   rw [f4SignedSimpleRootIndex_inl, f4ModularCoroot_castAdd]
-  exact f4ShortRootSubspace_mkQ_simpleCoroot_zero_eq_quotientBasis
+  exact f4ShortRootQuotientBasis_thirteen.symm
 
 /-- The positive long simple-root `1` has coroot quotient coordinate `12`. -/
 theorem f4ShortRootSubspace_mkQ_modularCoroot_inl_one_eq_quotientBasis :
@@ -81,7 +67,7 @@ theorem f4ShortRootSubspace_mkQ_modularCoroot_inl_one_eq_quotientBasis :
         (f4ModularCoroot (f4SignedSimpleRootIndex (.inl 1))) =
       f4ShortRootQuotientBasis 12 := by
   rw [f4SignedSimpleRootIndex_inl, f4ModularCoroot_castAdd]
-  exact f4ShortRootSubspace_mkQ_simpleCoroot_one_eq_quotientBasis
+  exact f4ShortRootQuotientBasis_twelve.symm
 
 /-- The negative long simple-root `0` has the same coroot quotient coordinate `13`. -/
 theorem f4ShortRootSubspace_mkQ_modularCoroot_inr_zero_eq_quotientBasis :
@@ -93,7 +79,7 @@ theorem f4ShortRootSubspace_mkQ_modularCoroot_inr_zero_eq_quotientBasis :
   exact (congrArg f4ShortRootSubspace.mkQ
     ((f4ModularCoroot_f4OppositeRootIndex (Fin.castAdd 44 (0 : Fin 4))).trans
       (f4ModularCoroot_castAdd 0))).trans
-    f4ShortRootSubspace_mkQ_simpleCoroot_zero_eq_quotientBasis
+    f4ShortRootQuotientBasis_thirteen.symm
 
 /-- The negative long simple-root `1` has the same coroot quotient coordinate `12`. -/
 theorem f4ShortRootSubspace_mkQ_modularCoroot_inr_one_eq_quotientBasis :
@@ -105,7 +91,7 @@ theorem f4ShortRootSubspace_mkQ_modularCoroot_inr_one_eq_quotientBasis :
   exact (congrArg f4ShortRootSubspace.mkQ
     ((f4ModularCoroot_f4OppositeRootIndex (Fin.castAdd 44 (1 : Fin 4))).trans
       (f4ModularCoroot_castAdd 1))).trans
-    f4ShortRootSubspace_mkQ_simpleCoroot_one_eq_quotientBasis
+    f4ShortRootQuotientBasis_twelve.symm
 
 /-- On two long roots, the special root permutation preserves their Cartan integer. -/
 theorem f4_pairing_specialIsogenyIndexEquiv_eq_of_long
