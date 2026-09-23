@@ -13,7 +13,7 @@ public import TauCeti.Analysis.SpecialFunctions.Beta
 
 The bounded side between two consecutive prevertices has length equal to the integral of the
 absolute value of the Schwarz--Christoffel integrand over the interval between them.  This file
-packages that integral as `TauCeti.schwarzChristoffelSideLength` and identifies it with the
+packages that integral as `TauCeti.schwarzChristoffelSideIntegral` and identifies it with the
 distance between the corresponding vertices.
 
 This is the real equation in the Schwarz--Christoffel parameter problem: after the turning
@@ -26,8 +26,8 @@ those two factors reduces integrability to Euler's beta integral.
 
 * `TauCeti.intervalIntegrable_schwarzChristoffelDensity` -- the density is integrable between
   consecutive prevertices.
-* `TauCeti.schwarzChristoffelSideLength_pos` -- every such side length is positive.
-* `TauCeti.dist_schwarzChristoffelVertex_succ_eq_sideLength` -- the integral is the geometric
+* `TauCeti.schwarzChristoffelSideIntegral_pos` -- every such side integral is positive.
+* `TauCeti.dist_schwarzChristoffelVertex_succ_eq_sideIntegral` -- the integral is the geometric
   length of the corresponding polygon side.
 
 ## References
@@ -49,7 +49,7 @@ variable {n : ℕ}
 /-- The oriented candidate side-length integral between consecutive prevertices `a i` and
 `a (i + 1)`.  For strictly ordered prevertices and integrable endpoint singularities it is
 positive and equals the geometric side length, as proved below. -/
-noncomputable def schwarzChristoffelSideLength (a e : Fin (n + 1) → ℝ) (i : Fin n) : ℝ :=
+noncomputable def schwarzChristoffelSideIntegral (a e : Fin (n + 1) → ℝ) (i : Fin n) : ℝ :=
   ∫ x in a i.castSucc..a i.succ, schwarzChristoffelDensity a e x
 
 /-- The Schwarz--Christoffel density is interval integrable between two distinct endpoints when
@@ -163,12 +163,12 @@ theorem intervalIntegrable_schwarzChristoffelDensity_succ (a e : Fin (n + 1) →
 
 /-- The vector of a bounded Schwarz--Christoffel side is its density integral times the unit
 vector in the side's fixed direction. -/
-theorem schwarzChristoffelVertex_succ_sub_eq_sideLength_mul (a e : Fin (n + 1) → ℝ)
+theorem schwarzChristoffelVertex_succ_sub_eq_sideIntegral_mul (a e : Fin (n + 1) → ℝ)
     (z₀ : UpperHalfPlane) (ha : StrictMono a) (i : Fin n)
     (hleft : -1 < e i.castSucc) (hright : -1 < e i.succ) :
     schwarzChristoffelVertex a e z₀ i.succ -
         schwarzChristoffelVertex a e z₀ i.castSucc =
-      (schwarzChristoffelSideLength a e i : ℂ) *
+      (schwarzChristoffelSideIntegral a e i : ℂ) *
         Complex.exp (schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) := by
   classical
   let p := a i.castSucc
@@ -199,13 +199,13 @@ theorem schwarzChristoffelVertex_succ_sub_eq_sideLength_mul (a e : Fin (n + 1) �
     schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ (by rw [hsum]; exact hright),
     schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc
       (by rw [hsum]; exact hleft)] at hFTC
-  simpa only [schwarzChristoffelSideLength, p, q, C] using hFTC.symm
+  simpa only [schwarzChristoffelSideIntegral, p, q, C] using hFTC.symm
 
 /-- Every bounded Schwarz--Christoffel side has positive integral length when its endpoint
 singularities are integrable. -/
-theorem schwarzChristoffelSideLength_pos (a e : Fin (n + 1) → ℝ) (ha : StrictMono a)
+theorem schwarzChristoffelSideIntegral_pos (a e : Fin (n + 1) → ℝ) (ha : StrictMono a)
     (i : Fin n) (hleft : -1 < e i.castSucc) (hright : -1 < e i.succ) :
-    0 < schwarzChristoffelSideLength a e i := by
+    0 < schwarzChristoffelSideIntegral a e i := by
   apply intervalIntegral.intervalIntegral_pos_of_pos_on
     (intervalIntegrable_schwarzChristoffelDensity_succ a e ha i hleft hright) _
     (ha i.castSucc_lt_succ)
@@ -215,15 +215,15 @@ theorem schwarzChristoffelSideLength_pos (a e : Fin (n + 1) → ℝ) (ha : Stric
 
 /-- The side-length integral is the Euclidean distance between the corresponding consecutive
 Schwarz--Christoffel vertices. -/
-theorem dist_schwarzChristoffelVertex_succ_eq_sideLength (a e : Fin (n + 1) → ℝ)
+theorem dist_schwarzChristoffelVertex_succ_eq_sideIntegral (a e : Fin (n + 1) → ℝ)
     (z₀ : UpperHalfPlane) (ha : StrictMono a) (i : Fin n)
     (hleft : -1 < e i.castSucc) (hright : -1 < e i.succ) :
     dist (schwarzChristoffelVertex a e z₀ i.succ)
         (schwarzChristoffelVertex a e z₀ i.castSucc) =
-      schwarzChristoffelSideLength a e i := by
-  rw [Complex.dist_eq, schwarzChristoffelVertex_succ_sub_eq_sideLength_mul a e z₀ ha i
+      schwarzChristoffelSideIntegral a e i := by
+  rw [Complex.dist_eq, schwarzChristoffelVertex_succ_sub_eq_sideIntegral_mul a e z₀ ha i
     hleft hright, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos (schwarzChristoffelSideLength_pos a e ha i hleft hright),
+    abs_of_pos (schwarzChristoffelSideIntegral_pos a e ha i hleft hright),
     Complex.norm_exp_ofReal_mul_I, mul_one]
 
 end TauCeti
