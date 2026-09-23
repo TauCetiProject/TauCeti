@@ -105,7 +105,8 @@ theorem linearRec₂_mul_eq_succ_add_mul_pred
     (hd : ∀ r, d (r + 2) = D * d (r + 1) - S * d r) {m : ℕ} (hm : 0 < m) :
     D * d m = d (m + 1) + S * d (m - 1) := by
   obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-  rw [show k + 1 + 1 = k + 2 by omega, Nat.add_sub_cancel, hd k, sub_add_cancel]
+  simp only [Nat.add_assoc, Nat.reduceAdd, Nat.add_sub_cancel]
+  rw [hd k, sub_add_cancel]
 
 end NonUnitalNonAssocRing
 
