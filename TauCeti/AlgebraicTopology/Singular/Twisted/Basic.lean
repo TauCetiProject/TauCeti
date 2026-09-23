@@ -365,6 +365,13 @@ def twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
     twistedHomology L k ⟶ twistedHomology K k :=
   (HomologicalComplex.homologyFunctor _ _ k).map (twistedChainComplexCoefficientMap η)
 
+/-- The map on twisted homology induced by a coefficient morphism is the homology map of the
+corresponding map of twisted chain complexes. -/
+lemma twistedHomologyCoefficientMap_eq (η : L ⟶ K) (k : ℕ) :
+    twistedHomologyCoefficientMap η k =
+      HomologicalComplex.homologyMap (twistedChainComplexCoefficientMap η) k :=
+  (rfl)
+
 /-- The identity morphism of a coefficient system induces the identity of twisted homology. -/
 @[simp]
 lemma twistedHomologyCoefficientMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) (k : ℕ) :
@@ -574,6 +581,16 @@ lemma ιTwistedChains_twistedChainsMap (n : SimplexCategoryᵒᵖ)
 def twistedChainComplexMap :
     twistedChainComplex ((pullback f.hom).obj L) ⟶ twistedChainComplex L :=
   (AlgebraicTopology.alternatingFaceMapComplex _).map (twistedChainsMap f L)
+
+/-- Equal continuous maps induce the same map on twisted chain complexes, after the canonical
+identification of their pullback coefficient systems. -/
+lemma twistedChainComplexMap_congr {g : X ⟶ Y} (h : f = g) :
+    twistedChainComplexMap f L =
+      twistedChainComplexCoefficientMap
+          (eqToIso (congrArg (fun k : X ⟶ Y ↦ (pullback k.hom).obj L) h)).hom ≫
+        twistedChainComplexMap g L := by
+  subst h
+  simp
 
 /-- In each degree, a continuous map sends the summand of a simplex `σ` of `X` identically onto
 the summand of its image simplex in `Y`. -/
