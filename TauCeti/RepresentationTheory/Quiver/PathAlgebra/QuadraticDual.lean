@@ -51,14 +51,16 @@ choice.
 Duality here is taken through the path basis: `R^⊥` is the annihilator of `R` inside the
 degree-two part of `kQ` itself, and the degree-one part of `(kQ)ᵐᵒᵖ` is the span of the dual
 arrows. That span is *all* of the dual of the arrow module exactly when the quiver has finitely
-many arrows, `[∀ a b : Q, Finite (a ⟶ b)]` on top of the `[Finite Q]` the path algebra already
-asks for: a free module is identified with its full linear dual by its dual basis only in finite
-rank. Accordingly, the pairing and orthogonal-complement API is stated for arbitrary quivers, as
-`Submodule.dualAnnihilator` carries no finiteness hypothesis, while the named quadratic-dual
-ideal, algebra, and universal-property API assumes finite arrow types. That hypothesis delimits
+many arrows, `[∀ a b : Q, Finite (a ⟶ b)]`: a free module is identified with its full linear dual
+by its dual basis only in finite rank. Accordingly, the pairing and orthogonal-complement API is
+stated for arbitrary quivers, as `Submodule.dualAnnihilator` carries no finiteness hypothesis,
+while the named quadratic-dual ideal, algebra, and universal-property API assumes finite arrow
+types. That hypothesis delimits
 what those names mean rather than entering their construction, so it is carried as an
 underscore-named instance argument on `TauCeti.PathAlgebra.quadraticDualIdeal`, from which the rest
-of the dual API inherits it.
+of the dual API inherits it. The dual relation ideal needs nothing more, while the quadratic dual
+algebra and its universal property additionally assume `[Finite Q]`, which the unit of the path
+algebra needs.
 
 ## Main definitions
 
