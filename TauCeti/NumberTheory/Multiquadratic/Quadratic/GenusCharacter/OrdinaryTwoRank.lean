@@ -63,9 +63,8 @@ F. Lemmermeyer, *Reciprocity Laws: From Euler to Eisenstein*, §2.2, and D. A. C
 * `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_one_iff` and
   `TauCeti.Multiquadratic.twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg`: the ordinary `2`-rank
   of a real quadratic field.
-* `TauCeti.Multiquadratic.twoRank_eq_zero_of_minpoly_eq_X_sq_sub_three` and
-  `TauCeti.Multiquadratic.twoRank_eq_one_of_minpoly_eq_X_sq_sub_thirty_four`: `ℚ(√3)` has
-  `2`-rank `0 = t - 2`, and `ℚ(√34)` has `2`-rank `1 = t - 1`.
+* `TauCeti.Multiquadratic.twoRank_eq_one_of_minpoly_eq_X_sq_sub_thirty_four`: `ℚ(√34)` has
+  `2`-rank `1 = t - 1`.
 -/
 
 public section
@@ -237,52 +236,6 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg {s : Finset ℤ}
   omega
 
 /-! ### Worked examples -/
-
-/-- `3` is squarefree as an integer, being prime. -/
-private theorem squarefree_three : Squarefree (3 : ℤ) :=
-  (Int.prime_iff_natAbs_prime.mpr (by decide)).squarefree
-
-private theorem isPrimeDiscriminant_of_mem_neg_four_neg_three :
-    ∀ P ∈ ({-4, -3} : Finset ℤ), IsPrimeDiscriminant P := by
-  intro P hP
-  fin_cases hP
-  · exact isPrimeDiscriminant_neg_four
-  · simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)]
-      using isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
-
-private theorem eq_of_mem_neg_four_neg_three_of_even :
-    ∀ P ∈ ({-4, -3} : Finset ℤ), ∀ Q ∈ ({-4, -3} : Finset ℤ),
-      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q := by
-  intro P hP Q hQ
-  fin_cases hP <;> fin_cases hQ <;> simp only [IsEvenPrimeDiscriminant] <;> decide
-
-private theorem prod_neg_four_neg_three :
-    ∏ P ∈ ({-4, -3} : Finset ℤ), P = fundamentalDiscriminant (3 : ℤ) := by
-  rw [Finset.prod_pair (by decide : (-4 : ℤ) ≠ -3),
-    fundamentalDiscriminant_of_mod_four_ne_one (by decide : (3 : ℤ) % 4 ≠ 1)]
-  norm_num
-
-/-- **Two rational primes ramify in `ℚ(√3)`.** Its fundamental discriminant `12` factors as
-`(-4) · (-3)` into two prime discriminants, so the ramified primes are `2` and `3`. -/
-theorem ncard_ramifiedPrimes_eq_two_of_minpoly_eq_X_sq_sub_three
-    (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    (ramifiedPrimes K).ncard = 2 := by
-  rw [ncard_ramifiedPrimes_eq_card hmin hgen squarefree_three
-      isPrimeDiscriminant_of_mem_neg_four_neg_three eq_of_mem_neg_four_neg_three_of_even
-      prod_neg_four_neg_three,
-    Finset.card_pair (by decide : (-4 : ℤ) ≠ -3)]
-
-/-- **`ℚ(√3)` has class-group `2`-rank `0`.** Its discriminant `12 = (-4) · (-3)` has two negative
-prime-discriminant factors, so two primes ramify and the `2`-rank is `t - 2 = 0`, one less than
-the narrow `2`-rank `t - 1 = 1`. -/
-theorem twoRank_eq_zero_of_minpoly_eq_X_sq_sub_three
-    (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    TauCeti.ClassGroup.twoRank (𝓞 K) = 0 := by
-  rw [twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg
-      isPrimeDiscriminant_of_mem_neg_four_neg_three eq_of_mem_neg_four_neg_three_of_even
-      prod_neg_four_neg_three hmin hgen squarefree_three (by norm_num)
-      (P := -4) (by simp) (by norm_num),
-    ncard_ramifiedPrimes_eq_two_of_minpoly_eq_X_sq_sub_three hmin hgen]
 
 /-- **`ℚ(√34)` has class-group `2`-rank `1`.** Its discriminant `136 = 8 · 17` has only positive
 prime-discriminant factors, so the `2`-rank is `t - 1 = 1`, with `t = 2` ramified primes. This
