@@ -7,7 +7,7 @@ module
 
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import TauCeti.KnotTheory.Grid.Commutation.Pentagon
-public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Mixed
+public import TauCeti.KnotTheory.Grid.Differential.Square.Decomposition
 
 /-!
 # Rectangle--pentagon decompositions for grid commutation
@@ -271,24 +271,6 @@ theorem toRectangleDecomposition_second_toGridRectangle
   unfold toRectangleDecomposition
   rfl
 
-/-- Emptiness of the pentagon is preserved when forgetting its turn point. -/
-theorem isEmpty_toRectangleDecomposition_first
-    (D : GridPentagonRectangleDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toRectangleDecomposition.first.IsEmpty := by
-  cases D with
-  | mk middle pentagon rectangle =>
-      unfold toRectangleDecomposition
-      exact h
-
-/-- Emptiness of the rectangle is preserved when forgetting the pentagon turn point. -/
-theorem isEmpty_toRectangleDecomposition_second
-    (D : GridPentagonRectangleDecomposition a s x z) (h : D.rectangle.IsEmpty) :
-    D.toRectangleDecomposition.second.IsEmpty := by
-  cases D with
-  | mk middle pentagon rectangle =>
-      unfold toRectangleDecomposition
-      exact h
-
 /-- The pentagon's turn row lies between the sides of the first forgotten rectangle. -/
 theorem turn_mem_toRectangleDecomposition_first
     (D : GridPentagonRectangleDecomposition a s x z) :
@@ -339,23 +321,6 @@ theorem toRectangleDecomposition_first_left (D : GridRectanglePentagonDecomposit
     D.toRectangleDecomposition.first.left = D.rectangle.left := by
   unfold toRectangleDecomposition
   rfl
-
-/-- Emptiness of the rectangle is preserved when forgetting the pentagon turn point. -/
-theorem isEmpty_toRectangleDecomposition_first (D : GridRectanglePentagonDecomposition a s x z)
-    (h : D.rectangle.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
-  cases D with
-  | mk middle rectangle pentagon =>
-      unfold toRectangleDecomposition
-      exact h
-
-/-- Emptiness of the pentagon's underlying rectangle is preserved when forgetting its turn row. -/
-theorem isEmpty_toRectangleDecomposition_second
-    (D : GridRectanglePentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toRectangleDecomposition.second.IsEmpty := by
-  cases D with
-  | mk middle rectangle pentagon =>
-      unfold toRectangleDecomposition
-      exact h
 
 /-- The pentagon's turn row lies between the sides of the second forgotten rectangle. -/
 theorem turn_mem_toRectangleDecomposition_second
