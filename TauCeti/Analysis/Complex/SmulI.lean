@@ -41,7 +41,7 @@ end MulAction
 
 section Normed
 
-variable (X : Type*) [NormedAddCommGroup X] [NormedSpace ℂ X]
+variable (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℂ X]
 
 /-- Multiplication by `i` as a real continuous linear equivalence of a complex normed space. -/
 noncomputable def smulIEquiv : X ≃L[ℝ] X :=
