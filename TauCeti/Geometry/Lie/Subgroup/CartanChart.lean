@@ -98,8 +98,9 @@ theorem exists_mem_nhds_one_iff_mem_lieExp_of_isClosed {K : Subgroup G}
       simpa only [z, Function.comp_apply, Submodule.lieExpMulLieExp_apply] using
         hf.localInverse_right_inv hxsource
     have hz2norm : ‖(z.2 : LeftInvariantDerivation I G)‖ < ε := by
-      change z.2 ∈ Metric.ball (0 : q) ε at hzA
-      simpa only [Metric.mem_ball, dist_zero_right, Submodule.norm_coe] using hzA
+      have hzA' : z.2 ∈ Metric.ball (0 : q) ε := by
+        simpa only [A, Set.mem_preimage] using hzA
+      simpa only [Metric.mem_ball, dist_zero_right, Submodule.norm_coe] using hzA'
     have hz1p : (z.1 : LeftInvariantDerivation I G) ∈
         (lieSubalgebraOfSubgroup (I := I) K).toSubmodule := by
       simpa only [p] using z.1.property
