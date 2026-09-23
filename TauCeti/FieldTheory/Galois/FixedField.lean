@@ -87,17 +87,24 @@ public section
 
 open IntermediateField
 
-namespace Subgroup
+namespace IntermediateField
 
 variable {K M : Type*} [Field K] [Field M] [Algebra K M]
 
-private theorem fixingSubgroup_fixedField_gc :
+/-- The Galois connection between fixing subgroups and fixed intermediate fields. -/
+theorem fixingSubgroup_fixedField_gc :
     GaloisConnection
       (OrderDual.toDual ∘
         (IntermediateField.fixingSubgroup : IntermediateField K M → Subgroup (M ≃ₐ[K] M)))
       ((IntermediateField.fixedField : Subgroup (M ≃ₐ[K] M) → IntermediateField K M) ∘
         OrderDual.ofDual) :=
   fun E H ↦ (IntermediateField.le_iff_le H.ofDual E).symm
+
+end IntermediateField
+
+namespace Subgroup
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
 
 /-- **The fixed field of a common intersection is the compositum of the fixed fields.** This is
 the indexed Galois-lattice law: an element fixed by every automorphism common to all `H i` lies in
@@ -117,7 +124,7 @@ of carriers, this is `fixedPoints_subgroup_iSup`. -/
 @[simp]
 theorem fixedField_iSup {I : Sort*} (H : I → Subgroup (M ≃ₐ[K] M)) :
     fixedField (⨆ i, H i) = ⨅ i, fixedField (H i) :=
-  (fixingSubgroup_fixedField_gc (K := K) (M := M)).u_iInf
+  (IntermediateField.fixingSubgroup_fixedField_gc (K := K) (M := M)).u_iInf
 
 /-- **The fixed field of an intersection is the compositum of the fixed fields.** For a finite
 Galois extension, the Galois correspondence reverses binary meets and joins. -/
