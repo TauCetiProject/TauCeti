@@ -79,25 +79,17 @@ theorem im_root (f : posDef D) : (root f).im = √(D : ℝ) / (2 * f.1.a) :=
 theorem coe_root (f : posDef D) : (root f : ℂ) = (-(f.1.b : ℂ) + √(D : ℝ) * I) / (2 * f.1.a) := by
   simp [← (root f).re_add_im, add_div, mul_div_right_comm]
 
--- Over `ℂ` the discriminant `-D` of a form in `posDef D` is the square of `i √D`.
-private theorem discrim_eq_mul_self (f : posDef D) :
-    discrim (f.1.a : ℂ) f.1.b f.1.c = (√(D : ℝ) * I) * (√(D : ℝ) * I) := by
-  rw [mul_mul_mul_comm, ← ofReal_mul, Real.mul_self_sqrt D.cast_nonneg]
-  simpa [discrim, discrim_def] using congrArg (Int.cast : ℤ → ℂ) f.2.1
-
 /-- `root f` is the only point of the upper half-plane at which `a z² + b z + c` vanishes: the
 other root `(-b - i √D) / (2 a)` lies in the lower half-plane. -/
 theorem eq_root_iff (f : posDef D) (z : ℍ) :
     z = root f ↔ (f.1.a : ℂ) * z ^ 2 + f.1.b * z + f.1.c = 0 := by
-  have ha : (f.1.a : ℂ) ≠ 0 := by exact_mod_cast f.2.2.ne'
-  rw [sq, quadratic_eq_zero_iff ha (discrim_eq_mul_self f), ← coe_root, UpperHalfPlane.ext_iff]
-  refine ⟨.inl, fun h ↦ h.resolve_right fun h' ↦ ?_⟩
-  have hconj : (-(f.1.b : ℂ) - √(D : ℝ) * I) / (2 * f.1.a) = conj (root f : ℂ) := by
-    rw [coe_root, map_div₀]
-    simp [sub_eq_add_neg, map_ofNat]
-  have := congrArg Complex.im (h'.trans hconj)
-  rw [conj_im, coe_im, coe_im] at this
-  linarith [z.im_pos, (root f).im_pos]
+  -- Over `ℂ` the discriminant `-D` of a form in `posDef D` is the square of `i √D`.
+  have hd : discrim (f.1.a : ℂ) f.1.b f.1.c = (√(D : ℝ) * I) * (√(D : ℝ) * I) := by
+    rw [mul_mul_mul_comm, ← ofReal_mul, Real.mul_self_sqrt D.cast_nonneg]
+    simpa [discrim, discrim_def] using congrArg (Int.cast : ℤ → ℂ) f.2.1
+  rw [sq, quadratic_eq_zero_iff (mod_cast f.2.2.ne') hd, ← coe_root, UpperHalfPlane.ext_iff,
+    or_iff_left fun h ↦ z.coe_im_pos.not_ge ?_]
+  simp [h, div_im, div_nonpos_iff, f.2.2.le, mul_nonneg]
 
 /-- The root map is `SL(2, ℤ)`-equivariant: `root (γ • f) = γ • root f`, with the action
 `γ • f = f ∘ γ⁻¹` on forms and the Möbius action on `ℍ`. -/
