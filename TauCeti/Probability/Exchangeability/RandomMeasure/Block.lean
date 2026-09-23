@@ -130,6 +130,7 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMargina
 
 /-- **Restriction compatibility for block marginals.** The `r`-th width-`m` subblock of the
 `i`-th width-`n * m` block is the width-`m` block numbered `i * n + r`. -/
+@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] (i : ℕ) (r : Fin n) :
     (@ProbabilityMeasure.blockMarginals α _ P (n * m)
