@@ -357,20 +357,17 @@ noncomputable def kummerMapCanonical (hn : IsUnit (n : K)) :
       (continuousCohomology 1
         (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K n))) :=
   AddMonoidHom.toMultiplicativeRight <|
-    (explicitH1IsoContinuousCohomology (AbsoluteGaloisGroup K)
-      (KummerCoeff K n)).hom.hom.toLinearMap.toAddMonoidHom |>.comp
-        ((discreteH1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n)).symm.toAddMonoidHom.comp
-          (AddMonoidHom.toMultiplicativeRight.symm (kummerMap K n hn)))
+    (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+      (KummerCoeff K n)).toAddMonoidHom.comp
+        (AddMonoidHom.toMultiplicativeRight.symm (kummerMap K n hn))
 
 /-- **The explicit and canonical Kummer maps agree.** The degree-one comparison sends the
 explicit Kummer class of a unit to its canonical continuous-cohomology class. -/
 @[simp]
 theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
     Multiplicative.toAdd (kummerMapCanonical K n hn a) =
-      (explicitH1IsoContinuousCohomology (AbsoluteGaloisGroup K)
-        (KummerCoeff K n)).hom
-          ((discreteH1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n)).symm
-            (Multiplicative.toAdd (kummerMap K n hn a))) := by
+      explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+        (KummerCoeff K n) (Multiplicative.toAdd (kummerMap K n hn a)) := by
   rfl
 
 /-! ### Transport to another coefficient model -/
