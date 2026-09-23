@@ -233,26 +233,18 @@ theorem repartitionToPrincipalParts_surjective (D : SchemeWeilDivisor X) :
     intro P Q h
     apply e.symm.injective
     exact congrArg Subtype.val h
-  let representative : ∀ x, X.functionField := fun x ↦
-    if hx : t x = 0 then 0 else Classical.choose
-      ((Submodule.Quotient.mk_surjective (stalkSubmodule D x.1)) (t x))
-  have hrepresentative (x) : Submodule.Quotient.mk (representative x) = t x := by
-    dsimp only [representative]
-    split_ifs with hx
-    · simp [hx]
-    · exact Classical.choose_spec
-        ((Submodule.Quotient.mk_surjective (stalkSubmodule D x.1)) (t x))
-  have hrepresentative_ne (x) (hx : representative x ≠ 0) : t x ≠ 0 := by
-    intro htx
-    apply hx
-    dsimp only [representative]
-    simp [htx]
-  let b : Place k X.functionField → X.functionField := fun P ↦ representative (ix P)
+  let q (x : {x : CodimensionOnePoint X // (x : X) ∈ (⊤ : X.Opens)}) :=
+    Submodule.mkQ (stalkSubmodule D x.1)
+  obtain ⟨u, hu⟩ : ∃ u : Π₀ _ : {x : CodimensionOnePoint X //
+      (x : X) ∈ (⊤ : X.Opens)}, X.functionField,
+      DFinsupp.mapRange (fun x ↦ q x) (fun x ↦ (q x).map_zero) u = t :=
+    (DFinsupp.mapRange_surjective (fun x ↦ q x)
+      (fun x ↦ (q x).map_zero)).mpr (fun x ↦ (stalkSubmodule D x.1).mkQ_surjective) t
+  let b : Place k X.functionField → X.functionField := fun P ↦ u (ix P)
   have hb_support : {P | b P ≠ 0}.Finite := by
-    refine (t.support.finite_toSet.preimage hix.injOn).subset ?_
+    refine (u.support.finite_toSet.preimage hix.injOn).subset ?_
     intro P hP
-    rw [Set.mem_preimage, Finset.mem_coe]
-    exact (DFinsupp.mem_support_toFun t (ix P)).mpr (hrepresentative_ne (ix P) hP)
+    exact (DFinsupp.mem_support_toFun u (ix P)).mpr hP
   have hb : b ∈ repartitionSpace k X.functionField := by
     rw [mem_repartitionSpace_iff_finite]
     exact hb_support.subset fun P hP hPb ↦ hP (by simp [hPb])
@@ -267,9 +259,11 @@ theorem repartitionToPrincipalParts_surjective (D : SchemeWeilDivisor X) :
     simp only [ix, e, ← CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim,
       Equiv.symm_apply_apply]
   have ha_apply : (a : Place k X.functionField → X.functionField)
-      (X.toPlace (k := k) (x.1 : X)) = representative x := by
+      (X.toPlace (k := k) (x.1 : X)) = u x := by
     simp only [a, b, hix_apply]
-  rw [ha_apply, hrepresentative]
+  rw [ha_apply]
+  have hx := congrArg (fun v : principalPartsSections D ⊤ ↦ v x) hu
+  simpa only [DFinsupp.mapRange_apply, q, Submodule.mkQ_apply] using hx
 
 /-- **Global principal parts as a repartition quotient.** The quotient of the repartition space
 by the repartitions bounded by `D` is linearly equivalent to the global principal parts of `D`. -/
