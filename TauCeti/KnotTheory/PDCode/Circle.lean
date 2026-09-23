@@ -23,6 +23,11 @@ have bracket one rather than a negative power of the loop value.
 `ClaspInsertion` applies to clasps whose arcs meet crossings and does not treat a clasp through a
 crossing-free circle; this file supplies the separate operation of adjoining a disjoint
 crossing-free circle, which local move calculations need alongside it.
+
+The PD-code convention follows M. Mastin, *Links and Planar Diagram Codes*, Definitions 2--3.
+The disjoint-circle Kauffman-bracket relation follows L. H. Kauffman, *State models and the Jones
+polynomial*, and W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997),
+Chapter 3.
 -/
 
 public section
@@ -67,6 +72,7 @@ def adjoinCircle (D : PDCode n) : PDCode n where
     D.adjoinCircle.crossingTurn = D.crossingTurn := by
   simp [crossingTurn_def]
 
+/-- Adjoining a circle leaves the component traversal permutation unchanged. -/
 @[simp] theorem componentPerm_adjoinCircle (D : PDCode n) :
     D.adjoinCircle.componentPerm = D.componentPerm := by
   rw [componentPerm_def, componentPerm_def, crossingTurn_adjoinCircle,
@@ -84,15 +90,18 @@ def adjoinCircle (D : PDCode n) : PDCode n where
     adjoinCircle_crossinglessComponentCount]
   omega
 
+/-- Adjoining a circle leaves the smoothing traversal permutation unchanged. -/
 @[simp] theorem smoothingTurn_adjoinCircle (D : PDCode n) (s : Fin n → Bool) :
     D.adjoinCircle.smoothingTurn s = D.smoothingTurn s := by
   simp [smoothingTurn_def]
 
+/-- Adjoining a circle leaves the chosen local smoothing at every crossing unchanged. -/
 @[simp] theorem smoothingChoice_adjoinCircle (D : PDCode n) (s : Fin n → Bool) :
     D.adjoinCircle.smoothingChoice s = D.smoothingChoice s := by
   funext i
   cases hs : s i <;> simp [hs]
 
+/-- Adjoining a circle leaves the state traversal permutation unchanged. -/
 @[simp] theorem statePerm_adjoinCircle (D : PDCode n) (s : Fin n → Bool) :
     D.adjoinCircle.statePerm s = D.statePerm s := by
   rw [statePerm_def, statePerm_def, smoothingTurn_adjoinCircle,
@@ -106,7 +115,7 @@ def adjoinCircle (D : PDCode n) : PDCode n where
 
 /-- Adjoining a circle to a nonempty diagram multiplies its Kauffman bracket by the loop
 value. The empty code is excluded because its bracket is normalized to one. -/
-theorem kauffmanBracket_adjoinCircle {R : Type*} [CommRing R] (D : PDCode n)
+@[simp] theorem kauffmanBracket_adjoinCircle {R : Type*} [CommRing R] (D : PDCode n)
     (h : 0 < D.componentCount) (a : Rˣ) :
     D.adjoinCircle.kauffmanBracket a = jonesDelta a * D.kauffmanBracket a := by
   rw [kauffmanBracket_def, kauffmanBracket_def, Finset.mul_sum]
@@ -158,6 +167,7 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
       orientation ::ₘ D.crossinglessComponents := by
   rfl
 
+/-- Adjoining a circle leaves every existing crossing sign unchanged. -/
 @[simp] theorem crossingSign_adjoinCircle (D : OrientedPDCode n) (orientation : Bool)
     (i : Fin n) :
     (OrientedPDCode.adjoinCircle D orientation).crossingSign i = D.crossingSign i := by
@@ -168,6 +178,7 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
     (OrientedPDCode.adjoinCircle D orientation).writhe = D.writhe := by
   simp [writhe_def]
 
+/-- Mirroring commutes with adjoining an oriented crossing-free circle. -/
 @[simp] theorem mirror_adjoinCircle (D : OrientedPDCode n) (orientation : Bool) :
     (OrientedPDCode.adjoinCircle D orientation).mirror =
       OrientedPDCode.adjoinCircle D.mirror orientation := by
@@ -175,7 +186,7 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
 
 /-- Adjoining a circle to a nonempty oriented diagram multiplies the normalized bracket by the
 same loop value as the unoriented bracket, since the writhe is unchanged. -/
-theorem normalizedKauffmanBracket_adjoinCircle {R : Type*} [CommRing R]
+@[simp] theorem normalizedKauffmanBracket_adjoinCircle {R : Type*} [CommRing R]
     (D : OrientedPDCode n) (orientation : Bool) (h : 0 < D.toPDCode.componentCount)
     (a : Rˣ) :
     (OrientedPDCode.adjoinCircle D orientation).normalizedKauffmanBracket a =
@@ -220,6 +231,8 @@ def adjoinCircle (D : FramedOrientedPDCode n) (orientation : Bool) (framing : �
       (orientation, framing) ::ₘ D.crossinglessFramings := by
   rfl
 
+/-- Mirroring commutes with adjoining a framed oriented crossing-free circle and negates its
+framing. -/
 @[simp] theorem mirror_adjoinCircle (D : FramedOrientedPDCode n) (orientation : Bool)
     (framing : ℤ) :
     (FramedOrientedPDCode.adjoinCircle D orientation framing).mirror =

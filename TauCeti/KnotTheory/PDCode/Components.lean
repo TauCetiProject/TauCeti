@@ -111,7 +111,7 @@ theorem isPerfectMatching_crossingTurn (D : PDCode n) :
   obtain ⟨⟨i, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv n).surjective x
   rw [crossingTurn_crossing, crossing_apply, D.halfEdge.apply_eq_iff_eq,
     (crossingSlotEquiv n).apply_eq_iff_eq, Prod.mk.injEq] at hh
-  exact oppositeCrossingSlot_ne _ hh.2
+  exact Fin.oppositeCrossingSlot_ne _ hh.2
 
 /-- The directed crossing traversal orbits come in pairs. -/
 theorem even_orbitCount_componentPerm (D : PDCode n) :
