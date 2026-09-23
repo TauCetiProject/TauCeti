@@ -48,8 +48,6 @@ geometric pairing makes the exact target of the juxtaposition argument explicit.
 * `TauCeti.GridDiagram.pentagonMap_unblockedDifferential_single_apply` and
   `TauCeti.GridDiagram.unblockedDifferential_pentagonMap_single_apply` identify those sums with
   the two sides of the chain-map equation on a grid-state generator.
-* `TauCeti.GridPentagonBetween.isEmpty_iff_toGridRectangleBetween` identifies the emptiness of a
-  pentagon with that of its underlying rectangle.
 * `TauCeti.GridPentagonRectangleDecomposition.turn_mem_toRectangleDecomposition_first` and
   `TauCeti.GridRectanglePentagonDecomposition.turn_mem_toRectangleDecomposition_second` transport
   the pentagon turn point to the underlying rectangles.
@@ -280,7 +278,7 @@ theorem isEmpty_toRectangleDecomposition_first
   cases D with
   | mk middle pentagon rectangle =>
       unfold toRectangleDecomposition
-      exact pentagon.isEmpty_iff_toGridRectangleBetween.mp h
+      exact h
 
 /-- Emptiness of the rectangle is preserved when forgetting the pentagon turn point. -/
 theorem isEmpty_toRectangleDecomposition_second
@@ -357,7 +355,7 @@ theorem isEmpty_toRectangleDecomposition_second
   cases D with
   | mk middle rectangle pentagon =>
       unfold toRectangleDecomposition
-      exact pentagon.isEmpty_iff_toGridRectangleBetween.mp h
+      exact h
 
 /-- The pentagon's turn row lies between the sides of the second forgotten rectangle. -/
 theorem turn_mem_toRectangleDecomposition_second
