@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Reductive.Basic
-public import TauCeti.AlgebraicGeometry.AffineGroupScheme.LinearlyReductive
+public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.Reductive.LinearlyReductive
 
 /-!
