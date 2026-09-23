@@ -184,64 +184,47 @@ theorem isMorphism_codRestrict
 
 variable (W' : RationalHodgeSubstructure X.isBaseChangeRat X.hs)
 
-/-- The rational projection onto `W` along a complementary rational Hodge substructure `W'`,
-with codomain restricted to `W`. -/
-noncomputable def substructureRetractionOfIsComplRat (h : IsCompl W W') :
-    X.ratCarrier →ₗ[ℚ] W.WQ :=
-  (W.WQ.projection W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)).codRestrict W.WQ
-    fun x ↦ Submodule.projection_apply_mem _ x
-
-/-- Projection along complementary rational Hodge substructures is a morphism of the ambient
-pure Hodge structure. -/
-theorem isMorphism_substructureRetractionOfIsComplRat (h : IsCompl W W') :
-    HodgeStructureOn.IsMorphism X.hs W.hodgeStructure
-      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
-        (isBaseChange_integralSubmoduleToRational X.isBaseChangeRat W.WQ)
-        (isBaseChange_integralSubmoduleToComplex X.isBaseChangeRat X.isBaseChangeComplex W.WQ)
-        (substructureRetractionOfIsComplRat X W W' h)) := by
-  have hp : HodgeStructureOn.IsMorphism X.hs X.hs
-      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
-        X.isBaseChangeRat X.isBaseChangeComplex
-        (W.WQ.projection W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h))) := by
-    apply HodgeStructureOn.isMorphism_of_isIdempotentElem
-      (isIdempotentElem_rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
-        (Submodule.isIdempotentElem_projection
-          (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)))
-    · rw [range_rationalMapToComplex, Submodule.range_projection, ← W.WC_def]
-      exact W.isSubstructure
-    · rw [ker_rationalMapToComplex, Submodule.ker_projection, ← W'.WC_def]
-      exact W'.isSubstructure
-  exact isMorphism_codRestrict W _ hp fun x ↦ Submodule.projection_apply_mem _ x
-
 /-- The categorical retraction onto `W` along a complementary rational Hodge substructure
 `W'`. -/
 noncomputable def substructureRetractionOfIsCompl (h : IsCompl W W') :
     X ⟶ ofSubstructure X W :=
-  Hom.ofIsMorphism (substructureRetractionOfIsComplRat X W W' h)
-    (isMorphism_substructureRetractionOfIsComplRat X W W' h)
+  Hom.ofIsMorphism
+    (W.WQ.projectionOnto W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)) <| by
+      have hp := W.isMorphism_rationalMapToComplex_projection_of_isCompl W' h
+      have hc := isMorphism_codRestrict W
+        (W.WQ.projection W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)) hp
+        (fun x ↦ Submodule.projection_apply_mem _ x)
+      have heq : W.WQ.projectionOnto W'.WQ
+          (RationalHodgeSubstructure.isCompl_iff_WQ.1 h) =
+          (W.WQ.projection W'.WQ
+            (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)).codRestrict W.WQ
+              (fun x ↦ Submodule.projection_apply_mem _ x) := by
+        ext x
+        rfl
+      rw [heq]
+      exact hc
 
 /-- The rational map of the retraction along a complement is the corresponding subspace
 projection with codomain restricted to `W`. -/
 @[simp]
 theorem substructureRetractionOfIsCompl_toRatLinearMap (h : IsCompl W W') :
     (substructureRetractionOfIsCompl X W W' h).hom.toRatLinearMap =
-      substructureRetractionOfIsComplRat X W W' h := by
+      W.WQ.projectionOnto W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h) := by
   rw [substructureRetractionOfIsCompl, Hom.ofIsMorphism_toRatLinearMap]
 
 /-- Inclusion followed by retraction along a complementary substructure is the identity. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem substructureInclusion_comp_substructureRetractionOfIsCompl (h : IsCompl W W') :
     substructureInclusion X W ≫ substructureRetractionOfIsCompl X W W' h =
       𝟙 (ofSubstructure X W) := by
   apply Hom.ext
   rw [comp_toRatLinearMap, id_toRatLinearMap,
     substructureRetractionOfIsCompl_toRatLinearMap, substructureInclusion_toRatLinearMap]
-  ext x
-  apply Subtype.ext
-  exact Submodule.projection_apply_of_mem_left _ x.property
+  exact Submodule.projectionOnto_comp_subtype
+    (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)
 
 /-- A substructure contained in the complementary summand is annihilated by the retraction. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero
     {U : RationalHodgeSubstructure X.isBaseChangeRat X.hs} (h : IsCompl W W') (hU : U ≤ W') :
     substructureInclusion X U ≫ substructureRetractionOfIsCompl X W W' h = 0 := by
@@ -249,65 +232,54 @@ theorem substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero
   rw [comp_toRatLinearMap, zero_toRatLinearMap,
     substructureRetractionOfIsCompl_toRatLinearMap, substructureInclusion_toRatLinearMap]
   ext x
-  apply Subtype.ext
-  exact Submodule.projection_apply_of_mem_right _ (hU x.property)
+  change W.WQ.projectionOnto W'.WQ _ (U.WQ.subtype x) = 0
+  exact Submodule.projectionOnto_apply_of_mem_right _ (hU x.property)
+
+/-- Retraction along a complementary substructure followed by inclusion is the corresponding
+projection on the ambient rational carrier. -/
+theorem substructureRetractionOfIsCompl_comp_substructureInclusion_toRatLinearMap
+    (h : IsCompl W W') :
+    ((substructureRetractionOfIsCompl X W W' h ≫ substructureInclusion X W).hom.toRatLinearMap) =
+      W.WQ.projection W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h) := by
+  rw [comp_toRatLinearMap, substructureRetractionOfIsCompl_toRatLinearMap,
+    substructureInclusion_toRatLinearMap]
+  rfl
 
 variable (P : Polarization X.isBaseChangeComplex X.hs)
-
-/-- The rational retraction onto a rational Hodge substructure: the orthogonal projector with its
-codomain restricted to the subspace. -/
-noncomputable def substructureRetractionRat : X.ratCarrier →ₗ[ℚ] W.WQ :=
-  (W.projection P).codRestrict W.WQ fun x ↦ by
-    rw [← W.range_projection P]
-    exact LinearMap.mem_range_self (W.projection P) x
-
-/-- The rational retraction is a morphism of pure Hodge structures. -/
-theorem isMorphism_substructureRetractionRat :
-    HodgeStructureOn.IsMorphism X.hs W.hodgeStructure
-      (rationalMapToComplex X.isBaseChangeRat X.isBaseChangeComplex
-        (isBaseChange_integralSubmoduleToRational X.isBaseChangeRat W.WQ)
-        (isBaseChange_integralSubmoduleToComplex X.isBaseChangeRat X.isBaseChangeComplex W.WQ)
-        (substructureRetractionRat X W P)) :=
-  isMorphism_codRestrict W (W.projection P)
-    (W.isMorphism_rationalMapToComplex_projection P) (fun x ↦ by
-    rw [← W.range_projection P]
-    exact LinearMap.mem_range_self (W.projection P) x)
 
 /-- The categorical retraction of a rational Hodge substructure inclusion supplied by a chosen
 polarization. -/
 noncomputable def substructureRetraction : X ⟶ ofSubstructure X W :=
-  Hom.ofIsMorphism (substructureRetractionRat X W P)
-    (isMorphism_substructureRetractionRat X W P)
+  substructureRetractionOfIsCompl X W (RationalHodgeSubstructure.orthogonal P W)
+    (RationalHodgeSubstructure.isCompl_orthogonal P W)
 
 /-- The rational map underlying the categorical retraction is the orthogonal projector with its
 codomain restricted to the substructure. -/
 @[simp]
 theorem substructureRetraction_toRatLinearMap :
-    (substructureRetraction X W P).hom.toRatLinearMap = substructureRetractionRat X W P := by
-  rw [substructureRetraction, Hom.ofIsMorphism_toRatLinearMap]
+    (substructureRetraction X W P).hom.toRatLinearMap =
+      W.WQ.projectionOnto (RationalHodgeSubstructure.orthogonal P W).WQ
+        (RationalHodgeSubstructure.isCompl_WQ_orthogonal_WQ P W) := by
+  rw [substructureRetraction, substructureRetractionOfIsCompl_toRatLinearMap]
 
 /-- The inclusion followed by the orthogonal retraction is the identity on the induced Hodge
 structure. -/
 @[simp]
 theorem substructureInclusion_comp_substructureRetraction :
     substructureInclusion X W ≫ substructureRetraction X W P = 𝟙 (ofSubstructure X W) := by
-  apply Hom.ext
-  rw [comp_toRatLinearMap, id_toRatLinearMap, substructureRetraction_toRatLinearMap,
-    substructureInclusion_toRatLinearMap]
-  ext x
-  -- The remaining coercions hide precisely that the projector fixes the subspace.
-  apply Subtype.ext
-  change W.projection P (W.WQ.subtype x) = W.WQ.subtype x
-  exact W.projection_apply_of_mem P x.property
+  exact substructureInclusion_comp_substructureRetractionOfIsCompl X W
+    (RationalHodgeSubstructure.orthogonal P W)
+    (RationalHodgeSubstructure.isCompl_orthogonal P W)
 
 /-- The orthogonal retraction followed by the inclusion is the Hodge projector on the ambient
 object. -/
 theorem substructureRetraction_comp_substructureInclusion_toRatLinearMap :
     ((substructureRetraction X W P ≫ substructureInclusion X W).hom.toRatLinearMap) =
       W.projection P := by
-  rw [comp_toRatLinearMap, substructureRetraction_toRatLinearMap,
-    substructureInclusion_toRatLinearMap, substructureRetractionRat,
-    LinearMap.subtype_comp_codRestrict]
+  rw [substructureRetraction, W.projection_eq_submodule_projection P]
+  exact substructureRetractionOfIsCompl_comp_substructureInclusion_toRatLinearMap X W
+    (RationalHodgeSubstructure.orthogonal P W)
+    (RationalHodgeSubstructure.isCompl_orthogonal P W)
 
 /-- The inclusion of a rational Hodge substructure into a polarizable Hodge structure is a split
 monomorphism. -/

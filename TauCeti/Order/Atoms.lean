@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Atoms
-public import Mathlib.Order.SupIndep
+public import TauCeti.Order.SupIndep
 
 /-!
 # Finite atom decompositions in a complemented modular lattice
@@ -22,30 +22,14 @@ atomisticity and the decomposition is an arbitrary supremum
 descending chain condition makes the family finite from the start, which is what lattices without
 arbitrary suprema — lattices of subobjects closed under finite meets and joins only — need.
 
-Such a decomposition splits the lattice one member at a time: each member of an independent
-family whose supremum is `⊤` is complemented by the supremum of the remaining members. That
-step is pure lattice theory, needing no modularity, complementedness or chain condition, so it is
-recorded separately as `Finset.SupIndep.isCompl_sup_erase`.
-
 ## Main declarations
 
-* `Finset.SupIndep.isCompl_sup_erase`: a member of an independent finite family spanning a
-  bounded lattice is complemented by the supremum of the other members.
 * `TauCeti.exists_finset_isAtom_sup_eq`: in a complemented modular lattice satisfying the
   descending chain condition, every element is the supremum of a finite independent family of
   atoms.
 -/
 
 public section
-
-/-- In a bounded lattice, a member of an independent finite family whose supremum is `⊤` is
-complemented by the supremum of the remaining members. -/
-theorem Finset.SupIndep.isCompl_sup_erase {ι L : Type*} [Lattice L] [BoundedOrder L]
-    [DecidableEq ι] {s : Finset ι} {f : ι → L} (hind : s.SupIndep f) (htop : s.sup f = ⊤)
-    {i : ι} (hi : i ∈ s) : IsCompl (f i) ((s.erase i).sup f) where
-  disjoint := Finset.supIndep_iff_disjoint_erase.1 hind i hi
-  codisjoint := codisjoint_iff.2 <| by
-    rw [← Finset.sup_insert, Finset.insert_erase hi, htop]
 
 namespace TauCeti
 
