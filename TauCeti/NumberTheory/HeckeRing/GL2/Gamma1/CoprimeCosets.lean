@@ -232,21 +232,19 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p) (hσ10 :
     linear_combination e11 + γ 1 1 * hσdet]
   exact ⟨(hc.sub (dvd_mul_left _ _)).mul_left _, hd.sub ((hc.sub (dvd_mul_left _ _)).mul_right _)⟩
 
-/-- **The witness for the reverse inclusion.** For `σ = !![m, n; N, p]`, the matrix
-`!![m p, n; N, 1]` lies in `Γ₁(N)` — its lower row is `(N, 1)`, and its determinant is the Bézout
-relation `m p − n N = 1` — and moving it across `diag(1, p)` produces exactly the twisted
+/-- **The witness for the reverse inclusion.** For `0 < p` and `σ = !![m, n; N, p]`, the matrix
+`γ = !![m p, n; N, 1]` lies in `Γ₁(N)` and satisfies `diag(1, p) · γ = σ · diag(p, 1)`, the twisted
 representative. -/
 lemma exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (hp : 0 < p) (hσ10 : σ 1 0 = (N : ℤ))
     (hσ11 : σ 1 1 = (p : ℤ)) :
     ∃ γ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = primeRep σ p none := by
-  have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 := mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
-  obtain ⟨γ, hγmat⟩ : ∃ γ : SL(2, ℤ), (γ : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1] :=
-    ⟨⟨_, by simpa [Matrix.det_fin_two_of] using hσdet⟩, rfl⟩
-  refine ⟨γ, mem_Gamma1_iff_dvd_lowerRow.mpr (by simp [hγmat]), Units.ext ?_⟩
-  rw [Units.val_mul, coe_natDiagGL_one hp, coe_primeRep_none hp, coe_mapGL_int_rat_fin_two, hγmat,
-    hσ10, hσ11, Matrix.mul_fin_two]
-  simp [mul_comm]
+  -- `γ` has lower row `(N, 1)`, and determinant `m p − n N = 1`, the Bézout relation of `σ`
+  let γ : SL(2, ℤ) := ⟨!![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1], by
+    rw [Matrix.det_fin_two_of, mul_one, mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11]⟩
+  refine ⟨γ, mem_Gamma1_of_dvd_lowerRow dvd_rfl (dvd_zero _), Units.ext ?_⟩
+  rw [Units.val_mul, coe_natDiagGL_one hp, coe_primeRep_none hp, coe_mapGL_int_rat_fin_two,
+    Matrix.mul_fin_two]
+  simp [γ, hσ10, hσ11, mul_comm (p : ℚ)]
 
 /-- **The forward inclusion.** For a prime `p` and `γ ∈ Γ₁(N)`, the product `diag(1, p) · γ` lies
 in one of the `p + 1` right cosets: an upper-triangular one when `p ∤ a`, where the congruence
