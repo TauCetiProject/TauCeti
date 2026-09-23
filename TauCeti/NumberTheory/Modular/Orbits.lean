@@ -76,7 +76,7 @@ lemma orbit_mk_int_vadd (n : ℤ) (z : ℍ) :
   Quotient.sound' ⟨_root_.ModularGroup.T ^ n, UpperHalfPlane.modular_T_zpow_smul z n⟩
 
 /-- On the perpendicular bisector `re = -r / 2` of `0` and `-r`, translation by `r` preserves the
-norm-square. For `r = ±1` that line is a vertical edge of `𝒟`. -/
+norm-square. For `r = ±1` that line contains a vertical edge of `𝒟`. -/
 lemma normSq_coe_vadd_of_re_eq {r : ℝ} {p : ℍ} (hre : p.re = -r / 2) :
     Complex.normSq ((r +ᵥ p : ℍ) : ℂ) = Complex.normSq (p : ℂ) := by
   simp [Complex.normSq_add, hre]
