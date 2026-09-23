@@ -109,21 +109,6 @@ section Field
 
 variable {K : Type*} [Field K] [NeZero (2 : K)]
 
-/-- The simple-root Cartan generators form a basis of the split diagonal Cartan. -/
-private noncomputable def cartanGeneratorBasis (n : ℕ) (hn : 4 ≤ n) :
-    Module.Basis (Fin n) K (typeDDiagonalCartan K (Fin n)) :=
-  basisOfLinearIndependentOfCardEqFinrank' _
-    (linearIndependent_cartanGenerator_subtype (K := K) n hn)
-    (by simp [finrank_typeDDiagonalCartan])
-
-/-- The vectors of `cartanGeneratorBasis` are the explicit matrix Cartan generators. -/
-@[simp]
-private theorem cartanGeneratorBasis_apply (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
-    cartanGeneratorBasis (K := K) n hn i =
-      (⟨cartanGenerator (K := K) n hn i,
-        cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n)) := by
-  exact congr_fun (coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _) i
-
 /-- The explicit simple-root Cartan generators span the diagonal Cartan as a Lie subalgebra. -/
 theorem typeDDiagonalCartan_eq_lieSpan_cartanGenerator (n : ℕ) (hn : 4 ≤ n) :
     typeDDiagonalCartan K (Fin n) =
@@ -132,14 +117,10 @@ theorem typeDDiagonalCartan_eq_lieSpan_cartanGenerator (n : ℕ) (hn : 4 ≤ n) 
   apply LieSubalgebra.toSubmodule_injective
   rw [LieSubalgebra.coe_lieSpan_eq_span_of_forall_lie_eq_zero]
   · rw [← Submodule.map_subtype_top (typeDDiagonalCartan K (Fin n)).toSubmodule,
-      ← (cartanGeneratorBasis (K := K) n hn).span_eq, Submodule.map_span, ← Set.range_comp]
-    have hfun : (typeDDiagonalCartan K (Fin n)).toSubmodule.subtype ∘
-        cartanGeneratorBasis (K := K) n hn =
-        cartanGenerator (K := K) n hn := by
-      funext i
-      rw [Function.comp_apply, cartanGeneratorBasis_apply]
-      rw [Submodule.subtype_apply]
-    rw [hfun]
+      ← (linearIndependent_cartanGenerator_subtype (K := K) n hn).span_eq_top_of_card_eq_finrank'
+        (by simp [finrank_typeDDiagonalCartan]),
+      Submodule.map_span, ← Set.range_comp]
+    rfl
   · rintro x ⟨i, rfl⟩ y ⟨j, rfl⟩
     exact lie_cartanGenerator_cartanGenerator n hn i j
 
