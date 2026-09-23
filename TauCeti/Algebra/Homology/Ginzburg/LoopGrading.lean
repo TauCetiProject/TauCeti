@@ -297,8 +297,9 @@ private theorem ginzburgRetractPath_hone :
     (one_def (k := k) (Q := Symmetrify Q)).symm
 
 /-- The algebra homomorphism from the Ginzburg path algebra to the doubled path algebra which fixes
-the vertex idempotents and the doubled arrows and kills every adjoined loop `t_i`.  A Ginzburg path
-goes to itself when it uses no loop, and to zero otherwise. -/
+the vertex idempotents and the doubled arrows and kills every adjoined loop `t_i`.  It follows the
+construction of `TauCeti.PathAlgebra.symmetrifyRetraction`: a Ginzburg path goes to itself when it
+uses no loop, and to zero otherwise. -/
 noncomputable def ginzburgRetraction :
     pathAlgebra k (GinzburgQuiver Q) →ₐ[k] pathAlgebra k (Symmetrify Q) :=
   liftAlgHom k (fun x => ginzburgRetractPath k x.2.2) (ginzburgRetractPath_comp k)
