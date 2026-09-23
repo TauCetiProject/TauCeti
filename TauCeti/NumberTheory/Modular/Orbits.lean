@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Modular
 
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 
 /-!
@@ -50,6 +51,8 @@ the unit arc right of `i`.
 public section
 
 open UpperHalfPlane
+
+open ModularGroup (smul_eq_smul_of_eq_or_eq_neg)
 
 open scoped MatrixGroups Modular
 
@@ -166,12 +169,6 @@ lemma S_smul_mem_fd_of_norm_eq_one {p : ℍ} (hre : |p.re| ≤ 1 / 2) (hnorm : �
 /-- The inversion is an involution of `ℍ`. -/
 lemma S_smul_S_smul (p : ℍ) : _root_.ModularGroup.S • (_root_.ModularGroup.S • p) = p := by
   rw [← _root_.ModularGroup.SL_neg_smul, ← _root_.ModularGroup.S_inv, inv_smul_smul]
-
--- Absorbs the sign ambiguity `g = k ∨ g = -k` in each case of Mathlib's classification
--- `ModularGroup.cases_of_mem_fd_smul_mem_fd`: `-k` acts on `ℍ` as `k` does.
-private lemma smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} {z : ℍ} (hg : g = k ∨ g = -k) :
-    g • z = k • z :=
-  hg.elim (· ▸ rfl) (· ▸ _root_.ModularGroup.SL_neg_smul _ _)
 
 /-- A point of the closed fundamental domain lying in the `SL(2, ℤ)`-orbit of `i` is `i`
 itself: the boundary identifications of `𝒟` fix `i`. -/
