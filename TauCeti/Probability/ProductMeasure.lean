@@ -23,9 +23,10 @@ separates it into two independent pieces, so
   = μ none ⊗ Measure.infinitePi (fun i => μ (some i)).
 ```
 
-This is the countable-product form of Mathlib's `MeasureTheory.Measure.pi_map_piOptionEquivProd`,
-which is stated for `Measure.pi` over a finite index type. It is the step that isolates one
-distinguished coordinate — a global or initial variable — from an i.i.d. family of the others.
+This is the infinite-product analogue of Mathlib's `MeasureTheory.Measure.pi_map_piOptionEquivProd`,
+which is stated for `Measure.pi` over a finite index type. It isolates one distinguished
+coordinate — a global or initial variable — from the independent remaining coordinates, each
+with its respective law.
 
 ## Main results
 

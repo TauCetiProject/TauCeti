@@ -161,8 +161,10 @@ theorem separateRowLaw_colReindex {g : I × I × I × I → α} (hg : Measurable
     funext r j
     rfl
   simp only [ProbabilityMeasure.toMeasure_map, separateRowLaw_toMeasure]
+  -- Expose `permReindex` as coordinate precomposition so `map_map` sees the row map.
   rw [show (permReindex τ : (ℕ → α) → ℕ → α) = (fun x j => x (τ j)) from rfl]
   rw [Measure.map_map (measurable_reindex τ) hrow]
+  -- Fold the product noise measure into `ρ` and restore `permReindex` to match `hfun`.
   change ρ.map ((permReindex τ) ∘ (fun (r : I × (ℕ → I)) j =>
       g (z.1, r.1, z.2 j, r.2 j))) =
     ρ.map (fun (r : I × (ℕ → I)) j => g (z.1, r.1, z.2 (τ j), r.2 j))
