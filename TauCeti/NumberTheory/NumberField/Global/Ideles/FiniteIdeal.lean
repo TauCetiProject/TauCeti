@@ -28,6 +28,7 @@ variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- The fractional ideal of an idele's finite component is trivial exactly when the idele is a
 unit at every finite place. -/
+-- The finite-adele and coordinate simp lemmas already prove this equivalence.
 theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup R K} :
     toFractionalIdeal (IdeleGroup.toFiniteIdele R K x) = 1 ↔
       ∀ v : HeightOneSpectrum R, Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by

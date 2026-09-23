@@ -325,6 +325,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
 /-- **The principal ideles congruent to one are the elements congruent to one.**  At a finite
 divisor of `𝔪` the coordinate of a principal idele is the global element, whose valuation in the
 completion is its `v`-adic valuation, and at a real place its sign is that of the real embedding. -/
+-- The placewise membership and coordinate simp lemmas already normalize the left-hand side.
 theorem unitEmbedding_mem_ideleCongrOneSubgroup_iff {𝔪 : Modulus K} {x : Kˣ} :
     IdeleGroup.unitEmbedding (𝓞 K) K x ∈ ideleCongrOneSubgroup 𝔪 ↔ IsCongrOne 𝔪 x := by
   have hsub : ∀ v : HeightOneSpectrum (𝓞 K),
