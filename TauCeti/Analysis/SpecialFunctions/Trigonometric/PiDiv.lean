@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 # Sine at a natural fraction of pi
 
 The sine of `π / k` is positive for natural `k ≥ 2`.
+This supplies positive sine factors when constructing finite-order triangle-group matrices.
 -/
 
 public section

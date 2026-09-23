@@ -13,6 +13,8 @@ import Mathlib.Tactic
 
 If a sum of three nonnegative natural reciprocals is below one, each nonzero denominator is
 at least two.
+This converts the reciprocal-sum hypothesis for a hyperbolic triangle group into the parameter
+bounds needed for its trigonometric matrix representation.
 -/
 
 public section

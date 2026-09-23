@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.PiDiv
 
 /-!
 # Trace identities for `2 × 2` matrices
@@ -65,9 +67,13 @@ variable {R : Type*} [CommRing R]
 theorem pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
     A ^ (n + 2) = A.trace • A ^ (n + 1) - A.det • A ^ n := by
   have h : A ^ 2 = A.trace • A - A.det • 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [sq, mul_apply, Fin.sum_univ_two, trace_fin_two, det_fin_two] <;> ring
+    nontriviality R
+    have hCH := A.aeval_self_charpoly
+    rw [A.charpoly_fin_two] at hCH
+    simp only [map_add, Polynomial.aeval_sub, map_pow, Polynomial.aeval_X, map_mul,
+      Polynomial.aeval_C, Algebra.smul_def, mul_one] at hCH ⊢
+    apply sub_eq_zero.mp
+    convert hCH using 1; abel
   rw [pow_add, h, mul_sub, Matrix.mul_smul, Matrix.mul_smul, mul_one, pow_succ]
 
 /-- The traces of the powers of a `2 × 2` matrix satisfy the Cayley–Hamilton recurrence. -/
@@ -112,8 +118,7 @@ power `-1`. Its image in `PSL(2, ℝ)` has order dividing `k`. -/
 theorem pow_eq_neg_one_of_trace_eq_two_mul_cos_pi_div {A : Matrix (Fin 2) (Fin 2) ℝ} {k : ℕ}
     (hdet : A.det = 1) (hk : 2 ≤ k) (htr : A.trace = 2 * cos (π / k)) : A ^ k = -1 := by
   have hk₀ : (k : ℝ) ≠ 0 := by positivity
-  have hk₁ : (1 : ℝ) < k := by exact_mod_cast hk
-  have hs : 0 < sin (π / k) := sin_pos_of_pos_of_lt_pi (by positivity) (div_lt_self pi_pos hk₁)
+  have hs : 0 < sin (π / k) := TauCeti.sin_pi_div_pos hk
   have h := sin_smul_pow_fin_two hdet htr k
   -- Normalize the two sine arguments before using `sin_pi` and `sin_pi_sub`.
   rw [show (k : ℝ) * (π / k) = π by field_simp, show ((k : ℝ) - 1) * (π / k) = π - π / k by

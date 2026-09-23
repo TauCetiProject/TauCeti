@@ -16,9 +16,10 @@ import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 /-!
 # Hyperbolic triangle groups are infinite
 
-The triangle group `Δ(a, b, c)` is *hyperbolic* when `1/a + 1/b + 1/c < 1`. This file proves that
-such a group is infinite, by an explicit representation in `PSL(2, ℝ)` in which the commutator of
-the generators `x` and `y` goes to a hyperbolic element.
+For nonzero natural parameters `a`, `b`, and `c`, the triangle group `Δ(a, b, c)` is
+*hyperbolic* when `1/a + 1/b + 1/c < 1`. This file proves that such a group is infinite, by an
+explicit representation in `PSL(2, ℝ)` in which the commutator of the generators `x` and `y`
+goes to a hyperbolic element.
 
 Write `θ₁ = π / a`, `θ₂ = π / b`, `θ₃ = π / c`. For real `t`, the matrices
 
