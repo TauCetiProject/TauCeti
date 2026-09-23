@@ -12,6 +12,7 @@ public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.IntermediateField.Lift
+public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 
 /-!
 # The absolute Galois group of a field, taken at its separable closure
@@ -334,7 +335,9 @@ Its forward map is restriction, `absoluteGaloisGroupRestrictEquiv_apply`, and bo
 computed on elements of `SeparableClosure K` by `coe_absoluteGaloisGroupRestrictEquiv_apply` and
 `absoluteGaloisGroupRestrictEquiv_symm_apply_coe`. Those lemmas are stated on applications rather
 than on the isomorphisms themselves, because `Field.absoluteGaloisGroup K` carries its own derived
-group and topology instances, so an equation between the isomorphisms is not usable by `rw`. -/
+group and topology instances, so an equation between the isomorphisms is not usable by `rw`.
+Closed subgroups and their normal quotients transport along this comparison through
+`ContinuousMulEquiv.closedSubgroupOrderIso` and `ContinuousMulEquiv.quotient`. -/
 def absoluteGaloisGroupRestrictEquiv :
     Field.absoluteGaloisGroup K ≃ₜ* AbsoluteGaloisGroup K :=
   separableClosureRestrictEquiv K (AlgebraicClosure K)
