@@ -95,7 +95,7 @@ theorem card_stabilizer_eq_card_inertia_mul_finSepDegree (p : Ideal R) [p.IsMaxi
       (Subgroup.subgroupOfEquivOfLe (inertia_le_stabilizer (M := G) P)).toEquiv,
     AddSubgroup.subgroupOf_inertia]
 
-variable [IsDedekindDomain R] [IsDedekindDomain S] [Module.Finite R S] [Module.Flat R S]
+variable [IsDomain R] [IsDedekindDomain S] [Module.Finite R S] [Module.Flat R S]
 
 /-- The order of the decomposition group is `e * f`, without a separability hypothesis on the
 residue extension. -/
