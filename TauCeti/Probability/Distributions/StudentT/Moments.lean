@@ -187,10 +187,6 @@ private lemma studentTKernel_sq (hν : 0 < ν) (x : ℝ) :
   field_simp
   ring
 
-private theorem integrable_sq_studentTMeasure_of_two_lt (hν : 2 < ν) :
-    Integrable (fun x : ℝ => x ^ 2) (studentTMeasure ν) :=
-  (integrable_pow_studentTMeasure_iff (lt_trans zero_lt_two hν) 2).2 (by simpa using hν)
-
 private lemma beta_sub_beta_add_one (hν : 2 < ν) :
     beta (1 / 2) ((ν - 2) / 2) - beta (1 / 2) (ν / 2) =
       beta (3 / 2) ((ν - 2) / 2) := by
@@ -314,7 +310,8 @@ theorem variance_id_studentTMeasure (hν : 2 < ν) :
     isProbabilityMeasure_studentTMeasure (lt_trans zero_lt_two hν)
   have hmem : MemLp id 2 (studentTMeasure ν) :=
     (memLp_two_iff_integrable_sq measurable_id'.aestronglyMeasurable).2
-      (by simpa using integrable_sq_studentTMeasure_of_two_lt hν)
+      (by simpa using
+        (integrable_pow_studentTMeasure_iff (lt_trans zero_lt_two hν) 2).2 (by simpa using hν))
   rw [variance_eq_sub hmem]
   simp only [Pi.pow_apply, id_eq]
   rw [integral_sq_studentTMeasure hν, integral_id_studentTMeasure]
