@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # The simple-root basis of the checkerboard lattice
@@ -66,7 +65,7 @@ available: this deduces it from the lattice, rather than the other way round.
 * `TauCeti.DynkinType.det_typeDSimpleRoot_sq`: the determinant square of the integral simple-root
   matrix.
 * `TauCeti.DynkinType.linearIndependent_typeDSimpleRoot_cast`: scalar-extension independence over
-  a field where `2` is nonzero.
+  a commutative domain where `2` is nonzero.
 
 ## References
 
@@ -346,14 +345,15 @@ theorem det_typeDSimpleRoot_sq (n : ℕ) (hn : 4 ≤ n) :
 
 /-! ## Scalar extension of the simple-root independence -/
 
-/-- The Bourbaki simple roots remain linearly independent after scalar extension to a field in
-which `2` is nonzero. -/
-theorem linearIndependent_typeDSimpleRoot_cast {K : Type*} [Field K] [NeZero (2 : K)]
+/-- The Bourbaki simple roots remain linearly independent after scalar extension to a commutative
+domain in which `2` is nonzero. -/
+theorem linearIndependent_typeDSimpleRoot_cast {K : Type*} [CommRing K] [IsDomain K]
+    [NeZero (2 : K)]
     (hn : 4 ≤ n) :
     LinearIndependent K (fun i j => (typeDSimpleRoot n hn i j : K)) := by
   let A : Matrix (Fin n) (Fin n) K := Matrix.of fun i j => (typeDSimpleRoot n hn i j : K)
   have hdetcast : A.det = ((Matrix.of (typeDSimpleRoot n hn)).det : K) := by
-    rw [show A = (Matrix.of (typeDSimpleRoot n hn)).map (Int.castRingHom K) by
+    rw [show A = (Matrix.of (typeDSimpleRoot n hn)).map (fun x : ℤ => (x : K)) by
       ext i j
       simp [A]]
     exact (Int.cast_det (R := K) (Matrix.of (typeDSimpleRoot n hn))).symm
@@ -367,13 +367,11 @@ theorem linearIndependent_typeDSimpleRoot_cast {K : Type*} [Field K] [NeZero (2 
       rw [show (4 : K) = (2 : K) ^ 2 by norm_num]
       exact pow_ne_zero 2 (NeZero.ne _)
     exact hfour (by simpa [hzero] using hdet_sq.symm)
-  have hrows : LinearIndependent K (fun i => A i) := by
-    apply Matrix.linearIndependent_rows_iff_isUnit.mpr
-    rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
-    exact hdet
-  -- The matrix rows are definitionally the cast simple-root coordinate family.
-  change LinearIndependent K (fun i => A i)
-  exact hrows
+  have hrows : LinearIndependent K A.row :=
+    Matrix.linearIndependent_rows_of_det_ne_zero hdet
+  convert hrows using 1
+  funext i j
+  simp [A, Matrix.row]
 
 end TauCeti.DynkinType
 

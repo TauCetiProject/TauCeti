@@ -18,8 +18,8 @@ basis. The coordinate theorem records the identification with the pinned classic
 datum, so a later Lie-algebra basis can use the same Cartan coordinates.
 
 The independence argument transports the integral independence of the Bourbaki simple roots to a
-field in which `2` is invertible. The ambient independence and Lie-span theorems are exposed for
-the later `LieAlgebra.Basis` construction.
+commutative domain in which `2` is invertible. The ambient independence and Lie-span theorems are
+exposed for the later `LieAlgebra.Basis` construction.
 
 ## Main declarations
 
@@ -48,16 +48,18 @@ section CommRing
 
 variable {K : Type*} [CommRing K]
 
-/-- The diagonal type-D Cartan contains every explicit simple-root Cartan generator. -/
-theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
-    cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
-  have hgen : cartanGenerator (K := K) n hn i =
+private theorem cartanGenerator_eq_coe_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    cartanGenerator (K := K) n hn i =
       (typeDDiagonalEquiv (K := K) (ι := Fin n)
         (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :
         LieAlgebra.Orthogonal.typeD (Fin n) K) := by
-    apply Subtype.ext
-    rw [val_cartanGenerator, coe_typeDDiagonalEquiv_apply]
-  rw [hgen]
+  apply Subtype.ext
+  rw [val_cartanGenerator, coe_typeDDiagonalEquiv_apply]
+
+/-- The diagonal type-D Cartan contains every explicit simple-root Cartan generator. -/
+theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
+  rw [cartanGenerator_eq_coe_typeDDiagonalEquiv]
   exact (typeDDiagonalEquiv (K := K) (ι := Fin n)
     (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).2
 
@@ -74,9 +76,9 @@ theorem typeDDiagonalCartanBasis_repr_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
 
 end CommRing
 
-section Field
+section Domain
 
-variable {K : Type*} [Field K] [NeZero (2 : K)]
+variable {K : Type*} [CommRing K] [IsDomain K] [NeZero (2 : K)]
 
 private theorem linearIndependent_cartanGenerator_subtype (n : ℕ) (hn : 4 ≤ n) :
     LinearIndependent K (fun i : Fin n =>
@@ -84,7 +86,7 @@ private theorem linearIndependent_cartanGenerator_subtype (n : ℕ) (hn : 4 ≤ 
         cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n))) := by
   have hrows : LinearIndependent K (fun i j =>
       (DynkinType.typeDSimpleRoot n hn i j : K)) :=
-    DynkinType.linearIndependent_typeDSimpleRoot_cast hn
+    DynkinType.linearIndependent_typeDSimpleRoot_cast (K := K) hn
   have hcoord : LinearIndependent K (fun i =>
       typeDDiagonalEquiv (K := K) (ι := Fin n)
         (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))) :=
@@ -93,30 +95,26 @@ private theorem linearIndependent_cartanGenerator_subtype (n : ℕ) (hn : 4 ≤ 
   convert hcoord using 1
   funext i
   apply Subtype.ext
-  apply Subtype.ext
-  rw [coe_typeDDiagonalEquiv_apply, val_cartanGenerator]
+  exact cartanGenerator_eq_coe_typeDDiagonalEquiv (K := K) n hn i
 
 /-- The explicit simple-root Cartan generators are linearly independent in the ambient
 type-D Lie algebra. -/
 theorem linearIndependent_cartanGenerator (n : ℕ) (hn : 4 ≤ n) :
     LinearIndependent K (cartanGenerator (K := K) n hn) := by
-  rw [Fintype.linearIndependent_iff]
-  intro g hg k
-  have hsub := Fintype.linearIndependent_iff.mp
-    (linearIndependent_cartanGenerator_subtype (K := K) n hn)
-  apply hsub g
-  · apply Subtype.ext
-    -- Map the subtype relation through the Cartan inclusion to compare it with the ambient sum.
-    change (typeDDiagonalCartan K (Fin n)).incl _ = 0
-    rw [map_sum]
-    simp only [map_smul, LieSubalgebra.coe_incl]
-    exact hg
+  exact (linearIndependent_cartanGenerator_subtype (K := K) n hn).map'
+    (typeDDiagonalCartan K (Fin n)).toSubmodule.subtype (Submodule.ker_subtype _)
+
+end Domain
+
+section Field
+
+variable {K : Type*} [Field K] [NeZero (2 : K)]
 
 /-- The simple-root Cartan generators form a basis of the split diagonal Cartan. -/
 noncomputable def cartanGeneratorBasis (n : ℕ) (hn : 4 ≤ n) :
     Module.Basis (Fin n) K (typeDDiagonalCartan K (Fin n)) :=
   basisOfLinearIndependentOfCardEqFinrank' _
-    (linearIndependent_cartanGenerator_subtype n hn)
+    (linearIndependent_cartanGenerator_subtype (K := K) n hn)
     (by simp [finrank_typeDDiagonalCartan])
 
 /-- The vectors of `cartanGeneratorBasis` are the explicit matrix Cartan generators. -/
@@ -141,9 +139,7 @@ theorem typeDDiagonalCartan_eq_lieSpan_cartanGenerator (n : ℕ) (hn : 4 ≤ n) 
         cartanGenerator (K := K) n hn := by
       funext i
       rw [Function.comp_apply, cartanGeneratorBasis_apply]
-      -- Expose the subtype coercion after replacing the basis vector by its generator.
-      change cartanGenerator (K := K) n hn i = cartanGenerator (K := K) n hn i
-      rfl
+      rw [Submodule.subtype_apply]
     rw [hfun]
   · rintro x ⟨i, rfl⟩ y ⟨j, rfl⟩
     exact lie_cartanGenerator_cartanGenerator n hn i j
