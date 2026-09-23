@@ -292,5 +292,6 @@ theorem Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd {a b c d : ℤ} (hd 
 
 /-- The discriminant `b² - 4 a c` of integers `a`, `b`, `c` leaves the remainder `b % 2` on
 division by `4`, so it is `0` or `1` modulo `4`. -/
+@[simp]
 theorem Int.discrim_emod_four (a b c : ℤ) : discrim a b c % 4 = b % 2 := by
   rw [discrim, mul_assoc, Int.sub_mul_emod_self_left, Int.sq_emod_four]
