@@ -16,7 +16,7 @@ The radial geodesic from the centre of a normal neighbourhood to one of its poin
 Riemannian length among the `C¹` curves that stay in that neighbourhood. The Gauss lemma gives a
 lower bound by the change in the norm of the logarithm; the radial geodesic attains that bound.
 Corner smoothing extends the comparison to piecewise `C¹` competitors without changing their
-image or length.
+endpoints or length while keeping them inside the normal neighbourhood.
 
 This local comparison is the input for the escape argument that turns radial length into the
 Riemannian distance, whose infimum ranges over paths that may leave the normal neighbourhood.
@@ -52,15 +52,15 @@ that of the radial geodesic. -/
 theorem IsNormalDomain.pathELength_riemannianExp_smul_le
     {p : M} {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U)
     {v : TangentSpace I p} (hv : v ∈ U)
-    {γ : ℝ → M} (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc 0 1))
-    (hγU : MapsTo γ (Icc 0 1) (riemannianExp I M p '' U))
-    (hγ0 : γ 0 = p) (hγ1 : γ 1 = riemannianExp I M p v) :
+    {γ : ℝ → M} {a b : ℝ} (hab : a ≤ b) (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b))
+    (hγU : MapsTo γ (Icc a b) (riemannianExp I M p '' U))
+    (hγa : γ a = p) (hγb : γ b = riemannianExp I M p v) :
     pathELength I (fun t : ℝ ↦ riemannianExp I M p (t • v)) 0 1 ≤
-      pathELength I γ 0 1 := by
+      pathELength I γ a b := by
   rw [pathELength_riemannianExp_smul_zero_one h hv]
   have hbound := h.ofReal_norm_riemannianLog_le_pathELength
-    (a := 0) (b := 1) zero_le_one hγ hγU hγ0
-  simpa only [hγ1, h.riemannianLog_riemannianExp hv, ofReal_norm] using hbound
+    hab hγ hγU hγa
+  simpa only [hγb, h.riemannianLog_riemannianExp hv, ofReal_norm] using hbound
 
 /-- A radial geodesic also minimizes against piecewise `C¹` competitors in the normal
 neighbourhood, including broken paths with finitely many corners. The competitor may have any
@@ -76,7 +76,7 @@ theorem IsNormalDomain.pathELength_riemannianExp_smul_le_of_piecewise
   obtain ⟨η, hη, hη0, hη1, hlength, hηU⟩ :=
     hγ.exists_contMDiff_pathELength_eq_of_mapsTo hγU
   rw [← hlength]
-  exact h.pathELength_riemannianExp_smul_le hv hη.contMDiffOn hηU
+  exact h.pathELength_riemannianExp_smul_le hv zero_le_one hη.contMDiffOn hηU
     (hη0.trans hγa) (hη1.trans hγb)
 
 end TauCeti.Manifold
