@@ -274,11 +274,14 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
           exact congrArg (fun x : FixedPoints.addSubgroup H M => (x : M))
             (coe_quotient_smul_fixedPoints_addSubgroup g m) }
 
+-- `simp` reduces the carrier of the `abbrev` `TopRep.quotientToInvariants` in implicit type
+-- arguments before it looks a term up, so the left-hand side is stated through `dsimp% only`, as
+-- in #8315.
 /-- The quotient-invariants dictionary morphism preserves the underlying coefficient. -/
 @[simp]
 theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
-    (ofDiscreteModuleQuotient G M H m).1 = (m : M) := by
+    (dsimp% only ((ofDiscreteModuleQuotient G M H m).1)) = (m : M) := by
   let _ : IsTopologicalAddGroup M := isTopologicalAddGroup_of_discreteTopology
   -- The categorical morphism hides the same semireducible carrier wrapper as `f_apply` above.
   -- After crossing it, the public evaluation lemma proves the coefficient-level statement.
