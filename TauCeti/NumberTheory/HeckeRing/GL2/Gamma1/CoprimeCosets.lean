@@ -205,20 +205,17 @@ private lemma natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries (hp : 0 
   · linear_combination (-(p : ℚ) * ((γ 1 0 : ℤ) : ℚ)) * hσdetQ
   · linear_combination (-(p : ℚ) * ((γ 1 1 : ℤ) : ℚ)) * hσdetQ
 
-/-- **The forward factorisation through the twisted coset.** For `σ = !![m, n; N, p]`, so that
-`m p − n N = 1`, and `γ = !![a, b; c, d] ∈ Γ₁(N)` with `p ∣ a`, the product `diag(1, p) · γ` lies
-in the right coset `Γ₁(N) · σ · diag(p, 1)`:
+/-- **The forward factorisation through the twisted coset.** The product `diag(1, p) · γ` lies in
+the right coset `Γ₁(N) · σ · diag(p, 1)` for every `γ = !![a, b; c, d] ∈ Γ₁(N)` with `p ∣ a`,
+where `σ = !![m, n; N, p]`, so that `m p − n N = 1`; `p` need not be prime. With `a = p a′`,
 
-`diag(1, p) · γ = !![a − b N, b m − a′ n; p(c − d N), p d m − c n] · σ · diag(p, 1)`,  `a = p a′`.
-
-No primality is used, and the divisibility `p ∣ a` is what makes the upper-right entry of the
-left factor integral. -/
+`diag(1, p) · γ = !![a − b N, b m − a′ n; p(c − d N), p d m − c n] · σ · diag(p, 1)`. -/
 lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p) (hσ10 : σ 1 0 = (N : ℤ))
     (hσ11 : σ 1 1 = (p : ℤ)) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) (hpa : (p : ℤ) ∣ γ 0 0) :
     ∃ δ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * primeRep σ p none := by
   obtain ⟨a', ha'⟩ := hpa
   have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 := mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
-  -- the new left factor; its determinant is `1` by those of `γ` and `σ`
+  -- the new left factor, integral because `p ∣ a`; its determinant is `1` by those of `γ` and `σ`
   obtain ⟨δ, e00, e01, e10, e11⟩ : ∃ δ : SL(2, ℤ), δ 0 0 = γ 0 0 - γ 0 1 * (N : ℤ) ∧
       δ 0 1 = γ 0 1 * σ 0 0 - a' * σ 0 1 ∧ δ 1 0 = (p : ℤ) * (γ 1 0 - γ 1 1 * (N : ℤ)) ∧
       δ 1 1 = (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 :=
@@ -227,20 +224,13 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p) (hσ10 :
       rw [Matrix.det_fin_two_of]
       linear_combination γ.fin_two_mul_sub_mul_eq_one + (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0) * hσdet +
         (σ 0 1 * (γ 1 1 * (N : ℤ) - γ 1 0)) * ha'⟩, rfl, rfl, rfl, rfl⟩
-  have hδ11_sub_one :
-      (p : ℤ) * γ 1 1 * σ 0 0 - γ 1 0 * σ 0 1 - 1 =
-        γ 1 1 - 1 + (N : ℤ) * (γ 1 1 * σ 0 1) - γ 1 0 * σ 0 1 := by
-    linear_combination γ 1 1 * hσdet
-  have hδΓ1 : δ ∈ Gamma1 N := by
-    obtain ⟨hc, hd⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
-    refine mem_Gamma1_of_dvd_lowerRow ?_ ?_
-    · rw [e10]
-      exact (hc.sub (dvd_mul_left _ _)).mul_left _
-    -- `m p ≡ 1 (mod N)`, from the Bézout relation, is what puts the left factor in `Γ₁(N)`
-    · rw [e11, hδ11_sub_one]
-      exact (hd.add (dvd_mul_right _ _)).sub (hc.mul_right _)
-  exact ⟨δ, hδΓ1,
+  obtain ⟨hc, hd⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
+  refine ⟨δ, mem_Gamma1_iff_dvd_lowerRow.mpr ?_,
     natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries hp hσ10 hσ11 ha' e00 e01 e10 e11⟩
+  -- `m p ≡ 1 (mod N)`, from the Bézout relation, is what puts the left factor in `Γ₁(N)`
+  rw [e10, show δ 1 1 - 1 = γ 1 1 - 1 - (γ 1 0 - γ 1 1 * (N : ℤ)) * σ 0 1 by
+    linear_combination e11 + γ 1 1 * hσdet]
+  exact ⟨(hc.sub (dvd_mul_left _ _)).mul_left _, hd.sub ((hc.sub (dvd_mul_left _ _)).mul_right _)⟩
 
 /-- **The witness for the reverse inclusion.** For `σ = !![m, n; N, p]`, the matrix
 `!![m p, n; N, 1]` lies in `Γ₁(N)` — its lower row is `(N, 1)`, and its determinant is the Bézout
