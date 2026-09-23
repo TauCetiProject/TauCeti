@@ -23,10 +23,10 @@ Lipschitz constant on a sufficiently small ball. This file combines those facts 
 Lyapunov--Perron theorem: the initial displacements of forward negative-gradient trajectories
 confined to that ball form a Lipschitz graph over a ball in the stable linear subspace.
 
-This is the local stable-manifold theorem at the equilibrium itself: the graph map is Lipschitz,
-differentiable at the origin with derivative zero, and hence tangent there to the stable linear
-subspace. Smoothness away from the equilibrium and the resulting embedded-submanifold structure
-are not established here.
+This is a local stable-set graph and tangency theorem at the equilibrium: the graph map is
+Lipschitz, differentiable at the origin with derivative zero, and hence tangent there to the stable
+linear subspace. Smoothness away from the equilibrium and the resulting embedded-submanifold
+structure are not established here.
 
 Applying the same construction after reversing time gives the corresponding local unstable set
 as a Lipschitz graph over the unstable Hessian spectral subspace.
