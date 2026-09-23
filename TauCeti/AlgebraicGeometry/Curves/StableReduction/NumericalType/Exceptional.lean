@@ -299,10 +299,12 @@ theorem not_affineE7 {c : ℕ → T.Component}
       _ = 0 := by
         rw [AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero AffineDynkinType.valid_E7]
         simp
+  let nodeEquiv : Fin 8 ≃ Fin AffineDynkinType.E7.nodes :=
+    finCongr AffineDynkinType.nodes_E7.symm
   let d' : ℕ → T.Component := fun i ↦
-    if hi : i < 8 then d (e.symm ⟨i, hi⟩) else d none
+    if hi : i < 8 then d (e.symm (nodeEquiv ⟨i, hi⟩)) else d none
   let y : ℕ → ℤ := fun i ↦
-    if hi : i < 8 then AffineDynkinType.E7.marks ⟨i, hi⟩ else 0
+    if hi : i < 8 then AffineDynkinType.E7.marks (nodeEquiv ⟨i, hi⟩) else 0
   have hd_injective : Function.Injective d := by
     intro i j hij
     rcases i with _ | ⟨a, s⟩ <;> rcases j with _ | ⟨b, t⟩
@@ -347,18 +349,20 @@ theorem not_affineE7 {c : ℕ → T.Component}
           omega)
   have hd_inj : ∀ i < 8, ∀ j < 8, d' i = d' j → i = j := by
     intro i hi j hj hij
-    have hdij : d (e.symm ⟨i, hi⟩) = d (e.symm ⟨j, hj⟩) := by simpa [d', hi, hj] using hij
+    have hdij : d (e.symm (nodeEquiv ⟨i, hi⟩)) =
+        d (e.symm (nodeEquiv ⟨j, hj⟩)) := by simpa [d', hi, hj] using hij
     have heij := congrArg e (hd_injective hdij)
-    dsimp only [e] at heij
-    simpa only [Equiv.apply_symm_apply] using congrArg Fin.val heij
+    have hfin : (⟨i, hi⟩ : Fin 8) = ⟨j, hj⟩ := nodeEquiv.injective (by
+      simpa only [Equiv.apply_symm_apply] using heij)
+    exact congrArg Fin.val hfin
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos hd_inj hcard (y := y) ?_ ?_ ?_
   · intro i hi
     simpa [y, hi] using
-      (AffineDynkinType.marks_pos (t := AffineDynkinType.E7) (⟨i, hi⟩ : Fin 8)).le
+      (AffineDynkinType.marks_pos (nodeEquiv ⟨i, hi⟩)).le
   · refine ⟨0, by omega, ?_⟩
-    simp [y]
+    simpa [y] using AffineDynkinType.marks_pos (nodeEquiv (0 : Fin 8))
   · intro i hi
-    let ii : Fin AffineDynkinType.E7.nodes := ⟨i, by simpa using hi⟩
+    let ii : Fin AffineDynkinType.E7.nodes := nodeEquiv ⟨i, hi⟩
     have hsum :
         (∑ x : Fin AffineDynkinType.E7.nodes,
           T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x) =
@@ -372,14 +376,27 @@ theorem not_affineE7 {c : ℕ → T.Component}
         T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x := by
       rw [hsum, hrow]
     rw [← Fin.sum_univ_eq_sum_range]
+    have hd'i : d' i = d (e.symm ii) := by
+      simp only [d', hi, dite_true]
+      rw [show nodeEquiv ⟨i, _⟩ = ii by
+        apply nodeEquiv.injective
+        exact Fin.ext rfl]
+    have hd'x (x : Fin 8) : d' x = d (e.symm (nodeEquiv x)) := by
+      simp only [d', Fin.is_lt, dite_true]
+    have hyx (x : Fin 8) : y x = AffineDynkinType.E7.marks (nodeEquiv x) := by
+      simp only [y, Fin.is_lt, dite_true]
     have hnormalize :
         (∑ x : Fin 8, T.intersection (d' i) (d' x) * y x) =
           ∑ x : Fin AffineDynkinType.E7.nodes,
             T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x := by
-      apply Finset.sum_congr rfl
-      intro x _
-      simp only [d', y, hi, Fin.is_lt, dite_true]
-      congr 4
+      calc
+        _ = ∑ x : Fin 8, T.intersection (d (e.symm ii))
+              (d (e.symm (nodeEquiv x))) * AffineDynkinType.E7.marks (nodeEquiv x) := by
+            apply Finset.sum_congr rfl
+            intro x _
+            rw [hd'i, hd'x, hyx]
+        _ = _ := nodeEquiv.sum_comp fun x ↦
+          T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x
     rw [hnormalize]
     exact hcanonical
 
