@@ -52,6 +52,15 @@ def _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField [IsIntegral X] :
   letI : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.choice inferInstance, trivial⟩⟩
   (X.germToFunctionField ⊤).hom.comp (Scheme.Modules.baseRingToGlobalSections k X)
 
+/-- The base-ring map to the function field sends a scalar to the rational function induced by
+the corresponding global function. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.baseRingToFunctionField_apply [IsIntegral X]
+    [Nonempty (⊤ : X.Opens)] (c : k) :
+    Scheme.baseRingToFunctionField k X c =
+      X.germToFunctionField ⊤ (Scheme.Modules.baseRingToGlobalSections k X c) := by
+  rfl
+
 /-- The function field of an integral scheme over `Spec k` is canonically a `k`-algebra. -/
 instance (priority := 900) _root_.AlgebraicGeometry.Scheme.functionFieldBaseAlgebra
     [IsIntegral X] : Algebra k X.functionField :=
