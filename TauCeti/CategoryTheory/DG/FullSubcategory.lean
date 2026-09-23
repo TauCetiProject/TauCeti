@@ -15,6 +15,9 @@ its Hom complexes, differential, identities, and composition intact. The inclusi
 functor whose maps on Hom complexes are identities. This construction is useful for selecting
 representable, finite cell, or perfect objects while retaining their chain-level morphisms.
 
+The ambient DG category need not have an ordinary `Category` instance, so Mathlib's
+`ObjectProperty.FullSubcategory` is unavailable here.
+
 ## Main definitions
 
 * `TauCeti.DGFullSubcategory`: objects satisfying a predicate in a DG category.
