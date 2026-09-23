@@ -41,12 +41,6 @@ topological Krull dimension `d`. -/
 def IsPureDimensional (d : ℕ) (X : Type*) [TopologicalSpace X] : Prop :=
   ∀ Z ∈ irreducibleComponents X, topologicalKrullDim Z = d
 
-/-- The dimension of an irreducible component of a pure-dimensional space. -/
-theorem IsPureDimensional.component {d : ℕ} {X : Type*} [TopologicalSpace X]
-    (hX : IsPureDimensional d X) (Z : Set X) (hZ : Z ∈ irreducibleComponents X) :
-    topologicalKrullDim Z = d :=
-  hX Z hZ
-
 /-- Pure dimension is preserved by a homeomorphism. -/
 theorem IsPureDimensional.homeomorph {d : ℕ} {X Y : Type*} [TopologicalSpace X]
     [TopologicalSpace Y] (hX : IsPureDimensional d X) (e : X ≃ₜ Y) :
@@ -54,7 +48,7 @@ theorem IsPureDimensional.homeomorph {d : ℕ} {X Y : Type*} [TopologicalSpace X
   intro Z hZ
   have hpre : e ⁻¹' Z ∈ irreducibleComponents X :=
     preimage_mem_irreducibleComponents hZ e.isOpenEmbedding (by simpa using hZ.1.nonempty)
-  have hdim := hX.component (e ⁻¹' Z) hpre
+  have hdim := hX (e ⁻¹' Z) hpre
   have he : (e ⁻¹' Z) ≃ₜ Z :=
     e.isEmbedding.homeomorphOfSubsetRange (by simp)
   exact he.isHomeomorph.topologicalKrullDim_eq.symm.trans hdim

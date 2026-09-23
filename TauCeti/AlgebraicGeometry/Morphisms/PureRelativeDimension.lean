@@ -62,18 +62,12 @@ variable {d : ℕ} {X Y Z : Scheme.{u}}
 
 namespace PureRelativeDimension
 
-/-- Every set-theoretic fibre of a morphism of pure relative dimension `d` is pure-dimensional
-of dimension `d`. -/
-theorem isPureDimensional_setFiber (f : X ⟶ Y) [PureRelativeDimension d f] (y : Y) :
-    IsPureDimensional d (f ⁻¹' {y}) :=
-  PureRelativeDimension.isPureDimensional_preimage (f := f) y
-
 /-- Every scheme-theoretic fibre of a morphism of pure relative dimension `d` is
 pure-dimensional of dimension `d`. -/
 theorem isPureDimensional_fiber (f : X ⟶ Y) [PureRelativeDimension d f] (y : Y) :
     IsPureDimensional d (f.fiber y) :=
   (f.fiberHomeo y).isPureDimensional_iff.mpr
-    (isPureDimensional_setFiber f y)
+    (PureRelativeDimension.isPureDimensional_preimage (f := f) y)
 
 /-- A locally quasi-finite morphism has pure relative dimension zero. -/
 instance (priority := low) of_locallyQuasiFinite (f : X ⟶ Y) [LocallyQuasiFinite f] :
@@ -87,14 +81,14 @@ private theorem precomp_iso (e : Z ≅ X) (f : X ⟶ Y) [PureRelativeDimension d
     PureRelativeDimension d (e.hom ≫ f) := by
   refine { toRelativeDimensionLE := inferInstance, isPureDimensional_preimage := fun y ↦ ?_ }
   have h : IsPureDimensional d (f ⁻¹' {y}) :=
-    isPureDimensional_setFiber (d := d) f y
+    PureRelativeDimension.isPureDimensional_preimage (f := f) y
   have he : (e.hom ⁻¹' (f ⁻¹' {y})) ≃ₜ (f ⁻¹' {y}) :=
     e.hom.homeomorph.isEmbedding.homeomorphOfSubsetRange (by simp)
   have hpure : IsPureDimensional d (e.hom ⁻¹' (f ⁻¹' {y})) :=
     he.isPureDimensional_iff.mpr h
   have hpre : (e.hom ≫ f) ⁻¹' {y} = e.hom ⁻¹' (f ⁻¹' {y}) := by
-    ext x
-    rfl
+    rw [← Set.preimage_comp]
+    congr 1
   rw [hpre]
   exact hpure
 
@@ -103,16 +97,10 @@ private theorem postcomp_iso (f : X ⟶ Y) (e : Y ≅ Z) [PureRelativeDimension 
   refine { toRelativeDimensionLE := inferInstance, isPureDimensional_preimage := fun z ↦ ?_ }
   have hpre : (f ≫ e.hom) ⁻¹' {z} = f ⁻¹' {e.inv z} := by
     ext x
-    simp only [Set.mem_preimage, Set.mem_singleton_iff]
-    change e.hom (f x) = z ↔ f x = e.inv z
-    constructor
-    · intro h
-      apply_fun e.inv at h
-      simpa using h
-    · intro h
-      simp [h]
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, Scheme.Hom.comp_apply]
+    exact (e.schemeIsoToHomeo.toEquiv.eq_symm_apply (x := z) (y := f x)).symm
   rw [hpre]
-  exact isPureDimensional_setFiber f (e.inv z)
+  exact PureRelativeDimension.isPureDimensional_preimage (f := f) (e.inv z)
 
 /-- Having pure relative dimension `d` is invariant under isomorphisms of arrows. -/
 instance respectsIso (d : ℕ) :
