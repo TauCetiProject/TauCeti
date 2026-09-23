@@ -726,6 +726,41 @@ lemma twistedHomologyMap_naturality (η : L ⟶ K) (k : ℕ) :
 
 end MapCoefficient
 
+section MapSquare
+
+variable {A B C D : TopCat.{v}} (a : A ⟶ B) (b : B ⟶ D)
+  (c : A ⟶ C) (d : C ⟶ D)
+  (L : LocalCoefficientSystem.{u, v, max v w} R D) (h : a ≫ b = c ≫ d)
+
+/-- A commutative square of spaces induces a commutative square of twisted chain maps after
+comparing the two iterated pullbacks of the coefficient system. -/
+lemma twistedChainComplexMap_naturality_square :
+    twistedChainComplexMap a ((pullback b.hom).obj L) ≫ twistedChainComplexMap b L =
+      twistedChainComplexCoefficientMap
+          (((pullbackCompIso a.hom b.hom).app L).symm ≪≫
+            eqToIso (congrArg (fun k : A ⟶ D ↦ (pullback k.hom).obj L) h) ≪≫
+            (pullbackCompIso c.hom d.hom).app L).hom ≫
+        twistedChainComplexMap c ((pullback d.hom).obj L) ≫
+          twistedChainComplexMap d L := by
+  let e := pullbackCompIso (R := R) a.hom b.hom
+  have he : IsIso (twistedChainComplexCoefficientMap (e.hom.app L)) := by
+    rw [← Iso.app_hom, ← twistedChainComplexCoefficientIso_hom]
+    infer_instance
+  let _ := he
+  apply (cancel_epi (twistedChainComplexCoefficientMap (e.hom.app L))).1
+  dsimp [e]
+  rw [← twistedChainComplexMap_comp a b L]
+  rw [← Category.assoc]
+  rw [← twistedChainComplexCoefficientMap_comp]
+  simp only [← Category.assoc]
+  rw [Iso.hom_inv_id_app, Category.id_comp]
+  rw [twistedChainComplexCoefficientMap_comp]
+  simp only [Category.assoc]
+  rw [← twistedChainComplexMap_comp c d L]
+  exact twistedChainComplexMap_congr (a ≫ b) L h
+
+end MapSquare
+
 section ConstantMap
 
 variable {Y : TopCat.{v}} (f : X ⟶ Y) (M : ModuleCat.{max v w} R)

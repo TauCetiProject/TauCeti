@@ -44,18 +44,6 @@ namespace TopPair
 variable {R : Type u} [Ring R] {P Q : TopPair.{v}} (f : P ⟶ Q)
   (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst)
 
-/-- The ambient component of the identity map of a topological pair is the identity. -/
-@[simp]
-lemma Hom.fst_id (P : TopPair.{v}) : Hom.fst (𝟙 P) = 𝟙 P.fst :=
-  rfl
-
-/-- The ambient component of a composite map of topological pairs is the composite of the
-ambient components. -/
-@[simp]
-lemma Hom.fst_comp {S : TopPair.{v}} (f : P ⟶ Q) (g : Q ⟶ S) :
-    Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g :=
-  rfl
-
 /-- Restricting a pulled-back local coefficient system to the subspace agrees canonically with
 pulling the restricted system back along the subspace component of a map of pairs. -/
 def subspaceSystemPullbackIso :
@@ -84,28 +72,8 @@ lemma twistedChainComplexMap_naturality_pair :
         LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L =
       twistedSubspaceChainComplexMap f L ≫
         LocalCoefficientSystem.twistedChainComplexMap Q.map L := by
-  let e := LocalCoefficientSystem.pullbackCompIso (R := R) P.map.hom (Hom.fst f).hom
-  have he : IsIso (LocalCoefficientSystem.twistedChainComplexCoefficientMap (e.hom.app L)) := by
-    rw [← Iso.app_hom,
-      ← LocalCoefficientSystem.twistedChainComplexCoefficientIso_hom]
-    infer_instance
-  let _ := he
-  apply (cancel_epi (LocalCoefficientSystem.twistedChainComplexCoefficientMap (e.hom.app L))).1
-  dsimp [e]
-  rw [← LocalCoefficientSystem.twistedChainComplexMap_comp P.map (Hom.fst f) L]
-  simp only [twistedSubspaceChainComplexMap, subspaceSystemPullbackIso, Iso.trans_hom,
-    Iso.symm_hom, Category.assoc]
-  rw [← Category.assoc]
-  rw [← LocalCoefficientSystem.twistedChainComplexCoefficientMap_comp]
-  rw [Iso.app_inv]
-  simp only [← Category.assoc]
-  rw [Iso.hom_inv_id_app, Category.id_comp]
-  rw [LocalCoefficientSystem.twistedChainComplexCoefficientMap_comp]
-  simp only [Category.assoc]
-  rw [Iso.app_hom]
-  rw [← LocalCoefficientSystem.twistedChainComplexMap_comp (Hom.snd f) Q.map L]
-  exact LocalCoefficientSystem.twistedChainComplexMap_congr
-    (P.map ≫ Hom.fst f) L (Hom.w f).symm
+  exact LocalCoefficientSystem.twistedChainComplexMap_naturality_square
+    P.map (Hom.fst f) (Hom.snd f) Q.map L (Hom.w f).symm
 
 /-- The map on relative twisted chain complexes induced by a map of topological pairs. -/
 def twistedChainComplexMap :
@@ -137,6 +105,48 @@ lemma twistedChainComplexπ_comp_twistedChainComplexMap :
       LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L ≫
         Q.twistedChainComplexπ L :=
   P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
+
+/-- Relative maps of pairs commute with a change of coefficients on the target pair. -/
+@[reassoc]
+lemma twistedChainComplexMap_naturality
+    {K : LocalCoefficientSystem.{u, v, max v w} R Q.fst} (η : L ⟶ K) :
+    twistedChainComplexMap f L ≫ Q.twistedChainComplexCoefficientMap η =
+      P.twistedChainComplexCoefficientMap
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) ≫
+        twistedChainComplexMap f K := by
+  apply (cancel_epi (P.twistedChainComplexπ
+    ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L))).1
+  calc
+    _ = (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L ≫
+          Q.twistedChainComplexπ L) ≫ Q.twistedChainComplexCoefficientMap η := by
+        rw [← Category.assoc, twistedChainComplexπ_comp_twistedChainComplexMap]
+    _ = LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L ≫
+          (Q.twistedChainComplexπ L ≫ Q.twistedChainComplexCoefficientMap η) :=
+        Category.assoc _ _ _
+    _ = (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L ≫
+          LocalCoefficientSystem.twistedChainComplexCoefficientMap η) ≫
+          Q.twistedChainComplexπ K := by
+        rw [Q.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap]
+        exact (Category.assoc _ _ _).symm
+    _ = (LocalCoefficientSystem.twistedChainComplexCoefficientMap
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) ≫
+          LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) K) ≫
+          Q.twistedChainComplexπ K := by
+        rw [LocalCoefficientSystem.twistedChainComplexMap_naturality]
+    _ = LocalCoefficientSystem.twistedChainComplexCoefficientMap
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) ≫
+          (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) K ≫
+            Q.twistedChainComplexπ K) := Category.assoc _ _ _
+    _ = (LocalCoefficientSystem.twistedChainComplexCoefficientMap
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) ≫
+          P.twistedChainComplexπ
+            ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj K)) ≫
+          twistedChainComplexMap f K := by
+        rw [← twistedChainComplexπ_comp_twistedChainComplexMap]
+        exact (Category.assoc _ _ _).symm
+    _ = _ := by
+      rw [← Category.assoc,
+        P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap]
 
 /-- The pullback along the ambient component of the identity map of a pair is canonically
 isomorphic to the original coefficient system. -/
@@ -235,6 +245,20 @@ abbrev twistedHomologyMap (k : ℕ) :
     P.twistedHomology ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) k ⟶
       Q.twistedHomology L k :=
   HomologicalComplex.homologyMap (twistedChainComplexMap f L) k
+
+/-- The homology maps of pairs commute with a change of coefficients on the target pair. -/
+@[reassoc]
+lemma twistedHomologyMap_naturality
+    {K : LocalCoefficientSystem.{u, v, max v w} R Q.fst} (η : L ⟶ K)
+    (k : ℕ) :
+    twistedHomologyMap f L k ≫ Q.twistedHomologyCoefficientMap η k =
+      P.twistedHomologyCoefficientMap
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) k ≫
+        twistedHomologyMap f K k :=
+  ((HomologicalComplex.homologyMap_comp _ _ _).symm).trans
+    ((congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
+      (twistedChainComplexMap_naturality f L η)).trans
+      (HomologicalComplex.homologyMap_comp _ _ _))
 
 /-- The quotient maps from ambient to relative twisted homology are natural in maps of
 topological pairs. -/
