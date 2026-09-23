@@ -267,10 +267,10 @@ into `O(Q)`. -/
 @[simp]
 theorem specialOrthogonalToOrthogonal_spinToSpecialOrthogonal (Q : QuadraticForm R M)
     (x : spinGroup Q) :
-    QuadraticMap.specialOrthogonalToOrthogonal Q (spinToSpecialOrthogonal Q x) =
+    _root_.QuadraticMap.specialOrthogonalToOrthogonal Q (spinToSpecialOrthogonal Q x) =
       spinToOrthogonal Q x := by
   ext m
-  rw [QuadraticMap.coe_specialOrthogonalToOrthogonal, coe_spinToSpecialOrthogonal_apply,
+  rw [_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal, coe_spinToSpecialOrthogonal_apply,
     coe_spinToOrthogonal_apply]
 
 end CliffordAlgebra

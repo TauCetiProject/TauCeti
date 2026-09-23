@@ -43,11 +43,11 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
 * `TauCeti.QuadraticMap.orthogonalGroup Q`: the `Q`-preserving linear automorphisms of `M`, as a
   subgroup of `M ≃ₗ[R] M`.
 * `TauCeti.QuadraticMap.specialOrthogonalGroup Q`: its determinant-one subgroup.
-* `TauCeti.QuadraticMap.orthogonalDet Q`: the determinant `O(Q) →* Rˣ`.
-* `TauCeti.QuadraticMap.specialOrthogonalWithin Q`: its kernel, the determinant-one subgroup
+* `QuadraticMap.orthogonalDet Q`: the determinant `O(Q) →* Rˣ`.
+* `QuadraticMap.specialOrthogonalWithin Q`: its kernel, the determinant-one subgroup
   regarded as a subgroup of `orthogonalGroup Q` rather than of `M ≃ₗ[R] M`, with
-  `TauCeti.QuadraticMap.specialOrthogonalToOrthogonal Q : SO(Q) →* O(Q)` and
-  `TauCeti.QuadraticMap.specialOrthogonalWithinEquiv Q` relating the two spellings.
+  `QuadraticMap.specialOrthogonalToOrthogonal Q : SO(Q) →* O(Q)` and
+  `QuadraticMap.specialOrthogonalWithinEquiv Q` relating the two spellings.
 * `TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear Q`: the faithful coordinate inclusion of
   a special orthogonal group into matrix `GL`.
 * `TauCeti.QuadraticMap.reflection Q v`: the reflection in the hyperplane orthogonal to a vector `v`
@@ -321,12 +321,28 @@ instance specialOrthogonalGroup_normal (Q : QuadraticMap R M N) :
   rw [specialOrthogonalGroup, Subgroup.inf_subgroupOf_left]
   infer_instance
 
+end Det
+
+end QuadraticMap
+
+end TauCeti
+
+namespace QuadraticMap
+
+section Det
+
+variable {R : Type u} {M : Type v} {N : Type w} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N]
+
+variable {Q : QuadraticMap R M N}
+
 /-- The determinant of an orthogonal automorphism, as a homomorphism `O(Q) →* Rˣ`. -/
-noncomputable def orthogonalDet (Q : QuadraticMap R M N) : orthogonalGroup Q →* Rˣ :=
-  LinearEquiv.det.comp (orthogonalGroup Q).subtype
+noncomputable def orthogonalDet (Q : QuadraticMap R M N) :
+    TauCeti.QuadraticMap.orthogonalGroup Q →* Rˣ :=
+  LinearEquiv.det.comp (TauCeti.QuadraticMap.orthogonalGroup Q).subtype
 
 @[simp]
-theorem orthogonalDet_apply (g : orthogonalGroup Q) :
+theorem orthogonalDet_apply (g : TauCeti.QuadraticMap.orthogonalGroup Q) :
     orthogonalDet Q g = LinearEquiv.det (g : M ≃ₗ[R] M) := (rfl)
 
 /-- The determinant-one subgroup of `O(Q)`, as a subgroup **of `orthogonalGroup Q`**: the kernel
@@ -334,36 +350,34 @@ of `orthogonalDet Q`. By contrast `specialOrthogonalGroup Q` is a subgroup of `M
 two are identified by `specialOrthogonalWithin_eq_subgroupOf` and
 `specialOrthogonalWithinEquiv`. -/
 noncomputable def specialOrthogonalWithin (Q : QuadraticMap R M N) :
-    Subgroup (orthogonalGroup Q) :=
+    Subgroup (TauCeti.QuadraticMap.orthogonalGroup Q) :=
   (orthogonalDet Q).ker
 
 @[simp]
-theorem mem_specialOrthogonalWithin_iff {g : orthogonalGroup Q} :
+theorem mem_specialOrthogonalWithin_iff {g : TauCeti.QuadraticMap.orthogonalGroup Q} :
     g ∈ specialOrthogonalWithin Q ↔ LinearEquiv.det (g : M ≃ₗ[R] M) = 1 := Iff.rfl
 
 /-- `specialOrthogonalWithin Q` is the special orthogonal group pulled back to `O(Q)`. -/
 theorem specialOrthogonalWithin_eq_subgroupOf :
-    specialOrthogonalWithin Q = (specialOrthogonalGroup Q).subgroupOf (orthogonalGroup Q) := by
+    specialOrthogonalWithin Q =
+      (TauCeti.QuadraticMap.specialOrthogonalGroup Q).subgroupOf
+        (TauCeti.QuadraticMap.orthogonalGroup Q) := by
   ext g
   simp [Subgroup.mem_subgroupOf, g.2]
 
 /-- The inclusion `SO(Q) →* O(Q)`. -/
 noncomputable def specialOrthogonalToOrthogonal (Q : QuadraticMap R M N) :
-    specialOrthogonalGroup Q →* orthogonalGroup Q :=
-  Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q)
+    TauCeti.QuadraticMap.specialOrthogonalGroup Q →* TauCeti.QuadraticMap.orthogonalGroup Q :=
+  Subgroup.inclusion (TauCeti.QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q)
 
 @[simp]
-theorem coe_specialOrthogonalToOrthogonal (g : specialOrthogonalGroup Q) :
-    ((specialOrthogonalToOrthogonal Q g : orthogonalGroup Q) : M ≃ₗ[R] M) = g := (rfl)
+theorem coe_specialOrthogonalToOrthogonal (g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
+    ((specialOrthogonalToOrthogonal Q g : TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) =
+      g := (rfl)
 
 theorem specialOrthogonalToOrthogonal_injective :
     Function.Injective (specialOrthogonalToOrthogonal Q) :=
   Subgroup.inclusion_injective _
-
-@[simp]
-theorem orthogonalDet_specialOrthogonalToOrthogonal (g : specialOrthogonalGroup Q) :
-    orthogonalDet Q (specialOrthogonalToOrthogonal Q g) = 1 := by
-  simpa using (mem_specialOrthogonalGroup_iff.mp g.2).2
 
 /-- The image of `SO(Q)` in `O(Q)` is exactly the determinant kernel. -/
 @[simp]
@@ -374,18 +388,22 @@ theorem range_specialOrthogonalToOrthogonal :
 
 /-- The determinant kernel inside `O(Q)` is canonically isomorphic to `SO(Q)`. -/
 noncomputable def specialOrthogonalWithinEquiv (Q : QuadraticMap R M N) :
-    specialOrthogonalWithin Q ≃* specialOrthogonalGroup Q :=
+    specialOrthogonalWithin Q ≃* TauCeti.QuadraticMap.specialOrthogonalGroup Q :=
   (MulEquiv.subgroupCongr specialOrthogonalWithin_eq_subgroupOf).trans
-    (Subgroup.subgroupOfEquivOfLe (specialOrthogonalGroup_le_orthogonalGroup Q))
+    (Subgroup.subgroupOfEquivOfLe
+      (TauCeti.QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q))
 
 @[simp]
 theorem coe_specialOrthogonalWithinEquiv_apply (g : specialOrthogonalWithin Q) :
-    ((specialOrthogonalWithinEquiv Q g : specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
-      ((g : orthogonalGroup Q) : M ≃ₗ[R] M) := (rfl)
+    ((specialOrthogonalWithinEquiv Q g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
+        M ≃ₗ[R] M) =
+      ((g : TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) := (rfl)
 
 @[simp]
-theorem coe_specialOrthogonalWithinEquiv_symm_apply (g : specialOrthogonalGroup Q) :
-    (((specialOrthogonalWithinEquiv Q).symm g : specialOrthogonalWithin Q) : orthogonalGroup Q) =
+theorem coe_specialOrthogonalWithinEquiv_symm_apply
+    (g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
+    (((specialOrthogonalWithinEquiv Q).symm g : specialOrthogonalWithin Q) :
+        TauCeti.QuadraticMap.orthogonalGroup Q) =
       specialOrthogonalToOrthogonal Q g := (rfl)
 
 /-- On a zero module the determinant kernel is all of `O(Q)`, both groups being trivial; this is
@@ -393,6 +411,23 @@ the case excluded from `index_specialOrthogonalWithin`. -/
 theorem specialOrthogonalWithin_eq_top [Subsingleton M] : specialOrthogonalWithin Q = ⊤ := by
   refine eq_top_iff.mpr fun g _ => ?_
   rw [mem_specialOrthogonalWithin_iff, Subsingleton.elim (g : M ≃ₗ[R] M) 1, map_one]
+
+end Det
+
+end QuadraticMap
+
+namespace TauCeti
+
+namespace QuadraticMap
+
+open _root_.QuadraticMap
+
+section Det
+
+variable {R : Type u} {M : Type v} {N : Type w} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N]
+
+variable {Q : QuadraticMap R M N}
 
 section SpecialCongr
 
@@ -646,12 +681,6 @@ theorem reflectionOrthogonal_mul_self :
 theorem reflectionOrthogonal_inv :
     (reflectionOrthogonal Q v)⁻¹ = reflectionOrthogonal Q v :=
   inv_eq_of_mul_eq_one_left (reflectionOrthogonal_mul_self Q v)
-
-/-- A reflection is improper: its determinant is `-1` on a finite free module. -/
-@[simp]
-theorem orthogonalDet_reflectionOrthogonal [Module.Free R M] [Module.Finite R M] :
-    orthogonalDet Q (reflectionOrthogonal Q v) = -1 := by
-  rw [orthogonalDet_apply, coe_reflectionOrthogonal, det_reflection]
 
 end Reflection
 
