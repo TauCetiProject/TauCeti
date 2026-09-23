@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.CoordinateDiscriminant
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Isotropic
 public import TauCeti.InformationTheory.Coding.Discriminant
 
 /-!
@@ -16,7 +17,8 @@ The discriminant group of the zero-code Construction A lattice is canonically th
 alphabet `(ℤ/m)^ι`. This file transports an additive code through that canonical isometry, so the
 code becomes an actual subgroup of the discriminant group. The transport identifies bilinear
 orthogonal complements and bilinear isotropy, and its inverse-image carrier is exactly the
-Construction A carrier of the original code. The orthogonality statements use the finite
+Construction A carrier of the original code. Gluing along a self-orthogonal code gives the
+Construction A integral lattice. The orthogonality statements use the finite
 bilinear-module presentation, while the carrier statement uses the quotient discriminant-group
 presentation required by the corresponding APIs. Quadratic isotropy is not treated here.
 
@@ -69,6 +71,17 @@ theorem orthogonalComplement_codeInZeroLatticeDiscriminantBilinearModule
     orthogonalComplement_coordinatePower_zmodStandard,
     codeInZeroLatticeDiscriminantBilinearModule]
 
+/-- An integer vector lies in the dual of the Construction A lattice exactly when its reduction
+lies in the orthogonal complement of the code in the coordinate alphabet. -/
+theorem intCast_mem_integralLattice_dualCarrier_iff (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
+    (z : ι → ℤ) :
+    (fun i ↦ (z i : ℚ)) ∈ (integralLattice m C hC).dualCarrier ↔
+      (fun i ↦ (z i : ZMod m)) ∈
+        ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalComplement C := by
+  rw [integralLattice_dualCarrier, intCast_mem_lattice,
+    orthogonalComplement_coordinatePower_zmodStandard]
+
 /-- Bilinear isotropy is preserved by the coordinate identification. -/
 @[simp]
 theorem isIsotropic_codeInZeroLatticeDiscriminantBilinearModule_iff
@@ -117,6 +130,16 @@ theorem codeInZeroLatticeDiscriminantGroup_eq_codeInZeroLatticeDiscriminantBilin
     codeInZeroLatticeDiscriminantGroup m ι C = codeInZeroLatticeDiscriminantBilinearModule m ι C :=
   AddSubgroup.ext fun _ ↦ mem_codeInZeroLatticeDiscriminantGroup_iff_discriminantIsometry m ι C
 
+/-- The subgroup of the zero-lattice discriminant group transported from a self-orthogonal code
+is isotropic for the discriminant pairing. -/
+theorem isIsotropic_codeInZeroLatticeDiscriminantGroup (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
+    (zeroLattice m ι).discriminantBilinearModule.IsIsotropic
+      (codeInZeroLatticeDiscriminantGroup m ι C) := by
+  rw [codeInZeroLatticeDiscriminantGroup_eq_codeInZeroLatticeDiscriminantBilinearModule,
+    isIsotropic_codeInZeroLatticeDiscriminantBilinearModule_iff_le_euclideanDual]
+  exact hC
+
 /-- Reduction maps the transported discriminant subgroup back to the original code. -/
 @[simp]
 theorem map_codeInZeroLatticeDiscriminantGroup (C : AdditiveCode (ZMod m) ι) :
@@ -159,5 +182,21 @@ theorem coe_intermediateCarrierOfDiscriminantSubgroup_codeInZeroLatticeDiscrimin
       (codeInZeroLatticeDiscriminantGroup m ι C)).1 = lattice m C := by
   ext x
   exact mem_intermediateCarrier_codeInZeroLatticeDiscriminantGroup_iff m ι C x
+
+/-- **Gluing the zero-code lattice along a self-orthogonal code gives Construction A.** The
+integral overlattice of `m ℤ^ι` glued along the discriminant subgroup of `C` has the literal
+Construction A carrier and the same normalized dot-product form. -/
+theorem toIntegralLattice_codeInZeroLatticeDiscriminantGroup_eq_integralLattice
+    (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
+    ((zeroLattice m ι).isIntegral_intermediateCarrierOfDiscriminantSubgroup_iff _ |>.mpr
+        (isIsotropic_codeInZeroLatticeDiscriminantGroup m ι C hC)).toIntegralLattice =
+      integralLattice m C hC := by
+  apply IntegralLattice.ext
+  · rw [IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice_carrier,
+      integralLattice_carrier,
+      coe_intermediateCarrierOfDiscriminantSubgroup_codeInZeroLatticeDiscriminantGroup]
+  · rw [IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice_form, zeroLattice_form,
+      integralLattice_form]
 
 end TauCeti.ConstructionA

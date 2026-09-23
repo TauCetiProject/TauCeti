@@ -33,8 +33,6 @@ of `L₀` glued along that subgroup is literally `P_m(C)`, and the general compa
 
 ## Main declarations
 
-* `TauCeti.ConstructionA.toIntegralLattice_codeInZeroLatticeDiscriminantGroup_eq_integralLattice`:
-  the integral overlattice of `L₀` glued along the subgroup of `C` is the Construction A lattice.
 * `TauCeti.ConstructionA.discriminantBilinearOrthogonalQuotientIsometry`: the isometry
   `A_{P_m(C)} ≅ C⊥ / C` of finite bilinear modules, with representative formula
   `TauCeti.ConstructionA.discriminantBilinearOrthogonalQuotientIsometry_mk_intCast`.
@@ -43,6 +41,8 @@ of `L₀` glued along that subgroup is literally `P_m(C)`, and the general compa
   formula `TauCeti.ConstructionA.discriminantOrthogonalQuotientIsometry_mk_intCast`.
 * `TauCeti.ConstructionA.natCard_orthogonalQuotient_coordinatePower_zmodStandard`: the order of
   `C⊥ / C` is the discriminant of `P_m(C)`.
+* `subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimodular`:
+  `C⊥ / C` is trivial exactly when `P_m(C)` is unimodular.
 
 ## References
 
@@ -59,34 +59,6 @@ namespace TauCeti.ConstructionA
 
 variable (m : ℕ+) (ι : Type*) [Fintype ι]
 
-/-! ## The glued overlattice is Construction A -/
-
-/-- The subgroup of the zero-lattice discriminant group transported from a self-orthogonal code
-is isotropic for the discriminant pairing. -/
-theorem isIsotropic_codeInZeroLatticeDiscriminantGroup (C : AdditiveCode (ZMod m) ι)
-    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
-    (zeroLattice m ι).discriminantBilinearModule.IsIsotropic
-      (codeInZeroLatticeDiscriminantGroup m ι C) := by
-  rw [codeInZeroLatticeDiscriminantGroup_eq_codeInZeroLatticeDiscriminantBilinearModule,
-    isIsotropic_codeInZeroLatticeDiscriminantBilinearModule_iff_le_euclideanDual]
-  exact hC
-
-/-- **Gluing the zero-code lattice along a self-orthogonal code gives Construction A.** The
-integral overlattice of `m ℤ^ι` glued along the discriminant subgroup of `C` has the literal
-Construction A carrier and the same normalized dot-product form. -/
-theorem toIntegralLattice_codeInZeroLatticeDiscriminantGroup_eq_integralLattice
-    (C : AdditiveCode (ZMod m) ι)
-    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
-    ((zeroLattice m ι).isIntegral_intermediateCarrierOfDiscriminantSubgroup_iff _ |>.mpr
-        (isIsotropic_codeInZeroLatticeDiscriminantGroup m ι C hC)).toIntegralLattice =
-      integralLattice m C hC := by
-  apply IntegralLattice.ext
-  · rw [IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice_carrier,
-      integralLattice_carrier,
-      coe_intermediateCarrierOfDiscriminantSubgroup_codeInZeroLatticeDiscriminantGroup]
-  · rw [IntegralLattice.IntermediateCarrier.IsIntegral.toIntegralLattice_form, zeroLattice_form,
-      integralLattice_form]
-
 /-! ## The bilinear isometry -/
 
 /-- The discriminant class in `A_{L₀}` of an integer vector of the dual of an integral overlattice
@@ -100,17 +72,6 @@ private theorem discriminantEquiv_dualClassHom_of_intCast
   convert discriminantEquiv_mk_of_intCast m ι z
     ((mem_zeroLattice_dualCarrier_iff m ι).mpr ⟨z, rfl⟩) using 3
   exact Subtype.ext hy
-
-/-- An integer vector lies in the dual of the Construction A lattice exactly when its reduction
-lies in the orthogonal complement of the code in the coordinate alphabet. -/
-theorem intCast_mem_integralLattice_dualCarrier_iff (C : AdditiveCode (ZMod m) ι)
-    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
-    (z : ι → ℤ) :
-    (fun i ↦ (z i : ℚ)) ∈ (integralLattice m C hC).dualCarrier ↔
-      (fun i ↦ (z i : ZMod m)) ∈
-        ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalComplement C := by
-  rw [integralLattice_dualCarrier, intCast_mem_lattice,
-    orthogonalComplement_coordinatePower_zmodStandard]
 
 /-- **The discriminant bilinear module of a Construction A lattice is `C⊥ / C`.** For a
 self-orthogonal additive code `C` over `ℤ/m`, the discriminant bilinear module of `P_m(C)` is the
@@ -160,6 +121,18 @@ theorem natCard_orthogonalQuotient_coordinatePower_zmodStandard (C : AdditiveCod
   (Nat.card_congr
       (discriminantBilinearOrthogonalQuotientIsometry m ι C hC).toAddEquiv.toEquiv).symm.trans
     (integralLattice m C hC).natCard_discriminantGroup
+
+/-- The orthogonal quotient of a self-orthogonal code is trivial exactly when its Construction A
+lattice is unimodular. -/
+theorem subsingleton_orthogonalQuotient_coordinatePower_zmodStandard_iff_isUnimodular
+    (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual) :
+    Subsingleton
+        (((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalQuotient C) ↔
+      (integralLattice m C hC).IsUnimodular := by
+  rw [(integralLattice m C hC).isUnimodular_iff_subsingleton_discriminantGroup]
+  exact Equiv.subsingleton_congr
+    (discriminantBilinearOrthogonalQuotientIsometry m ι C hC).toAddEquiv.toEquiv.symm
 
 /-! ## The quadratic isometry for an even modulus -/
 
