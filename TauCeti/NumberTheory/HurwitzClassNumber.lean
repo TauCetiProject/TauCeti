@@ -25,7 +25,7 @@ Here `H D` is *defined* combinatorially, as a weighted count of **reduced** form
 equivalent to exactly one reduced form, the boundary conditions being what removes the double
 count on the edges of the fundamental domain, so the count is the class count; that comparison is
 separate. The definition involves no class groups, and it is a finite, decidable sum: a reduced
-form of discriminant `-D` has `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`.
+form of discriminant `-D < 0` has `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`.
 
 ## Main definitions
 
@@ -36,8 +36,8 @@ form of discriminant `-D` has `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`.
 
 ## Main results
 
-* `TauCeti.mem_reducedForms`: for `D ≠ 0`, the reduced forms of discriminant `-D` are exactly the
-  reduced forms `f` with `f.discrim = -D`; the box the definition searches is no restriction.
+* `TauCeti.mem_reducedForms`: for `D ≠ 0`, `f ∈ reducedForms D` exactly when `f.discrim = -D` and
+  `f` is reduced, so the box the definition searches is no restriction.
 * `TauCeti.hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two`: `H D = 0` when
   `D ≡ 1, 2 (mod 4)`, since a discriminant `b² - 4 a c` is `0` or `1` modulo `4`
   (`Int.discrim_emod_four`).
@@ -64,15 +64,15 @@ and `0 ≤ b` whenever `|b| = a` or `a = c` (Cohen, Definition 5.3.2).
 
 For a positive-definite form this picks exactly one representative of each `SL₂(ℤ)`-class: the
 inequalities place the root `τ = (-b + i √(4 a c - b²)) / (2 a)` of `a τ² + b τ + c` in
-`ModularGroup.fd`, and the sign condition chooses one of the two boundary points that `SL₂(ℤ)`
+`ModularGroup.fd`, and the sign condition chooses one of each pair of boundary points that `SL₂(ℤ)`
 identifies. Definiteness is not part of the predicate (`IsReducedForm ⟨0, 0, 1⟩` holds), but a
 reduced form with `f.discrim < 0` has `0 < f.a` (`pos_of_nonneg_of_discrim_lt_zero`). -/
 def IsReducedForm (f : BinaryQuadraticForm ℤ) : Prop :=
   |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b)
 deriving Decidable
 
-/-- `a x² + b x y + c y²` is reduced exactly when `|b| ≤ a ≤ c`, and `0 ≤ b` whenever `|b| = a` or
-`a = c`. -/
+/-- The form `f = a x² + b x y + c y²` is reduced exactly when `|b| ≤ a ≤ c`, and `0 ≤ b` whenever
+`|b| = a` or `a = c`. -/
 theorem isReducedForm_iff {f : BinaryQuadraticForm ℤ} :
     IsReducedForm f ↔ |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b) :=
   Iff.rfl
