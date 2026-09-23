@@ -275,18 +275,13 @@ theorem induction_on {motive : PresentedK0 rels → Prop} (x : PresentedK0 rels)
 
 section HomExt
 
-variable {G : Type*} [SubtractionMonoid G]
+variable {G : Type*} [AddMonoid G]
 
 /-- Two homomorphisms out of a presented Grothendieck group agreeing on the classes of objects of
 `C` are equal. -/
 @[ext]
-theorem hom_ext {f g : PresentedK0 rels →+ G} (h : ∀ X : C, f (of X) = g (of X)) : f = g := by
-  refine AddMonoidHom.ext fun x => ?_
-  induction x using PresentedK0.induction_on with
-  | zero => rw [map_zero, map_zero]
-  | of X => exact h X
-  | add a b ha hb => rw [map_add, map_add, ha, hb]
-  | neg a ha => rw [map_neg, map_neg, ha]
+theorem hom_ext {f g : PresentedK0 rels →+ G} (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
+  AddMonoidHom.eq_of_eqOn_dense closure_range_of (by rintro _ ⟨X, rfl⟩; exact h X)
 
 end HomExt
 

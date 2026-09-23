@@ -224,12 +224,18 @@ theorem induction_on {motive : TriangulatedK0 C → Prop} (x : TriangulatedK0 C)
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   PresentedK0.induction_on x zero of add neg
 
-variable {G : Type*} [AddCommGroup G]
+section HomExt
+
+variable {G : Type*} [AddMonoid G]
 
 /-- Two homomorphisms out of triangulated `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
 theorem hom_ext {f g : TriangulatedK0 C →+ G} (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   PresentedK0.hom_ext h
+
+end HomExt
+
+variable {G : Type*} [AddCommGroup G]
 
 variable (C) in
 /-- An additive invariant for triangulated `K₀`: a function on objects of `C`, constant on
