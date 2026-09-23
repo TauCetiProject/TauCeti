@@ -19,7 +19,7 @@ at its fourth component is simply laced: all seven weights and all six displayed
 agree, and there are no other edges.  This is
 [Stacks, Lemma 55.5.13](https://stacks.math.columbia.edu/tag/0C8J).
 
-Extending both length-three arms of this diagram by one component produces the affine `E₇`
+Extending the length-two arm of this diagram by one component produces the affine `E₇`
 diagram.  Its marks `(1, 2, 3, 4, 3, 2, 1, 2)` form a positive kernel vector for the displayed
 intersection matrix.  Negative definiteness on a proper family of components therefore rules
 out this configuration, which is
@@ -226,6 +226,12 @@ theorem not_affineE7 {c : ℕ → T.Component}
     Equiv.ofBijective ![4, 3, 2, 0, 5, 6, 7, 1] (by decide)
   let y : ℕ → ℤ := fun i ↦
     if hi : i < 8 then AffineDynkinType.E7.marks (e ⟨i, hi⟩) else 0
+  have hd_chain (i : Fin 8) (hi : (i : ℕ) < 7) : d i = c i := by
+    simp [d, hi]
+  have hd_branch (i : Fin 8) (hi : ¬ (i : ℕ) < 7) : d i = branch := by
+    simp [d, hi]
+  have he (i : Fin 8) : e i = ![4, 3, 2, 0, 5, 6, 7, 1] i := by
+    rfl
   have hcartan (i j : Fin 8) :
       AffineDynkinType.E7.cartanMatrix (e i) (e j) =
         if i = j then 2 else if
@@ -233,8 +239,7 @@ theorem not_affineE7 {c : ℕ → T.Component}
             ((i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i)) ∨
           ((i : ℕ) = 3 ∧ (j : ℕ) = 7) ∨
           ((i : ℕ) = 7 ∧ (j : ℕ) = 3) then -1 else 0 := by
-    change AffineDynkinType.E7.cartanMatrix
-      (![4, 3, 2, 0, 5, 6, 7, 1] i) (![4, 3, 2, 0, 5, 6, 7, 1] j) = _
+    rw [he i, he j]
     fin_cases i <;> fin_cases j <;>
       rw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E7] <;>
       simp only [AffineDynkinType.graph_E7_adj] <;>
@@ -245,23 +250,20 @@ theorem not_affineE7 {c : ℕ → T.Component}
     rw [hcartan]
     by_cases hi : (i : ℕ) < 7
     · by_cases hj : (j : ℕ) < 7
-      · rw [show d i = c i by simp [d, hi], show d j = c j by simp [d, hj], hentry hi hj]
+      · rw [hd_chain i hi, hd_chain j hj, hentry hi hj]
         simp only [Fin.ext_iff]
         split_ifs <;> omega
       · have hj7 : (j : ℕ) = 7 := by omega
-        rw [show d i = c i by simp [d, hi], show d j = branch by simp [d, hj],
-          hbranch_entry hi]
+        rw [hd_chain i hi, hd_branch j hj, hbranch_entry hi]
         simp only [Fin.ext_iff]
         split_ifs <;> omega
     · have hi7 : (i : ℕ) = 7 := by omega
       by_cases hj : (j : ℕ) < 7
-      · rw [show d i = branch by simp [d, hi], show d j = c j by simp [d, hj],
-          T.intersection_comm, hbranch_entry hj]
+      · rw [hd_branch i hi, hd_chain j hj, T.intersection_comm, hbranch_entry hj]
         simp only [Fin.ext_iff]
         split_ifs <;> omega
       · have hj7 : (j : ℕ) = 7 := by omega
-        rw [show d i = branch by simp [d, hi], show d j = branch by simp [d, hj],
-          hbranch_self, hwb]
+        rw [hd_branch i hi, hd_branch j hj, hbranch_self, hwb]
         rw [ite_eq_left (Fin.ext (by omega))]
         ring
   have hrow (i : Fin 8) :
