@@ -66,7 +66,9 @@ namespace TauCeti
 open MeasureTheory Set
 open scoped ENNReal
 
-variable {X : Type*} [PseudoMetricSpace X] {g : ℝ → X} {φ : ℝ → ℝ≥0∞} {s : Set ℝ}
+section EMetric
+
+variable {X : Type*} [PseudoEMetricSpace X] {g : ℝ → X} {φ : ℝ → ℝ≥0∞} {s : Set ℝ}
 
 /-- **The increments of `g` are dominated over all of `s`, not merely over subintervals.** On an
 order-connected `s` the interval `Ioc x y` spanned by two of its points is again inside `s`, so the
@@ -100,6 +102,10 @@ theorem ediam_image_le_of_edist_le_setLIntegral (hs : s.OrdConnected)
   refine Metric.ediam_le ?_
   rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
   exact edist_le_setLIntegral hs hdom hx hy
+
+end EMetric
+
+variable {X : Type*} [PseudoMetricSpace X] {g : ℝ → X} {φ : ℝ → ℝ≥0∞} {s : Set ℝ}
 
 /-- **A map whose increments are dominated by a density of finite integral has bounded image.**
 The finiteness form of `TauCeti.ediam_image_le_of_edist_le_setLIntegral`, and the form a
