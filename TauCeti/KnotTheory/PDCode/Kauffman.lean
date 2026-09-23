@@ -292,6 +292,17 @@ theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool)
   simp at h
   simp [stateLoopCount_def, h]
 
+/-- Every smoothing of a diagram with a component has at least one circle. -/
+theorem one_le_stateLoopCount_of_componentCount_pos (D : PDCode n)
+    (h : 0 < D.componentCount) (s : Fin n → Bool) : 1 ≤ D.stateLoopCount s := by
+  by_cases hn : n = 0
+  · subst n
+    have hc : 0 < D.crossinglessComponentCount := by
+      simpa [componentCount_eq, crossingComponentCount_eq_zero] using h
+    rw [stateLoopCount_eq_crossinglessComponentCount]
+    omega
+  · exact D.one_le_stateLoopCount hn s
+
 /-- Mirroring a code negates the state producing a given circle count. -/
 @[simp] theorem stateLoopCount_mirror (D : PDCode n) (s : Fin n → Bool) :
     D.mirror.stateLoopCount s = D.stateLoopCount fun i => !(s i) := by

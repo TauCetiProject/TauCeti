@@ -20,9 +20,9 @@ For a nonempty diagram, adjoining a circle multiplies the Kauffman bracket by th
 `jonesDelta`; the nonemptiness hypothesis is necessary because the empty code is normalised to
 have bracket one rather than a negative power of the loop value.
 
-The construction is the crossing-free-circle case omitted by the algebraic clasp insertion in
-`TauCeti.KnotTheory.PDCode.ClaspInsertion` and is the component operation needed when completing
-the Reidemeister move calculus.
+`ClaspInsertion` applies to clasps whose arcs meet crossings and does not treat a clasp through a
+crossing-free circle; this file supplies the separate operation of adjoining a disjoint
+crossing-free circle, which local move calculations need alongside it.
 -/
 
 public section
@@ -62,21 +62,26 @@ def adjoinCircle (D : PDCode n) : PDCode n where
     D.adjoinCircle.crossinglessComponentCount = D.crossinglessComponentCount + 1 := by
   rfl
 
+/-! Adjoining a circle leaves the crossing traversal unchanged. -/
+@[simp] theorem crossingTurn_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.crossingTurn = D.crossingTurn := by
+  apply Equiv.ext
+  intro h
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
+  simp only [← adjoinCircle_halfEdge D]
+  rw [crossingTurn_crossing]
+  simp
+
+@[simp] theorem componentPerm_adjoinCircle (D : PDCode n) :
+    D.adjoinCircle.componentPerm = D.componentPerm := by
+  rw [componentPerm_def, componentPerm_def, crossingTurn_adjoinCircle,
+    adjoinCircle_edgePair]
+
 /-- Adjoining a circle does not change the crossing-bearing components. -/
 @[simp] theorem crossingComponentCount_adjoinCircle (D : PDCode n) :
     D.adjoinCircle.crossingComponentCount = D.crossingComponentCount := by
-  have hturn : D.adjoinCircle.crossingTurn = D.crossingTurn := by
-    apply Equiv.ext
-    intro h
-    obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
-    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
-    simp only [← adjoinCircle_halfEdge D] at *
-    rw [crossingTurn_crossing]
-    rw [adjoinCircle_halfEdge] at *
-    rw [crossingTurn_crossing]
-    simp
-  rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
-    componentPerm_def, hturn, adjoinCircle_edgePair]
+  rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_adjoinCircle]
 
 /-- Adjoining a circle increases the total component count by one. -/
 @[simp] theorem componentCount_adjoinCircle (D : PDCode n) :
@@ -85,39 +90,31 @@ def adjoinCircle (D : PDCode n) : PDCode n where
     adjoinCircle_crossinglessComponentCount]
   omega
 
+@[simp] theorem smoothingTurn_adjoinCircle (D : PDCode n) (s : Fin n → Bool) :
+    D.adjoinCircle.smoothingTurn s = D.smoothingTurn s := by
+  apply Equiv.ext
+  intro h
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
+  simp only [← adjoinCircle_halfEdge D]
+  rw [smoothingTurn_crossing]
+  simp
+
+@[simp] theorem smoothingChoice_adjoinCircle (D : PDCode n) (s : Fin n → Bool) :
+    D.adjoinCircle.smoothingChoice s = D.smoothingChoice s := by
+  funext i
+  cases hs : s i <;> simp [hs]
+
+@[simp] theorem statePerm_adjoinCircle (D : PDCode n) (s : Fin n → Bool) :
+    D.adjoinCircle.statePerm s = D.statePerm s := by
+  rw [statePerm_def, statePerm_def, smoothingTurn_adjoinCircle,
+    smoothingChoice_adjoinCircle, adjoinCircle_edgePair]
+
 /-- Every smoothing has exactly one additional circle after adjoining a circle. -/
 @[simp] theorem stateLoopCount_adjoinCircle (D : PDCode n) (s : Fin n → Bool) :
     D.adjoinCircle.stateLoopCount s = D.stateLoopCount s + 1 := by
-  rw [stateLoopCount_def, stateLoopCount_def]
-  have hperm : D.adjoinCircle.statePerm s = D.statePerm s := by
-    rw [statePerm_def, statePerm_def, adjoinCircle_edgePair]
-    have hchoice : D.adjoinCircle.smoothingChoice s = D.smoothingChoice s := by
-      funext i
-      cases hs : s i <;> simp [hs]
-    rw [hchoice]
-    congr 1
-    apply Equiv.ext
-    intro h
-    obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
-    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
-    simp only [← adjoinCircle_halfEdge D] at *
-    rw [smoothingTurn_crossing]
-    rw [adjoinCircle_halfEdge] at *
-    rw [smoothingTurn_crossing]
-    simp
-  rw [hperm, adjoinCircle_crossinglessComponentCount]
+  simp [stateLoopCount_def]
   omega
-
-/-- Every smoothing of a nonempty diagram has at least one circle. -/
-private theorem one_le_stateLoopCount_of_componentCount_pos (D : PDCode n)
-    (h : 0 < D.componentCount) (s : Fin n → Bool) : 1 ≤ D.stateLoopCount s := by
-  by_cases hn : n = 0
-  · subst n
-    have hc : 0 < D.crossinglessComponentCount := by
-      simpa [componentCount_eq, crossingComponentCount_eq_zero] using h
-    rw [stateLoopCount_eq_crossinglessComponentCount]
-    exact (Nat.succ_le_iff).2 hc
-  · exact D.one_le_stateLoopCount hn s
 
 /-- Adjoining a circle to a nonempty diagram multiplies its Kauffman bracket by the loop
 value. The empty code is excluded because its bracket is normalized to one. -/
@@ -129,9 +126,8 @@ theorem kauffmanBracket_adjoinCircle {R : Type*} [CommRing R] (D : PDCode n)
   intro s
   have hstate := D.one_le_stateLoopCount_of_componentCount_pos h s
   rw [stateLoopCount_adjoinCircle]
-  have hexp : D.stateLoopCount s + 1 - 1 = (D.stateLoopCount s - 1) + 1 := by
-    omega
-  rw [hexp, pow_succ]
+  have hexp : D.stateLoopCount s + 1 - 1 = D.stateLoopCount s := by omega
+  rw [hexp, ← mul_pow_sub_one (Nat.ne_of_gt hstate) (jonesDelta a)]
   ring
 
 /-- Mirroring commutes with adjoining an unoriented circle. -/
@@ -175,11 +171,9 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
       orientation ::ₘ D.crossinglessComponents := by
   rfl
 
-/-- An isolated circle does not change the writhe. -/
-@[simp] theorem writhe_adjoinCircle (D : OrientedPDCode n) (orientation : Bool) :
-    (OrientedPDCode.adjoinCircle D orientation).writhe = D.writhe := by
-  rw [OrientedPDCode.writhe_def, OrientedPDCode.writhe_def]
-  refine Finset.sum_congr rfl (fun i _ => ?_)
+@[simp] theorem crossingSign_adjoinCircle (D : OrientedPDCode n) (orientation : Bool)
+    (i : Fin n) :
+    (OrientedPDCode.adjoinCircle D orientation).crossingSign i = D.crossingSign i := by
   rcases D.crossingSign_eq_one_or_neg_one i with hi | hi
   · rw [hi]
     apply (crossingSign_eq_one_iff _ _).mpr
@@ -187,6 +181,16 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
   · rw [hi]
     apply (crossingSign_eq_neg_one_iff _ _).mpr
     simpa [OrientedPDCode.adjoinCircle] using (D.crossingSign_eq_neg_one_iff i).mp hi
+
+/-- An isolated circle does not change the writhe. -/
+@[simp] theorem writhe_adjoinCircle (D : OrientedPDCode n) (orientation : Bool) :
+    (OrientedPDCode.adjoinCircle D orientation).writhe = D.writhe := by
+  simp [writhe_def]
+
+@[simp] theorem mirror_adjoinCircle (D : OrientedPDCode n) (orientation : Bool) :
+    (OrientedPDCode.adjoinCircle D orientation).mirror =
+      OrientedPDCode.adjoinCircle D.mirror orientation := by
+  apply ext <;> simp [OrientedPDCode.adjoinCircle]
 
 /-- Adjoining a circle to a nonempty oriented diagram multiplies the normalized bracket by the
 same loop value as the unoriented bracket, since the writhe is unchanged. -/
@@ -234,6 +238,12 @@ def adjoinCircle (D : FramedOrientedPDCode n) (orientation : Bool) (framing : �
     (FramedOrientedPDCode.adjoinCircle D orientation framing).crossinglessFramings =
       (orientation, framing) ::ₘ D.crossinglessFramings := by
   rfl
+
+@[simp] theorem mirror_adjoinCircle (D : FramedOrientedPDCode n) (orientation : Bool)
+    (framing : ℤ) :
+    (FramedOrientedPDCode.adjoinCircle D orientation framing).mirror =
+      FramedOrientedPDCode.adjoinCircle D.mirror orientation (-framing) := by
+  apply ext <;> simp
 
 end FramedOrientedPDCode
 
