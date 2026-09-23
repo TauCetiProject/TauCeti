@@ -72,6 +72,12 @@ def IsReducedForm (a b c : ℤ) : Prop :=
   |b| ≤ a ∧ a ≤ c ∧ (|b| = a ∨ a = c → 0 ≤ b)
 deriving Decidable
 
+/-- `a x² + b x y + c y²` is reduced exactly when `|b| ≤ a ≤ c`, and `0 ≤ b` whenever `|b| = a` or
+`a = c`. -/
+theorem isReducedForm_iff {a b c : ℤ} :
+    IsReducedForm a b c ↔ |b| ≤ a ∧ a ≤ c ∧ (|b| = a ∨ a = c → 0 ≤ b) :=
+  Iff.rfl
+
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
 `(a, b, c)`.
 
@@ -108,6 +114,7 @@ searches loses nothing. -/
 
 /-- There are no reduced forms of discriminant `-D` when `D ≡ 1, 2 (mod 4)`: a discriminant
 `b² - 4 a c` is `0` or `1` modulo `4` (`Int.discrim_emod_four`). -/
+@[simp]
 theorem reducedForms_eq_empty_of_mod_four_eq_one_or_two {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
     reducedForms D = ∅ :=
   filter_eq_empty_iff.mpr fun t _ ⟨h, _⟩ ↦ by
@@ -155,6 +162,7 @@ theorem hurwitzClassNumber_of_ne_zero {D : ℕ} (hD : D ≠ 0) :
   ite_eq_right hD
 
 /-- The Hurwitz class number `H D` is `0` for `D ≡ 1, 2 (mod 4)`. -/
+@[simp]
 theorem hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
     hurwitzClassNumber D = 0 := by
   rw [hurwitzClassNumber_of_ne_zero (by lia), reducedForms_eq_empty_of_mod_four_eq_one_or_two hD,
@@ -164,23 +172,23 @@ theorem hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two {D : ℕ} (hD : D %
 
 /-- `H 3 = 1/3`: the only reduced form of discriminant `-3` is `x² + x y + y²`, which counts
 `1/3`. -/
-theorem hurwitzClassNumber_three : hurwitzClassNumber 3 = 1 / 3 := by decide +kernel
+@[simp] theorem hurwitzClassNumber_three : hurwitzClassNumber 3 = 1 / 3 := by decide +kernel
 
 /-- `H 4 = 1/2`: the only reduced form of discriminant `-4` is `x² + y²`, which counts `1/2`. -/
-theorem hurwitzClassNumber_four : hurwitzClassNumber 4 = 1 / 2 := by decide +kernel
+@[simp] theorem hurwitzClassNumber_four : hurwitzClassNumber 4 = 1 / 2 := by decide +kernel
 
 /-- `H 7 = 1`: the only reduced form of discriminant `-7` is `x² + x y + 2 y²`. -/
-theorem hurwitzClassNumber_seven : hurwitzClassNumber 7 = 1 := by decide +kernel
+@[simp] theorem hurwitzClassNumber_seven : hurwitzClassNumber 7 = 1 := by decide +kernel
 
 /-- `H 8 = 1`: the only reduced form of discriminant `-8` is `x² + 2 y²`. -/
-theorem hurwitzClassNumber_eight : hurwitzClassNumber 8 = 1 := by decide +kernel
+@[simp] theorem hurwitzClassNumber_eight : hurwitzClassNumber 8 = 1 := by decide +kernel
 
 /-- `H 12 = 4/3`: the reduced forms of discriminant `-12` are `x² + 3 y²` and the non-primitive
 `2 (x² + x y + y²)`, which counts `1/3`. -/
-theorem hurwitzClassNumber_twelve : hurwitzClassNumber 12 = 4 / 3 := by decide +kernel
+@[simp] theorem hurwitzClassNumber_twelve : hurwitzClassNumber 12 = 4 / 3 := by decide +kernel
 
 /-- `H 16 = 3/2`: the reduced forms of discriminant `-16` are `x² + 4 y²` and the non-primitive
 `2 (x² + y²)`, which counts `1/2`. -/
-theorem hurwitzClassNumber_sixteen : hurwitzClassNumber 16 = 3 / 2 := by decide +kernel
+@[simp] theorem hurwitzClassNumber_sixteen : hurwitzClassNumber 16 = 3 / 2 := by decide +kernel
 
 end TauCeti
