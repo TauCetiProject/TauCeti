@@ -119,48 +119,34 @@ private lemma studentTPDFReal_abs (ν x : ℝ) : studentTPDFReal ν |x| = studen
   · rw [abs_of_nonneg hx]
   · rw [abs_of_nonpos hx, studentTPDFReal_neg]
 
-private theorem integrable_pow_studentTMeasure_of_lt (hν : 0 < ν) (q : ℕ)
-    (hq : (q : ℝ) < ν) : Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) := by
-  rw [integrable_studentTMeasure_iff]
-  simp_rw [smul_eq_mul]
-  have hIoi := (integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
-    (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).2 hq
-  have habs := TauCeti.MeasureTheory.integrable_comp_abs hIoi
-  rw [← integrable_norm_iff (by fun_prop)]
-  simpa only [studentTPDFReal_abs, Real.rpow_natCast, Real.norm_eq_abs, abs_mul,
-    abs_of_nonneg (studentTPDFReal_nonneg ν _), abs_pow] using habs
-
-private theorem not_integrable_pow_studentTMeasure (hν : 0 < ν) (q : ℕ)
-    (hνq : ν ≤ (q : ℝ)) :
-    ¬ Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) := by
-  intro hint
-  have hden := (integrable_studentTMeasure_iff (ν := ν)
-    (f := fun x : ℝ => x ^ q)).mp hint
-  have hIoi : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ (q : ℝ))
-      (Ioi (0 : ℝ)) := by
-    simpa only [Real.rpow_natCast, smul_eq_mul] using hden.integrableOn (s := Ioi (0 : ℝ))
-  exact (not_lt_of_ge hνq) ((integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
-    (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).mp hIoi)
+private theorem integrable_pow_studentTMeasure_iff (hν : 0 < ν) (q : ℕ) :
+    Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) ↔ (q : ℝ) < ν := by
+  constructor
+  · intro hint
+    have hden := (integrable_studentTMeasure_iff (ν := ν)
+      (f := fun x : ℝ => x ^ q)).mp hint
+    have hIoi : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ (q : ℝ))
+        (Ioi (0 : ℝ)) := by
+      simpa only [Real.rpow_natCast, smul_eq_mul] using hden.integrableOn (s := Ioi (0 : ℝ))
+    exact (integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
+      (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).mp hIoi
+  · intro hq
+    rw [integrable_studentTMeasure_iff]
+    simp_rw [smul_eq_mul]
+    have hIoi := (integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν
+      (lt_of_lt_of_le (by norm_num : (-1 : ℝ) < 0) (Nat.cast_nonneg q))).2 hq
+    have habs := TauCeti.MeasureTheory.integrable_comp_abs hIoi
+    rw [← integrable_norm_iff (by fun_prop)]
+    simpa only [studentTPDFReal_abs, Real.rpow_natCast, Real.norm_eq_abs, abs_mul,
+      abs_of_nonneg (studentTPDFReal_nonneg ν _), abs_pow] using habs
 
 /-- The identity is integrable under a nondegenerate Student t law exactly when the number of
 degrees of freedom exceeds one. -/
 @[simp]
 theorem integrable_id_studentTMeasure_iff (hν : 0 < ν) :
     Integrable id (studentTMeasure ν) ↔ 1 < ν := by
-  constructor
-  · intro hint
-    by_contra h
-    have hnot := not_integrable_pow_studentTMeasure hν 1 (by
-      simpa using (not_lt.mp h : ν ≤ 1))
-    have hint' : Integrable (fun x : ℝ => x) (studentTMeasure ν) := by
-      refine hint.congr (ae_of_all _ fun x => ?_)
-      rfl
-    apply hnot
-    simpa only [pow_one] using hint'
-  · intro hν1
-    have hν1' : ((1 : ℕ) : ℝ) < ν := by simpa using hν1
-    exact (integrable_pow_studentTMeasure_of_lt hν 1 hν1').congr
-      (ae_of_all _ fun x => by simp [id_eq])
+  change Integrable (fun x : ℝ => x) (studentTMeasure ν) ↔ 1 < ν
+  simpa only [pow_one, Nat.cast_one] using integrable_pow_studentTMeasure_iff hν 1
 
 /-- The Bochner integral of the identity under a Student t measure is zero for every parameter,
 including by convention when the identity is not integrable. -/
@@ -169,8 +155,9 @@ theorem integral_id_studentTMeasure (ν : ℝ) :
     ∫ x, x ∂studentTMeasure ν = 0 := by
   have hpres : MeasurePreserving (fun x : ℝ => -x) (studentTMeasure ν) (studentTMeasure ν) :=
     ⟨measurable_neg, studentTMeasure_map_neg ν⟩
-  have h := hpres.integral_comp (Homeomorph.neg ℝ).measurableEmbedding id
-  change (∫ x, -x ∂studentTMeasure ν) = ∫ x, x ∂studentTMeasure ν at h
+  have h : (∫ x, -x ∂studentTMeasure ν) = ∫ x, x ∂studentTMeasure ν := by
+    simpa only [Function.comp_apply, id_eq] using
+      hpres.integral_comp (Homeomorph.neg ℝ).measurableEmbedding id
   rw [integral_neg] at h
   linarith
 
@@ -197,7 +184,7 @@ private lemma studentTKernel_sq (hν : 0 < ν) (x : ℝ) :
 
 private theorem integrable_sq_studentTMeasure_of_two_lt (hν : 2 < ν) :
     Integrable (fun x : ℝ => x ^ 2) (studentTMeasure ν) :=
-  integrable_pow_studentTMeasure_of_lt (lt_trans zero_lt_two hν) 2 (by simpa using hν)
+  (integrable_pow_studentTMeasure_iff (lt_trans zero_lt_two hν) 2).2 (by simpa using hν)
 
 private lemma beta_sub_beta_add_one (hν : 2 < ν) :
     beta (1 / 2) ((ν - 2) / 2) - beta (1 / 2) (ν / 2) =
@@ -306,12 +293,7 @@ of freedom exceeds two. -/
 @[simp]
 theorem integrable_sq_studentTMeasure_iff (hν : 0 < ν) :
     Integrable (fun x : ℝ => x ^ 2) (studentTMeasure ν) ↔ 2 < ν := by
-  constructor
-  · intro hint
-    by_contra h
-    exact not_integrable_pow_studentTMeasure hν 2 (by
-      simpa using (not_lt.mp h : ν ≤ 2)) hint
-  · exact integrable_sq_studentTMeasure_of_two_lt
+  simpa only [Nat.cast_ofNat] using integrable_pow_studentTMeasure_iff hν 2
 
 /-- At or below two degrees of freedom, the second raw moment of a nondegenerate Student t law
 diverges. -/
