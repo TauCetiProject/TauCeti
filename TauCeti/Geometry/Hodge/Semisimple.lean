@@ -344,7 +344,7 @@ theorem substructureBiproductIso_hom
 
 /-- The isomorphism from an independent spanning family restricts on each summand to its
 substructure inclusion. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem biproduct_ι_comp_substructureBiproductIso_hom
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
