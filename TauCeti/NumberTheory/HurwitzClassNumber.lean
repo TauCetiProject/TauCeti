@@ -76,7 +76,7 @@ definite. -/
 theorem IsReducedForm.pos_of_discrim_lt_zero {a b c : ℤ} (h : IsReducedForm a b c)
     (hd : discrim a b c < 0) : 0 < a :=
   -- `a = 0` would make the discriminant `b ^ 2`, which is not negative
-  ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ hd.not_ge <| by simp [discrim, ha, sq_nonneg]
+  ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ hd.not_ge <| by simp only [discrim, ha, mul_zero, zero_mul, sub_zero, sq_nonneg]
 
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
 `(a, b, c)`.
@@ -101,10 +101,12 @@ theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {a b c : ℤ} :
   rw [discrim] at hd
   obtain ⟨hb₁, hb₂⟩ := abs_le.mp hb
   -- `3 a² ≤ 3 a c ≤ 4 a c - b² = D`, as `b² ≤ a² ≤ a c`; so `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`
-  have : 3 * c ≤ D := by nlinarith
+  have hbb := mul_self_le_mul_self_of_le_of_neg_le hb₂ (neg_le.mp hb₁)
+  have hac' := mul_le_mul_of_nonneg_left hac ha.le
+  have : 3 * c ≤ D := by linarith [le_mul_of_one_le_left (ha.le.trans hac) ha]
   obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le ha.le
   have hn : n ≤ (D / 3).sqrt := Nat.le_sqrt.2 <| (Nat.le_div_iff_mul_le three_pos).2 <| by
-    zify; nlinarith
+    zify; linarith
   lia
 
 /-- The discriminant `b² - 4 a c` of integers `a`, `b`, `c` leaves the remainder `b % 2` on
