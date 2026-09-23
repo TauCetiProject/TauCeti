@@ -524,6 +524,14 @@ theorem Gamma0_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
   obtain ⟨c, hc, hm, -⟩ := exists_conjScale_mem_Gamma0_of_dvd d M _ dvd_rfl ⟨γ, hγ⟩
   exact ⟨_, hm, (mapGL_conjScale γ c hc).symm⟩
 
+/-- **Level transport for `Γ₀` at a divisor.** Whenever `d * M ∣ N`, conjugation by
+`diag(d, 1)` carries `Γ₀(N)` into `Γ₀(M)`: this is what makes `V_d` a map
+`S_k(Γ₀(M)) → S_k(Γ₀(N))` for every multiple `N` of `d * M`. -/
+theorem Gamma0_map_le_conjAct_scaleGL_of_dvd {M d N : ℕ} [NeZero d] (h : d * M ∣ N) :
+    ((Gamma0 N).map (mapGL ℝ) : Subgroup (GL (Fin 2) ℝ)) ≤
+      ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma0 M).map (mapGL ℝ)) :=
+  (Subgroup.map_mono (Gamma0_le_Gamma0_of_dvd h)).trans (Gamma0_map_le_conjAct_scaleGL M d)
+
 end Transport
 
 /-! ### The `T`-factorisation of `Γ₀(N / l)` -/
