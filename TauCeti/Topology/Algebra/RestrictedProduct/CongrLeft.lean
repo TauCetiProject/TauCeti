@@ -102,6 +102,15 @@ theorem restrictedProductReindex_symm_apply (e : ι' ≃ ι)
     (restrictedProductReindex e).symm x (e i) = x i := by
   simpa [restrictedProductReindex] using restrictedProductCongrLeft_apply_apply e x i
 
+/-- Evaluation of the inverse reindexing equivalence at any original index, with its dependent
+coordinate transported along `e (e.symm j) = j`. -/
+@[simp]
+theorem restrictedProductReindex_symm_apply_eq_cast (e : ι' ≃ ι)
+    (x : Πʳ i, [G (e i), U (e i)]) (j : ι) :
+    (restrictedProductReindex e).symm x j =
+      cast (congrArg G (e.apply_symm_apply j)) (x (e.symm j)) := by
+  simp [restrictedProductReindex, restrictedProductCongrLeft_apply]
+
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- Reindexing a restricted product is continuous. -/
@@ -115,37 +124,48 @@ theorem continuous_restrictedProductCongrLeft (e : ι' ≃ ι) :
     rw [mem_cofinite] at hS ⊢
     rw [← Set.image_compl_eq e.bijective]
     exact hS.image e
+  have mapsToCast (i j : ι) (h : i = j) :
+      Set.MapsTo (cast (congrArg G h)) (U i) (U j) := by
+    cases h
+    exact Set.mapsTo_id _
+  have continuousCast (i j : ι) (h : i = j) :
+      Continuous (cast (congrArg G h) : G i → G j) := by
+    cases h
+    exact continuous_id
+  let φ : ∀ i, G (e (e.symm i)) → G i := fun i ↦
+    cast (congrArg G (e.apply_symm_apply i))
+  have hφ : ∀ i, Set.MapsTo (φ i) (U (e (e.symm i))) (U i) := by
+    intro i
+    exact mapsToCast _ _ (e.apply_symm_apply i)
+  have hφcont : ∀ i, Continuous (φ i) := by
+    intro i
+    exact continuousCast _ _ (e.apply_symm_apply i)
+  have hfS : Tendsto e.symm (𝓟 T) (𝓟 S) := by
+    apply tendsto_principal.2
+    rintro i ⟨j, hj, rfl⟩
+    simpa using hj
+  have hφS : ∀ᶠ i in 𝓟 T, Set.MapsTo (φ i) (U (e (e.symm i))) (U i) :=
+    .of_forall hφ
   let f : (Πʳ i, [G (e i), U (e i)]_[𝓟 S]) →
-      (Πʳ i, [G i, U i]_[𝓟 T]) := fun x ↦ ⟨e.piCongrLeft G x, by
-        intro i hi
-        -- Unpack the principal-filter condition to its coordinate membership statement.
-        change (e.piCongrLeft G x) i ∈ U i
-        obtain ⟨j, hj, rfl⟩ := hi
-        have hcoord : (e.piCongrLeft G x) (e j) = x.1 j :=
-          Equiv.piCongrLeft_apply_apply G e x.1 j
-        rw [hcoord]
-        exact (Filter.eventually_principal.mp x.2) j hj⟩
+      (Πʳ i, [G i, U i]_[𝓟 T]) :=
+    RestrictedProduct.mapAlong (fun i : ι' ↦ G (e i)) G e.symm hfS φ hφS
   have hf : Continuous f := by
-    apply (RestrictedProduct.continuous_rng_of_principal
-      (R := G) (A := U)).mpr
-    exact (Homeomorph.piCongrLeft (Y := G) e).continuous_toFun.comp
-      (RestrictedProduct.continuous_coe (R := fun i : ι' ↦ G (e i))
-        (A := fun i ↦ U (e i)))
+    exact RestrictedProduct.mapAlong_continuous (fun i : ι' ↦ G (e i)) G e.symm
+      hfS φ hφS hφcont
   have hfac : restrictedProductCongrLeft e ∘ RestrictedProduct.inclusion _ _ hS =
       RestrictedProduct.inclusion _ _ hT ∘ f := by
     funext x
     apply RestrictedProduct.ext
     intro i
+    -- RestrictedProduct.ext reduces the map equality to evaluation after inclusion.
     change restrictedProductCongrLeft e (RestrictedProduct.inclusion _ _ hS x) i =
       RestrictedProduct.inclusion _ _ hT (f x) i
     rw [restrictedProductCongrLeft_apply, RestrictedProduct.inclusion_apply]
-    change cast (congrArg G (e.apply_symm_apply i)) (x (e.symm i)) =
-      (e.piCongrLeft G (x : Πʳ i, [G (e i), U (e i)]_[𝓟 S])) i
-    exact (Equiv.piCongrLeft_apply_eq_cast _ _).symm
+    simp [f, RestrictedProduct.mapAlong_apply, φ]
   rw [hfac]
   exact (RestrictedProduct.continuous_inclusion hT).comp hf
 
-/-- The inverse of restricted-product reindexing is continuous. -/
+/-- The inverse of the left-oriented restricted-product reindexing is continuous. -/
 theorem continuous_restrictedProductCongrLeft_symm (e : ι' ≃ ι) :
     Continuous (@restrictedProductCongrLeft ι ι' G U e).symm := by
   rw [RestrictedProduct.continuous_dom]
@@ -159,29 +179,28 @@ theorem continuous_restrictedProductCongrLeft_symm (e : ι' ≃ ι) :
       simp [T]
     rw [hcompl]
     exact hS.image e.symm
+  have hfS : Tendsto e (𝓟 T) (𝓟 S) := by
+    apply tendsto_principal.2
+    intro i hi
+    simpa [T] using hi
+  have hφS : ∀ᶠ i in 𝓟 T,
+      Set.MapsTo (fun x : G (e i) ↦ x) (U (e i)) (U (e i)) :=
+    .of_forall fun _ _ hx ↦ hx
   let f : (Πʳ i, [G i, U i]_[𝓟 S]) →
-      (Πʳ i, [G (e i), U (e i)]_[𝓟 T]) := fun x ↦ ⟨(e.piCongrLeft G).symm x, by
-        intro i hi
-        -- Unpack the principal-filter condition to its coordinate membership statement.
-        change (e.piCongrLeft G).symm x i ∈ U (e i)
-        have hi' : e i ∈ S := by simpa [T] using hi
-        change x (e i) ∈ U (e i)
-        exact (Filter.eventually_principal.mp x.2) (e i) hi'⟩
+      (Πʳ i, [G (e i), U (e i)]_[𝓟 T]) :=
+    RestrictedProduct.mapAlong G (fun i : ι' ↦ G (e i)) e hfS (fun _ x ↦ x) hφS
   have hf : Continuous f := by
-    apply (RestrictedProduct.continuous_rng_of_principal
-      (R := fun i : ι' ↦ G (e i)) (A := fun i ↦ U (e i))).mpr
-    exact (Homeomorph.piCongrLeft (Y := G) e).symm.continuous_toFun.comp
-      (RestrictedProduct.continuous_coe (R := G) (A := U))
+    exact RestrictedProduct.mapAlong_continuous G (fun i : ι' ↦ G (e i)) e
+      hfS (fun _ x ↦ x) hφS (fun _ ↦ continuous_id)
   have hfac : (restrictedProductCongrLeft e).symm ∘ RestrictedProduct.inclusion _ _ hS =
       RestrictedProduct.inclusion _ _ hT ∘ f := by
     funext x
     apply RestrictedProduct.ext
     intro i
+    -- The inclusion coercions expose the inverse Pi reindexing on evaluation.
     change (restrictedProductCongrLeft e).symm (RestrictedProduct.inclusion _ _ hS x) i =
       RestrictedProduct.inclusion _ _ hT (f x) i
-    change x (e i) =
-      (e.piCongrLeft G).symm (x : Πʳ i, [G i, U i]_[𝓟 S]) i
-    exact (Equiv.piCongrLeft_symm_apply G e x i).symm
+    simp [f, RestrictedProduct.mapAlong_apply]
   rw [hfac]
   exact (RestrictedProduct.continuous_inclusion hT).comp hf
 
