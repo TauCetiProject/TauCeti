@@ -134,24 +134,21 @@ theorem orbit_mk_injOn_canonicalReps [ModularFormClass F 𝒮ℒ k] (f : F) :
   · exact ⟨hre.trans_lt (by norm_num), fun h ↦ absurd h hgt.ne'⟩
   · exact ⟨hre.trans (by norm_num), fun _ ↦ hre.le⟩
 
-private lemma exists_of_re_eq_half [ModularFormClass F 𝒮ℒ k] {f : F}
-    {p₀ : ℍ} (hfd : p₀ ∈ 𝒟) (hord : orderOfVanishingAt f p₀ ≠ 0) (hre : (p₀ : ℂ).re = 1 / 2)
-    (hlt : 1 < ‖(p₀ : ℂ)‖) : ∃ p ∈ canonicalReps f,
-      (Quotient.mk'' p : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' p₀ := by
+private lemma exists_of_re_eq_half [ModularFormClass F 𝒮ℒ k] {f : F} {p₀ : ℍ} (hfd : p₀ ∈ 𝒟)
+    (hord : orderOfVanishingAt f p₀ ≠ 0) (hre : (p₀ : ℂ).re = 1 / 2) (hlt : 1 < ‖(p₀ : ℂ)‖) :
+    ∃ p ∈ canonicalReps f, (Quotient.mk'' p : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) =
+      Quotient.mk'' p₀ := by
   have horb : (Quotient.mk'' ((-1 : ℝ) +ᵥ p₀) : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) =
       Quotient.mk'' p₀ := by
     simpa using ModularGroup.orbit_mk_int_vadd (-1) p₀
-  have hord' : orderOfVanishingAt f ((-1 : ℝ) +ᵥ p₀) ≠ 0 := by
-    rw [← orderOfVanishingOnOrbit_mk (k := k) f, horb, orderOfVanishingOnOrbit_mk]
-    exact hord
-  have hre' : p₀.re = -(-1 : ℝ) / 2 := hre.trans (by norm_num)
+  -- the translation lemmas take the edge as the line `re = -r / 2`; here `r = -1`
+  have hre' : p₀.re = -(-1) / 2 := hre.trans (by norm_num)
   refine ⟨(-1 : ℝ) +ᵥ p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr
-    ⟨ModularGroup.vadd_mem_fd_of_re_eq hfd hre', hord'⟩,
-      Or.inr (Or.inl ⟨?_, ?_⟩)⟩, horb⟩
-  · rw [coe_vadd, Complex.add_re, Complex.ofReal_re, hre]
+    ⟨ModularGroup.vadd_mem_fd_of_re_eq hfd hre', ?_⟩,
+      Or.inr (Or.inl ⟨?_, ModularGroup.norm_coe_vadd_of_re_eq hre' ▸ hlt⟩)⟩, horb⟩
+  · rwa [← orderOfVanishingOnOrbit_mk (k := k) f, horb, orderOfVanishingOnOrbit_mk]
+  · rw [coe_re, vadd_re, hre']
     norm_num
-  · rw [ModularGroup.norm_coe_vadd_of_re_eq hre']
-    exact hlt
 
 private lemma exists_of_norm_eq_one_of_re_pos [ModularFormClass F 𝒮ℒ k] {f : F}
     {p₀ : ℍ} (hfd : p₀ ∈ 𝒟) (hord : orderOfVanishingAt f p₀ ≠ 0)
