@@ -17,7 +17,7 @@ public section
 
 namespace TauCeti
 
-/-- For a natural denominator at least two, `π / k` lies strictly between zero and `π`. -/
+/-- For a natural denominator at least two, the sine of `π / k` is positive. -/
 theorem sin_pi_div_pos {k : ℕ} (hk : 2 ≤ k) : 0 < Real.sin (Real.pi / k) := by
   have hk₁ : (1 : ℝ) < k := by exact_mod_cast hk
   exact Real.sin_pos_of_pos_of_lt_pi (by positivity) (div_lt_self Real.pi_pos hk₁)
