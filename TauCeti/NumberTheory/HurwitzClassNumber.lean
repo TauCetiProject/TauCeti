@@ -105,20 +105,18 @@ theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {a b c : ℤ} :
   have : 3 * c ≤ D := by nlinarith
   lia
 
-/-- A discriminant `b² - 4 a c` is `0` or `1` modulo `4`, so there are no reduced forms of
-discriminant `-D` when `D ≡ 1, 2 (mod 4)`. -/
+/-- The discriminant `b² - 4 a c` of integers `a`, `b`, `c` leaves the remainder `b % 2` on
+division by `4`, so it is `0` or `1` modulo `4`. -/
+theorem _root_.Int.discrim_emod_four (a b c : ℤ) : discrim a b c % 4 = b % 2 := by
+  rw [discrim, mul_assoc, Int.sub_mul_emod_self_left, Int.sq_emod_four]
+
+/-- There are no reduced forms of discriminant `-D` when `D ≡ 1, 2 (mod 4)`: a discriminant
+`b² - 4 a c` is `0` or `1` modulo `4` (`Int.discrim_emod_four`). -/
 theorem reducedForms_eq_empty_of_mod_four {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
-    reducedForms D = ∅ := by
-  refine eq_empty_of_forall_notMem fun ⟨a, b, c⟩ h ↦ ?_
-  replace h := (mem_filter.mp h).2.1
-  rw [discrim] at h
-  obtain ⟨k, rfl | rfl⟩ := Int.even_or_odd' b
-  · have : (D : ℤ) = 4 * (a * c - k ^ 2) := by linear_combination h
-    generalize a * c - k ^ 2 = m at this
-    omega
-  · have : (D : ℤ) = 4 * (a * c - k ^ 2 - k) - 1 := by linear_combination h
-    generalize a * c - k ^ 2 - k = m at this
-    omega
+    reducedForms D = ∅ :=
+  filter_eq_empty_iff.mpr fun t _ ⟨h, _⟩ ↦ by
+    have := Int.discrim_emod_four t.1 t.2.1 t.2.2
+    lia
 
 /-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `0 < D` the number of reduced forms
 of discriminant `-D`, the multiples of `x² + y²` (the forms `(a, 0, a)`) weighted by `1/2` and the
