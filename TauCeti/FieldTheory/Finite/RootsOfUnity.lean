@@ -12,16 +12,13 @@ public import Mathlib.RingTheory.RootsOfUnity.Basic
 # The unit group of a finite field is its group of roots of unity
 
 For a finite field `F` with `q` elements, every unit satisfies `x ^ (q - 1) = 1`, so the group
-`μ_{q-1}` of `(q-1)`-st roots of unity is all of `Fˣ`. This file records that identification and
-the accompanying cast computation `(q - 1 : F) = -1`, which is what makes `q - 1` invertible in
-any commutative local ring whose residue field is `F`.
+`μ_{q-1}` of `(q-1)`-st roots of unity is all of `Fˣ`. This file records that identification.
 
 Mathlib has the statement for the prime fields (`ZMod.rootsOfUnity_eq_top`); the version here is
 for an arbitrary finite field and is indexed by `Nat.card`.
 
 ## Main results
 
-* `TauCeti.natCast_natCard_sub_one_eq_neg_one`: `(q - 1 : F) = -1`.
 * `TauCeti.rootsOfUnity_natCard_sub_one_eq_top` and `TauCeti.rootsOfUnityEquivUnits`: the
   `(q-1)`-st roots of unity of `F` are exactly its units.
 -/
@@ -33,19 +30,6 @@ noncomputable section
 namespace TauCeti
 
 variable (F : Type*) [Finite F]
-
-section AddGroupWithOne
-
-variable [AddGroupWithOne F] [Nontrivial F]
-
-/-- In a finite nontrivial additive group with one, `q - 1` reduces to `-1`, where `q` is its
-cardinality. -/
-theorem natCast_natCard_sub_one_eq_neg_one : ((Nat.card F - 1 : ℕ) : F) = -1 := by
-  have := Fintype.ofFinite F
-  have hq : ((Nat.card F : ℕ) : F) = 0 := by simp [Nat.card_eq_fintype_card]
-  rw [Nat.cast_sub Finite.one_lt_card.le, hq, Nat.cast_one, zero_sub]
-
-end AddGroupWithOne
 
 section CommGroupWithZero
 
