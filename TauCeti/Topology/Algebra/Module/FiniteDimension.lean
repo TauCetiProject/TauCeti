@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 
 /-!
 # Multilinear maps on finitely many finite-dimensional spaces are continuous
 
-A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional normed spaces
-over a complete field is continuous, with no bound assumed:
+A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
+topological vector spaces over a complete field is continuous, with no bound assumed:
 `MultilinearMap.continuous_of_finiteDimensional`. Expanding each argument in a basis
 writes `f` as a finite sum of terms `(∏ i, coordinate) • constant`, and each coordinate is a
 linear functional on a finite-dimensional space, hence continuous.
@@ -28,8 +28,10 @@ public section
 namespace MultilinearMap
 
 variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [Finite ι] [∀ i, NormedAddCommGroup (M i)] [∀ i, NormedSpace 𝕜 (M i)]
-  [∀ i, FiniteDimensional 𝕜 (M i)] [NormedAddCommGroup N] [NormedSpace 𝕜 N]
+  [Finite ι] [∀ i, AddCommGroup (M i)] [∀ i, Module 𝕜 (M i)] [∀ i, TopologicalSpace (M i)]
+  [∀ i, IsTopologicalAddGroup (M i)] [∀ i, ContinuousSMul 𝕜 (M i)] [∀ i, T2Space (M i)]
+  [∀ i, FiniteDimensional 𝕜 (M i)] [AddCommMonoid N] [Module 𝕜 N] [TopologicalSpace N]
+  [ContinuousAdd N] [ContinuousSMul 𝕜 N]
 
 /-- **A multilinear map on finitely many finite-dimensional spaces is continuous.** Over a
 complete field, no bound need be assumed. -/
