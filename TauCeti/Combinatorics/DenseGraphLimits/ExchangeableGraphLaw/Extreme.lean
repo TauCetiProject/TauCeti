@@ -144,7 +144,8 @@ the exchangeable probability measures on graphs if and only if its finite law is
 theorem mem_extremePoints_iff_isDissociated (L : InfiniteExchangeableGraphLaw) :
     L.law ∈ extremePoints ℝ≥0∞ exchangeableGraphProbabilityMeasures ↔
       (exchangeableGraphLawEquivInfinite.symm L).IsDissociated := by
-  rw [mem_extremePoints_iff_arrayLaw_mem_extremePoints, isDissociated_iff_arrayLaw_mem_extremePoints]
+  rw [mem_extremePoints_iff_arrayLaw_mem_extremePoints,
+    isDissociated_iff_arrayLaw_mem_extremePoints]
 
 
 /-- The infinite sampling law of a graphon is an extreme exchangeable graph measure. -/
@@ -158,7 +159,8 @@ theorem infiniteSampleLaw_mem_extremePoints {Ω : Type*} [MeasurableSpace Ω] {�
 /-- **A dissociated graph law does not mix**: a mixture of exchangeable graph laws equal to a
 dissociated exchangeable graph law has almost every component equal to that law. -/
 theorem InfiniteExchangeableGraphLaw.ae_eq_of_comp_eq {Z : Type*} [MeasurableSpace Z]
-    (L : InfiniteExchangeableGraphLaw) (hL : (exchangeableGraphLawEquivInfinite.symm L).IsDissociated)
+    (L : InfiniteExchangeableGraphLaw)
+    (hL : (exchangeableGraphLawEquivInfinite.symm L).IsDissociated)
     {π : Measure Z} {κ : Kernel Z (SimpleGraph ℕ)} [IsMarkovKernel κ]
     (hκ : ∀ᵐ z ∂π, ∀ σ : Equiv.Perm ℕ, (κ z).map (SimpleGraph.comap ⇑σ) = κ z)
     (hmix : κ ∘ₘ π = L.law) : ∀ᵐ z ∂π, κ z = L.law := by
@@ -167,7 +169,7 @@ theorem InfiniteExchangeableGraphLaw.ae_eq_of_comp_eq {Z : Type*} [MeasurableSpa
     (isDissociated_iff_jointlyDissociated L).1 hL
   have hκ' : ∀ᵐ z ∂π, JointlyExchangeable ((κ.map SimpleGraph.adjArray) z) fun p x => x p := by
     filter_upwards [hκ] with z hz
-    rw [Kernel.map_apply _ SimpleGraph.measurable_adjArray]
+    rw [Kernel.map_apply _ SimpleGraph.measurable_adjArray, ← arrayLaw_def]
     exact jointlyExchangeable_arrayLaw hz
   have : IsMarkovKernel (κ.map SimpleGraph.adjArray) :=
     Kernel.IsMarkovKernel.map κ SimpleGraph.measurable_adjArray
