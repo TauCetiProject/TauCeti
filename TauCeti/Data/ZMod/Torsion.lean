@@ -80,6 +80,7 @@ noncomputable def zmodTorsionByEquiv (p k : ℕ) [NeZero p] :
 theorem zmodTorsionByEquiv_apply_coe (p k : ℕ) [NeZero p] (x : ZMod p) :
     ((zmodTorsionByEquiv p k x : ZMod (p ^ (k + 1))) : ZMod (p ^ (k + 1))) =
       (x.val * p ^ k : ℕ) := by
+  -- The equivalence uses `zmodTorsionByEquivHom` as its forward map.
   change ((zmodTorsionByEquivHom p k x :
     AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) : ZMod (p ^ (k + 1))) = _
   conv_lhs => rw [← ZMod.natCast_zmod_val x]
@@ -101,6 +102,15 @@ theorem zmodTorsionByEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
     rw [h]
   · intro h
     exact Subtype.ext h
+
+/-- The inverse picks the unique residue whose multiple by `p ^ k` is the given torsion point. -/
+theorem zmodTorsionByEquiv_symm_apply_eq_iff (p k : ℕ) [NeZero p]
+    (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) (x : ZMod p) :
+    (zmodTorsionByEquiv p k).symm y = x ↔
+      (x.val * p ^ k : ℕ) = (y.1 : ZMod (p ^ (k + 1))) := by
+  change (zmodTorsionByEquiv p k).toEquiv.symm y = x ↔ _
+  rw [Equiv.symm_apply_eq, eq_comm]
+  exact zmodTorsionByEquiv_apply_eq_iff p k x y
 
 end TauCeti
 

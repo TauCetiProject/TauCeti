@@ -9,9 +9,9 @@ public import Mathlib.Algebra.CharP.Basic
 public import Mathlib.Algebra.Field.Basic
 
 /-!
-# Nonzero natural casts in fields
+# Nonzero natural casts in semirings
 
-This file records that every natural divisor of a nonzero natural cast in a field also has
+This file records that every natural divisor of a nonzero natural cast in a semiring also has
 nonzero cast.
 -/
 
@@ -21,8 +21,8 @@ namespace TauCeti
 
 namespace Nat
 
-/-- A divisor of a nonzero natural cast in a field has nonzero cast. -/
-theorem cast_ne_zero_of_dvd {K : Type*} [Field K] {N d : ℕ} (hN : (N : K) ≠ 0) (hd : d ∣ N) :
+/-- A divisor of a nonzero natural cast in a semiring has nonzero cast. -/
+theorem cast_ne_zero_of_dvd {K : Type*} [Semiring K] {N d : ℕ} (hN : (N : K) ≠ 0) (hd : d ∣ N) :
     (d : K) ≠ 0 := by
   obtain ⟨c, rfl⟩ := hd
   contrapose! hN

@@ -11,6 +11,7 @@ import TauCeti.Algebra.Group.Prod
 import TauCeti.Data.ZMod.Torsion
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.GroupTheory.Index
+import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Rank-two finite abelian groups of prime-power exponent
@@ -129,7 +130,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
   refine ⟨E |>.trans (AddEquiv.piCongrRight fun i ↦
       (ZMod.ringEquivCongr (by rw [ha i, ha_eq i])).toAddEquiv) |>.trans
       (AddEquiv.arrowCongr r (AddEquiv.refl (ZMod (p ^ k)))) |>.trans
-      (TauCeti.AddEquiv.finTwoArrowEquivProd (ZMod (p ^ k)))⟩
+      (LinearEquiv.finTwoArrow ℕ (ZMod (p ^ k))).toAddEquiv⟩
 
 end AddCommGroup
 
