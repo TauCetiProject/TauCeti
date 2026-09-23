@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Complex.Polynomial.Basic
+public import TauCeti.Analysis.Analytic.Multiset
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Polynomial
 import Mathlib.Topology.ContinuousMap.Units
-import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
 /-!
 # Holomorphic functions summed over the roots of a polynomial
@@ -27,10 +27,11 @@ functions of the values `g(z)`, that is, for the coefficients of `∏ (X - g(z))
 Read through the elementary symmetric chart `TauCeti.Sym.coeffEquiv`, which identifies `Sym^n ℂ`
 with `Fin n → ℂ`, this says that a holomorphic change of coordinate `φ` acts analytically on
 elementary symmetric coordinates everywhere, including along the diagonal where points collide:
-`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`. This is what makes the
-transition maps of the elementary symmetric atlas on the symmetric power of a Riemann surface
-holomorphic (Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). At
-tuples of distinct points the same conclusion is
+`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`. This is the local analytic
+input needed to prove that the transition maps of the elementary symmetric atlas on the symmetric
+power of a Riemann surface are holomorphic (Ozsváth--Szabó,
+[arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). At tuples of distinct points the
+same local conclusion is
 `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm`, obtained there from the implicit function
 theorem, which is unavailable once roots collide.
 
@@ -73,29 +74,6 @@ open Complex Filter Metric Polynomial Real Topology
 namespace TauCeti
 
 namespace Polynomial
-
-section Linear
-
-variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {n : ℕ}
-
-/-- The image of the monic polynomial with lower coefficients `c` under a linear map depends
-analytically on `c`: it is affine in `c`. -/
-private theorem analyticAt_linearMap_monicOfCoeff (Λ : 𝕜[X] →ₗ[𝕜] F) (c₀ : Fin n → 𝕜) :
-    AnalyticAt 𝕜 (fun c => Λ (monicOfCoeff c)) c₀ := by
-  have h : (fun c : Fin n → 𝕜 => Λ (monicOfCoeff c)) =
-      fun c => Λ (X ^ n) + ∑ i : Fin n, c i • Λ (monomial (i : ℕ) 1) := by
-    funext c
-    have hp : monicOfCoeff c = X ^ n + ∑ i : Fin n, c i • monomial (i : ℕ) (1 : 𝕜) :=
-      Polynomial.funext fun z => by
-        simp [eval_monicOfCoeff, eval_finsetSum, smul_monomial]
-    simp [hp, map_sum, map_smul]
-  rw [h]
-  exact analyticAt_const.add (Finset.univ.analyticAt_fun_sum fun i _ =>
-    ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin n => 𝕜) i).analyticAt c₀).smul
-      analyticAt_const)
-
-end Linear
 
 section Circle
 
@@ -160,8 +138,8 @@ theorem analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff {g : ℂ → �
   let B : (Fin n → ℂ) → C(sphere w r, ℂ) := fun c => Λ (monicOfCoeff c)
   let D : (Fin n → ℂ) → C(sphere w r, ℂ) := fun c => (Λ ∘ₗ derivative) (monicOfCoeff c)
   let G : C(sphere w r, ℂ) := ⟨fun t => g t, continuousOn_iff_continuous_domRestrict.1 hg⟩
-  have hB : AnalyticAt ℂ B c₀ := analyticAt_linearMap_monicOfCoeff Λ c₀
-  have hD : AnalyticAt ℂ D c₀ := analyticAt_linearMap_monicOfCoeff _ c₀
+  have hB : AnalyticAt ℂ B c₀ := Polynomial.analyticAt_linearMap_monicOfCoeff Λ c₀
+  have hD : AnalyticAt ℂ D c₀ := Polynomial.analyticAt_linearMap_monicOfCoeff _ c₀
   have hunit : IsUnit (B c₀) :=
     (ContinuousMap.isUnit_iff_forall_ne_zero _).2 fun t => by simpa [B, Λ] using hc₀ t t.2
   have hinv : AnalyticAt ℂ (fun c => Ring.inverse (B c)) c₀ := by
@@ -244,36 +222,6 @@ theorem _root_.Polynomial.circleIntegral_mul_derivative_div_eval (p : ℂ[X]) (h
   simp [mul_comm]
 
 end Trace
-
-section Esymm
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E]
-
-/-- If every power sum of positive degree of a family of multisets depends analytically on the
-parameter, then so does every elementary symmetric function, by Newton's identities. -/
-theorem analyticAt_esymm_of_forall_analyticAt_sum_map_pow {m : E → Multiset 𝕜} {x₀ : E}
-    (h : ∀ j, 0 < j → AnalyticAt 𝕜 (fun x => ((m x).map (· ^ j)).sum) x₀) (k : ℕ) :
-    AnalyticAt 𝕜 (fun x => (m x).esymm k) x₀ := by
-  induction k using Nat.strong_induction_on with
-  | _ k ih =>
-    rcases Nat.eq_zero_or_pos k with rfl | hk
-    · simpa [Multiset.esymm] using analyticAt_const
-    have hrec : (fun x => (m x).esymm k) = fun x => (k : 𝕜)⁻¹ * ((-1) ^ (k + 1) *
-        ∑ a ∈ Finset.antidiagonal k with a.1 < k,
-          (-1) ^ a.1 * (m x).esymm a.1 * ((m x).map (· ^ a.2)).sum) := by
-      funext x
-      rw [← Multiset.mul_esymm_eq_sum, inv_mul_cancel_left₀ (Nat.cast_ne_zero.2 hk.ne')]
-    rw [hrec]
-    refine analyticAt_const.mul <| analyticAt_const.mul <|
-      Finset.analyticAt_fun_sum _ fun a ha => ?_
-    obtain ⟨ha, hak⟩ := Finset.mem_filter.1 ha
-    have ha2 : 0 < a.2 := by
-      have := Finset.mem_antidiagonal.1 ha
-      omega
-    exact (analyticAt_const.mul (ih a.1 hak)).mul (h a.2 ha2)
-
-end Esymm
 
 namespace Sym
 
@@ -407,8 +355,8 @@ coefficients of a monic polynomial to those of the monic polynomial whose roots 
 of its roots. This induced map is analytic at every coefficient tuple `c₀` at each of whose roots
 `φ` is analytic, whether or not those roots are distinct.
 
-Read on the symmetric power of a Riemann surface, `φ` is a change of holomorphic coordinate, and
-this is the holomorphy of the corresponding transition map of elementary symmetric charts. -/
+Read on the symmetric power of a Riemann surface, this is the local analytic input for the
+holomorphy of the corresponding transition map of elementary symmetric charts. -/
 theorem analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt {φ : ℂ → ℂ} {c₀ : Fin n → ℂ}
     (hφ : ∀ z ∈ (coeffEquiv ℂ n).symm c₀, AnalyticAt ℂ φ z) :
     AnalyticAt ℂ (fun c => coeffEquiv ℂ n (_root_.Sym.map φ ((coeffEquiv ℂ n).symm c))) c₀ := by
@@ -418,7 +366,8 @@ theorem analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt {φ : ℂ → �
       analyticAt_sum_map_coeffEquiv_symm fun z hz => (hφ z hz).fun_pow j
   refine AnalyticAt.pi fun i => ?_
   simp only [coeffEquiv_apply, _root_.Sym.coe_map]
-  exact analyticAt_const.mul (analyticAt_esymm_of_forall_analyticAt_sum_map_pow hpow _)
+  exact analyticAt_const.mul (analyticAt_esymm_of_forall_analyticAt_sum_map_pow _ fun j hj _ =>
+    hpow j hj)
 
 end Sym
 
