@@ -598,6 +598,46 @@ theorem isRecut_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommo
     D.IsRecut (D.recut hone hfirst hsecond) :=
   (D.existsUnique_isRecut hone hfirst hsecond).choose_spec.1
 
+/-- The generic recut retains the common-terminal-side orientation. -/
+theorem isRecutOfRightEqRight_recut (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.right) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    D.IsRecutOfRightEqRight (D.recut hone hfirst hsecond) := by
+  have hrecut := D.isRecut_recut hone hfirst hsecond
+  rcases hrecut.orientation with hdata | hdata | hdata | hdata
+  · apply False.elim
+    apply D.sideColumns_ne_of_hasOneCommonSide hone
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hdata.side_eq,
+      hcommon]
+  · exact hdata
+  · exact (D.first.left_ne_right (hdata.side_eq.trans hcommon.symm)).elim
+  · exact (D.second.left_ne_right (hdata.side_eq.symm.trans hcommon)).elim
+
+/-- In a common-terminal-side decomposition, exactly one rectangle in its recut has the original
+second rectangle's terminal side. -/
+theorem recut_first_or_second_right_eq_second_right (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.right) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    let E := D.recut hone hfirst hsecond
+    (E.first.right = D.second.right ∧ E.second.right ≠ D.second.right) ∨
+      (E.first.right ≠ D.second.right ∧ E.second.right = D.second.right) := by
+  let E := D.recut hone hfirst hsecond
+  dsimp only
+  have hdata := D.isRecutOfRightEqRight_recut hcommon hone hfirst hsecond
+  rcases hdata.recut_branch with ⟨-, -, hfirst, hsecond⟩ | ⟨-, -, hfirst, hsecond⟩
+  · right
+    refine ⟨?_, ?_⟩
+    · intro h
+      rw [hfirst] at h
+      rw [← hcommon] at h
+      exact D.first.left_ne_right h
+    · exact hsecond.trans hcommon
+  · left
+    refine ⟨hfirst.trans hcommon, ?_⟩
+    intro h
+    rw [hsecond] at h
+    exact D.second.left_ne_right h
+
 /-- The recut of a decomposition again shares exactly one side column. -/
 theorem hasOneCommonSide_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
