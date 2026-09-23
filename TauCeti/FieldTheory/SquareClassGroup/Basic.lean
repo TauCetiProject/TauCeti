@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Even
 public import Mathlib.Algebra.Module.ZMod
-public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 
 /-!
@@ -31,8 +30,6 @@ square. So linear independence of the classes is the **Finset form** of square-c
   products and powers.
 * `TauCeti.squareClass_eq_iff_isSquare_mul`: equality of square classes read as a square product.
 * `TauCeti.SquareClassGroup.two_nsmul_eq_zero`: the square-class group is killed by two.
-* `TauCeti.isAddKleinFour_squareClassGroup_of_natCard_eq_four`: a square-class group with four
-  elements is a Klein four-group.
 * `TauCeti.linearIndependent_squareClass_iff`: the classes of `d : ι → Kˣ` are `ZMod 2`-linearly
   independent iff no nonempty subset product is a square.
 -/
@@ -56,16 +53,6 @@ instance : Module (ZMod 2) (SquareClassGroup K) :=
   QuotientAddGroup.zmodModule fun x => by
     rw [Additive.mem_toAddSubgroup, Subgroup.mem_square, toMul_nsmul]
     exact ⟨Additive.toMul x, pow_two _⟩
-
-/-- A square-class group with four elements is a Klein four-group. -/
-theorem isAddKleinFour_squareClassGroup_of_natCard_eq_four
-    (hcard : Nat.card (SquareClassGroup K) = 4) :
-    IsAddKleinFour (SquareClassGroup K) := by
-  let _ : Finite (SquareClassGroup K) := Nat.finite_of_card_ne_zero (by omega)
-  let _ : Nontrivial (SquareClassGroup K) :=
-    Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  exact ⟨hcard, (AddMonoid.exponent_eq_prime_iff Nat.prime_two).mpr fun g hg ↦
-    addOrderOf_eq_prime (ZModModule.char_nsmul_eq_zero 2 g) hg⟩
 
 /-- The square class of a unit. -/
 def squareClass (u : Kˣ) : SquareClassGroup K :=

@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.SpecificGroups.KleinFour
-
+public import TauCeti.Algebra.Group.ElementaryTwoQuotient.KleinFour
 public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup
 public import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # The square classes of a nonarchimedean local field
@@ -53,6 +53,8 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   exhaust the square-class group.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two`: every element of `Kˣ` agrees, up to a square,
   with one of `1`, `u`, `π`, `u π`.
+* `TauCeti.exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two`: the unit `u`
+  can be chosen with nonsquare residue, as required by the representative classification.
 * `TauCeti.isSquare_or_isSquare_mul_of_isUnit_two`: an element of even valuation is a square or
   `u` times a square.
 
@@ -65,7 +67,7 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 
 public section
 
-open ValuativeRel IsNonarchimedeanLocalField
+open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
 
 namespace TauCeti
 
@@ -125,8 +127,7 @@ theorem natCard_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
 is a Klein four-group. -/
 theorem isAddKleinFour_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
     IsAddKleinFour (SquareClassGroup K) :=
-  isAddKleinFour_squareClassGroup_of_natCard_eq_four
-    (natCard_squareClassGroup_of_isUnit_two h2)
+  isAddKleinFour_of_natCard_eq_four (natCard_squareClassGroup_of_isUnit_two h2)
 
 /-- For a nonsquare `u` of even valuation and a uniformizer `π`, the square classes of
 `1`, `u`, `π`, and `u * π` are pairwise distinct. -/
@@ -192,6 +193,38 @@ theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : K�
   · exact ⟨u, by simp, (squareClass_eq_iff_isSquare_mul a u).mp h⟩
   · exact ⟨π, by simp, (squareClass_eq_iff_isSquare_mul a π).mp h⟩
   · exact ⟨u * π, by simp, (squareClass_eq_iff_isSquare_mul a (u * π)).mp h⟩
+
+/-- **The four square classes with the unramified unit chosen explicitly.** Away from residue
+characteristic two, for every uniformizer `π` there is a unit `u` of `𝒪[K]` whose residue is
+a nonsquare, and `1`, `u`, `π`, `u π` represent all four square classes. -/
+theorem exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two
+    (h2 : IsUnit (2 : 𝒪[K])) {π : Kˣ} (hπ : IsUniformizer K π) :
+    ∃ u : 𝒪[K]ˣ,
+      ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) ∧
+      ∀ a : Kˣ, ∃ r ∈ ({1, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u,
+          π, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u * π} : Set Kˣ),
+        IsSquare (a * r) := by
+  have h2K : (2 : K) ≠ 0 := by
+    intro h
+    apply h2.ne_zero
+    exact Subtype.ext h
+  obtain ⟨x, hx, hxsq⟩ := exists_mem_unitFiltration_not_isSquare h2K
+  have hx0 : x ∈ unitFiltration K 0 := unitFiltration_antitone (Nat.zero_le _) hx
+  let x0 : unitFiltration K 0 := ⟨x, hx0⟩
+  let u : 𝒪[K]ˣ := unitFiltrationToIntegerUnits 0 x0
+  have hu_map : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u = x := by
+    simp [u, x0]
+  refine ⟨u, ?_, fun a ↦ ?_⟩
+  · rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
+    exact hxsq
+  · apply exists_isSquare_mul_of_isUnit_two h2 hπ
+    · have hxval : (normalizedValuation K x).toAdd = 0 := by
+        apply toAdd_eq_zero.mpr
+        rw [normalizedValuation_eq_one_iff]
+        exact (mem_unitFiltration_zero x).mp hx0
+      rw [hu_map, hxval]
+      exact ⟨0, by simp⟩
+    · rwa [hu_map]
 
 /-- **The even-valuation square classes away from residue characteristic two.** An element of
 even valuation is a square, or `u` times a square, for any fixed nonsquare `u` of even
