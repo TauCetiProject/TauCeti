@@ -230,6 +230,23 @@ noncomputable def homOfRationalSubsetSubset (Aplus : Subring A)
     (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower
       q.num q.den _ q.hasDenominatorPower h)
 
+/-- The comparison morphism is the comparison ring homomorphism
+`ringHomOfRationalSubsetSubset`, packaged by `completionLocObjHom`. The body of
+`homOfRationalSubsetSubset` is not exposed, so this is how a consumer reaches the underlying ring
+homomorphism, through `completionLocObjHom_hom`. -/
+theorem homOfRationalSubsetSubset_def (Aplus : Subring A)
+    (hAplus : ∀ ⦃a : A⦄, a ∈ Aplus → IsPowerBounded a) {P : PairOfDefinition A}
+    {p q : Presentation P}
+    (h : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den) :
+    homOfRationalSubsetSubset Aplus hAplus h =
+      completionLocObjHom P p.num p.den _ p.hasDenominatorPower q.num q.den _
+        q.hasDenominatorPower
+        (ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower q.num
+          q.den _ q.hasDenominatorPower h)
+        (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _
+          p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower h) :=
+  (rfl)
+
 /-- The comparison morphism of `R(p) ⊆ R(p)` is the identity. -/
 @[simp]
 theorem homOfRationalSubsetSubset_self (Aplus : Subring A)
