@@ -57,6 +57,9 @@ namespace TauCeti
 
 attribute [local instance] Polynomial.Gal.splits_ℚ_ℂ
 
+-- The certificate predicates below implement the Layer 6 interface in the
+-- PolynomialGaloisGroups roadmap:
+-- https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/PolynomialGaloisGroups/README.md
 /-- A good-prime factorization item: `p` is prime, does not divide the discriminant of `f`, and
 the irreducible factors of `f` modulo `p` have degrees `t`, with multiplicity. -/
 def HasFactorDegrees (f : ℤ[X]) (p : ℕ) (t : Multiset ℕ) : Prop :=
