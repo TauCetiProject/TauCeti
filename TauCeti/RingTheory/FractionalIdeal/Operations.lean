@@ -65,6 +65,7 @@ theorem canonicalEquiv_eq_ringEquivOfRingEquiv (K K' : Type*) [CommRing K] [Comm
 
 /-- Transport of a `coeIdeal` along `FractionalIdeal.ringEquivOfRingEquiv f` is the `coeIdeal` of
 the pushforward ideal `Ideal.map f`. This is the fraction-field shadow of `Ideal.map`. -/
+@[simp]
 theorem ringEquivOfRingEquiv_coeIdeal (K L : Type*)
     [CommRing K] [CommRing L] [Algebra R K] [Algebra R' L] [IsFractionRing R K]
     [IsFractionRing R' L] (f : R ≃+* R')

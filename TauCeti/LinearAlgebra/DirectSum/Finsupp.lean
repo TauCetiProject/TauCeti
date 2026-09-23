@@ -29,6 +29,7 @@ variable {R : Type*} [CommSemiring R] {ι : Type*} [DecidableEq ι] {N N' : Type
 
 /-- The coefficients of `(1 ⊗ g) t` in `(ι →₀ R) ⊗ N'` are the images under `g` of the
 coefficients of `t`. -/
+@[simp]
 lemma finsuppScalarLeft_lTensor_apply (g : N →ₗ[R] N') (t : (ι →₀ R) ⊗[R] N) (i : ι) :
     finsuppScalarLeft R N' ι (g.lTensor _ t) i = g (finsuppScalarLeft R N ι t i) := by
   induction t using TensorProduct.induction_on with

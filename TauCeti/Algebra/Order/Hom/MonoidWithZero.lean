@@ -28,6 +28,7 @@ variable {G H K : Type*} [Group G] [PartialOrder G] [Group H] [PartialOrder H]
   [Group K] [PartialOrder K]
 
 /-- The inverse of `OrderMonoidIso.withZero` is compatible with composition. -/
+@[simp]
 theorem withZero_symm_trans (A : WithZero G ≃*o WithZero H) (B : WithZero H ≃*o WithZero K) :
     (withZero.symm A).trans (withZero.symm B) = withZero.symm (A.trans B) := by
   ext x
