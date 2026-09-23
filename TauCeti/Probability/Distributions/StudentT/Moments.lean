@@ -29,6 +29,8 @@ exactly for `-1 < q < ν`; the exponential-moment statements read off that sharp
 
 ## Main results
 
+* `integrable_pow_studentTMeasure_iff` — within the nondegenerate family, a natural power is
+  integrable exactly when its degree is less than the degrees of freedom;
 * `integrable_id_studentTMeasure_iff` and `integral_id_studentTMeasure` — within the nondegenerate
   family the mean exists exactly when `1 < ν`, while its Bochner integral is zero for every
   parameter;
@@ -119,7 +121,10 @@ private lemma studentTPDFReal_abs (ν x : ℝ) : studentTPDFReal ν |x| = studen
   · rw [abs_of_nonneg hx]
   · rw [abs_of_nonpos hx, studentTPDFReal_neg]
 
-private theorem integrable_pow_studentTMeasure_iff (hν : 0 < ν) (q : ℕ) :
+/-- A natural power is integrable under a nondegenerate Student t law exactly when its degree is
+less than the degrees of freedom. -/
+@[simp]
+theorem integrable_pow_studentTMeasure_iff (hν : 0 < ν) (q : ℕ) :
     Integrable (fun x : ℝ => x ^ q) (studentTMeasure ν) ↔ (q : ℝ) < ν := by
   constructor
   · intro hint
@@ -145,7 +150,7 @@ degrees of freedom exceeds one. -/
 @[simp]
 theorem integrable_id_studentTMeasure_iff (hν : 0 < ν) :
     Integrable id (studentTMeasure ν) ↔ 1 < ν := by
-  change Integrable (fun x : ℝ => x) (studentTMeasure ν) ↔ 1 < ν
+  delta id
   simpa only [pow_one, Nat.cast_one] using integrable_pow_studentTMeasure_iff hν 1
 
 /-- The Bochner integral of the identity under a Student t measure is zero for every parameter,
