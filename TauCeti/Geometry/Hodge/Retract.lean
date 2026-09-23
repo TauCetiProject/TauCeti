@@ -200,7 +200,7 @@ noncomputable def substructureRetractionOfIsCompl (h : IsCompl W W') :
             (RationalHodgeSubstructure.isCompl_iff_WQ.1 h)).codRestrict W.WQ
               (fun x ↦ Submodule.projection_apply_mem _ x) := by
         ext x
-        rfl
+        simp only [LinearMap.codRestrict_apply, Submodule.coe_projectionOnto_apply]
       rw [heq]
       exact hc
 
@@ -232,7 +232,7 @@ theorem substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero
   rw [comp_toRatLinearMap, zero_toRatLinearMap,
     substructureRetractionOfIsCompl_toRatLinearMap, substructureInclusion_toRatLinearMap]
   ext x
-  change W.WQ.projectionOnto W'.WQ _ (U.WQ.subtype x) = 0
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply]
   exact Submodule.projectionOnto_apply_of_mem_right _ (hU x.property)
 
 /-- Retraction along a complementary substructure followed by inclusion is the corresponding
@@ -243,7 +243,7 @@ theorem substructureRetractionOfIsCompl_comp_substructureInclusion_toRatLinearMa
       W.WQ.projection W'.WQ (RationalHodgeSubstructure.isCompl_iff_WQ.1 h) := by
   rw [comp_toRatLinearMap, substructureRetractionOfIsCompl_toRatLinearMap,
     substructureInclusion_toRatLinearMap]
-  rfl
+  rw [Submodule.projection]
 
 variable (P : Polarization X.isBaseChangeComplex X.hs)
 

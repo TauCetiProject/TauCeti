@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Hodge.Orthogonal
 public import TauCeti.Geometry.Hodge.Prod
 public import TauCeti.Geometry.Hodge.Retract
 public import TauCeti.Order.Atoms
+public import TauCeti.Order.SupIndep
 public import Mathlib.CategoryTheory.Simple
 
 /-!
@@ -233,20 +234,14 @@ theorem simple_of_isAtom
   · -- An isomorphism is nonzero: were the zero morphism surjective, `U` would be `⊥`.
     intro hfiso hfzero
     have hsurj := (isIso_iff_bijective f).1 hfiso |>.2
+    have hfmap : f.hom.toRatLinearMap = 0 := by
+      rw [hfzero, zero_toRatLinearMap]
     apply hU.ne_bot
     apply RationalHodgeSubstructure.ext
-    ext x
-    simp only [RationalHodgeSubstructure.bot_WQ, Submodule.mem_bot]
-    constructor
-    · intro hx
-      obtain ⟨y, hy⟩ := hsurj (⟨x, hx⟩ : (ofSubstructure X U).ratCarrier)
-      have hfmap : f.hom.toRatLinearMap = 0 := by
-        rw [hfzero, zero_toRatLinearMap]
-      have : (⟨x, hx⟩ : (ofSubstructure X U).ratCarrier) = 0 := by
-        rw [← hy, hfmap, LinearMap.zero_apply]
-      exact congrArg Subtype.val this
-    · rintro rfl
-      exact U.WQ.zero_mem
+    rw [RationalHodgeSubstructure.bot_WQ]
+    exact Submodule.subsingleton_iff_eq_bot.1 ((Submodule.subsingleton_iff ℚ).1
+      (subsingleton_iff_bot_eq_top.1
+        (LinearMap.range_zero.symm.trans (hfmap ▸ LinearMap.range_eq_top.2 hsurj))))
   · -- A nonzero monomorphism is injective by assumption and surjective by the range argument.
     intro hfzero
     exact (isIso_iff_bijective f).2
@@ -255,29 +250,41 @@ theorem simple_of_isAtom
 /-- The map from the ambient object to the biproduct given by projection onto each member of an
 independent spanning family along the supremum of the other members. -/
 noncomputable def substructureBiproductLift
+    [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) :
-    X ⟶ (⨁ fun U : s ↦ ofSubstructure X U.1) := by
-  classical
-  exact biproduct.lift fun U ↦
+    X ⟶ (⨁ fun U : s ↦ ofSubstructure X U.1) :=
+  biproduct.lift fun U ↦
     substructureRetractionOfIsCompl X U.1 ((s.erase U.1).sup id)
       (hind.isCompl_sup_erase htop U.2)
+
+/-- Each component of the lift from an independent spanning family is projection along the
+supremum of the other substructures. -/
+@[reassoc (attr := simp)]
+theorem substructureBiproductLift_π
+    [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
+    (hind : s.SupIndep id) (htop : s.sup id = ⊤) (U : s) :
+    substructureBiproductLift X s hind htop ≫
+        biproduct.π (fun U : s ↦ ofSubstructure X U.1) U =
+      substructureRetractionOfIsCompl X U.1 ((s.erase U.1).sup id)
+        (hind.isCompl_sup_erase htop U.2) := by
+  apply biproduct.lift_π
 
 /-- The canonical map out of an independent spanning biproduct followed by its projection map is
 the identity. -/
 @[reassoc (attr := simp)]
 theorem substructureBiproductDesc_comp_substructureBiproductLift
+    [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) :
     substructureBiproductDesc X s ≫ substructureBiproductLift X s hind htop = 𝟙 _ := by
-  classical
   apply biproduct.hom_ext'
   intro U
   apply biproduct.hom_ext
   intro T
-  simp only [substructureBiproductDesc, substructureBiproductLift,
-    biproduct.ι_desc_assoc]
-  rw [Category.assoc, biproduct.lift_π, Category.comp_id, biproduct.ι_π]
+  simp only [substructureBiproductDesc, biproduct.ι_desc_assoc]
+  rw [Category.assoc, substructureBiproductLift_π, Category.comp_id, biproduct.ι_π]
   by_cases hUT : U = T
   · subst T
     rw [substructureInclusion_comp_substructureRetractionOfIsCompl]
@@ -285,10 +292,8 @@ theorem substructureBiproductDesc_comp_substructureBiproductLift
   · rw [substructureInclusion_comp_substructureRetractionOfIsCompl_eq_zero X T.1
       ((s.erase T.1).sup id) (U := U.1) (hind.isCompl_sup_erase htop T.2)]
     · simp [hUT]
-    · exact (Finset.le_sup (f := fun W : RationalHodgeSubstructure
-        X.isBaseChangeRat X.hs ↦ W)
-        (Finset.mem_erase.2 ⟨fun h ↦ hUT (Subtype.ext h), U.2⟩) :
-          U.1 ≤ (s.erase T.1).sup id)
+    · exact Finset.le_sup (f := id)
+        (Finset.mem_erase.2 ⟨fun h ↦ hUT (Subtype.ext h), U.2⟩)
 
 /-- The canonical map from an independent spanning biproduct is surjective on rational
 carriers. -/
@@ -316,6 +321,7 @@ theorem isIso_substructureBiproductDesc
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
     (hind : s.SupIndep id) (htop : s.sup id = ⊤) :
     IsIso (substructureBiproductDesc X s) := by
+  classical
   let _ : IsSplitMono (substructureBiproductDesc X s) := IsSplitMono.mk' ⟨
     substructureBiproductLift X s hind htop,
     substructureBiproductDesc_comp_substructureBiproductLift X s hind htop⟩
@@ -342,6 +348,19 @@ theorem substructureBiproductIso_hom
     (substructureBiproductIso X s hind htop).hom = substructureBiproductDesc X s := by
   rw [substructureBiproductIso, asIso_hom]
 
+/-- The inverse of the biproduct isomorphism is the lift of the complementary retractions. -/
+@[simp]
+theorem substructureBiproductIso_inv
+    [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
+    (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
+    (hind : s.SupIndep id) (htop : s.sup id = ⊤) :
+    (substructureBiproductIso X s hind htop).inv =
+      substructureBiproductLift X s hind htop := by
+  let _ := isIso_substructureBiproductDesc X s hind htop
+  rw [substructureBiproductIso, asIso_inv]
+  exact (IsIso.eq_inv_of_hom_inv_id
+    (substructureBiproductDesc_comp_substructureBiproductLift X s hind htop)).symm
+
 /-- The isomorphism from an independent spanning family restricts on each summand to its
 substructure inclusion. -/
 @[reassoc]
@@ -364,13 +383,7 @@ theorem substructureBiproductIso_inv_comp_biproduct_π
         biproduct.π (fun U : s ↦ ofSubstructure X U.1) U =
       substructureRetractionOfIsCompl X U.1 ((s.erase U.1).sup id)
         (hind.isCompl_sup_erase htop U.2) := by
-  let _ := isIso_substructureBiproductDesc X s hind htop
-  rw [substructureBiproductIso, asIso_inv,
-    ← IsIso.eq_inv_of_hom_inv_id
-      (substructureBiproductDesc_comp_substructureBiproductLift X s hind htop),
-    substructureBiproductLift, biproduct.lift_π]
-  congr
-  apply Subsingleton.elim
+  rw [substructureBiproductIso_inv, substructureBiproductLift_π]
 
 /-- **Categorical semisimplicity of polarizable rational Hodge structures.** Every object is
 isomorphic to a finite biproduct of simple objects induced by rational Hodge substructures. -/

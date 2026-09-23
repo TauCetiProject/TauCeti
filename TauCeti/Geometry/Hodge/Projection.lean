@@ -86,9 +86,7 @@ theorem isIdempotentElem_projection : IsIdempotentElem (projection P W) :=
 theorem projection_eq_submodule_projection :
     projection P W =
       W.WQ.projection (orthogonal P W).WQ (isCompl_WQ_orthogonal_WQ P W) :=
-  by
-    have h := LinearMap.IsIdempotentElem.eq_projection (isIdempotentElem_projection P W)
-    simpa only [range_projection, ker_projection] using h
+  by rw [projection]
 
 /-- The Hodge projector fixes the rational Hodge substructure it projects onto. -/
 @[simp]

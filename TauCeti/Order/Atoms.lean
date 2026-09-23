@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Atoms
-public import TauCeti.Order.SupIndep
+public import Mathlib.Order.SupIndep
 
 /-!
 # Finite atom decompositions in a complemented modular lattice
