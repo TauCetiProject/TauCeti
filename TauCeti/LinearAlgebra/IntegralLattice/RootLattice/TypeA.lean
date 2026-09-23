@@ -532,14 +532,6 @@ theorem typeAStandardQuadraticModule_two_quadratic (a : ZMod 3) :
     rw [show (4 / 3 : ℚ) = 1 + 1 / 3 by norm_num, AddCircle.coe_add]
     norm_num
 
-/-- The polar pairing of the `A₂` discriminant form on integer representatives is `2ab/3`. -/
-theorem typeAStandardQuadraticModule_two_pairing_intCast (a b : ℤ) :
-    (typeAStandardQuadraticModule 2).toFiniteBilinearModule.pairing
-        (a : ZMod 3) (b : ZMod 3) =
-      (((2 * (a : ℚ) * (b : ℚ)) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
-  convert typeAStandardQuadraticModule_pairing_intCast 2 a b using 1
-  ring_nf
-
 /-- The polar pairing of arbitrary symbols in the `A₂` discriminant form is `2ab/3`, using
 their canonical representatives in `{0, 1, 2}`. -/
 @[simp]
@@ -550,8 +542,10 @@ theorem typeAStandardQuadraticModule_two_pairing (a b : ZMod 3) :
     exact_mod_cast ZMod.natCast_rightInverse a
   have hb : (((b.val : ℤ) : ZMod 3)) = b := by
     exact_mod_cast ZMod.natCast_rightInverse b
-  rw [← ha, ← hb, typeAStandardQuadraticModule_two_pairing_intCast]
+  conv_lhs => rw [← ha, ← hb]
+  rw [typeAStandardQuadraticModule_pairing_intCast]
   norm_num
+  ring_nf
 
 /-- The generator of the cyclic model has quadratic value `n / (2 (n + 1))`. -/
 @[simp]
