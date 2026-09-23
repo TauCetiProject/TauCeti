@@ -63,7 +63,7 @@ variable {D : ℕ} [NeZero D]
 `a x² + b x y + c y²` of discriminant `-D`. -/
 noncomputable def root (f : posDef D) : ℍ :=
   ⟨⟨-(f.1.b : ℝ) / (2 * f.1.a), √(D : ℝ) / (2 * f.1.a)⟩,
-    div_pos (Real.sqrt_pos.2 <| Nat.cast_pos.2 <| NeZero.pos D) (by have := f.2.2; positivity)⟩
+    by have := NeZero.pos D; have := f.2.2; positivity⟩
 
 @[simp]
 theorem re_root (f : posDef D) : (root f).re = -(f.1.b : ℝ) / (2 * f.1.a) :=
