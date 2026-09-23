@@ -257,7 +257,7 @@ theorem _root_.LieIdeal.isNilpotent_iff_exists_envelopingIdeal_pow_smul_top_eq_b
       ∃ n : ℕ, I.envelopingIdeal ^ n • (⊤ : Submodule U M) = ⊥ := by
   rw [LieModule.isNilpotent_iff R]
   refine exists_congr fun n ↦ ?_
-  rw [← I.lcs_eq_bot_iff M n]
+  rw [← LieIdeal.lcs_eq_bot_iff I M n]
   let e := UniversalEnvelopingAlgebra.lieSubmoduleOrderIso hcompat
   constructor
   · intro hn
