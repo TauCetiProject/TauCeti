@@ -44,7 +44,7 @@ open IntermediateField MulAction
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- The action of the automorphism group of `L / K` on its intermediate fields. -/
-instance : MulAction (L ≃ₐ[K] L) (IntermediateField K L) where
+instance instMulActionIntermediateField : MulAction (L ≃ₐ[K] L) (IntermediateField K L) where
   smul σ E := E.map σ.toAlgHom
   one_smul E := by
     change E.map (AlgHom.id K L) = E
@@ -73,7 +73,6 @@ section Galois
 
 /-- The Galois correspondence carries a conjugate field to the conjugate of its fixing
 subgroup. -/
-@[simp]
 theorem fixingSubgroup_smul (E : IntermediateField K L) (σ : L ≃ₐ[K] L) :
     (σ • E).fixingSubgroup = E.fixingSubgroup.map (MulAut.conj σ) := by
   rw [smul_intermediateField_def, IsGalois.map_fixingSubgroup]
