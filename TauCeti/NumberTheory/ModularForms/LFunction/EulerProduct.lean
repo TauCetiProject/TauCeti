@@ -46,6 +46,12 @@ namespace HeckeRing.GL2.Eigenform
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
+private theorem prime_cpow_sub (p : Nat.Primes) (k : ℤ) (s : ℂ) :
+    (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s) = (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) := by
+  rw [sub_eq_add_neg _ (2 * s), ← neg_mul,
+    Complex.cpow_add _ _ (by exact_mod_cast p.prop.ne_zero), ← Complex.cpow_intCast,
+    Int.cast_sub, Int.cast_one]
+
 /-- For a normalized full eigenform, the quadratic Euler factor times its prime-power sum is
 `1` in the half-plane of absolute convergence. -/
 theorem LSeries_localFactor_mul_tsum_eq_one (f : Eigenform N k)
@@ -63,14 +69,10 @@ theorem LSeries_localFactor_mul_tsum_eq_one (f : Eigenform N k)
   have H := TauCeti.LSeries_localFactor_mul_tsum_eq_one_of_recurrence
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1))
     h₁ p (f.qExpansion_coeff_prime_pow_add_two h₁ p.prop) hsum
-  have hpow :
-      (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s) = (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) := by
-    rw [sub_eq_add_neg _ (2 * s), ← neg_mul,
-      Complex.cpow_add _ _ (by exact_mod_cast p.prop.ne_zero), ← Complex.cpow_intCast,
-      Int.cast_sub, Int.cast_one]
-  simpa only [mul_assoc, hpow] using H
+  simpa only [mul_assoc, prime_cpow_sub] using H
 
 /-- The prime-power sum of a normalized full eigenform is the inverse quadratic Euler factor. -/
+@[simp]
 theorem LSeries_localFactor_tsum (f : Eigenform N k)
     (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) (p : Nat.Primes)
     {s : ℂ} (hs : (k : ℝ) / 2 + 1 < s.re) :
@@ -113,13 +115,7 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
   have H := TauCeti.LSeries_eulerProduct_hasProd_of_recurrence
     (c := fun p ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) p * (p : ℂ) ^ (k - 1)) h₁
     (f.qExpansion_coeff_mul h₁) (fun p hp r ↦ f.qExpansion_coeff_prime_pow_add_two h₁ hp r) hsum
-  -- `p ^ (k - 1) * p ^ (-2 s) = p ^ (k - 1 - 2 s)`
-  have hpow (p : Nat.Primes) :
-      (p : ℂ) ^ (k - 1) * (p : ℂ) ^ (-2 * s) = (p : ℂ) ^ ((k : ℂ) - 1 - 2 * s) := by
-    rw [sub_eq_add_neg _ (2 * s), ← neg_mul,
-      Complex.cpow_add _ _ (by exact_mod_cast p.prop.ne_zero), ← Complex.cpow_intCast,
-      Int.cast_sub, Int.cast_one]
-  simpa only [mul_assoc, hpow] using H
+  simpa only [mul_assoc, prime_cpow_sub] using H
 
 /-- **The Euler product of a normalized Hecke eigenform**, as an equality with `∏'`: for a full
 Hecke eigenform `f` with `a₁(f) = 1` and `Re s > k/2 + 1`,
