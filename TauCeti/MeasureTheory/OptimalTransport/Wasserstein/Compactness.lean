@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Prokhorov
-public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Moment
 
 /-!
@@ -46,15 +45,16 @@ compactness for the weak topology on `ProbabilityMeasure X`.
 
 ## Main statements
 
-* `TauCeti.WassersteinSpace.isCompact_closure_of_isTightMeasureSet` — a tight set with uniformly
-  small `p`-moment tails is relatively compact, on a separable metric space;
-* `TauCeti.WassersteinSpace.isTightMeasureSet_of_isCompact_closure` — a relatively compact set is
+* `isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le`
+  — a tight set with uniformly small `p`-moment tails is relatively compact, on a separable metric
+  space;
+* `isTightMeasureSet_of_isCompact_closure` — a relatively compact set is
   tight, on a complete separable pseudometric space;
-* `TauCeti.WassersteinSpace.exists_setLIntegral_edist_rpow_le_of_isCompact_closure` — a relatively
+* `exists_setLIntegral_edist_rpow_le_of_isCompact_closure` — a relatively
   compact set has uniformly small `p`-moment tails about every basepoint;
-* `TauCeti.WassersteinSpace.isCompact_closure_iff_isTightMeasureSet` and
-  `TauCeti.WassersteinSpace.isCompact_iff_isClosed_isTightMeasureSet` — the resulting
-  characterizations of relatively compact and of compact sets.
+* `isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le` and
+  `isCompact_iff_isClosed_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le`
+  — the resulting characterizations of relatively compact and of compact sets.
 
 ## References
 
@@ -72,6 +72,15 @@ namespace TauCeti
 
 namespace WassersteinSpace
 
+private theorem setOf_toMeasure_eq_image {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+    {p : ℝ≥0∞}
+    (S : Set (WassersteinSpace p X)) :
+    {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} =
+      (fun μ : ProbabilityMeasure X ↦ (μ : Measure X)) ''
+        ((fun μ : WassersteinSpace p X ↦ (μ : ProbabilityMeasure X)) '' S) := by
+  ext
+  simp
+
 section Necessity
 
 variable {X : Type*} {p : ℝ≥0∞} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
@@ -84,9 +93,8 @@ theorem isTightMeasureSet_of_isCompact_closure [CompleteSpace X] {S : Set (Wasse
     IsTightMeasureSet {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} := by
   have hS' : IsCompact (closure ((↑) '' S : Set (ProbabilityMeasure X))) :=
     (hS.image continuous_toProbabilityMeasure).closure_of_subset (image_mono subset_closure)
-  convert MeasureTheory.isTightMeasureSet_of_isCompact_closure hS' using 1
-  ext
-  simp
+  rw [setOf_toMeasure_eq_image]
+  exact MeasureTheory.isTightMeasureSet_of_isCompact_closure hS'
 
 /-- **A relatively compact set of the Wasserstein space has uniformly integrable moments.** For a
 finite exponent `1 ≤ p < ∞`, the `p`-moments about any basepoint of the laws of a relatively
@@ -110,68 +118,6 @@ theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure (hp : p ≠ ∞)
 
 end Necessity
 
-section OpenTails
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {q : ℝ}
-
-/-- The part of a moment coming from the open region beyond a radius is a weakly lower
-semicontinuous function of the law, its integrand being lower semicontinuous. -/
-private theorem lowerSemicontinuous_setLIntegral_edist_rpow (x : X) (r : ℝ≥0) :
-    LowerSemicontinuous fun ν : ProbabilityMeasure X ↦
-      ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂(ν : Measure X) := by
-  have hU : IsOpen {y | r < nndist x y} :=
-    isOpen_lt continuous_const (continuous_const.nndist continuous_id)
-  have hG : Continuous fun y ↦ edist x y ^ q :=
-    ENNReal.continuous_rpow_const.comp (continuous_const.edist continuous_id)
-  simp_rw [← lintegral_indicator hU.measurableSet]
-  refine lowerSemicontinuous_lintegral_probabilityMeasure <|
-    lowerSemicontinuous_iff_isOpen_preimage.2 fun a ↦ ?_
-  convert hU.inter ((isOpen_Ioi (a := a)).preimage hG) using 1
-  ext y
-  by_cases hy : r < nndist x y <;> simp [hy]
-
-/-- A moment of a probability measure is at most the `q`-th power of a radius plus the part of the
-moment coming from the open region beyond that radius. -/
-private theorem lintegral_edist_rpow_le_add (hq : 0 ≤ q) (ν : Measure X) [IsProbabilityMeasure ν]
-    (x : X) (r : ℝ≥0) :
-    ∫⁻ y, edist x y ^ q ∂ν ≤ (r : ℝ≥0∞) ^ q + ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂ν := by
-  have hU : MeasurableSet {y | r < nndist x y} :=
-    measurableSet_lt measurable_const (continuous_const.nndist continuous_id).measurable
-  calc ∫⁻ y, edist x y ^ q ∂ν
-      ≤ ∫⁻ y, (r : ℝ≥0∞) ^ q + {y | r < nndist x y}.indicator (fun y ↦ edist x y ^ q) y ∂ν := by
-        refine lintegral_mono fun y ↦ ?_
-        by_cases hy : r < nndist x y
-        · simp [hy]
-        · rw [indicator_of_notMem (s := {y | r < nndist x y}) hy, add_zero, edist_nndist]
-          gcongr
-          exact_mod_cast not_lt.1 hy
-    _ = (r : ℝ≥0∞) ^ q + ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂ν := by
-        rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
-          lintegral_indicator hU]
-
-/-- Along a weakly convergent family of laws whose `q`-moments have uniformly small tails over the
-open regions beyond some radii, the `q`-moments converge to the `q`-moment of the limit. -/
-private theorem tendsto_lintegral_edist_rpow (hq : 0 < q) {γ : Type*} {L : Filter γ}
-    {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X} (h : Tendsto μs L (𝓝 μ)) (x : X)
-    (htail : ∀ ε : ℝ≥0∞, 0 < ε → ∃ r : ℝ≥0, ∀ᶠ i in L,
-      ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂(μs i : Measure X) ≤ ε) :
-    Tendsto (fun i ↦ ∫⁻ y, edist x y ^ q ∂(μs i : Measure X)) L
-      (𝓝 (∫⁻ y, edist x y ^ q ∂(μ : Measure X))) := by
-  have hcoe (y : X) : ((nndist x y ^ q : ℝ≥0) : ℝ≥0∞) = edist x y ^ q := by
-    rw [ENNReal.coe_rpow_of_nonneg _ hq.le, edist_nndist]
-  simp_rw [← hcoe]
-  refine tendsto_lintegral_of_tendsto_probabilityMeasure
-    ((NNReal.continuous_rpow_const hq.le).comp (continuous_const.nndist continuous_id)) h
-    fun ε hε ↦ ?_
-  obtain ⟨r, hr⟩ := htail ε hε
-  refine ⟨(r + 1) ^ q, hr.mono fun i hi ↦ ?_⟩
-  have hsub : {y | (r + 1) ^ q ≤ nndist x y ^ q} ⊆ {y | r < nndist x y} :=
-    fun y hy ↦ (lt_add_one r).trans_le ((NNReal.rpow_le_rpow_iff hq).1 hy)
-  simp_rw [hcoe]
-  exact (lintegral_mono_set hsub).trans hi
-
-end OpenTails
-
 section Sufficiency
 
 variable {X : Type*} {p : ℝ≥0∞} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
@@ -182,7 +128,8 @@ metric space and for a finite exponent `1 ≤ p < ∞`, a set of laws of finite 
 relatively compact in `P_p (X)` as soon as it is tight and its `p`-moments about a basepoint `x`
 have uniformly small tails: for every `ε > 0` there is a radius `R` such that, for every law of the
 set, the part of its `p`-moment coming from distance at least `R` is at most `ε`. -/
-theorem isCompact_closure_of_isTightMeasureSet (hp : p ≠ ∞) (x : X)
+theorem isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le
+    (hp : p ≠ ∞) (x : X)
     {S : Set (WassersteinSpace p X)}
     (hT : IsTightMeasureSet {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S})
     (hU : ∀ ε : ℝ≥0∞, 0 < ε → ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y}, edist x y ^ p.toReal
@@ -192,9 +139,10 @@ theorem isCompact_closure_of_isTightMeasureSet (hp : p ≠ ∞) (x : X)
   choose R hR using hU
   set S' : Set (ProbabilityMeasure X) := (↑) '' S
   have hK : IsCompact (closure S') := _root_.isCompact_closure_of_isTightMeasureSet <| by
-    convert hT using 1
-    ext
-    simp [S']
+    change IsTightMeasureSet ((fun μ : ProbabilityMeasure X ↦ (μ : Measure X)) ''
+      ((fun μ : WassersteinSpace p X ↦ (μ : ProbabilityMeasure X)) '' S))
+    rw [← setOf_toMeasure_eq_image]
+    exact hT
   -- `S` lies in the set `T` of laws in the weak closure of `S` whose tails over the open regions
   -- beyond the radii `R ε` are at most `ε`; it suffices to show that `T` is compact.
   set T : Set (WassersteinSpace p X) := {μ | (μ : ProbabilityMeasure X) ∈ closure S' ∧
@@ -217,14 +165,13 @@ theorem isCompact_closure_of_isTightMeasureSet (hp : p ≠ ∞) (x : X)
       ε).mem_of_tendsto hlim (hFT.mono fun μ hμ ↦ hμ.2 ε hε)
   -- The limit has finite `p`-moment, so it is a point of the Wasserstein space.
   have hνmem : HasFiniteMoment p (ν : Measure X) := by
-    refine hasFiniteMoment_def.2 ⟨x, measurable_edist_right.aestronglyMeasurable, ?_⟩
-    rw [eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp]
-    simp only [enorm_eq_self]
-    refine (lintegral_edist_rpow_le_add ENNReal.toReal_nonneg _ x (R 1 one_pos)).trans_lt ?_
-    exact ENNReal.add_lt_top.2 ⟨by finiteness, (hνT 1 one_pos).trans_lt ENNReal.one_lt_top⟩
+    apply (hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x _).2
+    exact (lintegral_edist_rpow_le_add (q := p.toReal) ENNReal.toReal_nonneg _ x
+      (R 1 one_pos)).trans_lt
+      (ENNReal.add_lt_top.2 ⟨by finiteness, (hνT 1 one_pos).trans_lt ENNReal.one_lt_top⟩) |>.ne
   refine ⟨mk ν hνmem, ⟨by simpa using hνK, fun ε hε ↦ by simpa using hνT ε hε⟩, ?_⟩
   -- Weak convergence and convergence of the `p`-moments give convergence in `W_p`.
-  have hmoment := tendsto_lintegral_edist_rpow (ENNReal.toReal_pos hp0 hp) hlim x
+  have hmoment := tendsto_lintegral_edist_rpow (q := p.toReal) (ENNReal.toReal_pos hp0 hp) hlim x
     fun ε hε ↦ ⟨R ε hε, hFT.mono fun μ hμ ↦ hμ.2 ε hε⟩
   exact (tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral hp x (μs := id)).2
     ⟨by simpa using hlim, by simpa using hmoment⟩
@@ -240,7 +187,8 @@ variable {X : Type*} {p : ℝ≥0∞} [MetricSpace X] [CompleteSpace X] [Measura
 for a finite exponent `1 ≤ p < ∞`, a set of laws of finite `p`-moment is relatively compact in
 `P_p (X)` exactly when it is tight and its `p`-moments about a basepoint `x` have uniformly small
 tails. -/
-theorem isCompact_closure_iff_isTightMeasureSet (hp : p ≠ ∞) (x : X)
+theorem isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le
+    (hp : p ≠ ∞) (x : X)
     {S : Set (WassersteinSpace p X)} :
     IsCompact (closure S) ↔
       IsTightMeasureSet {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} ∧
@@ -248,18 +196,20 @@ theorem isCompact_closure_iff_isTightMeasureSet (hp : p ≠ ∞) (x : X)
           edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≤ ε :=
   ⟨fun h ↦ ⟨isTightMeasureSet_of_isCompact_closure h,
       fun _ hε ↦ exists_setLIntegral_edist_rpow_le_of_isCompact_closure hp h x hε⟩,
-    fun h ↦ isCompact_closure_of_isTightMeasureSet hp x h.1 h.2⟩
+    fun h ↦ isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le hp x h.1
+      h.2⟩
 
 /-- **Compact sets of the Wasserstein space.** On a complete separable metric space and for a
 finite exponent `1 ≤ p < ∞`, a set of laws of finite `p`-moment is compact in `P_p (X)` exactly
 when it is closed, tight, and its `p`-moments about a basepoint `x` have uniformly small tails. -/
-theorem isCompact_iff_isClosed_isTightMeasureSet (hp : p ≠ ∞) (x : X)
+theorem isCompact_iff_isClosed_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le
+    (hp : p ≠ ∞) (x : X)
     {S : Set (WassersteinSpace p X)} :
     IsCompact S ↔ IsClosed S ∧
       IsTightMeasureSet {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} ∧
         ∀ ε : ℝ≥0∞, 0 < ε → ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y},
           edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≤ ε := by
-  rw [← isCompact_closure_iff_isTightMeasureSet hp x]
+  rw [← isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le hp x]
   exact ⟨fun h ↦ ⟨h.isClosed, h.closure⟩,
     fun ⟨hc, h⟩ ↦ hc.closure_eq ▸ h⟩
 
