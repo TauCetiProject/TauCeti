@@ -16,7 +16,7 @@ A function dominated by a strictly decreasing real exponential in the imaginary 
 tends to zero as that coordinate tends to infinity. This supplies the general asymptotic step
 used when exponential decay in a cusp coordinate is converted into vanishing at the cusp.
 
-An exponential growth bound with integer rate `k` also remains valid after increasing `k`. This
+An exponential growth bound with real rate `k` also remains valid after increasing `k`. This
 monotonicity feeds the independence of a cusp Laurent expansion from the chosen growth bound.
 
 -/
@@ -41,16 +41,16 @@ theorem isZeroAtImInfty_of_isBigO_exp_neg {E : Type*} [NormedAddCommGroup E] {f 
   refine hf.trans_tendsto <| (Real.tendsto_exp_atBot.comp ?_).comp tendsto_comap
   exact tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.mpr hc)
 
-/-- An exponential growth bound at `i∞` remains valid after increasing its integer rate. -/
+/-- An exponential growth bound at `i∞` remains valid after increasing its real rate. -/
 theorem isBigO_exp_of_le {E : Type*} [NormedAddCommGroup E]
-    (w : ℝ) (hw : 0 < w) {k k' : ℤ} (hkk' : k ≤ k') {f : ℍ → E}
+    (w : ℝ) (hw : 0 < w) {k k' : ℝ} (hkk' : k ≤ k') {f : ℍ → E}
     (hf : f =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w)) :
-    f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * (k' : ℝ) * z.im / w) := by
+      fun z ↦ Real.exp (2 * Real.pi * k * z.im / w)) :
+    f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * k' * z.im / w) := by
   refine hf.trans (Asymptotics.isBigO_of_le _ fun z ↦ ?_)
   simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
   apply (div_le_div_iff_of_pos_right hw).2
   exact mul_le_mul_of_nonneg_right
-    (mul_le_mul_of_nonneg_left (by exact_mod_cast hkk') (by positivity)) z.im_pos.le
+    (mul_le_mul_of_nonneg_left hkk' (by positivity)) z.im_pos.le
 
 end TauCeti.UpperHalfPlane

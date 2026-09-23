@@ -154,14 +154,6 @@ theorem laurentQExpansion_coeff_neg_eq_valueAtInfty (D : Γ.CuspDatum) (k : ℤ)
   rw [laurentQExpansion_coeff_neg,
     twistedExtension_zero_eq_valueAtInfty D k f hf hhol hbound]
 
-private theorem hasSum_mul_zpow_natCast_sub_iff {a : ℕ → ℂ} {q s : ℂ}
-    (hq : q ≠ 0) (k : ℤ) :
-    HasSum (fun n : ℕ ↦ a n * q ^ ((n : ℤ) - k)) s ↔
-      HasSum (fun n : ℕ ↦ a n * q ^ n) (q ^ k * s) := by
-  have hpow (n : ℕ) : q ^ k * (a n * q ^ ((n : ℤ) - k)) = a n * q ^ n := by
-    rw [mul_left_comm, ← zpow_natCast, ← zpow_add₀ hq, add_sub_cancel]
-  exact (hasSum_mul_left_iff (zpow_ne_zero k hq)).symm.trans (by simp only [hpow])
-
 /-- The Laurent q-expansion converges to the cusp extension throughout the punctured unit disc,
 when reindexed over its potentially nonzero coefficients. -/
 theorem hasSum_laurentQExpansion_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
@@ -175,11 +167,7 @@ theorem hasSum_laurentQExpansion_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : �
       (cuspExtension D f q) := by
   rw [cuspExtension_eq_zpow_mul_twistedExtension_of_ne_zero_of_norm_lt_one
     D k f hf hq hq_norm]
-  rw [show (fun n : ℕ ↦ (laurentQExpansion D k f).coeff ((n : ℤ) - k) *
-    q ^ ((n : ℤ) - k)) = fun n : ℕ ↦
-      (twistedQExpansion D k f).coeff n * q ^ ((n : ℤ) - k) by
-        funext n
-        rw [laurentQExpansion_coeff_natCast_sub]]
+  simp_rw [laurentQExpansion_coeff_natCast_sub]
   apply (hasSum_mul_zpow_natCast_sub_iff hq k).2
   simpa only [← mul_assoc, ← zpow_add₀ hq, add_neg_cancel, zpow_zero, one_mul] using
     hasSum_twistedQExpansion D k f hf hhol hbound hq_norm
@@ -285,7 +273,7 @@ theorem laurentQExpansion_coeff_natCast_sub_of_le (D : Γ.CuspDatum) {k k' : ℤ
     (laurentQExpansion D k f).coeff ((n : ℤ) - k') =
       (twistedQExpansion D k' f).coeff n := by
   have hbound' := TauCeti.UpperHalfPlane.isBigO_exp_of_le
-    D.width D.width_pos hkk' hbound
+    D.width D.width_pos (k := (k : ℝ)) (k' := (k' : ℝ)) (by exact_mod_cast hkk') hbound
   have hunique := laurentQExpansion_coeff_unique D k' f hf hhol hbound'
     (c := fun j ↦ (laurentQExpansion D k f).coeff j)
     (fun j hj ↦ laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (by omega))
@@ -303,7 +291,8 @@ theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : ℍ → 
   apply HahnSeries.ext
   funext j
   exact laurentQExpansion_coeff_unique D k' f hf hhol
-    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width D.width_pos hkk' hbound)
+    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width D.width_pos
+      (k := (k : ℝ)) (k' := (k' : ℝ)) (by exact_mod_cast hkk') hbound)
     (fun j hj ↦ laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (by omega))
     (hasSum_laurentQExpansion_coordinate D k f hf hhol hbound) j
 

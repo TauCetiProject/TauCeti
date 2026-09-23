@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.InfiniteSum.NatInt
+public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
 /-!
 # Reindexing infinite sums between the integers and natural numbers
@@ -16,6 +16,8 @@ lemma for an integer-indexed family whose support is bounded below.
 ## Main results
 
 * `TauCeti.hasSum_int_iff_natCast_sub`: reindex a family supported in `[-k, ∞)` by `n ↦ n - k`.
+* `TauCeti.hasSum_mul_zpow_natCast_sub_iff`: move an integer-power shift between the summands and
+  their sum.
 -/
 
 public section
@@ -41,5 +43,16 @@ theorem hasSum_int_iff_natCast_sub {E : Type*} [AddCommMonoid E] [TopologicalSpa
     simp only [g]
     omega
   simpa only [Function.comp_def, g] using (hg.hasSum_iff hoff).symm
+
+/-- Multiplication by `q ^ k` converts a sum with powers `q ^ (n - k)` into one with powers
+`q ^ n`. -/
+theorem hasSum_mul_zpow_natCast_sub_iff {K : Type*} [Field K] [TopologicalSpace K]
+    [IsTopologicalSemiring K] {a : ℕ → K} {q s : K}
+    (hq : q ≠ 0) (k : ℤ) :
+    HasSum (fun n : ℕ ↦ a n * q ^ ((n : ℤ) - k)) s ↔
+      HasSum (fun n : ℕ ↦ a n * q ^ n) (q ^ k * s) := by
+  have hpow (n : ℕ) : q ^ k * (a n * q ^ ((n : ℤ) - k)) = a n * q ^ n := by
+    rw [mul_left_comm, ← zpow_natCast, ← zpow_add₀ hq, add_sub_cancel]
+  exact (hasSum_mul_left_iff (zpow_ne_zero k hq)).symm.trans (by simp only [hpow])
 
 end TauCeti
