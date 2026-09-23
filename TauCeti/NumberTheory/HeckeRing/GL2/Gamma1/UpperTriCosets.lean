@@ -233,25 +233,16 @@ private lemma exists_offset_of_primeFactors_subset (hp : 0 < p)
 
 /-- **The forward factorisation at an index supported on the level.** If every prime factor of
 `p` divides `N`, then for `γ ∈ Γ₁(N)` the product `diag(1, p) · γ` lies in one of the `p` right
-cosets `Γ₁(N) · !![1, j; 0, p]`.
-
-The offset solves `a j ≡ b (mod p)` for `γ = !![a, b; c, d]`, which
-`exists_offset_of_primeFactors_subset` supplies; the factorisation itself is
-`exists_mem_Gamma1_natDiagGL_mul_of_dvd`. -/
+cosets `Γ₁(N) · !![1, j; 0, p]`. -/
 lemma exists_mem_Gamma1_natDiagGL_mul (hp : 0 < p) (hpN : p.primeFactors ⊆ N.primeFactors)
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
-    ∃ (j : Fin p) (δ : SL(2, ℤ)), δ ∈ Gamma1 N ∧
-      natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * upperTriRep p j := by
-  obtain ⟨ha, -, -⟩ := (Gamma1_mem N γ).mp hγ
-  -- the level congruence on the upper-left entry, read in `ℤ`
-  have haN : (N : ℤ) ∣ γ 0 0 - 1 := by
-    refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp ?_
-    push_cast
-    rw [ha, sub_self]
-  obtain ⟨j, hjlt, hj⟩ :=
-    exists_offset_of_primeFactors_subset hp hpN (a := γ 0 0) (b := γ 0 1) haN
-  obtain ⟨δ, hδ, heq⟩ := exists_mem_Gamma1_natDiagGL_mul_of_dvd hγ hjlt hj
-  exact ⟨⟨j, hjlt⟩, δ, hδ, heq⟩
+    ∃ j : Fin p, ∃ δ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * upperTriRep p j := by
+  -- the offset solves `a j ≡ b (mod p)` for `γ = !![a, b; c, d]`, from the level congruence
+  -- `a ≡ 1 (mod N)` on the upper-left entry, read in `ℤ`
+  obtain ⟨j, hjlt, hj⟩ := exists_offset_of_primeFactors_subset hp hpN (b := γ 0 1) <|
+    (ZMod.intCast_eq_intCast_iff_dvd_sub _ _ _).mp <|
+      Int.cast_one.trans ((Gamma1_mem N γ).mp hγ).1.symm
+  exact ⟨⟨j, hjlt⟩, exists_mem_Gamma1_natDiagGL_mul_of_dvd hγ hjlt hj⟩
 
 /-- **The `p` right cosets are pairwise distinct.** If `Γ · !![1, j₁; 0, p] = Γ · !![1, j₂; 0, p]`
 for a subgroup `Γ` of `SL₂(ℤ)`, then `j₁ = j₂`: the comparison matrix has upper-left entry `1`
