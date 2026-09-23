@@ -167,28 +167,25 @@ private theorem isEmbedding_of_slice {φ : M → N} {c : ℝ}
     simpa only [Function.comp_def, h] using htrack
   exact (isEmbedding_prodMkLeft c).of_comp_iff.mp hprod
 
-private def timeReverse (X : Type*) [TopologicalSpace X] : (X × ℝ) ≃ₜ (X × ℝ) :=
-  Homeomorph.prodCongr (Homeomorph.refl X) (Homeomorph.subLeft (1 : ℝ))
-
-@[simp]
-private theorem timeReverse_apply (X : Type*) [TopologicalSpace X] (p : X × ℝ) :
-    timeReverse X p = (p.1, 1 - p.2) :=
-  rfl
-
 /-! ### Symmetry -/
 
 /-- Reverse a topological concordance by reflecting both source and target time. -/
 def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f where
-  toFun p := timeReverse N (C (timeReverse M p))
+  toFun p :=
+    Homeomorph.prodCongr (Homeomorph.refl N) (Homeomorph.subLeft (1 : ℝ))
+      (C (Homeomorph.prodCongr (Homeomorph.refl M) (Homeomorph.subLeft (1 : ℝ)) p))
   isLocallyFlat' := by
-    have hsource := C.isLocallyFlat.comp_homeomorph (timeReverse M)
-    have htarget := hsource.homeomorph_comp (timeReverse N)
+    have hsource := C.isLocallyFlat.comp_homeomorph
+      (Homeomorph.prodCongr (Homeomorph.refl M) (Homeomorph.subLeft (1 : ℝ)))
+    have htarget := hsource.homeomorph_comp
+      (Homeomorph.prodCongr (Homeomorph.refl N) (Homeomorph.subLeft (1 : ℝ)))
     simpa only [Function.comp_def] using htarget
   exists_pos_apply_eq_left' := by
     obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_right
     refine ⟨ε, hε, fun x t ht => ?_⟩
     have ht' : 1 - ε ≤ 1 - t := by linarith
-    rw [timeReverse_apply, timeReverse_apply, hC x (1 - t) ht']
+    simp only [Homeomorph.coe_prodCongr, Prod.map_apply,
+      Homeomorph.refl_apply, id_eq, Homeomorph.subLeft_apply, hC x (1 - t) ht']
     apply Prod.ext
     · rfl
     · ring
@@ -196,7 +193,8 @@ def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f
     obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_left
     refine ⟨ε, hε, fun x t ht => ?_⟩
     have ht' : 1 - t ≤ ε := by linarith
-    rw [timeReverse_apply, timeReverse_apply, hC x (1 - t) ht']
+    simp only [Homeomorph.coe_prodCongr, Prod.map_apply,
+      Homeomorph.refl_apply, id_eq, Homeomorph.subLeft_apply, hC x (1 - t) ht']
     apply Prod.ext
     · rfl
     · ring
@@ -204,7 +202,7 @@ def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f
     have ht' : 1 - t ∈ Ioo (0 : ℝ) 1 := by
       constructor <;> linarith [ht.1, ht.2]
     have hC := C.snd_apply_mem_Ioo x (1 - t) ht'
-    rw [timeReverse_apply, timeReverse_apply]
+    change (1 - (C (x, 1 - t)).2) ∈ Ioo (0 : ℝ) 1
     constructor <;> linarith [hC.1, hC.2]
 
 /-! ### Endpoint embeddings -/
@@ -223,9 +221,7 @@ theorem isEmbedding_right (C : TopologicalConcordance F F' f g) : IsEmbedding g 
 @[simp]
 theorem symm_apply (C : TopologicalConcordance F F' f g) (x : M) (t : ℝ) :
     C.symm (x, t) = ((C (x, 1 - t)).1, 1 - (C (x, 1 - t)).2) := by
-  -- Unfolding the coercion of the structure literal exposes its defining track.
-  change timeReverse N (C (timeReverse M (x, t))) = _
-  rw [timeReverse_apply, timeReverse_apply]
+  rfl
 
 /-- Reversing a track twice gives it back. -/
 @[simp]
