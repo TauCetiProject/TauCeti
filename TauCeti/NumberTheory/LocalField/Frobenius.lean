@@ -50,9 +50,8 @@ variable {K L : Type*}
 where `q` is the cardinality of the residue field of the base. -/
 @[simp]
 theorem frobeniusAlgEquiv_teichmullerLift [IsUnramified K L] (a : 𝓀[L]) :
-    (frobeniusAlgEquiv (K := K) (L := L)).integerRingAlgEquiv (teichmullerLift L a) =
+    teichmullerLift L (frobeniusAlgEquiv (K := K) (L := L) • a) =
       teichmullerLift L (a ^ Nat.card 𝓀[K]) := by
-  rw [AlgEquiv.integerRingAlgEquiv_teichmullerLift]
   congr 1
   have h := congrArg (fun e : 𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L] ↦ e a)
     (residueField_toAlgEquiv_frobeniusAlgEquiv (K := K) (L := L))
@@ -74,7 +73,7 @@ theorem frobeniusAlgEquiv_rootsOfUnity [IsUnramified K L]
       𝒪[L] L ζ).symm
   rw [hζ]
   rw [← AlgEquiv.coe_smul_integerRing,
-    ← AlgEquiv.integerRingAlgEquiv_apply,
+    smul_teichmullerLift,
     frobeniusAlgEquiv_teichmullerLift,
     map_pow]
   rfl

@@ -29,7 +29,7 @@ that the two constructions agree on units.
   when it reduces to `a` and is fixed by the `q`-th power map.
 * `TauCeti.teichmullerLift_unique`: it is the unique zero-preserving multiplicative section of
   reduction.
-* `AlgEquiv.integerRingAlgEquiv_teichmullerLift`: local-field automorphisms commute with the
+* `TauCeti.smul_teichmullerLift`: local-field automorphisms commute with the
   Teichmüller lift through their residue-field action.
 
 ## References
@@ -147,9 +147,10 @@ variable {K L : Type*}
 /-- An automorphism of a finite local-field extension carries each Teichmüller representative
 to the representative of its residue-field image. -/
 @[simp]
-theorem AlgEquiv.integerRingAlgEquiv_teichmullerLift (σ : L ≃ₐ[K] L) (a : 𝓀[L]) :
-    σ.integerRingAlgEquiv (teichmullerLift L a) =
+theorem smul_teichmullerLift (σ : L ≃ₐ[K] L) (a : 𝓀[L]) :
+    σ • teichmullerLift L a =
       teichmullerLift L (σ • a) := by
+  rw [← AlgEquiv.integerRingAlgEquiv_apply]
   apply (eq_teichmullerLift_iff L).2
   constructor
   · rw [AlgEquiv.integerRingAlgEquiv_apply,
