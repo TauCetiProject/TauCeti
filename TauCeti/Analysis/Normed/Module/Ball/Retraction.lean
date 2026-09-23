@@ -69,16 +69,9 @@ theorem radialRetraction_of_norm_le (h : ‖x‖ ≤ r) : radialRetraction r x =
 /-- The radial retraction agrees with the identity on a neighborhood of every point in the open
 ball. -/
 theorem radialRetraction_eventuallyEq_id (hx : ‖x‖ < r) :
-    radialRetraction r =ᶠ[nhds x] id := by
-  filter_upwards [Metric.ball_mem_nhds x (sub_pos.2 hx)] with y hy
-  have hy' : ‖y - x‖ < r - ‖x‖ := by
-    simpa only [Metric.mem_ball, dist_eq_norm] using hy
-  apply radialRetraction_of_norm_le
-  exact (calc
-    ‖y‖ = ‖(y - x) + x‖ := by rw [sub_add_cancel]
-    _ ≤ ‖y - x‖ + ‖x‖ := norm_add_le _ _
-    _ < (r - ‖x‖) + ‖x‖ := by linarith
-    _ = r := by ring).le
+    radialRetraction r =ᶠ[nhds x] id :=
+  eventuallyEq_of_mem (isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)) fun _ hy ↦
+    radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le
 
 /-- Outside the closed ball of radius `r` the radial retraction scales by `r / ‖x‖`. -/
 theorem radialRetraction_of_le_norm (h : r ≤ ‖x‖) :
