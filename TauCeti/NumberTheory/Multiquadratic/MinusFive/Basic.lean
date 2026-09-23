@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
+import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 import Mathlib.FieldTheory.KummerPolynomial
 
 /-!
@@ -49,7 +50,8 @@ theorem exists_minpoly_eq_X_sq_add_five_and_adjoin_eq_top :
   let K := AdjoinRoot (X ^ 2 - C (-5 : ℚ))
   let x : K := AdjoinRoot.root (X ^ 2 - C (-5 : ℚ))
   have hx : x ^ 2 = algebraMap ℤ K (-5 : ℤ) := by
-    exact adjoinRoot_root_sq (-5)
+    rw [TauCeti.AdjoinRoot.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
+    norm_num
   refine ⟨integralSqrt hx, minpoly_integralSqrt hx (fun ⟨q, hq⟩ => by
       norm_num at hq
       nlinarith [mul_self_nonneg q]), ?_⟩

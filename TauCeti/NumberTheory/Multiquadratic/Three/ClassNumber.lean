@@ -34,6 +34,10 @@ The main theorem is stated for any number field with an integral generator of mi
 
 ## Main results
 
+* `TauCeti.NumberField.discr_eq_twelve_of_minpoly_eq_X_sq_sub_three`: every presentation of
+  `ℚ(√3)` by an integral generator has discriminant `12`.
+* `TauCeti.NumberField.discr_adjoinRoot_sqrt_three_eq_twelve`: the discriminant of the concrete
+  `AdjoinRoot (X² - 3)` model is `12`.
 * `TauCeti.NumberField.classNumber_eq_one_of_minpoly_eq_X_sq_sub_three`: every presentation of
   `ℚ(√3)` by an integral generator has class number one.
 * `TauCeti.NumberField.classNumber_adjoinRoot_sqrt_three_eq_one`: the result for the concrete
@@ -50,12 +54,20 @@ namespace TauCeti.NumberField
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 
 /-- The discriminant of a presentation of `ℚ(√3)` is `12`. -/
-private theorem discr_eq_twelve_of_minpoly_eq_X_sq_sub_three
+theorem discr_eq_twelve_of_minpoly_eq_X_sq_sub_three
     (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ))
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
     NumberField.discr K = 12 := by
   simpa using NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen
     (Int.prime_iff_natAbs_prime.mpr (by decide)).squarefree (by decide)
+
+/-- **Worked example.** The concrete number field `AdjoinRoot (X² - 3)`, modelling `ℚ(√3)`, has
+discriminant `12`. -/
+@[simp]
+theorem discr_adjoinRoot_sqrt_three_eq_twelve :
+    NumberField.discr (AdjoinRoot (X ^ 2 - C (3 : ℚ))) = 12 := by
+  obtain ⟨θ, hmin, hgen⟩ := exists_minpoly_eq_X_sq_sub_three_and_adjoin_eq_top
+  exact discr_eq_twelve_of_minpoly_eq_X_sq_sub_three hmin hgen
 
 /-- **The class number of `ℚ(√3)` is one.** This presentation-independent statement assumes an
 integral generator with minimal polynomial `X² - 3` which generates the field over `ℚ`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.RingTheory.Discriminant
+public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.FieldTheory.Trace
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
@@ -25,6 +26,7 @@ computation (`Quadratic/Norm.lean`).
 
 ## Main results
 
+* `TauCeti.AdjoinRoot.root_sq`: the root of `X² - d` in its `AdjoinRoot` model squares to `d`.
 * `NumberField.minpoly_rat_quadratic`: the minimal polynomial of `θ` over `ℚ` is `X² - d`.
 * `NumberField.finrank_rat_eq_two`: `K` has degree `2` over `ℚ`.
 * `NumberField.finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add`: the same for a field generated
@@ -53,6 +55,18 @@ public section
 
 open Polynomial NumberField Module
 open scoped Matrix
+
+namespace TauCeti.AdjoinRoot
+
+variable {R : Type*} [CommRing R]
+
+/-- The root of `X² - d` in its `AdjoinRoot` model squares to the coefficient `d`. -/
+theorem root_sq (d : R) :
+    (AdjoinRoot.root (X ^ 2 - C d)) ^ 2 = algebraMap R (AdjoinRoot (X ^ 2 - C d)) d := by
+  rw [← sub_eq_zero, ← AdjoinRoot.eval₂_root, eval₂_sub, eval₂_C, eval₂_pow, eval₂_X,
+    AdjoinRoot.algebraMap_eq]
+
+end TauCeti.AdjoinRoot
 
 namespace NumberField
 
