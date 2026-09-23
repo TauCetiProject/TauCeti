@@ -113,6 +113,22 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
   rw [D.localLogDerivSeries_def, PowerSeries.coeff_succ_X_mul, pow_succ']
   ring
 
+/-- A local Euler factor is nonzero at `s` if the corresponding local power series is nonzero at
+`N(P) ^ (-s)`. -/
+theorem eulerFactor_ne_zero_of_localPowerSeries_ne_zero (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hne : FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+      (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ≠ 0) :
+    D.eulerFactor P s ≠ 0 := by
+  rw [D.eulerFactor_eq_tsum]
+  rw [FormalMultilinearSeries.ofScalars_sum_eq] at hne
+  convert hne using 1
+  exact tsum_congr fun e ↦ by
+    rw [D.coeff_localPowerSeries]
+    exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
+      D.toIdealArithmeticFunction P s e)
+
 /-- A local Euler factor is nonzero at `s` if the corresponding local power series is zero-free
 on the disk bounded by the real parameter `σ`, and `σ < Re(s)`. -/
 theorem eulerFactor_ne_zero_of_zeroFree (D : EulerProductData K)
@@ -123,23 +139,12 @@ theorem eulerFactor_ne_zero_of_zeroFree (D : EulerProductData K)
           (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P)) z ≠ 0)
     (hs : σ < s.re) :
     D.eulerFactor P s ≠ 0 := by
-  have hP0 := Nat.zero_lt_of_lt (NumberField.HeightOneSpectrum.one_lt_absNorm P)
-  have hlt : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ <
-      ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ := by
-    simp only [Complex.norm_natCast_cpow_of_pos hP0]
-    exact Real.rpow_lt_rpow_of_exponent_lt (by
-      exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
-  have heval :
-      FormalMultilinearSeries.ofScalarsSum (E := ℂ)
-          (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
-          ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) = D.eulerFactor P s := by
-    rw [FormalMultilinearSeries.ofScalars_sum_eq, D.eulerFactor_eq_tsum]
-    exact tsum_congr fun e ↦ by
-      rw [D.coeff_localPowerSeries]
-      exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
-        D.toIdealArithmeticFunction P s e).symm
-  rw [← heval]
-  exact hne _ hlt
+  apply D.eulerFactor_ne_zero_of_localPowerSeries_ne_zero P
+  apply hne
+  simp only [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
+    (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
+  exact Real.rpow_lt_rpow_of_exponent_lt (by
+    exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
 
 /-- The evaluation of a local formal logarithmic derivative inside a zero-free disk. This is
 `logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries` with coefficient convergence
