@@ -8,16 +8,11 @@ module
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 
 /-!
-# Closed compact real Spin carrier
+# Closed real Spin carrier
 
-The compactness instance for the real Clifford Spin group gives closedness after mapping its carrier
-into the Clifford algebra and pulling that closed set back along the units valuation. This is the
-ambient closedness statement needed when the Spin group is treated as a closed subgroup of the
-Clifford-algebra units.
-
-This carrier is used to view the compact real Spin group as a closed subgroup of the
-Clifford-algebra units. The corresponding special-orthogonal carrier is provided separately in
-`RealSpecialOrthogonal.lean`.
+This module proves that the compact real Spin carrier is closed in the units of its
+Clifford algebra, providing the closed-subgroup input for its Lie-group structure. The corresponding
+special-orthogonal carrier is provided separately in `RealSpecialOrthogonal.lean`.
 
 ## References
 
@@ -50,13 +45,8 @@ theorem isClosed_range_realCliffordSpinGroupZero_toUnits (n : ℕ) :
     (hc.image (continuous_subtype_val :
       Continuous ((↑) : realCliffordSpinGroupZero n → A))).isClosed
   have hsu : (fun x : realCliffordSpinGroupZero n => (x : A)) '' Set.univ =
-      (realCliffordSpinGroupZero n : Set A) := by
-    ext x
-    constructor
-    · rintro ⟨y, -, rfl⟩
-      exact y.2
-    · intro hx
-      exact ⟨⟨x, hx⟩, Set.mem_univ _, rfl⟩
+      (realCliffordSpinGroupZero n : Set A) :=
+    Subtype.coe_image_univ (realCliffordSpinGroupZero n : Set A)
   have hs : IsClosed (realCliffordSpinGroupZero n : Set A) := by
     rw [← hsu]
     exact himage
@@ -65,16 +55,15 @@ theorem isClosed_range_realCliffordSpinGroupZero_toUnits (n : ℕ) :
     simpa only [f] using hs.preimage Units.continuous_val
   have hcoe (x : realCliffordSpinGroupZero n) :
       ((spinGroup.toUnits (Q := realCliffordForm n 0) x : Aˣ) : A) = (x : A) := by
+    -- `spinGroup.toUnits` stores the subtype value as its unit value by definition.
     rfl
   have hset : Set.range (spinGroup.toUnits (Q := realCliffordForm n 0)) =
       f ⁻¹' (realCliffordSpinGroupZero n : Set A) := by
     ext u
     constructor
     · rintro ⟨x, rfl⟩
-      change ((spinGroup.toUnits (Q := realCliffordForm n 0) x : Aˣ) : A) ∈
-        (realCliffordSpinGroupZero n : Set A)
-      rw [hcoe x]
-      exact x.2
+      have hx : (x : A) ∈ (realCliffordSpinGroupZero n : Set A) := x.2
+      simpa only [f, Set.mem_preimage, hcoe x] using hx
     · intro hu'
       refine ⟨⟨u, hu'⟩, ?_⟩
       apply Units.ext
