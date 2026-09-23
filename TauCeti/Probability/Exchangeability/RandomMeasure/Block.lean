@@ -163,7 +163,6 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMargin
 
 /-- The zeroth block marginal of positive width `m` is the ordinary first-`m` prefix marginal.
 This identifies the consecutive-block API with the finite-marginal uniqueness API. -/
-@[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_zero_eq_map_prefixProj
     (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] :
     P.blockMarginals m 0 = P.map (prefixProj α m) := by
