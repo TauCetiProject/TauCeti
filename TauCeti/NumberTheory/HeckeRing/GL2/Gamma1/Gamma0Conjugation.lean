@@ -157,10 +157,10 @@ private lemma conjTau_mul (a b c e p j t : ℤ) (hdet : a * e - b * c = 1)
   · linear_combination c * ht
 
 /-- **`det τ = 1`**, structurally from the product identity and `det C = p`. -/
-private lemma conjTau_det (a b c e p j t : ℤ) (hp : p ≠ 0) (hdet : a * e - b * c = 1)
-    (ht : b + j * e = p * t) : (conjTau a b c e p j t).det = 1 :=
-  Matrix.det_eq_one_of_mul_eq_of_dets_eq hp (conjTau_mul a b c e p j t hdet ht)
-    (by rw [Matrix.det_fin_two_of]; ring) (conjDiag_det a b c e p hdet)
+private lemma conjTau_det (a b c e p j t : ℤ) (hdet : a * e - b * c = 1)
+    (ht : b + j * e = p * t) : (conjTau a b c e p j t).det = 1 := by
+  rw [conjTau, Matrix.det_fin_two_of]
+  linear_combination (c * (1 - p) * (t - b)) * hdet + c * ht
 
 /-- **`τ` satisfies the `Γ₁(N)` congruences on its lower row**, both because that row carries a
 factor of `c`, which `Γ₀(N)` membership makes divisible by `N`. -/
@@ -173,21 +173,18 @@ private lemma conjTau_gamma1 (a b c e p j t : ℤ) (hc : (N : ℤ) ∣ c) :
 /-- **The coprime branch, at the level of integer matrices.** A Bézout pair `u e + v p = 1`
 hands over the offset `j = -b u` outright — no division is needed, since `b + j e = p (b v)`
 follows by multiplying the relation by `b`. -/
-private lemma exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout (hp : 0 < p) {a b c e u v : ℤ}
+private lemma exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout {a b c e u v : ℤ}
     (hdet : a * e - b * c = 1) (hc : (N : ℤ) ∣ c) (huv : u * e + v * (p : ℤ) = 1) :
-    ∃ τ γ : SL(2, ℤ), τ ∈ Gamma1 N ∧ γ ∈ Gamma1 N ∧
-      (τ : Matrix (Fin 2) (Fin 2) ℤ) * !![1, 0; 0, (p : ℤ)] * (γ : Matrix (Fin 2) (Fin 2) ℤ)
-        = conjDiag a b c e (p : ℤ) := by
+    ∃ τ γ : SL(2, ℤ), τ ∈ Gamma1 N ∧ γ ∈ Gamma1 N ∧ (τ : Matrix (Fin 2) (Fin 2) ℤ) *
+      !![1, 0; 0, (p : ℤ)] * (γ : Matrix (Fin 2) (Fin 2) ℤ) = conjDiag a b c e (p : ℤ) := by
   have ht : b + (-b * u) * e = (p : ℤ) * (b * v) := by linear_combination (-b) * huv
   have hτdet : (conjTau a b c e (p : ℤ) (-b * u) (b * v)).det = 1 :=
-    conjTau_det _ _ _ _ _ _ _ (by exact_mod_cast hp.ne') hdet ht
+    conjTau_det _ _ _ _ _ _ _ hdet ht
   refine ⟨⟨_, hτdet⟩, ModularGroup.T ^ (-b * u),
     mem_Gamma1_iff_dvd_lowerRow.mpr <| conjTau_gamma1 a b c e (p : ℤ) (-b * u) (b * v) hc,
     T_zpow_mem_Gamma1 N _, ?_⟩
-  rw [ModularGroup.coe_T_zpow, mul_assoc,
-    show (!![1, 0; 0, (p : ℤ)] * !![1, -b * u; 0, 1] : Matrix (Fin 2) (Fin 2) ℤ)
-      = !![1, -b * u; 0, (p : ℤ)] from by ext i k; fin_cases i <;> fin_cases k <;> simp]
-  exact conjTau_mul a b c e (p : ℤ) (-b * u) (b * v) hdet ht
+  rw [ModularGroup.coe_T_zpow, mul_assoc, Matrix.mul_fin_two]
+  simpa using conjTau_mul a b c e (p : ℤ) (-b * u) (b * v) hdet ht
 
 /-- **Conjugation by `Γ₀(N)` fixes the double coset of `diag(1, p)`**, when the lower-right
 entry of the conjugating matrix is coprime to `p`.
@@ -199,9 +196,8 @@ theorem conj_natDiagGL_mem_doubleCoset_of_isCoprime (hp : 0 < p) {g : SL(2, ℤ)
       doubleCoset (natDiagGL 2 ![1, p] : GL (Fin 2) ℚ)
         ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
   obtain ⟨u, v, huv⟩ := hco
-  obtain ⟨τ, γ, hτ, hγ, h⟩ := exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout (N := N) hp
-    (Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one g)
-    (by simpa [ZMod.intCast_zmod_eq_zero_iff_dvd] using Gamma0_mem.mp hg) huv
+  obtain ⟨τ, γ, hτ, hγ, h⟩ := exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout (N := N)
+    (Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one g) (mem_Gamma0_iff_dvd.mp hg) huv
   exact mem_doubleCoset_of_intMatrix_eq_of_mem 2 τ γ (Subgroup.mem_map_of_mem _ hτ)
     (Subgroup.mem_map_of_mem _ hγ) _ _ _ _ (coe_natDiagGL_one_eq_map hp)
     (coe_conj_natDiagGL hp g) h
@@ -281,27 +277,25 @@ Only the left factor is built here. The right one is `CoprimeCosets`' own: at th
 
 The relation comes for free at the call site: reducing `a (p f) − b c = 1` along `N ∣ c` leaves
 `(a f) p ≡ 1 (mod N)`, so `p` is invertible modulo the level with no coprimality hypothesis. -/
-private lemma exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout (hp : 0 < p)
-    {a b c' f : ℤ} (hσ : a * f * (p : ℤ) - b * c' * (N : ℤ) = 1) :
-    ∃ τ : SL(2, ℤ), τ ∈ Gamma1 N ∧
-      (τ : Matrix (Fin 2) (Fin 2) ℤ)
-            * !![a * f * (p : ℤ), b * c'; (N : ℤ) * (p : ℤ), (p : ℤ)]
-        = conjDiag a b ((N : ℤ) * c') ((p : ℤ) * f) (p : ℤ) := by
-  set c := (N : ℤ) * c' with hc
+private lemma exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout (hp : 0 < p) {a b c' f : ℤ}
+    (hσ : a * f * (p : ℤ) - b * c' * (N : ℤ) = 1) :
+    ∃ τ ∈ Gamma1 N, (τ : Matrix (Fin 2) (Fin 2) ℤ) *
+      !![a * f * (p : ℤ), b * c'; (N : ℤ) * (p : ℤ), (p : ℤ)] =
+        conjDiag a b ((N : ℤ) * c') ((p : ℤ) * f) (p : ℤ) := by
+  set c := (N : ℤ) * c'
   -- the conjugate's entries, in the form `!![p α, β; p γ, δ]`
   set α := a * f - b * c
   set β := a * b * ((p : ℤ) - 1)
-  set γ := c * f * (1 - (p : ℤ)) with hγ
-  set δ := (p : ℤ) + b * c * ((p : ℤ) - 1) with hδ
+  set γ := c * f * (1 - (p : ℤ))
+  set δ := (p : ℤ) + b * c * ((p : ℤ) - 1)
   have hconj : conjDiag a b c ((p : ℤ) * f) (p : ℤ) = !![(p : ℤ) * α, β; (p : ℤ) * γ, δ] :=
-    conjDiag_eq_twisted a b c f (p : ℤ) (by rw [hc]; linear_combination hσ)
+    conjDiag_eq_twisted a b c f (p : ℤ) (by linear_combination hσ)
   -- the left factor `τ′`
   have hτdet : (twistTau (p : ℤ) α β γ δ (a * f) (b * c') (N : ℤ)).det = 1 :=
-    twistTau_det _ _ _ _ _ _ _ _ (by exact_mod_cast hp.ne') hσ
-      (hconj ▸ conjDiag_det a b c ((p : ℤ) * f) (p : ℤ) (by rw [hc]; linear_combination hσ))
-  refine ⟨⟨_, hτdet⟩, mem_Gamma1_iff_dvd_lowerRow.mpr <|
-    twistTau_gamma1 (p : ℤ) α β γ δ (a * f) (b * c') ⟨c' * f * (1 - (p : ℤ)), by rw [hγ, hc]; ring⟩
-      ⟨b * c' * ((p : ℤ) - 1), by rw [hδ, hc]; ring⟩ hσ, ?_⟩
+    twistTau_det _ _ _ _ _ _ _ _ (Int.natCast_ne_zero.mpr hp.ne') hσ
+      (hconj ▸ conjDiag_det a b c ((p : ℤ) * f) (p : ℤ) (by linear_combination hσ))
+  refine ⟨⟨_, hτdet⟩, mem_Gamma1_iff_dvd_lowerRow.mpr <| twistTau_gamma1 (p : ℤ) α β γ δ (a * f)
+    (b * c') ⟨c' * f * (1 - (p : ℤ)), by ring⟩ ⟨b * c' * ((p : ℤ) - 1), by ring⟩ hσ, ?_⟩
   rw [hconj]
   exact twistTau_mul (p : ℤ) α β γ δ (a * f) (b * c') (N : ℤ) hσ
 
@@ -313,8 +307,7 @@ theorem conj_natDiagGL_mem_doubleCoset_of_dvd (hp : 0 < p) {g : SL(2, ℤ)} (hg 
       doubleCoset (natDiagGL 2 ![1, p] : GL (Fin 2) ℚ)
         ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
   obtain ⟨f, hf⟩ := he
-  obtain ⟨c', hc'⟩ : (N : ℤ) ∣ g 1 0 := by
-    simpa [ZMod.intCast_zmod_eq_zero_iff_dvd] using Gamma0_mem.mp hg
+  obtain ⟨c', hc'⟩ := mem_Gamma0_iff_dvd.mp hg
   have hσ : g 0 0 * f * (p : ℤ) - g 0 1 * c' * (N : ℤ) = 1 := by
     have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one g
     rw [hf, hc'] at hdet
