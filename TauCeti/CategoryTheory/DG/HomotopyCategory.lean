@@ -87,6 +87,8 @@ private noncomputable def dgCyclesConcreteEquiv (X Y : C) :
     dgCycles R X Y ≃ₗ[R]
       ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.K :=
   { toFun := fun f ↦ by
+      -- `moduleCatLeftHomologyData.K` unfolds to the kernel of the middle differential,
+      -- which is `dgCycles` after unfolding `dgHomComplex` in degree zero.
       change LinearMap.ker (dgDifferential R 0)
       exact f
     invFun := fun f ↦ by
@@ -126,6 +128,8 @@ private theorem dgHomotopyClass_moduleCatHomologyIso_hom {X Y : C}
     (dgHomologyIso R X Y).hom (dgHomotopyClass R f hf) =
       S.moduleCatLeftHomologyData.π (dgCyclesConcreteEquiv R X Y ⟨f, hf⟩) := by
   let e := dgHomologyIso R X Y
+  -- Unfolding `dgHomotopyClassLinearMap` exposes transport by `e.inv`; applying `e.hom`
+  -- then reduces the claim to the inverse-hom identity.
   change e.hom (e.inv _) = _
   exact e.inv_hom_id_apply _
 
@@ -148,6 +152,8 @@ private theorem moduleCatπ_eq_zero_iff {X Y : C}
     ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π f = 0 ↔
       f ∈ LinearMap.range
         ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatToCycles := by
+  -- For `ModuleCat`, the concrete homology projection is definitionally the quotient map
+  -- by the range of the map into cycles.
   change Submodule.Quotient.mk f = 0 ↔ _
   exact Submodule.Quotient.mk_eq_zero
     (LinearMap.range ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatToCycles)
@@ -186,6 +192,8 @@ theorem exists_dgHomotopyClass_eq {X Y : C} (c : DGHomotopyClass R X Y) :
   refine ⟨g, g.2, ?_⟩
   apply e.toLinearEquiv.injective
   have hclass := dgHomotopyClass_moduleCatHomologyIso_hom R (g : DGHom R 0 X Y) g.2
+  -- The function underlying `e.toLinearEquiv` is `e.hom`; spelling that out lets the
+  -- representative compatibility lemma rewrite the transported class.
   change e.hom (dgHomotopyClass R g g.2) = e.hom c
   rw [show e.hom (dgHomotopyClass R g g.2) =
     S.moduleCatLeftHomologyData.π (dgCyclesConcreteEquiv R X Y g) by
@@ -205,6 +213,8 @@ theorem dgHomotopyClass_eq_iff {X Y : C} {f g : DGHom R 0 X Y}
     have h' := congrArg e.hom h
     have hf' := dgHomotopyClass_moduleCatHomologyIso_hom R f hf
     have hg' := dgHomotopyClass_moduleCatHomologyIso_hom R g hg
+    -- Applying the bundled isomorphism is definitionally application of its forward map.
+    -- The following rewrites then use the explicit representative compatibility lemma.
     change e.hom (dgHomotopyClass R f hf) = e.hom (dgHomotopyClass R g hg) at h'
     rw [show e.hom (dgHomotopyClass R f hf) =
         ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
@@ -228,6 +238,8 @@ theorem dgHomotopyClass_eq_iff {X Y : C} {f g : DGHom R 0 X Y}
     apply e.toLinearEquiv.injective
     have hf' := dgHomotopyClass_moduleCatHomologyIso_hom R f hf
     have hg' := dgHomotopyClass_moduleCatHomologyIso_hom R g hg
+    -- As above, expose the forward map of the concrete homology isomorphism before using
+    -- `dgHomotopyClass_moduleCatHomologyIso_hom`.
     change e.hom (dgHomotopyClass R f hf) = e.hom (dgHomotopyClass R g hg)
     rw [show e.hom (dgHomotopyClass R f hf) =
         ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
@@ -419,6 +431,8 @@ theorem dgHomotopyComp_dgHomotopyClass {X Y Z : C}
   have hfg' := dgHomotopyClass_moduleCatHomologyIso_hom R (dgCompZero R f g)
     (dgCompZero_mem_dgCycles R hf hg)
   apply eXZ.toLinearEquiv.injective
+  -- Unfolding `dgHomotopyComp` exposes its construction by transporting the concrete
+  -- quotient composition along `eXY`, `eYZ`, and `eXZ`.
   change eXZ.hom (eXZ.inv
       (dgConcreteHomotopyComp R X Y Z
         (eXY.hom (dgHomotopyClass R f hf))
