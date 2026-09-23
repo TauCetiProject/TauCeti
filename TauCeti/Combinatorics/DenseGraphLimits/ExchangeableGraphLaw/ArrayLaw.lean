@@ -29,8 +29,9 @@ speak about graph laws.
   disjoint index sets; for a jointly exchangeable law consecutive windows suffice
   (`indepFun_restrict_of_forall_Ico`), and each window of a graph is the block restriction of its
   array.
-* **Convex mixtures.** The array law is the pushforward along the adjacency array, so it is linear
-  in the measure (`Measure.map_add`, `Measure.map_smul`), and the array laws of graph laws are
+* **Convex mixtures.** The array law and the graph law are pushforwards, so they are linear in
+  the measure (`arrayLaw_add`, `arrayLaw_smul`, `graphLawOfArray_add`, `graphLawOfArray_smul`),
+  and the array laws of graph laws are
   exactly the jointly exchangeable probability laws carried by the symmetric `false`-diagonal
   arrays. Extremality among those laws is joint dissociation
   (`jointlyDissociated_iff_mem_extremePoints_on`), so dissociation of a graph law is extremality of
@@ -83,6 +84,18 @@ instance (μ : Measure (SimpleGraph ℕ)) [IsProbabilityMeasure μ] :
     IsProbabilityMeasure (arrayLaw μ) := by
   rw [arrayLaw_def]; infer_instance
 
+/-- The array law of a sum of laws is the sum of the array laws. -/
+@[simp]
+theorem arrayLaw_add (μ ν : Measure (SimpleGraph ℕ)) :
+    arrayLaw (μ + ν) = arrayLaw μ + arrayLaw ν :=
+  Measure.map_add _ _ SimpleGraph.measurable_adjArray
+
+/-- The array law of a scaled law is the scaled array law. -/
+@[simp]
+theorem arrayLaw_smul (c : ℝ≥0∞) (μ : Measure (SimpleGraph ℕ)) :
+    arrayLaw (c • μ) = c • arrayLaw μ :=
+  Measure.map_smul c SimpleGraph.measurable_adjArray.aemeasurable
+
 /-- The array law of any law on graphs is carried by the symmetric `false`-diagonal arrays. -/
 theorem arrayLaw_compl_symmetricArraysWithDiag_eq_zero (μ : Measure (SimpleGraph ℕ)) :
     arrayLaw μ (symmetricArraysWithDiag Bool false)ᶜ = 0 := by
@@ -132,6 +145,18 @@ instance (ρ : Measure (ℕ × ℕ → Bool)) [IsProbabilityMeasure ρ] :
     IsProbabilityMeasure (graphLawOfArray ρ) := by
   rw [graphLawOfArray_def]; infer_instance
 
+/-- The graph law of a sum of laws is the sum of the graph laws. -/
+@[simp]
+theorem graphLawOfArray_add (ρ ρ' : Measure (ℕ × ℕ → Bool)) :
+    graphLawOfArray (ρ + ρ') = graphLawOfArray ρ + graphLawOfArray ρ' :=
+  Measure.map_add _ _ measurable_graphOfArray
+
+/-- The graph law of a scaled law is the scaled graph law. -/
+@[simp]
+theorem graphLawOfArray_smul (c : ℝ≥0∞) (ρ : Measure (ℕ × ℕ → Bool)) :
+    graphLawOfArray (c • ρ) = c • graphLawOfArray ρ :=
+  Measure.map_smul c measurable_graphOfArray.aemeasurable
+
 /-- The graph law of the array law of a law on graphs is the law. -/
 @[simp]
 theorem graphLawOfArray_arrayLaw (μ : Measure (SimpleGraph ℕ)) :
@@ -155,7 +180,7 @@ theorem arrayLaw_graphLawOfArray {ρ : Measure (ℕ × ℕ → Bool)}
   exact hae.mono fun x hx => by simp [Function.comp, adjArray_graphOfArray hx]
 
 /-- The graph law of a diagonally invariant law on arrays is invariant under relabelling. -/
-theorem graphLawOfArray_map_comap {ρ : Measure (ℕ × ℕ → Bool)} (σ : Equiv.Perm ℕ)
+theorem map_comap_graphLawOfArray {ρ : Measure (ℕ × ℕ → Bool)} (σ : Equiv.Perm ℕ)
     (hρ : ρ.map (pairReindex σ σ) = ρ) :
     (graphLawOfArray ρ).map (SimpleGraph.comap ⇑σ) = graphLawOfArray ρ := by
   rw [graphLawOfArray_def, Measure.map_map (SimpleGraph.measurable_comap _) measurable_graphOfArray]
@@ -181,7 +206,7 @@ noncomputable def infiniteGraphLawOfArray
     obtain ⟨hmem, -⟩ :=
       mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 ρ.2
     obtain ⟨hexch, -⟩ := mem_jointlyExchangeableProbabilityMeasures_iff.1 hmem
-    exact graphLawOfArray_map_comap σ (hexch.map_pairReindex σ)
+    exact map_comap_graphLawOfArray σ (hexch.map_pairReindex σ)
 
 /-- The law of the bundled graph law of an array law. -/
 @[simp]
@@ -288,19 +313,19 @@ theorem isDissociated_iff_forall_indepFun_restrict (L : InfiniteExchangeableGrap
           (SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)),
             SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))) := by
     funext G
-    simp only [Function.comp, Prod.map, restrictFin_comap_castAdd, restrictFin_comap_natAdd,
+    simp only [Function.comp, Prod.map, comap_restrictFin_castAdd, comap_restrictFin_natAdd,
       restrict_adjArray_zero, restrict_adjArray k l (k + l) rfl]
   have e2 : (fun x : ℕ × ℕ → Bool => (Finset.Ico 0 k ×ˢ Finset.Ico 0 k).restrict x)
         ∘ SimpleGraph.adjArray
       = finGraphBlockAt 0 k k (Nat.zero_add k) ∘ fun G : SimpleGraph ℕ =>
           SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)) := by
-    funext G; simp only [Function.comp, restrictFin_comap_castAdd, restrict_adjArray_zero]
+    funext G; simp only [Function.comp, comap_restrictFin_castAdd, restrict_adjArray_zero]
   have e3 : (fun x : ℕ × ℕ → Bool => (Finset.Ico k (k + l) ×ˢ Finset.Ico k (k + l)).restrict x)
         ∘ SimpleGraph.adjArray
       = finGraphBlockAt k l (k + l) rfl ∘ fun G : SimpleGraph ℕ =>
           SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l)) := by
     funext G
-    simp only [Function.comp, restrictFin_comap_natAdd, restrict_adjArray k l (k + l) rfl]
+    simp only [Function.comp, comap_restrictFin_natAdd, restrict_adjArray k l (k + l) rfl]
   have hemb : MeasurableEmbedding
       (Prod.map (finGraphBlockAt 0 k k (Nat.zero_add k)) (finGraphBlockAt k l (k + l) rfl)) :=
     (measurableEmbedding_finGraphBlockAt 0 k k (Nat.zero_add k)).prodMap
@@ -314,7 +339,7 @@ theorem isDissociated_iff_forall_indepFun_restrict (L : InfiniteExchangeableGrap
     hemb.map_injective.eq_iff]
   rw [L.map_comap_natAdd_restrictFin,
     Measure.map_map (by fun_prop) (SimpleGraph.measurable_restrictFin _)]
-  simp only [Function.comp_def, restrictFin_comap_castAdd]
+  simp only [Function.comp_def, comap_restrictFin_castAdd]
 
 /-- **Dissociation is joint dissociation of the array law.** -/
 theorem isDissociated_iff_jointlyDissociated (L : InfiniteExchangeableGraphLaw) :

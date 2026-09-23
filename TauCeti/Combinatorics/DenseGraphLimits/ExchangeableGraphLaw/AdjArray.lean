@@ -11,19 +11,17 @@ public import TauCeti.Combinatorics.SimpleGraph.Measurable
 /-!
 # The adjacency array of a graph and the graph of an array
 
-A graph is read as a `Bool`-valued array: the adjacency array `SimpleGraph.adjArray G` on `V × V` is
-`true` exactly on edges, and determines the graph. On `ℕ` the array is symmetric with `false`
-diagonal, and the graph of such an array is recovered by `graphOfArray`. An array is read back as a
-graph by `graphOfArray`, the `SimpleGraph.fromRel` of the array: `i` and `j` are adjacent when they
-are distinct and the array is `true` at `(i, j)` or at `(j, i)`. The two are measurable, mutually
-inverse on the symmetric arrays with `false` diagonal, and intertwine relabelling of the graph with
-the diagonal relabelling of the array.
+The adjacency array `SimpleGraph.adjArray G` of a graph on `ℕ` is symmetric with `false` diagonal.
+An array is read back as a graph by `graphOfArray`, the `SimpleGraph.fromRel` of the array: `i` and
+`j` are adjacent when they are distinct and the array is `true` at `(i, j)` or at `(j, i)`. The two
+are mutually inverse on the symmetric arrays with `false` diagonal and intertwine relabelling of the
+graph with the diagonal relabelling of the array. The adjacency array itself, its measurability and
+its injectivity are in `SimpleGraph/Maps.lean` and `SimpleGraph/Measurable.lean`.
 
 ## Main results
 
-* `SimpleGraph.adjArray`, `SimpleGraph.adjArray_apply`, `SimpleGraph.measurable_adjArray`,
-  `SimpleGraph.adjArray_injective`, over any vertex type;
-  `SimpleGraph.adjArray_mem_symmetricArraysWithDiag`, `SimpleGraph.adjArray_comap` on `ℕ`.
+* `SimpleGraph.adjArray_mem_symmetricArraysWithDiag`, `SimpleGraph.adjArray_comap` — the
+  adjacency array of a graph on `ℕ` lies in the carrier and intertwines relabelling.
 * `TauCeti.DenseGraphLimits.graphOfArray`, `graphOfArray_adj`, `measurable_graphOfArray`,
   `graphOfArray_pairReindex`.
 * `SimpleGraph.graphOfArray_adjArray`, `TauCeti.DenseGraphLimits.adjArray_graphOfArray` — the
@@ -45,34 +43,6 @@ open MeasureTheory Set TauCeti.Probability SimpleGraph
 namespace TauCeti
 
 namespace DenseGraphLimits
-
-open Classical in
-/-- The adjacency array of a graph: `true` exactly on edges. -/
-noncomputable def _root_.SimpleGraph.adjArray {V : Type*} (G : SimpleGraph V) : V × V → Bool :=
-  fun p => decide (G.Adj p.1 p.2)
-
-open Classical in
-/-- The adjacency array is `true` exactly on edges. -/
-@[simp]
-theorem _root_.SimpleGraph.adjArray_apply {V : Type*} (G : SimpleGraph V) (i j : V) :
-    G.adjArray (i, j) = decide (G.Adj i j) :=
-  (rfl)
-
-open Classical in
-/-- Reading a graph as an array is measurable. -/
-@[fun_prop]
-theorem _root_.SimpleGraph.measurable_adjArray {V : Type*} :
-    Measurable (SimpleGraph.adjArray : SimpleGraph V → V × V → Bool) :=
-  Measurable.of_eval fun p =>
-    (measurable_of_countable (fun q : Prop => decide q)).comp
-      (measurable_iff_adj.1 measurable_id p.1 p.2)
-
-/-- A graph is determined by its adjacency array. -/
-theorem _root_.SimpleGraph.adjArray_injective {V : Type*} :
-    Function.Injective (SimpleGraph.adjArray : SimpleGraph V → V × V → Bool) := fun G G' h => by
-  ext i j
-  have := congrFun h (i, j)
-  simpa only [SimpleGraph.adjArray_apply, decide_eq_decide] using this
 
 /-- The adjacency array of a graph is symmetric with `false` diagonal. -/
 theorem _root_.SimpleGraph.adjArray_mem_symmetricArraysWithDiag (G : SimpleGraph ℕ) :

@@ -10,20 +10,21 @@ public import TauCeti.Probability.Independence.Map
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 
 /-!
-# Joint dissociation through finite square blocks
+# Block independence of an array law along relabellings and consecutive windows
 
-Joint dissociation of the coordinate array of a law on `ℕ × ℕ → α` is independence of the
-`Finset` restrictions of the array to every pair of disjoint finite square blocks `I ×ˢ I`,
-`J ×ˢ J` (`jointlyDissociated_iff_indepFun_restrict`). For a jointly exchangeable law the
-blocks may be taken consecutive: independence of the
-windows `[0, k)²` and `[k, k + l)²` for all `k, l` already gives independence of all disjoint
-blocks, since a finitely supported permutation carries any two disjoint finite sets onto two
-consecutive windows and the law is invariant under it. This is the form in which dissociation of
-a law on another carrier, read through a measurable encoding into arrays, is compared with joint
-dissociation.
+For a law on `ℕ × ℕ → α`, independence of the `Finset` restrictions of the array to two square
+blocks `I ×ˢ I`, `J ×ˢ J` transports along any diagonal relabelling preserving the law, to the
+blocks over the relabelled sets. For a jointly exchangeable law the blocks may therefore be taken
+consecutive: independence of the windows `[0, |I|)²` and `[|I|, |I| + |J|)²` gives independence
+of the blocks over any two disjoint finite sets `I`, `J`, since a finitely supported permutation
+carries the two sets onto the two windows. This is the form in which independence of consecutive
+label windows, the shape of dissociation for a law on another carrier read into arrays, is compared
+with independence of all disjoint blocks.
 
 ## Main results
 
+* `TauCeti.Probability.indepFun_restrict_map_of_map_pairReindex_eq` — block independence
+  transports along a law-preserving diagonal relabelling.
 * `TauCeti.Probability.indepFun_restrict_of_forall_Ico` — for a jointly exchangeable law,
   consecutive windows suffice.
 -/
