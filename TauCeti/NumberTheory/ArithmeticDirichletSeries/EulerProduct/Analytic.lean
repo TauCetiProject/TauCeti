@@ -36,7 +36,7 @@ product of the Dedekind zeta function.
 * `TauCeti.EulerProductData.hasProd_eulerFactor`: the **analytic Euler product**, when the
   ideal-indexed Dirichlet series converges absolutely at `s`.
 * `TauCeti.EulerProductData.norm_absNorm_cpow_neg_le_radius_localPowerSeries`: a lower bound for
-  the convergence radius of a local power series from its real abscissa of absolute convergence.
+  the convergence radius of a local power series from absolute convergence at a real point.
 * `TauCeti.MultiplicativeIdealWeight.hasProd_eulerFactor`: the same product, with the local factors
   in the closed geometric form available for a completely multiplicative weight.
 * `TauCeti.MultiplicativeIdealWeight.LSeries_ne_zero_of_summable_idealTerm`: the `L`-series is
@@ -234,6 +234,7 @@ open IdealArithmeticFunction
 variable (D : EulerProductData K) {s : ℂ}
 
 /-- Evaluating the local power series at `N(P) ^ (-s)` gives the Euler factor at `s`. -/
+@[simp]
 theorem ofScalarsSum_localPowerSeries_eq_eulerFactor
     (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
     FormalMultilinearSeries.ofScalarsSum (E := ℂ)
@@ -267,13 +268,13 @@ theorem abscissaOfAbsConv_localArithmeticFactor_le (P : HeightOneSpectrum (𝓞 
 analytic radius of its local power series. -/
 theorem norm_absNorm_cpow_neg_le_radius_localPowerSeries
     (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ}
-    (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ) :
+    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ)) :
     (‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊ : ENNReal) ≤
       (FormalMultilinearSeries.ofScalars ℂ fun n ↦
         PowerSeries.coeff n (D.localPowerSeries P)).radius := by
   let q : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))
   have hlocal : Summable fun e : ℕ ↦ D (P.primeIdealPow e) * q ^ e := by
-    have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ)
+    have hsum := hσ
     rw [LSeriesSummable] at hsum
     have hsum' := hsum.comp_injective <|
       Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)

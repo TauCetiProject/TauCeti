@@ -45,7 +45,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 private theorem localLogSeries_radius_data (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
-    (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ)
+    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
     (hs : σ < s.re) :
     let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
     (r : ENNReal) ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦
@@ -62,7 +62,7 @@ private theorem localLogSeries_radius_data (D : EulerProductData K)
 zero-free disk on which the local factor converges. -/
 theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
-    (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ)
+    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
     (hne : ∀ z : ℂ,
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)
@@ -84,9 +84,10 @@ theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
 /-- **The local prime-power logarithm evaluates to a logarithm of the Euler factor.** Under the
 same convergence and zero-free-disk hypotheses, exponentiating the sum of the formal logarithmic
 coefficients at `N(P) ^ (-s)` recovers the analytic local Euler factor at `s`. -/
+@[simp]
 theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
     (D : EulerProductData K) (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
-    (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ)
+    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
     (hne : ∀ z : ℂ,
       ‖z‖ < ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ →
         FormalMultilinearSeries.ofScalarsSum (E := ℂ)

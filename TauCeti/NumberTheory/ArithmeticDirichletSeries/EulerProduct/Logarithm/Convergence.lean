@@ -67,7 +67,8 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
   have hr : (r : ENNReal) ≤
       (FormalMultilinearSeries.ofScalars ℂ fun n ↦
         PowerSeries.coeff n (D.localPowerSeries P)).radius := by
-    exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
+    exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P
+      (LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ))
   have hz : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
     rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
     dsimp [r]
