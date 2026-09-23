@@ -94,6 +94,7 @@ section Image
 
 /-- Extension of scalars commutes with taking the image of a submodule: the image of the extension
 of `p` under the extension of `f` is the extension of the image of `p` under `f`. -/
+@[simp]
 theorem map_baseChange (f : M →ₗ[R] N) (p : Submodule R M) :
     Submodule.map (f.baseChange A) (p.baseChange A) = (p.map f).baseChange A := by
   rw [Submodule.baseChange_eq_span, Submodule.map_span, Submodule.baseChange_eq_span]

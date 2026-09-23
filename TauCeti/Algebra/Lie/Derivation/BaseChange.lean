@@ -95,6 +95,7 @@ theorem baseChange_apply_tmul (D : LieDerivation R L L) (a : A) (x : L) :
 
 /-- The linear map underlying the extension of `D` is the extension of the linear map underlying
 `D`; this is what lets the linear-algebraic base-change API apply to it. -/
+@[simp]
 theorem baseChange_toLinearMap (D : LieDerivation R L L) :
     (D.baseChange A).toLinearMap = D.toLinearMap.baseChange A :=
   (rfl)
