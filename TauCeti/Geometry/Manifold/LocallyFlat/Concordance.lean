@@ -21,9 +21,8 @@ The complementary model of the locally flat track is explicit data, as it is in
 parameter and the ambient time coordinate gives the symmetry operation. Transitivity is not proved
 in this file.
 
-The relation is intended for the locally flat concordance variant of the knot concordance layer:
-specialising `M` to the circle and `N` to `S³` gives the topological concordance relation on the
-geometric knot presentations.
+This is the relation underlying topological knot concordance: specialising `M` to the circle and
+`N` to `S³` gives the topological concordance relation on geometric knot presentations.
 
 ## Main definitions
 
@@ -67,7 +66,7 @@ structure TopologicalConcordance (F F' : Type*) [TopologicalSpace F] [Topologica
   /-- The locally flat track of the concordance. -/
   toFun : M × ℝ → N × ℝ
   /-- The track is locally flat with the chosen complementary model. -/
-  isLocallyFlat : IsLocallyFlat (F × ℝ) F' toFun
+  isLocallyFlat' : IsLocallyFlat (F × ℝ) F' toFun
   /-- The initial product collar. -/
   exists_pos_apply_eq_left' :
     ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), t ≤ ε → toFun (x, t) = (f x, t)
@@ -93,7 +92,7 @@ instance instFunLike {f g : M → N} :
 variable {f g h : M → N}
 
 @[simp]
-theorem coe_toFun (C : TopologicalConcordance F F' f g) : ⇑C = C.toFun :=
+theorem toFun_eq_coe (C : TopologicalConcordance F F' f g) : C.toFun = ⇑C :=
   rfl
 
 @[ext]
@@ -103,8 +102,8 @@ theorem ext {C D : TopologicalConcordance F F' f g} (h : ∀ p, C p = D p) : C =
 variable (C : TopologicalConcordance F F' f g)
 
 /-- The underlying track is locally flat with the chosen complementary model. -/
-theorem isLocallyFlat' : IsLocallyFlat (F × ℝ) F' (⇑C) :=
-  C.isLocallyFlat
+theorem isLocallyFlat : IsLocallyFlat (F × ℝ) F' (⇑C) :=
+  C.isLocallyFlat'
 
 /-! ### Collar API -/
 
@@ -164,7 +163,7 @@ theorem snd_apply_mem_Ioo_iff (x : M) {t : ℝ} :
 private theorem isEmbedding_of_slice {φ : M → N} {c : ℝ}
     (h : ∀ x : M, C (x, c) = (φ x, c)) : IsEmbedding φ := by
   have htrack : IsEmbedding (fun x : M => C (x, c)) :=
-    C.isLocallyFlat'.isEmbedding.comp (isEmbedding_prodMkLeft c)
+    C.isLocallyFlat.isEmbedding.comp (isEmbedding_prodMkLeft c)
   have hprod : IsEmbedding ((fun y : N => (y, c)) ∘ φ) := by
     simpa only [Function.comp_def, h] using htrack
   exact (isEmbedding_prodMkLeft c).of_comp_iff.mp hprod
@@ -182,8 +181,8 @@ private theorem timeReverse_apply (X : Type*) [TopologicalSpace X] (p : X × ℝ
 /-- Reverse a topological concordance by reflecting both source and target time. -/
 def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f where
   toFun p := timeReverse N (C (timeReverse M p))
-  isLocallyFlat := by
-    have hsource := C.isLocallyFlat'.comp_homeomorph (timeReverse M)
+  isLocallyFlat' := by
+    have hsource := C.isLocallyFlat.comp_homeomorph (timeReverse M)
     have htarget := hsource.homeomorph_comp (timeReverse N)
     simpa only [Function.comp_def] using htarget
   exists_pos_apply_eq_left' := by
@@ -205,9 +204,8 @@ def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f
   snd_apply_mem_Ioo' x t ht := by
     have ht' : 1 - t ∈ Ioo (0 : ℝ) 1 := by
       constructor <;> linarith [ht.1, ht.2]
-    have hC := C.snd_apply_mem_Ioo' x (1 - t) ht'
-    change (C (x, 1 - t)).2 ∈ Ioo (0 : ℝ) 1 at hC
-    change (1 - (C (x, 1 - t)).2) ∈ Ioo (0 : ℝ) 1
+    have hC := C.snd_apply_mem_Ioo x (1 - t) ht'
+    rw [timeReverse_apply, timeReverse_apply]
     constructor <;> linarith [hC.1, hC.2]
 
 /-! ### Endpoint embeddings -/
@@ -217,8 +215,8 @@ slice of the locally flat track. -/
 theorem isEmbedding_left (C : TopologicalConcordance F F' f g) : IsEmbedding f := by
   exact C.isEmbedding_of_slice C.apply_zero
 
-/-- The final map of a topological concordance is an embedding, because the reversed track has it
-as its initial map. -/
+/-- The final map of a topological concordance is an embedding, because it is the time-one slice
+of the locally flat track. -/
 theorem isEmbedding_right (C : TopologicalConcordance F F' f g) : IsEmbedding g := by
   exact C.symm.isEmbedding_left
 
@@ -226,6 +224,7 @@ theorem isEmbedding_right (C : TopologicalConcordance F F' f g) : IsEmbedding g 
 @[simp]
 theorem symm_apply (C : TopologicalConcordance F F' f g) (x : M) (t : ℝ) :
     C.symm (x, t) = ((C (x, 1 - t)).1, 1 - (C (x, 1 - t)).2) := by
+  -- Unfolding the coercion of the structure literal exposes its defining track.
   change timeReverse N (C (timeReverse M (x, t))) = _
   rw [timeReverse_apply, timeReverse_apply]
 
