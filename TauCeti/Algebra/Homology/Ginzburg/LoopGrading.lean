@@ -20,9 +20,9 @@ the negative of its loop count.  Consequently the cohomological degree `-n` piec
 loop-count degree `n` piece, not merely isomorphic to it, and every positive cohomological piece
 vanishes.  In particular, degree zero is spanned precisely by paths containing no adjoined loop.
 This is the path decomposition needed to identify the zeroth cohomology of the two-dimensional
-Ginzburg DG algebra with the additive preprojective algebra. The retraction
-`TauCeti.ginzburgRetraction` kills adjoined loops and fixes doubled paths; its image is exactly
-cohomological degree zero.
+Ginzburg DG algebra with the additive preprojective algebra. The image of
+`TauCeti.ginzburgMap` is exactly cohomological degree zero, and
+`TauCeti.ginzburgRetraction` kills adjoined loops and inverts that map on degree zero.
 
 ## Main results
 
@@ -318,6 +318,7 @@ private theorem ginzburgRetraction_ofArrow {a b : GinzburgQuiver Q} (e : a ⟶ b
   exact ginzburgRetractArrow_mul_vertexIdempotent k e
 
 /-- The retraction kills every adjoined loop. -/
+@[simp]
 theorem ginzburgRetraction_ofArrow_loop (i : Q) :
     ginzburgRetraction k (ofArrow (GinzburgHom.loop i)) = 0 :=
   ginzburgRetraction_ofArrow k _
@@ -338,6 +339,7 @@ theorem ginzburgRetraction_ginzburgMap (x : pathAlgebra k (Symmetrify Q)) :
   rw [← AlgHom.comp_apply, ginzburgRetraction_comp_ginzburgMap, AlgHom.id_apply]
 
 /-- The retraction fixes every doubled arrow. -/
+@[simp]
 theorem ginzburgRetraction_ofArrow_double {i j : Q} (a : (i ⟶ j) ⊕ (j ⟶ i)) :
     ginzburgRetraction k (ofArrow (GinzburgHom.double a)) =
       ofArrow (Q := Symmetrify Q) (a := i) (b := j) a :=

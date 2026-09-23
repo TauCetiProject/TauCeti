@@ -232,6 +232,7 @@ theorem coe_preprojectiveEquivGinzburgTwoCohomologyZero_apply (x : preprojective
 
 /-- The inverse of `Π_k(Q) ≃ H⁰(Π₂(Q))` is
 `TauCeti.ginzburgTwoCohomologyToPreprojective` on degree-zero classes. -/
+@[simp]
 theorem preprojectiveEquivGinzburgTwoCohomologyZero_symm_apply
     (z : (isDGAlgebra_ginzburgTwoDifferential (Q := Q) k).cohomologyGrading 0) :
     (preprojectiveEquivGinzburgTwoCohomologyZero k Q).symm z =
