@@ -23,10 +23,8 @@ equation and the determinant-one equation; both are closed in the entrywise matr
   the matrix orthogonal and special orthogonal groups are closed over any `T₁` topological
   commutative ring.
 
-These closed carriers give the orthogonal and special orthogonal matrix groups the induced
-topology from `Matrix n n R`.  Their closedness is the topological input needed when these
-concrete groups are treated as Lie groups and when continuity arguments are transferred from
-the ambient matrix space to the groups.
+The closedness statements identify the topological input supplied by these carriers for later
+constructions of Lie-group structures and continuity arguments on the corresponding subgroups.
 -/
 
 public section
