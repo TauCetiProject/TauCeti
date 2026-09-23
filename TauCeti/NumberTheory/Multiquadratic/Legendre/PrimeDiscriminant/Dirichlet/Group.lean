@@ -147,7 +147,8 @@ theorem genusCharAtLevel_apply_int (t : Finset s) (n : ℤ)
 theorem isQuadratic_genusCharAtLevel (t : Finset s) : (genusCharAtLevel s hs t).IsQuadratic :=
   MulChar.isQuadratic_prod fun P _ ↦ isQuadratic_primeDiscriminantCharAtLevel s hs P
 
-/-- The conductor of a subset character is the product of the absolute values of its factors. -/
+/-- If the subset contains at most one even prime discriminant, its character's conductor is the
+product of the absolute values of its factors. -/
 theorem conductor_genusCharAtLevel
     (t : Finset s)
     (heven : ∀ P ∈ t, ∀ Q ∈ t,

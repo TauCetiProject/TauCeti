@@ -52,6 +52,55 @@ namespace TauCeti.Multiquadratic
 
 /-! ### Prescribing several characters at once -/
 
+/-- The values of the three even prime-discriminant characters at the four odd residue classes
+modulo eight. -/
+private theorem evenPrimeDiscriminantCharFun_table :
+    (primeDiscriminantCharFun (-4) 1 = 1 ∧ primeDiscriminantCharFun 8 1 = 1 ∧
+      primeDiscriminantCharFun (-8) 1 = 1) ∧
+    (primeDiscriminantCharFun (-4) 3 = -1 ∧ primeDiscriminantCharFun 8 3 = -1 ∧
+      primeDiscriminantCharFun (-8) 3 = 1) ∧
+    (primeDiscriminantCharFun (-4) 5 = 1 ∧ primeDiscriminantCharFun 8 5 = -1 ∧
+      primeDiscriminantCharFun (-8) 5 = -1) ∧
+    (primeDiscriminantCharFun (-4) 7 = -1 ∧ primeDiscriminantCharFun 8 7 = 1 ∧
+      primeDiscriminantCharFun (-8) 7 = -1) := by
+  norm_num [primeDiscriminantCharFun_def]
+
+private theorem exists_primeDiscriminantCharFun_neg_four_eight (ε4 ε8 : ℤˣ) :
+    ∃ a : ℕ, primeDiscriminantCharFun (-4) a = ε4 ∧
+      primeDiscriminantCharFun 8 a = ε8 := by
+  obtain ⟨⟨h41, h81, -⟩, ⟨h43, h83, -⟩, ⟨h45, h85, -⟩, ⟨h47, h87, -⟩⟩ :=
+    evenPrimeDiscriminantCharFun_table
+  rcases Int.units_eq_one_or ε4 with rfl | rfl <;>
+    rcases Int.units_eq_one_or ε8 with rfl | rfl
+  · exact ⟨1, by simp [h41], by simp [h81]⟩
+  · exact ⟨5, by simp [h45], by simp [h85]⟩
+  · exact ⟨7, by simp [h47], by simp [h87]⟩
+  · exact ⟨3, by simp [h43], by simp [h83]⟩
+
+private theorem exists_primeDiscriminantCharFun_neg_four_neg_eight (ε4 εm8 : ℤˣ) :
+    ∃ a : ℕ, primeDiscriminantCharFun (-4) a = ε4 ∧
+      primeDiscriminantCharFun (-8) a = εm8 := by
+  obtain ⟨⟨h41, -, hm81⟩, ⟨h43, -, hm83⟩, ⟨h45, -, hm85⟩, ⟨h47, -, hm87⟩⟩ :=
+    evenPrimeDiscriminantCharFun_table
+  rcases Int.units_eq_one_or ε4 with rfl | rfl <;>
+    rcases Int.units_eq_one_or εm8 with rfl | rfl
+  · exact ⟨1, by simp [h41], by simp [hm81]⟩
+  · exact ⟨5, by simp [h45], by simp [hm85]⟩
+  · exact ⟨3, by simp [h43], by simp [hm83]⟩
+  · exact ⟨7, by simp [h47], by simp [hm87]⟩
+
+private theorem exists_primeDiscriminantCharFun_eight_neg_eight (ε8 εm8 : ℤˣ) :
+    ∃ a : ℕ, primeDiscriminantCharFun 8 a = ε8 ∧
+      primeDiscriminantCharFun (-8) a = εm8 := by
+  obtain ⟨⟨-, h81, hm81⟩, ⟨-, h83, hm83⟩, ⟨-, h85, hm85⟩, ⟨-, h87, hm87⟩⟩ :=
+    evenPrimeDiscriminantCharFun_table
+  rcases Int.units_eq_one_or ε8 with rfl | rfl <;>
+    rcases Int.units_eq_one_or εm8 with rfl | rfl
+  · exact ⟨1, by simp [h81], by simp [hm81]⟩
+  · exact ⟨7, by simp [h87], by simp [hm87]⟩
+  · exact ⟨3, by simp [h83], by simp [hm83]⟩
+  · exact ⟨5, by simp [h85], by simp [hm85]⟩
+
 /-- The characters of any proper subfamily of the three even prime discriminants can take an
 arbitrary prescribed sign pattern. -/
 private theorem exists_forall_evenPrimeDiscriminantCharFun_eq {s : Finset ℤ}
@@ -59,91 +108,27 @@ private theorem exists_forall_evenPrimeDiscriminantCharFun_eq {s : Finset ℤ}
     ∃ a : ℕ, ∀ P ∈ s, IsEvenPrimeDiscriminant P → primeDiscriminantCharFun P a = ε P := by
   by_cases h4 : -4 ∈ s
   · by_cases h8 : 8 ∈ s
-    · have hm8 : -8 ∉ s := fun hm8 => hnoall ⟨h4, h8, hm8⟩
-      rcases Int.units_eq_one_or (ε (-4)) with hε4 | hε4 <;>
-        rcases Int.units_eq_one_or (ε 8) with hε8 | hε8
-      · refine ⟨1, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa using congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · simpa using congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-        · exact (hm8 hPs).elim
-      · refine ⟨5, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-        · exact (hm8 hPs).elim
-      · refine ⟨7, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-        · exact (hm8 hPs).elim
-      · refine ⟨3, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-        · exact (hm8 hPs).elim
-    · rcases Int.units_eq_one_or (ε (-4)) with hε4 | hε4 <;>
-        rcases Int.units_eq_one_or (ε (-8)) with hεm8 | hεm8
-      · refine ⟨1, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa using congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · exact (h8 hPs).elim
-        · simpa using congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
-      · refine ⟨5, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · exact (h8 hPs).elim
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
-      · refine ⟨3, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · exact (h8 hPs).elim
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
-      · refine ⟨7, fun P hPs hP => ?_⟩
-        rcases hP with rfl | rfl | rfl
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hε4.symm
-        · exact (h8 hPs).elim
-        · simpa [primeDiscriminantCharFun_def] using
-            congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
-  · rcases Int.units_eq_one_or (ε 8) with hε8 | hε8 <;>
-      rcases Int.units_eq_one_or (ε (-8)) with hεm8 | hεm8
-    · refine ⟨1, fun P hPs hP => ?_⟩
+    · have hm8 : -8 ∉ s := fun hm8 ↦ hnoall ⟨h4, h8, hm8⟩
+      obtain ⟨a, ha4, ha8⟩ := exists_primeDiscriminantCharFun_neg_four_eight (ε (-4)) (ε 8)
+      refine ⟨a, fun P hPs hP ↦ ?_⟩
       rcases hP with rfl | rfl | rfl
-      · exact (h4 hPs).elim
-      · simpa using congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-      · simpa using congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
-    · refine ⟨7, fun P hPs hP => ?_⟩
+      · exact ha4
+      · exact ha8
+      · exact (hm8 hPs).elim
+    · obtain ⟨a, ha4, ham8⟩ :=
+        exists_primeDiscriminantCharFun_neg_four_neg_eight (ε (-4)) (ε (-8))
+      refine ⟨a, fun P hPs hP ↦ ?_⟩
       rcases hP with rfl | rfl | rfl
-      · exact (h4 hPs).elim
-      · simpa [primeDiscriminantCharFun_def] using
-          congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-      · simpa [primeDiscriminantCharFun_def] using
-          congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
-    · refine ⟨3, fun P hPs hP => ?_⟩
-      rcases hP with rfl | rfl | rfl
-      · exact (h4 hPs).elim
-      · simpa [primeDiscriminantCharFun_def] using
-          congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-      · simpa [primeDiscriminantCharFun_def] using
-          congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
-    · refine ⟨5, fun P hPs hP => ?_⟩
-      rcases hP with rfl | rfl | rfl
-      · exact (h4 hPs).elim
-      · simpa [primeDiscriminantCharFun_def] using
-          congrArg (fun u : ℤˣ => (u : ℤ)) hε8.symm
-      · simpa [primeDiscriminantCharFun_def] using
-          congrArg (fun u : ℤˣ => (u : ℤ)) hεm8.symm
+      · exact ha4
+      · exact (h8 hPs).elim
+      · exact ham8
+  · obtain ⟨a, ha8, ham8⟩ :=
+      exists_primeDiscriminantCharFun_eight_neg_eight (ε 8) (ε (-8))
+    refine ⟨a, fun P hPs hP ↦ ?_⟩
+    rcases hP with rfl | rfl | rfl
+    · exact (h4 hPs).elim
+    · exact ha8
+    · exact ham8
 
 /-- **Prescribing a square-class independent family of prime-discriminant characters.** If `s`
 does not contain all three even prime discriminants, then every assignment of signs to `s` is
