@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
@@ -50,6 +51,11 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
   square when `k < v_K(2)`.
 * `TauCeti.exists_integerUnit_residue_not_isSquare`: away from residue characteristic two there
   is a unit of `𝒪[K]` whose residue is a nonsquare.
+* `TauCeti.isSquare_zpow_mul_iff`: for `w` of even valuation, `π ^ m * w` is a square exactly
+  when `m` is even and `w` is a square.
+* `TauCeti.not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation`: a uniformizer
+  times an element of even valuation is not a square.
+* `TauCeti.not_isSquare_of_isUniformizer`: a uniformizer is not a square.
 
 ## References
 
@@ -281,6 +287,37 @@ characteristic different from two. -/
 theorem isClosed_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     IsClosed ((powMonoidHom 2 : Kˣ →* Kˣ).range : Set Kˣ) :=
   Subgroup.isClosed_of_isOpen _ (isOpen_range_powMonoidHom_two h2)
+
+/-- **Squares in a nonarchimedean local field.** Written against a uniformizer `π`, an element
+`π ^ m * w` with `w` of even valuation is a square exactly when `m` is even and `w` is a square.
+No hypothesis on the residue characteristic is needed. -/
+theorem isSquare_zpow_mul_iff {π w : Kˣ} (hπ : IsUniformizer K π)
+    (hw : Even (normalizedValuation K w).toAdd) (m : ℤ) :
+    IsSquare (π ^ m * w) ↔ Even m ∧ IsSquare w := by
+  have hπ' := (isUniformizer_def π).mp hπ
+  refine ⟨fun hsq ↦ ?_, ?_⟩
+  · -- The valuation of `π ^ m * w` is `m`, so `m` is even.
+    have hm : Even m := by
+      have hev := even_toAdd_normalizedValuation_of_isSquare hsq
+      rw [map_mul, toAdd_mul, normalizedValuation_zpow_of_eq_ofAdd_one hπ', toAdd_ofAdd] at hev
+      exact (Int.even_add.mp hev).mpr hw
+    refine ⟨hm, ?_⟩
+    have h := hsq.mul ((even_neg.mpr hm).isSquare_zpow π)
+    rwa [mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul] at h
+  · rintro ⟨hm, hw'⟩
+    exact (hm.isSquare_zpow π).mul hw'
+
+/-- A uniformizer times an element of even valuation has odd valuation, so it is not a
+square. -/
+theorem not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation {π w : Kˣ}
+    (hπ : IsUniformizer K π)
+    (hw : Even (normalizedValuation K w).toAdd) : ¬IsSquare (π * w) := fun h ↦
+  Int.not_even_one ((isSquare_zpow_mul_iff hπ hw 1).mp (by simpa using h)).1
+
+/-- A uniformizer is not a square. -/
+theorem not_isSquare_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) : ¬IsSquare π := by
+  simpa using not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation
+    hπ (w := 1) (by simp)
 
 /-- Away from residue characteristic two, there is a unit of `𝒪[K]` whose residue is a
 nonsquare. -/

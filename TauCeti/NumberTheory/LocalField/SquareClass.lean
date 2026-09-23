@@ -17,13 +17,8 @@ import TauCeti.NumberTheory.LocalField.Squares
 # The square classes of a nonarchimedean local field
 
 Let `K` be a nonarchimedean local field with normalized valuation `v_K` and uniformizer `π`.
-Writing an element as `π ^ m * w` with `v_K(w)` even splits the question of being a square into
-two independent questions: the parity of `m`, and whether `w` is a square. That is
-`TauCeti.isSquare_zpow_mul_iff`, and it holds in every residue characteristic. In particular a
-square has even valuation, so an element of odd valuation is never a square.
-
-Away from residue characteristic two the second question has exactly two answers: the
-square-class group `Kˣ ⧸ (Kˣ)²` has four elements, and for a nonsquare `u` of even valuation the
+Away from residue characteristic two the square-class group `Kˣ ⧸ (Kˣ)²` has four elements, and
+for a nonsquare `u` of even valuation the
 four classes are represented by
 
 `1`, `u`, `π`, `u π`.
@@ -37,11 +32,6 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 
 ## Main results
 
-* `TauCeti.isSquare_zpow_mul_iff`: for `w` of even valuation, `π ^ m * w` is a square exactly
-  when `m` is even and `w` is a square.
-* `TauCeti.not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation`: a uniformizer
-  times an element of even valuation is not a square.
-* `TauCeti.not_isSquare_of_isUniformizer`: a uniformizer is not a square.
 * `TauCeti.card_squareClass_of_odd`: away from residue
   characteristic two the literal quotient by squares has four elements.
 * `TauCeti.natCard_squareClassGroup_of_isUnit_two`: away from residue characteristic two the
@@ -74,37 +64,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- **Squares in a nonarchimedean local field.** Written against a uniformizer `π`, an element
-`π ^ m * w` with `w` of even valuation is a square exactly when `m` is even and `w` is a square.
-No hypothesis on the residue characteristic is needed. -/
-theorem isSquare_zpow_mul_iff {π w : Kˣ} (hπ : IsUniformizer K π)
-    (hw : Even (normalizedValuation K w).toAdd) (m : ℤ) :
-    IsSquare (π ^ m * w) ↔ Even m ∧ IsSquare w := by
-  have hπ' := (isUniformizer_def π).mp hπ
-  refine ⟨fun hsq ↦ ?_, ?_⟩
-  · -- The valuation of `π ^ m * w` is `m`, so `m` is even.
-    have hm : Even m := by
-      have hev := even_toAdd_normalizedValuation_of_isSquare hsq
-      rw [map_mul, toAdd_mul, normalizedValuation_zpow_of_eq_ofAdd_one hπ', toAdd_ofAdd] at hev
-      exact (Int.even_add.mp hev).mpr hw
-    refine ⟨hm, ?_⟩
-    have h := hsq.mul ((even_neg.mpr hm).isSquare_zpow π)
-    rwa [mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul] at h
-  · rintro ⟨hm, hw'⟩
-    exact (hm.isSquare_zpow π).mul hw'
-
-/-- A uniformizer times an element of even valuation has odd valuation, so it is not a
-square. -/
-theorem not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation {π w : Kˣ}
-    (hπ : IsUniformizer K π)
-    (hw : Even (normalizedValuation K w).toAdd) : ¬IsSquare (π * w) := fun h ↦
-  Int.not_even_one ((isSquare_zpow_mul_iff hπ hw 1).mp (by simpa using h)).1
-
-/-- A uniformizer is not a square. -/
-theorem not_isSquare_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) : ¬IsSquare π := by
-  simpa using not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation
-    hπ (w := 1) (by simp)
 
 /-- **The multiplicative square-class group of a nonarchimedean local field away from residue
 characteristic two has four elements.** This is the literal quotient `Kˣ ⧸ (Kˣ)²`;
