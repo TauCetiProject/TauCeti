@@ -380,8 +380,8 @@ theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
     f4KillingRootLabel (f4OppositeRootIndex α) = -f4KillingRootLabel α := by
   have hsource : (F4.rationalRootSystem valid_F4).reflectionPerm
       (f4RootIndex α) (f4RootIndex α) = f4RootIndex (f4OppositeRootIndex α) := by
-    rw [reflectionPerm_rationalRootSystem, simplyConnectedRootDatum_F4]
-    rfl
+    rw [reflectionPerm_rationalRootSystem, simplyConnectedRootDatum_F4,
+      f4OppositeRootIndex_eq_reflectionPerm]; rfl
   calc
     _ = (F4.rationalRootSystemEquiv valid_F4).indexEquiv
         ((F4.rationalRootSystem valid_F4).reflectionPerm (f4RootIndex α) (f4RootIndex α)) :=

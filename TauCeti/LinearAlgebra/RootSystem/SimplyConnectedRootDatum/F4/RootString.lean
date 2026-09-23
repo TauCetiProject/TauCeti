@@ -26,8 +26,12 @@ public section
 namespace TauCeti.DynkinType
 
 /-- The pinned index of the root opposite to `α`. -/
-@[expose] noncomputable def f4OppositeRootIndex (α : Fin 48) : Fin 48 :=
+noncomputable def f4OppositeRootIndex (α : Fin 48) : Fin 48 :=
   f4SimplyConnectedRootDatum.reflectionPerm α α
+
+/-- The opposite index is the self-reflection in the pinned root datum. -/
+theorem f4OppositeRootIndex_eq_reflectionPerm (α : Fin 48) :
+    f4OppositeRootIndex α = f4SimplyConnectedRootDatum.reflectionPerm α α := (rfl)
 
 /-- Taking the opposite pinned root index twice restores the index. -/
 @[simp] theorem f4OppositeRootIndex_f4OppositeRootIndex (α : Fin 48) :

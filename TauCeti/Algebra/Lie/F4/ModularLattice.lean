@@ -366,8 +366,7 @@ second half of the table. -/
 @[simp] theorem f4OppositeRootIndex_castAdd (i : Fin 4) :
     f4OppositeRootIndex (Fin.castAdd 44 i) =
       Fin.addNat (Fin.castAdd 20 i) 24 := by
-  unfold f4OppositeRootIndex
-  rw [f4SimplyConnectedRootDatum_reflectionPerm]
+  rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm]
   revert i
   decide
 
