@@ -368,7 +368,9 @@ theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
     Multiplicative.toAdd (kummerMapCanonical K n hn a) =
       explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
         (KummerCoeff K n) (Multiplicative.toAdd (kummerMap K n hn a)) := by
-  rfl
+  rw [kummerMapCanonical, AddMonoidHom.toMultiplicativeRight_apply_apply, toAdd_ofAdd,
+    AddMonoidHom.comp_apply, AddMonoidHom.toMultiplicativeRight_symm_apply_apply, toMul_ofMul,
+    AddEquiv.coe_toAddMonoidHom]
 
 /-! ### Transport to another coefficient model -/
 
