@@ -73,8 +73,6 @@ namespace TauCeti
 
 open scoped TensorProduct
 
-namespace Algebra.TensorProduct
-
 universe u v w x
 
 /-- Pairing the scalar factor against an `R`-linear functional commutes with distributing scalar
@@ -92,6 +90,8 @@ theorem lid_rTensor_distribBaseChange_symm {R : Type u} {A : Type v} {M : Type w
   | tmul a m =>
     rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
     simp [TensorProduct.smul_tmul']
+
+namespace Algebra.TensorProduct
 
 variable (K L A B : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
   [Semiring A] [Algebra K A] [Semiring B] [Algebra K B]

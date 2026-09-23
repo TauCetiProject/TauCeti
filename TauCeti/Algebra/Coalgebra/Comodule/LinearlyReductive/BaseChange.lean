@@ -94,7 +94,7 @@ private noncomputable def descendHom (l : A →ₗ[k] k)
   | tmul u c =>
     rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
     simp only [TensorProduct.map_tmul, LinearMap.id_apply]
-    rw [Algebra.TensorProduct.lid_rTensor_distribBaseChange_symm, descendLinearMap_apply]
+    rw [TauCeti.lid_rTensor_distribBaseChange_symm, descendLinearMap_apply]
 
 private theorem descendHom_toLinearMap (l : A →ₗ[k] k)
     (π : letI := Comodule.baseChange (R := k) (H := C) (M := V) A
