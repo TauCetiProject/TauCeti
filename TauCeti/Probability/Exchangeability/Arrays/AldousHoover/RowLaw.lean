@@ -126,6 +126,7 @@ theorem measurable_separateRowLaw {g : I × I × I × I → α} (hg : Measurable
     (measurable_separateRow hg)).subtype_mk
 
 /-- Permuting the columns of the noise reindexes the corresponding row law. -/
+@[simp]
 theorem separateRowLaw_colReindex {g : I × I × I × I → α} (hg : Measurable g)
     (z : I × (ℕ → I)) (τ : Equiv.Perm ℕ) :
     (separateRowLaw g z).map (permReindex τ) =
@@ -274,6 +275,7 @@ theorem conditionallyIIDWith_arrayRow_separateArray {g : I × I × I × I → α
 
 /-- **The row mixing law of a separate coding** is the law of the random row law under uniform
 global and column noise. -/
+@[simp]
 theorem map_separateRowLaw_noiseMeasure {g : I × I × I × I → α} (hg : Measurable g) :
     (noiseMeasure Axis (ℕ × ℕ)).map
         (fun u => separateRowLaw g (u .global, fun j => u (.vertex .column j))) =
@@ -289,6 +291,7 @@ theorem map_separateRowLaw_noiseMeasure {g : I × I × I × I → α} (hg : Meas
 
 /-- The mixing law of a separate coding is invariant under reindexing the columns of its random
 row law. -/
+@[simp]
 theorem map_separateRowLaw_colReindex {g : I × I × I × I → α} (hg : Measurable g)
     (τ : Equiv.Perm ℕ) :
     (((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map

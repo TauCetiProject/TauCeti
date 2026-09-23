@@ -48,6 +48,7 @@ namespace Measure
 /-- **Splitting off the coordinate `none` of an infinite product measure.** Under the product of
 probability measures indexed by `Option ι`, the coordinate at `none` and the family of coordinates
 at `some i` are independent, with laws `μ none` and the product of the `μ (some i)`. -/
+@[simp]
 theorem infinitePi_map_none_some {ι : Type*} {X : Option ι → Type*}
     [∀ i, MeasurableSpace (X i)] (μ : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (μ i)] :
     (Measure.infinitePi μ).map (fun x => (x none, fun i => x (some i)))
