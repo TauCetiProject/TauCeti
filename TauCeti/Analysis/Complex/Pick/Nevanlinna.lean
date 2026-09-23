@@ -250,6 +250,11 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
   (1 + (x : ℂ) * z) / ((x : ℂ) - z)
 
+/-- The defining formula for the Nevanlinna kernel. -/
+theorem nevanlinnaKernel_def (z : ℂ) (x : ℝ) :
+    nevanlinnaKernel z x = (1 + (x : ℂ) * z) / ((x : ℂ) - z) :=
+  by rw [nevanlinnaKernel]
+
 /-- At a real parameter the Nevanlinna kernel is real. -/
 @[simp]
 theorem nevanlinnaKernel_ofReal (t x : ℝ) :
