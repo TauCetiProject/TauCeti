@@ -47,8 +47,7 @@ namespace TauCeti
 variable {R : Type*} [CommRing R] {G : Type*} [CommMonoid G]
 variable (p : ℕ) [hp : Fact p.Prime] [CharP R p]
 
-/-- In characteristic `p`, the `p`-th power of `single g 1 - 1` collapses by the freshman's
-dream to `single (g ^ p) 1 - 1`; when `g ^ p = 1` this is `single 1 1 - 1 = 0`. -/
+/-- In characteristic `p`, the `p`-th power of `single g 1 - 1` vanishes when `g ^ p = 1`. -/
 theorem single_sub_one_pow_eq_zero {g : G} (hgp : g ^ p = 1) :
     (MonoidAlgebra.single g (1 : R) - 1) ^ p = 0 := by
   have : Nonempty G := ⟨1⟩
@@ -59,14 +58,14 @@ theorem single_sub_one_pow_eq_zero {g : G} (hgp : g ^ p = 1) :
     ← MonoidAlgebra.one_def, sub_self]
 
 /-- The group-like difference `single g 1 - 1` is nilpotent when `g ^ p = 1` in characteristic
-`p`: its `p`-th power vanishes. -/
+`p`. -/
 theorem isNilpotent_single_sub_one {g : G} (hgp : g ^ p = 1) :
     IsNilpotent (MonoidAlgebra.single g (1 : R) - 1) :=
   ⟨p, single_sub_one_pow_eq_zero p hgp⟩
 
 /-- **A monoid algebra with `p`-torsion is non-reduced in characteristic `p`.** If `R` has
 characteristic `p` and `G` has a nontrivial element `g` with `g ^ p = 1`, then `R[G]` is not
-reduced: `single g 1 - 1` is a nonzero nilpotent. -/
+reduced. -/
 theorem not_isReduced_monoidAlgebra [Nontrivial R] {g : G} (hg : g ≠ 1) (hgp : g ^ p = 1) :
     ¬ IsReduced (MonoidAlgebra R G) := by
   intro h
