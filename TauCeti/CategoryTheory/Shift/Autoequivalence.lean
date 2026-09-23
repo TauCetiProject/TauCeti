@@ -168,6 +168,7 @@ lemma reindex_add (a b : ℤ) : reindex (e := e) (a + b) = reindex a ⋙ reindex
   Functor.ext (reindex_obj_add a b) (fun _ _ φ ↦ by
     ext n
     rw [comp_f, comp_f, eqToHom_f, eqToHom_f]
+    -- Specify the index equality so `φ.f_eq` does not leave its target index unresolved.
     exact φ.f_eq (show n + (a + b) = n + b + a by omega))
 
 /-- The shift of `e`-sequences by `ℤ`, given by reindexing. It is strict: its structure
@@ -232,6 +233,7 @@ private lemma extendHom_comm {X Y : IntSequence e} (g : X.X 0 ⟶ Y.X 0) (n m : 
   · subst h
     simp [extendHom_add_one g hn]
   · obtain rfl : n = m - 1 := by omega
+    -- Specify the bound needed for the negative branch of `extendHom_sub_one`.
     simp [extendHom_sub_one g (show m ≤ 0 by omega)]
 
 instance : (eval (e := e)).Faithful where
