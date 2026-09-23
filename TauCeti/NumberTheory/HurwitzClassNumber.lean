@@ -24,7 +24,7 @@ Here `H D` is *defined* combinatorially, as a weighted count of **reduced** form
 equivalent to exactly one reduced form, the boundary conditions being what removes the double
 count on the edges of the fundamental domain, so the count is the class count; that comparison is
 separate. The definition involves no class groups, and it is a finite, decidable sum: a reduced
-form of discriminant `-D` has `3 a² ≤ D`.
+form of discriminant `-D` has `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`.
 
 ## Main definitions
 
@@ -81,12 +81,12 @@ theorem IsReducedForm.pos_of_discrim_lt_zero {a b c : ℤ} (h : IsReducedForm a 
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
 `(a, b, c)`.
 
-The definition searches the box `1 ≤ a, c ≤ D / 3`, `|b| ≤ D / 3`, which makes it a finite,
-decidable set; `mem_reducedForms` shows that for `D ≠ 0` this box loses nothing. For `D = 0` the box
-is empty, so `reducedForms 0 = ∅`, although every `c y²` with `0 ≤ c` is a reduced form of
-discriminant `0`. -/
-def reducedForms (D : ℕ) : Finset (ℤ × ℤ × ℤ) := {t ∈ Icc 1 (D / 3 : ℤ) ×ˢ
-    Icc (-(D / 3) : ℤ) (D / 3) ×ˢ Icc 1 (D / 3 : ℤ) | discrim t.1 t.2.1 t.2.2 = -D ∧
+The definition searches the box `1 ≤ a ≤ √(D / 3)`, `|b| ≤ √(D / 3)`, `1 ≤ c ≤ D / 3` (with
+`Nat.sqrt`), which makes it a finite, decidable set; `mem_reducedForms` shows that for `D ≠ 0` this
+box loses nothing. For `D = 0` the box is empty, so `reducedForms 0 = ∅`, although every `c y²`
+with `0 ≤ c` is a reduced form of discriminant `0`. -/
+def reducedForms (D : ℕ) : Finset (ℤ × ℤ × ℤ) := {t ∈ Icc 1 ((D / 3).sqrt : ℤ) ×ˢ
+    Icc (-(D / 3).sqrt : ℤ) (D / 3).sqrt ×ˢ Icc 1 (D / 3 : ℤ) | discrim t.1 t.2.1 t.2.2 = -D ∧
     IsReducedForm t.1 t.2.1 t.2.2}
 
 /-- **The reduced forms of discriminant `-D`**: for `D ≠ 0`, `(a, b, c) ∈ reducedForms D` exactly
@@ -100,8 +100,11 @@ theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {a b c : ℤ} :
   obtain ⟨hb, hac, -⟩ := hr
   rw [discrim] at hd
   obtain ⟨hb₁, hb₂⟩ := abs_le.mp hb
-  -- `3 c ≤ 3 a c ≤ 4 a c - b² = D`, as `1 ≤ a` and `b² ≤ a² ≤ a c`; so `|b| ≤ a ≤ c ≤ D / 3`
+  -- `3 a² ≤ 3 a c ≤ 4 a c - b² = D`, as `b² ≤ a² ≤ a c`; so `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`
   have : 3 * c ≤ D := by nlinarith
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le ha.le
+  have hn : n ≤ (D / 3).sqrt := Nat.le_sqrt.2 <| (Nat.le_div_iff_mul_le three_pos).2 <| by
+    zify; nlinarith
   lia
 
 /-- The discriminant `b² - 4 a c` of integers `a`, `b`, `c` leaves the remainder `b % 2` on
