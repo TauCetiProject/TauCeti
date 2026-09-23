@@ -29,32 +29,9 @@ induction from `T` carries an irreducible representation **lying over `V`** to a
 representation of `G`, and `Injectivity.lean` shows that it does so injectively on isomorphism
 classes.  This file proves that it is also **surjective**: every irreducible representation of `G`
 lying over `V` is induced from an irreducible representation of `T` lying over `V`.  With the two
-earlier halves this completes the Clifford correspondence `Irr(T ∣ V) ≃ Irr(G ∣ V)`.
-
-The proof is a character count, not a decomposition of the restriction.  Write `Res_T W` for the
-restriction of the given irreducible `W : FDRep k G` to `T` and let `U₁, …, U_r` enumerate the
-irreducible representations of `T`, as `TauCeti.irreducibleRepresentation` does.  Expanding the
-class function of `Res_T W` in the orthonormal basis of irreducible characters
-(`TauCeti.ClassFunction.sum_characterPairing_smul_ofCharacter`) gives
-
-`χ_W(t) = ∑ᵢ aᵢ · χ_{Uᵢ}(t)`,  `aᵢ = dim Hom_T(Uᵢ, Res_T W)`,
-
-for every `t : T`.  Restricting that identity to `N` and pairing it with the character of `V` over
-`N` turns the pairing on the left into `dim Hom_N(V, Res_N W)` and each pairing on the right into
-`dim Hom_N(V, Res_N Uᵢ)`, so
-
-`dim Hom_N(V, Res_N W) = ∑ᵢ aᵢ · dim Hom_N(V, Res_N Uᵢ)`
-
-as natural numbers.  That `W` lies over `V` makes the left-hand side nonzero, so some index `i` has
-both factors nonzero: `Uᵢ` lies over `V`, and `Hom_T(Uᵢ, Res_T W) ≠ 0`.  Frobenius reciprocity
-(`TauCeti.finrank_hom_indFDRep`) turns the second into `Hom_G(Ind_T^G Uᵢ, W) ≠ 0`, and since
-`Ind_T^G Uᵢ` is irreducible (`FDRep.simple_indFDRep_of_inertia`) and `W` is irreducible, Schur's
-lemma upgrades a nonzero intertwiner between them to an isomorphism.
-
-Both the algebraic closedness and the characteristic-zero hypothesis are those of the rest of the
-Clifford layer: the first makes the irreducible characters an orthonormal basis of the class
-functions, so that the multiplicities `aᵢ` are the pairings, and the second is Maschke's condition
-in the form in which the surrounding files use it.
+earlier halves this completes the Clifford correspondence `Irr(T ∣ V) ≃ Irr(G ∣ V)`, which reduces
+the classification of the irreducible representations of `G` lying over `V` to the same
+classification for the inertia group, a group in which `V` is stable under conjugation.
 
 ## Main statements
 
@@ -112,6 +89,17 @@ theorem exists_simple_liesOver_inertia_nonempty_iso_indFDRep
     (hW : W.LiesOver N.subtype V) :
     ∃ (U : FDRep k (inertia V)) (_ : Simple U),
       U.LiesOver (Subgroup.inclusion (le_inertia V)) V ∧ Nonempty (indFDRep U ≅ W) := by
+  -- The proof is a character count, not a decomposition of the restriction.  Expanding the class
+  -- function of `Res_T W` in the orthonormal basis of irreducible characters of `T = inertia V`
+  -- gives `χ_W(t) = ∑ᵢ aᵢ · χ_{Uᵢ}(t)` with `aᵢ = dim Hom_T(Uᵢ, Res_T W)`; algebraic closedness is
+  -- what makes that basis orthonormal, so that the multiplicities `aᵢ` are the pairings.
+  -- Restricting the identity to `N` and pairing it with the character of `V` turns it into the
+  -- identity of natural numbers `dim Hom_N(V, Res_N W) = ∑ᵢ aᵢ · dim Hom_N(V, Res_N Uᵢ)`, whose
+  -- left-hand side is nonzero because `W` lies over `V`.  Some `Uᵢ` therefore lies over `V` and
+  -- admits a nonzero intertwiner into `Res_T W`; Frobenius reciprocity
+  -- (`TauCeti.finrank_hom_indFDRep`) moves that intertwiner to `Hom_G(Ind Uᵢ, W)`, and Schur's
+  -- lemma makes it an isomorphism, `Ind Uᵢ` being irreducible by
+  -- `FDRep.simple_indFDRep_of_inertia`.
   classical
   let _ : Fintype G := Fintype.ofFinite G
   let _ : Fintype N := Fintype.ofFinite N
@@ -147,29 +135,14 @@ theorem exists_simple_liesOver_inertia_nonempty_iso_indFDRep
   -- Expand the character of `Res_T W` in the basis of irreducible characters of `T`.
   have hexp : ∀ t : (inertia V), W.character (t : G) = ∑ i, (a i : k) * (U i).character t := by
     intro t
-    have hsum := ClassFunction.sum_characterPairing_smul_ofCharacter
+    have hval := ClassFunction.apply_eq_sum_characterPairing_mul_character
       (irreducibleRepresentation (k := k) (G := (inertia V : Subgroup G)))
       (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp)
-      (ClassFunction.ofFDRep (resFDRep (inertia V) W))
-    let evalAt : ClassFunction k (inertia V) →ₗ[k] k :=
-      (LinearMap.proj t).comp (ClassFunction k (inertia V)).subtype
-    have hev := congrArg evalAt hsum
-    rw [map_sum] at hev
-    have hterm : ∀ i : Fin (Nat.card (ConjClasses (inertia V))),
-        evalAt (ClassFunction.characterPairing
-            (ClassFunction.ofCharacter (irreducibleRepresentation k i))
-            (ClassFunction.ofFDRep (resFDRep (inertia V) W)) •
-          ClassFunction.ofCharacter (irreducibleRepresentation k i)) =
-          (a i : k) * (U i).character t := by
-      intro i
-      rw [map_smul, hcoeff i, smul_eq_mul]
-      congr 1
-      exact ClassFunction.ofCharacter_apply (irreducibleRepresentation k i) t
-    rw [Finset.sum_congr rfl fun i _ => hterm i] at hev
-    have hrhs : evalAt (ClassFunction.ofFDRep (resFDRep (inertia V) W)) = W.character (t : G) :=
-      ClassFunction.ofFDRep_apply (resFDRep (inertia V) W) t
-    rw [hrhs] at hev
-    exact hev.symm
+      (ClassFunction.ofFDRep (resFDRep (inertia V) W)) t
+    rw [ClassFunction.ofFDRep_apply, character_resFDRep] at hval
+    refine hval.trans (Finset.sum_congr rfl fun i _ => ?_)
+    rw [hcoeff i, ← ClassFunction.ofCharacter_apply (irreducibleRepresentation k i) t, hU i,
+      ClassFunction.ofFDRep_apply]
   -- Pair the expansion, restricted to `N`, with the character of `V`.
   have hpair : (Module.finrank k (V ⟶ resFDRep N W) : k) = ∑ i, (a i : k) * (b i : k) := by
     have h1 : ClassFunction.characterPairing (ClassFunction.ofFDRep (resFDRep N W))
