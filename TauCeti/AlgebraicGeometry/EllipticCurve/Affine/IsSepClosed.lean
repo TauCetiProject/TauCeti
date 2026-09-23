@@ -60,7 +60,7 @@ theorem exists_point_on_curve_of_isSepClosed (a : F) (h : (2 : F) ≠ 0 ∨ W.a�
 end Affine
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve F)
-  {Ω : Type*} [Field Ω] [Algebra F Ω] {x y : Ω}
+  {Ω : Type*} [CommRing Ω] [NoZeroDivisors Ω] [Algebra F Ω] {x y : Ω}
 
 /-- **The `y`-coordinate of a point with rational `x` is rational** over a separably closed field,
 under the same separability side condition as `Affine.exists_point_on_curve_of_isSepClosed`. -/
