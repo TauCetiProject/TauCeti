@@ -121,7 +121,7 @@ theorem preimage_zeroPatternSet_eq_affineConeOrbit (hi : IsIntegralLattice i)
 
 /-! ### Intrinsic consequences -/
 
-private theorem affineConeOrbit_nonempty_of_basis (hi : IsIntegralLattice i)
+private theorem nonempty_affineConeOrbit_of_basis (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ)
     {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face) :
@@ -135,10 +135,10 @@ private theorem affineConeOrbit_nonempty_of_basis (hi : IsIntegralLattice i)
   by_cases hρ : ρ ∈ hσ.faceOrderIso hi F <;> simp
 
 /-- Every face-indexed affine-cone orbit is nonempty. -/
-theorem affineConeOrbit_nonempty (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
+theorem nonempty_affineConeOrbit (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
     (F : σ.Face) : (affineConeOrbit hi F).Nonempty := by
   obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
-  exact affineConeOrbit_nonempty_of_basis hi hσ hb F
+  exact nonempty_affineConeOrbit_of_basis hi hσ hb F
 
 /-- The orbit strata form a partition: every affine complex point belongs to the orbit of a
 unique face. -/
@@ -257,7 +257,7 @@ theorem affineConeOrbit_subset_closure_iff (hi : IsIntegralLattice i)
   let _ := affinePointTopology g
   constructor
   · intro h
-    obtain ⟨x, hx⟩ := affineConeOrbit_nonempty hi hσ G
+    obtain ⟨x, hx⟩ := nonempty_affineConeOrbit hi hσ G
     exact (mem_closure_affineConeOrbit_iff_le hi hσ F G g hx).mp (h hx)
   · intro h x hx
     exact (mem_closure_affineConeOrbit_iff_le hi hσ F G g hx).mpr h
