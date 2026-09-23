@@ -20,7 +20,9 @@ zero, shifted down by `k`, is the Laurent expansion of `f` at the cusp.
 This file packages that construction as a formal `LaurentSeries ℂ`. It proves that all
 coefficients below exponent `-k` vanish and, more importantly, that the resulting Laurent series
 converges to the descended function throughout the punctured unit disc. Thus the formal series is
-connected to the actual quotient function rather than merely recording its coefficients.
+connected to the actual quotient function rather than merely recording its coefficients. The
+coefficients are uniquely characterized by this convergence, so the resulting series is
+independent of the valid growth bound `k` used to construct it.
 
 ## Main declarations
 
@@ -32,6 +34,10 @@ connected to the actual quotient function rather than merely recording its coeff
   the punctured q-disc.
 * `TauCeti.Subgroup.CuspDatum.hasSum_laurentQExpansion_coordinate`: the corresponding expansion
   of the original function on the upper half-plane.
+* `TauCeti.Subgroup.CuspDatum.laurentQExpansion_coeff_unique`: any convergent Laurent expansion
+  supported in the prescribed range has these coefficients.
+* `TauCeti.Subgroup.CuspDatum.laurentQExpansion_eq`: the expansion is independent of the valid
+  growth bound used in its construction.
 
 ## References
 
@@ -49,8 +55,8 @@ namespace TauCeti.Subgroup.CuspDatum
 variable {Γ : Subgroup PSL(2, ℝ)}
 
 /-- The Taylor series at zero of the q-extension obtained after twisting by `q^k`. Under the
-growth hypothesis of `hasSum_twistedQExpansion`, this series converges on the open unit disc to
-`twistedExtension D k f`. -/
+hypotheses of `hasSum_twistedQExpansion` (invariance, holomorphy, and the growth bound for `k`),
+this series converges on the open unit disc to `twistedExtension D k f`. -/
 def twistedQExpansion (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) : PowerSeries ℂ :=
   UpperHalfPlane.qExpansion D.width fun z ↦ cuspTwist D k f (D.scaling⁻¹ • z)
 
@@ -75,8 +81,9 @@ theorem twistedQExpansion_coeff_zero (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → �
   rw [twistedQExpansion_coeff]
   simp
 
-/-- The Laurent q-expansion with lower exponent `-k`: shift the Taylor series of the bounded
-twisted extension by the monomial `X⁻ᵏ`. -/
+/-- The Taylor series of the twisted extension, shifted by `X⁻ᵏ`, so that it is supported in
+exponents at least `-k`. Under the growth bound for `k`, it is independent of `k` by
+`laurentQExpansion_eq`. -/
 def laurentQExpansion (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) : LaurentSeries ℂ :=
   HahnSeries.single (-k) 1 * (twistedQExpansion D k f : LaurentSeries ℂ)
 
@@ -147,6 +154,35 @@ theorem laurentQExpansion_coeff_neg_eq_valueAtInfty (D : Γ.CuspDatum) (k : ℤ)
   rw [laurentQExpansion_coeff_neg,
     twistedExtension_zero_eq_valueAtInfty D k f hf hhol hbound]
 
+private theorem hasSum_mul_zpow_natCast_sub_iff {a : ℕ → ℂ} {q s : ℂ}
+    (hq : q ≠ 0) (k : ℤ) :
+    HasSum (fun n : ℕ ↦ a n * q ^ ((n : ℤ) - k)) s ↔
+      HasSum (fun n : ℕ ↦ a n * q ^ n) (q ^ k * s) := by
+  have hpow (n : ℕ) : q ^ ((n : ℤ) - k) = q ^ (-k) * q ^ n := by
+    rw [show (n : ℤ) - k = -k + (n : ℤ) by omega, zpow_add₀ hq, zpow_natCast]
+  constructor
+  · intro hsum
+    have hterms : (fun n : ℕ ↦ q ^ k * (a n * q ^ ((n : ℤ) - k))) =
+        fun n : ℕ ↦ a n * q ^ n := by
+      funext n
+      rw [hpow]
+      calc
+        q ^ k * (a n * (q ^ (-k) * q ^ n)) =
+            (q ^ k * q ^ (-k)) * (a n * q ^ n) := by ring
+        _ = a n * q ^ n := by rw [← zpow_add₀ hq, add_neg_cancel, zpow_zero, one_mul]
+    simpa only [hterms] using hsum.mul_left (q ^ k)
+  · intro hsum
+    have hterms : (fun n : ℕ ↦ q ^ (-k) * (a n * q ^ n)) =
+        fun n : ℕ ↦ a n * q ^ ((n : ℤ) - k) := by
+      funext n
+      rw [hpow]
+      ring
+    have htotal : q ^ (-k) * (q ^ k * s) = s := by
+      calc
+        q ^ (-k) * (q ^ k * s) = (q ^ (-k) * q ^ k) * s := by ring
+        _ = s := by rw [← zpow_add₀ hq, neg_add_cancel, zpow_zero, one_mul]
+    simpa only [hterms, htotal] using hsum.mul_left (q ^ (-k))
+
 /-- The Laurent q-expansion converges to the cusp extension throughout the punctured unit disc,
 when reindexed over its potentially nonzero coefficients. -/
 theorem hasSum_laurentQExpansion_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
@@ -158,20 +194,16 @@ theorem hasSum_laurentQExpansion_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : �
     HasSum (fun n : ℕ ↦
       (laurentQExpansion D k f).coeff ((n : ℤ) - k) * q ^ ((n : ℤ) - k))
       (cuspExtension D f q) := by
-  have hsum := (hasSum_twistedQExpansion D k f hf hhol hbound hq_norm).mul_left (q ^ (-k))
   rw [cuspExtension_eq_zpow_mul_twistedExtension_of_ne_zero_of_norm_lt_one
     D k f hf hq hq_norm]
-  have hterms :
-      (fun n : ℕ ↦ (laurentQExpansion D k f).coeff ((n : ℤ) - k) *
-        q ^ ((n : ℤ) - k)) =
-      fun n : ℕ ↦ q ^ (-k) * ((twistedQExpansion D k f).coeff n * q ^ n) := by
-    funext n
-    rw [laurentQExpansion_coeff_natCast_sub]
-    have hindex : (n : ℤ) - k = -k + (n : ℤ) := by omega
-    rw [hindex, zpow_add₀ hq, zpow_natCast]
-    ring
-  rw [hterms]
-  exact hsum
+  rw [show (fun n : ℕ ↦ (laurentQExpansion D k f).coeff ((n : ℤ) - k) *
+    q ^ ((n : ℤ) - k)) = fun n : ℕ ↦
+      (twistedQExpansion D k f).coeff n * q ^ ((n : ℤ) - k) by
+        funext n
+        rw [laurentQExpansion_coeff_natCast_sub]]
+  apply (hasSum_mul_zpow_natCast_sub_iff hq k).2
+  simpa only [← mul_assoc, ← zpow_add₀ hq, add_neg_cancel, zpow_zero, one_mul] using
+    hasSum_twistedQExpansion D k f hf hhol hbound hq_norm
 
 /-- Reindex a Laurent q-expansion supported in exponents at least `-k` by `n - k'`, for any
 `k'` at least `k`. -/
@@ -257,26 +289,11 @@ theorem laurentQExpansion_coeff_unique (D : Γ.CuspDatum) (k : ℤ) (f : ℍ →
       rw [coordinate_inv_smul] at hsum'
       have hreindexed := (hasSum_int_iff_natCast_sub fun j hj ↦ by
         rw [hc j hj, zero_mul]).mp hsum'
-      have hscaled := hreindexed.mul_left (Function.Periodic.qParam D.width z ^ k)
       simp only [F, ContinuousMap.coe_mk]
       rw [cuspTwist_inv_smul D k f z]
       simp only [smul_eq_mul]
-      have hterms :
-          (fun m : ℕ ↦ c ((m : ℤ) - k) * Function.Periodic.qParam D.width z ^ m) =
-          fun m : ℕ ↦ Function.Periodic.qParam D.width z ^ k *
-            (c ((m : ℤ) - k) *
-              Function.Periodic.qParam D.width z ^ ((m : ℤ) - k)) := by
-        funext m
-        have hq : Function.Periodic.qParam D.width z ≠ 0 :=
-          Function.Periodic.qParam_ne_zero z
-        have hpow : Function.Periodic.qParam D.width z ^ m =
-            Function.Periodic.qParam D.width z ^ ((m : ℤ) - k) *
-              Function.Periodic.qParam D.width z ^ k := by
-          rw [← zpow_add₀ hq, sub_add_cancel, zpow_natCast]
-        rw [hpow]
-        ring
-      rw [hterms]
-      exact hscaled
+      exact (hasSum_mul_zpow_natCast_sub_iff
+        (Function.Periodic.qParam_ne_zero z) k).mp hreindexed
 
 /-- If `k ≤ k'`, the coefficients of the Laurent expansion constructed using the `k`-bound,
 reindexed by `n - k'`, are the Taylor coefficients of the `k'`-twisted extension. -/

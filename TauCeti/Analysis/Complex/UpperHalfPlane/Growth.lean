@@ -10,15 +10,18 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 /-!
-# Exponential decay on the upper half-plane
+# Exponential bounds on the upper half-plane
 
 A function dominated by a strictly decreasing real exponential in the imaginary coordinate
 tends to zero as that coordinate tends to infinity. This supplies the general asymptotic step
 used when exponential decay in a cusp coordinate is converted into vanishing at the cusp.
 
+An exponential growth bound with integer rate `k` also remains valid after increasing `k`. This
+monotonicity feeds the independence of a cusp Laurent expansion from the chosen growth bound.
+
 -/
 
-/- Formal source: the argument is the one proving
+/- Formal source for the decay result: the argument is the one proving
 `UpperHalfPlane.IsZeroAtImInfty.of_exp_decay` in
 `Mathlib/NumberTheory/ModularForms/Petersson.lean`. That statement bundles the decay rate into
 an existential and lives behind the modular-forms import, so the unbundled form is restated
@@ -39,7 +42,8 @@ theorem isZeroAtImInfty_of_isBigO_exp_neg {E : Type*} [NormedAddCommGroup E] {f 
   exact tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.mpr hc)
 
 /-- An exponential growth bound at `i∞` remains valid after increasing its integer rate. -/
-theorem isBigO_exp_of_le (w : ℝ) (hw : 0 < w) {k k' : ℤ} (hkk' : k ≤ k') {f : ℍ → ℂ}
+theorem isBigO_exp_of_le {E : Type*} [NormedAddCommGroup E]
+    (w : ℝ) (hw : 0 < w) {k k' : ℤ} (hkk' : k ≤ k') {f : ℍ → E}
     (hf : f =O[atImInfty]
       fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / w)) :
     f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * (k' : ℝ) * z.im / w) := by
