@@ -59,7 +59,6 @@ theorem mk_relator (r : freeProfiniteGroup X) (hr : r ∈ rels) : mk rels r = 1 
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
 
 /-- The kernel of the quotient map is the closed normal closure of the relators. -/
-@[simp]
 theorem mem_ker_mk_iff (x : freeProfiniteGroup X) :
     x ∈ (mk rels).ker ↔ x ∈ (Subgroup.normalClosure rels).topologicalClosure := by
   change (x : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
@@ -162,7 +161,6 @@ theorem mk_relator (r : freeProP p X) (hr : r ∈ rels) : mk p rels r = 1 := by
     (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
 
 /-- The kernel of the quotient map is the closed normal closure of the relators. -/
-@[simp]
 theorem mem_ker_mk_iff (x : freeProP p X) :
     x ∈ (mk p rels).ker ↔ x ∈ (Subgroup.normalClosure rels).topologicalClosure := by
   change (x : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
