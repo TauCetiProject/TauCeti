@@ -26,7 +26,8 @@ characteristic, or an invertible `2`.
 
 * `TauCeti.linearRec₂_mul_eq_succ_add_mul_pred`: for `0 < m`, multiplying a term by `D` moves it
   one step up and leaves `S` times the term one step down,
-  `D * d m = d (m + 1) + S * d (m - 1)`. It needs no hypothesis on `D` and `S`.
+  `D * d m = d (m + 1) + S * d (m - 1)`. It needs no hypothesis on `D` and `S`, and of `R` only
+  an additive group structure and a multiplication, with no ring axioms.
   This is the recurrence itself, re-indexed so that the multiplication rather than the top term
   is the subject; in that form it is what an induction on a product can apply term by term.
 * `TauCeti.linearRec₂_mul_eq_sum_pow_mul`: once `d` is normalised by `d 0 = 1` and `d 1 = D`,
@@ -82,7 +83,8 @@ and `formal_ppow_mul`.
 
 They are ported public here rather than kept private: they are the reusable content of that
 block, and a private copy would have to be re-ported by every consumer. The hypotheses are
-AINTLIB's, unchanged; `D`, `S` and `d` become `variable`s, the names follow Mathlib's
+AINTLIB's, except that the first result drops the ring axioms it does not use; `D`, `S` and `d`
+become `variable`s, the names follow Mathlib's
 statement-describing convention instead of the source's `formal_*` working names, and the first
 proof spells out the step that the source discharges with `grind`.
 -/
@@ -93,9 +95,9 @@ namespace TauCeti
 
 open Finset
 
-section NonUnitalNonAssocRing
+section AddGroup
 
-variable {R : Type*} [NonUnitalNonAssocRing R] {D S : R} {d : ℕ → R}
+variable {R : Type*} [AddGroup R] [Mul R] {D S : R} {d : ℕ → R}
 
 /-- **Multiplying by `D` shifts a term up.** For a sequence obeying
 `d (r + 2) = D * d (r + 1) - S * d r`, multiplication by `D` sends `d m`, for `0 < m`, to the next
@@ -108,7 +110,7 @@ theorem linearRec₂_mul_eq_succ_add_mul_pred
   simp only [Nat.add_assoc, Nat.reduceAdd, Nat.add_sub_cancel]
   rw [hd k, sub_add_cancel]
 
-end NonUnitalNonAssocRing
+end AddGroup
 
 variable {R : Type*} [Ring R] {D S : R} {d : ℕ → R}
 

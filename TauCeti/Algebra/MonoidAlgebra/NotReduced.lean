@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Nilpotent.Basic
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # A monoid algebra is non-reduced in the presence of `p`-torsion
@@ -19,7 +20,7 @@ reduced whenever `R` has prime characteristic `p` and `G` has a nontrivial eleme
 The mechanism is the freshman's dream: if `g ≠ 1` with `g ^ p = 1`, then in characteristic `p`
 the group-like element `single g 1` and the identity `1 = single 1 1` satisfy
 `(single g 1 - 1) ^ p = single (g ^ p) 1 - 1 = single 1 1 - 1 = 0` by `sub_pow_char`, while
-`single g 1 - 1 ≠ 0` because `single` is injective in its index. So `single g 1 - 1` is a nonzero
+`single g 1 - 1 ≠ 0` by `TauCeti.single_sub_one_ne_zero`. So `single g 1 - 1` is a nonzero
 nilpotent and `R[G]` is not reduced.
 
 ## Main declarations
@@ -27,7 +28,6 @@ nilpotent and `R[G]` is not reduced.
 * `TauCeti.single_sub_one_pow_eq_zero`: `(single g 1 - 1) ^ p = 0` when `g ^ p = 1`, in
   characteristic `p`.
 * `TauCeti.isNilpotent_single_sub_one`: the element `single g 1 - 1` is nilpotent.
-* `TauCeti.single_sub_one_ne_zero`: `single g 1 - 1` is nonzero when `g ≠ 1`.
 * `TauCeti.not_isReduced_monoidAlgebra`: `R[G]` is not reduced when `G` has nontrivial
   `p`-torsion and `R` has characteristic `p`.
 
@@ -35,8 +35,7 @@ nilpotent and `R[G]` is not reduced.
 
 The freshman's-dream identity `(x - y) ^ p = x ^ p - y ^ p` in characteristic `p` is Mathlib's
 `sub_pow_char`; the monomial power law `single m r ^ n = single (m ^ n) (r ^ n)` is Mathlib's
-`MonoidAlgebra.single_pow`; injectivity of `single` in its index is
-`MonoidAlgebra.single_left_injective`.
+`MonoidAlgebra.single_pow`.
 The characteristic of the monoid algebra is transported from that of `R` along the injective
 `algebraMap` (`charP_of_injective_algebraMap` with `FaithfulSMul.algebraMap_injective`).
 -/
@@ -44,20 +43,6 @@ The characteristic of the monoid algebra is transported from that of `R` along t
 public section
 
 namespace TauCeti
-
-section Ring
-
-variable {R : Type*} [Ring R] {G : Type*} [One G]
-
-/-- Over a nontrivial ring, the difference `single g 1 - 1` between the basis element at `g` and the
-unit is nonzero when `g ≠ 1`. -/
-theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
-    MonoidAlgebra.single g (1 : R) - 1 ≠ 0 := by
-  rw [sub_ne_zero, MonoidAlgebra.one_def]
-  intro h
-  exact hg (MonoidAlgebra.single_left_injective one_ne_zero h)
-
-end Ring
 
 variable {R : Type*} [CommRing R] {G : Type*} [CommMonoid G]
 variable (p : ℕ) [hp : Fact p.Prime] [CharP R p]
