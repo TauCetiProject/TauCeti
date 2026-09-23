@@ -254,6 +254,10 @@ theorem pushforwardToSheafify_naturality {P Q : PresheafOfModules.{v} R.obj} (f 
       pushforwardToSheafify (J := J) (K := K) F R P ≫
         ((SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)).map
           ((PresheafOfModules.sheafification (R := R) (𝟙 R.obj)).map f)).val := by
+  -- The stated equality is between bundled module morphisms, while adjunction naturality is an
+  -- equality of the maps used to build them. Unfolding these wrapper fields by `change` is needed
+  -- here: the public underlying-presheaf characterization below is only available after applying
+  -- `toPresheaf`, so it cannot rewrite this bundled goal directly.
   change (presheafPushforward F R).map f ≫
       (presheafPushforward F R).map
         ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.app Q) =

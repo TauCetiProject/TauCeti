@@ -17,6 +17,8 @@ equips restriction to the slice over `X` with a strong symmetric monoidal struct
 The construction descends the evident symmetric monoidal structure on restriction of presheaves
 through sheafification.  The localization universal property supplies all monoidal coherence laws;
 the proof that the descended structure preserves the braiding uses the same localization comparison.
+The descent uses Mathlib's
+[`CategoryTheory.Localization.Monoidal.functorMonoidalOfComp`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Localization/Monoidal/Functor.html#CategoryTheory.Localization.Monoidal.functorMonoidalOfComp).
 
 ## Main declarations
 
@@ -141,6 +143,10 @@ instance overFunctorBraided :
     let _ : (overSheafification R X).Braided := overSheafificationBraided R X
     let _ : (overSheafification R X).Monoidal :=
       (overSheafificationBraided R X).toMonoidal
+    -- `Functor.Braided` asks for the tensorator on arbitrary sheaves, whereas the localization
+    -- comparison lemmas describe it after choosing sheafification presentations. This `change`
+    -- is the definitional bridge from the generated `functorMonoidalOfComp` tensorator to the
+    -- public `curriedTensorPreIsoPost` characterization used below.
     change
       ((CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost
         (overSourceSheafification R) (overSourceW R)
@@ -221,7 +227,6 @@ instance overFunctorBraided :
 variable {R}
 
 /-- The tensor comparison for restriction to a slice. -/
-@[expose]
 def _root_.SheafOfModules.overTensorIso
     (M N : SheafOfModules.{u} (ringCatSheaf R)) (X : C) :
     @Iso (SheafOfModules.{u} (ringCatSheaf (R.over X))) _ ((M ⊗ N).over X)
@@ -230,7 +235,6 @@ def _root_.SheafOfModules.overTensorIso
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N).symm
 
 /-- The unit comparison for restriction to a slice. -/
-@[expose]
 def _root_.SheafOfModules.overUnitIso (X : C) :
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj
         (𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) ≅
@@ -243,26 +247,26 @@ theorem overTensorIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overTensorIso N X).hom =
       Functor.OplaxMonoidal.δ
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem overTensorIso_inv (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overTensorIso N X).inv =
       Functor.LaxMonoidal.μ
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem overUnitIso_hom : (_root_.SheafOfModules.overUnitIso (R := R) X).hom =
     Functor.OplaxMonoidal.η
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem overUnitIso_inv : (_root_.SheafOfModules.overUnitIso (R := R) X).inv =
     Functor.LaxMonoidal.ε
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) :=
-  rfl
+  (rfl)
 
 end SheafOfModules
 
