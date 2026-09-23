@@ -27,8 +27,8 @@ pure zero-dimensional. The property is invariant under isomorphisms of arrows.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.PureRelativeDimension d f`: every nonempty fibre of `f` is
-  equidimensional of dimension `d`.
+* `TauCeti.AlgebraicGeometry.PureRelativeDimension d f`: `f` has relative dimension at most `d`,
+  and every fibre is pure-dimensional of dimension `d`.
 * `TauCeti.AlgebraicGeometry.pureRelativeDimension_iff_isPureDimensional_fiber`: the
   scheme-theoretic fibre characterization.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isPureDimensional_fiber`: the
