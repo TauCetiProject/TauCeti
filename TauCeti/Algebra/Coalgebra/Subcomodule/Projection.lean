@@ -37,7 +37,7 @@ variable [AddCommGroup V] [Module R V] [Comodule R C V]
 
 /-- The projection onto a subcomodule `W` along a complementary subcomodule `Q`, as a comodule
 endomorphism. Its underlying linear map is `Submodule.projection`. -/
-@[expose] noncomputable def projection (W Q : Subcomodule R C V)
+noncomputable def projection (W Q : Subcomodule R C V)
     (h : IsCompl W.toSubmodule Q.toSubmodule) : Comodule.Hom R C V V where
   toLinearMap := W.toSubmodule.projection Q.toSubmodule h
   map_coact := by
@@ -65,7 +65,7 @@ endomorphism. Its underlying linear map is `Submodule.projection`. -/
 theorem projection_toLinearMap (W Q : Subcomodule R C V)
     (h : IsCompl W.toSubmodule Q.toSubmodule) :
     (projection W Q h).toLinearMap = W.toSubmodule.projection Q.toSubmodule h :=
-  rfl
+  (rfl)
 
 /-- The projection onto `W` along `Q` takes values in `W`. -/
 @[simp]
