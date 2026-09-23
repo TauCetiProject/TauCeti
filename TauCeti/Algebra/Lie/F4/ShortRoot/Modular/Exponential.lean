@@ -306,6 +306,8 @@ noncomputable def f4ShortRootInclusion :
     f4ShortRootLieIdeal →ₗ[ZMod 2] f4ModularChevalleyLieAlgebra :=
   f4ShortRootLieIdeal.incl.toLinearMap
 
+/-- Include the scalar-extended short-root ideal in the integral Chevalley lattice after
+canceling the intermediate base change through `ZMod 2`. -/
 noncomputable def f4ShortRootBaseChangeInclusion {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] :
     A ⊗[ZMod 2] f4ShortRootLieIdeal →ₗ[A] A ⊗[ℤ] f4ChevalleyLieLattice :=
