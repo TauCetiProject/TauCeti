@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # The simple-root basis of the checkerboard lattice
@@ -62,6 +63,10 @@ available: this deduces it from the lattice, rather than the other way round.
 * `TauCeti.IntegralLattice.determinant_checkerboardLattice`: the signed determinant of the
   checkerboard lattice is `4`.
 * `CartanMatrix.D_det`: `(CartanMatrix.D n).det = 4` for `2 ≤ n`.
+* `TauCeti.DynkinType.det_typeDSimpleRoot_sq`: the determinant square of the integral simple-root
+  matrix.
+* `TauCeti.DynkinType.linearIndependent_typeDSimpleRoot_cast`: scalar-extension independence over
+  a field where `2` is nonzero.
 
 ## References
 
@@ -313,14 +318,9 @@ theorem D_det (hn : 2 ≤ n) : (D n).det = 4 := by
       norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
         Matrix.cons_val_fin_one]
   have : NeZero n := ⟨by omega⟩
-  have hmul : Matrix.of (TauCeti.DynkinType.typeDSimpleRoot n hn4) *
-      Matrix.transpose (Matrix.of (TauCeti.DynkinType.typeDSimpleRoot n hn4)) = D n := by
-    ext i j
-    rw [Matrix.mul_apply,
-      ← TauCeti.DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn4 i j]
-    simp [dotProduct]
   have hsq : (D n).det = (Matrix.of (TauCeti.DynkinType.typeDSimpleRoot n hn4)).det ^ 2 := by
-    rw [← hmul, Matrix.det_mul, Matrix.det_transpose, sq]
+    rw [← TauCeti.DynkinType.typeDSimpleRoot_mul_transpose hn4, Matrix.det_mul,
+      Matrix.det_transpose, sq]
   have hnonneg : 0 ≤ (D n).det := by
     rw [hsq]
     exact sq_nonneg _
@@ -331,6 +331,51 @@ theorem D_det (hn : 2 ≤ n) : (D n).det = 4 := by
   omega
 
 end CartanMatrix
+
+namespace TauCeti.DynkinType
+
+/-! ## The determinant square of the simple-root matrix -/
+
+variable {n : ℕ}
+
+/-- The determinant square of the integral type-D simple-root matrix. -/
+theorem det_typeDSimpleRoot_sq (n : ℕ) (hn : 4 ≤ n) :
+    (Matrix.of (typeDSimpleRoot n hn)).det ^ 2 = 4 := by
+  rw [← CartanMatrix.D_det (show 2 ≤ n by omega), ← typeDSimpleRoot_mul_transpose hn,
+    Matrix.det_mul, Matrix.det_transpose, sq]
+
+/-! ## Scalar extension of the simple-root independence -/
+
+/-- The Bourbaki simple roots remain linearly independent after scalar extension to a field in
+which `2` is nonzero. -/
+theorem linearIndependent_typeDSimpleRoot_cast {K : Type*} [Field K] [NeZero (2 : K)]
+    (hn : 4 ≤ n) :
+    LinearIndependent K (fun i j => (typeDSimpleRoot n hn i j : K)) := by
+  let A : Matrix (Fin n) (Fin n) K := Matrix.of fun i j => (typeDSimpleRoot n hn i j : K)
+  have hdetcast : A.det = ((Matrix.of (typeDSimpleRoot n hn)).det : K) := by
+    rw [show A = (Matrix.of (typeDSimpleRoot n hn)).map (Int.castRingHom K) by
+      ext i j
+      simp [A]]
+    exact (Int.cast_det (R := K) (Matrix.of (typeDSimpleRoot n hn))).symm
+  have hdet_sq : A.det ^ 2 = (4 : K) := by
+    rw [hdetcast]
+    simpa only [Int.cast_pow, Int.cast_ofNat] using
+      congrArg (fun z : ℤ => (z : K)) (det_typeDSimpleRoot_sq n hn)
+  have hdet : A.det ≠ 0 := by
+    intro hzero
+    have hfour : (4 : K) ≠ 0 := by
+      rw [show (4 : K) = (2 : K) ^ 2 by norm_num]
+      exact pow_ne_zero 2 (NeZero.ne _)
+    exact hfour (by simpa [hzero] using hdet_sq.symm)
+  have hrows : LinearIndependent K (fun i => A i) := by
+    apply Matrix.linearIndependent_rows_iff_isUnit.mpr
+    rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero]
+    exact hdet
+  -- The matrix rows are definitionally the cast simple-root coordinate family.
+  change LinearIndependent K (fun i => A i)
+  exact hrows
+
+end TauCeti.DynkinType
 
 namespace TauCeti
 
