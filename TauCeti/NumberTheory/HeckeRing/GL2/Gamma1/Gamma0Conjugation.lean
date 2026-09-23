@@ -181,20 +181,17 @@ private lemma exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout {a b c e u v 
   simpa using conjTau_mul a b c e (p : ℤ) (-b * u) (b * v) hdet ht
 
 /-- **Conjugation by `Γ₀(N)` fixes the double coset of `diag(1, p)`**, when the lower-right
-entry of the conjugating matrix is coprime to `p`.
-
-The module docstring explains why this branch and the `p ∣ e` one are different constructions. -/
-theorem conj_natDiagGL_mem_doubleCoset_of_isCoprime (hp : 0 < p) {g : SL(2, ℤ)}
-    (hg : g ∈ Gamma0 N) (hco : IsCoprime (g 1 1) (p : ℤ)) :
-    mapGL ℚ g * natDiagGL 2 ![1, p] * mapGL ℚ g⁻¹ ∈
-      doubleCoset (natDiagGL 2 ![1, p] : GL (Fin 2) ℚ)
-        ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
+entry of the conjugating matrix is coprime to `p`. The complementary case, where `p` divides
+that entry, is `conj_natDiagGL_mem_doubleCoset_of_dvd`. -/
+theorem conj_natDiagGL_mem_doubleCoset_of_isCoprime (hp : 0 < p) {g : SL(2, ℤ)} (hg : g ∈ Gamma0 N)
+    (hco : IsCoprime (g 1 1) (p : ℤ)) :
+    mapGL ℚ g * natDiagGL 2 ![1, p] * mapGL ℚ g⁻¹ ∈ doubleCoset (natDiagGL 2 ![1, p] : GL (Fin 2) ℚ)
+      ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
   obtain ⟨u, v, huv⟩ := hco
-  obtain ⟨τ, γ, hτ, hγ, h⟩ := exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout (N := N)
-    (Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one g) (mem_Gamma0_iff_dvd.mp hg) huv
+  obtain ⟨τ, γ, hτ, hγ, h⟩ := exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout
+    g.fin_two_mul_sub_mul_eq_one (mem_Gamma0_iff_dvd.mp hg) huv
   exact mem_doubleCoset_of_intMatrix_eq_of_mem 2 τ γ (Subgroup.mem_map_of_mem _ hτ)
-    (Subgroup.mem_map_of_mem _ hγ) _ _ _ _ (coe_natDiagGL_one_eq_map hp)
-    (coe_conj_natDiagGL hp g) h
+    (Subgroup.mem_map_of_mem _ hγ) _ _ _ _ (coe_natDiagGL_one_eq_map hp) (coe_conj_natDiagGL hp g) h
 
 /-- **The twisted `Γ₁` factor, parametrized by the conjugate's entries.** If the conjugate is
 `!![p α, β; p γ, δ]` — i.e. its first column is divisible by `p`, which is what `p ∣ e` gives —
