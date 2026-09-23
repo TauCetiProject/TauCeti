@@ -11,6 +11,8 @@ public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
+import TauCeti.RingTheory.Flat.TensorProduct
+
 /-!
 # Kernels of Hopf algebra morphisms
 
@@ -134,19 +136,6 @@ private theorem counit_eq_zero_of_mem_ker (f : H →ₐc[R] K) {x : H}
 
 end BialgScaffolding
 
-/-- The tensor square of the injective factor through `H / ker f` is injective. -/
-private theorem tensor_kerLiftAlg_injective {R : Type u} [CommSemiring R] {H K : Type*}
-    [Ring H] [Semiring K] [Algebra R H] [Algebra R K] [Module.Flat R K]
-    (f : H →ₐ[R] K) [Module.Flat R (H ⧸ RingHom.ker f)] :
-    Function.Injective
-      (Algebra.TensorProduct.map (Ideal.kerLiftAlg f) (Ideal.kerLiftAlg f)) := by
-  let f' : (H ⧸ RingHom.ker f) →ₐ[R] K := Ideal.kerLiftAlg f
-  have hf' : Function.Injective f' := Ideal.kerLiftAlg_injective f
-  -- Expose the underlying linear map to apply Mathlib's flat tensor-injectivity theorem.
-  change Function.Injective (Algebra.TensorProduct.map f' f').toLinearMap
-  rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq]
-  exact TensorProduct.map_injective_of_flat_flat f'.toLinearMap f'.toLinearMap hf' hf'
-
 section Hopf
 
 variable {R : Type u} {H : Type v} {K : Type w}
@@ -264,7 +253,8 @@ private theorem comul_mem_left_sup_right_of_mem_ker (f : H →ₐc[R] K)
       _ = 0 := hzero
   have hqzero :
       Algebra.TensorProduct.map q q (Coalgebra.comul (R := R) x) = 0 :=
-    tensor_kerLiftAlg_injective f.toAlgHom hfactor
+    Algebra.TensorProduct.map_injective_of_flat_flat f' f'
+      (Ideal.kerLiftAlg_injective f.toAlgHom) (Ideal.kerLiftAlg_injective f.toAlgHom) hfactor
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
       leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I := by
     simpa only [q, AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_ker] using
