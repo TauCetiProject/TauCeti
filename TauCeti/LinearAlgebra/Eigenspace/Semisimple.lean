@@ -31,23 +31,16 @@ open Module Polynomial
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {f : End K V}
 
-/-- **The `lsmul` restriction is the restriction of the endomorphism.** `Algebra.lsmul K K V f`
-acts as `f`, and membership in its `invtSubmodule` is the invariance condition
-`LinearMap.restrict` asks for, so the two restrictions are the same map. -/
-private theorem restrict_lsmul_eq_restrict {p : Submodule K V} (f : End K V)
-    (hinv : p ∈ (Algebra.lsmul K K V f).invtSubmodule) :
-    LinearMap.restrict (Algebra.lsmul K K V f) hinv = f.restrict hinv := rfl
-
 /-- **An eigenspace is semisimple as a `K[X]`-module.** Carried through `AEval` along a proof
 `hinv` that it is invariant, the `μ`-eigenspace of `f` is a semisimple `K[X]`-module. -/
 private theorem isSemisimpleModule_mapSubmodule_eigenspace (f : End K V) (μ : K)
     (hinv : f.eigenspace μ ∈ (Algebra.lsmul K K V f).invtSubmodule) :
     IsSemisimpleModule K[X] (AEval.mapSubmodule K V f ⟨f.eigenspace μ, hinv⟩) := by
-  -- `AEval.restrict_equiv_mapSubmodule` restricts `Algebra.lsmul K K V f` rather than `f`;
-  -- `restrict_lsmul_eq_restrict` is that identification, stated once
+  -- `AEval.restrict_equiv_mapSubmodule` restricts `Algebra.lsmul K K V f` rather than `f`, which
+  -- acts as `f`, so the two restrictions agree definitionally
   have hres : LinearMap.restrict (p := f.eigenspace μ) (q := f.eigenspace μ)
       (Algebra.lsmul K K V f) hinv = μ • LinearMap.id :=
-    (restrict_lsmul_eq_restrict f hinv).trans (Module.End.restrict_eigenspace f μ)
+    Module.End.restrict_eigenspace f μ
   refine (AEval.restrict_equiv_mapSubmodule f _ hinv).isSemisimpleModule_iff.mp ?_
   refine End.isSemisimple_of_squarefree_aeval_eq_zero (p := X - C μ)
     (irreducible_X_sub_C μ).squarefree ?_

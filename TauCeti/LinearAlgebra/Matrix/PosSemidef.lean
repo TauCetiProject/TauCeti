@@ -73,18 +73,11 @@ private theorem posSemidef_of_support_posSemidef {R : Type u}
     rw [Finset.sum_subtype x.support (by intro a; rfl)]
   simpa only [Matrix.of_apply, Finsupp.sum, mul_assoc] using h''
 
-private theorem matrixOf_star_mul_eq_vecMulVec {R : Type u}
-    [Ring R] [StarRing R] (g : α → R) :
-    Matrix.of (fun a b => star (g a) * g b) = Matrix.vecMulVec (star g) g := by
-  ext a b
-  simp only [Matrix.of_apply, Matrix.vecMulVec_apply, Pi.star_apply]
-
 private theorem star_mul_matrix_isHermitian {R : Type u}
     [Ring R] [StarRing R] (g : α → R) :
     (Matrix.of fun a b => star (g a) * g b).IsHermitian := by
-  rw [matrixOf_star_mul_eq_vecMulVec]
-  ext a b
-  simp [Matrix.conjTranspose_apply, Matrix.vecMulVec_apply, Pi.star_apply]
+  change (Matrix.vecMulVec (star g) g).IsHermitian
+  rw [Matrix.IsHermitian, Matrix.conjTranspose_vecMulVec, star_star]
 
 /-- The rank-one matrix `(a, b) ↦ star (g a) · g b` is positive semidefinite for an arbitrary
 index type. Such matrices are elementary building blocks for positive-semidefinite matrices;
@@ -94,8 +87,7 @@ theorem posSemidef_rankOne {R : Type u}
     Matrix.PosSemidef (fun a b => star (g a) * g b) := by
   refine posSemidef_of_support_posSemidef _ (star_mul_matrix_isHermitian g) ?_
   intro x
-  exact (matrixOf_star_mul_eq_vecMulVec (g := fun i : x.support => g (i : α))).symm ▸
-    Matrix.posSemidef_vecMulVec_star_self _
+  exact Matrix.posSemidef_vecMulVec_star_self _
 
 /-- The constant matrix with value `1` is positive semidefinite. -/
 theorem posSemidef_const_one {R : Type u}
