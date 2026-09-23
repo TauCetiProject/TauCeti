@@ -16,6 +16,8 @@ This module records an explicit modular second-root witness for
 `X⁵ + X⁴ - 4X³ - 3X² + 3X + 1`. This witness supplies the extra datum that distinguishes its
 cyclic Galois group from the dihedral possibility.
 
+The witness is specified in the `PolynomialGaloisGroups` roadmap, Layer 6 worked examples.
+
 ## Main results
 
 * `TauCeti.hasSecondRootInRootField_cyclicQuintic`: the second-root evidence used by the cyclic

@@ -25,6 +25,8 @@ The predicates contain only finite data. They do not search for a suitable prime
 or second root. Their elimination lemmas expose the mathematical consequences used by quintic
 certificates, while keeping the proof of primality bundled with the factor-degree computation.
 
+This follows the degree-five certificate target in the `PolynomialGaloisGroups` roadmap, Layer 6.
+
 ## Main definitions
 
 * `TauCeti.IsGoodPrime`: a prime candidate does not divide the polynomial discriminant.
@@ -142,10 +144,10 @@ theorem HasFactorDegrees.irreducible_map {f : ℤ[X]} {p n : ℕ}
   let _ := hp
   exact ⟨hp, Polynomial.factorDegrees_eq_singleton_iff.mp hfac⟩
 
-/-- If a monic polynomial has its degree as its sole factor degree at a good prime, then its
-image over `ℚ` is irreducible. -/
-theorem HasFactorDegrees.irreducible_map_rat {f : ℤ[X]} {p : ℕ}
-    (h : HasFactorDegrees f p {f.natDegree}) (hf : f.Monic) :
+/-- Any singleton factor-degree evidence for a monic polynomial proves that its image over
+`ℚ` is irreducible. -/
+theorem HasFactorDegrees.irreducible_map_rat {f : ℤ[X]} {p n : ℕ}
+    (h : HasFactorDegrees f p {n}) (hf : f.Monic) :
     Irreducible (f.map (Int.castRingHom ℚ)) := by
   obtain ⟨hp, hirr, -⟩ := h.irreducible_map
   let _ := hp
@@ -246,15 +248,19 @@ theorem HasSecondRootInRootField.isRoot_mk_and_ne_root {f : ℤ[X]} {b : ℚ[X]}
       AdjoinRoot.mk fℚ b ≠ AdjoinRoot.root fℚ := by
   let fℚ := f.map (Int.castRingHom ℚ)
   have hfℚ : fℚ.Monic := hf.map _
+  have hdiv : fℚ ∣ fℚ.comp b :=
+    (modByMonic_eq_zero_iff_dvd hfℚ).mp h.comp_modByMonic_eq_zero
+  have heval : (fℚ.map (algebraMap ℚ (AdjoinRoot fℚ))).eval (AdjoinRoot.mk fℚ b) =
+      AdjoinRoot.mk fℚ (fℚ.comp b) := by
+    rw [eval_map, ← aeval_def, ← AdjoinRoot.aeval_eq b, ← aeval_comp,
+      AdjoinRoot.aeval_eq]
   constructor
-  · rw [Polynomial.IsRoot, eval_map, ← aeval_def, ← AdjoinRoot.aeval_eq b, ← aeval_comp,
-      AdjoinRoot.aeval_eq,
-      AdjoinRoot.mk_eq_zero, ← modByMonic_eq_zero_iff_dvd hfℚ]
-    exact h.comp_modByMonic_eq_zero
+  · rw [Polynomial.IsRoot, heval, AdjoinRoot.mk_eq_zero]
+    exact hdiv
   · intro heq
     apply h.modByMonic_ne_X_modByMonic
-    have heq' : AdjoinRoot.mk fℚ b = AdjoinRoot.mk fℚ X := by
-      exact heq
+    have heq' : AdjoinRoot.mk fℚ b = AdjoinRoot.mk fℚ X :=
+      heq.trans (AdjoinRoot.mk_X).symm
     have hmod := congrArg (AdjoinRoot.modByMonicHom hfℚ) heq'
     rw [AdjoinRoot.modByMonicHom_mk, AdjoinRoot.modByMonicHom_mk] at hmod
     exact hmod
