@@ -432,6 +432,40 @@ theorem f4KillingRootLabel_surjective : Function.Surjective f4KillingRootLabel :
   simp only [f4KillingRootLabel, f4RootIndex, Fin.cast_cast, Fin.cast_eq_self]
   exact Equiv.apply_symm_apply (F4.rationalRootSystemEquiv valid_F4).indexEquiv γ
 
+/-- A missing endpoint in the pinned root string forces the corresponding adjoint power to
+vanish. The only excluded case is the string through the opposite root. -/
+theorem f4_ad_pow_rootVector_eq_zero_of_no_endpoint (α β : Fin 48) (n : ℕ)
+    (hopp : β ≠ f4OppositeRootIndex α)
+    (hno : ∀ δ : Fin 48, f4SimplyConnectedRootDatum.root δ ≠
+      f4SimplyConnectedRootDatum.root β +
+        (n : ℤ) • f4SimplyConnectedRootDatum.root α) :
+    ((ad ℚ (F4.lieAlgebra valid_F4)
+      (f4ChevalleyRootVector (f4KillingRoot α))) ^ n)
+        (f4ChevalleyRootVector (f4KillingRoot β)) = 0 := by
+  let H := F4.cartanSubalgebra valid_F4
+  have hαnz : (f4KillingRoot α).IsNonZero := H.isNonZero_coe_root (f4KillingRootLabel α)
+  have hβnz : (f4KillingRoot β).IsNonZero := H.isNonZero_coe_root (f4KillingRootLabel β)
+  have hopp' : α ≠ f4OppositeRootIndex β := by
+    intro h
+    apply hopp
+    rw [h, f4OppositeRootIndex_f4OppositeRootIndex]
+  have hsum := f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp'
+  rcases f4ChevalleyRootVector_isChevalleySystem.ad_pow_rootVector_eq_zero_or_exists
+      hαnz hβnz hsum n with hzero | hnonzero
+  · exact hzero
+  · obtain ⟨γ, hγcoe, -, -⟩ := hnonzero
+    have hγnz : γ.IsNonZero := by
+      rw [Weight.IsNonZero, Weight.IsZero, hγcoe]
+      exact coe_add_natCast_smul_ne_zero hαnz hβnz hsum n
+    have hγroot : γ ∈ H.root := by
+      simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using hγnz
+    obtain ⟨δ, hδlabel⟩ := f4KillingRootLabel_surjective ⟨γ, hγroot⟩
+    have hδweight : f4KillingRoot δ = γ := congrArg Subtype.val hδlabel
+    apply (hno δ).elim
+    apply (f4KillingRoot_eq_add_zsmul_iff α β δ n).mp
+    rw [hδweight]
+    simpa using hγcoe
+
 /-- The second divided adjoint power sends the opposite root vector to the negative root vector. -/
 theorem f4_dividedPower_two_ad_rootVector_opposite (α : Fin 48) :
     Associative.dividedPower 2
@@ -468,63 +502,23 @@ theorem f4_dividedPower_two_ad_rootVector_eq_zero_of_short (α β : Fin 48)
         (ad ℚ (F4.lieAlgebra valid_F4)
           (f4ChevalleyRootVector (f4KillingRoot α))) •
         f4ChevalleyRootVector (f4KillingRoot β) = 0 := by
-  by_cases heq : β = α
-  · subst β
-    simp only [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, pow_two,
-      Module.End.mul_apply, ad_apply, lie_self, lie_zero, smul_zero]
-  have hαnz : (f4KillingRoot α).IsNonZero :=
-    (F4.cartanSubalgebra valid_F4).isNonZero_coe_root (f4KillingRootLabel α)
-  have hβnz : (f4KillingRoot β).IsNonZero :=
-    (F4.cartanSubalgebra valid_F4).isNonZero_coe_root (f4KillingRootLabel β)
-  have hopp' : α ≠ f4OppositeRootIndex β := by
-    intro h
-    apply hopp
-    rw [h, f4OppositeRootIndex_f4OppositeRootIndex]
-  have hsum := f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp'
-  rcases f4ChevalleyRootVector_isChevalleySystem.ad_pow_rootVector_eq_zero_or_exists
-      hαnz hβnz hsum 2 with hzero | hnonzero
-  · rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, hzero,
-      smul_zero]
-  · obtain ⟨γ, hγcoe, -, -⟩ := hnonzero
-    have hγnz : γ.IsNonZero := by
-      rw [Weight.IsNonZero, Weight.IsZero, hγcoe]
-      exact coe_add_natCast_smul_ne_zero hαnz hβnz hsum 2
-    have hγroot : γ ∈ (F4.cartanSubalgebra valid_F4).root := by
-      simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using hγnz
-    obtain ⟨δ, hδlabel⟩ := f4KillingRootLabel_surjective ⟨γ, hγroot⟩
-    have hδweight : f4KillingRoot δ = γ := by
-      -- `f4KillingRoot` is the subtype coercion of `f4KillingRootLabel`, with no coercion lemma.
-      change (f4KillingRootLabel δ : Weight ℚ (F4.cartanSubalgebra valid_F4)
-        (F4.lieAlgebra valid_F4)) = γ
-      exact congrArg Subtype.val hδlabel
-    have hpinned : f4SimplyConnectedRootDatum.root δ =
-        f4SimplyConnectedRootDatum.root β +
-          (2 : ℤ) • f4SimplyConnectedRootDatum.root α := by
-      apply (f4KillingRoot_eq_add_zsmul_iff α β δ 2).mp
-      rw [hδweight]
-      simpa using hγcoe
+  have hpow := f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 2 hopp (by
+    intro δ hpinned
     rcases f4Length_eq_one_or_eq_two α with hα | hα
     · have hneg : f4SimplyConnectedRootDatum.root β ≠
           -f4SimplyConnectedRootDatum.root α := by
         intro h
         apply hopp
-        apply f4KillingRoot_injective
-        rw [f4KillingRoot_f4OppositeRootIndex]
-        have hk := (f4KillingRoot_eq_add_zsmul_iff α α β (-2)).mpr (by
-          rw [h]
-          module)
-        apply Weight.ext
-        intro x
-        have hx := congrFun hk x
-        simp only [Pi.add_apply, Pi.smul_apply, Int.cast_neg, Int.cast_ofNat] at hx
-        simp only [Weight.coe_neg, Pi.neg_apply]
-        linear_combination hx
+        simpa only [f4OppositeRootIndex_eq_reflectionPerm] using
+          (f4SimplyConnectedRootDatum.root_eq_neg_iff.mp h)
       exact (f4_not_root_eq_short_add_nsmul_short_of_two_le α β δ 2 hα hβ hneg
         (by omega) hpinned).elim
     · have hn :=
         f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
           α β δ 2 hα hβ (by omega) hpinned
-      omega
+      omega)
+  rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply, hpow,
+    smul_zero]
 
 /-- The second divided adjoint power annihilates every Cartan element. -/
 theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)

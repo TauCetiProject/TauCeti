@@ -246,6 +246,16 @@ which it multiplies. -/
   rw [f4SpecialIsogenyIndex_involutive i] at h
   exact h
 
+theorem f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff (i : Fin 48) :
+    f4Length (f4SpecialIsogenyIndexEquiv i) = 1 ↔ f4Length i = 2 := by
+  simpa only [f4SpecialIsogenyIndexEquiv_apply] using
+    f4Length_specialIsogenyIndex_eq_one_iff i
+
+theorem f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff (i : Fin 48) :
+    f4Length (f4SpecialIsogenyIndexEquiv i) = 2 ↔ f4Length i = 1 := by
+  simpa only [f4SpecialIsogenyIndexEquiv_apply] using
+    f4Length_specialIsogenyIndex_eq_two_iff i
+
 /-- **The Cartan integers transform by the rule a special isogeny forces.** Writing `α'` for the
 image of a root `α` under the special permutation, pairing the root equation against the coroot
 equation gives `ℓ(α) ⟨α', β'∨⟩ = ℓ(β) ⟨α, β∨⟩`. No diagram automorphism satisfies this, since the
@@ -315,11 +325,9 @@ theorem f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add
         f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
           f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv α) := by
   have hβ' : f4Length (f4SpecialIsogenyIndexEquiv β) = 1 := by
-    simpa only [f4SpecialIsogenyIndexEquiv_apply,
-      f4Length_specialIsogenyIndex_eq_one_iff] using hβ
+    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ
   have hγ' : f4Length (f4SpecialIsogenyIndexEquiv γ) = 1 := by
-    simpa only [f4SpecialIsogenyIndexEquiv_apply,
-      f4Length_specialIsogenyIndex_eq_one_iff] using hγ
+    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ
   constructor
   · intro h
     apply f4SpecialIsogenyMatrix_mulVec_injective
