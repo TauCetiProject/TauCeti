@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.GroupTheory.SpecificGroups.KleinFour
+public import Mathlib.GroupTheory.SpecificGroups.KleinFour
+import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
@@ -29,10 +31,10 @@ four classes are represented by
 
 The choice of `u` is part of the statement. Up to squares `u` is a unit of `𝒪[K]`, and by
 `TauCeti.isSquare_unitsMap_subtype_iff` such a unit is a nonsquare exactly when its residue is a
-nonsquare of `𝓀[K]`. One exists: in odd residue characteristic
-`TauCeti.not_unitFiltration_le_square` says that not every unit of `𝒪[K]` is a square. This is
-the list of representatives used to compute Hilbert symbols over `K` and to count its quadratic
-extensions.
+nonsquare of `𝓀[K]`. The theorem
+`TauCeti.exists_not_isSquare_of_toAdd_normalizedValuation_eq_zero` produces such a `u` in odd
+residue characteristic. This is the list of representatives used to compute Hilbert symbols over
+`K` and to count its quadratic extensions.
 
 ## Main results
 
@@ -45,6 +47,10 @@ extensions.
   characteristic two the literal quotient by squares has four elements.
 * `TauCeti.natCard_squareClassGroup_of_isUnit_two`: away from residue characteristic two the
   square-class group has four elements.
+* `TauCeti.exists_not_isSquare_of_toAdd_normalizedValuation_eq_zero`: away from residue
+  characteristic two there is a nonsquare of normalized valuation zero.
+* `TauCeti.isAddKleinFour_squareClassGroup_of_isUnit_two`: away from residue characteristic two
+  the square-class group is a Klein four-group.
 * `TauCeti.squareClass_eq_zero_or_eq_or_of_isUnit_two`: the four specified square classes
   exhaust the square-class group.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two`: every element of `Kˣ` agrees, up to a square,
@@ -116,31 +122,37 @@ theorem natCard_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
   rw [← natCard_multiplicativeSquareClassGroup]
   exact natCard_multiplicativeSquareClassGroup_of_isUnit_two h2
 
-/-- For a nonsquare `u` of even valuation and a uniformizer `π`, the classes of
-`1`, `u`, `π`, and `u * π` are pairwise distinct. -/
-theorem pairwise_ne_squareClasses_of_isUniformizer_of_even_toAdd_normalizedValuation_of_not_isSquare
-    {π u : Kˣ}
-    (hπ : IsUniformizer K π) (hu : Even (normalizedValuation K u).toAdd) (hu' : ¬IsSquare u) :
-    (0 : SquareClassGroup K) ≠ squareClass u ∧
-      (0 : SquareClassGroup K) ≠ squareClass π ∧
-      (0 : SquareClassGroup K) ≠ squareClass (u * π) ∧
-      squareClass u ≠ squareClass π ∧
-      squareClass u ≠ squareClass (u * π) ∧
-      squareClass π ≠ squareClass (u * π) := by
-  have hπ' := not_isSquare_of_isUniformizer hπ
-  have huπ : ¬IsSquare (u * π) := by
-    simpa [mul_comm] using
-      not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation hπ hu
-  refine ⟨fun h ↦ hu' ((squareClass_eq_zero_iff u).mp h.symm),
-    fun h ↦ hπ' ((squareClass_eq_zero_iff π).mp h.symm),
-    fun h ↦ huπ ((squareClass_eq_zero_iff (u * π)).mp h.symm),
-    fun h ↦ huπ ((squareClass_eq_iff_isSquare_mul u π).mp h), ?_, ?_⟩
-  · rw [squareClass_mul]
-    exact fun h ↦ hπ' ((squareClass_eq_zero_iff π).mp
-      (by simpa using sub_eq_zero.mpr h.symm))
-  · rw [squareClass_mul]
-    exact fun h ↦ hu' ((squareClass_eq_zero_iff u).mp
-      (by simpa using sub_eq_zero.mpr h.symm))
+/-- Away from residue characteristic two, there is a nonsquare unit class, represented by an
+element of `Kˣ` with normalized valuation zero. -/
+theorem exists_not_isSquare_of_toAdd_normalizedValuation_eq_zero
+    (h2 : IsUnit (2 : 𝒪[K])) :
+    ∃ u : Kˣ, (normalizedValuation K u).toAdd = 0 ∧ ¬IsSquare u := by
+  have h2res : (2 : 𝓀[K]) ≠ 0 := by
+    simpa only [map_ofNat] using (h2.map (IsLocalRing.residue 𝒪[K])).ne_zero
+  have hchar : ringChar 𝓀[K] ≠ 2 := fun h ↦
+    h2res (by exact_mod_cast h ▸ ringChar.Nat.cast_ringChar)
+  obtain ⟨a, ha⟩ := FiniteField.exists_nonsquare hchar
+  have ha0 : a ≠ 0 := fun h ↦ ha (h ▸ IsSquare.zero)
+  let α : 𝓀[K]ˣ := Units.mk0 a ha0
+  let u : 𝒪[K]ˣ := TauCeti.teichmuller 𝒪[K] α
+  refine ⟨Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u, ?_, ?_⟩
+  · rw [normalizedValuation_integerUnits, toAdd_one]
+  · rw [isSquare_unitsMap_subtype_iff h2, TauCeti.unitsMap_residue_teichmuller]
+    intro hα
+    apply ha
+    rcases hα with ⟨b, hb⟩
+    exact ⟨(b : 𝓀[K]), by simpa [α] using congrArg Units.val hb⟩
+
+/-- Away from residue characteristic two, the square-class group of a nonarchimedean local field
+is a Klein four-group. -/
+theorem isAddKleinFour_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
+    IsAddKleinFour (SquareClassGroup K) := by
+  have hcard := natCard_squareClassGroup_of_isUnit_two h2
+  let _ : Finite (SquareClassGroup K) := Nat.finite_of_card_ne_zero (by omega)
+  let _ : Nontrivial (SquareClassGroup K) :=
+    Finite.one_lt_card_iff_nontrivial.mp (by omega)
+  exact ⟨hcard, (AddMonoid.exponent_eq_prime_iff Nat.prime_two).mpr fun g hg ↦
+    addOrderOf_eq_prime (ZModModule.char_nsmul_eq_zero 2 g) hg⟩
 
 /-- **The four square classes of a nonarchimedean local field of odd residue characteristic.**
 For a nonsquare `u` of even valuation and a uniformizer `π`, their four classes exhaust the
@@ -149,16 +161,15 @@ theorem squareClass_eq_zero_or_eq_or_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {
     (hπ : IsUniformizer K π) (hu : Even (normalizedValuation K u).toAdd) (hu' : ¬IsSquare u) :
     ∀ x : SquareClassGroup K,
       x = 0 ∨ x = squareClass u ∨ x = squareClass π ∨ x = squareClass (u * π) := by
-  have hcard := natCard_squareClassGroup_of_isUnit_two h2
-  let _ : Finite (SquareClassGroup K) := Nat.finite_of_card_ne_zero (by omega)
-  let _ : Nontrivial (SquareClassGroup K) :=
-    Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  let _ : IsAddKleinFour (SquareClassGroup K) := ⟨hcard,
-    (AddMonoid.exponent_eq_prime_iff Nat.prime_two).mpr fun g hg ↦
-      addOrderOf_eq_prime (ZModModule.char_nsmul_eq_zero 2 g) hg⟩
-  obtain ⟨h0u, h0π, _, huπ, _, _⟩ :=
-    pairwise_ne_squareClasses_of_isUniformizer_of_even_toAdd_normalizedValuation_of_not_isSquare
-      hπ hu hu'
+  let _ : IsAddKleinFour (SquareClassGroup K) :=
+    isAddKleinFour_squareClassGroup_of_isUnit_two h2
+  have h0u : squareClass u ≠ 0 := (squareClass_eq_zero_iff u).not.mpr hu'
+  have h0π : squareClass π ≠ 0 :=
+    (squareClass_eq_zero_iff π).not.mpr (not_isSquare_of_isUniformizer hπ)
+  have huπ : squareClass u ≠ squareClass π :=
+    (squareClass_eq_iff_isSquare_mul u π).not.mpr (by
+      simpa [mul_comm] using
+        not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation hπ hu)
   intro x
   by_cases hx : x = 0
   · exact Or.inl hx
@@ -168,7 +179,7 @@ theorem squareClass_eq_zero_or_eq_or_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {
   · exact Or.inr (Or.inr (Or.inl hxπ))
   · exact Or.inr (Or.inr (Or.inr <| by
       rw [squareClass_mul]
-      exact IsAddKleinFour.eq_add_of_ne_all h0u.symm h0π.symm huπ hx hxu hxπ))
+      exact IsAddKleinFour.eq_add_of_ne_all h0u h0π huπ hx hxu hxπ))
 
 /-- **The four square classes of a nonarchimedean local field of odd residue characteristic.**
 For a uniformizer `π` and a nonsquare `u` of even valuation, every element of `Kˣ` becomes a
