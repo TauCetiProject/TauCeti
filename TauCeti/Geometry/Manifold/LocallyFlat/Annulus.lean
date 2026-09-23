@@ -93,6 +93,22 @@ def CoboundAnnulus (f g : X → E) : Prop :=
     range h = filledHull (range f) \ (filledHull (range g) \ range g) ∧
     h '' (univ ×ˢ {0}) = range f ∧ h '' (univ ×ˢ {1}) = range g
 
+/-- The two boundary images of a cobounded annulus are disjoint.
+
+The endpoint products `X × {0}` and `X × {1}` are disjoint, and an embedding is injective, so the
+two endpoint equalities in `CoboundAnnulus` force the corresponding images to be disjoint. -/
+theorem CoboundAnnulus.disjoint_range {f g : X → E} (h : CoboundAnnulus f g) :
+    Disjoint (range f) (range g) := by
+  rcases h with ⟨H, hH, -, hzero, hone⟩
+  rw [← hzero, ← hone]
+  refine disjoint_left.2 ?_
+  rintro z ⟨p, hp, rfl⟩ ⟨q, hq, hqz⟩
+  have hpq : p = q := hH.injective hqz.symm
+  have htime : p.2 = q.2 := congrArg Prod.snd hpq
+  have hp0 : p.2 = 0 := by simpa using hp.2
+  have hq1 : q.2 = 1 := by simpa using hq.2
+  linarith [htime, hp0, hq1]
+
 end CoboundAnnulus
 
 /-- **The annulus conjecture for `n`-spheres in `ℝⁿ⁺¹`:** if `f` and `g` are locally flat
