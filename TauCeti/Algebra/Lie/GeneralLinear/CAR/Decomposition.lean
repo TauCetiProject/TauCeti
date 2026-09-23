@@ -22,12 +22,6 @@ named irreducible and has dimension `2 ^ (N * (N + 1) / 2)` in the CAR module.  
 those two facts into the numerical multiplicity, the dimension of the simple type, and the
 resulting direct-sum decomposition.
 
-The dimension calculation also records the complementary exponent identity
-`N * (N + 1) / 2 + N * (N - 1) / 2 = N * N`, matching the total Clifford dimension.
-
-The construction uses the multiplicity and isotypic-component APIs rather than unfolding either
-the CAR occupation calculation or the chosen carrier for `glIrreducible`.
-
 ## Main results
 
 * `isotypicMultiplicity_glIrreducible_car`: the CAR multiplicity is
