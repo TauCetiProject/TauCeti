@@ -549,6 +549,11 @@ theorem typeDSimpleRoot_mul_transpose (hn : 4 ≤ n) :
   rw [Matrix.mul_apply, ← typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j]
   simp [dotProduct]
 
+/-- The determinant of the type-D Cartan matrix is the square of the simple-root determinant. -/
+theorem det_D_eq_det_typeDSimpleRoot_sq (hn : 4 ≤ n) :
+    (CartanMatrix.D n).det = (Matrix.of (typeDSimpleRoot n hn)).det ^ 2 := by
+  rw [← typeDSimpleRoot_mul_transpose hn, Matrix.det_mul, Matrix.det_transpose, sq]
+
 
 /-- The first `n` entries of `typeDRootEquiv` are the Bourbaki-numbered simple roots. -/
 @[simp] theorem typeDRootEquiv_apply_typeDSimpleIndex (hn : 4 ≤ n) (i : Fin n) :

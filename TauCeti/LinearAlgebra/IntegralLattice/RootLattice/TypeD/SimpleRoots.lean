@@ -317,9 +317,7 @@ theorem D_det (hn : 2 ≤ n) : (D n).det = 4 := by
       norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
         Matrix.cons_val_fin_one]
   have : NeZero n := ⟨by omega⟩
-  have hsq : (D n).det = (Matrix.of (TauCeti.DynkinType.typeDSimpleRoot n hn4)).det ^ 2 := by
-    rw [← TauCeti.DynkinType.typeDSimpleRoot_mul_transpose hn4, Matrix.det_mul,
-      Matrix.det_transpose, sq]
+  have hsq := TauCeti.DynkinType.det_D_eq_det_typeDSimpleRoot_sq hn4
   have hnonneg : 0 ≤ (D n).det := by
     rw [hsq]
     exact sq_nonneg _
@@ -340,8 +338,7 @@ variable {n : ℕ}
 /-- The determinant square of the integral type-D simple-root matrix. -/
 theorem det_typeDSimpleRoot_sq (n : ℕ) (hn : 4 ≤ n) :
     (Matrix.of (typeDSimpleRoot n hn)).det ^ 2 = 4 := by
-  rw [← CartanMatrix.D_det (show 2 ≤ n by omega), ← typeDSimpleRoot_mul_transpose hn,
-    Matrix.det_mul, Matrix.det_transpose, sq]
+  rw [← det_D_eq_det_typeDSimpleRoot_sq hn, CartanMatrix.D_det (by omega)]
 
 /-! ## Scalar extension of the simple-root independence -/
 
@@ -367,11 +364,11 @@ theorem linearIndependent_typeDSimpleRoot_cast {K : Type*} [CommRing K] [IsDomai
       rw [show (4 : K) = (2 : K) ^ 2 by norm_num]
       exact pow_ne_zero 2 (NeZero.ne _)
     exact hfour (by simpa [hzero] using hdet_sq.symm)
-  have hrows : LinearIndependent K A.row :=
+  have hrows : LinearIndependent K (fun i => A i) :=
     Matrix.linearIndependent_rows_of_det_ne_zero hdet
   convert hrows using 1
   funext i j
-  simp [A, Matrix.row]
+  simp [A]
 
 end TauCeti.DynkinType
 

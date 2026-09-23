@@ -18,7 +18,7 @@ basis. The coordinate theorem records the identification with the pinned classic
 datum, so a later Lie-algebra basis can use the same Cartan coordinates.
 
 The independence argument transports the integral independence of the Bourbaki simple roots to a
-commutative domain in which `2` is invertible. The ambient independence and Lie-span theorems are
+commutative domain in which `2` is nonzero. The ambient independence and Lie-span theorems are
 exposed for the later `LieAlgebra.Basis` construction.
 
 ## Main declarations
