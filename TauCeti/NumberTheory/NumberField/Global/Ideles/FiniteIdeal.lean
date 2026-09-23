@@ -27,7 +27,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- The fractional ideal of an idele's finite component is trivial exactly when the idele is a
 unit at every finite place. -/
-@[simp] theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup (𝓞 K) K} :
+theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup (𝓞 K) K} :
     toFractionalIdeal (IdeleGroup.toFiniteIdele (𝓞 K) K x) = 1 ↔
       ∀ v : HeightOneSpectrum (𝓞 K), Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
   simp only [toFractionalIdeal_eq_one_iff, adicOrd_eq_zero_iff, IdeleGroup.coe_toFiniteIdele,
