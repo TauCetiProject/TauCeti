@@ -402,7 +402,6 @@ noncomputable def presentationLimitStalkValuation (x : spa Aplus) :
 
 /-- **The stalk valuation restricts to the rational points**: its pullback along the germ map of
 a rational neighbourhood `R(p)` of `x` is the point of `A⟨p⟩` determined by `x`. -/
-@[simp]
 theorem comap_presentationLimitRationalGerm_presentationLimitStalkValuation (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) (x : spa Aplus)
     (hx : x ∈ spaBasicOpen Aplus p.num p.den) :
