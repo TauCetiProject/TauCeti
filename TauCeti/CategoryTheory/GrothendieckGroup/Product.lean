@@ -138,7 +138,6 @@ lemma prodEquiv_apply (x : SplitK0 (C × D)) :
 
 /-- The inverse product equivalence is the sum of the maps induced by inserting a zero object in
 each coordinate. -/
-@[simp]
 lemma prodEquiv_symm_apply (x : SplitK0 C × SplitK0 D) :
     (prodEquiv (C := C) (D := D)).symm x =
       map (CategoryTheory.Prod.sectL C (0 : D)) x.1 +
@@ -146,7 +145,6 @@ lemma prodEquiv_symm_apply (x : SplitK0 C × SplitK0 D) :
   rfl
 
 /-- The product equivalence sends an object class to the pair of its component classes. -/
-@[simp]
 lemma prodEquiv_of (X : C × D) : prodEquiv (of X) = (of X.1, of X.2) := by
   simp [prodEquiv_apply]
 
