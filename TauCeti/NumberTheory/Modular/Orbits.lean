@@ -227,11 +227,6 @@ theorem orbit_mk_I_ne_orbit_mk_ρ :
     (Quotient.mk'' I : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) ≠ Quotient.mk'' ρ :=
   fun h ↦ I_ne_ρ ((orbit_mk_eq_I_iff _root_.ModularGroup.ρ_mem_fd).mp h.symm).symm
 
-private lemma S_smul_eq_self_of_re_nonpos {p : ℍ} (hnorm : ‖(p : ℂ)‖ = 1) (hre : p.re ≤ 0)
-    (hSre : (_root_.ModularGroup.S • p).re ≤ 0) : _root_.ModularGroup.S • p = p := by
-  rw [re_S_smul_of_norm_eq_one hnorm, neg_nonpos] at hSre
-  rw [eq_I_of_re_eq_zero hnorm ((coe_re p).trans (hre.antisymm hSre)), S_smul_I]
-
 /-- The orbit map is injective on the part of `𝒟` left of the boundary identifications: the
 points with `re < 1/2` which, if on the unit circle, have `re ≤ 0`. This drops the right
 vertical edge, which `T` identifies with the left one, and the arc right of `i`, which `S` folds
@@ -242,7 +237,9 @@ lemma orbit_mk_injOn_fd_left :
   rintro p₁ ⟨hp₁fd, hp₁re, hp₁arc⟩ p₂ ⟨hp₂fd, hp₂re, hp₂arc⟩ h
   obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • p₂ = p₁ := Quotient.exact' h
   have hsign {k : SL(2, ℤ)} (hg : g = k ∨ g = -k) : g • p₂ = k • p₂ := by
-    obtain rfl | rfl := hg <;> simp
+    obtain rfl | rfl := hg
+    · rfl
+    · exact _root_.ModularGroup.SL_neg_smul _ _
   rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd hp₂fd hp₁fd with
     hg | ⟨hg, hre⟩ | ⟨-, hre⟩ | ⟨hg, hnorm⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨hg, rfl⟩ |
     ⟨hg, rfl⟩ | ⟨hg, rfl⟩
@@ -251,8 +248,9 @@ lemma orbit_mk_injOn_fd_left :
     norm_num at hp₁re
   · exact absurd hre hp₂re.ne
   · rw [hsign hg] at hp₁arc ⊢
-    exact S_smul_eq_self_of_re_nonpos hnorm (hp₂arc hnorm)
-      (hp₁arc (norm_coe_S_smul_of_norm_eq_one hnorm))
+    have h1 := hp₁arc (norm_coe_S_smul_of_norm_eq_one hnorm)
+    rw [re_S_smul_of_norm_eq_one hnorm, neg_nonpos] at h1
+    rw [eq_I_of_re_eq_zero hnorm ((hp₂arc hnorm).antisymm h1), S_smul_I]
   · exact absurd re_vadd_ρ hp₂re.ne
   · exact absurd re_vadd_ρ hp₂re.ne
   · exact absurd re_vadd_ρ hp₂re.ne
