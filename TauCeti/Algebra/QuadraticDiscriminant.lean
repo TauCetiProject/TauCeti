@@ -14,7 +14,10 @@ import Mathlib.Data.Rat.Floor
 Mathlib's `discrim_le_zero` shows that a quadratic polynomial over a linearly ordered field which
 is non-negative at every point of the field has non-positive discriminant. This file supplies two
 facts about the homogeneous two-variable form `a * x ^ 2 + b * x * y + c * y ^ 2` that it does not
-give: the reverse implication, and an integral version whose hypothesis is much weaker.
+give: the reverse implication, and an integral version whose hypothesis is much weaker. It also
+records two elementary facts about discriminants used for positive definite integral forms: a
+negative discriminant together with `0 ≤ a` forces `0 < a`, and an integral discriminant is `0` or
+`1` modulo `4`.
 
 The integral version is the substantial one, and it is worth being precise about what makes it
 substantial. Over a *field*, non-negativity along a single line `y = y₀ ≠ 0` already forces
@@ -45,10 +48,11 @@ conclusion to every `(x, y)`.
 * `Int.discrim_emod_four`: `discrim a b c % 4 = b % 2`, so an integral discriminant is `0` or `1`
   modulo `4`.
 
-Both are proved from a common lemma in which `x` runs over an arithmetic progression rather than
-all of `ℤ`. Only one `x` is ever used — the member of the progression nearest the minimum of the
-restricted form — so thinning the line to gap `m` costs exactly a factor `m` in the height
-hypothesis, which the choice of `y` absorbs; `m = 1` is the full line.
+The two `Int.discrim_le_zero_…` results are proved from a common lemma in which `x` runs over an
+arithmetic progression rather than all of `ℤ`. Only one `x` is ever used — the member of the
+progression nearest the minimum of the restricted form — so thinning the line to gap `m` costs
+exactly a factor `m` in the height hypothesis, which the choice of `y` absorbs; `m = 1` is the full
+line.
 
 The weaker hypothesis constraining only `y` is not stated separately: it is strictly stronger
 than the one above, so a caller holding it applies the same theorem through
