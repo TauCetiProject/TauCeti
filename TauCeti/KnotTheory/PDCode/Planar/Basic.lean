@@ -22,7 +22,8 @@ vertices, `2n` edges, and `c` connected components. `PDCode.IsPlanar` imposes th
 The associated `PermutationTriple` and its ribbon graph provide the connectivity and Euler
 characteristic API. Crossing-free circles are retained in the original code; they can be placed
 in disjoint disks. This representation does not choose an outer face or nesting of disconnected
-projection components. Consequently a common-face move below concerns a single boundary cycle,
+projection components. Consequently a common-face move in `PDCode.Planar.ReidemeisterTwo`
+concerns a single boundary cycle,
 not two arbitrarily chosen components of the complement of a disconnected drawing.
 
 This is the rotation-system encoding of planar diagrams (Lickorish, *An Introduction to Knot
@@ -90,7 +91,7 @@ def IsPlanar (D : PDCode n) : Prop :=
     n + 2 * Nat.card D.projectionTriple.ribbonGraph.ConnectedComponent
 
 /-- For a connected projection, planarity is the Euler condition `F = n + 2`. -/
-theorem isPlanar_iff_of_connected (D : PDCode n)
+theorem isPlanar_iff_of_isConnected (D : PDCode n)
     (h : D.projectionTriple.IsConnected) :
     D.IsPlanar ↔ orbitCount D.facePerm = n + 2 := by
   have hr : D.projectionTriple.ribbonGraph.IsConnected :=
@@ -135,7 +136,7 @@ private theorem oneCrossing_connected : (D₀).toPDCode.projectionTriple.IsConne
 
 /-- The one-crossing positive oriented code is planar. -/
 theorem isPlanar_orientedPDCodeOneCrossingPositive : (D₀).toPDCode.IsPlanar := by
-  rw [PDCode.isPlanar_iff_of_connected _ oneCrossing_connected,
+  rw [PDCode.isPlanar_iff_of_isConnected _ oneCrossing_connected,
     Equiv.Perm.orbitCount_eq_card_parts_partition]
   have hface : (D₀).toPDCode.facePerm = Equiv.swap 0 2 := by
     ext x

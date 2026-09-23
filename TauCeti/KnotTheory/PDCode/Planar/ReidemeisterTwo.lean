@@ -18,9 +18,12 @@ import all TauCeti.Combinatorics.Enumerative.PerfectMatching
 # Second Reidemeister moves on oriented planar diagrams
 
 `OrientedPlanarDiagram.IsReidemeisterTwo` inserts the existing oriented clasp across a common
-face of a planar rotation system, or removes such a clasp. Both endpoints are planar diagrams.
-The relation covers arcs incident to crossings on a common face boundary. Moves involving
-crossing-free circles or separate boundary cycles require additional placement data.
+face of a planar rotation system, or removes such a clasp. `PDCode.ClaspLocal` records the
+common-face locality; the insertion constructor additionally takes a user-supplied certificate
+that its chosen output is planar. This module does not derive that certificate from the
+common-face condition. Both endpoints are planar diagrams. The relation covers arcs incident to
+crossings on a common face boundary. Moves involving crossing-free circles or separate boundary
+cycles require additional placement data.
 
 The normalized bracket is invariant under this relation, consuming the unrestricted algebraic
 calculation in `OrientedPDCode.normalizedKauffmanBracket_insertClasp`. This is a diagram-level
@@ -35,7 +38,9 @@ polynomial*, Topology 26 (1987), 395–407.
 public section
 
 /-! The two distinct arcs face one another across a common face in the endpoint convention
-of `insertClasp`. The opposite side of the second arc is essential. -/
+of `insertClasp`. The opposite side of the second arc is essential. `ClaspLocal` is only the
+locality certificate; planarity of the inserted code is supplied separately to the move
+constructor. -/
 namespace TauCeti.PDCode
 
 open Equiv Equiv.Perm
@@ -258,7 +263,7 @@ theorem isPlanar_insertClasp_orientedPDCodeOneCrossingPositive (b : Bool) :
   have hc :
       ((D₀).insertClasp 0 3 b (by decide) (by decide)).toPDCode.projectionTriple.IsConnected :=
     oneCrossing_insertClasp_connected_q3 b
-  rw [PDCode.isPlanar_iff_of_connected _ hc,
+  rw [PDCode.isPlanar_iff_of_isConnected _ hc,
     Equiv.Perm.orbitCount_eq_card_parts_partition]
   cases b <;> decide +kernel
 
@@ -285,7 +290,7 @@ theorem not_isPlanar_insertClasp_orientedPDCodeOneCrossingPositive (b : Bool) :
   have hc :
       ((D₀).insertClasp 0 2 b (by decide) (by decide)).toPDCode.projectionTriple.IsConnected :=
     oneCrossing_insertClasp_connected_q2 b
-  rw [PDCode.isPlanar_iff_of_connected _ hc,
+  rw [PDCode.isPlanar_iff_of_isConnected _ hc,
     Equiv.Perm.orbitCount_eq_card_parts_partition]
   cases b <;> decide +kernel
 
