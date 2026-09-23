@@ -7,10 +7,9 @@ module
 
 -- `TauCeti.RepresentationTheory.Induction.Clifford.Injectivity` is imported publicly: it
 -- re-exports `TauCeti.inertia`, `TauCeti.le_inertia`, `FDRep.LiesOver`, `TauCeti.indFDRep` and
--- `TauCeti.resFDRep`, all of which occur in the statements below, together with
--- `FDRep.simple_indFDRep_of_inertia` and
--- `FDRep.nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep`, the two halves of the
--- correspondence that the packaged statement combines with the surjectivity proved here.
+-- `TauCeti.resFDRep`, all of which occur in the statement below, together with
+-- `FDRep.simple_indFDRep_of_inertia`, the irreducibility of the induced representation that the
+-- proof uses to upgrade a nonzero intertwiner to an isomorphism.
 public import TauCeti.RepresentationTheory.Induction.Clifford.Injectivity
 -- Non-public: the enumeration `TauCeti.irreducibleRepresentation` of the irreducible
 -- representations of the inertia group, and the expansion of a class function in the basis of
@@ -61,16 +60,10 @@ in the form in which the surrounding files use it.
 
 * `FDRep.exists_simple_liesOver_inertia_nonempty_iso_indFDRep`: **surjectivity in the Clifford
   correspondence**.  An irreducible representation of `G` lying over `V` is induced from an
-  irreducible representation of the inertia group lying over `V`.
-* `FDRep.clifford_correspondence`: the packaged correspondence.  The representation of the inertia
-  group produced by the previous statement is unique up to isomorphism, by the injectivity theorem
-  `FDRep.nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep`.
+  irreducible representation of the inertia group lying over `V`.  The inducing representation is
+  unique up to isomorphism by `FDRep.nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep`.
 
 ## References
-
-This proves the "Clifford correspondence" milestone of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, whose forward map and
-injectivity are already in place in the two files named above.
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, AMS Chelsea (1976), Theorem 6.11.
 * C. W. Curtis and I. Reiner, *Methods of Representation Theory, Vol. I*, Wiley (1981), §11.
@@ -242,26 +235,6 @@ theorem exists_simple_liesOver_inertia_nonempty_iso_indFDRep
     (X := indFDRep (U i)) (Y := W) fun e => hiso ⟨e⟩
   rw [finrank_hom_indFDRep] at hzero
   exact ha hzero
-
-/-- **The Clifford correspondence.**  Let `N` be a normal subgroup of a finite group `G` and let
-`V` be an irreducible representation of `N` over an algebraically closed field of characteristic
-zero.  Every irreducible representation `W` of `G` lying over `V` is induced from an irreducible
-representation of `inertia V` lying over `V`, and that representation is unique up to
-isomorphism. -/
-theorem clifford_correspondence (V : FDRep k N) [Simple V] (W : FDRep k G) [Simple W]
-    (hW : W.LiesOver N.subtype V) :
-    ∃ (U : FDRep k (inertia V)) (_ : Simple U),
-      U.LiesOver (Subgroup.inclusion (le_inertia V)) V ∧ Nonempty (indFDRep U ≅ W) ∧
-        ∀ (U' : FDRep k (inertia V)) [Simple U'],
-          U'.LiesOver (Subgroup.inclusion (le_inertia V)) V →
-            Nonempty (indFDRep U' ≅ W) → Nonempty (U ≅ U') := by
-  obtain ⟨U, hUsimple, hUover, ⟨e⟩⟩ :=
-    exists_simple_liesOver_inertia_nonempty_iso_indFDRep V W hW
-  let _ : Simple U := hUsimple
-  refine ⟨U, hUsimple, hUover, ⟨e⟩, fun U' _ hU'over hU'ind => ?_⟩
-  obtain ⟨e'⟩ := hU'ind
-  exact nonempty_iso_of_liesOver_inertia_of_nonempty_iso_indFDRep V U U' hUover hU'over
-    ⟨e.trans e'.symm⟩
 
 end Surjectivity
 
