@@ -78,7 +78,7 @@ theorem isRiemannianManifold : IsRiemannianManifold 𝓘(ℝ, ℝ) realOpenUnitB
 /-- The radial segment from the centre to `q`, affinely parametrized on `[0, 1]` and clamped
 outside that interval. -/
 def radialSegment (q : realOpenUnitBall) : ℝ → realOpenUnitBall :=
-  TauCeti.TopologicalSpace.Opens.convexSegment realOpenUnitBall
+  TopologicalSpace.Opens.convexSegment realOpenUnitBall
     (convex_ball (0 : ℝ) 1) center q
 
 /-- On `[0, 1]`, the radial segment from the centre to `q` is `t ↦ t * q`. -/
@@ -88,7 +88,7 @@ theorem coe_radialSegment (q : realOpenUnitBall) (t : ℝ) (ht : t ∈ Icc 0 1) 
     (radialSegment q t : ℝ) =
         ⇑(ContinuousAffineMap.lineMap (R := ℝ) (center : ℝ) (q : ℝ)) t := by
       simpa only [radialSegment, Function.comp_apply] using
-        TauCeti.TopologicalSpace.Opens.convexSegment_val_eqOn realOpenUnitBall
+        TopologicalSpace.Opens.convexSegment_val_eqOn realOpenUnitBall
           (convex_ball (0 : ℝ) 1) center q t ht
     _ = t * (q : ℝ) := by
       simp [ContinuousAffineMap.coe_lineMap_eq, AffineMap.lineMap_apply_module]
@@ -96,25 +96,25 @@ theorem coe_radialSegment (q : realOpenUnitBall) (t : ℝ) (ht : t ∈ Icc 0 1) 
 /-- The radial segment starts at the centre of the open unit ball. -/
 @[simp]
 theorem radialSegment_zero (q : realOpenUnitBall) : radialSegment q 0 = center :=
-  TauCeti.TopologicalSpace.Opens.convexSegment_zero realOpenUnitBall
+  TopologicalSpace.Opens.convexSegment_zero realOpenUnitBall
     (convex_ball (0 : ℝ) 1) center q
 
 /-- The radial segment ends at `q`. -/
 @[simp]
 theorem radialSegment_one (q : realOpenUnitBall) : radialSegment q 1 = q :=
-  TauCeti.TopologicalSpace.Opens.convexSegment_one realOpenUnitBall
+  TopologicalSpace.Opens.convexSegment_one realOpenUnitBall
     (convex_ball (0 : ℝ) 1) center q
 
 /-- The radial segment is `C¹` on `[0, 1]`. -/
 theorem contMDiffOn_radialSegment (q : realOpenUnitBall) :
     CMDiff[Icc 0 1] 1 (radialSegment q) :=
-  TauCeti.TopologicalSpace.Opens.contMDiffOn_convexSegment realOpenUnitBall
+  TopologicalSpace.Opens.contMDiffOn_convexSegment realOpenUnitBall
     (convex_ball (0 : ℝ) 1) center q
 
 /-- The radial segment realizes the distance from the centre to `q`. -/
 theorem pathELength_radialSegment (q : realOpenUnitBall) :
     pathELength 𝓘(ℝ, ℝ) (radialSegment q) 0 1 = edist center q :=
-  TauCeti.TopologicalSpace.Opens.pathELength_convexSegment_eq_edist realOpenUnitBall
+  TopologicalSpace.Opens.pathELength_convexSegment_eq_edist realOpenUnitBall
     (convex_ball (0 : ℝ) 1) center q
 
 /-- Every point of the real open unit ball is joined to its centre by its radial `C¹` segment,
