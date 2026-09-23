@@ -191,17 +191,15 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
   carrier := {f | f.discrim = -D ∧ 0 < f.a}
   smul_mem' γ f := by
     rintro ⟨hD, ha⟩
-    have hd : discrim f.a f.b f.c ≤ 0 := by
-      rw [← discrim_def, hD]
-      exact neg_nonpos.2 D.cast_nonneg
-    have hd' : discrim (γ • f).a (γ • f).b (γ • f).c < 0 := by
-      rw [← discrim_def, discrim_smul, hD, neg_lt_zero]
-      exact_mod_cast NeZero.pos D
+    have hd : discrim f.a f.b f.c ≤ 0 := (discrim_def f).symm.trans_le <| by simp [hD]
+    have hd' : discrim (γ • f).a (γ • f).b (γ • f).c < 0 :=
+      (discrim_def (γ • f)).symm.trans_lt <| by simp [hD, NeZero.pos]
     refine ⟨(discrim_smul γ f).trans hD, pos_of_nonneg_of_discrim_lt_zero ?_ hd'⟩
     -- `(γ • f).a` is the value of `γ • f` at `(1, 0)`, that is the value of `f` at `(s, -r)`
-    calc 0 ≤ f.eval (γ 1 1) (-γ 1 0) := by
-          rw [eval_def]
-          exact nonneg_of_discrim_le_zero ha hd _ _
+    calc
+      0 ≤ f.eval (γ 1 1) (-γ 1 0) := by
+        rw [eval_def]
+        exact nonneg_of_discrim_le_zero ha hd _ _
       _ = (γ • f).eval 1 0 := by simp [eval_smul]
       _ = (γ • f).a := by simp [eval_def]
 
