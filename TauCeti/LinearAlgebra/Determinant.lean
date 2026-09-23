@@ -46,8 +46,6 @@ one summand per column.
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
 * `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
-* `Matrix.det_of_sum_column`: the multilinear expansion of a determinant whose columns are finite
-  sums.
 
 ## Implementation notes
 
@@ -254,24 +252,5 @@ theorem det_mul_column_intCast {n : Type*} [Fintype n] [DecidableEq n]
     ext i j
     simp
   rw [hmap, Matrix.det_mul_column, ← Int.cast_det]
-
-/-- **The multilinear expansion of a determinant along its columns.**  When every entry of
-column `j` is a sum over the same finite set `S j` of indices, the determinant is the sum, over
-the choices `r` of one index `r j ∈ S j` for each column, of the determinant of the matrix whose
-column `j` is the `r j`-th summand.  This is `MultilinearMap.map_sum_finset` for the determinant,
-read on columns. -/
-theorem det_of_sum_column {n ι : Type*} [Fintype n] [DecidableEq n] {R : Type*} [CommRing R]
-    (S : n → Finset ι) (g : n → ι → n → R) :
-    (Matrix.of fun i j => ∑ m ∈ S j, g j m i).det =
-      ∑ r ∈ Fintype.piFinset S, (Matrix.of fun i j => g j (r j) i).det := by
-  simp_rw [← Matrix.det_transpose (Matrix.of _), Matrix.det.eq_1]
-  have h := (Matrix.detRowAlternating : (n → R) [⋀^n]→ₗ[R] R).toMultilinearMap.map_sum_finset g S
-  simp only [AlternatingMap.coe_multilinearMap] at h
-  convert h using 3 with r
-  · congr 1
-    ext j i
-    simp [Finset.sum_apply]
-  · -- the transpose of `Matrix.of f` is `fun j i => f i j` by definition
-    rfl
 
 end Matrix

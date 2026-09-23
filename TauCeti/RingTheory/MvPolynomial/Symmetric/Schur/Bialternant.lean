@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Tactic.LinearCombination
-public import TauCeti.Combinatorics.Young.OfRowLens
+import Mathlib.Tactic.LinearCombination
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
 
@@ -57,8 +56,8 @@ last row except for its final entry `y ^ λ_n`.  In the remaining `n × n` block
 and column `j` is `x_i - y` times the geometric sum
 `∑_{λ_{j+1} ≤ m ≤ λ_j} x_i ^ (m + n - 1 - j) · y ^ (λ_j - m)`.  Pulling the factor `x_i - y` out of
 each row and expanding the determinant multilinearly in its columns
-(`Matrix.det_of_sum_column`) gives a sum over the families `m_j ∈ [λ_{j+1}, λ_j]`, which are the
-row lengths of the shapes interlacing `μ` (`YoungDiagram.sum_interlacingShapes_eq_sum_piFinset`).
+(`MultilinearMap.map_sum_finset`) gives a sum over families `m_j ∈ [λ_{j+1}, λ_j]`. These are the
+row lengths of shapes interlacing `μ` (`YoungDiagram.sum_interlacingShapes_eq_sum_piFinset`).
 
 ## References
 
@@ -163,8 +162,10 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
     have h1 : e j.castSucc = b + 1 + c := by simp only [he, Fin.val_castSucc]; omega
     have h2 : e j.succ = a + c := by simp only [he, Fin.val_succ]; omega
     have h3 : e j.castSucc - e j.succ = b + 1 - a := by rw [h1, h2]; omega
+    -- Keep `b + 1` in the bound so the geometric sum matches the interval calculation below.
+    have hab1 : a ≤ b + 1 := Nat.le_succ_of_le hab
     have hgeom := (Commute.all (X i.castSucc : MvPolynomial (Fin (n + 1)) R) y).geom_sum₂_Ico_mul
-      (show a ≤ b + 1 by omega)
+      hab1
     have hsum : ∑ m ∈ Icc a b, (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^ (m + c) *
         y ^ (b - m) = X i.castSucc ^ c *
           ∑ m ∈ Ico a (b + 1), X i.castSucc ^ m * y ^ (b + 1 - 1 - m) := by
@@ -185,9 +186,27 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
     rw [YoungDiagram.card_eq_sum_range_rowLen ν (YoungDiagram.mem_interlacingShapes.mp hν).2,
       ← Fin.sum_univ_eq_sum_range]
   -- Pull the factor `x_i - y` out of each row and expand the block multilinearly in its columns.
+  have hdet_sum : (Matrix.of fun i j : Fin n =>
+      ∑ m ∈ Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
+        X i.castSucc ^ (m + (n - 1 - j)) * y ^ (μ.rowLen j - m)).det =
+      ∑ r ∈ Fintype.piFinset (fun j : Fin n =>
+        Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j)),
+        (Matrix.of fun i j : Fin n =>
+          X i.castSucc ^ (r j + (n - 1 - j)) * y ^ (μ.rowLen j - r j)).det := by
+    simp_rw [← Matrix.det_transpose (Matrix.of _), Matrix.det.eq_1]
+    have h := (Matrix.detRowAlternating (R := MvPolynomial (Fin (n + 1)) R)
+      (n := Fin n)).toMultilinearMap.map_sum_finset
+        (fun j (m : ℕ) i => X i.castSucc ^ (m + (n - 1 - j)) * y ^ (μ.rowLen j - m))
+        (fun j : Fin n => Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j))
+    simp only [AlternatingMap.coe_multilinearMap] at h
+    convert h using 3 with r
+    · congr 1
+      ext j i
+      simp [Finset.sum_apply]
+    · rfl
   have hel : e (Fin.last n) = μ.rowLen n := by simp [he]
   rw [alternant_eq_X_last_pow_mul_det e he_anti, ← hy, hel, hblock, Matrix.det_mul_column, hN,
-    Matrix.det_of_sum_column, hsum, mul_left_comm, Finset.mul_sum]
+    hdet_sum, hsum, mul_left_comm, Finset.mul_sum]
   congr 1
   refine sum_congr rfl fun r hr => ?_
   have hr' : ∀ j ∈ univ, r j ≤ μ.rowLen j := fun j _ =>
