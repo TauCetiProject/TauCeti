@@ -25,6 +25,15 @@ public section
 
 namespace TauCeti.DynkinType
 
+/-- The pinned index of the root opposite to `α`. -/
+@[expose] noncomputable def f4OppositeRootIndex (α : Fin 48) : Fin 48 :=
+  f4SimplyConnectedRootDatum.reflectionPerm α α
+
+/-- Taking the opposite pinned root index twice restores the index. -/
+@[simp] theorem f4OppositeRootIndex_f4OppositeRootIndex (α : Fin 48) :
+    f4OppositeRootIndex (f4OppositeRootIndex α) = α := by
+  exact f4SimplyConnectedRootDatum.indexNeg.neg_neg α
+
 /-- The tabulated F4 root length is quadratic along every integral root relation. -/
 theorem f4Length_of_root_eq_add_zsmul (α β γ : Fin 48) (n : ℤ)
     (h : f4SimplyConnectedRootDatum.root γ =

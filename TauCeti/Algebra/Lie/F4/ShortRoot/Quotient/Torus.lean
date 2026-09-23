@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Basis
-public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.SpecialMap
 
 /-!
 # Torus pinning for the modular F4 quotient
@@ -33,37 +33,6 @@ namespace TauCeti.DynkinType
 open scoped _root_.Matrix
 
 noncomputable section
-
-/-- The torus-point map contravariant to the F4 special character-lattice map. -/
-def f4SpecialIsogenyTorusMap {A : Type*} [CommRing A]
-    (s : Fin 4 → Aˣ) : Fin 4 → Aˣ :=
-  ![s 3 ^ 2, s 2 ^ 2, s 1, s 0]
-
-/-- Applying the special torus map twice is coordinatewise squaring. -/
-@[simp] theorem f4SpecialIsogenyTorusMap_apply_apply
-    {A : Type*} [CommRing A] (s : Fin 4 → Aˣ) :
-    f4SpecialIsogenyTorusMap (f4SpecialIsogenyTorusMap s) =
-      fun i => s i ^ 2 := by
-  ext i
-  fin_cases i <;> simp [f4SpecialIsogenyTorusMap]
-
-/-- Evaluation after the special torus map is evaluation after applying the
-special character-lattice matrix. -/
-theorem torusCharacter_f4SpecialIsogenyTorusMap
-    {A : Type*} [CommRing A] (s : Fin 4 → Aˣ) (μ : Fin 4 → ℤ) :
-    TauCeti.torusCharacter (f4SpecialIsogenyTorusMap s) μ =
-      TauCeti.torusCharacter s (f4SpecialIsogenyMatrix *ᵥ μ) := by
-  rw [TauCeti.torusCharacter_def, TauCeti.torusCharacter_def,
-    f4SpecialIsogenyMatrix_def]
-  have hcomm (a b c d : Aˣ) : a * (b * (c * d)) = d * (c * (b * a)) := by
-    calc
-      a * (b * (c * d)) = (a * b) * (c * d) := (mul_assoc _ _ _).symm
-      _ = (c * d) * (a * b) := mul_comm _ _
-      _ = (d * c) * (b * a) := congrArg₂ (· * ·) (mul_comm _ _) (mul_comm _ _)
-      _ = d * (c * (b * a)) := mul_assoc _ _ _
-  simpa [f4SpecialIsogenyTorusMap, Matrix.mulVec, dotProduct,
-    Fin.sum_univ_succ, Fin.prod_univ_succ, zpow_mul] using
-      hcomm ((s 3 ^ 2) ^ μ 0) ((s 2 ^ 2) ^ μ 1) (s 1 ^ μ 2) (s 0 ^ μ 3)
 
 /-- The quotient-basis weight: the long root paired with a nonzero short-root
 weight, and zero on the two Cartan coordinates. -/

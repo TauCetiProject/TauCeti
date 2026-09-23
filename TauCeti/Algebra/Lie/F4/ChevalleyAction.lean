@@ -375,10 +375,6 @@ theorem exists_f4_dividedAd_sq_rootVector_eq_smul_of_long_add_two_short (α β �
     rw [smul_smul]
     norm_num
 
-/-- The pinned index of the root opposite to `α`. -/
-@[expose] def f4OppositeRootIndex (α : Fin 48) : Fin 48 :=
-  f4SimplyConnectedRootDatum.reflectionPerm α α
-
 /-- The pinned opposite-root index has the negative rational Killing-root label. -/
 theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
     f4KillingRootLabel (f4OppositeRootIndex α) = -f4KillingRootLabel α := by
@@ -412,11 +408,6 @@ theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := by
     (fun r : (F4.cartanSubalgebra valid_F4).root =>
       (r : Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4)))
     (f4KillingRootLabel_f4OppositeRootIndex α)
-
-/-- Taking the opposite pinned root index twice restores the index. -/
-@[simp] theorem f4OppositeRootIndex_f4OppositeRootIndex (α : Fin 48) :
-    f4OppositeRootIndex (f4OppositeRootIndex α) = α := by
-  exact f4SimplyConnectedRootDatum.indexNeg.neg_neg α
 
 /-- Two indexed rational Killing roots do not sum to zero unless their pinned labels are
 opposite. -/
