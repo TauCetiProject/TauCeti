@@ -12,7 +12,7 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Comap
 
 The augmentation ideal of a Hopf algebra is the kernel of its counit. The counit is split
 by the unit, hence surjective, so the kernel Hopf ideal machinery of
-`TauCeti.Algebra.HopfAlgebra.Kernel` applies directly and no Sweedler-decomposition
+`TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel` applies directly and no Sweedler-decomposition
 argument is needed.
 
 This is the fundamental example of a Hopf ideal: the quotient by it is the base ring, and
