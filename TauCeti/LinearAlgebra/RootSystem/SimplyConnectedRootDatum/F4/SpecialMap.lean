@@ -279,11 +279,7 @@ theorem torusCharacter_f4SpecialIsogenyTorusMap
   rw [TauCeti.torusCharacter_def, TauCeti.torusCharacter_def,
     f4SpecialIsogenyMatrix_def]
   have hcomm (a b c d : Aˣ) : a * (b * (c * d)) = d * (c * (b * a)) := by
-    calc
-      a * (b * (c * d)) = (a * b) * (c * d) := (mul_assoc _ _ _).symm
-      _ = (c * d) * (a * b) := mul_comm _ _
-      _ = (d * c) * (b * a) := congrArg₂ (· * ·) (mul_comm _ _) (mul_comm _ _)
-      _ = d * (c * (b * a)) := mul_assoc _ _ _
+    ac_rfl
   simpa [f4SpecialIsogenyTorusMap, Matrix.mulVec, dotProduct,
     Fin.sum_univ_succ, Fin.prod_univ_succ, zpow_mul] using
       hcomm ((s 3 ^ 2) ^ μ 0) ((s 2 ^ 2) ^ μ 1) (s 1 ^ μ 2) (s 0 ^ μ 3)
