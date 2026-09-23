@@ -36,11 +36,13 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {f : End K V}
 private theorem isSemisimpleModule_mapSubmodule_eigenspace (f : End K V) (μ : K)
     (hinv : f.eigenspace μ ∈ (Algebra.lsmul K K V f).invtSubmodule) :
     IsSemisimpleModule K[X] (AEval.mapSubmodule K V f ⟨f.eigenspace μ, hinv⟩) := by
-  -- `AEval.restrict_equiv_mapSubmodule` restricts `Algebra.lsmul K K V f` rather than `f`, which
-  -- acts as `f`, so the two restrictions agree definitionally
+  -- `AEval.restrict_equiv_mapSubmodule` restricts `Algebra.lsmul K K V f` rather than `f`
+  have hlsmul : LinearMap.restrict (p := f.eigenspace μ) (q := f.eigenspace μ)
+      (Algebra.lsmul K K V f) hinv =
+        f.restrict (p := f.eigenspace μ) (q := f.eigenspace μ) hinv := rfl
   have hres : LinearMap.restrict (p := f.eigenspace μ) (q := f.eigenspace μ)
       (Algebra.lsmul K K V f) hinv = μ • LinearMap.id :=
-    Module.End.restrict_eigenspace f μ
+    hlsmul.trans (Module.End.restrict_eigenspace f μ)
   refine (AEval.restrict_equiv_mapSubmodule f _ hinv).isSemisimpleModule_iff.mp ?_
   refine End.isSemisimple_of_squarefree_aeval_eq_zero (p := X - C μ)
     (irreducible_X_sub_C μ).squarefree ?_

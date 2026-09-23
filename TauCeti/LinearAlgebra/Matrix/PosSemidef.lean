@@ -75,9 +75,8 @@ private theorem posSemidef_of_support_posSemidef {R : Type u}
 
 private theorem star_mul_matrix_isHermitian {R : Type u}
     [Ring R] [StarRing R] (g : α → R) :
-    (Matrix.of fun a b => star (g a) * g b).IsHermitian := by
-  change (Matrix.vecMulVec (star g) g).IsHermitian
-  rw [Matrix.IsHermitian, Matrix.conjTranspose_vecMulVec, star_star]
+    (Matrix.of fun a b => star (g a) * g b).IsHermitian :=
+  Matrix.IsHermitian.ext fun a b => by simp
 
 /-- The rank-one matrix `(a, b) ↦ star (g a) · g b` is positive semidefinite for an arbitrary
 index type. Such matrices are elementary building blocks for positive-semidefinite matrices;
@@ -87,7 +86,11 @@ theorem posSemidef_rankOne {R : Type u}
     Matrix.PosSemidef (fun a b => star (g a) * g b) := by
   refine posSemidef_of_support_posSemidef _ (star_mul_matrix_isHermitian g) ?_
   intro x
-  exact Matrix.posSemidef_vecMulVec_star_self _
+  have h : (Matrix.of fun a b : x.support => star (g a) * g b) =
+      Matrix.vecMulVec (star fun a : x.support => g a) fun a : x.support => g a := by
+    ext a b
+    simp [Matrix.vecMulVec_apply]
+  exact h.symm ▸ Matrix.posSemidef_vecMulVec_star_self _
 
 /-- The constant matrix with value `1` is positive semidefinite. -/
 theorem posSemidef_const_one {R : Type u}
