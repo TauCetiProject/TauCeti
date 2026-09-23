@@ -27,43 +27,205 @@ open scoped RestrictedProduct
 
 universe u v w
 
+section Equiv
+
 variable {ι : Type u} {ι' : Type v} {G : ι → Type w} {U : ∀ i, Set (G i)}
+
+private theorem cast_apply {i j : ι} (h : i = j) (x : ∀ k, G k) :
+    cast (congrArg G h) (x i) = x j := by
+  subst j
+  rfl
+
+private theorem cast_mapsTo {i j : ι} (h : i = j) :
+    Set.MapsTo (cast (congrArg G h)) (U i) (U j) := by
+  subst j
+  exact Set.mapsTo_id _
+
+private theorem continuous_cast [∀ i, TopologicalSpace (G i)] {i j : ι} (h : i = j) :
+    Continuous (cast (congrArg G h) : G i → G j) := by
+  subst j
+  exact continuous_id
+
+private def restrictedProductCongrLeftMap (e : ι' ≃ ι) :
+    (Πʳ i, [G (e i), U (e i)]) → (Πʳ i, [G i, U i]) :=
+  RestrictedProduct.mapAlong (fun i : ι' ↦ G (e i)) G e.symm
+    e.symm.injective.tendsto_cofinite
+    (fun i ↦ cast (congrArg G (e.apply_symm_apply i)))
+    (.of_forall fun i ↦ cast_mapsTo (G := G) (U := U) (e.apply_symm_apply i))
+
+private def restrictedProductReindexMap (e : ι' ≃ ι) :
+    (Πʳ i, [G i, U i]) → (Πʳ i, [G (e i), U (e i)]) :=
+  RestrictedProduct.mapAlong G (fun i : ι' ↦ G (e i)) e
+    e.injective.tendsto_cofinite (fun _ x ↦ x)
+    (.of_forall fun _ ↦ Set.mapsTo_id _)
+
+/-- Reindex a restricted product of arbitrary sets along an equivalence, from `ι'` to `ι`. -/
+def restrictedProductCongrLeftEquiv (e : ι' ≃ ι) :
+    (Πʳ i, [G (e i), U (e i)]) ≃ (Πʳ i, [G i, U i]) where
+  toFun := restrictedProductCongrLeftMap e
+  invFun := restrictedProductReindexMap e
+  left_inv x := by
+    apply RestrictedProduct.ext
+    intro i
+    simp only [restrictedProductCongrLeftMap, restrictedProductReindexMap,
+      RestrictedProduct.mapAlong_apply]
+    rw [← Equiv.piCongrLeft_apply_eq_cast x (e i)]
+    exact Equiv.piCongrLeft_apply_apply G e x i
+  right_inv x := by
+    apply RestrictedProduct.ext
+    intro i
+    simp only [restrictedProductCongrLeftMap, restrictedProductReindexMap,
+      RestrictedProduct.mapAlong_apply]
+    exact cast_apply (e.apply_symm_apply i) x
+
+/-- The set-level reindexing equivalence preserves the coordinate at `e i`. -/
+theorem restrictedProductCongrLeftEquiv_apply_apply (e : ι' ≃ ι)
+    (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
+    restrictedProductCongrLeftEquiv e x (e i) = x i := by
+  change restrictedProductCongrLeftMap e x (e i) = x i
+  simp only [restrictedProductCongrLeftMap, RestrictedProduct.mapAlong_apply]
+  rw [← Equiv.piCongrLeft_apply_eq_cast x (e i)]
+  exact Equiv.piCongrLeft_apply_apply G e x i
+
+/-- Evaluation of set-level reindexing at any target coordinate. -/
+@[simp]
+theorem restrictedProductCongrLeftEquiv_apply (e : ι' ≃ ι)
+    (x : Πʳ i, [G (e i), U (e i)]) (j : ι) :
+    restrictedProductCongrLeftEquiv e x j =
+      cast (congrArg G (e.apply_symm_apply j)) (x (e.symm j)) := by
+  change restrictedProductCongrLeftMap e x j = _
+  simp only [restrictedProductCongrLeftMap, RestrictedProduct.mapAlong_apply]
+
+/-- The inverse set-level reindexing equivalence evaluates by precomposition with `e`. -/
+@[simp]
+theorem restrictedProductCongrLeftEquiv_symm_apply (e : ι' ≃ ι)
+    (x : Πʳ i, [G i, U i]) (i : ι') :
+    (restrictedProductCongrLeftEquiv e).symm x i = x (e i) := by
+  change restrictedProductReindexMap e x i = _
+  simp only [restrictedProductReindexMap, RestrictedProduct.mapAlong_apply]
+
+/-- Reindex a restricted product of arbitrary sets in the consumer orientation. -/
+def restrictedProductReindexEquiv (e : ι' ≃ ι) :
+    (Πʳ i, [G i, U i]) ≃ (Πʳ i, [G (e i), U (e i)]) :=
+  (restrictedProductCongrLeftEquiv e).symm
+
+/-- Evaluation of consumer-oriented set-level reindexing at a new index. -/
+@[simp]
+theorem restrictedProductReindexEquiv_apply (e : ι' ≃ ι)
+    (x : Πʳ i, [G i, U i]) (i : ι') :
+    restrictedProductReindexEquiv e x i = x (e i) := by
+  exact restrictedProductCongrLeftEquiv_symm_apply e x i
+
+/-- Evaluation of the inverse consumer-oriented set-level reindexing at a corresponding index. -/
+theorem restrictedProductReindexEquiv_symm_apply (e : ι' ≃ ι)
+    (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
+    (restrictedProductReindexEquiv e).symm x (e i) = x i := by
+  simpa [restrictedProductReindexEquiv] using restrictedProductCongrLeftEquiv_apply_apply e x i
+
+/-- Evaluation of inverse consumer-oriented set-level reindexing at any original index. -/
+@[simp]
+theorem restrictedProductReindexEquiv_symm_apply_eq_cast (e : ι' ≃ ι)
+    (x : Πʳ i, [G (e i), U (e i)]) (j : ι) :
+    (restrictedProductReindexEquiv e).symm x j =
+      cast (congrArg G (e.apply_symm_apply j)) (x (e.symm j)) := by
+  exact restrictedProductCongrLeftEquiv_apply e x j
+
+variable [∀ i, TopologicalSpace (G i)]
+
+/-- Set-level reindexing from `ι'` to `ι` is continuous. -/
+theorem continuous_restrictedProductCongrLeftEquiv (e : ι' ≃ ι) :
+    Continuous (@restrictedProductCongrLeftEquiv ι ι' G U e) := by
+  change Continuous (restrictedProductCongrLeftMap e)
+  exact RestrictedProduct.mapAlong_continuous (fun i : ι' ↦ G (e i)) G e.symm
+    e.symm.injective.tendsto_cofinite
+    (fun i ↦ cast (congrArg G (e.apply_symm_apply i)))
+    (.of_forall fun i ↦ cast_mapsTo (G := G) (U := U) (e.apply_symm_apply i))
+    (fun i ↦ continuous_cast (G := G) (e.apply_symm_apply i))
+
+/-- The inverse of set-level reindexing from `ι'` to `ι` is continuous. -/
+theorem continuous_restrictedProductCongrLeftEquiv_symm (e : ι' ≃ ι) :
+    Continuous (@restrictedProductCongrLeftEquiv ι ι' G U e).symm := by
+  change Continuous (restrictedProductReindexMap e)
+  exact RestrictedProduct.mapAlong_continuous G (fun i : ι' ↦ G (e i)) e
+    e.injective.tendsto_cofinite (fun _ x ↦ x)
+    (.of_forall fun _ ↦ Set.mapsTo_id _) (fun _ ↦ continuous_id)
+
+/-- Consumer-oriented set-level reindexing is continuous. -/
+theorem continuous_restrictedProductReindexEquiv (e : ι' ≃ ι) :
+    Continuous (@restrictedProductReindexEquiv ι ι' G U e) := by
+  exact continuous_restrictedProductCongrLeftEquiv_symm e
+
+/-- The inverse of consumer-oriented set-level reindexing is continuous. -/
+theorem continuous_restrictedProductReindexEquiv_symm (e : ι' ≃ ι) :
+    Continuous (@restrictedProductReindexEquiv ι ι' G U e).symm := by
+  exact continuous_restrictedProductCongrLeftEquiv e
+
+end Equiv
+
+variable {ι : Type u} {ι' : Type v} {G : ι → Type w} [∀ i, Group (G i)]
+  {U : ∀ i, Subgroup (G i)}
+
+private def castMonoidHom {i j : ι} (h : i = j) : G i →* G j :=
+  (MulEquiv.cast h).toMonoidHom
+
+private theorem castMonoidHom_mapsTo {i j : ι} (h : i = j) :
+    Set.MapsTo (castMonoidHom (G := G) h) (U i : Set (G i)) (U j : Set (G j)) := by
+  subst j
+  exact Set.mapsTo_id _
+
+private theorem continuous_castMonoidHom [∀ i, TopologicalSpace (G i)]
+    {i j : ι} (h : i = j) : Continuous (castMonoidHom (G := G) h) := by
+  subst j
+  exact continuous_id
+
+private def restrictedProductCongrLeftHom (e : ι' ≃ ι) :
+    (Πʳ i, [G (e i), U (e i)]) →* (Πʳ i, [G i, U i]) :=
+  RestrictedProduct.mapAlongMonoidHom (fun i : ι' ↦ G (e i)) G e.symm
+    e.symm.injective.tendsto_cofinite
+    (fun i ↦ castMonoidHom (G := G) (e.apply_symm_apply i))
+    (.of_forall fun i ↦ castMonoidHom_mapsTo (G := G) (U := U) (e.apply_symm_apply i))
+
+private def restrictedProductReindexHom (e : ι' ≃ ι) :
+    (Πʳ i, [G i, U i]) →* (Πʳ i, [G (e i), U (e i)]) :=
+  RestrictedProduct.mapAlongMonoidHom G (fun i : ι' ↦ G (e i)) e
+    e.injective.tendsto_cofinite (fun i ↦ MonoidHom.id (G (e i)))
+    (.of_forall fun _ ↦ Set.mapsTo_id _)
 
 /-- Reindex a restricted product along an equivalence, in the orientation from `ι'` to `ι`.
 At the index `e i`, the output has the same coordinate as the input at `i`. -/
 def restrictedProductCongrLeft (e : ι' ≃ ι) :
-    (Πʳ i, [G (e i), U (e i)]) ≃ (Πʳ i, [G i, U i]) where
-  toFun x := ⟨e.piCongrLeft G x, by
-    have hx : ∀ᶠ i in cofinite, x i ∈ U (e i) := x.2
-    have hx' := e.symm.injective.tendsto_cofinite hx
-    filter_upwards [hx'] with i hi
-    have hi : x (e.symm i) ∈ U (e (e.symm i)) := by
-      simpa only [Set.mem_preimage, Set.mem_ofPred_eq] using hi
-    rw [← e.apply_symm_apply i, Equiv.piCongrLeft_apply_apply]
-    exact hi⟩
-  invFun x := ⟨(e.piCongrLeft G).symm x, by
-    have hx : ∀ᶠ i in cofinite, x i ∈ U i := x.2
-    have hx' := e.injective.tendsto_cofinite hx
-    filter_upwards [hx'] with i hi
-    have hi : x (e i) ∈ U (e i) := by
-      simpa only [Set.mem_preimage, Set.mem_ofPred_eq] using hi
-    simpa only [Equiv.piCongrLeft_symm_apply] using hi⟩
-  left_inv x := by
-    apply RestrictedProduct.ext
-    intro i
-    exact congrFun ((e.piCongrLeft G).left_inv x) i
-  right_inv x := by
-    apply RestrictedProduct.ext
-    intro i
-    exact congrFun ((e.piCongrLeft G).right_inv x) i
+    (Πʳ i, [G (e i), U (e i)]) ≃* (Πʳ i, [G i, U i]) :=
+  MonoidHom.toMulEquiv (restrictedProductCongrLeftHom e) (restrictedProductReindexHom e)
+    (by
+      apply MonoidHom.ext
+      intro x
+      apply RestrictedProduct.ext
+      intro i
+      simp only [MonoidHom.comp_apply, restrictedProductCongrLeftHom,
+        restrictedProductReindexHom, RestrictedProduct.mapAlongMonoidHom_apply,
+        MonoidHom.id_apply, castMonoidHom, MulEquiv.coe_toMonoidHom,
+        MulEquiv.cast_apply]
+      rw [← Equiv.piCongrLeft_apply_eq_cast x (e i)]
+      exact Equiv.piCongrLeft_apply_apply G e x i)
+    (by
+      apply MonoidHom.ext
+      intro x
+      apply RestrictedProduct.ext
+      intro i
+      simp only [MonoidHom.comp_apply, restrictedProductCongrLeftHom,
+        restrictedProductReindexHom, RestrictedProduct.mapAlongMonoidHom_apply,
+        MonoidHom.id_apply, castMonoidHom, MulEquiv.coe_toMonoidHom,
+        MulEquiv.cast_apply]
+      exact cast_apply (e.apply_symm_apply i) x)
 
 /-- The reindexing equivalence preserves coordinates when evaluated at `e i`. -/
 theorem restrictedProductCongrLeft_apply_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     restrictedProductCongrLeft e x (e i) = x i := by
-  -- The Mathlib coordinate theorem is stated for functions, so expose the restricted-product
-  -- subtype coercion before applying it.
-  change (e.piCongrLeft G x) (e i) = x i
+  simp only [restrictedProductCongrLeft, MonoidHom.toMulEquiv_apply,
+    restrictedProductCongrLeftHom, RestrictedProduct.mapAlongMonoidHom_apply,
+    castMonoidHom, MulEquiv.coe_toMonoidHom, MulEquiv.cast_apply]
+  rw [← Equiv.piCongrLeft_apply_eq_cast x (e i)]
   exact Equiv.piCongrLeft_apply_apply G e x i
 
 /-- Evaluation at any target index, with the dependent coordinate transported along
@@ -73,20 +235,22 @@ theorem restrictedProductCongrLeft_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (j : ι) :
     restrictedProductCongrLeft e x j =
       cast (congrArg G (e.apply_symm_apply j)) (x (e.symm j)) := by
-  exact Equiv.piCongrLeft_apply_eq_cast x j
+  change restrictedProductCongrLeftHom e x j = _
+  simp only [restrictedProductCongrLeftHom, RestrictedProduct.mapAlongMonoidHom_apply,
+    castMonoidHom, MulEquiv.coe_toMonoidHom, MulEquiv.cast_apply]
 
 /-- The inverse reindexing equivalence evaluates at the corresponding original index. -/
 @[simp]
 theorem restrictedProductCongrLeft_symm_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G i, U i]) (i : ι') :
     (restrictedProductCongrLeft e).symm x i = x (e i) := by
-  -- The inverse equivalence's subtype coercion must be exposed to match Mathlib's function lemma.
-  change ((e.piCongrLeft G).symm x) i = x (e i)
-  exact Equiv.piCongrLeft_symm_apply G e x i
+  change restrictedProductReindexHom e x i = _
+  simp only [restrictedProductReindexHom, RestrictedProduct.mapAlongMonoidHom_apply,
+    MonoidHom.id_apply]
 
 /-- Reindex in the consumer orientation: `x` is sent to the function `i ↦ x (e i)`. -/
 def restrictedProductReindex (e : ι' ≃ ι) :
-    (Πʳ i, [G i, U i]) ≃ (Πʳ i, [G (e i), U (e i)]) :=
+    (Πʳ i, [G i, U i]) ≃* (Πʳ i, [G (e i), U (e i)]) :=
   (restrictedProductCongrLeft e).symm
 
 /-- Evaluation of `restrictedProductReindex` at a new index. -/
@@ -94,7 +258,7 @@ def restrictedProductReindex (e : ι' ≃ ι) :
 theorem restrictedProductReindex_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G i, U i]) (i : ι') :
     restrictedProductReindex e x i = x (e i) := by
-  simp [restrictedProductReindex]
+  exact restrictedProductCongrLeft_symm_apply e x i
 
 /-- Evaluation of the inverse of `restrictedProductReindex` at an original index. -/
 theorem restrictedProductReindex_symm_apply (e : ι' ≃ ι)
@@ -109,105 +273,36 @@ theorem restrictedProductReindex_symm_apply_eq_cast (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (j : ι) :
     (restrictedProductReindex e).symm x j =
       cast (congrArg G (e.apply_symm_apply j)) (x (e.symm j)) := by
-  simp [restrictedProductReindex, restrictedProductCongrLeft_apply]
+  exact restrictedProductCongrLeft_apply e x j
 
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- Reindexing a restricted product is continuous. -/
 theorem continuous_restrictedProductCongrLeft (e : ι' ≃ ι) :
-    Continuous (@restrictedProductCongrLeft ι ι' G U e) := by
-  rw [RestrictedProduct.continuous_dom]
-  intro S hS
-  let T : Set ι := e '' S
-  have hT : cofinite ≤ 𝓟 T := by
-    rw [le_principal_iff] at hS ⊢
-    rw [mem_cofinite] at hS ⊢
-    rw [← Set.image_compl_eq e.bijective]
-    exact hS.image e
-  have mapsToCast (i j : ι) (h : i = j) :
-      Set.MapsTo (cast (congrArg G h)) (U i) (U j) := by
-    cases h
-    exact Set.mapsTo_id _
-  have continuousCast (i j : ι) (h : i = j) :
-      Continuous (cast (congrArg G h) : G i → G j) := by
-    cases h
-    exact continuous_id
-  let φ : ∀ i, G (e (e.symm i)) → G i := fun i ↦
-    cast (congrArg G (e.apply_symm_apply i))
-  have hφ : ∀ i, Set.MapsTo (φ i) (U (e (e.symm i))) (U i) := by
-    intro i
-    exact mapsToCast _ _ (e.apply_symm_apply i)
-  have hφcont : ∀ i, Continuous (φ i) := by
-    intro i
-    exact continuousCast _ _ (e.apply_symm_apply i)
-  have hfS : Tendsto e.symm (𝓟 T) (𝓟 S) := by
-    apply tendsto_principal.2
-    rintro i ⟨j, hj, rfl⟩
-    simpa using hj
-  have hφS : ∀ᶠ i in 𝓟 T, Set.MapsTo (φ i) (U (e (e.symm i))) (U i) :=
-    .of_forall hφ
-  let f : (Πʳ i, [G (e i), U (e i)]_[𝓟 S]) →
-      (Πʳ i, [G i, U i]_[𝓟 T]) :=
-    RestrictedProduct.mapAlong (fun i : ι' ↦ G (e i)) G e.symm hfS φ hφS
-  have hf : Continuous f := by
-    exact RestrictedProduct.mapAlong_continuous (fun i : ι' ↦ G (e i)) G e.symm
-      hfS φ hφS hφcont
-  have hfac : restrictedProductCongrLeft e ∘ RestrictedProduct.inclusion _ _ hS =
-      RestrictedProduct.inclusion _ _ hT ∘ f := by
-    funext x
-    apply RestrictedProduct.ext
-    intro i
-    rw [Function.comp_apply, Function.comp_apply]
-    rw [restrictedProductCongrLeft_apply, RestrictedProduct.inclusion_apply]
-    simp [f, RestrictedProduct.mapAlong_apply, φ]
-  rw [hfac]
-  exact (RestrictedProduct.continuous_inclusion hT).comp hf
+    Continuous (@restrictedProductCongrLeft ι ι' G _ U e) := by
+  change Continuous (restrictedProductCongrLeftHom e)
+  exact RestrictedProduct.mapAlong_continuous (fun i : ι' ↦ G (e i)) G e.symm
+    e.symm.injective.tendsto_cofinite
+    (fun i ↦ castMonoidHom (G := G) (e.apply_symm_apply i))
+    (.of_forall fun i ↦ castMonoidHom_mapsTo (G := G) (U := U) (e.apply_symm_apply i))
+    (fun i ↦ continuous_castMonoidHom (G := G) (e.apply_symm_apply i))
 
 /-- The inverse of the left-oriented restricted-product reindexing is continuous. -/
 theorem continuous_restrictedProductCongrLeft_symm (e : ι' ≃ ι) :
-    Continuous (@restrictedProductCongrLeft ι ι' G U e).symm := by
-  rw [RestrictedProduct.continuous_dom]
-  intro S hS
-  let T : Set ι' := e ⁻¹' S
-  have hT : cofinite ≤ 𝓟 T := by
-    rw [le_principal_iff] at hS ⊢
-    rw [mem_cofinite] at hS ⊢
-    have hcompl : Tᶜ = e.symm '' Sᶜ := by
-      ext i
-      simp [T]
-    rw [hcompl]
-    exact hS.image e.symm
-  have hfS : Tendsto e (𝓟 T) (𝓟 S) := by
-    apply tendsto_principal.2
-    intro i hi
-    simpa [T] using hi
-  have hφS : ∀ᶠ i in 𝓟 T,
-      Set.MapsTo (fun x : G (e i) ↦ x) (U (e i)) (U (e i)) :=
-    .of_forall fun _ _ hx ↦ hx
-  let f : (Πʳ i, [G i, U i]_[𝓟 S]) →
-      (Πʳ i, [G (e i), U (e i)]_[𝓟 T]) :=
-    RestrictedProduct.mapAlong G (fun i : ι' ↦ G (e i)) e hfS (fun _ x ↦ x) hφS
-  have hf : Continuous f := by
-    exact RestrictedProduct.mapAlong_continuous G (fun i : ι' ↦ G (e i)) e
-      hfS (fun _ x ↦ x) hφS (fun _ ↦ continuous_id)
-  have hfac : (restrictedProductCongrLeft e).symm ∘ RestrictedProduct.inclusion _ _ hS =
-      RestrictedProduct.inclusion _ _ hT ∘ f := by
-    funext x
-    apply RestrictedProduct.ext
-    intro i
-    rw [Function.comp_apply, Function.comp_apply]
-    simp [f, RestrictedProduct.mapAlong_apply]
-  rw [hfac]
-  exact (RestrictedProduct.continuous_inclusion hT).comp hf
+    Continuous (@restrictedProductCongrLeft ι ι' G _ U e).symm := by
+  change Continuous (restrictedProductReindexHom e)
+  exact RestrictedProduct.mapAlong_continuous G (fun i : ι' ↦ G (e i)) e
+    e.injective.tendsto_cofinite (fun i ↦ MonoidHom.id (G (e i)))
+    (.of_forall fun _ ↦ Set.mapsTo_id _) (fun _ ↦ continuous_id)
 
 /-- The consumer-oriented reindexing map is continuous. -/
 theorem continuous_restrictedProductReindex (e : ι' ≃ ι) :
-    Continuous (@restrictedProductReindex ι ι' G U e) := by
+    Continuous (@restrictedProductReindex ι ι' G _ U e) := by
   exact continuous_restrictedProductCongrLeft_symm e
 
 /-- The inverse of the consumer-oriented reindexing map is continuous. -/
 theorem continuous_restrictedProductReindex_symm (e : ι' ≃ ι) :
-    Continuous (@restrictedProductReindex ι ι' G U e).symm := by
+    Continuous (@restrictedProductReindex ι ι' G _ U e).symm := by
   exact continuous_restrictedProductCongrLeft e
 
 end TauCeti
