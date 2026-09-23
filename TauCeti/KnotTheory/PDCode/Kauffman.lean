@@ -146,6 +146,11 @@ def smoothingTurn (D : PDCode n) (b : Fin n → Bool) : Equiv.Perm (Fin (4 * n))
   D.halfEdge.permCongr
     ((crossingSlotEquiv n).permCongr (Equiv.prodCongrRight fun i => slotSmoothing (b i)))
 
+/-- The defining equation for the smoothing traversal permutation. -/
+theorem smoothingTurn_def (D : PDCode n) (b : Fin n → Bool) :
+    D.smoothingTurn b = D.halfEdge.permCongr
+      ((crossingSlotEquiv n).permCongr (Equiv.prodCongrRight fun i => slotSmoothing (b i))) := (rfl)
+
 /-- Smoothing reconnects the slots at a crossing by the chosen local smoothing. -/
 @[simp] theorem smoothingTurn_crossing (D : PDCode n) (b : Fin n → Bool) (i : Fin n)
     (slot : Fin 4) :
@@ -277,10 +282,8 @@ theorem even_orbitCount_statePerm (D : PDCode n) (s : Fin n → Bool) :
 theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool) :
     1 ≤ D.stateLoopCount s := by
   have hpos : 0 < orbitCount (D.statePerm s) := by
-    have : Nonempty (Quotient (SameCycle.setoid (D.statePerm s))) :=
-      ⟨Quotient.mk _ ⟨0, by omega⟩⟩
-    rw [orbitCount_def]
-    exact Nat.card_pos
+    let _ : Nonempty (Fin (4 * n)) := ⟨⟨0, by omega⟩⟩
+    exact Equiv.Perm.orbitCount_pos (D.statePerm s)
   obtain ⟨k, hk⟩ := D.even_orbitCount_statePerm s
   rw [stateLoopCount_def]
   omega

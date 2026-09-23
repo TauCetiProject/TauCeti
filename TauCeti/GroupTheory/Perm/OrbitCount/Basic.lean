@@ -106,6 +106,14 @@ theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :
     orbitCount σ ≤ Nat.card α :=
   Nat.card_le_card_of_surjective (Quotient.mk (SameCycle.setoid σ)) Quotient.mk_surjective
 
+/-- A permutation of a finite nonempty type has a positive number of orbits. -/
+theorem _root_.Equiv.Perm.orbitCount_pos [Finite α] [Nonempty α] (σ : Equiv.Perm α) :
+    0 < orbitCount σ := by
+  let _ : Nonempty (Quotient (SameCycle.setoid σ)) :=
+    ⟨Quotient.mk _ (Classical.choice (inferInstance : Nonempty α))⟩
+  rw [orbitCount_def]
+  exact Nat.card_pos
+
 /-- Conjugate permutations have the same number of orbits: conjugation by `g` relabels the points
 by `g`, hence relabels the orbits. -/
 @[simp]

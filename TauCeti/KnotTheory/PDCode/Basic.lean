@@ -111,6 +111,14 @@ theorem oppositeCrossingSlot_apply_oppositeCrossingSlot (slot : Fin 4) :
     oppositeCrossingSlot (oppositeCrossingSlot slot) = slot := by
   fin_cases slot <;> decide
 
+/-- The opposite crossing slot is different from the original slot. -/
+theorem oppositeCrossingSlot_ne (slot : Fin 4) :
+    oppositeCrossingSlot slot ≠ slot := by
+  intro h
+  have hv := congrArg Fin.val h
+  rw [oppositeCrossingSlot_apply] at hv
+  fin_cases slot <;> simp at hv
+
 end PDCode
 
 /-- A finite unoriented PD-code with `n` crossings.
@@ -404,6 +412,12 @@ def crossing (D : OrientedPDCode n) (i : Fin n) (slot : Fin 4) : Fin (4 * n) :=
 def crossingSign (D : OrientedPDCode n) (i : Fin n) : ℤ :=
   if Bool.xor (D.orientation (D.crossing i 0)) (D.orientation (D.crossing i 1)) =
       D.overPair i then 1 else -1
+
+/-- The defining equation for an oriented crossing sign. -/
+theorem crossingSign_def (D : OrientedPDCode n) (i : Fin n) :
+    D.crossingSign i =
+      if Bool.xor (D.orientation (D.crossing i 0)) (D.orientation (D.crossing i 1)) =
+          D.overPair i then 1 else -1 := (rfl)
 
 /-- A crossing is positive exactly when its orientation parity agrees with its over-strand. -/
 @[simp]
