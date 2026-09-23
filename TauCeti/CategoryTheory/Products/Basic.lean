@@ -7,11 +7,13 @@ module
 
 public import Mathlib.CategoryTheory.EssentiallySmall
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 
 /-!
 # Basic structures on product categories
 
-This file supplies componentwise smallness and zero objects for Cartesian product categories.
+This file supplies componentwise smallness, zero morphisms, and zero objects for Cartesian product
+categories. These structures let additive constructions and invariants apply to products.
 -/
 
 public section
@@ -25,6 +27,12 @@ open Limits ZeroObject
 universe w₁ w₂ v₁ v₂ u₁ u₂
 
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+
+/-- Zero morphisms in a product category are computed componentwise. -/
+instance [HasZeroMorphisms C] [HasZeroMorphisms D] : HasZeroMorphisms (C × D) where
+  zero := fun X Y => ⟨⟨0, 0⟩⟩
+  comp_zero f Z := by ext <;> simp
+  zero_comp := by intros; ext <;> simp
 
 /-- The product of essentially small categories is essentially small. -/
 noncomputable instance [EssentiallySmall.{w₁} C] [EssentiallySmall.{w₂} D] :

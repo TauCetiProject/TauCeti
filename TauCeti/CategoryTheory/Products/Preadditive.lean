@@ -12,9 +12,10 @@ public import TauCeti.CategoryTheory.Products.Basic
 /-!
 # Products of preadditive categories
 
-This file equips the Cartesian product of two preadditive categories with its componentwise
-preadditive structure and binary biproducts, and shows that the standard projection and product
-functors are additive.
+This file equips product categories with componentwise binary biproducts and, when the factors
+are preadditive, a componentwise preadditive structure and additive projection and product
+functors. These constructions let additive invariants, including split Grothendieck groups,
+compare a product category with its factors.
 -/
 
 public section
@@ -37,7 +38,8 @@ instance instPreadditiveProd [Preadditive C] [Preadditive D] : Preadditive (C ×
 
 section BinaryBiproducts
 
-variable [Preadditive C] [Preadditive D] [HasBinaryBiproducts C] [HasBinaryBiproducts D]
+variable [HasZeroMorphisms C] [HasZeroMorphisms D]
+  [HasBinaryBiproducts C] [HasBinaryBiproducts D]
 
 private noncomputable def prodBinaryBicone (P Q : C × D) : BinaryBicone P Q where
   pt := (P.1 ⊞ Q.1, P.2 ⊞ Q.2)
@@ -51,11 +53,11 @@ private noncomputable def prodBinaryBicone (P Q : C × D) : BinaryBicone P Q whe
   inr_snd := by ext <;> simp
 
 private noncomputable def prodBinaryBiconeIsBilimit (P Q : C × D) :
-    (prodBinaryBicone P Q).IsBilimit :=
+    (prodBinaryBicone P Q).IsBilimit := by
   -- `BinaryFan` and `BinaryCofan` express their equations through the walking-pair diagram.
   -- After selecting a product coordinate, `change` unfolds those diagram maps to the bicone
   -- fields, which are definitionally the displayed componentwise biproduct maps.
-  isBinaryBilimitOfIsLimit _ <| BinaryFan.IsLimit.mk _
+  refine ⟨BinaryFan.IsLimit.mk _
     (fun f g => (biprod.lift f.1 g.1, biprod.lift f.2 g.2))
     (fun _ _ => by ext <;> simp [prodBinaryBicone])
     (fun _ _ => by ext <;> simp [prodBinaryBicone])
@@ -78,7 +80,30 @@ private noncomputable def prodBinaryBiconeIsBilimit (P Q : C × D) :
         · rw [biprod.lift_snd]
           have h := congrArg (fun p => p.2) h₂
           change m.2 ≫ biprod.snd = g.2 at h
-          exact h)
+          exact h), BinaryCofan.IsColimit.mk _
+    (fun f g => (biprod.desc f.1 g.1, biprod.desc f.2 g.2))
+    (fun _ _ => by ext <;> simp [prodBinaryBicone])
+    (fun _ _ => by ext <;> simp [prodBinaryBicone])
+    (fun f g m h₁ h₂ => by
+      apply Prod.hom_ext
+      · apply biprod.hom_ext'
+        · rw [biprod.inl_desc]
+          have h := congrArg (fun p => p.1) h₁
+          change biprod.inl ≫ m.1 = f.1 at h
+          exact h
+        · rw [biprod.inr_desc]
+          have h := congrArg (fun p => p.1) h₂
+          change biprod.inr ≫ m.1 = g.1 at h
+          exact h
+      · apply biprod.hom_ext'
+        · rw [biprod.inl_desc]
+          have h := congrArg (fun p => p.2) h₁
+          change biprod.inl ≫ m.2 = f.2 at h
+          exact h
+        · rw [biprod.inr_desc]
+          have h := congrArg (fun p => p.2) h₂
+          change biprod.inr ≫ m.2 = g.2 at h
+          exact h)⟩
 
 /-- Binary biproducts in a product category are computed componentwise. -/
 noncomputable instance : HasBinaryBiproducts (C × D) where
