@@ -78,11 +78,17 @@ theorem dickson_two_eval_add {x y a : R} (h : x * y = a) (n : ℕ) :
 
 This is the quotient formula `P_k(t, a) = (x ^ (k - 1) - y ^ (k - 1)) / (x - y)` for the roots `x`,
 `y` of `X² - t X + a`, stated multiplied out so that it holds in any commutative ring and at a
-repeated root; for the value at a repeated root itself use `dickson_two_sq_eval_two_mul`. In a
-field, `eq_div_of_mul_eq` recovers the quotient itself when `x ≠ y`. -/
+repeated root; for the value at a repeated root itself use `dickson_two_sq_eval_two_mul`, and for
+the quotient itself, over a field at distinct roots, `dickson_two_eval_add_eq_div`. -/
 theorem dickson_two_eval_add_mul_sub {x y a : R} (h : x * y = a) (n : ℕ) :
     (dickson 2 a n).eval (x + y) * (x - y) = x ^ (n + 1) - y ^ (n + 1) := by
   rw [dickson_two_eval_add h, ← geom_sum₂_mul, Nat.add_one_sub_one]
+
+/-- **The quotient formula at distinct roots**: over a field, if `x * y = a` and `x ≠ y`, then
+`(dickson 2 a n).eval (x + y) = (x ^ (n + 1) - y ^ (n + 1)) / (x - y)`. -/
+theorem dickson_two_eval_add_eq_div {K : Type*} [Field K] {x y a : K} (h : x * y = a) (hxy : x ≠ y)
+    (n : ℕ) : (dickson 2 a n).eval (x + y) = (x ^ (n + 1) - y ^ (n + 1)) / (x - y) :=
+  eq_div_of_mul_eq (sub_ne_zero.mpr hxy) (dickson_two_eval_add_mul_sub h n)
 
 /-- **At a repeated root the Dickson value is `(n + 1) * x ^ n`**: this is the value at `t = 2 * x`
 with parameter `a = x ^ 2`, where `X² - t X + a = (X - x)²` has the repeated root `x`.
