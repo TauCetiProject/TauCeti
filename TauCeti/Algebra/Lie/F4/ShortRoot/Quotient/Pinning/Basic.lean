@@ -272,8 +272,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
     (hk : f4Length (f4SignedSimpleRootIndex k) = 2) :
     let i : F4ShortRootIndex :=
       ⟨f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)), by
-        simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-          (f4Length_specialIsogenyIndex_eq_one_iff
+        exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff
             (f4OppositeRootIndex (f4SignedSimpleRootIndex k))).2 (by
               exact (f4Length_opposite _).trans hk)⟩
     let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl i)
@@ -286,8 +285,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
   have hβ : f4Length β = 2 := by
     exact (f4Length_opposite _).trans hk
   have hi : f4Length (f4SpecialIsogenyIndexEquiv β) = 1 := by
-    simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-      (f4Length_specialIsogenyIndex_eq_one_iff β).2 hβ
+    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ
   let i : F4ShortRootIndex := ⟨f4SpecialIsogenyIndexEquiv β, hi⟩
   let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl i)
   have hlift : f4ShortRootQuotientLift a = f4ModularRootVector β := by
@@ -305,8 +303,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
     exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_opposite k
   let j : F4ShortRootIndex :=
     ⟨f4SpecialIsogenyIndexEquiv α, by
-      simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-        (f4Length_specialIsogenyIndex_eq_one_iff α).2 hk⟩
+      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk⟩
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl j)
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector α)) =
@@ -365,8 +362,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
   let β := f4SpecialIsogenyIndexEquiv i
   have hβ : f4Length β = 2 := by
     dsimp only [β]
-    simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-      (f4Length_specialIsogenyIndex_eq_two_iff i).2 i.property
+    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
@@ -376,8 +372,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
       f4PinnedRootIndex_f4KillingRootLabel]
   let iopp : F4ShortRootIndex :=
     ⟨f4SpecialIsogenyIndexEquiv (f4OppositeRootIndex (f4SignedSimpleRootIndex k)), by
-      simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-        (f4Length_specialIsogenyIndex_eq_one_iff
+      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff
           (f4OppositeRootIndex (f4SignedSimpleRootIndex k))).2 (by
             exact (f4Length_opposite _).trans hk)⟩
   by_cases hi : i = iopp
@@ -407,8 +402,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
     have htargetShort :
         f4Length (f4SignedSimpleRootIndex (isogenyReverse k)) = 1 := by
       rw [← f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex]
-      simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-        (f4Length_specialIsogenyIndex_eq_one_iff _).2 hk
+      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff _).2 hk
     have htargetNe : i ≠
         f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) := by
       intro h
@@ -543,8 +537,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
           (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))) :
     let iβ : F4ShortRootIndex :=
       ⟨f4SpecialIsogenyIndexEquiv β, by
-        simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-          (f4Length_specialIsogenyIndex_eq_one_iff β).2 hβ⟩
+        exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ⟩
     let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)
     f4ShortRootQuotientToIdealEquiv
         (f4ShortRootQuotientDividedSquareColumn k a) =
@@ -552,12 +545,10 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_specialM
   dsimp only
   let iβ : F4ShortRootIndex :=
     ⟨f4SpecialIsogenyIndexEquiv β, by
-      simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-        (f4Length_specialIsogenyIndex_eq_one_iff β).2 hβ⟩
+      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ⟩
   let iγ : F4ShortRootIndex :=
     ⟨f4SpecialIsogenyIndexEquiv γ, by
-      simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-        (f4Length_specialIsogenyIndex_eq_one_iff γ).2 hγ⟩
+      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩
   let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ)
   have hlift : f4ShortRootQuotientLift a = f4ModularRootVector β := by
@@ -690,8 +681,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
   let β := f4SpecialIsogenyIndexEquiv i
   have hβ : f4Length β = 2 := by
     dsimp only [β]
-    simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-      (f4Length_specialIsogenyIndex_eq_two_iff i).2 i.property
+    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff i).2 i.property
   have hlift : f4ShortRootQuotientLift
       (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
         f4ModularRootVector β := by
@@ -704,8 +694,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
     (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
   have htargetLong : f4Length (f4SignedSimpleRootIndex (isogenyReverse k)) = 2 := by
     rw [htargetSource]
-    simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-      (f4Length_specialIsogenyIndex_eq_two_iff
+    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff
         (f4SignedSimpleRootIndex k)).2 hk
   by_cases hedge : ∃ δ : Fin 48, f4Length δ = 1 ∧
       f4SimplyConnectedRootDatum.root δ =
@@ -716,8 +705,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
     let γ := f4SpecialIsogenyIndexEquiv δ
     have hγ : f4Length γ = 2 := by
       dsimp only [γ]
-      simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-        (f4Length_specialIsogenyIndex_eq_two_iff δ).2 hδ
+      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff δ).2 hδ
     have hmap : f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
         f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
           f4SimplyConnectedRootDatum.root
@@ -736,8 +724,7 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_short
         k β γ hk hβ hγ hmap
     dsimp only at hcomparison
     have hi : (⟨f4SpecialIsogenyIndexEquiv β, by
-        simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-          (f4Length_specialIsogenyIndex_eq_one_iff β).2 hβ⟩ : F4ShortRootIndex) = i := by
+        exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ⟩ : F4ShortRootIndex) = i := by
       apply Subtype.ext
       dsimp only [β]
       simp only [f4SpecialIsogenyIndexEquiv_apply]
