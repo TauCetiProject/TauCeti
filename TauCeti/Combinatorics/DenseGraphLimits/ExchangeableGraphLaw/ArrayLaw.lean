@@ -38,8 +38,8 @@ speak about graph laws.
   its array law (`isDissociated_iff_arrayLaw_mem_extremePoints`).
 
 The carrier-level bridge, the adjacency array of a graph and the graph of an array, is
-`ExchangeableGraphLaw/AdjArray.lean`. In the proofs a window of a graph is read on its block as
-the adjacency array of the finite graph, which determines it.
+`ExchangeableGraphLaw/AdjArray.lean`. The window of a graph on the labels `[k, k + n)` corresponds
+to the block `[k, k + n)²` of its adjacency array.
 
 ## Main results
 
@@ -51,8 +51,10 @@ the adjacency array of the finite graph, which determines it.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_forall_indepFun_restrict` — dissociation of the
   finite law is block independence of the array law at consecutive windows.
 * `TauCeti.DenseGraphLimits.isDissociated_iff_jointlyDissociated` — dissociation compatibility.
-* `TauCeti.DenseGraphLimits.isDissociated_iff_arrayLaw_mem_extremePoints` — dissociation of a
-  graph law is extremality of its array law.
+* `TauCeti.DenseGraphLimits.isDissociated_iff_arrayLaw_mem_extremePoints`,
+  `isDissociated_iff_graphLawArrayLawEquiv_mem_extremePoints`,
+  `isDissociated_graphLawArrayLawEquiv_symm` — dissociation of a graph law is extremality of its
+  array law, in either direction of the adapter.
 
 ## References
 
@@ -216,8 +218,7 @@ theorem infiniteGraphLawOfArray_law
     (infiniteGraphLawOfArray ρ).law = graphLawOfArray ρ.1 :=
   (rfl)
 
-/-- The array law of the bundled graph law of an array law is the array law; `simp` reaches it
-through `infiniteGraphLawOfArray_law` and `arrayLaw_graphLawOfArray`. -/
+/-- Converting a carried array law to a graph law and back recovers the array law. -/
 theorem arrayLaw_infiniteGraphLawOfArray
     (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
       ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
@@ -237,6 +238,20 @@ noncomputable def graphLawArrayLawEquiv :
   invFun := infiniteGraphLawOfArray
   left_inv L := InfiniteExchangeableGraphLaw.ext (graphLawOfArray_arrayLaw L.law)
   right_inv ρ := Subtype.ext (arrayLaw_infiniteGraphLawOfArray ρ)
+
+/-- The forward direction of the adapter is the array law. -/
+@[simp]
+theorem graphLawArrayLawEquiv_apply_coe (L : InfiniteExchangeableGraphLaw) :
+    (graphLawArrayLawEquiv L : Measure (ℕ × ℕ → Bool)) = arrayLaw L.law :=
+  (rfl)
+
+/-- The inverse direction of the adapter is the bundled graph law of the array law. -/
+@[simp]
+theorem graphLawArrayLawEquiv_symm_apply
+    (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
+      ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false}) :
+    graphLawArrayLawEquiv.symm ρ = infiniteGraphLawOfArray ρ :=
+  (rfl)
 
 /-! ### Dissociation -/
 
@@ -364,6 +379,28 @@ theorem isDissociated_iff_arrayLaw_mem_extremePoints (L : InfiniteExchangeableGr
     jointlyDissociated_iff_mem_extremePoints_on (jointlyExchangeable_arrayLaw L.exchangeable)
       (arrayLaw_compl_symmetricArraysWithDiag_eq_zero _)]
   rw [jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_eq]
+
+/-- **Dissociation is extremality**, stated on the adapter: an exchangeable law on infinite
+graphs is dissociated exactly when its image under `graphLawArrayLawEquiv` is an extreme point of
+the jointly exchangeable laws carried by the symmetric arrays. -/
+theorem isDissociated_iff_graphLawArrayLawEquiv_mem_extremePoints
+    (L : InfiniteExchangeableGraphLaw) :
+    (exchangeableGraphLawEquivInfinite.symm L).IsDissociated ↔
+      (graphLawArrayLawEquiv L : Measure (ℕ × ℕ → Bool)) ∈ extremePoints ℝ≥0∞
+        (jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false) := by
+  rw [graphLawArrayLawEquiv_apply_coe]
+  exact isDissociated_iff_arrayLaw_mem_extremePoints L
+
+/-- The graph law recovered from an extreme carried array law is dissociated. -/
+theorem isDissociated_graphLawArrayLawEquiv_symm
+    (ρ : {ρ : Measure (ℕ × ℕ → Bool) //
+      ρ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false})
+    (h : ρ.1 ∈ extremePoints ℝ≥0∞
+      (jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false)) :
+    (exchangeableGraphLawEquivInfinite.symm (graphLawArrayLawEquiv.symm ρ)).IsDissociated := by
+  rw [isDissociated_iff_arrayLaw_mem_extremePoints, graphLawArrayLawEquiv_symm_apply,
+    arrayLaw_infiniteGraphLawOfArray]
+  exact h
 
 end DenseGraphLimits
 
