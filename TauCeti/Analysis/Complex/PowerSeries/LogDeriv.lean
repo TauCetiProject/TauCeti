@@ -28,24 +28,31 @@ nearest zero of the original series, even when the original series converges far
 
 public section
 
-namespace PowerSeries
+namespace FormalMultilinearSeries
 
 open Filter
 open scoped Topology
 
-private theorem iteratedDeriv_analyticSum_zero (f : ℂ⟦X⟧)
-    (hf : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius) (n : ℕ) :
-    iteratedDeriv n (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) 0 =
-      n.factorial * coeff n f := by
+/-- The iterated derivatives at zero of the sum of a scalar formal multilinear series recover its
+coefficients, up to the factorial normalization. -/
+theorem iteratedDeriv_ofScalarsSum_zero (c : ℕ → ℂ)
+    (hc : 0 < (ofScalars ℂ c).radius) (n : ℕ) :
+    iteratedDeriv n (ofScalarsSum (E := ℂ) c) 0 = n.factorial * c n := by
   have hseries :=
-    (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hf
+    (ofScalars ℂ c).hasFPowerSeriesOnBall hc
   have hfac := hseries.factorial_smul (1 : ℂ)
-  simp only [FormalMultilinearSeries.apply_eq_prod_smul_coeff, Finset.prod_const,
-    Finset.card_univ, Fintype.card_fin, one_pow, one_mul, smul_eq_mul,
-    FormalMultilinearSeries.coeff_ofScalars] at hfac
+  simp only [apply_eq_prod_smul_coeff, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+    one_pow, one_mul, smul_eq_mul, coeff_ofScalars] at hfac
   have h := hfac n
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
-  simpa [FormalMultilinearSeries.ofScalarsSum, mul_comm] using h.symm
+  simpa [ofScalarsSum, mul_comm] using h.symm
+
+end FormalMultilinearSeries
+
+namespace PowerSeries
+
+open Filter
+open scoped Topology
 
 private theorem coeff_logDeriv_recurrence (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1) (m : ℕ) :
     ∑ i ∈ Finset.range (m + 1), coeff i (logDeriv f) * coeff (m - i) f =
@@ -71,7 +78,8 @@ private theorem iteratedDeriv_logDeriv_recurrence (f : ℂ⟦X⟧)
     ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hf)
       |>.analyticAt_of_mem (Metric.mem_eball_self hf)
   have hFderiv (k : ℕ) : iteratedDeriv k F 0 = k.factorial * coeff k f := by
-    simpa [F] using iteratedDeriv_analyticSum_zero f hf k
+    simpa [F] using FormalMultilinearSeries.iteratedDeriv_ofScalarsSum_zero
+      (fun n ↦ coeff n f) hf k
   have hF0 : F 0 = 1 := by
     calc
       F 0 = coeff 0 f := by
@@ -110,7 +118,9 @@ private theorem iteratedDeriv_logDeriv_recurrence (f : ℂ⟦X⟧)
       push_cast [Nat.factorial_succ]
       ring
 
-private theorem coeff_logDeriv_eq_iteratedDeriv (f : ℂ⟦X⟧)
+/-- The coefficients of a formal logarithmic derivative are the normalized iterated derivatives
+at zero of the analytic logarithmic derivative. -/
+theorem coeff_logDeriv_eq_iteratedDeriv (f : ℂ⟦X⟧)
     (hf0 : constantCoeff f = 1)
     (hf : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius) (n : ℕ) :
     coeff n (logDeriv f) =
