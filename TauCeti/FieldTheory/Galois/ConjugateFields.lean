@@ -24,15 +24,17 @@ distinct images of those embeddings are indexed by the cosets of
 
 ## Main definitions
 
-* `TauCeti.conjugateFields`: the orbit of an intermediate field under ambient automorphisms.
-* `TauCeti.conjugateFieldsEquivConjugateSubgroups`: the Galois-correspondence bijection between
-  those two sets.
+* `IntermediateField.conjugateFields`: the orbit of an intermediate field.
+* `IntermediateField.conjugateFieldsEquivConjugateSubgroups`: the Galois-correspondence
+  bijection between those two sets.
+* `IntermediateField.quotientNormalizerEquivConjugateFields`: normalizer cosets index the
+  conjugate fields.
 
 ## Main results
 
-* `TauCeti.stabilizer_intermediateField_eq_normalizer`: the stabilizer of an intermediate field
-  is the normalizer of its fixing subgroup.
-* `TauCeti.ncard_conjugateFields`: the number of conjugate fields is the normalizer index.
+* `IntermediateField.stabilizer_intermediateField_eq_normalizer`: the field stabilizer is the
+  normalizer of its fixing subgroup.
+* `IntermediateField.ncard_conjugateFields`: the number of fields is the normalizer index.
 -/
 
 public section
@@ -48,18 +50,26 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 instance instMulActionIntermediateField : MulAction (L ≃ₐ[K] L) (IntermediateField K L) where
   smul σ E := E.map σ.toAlgHom
   one_smul E := by
+    -- The action is defined by `map`; the identity automorphism coerces to `AlgHom.id`.
     change E.map (AlgHom.id K L) = E
     exact E.map_id
   mul_smul σ τ E := by
+    -- The product automorphism coerces to the composite in the order used by `map_map`.
     change E.map (σ * τ).toAlgHom = (E.map τ.toAlgHom).map σ.toAlgHom
     rw [IntermediateField.map_map]
     congr 1
+
+namespace AlgEquiv
 
 /-- Conjugating an intermediate field means mapping it along the automorphism. -/
 @[simp]
 theorem smul_intermediateField_def (σ : L ≃ₐ[K] L) (E : IntermediateField K L) :
     σ • E = E.map σ.toAlgHom :=
   (rfl)
+
+end AlgEquiv
+
+namespace IntermediateField
 
 /-- The set of images of `E` under automorphisms of the ambient extension. -/
 def conjugateFields (E : IntermediateField K L) : Set (IntermediateField K L) :=
@@ -85,11 +95,11 @@ theorem stabilizer_intermediateField_eq_normalizer (E : IntermediateField K L) :
   · intro h
     calc
       E.fixingSubgroup.map (MulAut.conj σ) = (σ • E).fixingSubgroup := by
-        rw [smul_intermediateField_def, IsGalois.map_fixingSubgroup]
+        rw [AlgEquiv.smul_intermediateField_def, IsGalois.map_fixingSubgroup]
         congr 1
       _ = E.fixingSubgroup := congrArg IntermediateField.fixingSubgroup h
   · intro h
-    rw [← IsGalois.fixedField_fixingSubgroup (σ • E), smul_intermediateField_def,
+    rw [← IsGalois.fixedField_fixingSubgroup (σ • E), AlgEquiv.smul_intermediateField_def,
       IsGalois.map_fixingSubgroup]
     convert congrArg fixedField h using 1 <;> congr 1
     exact (IsGalois.fixedField_fixingSubgroup E).symm
@@ -111,14 +121,56 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
     apply mem_conjugateFields_iff.mpr
     refine ⟨σ, ?_⟩
     calc
-      E.map σ.toAlgHom = σ • E := rfl
+      E.map σ.toAlgHom = σ • E := (AlgEquiv.smul_intermediateField_def σ E).symm
       _ = fixedField (E.fixingSubgroup.map (MulAut.conj σ)) := by
         simp only [Subgroup.fixedField_map_conj, IsGalois.fixedField_fixingSubgroup,
-          smul_intermediateField_def]
+          AlgEquiv.smul_intermediateField_def]
       _ = fixedField H.1 := congrArg fixedField hσ
       _ = _ := rfl⟩
   left_inv E' := Subtype.ext (IsGalois.fixedField_fixingSubgroup E'.1)
   right_inv H := Subtype.ext (IntermediateField.fixingSubgroup_fixedField H.1)
+
+/-- The forward Galois correspondence sends a conjugate field to its fixing subgroup. -/
+@[simp]
+theorem conjugateFieldsEquivConjugateSubgroups_apply (E : IntermediateField K L)
+    (E' : conjugateFields E) :
+    (conjugateFieldsEquivConjugateSubgroups E E').1 = E'.1.fixingSubgroup := by
+  simp [conjugateFieldsEquivConjugateSubgroups]
+
+/-- The inverse Galois correspondence sends a conjugate subgroup to its fixed field. -/
+@[simp]
+theorem conjugateFieldsEquivConjugateSubgroups_symm_apply (E : IntermediateField K L)
+    (H : MulAction.orbit (ConjAct (L ≃ₐ[K] L)) E.fixingSubgroup) :
+    ((conjugateFieldsEquivConjugateSubgroups E).symm H).1 = fixedField H.1 := by
+  simp [conjugateFieldsEquivConjugateSubgroups]
+
+/-- The normalizer cosets index the conjugate images of an intermediate field. -/
+noncomputable def quotientNormalizerEquivConjugateFields (E : IntermediateField K L) :
+    (L ≃ₐ[K] L) ⧸ Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L)) ≃
+      conjugateFields E :=
+  (Subgroup.quotientEquivOfEq (stabilizer_intermediateField_eq_normalizer E).symm).trans
+    (MulAction.orbitEquivQuotientStabilizer (L ≃ₐ[K] L) E).symm
+
+/-- A normalizer coset represented by `σ` gives the field `σ • E`. -/
+@[simp]
+theorem quotientNormalizerEquivConjugateFields_mk (E : IntermediateField K L)
+    (σ : L ≃ₐ[K] L) :
+    ((quotientNormalizerEquivConjugateFields E) (QuotientGroup.mk σ)).1 = σ • E := by
+  change (((Subgroup.quotientEquivOfEq
+    (stabilizer_intermediateField_eq_normalizer E).symm).trans
+      (MulAction.orbitEquivQuotientStabilizer (L ≃ₐ[K] L) E).symm)
+        (QuotientGroup.mk σ)).1 = σ • E
+  rw [Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+    MulAction.orbitEquivQuotientStabilizer_symm_apply]
+
+/-- The normalizer-coset parametrization respects the ambient Galois action. -/
+theorem quotientNormalizerEquivConjugateFields_smul (E : IntermediateField K L)
+    (σ : L ≃ₐ[K] L)
+    (q : (L ≃ₐ[K] L) ⧸ Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L))) :
+    (quotientNormalizerEquivConjugateFields E (σ • q)).1 =
+      σ • (quotientNormalizerEquivConjugateFields E q).1 := by
+  induction q using Quotient.inductionOn' with
+  | _ τ => simp [mul_smul]
 
 /-- The number of distinct conjugates of an intermediate field is the index of the normalizer
 of its fixing subgroup. -/
@@ -129,5 +181,7 @@ theorem ncard_conjugateFields (E : IntermediateField K L) :
     stabilizer_intermediateField_eq_normalizer]
 
 end Galois
+
+end IntermediateField
 
 end TauCeti

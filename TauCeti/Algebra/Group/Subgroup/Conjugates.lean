@@ -34,6 +34,8 @@ theorem mem_conjugateSubgroups_iff {G : Type*} [Group G] {H H' : Subgroup G} :
   · rintro ⟨g, rfl⟩
     exact ⟨ConjAct.toConjAct g, rfl⟩
 
+namespace MulEquiv
+
 /-- A group isomorphism identifies the sets of conjugates of corresponding subgroups. -/
 def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G) :
@@ -45,6 +47,7 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
       obtain ⟨g, hg⟩ := mem_conjugateSubgroups_iff.mp h
       apply mem_conjugateSubgroups_iff.mpr
       refine ⟨e g, ?_⟩
+      -- `Subgroup.map` sees the monoid homomorphism underlying `MulAut.conj`.
       change H.map (MulAut.conj g).toMonoidHom = J at hg
       change (H.map e.toMonoidHom).map (MulAut.conj (e g)).toMonoidHom = J.map e.toMonoidHom
       have hmap : (H.map e.toMonoidHom).map (MulAut.conj (e g)).toMonoidHom =
@@ -57,6 +60,7 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
       apply mem_conjugateSubgroups_iff.mpr
       refine ⟨e.symm g, ?_⟩
       apply e.mapSubgroup.injective
+      -- Expose the underlying homomorphisms to apply `Subgroup.map_map_conj`.
       change (H.map (MulAut.conj (e.symm g)).toMonoidHom).map e.toMonoidHom =
         J.map e.toMonoidHom
       change (H.map e.toMonoidHom).map (MulAut.conj g).toMonoidHom = J.map e.toMonoidHom at hg
@@ -65,5 +69,24 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
           (H.map e.toMonoidHom).map (MulAut.conj g).toMonoidHom := by
         simpa only [heg] using Subgroup.map_map_conj H e.toMonoidHom (e.symm g)
       exact hmap.trans hg
+
+/-- On conjugate subgroups the equivalence maps each subgroup along the given isomorphism. -/
+@[simp]
+theorem conjugateSubgroupsEquiv_apply {G G' : Type*} [Group G] [Group G']
+    (e : G ≃* G') (H : Subgroup G) (J : MulAction.orbit (ConjAct G) H) :
+    ((conjugateSubgroupsEquiv e H) J).1 = J.1.map e.toMonoidHom := by
+  change e.mapSubgroup J.1 = J.1.map e.toMonoidHom
+  rfl
+
+/-- The inverse equivalence maps a conjugate subgroup along the inverse isomorphism. -/
+@[simp]
+theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
+    (e : G ≃* G') (H : Subgroup G)
+    (J : MulAction.orbit (ConjAct G') (H.map e.toMonoidHom)) :
+    (((conjugateSubgroupsEquiv e H).symm J).1) = J.1.map e.symm.toMonoidHom := by
+  change e.mapSubgroup.symm J.1 = J.1.map e.symm.toMonoidHom
+  rfl
+
+end MulEquiv
 
 end TauCeti
