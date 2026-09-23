@@ -27,7 +27,8 @@ chart, and their closure order is the reverse of the face order.
 
 * `TauCeti.Toric.affineConeOrbit`: the intrinsic stratum associated to a face.
 * `TauCeti.Toric.mem_affineConeOrbit_iff_coneChartEquiv`: its coordinate zero-pattern.
-* `TauCeti.Toric.closure_affineConeOrbit_eq_coordinate`: the coordinate form of its closure.
+* `TauCeti.Toric.closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero`: the coordinate
+  form of its closure.
 * `TauCeti.Toric.isLocallyClosed_affineConeOrbit`: every affine-cone orbit is locally closed.
 * `TauCeti.Toric.closure_affineConeOrbit`: the intrinsic union formula for its closure.
 * `TauCeti.Toric.affineConeOrbit_subset_closure_iff`: face inclusion is the reverse closure order.
@@ -59,6 +60,7 @@ def affineConeOrbit (hi : IsIntegralLattice i) (F : σ.Face) :
 
 /-- Membership in an affine-cone orbit is characterized by nonvanishing of precisely the
 monomials whose characters vanish on the associated face. -/
+@[simp]
 theorem mem_affineConeOrbit (hi : IsIntegralLattice i) (F : σ.Face)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
     x ∈ affineConeOrbit hi F ↔ ∀ m : dualSemigroup hi σ,
@@ -111,7 +113,7 @@ theorem preimage_zeroPatternSet_eq_affineConeOrbit (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face) :
     coneChartEquiv hi hσ.toIsToricCone hb ⁻¹'
-        zeroPatternSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F) =
+        zeroPatternSet (ToricRay σ) (ι → ℂˣ) ℂ (hσ.faceOrderIso hi F) =
       affineConeOrbit hi F := by
   ext x
   rw [Set.mem_preimage, mem_zeroPatternSet,
@@ -168,14 +170,15 @@ theorem isLocallyClosed_affineConeOrbit (hi : IsIntegralLattice i)
   obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
   let _ := ToricRay.finite_of_fg hσ.fg
   rw [← preimage_zeroPatternSet_eq_affineConeOrbit hi hσ hb F]
-  exact (isLocallyClosed_zeroPatternSet (ToricRay σ) (Fin l → ℂˣ)
+  exact (isLocallyClosed_zeroPatternSet (ToricRay σ) (Fin l → ℂˣ) ℂ
     (hσ.faceOrderIso hi F)).preimage
     (by simpa only [coe_coneChartHomeomorph hi hσ.toIsToricCone hb g] using
       (coneChartHomeomorph hi hσ.toIsToricCone hb g).continuous)
 
 /-- The closure of the orbit of `F` consists of the points whose coordinates at all rays of `F`
 vanish; coordinates at other rays may vanish as well. -/
-theorem closure_affineConeOrbit_eq_coordinate (hi : IsIntegralLattice i)
+theorem closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero
+    (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ)
     {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
@@ -187,20 +190,43 @@ theorem closure_affineConeOrbit_eq_coordinate (hi : IsIntegralLattice i)
   dsimp only
   let _ := affinePointTopology g
   have hpre := (coneChartHomeomorph hi hσ.toIsToricCone hb g).preimage_closure
-    (zeroPatternSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F))
+    (zeroPatternSet (ToricRay σ) (ι → ℂˣ) ℂ (hσ.faceOrderIso hi F))
   rw [coe_coneChartHomeomorph] at hpre
   calc
     closure (affineConeOrbit hi F) = closure
         (coneChartEquiv hi hσ.toIsToricCone hb ⁻¹'
-          zeroPatternSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F)) :=
+          zeroPatternSet (ToricRay σ) (ι → ℂˣ) ℂ (hσ.faceOrderIso hi F)) :=
       congrArg closure (preimage_zeroPatternSet_eq_affineConeOrbit hi hσ hb F).symm
     _ = coneChartEquiv hi hσ.toIsToricCone hb ⁻¹'
-        closure (zeroPatternSet (ToricRay σ) (ι → ℂˣ)
+        closure (zeroPatternSet (ToricRay σ) (ι → ℂˣ) ℂ
           (hσ.faceOrderIso hi F)) := hpre.symm
     _ = {x | ∀ ρ ∈ hσ.faceOrderIso hi F,
         (coneChartEquiv hi hσ.toIsToricCone hb x).1 ρ = 0} := by
       rw [closure_zeroPatternSet]
       rfl
+
+/-- A point of the orbit of `G` lies in the closure of the orbit of `F` exactly when `F` is a
+face of `G`. -/
+theorem mem_closure_affineConeOrbit_iff_le (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) (F G : σ.Face)
+    (g : AddGeneratingFamily (dualSemigroup hi σ) s)
+    {x : AffineSemigroupComplexPoint (dualSemigroup hi σ)}
+    (hx : x ∈ affineConeOrbit hi G) :
+    let _ := affinePointTopology g
+    x ∈ closure (affineConeOrbit hi F) ↔ F ≤ G := by
+  dsimp only
+  let _ := affinePointTopology g
+  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
+  rw [closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero hi hσ hb F g]
+  constructor
+  · intro h
+    apply (hσ.faceOrderIso hi).le_iff_le.mp
+    intro ρ hρ
+    exact ((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb G x).mp hx ρ).mp
+      (h ρ hρ)
+  · intro h ρ hρ
+    exact ((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb G x).mp hx ρ).mpr
+      ((hσ.faceOrderIso hi).monotone h hρ)
 
 /-- The closure of the orbit stratum of `F` is the union of the strata indexed by faces
 containing `F`. -/
@@ -210,24 +236,16 @@ theorem closure_affineConeOrbit (hi : IsIntegralLattice i) (hσ : IsRegularCone 
     closure (affineConeOrbit hi F) = ⋃ G ∈ Set.Ici F, affineConeOrbit hi G := by
   dsimp only
   let _ := affinePointTopology g
-  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
-  rw [closure_affineConeOrbit_eq_coordinate hi hσ hb F g]
   ext x
   constructor
   · intro hx
     obtain ⟨G, hxG, -⟩ := existsUnique_face_mem_affineConeOrbit hi hσ x
-    have hFG : F ≤ G := by
-      apply (hσ.faceOrderIso hi).le_iff_le.mp
-      intro ρ hρ
-      exact ((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb G x).mp hxG ρ).mp
-        (hx ρ hρ)
+    have hFG := (mem_closure_affineConeOrbit_iff_le hi hσ F G g hxG).mp hx
     exact Set.mem_iUnion.2 ⟨G, Set.mem_iUnion.2 ⟨hFG, hxG⟩⟩
   · intro hx
     obtain ⟨G, hx⟩ := Set.mem_iUnion.1 hx
     obtain ⟨hFG, hxG⟩ := Set.mem_iUnion.1 hx
-    intro ρ hρ
-    exact ((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb G x).mp hxG ρ).mpr
-      ((hσ.faceOrderIso hi).monotone hFG hρ)
+    exact (mem_closure_affineConeOrbit_iff_le hi hσ F G g hxG).mpr hFG
 
 /-- Face inclusion is the reverse closure order on affine-cone orbits. -/
 theorem affineConeOrbit_subset_closure_iff (hi : IsIntegralLattice i)
@@ -237,17 +255,11 @@ theorem affineConeOrbit_subset_closure_iff (hi : IsIntegralLattice i)
     affineConeOrbit hi G ⊆ closure (affineConeOrbit hi F) ↔ F ≤ G := by
   dsimp only
   let _ := affinePointTopology g
-  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
-  rw [closure_affineConeOrbit_eq_coordinate hi hσ hb F g]
   constructor
   · intro h
     obtain ⟨x, hx⟩ := affineConeOrbit_nonempty hi hσ G
-    apply (hσ.faceOrderIso hi).le_iff_le.mp
-    intro ρ hρ
-    have hcoord := (mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb G x).mp hx
-    exact (hcoord ρ).mp (h hx ρ hρ)
-  · intro h x hx ρ hρ
-    have hcoord := (mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb G x).mp hx
-    exact (hcoord ρ).mpr ((hσ.faceOrderIso hi).monotone h hρ)
+    exact (mem_closure_affineConeOrbit_iff_le hi hσ F G g hx).mp (h hx)
+  · intro h x hx
+    exact (mem_closure_affineConeOrbit_iff_le hi hσ F G g hx).mpr h
 
 end TauCeti.Toric
