@@ -15,9 +15,10 @@ subobjects. A linear map has degree `q` when it maps everything in the degree-`p
 source into the degree-`p + q` piece of the target. This is a containment condition, so no
 direct-sum hypothesis is imposed and a map can be homogeneous of several degrees at once. The
 families are indexed by an arbitrary `SetLike` type, so the homogeneity predicate and the additive
-closure lemmas cover gradings by submodules, additive subgroups and additive submonoids alike;
-`LinearMap.IsHomogeneous.smul` and `LinearMap.homogeneousSubmodule` additionally need the target
-pieces to be closed under the scalar action, i.e. a submodule-valued grading.
+closure lemmas cover gradings by submodules, additive subgroups and additive submonoids alike.
+`LinearMap.IsHomogeneous.smul` additionally needs the target pieces to be closed under a
+distributive scalar action, and `LinearMap.homogeneousSubmodule` needs them to be additive
+submonoids closed under a module action, i.e. a submodule-valued grading.
 
 The multilinear counterpart, and the degree calculus for substitution, are in
 `TauCeti.LinearAlgebra.Graded.Multilinear`.

@@ -24,6 +24,8 @@ import Mathlib.Tactic.NoncommRing
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
   nonempty finite type by the parity of their cardinality: each parity accounts for exactly half
   of them.
+* `TauCeti.sum_powerset_neg_one_pow_card` evaluates the alternating sum over the subsets of a
+  finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
   to cancel a signed sum.
 * `Finset.sum_Icc_neg_one_pow_card_sub_card_left` and
@@ -141,6 +143,15 @@ theorem card_odd_card_finset {ι : Type*} [Finite ι] [Nonempty ι] :
   rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Nat.card_eq_fintype_card] at heven
   omega
 
+/-- **The alternating sum over the subsets of a finset** is `1` for the empty finset and `0`
+otherwise, in an arbitrary ring. Mathlib's `Finset.sum_powerset_neg_one_pow_card` is the case of
+the integers. -/
+theorem sum_powerset_neg_one_pow_card {α R : Type*} [DecidableEq α] [Ring R] (s : Finset α) :
+    ∑ t ∈ s.powerset, (-1 : R) ^ t.card = if s = ∅ then 1 else 0 := by
+  have := congrArg (Int.cast : ℤ → R) (Finset.sum_powerset_neg_one_pow_card (x := s))
+  push_cast at this
+  exact this
+
 end TauCeti
 
 namespace Finset
@@ -194,15 +205,12 @@ theorem sum_Icc_neg_one_pow_card_sub_card_left {α R : Type*} [DecidableEq α] [
       disjoint_sdiff.mono_right (mem_powerset.1 hu)
     rw [Icc_eq_image_powerset hst, sum_image fun u hu v hv huv => by
       rw [← union_sdiff_cancel_left (hdisj u hu), huv, union_sdiff_cancel_left (hdisj v hv)]]
-    have hsum : ∑ u ∈ (t \ s).powerset, (-1 : R) ^ u.card = if t \ s = ∅ then 1 else 0 := by
-      have := congrArg (Int.cast : ℤ → R) (sum_powerset_neg_one_pow_card (x := t \ s))
-      push_cast at this
-      exact this
     have hcond : t \ s = ∅ ↔ s = t := by
       rw [sdiff_eq_empty_iff_subset]
       exact ⟨fun h => subset_antisymm hst h, fun h => h ▸ subset_rfl⟩
     rw [sum_congr rfl fun u hu => by
-      rw [card_union_of_disjoint (hdisj u hu), Nat.add_sub_cancel_left], hsum]
+      rw [card_union_of_disjoint (hdisj u hu), Nat.add_sub_cancel_left],
+      TauCeti.sum_powerset_neg_one_pow_card]
     exact if_congr hcond rfl rfl
   · rw [Icc_eq_empty hst, sum_empty, ite_eq_right_iff.2 fun h => absurd h.le hst]
 

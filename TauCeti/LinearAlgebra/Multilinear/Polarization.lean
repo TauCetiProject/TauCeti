@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Data.Fintype.Perm
-public import Mathlib.Data.Nat.Choose.Sum
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Polarization for multilinear maps
@@ -49,7 +49,7 @@ universe u v w z
 
 namespace TauCeti
 
-variable {R : Type u} {ι : Type w} [Ring R] [DecidableEq ι]
+variable {ι : Type w} [DecidableEq ι]
 
 /-- The functions into a fixed finset, as a filter on all functions. -/
 private theorem piFinset_const [Fintype ι] (T : Finset ι) :
@@ -63,14 +63,6 @@ private theorem filter_subset_compl [Fintype ι] (A : Finset ι) :
     {S ∈ (Finset.univ : Finset (Finset ι)) | A ⊆ Sᶜ} = Aᶜ.powerset := by
   ext S
   simp [Finset.mem_powerset, Finset.subset_compl_comm]
-
-/-- The alternating sum over the subsets of a finset, in an arbitrary ring. -/
-private theorem sum_powerset_neg_one_pow_card (A : Finset ι) :
-    ∑ S ∈ A.powerset, (-1 : R) ^ #S = if A = ∅ then 1 else 0 := by
-  have := congrArg (Int.cast (R := R)) (Finset.sum_powerset_neg_one_pow_card (x := A))
-  rw [Int.cast_sum] at this
-  simpa only [Int.cast_pow, Int.cast_neg, Int.cast_one, apply_ite (Int.cast (R := R)),
-    Int.cast_zero] using this
 
 end TauCeti
 
