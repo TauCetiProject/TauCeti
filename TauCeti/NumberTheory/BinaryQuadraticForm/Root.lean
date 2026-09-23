@@ -100,31 +100,18 @@ theorem root_smul (γ : SL(2, ℤ)) (f : posDef D) : root (γ • f) = γ • ro
   -- `(γ • f)(γ • τ, 1) (r τ + s)² = (det γ)² f(τ, 1)` for `γ = !![p, q; r, s]` and `τ = root f`
   grind [(eq_root_iff f _).1 rfl]
 
-/-- For fixed `D`, a positive definite form is determined by its root: the imaginary part of the
-root gives `a`, the real part then gives `b`, and the discriminant gives `c`. -/
+/-- For fixed `D`, a positive definite form is determined by its root. -/
 theorem root_injective : Function.Injective (root (D := D)) := by
-  intro f g h
-  obtain ⟨hdf, hfa⟩ := mem_posDef.1 f.2
-  obtain ⟨hdg, hga'⟩ := mem_posDef.1 g.2
-  have ha : (f.1.a : ℝ) ≠ 0 := by exact_mod_cast hfa.ne'
-  have hga : (g.1.a : ℝ) ≠ 0 := by exact_mod_cast hga'.ne'
-  have him := congrArg UpperHalfPlane.im h
-  have hre := congrArg UpperHalfPlane.re h
-  simp only [im_root, re_root] at him hre
-  rw [div_eq_div_iff (by positivity) (by positivity)] at him hre
-  have haa : f.1.a = g.1.a := by
-    have := mul_left_cancel₀ (Real.sqrt_pos.2 <| Nat.cast_pos.2 <| NeZero.pos D).ne' him
-    exact_mod_cast (by linarith : (f.1.a : ℝ) = g.1.a)
-  rw [← haa] at hre
-  have hbb : f.1.b = g.1.b := by
-    have := mul_right_cancel₀ (by positivity : (2 * f.1.a : ℝ) ≠ 0) hre
-    exact_mod_cast neg_inj.1 this
-  have hcc : f.1.c = g.1.c := by
-    rw [discrim_def, discrim, haa, hbb] at hdf
-    rw [discrim_def, discrim] at hdg
-    have : (4 * g.1.a) * (f.1.c - g.1.c) = 0 := by linear_combination hdg - hdf
-    exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left (by omega))
-  exact Subtype.ext (BinaryQuadraticForm.ext haa hbb hcc)
+  rintro ⟨⟨a, b, c⟩, hf⟩ ⟨⟨a', b', c'⟩, hg⟩ h
+  obtain ⟨hdf, ha : 0 < a⟩ := mem_posDef.1 hf
+  obtain ⟨hdg, -⟩ := mem_posDef.1 hg
+  -- the imaginary part `√D / (2 a)` of the root gives `a`
+  obtain rfl : a = a' := by simpa [div_eq_mul_inv, NeZero.ne] using congrArg UpperHalfPlane.im h
+  -- the real part `-b / (2 a)` then gives `b`
+  obtain rfl : b = b' := by simpa [ha.ne'] using congrArg UpperHalfPlane.re h
+  -- and the discriminant `b² - 4 a c = -D` gives `c`
+  obtain rfl : c = c' := by simpa [discrim_def, discrim, ha.ne'] using hdf.trans hdg.symm
+  rfl
 
 /-- The squared absolute value of the root of `a x² + b x y + c y²` is `c / a`. -/
 theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := by
