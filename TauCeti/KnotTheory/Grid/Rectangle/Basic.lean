@@ -690,6 +690,12 @@ its interior. -/
 def IsEmpty : Prop :=
   R.toGridRectangle.IsEmptyFor x
 
+/-- Emptiness of an oriented rectangle is emptiness of its underlying toroidal rectangle for the
+source state. -/
+@[simp]
+theorem isEmpty_iff_toGridRectangle_isEmptyFor :
+    R.IsEmpty ↔ R.toGridRectangle.IsEmptyFor x := Iff.rfl
+
 /-- The finite set of empty oriented rectangles from `x` to `y`. -/
 noncomputable def emptyRectangles (x y : GridState n) : Finset (GridRectangleBetween x y) := by
   classical
@@ -722,7 +728,8 @@ theorem emptyRectangles_subset_all (x y : GridState n) :
 theorem emptyRectangles_eq_all_of_le_two (hn : n ≤ 2) (x y : GridState n) :
     emptyRectangles x y = all x y := by
   ext R
-  simp [isEmpty_of_le_two hn R]
+  simp only [mem_emptyRectangles, mem_all]
+  exact ⟨fun _ => trivial, fun _ => isEmpty_of_le_two hn R⟩
 
 /-- There are no empty rectangles from a grid state to itself. -/
 @[simp]

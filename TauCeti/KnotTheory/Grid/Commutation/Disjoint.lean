@@ -269,10 +269,10 @@ theorem isEmpty_commute_pentagon
   simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
 
@@ -284,10 +284,10 @@ theorem isEmpty_commute_rectangle
   unfold commute
   exact D.toRectangleDecomposition.isEmpty_commute_second (D.hasDisjointSides_def.mp h)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
 
@@ -421,10 +421,10 @@ theorem isEmpty_commute_rectangle
   unfold commute
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hpentagon)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hrectangle)
 
@@ -437,10 +437,10 @@ theorem isEmpty_commute_pentagon
   simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_second (D.hasDisjointSides_def.mp h)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hpentagon)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hrectangle)
 

@@ -75,19 +75,19 @@ private theorem isRecutOfLeftEqLeft_recut
     D.toRectangleDecomposition.IsRecutOfLeftEqLeft
       (D.toRectangleDecomposition.recut hone
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)) := by
   have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
       D.toRectangleDecomposition.second.IsEmpty :=
     ⟨by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle,
       by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon⟩
   have hcommon' : D.toRectangleDecomposition.first.left =
@@ -113,10 +113,10 @@ theorem recut_first_right_of_left_eq_left
     (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
     ((D.toRectangleDecomposition.recut hone
       (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
       (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).first).right =
         finRotate n a := by
@@ -136,28 +136,28 @@ theorem turn_mem_recut_first_of_left_eq_left
     s ∈ Grid.cIco
       (D.toRectangleDecomposition.recut hone
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).first.bottom
       (D.toRectangleDecomposition.recut hone
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).first.top := by
   -- Work in the forgotten rectangle decomposition to use its emptiness and cyclic-order facts.
   have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
       D.toRectangleDecomposition.second.IsEmpty :=
     ⟨by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle,
       by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon⟩
   have hcommon' : D.toRectangleDecomposition.first.left =
@@ -223,10 +223,10 @@ noncomputable def recutLeftEqLeft
   have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
       D.toRectangleDecomposition.second.IsEmpty :=
     ⟨by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle,
       by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon⟩
   let E := D.toRectangleDecomposition.recut hone hempty.1 hempty.2
@@ -248,19 +248,19 @@ theorem recutLeftEqLeft_toRectangleDecomposition
     (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).toRectangleDecomposition =
       D.toRectangleDecomposition.recut hone
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
         (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon) := by
   have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
       D.toRectangleDecomposition.second.IsEmpty :=
     ⟨by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle,
       by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon⟩
   let E := D.toRectangleDecomposition.recut hone hempty.1 hempty.2
@@ -292,10 +292,10 @@ theorem isRecut_recutLeftEqLeft
   rw [D.recutLeftEqLeft_toRectangleDecomposition hcommon hone hrectangle hpentagon]
   exact D.toRectangleDecomposition.isRecut_recut hone
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
     (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
 
@@ -310,10 +310,10 @@ theorem isEmpty_pentagon_recutLeftEqLeft
   simpa only [recutLeftEqLeft, GridPentagonBetween.ofRightEq_toGridRectangleBetween] using
     (D.toRectangleDecomposition.isRecut_recut hone
       (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
       (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).isEmpty_first
 
@@ -328,10 +328,10 @@ theorem isEmpty_rectangle_recutLeftEqLeft
   simpa only [recutLeftEqLeft] using
     (D.toRectangleDecomposition.isRecut_recut hone
       (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
       (by
-      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).isEmpty_second
 
