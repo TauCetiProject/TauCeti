@@ -133,6 +133,8 @@ def hurwitzClassNumber (D : ℕ) : ℚ :=
       else if t.1 = t.2.1 ∧ t.2.1 = t.2.2 then 1 / 3
       else 1
 
+/-- `H 0 = -1/12` is Zagier's normalisation, not a weighted count of reduced forms as `H D` is for
+`D ≠ 0` (`hurwitzClassNumber_of_ne_zero`). -/
 @[simp] theorem hurwitzClassNumber_zero : hurwitzClassNumber 0 = -1 / 12 := rfl
 
 /-- For `D ≠ 0`, `H D` is the weighted count of the reduced forms of discriminant `-D`. -/
