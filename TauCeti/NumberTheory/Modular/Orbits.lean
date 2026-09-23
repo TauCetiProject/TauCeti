@@ -199,7 +199,7 @@ its translate `ρ + 1`: the two corners the boundary identifications of `𝒟` e
 lemma orbit_mk_eq_ρ_iff {p : ℍ} (hp : p ∈ 𝒟) :
     (Quotient.mk'' p : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' ρ ↔
       p = ρ ∨ p = (1 : ℝ) +ᵥ ρ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.elim (· ▸ rfl) (· ▸ Quotient.sound' ⟨_, modular_T_smul ρ⟩)⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ h.elim (· ▸ rfl) (· ▸ by simpa using orbit_mk_int_vadd 1 ρ)⟩
   obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • (ρ : ℍ) = p := Quotient.exact' h
   rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd _root_.ModularGroup.ρ_mem_fd hp with
     hg | ⟨hg, -⟩ | ⟨-, hre⟩ | ⟨hg, -⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨hg, -⟩ | ⟨hg, -⟩ | ⟨hg, -⟩
