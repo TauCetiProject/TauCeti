@@ -202,6 +202,7 @@ def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f
     have ht' : 1 - t ∈ Ioo (0 : ℝ) 1 := by
       constructor <;> linarith [ht.1, ht.2]
     have hC := C.snd_apply_mem_Ioo x (1 - t) ht'
+    -- Unfold the product homeomorphisms and concordance coercion by definitional equality.
     change (1 - (C (x, 1 - t)).2) ∈ Ioo (0 : ℝ) 1
     constructor <;> linarith [hC.1, hC.2]
 
