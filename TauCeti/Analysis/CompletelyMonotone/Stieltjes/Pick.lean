@@ -12,7 +12,7 @@ import TauCeti.Analysis.Complex.Pick.Boundary
 /-!
 # The Pick characterization of complete Bernstein functions
 
-A function continuous on `[0, ∞)` is complete Bernstein exactly when it is nonnegative on
+A function is complete Bernstein exactly when it is right-continuous at `0`, nonnegative on
 `(0, ∞)`, extends holomorphically to the slit plane `ℂ \ (-∞, 0]`, and maps the upper
 half-plane into its closure.  This is the analytic characterization of complete Bernstein
 functions.
@@ -27,7 +27,8 @@ complete-Bernstein representing data.
 
 ## Main declarations
 
-* The Pick characterization of complete Bernstein functions.
+* `TauCeti.isCompleteBernsteinFunction_iff_continuousWithinAt_nonneg_exists_analyticOnNhd`:
+  the Pick characterization of complete Bernstein functions.
 
 ## References
 
@@ -44,10 +45,10 @@ open Complex Filter MeasureTheory Set Topology
 namespace TauCeti
 
 /-- **Pick characterization of complete Bernstein functions** (Schilling--Song--Vondraček,
-Theorem 6.2).  A real function continuous on `[0, ∞)` is complete Bernstein exactly when it is
-nonnegative on `(0, ∞)` and has a holomorphic extension to the slit plane that maps the upper
+Theorem 6.2). A real function is complete Bernstein exactly when it is right-continuous at `0`,
+nonnegative on `(0, ∞)`, and has a holomorphic extension to the slit plane that maps the upper
 half-plane into its closure. -/
-theorem isCompleteBernsteinFunction_iff_continuousAtZero_nonneg_exists_analytic_slitPlane_im_nonneg
+theorem isCompleteBernsteinFunction_iff_continuousWithinAt_nonneg_exists_analyticOnNhd
     (f : ℝ → ℝ) :
     IsCompleteBernsteinFunction f ↔
       ContinuousWithinAt f (Ici 0) 0 ∧ (∀ t : ℝ, 0 < t → 0 ≤ f t) ∧
@@ -59,10 +60,8 @@ theorem isCompleteBernsteinFunction_iff_continuousAtZero_nonneg_exists_analytic_
     obtain ⟨F, hF, hFf, him⟩ := hf.exists_analyticOnNhd_slitPlane
     refine ⟨hf.isBernsteinFunction.continuousOn.continuousWithinAt (mem_Ici.mpr le_rfl),
       fun t ht => hf.isBernsteinFunction.nonneg ht.le, F, hF, hFf, fun z hz => ?_⟩
-    have hzim : 0 < z.im := hz
-    have hzslit : z ∈ slitPlane := mem_slitPlane_iff.2 (Or.inr hzim.ne')
-    have hprod := him z hzslit
-    nlinarith
+    exact nonneg_of_mul_nonneg_right
+      (him z (mem_slitPlane_iff.2 (Or.inr (ne_of_gt hz)))) hz
   · rintro ⟨hfcont, hpos, F, hF, hFf, him⟩
     have hzero : ∀ t : ℝ, 0 < t → (F (t : ℂ)).im = 0 := fun t ht => by
       rw [hFf t ht]
@@ -76,8 +75,8 @@ theorem isCompleteBernsteinFunction_iff_continuousAtZero_nonneg_exists_analytic_
         hrho hb (f := f) (fun t ht => by
           rw [← hFf t ht]
           exact eq_integral_nevanlinnaKernel_add_of_eqOn_upperHalfPlane
-            (hF.continuousOn.continuousAt
-              (isOpen_slitPlane.mem_nhds (ofReal_mem_slitPlane.mpr ht)))
+            ((hF.continuousOn.continuousAt
+              (isOpen_slitPlane.mem_nhds (ofReal_mem_slitPlane.mpr ht))).continuousWithinAt)
             hrho ht hrep) hpos
     have hzero : g 0 = f 0 := by
       have hgt : Tendsto g (𝓝[>] (0 : ℝ)) (𝓝 (g 0)) :=

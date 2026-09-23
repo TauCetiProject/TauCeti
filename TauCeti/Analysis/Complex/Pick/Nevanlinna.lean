@@ -250,54 +250,33 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
   (1 + (x : ℂ) * z) / ((x : ℂ) - z)
 
-/-- The defining formula for the Nevanlinna kernel. -/
-theorem nevanlinnaKernel_def (z : ℂ) (x : ℝ) :
-    nevanlinnaKernel z x = (1 + (x : ℂ) * z) / ((x : ℂ) - z) :=
-  by rw [nevanlinnaKernel]
-
 /-- The Nevanlinna kernel is measurable in its real variable at every complex parameter. -/
 @[fun_prop]
 theorem measurable_nevanlinnaKernel (z : ℂ) : Measurable (nevanlinnaKernel z) := by
-  change Measurable fun x : ℝ => (1 + (x : ℂ) * z) / ((x : ℂ) - z)
+  unfold nevanlinnaKernel
   exact (measurable_const.add (Complex.measurable_ofReal.mul_const z)).div
     (Complex.measurable_ofReal.sub measurable_const)
 
 /-- Away from its pole, the Nevanlinna kernel separates into its affine part and a resolvent. -/
 theorem nevanlinnaKernel_eq_add_div {z : ℂ} {x : ℝ} (h : (x : ℂ) - z ≠ 0) :
     nevanlinnaKernel z x = z + (1 + z ^ 2) / ((x : ℂ) - z) := by
-  rw [nevanlinnaKernel_def]
+  rw [nevanlinnaKernel]
   field_simp
   ring
 
 /-- The Nevanlinna kernel is continuous in its complex parameter away from its pole. -/
 theorem continuousAt_nevanlinnaKernel_left {x : ℝ} {z : ℂ} (h : (x : ℂ) ≠ z) :
     ContinuousAt (fun w => nevanlinnaKernel w x) z := by
-  rw [show (fun w => nevanlinnaKernel w x) =
-      fun w => (1 + (x : ℂ) * w) / ((x : ℂ) - w) by
-        funext w
-        exact nevanlinnaKernel_def w x]
+  unfold nevanlinnaKernel
   exact (continuousAt_const.add (continuousAt_const.mul continuousAt_id)).div
     (continuousAt_const.sub continuousAt_id) (sub_ne_zero.mpr h)
 
-/-- Near a point with positive real part, the Nevanlinna kernel is uniformly bounded on the
-nonpositive real axis. -/
-theorem norm_nevanlinnaKernel_le_of_nonpos_of_norm_sub_lt {z₀ z : ℂ} {x : ℝ}
-    (hz₀ : 0 < z₀.re) (hx : x ≤ 0) (hz : ‖z - z₀‖ < z₀.re / 2) :
-    ‖nevanlinnaKernel z x‖ ≤ ‖z₀‖ + z₀.re / 2 +
-      (1 + (‖z₀‖ + z₀.re / 2) ^ 2) * (2 / z₀.re) := by
-  have hznorm : ‖z‖ < ‖z₀‖ + z₀.re / 2 := by
-    calc
-      ‖z‖ ≤ ‖z - z₀‖ + ‖z₀‖ := by
-        simpa only [sub_add_cancel] using norm_add_le (z - z₀) z₀
-      _ < z₀.re / 2 + ‖z₀‖ := by simpa [add_comm] using add_lt_add_right hz ‖z₀‖
-      _ = _ := add_comm _ _
-  have hzre : z₀.re / 2 < z.re := by
-    have hre : |z.re - z₀.re| ≤ ‖z - z₀‖ := by
-      simpa only [sub_re] using abs_re_le_norm (z - z₀)
-    have : |z.re - z₀.re| < z₀.re / 2 := lt_of_le_of_lt hre hz
-    have := (abs_lt.mp this).1
-    linarith
-  have hden : z₀.re / 2 ≤ ‖(x : ℂ) - z‖ := by
+/-- On the nonpositive real axis, the Nevanlinna kernel is bounded at every parameter with
+positive real part. -/
+theorem norm_nevanlinnaKernel_le_of_nonpos {z : ℂ} {x : ℝ}
+    (hz : 0 < z.re) (hx : x ≤ 0) :
+    ‖nevanlinnaKernel z x‖ ≤ ‖z‖ + (1 + ‖z‖ ^ 2) / z.re := by
+  have hden : z.re ≤ ‖(x : ℂ) - z‖ := by
     have hre : |x - z.re| ≤ ‖(x : ℂ) - z‖ := by
       simpa only [sub_re, ofReal_re] using abs_re_le_norm ((x : ℂ) - z)
     have hneg : x - z.re < 0 := by linarith
@@ -305,28 +284,23 @@ theorem norm_nevanlinnaKernel_le_of_nonpos_of_norm_sub_lt {z₀ z : ℂ} {x : �
     linarith
   have hden0 : (x : ℂ) - z ≠ 0 := by
     rw [← norm_pos_iff]
-    exact lt_of_lt_of_le (half_pos hz₀) hden
-  have hinv : ‖((x : ℂ) - z)⁻¹‖ ≤ 2 / z₀.re := by
+    exact lt_of_lt_of_le hz hden
+  have hinv : ‖((x : ℂ) - z)⁻¹‖ ≤ (z.re)⁻¹ := by
     rw [norm_inv]
-    calc
-      ‖(x : ℂ) - z‖⁻¹ ≤ (z₀.re / 2)⁻¹ := inv_anti₀ (half_pos hz₀) hden
-      _ = 2 / z₀.re := by field_simp
+    exact inv_anti₀ hz hden
   rw [nevanlinnaKernel_eq_add_div hden0, div_eq_mul_inv]
   calc
     ‖z + (1 + z ^ 2) * ((x : ℂ) - z)⁻¹‖
         ≤ ‖z‖ + ‖(1 + z ^ 2) * ((x : ℂ) - z)⁻¹‖ := norm_add_le _ _
     _ = ‖z‖ + ‖1 + z ^ 2‖ * ‖((x : ℂ) - z)⁻¹‖ := by rw [norm_mul]
-    _ ≤ ‖z₀‖ + z₀.re / 2 + (1 + (‖z₀‖ + z₀.re / 2) ^ 2) * (2 / z₀.re) := by
-      have hsq : ‖z ^ 2‖ < (‖z₀‖ + z₀.re / 2) ^ 2 := by
-        simpa only [norm_pow] using pow_lt_pow_left₀ hznorm (norm_nonneg z)
-          (by norm_num : 2 ≠ 0)
-      have hone : ‖1 + z ^ 2‖ ≤ 1 + ‖z ^ 2‖ := by
-        simpa only [norm_one] using norm_add_le (1 : ℂ) (z ^ 2)
-      calc
-        ‖z‖ + ‖1 + z ^ 2‖ * ‖((x : ℂ) - z)⁻¹‖
-            ≤ ‖z₀‖ + z₀.re / 2 + (1 + ‖z ^ 2‖) * (2 / z₀.re) := by gcongr
-        _ ≤ ‖z₀‖ + z₀.re / 2 +
-            (1 + (‖z₀‖ + z₀.re / 2) ^ 2) * (2 / z₀.re) := by gcongr
+    _ ≤ ‖z‖ + (1 + ‖z‖ ^ 2) / z.re := by
+      have hone : ‖1 + z ^ 2‖ ≤ 1 + ‖z‖ ^ 2 := by
+        calc
+          ‖1 + z ^ 2‖ ≤ 1 + ‖z ^ 2‖ := by
+            simpa only [norm_one] using norm_add_le (1 : ℂ) (z ^ 2)
+          _ = _ := by rw [norm_pow]
+      rw [div_eq_mul_inv]
+      gcongr
 
 /-- At a real parameter the Nevanlinna kernel is real. -/
 @[simp]
