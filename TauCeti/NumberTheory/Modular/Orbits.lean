@@ -23,9 +23,9 @@ On the closed domain `𝒟` the representative is not unique: `z ↦ z + 1` iden
 vertical edges and `z ↦ -1/z` folds the unit arc onto itself, fixing `i` and swapping `ρ` with
 `ρ + 1`. Mathlib's classification `ModularGroup.cases_of_mem_fd_smul_mem_fd` pins these
 identifications down, and here it yields the closed-domain complements: the elliptic orbits of
-`i` and `ρ` meet `𝒟` exactly at `i` and at `{ρ, ρ + 1}`, and the orbit map is injective on the
-part of `𝒟` left of the identifications — `𝒟` without the right vertical edge and the part of
-the unit arc right of `i`.
+`i` and `ρ` meet `𝒟` exactly at `i` and at `{ρ, ρ + 1}`, and every orbit meets the part of `𝒟`
+left of the identifications — `𝒟` without the right vertical edge and the part of the unit arc
+right of `i` — exactly once.
 
 ## Main declarations
 
