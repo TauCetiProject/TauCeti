@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
+public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
@@ -22,7 +24,9 @@ It lifts isometries and isometric equivalences by extending their underlying lin
 the interaction with the additive operations on forms, compares direct and successive extension
 through a scalar tower, and proves that finite-dimensional nondegenerate forms remain
 nondegenerate over a field extension. It also identifies the base change of a diagonal form with
-the diagonal form obtained by mapping its coefficients into the target algebra.
+the diagonal form obtained by mapping its coefficients into the target algebra. Finally, it
+extends orthogonal and special orthogonal automorphisms, which lets a quadratic space's rational
+symmetries act on each scalar extension.
 
 These results complement Mathlib's construction `QuadraticForm.baseChange` and its pure-tensor
 evaluation theorem.  They allow localizations of a quadratic space to inherit maps, injective
@@ -349,6 +353,133 @@ theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]
   apply hinjective
   simpa only [QuadraticMap.Isometry.baseChange_toLinearMap,
     LinearMap.baseChange_eq_ltensor] using hxy
+
+/-! ### Orthogonal groups -/
+
+namespace TauCeti
+
+namespace QuadraticMap
+
+/-- Extending scalars carries an orthogonal automorphism of `Q` to an orthogonal automorphism of
+`Q.baseChange A`.  Over a field extension this is the map that compares the rational and local
+orthogonal groups. -/
+noncomputable def orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M) :
+    orthogonalGroup Q →* orthogonalGroup (Q.baseChange A) where
+  toFun g := ⟨LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M), by
+    apply mem_orthogonalGroup_iff.mpr
+    intro x
+    let e := (orthogonalGroupEquivIsometryEquiv Q g).toIsometry
+    have he : e.toLinearMap = (g : M ≃ₗ[R] M).toLinearMap := by
+      ext m
+      exact congrFun (coe_orthogonalGroupEquivIsometryEquiv Q g) m
+    -- The target is written through a linear equivalence, while the isometry base-change API is
+    -- stated through its underlying linear map.
+    change (Q.baseChange A) (((g : M ≃ₗ[R] M).toLinearMap.baseChange A) x) = (Q.baseChange A) x
+    rw [← he, ← QuadraticMap.Isometry.baseChange_toLinearMap]
+    exact (QuadraticMap.Isometry.baseChange e A).map_app x⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' g h := Subtype.ext (by simp [LinearEquiv.baseChange_mul])
+
+/-- The linear equivalence underlying an orthogonal automorphism after scalar extension is the
+base change of its original linear equivalence. -/
+@[simp]
+theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
+    (g : orthogonalGroup Q) :
+    (orthogonalGroupBaseChange (A := A) Q g :
+      A ⊗[R] M ≃ₗ[A] A ⊗[R] M) = LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
+  rfl
+
+/-- On a pure tensor, base change of an orthogonal automorphism applies the automorphism to the
+second tensor factor. -/
+@[simp]
+theorem orthogonalGroupBaseChange_apply_tmul (Q : _root_.QuadraticForm R M)
+    (g : orthogonalGroup Q) (a : A) (m : M) :
+    ((orthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
+      a ⊗ₜ (g : M ≃ₗ[R] M) m := by
+  rw [coe_orthogonalGroupBaseChange]
+  exact LinearEquiv.baseChange_tmul R A M M a m
+
+/-- The determinant of a base-changed orthogonal automorphism is the image of its original
+determinant. -/
+@[simp]
+theorem det_orthogonalGroupBaseChange [Module.Free R M] [Module.Finite R M]
+    (Q : _root_.QuadraticForm R M) (g : orthogonalGroup Q) :
+    LinearEquiv.det (orthogonalGroupBaseChange (A := A) Q g :
+      A ⊗[R] M ≃ₗ[A] A ⊗[R] M) = (LinearEquiv.det (g : M ≃ₗ[R] M)).map (algebraMap R A) := by
+  rw [coe_orthogonalGroupBaseChange, LinearEquiv.det_baseChange]
+
+/-- Scalar extension of orthogonal automorphisms is injective whenever the extension is faithful
+and the original module is flat.  In particular, this applies to extensions of fields. -/
+theorem orthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Flat R M]
+    (Q : _root_.QuadraticForm R M) :
+    Function.Injective (orthogonalGroupBaseChange (A := A) Q) := by
+  intro g h hgh
+  apply Subtype.ext
+  apply LinearEquiv.toLinearMap_injective
+  apply LinearMap.baseChangeHom_injective (R := R) (S := A) (M := M) (N := M)
+  change (g : M ≃ₗ[R] M).toLinearMap.baseChange A = (h : M ≃ₗ[R] M).toLinearMap.baseChange A
+  simpa only [coe_orthogonalGroupBaseChange, LinearEquiv.coe_baseChange] using
+    congrArg LinearEquiv.toLinearMap (congrArg Subtype.val hgh)
+
+/-- Base change preserves the determinant-one condition, giving the corresponding map on special
+orthogonal groups. -/
+noncomputable def specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Finite R M]
+    (Q : _root_.QuadraticForm R M) :
+    specialOrthogonalGroup Q →* specialOrthogonalGroup (Q.baseChange A) where
+  toFun g := ⟨orthogonalGroupBaseChange (A := A) Q
+      ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩, by
+    apply mem_specialOrthogonalGroup_iff.mpr
+    refine ⟨(orthogonalGroupBaseChange (A := A) Q
+      ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩).2, ?_⟩
+    have hg := (mem_specialOrthogonalGroup_iff.mp g.2).2
+    rw [det_orthogonalGroupBaseChange, hg, map_one]⟩
+  map_one' := Subtype.ext (by simp [orthogonalGroupBaseChange])
+  map_mul' g h := Subtype.ext (by simp [orthogonalGroupBaseChange, LinearEquiv.baseChange_mul])
+
+/-- The linear equivalence underlying a base-changed special orthogonal automorphism is the base
+change of its underlying linear equivalence. -/
+@[simp]
+theorem coe_specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Finite R M]
+    (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
+    (specialOrthogonalGroupBaseChange (A := A) Q g :
+      A ⊗[R] M ≃ₗ[A] A ⊗[R] M) = LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
+  rfl
+
+/-- The special-orthogonal base-change map is the orthogonal base-change map restricted to the
+determinant-one subgroup. -/
+@[simp]
+theorem specialOrthogonalGroupBaseChange_to_orthogonalGroup [Module.Free R M] [Module.Finite R M]
+    (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
+    (specialOrthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
+      (orthogonalGroupBaseChange (A := A) Q
+        ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩ : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) := by
+  rw [coe_specialOrthogonalGroupBaseChange, coe_orthogonalGroupBaseChange]
+
+/-- On pure tensors, base change of a special orthogonal automorphism acts on the second factor. -/
+@[simp]
+theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Finite R M]
+    (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) (a : A) (m : M) :
+    ((specialOrthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
+      a ⊗ₜ (g : M ≃ₗ[R] M) m := by
+  rw [coe_specialOrthogonalGroupBaseChange]
+  exact LinearEquiv.baseChange_tmul R A M M a m
+
+/-- Scalar extension of special orthogonal automorphisms is injective whenever the extension is
+faithful and the original module is flat. -/
+theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Flat R M]
+    [Module.Free R M] [Module.Finite R M] (Q : _root_.QuadraticForm R M) :
+    Function.Injective (specialOrthogonalGroupBaseChange (A := A) Q) := by
+  intro g h hgh
+  apply Subtype.ext
+  apply LinearEquiv.toLinearMap_injective
+  apply LinearMap.baseChangeHom_injective (R := R) (S := A) (M := M) (N := M)
+  change (g : M ≃ₗ[R] M).toLinearMap.baseChange A = (h : M ≃ₗ[R] M).toLinearMap.baseChange A
+  simpa only [coe_specialOrthogonalGroupBaseChange, LinearEquiv.coe_baseChange] using
+    congrArg LinearEquiv.toLinearMap (congrArg Subtype.val hgh)
+
+end QuadraticMap
+
+end TauCeti
 
 end CommRing
 
