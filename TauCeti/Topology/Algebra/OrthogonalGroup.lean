@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.Group.Matrix
+public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
 # Closedness of the matrix special orthogonal group
@@ -21,8 +23,8 @@ equation and the determinant-one equation; both are closed in the entrywise matr
   the matrix orthogonal and special orthogonal groups are closed over any `T₁` topological
   commutative ring.
 
-The proof is stated directly with the transpose equation rather than routing through the unitary
-group, whose topology uses a star operation and therefore does not apply to an arbitrary ring.
+The results are obtained by specializing the existing closedness results for the unitary and
+special unitary groups to the trivial star structure on a commutative ring.
 -/
 
 public section
@@ -34,26 +36,20 @@ namespace Matrix
 variable {n R : Type*} [Fintype n] [DecidableEq n]
   [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
+attribute [local instance] starRingOfComm
+
+local instance instContinuousStar : ContinuousStar R := ⟨continuous_id⟩
+
 /-- The matrix orthogonal group is closed in the entrywise matrix topology. -/
 theorem isClosed_orthogonalGroup [T1Space R] :
     IsClosed (Matrix.orthogonalGroup n R : Set (Matrix n n R)) := by
-  have horth : (Matrix.orthogonalGroup n R : Set (Matrix n n R)) =
-      (fun A : Matrix n n R => A.transpose * A) ⁻¹' ({1} : Set (Matrix n n R)) := by
-    ext A
-    simpa using (Matrix.mem_orthogonalGroup_iff' (n := n) (R := R) (A := A))
-  rw [horth]
-  exact isClosed_singleton.preimage ((continuous_id.matrix_transpose).mul continuous_id)
+  simpa only [Matrix.orthogonalGroup] using
+    (isClosed_unitary (R := Matrix n n R))
 
 /-- The matrix special orthogonal group is closed in the entrywise matrix topology. -/
 theorem isClosed_specialOrthogonalGroup [T1Space R] :
     IsClosed (Matrix.specialOrthogonalGroup n R : Set (Matrix n n R)) := by
-  have hso : (Matrix.specialOrthogonalGroup n R : Set (Matrix n n R)) =
-      (Matrix.orthogonalGroup n R : Set (Matrix n n R)) ∩ {A | A.det = 1} := by
-    ext A
-    simpa using Matrix.mem_specialOrthogonalGroup_iff
-  have hdet_closed : IsClosed {A : Matrix n n R | A.det = 1} :=
-    isClosed_singleton.preimage (Continuous.matrix_det continuous_id)
-  rw [hso]
-  exact isClosed_orthogonalGroup.inter hdet_closed
+  simpa only [Matrix.specialOrthogonalGroup] using
+    (TauCeti.Matrix.isClosed_specialUnitaryGroup (n := n) (𝕜 := R))
 
 end Matrix
