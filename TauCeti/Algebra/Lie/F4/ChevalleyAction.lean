@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Weights.Root.CorootSpan
 public import TauCeti.Algebra.Lie.Weights.Root.KostantStability
 public import TauCeti.LinearAlgebra.RootSystem.EquivInvariance
-public import TauCeti.RingTheory.Nilpotent.BaseChangeAction
+public import TauCeti.RingTheory.DividedPowers.Associative
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.RootSystem
 
