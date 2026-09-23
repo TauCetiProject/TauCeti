@@ -28,7 +28,6 @@ exposed for the later `LieAlgebra.Basis` construction.
 * `TypeDStd.linearIndependent_cartanGenerator`: the ambient Cartan generators are independent.
 * `TypeDStd.typeDDiagonalCartan_eq_lieSpan_cartanGenerator`: they span the diagonal Cartan as a
   Lie subalgebra.
-* `TypeDStd.cartanGeneratorBasis`: the simple-root Cartan generators as a module basis.
 * `TypeDStd.typeDDiagonalCartanBasis_repr_cartanGenerator`: their coordinates in the ambient
   diagonal basis are the pinned type-D simple roots.
 
@@ -111,7 +110,7 @@ section Field
 variable {K : Type*} [Field K] [NeZero (2 : K)]
 
 /-- The simple-root Cartan generators form a basis of the split diagonal Cartan. -/
-noncomputable def cartanGeneratorBasis (n : ℕ) (hn : 4 ≤ n) :
+private noncomputable def cartanGeneratorBasis (n : ℕ) (hn : 4 ≤ n) :
     Module.Basis (Fin n) K (typeDDiagonalCartan K (Fin n)) :=
   basisOfLinearIndependentOfCardEqFinrank' _
     (linearIndependent_cartanGenerator_subtype (K := K) n hn)
@@ -119,7 +118,7 @@ noncomputable def cartanGeneratorBasis (n : ℕ) (hn : 4 ≤ n) :
 
 /-- The vectors of `cartanGeneratorBasis` are the explicit matrix Cartan generators. -/
 @[simp]
-theorem cartanGeneratorBasis_apply (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+private theorem cartanGeneratorBasis_apply (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
     cartanGeneratorBasis (K := K) n hn i =
       (⟨cartanGenerator (K := K) n hn i,
         cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n)) := by
