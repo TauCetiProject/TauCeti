@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.SeparablyGenerated
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
+public import TauCeti.RingTheory.Kaehler.Separable
 
 /-!
 # One-dimensionality of the Kähler differentials of a function field
@@ -40,9 +41,6 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
 * `TauCeti.derivativeOfSeparating`: differentiation `y ↦ dy/dx` with respect to `x`, as a
   `k`-derivation of `F`, with `TauCeti.derivativeOfSeparating_smul_D` the identity
   `d y = (dy/dx) · dx` and `TauCeti.eq_derivativeOfSeparating` its uniqueness.
-* `TauCeti.D_eq_zero_of_isSeparable`: a separable algebraic element has vanishing differential,
-  so over a perfect field `TauCeti.transcendental_of_D_ne_zero` reads a nonzero differential as
-  transcendence.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a
   fixed parameter over a perfect field.
 
@@ -155,23 +153,7 @@ theorem derivativeOfSeparating_self : derivativeOfSeparating hx x = 1 :=
 
 end Separating
 
-/-- A separable algebraic element has vanishing universal differential, so the universal
-derivation detects only the inseparable or transcendental part of an extension. -/
-theorem D_eq_zero_of_isSeparable (hx : IsSeparable k x) : D k F x = 0 := by
-  have hcoeff : aeval x (minpoly k x).derivative ≠ 0 :=
-    Separable.aeval_derivative_ne_zero hx (minpoly.aeval k x)
-  have hder := (D k F).map_aeval (minpoly k x) x
-  rw [minpoly.aeval, map_zero] at hder
-  exact (smul_eq_zero.mp hder.symm).resolve_left hcoeff
-
 variable [PerfectField k]
-
-/-- Over a perfect base field, an element with nonzero universal differential is transcendental:
-an algebraic element is separable, hence has vanishing differential. -/
-theorem transcendental_of_D_ne_zero (hx : D k F x ≠ 0) : Transcendental k x := by
-  intro halg
-  exact hx (D_eq_zero_of_isSeparable
-    (PerfectField.separable_of_irreducible (minpoly.irreducible halg.isIntegral)))
 
 namespace IsFunctionField
 
