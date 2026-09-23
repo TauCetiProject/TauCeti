@@ -146,10 +146,6 @@ theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
   rw [← pow_mul, ← pow_two, ← hcard, Nat.card_eq_fintype_card]
   exact _root_.FiniteField.pow_card a
 
-end DivisionRing
-
-variable [Field L] [Algebra K L]
-
 /-- **In a quadratic extension the `q`-power map is an involution on units**, the units-level
 form of `TauCeti.FiniteField.pow_natCard_pow_natCard`. -/
 theorem units_pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : Lˣ) :
@@ -157,6 +153,10 @@ theorem units_pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : Lˣ) :
   Units.ext (by
     rw [Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
     exact pow_natCard_pow_natCard h2 (a : L))
+
+end DivisionRing
+
+variable [Field L] [Algebra K L]
 
 /-- **In a quadratic extension the `q`-th power of an element outside the base field is again
 outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to

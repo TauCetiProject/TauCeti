@@ -114,7 +114,6 @@ end AlgEquiv
 
 variable {F E}
 
-omit [Normal F E] in
 /-- A homomorphism into `Gal(E/F)` lifting the automorphisms of the separable closure is
 continuous.
 
