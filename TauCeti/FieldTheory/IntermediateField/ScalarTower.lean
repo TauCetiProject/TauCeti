@@ -28,7 +28,7 @@ namespace IntermediateField
 intermediate field `E` of `L / K`; this is the same statement for a base `k` sitting below `K`,
 which is what an object of `L` defined over `k` needs in order to be restricted to `E`. -/
 instance instIsScalarTower {k K L : Type*} [CommSemiring k] [Field K] [Field L]
-    [Algebra k K] [Algebra k L] [Algebra K L] [IsScalarTower k K L]
+    [SMul k K] [Algebra k L] [Algebra K L] [IsScalarTower k K L]
     (E : IntermediateField K L) : IsScalarTower k E L :=
   Subalgebra.isScalarTower_mid E.toSubalgebra
 

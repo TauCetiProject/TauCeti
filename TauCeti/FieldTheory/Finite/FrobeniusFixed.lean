@@ -125,7 +125,11 @@ end Finite
 
 section Quadratic
 
-variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
+variable {K L : Type*} [Field K] [Finite K]
+
+section DivisionRing
+
+variable [DivisionRing L] [Algebra K L]
 
 /-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
 `L` has `q²` elements, so `a ^ (q²) = a`.
@@ -141,6 +145,10 @@ theorem pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : L) :
     rw [Module.natCard_eq_pow_finrank (K := K) (V := L), h2]
   rw [← pow_mul, ← pow_two, ← hcard, Nat.card_eq_fintype_card]
   exact _root_.FiniteField.pow_card a
+
+end DivisionRing
+
+variable [Field L] [Algebra K L]
 
 /-- **In a quadratic extension the `q`-power map is an involution on units**, the units-level
 form of `TauCeti.FiniteField.pow_natCard_pow_natCard`. -/
