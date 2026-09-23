@@ -47,7 +47,7 @@ namespace TauCeti
 
 section Ring
 
-variable {R : Type*} [Ring R] {G : Type*} [Monoid G]
+variable {R : Type*} [Ring R] {G : Type*} [One G]
 
 /-- The group-like difference `single g 1 - 1` is nonzero when `g ≠ 1`, since `single` is
 injective in its index (the coefficient `1` is nonzero over a nontrivial base). -/

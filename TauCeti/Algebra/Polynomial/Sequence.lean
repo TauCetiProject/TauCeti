@@ -33,7 +33,7 @@ variable {R : Type*} [Semiring R] (S : Polynomial.Sequence R)
 /-- Polynomials in a polynomial sequence whose leading coefficients are right-regular are linearly
 independent. -/
 theorem linearIndependent_of_isRightRegular_leadingCoeff
-    [IsRightCancelAdd R] (hCoeff : ∀ i, IsRightRegular (S i).leadingCoeff) :
+    [IsCancelAdd R] (hCoeff : ∀ i, IsRightRegular (S i).leadingCoeff) :
     LinearIndependent R S := by
   classical
   refine linearIndependent_iff'ₛ.2 fun s f g hsum i hi => ?_

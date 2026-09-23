@@ -72,8 +72,9 @@ eigenvalue of the underlying linear map. That is why the ambient hypotheses are
 `FiniteDimensional K M` and `IsAlgClosed K`, exactly the hypotheses of
 `Module.End.exists_eigenvalue`.
 
-`TauCeti.eq_of_forall_lie_eq_smul` is stated over an arbitrary field with a `Nontrivial M`
-hypothesis rather than an irreducibility one, since uniqueness of the scalar needs nothing else.
+`TauCeti.eq_of_forall_lie_eq_smul` is stated over an arbitrary division ring, for any bracket
+action, with a `Nontrivial M` hypothesis rather than an irreducibility one, since uniqueness of
+the scalar needs nothing else.
 
 ## References
 
