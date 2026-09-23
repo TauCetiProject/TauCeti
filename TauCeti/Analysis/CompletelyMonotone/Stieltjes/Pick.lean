@@ -17,13 +17,10 @@ A function is complete Bernstein exactly when it is right-continuous at `0`, non
 half-plane into its closure.  This is the analytic characterization of complete Bernstein
 functions.
 
-The forward direction is the holomorphic extension constructed from complete-Bernstein
-representing data.  For the converse, the Pick function has a Nevanlinna representation whose
-measure is carried by `(-∞, 0]`.  The remaining boundary step is to pass that representation
-from the upper half-plane to a positive real parameter.  The Nevanlinna kernel is uniformly
-bounded near such a parameter on `(-∞, 0]`, so dominated convergence makes its integral
-continuous there.  The resulting real-axis representation converts directly into
-complete-Bernstein representing data.
+The characterization is supported by boundary-continuity results for Nevanlinna
+representations, which transfer upper-half-plane formulas to positive real parameters.  It
+therefore lets users recover complete-Bernstein representing data from a holomorphic Pick
+extension.
 
 ## Main declarations
 
