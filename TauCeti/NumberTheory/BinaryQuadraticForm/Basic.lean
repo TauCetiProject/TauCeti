@@ -7,19 +7,20 @@ module
 
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import TauCeti.Algebra.QuadraticDiscriminant
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Binary quadratic forms and the action of `SL(2, R)`
 
 A binary quadratic form over a commutative ring `R` is a polynomial `a x² + b x y + c y²`; here it
-is recorded by its three coefficients, as `TauCeti.BinaryQuadraticForm R`. The group `SL(2, R)`
-acts on such forms by linear change of variables, and over `ℤ` the forms that are positive definite
-of a fixed discriminant `-D < 0` form a sub-action. Its orbits are the classes counted, with
-weights, by the Hurwitz class number `H(D)`. Through the form `v ↦ det(v, M v)` attached to an
-integer matrix `M`, they also describe the `SL(2, ℤ)`-conjugacy classes of integer matrices of
-fixed trace and determinant, which is how they enter the Eichler–Selberg trace formula. This file
-supplies the action on which both descriptions are built.
+is recorded by its three coefficients, as `TauCeti.BinaryQuadraticForm R`. The group `SL(2, R)` acts
+on such forms by linear change of variables, and over `ℤ` the forms that are positive definite of a
+fixed discriminant `-D < 0` form a sub-action. Its orbits are the classes counted, with weights, by
+the Hurwitz class number `H(D)` (`TauCeti.hurwitzClassNumber`). Through the form `v ↦ det(v, M v)`
+attached to an integer matrix `M`, they also describe the `SL(2, ℤ)`-conjugacy classes of integer
+matrices of fixed trace and determinant, which is how they enter the Eichler–Selberg trace formula.
+This file supplies the action on which both descriptions are built.
 
 The action is on the left, by `γ • f = f ∘ γ⁻¹`. For `γ = !![p, q; r, s]` the inverse is the
 adjugate `!![s, -q; -r, p]` (Mathlib's `Matrix.SpecialLinearGroup.SL2_inv_expl`), so
@@ -34,15 +35,15 @@ determinant hypothesis. The substitution `f ↦ f ∘ γ` found in much of the c
 a right action; composing with `γ⁻¹` instead gives the left action that `MulAction` expects, with
 the same orbits. With this convention `T • ⟨a, b, c⟩ = ⟨a, b - 2 a, a - b + c⟩` and
 `S • ⟨a, b, c⟩ = ⟨c, -b, a⟩`, where `S` and `T` are Mathlib's `ModularGroup.S = !![0, -1; 1, 0]`
-and `ModularGroup.T = !![1, 1; 0, 1]`; the examples at the end of the file check instances of both
-by evaluation. It is also the convention for which the form `v ↦ det(v, M v)` of an integer
-matrix `M` is carried to that of `γ M γ⁻¹` by `γ •`, and for which the root `(-b + √(-D)) / (2 a)`
-of a positive definite form moves by the Möbius action of `γ` on the upper half-plane.
+and `ModularGroup.T = !![1, 1; 0, 1]`; the examples at the end of the file check both formulas.
+It is also the convention for which the root `(-b + √(-D)) / (2 a)` of a positive definite form
+moves by the Möbius action of `γ` on the upper half-plane.
 
-The determinant enters only through the discriminant `discrim a b c = b² - 4 a c`, which changes
-by the factor `(det γ)² = 1`. Positivity of the leading coefficient is then preserved because
-`4 a a' = (2 a s - b r)² + D r²` and `(r, s) ≠ (0, 0)`. This needs `D ≠ 0`: the form `⟨1, 2, 1⟩`
-of discriminant `0` is sent by `!![1, 0; 1, 1]` to a form with leading coefficient `0`.
+The discriminant `discrim a b c = b² - 4 a c` changes by the factor `(det γ)² = 1`. Positivity of
+the leading coefficient is then preserved: `(γ • f).a = f(s, -r)` is a value of the non-negative
+form `f`, and a form of negative discriminant with non-negative leading coefficient has positive
+leading coefficient. This needs `D ≠ 0`: the form `⟨1, 2, 1⟩` of discriminant `0` is sent by
+`!![1, 0; 1, 1]` to a form with leading coefficient `0`.
 
 Mathlib's `QuadraticForm R (Fin 2 → R)` is not used, because its discriminant is built from the
 associated bilinear form and so requires `2` to be invertible in `R`, which fails over `ℤ`.
@@ -154,19 +155,13 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
   carrier := {f | f.discrim = -D ∧ 0 < f.a}
   smul_mem' γ f := by
     rintro ⟨hD, ha⟩
-    refine ⟨(discrim_smul γ f).trans hD, pos_of_mul_pos_right (a := 4 * f.a) ?_ (by positivity)⟩
-    have key : 4 * f.a * (γ • f).a = (2 * f.a * γ 1 1 - f.b * γ 1 0) ^ 2 + D * γ 1 0 ^ 2 := by
-      simp only [discrim_def, smul_a] at hD ⊢
-      linear_combination (-γ 1 0 ^ 2) * hD
-    rw [key]
-    rcases eq_or_ne (γ 1 0) 0 with hr | hr
-    · have hs : γ 1 1 ≠ 0 := by
-        intro hs
-        simpa [hr, hs] using γ.fin_two_mul_sub_mul_eq_one
-      simp only [hr, mul_zero, sub_zero, zero_pow two_ne_zero, add_zero]
-      positivity
-    · have := NeZero.pos D
-      positivity
+    have hD' : (γ • f).discrim < 0 := by
+      rw [discrim_smul, hD, neg_lt_zero]
+      exact_mod_cast NeZero.pos D
+    refine ⟨(discrim_smul γ f).trans hD, pos_of_nonneg_of_discrim_lt_zero ?_ hD'⟩
+    have := nonneg_of_discrim_le_zero ha (hD ▸ neg_nonpos.2 D.cast_nonneg) (γ 1 1) (-γ 1 0)
+    rw [smul_a]
+    linear_combination this
 
 /-- A form lies in `posDef D` exactly when its discriminant is `-D` and its leading coefficient is
 positive. -/
@@ -175,16 +170,15 @@ theorem mem_posDef {D : ℕ} [NeZero D] {f : BinaryQuadraticForm ℤ} :
     f ∈ posDef D ↔ f.discrim = -D ∧ 0 < f.a :=
   Iff.rfl
 
-/-! The convention `γ • f = f ∘ γ⁻¹`, checked on `T`, `S * T` and `S`. -/
+/-! The convention `γ • f = f ∘ γ⁻¹` on the generators `T` and `S`: the formulas of the module
+docstring. -/
 
-example : ModularGroup.T • (⟨1, 1, 1⟩ : BinaryQuadraticForm ℤ) = ⟨1, -1, 1⟩ := by
-  decide +kernel
+example (a b c : ℤ) :
+    ModularGroup.T • (⟨a, b, c⟩ : BinaryQuadraticForm ℤ) = ⟨a, b - 2 * a, a - b + c⟩ := by
+  ext <;> simp [ModularGroup.coe_T]
 
-example : (ModularGroup.S * ModularGroup.T) • (⟨1, 1, 1⟩ : BinaryQuadraticForm ℤ) = ⟨1, 1, 1⟩ := by
-  decide +kernel
-
-example : ModularGroup.S • (⟨1, 0, 1⟩ : BinaryQuadraticForm ℤ) = ⟨1, 0, 1⟩ := by
-  decide +kernel
+example (a b c : ℤ) : ModularGroup.S • (⟨a, b, c⟩ : BinaryQuadraticForm ℤ) = ⟨c, -b, a⟩ := by
+  ext <;> simp [ModularGroup.coe_S]
 
 end BinaryQuadraticForm
 
