@@ -76,7 +76,8 @@ definite. -/
 theorem IsReducedForm.pos_of_discrim_lt_zero {a b c : ℤ} (h : IsReducedForm a b c)
     (hd : discrim a b c < 0) : 0 < a :=
   -- `a = 0` would make the discriminant `b ^ 2`, which is not negative
-  ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ hd.not_ge <| by simp only [discrim, ha, mul_zero, zero_mul, sub_zero, sq_nonneg]
+  ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ hd.not_ge <| by
+    simp only [discrim, ha, mul_zero, zero_mul, sub_zero, sq_nonneg]
 
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
 `(a, b, c)`.
