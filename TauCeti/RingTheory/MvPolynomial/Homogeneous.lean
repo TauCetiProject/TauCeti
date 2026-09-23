@@ -13,6 +13,9 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 Evaluating a homogeneous polynomial of degree `n` after multiplying every variable by `a`
 multiplies its value by `a ^ n`. This permits normalizing linear substitutions without
 expanding the polynomial.
+
+The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
+notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`.
 -/
 
 public section
