@@ -70,7 +70,7 @@ theorem
       IsIntegral (v.adicCompletionIntegers K) x ∧
       Algebra.adjoin (v.adicCompletion K) {(x : w.adicCompletion L)} = ⊤ := by
   let _ : IsLocalHom (algebraMap (v.adicCompletionIntegers K)
-      (w.adicCompletionIntegers L)) := algebraMap_adicCompletionIntegers_isLocalHom K L v w
+      (w.adicCompletionIntegers L)) := isLocalHom_algebraMap_adicCompletionIntegers K L v w
   let _ : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
     Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
   let _ : Algebra.IsSeparable

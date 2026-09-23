@@ -40,7 +40,7 @@ local extension comparable with the global one along `B → 𝒪_w`.
   `L_w` form a scalar tower, so the two ways of letting `𝒪_v` act on `L_w` agree.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isTorsionFree`: `𝒪_w` is a
   torsion-free `𝒪_v`-module.
-* `IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletionIntegers_isLocalHom`: the
+* `IsDedekindDomain.HeightOneSpectrum.isLocalHom_algebraMap_adicCompletionIntegers`: the
   canonical map `𝒪_v → 𝒪_w` is a local ring homomorphism.
 * `IsDedekindDomain.HeightOneSpectrum.maximalIdeal_adicCompletionIntegers_liesOver`: the maximal
   ideal of `𝒪_w` lies over the maximal ideal of `𝒪_v`.
@@ -131,14 +131,15 @@ scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isTorsionFree
 
 /-- The canonical map `𝒪_v → 𝒪_w` of completed integer rings is a local ring homomorphism. -/
-theorem algebraMap_adicCompletionIntegers_isLocalHom :
+theorem isLocalHom_algebraMap_adicCompletionIntegers :
     IsLocalHom (algebraMap (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)) := by
   rw [algebraMap_adicCompletionIntegersExtensionAlgebra]
-  exact ((IsLocalRing.local_hom_TFAE _).out 5 1).mp
-    (comap_maximalIdeal_adicCompletionIntegersExtension K L v w)
+  refine ⟨fun x hx ↦ IsLocalRing.notMem_maximalIdeal.mp ?_⟩
+  rw [← comap_maximalIdeal_adicCompletionIntegersExtension K L v w, Ideal.mem_comap]
+  exact IsLocalRing.notMem_maximalIdeal.mpr hx
 
 scoped[AdicCompletionExtension] attribute [instance]
-  IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletionIntegers_isLocalHom
+  IsDedekindDomain.HeightOneSpectrum.isLocalHom_algebraMap_adicCompletionIntegers
 
 /-- The maximal ideal of `𝒪_w` lies over the maximal ideal of `𝒪_v`. -/
 theorem maximalIdeal_adicCompletionIntegers_liesOver :
