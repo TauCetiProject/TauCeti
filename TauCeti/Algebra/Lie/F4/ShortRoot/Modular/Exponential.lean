@@ -63,18 +63,18 @@ theorem f4RootAdjointDerivation_dividedPower_mem (k : Fin 4 ⊕ Fin 4) (n : ℕ)
     (f4KillingRoot (f4SignedSimpleRootIndex k)) n hy
 
 /-- The root adjoint derivation is nilpotent. -/
-theorem f4RootAdjointDerivation_isNilpotent (k : Fin 4 ⊕ Fin 4) :
+theorem isNilpotent_f4RootAdjointDerivation (k : Fin 4 ⊕ Fin 4) :
     IsNilpotent (f4RootAdjointDerivation k).toLinearMap := by
   rw [f4RootAdjointDerivation_toLinearMap]
   exact f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.isNilpotent_ad_rootVector
     (f4KillingRoot (f4SignedSimpleRootIndex k))
 
-/-- The third adjoint power annihilates every short-root vector. -/
-theorem f4_ad_cube_rootVector_eq_zero_of_short (α β : Fin 48)
-    (hβ : f4Length β = 1) :
+/-- Three adjoint applications annihilate every F4 root vector, regardless of root length. -/
+theorem f4_ad_cube_rootVector_eq_zero (α β : Fin 48) :
     ((ad ℚ (F4.lieAlgebra valid_F4)
       (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3)
         (f4ChevalleyRootVector (f4KillingRoot β)) = 0 := by
+  have hthree : (3 : ℕ) = 2 + 1 := by omega
   by_cases hopp : β = f4OppositeRootIndex α
   · subst β
     let a := f4KillingRoot α
@@ -91,16 +91,60 @@ theorem f4_ad_cube_rootVector_eq_zero_of_short (α β : Fin 48)
         f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.lie_coroot a a,
         root_apply_coroot ha]
       module
-    rw [show (3 : ℕ) = 2 + 1 by omega, pow_succ', Module.End.mul_apply, pow_two,
+    rw [hthree, pow_succ', Module.End.mul_apply, pow_two,
       Module.End.mul_apply, ad_apply, f4KillingRoot_f4OppositeRootIndex, h1, h2,
       lie_smul, lie_self, smul_zero]
-  · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
-    have hpow : ((ad ℚ (F4.lieAlgebra valid_F4)
-        (f4ChevalleyRootVector (f4KillingRoot α))) ^ 2)
-          (f4ChevalleyRootVector (f4KillingRoot β)) = 0 := by
-      rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply] at hdiv
-      exact (smul_eq_zero.mp hdiv).resolve_left (by norm_num)
-    rw [show (3 : ℕ) = 2 + 1 by omega, pow_succ', Module.End.mul_apply, hpow, map_zero]
+  · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
+    · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
+      have hpow : ((ad ℚ (F4.lieAlgebra valid_F4)
+          (f4ChevalleyRootVector (f4KillingRoot α))) ^ 2)
+            (f4ChevalleyRootVector (f4KillingRoot β)) = 0 := by
+        rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply] at hdiv
+        exact (smul_eq_zero.mp hdiv).resolve_left (by norm_num)
+      rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
+    · let H := F4.cartanSubalgebra valid_F4
+      let a := f4KillingRoot α
+      let b := f4KillingRoot β
+      let x := f4ChevalleyRootVector
+      have ha : a.IsNonZero :=
+        H.isNonZero_coe_root (f4KillingRootLabel α)
+      have hb : b.IsNonZero :=
+        H.isNonZero_coe_root (f4KillingRootLabel β)
+      have hopp' : α ≠ f4OppositeRootIndex β := by
+        intro h
+        apply hopp
+        rw [h, f4OppositeRootIndex_f4OppositeRootIndex]
+      have hsum := f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp'
+      rcases f4ChevalleyRootVector_isChevalleySystem.ad_pow_rootVector_eq_zero_or_exists
+          ha hb hsum 3 with hzero | hnonzero
+      · exact hzero
+      · obtain ⟨γ, hγcoe, -, -⟩ := hnonzero
+        have hγnz : γ.IsNonZero := by
+          rw [Weight.IsNonZero, Weight.IsZero, hγcoe]
+          exact coe_add_natCast_smul_ne_zero ha hb hsum 3
+        have hγroot : γ ∈ H.root := by
+          simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using hγnz
+        let δ : Fin 48 := f4PinnedRootIndex ⟨γ, hγroot⟩
+        have hδweight : f4KillingRoot δ = γ := by
+          -- The Killing weight is the underlying function of its root-label subtype.
+          change (f4KillingRootLabel δ : Weight ℚ H (F4.lieAlgebra valid_F4)) = γ
+          exact congrArg Subtype.val (f4KillingRootLabel_f4PinnedRootIndex ⟨γ, hγroot⟩)
+        have hpinned : f4SimplyConnectedRootDatum.root δ =
+            f4SimplyConnectedRootDatum.root β +
+              (3 : ℤ) • f4SimplyConnectedRootDatum.root α := by
+          apply (f4KillingRoot_eq_add_zsmul_iff α β δ 3).mp
+          rw [hδweight]
+          simpa using hγcoe
+        have hlen := f4Length_of_root_eq_add_zsmul α β δ 3 hpinned
+        have hpair := abs_pairing_f4SimplyConnectedRootDatum_le_two β α
+        have hpairLower : -2 ≤ f4SimplyConnectedRootDatum.pairing β α :=
+          (abs_le.mp hpair).1
+        rw [f4SimplyConnectedRootDatum_pairing] at hpairLower
+        rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
+          rcases f4Length_eq_one_or_eq_two δ with hδ | hδ
+        all_goals rw [hα, hβ, hδ] at hlen
+        all_goals norm_num at hlen
+        all_goals omega
 
 /-- The third adjoint power annihilates every Cartan element. -/
 theorem f4_ad_cube_cartan_eq_zero (α : Fin 48)
@@ -114,15 +158,16 @@ theorem f4_ad_cube_cartan_eq_zero (α : Fin 48)
         (h : F4.lieAlgebra valid_F4) = 0 := by
     rw [Associative.dividedPower_def, Module.End.smul_def, LinearMap.smul_apply] at hdiv
     exact (smul_eq_zero.mp hdiv).resolve_left (by norm_num)
-  rw [show (3 : ℕ) = 2 + 1 by omega, pow_succ', Module.End.mul_apply, hpow, map_zero]
+  have hthree : (3 : ℕ) = 2 + 1 := by omega
+  rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_zero]
 
 /-- The third adjoint power vanishes on each integral short-root vector. -/
 theorem f4RootAdjointDerivation_pow_three_integralRootVector
-    (k : Fin 4 ⊕ Fin 4) (i : Fin 48) (hi : f4Length i = 1) :
+    (k : Fin 4 ⊕ Fin 4) (i : Fin 48) :
     ((f4RootAdjointDerivation k).toLinearMap ^ 3)
         (f4IntegralRootVector i : F4.lieAlgebra valid_F4) = 0 := by
   rw [f4RootAdjointDerivation_toLinearMap, coe_f4IntegralRootVector]
-  exact f4_ad_cube_rootVector_eq_zero_of_short (f4SignedSimpleRootIndex k) i hi
+  exact f4_ad_cube_rootVector_eq_zero (f4SignedSimpleRootIndex k) i
 
 /-- The third adjoint power vanishes on each integral simple coroot. -/
 theorem f4RootAdjointDerivation_pow_three_integralSimpleCoroot
@@ -146,14 +191,15 @@ noncomputable def f4ModularRootAdjoint (k : Fin 4 ⊕ Fin 4) :
     Module.End (ZMod 2) f4ModularChevalleyLieAlgebra :=
   (f4IntegralRootAdjoint k).baseChange (ZMod 2)
 
-@[simp] theorem f4ModularRootAdjoint_tmul (k : Fin 4 ⊕ Fin 4)
+/-- Reduction of the first integral divided power acts on a pure tensor by base change. -/
+theorem f4ModularRootAdjoint_tmul (k : Fin 4 ⊕ Fin 4)
     (y : f4ChevalleyLieLattice) :
     f4ModularRootAdjoint k (1 ⊗ₜ[ℤ] y) =
       1 ⊗ₜ[ℤ] f4IntegralRootAdjoint k y := by
   rw [f4ModularRootAdjoint, LinearMap.baseChange_tmul]
 
 /-- The integral first divided power evaluates as the ambient adjoint derivation. -/
-theorem f4IntegralRootAdjoint_apply (k : Fin 4 ⊕ Fin 4)
+@[simp] theorem f4IntegralRootAdjoint_apply (k : Fin 4 ⊕ Fin 4)
     (y : f4ChevalleyLieLattice) :
     ((f4IntegralRootAdjoint k y : f4ChevalleyLieLattice) :
       F4.lieAlgebra valid_F4) =
@@ -185,7 +231,8 @@ theorem f4ModularRootAdjoint_tmul_eq_lie (k : Fin 4 ⊕ Fin 4)
   rw [f4ModularRootAdjoint_tmul, hint, f4ModularRootVector_eq,
     LieAlgebra.ExtendScalars.bracket_tmul, one_mul]
 
-theorem f4ModularRootAdjoint_apply_eq_lie (k : Fin 4 ⊕ Fin 4)
+/-- The reduced first adjoint is the Lie bracket with the signed simple-root vector. -/
+@[simp] theorem f4ModularRootAdjoint_apply_eq_lie (k : Fin 4 ⊕ Fin 4)
     (x : f4ModularChevalleyLieAlgebra) :
     f4ModularRootAdjoint k x =
       ⁅f4ModularRootVector (f4SignedSimpleRootIndex k), x⁆ := by
@@ -231,14 +278,43 @@ noncomputable def f4RootExponentialLieEquiv {A : Type*} [CommRing A] [Algebra �
     A ⊗[ℤ] f4ChevalleyLieLattice ≃ₗ⁅A⁆ A ⊗[ℤ] f4ChevalleyLieLattice :=
   baseChangeExpLieEquiv (f4RootAdjointDerivation k) f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
-    (f4RootAdjointDerivation_isNilpotent k) t
+    (isNilpotent_f4RootAdjointDerivation k) t
 
+/-- The Lie equivalence acts by the integral root exponential on every vector. -/
 @[simp] theorem f4RootExponentialLieEquiv_apply {A : Type*} [CommRing A] [Algebra ℤ A]
     (k : Fin 4 ⊕ Fin 4) (t : A) (x : A ⊗[ℤ] f4ChevalleyLieLattice) :
     f4RootExponentialLieEquiv k t x = f4RootExponential k t x := by
   exact baseChangeExpLieEquiv_apply (f4RootAdjointDerivation k) f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
-    (f4RootAdjointDerivation_isNilpotent k) t x
+    (isNilpotent_f4RootAdjointDerivation k) t x
+
+/-- The integral root action at zero is the identity Lie automorphism. -/
+@[simp] theorem f4RootExponentialLieEquiv_zero {A : Type*} [CommRing A] [Algebra ℤ A]
+    (k : Fin 4 ⊕ Fin 4) :
+    f4RootExponentialLieEquiv (A := A) k 0 = LieEquiv.refl := by
+  simpa only [f4RootExponentialLieEquiv] using
+    (baseChangeExpLieEquiv_zero (R := A) (f4RootAdjointDerivation k)
+      f4ChevalleyLieLattice (f4RootAdjointDerivation_dividedPower_mem k)
+      (isNilpotent_f4RootAdjointDerivation k))
+
+/-- Composing two integral root actions adds their parameters. -/
+@[simp] theorem f4RootExponentialLieEquiv_trans {A : Type*} [CommRing A] [Algebra ℤ A]
+    (k : Fin 4 ⊕ Fin 4) (t u : A) :
+    (f4RootExponentialLieEquiv k t).trans (f4RootExponentialLieEquiv k u) =
+      f4RootExponentialLieEquiv k (t + u) := by
+  simpa only [f4RootExponentialLieEquiv] using
+    (baseChangeExpLieEquiv_trans (f4RootAdjointDerivation k) f4ChevalleyLieLattice
+      (f4RootAdjointDerivation_dividedPower_mem k)
+      (isNilpotent_f4RootAdjointDerivation k) t u)
+
+/-- Negating the parameter gives the inverse integral root action. -/
+@[simp] theorem f4RootExponentialLieEquiv_symm {A : Type*} [CommRing A] [Algebra ℤ A]
+    (k : Fin 4 ⊕ Fin 4) (t : A) :
+    (f4RootExponentialLieEquiv k t).symm = f4RootExponentialLieEquiv k (-t) := by
+  simpa only [f4RootExponentialLieEquiv] using
+    (baseChangeExpLieEquiv_symm (f4RootAdjointDerivation k) f4ChevalleyLieLattice
+      (f4RootAdjointDerivation_dividedPower_mem k)
+      (isNilpotent_f4RootAdjointDerivation k) t)
 
 /-- On a pure tensor killed by the third adjoint power, the root exponential over any parameter
 ring is its three-term integral divided-power polynomial. -/
@@ -254,7 +330,7 @@ theorem f4RootExponential_tmul_of_cube {A : Type*} [CommRing A] [Algebra ℤ A]
   rw [baseChangeExp_tmul_of_pow_smul_eq_zero
     (f4RootAdjointDerivation k).toLinearMap f4ChevalleyLieLattice
     (f4RootAdjointDerivation_dividedPower_mem k)
-    (f4RootAdjointDerivation_isNilpotent k) t 1 y hy]
+    (isNilpotent_f4RootAdjointDerivation k) t 1 y hy]
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, one_mul,
     pow_one, integralDividedPower_zero, Module.End.one_apply]
   have hscalar (s : A) (z : f4ChevalleyLieLattice) :
@@ -290,7 +366,8 @@ noncomputable def f4ShortRootExponential {A : Type*} [CommRing A] [Algebra (ZMod
   1 + t • (f4ShortRootSignedSimpleAdjoint k).baseChange A +
     t ^ 2 • (f4ShortRootDividedAdjointSquare k).baseChange A
 
-theorem f4ShortRootExponential_apply {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
+/-- On pure tensors, the restricted root action is its three-term divided-power polynomial. -/
+@[simp] theorem f4ShortRootExponential_apply {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
     (k : Fin 4 ⊕ Fin 4) (t : A) (z : f4ShortRootLieIdeal) :
     f4ShortRootExponential k t ((1 : A) ⊗ₜ[ZMod 2] z) =
       (1 : A) ⊗ₜ[ZMod 2] z +
@@ -316,7 +393,7 @@ noncomputable def f4ShortRootBaseChangeInclusion {A : Type*} [CommRing A]
 
 /-- On a pure tensor, the scalar-extended ideal inclusion is the scalar-tower cancellation of the
 underlying modular vector. -/
-theorem f4ShortRootBaseChangeInclusion_tmul {A : Type*} [CommRing A]
+@[simp] theorem f4ShortRootBaseChangeInclusion_tmul {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (a : A) (z : f4ShortRootLieIdeal) :
     f4ShortRootBaseChangeInclusion (A := A) (a ⊗ₜ[ZMod 2] z) =
       TauCeti.cancelBaseChange ℤ (ZMod 2) A
@@ -329,6 +406,7 @@ theorem f4ShortRootBaseChangeInclusion_tmul {A : Type*} [CommRing A]
   exact congrArg (TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice)
     (LinearMap.baseChange_tmul f4ShortRootInclusion a z)
 
+/-- Scalar extension preserves the injection of the short-root ideal into the Chevalley lattice. -/
 theorem f4ShortRootBaseChangeInclusion_injective {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] :
     Function.Injective (f4ShortRootBaseChangeInclusion (A := A)) := by
@@ -447,6 +525,7 @@ theorem f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul
       ext i j
       simp [LinearMap.toMatrix_apply, Module.Basis.baseChange_apply, Algebra.smul_def]
 
+/-- A modular ideal vector with an integral lift maps to that lift after scalar extension. -/
 theorem f4ShortRootBaseChangeInclusion_tmul_of_coe_eq {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (a : A) (z : f4ShortRootLieIdeal)
     (y : f4ChevalleyLieLattice)
@@ -482,13 +561,14 @@ theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
       ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootDividedAdjointSquare k z) =
         (1 : A) ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y :=
     f4ShortRootBaseChangeInclusion_tmul_of_coe_eq (A := A) (1 : A) _ _ hd2
-  have hpoly : f4ShortRootExponential (A := A) k t ((1 : A) ⊗ₜ[ZMod 2] z) =
-      ((1 : A) ⊗ₜ[ZMod 2] z) +
-        t • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootSignedSimpleAdjoint k z) +
-        t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootDividedAdjointSquare k z) := by
-    unfold f4ShortRootExponential
-    simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.smul_apply,
-      LinearMap.baseChange_tmul]
+  have hpoly := f4ShortRootExponential_apply (A := A) k t z
+  let ι := f4ShortRootBaseChangeInclusion (A := A)
+  let z₀ := (1 : A) ⊗ₜ[ZMod 2] z
+  let z₁ := (1 : A) ⊗ₜ[ZMod 2] f4ShortRootSignedSimpleAdjoint k z
+  let z₂ := (1 : A) ⊗ₜ[ZMod 2] f4ShortRootDividedAdjointSquare k z
+  have hmap : ι (z₀ + t • z₁ + t ^ 2 • z₂) =
+      ι z₀ + t • ι z₁ + t ^ 2 • ι z₂ := by
+    simp only [map_add, map_smul]
   calc
     _ = f4RootExponential k t ((1 : A) ⊗ₜ[ℤ] y) :=
       congrArg (f4RootExponential k t) hzA
@@ -496,8 +576,8 @@ theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
         t • ((1 : A) ⊗ₜ[ℤ] f4IntegralRootAdjoint k y) +
         t ^ 2 • ((1 : A) ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) :=
       f4RootExponential_tmul_of_cube k t y hy
-    _ = _ := (congrArg (f4ShortRootBaseChangeInclusion (A := A)) hpoly).trans
-      ((show _ = _ from by simp only [map_add, map_smul]).trans
+    _ = _ := (congrArg ι hpoly).trans
+      (hmap.trans
         (congrArg₂ (· + ·)
           (congrArg₂ (· + ·) hzA (congrArg (t • ·) hd1A))
           (congrArg (t ^ 2 • ·) hd2A))) |>.symm
@@ -553,7 +633,7 @@ theorem f4RootExponential_intertwines_basis {A : Type*} [CommRing A]
     obtain ⟨i | j, rfl⟩ := f4ShortRootWeightIndexEquiv.symm.surjective b
     · exact ⟨f4IntegralRootVector i,
         (coe_f4ShortRootLieIdealBasis_symm_inl i).trans (f4ModularRootVector_eq i),
-        f4RootAdjointDerivation_pow_three_integralRootVector k i i.property⟩
+        f4RootAdjointDerivation_pow_three_integralRootVector k i⟩
     · refine ⟨f4IntegralSimpleCoroot (f4ShortSimpleIndex j), ?_,
         f4RootAdjointDerivation_pow_three_integralSimpleCoroot k (f4ShortSimpleIndex j)⟩
       exact (coe_f4ShortRootLieIdealBasis _).trans
@@ -577,6 +657,45 @@ theorem f4RootExponential_intertwines {A : Type*} [CommRing A]
     simp only [Module.Basis.baseChange_apply, LinearMap.comp_apply]
     exact f4RootExponential_intertwines_basis k t b
   exact LinearMap.congr_fun hmaps x
+
+/-- The restricted root action at zero is the identity. -/
+@[simp] theorem f4ShortRootExponential_zero {A : Type*} [CommRing A]
+    [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) :
+    f4ShortRootExponential (A := A) k 0 = 1 := by
+  simp [f4ShortRootExponential]
+
+/-- Restricted root actions compose by addition of their parameters. -/
+theorem f4ShortRootExponential_add {A : Type*} [CommRing A]
+    [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t u : A) :
+    f4ShortRootExponential k (t + u) =
+      f4ShortRootExponential k t * f4ShortRootExponential k u := by
+  apply LinearMap.ext
+  intro z
+  apply f4ShortRootBaseChangeInclusion_injective
+  have h := congrArg (fun e : A ⊗[ℤ] f4ChevalleyLieLattice ≃ₗ⁅A⁆
+      A ⊗[ℤ] f4ChevalleyLieLattice =>
+        e (f4ShortRootBaseChangeInclusion (A := A) z))
+    (f4RootExponentialLieEquiv_trans (A := A) k u t)
+  simpa only [add_comm u t, LieEquiv.trans_apply, f4RootExponentialLieEquiv_apply,
+    f4RootExponential_intertwines, Module.End.mul_apply] using h.symm
+
+/-- The action with opposite parameter is a left inverse. -/
+@[simp] theorem f4ShortRootExponential_neg_mul {A : Type*} [CommRing A]
+    [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t : A) :
+    f4ShortRootExponential k (-t) * f4ShortRootExponential k t = 1 := by
+  calc
+    _ = f4ShortRootExponential k (-t + t) :=
+      (f4ShortRootExponential_add k (-t) t).symm
+    _ = 1 := by simpa only [neg_add_cancel] using f4ShortRootExponential_zero (A := A) k
+
+/-- The action with opposite parameter is a right inverse. -/
+@[simp] theorem f4ShortRootExponential_mul_neg {A : Type*} [CommRing A]
+    [Algebra (ZMod 2) A] (k : Fin 4 ⊕ Fin 4) (t : A) :
+    f4ShortRootExponential k t * f4ShortRootExponential k (-t) = 1 := by
+  calc
+    _ = f4ShortRootExponential k (t + -t) :=
+      (f4ShortRootExponential_add k t (-t)).symm
+    _ = 1 := by simpa only [add_neg_cancel] using f4ShortRootExponential_zero (A := A) k
 
 /-- Conjugation by a signed-simple root exponential carries the scalar-extended adjoint action
 to the adjoint action of the transformed ambient vector. -/

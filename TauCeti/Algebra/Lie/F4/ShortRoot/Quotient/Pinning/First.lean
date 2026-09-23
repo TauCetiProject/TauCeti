@@ -182,12 +182,12 @@ private theorem exists_f4SignedLongCoroot_quotient_ideal_coordinate
       f4ModularCoroot (f4SignedSimpleRootIndex (isogenyReverse k)) =
         (f4ShortRootLieIdealBasis c : f4ModularChevalleyLieAlgebra) := by
   rcases k with ⟨j⟩ | ⟨j⟩ <;> fin_cases j
-  · exact ⟨13, f4ShortRootSubspace_mkQ_modularCoroot_table_inl_zero,
+  · exact ⟨13, f4ShortRootSubspace_mkQ_modularCoroot_inl_zero_eq_quotientBasis,
       (coe_f4ShortRootLieIdealBasis_thirteen.trans (by
         simp only [isogenyReverse, Sum.map_inl, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inl, f4ModularCoroot_castAdd]
         rfl)).symm⟩
-  · exact ⟨12, f4ShortRootSubspace_mkQ_modularCoroot_table_inl_one,
+  · exact ⟨12, f4ShortRootSubspace_mkQ_modularCoroot_inl_one_eq_quotientBasis,
       (coe_f4ShortRootLieIdealBasis_twelve.trans (by
         simp only [isogenyReverse, Sum.map_inl, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inl, f4ModularCoroot_castAdd]
@@ -196,12 +196,12 @@ private theorem exists_f4SignedLongCoroot_quotient_ideal_coordinate
     contradiction
   · rw [f4SignedSimpleRootIndex_inl, f4Length_def] at hk
     contradiction
-  · exact ⟨13, f4ShortRootSubspace_mkQ_modularCoroot_table_inr_zero,
+  · exact ⟨13, f4ShortRootSubspace_mkQ_modularCoroot_inr_zero_eq_quotientBasis,
       (coe_f4ShortRootLieIdealBasis_thirteen.trans (by
         simp only [isogenyReverse, Sum.map_inr, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd, f4ModularCoroot_addNat_castAdd]
         rfl)).symm⟩
-  · exact ⟨12, f4ShortRootSubspace_mkQ_modularCoroot_table_inr_one,
+  · exact ⟨12, f4ShortRootSubspace_mkQ_modularCoroot_inr_one_eq_quotientBasis,
       (coe_f4ShortRootLieIdealBasis_twelve.trans (by
         simp only [isogenyReverse, Sum.map_inr, Fin.revPerm_apply, Fin.rev,
           f4SignedSimpleRootIndex_inr, f4OppositeRootIndex_castAdd, f4ModularCoroot_addNat_castAdd]

@@ -141,15 +141,6 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul_of_cube
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) (f4IntegralRootAdjoint k x))
         (f4ShortRootBaseChangeQuotient_tmul (1 : A) (f4IntegralDividedAdjointSquare k x))))
 
-/-- The third signed-simple-root adjoint power annihilates every integral long-root vector. -/
-theorem f4RootAdjointDerivation_pow_three_integralRootVector_of_long
-    (k : Fin 4 ⊕ Fin 4) (i : Fin 48) (hi : f4Length i = 2) :
-    ((f4RootAdjointDerivation k).toLinearMap ^ 3)
-        (f4IntegralRootVector i : F4.lieAlgebra valid_F4) = 0 := by
-  rw [f4RootAdjointDerivation_toLinearMap, coe_f4IntegralRootVector]
-  exact f4_ad_cube_rootVector_eq_zero_of_long
-    (f4SignedSimpleRootIndex k) i hi
-
 /-- The canonical integral lift of a quotient basis coordinate: a long root vector, or the long
 simple coroot `h₁`, `h₀` at coordinates `12`, `13`. -/
 noncomputable def f4IntegralShortRootQuotientLift (a : Fin 26) :
@@ -255,9 +246,7 @@ theorem f4RootAdjointDerivation_pow_three_integralShortRootQuotientLift
       rw [h, Equiv.apply_symm_apply]
     subst a
     simp only [f4IntegralShortRootQuotientLift, Equiv.apply_symm_apply]
-    exact f4RootAdjointDerivation_pow_three_integralRootVector_of_long k _
-      (by simpa only [f4SpecialIsogenyIndexEquiv_apply] using
-        (f4Length_specialIsogenyIndex_eq_two_iff i).2 i.property)
+    exact f4RootAdjointDerivation_pow_three_integralRootVector k _
   · have ha : a = f4ShortRootWeightIndexEquiv.symm (Sum.inr j) := by
       apply f4ShortRootWeightIndexEquiv.injective
       rw [h, Equiv.apply_symm_apply]
