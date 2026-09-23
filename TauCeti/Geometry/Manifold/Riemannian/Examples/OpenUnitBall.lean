@@ -29,10 +29,11 @@ a closed subset of `ℝ`.
 * `TauCeti.RealOpenUnitBall.exists_pathELength_eq_edist`: every point is joined to the centre by
   a `C¹` path whose Riemannian length realizes the distance.
 * `TauCeti.RealOpenUnitBall.not_completeSpace`: the open unit ball is not complete.
-* `TauCeti.RealOpenUnitBall.closedBall_center_two`: its radius-two closed ball is the whole space.
-* `TauCeti.RealOpenUnitBall.not_isCompact_closedBall_center_two` and
-  `TauCeti.RealOpenUnitBall.not_properSpace`: that closed ball is not compact, so the space is not
-  proper.
+* `TauCeti.RealOpenUnitBall.closedBall_center_eq_univ`: every closed ball of radius at least one
+  is the whole space.
+* `TauCeti.RealOpenUnitBall.not_isCompact_closedBall_center` and
+  `TauCeti.RealOpenUnitBall.not_properSpace`: those closed balls are not compact, so the space is
+  not proper.
 -/
 
 public section
@@ -77,7 +78,8 @@ theorem isRiemannianManifold : IsRiemannianManifold 𝓘(ℝ, ℝ) realOpenUnitB
 /-- The radial segment from the centre to `q`, affinely parametrized on `[0, 1]` and clamped
 outside that interval. -/
 def radialSegment (q : realOpenUnitBall) : ℝ → realOpenUnitBall :=
-  Manifold.convexSegment realOpenUnitBall (convex_ball (0 : ℝ) 1) center q
+  TauCeti.TopologicalSpace.Opens.convexSegment realOpenUnitBall
+    (convex_ball (0 : ℝ) 1) center q
 
 /-- On `[0, 1]`, the radial segment from the centre to `q` is `t ↦ t * q`. -/
 theorem coe_radialSegment (q : realOpenUnitBall) (t : ℝ) (ht : t ∈ Icc 0 1) :
@@ -86,25 +88,33 @@ theorem coe_radialSegment (q : realOpenUnitBall) (t : ℝ) (ht : t ∈ Icc 0 1) 
     (radialSegment q t : ℝ) =
         ⇑(ContinuousAffineMap.lineMap (R := ℝ) (center : ℝ) (q : ℝ)) t := by
       simpa only [radialSegment, Function.comp_apply] using
-        Manifold.convexSegment_val_eqOn realOpenUnitBall
+        TauCeti.TopologicalSpace.Opens.convexSegment_val_eqOn realOpenUnitBall
           (convex_ball (0 : ℝ) 1) center q t ht
     _ = t * (q : ℝ) := by
       simp [ContinuousAffineMap.coe_lineMap_eq, AffineMap.lineMap_apply_module]
 
-/-- The radial segment has the centre and `q` as its endpoints. -/
-theorem radialSegment_endpoints (q : realOpenUnitBall) :
-    radialSegment q 0 = center ∧ radialSegment q 1 = q :=
-  Manifold.convexSegment_endpoints realOpenUnitBall (convex_ball (0 : ℝ) 1) center q
+/-- The radial segment starts at the centre of the open unit ball. -/
+@[simp]
+theorem radialSegment_zero (q : realOpenUnitBall) : radialSegment q 0 = center :=
+  TauCeti.TopologicalSpace.Opens.convexSegment_zero realOpenUnitBall
+    (convex_ball (0 : ℝ) 1) center q
+
+/-- The radial segment ends at `q`. -/
+@[simp]
+theorem radialSegment_one (q : realOpenUnitBall) : radialSegment q 1 = q :=
+  TauCeti.TopologicalSpace.Opens.convexSegment_one realOpenUnitBall
+    (convex_ball (0 : ℝ) 1) center q
 
 /-- The radial segment is `C¹` on `[0, 1]`. -/
 theorem contMDiffOn_radialSegment (q : realOpenUnitBall) :
     CMDiff[Icc 0 1] 1 (radialSegment q) :=
-  Manifold.contMDiffOn_convexSegment realOpenUnitBall (convex_ball (0 : ℝ) 1) center q
+  TauCeti.TopologicalSpace.Opens.contMDiffOn_convexSegment realOpenUnitBall
+    (convex_ball (0 : ℝ) 1) center q
 
 /-- The radial segment realizes the distance from the centre to `q`. -/
 theorem pathELength_radialSegment (q : realOpenUnitBall) :
     pathELength 𝓘(ℝ, ℝ) (radialSegment q) 0 1 = edist center q :=
-  Manifold.pathELength_convexSegment_eq_edist realOpenUnitBall
+  TauCeti.TopologicalSpace.Opens.pathELength_convexSegment_eq_edist realOpenUnitBall
     (convex_ball (0 : ℝ) 1) center q
 
 /-- Every point of the real open unit ball is joined to its centre by its radial `C¹` segment,
@@ -112,8 +122,8 @@ whose Riemannian length is exactly the distance between its endpoints. -/
 theorem exists_pathELength_eq_edist (q : realOpenUnitBall) :
     ∃ γ : ℝ → realOpenUnitBall, CMDiff[Icc 0 1] 1 γ ∧ γ 0 = center ∧ γ 1 = q ∧
       pathELength 𝓘(ℝ, ℝ) γ 0 1 = edist center q := by
-  exact ⟨radialSegment q, contMDiffOn_radialSegment q, (radialSegment_endpoints q).1,
-    (radialSegment_endpoints q).2, pathELength_radialSegment q⟩
+  exact ⟨radialSegment q, contMDiffOn_radialSegment q, radialSegment_zero q,
+    radialSegment_one q, pathELength_radialSegment q⟩
 
 /-- The real open unit ball is not complete. -/
 theorem not_completeSpace : ¬ CompleteSpace realOpenUnitBall := by
@@ -132,21 +142,22 @@ theorem not_completeSpace : ¬ CompleteSpace realOpenUnitBall := by
   rw [hclosure] at hone
   simp at hone
 
-/-- The closed ball of radius two about the centre is the whole real open unit ball. -/
-@[simp]
-theorem closedBall_center_two : Metric.closedBall center 2 = univ := by
+/-- A closed ball of radius at least one about the centre is the whole real open unit ball. -/
+theorem closedBall_center_eq_univ (r : ℝ) (hr : 1 ≤ r) :
+    Metric.closedBall center r = univ := by
   apply eq_univ_of_forall
   intro x
   rw [mem_closedBall]
   have hdist : dist x center = |(x : ℝ)| := by
     rw [Subtype.dist_eq, coe_center, Real.dist_eq, sub_zero]
   rw [hdist]
-  exact (mem_iff.mp x.property).le.trans (by norm_num)
+  exact (mem_iff.mp x.property).le.trans hr
 
-/-- The radius-two closed ball about the centre of the real open unit ball is not compact. -/
-theorem not_isCompact_closedBall_center_two :
-    ¬ IsCompact (Metric.closedBall center 2) := by
-  rw [closedBall_center_two, isCompact_univ_iff]
+/-- A closed ball of radius at least one about the centre of the real open unit ball is not
+compact. -/
+theorem not_isCompact_closedBall_center (r : ℝ) (hr : 1 ≤ r) :
+    ¬ IsCompact (Metric.closedBall center r) := by
+  rw [closedBall_center_eq_univ r hr, isCompact_univ_iff]
   intro hcompact
   let _ := hcompact
   exact not_completeSpace inferInstance
@@ -155,7 +166,7 @@ theorem not_isCompact_closedBall_center_two :
 theorem not_properSpace : ¬ ProperSpace realOpenUnitBall := by
   intro hproper
   let _ := hproper
-  exact not_isCompact_closedBall_center_two (isCompact_closedBall center 2)
+  exact not_isCompact_closedBall_center 2 (by norm_num) (isCompact_closedBall center 2)
 
 end RealOpenUnitBall
 
