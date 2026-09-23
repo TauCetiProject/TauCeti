@@ -74,6 +74,7 @@ private noncomputable def torsionByPrimeEquiv (p k : ℕ) [NeZero p] :
     rw [ZMod.lift_coe]
     simp only [zmultiplesHom_apply]
     rw [natCast_zsmul]
+    -- `Subtype.ext` leaves equality in the ambient `ZMod`; its scalar action is inherited.
     change (x.1.val / p ^ k) • (p ^ k : ZMod (p ^ (k + 1))) = x.1
     rw [nsmul_eq_mul]
     rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
@@ -114,10 +115,12 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
     let T : AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) ≃
         (∀ i : ι, AddSubgroup.torsionBy (ZMod (n i)) (p : ℤ)) :=
       { toFun := fun x i ↦ ⟨x.1 i, by
+          -- Torsion membership in a product is pointwise scalar annihilation.
           change (p : ℤ) • x.1 i = 0
           have hx : (p : ℤ) • x.1 = 0 := x.2
           exact congrFun hx i⟩
         invFun := fun x ↦ ⟨fun i ↦ x i, by
+          -- The scalar action and zero of a dependent function are defined pointwise.
           change (p : ℤ) • (fun i ↦ (x i : ZMod (n i))) = 0
           funext i
           exact (x i).2⟩
@@ -139,6 +142,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
       AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) := by
     ext x
     rw [AddSubgroup.mem_map_equiv]
+    -- Membership in both torsion subgroups unfolds to the displayed annihilation equations.
     change (p : ℤ) • E.symm x = 0 ↔ (p : ℤ) • x = 0
     constructor
     · intro hx
@@ -154,6 +158,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
     exact Nat.pow_right_injective hp.two_le ht
   have hsum : ∑ i, a i = 2 * k := by
     apply Nat.pow_right_injective hp.two_le
+    -- Applying injectivity exposes equality after applying the power function.
     change p ^ (∑ i, a i) = p ^ (2 * k)
     rw [← Finset.prod_pow_eq_pow_sum Finset.univ a p]
     simp only [← ha, hcard_prod]

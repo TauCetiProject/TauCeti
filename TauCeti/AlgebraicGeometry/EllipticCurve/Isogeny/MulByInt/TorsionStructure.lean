@@ -162,6 +162,7 @@ private theorem primePowerCoprimeInt (N : ℕ) : (N.primeFactors : Set ℕ).Pair
     (Function.onFun IsCoprime fun p ↦ ((p ^ N.factorization p : ℕ) : ℤ)) := by
   intro p hp r hr hpr
   exact (Nat.Coprime.cast <| N.pairwise_coprime_pow_primeFactors_factorization
+    -- The factorization theorem indexes by prime-factor subtypes, so lift `p ≠ r` to them.
     (show (⟨p, hp⟩ : N.primeFactors) ≠ ⟨r, hr⟩ by
       intro h
       exact hpr (congrArg Subtype.val h)))
@@ -182,6 +183,7 @@ private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
   have hN0 : N ≠ 0 := NeZero.ne N
   apply Submodule.torsionBy_isInternal (primePowerCoprimeInt N)
   rw [prodPrimePowerInt hN0]
+  -- `AddSubgroup.torsionBy` is the underlying subtype of this `Module.IsTorsionBy` instance.
   change Module.IsTorsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) (N : ℤ)
   exact Submodule.torsionBy_isTorsionBy (R := ℤ) (M := W.toAffine.Point) (N : ℤ)
 
