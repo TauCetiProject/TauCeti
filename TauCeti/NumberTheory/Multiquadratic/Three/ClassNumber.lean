@@ -21,9 +21,9 @@ integral representative of norm `1`, that is, the unit ideal. Mathlib's
 `NumberField.RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt` packages exactly this
 comparison, and `12 < 16` is the required numerical inequality.
 
-Total reality is what makes the bound small enough: an imaginary quadratic field of the same
-absolute discriminant would carry the extra factor `4/π`, and `(4/π)·√12/2 ≈ 2.2` would not
-suffice.
+Total reality is what makes the bound small enough: at absolute discriminant `12`, the
+hypothetical imaginary-signature Minkowski bound would carry the extra factor `4/π`, giving
+`(4/π)·√12/2 ≈ 2.2`, which would not suffice.
 
 The main theorem is stated for any number field with an integral generator of minimal polynomial
 `X² - 3`; the final theorem applies it to the `AdjoinRoot (X² - 3)` model.

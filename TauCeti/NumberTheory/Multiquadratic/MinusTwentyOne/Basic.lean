@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Squarefree.Basic
 public import TauCeti.RingTheory.AdjoinRoot
 public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
-import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.Data.Nat.Squarefree
 
