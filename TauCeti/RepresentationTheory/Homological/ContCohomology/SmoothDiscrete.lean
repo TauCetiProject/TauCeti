@@ -76,8 +76,6 @@ provide the basic examples of smooth discrete objects used by coefficient constr
   underlying map, which is how statements phrased with it are specialised.
 * `TauCeti.res_ofDiscreteModule`: the dictionary commutes with restriction to a subgroup, on the
   nose.
-* `TauCeti.addSubgroupContinuousLinearEquivInvariants`: a subgroup specified by an invariant
-  membership condition is continuously linearly equivalent to those invariants.
 * `TauCeti.isSmoothDiscrete_of_ρ_apply_eq_self`: a discrete object with trivial action is smooth
   discrete.
 * `TauCeti.IsSmoothDiscrete.res`: smoothness is inherited by restriction along a continuous
@@ -254,29 +252,6 @@ variable {R G M}
     (ofDiscreteModule R G M).ρ g m = g • m := (rfl)
 
 end OfDiscreteModule
-
-section DiscreteInvariants
-
-variable (G : Type v) [Monoid G]
-  (M : Type w) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-
-/-- A subgroup of a discrete module is continuously linearly equivalent to the invariants of a
-continuous representation when they have the same underlying elements. The body is exposed so
-that pointwise compatibility lemmas for dictionary morphisms can reduce its underlying map. -/
-@[expose]
-def addSubgroupContinuousLinearEquivInvariants (S : AddSubgroup M)
-    (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) :
-    S ≃L[ℤ] pi.invariants where
-  toFun m := ⟨m.1, (h m.1).2 m.2⟩
-  invFun m := ⟨m.1, (h m.1).1 m.2⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := continuous_of_discreteTopology
-  continuous_invFun := continuous_of_discreteTopology
-
-end DiscreteInvariants
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 

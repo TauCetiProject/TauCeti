@@ -236,7 +236,7 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
       TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H :=
   let f : FixedPoints.addSubgroup H M →L[ℤ]
       ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype).invariants :=
-    (@addSubgroupContinuousLinearEquivInvariants H _ M _ _
+    (@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
       (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
         ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) fun m ↦
           (ContRepresentation.mem_invariants m).trans
@@ -248,7 +248,17 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
         | H g =>
           ext m
           have f_apply (x : FixedPoints.addSubgroup H M) : (f x).1 = (x : M) := by
-            rfl
+            change
+              ((@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
+                (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+                ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+                  (ContRepresentation.mem_invariants m).trans
+                    (FixedPoints.mem_addSubgroup H M m).symm) x).1) = x.1
+            exact @AddSubgroup.continuousLinearEquivInvariants_val H M _ _ _
+              (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+              ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+                (ContRepresentation.mem_invariants m).trans
+                  (FixedPoints.mem_addSubgroup H M m).symm) x
           -- `isIntertwining'` stores an equality of composed linear maps; after extensionality,
           -- expose their applications so the public evaluation lemmas can rewrite both sides.
           change
@@ -265,19 +275,18 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
 @[simp]
 theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
-    (ofDiscreteModuleQuotient G M H m).1 = (m : M) :=
-  (rfl)
-
-/-- Including the quotient-invariants dictionary morphism into the ambient canonical object
-preserves the underlying coefficient. This is the pointwise coefficient identity in the
-compatible pair defining inflation. -/
-@[simp]
-theorem quotientToInvariantsι_ofDiscreteModuleQuotient_apply
-    (H : Subgroup G) [H.Normal] (m : FixedPoints.addSubgroup H M) :
-    TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) H
-        (ofDiscreteModuleQuotient G M H m) = (m : M) := by
-  rw [TopRep.quotientToInvariantsι_apply]
-  exact ofDiscreteModuleQuotient_apply G M H m
+    (ofDiscreteModuleQuotient G M H m).1 = (m : M) := by
+  change
+    ((@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
+      (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+      ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+        (ContRepresentation.mem_invariants m).trans
+          (FixedPoints.mem_addSubgroup H M m).symm) m).1) = m.1
+  exact @AddSubgroup.continuousLinearEquivInvariants_val H M _ _ _
+    (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+    ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+      (ContRepresentation.mem_invariants m).trans
+        (FixedPoints.mem_addSubgroup H M m).symm) m
 
 end Dictionary
 

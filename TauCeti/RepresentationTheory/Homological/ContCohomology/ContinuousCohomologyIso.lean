@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
@@ -103,20 +104,33 @@ Both carry the subspace topology of the discrete `M`, so the identification is a
 well as an isomorphism of `ℤ`-modules. -/
 def H0ContinuousLinearEquivInvariants :
     H0 G M ≃L[ℤ] (ofDiscreteModule ℤ G M).ρ.invariants :=
-  @addSubgroupContinuousLinearEquivInvariants G _ M _ _
-    (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+  @AddSubgroup.continuousLinearEquivInvariants G M _ _ _
+    (inferInstance : DiscreteTopology M) (H0 G M)
+      (ofDiscreteModule ℤ G M).ρ
       (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)
 
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
-    (H0ContinuousLinearEquivInvariants G M m).1 = m.1 :=
-  (rfl)
+    (H0ContinuousLinearEquivInvariants G M m).1 = m.1 := by
+  change
+    ((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
+      (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m).1) = m.1
+  exact @AddSubgroup.continuousLinearEquivInvariants_val G M _ _ _
+    (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+    (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_symm_val
     (m : (ofDiscreteModule ℤ G M).ρ.invariants) :
-    ((H0ContinuousLinearEquivInvariants G M).symm m).1 = m.1 :=
-  (rfl)
+    ((H0ContinuousLinearEquivInvariants G M).symm m).1 = m.1 := by
+  change
+    (((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
+      (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)).symm m).1) = m.1
+  exact @AddSubgroup.continuousLinearEquivInvariants_symm_val G M _ _ _
+    (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+    (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
 end Carriers
 
@@ -170,7 +184,8 @@ theorem coe_explicitH0IsoContinuousCohomology_inv_apply
     (y : continuousCohomology 0 (ofDiscreteModule ℤ G M)) :
     (((explicitH0IsoContinuousCohomology G M).inv y : H0 G M) : M) =
       ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).1 :=
-  (rfl)
+  H0ContinuousLinearEquivInvariants_symm_val G M
+    ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)
 
 end Comparison
 
