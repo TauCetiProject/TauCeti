@@ -158,30 +158,9 @@ private theorem hasSum_mul_zpow_natCast_sub_iff {a : ℕ → ℂ} {q s : ℂ}
     (hq : q ≠ 0) (k : ℤ) :
     HasSum (fun n : ℕ ↦ a n * q ^ ((n : ℤ) - k)) s ↔
       HasSum (fun n : ℕ ↦ a n * q ^ n) (q ^ k * s) := by
-  have hpow (n : ℕ) : q ^ ((n : ℤ) - k) = q ^ (-k) * q ^ n := by
-    rw [show (n : ℤ) - k = -k + (n : ℤ) by omega, zpow_add₀ hq, zpow_natCast]
-  constructor
-  · intro hsum
-    have hterms : (fun n : ℕ ↦ q ^ k * (a n * q ^ ((n : ℤ) - k))) =
-        fun n : ℕ ↦ a n * q ^ n := by
-      funext n
-      rw [hpow]
-      calc
-        q ^ k * (a n * (q ^ (-k) * q ^ n)) =
-            (q ^ k * q ^ (-k)) * (a n * q ^ n) := by ring
-        _ = a n * q ^ n := by rw [← zpow_add₀ hq, add_neg_cancel, zpow_zero, one_mul]
-    simpa only [hterms] using hsum.mul_left (q ^ k)
-  · intro hsum
-    have hterms : (fun n : ℕ ↦ q ^ (-k) * (a n * q ^ n)) =
-        fun n : ℕ ↦ a n * q ^ ((n : ℤ) - k) := by
-      funext n
-      rw [hpow]
-      ring
-    have htotal : q ^ (-k) * (q ^ k * s) = s := by
-      calc
-        q ^ (-k) * (q ^ k * s) = (q ^ (-k) * q ^ k) * s := by ring
-        _ = s := by rw [← zpow_add₀ hq, neg_add_cancel, zpow_zero, one_mul]
-    simpa only [hterms, htotal] using hsum.mul_left (q ^ (-k))
+  have hpow (n : ℕ) : q ^ k * (a n * q ^ ((n : ℤ) - k)) = a n * q ^ n := by
+    rw [mul_left_comm, ← zpow_natCast, ← zpow_add₀ hq, add_sub_cancel]
+  exact (hasSum_mul_left_iff (zpow_ne_zero k hq)).symm.trans (by simp only [hpow])
 
 /-- The Laurent q-expansion converges to the cusp extension throughout the punctured unit disc,
 when reindexed over its potentially nonzero coefficients. -/
@@ -323,15 +302,10 @@ theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : ℍ → 
     laurentQExpansion D k f = laurentQExpansion D k' f := by
   apply HahnSeries.ext
   funext j
-  by_cases hj : j < -k'
-  · rw [laurentQExpansion_coeff_eq_zero_of_lt_neg D k' f hj,
-      laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (lt_of_lt_of_le hj (by omega))]
-  · let n := (j + k').toNat
-    have hn : (n : ℤ) - k' = j := by
-      simp only [n]
-      omega
-    rw [← hn, laurentQExpansion_coeff_natCast_sub,
-      laurentQExpansion_coeff_natCast_sub_of_le D hkk' f hf hhol hbound]
+  exact laurentQExpansion_coeff_unique D k' f hf hhol
+    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width D.width_pos hkk' hbound)
+    (fun j hj ↦ laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (by omega))
+    (hasSum_laurentQExpansion_coordinate D k f hf hhol hbound) j
 
 /-- The Laurent q-expansion is independent of which valid exponential growth bound is used to
 construct it. -/
