@@ -206,6 +206,10 @@ def subfan : Fan i where
 @[simp]
 theorem subfan_cones : (Φ.subfan S hS hface).cones = S := (rfl)
 
+/-- A subfan uses the ambient fan's integral lattice. -/
+@[simp]
+theorem subfan_lattice : (Φ.subfan S hS hface).lattice = Φ.lattice := (rfl)
+
 /-- The support of a subfan is contained in the support of the ambient fan. -/
 theorem support_subfan_subset : (Φ.subfan S hS hface).support ⊆ Φ.support := by
   intro x hx
@@ -408,5 +412,37 @@ theorem leastCone_isFaceOf (f : FanHom Φ Ψ) {τ σ : PointedCone ℝ V}
     (f.leastCone_mono (Φ.mem_of_isFaceOf hσ h) hσ h.le)
 
 end FanHom
+
+namespace Fan
+
+variable (Φ : Fan i) (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ.cones)
+  (hface : ∀ ⦃σ τ⦄, σ ∈ S → τ.IsFaceOf σ → τ ∈ S)
+
+/-- The inclusion of a subfan in its ambient fan, as a fan morphism with identity lattice and
+real maps. -/
+def subfanInclusion : FanHom (Φ.subfan S hS hface) Φ where
+  latticeMap := AddMonoidHom.id N
+  realMap := LinearMap.id
+  map_lattice _ := rfl
+  map_cone σ hσ := ⟨σ, hS (by simpa only [subfan_cones] using hσ), by simp⟩
+
+@[simp]
+theorem subfanInclusion_latticeMap :
+    (Φ.subfanInclusion S hS hface).latticeMap = AddMonoidHom.id N := (rfl)
+
+@[simp]
+theorem subfanInclusion_realMap :
+    (Φ.subfanInclusion S hS hface).realMap = LinearMap.id := (rfl)
+
+/-- The least ambient cone containing a cone of a subfan is that cone itself. -/
+theorem subfanInclusion_leastCone (σ : (Φ.subfan S hS hface).cones) :
+    (Φ.subfanInclusion S hS hface).leastCone σ.2 = σ.1 := by
+  apply le_antisymm
+  · apply FanHom.leastCone_le _ σ.2 (hS (by simpa only [subfan_cones] using σ.2))
+    simp [subfanInclusion_realMap]
+  · simpa only [subfanInclusion_realMap, PointedCone.map_id] using
+      (Φ.subfanInclusion S hS hface).map_le_leastCone σ.2
+
+end Fan
 
 end TauCeti.Toric
