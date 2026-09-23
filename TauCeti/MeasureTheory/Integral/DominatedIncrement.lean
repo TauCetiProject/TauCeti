@@ -44,8 +44,9 @@ therefore stated in the packaged `UniformContinuousOn` / `Metric.ediam` vocabula
 `ε`–`δ` form; `Metric.uniformContinuousOn_iff_le` unpacks the first for a consumer that wants an
 explicit modulus, and `Metric.isBounded_iff_ediam_ne_top` the second.
 
-The target is an arbitrary pseudo-metric space: the domination hypothesis is a statement about
-`edist`, and neither conclusion sees any linear structure. The domain is `ℝ` with Lebesgue measure,
+The domination hypothesis is a statement about `edist`, and no conclusion sees any linear
+structure: the diameter bound holds for an arbitrary pseudo-emetric target, and boundedness and
+uniform continuity for an arbitrary pseudo-metric one. The domain is `ℝ` with Lebesgue measure,
 which is where `Ioc x y` and its measure `ENNReal.ofReal (y - x)` — the two things the modulus
 argument uses — live.
 

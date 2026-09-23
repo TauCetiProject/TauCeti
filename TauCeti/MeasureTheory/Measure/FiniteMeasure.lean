@@ -81,8 +81,7 @@ instance FiniteMeasure.instMeasurableSingletonClass [CountablyGenerated α] :
 
 /-- **Singletons are measurable in the space of probability measures** whenever they are measurable
 in the space of finite measures, as they are when the σ-algebra on `α` is countably generated
-(`FiniteMeasure.instMeasurableSingletonClass`). Pulled back along the injective measurable map
-`ProbabilityMeasure.toFiniteMeasure`. -/
+(`FiniteMeasure.instMeasurableSingletonClass`). -/
 instance ProbabilityMeasure.instMeasurableSingletonClass
     [MeasurableSingletonClass (FiniteMeasure α)] :
     MeasurableSingletonClass (ProbabilityMeasure α) where
