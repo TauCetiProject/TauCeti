@@ -36,7 +36,8 @@ quotient by such a power.
 * `exists_pow_ι_mem_centralAugmentation_of_isNilpotent_ad`: in exponential characteristic
   `p ≠ 1`, a Frobenius power of `ι x` lies in the intersection when `ad x` is nilpotent.
 * `exists_pow_mul_ι_mem_centralAugmentationIdeal_pow_of_isNilpotent_ad`:
-  one Frobenius exponent works in every power of the generated ideal when `ad x` is nilpotent.
+  in exponential characteristic `p ≠ 1`, one Frobenius exponent works in every power of the
+  generated ideal when `ad x` is nilpotent.
 
 ## See also
 
@@ -100,8 +101,8 @@ theorem exists_pow_ι_mem_centralAugmentation_of_isNilpotent_ad (p : ℕ) [ExpCh
   refine ⟨e, (mem_centralAugmentation R U).mpr ⟨hcentral, ?_⟩⟩
   exact pow_ι_mem_augmentation_toIdeal R L x (pow_ne_zero e (expChar_ne_zero R p))
 
-/-- If `ad x` is nilpotent, every power of the central augmentation ideal contains the
-corresponding power of a Frobenius power of `ι x`. -/
+/-- If `ad x` is nilpotent in exponential characteristic `p ≠ 1`, every power of the central
+augmentation ideal contains the corresponding power of a Frobenius power of `ι x`. -/
 theorem exists_pow_mul_ι_mem_centralAugmentationIdeal_pow_of_isNilpotent_ad
     (p : ℕ) [ExpChar R p] (hp : p ≠ 1) {x : L}
     (h : IsNilpotent (LieAlgebra.ad R L x)) :
