@@ -268,8 +268,13 @@ theorem isEmpty_commute_pentagon
   unfold commute
   simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
-    (D.isEmpty_toRectangleDecomposition_first hrectangle)
-    (D.isEmpty_toRectangleDecomposition_second hpentagon)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
 
 /-- Reordering preserves emptiness of the rectangle when both original domains are empty. -/
 theorem isEmpty_commute_rectangle
@@ -278,8 +283,13 @@ theorem isEmpty_commute_rectangle
     (D.commute h).rectangle.IsEmpty := by
   unfold commute
   exact D.toRectangleDecomposition.isEmpty_commute_second (D.hasDisjointSides_def.mp h)
-    (D.isEmpty_toRectangleDecomposition_first hrectangle)
-    (D.isEmpty_toRectangleDecomposition_second hpentagon)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
 
 end GridRectanglePentagonDecomposition
 
@@ -410,8 +420,13 @@ theorem isEmpty_commute_rectangle
     (D.commute h).rectangle.IsEmpty := by
   unfold commute
   exact D.toRectangleDecomposition.isEmpty_commute_first (D.hasDisjointSides_def.mp h)
-    (D.isEmpty_toRectangleDecomposition_first hpentagon)
-    (D.isEmpty_toRectangleDecomposition_second hrectangle)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hpentagon)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hrectangle)
 
 /-- Reordering preserves emptiness of the pentagon when both original domains are empty. -/
 theorem isEmpty_commute_pentagon
@@ -421,8 +436,13 @@ theorem isEmpty_commute_pentagon
   unfold commute
   simp only [GridPentagonBetween.ofToGridRectangleEq_toGridRectangleBetween]
   exact D.toRectangleDecomposition.isEmpty_commute_second (D.hasDisjointSides_def.mp h)
-    (D.isEmpty_toRectangleDecomposition_first hpentagon)
-    (D.isEmpty_toRectangleDecomposition_second hrectangle)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hpentagon)
+    (by
+      simpa only [GridRectangleBetween.IsEmpty, GridRectangle.IsEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hrectangle)
 
 /-- Reordering a disjoint pentagon--rectangle decomposition twice recovers the original
 decomposition. -/

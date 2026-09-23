@@ -48,12 +48,6 @@ geometric pairing makes the exact target of the juxtaposition argument explicit.
 * `TauCeti.GridDiagram.pentagonMap_unblockedDifferential_single_apply` and
   `TauCeti.GridDiagram.unblockedDifferential_pentagonMap_single_apply` identify those sums with
   the two sides of the chain-map equation on a grid-state generator.
-* `TauCeti.GridPentagonRectangleDecomposition.turn_mem_toRectangleDecomposition_first` and
-  `TauCeti.GridRectanglePentagonDecomposition.turn_mem_toRectangleDecomposition_second` transport
-  the pentagon turn point to the underlying rectangles.
-* `TauCeti.GridPentagonRectangleDecomposition.isEmpty_toRectangleDecomposition_first` and
-  `TauCeti.GridRectanglePentagonDecomposition.isEmpty_toRectangleDecomposition_second` transport
-  emptiness to the underlying rectangle decomposition.
 
 ## References
 
@@ -274,32 +268,6 @@ theorem toRectangleDecomposition_second_toGridRectangle
   unfold toRectangleDecomposition
   rfl
 
-/-- Emptiness of the pentagon implies emptiness of its first underlying rectangle. -/
-theorem isEmpty_toRectangleDecomposition_first
-    (D : GridPentagonRectangleDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toRectangleDecomposition.first.IsEmpty := by
-  unfold GridRectangleBetween.IsEmpty
-  rw [D.toRectangleDecomposition_first_toGridRectangle]
-  exact h
-
-/-- Emptiness of the rectangle implies emptiness of the second underlying rectangle. -/
-theorem isEmpty_toRectangleDecomposition_second
-    (D : GridPentagonRectangleDecomposition a s x z) (h : D.rectangle.IsEmpty) :
-    D.toRectangleDecomposition.second.IsEmpty := by
-  unfold GridRectangleBetween.IsEmpty
-  rw [D.toRectangleDecomposition_second_toGridRectangle]
-  exact h
-
-/-- The pentagon's turn row lies between the sides of the first forgotten rectangle. -/
-theorem turn_mem_toRectangleDecomposition_first
-    (D : GridPentagonRectangleDecomposition a s x z) :
-    s ∈ Grid.cIco D.toRectangleDecomposition.first.bottom
-      D.toRectangleDecomposition.first.top := by
-  cases D with
-  | mk middle pentagon rectangle =>
-      unfold toRectangleDecomposition
-      exact pentagon.turn_mem
-
 /-- A pentagon--rectangle decomposition is determined by its underlying pair of rectangles. -/
 theorem toRectangleDecomposition_injective :
     Function.Injective
@@ -341,16 +309,6 @@ theorem toRectangleDecomposition_first_left (D : GridRectanglePentagonDecomposit
   unfold toRectangleDecomposition
   rfl
 
-/-- The pentagon's turn row lies between the sides of the second forgotten rectangle. -/
-theorem turn_mem_toRectangleDecomposition_second
-    (D : GridRectanglePentagonDecomposition a s x z) :
-    s ∈ Grid.cIco D.toRectangleDecomposition.second.bottom
-      D.toRectangleDecomposition.second.top := by
-  cases D with
-  | mk middle rectangle pentagon =>
-      unfold toRectangleDecomposition
-      exact pentagon.turn_mem
-
 /-- The first underlying rectangle has the rectangle's terminal side. -/
 @[simp]
 theorem toRectangleDecomposition_first_right (D : GridRectanglePentagonDecomposition a s x z) :
@@ -387,22 +345,6 @@ theorem toRectangleDecomposition_second_toGridRectangle
     D.toRectangleDecomposition.second.toGridRectangle = D.pentagon.toGridRectangle := by
   unfold toRectangleDecomposition
   rfl
-
-/-- Emptiness of the rectangle implies emptiness of the first underlying rectangle. -/
-theorem isEmpty_toRectangleDecomposition_first
-    (D : GridRectanglePentagonDecomposition a s x z) (h : D.rectangle.IsEmpty) :
-    D.toRectangleDecomposition.first.IsEmpty := by
-  unfold GridRectangleBetween.IsEmpty
-  rw [D.toRectangleDecomposition_first_toGridRectangle]
-  exact h
-
-/-- Emptiness of the pentagon implies emptiness of its second underlying rectangle. -/
-theorem isEmpty_toRectangleDecomposition_second
-    (D : GridRectanglePentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toRectangleDecomposition.second.IsEmpty := by
-  unfold GridRectangleBetween.IsEmpty
-  rw [D.toRectangleDecomposition_second_toGridRectangle]
-  exact h
 
 /-- A rectangle--pentagon decomposition is determined by its underlying pair of rectangles. -/
 theorem toRectangleDecomposition_injective :
