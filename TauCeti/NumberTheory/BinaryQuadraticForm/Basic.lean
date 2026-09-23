@@ -51,7 +51,9 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 ## Main definitions
 
 * `TauCeti.BinaryQuadraticForm R`: the binary quadratic form `a x² + b x y + c y²` over `R`.
+* `TauCeti.BinaryQuadraticForm.equivProd`: a form is its triple of coefficients `(a, b, c)`.
 * `TauCeti.BinaryQuadraticForm.discrim`: its discriminant `b² - 4 a c`.
+* `TauCeti.BinaryQuadraticForm.eval`: its value `a x² + b x y + c y²` at `(x, y)`.
 * The instance `MulAction SL(2, R) (TauCeti.BinaryQuadraticForm R)`: the action
   `γ • f = f ∘ γ⁻¹`, for a commutative ring `R`.
 * `TauCeti.BinaryQuadraticForm.posDef D`: for `D ≠ 0`, the positive definite integral forms of
@@ -61,6 +63,7 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 
 * `TauCeti.BinaryQuadraticForm.smul_a`, `TauCeti.BinaryQuadraticForm.smul_b` and
   `TauCeti.BinaryQuadraticForm.smul_c`: the coefficients of `γ • f`.
+* `TauCeti.BinaryQuadraticForm.eval_smul`: `γ • f` is `f ∘ γ⁻¹`.
 * `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
 * `TauCeti.BinaryQuadraticForm.mem_posDef`: membership in `posDef D`.
 
@@ -73,7 +76,7 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
   J. Ramanujan Math. Soc. (2019), arXiv:1711.00327.
 -/
 
-@[expose] public section
+public section
 
 open Matrix
 open scoped MatrixGroups
@@ -93,15 +96,41 @@ structure BinaryQuadraticForm (R : Type*) where
 
 namespace BinaryQuadraticForm
 
+/-- A binary quadratic form is its triple of coefficients `(a, b, c)`. It is exposed so that the
+kernel can evaluate it, as `decide` does for the values of `TauCeti.hurwitzClassNumber`. -/
+@[expose, simps]
+def equivProd {R : Type*} : BinaryQuadraticForm R ≃ R × R × R where
+  toFun f := (f.a, f.b, f.c)
+  invFun t := ⟨t.1, t.2.1, t.2.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
 variable {R : Type*} [CommRing R]
 
-/-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. -/
+/-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. It is exposed so that the
+kernel can evaluate it, as `decide` does for the values of `TauCeti.hurwitzClassNumber`. -/
+@[expose]
 protected def discrim (f : BinaryQuadraticForm R) : R :=
   discrim f.a f.b f.c
 
-/-- The discriminant of `a x² + b x y + c y²`, written out in the coefficients: `b² - 4 a c`. -/
-theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = f.b ^ 2 - 4 * f.a * f.c :=
+/-- The discriminant of a form is Mathlib's `discrim` of its coefficients. -/
+theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = discrim f.a f.b f.c :=
   rfl
+
+/-- The value `a x² + b x y + c y²` of the form `f` at `(x, y)`. -/
+def eval (f : BinaryQuadraticForm R) (x y : R) : R :=
+  f.a * x ^ 2 + f.b * x * y + f.c * y ^ 2
+
+/-- The value of `f` at `(x, y)` is `a x² + b x y + c y²`. -/
+theorem eval_def (f : BinaryQuadraticForm R) (x y : R) :
+    f.eval x y = f.a * x ^ 2 + f.b * x * y + f.c * y ^ 2 :=
+  (rfl)
+
+/-- The value of the form `⟨a, b, c⟩` at `(x, y)` is `a x² + b x y + c y²`. -/
+@[simp]
+theorem eval_mk (a b c x y : R) :
+    (⟨a, b, c⟩ : BinaryQuadraticForm R).eval x y = a * x ^ 2 + b * x * y + c * y ^ 2 :=
+  (rfl)
 
 /-- `γ • f` is the form `f ∘ γ⁻¹`, so `(γ • f)(x, y) = f(s x - q y, -r x + p y)` for
 `γ = !![p, q; r, s]`. The coefficients are written through the entries of the adjugate
@@ -135,6 +164,13 @@ theorem smul_c (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
     (γ • f).c = f.a * γ 0 1 ^ 2 - f.b * γ 0 0 * γ 0 1 + f.c * γ 0 0 ^ 2 :=
   rfl
 
+/-- `γ • f` is `f ∘ γ⁻¹`: its value at `(x, y)` is `f(s x - q y, -r x + p y)`, for
+`γ = !![p, q; r, s]`. -/
+theorem eval_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) (x y : R) :
+    (γ • f).eval x y = f.eval (γ 1 1 * x - γ 0 1 * y) (-γ 1 0 * x + γ 0 0 * y) := by
+  simp only [eval_def, smul_a, smul_b, smul_c]
+  ring
+
 /-- `f ↦ f ∘ γ⁻¹` is a left action of `SL(2, R)` on binary quadratic forms. -/
 instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
   one_smul f := by simp [BinaryQuadraticForm.ext_iff]
@@ -146,7 +182,7 @@ instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
 /-- The discriminant `b² - 4 a c` of a binary quadratic form is invariant under `SL(2, R)`. -/
 @[simp]
 theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).discrim = f.discrim := by
-  simp only [discrim_def, smul_a, smul_b, smul_c]
+  simp only [discrim_def, discrim, smul_a, smul_b, smul_c]
   linear_combination (f.b ^ 2 - 4 * f.a * f.c) * congr($(γ.fin_two_mul_sub_mul_eq_one) ^ 2)
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
@@ -155,13 +191,19 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
   carrier := {f | f.discrim = -D ∧ 0 < f.a}
   smul_mem' γ f := by
     rintro ⟨hD, ha⟩
-    have hD' : (γ • f).discrim < 0 := by
-      rw [discrim_smul, hD, neg_lt_zero]
+    have hd : discrim f.a f.b f.c ≤ 0 := by
+      rw [← discrim_def, hD]
+      exact neg_nonpos.2 D.cast_nonneg
+    have hd' : discrim (γ • f).a (γ • f).b (γ • f).c < 0 := by
+      rw [← discrim_def, discrim_smul, hD, neg_lt_zero]
       exact_mod_cast NeZero.pos D
-    refine ⟨(discrim_smul γ f).trans hD, pos_of_nonneg_of_discrim_lt_zero ?_ hD'⟩
-    have := nonneg_of_discrim_le_zero ha (hD ▸ neg_nonpos.2 D.cast_nonneg) (γ 1 1) (-γ 1 0)
-    rw [smul_a]
-    linear_combination this
+    refine ⟨(discrim_smul γ f).trans hD, pos_of_nonneg_of_discrim_lt_zero ?_ hd'⟩
+    -- `(γ • f).a` is the value of `γ • f` at `(1, 0)`, that is the value of `f` at `(s, -r)`
+    calc 0 ≤ f.eval (γ 1 1) (-γ 1 0) := by
+          rw [eval_def]
+          exact nonneg_of_discrim_le_zero ha hd _ _
+      _ = (γ • f).eval 1 0 := by simp [eval_smul]
+      _ = (γ • f).a := by simp [eval_def]
 
 /-- A form lies in `posDef D` exactly when its discriminant is `-D` and its leading coefficient is
 positive. -/

@@ -6,8 +6,8 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.Data.Int.Interval
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
 import TauCeti.Algebra.QuadraticDiscriminant
 
 /-!
@@ -29,16 +29,15 @@ form of discriminant `-D` has `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`.
 
 ## Main definitions
 
-* `TauCeti.IsReducedForm a b c`: the form `a x² + b x y + c y²` is reduced.
-* `TauCeti.reducedForms D`: for `D ≠ 0`, the finite set of reduced forms of discriminant `-D`, as
-  triples `(a, b, c)`.
-* `TauCeti.reducedFormWeight t`: the weight `1/2`, `1/3` or `1` with which a reduced form counts.
+* `TauCeti.IsReducedForm f`: the form `f = a x² + b x y + c y²` is reduced.
+* `TauCeti.reducedForms D`: for `D ≠ 0`, the finite set of reduced forms of discriminant `-D`.
+* `TauCeti.reducedFormWeight f`: the weight `1/2`, `1/3` or `1` with which a reduced form counts.
 * `TauCeti.hurwitzClassNumber D`: the Hurwitz class number `H D`.
 
 ## Main results
 
 * `TauCeti.mem_reducedForms`: for `D ≠ 0`, the reduced forms of discriminant `-D` are exactly the
-  reduced triples with `discrim a b c = -D`; the box the definition searches is no restriction.
+  reduced forms `f` with `f.discrim = -D`; the box the definition searches is no restriction.
 * `TauCeti.hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two`: `H D = 0` when
   `D ≡ 1, 2 (mod 4)`, since a discriminant `b² - 4 a c` is `0` or `1` modulo `4`
   (`Int.discrim_emod_four`).
@@ -60,42 +59,43 @@ open Finset
 
 namespace TauCeti
 
-/-- The integral binary quadratic form `a x² + b x y + c y²` is **reduced**: `|b| ≤ a ≤ c`, and
-`0 ≤ b` whenever `|b| = a` or `a = c` (Cohen, Definition 5.3.2).
+/-- The integral binary quadratic form `f = a x² + b x y + c y²` is **reduced**: `|b| ≤ a ≤ c`,
+and `0 ≤ b` whenever `|b| = a` or `a = c` (Cohen, Definition 5.3.2).
 
 For a positive-definite form this picks exactly one representative of each `SL₂(ℤ)`-class: the
 inequalities place the root `τ = (-b + i √(4 a c - b²)) / (2 a)` of `a τ² + b τ + c` in
 `ModularGroup.fd`, and the sign condition chooses one of the two boundary points that `SL₂(ℤ)`
-identifies. Definiteness is not part of the predicate (`IsReducedForm 0 0 1` holds), but a reduced
-form with `discrim a b c < 0` has `0 < a` (`pos_of_nonneg_of_discrim_lt_zero`). -/
-def IsReducedForm (a b c : ℤ) : Prop :=
-  |b| ≤ a ∧ a ≤ c ∧ (|b| = a ∨ a = c → 0 ≤ b)
+identifies. Definiteness is not part of the predicate (`IsReducedForm ⟨0, 0, 1⟩` holds), but a
+reduced form with `f.discrim < 0` has `0 < f.a` (`pos_of_nonneg_of_discrim_lt_zero`). -/
+def IsReducedForm (f : BinaryQuadraticForm ℤ) : Prop :=
+  |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b)
 deriving Decidable
 
 /-- `a x² + b x y + c y²` is reduced exactly when `|b| ≤ a ≤ c`, and `0 ≤ b` whenever `|b| = a` or
 `a = c`. -/
-theorem isReducedForm_iff {a b c : ℤ} :
-    IsReducedForm a b c ↔ |b| ≤ a ∧ a ≤ c ∧ (|b| = a ∨ a = c → 0 ≤ b) :=
+theorem isReducedForm_iff {f : BinaryQuadraticForm ℤ} :
+    IsReducedForm f ↔ |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b) :=
   Iff.rfl
 
-/-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
-`(a, b, c)`.
+/-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`.
 
 The definition searches the box `1 ≤ a ≤ √(D / 3)`, `|b| ≤ √(D / 3)`, `1 ≤ c ≤ D / 3` (with
 `Nat.sqrt`), which makes it a finite, decidable set; `mem_reducedForms` shows that for `D ≠ 0` this
 box loses nothing. For `D = 0` the box is empty, so `reducedForms 0 = ∅`, although every `c y²`
 with `0 ≤ c` is a reduced form of discriminant `0`. -/
-def reducedForms (D : ℕ) : Finset (ℤ × ℤ × ℤ) := {t ∈ Icc 1 ((D / 3).sqrt : ℤ) ×ˢ
-    Icc (-(D / 3).sqrt : ℤ) (D / 3).sqrt ×ˢ Icc 1 (D / 3 : ℤ) | discrim t.1 t.2.1 t.2.2 = -D ∧
-    IsReducedForm t.1 t.2.1 t.2.2}
+def reducedForms (D : ℕ) : Finset (BinaryQuadraticForm ℤ) :=
+  {f ∈ (Icc 1 ((D / 3).sqrt : ℤ) ×ˢ Icc (-(D / 3).sqrt : ℤ) (D / 3).sqrt ×ˢ
+      Icc 1 (D / 3 : ℤ)).map BinaryQuadraticForm.equivProd.symm.toEmbedding |
+    f.discrim = -D ∧ IsReducedForm f}
 
-/-- **The reduced forms of discriminant `-D`**: for `D ≠ 0`, `(a, b, c) ∈ reducedForms D` exactly
-when `discrim a b c = -D` and `a x² + b x y + c y²` is reduced, so the box that `reducedForms`
-searches loses nothing. -/
-@[simp] theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {a b c : ℤ} :
-    (a, b, c) ∈ reducedForms D ↔ discrim a b c = -D ∧ IsReducedForm a b c := by
-  simp only [reducedForms, mem_filter, mem_product, mem_Icc, and_iff_right_iff_imp]
-  rintro ⟨hd, hr⟩
+/-- **The reduced forms of discriminant `-D`**: for `D ≠ 0`, `f ∈ reducedForms D` exactly when
+`f.discrim = -D` and `f` is reduced, so the box that `reducedForms` searches loses nothing. -/
+@[simp] theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {f : BinaryQuadraticForm ℤ} :
+    f ∈ reducedForms D ↔ f.discrim = -D ∧ IsReducedForm f := by
+  refine mem_filter.trans <| and_iff_right_of_imp fun ⟨hd, hr⟩ ↦ mem_map_equiv.2 ?_
+  obtain ⟨a, b, c⟩ := f
+  simp only [BinaryQuadraticForm.discrim_def, isReducedForm_iff] at hd hr
+  simp only [Equiv.symm_symm, BinaryQuadraticForm.equivProd_apply, mem_product, mem_Icc]
   have ha := pos_of_nonneg_of_discrim_lt_zero ((abs_nonneg b).trans hr.1) (hd.trans_lt <| by lia)
   obtain ⟨hb, hac, -⟩ := hr
   rw [discrim] at hd
@@ -117,30 +117,31 @@ searches loses nothing. -/
 @[simp]
 theorem reducedForms_eq_empty_of_mod_four_eq_one_or_two {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
     reducedForms D = ∅ :=
-  filter_eq_empty_iff.mpr fun t _ ⟨h, _⟩ ↦ by
-    have := Int.discrim_emod_four t.1 t.2.1 t.2.2
+  filter_eq_empty_iff.mpr fun f _ ⟨h, _⟩ ↦ by
+    have := Int.discrim_emod_four f.a f.b f.c
+    rw [BinaryQuadraticForm.discrim_def] at h
     lia
 
-/-- The weight with which a reduced form `t = (a, b, c)` counts in the Hurwitz class number: `1/2`
-for the multiples `(a, 0, a)` of `x² + y²`, `1/3` for the multiples `(a, a, a)` of `x² + x y + y²`,
-and `1` for every other form. -/
-def reducedFormWeight (t : ℤ × ℤ × ℤ) : ℚ :=
-  if t.2.1 = 0 ∧ t.1 = t.2.2 then 1 / 2
-  else if t.1 = t.2.1 ∧ t.2.1 = t.2.2 then 1 / 3
+/-- The weight with which a reduced form `f = a x² + b x y + c y²` counts in the Hurwitz class
+number: `1/2` for the multiples `⟨a, 0, a⟩` of `x² + y²`, `1/3` for the multiples `⟨a, a, a⟩` of
+`x² + x y + y²`, and `1` for every other form. -/
+def reducedFormWeight (f : BinaryQuadraticForm ℤ) : ℚ :=
+  if f.b = 0 ∧ f.a = f.c then 1 / 2
+  else if f.a = f.b ∧ f.b = f.c then 1 / 3
   else 1
 
-/-- The multiples `(a, 0, a)` of `x² + y²` count `1/2`. -/
-@[simp] theorem reducedFormWeight_self_zero_self (a : ℤ) : reducedFormWeight (a, 0, a) = 1 / 2 :=
+/-- The multiples `⟨a, 0, a⟩` of `x² + y²` count `1/2`. -/
+@[simp] theorem reducedFormWeight_self_zero_self (a : ℤ) : reducedFormWeight ⟨a, 0, a⟩ = 1 / 2 :=
   ite_eq_left ⟨rfl, rfl⟩
 
-/-- The nonzero multiples `(a, a, a)` of `x² + x y + y²` count `1/3`. -/
+/-- The nonzero multiples `⟨a, a, a⟩` of `x² + x y + y²` count `1/3`. -/
 @[simp] theorem reducedFormWeight_self_self_self {a : ℤ} (ha : a ≠ 0) :
-    reducedFormWeight (a, a, a) = 1 / 3 := by
+    reducedFormWeight ⟨a, a, a⟩ = 1 / 3 := by
   simp [reducedFormWeight, ha]
 
 /-- Every other form counts `1`. -/
 @[simp] theorem reducedFormWeight_eq_one {a b c : ℤ} (h₁ : ¬(b = 0 ∧ a = c))
-    (h₂ : ¬(a = b ∧ b = c)) : reducedFormWeight (a, b, c) = 1 := by
+    (h₂ : ¬(a = b ∧ b = c)) : reducedFormWeight ⟨a, b, c⟩ = 1 := by
   simp [reducedFormWeight, h₁, h₂]
 
 /-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `D ≠ 0` the number of reduced forms
@@ -150,7 +151,7 @@ The value `H 0 = -1/12` is Zagier's normalisation, the one in which the `t² = 4
 Eichler–Selberg trace formula absorb the contribution of the scalar matrices. `H D` vanishes for
 `D ≡ 1, 2 (mod 4)` (`hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two`). -/
 def hurwitzClassNumber (D : ℕ) : ℚ :=
-  if D = 0 then -1 / 12 else ∑ t ∈ reducedForms D, reducedFormWeight t
+  if D = 0 then -1 / 12 else ∑ f ∈ reducedForms D, reducedFormWeight f
 
 /-- `H 0 = -1/12` is Zagier's normalisation, not a weighted count of reduced forms as `H D` is for
 `D ≠ 0` (`hurwitzClassNumber_of_ne_zero`). -/
@@ -158,7 +159,7 @@ def hurwitzClassNumber (D : ℕ) : ℚ :=
 
 /-- `H D` for `D ≠ 0` is the weighted count of the reduced forms of discriminant `-D`. -/
 theorem hurwitzClassNumber_of_ne_zero {D : ℕ} (hD : D ≠ 0) :
-    hurwitzClassNumber D = ∑ t ∈ reducedForms D, reducedFormWeight t :=
+    hurwitzClassNumber D = ∑ f ∈ reducedForms D, reducedFormWeight f :=
   ite_eq_right hD
 
 /-- The Hurwitz class number `H D` is `0` for `D ≡ 1, 2 (mod 4)`. -/
