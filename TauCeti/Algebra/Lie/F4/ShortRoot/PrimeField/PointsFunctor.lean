@@ -345,18 +345,15 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
     CommHopfAlgCat.quotientPointsHom_apply]
 
 /-- The quotient-coordinate equivalence commutes with change of coefficient algebra. -/
-@[simp] theorem coordinatePointsEquiv_mapPoints {A B : Type v}
+@[simp] theorem coordinatePointsEquiv_mapPoints {A : Type v} {B : Type w}
     [CommRing A] [CommRing B] [Algebra 𝔽₂ A] [Algebra 𝔽₂ B]
     (f : A →ₐ[𝔽₂] B) (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
-    coordinatePointsEquiv B (HopfAlgebra.mapPoints (H := Q) (CommAlgCat.ofHom f) q) =
+    coordinatePointsEquiv B (WithConv.toConv (f.comp q.ofConv)) =
       pointsMap f (coordinatePointsEquiv A q) := by
   apply Subtype.ext
-  simpa only [coordinatePointsEquiv, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
-    coe_pointsMap, GeneralLinear.coe_mapHopfIdealPointsSubgroup,
-    CommAlgCat.hom_ofHom, AlgHom.toRingHom_eq_coe] using
-    congrArg Subtype.val
-      (GeneralLinear.hopfIdealPointsSubgroupMulEquiv_mapPoints 26 J
-        (CommAlgCat.ofHom f) q)
+  rw [coe_coordinatePointsEquiv, coe_pointsMap, coe_coordinatePointsEquiv]
+  simp only [AlgHom.comp_assoc]
+  exact GeneralLinear.pointsMulEquiv_mapValue 26 f _
 
 end PrimeField
 
