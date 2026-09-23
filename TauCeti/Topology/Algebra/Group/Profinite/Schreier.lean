@@ -43,6 +43,7 @@ attribute [local implicit_reducible]
   Quiver.Symmetrify IsFreeGroupoid.Generators
   WideSubquiver WideSubquiver.toType WideSubquiver.quiver IsFreeGroupoid.quiverGenerators
   Quiver.symmetrifyQuiver Quiver.wideSubquiverSymmetrify
+  IsFreeGroupoid.SpanningTree.homOfPath
 
 open Set Function
 open CategoryTheory CategoryTheory.ActionCategory CategoryTheory.SingleObj Quiver FreeGroup
@@ -297,72 +298,6 @@ theorem nonTreeEdgeCard [Finite V] [∀ a b : V, Finite (a ⟶ b)]
       exact hcomplement.trans (by omega)
   )
 
-private abbrev spanningRoot {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T] : C :=
-  -- `T` has the same vertices as the ambient groupoid, but through two type synonyms.
-  show T from root T
-
-@[reducible]
-private def spanningHomOfPath {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T] :
-    ∀ {a : C}, Path (root T) a → (spanningRoot T ⟶ a)
-  | _, Path.nil => 𝟙 _
-  | _, Path.cons p f =>
-      spanningHomOfPath T p ≫
-        Sum.recOn f.val (fun e => IsFreeGroupoid.of e) fun e => inv (IsFreeGroupoid.of e)
-
-@[reducible]
-private def spanningTreeHom {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
-    (a : C) : spanningRoot T ⟶ a :=
-  spanningHomOfPath T default
-
-private lemma spanningTreeHomEq {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
-    {a : C} (p : Path (root T) a) : spanningTreeHom T a = spanningHomOfPath T p := by
-  rw [spanningTreeHom, Unique.default_eq]
-
-@[simp]
-private lemma spanningTreeHomRoot {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T] :
-    spanningTreeHom T (spanningRoot T) = 𝟙 _ := by
-  rw [spanningTreeHomEq T Path.nil]
-
-@[reducible]
-private def spanningLoopOfHom {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
-    {a b : C} (p : a ⟶ b) : End (spanningRoot T) :=
-  spanningTreeHom T a ≫ p ≫ inv (spanningTreeHom T b)
-
-private lemma spanningLoopOfHomEqId {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
-    {a b : IsFreeGroupoid.Generators C} (e : a ⟶ b)
-    (h : e ∈ wideSubquiverSymmetrify T a b) :
-    spanningLoopOfHom T (IsFreeGroupoid.of e) = 𝟙 (spanningRoot T) := by
-  rw [spanningLoopOfHom, ← Category.assoc, IsIso.comp_inv_eq, Category.id_comp]
-  rcases h with h | h
-  · rw [spanningTreeHomEq T (Path.cons default ⟨Sum.inl e, h⟩), spanningHomOfPath.eq_def]
-  · rw [spanningTreeHomEq T (Path.cons default ⟨Sum.inr e, h⟩), spanningHomOfPath.eq_def]
-    simp only [IsIso.inv_hom_id, Category.comp_id, Category.assoc, spanningTreeHom]
-
-@[reducible]
-private def spanningFunctorOfMonoidHom {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
-    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
-    {X : Type u} [Monoid X] (f : End (spanningRoot T) →* X) :
-    C ⥤ CategoryTheory.SingleObj X where
-  obj _ := ()
-  map p := f (spanningLoopOfHom T p)
-  map_id := by
-    intro a
-    dsimp only [spanningLoopOfHom]
-    rw [Category.id_comp, IsIso.hom_inv_id]
-    simpa only [CategoryTheory.End.one_def, id_as_one] using f.map_one
-  map_comp := by
-    intros
-    rw [comp_as_mul, ← f.map_mul]
-    simp only [IsIso.inv_hom_id_assoc, spanningLoopOfHom, CategoryTheory.End.mul_def,
-      Category.assoc]
-
 /-- The loops attached to the directed edges outside an unoriented spanning tree form a free
 basis of the vertex group at the root. -/
 noncomputable def spanningTreeBasis
@@ -375,25 +310,30 @@ noncomputable def spanningTreeBasis
   classical
   let X : Set _ := (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ
   apply FreeGroupBasis.ofUniqueLift X
-    (fun e => spanningLoopOfHom T (IsFreeGroupoid.of e.val.hom))
+    (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
   intro Y _ f
   let f' : Labelling (IsFreeGroupoid.Generators C) Y := fun a b e =>
     if h : e ∈ wideSubquiverSymmetrify T a b then 1 else f ⟨⟨a, b, e⟩, h⟩
   rcases IsFreeGroupoid.unique_lift f' with ⟨F', hF', uF'⟩
   refine ⟨F'.mapEnd _, ?_, ?_⟩
-  · suffices ∀ {x y} (q : x ⟶ y), F'.map (spanningLoopOfHom T q) = (F'.map q : Y) by
+  · suffices ∀ {x y} (q : x ⟶ y),
+        F'.map (IsFreeGroupoid.SpanningTree.loopOfHom T q) = (F'.map q : Y) by
       rintro ⟨⟨a, b, e⟩, h⟩
       simp only [Functor.mapEnd, DFunLike.coe, this, hF']
       exact dite_eq_right h
     intro x y q
-    suffices ∀ {a} (p : Path (root T) a), F'.map (spanningHomOfPath T p) = 1 by
-      simp only [this, spanningTreeHom, comp_as_mul, inv_as_inv, spanningLoopOfHom, inv_one,
-        mul_one, one_mul, Functor.map_inv, Functor.map_comp]
+    suffices ∀ {a : C} (p : Path (root T) a),
+        F'.map (IsFreeGroupoid.SpanningTree.homOfPath T p) = 1 by
+      simp only [this, IsFreeGroupoid.SpanningTree.treeHom, comp_as_mul, inv_as_inv,
+        IsFreeGroupoid.SpanningTree.loopOfHom, inv_one, mul_one, one_mul, Functor.map_inv,
+        Functor.map_comp]
     intro a p
     induction p with
-    | nil => rw [spanningHomOfPath, F'.map_id, id_as_one]
+    | nil =>
+        change F'.map (𝟙 (show C from root T)) = 1
+        rw [F'.map_id, id_as_one]
     | cons p e ih =>
-        rw [spanningHomOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
+        rw [IsFreeGroupoid.SpanningTree.homOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
         rcases e with ⟨e | e, eT⟩
         · rw [hF']
           exact dite_eq_left (Or.inl eT)
@@ -401,16 +341,18 @@ noncomputable def spanningTreeBasis
           exact dite_eq_left (Or.inr eT)
   · intro E hE
     ext x
-    suffices (spanningFunctorOfMonoidHom T E).map x = F'.map x by
-      simpa only [spanningLoopOfHom, spanningFunctorOfMonoidHom, IsIso.inv_id,
-        spanningTreeHomRoot, Category.id_comp, Category.comp_id] using! this
+    suffices (IsFreeGroupoid.SpanningTree.functorOfMonoidHom T E).map x = F'.map x by
+      simpa only [IsFreeGroupoid.SpanningTree.loopOfHom,
+        IsFreeGroupoid.SpanningTree.functorOfMonoidHom, IsIso.inv_id,
+        IsFreeGroupoid.SpanningTree.treeHom_root, Category.id_comp, Category.comp_id] using! this
     congr
     apply uF'
     intro a b e
     -- Expanding the labelling exposes the tree-edge case split used in its definition.
-    change E (spanningLoopOfHom T _) = dite _ _ _
+    change E (IsFreeGroupoid.SpanningTree.loopOfHom T _) = dite _ _ _
     split_ifs with h
-    · rw [spanningLoopOfHomEqId T e h, ← CategoryTheory.End.one_def, E.map_one]
+    · rw [IsFreeGroupoid.SpanningTree.loopOfHom_eq_id T e h,
+        ← CategoryTheory.End.one_def, E.map_one]
     · exact hE ⟨⟨a, b, e⟩, h⟩
 
 end WideSubquiver
