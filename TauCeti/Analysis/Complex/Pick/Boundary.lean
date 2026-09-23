@@ -54,7 +54,7 @@ public section
 
 noncomputable section
 
-open Complex MeasureTheory Set
+open Complex Filter MeasureTheory Set Topology
 
 namespace TauCeti
 
@@ -243,6 +243,52 @@ theorem measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add [IsFiniteMeasure mu]
     field_simp
   rw [heq] at hle
   linarith
+
+/-- The Nevanlinna integral of a finite measure carried by `(-∞, 0]` is continuous at every
+point with positive real part.  Although the kernel has a pole on the real axis, that pole stays
+a positive distance from the measure's support. -/
+theorem continuousAt_integral_nevanlinnaKernel_of_measure_Ioi_eq_zero
+    {rho : Measure ℝ} [IsFiniteMeasure rho] (hrho : rho (Ioi 0) = 0) {z₀ : ℂ}
+    (hz₀ : 0 < z₀.re) :
+    ContinuousAt (fun z : ℂ => ∫ x, nevanlinnaKernel z x ∂rho) z₀ := by
+  have hale : ∀ᵐ x ∂rho, x ≤ 0 :=
+    (measure_eq_zero_iff_ae_notMem.mp hrho).mono fun x hx => not_lt.mp hx
+  refine tendsto_integral_filter_of_norm_le_const ?_ ?_ ?_
+  · exact Eventually.of_forall fun z =>
+      (measurable_nevanlinnaKernel z).aestronglyMeasurable
+  · refine ⟨‖z₀‖ + z₀.re / 2 + (1 + (‖z₀‖ + z₀.re / 2) ^ 2) * (2 / z₀.re), ?_⟩
+    filter_upwards [Metric.ball_mem_nhds z₀ (half_pos hz₀)] with z hz
+    filter_upwards [hale] with x hx
+    rw [Metric.mem_ball, dist_eq_norm] at hz
+    exact norm_nevanlinnaKernel_le_of_nonpos_of_norm_sub_lt hz₀ hx hz
+  · filter_upwards [hale] with x hx
+    apply (continuousAt_nevanlinnaKernel_left ?_).tendsto
+    intro h
+    have hxt : x ≠ z₀.re := ne_of_lt (lt_of_le_of_lt hx hz₀)
+    apply hxt
+    simpa using congrArg Complex.re h
+
+/-- A Nevanlinna representation valid on the upper half-plane holds at a positive real parameter
+`t` at which `F` is continuous, provided its measure is carried by `(-∞, 0]`. -/
+theorem eq_integral_nevanlinnaKernel_add_of_eqOn_upperHalfPlane
+    {F : ℂ → ℂ} {rho : Measure ℝ} [IsFiniteMeasure rho] {b c t : ℝ}
+    (hF : ContinuousAt F t) (hrho : rho (Ioi 0) = 0) (ht : 0 < t)
+    (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = (b : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂rho + c) :
+    F t = (b : ℂ) * t + ∫ x, nevanlinnaKernel t x ∂rho + c := by
+  have hnebot : (𝓝[UpperHalfPlane.upperHalfPlaneSet] (t : ℂ)).NeBot :=
+    mem_closure_iff_nhdsWithin_neBot.1 (by
+      rw [UpperHalfPlane.upperHalfPlaneSet, Complex.closure_setOfPred_lt_im]
+      simp)
+  have hright : ContinuousAt
+      (fun w : ℂ => (b : ℂ) * w + ∫ x, nevanlinnaKernel w x ∂rho + c) t :=
+    ((continuousAt_const.mul continuousAt_id).add
+      (continuousAt_integral_nevanlinnaKernel_of_measure_Ioi_eq_zero hrho ht)).add
+      continuousAt_const
+  refine tendsto_nhds_unique' hnebot ?_
+    (hright.tendsto.mono_left nhdsWithin_le_nhds)
+  exact (hF.tendsto.mono_left nhdsWithin_le_nhds).congr'
+    (eventually_nhdsWithin_of_forall hrep)
 
 /-- **The Nevanlinna measure of a Pick function real on the positive half-axis.** A function that
 is holomorphic on the slit plane, has nonnegative imaginary part on the upper half-plane and is
