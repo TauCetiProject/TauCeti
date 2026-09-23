@@ -91,7 +91,7 @@ lemma norm_coe_vadd_of_re_eq {r : ℝ} {p : ℍ} (hre : p.re = -r / 2) :
 lemma vadd_mem_fd_of_re_eq {r : ℝ} {p : ℍ} (hp : p ∈ 𝒟) (hre : p.re = -r / 2) : r +ᵥ p ∈ 𝒟 :=
   -- the translate keeps the modulus and is the mirror image `-p.re` of `p` in real part
   ⟨normSq_coe_vadd_of_re_eq hre ▸ hp.1, by
-    rw [vadd_re, show r + p.re = -p.re by linarith, abs_neg]
+    rw [vadd_re, show r + p.re = -p.re by rw [hre]; ring, abs_neg]
     exact hp.2⟩
 
 /-- Distinct points of the **open** fundamental domain lie in distinct `SL(2, ℤ)`-orbits: the
