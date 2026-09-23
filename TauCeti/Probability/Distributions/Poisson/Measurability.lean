@@ -7,7 +7,12 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Poisson.Basic
-/-! # Parameter measurability for the Poisson distribution -/
+/-!
+# Parameter measurability for the Poisson distribution
+
+Measurability in the rate lets measurable rate maps produce measurable measure-valued Poisson
+families and permits packaging such families as kernels.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory
@@ -15,8 +20,8 @@ open scoped ENNReal NNReal
 namespace TauCeti.Probability
 /-- **The Poisson family is measurable in its rate.**
 
-The standard-distributions roadmap composes this with `Real.toNNReal` to build the Gamma-mixed
-Poisson kernel. -/
+This permits composition with measurable rate maps and packages the resulting measure-valued
+family as a kernel. -/
 @[fun_prop] theorem measurable_poissonMeasure : Measurable fun r : ℝ≥0 => poissonMeasure r := by
   simp only [poissonMeasure]
   exact TauCeti.MeasureTheory.measurable_sum_smul_dirac fun n => by fun_prop

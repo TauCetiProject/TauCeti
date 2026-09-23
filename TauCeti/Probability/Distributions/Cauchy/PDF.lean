@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Probability.Density
 public import Mathlib.Probability.Distributions.Cauchy
-/-! # Density API for the Cauchy distribution -/
+/-!
+# Density API for the Cauchy distribution
+
+This file connects nondegenerate Cauchy laws to `HasPDF` and identifies `pdf` and the
+Radon--Nikodym derivative at every scale, including the singular zero-scale boundary.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

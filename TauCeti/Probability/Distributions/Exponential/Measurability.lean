@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Probability.Distributions.Gamma.Measurability
 public import Mathlib.Probability.Distributions.Exponential
-/-! # Parameter measurability for the exponential distribution -/
+/-!
+# Parameter measurability for the exponential distribution
+
+Measurability in the rate lets measurable rate maps produce measurable measure-valued
+exponential families, in particular kernels. It follows from the shape-one Gamma family.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

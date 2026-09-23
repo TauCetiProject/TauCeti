@@ -7,7 +7,12 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Binomial
-/-! # Parameter measurability for the binomial distribution -/
+/-!
+# Parameter measurability for the binomial distribution
+
+Joint measurability in the number of trials and success probability lets measurable parameter
+maps produce measurable measure-valued binomial families, in particular kernels.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

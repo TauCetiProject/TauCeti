@@ -7,7 +7,12 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Geometric
-/-! # Parameter measurability for the geometric distribution -/
+/-!
+# Parameter measurability for the geometric distribution
+
+Measurability in the success probability lets measurable parameter maps produce measurable
+measure-valued geometric families, in particular kernels, including the zero-parameter boundary.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

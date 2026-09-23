@@ -8,7 +8,12 @@ module
 public import TauCeti.Probability.Density
 public import Mathlib.Probability.Distributions.Gamma
 
-/-! # Density API for the Gamma distribution -/
+/-!
+# Density API for the Gamma distribution
+
+This file connects the Gamma law to `HasPDF`, `pdf`, and the Radon--Nikodym derivative, allowing
+consumers to pass between distributional and density formulations.
+-/
 
 public section
 noncomputable section

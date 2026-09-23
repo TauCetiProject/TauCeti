@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Probability.Density
 public import Mathlib.Probability.Distributions.Pareto
-/-! # Density API for the Pareto distribution -/
+/-!
+# Density API for the Pareto distribution
+
+This file connects the Pareto law to `HasPDF`, `pdf`, and the Radon--Nikodym derivative, allowing
+consumers to pass between distributional and density formulations.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

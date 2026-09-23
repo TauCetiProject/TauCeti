@@ -8,7 +8,12 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Gamma
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Gamma
-/-! # Parameter measurability for the Gamma distribution -/
+/-!
+# Parameter measurability for the Gamma distribution
+
+Joint measurability in shape and rate lets measurable parameter maps produce measurable
+measure-valued Gamma families, in particular kernels.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

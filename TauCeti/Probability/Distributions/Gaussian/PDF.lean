@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Probability.Density
 public import Mathlib.Probability.Distributions.Gaussian.Real
-/-! # Density API for the real Gaussian distribution -/
+/-!
+# Density API for the real Gaussian distribution
+
+This file connects nondegenerate real Gaussian laws to `HasPDF` and identifies `pdf` at every
+variance, including the singular zero-variance boundary.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

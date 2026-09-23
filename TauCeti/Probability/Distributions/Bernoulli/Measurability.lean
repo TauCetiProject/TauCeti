@@ -6,7 +6,12 @@ Authors: Claude
 module
 
 public import Mathlib.Probability.Distributions.Bernoulli
-/-! # Parameter measurability for the Bernoulli distribution -/
+/-!
+# Parameter measurability for the Bernoulli distribution
+
+Measurability in the success probability lets measurable parameter maps produce measurable
+measure-valued Bernoulli families, in particular kernels.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

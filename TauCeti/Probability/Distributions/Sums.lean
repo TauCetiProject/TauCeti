@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Exponential
+public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Distributions.Gamma.Sum
-public import TauCeti.Probability.Distributions.Geometric
+public import TauCeti.Probability.Distributions.Geometric.Basic
 public import TauCeti.Probability.Distributions.Laplace
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 import Mathlib.Probability.Independence.CharacteristicFunction

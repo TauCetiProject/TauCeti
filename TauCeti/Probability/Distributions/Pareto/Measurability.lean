@@ -7,7 +7,12 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Pareto
-/-! # Parameter measurability for the Pareto distribution -/
+/-!
+# Parameter measurability for the Pareto distribution
+
+Joint measurability in threshold and shape lets measurable parameter maps produce measurable
+measure-valued Pareto families, in particular kernels.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

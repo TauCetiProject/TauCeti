@@ -7,7 +7,12 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Cauchy
-/-! # Parameter measurability for the Cauchy distribution -/
+/-!
+# Parameter measurability for the Cauchy distribution
+
+Joint measurability in location and scale lets measurable parameter maps produce measurable
+measure-valued Cauchy families, in particular kernels, including the zero-scale Dirac boundary.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory

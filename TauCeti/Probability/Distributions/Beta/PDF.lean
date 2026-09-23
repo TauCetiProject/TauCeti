@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Probability.Density
 public import Mathlib.Probability.Distributions.Beta
-/-! # Density API for the Beta distribution -/
+/-!
+# Density API for the Beta distribution
+
+This file connects the Beta law to `HasPDF`, `pdf`, and the Radon--Nikodym derivative, allowing
+consumers to pass between distributional and density formulations.
+-/
 public section
 noncomputable section
 open MeasureTheory ProbabilityTheory
