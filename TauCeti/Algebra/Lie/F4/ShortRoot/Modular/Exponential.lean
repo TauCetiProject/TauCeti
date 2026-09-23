@@ -455,12 +455,6 @@ theorem f4ShortRootBaseChangeInclusion_tmul_of_coe_eq {A : Type*} [CommRing A]
   rw [f4ShortRootBaseChangeInclusion_tmul, h, TauCeti.cancelBaseChange_tmul]
   simp
 
-private theorem map_quadratic_sum
-    {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) (t : R) (x y z : M) :
-    f (x + t • y + t ^ 2 • z) = f x + t • f y + t ^ 2 • f z := by
-  simp only [map_add, map_smul]
-
 /-- On any ideal vector represented by a single integral tensor, the integral root exponential
 intertwines the modular three-term polynomial with the scalar-tower inclusion. -/
 theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
@@ -503,7 +497,7 @@ theorem f4RootExponential_intertwines_tmul_of_coe_eq {A : Type*} [CommRing A]
         t ^ 2 • ((1 : A) ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k y) :=
       f4RootExponential_tmul_of_cube k t y hy
     _ = _ := (congrArg (f4ShortRootBaseChangeInclusion (A := A)) hpoly).trans
-      ((map_quadratic_sum (f4ShortRootBaseChangeInclusion (A := A)) t _ _ _).trans
+      ((show _ = _ from by simp only [map_add, map_smul]).trans
         (congrArg₂ (· + ·)
           (congrArg₂ (· + ·) hzA (congrArg (t • ·) hd1A))
           (congrArg (t ^ 2 • ·) hd2A))) |>.symm
