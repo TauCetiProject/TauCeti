@@ -36,7 +36,7 @@ form of discriminant `-D` has `3 a² ≤ D`.
 
 ## Main results
 
-* `TauCeti.mem_reducedForms`: for `0 < D`, the reduced forms of discriminant `-D` are exactly the
+* `TauCeti.mem_reducedForms`: for `D ≠ 0`, the reduced forms of discriminant `-D` are exactly the
   reduced triples with `discrim a b c = -D`; the box the definition searches is no restriction.
 * `TauCeti.hurwitzClassNumber_eq_zero_of_mod_four`: `H D = 0` when `D ≡ 1, 2 (mod 4)`, since a
   discriminant `b² - 4 a c` is `0` or `1` modulo `4`.
@@ -72,34 +72,38 @@ def IsReducedForm (a b c : ℤ) : Prop :=
 instance (a b c : ℤ) : Decidable (IsReducedForm a b c) :=
   inferInstanceAs (Decidable (_ ∧ _ ∧ _))
 
+/-- A reduced form `a x² + b x y + c y²` of negative discriminant has `0 < a`, so it is positive
+definite. -/
+theorem IsReducedForm.pos_of_discrim_neg {a b c : ℤ} (h : IsReducedForm a b c)
+    (hd : discrim a b c < 0) : 0 < a :=
+  -- `a = 0` would force `b = 0` and discriminant `0`
+  ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ by simp_all [discrim, IsReducedForm]
+
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
 `(a, b, c)`.
 
 The definition searches the box `1 ≤ a, c ≤ D / 3`, `|b| ≤ D / 3`, which makes it a finite,
-decidable set; `mem_reducedForms` shows that for `0 < D` this box loses nothing. For `D = 0` the box
+decidable set; `mem_reducedForms` shows that for `D ≠ 0` this box loses nothing. For `D = 0` the box
 is empty, so `reducedForms 0 = ∅`, although every `c y²` with `0 ≤ c` is a reduced form of
 discriminant `0`. -/
 def reducedForms (D : ℕ) : Finset (ℤ × ℤ × ℤ) := {t ∈ Icc 1 (D / 3 : ℤ) ×ˢ
     Icc (-(D / 3) : ℤ) (D / 3) ×ˢ Icc 1 (D / 3 : ℤ) | discrim t.1 t.2.1 t.2.2 = -D ∧
     IsReducedForm t.1 t.2.1 t.2.2}
 
-/-- **The reduced forms of discriminant `-D`** are the reduced triples `(a, b, c)` with
-`discrim a b c = -D`, for `0 < D`: a reduced form of negative discriminant has `1 ≤ a` and
-`3 a c ≤ D`, so the box that `reducedForms` searches contains all of them. -/
-theorem mem_reducedForms {D : ℕ} (hD : 0 < D) {a b c : ℤ} :
+/-- **The reduced forms of discriminant `-D`**: for `D ≠ 0`, `(a, b, c) ∈ reducedForms D` exactly
+when `discrim a b c = -D` and `a x² + b x y + c y²` is reduced, so the box that `reducedForms`
+searches loses nothing. -/
+theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {a b c : ℤ} :
     (a, b, c) ∈ reducedForms D ↔ discrim a b c = -D ∧ IsReducedForm a b c := by
-  simp only [reducedForms, mem_filter, mem_product, mem_Icc]
-  refine ⟨fun h ↦ h.2, fun ⟨hd, hb, hac, h⟩ ↦ ⟨?_, hd, hb, hac, h⟩⟩
+  simp only [reducedForms, mem_filter, mem_product, mem_Icc, and_iff_right_iff_imp]
+  rintro ⟨hd, hr⟩
+  have ha := hr.pos_of_discrim_neg <| by lia
+  obtain ⟨hb, hac, -⟩ := hr
   rw [discrim] at hd
-  have hD' : (0 : ℤ) < D := by exact_mod_cast hD
   obtain ⟨hb₁, hb₂⟩ := abs_le.mp hb
-  have hb2 : b ^ 2 ≤ a ^ 2 := by nlinarith
-  -- `a = 0` would force `b = 0` and discriminant `0`; so `1 ≤ a`, and then `3 a c ≤ D`
-  have ha : 1 ≤ a := by nlinarith
-  have hc : 3 * (a * c) ≤ D := by nlinarith
-  have h3a : 3 * a ≤ D := by nlinarith
-  have h3c : 3 * c ≤ D := by nlinarith
-  refine ⟨⟨ha, by omega⟩, ⟨by omega, by omega⟩, by omega, by omega⟩
+  -- `3 c ≤ 3 a c ≤ 4 a c - b² = D`, as `1 ≤ a` and `b² ≤ a² ≤ a c`; with `|b| ≤ a ≤ c`, the box
+  have : 3 * c ≤ D := by nlinarith
+  lia
 
 /-- A discriminant `b² - 4 a c` is `0` or `1` modulo `4`, so there are no reduced forms of
 discriminant `-D` when `D ≡ 1, 2 (mod 4)`. -/
