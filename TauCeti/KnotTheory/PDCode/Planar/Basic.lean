@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.PDCode.Components
 public import TauCeti.Combinatorics.RibbonGraph.OfPermutationTriple
+import all TauCeti.KnotTheory.PDCode.Basic
 
 /-!
 # Planar rotation systems for PD-codes
@@ -106,6 +107,48 @@ theorem isPlanar_iff_of_connected (D : PDCode n)
 end TauCeti.PDCode
 
 namespace TauCeti
+
+/-! The existing one-crossing code is a small connected rotation system used by the
+Reidemeister-two examples. Its connectivity and planarity belong to the basic planar API. -/
+
+local notation "D₀" => orientedPDCodeOneCrossingPositive
+
+private theorem oneCrossing_connected : (D₀).toPDCode.projectionTriple.IsConnected := by
+  rw [PermutationTriple.isConnected_iff]
+  constructor
+  · decide
+  · apply MulAction.IsPretransitive.of_orbit (x₀ := 0)
+    intro x
+    let t := (D₀).toPDCode.projectionTriple
+    let g0 : t.monodromyGroup := ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
+    fin_cases x
+    · exact ⟨1, by simp⟩
+    · refine ⟨g0⁻¹, ?_⟩
+      dsimp [t, g0]
+      simp only [PDCode.projectionTriple_σ0, Nat.reduceMul, Fin.isValue]
+      decide +kernel
+    · refine ⟨g0⁻¹ * g0⁻¹, ?_⟩
+      dsimp [t, g0]
+      simp only [PDCode.projectionTriple_σ0, Nat.reduceMul, Fin.isValue]
+      decide +kernel
+    · refine ⟨g0, ?_⟩
+      dsimp [t, g0]
+      simp only [PDCode.projectionTriple_σ0, Nat.reduceMul, Fin.isValue,
+        Equiv.Perm.coe_inv]
+      decide +kernel
+
+/-- The one-crossing positive oriented code is planar. -/
+theorem isPlanar_orientedPDCodeOneCrossingPositive : (D₀).toPDCode.IsPlanar := by
+  rw [PDCode.isPlanar_iff_of_connected _ oneCrossing_connected,
+    Equiv.Perm.orbitCount_eq_card_parts_partition]
+  have hface : (D₀).toPDCode.facePerm = Equiv.swap 0 2 := by
+    ext x
+    fin_cases x <;>
+      simp [PDCode.facePerm, PDCode.crossingRotation, orientedPDCodeOneCrossingPositive,
+        PDCode.crossingSlotEquiv, finCycle_apply, finProdFinEquiv, Fin.divNat, Fin.modNat,
+        Equiv.swap_apply_def]
+  rw [hface]
+  decide
 
 /-- An oriented planar rotation-system diagram. The subtype retains the existing oriented
 PD-code and adds the genus-zero condition, without choosing a geometric drawing or outer face. -/

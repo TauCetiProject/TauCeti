@@ -91,45 +91,22 @@ The calculations below count faces independently of the bracket calculation. -/
 
 local notation "D₀" => orientedPDCodeOneCrossingPositive
 
-private theorem oneCrossing_connected : (D₀).toPDCode.projectionTriple.IsConnected := by
+private theorem connected_of_monodromy_orbit {m : ℕ} (t : PermutationTriple m)
+    (hm : m ≠ 0) (x₀ : Fin m)
+    (h : ∀ x : Fin m, ∃ g : t.monodromyGroup, g • x₀ = x) : t.IsConnected := by
   rw [PermutationTriple.isConnected_iff]
-  constructor
-  · decide
-  · apply MulAction.IsPretransitive.of_orbit (x₀ := 0)
-    intro x
-    let t := (D₀).toPDCode.projectionTriple
-    let g0 : t.monodromyGroup := ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
-    fin_cases x
-    · exact ⟨1, by simp⟩
-    · refine ⟨g0⁻¹, ?_⟩
-      dsimp [t, g0]
-      simp only [PDCode.projectionTriple_σ0, Nat.reduceMul, Fin.isValue]
-      decide
-    · refine ⟨g0⁻¹ * g0⁻¹, ?_⟩
-      dsimp [t, g0]
-      simp only [PDCode.projectionTriple_σ0, Nat.reduceMul, Fin.isValue]
-      decide
-    · refine ⟨g0, ?_⟩
-      dsimp [t, g0]
-      simp only [PDCode.projectionTriple_σ0, Nat.reduceMul, Fin.isValue, Equiv.Perm.coe_inv]
-      decide
-
-/-- The one-crossing positive oriented code is planar. -/
-theorem isPlanar_orientedPDCodeOneCrossingPositive : (D₀).toPDCode.IsPlanar := by
-  rw [PDCode.isPlanar_iff_of_connected _ oneCrossing_connected,
-    Equiv.Perm.orbitCount_eq_card_parts_partition]
-  decide
+  exact ⟨hm, MulAction.IsPretransitive.of_orbit h⟩
 
 private theorem oneCrossing_insertClasp_connected_q2_false :
     ((D₀).insertClasp 0 2 false (by decide) (by decide)).toPDCode.projectionTriple.IsConnected := by
-  rw [PermutationTriple.isConnected_iff]
-  constructor
-  · decide
-  · apply MulAction.IsPretransitive.of_orbit (x₀ := 0)
+  let t := ((D₀).insertClasp 0 2 false (by decide) (by decide)).projectionTriple
+  have ht : t.IsConnected := connected_of_monodromy_orbit t (by decide) 0 (by
     intro x
-    let t := ((D₀).insertClasp 0 2 false (by decide) (by decide)).projectionTriple
     let g0 : t.monodromyGroup := ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
     let g1 : t.monodromyGroup := ⟨t.σ1, t.σ1_mem_monodromyGroup⟩
+    /- Each branch records one explicit word in the two monodromy generators sending `0`
+       to the listed half-edge. Keeping this finite table local makes the witness independent
+       of the implementation of the ribbon graph connected-component quotient. -/
     fin_cases x
     · exact ⟨1, by simp⟩
     · refine ⟨g0⁻¹, ?_⟩
@@ -186,18 +163,17 @@ private theorem oneCrossing_insertClasp_connected_q2_false :
       dsimp [t, g0, g1]
       simp only [Fin.isValue, OrientedPDCode.toPDCode_insertClasp,
          PDCode.projectionTriple_σ0, PDCode.projectionTriple_σ1, Nat.reduceMul]
-      decide
+      decide)
+  exact ht
 
 private theorem oneCrossing_insertClasp_connected_q3_false :
     ((D₀).insertClasp 0 3 false (by decide) (by decide)).toPDCode.projectionTriple.IsConnected := by
-  rw [PermutationTriple.isConnected_iff]
-  constructor
-  · decide
-  · apply MulAction.IsPretransitive.of_orbit (x₀ := 0)
+  let t := ((D₀).insertClasp 0 3 false (by decide) (by decide)).projectionTriple
+  have ht : t.IsConnected := connected_of_monodromy_orbit t (by decide) 0 (by
     intro x
-    let t := ((D₀).insertClasp 0 3 false (by decide) (by decide)).projectionTriple
     let g0 : t.monodromyGroup := ⟨t.σ0, t.σ0_mem_monodromyGroup⟩
     let g1 : t.monodromyGroup := ⟨t.σ1, t.σ1_mem_monodromyGroup⟩
+    /- The q3 table is the same orbit argument with the other endpoint routing. -/
     fin_cases x
     · exact ⟨1, by simp⟩
     · refine ⟨g0⁻¹, ?_⟩
@@ -254,7 +230,8 @@ private theorem oneCrossing_insertClasp_connected_q3_false :
       dsimp [t, g0, g1]
       simp only [Fin.isValue, OrientedPDCode.toPDCode_insertClasp,
          PDCode.projectionTriple_σ0, PDCode.projectionTriple_σ1, Nat.reduceMul]
-      decide
+      decide)
+  exact ht
 
 private theorem oneCrossing_insertClasp_connected_q2 (b : Bool) :
     ((D₀).insertClasp 0 2 b (by decide) (by decide)).toPDCode.projectionTriple.IsConnected := by
