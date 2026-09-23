@@ -69,6 +69,21 @@ def torsionByTorsionByEquiv {A : Type*} [AddCommGroup A] {a b : ℕ} (hab : a �
       right_inv := fun _ ↦ rfl
       map_add' := fun _ _ ↦ rfl }
 
+/-- `torsionByTorsionByEquiv` preserves the underlying ambient element. -/
+@[simp]
+theorem torsionByTorsionByEquiv_apply_coe {A : Type*} [AddCommGroup A] {a b : ℕ} (hab : a ∣ b)
+    (x : _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A (b : ℤ)) (a : ℤ)) :
+    ((torsionByTorsionByEquiv hab x : _root_.AddSubgroup.torsionBy A (a : ℤ)) : A) = x.1.1 :=
+  by simp [torsionByTorsionByEquiv]
+
+/-- The inverse of `torsionByTorsionByEquiv` preserves the underlying ambient element. -/
+@[simp]
+theorem torsionByTorsionByEquiv_symm_apply_coe {A : Type*} [AddCommGroup A] {a b : ℕ}
+    (hab : a ∣ b) (x : _root_.AddSubgroup.torsionBy A (a : ℤ)) :
+    (((torsionByTorsionByEquiv hab).symm x :
+      _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A (b : ℤ)) (a : ℤ)) : A) = x.1 :=
+  by simp [torsionByTorsionByEquiv]
+
 end AddSubgroup
 
 end TauCeti
@@ -95,6 +110,20 @@ def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B
   left_inv x := Subtype.ext (e.left_inv x)
   right_inv x := Subtype.ext (e.right_inv x)
   map_add' _ _ := Subtype.ext (e.map_add _ _)
+
+/-- `torsionByCongr` applies its additive equivalence to the underlying element. -/
+@[simp]
+theorem torsionByCongr_apply_coe {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B)
+    (n : ℕ) (x : _root_.AddSubgroup.torsionBy A (n : ℤ)) :
+    ((torsionByCongr e n x : _root_.AddSubgroup.torsionBy B (n : ℤ)) : B) = e x.1 :=
+  by simp [torsionByCongr]
+
+/-- The inverse of `torsionByCongr` applies the inverse additive equivalence. -/
+@[simp]
+theorem torsionByCongr_symm_apply_coe {A B : Type*} [AddCommGroup A] [AddCommGroup B]
+    (e : A ≃+ B) (n : ℕ) (x : _root_.AddSubgroup.torsionBy B (n : ℤ)) :
+    (((torsionByCongr e n).symm x : _root_.AddSubgroup.torsionBy A (n : ℤ)) : A) = e.symm x.1 :=
+  by simp [torsionByCongr]
 
 end AddEquiv
 

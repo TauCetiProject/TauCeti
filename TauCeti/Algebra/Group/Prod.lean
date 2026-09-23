@@ -67,9 +67,55 @@ def piProd {ι : Type*} (B C : ι → Type*)
     (∀ i, B i × C i) ≃+ (∀ i, B i) × (∀ i, C i) :=
   { Equiv.arrowProdEquivProdArrow ι B C with map_add' := fun _ _ ↦ rfl }
 
+/-- `piProd` maps a function to its two component functions. -/
+@[simp]
+theorem piProd_apply (B C : ι → Type*) [∀ i, AddCommGroup (B i)] [∀ i, AddCommGroup (C i)]
+    (f : ∀ i, B i × C i) : piProd B C f = (fun i ↦ (f i).1, fun i ↦ (f i).2) :=
+  by
+    change Equiv.arrowProdEquivProdArrow ι B C f = _
+    exact Equiv.arrowProdEquivProdArrow_apply ι B C f
+
+/-- The inverse of `piProd` pairs component functions pointwise. -/
+@[simp]
+theorem piProd_symm_apply (B C : ι → Type*) [∀ i, AddCommGroup (B i)]
+    [∀ i, AddCommGroup (C i)] (f : (∀ i, B i) × (∀ i, C i)) :
+    (piProd B C).symm f = fun i ↦ (f.1 i, f.2 i) :=
+  by
+    apply funext
+    intro i
+    change (Equiv.arrowProdEquivProdArrow ι B C).symm f i = _
+    exact Equiv.arrowProdEquivProdArrow_symm_apply ι B C f i
+
 /-- A product of two copies of an additive group, presented as functions on `Fin 2`. -/
 def finTwoArrowEquivProd (A : Type*) [AddCommGroup A] : (Fin 2 → A) ≃+ A × A :=
   { finTwoArrowEquiv A with map_add' := fun _ _ ↦ rfl }
+
+/-- `finTwoArrowEquivProd` evaluates a function at `0` and `1`. -/
+@[simp]
+theorem finTwoArrowEquivProd_apply (A : Type*) [AddCommGroup A] (f : Fin 2 → A) :
+    finTwoArrowEquivProd A f = (f 0, f 1) :=
+  by
+    change finTwoArrowEquiv A f = _
+    rw [finTwoArrowEquiv_apply]
+    rfl
+
+/-- The inverse of `finTwoArrowEquivProd` evaluates to the first component at `0`. -/
+@[simp]
+theorem finTwoArrowEquivProd_symm_apply_zero (A : Type*) [AddCommGroup A] (x : A × A) :
+    (finTwoArrowEquivProd A).symm x 0 = x.1 :=
+  by
+    change (finTwoArrowEquiv A).symm x 0 = _
+    rw [finTwoArrowEquiv_symm_apply]
+    rfl
+
+/-- The inverse of `finTwoArrowEquivProd` evaluates to the second component at `1`. -/
+@[simp]
+theorem finTwoArrowEquivProd_symm_apply_one (A : Type*) [AddCommGroup A] (x : A × A) :
+    (finTwoArrowEquivProd A).symm x 1 = x.2 :=
+  by
+    change (finTwoArrowEquiv A).symm x 1 = _
+    rw [finTwoArrowEquiv_symm_apply]
+    rfl
 
 end AddEquiv
 
