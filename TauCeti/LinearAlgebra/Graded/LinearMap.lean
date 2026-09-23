@@ -134,7 +134,7 @@ variable {R : Type uR} {S : Type*} {ι : Type uι} {M : Type uM} {N : Type uN}
 
 /-- A scalar multiple of a homogeneous linear map has the same degree. -/
 @[grind ←]
-theorem IsHomogeneous.smul [Monoid S] [DistribMulAction S N] [SMulCommClass R S N]
+theorem IsHomogeneous.smul [DistribSMul S N] [SMulCommClass R S N]
     [SMulMemClass σN S N] {f : M →ₗ[R] N} {𝒜 : ι → σM}
     {ℬ : ι → σN} {q : ι} (hf : IsHomogeneous f 𝒜 ℬ q) (s : S) :
     IsHomogeneous (s • f) 𝒜 ℬ q := by

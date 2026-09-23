@@ -35,8 +35,8 @@ variable {n : Type*} {S T : Type*}
 
 /-- **The condition `Mᵀ = -M` passes to the image of the matrix** under an additive morphism of
 the value rings. -/
-theorem transpose_map_of_transpose_eq_neg [AddGroup S] [AddGroup T] {F : Type*} [FunLike F S T]
-    [AddMonoidHomClass F S T] (f : F) {M : Matrix n n S} (hM : Mᵀ = -M) :
+theorem transpose_map_of_transpose_eq_neg [AddGroup S] [SubtractionMonoid T] {F : Type*}
+    [FunLike F S T] [AddMonoidHomClass F S T] (f : F) {M : Matrix n n S} (hM : Mᵀ = -M) :
     (M.map f)ᵀ = -M.map f := by
   ext a b
   have h := congrFun (congrFun hM a) b
@@ -70,7 +70,7 @@ theorem diag_eq_zero_of_transpose_eq_neg_of_charP [Ring S] (p : ℕ) [CharP S p]
 /-- **Two matrices equal to the negatives of their transposes agree as soon as they agree above
 the diagonal**, provided both diagonals vanish: the entries below the diagonal are the negatives
 of their mirror images. -/
-theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [AddGroup S] {M N : Matrix n n S}
+theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [Zero S] [Neg S] {M N : Matrix n n S}
     (hM : Mᵀ = -M) (hN : Nᵀ = -N) (hMd : ∀ a, M a a = 0) (hNd : ∀ a, N a a = 0)
     (h : ∀ a b : n, a < b → M a b = N a b) : M = N := by
   have hskew : ∀ K : Matrix n n S, Kᵀ = -K → ∀ a b, K b a = -K a b := by

@@ -34,11 +34,11 @@ public section
 
 namespace Matrix
 
-variable {l m n o ι S : Type*} [CommSemiring S]
+variable {l m n o ι S : Type*}
 
 /-- **An ideal containing the entries of a matrix contains the entries of any two-sided product
 formed from it.** Each entry of `P * A * Q` is an `S`-combination of entries of `A`. -/
-theorem mul_mul_apply_mem [Fintype m] [Fintype n] {A : Matrix m n S} {I : Ideal S}
+theorem mul_mul_apply_mem [CommSemiring S] [Fintype m] [Fintype n] {A : Matrix m n S} {I : Ideal S}
     (hA : ∀ i j, A i j ∈ I) (P : Matrix l m S) (Q : Matrix n o S) (i : l) (j : o) :
     (P * A * Q) i j ∈ I := by
   rw [Matrix.mul_apply]
@@ -49,7 +49,7 @@ theorem mul_mul_apply_mem [Fintype m] [Fintype n] {A : Matrix m n S} {I : Ideal 
 
 /-- **An ideal containing the entries of a family of matrices contains the entries of every
 linear combination of them.** -/
-theorem sum_smul_apply_mem [Fintype ι] {F : ι → Matrix m n S} {I : Ideal S}
+theorem sum_smul_apply_mem [Semiring S] [Fintype ι] {F : ι → Matrix m n S} {I : Ideal S}
     (hF : ∀ a i j, F a i j ∈ I) (c : ι → S) (i : m) (j : n) :
     (∑ a, c a • F a) i j ∈ I := by
   rw [Matrix.sum_apply]
