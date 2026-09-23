@@ -133,8 +133,9 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMargina
 @[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] (i : ℕ) (r : Fin n) :
-    (P.map fun x (j : Fin (n * m)) => x (i * (n * m) + j)).map
-      (blockRestriction (α := α) m n r) =
+    (@ProbabilityMeasure.blockMarginals α _ P (n * m)
+      ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
+        (blockRestriction (α := α) m n r) =
       P.blockMarginals m (i * n + r) := by
   let _ : NeZero n := r.neZero
   have hOld : (@ProbabilityMeasure.blockMarginals α _ P (n * m)
@@ -156,7 +157,7 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMargin
       (measurable_pi_apply r) (Measurable.of_eval fun r => Measurable.of_eval fun j =>
         measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
     simpa only [hcomp, Function.comp_def] using h
-  simpa only [ProbabilityMeasure.blockMarginals_apply, Nat.divModEquiv_symm_apply] using hOld
+  exact hOld
 
 /-- The permutation of path coordinates induced by permuting blocks and preserving the position
 inside each block. -/

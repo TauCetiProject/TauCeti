@@ -98,9 +98,10 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.probabilityMeasureCode_map_apply
     {β : Type*} [MeasurableSpace β] [CountablyGenerated β]
     (P : ProbabilityMeasure α) (f : α → β) (hf : AEMeasurable f P)
     (s : ProbabilityMeasureCodeIndex β) :
-    (Measure.map f (P : Measure α)) (s : Set β) =
+    probabilityMeasureCode (P.map f) s =
       (P : Measure α) (f ⁻¹' (s : Set β)) := by
-  exact Measure.map_apply_of_aemeasurable hf (measurableSet_probabilityMeasureCodeIndex s)
+  simpa only [probabilityMeasureCode_apply, ProbabilityMeasure.toMeasure_map] using
+    Measure.map_apply_of_aemeasurable hf (measurableSet_probabilityMeasureCodeIndex s)
 
 omit [CountablyGenerated α] in
 /-- A measurable pushforward followed by the canonical measure code is measurable in the input
