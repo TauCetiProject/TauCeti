@@ -11,12 +11,18 @@ public import TauCeti.Algebra.Group.Subgroup.Map
 /-!
 # Conjugate subgroups
 
-This file packages the set of conjugates of a subgroup.  A conjugate of `H ≤ G` is the image
-of `H` under the inner automorphism `MulAut.conj g` for some `g : G`.
+This file characterizes membership in the orbit of a subgroup under conjugation and transports
+that orbit across a group isomorphism. A conjugate of `H ≤ G` is the image of `H` under
+`MulAut.conj g` for some `g : G`.
 
 ## Main definitions
 
-* `MulAction.orbit (ConjAct G) H`: the set of conjugates of a subgroup `H`.
+* `MulEquiv.conjugateSubgroupsEquiv`: a group isomorphism identifies the conjugates of
+  corresponding subgroups.
+
+## Main results
+
+* `TauCeti.mem_conjugateSubgroups_iff`: orbit membership is subgroup conjugation.
 -/
 
 public section
@@ -79,6 +85,7 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
 theorem conjugateSubgroupsEquiv_apply {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G) (J : MulAction.orbit (ConjAct G) H) :
     ((conjugateSubgroupsEquiv e H) J).1 = J.1.map (e : G →* G') := by
+  -- The subtype equivalence applies `e.mapSubgroup`; its map is the underlying monoid hom.
   change e.mapSubgroup J.1 = J.1.map e.toMonoidHom
   rfl
 
@@ -88,6 +95,7 @@ theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G)
     (J : MulAction.orbit (ConjAct G') (H.map (e : G →* G'))) :
     (((conjugateSubgroupsEquiv e H).symm J).1) = J.1.map (e.symm : G' →* G) := by
+  -- The inverse subtype equivalence applies `e.mapSubgroup.symm`.
   change e.mapSubgroup.symm J.1 = J.1.map e.symm.toMonoidHom
   rfl
 

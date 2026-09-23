@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Subgroup.Conjugates
 public import TauCeti.FieldTheory.Galois.FixedField
+public import TauCeti.FieldTheory.IntermediateField.ConjugateFields
 
 /-!
 # Conjugate intermediate fields
@@ -24,7 +25,6 @@ distinct images of those embeddings are indexed by the cosets of
 
 ## Main definitions
 
-* `IntermediateField.conjugateFields`: the orbit of an intermediate field.
 * `IntermediateField.conjugateFieldsEquivConjugateSubgroups`: the Galois-correspondence
   bijection between those two sets.
 * `IntermediateField.quotientNormalizerEquivConjugateFields`: normalizer cosets index the
@@ -39,53 +39,12 @@ distinct images of those embeddings are indexed by the cosets of
 
 public section
 
-namespace TauCeti
-
 open IntermediateField MulAction
 open scoped Pointwise
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-
-/-- The action of the automorphism group of `L / K` on its intermediate fields. -/
-instance instMulActionIntermediateField : MulAction (L ≃ₐ[K] L) (IntermediateField K L) where
-  smul σ E := E.map σ.toAlgHom
-  one_smul E := by
-    -- The action is defined by `map`; the identity automorphism coerces to `AlgHom.id`.
-    change E.map (AlgHom.id K L) = E
-    exact E.map_id
-  mul_smul σ τ E := by
-    -- The product automorphism coerces to the composite in the order used by `map_map`.
-    change E.map (σ * τ).toAlgHom = (E.map τ.toAlgHom).map σ.toAlgHom
-    rw [IntermediateField.map_map]
-    congr 1
-
-end TauCeti
-
-open IntermediateField MulAction
-open scoped Pointwise
-
-variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-
-namespace AlgEquiv
-
-/-- Conjugating an intermediate field means mapping it along the automorphism. -/
-@[simp]
-theorem smul_intermediateField_def (σ : L ≃ₐ[K] L) (E : IntermediateField K L) :
-    σ • E = E.map σ.toAlgHom :=
-  (rfl)
-
-end AlgEquiv
 
 namespace IntermediateField
-
-/-- The set of images of `E` under automorphisms of the ambient extension. -/
-def conjugateFields (E : IntermediateField K L) : Set (IntermediateField K L) :=
-  orbit (L ≃ₐ[K] L) E
-
-/-- Membership in `conjugateFields E` means being the image of `E` under an automorphism. -/
-theorem mem_conjugateFields_iff {E E' : IntermediateField K L} :
-    E' ∈ conjugateFields E ↔ ∃ σ : L ≃ₐ[K] L, E.map σ.toAlgHom = E' := by
-  simp [conjugateFields, mem_orbit_iff, eq_comm]
 
 section Galois
 
@@ -163,6 +122,7 @@ noncomputable def quotientNormalizerEquivConjugateFields (E : IntermediateField 
 theorem quotientNormalizerEquivConjugateFields_mk (E : IntermediateField K L)
     (σ : L ≃ₐ[K] L) :
     ((quotientNormalizerEquivConjugateFields E) (QuotientGroup.mk σ)).1 = σ • E := by
+  -- Expose the composite equivalence so its two component application lemmas can rewrite.
   change (((Subgroup.quotientEquivOfEq
     (stabilizer_intermediateField_eq_normalizer E).symm).trans
       (MulAction.orbitEquivQuotientStabilizer (L ≃ₐ[K] L) E).symm)
