@@ -19,7 +19,7 @@ factor of `c`.
 
 This covariance removes the translation and positive-scaling redundancy from the prevertex
 parameters.  The corresponding normalization of two ordered real points is developed separately
-in `TauCeti.Analysis.Real.Affine`.
+in `TauCeti.Algebra.Order.Field.Basic`.
 
 ## Main results
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
-# Principal complex powers and positive real scaling
+# Principal complex powers: positive real scaling and inversion on a sector
 
 Multiplication of a complex number by a nonnegative real scalar is compatible with principal
 complex powers.  Away from zero, this follows because positive scaling does not cross the branch
@@ -20,10 +20,11 @@ argument stays inside the principal range `(-π, π]`, which is where `Complex.c
 applied.  For a positive real exponent `r` that range is reached exactly on the sector
 `-(r * π) < arg u ≤ r * π`.
 
-## Main result
+## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
-* `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`
+* `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
+  base on a suitable sector.
 -/
 
 public section
@@ -32,9 +33,10 @@ open Complex
 
 namespace TauCeti
 
-/-- A principal complex power splits across multiplication by a nonnegative real scalar.  When
-both factors are nonzero, positive scaling preserves the argument and makes the principal
-logarithm additive; the zero cases follow from the totalized definition of `cpow`. -/
+/-- A principal complex power splits across multiplication by a nonnegative real scalar:
+`((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w` for all complex `z` and `w`, without a branch
+hypothesis on `z`.  This generalizes `Complex.mul_cpow_ofReal_nonneg` to a complex second factor;
+the proof follows Mathlib's. -/
 theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     ((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w := by
   rcases eq_or_ne w 0 with (rfl | hw)
