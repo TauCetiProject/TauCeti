@@ -108,18 +108,6 @@ open scoped nonZeroDivisors ComplexOrder
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The prime-norm parameter strictly decreases as the real part of the exponent increases. -/
-theorem norm_absNorm_cpow_neg_lt_of_re_gt (P : HeightOneSpectrum (𝓞 K))
-    {σ : ℝ} {s : ℂ} (hs : σ < s.re) :
-    ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ <
-      ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ := by
-  rw [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-    (NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-    Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-      (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
-  exact Real.rpow_lt_rpow_of_exponent_lt (by
-    exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
-
 namespace EulerProductData
 
 open IdealArithmeticFunction
@@ -276,6 +264,26 @@ theorem norm_absNorm_cpow_neg_le_radius_localPowerSeries
     ring
   apply FormalMultilinearSeries.le_radius_of_summable
   simpa [q, FormalMultilinearSeries.ofScalars_norm] using hlocal.norm
+
+/-- Absolute convergence at `σ` gives a radius bound for the local power series, and the
+prime-norm parameter at `s` lies strictly inside that radius when `σ < Re(s)`. -/
+theorem localPowerSeries_radius_data (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
+    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
+    (hs : σ < s.re) :
+    let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
+    (r : ENNReal) ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦
+      PowerSeries.coeff n (D.localPowerSeries P)).radius ∧
+    ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
+  dsimp
+  constructor
+  · exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
+  · rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
+    apply NNReal.coe_lt_coe.mp
+    simpa only [coe_nnnorm, Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
+      (NumberField.HeightOneSpectrum.one_lt_absNorm P))] using
+      (Real.rpow_lt_rpow_of_exponent_lt (by
+        exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P)
+        (by simp; linarith : (-s).re < (-(σ : ℂ)).re))
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set
 `S` of primes are absolutely convergent `LSeries`, so are the norm coefficients of the restriction

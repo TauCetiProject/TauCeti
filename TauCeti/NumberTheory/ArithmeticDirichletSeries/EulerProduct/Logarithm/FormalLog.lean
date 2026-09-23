@@ -43,21 +43,6 @@ open scoped nonZeroDivisors NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-private theorem localLogSeries_radius_data (D : EulerProductData K)
-    (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
-    (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))
-    (hs : σ < s.re) :
-    let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
-    (r : ENNReal) ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦
-      PowerSeries.coeff n (D.localPowerSeries P)).radius ∧
-    ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
-  dsimp
-  constructor
-  · simpa using D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
-  · rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
-    exact NNReal.coe_lt_coe.mp (by simpa only [coe_nnnorm] using
-      norm_absNorm_cpow_neg_lt_of_re_gt P hs)
-
 /-- The evaluated formal logarithm of a local Euler factor converges absolutely inside every
 zero-free disk on which the local factor converges. -/
 theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
@@ -71,7 +56,7 @@ theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
     Summable fun e : ℕ ↦ ‖PowerSeries.coeff e (D.localLogSeries P) *
       ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e‖ := by
   let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
-  obtain ⟨hr, hz⟩ := localLogSeries_radius_data D P hσ hs
+  obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P hσ hs
   rw [D.localLogSeries_def]
   apply PowerSeries.summable_norm_coeff_logOf_mul_pow_of_zeroFree
     (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
@@ -96,7 +81,7 @@ theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
     Complex.exp (∑' e : ℕ, PowerSeries.coeff e (D.localLogSeries P) *
       ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e) = D.eulerFactor P s := by
   let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
-  obtain ⟨hr, hz⟩ := localLogSeries_radius_data D P hσ hs
+  obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P hσ hs
   rw [D.localLogSeries_def]
   calc
     Complex.exp (∑' e : ℕ, PowerSeries.coeff e (PowerSeries.logOf

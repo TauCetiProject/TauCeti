@@ -64,22 +64,13 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
         ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
   let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
   -- The canonical local-factor radius bound supplies the analytic disk.
-  have hr : (r : ENNReal) ≤
-      (FormalMultilinearSeries.ofScalars ℂ fun n ↦
-        PowerSeries.coeff n (D.localPowerSeries P)).radius := by
-    exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P
-      (LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ))
-  have hz : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
-    dsimp [r]
-    exact NNReal.coe_lt_coe.mp (by simpa only [coe_nnnorm] using
-      norm_absNorm_cpow_neg_lt_of_re_gt P hs)
+  obtain ⟨hr, hz⟩ := D.localPowerSeries_radius_data P
+    (LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ)) hs
   -- Zero-freeness lets the analytic logarithmic derivative inherit that radius.
   have hlog := PowerSeries.summable_coeff_logDeriv_mul_pow_of_zeroFree
     (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
     (fun z hz' ↦ hne z (by
       rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
-      dsimp [r] at hz'
       exact_mod_cast hz')) hz
   -- Multiplication by `X` shifts the formal logarithmic derivative by one degree.
   rw [← summable_nat_add_iff 1]
