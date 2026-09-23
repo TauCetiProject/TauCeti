@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
-public import TauCeti.FieldTheory.KummerExtension
 
 /-!
 # Ramification in a radical extension `y ^ n = u`
