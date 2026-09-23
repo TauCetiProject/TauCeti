@@ -128,16 +128,11 @@ theorem orbit_mk_injOn_canonicalReps [ModularFormClass F 𝒮ℒ k] (f : F) :
       ↑(canonicalReps f) := by
   refine ModularGroup.orbit_mk_injOn_fd_left.mono fun p hp ↦ ?_
   obtain ⟨hmem, hcond⟩ := mem_canonicalReps.mp hp
-  refine ⟨(mem_fdZeros.mp hmem).1, ?_, ?_⟩
-  · rcases hcond with ⟨-, habs⟩ | ⟨hre, -⟩ | ⟨-, -, hre⟩
-    · exact lt_of_abs_lt (coe_re p ▸ habs)
-    · norm_num [← coe_re, hre]
-    · exact (coe_re p ▸ hre).trans (by norm_num)
-  · intro hnorm
-    rcases hcond with ⟨hgt, -⟩ | ⟨-, hgt⟩ | ⟨-, -, hre⟩
-    · norm_num [hnorm] at hgt
-    · norm_num [hnorm] at hgt
-    · exact (coe_re p ▸ hre).le
+  refine ⟨(mem_fdZeros.mp hmem).1, ?_⟩
+  rcases hcond with ⟨hgt, habs⟩ | ⟨hre, hgt⟩ | ⟨-, -, hre⟩
+  · exact ⟨lt_of_abs_lt habs, fun h ↦ absurd h hgt.ne'⟩
+  · exact ⟨hre.trans_lt (by norm_num), fun h ↦ absurd h hgt.ne'⟩
+  · exact ⟨hre.trans (by norm_num), fun _ ↦ hre.le⟩
 
 private lemma normSq_coe_vadd_neg_one {p : ℍ} (hre : (p : ℂ).re = 1 / 2) :
     Complex.normSq (((-1 : ℝ) +ᵥ p : ℍ) : ℂ) = Complex.normSq (p : ℂ) := by
