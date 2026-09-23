@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.PowerSeries.Log
+public import TauCeti.Analysis.Complex.PowerSeries.Log.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Coeff
 
@@ -110,11 +110,6 @@ theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
         rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
         exact_mod_cast hz'
       · exact hz
-    _ = D.eulerFactor P s := by
-      rw [FormalMultilinearSeries.ofScalars_sum_eq, D.eulerFactor_eq_tsum]
-      exact tsum_congr fun e ↦ by
-        rw [D.coeff_localPowerSeries]
-        exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
-          D.toIdealArithmeticFunction P s e).symm
+    _ = D.eulerFactor P s := D.ofScalarsSum_localPowerSeries_eq_eulerFactor P s
 
 end TauCeti.EulerProductData

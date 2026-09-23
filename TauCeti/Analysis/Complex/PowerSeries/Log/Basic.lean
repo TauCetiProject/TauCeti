@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.PowerSeries.LogDeriv
+public import TauCeti.Analysis.Complex.PowerSeries.Log.Deriv
 import TauCeti.Analysis.Complex.BranchLogRoot
-import Mathlib.Analysis.Complex.TaylorSeries
 import Mathlib.Analysis.Normed.Module.Connected
 
 /-!

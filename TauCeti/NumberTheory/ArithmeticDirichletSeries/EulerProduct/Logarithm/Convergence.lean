@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.PowerSeries.LogDeriv
+public import TauCeti.Analysis.Complex.PowerSeries.Log.Deriv
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Eval
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
@@ -100,22 +100,8 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries_of_ze
     (hσ.trans (by exact_mod_cast hs))
     (by
       have hzero := hne ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s))
-      have hP0 := Nat.zero_lt_of_lt (NumberField.HeightOneSpectrum.one_lt_absNorm P)
-      have hlt : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ <
-          ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ := by
-        simp only [Complex.norm_natCast_cpow_of_pos hP0]
-        exact Real.rpow_lt_rpow_of_exponent_lt (by
-          exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
-      have heval :
-          FormalMultilinearSeries.ofScalarsSum (E := ℂ)
-              (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
-              ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) = D.eulerFactor P s := by
-        rw [FormalMultilinearSeries.ofScalars_sum_eq, D.eulerFactor_eq_tsum]
-        exact tsum_congr fun e ↦ by
-          rw [D.coeff_localPowerSeries]
-          exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
-            D.toIdealArithmeticFunction P s e).symm
-      rw [← heval]
+      have hlt := norm_absNorm_cpow_neg_lt_of_re_gt P hs
+      rw [← D.ofScalarsSum_localPowerSeries_eq_eulerFactor P s]
       exact hzero hlt)
     (D.summable_coeff_localLogDerivSeries_of_zeroFree P hσ hne hs)
 
