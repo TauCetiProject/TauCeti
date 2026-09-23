@@ -89,11 +89,6 @@ def IsPlanar (D : PDCode n) : Prop :=
   orbitCount D.projectionTriple.σinf =
     n + 2 * Nat.card D.projectionTriple.ribbonGraph.ConnectedComponent
 
-/-- The face-count characterization of planarity of a PD rotation system. -/
-theorem isPlanar_iff (D : PDCode n) : D.IsPlanar ↔
-    orbitCount D.projectionTriple.σinf =
-      n + 2 * Nat.card D.projectionTriple.ribbonGraph.ConnectedComponent := Iff.rfl
-
 /-- For a connected projection, planarity is the Euler condition `F = n + 2`. -/
 theorem isPlanar_iff_of_connected (D : PDCode n)
     (h : D.projectionTriple.IsConnected) :
@@ -102,7 +97,8 @@ theorem isPlanar_iff_of_connected (D : PDCode n)
     (PermutationTriple.isConnected_ribbonGraph D.projectionTriple).mpr h
   have hc : Fintype.card D.projectionTriple.ribbonGraph.ConnectedComponent = 1 :=
     (BipartiteRibbonGraph.isConnected_iff_card_connectedComponent_eq_one _).mp hr
-  rw [isPlanar_iff, projectionTriple_σinf, Nat.card_eq_fintype_card, hc]
+  unfold IsPlanar
+  rw [projectionTriple_σinf, Nat.card_eq_fintype_card, hc]
 
 end TauCeti.PDCode
 
