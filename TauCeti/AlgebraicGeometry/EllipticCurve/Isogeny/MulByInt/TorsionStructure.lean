@@ -175,7 +175,7 @@ private theorem prodPrimePowerInt {N : ℕ} (hN : N ≠ 0) :
 open scoped Classical in
 omit [IsSepClosed K] in
 /-- The primary torsion subgroups form an internal direct sum of `E[N]`. -/
-private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K) [W.IsElliptic]
+private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
     (N : ℕ) [NeZero N] : DirectSum.IsInternal fun p : N.primeFactors ↦
     Submodule.torsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))
       ((p ^ N.factorization p : ℕ) : ℤ) := by
