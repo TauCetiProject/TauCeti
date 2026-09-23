@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Instances.ZMod
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 import Mathlib.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # Continuous characters and the pro-`p` Frattini subgroup
 
-A continuous character to the additive group of `ZMod p` is either trivial or has kernel of
-index `p`. Thus every continuous character of a profinite group factors through its Frattini
+A continuous homomorphism to a discrete group of cardinality `p` is either trivial or has kernel
+of index `p`. Thus every continuous character to `𝔽_p` factors through the pro-`p` Frattini
 quotient. This is the character-theoretic input to describing the generator rank of a pro-`p`
-group by its continuous `𝔽_p`-valued characters. The finite target is given its discrete
-topology.
+group by its continuous `𝔽_p`-valued characters. The lift uses the quotient topology.
 
 ## References
 
@@ -30,68 +31,101 @@ namespace TauCeti
 universe u
 
 variable {p : ℕ} [Fact p.Prime]
-variable [TopologicalSpace (Multiplicative (ZMod p))]
-  [DiscreteTopology (Multiplicative (ZMod p))]
 variable {G : Type u} [Group G] [TopologicalSpace G]
 
-local instance : Fact (Nat.card (Multiplicative (ZMod p))).Prime := ⟨by
-  rw [Nat.card_congr Multiplicative.toAdd, Nat.card_zmod p]
-  exact Fact.out⟩
-
-/-- The pro-`p` Frattini subgroup lies in the kernel of every continuous character to
-`𝔽_p`. Equivalently, such a character descends to the Frattini quotient. -/
-theorem _root_.ContinuousMonoidHom.proPFrattini_le_ker
-    (f : G →ₜ* Multiplicative (ZMod p)) : proPFrattini p G ≤ f.ker := by
+/-- The pro-`p` Frattini subgroup lies in the kernel of every continuous homomorphism to a
+discrete group of cardinality `p`. -/
+theorem _root_.ContinuousMonoidHom.proPFrattini_le_ker {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
+    proPFrattini p G ≤ f.ker := by
   by_cases hf : ∀ x, f x = 1
   · intro x hx
-    -- Membership in the kernel is the equation defining the kernel subgroup.
-    change f x = 1
-    exact hf x
+    exact MonoidHom.mem_ker.mpr (hf x)
   · push Not at hf
     have hrange : f.toMonoidHom.range = ⊤ := by
-      rcases (f.toMonoidHom.range).eq_bot_or_eq_top_of_prime_card with hbot | htop
+      rcases (f.toMonoidHom.range).eq_bot_or_eq_top_of_prime_card
+          (hp := ⟨hH ▸ Fact.out⟩) with hbot | htop
       · obtain ⟨x, hx⟩ := hf
         rw [MonoidHom.range_eq_bot_iff] at hbot
         have hfx : f x = 1 := by
-          simpa using congrArg (fun k : G →* Multiplicative (ZMod p) => k x) hbot
+          simpa using congrArg (fun k : G →* H => k x) hbot
         exact (hx hfx).elim
       · exact htop
     have hopen : IsOpen (f.ker : Set G) := by
-      -- The kernel is the preimage of the identity in the discrete target.
-      change IsOpen (f ⁻¹' ({1} : Set (Multiplicative (ZMod p))))
+      rw [MonoidHom.coe_ker]
       exact (isOpen_discrete {1}).preimage f.continuous
-    let U : OpenNormalSubgroup G :=
-      { toOpenSubgroup := ⟨f.ker, hopen⟩
-        isNormal' := inferInstance }
-    have hindex : U.toSubgroup.index = p := by
-      -- Unfolding this local open normal subgroup exposes the homomorphism kernel.
-      change f.toMonoidHom.ker.index = p
+    have hindex : f.toMonoidHom.ker.index = p := by
       rw [Subgroup.index_ker, hrange]
-      simp
-    exact proPFrattini_le hindex
+      simp [hH]
+    exact proPFrattini_le (U := ⟨⟨f.ker, hopen⟩, inferInstance⟩) hindex
 
-/-- Every continuous character to `𝔽_p` factors uniquely through the pro-`p` Frattini
-quotient. -/
-theorem _root_.ContinuousMonoidHom.existsUnique_frattiniQuotient_lift
-    [IsTopologicalGroup G] (f : G →ₜ* Multiplicative (ZMod p)) :
-    ∃! g : (G ⧸ proPFrattini p G) →ₜ* Multiplicative (ZMod p),
-      g.toMonoidHom.comp (QuotientGroup.mk' (proPFrattini p G)) = f.toMonoidHom := by
-  have hker := ContinuousMonoidHom.proPFrattini_le_ker f
+/-- The continuous homomorphism induced on the pro-`p` Frattini quotient by a continuous
+homomorphism to a discrete group of cardinality `p`. -/
+def _root_.ContinuousMonoidHom.frattiniQuotientLift {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
+    (G ⧸ proPFrattini p G) →ₜ* H := by
+  have hker := ContinuousMonoidHom.proPFrattini_le_ker hH f
   let g₀ := QuotientGroup.lift (proPFrattini p G) f.toMonoidHom hker
-  have hcomp : g₀.comp (QuotientGroup.mk' (proPFrattini p G)) = f.toMonoidHom :=
-    QuotientGroup.lift_comp_mk' _ _ _
-  have hcontinuous : Continuous g₀ := by
-    apply QuotientGroup.isOpenQuotientMap_mk.continuous_comp_iff.mp
-    -- The quotient lift composes back to `f` along the quotient map.
-    change Continuous (fun x : G ↦
-      QuotientGroup.lift (proPFrattini p G) f.toMonoidHom hker (QuotientGroup.mk x))
-    simp only [QuotientGroup.lift_mk']
-    exact f.continuous
-  let g : (G ⧸ proPFrattini p G) →ₜ* Multiplicative (ZMod p) := ⟨g₀, hcontinuous⟩
-  refine ⟨g, hcomp, ?_⟩
-  intro g' hg'
-  apply ContinuousMonoidHom.toMonoidHom_injective
-  apply QuotientGroup.monoidHom_ext
-  exact hg'.trans hcomp.symm
+  have hcomp : ⇑g₀ ∘ QuotientGroup.mk = f := by
+    funext x
+    exact QuotientGroup.lift_mk' _ _ _
+  exact ⟨g₀, (QuotientGroup.isQuotientMap_mk (proPFrattini p G)).continuous_iff.mpr
+    (hcomp ▸ f.continuous)⟩
+
+/-- Evaluation of the induced homomorphism on a class represented by `x`. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.frattiniQuotientLift_mk {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) (x : G) :
+    ContinuousMonoidHom.frattiniQuotientLift hH f (x : G ⧸ proPFrattini p G) = f x :=
+  QuotientGroup.lift_mk' (N := proPFrattini p G) (φ := f.toMonoidHom)
+    (HN := ContinuousMonoidHom.proPFrattini_le_ker hH f) x
+
+/-- Composition with the quotient projection recovers the original homomorphism. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.frattiniQuotientLift_comp_quotientMk {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
+    (ContinuousMonoidHom.frattiniQuotientLift hH f).comp
+      (ContinuousMonoidHom.quotientMk (proPFrattini p G)) = f := by
+  ext x
+  simp
+
+/-- A continuous homomorphism on the quotient with the same values on representatives as `f`
+equals `frattiniQuotientLift hH f`. -/
+theorem _root_.ContinuousMonoidHom.frattiniQuotientLift_unique {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H)
+    (g : (G ⧸ proPFrattini p G) →ₜ* H)
+    (hg : ∀ x : G, g (x : G ⧸ proPFrattini p G) = f x) :
+    g = ContinuousMonoidHom.frattiniQuotientLift hH f := by
+  ext q
+  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (proPFrattini p G) q
+  exact hg x
+
+/-- Continuous homomorphisms to a discrete group of cardinality `p` factor uniquely through the
+pro-`p` Frattini quotient. -/
+theorem _root_.ContinuousMonoidHom.existsUnique_frattiniQuotient_lift {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
+    ∃! g : (G ⧸ proPFrattini p G) →ₜ* H,
+      g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) = f := by
+  refine ⟨ContinuousMonoidHom.frattiniQuotientLift hH f, by simp, ?_⟩
+  intro g hg
+  apply ContinuousMonoidHom.frattiniQuotientLift_unique hH f
+  intro x
+  have hx := congrArg (fun k : G →ₜ* H => k x) hg
+  simpa using hx
+
+/-- Precomposition with the Frattini quotient projection identifies continuous homomorphisms
+from the quotient with continuous homomorphisms from `G` for a discrete target of cardinality
+`p`. -/
+def _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) :
+    ((G ⧸ proPFrattini p G) →ₜ* H) ≃ (G →ₜ* H) where
+  toFun f := f.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G))
+  invFun f := ContinuousMonoidHom.frattiniQuotientLift hH f
+  left_inv f := by
+    apply ContinuousMonoidHom.ext
+    intro q
+    obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (proPFrattini p G) q
+    simp
+  right_inv f := by simp
 
 end TauCeti
