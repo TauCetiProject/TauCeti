@@ -12,15 +12,10 @@ public import TauCeti.Combinatorics.Quiver.Arborescence
 /-!
 # A free basis from a spanning tree
 
-A geodesic spanning tree in a free groupoid gives a basis of the vertex group indexed by the
-directed edges outside the underlying unoriented tree.  The finite-quiver cardinality results in
+Given an arborescence in the symmetrified generating quiver of a free groupoid, this file
+constructs a basis of the vertex group at the root, indexed by directed edges outside the
+underlying unoriented tree.  The finite-quiver cardinality results in
 `TauCeti.Combinatorics.Quiver.Arborescence` count this basis in applications to Schreier bounds.
-
-The explicit spanning-tree construction is adapted from the approach in
-`LeanPool/FiniteGraphFundamentalGroup/Proof.lean` in `Vilin97/lean-pool` at commit
-`38b8ba36899903cb7d3a42bb9f8a3f5c70fdb05f`.  That source is licensed under Apache-2.0 and
-credits Arthur Freitas Ramos, David Hulak, and Ruy de Queiroz.  This version is rewritten for
-Mathlib's `WideSubquiver`, `IsFreeGroupoid`, and `FreeGroupBasis` APIs.
 
 ## Main results
 
@@ -49,7 +44,6 @@ universe u
 namespace TauCeti
 
 namespace WideSubquiver
-
 
 /-- The loops attached to the directed edges outside an unoriented spanning tree form a free
 basis of the vertex group at the root. -/
@@ -121,8 +115,8 @@ noncomputable def spanningTreeBasis
     (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
     spanningTreeBasis T e =
       IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
-  -- `ofUniqueLift` builds the basis through `ofLift`; expose that wrapper's underlying free-group
-  -- lift so Mathlib's `FreeGroup.lift_apply_of` equation applies to this generator.
+  -- `ofUniqueLift` builds the basis through `ofLift`; expose its free-group lift so Mathlib's
+  -- `FreeGroup.lift_apply_of` equation applies at this generator.
   change FreeGroup.lift
       (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
       (FreeGroup.of e) = _

@@ -21,11 +21,11 @@ attribute [local implicit_reducible]
 
 public section
 
-universe u
+universe u v
 
 namespace TauCeti.WideSubquiver
 
-variable {V : Type u} [Quiver.{u} V]
+variable {V : Type u} [Quiver.{v, u} V]
 
 /-- Total arrows of a wide subquiver are equivalent to its set of ambient total arrows. -/
 def totalEquivSet (H : _root_.WideSubquiver V) :

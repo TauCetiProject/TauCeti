@@ -51,13 +51,13 @@ noncomputable section
 
 public section
 
-universe u
+universe u v
 
 namespace TauCeti
 
 namespace WideSubquiver
 
-variable {V : Type u} [Quiver.{u} V]
+variable {V : Type u} [Quiver.{v, u} V]
 
 private noncomputable instance wideSubquiverVertexFintype [Fintype V]
     (T : WideSubquiver V) : Fintype T :=
@@ -66,7 +66,7 @@ private noncomputable instance wideSubquiverVertexFintype [Fintype V]
 private noncomputable instance symmetrifyFintype [Fintype V] : Fintype (Symmetrify V) :=
   Fintype.ofEquiv V (Equiv.refl _)
 
-private lemma existsLastData {W : Type u} [Quiver.{u} W] [Arborescence W]
+private lemma existsLastData {W : Type u} [Quiver.{v, u} W] [Arborescence W]
     (b : W) (hb : b ≠ root W) :
     Nonempty (Σ a : W, Path (root W) a × (a ⟶ b)) := by
   let q : Path (root W) b := default
@@ -74,18 +74,18 @@ private lemma existsLastData {W : Type u} [Quiver.{u} W] [Arborescence W]
   | nil => exact False.elim (hb rfl)
   | cons p e => exact ⟨⟨_, p, e⟩⟩
 
-private noncomputable def lastData {W : Type u} [Quiver.{u} W] [Arborescence W]
+private noncomputable def lastData {W : Type u} [Quiver.{v, u} W] [Arborescence W]
     (b : {b : W // b ≠ root W}) :
     Σ a : W, Path (root W) a × (a ⟶ b.1) :=
   Classical.choice (existsLastData b.1 b.2)
 
-private lemma defaultPathLengthRoot {W : Type u} [Quiver.{u} W] [Arborescence W]
+private lemma defaultPathLengthRoot {W : Type u} [Quiver.{v, u} W] [Arborescence W]
     (b : W) (h : b = root W) :
     (default : Path (root W) b).length = 0 := by
   cases h
   exact congrArg Path.length (Subsingleton.elim _ Path.nil)
 
-private lemma targetNeRoot {W : Type u} [Quiver.{u} W] [Arborescence W]
+private lemma targetNeRoot {W : Type u} [Quiver.{v, u} W] [Arborescence W]
     (e : Quiver.Total W) : e.right ≠ root W := by
   intro h
   let p : Path (root W) e.left := default
@@ -95,7 +95,7 @@ private lemma targetNeRoot {W : Type u} [Quiver.{u} W] [Arborescence W]
   simp [p, hzero] at hlen
 
 /-- The directed edges of an arborescence correspond to the vertices other than its root. -/
-noncomputable def arborescenceEdgeEquiv (W : Type u) [Quiver.{u} W] [Arborescence W] :
+noncomputable def arborescenceEdgeEquiv (W : Type u) [Quiver.{v, u} W] [Arborescence W] :
     Quiver.Total W ≃ {b : W // b ≠ root W} where
   toFun e := ⟨e.right, targetNeRoot e⟩
   invFun b :=
@@ -112,12 +112,12 @@ noncomputable def arborescenceEdgeEquiv (W : Type u) [Quiver.{u} W] [Arborescenc
   right_inv b := by rfl
 
 /-- The forward map of `arborescenceEdgeEquiv` sends an edge to its target vertex. -/
-@[simp] theorem arborescenceEdgeEquiv_apply_val (W : Type u) [Quiver.{u} W] [Arborescence W]
+@[simp] theorem arborescenceEdgeEquiv_apply_val (W : Type u) [Quiver.{v, u} W] [Arborescence W]
     (e : Quiver.Total W) : (arborescenceEdgeEquiv W e).val = e.right := by
   rfl
 
 /-- The directed edges of a finite arborescence have cardinality one less than its vertices. -/
-theorem arborescenceEdgeCard (W : Type u) [Quiver.{u} W] [Arborescence W] [Finite W] :
+theorem arborescenceEdgeCard (W : Type u) [Quiver.{v, u} W] [Arborescence W] [Finite W] :
     Nat.card (Quiver.Total W) = Nat.card W - 1 := by
   classical
   exact (letI := Fintype.ofFinite W
