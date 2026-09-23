@@ -21,8 +21,9 @@ This file packages that construction as a formal `LaurentSeries ℂ`. It proves 
 coefficients below exponent `-k` vanish and, more importantly, that the resulting Laurent series
 converges to the descended function throughout the punctured unit disc. Thus the formal series is
 connected to the actual quotient function rather than merely recording its coefficients. The
-coefficients are uniquely characterized by this convergence, so the resulting series is
-independent of the valid growth bound `k` used to construct it.
+coefficients are uniquely characterized by this convergence together with the prescribed lower
+support bound, so the resulting series is independent of the valid growth bound `k` used to
+construct it.
 
 ## Main declarations
 
@@ -109,6 +110,7 @@ theorem laurentQExpansion_coeff_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : �
   simp
 
 /-- There are no Laurent coefficients below the prescribed lower exponent `-k`. -/
+@[simp]
 theorem laurentQExpansion_coeff_eq_zero_of_lt_neg (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
     {j : ℤ} (hj : j < -k) :
     (laurentQExpansion D k f).coeff j = 0 := by

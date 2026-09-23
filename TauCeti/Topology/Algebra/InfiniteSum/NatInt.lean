@@ -46,7 +46,7 @@ theorem hasSum_int_iff_natCast_sub {E : Type*} [AddCommMonoid E] [TopologicalSpa
 
 /-- Multiplication by `q ^ k` converts a sum with powers `q ^ (n - k)` into one with powers
 `q ^ n`. -/
-theorem hasSum_mul_zpow_natCast_sub_iff {K : Type*} [Field K] [TopologicalSpace K]
+theorem hasSum_mul_zpow_natCast_sub_iff {K : Type*} [Semifield K] [TopologicalSpace K]
     [IsTopologicalSemiring K] {a : ℕ → K} {q s : K}
     (hq : q ≠ 0) (k : ℤ) :
     HasSum (fun n : ℕ ↦ a n * q ^ ((n : ℤ) - k)) s ↔
