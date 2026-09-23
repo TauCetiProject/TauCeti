@@ -110,7 +110,7 @@ theorem exists_pow_mul_ι_mem_centralAugmentationIdeal_pow_of_isNilpotent_ad
   obtain ⟨e, he⟩ := exists_pow_ι_mem_centralAugmentation_of_isNilpotent_ad p hp h
   refine ⟨e, fun n ↦ ?_⟩
   rw [pow_mul]
-  exact Ideal.pow_mem_pow (mem_centralAugmentationIdeal_of_mem R U he) n
+  exact Ideal.pow_mem_pow (mem_centralAugmentationIdeal_of_mem_centralAugmentation R U he) n
 
 end ExpChar
 
