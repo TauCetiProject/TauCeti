@@ -40,18 +40,6 @@ instance instPreadditiveProd [Preadditive C] [Preadditive D] : Preadditive (C ×
   add_comp _ _ _ _ _ _ := by ext <;> simp
   comp_add _ _ _ _ _ _ := by ext <;> simp
 
-/-- Addition of morphisms in a product category is componentwise in the first coordinate. -/
-@[simp]
-lemma prod_add_fst [Preadditive C] [Preadditive D] {X Y : C × D} (f g : X ⟶ Y) :
-    (f + g).1 = f.1 + g.1 :=
-  rfl
-
-/-- Addition of morphisms in a product category is componentwise in the second coordinate. -/
-@[simp]
-lemma prod_add_snd [Preadditive C] [Preadditive D] {X Y : C × D} (f g : X ⟶ Y) :
-    (f + g).2 = f.2 + g.2 :=
-  rfl
-
 /-- A pair of zero objects is a zero object of the product category. -/
 instance [HasZeroObject C] [HasZeroObject D] : HasZeroObject (C × D) where
   zero := ⟨(0, 0),
@@ -155,9 +143,9 @@ instance [HasZeroObject D] : (_root_.CategoryTheory.Prod.sectL C (0 : D)).Additi
   map_add := by
     intro X Y f g
     apply Prod.hom_ext
-    · rw [prod_add_fst]
+    · rw [Prod.fst_add]
       rfl
-    · rw [prod_add_snd]
+    · rw [Prod.snd_add]
       change 𝟙 (0 : D) = 𝟙 (0 : D) + 𝟙 (0 : D)
       simp
 
@@ -166,10 +154,10 @@ instance [HasZeroObject C] : (_root_.CategoryTheory.Prod.sectR (0 : C) D).Additi
   map_add := by
     intro X Y f g
     apply Prod.hom_ext
-    · rw [prod_add_fst]
+    · rw [Prod.fst_add]
       change 𝟙 (0 : C) = 𝟙 (0 : C) + 𝟙 (0 : C)
       simp
-    · rw [prod_add_snd]
+    · rw [Prod.snd_add]
       rfl
 
 variable {C' : Type*} [Category* C'] [Preadditive C']
