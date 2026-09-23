@@ -15,13 +15,14 @@ public import Mathlib.Algebra.Module.ZMod
 
 Following Dougherty, Gulliver, and Harada, a Type II code over `ℤ/2^r` is an additive code which
 is self-dual for the `ℤ/2^r` dot product and all of whose Euclidean weights are divisible by
-`2^(r+1)`. These are exactly the codes whose Construction A lattices are even and unimodular.
+`2^(r+1)`. For `r ≥ 1`, these are exactly the codes whose Construction A lattices are even and
+unimodular.
 
 The notion is specific to moduli which are powers of two, so the predicate is stated only for
 codes over `ℤ/2^r`; it is not a predicate on codes over an arbitrary `ℤ/m`. The intended range is
-`r ≥ 1`: at `r = 0` every code over the trivial ring `ℤ/1` satisfies it, and the theorems which
-consume it assume `r ≠ 0`. At `r = 1` it is the binary Type II condition, since binary Euclidean
-weights are Hamming weights.
+`r ≥ 1`: at `r = 0` every code over the trivial ring `ℤ/1` satisfies it. The evenness
+characterization therefore requires `r ≠ 0`. At `r = 1` it is the binary Type II condition, since
+binary Euclidean weights are Hamming weights.
 
 ## References
 
