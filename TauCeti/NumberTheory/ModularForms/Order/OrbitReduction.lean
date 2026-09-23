@@ -134,29 +134,22 @@ theorem orbit_mk_injOn_canonicalReps [ModularFormClass F 𝒮ℒ k] (f : F) :
   · exact ⟨hre.trans_lt (by norm_num), fun h ↦ absurd h hgt.ne'⟩
   · exact ⟨hre.trans (by norm_num), fun _ ↦ hre.le⟩
 
-/-- Every non-elliptic orbit of nonzero order has a representative among the canonical ones:
-its representative in the left part of `𝒟` (`ModularGroup.exists_smul_mem_fd_left`) is one. -/
+/-- Every non-elliptic orbit of nonzero order has a representative among the canonical ones. -/
 theorem exists_mem_canonicalReps_orbit_mk_eq [ModularFormClass F 𝒮ℒ k] {f : F}
-    {q : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ}
-    (hqI : q ≠ Quotient.mk'' I) (hqρ : q ≠ Quotient.mk'' ρ)
-    (hq : orderOfVanishingOnOrbit f q ≠ 0) :
+    {q : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ} (hqI : q ≠ Quotient.mk'' I)
+    (hqρ : q ≠ Quotient.mk'' ρ) (hq : orderOfVanishingOnOrbit f q ≠ 0) :
     ∃ p ∈ canonicalReps f, Quotient.mk'' p = q := by
-  induction q using Quotient.inductionOn' with | h z => ?_
+  obtain ⟨z, rfl⟩ := q.exists_rep
+  -- the orbit's representative in the left part of `𝒟` is one of the canonical ones
   obtain ⟨g, hfd, hre, harc⟩ := ModularGroup.exists_smul_mem_fd_left z
-  have horb : (Quotient.mk'' (g • z) : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) =
-      Quotient.mk'' z := Quotient.sound' ⟨g, rfl⟩
-  rw [← horb, orderOfVanishingOnOrbit_mk] at hq
-  refine ⟨g • z, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr ⟨hfd, hq⟩, ?_⟩, horb⟩
-  rw [coe_re]
+  rw [← MulAction.orbitRel.Quotient.quotient_smul_eq (g := g) (a := z)] at hq hqI hqρ ⊢
+  rw [orderOfVanishingOnOrbit_mk] at hq
+  refine ⟨g • z, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr ⟨hfd, hq⟩, ?_⟩, rfl⟩
   rcases (Complex.one_le_normSq_iff.mp hfd.1).lt_or_eq with hlt | heq
-  · rcases (neg_le_of_abs_le hfd.2).lt_or_eq with h | h
-    · exact .inl ⟨hlt, abs_lt.mpr ⟨h, hre⟩⟩
-    · exact .inr (.inl ⟨h.symm, hlt⟩)
-  · rcases (harc heq.symm).lt_or_eq with hneg | hzero
-    · exact .inr (.inr ⟨fun h ↦ hqρ (horb ▸ congrArg Quotient.mk'' (coe_injective h)),
-        heq.symm, hneg⟩)
-    · exact absurd (horb ▸ congrArg Quotient.mk'' (eq_I_of_re_eq_zero heq.symm
-        ((coe_re _).trans hzero))) hqI
+  · exact (neg_le_of_abs_le hfd.2).lt_or_eq.imp (fun h ↦ ⟨hlt, abs_lt.mpr ⟨h, hre⟩⟩)
+      fun h ↦ .inl ⟨h.symm, hlt⟩
+  · exact .inr <| .inr ⟨fun h ↦ hqρ (congrArg _ (coe_injective h)), heq.symm,
+      (harc heq.symm).lt_of_ne fun h ↦ hqI (congrArg _ (eq_I_of_re_eq_zero heq.symm h))⟩
 
 /-- The `∑ᶠ` over the non-elliptic orbit space equals the sum over the canonical
 representatives: the orbit map matches `canonicalReps` bijectively with the non-elliptic
