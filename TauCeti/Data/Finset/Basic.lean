@@ -165,6 +165,7 @@ theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddComm
 /-- **The alternating sum over the subsets of a finset** is `1` for the empty finset and `0`
 otherwise, in an arbitrary ring. Mathlib's `Finset.sum_powerset_neg_one_pow_card` is the case of
 the integers. -/
+@[simp]
 theorem sum_powerset_neg_one_pow_card_of_ring {α R : Type*} [DecidableEq α] [Ring R]
     (s : Finset α) :
     ∑ t ∈ s.powerset, (-1 : R) ^ t.card = if s = ∅ then 1 else 0 := by
