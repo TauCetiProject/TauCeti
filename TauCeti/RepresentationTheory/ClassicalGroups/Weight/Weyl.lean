@@ -21,9 +21,10 @@ the weight lattice, and its first consequence is that weight multiplicities are 
 
 Every `Sₙ`-orbit on `Fin n → ℤ` contains exactly one weakly decreasing sequence, that is, exactly
 one `TauCeti.DominantWeight` (`TauCeti.existsUnique_dominantWeight`).  So the dominant weights are
-a set of orbit representatives, and the weights of a representation, with their multiplicities,
-are determined by the dominant ones (`TauCeti.finrank_weightSpace_dominantWeightOf`).  That is
-what makes `TauCeti.DominantWeight` the index type the highest-weight theory of `GL n` runs on.
+a set of orbit representatives, and whether a weight occurs, and with what multiplicity, can be
+read off its dominant representative (`TauCeti.finrank_weightSpace_dominantWeightOf`,
+`TauCeti.weightSpace_eq_bot_dominantWeightOf_iff`).  The highest-weight classification that
+indexes the irreducibles of `GL n` by dominant weights is not proved here.
 
 ## Implementation notes
 
@@ -150,8 +151,9 @@ permutation matrix of `σ⁻¹`. -/
 @[simp]
 theorem coe_weightSpaceEquivCompPerm_apply (σ : Equiv.Perm (Fin n)) (l : Fin n → ℤ)
     (w : weightSpace ρ l) :
-    (weightSpaceEquivCompPerm ρ σ l w : W) = ρ (permutationGL (k := k) σ⁻¹) (w : W) :=
-  (rfl)
+    (weightSpaceEquivCompPerm ρ σ l w : W) = ρ (permutationGL (k := k) σ⁻¹) (w : W) := by
+  rw [weightSpaceEquivCompPerm, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
+    Submodule.coe_equivMapOfInjective_apply]
 
 /-- Its inverse is the action of the permutation matrix of `σ`. -/
 @[simp]
@@ -164,11 +166,13 @@ theorem coe_weightSpaceEquivCompPerm_symm_apply (σ : Equiv.Perm (Fin n)) (l : F
     permutationGL_inv_apply_permutationGL_apply]
 
 /-- **Weight multiplicities are constant on `Sₙ`-orbits.** -/
+@[simp]
 theorem finrank_weightSpace_comp_perm (σ : Equiv.Perm (Fin n)) (l : Fin n → ℤ) :
     finrank k (weightSpace ρ (l ∘ ⇑σ)) = finrank k (weightSpace ρ l) :=
   (weightSpaceEquivCompPerm ρ σ l).symm.finrank_eq
 
 /-- **Being a weight at all is constant on `Sₙ`-orbits.** -/
+@[simp]
 theorem weightSpace_eq_bot_comp_perm_iff (σ : Equiv.Perm (Fin n)) (l : Fin n → ℤ) :
     weightSpace ρ (l ∘ ⇑σ) = ⊥ ↔ weightSpace ρ l = ⊥ := by
   have hmap : (weightSpace ρ l).map (ρ (permutationGL (k := k) σ⁻¹)) = weightSpace ρ (l ∘ ⇑σ) := by
@@ -181,6 +185,7 @@ theorem weightSpace_eq_bot_comp_perm_iff (σ : Equiv.Perm (Fin n)) (l : Fin n �
     rw [h w hw, map_zero]
 
 /-- The dominant representative of a weight carries the same multiplicity. -/
+@[simp]
 theorem finrank_weightSpace_dominantWeightOf (l : Fin n → ℤ) :
     finrank k (weightSpace ρ (dominantWeightOf l : Fin n → ℤ)) = finrank k (weightSpace ρ l) := by
   rw [coe_dominantWeightOf, finrank_weightSpace_comp_perm]

@@ -28,11 +28,12 @@ last entry is what makes the pair `(m, μ)` unique: without the row bound the sa
 `μ + m·(1, …, 1)` for many pairs.  Downstream this is the statement that a rational irreducible
 is `det^m` tensored with a polynomial one.
 
-A third fact ties the index type to the symmetric group acting on `ℤⁿ` by permuting coordinates:
+A third fact ties the weights to the symmetric group acting on `ℤⁿ` by permuting coordinates:
 every orbit of that action contains exactly one dominant weight
 (`TauCeti.existsUnique_dominantWeight`), the weakly decreasing rearrangement
-`TauCeti.dominantWeightOf` of any of its members.  That is what makes the dominant weights an
-index type for `GL n` and not merely a convenient normal form.
+`TauCeti.dominantWeightOf` of any of its members.  So a dominant weight is the canonical
+representative of its orbit; that these representatives index the irreducibles of `GL n` is the
+highest-weight classification, which is not proved here.
 
 The last entry `λₙ` is read through the dedicated accessor `TauCeti.DominantWeight.detShift`,
 which is `0` for `n = 0`, so that the empty weight needs no special casing at the use sites.
@@ -358,25 +359,18 @@ theorem coe_dominantWeightOf_eq_of_antitone {l : Fin n → ℤ} {σ : Equiv.Perm
 /-- A dominant weight is its own dominant representative. -/
 @[simp]
 theorem dominantWeightOf_coe (d : DominantWeight n) : dominantWeightOf (d : Fin n → ℤ) = d := by
-  have hone : (d : Fin n → ℤ) ∘ ⇑(1 : Equiv.Perm (Fin n)) = (d : Fin n → ℤ) := by
-    rw [Equiv.Perm.coe_one, Function.comp_id]
-  have hanti : Antitone ((d : Fin n → ℤ) ∘ ⇑(1 : Equiv.Perm (Fin n))) := by
-    rw [hone]
-    exact d.antitone
-  exact Subtype.ext ((coe_dominantWeightOf_eq_of_antitone hanti).trans hone)
+  refine Subtype.ext ?_
+  rw [coe_dominantWeightOf, dominantSort,
+    (Tuple.sort_eq_refl_iff_monotone (f := fun i => OrderDual.toDual ((d : Fin n → ℤ) i))).2
+      fun _ _ hij => d.antitone hij,
+    Equiv.coe_refl, Function.comp_id]
 
 /-- Rearranging a weight does not change its dominant representative. -/
 @[simp]
 theorem dominantWeightOf_comp (l : Fin n → ℤ) (σ : Equiv.Perm (Fin n)) :
-    dominantWeightOf (l ∘ ⇑σ) = dominantWeightOf l := by
-  -- Sorting `l ∘ σ` and then relabelling by `σ` is a sorting permutation for `l` itself.
-  have hmul : l ∘ ⇑(σ * dominantSort (l ∘ ⇑σ)) = (l ∘ ⇑σ) ∘ ⇑(dominantSort (l ∘ ⇑σ)) := by
-    rw [Equiv.Perm.coe_mul, Function.comp_assoc]
-  have hanti : Antitone (l ∘ ⇑(σ * dominantSort (l ∘ ⇑σ))) := by
-    rw [hmul]
-    exact antitone_comp_dominantSort (l ∘ ⇑σ)
-  refine Subtype.ext ?_
-  rw [coe_dominantWeightOf, coe_dominantWeightOf_eq_of_antitone hanti, hmul]
+    dominantWeightOf (l ∘ ⇑σ) = dominantWeightOf l :=
+  Subtype.ext <| Tuple.comp_perm_comp_sort_eq_comp_sort (f := fun i => OrderDual.toDual (l i))
+    (σ := σ)
 
 /-- **Each `Sₙ`-orbit of weights contains exactly one dominant weight**, so the dominant weights
 are a set of representatives for the action of the Weyl group on the weight lattice. -/
