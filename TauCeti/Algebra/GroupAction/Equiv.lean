@@ -15,13 +15,13 @@ This file records elementary facts about additive equivalences that intertwine g
 
 ## Main results
 
-* `TauCeti.AddEquiv.symm_map_smul_of_map_smul`: the inverse of an equivariant additive
+* `AddEquiv.symm_map_smul_of_map_smul`: the inverse of an equivariant additive
   equivalence is equivariant.
 -/
 
 public section
 
-namespace TauCeti.AddEquiv
+namespace AddEquiv
 
 variable {G M N : Type*} [Add M] [Add N] [SMul G M] [SMul G N]
 
@@ -32,6 +32,6 @@ theorem symm_map_smul_of_map_smul (e : M ≃+ N)
   apply e.injective
   rw [e.apply_symm_apply, hequiv, e.apply_symm_apply]
 
-end TauCeti.AddEquiv
+end AddEquiv
 
 end
