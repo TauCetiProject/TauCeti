@@ -473,6 +473,20 @@ lemma mapGL_conjScale [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * 
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, hc', mul_comm]
 
+/-- The lower-left entry of a matrix `γ ∈ Γ₀(dM)` is divisible by `d`, its `diag(d, 1)`-conjugate
+`conjScale d γ` again lies in `Γ₀(M)`, and the conjugation leaves the lower-right entry alone: the
+diamond label of `γ` is read along the reduction `(ZMod (dM))ˣ → (ZMod M)ˣ`. The level transports
+`Gamma1_map_le_conjAct_scaleGL` and `Gamma0_map_le_conjAct_scaleGL` are read off from it. -/
+lemma exists_conjScale_mem_Gamma0 (d M : ℕ) (γ : ↥(Gamma0 (d * M))) :
+    ∃ (c : ℤ) (hc : (γ : SL(2, ℤ)) 1 0 = d * c) (hm : conjScale d γ c hc ∈ Gamma0 M),
+      (Gamma0Map M).toHomUnits ⟨conjScale d γ c hc, hm⟩ =
+        ZMod.unitsMap (Dvd.intro_left d rfl : M ∣ d * M) ((Gamma0Map (d * M)).toHomUnits γ) := by
+  obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp γ.2
+  have hc : (γ : SL(2, ℤ)) 1 0 = d * ((M : ℤ) * t) := by rw [ht, Nat.cast_mul, mul_assoc]
+  refine ⟨_, hc, mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _), ?_⟩
+  ext
+  simp [Gamma0Map_apply, ZMod.unitsMap_def]
+
 /-- **Level transport for `Γ₁`**: conjugation by `diag(d, 1)` carries `Γ₁(dM)` into `Γ₁(M)`.
 This is what makes `V_d` a map `M_k(Γ₁(M)) → M_k(Γ₁(dM))`. -/
 theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
@@ -480,11 +494,11 @@ theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
       ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma1 M).map (mapGL ℝ)) := by
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
-  obtain ⟨⟨t, ht⟩, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
-  have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht, Nat.cast_mul, mul_assoc]
+  obtain ⟨c, hc, hm, -⟩ := exists_conjScale_mem_Gamma0 d M ⟨γ, Gamma1_in_Gamma0 _ hγ⟩
   -- the lower-right entry only needs its congruence read modulo the divisor `M` of `dM`
-  exact ⟨conjScale d γ _ hc, mem_Gamma1_of_dvd_lowerRow (dvd_mul_right _ _)
-    ((Int.natCast_dvd_natCast.mpr (dvd_mul_left M d)).trans h11), (mapGL_conjScale γ _ hc).symm⟩
+  exact ⟨_, mem_Gamma1_of_dvd_lowerRow (mem_Gamma0_iff_dvd.mp hm)
+    ((Int.natCast_dvd_natCast.mpr (dvd_mul_left M d)).trans (mem_Gamma1_iff_dvd_lowerRow.mp hγ).2),
+    (mapGL_conjScale γ c hc).symm⟩
 
 /-- **Level transport at a divisor.** Whenever `d * M ∣ N`, conjugation by `diag(d, 1)` carries
 `Γ₁(N)` into `Γ₁(M)`: this is what makes `V_d` a map `S_k(Γ₁(M)) → S_k(Γ₁(N))`, not only for
@@ -500,10 +514,8 @@ theorem Gamma0_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
       ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma0 M).map (mapGL ℝ)) := by
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
-  obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
-  have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht, Nat.cast_mul, mul_assoc]
-  exact ⟨conjScale d γ _ hc, mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _),
-    (mapGL_conjScale γ _ hc).symm⟩
+  obtain ⟨c, hc, hm, -⟩ := exists_conjScale_mem_Gamma0 d M ⟨γ, hγ⟩
+  exact ⟨_, hm, (mapGL_conjScale γ c hc).symm⟩
 
 end Transport
 
@@ -706,20 +718,6 @@ end Descent
 /-! ### The nebentypus character of a level-raise -/
 
 section Nebentypus
-
-/-- The lower-left entry of a matrix `γ ∈ Γ₀(dM)` is divisible by `d`, its `diag(d, 1)`-conjugate
-`conjScale d γ` again lies in `Γ₀(M)`, and the conjugation leaves the lower-right entry alone: the
-diamond label of `γ` is read along the reduction `(ZMod (dM))ˣ → (ZMod M)ˣ`. -/
-lemma exists_conjScale_mem_Gamma0 (d M : ℕ) (γ : ↥(Gamma0 (d * M))) :
-    ∃ (c : ℤ) (hc : (γ : SL(2, ℤ)) 1 0 = d * c) (hm : conjScale d γ c hc ∈ Gamma0 M),
-      (Gamma0Map M).toHomUnits ⟨conjScale d γ c hc, hm⟩ =
-        ZMod.unitsMap (Dvd.intro_left d rfl : M ∣ d * M) ((Gamma0Map (d * M)).toHomUnits γ) := by
-  obtain ⟨t, ht⟩ : ((d * M : ℕ) : ℤ) ∣ (γ : SL(2, ℤ)) 1 0 :=
-    mem_Gamma0_iff_dvd.mp γ.2
-  have hc : (γ : SL(2, ℤ)) 1 0 = d * ((M : ℤ) * t) := by rw [ht]; push_cast; ring
-  refine ⟨_, hc, Gamma0_mem.mpr (by simp), ?_⟩
-  ext
-  simp [Gamma0Map_apply, ZMod.unitsMap_def]
 
 /-- The `diag(d, 1)`-conjugate of a matrix of `Γ₀(N)` lies in `Γ₀(M)` whenever `d * M ∣ N`, and
 the conjugation leaves the lower-right entry alone: the diamond label of `γ` is read along the
