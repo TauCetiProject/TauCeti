@@ -645,6 +645,16 @@ theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     (fun g n => q.map_smul g n) (fun g m => (q.comp f).map_smul g m) using 1 <;>
     ext <;> rfl
 
+omit [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousSMul G M] in
+/-- The inverse of an equivariant additive equivalence is equivariant. -/
+theorem symm_map_smul_of_map_smul
+    {N : Type uN} [AddCommGroup N] [DistribMulAction G N]
+    (e : M ≃+ N) (hequiv : ∀ (g : G) (m : M), e (g • m) = g • e m) (g : G) (n : N) :
+    e.symm (g • n) = g • e.symm n := by
+  apply e.injective
+  rw [e.apply_symm_apply, hequiv, e.apply_symm_apply]
+
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit first continuous cohomology. Both directions are required to be
 continuous; for discrete coefficient modules this follows automatically from discreteness. -/
@@ -656,13 +666,7 @@ noncomputable def explicitCoeff1Equiv {N : Type uN} [AddCommGroup N] [Topologica
     { e.toAddMonoidHom with map_smul' := hequiv }
   let q : N →+[G] M :=
     { e.symm.toAddMonoidHom with
-      map_smul' := fun g n => by
-        apply e.injective
-        -- Expose the coercions from the bundled equivariant homomorphism and
-        -- `e.symm.toAddMonoidHom` so that the inverse laws for `e` and the stated equivariance of
-        -- `e` can rewrite the goal.
-        change e (e.symm (g • n)) = e (g • e.symm n)
-        rw [e.apply_symm_apply, hequiv, e.apply_symm_apply] }
+      map_smul' := symm_map_smul_of_map_smul G M e hequiv }
   have hf : Continuous f := he
   have hq : Continuous q := he'
   exact
@@ -703,12 +707,7 @@ theorem explicitCoeff1Equiv_symm_apply {N : Type uN} [AddCommGroup N] [Topologic
     (explicitCoeff1Equiv G M e he he' hequiv).symm x =
       explicitCoeff1 G N
         { e.symm.toAddMonoidHom with
-          map_smul' := fun g n => by
-            apply e.injective
-            -- Expose the same bundled coercions as in `explicitCoeff1Equiv` so that the
-            -- inverse laws for `e` and its forward equivariance can rewrite the goal.
-            change e (e.symm (g • n)) = e (g • e.symm n)
-            rw [e.apply_symm_apply, hequiv, e.apply_symm_apply] }
+          map_smul' := symm_map_smul_of_map_smul G M e hequiv }
         he' x :=
   (rfl)
 
