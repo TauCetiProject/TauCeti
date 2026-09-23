@@ -95,8 +95,7 @@ theorem dirichletConductor_dvd_of_le {Y Z : Subgroup (DirichletCharacter R n)}
 local instance finite_sup {Y Z : Subgroup (DirichletCharacter R n)}
     [Finite Y] [Finite Z] : Finite ↥(Y ⊔ Z) := by
   let f : Y × Z → ↥(Y ⊔ Z) := fun ⟨⟨χ, hχ⟩, ⟨ψ, hψ⟩⟩ ↦
-    ⟨χ * ψ, mul_mem ((show Y ≤ Y ⊔ Z from le_sup_left) hχ)
-      ((show Z ≤ Y ⊔ Z from le_sup_right) hψ)⟩
+    ⟨χ * ψ, mul_mem (le_sup_left (a := Y) hχ) (le_sup_right (a := Y) hψ)⟩
   exact Finite.of_surjective f fun ⟨χ, hχ⟩ ↦ by
     obtain ⟨ψ, hψ, ξ, hξ, rfl⟩ := Subgroup.mem_sup.mp hχ
     exact ⟨⟨⟨ψ, hψ⟩, ⟨ξ, hξ⟩⟩, rfl⟩
