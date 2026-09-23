@@ -24,7 +24,7 @@ elements. The conjugates of a field form its orbit under this action.
 * `IntermediateField.mem_conjugateFields_iff`: orbit membership is an automorphism image.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -68,6 +68,7 @@ def conjugateFields (E : IntermediateField K L) : Set (IntermediateField K L) :=
   orbit (L ≃ₐ[K] L) E
 
 /-- Membership in `conjugateFields E` means being the image of `E` under an automorphism. -/
+@[simp]
 theorem mem_conjugateFields_iff {E E' : IntermediateField K L} :
     E' ∈ conjugateFields E ↔ ∃ σ : L ≃ₐ[K] L, E.map σ.toAlgHom = E' := by
   simp [conjugateFields, mem_orbit_iff, eq_comm]

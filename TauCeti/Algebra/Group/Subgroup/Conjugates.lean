@@ -32,6 +32,7 @@ namespace TauCeti
 open scoped Pointwise
 
 /-- Membership in the conjugacy orbit of `H` means being obtained from `H` by conjugation. -/
+@[simp]
 theorem mem_conjugateSubgroups_iff {G : Type*} [Group G] {H H' : Subgroup G} :
     H' ∈ MulAction.orbit (ConjAct G) H ↔ ∃ g : G, H.map (MulAut.conj g) = H' := by
   constructor

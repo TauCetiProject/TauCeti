@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-public import TauCeti.Algebra.GroupAction.AlgHom
 
 /-!
 # Embeddings of a simple field and roots of the minimal polynomial

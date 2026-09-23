@@ -115,19 +115,18 @@ noncomputable def quotientNormalizerEquivConjugateFields (E : IntermediateField 
     (L ≃ₐ[K] L) ⧸ Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L)) ≃
       conjugateFields E :=
   (Subgroup.quotientEquivOfEq (stabilizer_intermediateField_eq_normalizer E).symm).trans
-    (MulAction.orbitEquivQuotientStabilizer (L ≃ₐ[K] L) E).symm
+    ((MulAction.orbitEquivQuotientStabilizer (L ≃ₐ[K] L) E).symm.trans
+      (Equiv.subtypeEquivRight fun E' ↦ by
+        simp only [mem_orbit_iff, AlgEquiv.smul_intermediateField_def,
+          mem_conjugateFields_iff]))
 
 /-- A normalizer coset represented by `σ` gives the field `σ • E`. -/
 @[simp]
 theorem quotientNormalizerEquivConjugateFields_mk (E : IntermediateField K L)
     (σ : L ≃ₐ[K] L) :
     ((quotientNormalizerEquivConjugateFields E) (QuotientGroup.mk σ)).1 = σ • E := by
-  -- Expose the composite equivalence so its two component application lemmas can rewrite.
-  change (((Subgroup.quotientEquivOfEq
-    (stabilizer_intermediateField_eq_normalizer E).symm).trans
-      (MulAction.orbitEquivQuotientStabilizer (L ≃ₐ[K] L) E).symm)
-        (QuotientGroup.mk σ)).1 = σ • E
-  rw [Equiv.trans_apply, Subgroup.quotientEquivOfEq_mk,
+  simp only [quotientNormalizerEquivConjugateFields, Equiv.trans_apply,
+    Subgroup.quotientEquivOfEq_mk, Equiv.subtypeEquivRight_apply,
     MulAction.orbitEquivQuotientStabilizer_symm_apply]
 
 /-- The normalizer-coset parametrization respects the ambient Galois action. -/
@@ -144,7 +143,13 @@ of its fixing subgroup. -/
 theorem ncard_conjugateFields (E : IntermediateField K L) :
     (conjugateFields E).ncard =
       (Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L))).index := by
-  rw [conjugateFields, ← MulAction.index_stabilizer,
+  have hcard : (conjugateFields E).ncard =
+      (MulAction.orbit (L ≃ₐ[K] L) E).ncard := by
+    congr 1
+    ext E'
+    simp only [mem_conjugateFields_iff, mem_orbit_iff,
+      AlgEquiv.smul_intermediateField_def]
+  rw [hcard, ← MulAction.index_stabilizer,
     stabilizer_intermediateField_eq_normalizer]
 
 end Galois
