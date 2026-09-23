@@ -1,0 +1,184 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Chris Birkbeck
+-/
+module
+
+public import Mathlib.Algebra.QuadraticDiscriminant
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+
+/-!
+# Binary quadratic forms and the action of `SL(2, R)`
+
+A binary quadratic form over a commutative ring `R` is a polynomial `a x² + b x y + c y²`; here it
+is recorded by its three coefficients, as `TauCeti.BinaryQuadraticForm R`. The group `SL(2, R)`
+acts on such forms by linear change of variables, and over `ℤ` the forms that are positive definite
+of a fixed discriminant `-D < 0` form a sub-action. Its orbits are the classes counted, with
+weights, by the Hurwitz class number `H(D)`. Through the form `v ↦ det(v, M v)` attached to an
+integer matrix `M`, they also describe the `SL(2, ℤ)`-conjugacy classes of integer matrices of
+fixed trace and determinant, which is how they enter the Eichler–Selberg trace formula. This file
+supplies the action on which both descriptions are built.
+
+The action is on the left, by `γ • f = f ∘ γ⁻¹`. For `γ = !![p, q; r, s]` the inverse is the
+adjugate `!![s, -q; -r, p]` (Mathlib's `Matrix.SpecialLinearGroup.SL2_inv_expl`), so
+`(γ • f)(x, y) = f(s x - q y, -r x + p y)` and the new coefficients are
+```
+a' = a s² - b r s + c r²
+b' = -2 a q s + b (p s + q r) - 2 c p r
+c' = a q² - b p q + c p².
+```
+Only the entries of the adjugate occur, so the action laws are polynomial identities and need no
+determinant hypothesis. The substitution `f ↦ f ∘ γ` found in much of the classical literature is
+a right action; composing with `γ⁻¹` instead gives the left action that `MulAction` expects, with
+the same orbits. With this convention `T • ⟨a, b, c⟩ = ⟨a, b - 2 a, a - b + c⟩` and
+`S • ⟨a, b, c⟩ = ⟨c, -b, a⟩`, where `S` and `T` are Mathlib's `ModularGroup.S = !![0, -1; 1, 0]`
+and `ModularGroup.T = !![1, 1; 0, 1]`; the examples at the end of the file check instances of both
+by evaluation. It is also the convention for which the form `v ↦ det(v, M v)` of an integer
+matrix `M` is carried to that of `γ M γ⁻¹` by `γ •`, and for which the root `(-b + √(-D)) / (2 a)`
+of a positive definite form moves by the Möbius action of `γ` on the upper half-plane.
+
+The determinant enters only through the discriminant `discrim a b c = b² - 4 a c`, which changes
+by the factor `(det γ)² = 1`. Positivity of the leading coefficient is then preserved because
+`4 a a' = (2 a s - b r)² + D r²` and `(r, s) ≠ (0, 0)`. This needs `D ≠ 0`: the form `⟨1, 2, 1⟩`
+of discriminant `0` is sent by `!![1, 0; 1, 1]` to a form with leading coefficient `0`.
+
+Mathlib's `QuadraticForm R (Fin 2 → R)` is not used, because its discriminant is built from the
+associated bilinear form and so requires `2` to be invertible in `R`, which fails over `ℤ`.
+
+## Main definitions
+
+* `TauCeti.BinaryQuadraticForm R`: the binary quadratic form `a x² + b x y + c y²` over `R`.
+* The instance `MulAction SL(2, R) (TauCeti.BinaryQuadraticForm R)`: the action
+  `γ • f = f ∘ γ⁻¹`, for a commutative ring `R`.
+* `TauCeti.BinaryQuadraticForm.posDef D`: for `D ≠ 0`, the positive definite integral forms of
+  discriminant `-D`, as a sub-action of `SL(2, ℤ)`.
+
+## Main results
+
+* `TauCeti.BinaryQuadraticForm.smul_a`, `TauCeti.BinaryQuadraticForm.smul_b` and
+  `TauCeti.BinaryQuadraticForm.smul_c`: the coefficients of `γ • f`.
+* `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
+* `TauCeti.BinaryQuadraticForm.mem_posDef`: membership in `posDef D`.
+
+## References
+
+* H. Cohen, *A Course in Computational Algebraic Number Theory*, Graduate Texts in Mathematics
+  138, Springer, 1993, §5.2–5.3.
+* D. A. Buell, *Binary Quadratic Forms: Classical Theory and Modern Computations*, Springer, 1989.
+* A. Popa and D. Zagier, *A simple proof of the Eichler–Selberg trace formula*,
+  J. Ramanujan Math. Soc. (2019), arXiv:1711.00327.
+-/
+
+@[expose] public section
+
+open Matrix
+open scoped MatrixGroups
+
+namespace TauCeti
+
+/-- The binary quadratic form `a x² + b x y + c y²` over `R`, recorded by its three
+coefficients. -/
+@[ext]
+structure BinaryQuadraticForm (R : Type*) where
+  /-- The coefficient of `x²`. -/
+  a : R
+  /-- The coefficient of `x y`. -/
+  b : R
+  /-- The coefficient of `y²`. -/
+  c : R
+  deriving DecidableEq
+
+namespace BinaryQuadraticForm
+
+variable {R : Type*} [CommRing R]
+
+/-- `γ • f` is the form `f ∘ γ⁻¹`: for `γ = !![p, q; r, s]` it is
+`f(s x - q y, -r x + p y)`, written out through the entries of the adjugate `!![s, -q; -r, p]`
+so that each coefficient is a polynomial in the entries of `γ`. -/
+instance : SMul SL(2, R) (BinaryQuadraticForm R) where
+  smul γ f :=
+    { a := f.a * γ 1 1 ^ 2 - f.b * γ 1 0 * γ 1 1 + f.c * γ 1 0 ^ 2
+      b := -2 * f.a * γ 0 1 * γ 1 1 + f.b * (γ 0 0 * γ 1 1 + γ 0 1 * γ 1 0) -
+        2 * f.c * γ 0 0 * γ 1 0
+      c := f.a * γ 0 1 ^ 2 - f.b * γ 0 0 * γ 0 1 + f.c * γ 0 0 ^ 2 }
+
+/-- The `x²`-coefficient of `γ • f` is `f(s, -r) = a s² - b r s + c r²`, for
+`γ = !![p, q; r, s]`. -/
+@[simp]
+theorem smul_a (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
+    (γ • f).a = f.a * γ 1 1 ^ 2 - f.b * γ 1 0 * γ 1 1 + f.c * γ 1 0 ^ 2 :=
+  rfl
+
+/-- The `x y`-coefficient of `γ • f` is `-2 a q s + b (p s + q r) - 2 c p r`, for
+`γ = !![p, q; r, s]`. -/
+@[simp]
+theorem smul_b (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
+    (γ • f).b = -2 * f.a * γ 0 1 * γ 1 1 + f.b * (γ 0 0 * γ 1 1 + γ 0 1 * γ 1 0) -
+      2 * f.c * γ 0 0 * γ 1 0 :=
+  rfl
+
+/-- The `y²`-coefficient of `γ • f` is `f(-q, p) = a q² - b p q + c p²`, for
+`γ = !![p, q; r, s]`. -/
+@[simp]
+theorem smul_c (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
+    (γ • f).c = f.a * γ 0 1 ^ 2 - f.b * γ 0 0 * γ 0 1 + f.c * γ 0 0 ^ 2 :=
+  rfl
+
+/-- `f ↦ f ∘ γ⁻¹` is a left action of `SL(2, R)` on binary quadratic forms. -/
+instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
+  one_smul f := by ext <;> simp
+  mul_smul γ δ f := by
+    ext <;> simp only [smul_a, smul_b, smul_c, SpecialLinearGroup.coe_mul, Matrix.mul_apply,
+      Fin.sum_univ_two] <;> ring
+
+/-- The discriminant `b² - 4 a c` of a binary quadratic form is invariant under `SL(2, R)`. -/
+theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
+    discrim (γ • f).a (γ • f).b (γ • f).c = discrim f.a f.b f.c := by
+  simp only [smul_a, smul_b, smul_c, discrim]
+  linear_combination (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 + 1) * (f.b ^ 2 - 4 * f.a * f.c) *
+    SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+
+/-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
+sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/
+def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm ℤ) where
+  carrier := {f | discrim f.a f.b f.c = -D ∧ 0 < f.a}
+  smul_mem' γ f := by
+    rintro ⟨hD, ha⟩
+    refine ⟨(discrim_smul γ f).trans hD, pos_of_mul_pos_right (a := 4 * f.a) ?_ (by positivity)⟩
+    have key : 4 * f.a * (γ • f).a = (2 * f.a * γ 1 1 - f.b * γ 1 0) ^ 2 + D * γ 1 0 ^ 2 := by
+      rw [discrim] at hD
+      rw [smul_a]
+      linear_combination (-γ 1 0 ^ 2) * hD
+    rw [key]
+    rcases eq_or_ne (γ 1 0) 0 with hr | hr
+    · have hs : γ 1 1 ≠ 0 := by
+        rintro hs
+        simpa [hr, hs] using SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+      simp only [hr, mul_zero, sub_zero, zero_pow two_ne_zero, add_zero]
+      positivity
+    · have := NeZero.pos D
+      positivity
+
+/-- A form lies in `posDef D` exactly when its discriminant is `-D` and its leading coefficient is
+positive. -/
+@[simp]
+theorem mem_posDef {D : ℕ} [NeZero D] {f : BinaryQuadraticForm ℤ} :
+    f ∈ posDef D ↔ discrim f.a f.b f.c = -D ∧ 0 < f.a :=
+  Iff.rfl
+
+/-! The convention `γ • f = f ∘ γ⁻¹`, checked on `T`, `S * T` and `S`. -/
+
+example : ModularGroup.T • (⟨1, 1, 1⟩ : BinaryQuadraticForm ℤ) = ⟨1, -1, 1⟩ := by
+  decide +kernel
+
+example : (ModularGroup.S * ModularGroup.T) • (⟨1, 1, 1⟩ : BinaryQuadraticForm ℤ) = ⟨1, 1, 1⟩ := by
+  decide +kernel
+
+example : ModularGroup.S • (⟨1, 0, 1⟩ : BinaryQuadraticForm ℤ) = ⟨1, 0, 1⟩ := by
+  decide +kernel
+
+end BinaryQuadraticForm
+
+end TauCeti
