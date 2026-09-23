@@ -83,7 +83,8 @@ theorem summable_norm_coeff_localLogSeries_of_zeroFree (D : EulerProductData K)
 
 /-- **The local prime-power logarithm evaluates to a logarithm of the Euler factor.** Under the
 same convergence and zero-free-disk hypotheses, exponentiating the sum of the formal logarithmic
-coefficients at `N(P) ^ (-s)` recovers the analytic local Euler factor at `s`. -/
+coefficients at `N(P) ^ (-s)` recovers the analytic local Euler factor at `s`. Apply this theorem
+with a chosen `σ`; the left-hand side does not determine it for simplification. -/
 theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
     (D : EulerProductData K) (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} {s : ℂ}
     (hσ : LSeriesSummable (D.localArithmeticFactor P) (σ : ℂ))

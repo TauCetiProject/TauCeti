@@ -76,7 +76,8 @@ private theorem coeff_logOf_eq_iteratedDeriv_of_deriv_eq (f : ℂ⟦X⟧)
 /-- **The evaluated formal logarithm exponentiates to the original power series.** If a complex
 power series has constant coefficient one and is zero-free in a disk of convergence, then its
 formal logarithm converges throughout that disk and its exponential is the analytic sum of the
-original series. -/
+original series. Apply this theorem with an explicit radius `r`; the left-hand side does not
+determine it for simplification. -/
 theorem exp_tsum_coeff_logOf_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
     (hf0 : constantCoeff f = 1) {r : ENNReal}
     (hr : r ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius)
