@@ -40,6 +40,7 @@ public section
 namespace TauCeti
 
 open IntermediateField MulAction
+open scoped Pointwise
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
@@ -96,7 +97,7 @@ theorem stabilizer_intermediateField_eq_normalizer (E : IntermediateField K L) :
 /-- The Galois correspondence restricts to a bijection from conjugates of an intermediate
 field to conjugates of its fixing subgroup. -/
 noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField K L) :
-    conjugateFields E ≃ conjugateSubgroups E.fixingSubgroup where
+    conjugateFields E ≃ MulAction.orbit (ConjAct (L ≃ₐ[K] L)) E.fixingSubgroup where
   toFun E' := ⟨E'.1.fixingSubgroup, by
     obtain ⟨σ, hσ⟩ := mem_conjugateFields_iff.mp E'.2
     refine mem_conjugateSubgroups_iff.mpr ⟨σ, ?_⟩

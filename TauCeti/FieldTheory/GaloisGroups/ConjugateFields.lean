@@ -47,6 +47,7 @@ public section
 namespace TauCeti
 
 open IntermediateField MulAction Polynomial
+open scoped Pointwise
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E]
 
@@ -123,7 +124,7 @@ noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups (x : E)
       (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
     conjugateSimpleFields (F := F) x ≃
-      conjugateSubgroups (stabilizer (minpoly F x).Gal y) := by
+      MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) := by
   let _ : FiniteDimensional F F⟮x⟯ :=
     adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
@@ -134,8 +135,9 @@ noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups (x : E)
     IsGalois.of_separable_splitting_field hsep
   let e := conjugateSubgroupsEquiv (galEquivNormalClosure (F := F) (E := E) x)
     (stabilizer (minpoly F x).Gal y)
-  have he : conjugateSubgroups (stabilizer (minpoly F x).Gal y) ≃
-      conjugateSubgroups (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup := by
+  have he : MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) ≃
+      MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F))
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup := by
     simpa only [hy] using e
   exact (conjugateFieldsEquivConjugateSubgroups
     (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))).trans he.symm
