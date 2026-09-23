@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.KleinFour
-import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
-import TauCeti.NumberTheory.LocalField.Squares
 
 public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
@@ -49,9 +47,9 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   square-class group has four elements.
 * `TauCeti.isAddKleinFour_squareClassGroup_of_isUnit_two`: away from residue characteristic two
   the square-class group is a Klein four-group.
-* `TauCeti.squareClasses_pairwise_ne_of_isUniformizer`: the four specified square classes are
-  pairwise distinct.
-* `TauCeti.squareClass_eq_zero_or_eq_or_of_isUnit_two`: the four specified square classes
+* `TauCeti.squareClass_ne_zero_and_ne_of_isUniformizer_of_not_isSquare`: the four specified
+  square classes are pairwise distinct.
+* `TauCeti.eq_zero_or_eq_squareClass_of_isUnit_two`: the four specified square classes
   exhaust the square-class group.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two`: every element of `Kˣ` agrees, up to a square,
   with one of `1`, `u`, `π`, `u π`.
@@ -106,8 +104,9 @@ theorem not_isSquare_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) : ¬
     hπ (w := 1) (by simp)
 
 /-- **The multiplicative square-class group of a nonarchimedean local field away from residue
-characteristic two has four elements.** This is the literal quotient `Kˣ ⧸ (Kˣ)²` used in the
-roadmap statement. -/
+characteristic two has four elements.** This is the literal quotient `Kˣ ⧸ (Kˣ)²`;
+`TauCeti.natCard_squareClassGroup_of_isUnit_two` restates it on the additive
+`TauCeti.SquareClassGroup`. -/
 theorem natCard_multiplicativeSquareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (MultiplicativeSquareClassGroup K) = 4 :=
   (Nat.card_congr (QuotientGroup.quotientMulEquivOfEq
@@ -125,23 +124,18 @@ theorem natCard_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
 /-- Away from residue characteristic two, the square-class group of a nonarchimedean local field
 is a Klein four-group. -/
 theorem isAddKleinFour_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
-    IsAddKleinFour (SquareClassGroup K) := by
-  have hcard := natCard_squareClassGroup_of_isUnit_two h2
-  let _ : Finite (SquareClassGroup K) := Nat.finite_of_card_ne_zero (by omega)
-  let _ : Nontrivial (SquareClassGroup K) :=
-    Finite.one_lt_card_iff_nontrivial.mp (by omega)
-  exact ⟨hcard, (AddMonoid.exponent_eq_prime_iff Nat.prime_two).mpr fun g hg ↦
-    addOrderOf_eq_prime (ZModModule.char_nsmul_eq_zero 2 g) hg⟩
+    IsAddKleinFour (SquareClassGroup K) :=
+  isAddKleinFour_squareClassGroup_of_natCard_eq_four
+    (natCard_squareClassGroup_of_isUnit_two h2)
 
 /-- For a nonsquare `u` of even valuation and a uniformizer `π`, the square classes of
 `1`, `u`, `π`, and `u * π` are pairwise distinct. -/
-theorem squareClasses_pairwise_ne_of_isUniformizer {u π : Kˣ} (hπ : IsUniformizer K π)
+theorem squareClass_ne_zero_and_ne_of_isUniformizer_of_not_isSquare
+    {u π : Kˣ} (hπ : IsUniformizer K π)
     (hu : Even (normalizedValuation K u).toAdd) (hu' : ¬IsSquare u) :
     squareClass u ≠ 0 ∧ squareClass π ≠ 0 ∧ squareClass (u * π) ≠ 0 ∧
       squareClass u ≠ squareClass π ∧ squareClass u ≠ squareClass (u * π) ∧
       squareClass π ≠ squareClass (u * π) := by
-  -- Align the quotient's group structure with the addition used by the square-class API.
-  let _ : AddCommGroup (SquareClassGroup K) := inferInstance
   have h0u : squareClass u ≠ 0 := (squareClass_eq_zero_iff u).not.mpr hu'
   have h0π : squareClass π ≠ 0 :=
     (squareClass_eq_zero_iff π).not.mpr (not_isSquare_of_isUniformizer hπ)
@@ -163,14 +157,14 @@ theorem squareClasses_pairwise_ne_of_isUniformizer {u π : Kˣ} (hπ : IsUniform
 /-- **The four square classes of a nonarchimedean local field of odd residue characteristic.**
 For a nonsquare `u` of even valuation and a uniformizer `π`, their four classes exhaust the
 square-class group. -/
-theorem squareClass_eq_zero_or_eq_or_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : Kˣ}
+theorem eq_zero_or_eq_squareClass_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : Kˣ}
     (hπ : IsUniformizer K π) (hu : Even (normalizedValuation K u).toAdd) (hu' : ¬IsSquare u) :
     ∀ x : SquareClassGroup K,
       x = 0 ∨ x = squareClass u ∨ x = squareClass π ∨ x = squareClass (u * π) := by
   let _ : IsAddKleinFour (SquareClassGroup K) :=
     isAddKleinFour_squareClassGroup_of_isUnit_two h2
   obtain ⟨h0u, h0π, _, huπ, _, _⟩ :=
-    squareClasses_pairwise_ne_of_isUniformizer hπ hu hu'
+    squareClass_ne_zero_and_ne_of_isUniformizer_of_not_isSquare hπ hu hu'
   intro x
   by_cases hx : x = 0
   · exact Or.inl hx
@@ -192,7 +186,7 @@ theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : K�
     (a : Kˣ) :
     ∃ r ∈ ({1, u, π, u * π} : Set Kˣ), IsSquare (a * r) := by
   classical
-  rcases squareClass_eq_zero_or_eq_or_of_isUnit_two h2 hπ hu hu' (squareClass a) with
+  rcases eq_zero_or_eq_squareClass_of_isUnit_two h2 hπ hu hu' (squareClass a) with
     h | h | h | h
   · exact ⟨1, by simp, by simpa using (squareClass_eq_zero_iff a).mp h⟩
   · exact ⟨u, by simp, (squareClass_eq_iff_isSquare_mul a u).mp h⟩
