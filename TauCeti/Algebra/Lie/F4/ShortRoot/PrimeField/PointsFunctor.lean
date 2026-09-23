@@ -335,7 +335,7 @@ noncomputable def coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽�
       rw [points_eq_hopfIdealPointsSubgroup, definingIdeal_def]))
 
 /-- The coordinate-point equivalence evaluates the ambient matrix coordinates. -/
-theorem coe_coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽₂ A]
+@[simp] theorem coe_coordinatePointsEquiv (A : Type v) [CommRing A] [Algebra 𝔽₂ A]
     (q : HopfAlgebra.points (H := Q) (CommAlgCat.of 𝔽₂ A)) :
     (coordinatePointsEquiv A q : GL (Fin 26) A) =
       GeneralLinear.pointsMulEquiv 26

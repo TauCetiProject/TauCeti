@@ -16,11 +16,6 @@ simple coroots at zero-based Lean indices `0` and `1`. The special F4 root permu
 these coordinates by the same `Fin 26` labels as the short-root basis. Their images in the quotient
 form a basis with the normalization required by the special isogeny.
 
-## Formalization source
-
-`f4LongRootComplementBasis`, `f4ShortRootQuotientBasis`, and their coordinate lemmas were
-adapted from the checked [A0 integration reference](https://github.com/TauCetiProject/TauCeti/blob/850f60f8b/TauCeti/Algebra/Lie/F4/ShortRoot/Quotient/Basis.lean).
-
 ## References
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11, for the
@@ -170,17 +165,11 @@ the twenty-four long roots and the two long simple coroots. -/
 def f4LongRootComplement : Submodule (ZMod 2) f4ModularChevalleyLieAlgebra :=
   Submodule.span (ZMod 2) (f4ModularChevalleyBasis '' f4ShortChevalleyIndicesᶜ)
 
-/-- The complement is the span of exactly the non-short Chevalley coordinates. -/
-theorem f4LongRootComplement_eq_span :
-    f4LongRootComplement =
-      Submodule.span (ZMod 2) (f4ModularChevalleyBasis '' f4ShortChevalleyIndicesᶜ) := by
-  rw [f4LongRootComplement]
-
 /-- **The short-root subspace and its coordinate complement decompose the reduced Chevalley Lie
 algebra.**  This is what makes the complementary coordinates a basis of the quotient. -/
 theorem isCompl_f4ShortRootSubspace_f4LongRootComplement :
     IsCompl f4ShortRootSubspace f4LongRootComplement := by
-  rw [f4ShortRootSubspace_eq_span, f4LongRootComplement_eq_span]
+  rw [f4ShortRootSubspace_eq_span, f4LongRootComplement]
   exact f4ModularChevalleyBasis.linearIndependent.isCompl_span_image
     f4ModularChevalleyBasis.span_eq isCompl_compl
 
@@ -237,7 +226,7 @@ noncomputable def f4ShortRootQuotientBasis :
       isCompl_f4ShortRootSubspace_f4LongRootComplement).symm
 
 /-- Each quotient basis vector is the class of its complementary Chevalley basis vector. -/
-theorem f4ShortRootQuotientBasis_apply (a : Fin 26) :
+@[simp] theorem f4ShortRootQuotientBasis_apply (a : Fin 26) :
     f4ShortRootQuotientBasis a =
       Submodule.Quotient.mk (f4ModularChevalleyBasis (f4LongRootBasisCoordinate a)) := by
   rw [f4ShortRootQuotientBasis, Basis.map_apply,
@@ -246,7 +235,7 @@ theorem f4ShortRootQuotientBasis_apply (a : Fin 26) :
   exact coe_f4LongRootComplementBasis a
 
 /-- A nonzero-weight quotient coordinate is the corresponding special-map long-root class. -/
-@[simp] theorem f4ShortRootQuotientBasis_symm_inl (i : F4ShortRootIndex) :
+theorem f4ShortRootQuotientBasis_symm_inl (i : F4ShortRootIndex) :
     f4ShortRootQuotientBasis (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
       Submodule.Quotient.mk
         (f4ModularRootVector (f4SpecialIsogenyIndexEquiv i)) := by
@@ -256,7 +245,7 @@ theorem f4ShortRootQuotientBasis_apply (a : Fin 26) :
     f4PinnedRootIndex_f4KillingRootLabel]
 
 /-- Quotient coordinate twelve is the class of the first surviving simple coroot. -/
-@[simp] theorem f4ShortRootQuotientBasis_twelve :
+theorem f4ShortRootQuotientBasis_twelve :
     f4ShortRootQuotientBasis 12 =
       Submodule.Quotient.mk
         (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (1 : Fin 4))) := by
@@ -264,7 +253,7 @@ theorem f4ShortRootQuotientBasis_apply (a : Fin 26) :
     f4ModularChevalleyBasis_longRootBasisCoordinate_twelve]
 
 /-- Quotient coordinate thirteen is the class of the other surviving simple coroot. -/
-@[simp] theorem f4ShortRootQuotientBasis_thirteen :
+theorem f4ShortRootQuotientBasis_thirteen :
     f4ShortRootQuotientBasis 13 =
       Submodule.Quotient.mk
         (f4ModularSimpleCoroot (Fin.cast rank_F4.symm (0 : Fin 4))) := by

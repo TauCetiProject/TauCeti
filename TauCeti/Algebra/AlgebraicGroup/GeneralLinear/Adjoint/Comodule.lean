@@ -116,7 +116,7 @@ private theorem tangentScalarExtensionEquiv_adjointComodule_endOfPoint
         (LinearMap.rTensor V phi.toLinearMap
           (Comodule.endOfPoint V g₀.ofConv (1 ⊗ₜ[k] v))) = _ at hm
     rw [hn] at hm
-    simpa using hm
+    simpa only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, map_one] using hm
   induction x using TensorProduct.induction_on with
   | zero => simp [map_zero, ← Derivation.adRepresentation_apply]
   | add x y hx hy =>

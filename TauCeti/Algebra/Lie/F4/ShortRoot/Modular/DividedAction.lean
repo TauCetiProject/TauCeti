@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Matrix
-public import TauCeti.Algebra.Lie.Weights.Root.KostantStability
-public import TauCeti.RingTheory.Nilpotent.BaseChangeAction
 
 /-!
 # Divided adjoint squares on the modular F₄ short-root ideal
@@ -15,11 +13,6 @@ public import TauCeti.RingTheory.Nilpotent.BaseChangeAction
 The second adjoint divided power is formed on the integral Chevalley lattice before reduction
 modulo two. This file identifies its base change with the integral divided-square matrices used
 in the pinned twenty-six-dimensional representation.
-
-## Formalization source
-
-`f4IntegralDividedAdjointSquare`, `f4ModularDividedAdjointSquare`, and the sparse matrix
-identification were adapted from the checked [A0 integration reference](https://github.com/TauCetiProject/TauCeti/blob/850f60f8b/TauCeti/Algebra/Lie/F4/ShortRoot/Modular/DividedAction.lean).
 
 ## References
 
