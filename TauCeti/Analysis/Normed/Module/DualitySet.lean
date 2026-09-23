@@ -101,6 +101,7 @@ theorem dualitySet_zero : dualitySet 𝕜 (0 : E) = {0} := by
   simp
 
 /-- The duality set is conjugate-homogeneous under scalar multiplication. -/
+@[simp]
 theorem dualitySet_smul (c : 𝕜) (x : E) :
     dualitySet 𝕜 (c • x) = star c • dualitySet 𝕜 x := by
   by_cases hc : c = 0
