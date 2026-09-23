@@ -9,6 +9,7 @@ import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Projection
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Transport
 import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 
@@ -186,66 +187,6 @@ theorem coact_eq_tmul_one_of_isCompletelyReducible_of_forall_exists_fixed [One C
 
 end Comodule
 
-namespace Subcomodule
-
-section Projection
-
-variable {R : Type u} {C : Type v} {V : Type w}
-variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
-variable [AddCommGroup V] [Module R V] [Comodule R C V]
-
-/-- The projection onto a subcomodule `W` along a complementary subcomodule `Q`, as a comodule
-endomorphism. Its underlying linear map is `Submodule.projection`. -/
-noncomputable def projection (W Q : Subcomodule R C V)
-    (h : IsCompl W.toSubmodule Q.toSubmodule) : Comodule.Hom R C V V where
-  toLinearMap := W.toSubmodule.projection Q.toSubmodule h
-  map_coact := by
-    ext v
-    obtain ⟨w, hw, q, hq, rfl⟩ := Submodule.mem_sup.mp (h.sup_eq_top ▸ Submodule.mem_top :
-      v ∈ W.toSubmodule ⊔ Q.toSubmodule)
-    obtain ⟨x, hx⟩ := W.coact_mem hw
-    obtain ⟨y, hy⟩ := Q.coact_mem hq
-    have hW : W.toSubmodule.projection Q.toSubmodule h ∘ₗ W.carrier.subtype =
-        LinearMap.id ∘ₗ W.carrier.subtype := by
-      ext w
-      exact Submodule.projection_apply_of_mem_left h w.2
-    have hQ : W.toSubmodule.projection Q.toSubmodule h ∘ₗ Q.carrier.subtype =
-        0 ∘ₗ Q.carrier.subtype := by
-      ext q
-      exact Submodule.projection_apply_of_mem_right h q.2
-    simp only [LinearMap.comp_apply, map_add, ← hx, ← hy, TensorProduct.map_map, hW, hQ,
-      LinearMap.id_comp, LinearMap.zero_comp, TensorProduct.map_zero_left, LinearMap.zero_apply,
-      Submodule.projection_apply_of_mem_left h hw, Submodule.projection_apply_of_mem_right h hq,
-      map_zero, add_zero]
-
-/-- The underlying linear map of `TauCeti.Subcomodule.projection` is the linear projection
-`Submodule.projection`. -/
-@[simp]
-theorem projection_toLinearMap (W Q : Subcomodule R C V)
-    (h : IsCompl W.toSubmodule Q.toSubmodule) :
-    (projection W Q h).toLinearMap = W.toSubmodule.projection Q.toSubmodule h :=
-  (rfl)
-
-/-- The projection onto `W` along `Q` takes values in `W`. -/
-@[simp]
-theorem projection_apply_mem {W Q : Subcomodule R C V}
-    (h : IsCompl W.toSubmodule Q.toSubmodule) (v : V) : projection W Q h v ∈ W :=
-  Submodule.projection_apply_mem h v
-
-/-- The projection onto `W` along `Q` fixes `W` pointwise. -/
-theorem projection_apply_of_mem_left {W Q : Subcomodule R C V}
-    (h : IsCompl W.toSubmodule Q.toSubmodule) {v : V} (hv : v ∈ W) : projection W Q h v = v :=
-  Submodule.projection_apply_of_mem_left h hv
-
-/-- The projection onto `W` along `Q` vanishes on `Q`. -/
-theorem projection_apply_of_mem_right {W Q : Subcomodule R C V}
-    (h : IsCompl W.toSubmodule Q.toSubmodule) {v : V} (hv : v ∈ Q) : projection W Q h v = 0 :=
-  Submodule.projection_apply_of_mem_right h hv
-
-end Projection
-
-end Subcomodule
-
 namespace Comodule
 
 variable {R : Type u} {C : Type v} {V : Type w}
@@ -253,13 +194,12 @@ variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommGroup V] [Module R V] [Comodule R C V]
 
 /-- **Complete reducibility via equivariant retractions.** A comodule is completely reducible
-exactly when every subcomodule `W` is the image of a comodule endomorphism that fixes `W`
-pointwise. The kernel of such an endomorphism is a complementary subcomodule, and conversely the
-projection along a complementary subcomodule is such an endomorphism. Flatness of `C` is what
-makes the kernel a subcomodule. -/
+exactly when every subcomodule is the image of a comodule endomorphism that fixes it pointwise. -/
 theorem isCompletelyReducible_iff_forall_exists_hom [Module.Flat R C] :
     IsCompletelyReducible R C V ↔ ∀ W : Subcomodule R C V,
       ∃ P : Hom R C V V, (∀ v, P v ∈ W) ∧ ∀ w ∈ W, P w = w := by
+  -- A projection along a complement gives a retraction; conversely, flatness makes the kernel
+  -- of a retraction into a subcomodule complement.
   refine ⟨fun hV W ↦ ?_, fun hV ↦ IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_⟩
   · obtain ⟨Q, hQ⟩ := hV.exists_isCompl W
     exact ⟨Subcomodule.projection W Q hQ, Subcomodule.projection_apply_mem hQ,

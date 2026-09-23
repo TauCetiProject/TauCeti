@@ -30,7 +30,7 @@ affine group is linearly reductive exactly when it is a torus.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), Theorem 12.12.
+* J. S. Milne, *Algebraic Groups* (2017), Theorem 12.30.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 3.2.
 -/
 

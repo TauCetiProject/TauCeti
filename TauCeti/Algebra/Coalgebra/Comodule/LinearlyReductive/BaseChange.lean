@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+public import TauCeti.Algebra.TensorProduct.BaseChange
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 
@@ -15,22 +16,8 @@ import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 # Complete reducibility descends along scalar extension
 
 Let `C` be a coalgebra over a field `k`, let `V` be a `C`-comodule, and let `A` be a nonzero
-commutative `k`-algebra, for instance a field extension of `k`. If the base-changed comodule
-`A ⊗[k] V` over `A ⊗[k] C` is completely reducible, then so is `V`.
-
-The argument pushes an equivariant projection back down to `k`. Choose a `k`-linear
-functional `λ : A → k` with `λ 1 = 1`, which exists because `k → A` is an injective map of
-`k`-vector spaces. For a subcomodule `W ≤ V`, the scalar extension `A ⊗[k] W` is a subcomodule of
-`A ⊗[k] V`, so it has a complementary subcomodule and hence an equivariant projection `π` onto
-it. The composite
-
-```text
-V → A ⊗[k] V → A ⊗[k] V → V,    v ↦ (λ ⊗ id) (π (1 ⊗ v))
-```
-
-is again a comodule endomorphism, because `λ ⊗ id` intertwines the base-changed coaction with the
-original one. It maps `V` into `W` and fixes `W` pointwise, so its kernel is a subcomodule
-complement of `W`.
+commutative `k`-algebra. If the base-changed comodule `A ⊗[k] V` over `A ⊗[k] C` is completely
+reducible, then so is `V`.
 
 Consequently linear reductivity of a coalgebra descends from any field extension. For coordinate
 Hopf algebras this is the statement that an affine group over `k` is linearly reductive as soon as
@@ -79,21 +66,6 @@ private theorem coact_lid_rTensor (l : A →ₗ[k] k) (x : A ⊗[k] V) :
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul a v => simp
 
-omit [Coalgebra k C] [Comodule k C V] in
-/-- Pairing the scalar factor against `l` commutes with extending a vector by the coalgebra
-factor `1 ⊗ c`. -/
-private theorem lid_rTensor_distribBaseChange_symm (l : A →ₗ[k] k) (y : A ⊗[k] V) (c : C) :
-    TensorProduct.lid k (V ⊗[k] C) (l.rTensor (V ⊗[k] C)
-        ((TensorProduct.AlgebraTensorModule.distribBaseChange k A V C).symm
-          (y ⊗ₜ[A] ((1 : A) ⊗ₜ[k] c)))) =
-      TensorProduct.lid k V (l.rTensor V y) ⊗ₜ[k] c := by
-  induction y using TensorProduct.induction_on with
-  | zero => simp
-  | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
-  | tmul a v =>
-    rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
-    simp [TensorProduct.smul_tmul']
-
 /-- The `k`-linear endomorphism `v ↦ (l ⊗ id) (π (1 ⊗ v))` of `V` obtained from an endomorphism
 `π` of the base-changed comodule and a `k`-linear functional `l : A → k`. -/
 private noncomputable def descendLinearMap (l : A →ₗ[k] k) (π : A ⊗[k] V →ₗ[A] A ⊗[k] V) :
@@ -122,7 +94,7 @@ private noncomputable def descendHom (l : A →ₗ[k] k)
   | tmul u c =>
     rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
     simp only [TensorProduct.map_tmul, LinearMap.id_apply]
-    rw [lid_rTensor_distribBaseChange_symm, descendLinearMap_apply]
+    rw [Algebra.TensorProduct.lid_rTensor_distribBaseChange_symm, descendLinearMap_apply]
 
 private theorem descendHom_toLinearMap (l : A →ₗ[k] k)
     (π : letI := Comodule.baseChange (R := k) (H := C) (M := V) A
@@ -145,6 +117,8 @@ theorem IsCompletelyReducible.of_baseChange [Nontrivial A]
     (h : letI := Comodule.baseChange (R := k) (H := C) (M := V) A
       IsCompletelyReducible A (A ⊗[k] C) (A ⊗[k] V)) :
     IsCompletelyReducible k C V := by
+  -- Descend a projection along a complementary base-changed subcomodule by pairing its scalar
+  -- factor against a functional that sends `1` to `1`.
   let _ := Comodule.baseChange (R := k) (H := C) (M := V) A
   let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   have : Module.Flat k C := by
