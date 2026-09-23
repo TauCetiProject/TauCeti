@@ -12,8 +12,8 @@ public import Mathlib.Topology.KrullDimension
 
 A topological space is pure-dimensional of dimension `d` when every irreducible component has
 Krull dimension `d`. Empty spaces are pure-dimensional of every dimension, since they have no
-irreducible components. This convention is the one used for nonempty fibres in the definition of
-a morphism of pure relative dimension.
+irreducible components. Thus empty fibres automatically satisfy the pure-dimensional component
+condition in the definition of a morphism of pure relative dimension.
 
 The property is invariant under homeomorphisms. A discrete space is pure-dimensional of dimension
 zero: every irreducible component is nonempty and discrete, hence has Krull dimension zero.

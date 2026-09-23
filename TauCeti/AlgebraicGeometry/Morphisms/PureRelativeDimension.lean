@@ -19,8 +19,8 @@ equivalent scheme-theoretic formulation.
 
 The explicit dimension bound is included because the definition makes sense without a finiteness
 hypothesis. For locally finite type morphisms it follows mathematically from equidimensionality of
-the Noetherian fibres. Keeping it in the predicate makes the generally useful implication to
-`RelativeDimensionLE` available without silently assuming local finite type.
+the locally Noetherian fibres. Keeping it in the predicate makes the generally useful implication
+to `RelativeDimensionLE` available without silently assuming local finite type.
 
 Locally quasi-finite morphisms supply the basic example: their fibres are discrete and therefore
 pure zero-dimensional. The property is invariant under isomorphisms of arrows.
@@ -29,6 +29,8 @@ pure zero-dimensional. The property is invariant under isomorphisms of arrows.
 
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension d f`: every nonempty fibre of `f` is
   equidimensional of dimension `d`.
+* `TauCeti.AlgebraicGeometry.pureRelativeDimension_iff_isPureDimensional_fiber`: the
+  scheme-theoretic fibre characterization.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isPureDimensional_fiber`: the
   scheme-theoretic fibre formulation.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_locallyQuasiFinite`: locally quasi-finite
@@ -60,14 +62,26 @@ class PureRelativeDimension (d : ℕ) {X Y : Scheme.{u}} (f : X ⟶ Y) : Prop
 
 variable {d : ℕ} {X Y Z : Scheme.{u}}
 
+/-- A morphism has pure relative dimension `d` if and only if it has relative dimension at most
+`d` and every scheme-theoretic fibre is pure-dimensional of dimension `d`. -/
+theorem pureRelativeDimension_iff_isPureDimensional_fiber (f : X ⟶ Y) :
+    PureRelativeDimension d f ↔
+      RelativeDimensionLE d f ∧ ∀ y : Y, IsPureDimensional d (f.fiber y) := by
+  constructor
+  · intro h
+    exact ⟨h.toRelativeDimensionLE, fun y ↦
+      (f.fiberHomeo y).isPureDimensional_iff.mpr (h.isPureDimensional_preimage y)⟩
+  · rintro ⟨hle, hpure⟩
+    let _ : RelativeDimensionLE d f := hle
+    exact ⟨fun y ↦ (f.fiberHomeo y).isPureDimensional_iff.mp (hpure y)⟩
+
 namespace PureRelativeDimension
 
 /-- Every scheme-theoretic fibre of a morphism of pure relative dimension `d` is
 pure-dimensional of dimension `d`. -/
 theorem isPureDimensional_fiber (f : X ⟶ Y) [PureRelativeDimension d f] (y : Y) :
     IsPureDimensional d (f.fiber y) :=
-  (f.fiberHomeo y).isPureDimensional_iff.mpr
-    (PureRelativeDimension.isPureDimensional_preimage (f := f) y)
+  ((pureRelativeDimension_iff_isPureDimensional_fiber f).mp inferInstance).2 y
 
 /-- A locally quasi-finite morphism has pure relative dimension zero. -/
 instance (priority := low) of_locallyQuasiFinite (f : X ⟶ Y) [LocallyQuasiFinite f] :
