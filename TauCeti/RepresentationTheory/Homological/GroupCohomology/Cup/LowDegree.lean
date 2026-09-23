@@ -30,8 +30,7 @@ variable by an explicit `1`-cochain. Descent in the first variable uses
 The class-level definition chooses representatives of the two `H¹` classes. This choice is
 intentional: Mathlib exposes `H¹` as a `ModuleCat` quotient, and `Classical.choose` is used only
 to select a cocycle representative. `cup11_cocycle_eq_of_H1π_eq` records independence of the
-explicit cochain formula, and `cup11_respects_cocycles` records the corresponding class-level
-independence.
+explicit cochain formula.
 `cup11_mk` records the resulting pointwise formula on any supplied representatives.
 
 This is a deliberately scoped `(1,1)` ordinary cochain/descent component that can be reused by a
@@ -63,11 +62,6 @@ private lemma rho_smul (A : Rep.{0} ℤ G) (g : G) (c : ℤ) (x : A) :
   rw [map_smul]
   rfl
 
-private lemma hs_add (σ : groupCohomology.cocycles₁ (G := G) (A := ZRep)) (g h : G) :
-    σ (g * h) = σ h + σ g := by
-  simpa [Rep.trivial_ρ_apply] using
-    (groupCohomology.mem_cocycles₁_iff (σ : G → ℤ)).1 σ.property g h
-
 /-- The inhomogeneous `(1,1)` formula is a `2`-cocycle. -/
 lemma cup11_mem_cocycles₂ (σ : groupCohomology.cocycles₁ (G := G) (A := Rep.trivial ℤ G ℤ))
     (τ : groupCohomology.cocycles₁ (G := G) A) :
@@ -82,7 +76,7 @@ lemma cup11_mem_cocycles₂ (σ : groupCohomology.cocycles₁ (G := G) (A := Rep
   change
     ((σ (g * h) : ℤ) • A.ρ (g * h) (τ j) + σ g • A.ρ g (τ h)) =
       A.ρ g (σ h • A.ρ h (τ j)) + σ g • A.ρ g (τ (h * j))
-  rw [hs_add σ g h, ht h j]
+  rw [groupCohomology.cocycles₁_map_mul_of_isTrivial σ g h, add_comm, ht h j]
   rw [Rep.ρ_mul]
   simp only [LinearMap.coe_comp, Function.comp_apply]
   rw [map_add, rho_smul]
@@ -167,7 +161,7 @@ private lemma cup11_right_coboundary
         σ q.1 • A.ρ q.1 (A.ρ q.2 y - y)
     rw [map_neg, map_sub, Rep.ρ_mul]
     simp only [LinearMap.coe_comp, Function.comp_apply]
-    rw [hs_add σ q.1 q.2]
+    rw [groupCohomology.cocycles₁_map_mul_of_isTrivial σ q.1 q.2, add_comm]
     simp only [rho_smul]
     module
   have hmem : (fun q : G × G => σ q.1 • A.ρ q.1 (A.ρ q.2 y - y)) ∈
@@ -280,19 +274,6 @@ theorem cup11_cocycle_eq_of_H1π_eq
         ⟨fun q : G × G => σ₂ q.1 • A.ρ q.1 (τ₂ q.2),
           cup11_mem_cocycles₂ σ₂ τ₂⟩ := by
   rw [← cup11_mk σ₁ τ₁, ← cup11_mk σ₂ τ₂]
-  rw [hσ, hτ]
-
-/-- The class-level cup depends only on the two cohomology classes, not on chosen cocycles. -/
-theorem cup11_respects_cocycles
-    (σ₁ σ₂ : groupCohomology.cocycles₁ (G := G) (Rep.trivial ℤ G ℤ))
-    (τ₁ τ₂ : groupCohomology.cocycles₁ (G := G) A)
-    (hσ : groupCohomology.H1π (Rep.trivial ℤ G ℤ) σ₁ =
-      groupCohomology.H1π (Rep.trivial ℤ G ℤ) σ₂)
-    (hτ : groupCohomology.H1π A τ₁ = groupCohomology.H1π A τ₂) :
-    cup11 (G := G) (groupCohomology.H1π (Rep.trivial ℤ G ℤ) σ₁)
-        (groupCohomology.H1π A τ₁) =
-      cup11 (G := G) (groupCohomology.H1π (Rep.trivial ℤ G ℤ) σ₂)
-        (groupCohomology.H1π A τ₂) := by
   rw [hσ, hτ]
 
 /-- The `(1,1)` cup is ℤ-linear in its second class argument. -/
