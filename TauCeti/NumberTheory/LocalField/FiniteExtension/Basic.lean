@@ -57,7 +57,7 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
 * `TauCeti.finiteExtensionNormedFieldTopology_eq`: any valuative topology for such a relation is
   the norm topology.
 * `AlgEquiv.valuation_eq`: `K`-algebra automorphisms of `M` preserve the valuation.
-* `TauCeti.normalizedValuation_algEquiv`: the corresponding invariance of the normalized
+* `AlgEquiv.normalizedValuation_eq`: the corresponding invariance of the normalized
   valuation on units.
 * `Valuation.Integers.isIntegral_iff_valuation_le_one`: for any valuative relation on `M`
   extending that of `K`, an element of `M` is integral over a ring of integers of `K` exactly when
@@ -366,15 +366,13 @@ theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (
 
 /-- A `K`-automorphism of a finite local-field extension preserves its normalized valuation. -/
 @[simp]
-theorem normalizedValuation_algEquiv [ValuativeRel M] [ValuativeExtension K M]
+theorem _root_.AlgEquiv.normalizedValuation_eq [ValuativeRel M] [ValuativeExtension K M]
     [TopologicalSpace M] [IsNonarchimedeanLocalField M] (σ : M ≃ₐ[K] M) (x : Mˣ) :
     normalizedValuation M (Units.map σ x) = normalizedValuation M x := by
   apply Multiplicative.toAdd.injective
   simp only [toAdd_normalizedValuation_eq_neg_log, Units.coe_map]
-  -- The log expressions are definitionally the normalized values of the two field elements.
-  change -((valueGroupWithZeroIsoInt M) (valuation M (σ (x : M)))).log =
-    -((valueGroupWithZeroIsoInt M) (valuation M (x : M))).log
-  rw [σ.valuation_eq]
+  exact congrArg (fun v => -WithZero.log (valueGroupWithZeroIsoInt M v))
+    (σ.valuation_eq (x : M))
 
 end Uniqueness
 

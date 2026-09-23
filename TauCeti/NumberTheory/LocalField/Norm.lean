@@ -53,6 +53,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- **Valuation of a Galois norm after scalar extension.** The norm is the product of the Galois
 conjugates, and each conjugate has the same normalized valuation. -/
+@[simp]
 theorem normalizedValuation_algebraMap_norm [IsGalois K L] (x : Lˣ) :
     normalizedValuation L (Units.map (algebraMap K L : K →* L) (Algebra.normUnits K x)) =
       normalizedValuation L x ^ Module.finrank K L := by
@@ -60,18 +61,18 @@ theorem normalizedValuation_algebraMap_norm [IsGalois K L] (x : Lˣ) :
       ∏ σ : L ≃ₐ[K] L, Units.map σ x := by
     apply Units.ext
     simp only [Units.coe_map, Algebra.coe_normUnits]
-    -- The units product is coerced to `L` before rewriting it as a product in `L`.
-    change algebraMap K L (Algebra.norm K (x : L)) =
-      (Units.coeHom L) (∏ σ : L ≃ₐ[K] L, Units.map σ.toRingEquiv.toRingHom x)
-    simp only [map_prod]
-    exact Algebra.norm_eq_prod_automorphisms K (x : L)
+    conv_rhs =>
+      rw [← Units.coeHom_apply
+        (∏ σ : L ≃ₐ[K] L, Units.map (σ : L →* L) x), map_prod]
+    simpa only [Units.coeHom_apply, Units.coe_map, AlgEquiv.coe_coe, MonoidHom.coe_coe] using
+      Algebra.norm_eq_prod_automorphisms K (x : L)
   rw [hnorm, map_prod]
-  simp_rw [normalizedValuation_algEquiv]
+  simp_rw [AlgEquiv.normalizedValuation_eq]
   rw [Finset.prod_const, Finset.card_univ, ← Nat.card_eq_fintype_card,
     IsGalois.card_aut_eq_finrank]
 
--- A valuation-zero unit and its inverse are integral over `𝒪[K]`; so are both of their norms.
-private theorem normalizedValuation_norm_eq_one_of_eq_one (x : Lˣ)
+/-- The norm of a valuation-zero unit has valuation zero in every finite local-field extension. -/
+theorem normalizedValuation_norm_eq_one_of_eq_one (x : Lˣ)
     (hx : normalizedValuation L x = 1) :
     normalizedValuation K (Algebra.normUnits K x) = 1 := by
   have hint (y : Lˣ) (hy : normalizedValuation L y = 1) : IsIntegral 𝒪[K] (y : L) := by
