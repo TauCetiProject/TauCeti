@@ -24,7 +24,7 @@ type-D root datum.
 * `SpinPolarizationData.spinAction_typeDQuadraticEquiv_cartanGenerator_basis`: the concrete
   numbered Cartan generator acts on each exterior-basis vector by its type-D spin weight.
 * `SpinPolarizationData.spinAction_typeDSimpleCorootBivector_basis`: the corresponding reusable
-  simple-coroot calculation over any field with invertible `2`.
+  simple-coroot calculation over any commutative ring.
 
 ## References
 
@@ -42,7 +42,7 @@ section CommRing
 
 variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
-  {n : ℕ} (b : Module.Basis (Fin n) K P.W) [Invertible (2 : K)]
+  {n : ℕ} (b : Module.Basis (Fin n) K P.W)
 
 /-- A type-`D` simple-coroot bivector acts on an exterior-basis spinor by the corresponding
 integral spin weight in the simply connected root datum. -/
@@ -50,16 +50,27 @@ theorem spinAction_typeDSimpleCorootBivector_basis
     (hn : 2 ≤ n) (i : Fin n) (s : Finset (Fin n)) :
     spinAction Q P (P.typeDSimpleCorootBivector b hn i) (b.ExteriorAlgebra s) =
       algebraMap ℤ K (DynkinType.typeDSpinWeight s i) • b.ExteriorAlgebra s := by
-  rw [P.typeDSimpleCorootBivector_eq_diagonalBivector b hn i]
+  rw [P.typeDSimpleCorootBivector_def b]
   by_cases hnext : (i : ℕ) + 1 < n
-  · rw [dite_eq_left hnext, P.spinAction_diagonalBivector_sub_diagonalBivector_basis b]
-    have hwt := DynkinType.algebraMap_typeDSpinWeight_apply (K := K) s i
-    rw [dite_eq_left hnext] at hwt
-    exact (congrArg (fun z : K => z • b.ExteriorAlgebra s)
-      hwt).symm
-  · rw [dite_eq_right hnext, map_add, LinearMap.add_apply,
-      P.spinAction_diagonalBivector_basis b, P.spinAction_diagonalBivector_basis b,
-      ← add_smul]
+  · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply, map_mul, Module.End.mul_apply,
+      map_mul, Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
+      spinAction_ι_wedge, spinAction_ι_contract, P.pairingEquiv_dualVector,
+      P.pairingEquiv_dualVector, TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis,
+      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis]
+    have hwt : algebraMap ℤ K (DynkinType.typeDSpinWeight s i) =
+        algebraMap ℤ K (if i ∈ s then 1 else 0) -
+          algebraMap ℤ K (if (⟨(i : ℕ) + 1, hnext⟩ : Fin n) ∈ s then 1 else 0) := by
+      rw [DynkinType.typeDSpinWeight_apply, dite_eq_left hnext, map_sub]
+    rw [hwt]
+    by_cases hi : i ∈ s <;>
+      by_cases hj : (⟨(i : ℕ) + 1, hnext⟩ : Fin n) ∈ s <;>
+        simp [hi, hj]
+  · rw [dite_eq_right hnext, map_sub, LinearMap.sub_apply, map_add, LinearMap.add_apply,
+      map_one, map_mul, Module.End.mul_apply, map_mul, Module.End.mul_apply,
+      spinAction_ι_wedge, spinAction_ι_contract, spinAction_ι_wedge, spinAction_ι_contract,
+      P.pairingEquiv_dualVector, P.pairingEquiv_dualVector,
+      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis,
+      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis]
     have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
       apply Fin.ext
       dsimp only
@@ -70,12 +81,14 @@ theorem spinAction_typeDSimpleCorootBivector_basis
       apply Fin.ext
       dsimp only
       omega
-    have hspin : spinWeight K s i = spinWeight K s (⟨n - 1, by omega⟩ : Fin n) :=
-      congrArg (spinWeight K s) hi
-    have hwt := DynkinType.algebraMap_typeDSpinWeight_apply (K := K) s i
-    rw [dite_eq_right hnext, hprev, hspin] at hwt
-    simpa only [hprev, hspin] using
-      (congrArg (fun z : K => z • b.ExteriorAlgebra s) hwt).symm
+    have hwt : algebraMap ℤ K (DynkinType.typeDSpinWeight s i) =
+        algebraMap ℤ K (if (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) ∈ s then 1 else 0) +
+          algebraMap ℤ K (if i ∈ s then 1 else 0) - 1 := by
+      rw [DynkinType.typeDSpinWeight_apply, dite_eq_right hnext, map_sub, map_add, map_one]
+    rw [hwt, hprev]
+    by_cases hlast : (⟨n - 1, by omega⟩ : Fin n) ∈ s <;>
+      by_cases hpell : (⟨n - 2, by omega⟩ : Fin n) ∈ s <;>
+        simp [hlast, hpell, hi]
 
 end CommRing
 
