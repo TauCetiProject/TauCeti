@@ -32,7 +32,7 @@ one through two prescribed points is not.
 
 * `TauCeti.UpperHalfPlane.geodesicLine g` — the imaginary axis in its upward unit-speed
   parametrisation, moved by `g`: the map `t ↦ g • UpperHalfPlane.mk ⟨0, exp t⟩ _`.
-  `geodesicLine_one` and `geodesicLine_zero` give its value at `g = 1` and at `t = 0`.
+  `geodesicLine_one_apply` and `geodesicLine_zero` give its value at `g = 1` and at `t = 0`.
 * `TauCeti.UpperHalfPlane.isometry_geodesicLine` — `geodesicLine g` is an isometric embedding
   of `ℝ`, hence injective (`geodesicLine_injective`).
 * `TauCeti.UpperHalfPlane.dist_geodesicLine` — the distance between two of its points is
@@ -63,7 +63,7 @@ theorem geodesicLine_def (g : PSL(2, ℝ)) (t : ℝ) :
   rfl
 
 /-- The geodesic line of the identity is the upward unit-speed imaginary axis. -/
-theorem geodesicLine_one (t : ℝ) :
+theorem geodesicLine_one_apply (t : ℝ) :
     geodesicLine (1 : PSL(2, ℝ)) t = UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
   simp [geodesicLine_def]
 
