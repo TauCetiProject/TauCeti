@@ -132,23 +132,24 @@ local instance [IsIntegrallyClosed W₁.CoordinateRing] : IsDedekindDomain W₁.
 /-- **A point over the point at infinity is sent to `0`.** If the place of the affine point
 `(x, y)` of `W₁` restricts along `φ` to the place at infinity of `W₂` — the point lies in the fibre
 `φ⁻¹(O₂)` — then `φ.toPointHom` sends it to the point at infinity. -/
+@[simp]
 theorem toPointHom_some_eq_zero_of_isEquiv_comap_infinityPlace
     [IsIntegrallyClosed W₁.CoordinateRing] {x y : F} (h : W₁.Nonsingular x y)
     (hP : (((CoordinateRing.pointPlace h.1).valuation W₁.FunctionField).comap
-      φ.fieldPullback.toRingHom).IsEquiv W₂.infinityPlace) :
+      (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv W₂.infinityPlace) :
     φ.toPointHom (.some x y h) = 0 := by
   -- the pulled-back coordinate `φ^* x₂` has a pole at the point, as `x₂` has one at infinity
   have hpole : 1 < (CoordinateRing.pointPlace h.1).valuation W₁.FunctionField
       (φ.pullback (algebraMap F[X] W₂.CoordinateRing X)) := by
     have hx := one_lt_infinityPlace_X W₂
-    rwa [← not_le, ← Valuation.isEquiv_iff_val_le_one.mp hP, not_le, Valuation.comap_apply,
-      IsScalarTower.algebraMap_apply F[X] W₂.CoordinateRing W₂.FunctionField,
-      AlgHom.toRingHom_eq_coe, RingHom.coe_coe, fieldPullback_algebraMap] at hx
+    rw [← not_le, ← Valuation.isEquiv_iff_val_le_one.mp hP, not_le, Valuation.comap_apply,
+      IsScalarTower.algebraMap_apply F[X] W₂.CoordinateRing W₂.FunctionField] at hx
+    rw [← AlgHom.toRingHom_eq_coe] at hx
+    rwa [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, fieldPullback_algebraMap] at hx
   -- the class of the point is that of its ideal, which extends to the unit ideal
-  have hI : CoordinateRing.XYIdeal W₁ x (C y) ∈ (Ideal W₁.CoordinateRing)⁰ :=
-    mem_nonZeroDivisors_of_ne_zero (CoordinateRing.XYIdeal_ne_bot x (C y))
-  rw [toPointHom_eq_iff, Point.toClass_zero, Point.toClass_some_eq_ofMul_mk0 h hI, pushClass_apply,
-    toMul_ofMul, pushClassMonoidHom_mk0_eq_one_of_map_eq_top φ ⟨_, hI⟩
+  rw [toPointHom_eq_iff, Point.toClass_zero, Point.toClass_some_eq_ofMul_mk0 h, pushClass_apply,
+    toMul_ofMul, pushClassMonoidHom_mk0_eq_one_of_map_eq_top φ
+      ⟨_, mem_nonZeroDivisors_of_ne_zero (CoordinateRing.XYIdeal_ne_bot x (C y))⟩
       (φ.map_XYIdeal_eq_top_of_one_lt_valuation h.1 hpole), ofMul_one]
 
 end Isogeny

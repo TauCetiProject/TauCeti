@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Derivative
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.XYIdealMaximal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.XYIdealMaximal
 import TauCeti.RingTheory.FractionalIdeal.Divisibility
 import Mathlib.LinearAlgebra.DirectSum.Finite
 import Mathlib.LinearAlgebra.FreeModule.Norm
@@ -689,9 +689,11 @@ coordinate ring is a Dedekind domain. Mathlib's `toClass_some` states it through
 fractional ideal `XYIdeal'`; this is the form in which class-group maps defined on integral ideals,
 such as a relative norm, are evaluated. -/
 theorem toClass_some_eq_ofMul_mk0 [IsDedekindDomain W.CoordinateRing] {x y : F}
-    (h : W.Nonsingular x y)
-    (hI : CoordinateRing.XYIdeal W x (C y) ∈ (Ideal W.CoordinateRing)⁰) :
-    toClass (some x y h) = Additive.ofMul (ClassGroup.mk0 ⟨_, hI⟩) := by
+    (h : W.Nonsingular x y) :
+    toClass (some x y h) = Additive.ofMul (ClassGroup.mk0
+      ⟨_, mem_nonZeroDivisors_of_ne_zero (CoordinateRing.XYIdeal_ne_bot x (C y))⟩) := by
+  have hI : CoordinateRing.XYIdeal W x (C y) ∈ (Ideal W.CoordinateRing)⁰ :=
+    mem_nonZeroDivisors_of_ne_zero (CoordinateRing.XYIdeal_ne_bot x (C y))
   have hmk :
       ClassGroup.mk W.FunctionField (CoordinateRing.XYIdeal' h) = ClassGroup.mk0 ⟨_, hI⟩ := by
     rw [← ClassGroup.mk_mk0 W.FunctionField]
