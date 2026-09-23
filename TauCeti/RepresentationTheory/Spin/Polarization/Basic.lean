@@ -21,9 +21,9 @@ scalar line. It also records the two elementary consequences that every consumer
 form vanishes identically on each isotropic summand, and a basis of the first summand has a
 Kronecker-dual family of vectors in the second.
 
-Over a field the decomposition also counts dimensions: the two isotropic summands are dual to each
-other, so equidimensional, and the remainder embeds in the scalar line, so is at most a line.
-Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the parity of `dim V` decides which,
+The decomposition also counts dimensions. Over any nontrivial ring the remainder embeds in the
+scalar line, so is at most a line; over a field the two isotropic summands are moreover dual to
+each other, so equidimensional. Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the parity of `dim V` decides which,
 giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in dimension `2l + 1` (type `Bₗ`).
 
 ## Main definitions
