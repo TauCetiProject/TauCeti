@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.NumberTheory.LocalField.PowerSubgroup
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.RingTheory.Valuation.ValuationRing
@@ -47,6 +48,8 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 * `TauCeti.valuation_sq_sub_one_ne_pow_odd` and `TauCeti.not_isSquare_one_add_pow_odd`: below depth
   `2 v_K(2)`, a square cannot differ from one to exact odd order, so `1 + π^(2k+1)` is not a
   square when `k < v_K(2)`.
+* `TauCeti.exists_integerUnit_residue_not_isSquare`: away from residue characteristic two there
+  is a unit of `𝒪[K]` whose residue is a nonsquare.
 
 ## References
 
@@ -278,5 +281,20 @@ characteristic different from two. -/
 theorem isClosed_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     IsClosed ((powMonoidHom 2 : Kˣ →* Kˣ).range : Set Kˣ) :=
   Subgroup.isClosed_of_isOpen _ (isOpen_range_powMonoidHom_two h2)
+
+/-- Away from residue characteristic two, there is a unit of `𝒪[K]` whose residue is a
+nonsquare. -/
+theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
+    ∃ u : 𝒪[K]ˣ, ¬IsSquare (Units.map (IsLocalRing.residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) := by
+  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
+  obtain ⟨x, hx, hxsq⟩ := exists_mem_unitFiltration_not_isSquare h2K
+  have hx0 : x ∈ unitFiltration K 0 := unitFiltration_antitone (Nat.zero_le _) hx
+  let x0 : unitFiltration K 0 := ⟨x, hx0⟩
+  let u : 𝒪[K]ˣ := unitFiltrationToIntegerUnits 0 x0
+  have hu_map : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u = x := by
+    simp [u, x0]
+  refine ⟨u, ?_⟩
+  rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
+  exact hxsq
 
 end TauCeti

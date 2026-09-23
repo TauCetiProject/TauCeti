@@ -42,7 +42,7 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 * `TauCeti.not_isSquare_mul_of_isUniformizer_of_even_toAdd_normalizedValuation`: a uniformizer
   times an element of even valuation is not a square.
 * `TauCeti.not_isSquare_of_isUniformizer`: a uniformizer is not a square.
-* `TauCeti.natCard_multiplicativeSquareClassGroup_of_isUnit_two`: away from residue
+* `TauCeti.card_squareClass_of_odd`: away from residue
   characteristic two the literal quotient by squares has four elements.
 * `TauCeti.natCard_squareClassGroup_of_isUnit_two`: away from residue characteristic two the
   square-class group has four elements.
@@ -54,8 +54,6 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   exhaust the square-class group.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two`: every element of `Kˣ` agrees, up to a square,
   with one of `1`, `u`, `π`, `u π`.
-* `TauCeti.exists_integerUnit_residue_not_isSquare`: away from residue characteristic two there
-  is a unit of `𝒪[K]` whose residue is a nonsquare.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two_of_integerUnit_residue_not_isSquare`: the four
   representatives can be formed from any specified integer-ring unit with nonsquare residue.
 * `TauCeti.isSquare_or_isSquare_mul_of_isUnit_two`: an element of even valuation is a square or
@@ -112,7 +110,8 @@ theorem not_isSquare_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) : ¬
 characteristic two has four elements.** This is the literal quotient `Kˣ ⧸ (Kˣ)²`;
 `TauCeti.natCard_squareClassGroup_of_isUnit_two` restates it on the additive
 `TauCeti.SquareClassGroup`. -/
-theorem natCard_multiplicativeSquareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
+@[simp]
+theorem card_squareClass_of_odd (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (MultiplicativeSquareClassGroup K) = 4 :=
   (Nat.card_congr (QuotientGroup.quotientMulEquivOfEq
     (square_eq_powMonoidHom_two_range (G := Kˣ))).toEquiv).trans
@@ -121,10 +120,11 @@ theorem natCard_multiplicativeSquareClassGroup_of_isUnit_two (h2 : IsUnit (2 : �
 /-- **The square-class group of a nonarchimedean local field away from residue characteristic
 two has four elements.** This is the count `#(Kˣ ⧸ (Kˣ)²) = 4` of
 `TauCeti.card_squareClasses_of_isUnit`, read on `TauCeti.SquareClassGroup`. -/
+@[simp]
 theorem natCard_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (SquareClassGroup K) = 4 := by
   rw [← natCard_multiplicativeSquareClassGroup]
-  exact natCard_multiplicativeSquareClassGroup_of_isUnit_two h2
+  exact card_squareClass_of_odd h2
 
 /-- Away from residue characteristic two, the square-class group of a nonarchimedean local field
 is a Klein four-group. -/
@@ -198,21 +198,6 @@ theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : K�
   · exact ⟨u, by simp, (squareClass_eq_iff_isSquare_mul a u).mp h⟩
   · exact ⟨π, by simp, (squareClass_eq_iff_isSquare_mul a π).mp h⟩
   · exact ⟨u * π, by simp, (squareClass_eq_iff_isSquare_mul a (u * π)).mp h⟩
-
-/-- Away from residue characteristic two, there is a unit of `𝒪[K]` whose residue is a
-nonsquare. -/
-theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
-    ∃ u : 𝒪[K]ˣ, ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) := by
-  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
-  obtain ⟨x, hx, hxsq⟩ := exists_mem_unitFiltration_not_isSquare h2K
-  have hx0 : x ∈ unitFiltration K 0 := unitFiltration_antitone (Nat.zero_le _) hx
-  let x0 : unitFiltration K 0 := ⟨x, hx0⟩
-  let u : 𝒪[K]ˣ := unitFiltrationToIntegerUnits 0 x0
-  have hu_map : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u = x := by
-    simp [u, x0]
-  refine ⟨u, ?_⟩
-  rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
-  exact hxsq
 
 /-- **The four square classes with an explicitly chosen unramified unit.** Away from residue
 characteristic two, if a unit `u` of `𝒪[K]` has nonsquare residue, then every element of `Kˣ`
