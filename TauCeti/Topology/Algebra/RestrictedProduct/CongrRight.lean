@@ -117,13 +117,13 @@ theorem continuous_restrictedProductCongrRight_symm {H : ι → Type w} [∀ i, 
 the induced homomorphism of restricted products is surjective exactly when the equivalences are
 eventually bijections of the reference subgroups. So the `Set.BijOn` hypothesis of
 `restrictedProductCongrRight` is not only sufficient but necessary. -/
-theorem surjective_restrictedProductMap_iff_eventually_bijOn {H : ι → Type w}
+theorem restrictedProductMap_surjective_iff_eventually_bijOn {H : ι → Type w}
     [∀ i, Group (H i)] (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i ≃* H i)
     (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)) :
     Function.Surjective (restrictedProductMap U U' (fun i ↦ (φ i).toMonoidHom) hφ) ↔
       ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i) := by
-  refine (surjective_restrictedProductMap_iff U U' _ hφ).trans
+  refine (restrictedProductMap_surjective_iff U U' _ hφ).trans
     ⟨fun h ↦ ?_, fun h ↦ ⟨fun i ↦ (φ i).surjective, h.mono fun _ hi ↦ hi.surjOn⟩⟩
   filter_upwards [hφ, h.2] with i hmaps hsurj
   exact ⟨hmaps, (φ i).injective.injOn, hsurj⟩
@@ -132,15 +132,14 @@ theorem surjective_restrictedProductMap_iff_eventually_bijOn {H : ι → Type w}
 induce an equivalence of restricted products. The witness uses identity maps on
 `Multiplicative ℤ`, with every source reference subgroup `⊥` and every target reference subgroup
 `⊤`: the induced map is the inclusion of the finitely supported elements into the full product,
-which is not surjective. This is rejection test 9 in
-`TauCetiRoadmap/RestrictedProducts/README.md`, "Worked examples and rejection tests". -/
+which is not surjective. -/
 theorem not_forall_surjective_restrictedProductMap :
     ¬ ∀ (U U' : ℕ → Subgroup (Multiplicative ℤ))
         (φ : ∀ _ : ℕ, Multiplicative ℤ ≃* Multiplicative ℤ)
         (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)),
         Function.Surjective (restrictedProductMap U U' (fun i ↦ (φ i).toMonoidHom) hφ) := by
   intro h
-  have hbij := (surjective_restrictedProductMap_iff_eventually_bijOn (fun _ ↦ ⊥) (fun _ ↦ ⊤)
+  have hbij := (restrictedProductMap_surjective_iff_eventually_bijOn (fun _ ↦ ⊥) (fun _ ↦ ⊤)
     (fun _ ↦ MulEquiv.refl _) (.of_forall fun _ _ _ ↦ Subgroup.mem_top _)).mp (h _ _ _ _)
   obtain ⟨i, hi⟩ := hbij.exists
   obtain ⟨a, ha, hae⟩ := hi.surjOn (Subgroup.mem_top (Multiplicative.ofAdd (1 : ℤ)))

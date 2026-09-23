@@ -121,7 +121,7 @@ reference subgroup onto the target one. Surjectivity of each coordinate map alon
 an element of the target may lie in the target reference subgroups at infinitely many indices
 where no preimage lies in the source reference subgroup. -/
 @[simp]
-theorem surjective_restrictedProductMap_iff {H : ι → Type w} [∀ i, Group (H i)]
+theorem restrictedProductMap_surjective_iff {H : ι → Type w} [∀ i, Group (H i)]
     (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
     (φ : ∀ i, G i →* H i)
     (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)) :
