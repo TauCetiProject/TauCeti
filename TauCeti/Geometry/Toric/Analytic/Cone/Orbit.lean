@@ -109,41 +109,41 @@ theorem mem_affineConeOrbit_iff_coneChartEquiv (hi : IsIntegralLattice i)
 
 /-- The coordinate stratum attached to a subset `A` of an index type: precisely those pairs whose
 first coordinates vanish on `A` and nowhere else.  The second component is unrestricted. -/
-def coneOrbitCoordinateSet (α β : Type*) (A : Set α) : Set ((α → ℂ) × β) :=
+def zeroPatternSet (α β : Type*) (A : Set α) : Set ((α → ℂ) × β) :=
   {z | ∀ a, z.1 a = 0 ↔ a ∈ A}
 
 /-- A coordinate pair belongs to the stratum attached to `A` exactly when its first coordinate
 vanishes precisely on `A`. -/
 @[simp]
-theorem mem_coneOrbitCoordinateSet (α β : Type*) (A : Set α) (z : (α → ℂ) × β) :
-    z ∈ coneOrbitCoordinateSet α β A ↔ ∀ a, z.1 a = 0 ↔ a ∈ A :=
+theorem mem_zeroPatternSet (α β : Type*) (A : Set α) (z : (α → ℂ) × β) :
+    z ∈ zeroPatternSet α β A ↔ ∀ a, z.1 a = 0 ↔ a ∈ A :=
   Iff.rfl
 
 /-- The coordinate stratum is a product of single-coordinate conditions with an unrestricted
 second factor. -/
-theorem coneOrbitCoordinateSet_eq_pi_prod (α β : Type*) (A : Set α) :
-    coneOrbitCoordinateSet α β A =
+theorem zeroPatternSet_eq_pi_prod (α β : Type*) (A : Set α) :
+    zeroPatternSet α β A =
       (Set.pi Set.univ fun a ↦ {z : ℂ | z = 0 ↔ a ∈ A}) ×ˢ Set.univ := by
   ext z
-  rw [mem_coneOrbitCoordinateSet]
+  rw [mem_zeroPatternSet]
   simp only [Set.mem_prod, Set.mem_pi, Set.mem_univ, true_implies, and_true]
   rfl
 
 /-- Under any extending-basis chart, the intrinsic orbit of `F` is the inverse image of the
 coordinate stratum attached to the rays of `F`. -/
-theorem preimage_coneOrbitCoordinateSet_eq_affineConeOrbit (hi : IsIntegralLattice i)
+theorem preimage_zeroPatternSet_eq_affineConeOrbit (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ) {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face) :
     coneChartEquiv hi hσ.toIsToricCone hb ⁻¹'
-        coneOrbitCoordinateSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F) =
+        zeroPatternSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F) =
       affineConeOrbit hi F := by
   ext x
-  rw [Set.mem_preimage, mem_coneOrbitCoordinateSet,
+  rw [Set.mem_preimage, mem_zeroPatternSet,
     mem_affineConeOrbit_iff_coneChartEquiv]
 
 /-- A coordinate stratum with finitely many first coordinates is locally closed. -/
-theorem isLocallyClosed_coneOrbitCoordinateSet (α β : Type*) [Finite α]
-    [TopologicalSpace β] (A : Set α) : IsLocallyClosed (coneOrbitCoordinateSet α β A) := by
+theorem isLocallyClosed_zeroPatternSet (α β : Type*) [Finite α]
+    [TopologicalSpace β] (A : Set α) : IsLocallyClosed (zeroPatternSet α β A) := by
   classical
   let U := (Set.pi Aᶜ fun _ ↦ ({0}ᶜ : Set ℂ)) ×ˢ (Set.univ : Set β)
   let Z := (Set.pi A fun _ ↦ ({0} : Set ℂ)) ×ˢ (Set.univ : Set β)
@@ -153,7 +153,7 @@ theorem isLocallyClosed_coneOrbitCoordinateSet (α β : Type*) [Finite α]
     (isClosed_set_pi fun _ _ ↦ isClosed_singleton).prod isClosed_univ
   refine ⟨U, Z, hU, hZ, ?_⟩
   ext z
-  simp only [mem_coneOrbitCoordinateSet, Set.mem_inter_iff, U, Z, Set.mem_prod, Set.mem_pi,
+  simp only [mem_zeroPatternSet, Set.mem_inter_iff, U, Z, Set.mem_prod, Set.mem_pi,
     Set.mem_compl_iff, Set.mem_singleton_iff, Set.mem_univ, and_true]
   constructor
   · intro hz
@@ -164,10 +164,10 @@ theorem isLocallyClosed_coneOrbitCoordinateSet (α β : Type*) [Finite α]
 
 /-- The closure of a coordinate stratum permits additional first coordinates to vanish, while
 retaining the coordinates already forced to be zero. -/
-theorem closure_coneOrbitCoordinateSet (α β : Type*) [TopologicalSpace β] (A : Set α) :
-    closure (coneOrbitCoordinateSet α β A) = {z | ∀ a ∈ A, z.1 a = 0} := by
+theorem closure_zeroPatternSet (α β : Type*) [TopologicalSpace β] (A : Set α) :
+    closure (zeroPatternSet α β A) = {z | ∀ a ∈ A, z.1 a = 0} := by
   classical
-  rw [coneOrbitCoordinateSet_eq_pi_prod, closure_prod_eq, closure_pi_set]
+  rw [zeroPatternSet_eq_pi_prod, closure_prod_eq, closure_pi_set]
   ext z
   simp only [Set.mem_prod, Set.mem_pi, Set.mem_univ, true_implies, closure_univ, and_true]
   constructor
@@ -231,8 +231,8 @@ theorem isLocallyClosed_affineConeOrbit (hi : IsIntegralLattice i)
   let _ := affinePointTopology g
   obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
   let _ := ToricRay.finite_of_fg hσ.fg
-  rw [← preimage_coneOrbitCoordinateSet_eq_affineConeOrbit hi hσ hb F]
-  exact (isLocallyClosed_coneOrbitCoordinateSet (ToricRay σ) (Fin l → ℂˣ)
+  rw [← preimage_zeroPatternSet_eq_affineConeOrbit hi hσ hb F]
+  exact (isLocallyClosed_zeroPatternSet (ToricRay σ) (Fin l → ℂˣ)
     (hσ.faceOrderIso hi F)).preimage
     (by simpa only [coe_coneChartHomeomorph hi hσ.toIsToricCone hb g] using
       (coneChartHomeomorph hi hσ.toIsToricCone hb g).continuous)
@@ -251,19 +251,19 @@ theorem closure_affineConeOrbit_eq_coordinate (hi : IsIntegralLattice i)
   dsimp only
   let _ := affinePointTopology g
   have hpre := (coneChartHomeomorph hi hσ.toIsToricCone hb g).preimage_closure
-    (coneOrbitCoordinateSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F))
+    (zeroPatternSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F))
   rw [coe_coneChartHomeomorph] at hpre
   calc
     closure (affineConeOrbit hi F) = closure
         (coneChartEquiv hi hσ.toIsToricCone hb ⁻¹'
-          coneOrbitCoordinateSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F)) :=
-      congrArg closure (preimage_coneOrbitCoordinateSet_eq_affineConeOrbit hi hσ hb F).symm
+          zeroPatternSet (ToricRay σ) (ι → ℂˣ) (hσ.faceOrderIso hi F)) :=
+      congrArg closure (preimage_zeroPatternSet_eq_affineConeOrbit hi hσ hb F).symm
     _ = coneChartEquiv hi hσ.toIsToricCone hb ⁻¹'
-        closure (coneOrbitCoordinateSet (ToricRay σ) (ι → ℂˣ)
+        closure (zeroPatternSet (ToricRay σ) (ι → ℂˣ)
           (hσ.faceOrderIso hi F)) := hpre.symm
     _ = {x | ∀ ρ ∈ hσ.faceOrderIso hi F,
         (coneChartEquiv hi hσ.toIsToricCone hb x).1 ρ = 0} := by
-      rw [closure_coneOrbitCoordinateSet]
+      rw [closure_zeroPatternSet]
       rfl
 
 /-- The closure of the orbit stratum of `F` is the union of the strata indexed by faces
