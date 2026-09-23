@@ -37,7 +37,7 @@ variable (F)
 /-- Every positive ramification group of a finite inertia group is a `p`-group in residue
 characteristic `p`. This includes the wild inertia group `G₁`. -/
 theorem isPGroup_ramificationGroup_succ (P : Place k F') (p i : ℕ)
-    [Fact p.Prime] [CharP P.ResidueField p] [Finite (ramificationGroup F P 0)] :
+    [CharP P.ResidueField p] [Finite (ramificationGroup F P 0)] :
     IsPGroup p (ramificationGroup F P (i + 1)) := by
   obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot F P
   rw [isPGroup_iff_pow_pow_eq_one]
