@@ -119,13 +119,11 @@ theorem isEmbedding_right (C : TopologicalConcordance F F' f g) : IsEmbedding g 
     simpa only [Function.comp_def, hone] using htrack
   exact (isEmbedding_prodMkLeft (1 : ℝ)).of_comp_iff.mp hprod
 
-private def timeReverse : ℝ ≃ₜ ℝ := Homeomorph.subLeft (1 : ℝ)
-
 private def sourceTimeReverse : (M × ℝ) ≃ₜ (M × ℝ) :=
-  Homeomorph.prodCongr (Homeomorph.refl M) timeReverse
+  Homeomorph.prodCongr (Homeomorph.refl M) (Homeomorph.subLeft (1 : ℝ))
 
 private def targetTimeReverse : (N × ℝ) ≃ₜ (N × ℝ) :=
-  Homeomorph.prodCongr (Homeomorph.refl N) timeReverse
+  Homeomorph.prodCongr (Homeomorph.refl N) (Homeomorph.subLeft (1 : ℝ))
 
 /-- Reverse a topological concordance by reflecting both source and target time. -/
 def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f where
