@@ -22,7 +22,6 @@ The continuity proofs use Mathlib's `RestrictedProduct.mapAlong_continuous`.
 public section
 
 namespace TauCeti
-namespace Equiv
 
 open Filter
 open scoped RestrictedProduct
@@ -180,5 +179,4 @@ theorem continuous_restrictedProductReindex_symm (e : ι' ≃ ι) :
     Continuous (@restrictedProductReindex ι ι' G U e).symm := by
   exact continuous_restrictedProductCongrLeft e
 
-end Equiv
 end TauCeti
