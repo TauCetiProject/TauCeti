@@ -76,6 +76,10 @@ Krull--Schmidt hypotheses of a finite-dimensional algebra.
   generated projectives is the split one.
 * `TauCeti.finiteModulesExactK0Equiv`: the explicit comparison between the named finite-module
   exact structure and the structure induced directly from all modules.
+* `CategoryTheory.Equivalence.isConflationExact_finiteModules_congrFullSubcategory_functor` and
+  its `finiteProjectiveModules` and `_inverse` companions: an exact equivalence of module
+  categories respecting the two object properties restricts to exact equivalences of the two
+  subcategories. These are dot notation on the equivalence.
 * `TauCeti.cartanMap_apply`: the Cartan map factors through the Grothendieck group of the modules
   admitting finite resolutions by finitely generated projectives, by the resolution theorem.
 * `TauCeti.moduleEulerClassOf_eq`: every finite projective resolution computes the module Euler
@@ -270,6 +274,78 @@ noncomputable def cartanMap :
     cartanMap R (ExactK0.of ⟨M, hM⟩) =
       ExactK0.of ⟨M, (ModuleCat.isFG_iff M).mpr (finiteProjectiveModules_iff.mp hM).1⟩ :=
   ExactK0.map_of _ _ _
+
+/-! ### Transport along exact equivalences -/
+
+-- These four statements are instances of
+-- `TauCeti.ExactStructure.isConflationExact_congrFullSubcategory_functor` and its inverse
+-- companion. They are recorded here, rather than at their point of use, because the bodies of
+-- `finiteModulesExactStructure` and `finiteProjectiveModulesExactStructure` are not exposed, so
+-- only this module can identify these structures with `ExactStructure.fullSubcategory`.
+end TauCeti
+
+namespace CategoryTheory.Equivalence
+
+open TauCeti
+
+universe u
+
+variable {R S : Type u} [Ring R] [Ring S] (e : ModuleCat.{u} S ≌ ModuleCat.{u} R)
+  [e.functor.Additive]
+
+/-- An exact equivalence of module categories pulling the finitely generated `R`-modules back to
+the finitely generated `S`-modules restricts to a conflation-exact functor between the finitely
+generated modules. -/
+theorem isConflationExact_finiteModules_congrFullSubcategory_functor
+    (hF : (ExactStructure.abelian (ModuleCat.{u} S)).IsConflationExact
+      (ExactStructure.abelian (ModuleCat.{u} R)) e.functor)
+    (h : (ModuleCat.isFG R).inverseImage e.functor = ModuleCat.isFG S) :
+    (finiteModulesExactStructure S).IsConflationExact (finiteModulesExactStructure R)
+      (e.congrFullSubcategory h).functor :=
+  ExactStructure.isConflationExact_congrFullSubcategory_functor _ _ e hF h
+
+/-- The inverse of an exact equivalence of module categories pulling the finitely generated
+`R`-modules back to the finitely generated `S`-modules restricts to a conflation-exact functor
+between the finitely generated modules. -/
+theorem isConflationExact_finiteModules_congrFullSubcategory_inverse
+    (hG : (ExactStructure.abelian (ModuleCat.{u} R)).IsConflationExact
+      (ExactStructure.abelian (ModuleCat.{u} S)) e.inverse)
+    (h : (ModuleCat.isFG R).inverseImage e.functor = ModuleCat.isFG S) :
+    (finiteModulesExactStructure R).IsConflationExact (finiteModulesExactStructure S)
+      (e.congrFullSubcategory h).inverse :=
+  ExactStructure.isConflationExact_congrFullSubcategory_inverse _ _ e hG h
+
+/-- An exact equivalence of module categories pulling the finitely generated projective
+`R`-modules back to the finitely generated projective `S`-modules restricts to a conflation-exact
+functor between the finitely generated projective modules. -/
+theorem isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor
+    (hF : (ExactStructure.abelian (ModuleCat.{u} S)).IsConflationExact
+      (ExactStructure.abelian (ModuleCat.{u} R)) e.functor)
+    (h : (finiteProjectiveModules R).inverseImage e.functor = finiteProjectiveModules S) :
+    (finiteProjectiveModulesExactStructure S).IsConflationExact
+      (finiteProjectiveModulesExactStructure R) (e.congrFullSubcategory h).functor :=
+  ExactStructure.isConflationExact_congrFullSubcategory_functor _ _ e hF h
+
+/-- The inverse of an exact equivalence of module categories pulling the finitely generated
+projective `R`-modules back to the finitely generated projective `S`-modules restricts to a
+conflation-exact functor between the finitely generated projective modules. -/
+theorem isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse
+    (hG : (ExactStructure.abelian (ModuleCat.{u} R)).IsConflationExact
+      (ExactStructure.abelian (ModuleCat.{u} S)) e.inverse)
+    (h : (finiteProjectiveModules R).inverseImage e.functor = finiteProjectiveModules S) :
+    (finiteProjectiveModulesExactStructure R).IsConflationExact
+      (finiteProjectiveModulesExactStructure S) (e.congrFullSubcategory h).inverse :=
+  ExactStructure.isConflationExact_congrFullSubcategory_inverse _ _ e hG h
+
+end CategoryTheory.Equivalence
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+
+universe u
+
+variable (R : Type u) [Ring R]
 
 /-! ### The resolution theorem -/
 

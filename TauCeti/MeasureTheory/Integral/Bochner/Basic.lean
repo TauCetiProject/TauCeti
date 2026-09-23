@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
-import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -98,11 +98,12 @@ theorem integrable_comp_abs {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
   have hIoi : IntegrableOn (fun x : ℝ => f |x|) (Set.Ioi 0) :=
     hf.congr_fun (fun x hx => by rw [abs_of_pos hx]) measurableSet_Ioi
   have hIic : IntegrableOn (fun x : ℝ => f |x|) (Set.Iic 0) := by
-    have hemb : MeasurableEmbedding fun x : ℝ => -x := (Homeomorph.neg ℝ).measurableEmbedding
-    have h := ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
-      hemb (f := fun y : ℝ => f |y|) (s := Set.Ici (0 : ℝ))).2
-      (Iff.mpr integrableOn_Ici_iff_integrableOn_Ioi hIoi)
-    simpa [Function.comp_def, abs_neg] using h
+    have hIoi' : IntegrableOn (fun x : ℝ => f |x|) (Set.Ioi (-(0 : ℝ))) := by
+      simpa only [neg_zero] using hIoi
+    have hIio : IntegrableOn (fun x : ℝ => f |-x|) (Set.Iio 0) :=
+      hIoi'.comp_neg_Iio (μ := volume) (c := 0)
+    rw [integrableOn_Iic_iff_integrableOn_Iio]
+    simpa only [abs_neg] using hIio
   rw [← integrableOn_univ, ← Set.Iic_union_Ioi (a := (0 : ℝ))]
   exact hIic.union hIoi
 

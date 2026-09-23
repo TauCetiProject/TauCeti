@@ -49,6 +49,8 @@ cone, induces a homeomorphism.
   the binomial relations of the family.
 * `TauCeti.Toric.affinePointTopology`: the topology induced by a monomial embedding.
 * `TauCeti.Toric.affinePointTopology_eq`: it does not depend on the generating family.
+* `TauCeti.Toric.continuous_iff_forall_continuous_apply_single`: a map into the complex points is
+  continuous exactly when evaluation at every monomial is.
 * `TauCeti.Toric.isClosedEmbedding_monomialEmbedding`: the monomial embedding is a closed
   embedding, whence the Hausdorff, second countable and locally compact conclusions.
 * `TauCeti.Toric.AffineSemigroupComplexPoint.comap`: the map on complex points induced by a
@@ -83,6 +85,18 @@ abbrev AffineSemigroupComplexPoint (S : Type*) [AddCommMonoid S] :=
 every monomial to `1`. -/
 noncomputable instance : Inhabited (AffineSemigroupComplexPoint S) where
   default := MonoidAlgebra.lift ℂ ℂ (Multiplicative S) 1
+
+/-- The distinguished complex point is the algebra homomorphism induced by the trivial
+character. -/
+theorem default_def :
+    (default : AffineSemigroupComplexPoint S) = MonoidAlgebra.lift ℂ ℂ (Multiplicative S) 1 :=
+  (rfl)
+
+/-- The distinguished complex point takes the value `1` on every monomial. -/
+@[simp]
+theorem default_apply_single (s : S) :
+    (default : AffineSemigroupComplexPoint S) (MonoidAlgebra.single (ofAdd s) 1) = 1 := by
+  rw [default_def, MonoidAlgebra.lift_single, one_smul, MonoidHom.one_apply]
 
 /-- Two complex points of `S` that agree on every monomial are equal. -/
 @[ext]
@@ -263,6 +277,15 @@ theorem affinePointTopology_eq_iInf (g : AddGeneratingFamily S r) :
   rw [affinePointTopology, induced_to_pi]
   simp only [monomialEmbedding_apply]
   exact le_iInf fun j ↦ iInf_le _ (g.toFun j)
+
+/-- A map into the affine complex points is continuous for the monomial-embedding topology exactly
+when its composite with evaluation at every monomial is continuous. -/
+theorem continuous_iff_forall_continuous_apply_single {X : Type*} [TopologicalSpace X]
+    (g : AddGeneratingFamily S r) (φ : X → AffineSemigroupComplexPoint S) :
+    Continuous[inferInstance, affinePointTopology g] φ ↔
+      ∀ s : S, Continuous fun x ↦ φ x (MonoidAlgebra.single (ofAdd s) 1) := by
+  rw [affinePointTopology_eq_iInf g, continuous_iInf_rng]
+  exact forall_congr' fun s ↦ continuous_induced_rng
 
 /-- The monomial-embedding topology does not depend on the chosen finite generating family. -/
 theorem affinePointTopology_eq (g : AddGeneratingFamily S r) (h : AddGeneratingFamily S r') :

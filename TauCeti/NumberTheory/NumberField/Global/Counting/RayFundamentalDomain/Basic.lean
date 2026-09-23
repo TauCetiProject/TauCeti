@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SignCut
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 
 /-!
@@ -127,12 +128,9 @@ def posRegion (𝔪 : Modulus K) : Set (mixedSpace K) :=
 
 /-- The positivity region is open: it is a finite intersection of open half spaces. -/
 theorem isOpen_posRegion (𝔪 : Modulus K) : IsOpen (posRegion 𝔪) := by
-  have h : posRegion 𝔪 = ⋂ w ∈ 𝔪.infinitePart, {x : mixedSpace K | 0 < x.1 w} := by
-    ext x
-    simp
-  rw [h]
-  exact isOpen_biInter_finset fun w _ ↦
-    isOpen_lt continuous_const ((continuous_apply w).comp continuous_fst)
+  rw [show posRegion 𝔪 = {x : mixedSpace K | ∀ w ∈ 𝔪.infinitePart, 0 < x.1 w} from
+    Set.ext fun _ ↦ mem_posRegion]
+  exact TauCeti.NumberField.mixedEmbedding.isOpen_setOfPred_forall_mem_pos 𝔪.infinitePart
 
 theorem measurableSet_posRegion (𝔪 : Modulus K) : MeasurableSet (posRegion 𝔪) :=
   (isOpen_posRegion 𝔪).measurableSet
@@ -235,7 +233,7 @@ theorem measurableSet_rayFundamentalDomain (𝔪 : Modulus K) :
   rw [rayFundamentalDomain_eq_iUnion]
   refine (measurableSet_posRegion 𝔪).inter (MeasurableSet.iUnion fun q ↦ ?_)
   rw [← Set.preimage_smul_inv]
-  exact (measurableSet_fundamentalCone K).preimage (measurable_unitSMul _)
+  exact (measurableSet_fundamentalCone K).preimage (measurable_const_smul _)
 
 /-- Every point of the ray fundamental domain has positive mixed norm. -/
 theorem norm_pos_of_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}

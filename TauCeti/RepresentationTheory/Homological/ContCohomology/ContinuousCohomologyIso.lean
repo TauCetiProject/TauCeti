@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
@@ -102,26 +103,37 @@ the canonical object `TauCeti.ofDiscreteModule ℤ G M`, by the identity on unde
 Both carry the subspace topology of the discrete `M`, so the identification is a homeomorphism as
 well as an isomorphism of `ℤ`-modules. -/
 def H0ContinuousLinearEquivInvariants :
-    H0 G M ≃L[ℤ] (ofDiscreteModule ℤ G M).ρ.invariants where
-  toFun m := ⟨m.1, (mem_invariants_ofDiscreteModule_iff_mem_H0 G M m.1).2 m.2⟩
-  invFun m := ⟨m.1, (mem_invariants_ofDiscreteModule_iff_mem_H0 G M m.1).1 m.2⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 continuous_subtype_val
-  continuous_invFun := continuous_induced_rng.2 continuous_subtype_val
+    H0 G M ≃L[ℤ] (ofDiscreteModule ℤ G M).ρ.invariants :=
+  @AddSubgroup.continuousLinearEquivInvariants G M _ _ _
+    (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)
 
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
-    (H0ContinuousLinearEquivInvariants G M m).1 = m.1 :=
-  (rfl)
+    (H0ContinuousLinearEquivInvariants G M m).1 = m.1 := by
+  -- The goal is an equality in the semireducibly bundled carrier
+  -- `(ofDiscreteModule ℤ G M).V`, whereas the evaluation lemma is an equality in `M`.
+  -- `change` crosses only that carrier wrapper before applying the public evaluation API.
+  change
+    ((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
+      (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m).1) = m.1
+  exact @AddSubgroup.continuousLinearEquivInvariants_val G M _ _ _
+    (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+    (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_symm_val
     (m : (ofDiscreteModule ℤ G M).ρ.invariants) :
-    ((H0ContinuousLinearEquivInvariants G M).symm m).1 = m.1 :=
-  (rfl)
+    ((H0ContinuousLinearEquivInvariants G M).symm m).1 = m.1 := by
+  -- As above, expose only the bundled carrier so the public inverse evaluation lemma applies.
+  change
+    (((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
+      (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)).symm m).1) = m.1
+  exact @AddSubgroup.continuousLinearEquivInvariants_symm_val G M _ _ _
+    (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+    (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
 end Carriers
 
@@ -175,7 +187,8 @@ theorem coe_explicitH0IsoContinuousCohomology_inv_apply
     (y : continuousCohomology 0 (ofDiscreteModule ℤ G M)) :
     (((explicitH0IsoContinuousCohomology G M).inv y : H0 G M) : M) =
       ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y).1 :=
-  (rfl)
+  H0ContinuousLinearEquivInvariants_symm_val G M
+    ((ContinuousCohomology.zeroIso (ofDiscreteModule ℤ G M)).hom y)
 
 end Comparison
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
 
@@ -33,8 +34,14 @@ torus points.  Given an identification of the character lattice with a free abel
 * `TauCeti.Toric.characterEvaluation`: evaluation of a character as a homomorphism on the torus.
 * `TauCeti.Toric.complexTorusMap`: the torus map induced by an additive map of lattices.
 * `TauCeti.Toric.exists_characterEvaluation_ne`: integral characters separate torus points.
+* `Module.Basis.integralCharacterRepr`: the free presentation of the character lattice dual to an
+  integral basis of `N`.
 * `TauCeti.Toric.complexTorusCoordinates`: coordinates supplied by a free presentation of the
   character lattice.
+* `TauCeti.Toric.complexTorus_apply_eq_prod_zpow`: the Laurent-monomial formula for evaluation of
+  a character in those coordinates.
+* `Module.Basis.complexTorusCoordinates`: coordinates supplied by an integral basis of the
+  lattice, through its dual basis.
 
 ## References
 
@@ -49,22 +56,18 @@ namespace TauCeti.Toric
 open Multiplicative
 
 variable {N N' N'' : Type*}
-  [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N]
-  [AddCommGroup N'] [Module.Free ℤ N'] [Module.Finite ℤ N']
-  [AddCommGroup N''] [Module.Free ℤ N''] [Module.Finite ℤ N'']
+  [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
 
-/-- The lattice of integral characters of a finite free `ℤ`-module `N`. -/
-abbrev IntegralCharacter (N : Type*) [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N] :=
-  let _ := (inferInstance : Module.Free ℤ N)
-  let _ := (inferInstance : Module.Finite ℤ N)
+/-- The group of integral characters of an additive commutative group `N`. -/
+abbrev IntegralCharacter (N : Type*) [AddCommGroup N] :=
   N →+ ℤ
 
-/-- The coordinate-free complex torus with character lattice `N →+ ℤ`, for a finite free `ℤ`-
-module `N`.
+/-- The group of complex unit-valued characters on `N →+ ℤ`.
 
+For a finite free `ℤ`-module `N`, this is its coordinate-free complex torus.
 `AddChar` is the additive-domain form of the equivalent Mathlib carrier
 `Multiplicative (N →+ ℤ) →* ℂˣ`; using it makes evaluation and pullback of characters direct. -/
-abbrev ComplexTorus (N : Type*) [AddCommGroup N] [Module.Free ℤ N] [Module.Finite ℤ N] :=
+abbrev ComplexTorus (N : Type*) [AddCommGroup N] :=
   AddChar (IntegralCharacter N) ℂˣ
 
 /-- Evaluation of the integral character `m` as a homomorphism on complex-torus points.
@@ -145,6 +148,21 @@ theorem exists_characterEvaluation_ne {x y : ComplexTorus N} (h : x ≠ y) :
     ∃ m : IntegralCharacter N, characterEvaluation m x ≠ characterEvaluation m y := by
   simpa only [characterEvaluation_apply] using (DFunLike.ne_iff.mp h)
 
+/-- The free presentation of the character lattice dual to an integral basis `B` of `N`: an
+integral character corresponds to the family of its values on the basis vectors. -/
+noncomputable def _root_.Module.Basis.integralCharacterRepr {ι : Type*} [Finite ι]
+    (B : Module.Basis ι ℤ N) : IntegralCharacter N ≃+ (ι →₀ ℤ) := by
+  classical
+  exact ((addMonoidHomLequivInt ℤ).trans B.dualBasis.repr).toAddEquiv
+
+/-- The coordinate of an integral character at a basis index is its value on that basis vector. -/
+@[simp]
+theorem _root_.Module.Basis.integralCharacterRepr_apply {ι : Type*} [Finite ι]
+    (B : Module.Basis ι ℤ N) (m : IntegralCharacter N) (i : ι) :
+    B.integralCharacterRepr m i = m (B i) := by
+  classical
+  simp [Module.Basis.integralCharacterRepr]
+
 /-- A free presentation of the character lattice identifies the coordinate-free complex torus
 with a product of copies of `ℂˣ`.  The last step is Tau Ceti's `freeAbelianCharEquiv`. -/
 noncomputable def complexTorusCoordinates {σ : Type*}
@@ -160,4 +178,65 @@ theorem complexTorusCoordinates_apply {σ : Type*} (e : IntegralCharacter N ≃+
     complexTorusCoordinates e x i = x (e.symm (Finsupp.single i 1)) :=
   by simp [complexTorusCoordinates, AddChar.toMonoidHomMulEquiv]
 
+/-- The torus point with prescribed coordinates evaluates an integral character to the Laurent
+monomial in those coordinates whose exponents are the coordinates of the character. -/
+@[simp]
+theorem complexTorusCoordinates_symm_apply {σ : Type*} (e : IntegralCharacter N ≃+ (σ →₀ ℤ))
+    (c : σ → ℂˣ) (m : IntegralCharacter N) :
+    (complexTorusCoordinates e).symm c m = (e m).prod fun i n ↦ c i ^ n := by
+  simp [complexTorusCoordinates, AddChar.toMonoidHomMulEquiv]
+
+/-- The Laurent-monomial formula: a torus point evaluates an integral character `m` to the
+product of its coordinates, in the presentation `e`, raised to the coordinates of `m`. -/
+theorem complexTorus_apply_eq_prod_zpow {σ : Type*} (e : IntegralCharacter N ≃+ (σ →₀ ℤ))
+    (x : ComplexTorus N) (m : IntegralCharacter N) :
+    x m = (e m).prod fun i n ↦ complexTorusCoordinates e x i ^ n := by
+  conv_lhs => rw [← (complexTorusCoordinates e).symm_apply_apply x]
+  exact complexTorusCoordinates_symm_apply e _ m
+
+/-- The Laurent-monomial formula for a finite index type. -/
+theorem complexTorus_apply_eq_prod_zpow_of_fintype {σ : Type*} [Fintype σ]
+    (e : IntegralCharacter N ≃+ (σ →₀ ℤ)) (x : ComplexTorus N) (m : IntegralCharacter N) :
+    x m = ∏ i, complexTorusCoordinates e x i ^ e m i := by
+  rw [complexTorus_apply_eq_prod_zpow e, Finsupp.prod_fintype _ _ fun _ ↦ zpow_zero _]
+
 end TauCeti.Toric
+
+namespace Module.Basis
+
+open TauCeti.Toric
+
+variable {N κ : Type*} [AddCommGroup N] [Module.Finite ℤ N]
+
+/-- The coordinates on the coordinate-free complex torus supplied by an integral basis of `N`: a
+torus point corresponds to its values on the dual basis characters, the coordinate functionals of
+the basis. -/
+noncomputable def complexTorusCoordinates (b : Basis κ ℤ N) :
+    ComplexTorus N ≃* (κ → ℂˣ) := by
+  classical
+  letI : Finite κ := Module.Finite.finite_basis b
+  exact TauCeti.Toric.complexTorusCoordinates b.integralCharacterRepr
+
+/-- The coordinate of a torus point indexed by a basis vector is its value on the coordinate
+functional of that vector. -/
+@[simp]
+theorem complexTorusCoordinates_apply (b : Basis κ ℤ N)
+    (x : ComplexTorus N) (c : κ) :
+    b.complexTorusCoordinates x c = x (b.coord c).toAddMonoidHom := by
+  classical
+  have : Finite κ := Module.Finite.finite_basis b
+  rw [complexTorusCoordinates, TauCeti.Toric.complexTorusCoordinates_apply]
+  congr 1
+  refine (AddEquiv.symm_apply_eq b.integralCharacterRepr).2 ?_
+  ext j
+  simp [Finsupp.single_apply, eq_comm]
+
+/-- The torus point with prescribed basis coordinates takes the prescribed value on each coordinate
+functional. -/
+@[simp]
+theorem complexTorusCoordinates_symm_apply (b : Basis κ ℤ N)
+    (z : κ → ℂˣ) (c : κ) :
+    b.complexTorusCoordinates.symm z (b.coord c).toAddMonoidHom = z c := by
+  rw [← complexTorusCoordinates_apply, MulEquiv.apply_symm_apply]
+
+end Module.Basis
