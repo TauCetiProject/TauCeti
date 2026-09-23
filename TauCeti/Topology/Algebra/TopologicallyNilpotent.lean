@@ -79,10 +79,10 @@ variable {A : Type*} [Ring A] [TopologicalSpace A] [SeparatelyContinuousMul A]
 /-- **A topologically nilpotent element absorbs any element into any open subring.** For `s`
 topologically nilpotent and `B` open, `a * s ^ n` lies in `B` for all large `n`.
 
-Multiplication by `a` is continuous, so `B` pulls back to a neighbourhood of `0`, and the powers
-of `s` converge to `0`. Neither commutativity nor continuity of addition is used — only
-`ContinuousMul` — and no Huber structure enters, which is why this sits here rather than beside
-the ring-of-definition form it generalises,
+Multiplication by `a` is continuous, so `B` pulls back to a neighbourhood of `0`, and the powers of
+`s` converge to `0`. Neither commutativity nor continuity of addition is used — only
+`SeparatelyContinuousMul` — and no Huber structure enters, which is why this sits here rather than
+beside the ring-of-definition form it generalises,
 `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_mul_mem`. -/
 theorem eventually_mul_pow_mem_of_isTopologicallyNilpotent {s : A}
     (hs : IsTopologicallyNilpotent s) {B : Subring A} (hB : IsOpen (B : Set A)) (a : A) :
