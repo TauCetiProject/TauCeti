@@ -322,6 +322,15 @@ theorem nondegenerate {K : Type u} [CommRing K] [IsReduced K]
   exact congrArg Subtype.val (P.lineCoordinate_injective (by simpa using hcoord) :
     z = (0 : P.line))
 
+/-- **The orthogonal remainder of a polarization is at most a line.** Its scalar coordinate
+`SpinPolarizationData.lineCoordinate` is injective into `K`, which is one-dimensional. -/
+theorem finrank_line_le_one {K : Type u} [CommRing K] [Nontrivial K] {V : Type v} [AddCommGroup V]
+    [Module K V] {Q : QuadraticForm K V} (P : SpinPolarizationData Q) :
+    Module.finrank K P.line ≤ 1 := by
+  have h := LinearMap.finrank_le_finrank_of_injective (f := P.lineCoordinate)
+    P.lineCoordinate_injective
+  simpa using h
+
 section Dimension
 
 open Module
@@ -333,21 +342,15 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 
 A polarization is a decomposition `V = W ⊕ W' ⊕ L` in which the polar form pairs `W` with `W'`
 perfectly and `L` sits inside the scalar line. The first fact makes the two isotropic summands
-equidimensional and the second bounds the remainder by one dimension, so the dimension of `V`
-determines the dimension of `W` up to the parity of `finrank V`. -/
+equidimensional and the second, `finrank_line_le_one` above, bounds the remainder by one
+dimension, so the dimension of `V` determines the dimension of `W` up to the parity of
+`finrank V`. -/
 
 /-- **The two isotropic summands of a polarization have the same dimension.** The polar form
 identifies the second with the dual of the first, and a space and its dual have the same
 dimension. -/
 theorem finrank_W'_eq_finrank_W : finrank K P.W' = finrank K P.W := by
   rw [P.pairingEquiv.finrank_eq, Subspace.dual_finrank_eq]
-
-/-- **The orthogonal remainder of a polarization is at most a line.** Its scalar coordinate
-`SpinPolarizationData.lineCoordinate` is injective into `K`, which is one-dimensional. -/
-theorem finrank_line_le_one : finrank K P.line ≤ 1 := by
-  have h := LinearMap.finrank_le_finrank_of_injective (f := P.lineCoordinate)
-    P.lineCoordinate_injective
-  simpa using h
 
 variable [FiniteDimensional K V]
 
