@@ -20,6 +20,8 @@ two.
 
 ## Main declarations
 
+* `CliffordAlgebra.realCliffordUnitLevelHomeomorphSubtype` identifies the action carrier with the
+  same unit level viewed as a raw quadratic-form subtype.
 * `CliffordAlgebra.realCliffordUnitLevelHomeomorphSphere` identifies the unit level with the
   Euclidean unit sphere through `EuclideanSpace.equiv`.
 * `CliffordAlgebra.pathConnectedSpace_realCliffordUnitLevel_add_two` transfers the standard
@@ -49,6 +51,32 @@ def realCliffordUnitLevelHomeomorphSphere (n : ℕ) :
             simpa only [ContinuousLinearEquiv.coe_toHomeomorph,
               ContinuousLinearEquiv.coe_symm_toHomeomorph, mem_sphere,
               dist_zero_right] using hv⟩)
+
+/-- The compact real Spin unit level is the raw quadratic level with its canonical action subtype
+    structure forgotten. -/
+def realCliffordUnitLevelHomeomorphSubtype (n : ℕ) :
+    realCliffordUnitLevel n ≃ₜ {x : Fin n → ℝ // realCliffordForm n 0 x = 1} :=
+  Homeomorph.ofEqSubtypes (by
+    funext x
+    exact propext (mem_realCliffordUnitLevel n x))
+
+/-- The carrier homeomorphism does not change the underlying vector. -/
+@[simp]
+theorem coe_realCliffordUnitLevelHomeomorphSubtype_apply (n : ℕ)
+    (x : realCliffordUnitLevel n) :
+    (realCliffordUnitLevelHomeomorphSubtype n x : Fin n → ℝ) = x :=
+  by
+    rw [realCliffordUnitLevelHomeomorphSubtype]
+    rfl
+
+/-- The inverse carrier homeomorphism does not change the underlying vector. -/
+@[simp]
+theorem coe_realCliffordUnitLevelHomeomorphSubtype_symm_apply (n : ℕ)
+    (x : {x : Fin n → ℝ // realCliffordForm n 0 x = 1}) :
+    ((realCliffordUnitLevelHomeomorphSubtype n).symm x : Fin n → ℝ) = x :=
+  by
+    rw [realCliffordUnitLevelHomeomorphSubtype]
+    rfl
 
 /-- The forward map of `realCliffordUnitLevelHomeomorphSphere` is Euclidean coordinate
 conversion. -/
