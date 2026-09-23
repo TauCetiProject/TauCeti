@@ -48,9 +48,11 @@ geometric pairing makes the exact target of the juxtaposition argument explicit.
 * `TauCeti.GridDiagram.pentagonMap_unblockedDifferential_single_apply` and
   `TauCeti.GridDiagram.unblockedDifferential_pentagonMap_single_apply` identify those sums with
   the two sides of the chain-map equation on a grid-state generator.
-* `TauCeti.GridRectanglePentagonDecomposition.isEmpty_toRectangleDecomposition_first` and
-  `TauCeti.GridPentagonRectangleDecomposition.turn_mem_toRectangleDecomposition_second` transport
-  emptiness and the pentagon turn point to the underlying rectangles.
+* `TauCeti.GridPentagonBetween.isEmpty_toGridRectangleBetween` makes the pentagon's inherited
+  emptiness predicate explicit on its underlying rectangle.
+* `TauCeti.GridPentagonRectangleDecomposition.turn_mem_toRectangleDecomposition_first` and
+  `TauCeti.GridRectanglePentagonDecomposition.turn_mem_toRectangleDecomposition_second` transport
+  the pentagon turn point to the underlying rectangles.
 
 ## References
 
@@ -278,7 +280,7 @@ theorem isEmpty_toRectangleDecomposition_first
   cases D with
   | mk middle pentagon rectangle =>
       unfold toRectangleDecomposition
-      exact h
+      exact pentagon.isEmpty_toGridRectangleBetween h
 
 /-- Emptiness of the rectangle is preserved when forgetting the pentagon turn point. -/
 theorem isEmpty_toRectangleDecomposition_second
@@ -288,6 +290,16 @@ theorem isEmpty_toRectangleDecomposition_second
   | mk middle pentagon rectangle =>
       unfold toRectangleDecomposition
       exact h
+
+/-- The pentagon's turn row lies between the sides of the first forgotten rectangle. -/
+theorem turn_mem_toRectangleDecomposition_first
+    (D : GridPentagonRectangleDecomposition a s x z) :
+    s ∈ Grid.cIco D.toRectangleDecomposition.first.bottom
+      D.toRectangleDecomposition.first.top := by
+  cases D with
+  | mk middle pentagon rectangle =>
+      unfold toRectangleDecomposition
+      exact pentagon.turn_mem
 
 /-- A pentagon--rectangle decomposition is determined by its underlying pair of rectangles. -/
 theorem toRectangleDecomposition_injective :
@@ -301,6 +313,7 @@ theorem toRectangleDecomposition_injective :
     Subsingleton.helim
       (congrArg (fun y => GridPentagonBetween a s x y) hmiddle) D.pentagon E.pentagon
   exact GridPentagonRectangleDecomposition.ext hmiddle hpentagon hrectangle
+
 end GridPentagonRectangleDecomposition
 
 namespace GridRectanglePentagonDecomposition
@@ -344,7 +357,7 @@ theorem isEmpty_toRectangleDecomposition_second
   cases D with
   | mk middle rectangle pentagon =>
       unfold toRectangleDecomposition
-      exact h
+      exact pentagon.isEmpty_toGridRectangleBetween h
 
 /-- The pentagon's turn row lies between the sides of the second forgotten rectangle. -/
 theorem turn_mem_toRectangleDecomposition_second
@@ -354,16 +367,6 @@ theorem turn_mem_toRectangleDecomposition_second
   cases D with
   | mk middle rectangle pentagon =>
       unfold toRectangleDecomposition
-      exact pentagon.turn_mem
-
-/-- The pentagon's turn row lies between the sides of the first forgotten rectangle. -/
-theorem turn_mem_toRectangleDecomposition_first
-    (D : GridPentagonRectangleDecomposition a s x z) :
-    s ∈ Grid.cIco D.toRectangleDecomposition.first.bottom
-      D.toRectangleDecomposition.first.top := by
-  cases D with
-  | mk middle pentagon rectangle =>
-      unfold GridPentagonRectangleDecomposition.toRectangleDecomposition
       exact pentagon.turn_mem
 
 /-- The first underlying rectangle has the rectangle's terminal side. -/
