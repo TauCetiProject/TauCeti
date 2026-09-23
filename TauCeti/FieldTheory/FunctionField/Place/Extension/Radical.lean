@@ -119,16 +119,18 @@ theorem div_gcd_ord_dvd_ramificationIdx_of_pow_eq {y : F'} {n : ℕ} {u : F} (hn
   rw [← Int.natCast_dvd_natCast, Int.natCast_div]
   exact hdvd
 
-variable [FiniteDimensional F F']
-
 private theorem ramificationIdx_eq_and_finrank_eq {y : F'} {n : ℕ} {u : F}
     (htop : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
     (h : Int.gcd n ((P'.restrict k F).ord u) = 1) :
     ramificationIdx F P' = n ∧ Module.finrank F F' = n := by
   have hfr := finrank_eq_of_pow_eq_of_gcd_ord_eq_one (P'.restrict k F) htop hy hn h
+  have hfin : FiniteDimensional F F' := FiniteDimensional.of_finrank_pos (by
+    rw [hfr]
+    exact Nat.pos_of_ne_zero hn)
   have hdvd := div_gcd_ord_dvd_ramificationIdx_of_pow_eq k F (P' := P') hn hy
   rw [h, Nat.div_one] at hdvd
-  have hle : ramificationIdx F P' ≤ n := hfr ▸ ramificationIdx_le_finrank F P'
+  have hle : ramificationIdx F P' ≤ n :=
+    hfr ▸ @ramificationIdx_le_finrank k' F F' _ _ _ _ _ P' hfin
   exact ⟨hle.antisymm (Nat.le_of_dvd (ramificationIdx_pos F P') hdvd), hfr⟩
 
 /-- **Total ramification in a radical extension** (Stichtenoth, Proposition 3.7.3(b)): if
