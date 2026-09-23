@@ -67,6 +67,11 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 * `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
 * `TauCeti.BinaryQuadraticForm.mem_posDef`: membership in `posDef D`.
 
+## Implementation notes
+
+`discrim` and `equivProd` are exposed, so that the kernel can evaluate them, as `decide` does for
+the values of `TauCeti.hurwitzClassNumber`; the other definitions are not.
+
 ## References
 
 * H. Cohen, *A Course in Computational Algebraic Number Theory*, Graduate Texts in Mathematics
@@ -96,8 +101,7 @@ structure BinaryQuadraticForm (R : Type*) where
 
 namespace BinaryQuadraticForm
 
-/-- A binary quadratic form is its triple of coefficients `(a, b, c)`. It is exposed so that the
-kernel can evaluate it, as `decide` does for the values of `TauCeti.hurwitzClassNumber`. -/
+/-- A binary quadratic form is its triple of coefficients `(a, b, c)`. -/
 @[expose, simps]
 def equivProd {R : Type*} : BinaryQuadraticForm R ≃ R × R × R where
   toFun f := (f.a, f.b, f.c)
@@ -105,8 +109,7 @@ def equivProd {R : Type*} : BinaryQuadraticForm R ≃ R × R × R where
 
 variable {R : Type*} [CommRing R]
 
-/-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. It is exposed so that the
-kernel can evaluate it, as `decide` does for the values of `TauCeti.hurwitzClassNumber`. -/
+/-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. -/
 @[expose]
 protected def discrim (f : BinaryQuadraticForm R) : R :=
   discrim f.a f.b f.c
@@ -130,9 +133,9 @@ theorem eval_mk (a b c x y : R) :
     (⟨a, b, c⟩ : BinaryQuadraticForm R).eval x y = a * x ^ 2 + b * x * y + c * y ^ 2 :=
   (rfl)
 
-/-- `γ • f` is the form `f ∘ γ⁻¹`, so `(γ • f)(x, y) = f(s x - q y, -r x + p y)` for
-`γ = !![p, q; r, s]`. The coefficients are written through the entries of the adjugate
-`γ⁻¹ = !![s, -q; -r, p]`, so each is a polynomial in the entries of `γ`. -/
+/-- `γ • f` is the form `f ∘ γ⁻¹` (`eval_smul`). The coefficients are written through the entries
+of the adjugate `γ⁻¹ = !![s, -q; -r, p]` of `γ = !![p, q; r, s]`, so each is a polynomial in the
+entries of `γ`. -/
 instance : SMul SL(2, R) (BinaryQuadraticForm R) where
   smul γ f :=
     { a := f.a * γ 1 1 ^ 2 - f.b * γ 1 0 * γ 1 1 + f.c * γ 1 0 ^ 2
@@ -189,15 +192,14 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
   carrier := {f | f.discrim = -D ∧ 0 < f.a}
   smul_mem' γ f := by
     rintro ⟨hD, ha⟩
-    have hd : discrim f.a f.b f.c ≤ 0 := (discrim_def f).symm.trans_le <| by simp [hD]
-    have hd' : discrim (γ • f).a (γ • f).b (γ • f).c < 0 :=
-      (discrim_def (γ • f)).symm.trans_lt <| by simp [hD, NeZero.pos]
-    refine ⟨(discrim_smul γ f).trans hD, pos_of_nonneg_of_discrim_lt_zero ?_ hd'⟩
+    have hd : f.discrim < 0 := by simp [hD, NeZero.pos]
+    refine ⟨(discrim_smul γ f).trans hD, pos_of_nonneg_of_discrim_lt_zero ?_ <|
+      (discrim_def (γ • f)).symm.trans_lt <| (discrim_smul γ f).trans_lt hd⟩
     -- `(γ • f).a` is the value of `γ • f` at `(1, 0)`, that is the value of `f` at `(s, -r)`
     calc
       0 ≤ f.eval (γ 1 1) (-γ 1 0) := by
         rw [eval_def]
-        exact nonneg_of_discrim_le_zero ha hd _ _
+        exact nonneg_of_discrim_le_zero ha ((discrim_def f).symm.trans_lt hd).le _ _
       _ = (γ • f).eval 1 0 := by simp [eval_smul]
       _ = (γ • f).a := by simp [eval_def]
 
