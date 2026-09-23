@@ -108,6 +108,18 @@ noncomputable def spanningTreeBasis
         ← CategoryTheory.End.one_def, E.map_one]
     · exact hE ⟨⟨a, b, e⟩, h⟩
 
+private theorem ofUniqueLift_spanningTreeBasis_apply
+    {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
+    (T : WideSubquiver (Symmetrify (IsFreeGroupoid.Generators C))) [Arborescence T]
+    (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
+    spanningTreeBasis T e =
+      IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
+  -- This isolates the constructor reduction for the universal-property basis.
+  change FreeGroup.lift
+      (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
+      (FreeGroup.of e) = _
+  exact FreeGroup.lift_apply_of
+
 /-- Applying the spanning-tree basis to a non-tree edge gives its associated loop. -/
 @[simp] theorem spanningTreeBasis_apply
     {C : Type u} [Groupoid.{u} C] [IsFreeGroupoid C]
@@ -115,12 +127,7 @@ noncomputable def spanningTreeBasis
     (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
     spanningTreeBasis T e =
       IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
-  -- `ofUniqueLift` builds the basis through `ofLift`; expose its free-group lift so Mathlib's
-  -- `FreeGroup.lift_apply_of` equation applies at this generator.
-  change FreeGroup.lift
-      (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
-      (FreeGroup.of e) = _
-  exact FreeGroup.lift_apply_of
+  exact ofUniqueLift_spanningTreeBasis_apply T e
 
 end WideSubquiver
 

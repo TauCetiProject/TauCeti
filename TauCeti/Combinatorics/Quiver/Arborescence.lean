@@ -28,9 +28,11 @@ credits Arthur Freitas Ramos, David Hulak, and Ruy de Queiroz.  This version use
 
 ## Main results
 
-* `WideSubquiver.arborescenceEdgeEquiv`: tree edges are in bijection with non-root vertices.
-* `WideSubquiver.arborescenceEdgeCard`: the directed edges of a finite arborescence have
+* `arborescenceEdgeEquiv`: tree edges are in bijection with non-root vertices.
+* `arborescenceEdgeCard`: the directed edges of a finite arborescence have
   cardinality one less than its vertices.
+* `WideSubquiver.symmetrifiedTreeEdgeEquiv`: tree edges correspond to their unoriented edges.
+* `WideSubquiver.symmetrifiedTreeEdgeMap`: forgets the orientation tag of a tree edge.
 * `WideSubquiver.symmetrifiedTreeSetCard`: a spanning tree has one fewer unoriented edge than
   vertices.
 * `WideSubquiver.nonTreeEdgeCard`: the exact number of directed edges outside that tree.
@@ -65,6 +67,8 @@ private noncomputable instance wideSubquiverVertexFintype [Fintype V]
 
 private noncomputable instance symmetrifyFintype [Fintype V] : Fintype (Symmetrify V) :=
   Fintype.ofEquiv V (Equiv.refl _)
+
+end WideSubquiver
 
 private lemma existsLastData {W : Type u} [Quiver.{v, u} W] [Arborescence W]
     (b : W) (hb : b ≠ root W) :
@@ -117,7 +121,7 @@ noncomputable def arborescenceEdgeEquiv (W : Type u) [Quiver.{v, u} W] [Arboresc
   rfl
 
 /-- The directed edges of a finite arborescence have cardinality one less than its vertices. -/
-theorem arborescenceEdgeCard (W : Type u) [Quiver.{v, u} W] [Arborescence W] [Finite W] :
+@[simp] theorem arborescenceEdgeCard (W : Type u) [Quiver.{v, u} W] [Arborescence W] [Finite W] :
     Nat.card (Quiver.Total W) = Nat.card W - 1 := by
   classical
   exact (letI := Fintype.ofFinite W
@@ -126,6 +130,10 @@ theorem arborescenceEdgeCard (W : Type u) [Quiver.{v, u} W] [Arborescence W] [Fi
       rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
         Fintype.card_congr (arborescenceEdgeEquiv W), Fintype.card_subtype_compl]
       simp)
+
+namespace WideSubquiver
+
+variable {V : Type u} [Quiver.{v, u} V]
 
 private lemma noReverseEdges (T : WideSubquiver (Symmetrify V)) [Arborescence T]
     {a b : V} (e : @Quiver.Hom V _ a b)
@@ -145,7 +153,9 @@ private lemma noReverseEdges (T : WideSubquiver (Symmetrify V)) [Arborescence T]
     simpa only [Path.length_cons] using congrArg Path.length hqp
   omega
 
-private def symEdgeForget (T : WideSubquiver (Symmetrify V))
+/-- Forget the orientation tag of a tree edge to obtain its unoriented edge. -/
+@[expose]
+def symmetrifiedTreeEdgeMap (T : WideSubquiver (Symmetrify V))
     (e : Quiver.Total T) : Quiver.Total (wideSubquiverSymmetrify T) := by
   rcases e with ⟨a, b, ⟨f, hf⟩⟩
   cases f using Sum.casesOn with
@@ -163,23 +173,23 @@ private def symEdgeForgetInv (T : WideSubquiver (Symmetrify V))
 
 private lemma symEdgeForgetInvForget
     (T : WideSubquiver (Symmetrify V)) [Arborescence T]
-    (e : Quiver.Total T) : symEdgeForgetInv T (symEdgeForget T e) = e := by
+    (e : Quiver.Total T) : symEdgeForgetInv T (symmetrifiedTreeEdgeMap T e) = e := by
   rcases e with ⟨a, b, ⟨f, hf⟩⟩
   -- The vertices of the symmetrification are definitionally a type synonym for `V`.
   change V at a b
   cases f using Sum.casesOn with
   | inl f =>
-      simp only [symEdgeForget, symEdgeForgetInv]
+      simp only [symmetrifiedTreeEdgeMap, symEdgeForgetInv]
       exact dite_eq_left hf
   | inr f =>
       have hn : ¬T b a (Sum.inl f) := fun h => noReverseEdges T f h hf
-      simp only [symEdgeForget, symEdgeForgetInv]
+      simp only [symmetrifiedTreeEdgeMap, symEdgeForgetInv]
       exact dite_eq_right hn
 
 private lemma symEdgeForgetForgetInv
     (T : WideSubquiver (Symmetrify V))
     (e : Quiver.Total (wideSubquiverSymmetrify T)) :
-    symEdgeForget T (symEdgeForgetInv T e) = e := by
+    symmetrifiedTreeEdgeMap T (symEdgeForgetInv T e) = e := by
   rcases e with ⟨a, b, ⟨f, hf⟩⟩
   -- Remove the symmetrification's vertex type synonym before inspecting the orientation tag.
   change V at a b
@@ -200,15 +210,26 @@ private lemma symEdgeForgetForgetInv
     rw [hinv]
     rfl
 
-private def symEdgeEquiv (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
+/-- The directed edges of a tree in the symmetrified quiver correspond to its unoriented edges. -/
+def symmetrifiedTreeEdgeEquiv (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
     Quiver.Total T ≃ Quiver.Total (wideSubquiverSymmetrify T) where
-  toFun := symEdgeForget T
+  toFun := symmetrifiedTreeEdgeMap T
   invFun := symEdgeForgetInv T
   left_inv := symEdgeForgetInvForget T
   right_inv := symEdgeForgetForgetInv T
 
+/-- The forward map sends a tree edge with the forward orientation to the same ambient edge. -/
+theorem symmetrifiedTreeEdgeMap_apply_inl (T : WideSubquiver (Symmetrify V))
+    {a b : V} (e : @Quiver.Hom V _ a b) (he : T a b (Sum.inl e)) :
+    symmetrifiedTreeEdgeMap T ⟨a, b, ⟨Sum.inl e, he⟩⟩ = ⟨a, b, ⟨e, Or.inl he⟩⟩ := rfl
+
+/-- The forward map reverses an edge tagged with the reverse orientation. -/
+theorem symmetrifiedTreeEdgeMap_apply_inr (T : WideSubquiver (Symmetrify V))
+    {a b : V} (e : @Quiver.Hom V _ b a) (he : T a b (Sum.inr e)) :
+    symmetrifiedTreeEdgeMap T ⟨a, b, ⟨Sum.inr e, he⟩⟩ = ⟨b, a, ⟨e, Or.inr he⟩⟩ := rfl
+
 /-- The unoriented edges of an arborescence have cardinality one less than its vertex set. -/
-theorem symmetrifiedTreeSetCard [Finite V]
+@[simp] theorem symmetrifiedTreeSetCard [Finite V]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
     Nat.card (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
       Set (Quiver.Total V)) = Nat.card V - 1 := by
@@ -216,22 +237,45 @@ theorem symmetrifiedTreeSetCard [Finite V]
   exact (letI := Fintype.ofFinite V
     letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (arborescenceEdgeEquiv T).symm
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
-      Fintype.ofEquiv _ (symEdgeEquiv T)
+      Fintype.ofEquiv _ (symmetrifiedTreeEdgeEquiv T)
     letI : Fintype (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
         Set (Quiver.Total V)) := Fintype.ofEquiv _ (totalEquivSet _)
     -- Keep the finite instances local to this proof while retaining `Finite` in the public API.
     show _ from by
       rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
         ← Fintype.card_congr (totalEquivSet (wideSubquiverSymmetrify T)),
-        ← Fintype.card_congr (symEdgeEquiv T)]
+        ← Fintype.card_congr (symmetrifiedTreeEdgeEquiv T)]
       have hcard : Fintype.card T = Fintype.card V :=
         Fintype.card_congr (Equiv.refl V)
       simpa [hcard] using arborescenceEdgeCard T
   )
 
+private lemma finiteVertices_of_finiteTotal [Finite (Quiver.Total V)]
+    (T : WideSubquiver (Symmetrify V)) [Arborescence T] : Finite V := by
+  classical
+  exact (letI : Fintype (Quiver.Total V) := Fintype.ofFinite _
+    let A : Set (Quiver.Total V) :=
+    wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T)
+    letI : Fintype A := Fintype.ofFinite _
+    letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
+    Fintype.ofEquiv _ (totalEquivSet _).symm
+    letI : Fintype (Quiver.Total T) :=
+      Fintype.ofEquiv _ (symmetrifiedTreeEdgeEquiv T).symm
+    letI : Fintype {b : T // b ≠ root T} := Fintype.ofEquiv _ (arborescenceEdgeEquiv T)
+    let f : Option {b : T // b ≠ root T} → T := fun b => b.elim (root T) Subtype.val
+    let hf : Function.Surjective f := by
+      intro b
+      by_cases h : b = root T
+      · exact ⟨none, by simp [f, h]⟩
+      · exact ⟨some ⟨b, h⟩, rfl⟩
+    letI : Finite T := Finite.of_surjective f hf
+    letI : Finite (Symmetrify V) := ‹Finite T›
+    letI : Finite V := ‹Finite T›
+    show Finite V from ‹Finite V›)
+
 /-- The directed edges outside the underlying unoriented spanning tree are exactly the total
 number of directed edges plus one minus the number of vertices. -/
-theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
+@[simp] theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
     Nat.card
         ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ :
@@ -244,21 +288,13 @@ theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
     letI : Fintype A := Fintype.ofFinite _
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Fintype.ofEquiv _ (totalEquivSet _).symm
-    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (symEdgeEquiv T).symm
+    letI : Finite V := finiteVertices_of_finiteTotal T
+    letI : Fintype (Quiver.Total T) :=
+      Fintype.ofEquiv _ (symmetrifiedTreeEdgeEquiv T).symm
     letI : Fintype {b : T // b ≠ root T} := Fintype.ofEquiv _ (arborescenceEdgeEquiv T)
-    let f : Option {b : T // b ≠ root T} → T := fun b => b.elim (root T) Subtype.val
-    let hf : Function.Surjective f := by
-      intro b
-      by_cases h : b = root T
-      · exact ⟨none, by simp [f, h]⟩
-      · exact ⟨some ⟨b, h⟩, rfl⟩
-    letI : Finite T := Finite.of_surjective f hf
-    letI : Finite (Symmetrify V) := ‹Finite T›
-    letI : Finite V := ‹Finite T›
     letI := Fintype.ofFinite V
-    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (arborescenceEdgeEquiv T).symm
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
-      Fintype.ofEquiv _ (symEdgeEquiv T)
+      Fintype.ofEquiv _ (symmetrifiedTreeEdgeEquiv T)
     letI : Fintype (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
         Set (Quiver.Total V)) := Fintype.ofEquiv _ (totalEquivSet _)
     -- Reuse finite cardinality lemmas without exposing chosen `Fintype` instances.
