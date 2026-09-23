@@ -18,8 +18,7 @@ while the primitive acquires `c ^ (S + 1)` because the change of variable contri
 factor of `c`.
 
 This covariance removes the translation and positive-scaling redundancy from the prevertex
-parameters.  The corresponding normalization of two ordered real points is developed separately
-in `TauCeti.Algebra.Order.Field.Basic`.
+parameters.
 
 ## Main results
 
@@ -57,7 +56,8 @@ theorem schwarzChristoffelIntegrand_affine_prevertices (a e : ι → ℝ) {c : �
     ring
   simp_rw [h_affine, TauCeti.ofReal_mul_cpow hc.le, Finset.prod_mul_distrib]
   congr 1
-  exact (ofReal_cpow_sum hc e Finset.univ).symm
+  rw [Complex.ofReal_sum]
+  exact (cpow_sum (Complex.ofReal_ne_zero.mpr hc.ne') (fun i ↦ (e i : ℂ)) Finset.univ).symm
 
 /-- The normalized Schwarz--Christoffel primitive is covariant under a simultaneous positive
 affine change of its prevertices, base point, and argument.  Its scale exponent is one more than
