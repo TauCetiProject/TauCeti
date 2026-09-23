@@ -29,13 +29,6 @@ open TauCeti
 
 noncomputable section
 
-private theorem continuous_realCliffordSpinOrbitMap_action (n : ℕ)
-    (x : realCliffordUnitLevel n) :
-    Continuous (fun s : realCliffordSpinGroupZero n => s • x) := by
-  apply (realCliffordSpinOrbitMap n x).continuous.congr
-  intro s
-  exact realCliffordSpinOrbitMap_apply n x s
-
 /-- The compact Spin orbit identifies the quotient by a unit-level stabilizer with that level. -/
 noncomputable def realCliffordSpinOrbitHomeomorph (n : ℕ) (hn : 2 ≤ n)
     (x : realCliffordUnitLevel n) :
@@ -44,7 +37,8 @@ noncomputable def realCliffordSpinOrbitHomeomorph (n : ℕ) (hn : 2 ≤ n)
   let _ : MulAction.IsPretransitive (realCliffordSpinGroupZero n)
       (realCliffordUnitLevel n) := isPretransitive_realCliffordUnitLevel n hn
   exact TauCeti.quotientStabilizerHomeomorph (realCliffordSpinGroupZero n) x
-    (continuous_realCliffordSpinOrbitMap_action n x)
+    ((realCliffordSpinOrbitMap n x).continuous.congr fun s =>
+      realCliffordSpinOrbitMap_apply n x s)
 
 /-- The compact Spin orbit homeomorphism evaluates a representative by the Spin action. -/
 @[simp]
@@ -55,7 +49,8 @@ theorem realCliffordSpinOrbitHomeomorph_mk (n : ℕ) (hn : 2 ≤ n)
       (realCliffordUnitLevel n) := isPretransitive_realCliffordUnitLevel n hn
   simpa only [realCliffordSpinOrbitHomeomorph] using
     TauCeti.quotientStabilizerHomeomorph_mk (realCliffordSpinGroupZero n) x
-      (continuous_realCliffordSpinOrbitMap_action n x) s
+      ((realCliffordSpinOrbitMap n x).continuous.congr fun s =>
+        realCliffordSpinOrbitMap_apply n x s) s
 
 /-- The compact Spin orbit homeomorphism is equivariant for left multiplication. -/
 theorem realCliffordSpinOrbitHomeomorph_smul (n : ℕ) (hn : 2 ≤ n)
@@ -67,7 +62,8 @@ theorem realCliffordSpinOrbitHomeomorph_smul (n : ℕ) (hn : 2 ≤ n)
       (realCliffordUnitLevel n) := isPretransitive_realCliffordUnitLevel n hn
   simpa only [realCliffordSpinOrbitHomeomorph] using
     TauCeti.quotientStabilizerHomeomorph_smul (realCliffordSpinGroupZero n) x
-      (continuous_realCliffordSpinOrbitMap_action n x) s q
+      ((realCliffordSpinOrbitMap n x).continuous.congr fun s =>
+        realCliffordSpinOrbitMap_apply n x s) s q
 
 end
 
