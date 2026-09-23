@@ -44,9 +44,11 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.1.
 * S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
+* J. Riou and A. Yang, [relative homology of simplicial-set pairs in
+  Mathlib](https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/AlgebraicTopology/SimplicialSet/Homology/Relative.lean).
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -70,6 +72,14 @@ variable {P R k M}
 abbrev singularCochainComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
     P'.singularCochainComplex R k M ⟶ P.singularCochainComplex R k M :=
   (TauCeti.ChainComplex.linearYonedaFunctor k M).map (singularChainComplexMap f R).op
+
+/-- The degree-`n` component of the cochain map induced by `f` acts by precomposition with the
+degree-`n` component of the induced relative singular chain map. -/
+@[simp]
+lemma singularCochainComplexMap_f_apply {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ)
+    (g : (P'.singularCochainComplex R k M).X n) :
+    (singularCochainComplexMap (R := R) (k := k) (M := M) f).f n g =
+      (singularChainComplexMap f R).f n ≫ g := rfl
 
 @[simp]
 lemma singularCochainComplexMap_id (P : TopPair.{w}) :
@@ -111,7 +121,7 @@ variable (R k M)
 
 /-- Relative singular cohomology in degree `n` as a contravariant functor from topological pairs
 to `k`-modules. -/
-@[simps]
+@[expose, simps]
 def singularCohomologyFunctor (n : ℕ) : TopPair.{w}ᵒᵖ ⥤ ModuleCat.{v} k where
   obj P := P.unop.singularCohomology R k M n
   map f := TopPair.singularCohomologyMap f.unop n
@@ -156,7 +166,7 @@ abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.snd.singularCohomology R k M n ⟶ P.singularCohomology R k M m :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
 
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
@@ -191,7 +201,7 @@ variable {P R k M}
 
 /-- The morphism of cochain sequences `C*(Y, B) ⟶ C*(Y) ⟶ C*(B)` to `C*(X, A) ⟶ C*(X) ⟶ C*(A)`
 induced by a map of pairs `(X, A) ⟶ (Y, B)`. -/
-@[simps]
+@[expose, simps]
 def singularCochainComplexShortComplexMap {P P' : TopPair.{w}} (f : P ⟶ P') :
     P'.singularCochainComplexShortComplex R k M ⟶ P.singularCochainComplexShortComplex R k M where
   τ₁ := singularCochainComplexMap f

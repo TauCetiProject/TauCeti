@@ -30,7 +30,7 @@ singular cohomology is obtained from the one of chain complexes.
   exactness of degreewise split sequences.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits Opposite
 
@@ -41,6 +41,7 @@ variable {C : Type*} [Category* C] [Abelian C] {α : Type*} [AddRightCancelSemig
 
 /-- The contravariant functor sending a chain complex `X` to the cochain complex of `k`-modules
 `Hom(X, Y)`, which in degree `i` is the module of morphisms `X.X i ⟶ Y`. -/
+@[expose]
 noncomputable def linearYonedaFunctor : (ChainComplex C α)ᵒᵖ ⥤ CochainComplex (ModuleCat k) α :=
   (((linearYoneda k C).obj Y).rightOp.mapHomologicalComplex _).op ⋙
     HomologicalComplex.unopFunctor _ _

@@ -37,7 +37,7 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
   Section 3.1.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -62,6 +62,14 @@ with the chain map induced by `f`. -/
 abbrev singularCochainComplexMap {X Y : TopCat.{w}} (f : X ⟶ Y) :
     Y.singularCochainComplex R k M ⟶ X.singularCochainComplex R k M :=
   (TauCeti.ChainComplex.linearYonedaFunctor k M).map (SSet.chainComplexMap (toSSet.map f) R).op
+
+/-- The degree-`n` component of the cochain map induced by `f` acts by precomposition with the
+degree-`n` component of the induced singular chain map. -/
+@[simp]
+lemma singularCochainComplexMap_f_apply {X Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ)
+    (g : (Y.singularCochainComplex R k M).X n) :
+    (singularCochainComplexMap (R := R) (k := k) (M := M) f).f n g =
+      (SSet.chainComplexMap (toSSet.map f) R).f n ≫ g := rfl
 
 @[simp]
 lemma singularCochainComplexMap_id (X : TopCat.{w}) :
@@ -109,7 +117,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
 
 /-- Singular cohomology in degree `n` as a contravariant functor from topological spaces to
 `k`-modules. -/
-@[simps]
+@[expose, simps]
 def singularCohomologyFunctor (n : ℕ) : TopCat.{w}ᵒᵖ ⥤ ModuleCat.{v} k where
   obj X := X.unop.singularCohomology R k M n
   map f := TopCat.singularCohomologyMap f.unop n
