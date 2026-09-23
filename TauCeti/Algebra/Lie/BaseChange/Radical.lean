@@ -8,7 +8,12 @@ module
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.Lie.CartanCriterion
 public import TauCeti.Algebra.Lie.Killing.BaseChange
+public import TauCeti.Algebra.Lie.BaseChange.Quotient
 public import TauCeti.Algebra.Lie.Nilradical
+public import TauCeti.Algebra.Lie.Solvable
+-- Private: membership in an extended submodule descends over a faithfully flat algebra, and is
+-- used only inside the proof of `LieAlgebra.one_tmul_mem_radical_baseChange_iff`.
+import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
 # Solvability, nilpotency and semisimplicity under extension of scalars
@@ -36,14 +41,23 @@ only if it vanished already.  Applied to the two largest ideals, ascent gives
 
 Neither containment is forced to be an equality by the transfer principles, because an ideal of
 `A ⊗[R] L` need not be extended from `L` at all, and nothing above bounds the ideals that are
-not.  The case where both sides are `⊥` is settled here, and it is the case a structural argument
-over an algebraic closure rests on: `LieAlgebra.hasTrivialRadical_baseChange_iff` says that over
-a field of characteristic zero a finite-dimensional Lie algebra has trivial radical exactly when
-some field extension of it does, so extending scalars can neither destroy nor *create* a solvable
-ideal of a semisimple algebra.  That equivalence is not a formal consequence of the transfer
-principles above; it runs through Cartan's criterion, which converts triviality of the radical
-into nondegeneracy of the Killing form, a property `TauCeti.isKilling_baseChange_iff` does
-transport in both directions.
+not.  The case where both sides are `⊥` is settled first, and it is the case the structural
+argument rests on: `LieAlgebra.hasTrivialRadical_baseChange_iff` says that over a field of
+characteristic zero a finite-dimensional Lie algebra has trivial radical exactly when some field
+extension of it does, so extending scalars can neither destroy nor *create* a solvable ideal of a
+semisimple algebra.  That equivalence is not a formal consequence of the transfer principles
+above; it runs through Cartan's criterion, which converts triviality of the radical into
+nondegeneracy of the Killing form, a property `TauCeti.isKilling_baseChange_iff` does transport in
+both directions.
+
+The general case reduces to it.  Extension of scalars commutes with quotients
+(`LieIdeal.quotientBaseChangeEquiv`), so `(A ⊗[K] L) ⧸ (radical K L).baseChange A` is
+`A ⊗[K] (L ⧸ radical K L)`, which has trivial radical by the equivalence just quoted; and the
+radical is the unique solvable ideal whose quotient has trivial radical
+(`LieAlgebra.hasTrivialRadical_quotient_iff`).  That gives
+`LieAlgebra.radical_baseChange`: **in characteristic zero the radical commutes with a field
+extension.**  The corresponding statement for the nilradical is *not* proved here; the quotient
+argument is unavailable for it, since `L ⧸ nilradical K L` need not have trivial nilradical.
 
 ## Main results
 
@@ -55,6 +69,10 @@ transport in both directions.
   of the extended algebra.
 * `LieAlgebra.hasTrivialRadical_baseChange_iff`: **in characteristic zero a finite-dimensional Lie
   algebra has trivial radical exactly when its extension to a field extension does.**
+* `LieAlgebra.radical_baseChange`: **in characteristic zero the solvable radical of a
+  finite-dimensional Lie algebra commutes with a field extension**, with
+  `LieAlgebra.one_tmul_mem_radical_baseChange_iff` reading it as a membership criterion that may
+  be checked after extending scalars.
 
 ## References
 
@@ -139,10 +157,9 @@ open TauCeti.LieAlgebra
 variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
 variable (A : Type*) [CommRing A] [Algebra R A]
 
-/-- **The extension of scalars of the solvable radical lands in the solvable radical.**  The
-containment is not an equality for formal reasons, since an ideal of `A ⊗[R] L` need not be
-extended from `L`; `LieAlgebra.hasTrivialRadical_baseChange_iff` settles the case where both
-sides vanish. -/
+/-- **The extension of scalars of the solvable radical lands in the solvable radical.**  Nothing
+formal makes the containment an equality, since an ideal of `A ⊗[R] L` need not be extended from
+`L`; over a field of characteristic zero it is one, which is `LieAlgebra.radical_baseChange`. -/
 theorem baseChange_radical_le [IsNoetherian R L] :
     (radical R L).baseChange A ≤ radical A (A ⊗[R] L) :=
   le_sSup (LieIdeal.isSolvable_baseChange A (radical R L))
@@ -173,6 +190,39 @@ theorem hasTrivialRadical_baseChange_iff :
   have : CharZero A := charZero_of_injective_algebraMap (algebraMap K A).injective
   rw [hasTrivialRadical_iff_isKilling, hasTrivialRadical_iff_isKilling]
   exact TauCeti.isKilling_baseChange_iff K A L
+
+/-- **In characteristic zero the solvable radical commutes with a field extension.**  For a
+finite-dimensional Lie algebra over a field of characteristic zero, the radical of the extension
+of scalars is the extension of the radical.
+
+The substance is that extending scalars creates no new solvable ideals, and the proof reduces it
+to the case of a trivial radical.  Extension of scalars commutes with quotients
+(`LieIdeal.quotientBaseChangeEquiv`), so `(A ⊗[K] L) ⧸ (radical K L).baseChange A` is
+`A ⊗[K] (L ⧸ radical K L)`, which has trivial radical by
+`LieAlgebra.hasTrivialRadical_baseChange_iff`.  The extended radical is a solvable ideal whose
+quotient has trivial radical, and `LieAlgebra.hasTrivialRadical_quotient_iff` says there is only
+one such ideal, the radical.
+
+Characteristic zero is a genuine hypothesis, inherited from
+`LieAlgebra.hasTrivialRadical_baseChange_iff`. -/
+@[simp]
+theorem radical_baseChange :
+    radical A (A ⊗[K] L) = (radical K L).baseChange A := by
+  have _ : HasTrivialRadical A (A ⊗[K] (L ⧸ radical K L)) :=
+    (hasTrivialRadical_baseChange_iff K (L ⧸ radical K L) A).mpr inferInstance
+  have _ : IsSolvable ↥((radical K L).baseChange A) :=
+    LieIdeal.isSolvable_baseChange A (radical K L)
+  have htriv : HasTrivialRadical A ((A ⊗[K] L) ⧸ (radical K L).baseChange A) :=
+    hasTrivialRadical_of_equiv (LieIdeal.quotientBaseChangeEquiv A (radical K L))
+  exact ((hasTrivialRadical_quotient_iff _).mp htriv).symm
+
+/-- **Membership in the radical may be checked after a field extension.**  In characteristic zero
+a vector of a finite-dimensional Lie algebra lies in the solvable radical exactly when its
+canonical image in an extension of scalars does. -/
+theorem one_tmul_mem_radical_baseChange_iff (x : L) :
+    (1 : A) ⊗ₜ[K] x ∈ radical A (A ⊗[K] L) ↔ x ∈ radical K L := by
+  rw [radical_baseChange, ← LieSubmodule.mem_toSubmodule, LieSubmodule.coe_baseChange,
+    Submodule.one_tmul_mem_baseChange_iff, LieSubmodule.mem_toSubmodule]
 
 end CharZero
 
