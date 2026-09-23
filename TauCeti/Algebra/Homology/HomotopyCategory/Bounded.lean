@@ -231,7 +231,6 @@ private lemma quotient_obj_obj_as_private (X : CochainComplex.Bounded C) :
     ((quotient C).obj X).obj.as = X.obj := rfl
 
 /-- The underlying complex of a bounded quotient object is the original complex. -/
-@[simp]
 lemma quotient_obj_obj_as (X : CochainComplex.Bounded C) :
     ((quotient C).obj X).obj.as = X.obj := quotient_obj_obj_as_private C X
 
