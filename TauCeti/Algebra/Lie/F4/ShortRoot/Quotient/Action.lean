@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.DividedAction
+public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Exponential
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Centralizer
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Basis
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.SpecialMapRootAddition
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.SpecialMap
 
 /-!
 # Root-action columns on the modular F4 quotient
@@ -68,7 +68,7 @@ theorem f4ShortRootSubspace_mkQ_simpleCoroot_one_eq_quotientBasis :
   exact f4ShortRootQuotientBasis_twelve.symm
 
 /-- The positive long simple-root `0` has coroot quotient coordinate `13`. -/
-theorem f4ShortRootSubspace_mkQ_modularCoroot_table_inl_zero :
+theorem f4ShortRootSubspace_mkQ_modularCoroot_inl_zero_eq_quotientBasis :
     f4ShortRootSubspace.mkQ
         (f4ModularCoroot (f4SignedSimpleRootIndex (.inl 0))) =
       f4ShortRootQuotientBasis 13 := by
@@ -76,7 +76,7 @@ theorem f4ShortRootSubspace_mkQ_modularCoroot_table_inl_zero :
   exact f4ShortRootSubspace_mkQ_simpleCoroot_zero_eq_quotientBasis
 
 /-- The positive long simple-root `1` has coroot quotient coordinate `12`. -/
-theorem f4ShortRootSubspace_mkQ_modularCoroot_table_inl_one :
+theorem f4ShortRootSubspace_mkQ_modularCoroot_inl_one_eq_quotientBasis :
     f4ShortRootSubspace.mkQ
         (f4ModularCoroot (f4SignedSimpleRootIndex (.inl 1))) =
       f4ShortRootQuotientBasis 12 := by
@@ -84,7 +84,7 @@ theorem f4ShortRootSubspace_mkQ_modularCoroot_table_inl_one :
   exact f4ShortRootSubspace_mkQ_simpleCoroot_one_eq_quotientBasis
 
 /-- The negative long simple-root `0` has the same coroot quotient coordinate `13`. -/
-theorem f4ShortRootSubspace_mkQ_modularCoroot_table_inr_zero :
+theorem f4ShortRootSubspace_mkQ_modularCoroot_inr_zero_eq_quotientBasis :
     f4ShortRootSubspace.mkQ
         (f4ModularCoroot (f4SignedSimpleRootIndex (.inr 0))) =
       f4ShortRootQuotientBasis 13 := by
@@ -96,7 +96,7 @@ theorem f4ShortRootSubspace_mkQ_modularCoroot_table_inr_zero :
     f4ShortRootSubspace_mkQ_simpleCoroot_zero_eq_quotientBasis
 
 /-- The negative long simple-root `1` has the same coroot quotient coordinate `12`. -/
-theorem f4ShortRootSubspace_mkQ_modularCoroot_table_inr_one :
+theorem f4ShortRootSubspace_mkQ_modularCoroot_inr_one_eq_quotientBasis :
     f4ShortRootSubspace.mkQ
         (f4ModularCoroot (f4SignedSimpleRootIndex (.inr 1))) =
       f4ShortRootQuotientBasis 12 := by
@@ -305,10 +305,10 @@ private theorem f4ModularDividedAdjointSquare_rootVector_of_long_add_two_short
         exact hε'
       _ = ((ε • f4IntegralRootVector γ : f4ChevalleyLieLattice) :
           F4.lieAlgebra valid_F4) := by
-        rw [show ((ε • f4IntegralRootVector γ : f4ChevalleyLieLattice) :
-            F4.lieAlgebra valid_F4) =
-          ε • (f4IntegralRootVector γ : F4.lieAlgebra valid_F4) by rfl,
-          coe_f4IntegralRootVector, Int.cast_smul_eq_zsmul]
+        change _ = f4ChevalleyLieLattice.toSubmodule.subtype
+          (ε • f4IntegralRootVector γ)
+        rw [map_smul, Submodule.subtype_apply, coe_f4IntegralRootVector,
+          Int.cast_smul_eq_zsmul]
   rw [f4ModularRootVector_eq, f4ModularDividedAdjointSquare_tmul, hintegral,
     TensorProduct.tmul_smul, TensorProduct.smul_tmul', f4ModularRootVector_eq]
   rcases hεsign with rfl | rfl <;> simp
@@ -547,75 +547,6 @@ theorem f4ShortRootSubspace_mkQ_dividedSquare_simpleCoroot_eq_zero
         (f4ModularDividedAdjointSquare k (f4ModularSimpleCoroot i)) = 0 := by
   rw [f4ModularDividedAdjointSquare_simpleCoroot_eq_zero, map_zero]
 
-/-- Three rational adjoint applications to a long-root vector vanish.  This is the pointwise
-cutoff needed to truncate integral divided-power exponential columns before reduction. -/
-theorem f4_ad_cube_rootVector_eq_zero_of_long
-    (α β : Fin 48) (hβ : f4Length β = 2) :
-    ((ad ℚ (F4.lieAlgebra valid_F4)
-      (f4ChevalleyRootVector (f4KillingRoot α))) ^ 3)
-        (f4ChevalleyRootVector (f4KillingRoot β)) = 0 := by
-  let H := F4.cartanSubalgebra valid_F4
-  let a := f4KillingRoot α
-  let b := f4KillingRoot β
-  let x := f4ChevalleyRootVector
-  have ha : a.IsNonZero :=
-    H.isNonZero_coe_root (f4KillingRootLabel α)
-  have hb : b.IsNonZero :=
-    H.isNonZero_coe_root (f4KillingRootLabel β)
-  by_cases hopp : β = f4OppositeRootIndex α
-  · subst β
-    have hop : f4KillingRoot (f4OppositeRootIndex α) = -a := by
-      simpa only [a] using f4KillingRoot_f4OppositeRootIndex α
-    have hfirst : ⁅x a, x (-a)⁆ =
-        ((coroot a : H) : F4.lieAlgebra valid_F4) :=
-      f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.lie_neg a ha
-    have hsecond : ⁅x a, ((coroot a : H) : F4.lieAlgebra valid_F4)⁆ =
-        (-2 : ℚ) • x a := by
-      rw [← lie_skew,
-        f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.lie_coroot a a,
-        root_apply_coroot ha]
-      module
-    have hpowTwo :
-        ((ad ℚ (F4.lieAlgebra valid_F4) (x a)) ^ 2) (x (-a)) =
-          (-2 : ℚ) • x a := by
-      rw [pow_two, Module.End.mul_apply, ad_apply, ad_apply, hfirst, hsecond]
-    rw [show (3 : ℕ) = 2 + 1 by omega, pow_succ', Module.End.mul_apply,
-      hop, hpowTwo, map_smul, ad_apply, lie_self, smul_zero]
-  · have hopp' : α ≠ f4OppositeRootIndex β := by
-      intro h
-      apply hopp
-      rw [h, f4OppositeRootIndex_f4OppositeRootIndex]
-    have hsum := f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp'
-    rcases f4ChevalleyRootVector_isChevalleySystem.ad_pow_rootVector_eq_zero_or_exists
-        ha hb hsum 3 with hzero | hnonzero
-    · exact hzero
-    · obtain ⟨γ, hγcoe, -, -⟩ := hnonzero
-      have hγnz : γ.IsNonZero := by
-        rw [Weight.IsNonZero, Weight.IsZero, hγcoe]
-        exact coe_add_natCast_smul_ne_zero ha hb hsum 3
-      have hγroot : γ ∈ H.root := by
-        simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using hγnz
-      let δ : Fin 48 := f4PinnedRootIndex ⟨γ, hγroot⟩
-      have hδweight : f4KillingRoot δ = γ := by
-        -- The Killing weight is the underlying function of its root-label subtype.
-        change (f4KillingRootLabel δ : Weight ℚ H (F4.lieAlgebra valid_F4)) = γ
-        exact congrArg Subtype.val (f4KillingRootLabel_f4PinnedRootIndex ⟨γ, hγroot⟩)
-      have hpinned : f4SimplyConnectedRootDatum.root δ =
-          f4SimplyConnectedRootDatum.root β +
-            (3 : ℤ) • f4SimplyConnectedRootDatum.root α := by
-        apply (f4KillingRoot_eq_add_zsmul_iff α β δ 3).mp
-        rw [hδweight]
-        simpa using hγcoe
-      have hlen := f4Length_of_root_eq_add_zsmul α β δ 3 hpinned
-      have hpair := abs_pairing_f4SimplyConnectedRootDatum_le_two β α
-      have hpairLower : -2 ≤ f4SimplyConnectedRootDatum.pairing β α :=
-        (abs_le.mp hpair).1
-      rw [f4SimplyConnectedRootDatum_pairing] at hpairLower
-      rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
-        rcases f4Length_eq_one_or_eq_two δ with hδ | hδ
-      all_goals rw [hα, hβ, hδ] at hlen
-      all_goals norm_num at hlen
-      all_goals omega
 
 end
 

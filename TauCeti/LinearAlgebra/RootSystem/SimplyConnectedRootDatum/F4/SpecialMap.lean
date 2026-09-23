@@ -27,7 +27,8 @@ permutation of the forty-eight root indices exchanges long roots with short ones
 positivity, and commutes with root negation. The rescaling exponent is the squared-length table
 `TauCeti.DynkinType.f4Length`: it is `1` on short roots and `2` on long roots. Applying the data
 twice multiplies both lattices by `2`, and the two exponents along each orbit multiply to `2`.
-The dual map on torus points and its character evaluation are computed here as well.
+The dual map on torus points, its character evaluation, and transport of root-addition edges are
+computed here as well.
 
 These equations are the explicit `F₄` input for the root-datum special-isogeny construction, the
 last of the three beside the type `B₂` case of
@@ -64,6 +65,8 @@ own.
   permutation is `TauCeti.lengthPermF4`, the pinned length-exchanging permutation of the diagram.
 * `TauCeti.DynkinType.f4Length_mul_pairing_f4SpecialIsogenyIndex`: the Cartan integers transform by
   the rule a special isogeny forces.
+* `TauCeti.DynkinType.f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add`: root-addition
+  edges transported by the special map.
 
 ## References
 
@@ -283,5 +286,49 @@ theorem torusCharacter_f4SpecialIsogenyTorusMap
   simpa [f4SpecialIsogenyTorusMap, Matrix.mulVec, dotProduct,
     Fin.sum_univ_succ, Fin.prod_univ_succ, zpow_mul] using
       hcomm ((s 3 ^ 2) ^ μ 0) ((s 2 ^ 2) ^ μ 1) (s 1 ^ μ 2) (s 0 ^ μ 3)
+
+/-! ## Transport of root-addition edges -/
+
+private theorem f4SpecialIsogenyMatrix_mulVec_root_image (i : Fin 48) :
+    Matrix.mulVec f4SpecialIsogenyMatrix
+        (f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv i)) =
+      f4Length (f4SpecialIsogenyIndexEquiv i) •
+        f4SimplyConnectedRootDatum.root i := by
+  have hindex : f4SpecialIsogenyIndexEquiv (f4SpecialIsogenyIndexEquiv i) = i := by
+    simpa only [f4SpecialIsogenyIndexEquiv_apply] using f4SpecialIsogenyIndex_involutive i
+  rw [f4SpecialIsogenyMatrix_mulVec_root, hindex]
+
+private theorem f4SpecialIsogenyMatrix_mulVec_injective :
+    Function.Injective (Matrix.mulVec f4SpecialIsogenyMatrix) :=
+  Matrix.mulVec_injective_of_det_ne_zero (by simp)
+
+/-- **Root-addition edges transport through the F4 special root permutation.** If `β` and `γ`
+are long, applying the special matrix removes their exponent and leaves exactly the exponent of
+the possibly short root `α`. -/
+theorem f4_root_add_smul_iff_specialIsogenyIndexEquiv_root_add
+    (α β γ : Fin 48) (hβ : f4Length β = 2) (hγ : f4Length γ = 2) :
+    f4SimplyConnectedRootDatum.root γ =
+        f4SimplyConnectedRootDatum.root β +
+          f4Length (f4SpecialIsogenyIndexEquiv α) •
+            f4SimplyConnectedRootDatum.root α ↔
+      f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv γ) =
+        f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv β) +
+          f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv α) := by
+  have hβ' : f4Length (f4SpecialIsogenyIndexEquiv β) = 1 := by
+    simpa only [f4SpecialIsogenyIndexEquiv_apply,
+      f4Length_specialIsogenyIndex_eq_one_iff] using hβ
+  have hγ' : f4Length (f4SpecialIsogenyIndexEquiv γ) = 1 := by
+    simpa only [f4SpecialIsogenyIndexEquiv_apply,
+      f4Length_specialIsogenyIndex_eq_one_iff] using hγ
+  constructor
+  · intro h
+    apply f4SpecialIsogenyMatrix_mulVec_injective
+    rw [Matrix.mulVec_add, f4SpecialIsogenyMatrix_mulVec_root_image,
+      f4SpecialIsogenyMatrix_mulVec_root_image,
+      f4SpecialIsogenyMatrix_mulVec_root_image, hβ', hγ', one_smul, one_smul, h]
+  · intro h
+    have h' := congrArg (Matrix.mulVec f4SpecialIsogenyMatrix) h
+    simpa only [Matrix.mulVec_add, f4SpecialIsogenyMatrix_mulVec_root_image,
+      hβ', hγ', one_smul] using h'
 
 end TauCeti.DynkinType
