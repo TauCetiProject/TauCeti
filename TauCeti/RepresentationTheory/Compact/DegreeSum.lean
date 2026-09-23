@@ -8,38 +8,29 @@ module
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import TauCeti.RepresentationTheory.Compact.Finite
 public import TauCeti.RepresentationTheory.Compact.PeterWeyl
--- Non-public: the cardinality of a basis index and the positivity of the dimension of an
--- irreducible are used only inside proofs.
-import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-import TauCeti.RepresentationTheory.Irreducible
 
 /-!
 # Peter-Weyl for a finite group: the matrix-coefficient basis and the sum of the squared degrees
 
 For a compact group `G` the normalized matrix coefficients of a skeleton of the unitary dual are a
 *Hilbert* basis of `L²(G)` (`TauCeti.peterWeylBasis`). When `G` is finite and discrete that
-statement collapses to an algebraic one, and this file carries out the collapse.
+statement is an algebraic one, and this file states it as such.
 
 Normalized Haar measure on a finite discrete group has full support, so `L²(G)` *is* the space
-`G → 𝕜` of all functions on `G` (`TauCeti.lpHaarProbEquivFun`); in particular it is
-finite-dimensional, of dimension `|G|`. A Hilbert basis of a finite-dimensional inner product space
-is an ordinary module basis: its span has trivial orthogonal complement, and a submodule of a
-finite-dimensional space with trivial orthogonal complement is everything. Reading the resulting
-basis off both spaces gives
+`G → 𝕜` of all functions on `G` (`TauCeti.lpHaarProbEquivFun`), of dimension `|G|`. On such a `G`
+the Peter-Weyl family is an ordinary module basis — of `L²(G)`, and read through that
+identification of `G → 𝕜` itself, so that the matrix coefficients are a basis of the functions on
+a finite group. Its index is the type of matrix positions
+`Σ π, Fin (dim V_π) × Fin (dim V_π)`, so counting it against the dimension `|G|` gives the degree
+identity `∑_π (dim V_π)² = |G|`; run the other way, the same count makes the skeleton itself
+finite, a finite group having only finitely many irreducible unitary representations up to
+equivalence.
 
-* the matrix coefficients as a **basis of the functions on `G`**, and
-* the count `∑_π (dim V_π)² = |G|`, because the basis is indexed by
-  `Σ π, Fin (dim V_π) × Fin (dim V_π)`.
-
-Finiteness of the index runs the other way: a skeleton of the unitary dual of a finite group has
-finitely many members, because every model has positive dimension and so contributes at least one
-basis vector.
-
-The same count is proved algebraically, over any algebraically closed field whose characteristic
-does not divide `|G|`, by the Wedderburn decomposition of the group algebra in
-`TauCeti/RepresentationTheory/CharacterTable/Wedderburn.lean`; what is new here is that the
-*analytic* Peter-Weyl basis returns it, which is the acceptance criterion the compact-groups
-roadmap states for the finite case.
+The same identity is proved algebraically, over any algebraically closed field whose characteristic
+does not divide `|G|` and indexed by the blocks of the group algebra, from the Wedderburn
+decomposition in `TauCeti/RepresentationTheory/CharacterTable/Wedderburn.lean`. What is new here is
+that the *analytic* Peter-Weyl basis returns it, on the matrix positions of a skeleton of the
+unitary dual.
 
 ## Main definitions
 
@@ -50,8 +41,6 @@ roadmap states for the finite case.
 
 ## Main statements
 
-* `TauCeti.finrank_lp_haarProb`: `L^p` of a finite discrete group has dimension `|G|`.
-* `TauCeti.IrrepModel.dim_pos`: a model of an irreducible representation has positive dimension.
 * `TauCeti.IsIrrepSkeleton.finite`: a skeleton of the unitary dual of a finite group is finite.
 * `TauCeti.IsIrrepSkeleton.sum_sq_dim_eq_natCard`: **the squares of the degrees sum to the order of
   the group**, `∑_π (dim V_π)² = |G|`.
@@ -65,9 +54,6 @@ roadmap states for the finite case.
 ## References
 
 * Daniel Bump, *Lie Groups*, second edition, Chapter 2.
-* [Compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-  whose first worked example asks that `peterWeylBasis`, specialized to a finite group, give
-  `dim L²(G) = ∑_π (dim V_π)² = |G|` with the matrix coefficients as a basis.
 
 ## Tags
 
@@ -77,40 +63,9 @@ Peter-Weyl theorem, finite group, matrix coefficient, degree
 public section
 
 open MeasureTheory
-open scoped ENNReal InnerProductSpace
+open scoped InnerProductSpace
 
 namespace TauCeti
-
-section FiniteDimensional
-
-variable (G : Type*) [Group G] [Finite G] [TopologicalSpace G] [DiscreteTopology G]
-  [MeasurableSpace G] [BorelSpace G] (𝕜 : Type*) [NontriviallyNormedField 𝕜] (p : ℝ≥0∞)
-
-/-- **`L^p` of a finite discrete group is finite-dimensional.** It is the space `G → 𝕜` of all
-functions on `G`, by `TauCeti.lpHaarProbEquivFun`. -/
-instance finiteDimensional_lp_haarProb : FiniteDimensional 𝕜 (Lp 𝕜 p (haarProb G)) := by
-  have : Fintype G := Fintype.ofFinite G
-  exact Module.Finite.equiv (lpHaarProbEquivFun G 𝕜 p).symm
-
-/-- **`L^p` of a finite discrete group has dimension the order of the group.** No exponent
-condition is needed: the identification with `G → 𝕜` holds for every `p`. -/
-theorem finrank_lp_haarProb : Module.finrank 𝕜 (Lp 𝕜 p (haarProb G)) = Nat.card G := by
-  have : Fintype G := Fintype.ofFinite G
-  rw [(lpHaarProbEquivFun G 𝕜 p).finrank_eq, Module.finrank_fintype_fun_eq_card,
-    Nat.card_eq_fintype_card]
-
-end FiniteDimensional
-
-section Dimension
-
-variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G]
-
-/-- **A model of an irreducible representation has positive dimension.** Irreducibility asks for a
-nonzero carrier, and the carrier of a model is `EuclideanSpace 𝕜 (Fin dim)`. -/
-theorem IrrepModel.dim_pos (m : IrrepModel 𝕜 G) : 0 < m.dim := by
-  simpa using Representation.IsIrreducible.finrank_pos m.isIrreducible
-
-end Dimension
 
 section Basis
 
@@ -118,9 +73,10 @@ variable {𝕜 G ι : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] [Group G] [Finite 
   [DiscreteTopology G] [MeasurableSpace G] [BorelSpace G] {models : ι → IrrepModel 𝕜 G}
 
 omit [IsAlgClosed 𝕜] in
-/-- **For a finite group the Peter-Weyl family spans `L²(G)` algebraically.** Completeness of the
-family says that the orthogonal complement of its span vanishes; in a finite-dimensional inner
-product space that forces the span itself to be everything, with no closure taken. -/
+/-- **For a finite group the Peter-Weyl family spans `L²(G)` algebraically**, with no closure
+taken: the span of the normalized matrix coefficients is already all of `L²(G)`. This is what
+makes the Hilbert basis `TauCeti.peterWeylBasis` a module basis,
+`TauCeti.peterWeylModuleBasis`. -/
 theorem IsIrrepSkeleton.span_peterWeylFamily_eq_top (h : IsIrrepSkeleton models) :
     Submodule.span 𝕜 (Set.range (peterWeylFamily models)) = ⊤ :=
   Submodule.orthogonal_eq_bot_iff.mp h.orthogonal_span_peterWeylFamily_eq_bot
@@ -141,10 +97,11 @@ theorem coe_peterWeylModuleBasis (h : IsIrrepSkeleton models) :
   Module.Basis.coe_mk _ _
 
 /-- **A skeleton of the unitary dual of a finite group is finite**: a finite group has only
-finitely many irreducible unitary representations up to equivalence. Each model contributes at
-least one basis vector of the finite-dimensional space `L²(G)`, because its dimension is
-positive. -/
+finitely many irreducible unitary representations up to equivalence. It supplies the `Fintype`
+hypothesis of `TauCeti.IsIrrepSkeleton.sum_sq_dim_eq_natCard`. -/
 theorem IsIrrepSkeleton.finite (h : IsIrrepSkeleton models) : Finite ι := by
+  -- Each model contributes at least one of the finitely many basis vectors, its dimension being
+  -- positive, so the index is covered by the finite basis index.
   have : Fintype (Σ i, Fin (models i).dim × Fin (models i).dim) :=
     FiniteDimensional.fintypeBasisIndex (peterWeylModuleBasis h)
   refine Finite.of_surjective (α := Σ i, Fin (models i).dim × Fin (models i).dim) Sigma.fst ?_
