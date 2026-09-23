@@ -73,16 +73,6 @@ section Tails
 
 variable {X : Type*} [PseudoMetricSpace X]
 
-/-- The nonnegative distance to the power `q` coerces to the corresponding extended distance. -/
-theorem coe_nndist_rpow {q : ℝ} (hq : 0 ≤ q) (x y : X) :
-    ((nndist x y ^ q : ℝ≥0) : ℝ≥0∞) = edist x y ^ q := by
-  rw [ENNReal.coe_rpow_of_nonneg _ hq, edist_nndist]
-
-/-- The nonnegative distance to a fixed point, raised to a nonnegative power, is continuous. -/
-theorem continuous_nndist_rpow_const {q : ℝ} (hq : 0 ≤ q) (x : X) :
-    Continuous fun y ↦ nndist x y ^ q :=
-  (NNReal.continuous_rpow_const hq).comp (continuous_const.nndist continuous_id)
-
 variable [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
@@ -127,7 +117,7 @@ theorem lowerSemicontinuous_setLIntegral_edist_rpow {q : ℝ} (x : X) (r : ℝ�
   ext y
   by_cases hy : r < nndist x y <;> simp [hy]
 
-/-- A moment of a probability measure is at most the `p`-th power of a radius plus the part of
+/-- A moment of a probability measure is at most the `q`-th power of a radius plus the part of
 the moment coming from the open region beyond that radius. -/
 theorem lintegral_edist_rpow_le_add {q : ℝ} (hq : 0 ≤ q) (ν : Measure X)
     [IsProbabilityMeasure ν] (x : X) (r : ℝ≥0) :
@@ -148,8 +138,8 @@ theorem lintegral_edist_rpow_le_add {q : ℝ} (hq : 0 ≤ q) (ν : Measure X)
         rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
           lintegral_indicator hU]
 
-/-- Along a weakly convergent family of laws whose `p`-moments have uniformly small tails over the
-open regions beyond some radii, the `p`-moments converge to the `p`-moment of the limit. -/
+/-- Along a weakly convergent family of laws whose `q`-moments have uniformly small tails over the
+open regions beyond some radii, the `q`-moments converge to the `q`-moment of the limit. -/
 theorem tendsto_lintegral_edist_rpow {q : ℝ} (hq : 0 < q) {γ : Type*} {L : Filter γ}
     {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X} (h : Tendsto μs L (𝓝 μ)) (x : X)
     (htail : ∀ ε : ℝ≥0∞, 0 < ε → ∃ r : ℝ≥0, ∀ᶠ i in L,

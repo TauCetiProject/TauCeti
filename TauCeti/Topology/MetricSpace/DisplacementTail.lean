@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 
 /-!
@@ -20,6 +21,9 @@ two laws control the transport cost of an unbounded power of the distance.
 
 ## Main statements
 
+* `TauCeti.coe_nndist_rpow` — the nonnegative and extended powers of a distance agree;
+* `TauCeti.continuous_nndist_rpow_const` — a nonnegative power of distance from a fixed point is
+  continuous;
 * `TauCeti.edist_rpow_le_min_add_indicator` — the pointwise truncation estimate.
 -/
 
@@ -31,6 +35,16 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {X : Type*} [PseudoMetricSpace X]
+
+/-- The nonnegative distance to the power `q` coerces to the corresponding extended distance. -/
+theorem coe_nndist_rpow {q : ℝ} (hq : 0 ≤ q) (x y : X) :
+    ((nndist x y ^ q : ℝ≥0) : ℝ≥0∞) = edist x y ^ q := by
+  rw [ENNReal.coe_rpow_of_nonneg _ hq, edist_nndist]
+
+/-- The nonnegative distance to a fixed point, raised to a nonnegative power, is continuous. -/
+theorem continuous_nndist_rpow_const {q : ℝ} (hq : 0 ≤ q) (x : X) :
+    Continuous fun y ↦ nndist x y ^ q :=
+  (NNReal.continuous_rpow_const hq).comp (continuous_const.nndist continuous_id)
 
 /-- A displacement larger than `2 R` is at most twice the distance from the basepoint `x` of an
 endpoint lying at distance at least `R` from it. Hence the `q`-th power of the displacement is at

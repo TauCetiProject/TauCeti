@@ -72,15 +72,6 @@ namespace TauCeti
 
 namespace WassersteinSpace
 
-private theorem setOf_toMeasure_eq_image {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
-    {p : ℝ≥0∞}
-    (S : Set (WassersteinSpace p X)) :
-    {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} =
-      {((ν : ProbabilityMeasure X) : Measure X) |
-        ν ∈ ((↑) '' S : Set (ProbabilityMeasure X))} := by
-  ext
-  simp
-
 section Necessity
 
 variable {X : Type*} {p : ℝ≥0∞} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
@@ -93,7 +84,9 @@ theorem isTightMeasureSet_of_isCompact_closure [CompleteSpace X] {S : Set (Wasse
     IsTightMeasureSet {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} := by
   have hS' : IsCompact (closure ((↑) '' S : Set (ProbabilityMeasure X))) :=
     (hS.image continuous_toProbabilityMeasure).closure_of_subset (image_mono subset_closure)
-  rw [setOf_toMeasure_eq_image]
+  change IsTightMeasureSet
+    ((fun μ : WassersteinSpace p X ↦ ((μ : ProbabilityMeasure X) : Measure X)) '' S)
+  rw [← Set.image_image]
   exact MeasureTheory.isTightMeasureSet_of_isCompact_closure hS'
 
 /-- **A relatively compact set of the Wasserstein space has uniformly integrable moments.** For a
@@ -139,7 +132,11 @@ theorem isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow
   choose R hR using hU
   have hK : IsCompact (closure ((↑) '' S : Set (ProbabilityMeasure X))) :=
     _root_.isCompact_closure_of_isTightMeasureSet <| by
-    rw [← setOf_toMeasure_eq_image]
+    rw [show {((ν : ProbabilityMeasure X) : Measure X) |
+          ν ∈ ((↑) '' S : Set (ProbabilityMeasure X))} =
+        {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} from
+      Set.image_image (fun ν : ProbabilityMeasure X ↦ (ν : Measure X))
+        (fun μ : WassersteinSpace p X ↦ (μ : ProbabilityMeasure X)) S]
     exact hT
   set S' : Set (ProbabilityMeasure X) := (↑) '' S
   -- `S` lies in the set `T` of laws in the weak closure of `S` whose tails over the open regions
