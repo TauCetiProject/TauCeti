@@ -78,8 +78,7 @@ open scoped MatrixGroups
 
 namespace TauCeti
 
-/-- The binary quadratic form `a x² + b x y + c y²` over `R`, recorded by its three
-coefficients. -/
+/-- A binary quadratic form `a x² + b x y + c y²` over `R`, recorded by its three coefficients. -/
 @[ext]
 structure BinaryQuadraticForm (R : Type*) where
   /-- The coefficient of `x²`. -/
@@ -94,9 +93,9 @@ namespace BinaryQuadraticForm
 
 variable {R : Type*} [CommRing R]
 
-/-- `γ • f` is the form `f ∘ γ⁻¹`: for `γ = !![p, q; r, s]` it is
-`f(s x - q y, -r x + p y)`, written out through the entries of the adjugate `!![s, -q; -r, p]`
-so that each coefficient is a polynomial in the entries of `γ`. -/
+/-- `γ • f` is the form `f ∘ γ⁻¹`, so `(γ • f)(x, y) = f(s x - q y, -r x + p y)` for
+`γ = !![p, q; r, s]`. The coefficients are written through the entries of the adjugate
+`γ⁻¹ = !![s, -q; -r, p]`, so each is a polynomial in the entries of `γ`. -/
 instance : SMul SL(2, R) (BinaryQuadraticForm R) where
   smul γ f :=
     { a := f.a * γ 1 1 ^ 2 - f.b * γ 1 0 * γ 1 1 + f.c * γ 1 0 ^ 2
