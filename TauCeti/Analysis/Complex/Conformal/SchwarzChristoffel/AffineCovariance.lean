@@ -26,8 +26,8 @@ in `TauCeti.Analysis.Real.Affine`.
 * `TauCeti.schwarzChristoffelIntegrand_affine_prevertices` -- covariance of the integrand.
 * `TauCeti.schwarzChristoffelPrimitive_affine_prevertices` -- covariance of the normalized
   primitive.
-* `TauCeti.schwarzChristoffelPrimitive_affine_prevertices_of_sum_eq_neg_two` -- under the closing
-  condition, the affine change scales the primitive by the inverse scale factor.
+* `TauCeti.schwarzChristoffelPrimitive_affine_prevertices_of_exponent_sum_eq_neg_two` -- under
+  the closing condition, the affine change scales the primitive by the inverse scale factor.
 
 ## References
 
@@ -62,7 +62,7 @@ theorem schwarzChristoffelIntegrand_affine_prevertices (a e : ι → ℝ) {c : �
       apply Finset.prod_congr rfl
       intro i _
       exact (Complex.ofReal_cpow hc.le (e i)).symm
-    _ = ((∏ i, c ^ e i : ℝ) : ℂ) := by push_cast; rfl
+    _ = ((∏ i, c ^ e i : ℝ) : ℂ) := (Complex.ofReal_prod Finset.univ _).symm
     _ = ((c ^ ∑ i, e i : ℝ) : ℂ) :=
       congr_arg ((↑) : ℝ → ℂ) (Real.rpow_sum_of_pos hc e Finset.univ).symm
     _ = (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) := Complex.ofReal_cpow hc.le _
@@ -136,7 +136,7 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
 /-- Under the polygonal closing condition `∑ i, e i = -2`, a positive affine change
 `x ↦ c * x + d` of the prevertices, base point, and argument multiplies the normalized
 Schwarz--Christoffel primitive by `c⁻¹`. -/
-theorem schwarzChristoffelPrimitive_affine_prevertices_of_sum_eq_neg_two (a e : ι → ℝ)
+theorem schwarzChristoffelPrimitive_affine_prevertices_of_exponent_sum_eq_neg_two (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) {c : ℝ} (hc : 0 < c) (d : ℝ) (hsum : ∑ i, e i = -2)
     {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
     schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e

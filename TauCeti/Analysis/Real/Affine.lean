@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Ring.Real
+public import Mathlib.Algebra.Order.Field.Basic
 
 /-!
-# Normalizing two real points by an affine map
+# Normalizing two ordered-field points by an affine map
 
-This file records that the inverse of Mathlib's `affineHomeomorph` gives a positive affine
-normalization carrying two ordered real points to `0` and `1`.
+This file records that a positive affine map carries two ordered points in a linearly ordered
+field to `0` and `1`.
 
 ## Main results
 
@@ -25,20 +25,15 @@ noncomputable section
 
 namespace TauCeti
 
-/-- Two ordered real points can be normalized to `0` and `1` by a positive affine change. -/
-theorem exists_affine_eq_zero_one {x y : ℝ} (hxy : x < y) :
+/-- Two ordered points in a linearly ordered field can be normalized to `0` and `1` by a positive
+affine change. -/
+theorem exists_affine_eq_zero_one {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {x y : K} (hxy : x < y) :
     ∃ c > 0, ∃ d, c * x + d = 0 ∧ c * y + d = 1 := by
   have hne : y - x ≠ 0 := sub_ne_zero.mpr hxy.ne'
-  let f := affineHomeomorph (y - x) x hne
-  have hf (z : ℝ) : (y - x)⁻¹ * z + -(y - x)⁻¹ * x = f.symm z := by
-    simp [f, affineHomeomorph_symm_apply, div_eq_mul_inv]
-    ring
-  have hx : f.symm x = 0 := by
-    simp [f]
-  have hy : f.symm y = 1 := by
-    simpa [f, affineHomeomorph_apply] using f.symm_apply_apply (1 : ℝ)
-  exact ⟨(y - x)⁻¹, inv_pos.mpr (sub_pos.mpr hxy), -(y - x)⁻¹ * x,
-    (hf x).trans hx, (hf y).trans hy⟩
+  refine ⟨(y - x)⁻¹, inv_pos.mpr (sub_pos.mpr hxy), -(y - x)⁻¹ * x, ?_, ?_⟩
+  · rw [neg_mul, add_neg_cancel]
+  · rw [neg_mul, ← sub_eq_add_neg, ← mul_sub, inv_mul_cancel₀ hne]
 
 end TauCeti
 
