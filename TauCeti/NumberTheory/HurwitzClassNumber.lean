@@ -84,29 +84,26 @@ The definition searches the box `1 ≤ a ≤ √(D / 3)`, `|b| ≤ √(D / 3)`, 
 box loses nothing. For `D = 0` the box is empty, so `reducedForms 0 = ∅`, although every `c y²`
 with `0 ≤ c` is a reduced form of discriminant `0`. -/
 def reducedForms (D : ℕ) : Finset (BinaryQuadraticForm ℤ) :=
-  {f ∈ (Icc 1 ((D / 3).sqrt : ℤ) ×ˢ Icc (-(D / 3).sqrt : ℤ) (D / 3).sqrt ×ˢ
-      Icc 1 (D / 3 : ℤ)).map BinaryQuadraticForm.equivProd.symm.toEmbedding |
-    f.discrim = -D ∧ IsReducedForm f}
+  {f ∈ (Icc 1 ((D / 3).sqrt : ℤ) ×ˢ Icc (-(D / 3).sqrt : ℤ) (D / 3).sqrt ×ˢ Icc 1 (D / 3 : ℤ)).map
+    BinaryQuadraticForm.equivProd.symm.toEmbedding | f.discrim = -D ∧ IsReducedForm f}
 
 /-- **The reduced forms of discriminant `-D`**: for `D ≠ 0`, `f ∈ reducedForms D` exactly when
 `f.discrim = -D` and `f` is reduced, so the box that `reducedForms` searches loses nothing. -/
 @[simp] theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {f : BinaryQuadraticForm ℤ} :
     f ∈ reducedForms D ↔ f.discrim = -D ∧ IsReducedForm f := by
-  refine mem_filter.trans <| and_iff_right_of_imp fun ⟨hd, hr⟩ ↦ mem_map_equiv.2 ?_
+  refine mem_filter.trans <| and_iff_right_of_imp fun h ↦ mem_map_equiv.2 ?_
   obtain ⟨a, b, c⟩ := f
-  simp only [BinaryQuadraticForm.discrim_def, isReducedForm_iff] at hd hr
-  simp only [Equiv.symm_symm, BinaryQuadraticForm.equivProd_apply, mem_product, mem_Icc]
-  have ha := pos_of_nonneg_of_discrim_lt_zero ((abs_nonneg b).trans hr.1) (hd.trans_lt <| by lia)
-  obtain ⟨hb, hac, -⟩ := hr
+  simp only [BinaryQuadraticForm.discrim_def, isReducedForm_iff, abs_le, Equiv.symm_symm,
+    BinaryQuadraticForm.equivProd_apply, mem_product, mem_Icc] at h ⊢
+  obtain ⟨hd, ⟨hb₁, hb₂⟩, hac, -⟩ := h
+  have ha := pos_of_nonneg_of_discrim_lt_zero (by lia) (hd.trans_lt <| by lia)
   rw [discrim] at hd
-  obtain ⟨hb₁, hb₂⟩ := abs_le.mp hb
   -- `3 a² ≤ 3 a c ≤ 4 a c - b² = D`, as `b² ≤ a² ≤ a c`; so `|b| ≤ a ≤ √(D / 3)` and `c ≤ D / 3`
-  have hbb := mul_self_le_mul_self_of_le_of_neg_le hb₂ (neg_le.mp hb₁)
+  have hbb := sq_le_sq' hb₁ hb₂
   have hac' := mul_le_mul_of_nonneg_left hac ha.le
-  have : 3 * c ≤ D := by linarith [le_mul_of_one_le_left (ha.le.trans hac) ha]
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le ha.le
-  have hn : n ≤ (D / 3).sqrt := Nat.le_sqrt.2 <| (Nat.le_div_iff_mul_le three_pos).2 <| by
-    zify; linarith
+  have hc := le_mul_of_one_le_left (ha.le.trans hac) ha
+  lift a to ℕ using ha.le
+  have hn : a ≤ (D / 3).sqrt := Nat.le_sqrt.2 <| by lia
   lia
 
 /-- The search box of `reducedForms 0` is empty. -/
