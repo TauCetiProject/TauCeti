@@ -59,6 +59,13 @@ instance instMulActionIntermediateField : MulAction (L ≃ₐ[K] L) (Intermediat
     rw [IntermediateField.map_map]
     congr 1
 
+end TauCeti
+
+open IntermediateField MulAction
+open scoped Pointwise
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
 namespace AlgEquiv
 
 /-- Conjugating an intermediate field means mapping it along the automorphism. -/
@@ -110,14 +117,14 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
     conjugateFields E ≃ MulAction.orbit (ConjAct (L ≃ₐ[K] L)) E.fixingSubgroup where
   toFun E' := ⟨E'.1.fixingSubgroup, by
     obtain ⟨σ, hσ⟩ := mem_conjugateFields_iff.mp E'.2
-    refine mem_conjugateSubgroups_iff.mpr ⟨σ, ?_⟩
+    refine TauCeti.mem_conjugateSubgroups_iff.mpr ⟨σ, ?_⟩
     calc
       E.fixingSubgroup.map (MulAut.conj σ) = (E.map σ.toAlgHom).fixingSubgroup := by
         rw [IsGalois.map_fixingSubgroup]
         congr 1
       _ = E'.1.fixingSubgroup := congrArg IntermediateField.fixingSubgroup hσ⟩
   invFun H := ⟨fixedField H.1, by
-    obtain ⟨σ, hσ⟩ := mem_conjugateSubgroups_iff.mp H.2
+    obtain ⟨σ, hσ⟩ := TauCeti.mem_conjugateSubgroups_iff.mp H.2
     apply mem_conjugateFields_iff.mpr
     refine ⟨σ, ?_⟩
     calc
@@ -183,5 +190,3 @@ theorem ncard_conjugateFields (E : IntermediateField K L) :
 end Galois
 
 end IntermediateField
-
-end TauCeti

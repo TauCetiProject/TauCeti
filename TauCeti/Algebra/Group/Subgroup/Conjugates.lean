@@ -34,6 +34,10 @@ theorem mem_conjugateSubgroups_iff {G : Type*} [Group G] {H H' : Subgroup G} :
   · rintro ⟨g, rfl⟩
     exact ⟨ConjAct.toConjAct g, rfl⟩
 
+end TauCeti
+
+open scoped Pointwise
+
 namespace MulEquiv
 
 /-- A group isomorphism identifies the sets of conjugates of corresponding subgroups. -/
@@ -44,8 +48,8 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
   e.mapSubgroup.subtypeEquiv fun J ↦ by
     constructor
     · intro h
-      obtain ⟨g, hg⟩ := mem_conjugateSubgroups_iff.mp h
-      apply mem_conjugateSubgroups_iff.mpr
+      obtain ⟨g, hg⟩ := TauCeti.mem_conjugateSubgroups_iff.mp h
+      apply TauCeti.mem_conjugateSubgroups_iff.mpr
       refine ⟨e g, ?_⟩
       -- `Subgroup.map` sees the monoid homomorphism underlying `MulAut.conj`.
       change H.map (MulAut.conj g).toMonoidHom = J at hg
@@ -56,8 +60,8 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
           (Subgroup.map_map_conj H e.toMonoidHom g).symm
       exact hmap.trans (congrArg (·.map e.toMonoidHom) hg)
     · intro h
-      obtain ⟨g, hg⟩ := mem_conjugateSubgroups_iff.mp h
-      apply mem_conjugateSubgroups_iff.mpr
+      obtain ⟨g, hg⟩ := TauCeti.mem_conjugateSubgroups_iff.mp h
+      apply TauCeti.mem_conjugateSubgroups_iff.mpr
       refine ⟨e.symm g, ?_⟩
       apply e.mapSubgroup.injective
       -- Expose the underlying homomorphisms to apply `Subgroup.map_map_conj`.
@@ -88,5 +92,3 @@ theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
   rfl
 
 end MulEquiv
-
-end TauCeti
