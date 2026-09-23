@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.BaseChange
+public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
 
 /-!
@@ -20,9 +21,9 @@ homomorphism `LieHom.baseChange` is what this file records.
 
 The point of the `A`-linear form is that its kernel is a `LieIdeal A (A ⊗[R] L)`, so it can be
 compared with `LieSubmodule.baseChange`.  The comparison is an equality over a flat coefficient
-algebra, and also for a surjective homomorphism over an arbitrary one; both readings are inherited
-from `LinearMap.ker_baseChange` and `LinearMap.ker_baseChange_of_surjective`.  Surjectivity itself
-is right-exactness of the tensor product and asks nothing of `A`.
+algebra, and also for a surjective homomorphism over an arbitrary one; the first reading is
+Mathlib's `Module.Flat.ker_lTensor_eq` and the second is `LinearMap.ker_baseChange_of_surjective`.
+Surjectivity itself is right-exactness of the tensor product and asks nothing of `A`.
 
 ## Main definitions
 
@@ -94,7 +95,9 @@ carries the exact pair `ker f ↪ L → L'` to an exact pair. -/
 theorem ker_baseChange [Module.Flat R A] : (baseChange A f).ker = f.ker.baseChange A := by
   rw [← LieSubmodule.toSubmodule_inj, LieSubmodule.coe_baseChange, ker_toSubmodule,
     ker_toSubmodule, coe_baseChange]
-  exact LinearMap.ker_baseChange A (f : L →ₗ[R] L')
+  -- `LinearMap.baseChange` is `AlgebraTensorModule.lTensor` and `Submodule.baseChange` is the
+  -- range of the extended inclusion, so this is Mathlib's statement verbatim.
+  exact Module.Flat.ker_lTensor_eq A A (f : L →ₗ[R] L')
 
 /-- **For a surjective homomorphism, extension of scalars commutes with kernels over an arbitrary
 coefficient algebra.**  Right-exactness of the tensor product replaces flatness here. -/
