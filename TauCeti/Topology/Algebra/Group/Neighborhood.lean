@@ -20,8 +20,8 @@ used both for exponential charts and for later subgroup atlases.
   characterisation `f y = x` to the translated form `g * f y = x` near `g ∈ K`.
 * `AddSubgroup.eventually_mem_iff_exists_add_eq_of_mem` is the additive counterpart.
 
-The only regularity required is continuous multiplication: inversion is used algebraically to
-identify the translated neighbourhood, while the homeomorphism `Homeomorph.mulLeft` supplies the
+The only regularity required is continuity of each left translation: inversion is used algebraically
+to identify the translated neighbourhood, while the homeomorphism `Homeomorph.mulLeft` supplies the
 topological transport.
 -/
 
@@ -30,7 +30,7 @@ public section
 open Filter
 open scoped Topology
 
-variable {G : Type*} [TopologicalSpace G] [Group G] [ContinuousMul G]
+variable {G : Type*} [TopologicalSpace G] [Group G] [ContinuousConstSMul G G]
 
 namespace Subgroup
 
@@ -44,10 +44,22 @@ theorem eventually_mem_iff_exists_mul_eq_of_mem
     (K : Subgroup G) {ι : Type*} {s : Set ι} {f : ι → G} {g : G} (hg : g ∈ K)
     (h : ∀ᶠ x in 𝓝 (1 : G), x ∈ K ↔ ∃ y ∈ s, f y = x) :
     ∀ᶠ x in 𝓝 g, x ∈ K ↔ ∃ y ∈ s, g * f y = x := by
+  let e : G ≃ₜ G :=
+    { toEquiv := Equiv.mulLeft g⁻¹
+      continuous_toFun := by
+        change Continuous (g⁻¹ * ·)
+        exact continuous_const_smul g⁻¹
+      continuous_invFun := by
+        rw [show (Equiv.mulLeft g⁻¹).invFun = (g * ·) by
+          funext x
+          simp]
+        exact continuous_const_smul g }
   have hmap : Tendsto (fun x : G => g⁻¹ * x) (𝓝 g) (𝓝 (1 : G)) := by
-    change Filter.map (Homeomorph.mulLeft g⁻¹) (𝓝 g) ≤ 𝓝 (1 : G)
-    rw [(Homeomorph.mulLeft g⁻¹).map_nhds_eq g]
-    simp
+    -- `Tendsto` is a filter inequality; expose the homeomorphism coercion to use its neighborhood
+    -- equality directly.
+    change Filter.map e (𝓝 g) ≤ 𝓝 (1 : G)
+    rw [e.map_nhds_eq]
+    simp [e]
   filter_upwards [hmap.eventually h] with x hx
   constructor
   · intro hKx
