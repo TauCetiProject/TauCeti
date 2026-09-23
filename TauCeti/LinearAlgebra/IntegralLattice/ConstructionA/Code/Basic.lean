@@ -110,6 +110,13 @@ theorem mem_codeInZeroLatticeDiscriminantGroup_iff_discriminantIsometry
     x ∈ codeInZeroLatticeDiscriminantGroup m ι C ↔ discriminantIsometry m ι x ∈ C := by
   rw [mem_codeInZeroLatticeDiscriminantGroup_iff, discriminantIsometry_apply]
 
+/-- The quotient-group and finite-bilinear-module views of a transported code are the same
+subgroup of the zero-lattice discriminant group. -/
+theorem codeInZeroLatticeDiscriminantGroup_eq_codeInZeroLatticeDiscriminantBilinearModule
+    (C : AdditiveCode (ZMod m) ι) :
+    codeInZeroLatticeDiscriminantGroup m ι C = codeInZeroLatticeDiscriminantBilinearModule m ι C :=
+  AddSubgroup.ext fun _ ↦ mem_codeInZeroLatticeDiscriminantGroup_iff_discriminantIsometry m ι C
+
 /-- Reduction maps the transported discriminant subgroup back to the original code. -/
 @[simp]
 theorem map_codeInZeroLatticeDiscriminantGroup (C : AdditiveCode (ZMod m) ι) :
