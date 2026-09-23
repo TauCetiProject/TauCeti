@@ -26,7 +26,7 @@ namespace TauCeti
 
 namespace ConjClasses
 
-variable {G : Type*} [Group G]
+variable {G : Type*} [Monoid G]
 
 /-- **The conjugacy class of the identity is the singleton `{1}`**: an element conjugate to `1` is
 `1`. -/

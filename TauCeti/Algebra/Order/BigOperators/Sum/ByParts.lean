@@ -34,7 +34,7 @@ namespace TauCeti
 
 open Finset
 
-variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R]
+variable {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
 
 /-- **Abel's inequality, comparison form.** If the partial sums of `f` are dominated by those of
 `g` up to `N`, and `w` is nonnegative and antitone on the first `N` indices, then

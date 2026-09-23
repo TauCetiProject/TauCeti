@@ -97,8 +97,8 @@ universe u v w x
 
 section Uniqueness
 
-variable {K : Type u} [Field K] {L : Type v} [LieRing L]
-variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
+variable {K : Type u} [DivisionRing K] {L : Type v}
+variable {M : Type w} [AddCommGroup M] [Module K M] [Bracket L M]
 
 /-- **The scalar by which an element of `L` acts is unique.** On a nontrivial module two scalars
 that both describe the action of `x` agree; no irreducibility is needed. -/

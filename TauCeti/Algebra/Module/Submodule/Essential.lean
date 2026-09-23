@@ -209,8 +209,11 @@ end Semiring
 
 section Ring
 
-variable {R : Type u} {M : Type v} {M₂ : Type w}
-  [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂] [Module R M₂]
+variable {R : Type u} {M : Type v} {M₂ : Type w} [Ring R] [AddCommGroup M₂] [Module R M₂]
+
+section AddCommMonoid
+
+variable [AddCommMonoid M] [Module R M]
 
 /-- **An essential range is a minimality condition.** If `f : M →ₗ[R] M₂` has essential range and
 `h : M₂ →ₗ[R] M₃` is such that `h ∘ₗ f` is injective, then `h` is already injective.
@@ -227,6 +230,10 @@ theorem IsEssential.injective_of_injective_comp {M₃ : Type*} [AddCommGroup M�
   have hy2 : h y = 0 := hy.2
   have hx0 : x = 0 := hhf (by simp [LinearMap.comp_apply, hx, hy2])
   rw [← hx, hx0, map_zero]
+
+end AddCommMonoid
+
+variable [AddCommGroup M] [Module R M]
 
 /-- **Essential ranges are exactly the essential monomorphisms.** An embedding `f : M →ₗ[R] M₂` has
 essential range precisely when no map out of `M₂` can precompose to an embedding without already

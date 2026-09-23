@@ -93,7 +93,9 @@ namespace TauCeti
 
 open Finset
 
-variable {R : Type*} [Ring R] {D S : R} {d : ℕ → R}
+section NonUnitalNonAssocRing
+
+variable {R : Type*} [NonUnitalNonAssocRing R] {D S : R} {d : ℕ → R}
 
 /-- **Multiplying by `D` shifts a term up.** For a sequence obeying
 `d (r + 2) = D * d (r + 1) - S * d r`, multiplication by `D` sends `d m`, for `0 < m`, to the next
@@ -104,6 +106,10 @@ theorem linearRec₂_mul_eq_succ_add_mul_pred
     D * d m = d (m + 1) + S * d (m - 1) := by
   obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
   rw [show k + 1 + 1 = k + 2 by omega, Nat.add_sub_cancel, hd k, sub_add_cancel]
+
+end NonUnitalNonAssocRing
+
+variable {R : Type*} [Ring R] {D S : R} {d : ℕ → R}
 
 /-- **A product of two terms is a sum of single terms.** For a sequence obeying
 `d (r + 2) = D * d (r + 1) - S * d r`, normalised by `d 0 = 1` and `d 1 = D`, and with `D`

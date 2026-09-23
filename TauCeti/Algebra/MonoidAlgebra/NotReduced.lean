@@ -45,6 +45,20 @@ public section
 
 namespace TauCeti
 
+section Ring
+
+variable {R : Type*} [Ring R] {G : Type*} [Monoid G]
+
+/-- The group-like difference `single g 1 - 1` is nonzero when `g ≠ 1`, since `single` is
+injective in its index (the coefficient `1` is nonzero over a nontrivial base). -/
+theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
+    MonoidAlgebra.single g (1 : R) - 1 ≠ 0 := by
+  rw [sub_ne_zero, MonoidAlgebra.one_def]
+  intro h
+  exact hg (MonoidAlgebra.single_left_injective one_ne_zero h)
+
+end Ring
+
 variable {R : Type*} [CommRing R] {G : Type*} [CommMonoid G]
 variable (p : ℕ) [hp : Fact p.Prime] [CharP R p]
 
@@ -64,14 +78,6 @@ theorem single_sub_one_pow_eq_zero {g : G} (hgp : g ^ p = 1) :
 theorem isNilpotent_single_sub_one {g : G} (hgp : g ^ p = 1) :
     IsNilpotent (MonoidAlgebra.single g (1 : R) - 1) :=
   ⟨p, single_sub_one_pow_eq_zero p hgp⟩
-
-/-- The group-like difference `single g 1 - 1` is nonzero when `g ≠ 1`, since `single` is
-injective in its index (the coefficient `1` is nonzero over a nontrivial base). -/
-theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
-    MonoidAlgebra.single g (1 : R) - 1 ≠ 0 := by
-  rw [sub_ne_zero, MonoidAlgebra.one_def]
-  intro h
-  exact hg (MonoidAlgebra.single_left_injective one_ne_zero h)
 
 /-- **A monoid algebra with `p`-torsion is non-reduced in characteristic `p`.** If `R` has
 characteristic `p` and `G` has a nontrivial element `g` with `g ^ p = 1`, then `R[G]` is not
