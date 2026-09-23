@@ -46,9 +46,9 @@ namespace TauCeti
 
 open RealInnerProductSpace
 
-section Normed
+section Seminormed
 
-variable {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] {s : Set E} {g : E → F}
+variable {E F : Type*} [SeminormedAddGroup E] [SeminormedAddGroup F] {s : Set E} {g : E → F}
 
 /-- **A distance-preserving map fixing the origin preserves norms.** The norm is the distance to
 the origin, which is a fixed point lying in `s`. Only the metric structure is involved, so this
@@ -58,12 +58,12 @@ theorem norm_map_of_dist_map_eq (h0 : (0 : E) ∈ s) (hg0 : g 0 = 0)
     ‖g z‖ = ‖z‖ := by
   simpa [hg0] using hg z hz 0 h0
 
-end Normed
+end Seminormed
 
 section InnerProduct
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
-  [InnerProductSpace ℝ F] {s : Set E} {g : E → F}
+variable {E F : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [SeminormedAddCommGroup F] [InnerProductSpace ℝ F] {s : Set E} {g : E → F}
 
 /-- **A distance-preserving map fixing the origin preserves the real inner product.** Polarisation:
 by `norm_sub_sq_real` the inner product `⟪z, w⟫_ℝ` is determined by the three quantities `‖z‖`,

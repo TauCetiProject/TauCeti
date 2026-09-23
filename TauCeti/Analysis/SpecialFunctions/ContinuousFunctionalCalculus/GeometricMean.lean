@@ -55,9 +55,13 @@ namespace TauCeti
 
 variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [TopologicalSpace A]
   [StarOrderedRing A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
-  [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A]
+  [NonnegSpectrumClass ℝ A]
 
 variable {a b x : A}
+
+section SeparatelyContinuousMul
+
+variable [SeparatelyContinuousMul A]
 
 /-- Conjugation by a square root preserves nonnegativity. -/
 theorem conjSqrt_nonneg (c : A) (hb : 0 ≤ b := by cfc_tac) : 0 ≤ conjSqrt c b := by
@@ -94,7 +98,9 @@ theorem geometricMean_zero (a : A) : geometricMean a 0 = 0 := by
 theorem zero_geometricMean (b : A) : geometricMean 0 b = 0 := by
   simp [geometricMean_def, conjSqrt_apply]
 
-variable [T2Space A]
+end SeparatelyContinuousMul
+
+variable [IsSemitopologicalRing A] [T2Space A]
 
 /-- The geometric mean written out through square roots rather than through `CFC.conjSqrt`. -/
 theorem geometricMean_eq_sqrt_mul_mul (a b : A) :

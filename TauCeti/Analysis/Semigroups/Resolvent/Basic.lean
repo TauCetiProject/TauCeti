@@ -179,22 +179,10 @@ private lemma integral_comp_add_right_Ioi (f : ℝ → X) (h : ℝ) :
   -- Apply translation invariance of Lebesgue measure
   exact MeasureTheory.integral_add_right_eq_self _ h
 
-omit [CompleteSpace X] in
-/-- Splitting `∫_{Ioi 0} = ∫_{Ioc 0 h} + ∫_{Ioi h}` for `h > 0`. -/
-private lemma integral_Ioi_eq_Ioc_add_Ioi (f : ℝ → X) {h : ℝ} (hh : 0 < h)
-    (hf : IntegrableOn f (Set.Ioi 0) volume) :
-    ∫ t in Set.Ioi 0, f t = (∫ t in Set.Ioc 0 h, f t) + ∫ t in Set.Ioi h, f t := by
-  rw [← Set.Ioc_union_Ioi_eq_Ioi hh.le]
-  have hd : Disjoint (Set.Ioc 0 h) (Set.Ioi h) :=
-    Set.disjoint_left.mpr (fun _ ht1 ht2 ↦ not_le.mpr ht2 ht1.2)
-  exact MeasureTheory.setIntegral_union hd measurableSet_Ioi
-    (hf.mono_set Set.Ioc_subset_Ioi_self)
-    (hf.mono_set (Set.Ioi_subset_Ioi hh.le))
-
-/-- The resolvent shift identity for a positive time increment. -/
+/-- The resolvent shift identity for a nonnegative time increment. -/
 private theorem StronglyContinuousSemigroup.resolvent_shift_identity
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
-    (lambda : ℝ) (hlam : ω < lambda) (x : X) {h : ℝ} (hh : 0 < h) :
+    (lambda : ℝ) (hlam : ω < lambda) (x : X) {h : ℝ} (hh : 0 ≤ h) :
     S.realOperator h (S.resolvent hb lambda hlam x) - S.resolvent hb lambda hlam x =
       (Real.exp (lambda * h) - 1) • S.resolvent hb lambda hlam x -
       Real.exp (lambda * h) •
@@ -209,7 +197,7 @@ private theorem StronglyContinuousSemigroup.resolvent_shift_identity
         (S.realOperator h) (f t) = Real.exp (lambda * h) • f (t + h) := by
       intro t ht
       simp only [f, ContinuousLinearMap.map_smul]
-      rw [← S.realOperator_add_apply h t hh.le (Set.mem_Ioi.mp ht).le, add_comm]
+      rw [← S.realOperator_add_apply h t hh (Set.mem_Ioi.mp ht).le, add_comm]
       symm
       rw [← mul_smul, ← Real.exp_add]
       congr 1
@@ -220,9 +208,11 @@ private theorem StronglyContinuousSemigroup.resolvent_shift_identity
     exact integral_comp_add_right_Ioi f h
   -- Step 2: split `∫_{Ioi h} = Rlx - ∫_{Ioc 0 h} f`
   have h_split : ∫ u in Set.Ioi h, f u = Rlx - ∫ u in Set.Ioc 0 h, f u := by
-    have hsplit := integral_Ioi_eq_Ioc_add_Ioi f hh
-      (S.integrableOn_resolvent_integrand hb lambda hlam x)
-    rw [hRlx, hsplit]
+    have hint : IntegrableOn f (Set.Ioi 0) := S.integrableOn_resolvent_integrand hb lambda hlam x
+    have hsplit := intervalIntegral.integral_interval_add_Ioi hint
+      (hint.mono_set (Set.Ioi_subset_Ioi hh))
+    rw [intervalIntegral.integral_of_le hh] at hsplit
+    rw [hRlx, ← hsplit]
     abel
   -- Step 3: combine into the key identity
   rw [h_push, h_split]
@@ -258,7 +248,7 @@ private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
   -- rewrite via the shift identity, then take the limit term by term
   apply Filter.Tendsto.congr'
   · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-    rw [S.resolvent_shift_identity hb lambda hlam x ht, smul_sub, smul_smul, smul_smul]
+    rw [S.resolvent_shift_identity hb lambda hlam x ht.le, smul_sub, smul_smul, smul_smul]
   · set Rlx := S.resolvent hb lambda hlam x
     set f := fun t ↦ Real.exp (-(lambda * t)) • S.realOperator t x
     apply Filter.Tendsto.sub

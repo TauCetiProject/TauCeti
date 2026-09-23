@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Group.OpenSubgroup
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.TopologicallyFinitelyGenerated
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!

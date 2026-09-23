@@ -286,6 +286,13 @@ def jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag (α : Type*)
     (d : α) : Set (Measure (ℕ × ℕ → α)) :=
   jointlyExchangeableProbabilityMeasuresOn α (symmetricArraysWithDiag α d)
 
+/-- The jointly exchangeable laws carried by the symmetric arrays are the carried laws at that
+carrier. -/
+theorem jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_eq (d : α) :
+    jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag α d
+      = jointlyExchangeableProbabilityMeasuresOn α (symmetricArraysWithDiag α d) :=
+  (rfl)
+
 /-- Membership in the jointly exchangeable laws carried by the symmetric arrays. -/
 @[simp]
 theorem mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff {d : α}

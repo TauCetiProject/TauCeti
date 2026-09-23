@@ -324,6 +324,14 @@ theorem separatelyExchangeable_iff_map_pairReindex {μ : Measure Ω} {X : ℕ ×
       rw [pairReindex_apply]
     rw [map_map_array hX (measurable_pairReindex σ τ), hread]
 
+/-- A jointly exchangeable law on array path space is invariant under every diagonal
+relabelling. -/
+theorem JointlyExchangeable.map_pairReindex {ρ : Measure (ℕ × ℕ → α)}
+    (hρ : JointlyExchangeable ρ fun p x => x p) (σ : Equiv.Perm ℕ) :
+    ρ.map (pairReindex σ σ) = ρ := by
+  have := (jointlyExchangeable_iff.mp hρ) σ
+  simpa only [← pairReindex_def, Measure.map_id'] using this
+
 /-- **A separately exchangeable array law is preserved by every pair reindexing** of array path
 space. This is the measure-preserving form of `separatelyExchangeable_iff_map_pairReindex` for the
 coordinate array. -/

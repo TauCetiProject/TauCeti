@@ -51,7 +51,9 @@ namespace TauCeti
 
 universe u v w
 
-variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
+section Semiring
+
+variable {A : Type u} {M : Type v} [Semiring A] [AddCommMonoid M] [Module A M]
 variable {ι : Type w} {Q : ι → Submodule A M}
 
 /-- A summand of an internal direct sum decomposition is complementary to the supremum of the other
@@ -59,6 +61,11 @@ summands: independence gives disjointness, and spanning gives codisjointness. -/
 theorem isCompl_biSup_ne (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) :
     IsCompl (Q i) (⨆ j, ⨆ (_ : j ≠ i), Q j) :=
   ⟨hQi i, codisjoint_iff.mpr (by rw [← hQt]; exact (iSup_split_single Q i).symm)⟩
+
+end Semiring
+
+variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
+variable {ι : Type w} {Q : ι → Submodule A M}
 
 /-- The projection of `M` onto the summand `Q i` of an internal direct sum decomposition, along the
 supremum of the other summands. -/

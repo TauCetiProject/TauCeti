@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.GroupTheory.Schreier
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # Topological generation of a topological group
@@ -189,8 +190,7 @@ topologically finitely generated. -/
 theorem IsTopologicallyFinitelyGenerated.of_openSubgroup [CompactSpace G]
     (hG : IsTopologicallyFinitelyGenerated G) (U : OpenSubgroup G) :
     IsTopologicallyFinitelyGenerated (↥U.toSubgroup) := by
-  have hUindex : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-  exact hG.of_openSubgroup_of_finiteIndex (U := U) (hUindex := hUindex)
+  exact hG.of_openSubgroup_of_finiteIndex (U := U)
 
 /-- Topological finite generation is invariant under topological group isomorphism. -/
 theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :

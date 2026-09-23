@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Transitivity
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # The norm between the ground levels of a restriction
@@ -60,10 +61,6 @@ namespace LayerRestriction
 variable {small big : NormalLayer G}
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
-
-/-- An open subgroup of the compact group `G` has finite index. -/
-local instance (U : OpenSubgroup G) : U.toSubgroup.FiniteIndex :=
-  Subgroup.finiteIndex_of_finite_quotient
 
 /-- The **norm** `N_{U/U'} : A^{U'} → A^U` along a restriction `U' ≤ U` of ground subgroups: the
 relative degree-zero corestriction `ContCohomology.explicitCor0Le`, read on levels and evaluated by

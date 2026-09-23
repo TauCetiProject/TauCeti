@@ -34,6 +34,10 @@ the trace is not built here.
 
 * `TauCeti.TemperleyLieb.jonesDelta_inv`: the loop value is unchanged by inverting the unit.
 * `TauCeti.TemperleyLieb.jones_sigma`: the representation sends `sigma i` to `jonesUnit a i`.
+* `TauCeti.TemperleyLieb.jonesUnit_mul_jonesUnit_comm`: units for disjoint crossings satisfy the
+  distant-generator braid relation.
+* `TauCeti.TemperleyLieb.jonesUnit_braid`: units for adjacent crossings satisfy the braid relation
+  corresponding to the third Reidemeister move.
 * `TauCeti.TemperleyLieb.jones_sigma_ne_one_two`: the representation is nontrivial on two
   strands over a nontrivial base ring.
 
@@ -123,6 +127,21 @@ def jones (a : Rˣ) : BraidGroup n →* (TemperleyLieb R (jonesDelta a) n)ˣ :=
 theorem jones_sigma (a : Rˣ) (i : Fin (n - 1)) :
     jones n a (BraidGroup.sigma i) = jonesUnit a i :=
   BraidGroup.lift_sigma _ _ _ i
+
+/-- Jones units on disjoint pairs of strands commute, the distant-generator braid relation. -/
+theorem jonesUnit_mul_jonesUnit_comm (a : Rˣ) {i j : Fin (n - 1)}
+    (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
+    jonesUnit a i * jonesUnit a j = jonesUnit a j * jonesUnit a i := by
+  simpa only [map_mul, jones_sigma] using
+    congrArg (jones n a) (BraidGroup.sigma_mul_sigma_comm h)
+
+/-- Jones units on adjacent pairs of strands satisfy the braid relation corresponding to the third
+Reidemeister move. -/
+theorem jonesUnit_braid (a : Rˣ) {i j : Fin (n - 1)}
+    (h : (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) :
+    jonesUnit a i * jonesUnit a j * jonesUnit a i =
+      jonesUnit a j * jonesUnit a i * jonesUnit a j := by
+  simpa only [map_mul, jones_sigma] using congrArg (jones n a) (BraidGroup.sigma_braid h)
 
 /-- The Jones representation of the two-strand braid group is nontrivial: the elementary braid
 does not go to the identity. -/
