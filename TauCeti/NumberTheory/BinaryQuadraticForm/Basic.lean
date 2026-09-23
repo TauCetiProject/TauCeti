@@ -102,8 +102,6 @@ kernel can evaluate it, as `decide` does for the values of `TauCeti.hurwitzClass
 def equivProd {R : Type*} : BinaryQuadraticForm R ≃ R × R × R where
   toFun f := (f.a, f.b, f.c)
   invFun t := ⟨t.1, t.2.1, t.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
 
 variable {R : Type*} [CommRing R]
 
