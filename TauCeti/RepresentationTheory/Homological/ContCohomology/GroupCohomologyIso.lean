@@ -287,10 +287,13 @@ theorem explicitH1IsoGroupCohomology_mk (z : Z1 G M) :
       groupCohomology.H1π _ (Z1AddEquivCocycles₁ G M z) :=
   (rfl)
 
+-- `simp` reduces the carrier `ModuleCat.of ℤ (cocycles₁ _)` of the source of `H1π` in implicit
+-- type arguments before it looks a term up, so the left-hand side is stated through
+-- `dsimp% only`, as in #8315.
 @[simp]
 theorem explicitH1IsoGroupCohomology_symm_H1π
     (c : cocycles₁ (Rep.ofDistribMulAction ℤ G M)) :
-    (explicitH1IsoGroupCohomology G M).symm (groupCohomology.H1π _ c) =
+    (dsimp% only ((explicitH1IsoGroupCohomology G M).symm (groupCohomology.H1π _ c))) =
       (((Z1AddEquivCocycles₁ G M).symm c : Z1 G M) : H1 G M) := by
   rw [AddEquiv.symm_apply_eq, explicitH1IsoGroupCohomology_mk, AddEquiv.apply_symm_apply]
 
@@ -353,10 +356,11 @@ theorem explicitH2IsoGroupCohomology_mk (z : Z2 G M) :
       groupCohomology.H2π _ (Z2AddEquivCocycles₂ G M z) :=
   (rfl)
 
+-- `dsimp% only` on the left-hand side: see the comment on `explicitH1IsoGroupCohomology_symm_H1π`.
 @[simp]
 theorem explicitH2IsoGroupCohomology_symm_H2π
     (c : cocycles₂ (Rep.ofDistribMulAction ℤ G M)) :
-    (explicitH2IsoGroupCohomology G M).symm (groupCohomology.H2π _ c) =
+    (dsimp% only ((explicitH2IsoGroupCohomology G M).symm (groupCohomology.H2π _ c))) =
       (((Z2AddEquivCocycles₂ G M).symm c : Z2 G M) : H2 G M) := by
   rw [AddEquiv.symm_apply_eq, explicitH2IsoGroupCohomology_mk, AddEquiv.apply_symm_apply]
 
