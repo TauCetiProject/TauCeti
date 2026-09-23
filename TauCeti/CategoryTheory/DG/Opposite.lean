@@ -51,6 +51,13 @@ target reversed. -/
 theorem dgDifferential_op {X Y : C} (n : ℤ) (f : DGHom R n Y X) :
     dgDifferential (R := R) (C := Cᵒᵖ) n f = dgDifferential R n f := rfl
 
+/-- The identity in the opposite DG category is the original identity. -/
+@[simp]
+theorem dgId_op (X : C) :
+    dgId (R := R) (C := Cᵒᵖ) (op X) = dgId R X := by
+  rw [dgId_def, dgId_def]
+  congr 1
+
 /-- On the bidegree-`(p,q)` summand, composition in the opposite DG category is composition in
 the original category after swapping the two factors with the Koszul sign. -/
 theorem dgCompMap_op (X Y Z : C) (p q n : ℤ)
