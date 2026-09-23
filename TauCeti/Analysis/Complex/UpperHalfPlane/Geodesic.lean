@@ -36,8 +36,7 @@ one through two prescribed points is not.
 * `TauCeti.UpperHalfPlane.isometry_geodesicLine` — `geodesicLine g` is an isometric embedding
   of `ℝ`, hence injective (`geodesicLine_injective`).
 * `TauCeti.UpperHalfPlane.dist_geodesicLine` — the distance between two of its points is
-  `|s - t|`; `TauCeti.UpperHalfPlane.dist_geodesicLine_zero` specializes this to the line's own
-  base point.
+  `|s - t|`.
 * `TauCeti.UpperHalfPlane.smul_geodesicLine` — further translating a geodesic line by `h` gives
   the geodesic line of `h * g`, pointwise; `TauCeti.UpperHalfPlane.smul_range_geodesicLine` is
   the same fact at the level of the line as a set, so these lines are permuted, not merely
@@ -78,13 +77,6 @@ theorem geodesicLine_injective (g : PSL(2, ℝ)) : Function.Injective (geodesicL
 theorem dist_geodesicLine (g : PSL(2, ℝ)) (s t : ℝ) :
     dist (geodesicLine g s) (geodesicLine g t) = |s - t| := by
   rw [(isometry_geodesicLine g).dist_eq, Real.dist_eq]
-
-/-- The specialization of `dist_geodesicLine` to the line's own parameter `0`, the form a
-consumer working from a fixed base point reaches for. -/
-@[simp]
-theorem dist_geodesicLine_zero (g : PSL(2, ℝ)) (t : ℝ) :
-    dist (geodesicLine g t) (geodesicLine g 0) = |t| := by
-  simp
 
 theorem geodesicLine_zero (g : PSL(2, ℝ)) : geodesicLine g 0 = g • UpperHalfPlane.I := by
   rw [geodesicLine_def]
