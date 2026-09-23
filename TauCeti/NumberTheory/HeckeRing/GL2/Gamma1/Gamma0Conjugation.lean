@@ -216,10 +216,11 @@ private lemma twistTau_mul (p α β γ δ m n N : ℤ) (hσ : m * p - n * N = 1)
   · linear_combination (p * γ) * hσ
   · linear_combination δ * hσ
 
-/-- **`det τ′ = 1`**, as `det τ′ = (α δ - β γ) (m p - n N)`. -/
+/-- **`det τ′ = 1`** when `m p - n N = 1` and `α δ - β γ = 1`, for every `p` (`p = 0` included). -/
 private lemma twistTau_det (p α β γ δ m n N : ℤ) (hσ : m * p - n * N = 1)
     (hαδ : α * δ - β * γ = 1) : (twistTau p α β γ δ m n N).det = 1 := by
   rw [twistTau, Matrix.det_fin_two_of]
+  -- `det τ′ = (α δ - β γ) (m p - n N)`
   linear_combination (α * δ - β * γ) * hσ + hαδ
 
 /-- **`τ′` satisfies the `Γ₁(N)` congruences on its lower row.** The two hypotheses are what the
@@ -285,7 +286,7 @@ private lemma exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout {a b c' f :
     conjDiag_eq_twisted a b c f (p : ℤ) (by linear_combination hσ)
   -- the left factor `τ′`
   have hτdet : (twistTau (p : ℤ) α β γ δ (a * f) (b * c') (N : ℤ)).det = 1 :=
-    twistTau_det _ _ _ _ _ _ _ _ hσ (by linear_combination (1 + ((p : ℤ) - 1) * b * c) * hσ)
+    twistTau_det _ _ _ _ _ _ _ _ hσ (by linear_combination (1 + b * c * ((p : ℤ) - 1)) * hσ)
   refine ⟨⟨_, hτdet⟩, mem_Gamma1_iff_dvd_lowerRow.mpr <| twistTau_gamma1 (p : ℤ) α β γ δ (a * f)
     (b * c') ⟨c' * f * (1 - (p : ℤ)), by ring⟩ ⟨b * c' * ((p : ℤ) - 1), by ring⟩ hσ, ?_⟩
   rw [hconj]
