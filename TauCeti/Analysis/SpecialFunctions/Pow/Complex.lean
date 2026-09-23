@@ -10,8 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 /-!
 # Principal complex powers and positive real scaling
 
-Multiplication of a nonzero complex number by a positive real scalar does not cross the branch cut
-of the principal logarithm.  Consequently, principal complex powers split across such a product.
+Multiplication of a complex number by a nonnegative real scalar is compatible with principal
+complex powers.  Away from zero, this follows because positive scaling does not cross the branch
+cut of the principal logarithm; the zero cases follow from the totalized definition of `cpow`.
 
 Taking the principal power `u ^ (r⁻¹ : ℝ)` of a nonzero `u` divides its argument by `r`, so
 raising the result back to the power `r` returns `u` — but only as long as the intermediate
@@ -21,7 +22,7 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 
 ## Main result
 
-* `Complex.ofReal_mul_cpow` -- a principal power splits across a positive real factor.
+* `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`
 -/
 
@@ -31,15 +32,21 @@ open Complex
 
 namespace TauCeti
 
-/-- A principal complex power splits across multiplication by a positive real scalar.  Positivity
-ensures that multiplication by `r` does not change the argument of `z`, so the principal logarithm
-is additive on this product. -/
-theorem _root_.Complex.ofReal_mul_cpow {r : ℝ} (hr : 0 < r) {z : ℂ} (hz : z ≠ 0) (w : ℂ) :
+/-- A principal complex power splits across multiplication by a nonnegative real scalar.  When
+both factors are nonzero, positive scaling preserves the argument and makes the principal
+logarithm additive; the zero cases follow from the totalized definition of `cpow`. -/
+theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     ((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w := by
-  rw [Complex.cpow_def_of_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr hr.ne') hz),
-    Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr.ne'),
-    Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr hz, add_mul, Complex.exp_add]
-  rw [Complex.ofReal_log hr.le]
+  rcases eq_or_ne w 0 with (rfl | hw)
+  · simp only [Complex.cpow_zero, mul_one]
+  rcases eq_or_lt_of_le hr with (rfl | hr')
+  · rw [Complex.ofReal_zero, zero_mul, Complex.zero_cpow hw, zero_mul]
+  rcases eq_or_ne z 0 with (rfl | hz)
+  · simp [Complex.zero_cpow hw]
+  rw [Complex.cpow_def_of_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne') hz),
+    Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
+    Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
+  rw [Complex.ofReal_log hr]
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate
