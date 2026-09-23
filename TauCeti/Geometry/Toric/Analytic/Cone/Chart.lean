@@ -103,15 +103,9 @@ theorem apply_single_ne_zero_iff_coneChartEquiv_fst_ne_zero
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) (m : dualSemigroup hi σ) :
     x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0 ↔
       ∀ ρ ∈ (regularDualSemigroupEquiv hi hσ hb m).1.support,
-        (coneChartEquiv hi hσ hb x).1 ρ ≠ 0 := by
-  obtain ⟨z, rfl⟩ := (coneChartEquiv hi hσ hb).symm.surjective x
-  rw [coneChartEquiv_symm_apply_single, mul_ne_zero_iff, Finsupp.prod_ne_zero_iff]
-  simp only [Equiv.apply_symm_apply]
-  constructor
-  · rintro ⟨hz, -⟩ ρ hρ hzero
-    exact hz ρ hρ (by simp [hzero, Finsupp.mem_support_iff.mp hρ])
-  · intro hz
-    exact ⟨fun ρ hρ ↦ pow_ne_zero _ (hz ρ hρ), Units.ne_zero _⟩
+        (coneChartEquiv hi hσ hb x).1 ρ ≠ 0 :=
+  apply_single_ne_zero_iff_regularAffinePointEquiv_fst_ne_zero
+    (regularDualSemigroupEquiv hi hσ hb) x m
 
 /-- The coordinate of a complex point indexed by a ray is its value on the monomial of the dual
 basis character of that ray. -/
