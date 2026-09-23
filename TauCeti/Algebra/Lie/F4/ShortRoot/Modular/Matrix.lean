@@ -36,11 +36,23 @@ def f4SimpleRootTarget : (Fin 4 ⊕ Fin 4) → Fin 26 → Fin 26
   | .inl i => raisingTarget i
   | .inr i => loweringTarget i
 
+@[simp] theorem f4SimpleRootTarget_inl (i : Fin 4) (b : Fin 26) :
+    f4SimpleRootTarget (.inl i) b = raisingTarget i b := (rfl)
+
+@[simp] theorem f4SimpleRootTarget_inr (i : Fin 4) (b : Fin 26) :
+    f4SimpleRootTarget (.inr i) b = loweringTarget i b := (rfl)
+
 /-- The integral coefficient of the unique possibly nonzero entry in a simple-root matrix
 column. -/
 def f4SimpleRootCoeff : (Fin 4 ⊕ Fin 4) → Fin 26 → ℤ
   | .inl i => raisingCoeff i
   | .inr i => loweringCoeff i
+
+@[simp] theorem f4SimpleRootCoeff_inl (i : Fin 4) (b : Fin 26) :
+    f4SimpleRootCoeff (.inl i) b = raisingCoeff i b := (rfl)
+
+@[simp] theorem f4SimpleRootCoeff_inr (i : Fin 4) (b : Fin 26) :
+    f4SimpleRootCoeff (.inr i) b = loweringCoeff i b := (rfl)
 
 /-- Each simple-root matrix column is supported on the single entry named by
 `f4SimpleRootTarget`, where it carries the coefficient named by `f4SimpleRootCoeff`. -/

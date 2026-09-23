@@ -152,10 +152,22 @@ def f4DividedSquareTarget : (Fin 4 ⊕ Fin 4) → Fin 26 → Fin 26
   | .inl i => raisingDividedSquareTarget i
   | .inr i => loweringDividedSquareTarget i
 
+@[simp] theorem f4DividedSquareTarget_inl (i : Fin 4) (b : Fin 26) :
+    f4DividedSquareTarget (.inl i) b = raisingDividedSquareTarget i b := (rfl)
+
+@[simp] theorem f4DividedSquareTarget_inr (i : Fin 4) (b : Fin 26) :
+    f4DividedSquareTarget (.inr i) b = loweringDividedSquareTarget i b := (rfl)
+
 /-- The integral coefficient in a divided-square matrix column. -/
 def f4DividedSquareCoeff : (Fin 4 ⊕ Fin 4) → Fin 26 → ℤ
   | .inl i => raisingDividedSquareCoeff i
   | .inr i => loweringDividedSquareCoeff i
+
+@[simp] theorem f4DividedSquareCoeff_inl (i : Fin 4) (b : Fin 26) :
+    f4DividedSquareCoeff (.inl i) b = raisingDividedSquareCoeff i b := (rfl)
+
+@[simp] theorem f4DividedSquareCoeff_inr (i : Fin 4) (b : Fin 26) :
+    f4DividedSquareCoeff (.inr i) b = loweringDividedSquareCoeff i b := (rfl)
 
 /-- Each sparse divided-square matrix entry is its column coefficient at the target row. -/
 @[simp] theorem rootDividedSquareMatrix_apply
