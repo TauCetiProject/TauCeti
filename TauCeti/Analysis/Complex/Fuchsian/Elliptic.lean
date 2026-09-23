@@ -51,6 +51,8 @@ theorem stabilizerBallQuotientChart_mk [Finite (stabilizer Γ z)] (hε : 0 < ε)
       ⟨Quotient.mk _ (τ : ℍ),
         ⟨Quotient.mk _ τ, stabilizerBallQuotientToQuotient_mk Γ z ε τ⟩⟩) : ℂ) =
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
+  -- Rewrite the quotient constructor to the range representative so the chart's inverse
+  -- homeomorphism can reduce using its explicit range witness.
   simpa only [stabilizerBallQuotientToQuotient_mk] using
     (show (↑(stabilizerBallQuotientChart hε hopen
       ⟨stabilizerBallQuotientToQuotient Γ z ε (Quotient.mk _ τ),
