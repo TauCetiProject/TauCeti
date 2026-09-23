@@ -146,7 +146,7 @@ private lemma exists_of_re_eq_half [ModularFormClass F 𝒮ℒ k] {f : F}
     exact hord
   have hre' : p₀.re = -(-1 : ℝ) / 2 := hre.trans (by norm_num)
   refine ⟨(-1 : ℝ) +ᵥ p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr
-    ⟨ModularGroup.vadd_mem_fd_of_re_eq (by norm_num) hfd hre', hord'⟩,
+    ⟨ModularGroup.vadd_mem_fd_of_re_eq hfd hre', hord'⟩,
       Or.inr (Or.inl ⟨?_, ?_⟩)⟩, horb⟩
   · rw [coe_vadd, Complex.add_re, Complex.ofReal_re, hre]
     norm_num

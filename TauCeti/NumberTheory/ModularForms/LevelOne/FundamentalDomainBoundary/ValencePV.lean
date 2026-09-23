@@ -446,7 +446,7 @@ private lemma orderOfVanishingAt_corner_eq_zero {f : ℍ → ℂ} {S : Finset �
   refine hcS (hcomp c ?_ hne)
   rcases hc with rfl | rfl | rfl
   exacts [ModularGroup.I_mem_fd, ModularGroup.ρ_mem_fd,
-    ModularGroup.vadd_mem_fd_of_re_eq (by norm_num) ModularGroup.ρ_mem_fd (by norm_num)]
+    ModularGroup.vadd_mem_fd_of_re_eq ModularGroup.ρ_mem_fd (by norm_num)]
 
 /-- The `ℂ`-corner classification transfers along the coercion: a point of `ℍ` lands on
 `{i, ρ, ρ + 1}` in `ℂ` exactly when it is one of the three corner points of `ℍ`. -/

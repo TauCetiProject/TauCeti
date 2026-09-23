@@ -30,8 +30,8 @@ the unit arc right of `i`.
 
 * `TauCeti.ModularGroup.exists_rep_mem_fd`: every orbit meets `𝒟`.
 * `TauCeti.ModularGroup.orbit_mk_int_vadd`: integer translation preserves the orbit.
-* `TauCeti.ModularGroup.vadd_mem_fd_of_re_eq`: translation by `r`, `|r| ≤ 1`, carries the points
-  of `𝒟` on the line `re = -r / 2` into `𝒟`.
+* `TauCeti.ModularGroup.vadd_mem_fd_of_re_eq`: translation by `r` carries the points of `𝒟` on
+  the line `re = -r / 2` into `𝒟`.
 * `TauCeti.ModularGroup.orbit_mk_injOn_fdo`: the orbit map is injective on `𝒟ᵒ`.
 * `TauCeti.ModularGroup.orbit_mk_eq_I_iff`: a point of `𝒟` lies in the orbit of `i` exactly
   when it is `i`.
@@ -87,12 +87,12 @@ lemma norm_coe_vadd_of_re_eq {r : ℝ} {p : ℍ} (hre : p.re = -r / 2) :
     ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
   rw [Complex.norm_def, Complex.norm_def, normSq_coe_vadd_of_re_eq hre]
 
-/-- Translation by `r` carries a fundamental-domain point on the line `re = -r / 2` to one on
-`re = r / 2`, keeping the modulus. -/
-lemma vadd_mem_fd_of_re_eq {r : ℝ} {p : ℍ} (hr : |r| ≤ 1) (hp : p ∈ 𝒟) (hre : p.re = -r / 2) :
-    r +ᵥ p ∈ 𝒟 := by
-  refine ⟨normSq_coe_vadd_of_re_eq hre ▸ hp.1, abs_le.mpr ⟨?_, ?_⟩⟩ <;>
-    rw [vadd_re, hre] <;> linarith [abs_le.mp hr]
+/-- Translation by `r` carries a point of `𝒟` on the line `re = -r / 2` into `𝒟`. -/
+lemma vadd_mem_fd_of_re_eq {r : ℝ} {p : ℍ} (hp : p ∈ 𝒟) (hre : p.re = -r / 2) : r +ᵥ p ∈ 𝒟 :=
+  -- the translate keeps the modulus and is the mirror image `-p.re` of `p` in real part
+  ⟨normSq_coe_vadd_of_re_eq hre ▸ hp.1, by
+    rw [vadd_re, show r + p.re = -p.re by linarith, abs_neg]
+    exact hp.2⟩
 
 /-- Distinct points of the **open** fundamental domain lie in distinct `SL(2, ℤ)`-orbits: the
 orbit map is injective there. This is the Second Fundamental Domain Lemma
