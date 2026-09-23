@@ -18,7 +18,8 @@ formed from it, and every entry of any linear combination of matrices whose entr
 contains: each such entry is an `S`-combination of entries of the original matrices.
 
 Nothing here needs invertibility, a square shape, or a diagonal target — only that the products
-are conformable — so the statements are at `CommSemiring` and rectangular. They are the
+are conformable — so the statements are rectangular. The two-sided product statement is at
+`CommSemiring`, and the linear-combination one holds over any `Semiring`. They are the
 membership computations a defining-ideal closure proof performs when it propagates a relation
 through a matrix identity.
 
