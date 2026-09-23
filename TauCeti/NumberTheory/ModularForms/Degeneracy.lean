@@ -464,6 +464,11 @@ lemma coe_conjScale (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) 
       !![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1] := by
   rw [conjScale]
 
+/-- `conjScale` leaves the lower-right entry alone. -/
+lemma conjScale_apply_one_one (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) :
+    conjScale d γ c hc 1 1 = γ 1 1 := by
+  simp
+
 /-- Conjugation by `diag(d, 1)` realizes `conjScale`. -/
 lemma mapGL_conjScale [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) :
     scaleGL d * mapGL ℝ γ * (scaleGL d)⁻¹ = mapGL ℝ (conjScale d γ c hc) := by
@@ -496,7 +501,9 @@ theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
   obtain ⟨c, hc, hm, -⟩ :=
     exists_conjScale_mem_Gamma0_of_dvd d M _ dvd_rfl ⟨γ, Gamma1_in_Gamma0 _ hγ⟩
   refine ⟨_, mem_Gamma1_iff.mpr ⟨hm, ?_⟩, (mapGL_conjScale γ c hc).symm⟩
-  -- the lower-right entry only needs its congruence read modulo the divisor `M` of `dM`
+  -- `conjScale` keeps the lower-right entry, whose congruence only needs reading modulo the
+  -- divisor `M` of `dM`
+  rw [conjScale_apply_one_one]
   exact (mem_Gamma1_iff.mp (Gamma1_le_Gamma1_of_dvd (Nat.dvd_mul_left M d) hγ)).2
 
 /-- **Level transport at a divisor.** Whenever `d * M ∣ N`, conjugation by `diag(d, 1)` carries
