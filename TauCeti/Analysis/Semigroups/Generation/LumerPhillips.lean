@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Generation.LimitSemigroup
 public import TauCeti.Analysis.Semigroups.Generation.Yosida.Generator
+public import TauCeti.Analysis.Semigroups.Dissipative.Duality
 
 /-!
 # The Lumer--Phillips generation theorem
@@ -30,6 +31,9 @@ resolvent point `1`. Thus the generator of the limit semigroup is `A`.
   **Lumer--Phillips generation theorem**.
 * `TauCeti.Semigroups.exists_contractionSemigroup_generator_eq_iff`: an operator generates a
   contraction semigroup exactly when it is densely defined and m-dissipative.
+* `TauCeti.Semigroups.exists_contractionSemigroup_generator_eq_iff_forall_mem_dualitySet`: the
+  same characterization with dissipativity in duality-map form, `x' (A x) ≤ 0` for every element
+  `x'` of the duality set of every `x ∈ D(A)`.
 
 ## References
 
@@ -108,6 +112,30 @@ theorem exists_contractionSemigroup_generator_eq_iff (A : X →ₗ.[ℝ] X) :
     exact S.toStronglyContinuousSemigroup.dense_domain
   · rw [← hS]
     exact ContractionSemigroup.isMDissipative_generator S
+
+/-- **Lumer--Phillips in duality-map form.** An unbounded operator on a real Banach space is the
+generator of a strongly continuous contraction semigroup if and only if it is densely defined,
+satisfies `x' (A x) ≤ 0` for **every** element `x'` of the duality set of every `x ∈ D(A)`, and
+`lambda • I - A` maps `D(A)` onto `X` for some `lambda > 0`.
+
+Since duality sets are nonempty, the universal sign condition implies the existential one that
+characterizes dissipativity (`isDissipative_iff_exists_mem_dualitySet`), so this is
+`exists_contractionSemigroup_generator_eq_iff` with the sign condition strengthened by
+`ContractionSemigroup.apply_generator_nonpos_of_mem_dualitySet`. -/
+theorem exists_contractionSemigroup_generator_eq_iff_forall_mem_dualitySet (A : X →ₗ.[ℝ] X) :
+    (∃ S : ContractionSemigroup X, S.toStronglyContinuousSemigroup.generator = A) ↔
+      Dense (A.domain : Set X) ∧ (∀ x : A.domain, ∀ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0) ∧
+        ∃ lambda : ℝ, 0 < lambda ∧
+          Function.Surjective fun x : A.domain => lambda • (x : X) - A x := by
+  refine ⟨fun h => ?_, fun ⟨hdense, hsign, hrange⟩ => ?_⟩
+  · obtain ⟨hdense, hA⟩ := (exists_contractionSemigroup_generator_eq_iff A).mp h
+    obtain ⟨S, rfl⟩ := h
+    exact ⟨hdense, fun x f hf => S.apply_generator_nonpos_of_mem_dualitySet x hf,
+      hA.exists_smul_sub_surjective⟩
+  · refine (exists_contractionSemigroup_generator_eq_iff A).mpr ⟨hdense, ?_, hrange⟩
+    refine (isDissipative_iff_exists_mem_dualitySet A).mpr fun x => ?_
+    obtain ⟨f, hf⟩ := dualitySet_nonempty ℝ (x : X)
+    exact ⟨f, hf, hsign x f hf⟩
 
 end TauCeti.Semigroups
 
