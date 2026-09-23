@@ -26,7 +26,7 @@ adjugate `!![s, -q; -r, p]` (Mathlib's `Matrix.SpecialLinearGroup.SL2_inv_expl`)
 `(γ • f)(x, y) = f(s x - q y, -r x + p y)` and the new coefficients are
 ```
 a' = a s² - b r s + c r²
-b' = -2 a q s + b (p s + q r) - 2 c p r
+b' = b (p s + q r) - 2 a q s - 2 c p r
 c' = a q² - b p q + c p².
 ```
 Only the entries of the adjugate occur, so the action laws are polynomial identities and need no
@@ -99,7 +99,7 @@ variable {R : Type*} [CommRing R]
 instance : SMul SL(2, R) (BinaryQuadraticForm R) where
   smul γ f :=
     { a := f.a * γ 1 1 ^ 2 - f.b * γ 1 0 * γ 1 1 + f.c * γ 1 0 ^ 2
-      b := -2 * f.a * γ 0 1 * γ 1 1 + f.b * (γ 0 0 * γ 1 1 + γ 0 1 * γ 1 0) -
+      b := f.b * (γ 0 0 * γ 1 1 + γ 0 1 * γ 1 0) - 2 * f.a * γ 0 1 * γ 1 1 -
         2 * f.c * γ 0 0 * γ 1 0
       c := f.a * γ 0 1 ^ 2 - f.b * γ 0 0 * γ 0 1 + f.c * γ 0 0 ^ 2 }
 
@@ -110,11 +110,11 @@ theorem smul_a (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
     (γ • f).a = f.a * γ 1 1 ^ 2 - f.b * γ 1 0 * γ 1 1 + f.c * γ 1 0 ^ 2 :=
   rfl
 
-/-- The `x y`-coefficient of `γ • f` is `-2 a q s + b (p s + q r) - 2 c p r`, for
+/-- The `x y`-coefficient of `γ • f` is `b (p s + q r) - 2 a q s - 2 c p r`, for
 `γ = !![p, q; r, s]`. -/
 @[simp]
 theorem smul_b (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
-    (γ • f).b = -2 * f.a * γ 0 1 * γ 1 1 + f.b * (γ 0 0 * γ 1 1 + γ 0 1 * γ 1 0) -
+    (γ • f).b = f.b * (γ 0 0 * γ 1 1 + γ 0 1 * γ 1 0) - 2 * f.a * γ 0 1 * γ 1 1 -
       2 * f.c * γ 0 0 * γ 1 0 :=
   rfl
 
