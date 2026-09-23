@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
@@ -21,36 +20,25 @@ the weight lattice, and its first consequence is that weight multiplicities are 
 `Sₙ`-orbits (`TauCeti.finrank_weightSpace_comp_perm`).
 
 Every `Sₙ`-orbit on `Fin n → ℤ` contains exactly one weakly decreasing sequence, that is, exactly
-one `TauCeti.DominantWeight` (`TauCeti.existsUnique_dominantWeight`): sorting supplies one and
-`Tuple.unique_antitone` makes it unique.  So the dominant weights are a set of orbit
-representatives, and the weights of a representation, with their multiplicities, are determined by
-the dominant ones (`TauCeti.finrank_weightSpace_dominantWeightOf`).  That is what makes
-`TauCeti.DominantWeight` the index type the highest-weight theory of `GL n` runs on.
+one `TauCeti.DominantWeight` (`TauCeti.existsUnique_dominantWeight`).  So the dominant weights are
+a set of orbit representatives, and the weights of a representation, with their multiplicities,
+are determined by the dominant ones (`TauCeti.finrank_weightSpace_dominantWeightOf`).  That is
+what makes `TauCeti.DominantWeight` the index type the highest-weight theory of `GL n` runs on.
 
 ## Implementation notes
 
-The relabelling convention is fixed by `TauCeti.permutationGL_mul_diagGL_mul_inv`: conjugating
-`diagGL t` by `permutationGL σ` gives `diagGL (t ∘ σ⁻¹)`.  Reading that identity backwards moves
-`permutationGL σ` past a diagonal matrix and produces the weight `l ∘ σ⁻¹` on the image, so the
-`σ⁻¹` in `TauCeti.weightSpace_map_permutationGL` is not a choice but the convention of the
-conjugation lemma.  The orbit statements below are stated with a bare `σ` where no image is
+The `σ⁻¹` in `TauCeti.weightSpace_map_permutationGL` is the relabelling convention of
+`TauCeti.permutationGL_mul_diagGL_mul_inv`, by which conjugating `diagGL t` by `permutationGL σ`
+gives `diagGL (t ∘ σ⁻¹)`.  The orbit statements below are stated with a bare `σ` where no image is
 involved, since `σ ↦ σ⁻¹` is a bijection of `Sₙ`.
-
-The sorting permutation is `Tuple.sort` applied to the weight read in the order dual, because
-`Tuple.sort` produces monotone rearrangements while a dominant weight is antitone.  Nothing else
-about it is used: existence comes from `Tuple.monotone_sort` and uniqueness from
-`Tuple.unique_antitone`, so the same orbit representative would result from any other sorting
-procedure.
 
 ## Main definitions
 
-* `TauCeti.dominantSort`: a permutation sorting a weight into weakly decreasing order.
-* `TauCeti.dominantWeightOf`: the dominant weight in the `Sₙ`-orbit of a weight.
+* `TauCeti.weightSpaceEquivCompPerm`: the linear equivalence between the weight spaces of `l` and
+  of `l ∘ σ` cut out by a permutation matrix.
 
 ## Main results
 
-* `TauCeti.existsUnique_dominantWeight`: **each `Sₙ`-orbit of weights contains exactly one
-  dominant weight.**
 * `TauCeti.weightSpace_map_permutationGL`: **a permutation matrix carries the weight space of `l`
   onto the weight space of `l ∘ σ⁻¹`.**
 * `TauCeti.finrank_weightSpace_comp_perm`: weight multiplicities are constant on `Sₙ`-orbits.
@@ -63,9 +51,6 @@ procedure.
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15: the weights
   of `GL n` and the Weyl group `Sₙ` permuting them.
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3, "The maximal torus and weight spaces" and "Dominant weights", whose "`GLₙ` Weyl group
-  `Sₙ` acting on `ℤⁿ`" is what this file supplies.
 -/
 
 public section
@@ -77,52 +62,6 @@ universe u v
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-! ### Sorting a weight into the dominant chamber -/
-
-/-- A permutation rearranging a weight into weakly decreasing order.  It is `Tuple.sort` of the
-weight read in the order dual, since `Tuple.sort` produces monotone rearrangements. -/
-noncomputable def dominantSort (l : Fin n → ℤ) : Equiv.Perm (Fin n) :=
-  Tuple.sort fun i => OrderDual.toDual (l i)
-
-/-- Sorting makes a weight weakly decreasing. -/
-theorem antitone_comp_dominantSort (l : Fin n → ℤ) : Antitone (l ∘ ⇑(dominantSort l)) :=
-  fun _ _ hij => Tuple.monotone_sort (fun i => OrderDual.toDual (l i)) hij
-
-/-- **The dominant weight in the `Sₙ`-orbit of a weight**: its weakly decreasing rearrangement. -/
-noncomputable def dominantWeightOf (l : Fin n → ℤ) : DominantWeight n :=
-  ⟨l ∘ ⇑(dominantSort l), antitone_comp_dominantSort l⟩
-
-@[simp]
-theorem coe_dominantWeightOf (l : Fin n → ℤ) :
-    (dominantWeightOf l : Fin n → ℤ) = l ∘ ⇑(dominantSort l) :=
-  (rfl)
-
-/-- Any weakly decreasing rearrangement of a weight is its dominant representative. -/
-theorem coe_dominantWeightOf_eq_of_antitone {l : Fin n → ℤ} {σ : Equiv.Perm (Fin n)}
-    (h : Antitone (l ∘ ⇑σ)) : (dominantWeightOf l : Fin n → ℤ) = l ∘ ⇑σ :=
-  Tuple.unique_antitone (antitone_comp_dominantSort l) h
-
-/-- A dominant weight is its own dominant representative. -/
-@[simp]
-theorem dominantWeightOf_coe (d : DominantWeight n) : dominantWeightOf (d : Fin n → ℤ) = d :=
-  Subtype.ext <| coe_dominantWeightOf_eq_of_antitone (l := (d : Fin n → ℤ)) (σ := 1)
-    fun _ _ hij => d.antitone hij
-
-/-- Rearranging a weight does not change its dominant representative. -/
-@[simp]
-theorem dominantWeightOf_comp (l : Fin n → ℤ) (σ : Equiv.Perm (Fin n)) :
-    dominantWeightOf (l ∘ ⇑σ) = dominantWeightOf l :=
-  Subtype.ext <| (coe_dominantWeightOf_eq_of_antitone (l := l)
-    (σ := σ * dominantSort (l ∘ ⇑σ)) fun _ _ hij => antitone_comp_dominantSort (l ∘ ⇑σ) hij).symm
-
-/-- **Each `Sₙ`-orbit of weights contains exactly one dominant weight**, so the dominant weights
-are a set of representatives for the action of the Weyl group on the weight lattice. -/
-theorem existsUnique_dominantWeight (l : Fin n → ℤ) :
-    ∃! d : DominantWeight n, ∃ σ : Equiv.Perm (Fin n), (d : Fin n → ℤ) = l ∘ ⇑σ := by
-  refine ⟨dominantWeightOf l, ⟨dominantSort l, rfl⟩, ?_⟩
-  rintro ⟨d, hd⟩ ⟨σ, rfl⟩
-  exact (dominantWeightOf_coe ⟨_, hd⟩).symm.trans (dominantWeightOf_comp l σ)
 
 /-! ### Permuting the weight characters -/
 
@@ -145,18 +84,6 @@ section Action
 
 variable {k : Type u} [CommRing k] {W : Type v} [AddCommGroup W] [Module k W]
   (ρ : Representation k (GL (Fin n) k) W)
-
-/-- Moving a permutation matrix past a diagonal one relabels the diagonal entries. -/
-theorem diagGL_mul_permutationGL (σ : Equiv.Perm (Fin n)) (t : Fin n → kˣ) :
-    diagGL t * permutationGL (k := k) σ =
-      permutationGL (k := k) σ * diagGL fun i => t (σ i) := by
-  have h : permutationGL (k := k) σ * (diagGL fun i => t (σ i)) * (permutationGL (k := k) σ)⁻¹
-      = diagGL t := by
-    rw [permutationGL_mul_diagGL_mul_inv]
-    congr 1
-    funext i
-    simp
-  rw [← h, inv_mul_cancel_right]
 
 /-- Composing the actions of two permutation matrices. -/
 private theorem permutationGL_apply_permutationGL_apply (σ τ : Equiv.Perm (Fin n)) (w : W) :
@@ -217,6 +144,24 @@ noncomputable def weightSpaceEquivCompPerm (σ : Equiv.Perm (Fin n)) (l : Fin n 
     weightSpace ρ l ≃ₗ[k] weightSpace ρ (l ∘ ⇑σ) :=
   (Submodule.equivMapOfInjective _ (injective_permutationGL_apply ρ σ⁻¹) (weightSpace ρ l)).trans
     (LinearEquiv.ofEq _ _ (by rw [weightSpace_map_permutationGL, inv_inv]))
+
+/-- The equivalence between the weight spaces of `l` and of `l ∘ σ` is the action of the
+permutation matrix of `σ⁻¹`. -/
+@[simp]
+theorem coe_weightSpaceEquivCompPerm_apply (σ : Equiv.Perm (Fin n)) (l : Fin n → ℤ)
+    (w : weightSpace ρ l) :
+    (weightSpaceEquivCompPerm ρ σ l w : W) = ρ (permutationGL (k := k) σ⁻¹) (w : W) :=
+  (rfl)
+
+/-- Its inverse is the action of the permutation matrix of `σ`. -/
+@[simp]
+theorem coe_weightSpaceEquivCompPerm_symm_apply (σ : Equiv.Perm (Fin n)) (l : Fin n → ℤ)
+    (w : weightSpace ρ (l ∘ ⇑σ)) :
+    (((weightSpaceEquivCompPerm ρ σ l).symm w : weightSpace ρ l) : W) =
+      ρ (permutationGL (k := k) σ) (w : W) := by
+  refine injective_permutationGL_apply ρ σ⁻¹ ?_
+  rw [← coe_weightSpaceEquivCompPerm_apply, LinearEquiv.apply_symm_apply,
+    permutationGL_inv_apply_permutationGL_apply]
 
 /-- **Weight multiplicities are constant on `Sₙ`-orbits.** -/
 theorem finrank_weightSpace_comp_perm (σ : Equiv.Perm (Fin n)) (l : Fin n → ℤ) :
