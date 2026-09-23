@@ -59,15 +59,15 @@ namespace TauCeti
 
 variable {E : Type*} {m : ℕ}
 
-variable (m) in
 /-- The descent of a function `f : ℂ → E` through `u ↦ u ^ m`: its value at `w` is the value of
 `f` at the principal `m`-th root of `w`. When `f` is invariant under the `m`-th roots of unity on
 a set `s`, this is the function on `(· ^ m) '' s` through which `f` factors on `s`
 (`TauCeti.descendPow_pow`). -/
-noncomputable def descendPow (f : ℂ → E) (w : ℂ) : E :=
+noncomputable def descendPow (m : ℕ) [NeZero m] (f : ℂ → E) (w : ℂ) : E :=
   f (w ^ (m⁻¹ : ℂ))
 
-theorem descendPow_apply (f : ℂ → E) (w : ℂ) : descendPow m f w = f (w ^ (m⁻¹ : ℂ)) :=
+theorem descendPow_apply {m : ℕ} [NeZero m] (f : ℂ → E) (w : ℂ) :
+    descendPow m f w = f (w ^ (m⁻¹ : ℂ)) :=
   (rfl)
 
 variable [NeZero m]
