@@ -64,6 +64,8 @@ identification of this Clifford algebra with a CAR algebra; none of that is supp
   `TauCeti.traceQuadraticForm_ι_single_mul_ι_single_add_swap`, the anticommutation relations
   `d_ij d_kl + d_kl d_ij = 2 δ_jk δ_li` on the matrix units, is the specialization; and
   `TauCeti.traceQuadraticForm_ι_single_mul_self`: the squares `d_ij d_ij = δ_ij`.
+* `TauCeti.carGenerator`: the opaque public matrix-unit generator used by the CAR consumers,
+  together with its generator-level anticommutation and square equations.
 
 ## Implementation notes
 
@@ -265,6 +267,8 @@ open CliffordAlgebra
 
 variable [CommRing R] [DecidableEq n]
 
+attribute [local instance] Classical.decEq
+
 omit [DecidableEq n] in
 /-- **The anticommutation relation in the Clifford algebra of the trace form**: any two generators
 anticommute up to `2 trace (X * Y)`, the polar-form normalization. -/
@@ -308,6 +312,53 @@ theorem traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired (i j k l :
         * ι (traceQuadraticForm R n) (Matrix.single i j a)) := by
   rw [eq_neg_iff_add_eq_zero, traceQuadraticForm_ι_single_mul_ι_single_add_swap]
   simp [h]
+
+/-! ### Matrix-unit Clifford generators -/
+
+omit [DecidableEq n] in
+/-- The Clifford generator associated to the matrix unit `Eᵢⱼ`.
+
+This is the common CAR generator used by the highest-weight, occupation, Casimir, and weight
+multiplicity calculations. It is opaque so downstream proofs use the characterization theorem
+below rather than depending on the implementation. -/
+noncomputable def carGenerator {K : Type*} [CommRing K] {m : Type*} [Fintype m]
+    (i j : m) : CliffordAlgebra (traceQuadraticForm K m) :=
+  ι (traceQuadraticForm K m) (Matrix.single i j 1)
+
+omit [DecidableEq n] in
+/-- The matrix-unit formula for `carGenerator`. -/
+@[simp]
+theorem carGenerator_def {K : Type*} [CommRing K] {m : Type*} [Fintype m] (i j : m) :
+    carGenerator (K := K) i j =
+      ι (traceQuadraticForm K m) (Matrix.single i j 1) := by
+  rfl
+
+omit [DecidableEq n] in
+/-- The matrix-unit generators satisfy the CAR anticommutation relation. -/
+theorem carGenerator_mul_add_swap {K : Type*} [CommRing K] {m : Type*} [Fintype m]
+    (i j k l : m) :
+    carGenerator (K := K) i j * carGenerator k l + carGenerator k l * carGenerator i j =
+      algebraMap K _ (if j = k ∧ l = i then 2 else 0) := by
+  rw [carGenerator_def, carGenerator_def,
+    traceQuadraticForm_ι_single_mul_ι_single_add_swap]
+  simp
+
+omit [DecidableEq n] in
+/-- The square of a matrix-unit generator is zero off the diagonal and scalar on the diagonal. -/
+theorem carGenerator_mul_self {K : Type*} [CommRing K] {m : Type*} [Fintype m] (i j : m) :
+    carGenerator (K := K) i j * carGenerator i j =
+      algebraMap K _ (if i = j then 1 else 0) := by
+  rw [carGenerator_def, traceQuadraticForm_ι_single_mul_self]
+  simp
+
+omit [DecidableEq n] in
+/-- Non-paired matrix-unit generators anticommute. -/
+theorem carGenerator_mul_comm_of_not_paired {K : Type*} [CommRing K] {m : Type*} [Fintype m]
+    (i j k l : m) (h : ¬(j = k ∧ l = i)) :
+    carGenerator (K := K) i j * carGenerator k l =
+      -(carGenerator k l * carGenerator i j) := by
+  rw [carGenerator_def, carGenerator_def,
+    traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired _ _ _ _ 1 1 h]
 
 end CAR
 

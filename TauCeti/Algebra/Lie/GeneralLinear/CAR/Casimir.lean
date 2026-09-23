@@ -78,18 +78,16 @@ private theorem sum_carGenerator_cycle (a b : Fin N) :
         carGenerator i b * carGenerator a k * carGenerator k i -
           (if i = a then (2 : K) • carGenerator i b else 0) +
             if k = b then (2 : K) • carGenerator a k else 0 := by
-    have hib := traceQuadraticForm_ι_single_mul_ι_single_add_swap
-      (R := K) k i i b 1 1
-    have hak := traceQuadraticForm_ι_single_mul_ι_single_add_swap
-      (R := K) k i a k 1 1
+    have hib := carGenerator_mul_add_swap (K := K) k i i b
+    have hak := carGenerator_mul_add_swap (K := K) k i a k
     have hib' : carGenerator (K := K) k i * carGenerator i b =
         algebraMap K _ (if i = i ∧ b = k then 2 * (1 * 1) else 0) -
           carGenerator i b * carGenerator k i :=
-      eq_sub_iff_add_eq.mpr hib
+      eq_sub_iff_add_eq.mpr (by simpa using hib)
     have hak' : carGenerator (K := K) k i * carGenerator a k =
         algebraMap K _ (if i = a ∧ k = k then 2 * (1 * 1) else 0) -
           carGenerator a k * carGenerator k i :=
-      eq_sub_iff_add_eq.mpr hak
+      eq_sub_iff_add_eq.mpr (by simpa using hak)
     rw [hib', sub_mul, mul_assoc (carGenerator (K := K) i b), hak', mul_sub]
     have hcentral (x : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
         algebraMap K _ (2 : K) * x = x * algebraMap K _ (2 : K) :=
@@ -114,13 +112,15 @@ private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
   have hFD (i j : Fin N) : ⁅carF (K := K) i j, carGenerator (K := K) a b⁆ =
       (if j = a then carGenerator (K := K) i b else 0) -
         if b = i then carGenerator (K := K) a j else 0 := by
+    simp only [carF, carGenerator_def]
     rw [glCliffordHom_lie_ι, lie_single_single]
-    simp only [map_sub, apply_ite, map_zero, one_mul, carGenerator]
+    simp only [map_sub, apply_ite, map_zero, one_mul]
     split_ifs <;> rfl
   have hF (i j : Fin N) :
       carF (K := K) i j =
-        (2 : K)⁻¹ • ∑ k : Fin N, carGenerator (K := K) i k * carGenerator k j := by
-    exact glCliffordHom_single (K := K) (n := Fin N) i j
+      (2 : K)⁻¹ • ∑ k : Fin N, carGenerator (K := K) i k * carGenerator k j := by
+    simpa only [carF, carGenerator_def] using
+      glCliffordHom_single (K := K) (n := Fin N) i j
   have hA : (∑ i : Fin N, ∑ j : Fin N,
       carF (K := K) i j * (if i = a then carGenerator (K := K) j b else 0)) =
         ∑ j : Fin N, carF (K := K) a j * carGenerator j b := by
@@ -200,7 +200,8 @@ private theorem carCasimirElement_eq_algebraMap :
       X i j • Matrix.single i j (1 : K) := by
     rw [Matrix.smul_single, smul_eq_mul, mul_one]
   rw [hsingle, map_smul]
-  exact (commute_carCasimirElement_carGenerator (K := K) i j).smul_right (X i j)
+  simpa only [carGenerator_def] using
+    (commute_carCasimirElement_carGenerator (K := K) i j).smul_right (X i j)
 
 end CliffordCalculation
 

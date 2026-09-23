@@ -80,13 +80,13 @@ theorem carOccupationElement_def [decEq : DecidableEq n] (i j : n) :
         (ι (traceQuadraticForm K n) (Matrix.single i j 1) *
           ι (traceQuadraticForm K n) (Matrix.single j i 1)) := by
   cases Subsingleton.elim decEq (Classical.decEq n)
-  rfl
+  rw [carOccupationElement, carGenerator_def, carGenerator_def]
 
 /-- The diagonal occupation element is the scalar `1/2`. -/
 @[simp]
 theorem carOccupationElement_self (i : n) :
     carOccupationElement (K := K) i i = (2 : K)⁻¹ • 1 := by
-  simp [carOccupationElement, carGenerator]
+  simp [carOccupationElement, carGenerator_def]
 
 /-- Oppositely oriented off-diagonal occupation elements are orthogonal in this order. -/
 @[simp]
@@ -101,7 +101,7 @@ theorem carOccupationElement_mul_swap {i j : n} (hij : i ≠ j) :
       (carGenerator j i * carGenerator i j),
     ← mul_assoc (carGenerator (K := K) j i) (carGenerator j i)
       (carGenerator i j)]
-  simp [carGenerator, hij]
+  simp [carGenerator_def, hij]
 
 section Half
 
@@ -113,9 +113,7 @@ diagonal, where both terms are the scalar `1/2`. -/
 theorem carOccupationElement_add_swap (i j : n) :
     carOccupationElement (K := K) i j + carOccupationElement (K := K) j i = 1 := by
   rw [carOccupationElement, carOccupationElement, ← smul_add]
-  have hcar := traceQuadraticForm_ι_single_mul_ι_single_add_swap
-    (R := K) i j j i 1 1
-  simp only [one_mul] at hcar
+  have hcar := carGenerator_mul_add_swap (K := K) i j j i
   rw [hcar, Algebra.smul_def, ← map_mul]
   simp
 
@@ -164,6 +162,7 @@ theorem commute_carOccupationElement {i j k l : n} :
   · rw [commute_iff_lie_eq, carOccupationElement, carOccupationElement]
     rw [Ring.lie_def, smul_mul_assoc, mul_smul_comm, smul_smul,
       smul_mul_assoc, mul_smul_comm, smul_smul, ← smul_sub, ← Ring.lie_def,
+      carGenerator_def, carGenerator_def, carGenerator_def, carGenerator_def,
       lie_ι_mul_ι_ι_mul_ι]
     have hzy : ¬(l = j ∧ i = k) := by
       rintro ⟨rfl, rfl⟩
@@ -201,7 +200,7 @@ theorem glCliffordHom_single_self_eq_sum_occupation (i : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i i 1) =
       ∑ k : n, carOccupationElement (K := K) i k := by
   rw [glCliffordHom_single, Finset.smul_sum]
-  simp only [carOccupationElement, carGenerator]
+  simp only [carOccupationElement, carGenerator_def]
 
 /-- Orient the diagonal lift using only positive-pair occupation projections. Below `i`, the
 opposite orientation is replaced by its complement. -/

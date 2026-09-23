@@ -70,20 +70,20 @@ private theorem commute_carOccupationElement_carGenerator
   have hsecond : ¬(i = k ∧ l = j) := by
     rintro ⟨rfl, rfl⟩
     exact hforward rfl
-  rw [carOccupationElement_def]
+  rw [carOccupationElement_def (K := K) (n := Fin N)
+    (decEq := Classical.decEq (Fin N))]
+  simp only [← carGenerator_def]
   apply Commute.smul_left
   rw [Commute]
   calc
     (carGenerator (K := K) i j * carGenerator j i) * carGenerator k l =
         carGenerator i j * (carGenerator j i * carGenerator k l) := mul_assoc _ _ _
     _ = carGenerator i j * (-(carGenerator k l * carGenerator j i)) := by
-      rw [traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired
-        j i k l 1 1 hsecond]
+      rw [carGenerator_mul_comm_of_not_paired j i k l hsecond]
     _ = -(carGenerator i j * carGenerator k l) * carGenerator j i := by
       simp [mul_assoc]
     _ = -(-(carGenerator k l * carGenerator i j)) * carGenerator j i := by
-      rw [traceQuadraticForm_ι_single_mul_ι_single_comm_of_not_paired
-        i j k l 1 1 hfirst]
+      rw [carGenerator_mul_comm_of_not_paired i j k l hfirst]
     _ = carGenerator k l * (carGenerator i j * carGenerator j i) := by
       simp [mul_assoc]
 
@@ -107,8 +107,11 @@ private theorem carOccupationElement_mul_carGenerator_snd
     {K : Type*} [Field K] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
     carOccupationElement (K := K) i j * carGenerator (K := K) j i = 0 := by
   classical
-  rw [carOccupationElement_def, smul_mul_assoc, mul_assoc]
-  simp [carGenerator, hij.symm]
+  rw [carOccupationElement_def (K := K) (n := Fin N)
+    (decEq := Classical.decEq (Fin N)), smul_mul_assoc, mul_assoc]
+  simp only [← carGenerator_def]
+  rw [carGenerator_mul_self]
+  simp [Ne.symm hij]
 
 private theorem carOccupationElement_mul_carGenerator_fst
     {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
@@ -185,12 +188,17 @@ private theorem pow_card_mul_finrank_carOccupationFixed
   · intro a ha x hx
     dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
-    simpa [← mul_assoc, carOccupationElement_def] using hx
+    rw [carGenerator_def, carGenerator_def, smul_mul_assoc, ← mul_assoc, ← smul_mul_assoc]
+    rw [← carOccupationElement_def (K := K) (n := Fin N)
+      (decEq := Classical.decEq (Fin N))]
+    simpa only [← mul_assoc] using hx
   · intro a ha x hx
     dsimp only [p, u, v, carOccupationEnd, carLoweringEnd, carScaledRaisingEnd] at hx ⊢
     simp only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, smul_eq_mul] at hx ⊢
     rw [← mul_assoc, mul_smul_comm]
-    rw [← carOccupationElement_def]
+    rw [carGenerator_def, carGenerator_def, smul_mul_assoc, ← smul_mul_assoc]
+    rw [← carOccupationElement_def (K := K) (n := Fin N)
+      (decEq := Classical.decEq (Fin N))]
     rw [carOccupationElement_swap]
     simp [sub_mul, hx]
 
