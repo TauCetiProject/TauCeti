@@ -210,7 +210,8 @@ abbrev fullyFaithfulι : (ι C).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
 
 /-- The quotient functor from bounded cochain complexes to their bounded homotopy category. -/
-noncomputable abbrev quotient : BoundedCochainComplex C ⥤ BoundedHomotopyCategory C :=
+@[expose, implicit_reducible, simps!]
+def quotient : BoundedCochainComplex C ⥤ BoundedHomotopyCategory C :=
   ObjectProperty.lift _
     (BoundedCochainComplex.ι C ⋙ HomotopyCategory.quotient C (.up ℤ)) (by
       rintro ⟨K, hK⟩
@@ -219,7 +220,8 @@ noncomputable abbrev quotient : BoundedCochainComplex C ⥤ BoundedHomotopyCateg
       exact hK)
 
 /-- The bounded quotient followed by the inclusion agrees with the ordinary homotopy quotient. -/
-noncomputable abbrev quotientCompιIso :
+@[expose, simps! -isSimp]
+def quotientCompιIso :
     quotient C ⋙ ι C ≅
       BoundedCochainComplex.ι C ⋙ HomotopyCategory.quotient C (.up ℤ) :=
   ObjectProperty.liftCompιIso ..
@@ -250,6 +252,37 @@ instance : (quotient C).EssSurj where
 instance : (quotient C).Full := by
   dsimp [quotient]
   infer_instance
+
+section
+
+variable (C) [HasZeroObject C] [HasBinaryBiproducts C]
+
+/-- The collection of all single functors `C ⥤ BoundedHomotopyCategory C` for `n : ℤ`,
+along with their compatibilities with shifts. -/
+noncomputable def singleFunctors : SingleFunctors C (BoundedHomotopyCategory C) ℤ :=
+  SingleFunctors.lift (HomotopyCategory.singleFunctors C) (ι C)
+    (fun n ↦ (boundedHomotopyCategory C).lift (HomotopyCategory.singleFunctor C n)
+      (fun X ↦ by
+        rw [← HomotopyCategory.quotient_obj_singleFunctors_obj,
+          boundedHomotopyCategory_quotient_obj_iff, boundedCochainComplex_iff]
+        exact ⟨n, n, inferInstance, inferInstance⟩))
+    (fun _ ↦ Iso.refl _)
+
+/-- The single functor `C ⥤ BoundedHomotopyCategory C`. -/
+noncomputable abbrev singleFunctor (n : ℤ) : C ⥤ BoundedHomotopyCategory C :=
+  (singleFunctors C).functor n
+
+/-- The bounded single functor is induced by
+`HomotopyCategory.singleFunctor C n : C ⥤ HomotopyCategory C (.up ℤ)`. -/
+noncomputable def singleFunctorCompιIso (n : ℤ) :
+    singleFunctor C n ⋙ ι C ≅ HomotopyCategory.singleFunctor C n :=
+  Iso.refl _
+
+instance (n : ℤ) : (singleFunctor C n).Additive := by
+  dsimp [singleFunctor, singleFunctors]
+  infer_instance
+
+end
 
 end BoundedHomotopyCategory
 
