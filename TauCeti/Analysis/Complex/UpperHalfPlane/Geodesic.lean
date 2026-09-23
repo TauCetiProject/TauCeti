@@ -60,9 +60,8 @@ theorem geodesicLine_def (g : PSL(2, ℝ)) (t : ℝ) :
 
 /-- The geodesic line of the identity is the upward unit-speed imaginary axis. -/
 @[simp]
-theorem geodesicLine_one :
-    geodesicLine (1 : PSL(2, ℝ)) = fun t => UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
-  funext t
+theorem geodesicLine_one (t : ℝ) :
+    geodesicLine (1 : PSL(2, ℝ)) t = UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
   simp [geodesicLine_def]
 
 theorem isometry_geodesicLine (g : PSL(2, ℝ)) : Isometry (geodesicLine g) :=
@@ -76,7 +75,9 @@ theorem dist_geodesicLine (g : PSL(2, ℝ)) (s t : ℝ) :
     dist (geodesicLine g s) (geodesicLine g t) = |s - t| := by
   rw [(isometry_geodesicLine g).dist_eq, Real.dist_eq]
 
-@[simp]
+/-- Higher priority than `geodesicLine_one`, so `geodesicLine 1 0` still normalises to `I`
+rather than to `geodesicLine_one`'s more general (but less specific at `g = 1`) rewrite. -/
+@[simp high]
 theorem geodesicLine_zero (g : PSL(2, ℝ)) : geodesicLine g 0 = g • UpperHalfPlane.I := by
   rw [geodesicLine_def]
   congr 1
@@ -90,9 +91,15 @@ theorem smul_geodesicLine (h g : PSL(2, ℝ)) (t : ℝ) :
 
 /-- The same fact as `smul_geodesicLine`, at the level of the line as a set: the `PSL(2, ℝ)`-action
 permutes these lines rather than merely mapping into their union. -/
+@[simp]
 theorem smul_range_geodesicLine (h g : PSL(2, ℝ)) :
     h • Set.range (geodesicLine g) = Set.range (geodesicLine (h * g)) := by
   rw [Set.smul_set_range]
   simp [smul_geodesicLine]
+
+/-- A geodesic line through any prescribed point, at its own parameter `0`. -/
+theorem exists_geodesicLine_zero_eq (z : ℍ) : ∃ g : PSL(2, ℝ), geodesicLine g 0 = z := by
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) UpperHalfPlane.I z
+  exact ⟨g, by rw [geodesicLine_zero, hg]⟩
 
 end TauCeti.UpperHalfPlane
