@@ -25,7 +25,10 @@ decomposition. Forgetting the turn point recovers exactly the generic recut, so 
 covered-square repartition data remain available without duplicating the rectangle geometry.
 
 This module treats the common-initial-side orientation and preserves the underlying rectangle
-repartition and its rectangle weights.
+repartition and its rectangle weights. It also records the two possible cuts in the
+common-terminal-side orientation. In that orientation exactly one recut rectangle ends on the
+replaced grid line; which one it is is part of the finite geometry, and later turn-row transports
+must distinguish the two cases.
 
 ## Main results
 
@@ -38,6 +41,10 @@ repartition and its rectangle weights.
   decomposition retains the generic recut relation, including its covered-square repartition.
 * `TauCeti.GridRectanglePentagonDecomposition.OMonomial_mul_OMonomial_recutLeftEqLeft`: the
   product of the two underlying rectangle weights is preserved.
+* `TauCeti.GridRectanglePentagonDecomposition.isRecutOfRightEqRight_recut`: the generic recut
+  has the common-terminal-side orientation when the original rectangle and pentagon do.
+* `TauCeti.GridRectanglePentagonDecomposition.recut_first_or_second_right_eq_pentagon_right`:
+  exactly one of the two new rectangles has the original pentagon's terminal side.
 
 ## References
 
@@ -375,6 +382,126 @@ theorem OMonomial_mul_OMonomial_recutLeftEqLeft
     GridPentagonRectangleDecomposition.toRectangleDecomposition_second_toGridRectangle,
     GridRectanglePentagonDecomposition.toRectangleDecomposition_first_toGridRectangle,
     GridRectanglePentagonDecomposition.toRectangleDecomposition_second_toGridRectangle] using h
+
+end GridRectanglePentagonDecomposition
+
+namespace GridRectanglePentagonDecomposition
+
+variable {n : ℕ} {a s : Fin n} {x z : GridState n}
+
+private theorem left_ne_left_of_right_eq_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide) :
+    D.toRectangleDecomposition.first.left ≠ D.toRectangleDecomposition.second.left := by
+  intro hleft
+  have hright : D.toRectangleDecomposition.first.right =
+      D.toRectangleDecomposition.second.right := by
+    simpa only [toRectangleDecomposition_first_right,
+      toRectangleDecomposition_second_right] using hcommon
+  apply D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide hone
+  ext c
+  simp only [GridRectangleBetween.sideColumns, Finset.mem_insert, Finset.mem_singleton]
+  simp only [hleft, hright]
+
+/-- The generic recut retains the common-terminal-side orientation when the rectangle and
+pentagon of a rectangle--pentagon decomposition share their terminal side. -/
+theorem isRecutOfRightEqRight_recut
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    D.toRectangleDecomposition.IsRecutOfRightEqRight
+      (D.toRectangleDecomposition.recut hone
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+        (by
+          simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+            D.toRectangleDecomposition_middle,
+            D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)) := by
+  have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
+      D.toRectangleDecomposition.second.IsEmpty :=
+    ⟨by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle,
+      by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon⟩
+  have hcommon' : D.toRectangleDecomposition.first.right =
+      D.toRectangleDecomposition.second.right := by
+    simpa only [toRectangleDecomposition_first_right,
+      toRectangleDecomposition_second_right] using hcommon
+  have hleft := D.left_ne_left_of_right_eq_right hcommon hone
+  have hrecut := D.toRectangleDecomposition.isRecut_recut hone hempty.1 hempty.2
+  rcases hrecut.orientation with hdata | hdata | hdata | hdata
+  · apply False.elim
+    apply D.toRectangleDecomposition.sideColumns_ne_of_hasOneCommonSide hone
+    ext c
+    simp only [GridRectangleBetween.sideColumns, Finset.mem_insert, Finset.mem_singleton]
+    simp only [hdata.side_eq, hcommon']
+  · exact hdata
+  · exact (D.toRectangleDecomposition.first.left_ne_right
+      (hdata.side_eq.trans hcommon'.symm)).elim
+  · exact (D.toRectangleDecomposition.second.left_ne_right
+      (hdata.side_eq.symm.trans hcommon')).elim
+
+/-- In a common-terminal-side overlap, the generic recut places the terminal side of the
+original pentagon on one of its two new rectangles. The alternatives are disjoint because those
+rectangles have different terminal sides. -/
+theorem recut_first_or_second_right_eq_pentagon_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    let E := D.toRectangleDecomposition.recut hone
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by
+        simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+          D.toRectangleDecomposition_middle,
+          D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
+    (E.first.right = D.pentagon.right ∧ E.second.right ≠ D.pentagon.right) ∨
+      (E.first.right ≠ D.pentagon.right ∧ E.second.right = D.pentagon.right) := by
+  let E := D.toRectangleDecomposition.recut hone
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+    (by
+      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)
+  dsimp only
+  have hdata := D.isRecutOfRightEqRight_recut hcommon hone hrectangle hpentagon
+  have hcommon' : D.toRectangleDecomposition.first.right =
+      D.toRectangleDecomposition.second.right := by
+    simpa only [toRectangleDecomposition_first_right,
+      toRectangleDecomposition_second_right] using hcommon
+  have hpentagon : D.toRectangleDecomposition.second.right = D.pentagon.right :=
+    D.toRectangleDecomposition_second_right
+  rcases hdata.recut_branch with ⟨-, -, hfirst, hsecond⟩ | ⟨-, -, hfirst, hsecond⟩
+  · right
+    refine ⟨?_, ?_⟩
+    · intro h
+      rw [hfirst] at h
+      rw [← hpentagon, ← hcommon'] at h
+      exact D.toRectangleDecomposition.first.left_ne_right h
+    · calc
+        _ = D.toRectangleDecomposition.first.right := hsecond
+        _ = D.toRectangleDecomposition.second.right := hcommon'
+        _ = D.pentagon.right := hpentagon
+  · left
+    refine ⟨?_, ?_⟩
+    · calc
+        _ = D.toRectangleDecomposition.first.right := hfirst
+        _ = D.toRectangleDecomposition.second.right := hcommon'
+        _ = D.pentagon.right := hpentagon
+    · intro h
+      rw [hsecond] at h
+      rw [← hpentagon] at h
+      exact D.toRectangleDecomposition.second.left_ne_right h
 
 end GridRectanglePentagonDecomposition
 
