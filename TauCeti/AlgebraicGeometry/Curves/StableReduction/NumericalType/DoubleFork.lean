@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Fork
-import Mathlib.Tactic.Linarith
+import TauCeti.LinearAlgebra.RootSystem.FiniteType.AffineD
 
 /-!
 # Double-ended forks of `(-2)`-indices
@@ -42,108 +42,38 @@ variable {T : NumericalType.{u}} {t : ℕ} {c : ℕ → T.Component}
 
 namespace IsSelfIntersectionMinusTwoFork
 
-private lemma affine_sum_nonneg
-    (hr : T.IsSelfIntersectionMinusTwoFork t c right)
-    (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
-    (ht : 3 < t) {w : ℕ+} (d : ℕ → T.Component) (y : ℕ → ℤ)
-    (hd_lt : ∀ {i}, i < t → d i = c i) (hd_right : d t = right)
-    (hd_left : d (t + 1) = left) (hw : ∀ i < t, (T.weight (c i) : ℤ) = w)
-    (hwright : (T.weight right : ℤ) = w) (hwleft : (T.weight left : ℤ) = w)
-    (hedge : ∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = w)
-    (hrightEdge : T.intersection (c (t - 2)) right = w)
-    (hleftEdge : T.intersection (c 1) left = w)
-    (hleftZero : ∀ {i}, i < t → i ≠ 1 → T.intersection (c i) left = 0)
-    (hleftRight : left ≠ right) (hy0 : y 0 = 1) (hyLast : y (t - 1) = 1)
-    (hyInterior : ∀ {i}, 0 < i → i + 1 < t → y i = 2) (hyRight : y t = 1)
-    (hyLeft : y (t + 1) = 1) :
-    ∀ i < t + 2, 0 ≤ ∑ j ∈ range (t + 2), T.intersection (d i) (d j) * y j := by
-  have hforkCard := hr.le_card
-  have hchainCard : t < Fintype.card T.Component := by
+private lemma not_forall_fintype_sum_intersection_mul_nonneg_of_pos
+    {I : Type*} [Fintype I] (e : I → T.Component)
+    (he : Function.Injective e) (hcard : Fintype.card I < Fintype.card T.Component)
+    {y : I → ℤ} (hy : ∀ i, 0 ≤ y i) (hypos : ∃ i, 0 < y i) :
+    ¬ ∀ i, 0 ≤ ∑ j, T.intersection (e i) (e j) * y j := by
+  classical
+  intro hrow
+  let s : Finset T.Component := univ.image e
+  have hs : s ≠ univ := by
+    intro hs
+    have hcards : s.card = Fintype.card I := by
+      simp only [s, card_image_of_injective univ he, card_univ]
+    rw [hs, card_univ] at hcards
     omega
-  have hsplit (x : T.Component) :
-      ∑ j ∈ range (t + 2), T.intersection x (d j) * y j =
-        (∑ j ∈ range t, T.intersection x (c j) * y j) +
-          T.intersection x right * y t + T.intersection x left * y (t + 1) := by
-    rw [show t + 2 = (t + 1) + 1 by omega, sum_range_succ, sum_range_succ, hd_right,
-      hd_left]
-    congr 2
-    exact sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
-  have hchainRow {i : ℕ} (hit : i < t) :
-      0 ≤ ∑ j ∈ range (t + 2), T.intersection (d i) (d j) * y j := by
-    rw [hd_lt hit, hsplit]
-    rcases Nat.eq_zero_or_pos i with rfl | hi0
-    · rw [hr.left_sum_eq hchainCard (by omega) y, hy0, hyInterior (i := 1) (by omega)
-          (by omega), hr.intersection_self 0 (by omega), hedge 0 (by omega),
-          hw 0 (by omega),
-          hr.branch_intersection_eq_zero (i := 0) (by omega) (by omega),
-          hleftZero (i := 0) (by omega) (by omega), hyRight, hyLeft]
-      linarith
-    rcases eq_or_lt_of_le (Nat.succ_le_of_lt hit) with hilast | hilast
-    · obtain rfl : i = t - 1 := by omega
-      have hedgeLast : T.intersection (c (t - 2)) (c (t - 1)) = w := by
-        simpa only [show t - 2 + 1 = t - 1 by omega] using hedge (t - 2) (by omega)
-      rw [hr.right_sum_eq hchainCard (by omega) y, hyInterior (i := t - 2) (by omega)
-          (by omega), hyLast, T.intersection_comm (c (t - 1)) (c (t - 2)),
-          hedgeLast, hr.intersection_self (t - 1) (by omega), hw (t - 1) (by omega),
-          hr.branch_intersection_eq_zero (i := t - 1) (by omega) (by omega),
-          hleftZero (i := t - 1) (by omega) (by omega), hyRight, hyLeft]
-      linarith
-    · rw [hr.interior_sum_eq hchainCard y hi0 hilast,
-          T.intersection_comm (c i) (c (i - 1))]
-      have hedgePrev : T.intersection (c (i - 1)) (c i) = w := by
-        simpa only [show i - 1 + 1 = i by omega] using hedge (i - 1) (by omega)
-      rw [hedgePrev, hedge i hilast, hr.intersection_self i hit, hw i hit,
-          hyInterior hi0 hilast, hyRight, hyLeft]
-      by_cases hi1 : i = 1
-      · subst i
-        rw [hy0, hyInterior (i := 2) (by omega) (by omega),
-          hr.branch_intersection_eq_zero (i := 1) (by omega) (by omega), hleftEdge]
-        linarith
-      · by_cases hipenultimate : i = t - 2
-        · subst i
-          have hyPrev : y (t - 2 - 1) = 2 := hyInterior (by omega) (by omega)
-          have hyNext : y (t - 2 + 1) = 1 := by
-            rw [show t - 2 + 1 = t - 1 by omega, hyLast]
-          have hleftZero' : T.intersection (c (t - 2)) left = 0 :=
-            hleftZero (by omega) (by omega)
-          rw [hyPrev, hyNext, hrightEdge, hleftZero']
-          linarith
-        · rw [hyInterior (i := i - 1) (by omega) (by omega),
-            hyInterior (i := i + 1) (by omega) (by omega),
-            hr.branch_intersection_eq_zero hit hipenultimate, hleftZero hit hi1]
-          linarith
-  have hrightRow :
-      0 ≤ ∑ j ∈ range (t + 2), T.intersection (d t) (d j) * y j := by
-    rw [hd_right, hsplit]
-    have hsum : (∑ j ∈ range t, T.intersection right (c j) * y j) =
-        T.intersection right (c (t - 2)) * y (t - 2) := by
-      refine sum_eq_single (t - 2) (fun j hj hne ↦ ?_) (fun hj ↦ ?_)
-      · rw [T.intersection_comm,
-          hr.branch_intersection_eq_zero (mem_range.mp hj) (by omega), zero_mul]
-      · exact absurd (mem_range.mpr (by omega)) hj
-    rw [hsum, T.intersection_comm right, hrightEdge,
-      hyInterior (i := t - 2) (by omega) (by omega), hr.branch_intersection_self,
-      hwright, hyRight, hyLeft]
-    have := T.offDiagonal_nonneg right left hleftRight.symm
-    linarith
-  have hleftRow :
-      0 ≤ ∑ j ∈ range (t + 2), T.intersection (d (t + 1)) (d j) * y j := by
-    rw [hd_left, hsplit]
-    have hsum : (∑ j ∈ range t, T.intersection left (c j) * y j) =
-        T.intersection left (c 1) * y 1 := by
-      refine sum_eq_single 1 (fun j hj hne ↦ ?_) (fun hj ↦ ?_)
-      · rw [T.intersection_comm, hleftZero (mem_range.mp hj) hne, zero_mul]
-      · exact absurd (mem_range.mpr (by omega)) hj
-    rw [hsum, T.intersection_comm left, hleftEdge, hyInterior (i := 1) (by omega)
-        (by omega), hl.branch_intersection_self, hwleft, hyRight, hyLeft]
-    have := T.offDiagonal_nonneg left right hleftRight
-    linarith
-  intro i hi
-  by_cases hit : i < t
-  · exact hchainRow hit
-  rcases (show i = t ∨ i = t + 1 by omega) with rfl | rfl
-  · exact hrightRow
-  · exact hleftRow
+  let x : T.Component → ℤ := fun k ↦ ∑ i, if e i = k then y i else 0
+  have hxe (i : I) : x (e i) = y i := by
+    simp [x, he.eq_iff]
+  obtain ⟨i, hyi⟩ := hypos
+  have hne : ∃ k ∈ s, x k ≠ 0 :=
+    ⟨e i, mem_image_of_mem e (mem_univ i), by rw [hxe]; exact hyi.ne'⟩
+  have key := T.sum_sum_intersection_mul_neg hs hne
+  have hinjOn : Set.InjOn e ↑(univ : Finset I) := fun _ _ _ _ h ↦ he h
+  simp only [s, sum_image hinjOn] at key
+  have heq : ∑ i, ∑ j, T.intersection (e i) (e j) * x (e i) * x (e j) =
+      ∑ i, y i * ∑ j, T.intersection (e i) (e j) * y j := by
+    refine sum_congr rfl fun i _ ↦ ?_
+    rw [mul_sum]
+    refine sum_congr rfl fun j _ ↦ ?_
+    rw [hxe, hxe]
+    ring_nf
+  rw [heq] at key
+  exact absurd key (not_lt.mpr (sum_nonneg fun i _ ↦ mul_nonneg (hy i) (hrow i)))
 
 /-- A chain of at least four `(-2)`-indices cannot have additional leaves meeting its second and
 penultimate components when the displayed components form a proper subset of the numerical type.
@@ -184,55 +114,255 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     have hreverse_ne : t - 1 - i ≠ t - 2 := by omega
     simpa only [hreverse] using
       hl.branch_intersection_eq_zero (i := t - 1 - i) (by omega) hreverse_ne
-  -- Enumerate the chain followed by its right and left leaves.
-  let d : ℕ → T.Component := fun i ↦ if i < t then c i else if i = t then right else left
-  have hd_lt {i : ℕ} (hi : i < t) : d i = c i := by simp [d, hi]
-  have hd_right : d t = right := by simp [d]
-  have hd_left : d (t + 1) = left := by simp [d]
-  have hd_injective : ∀ i < t + 2, ∀ j < t + 2, d i = d j → i = j := by
-    intro i hi j hj hij
-    by_cases hit : i < t
-    · by_cases hjt : j < t
-      · rw [hd_lt hit, hd_lt hjt] at hij
-        exact hr.injOn i hit j hjt hij
-      · rcases (show j = t ∨ j = t + 1 by omega) with rfl | rfl
-        · rw [hd_lt hit, hd_right] at hij
-          exact (hr.branch_ne i hit hij.symm).elim
-        · rw [hd_lt hit, hd_left] at hij
-          exact (hleft_ne_chain i hit hij.symm).elim
-    · by_cases hjt : j < t
-      · rcases (show i = t ∨ i = t + 1 by omega) with rfl | rfl
-        · rw [hd_right, hd_lt hjt] at hij
-          exact (hr.branch_ne j hjt hij).elim
-        · rw [hd_left, hd_lt hjt] at hij
-          exact (hleft_ne_chain j hjt hij).elim
-      · rcases (show i = t ∨ i = t + 1 by omega) with hi_eq | hi_eq
-        · rcases (show j = t ∨ j = t + 1 by omega) with hj_eq | hj_eq
-          · omega
-          · subst i
-            subst j
-            rw [hd_right, hd_left] at hij
-            exact (hleftRight hij.symm).elim
-        · rcases (show j = t ∨ j = t + 1 by omega) with hj_eq | hj_eq
-          · subst i
-            subst j
-            rw [hd_left, hd_right] at hij
-            exact (hleftRight hij).elim
-          · omega
-  -- These are the affine `D` marks: one at the four leaves and two on the interior chain.
-  let y : ℕ → ℤ := fun i ↦ if i < t then if i = 0 ∨ i + 1 = t then 1 else 2 else 1
-  have hy0 : y 0 = 1 := by simp [y]
-  have hyLast : y (t - 1) = 1 := by simp [y]; omega
-  have hyInterior {i : ℕ} (hi : 0 < i) (hit : i + 1 < t) : y i = 2 := by
-    simp [y, hi.ne', hit.ne]; omega
-  have hyRight : y t = 1 := by simp [y]
-  have hyLeft : y (t + 1) = 1 := by simp [y]
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := d) hd_injective hcard
-    (y := y) (fun i hi ↦ ?_) ⟨0, by omega, by simp [y]⟩ ?_
-  · simp only [y]
-    split_ifs <;> omega
-  exact affine_sum_nonneg hr hl ht d y hd_lt hd_right hd_left hw hwright hwleft hedge
-    hrightEdge hleftEdge hleftZero hleftRight hy0 hyLast hyInterior hyRight hyLeft
+  have hchainEntry (i j : ℕ) (hi : i < t) (hj : j < t) :
+      T.intersection (c i) (c j) =
+        if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then w else 0 := by
+    split_ifs with hij hadj
+    · subst j
+      rw [hr.intersection_self i hi, hw i hi]
+    · rcases hadj with hadj | hadj
+      · subst j
+        exact hedge i hj
+      · subst i
+        rw [T.intersection_comm]
+        exact hedge j hi
+    · exact hr.intersection_eq_zero hchainCard hi hj hij (by omega) (by omega)
+  have hrightEntry (i : ℕ) (hi : i < t) :
+      T.intersection (c i) right = if i = t - 2 then (w : ℤ) else 0 := by
+    split_ifs with hit
+    · subst i
+      exact hrightEdge
+    · exact hr.branch_intersection_eq_zero hi hit
+  have hleftEntry (i : ℕ) (hi : i < t) :
+      T.intersection (c i) left = if i = 1 then (w : ℤ) else 0 := by
+    split_ifs with hi1
+    · subst i
+      exact hleftEdge
+    · exact hleftZero hi hi1
+  let n := t - 4
+  have hmiddle_lt (i : Fin (n + 2)) : (i : ℕ) + 1 < t := by
+    have hi := i.isLt
+    simp only [n] at hi
+    omega
+  let e : DoubleForkIndex n → T.Component
+    | .inl i => if i = 0 then c 0 else left
+    | .inr (.inl i) => c (i + 1)
+    | .inr (.inr i) => if i = 0 then c (t - 1) else right
+  have he : Function.Injective e := by
+    intro i j hij
+    rcases i with i | i | i <;> rcases j with j | j | j
+    · fin_cases i <;> fin_cases j
+      · rfl
+      · exact (hleft_ne_chain 0 (by omega) (by simpa [e] using hij.symm)).elim
+      · exact (hleft_ne_chain 0 (by omega) (by simpa [e] using hij)).elim
+      · rfl
+    · exfalso
+      fin_cases i
+      · exact (hr.ne (i := 0) (j := j + 1) (by omega) (hmiddle_lt j) (by omega)
+          (by simpa [e] using hij)).elim
+      · exact (hleft_ne_chain (j + 1) (hmiddle_lt j) (by simpa [e] using hij)).elim
+    · exfalso
+      fin_cases i <;> fin_cases j
+      · exact (hr.ne (i := 0) (j := t - 1) (show 0 < t by omega) (show t - 1 < t by omega)
+          (show 0 ≠ t - 1 by omega) (by simpa [e] using hij)).elim
+      · exact (hr.branch_ne 0 (by omega) (by simpa [e] using hij.symm)).elim
+      · exact (hleft_ne_chain (t - 1) (by omega) (by simpa [e] using hij)).elim
+      · exact (hleftRight (by simpa [e] using hij)).elim
+    · exfalso
+      fin_cases j
+      · exact (hr.ne (i := i + 1) (j := 0) (hmiddle_lt i) (by omega) (by omega)
+          (by simpa [e] using hij)).elim
+      · exact (hleft_ne_chain (i + 1) (hmiddle_lt i) (by simpa [e] using hij.symm)).elim
+    · apply congrArg (Sum.inr ∘ Sum.inl)
+      apply Fin.ext
+      have := hr.injOn (i + 1) (hmiddle_lt i) (j + 1) (hmiddle_lt j)
+        (by simpa [e] using hij)
+      omega
+    · exfalso
+      fin_cases j
+      · exact (hr.ne (i := i + 1) (j := t - 1) (hmiddle_lt i) (by omega) (by omega)
+          (by simpa [e] using hij)).elim
+      · exact (hr.branch_ne (i + 1) (hmiddle_lt i) (by simpa [e] using hij.symm)).elim
+    · exfalso
+      fin_cases i <;> fin_cases j
+      · exact (hr.ne (i := t - 1) (j := 0) (show t - 1 < t by omega) (show 0 < t by omega)
+          (show t - 1 ≠ 0 by omega) (by simpa [e] using hij)).elim
+      · exact (hleft_ne_chain (t - 1) (by omega) (by simpa [e] using hij.symm)).elim
+      · exact (hr.branch_ne 0 (by omega) (by simpa [e] using hij)).elim
+      · exact (hleftRight (by simpa [e] using hij.symm)).elim
+    · exfalso
+      fin_cases i
+      · exact (hr.ne (i := t - 1) (j := j + 1) (by omega) (hmiddle_lt j) (by omega)
+          (by simpa [e] using hij)).elim
+      · exact (hr.branch_ne (j + 1) (hmiddle_lt j) (by simpa [e] using hij)).elim
+    · fin_cases i <;> fin_cases j
+      · rfl
+      · exact (hr.branch_ne (t - 1) (by omega) (by simpa [e] using hij.symm)).elim
+      · exact (hr.branch_ne (t - 1) (by omega) (by simpa [e] using hij)).elim
+      · rfl
+  let mark : DoubleForkIndex n → ℤ
+    | .inl _ => 1
+    | .inr (.inl _) => 2
+    | .inr (.inr _) => 1
+  let extra : DoubleForkIndex n → DoubleForkIndex n → ℤ
+    | .inl i, .inr (.inr j) => if i = 1 ∧ j = 1 then T.intersection left right else 0
+    | .inr (.inr i), .inl j => if i = 1 ∧ j = 1 then T.intersection right left else 0
+    | _, _ => 0
+  have hzero_ne_last : 0 ≠ t - 1 := by omega
+  have hone_ne_last : 1 ≠ t - 1 := by omega
+  have hlast_ne_zero : t - 1 ≠ 0 := by omega
+  have hlast_ne_one : t - 1 ≠ 1 := by omega
+  have hzero_ne_penultimate : 0 ≠ t - 2 := by omega
+  have hlast_ne_penultimate : t - 1 ≠ t - 2 := by omega
+  have hmatrix (i j : DoubleForkIndex n) :
+      T.intersection (e i) (e j) =
+        -(w : ℤ) * doubleForkCartanMatrix n i j + extra i j := by
+    rcases i with i | i | i <;> rcases j with j | j | j
+    all_goals simp only [e]
+    · fin_cases i <;> fin_cases j
+      all_goals dsimp
+      · rw [hchainEntry 0 0 (by omega) (by omega)]
+        simp [extra]
+        ring_nf
+      · rw [hleftEntry 0 (by omega)]
+        simp [extra]
+      · rw [T.intersection_comm, hleftEntry 0 (by omega)]
+        simp [extra]
+      · rw [hl.branch_intersection_self, hwleft]
+        simp [extra]
+        ring_nf
+    · fin_cases i
+      all_goals dsimp
+      · rw [hchainEntry 0 (j + 1) (by omega) (hmiddle_lt j)]
+        simp only [extra, doubleForkCartanMatrix_inl_inr_inl]
+        by_cases hj0 : (j : ℕ) = 0
+        · have : j = 0 := Fin.ext hj0
+          subst j
+          norm_num
+        · simp [hj0]
+      · rw [T.intersection_comm, hleftEntry (j + 1) (hmiddle_lt j)]
+        simp only [extra, doubleForkCartanMatrix_inl_inr_inl]
+        by_cases hj0 : (j : ℕ) = 0
+        · have : j = 0 := Fin.ext hj0
+          subst j
+          norm_num
+        · simp [hj0]
+    · fin_cases i <;> fin_cases j
+      all_goals dsimp
+      · rw [hchainEntry 0 (t - 1) (by omega) (by omega)]
+        simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
+        simp [hzero_ne_last, hone_ne_last]
+      · rw [hrightEntry 0 (by omega)]
+        simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
+        simp only [hzero_ne_penultimate, ↓reduceIte]
+        norm_num
+      · rw [T.intersection_comm, hleftEntry (t - 1) (by omega)]
+        simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
+        simp only [hlast_ne_one, ↓reduceIte]
+        norm_num
+      · norm_num [extra]
+    · fin_cases j
+      all_goals dsimp
+      · rw [hchainEntry (i + 1) 0 (hmiddle_lt i) (by omega)]
+        simp only [extra, doubleForkCartanMatrix_inr_inl_inl]
+        by_cases hi0 : (i : ℕ) = 0
+        · have : i = 0 := Fin.ext hi0
+          subst i
+          norm_num
+        · simp [hi0]
+      · rw [hleftEntry (i + 1) (hmiddle_lt i)]
+        simp only [extra, doubleForkCartanMatrix_inr_inl_inl]
+        by_cases hi0 : (i : ℕ) = 0
+        · have : i = 0 := Fin.ext hi0
+          subst i
+          norm_num
+        · simp [hi0]
+    · simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inl]
+      rw [hchainEntry (i + 1) (j + 1) (hmiddle_lt i) (hmiddle_lt j)]
+      split_ifs <;> omega
+    · fin_cases j
+      all_goals dsimp
+      · rw [hchainEntry (i + 1) (t - 1) (hmiddle_lt i) (by omega)]
+        simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inr]
+        split_ifs <;> omega
+      · rw [hrightEntry (i + 1) (hmiddle_lt i)]
+        simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inr]
+        split_ifs <;> omega
+    · fin_cases i <;> fin_cases j
+      all_goals dsimp
+      · rw [hchainEntry (t - 1) 0 (by omega) (by omega)]
+        simp only [doubleForkCartanMatrix_inr_inr_inl, extra]
+        simp [hlast_ne_zero, hone_ne_last]
+      · rw [hleftEntry (t - 1) (by omega)]
+        simp only [doubleForkCartanMatrix_inr_inr_inl, extra]
+        simp only [hlast_ne_one, ↓reduceIte]
+        norm_num
+      · rw [T.intersection_comm, hrightEntry 0 (by omega)]
+        simp only [doubleForkCartanMatrix_inr_inr_inl, extra]
+        simp only [hzero_ne_penultimate, ↓reduceIte]
+        norm_num
+      · norm_num [extra]
+    · fin_cases i
+      all_goals dsimp
+      · rw [hchainEntry (t - 1) (j + 1) (by omega) (hmiddle_lt j)]
+        simp only [extra, doubleForkCartanMatrix_inr_inr_inr_inl]
+        split_ifs <;> omega
+      · rw [T.intersection_comm, hrightEntry (j + 1) (hmiddle_lt j)]
+        simp only [extra, doubleForkCartanMatrix_inr_inr_inr_inl]
+        split_ifs <;> omega
+    · fin_cases i <;> fin_cases j
+      all_goals dsimp
+      · rw [hchainEntry (t - 1) (t - 1) (by omega) (by omega)]
+        simp [extra]
+        ring_nf
+      · rw [hrightEntry (t - 1) (by omega)]
+        simp only [hlast_ne_penultimate, ↓reduceIte]
+        norm_num [extra]
+      · rw [T.intersection_comm, hrightEntry (t - 1) (by omega)]
+        simp only [hlast_ne_penultimate, ↓reduceIte]
+        norm_num [extra]
+      · rw [hr.branch_intersection_self, hwright]
+        simp [extra]
+        ring_nf
+  have hmark (i : DoubleForkIndex n) : (mark i : ℚ) = doubleForkMark n i := by
+    rcases i with i | i | i <;> simp [mark]
+  have hcartan (i : DoubleForkIndex n) :
+      ∑ j, doubleForkCartanMatrix n i j * mark j = 0 := by
+    have hcast : ((↑(∑ j, doubleForkCartanMatrix n i j * mark j) : ℚ)) = 0 := by
+      rw [Int.cast_sum]
+      simp_rw [Int.cast_mul, hmark]
+      exact sum_doubleForkCartanMatrix_mul_doubleForkMark_eq_zero n i
+    exact Int.cast_injective hcast
+  have hextra (i : DoubleForkIndex n) : 0 ≤ ∑ j, extra i j * mark j := by
+    have hnonneg := T.offDiagonal_nonneg left right hleftRight
+    rcases i with i | i | i
+    · fin_cases i <;> simp [extra, mark, Fintype.sum_sum_type, hnonneg]
+    · simp [extra]
+    · fin_cases i <;>
+        simp [extra, mark, Fintype.sum_sum_type,
+          T.intersection_comm right left, hnonneg]
+  have hrow (i : DoubleForkIndex n) :
+      0 ≤ ∑ j, T.intersection (e i) (e j) * mark j := by
+    have hsum : ∑ j, T.intersection (e i) (e j) * mark j = ∑ j, extra i j * mark j := by
+      calc
+        ∑ j, T.intersection (e i) (e j) * mark j =
+            ∑ j, (-(w : ℤ) * doubleForkCartanMatrix n i j + extra i j) * mark j := by
+          exact sum_congr rfl fun j _ ↦ by rw [hmatrix]
+        _ = -(w : ℤ) * (∑ j, doubleForkCartanMatrix n i j * mark j) +
+            ∑ j, extra i j * mark j := by
+          simp_rw [add_mul]
+          rw [sum_add_distrib, mul_sum]
+          ring_nf
+        _ = ∑ j, extra i j * mark j := by rw [hcartan]; ring_nf
+    calc
+      0 ≤ ∑ j, extra i j * mark j := hextra i
+      _ = ∑ j, T.intersection (e i) (e j) * mark j := hsum.symm
+  have hindexCard : Fintype.card (DoubleForkIndex n) = t + 2 := by
+    simp [n]
+    omega
+  exact (not_forall_fintype_sum_intersection_mul_nonneg_of_pos (y := mark) e he
+    (by rw [hindexCard]; exact hcard) (fun i ↦ by
+      rcases i with i | i | i <;> simp [mark]) ⟨Sum.inl 0, by simp [mark]⟩) hrow
 
 end IsSelfIntersectionMinusTwoFork
 
