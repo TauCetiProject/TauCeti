@@ -12,13 +12,13 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 
 /-!
-# Divisors on a proper curve and divisors of its function field
+# Divisors on a scheme of dimension at most one and divisors of its function field
 
-Let `X` be a separated integral curve over a field `k`. If every codimension-one local ring is a
-discrete valuation ring and the structure morphism satisfies the existence part of the valuative
-criterion, codimension-one points of `X` are equivalent to normalized places of `k(X)`. Reindexing
-finite formal sums along this equivalence identifies scheme-theoretic Weil divisors with divisors
-of the function field.
+Let `X` be a separated integral scheme over a field `k`, of dimension at most one. If every
+codimension-one local ring is a discrete valuation ring and the structure morphism satisfies the
+existence part of the valuative criterion, codimension-one points of `X` are equivalent to
+normalized places of `k(X)`. Reindexing finite formal sums along this equivalence identifies
+scheme-theoretic Weil divisors with divisors of the function field.
 
 This file records the characteristic properties of that identification. It preserves point
 divisors, coefficientwise order and effectivity, the residue-degree-weighted degree, and principal
@@ -159,6 +159,17 @@ theorem equivFunctionFieldDivisor_le_iff
     Finsupp.mapDomain_le_mapDomain_iff_le
       (CodimensionOnePoint.equivPlace hex hdim).injective D E
 
+/-- Pulling back along the point-to-place equivalence preserves coefficientwise inequalities. -/
+@[simp]
+theorem equivFunctionFieldDivisor_symm_le_iff
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) {D E : Divisor k X.functionField} :
+    (equivFunctionFieldDivisor hex hdim).symm D ≤
+        (equivFunctionFieldDivisor hex hdim).symm E ↔ D ≤ E := by
+  rw [← equivFunctionFieldDivisor_le_iff (hex := hex) (hdim := hdim),
+    (equivFunctionFieldDivisor hex hdim).apply_symm_apply,
+    (equivFunctionFieldDivisor hex hdim).apply_symm_apply]
+
 /-- Reindexing along the point-to-place equivalence preserves effectivity. -/
 @[simp]
 theorem isEffective_equivFunctionFieldDivisor_iff
@@ -252,6 +263,20 @@ theorem equivFunctionFieldDivisor_principalDivisor
     ← WeilDivisor.OrderSystem.principalHom_apply, ← AddMonoidHom.comp_apply,
     equivFunctionFieldDivisor_principalHom]
 
+/-- Pulling back a place-order principal divisor gives the corresponding scheme-theoretic
+principal divisor. -/
+@[simp]
+theorem equivFunctionFieldDivisor_symm_principalDivisor
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (hF : IsFunctionField k X.functionField)
+    (g : Additive X.functionFieldˣ) :
+    (equivFunctionFieldDivisor hex hdim).symm
+        ((Place.orderSystem hF).principalDivisor g) =
+      (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g := by
+  apply (equivFunctionFieldDivisor hex hdim).injective
+  rw [(equivFunctionFieldDivisor hex hdim).apply_symm_apply,
+    equivFunctionFieldDivisor_principalDivisor]
+
 /-- Scheme-theoretic principal divisors become function-field principal divisors under the
 point-to-place equivalence. -/
 @[simp]
@@ -264,6 +289,19 @@ theorem equivFunctionFieldDivisor_principal
       Divisor.principal hF z := by
   rw [equivFunctionFieldDivisor_principalDivisor, Divisor.principalDivisor_eq,
     toMul_ofMul]
+
+/-- Pulling back a function-field principal divisor gives the corresponding scheme-theoretic
+principal divisor. -/
+@[simp]
+theorem equivFunctionFieldDivisor_symm_principal
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (hF : IsFunctionField k X.functionField)
+    (z : X.functionFieldˣ) :
+    (equivFunctionFieldDivisor hex hdim).symm (Divisor.principal hF z) =
+      (WeilDivisor.OrderSystem.ofScheme X).principalDivisor (Additive.ofMul z) := by
+  apply (equivFunctionFieldDivisor hex hdim).injective
+  rw [(equivFunctionFieldDivisor hex hdim).apply_symm_apply,
+    equivFunctionFieldDivisor_principal]
 
 /-- Linear equivalence of scheme divisors is exactly linear equivalence of the corresponding
 function-field divisors. -/
