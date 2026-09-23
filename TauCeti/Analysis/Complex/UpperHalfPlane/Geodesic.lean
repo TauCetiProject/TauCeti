@@ -24,21 +24,26 @@ vertical lines and semicircles centred on the real axis: as a *set*, the image o
 `geodesicLine g` is the `g`-translate of the imaginary axis, which is a vertical line when the
 representing matrix's lower-left entry `g 1 0` or lower-right entry `g 1 1` is `0` (equivalently,
 `g` sends one of the imaginary axis's two boundary points, `0` and the point at infinity, to the
-point at infinity) and a semicircle centred on the real axis otherwise. That case split, and the
-existence of a `geodesicLine` through two prescribed points, are not proved here.
+point at infinity) and a semicircle centred on the real axis otherwise. That case split is not
+proved here. A geodesic line through one prescribed point is (`exists_geodesicLine_zero_eq`);
+one through two prescribed points is not.
 
 ## Main declarations
 
 * `TauCeti.UpperHalfPlane.geodesicLine g` — the imaginary axis in its upward unit-speed
   parametrisation, moved by `g`: the map `t ↦ g • UpperHalfPlane.mk ⟨0, exp t⟩ _`.
+  `geodesicLine_one` and `geodesicLine_zero` give its value at `g = 1` and at `t = 0`.
 * `TauCeti.UpperHalfPlane.isometry_geodesicLine` — `geodesicLine g` is an isometric embedding
-  of `ℝ`.
+  of `ℝ`, hence injective (`geodesicLine_injective`).
 * `TauCeti.UpperHalfPlane.dist_geodesicLine` — the distance between two of its points is
-  `|s - t|`.
+  `|s - t|`; `TauCeti.UpperHalfPlane.dist_geodesicLine_zero` specializes this to the line's own
+  base point.
 * `TauCeti.UpperHalfPlane.smul_geodesicLine` — further translating a geodesic line by `h` gives
   the geodesic line of `h * g`, pointwise; `TauCeti.UpperHalfPlane.smul_range_geodesicLine` is
   the same fact at the level of the line as a set, so these lines are permuted, not merely
   mapped into each other, by the `PSL(2, ℝ)`-action.
+* `TauCeti.UpperHalfPlane.exists_geodesicLine_zero_eq` — a geodesic line through any prescribed
+  point of `ℍ`.
 -/
 
 public section
@@ -59,7 +64,6 @@ theorem geodesicLine_def (g : PSL(2, ℝ)) (t : ℝ) :
   rfl
 
 /-- The geodesic line of the identity is the upward unit-speed imaginary axis. -/
-@[simp]
 theorem geodesicLine_one (t : ℝ) :
     geodesicLine (1 : PSL(2, ℝ)) t = UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
   simp [geodesicLine_def]
@@ -75,9 +79,13 @@ theorem dist_geodesicLine (g : PSL(2, ℝ)) (s t : ℝ) :
     dist (geodesicLine g s) (geodesicLine g t) = |s - t| := by
   rw [(isometry_geodesicLine g).dist_eq, Real.dist_eq]
 
-/-- Higher priority than `geodesicLine_one`, so `geodesicLine 1 0` still normalises to `I`
-rather than to `geodesicLine_one`'s more general (but less specific at `g = 1`) rewrite. -/
-@[simp high]
+/-- The specialization of `dist_geodesicLine` to the line's own parameter `0`, the form a
+consumer working from a fixed base point reaches for. -/
+@[simp]
+theorem dist_geodesicLine_zero (g : PSL(2, ℝ)) (t : ℝ) :
+    dist (geodesicLine g t) (geodesicLine g 0) = |t| := by
+  simp
+
 theorem geodesicLine_zero (g : PSL(2, ℝ)) : geodesicLine g 0 = g • UpperHalfPlane.I := by
   rw [geodesicLine_def]
   congr 1
