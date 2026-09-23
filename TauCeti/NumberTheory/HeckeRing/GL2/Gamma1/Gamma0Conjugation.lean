@@ -156,9 +156,9 @@ private lemma conjTau_mul (a b c e p j t : ℤ) (hdet : a * e - b * c = 1)
   · linear_combination (-j) * hdet + a * ht
   · linear_combination c * ht
 
-/-- **`det τ = 1`**, structurally from the product identity and `det C = p`. -/
-private lemma conjTau_det (a b c e p j t : ℤ) (hdet : a * e - b * c = 1)
-    (ht : b + j * e = p * t) : (conjTau a b c e p j t).det = 1 := by
+/-- **`det τ = 1`** at any offset with `b + j e = p t`, for every `p` (`p = 0` included). -/
+private lemma conjTau_det (a b c e p j t : ℤ) (hdet : a * e - b * c = 1) (ht : b + j * e = p * t) :
+    (conjTau a b c e p j t).det = 1 := by
   rw [conjTau, Matrix.det_fin_two_of]
   linear_combination (c * (1 - p) * (t - b)) * hdet + c * ht
 
