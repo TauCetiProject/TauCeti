@@ -150,6 +150,7 @@ private lemma integrableOn_scaled_fisherMomentKernel_iff (hm : 0 < m) (hn : 0 < 
 
 /-- A natural power is integrable under a valid Fisher--Snedecor law exactly when twice its
 order is below the denominator degrees of freedom. -/
+@[simp]
 theorem integrable_pow_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) (q : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ q) (fisherSnedecorMeasure m n) ↔ 2 * q < n := by
   rw [integrable_fisherSnedecorMeasure_iff_integrableOn_Ioi]
@@ -275,6 +276,7 @@ private lemma betaMomentIntegrand_eq (q : ℕ) {u : ℝ}
       rw [hpowu, hpowv]
 
 /-- The `q`th natural moment of a Fisher--Snedecor law, in beta-function form. -/
+@[simp]
 theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
     (hq : 2 * q < n) :
     ∫ x, x ^ q ∂fisherSnedecorMeasure m n =
