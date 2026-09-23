@@ -55,6 +55,9 @@ receiver notation on the Lie ideal.
 
 The ideal construction and its use in the proof of Ado's theorem follow W. Fulton and J. Harris,
 *Representation Theory: A First Course*, Appendix E.
+
+The uniform nilpotence argument uses Mathlib's Engel-theorem characterization
+`LieModule.isNilpotent_iff_forall'` from `Mathlib.Algebra.Lie.Engel`.
 -/
 
 public section
