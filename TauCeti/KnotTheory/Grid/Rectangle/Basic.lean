@@ -692,7 +692,6 @@ def IsEmpty : Prop :=
 
 /-- Emptiness of an oriented rectangle is emptiness of its underlying toroidal rectangle for the
 source state. -/
-@[simp]
 theorem isEmpty_iff_toGridRectangle_isEmptyFor :
     R.IsEmpty ↔ R.toGridRectangle.IsEmptyFor x := Iff.rfl
 
