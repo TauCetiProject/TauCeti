@@ -307,7 +307,7 @@ instance : (quotient C).Full := by
 
 section
 
-variable (C) [HasZeroObject C] [HasBinaryBiproducts C]
+variable (C) [HasZeroObject C]
 
 private noncomputable def singleFunctorLift (n : ℤ) : C ⥤ HomotopyCategory.Bounded C :=
   (HomotopyCategory.bounded C).lift (HomotopyCategory.singleFunctor C n)
