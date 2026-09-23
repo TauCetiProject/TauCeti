@@ -6,19 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
+public import TauCeti.NumberTheory.LocalField.Teichmuller
 
 /-!
-# Frobenius in towers of unramified local fields
+# Frobenius in unramified local fields
 
 The arithmetic Frobenius of a finite unramified extension is compatible with restriction through
 a normal intermediate field. This identifies the Frobenius elements at different finite levels
 of an unramified tower, rather than merely identifying arbitrary generators of their cyclic Galois
-groups.
+groups. It acts on Teichmüller representatives and prime-to-residue-characteristic roots of unity
+by raising their residue classes to the cardinality of the base residue field.
 
 ## Main result
 
 * `TauCeti.frobeniusAlgEquiv_restrictNormal`: restricting arithmetic Frobenius to a normal
   intermediate field gives arithmetic Frobenius there.
+* `TauCeti.frobeniusAlgEquiv_teichmullerLift`: arithmetic Frobenius acts on Teichmüller
+  representatives by the `q`-th power map on the residue field.
+* `TauCeti.frobeniusAlgEquiv_rootsOfUnity`: on prime-to-residue-characteristic roots of
+  unity, arithmetic Frobenius acts by the `q`-th power map.
 
 ## References
 
@@ -32,6 +38,48 @@ noncomputable section
 open ValuativeRel
 
 namespace TauCeti
+
+section Teichmuller
+
+variable {K L : Type*}
+  [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L] [IsGalois K L]
+
+/-- Arithmetic Frobenius sends the Teichmüller representative of `a` to that of `a ^ q`,
+where `q` is the cardinality of the residue field of the base. -/
+@[simp]
+theorem frobeniusAlgEquiv_teichmullerLift [IsUnramified K L] (a : 𝓀[L]) :
+    (frobeniusAlgEquiv (K := K) (L := L)).integerRingAlgEquiv (teichmullerLift L a) =
+      teichmullerLift L (a ^ Nat.card 𝓀[K]) := by
+  rw [AlgEquiv.integerRingAlgEquiv_teichmullerLift]
+  congr 1
+  have h := congrArg (fun e : 𝓀[L] ≃ₐ[𝓀[K]] 𝓀[L] ↦ e a)
+    (residueField_toAlgEquiv_frobeniusAlgEquiv (K := K) (L := L))
+  simpa only [MulSemiringAction.toAlgEquiv_apply,
+    FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
+    Fintype.card_eq_nat_card] using h
+
+/-- Arithmetic Frobenius raises every `(q_L - 1)`-st root of unity in an unramified extension
+to the `q_K`-th power. -/
+@[simp]
+theorem frobeniusAlgEquiv_rootsOfUnity [IsUnramified K L]
+    (ζ : rootsOfUnity (Nat.card 𝓀[L] - 1) L) :
+    frobeniusAlgEquiv (K := K) (L := L) ((ζ : Lˣ) : L) =
+      (((ζ : Lˣ) : L) ^ Nat.card 𝓀[K]) := by
+  let a := rootsOfUnityAlgebraMulEquivUnitsResidueField 𝒪[L] L ζ
+  have hζ : ((ζ : Lˣ) : L) = ((teichmullerLift L (a : 𝓀[L]) : 𝒪[L]) : L) := by
+    rw [← coe_teichmuller_apply]
+    exact (algebraMap_teichmuller_rootsOfUnityAlgebraMulEquivUnitsResidueField
+      𝒪[L] L ζ).symm
+  rw [hζ]
+  rw [← AlgEquiv.coe_smul_integerRing,
+    ← AlgEquiv.integerRingAlgEquiv_apply,
+    frobeniusAlgEquiv_teichmullerLift,
+    map_pow]
+  rfl
+
+end Teichmuller
 
 variable {K L M : Type*}
   [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
