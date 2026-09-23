@@ -11,10 +11,11 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 # Real translations of the upper half-plane
 
 A real number `r` translates a point `z` of `ℍ` to `r +ᵥ z`. The translation is an isometry of
-the hyperbolic metric but not of the modulus: it preserves `‖z‖` exactly when `z` lies on the
-perpendicular bisector `re = -r / 2` of `0` and `-r`, since then `z` and `r +ᵥ z` are mirror
-images in the imaginary axis. For `r = ±1` that line contains a vertical edge of the standard
-fundamental domain, which is how the fundamental-domain API uses these lemmas.
+the hyperbolic metric but not of the modulus: for `r ≠ 0` it preserves `‖z‖` exactly when `z`
+lies on the perpendicular bisector `re = -r / 2` of `0` and `-r`, since then `z` and `r +ᵥ z` are
+mirror images in the imaginary axis. The lemmas here prove that this condition is sufficient, for
+every `r`. For `r = ±1` that line contains a vertical edge of the standard fundamental domain,
+which is how the fundamental-domain API uses these lemmas.
 
 ## Main results
 
