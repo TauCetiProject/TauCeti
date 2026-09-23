@@ -61,7 +61,8 @@ def restrictedProductCongrLeft (e : ι' ≃ ι) :
 theorem restrictedProductCongrLeft_apply_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     restrictedProductCongrLeft e x (e i) = x i := by
-  -- Unfolding the restricted-product equivalence exposes the underlying dependent Pi reindexing.
+  -- The Mathlib coordinate theorem is stated for functions, so expose the restricted-product
+  -- subtype coercion before applying it.
   change (e.piCongrLeft G x) (e i) = x i
   exact Equiv.piCongrLeft_apply_apply G e x i
 
@@ -79,7 +80,7 @@ theorem restrictedProductCongrLeft_apply (e : ι' ≃ ι)
 theorem restrictedProductCongrLeft_symm_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G i, U i]) (i : ι') :
     (restrictedProductCongrLeft e).symm x i = x (e i) := by
-  -- As above, the subtype equivalence uses the inverse Pi reindexing pointwise.
+  -- The inverse equivalence's subtype coercion must be exposed to match Mathlib's function lemma.
   change ((e.piCongrLeft G).symm x) i = x (e i)
   exact Equiv.piCongrLeft_symm_apply G e x i
 
@@ -156,9 +157,7 @@ theorem continuous_restrictedProductCongrLeft (e : ι' ≃ ι) :
     funext x
     apply RestrictedProduct.ext
     intro i
-    -- RestrictedProduct.ext reduces the map equality to evaluation after inclusion.
-    change restrictedProductCongrLeft e (RestrictedProduct.inclusion _ _ hS x) i =
-      RestrictedProduct.inclusion _ _ hT (f x) i
+    rw [Function.comp_apply, Function.comp_apply]
     rw [restrictedProductCongrLeft_apply, RestrictedProduct.inclusion_apply]
     simp [f, RestrictedProduct.mapAlong_apply, φ]
   rw [hfac]
@@ -196,9 +195,7 @@ theorem continuous_restrictedProductCongrLeft_symm (e : ι' ≃ ι) :
     funext x
     apply RestrictedProduct.ext
     intro i
-    -- The inclusion coercions expose the inverse Pi reindexing on evaluation.
-    change (restrictedProductCongrLeft e).symm (RestrictedProduct.inclusion _ _ hS x) i =
-      RestrictedProduct.inclusion _ _ hT (f x) i
+    rw [Function.comp_apply, Function.comp_apply]
     simp [f, RestrictedProduct.mapAlong_apply]
   rw [hfac]
   exact (RestrictedProduct.continuous_inclusion hT).comp hf
