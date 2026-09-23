@@ -77,8 +77,8 @@ the values of `TauCeti.hurwitzClassNumber`; the other definitions are not.
 * H. Cohen, *A Course in Computational Algebraic Number Theory*, Graduate Texts in Mathematics
   138, Springer, 1993, §5.2–5.3.
 * D. A. Buell, *Binary Quadratic Forms: Classical Theory and Modern Computations*, Springer, 1989.
-* A. Popa and D. Zagier, *A simple proof of the Eichler–Selberg trace formula*,
-  J. Ramanujan Math. Soc. (2019), arXiv:1711.00327.
+* A. Popa and D. Zagier, *An elementary proof of the Eichler–Selberg trace formula*,
+  J. Reine Angew. Math. **762** (2020), 105–122, arXiv:1711.00327.
 -/
 
 public section
