@@ -12,6 +12,7 @@ public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Option
 public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Combinatorics.Quiver.WideSubquiver
 
 /-!
 # Cardinalities of arborescences
@@ -65,13 +66,6 @@ private noncomputable instance wideSubquiverVertexFintype [Fintype V]
 
 private noncomputable instance symmetrifyFintype [Fintype V] : Fintype (Symmetrify V) :=
   Fintype.ofEquiv V (Equiv.refl _)
-
-private def wideTotalEquiv (H : WideSubquiver V) :
-    Quiver.Total H ≃ (wideSubquiverEquivSetTotal H : Set (Quiver.Total V)) where
-  toFun e := ⟨⟨e.left, e.right, e.hom.val⟩, e.hom.property⟩
-  invFun e := ⟨e.1.left, e.1.right, ⟨e.1.hom, e.2⟩⟩
-  left_inv e := by cases e; rfl
-  right_inv e := by cases e; rfl
 
 private lemma existsLastData (T : WideSubquiver V) [Arborescence T]
     {b : T} (hb : b ≠ root T) :
@@ -228,11 +222,11 @@ theorem symmetrifiedTreeSetCard [Finite V]
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Fintype.ofEquiv _ (symEdgeEquiv T)
     letI : Fintype (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
-        Set (Quiver.Total V)) := Fintype.ofEquiv _ (wideTotalEquiv _)
+        Set (Quiver.Total V)) := Fintype.ofEquiv _ (totalEquivSet _)
     -- Keep the finite instances local to this proof while retaining `Finite` in the public API.
     show _ from by
       rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
-        ← Fintype.card_congr (wideTotalEquiv (wideSubquiverSymmetrify T)),
+        ← Fintype.card_congr (totalEquivSet (wideSubquiverSymmetrify T)),
         ← Fintype.card_congr (symEdgeEquiv T)]
       have hcard : Fintype.card (Symmetrify V) = Fintype.card V :=
         Fintype.card_congr (Equiv.refl V)
@@ -253,7 +247,7 @@ theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
       wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T)
     letI : Fintype A := Fintype.ofFinite _
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
-      Fintype.ofEquiv _ (wideTotalEquiv _).symm
+      Fintype.ofEquiv _ (totalEquivSet _).symm
     letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (symEdgeEquiv T).symm
     letI : Fintype {b : T // b ≠ root T} := Fintype.ofEquiv _ (arborescenceEdgeEquiv T)
     let f : Option {b : T // b ≠ root T} → T := fun b => b.elim (root T) Subtype.val
@@ -270,7 +264,7 @@ theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Fintype.ofEquiv _ (symEdgeEquiv T)
     letI : Fintype (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
-        Set (Quiver.Total V)) := Fintype.ofEquiv _ (wideTotalEquiv _)
+        Set (Quiver.Total V)) := Fintype.ofEquiv _ (totalEquivSet _)
     -- Reuse finite cardinality lemmas without exposing chosen `Fintype` instances.
     show _ from by
       rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
