@@ -18,8 +18,7 @@ track a product for `t ≤ ε` and `t ≥ 1 − ε`.
 
 The complementary model of the locally flat track is explicit data, as it is in
 `IsLocallyFlat`; no smooth structure is smuggled into the topological relation. Reversing the real
-parameter and the ambient time coordinate gives the symmetry operation. Transitivity is not proved
-in this file.
+parameter and the ambient time coordinate gives the symmetry operation.
 
 This is the relation underlying topological knot concordance: specialising `M` to the circle and
 `N` to `S³` gives the topological concordance relation on geometric knot presentations.
@@ -242,11 +241,6 @@ end TopologicalConcordance
 def TopologicallyConcordant (F F' : Type*) [TopologicalSpace F] [TopologicalSpace F'] [Zero F']
     (f g : M → N) : Prop :=
   Nonempty (TopologicalConcordance F F' f g)
-
-/-- Topological concordance is exactly the nonemptiness of its track type. -/
-theorem topologicallyConcordant_iff_nonempty {f g : M → N} :
-    TopologicallyConcordant F F' f g ↔ Nonempty (TopologicalConcordance F F' f g) :=
-  Iff.rfl
 
 namespace TopologicallyConcordant
 
