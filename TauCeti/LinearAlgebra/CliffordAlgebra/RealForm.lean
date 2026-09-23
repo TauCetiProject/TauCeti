@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+public import TauCeti.LinearAlgebra.QuadraticForm.Real
 
 /-!
 # The real Clifford algebras `Cliff(p, q)` and the base entries of the Bott table
@@ -85,6 +86,8 @@ equivalences and their values, not their bare existence, that the Bott-periodici
 
 ## Main results
 
+* `QuadraticForm.equivalent_realSignatureForm_realCliffordForm`: the orthogonal-sum and coordinate
+  presentations of the real normal form are isometric.
 * `TauCeti.nondegenerate_realCliffordForm`: the signature forms are nondegenerate.
 * `TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`: the compact signature form is the
   standard real sum-of-squares form.
@@ -118,6 +121,10 @@ Clifford algebra `Cliff(p, q)`. -/
 def realCliffordForm (p q : ℕ) : QuadraticForm ℝ (Fin (p + q) → ℝ) :=
   weightedSumSquares ℝ (realCliffordWeight p q)
 
+/-- The coordinate signature form is the weighted sum of squares for `realCliffordWeight`. -/
+theorem realCliffordForm_def (p q : ℕ) :
+    realCliffordForm p q = weightedSumSquares ℝ (realCliffordWeight p q) := (rfl)
+
 @[simp]
 theorem realCliffordWeight_of_lt {p q : ℕ} {i : Fin (p + q)} (hi : (i : ℕ) < p) :
     realCliffordWeight p q i = 1 :=
@@ -127,6 +134,17 @@ theorem realCliffordWeight_of_lt {p q : ℕ} {i : Fin (p + q)} (hi : (i : ℕ) <
 theorem realCliffordWeight_of_le {p q : ℕ} {i : Fin (p + q)} (hi : p ≤ (i : ℕ)) :
     realCliffordWeight p q i = -1 :=
   ite_eq_right (not_lt.2 hi)
+
+/-- The orthogonal-sum and coordinate presentations of the real normal form of signature `(p, q)`
+are isometric. -/
+theorem _root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
+    (_root_.QuadraticForm.realSignatureForm p q).Equivalent (realCliffordForm p q) := by
+  have hweight : realCliffordWeight p q ∘ finSumFinEquiv =
+      Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
+    funext x
+    cases x <;> simp
+  rw [_root_.QuadraticForm.realSignatureForm_def, realCliffordForm_def]
+  exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv hweight
 
 @[simp]
 theorem realCliffordWeight_mul_self (p q : ℕ) (i : Fin (p + q)) :

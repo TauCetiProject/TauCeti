@@ -34,6 +34,8 @@ sublattice.
 
 * `TauCeti.GlobalNumberFields.mem_congruenceLattice_iff`: its points are the images of the
   elements of `I * 𝔪₀`.
+* `TauCeti.GlobalNumberFields.coe_congruenceLattice_mk0_eq_image`: for an integral ideal `𝔞`,
+  the same description over `𝔞 * 𝔪₀`.
 * `TauCeti.GlobalNumberFields.congruenceLattice_le_idealLattice`: it is a sublattice of the ideal
   lattice of `I`.
 * `TauCeti.GlobalNumberFields.relIndex_congruenceLattice`: its index in the ideal lattice of `I`
@@ -147,5 +149,17 @@ theorem congruenceLattice_one (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
 theorem congruenceLattice_narrowModulus (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     congruenceLattice (narrowModulus K) I = idealLattice K I :=
   congruenceLattice_eq_idealLattice_of_finitePart_eq_top (narrowModulus_finitePart) I
+
+/-- **The congruence lattice of an integral ideal, upstairs.**  For a nonzero integral ideal `𝔞`,
+the congruence lattice of `𝔪` at `mk0 𝔞` is the image under `mixedEmbedding` of the ideal
+`𝔞 * 𝔪₀` of `𝓞 K`. -/
+@[simp]
+theorem coe_congruenceLattice_mk0_eq_image (𝔪 : Modulus K) (𝔞 : (Ideal (𝓞 K))⁰) :
+    (congruenceLattice 𝔪 (FractionalIdeal.mk0 K 𝔞) : Set (mixedSpace K)) =
+      (fun y : 𝓞 K ↦ mixedEmbedding K (y : K)) ''
+        ((𝔞 : Ideal (𝓞 K)) * 𝔪.finitePart : Ideal (𝓞 K)) := by
+  ext x
+  simp [mem_congruenceLattice_iff, FractionalIdeal.coe_mk0, ← FractionalIdeal.coeIdeal_mul,
+    FractionalIdeal.mem_coeIdeal]
 
 end TauCeti.GlobalNumberFields

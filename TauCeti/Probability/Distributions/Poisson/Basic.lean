@@ -29,9 +29,7 @@ public section
 open MeasureTheory ProbabilityTheory Real
 open scoped NNReal Nat
 
-namespace TauCeti
-
-namespace Probability
+namespace TauCeti.Probability
 
 /-- The probability-generating function of a Poisson distribution. -/
 @[simp]
@@ -154,6 +152,4 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
   rw [hX.variance_eq]
   exact variance_id_map_cast_poissonMeasure r
 
-end Probability
-
-end TauCeti
+end TauCeti.Probability

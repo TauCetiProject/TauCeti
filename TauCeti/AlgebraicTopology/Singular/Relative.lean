@@ -35,10 +35,13 @@ universe w v u
 
 namespace TopPair
 
+/-- The inclusion of the subspace of a topological pair is a monomorphism, since an embedding is
+injective. -/
+instance (P : TopPair.{w}) : Mono P.map :=
+  (TopCat.mono_iff_injective _).mpr P.isEmbedding_map.injective
+
 /-- An embedding of topological spaces induces a monomorphism of singular simplicial sets. -/
-instance (P : TopPair.{w}) : Mono (TopCat.toSSet.map P.map) := by
-  let _ : Mono P.map := (TopCat.mono_iff_injective _).mpr P.isEmbedding_map.injective
-  apply Functor.map_mono
+instance (P : TopPair.{w}) : Mono (TopCat.toSSet.map P.map) := Functor.map_mono _ _
 
 /-- The singular simplicial-set pair associated to a topological pair. -/
 def toSSetPair : TopPair.{w} ⥤ SSetPair.{w} :=

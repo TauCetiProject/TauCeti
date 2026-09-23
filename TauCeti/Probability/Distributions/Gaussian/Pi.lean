@@ -16,16 +16,19 @@ The product measure `γ^ι = Measure.pi (fun _ : ι => gaussianReal 0 1)` is Leb
 what lets a weight-in-the-measure statement about `γ^ι` be read as a weight-in-the-function
 statement about `volume^ι`, via `TauCeti.weightL2Isometry`.
 
-Like `TauCeti.gaussianPDFReal_zero_one`, these are statements about the Gaussian distribution
+Like `TauCeti.Probability.gaussianPDFReal_zero_one`, these are statements about the Gaussian
+distribution
 alone (no orthogonal family appears), so they live here rather than with the multi-index Hermite
 basis that consumes them.
 
 ## Main statements
 
-* `TauCeti.prod_gaussianPDFReal_zero_one`: the joint density in closed form,
+* `TauCeti.Probability.prod_gaussianPDFReal_zero_one`: the joint density in closed form,
   `(2π)^(-d/2) · e^{-∑ᵢ xᵢ²/2}`, where `d` is the number of coordinates.
-* `TauCeti.pi_gaussianReal_eq_withDensity`: `γ^ι = volume^ι` weighted by the joint density.
-* `TauCeti.pi_volume_absolutelyContinuous_pi_gaussianReal`: the joint density never vanishes, so
+* `TauCeti.Probability.pi_gaussianReal_eq_withDensity`: `γ^ι = volume^ι` weighted by the joint
+  density.
+* `TauCeti.Probability.pi_volume_absolutelyContinuous_pi_gaussianReal`: the joint density never
+  vanishes, so
   `volume^ι`-null sets are exactly `γ^ι`-null sets in the direction one needs to move an
   almost-everywhere statement from `γ^ι` to `volume^ι`.
 -/
@@ -36,7 +39,7 @@ open MeasureTheory ProbabilityTheory Real
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable (ι : Type*) [Fintype ι]
 
@@ -103,4 +106,4 @@ theorem pi_volume_absolutelyContinuous_pi_gaussianReal :
     (Filter.Eventually.of_forall fun x =>
       (ENNReal.ofReal_pos.2 (prod_gaussianPDFReal_pos ι x)).ne')
 
-end TauCeti
+end TauCeti.Probability

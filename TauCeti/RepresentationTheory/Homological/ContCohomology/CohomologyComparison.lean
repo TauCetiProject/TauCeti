@@ -49,6 +49,9 @@ is why the discrete synonyms exist.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_apply` and
   `explicitH2AddEquivContinuousCohomology_apply`: the comparisons send the class of an explicit
   cocycle to the homology class of the cocycle it corresponds to.
+* `TauCeti.ContCohomology.explicitIso_map`: the degree-one comparison is natural in compatible
+  pairs, with `explicitIso_res` and `explicitIso_coeffMap` as its restriction and coefficient-map
+  specializations.
 * `TauCeti.ContCohomology.explicitH2AddEquivContinuousCohomology_map` and
   `explicitH2AddEquivContinuousCohomology_coeffMap`: the degree-two comparison carries the explicit
   pullback along a compatible pair, and in particular the explicit coefficient map, to the
@@ -126,6 +129,27 @@ theorem explicitH1AddEquivContinuousCohomology_symm_apply
   apply (explicitH1AddEquivContinuousCohomology G M).injective
   rw [AddEquiv.apply_symm_apply, explicitH1AddEquivContinuousCohomology_apply,
     AddEquiv.apply_symm_apply]
+
+/-- **Naturality of the degree-one comparison.** The comparison carries the explicit
+pullback along a compatible pair to Mathlib's canonical continuous-cohomology map along the same
+pair. Restriction and coefficient maps below are specializations of this square. -/
+theorem explicitH1AddEquivContinuousCohomology_map
+    (H N : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction H N] [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N)
+    (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (x : H1 G M) :
+    _root_.ContinuousCohomology.map φ
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) 1
+        (explicitH1AddEquivContinuousCohomology G M x) =
+      explicitH1AddEquivContinuousCohomology H N
+        (explicitMap1 G M H N φ f continuous_of_discreteTopology hf x) := by
+  induction x using QuotientAddGroup.induction_on with
+  | H c =>
+    rw [explicitMap1_mk, explicitH1AddEquivContinuousCohomology_apply,
+      explicitH1AddEquivContinuousCohomology_apply, ← cocycleEquiv1_naturality]
+    exact congr($(_root_.ContinuousCohomology.π_map φ
+      (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) 1)
+      (cocycleEquiv1 G M c))
 
 /-! ### Degree two -/
 
@@ -284,6 +308,63 @@ theorem explicitH1IsoContinuousCohomology_inv_apply
     ((explicitH1AddEquivContinuousCohomology G M).symm
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 1 c)) = _
   rw [explicitH1AddEquivContinuousCohomology_symm_apply]
+
+/-! ### Transport in degree one -/
+
+/-- **Transport of compatible-pair pullback in degree one.** The isomorphisms of
+topological modules carry the explicit pullback to Mathlib's canonical map. Compactness is needed
+only to equip the canonical cohomology objects with their discrete topology. -/
+theorem explicitIso_map
+    (H N : Type u) [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction H N] [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N)
+    (hf : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (x : DiscreteH1 G M) :
+    _root_.ContinuousCohomology.map φ
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) 1
+        ((explicitH1IsoContinuousCohomology G M).hom x) =
+      (explicitH1IsoContinuousCohomology H N).hom
+        ((discreteH1Equiv H N).symm
+          (explicitMap1 G M H N φ f continuous_of_discreteTopology hf
+            (discreteH1Equiv G M x))) := by
+  rw [explicitH1IsoContinuousCohomology_hom_apply,
+    explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
+  exact explicitH1AddEquivContinuousCohomology_map G M H N φ f hf
+    (discreteH1Equiv G M x)
+
+/-- **Transport of restriction in degree one.** The comparison carries restriction of
+explicit cohomology classes to canonical restriction along the subgroup inclusion. -/
+theorem explicitIso_res (S : Subgroup G) [CompactSpace S] (x : DiscreteH1 G M) :
+    TauCeti.ContinuousCohomology.res S (ofDiscreteModule ℤ G M) 1
+        ((explicitH1IsoContinuousCohomology G M).hom x) =
+      (explicitH1IsoContinuousCohomology S M).hom
+        ((discreteH1Equiv S M).symm
+          (explicitRes1 G M S (discreteH1Equiv G M x))) := by
+  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype S : S →* G)
+      (AddMonoidHom.id M).toIntLinearMap (fun _ _ ↦ rfl) =
+      𝟙 (TopRep.res (S.subtype : S →* G) (ofDiscreteModule ℤ G M)) :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  rw [TauCeti.ContinuousCohomology.res_def, explicitRes1_eq_explicitMap1, ← hpair]
+  exact explicitIso_map G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
+    (fun _ _ ↦ rfl) x
+
+/-- **Transport of coefficient maps in degree one.** The comparison carries the
+explicit coefficient map to the canonical map induced by the same equivariant homomorphism. -/
+theorem explicitIso_coeffMap
+    (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [DistribMulAction G N] [ContinuousSMul G N] (f : M →+[G] N) (x : DiscreteH1 G M) :
+    TauCeti.ContinuousCohomology.coeffMap
+        (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m) 1
+        ((explicitH1IsoContinuousCohomology G M).hom x) =
+      (explicitH1IsoContinuousCohomology G N).hom
+        ((discreteH1Equiv G N).symm
+          (explicitCoeff1 G M f continuous_of_discreteTopology (discreteH1Equiv G M x))) := by
+  have hpair : ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G)
+      f.toAddMonoidHom.toIntLinearMap (fun g m ↦ map_smul f g m) =
+      ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap fun g m ↦ map_smul f g m :=
+    ofDiscreteModulePair_eq_of_hom_apply _ _ _ _ fun _ ↦ rfl
+  rw [TauCeti.ContinuousCohomology.coeffMap_def, explicitCoeff1_eq_explicitMap1, ← hpair]
+  exact explicitIso_map G M G N (ContinuousMonoidHom.id G) f.toAddMonoidHom
+    (fun g m ↦ map_smul f g m) x
 
 /-- The degree-two comparison in `TopModuleCat ℤ`. -/
 noncomputable def explicitH2IsoContinuousCohomology :

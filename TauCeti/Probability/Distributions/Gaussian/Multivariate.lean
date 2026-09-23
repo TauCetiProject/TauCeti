@@ -23,13 +23,17 @@ linear maps and characterizes independence of complementary coordinate blocks.
 
 ## Main results
 
-* `TauCeti.covMatrix_multivariateGaussian` recovers the covariance parameter of a multivariate
+* `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
+  multivariate
   Gaussian law.
-* `TauCeti.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as an image
+* `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
+  an image
   of the standard Gaussian.
-* `TauCeti.covariance_inner_matrix_multivariateGaussian` computes covariance after two matrix
+* `TauCeti.Probability.covariance_inner_matrix_multivariateGaussian` computes covariance after two
+  matrix
   maps.
-* `TauCeti.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of two
+* `TauCeti.Probability.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of
+  two
   complementary coordinate blocks.
 
 ## References
@@ -45,7 +49,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 open scoped MatrixOrder Matrix.Norms.L2Operator RealInnerProductSpace
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι : Type*}
 
@@ -184,4 +188,4 @@ theorem indepFun_sumEquivProd_multivariateGaussian_iff
     convert hind_eval.comp (by fun_prop : Measurable (EuclideanSpace.equiv ι ℝ).symm)
       (by fun_prop : Measurable (EuclideanSpace.equiv κ ℝ).symm) using 1 <;> ext x i <;> rfl
 
-end TauCeti
+end TauCeti.Probability

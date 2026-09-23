@@ -136,17 +136,12 @@ variable {R : Type*} [Ring R] [TopologicalSpace R] {G : Type*} [Monoid G]
 
 /-- The `G`-action on the underlying module of an object of `TopRep R G`, read off from its
 operators. This is the object half of the translation back to Mathlib's unbundled classes. It is
-not a global instance: `X.V` is a projection, so instance search would attempt it on every action
-goal. Files that need it declare it a `local instance`, as this one does below. Its behaviour is
-`TopRep.distribMulAction_smul`; the body is `@[expose]`d only because the round trip of the
-dictionary below (`TauCeti.discreteRepEquivSmoothTopRep`) returns an object carrying this very
-instance, and identifying it with the one it started from is a definitional step. -/
-@[expose, instance_reducible] def distribMulAction (X : TopRep R G) : DistribMulAction G X.V where
-  smul g x := X.ρ g x
-  one_smul x := congr($(map_one X.ρ) x)
-  mul_smul g h x := congr($(map_mul X.ρ g h) x)
-  smul_zero g := map_zero (X.ρ g)
-  smul_add g x y := map_add (X.ρ g) x y
+not a global instance; files that need it declare it a `local instance`, as this one does below.
+Its behaviour is `TopRep.distribMulAction_smul`; the body is `@[expose]`d only because the round
+trip of the dictionary below (`TauCeti.discreteRepEquivSmoothTopRep`) returns an object carrying
+this very instance, and identifying it with the one it started from is a definitional step. -/
+@[expose, instance_reducible] def distribMulAction (X : TopRep R G) : DistribMulAction G X.V :=
+  .compHom X.V X.ρ.toRepresentation
 
 attribute [local instance] distribMulAction
 

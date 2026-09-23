@@ -16,7 +16,8 @@ matrix-valued parameter define a measure-valued kernel without first bundling th
 
 ## Main result
 
-* `TauCeti.measurable_multivariateGaussian` — the Gaussian law is jointly measurable in its mean
+* `TauCeti.Probability.measurable_multivariateGaussian` — the Gaussian law is jointly measurable in
+  its mean
   and every coordinate of its raw matrix parameter.
 -/
 
@@ -26,7 +27,7 @@ noncomputable section
 
 open ProbabilityTheory
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -40,4 +41,4 @@ theorem measurable_multivariateGaussian :
   ProbabilityTheory.measurable_multivariateGaussian.comp
     (measurable_fst.prodMk ((Matrix.measurable_of ι ι ℝ).comp measurable_snd))
 
-end TauCeti
+end TauCeti.Probability

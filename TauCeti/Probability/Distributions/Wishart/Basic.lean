@@ -20,7 +20,8 @@ import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
 /-!
 # The Gaussian-Gram Wishart family
 
-The Gaussian-Gram Wishart law `TauCeti.wishartGramMeasure ν S` is the law of the Gram sum
+The Gaussian-Gram Wishart law `TauCeti.Probability.wishartGramMeasure ν S` is the law of the Gram
+sum
 `∑ r, X r * (X r)ᵀ` of `ν` independent centred multivariate Gaussian vectors with covariance
 matrix `S`, carried by the symmetric-matrix subspace of
 `TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic`.
@@ -32,33 +33,44 @@ a density definition cannot.
 
 ## Main definitions
 
-* `TauCeti.wishartGram` — the Gram sum of a finite family of Euclidean vectors, bundled into the
+* `TauCeti.Probability.wishartGram` — the Gram sum of a finite family of Euclidean vectors, bundled
+  into the
   symmetric-matrix subspace.
-* `TauCeti.wishartGramMeasure` — the Gaussian-Gram Wishart law.
+* `TauCeti.Probability.wishartGramMeasure` — the Gaussian-Gram Wishart law.
 
 ## Main results
 
-* `TauCeti.trace_mul_coe_wishartGram` — the trace statistic of a Gram sum is the sum of the
+* `TauCeti.Probability.trace_mul_coe_wishartGram` — the trace statistic of a Gram sum is the sum of
+  the
   quadratic forms of its vectors.
-* `TauCeti.isProbabilityMeasure_wishartGramMeasure` — it is a probability measure, at every
-  degree and every scale matrix.
-* `TauCeti.hasLaw_wishartGram_gaussian` — the Gram sum of an independent centred Gaussian
+* `TauCeti.Probability.isProbabilityMeasure_wishartGramMeasure` — it is a probability measure,
+  at every degree and every scale matrix.
+* `TauCeti.Probability.hasLaw_wishartGram_gaussian` — the Gram sum of an independent centred
+  Gaussian
   family has this law.
-* `TauCeti.wishartGramMeasure_of_not_posSemidef` — outside the positive-semidefinite cone the law
+* `TauCeti.Probability.wishartGramMeasure_of_not_posSemidef` — outside the positive-semidefinite
+  cone the law
   is the Dirac mass at zero.
-* `TauCeti.map_symmetricCongruenceLinearMap_wishartGramMeasure` — a rectangular congruence carries
+* `TauCeti.Probability.map_symmetricCongruenceLinearMap_wishartGramMeasure` — a rectangular
+  congruence carries
   the law of scale `S` to the law of scale `M * S * Mᵀ`, and
-  `TauCeti.wishartGramMeasure_eq_map_sqrt` specializes it to the square root of the scale.
-* `TauCeti.wishartGramMeasure_conv_wishartGramMeasure` — the degrees add under convolution.
-* `TauCeti.wishartGramMeasure_setOf_posSemidef` — the law is carried by the positive-semidefinite
+  `TauCeti.Probability.wishartGramMeasure_eq_map_sqrt` specializes it to the square root of the
+  scale.
+* `TauCeti.Probability.wishartGramMeasure_conv_wishartGramMeasure` — the degrees add under
+  convolution.
+* `TauCeti.Probability.wishartGramMeasure_setOf_posSemidef` — the law is carried by the
+  positive-semidefinite
   cone.
-* `TauCeti.ae_posSemidef_wishartGramMeasure` — the sampled matrix is positive semidefinite almost
+* `TauCeti.Probability.ae_posSemidef_wishartGramMeasure` — the sampled matrix is positive
+  semidefinite almost
   everywhere.
-* `TauCeti.wishartGramMeasure_setOf_rank_le` — the rank is at most `min ν S.rank`.
-* `TauCeti.ae_rank_le_wishartGramMeasure` — the same rank bound holds almost everywhere.
-* `TauCeti.mutuallySingular_wishartGramMeasure_symmetricLebesgue` — below that rank threshold the
+* `TauCeti.Probability.wishartGramMeasure_setOf_rank_le` — the rank is at most `min ν S.rank`.
+* `TauCeti.Probability.ae_rank_le_wishartGramMeasure` — the same rank bound holds almost everywhere.
+* `TauCeti.Probability.mutuallySingular_wishartGramMeasure_symmetricLebesgue` — below that rank
+  threshold the
   law has no density against `TauCeti.symmetricLebesgue`.
-* `TauCeti.map_symmetricFinOneEquiv_wishartGramMeasure` — in dimension one the law is a chi-squared
+* `TauCeti.Probability.map_symmetricFinOneEquiv_wishartGramMeasure` — in dimension one the law is a
+  chi-squared
   law scaled by the variance, read through the single-entry identification with `ℝ`.
 
 ## References
@@ -74,7 +86,7 @@ open MeasureTheory ProbabilityTheory
 
 open scoped ENNReal RealInnerProductSpace Matrix MatrixOrder
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] {p ν : ℕ} {S : Matrix (Fin p) (Fin p) ℝ}
 
@@ -410,4 +422,4 @@ theorem map_symmetricFinOneEquiv_wishartGramMeasure (ν : ℕ) {S : Matrix (Fin 
       measurable_wishartGram, hgram, ← Measure.map_map (by fun_prop) (by fun_prop), hpi,
     Probability.map_sum_sq_pi_gaussianReal, Fintype.card_fin, Real.coe_toNNReal _ hS]
 
-end TauCeti
+end TauCeti.Probability

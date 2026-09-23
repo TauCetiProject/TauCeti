@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.ObjectCodeMonoid
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
@@ -52,6 +53,8 @@ the same small universe.
 * `TauCeti.SplitK0.of_biprod` and `TauCeti.SplitK0.of_eq_zero_of_isZero`: the defining biproduct
   relation and its consequence for a zero object.
 * `TauCeti.SplitK0.exists_eq_sub`: every split-`K₀` class is a difference of two object classes.
+* `TauCeti.SplitK0.AdditiveInvariant.obj_biproduct` and `TauCeti.SplitK0.of_biproduct`: additive
+  invariants, and in particular the class map, are additive on finite biproducts.
 * `TauCeti.SplitK0.liftEquiv`: the universal property. Biproduct-additive invariants with values
   in `G` correspond bijectively to homomorphisms `SplitK0 C →+ G`.
 * `TauCeti.SplitK0.grothendieckAddGroupEquiv`: split `K₀` is the group completion of the additive
@@ -321,6 +324,65 @@ lemma mapEquiv_toAddMonoidHom (e : C ≌ D) [e.functor.Additive] :
 end SplitK0
 
 end Functoriality
+
+section FiniteBiproducts
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+  {G : Type*} [AddCommGroup G] (v : SplitK0.AdditiveInvariant C G)
+
+namespace SplitK0.AdditiveInvariant
+
+/-- An additive invariant vanishes on zero objects. -/
+theorem obj_eq_zero_of_isZero {X : C} (hX : IsZero X) : v.obj X = 0 := by
+  have h := v.map_biprod X X
+  rw [v.map_iso (isoBiprodZero hX).symm] at h
+  exact add_eq_right.1 h.symm
+
+/-- An additive invariant is additive on finite biproducts. -/
+@[simp]
+theorem obj_biproduct [HasZeroObject C] {J : Type} [Fintype J] (f : J → C) [HasBiproduct f] :
+    v.obj (⨁ f) = ∑ j, v.obj (f j) := by
+  have := hasFiniteBiproducts_of_hasBinaryBiproducts (C := C)
+  revert f
+  refine Fintype.induction_empty_option
+    (P := fun J _ => ∀ (f : J → C) [HasBiproduct f], v.obj (⨁ f) = ∑ j, v.obj (f j))
+    ?_ ?_ ?_ J
+  · intro α β _ e hα f _
+    let : Fintype α := Fintype.ofEquiv β e.symm
+    rw [v.map_iso (biproduct.whiskerEquiv e fun _ => Iso.refl _).symm, hα fun a => f (e a)]
+    exact e.sum_comp fun b => v.obj (f b)
+  · intro f _
+    rw [v.obj_eq_zero_of_isZero ((IsZero.iff_id_eq_zero _).2
+      (biproduct.hom_ext _ _ fun j => j.elim))]
+    simp
+  · intro α _ ih f _
+    rw [v.map_iso (biproductOptionIso f), v.map_biprod, ih, Fintype.sum_option]
+
+end SplitK0.AdditiveInvariant
+
+namespace SplitK0
+
+variable [EssentiallySmall.{w} C]
+
+variable (C) in
+/-- The class map `X ↦ [X]`, as a biproduct-additive invariant valued in split `K₀` itself. -/
+noncomputable def ofInvariant : AdditiveInvariant C (SplitK0 C) where
+  obj := of
+  map_iso _ _ e := of_congr e
+  map_biprod := of_biprod
+
+@[simp]
+lemma ofInvariant_obj (X : C) : (ofInvariant C).obj X = of X := (rfl)
+
+/-- The class of a finite biproduct is the sum of the classes of its summands. -/
+@[simp]
+theorem of_biproduct [HasZeroObject C] {J : Type} [Fintype J] (f : J → C) [HasBiproduct f] :
+    (of (⨁ f) : SplitK0 C) = ∑ j, of (f j) :=
+  (ofInvariant C).obj_biproduct f
+
+end SplitK0
+
+end FiniteBiproducts
 
 section IsoClasses
 

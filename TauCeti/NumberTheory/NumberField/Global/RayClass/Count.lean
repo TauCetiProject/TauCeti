@@ -47,9 +47,7 @@ by a character reaches for; the counting statement is its `Nat.card` shadow.
 * `TauCeti.GlobalNumberFields.rayClassIdealCountingFunction_def`,
   `TauCeti.GlobalNumberFields.idealClassSigmaEquiv_apply_coe` and
   `TauCeti.GlobalNumberFields.idealClassSigmaEquiv_symm_apply_fst`: the characteristic lemmas of
-  the two definitions, so that a consumer never has to unfold either.  They are needed rather than
-  merely convenient: the module system does not expose these definitions, so a downstream module
-  cannot reduce them on its own.
+  the two definitions, so that a consumer never has to unfold either.
 
 ## References
 
@@ -103,9 +101,8 @@ noncomputable def rayClassIdealCountingFunction
   Nat.card {I : integralIdealsPrimeTo 𝔪 //
     idealClass 𝔪 I = c ∧ (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x}
 
-/-- The counting function unfolded.  A downstream module cannot see through the definition on its
-own — the module system does not expose it — so this is the lemma that turns a count back into the
-set it counts. -/
+/-- **The counting function as the cardinality defining it.**  The rewrite rule turning
+`rayClassIdealCountingFunction` into the set of ideals of class `c` whose norm is at most `x`. -/
 theorem rayClassIdealCountingFunction_def (𝔪 : Modulus K) (c : RayClassGroup 𝔪) (x : ℝ) :
     rayClassIdealCountingFunction 𝔪 c x =
       Nat.card {I : integralIdealsPrimeTo 𝔪 //

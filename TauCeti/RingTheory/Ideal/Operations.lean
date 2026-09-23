@@ -31,6 +31,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   belongs to `S'`.
 * `Ideal.sup_pow_le_sup_pow_right`: modulo a two-sided ideal `I`, powers of
   `I ⊔ J` are controlled by the corresponding power of the two-sided ideal `J`.
+* `Ideal.isTwoSided_span_of_subset_center`: a left ideal spanned by central elements is two-sided.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: a subalgebra meeting every
   residue class modulo a principal ideal and containing a generator of it meets every residue
   class modulo each power of that ideal.
@@ -98,6 +99,22 @@ accounted for. -/
 theorem span_insert_eq_top_of_subset (hsub : S ⊆ insert a S')
     (hspan : Ideal.span (insert a S) = ⊤) : Ideal.span (insert a S') = ⊤ :=
   eq_top_mono (Ideal.span_mono <| Set.insert_subset (Set.mem_insert _ _) hsub) hspan
+
+variable {A : Type*} [Semiring A] {s : Set A}
+
+/-- A left ideal spanned by central elements is two-sided. -/
+theorem isTwoSided_span_of_subset_center (hs : s ⊆ Set.center A) :
+    (Ideal.span s).IsTwoSided where
+  mul_mem_of_left b hz := by
+    refine Submodule.span_induction (p := fun z _ ↦ z * b ∈ Ideal.span s)
+      (fun z hz ↦ ?_) (by simp) (fun x y _ _ hx hy ↦ ?_)
+      (fun c x _ hx ↦ ?_) hz
+    · rw [← (Semigroup.mem_center_iff.mp (hs hz) b)]
+      exact Ideal.mul_mem_left _ b (Ideal.subset_span hz)
+    · rw [add_mul]
+      exact Ideal.add_mem _ hx hy
+    · rw [smul_eq_mul, mul_assoc]
+      exact Ideal.mul_mem_left _ c hx
 
 end Span
 

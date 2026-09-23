@@ -31,7 +31,7 @@ tail above `0`, whose mass `1 - exp (-r)` is `P(1, r)` by `TauCeti.regularizedGa
 Read the other way round, the resulting identity is the classical duality between a Poisson law of
 rate `r` and a gamma law of integer shape: a Poisson variable of rate `r` exceeds `n` exactly as
 often as the `(n + 1)`-st arrival of a unit-rate Poisson process occurs before time `r`, which is
-the event `TauCeti.measureReal_Iic_gammaMeasure` measures.
+the event `TauCeti.Probability.measureReal_Iic_gammaMeasure` measures.
 
 ## Main results
 
@@ -57,9 +57,7 @@ public section
 open MeasureTheory ProbabilityTheory Real Set
 open scoped NNReal Nat
 
-namespace TauCeti
-
-namespace Probability
+namespace TauCeti.Probability
 
 variable {r : ℝ≥0} {n : ℕ}
 
@@ -185,6 +183,4 @@ theorem measureReal_le_of_hasLaw_poissonMeasure {Ω : Type*} [MeasurableSpace Ω
   rw [hX.measureReal_eq (p := fun k : ℕ => k ≤ n) .of_discrete, Iic_def]
   exact poissonMeasure_real_Iic r n
 
-end Probability
-
-end TauCeti
+end TauCeti.Probability

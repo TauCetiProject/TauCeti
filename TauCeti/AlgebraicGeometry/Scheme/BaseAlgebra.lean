@@ -20,6 +20,7 @@ the base, stalk, and function-field algebra structures form a scalar tower.
 
 * `Scheme.baseRingToFunctionField`: the canonical map from the base ring to the function field.
 * `Scheme.baseRingToStalk`: the canonical map from the base ring to a stalk.
+* `Scheme.fromSpecStalk_comp_over`: the spectrum of a stalk maps to `X` over the affine base.
 * `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
   algebra structures.
 * `Scheme.baseStalkFunctionFieldIsScalarTower`: compatibility of the base, stalk, and
@@ -130,6 +131,38 @@ instance _root_.AlgebraicGeometry.Scheme.baseStalkFunctionFieldIsScalarTower [Is
   ext c
   simp only [Scheme.baseRingToFunctionField, Scheme.baseRingToStalk, RingHom.comp_apply]
   exact (X.algebraMap_germ_eq_germToFunctionField (U := ⊤) (x := x) trivial _).symm
+
+/-- The canonical morphism from the spectrum of a stalk to a scheme over `Spec k` is a morphism
+over `Spec k`; on rings, its composite with the structure morphism is the algebra map from `k`
+to the stalk. -/
+theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_comp_over (x : X) :
+    X.fromSpecStalk x ≫ (X ↘ Spec (.of k)) =
+      Spec.map (CommRingCat.ofHom (algebraMap k (X.presheaf.stalk x))) := by
+  have hbase : X ↘ Spec (.of k) = X.toSpecΓ ≫
+      Spec.map (CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections k X)) := by
+    have hring : CommRingCat.ofHom (Scheme.Modules.baseRingToGlobalSections k X) =
+        (Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop := by
+      ext c
+      exact Scheme.Modules.baseRingToGlobalSections_apply k X c
+    rw [hring, Spec.map_comp, ← Category.assoc, ← Scheme.toSpecΓ_naturality,
+      ← SpecMap_ΓSpecIso_hom, Category.assoc, ← Spec.map_comp, Iso.inv_hom_id,
+      Spec.map_id, Category.comp_id]
+  rw [hbase, ← Category.assoc, Scheme.fromSpecStalk_toSpecΓ, ← Spec.map_comp, Spec.map_inj,
+    Scheme.algebraMap_stalk_eq_baseRingToStalk, Scheme.baseRingToStalk,
+    CommRingCat.ofHom_comp, CommRingCat.ofHom_hom]
+
+/-- At the generic point of an integral scheme, `fromSpecStalk` is a morphism from the spectrum
+of the function field over the affine base. -/
+theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_genericPoint_comp_over [IsIntegral X] :
+    X.fromSpecStalk (genericPoint X) ≫ (X ↘ Spec (.of k)) =
+      Spec.map (CommRingCat.ofHom (algebraMap k X.functionField)) := by
+  let _ : Nonempty (⊤ : X.Opens) := ⟨⟨genericPoint X, trivial⟩⟩
+  -- Both base-ring maps are the global-sections map followed by a germ at the generic point:
+  -- `Scheme.germToFunctionField ⊤` is by definition that germ.
+  rw [X.fromSpecStalk_comp_over (k := k), Spec.map_inj,
+    Scheme.algebraMap_stalk_eq_baseRingToStalk,
+    Scheme.algebraMap_functionField_eq_baseRingToFunctionField, Scheme.baseRingToStalk,
+    Scheme.baseRingToFunctionField]
 
 end CommRing
 

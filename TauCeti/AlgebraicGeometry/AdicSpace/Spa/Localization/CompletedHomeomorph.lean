@@ -42,6 +42,8 @@ subject only to the hypothesis `A₀ ≤ A⁺` that `spaLocalizationHomeomorph` 
 * `TauCeti.ValuationSpectrum.spaCompletedLocalizationHomeomorph_apply` and
   `TauCeti.ValuationSpectrum.coe_spaCompletedLocalizationHomeomorph`: the homeomorphism is the
   canonical map `spaLocToRationalSubset`, so it is that map which is a homeomorphism.
+* `TauCeti.ValuationSpectrum.val_comp_spaCompletedLocalizationHomeomorph`: composing the
+  homeomorphism with the inclusion of `R(T/s)` into `Spa (A, A⁺)` is `spaComapLoc`.
 
 ## References
 
@@ -144,6 +146,24 @@ theorem coe_spaCompletedLocalizationHomeomorph (P : PairOfDefinition A) (Aplus :
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   funext (spaCompletedLocalizationHomeomorph_apply P Aplus hP T s S hden)
+
+/-- The homeomorphism, followed by the inclusion of `R(T/s)` into `Spa (A, A⁺)`, is pullback
+along the structure map `ρ : A → A⟨T/s⟩`. This is the form that turns a statement about the
+homeomorphism into one about `spaComapLoc`, where the plus ring is visible and the map factors
+through the uncompleted localization. -/
+theorem val_comp_spaCompletedLocalizationHomeomorph (P : PairOfDefinition A) (Aplus : Subring A)
+    (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    Subtype.val ∘ ⇑(spaCompletedLocalizationHomeomorph P Aplus hP T s S hden) =
+      spaComapLoc P Aplus T s S hden := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  funext v
+  rw [Function.comp_apply, coe_spaCompletedLocalizationHomeomorph, spaLocToRationalSubset_val]
 
 end TauCeti.ValuationSpectrum
 

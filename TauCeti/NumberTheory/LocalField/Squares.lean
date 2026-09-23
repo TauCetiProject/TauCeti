@@ -137,7 +137,8 @@ theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
     exact (1 + 4 * c).2
   have h2' : (2 : 𝒪[K]) ≠ 0 := fun h ↦ h2 <| by
     rw [← map_ofNat 𝒪[K].subtype 2, h, map_zero]
-  obtain ⟨t, ht⟩ := (ValuationRing.isSquare_one_add_four_mul_iff h2').mp
+  obtain ⟨t, ht⟩ :=
+    (ValuationRing.isSquare_one_add_four_mul_iff (IsRegular.of_ne_zero h2')).mp
     ⟨⟨y, hyO⟩, Subtype.ext (by simpa [pow_two, h4] using hyK.symm)⟩
   exact ha (IsLocalRing.residue 𝒪[K] t) (by rw [← ht]; simp)
 

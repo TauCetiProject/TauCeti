@@ -23,7 +23,7 @@ itself trivial whenever it fixes a place that is unramified over `F`, because su
 trivial stabilizer in `Gal(L/F)`.
 
 Nothing here mentions complex conjugation: these are general facts about the action on places,
-used by `TauCeti/NumberTheory/NumberField/ComplexConjugation.lean`.
+used by `TauCeti/NumberTheory/NumberField/ComplexConjugation/Basic.lean`.
 
 ## Main results
 
