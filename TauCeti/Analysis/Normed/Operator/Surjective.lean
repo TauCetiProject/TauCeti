@@ -34,11 +34,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
-/-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear maps.
-
-A surjection `A` onto a finite-dimensional space admits a continuous linear right inverse `R`, and
-then `B ∘ R` is within distance `‖B - A‖ * ‖R‖` of the identity, hence injective and so, the
-target being finite-dimensional, surjective as soon as `B` is close enough to `A`. -/
+/-- Surjectivity onto a finite-dimensional space is an open condition on continuous linear
+maps. -/
 theorem isOpen_setOf_surjective : IsOpen {A : E →L[𝕜] F | Surjective A} := by
   rw [Metric.isOpen_iff]
   rintro A (hA : Surjective A)
