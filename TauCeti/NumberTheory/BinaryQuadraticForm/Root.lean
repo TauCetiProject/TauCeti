@@ -21,8 +21,8 @@ injective for fixed `D`, it identifies the stabiliser of `f` with that of `τ`.
 
 This is how the reduction theory of positive definite forms is transported to the upper half-plane:
 `f` is reduced exactly when `τ` lies in the standard fundamental domain (up to the boundary
-identifications), and the automorphism group of `f` is the stabiliser of `τ`, of order `4` at
-`τ = i`, `6` at `τ = ρ` and `2` otherwise.
+identifications), and the automorphism group of `f` is the stabiliser of `τ`, of order `4` when `τ`
+lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2` otherwise.
 
 ## Main definitions
 
@@ -50,7 +50,7 @@ identifications), and the automorphism group of `f` is the stabiliser of `τ`, o
 
 open Complex
 open UpperHalfPlane hiding I
-open scoped ComplexConjugate MatrixGroups
+open scoped MatrixGroups
 
 namespace TauCeti
 
@@ -116,21 +116,16 @@ theorem root_injective : Function.Injective (root (D := D)) := by
 /-- The squared absolute value of the root of `a x² + b x y + c y²` is `c / a`. -/
 theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := by
   obtain ⟨hdf, hfa⟩ := mem_posDef.1 f.2
-  have ha : (f.1.a : ℝ) ≠ 0 := by exact_mod_cast hfa.ne'
-  have hD : ((f.1.b : ℝ) ^ 2 - 4 * f.1.a * f.1.c) = -D := by
-    rw [discrim_def, discrim] at hdf
-    exact_mod_cast hdf
+  have hD : (f.1.b : ℝ) ^ 2 - 4 * f.1.a * f.1.c = -D := mod_cast hdf
   rw [Complex.normSq_apply, coe_re, coe_im, re_root, im_root]
   field_simp
-  rw [Real.sq_sqrt (Nat.cast_nonneg _)]
-  linear_combination hD
+  linear_combination hD + Real.sq_sqrt D.cast_nonneg
 
 /-- The stabiliser of the root of `f` in `SL(2, ℤ)` is the stabiliser of `f`. -/
 theorem stabilizer_root (f : posDef D) :
     MulAction.stabilizer SL(2, ℤ) (root f) = MulAction.stabilizer SL(2, ℤ) f := by
   ext γ
-  rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, ← root_smul,
-    root_injective.eq_iff]
+  simp only [MulAction.mem_stabilizer_iff, ← root_smul, root_injective.eq_iff]
 
 end BinaryQuadraticForm
 
