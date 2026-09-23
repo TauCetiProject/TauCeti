@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Henselian.Basic
 public import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -358,11 +359,6 @@ theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : �
   refine ⟨?_⟩
   rw [Subgroup.index_eq_card, card_powerClasses_of_isUnit hn]
   exact mul_ne_zero hn0 Nat.card_pos.ne'
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
-theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) : (2 : K) ≠ 0 := by
-  simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero
 
 /-- **The square classes away from residue characteristic `2`.** If `2` is invertible in `𝒪[K]`,
 then `Kˣ ⧸ (Kˣ)²` has `4` elements: `μ_2(K) = {±1}` has order `2`. -/
