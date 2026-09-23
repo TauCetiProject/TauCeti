@@ -349,10 +349,11 @@ theorem linearIndependent_typeDSimpleRoot_cast {K : Type*} [CommRing K] [IsDomai
     (hn : 4 ≤ n) :
     LinearIndependent K (fun i j => (typeDSimpleRoot n hn i j : K)) := by
   let A : Matrix (Fin n) (Fin n) K := Matrix.of fun i j => (typeDSimpleRoot n hn i j : K)
+  have hA : A = (Matrix.of (typeDSimpleRoot n hn)).map (fun x : ℤ => (x : K)) := by
+    ext i j
+    simp [A]
   have hdetcast : A.det = ((Matrix.of (typeDSimpleRoot n hn)).det : K) := by
-    rw [show A = (Matrix.of (typeDSimpleRoot n hn)).map (fun x : ℤ => (x : K)) by
-      ext i j
-      simp [A]]
+    rw [hA]
     exact (Int.cast_det (R := K) (Matrix.of (typeDSimpleRoot n hn))).symm
   have hdet_sq : A.det ^ 2 = (4 : K) := by
     rw [hdetcast]
@@ -361,7 +362,8 @@ theorem linearIndependent_typeDSimpleRoot_cast {K : Type*} [CommRing K] [IsDomai
   have hdet : A.det ≠ 0 := by
     intro hzero
     have hfour : (4 : K) ≠ 0 := by
-      rw [show (4 : K) = (2 : K) ^ 2 by norm_num]
+      have hfour_eq : (4 : K) = (2 : K) ^ 2 := by norm_num
+      rw [hfour_eq]
       exact pow_ne_zero 2 (NeZero.ne _)
     exact hfour (by simpa [hzero] using hdet_sq.symm)
   have hrows : LinearIndependent K (fun i => A i) :=

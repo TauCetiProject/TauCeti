@@ -10,16 +10,16 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.SimpleRoots
 
 /-!
-# The simple-root basis of the split type-D Cartan
+# The simple-root generators of the split type-D Cartan
 
 The explicit type-D Chevalley generators use the Bourbaki simple roots as diagonal coordinates.
-This file lifts those matrices into the diagonal Cartan subalgebra and packages them as a module
-basis. The coordinate theorem records the identification with the pinned classical type-D root
-datum, so a later Lie-algebra basis can use the same Cartan coordinates.
+This file lifts those matrices into the diagonal Cartan subalgebra and records their ambient
+coordinates against the standard Cartan basis. It exposes the independence and Lie-span results
+needed to use these generators as the split Cartan's simple-root coordinates.
 
 The independence argument transports the integral independence of the Bourbaki simple roots to a
-commutative domain in which `2` is nonzero. The ambient independence and Lie-span theorems are
-exposed for the later `LieAlgebra.Basis` construction.
+commutative domain in which `2` is nonzero. The ambient independence and Lie-span theorems expose
+the resulting split Cartan structure.
 
 ## Main declarations
 

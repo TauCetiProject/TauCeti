@@ -542,6 +542,7 @@ theorem typeDSimpleRoot_dotProduct_typeDSimpleRoot (hn : 4 ≤ n) (i j : Fin n) 
 
 /-! The simple-root Gram matrix is the type-D Cartan matrix. -/
 
+/-- The matrix of type-D simple roots times its transpose is the type-D Cartan matrix. -/
 theorem typeDSimpleRoot_mul_transpose (hn : 4 ≤ n) :
     Matrix.of (typeDSimpleRoot n hn) * Matrix.transpose (Matrix.of (typeDSimpleRoot n hn)) =
       CartanMatrix.D n := by
