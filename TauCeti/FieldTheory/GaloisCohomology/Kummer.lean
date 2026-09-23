@@ -355,8 +355,7 @@ theorem kummerIsoTransportContinuousSMul
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
     ContinuousSMul (AbsoluteGaloisGroup K) μ := by
   have hinv (g : AbsoluteGaloisGroup K) (x : μ) : e.symm (g • x) = g • e.symm x := by
-    apply e.injective
-    rw [e.apply_symm_apply, hequiv, e.apply_symm_apply]
+    exact symm_map_smul_of_map_smul (AbsoluteGaloisGroup K) (KummerCoeff K n) e hequiv g x
   let h : μ ≃ₜ KummerCoeff K n :=
     { toEquiv := e.symm.toEquiv
       continuous_toFun := continuous_of_discreteTopology
