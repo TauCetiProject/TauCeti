@@ -295,7 +295,6 @@ theorem integral_sq_studentTMeasure (hν : 2 < ν) :
 
 /-- Squaring is integrable under a nondegenerate Student t law exactly when the number of degrees
 of freedom exceeds two. -/
-@[simp]
 theorem integrable_sq_studentTMeasure_iff (hν : 0 < ν) :
     Integrable (fun x : ℝ => x ^ 2) (studentTMeasure ν) ↔ 2 < ν := by
   simpa only [Nat.cast_ofNat] using integrable_pow_studentTMeasure_iff hν 2
