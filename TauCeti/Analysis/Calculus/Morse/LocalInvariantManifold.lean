@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.ExponentialDichotomy
 public import TauCeti.Analysis.ODE.LyapunovPerron.Local
 
 /-!
-# Local stable and unstable sets at a Morse critical point
+# Local invariant sets at a Morse critical point
 
 At a nondegenerate critical point `x` of a twice continuously differentiable function on a
 finite-dimensional real Hilbert space, the negative-gradient vector field in displacement

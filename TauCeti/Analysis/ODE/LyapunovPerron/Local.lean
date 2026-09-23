@@ -350,17 +350,7 @@ theorem norm_localUnstableGraphMap_le (hN0 : N 0 = 0) (v : X) :
   norm_localStableGraphMap_le (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0]) v
 
-omit [CompleteSpace X] in
-open scoped Pointwise in
-/-- **Reversing time turns a backward solution into a forward solution of the negated equation.**
-Reflection by `t ↦ -t` identifies solutions on `Iic 0` with solutions of the negated equation
-on `Ici 0`, normalizing the reflected domain from `-Iic 0` to `Ici 0`. -/
-private theorem isIntegralCurveOn_comp_neg_Iic_iff {y : ℝ → X} :
-    IsIntegralCurveOn y (fun _ z ↦ A z + N z) (Iic 0) ↔
-      IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
-  simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
-    (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
-      (s := Iic 0) (a := -1) (by norm_num)).symm
+open scoped Pointwise
 
 /-- A backward solution confined to the ball on which the nonlinearity is small tends to the
 equilibrium in backward time. -/
@@ -376,11 +366,16 @@ theorem tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
   have hmaps' : MapsTo (fun t ↦ y (-t)) (Ici 0) (closedBall 0 r) := by
     intro t ht
     exact hmaps (by simpa using ht)
+  have hy' :
+      IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+    simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
+      (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
+        (s := Iic 0) (a := -1) (by norm_num)).mpr hy
   have hforward := tendsto_of_isIntegralCurveOn_mapsTo_closedBall
     (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
     (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left)
-    (isIntegralCurveOn_comp_neg_Iic_iff.mp hy) hmaps'
+    hy' hmaps'
   simpa only [Function.comp_def, neg_neg] using hforward.comp tendsto_neg_atBot_atTop
 
 /-- **The local unstable set at a hyperbolic equilibrium is a Lipschitz graph.** The initial
@@ -410,12 +405,18 @@ theorem setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
   simp only [mem_ofPred_eq]
   constructor
   · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
-    exact ⟨⟨fun t ↦ y (-t), isIntegralCurveOn_comp_neg_Iic_iff.mp hy, by simp,
-      fun t ht ↦ hmaps (by simpa using ht)⟩, hx⟩
+    have hy' :
+        IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ (-A) z + (-N) z) (Ici 0) := by
+      simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using
+        (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
+          (s := Iic 0) (a := -1) (by norm_num)).mpr hy
+    exact ⟨⟨fun t ↦ y (-t), hy', by simp, fun t ht ↦ hmaps (by simpa using ht)⟩, hx⟩
   · rintro ⟨⟨y, hy, rfl, hmaps⟩, hx⟩
-    exact ⟨⟨fun t ↦ y (-t),
-      isIntegralCurveOn_comp_neg_Iic_iff.mpr (by simpa only [neg_neg] using hy), by simp,
-      fun t ht ↦ hmaps (by simpa using ht)⟩, hx⟩
+    have hy' : IsIntegralCurveOn (fun t ↦ y (-t)) (fun _ z ↦ A z + N z) (Iic 0) := by
+      apply (isIntegralCurveOn_comp_mul_ne_zero (γ := fun t ↦ y (-t))
+        (v := fun _ z ↦ A z + N z) (s := Iic 0) (a := -1) (by norm_num)).mp
+      simpa [Function.comp_def, Pi.neg_def, one_smul, neg_add, add_comm] using hy
+    exact ⟨⟨fun t ↦ y (-t), hy', by simp, fun t ht ↦ hmaps (by simpa using ht)⟩, hx⟩
 
 omit hr in
 /-- **The local unstable-manifold theorem, Lipschitz form.** Near a hyperbolic equilibrium the
