@@ -124,7 +124,6 @@ theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionFi
 /-- **The kernel of the universal derivation is the Frobenius subfield**: in a one-variable
 function field over a perfect field, `d x = 0` exactly when `x` is a `p`-th power. This identifies
 differential nonvanishing with the Frobenius-subfield obstruction used by separating criteria. -/
-@[simp]
 theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] (x : F) :
     D k F x = 0 ↔ x ∈ (frobenius F p).fieldRange := by
