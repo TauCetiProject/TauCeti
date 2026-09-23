@@ -129,9 +129,10 @@ namespace GridPentagonBetween
 
 variable {n : ℕ} {a s : Fin n} {x y : GridState n}
 
-/-- An empty pentagon has an empty underlying rectangle. -/
-theorem isEmpty_toGridRectangleBetween (P : GridPentagonBetween a s x y)
-    (h : P.IsEmpty) : P.toGridRectangleBetween.IsEmpty := h
+/-- The emptiness of a pentagon is equivalent to that of its underlying rectangle. -/
+@[simp]
+theorem isEmpty_iff_toGridRectangleBetween (P : GridPentagonBetween a s x y) :
+    P.IsEmpty ↔ P.toGridRectangleBetween.IsEmpty := Iff.rfl
 
 /-- The initial side of a pentagon is not the line replaced by `γ`. -/
 theorem left_ne (P : GridPentagonBetween a s x y) : P.left ≠ finRotate n a :=
