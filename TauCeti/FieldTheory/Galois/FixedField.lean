@@ -111,6 +111,8 @@ theorem fixedField_sup (H H' : Subgroup (M ≃ₐ[K] M)) :
     fixedField (H ⊔ H') = fixedField H ⊓ fixedField H' := by
   apply SetLike.coe_injective
   rw [IntermediateField.coe_inf]
+  change MulAction.fixedPoints (↑(H ⊔ H')) M =
+    MulAction.fixedPoints (↑H) M ∩ MulAction.fixedPoints (↑H') M
   exact fixedPoints_subgroup_sup (M := M ≃ₐ[K] M) (α := M)
 
 /-- **The fixed field of a common intersection is the compositum of the fixed fields.** This is
@@ -133,6 +135,7 @@ theorem fixedField_iSup {I : Sort*} (H : I → Subgroup (M ≃ₐ[K] M)) :
     fixedField (⨆ i, H i) = ⨅ i, fixedField (H i) := by
   apply SetLike.coe_injective
   rw [IntermediateField.coe_iInf]
+  change MulAction.fixedPoints (↑(⨆ i, H i)) M = ⋂ i, MulAction.fixedPoints (↑(H i)) M
   exact fixedPoints_subgroup_iSup (M := M ≃ₐ[K] M) (α := M)
 
 /-- **The fixed field of the infimum of a set of subgroups is the compositum of their fixed
