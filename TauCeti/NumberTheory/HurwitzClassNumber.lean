@@ -38,8 +38,9 @@ form of discriminant `-D` has `3 a² ≤ D`.
 
 * `TauCeti.mem_reducedForms`: for `D ≠ 0`, the reduced forms of discriminant `-D` are exactly the
   reduced triples with `discrim a b c = -D`; the box the definition searches is no restriction.
-* `TauCeti.hurwitzClassNumber_eq_zero_of_mod_four`: `H D = 0` when `D ≡ 1, 2 (mod 4)`, since a
-  discriminant `b² - 4 a c` is `0` or `1` modulo `4`.
+* `TauCeti.hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two`: `H D = 0` when
+  `D ≡ 1, 2 (mod 4)`, since a discriminant `b² - 4 a c` is `0` or `1` modulo `4`
+  (`Int.discrim_emod_four`).
 * The first values `H 3 = 1/3`, `H 4 = 1/2`, `H 7 = 1`, `H 8 = 1`, `H 12 = 4/3` and `H 16 = 3/2`,
   the last two exercising the two weights on non-primitive forms.
 
@@ -65,7 +66,7 @@ For a positive-definite form this picks exactly one representative of each `SL�
 inequalities place the root `τ = (-b + i √(4 a c - b²)) / (2 a)` of `a τ² + b τ + c` in
 `ModularGroup.fd`, and the sign condition chooses one of the two boundary points that `SL₂(ℤ)`
 identifies. Definiteness is not part of the predicate (`IsReducedForm 0 0 1` holds), but a reduced
-form with `discrim a b c < 0` has `0 < a`. -/
+form with `discrim a b c < 0` has `0 < a` (`IsReducedForm.pos_of_discrim_lt_zero`). -/
 def IsReducedForm (a b c : ℤ) : Prop :=
   |b| ≤ a ∧ a ≤ c ∧ (|b| = a ∨ a = c → 0 ≤ b)
 
@@ -74,7 +75,7 @@ instance (a b c : ℤ) : Decidable (IsReducedForm a b c) :=
 
 /-- A reduced form `a x² + b x y + c y²` of negative discriminant has `0 < a`, so it is positive
 definite. -/
-theorem IsReducedForm.pos_of_discrim_neg {a b c : ℤ} (h : IsReducedForm a b c)
+theorem IsReducedForm.pos_of_discrim_lt_zero {a b c : ℤ} (h : IsReducedForm a b c)
     (hd : discrim a b c < 0) : 0 < a :=
   -- `a = 0` would make the discriminant `b ^ 2`, which is not negative
   ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ hd.not_ge <| by simp [discrim, ha, sq_nonneg]
@@ -97,7 +98,7 @@ theorem mem_reducedForms {D : ℕ} (hD : D ≠ 0) {a b c : ℤ} :
     (a, b, c) ∈ reducedForms D ↔ discrim a b c = -D ∧ IsReducedForm a b c := by
   simp only [reducedForms, mem_filter, mem_product, mem_Icc, and_iff_right_iff_imp]
   rintro ⟨hd, hr⟩
-  have ha := hr.pos_of_discrim_neg <| by lia
+  have ha := hr.pos_of_discrim_lt_zero <| by lia
   obtain ⟨hb, hac, -⟩ := hr
   rw [discrim] at hd
   obtain ⟨hb₁, hb₂⟩ := abs_le.mp hb
@@ -112,19 +113,19 @@ theorem _root_.Int.discrim_emod_four (a b c : ℤ) : discrim a b c % 4 = b % 2 :
 
 /-- There are no reduced forms of discriminant `-D` when `D ≡ 1, 2 (mod 4)`: a discriminant
 `b² - 4 a c` is `0` or `1` modulo `4` (`Int.discrim_emod_four`). -/
-theorem reducedForms_eq_empty_of_mod_four {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
+theorem reducedForms_eq_empty_of_mod_four_eq_one_or_two {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
     reducedForms D = ∅ :=
   filter_eq_empty_iff.mpr fun t _ ⟨h, _⟩ ↦ by
     have := Int.discrim_emod_four t.1 t.2.1 t.2.2
     lia
 
-/-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `0 < D` the number of reduced forms
+/-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `D ≠ 0` the number of reduced forms
 of discriminant `-D`, primitive or not, the multiples of `x² + y²` (the forms `(a, 0, a)`) weighted
 by `1/2` and the multiples of `x² + x y + y²` (the forms `(a, a, a)`) by `1/3`.
 
 The value `H 0 = -1/12` is Zagier's normalisation, the one in which the `t² = 4 n` terms of the
 Eichler–Selberg trace formula absorb the contribution of the scalar matrices. `H D` vanishes for
-`D ≡ 1, 2 (mod 4)` (`hurwitzClassNumber_eq_zero_of_mod_four`). -/
+`D ≡ 1, 2 (mod 4)` (`hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two`). -/
 def hurwitzClassNumber (D : ℕ) : ℚ :=
   if D = 0 then -1 / 12
   else
@@ -145,10 +146,11 @@ theorem hurwitzClassNumber_of_ne_zero {D : ℕ} (hD : D ≠ 0) :
   ite_eq_right hD
 
 /-- The Hurwitz class number `H D` is `0` for `D ≡ 1, 2 (mod 4)`. -/
-theorem hurwitzClassNumber_eq_zero_of_mod_four {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
+theorem hurwitzClassNumber_eq_zero_of_mod_four_eq_one_or_two {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
     hurwitzClassNumber D = 0 := by
   -- a discriminant `b² - 4 a c` is `0` or `1` modulo `4`, so no reduced form has discriminant `-D`
-  rw [hurwitzClassNumber_of_ne_zero (by lia), reducedForms_eq_empty_of_mod_four hD, sum_empty]
+  rw [hurwitzClassNumber_of_ne_zero (by lia), reducedForms_eq_empty_of_mod_four_eq_one_or_two hD,
+    sum_empty]
 
 /-! ### The first values -/
 
