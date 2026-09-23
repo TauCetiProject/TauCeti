@@ -22,6 +22,8 @@ nearest zero of the original series, even when the original series converges far
 
 ## Main result
 
+* `PowerSeries.hasSum_coeff_logDeriv_mul_pow_of_zeroFree`: evaluation of the formal
+  logarithmic derivative throughout a zero-free convergence disk.
 * `PowerSeries.summable_coeff_logDeriv_mul_pow_of_zeroFree`: convergence of the formal
   logarithmic derivative throughout a zero-free convergence disk.
 -/
@@ -149,17 +151,19 @@ theorem coeff_logDeriv_eq_iteratedDeriv (f : ℂ⟦X⟧)
       rw [Nat.sub_self, hfcoeff, mul_one] at ha
       exact add_left_cancel (hr.trans ha.symm)
 
-/-- **A formal logarithmic derivative converges throughout a zero-free disk.** Let `f` be a
-complex power series with constant coefficient one. If its analytic sum has no zero in a disk
-inside its disk of convergence, then the coefficient series of `f.logDeriv` is summable at every
-point of the smaller disk. -/
-theorem summable_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
+/-- **A formal logarithmic derivative sums to the analytic logarithmic derivative throughout a
+zero-free disk.** Let `f` be a complex power series with constant coefficient one. If its analytic
+sum has no zero in a disk inside its disk of convergence, then the coefficient series of
+`f.logDeriv` sums to the analytic logarithmic derivative at every point of the smaller disk. -/
+theorem hasSum_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
     (hf0 : constantCoeff f = 1) {r : ENNReal} (hr0 : 0 < r)
     (hr : r ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius)
     (hne : ∀ z : ℂ, ‖z‖ₑ < r →
       FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) z ≠ 0)
     {z : ℂ} (hz : ‖z‖ₑ < r) :
-    Summable fun n : ℕ ↦ coeff n (logDeriv f) * z ^ n := by
+    HasSum (fun n : ℕ ↦ coeff n (logDeriv f) * z ^ n)
+      (_root_.logDeriv
+        (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) z) := by
   let F := FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f
   let G := _root_.logDeriv F
   have hfr : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius :=
@@ -201,7 +205,16 @@ theorem summable_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
   have hzBall : z ∈ Metric.eball (0 : ℂ) (R : ENNReal) := by
     rw [Metric.mem_eball, edist_zero_right, enorm_lt_coe]
     exact enorm_lt_coe.mp hzR
-  refine (hlogSeries.hasSum hzBall).summable.congr fun n ↦ ?_
-  simp [mul_comm]
+  simpa [G, F, mul_comm] using hlogSeries.hasSum hzBall
+
+/-- A formal logarithmic derivative converges throughout a zero-free disk. -/
+theorem summable_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
+    (hf0 : constantCoeff f = 1) {r : ENNReal} (hr0 : 0 < r)
+    (hr : r ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius)
+    (hne : ∀ z : ℂ, ‖z‖ₑ < r →
+      FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) z ≠ 0)
+    {z : ℂ} (hz : ‖z‖ₑ < r) :
+    Summable fun n : ℕ ↦ coeff n (logDeriv f) * z ^ n :=
+  (hasSum_coeff_logDeriv_mul_pow_of_zeroFree f hf0 hr0 hr hne hz).summable
 
 end PowerSeries
