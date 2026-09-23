@@ -36,7 +36,8 @@ namespace TauCeti
 
 variable {X : Type*} [PseudoMetricSpace X]
 
-/-- The nonnegative distance to the power `q` coerces to the corresponding extended distance. -/
+/-- The `q`-th power of the nonnegative distance, coerced to `ℝ≥0∞`, is the `q`-th power of the
+extended distance. -/
 theorem coe_nndist_rpow {q : ℝ} (hq : 0 ≤ q) (x y : X) :
     ((nndist x y ^ q : ℝ≥0) : ℝ≥0∞) = edist x y ^ q := by
   rw [ENNReal.coe_rpow_of_nonneg _ hq, edist_nndist]

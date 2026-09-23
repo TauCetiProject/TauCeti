@@ -45,15 +45,17 @@ compactness for the weak topology on `ProbabilityMeasure X`.
 
 ## Main statements
 
-* `isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le`
+All the following declarations are in the `TauCeti` namespace.
+
+* `WassersteinSpace.isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le`
   — a tight set with uniformly small `p`-moment tails is relatively compact, on a separable metric
   space;
-* `isTightMeasureSet_of_isCompact_closure` — a relatively compact set is
+* `WassersteinSpace.isTightMeasureSet_of_isCompact_closure` — a relatively compact set is
   tight, on a complete separable pseudometric space;
-* `exists_setLIntegral_edist_rpow_le_of_isCompact_closure` — a relatively
+* `WassersteinSpace.exists_setLIntegral_edist_rpow_le_of_isCompact_closure` — a relatively
   compact set has uniformly small `p`-moment tails about every basepoint;
-* `isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le` and
-  `isCompact_iff_isClosed_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le`
+* `WassersteinSpace.isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le`,
+  `WassersteinSpace.isCompact_iff_isClosed_isTightMeasureSet_and_exists_setLIntegral_edist_rpow_le`
   — the resulting characterizations of relatively compact and of compact sets.
 
 ## References
