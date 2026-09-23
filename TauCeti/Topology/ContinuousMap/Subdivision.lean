@@ -26,7 +26,7 @@ public section
 open Set
 open scoped unitInterval
 
-namespace TauCeti.ContinuousMap
+namespace ContinuousMap
 
 /-- A continuous map from the unit square can be subdivided into a finite grid whose cells each
 map into one member of any given open cover of its image. The times are monotone, start at `0`,
@@ -49,4 +49,4 @@ theorem exists_grid_subdivision {X : Type*} [TopologicalSpace X] {ι : Sort*}
   obtain ⟨i, hsubset⟩ := hcell j k
   exact ⟨i, fun x hx => hsubset hx⟩
 
-end TauCeti.ContinuousMap
+end ContinuousMap
