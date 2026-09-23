@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.PowerSeries.LogDeriv
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Eval
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
 /-!
 # Convergence of local logarithmic-derivative series
@@ -56,51 +57,23 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
     Summable fun e : ℕ ↦
       PowerSeries.coeff e (D.localLogDerivSeries P) *
         ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ e := by
-  let q : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))
-  let r : NNReal := ‖q‖₊
-  -- Absolute convergence of the local Dirichlet series supplies the analytic radius.
-  have hlocal : Summable fun e : ℕ ↦
-      D (P.primeIdealPow e) * q ^ e := by
-    have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ)
-    rw [LSeriesSummable] at hsum
-    have hsum' := hsum.comp_injective <|
-      Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
-    refine hsum'.congr fun e ↦ ?_
-    simp only [Function.comp_apply]
-    rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
-        (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-      D.localArithmeticFactor_apply_pow]
-    dsimp [q]
-    rw [Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul,
-      Complex.cpow_neg]
-    ring
-  have hcoeff : Summable fun e : ℕ ↦
-      ‖PowerSeries.coeff e (D.localPowerSeries P)‖ * (r : ℝ) ^ e := by
-    refine hlocal.norm.congr fun e ↦ ?_
-    rw [D.coeff_localPowerSeries, norm_mul, norm_pow]
-    rfl
+  let r : NNReal := ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊
+  -- The canonical local-factor radius bound supplies the analytic disk.
   have hr : (r : ENNReal) ≤
       (FormalMultilinearSeries.ofScalars ℂ fun n ↦
         PowerSeries.coeff n (D.localPowerSeries P)).radius := by
-    apply FormalMultilinearSeries.le_radius_of_summable
-    simpa [FormalMultilinearSeries.ofScalars_norm] using hcoeff
+    exact D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
   have hz : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
     rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
-    -- Unfold the named boundary point to compare the two complex powers by real part.
-    change ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ < ‖q‖
-    dsimp [q]
-    rw [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-      (NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-      Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-        (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
-    exact Real.rpow_lt_rpow_of_exponent_lt (by
-      exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
+    dsimp [r]
+    exact NNReal.coe_lt_coe.mp (by simpa only [coe_nnnorm] using
+      norm_absNorm_cpow_neg_lt_of_re_gt P hs)
   -- Zero-freeness lets the analytic logarithmic derivative inherit that radius.
   have hlog := PowerSeries.summable_coeff_logDeriv_mul_pow_of_zeroFree
     (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
     (fun z hz' ↦ hne z (by
       rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
-      dsimp [r, q] at hz'
+      dsimp [r] at hz'
       exact_mod_cast hz')) hz
   -- Multiplication by `X` shifts the formal logarithmic derivative by one degree.
   rw [← summable_nat_add_iff 1]

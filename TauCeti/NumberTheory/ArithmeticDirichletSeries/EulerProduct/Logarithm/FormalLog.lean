@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Convergence
+public import TauCeti.Analysis.Complex.PowerSeries.Log
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Coeff
 
 /-!
 # Evaluating the logarithm of a local Euler factor
@@ -53,14 +55,8 @@ private theorem localLogSeries_radius_data (D : EulerProductData K)
   constructor
   · simpa using D.norm_absNorm_cpow_neg_le_radius_localPowerSeries P hσ
   · rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
-    change ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ <
-      ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖
-    rw [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-      (NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-      Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
-        (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
-    exact Real.rpow_lt_rpow_of_exponent_lt (by
-      exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
+    exact NNReal.coe_lt_coe.mp (by simpa only [coe_nnnorm] using
+      norm_absNorm_cpow_neg_lt_of_re_gt P hs)
 
 /-- The evaluated formal logarithm of a local Euler factor converges absolutely inside every
 zero-free disk on which the local factor converges. -/

@@ -108,6 +108,18 @@ open scoped nonZeroDivisors ComplexOrder
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- The prime-norm parameter strictly decreases as the real part of the exponent increases. -/
+theorem norm_absNorm_cpow_neg_lt_of_re_gt (P : HeightOneSpectrum (𝓞 K))
+    {σ : ℝ} {s : ℂ} (hs : σ < s.re) :
+    ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ <
+      ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖ := by
+  rw [Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
+    (NumberField.HeightOneSpectrum.one_lt_absNorm P)),
+    Complex.norm_natCast_cpow_of_pos (Nat.zero_lt_of_lt
+      (NumberField.HeightOneSpectrum.one_lt_absNorm P))]
+  exact Real.rpow_lt_rpow_of_exponent_lt (by
+    exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
+
 namespace EulerProductData
 
 open IdealArithmeticFunction
