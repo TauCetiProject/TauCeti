@@ -52,14 +52,16 @@ extension supplied by Doob--Dynkin factorization. -/
 def probabilityMeasureCodeMap (f : α → β) (hf : Measurable f) :
     (ProbabilityMeasureCodeIndex α → ℝ≥0∞) →
       ProbabilityMeasureCodeIndex β → ℝ≥0∞ :=
-  Classical.choose <| exists_measurable_comp_probabilityMeasureCode
-    (measurable_probabilityMeasureCode.comp (measurable_probabilityMeasure_map hf))
+  Classical.choose <|
+    (measurable_probabilityMeasureCode.comp
+      (measurable_probabilityMeasure_map hf)).exists_eq_measurable_comp_probabilityMeasureCode
 
 /-- Transport of probability-measure codes is measurable on the whole ambient code space. -/
 theorem measurable_probabilityMeasureCodeMap (f : α → β) (hf : Measurable f) :
     Measurable (probabilityMeasureCodeMap f hf) :=
-  (Classical.choose_spec <| exists_measurable_comp_probabilityMeasureCode
-    (measurable_probabilityMeasureCode.comp (measurable_probabilityMeasure_map hf))).1
+  (Classical.choose_spec <|
+    (measurable_probabilityMeasureCode.comp
+      (measurable_probabilityMeasure_map hf)).exists_eq_measurable_comp_probabilityMeasureCode).1
 
 /-- On the code of an actual probability measure, code transport is pushforward. -/
 @[simp]
@@ -67,8 +69,9 @@ theorem probabilityMeasureCodeMap_apply (f : α → β) (hf : Measurable f)
     (P : ProbabilityMeasure α) :
     probabilityMeasureCodeMap f hf (probabilityMeasureCode P) =
       probabilityMeasureCode (P.map f) := by
-  have hspec := (Classical.choose_spec <| exists_measurable_comp_probabilityMeasureCode
-    (measurable_probabilityMeasureCode.comp (measurable_probabilityMeasure_map hf))).2
+  have hspec := (Classical.choose_spec <|
+    (measurable_probabilityMeasureCode.comp
+      (measurable_probabilityMeasure_map hf)).exists_eq_measurable_comp_probabilityMeasureCode).2
   exact congrFun hspec P |>.symm
 
 end MeasureTheory

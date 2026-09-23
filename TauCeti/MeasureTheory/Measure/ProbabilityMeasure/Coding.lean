@@ -30,7 +30,7 @@ Injectivity follows from uniqueness of finite measures on a generating set algeb
 * `TauCeti.MeasureTheory.measurable_probabilityMeasureCode` -- measurability of the code;
 * `TauCeti.MeasureTheory.measurableSpace_probabilityMeasure_eq_comap_probabilityMeasureCode` --
   the Giry measurable space is induced by the code;
-* `TauCeti.MeasureTheory.exists_measurable_comp_probabilityMeasureCode` -- measurable
+* `Measurable.exists_eq_measurable_comp_probabilityMeasureCode` -- measurable
   factorization through the code;
 * `TauCeti.MeasureTheory.probabilityMeasureCode_injective` -- the code determines the measure.
 -/
@@ -114,7 +114,7 @@ theorem measurableSpace_probabilityMeasure_eq_comap_probabilityMeasureCode :
 /-- A measurable function of a probability measure into a nonempty standard Borel space factors
 measurably through its canonical code. The extension away from codes of actual probability
 measures is not specified. -/
-theorem exists_measurable_comp_probabilityMeasureCode
+theorem _root_.Measurable.exists_eq_measurable_comp_probabilityMeasureCode
     {γ : Type*} [MeasurableSpace γ]
     [StandardBorelSpace γ] [Nonempty γ]
     {F : ProbabilityMeasure α → γ} (hF : Measurable F) :
