@@ -133,6 +133,16 @@ theorem eval_mk (a b c x y : R) :
     (⟨a, b, c⟩ : BinaryQuadraticForm R).eval x y = a * x ^ 2 + b * x * y + c * y ^ 2 :=
   (rfl)
 
+/-- The value of `f` at `(1, 0)` is its first coefficient `a`. -/
+@[simp]
+theorem eval_one_zero (f : BinaryQuadraticForm R) : f.eval 1 0 = f.a := by
+  simp [eval_def]
+
+/-- The value of `f` at `(0, 1)` is its last coefficient `c`. -/
+@[simp]
+theorem eval_zero_one (f : BinaryQuadraticForm R) : f.eval 0 1 = f.c := by
+  simp [eval_def]
+
 /-- `γ • f` is the form `f ∘ γ⁻¹` (`eval_smul`). The coefficients are written through the entries
 of the adjugate `γ⁻¹ = !![s, -q; -r, p]` of `γ = !![p, q; r, s]`, so each is a polynomial in the
 entries of `γ`. -/
@@ -167,6 +177,7 @@ theorem smul_c (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
 
 /-- `γ • f` is `f ∘ γ⁻¹`: its value at `(x, y)` is `f(s x - q y, -r x + p y)`, for
 `γ = !![p, q; r, s]`. -/
+@[simp]
 theorem eval_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) (x y : R) :
     (γ • f).eval x y = f.eval (γ 1 1 * x - γ 0 1 * y) (-γ 1 0 * x + γ 0 0 * y) := by
   simp only [eval_def, smul_a, smul_b, smul_c]
@@ -200,8 +211,10 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
       0 ≤ f.eval (γ 1 1) (-γ 1 0) := by
         rw [eval_def]
         exact nonneg_of_discrim_le_zero ha ((discrim_def f).symm.trans_lt hd).le _ _
-      _ = (γ • f).eval 1 0 := by simp [eval_smul]
-      _ = (γ • f).a := by simp [eval_def]
+      _ = (γ • f).eval 1 0 := by
+        rw [eval_smul]
+        simp
+      _ = (γ • f).a := eval_one_zero _
 
 /-- A form lies in `posDef D` exactly when its discriminant is `-D` and its leading coefficient is
 positive. -/

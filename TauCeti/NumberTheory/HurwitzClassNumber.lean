@@ -135,10 +135,10 @@ def reducedFormWeight (f : BinaryQuadraticForm ℤ) : ℚ :=
     reducedFormWeight ⟨a, a, a⟩ = 1 / 3 :=
   (ite_eq_right fun h ↦ ha h.1).trans <| ite_eq_left ⟨rfl, rfl⟩
 
-/-- Every form `⟨a, b, c⟩` other than the multiples `⟨a, 0, a⟩` of `x² + y²` and `⟨a, a, a⟩` of
+/-- Every form other than the multiples `⟨a, 0, a⟩` of `x² + y²` and `⟨a, a, a⟩` of
 `x² + x y + y²` counts `1`. -/
-@[simp] theorem reducedFormWeight_eq_one {a b c : ℤ} (h₁ : ¬(b = 0 ∧ a = c))
-    (h₂ : ¬(a = b ∧ b = c)) : reducedFormWeight ⟨a, b, c⟩ = 1 :=
+@[simp] theorem reducedFormWeight_eq_one {f : BinaryQuadraticForm ℤ} (h₁ : ¬(f.b = 0 ∧ f.a = f.c))
+    (h₂ : ¬(f.a = f.b ∧ f.b = f.c)) : reducedFormWeight f = 1 :=
   (ite_eq_right h₁).trans <| ite_eq_right h₂
 
 /-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `D ≠ 0` the number of reduced forms
