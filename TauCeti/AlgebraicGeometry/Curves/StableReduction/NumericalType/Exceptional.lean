@@ -28,8 +28,9 @@ out this configuration, which is
 
 * `TauCeti.NumericalType.exists_weight_intersection_branch_seven_eq`: the `E₇`
   configuration is simply laced.
-* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.not_affineE7`: the affine `E₇`
-  configuration cannot be a proper subgraph of `(-2)`-indices.
+* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.intersection_branch_eq_zero`:
+  a distinct eighth `(-2)`-index cannot meet the middle component of the chain, excluding the
+  affine `E₇` configuration.
 -/
 
 public section
@@ -125,16 +126,20 @@ theorem exists_weight_intersection_branch_seven_eq
 
 namespace IsSelfIntersectionMinusTwoChain
 
-/-- The affine `E₇` diagram cannot occur as a proper subgraph of `(-2)`-indices.  Concretely,
-a chain of seven `(-2)`-indices cannot have a distinct eighth `(-2)`-index meeting its middle
-component when the numerical type has any further component.  This is
+/-- A distinct eighth `(-2)`-index cannot meet the middle component of a chain of seven
+`(-2)`-indices when the numerical type has any further component.  This excludes the affine
+`E₇` diagram as a proper subgraph, as in
 [Stacks, Lemma 55.5.15](https://stacks.math.columbia.edu/tag/0C8N). -/
-theorem not_affineE7 {c : ℕ → T.Component}
+theorem intersection_branch_eq_zero {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain 7 c)
     (hcard : 8 < Fintype.card T.Component) {branch : T.Component}
     (hbranch_ne : ∀ i < 7, branch ≠ c i)
-    (hbranch_self : T.intersection branch branch = -(2 * (T.weight branch : ℤ)))
-    (hbranch_pos : 0 < T.intersection (c 3) branch) : False := by
+    (hbranch_self : T.intersection branch branch = -(2 * (T.weight branch : ℤ))) :
+    T.intersection (c 3) branch = 0 := by
+  by_contra hbranch_nonzero
+  have hbranch_pos : 0 < T.intersection (c 3) branch :=
+    (T.offDiagonal_nonneg _ _ (hbranch_ne 3 (by omega)).symm).lt_of_ne
+      (Ne.symm hbranch_nonzero)
   -- Classify the two overlapping finite `E₇` subdiagrams obtained by omitting the right,
   -- respectively left, endpoint. This identifies every entry of the affine diagram.
   obtain ⟨w, hw, hwb, hedge, hab, hbranch_zero⟩ :=
