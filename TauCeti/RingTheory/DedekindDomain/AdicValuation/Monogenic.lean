@@ -22,6 +22,9 @@ generator of both the integer ring and its fraction field.
 
 ## Main results
 
+* The theorem `adjoin_adicCompletion_eq_top_of_adjoin_adicCompletionIntegers_eq_top` promotes
+  any generator of the completed integer extension to a generator of the completed field
+  extension.
 * The theorem
   `exists_adjoin_adicCompletionIntegers_eq_top_and_isIntegral_and_adjoin_adicCompletion_eq_top`
   gives one element which generates the completed integer ring and the completed field extension,
@@ -48,6 +51,16 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
   [Finite (R ⧸ v.asIdeal)] [Finite (B ⧸ w.asIdeal)]
 
+/-- A generator of the completed integer extension also generates the completed field extension. -/
+theorem adjoin_adicCompletion_eq_top_of_adjoin_adicCompletionIntegers_eq_top
+    (x : w.adicCompletionIntegers L)
+    (hx : Algebra.adjoin (v.adicCompletionIntegers K) {x} = ⊤) :
+    Algebra.adjoin (v.adicCompletion K) {(x : w.adicCompletion L)} = ⊤ := by
+  rw [← Algebra.algebraMap_ofSubsemiring_apply (w.adicCompletionIntegers L) x]
+  exact Algebra.adjoin_eq_top_of_intermediateField
+    (fun y _ ↦ Algebra.IsAlgebraic.isAlgebraic y)
+    (TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top hx)
+
 /-- When both residue fields are finite, the completed integer ring `𝒪_w` is generated over
 `𝒪_v` by an element which is also an integral generator of the field extension. -/
 theorem
@@ -57,20 +70,17 @@ theorem
       IsIntegral (v.adicCompletionIntegers K) x ∧
       Algebra.adjoin (v.adicCompletion K) {(x : w.adicCompletion L)} = ⊤ := by
   let _ : IsLocalHom (algebraMap (v.adicCompletionIntegers K)
-      (w.adicCompletionIntegers L)) := adicCompletionIntegers_isLocalHom K L v w
+      (w.adicCompletionIntegers L)) := algebraMap_adicCompletionIntegers_isLocalHom K L v w
   let _ : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
     Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
   let _ : Algebra.IsSeparable
       (IsLocalRing.ResidueField (v.adicCompletionIntegers K))
       (IsLocalRing.ResidueField (w.adicCompletionIntegers L)) := by
     infer_instance
-  obtain ⟨pb, hfield⟩ :=
-    TauCeti.IsDiscreteValuationRing.exists_powerBasis_intermediateField_adjoin_eq_top
-      (R := v.adicCompletionIntegers K) (S := w.adicCompletionIntegers L)
-      (v.adicCompletion K) (w.adicCompletion L)
+  let ⟨pb⟩ := TauCeti.IsDiscreteValuationRing.nonempty_powerBasis
+    (R := v.adicCompletionIntegers K) (S := w.adicCompletionIntegers L)
   refine ⟨pb.gen, pb.adjoin_gen_eq_top, pb.isIntegral_gen, ?_⟩
-  rw [← Algebra.algebraMap_ofSubsemiring_apply (w.adicCompletionIntegers L) pb.gen]
-  exact Algebra.adjoin_eq_top_of_intermediateField
-    (fun x _ ↦ Algebra.IsAlgebraic.isAlgebraic x) hfield
+  exact adjoin_adicCompletion_eq_top_of_adjoin_adicCompletionIntegers_eq_top
+    (K := K) (L := L) v w pb.gen pb.adjoin_gen_eq_top
 
 end IsDedekindDomain.HeightOneSpectrum
