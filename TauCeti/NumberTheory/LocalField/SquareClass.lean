@@ -56,8 +56,8 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   with one of `1`, `u`, `π`, `u π`.
 * `TauCeti.exists_integerUnit_residue_not_isSquare`: away from residue characteristic two there
   is a unit of `𝒪[K]` whose residue is a nonsquare.
-* `TauCeti.exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two`: the unit `u`
-  can be chosen with nonsquare residue, as required by the representative classification.
+* `TauCeti.exists_isSquare_mul_of_isUnit_two_of_integerUnit_residue_not_isSquare`: the four
+  representatives can be formed from any specified integer-ring unit with nonsquare residue.
 * `TauCeti.isSquare_or_isSquare_mul_of_isUnit_two`: an element of even valuation is a square or
   `u` times a square.
 
@@ -215,18 +215,15 @@ theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
   rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
   exact hxsq
 
-/-- **The four square classes with the unramified unit chosen explicitly.** Away from residue
-characteristic two, for every uniformizer `π` there is a unit `u` of `𝒪[K]` whose residue is
-a nonsquare, and `1`, `u`, `π`, `u π` represent all four square classes. -/
-theorem exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two
-    (h2 : IsUnit (2 : 𝒪[K])) {π : Kˣ} (hπ : IsUniformizer K π) :
-    ∃ u : 𝒪[K]ˣ,
-      ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) ∧
-      ∀ a : Kˣ, ∃ r ∈ ({1, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u,
-          π, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u * π} : Set Kˣ),
-        IsSquare (a * r) := by
-  obtain ⟨u, hu⟩ := exists_integerUnit_residue_not_isSquare h2
-  refine ⟨u, hu, fun a ↦ ?_⟩
+/-- **The four square classes with an explicitly chosen unramified unit.** Away from residue
+characteristic two, if a unit `u` of `𝒪[K]` has nonsquare residue, then `1`, `u`, `π`, and
+`u π` represent all four square classes. -/
+theorem exists_isSquare_mul_of_isUnit_two_of_integerUnit_residue_not_isSquare
+    (h2 : IsUnit (2 : 𝒪[K])) {π : Kˣ} (hπ : IsUniformizer K π) (u : 𝒪[K]ˣ)
+    (hu : ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u)) (a : Kˣ) :
+    ∃ r ∈ ({1, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u,
+        π, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u * π} : Set Kˣ),
+      IsSquare (a * r) := by
   apply exists_isSquare_mul_of_isUnit_two h2 hπ
   · rw [normalizedValuation_integerUnits]
     exact ⟨0, by simp⟩
