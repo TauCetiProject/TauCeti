@@ -246,26 +246,20 @@ lemma exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (hp : 0 < p) (hσ10 : σ 
     Matrix.mul_fin_two]
   simp [γ, hσ10, hσ11, mul_comm (p : ℚ)]
 
-/-- **The forward inclusion.** For a prime `p` and `γ ∈ Γ₁(N)`, the product `diag(1, p) · γ` lies
-in one of the `p + 1` right cosets: an upper-triangular one when `p ∤ a`, where the congruence
-`a j ≡ b (mod p)` is solvable because `a` is then invertible modulo the prime `p`, and the
-twisted one when `p ∣ a`. -/
+/-- **The forward inclusion.** The product `diag(1, p) · γ` lies in one of the `p + 1` right cosets
+`Γ₁(N) · primeRep σ p i` for every `γ ∈ Γ₁(N)`, if `p` is prime and `σ` has bottom row `(N, p)`. -/
 lemma exists_mem_Gamma1_natDiagGL_mul_primeRep (hp : p.Prime) (hσ10 : σ 1 0 = (N : ℤ))
-    (hσ11 : σ 1 1 = (p : ℤ)) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
-    ∃ i : Option (Fin p), ∃ δ ∈ Gamma1 N,
-      natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * primeRep σ p i := by
+    (hσ11 : σ 1 1 = (p : ℤ)) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) : ∃ i : Option (Fin p),
+    ∃ δ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * primeRep σ p i := by
+  -- for `γ = !![a, b; c, d]`: the twisted coset when `p ∣ a`, an upper-triangular one otherwise
   by_cases hpa : (p : ℤ) ∣ γ 0 0
-  · obtain ⟨δ, hδ, heq⟩ :=
-      exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd hp.pos hσ10 hσ11 hγ hpa
-    exact ⟨none, δ, hδ, heq⟩
-  · have hunit : IsUnit ((γ 0 0 : ℤ) : ZMod p) :=
-      (CharP.isUnit_intCast_iff (R := ZMod p) hp).mpr hpa
-    have : NeZero p := ⟨hp.pos.ne'⟩
-    obtain ⟨j, hdvd⟩ := ZMod.exists_dvd_sub_val_mul p (γ 0 1) (γ 0 0) hunit
-    have hjlt : j.val < p := ZMod.val_lt j
-    obtain ⟨δ, hδ, heq⟩ := exists_mem_Gamma1_natDiagGL_mul_of_dvd hγ hjlt
-      (by simpa [mul_comm] using hdvd)
-    exact ⟨some ⟨j.val, hjlt⟩, δ, hδ, by rw [primeRep_some]; exact heq⟩
+  · exact ⟨none, exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd hp.pos hσ10 hσ11 hγ hpa⟩
+  · have : NeZero p := ⟨hp.ne_zero⟩
+    -- `a` is then a unit modulo the prime `p`, so the congruence `a j ≡ b (mod p)` is solvable
+    obtain ⟨j, hj⟩ := ZMod.exists_dvd_sub_val_mul p (γ 0 1) (γ 0 0) <|
+      (CharP.isUnit_intCast_iff hp).mpr hpa
+    exact ⟨some ⟨j.val, j.val_lt⟩,
+      exists_mem_Gamma1_natDiagGL_mul_of_dvd hγ j.val_lt (mul_comm _ (γ 0 0) ▸ hj)⟩
 
 /-- **The twisted representative lies in none of the upper-triangular cosets.** For `1 < p`
 and `σ` whose lower-right entry is `p`, the right coset of `σ · diag(p, 1)` modulo any
