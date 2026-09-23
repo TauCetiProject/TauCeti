@@ -178,7 +178,7 @@ end Orthogonal
 
 section Dual
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q] [Finite Q]
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q]
   (R : Submodule k (pathAlgebra k Q))
 
 /-- The relation ideal of the quadratic dual: the two-sided ideal of the opposite path algebra
@@ -205,7 +205,7 @@ theorem op_mem_quadraticDualIdeal [∀ a b : Q, Finite (a ⟶ b)]
     op f ∈ quadraticDualIdeal k Q R :=
   TwoSidedIdeal.subset_span ⟨f, hf, rfl⟩
 
-variable (k Q R)
+variable (k Q R) [Finite Q]
 
 /-- The **quadratic dual algebra** of the quadratic algebra `kQ / (R)`: the opposite path algebra
 modulo the orthogonal complement of `R`. -/

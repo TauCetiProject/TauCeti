@@ -95,8 +95,6 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 /-! ### The relation ideals -/
 
-variable [Finite V]
-
 /-- The two-sided ideal spanned by the quadratic zigzag relators. -/
 noncomputable def quadraticZigzagIdeal : TwoSidedIdeal (pathAlgebra k (DoubledQuiver G)) :=
   TwoSidedIdeal.span {x | IsQuadraticZigzagRelator k G x}
@@ -173,6 +171,8 @@ private theorem backtrackElem_mul_mem_of_mem {a : pathAlgebra k (DoubledQuiver G
   rwa [sub_mul, sub_add_cancel] at hadd
 
 /-! ### The redundancy of the long relators -/
+
+variable [Finite V]
 
 /-- In a connected graph with at least three vertices, any two vertices have a neighbour outside
 the pair they form. This is the local hypothesis that makes the zigzag relations quadratic; it is
