@@ -95,8 +95,12 @@ namespace BinaryQuadraticForm
 variable {R : Type*} [CommRing R]
 
 /-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. -/
-def discrim (f : BinaryQuadraticForm R) : R :=
-  _root_.discrim f.a f.b f.c
+protected def discrim (f : BinaryQuadraticForm R) : R :=
+  discrim f.a f.b f.c
+
+/-- The discriminant of `a x² + b x y + c y²`, written out in the coefficients: `b² - 4 a c`. -/
+theorem discrim_def (f : BinaryQuadraticForm R) : f.discrim = f.b ^ 2 - 4 * f.a * f.c :=
+  rfl
 
 /-- `γ • f` is the form `f ∘ γ⁻¹`, so `(γ • f)(x, y) = f(s x - q y, -r x + p y)` for
 `γ = !![p, q; r, s]`. The coefficients are written through the entries of the adjugate
@@ -141,7 +145,7 @@ instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
 /-- The discriminant `b² - 4 a c` of a binary quadratic form is invariant under `SL(2, R)`. -/
 @[simp]
 theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).discrim = f.discrim := by
-  simp only [BinaryQuadraticForm.discrim, _root_.discrim, smul_a, smul_b, smul_c]
+  simp only [discrim_def, smul_a, smul_b, smul_c]
   linear_combination (f.b ^ 2 - 4 * f.a * f.c) * congr($(γ.fin_two_mul_sub_mul_eq_one) ^ 2)
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
@@ -152,7 +156,7 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
     rintro ⟨hD, ha⟩
     refine ⟨(discrim_smul γ f).trans hD, pos_of_mul_pos_right (a := 4 * f.a) ?_ (by positivity)⟩
     have key : 4 * f.a * (γ • f).a = (2 * f.a * γ 1 1 - f.b * γ 1 0) ^ 2 + D * γ 1 0 ^ 2 := by
-      simp only [BinaryQuadraticForm.discrim, _root_.discrim, smul_a] at hD ⊢
+      simp only [discrim_def, smul_a] at hD ⊢
       linear_combination (-γ 1 0 ^ 2) * hD
     rw [key]
     rcases eq_or_ne (γ 1 0) 0 with hr | hr
