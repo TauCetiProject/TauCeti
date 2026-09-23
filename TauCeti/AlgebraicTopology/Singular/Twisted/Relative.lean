@@ -206,6 +206,19 @@ abbrev twistedChainComplexShortComplex :
     ShortComplex (ChainComplex (ModuleCat.{max v w} R) ℕ) :=
   ShortComplex.mk _ _ (P.twistedChainComplexMap_comp_twistedChainComplexπ L)
 
+/-- A coefficient morphism gives a morphism of the short exact twisted chain sequences of a
+pair. -/
+def twistedChainComplexShortComplexCoefficientMap
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) :
+    P.twistedChainComplexShortComplex L ⟶ P.twistedChainComplexShortComplex K :=
+  ShortComplex.homMk
+    (LocalCoefficientSystem.twistedChainComplexCoefficientMap
+      ((LocalCoefficientSystem.pullback P.map.hom).map f))
+    (LocalCoefficientSystem.twistedChainComplexCoefficientMap f)
+    (P.twistedChainComplexCoefficientMap f)
+    (LocalCoefficientSystem.twistedChainComplexMap_naturality P.map f).symm
+    (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap f).symm
+
 /-- The twisted chain sequence of a topological pair is short exact. -/
 lemma shortExact_twistedChainComplexShortComplex :
     (P.twistedChainComplexShortComplex L).ShortExact where
@@ -285,6 +298,21 @@ twisted homology of its subspace in degree `m`, where `m + 1 = n`. -/
 abbrev twistedHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     P.twistedHomology L n ⟶ (P.subspaceSystem L).twistedHomology m :=
   (P.shortExact_twistedChainComplexShortComplex L).δ n m (by simpa)
+
+/-- The connecting morphism in relative twisted homology commutes with change of local
+coefficients. -/
+@[reassoc]
+lemma twistedHomologyδ_naturality_coefficient
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K)
+    (n m : ℕ) (h : m + 1 = n := by lia) :
+    P.twistedHomologyδ L n m h ≫
+        LocalCoefficientSystem.twistedHomologyCoefficientMap
+          ((LocalCoefficientSystem.pullback P.map.hom).map f) m =
+      P.twistedHomologyCoefficientMap f n ≫ P.twistedHomologyδ K n m h := by
+  exact HomologicalComplex.HomologySequence.δ_naturality
+    (P.twistedChainComplexShortComplexCoefficientMap f)
+    (P.shortExact_twistedChainComplexShortComplex L)
+    (P.shortExact_twistedChainComplexShortComplex K) n m (by simpa)
 
 @[reassoc (attr := simp)]
 lemma twistedHomologyδ_comp (n m : ℕ) (h : m + 1 = n := by lia) :
