@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
-public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 
 /-!
 # Closed compact real Spin carrier
@@ -16,9 +15,9 @@ into the Clifford algebra and pulling that closed set back along the units valua
 ambient closedness statement needed when the Spin group is treated as a closed subgroup of the
 Clifford-algebra units.
 
-The argument is the standard compact-to-closed theorem for Hausdorff spaces, in the form supplied
-by the existing compactness and topology APIs. The compact special-orthogonal carrier is packaged
-alongside it in `RealSpecialOrthogonal.lean`.
+This carrier is used to view the compact real Spin group as a closed subgroup of the
+Clifford-algebra units. The corresponding special-orthogonal carrier is provided separately in
+`RealSpecialOrthogonal.lean`.
 
 ## References
 
@@ -26,7 +25,7 @@ alongside it in `RealSpecialOrthogonal.lean`.
 
 ## Main results
 
-* `CliffordAlgebra.isClosed_range_realCliffordSpinGroupZero_toUnits`: the compact real Spin
+* `TauCeti.CliffordAlgebra.isClosed_range_realCliffordSpinGroupZero_toUnits`: the compact real Spin
   carrier is closed in the Clifford-algebra units.
 -/
 
@@ -34,9 +33,11 @@ public section
 
 open Set
 
+namespace TauCeti
+
 namespace CliffordAlgebra
 
-open TauCeti
+open _root_.CliffordAlgebra
 
 noncomputable section
 
@@ -62,21 +63,29 @@ theorem isClosed_range_realCliffordSpinGroupZero_toUnits (n : ℕ) :
   let f : Aˣ → A := fun u => u
   have hu : IsClosed (f ⁻¹' (realCliffordSpinGroupZero n : Set A)) := by
     simpa only [f] using hs.preimage Units.continuous_val
+  have hcoe (x : realCliffordSpinGroupZero n) :
+      ((spinGroup.toUnits (Q := realCliffordForm n 0) x : Aˣ) : A) = (x : A) := by
+    rfl
   have hset : Set.range (spinGroup.toUnits (Q := realCliffordForm n 0)) =
       f ⁻¹' (realCliffordSpinGroupZero n : Set A) := by
     ext u
     constructor
     · rintro ⟨x, rfl⟩
+      change ((spinGroup.toUnits (Q := realCliffordForm n 0) x : Aˣ) : A) ∈
+        (realCliffordSpinGroupZero n : Set A)
+      rw [hcoe x]
       exact x.2
     · intro hu'
       refine ⟨⟨u, hu'⟩, ?_⟩
       apply Units.ext
-      rfl
+      exact hcoe ⟨u, hu'⟩
   rw [hset]
   exact hu
 
 end
 
 end CliffordAlgebra
+
+end TauCeti
 
 end
