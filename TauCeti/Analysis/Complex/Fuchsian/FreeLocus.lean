@@ -19,12 +19,6 @@ therefore a Hausdorff, second countable Riemann surface, whose complex charts ar
 along the orbit projection, and the orbit projection is a covering map and a local
 biholomorphism.
 
-The complex-manifold structure, Hausdorffness and second countability are found by instance
-search, from `TauCeti.instIsManifoldQuotient`, Mathlib's
-`t2Space_of_properlyDiscontinuousSMul_of_t2Space` and
-`TauCeti.freeLocus.instSecondCountableTopologyQuotient`, and the covering property is
-`TauCeti.isCoveringMap_quotientMk_freeLocus`. This file adds the local biholomorphism.
-
 At a point with nontrivial stabilizer, an elliptic point, the orbit projection of the whole upper
 half-plane is not a covering map; its local model there is the power map `u ↦ u ^ m` of
 `TauCeti.rootsOfUnityBallQuotientHomeomorph`.

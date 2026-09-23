@@ -39,8 +39,8 @@ an open invariant subset. The free locus inherits the charts of the ambient mani
   the map is a `C^n` local diffeomorphism.
 * `TauCeti.instIsManifoldQuotient`: the orbit space of a free, properly discontinuous action by
   `C^n` maps on a `C^n` manifold is a `C^n` manifold.
-* `TauCeti.contMDiff_quotientMk` and `TauCeti.isLocalDiffeomorph_quotientMk`: the orbit
-  projection is a `C^n` local diffeomorphism.
+* `TauCeti.isLocalDiffeomorph_quotientMk`: the orbit projection is a `C^n` local
+  diffeomorphism.
 * `TauCeti.freeLocus.instChartedSpace`, `TauCeti.freeLocus.instIsManifold` and
   `TauCeti.freeLocus.instContMDiffConstSMul`: the free locus of a properly discontinuous action
   is an open submanifold on which the group acts by `C^n` maps.
@@ -221,12 +221,6 @@ theorem isLocalDiffeomorph_quotientMk [IsManifold I n M] :
   (isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := G) (E := M)).isCoveringMap
     |>.isLocalHomeomorph |>.isLocalDiffeomorph_chartedSpaceOfRightInverse
       Quotient.mk_surjective.hasRightInverse.choose_spec (quotientMk_deck (G := G) (M := M))
-
-/-- The orbit projection of a free, properly discontinuous action by `C^n` maps on a `C^n` manifold
-is `C^n`. -/
-theorem contMDiff_quotientMk [IsManifold I n M] :
-    ContMDiff I I n (Quotient.mk (MulAction.orbitRel G M)) :=
-  isLocalDiffeomorph_quotientMk.contMDiff
 
 end Quotient
 
