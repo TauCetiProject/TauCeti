@@ -85,6 +85,8 @@ private theorem overSheafificationLifting_iso_hom_app
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).hom.app P =
         (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
           (ringCatSheaf R) P).hom := by
+  -- The localization lifting stores `overSheafificationNatIso` in its `iso` field. Rewriting its
+  -- component lemma cannot expose that field projection, so reduce the projection first.
   change (overSheafificationNatIso (ringCatSheaf R) X).hom.app P = _
   exact overSheafificationNatIso_hom_app (ringCatSheaf R) X P
 
@@ -95,6 +97,8 @@ private theorem overSheafificationLifting_iso_inv_app
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).inv.app P =
         (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
           (ringCatSheaf R) P).inv := by
+  -- As above, expose the natural isomorphism stored in the localization lifting before applying
+  -- its public component characterization.
   change (overSheafificationNatIso (ringCatSheaf R) X).inv.app P = _
   exact overSheafificationNatIso_inv_app (ringCatSheaf R) X P
 
@@ -173,7 +177,7 @@ private theorem overCurriedTensorPreIsoPost_hom_app_app
   rfl
 
 /-- Restriction of sheaves of modules to a slice is a strong monoidal functor. -/
-instance overFunctorMonoidal :
+instance _root_.SheafOfModules.overFunctorMonoidal :
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).Monoidal :=
   @CategoryTheory.Localization.Monoidal.functorMonoidalOfComp
     _ _ _ _ _ _ _ _ _ sourceSheafification sourceW _ _
@@ -181,7 +185,7 @@ instance overFunctorMonoidal :
     (overSheafificationBraided R X).toMonoidal _ (overSheafificationLifting R X)
 
 /-- Restriction of sheaves of modules to a slice preserves the symmetric braiding. -/
-instance overFunctorBraided :
+instance _root_.SheafOfModules.overFunctorBraided :
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).Braided where
   braided M N := by
     let _ : CategoryTheory.Localization.Lifting
@@ -293,7 +297,8 @@ def _root_.SheafOfModules.overUnitIso (X : C) :
 
 /-- The forward tensor comparison is the oplax monoidal structure map of restriction. -/
 @[simp]
-theorem overTensorIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+theorem _root_.SheafOfModules.overTensorIso_hom
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overTensorIso N X).hom =
       Functor.OplaxMonoidal.δ
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N :=
@@ -301,7 +306,8 @@ theorem overTensorIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
 
 /-- The inverse tensor comparison is the lax monoidal structure map of restriction. -/
 @[simp]
-theorem overTensorIso_inv (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+theorem _root_.SheafOfModules.overTensorIso_inv
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overTensorIso N X).inv =
       Functor.LaxMonoidal.μ
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N :=
@@ -309,7 +315,8 @@ theorem overTensorIso_inv (M N : SheafOfModules.{u} (ringCatSheaf R)) :
 
 /-- The inverse tensor comparison, expanded through restriction of presheaves and
 sheafification. -/
-theorem overTensorIso_inv_eq (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+theorem _root_.SheafOfModules.overTensorIso_inv_eq
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overTensorIso N X).inv =
         (((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
               (sheafificationIso (ringCatSheaf R) M).symm.hom ≫
@@ -332,7 +339,9 @@ theorem overTensorIso_inv_eq (M N : SheafOfModules.{u} (ringCatSheaf R)) :
               (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)) M.val N.val ≫
             ((sheafificationIso (ringCatSheaf R) M).symm.inv ⊗ₘ
               (sheafificationIso (ringCatSheaf R) N).symm.inv)) := by
-  rw [overTensorIso_inv]
+  rw [_root_.SheafOfModules.overTensorIso_inv]
+  -- `overTensorIso` is defined from the generated monoidal structure. Its inverse reduces to the
+  -- localization tensorator only definitionally, before the public expansion lemma can apply.
   change
     ((CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost
       sourceSheafification sourceW
@@ -342,21 +351,24 @@ theorem overTensorIso_inv_eq (M N : SheafOfModules.{u} (ringCatSheaf R)) :
 
 /-- The forward unit comparison is the oplax monoidal unit map of restriction. -/
 @[simp]
-theorem overUnitIso_hom : (_root_.SheafOfModules.overUnitIso (R := R) X).hom =
+theorem _root_.SheafOfModules.overUnitIso_hom :
+    (_root_.SheafOfModules.overUnitIso (R := R) X).hom =
     Functor.OplaxMonoidal.η
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) :=
   (rfl)
 
 /-- The inverse unit comparison is the lax monoidal unit map of restriction. -/
 @[simp]
-theorem overUnitIso_inv : (_root_.SheafOfModules.overUnitIso (R := R) X).inv =
+theorem _root_.SheafOfModules.overUnitIso_inv :
+    (_root_.SheafOfModules.overUnitIso (R := R) X).inv =
     Functor.LaxMonoidal.ε
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) :=
   (rfl)
 
 /-- The inverse unit comparison, expanded through restriction of presheaves and
 sheafification. -/
-theorem overUnitIso_inv_eq : (_root_.SheafOfModules.overUnitIso (R := R) X).inv =
+theorem _root_.SheafOfModules.overUnitIso_inv_eq :
+    (_root_.SheafOfModules.overUnitIso (R := R) X).inv =
     Functor.LaxMonoidal.ε
         (PresheafOfModules.pushforward (F := Over.forget X)
             (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X)
@@ -368,7 +380,9 @@ theorem overUnitIso_inv_eq : (_root_.SheafOfModules.overUnitIso (R := R) X).inv 
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
         (Functor.OplaxMonoidal.η
           (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj))) := by
-  rw [overUnitIso_inv]
+  rw [_root_.SheafOfModules.overUnitIso_inv]
+  -- The unit comparison is defined from the generated monoidal structure, so unfold that
+  -- definitional wrapper before using `functorMonoidalOfComp_ε`.
   change Functor.LaxMonoidal.ε
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) = _
   rw [CategoryTheory.Localization.Monoidal.functorMonoidalOfComp_ε

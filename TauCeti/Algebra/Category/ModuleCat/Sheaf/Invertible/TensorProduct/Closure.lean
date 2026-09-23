@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.Restriction
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.TensorProduct.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 public import TauCeti.CategoryTheory.Sites.CoversTop
 
 /-!
