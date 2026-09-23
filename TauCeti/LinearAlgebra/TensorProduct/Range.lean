@@ -8,11 +8,16 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
 /-!
-# Ranges after extension of scalars
+# Images and ranges after extension of scalars
 
-If the coefficient algebra is faithfully flat, membership of a vector in the range of a linear map
-can be checked after extension of scalars.  This is the linear-algebraic descent step used when an
-equation acquires a solution after passing to a larger field.
+Extending scalars along an algebra `A` turns a linear map `f` into `f.baseChange A` and a submodule
+`p` into `p.baseChange A`.  The two operations commute: the image of an extended submodule is the
+extension of the image, with no hypothesis on `A` at all, because both sides are generated over `A`
+by the canonical images `1 ⊗ₜ m` of elements of `p`.
+
+If the coefficient algebra is moreover faithfully flat, membership of a vector in the range of a
+linear map can be checked after extension of scalars.  This is the linear-algebraic descent step
+used when an equation acquires a solution after passing to a larger field.
 
 This builds on `Submodule.baseChange` from
 `Mathlib/LinearAlgebra/TensorProduct/Tower.lean` and
@@ -23,6 +28,8 @@ This builds on `Submodule.baseChange` from
 
 ## Main results
 
+* `LinearMap.map_baseChange`: the image of an extended submodule under an extended linear map is
+  the extension of the image.
 * `LinearMap.one_tmul_mem_range_baseChange_iff`: a vector belongs to a range exactly when its
   canonical image belongs to the extended range, for a faithfully flat coefficient algebra.
 -/
@@ -68,10 +75,28 @@ universe u v w x
 
 variable {R : Type u} {A : Type v} {M : Type w} {N : Type x}
 
-section Descent
-
 variable [CommRing R] [Ring A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+section Image
+
+/-- Extension of scalars commutes with taking the image of a submodule: both sides are spanned
+over the extended coefficients by the canonical images of the elements of `f '' p`. -/
+theorem map_baseChange (f : M →ₗ[R] N) (p : Submodule R M) :
+    Submodule.map (f.baseChange A) (p.baseChange A) = (p.map f).baseChange A := by
+  rw [Submodule.baseChange_eq_span, Submodule.map_span, Submodule.baseChange_eq_span]
+  congr 1
+  ext y
+  simp only [Set.mem_image, SetLike.mem_coe, Submodule.mem_map, TensorProduct.mk_apply]
+  constructor
+  · rintro ⟨-, ⟨x, hx, rfl⟩, rfl⟩
+    exact ⟨f x, ⟨x, hx, rfl⟩, by simp⟩
+  · rintro ⟨-, ⟨x, hx, rfl⟩, rfl⟩
+    exact ⟨(1 : A) ⊗ₜ[R] x, ⟨x, hx, rfl⟩, by simp⟩
+
+end Image
+
+section Descent
 
 /-- Over a faithfully flat coefficient algebra, a vector belongs to the range of a linear map if
 and only if its canonical image belongs to the range after extension of scalars. -/
