@@ -84,8 +84,6 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
         PowerSeries.coeff n (D.localPowerSeries P)).radius := by
     apply FormalMultilinearSeries.le_radius_of_summable
     simpa [FormalMultilinearSeries.ofScalars_norm] using hcoeff
-  have hq0 : q ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl P.natCast_absNorm_ne_zero)
-  have hr0 : 0 < (r : ENNReal) := by simp [r, hq0]
   have hz : ‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-s)‖ₑ < (r : ENNReal) := by
     rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe]
     -- Unfold the named boundary point to compare the two complex powers by real part.
@@ -99,7 +97,7 @@ theorem summable_coeff_localLogDerivSeries_of_zeroFree (D : EulerProductData K)
       exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) (by simp; linarith)
   -- Zero-freeness lets the analytic logarithmic derivative inherit that radius.
   have hlog := PowerSeries.summable_coeff_logDeriv_mul_pow_of_zeroFree
-    (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr0 hr
+    (D.localPowerSeries P) (D.constantCoeff_localPowerSeries P) hr
     (fun z hz' ↦ hne z (by
       rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
       dsimp [r, q] at hz'
