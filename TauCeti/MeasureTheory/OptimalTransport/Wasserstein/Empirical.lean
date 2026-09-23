@@ -19,18 +19,6 @@ the empirical measures `(n + 1)⁻¹ ∑_{i ≤ n} δ_{Y i}` converge to `μ` in
 distance. This is the almost-sure consistency of the empirical measure as an estimator of `μ` in
 every `W_p` with `p < ∞`.
 
-The proof reads the convergence off the characterization of Wasserstein convergence as weak
-convergence together with convergence of `p`-moments,
-`TauCeti.tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_lintegral`. Both
-inputs hold almost surely:
-
-* the empirical measures converge weakly to `μ` almost surely (Varadarajan's theorem), which is the
-  constant-directing-measure case of
-  `TauCeti.Probability.ConditionallyIIDWith.tendsto_empiricalMeasure_ae`;
-* the `p`-moment `∫⁻ y, edist x y ^ p` of the empirical measure about a basepoint `x` is the
-  sample mean of the integrable variables `dist x (Y i) ^ p`, so it converges almost surely to the
-  `p`-moment of `μ` by the strong law of large numbers `ProbabilityTheory.strong_law_ae`.
-
 The exponent is finite: at `p = ∞` the statement fails. For the law giving mass `1 / 2` to each
 of two points at distance `1`, an odd number of samples never splits evenly between them, so some
 mass has to cross, and those empirical measures are at `W_∞` distance `1` from the law.
@@ -71,6 +59,9 @@ theorem tendsto_wassersteinEDist_empiricalMeasure_ae (hp0 : p ≠ 0) (hp : p ≠
     ∀ᵐ ω ∂P, Tendsto
       (fun n ↦ wassersteinEDist p (empiricalMeasure (fun i ↦ Y i ω) n : Measure X) μ) atTop
       (𝓝 0) := by
+  -- Apply `tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_lintegral`
+  -- to weak convergence from `ConditionallyIIDWith.tendsto_empiricalMeasure_ae`
+  -- (Varadarajan's theorem) and moment convergence from `strong_law_ae`.
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   obtain ⟨x, hx⟩ := hasFiniteMoment_def.mp hμ
   -- The `p`-moment of `μ` about `x` is finite.
