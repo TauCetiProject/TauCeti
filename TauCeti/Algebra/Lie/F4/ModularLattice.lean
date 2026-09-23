@@ -320,6 +320,15 @@ theorem f4Modular_lie_rootVector_of_add_eq_short (α β γ : Fin 48)
   exact f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero α β γ h
     (f4_chainBotCoeff_eq_zero_of_add_eq_short α β γ hβ hγ h)
 
+/-- A root edge between two roots of equal length has unit modular bracket coefficient. -/
+theorem f4Modular_lie_rootVector_of_add_eq_same_length (α β γ : Fin 48)
+    (hβγ : f4Length β = f4Length γ)
+    (h : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
+    ⁅f4ModularRootVector α, f4ModularRootVector β⁆ = f4ModularRootVector γ := by
+  exact f4Modular_lie_rootVector_of_add_of_chainBotCoeff_eq_zero α β γ h
+    (f4_chainBotCoeff_eq_zero_of_add_eq_same_length α β γ hβγ h)
+
 /-- Modular root vectors bracket to zero when their rational root-space sum is absent. -/
 theorem f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot (α β : Fin 48)
     (hbot : rootSpace (F4.cartanSubalgebra valid_F4)
@@ -479,6 +488,10 @@ theorem f4Modular_lie_rootVector_opposite (α : Fin 48) :
 /-- Recover the Bourbaki node number of a simple Killing root. -/
 abbrev f4PinnedSimpleIndex (i : f4KillingBase.support) : Fin 4 :=
   Fin.cast rank_F4 ((F4.lieBasis valid_F4).baseSupportEquiv.symm i)
+
+/-- The pinned numbering of simple Killing-root support labels. -/
+abbrev f4PinnedSimpleIndexEquiv : f4KillingBase.support ≃ Fin 4 :=
+  (F4.lieBasis valid_F4).baseSupportEquiv.symm.trans (finCongr rank_F4)
 
 theorem f4PinnedSimpleIndex_baseSupportEquiv (i : Fin F4.rank) :
     f4PinnedSimpleIndex ((F4.lieBasis valid_F4).baseSupportEquiv i) =

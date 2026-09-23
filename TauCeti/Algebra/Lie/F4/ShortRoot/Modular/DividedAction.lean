@@ -131,14 +131,29 @@ theorem f4ModularDividedAdjointSquare_rootVector_opposite (k : Fin 4 ⊕ Fin 4) 
   rw [f4ModularRootVector_eq]
   congr 1
 
+/-- A rational divided-square zero column remains zero after integral reduction. -/
+theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero
+    (k : Fin 4 ⊕ Fin 4) (β : Fin 48)
+    (h : Associative.dividedPower 2
+        (ad ℚ (F4.lieAlgebra valid_F4)
+          (f4ChevalleyRootVector (f4KillingRoot (f4SignedSimpleRootIndex k)))) •
+        f4ChevalleyRootVector (f4KillingRoot β) = 0) :
+    f4ModularDividedAdjointSquare k (f4ModularRootVector β) = 0 := by
+  have hintegral : f4IntegralDividedAdjointSquare k (f4IntegralRootVector β) = 0 := by
+    apply Subtype.ext
+    simpa only [coe_f4IntegralDividedAdjointSquare_apply, coe_f4IntegralRootVector,
+      ZeroMemClass.coe_zero] using h
+  rw [f4ModularRootVector_eq, f4ModularDividedAdjointSquare_tmul, hintegral,
+    TensorProduct.tmul_zero]
+
 /-- Modulo two, every non-opposite short-root column of the divided square vanishes. -/
 theorem f4ModularDividedAdjointSquare_rootVector_eq_zero_of_short
     (k : Fin 4 ⊕ Fin 4) (i : Fin 48) (hi : f4Length i = 1)
     (hopp : i ≠ f4OppositeRootIndex (f4SignedSimpleRootIndex k)) :
     f4ModularDividedAdjointSquare k (f4ModularRootVector i) = 0 := by
-  rw [f4ModularRootVector_eq, f4ModularDividedAdjointSquare_tmul,
-    f4IntegralDividedAdjointSquare_rootVector_eq_zero_of_short k i hi hopp,
-    TensorProduct.tmul_zero]
+  exact f4ModularDividedAdjointSquare_rootVector_eq_zero_of_dividedPower_eq_zero k i
+    (f4_dividedPower_two_ad_rootVector_eq_zero_of_short
+      (f4SignedSimpleRootIndex k) i hi hopp)
 
 /-- The modular divided square vanishes on every simple-coroot basis column. -/
 theorem f4ModularDividedAdjointSquare_simpleCoroot_eq_zero
