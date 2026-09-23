@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
-public import TauCeti.Probability.Distributions.Pareto.PDF
+public import Mathlib.Probability.Distributions.Pareto
 
 import TauCeti.Probability.Moments.IntegrableExpMul
+import TauCeti.Probability.Distributions.Pareto.PDF
 
 /-!
 # Elementary theory of the Pareto distribution

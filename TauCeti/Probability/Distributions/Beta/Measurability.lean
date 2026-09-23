@@ -5,9 +5,10 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma
-public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Beta
+
+import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.MeasureTheory.Measure.Measurability
 /-!
 # Parameter measurability for the Beta distribution
 
@@ -20,9 +21,8 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 /-- `ProbabilityTheory.beta` is measurable in its two parameters.
 
-It is `Real.Gamma α * Real.Gamma β / Real.Gamma (α + β)`, so this uses `Real.measurable_Gamma`
-three times. No positivity is assumed. Measurability concerns the total function, including junk
-values at the poles of `Real.Gamma`. -/
+It is `Real.Gamma α * Real.Gamma β / Real.Gamma (α + β)`. No positivity is assumed;
+measurability concerns the total function, including junk values at the poles of `Real.Gamma`. -/
 @[fun_prop] theorem measurable_beta : Measurable fun p : ℝ × ℝ => beta p.1 p.2 := by
   unfold beta
   fun_prop

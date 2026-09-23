@@ -19,8 +19,8 @@ open MeasureTheory ProbabilityTheory
 namespace TauCeti.Probability
 /-- **The geometric family is measurable in its success probability.**
 
-At `p = 0` the law is `Measure.dirac 0` rather than a weighted sum, so the proof splits along the
-measurable set `{p | p ≠ 0}` of the unit interval. -/
+At `p = 0` the law is `Measure.dirac 0`; the result covers this boundary as well as nonzero success
+probabilities. -/
 @[fun_prop] theorem measurable_geometricMeasure :
     Measurable fun p : unitInterval => geometricMeasure p := by
   simp only [geometricMeasure]

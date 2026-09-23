@@ -5,9 +5,10 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma
-public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Gamma
+
+import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.MeasureTheory.Measure.Measurability
 /-!
 # Parameter measurability for the Gamma distribution
 

@@ -5,8 +5,9 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Pareto
+
+import TauCeti.MeasureTheory.Measure.Measurability
 /-!
 # Parameter measurability for the Pareto distribution
 

@@ -5,8 +5,9 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Cauchy
+
+import TauCeti.MeasureTheory.Measure.Measurability
 /-!
 # Parameter measurability for the Cauchy distribution
 

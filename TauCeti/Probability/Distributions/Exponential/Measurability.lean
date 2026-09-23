@@ -5,8 +5,9 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gamma.Measurability
 public import Mathlib.Probability.Distributions.Exponential
+
+import TauCeti.Probability.Distributions.Gamma.Measurability
 /-!
 # Parameter measurability for the exponential distribution
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 public import Mathlib.Probability.Distributions.Poisson.Basic
+
+import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.Probability.Distributions.Poisson.Measurability
 
 /-!
