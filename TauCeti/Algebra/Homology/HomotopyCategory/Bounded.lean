@@ -227,14 +227,6 @@ def quotient : CochainComplex.Bounded C ⥤ HomotopyCategory.Bounded C :=
       rw [HomotopyCategory.bounded_quotient_obj_iff]
       exact hK)
 
-private lemma quotient_obj_obj_as_private (X : CochainComplex.Bounded C) :
-    ((quotient C).obj X).obj.as = X.obj := rfl
-
-/-- The underlying complex of a bounded quotient object is the original complex. -/
-@[simp]
-lemma quotient_obj_obj_as (X : CochainComplex.Bounded C) :
-    ((quotient C).obj X).obj.as = X.obj := quotient_obj_obj_as_private C X
-
 private lemma quotient_obj_obj_private (X : CochainComplex.Bounded C) :
     ((quotient C).obj X).obj = (HomotopyCategory.quotient C (.up ℤ)).obj X.obj := rfl
 
