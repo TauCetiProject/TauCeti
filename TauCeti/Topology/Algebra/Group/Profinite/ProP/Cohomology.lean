@@ -89,7 +89,6 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-- Applying the discrete coefficient dictionary to the carrier of `trivialFp` recovers the
 coefficient object itself. -/
-@[simp]
 theorem ofDiscreteModule_trivialFp :
     ofDiscreteModule (ZMod p) G (trivialFp p G).V = trivialFp p G :=
   ofDiscreteModule_eq_self (trivialFp p G)
