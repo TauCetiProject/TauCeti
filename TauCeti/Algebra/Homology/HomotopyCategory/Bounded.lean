@@ -25,8 +25,8 @@ The construction follows the organization of Mathlib's bounded-below category
 
 ## Main definitions
 
-* `TauCeti.CochainComplex.bounded`: the property of being strictly bounded above and below.
-* `TauCeti.CochainComplex.Bounded`: the full subcategory of bounded cochain complexes.
+* `CochainComplex.bounded`: the property of being strictly bounded above and below.
+* `CochainComplex.Bounded`: the full subcategory of bounded cochain complexes.
 * `TauCeti.HomotopyCategory.bounded`: the corresponding property in the homotopy category.
 * `TauCeti.HomotopyCategory.Bounded`: the homotopy category of bounded cochain complexes.
 * `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes.
@@ -40,8 +40,6 @@ The construction follows the organization of Mathlib's bounded-below category
 -/
 
 public section
-
-namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
   HomologicalComplex
@@ -105,6 +103,8 @@ abbrev fullyFaithfulι : (ι C).FullyFaithful :=
 end Bounded
 
 end CochainComplex
+
+namespace TauCeti
 
 namespace HomotopyCategory
 
