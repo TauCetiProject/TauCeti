@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.OfScalars
 public import TauCeti.RingTheory.PowerSeries.Log
 public import Mathlib.Analysis.Complex.TaylorSeries
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Convergence of formal logarithmic derivatives
@@ -29,27 +29,6 @@ nearest zero of the original series, even when the original series converges far
 -/
 
 public section
-
-namespace FormalMultilinearSeries
-
-open Filter
-open scoped Topology
-
-/-- The iterated derivatives at zero of the sum of a scalar formal multilinear series recover its
-coefficients, up to the factorial normalization. -/
-theorem iteratedDeriv_ofScalarsSum_zero (c : ℕ → ℂ)
-    (hc : 0 < (ofScalars ℂ c).radius) (n : ℕ) :
-    iteratedDeriv n (ofScalarsSum (E := ℂ) c) 0 = n.factorial * c n := by
-  have hseries :=
-    (ofScalars ℂ c).hasFPowerSeriesOnBall hc
-  have hfac := hseries.factorial_smul (1 : ℂ)
-  simp only [apply_eq_prod_smul_coeff, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-    one_pow, one_mul, smul_eq_mul, coeff_ofScalars] at hfac
-  have h := hfac n
-  rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
-  simpa [ofScalarsSum, mul_comm] using h.symm
-
-end FormalMultilinearSeries
 
 namespace PowerSeries
 
