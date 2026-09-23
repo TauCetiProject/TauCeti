@@ -49,8 +49,8 @@ section Ring
 
 variable {R : Type*} [Ring R] {G : Type*} [One G]
 
-/-- The group-like difference `single g 1 - 1` is nonzero when `g ≠ 1`, since `single` is
-injective in its index (the coefficient `1` is nonzero over a nontrivial base). -/
+/-- Over a nontrivial ring, the difference `single g 1 - 1` between the basis element at `g` and the
+unit is nonzero when `g ≠ 1`. -/
 theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
     MonoidAlgebra.single g (1 : R) - 1 ≠ 0 := by
   rw [sub_ne_zero, MonoidAlgebra.one_def]
