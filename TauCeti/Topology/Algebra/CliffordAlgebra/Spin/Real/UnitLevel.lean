@@ -42,14 +42,12 @@ def realCliffordUnitLevelHomeomorphSphere (n : ℕ) :
     constructor
     · exact norm_euclideanSpaceEquiv_symm_eq_one_of_realCliffordForm_zero_eq_one
     · intro hv
-      change ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖ = 1 at hv
-      calc
-        realCliffordForm n 0 v =
-            ‖(EuclideanSpace.equiv (Fin n) ℝ).symm v‖ ^ 2 := by
-          simpa only [ContinuousLinearEquiv.apply_symm_apply] using
-            realCliffordForm_zero_euclideanSpaceEquiv_eq_norm_sq
-              ((EuclideanSpace.equiv (Fin n) ℝ).symm v)
-        _ = 1 := by rw [hv]; norm_num
+      simpa only [ContinuousLinearEquiv.apply_symm_apply] using
+        (realCliffordForm_zero_euclideanSpaceEquiv_eq_one
+          ⟨(EuclideanSpace.equiv (Fin n) ℝ).symm v, by
+            simpa only [ContinuousLinearEquiv.coe_toHomeomorph,
+              ContinuousLinearEquiv.coe_symm_toHomeomorph, mem_sphere,
+              dist_zero_right] using hv⟩)
 
 /-- The forward map of `realCliffordUnitLevelHomeomorphSphere` is Euclidean coordinate
 conversion. -/

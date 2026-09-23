@@ -7,9 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
-public import TauCeti.Topology.Algebra.CliffordAlgebra.RealForm
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.UnitLevel
-public import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # Paths to normalized reflection-pair lifts
