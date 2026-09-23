@@ -21,16 +21,17 @@ Wherever the L-series of `a` converges absolutely, it is then the Euler product
 
 `L(a, s) = ∏_p (1 - a p * p ^ (-s) + c p * p ^ (-2 s))⁻¹`.
 
-Mathlib's `EulerProduct.eulerProduct_hasProd` reduces this to the local factor at each prime,
-and the local factor is the sum of the geometric-like series `∑ₑ a (p ^ e) p ^ (-e s)`, which the
-recurrence evaluates through `HasSum.one_sub_add_mul_eq_of_linearRec₂`. The nonvanishing of each
-quadratic factor is part of the conclusion, not a hypothesis.
+At each prime, the quadratic factor times the sum of the prime-power terms is `1`. Thus each
+factor is nonzero, and its inverse is the local contribution to the Euler product.
 
 This is the shape of the L-function of a normalized Hecke eigenform, where `c p = χ(p) p^(k-1)`
 (Diamond–Shurman, Theorem 5.9.2), and it covers the completely multiplicative case `c = 0`.
 
 ## Main results
 
+* `TauCeti.LSeries_localFactor_mul_tsum_eq_one_of_recurrence`: the factor identity.
+* `TauCeti.LSeries_localFactor_tsum_of_recurrence`: the prime-power sum is the inverse factor.
+* `TauCeti.LSeries_localFactor_ne_zero_of_recurrence`: each quadratic factor is nonzero.
 * `TauCeti.LSeries_eulerProduct_hasProd_of_recurrence`: the Euler product, as a `HasProd`.
 * `TauCeti.LSeries_eulerProduct_tprod_of_recurrence`: the same, as an equality with `∏'`.
 
@@ -47,6 +48,49 @@ open LSeries Nat
 namespace TauCeti
 
 variable {a c : ℕ → ℂ} {s : ℂ}
+
+/-- The quadratic factor times the sum over powers of a prime is `1` whenever the
+prime-power coefficients satisfy the second-order recurrence. -/
+theorem LSeries_localFactor_mul_tsum_eq_one_of_recurrence (h₁ : a 1 = 1) (p : Primes)
+    (hrec : ∀ r : ℕ,
+      a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
+    (hs : LSeriesSummable a s) :
+    (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s)) *
+      (∑' e : ℕ, term a s (p ^ e)) = 1 := by
+  have hterm (e : ℕ) : term a s (p ^ e) = a (p ^ e) * ((p : ℂ) ^ (-s)) ^ e := by
+    rw [term_of_ne_zero (pow_ne_zero e p.prop.ne_zero), cast_pow,
+      ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg, inv_pow,
+      div_eq_mul_inv]
+  have key := (hs.comp_injective (Nat.pow_right_injective p.prop.two_le)).hasSum
+    |>.one_sub_add_mul_eq_of_linearRec₂ (D := a p * (p : ℂ) ^ (-s))
+      (S := c p * ((p : ℂ) ^ (-s)) ^ 2) fun r ↦ by
+        simp only [Function.comp_apply, hterm, hrec r]; ring
+  simp only [Function.comp_apply] at key
+  rw [hterm 0, hterm 1] at key
+  -- Convert the exponent to a natural multiple before applying `Complex.cpow_nat_mul`.
+  have hexponent : -2 * s = (2 : ℕ) * -s := by push_cast; ring
+  rw [hexponent, Complex.cpow_nat_mul]
+  exact key.trans (by simp [h₁])
+
+/-- The sum over powers of a prime is the inverse quadratic Euler factor. -/
+theorem LSeries_localFactor_tsum_of_recurrence (h₁ : a 1 = 1) (p : Primes)
+    (hrec : ∀ r : ℕ,
+      a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
+    (hs : LSeriesSummable a s) :
+    ∑' e : ℕ, term a s (p ^ e) =
+      (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹ :=
+  eq_inv_of_mul_eq_one_right (LSeries_localFactor_mul_tsum_eq_one_of_recurrence h₁ p hrec hs)
+
+/-- Each quadratic Euler factor is nonzero in the half-plane of absolute convergence. -/
+theorem LSeries_localFactor_ne_zero_of_recurrence (h₁ : a 1 = 1) (p : Primes)
+    (hrec : ∀ r : ℕ,
+      a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
+    (hs : LSeriesSummable a s) :
+    1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s) ≠ 0 := by
+  intro hzero
+  have h := LSeries_localFactor_mul_tsum_eq_one_of_recurrence h₁ p hrec hs
+  rw [hzero] at h
+  simp at h
 
 /-- **The Euler product with quadratic local factors.** Let `a : ℕ → ℂ` satisfy `a 1 = 1`, be
 multiplicative on coprime arguments, and obey the recurrence
@@ -71,22 +115,9 @@ theorem LSeries_eulerProduct_hasProd_of_recurrence (h₁ : a 1 = 1)
     · simp
     rw [term_of_ne_zero (mul_ne_zero hm hn), term_of_ne_zero hm, term_of_ne_zero hn, hmul hmn,
       cast_mul, Complex.natCast_mul_natCast_cpow, mul_div_mul_comm]
-  -- the local factor at `p`: with `x = p ^ (-s)`, the terms at `p ^ e` are `a (p ^ e) * x ^ e`,
-  -- a sequence obeying the recurrence with `D = a p * x` and `S = c p * x ^ 2`
   have hlocal (p : Primes) : ∑' e : ℕ, term a s (p ^ e) =
       (1 - a p * (p : ℂ) ^ (-s) + c p * (p : ℂ) ^ (-2 * s))⁻¹ := by
-    have hterm (e : ℕ) : term a s (p ^ e) = a (p ^ e) * ((p : ℂ) ^ (-s)) ^ e := by
-      rw [term_of_ne_zero (pow_ne_zero e p.prop.ne_zero), cast_pow,
-        ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg, inv_pow,
-        div_eq_mul_inv]
-    have key := (hs.comp_injective (Nat.pow_right_injective p.prop.two_le)).hasSum
-      |>.one_sub_add_mul_eq_of_linearRec₂ (D := a p * (p : ℂ) ^ (-s))
-        (S := c p * ((p : ℂ) ^ (-s)) ^ 2) fun r ↦ by
-          simp only [Function.comp_apply, hterm, hrec p p.prop r]; ring
-    simp only [Function.comp_apply] at key
-    rw [hterm 0, hterm 1] at key
-    rw [show -2 * s = (2 : ℕ) * -s by push_cast; ring, Complex.cpow_nat_mul]
-    exact eq_inv_of_mul_eq_one_right <| key.trans <| by simp [h₁]
+    exact LSeries_localFactor_tsum_of_recurrence h₁ p (hrec p p.prop) hs
   have H := EulerProduct.eulerProduct_hasProd hterm₁ htermMul hs.norm (term_zero a s)
   rwa [funext hlocal] at H
 
