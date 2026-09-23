@@ -495,10 +495,9 @@ theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
   obtain ⟨c, hc, hm, -⟩ := exists_conjScale_mem_Gamma0 d M ⟨γ, Gamma1_in_Gamma0 _ hγ⟩
+  refine ⟨_, mem_Gamma1_iff.mpr ⟨hm, ?_⟩, (mapGL_conjScale γ c hc).symm⟩
   -- the lower-right entry only needs its congruence read modulo the divisor `M` of `dM`
-  exact ⟨_, mem_Gamma1_of_dvd_lowerRow (mem_Gamma0_iff_dvd.mp hm)
-    ((Int.natCast_dvd_natCast.mpr (dvd_mul_left M d)).trans (mem_Gamma1_iff_dvd_lowerRow.mp hγ).2),
-    (mapGL_conjScale γ c hc).symm⟩
+  exact (mem_Gamma1_iff.mp (Gamma1_le_Gamma1_of_dvd (Nat.dvd_mul_left M d) hγ)).2
 
 /-- **Level transport at a divisor.** Whenever `d * M ∣ N`, conjugation by `diag(d, 1)` carries
 `Γ₁(N)` into `Γ₁(M)`: this is what makes `V_d` a map `S_k(Γ₁(M)) → S_k(Γ₁(N))`, not only for
