@@ -25,6 +25,7 @@ underlying unoriented tree.  The finite-quiver cardinality results in
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Corollary 3.6.3.
+* Adapted from `Mathlib.GroupTheory.FreeGroup.NielsenSchreier`, by David Wärn.
 -/
 
 attribute [local implicit_reducible]
@@ -68,36 +69,42 @@ noncomputable def spanningTreeBasis
       rintro ⟨⟨a, b, e⟩, h⟩
       simp only [Functor.mapEnd, DFunLike.coe, this, hF']
       exact dite_eq_right h
+    have hPath : ∀ {a : C} (p : Path (root T) a),
+        F'.map (IsFreeGroupoid.SpanningTree.homOfPath T p) = 1 := by
+      intro a p
+      induction p with
+      | nil =>
+          have hnil :
+              F'.map (IsFreeGroupoid.SpanningTree.homOfPath T
+                (Path.nil : Path (root T) (root T))) = 1 := by
+            -- `homOfPath` has a root in the wide-subquiver vertex synonym, while `map_id` has the
+            -- corresponding object in `C`; exposing their shared identity isolates this coercion.
+            change F'.map (𝟙 (show C from root T)) = 1
+            rw [F'.map_id, id_as_one]
+          exact hnil
+      | cons p e ih =>
+          rw [IsFreeGroupoid.SpanningTree.homOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
+          rcases e with ⟨e | e, eT⟩
+          · rw [hF']
+            exact dite_eq_left (Or.inl eT)
+          · rw [F'.map_inv, inv_as_inv, inv_eq_one, hF']
+            exact dite_eq_left (Or.inr eT)
+    have hTreeHom (a : C) : F'.map (IsFreeGroupoid.SpanningTree.treeHom T a) = 1 := by
+      rw [IsFreeGroupoid.SpanningTree.treeHom_eq T (default : Path (root T) a)]
+      exact hPath _
     intro x y q
-    suffices ∀ {a : C} (p : Path (root T) a),
-        F'.map (IsFreeGroupoid.SpanningTree.homOfPath T p) = 1 by
-      simp only [this, IsFreeGroupoid.SpanningTree.treeHom, comp_as_mul, inv_as_inv,
-        IsFreeGroupoid.SpanningTree.loopOfHom, inv_one, mul_one, one_mul, Functor.map_inv,
-        Functor.map_comp]
-    intro a p
-    induction p with
-    | nil =>
-        have hnil :
-            F'.map (IsFreeGroupoid.SpanningTree.homOfPath T
-              (Path.nil : Path (root T) (root T))) = 1 := by
-          -- `homOfPath` has a root in the wide-subquiver vertex synonym, while `map_id` has the
-          -- corresponding object in `C`; exposing their shared identity isolates this coercion.
-          change F'.map (𝟙 (show C from root T)) = 1
-          rw [F'.map_id, id_as_one]
-        exact hnil
-    | cons p e ih =>
-        rw [IsFreeGroupoid.SpanningTree.homOfPath, F'.map_comp, comp_as_mul, ih, mul_one]
-        rcases e with ⟨e | e, eT⟩
-        · rw [hF']
-          exact dite_eq_left (Or.inl eT)
-        · rw [F'.map_inv, inv_as_inv, inv_eq_one, hF']
-          exact dite_eq_left (Or.inr eT)
+    simp only [IsFreeGroupoid.SpanningTree.loopOfHom, Functor.map_comp, comp_as_mul,
+      inv_as_inv, hTreeHom, inv_one, mul_one, one_mul, Functor.map_inv]
   · intro E hE
     ext x
+    have hRoot :
+        (IsFreeGroupoid.SpanningTree.functorOfMonoidHom T E).map x = E x := by
+      simp only [IsFreeGroupoid.SpanningTree.functorOfMonoidHom_map,
+        IsFreeGroupoid.SpanningTree.loopOfHom,
+        IsFreeGroupoid.SpanningTree.treeHom_root, IsIso.inv_id,
+        Category.id_comp, Category.comp_id]
     suffices (IsFreeGroupoid.SpanningTree.functorOfMonoidHom T E).map x = F'.map x by
-      simpa only [IsFreeGroupoid.SpanningTree.loopOfHom,
-        IsFreeGroupoid.SpanningTree.functorOfMonoidHom, IsIso.inv_id,
-        IsFreeGroupoid.SpanningTree.treeHom_root, Category.id_comp, Category.comp_id] using! this
+      exact hRoot.symm.trans this
     congr
     apply uF'
     intro a b e
