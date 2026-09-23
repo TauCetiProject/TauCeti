@@ -77,10 +77,9 @@ theorem f4ShortRootIdealDividedSquareColumn_eq_zero_of_long
 /-- Reversal exchanges a short signed-simple source with a long one. -/
 theorem f4Length_isogenyReverse_eq_two_of_short (k : Fin 4 ⊕ Fin 4)
     (hk : f4Length (f4SignedSimpleRootIndex k) = 1) :
-    f4Length (f4SignedSimpleRootIndex (isogenyReverse k)) = 2 := by
-  rw [← f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex,
-    f4SpecialIsogenyIndexEquiv_apply]
-  exact (f4Length_specialIsogenyIndex_eq_two_iff _).2 hk
+  f4Length (f4SignedSimpleRootIndex (isogenyReverse k)) = 2 := by
+  rw [← f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex]
+  exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_two_iff _).2 hk
 
 /-- Reduction modulo two followed by the quotient by the modular short-root ideal, after an
 arbitrary scalar extension. -/
