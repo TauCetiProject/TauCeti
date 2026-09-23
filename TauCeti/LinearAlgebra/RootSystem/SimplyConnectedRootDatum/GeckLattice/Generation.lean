@@ -27,8 +27,9 @@ that subgroup with all points of the Geck toral-closure scheme is a separate com
 * `TauCeti.DynkinType.geckTorusSubsystemSubgroup_univ_eq_geckElementarySubgroup_G2`: adjoining
   the torus to all numbered root subgroups adds no elements.
 
-The proof follows the type-`E₇` minuscule-carrier application of the generic coroot-generation
-theorem in `TauCeti.Algebra.Lie.E7.Minuscule.Generation`.
+## References
+
+* R. Steinberg, *Lectures on Chevalley Groups*, §3.
 -/
 
 public section
