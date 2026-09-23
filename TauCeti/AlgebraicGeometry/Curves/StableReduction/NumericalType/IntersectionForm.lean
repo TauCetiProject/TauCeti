@@ -236,10 +236,9 @@ theorem not_forall_fintype_sum_intersection_mul_nonneg_of_pos {I : Type*} [Finty
   intro hrow
   apply T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) (y := z)
   · intro i hi j hj hij
-    change (if hi' : i < Fintype.card I then e (f.symm ⟨i, hi'⟩) else
-      Classical.arbitrary _) =
-      if hj' : j < Fintype.card I then e (f.symm ⟨j, hj'⟩) else Classical.arbitrary _ at hij
-    rw [dite_eq_left hi, dite_eq_left hj] at hij
+    have hci : c i = e (f.symm ⟨i, hi⟩) := by simp [c, hi]
+    have hcj : c j = e (f.symm ⟨j, hj⟩) := by simp [c, hj]
+    rw [hci, hcj] at hij
     exact congrArg Fin.val (f.symm.injective (he hij))
   · exact hcard
   · intro i hi
