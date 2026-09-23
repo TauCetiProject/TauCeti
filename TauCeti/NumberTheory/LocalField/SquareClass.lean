@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup
 public import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
@@ -53,6 +54,8 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   exhaust the square-class group.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two`: every element of `Kˣ` agrees, up to a square,
   with one of `1`, `u`, `π`, `u π`.
+* `TauCeti.exists_integerUnit_residue_not_isSquare`: away from residue characteristic two there
+  is a unit of `𝒪[K]` whose residue is a nonsquare.
 * `TauCeti.exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two`: the unit `u`
   can be chosen with nonsquare residue, as required by the representative classification.
 * `TauCeti.isSquare_or_isSquare_mul_of_isUnit_two`: an element of even valuation is a square or
@@ -194,16 +197,10 @@ theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : K�
   · exact ⟨π, by simp, (squareClass_eq_iff_isSquare_mul a π).mp h⟩
   · exact ⟨u * π, by simp, (squareClass_eq_iff_isSquare_mul a (u * π)).mp h⟩
 
-/-- **The four square classes with the unramified unit chosen explicitly.** Away from residue
-characteristic two, for every uniformizer `π` there is a unit `u` of `𝒪[K]` whose residue is
-a nonsquare, and `1`, `u`, `π`, `u π` represent all four square classes. -/
-theorem exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two
-    (h2 : IsUnit (2 : 𝒪[K])) {π : Kˣ} (hπ : IsUniformizer K π) :
-    ∃ u : 𝒪[K]ˣ,
-      ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) ∧
-      ∀ a : Kˣ, ∃ r ∈ ({1, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u,
-          π, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u * π} : Set Kˣ),
-        IsSquare (a * r) := by
+/-- Away from residue characteristic two, there is a unit of `𝒪[K]` whose residue is a
+nonsquare. -/
+theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
+    ∃ u : 𝒪[K]ˣ, ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) := by
   have h2K : (2 : K) ≠ 0 := by
     intro h
     apply h2.ne_zero
@@ -214,17 +211,26 @@ theorem exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two
   let u : 𝒪[K]ˣ := unitFiltrationToIntegerUnits 0 x0
   have hu_map : Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u = x := by
     simp [u, x0]
-  refine ⟨u, ?_, fun a ↦ ?_⟩
-  · rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
-    exact hxsq
-  · apply exists_isSquare_mul_of_isUnit_two h2 hπ
-    · have hxval : (normalizedValuation K x).toAdd = 0 := by
-        apply toAdd_eq_zero.mpr
-        rw [normalizedValuation_eq_one_iff]
-        exact (mem_unitFiltration_zero x).mp hx0
-      rw [hu_map, hxval]
-      exact ⟨0, by simp⟩
-    · rwa [hu_map]
+  refine ⟨u, ?_⟩
+  rw [← not_congr (isSquare_unitsMap_subtype_iff h2 u), hu_map]
+  exact hxsq
+
+/-- **The four square classes with the unramified unit chosen explicitly.** Away from residue
+characteristic two, for every uniformizer `π` there is a unit `u` of `𝒪[K]` whose residue is
+a nonsquare, and `1`, `u`, `π`, `u π` represent all four square classes. -/
+theorem exists_integerUnit_residue_not_isSquare_and_isSquare_mul_of_isUnit_two
+    (h2 : IsUnit (2 : 𝒪[K])) {π : Kˣ} (hπ : IsUniformizer K π) :
+    ∃ u : 𝒪[K]ˣ,
+      ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) ∧
+      ∀ a : Kˣ, ∃ r ∈ ({1, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u,
+          π, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u * π} : Set Kˣ),
+        IsSquare (a * r) := by
+  obtain ⟨u, hu⟩ := exists_integerUnit_residue_not_isSquare h2
+  refine ⟨u, hu, fun a ↦ ?_⟩
+  apply exists_isSquare_mul_of_isUnit_two h2 hπ
+  · rw [normalizedValuation_integerUnits]
+    exact ⟨0, by simp⟩
+  · exact fun h ↦ hu ((isSquare_unitsMap_subtype_iff h2 u).mp h)
 
 /-- **The even-valuation square classes away from residue characteristic two.** An element of
 even valuation is a square, or `u` times a square, for any fixed nonsquare `u` of even
