@@ -12,7 +12,8 @@ import Mathlib.GroupTheory.Index
 # Torsion in residue rings with power modulus
 
 For every nonzero `p`, the subgroup of `ZMod (p ^ (k + 1))` killed by `p` is additively
-equivalent to `ZMod p`.
+equivalent to `ZMod p`. This counts the elements killed by `p` in prime-power cyclic factors,
+as required by the rank-two finite-abelian criterion.
 -/
 
 public section

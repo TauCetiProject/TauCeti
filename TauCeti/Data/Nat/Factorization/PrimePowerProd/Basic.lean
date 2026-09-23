@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Data.Nat.Factorization.Induction
 public import Mathlib.Data.Nat.Prime.Pow
-public import Mathlib.RingTheory.Coprime.Lemmas
 
 /-!
 # Ordered products over a prime factorisation

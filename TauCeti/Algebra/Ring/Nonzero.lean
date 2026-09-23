@@ -11,7 +11,8 @@ public import Mathlib.Algebra.CharP.Basic
 # Nonzero natural casts in semirings
 
 This file records that every natural divisor of a nonzero natural cast in a semiring also has
-nonzero cast.
+nonzero cast. It passes the nonzero-cast hypothesis from `N` to its divisors when applying
+torsion counts.
 -/
 
 public section

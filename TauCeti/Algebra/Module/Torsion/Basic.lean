@@ -52,12 +52,17 @@ def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
     _root_.AddSubgroup.torsionBy (∀ i, A i) (n : ℤ) ≃+
       (∀ i, _root_.AddSubgroup.torsionBy (A i) (n : ℤ)) where
   toFun x i := ⟨x.1 i, by
-    change (n : ℤ) • x.1 i = 0
-    exact congrFun x.2 i⟩
+    apply _root_.AddSubgroup.torsionBy.nsmul_iff.2
+    have hx : n • (x.1 : ∀ i, A i) = 0 :=
+      congrArg Subtype.val (_root_.AddSubgroup.torsionBy.nsmul x)
+    simpa only [Pi.smul_apply, Pi.zero_apply] using congrFun hx i⟩
   invFun x := ⟨fun i ↦ x i, by
-    change (n : ℤ) • (fun i ↦ (x i : A i)) = 0
-    funext i
-    exact (x i).2⟩
+    apply _root_.AddSubgroup.torsionBy.nsmul_iff.2
+    ext i
+    simp only [Pi.smul_apply, Pi.zero_apply]
+    have hxi : n • (x i : A i) = 0 :=
+      congrArg Subtype.val (_root_.AddSubgroup.torsionBy.nsmul (x i))
+    exact hxi⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl

@@ -13,6 +13,7 @@ import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.Nat.Factorization.PrimePowerProd.Basic
 import Mathlib.Algebra.DirectSum.Decomposition
 import Mathlib.Data.ZMod.QuotientRing
+import Mathlib.RingTheory.Coprime.Lemmas
 
 /-!
 # The finite-level torsion structure of an elliptic curve
