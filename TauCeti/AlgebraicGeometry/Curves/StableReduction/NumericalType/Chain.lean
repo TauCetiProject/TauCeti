@@ -107,6 +107,33 @@ lemma shift (hc : T.IsSelfIntersectionMinusTwoChain t c) {r s : ℕ} (hrs : r + 
   intersection_self i hi := hc.intersection_self (r + i) (by omega)
   intersection_succ_pos i hi := hc.intersection_succ_pos (r + i) (by omega)
 
+/-- A chain followed by a component outside the chain is injective on its first `t + 1` terms. -/
+lemma injOn_snoc (hc : T.IsSelfIntersectionMinusTwoChain t c) {branch : T.Component}
+    (hbranch_ne : ∀ i < t, branch ≠ c i) :
+    ∀ i < t + 1, ∀ j < t + 1,
+      (if i = t then branch else c i) = (if j = t then branch else c j) → i = j := by
+  intro i hi j hj hij
+  by_cases hit : i = t
+  · by_cases hjt : j = t
+    · exact hit.trans hjt.symm
+    · simp only [hit, hjt, ↓reduceIte] at hij
+      exact (hbranch_ne j (by omega) hij).elim
+  · by_cases hjt : j = t
+    · simp only [hit, hjt, ↓reduceIte] at hij
+      exact (hbranch_ne i (by omega) hij.symm).elim
+    · simp only [hit, hjt, ↓reduceIte] at hij
+      exact hc.injOn i (by omega) j (by omega) hij
+
+/-- A chain and a further distinct component contain at least `t + 1` components. -/
+lemma le_card_snoc (hc : T.IsSelfIntersectionMinusTwoChain t c) {branch : T.Component}
+    (hbranch_ne : ∀ i < t, branch ≠ c i) :
+    t + 1 ≤ Fintype.card T.Component := by
+  let e : Fin (t + 1) → T.Component := fun j ↦ if (j : ℕ) = t then branch else c j
+  simpa using Fintype.card_le_of_injective e (by
+    intro p q hpq
+    apply Fin.ext
+    exact hc.injOn_snoc hbranch_ne p (by omega) q (by omega) hpq)
+
 end IsSelfIntersectionMinusTwoChain
 
 /-- If two meeting components of a numerical type have intersection number `aᵢⱼ = wᵢp = wⱼq`
@@ -341,6 +368,44 @@ theorem IsSelfIntersectionMinusTwoChain.intersection_eq_zero {t : ℕ} {c : ℕ 
   · exact ends p q (by omega) hq
   · rw [T.intersection_comm]
     exact ends q p (by omega) hp
+
+namespace IsSelfIntersectionMinusTwoChain
+
+/-- The intersection entries of a proper simply laced chain with common weight `w`. -/
+theorem intersection_eq_ite {t : ℕ} {c : ℕ → T.Component} {w : ℤ}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
+    (hweight : ∀ i < t, (T.weight (c i) : ℤ) = w)
+    (hedge : ∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = w)
+    {i j : ℕ} (hi : i < t) (hj : j < t) :
+    T.intersection (c i) (c j) =
+      if i = j then -(2 * w) else if i + 1 = j ∨ j + 1 = i then w else 0 := by
+  by_cases hij : i = j
+  · subst j
+    simp only [↓reduceIte]
+    rw [hc.intersection_self i hi, hweight i hi]
+  · simp only [hij, ↓reduceIte]
+    by_cases hadj : i + 1 = j ∨ j + 1 = i
+    · simp only [hadj, ↓reduceIte]
+      rcases hadj with rfl | hji
+      · exact hedge i (by omega)
+      · rw [T.intersection_comm]
+        subst i
+        exact hedge j (by omega)
+    · simp only [hadj, ↓reduceIte]
+      exact hc.intersection_eq_zero hcard hi hj hij (by omega) (by omega)
+
+/-- The intersection entries of a leaf meeting just one component of a chain. -/
+lemma intersection_branch_eq_ite {t : ℕ} {c : ℕ → T.Component} {branch : T.Component}
+    {k : ℕ} {w : ℤ} (hbranch : T.intersection (c k) branch = w)
+    (hzero : ∀ i < t, i ≠ k → T.intersection (c i) branch = 0)
+    {i : ℕ} (hi : i < t) :
+    T.intersection (c i) branch = if i = k then w else 0 := by
+  by_cases hik : i = k
+  · subst i
+    simp [hbranch]
+  · simpa [hik] using hzero i hi hik
+
+end IsSelfIntersectionMinusTwoChain
 
 /-- In a proper chain with at least two components, the left-end row of an intersection sum
 has only its diagonal and adjacent terms. -/

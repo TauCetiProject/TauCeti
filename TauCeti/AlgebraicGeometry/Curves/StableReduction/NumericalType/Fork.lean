@@ -73,26 +73,12 @@ namespace IsSelfIntersectionMinusTwoFork
 lemma injOn_snoc (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
     ∀ i < t + 1, ∀ j < t + 1,
       (if i = t then branch else c i) = (if j = t then branch else c j) → i = j := by
-  intro i hi j hj hij
-  by_cases hit : i = t
-  · by_cases hjt : j = t
-    · exact hit.trans hjt.symm
-    · simp only [hit, hjt, ↓reduceIte] at hij
-      exact (hf.branch_ne j (by omega) hij).elim
-  · by_cases hjt : j = t
-    · simp only [hit, hjt, ↓reduceIte] at hij
-      exact (hf.branch_ne i (by omega) hij.symm).elim
-    · simp only [hit, hjt, ↓reduceIte] at hij
-      exact hf.injOn i (by omega) j (by omega) hij
+  exact hf.toIsSelfIntersectionMinusTwoChain.injOn_snoc hf.branch_ne
 
 /-- A fork contains at least `t + 1` distinct components. -/
 lemma le_card (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
     t + 1 ≤ Fintype.card T.Component := by
-  let e : Fin (t + 1) → T.Component := fun j ↦ if (j : ℕ) = t then branch else c j
-  simpa using Fintype.card_le_of_injective e (by
-    intro p q hpq
-    apply Fin.ext
-    exact hf.injOn_snoc p (by omega) q (by omega) hpq)
+  exact hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
 
 private lemma chain_branch_last (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
     T.IsSelfIntersectionMinusTwoChain t fun j ↦ if j = t - 1 then branch else c j where
