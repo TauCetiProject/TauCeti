@@ -19,9 +19,11 @@ of these short exact sequences, and deduces that the connecting morphism is natu
 forms a natural transformation `SSetPair.homologyδNatTrans`.
 
 It also records that the quotient maps from ambient to relative homology are natural in the pair:
-they commute with morphisms of simplicial-set pairs, and that the short exact sequence of chain
-complexes of a pair is split in each degree, because in degree `n` the map `C(X) ⟶ C(Y)` is induced
-by the injection of the `n`-simplices of `X` into those of `Y`.
+they commute with morphisms of simplicial-set pairs. The short exact sequence of chain complexes
+of a pair is split in each degree, because the map `C(X) ⟶ C(Y)` is induced by the injection of
+the `n`-simplices of `X` into those of `Y`. A morphism of pairs which is a quasi-isomorphism on
+subcomplexes and ambient simplicial sets is a quasi-isomorphism on relative chains
+(`SSetPair.quasiIso_chainComplexMap`), hence induces isomorphisms on relative homology.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -95,6 +97,25 @@ noncomputable def homologyδNatTrans (R : A) (n m : ℕ) (h : m + 1 = n := by li
 lemma homologyδNatTrans_app (R : A) (n m : ℕ) (h : m + 1 = n) (P : SSetPair.{w}) :
     (homologyδNatTrans R n m h).app P = P.homologyδ R n m h := by
   rw [homologyδNatTrans.eq_def]
+
+/-- A morphism of pairs of simplicial sets which is a quasi-isomorphism on the subcomplexes and
+on the ambient simplicial sets is a quasi-isomorphism on relative chains. -/
+lemma quasiIso_chainComplexMap {P P' : SSetPair.{w}} (f : P ⟶ P') (R : A)
+    [QuasiIso (SSet.chainComplexMap f.left R)] [QuasiIso (SSet.chainComplexMap f.right R)] :
+    QuasiIso (SSetPair.chainComplexMap f R) := by
+  have := HomologicalComplex.HomologySequence.quasiIso_τ₃ (chainComplexShortComplexMap f R)
+    (P.shortExact_chainComplexShortComplex R) (P'.shortExact_chainComplexShortComplex R)
+    (by rw [chainComplexShortComplexMap_τ₁]; infer_instance)
+    (by rw [chainComplexShortComplexMap_τ₂]; infer_instance)
+  rwa [chainComplexShortComplexMap_τ₃] at this
+
+/-- A morphism of pairs of simplicial sets which is a quasi-isomorphism on the subcomplexes and
+on the ambient simplicial sets induces isomorphisms on relative homology. -/
+lemma isIso_homologyMap_of_quasiIso {P P' : SSetPair.{w}} (f : P ⟶ P') (R : A)
+    [QuasiIso (SSet.chainComplexMap f.left R)] [QuasiIso (SSet.chainComplexMap f.right R)]
+    (n : ℕ) : IsIso (SSetPair.homologyMap f R n) := by
+  have := quasiIso_chainComplexMap f R
+  infer_instance
 
 variable {D : Type*} [Category* D] [HasCoproducts.{w} D] [Preadditive D]
   [CategoryWithHomology D]

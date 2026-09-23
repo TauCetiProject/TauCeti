@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Homotopy
 
@@ -463,5 +464,13 @@ theorem isIso_homologyMap_smallSingularChainι [CategoryWithHomology C] (n : ℕ
       (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n) := by
   rw [← smallSingularHomologyIso_hom R U hU hcov n]
   infer_instance
+
+/-- The inclusion of the chains subordinate to an open cover is a quasi-isomorphism. -/
+theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι [CategoryWithHomology C] :
+    QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) := by
+  rw [quasiIso_iff]
+  intro n
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  exact isIso_homologyMap_smallSingularChainι R U hU hcov n
 
 end TauCeti

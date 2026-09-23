@@ -26,6 +26,8 @@ small-chain equivalence and prove excision.
 * `TopCat.smallSingularSubcomplex`: the subcomplex of singular simplices whose image lies in one
   member of a family of subsets.
 * `TopCat.smallSingularSubcomplexMap`: a covered map restricts to the small subcomplexes.
+* `TopCat.preimage_smallSingularSubcomplex`: the preimage of a small subcomplex along a map is
+  the small subcomplex of the preimage family.
 * `TauCeti.AffineChain.smallSingularChain`: push affine chains forward along a small simplex
   with values in the small-chain complex.
 * `TauCeti.AffineChain.exists_singularChain_small_factor`: a pushed-forward affine chain supported
@@ -97,6 +99,15 @@ lemma smallSingularSubcomplexMap_id :
     X.smallSingularSubcomplexMap U U (𝟙 X) id (fun i ↦ Set.mapsTo_id (U i)) = 𝟙 _ := by
   ext n σ
   rfl
+
+/-- The preimage of the small singular subcomplex of a family along a continuous map is the small
+singular subcomplex of the preimage family. -/
+@[simp]
+lemma preimage_smallSingularSubcomplex (f : Y ⟶ X) :
+    (X.smallSingularSubcomplex U).preimage (TopCat.toSSet.map f) =
+      Y.smallSingularSubcomplex (fun i ↦ f ⁻¹' U i) := by
+  ext n σ
+  simp [Set.range_comp, Set.image_subset_iff]
 
 variable {μ : Type*} {Z : TopCat.{w}} (W : μ → Set Z)
 

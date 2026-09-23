@@ -10,6 +10,8 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
 # Relative singular chains
@@ -18,7 +20,9 @@ This file sends a topological pair to the corresponding pair of singular simplic
 defines its relative singular chain complex.  The complex is the cokernel of the inclusion of the
 singular chains of the subspace into those of the ambient space.  In an abelian coefficient
 category this gives the short exact sequence of chain complexes used to construct the connecting
-morphisms in relative singular homology.
+morphisms in relative singular homology.  A simplex of the singular pair restricted to a subcomplex
+of the ambient simplicial set comes from the subspace exactly when its image lies in the subspace
+(`TopPair.mem_range_restrict_hom_app_iff`).
 
 The construction follows the quotient-chain presentation in Eilenberg--Steenrod, *Foundations of
 Algebraic Topology*, Chapters I--III, and is implemented using Mathlib's `SSetPair` relative-chain
@@ -79,6 +83,15 @@ lemma toSSetPair_map_left {P P' : TopPair.{w}} (f : P ⟶ P') :
 @[simp]
 lemma toSSetPair_map_right {P P' : TopPair.{w}} (f : P ⟶ P') :
     (toSSetPair.map f).right = TopCat.toSSet.map (Hom.fst f) := rfl
+
+/-- A simplex of the singular pair of `P` restricted to a subcomplex `S` comes from the subspace
+exactly when its image lies in the subspace. -/
+lemma mem_range_restrict_hom_app_iff (P : TopPair.{w}) (S : (toSSetPair.obj P).right.Subcomplex)
+    {n : SimplexCategoryᵒᵖ} (x : ((toSSetPair.obj P).restrict S).right.obj n) :
+    x ∈ Set.range (((toSSetPair.obj P).restrict S).hom.app n) ↔
+      Set.range (P.fst.toSSetObjEquiv n x.1) ⊆ Set.range P.map :=
+  (SSetPair.mem_range_restrict_hom_app_iff _ _ x).trans
+    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.1)
 
 variable (C : Type u) [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 
