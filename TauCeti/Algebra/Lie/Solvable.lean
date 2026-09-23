@@ -158,20 +158,17 @@ theorem isSolvable_iff_ideal_quotient (I : LieIdeal R L) :
   obtain ⟨h₁, h₂⟩ := h
   exact isSolvable_of_isSolvable_ker_of_surjective I.mkQ_surjective (by rwa [I.ker_mkQ]) h₂
 
-/-- **Triviality of the radical transfers along an isomorphism of Lie algebras.**  A solvable
-ideal of the source is carried to a solvable ideal of the target, which vanishes, and the
-isomorphism is injective.
+/-- **Triviality of the radical transfers along an isomorphism of Lie algebras.**
 
 Nothing is assumed of the coefficients: the statement is about solvable ideals one at a time, so
 it does not go through the radical itself and needs no Noetherian hypothesis. -/
-theorem hasTrivialRadical_of_equiv (e : L ≃ₗ⁅R⁆ L') [HasTrivialRadical R L'] :
-    HasTrivialRadical R L :=
+theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ L') :
+    HasTrivialRadical R L' :=
   hasTrivialRadical_of_no_solvable_ideals fun I hI => by
-    have _ : IsSolvable ↥I := hI
-    have hbot : I.map (e : L →ₗ⁅R⁆ L') = ⊥ :=
+    have hbot : I.map (e.symm : L' →ₗ⁅R⁆ L) = ⊥ :=
       HasTrivialRadical.eq_bot_of_isSolvable
-        (hI := LieIdeal.isSolvable_map _ _ e.surjective) _
-    have hker : (e : L →ₗ⁅R⁆ L').ker = ⊥ := (LieHom.ker_eq_bot _).mpr e.injective
+        (hI := LieIdeal.isSolvable_map _ _ e.symm.surjective) _
+    have hker : (e.symm : L' →ₗ⁅R⁆ L).ker = ⊥ := (LieHom.ker_eq_bot _).mpr e.symm.injective
     rw [LieIdeal.map_eq_bot_iff, hker, le_bot_iff] at hbot
     exact hbot
 

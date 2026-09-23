@@ -9,11 +9,9 @@ public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.Lie.CartanCriterion
 public import TauCeti.Algebra.Lie.Killing.BaseChange
 public import TauCeti.Algebra.Lie.BaseChange.Quotient
+public import TauCeti.Algebra.Lie.BaseChange.Range
 public import TauCeti.Algebra.Lie.Nilradical
 public import TauCeti.Algebra.Lie.Solvable
--- Private: membership in an extended submodule descends over a faithfully flat algebra, and is
--- used only inside the proof of `LieAlgebra.one_tmul_mem_radical_baseChange_iff`.
-import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
 # Solvability, nilpotency and semisimplicity under extension of scalars
@@ -195,25 +193,22 @@ theorem hasTrivialRadical_baseChange_iff :
 finite-dimensional Lie algebra over a field of characteristic zero, the radical of the extension
 of scalars is the extension of the radical.
 
-The substance is that extending scalars creates no new solvable ideals, and the proof reduces it
-to the case of a trivial radical.  Extension of scalars commutes with quotients
-(`LieIdeal.quotientBaseChangeEquiv`), so `(A ⊗[K] L) ⧸ (radical K L).baseChange A` is
-`A ⊗[K] (L ⧸ radical K L)`, which has trivial radical by
-`LieAlgebra.hasTrivialRadical_baseChange_iff`.  The extended radical is a solvable ideal whose
-quotient has trivial radical, and `LieAlgebra.hasTrivialRadical_quotient_iff` says there is only
-one such ideal, the radical.
-
-Characteristic zero is a genuine hypothesis, inherited from
-`LieAlgebra.hasTrivialRadical_baseChange_iff`. -/
+The substance is that extending scalars creates no new solvable ideals.  Characteristic zero is a
+genuine hypothesis, inherited from `LieAlgebra.hasTrivialRadical_baseChange_iff`; the reduction to
+that special case is described in the module docstring. -/
 @[simp]
 theorem radical_baseChange :
     radical A (A ⊗[K] L) = (radical K L).baseChange A := by
+  -- the extension of `L ⧸ radical K L` has trivial radical, ...
   have _ : HasTrivialRadical A (A ⊗[K] (L ⧸ radical K L)) :=
     (hasTrivialRadical_baseChange_iff K (L ⧸ radical K L) A).mpr inferInstance
   have _ : IsSolvable ↥((radical K L).baseChange A) :=
     LieIdeal.isSolvable_baseChange A (radical K L)
+  -- ... and extension of scalars identifies it with the quotient by the extended radical, ...
   have htriv : HasTrivialRadical A ((A ⊗[K] L) ⧸ (radical K L).baseChange A) :=
-    hasTrivialRadical_of_equiv (LieIdeal.quotientBaseChangeEquiv A (radical K L))
+    hasTrivialRadical_of_equiv (LieIdeal.quotientBaseChangeEquiv A (radical K L)).symm
+  -- ... so the extended radical is a solvable ideal whose quotient has trivial radical, and the
+  -- radical is the only ideal of that kind.
   exact ((hasTrivialRadical_quotient_iff _).mp htriv).symm
 
 /-- **Membership in the radical may be checked after a field extension.**  In characteristic zero
@@ -221,8 +216,7 @@ a vector of a finite-dimensional Lie algebra lies in the solvable radical exactl
 canonical image in an extension of scalars does. -/
 theorem one_tmul_mem_radical_baseChange_iff (x : L) :
     (1 : A) ⊗ₜ[K] x ∈ radical A (A ⊗[K] L) ↔ x ∈ radical K L := by
-  rw [radical_baseChange, ← LieSubmodule.mem_toSubmodule, LieSubmodule.coe_baseChange,
-    Submodule.one_tmul_mem_baseChange_iff, LieSubmodule.mem_toSubmodule]
+  rw [radical_baseChange, LieSubmodule.one_tmul_mem_baseChange_iff]
 
 end CharZero
 
