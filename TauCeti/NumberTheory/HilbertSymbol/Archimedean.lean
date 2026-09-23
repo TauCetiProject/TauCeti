@@ -38,8 +38,6 @@ the normal form `p⟨1⟩ ⊥ q⟨-1⟩` gives the archimedean Hasse sign `(-1)^
 * `TauCeti.prod_hilbertSymbol_real_of_equiv_weightedSumSquares`: that product is `(-1)^(q(q-1)/2)`
   for the negative index `q` of any real form the family diagonalizes, so it depends only on the
   isometry class.
-* `QuadraticForm.equivalent_realSignatureForm_realCliffordForm`: the orthogonal-sum and coordinate
-  presentations of the real normal form are isometric.
 * `TauCeti.prod_hilbertSymbol_realCliffordWeight`: the archimedean Hasse sign of the coordinate
   normal form is `(-1)^(q(q-1)/2)`.
 
@@ -148,17 +146,6 @@ theorem prod_hilbertSymbol_real_of_equiv_weightedSumSquares {M : Type*} [AddComm
   classical
   rw [prod_hilbertSymbol_real, _root_.QuadraticForm.sigNeg_of_equiv_weightedSumSquares h,
     Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
-
-/-- The orthogonal-sum and coordinate presentations of the real normal form of signature `(p, q)`
-are isometric. -/
-theorem _root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
-    (_root_.QuadraticForm.realSignatureForm p q).Equivalent (realCliffordForm p q) := by
-  have hweight : realCliffordWeight p q ∘ finSumFinEquiv =
-      Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
-    funext x
-    cases x <;> simp
-  rw [_root_.QuadraticForm.realSignatureForm_def, realCliffordForm_def]
-  exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv hweight
 
 /-- **The archimedean Hasse sign of the normal form.** The product of the real Hilbert symbols
 over the ordered pairs of the coordinate weights of `realCliffordForm p q` is
