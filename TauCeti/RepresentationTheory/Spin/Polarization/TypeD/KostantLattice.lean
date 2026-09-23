@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.SpinWeight
+public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Relations
 
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
@@ -269,31 +270,8 @@ theorem spinAction_typeDSimpleCorootBivector_exteriorBasis
     spinAction Q P (P.typeDSimpleCorootBivector b (by omega) i)
         (b.ExteriorAlgebra s) =
       (TauCeti.DynkinType.typeDSpinWeight s i : ℚ) • b.ExteriorAlgebra s := by
-  rw [P.typeDSimpleCorootBivector_eq_diagonalBivector b (by omega) i]
-  by_cases hnext : (i : ℕ) + 1 < n
-  · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply,
-      P.spinAction_diagonalBivector_basis b, P.spinAction_diagonalBivector_basis b, ← sub_smul]
-    simpa only [dite_eq_left hnext, algebraMap_int_eq, Int.coe_castRingHom] using
-      (congrArg (fun z : ℚ ↦ z • b.ExteriorAlgebra s)
-        (TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply (K := ℚ) s i)).symm
-  · have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
-      apply Fin.ext
-      dsimp only
-      omega
-    rw [dite_eq_right hnext, map_add, LinearMap.add_apply,
-      P.spinAction_diagonalBivector_basis b, P.spinAction_diagonalBivector_basis b, ← add_smul]
-    have hprev :
-        (⟨(i : ℕ) - 1, by have := i.isLt; omega⟩ : Fin n) =
-          (⟨n - 2, by omega⟩ : Fin n) := by
-      apply Fin.ext
-      dsimp only
-      omega
-    have hspin : spinWeight ℚ s i = spinWeight ℚ s (⟨n - 1, by omega⟩ : Fin n) :=
-      congrArg (spinWeight ℚ s) hi
-    have hwt := TauCeti.DynkinType.algebraMap_typeDSpinWeight_apply (K := ℚ) s i
-    rw [dite_eq_right hnext, hprev, hspin] at hwt
-    simpa only [algebraMap_int_eq, Int.coe_castRingHom] using
-      (congrArg (fun z : ℚ ↦ z • b.ExteriorAlgebra s) hwt).symm
+  simpa only [algebraMap_int_eq, Int.coe_castRingHom] using
+    (P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s)
 
 /-- Every exterior-basis vector is a Cartan weight vector for the type-`D` spin representation,
 with its integral simply connected spin weight. -/

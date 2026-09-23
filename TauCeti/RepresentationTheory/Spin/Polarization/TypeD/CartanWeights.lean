@@ -12,15 +12,19 @@ public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.RootGenerator
 # Concrete type-D Cartan weights on spinors
 
 The split orthogonal model and the Clifford polarization use different coordinates for the same
-Cartan subalgebra.  This file records their common weight calculation: the numbered matrix
-Cartan generator acts on an exterior-basis spinor by the corresponding integral type-D spin
-weight.  The result is the concrete Cartan-action bridge needed when transporting highest-weight
-data between the orthogonal Lie algebra and the abstract type-D root datum.
+Cartan subalgebra.  This file records their common weight calculation: a simple-coroot bivector,
+and hence the numbered matrix Cartan generator, acts on an exterior-basis spinor by the
+corresponding integral type-D spin weight.  The arbitrary-field calculation factors the rational
+specialization in `TypeD/KostantLattice.lean` and supplies the concrete Cartan-action bridge
+needed when transporting highest-weight data between the orthogonal Lie algebra and the abstract
+type-D root datum.
 
 ## Main declarations
 
 * `SpinPolarizationData.spinAction_typeDQuadraticEquiv_cartanGenerator_basis`: the concrete
   numbered Cartan generator acts on each exterior-basis vector by its type-D spin weight.
+* `SpinPolarizationData.spinAction_typeDSimpleCorootBivector_basis`: the corresponding reusable
+  simple-coroot calculation over any field with invertible `2`.
 
 ## References
 
@@ -38,16 +42,13 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {n : ℕ} (b : Module.Basis (Fin n) K P.W) [Invertible (2 : K)]
 
-/-- The numbered type-`D` Cartan generator acts on an exterior-basis spinor by the corresponding
+/-- A type-`D` simple-coroot bivector acts on an exterior-basis spinor by the corresponding
 integral spin weight in the simply connected root datum. -/
-theorem spinAction_typeDQuadraticEquiv_cartanGenerator_basis
-    (hn : 4 ≤ n) (hline : P.line = ⊥) (i : Fin n) (s : Finset (Fin n)) :
-    spinAction Q P
-        (P.typeDQuadraticEquiv b hline (TypeDStd.cartanGenerator n hn i))
-        (b.ExteriorAlgebra s) =
+theorem spinAction_typeDSimpleCorootBivector_basis
+    (hn : 2 ≤ n) (i : Fin n) (s : Finset (Fin n)) :
+    spinAction Q P (P.typeDSimpleCorootBivector b hn i) (b.ExteriorAlgebra s) =
       algebraMap ℤ K (DynkinType.typeDSpinWeight s i) • b.ExteriorAlgebra s := by
-  rw [P.typeDQuadraticEquiv_cartanGenerator b hn hline i,
-    P.typeDSimpleCorootBivector_eq_diagonalBivector b (by omega) i]
+  rw [P.typeDSimpleCorootBivector_eq_diagonalBivector b hn i]
   by_cases hnext : (i : ℕ) + 1 < n
   · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply,
       P.spinAction_diagonalBivector_basis b, P.spinAction_diagonalBivector_basis b,
@@ -75,5 +76,16 @@ theorem spinAction_typeDQuadraticEquiv_cartanGenerator_basis
     rw [dite_eq_right hnext, hprev, hspin] at hwt
     simpa only [hprev, hspin] using
       (congrArg (fun z : K => z • b.ExteriorAlgebra s) hwt).symm
+
+/-- The numbered type-`D` Cartan generator acts on an exterior-basis spinor by the corresponding
+integral spin weight in the simply connected root datum. -/
+theorem spinAction_typeDQuadraticEquiv_cartanGenerator_basis
+    (hn : 4 ≤ n) (hline : P.line = ⊥) (i : Fin n) (s : Finset (Fin n)) :
+    spinAction Q P
+        (P.typeDQuadraticEquiv b hline (TypeDStd.cartanGenerator n hn i))
+        (b.ExteriorAlgebra s) =
+      algebraMap ℤ K (DynkinType.typeDSpinWeight s i) • b.ExteriorAlgebra s := by
+  rw [P.typeDQuadraticEquiv_cartanGenerator b hn hline i]
+  exact P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s
 
 end TauCeti.SpinPolarizationData
