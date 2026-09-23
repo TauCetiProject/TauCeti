@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import TauCeti.Algebra.GroupAction.AlgHom
 
 /-!
 # Embeddings of a simple field and roots of the minimal polynomial
@@ -27,22 +28,6 @@ public section
 namespace TauCeti
 
 open IntermediateField Polynomial
-
-/-- Automorphisms of the codomain act on algebra embeddings by postcomposition. -/
-instance instMulActionAlgHom (F A K : Type*) [Field F] [Field A] [Field K]
-    [Algebra F A] [Algebra F K] : MulAction (K ≃ₐ[F] K) (A →ₐ[F] K) where
-  smul σ φ := σ.toAlgHom.comp φ
-  one_smul φ := by
-    ext a
-    rfl
-  mul_smul σ τ φ := by
-    ext a
-    rfl
-
-@[simp]
-theorem smul_algHom_apply {F A K : Type*} [Field F] [Field A] [Field K]
-    [Algebra F A] [Algebra F K] (σ : K ≃ₐ[F] K) (φ : A →ₐ[F] K) (a : A) :
-    (σ • φ) a = σ (φ a) := rfl
 
 variable (F K : Type*) [Field F] [Field K]
 variable {E : Type*} [Field E] [Algebra F E] [Algebra F K]

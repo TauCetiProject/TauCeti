@@ -91,7 +91,7 @@ theorem quotientStabilizerEquivAlgHomSimpleField_smul (x : E)
     rw [e.apply_symm_apply, rootSetEquivQuotientStabilizer_smul,
       e.apply_symm_apply]
   simpa only [quotientStabilizerEquivAlgHomSimpleField, Equiv.trans_apply,
-    rootSetEquivAlgHomAdjoin_apply_gen, smul_algHom_apply, e, rootSet.coe_smul,
+    rootSetEquivAlgHomAdjoin_apply_gen, AlgEquiv.smul_algHom_apply, e, rootSet.coe_smul,
     AlgEquiv.smul_def] using
     congrArg Subtype.val he
 
