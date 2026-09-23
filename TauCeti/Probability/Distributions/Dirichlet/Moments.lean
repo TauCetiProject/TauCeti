@@ -11,10 +11,13 @@ public import TauCeti.Probability.Moments.Covariance
 /-!
 # Mean and covariance of the Dirichlet distribution
 
-A Dirichlet law is carried by the standard simplex, so it has moments of every order and its
-elementary moments can be read off its block marginals.  Writing `a₀ = ∑ j, a j` for the total
-concentration, the total of a nonempty block of coordinates whose complement is also nonempty is a
-Beta variable with parameters the block concentration and its complement, whence the mean
+A Dirichlet law with positive concentration parameters on a nonempty coordinate type is carried by
+the standard simplex, so it has moments of every order and its elementary moments can be read off
+its block marginals.  For invalid parameters or an empty coordinate type, `dirichletMeasure a = 0`,
+so the support, `MemLp`, integrability, and exponential-moment conclusions below are vacuous.
+Writing `a₀ = ∑ j, a j` for the total concentration, the total of a nonempty block of
+coordinates whose complement is also nonempty is a Beta variable with parameters the block
+concentration and its complement, whence the mean
 `a i / a₀` of a coordinate, the variance `a i * (a₀ - a i) / (a₀ ^ 2 * (a₀ + 1))`, and, by
 polarization on a two-element block, the covariance `-(a i * a j) / (a₀ ^ 2 * (a₀ + 1))` of two
 distinct coordinates.
@@ -26,7 +29,8 @@ makes the stated value vanish.
 
 ## Main results
 
-* `TauCeti.Probability.memLp_id_dirichletMeasure` — a Dirichlet law has moments of every order.
+* `TauCeti.Probability.memLp_id_dirichletMeasure` — the valid Dirichlet law has moments of every
+  order, while the other parameter cases reduce to the zero measure.
 * `TauCeti.Probability.integral_id_dirichletMeasure` — the Bochner mean is the normalized
   concentration vector.
 * `TauCeti.Probability.variance_sum_dirichletMeasure` — the variance of the total of a block of
@@ -62,7 +66,8 @@ variable {ι : Type*} [Fintype ι] [Nonempty ι] {a : ι → ℝ}
 /-! ### Moments of every order -/
 
 omit [Nonempty ι] in
-/-- A Dirichlet vector almost surely lies in the closed unit ball. -/
+/-- With positive parameters on a nonempty coordinate type, a Dirichlet vector almost surely lies
+in the closed unit ball. Otherwise `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
 theorem ae_norm_le_one_dirichletMeasure :
     ∀ᵐ x ∂dirichletMeasure a, ‖x‖ ≤ 1 := by
   by_cases h : Nonempty ι ∧ ∀ i, 0 < a i
@@ -82,7 +87,8 @@ theorem ae_norm_le_one_dirichletMeasure :
     simp
 
 omit [Nonempty ι] in
-/-- A Dirichlet law has moments of every order. -/
+/-- With positive parameters on a nonempty coordinate type, the simplex-supported Dirichlet law has
+moments of every order. Otherwise `dirichletMeasure a = 0`, so the `MemLp` conclusion is vacuous. -/
 theorem memLp_id_dirichletMeasure (p : ℝ≥0∞) :
     MemLp id p (dirichletMeasure a) := by
   by_cases h : Nonempty ι ∧ ∀ i, 0 < a i
@@ -93,13 +99,15 @@ theorem memLp_id_dirichletMeasure (p : ℝ≥0∞) :
     simp
 
 omit [Nonempty ι] in
-/-- Every coordinate of a Dirichlet law has moments of every order. -/
+/-- Every coordinate of the valid Dirichlet law has moments of every order. For invalid parameters,
+`dirichletMeasure a = 0`, so the `MemLp` conclusion is vacuous. -/
 theorem memLp_eval_dirichletMeasure (i : ι) (p : ℝ≥0∞) :
     MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) p (dirichletMeasure a) :=
   (memLp_id_dirichletMeasure p).eval_piLp i
 
 omit [Nonempty ι] in
-/-- The identity is integrable for every Dirichlet measure. -/
+/-- The identity is integrable for the simplex-supported Dirichlet law. For invalid parameters or
+an empty coordinate type, `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
 theorem integrable_id_dirichletMeasure :
     Integrable id (dirichletMeasure a) :=
   memLp_one_iff_integrable.mp (memLp_id_dirichletMeasure 1)
@@ -237,8 +245,9 @@ theorem covarianceBilin_dirichletMeasure (ha : ∀ i, 0 < a i)
 /-! ### Exponential moments -/
 
 omit [Nonempty ι] in
-/-- Every directional exponential moment of a Dirichlet law is finite, because the law is carried
-by the bounded standard simplex. -/
+/-- With positive parameters on a nonempty coordinate type, every directional exponential moment
+of the Dirichlet law is finite because the law is carried by the bounded standard simplex.
+Otherwise `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
 theorem integrableExpSet_inner_dirichletMeasure (θ : EuclideanSpace ℝ ι) :
     integrableExpSet (fun x ↦ ⟪θ, x⟫) (dirichletMeasure a) = Set.univ := by
   by_cases h : Nonempty ι ∧ ∀ i, 0 < a i
