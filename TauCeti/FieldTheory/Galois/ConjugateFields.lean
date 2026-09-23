@@ -71,13 +71,6 @@ theorem mem_conjugateFields_iff {E E' : IntermediateField K L} :
 
 section Galois
 
-/-- The Galois correspondence carries a conjugate field to the conjugate of its fixing
-subgroup. -/
-theorem fixingSubgroup_smul (E : IntermediateField K L) (σ : L ≃ₐ[K] L) :
-    (σ • E).fixingSubgroup = E.fixingSubgroup.map (MulAut.conj σ) := by
-  rw [smul_intermediateField_def, IsGalois.map_fixingSubgroup]
-  congr 1
-
 variable [FiniteDimensional K L] [IsGalois K L]
 
 /-- The stabilizer of an intermediate field under ambient automorphisms is the normalizer of
@@ -89,10 +82,16 @@ theorem stabilizer_intermediateField_eq_normalizer (E : IntermediateField K L) :
   rw [mem_stabilizer_iff, Subgroup.mem_normalizer_iff_map_conj_eq]
   constructor
   · intro h
-    simpa only [fixingSubgroup_smul] using congrArg IntermediateField.fixingSubgroup h
+    calc
+      E.fixingSubgroup.map (MulAut.conj σ) = (σ • E).fixingSubgroup := by
+        rw [smul_intermediateField_def, IsGalois.map_fixingSubgroup]
+        congr 1
+      _ = E.fixingSubgroup := congrArg IntermediateField.fixingSubgroup h
   · intro h
-    rw [← IsGalois.fixedField_fixingSubgroup (σ • E), fixingSubgroup_smul, h,
-      IsGalois.fixedField_fixingSubgroup]
+    rw [← IsGalois.fixedField_fixingSubgroup (σ • E), smul_intermediateField_def,
+      IsGalois.map_fixingSubgroup]
+    convert congrArg fixedField h using 1 <;> congr 1
+    exact (IsGalois.fixedField_fixingSubgroup E).symm
 
 /-- The Galois correspondence restricts to a bijection from conjugates of an intermediate
 field to conjugates of its fixing subgroup. -/
@@ -101,7 +100,11 @@ noncomputable def conjugateFieldsEquivConjugateSubgroups (E : IntermediateField 
   toFun E' := ⟨E'.1.fixingSubgroup, by
     obtain ⟨σ, hσ⟩ := mem_conjugateFields_iff.mp E'.2
     refine mem_conjugateSubgroups_iff.mpr ⟨σ, ?_⟩
-    rw [← fixingSubgroup_smul, smul_intermediateField_def, hσ]⟩
+    calc
+      E.fixingSubgroup.map (MulAut.conj σ) = (E.map σ.toAlgHom).fixingSubgroup := by
+        rw [IsGalois.map_fixingSubgroup]
+        congr 1
+      _ = E'.1.fixingSubgroup := congrArg IntermediateField.fixingSubgroup hσ⟩
   invFun H := ⟨fixedField H.1, by
     obtain ⟨σ, hσ⟩ := mem_conjugateSubgroups_iff.mp H.2
     apply mem_conjugateFields_iff.mpr
