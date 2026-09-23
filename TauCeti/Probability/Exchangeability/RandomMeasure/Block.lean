@@ -163,20 +163,19 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMargin
 
 /-- The zeroth block marginal of positive width `m` is the ordinary first-`m` prefix marginal.
 This identifies the consecutive-block API with the finite-marginal uniqueness API. -/
+-- `blockMarginals_apply` simplifies the left side, so `simpNF` rejects a `@[simp]` tag here.
 theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_zero_eq_map_prefixProj
     (P : ProbabilityMeasure (ℕ → α)) (m : ℕ) [NeZero m] :
     P.blockMarginals m 0 = P.map (prefixProj α m) := by
-  apply ProbabilityMeasure.toMeasure_injective
-  simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply]
-  congr 1
-  funext x j
-  -- Unfold the inverse quotient-remainder equivalence at quotient zero.
-  change x (0 * m + j) = x j
-  simp
+  have hproj :
+      (fun x : ℕ → α => fun j : Fin m => x ((Nat.divModEquiv m).symm (0, j))) =
+        prefixProj α m := by
+    funext x j
+    change x (0 * m + j) = x j
+    simp
+  rw [ProbabilityMeasure.blockMarginals_apply, hproj]
 
-/-- **Positive-width zeroth block marginals determine a path measure.** It is enough to know the
-law of every nonempty finite prefix; an arbitrary shorter prefix is obtained by restricting the
-next nonempty one. -/
+/-- Two path measures are equal if their zeroth block marginals agree at every positive width. -/
 theorem _root_.MeasureTheory.ProbabilityMeasure.eq_of_blockMarginals_zero_eq
     {P Q : ProbabilityMeasure (ℕ → α)}
     (h : ∀ m : ℕ, P.blockMarginals (m + 1) 0 = Q.blockMarginals (m + 1) 0) : P = Q := by
@@ -198,6 +197,18 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.eq_of_blockMarginals_zero_eq
         congrArg ProbabilityMeasure.toMeasure (h m)
   rw [hcomp, ← Measure.map_map hrestrict (measurable_prefixProj (m + 1)), hnext,
     Measure.map_map hrestrict (measurable_prefixProj (m + 1))]
+
+/-- Two random path measures are almost surely equal if their zeroth block marginals agree
+almost surely at every positive width. -/
+theorem _root_.MeasureTheory.ProbabilityMeasure.ae_eq_of_blockMarginals_zero_ae_eq
+    {S : Type*} [MeasurableSpace S] {μ : Measure S}
+    {P Q : S → ProbabilityMeasure (ℕ → α)}
+    (h : ∀ m : ℕ,
+      (fun s => (P s).blockMarginals (m + 1) 0) =ᵐ[μ]
+        fun s => (Q s).blockMarginals (m + 1) 0) :
+    P =ᵐ[μ] Q := by
+  filter_upwards [ae_all_iff.2 h] with s hs
+  exact ProbabilityMeasure.eq_of_blockMarginals_zero_eq hs
 
 /-- The permutation of path coordinates induced by permuting blocks and preserving the position
 inside each block. -/
@@ -258,9 +269,8 @@ theorem measurable_codedBlockMarginals (m : ℕ) [NeZero m]
     measurable_probabilityMeasureCode.comp
       ((measurable_pi_apply i).comp (measurable_blockMarginals m))
 
-/-- **The coded positive-width zeroth block marginals determine a path measure.** The code is
-injective at every width, and the resulting finite prefix laws determine the whole law. The
-countable-generation assumption is stated exactly for the finite product spaces being coded. -/
+/-- Two path measures are equal if their coded zeroth block marginals agree at every positive
+width, assuming countable generation of the finite product spaces being coded. -/
 theorem _root_.MeasureTheory.ProbabilityMeasure.eq_of_codedBlockMarginals_zero_eq
     [∀ m : ℕ, MeasurableSpace.CountablyGenerated (Fin (m + 1) → α)]
     {P Q : ProbabilityMeasure (ℕ → α)}
@@ -270,10 +280,9 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.eq_of_codedBlockMarginals_zero_e
   intro m
   exact probabilityMeasureCode_injective (h m)
 
-/-- **Almost-sure reconstruction from coded finite blocks.** If two random path measures have the
-same coded zeroth block marginal at every positive width, on a width-dependent almost-sure set,
-then the random path measures themselves agree almost surely. Countability of the widths puts all
-the block identities on one common full-measure set. -/
+/-- Two random path measures are almost surely equal if their coded zeroth block marginals agree
+almost surely at every positive width, assuming countable generation of the finite product spaces
+being coded. -/
 theorem _root_.MeasureTheory.ProbabilityMeasure.ae_eq_of_codedBlockMarginals_zero_ae_eq
     [∀ m : ℕ, MeasurableSpace.CountablyGenerated (Fin (m + 1) → α)]
     {S : Type*} [MeasurableSpace S] {μ : Measure S}
@@ -282,8 +291,10 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.ae_eq_of_codedBlockMarginals_zer
       (fun s => (P s).codedBlockMarginals (m + 1) 0) =ᵐ[μ]
         fun s => (Q s).codedBlockMarginals (m + 1) 0) :
     P =ᵐ[μ] Q := by
-  filter_upwards [ae_all_iff.2 h] with s hs
-  exact ProbabilityMeasure.eq_of_codedBlockMarginals_zero_eq hs
+  apply ProbabilityMeasure.ae_eq_of_blockMarginals_zero_ae_eq
+  intro m
+  filter_upwards [h m] with s hs
+  exact probabilityMeasureCode_injective hs
 
 /-- **The finite block marginals of an invariant random path measure are fully exchangeable.**
 
