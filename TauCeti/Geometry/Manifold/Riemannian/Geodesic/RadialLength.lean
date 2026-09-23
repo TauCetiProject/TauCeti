@@ -11,9 +11,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 /-!
 # Length of radial geodesic segments
 
-In a normal domain, the radial exponential curve from parameter `0` to `1` has length equal to the
-norm of its initial velocity. This formula gives the length of the radial candidate path in a
-normal neighbourhood.
+In a normal domain, the radial exponential curve has length equal to the norm of its initial
+velocity times the elapsed parameter on every subinterval of `[0, 1]`. This formula gives the
+length of the radial candidate path in a normal neighbourhood.
 
 The length calculation uses the constant-speed formula for maximal geodesics in
 `TauCeti.Manifold.pathELength_maximalGeodesic`.
@@ -43,17 +43,26 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [T2Space (TangentBundle I M)]
 
+/-- In a normal domain, the radial exponential curve between parameters `s` and `t` in `[0, 1]`
+has length `‖v‖ * ENNReal.ofReal (t - s)`. -/
+theorem pathELength_riemannianExp_smul {p : M} {U : Set (TangentSpace I p)}
+    (h : IsNormalDomain I M p U) {v : TangentSpace I p} (hv : v ∈ U) {s t : ℝ}
+    (hs : s ∈ Icc 0 1) (ht : t ∈ Icc 0 1) :
+    pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) s t =
+      ‖v‖ₑ * ENNReal.ofReal (t - s) := by
+  have hcurve : (fun u : ℝ ↦ riemannianExp I M p (u • v)) = maximalGeodesic I M p v := by
+    funext u
+    exact riemannianExp_smul p v u
+  rw [hcurve, pathELength_maximalGeodesic (h.mem_geodesicInterval hv hs.1 hs.2)
+    (h.mem_geodesicInterval hv ht.1 ht.2)]
+
 /-- In a normal domain, the radial exponential curve from `0` to `1` has length `‖v‖`. -/
 theorem pathELength_riemannianExp_smul_zero_one {p : M} {U : Set (TangentSpace I p)}
     (h : IsNormalDomain I M p U) {v : TangentSpace I p} (hv : v ∈ U) :
     pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) 0 1 = ‖v‖ₑ := by
-  have hcurve : (fun u : ℝ ↦ riemannianExp I M p (u • v)) = maximalGeodesic I M p v := by
-    funext u
-    exact riemannianExp_smul p v u
-  rw [hcurve, pathELength_maximalGeodesic
-    (h.mem_geodesicInterval hv (by norm_num) (by norm_num))
-    (h.mem_geodesicInterval hv (by norm_num) (by norm_num)), sub_zero, ENNReal.ofReal_one,
-    mul_one]
+  simpa only [pathELength_riemannianExp_smul, sub_zero, ENNReal.ofReal_one, mul_one]
+    using pathELength_riemannianExp_smul (s := 0) (t := 1) h hv ⟨le_rfl, zero_le_one⟩
+      ⟨zero_le_one, le_rfl⟩
 
 end TauCeti.Manifold
 
