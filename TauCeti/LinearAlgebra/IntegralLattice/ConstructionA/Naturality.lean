@@ -36,21 +36,6 @@ open Matrix
 
 variable {ι κ : Type*}
 
-/-- Restricting a rational signed coordinate change to integer scalars does not change its
-underlying function. -/
-@[simp]
-theorem signedEquiv_restrictScalars_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → ℚ) :
-    (signedEquiv (R := ℚ) u e).restrictScalars ℤ x = signedEquiv u e x := rfl
-
-/-- A monomial coordinate change over `ZMod m` agrees with a signed coordinate change when its
-coordinate units are reductions of integer units.  This is the condition under which the standard
-rational signed permutation supplies the Construction A isometry. -/
-theorem monomialEquiv_eq_signedEquiv_of_intUnits {m : ℕ+} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ)
-    (v : ι → ℤˣ) (hv : ∀ i, (v i : ZMod m) = u i) :
-    monomialEquiv u e = signedEquiv v e := by
-  ext x j
-  rw [monomialEquiv_apply, signedEquiv_apply, hv]
-
 variable {m : ℕ+}
 
 /-- Construction A commutes with a signed coordinate change.  The carrier equality is stated in
