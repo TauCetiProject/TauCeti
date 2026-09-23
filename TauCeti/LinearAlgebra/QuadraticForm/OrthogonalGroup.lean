@@ -375,6 +375,14 @@ theorem coe_specialOrthogonalToOrthogonal (g : TauCeti.QuadraticMap.specialOrtho
     ((specialOrthogonalToOrthogonal Q g : TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) =
       g := (rfl)
 
+/-- The orthogonal determinant of an element of `SO(Q)` is one. -/
+@[simp]
+theorem orthogonalDet_specialOrthogonalToOrthogonal
+    (g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
+    orthogonalDet Q (specialOrthogonalToOrthogonal Q g) = 1 := by
+  rw [orthogonalDet_apply, coe_specialOrthogonalToOrthogonal]
+  exact (TauCeti.QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).2
+
 theorem specialOrthogonalToOrthogonal_injective :
     Function.Injective (specialOrthogonalToOrthogonal Q) :=
   Subgroup.inclusion_injective _
@@ -397,14 +405,32 @@ noncomputable def specialOrthogonalWithinEquiv (Q : QuadraticMap R M N) :
 theorem coe_specialOrthogonalWithinEquiv_apply (g : specialOrthogonalWithin Q) :
     ((specialOrthogonalWithinEquiv Q g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
         M ≃ₗ[R] M) =
-      ((g : TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) := (rfl)
+      ((g : TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) := by
+  let h : specialOrthogonalWithin Q =
+      (TauCeti.QuadraticMap.specialOrthogonalGroup Q).subgroupOf
+        (TauCeti.QuadraticMap.orthogonalGroup Q) :=
+    specialOrthogonalWithin_eq_subgroupOf
+  change ((MulEquiv.subgroupCongr h g :
+    TauCeti.QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) = _
+  exact congrArg (fun x : TauCeti.QuadraticMap.orthogonalGroup Q => (x : M ≃ₗ[R] M))
+    (MulEquiv.subgroupCongr_apply h g)
 
 @[simp]
 theorem coe_specialOrthogonalWithinEquiv_symm_apply
     (g : TauCeti.QuadraticMap.specialOrthogonalGroup Q) :
     (((specialOrthogonalWithinEquiv Q).symm g : specialOrthogonalWithin Q) :
         TauCeti.QuadraticMap.orthogonalGroup Q) =
-      specialOrthogonalToOrthogonal Q g := (rfl)
+      specialOrthogonalToOrthogonal Q g := by
+  let h : specialOrthogonalWithin Q =
+      (TauCeti.QuadraticMap.specialOrthogonalGroup Q).subgroupOf
+        (TauCeti.QuadraticMap.orthogonalGroup Q) :=
+    specialOrthogonalWithin_eq_subgroupOf
+  change ((MulEquiv.subgroupCongr h).symm
+    ((Subgroup.subgroupOfEquivOfLe
+      (TauCeti.QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q)).symm g) :
+    TauCeti.QuadraticMap.orthogonalGroup Q) = _
+  rw [MulEquiv.subgroupCongr_symm_apply]
+  rfl
 
 /-- On a zero module the determinant kernel is all of `O(Q)`, both groups being trivial; this is
 the case excluded from `index_specialOrthogonalWithin`. -/
@@ -650,6 +676,13 @@ theorem coe_reflectionOrthogonal :
     (reflectionOrthogonal Q v : M ≃ₗ[R] M) = reflection Q v := by
   simp only [reflectionOrthogonal]
 
+/-- The orthogonal determinant of a reflection is minus one. -/
+@[simp]
+theorem _root_.QuadraticMap.orthogonalDet_reflectionOrthogonal [Module.Free R M]
+    [Module.Finite R M] :
+    orthogonalDet Q (reflectionOrthogonal Q v) = (-1 : Rˣ) := by
+  rw [orthogonalDet_apply, coe_reflectionOrthogonal, det_reflection]
+
 /-- Rescaling the defining vector by an invertible scalar does not change the bundled orthogonal
 reflection. -/
 @[simp]
@@ -856,10 +889,8 @@ variable {R : Type u} {M : Type v} [CommRing R] [IsDomain R] [AddCommGroup M] [M
   [Module.Free R M] [Module.Finite R M]
 
 /-- **The determinant of an isometry squares to one.** If the polar form of `Q` is
-left-separating on a finite free module over an integral domain, every orthogonal automorphism
-has determinant `±1`: comparing Gram determinants in `Mᵀ G M = G` gives
-`(det g) ^ 2 * det G = det G` with `det G ≠ 0`. Some nondegeneracy is needed, since for `Q = 0`
-every automorphism is orthogonal. -/
+left-separating on a finite free module over an integral domain, every orthogonal automorphism has
+determinant `±1`. -/
 theorem orthogonalDet_sq {Q : QuadraticForm R M} (hQ : Q.polarBilin.SeparatingLeft)
     (g : orthogonalGroup Q) : orthogonalDet Q g ^ 2 = 1 := by
   have hg : BilinForm.IsIsometry Q.polarBilin (g : M ≃ₗ[R] M) :=
@@ -877,9 +908,8 @@ variable {K : Type u} {V : Type v} [Field K] [NeZero (2 : K)] [AddCommGroup V] [
   [FiniteDimensional K V] {Q : QuadraticForm K V}
 
 /-- **The determinant lands exactly in `μ₂`.** For a nondegenerate form over a field of
-characteristic not two, on a nonzero space, the determinants of the orthogonal automorphisms are
-exactly the square roots of unity `±1`: they square to one by `orthogonalDet_sq`, and a reflection
-in an anisotropic vector, which exists by nondegeneracy, has determinant `-1`. -/
+characteristic not two on a nonzero space, the determinants of the orthogonal automorphisms are
+exactly the square roots of unity `±1`. -/
 theorem range_orthogonalDet [Nontrivial V] (hQ : Q.Nondegenerate) :
     (orthogonalDet Q).range = rootsOfUnity 2 K := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne 2)
