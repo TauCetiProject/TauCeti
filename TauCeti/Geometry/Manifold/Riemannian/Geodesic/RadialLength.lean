@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Length
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
 
 /-!
 # Length of radial geodesic segments
 
-The radial curve is a reparametrized maximal geodesic wherever its parameters lie in the interval
-of existence. Its directed length from parameter `s` to `t` is its speed times
-`ENNReal.ofReal (t - s)`, so it is zero when `t < s`. These results record this length directly in
-exponential-map coordinates, so it can be compared with the length of a competing path in a normal
-neighbourhood.
+In a normal domain, the radial exponential curve from parameter `0` to `1` has length equal to the
+norm of its initial velocity. This formula gives the length of the radial candidate path in a
+normal neighbourhood.
 
 The length calculation uses the constant-speed formula for maximal geodesics in
 `TauCeti.Manifold.pathELength_maximalGeodesic`.
