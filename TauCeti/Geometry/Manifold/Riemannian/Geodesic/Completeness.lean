@@ -19,7 +19,9 @@ therefore be totally bounded, hence relatively compact once the manifold is metr
 the velocity lift would then stay in the part of the tangent bundle consisting of the vectors of
 norm at most the speed over that compact set, which is compact.  An integral curve of the geodesic
 spray cannot remain in a compact set as it approaches a finite endpoint of its maximal interval,
-so no such endpoint exists and every geodesic is defined for all time.
+so no such endpoint exists and every geodesic is defined for all time.  The same Lipschitz bound,
+read between the parameters `0` and `1`, says that the exponential map does not increase the
+distance from the base point: `dist p (exp_p v) ≤ ‖v‖`.
 
 The step about velocities is not implicit in constant speed: that bounds the velocity in the
 fibrewise Riemannian norm, and it is the compactness of the norm-bounded part of a Riemannian
@@ -33,6 +35,8 @@ space.
   `‖v‖` throughout its maximal interval, so its length over a parameter interval is `‖v‖` times
   the elapsed time.
 * `TauCeti.Manifold.lipschitzOnWith_maximalGeodesic`: consequently it is `‖v‖`-Lipschitz there.
+* `TauCeti.Manifold.edist_riemannianExp_le` and `TauCeti.Manifold.dist_riemannianExp_le`: the
+  distance from `p` to `exp_p v` is at most `‖v‖`.
 * `TauCeti.Manifold.isGeodesicallyCompleteAt_of_completeSpace`: a complete Riemannian manifold is
   geodesically complete at every point, with
   `TauCeti.Manifold.isGeodesicCurveOnFrom_maximalGeodesic_univ` the resulting all-time geodesic
@@ -123,6 +127,35 @@ theorem lipschitzOnWith_maximalGeodesic :
   · exact key s hs t ht h
   · rw [edist_comm, edist_comm s t]
     exact key t ht s hs h
+
+/-! ### The distance bound for the exponential map -/
+
+/-- **The exponential map does not increase the distance from the base point.**  The extended
+distance from `p` to `exp_p v` is at most `‖v‖ₑ`, for every tangent vector `v` at `p`. -/
+theorem edist_riemannianExp_le (p : M) (v : TangentSpace I p) :
+    edist p (riemannianExp I M p v) ≤ ‖v‖ₑ := by
+  by_cases hv : v ∈ expDomain I M p
+  · have h := lipschitzOnWith_maximalGeodesic (I := I) (M := M) (p := p) (v := v)
+      zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
+    rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq] at h
+    have h01 : edist (0 : ℝ) 1 = 1 := by simp [edist_dist, Real.dist_eq]
+    simpa [riemannianExp_def, enorm_eq_nnnorm, h01] using h
+  · simp [hv]
+
+section Metric
+
+variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [T2Space (TangentBundle I M)] [IsRiemannianManifold I M]
+
+/-- The distance from `p` to `exp_p v` is at most `‖v‖`; see `edist_riemannianExp_le`. -/
+theorem dist_riemannianExp_le (p : M) (v : TangentSpace I p) :
+    dist p (riemannianExp I M p v) ≤ ‖v‖ := by
+  have h := edist_riemannianExp_le (I := I) (M := M) p v
+  rwa [← ofReal_norm, edist_le_ofReal (norm_nonneg v)] at h
+
+end Metric
 
 /-! ### Completeness -/
 

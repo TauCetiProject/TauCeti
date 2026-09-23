@@ -61,7 +61,7 @@ theorem laplaceTransform_nnrealExpMeasure {r t : ℝ} (hr : 0 < r) (ht : -r < t)
       rw [Real.coe_toNNReal x hx.le]
     _ = mgf (fun x : ℝ => x) (expMeasure r) (-t) := by
       simp only [mgf, neg_mul]
-    _ = r / (r - -t) := Probability.mgf_fun_id_expMeasure hr (by linarith)
+    _ = r / (r - -t) := Probability.mgf_id_expMeasure hr (by linarith)
     _ = r / (r + t) := by ring
 
 /-- The positive-rate exponential measure represents `t ↦ r / (r + t)` in Bernstein's theorem. -/

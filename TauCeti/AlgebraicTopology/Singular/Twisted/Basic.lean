@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
@@ -240,7 +241,7 @@ lemma ιTwistedChainComplex_d (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌
   rfl
 
 /-- Singular homology of `X` with coefficients in the local coefficient system `L`. -/
-def twistedHomology (k : ℕ) : ModuleCat.{max v w} R := (twistedChainComplex L).homology k
+abbrev twistedHomology (k : ℕ) : ModuleCat.{max v w} R := (twistedChainComplex L).homology k
 
 end Chains
 
@@ -335,6 +336,29 @@ lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
       twistedChainComplexCoefficientMap η ≫ twistedChainComplexCoefficientMap θ :=
   (congrArg (fun φ ↦ (AlgebraicTopology.alternatingFaceMapComplex _).map φ)
     (twistedChainsCoefficientMap_comp η θ)).trans (CategoryTheory.Functor.map_comp _ _ _)
+
+/-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
+complexes. -/
+def twistedChainComplexCoefficientIso (e : L ≅ K) :
+    twistedChainComplex L ≅ twistedChainComplex K where
+  hom := twistedChainComplexCoefficientMap e.hom
+  inv := twistedChainComplexCoefficientMap e.inv
+  hom_inv_id := by
+    rw [← twistedChainComplexCoefficientMap_comp, e.hom_inv_id,
+      twistedChainComplexCoefficientMap_id]
+  inv_hom_id := by
+    rw [← twistedChainComplexCoefficientMap_comp, e.inv_hom_id,
+      twistedChainComplexCoefficientMap_id]
+
+@[simp]
+lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :
+    (twistedChainComplexCoefficientIso e).hom = twistedChainComplexCoefficientMap e.hom :=
+  (rfl)
+
+@[simp]
+lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
+    (twistedChainComplexCoefficientIso e).inv = twistedChainComplexCoefficientMap e.inv :=
+  (rfl)
 
 /-- The map on twisted homology induced by a morphism of local coefficient systems. -/
 def twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
@@ -470,6 +494,26 @@ def twistedHomologyConstantIso (M : ModuleCat.{max v w} R) (k : ℕ) :
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{max v w} R) k).obj M).obj X :=
   (HomologicalComplex.homologyFunctor _ _ k).mapIso (twistedChainComplexConstantIso X M)
 
+-- Not `simp` lemmas, here or for the relative comparison in
+-- `TauCeti.AlgebraicTopology.Singular.Twisted.Relative`: the comparison isomorphism is the simp
+-- normal form, so that the lemmas relating it to the other maps of the theory can themselves be
+-- `simp`.  They are stated for rewriting a comparison down to the chain level when needed.
+variable (X) in
+/-- The comparison of twisted homology with ordinary singular homology is the map induced on
+homology by the comparison of the chain complexes. -/
+lemma twistedHomologyConstantIso_hom (M : ModuleCat.{max v w} R) (k : ℕ) :
+    (twistedHomologyConstantIso X M k).hom =
+      HomologicalComplex.homologyMap (twistedChainComplexConstantIso X M).hom k :=
+  (rfl)
+
+variable (X) in
+/-- The inverse of the comparison of twisted homology with ordinary singular homology is the map
+induced on homology by the inverse comparison of the chain complexes. -/
+lemma twistedHomologyConstantIso_inv (M : ModuleCat.{max v w} R) (k : ℕ) :
+    (twistedHomologyConstantIso X M k).inv =
+      HomologicalComplex.homologyMap (twistedChainComplexConstantIso X M).inv k :=
+  (rfl)
+
 variable (X) in
 /-- The comparison of twisted homology with ordinary singular homology is natural in the
 coefficient module. -/
@@ -542,9 +586,26 @@ lemma ιTwistedChainComplex_twistedChainComplexMap (k : ℕ)
 
 /-- The map on twisted homology induced by a continuous map, from the homology of `X` twisted by
 the pullback system to the homology of `Y` twisted by `L`. -/
-def twistedHomologyMap (k : ℕ) :
+abbrev twistedHomologyMap (k : ℕ) :
     twistedHomology ((pullback f.hom).obj L) k ⟶ twistedHomology L k :=
-  (HomologicalComplex.homologyFunctor _ _ k).map (twistedChainComplexMap f L)
+  HomologicalComplex.homologyMap (twistedChainComplexMap f L) k
+
+/-- A monomorphism of spaces, that is, a continuous map with injective underlying function,
+induces a monomorphism of twisted chains in every degree: it reindexes the summands along an
+injection of singular simplices. -/
+-- The term has type `Mono (Sigma.map' ((TopCat.toSSet.map f).app k) fun _ ↦ 𝟙 _)`, so it uses two
+-- definitional equalities that the section otherwise keeps hidden: that `twistedChainsMap` is
+-- `twistedChainsMapApp` in every degree, and that the summand `((pullback f.hom).obj L).obj
+-- (initialVertex σ)` of the source is `L.obj (initialVertex ((TopCat.toSSet.map f).app k σ))`.
+instance mono_twistedChainsMap_app [Mono f] (k : SimplexCategoryᵒᵖ) :
+    Mono ((twistedChainsMap f L).app k) :=
+  MonoCoprod.mono_map'_of_injective (fun σ ↦ L.obj (initialVertex σ))
+    ((TopCat.toSSet.map f).app k)
+    ((CategoryTheory.mono_iff_injective ((TopCat.toSSet.map f).app k)).mp inferInstance)
+
+/-- A monomorphism of spaces induces a monomorphism of twisted chain complexes. -/
+instance mono_twistedChainComplexMap [Mono f] : Mono (twistedChainComplexMap f L) :=
+  HomologicalComplex.mono_of_mono_f _ fun _ ↦ mono_twistedChainsMap_app f L _
 
 end Map
 

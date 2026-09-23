@@ -38,6 +38,8 @@ place of completeness of the Tate algebra for the Gauss norm.
 
 ## Main results
 
+* `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
+  weighted coefficient dominates.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
   series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
@@ -76,6 +78,14 @@ variable {R : Type*} [NormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries
 theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
     f.HasGaussNorm norm c :=
   ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
+
+/-- If the weighted coefficient in degree `s` dominates every other one, the Gauss norm is the
+value it takes there. -/
+theorem gaussNorm_eq_of_forall_le {S : Type*} [Semiring S] {v : S → ℝ} {a : PowerSeries S}
+    (h : ∀ m, v (a.coeff m) * c ^ m ≤ v (a.coeff s) * c ^ s) :
+    a.gaussNorm v c = v (a.coeff s) * c ^ s :=
+  le_antisymm ((PowerSeries.gaussNorm_eq v c a).trans_le (ciSup_le h))
+    (PowerSeries.le_gaussNorm v c a ⟨_, Set.forall_mem_range.mpr h⟩ s)
 
 section
 

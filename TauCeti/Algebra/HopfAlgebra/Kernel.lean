@@ -129,7 +129,7 @@ private theorem antipode_mem_ker (f : H →ₐc[R] K) {x : H}
     HopfAlgebra.antipode R x ∈ RingHom.ker (f : H →ₐ[R] K) := by
   rw [RingHom.mem_ker]
   have hfx : f x = 0 := RingHom.mem_ker.mp hx
-  simp [hfx, BialgHom.map_antipode f x]
+  simp [hfx, BialgHomClass.map_antipode f x]
 
 /-- Build a Hopf ideal from the only kernel condition that is not automatic. -/
 private def ofKerComul (f : H →ₐc[R] K)

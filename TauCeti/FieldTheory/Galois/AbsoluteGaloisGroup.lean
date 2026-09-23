@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.Galois.Profinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.FieldTheory.Galois.FixedField
+public import TauCeti.FieldTheory.IntermediateField.Lift
 
 /-!
 # The absolute Galois group of a field, taken at its separable closure
@@ -264,7 +265,7 @@ def intermediateFieldEquivClosedSubgroup :
     have h₁ : IntermediateField.lift M₁ ≤ IntermediateField.lift M₂ := by
       rw [← IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure M₂]
       exact le_inf ((IntermediateField.le_iff_le _ _).mpr h) (IntermediateField.lift_le M₁)
-    exact fun y hy ↦ (IntermediateField.mem_lift y).mp (h₁ ((IntermediateField.mem_lift y).mpr hy))
+    exact IntermediateField.lift_le_lift_iff.mp h₁
 
 /-- The correspondence sends an intermediate field to the fixing subgroup of its lift. -/
 @[simp]

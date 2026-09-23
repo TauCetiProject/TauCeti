@@ -34,6 +34,7 @@ trivial coefficient object for that subgroup.
 * `TauCeti.trivialF2_V`: the carrier is `ULift (ZMod 2)`.
 * `TauCeti.trivialF2Equiv`: the additive equivalence that crosses the universe lift.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
+* `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
 -/
@@ -82,6 +83,21 @@ theorem trivialF2Equiv_symm_apply (x : ZMod 2) :
 /-- The lifted carrier of `trivialF2 G` has the discrete topology. -/
 instance : DiscreteTopology (trivialF2 G).V :=
   inferInstanceAs (DiscreteTopology (ULift.{u} (ZMod 2)))
+
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+/-- Applying the discrete coefficient dictionary to the carrier of `trivialF2` recovers the
+coefficient object itself.
+
+Comparisons between explicit cocycle groups and continuous cohomology are stated for the
+coefficient object `ofDiscreteModule ℤ G M` attached to a discrete module `M`. Taking
+`M := (trivialF2 G).V`, this equality identifies that object with `trivialF2 G`, so such a
+comparison carries a class computed from explicit cochains into continuous cohomology with
+trivial `𝔽₂` coefficients. -/
+@[simp]
+theorem ofDiscreteModule_trivialF2 :
+    ofDiscreteModule ℤ G (trivialF2 G).V = trivialF2 G :=
+  ofDiscreteModule_eq_self (trivialF2 G)
 
 /-- Every monoid element acts trivially on `trivialF2 G`.
 

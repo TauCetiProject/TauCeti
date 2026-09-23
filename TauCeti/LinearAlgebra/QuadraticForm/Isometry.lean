@@ -22,6 +22,8 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.IsometryEquiv.nondegenerate_iff`: nondegeneracy is invariant under isometry.
 * `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
   of squares along an equivalence of index types gives an isometric quadratic form.
+* `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: weighted sums of squares whose weights
+  agree after reindexing are equivalent.
 -/
 
 public section
@@ -114,6 +116,13 @@ theorem _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex_apply (w : �
     QuadraticForm.isometryEquivWeightedSumSquaresReindex w e x i = x (e i) :=
   -- The parentheses keep the proof opaque, so the definition need not be exposed.
   (rfl)
+
+/-- Weighted sums of squares whose weights agree after reindexing are equivalent. -/
+theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
+    {w : ι → S} {w' : ι' → S} (e : ι' ≃ ι) (h : w ∘ e = w') :
+    (weightedSumSquares R w').Equivalent (weightedSumSquares R w) :=
+  ⟨((QuadraticForm.isometryEquivWeightedSumSquaresReindex w e).trans
+    (QuadraticForm.weightedSumSquaresCongr h)).symm⟩
 
 end Reindex
 
