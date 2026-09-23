@@ -54,9 +54,9 @@ theorem spinAction_typeDSimpleCorootBivector_basis
   by_cases hnext : (i : ℕ) + 1 < n
   · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply, map_mul, Module.End.mul_apply,
       map_mul, Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
-      spinAction_ι_wedge, spinAction_ι_contract, P.pairingEquiv_dualVector,
-      P.pairingEquiv_dualVector, TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis,
-      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis]
+      spinAction_ι_wedge, spinAction_ι_contract, ← P.wedge_apply, ← P.contract_apply,
+      ← P.wedge_apply, ← P.contract_apply, P.wedge_contract_dualVector_basis,
+      P.wedge_contract_dualVector_basis]
     have hwt : algebraMap ℤ K (DynkinType.typeDSpinWeight s i) =
         algebraMap ℤ K (if i ∈ s then 1 else 0) -
           algebraMap ℤ K (if (⟨(i : ℕ) + 1, hnext⟩ : Fin n) ∈ s then 1 else 0) := by
@@ -68,9 +68,8 @@ theorem spinAction_typeDSimpleCorootBivector_basis
   · rw [dite_eq_right hnext, map_sub, LinearMap.sub_apply, map_add, LinearMap.add_apply,
       map_one, map_mul, Module.End.mul_apply, map_mul, Module.End.mul_apply,
       spinAction_ι_wedge, spinAction_ι_contract, spinAction_ι_wedge, spinAction_ι_contract,
-      P.pairingEquiv_dualVector, P.pairingEquiv_dualVector,
-      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis,
-      TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis]
+      ← P.wedge_apply, ← P.contract_apply, ← P.wedge_apply, ← P.contract_apply,
+      P.wedge_contract_dualVector_basis, P.wedge_contract_dualVector_basis]
     have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
       apply Fin.ext
       dsimp only
