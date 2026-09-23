@@ -43,6 +43,10 @@ milestone in Layer 6 of the ReductiveGroups roadmap.
 * `TauCeti.Comodule.IsCompletelyReducible.of_exists_isCompl` and
   `TauCeti.Comodule.IsCompletelyReducible.exists_isCompl`: construct and use complete
   reducibility through complementary subcomodules.
+* `TauCeti.Subcomodule.projection`: the projection onto a subcomodule along a complementary
+  subcomodule, as a comodule endomorphism.
+* `TauCeti.Comodule.isCompletelyReducible_iff_forall_exists_hom`: complete reducibility means
+  that every subcomodule is the image of a comodule endomorphism fixing it pointwise.
 * `TauCeti.Comodule.isCompletelyReducible_of_forall_eq_bot_or_eq_top`: a comodule with no
   subcomodules other than `⊥` and `⊤` is completely reducible, whence
   `TauCeti.Comodule.isCompletelyReducible_of_subsingleton` and
@@ -57,7 +61,8 @@ milestone in Layer 6 of the ReductiveGroups roadmap.
 * `TauCeti.Comodule.isCompletelyReducible_transport_iff`: complete reducibility is invariant
   under transport along a linear equivalence.
 * `TauCeti.Coalgebra.IsLinearlyReductive`: every finite-dimensional comodule is completely
-  reducible.
+  reducible, with constructor
+  `TauCeti.Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible`.
 * `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: testing finite-dimensional
   comodules in the base-field universe suffices for comodules in every universe.
 * `TauCeti.Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv`: complete reducibility
@@ -181,6 +186,92 @@ theorem coact_eq_tmul_one_of_isCompletelyReducible_of_forall_exists_fixed [One C
 
 end Comodule
 
+namespace Subcomodule
+
+section Projection
+
+variable {R : Type u} {C : Type v} {V : Type w}
+variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommGroup V] [Module R V] [Comodule R C V]
+
+/-- The projection onto a subcomodule `W` along a complementary subcomodule `Q`, as a comodule
+endomorphism. Its underlying linear map is `Submodule.projection`. -/
+noncomputable def projection (W Q : Subcomodule R C V)
+    (h : IsCompl W.toSubmodule Q.toSubmodule) : Comodule.Hom R C V V where
+  toLinearMap := W.toSubmodule.projection Q.toSubmodule h
+  map_coact := by
+    ext v
+    obtain ⟨w, hw, q, hq, rfl⟩ := Submodule.mem_sup.mp (h.sup_eq_top ▸ Submodule.mem_top :
+      v ∈ W.toSubmodule ⊔ Q.toSubmodule)
+    obtain ⟨x, hx⟩ := W.coact_mem hw
+    obtain ⟨y, hy⟩ := Q.coact_mem hq
+    have hW : W.toSubmodule.projection Q.toSubmodule h ∘ₗ W.carrier.subtype =
+        LinearMap.id ∘ₗ W.carrier.subtype := by
+      ext w
+      exact Submodule.projection_apply_of_mem_left h w.2
+    have hQ : W.toSubmodule.projection Q.toSubmodule h ∘ₗ Q.carrier.subtype =
+        0 ∘ₗ Q.carrier.subtype := by
+      ext q
+      exact Submodule.projection_apply_of_mem_right h q.2
+    simp only [LinearMap.comp_apply, map_add, ← hx, ← hy, TensorProduct.map_map, hW, hQ,
+      LinearMap.id_comp, LinearMap.zero_comp, TensorProduct.map_zero_left, LinearMap.zero_apply,
+      Submodule.projection_apply_of_mem_left h hw, Submodule.projection_apply_of_mem_right h hq,
+      map_zero, add_zero]
+
+/-- The underlying linear map of `TauCeti.Subcomodule.projection` is the linear projection
+`Submodule.projection`. -/
+@[simp]
+theorem projection_toLinearMap (W Q : Subcomodule R C V)
+    (h : IsCompl W.toSubmodule Q.toSubmodule) :
+    (projection W Q h).toLinearMap = W.toSubmodule.projection Q.toSubmodule h :=
+  (rfl)
+
+/-- The projection onto `W` along `Q` takes values in `W`. -/
+@[simp]
+theorem projection_apply_mem {W Q : Subcomodule R C V}
+    (h : IsCompl W.toSubmodule Q.toSubmodule) (v : V) : projection W Q h v ∈ W :=
+  Submodule.projection_apply_mem h v
+
+/-- The projection onto `W` along `Q` fixes `W` pointwise. -/
+theorem projection_apply_of_mem_left {W Q : Subcomodule R C V}
+    (h : IsCompl W.toSubmodule Q.toSubmodule) {v : V} (hv : v ∈ W) : projection W Q h v = v :=
+  Submodule.projection_apply_of_mem_left h hv
+
+/-- The projection onto `W` along `Q` vanishes on `Q`. -/
+theorem projection_apply_of_mem_right {W Q : Subcomodule R C V}
+    (h : IsCompl W.toSubmodule Q.toSubmodule) {v : V} (hv : v ∈ Q) : projection W Q h v = 0 :=
+  Submodule.projection_apply_of_mem_right h hv
+
+end Projection
+
+end Subcomodule
+
+namespace Comodule
+
+variable {R : Type u} {C : Type v} {V : Type w}
+variable [CommRing R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommGroup V] [Module R V] [Comodule R C V]
+
+/-- **Complete reducibility via equivariant retractions.** A comodule is completely reducible
+exactly when every subcomodule `W` is the image of a comodule endomorphism that fixes `W`
+pointwise. The kernel of such an endomorphism is a complementary subcomodule, and conversely the
+projection along a complementary subcomodule is such an endomorphism. Flatness of `C` is what
+makes the kernel a subcomodule. -/
+theorem isCompletelyReducible_iff_forall_exists_hom [Module.Flat R C] :
+    IsCompletelyReducible R C V ↔ ∀ W : Subcomodule R C V,
+      ∃ P : Hom R C V V, (∀ v, P v ∈ W) ∧ ∀ w ∈ W, P w = w := by
+  refine ⟨fun hV W ↦ ?_, fun hV ↦ IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_⟩
+  · obtain ⟨Q, hQ⟩ := hV.exists_isCompl W
+    exact ⟨Subcomodule.projection W Q hQ, Subcomodule.projection_apply_mem hQ,
+      fun _ ↦ Subcomodule.projection_apply_of_mem_left hQ⟩
+  · obtain ⟨P, hP_mem, hP_self⟩ := hV W
+    refine ⟨Hom.ker P, ?_⟩
+    rw [Hom.ker_toSubmodule,
+      ← LinearMap.ker_codRestrict W.toSubmodule P.toLinearMap hP_mem]
+    exact LinearMap.isCompl_of_proj fun w ↦ Subtype.ext (hP_self w w.2)
+
+end Comodule
+
 namespace Coalgebra
 
 variable (k : Type u) (C : Type v)
@@ -285,6 +376,14 @@ variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
 variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
 
 namespace IsLinearlyReductive
+
+/-- Construct linear reductivity by proving complete reducibility of every finite-dimensional
+comodule with carrier in the given universe. -/
+theorem of_forall_isCompletelyReducible
+    (h : ∀ (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V],
+      Comodule.IsCompletelyReducible k C V) :
+    IsLinearlyReductive.{u, v, w} k C :=
+  h
 
 /-- If every finite-dimensional comodule whose carrier is in the base-field universe is
 completely reducible, then every finite-dimensional comodule is completely reducible, regardless
