@@ -187,15 +187,7 @@ theorem hasDerivAt_schwarzChristoffelBoundary (a e : ι → ℝ)
       ((schwarzChristoffelDensity a e x : ℂ) *
         Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) x := by
   let C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
-  have hdcontOn : ContinuousOn (schwarzChristoffelDensity a e) (Ioo p q) := by
-    have hprod : ContinuousOn (fun y : ℝ ↦ ∏ k, |y - a k| ^ e k) (Ioo p q) := by
-      refine continuousOn_finsetProd _ fun k _ y hy ↦ ?_
-      rcases eq_or_ne (e k) 0 with hk | hk
-      · simpa [hk] using continuousWithinAt_const
-      · have hyk : y ≠ a k := fun h ↦ ha k hk (h ▸ hy)
-        exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
-          (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hyk)))).continuousWithinAt
-    exact hprod.congr fun y _ ↦ schwarzChristoffelDensity_def a e y
+  have hdcontOn := continuousOn_schwarzChristoffelDensity a e ha
   have hdcont : ContinuousAt (schwarzChristoffelDensity a e) x :=
     (hdcontOn x hx).continuousAt (isOpen_Ioo.mem_nhds hx)
   have hInt : HasDerivAt (fun y : ℝ ↦ ∫ t in x..y, schwarzChristoffelDensity a e t)

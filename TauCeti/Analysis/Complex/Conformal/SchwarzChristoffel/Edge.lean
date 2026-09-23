@@ -110,6 +110,19 @@ theorem schwarzChristoffelDensity_pos (a e : ι → ℝ) {x : ℝ}
   · simp [he]
   · exact Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero.mpr (hx k he))) _
 
+/-- The Schwarz--Christoffel boundary density is continuous on an interval containing no
+prevertex with nonzero exponent. -/
+theorem continuousOn_schwarzChristoffelDensity (a e : ι → ℝ) {p q : ℝ}
+    (ha : ∀ k, e k ≠ 0 → a k ∉ Ioo p q) :
+    ContinuousOn (schwarzChristoffelDensity a e) (Ioo p q) := by
+  unfold schwarzChristoffelDensity
+  refine continuousOn_finsetProd _ fun k _ x hx ↦ ?_
+  rcases eq_or_ne (e k) 0 with hk | hk
+  · simpa [hk] using continuousWithinAt_const
+  · have hxk : x ≠ a k := fun h ↦ ha k hk (h ▸ hx)
+    exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
+      (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hxk)))).continuousWithinAt
+
 /-- Zero turning exponents give constant boundary density one. -/
 @[simp]
 theorem schwarzChristoffelDensity_zero (a : ι → ℝ) :
@@ -420,13 +433,7 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear (a e : ι →
       InjOn L (Ioo p q) ∧ Collinear ℝ (L '' Ioo p q) := by
   obtain ⟨L, hL, hLcont, hdiff⟩ := exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀ ha
   have hne : ∀ t ∈ Ioo p q, ∀ i, e i ≠ 0 → t ≠ a i := fun t ht i he h => ha i he (h ▸ ht)
-  have hfcont : ContinuousOn (schwarzChristoffelDensity a e) (Ioo p q) := by
-    unfold schwarzChristoffelDensity
-    refine continuousOn_finsetProd _ fun i _ t ht => ?_
-    rcases eq_or_ne (e i) 0 with he | he
-    · simpa [he] using continuousWithinAt_const
-    · exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
-        (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne (hne t ht i he))))).continuousWithinAt
+  have hfcont := continuousOn_schwarzChristoffelDensity a e ha
   have key : ∀ x ∈ Ioo p q, ∀ y ∈ Ioo p q, y < x → L x - L y ≠ 0 := by
     intro x hx y hy hyx
     rw [hdiff x hx y hy]
