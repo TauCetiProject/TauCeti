@@ -32,6 +32,10 @@ not by the generally larger root quotient `G / H`.
 
 * `TauCeti.quotientStabilizerEquivAlgHomSimpleField`: the quotient of the normal-closure Galois
   group by a root stabilizer is the set of embeddings of the simple field.
+* `TauCeti.quotientStabilizerEquivAlgHomSimpleField_smul`: this equivalence respects the
+  Galois action by postcomposition.
+* `TauCeti.conjugateSimpleFieldsEquivConjugateSubgroups`: the conjugate fields
+  correspond to conjugates of a point stabilizer in the polynomial Galois group.
 * `TauCeti.ncard_conjugateSimpleFields`: the number of conjugate simple fields is the index of
   the normalizer of their fixing subgroup.
 * `TauCeti.exists_root_ncard_conjugateSimpleFields_eq_index_normalizer`: the same formula with
@@ -64,6 +68,33 @@ noncomputable def quotientStabilizerEquivAlgHomSimpleField (x : E)
     (rootSetEquivAlgHomAdjoin F (normalClosure F F⟮x⟯ E) x
       (Algebra.IsIntegral.isIntegral x))
 
+/-- The coset-to-embedding correspondence intertwines the Galois action on cosets with
+postcomposition on embeddings. -/
+theorem quotientStabilizerEquivAlgHomSimpleField_smul (x : E)
+    (y : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E))
+    (σ : Gal(normalClosure F F⟮x⟯ E/F))
+    (c : Gal(normalClosure F F⟮x⟯ E/F) ⧸
+      stabilizer Gal(normalClosure F F⟮x⟯ E/F) (y : normalClosure F F⟮x⟯ E)) :
+    quotientStabilizerEquivAlgHomSimpleField x y (σ • c) =
+      σ • quotientStabilizerEquivAlgHomSimpleField x y c := by
+  apply adjoin_algHom_ext F
+  intro a ha
+  simp only [Set.mem_singleton_iff] at ha
+  subst a
+  change (quotientStabilizerEquivAlgHomSimpleField x y (σ • c))
+      (AdjoinSimple.gen F x) =
+    (σ • quotientStabilizerEquivAlgHomSimpleField x y c) (AdjoinSimple.gen F x)
+  let e := rootSetEquivQuotientStabilizer
+    (minpoly.irreducible (Algebra.IsIntegral.isIntegral x)) y.2
+  have he : e.symm (σ • c) = σ • e.symm c := by
+    apply e.injective
+    rw [e.apply_symm_apply, rootSetEquivQuotientStabilizer_smul,
+      e.apply_symm_apply]
+  simpa only [quotientStabilizerEquivAlgHomSimpleField, Equiv.trans_apply,
+    rootSetEquivAlgHomAdjoin_apply_gen, smul_algHom_apply, e, rootSet.coe_smul,
+    AlgEquiv.smul_def] using
+    congrArg Subtype.val he
+
 end Normal
 
 /-- The distinct conjugates of `F⟮x⟯` inside its normal closure. -/
@@ -81,6 +112,33 @@ theorem mem_conjugateSimpleFields_iff {x : E}
   mem_conjugateFields_iff
 
 variable [Normal F E]
+
+/-- For a root whose point stabilizer fixes `F⟮x⟯`, conjugates of the simple field correspond
+to conjugates of that stabilizer in the polynomial Galois group. Such a root exists by
+`exists_root_map_stabilizer_eq_fixingSubgroup`. -/
+noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups (x : E)
+    (hsep : (minpoly F x).Separable)
+    (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
+    (hy : (stabilizer (minpoly F x).Gal y).map
+      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+        (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
+    conjugateSimpleFields (F := F) x ≃
+      conjugateSubgroups (stabilizer (minpoly F x).Gal y) := by
+  let _ : FiniteDimensional F F⟮x⟯ :=
+    adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
+  let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
+    normalClosure.is_finiteDimensional F F⟮x⟯ E
+  let _ : IsSplittingField F (normalClosure F F⟮x⟯ E) (minpoly F x) :=
+    isSplittingField_normalClosure_adjoin_simple x
+  let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
+    IsGalois.of_separable_splitting_field hsep
+  let e := conjugateSubgroupsEquiv (galEquivNormalClosure (F := F) (E := E) x)
+    (stabilizer (minpoly F x).Gal y)
+  have he : conjugateSubgroups (stabilizer (minpoly F x).Gal y) ≃
+      conjugateSubgroups (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup := by
+    simpa only [hy] using e
+  exact (conjugateFieldsEquivConjugateSubgroups
+    (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))).trans he.symm
 
 /-- For a separable minimal polynomial, the number of conjugates of `F⟮x⟯` is the index of
 the normalizer of its fixing subgroup in the Galois group of the normal closure. -/
