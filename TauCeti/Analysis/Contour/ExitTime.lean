@@ -37,10 +37,14 @@ as `ε → 0⁺`, and eventually has exact radius — the `t_eps` hypotheses of
 * `Contour.eventually_norm_at_firstExitTimeRight_eq` / `Left` — eventual exact radius along
   `𝓝[>] 0`.
 
+The exit times and their properties at a fixed radius hold for a curve into any seminormed group.
+The results as `ε → 0⁺` are stated in a normed group: their hypothesis that `γ` leaves `s` must
+give a positive distance from `s`, which a seminorm does not guarantee.
+
 ## Provenance
 
 Migrated from `firstExitTimeRight`/`firstExitTimeLeft` and their API in `ExitTime.lean` of the
-AINTLIB `LeanModularForms` development, restated for a curve into a normed group. See
+AINTLIB `LeanModularForms` development, restated for a curve into a seminormed group. See
 N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized Residue
 Theorem*, arXiv:1808.00997, §3.
 -/

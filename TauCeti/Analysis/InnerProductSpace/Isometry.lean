@@ -46,7 +46,7 @@ namespace TauCeti
 
 open RealInnerProductSpace
 
-section Normed
+section Seminormed
 
 variable {E F : Type*} [SeminormedAddGroup E] [SeminormedAddGroup F] {s : Set E} {g : E → F}
 
@@ -58,7 +58,7 @@ theorem norm_map_of_dist_map_eq (h0 : (0 : E) ∈ s) (hg0 : g 0 = 0)
     ‖g z‖ = ‖z‖ := by
   simpa [hg0] using hg z hz 0 h0
 
-end Normed
+end Seminormed
 
 section InnerProduct
 

@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv
 
 /-!
-# Multiplication by `i` on a complex normed space
+# Multiplication by `i` on a complex seminormed space
 
-Multiplication by `i` is a real continuous linear automorphism of any complex normed space, with
+Multiplication by `i` is a real continuous linear automorphism of any complex seminormed space, with
 inverse multiplication by `-i`.  It is the conjugating operator by which complex linearity of a
 real-linear map is tested.
 
@@ -39,11 +39,11 @@ theorem neg_I_smul_I_smul (x : X) : -I • (I • x) = x := by
 
 end MulAction
 
-section Normed
+section Seminormed
 
 variable (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℂ X]
 
-/-- Multiplication by `i` as a real continuous linear equivalence of a complex normed space. -/
+/-- Multiplication by `i` as a real continuous linear equivalence of a complex seminormed space. -/
 noncomputable def smulIEquiv : X ≃L[ℝ] X :=
   ContinuousLinearEquiv.smulLeft (Units.mk0 I I_ne_zero)
 
@@ -57,7 +57,7 @@ theorem smulIEquiv_apply (x : X) : smulIEquiv X x = I • x := by
 theorem smulIEquiv_symm_apply (x : X) : (smulIEquiv X).symm x = -I • x := by
   rw [ContinuousLinearEquiv.symm_apply_eq, smulIEquiv_apply, I_smul_neg_I_smul]
 
-end Normed
+end Seminormed
 
 end Complex
 
