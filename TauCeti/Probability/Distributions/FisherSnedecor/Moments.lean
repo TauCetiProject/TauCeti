@@ -135,18 +135,8 @@ private lemma integrableOn_scaled_fisherMomentKernel_iff (hm : 0 < m) (hn : 0 < 
             ring
   rw [mul_zero] at hcomp
   rw [← integrableOn_fisherMomentKernel_iff hm q (Nat.cast_nonneg q), ← hcomp]
-  constructor
-  · intro h
-    have h' : IntegrableOn (fun x : ℝ ↦ C *
-        (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
-        (Ioi (0 : ℝ)) := by
-      simpa [IntegrableOn, integrable_const_mul_iff hC] using h
-    exact h'.congr_fun heq.symm measurableSet_Ioi
-  · intro h
-    have h' : IntegrableOn (fun x : ℝ ↦ C *
-        (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
-        (Ioi (0 : ℝ)) := h.congr_fun heq measurableSet_Ioi
-    simpa [IntegrableOn, integrable_const_mul_iff hC] using h'
+  rw [integrableOn_congr_fun heq measurableSet_Ioi]
+  simp only [IntegrableOn, integrable_const_mul_iff hC]
 
 /-- A natural power is integrable under a valid Fisher--Snedecor law exactly when twice its
 order is below the denominator degrees of freedom. -/
@@ -163,25 +153,10 @@ theorem integrable_pow_fisherSnedecorMeasure_iff (hm : 0 < m) (hn : 0 < n) (q : 
           (Real.Gamma (m / 2) * Real.Gamma (n / 2)) * (m / n) ^ (m / 2)) *
         (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
       (Ioi (0 : ℝ)) := fun _ hx ↦ fisherMomentDensity_eq hm hn q hx
-  constructor
-  · intro h
-    have h' := h.congr_fun heq measurableSet_Ioi
-    have hk : IntegrableOn
-        (fun x : ℝ ↦ x ^ (m / 2 + q - 1) *
-          (1 + m * x / n) ^ (-((m + n) / 2))) (Ioi (0 : ℝ)) := by
-      simpa [IntegrableOn, integrable_const_mul_iff hC] using h'
-    rw [integrableOn_scaled_fisherMomentKernel_iff hm hn q] at hk
-    exact by linarith
-  · intro h
-    have hq : (q : ℝ) < n / 2 := by linarith
-    have hk := (integrableOn_scaled_fisherMomentKernel_iff hm hn q).2 hq
-    have h' : IntegrableOn (fun x ↦
-        (Real.Gamma ((m + n) / 2) /
-          (Real.Gamma (m / 2) * Real.Gamma (n / 2)) * (m / n) ^ (m / 2)) *
-        (x ^ (m / 2 + q - 1) * (1 + m * x / n) ^ (-((m + n) / 2))))
-        (Ioi (0 : ℝ)) := by
-      simpa [IntegrableOn, integrable_const_mul_iff hC] using hk
-    exact h'.congr_fun heq.symm measurableSet_Ioi
+  rw [integrableOn_congr_fun heq measurableSet_Ioi]
+  simp only [IntegrableOn, integrable_const_mul_iff hC]
+  rw [← IntegrableOn, integrableOn_scaled_fisherMomentKernel_iff hm hn q]
+  constructor <;> intro h <;> linarith
 
 /-- The identity is integrable under a valid Fisher--Snedecor law exactly above two denominator
 degrees of freedom. -/
