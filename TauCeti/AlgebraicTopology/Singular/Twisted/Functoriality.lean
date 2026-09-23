@@ -300,6 +300,22 @@ lemma homologyMap_twistedSubspaceChainComplexMap (k : ℕ) :
         LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k := by
   rw [twistedSubspaceChainComplexMap, HomologicalComplex.homologyMap_comp]
 
+/-- The homology maps induced by a map of pairs commute with the inclusions of the subspaces,
+after the canonical comparison of their pulled-back coefficient systems. -/
+lemma twistedHomologyMap_naturality_pair (k : ℕ) :
+    LocalCoefficientSystem.twistedHomologyMap P.map
+          ((LocalCoefficientSystem.pullback (Hom.fst f).hom).obj L) k ≫
+        LocalCoefficientSystem.twistedHomologyMap (Hom.fst f) L k =
+      LocalCoefficientSystem.twistedHomologyCoefficientMap
+          (subspaceSystemPullbackIso f L).hom k ≫
+        LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k ≫
+          LocalCoefficientSystem.twistedHomologyMap Q.map L k :=
+  ((HomologicalComplex.homologyMap_comp _ _ _).symm.trans
+    ((congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
+      (twistedChainComplexMap_naturality_pair f L)).trans
+      (HomologicalComplex.homologyMap_comp _ _ _))).trans
+    (by rw [homologyMap_twistedSubspaceChainComplexMap, Category.assoc])
+
 /-- The connecting morphism in relative twisted homology is natural in maps of topological
 pairs. -/
 @[reassoc]
