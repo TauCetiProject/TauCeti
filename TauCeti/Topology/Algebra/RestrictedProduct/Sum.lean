@@ -20,7 +20,8 @@ The forward map is continuous for every reference family (`continuous_restricted
 The inverse is continuous when every reference subgroup is open
 (`continuous_restrictedProductSum_symm`); this is the same openness hypothesis under which
 Mathlib's `RestrictedProduct.isTopologicalGroup` holds, so under it `restrictedProductSum` is a
-homeomorphism.
+homeomorphism. The hypothesis cannot be dropped: `not_continuous_restrictedProductSum_symm`
+exhibits a family with trivial reference subgroups for which the inverse is discontinuous.
 
 ## References
 

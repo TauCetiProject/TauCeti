@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.RestrictedProduct.Sum
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Instances.Rat
@@ -29,10 +30,12 @@ for all rational `t` of small absolute value and `s • eₙ` for all rational `
 value, and for `n` large and `t` rational close to `√2 / (n + 1)` the sum `t • e₀ + s • eₙ`
 escapes `W`.
 
-Multiplication on this space factors through the inverse of the splitting of the restricted product
-over `ℕ ⊕ ℕ` into two restricted products, and through the inverse of the decomposition into the
-`{0}` factor times the rest, so neither of those inverses is continuous for this family either;
-openness of the reference subgroups is the hypothesis that restores their continuity.
+Multiplication on this space factors through the inverse of the splitting `restrictedProductSum` of
+the restricted product over `ℕ ⊕ ℕ` into two restricted products, followed by the coordinatewise
+product of the two halves, which is continuous for every family. So that inverse is not continuous
+for this family either (`not_continuous_restrictedProductSum_symm`), although
+`continuous_restrictedProductSum_symm` makes it continuous once the reference subgroups are open;
+openness is a fact about the topology, not a limitation of that proof.
 
 The openness of the witness is checked stage by stage with `isOpen_restrictedProduct_iff`, and the
 neighbourhood argument uses `continuous_restrictedProduct_mulSingle`.
@@ -215,5 +218,49 @@ theorem not_isTopologicalGroup_restrictedProduct_rat_bot :
     ¬ IsTopologicalGroup (Πʳ _ : ℕ, [Multiplicative ℚ,
       ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))]) :=
   fun h ↦ not_continuousMul_restrictedProduct_rat_bot h.toContinuousMul
+
+/-- Multiplying the two halves of the splitting of `Πʳ k : ℕ ⊕ ℕ, [Multiplicative ℚ, ⊥]` is
+continuous, although multiplication on `Πʳ n : ℕ, [Multiplicative ℚ, ⊥]` itself is not. -/
+private theorem continuous_mul_restrictedProductSum_rat_bot :
+    Continuous fun z : Πʳ _ : ℕ ⊕ ℕ, [Multiplicative ℚ,
+        ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))] ↦
+      (restrictedProductSum (fun _ ↦ ⊥) z).1 * (restrictedProductSum (fun _ ↦ ⊥) z).2 := by
+  rw [RestrictedProduct.continuous_dom]
+  intro T hT
+  -- The stage of `ℕ` on which both halves of the stage `T` are integral.
+  have hT' : cofinite ≤ 𝓟 {n : ℕ | Sum.inl n ∈ T ∧ Sum.inr n ∈ T} := by
+    rw [le_principal_iff]
+    have h := eventually_mem_set.2 (le_principal_iff.1 hT)
+    filter_upwards [Sum.inl_injective.tendsto_cofinite.eventually h,
+      Sum.inr_injective.tendsto_cofinite.eventually h] with n hl hr using ⟨hl, hr⟩
+  -- The coordinatewise product between the two stages, through which the composite factors.
+  let g : (Πʳ _ : ℕ ⊕ ℕ, [Multiplicative ℚ,
+      ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))]_[𝓟 T]) →
+        Πʳ _ : ℕ, [Multiplicative ℚ, ((⊥ : Subgroup (Multiplicative ℚ)) :
+          Set (Multiplicative ℚ))]_[𝓟 {n : ℕ | Sum.inl n ∈ T ∧ Sum.inr n ∈ T}] :=
+    fun z ↦ RestrictedProduct.mk (fun n ↦ z (Sum.inl n) * z (Sum.inr n)) (by
+      rw [eventually_principal]
+      intro n hn
+      exact mul_mem (eventually_principal.1 z.2 _ hn.1) (eventually_principal.1 z.2 _ hn.2))
+  have hg : Continuous g := by
+    refine RestrictedProduct.continuous_rng_of_principal.mpr (continuous_pi fun n ↦ ?_)
+    exact (RestrictedProduct.continuous_eval (Sum.inl n)).mul
+      (RestrictedProduct.continuous_eval (Sum.inr n))
+  refine ((RestrictedProduct.continuous_inclusion hT').comp hg).congr fun z ↦ ?_
+  ext n : 1
+  simp only [Function.comp_apply, RestrictedProduct.inclusion_apply, RestrictedProduct.mul_apply,
+    restrictedProductSum_apply_inl, restrictedProductSum_apply_inr, RestrictedProduct.mk_apply, g]
+
+/-- The inverse of the splitting `restrictedProductSum` of a restricted product over a sum of index
+types is not continuous in general: for `Πʳ k : ℕ ⊕ ℕ, [Multiplicative ℚ, ⊥]`, with the trivial,
+non-open, reference subgroup at every index, it is a discontinuous bijection. The openness
+hypothesis of `continuous_restrictedProductSum_symm` therefore cannot be dropped. -/
+theorem not_continuous_restrictedProductSum_symm :
+    ¬ Continuous (restrictedProductSum (G := fun _ : ℕ ⊕ ℕ ↦ Multiplicative ℚ)
+      fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))).symm := by
+  intro h
+  refine not_continuousMul_restrictedProduct_rat_bot
+    ⟨(continuous_mul_restrictedProductSum_rat_bot.comp h).congr fun p ↦ ?_⟩
+  simp
 
 end TauCeti
