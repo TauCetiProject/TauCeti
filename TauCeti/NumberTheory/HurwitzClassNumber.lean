@@ -76,8 +76,8 @@ instance (a b c : ℤ) : Decidable (IsReducedForm a b c) :=
 definite. -/
 theorem IsReducedForm.pos_of_discrim_neg {a b c : ℤ} (h : IsReducedForm a b c)
     (hd : discrim a b c < 0) : 0 < a :=
-  -- `a = 0` would force `b = 0` and discriminant `0`
-  ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ by simp_all [discrim, IsReducedForm]
+  -- `a = 0` would make the discriminant `b ^ 2`, which is not negative
+  ((abs_nonneg b).trans h.1).lt_of_ne' fun ha ↦ hd.not_ge <| by simp [discrim, ha, sq_nonneg]
 
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
 `(a, b, c)`.
