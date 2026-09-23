@@ -27,10 +27,9 @@ on `PresheafOfModules.pushforward₀OfCommRingCat`. No formalization is vendored
 * `SheafOfModules.pushforwardTensorProductIso` is the generic comparison;
 * `SheafOfModules.overTensorProductIso` specializes it to restriction over an object.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Invertible sheaves on a
-scheme; the Picard group `Pic X` under `⊗`". It supplies the restriction compatibility needed to
-put two local trivializations over a common refinement and prove that an arbitrary tensor product
-of invertible sheaves is invertible.
+The slice-site comparison lets tensor-product constructions be transported to a common
+restriction. In particular, it is used to combine local trivializations of invertible and finite
+locally free sheaves over refinements of a cover.
 -/
 
 public section

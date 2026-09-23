@@ -432,6 +432,28 @@ def overSheafificationNatIso (R : Sheaf J RingCat.{u}) (X : C)
   case app => exact fun P ↦ (overSheafificationIso R P X).symm
   case naturality => exact fun f ↦ overSheafificationIso_inv_naturality R f X
 
+/-- The forward component of `overSheafificationNatIso` is the generic
+pushforward--sheafification comparison. -/
+@[simp]
+theorem overSheafificationNatIso_hom_app (R : Sheaf J RingCat.{u}) (X : C)
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{v}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{v}]
+    (P : PresheafOfModules.{v} R.obj) :
+    (overSheafificationNatIso R X).hom.app P =
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X) R P).hom :=
+  (rfl)
+
+/-- The inverse component of `overSheafificationNatIso` is the inverse generic
+pushforward--sheafification comparison. -/
+@[simp]
+theorem overSheafificationNatIso_inv_app (R : Sheaf J RingCat.{u}) (X : C)
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{v}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{v}]
+    (P : PresheafOfModules.{v} R.obj) :
+    (overSheafificationNatIso R X).inv.app P =
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X) R P).inv :=
+  (rfl)
+
 end SheafOfModules
 
 end

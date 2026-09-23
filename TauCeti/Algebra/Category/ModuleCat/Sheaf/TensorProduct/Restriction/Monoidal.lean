@@ -14,10 +14,11 @@ public import Mathlib.CategoryTheory.Localization.Monoidal.Functor
 For a sheaf of commutative rings `R` on a small site and an object `X` of the site, this file
 equips restriction to the slice over `X` with a strong symmetric monoidal structure.
 
-The construction descends the evident symmetric monoidal structure on restriction of presheaves
-through sheafification.  The localization universal property supplies all monoidal coherence laws;
-the proof that the descended structure preserves the braiding uses the same localization comparison.
-The descent uses Mathlib's
+The coherent tensor and unit comparisons allow tensor units, evaluation, and coevaluation maps to
+be transported through restriction to slice sites. They are the local compatibility needed when
+studying dualizable and finite locally free sheaves on a cover.
+
+The descent construction uses Mathlib's
 [`CategoryTheory.Localization.Monoidal.functorMonoidalOfComp`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Localization/Monoidal/Functor.html#CategoryTheory.Localization.Monoidal.functorMonoidalOfComp).
 
 ## Main declarations
@@ -46,36 +47,51 @@ namespace SheafOfModules
 
 variable (R : Sheaf J CommRingCat.{u}) (X : C)
 
-/-- Sheafification on the source site of restriction to a slice. -/
-abbrev overSourceSheafification :=
-  PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj)
+set_option quotPrecheck false in
+local notation "sourceSheafification" =>
+  PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)
 
-/-- Sheafification on the slice site. -/
-abbrev overTargetSheafification :=
-  PresheafOfModules.sheafification.{u} (𝟙 ((ringCatSheaf R).over X).obj)
+set_option quotPrecheck false in
+local notation "targetSheafification" =>
+  PresheafOfModules.sheafification (𝟙 ((ringCatSheaf R).over X).obj)
 
-/-- Restriction of presheaves of modules to a slice. -/
-abbrev overPresheafFunctor :=
+set_option quotPrecheck false in
+local notation "presheafRestriction" =>
   PresheafOfModules.pushforward (F := Over.forget X)
     (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X) (ringCatSheaf R)).inv
 
-/-- Restriction of presheaves followed by sheafification on the slice. -/
-abbrev overSheafification :=
-  overPresheafFunctor R X ⋙ overTargetSheafification R X
+set_option quotPrecheck false in
+local notation "restrictionSheafification" => presheafRestriction ⋙ targetSheafification
 
-/-- The local isomorphisms inverted by sheafification on the source site. -/
-abbrev overSourceW : MorphismProperty
-    (PresheafOfModules.{u} (ringCatSheaf R).obj) :=
-  (J.W (A := AddCommGrpCat.{u})).inverseImage
-    (PresheafOfModules.toPresheaf.{u} (ringCatSheaf R).obj)
+set_option quotPrecheck false in
+local notation "sourceW" =>
+  (J.W (A := AddCommGrpCat)).inverseImage
+    (PresheafOfModules.toPresheaf (ringCatSheaf R).obj)
 
-/-- The natural comparison exhibits restriction as a lift of presheaf restriction followed by
-sheafification. -/
-@[instance_reducible]
-def overSheafificationLifting : CategoryTheory.Localization.Lifting
-    (overSourceSheafification R) (overSourceW R)
-    (overSheafification R X) (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) where
+local instance overSheafificationLifting : CategoryTheory.Localization.Lifting
+    sourceSheafification sourceW restrictionSheafification
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) where
   iso := overSheafificationNatIso (ringCatSheaf R) X
+
+private theorem overSheafificationLifting_iso_hom_app
+    (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+    (CategoryTheory.Localization.Lifting.iso sourceSheafification sourceW
+      restrictionSheafification
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).hom.app P =
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) P).hom := by
+  change (overSheafificationNatIso (ringCatSheaf R) X).hom.app P = _
+  exact overSheafificationNatIso_hom_app (ringCatSheaf R) X P
+
+private theorem overSheafificationLifting_iso_inv_app
+    (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+    (CategoryTheory.Localization.Lifting.iso sourceSheafification sourceW
+      restrictionSheafification
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).inv.app P =
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) P).inv := by
+  change (overSheafificationNatIso (ringCatSheaf R) X).inv.app P = _
+  exact overSheafificationNatIso_inv_app (ringCatSheaf R) X P
 
 /-- The monoidal structure on sheaves of modules on the slice site. -/
 local instance : MonoidalCategory
@@ -97,38 +113,62 @@ local instance : SymmetricCategory
     (PresheafOfModules.{u} ((ringCatSheaf R).over X).obj) :=
   PresheafOfModules.symmetricCategory (R := (R.over X).obj)
 
-/-- The monoidal structure on restriction of presheaves used in the descent construction. -/
-@[instance_reducible]
-def overPresheafFunctorMonoidal : (overPresheafFunctor R X).Monoidal :=
-  inferInstanceAs
-    ((PresheafOfModules.pushforward₀OfCommRingCat (Over.forget X) R.obj).Monoidal)
+local instance overPresheafFunctorMonoidal : (presheafRestriction).Monoidal := by
+  -- `pushforwardRingIso` is definitionally `Iso.refl`, so this is the canonical strong monoidal
+  -- structure on `pushforward₀OfCommRingCat`, not a separately chosen tensorator.
+  change (PresheafOfModules.pushforward₀OfCommRingCat (Over.forget X) R.obj).Monoidal
+  infer_instance
 
-/-- Restriction of presheaves preserves the sectionwise symmetric braiding. -/
-@[instance_reducible]
-def overPresheafFunctorBraided : (overPresheafFunctor R X).Braided := by
-  letI : (overPresheafFunctor R X).Monoidal := overPresheafFunctorMonoidal R X
-  exact { braided _ _ := by rfl }
+local instance overPresheafFunctorBraided : (presheafRestriction).Braided where
+  -- After the preceding identification, both the canonical pushforward tensorator and the
+  -- braiding are defined sectionwise, so their compatibility is pointwise reflexivity.
+  braided _ _ := by
+    rfl
 
-/-- Sheafification on the slice is a braided monoidal functor. -/
-@[instance_reducible]
-def overTargetSheafificationBraided : (overTargetSheafification R X).Braided :=
+local instance overTargetSheafificationBraided : (targetSheafification).Braided :=
   sheafificationBraided (R.over X)
 
-/-- Restriction of presheaves followed by sheafification is braided monoidal. -/
-@[instance_reducible]
-def overSheafificationBraided : (overSheafification R X).Braided := by
-  letI : (overPresheafFunctor R X).Braided := overPresheafFunctorBraided R X
-  letI : (overTargetSheafification R X).Braided := overTargetSheafificationBraided R X
+local instance overSheafificationBraided : (restrictionSheafification).Braided := by
   exact @Functor.Braided.instComp _ _ _ _ _ _ _ _ _ _ _ _
-    (overPresheafFunctor R X) (overTargetSheafification R X) inferInstance inferInstance
+    presheafRestriction targetSheafification inferInstance inferInstance
+
+private theorem overCurriedTensorPreIsoPost_hom_app_app
+    (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    ((CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost
+      sourceSheafification sourceW
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+      restrictionSheafification).hom.app M).app N =
+        (((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
+              (sheafificationIso (ringCatSheaf R) M).symm.hom ≫
+            (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+              (ringCatSheaf R) M.val).hom) ⊗ₘ
+          ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
+              (sheafificationIso (ringCatSheaf R) N).symm.hom ≫
+            (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+              (ringCatSheaf R) N.val).hom)) ≫
+        Functor.LaxMonoidal.μ restrictionSheafification M.val N.val ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) (M.val ⊗ N.val)).inv ≫
+        (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
+          (Functor.OplaxMonoidal.δ sourceSheafification M.val N.val ≫
+            ((sheafificationIso (ringCatSheaf R) M).symm.inv ⊗ₘ
+              (sheafificationIso (ringCatSheaf R) N).symm.inv)) := by
+  rw [CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost_hom_app_app'
+    sourceSheafification sourceW
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+    restrictionSheafification (sheafificationIso (ringCatSheaf R) M).symm
+    (sheafificationIso (ringCatSheaf R) N).symm]
+  rw [overSheafificationLifting_iso_hom_app R X M.val,
+    overSheafificationLifting_iso_hom_app R X N.val,
+    overSheafificationLifting_iso_inv_app R X (M.val ⊗ N.val)]
+  rfl
 
 /-- Restriction of sheaves of modules to a slice is a strong monoidal functor. -/
 instance overFunctorMonoidal :
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).Monoidal :=
   @CategoryTheory.Localization.Monoidal.functorMonoidalOfComp
-    _ _ _ _ _ _ _ _ _
-    (overSourceSheafification R) (overSourceW R) _ _
-    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) (overSheafification R X)
+    _ _ _ _ _ _ _ _ _ sourceSheafification sourceW _ _
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) restrictionSheafification
     (overSheafificationBraided R X).toMonoidal _ (overSheafificationLifting R X)
 
 /-- Restriction of sheaves of modules to a slice preserves the symmetric braiding. -/
@@ -136,12 +176,12 @@ instance overFunctorBraided :
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).Braided where
   braided M N := by
     let _ : CategoryTheory.Localization.Lifting
-        (overSourceSheafification R) (overSourceW R)
-        (overSheafification R X)
+        sourceSheafification sourceW
+        restrictionSheafification
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) :=
       overSheafificationLifting R X
-    let _ : (overSheafification R X).Braided := overSheafificationBraided R X
-    let _ : (overSheafification R X).Monoidal :=
+    let _ : (restrictionSheafification).Braided := overSheafificationBraided R X
+    let _ : (restrictionSheafification).Monoidal :=
       (overSheafificationBraided R X).toMonoidal
     -- `Functor.Braided` asks for the tensorator on arbitrary sheaves, whereas the localization
     -- comparison lemmas describe it after choosing sheafification presentations. This `change`
@@ -149,78 +189,78 @@ instance overFunctorBraided :
     -- public `curriedTensorPreIsoPost` characterization used below.
     change
       ((CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost
-        (overSourceSheafification R) (overSourceW R)
+        sourceSheafification sourceW
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
-        (overSheafification R X)).hom.app M).app N ≫
+        restrictionSheafification).hom.app M).app N ≫
           (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map (β_ M N).hom =
         (β_ ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj M)
           ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).obj N)).hom ≫
           ((CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost
-            (overSourceSheafification R) (overSourceW R)
+            sourceSheafification sourceW
             (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
-            (overSheafification R X)).hom.app N).app M
+            restrictionSheafification).hom.app N).app M
     rw [CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost_hom_app_app'
-      (overSourceSheafification R) (overSourceW R)
+      sourceSheafification sourceW
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
-      (overSheafification R X) (sheafificationIso (ringCatSheaf R) M).symm
+      restrictionSheafification (sheafificationIso (ringCatSheaf R) M).symm
       (sheafificationIso (ringCatSheaf R) N).symm,
       CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost_hom_app_app'
-      (overSourceSheafification R) (overSourceW R)
+      sourceSheafification sourceW
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
-      (overSheafification R X) (sheafificationIso (ringCatSheaf R) N).symm
+      restrictionSheafification (sheafificationIso (ringCatSheaf R) N).symm
       (sheafificationIso (ringCatSheaf R) M).symm]
     simp only [Category.assoc, ← Functor.map_comp]
     -- Move the source braiding across the inverse tensorator of sheafification.
     have sheafification_braiding :
-        Functor.OplaxMonoidal.δ (overSourceSheafification R) M.val N.val ≫
-            (β_ ((overSourceSheafification R).obj M.val)
-              ((overSourceSheafification R).obj N.val)).hom =
-          (overSourceSheafification R).map (β_ M.val N.val).hom ≫
-            Functor.OplaxMonoidal.δ (overSourceSheafification R) N.val M.val := by
+        Functor.OplaxMonoidal.δ sourceSheafification M.val N.val ≫
+            (β_ ((sourceSheafification).obj M.val)
+              ((sourceSheafification).obj N.val)).hom =
+          (sourceSheafification).map (β_ M.val N.val).hom ≫
+            Functor.OplaxMonoidal.δ sourceSheafification N.val M.val := by
       rw [← cancel_mono (Functor.LaxMonoidal.μ
-        (overSourceSheafification R) N.val M.val)]
+        sourceSheafification N.val M.val)]
       simp
     rw [BraidedCategory.braiding_naturality, reassoc_of% sheafification_braiding,
       Functor.map_comp]
     -- Naturality moves the mapped source braiding through the localization comparison.
     have lifting_naturality :
-        (overSheafification R X).map (β_ M.val N.val).hom ≫
+        (restrictionSheafification).map (β_ M.val N.val).hom ≫
             (CategoryTheory.Localization.Lifting.iso
-              (overSourceSheafification R) (overSourceW R) (overSheafification R X)
+              sourceSheafification sourceW restrictionSheafification
               (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).inv.app
                 (N.val ⊗ M.val) =
           (CategoryTheory.Localization.Lifting.iso
-              (overSourceSheafification R) (overSourceW R) (overSheafification R X)
+              sourceSheafification sourceW restrictionSheafification
               (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).inv.app
                 (M.val ⊗ N.val) ≫
             (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
-              ((overSourceSheafification R).map (β_ M.val N.val).hom) :=
+              ((sourceSheafification).map (β_ M.val N.val).hom) :=
       (CategoryTheory.Localization.Lifting.iso
-        (overSourceSheafification R) (overSourceW R) (overSheafification R X)
+        sourceSheafification sourceW restrictionSheafification
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).inv.naturality
           (β_ M.val N.val).hom
     rw [← reassoc_of% lifting_naturality]
     -- The presheaf restriction--sheafification composite already preserves braidings.
     have presheaf_braiding :
-        Functor.LaxMonoidal.μ (overSheafification R X) M.val N.val ≫
-            (overTargetSheafification R X).map
-              ((overPresheafFunctor R X).map (β_ M.val N.val).hom) =
-          (β_ ((overSheafification R X).obj M.val)
-            ((overSheafification R X).obj N.val)).hom ≫
-            Functor.LaxMonoidal.μ (overSheafification R X) N.val M.val :=
-      Functor.LaxBraided.braided (F := overSheafification R X) M.val N.val
+        Functor.LaxMonoidal.μ restrictionSheafification M.val N.val ≫
+            (targetSheafification).map
+              ((presheafRestriction).map (β_ M.val N.val).hom) =
+          (β_ ((restrictionSheafification).obj M.val)
+            ((restrictionSheafification).obj N.val)).hom ≫
+            Functor.LaxMonoidal.μ restrictionSheafification N.val M.val :=
+      Functor.LaxBraided.braided (F := restrictionSheafification) M.val N.val
     rw [reassoc_of% presheaf_braiding]
     -- Finish by naturality of the target braiding with respect to the comparison maps.
     have comparison_braiding := BraidedCategory.braiding_naturality
       ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
           (sheafificationIso (ringCatSheaf R) M).symm.hom ≫
         (CategoryTheory.Localization.Lifting.iso
-          (overSourceSheafification R) (overSourceW R) (overSheafification R X)
+          sourceSheafification sourceW restrictionSheafification
           (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).hom.app M.val)
       ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
           (sheafificationIso (ringCatSheaf R) N).symm.hom ≫
         (CategoryTheory.Localization.Lifting.iso
-          (overSourceSheafification R) (overSourceW R) (overSheafification R X)
+          sourceSheafification sourceW restrictionSheafification
           (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).hom.app N.val)
     rw [reassoc_of% comparison_braiding]
 
@@ -242,6 +282,7 @@ def _root_.SheafOfModules.overUnitIso (X : C) :
   (Functor.Monoidal.εIso
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).symm
 
+/-- The forward tensor comparison is the oplax monoidal structure map of restriction. -/
 @[simp]
 theorem overTensorIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overTensorIso N X).hom =
@@ -249,6 +290,7 @@ theorem overTensorIso_hom (M N : SheafOfModules.{u} (ringCatSheaf R)) :
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N :=
   (rfl)
 
+/-- The inverse tensor comparison is the lax monoidal structure map of restriction. -/
 @[simp]
 theorem overTensorIso_inv (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (M.overTensorIso N X).inv =
@@ -256,17 +298,76 @@ theorem overTensorIso_inv (M N : SheafOfModules.{u} (ringCatSheaf R)) :
         (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) M N :=
   (rfl)
 
+/-- The inverse tensor comparison, expanded through restriction of presheaves and
+sheafification. -/
+theorem overTensorIso_inv_eq (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (M.overTensorIso N X).inv =
+        (((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
+              (sheafificationIso (ringCatSheaf R) M).symm.hom ≫
+            (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+              (ringCatSheaf R) M.val).hom) ⊗ₘ
+          ((_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
+              (sheafificationIso (ringCatSheaf R) N).symm.hom ≫
+            (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+              (ringCatSheaf R) N.val).hom)) ≫
+        Functor.LaxMonoidal.μ
+          (PresheafOfModules.pushforward (F := Over.forget X)
+              (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X)
+                (ringCatSheaf R)).inv ⋙
+            PresheafOfModules.sheafification
+              (𝟙 ((ringCatSheaf R).over X).obj)) M.val N.val ≫
+        (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+          (ringCatSheaf R) (M.val ⊗ N.val)).inv ≫
+        (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
+          (Functor.OplaxMonoidal.δ
+              (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)) M.val N.val ≫
+            ((sheafificationIso (ringCatSheaf R) M).symm.inv ⊗ₘ
+              (sheafificationIso (ringCatSheaf R) N).symm.inv)) := by
+  rw [overTensorIso_inv]
+  change
+    ((CategoryTheory.Localization.Monoidal.curriedTensorPreIsoPost
+      sourceSheafification sourceW
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+      restrictionSheafification).hom.app M).app N = _
+  exact overCurriedTensorPreIsoPost_hom_app_app R X M N
+
+/-- The forward unit comparison is the oplax monoidal unit map of restriction. -/
 @[simp]
 theorem overUnitIso_hom : (_root_.SheafOfModules.overUnitIso (R := R) X).hom =
     Functor.OplaxMonoidal.η
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) :=
   (rfl)
 
+/-- The inverse unit comparison is the lax monoidal unit map of restriction. -/
 @[simp]
 theorem overUnitIso_inv : (_root_.SheafOfModules.overUnitIso (R := R) X).inv =
     Functor.LaxMonoidal.ε
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) :=
   (rfl)
+
+/-- The inverse unit comparison, expanded through restriction of presheaves and
+sheafification. -/
+theorem overUnitIso_inv_eq : (_root_.SheafOfModules.overUnitIso (R := R) X).inv =
+    Functor.LaxMonoidal.ε
+        (PresheafOfModules.pushforward (F := Over.forget X)
+            (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X)
+              (ringCatSheaf R)).inv ⋙
+          PresheafOfModules.sheafification
+            (𝟙 ((ringCatSheaf R).over X).obj)) ≫
+      (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
+        (ringCatSheaf R) (𝟙_ (PresheafOfModules (ringCatSheaf R).obj))).inv ≫
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).map
+        (Functor.OplaxMonoidal.η
+          (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj))) := by
+  rw [overUnitIso_inv]
+  change Functor.LaxMonoidal.ε
+      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) = _
+  rw [CategoryTheory.Localization.Monoidal.functorMonoidalOfComp_ε
+    sourceSheafification sourceW
+    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
+    restrictionSheafification]
+  rw [overSheafificationLifting_iso_inv_app R X]
+  rfl
 
 end SheafOfModules
 
