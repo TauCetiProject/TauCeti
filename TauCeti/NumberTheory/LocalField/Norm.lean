@@ -53,12 +53,11 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- **Valuation of a Galois norm after scalar extension.** The norm is the product of the Galois
 conjugates, and each conjugate has the same normalized valuation. -/
-@[simp]
 theorem normalizedValuation_algebraMap_norm [IsGalois K L] (x : Lˣ) :
     normalizedValuation L (Units.map (algebraMap K L : K →* L) (Algebra.normUnits K x)) =
       normalizedValuation L x ^ Module.finrank K L := by
   have hnorm : Units.map (algebraMap K L : K →* L) (Algebra.normUnits K x) =
-      ∏ σ : L ≃ₐ[K] L, Units.map σ.toRingEquiv.toRingHom x := by
+      ∏ σ : L ≃ₐ[K] L, Units.map σ x := by
     apply Units.ext
     simp only [Units.coe_map, Algebra.coe_normUnits]
     -- The units product is coerced to `L` before rewriting it as a product in `L`.
@@ -119,7 +118,6 @@ theorem normalizedValuation_norm [IsUnramified K L] (x : Lˣ) :
 
 /-- **Additive valuation of a norm in an unramified extension.** This is
 `v_K(N_{L/K}(x)) = f(L/K) v_L(x)`. -/
-@[simp]
 theorem toAdd_normalizedValuation_norm [IsUnramified K L] (x : Lˣ) :
     (normalizedValuation K (Algebra.normUnits K x)).toAdd =
       inertiaDegree K L * (normalizedValuation L x).toAdd := by

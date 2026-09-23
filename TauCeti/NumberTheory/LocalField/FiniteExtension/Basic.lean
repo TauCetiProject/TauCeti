@@ -368,7 +368,7 @@ theorem _root_.AlgEquiv.valuation_eq [ValuativeRel M] [ValuativeExtension K M] (
 @[simp]
 theorem normalizedValuation_algEquiv [ValuativeRel M] [ValuativeExtension K M]
     [TopologicalSpace M] [IsNonarchimedeanLocalField M] (σ : M ≃ₐ[K] M) (x : Mˣ) :
-    normalizedValuation M (Units.map σ.toRingEquiv.toRingHom x) = normalizedValuation M x := by
+    normalizedValuation M (Units.map σ x) = normalizedValuation M x := by
   apply Multiplicative.toAdd.injective
   simp only [toAdd_normalizedValuation_eq_neg_log, Units.coe_map]
   -- The log expressions are definitionally the normalized values of the two field elements.
