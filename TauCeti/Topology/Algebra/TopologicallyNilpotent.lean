@@ -74,7 +74,7 @@ theorem isTopologicallyNilpotent_neg {a : R} :
 
 section Absorb
 
-variable {A : Type*} [Ring A] [TopologicalSpace A] [ContinuousMul A]
+variable {A : Type*} [Ring A] [TopologicalSpace A] [SeparatelyContinuousMul A]
 
 /-- **A topologically nilpotent element absorbs any element into any open subring.** For `s`
 topologically nilpotent and `B` open, `a * s ^ n` lies in `B` for all large `n`.

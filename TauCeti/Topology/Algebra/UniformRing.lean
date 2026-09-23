@@ -100,11 +100,11 @@ end Congr
 section Ext
 
 variable {R : Type*} [Ring R] [UniformSpace R] [IsTopologicalRing R] [IsUniformAddGroup R]
-  {B : Type*} [Semiring B] [TopologicalSpace B] [T2Space B]
+  {B : Type*} [NonAssocSemiring B] [TopologicalSpace B] [T2Space B]
 
 /-- **Maps out of a completion are determined on the image of the coercion.** Two continuous
-ring homomorphisms `R̂ → B` into a semiring carrying a Hausdorff topology that agree after composing
-with `coeRingHom` are equal.
+ring homomorphisms `R̂ → B` into a non-associative semiring carrying a Hausdorff topology that
+agree after composing with `coeRingHom` are equal.
 
 This is `UniformSpace.Completion.ext` packaged for ring homomorphisms: composing with
 `coeRingHom` is restriction along the coercion, and density of the image does the rest. Nothing

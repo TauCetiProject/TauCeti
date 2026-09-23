@@ -48,7 +48,7 @@ theorem topologicalClosure_coe (S : Subring R) :
 
 end Subring
 
-variable {B : Type*} [CommRing B] [TopologicalSpace B] [ContinuousAdd B]
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [SeparatelyContinuousAdd B]
 
 /-- The integral closure of an open subring `R` of `B` is open: it contains `R` itself, as the
 image of `algebraMap`, and an additive subgroup containing an open one is open. Only continuity
