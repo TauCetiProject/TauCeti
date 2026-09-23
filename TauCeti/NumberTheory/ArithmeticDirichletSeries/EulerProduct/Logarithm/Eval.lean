@@ -62,12 +62,11 @@ variable {K : Type*} [Field K] [NumberField K]
 theorem localPowerSeries_eval_eq_eulerFactor (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
     FormalMultilinearSeries.ofScalarsSum (E := ℂ)
-        (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
+        (fun n ↦ D.toIdealArithmeticFunction (P.primeIdealPow n))
           ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) =
       D.eulerFactor P s := by
   rw [FormalMultilinearSeries.ofScalars_sum_eq, D.eulerFactor_eq_tsum]
   exact tsum_congr fun e ↦ by
-    rw [D.coeff_localPowerSeries]
     exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
       D.toIdealArithmeticFunction P s e).symm
 
@@ -79,7 +78,7 @@ theorem eulerFactor_ne_zero_of_localPowerSeries_ne_zero (D : EulerProductData K)
       (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
         ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ≠ 0) :
     D.eulerFactor P s ≠ 0 := by
-  simpa only [D.localPowerSeries_eval_eq_eulerFactor] using hne
+  simpa only [D.coeff_localPowerSeries, D.localPowerSeries_eval_eq_eulerFactor] using hne
 
 /-- **Evaluation of a local formal logarithmic derivative.** If the coefficient series of
 `X F_P'(X) / F_P(X)` converges at `X = N(P) ^ (-s)` and the local Euler factor does not vanish at
