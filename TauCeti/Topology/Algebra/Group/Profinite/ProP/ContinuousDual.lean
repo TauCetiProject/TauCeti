@@ -41,15 +41,11 @@ theorem _root_.ContinuousMonoidHom.proPFrattini_le_ker {H : Type*} [Group H]
   by_cases hf : ∀ x, f x = 1
   · intro x hx
     exact MonoidHom.mem_ker.mpr (hf x)
-  · push Not at hf
-    have hrange : f.toMonoidHom.range = ⊤ := by
+  · have hrange : f.toMonoidHom.range = ⊤ := by
       rcases (f.toMonoidHom.range).eq_bot_or_eq_top_of_prime_card
           (hp := ⟨hH ▸ Fact.out⟩) with hbot | htop
-      · obtain ⟨x, hx⟩ := hf
-        rw [MonoidHom.range_eq_bot_iff] at hbot
-        have hfx : f x = 1 := by
-          simpa using congrArg (fun k : G →* H => k x) hbot
-        exact (hx hfx).elim
+      · rw [MonoidHom.range_eq_bot_iff] at hbot
+        exact (hf fun x => by simpa using DFunLike.congr_fun hbot x).elim
       · exact htop
     have hopen : IsOpen (f.ker : Set G) := by
       rw [MonoidHom.coe_ker]
@@ -63,22 +59,16 @@ theorem _root_.ContinuousMonoidHom.proPFrattini_le_ker {H : Type*} [Group H]
 homomorphism to a discrete group of cardinality `p`. -/
 def _root_.ContinuousMonoidHom.frattiniQuotientLift {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
-    (G ⧸ proPFrattini p G) →ₜ* H := by
-  have hker := ContinuousMonoidHom.proPFrattini_le_ker hH f
-  let g₀ := QuotientGroup.lift (proPFrattini p G) f.toMonoidHom hker
-  have hcomp : ⇑g₀ ∘ QuotientGroup.mk = f := by
-    funext x
-    exact QuotientGroup.lift_mk' _ _ _
-  exact ⟨g₀, (QuotientGroup.isQuotientMap_mk (proPFrattini p G)).continuous_iff.mpr
-    (hcomp ▸ f.continuous)⟩
+    (G ⧸ proPFrattini p G) →ₜ* H :=
+  ContinuousMonoidHom.quotientLift (proPFrattini p G) f
+    (ContinuousMonoidHom.proPFrattini_le_ker hH f)
 
 /-- Evaluation of the induced homomorphism on a class represented by `x`. -/
 @[simp]
 theorem _root_.ContinuousMonoidHom.frattiniQuotientLift_mk {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) (x : G) :
     ContinuousMonoidHom.frattiniQuotientLift hH f (x : G ⧸ proPFrattini p G) = f x :=
-  QuotientGroup.lift_mk' (N := proPFrattini p G) (φ := f.toMonoidHom)
-    (HN := ContinuousMonoidHom.proPFrattini_le_ker hH f) x
+  ContinuousMonoidHom.quotientLift_mk _ _ _ x
 
 /-- Composition with the quotient projection recovers the original homomorphism. -/
 @[simp]
@@ -86,8 +76,8 @@ theorem _root_.ContinuousMonoidHom.frattiniQuotientLift_comp_quotientMk {H : Typ
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
     (ContinuousMonoidHom.frattiniQuotientLift hH f).comp
       (ContinuousMonoidHom.quotientMk (proPFrattini p G)) = f := by
-  ext x
-  simp
+  exact ContinuousMonoidHom.quotientLift_comp_quotientMk (proPFrattini p G) f
+    (ContinuousMonoidHom.proPFrattini_le_ker hH f)
 
 /-- A continuous homomorphism on the quotient with the same values on representatives as `f`
 equals `frattiniQuotientLift hH f`. -/
@@ -96,9 +86,40 @@ theorem _root_.ContinuousMonoidHom.frattiniQuotientLift_unique {H : Type*} [Grou
     (g : (G ⧸ proPFrattini p G) →ₜ* H)
     (hg : ∀ x : G, g (x : G ⧸ proPFrattini p G) = f x) :
     g = ContinuousMonoidHom.frattiniQuotientLift hH f := by
-  ext q
-  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (proPFrattini p G) q
-  exact hg x
+  change g = ContinuousMonoidHom.quotientLift (proPFrattini p G) f
+    (ContinuousMonoidHom.proPFrattini_le_ker hH f)
+  exact ContinuousMonoidHom.quotientLift_unique (proPFrattini p G) f
+    (ContinuousMonoidHom.proPFrattini_le_ker hH f) g hg
+
+/-- Precomposition with the Frattini quotient projection identifies continuous homomorphisms
+from the quotient with continuous homomorphisms from `G` for a discrete target of cardinality
+`p`. -/
+@[expose] def _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) :
+    ((G ⧸ proPFrattini p G) →ₜ* H) ≃ (G →ₜ* H) where
+  toFun f := f.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G))
+  invFun f := ContinuousMonoidHom.frattiniQuotientLift hH f
+  left_inv f := by
+    apply (ContinuousMonoidHom.frattiniQuotientLift_unique hH
+      (f.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G))) f
+      (by intro x; simp)).symm
+  right_inv f := by simp
+
+/-- Evaluation of precomposition with the Frattini quotient projection. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv_apply {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p)
+    (g : (G ⧸ proPFrattini p G) →ₜ* H) :
+    ContinuousMonoidHom.frattiniQuotientHomEquiv hH g =
+      g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) := rfl
+
+/-- Evaluation of the inverse Frattini quotient homomorphism equivalence. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv_symm_apply {H : Type*} [Group H]
+    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p)
+    (f : G →ₜ* H) :
+    (ContinuousMonoidHom.frattiniQuotientHomEquiv hH).symm f =
+      ContinuousMonoidHom.frattiniQuotientLift hH f := rfl
 
 /-- Continuous homomorphisms to a discrete group of cardinality `p` factor uniquely through the
 pro-`p` Frattini quotient. -/
@@ -106,26 +127,6 @@ theorem _root_.ContinuousMonoidHom.existsUnique_frattiniQuotient_lift {H : Type*
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
     ∃! g : (G ⧸ proPFrattini p G) →ₜ* H,
       g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) = f := by
-  refine ⟨ContinuousMonoidHom.frattiniQuotientLift hH f, by simp, ?_⟩
-  intro g hg
-  apply ContinuousMonoidHom.frattiniQuotientLift_unique hH f
-  intro x
-  have hx := congrArg (fun k : G →ₜ* H => k x) hg
-  simpa using hx
-
-/-- Precomposition with the Frattini quotient projection identifies continuous homomorphisms
-from the quotient with continuous homomorphisms from `G` for a discrete target of cardinality
-`p`. -/
-def _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv {H : Type*} [Group H]
-    [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) :
-    ((G ⧸ proPFrattini p G) →ₜ* H) ≃ (G →ₜ* H) where
-  toFun f := f.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G))
-  invFun f := ContinuousMonoidHom.frattiniQuotientLift hH f
-  left_inv f := by
-    apply ContinuousMonoidHom.ext
-    intro q
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective (proPFrattini p G) q
-    simp
-  right_inv f := by simp
+  exact (ContinuousMonoidHom.frattiniQuotientHomEquiv hH).bijective.existsUnique f
 
 end TauCeti

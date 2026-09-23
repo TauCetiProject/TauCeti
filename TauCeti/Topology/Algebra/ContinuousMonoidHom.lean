@@ -16,7 +16,7 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 `ContinuousMapClass` instance, so neither map is available as a `ContinuousMonoidHom`. This file
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
-identity, and composition laws.
+identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
 -/
 
 public section
@@ -113,6 +113,81 @@ theorem coe_quotientMk (N : Subgroup G) [N.Normal] :
 @[simp]
 theorem quotientMk_apply (N : Subgroup G) [N.Normal] (g : G) : quotientMk N g = (g : G ⧸ N) :=
   (rfl)
+
+/-- The continuous homomorphism induced on a quotient by a continuous homomorphism that kills
+the normal subgroup. -/
+@[expose] def quotientLift {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
+    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) : (G ⧸ N) →ₜ* H where
+  toMonoidHom := QuotientGroup.lift N f.toMonoidHom hf
+  continuous_toFun := (QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr (by
+    convert f.continuous using 1
+    funext x
+    exact QuotientGroup.lift_mk' _ _ _)
+
+/-- Evaluation of the quotient lift on a class represented by `x`. -/
+@[simp]
+theorem quotientLift_mk {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
+    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) (x : G) :
+    quotientLift N f hf (x : G ⧸ N) = f x :=
+  QuotientGroup.lift_mk' (N := N) (φ := f.toMonoidHom) (HN := hf) x
+
+/-- Composition of the quotient lift with the quotient projection recovers the original map. -/
+@[simp]
+theorem quotientLift_comp_quotientMk {H : Type*} [Group H] [TopologicalSpace H]
+    (N : Subgroup G) [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) :
+    (quotientLift N f hf).comp (quotientMk N) = f := by
+  ext x
+  simp
+
+/-- A continuous homomorphism on the quotient is determined by its values on representatives. -/
+theorem quotientLift_unique {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
+    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) (g : (G ⧸ N) →ₜ* H)
+    (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift N f hf := by
+  ext q
+  obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective N q
+  exact hg x
+
+/-- Precomposition with the quotient projection identifies continuous homomorphisms on the
+quotient with continuous homomorphisms whose kernels contain the normal subgroup. -/
+@[expose] def quotientHomEquiv {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
+    [N.Normal] :
+    ((G ⧸ N) →ₜ* H) ≃ {f : G →ₜ* H // N ≤ (f : G →* H).ker} where
+  toFun g := ⟨g.comp (quotientMk N), by
+    intro x hx
+    apply MonoidHom.mem_ker.mpr
+    change g (quotientMk N x) = 1
+    rw [quotientMk_apply, (QuotientGroup.eq_one_iff x).mpr hx]
+    simp⟩
+  invFun f := quotientLift N f.val f.property
+  left_inv g := by
+    apply (quotientLift_unique N (g.comp (quotientMk N))
+      (by
+        intro x hx
+        exact MonoidHom.mem_ker.mpr (by
+          change g (x : G ⧸ N) = 1
+          simpa using congrArg g ((QuotientGroup.eq_one_iff x).mpr hx))) g
+      (by intro x; simp)).symm
+  right_inv f := by
+    apply Subtype.ext
+    exact quotientLift_comp_quotientMk N f.val f.property
+
+/-- Evaluation of the forward quotient homomorphism equivalence. -/
+@[simp]
+theorem quotientHomEquiv_apply {H : Type*} [Group H] [TopologicalSpace H] (N : Subgroup G)
+    [N.Normal] (g : (G ⧸ N) →ₜ* H) :
+    (quotientHomEquiv N g : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) =
+      ⟨g.comp (quotientMk N), by
+      intro x hx
+      apply MonoidHom.mem_ker.mpr
+      change g (quotientMk N x) = 1
+      rw [quotientMk_apply, (QuotientGroup.eq_one_iff x).mpr hx]
+      simp⟩ := rfl
+
+/-- Evaluation of the inverse quotient homomorphism equivalence. -/
+@[simp]
+theorem quotientHomEquiv_symm_apply {H : Type*} [Group H] [TopologicalSpace H]
+    (N : Subgroup G) [N.Normal] (f : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) :
+    (quotientHomEquiv N).symm f = quotientLift N f.val f.property := rfl
 
 end ContinuousMonoidHom
 
