@@ -603,10 +603,10 @@ theorem hasFiniteMoment_iff_memLp_edist {x : X} {ν : Measure X}
     HasFiniteMoment p ν ↔ MemLp (fun y ↦ edist x y) p ν :=
   ⟨fun h ↦ h.memLp hd, fun h ↦ ⟨x, h⟩⟩
 
-/-- The finite-moment condition for a probability measure is equivalent to finiteness of its
+/-- The finite-moment condition for a finite measure is equivalent to finiteness of its
 `p`-moment about any basepoint. -/
 theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) (x : X) (ν : Measure X) [IsProbabilityMeasure ν] :
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (x : X) (ν : Measure X) [IsFiniteMeasure ν] :
     HasFiniteMoment p ν ↔ ∫⁻ y, edist x y ^ p.toReal ∂ν ≠ ∞ := by
   rw [hasFiniteMoment_iff_memLp_edist (x := x) measurable_edist_right.aestronglyMeasurable]
   constructor
