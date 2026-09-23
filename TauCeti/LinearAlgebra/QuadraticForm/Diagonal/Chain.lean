@@ -23,7 +23,8 @@ endpoint diagonal forms. The converse is the substantive Witt chain theorem.
 The bodies of the four relations below are not exposed, so their constructors are unavailable
 outside this file. Downstream modules build steps through `TauCeti.BinaryStep.of_pair` and
 `TauCeti.DiagonalStep.binary`/`permutation`, and chains through
-`TauCeti.DiagonalChain.refl`/`binary`/`permutation`/`tail`/`trans` instead.
+`TauCeti.DiagonalChain.refl`/`binary`/`permutation`/`tail`/`trans` instead. They take steps apart
+through `TauCeti.PermutationStep.exists_perm` and `TauCeti.BinaryStep.exists_pair`.
 
 The declarations in this file assume only a commutative semiring and establish the elementary
 forward implication. The classical converse cited below is a theorem over fields with `2`
@@ -97,6 +98,14 @@ theorem of_pair {w w' : Fin n → Rˣ} (i j : Fin n) (hij : i ≠ j)
     BinaryStep w w' := by
   exact ⟨i, j, hij, hrest, hpair⟩
 
+/-- Eliminate a binary step into the changed pair, equality away from that pair, and an
+equivalence of the corresponding binary forms. This is the converse of `BinaryStep.of_pair`. -/
+theorem exists_pair {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
+    ∃ i j : Fin n, i ≠ j ∧ (∀ k, k ≠ i → k ≠ j → w k = w' k) ∧
+      (weightedSumSquares R ![(w i : R), (w j : R)]).Equivalent
+        (weightedSumSquares R ![(w' i : R), (w' j : R)]) :=
+  h
+
 /-- Swapping two distinct coefficients is a binary step. -/
 theorem swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
     BinaryStep w (w ∘ Equiv.swap i j) := by
@@ -110,6 +119,11 @@ theorem swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
 end BinaryStep
 
 namespace PermutationStep
+
+/-- Eliminate a permutation step into the permutation that reorders the coefficients. -/
+theorem exists_perm {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
+    ∃ σ : Equiv.Perm (Fin n), ∀ i, w' i = w (σ i) :=
+  h
 
 /-- Permutation steps may be reversed. -/
 theorem symm {w w' : Fin n → Rˣ} (h : PermutationStep w w') : PermutationStep w' w := by

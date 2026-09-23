@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Order.Interval.Finset.Defs
 
 /-!
 # Sums over ordered pairs
@@ -20,10 +22,18 @@ This is the shape a sum indexed by unordered pairs takes once the linear order i
 pair by its increasing representative. It is what lets an antisymmetric summand, for which the two
 terms of a transposed pair combine, be summed over pairs rather than over ordered pairs.
 
+For a symmetric summand the increasing representative carries no information beyond the unordered
+pair, so a product `∏_{i<j} f i j` over the increasing pairs is unchanged when the indices are
+permuted, which is `TauCeti.prod_prod_Ioi_comp_perm`. This is the symmetric counterpart of
+Mathlib's `Equiv.Perm.prod_Ioi_comp_eq_sign_mul_prod`, where an antisymmetric summand picks up the
+sign of the permutation.
+
 ## Main results
 
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
+  invariant under permuting the indices.
 -/
 
 public section
@@ -55,5 +65,32 @@ theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l]
       exact hdiag a ▸ congrArg (fun c => F (a, c)) (le_antisymm hnotmem hmem).symm
   rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
     ← hnot, hswap, Finset.sum_add_distrib]
+
+/-- **A product over the increasing pairs of a symmetric function is permutation invariant:**
+for symmetric `f`, `∏_{i<j} f (σ i) (σ j) = ∏_{i<j} f i j` for every permutation `σ`. -/
+@[to_additive /-- **A sum over the increasing pairs of a symmetric function is permutation
+invariant:** for symmetric `f`, `∑_{i<j} f (σ i) (σ j) = ∑_{i<j} f i j` for every permutation
+`σ`. -/]
+theorem prod_prod_Ioi_comp_perm {ι M : Type*} [LinearOrder ι] [Fintype ι]
+    [LocallyFiniteOrderTop ι] [CommMonoid M] (σ : Equiv.Perm ι) {f : ι → ι → M}
+    (hf : ∀ i j, f i j = f j i) :
+    ∏ i, ∏ j ∈ Ioi i, f (σ i) (σ j) = ∏ i, ∏ j ∈ Ioi i, f i j := by
+  rw [prod_sigma', prod_sigma']
+  refine prod_nbij' (fun x ↦ ⟨min (σ x.1) (σ x.2), max (σ x.1) (σ x.2)⟩)
+    (fun y ↦ ⟨min (σ.symm y.1) (σ.symm y.2), max (σ.symm y.1) (σ.symm y.2)⟩) ?_ ?_ ?_ ?_ ?_
+  all_goals
+    rintro ⟨a, b⟩ h
+    simp only [mem_sigma, mem_univ, mem_Ioi, true_and] at h ⊢
+  · rcases lt_or_gt_of_ne (σ.injective.ne h.ne) with hab | hab
+    · simpa [hab.le] using hab
+    · simpa [hab.le] using hab
+  · rcases lt_or_gt_of_ne (σ.symm.injective.ne h.ne) with hab | hab
+    · simpa [hab.le] using hab
+    · simpa [hab.le] using hab
+  · rcases le_total (σ a) (σ b) with hab | hab <;> simp [hab, h.le]
+  · rcases le_total (σ.symm a) (σ.symm b) with hab | hab <;> simp [hab, h.le]
+  · rcases le_total (σ a) (σ b) with hab | hab
+    · simp [hab]
+    · simp [hab, hf]
 
 end TauCeti
