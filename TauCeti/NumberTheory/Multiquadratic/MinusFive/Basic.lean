@@ -49,10 +49,7 @@ theorem exists_minpoly_eq_X_sq_add_five_and_adjoin_eq_top :
   let K := AdjoinRoot (X ^ 2 - C (-5 : ℚ))
   let x : K := AdjoinRoot.root (X ^ 2 - C (-5 : ℚ))
   have hx : x ^ 2 = algebraMap ℤ K (-5 : ℤ) := by
-    have hroot := AdjoinRoot.eval₂_root (X ^ 2 - C (-5 : ℚ))
-    rw [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, ← AdjoinRoot.algebraMap_eq, sub_eq_zero] at hroot
-    rw [hroot, IsScalarTower.algebraMap_apply ℤ ℚ K]
-    norm_num
+    exact adjoinRoot_root_sq (-5)
   refine ⟨integralSqrt hx, minpoly_integralSqrt hx (fun ⟨q, hq⟩ => by
       norm_num at hq
       nlinarith [mul_self_nonneg q]), ?_⟩

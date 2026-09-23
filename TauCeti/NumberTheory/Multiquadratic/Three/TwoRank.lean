@@ -60,28 +60,6 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K}
 private theorem squarefree_three : Squarefree (3 : ℤ) :=
   (Int.prime_iff_natAbs_prime.mpr (by decide)).squarefree
 
-/-- **Two rational primes ramify in `ℚ(√3)`.** Its fundamental discriminant `12` factors as
-`(-4) · (-3)` into two prime discriminants, so `t = 2`; the ramified primes are `2` and `3`. -/
-theorem ncard_ramifiedPrimes_eq_two_of_minpoly_eq_X_sq_sub_three
-    (hmin : minpoly ℤ θ = X ^ 2 - C (3 : ℤ)) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    (ramifiedPrimes K).ncard = 2 := by
-  have hs : ∀ P ∈ ({-4, -3} : Finset ℤ), IsPrimeDiscriminant P := by
-    intro P hP
-    fin_cases hP
-    · exact isPrimeDiscriminant_neg_four
-    · simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)]
-        using isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
-  have heven : ∀ P ∈ ({-4, -3} : Finset ℤ), ∀ Q ∈ ({-4, -3} : Finset ℤ),
-      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q := by
-    intro P hP Q hQ
-    fin_cases hP <;> fin_cases hQ <;> simp only [IsEvenPrimeDiscriminant] <;> decide
-  have hprod : ∏ P ∈ ({-4, -3} : Finset ℤ), P = fundamentalDiscriminant (3 : ℤ) := by
-    rw [Finset.prod_insert (by decide : (-4 : ℤ) ∉ ({-3} : Finset ℤ)), Finset.prod_singleton,
-      fundamentalDiscriminant_of_mod_four_ne_one (by decide : (3 : ℤ) % 4 ≠ 1)]
-    norm_num
-  rw [ncard_ramifiedPrimes_eq_card hmin hgen squarefree_three hs heven hprod,
-    Finset.card_pair (show (-4 : ℤ) ≠ -3 by decide)]
-
 /-- **The `2`-rank of the narrow class group of `ℚ(√3)` is `1`.** The genus-theoretic formula
 `2-rank Cl⁺(K) = t - 1` at `t = 2`. -/
 theorem narrowTwoRank_eq_one_of_minpoly_eq_X_sq_sub_three

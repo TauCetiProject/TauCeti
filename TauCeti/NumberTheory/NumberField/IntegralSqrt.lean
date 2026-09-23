@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.FieldTheory.KummerPolynomial
 
 /-!
@@ -40,6 +41,8 @@ integral generator that separates conjugates at primes above `2`.
   `NumberField.algebraMap_integralSqrt` and `NumberField.integralSqrt_sq`.
 * `NumberField.minpoly_integralSqrt`: its minimal polynomial over `ℤ` is `X² - d`,
   provided `d` is not a rational square.
+* `TauCeti.NumberField.adjoinRoot_root_sq`: the root of the canonical `AdjoinRoot (X² - d)`
+  model squares to the image of the integer `d`.
 -/
 
 public section
@@ -96,6 +99,22 @@ theorem minpoly_integralSqrt [NumberField K] (hx : x ^ 2 = algebraMap ℤ K d)
   norm_num
 
 end NumberField
+
+namespace TauCeti.NumberField
+
+/-- The root of `X² - d` in its `AdjoinRoot` model squares to the image of the integer `d`.
+This is the common root equation used to construct the integral generators of concrete quadratic
+models. -/
+theorem adjoinRoot_root_sq (d : ℤ) :
+    (AdjoinRoot.root (X ^ 2 - C (d : ℚ))) ^ 2 =
+      algebraMap ℤ (AdjoinRoot (X ^ 2 - C (d : ℚ))) d := by
+  have hroot := AdjoinRoot.eval₂_root (X ^ 2 - C (d : ℚ))
+  rw [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, ← AdjoinRoot.algebraMap_eq,
+    sub_eq_zero] at hroot
+  rw [hroot, IsScalarTower.algebraMap_apply ℤ ℚ]
+  norm_num
+
+end TauCeti.NumberField
 
 namespace TauCeti
 

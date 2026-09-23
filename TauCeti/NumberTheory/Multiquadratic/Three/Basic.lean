@@ -59,10 +59,7 @@ theorem exists_minpoly_eq_X_sq_sub_three_and_adjoin_eq_top :
   let K := AdjoinRoot (X ^ 2 - C (3 : ℚ))
   let x : K := AdjoinRoot.root (X ^ 2 - C (3 : ℚ))
   have hx : x ^ 2 = algebraMap ℤ K (3 : ℤ) := by
-    have hroot := AdjoinRoot.eval₂_root (X ^ 2 - C (3 : ℚ))
-    rw [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, ← AdjoinRoot.algebraMap_eq, sub_eq_zero] at hroot
-    rw [hroot, IsScalarTower.algebraMap_apply ℤ ℚ K]
-    norm_num
+    exact adjoinRoot_root_sq 3
   refine ⟨integralSqrt hx, minpoly_integralSqrt hx not_isSquare_three_rat, ?_⟩
   have hθx : ((integralSqrt hx : 𝓞 K) : K) = x := algebraMap_integralSqrt hx
   rw [hθx]
