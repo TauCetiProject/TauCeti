@@ -52,6 +52,7 @@ variable [FiniteDimensional K L] [IsGalois K L]
 
 /-- The stabilizer of an intermediate field under ambient automorphisms is the normalizer of
 its fixing subgroup. -/
+@[simp]
 theorem stabilizer_intermediateField_eq_normalizer (E : IntermediateField K L) :
     stabilizer (L ≃ₐ[K] L) E =
       Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L)) := by
@@ -130,6 +131,7 @@ theorem quotientNormalizerEquivConjugateFields_mk (E : IntermediateField K L)
     MulAction.orbitEquivQuotientStabilizer_symm_apply]
 
 /-- The normalizer-coset parametrization respects the ambient Galois action. -/
+@[simp]
 theorem quotientNormalizerEquivConjugateFields_smul (E : IntermediateField K L)
     (σ : L ≃ₐ[K] L)
     (q : (L ≃ₐ[K] L) ⧸ Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L))) :
@@ -140,6 +142,7 @@ theorem quotientNormalizerEquivConjugateFields_smul (E : IntermediateField K L)
 
 /-- The number of distinct conjugates of an intermediate field is the index of the normalizer
 of its fixing subgroup. -/
+@[simp]
 theorem ncard_conjugateFields (E : IntermediateField K L) :
     (conjugateFields E).ncard =
       (Subgroup.normalizer (E.fixingSubgroup : Set (L ≃ₐ[K] L))).index := by

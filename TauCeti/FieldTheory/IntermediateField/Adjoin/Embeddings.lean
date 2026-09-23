@@ -47,4 +47,14 @@ theorem rootSetEquivAlgHomAdjoin_apply_gen (α : E) (hα : IsIntegral F α)
     rootSetEquivAlgHomAdjoin F K α hα y (AdjoinSimple.gen F α) = y := by
   exact algHomAdjoinIntegralEquiv_symm_apply_gen F hα _
 
+/-- The inverse equivalence assigns to an embedding the image of the adjoined generator. -/
+@[simp]
+theorem rootSetEquivAlgHomAdjoin_symm_apply (α : E) (hα : IsIntegral F α)
+    (φ : F⟮α⟯ →ₐ[F] K) :
+    ((rootSetEquivAlgHomAdjoin F K α hα).symm φ : K) =
+      φ (AdjoinSimple.gen F α) := by
+  let y := (rootSetEquivAlgHomAdjoin F K α hα).symm φ
+  simpa only [y, Equiv.apply_symm_apply] using
+    (rootSetEquivAlgHomAdjoin_apply_gen F K α hα y).symm
+
 end TauCeti

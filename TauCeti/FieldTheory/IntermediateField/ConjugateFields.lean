@@ -67,6 +67,11 @@ namespace IntermediateField
 def conjugateFields (E : IntermediateField K L) : Set (IntermediateField K L) :=
   orbit (L ≃ₐ[K] L) E
 
+/-- Conjugate fields are the orbit under automorphisms of the ambient extension. -/
+theorem conjugateFields_def (E : IntermediateField K L) :
+    conjugateFields E = orbit (L ≃ₐ[K] L) E :=
+  by simp only [conjugateFields]
+
 /-- Membership in `conjugateFields E` means being the image of `E` under an automorphism. -/
 @[simp]
 theorem mem_conjugateFields_iff {E E' : IntermediateField K L} :
