@@ -12,10 +12,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
-# Trivial finite-field coefficients for profinite cohomology
+# Trivial `ZMod p` coefficients for continuous cohomology
 
-This file provides the canonical coefficient object for cohomology of pro-`p` groups: the
-trivial representation `trivialFp p G` of a group `G` on `ZMod p`.  When `p` is prime this is
+This file provides the trivial representation `trivialFp p G` of a group `G` on `ZMod p`.
+When `p` is prime this gives the coefficient object for cohomology of pro-`p` groups over
 the field `𝔽_p`. Mathlib's continuous-cohomology resolution requires coefficients in the universe
 of `G`, so its carrier is the corresponding universe lift of `ZMod p`. The abbreviation
 `cohomFp p G n` is continuous cohomology with these coefficients.
@@ -27,8 +27,8 @@ without repeatedly transporting across the definitional equality of trivial repr
 
 ## Main definitions
 
-* `TauCeti.trivialFp`: trivial `𝔽_p` coefficients in the universe of the group.
-* `TauCeti.cohomFp`: continuous cohomology with trivial `𝔽_p` coefficients.
+* `TauCeti.trivialFp`: trivial `ZMod p` coefficients in the universe of the group.
+* `TauCeti.cohomFp`: continuous cohomology with trivial `ZMod p` coefficients.
 * `TauCeti.cohomFpResMap`: restriction on `cohomFp`.
 
 ## Main results
@@ -41,6 +41,8 @@ without repeatedly transporting across the definitional equality of trivial repr
 ## References
 
 * J.-P. Serre, *Galois Cohomology*, I §4.
+* `TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2`, whose coefficient API
+  provides the formal template for this module.
 -/
 
 public section
@@ -67,18 +69,23 @@ theorem trivialFp_V : (trivialFp p G).V = ULift.{u} (ZMod p) := (rfl)
 
 /-- The additive equivalence from the lifted carrier of `trivialFp p G` to `ZMod p`. -/
 noncomputable def trivialFpEquiv : (trivialFp p G).V ≃+ ZMod p :=
+  -- The carrier is definitionally `ULift.{u} (ZMod p)`; elaborate `AddEquiv.ulift` against
+  -- that unfolded carrier because `trivialFp_V` is an equality of types.
   AddEquiv.ulift
 
 /-- `trivialFpEquiv` sends a lifted element to its underlying value. -/
 @[simp]
 theorem trivialFpEquiv_apply (x : ULift.{u} (ZMod p)) :
     trivialFpEquiv p G (cast (trivialFp_V p G).symm x) = x.down :=
+  -- `(rfl)` unfolds the hidden equivalence and reduces the cast; this is its public
+  -- application rule.
   (rfl)
 
 /-- The inverse of `trivialFpEquiv` lifts a value. -/
 @[simp]
 theorem trivialFpEquiv_symm_apply (x : ZMod p) :
     (trivialFpEquiv p G).symm x = cast (trivialFp_V p G).symm (ULift.up x) :=
+  -- The inverse likewise reduces definitionally after unfolding the equivalence and cast.
   (rfl)
 
 /-- The lifted carrier of `trivialFp p G` has the discrete topology. -/
@@ -89,6 +96,7 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-- Applying the discrete coefficient dictionary to the carrier of `trivialFp` recovers the
 coefficient object itself. -/
+@[simp]
 theorem ofDiscreteModule_trivialFp :
     ofDiscreteModule (ZMod p) G (trivialFp p G).V = trivialFp p G :=
   ofDiscreteModule_eq_self (trivialFp p G)
