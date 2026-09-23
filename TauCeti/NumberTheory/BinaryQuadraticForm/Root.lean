@@ -79,17 +79,11 @@ theorem im_root (f : posDef D) : (root f).im = √(D : ℝ) / (2 * f.1.a) :=
 theorem coe_root (f : posDef D) : (root f : ℂ) = (-(f.1.b : ℂ) + √(D : ℝ) * I) / (2 * f.1.a) := by
   simp [← (root f).re_add_im, add_div, mul_div_right_comm]
 
-/-- Over `ℂ` the discriminant `-D` of a form in `posDef D` is the square of `i √D`. -/
+-- Over `ℂ` the discriminant `-D` of a form in `posDef D` is the square of `i √D`.
 private theorem discrim_eq_mul_self (f : posDef D) :
     discrim (f.1.a : ℂ) f.1.b f.1.c = (√(D : ℝ) * I) * (√(D : ℝ) * I) := by
-  have h := f.2.1
-  rw [discrim_def] at h
-  rw [discrim]
-  have hs : ((√(D : ℝ) : ℝ) : ℂ) ^ 2 = D := by
-    rw [← ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
-    simp
-  have h' : ((f.1.b : ℂ) ^ 2 - 4 * f.1.a * f.1.c) = -D := by exact_mod_cast h
-  linear_combination h' - ((√(D : ℝ) : ℝ) : ℂ) ^ 2 * I_sq + hs
+  rw [mul_mul_mul_comm, ← ofReal_mul, Real.mul_self_sqrt D.cast_nonneg]
+  simpa [discrim, discrim_def] using congrArg (Int.cast : ℤ → ℂ) f.2.1
 
 /-- `root f` is the only point of the upper half-plane at which `a z² + b z + c` vanishes: the
 other root `(-b - i √D) / (2 a)` lies in the lower half-plane. -/
