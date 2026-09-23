@@ -97,7 +97,7 @@ theorem sum_neg_one_pow_card_smul_apply_sum_compl
       refine Iff.trans ?_ (Finite.surjective_iff_bijective (f := g))
       simp [Finset.eq_univ_iff_forall, Finset.mem_image, Function.Surjective]
     rw [← Finset.sum_filter, TauCeti.filter_subset_compl, ← Finset.sum_smul,
-      TauCeti.sum_powerset_neg_one_pow_card]
+      Finset.sum_powerset_neg_one_pow_card_of_ring]
     exact congrArg (fun r : R => r • f fun i => m (g i)) (if_congr hiff rfl rfl)
   have unweight : ∀ g : ι → ι, (if Function.Bijective g then (1 : R) else 0) •
       f (fun i => m (g i)) = if Function.Bijective g then f (fun i => m (g i)) else 0 := by
