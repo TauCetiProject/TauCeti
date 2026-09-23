@@ -24,8 +24,6 @@ short-root submodule.
 * R. W. Carter, *Simple Groups of Lie Type*, §12.3.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
 
-The rational divided-adjoint-square lemmas below were adapted from the checked
-[A0 integration reference](https://github.com/TauCetiProject/TauCeti/blob/850f60f8b/TauCeti/Algebra/Lie/F4/ShortRoot/Modular/DividedAction.lean).
 -/
 
 public section
@@ -381,6 +379,7 @@ theorem exists_f4_dividedAd_sq_rootVector_eq_smul_of_long_add_two_short (α β �
 @[expose] def f4OppositeRootIndex (α : Fin 48) : Fin 48 :=
   f4SimplyConnectedRootDatum.reflectionPerm α α
 
+/-- The pinned opposite-root index has the negative rational Killing-root label. -/
 theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
     f4KillingRootLabel (f4OppositeRootIndex α) = -f4KillingRootLabel α := by
   have hsource : (F4.rationalRootSystem valid_F4).reflectionPerm
@@ -396,6 +395,7 @@ theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
       indexEquiv_reflectionPerm (F4.rationalRootSystemEquiv valid_F4).toHom _ _
     _ = _ := rootSystem_reflectionPerm_self_eq_neg _
 
+/-- Distinct pinned indices define distinct rational Killing roots. -/
 theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := by
   intro α β h
   have hlabel : f4KillingRootLabel α = f4KillingRootLabel β := by
@@ -405,6 +405,7 @@ theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := by
   apply Fin.ext
   exact congrArg Fin.val hi
 
+/-- The Killing root at the opposite pinned index is the negative root. -/
 @[simp] theorem f4KillingRoot_f4OppositeRootIndex (α : Fin 48) :
     f4KillingRoot (f4OppositeRootIndex α) = -f4KillingRoot α := by
   exact congrArg
@@ -412,6 +413,7 @@ theorem f4KillingRoot_injective : Function.Injective f4KillingRoot := by
       (r : Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4)))
     (f4KillingRootLabel_f4OppositeRootIndex α)
 
+/-- Taking the opposite pinned root index twice restores the index. -/
 @[simp] theorem f4OppositeRootIndex_f4OppositeRootIndex (α : Fin 48) :
     f4OppositeRootIndex (f4OppositeRootIndex α) = α := by
   exact f4SimplyConnectedRootDatum.indexNeg.neg_neg α

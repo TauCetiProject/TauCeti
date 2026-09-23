@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Lie.BaseChange
 # Extension of scalars for Lie-module maps
 
 A Lie-module map remains equivariant after extending both the Lie algebra and its modules.
+This transports an equivariant map together with the action, for example from an integral
+Chevalley lattice to its modular short-root representation.
 -/
 
 public section
