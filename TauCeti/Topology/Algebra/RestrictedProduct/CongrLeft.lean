@@ -96,7 +96,6 @@ theorem restrictedProductReindex_apply (e : ι' ≃ ι)
   simp [restrictedProductReindex]
 
 /-- Evaluation of the inverse of `restrictedProductReindex` at an original index. -/
-@[simp]
 theorem restrictedProductReindex_symm_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     (restrictedProductReindex e).symm x (e i) = x i := by
