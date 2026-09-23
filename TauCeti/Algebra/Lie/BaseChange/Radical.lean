@@ -48,14 +48,12 @@ above; it runs through Cartan's criterion, which converts triviality of the radi
 nondegeneracy of the Killing form, a property `TauCeti.isKilling_baseChange_iff` does transport in
 both directions.
 
-The general case reduces to it.  Extension of scalars commutes with quotients
-(`LieIdeal.quotientBaseChangeEquiv`), so `(A ⊗[K] L) ⧸ (radical K L).baseChange A` is
-`A ⊗[K] (L ⧸ radical K L)`, which has trivial radical by the equivalence just quoted; and the
-radical is the unique solvable ideal whose quotient has trivial radical
-(`LieAlgebra.hasTrivialRadical_quotient_iff`).  That gives
-`LieAlgebra.radical_baseChange`: **in characteristic zero the radical commutes with a field
-extension.**  The corresponding statement for the nilradical is *not* proved here; the quotient
-argument is unavailable for it, since `L ⧸ nilradical K L` need not have trivial nilradical.
+For a finite-dimensional Lie algebra over a field of characteristic zero the containment is an
+equality: `LieAlgebra.radical_baseChange` says the radical commutes with a field extension, and
+`LieAlgebra.one_tmul_mem_radical_baseChange_iff` reads that as a criterion, so membership in the
+radical may be tested after extending scalars.  The corresponding statement for the nilradical is
+*not* proved here and does not follow, since `L ⧸ nilradical K L` need not have trivial
+nilradical.
 
 ## Main results
 
@@ -196,8 +194,7 @@ of scalars is the extension of the radical.
 The substance is the inclusion `≤`: extending scalars adds no new elements to the radical, so the
 extension of the radical is still the largest solvable ideal.  This says nothing about individual
 solvable ideals of `A ⊗[K] L`, which need not themselves be extended from `L`.  Characteristic
-zero is a genuine hypothesis, inherited from `LieAlgebra.hasTrivialRadical_baseChange_iff`; the
-reduction to that special case is described in the module docstring. -/
+zero is a genuine hypothesis, inherited from `LieAlgebra.hasTrivialRadical_baseChange_iff`. -/
 @[simp]
 theorem radical_baseChange :
     radical A (A ⊗[K] L) = (radical K L).baseChange A := by

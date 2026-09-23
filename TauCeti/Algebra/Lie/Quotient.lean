@@ -30,6 +30,7 @@ receiver notation on the ideal.
   algebra.
 * `LieIdeal.liftQ_mkQ`: the lifted homomorphism restricts to the original one along the quotient
   map.
+* `LieIdeal.coe_liftQ`: the lifted homomorphism is `Submodule.liftQ` of the underlying linear map.
 * `LieIdeal.liftQ_injective` and `LieIdeal.liftQ_surjective`: the lifted homomorphism is injective
   when the ideal exhausts the kernel, and surjective when the original homomorphism is.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
@@ -81,18 +82,29 @@ def liftQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) : L ⧸ I →ₗ⁅R⁆ L' 
 theorem liftQ_apply (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (x : L) :
     I.liftQ f h (LieSubmodule.Quotient.mk x) = f x := (rfl)
 
+/-- The linear map underlying the induced homomorphism on the quotient is `Submodule.liftQ` of
+the linear map underlying `f`. -/
+theorem coe_liftQ (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) :
+    ((I.liftQ f h : L ⧸ I →ₗ⁅R⁆ L') : L ⧸ I →ₗ[R] L') =
+      (LieSubmodule.toSubmodule I).liftQ (f : L →ₗ[R] L')
+        (((LieSubmodule.toSubmodule_le_toSubmodule I f.ker).mpr h).trans
+          (LieHom.ker_toSubmodule f).le) :=
+  (rfl)
+
 /-- The homomorphism induced on the quotient is injective as soon as the ideal quotiented by
 exhausts the kernel. -/
 theorem liftQ_injective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : f.ker ≤ I) :
-    Function.Injective (I.liftQ f h) :=
-  LinearMap.ker_eq_bot.mp <| Submodule.ker_liftQ_eq_bot _ (f : L →ₗ[R] L') h <| by
+    Function.Injective (I.liftQ f h) := by
+  rw [← LieHom.coe_toLinearMap, ← LinearMap.ker_eq_bot, coe_liftQ]
+  exact Submodule.ker_liftQ_eq_bot _ (f : L →ₗ[R] L') _ <| by
     rw [← LieHom.ker_toSubmodule, LieSubmodule.toSubmodule_le_toSubmodule]; exact h'
 
 /-- The homomorphism induced on the quotient by a surjective homomorphism is surjective. -/
 theorem liftQ_surjective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : Function.Surjective f) :
-    Function.Surjective (I.liftQ f h) :=
-  LinearMap.range_eq_top.mp <|
-    (Submodule.range_liftQ _ (f : L →ₗ[R] L') h).trans (LinearMap.range_eq_top.mpr h')
+    Function.Surjective (I.liftQ f h) := by
+  rw [← LieHom.coe_toLinearMap, ← LinearMap.range_eq_top, coe_liftQ, Submodule.range_liftQ,
+    LinearMap.range_eq_top, LieHom.coe_toLinearMap]
+  exact h'
 
 /-- The induced homomorphism on the quotient composed with the quotient map is the original
 homomorphism. -/

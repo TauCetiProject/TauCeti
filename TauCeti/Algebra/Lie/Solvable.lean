@@ -160,8 +160,8 @@ theorem isSolvable_iff_ideal_quotient (I : LieIdeal R L) :
 
 /-- **Triviality of the radical transfers along an isomorphism of Lie algebras.**
 
-Nothing is assumed of the coefficients: the statement is about solvable ideals one at a time, so
-it does not go through the radical itself and needs no Noetherian hypothesis. -/
+Nothing is assumed of the coefficient ring or of either Lie algebra; in particular neither of
+them has to be Noetherian. -/
 theorem hasTrivialRadical_of_equiv [HasTrivialRadical R L] (e : L ≃ₗ⁅R⁆ L') :
     HasTrivialRadical R L' :=
   hasTrivialRadical_of_no_solvable_ideals fun I hI => by

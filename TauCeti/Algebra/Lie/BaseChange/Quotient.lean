@@ -11,16 +11,17 @@ public import TauCeti.Algebra.Lie.Quotient
 /-!
 # Extension of scalars commutes with quotients of Lie algebras
 
-`LieHom.baseChange` extends the scalars of a homomorphism of Lie algebras.  Applied to the
-quotient map of an ideal `I` it presents `A ⊗[R] (L ⧸ I)` as the quotient of `A ⊗[R] L` by the
-extension of `I`, the isomorphism
+For a Lie ideal `I` of `L` and an `R`-algebra `A`, extending the scalars of the quotient `L ⧸ I`
+gives the same Lie algebra over `A` as quotienting the extension `A ⊗[R] L` by the extension of
+`I`:
 
 `(A ⊗[R] L) ⧸ I.baseChange A ≃ₗ⁅A⁆ A ⊗[R] (L ⧸ I)`.
 
-Both halves of the bijectivity are right-exactness of the tensor product, so nothing is asked of
-the coefficient algebra: the kernel is computed by `LieHom.ker_baseChange_of_surjective` and the
-surjectivity by `LieHom.baseChange_surjective`.  Flatness enters only for the kernel of a
-homomorphism that is *not* surjective, which is `LieHom.ker_baseChange`.
+Nothing is asked of the coefficient algebra; in particular `A` need not be flat over `R`.  The
+isomorphism is the obvious one on pure tensors, and it and its inverse are both characterized
+there, so the bundled equivalence is not opaque.  Its use is to move a question about an ideal of
+`A ⊗[R] L` containing an extended ideal to the extension of the corresponding quotient of `L`, as
+the base change of the solvable radical does.
 
 ## Main definitions
 
@@ -53,13 +54,14 @@ variable (A : Type v) [CommRing A] [Algebra R A] (I : LieIdeal R L)
 theorem ker_baseChange_mkQ : (LieHom.baseChange A I.mkQ).ker = I.baseChange A := by
   rw [LieHom.ker_baseChange_of_surjective A I.mkQ I.mkQ_surjective, ker_mkQ]
 
-/-- **Extension of scalars commutes with quotients of Lie algebras.**  The extended quotient map
-presents `A ⊗[R] (L ⧸ I)` as the quotient of `A ⊗[R] L` by the extension of `I`.
+/-- **Extension of scalars commutes with quotients of Lie algebras.**  The extension of `L ⧸ I`
+is the quotient of the extension of `L` by the extension of `I`, for an arbitrary coefficient
+algebra `A`.
 
-The isomorphism is the obvious one, sending the class of `a ⊗ₜ x` to `a ⊗ₜ` the class of `x`;
-that is `LieIdeal.quotientBaseChangeEquiv_mk_tmul`.  The characterizing lemmas below are phrased
-with `LieSubmodule.Quotient.mk` rather than `LieIdeal.mkQ`, which is the form the quotient's
-induction principle produces. -/
+The isomorphism sends the class of `a ⊗ₜ x` to `a ⊗ₜ` the class of `x`, which is
+`LieIdeal.quotientBaseChangeEquiv_mk_tmul`; `LieIdeal.quotientBaseChangeEquiv_symm_tmul`
+describes its inverse.  Both are phrased with `LieSubmodule.Quotient.mk` rather than
+`LieIdeal.mkQ`, the form in which the quotient's induction principle presents a class. -/
 noncomputable def quotientBaseChangeEquiv :
     ((A ⊗[R] L) ⧸ I.baseChange A) ≃ₗ⁅A⁆ A ⊗[R] (L ⧸ I) :=
   LieEquiv.ofBijective (liftQ (I.baseChange A) (LieHom.baseChange A I.mkQ)
