@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Submodule.Map
-public import TauCeti.Order.SupIndep
 public import TauCeti.RingTheory.KrullSchmidt.Existence
 public import TauCeti.RingTheory.KrullSchmidt.Uniqueness
 
@@ -264,7 +263,11 @@ private theorem indecomposableDecomposition_eq_singleton_top :
     simpa only [Finset.sup_eq_iSup, iSup_subtype, id_eq] using hi.2
   have hPtop : ∀ P ∈ s, P = ⊤ := by
     intro P hP
-    have hcompl : IsCompl P ((s.erase P).sup id) := hind.isCompl_sup_erase hsup hP
+    have hcompl : IsCompl P ((s.erase P).sup id) := by
+      refine ⟨(Finset.supIndep_iff_disjoint_erase.mp hind P hP), ?_⟩
+      rw [codisjoint_iff, ← hsup]
+      conv_rhs => rw [← Finset.insert_erase hP, Finset.sup_insert]
+      rfl
     rcases (isIndecomposableModule_iff_nontrivial_and_forall_isCompl.mp hM).2 _ _ hcompl with
       hPbot | hrest
     · exact (Submodule.nontrivial_iff_ne_bot.mp (hs P hP).nontrivial hPbot).elim
