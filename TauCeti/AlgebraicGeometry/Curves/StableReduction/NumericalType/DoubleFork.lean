@@ -304,12 +304,13 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     (ht : 3 < t) (hcard : t + 2 < Fintype.card T.Component) : False := by
   have hchainCard : t < Fintype.card T.Component := by omega
   have hrightCard : t + 1 < Fintype.card T.Component := by omega
+  have hreversePenultimate : t - 1 - (t - 2) = 1 := by omega
   have hleftRight : left ≠ right := by
     intro h
     have hrightZero : T.intersection (c 1) right = 0 :=
       hr.branch_intersection_eq_zero (by omega) (by omega)
     have hleftPos : 0 < T.intersection (c 1) left := by
-      simpa only [show t - 1 - (t - 2) = 1 by omega] using hl.branch_intersection_pos
+      simpa only [hreversePenultimate] using hl.branch_intersection_pos
     rw [h] at hleftPos
     omega
   have hleft_ne_chain : ∀ i < t, left ≠ c i := by
@@ -325,7 +326,6 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
       simpa only [hreverseLast] using hw' 0 (by omega)
     exact hw'last.symm.trans (hw (t - 1) (by omega))
   have hwleft : (T.weight left : ℤ) = w := hwleft'.trans hww
-  have hreversePenultimate : t - 1 - (t - 2) = 1 := by omega
   have hleftEdge : T.intersection (c 1) left = w := by
     simpa only [hreversePenultimate, hww] using hleftEdge'
   have hleftZero : ∀ {i}, i < t → i ≠ 1 → T.intersection (c i) left = 0 := by
