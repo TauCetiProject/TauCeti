@@ -104,10 +104,11 @@ theorem CoboundAnnulus.disjoint_range {f g : X → E} (h : CoboundAnnulus f g) :
   refine disjoint_left.2 ?_
   rintro z ⟨p, hp, rfl⟩ ⟨q, hq, hqz⟩
   have hpq : p = q := hH.injective hqz.symm
-  have htime : p.2 = q.2 := congrArg Prod.snd hpq
-  have hp0 : p.2 = 0 := by simpa using hp.2
-  have hq1 : q.2 = 1 := by simpa using hq.2
-  linarith [htime, hp0, hq1]
+  have hpq' : p.2 = q.2 := congrArg Prod.snd hpq
+  have hp0 : p.2 = (0 : I) := by simpa using hp.2
+  have hq1 : q.2 = (1 : I) := by simpa using hq.2
+  have h01 : (0 : I) = 1 := hp0.symm.trans (hpq'.trans hq1)
+  exact zero_ne_one h01
 
 end CoboundAnnulus
 
