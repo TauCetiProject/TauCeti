@@ -12,8 +12,9 @@ import Mathlib.Tactic.ComputeDegree
 /-!
 # Examples of quintic Galois-group certificate evidence
 
-This module records concrete evidence used by the worked acceptance certificates from the
-polynomial Galois-groups roadmap.
+This module records an explicit modular second-root witness for
+`X⁵ + X⁴ - 4X³ - 3X² + 3X + 1`. This witness supplies the extra datum that distinguishes its
+cyclic Galois group from the dihedral possibility.
 
 ## Main results
 
