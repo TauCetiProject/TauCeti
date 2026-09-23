@@ -45,6 +45,15 @@ private theorem isOpenEmbedding_depth :
   exact (isOpen_normalIio 1).isOpenEmbedding_subtypeVal.comp
     (homeomorphNormalIio 1).symm.isOpenEmbedding
 
+private theorem depth_eq_normalRay (t : Ico (0 : ℝ) 1) :
+    depth t = normalRay t.1 := by
+  rw [← normalRay_normalCoord (depth t)]
+  congr 1
+  change (((homeomorphNormalIio 1).symm t).1.1 0) = (t : ℝ)
+  have h := congrArg (fun q : Ico (0 : ℝ) 1 => (q : ℝ))
+    ((homeomorphNormalIio 1).apply_symm_apply t)
+  simpa only [coe_homeomorphNormalIio] using h
+
 /-- The standard collar map of the boundary of `EuclideanHalfSpace (n + 1)`. -/
 noncomputable def boundaryCollar (n : ℕ) :
     EuclideanSpace ℝ (Fin n) × Ico (0 : ℝ) 1 → EuclideanHalfSpace (n + 1) :=
@@ -59,18 +68,9 @@ theorem isCollar_boundaryParam (n : ℕ) :
   · exact (collarDiffeomorph (k := ⊤) n).toHomeomorph.isOpenEmbedding.comp
       (IsOpenEmbedding.id.prodMap isOpenEmbedding_depth)
   · intro x
-    change collarDiffeomorph (k := ⊤) n (x, depth 0) = _
-    rw [show depth 0 = (0 : EuclideanHalfSpace 1) by
-      change ((homeomorphNormalIio 1).symm (⟨0, by norm_num⟩ : Ico (0 : ℝ) 1) :
-        EuclideanHalfSpace 1) = 0
-      apply Subtype.ext
-      let z : ↥(normalIio 1) := ⟨0, by rw [mem_normalIio]; norm_num⟩
-      have hz : homeomorphNormalIio 1 z = (⟨0, by norm_num⟩ : Ico (0 : ℝ) 1) := by
-        apply Subtype.ext
-        simp [z, coe_homeomorphNormalIio]
-      rw [← hz]
-      exact congrArg (fun t : ↥(normalIio 1) => (t : EuclideanHalfSpace 1).1)
-        ((homeomorphNormalIio 1).symm_apply_apply z)]
+    rw [boundaryCollar, Function.comp_apply, Prod.map_apply]
+    simp only [id_eq]
+    rw [depth_eq_normalRay, normalRay_zero]
     exact collarDiffeomorph_apply_zero_eq_boundaryParam n x
 
 /-- The zero-depth slice of `boundaryCollar` is the boundary parametrization. -/
@@ -85,10 +85,9 @@ theorem boundaryCollar_apply_zero_coord (n : ℕ)
     (p : EuclideanSpace ℝ (Fin n) × Ico (0 : ℝ) 1) :
     (boundaryCollar n p).1 0 = p.2.1 := by
   rw [boundaryCollar, Function.comp_apply, collarDiffeomorph_apply_zero]
-  change (((homeomorphNormalIio 1).symm p.2 : EuclideanHalfSpace 1).1 0) = p.2.1
-  have h := congrArg (fun q : Ico (0 : ℝ) 1 => (q : ℝ))
-    ((homeomorphNormalIio 1).apply_symm_apply p.2)
-  simpa only [coe_homeomorphNormalIio] using h
+  rw [Prod.map_apply]
+  rw [depth_eq_normalRay]
+  rw [normalRay_coe_apply, max_eq_left p.2.2.1]
 
 /-- The tangential coordinates of `boundaryCollar` are unchanged. -/
 @[simp]
