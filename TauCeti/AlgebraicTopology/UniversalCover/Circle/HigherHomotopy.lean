@@ -41,8 +41,8 @@ This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
 * `Circle.subsingleton_homotopyGroup`, `Circle.homotopyGroup_eq_one` and
   `Circle.homotopyGroupPi_eq_one`: the same statements for the complex unit circle.
 * `TauCeti.EuclideanSpace.subsingleton_homotopyGroup_sphere`,
-  `TauCeti.EuclideanSpace.homotopyGroup_eq_one_sphere` and
-  `TauCeti.EuclideanSpace.homotopyGroupPi_eq_one_sphere`: the same statements for the unit circle
+  `TauCeti.EuclideanSpace.homotopyGroup_sphere_eq_one` and
+  `TauCeti.EuclideanSpace.homotopyGroupPi_sphere_eq_one`: the same statements for the unit circle
   of `EuclideanSpace ℝ (Fin 2)`, the model in which the Euclidean spheres are stated.
 
 The covering map is Junyan Xu's `AddCircle.isCoveringMap_coe` in
@@ -80,8 +80,7 @@ namespace Circle
 
 variable {N : Type*} [Nontrivial N] (z : Circle)
 
-/-- Every higher homotopy group of the complex unit circle is trivial. It is transported from
-`AddCircle (2 * π)` along `AddCircle.homeomorphCircle`. -/
+/-- Every higher homotopy group of the complex unit circle is trivial. -/
 instance subsingleton_homotopyGroup : Subsingleton (HomotopyGroup N Circle z) :=
   (HomotopyGroup.homeomorphEquivOfEq (N := N)
       (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne')
@@ -106,8 +105,7 @@ open Metric
 
 variable {N : Type*} [Nontrivial N] (y : sphere (0 : EuclideanSpace ℝ (Fin 2)) 1)
 
-/-- Every higher homotopy group of the unit circle of `EuclideanSpace ℝ (Fin 2)` is trivial. It
-is transported from `Circle` along `TauCeti.EuclideanSpace.sphereHomeomorphCircle`. -/
+/-- Every higher homotopy group of the unit circle of `EuclideanSpace ℝ (Fin 2)` is trivial. -/
 instance subsingleton_homotopyGroup_sphere :
     Subsingleton (HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) y) :=
   (HomotopyGroup.homeomorphEquiv (N := N) sphereHomeomorphCircle y).subsingleton_congr.mpr
@@ -115,15 +113,15 @@ instance subsingleton_homotopyGroup_sphere :
 
 /-- Every higher homotopy class of the unit circle of `EuclideanSpace ℝ (Fin 2)` is the
 identity. -/
-theorem homotopyGroup_eq_one_sphere [DecidableEq N]
+theorem homotopyGroup_sphere_eq_one [DecidableEq N]
     (a : HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) y) : a = 1 :=
   Subsingleton.elim _ _
 
 /-- Every element of `π_(n + 2)` of the unit circle of `EuclideanSpace ℝ (Fin 2)` is the
 identity. -/
-theorem homotopyGroupPi_eq_one_sphere (n : ℕ)
+theorem homotopyGroupPi_sphere_eq_one (n : ℕ)
     (a : π_ (n + 2) (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) y) : a = 1 :=
-  homotopyGroup_eq_one_sphere y a
+  homotopyGroup_sphere_eq_one y a
 
 end EuclideanSpace
 
