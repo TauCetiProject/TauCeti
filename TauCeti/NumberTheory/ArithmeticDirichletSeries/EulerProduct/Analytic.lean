@@ -234,7 +234,6 @@ open IdealArithmeticFunction
 variable (D : EulerProductData K) {s : ℂ}
 
 /-- Evaluating the local power series at `N(P) ^ (-s)` gives the Euler factor at `s`. -/
-@[simp]
 theorem ofScalarsSum_localPowerSeries_eq_eulerFactor
     (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
     FormalMultilinearSeries.ofScalarsSum (E := ℂ)
