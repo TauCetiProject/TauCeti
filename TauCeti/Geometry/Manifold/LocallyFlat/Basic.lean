@@ -698,7 +698,7 @@ private theorem isOpenEmbedding_symm_comp {X : Type*} [TopologicalSpace X]
       exact ψ.isOpen_image_symm_of_subset_target (hg.isOpenMap O hO)
         ((image_subset_range g O).trans hgr)
 
-variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+variable {G : Type*} [SeminormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
 part of the domain lying under it with the complementary model, the map being the zero slice.
