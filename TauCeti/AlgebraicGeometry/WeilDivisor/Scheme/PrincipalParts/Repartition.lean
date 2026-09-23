@@ -12,10 +12,12 @@ public import TauCeti.FieldTheory.FunctionField.Repartition.Basic
 /-!
 # Repartitions and scheme-theoretic principal parts
 
-Let `X` be an integral curve over a field `k` whose codimension-one points are the normalized
-places of its function field. A repartition of `k(X) / k` determines a finitely supported family
-of principal parts: at a point `x`, take the class of its entry at the corresponding place in
-`k(X) / 𝒪_X(D)_x`.
+Let `X` be an integral Noetherian separated scheme over a field `k`. Assume that `X → Spec(k)`
+satisfies the existence part of the valuative criterion, every point has coheight at most one,
+the local rings at codimension-one points are discrete valuation rings, and the resulting
+codimension-one points are identified with the normalized places of its function field. A
+repartition of `k(X) / k` determines a finitely supported family of principal parts: at a point
+`x`, take the class of its entry at the corresponding place in `k(X) / 𝒪_X(D)_x`.
 
 This file constructs that map and proves that it is surjective, with kernel the repartitions
 bounded by the function-field divisor corresponding to `D`. Thus global principal parts are the
@@ -114,7 +116,7 @@ private def repartitionToPrincipalPartsFamily (D : SchemeWeilDivisor X)
       WithZero.exp_zero]
     exact ha_integral
   classical
-  exact DFinsupp.mk hq.toFinset fun x ↦ q x
+  exact dfinsuppOfFiniteSupport q hq
 
 @[simp]
 private theorem repartitionToPrincipalPartsFamily_apply (D : SchemeWeilDivisor X)
@@ -123,15 +125,8 @@ private theorem repartitionToPrincipalPartsFamily_apply (D : SchemeWeilDivisor X
     repartitionToPrincipalPartsFamily hex hdim D a x =
       Submodule.Quotient.mk ((a : Place k X.functionField → X.functionField)
         (X.toPlace (k := k) (x.1 : X))) := by
-  classical
-  rw [repartitionToPrincipalPartsFamily, DFinsupp.mk_apply]
-  split_ifs with hx
-  · simp only [CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim]
-  · have hq : (Submodule.Quotient.mk
-        ((a : Place k X.functionField → X.functionField)
-          (CodimensionOnePoint.equivPlace (k := k) hex hdim x.1)) : PrincipalPart D x.1) = 0 :=
-      not_ne_iff.mp (by simpa only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using hx)
-    simpa only [CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim] using hq.symm
+  simp only [repartitionToPrincipalPartsFamily, dfinsuppOfFiniteSupport_apply,
+    CodimensionOnePoint.equivPlace_apply (X := X) (k := k) hex hdim]
 
 /-- A repartition determines a global family of principal parts by taking, at each
 codimension-one point, the class of its entry at the corresponding place. -/

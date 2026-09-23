@@ -133,13 +133,16 @@ abbrev PrincipalPart (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) : Typ
 abbrev principalPartsSections (D : SchemeWeilDivisor X) (U : X.Opens) :=
   Π₀ x : {x : CodimensionOnePoint X // (x : X) ∈ U}, PrincipalPart D x.1
 
-private def dfinsuppOfFiniteSupport {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
+/-- A dependent function with finite support, regarded as a dependent finitely supported
+function. -/
+def dfinsuppOfFiniteSupport {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
     (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) : Π₀ i, β i := by
   classical
   exact DFinsupp.mk hf.toFinset fun i ↦ f i
 
+/-- Evaluating `dfinsuppOfFiniteSupport f hf` returns the original function `f`. -/
 @[simp]
-private lemma dfinsuppOfFiniteSupport_apply {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
+lemma dfinsuppOfFiniteSupport_apply {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
     (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) (i : I) :
     dfinsuppOfFiniteSupport f hf i = f i := by
   classical
