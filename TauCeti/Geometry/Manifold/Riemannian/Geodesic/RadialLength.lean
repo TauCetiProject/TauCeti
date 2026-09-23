@@ -60,7 +60,7 @@ theorem pathELength_riemannianExp_smul {p : M} {v : TangentSpace I p} {s t : ℝ
   exact pathELength_maximalGeodesic hs ht
 
 /-- In a normal domain, the radial exponential curve from `0` to `1` has length `‖v‖`. -/
-@[simp] theorem pathELength_riemannianExp_smul_zero_one {p : M} {U : Set (TangentSpace I p)}
+theorem pathELength_riemannianExp_smul_zero_one {p : M} {U : Set (TangentSpace I p)}
     (h : IsNormalDomain I M p U) {v : TangentSpace I p} (hv : v ∈ U) :
     pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) 0 1 = ‖v‖ₑ := by
   rw [pathELength_riemannianExp_smul
