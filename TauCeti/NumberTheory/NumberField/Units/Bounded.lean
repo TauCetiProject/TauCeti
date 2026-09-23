@@ -48,24 +48,18 @@ This reduces searches among units with bounded logarithmic embedding to finite s
 theorem finite_setOf_norm_logEmbedding_le (r : ℝ) :
     {u : (𝓞 K)ˣ |
       ‖NumberField.Units.logEmbedding K (Additive.ofMul u)‖ ≤ r}.Finite := by
-  change {u : Additive ((𝓞 K)ˣ) |
-    ‖NumberField.Units.logEmbedding K u‖ ≤ r}.Finite
-  let f := NumberField.Units.logEmbedding K
-  let _ : Finite f.ker := by
-    rw [NumberField.Units.dirichletUnitTheorem.logEmbedding_ker]
-    refine Finite.of_injective
-      (fun x : (NumberField.Units.torsion K).toAddSubgroup =>
-        Additive.ofMul (⟨x.1.toMul, x.property⟩ : NumberField.Units.torsion K)) ?_
-    intro x y h
-    exact Subtype.ext (congrArg Subtype.val h)
-  refine Set.Finite.of_finite_fibers f ?_ ?_
-  · -- Reuse Mathlib's finiteness of the unit lattice inside a closed ball.
-    refine (NumberField.Units.dirichletUnitTheorem.unitLattice_inter_ball_finite K r).subset ?_
-    rintro y ⟨u, hu, rfl⟩
-    exact ⟨⟨u, Submodule.mem_top, rfl⟩, mem_closedBall_zero_iff.mpr hu⟩
-  · rintro y ⟨u, hu, rfl⟩
-    let _ : Finite (f ⁻¹' {f u}) :=
-      Finite.of_equiv f.ker (f.fiberEquivKer u).symm
-    exact Set.toFinite _
+  by_cases hr : 0 ≤ r
+  · refine (finite_setOf_forall_apply_le (K := K)
+      (Real.exp (Fintype.card (InfinitePlace K) * r))).subset ?_
+    intro u hu w
+    rw [← Real.exp_log (Units.pos_at_place u w)]
+    have hlog : |Real.log (w u)| ≤ Fintype.card (InfinitePlace K) * r :=
+      NumberField.Units.dirichletUnitTheorem.log_le_of_logEmbedding_le
+        (K := K) (x := u) hr hu w
+    exact Real.exp_le_exp.mpr ((le_abs_self (Real.log (w u))).trans hlog)
+  · have hr' : r < 0 := lt_of_not_ge hr
+    refine Set.finite_empty.subset ?_
+    intro u hu
+    exact (not_le_of_gt hr') ((norm_nonneg _).trans hu)
 
 end TauCeti.NumberField.Units
