@@ -93,24 +93,11 @@ theorem exists_f4_short_neighbor_of_long (α : Fin 48) (hα : f4Length α = 2) :
   have hγroot : P.root γ = P.root β + P.root α := by
     rw [← P.reflectionPerm_root, P.root_coroot_eq_pairing, hp]
     module
-  have hγroot' : f4Root γ = f4Root β + f4Root α := by
-    simpa only [P, f4SimplyConnectedRootDatum_root] using hγroot
-  have hγlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by simpa using hγroot')
   have hγ : f4Length γ = 1 := by
-    rw [hα, hβ, hp] at hγlen
-    norm_num at hγlen
-    exact hγlen
-  have hbot : P.chainBotCoeff α β = 0 := by
-    rw [P.chainBotCoeff_eq_zero_iff]
-    right
-    rintro ⟨δ, hδ⟩
-    have hδ' : f4Root δ = f4Root β - f4Root α := by
-      simpa only [P, f4SimplyConnectedRootDatum_root] using hδ
-    have hδlen := f4Length_of_root_eq_add_zsmul α β δ (-1) (by
-      simpa [sub_eq_add_neg] using hδ')
-    rw [hα, hβ, hp] at hδlen
-    norm_num at hδlen
-    rcases f4Length_eq_one_or_eq_two δ with hδ | hδ <;> omega
+    exact (f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
+      α β γ 1 hα hβ (by omega) (by simpa only [P, Nat.cast_one, one_zsmul] using hγroot)).2.2
+  have hbot : P.chainBotCoeff α β = 0 :=
+    f4_chainBotCoeff_eq_zero_of_add_eq_short α β γ hβ hγ hγroot
   exact ⟨β, γ, hβ, hp, hγroot, hγ, hbot⟩
 
 end TauCeti.DynkinType

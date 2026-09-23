@@ -11,8 +11,8 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Matrix
 # Divided adjoint squares on the modular F₄ short-root ideal
 
 The second adjoint divided power is formed on the integral Chevalley lattice before reduction
-modulo two. This file identifies its base change with the integral divided-square matrices used
-in the pinned twenty-six-dimensional representation.
+modulo two. This file identifies the reduced operator with the reductions of the integral
+divided-square matrices used in the pinned twenty-six-dimensional representation.
 
 ## References
 
@@ -421,7 +421,7 @@ private theorem f4ModularDividedAdjointSquare_basis_of_index_inr
       (Fin.cast rank_F4.symm (3 : Fin 4)) (Or.inr rfl)
       coe_f4ShortRootLieIdealBasis_thirteen
 
-/-- The ambient integral divided square and its matrix realization agree on every basis vector of
+/-- The reduced ambient divided square and its matrix realization agree on every basis vector of
 the modular short-root ideal. -/
 theorem f4ModularDividedAdjointSquare_basis (k : Fin 4 ⊕ Fin 4) (b : Fin 26) :
     f4ModularDividedAdjointSquare k
@@ -438,7 +438,7 @@ theorem f4ModularDividedAdjointSquare_basis (k : Fin 4 ⊕ Fin 4) (b : Fin 26) :
     (fun j h => f4ModularDividedAdjointSquare_basis_of_index_inr k b j h)
     (f4ShortRootWeightIndexEquiv b) rfl
 
-/-- The ambient integral divided square agrees with its matrix realization on every element of
+/-- The reduced ambient divided square agrees with its matrix realization on every element of
 the modular short-root ideal. -/
 @[simp] theorem coe_f4ShortRootDividedAdjointSquare_apply
     (k : Fin 4 ⊕ Fin 4) (y : f4ShortRootLieIdeal) :
