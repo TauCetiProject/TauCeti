@@ -480,11 +480,15 @@ theorem Gamma1_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
       ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma1 M).map (mapGL ℝ)) := by
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
-  obtain ⟨⟨t, ht⟩, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
-  have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht, Nat.cast_mul, mul_assoc]
-  -- the lower-right entry only needs its congruence read modulo the divisor `M` of `dM`
-  exact ⟨conjScale d γ _ hc, mem_Gamma1_of_dvd_lowerRow (dvd_mul_right _ _)
-    ((Int.natCast_dvd_natCast.mpr (dvd_mul_left M d)).trans h11), (mapGL_conjScale γ _ hc).symm⟩
+  obtain ⟨-, h11, h10⟩ := (Gamma1_mem _ _).mp hγ
+  obtain ⟨t, ht⟩ : ((d * M : ℕ) : ℤ) ∣ γ 1 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp h10
+  have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht]; push_cast; ring
+  have hdM : M ∣ d * M := Dvd.intro_left d rfl
+  -- the diagonal entries only need their congruence read modulo the divisor `M` of `dM`
+  exact ⟨conjScale d γ _ hc, mem_Gamma1_iff.mpr
+    ⟨Gamma0_mem.mpr (by simp),
+      by simpa using congrArg (ZMod.castHom hdM (ZMod M)) h11⟩,
+    (mapGL_conjScale γ _ hc).symm⟩
 
 /-- **Level transport at a divisor.** Whenever `d * M ∣ N`, conjugation by `diag(d, 1)` carries
 `Γ₁(N)` into `Γ₁(M)`: this is what makes `V_d` a map `S_k(Γ₁(M)) → S_k(Γ₁(N))`, not only for
@@ -500,10 +504,10 @@ theorem Gamma0_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
       ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma0 M).map (mapGL ℝ)) := by
   rintro _ ⟨γ, hγ, rfl⟩
   rw [mem_conjAct_inv_scaleGL_iff]
-  obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
-  have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht, Nat.cast_mul, mul_assoc]
-  exact ⟨conjScale d γ _ hc, mem_Gamma0_iff_dvd.mpr (dvd_mul_right _ _),
-    (mapGL_conjScale γ _ hc).symm⟩
+  obtain ⟨t, ht⟩ : ((d * M : ℕ) : ℤ) ∣ γ 1 0 :=
+    mem_Gamma0_iff_dvd.mp hγ
+  have hc : γ 1 0 = d * ((M : ℤ) * t) := by rw [ht]; push_cast; ring
+  exact ⟨conjScale d γ _ hc, Gamma0_mem.mpr (by simp), (mapGL_conjScale γ _ hc).symm⟩
 
 end Transport
 
