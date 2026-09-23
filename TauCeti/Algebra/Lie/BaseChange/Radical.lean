@@ -39,14 +39,10 @@ only if it vanished already.  Applied to the two largest ideals, ascent gives
 
 Neither containment is forced to be an equality by the transfer principles, because an ideal of
 `A ⊗[R] L` need not be extended from `L` at all, and nothing above bounds the ideals that are
-not.  The case where both sides are `⊥` is settled first, and it is the case the structural
-argument rests on: `LieAlgebra.hasTrivialRadical_baseChange_iff` says that over a field of
-characteristic zero a finite-dimensional Lie algebra has trivial radical exactly when some field
-extension of it does, so extending scalars can neither destroy nor *create* a solvable ideal of a
-semisimple algebra.  That equivalence is not a formal consequence of the transfer principles
-above; it runs through Cartan's criterion, which converts triviality of the radical into
-nondegeneracy of the Killing form, a property `TauCeti.isKilling_baseChange_iff` does transport in
-both directions.
+not.  The case where both sides are `⊥` is the separate statement
+`LieAlgebra.hasTrivialRadical_baseChange_iff`: over a field of characteristic zero a
+finite-dimensional Lie algebra has trivial radical exactly when some field extension of it does,
+so extending scalars can neither destroy nor *create* a solvable ideal of a semisimple algebra.
 
 For a finite-dimensional Lie algebra over a field of characteristic zero the containment is an
 equality: `LieAlgebra.radical_baseChange` says the radical commutes with a field extension, and
@@ -188,13 +184,13 @@ theorem hasTrivialRadical_baseChange_iff :
   exact TauCeti.isKilling_baseChange_iff K A L
 
 /-- **In characteristic zero the solvable radical commutes with a field extension.**  For a
-finite-dimensional Lie algebra over a field of characteristic zero, the radical of the extension
-of scalars is the extension of the radical.
+finite-dimensional Lie algebra `L` over a field `K` of characteristic zero and a field extension
+`A` of `K`, the radical of `A ⊗[K] L` is the extension of scalars of the radical of `L`.
 
-The substance is the inclusion `≤`: extending scalars adds no new elements to the radical, so the
-extension of the radical is still the largest solvable ideal.  This says nothing about individual
-solvable ideals of `A ⊗[K] L`, which need not themselves be extended from `L`.  Characteristic
-zero is a genuine hypothesis, inherited from `LieAlgebra.hasTrivialRadical_baseChange_iff`. -/
+Characteristic zero is a genuine hypothesis, not a convenience.  The equality determines the
+radical of `A ⊗[K] L` completely, although it says nothing about individual solvable ideals of
+`A ⊗[K] L`, which need not themselves be extended from `L`; as a test for membership in the
+radical it is `LieAlgebra.one_tmul_mem_radical_baseChange_iff`. -/
 @[simp]
 theorem radical_baseChange :
     radical A (A ⊗[K] L) = (radical K L).baseChange A := by
