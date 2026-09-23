@@ -39,6 +39,19 @@ def stabilizerBallQuotientChart [Finite (stabilizer Γ z)] (hε : 0 < ε)
   hopen.toIsEmbedding.toHomeomorph.symm.trans
     (stabilizerBallQuotientHomeomorph Γ z ε hε.le)
 
+/-- A properly discontinuous action with finite stabilizer admits an elliptic quotient chart at
+some positive radius. -/
+theorem exists_stabilizerBallQuotientChart [Finite (stabilizer Γ z)]
+    [ProperlyDiscontinuousSMul Γ ℍ] :
+    ∃ ε > 0, IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε) ∧
+      Nonempty ({q : orbitRel.Quotient Γ ℍ //
+        q ∈ Set.range (stabilizerBallQuotientToQuotient Γ z ε)} ≃ₜ
+        Metric.ball (0 : ℂ) (Real.tanh (ε / 2) ^ Nat.card (stabilizer Γ z))) := by
+  obtain ⟨ε, hopen, hε⟩ :=
+    ((eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient Γ z).and
+      self_mem_nhdsWithin).exists
+  exact ⟨ε, hε, hopen, ⟨stabilizerBallQuotientChart hε hopen⟩⟩
+
 /-- In the elliptic quotient chart, the orbit of a point in the stabilizer ball has coordinate
 equal to the corresponding power of its disc coordinate. -/
 theorem stabilizerBallQuotientChart_mk [Finite (stabilizer Γ z)] (hε : 0 < ε)
