@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.Measurability
 public import Mathlib.Probability.Distributions.Geometric
 /-!
 # Parameter measurability for the geometric distribution
