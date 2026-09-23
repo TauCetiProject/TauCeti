@@ -72,6 +72,9 @@ discs (topological sliceness) and for stating the annulus conjecture.
   `TauCeti.IsLocallyFlat.codRestrict`, `TauCeti.IsLocallyFlat.homeomorph_comp`,
   `TauCeti.IsLocallyFlat.comp_isOpenEmbedding`, `TauCeti.IsLocallyFlat.comp_homeomorph`: invariance
   under open embeddings and homeomorphisms of the ambient space and of the domain.
+* `TauCeti.IsSliceEmbedding.isClosedEmbedding` and
+  `TauCeti.IsLocallyFlat.isClosedEmbedding`: compact-source embeddings into Hausdorff spaces have
+  closed images.
 * `TauCeti.IsSliceEmbedding.transHomeomorph`: invariance under a homeomorphic change of model
   space.
 * `TauCeti.IsLocallyFlat.comp`: a composite of locally flat embeddings is locally flat, under an
@@ -300,6 +303,11 @@ theorem continuous (h : IsSliceEmbedding S f) : Continuous f :=
 theorem injective (h : IsSliceEmbedding S f) : Function.Injective f :=
   h.isEmbedding.injective
 
+/-- A compact-source slice embedding into a Hausdorff space is a closed embedding. -/
+theorem isClosedEmbedding [CompactSpace N] [T2Space M]
+    (h : IsSliceEmbedding S f) : IsClosedEmbedding f :=
+  h.continuous.isClosedEmbedding h.injective
+
 /-- Being a slice embedding is inherited by the restriction to an open subset of the domain. -/
 theorem restrict (h : IsSliceEmbedding S f) {U : Set N} (hU : IsOpen U) :
     IsSliceEmbedding S (f ∘ ((↑) : U → N)) := by
@@ -485,6 +493,11 @@ theorem continuous (h : IsLocallyFlat F F' f) : Continuous f :=
 
 theorem injective (h : IsLocallyFlat F F' f) : Function.Injective f :=
   h.isEmbedding.injective
+
+/-- A compact-source locally flat embedding into a Hausdorff space is a closed embedding. -/
+theorem isClosedEmbedding [CompactSpace N] [T2Space M]
+    (h : IsLocallyFlat F F' f) : IsClosedEmbedding f :=
+  IsSliceEmbedding.isClosedEmbedding h
 
 /-- Local flatness is inherited by the restriction to an open subset of the domain. -/
 theorem restrict (h : IsLocallyFlat F F' f) {U : Set N} (hU : IsOpen U) :
