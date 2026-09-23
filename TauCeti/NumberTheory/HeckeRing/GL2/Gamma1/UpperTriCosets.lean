@@ -170,35 +170,30 @@ lemma natDiagGL_mul_mapGL_T_zpow (hp : 0 < p) (b : Fin p) :
 `j < p` satisfies `p ∣ b − a j` for `γ = !![a, b; c, d]`, then `diag(1, p) · γ` lies in the
 right coset `Γ₁(N) · !![1, j; 0, p]`: explicitly
 
-`diag(1, p) · γ = !![a, m; p c, d − c j] · !![1, j; 0, p]`,  `b − a j = p m`.
+`diag(1, p) · γ = !![a, m; p c, d − c j] · !![1, j; 0, p]`, where `b − a j = p m`.
 
 The divisibility on the offset is the only arithmetic input, and it is where the two branches
 of Diamond–Shurman's Proposition 5.2.1 differ: at `p ∣ N` every `γ ∈ Γ₁(N)` admits such a `j`
-(below), while at a prime `p ∤ N` only those with `p ∤ a` do, the rest needing the further coset
-of `Gamma1/CoprimeCosets.lean`. -/
+(`exists_mem_Gamma1_natDiagGL_mul`), while at a prime `p ∤ N` only those with `p ∤ a` do, the rest
+needing the further coset of `Gamma1/CoprimeCosets.lean`. -/
 lemma exists_mem_Gamma1_natDiagGL_mul_of_dvd {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) {j : ℕ}
     (hjlt : j < p) (hj : (p : ℤ) ∣ γ 0 1 - γ 0 0 * j) :
     ∃ δ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * upperTriRep p ⟨j, hjlt⟩ := by
   obtain ⟨hc, hd⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
   obtain ⟨m, hm⟩ := hj
   -- the new left factor: its determinant is `a d − b c = 1`, and `N ∣ c` keeps it in `Γ₁(N)`
-  have hdet : (!![γ 0 0, m; (p : ℤ) * γ 1 0, γ 1 1 - γ 1 0 * j] :
-      Matrix (Fin 2) (Fin 2) ℤ).det = 1 := by
+  have hdet : det !![γ 0 0, m; p * γ 1 0, γ 1 1 - γ 1 0 * j] = 1 := by
     rw [det_fin_two_of]
     linear_combination γ.fin_two_mul_sub_mul_eq_one + γ 1 0 * hm
-  obtain ⟨δ, e00, e01, e10, e11⟩ : ∃ δ : SL(2, ℤ), (δ 0 0 : ℤ) = γ 0 0 ∧ (δ 0 1 : ℤ) = m ∧
-      (δ 1 0 : ℤ) = (p : ℤ) * γ 1 0 ∧ (δ 1 1 : ℤ) = γ 1 1 - γ 1 0 * j :=
-    ⟨⟨_, hdet⟩, rfl, rfl, rfl, rfl⟩
-  refine ⟨δ, mem_Gamma1_of_dvd_lowerRow ?_ ?_, ?_⟩
-  · rw [e10]
-    exact hc.mul_left _
-  · rw [e11, sub_right_comm]
-    exact hd.sub (hc.mul_right _)
+  obtain ⟨δ, e00, e01, e10, e11⟩ : ∃ δ : SL(2, ℤ), δ 0 0 = γ 0 0 ∧ δ 0 1 = m ∧
+      δ 1 0 = p * γ 1 0 ∧ δ 1 1 = γ 1 1 - γ 1 0 * j := ⟨⟨_, hdet⟩, rfl, rfl, rfl, rfl⟩
+  refine ⟨δ, mem_Gamma1_iff_dvd_lowerRow.mpr ?_, ?_⟩
+  · rw [e10, e11, sub_right_comm]
+    exact ⟨hc.mul_left _, hd.sub (hc.mul_right _)⟩
   · refine Units.ext ?_
-    rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one (Nat.zero_lt_of_lt hjlt), coe_upperTriRep,
-      coe_mapGL_int_rat_fin_two γ, coe_mapGL_int_rat_fin_two δ, e00, e01, e10, e11,
-      Matrix.mul_fin_two, Matrix.mul_fin_two]
-    congrm !![?_, ?_; ?_, ?_] <;> push_cast [eq_add_of_sub_eq hm] <;> ring1
+    push_cast [coe_natDiagGL_one (Nat.zero_lt_of_lt hjlt), coe_upperTriRep,
+      coe_mapGL_int_rat_fin_two, mul_fin_two, e00, e01, e10, e11, eq_add_of_sub_eq hm]
+    congrm !![?_, ?_; ?_, ?_] <;> ring1
 
 /-- **The upper-left entry of a level-`N` element is invertible modulo an index supported on the
 level.** If every prime factor of `p` divides `N` and `a ≡ 1 (mod N)`, then `a` is coprime to `p`:
