@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Tactic.LinearCombination
+public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Alternant
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
 
@@ -45,7 +46,8 @@ bialternant formula follows from the two branching rules by induction on the num
 
 * `TauCeti.alternant_eq_prod_mul_sum_interlacingShapes`: the branching rule for the alternants
   `a_{λ+δ}`.
-* `TauCeti.diagramSchurPoly_mul_alternant`: **Jacobi's bialternant formula** `s_μ · a_δ = a_{λ+δ}`.
+* `TauCeti.diagramSchurPoly_mul_alternant`: **Jacobi's bialternant formula** for Young diagrams.
+* `TauCeti.schurPoly_mul_alternant`: the formula for partitions in any finite alphabet.
 
 ## Implementation notes
 
@@ -134,17 +136,17 @@ This is the alternant counterpart of the branching rule
 `TauCeti.diagramSchurPoly_eq_sum_interlacingShapes` for Schur polynomials. -/
 theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.YoungDiagram)
     (hμ : μ.colLen 0 ≤ n + 1) :
-    alternant (Fin (n + 1)) R (fun j => μ.rowLen j + (n - j)) =
+    alternant (Fin (n + 1)) R (fun j => μ.betaNumber (n + 1) j) =
       (∏ i : Fin n, (X i.castSucc - X (Fin.last n))) *
         ∑ ν ∈ YoungDiagram.interlacingShapes n μ,
           X (Fin.last n) ^ (μ.card - ν.card) *
-            rename Fin.castSucc (alternant (Fin n) R fun j => ν.rowLen j + (n - 1 - j)) := by
+            rename Fin.castSucc (alternant (Fin n) R fun j => ν.betaNumber n j) := by
   set y : MvPolynomial (Fin (n + 1)) R := X (Fin.last n) with hy
-  set e : Fin (n + 1) → ℕ := fun j => μ.rowLen j + (n - j) with he
+  set e : Fin (n + 1) → ℕ := fun j => μ.betaNumber (n + 1) j with he
   have he_anti : ∀ j : Fin n, e j.succ ≤ e j.castSucc := by
     intro j
     have := μ.rowLen_anti j (j + 1) (Nat.le_succ _)
-    simp only [he, Fin.val_succ, Fin.val_castSucc]
+    simp only [he, YoungDiagram.betaNumber_def, Fin.val_succ, Fin.val_castSucc]
     omega
   -- After column reduction, each entry of the block is `x_i - y` times a geometric sum.
   set N : Matrix (Fin n) (Fin n) (MvPolynomial (Fin (n + 1)) R) := Matrix.of fun i j =>
@@ -159,8 +161,12 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
     set b := μ.rowLen j
     set c := n - 1 - j
     have hab : a ≤ b := μ.rowLen_anti _ _ (Nat.le_succ _)
-    have h1 : e j.castSucc = b + 1 + c := by simp only [he, Fin.val_castSucc]; omega
-    have h2 : e j.succ = a + c := by simp only [he, Fin.val_succ]; omega
+    have h1 : e j.castSucc = b + 1 + c := by
+      simp only [he, YoungDiagram.betaNumber_def, Fin.val_castSucc]
+      omega
+    have h2 : e j.succ = a + c := by
+      simp only [he, YoungDiagram.betaNumber_def, Fin.val_succ]
+      omega
     have h3 : e j.castSucc - e j.succ = b + 1 - a := by rw [h1, h2]; omega
     -- Keep `b + 1` in the bound so the geometric sum matches the interval calculation below.
     have hab1 : a ≤ b + 1 := Nat.le_succ_of_le hab
@@ -177,10 +183,11 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
     linear_combination (-(X i.castSucc ^ c : MvPolynomial (Fin (n + 1)) R)) * hgeom
   -- The right-hand side, as a sum over the families of row lengths of the interlacing shapes.
   have hsum : ∑ ν ∈ YoungDiagram.interlacingShapes n μ, y ^ (μ.card - ν.card) *
-      rename Fin.castSucc (alternant (Fin n) R fun j => ν.rowLen j + (n - 1 - j)) =
+      rename Fin.castSucc (alternant (Fin n) R fun j => ν.betaNumber n j) =
       ∑ r ∈ Fintype.piFinset fun j : Fin n => Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
         y ^ (μ.card - ∑ j, r j) *
           rename Fin.castSucc (alternant (Fin n) R fun j => r j + (n - 1 - j)) := by
+    simp only [YoungDiagram.betaNumber_def]
     rw [← YoungDiagram.sum_interlacingShapes_eq_sum_piFinset hμ]
     refine sum_congr rfl fun ν hν => ?_
     rw [YoungDiagram.card_eq_sum_range_rowLen ν (YoungDiagram.mem_interlacingShapes.mp hν).2,
@@ -204,7 +211,7 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
       ext j i
       simp [Finset.sum_apply]
     · rfl
-  have hel : e (Fin.last n) = μ.rowLen n := by simp [he]
+  have hel : e (Fin.last n) = μ.rowLen n := by simp [he, YoungDiagram.betaNumber_def]
   rw [alternant_eq_X_last_pow_mul_det e he_anti, ← hy, hel, hblock, Matrix.det_mul_column, hN,
     hdet_sum, hsum, mul_left_comm, Finset.mul_sum]
   congr 1
@@ -235,7 +242,7 @@ The row bound is necessary: for a taller shape `s_μ` vanishes, while the right-
 only sees the first `N` rows, need not. -/
 theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ : μ.colLen 0 ≤ N) :
     diagramSchurPoly N R μ * alternant (Fin N) R (fun j => N - 1 - j) =
-      alternant (Fin N) R fun j => μ.rowLen j + (N - 1 - j) := by
+      alternant (Fin N) R fun j => μ.betaNumber N j := by
   have hbot : ∀ i, (⊥ : _root_.YoungDiagram).rowLen i = 0 := fun i =>
     Nat.eq_zero_of_not_pos fun h =>
       _root_.YoungDiagram.notMem_bot _ (_root_.YoungDiagram.mem_iff_lt_rowLen.mpr h)
@@ -247,7 +254,7 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
     have hμ0 : μ = ⊥ := YoungDiagram.rowLen_injective (funext fun i => by
       rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (Nat.zero_le i)), hbot])
     subst hμ0
-    simp [diagramSchurPoly_bot, alternant_def]
+    simp [diagramSchurPoly_bot, alternant_def, YoungDiagram.betaNumber_def]
   | succ n ih =>
     -- The Vandermonde recursion: the branching rule for the alternant of the empty shape.
     have hvan : alternant (Fin (n + 1)) R (fun j => n - j) =
@@ -259,7 +266,7 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
         refine ⟨fun h => le_bot_iff.mp h.1.le, ?_⟩
         rintro rfl
         exact ⟨YoungDiagram.interlacedBy_iff.mpr fun i => by simp [hbot], by simp [hbotc]⟩
-      simpa [hshapes, hbot] using
+      simpa [hshapes, hbot, YoungDiagram.betaNumber_def] using
         alternant_eq_prod_mul_sum_interlacingShapes (R := R) n ⊥ (by simp [hbotc])
     simp only [Nat.add_sub_cancel]
     rw [diagramSchurPoly_eq_sum_interlacingShapes, hvan,
@@ -267,5 +274,19 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
     refine sum_congr rfl fun ν hν => ?_
     rw [← ih ν (YoungDiagram.mem_interlacingShapes.mp hν).2, map_mul]
     ring
+
+/-- **Jacobi's bialternant formula for partitions.** In a finite alphabet `σ`, ordered by
+`Fintype.equivFin σ`, the Schur polynomial of `μ` times the renamed staircase alternant equals
+the renamed alternant of the beta-numbers of its Young diagram. -/
+theorem schurPoly_mul_alternant {σ : Type*} [Fintype σ] {n : ℕ} (μ : n.Partition)
+    (hμ : (diagramOf μ).colLen 0 ≤ Fintype.card σ) :
+    schurPoly σ R μ *
+        rename (Fintype.equivFin σ).symm
+          (alternant (Fin (Fintype.card σ)) R (fun j => Fintype.card σ - 1 - j)) =
+      rename (Fintype.equivFin σ).symm
+        (alternant (Fin (Fintype.card σ)) R
+          (fun j => (diagramOf μ).betaNumber (Fintype.card σ) j)) := by
+  rw [schurPoly_eq_rename, ← map_mul,
+    diagramSchurPoly_mul_alternant (Fintype.card σ) (diagramOf μ) hμ]
 
 end TauCeti

@@ -29,9 +29,7 @@ pairing.
 The file also records one identity for the determinant of a matrix with one row replaced,
 alongside Mathlib's `Matrix.det_updateRow_add` and `Matrix.det_updateRow_smul`: Jacobi's formula
 in row form, that rescaling one row entry by entry along a fixed vector of factors and summing the
-results over the rows multiplies the determinant by the total of the factors.  It also records the
-multilinear expansion of a determinant whose columns are finite sums, as a sum over the choices of
-one summand per column.
+results over the rows multiplies the determinant by the total of the factors.
 
 ## Main results
 
