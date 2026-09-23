@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.Algebra.Lie.Derivation.Basic
+public import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 public import TauCeti.Algebra.Octonion.Basic
+public import TauCeti.LinearAlgebra.CrossProduct
 
 /-!
 # Derivations of the split octonions
@@ -41,8 +43,10 @@ In the other direction the file exhibits `14` independent derivations. The Zorn 
 by `ℤ/3`, with the two scalar entries in degree `0`, the top-right vector entry in degree `1` and
 the bottom-left one in degree `2`, and three families of derivations match those degrees: the
 `𝔰𝔩₃` acting on the vector entries in degree `0`, and a copy of `R³` in each off-diagonal degree.
-They are independent already at the diagonal idempotent `⟨1, 0, 0, 0⟩`, so `14 ≤ finrank (Der 𝕆)`
-over a field. The reverse inequality is not proved here.
+Evaluation at the diagonal idempotent `⟨1, 0, 0, 0⟩` separates the two off-diagonal families, which
+the `𝔰𝔩₃` family kills; evaluation on the vector entries then separates the `𝔰𝔩₃` family itself. So
+the three are independent and `14 ≤ finrank (Der 𝕆)` over a field. The reverse inequality is not
+proved here.
 
 ## Main definitions
 
@@ -71,17 +75,21 @@ over a field. The reverse inequality is not proved here.
 * `TauCeti.Octonion.gradedDerivation_injective`: the three explicit families are independent, so
   `Der 𝕆` contains `8 + 3 + 3` independent derivations; in particular
   `TauCeti.Octonion.instNontrivialDerivationLieAlgebra`, `Der 𝕆` is not the zero Lie algebra and
-  none of the above is vacuous.
-* `TauCeti.Octonion.le_finrank_derivationLieAlgebra`: over a field, `14 ≤ finrank (Der 𝕆)`.
+  none of the above is vacuous. `TauCeti.Octonion.slDerivation_injective`,
+  `TauCeti.Octonion.vectorDerivation_injective` and
+  `TauCeti.Octonion.covectorDerivation_injective` are the one-family corollaries.
+* `TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra`: over a field,
+  `14 ≤ finrank (Der 𝕆)`.
 
 ## Implementation notes
 
-Everything is stated over a commutative ring; the base is a field nowhere. The faithfulness result
-is stated for the exact hypothesis its proof uses, `IsSMulRegular (Octonion R) (2 : R)`, which is
-not a class; the instance form of it therefore asks for the two classes
-`[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`, which imply it but are strictly
-stronger. Some such hypothesis is necessary (over `𝔽₂` conjugation is the identity, so `Im 𝕆`
-contains `1` and the argument that `Im 𝕆` complements `R · 1` breaks down).
+Everything is stated over a commutative ring except the dimension bound
+`TauCeti.Octonion.fourteen_le_finrank_derivationLieAlgebra`, whose `finrank` count needs a field.
+The faithfulness result is stated for the exact hypothesis its proof uses,
+`IsSMulRegular (Octonion R) (2 : R)`, which is not a class; the instance form of it therefore asks
+for the two classes `[NoZeroSMulDivisors R (Octonion R)]` and `[NeZero (2 : R)]`, which imply it
+but are strictly stronger. Some such hypothesis is necessary (over `𝔽₂` conjugation is the
+identity, so `Im 𝕆` contains `1` and the argument that `Im 𝕆` complements `R · 1` breaks down).
 
 The two coordinate extractions the argument needs — reading the `a` and `b` entries of an equation
 between multiples of `⟨1, 0, 0, 0⟩` and of `1` — are isolated in a private lemma, so no public
@@ -93,11 +101,8 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (O
 
 ## References
 
-This is the first half of the `G₂ = Der(𝕆)` target of Layer 8 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` ("Build
-`derivationLieAlgebra (Octonion K)` ... and that `Im 𝕆` is its `7`-dimensional irreducible"). Of
-the count `finrank (Der 𝕆) = 14` only the lower bound is proved here; the matching upper bound, the
-type-`G₂` Killing-simplicity, and the identification with `LieAlgebra.g₂` are not.
+Of the count `finrank (Der 𝕆) = 14` only the lower bound is proved here; the matching upper bound,
+the type-`G₂` Killing-simplicity, and the identification with `LieAlgebra.g₂` are not.
 
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §2.
 * R. D. Schafer, *An Introduction to Nonassociative Algebras*, Ch. III, where the skewness of a
@@ -347,55 +352,32 @@ instance instIsFaithfulImaginaryLieSubmodule [NoZeroSMulDivisors R (Octonion R)]
 
 Everything above is a statement about an arbitrary derivation, so it is worth knowing that there
 are some, and knowing enough of them to see the expected dimension `14` from below. Three families
-are built here, and they are the three summands of the `ℤ/3`-grading that the Zorn model puts on
+are built here, and they match the three degrees of the `ℤ/3`-grading that the Zorn model puts on
 `𝕆`: writing `V = R³` for the top-right vector entry and `V*` for the bottom-left one,
 `𝕆 = (R e ⊕ R f) ⊕ V ⊕ V*` with `V · V ⊆ V*`, `V* · V* ⊆ V` and `V · V* ⊆ R e`, and `Der 𝕆` is
-expected to inherit that grading as `𝔰𝔩₃ ⊕ V ⊕ V*`, of dimension `8 + 3 + 3 = 14`.
+expected to inherit that grading as `𝔰𝔩₃ ⊕ V ⊕ V*`, of dimension `8 + 3 + 3 = 14`. Only the three
+embeddings are built here, not the decomposition.
 
 * `SL₃` acts on the Zorn vector matrices by `⟨a, b, v, w⟩ ↦ ⟨a, b, A v, (Aᵀ)⁻¹ w⟩`; differentiating
   at the identity along a traceless `A` gives `TauCeti.Octonion.slDerivation`, a homomorphism of
-  Lie algebras `𝔰𝔩₃ → Der 𝕆` and the degree-`0` summand.
+  Lie algebras `𝔰𝔩₃ → Der 𝕆` in degree `0`.
 * `TauCeti.Octonion.vectorDerivation` and `TauCeti.Octonion.covectorDerivation` are the two
-  off-diagonal summands. Their formulas are not a choice but the outcome of a computation: a
+  off-diagonal families. Their formulas are not a choice but the outcome of a computation: a
   derivation of degree `1` is pinned by its value `c ∈ V` on the idempotent `e = ⟨1, 0, 0, 0⟩`,
   because `D f = -D e` and the products `e v = v`, `f w = w`, `v w' = (v ⬝ᵥ w') e` then read off
   `D` on `V` and on `V*` in turn; the same computation in degree `2` gives `covectorDerivation`.
 
 That computation is how the formulas were found and is not itself formalized. What is proved here
-is that the three families do consist of derivations, and that they are independent — already at
-`e`, where `slDerivation A` vanishes while `vectorDerivation c` and `covectorDerivation d` give
-`⟨0, 0, c, 0⟩` and `⟨0, 0, 0, -d⟩`. That they *exhaust* `Der 𝕆`, which is the other half of
+is that the three families do consist of derivations, and that they are independent. Evaluation at
+`e` settles the two off-diagonal families at once, since `slDerivation A` vanishes at `e` while
+`vectorDerivation c` and `covectorDerivation d` give `⟨0, 0, c, 0⟩` and `⟨0, 0, 0, -d⟩`; for the
+same reason it says nothing about `A`, which a second evaluation, on the vector entries, then
+pins down. That the three families *exhaust* `Der 𝕆`, which is the other half of
 `finrank (Der 𝕆) = 14`, is not proved here. -/
 
 section Matrices
 
 open Matrix
-
-/-- Transposing a matrix moves it across a dot product. -/
-private theorem mulVec_dotProduct_transpose (A : Matrix (Fin 3) (Fin 3) R) (u w : Fin 3 → R) :
-    (A *ᵥ u) ⬝ᵥ w = u ⬝ᵥ (Aᵀ *ᵥ w) := by
-  simp [dotProduct_mulVec, vecMul_transpose]
-
-/-- **The infinitesimal Cauchy--Binet relation**: differentiating
-`(B u) ⨯₃ (B v) = (det B) • (B⁻¹)ᵀ (u ⨯₃ v)` at `B = 1` gives
-`(B u) ⨯₃ v + u ⨯₃ (B v) = (tr B) • (u ⨯₃ v) - Bᵀ (u ⨯₃ v)`, the identity that makes a traceless
-matrix act on the vector entries of a Zorn vector matrix by a derivation. Proved by expanding both
-sides in coordinates. -/
-private theorem mulVec_crossProduct_add (B : Matrix (Fin 3) (Fin 3) R) (u v : Fin 3 → R) :
-    (B *ᵥ u) ⨯₃ v + u ⨯₃ (B *ᵥ v) = B.trace • (u ⨯₃ v) - Bᵀ *ᵥ (u ⨯₃ v) := by
-  ext i
-  fin_cases i <;>
-    (simp [cross_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_three, Matrix.trace, Matrix.diag]
-     ring)
-
-/-- The traceless case of `TauCeti.Octonion.mulVec_crossProduct_add`: a traceless matrix acts on a
-cross product as minus the transposed action on the factors. -/
-private theorem transpose_mulVec_crossProduct {B : Matrix (Fin 3) (Fin 3) R} (hB : B.trace = 0)
-    (u v : Fin 3 → R) : Bᵀ *ᵥ (u ⨯₃ v) = -((B *ᵥ u) ⨯₃ v) - u ⨯₃ (B *ᵥ v) := by
-  have h : -((B *ᵥ u) ⨯₃ v + u ⨯₃ (B *ᵥ v)) = Bᵀ *ᵥ (u ⨯₃ v) := by
-    rw [mulVec_crossProduct_add, hB, zero_smul, zero_sub, neg_neg]
-  rw [← h]
-  abel
 
 /-- The endomorphism underlying `TauCeti.Octonion.slDerivation`: a matrix acts on the top-right
 vector entry and minus its transpose on the bottom-left one. -/
@@ -416,9 +398,9 @@ private def slDerivationEnd (A : Matrix (Fin 3) (Fin 3) R) : Module.End R (Octon
     · simp [mulVec_smul]
 
 /-- **A traceless matrix acts by a derivation.** On the two scalar entries the Leibniz rule is
-`TauCeti.Octonion.mulVec_dotProduct_transpose`, and on the two vector entries it is the traceless
-Cauchy--Binet relation `TauCeti.Octonion.transpose_mulVec_crossProduct`; tracelessness is used
-exactly there, and nowhere else. -/
+`Matrix.dotProduct_transpose_mulVec`, and on the two vector entries it is the traceless
+Cauchy--Binet relation `TauCeti.transpose_mulVec_crossProduct`; tracelessness is used exactly
+there, and nowhere else. -/
 private theorem slDerivationEnd_mem {A : Matrix (Fin 3) (Fin 3) R} (hA : A.trace = 0) :
     slDerivationEnd A ∈ derivationLieAlgebra R (Octonion R) := by
   rw [mem_derivationLieAlgebra]
@@ -431,12 +413,12 @@ private theorem slDerivationEnd_mem {A : Matrix (Fin 3) (Fin 3) R} (hA : A.trace
       mul_a, mul_b, mul_v, mul_w, mulVec_add, mulVec_sub, mulVec_smul,
       map_neg, LinearMap.neg_apply, zero_mul, mul_zero, zero_add, add_zero,
       zero_smul, dotProduct_neg, neg_dotProduct, neg_add_rev]
-  · rw [mulVec_dotProduct_transpose A x.v y.w]; ring
-  · rw [mulVec_dotProduct_transpose Aᵀ x.w y.v, transpose_transpose]; ring
+  · rw [dotProduct_comm (A *ᵥ x.v) y.w, ← dotProduct_transpose_mulVec]; ring
+  · rw [dotProduct_comm (Aᵀ *ᵥ x.w) y.v, dotProduct_transpose_mulVec]; ring
   · rw [hv]; module
   · rw [hw]; module
 
-/-- **`𝔰𝔩₃` acts on the split octonions by derivations**, the degree-`0` summand of `Der 𝕆`: a
+/-- **`𝔰𝔩₃` acts on the split octonions by derivations**, the degree-`0` family in `Der 𝕆`: a
 traceless `3 × 3` matrix acts on the top-right vector entry of a Zorn vector matrix and minus its
 transpose on the bottom-left one, and this is a homomorphism of Lie algebras. It is injective
 (`TauCeti.Octonion.slDerivation_injective`), so `Der 𝕆` contains a copy of `𝔰𝔩₃`. -/
@@ -488,6 +470,12 @@ private def vectorDerivationEnd (c : Fin 3 → R) : Module.End R (Octonion R) wh
       module
     · simp
 
+/-- The action of `TauCeti.Octonion.vectorDerivationEnd`, so that its Leibniz-rule proof can name
+the four entries instead of reshaping the goal by definitional equality. -/
+private theorem vectorDerivationEnd_apply (c : Fin 3 → R) (x : Octonion R) :
+    vectorDerivationEnd c x = ⟨-(c ⬝ᵥ x.w), c ⬝ᵥ x.w, (x.a - x.b) • c, c ⨯₃ x.v⟩ :=
+  (rfl)
+
 /-- The endomorphism underlying `TauCeti.Octonion.covectorDerivation`. Its top-right entry is
 written `x.w ⨯₃ d` rather than the more symmetric `-(d ⨯₃ x.w)` because Mathlib's
 `Matrix.cross_anticomm` normalizes it that way. -/
@@ -509,6 +497,12 @@ private def covectorDerivationEnd (d : Fin 3 → R) : Module.End R (Octonion R) 
     · simp
       module
 
+/-- The action of `TauCeti.Octonion.covectorDerivationEnd`, the mirror of
+`TauCeti.Octonion.vectorDerivationEnd_apply`. -/
+private theorem covectorDerivationEnd_apply (d : Fin 3 → R) (x : Octonion R) :
+    covectorDerivationEnd d x = ⟨d ⬝ᵥ x.v, -(d ⬝ᵥ x.v), x.w ⨯₃ d, (x.b - x.a) • d⟩ :=
+  (rfl)
+
 end Matrices
 
 section Coordinates
@@ -526,16 +520,12 @@ private theorem vectorDerivationEnd_mem (c : Fin 3 → R) :
   rw [mem_derivationLieAlgebra]
   intro x y
   refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
-  · change -(c ⬝ᵥ (x * y).w) = _
-    simp [vectorDerivationEnd]
+  · simp [vectorDerivationEnd_apply]
     ring
-  · change c ⬝ᵥ (x * y).w = _
-    simp [vectorDerivationEnd]
+  · simp [vectorDerivationEnd_apply]
     ring
-  · change (((x * y).a - (x * y).b) • c) i = _
-    fin_cases i <;> (simp [vectorDerivationEnd]; ring)
-  · change (c ⨯₃ (x * y).v) i = _
-    fin_cases i <;> (simp [vectorDerivationEnd]; ring)
+  · fin_cases i <;> (simp [vectorDerivationEnd_apply]; ring)
+  · fin_cases i <;> (simp [vectorDerivationEnd_apply]; ring)
 
 /-- **The degree-`2` endomorphisms are derivations**, by the computation of
 `TauCeti.Octonion.vectorDerivationEnd_mem` with the two vector entries exchanged. -/
@@ -544,16 +534,12 @@ private theorem covectorDerivationEnd_mem (d : Fin 3 → R) :
   rw [mem_derivationLieAlgebra]
   intro x y
   refine Octonion.ext ?_ ?_ (funext fun i => ?_) (funext fun i => ?_)
-  · change d ⬝ᵥ (x * y).v = _
-    simp [covectorDerivationEnd]
+  · simp [covectorDerivationEnd_apply]
     ring
-  · change -(d ⬝ᵥ (x * y).v) = _
-    simp [covectorDerivationEnd]
+  · simp [covectorDerivationEnd_apply]
     ring
-  · change ((x * y).w ⨯₃ d) i = _
-    fin_cases i <;> (simp [covectorDerivationEnd]; ring)
-  · change (((x * y).b - (x * y).a) • d) i = _
-    fin_cases i <;> (simp [covectorDerivationEnd]; ring)
+  · fin_cases i <;> (simp [covectorDerivationEnd_apply]; ring)
+  · fin_cases i <;> (simp [covectorDerivationEnd_apply]; ring)
 
 end Coordinates
 
@@ -564,7 +550,8 @@ open Matrix
 /-- **The degree-`1` derivations of `𝕆`**, indexed by their value `c` on the diagonal idempotent
 `e = ⟨1, 0, 0, 0⟩`: the derivation sending `e` to `⟨0, 0, c, 0⟩`, the top-right vector entry into
 the bottom-left one by `v ↦ c ⨯₃ v`, and the bottom-left entry back to the diagonal by
-`w ↦ (c ⬝ᵥ w) • (f - e)`. -/
+`w ↦ (c ⬝ᵥ w) • (f - e)`. It is injective
+(`TauCeti.Octonion.vectorDerivation_injective`). -/
 def vectorDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion R) where
   toFun c := ⟨vectorDerivationEnd c, vectorDerivationEnd_mem c⟩
   map_add' c c' := Subtype.ext <| LinearMap.ext fun x => by
@@ -583,7 +570,8 @@ def vectorDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion 
     · simp [vectorDerivationEnd]
 
 /-- **The degree-`2` derivations of `𝕆`**, the mirror image of `TauCeti.Octonion.vectorDerivation`
-across the diagonal of a Zorn vector matrix: the derivation sending `e` to `⟨0, 0, 0, -d⟩`. -/
+across the diagonal of a Zorn vector matrix: the derivation sending `e` to `⟨0, 0, 0, -d⟩`. It is
+injective (`TauCeti.Octonion.covectorDerivation_injective`). -/
 def covectorDerivation : (Fin 3 → R) →ₗ[R] derivationLieAlgebra R (Octonion R) where
   toFun d := ⟨covectorDerivationEnd d, covectorDerivationEnd_mem d⟩
   map_add' d d' := Subtype.ext <| LinearMap.ext fun x => by
@@ -655,33 +643,36 @@ theorem gradedDerivation_injective : Function.Injective (gradedDerivation (R := 
     simpa using congrArg Octonion.v (key ⟨0, 0, Pi.single j 1, 0⟩)
   simp [hA]
 
-/-- `𝔰𝔩₃` is `8`-dimensional. Private and stated only in the size this file needs: it is a fact
-about `LieAlgebra.SpecialLinear.sl`, not about octonions, so the general statement belongs with
-`sl` rather than here. -/
-private theorem finrank_sl_fin_three (K : Type*) [Field K] :
-    Module.finrank K (LieAlgebra.SpecialLinear.sl (Fin 3) K) = 8 := by
-  have hsurj : Function.Surjective (Matrix.traceLinearMap (Fin 3) K K) := fun r =>
-    ⟨Matrix.single 0 0 r, by simp⟩
-  have hrange : Module.finrank K (LinearMap.range (Matrix.traceLinearMap (Fin 3) K K)) = 1 := by
-    rw [LinearMap.range_eq_top.2 hsurj]
-    simp
-  have h := LinearMap.finrank_range_add_finrank_ker (Matrix.traceLinearMap (Fin 3) K K)
-  rw [hrange, Module.finrank_matrix] at h
-  simp at h
-  -- The carrier of `sl` is the kernel of the trace by definition, so the count transfers by
-  -- `exact` rather than by a rewrite.
-  have h8 : Module.finrank K (LinearMap.ker (Matrix.traceLinearMap (Fin 3) K K)) = 8 := by omega
-  exact h8
+/-- **`Der 𝕆` contains a copy of `𝔰𝔩₃`**, the one-family case of
+`TauCeti.Octonion.gradedDerivation_injective`. -/
+theorem slDerivation_injective :
+    Function.Injective (slDerivation (R := R)) := fun A B h =>
+  congrArg Prod.fst <| gradedDerivation_injective (a₁ := (A, 0, 0)) (a₂ := (B, 0, 0)) <| by
+    simp [h]
+
+/-- **`Der 𝕆` contains the degree-`1` copy of `R³`**, the one-family case of
+`TauCeti.Octonion.gradedDerivation_injective`. -/
+theorem vectorDerivation_injective :
+    Function.Injective (vectorDerivation (R := R)) := fun c c' h =>
+  congrArg (fun p => p.2.1) <|
+    gradedDerivation_injective (a₁ := (0, c, 0)) (a₂ := (0, c', 0)) <| by simp [h]
+
+/-- **`Der 𝕆` contains the degree-`2` copy of `R³`**, the one-family case of
+`TauCeti.Octonion.gradedDerivation_injective`. -/
+theorem covectorDerivation_injective :
+    Function.Injective (covectorDerivation (R := R)) := fun d d' h =>
+  congrArg (fun p => p.2.2) <|
+    gradedDerivation_injective (a₁ := (0, 0, d)) (a₂ := (0, 0, d')) <| by simp [h]
 
 /-- **`Der 𝕆` is at least `14`-dimensional** over a field, the half of `finrank (Der 𝕆) = 14` that
-an explicit supply of derivations gives: `8` from `𝔰𝔩₃` and `3 + 3` from the two off-diagonal
-families. The matching upper bound — that these `14` derivations are *all* of them — is not proved
-here. -/
-theorem le_finrank_derivationLieAlgebra (K : Type*) [Field K] :
+an explicit supply of derivations gives: `8 = 3 ^ 2 - 1` from `𝔰𝔩₃` (`TauCeti.finrank_sl`) and
+`3 + 3` from the two off-diagonal families. The matching upper bound — that these `14` derivations
+are *all* of them — is not proved here. -/
+theorem fourteen_le_finrank_derivationLieAlgebra (K : Type*) [Field K] :
     14 ≤ Module.finrank K (derivationLieAlgebra K (Octonion K)) := by
   have h := LinearMap.finrank_le_finrank_of_injective
     (f := gradedDerivation (R := K)) gradedDerivation_injective
-  rw [Module.finrank_prod, Module.finrank_prod, finrank_sl_fin_three,
+  rw [Module.finrank_prod, Module.finrank_prod, finrank_sl, Fintype.card_fin,
     Module.finrank_fin_fun] at h
   omega
 
