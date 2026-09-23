@@ -228,9 +228,12 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p) (hσ10 :
   obtain ⟨hc, hd⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
   refine ⟨δ, mem_Gamma1_iff_dvd_lowerRow.mpr ?_,
     natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries hp hσ10 hσ11 ha' e00 e01 e10 e11⟩
-  -- `m p ≡ 1 (mod N)`, from the Bézout relation, is what puts the left factor in `Γ₁(N)`
-  rw [e10, show δ 1 1 - 1 = γ 1 1 - 1 - (γ 1 0 - γ 1 1 * (N : ℤ)) * σ 0 1 by
-    linear_combination e11 + γ 1 1 * hσdet]
+  -- `m p ≡ 1 (mod N)`, from the Bézout relation, is what puts the left factor in `Γ₁(N)`: `e11`
+  -- alone gives `δ 1 1 = p d m - c n`, and only after `hσdet` replaces `p m` by `1 + n N` is
+  -- `δ 1 1 - 1` a combination of `d - 1` and `c - d N`, the quantities `hd` and `hc` control
+  have h11 : δ 1 1 - 1 = γ 1 1 - 1 - (γ 1 0 - γ 1 1 * (N : ℤ)) * σ 0 1 := by
+    linear_combination e11 + γ 1 1 * hσdet
+  rw [e10, h11]
   exact ⟨(hc.sub (dvd_mul_left _ _)).mul_left _, hd.sub ((hc.sub (dvd_mul_left _ _)).mul_right _)⟩
 
 /-- **The witness for the reverse inclusion.** For `0 < p` and `σ = !![m, n; N, p]`, the matrix
