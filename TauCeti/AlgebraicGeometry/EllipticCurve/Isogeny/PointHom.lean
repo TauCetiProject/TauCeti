@@ -126,11 +126,15 @@ theorem toPointHom_id (W : WeierstrassCurve.Affine F) [IsIntegrallyClosed W.Coor
   rw [toPointHom_apply, pushClass_id, AddMonoidHom.id_apply, ← Point.toClassEquiv_apply,
     AddEquiv.symm_apply_apply, AddMonoidHom.id_apply]
 
+local instance [IsIntegrallyClosed W₁.CoordinateRing] : IsDedekindDomain W₁.CoordinateRing :=
+  W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
+
 /-- **A point over the point at infinity is sent to `0`.** If the place of the affine point
 `(x, y)` of `W₁` restricts along `φ` to the place at infinity of `W₂` — the point lies in the fibre
 `φ⁻¹(O₂)` — then `φ.toPointHom` sends it to the point at infinity. -/
+@[simp]
 theorem toPointHom_some_eq_zero_of_isEquiv_comap_infinityPlace
-    [IsDedekindDomain W₁.CoordinateRing] {x y : F} (h : W₁.Nonsingular x y)
+    [IsIntegrallyClosed W₁.CoordinateRing] {x y : F} (h : W₁.Nonsingular x y)
     (hP : (((CoordinateRing.pointPlace h.1).valuation W₁.FunctionField).comap
       φ.fieldPullback.toRingHom).IsEquiv W₂.infinityPlace) :
     φ.toPointHom (.some x y h) = 0 := by

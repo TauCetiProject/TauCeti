@@ -100,11 +100,11 @@ variable {A K B : Type*} [CommRing A] [IsDedekindDomain A] [Field K] [Algebra A 
   [IsFractionRing A K] [CommRing B] [Algebra A B] [Algebra B K] [IsScalarTower A B K]
 
 /-- **A prime extends to the unit ideal of an overring containing an element with a pole at it.**
-If `b ∈ B` has `v 𝔭 b > 1`, then `b⁻¹ = n / d` with `n ∈ 𝔭` and `d ∉ 𝔭`, so `d = b n` lies in
-`𝔭B`; as `d` is invertible modulo the maximal ideal `𝔭`, so does `1`. -/
+If `b ∈ B` has `v 𝔭 b > 1`, then `𝔭B` is the unit ideal. -/
 theorem map_asIdeal_eq_top_of_one_lt_valuation [FaithfulSMul B K] (v : HeightOneSpectrum A)
     {b : B} (hb : 1 < v.valuation K (algebraMap B K b)) :
     v.asIdeal.map (algebraMap A B) = ⊤ := by
+  -- Write `b⁻¹ = n / d` with `n ∈ 𝔭` and `d ∉ 𝔭`; then `d = b n` lies in `𝔭B`.
   have hb0 : algebraMap B K b ≠ 0 := by
     rintro h
     rw [h, map_zero] at hb
@@ -121,6 +121,7 @@ theorem map_asIdeal_eq_top_of_one_lt_valuation [FaithfulSMul B K] (v : HeightOne
     apply FaithfulSMul.algebraMap_injective B K
     rw [map_mul, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply, ← hnd,
       ← mul_assoc, mul_inv_cancel₀ hb0, one_mul]
+  -- Since `d ∉ 𝔭` and `𝔭` is maximal, its inverse modulo `𝔭` puts `1` in `𝔭B`.
   obtain ⟨y, i, hi, hyi⟩ := v.isMaximal.exists_inv d.2
   rw [Ideal.eq_top_iff_one, ← map_one (algebraMap A B), ← hyi, map_add, map_mul, hd]
   exact Ideal.add_mem _ (Ideal.mul_mem_left _ _ (Ideal.mul_mem_left _ _
@@ -128,11 +129,7 @@ theorem map_asIdeal_eq_top_of_one_lt_valuation [FaithfulSMul B K] (v : HeightOne
 
 /-- **A prime extends to the prime of an overring carrying the same valuation**, unramified: if
 the valuation of the height one prime `𝔓` of the Dedekind overring `B` is that of `𝔭`, then
-`𝔭B = 𝔓`.
-
-Every maximal ideal of `B` containing `𝔭B` has a valuation bounded by `1` on `A` and centred at
-`𝔭`, hence equal to the valuation of `𝔭`, so it is `𝔓`. Thus `𝔭B` is a power of `𝔓`, and the
-exponent is `1` because a uniformizer of `𝔭` stays a uniformizer of `𝔓`. -/
+`𝔭B = 𝔓`. -/
 theorem map_asIdeal_eq_asIdeal_of_valuation_eq [IsDedekindDomain B] [IsFractionRing B K]
     (v : HeightOneSpectrum A) (𝔓 : HeightOneSpectrum B) (h : 𝔓.valuation K = v.valuation K) :
     v.asIdeal.map (algebraMap A B) = 𝔓.asIdeal := by
