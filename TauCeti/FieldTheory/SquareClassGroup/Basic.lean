@@ -44,9 +44,6 @@ variable {K : Type*} [Field K]
 abbrev SquareClassGroup (K : Type*) [Field K] : Type _ :=
   Additive Kˣ ⧸ (Subgroup.square Kˣ).toAddSubgroup
 
-/-- A shortcut to the additive group structure on the square-class quotient. -/
-instance : AddCommGroup (SquareClassGroup K) := inferInstance
-
 /-- The square-class group is a `ZMod 2`-module: every element has order dividing two, since the
 double of any unit class is the class of a square. -/
 instance : Module (ZMod 2) (SquareClassGroup K) :=

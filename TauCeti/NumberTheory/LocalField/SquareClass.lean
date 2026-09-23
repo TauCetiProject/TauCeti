@@ -119,7 +119,7 @@ theorem natCard_multiplicativeSquareClassGroup_of_isUnit_two (h2 : IsUnit (2 : �
       (card_squareClasses_of_isUnit h2)
 
 /-- **The square-class group of a nonarchimedean local field away from residue characteristic
-two has four elements.** This is the count `#(Kˣ ⧸ (Kˣ)ⁿ) = n · #μ_n(K)` of
+two has four elements.** This is the count `#(Kˣ ⧸ (Kˣ)²) = 4` of
 `TauCeti.card_squareClasses_of_isUnit`, read on `TauCeti.SquareClassGroup`. -/
 theorem natCard_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (SquareClassGroup K) = 4 := by
@@ -140,6 +140,8 @@ theorem squareClass_ne_zero_and_ne_of_isUniformizer_of_not_isSquare
     squareClass u ≠ 0 ∧ squareClass π ≠ 0 ∧ squareClass (u * π) ≠ 0 ∧
       squareClass u ≠ squareClass π ∧ squareClass u ≠ squareClass (u * π) ∧
       squareClass π ≠ squareClass (u * π) := by
+  let _ : AddCommGroup (SquareClassGroup K) :=
+    QuotientAddGroup.Quotient.addCommGroup (Subgroup.square Kˣ).toAddSubgroup
   have h0u : squareClass u ≠ 0 := (squareClass_eq_zero_iff u).not.mpr hu'
   have h0π : squareClass π ≠ 0 :=
     (squareClass_eq_zero_iff π).not.mpr (not_isSquare_of_isUniformizer hπ)
@@ -201,10 +203,7 @@ theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : K�
 nonsquare. -/
 theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
     ∃ u : 𝒪[K]ˣ, ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u) := by
-  have h2K : (2 : K) ≠ 0 := by
-    intro h
-    apply h2.ne_zero
-    exact Subtype.ext h
+  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
   obtain ⟨x, hx, hxsq⟩ := exists_mem_unitFiltration_not_isSquare h2K
   have hx0 : x ∈ unitFiltration K 0 := unitFiltration_antitone (Nat.zero_le _) hx
   let x0 : unitFiltration K 0 := ⟨x, hx0⟩
@@ -216,8 +215,8 @@ theorem exists_integerUnit_residue_not_isSquare (h2 : IsUnit (2 : 𝒪[K])) :
   exact hxsq
 
 /-- **The four square classes with an explicitly chosen unramified unit.** Away from residue
-characteristic two, if a unit `u` of `𝒪[K]` has nonsquare residue, then `1`, `u`, `π`, and
-`u π` represent all four square classes. -/
+characteristic two, if a unit `u` of `𝒪[K]` has nonsquare residue, then every element of `Kˣ`
+agrees, up to a square, with one of `1`, `u`, `π`, and `u π`. -/
 theorem exists_isSquare_mul_of_isUnit_two_of_integerUnit_residue_not_isSquare
     (h2 : IsUnit (2 : 𝒪[K])) {π : Kˣ} (hπ : IsUniformizer K π) (u : 𝒪[K]ˣ)
     (hu : ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u)) (a : Kˣ) :

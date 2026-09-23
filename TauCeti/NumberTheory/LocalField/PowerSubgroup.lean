@@ -359,12 +359,16 @@ theorem finiteIndex_range_powMonoidHom_of_isUnit {n : ℕ} (hn : IsUnit (n : �
   rw [Subgroup.index_eq_card, card_powerClasses_of_isUnit hn]
   exact mul_ne_zero hn0 Nat.card_pos.ne'
 
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
+theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) : (2 : K) ≠ 0 := by
+  simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero
+
 /-- **The square classes away from residue characteristic `2`.** If `2` is invertible in `𝒪[K]`,
 then `Kˣ ⧸ (Kˣ)²` has `4` elements: `μ_2(K) = {±1}` has order `2`. -/
 theorem card_squareClasses_of_isUnit (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) = 4 := by
-  have h2K : (2 : K) ≠ 0 := by
-    simpa only [map_ofNat] using (h2.map (Subring.subtype 𝒪[K])).ne_zero
+  have h2K : (2 : K) ≠ 0 := two_ne_zero_of_isUnit_two h2
   have hchar : ringChar K ≠ 2 := fun h ↦ h2K (by exact_mod_cast h ▸ ringChar.Nat.cast_ringChar)
   rw [card_powerClasses_of_isUnit (by exact_mod_cast h2),
     (IsPrimitiveRoot.neg_one (ringChar K) hchar).card_rootsOfUnity]
