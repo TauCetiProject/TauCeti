@@ -95,18 +95,11 @@ theorem eq_root_iff (f : posDef D) (z : ℍ) :
 /-- The root map is `SL(2, ℤ)`-equivariant: `root (γ • f) = γ • root f`, with the action
 `γ • f = f ∘ γ⁻¹` on forms and the Möbius action on `ℍ`. -/
 theorem root_smul (γ : SL(2, ℤ)) (f : posDef D) : root (γ • f) = γ • root f := by
-  refine ((eq_root_iff _ _).2 ?_).symm
-  have hden : ((γ 1 0 : ℝ) : ℂ) * root f + ((γ 1 1 : ℝ) : ℂ) ≠ 0 := by
-    refine linear_ne_zero (cd := ![(γ 1 0 : ℝ), γ 1 1]) (root f) fun h ↦ ?_
-    have h0 := congrFun h 0
-    have h1 := congrFun h 1
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Pi.zero_apply, Int.cast_eq_zero] at h0 h1
-    simpa [h0, h1] using Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  rw [coe_specialLinearGroup_apply]
-  simp only [SubMulAction.val_smul, smul_a, smul_b, smul_c, algebraMap_int_eq, eq_intCast]
-  push_cast at hden ⊢
-  field_simp
-  linear_combination (((γ 0 0 : ℤ) : ℂ) * γ 1 1 - γ 0 1 * γ 1 0) ^ 2 * (eq_root_iff f _).1 rfl
+  have hden : (γ 1 0 : ℂ) * root f + γ 1 1 ≠ 0 := denom_ne_zero γ (root f)
+  rw [eq_comm, eq_root_iff]
+  push_cast [coe_specialLinearGroup_apply, smul_a, smul_b, smul_c, eq_intCast]
+  -- `(γ • f)(γ • τ, 1) (r τ + s)² = (det γ)² f(τ, 1)` for `γ = !![p, q; r, s]` and `τ = root f`
+  grind [(eq_root_iff f _).1 rfl]
 
 /-- For fixed `D`, a positive definite form is determined by its root: the imaginary part of the
 root gives `a`, the real part then gives `b`, and the discriminant gives `c`. -/
