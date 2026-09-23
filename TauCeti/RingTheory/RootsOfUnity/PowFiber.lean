@@ -91,7 +91,7 @@ theorem preimage_image_pow_eq [CommGroupWithZero M]
 
 /-- Multiplication by the `m`-th roots of unity is free away from `0`. -/
 @[simp]
-theorem stabilizer_rootsOfUnity_of_ne_zero [CommMonoidWithZero M] [IsRightCancelMulZero M]
+theorem stabilizer_rootsOfUnity_of_ne_zero [CommMonoidWithZero M] [IsCancelMulZero M]
     {u : M} (hu : u ≠ 0) :
     stabilizer (rootsOfUnity m M) u = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).mpr fun ζ hζ ↦ ?_
