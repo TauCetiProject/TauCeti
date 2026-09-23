@@ -75,19 +75,14 @@ theorem ramificationGroup_succ_eq_bot_of_not_dvd_card_inertia
           ramificationGroup F P 0))
       (fun _ _ h ↦ Subtype.ext (congrArg
         (fun g : ramificationGroup F P 0 ↦ (g : P.integers.decompositionSubgroup F)) h))
-  obtain ⟨n, hn⟩ := (IsPGroup.iff_card.mp (isPGroup_ramificationGroup_succ F P p i))
+  have hcard := (isPGroup_ramificationGroup_succ F P p i).card_eq_or_dvd
   have hdvd : Nat.card (ramificationGroup F P (i + 1)) ∣
       Nat.card (ramificationGroup F P 0) :=
     Subgroup.card_dvd_of_le (ramificationGroup_antitone F P (Nat.zero_le (i + 1)))
-  cases n with
-  | zero =>
-    rw [Subgroup.eq_bot_iff_card]
-    simpa [pow_zero] using hn
-  | succ n =>
-    have hpdvd : p ∣ Nat.card (ramificationGroup F P (i + 1)) := by
-      rw [hn, pow_succ]
-      exact dvd_mul_left p (p ^ n)
-    exact (hp (hpdvd.trans hdvd)).elim
+  rcases hcard with hcard | hpdvd
+  · rw [Subgroup.eq_bot_iff_card]
+    exact hcard
+  · exact (hp (hpdvd.trans hdvd)).elim
 
 /-- Tame ramification has no wild inertia: in a finite Galois extension with separable
 residue extension, if the residue characteristic does not divide the ramification index,
