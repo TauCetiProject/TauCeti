@@ -44,6 +44,14 @@ variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {n : ℕ} (b : Module.Basis (Fin n) K P.W)
 
+private theorem spinAction_ι_mul_ι_basis (i : Fin n) (s : Finset (Fin n)) :
+    spinAction Q P
+        (CliffordAlgebra.ι Q (b i : V) * CliffordAlgebra.ι Q (P.dualVector b i : V))
+        (b.ExteriorAlgebra s) =
+      if i ∈ s then b.ExteriorAlgebra s else 0 := by
+  rw [map_mul, Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
+    ← P.wedge_apply, ← P.contract_apply, P.wedge_contract_dualVector_basis]
+
 /-- A type-`D` simple-coroot bivector acts on an exterior-basis spinor by the corresponding
 integral spin weight in the simply connected root datum. -/
 theorem spinAction_typeDSimpleCorootBivector_basis
@@ -52,11 +60,9 @@ theorem spinAction_typeDSimpleCorootBivector_basis
       algebraMap ℤ K (DynkinType.typeDSpinWeight s i) • b.ExteriorAlgebra s := by
   rw [P.typeDSimpleCorootBivector_def b]
   by_cases hnext : (i : ℕ) + 1 < n
-  · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply, map_mul, Module.End.mul_apply,
-      map_mul, Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
-      spinAction_ι_wedge, spinAction_ι_contract, ← P.wedge_apply, ← P.contract_apply,
-      ← P.wedge_apply, ← P.contract_apply, P.wedge_contract_dualVector_basis,
-      P.wedge_contract_dualVector_basis]
+  · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply,
+      spinAction_ι_mul_ι_basis P b i s,
+      spinAction_ι_mul_ι_basis P b ⟨(i : ℕ) + 1, hnext⟩ s]
     have hwt : algebraMap ℤ K (DynkinType.typeDSpinWeight s i) =
         algebraMap ℤ K (if i ∈ s then 1 else 0) -
           algebraMap ℤ K (if (⟨(i : ℕ) + 1, hnext⟩ : Fin n) ∈ s then 1 else 0) := by
@@ -66,10 +72,8 @@ theorem spinAction_typeDSimpleCorootBivector_basis
       by_cases hj : (⟨(i : ℕ) + 1, hnext⟩ : Fin n) ∈ s <;>
         simp [hi, hj]
   · rw [dite_eq_right hnext, map_sub, LinearMap.sub_apply, map_add, LinearMap.add_apply,
-      map_one, map_mul, Module.End.mul_apply, map_mul, Module.End.mul_apply,
-      spinAction_ι_wedge, spinAction_ι_contract, spinAction_ι_wedge, spinAction_ι_contract,
-      ← P.wedge_apply, ← P.contract_apply, ← P.wedge_apply, ← P.contract_apply,
-      P.wedge_contract_dualVector_basis, P.wedge_contract_dualVector_basis]
+      map_one, spinAction_ι_mul_ι_basis P b ⟨n - 2, by omega⟩ s,
+      spinAction_ι_mul_ι_basis P b ⟨n - 1, by omega⟩ s]
     have hi : i = (⟨n - 1, by omega⟩ : Fin n) := by
       apply Fin.ext
       dsimp only
