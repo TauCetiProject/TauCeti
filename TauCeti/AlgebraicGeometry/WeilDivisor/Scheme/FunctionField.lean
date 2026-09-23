@@ -193,9 +193,8 @@ theorem degree_equivFunctionFieldDivisor
   apply Finsupp.sum_congr
   intro x _
   congr 1
-  change ((X.toPlace (k := k) (x : X)).degree : ℤ) =
-    ((X ↘ Spec (.of k)).residueDegree x : ℤ)
-  exact_mod_cast X.toPlace_degree_eq_residueDegree (k := k) (x : X)
+  exact congrArg (fun n : ℕ ↦ (n : ℤ))
+    (X.toPlace_degree_eq_residueDegree (k := k) (x : X))
 
 /-- The scheme-theoretic degree of a pulled-back function-field divisor is its function-field
 degree. -/
@@ -236,9 +235,8 @@ theorem equivFunctionFieldDivisor_principalHom
     DFunLike.congr_fun (CodimensionOnePoint.toPlace_ordAddMonoidHom (k := k) x).symm
       (Additive.ofMul (Additive.toMul g))
 
-/-- Scheme-theoretic principal divisors become the corresponding function-field principal
-divisors under the point-to-place equivalence. -/
-@[simp]
+/-- Scheme-theoretic principal divisors become the corresponding place-order principal divisors
+under the point-to-place equivalence. -/
 theorem equivFunctionFieldDivisor_principalDivisor
     (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
     (hdim : ∀ x : X, coheight x ≤ 1) (hF : IsFunctionField k X.functionField)
@@ -253,6 +251,19 @@ theorem equivFunctionFieldDivisor_principalDivisor
   rw [← WeilDivisor.OrderSystem.principalHom_apply,
     ← WeilDivisor.OrderSystem.principalHom_apply, ← AddMonoidHom.comp_apply,
     equivFunctionFieldDivisor_principalHom]
+
+/-- Scheme-theoretic principal divisors become function-field principal divisors under the
+point-to-place equivalence. -/
+@[simp]
+theorem equivFunctionFieldDivisor_principal
+    (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) (hF : IsFunctionField k X.functionField)
+    (z : X.functionFieldˣ) :
+    equivFunctionFieldDivisor hex hdim
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor (Additive.ofMul z)) =
+      Divisor.principal hF z := by
+  rw [equivFunctionFieldDivisor_principalDivisor, Divisor.principalDivisor_eq,
+    toMul_ofMul]
 
 /-- Linear equivalence of scheme divisors is exactly linear equivalence of the corresponding
 function-field divisors. -/
