@@ -58,7 +58,6 @@ def restrictedProductCongrLeft (e : ι' ≃ ι) :
     exact congrFun ((e.piCongrLeft G).right_inv x) i
 
 /-- The reindexing equivalence preserves coordinates when evaluated at `e i`. -/
-@[simp]
 theorem restrictedProductCongrLeft_apply_apply (e : ι' ≃ ι)
     (x : Πʳ i, [G (e i), U (e i)]) (i : ι') :
     restrictedProductCongrLeft e x (e i) = x i := by
