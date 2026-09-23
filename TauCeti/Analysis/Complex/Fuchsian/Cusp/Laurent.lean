@@ -169,7 +169,7 @@ theorem hasSum_laurentQExpansion_natCast_sub (D : Γ.CuspDatum) (k : ℤ) (f : �
     D k f hf hq hq_norm]
   simp_rw [laurentQExpansion_coeff_natCast_sub]
   apply (hasSum_mul_zpow_natCast_sub_iff hq k).2
-  simpa only [← mul_assoc, ← zpow_add₀ hq, add_neg_cancel, zpow_zero, one_mul] using
+  simpa only [zpow_neg, mul_inv_cancel_left₀ (zpow_ne_zero k hq)] using
     hasSum_twistedQExpansion D k f hf hhol hbound hq_norm
 
 /-- Reindex a Laurent q-expansion supported in exponents at least `-k` by `n - k'`, for any
@@ -262,24 +262,6 @@ theorem laurentQExpansion_coeff_unique (D : Γ.CuspDatum) (k : ℤ) (f : ℍ →
       exact (hasSum_mul_zpow_natCast_sub_iff
         (Function.Periodic.qParam_ne_zero z) k).mp hreindexed
 
-/-- If `k ≤ k'`, the coefficients of the Laurent expansion constructed using the `k`-bound,
-reindexed by `n - k'`, are the Taylor coefficients of the `k'`-twisted extension. -/
-theorem laurentQExpansion_coeff_natCast_sub_of_le (D : Γ.CuspDatum) {k k' : ℤ}
-    (hkk' : k ≤ k') (f : ℍ → ℂ)
-    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
-    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
-    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
-      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) (n : ℕ) :
-    (laurentQExpansion D k f).coeff ((n : ℤ) - k') =
-      (twistedQExpansion D k' f).coeff n := by
-  have hbound' := TauCeti.UpperHalfPlane.isBigO_exp_of_le
-    D.width D.width_pos (k := (k : ℝ)) (k' := (k' : ℝ)) (by exact_mod_cast hkk') hbound
-  have hunique := laurentQExpansion_coeff_unique D k' f hf hhol hbound'
-    (c := fun j ↦ (laurentQExpansion D k f).coeff j)
-    (fun j hj ↦ laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (by omega))
-    (hasSum_laurentQExpansion_coordinate D k f hf hhol hbound) ((n : ℤ) - k')
-  simpa only [laurentQExpansion_coeff_natCast_sub] using hunique
-
 /-- Increasing a valid exponential growth rate does not change the Laurent q-expansion. -/
 theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : ℍ → ℂ)
     (hkk' : k ≤ k')
@@ -295,6 +277,19 @@ theorem laurentQExpansion_eq_of_le (D : Γ.CuspDatum) {k k' : ℤ} (f : ℍ → 
       (k := (k : ℝ)) (k' := (k' : ℝ)) (by exact_mod_cast hkk') hbound)
     (fun j hj ↦ laurentQExpansion_coeff_eq_zero_of_lt_neg D k f (by omega))
     (hasSum_laurentQExpansion_coordinate D k f hf hhol hbound) j
+
+/-- If `k ≤ k'`, the coefficients of the Laurent expansion constructed using the `k`-bound,
+reindexed by `n - k'`, are the Taylor coefficients of the `k'`-twisted extension. -/
+theorem laurentQExpansion_coeff_natCast_sub_of_le (D : Γ.CuspDatum) {k k' : ℤ}
+    (hkk' : k ≤ k') (f : ℍ → ℂ)
+    (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
+    (hhol : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f)
+    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) (n : ℕ) :
+    (laurentQExpansion D k f).coeff ((n : ℤ) - k') =
+      (twistedQExpansion D k' f).coeff n := by
+  rw [laurentQExpansion_eq_of_le D f hkk' hf hhol hbound,
+    laurentQExpansion_coeff_natCast_sub]
 
 /-- The Laurent q-expansion is independent of which valid exponential growth bound is used to
 construct it. -/

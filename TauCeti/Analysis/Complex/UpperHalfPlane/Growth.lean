@@ -49,8 +49,6 @@ theorem isBigO_exp_of_le {E : Type*} [NormedAddCommGroup E]
     f =O[atImInfty] fun z ↦ Real.exp (2 * Real.pi * k' * z.im / w) := by
   refine hf.trans (Asymptotics.isBigO_of_le _ fun z ↦ ?_)
   simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
-  apply (div_le_div_iff_of_pos_right hw).2
-  exact mul_le_mul_of_nonneg_right
-    (mul_le_mul_of_nonneg_left hkk' (by positivity)) z.im_pos.le
+  gcongr
 
 end TauCeti.UpperHalfPlane
