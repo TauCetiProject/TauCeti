@@ -59,11 +59,13 @@ open Finset
 namespace TauCeti
 
 /-- The integral binary quadratic form `a x² + b x y + c y²` is **reduced**: `|b| ≤ a ≤ c`, and
-`0 ≤ b` whenever `|b| = a` or `a = c`.
+`0 ≤ b` whenever `|b| = a` or `a = c` (Cohen, Definition 5.3.2).
 
 For a positive-definite form this picks exactly one representative of each `SL₂(ℤ)`-class: the
-inequalities place its root in the standard fundamental domain, and the sign condition chooses one
-of the two boundary points that `SL₂(ℤ)` identifies. -/
+inequalities place the root `τ = (-b + i √(4 a c - b²)) / (2 a)` of `a τ² + b τ + c` in
+`ModularGroup.fd`, and the sign condition chooses one of the two boundary points that `SL₂(ℤ)`
+identifies. Definiteness is not part of the predicate (`IsReducedForm 0 0 1` holds), but a reduced
+form with `discrim a b c < 0` has `0 < a`. -/
 def IsReducedForm (a b c : ℤ) : Prop :=
   |b| ≤ a ∧ a ≤ c ∧ (|b| = a ∨ a = c → 0 ≤ b)
 
@@ -73,11 +75,13 @@ instance (a b c : ℤ) : Decidable (IsReducedForm a b c) :=
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`, as triples
 `(a, b, c)`.
 
-The definition searches the box `1 ≤ a, c ≤ D`, `|b| ≤ D`, which makes it a finite, decidable
-set; `mem_reducedForms` shows that for `0 < D` this box loses nothing. -/
-def reducedForms (D : ℕ) : Finset (ℤ × ℤ × ℤ) :=
-  {t ∈ Icc 1 (D : ℤ) ×ˢ Icc (-D : ℤ) D ×ˢ Icc 1 (D : ℤ) |
-    discrim t.1 t.2.1 t.2.2 = -D ∧ IsReducedForm t.1 t.2.1 t.2.2}
+The definition searches the box `1 ≤ a, c ≤ D / 3`, `|b| ≤ D / 3`, which makes it a finite,
+decidable set; `mem_reducedForms` shows that for `0 < D` this box loses nothing. For `D = 0` the box
+is empty, so `reducedForms 0 = ∅`, although every `c y²` with `0 ≤ c` is a reduced form of
+discriminant `0`. -/
+def reducedForms (D : ℕ) : Finset (ℤ × ℤ × ℤ) := {t ∈ Icc 1 (D / 3 : ℤ) ×ˢ
+    Icc (-(D / 3) : ℤ) (D / 3) ×ˢ Icc 1 (D / 3 : ℤ) | discrim t.1 t.2.1 t.2.2 = -D ∧
+    IsReducedForm t.1 t.2.1 t.2.2}
 
 /-- **The reduced forms of discriminant `-D`** are the reduced triples `(a, b, c)` with
 `discrim a b c = -D`, for `0 < D`: a reduced form of negative discriminant has `1 ≤ a` and
@@ -93,7 +97,9 @@ theorem mem_reducedForms {D : ℕ} (hD : 0 < D) {a b c : ℤ} :
   -- `a = 0` would force `b = 0` and discriminant `0`; so `1 ≤ a`, and then `3 a c ≤ D`
   have ha : 1 ≤ a := by nlinarith
   have hc : 3 * (a * c) ≤ D := by nlinarith
-  refine ⟨⟨ha, by nlinarith⟩, ⟨by nlinarith, by nlinarith⟩, by omega, by nlinarith⟩
+  have h3a : 3 * a ≤ D := by nlinarith
+  have h3c : 3 * c ≤ D := by nlinarith
+  refine ⟨⟨ha, by omega⟩, ⟨by omega, by omega⟩, by omega, by omega⟩
 
 /-- A discriminant `b² - 4 a c` is `0` or `1` modulo `4`, so there are no reduced forms of
 discriminant `-D` when `D ≡ 1, 2 (mod 4)`. -/
