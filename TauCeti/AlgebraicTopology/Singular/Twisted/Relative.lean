@@ -219,6 +219,28 @@ def twistedChainComplexShortComplexCoefficientMap
     (LocalCoefficientSystem.twistedChainComplexMap_naturality P.map f).symm
     (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap f).symm
 
+@[simp]
+lemma twistedChainComplexShortComplexCoefficientMap_τ₁
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) :
+    (P.twistedChainComplexShortComplexCoefficientMap f).τ₁ =
+      LocalCoefficientSystem.twistedChainComplexCoefficientMap
+        ((LocalCoefficientSystem.pullback P.map.hom).map f) :=
+  (rfl)
+
+@[simp]
+lemma twistedChainComplexShortComplexCoefficientMap_τ₂
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) :
+    (P.twistedChainComplexShortComplexCoefficientMap f).τ₂ =
+      LocalCoefficientSystem.twistedChainComplexCoefficientMap f :=
+  (rfl)
+
+@[simp]
+lemma twistedChainComplexShortComplexCoefficientMap_τ₃
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) :
+    (P.twistedChainComplexShortComplexCoefficientMap f).τ₃ =
+      P.twistedChainComplexCoefficientMap f :=
+  (rfl)
+
 /-- The twisted chain sequence of a topological pair is short exact. -/
 lemma shortExact_twistedChainComplexShortComplex :
     (P.twistedChainComplexShortComplex L).ShortExact where
