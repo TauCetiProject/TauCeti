@@ -391,6 +391,7 @@ private def dgConcreteHomotopyComp (X Y Z : C) :
           refine ⟨h, ?_⟩
           exact congrArg Subtype.val hh))
 
+/-- The bilinear composition of homotopy classes induced by DG composition. -/
 noncomputable def dgHomotopyComp (X Y Z : C) :
     DGHomotopyClass R X Y →ₗ[R] DGHomotopyClass R Y Z →ₗ[R]
       DGHomotopyClass R X Z :=
