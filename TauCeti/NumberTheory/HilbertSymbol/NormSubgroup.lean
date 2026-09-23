@@ -105,7 +105,7 @@ theorem finiteIndex_quadraticNormSubgroup (a : R) [(Subgroup.square Rˣ).FiniteI
   Subgroup.finiteIndex_of_le (square_le_quadraticNormSubgroup a)
 
 /-- The element `-a` is the norm of the square-root generator of `R[√a]`. -/
-theorem neg_self_mem_quadraticNormSubgroup (a : Rˣ) :
+theorem neg_radicand_mem_quadraticNormSubgroup (a : Rˣ) :
     -a ∈ quadraticNormSubgroup (a : R) := by
   refine (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr ⟨⟨0, 1⟩, ?_⟩
   simp [QuadraticAlgebra.norm_def]
