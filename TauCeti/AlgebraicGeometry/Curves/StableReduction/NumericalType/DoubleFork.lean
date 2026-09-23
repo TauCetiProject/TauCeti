@@ -163,8 +163,8 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
       · exact (hleft_ne_chain (j + 1) (hmiddle_lt j) (by simpa [e] using hij)).elim
     · exfalso
       fin_cases i <;> fin_cases j
-      · exact (hr.ne (i := 0) (j := t - 1) (show 0 < t by omega) (show t - 1 < t by omega)
-          (show 0 ≠ t - 1 by omega) (by simpa [e] using hij)).elim
+      · exact (hr.ne (i := 0) (j := t - 1) (by omega) (by omega) (by omega)
+          (by simpa [e] using hij)).elim
       · exact (hr.branch_ne 0 (by omega) (by simpa [e] using hij.symm)).elim
       · exact (hleft_ne_chain (t - 1) (by omega) (by simpa [e] using hij)).elim
       · exact (hleftRight (by simpa [e] using hij)).elim
@@ -185,8 +185,8 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
       · exact (hr.branch_ne (i + 1) (hmiddle_lt i) (by simpa [e] using hij.symm)).elim
     · exfalso
       fin_cases i <;> fin_cases j
-      · exact (hr.ne (i := t - 1) (j := 0) (show t - 1 < t by omega) (show 0 < t by omega)
-          (show t - 1 ≠ 0 by omega) (by simpa [e] using hij)).elim
+      · exact (hr.ne (i := t - 1) (j := 0) (by omega) (by omega) (by omega)
+          (by simpa [e] using hij)).elim
       · exact (hleft_ne_chain (t - 1) (by omega) (by simpa [e] using hij.symm)).elim
       · exact (hr.branch_ne 0 (by omega) (by simpa [e] using hij)).elim
       · exact (hleftRight (by simpa [e] using hij.symm)).elim
@@ -210,120 +210,144 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     | _, _ => 0
   have hzero_ne_last : 0 ≠ t - 1 := by omega
   have hone_ne_last : 1 ≠ t - 1 := by omega
-  have hlast_ne_zero : t - 1 ≠ 0 := by omega
   have hlast_ne_one : t - 1 ≠ 1 := by omega
   have hzero_ne_penultimate : 0 ≠ t - 2 := by omega
   have hlast_ne_penultimate : t - 1 ≠ t - 2 := by omega
+  have hextra_comm (i j : DoubleForkIndex n) : extra i j = extra j i := by
+    rcases i with i | i | i <;> rcases j with j | j | j
+    all_goals simp only [extra]
+    case inl.inr.inr =>
+      by_cases hi : i = 1
+      · by_cases hj : j = 1
+        · simpa [hi, hj] using T.intersection_comm left right
+        · simp [hi, hj]
+      · simp [hi]
+    case inr.inr.inl =>
+      by_cases hi : i = 1
+      · by_cases hj : j = 1
+        · simpa [hi, hj] using T.intersection_comm right left
+        · simp [hi, hj]
+      · simp [hi]
+  -- It suffices to identify the six blocks on and above the diagonal. The other three blocks
+  -- follow from symmetry of the intersection pairing, the affine-D matrix, and `extra`.
+  have hmatrix_left_left (i j : Fin 2) :
+      T.intersection (e (.inl i)) (e (.inl j)) =
+        -(w : ℤ) * doubleForkCartanMatrix n (.inl i) (.inl j) + extra (.inl i) (.inl j) := by
+    simp only [e]
+    fin_cases i <;> fin_cases j
+    all_goals dsimp
+    · rw [hchainEntry 0 0 (by omega) (by omega)]
+      simp [extra]
+      ring_nf
+    · rw [hleftEntry 0 (by omega)]
+      simp [extra]
+    · rw [T.intersection_comm, hleftEntry 0 (by omega)]
+      simp [extra]
+    · rw [hl.branch_intersection_self, hwleft]
+      simp [extra]
+      ring_nf
+  have hmatrix_left_middle (i : Fin 2) (j : Fin (n + 2)) :
+      T.intersection (e (.inl i)) (e (.inr (.inl j))) =
+        -(w : ℤ) * doubleForkCartanMatrix n (.inl i) (.inr (.inl j)) +
+          extra (.inl i) (.inr (.inl j)) := by
+    simp only [e]
+    fin_cases i
+    all_goals dsimp
+    · rw [hchainEntry 0 (j + 1) (by omega) (hmiddle_lt j)]
+      simp only [extra, doubleForkCartanMatrix_inl_inr_inl]
+      by_cases hj0 : (j : ℕ) = 0
+      · have : j = 0 := Fin.ext hj0
+        subst j
+        norm_num
+      · simp [hj0]
+    · rw [T.intersection_comm, hleftEntry (j + 1) (hmiddle_lt j)]
+      simp only [extra, doubleForkCartanMatrix_inl_inr_inl]
+      by_cases hj0 : (j : ℕ) = 0
+      · have : j = 0 := Fin.ext hj0
+        subst j
+        norm_num
+      · simp [hj0]
+  have hmatrix_left_right (i j : Fin 2) :
+      T.intersection (e (.inl i)) (e (.inr (.inr j))) =
+        -(w : ℤ) * doubleForkCartanMatrix n (.inl i) (.inr (.inr j)) +
+          extra (.inl i) (.inr (.inr j)) := by
+    simp only [e]
+    fin_cases i <;> fin_cases j
+    all_goals dsimp
+    · rw [hchainEntry 0 (t - 1) (by omega) (by omega)]
+      simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
+      simp [hzero_ne_last, hone_ne_last]
+    · rw [hrightEntry 0 (by omega)]
+      simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
+      simp only [hzero_ne_penultimate, ↓reduceIte]
+      norm_num
+    · rw [T.intersection_comm, hleftEntry (t - 1) (by omega)]
+      simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
+      simp only [hlast_ne_one, ↓reduceIte]
+      norm_num
+    · norm_num [extra]
+  have hmatrix_middle_middle (i j : Fin (n + 2)) :
+      T.intersection (e (.inr (.inl i))) (e (.inr (.inl j))) =
+        -(w : ℤ) * doubleForkCartanMatrix n (.inr (.inl i)) (.inr (.inl j)) +
+          extra (.inr (.inl i)) (.inr (.inl j)) := by
+    simp only [e, extra, doubleForkCartanMatrix_inr_inl_inr_inl]
+    rw [hchainEntry (i + 1) (j + 1) (hmiddle_lt i) (hmiddle_lt j)]
+    split_ifs <;> omega
+  have hmatrix_middle_right (i : Fin (n + 2)) (j : Fin 2) :
+      T.intersection (e (.inr (.inl i))) (e (.inr (.inr j))) =
+        -(w : ℤ) * doubleForkCartanMatrix n (.inr (.inl i)) (.inr (.inr j)) +
+          extra (.inr (.inl i)) (.inr (.inr j)) := by
+    simp only [e]
+    fin_cases j
+    all_goals dsimp
+    · rw [hchainEntry (i + 1) (t - 1) (hmiddle_lt i) (by omega)]
+      simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inr]
+      split_ifs <;> omega
+    · rw [hrightEntry (i + 1) (hmiddle_lt i)]
+      simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inr]
+      split_ifs <;> omega
+  have hmatrix_right_right (i j : Fin 2) :
+      T.intersection (e (.inr (.inr i))) (e (.inr (.inr j))) =
+        -(w : ℤ) * doubleForkCartanMatrix n (.inr (.inr i)) (.inr (.inr j)) +
+          extra (.inr (.inr i)) (.inr (.inr j)) := by
+    simp only [e]
+    fin_cases i <;> fin_cases j
+    all_goals dsimp
+    · rw [hchainEntry (t - 1) (t - 1) (by omega) (by omega)]
+      simp [extra]
+      ring_nf
+    · rw [hrightEntry (t - 1) (by omega)]
+      simp only [hlast_ne_penultimate, ↓reduceIte]
+      norm_num [extra]
+    · rw [T.intersection_comm, hrightEntry (t - 1) (by omega)]
+      simp only [hlast_ne_penultimate, ↓reduceIte]
+      norm_num [extra]
+    · rw [hr.branch_intersection_self, hwright]
+      simp [extra]
+      ring_nf
+  have hmatrix_swap (i j : DoubleForkIndex n)
+      (h : T.intersection (e j) (e i) =
+        -(w : ℤ) * doubleForkCartanMatrix n j i + extra j i) :
+      T.intersection (e i) (e j) =
+        -(w : ℤ) * doubleForkCartanMatrix n i j + extra i j := by
+    calc
+      T.intersection (e i) (e j) = T.intersection (e j) (e i) := T.intersection_comm _ _
+      _ = -(w : ℤ) * doubleForkCartanMatrix n j i + extra j i := h
+      _ = -(w : ℤ) * doubleForkCartanMatrix n i j + extra i j := by
+        rw [← (doubleForkCartanMatrix_isSymm n).apply, hextra_comm]
   have hmatrix (i j : DoubleForkIndex n) :
       T.intersection (e i) (e j) =
         -(w : ℤ) * doubleForkCartanMatrix n i j + extra i j := by
     rcases i with i | i | i <;> rcases j with j | j | j
-    all_goals simp only [e]
-    · fin_cases i <;> fin_cases j
-      all_goals dsimp
-      · rw [hchainEntry 0 0 (by omega) (by omega)]
-        simp [extra]
-        ring_nf
-      · rw [hleftEntry 0 (by omega)]
-        simp [extra]
-      · rw [T.intersection_comm, hleftEntry 0 (by omega)]
-        simp [extra]
-      · rw [hl.branch_intersection_self, hwleft]
-        simp [extra]
-        ring_nf
-    · fin_cases i
-      all_goals dsimp
-      · rw [hchainEntry 0 (j + 1) (by omega) (hmiddle_lt j)]
-        simp only [extra, doubleForkCartanMatrix_inl_inr_inl]
-        by_cases hj0 : (j : ℕ) = 0
-        · have : j = 0 := Fin.ext hj0
-          subst j
-          norm_num
-        · simp [hj0]
-      · rw [T.intersection_comm, hleftEntry (j + 1) (hmiddle_lt j)]
-        simp only [extra, doubleForkCartanMatrix_inl_inr_inl]
-        by_cases hj0 : (j : ℕ) = 0
-        · have : j = 0 := Fin.ext hj0
-          subst j
-          norm_num
-        · simp [hj0]
-    · fin_cases i <;> fin_cases j
-      all_goals dsimp
-      · rw [hchainEntry 0 (t - 1) (by omega) (by omega)]
-        simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
-        simp [hzero_ne_last, hone_ne_last]
-      · rw [hrightEntry 0 (by omega)]
-        simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
-        simp only [hzero_ne_penultimate, ↓reduceIte]
-        norm_num
-      · rw [T.intersection_comm, hleftEntry (t - 1) (by omega)]
-        simp only [doubleForkCartanMatrix_inl_inr_inr, extra]
-        simp only [hlast_ne_one, ↓reduceIte]
-        norm_num
-      · norm_num [extra]
-    · fin_cases j
-      all_goals dsimp
-      · rw [hchainEntry (i + 1) 0 (hmiddle_lt i) (by omega)]
-        simp only [extra, doubleForkCartanMatrix_inr_inl_inl]
-        by_cases hi0 : (i : ℕ) = 0
-        · have : i = 0 := Fin.ext hi0
-          subst i
-          norm_num
-        · simp [hi0]
-      · rw [hleftEntry (i + 1) (hmiddle_lt i)]
-        simp only [extra, doubleForkCartanMatrix_inr_inl_inl]
-        by_cases hi0 : (i : ℕ) = 0
-        · have : i = 0 := Fin.ext hi0
-          subst i
-          norm_num
-        · simp [hi0]
-    · simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inl]
-      rw [hchainEntry (i + 1) (j + 1) (hmiddle_lt i) (hmiddle_lt j)]
-      split_ifs <;> omega
-    · fin_cases j
-      all_goals dsimp
-      · rw [hchainEntry (i + 1) (t - 1) (hmiddle_lt i) (by omega)]
-        simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inr]
-        split_ifs <;> omega
-      · rw [hrightEntry (i + 1) (hmiddle_lt i)]
-        simp only [extra, doubleForkCartanMatrix_inr_inl_inr_inr]
-        split_ifs <;> omega
-    · fin_cases i <;> fin_cases j
-      all_goals dsimp
-      · rw [hchainEntry (t - 1) 0 (by omega) (by omega)]
-        simp only [doubleForkCartanMatrix_inr_inr_inl, extra]
-        simp [hlast_ne_zero, hone_ne_last]
-      · rw [hleftEntry (t - 1) (by omega)]
-        simp only [doubleForkCartanMatrix_inr_inr_inl, extra]
-        simp only [hlast_ne_one, ↓reduceIte]
-        norm_num
-      · rw [T.intersection_comm, hrightEntry 0 (by omega)]
-        simp only [doubleForkCartanMatrix_inr_inr_inl, extra]
-        simp only [hzero_ne_penultimate, ↓reduceIte]
-        norm_num
-      · norm_num [extra]
-    · fin_cases i
-      all_goals dsimp
-      · rw [hchainEntry (t - 1) (j + 1) (by omega) (hmiddle_lt j)]
-        simp only [extra, doubleForkCartanMatrix_inr_inr_inr_inl]
-        split_ifs <;> omega
-      · rw [T.intersection_comm, hrightEntry (j + 1) (hmiddle_lt j)]
-        simp only [extra, doubleForkCartanMatrix_inr_inr_inr_inl]
-        split_ifs <;> omega
-    · fin_cases i <;> fin_cases j
-      all_goals dsimp
-      · rw [hchainEntry (t - 1) (t - 1) (by omega) (by omega)]
-        simp [extra]
-        ring_nf
-      · rw [hrightEntry (t - 1) (by omega)]
-        simp only [hlast_ne_penultimate, ↓reduceIte]
-        norm_num [extra]
-      · rw [T.intersection_comm, hrightEntry (t - 1) (by omega)]
-        simp only [hlast_ne_penultimate, ↓reduceIte]
-        norm_num [extra]
-      · rw [hr.branch_intersection_self, hwright]
-        simp [extra]
-        ring_nf
+    · exact hmatrix_left_left i j
+    · exact hmatrix_left_middle i j
+    · exact hmatrix_left_right i j
+    · exact hmatrix_swap (.inr (.inl i)) (.inl j) (hmatrix_left_middle j i)
+    · exact hmatrix_middle_middle i j
+    · exact hmatrix_middle_right i j
+    · exact hmatrix_swap (.inr (.inr i)) (.inl j) (hmatrix_left_right j i)
+    · exact hmatrix_swap (.inr (.inr i)) (.inr (.inl j)) (hmatrix_middle_right j i)
+    · exact hmatrix_right_right i j
   have hmark (i : DoubleForkIndex n) : (mark i : ℚ) = doubleForkMark n i := by
     rcases i with i | i | i <;> simp [mark]
   have hcartan (i : DoubleForkIndex n) :
