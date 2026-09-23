@@ -132,8 +132,7 @@ theorem IsRegularCone.realCharacter_eq_zero_on_face_iff {I : Type*}
     have hmem : i (primitiveGenerator hi hσ.toIsToricCone ρ) ∈ F :=
       (hσ.mem_faceOrderIso_iff hi F ρ).mp hρ
     have hzero := hm _ hmem
-    rw [hi.realCharacter_apply, ← (hb ρ).eq_primitiveGenerator hi hσ.toIsToricCone,
-      ← coe_regularDualSemigroupEquiv_fst_apply hi hσ.toIsToricCone hb] at hzero
+    rw [hσ.realCharacter_apply_primitiveGenerator hi hb] at hzero
     exact_mod_cast hzero
   · intro hm y hy
     have hF : F.toPointedCone = PointedCone.hull ℝ
@@ -145,12 +144,13 @@ theorem IsRegularCone.realCharacter_eq_zero_on_face_iff {I : Type*}
         PointedCone.ofSubmodule (LinearMap.ker (hi.realCharacter (m : N →+ ℤ))) := by
       apply Submodule.span_le.2
       rintro _ ⟨_, ⟨ρ, hρ, rfl⟩, rfl⟩
-      change hi.realCharacter (m : N →+ ℤ)
-        (i (primitiveGenerator hi hσ.toIsToricCone ρ)) = 0
-      rw [hi.realCharacter_apply,
-        ← (hb ρ).eq_primitiveGenerator hi hσ.toIsToricCone,
-        ← coe_regularDualSemigroupEquiv_fst_apply hi hσ.toIsToricCone hb]
+      apply PointedCone.mem_ofSubmodule_iff.mpr
+      apply LinearMap.mem_ker.mpr
+      rw [hσ.realCharacter_apply_primitiveGenerator hi hb]
       exact_mod_cast hm ρ hρ
-    exact LinearMap.mem_ker.mp (hle (hF ▸ hy))
+    rw [← PointedCone.Face.mem_toPointedCone, hF] at hy
+    have hker := hle hy
+    rw [PointedCone.mem_ofSubmodule_iff, LinearMap.mem_ker] at hker
+    exact hker
 
 end TauCeti.Toric

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Primitive
+import TauCeti.Data.Fin.Sum
 
 /-!
 # Regular toric cones and regular fans
@@ -348,14 +349,6 @@ theorem isUnit_det_toMatrix_compl {ι : Type*} [Fintype ι] [DecidableEq ι]
   exact isUnit_det_toMatrix_submatrix_inr hi hσ (hb.isPrimitiveGenerator_reindex e he)
     (hb'.isPrimitiveGenerator_reindex e' he')
 
-private theorem exists_sum_equiv_toricRay {m : ℕ} (s : ToricRay σ ↪ Fin m) :
-    ∃ (l : ℕ) (f : ToricRay σ ⊕ Fin l ≃ Fin m), ∀ ρ, f (Sum.inl ρ) = s ρ := by
-  classical
-  have _ : Fintype (ToricRay σ) := Fintype.ofInjective s s.injective
-  exact ⟨Fintype.card {j : Fin m // j ∉ Set.range s},
-    (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
-      (Equiv.sumCompl fun j : Fin m ↦ j ∈ Set.range s), fun ρ ↦ rfl⟩
-
 /-- Two extending bases of the same cone admit compatible splittings of their index sets into the
 rays of the cone and a common complement `Fin l`, in which the transition matrix has the block form
 `[[1, B], [0, D]]` with `D` unimodular. The two index sets have the same size, both being the rank
@@ -372,8 +365,8 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
     intro m l f
     have _ : Finite (ToricRay σ) := Finite.of_injective _ (f.injective.comp Sum.inl_injective)
     simpa [Nat.card_sum] using (Nat.card_congr f)
-  obtain ⟨l, e, he⟩ := IsExtendingBasis.exists_sum_equiv_toricRay r
-  obtain ⟨l', e', he'⟩ := exists_sum_equiv_toricRay r'
+  obtain ⟨l, e, he⟩ := r.exists_equiv_sum_fin
+  obtain ⟨l', e', he'⟩ := r'.exists_equiv_sum_fin
   have hn : Module.finrank ℤ N = n := by simpa using Module.finrank_eq_card_basis b
   have hn' : Module.finrank ℤ N = n' := by simpa using Module.finrank_eq_card_basis b'
   obtain rfl : l' = l := by
@@ -393,7 +386,7 @@ theorem exists_basis_sum (h : IsRegularCone i σ) :
     ∃ (l : ℕ) (b : Module.Basis (ToricRay σ ⊕ Fin l) ℤ N),
   ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ)) := by
   obtain ⟨n, b, r, hb⟩ := h.exists_basis
-  obtain ⟨l, e, he⟩ := IsExtendingBasis.exists_sum_equiv_toricRay r
+  obtain ⟨l, e, he⟩ := r.exists_equiv_sum_fin
   exact ⟨l, b.reindex e.symm, hb.isPrimitiveGenerator_reindex e he⟩
 
 end IsRegularCone

@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
+import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
-# Iterated two-element sums as `Fin 2` and `Fin 3`
+# Finite sums and finite types
 
 `Unit ⊕ Unit` and `Fin 2`, or `Unit ⊕ Unit ⊕ Unit` and `Fin 3`, are the two ways a small index
 type arises: one variable per named slot, or one variable per numeral. Translating between them
 is pure bookkeeping, needed wherever an object indexed by named slots must be presented against
 an API indexed by `Fin n`.
+
+More generally, an embedding of a type `α` into `Fin n` identifies `Fin n` with the sum of `α`
+and a finite complementary type.  This packages the standard splitting of a finite type along
+the range of an embedding.
 
 These are Mathlib's own compositions — `finOneEquiv` on each summand, then `finSumFinEquiv` —
 given a name and their evaluation lemmas, so that call sites reindexing a two- or three-variable
@@ -26,16 +32,31 @@ object can rewrite rather than unfold them.
   `0` and the right to `1`.
 * `unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`, sending the
   outer left summand to `0` and the two inner ones to `1` and `2`.
+* `Function.Embedding.exists_equiv_sum_fin`: an embedding into `Fin n` extends to an equivalence
+  from the sum with a finite complement.
 
 ## Implementation notes
 
-Each composition is an implementation detail: the evaluation lemmas characterise the equivalence
-completely, so `Mathlib.Logic.Equiv.Fin.Basic`, which supplies `finOneEquiv` and `finSumFinEquiv`
-and is used only in the definition bodies, is imported privately rather than re-exported. Only
-`Mathlib.Logic.Equiv.Defs`, needed for the types of the declarations, is public.
+The constructions are implementation details: `Mathlib.Data.Fintype.EquivFin` and
+`Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather than re-exported. Only the
+equivalence and embedding interfaces needed by the declaration types are public.
 -/
 
 public section
+
+namespace Function.Embedding
+
+/-- An embedding `s : α ↪ Fin n` extends to an equivalence from `α` together with a finite
+complement to `Fin n`. -/
+theorem exists_equiv_sum_fin {α : Type*} {n : ℕ} (s : α ↪ Fin n) :
+    ∃ (l : ℕ) (e : α ⊕ Fin l ≃ Fin n), ∀ a, e (Sum.inl a) = s a := by
+  classical
+  have _ : Fintype α := Fintype.ofInjective s s.injective
+  exact ⟨Fintype.card {j : Fin n // j ∉ Set.range s},
+    (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
+      (Equiv.sumCompl fun j : Fin n ↦ j ∈ Set.range s), fun a ↦ rfl⟩
+
+end Function.Embedding
 
 /-- The equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left summand to `0` and the right to `1`.
 
