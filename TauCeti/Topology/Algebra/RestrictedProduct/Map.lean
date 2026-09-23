@@ -12,8 +12,9 @@ public import TauCeti.Topology.Algebra.RestrictedProduct.Basic
 
 A family of coordinate homomorphisms induces a homomorphism of restricted products when it
 preserves the reference subgroups at all but finitely many indices. This file records that map,
-its continuity and functoriality, and the stronger everywhere-preserving specialization that maps
-the everywhere-integral subgroup into the everywhere-integral subgroup.
+its continuity and functoriality, the criterion for it to be surjective, and the stronger
+everywhere-preserving specialization that maps the everywhere-integral subgroup into the
+everywhere-integral subgroup.
 
 The distinction between eventual and everywhere preservation is essential: the final theorem
 gives an explicit family for which the eventual map does not preserve the integral subgroup.
@@ -113,6 +114,57 @@ theorem restrictedProductMap_comp {H : ι → Type w} {K : ι → Type z}
   ext x i
   rw [MonoidHom.comp_apply, restrictedProductMap_apply, restrictedProductMap_apply,
     restrictedProductMap_apply, MonoidHom.comp_apply]
+
+/-- A componentwise restricted-product homomorphism is surjective exactly when every coordinate
+map is surjective and, at all but finitely many indices, the coordinate map carries the source
+reference subgroup onto the target one. Surjectivity of each coordinate map alone is not enough:
+an element of the target may lie in the target reference subgroups at infinitely many indices
+where no preimage lies in the source reference subgroup. -/
+theorem surjective_restrictedProductMap_iff {H : ι → Type w} [∀ i, Group (H i)]
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    (φ : ∀ i, G i →* H i)
+    (hφ : ∀ᶠ i in cofinite, Set.MapsTo (φ i) (U i) (U' i)) :
+    Function.Surjective (restrictedProductMap U U' φ hφ) ↔
+      (∀ i, Function.Surjective (φ i)) ∧
+        ∀ᶠ i in cofinite, Set.SurjOn (φ i) (U i) (U' i) := by
+  classical
+  constructor
+  · intro h
+    refine ⟨fun i z ↦ ?_, ?_⟩
+    · -- Hit the element supported at `i` with value `z`.
+      obtain ⟨x, hx⟩ := h ⟨Pi.mulSingle i z,
+        (eventually_cofinite_ne i).mono fun j hj ↦ by simp [Pi.mulSingle_eq_of_ne hj]⟩
+      refine ⟨x i, ?_⟩
+      rw [← restrictedProductMap_apply U U' φ hφ, hx, RestrictedProduct.mk_apply,
+        Pi.mulSingle_eq_same]
+    · -- At each index where `φ j` misses part of `U' j`, pick a missed element; elsewhere pick
+      -- `1`. A preimage of the result must leave `U j` at every index of the first kind.
+      have hmiss : ∀ j, ∃ z ∈ U' j, ¬ Set.SurjOn (φ j) (U j) (U' j) → z ∉ φ j '' U j := by
+        intro j
+        by_cases hj : Set.SurjOn (φ j) (U j) (U' j)
+        · exact ⟨1, one_mem _, fun h ↦ absurd hj h⟩
+        · obtain ⟨z, hz, hz'⟩ := Set.not_subset.mp hj
+          exact ⟨z, hz, fun _ ↦ hz'⟩
+      choose z hzU hz using hmiss
+      obtain ⟨x, hx⟩ := h ⟨z, .of_forall hzU⟩
+      filter_upwards [x.2] with j hxj
+      by_contra hj
+      refine hz j hj ⟨x j, hxj, ?_⟩
+      rw [← restrictedProductMap_apply U U' φ hφ, hx, RestrictedProduct.mk_apply]
+  · rintro ⟨hsurj, hsurjOn⟩ y
+    -- Lift `y i` into `U i` whenever possible, and to an arbitrary preimage otherwise.
+    have hlift : ∀ i, ∃ a, φ i a = y i ∧ (y i ∈ φ i '' U i → a ∈ U i) := by
+      intro i
+      by_cases hi : y i ∈ φ i '' U i
+      · obtain ⟨a, ha, hay⟩ := hi
+        exact ⟨a, hay, fun _ ↦ ha⟩
+      · obtain ⟨a, hay⟩ := hsurj i (y i)
+        exact ⟨a, hay, fun h ↦ absurd h hi⟩
+    choose x hx hxU using hlift
+    refine ⟨⟨x, ?_⟩, ?_⟩
+    · filter_upwards [y.2, hsurjOn] with i hyi hi using hxU i (hi hyi)
+    · ext i
+      exact (restrictedProductMap_apply U U' φ hφ _ i).trans (hx i)
 
 /-- An everywhere-preserving componentwise map sends the integral subgroup into the target
 integral subgroup. -/
