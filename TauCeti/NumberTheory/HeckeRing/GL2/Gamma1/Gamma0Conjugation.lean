@@ -267,30 +267,22 @@ twisted representative — `σ · diag(p, 1)` for `σ` with bottom row `(N, p)` 
 
 Only the left factor is built here. The right one is `CoprimeCosets`' own: at that bottom row
 `exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none` already produces a `γ ∈ Γ₁(N)` with
-`diag(1, p) · γ = primeRep σ p none`, so there is nothing to re-derive.
-
-The relation comes for free at the call site: reducing `a (p f) − b c = 1` along `N ∣ c` leaves
-`(a f) p ≡ 1 (mod N)`, so `p` is invertible modulo the level with no coprimality hypothesis. -/
+`diag(1, p) · γ = primeRep σ p none`, so there is nothing to re-derive. -/
 private lemma exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout {a b c' f : ℤ}
     (hσ : a * f * (p : ℤ) - b * c' * (N : ℤ) = 1) :
     ∃ τ ∈ Gamma1 N, (τ : Matrix (Fin 2) (Fin 2) ℤ) *
       !![a * f * (p : ℤ), b * c'; (N : ℤ) * (p : ℤ), (p : ℤ)] =
         conjDiag a b ((N : ℤ) * c') ((p : ℤ) * f) (p : ℤ) := by
-  set c := (N : ℤ) * c'
   -- the conjugate's entries, in the form `!![p α, β; p γ, δ]`
-  set α := a * f - b * c
-  set β := a * b * ((p : ℤ) - 1)
-  set γ := c * f * (1 - (p : ℤ))
-  set δ := (p : ℤ) + b * c * ((p : ℤ) - 1)
-  have hconj : conjDiag a b c ((p : ℤ) * f) (p : ℤ) = !![(p : ℤ) * α, β; (p : ℤ) * γ, δ] :=
-    conjDiag_eq_twisted a b c f (p : ℤ) (by linear_combination hσ)
-  -- the left factor `τ′`
-  have hτdet : (twistTau (p : ℤ) α β γ δ (a * f) (b * c') (N : ℤ)).det = 1 :=
-    twistTau_det _ _ _ _ _ _ _ _ hσ (by linear_combination (1 + b * c * ((p : ℤ) - 1)) * hσ)
-  refine ⟨⟨_, hτdet⟩, mem_Gamma1_iff_dvd_lowerRow.mpr <| twistTau_gamma1 (p : ℤ) α β γ δ (a * f)
-    (b * c') ⟨c' * f * (1 - (p : ℤ)), by ring⟩ ⟨b * c' * ((p : ℤ) - 1), by ring⟩ hσ, ?_⟩
-  rw [hconj]
-  exact twistTau_mul (p : ℤ) α β γ δ (a * f) (b * c') (N : ℤ) hσ
+  have hconj := conjDiag_eq_twisted a b ((N : ℤ) * c') f (p : ℤ) (by linear_combination hσ)
+  -- the left factor `τ′`, with `α, β, γ, δ` read off `hconj`
+  refine ⟨⟨_, twistTau_det _ _ _ _ _ _ _ _ hσ ?_⟩,
+    mem_Gamma1_iff_dvd_lowerRow.mpr <| twistTau_gamma1 _ _ _ _ _ _ _ ?_ ?_ hσ,
+    (twistTau_mul _ _ _ _ _ _ _ _ hσ).trans hconj.symm⟩
+  · linear_combination (1 + b * ((N : ℤ) * c') * ((p : ℤ) - 1)) * hσ
+  · exact ((dvd_mul_right _ _).mul_right _).mul_right _
+  · rw [add_sub_cancel_left]
+    exact ((dvd_mul_right _ _).mul_left _).mul_right _
 
 /-- **Conjugation by `Γ₀(N)` fixes the double coset of `diag(1, p)`**, in the case where `p`
 divides the conjugating matrix's lower-right entry. -/
