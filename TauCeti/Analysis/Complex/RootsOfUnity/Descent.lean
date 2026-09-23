@@ -63,10 +63,10 @@ variable {E : Type*} {m : ℕ}
 `f` at the principal `m`-th root of `w`. When `f` is invariant under the `m`-th roots of unity on
 a set `s`, this is the function on `(· ^ m) '' s` through which `f` factors on `s`
 (`TauCeti.descendPow_pow`). -/
-noncomputable def descendPow (m : ℕ) [NeZero m] (f : ℂ → E) (w : ℂ) : E :=
+noncomputable def descendPow (m : ℕ) (f : ℂ → E) (w : ℂ) : E :=
   f (w ^ (m⁻¹ : ℂ))
 
-theorem descendPow_apply {m : ℕ} [NeZero m] (f : ℂ → E) (w : ℂ) :
+theorem descendPow_apply {m : ℕ} (f : ℂ → E) (w : ℂ) :
     descendPow m f w = f (w ^ (m⁻¹ : ℂ)) :=
   (rfl)
 
