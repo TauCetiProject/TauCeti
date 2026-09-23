@@ -226,9 +226,6 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p)
     (hσ11 : σ 1 1 = (p : ℤ)) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) (hpa : (p : ℤ) ∣ γ 0 0) :
     ∃ δ : SL(2, ℤ), δ ∈ Gamma1 N ∧
       natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * primeRep σ p none := by
-  obtain ⟨-, hd, hc⟩ := (Gamma1_mem N γ).mp hγ
-  replace hc : (N : ℤ) ∣ γ 1 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp hc
-  replace hd : (N : ℤ) ∣ γ 1 1 - 1 := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp <| by simp [hd]
   obtain ⟨a', ha'⟩ := hpa
   have hσdet : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 := mul_sub_mul_eq_one_of_lowerRow hσ10 hσ11
   -- the new left factor; its determinant is `1` by those of `γ` and `σ`
@@ -248,6 +245,7 @@ lemma exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd (hp : 0 < p)
         γ 1 1 - 1 + (N : ℤ) * (γ 1 1 * σ 0 1) - γ 1 0 * σ 0 1 := by
     linear_combination γ 1 1 * hσdet
   have hδΓ1 : δ ∈ Gamma1 N := by
+    obtain ⟨hc, hd⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
     refine mem_Gamma1_of_dvd_lowerRow ?_ ?_
     · rw [e10]
       exact (hc.sub (dvd_mul_left _ _)).mul_left _
@@ -269,7 +267,7 @@ lemma exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (hp : 0 < p) (hσ10 : σ 
   obtain ⟨γ, hγmat⟩ : ∃ γ : SL(2, ℤ), (γ : Matrix (Fin 2) (Fin 2) ℤ) =
       !![σ 0 0 * (p : ℤ), σ 0 1; (N : ℤ), 1] :=
     ⟨⟨_, by simpa [Matrix.det_fin_two_of] using hσdet⟩, rfl⟩
-  refine ⟨γ, mem_Gamma1_of_dvd_lowerRow (by simp [hγmat]) (by simp [hγmat]), ?_⟩
+  refine ⟨γ, mem_Gamma1_iff_dvd_lowerRow.mpr (by simp [hγmat]), ?_⟩
   -- the left factor is trivial here, so the entrywise lemma is fed the entries of `γ` at `δ = 1`
   have ha' : γ 0 0 = (p : ℤ) * σ 0 0 := by simp [hγmat, mul_comm]
   have h00 : (1 : SL(2, ℤ)) 0 0 = γ 0 0 - γ 0 1 * (N : ℤ) := by simpa [hγmat] using hσdet.symm

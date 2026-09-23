@@ -44,8 +44,9 @@ therefore stated in the packaged `UniformContinuousOn` / `Metric.ediam` vocabula
 `ε`–`δ` form; `Metric.uniformContinuousOn_iff_le` unpacks the first for a consumer that wants an
 explicit modulus, and `Metric.isBounded_iff_ediam_ne_top` the second.
 
-The target is an arbitrary pseudo-metric space: the domination hypothesis is a statement about
-`edist`, and neither conclusion sees any linear structure. The domain is `ℝ` with Lebesgue measure,
+The domination hypothesis is a statement about `edist`, and no conclusion sees any linear
+structure: the diameter bound holds for an arbitrary pseudo-emetric target, and boundedness and
+uniform continuity for an arbitrary pseudo-metric one. The domain is `ℝ` with Lebesgue measure,
 which is where `Ioc x y` and its measure `ENNReal.ofReal (y - x)` — the two things the modulus
 argument uses — live.
 
@@ -66,7 +67,9 @@ namespace TauCeti
 open MeasureTheory Set
 open scoped ENNReal
 
-variable {X : Type*} [PseudoMetricSpace X] {g : ℝ → X} {φ : ℝ → ℝ≥0∞} {s : Set ℝ}
+section EMetric
+
+variable {X : Type*} [PseudoEMetricSpace X] {g : ℝ → X} {φ : ℝ → ℝ≥0∞} {s : Set ℝ}
 
 /-- **The increments of `g` are dominated over all of `s`, not merely over subintervals.** On an
 order-connected `s` the interval `Ioc x y` spanned by two of its points is again inside `s`, so the
@@ -100,6 +103,10 @@ theorem ediam_image_le_of_edist_le_setLIntegral (hs : s.OrdConnected)
   refine Metric.ediam_le ?_
   rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
   exact edist_le_setLIntegral hs hdom hx hy
+
+end EMetric
+
+variable {X : Type*} [PseudoMetricSpace X] {g : ℝ → X} {φ : ℝ → ℝ≥0∞} {s : Set ℝ}
 
 /-- **A map whose increments are dominated by a density of finite integral has bounded image.**
 The finiteness form of `TauCeti.ediam_image_le_of_edist_le_setLIntegral`, and the form a

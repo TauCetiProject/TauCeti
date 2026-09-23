@@ -209,7 +209,7 @@ theorem hypergeometricWeight_ne_top (N K n k : ℕ) (hn : n ≤ N) :
 
 /-- Every function is integrable against a hypergeometric measure, since the measure has finite
 support. -/
-theorem integrable_hypergeometricMeasure {E : Type*} [NormedAddCommGroup E]
+theorem integrable_hypergeometricMeasure {E : Type*} [NormedAddGroup E]
     (f : ℕ → E) (N K n : ℕ) : Integrable f (hypergeometricMeasure N K n) := by
   rw [hypergeometricMeasure]
   split_ifs with h
@@ -472,7 +472,7 @@ theorem variance_id_map_cast_hypergeometricMeasure_of_population_one {K n : ℕ}
 /-- Every function on `ℝ` is integrable against the real-valued cast of a hypergeometric law,
 since the native law has finite support. -/
 @[simp]
-theorem integrable_map_cast_hypergeometricMeasure {E : Type*} [NormedAddCommGroup E]
+theorem integrable_map_cast_hypergeometricMeasure {E : Type*} [NormedAddGroup E]
     (f : ℝ → E) (N K n : ℕ) :
     Integrable f ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)) := by
   rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]

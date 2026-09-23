@@ -159,6 +159,11 @@ theorem mem_integralIdealsAway_iff {S : Finset (HeightOneSpectrum (𝓞 K))}
   change Ideal.IsPrimeTo I (S : Set (HeightOneSpectrum (𝓞 K))) ↔ _
   exact Ideal.isPrimeTo_iff
 
+/-- Members of `integralIdealsAway S` are nonzero ideals of a Dedekind domain, so they cancel. -/
+instance (S : Finset (HeightOneSpectrum (𝓞 K))) : CancelCommMonoid (integralIdealsAway S) where
+  mul_left_cancel a _ _ h :=
+    Subtype.ext <| mul_left_cancel₀ (mem_integralIdealsAway_iff.mp a.2).1 (congrArg Subtype.val h)
+
 /-- Membership in `integralIdealsAway S` is equivalently nonvanishing and vanishing fractional
 ideal multiplicity at every prime in `S`. -/
 theorem mem_integralIdealsAway_iff_count_eq_zero {S : Finset (HeightOneSpectrum (𝓞 K))}

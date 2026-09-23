@@ -68,11 +68,11 @@ omit [CompleteSpace X] in
 /-- The growth-bound estimate for the integrand in the defining resolvent integral. -/
 lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
-    (lambda : ℝ) (x : X) {t : ℝ} (ht : 0 < t) :
+    (lambda : ℝ) (x : X) {t : ℝ} (ht : 0 ≤ t) :
     ‖Real.exp (-(lambda * t)) • S.realOperator t x‖ ≤
       M * ‖x‖ * Real.exp (-(lambda - ω) * t) := by
   simpa only [pow_zero, one_mul, neg_mul] using
-    S.norm_pow_mul_resolvent_integrand_le hb 0 lambda x ht.le
+    S.norm_pow_mul_resolvent_integrand_le hb 0 lambda x ht
 
 private lemma StronglyContinuousSemigroup.aestronglyMeasurable_pow_mul_resolvent_integrand
     (S : StronglyContinuousSemigroup X) (n : ℕ) (lambda : ℝ) (x : X) :
@@ -140,7 +140,7 @@ noncomputable def StronglyContinuousSemigroup.resolvent
             · exact (exp_neg_integrableOn_Ioi 0 hpos).integrable.const_mul (M * ‖x‖)
             · apply (ae_restrict_mem measurableSet_Ioi).mono
               intro t (ht : 0 < t)
-              exact S.norm_resolvent_integrand_le hb lambda x ht
+              exact S.norm_resolvent_integrand_le hb lambda x ht.le
         _ = M / (lambda - ω) * ‖x‖ := by
             rw [MeasureTheory.integral_const_mul]
             have h_eval :

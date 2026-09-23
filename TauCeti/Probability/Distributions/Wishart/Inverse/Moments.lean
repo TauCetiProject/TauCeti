@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Probability.Distributions.InverseGamma
+public import TauCeti.Probability.Distributions.InverseGamma.Moments
 public import TauCeti.Probability.Distributions.Wishart.Inverse.Basic
 
 import TauCeti.Analysis.Matrix.PosSemidef

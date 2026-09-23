@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Group.PowerClassGroup
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 
 /-!
@@ -66,6 +67,8 @@ isomorphism** `TauCeti.kummerIso`.
   `TauCeti.kummerMap_eq_one_iff` the pointwise form.
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
+* `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
+  degree-one comparison isomorphism.
 
 ## References
 
@@ -343,6 +346,31 @@ theorem kummerIso_apply (hn : IsUnit (n : K)) (x : powerClassQuotient Kˣ n) :
 theorem kummerIso_mk (hn : IsUnit (n : K)) (a : Kˣ) :
     kummerIso K n hn (QuotientGroup.mk a) = kummerMap K n hn a := by
   rw [kummerIso_apply, kummerClassMap_mk]
+
+/-! ### The Kummer map against canonical continuous cohomology -/
+
+/-- **The canonical Kummer map** from units of `K` to Mathlib's continuous cohomology of the
+Kummer coefficient module. It is the explicit Kummer map transported through the degree-one
+comparison isomorphism. -/
+noncomputable def kummerMapCanonical (hn : IsUnit (n : K)) :
+    Kˣ →* Multiplicative
+      (continuousCohomology 1
+        (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K n))) :=
+  AddMonoidHom.toMultiplicativeRight <|
+    (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+      (KummerCoeff K n)).toAddMonoidHom.comp
+        (AddMonoidHom.toMultiplicativeRight.symm (kummerMap K n hn))
+
+/-- **The explicit and canonical Kummer maps agree.** The degree-one comparison sends the
+explicit Kummer class of a unit to its canonical continuous-cohomology class. -/
+@[simp]
+theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
+    Multiplicative.toAdd (kummerMapCanonical K n hn a) =
+      explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+        (KummerCoeff K n) (Multiplicative.toAdd (kummerMap K n hn a)) := by
+  rw [kummerMapCanonical, AddMonoidHom.toMultiplicativeRight_apply_apply, toAdd_ofAdd,
+    AddMonoidHom.comp_apply, AddMonoidHom.toMultiplicativeRight_symm_apply_apply, toMul_ofMul,
+    AddEquiv.coe_toAddMonoidHom]
 
 /-! ### Transport to another coefficient model -/
 

@@ -41,7 +41,7 @@ over `J` into the `n`-th corner-tail family. The conditional form of Lévy's dow
 conditionally independent given the tail. Mathlib's description of conditional independence through
 `condExpKernel` turns this into independence under almost every conditional law. Countably many
 pairs `I`, `J` share one null set, and independence of finite square blocks gives joint
-dissociation (`jointlyDissociated_of_indep_blockSigma_finset`).
+dissociation (`jointlyDissociated_iff_indepFun_restrict`).
 
 ## Main results
 
@@ -227,17 +227,6 @@ theorem JointlyExchangeable.ae_jointlyDissociated_condExpKernel_arrayTail
     simp only [ae_all_iff, Filter.eventually_imp_distrib_left]
     exact hfin
   filter_upwards [hall] with x hx
-  -- the finite square blocks are read by the restrictions
-  have hle : ∀ I : Finset ℕ, blockSigma (fun p (y : ℕ × ℕ → α) => y p) (↑I ×ˢ ↑I) ≤
-      MeasurableSpace.comap (fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y) inferInstance := by
-    refine fun I ↦ blockSigma_le_iff.mpr fun p hp ↦ ?_
-    have hp' : p ∈ I ×ˢ I := by rwa [← Finset.mem_coe, Finset.coe_product]
-    exact (measurable_pi_apply (⟨p, hp'⟩ : ↥(I ×ˢ I))).comp
-      (comap_measurable fun y : ℕ × ℕ → α => (I ×ˢ I).restrict y)
-  refine jointlyDissociated_of_indep_blockSigma_finset (fun p ↦ measurable_pi_apply p)
-    fun I J hIJ ↦ ?_
-  have h := hx I J hIJ
-  rw [IndepFun_iff_Indep] at h
-  exact indep_of_indep_of_le h (hle I) (hle J)
+  exact (jointlyDissociated_iff_indepFun_restrict fun p => measurable_pi_apply p).2 hx
 
 end TauCeti.Probability

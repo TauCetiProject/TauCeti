@@ -60,11 +60,11 @@ theorem continuousMonoidHomEquiv_symm_apply_etaFn (f : G →* P) (g : G) :
       (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) = f g := by
   rw [← continuousMonoidHomEquiv_apply, Equiv.apply_symm_apply]
 
-/-- Two continuous homomorphisms from a profinite completion to a Hausdorff topological group
+/-- Two continuous homomorphisms from a profinite completion to a Hausdorff topological monoid
 agree if they agree on the canonical dense image of the original group. -/
 @[ext]
 theorem continuousMonoidHom_ext
-    {Q : Type v} [Group Q] [TopologicalSpace Q] [T2Space Q]
+    {Q : Type v} [Monoid Q] [TopologicalSpace Q] [T2Space Q]
     {f g : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* Q}
     (h : ∀ x : G,
       f (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) x) =

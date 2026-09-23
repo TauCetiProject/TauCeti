@@ -175,26 +175,8 @@ theorem toReal_weibullPDF (k lam x : ℝ) :
 /-- The real Weibull density is measurable in the sample point. -/
 @[fun_prop]
 theorem measurable_weibullPDFReal (k lam : ℝ) : Measurable (weibullPDFReal k lam) := by
-  by_cases hvalid : 0 < k ∧ 0 < lam
-  · rcases hvalid with ⟨hk, hlam⟩
-    have heq : weibullPDFReal k lam = fun x ↦
-        if 0 < x then (k / lam) * Real.exp (Real.log (x / lam) * (k - 1)) *
-          Real.exp (-Real.exp (Real.log (x / lam) * k)) else 0 := by
-      funext x
-      by_cases hx : 0 < x
-      · rw [weibullPDFReal_of_pos hk hlam hx, ite_eq_left hx,
-          Real.rpow_def_of_pos (div_pos hx hlam), Real.rpow_def_of_pos (div_pos hx hlam)]
-      · rw [weibullPDFReal_of_nonpos (not_lt.mp hx) k lam, ite_eq_right hx]
-    rw [heq]
-    refine Measurable.ite (measurableSet_lt measurable_const measurable_id) (by fun_prop)
-      measurable_const
-  · have heq : weibullPDFReal k lam = 0 := by
-      funext x
-      rw [weibullPDFReal]
-      simp only [Pi.zero_apply]
-      exact ite_eq_right (fun hx ↦ hvalid ⟨hx.1, hx.2.1⟩)
-    rw [heq]
-    fun_prop
+  unfold weibullPDFReal
+  exact Measurable.ite (by measurability) (by fun_prop) measurable_const
 
 /-- The `ℝ≥0∞`-valued Weibull density is measurable in the sample point. -/
 @[fun_prop]
@@ -513,34 +495,8 @@ theorem variance_id_weibullMeasure (hk : 0 < k) (hlam : 0 < lam) :
 @[fun_prop]
 theorem measurable_uncurry_weibullPDF :
     Measurable fun q : (ℝ × ℝ) × ℝ ↦ weibullPDF q.1.1 q.1.2 q.2 := by
-  have heq : (fun q : (ℝ × ℝ) × ℝ ↦ weibullPDF q.1.1 q.1.2 q.2) = fun q ↦
-      ENNReal.ofReal (if 0 < q.1.1 ∧ 0 < q.1.2 ∧ 0 < q.2 then
-        (q.1.1 / q.1.2) * Real.exp (Real.log (q.2 / q.1.2) * (q.1.1 - 1)) *
-          Real.exp (-Real.exp (Real.log (q.2 / q.1.2) * q.1.1)) else 0) := by
-    funext q
-    rw [weibullPDF, weibullPDFReal]
-    split_ifs with h
-    · rw [Real.rpow_def_of_pos (div_pos h.2.2 h.2.1),
-        Real.rpow_def_of_pos (div_pos h.2.2 h.2.1)]
-    · rfl
-  rw [heq]
-  refine (Measurable.ite ?_ (by fun_prop) measurable_const).ennreal_ofReal
-  have hkset : MeasurableSet {q : (ℝ × ℝ) × ℝ | (0 : ℝ) < q.1.1} :=
-    measurableSet_lt (measurable_const : Measurable fun _ : (ℝ × ℝ) × ℝ ↦ (0 : ℝ))
-      measurable_fst.fst
-  have hlamset : MeasurableSet {q : (ℝ × ℝ) × ℝ | (0 : ℝ) < q.1.2} :=
-    measurableSet_lt (measurable_const : Measurable fun _ : (ℝ × ℝ) × ℝ ↦ (0 : ℝ))
-      measurable_fst.snd
-  have hxset : MeasurableSet {q : (ℝ × ℝ) × ℝ | (0 : ℝ) < q.2} :=
-    measurableSet_lt (measurable_const : Measurable fun _ : (ℝ × ℝ) × ℝ ↦ (0 : ℝ))
-      measurable_snd
-  have hset : {q : (ℝ × ℝ) × ℝ | (0 : ℝ) < q.1.1 ∧ 0 < q.1.2 ∧ 0 < q.2} =
-      {q | (0 : ℝ) < q.1.1} ∩ {q | (0 : ℝ) < q.1.2} ∩ {q | (0 : ℝ) < q.2} := by
-    ext q
-    simp only [Set.mem_ofPred_eq, Set.mem_inter_iff]
-    exact and_assoc.symm
-  rw [hset]
-  exact (hkset.inter hlamset).inter hxset
+  unfold weibullPDF weibullPDFReal
+  exact (Measurable.ite (by measurability) (by fun_prop) measurable_const).ennreal_ofReal
 
 /-- The Weibull family is measurable in shape and scale. -/
 @[fun_prop]

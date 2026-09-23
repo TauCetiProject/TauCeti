@@ -181,8 +181,8 @@ private lemma exists_mem_Gamma1_mul_diag_mul_eq_conjDiag_of_bezout (hp : 0 < p) 
   have ht : b + (-b * u) * e = (p : ℤ) * (b * v) := by linear_combination (-b) * huv
   have hτdet : (conjTau a b c e (p : ℤ) (-b * u) (b * v)).det = 1 :=
     conjTau_det _ _ _ _ _ _ _ (by exact_mod_cast hp.ne') hdet ht
-  obtain ⟨h10, h11⟩ := conjTau_gamma1 (N := N) a b c e (p : ℤ) (-b * u) (b * v) hc
-  refine ⟨⟨_, hτdet⟩, ModularGroup.T ^ (-b * u), mem_Gamma1_of_dvd_lowerRow h10 h11,
+  refine ⟨⟨_, hτdet⟩, ModularGroup.T ^ (-b * u),
+    mem_Gamma1_iff_dvd_lowerRow.mpr <| conjTau_gamma1 a b c e (p : ℤ) (-b * u) (b * v) hc,
     T_zpow_mem_Gamma1 N _, ?_⟩
   rw [ModularGroup.coe_T_zpow, mul_assoc,
     show (!![1, 0; 0, (p : ℤ)] * !![1, -b * u; 0, 1] : Matrix (Fin 2) (Fin 2) ℤ)
@@ -299,11 +299,9 @@ private lemma exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout (hp : 0 < p
   have hτdet : (twistTau (p : ℤ) α β γ δ (a * f) (b * c') (N : ℤ)).det = 1 :=
     twistTau_det _ _ _ _ _ _ _ _ (by exact_mod_cast hp.ne') hσ
       (hconj ▸ conjDiag_det a b c ((p : ℤ) * f) (p : ℤ) (by rw [hc]; linear_combination hσ))
-  obtain ⟨h10, h11⟩ :=
-    twistTau_gamma1 (N := N) (p : ℤ) α β γ δ (a * f) (b * c')
-      ⟨c' * f * (1 - (p : ℤ)), by rw [hγ, hc]; ring⟩
-      ⟨b * c' * ((p : ℤ) - 1), by rw [hδ, hc]; ring⟩ hσ
-  refine ⟨⟨_, hτdet⟩, mem_Gamma1_of_dvd_lowerRow h10 h11, ?_⟩
+  refine ⟨⟨_, hτdet⟩, mem_Gamma1_iff_dvd_lowerRow.mpr <|
+    twistTau_gamma1 (p : ℤ) α β γ δ (a * f) (b * c') ⟨c' * f * (1 - (p : ℤ)), by rw [hγ, hc]; ring⟩
+      ⟨b * c' * ((p : ℤ) - 1), by rw [hδ, hc]; ring⟩ hσ, ?_⟩
   rw [hconj]
   exact twistTau_mul (p : ℤ) α β γ δ (a * f) (b * c') (N : ℤ) hσ
 

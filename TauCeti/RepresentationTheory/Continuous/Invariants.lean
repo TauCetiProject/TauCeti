@@ -17,6 +17,11 @@ action of `G` on it factors through `G ⧸ S`. This file builds that `G ⧸ S`-r
 the unbundled language and in the category `TopRep`, together with the inclusion of the invariants
 back into the ambient object.
 
+It also provides the elementary continuous linear equivalence between an additive subgroup of a
+topological additive group and the invariants of a continuous representation when their underlying
+elements agree. This coefficient-level identification is independent of the quotient-representation
+construction.
+
 These are the continuous counterparts of Mathlib's `Representation.toInvariants`,
 `Representation.quotientToInvariants`, `Representation.quotientToInvariants_lift` and
 `Rep.quotientToInvariantsFunctor`. They are the coefficient half of inflation: the compatible pair
@@ -25,6 +30,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main definitions
 
+* `AddSubgroup.continuousLinearEquivInvariants`: an additive subgroup is continuously linearly
+  equivalent to a representation's invariants when membership agrees.
 * `ContRepresentation.toInvariants`: the representation of `G` on the invariants of `π|_S`.
 * `ContRepresentation.quotientToInvariants`: the representation of `G ⧸ S` on the
   invariants of `π|_S`.
@@ -44,13 +51,40 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 * `TopRep.isIso_invariantsResMap_quotientToInvariantsι`: taking quotient invariants and then
   invariants under the quotient recovers the original invariants.
 
-These declarations live in the root `ContRepresentation` and `TopRep` namespaces, rather than
-under `TauCeti`, so that dot notation on the Mathlib types they extend elaborates.
+These declarations live in the root `AddSubgroup`, `ContRepresentation` and `TopRep` namespaces,
+rather than under `TauCeti`, so that dot notation on the Mathlib types they extend elaborates.
 -/
 
 public section
 
 open CategoryTheory TauCeti.ContRepresentation
+
+namespace AddSubgroup
+
+variable {G M : Type*} [Monoid G] [AddCommGroup M] [TopologicalSpace M]
+  [IsTopologicalAddGroup M]
+
+/-- An additive subgroup of a topological additive group is continuously linearly equivalent to the
+invariants of a continuous representation when they have the same underlying elements. -/
+def continuousLinearEquivInvariants (S : AddSubgroup M) (pi : ContRepresentation ℤ G M)
+    (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) : S ≃L[ℤ] pi.invariants :=
+  ContinuousLinearEquiv.ofEq S.toIntSubmodule pi.invariants
+    (SetLike.ext fun m ↦ (h m).symm)
+
+@[simp]
+theorem continuousLinearEquivInvariants_val (S : AddSubgroup M)
+    (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) (m : S) :
+    (S.continuousLinearEquivInvariants pi h m).1 = m.1 :=
+  (rfl)
+
+@[simp]
+theorem continuousLinearEquivInvariants_symm_val (S : AddSubgroup M)
+    (pi : ContRepresentation ℤ G M) (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S)
+    (m : pi.invariants) :
+    ((S.continuousLinearEquivInvariants pi h).symm m).1 = m.1 :=
+  (rfl)
+
+end AddSubgroup
 
 namespace ContRepresentation
 

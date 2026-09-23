@@ -88,15 +88,30 @@ q-parameter. -/
 theorem cuspTwist_inv_smul (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) (z : ℍ) :
     cuspTwist D k f (D.scaling⁻¹ • z) =
       Function.Periodic.qParam D.width z ^ k * f (D.scaling⁻¹ • z) := by
-  have hcoordinate : coordinate D (D.scaling⁻¹ • z) =
-      Function.Periodic.qParam D.width z := by
-    rw [coordinate_apply, smul_inv_smul]
-  rw [cuspTwist_apply, hcoordinate]
+  rw [cuspTwist_apply, coordinate_inv_smul]
+
+/-- Multiplying by the cusp coordinate to the power `k` cancels the corresponding exponential
+growth in the scaling coordinate. In particular, the twisted function is bounded at the cusp. -/
+theorem isBoundedAtImInfty_cuspTwist_inv_smul (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
+    (hbound : (fun z : ℍ ↦ f (D.scaling⁻¹ • z)) =O[atImInfty]
+      fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
+    IsBoundedAtImInfty fun z : ℍ ↦ cuspTwist D k f (D.scaling⁻¹ • z) := by
+  have hscaled : (fun z : ℍ ↦ cuspTwist D k f (D.scaling⁻¹ • z)) =
+      fun z : ℍ ↦ Function.Periodic.qParam D.width z ^ k * f (D.scaling⁻¹ • z) := by
+    funext z
+    exact cuspTwist_inv_smul D k f z
+  rw [hscaled]
+  exact TauCeti.UpperHalfPlane.isBoundedAtImInfty_qParam_zpow_mul_of_isBigO
+    D.width k hbound
 
 /-- The q-extension after twisting by an integer power of the cusp coordinate. Under the
 corresponding hypothesis of `analyticAt_twistedExtension_zero`, it is analytic at zero. -/
 def twistedExtension (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) : ℂ → ℂ :=
   cuspExtension D (cuspTwist D k f)
+
+/-- The twisted extension is the cusp extension of the coordinate-twisted function. -/
+theorem twistedExtension_def (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ) :
+    twistedExtension D k f = cuspExtension D (cuspTwist D k f) := (rfl)
 
 /-- Pulling the twisted extension back along the cusp coordinate recovers `q^k f`. -/
 @[simp]
@@ -116,13 +131,7 @@ theorem analyticAt_twistedExtension_zero (D : Γ.CuspDatum) (k : ℤ) (f : ℍ �
   apply analyticAt_cuspExtension_zero D (cuspTwist D k f)
   · exact cuspTwist_smul D k f hf
   · exact mdifferentiable_cuspTwist D k f hhol
-  · have hscaled : (fun z : ℍ ↦ cuspTwist D k f (D.scaling⁻¹ • z)) =
-        fun z : ℍ ↦ Function.Periodic.qParam D.width z ^ k * f (D.scaling⁻¹ • z) := by
-      funext z
-      exact cuspTwist_inv_smul D k f z
-    rw [hscaled]
-    exact TauCeti.UpperHalfPlane.isBoundedAtImInfty_qParam_zpow_mul_of_isBigO
-      D.width k hbound
+  · exact isBoundedAtImInfty_cuspTwist_inv_smul D k f hbound
 
 /-- The value at zero of the twisted extension is the value at infinity of the twisted
 function in the normalized scaling coordinate. -/
@@ -134,15 +143,31 @@ theorem twistedExtension_zero_eq_valueAtInfty (D : Γ.CuspDatum) (k : ℤ) (f : 
     twistedExtension D k f 0 = valueAtInfty (fun z : ℍ ↦
       Function.Periodic.qParam D.width z ^ k * f (D.scaling⁻¹ • z)) := by
   have hbounded : IsBoundedAtImInfty
-      (fun z : ℍ ↦ cuspTwist D k f (D.scaling⁻¹ • z)) := by
-    simpa only [cuspTwist_inv_smul] using
-      TauCeti.UpperHalfPlane.isBoundedAtImInfty_qParam_zpow_mul_of_isBigO
-        D.width k hbound
+      (fun z : ℍ ↦ cuspTwist D k f (D.scaling⁻¹ • z)) :=
+    isBoundedAtImInfty_cuspTwist_inv_smul D k f hbound
   rw [twistedExtension, cuspExtension_zero_eq_valueAtInfty D (cuspTwist D k f)
     (cuspTwist_smul D k f hf) (mdifferentiable_cuspTwist D k f hhol) hbounded]
   congr 1
   funext z
   exact cuspTwist_inv_smul D k f z
+
+/-- On the punctured unit disc, the original cusp extension is `q⁻ᵏ` times its twisted
+extension. -/
+theorem cuspExtension_eq_zpow_mul_twistedExtension_of_ne_zero_of_norm_lt_one
+    (D : Γ.CuspDatum) (k : ℤ)
+    (f : ℍ → ℂ) (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
+    {q : ℂ} (hq : q ≠ 0) (hq_norm : ‖q‖ < 1) :
+    cuspExtension D f q = q ^ (-k) * twistedExtension D k f q := by
+  obtain ⟨z, hz⟩ := (isOpenQuotientMap_qCoordinate D).surjective
+    (⟨Complex.UnitDisc.mk q hq_norm, fun h ↦ hq (congrArg ((↑) : 𝔻 → ℂ) h)⟩ :
+      {q : 𝔻 // q ≠ 0})
+  have hzq : coordinate D z = q := by
+    rw [← coe_qCoordinate, hz]
+    exact Complex.UnitDisc.coe_mk q hq_norm
+  rw [← hzq, cuspExtension_coordinate D f hf,
+    twistedExtension_coordinate D k f hf]
+  rw [← mul_assoc, ← zpow_add₀ (coordinate_ne_zero D z)]
+  simp
 
 /-- Near the puncture, the original cusp extension is `q⁻ᵏ` times its twisted extension. -/
 theorem cuspExtension_eventuallyEq_zpow_mul_twistedExtension (D : Γ.CuspDatum) (k : ℤ)
@@ -152,17 +177,8 @@ theorem cuspExtension_eventuallyEq_zpow_mul_twistedExtension (D : Γ.CuspDatum) 
   filter_upwards [eventually_nhdsWithin_of_eventually_nhds
       (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one), self_mem_nhdsWithin]
     with q hq hq_ne
-  have hq_norm : ‖q‖ < 1 := by simpa only [Metric.mem_ball, dist_zero_right] using hq
-  obtain ⟨z, hz⟩ := (isOpenQuotientMap_qCoordinate D).surjective
-    (⟨Complex.UnitDisc.mk q hq_norm, fun h ↦ hq_ne (congrArg ((↑) : 𝔻 → ℂ) h)⟩ :
-      {q : 𝔻 // q ≠ 0})
-  have hzq : coordinate D z = q := by
-    rw [← coe_qCoordinate, hz]
-    exact Complex.UnitDisc.coe_mk q hq_norm
-  rw [← hzq, cuspExtension_coordinate D f hf,
-    twistedExtension_coordinate D k f hf]
-  rw [← mul_assoc, ← zpow_add₀ (coordinate_ne_zero D z)]
-  simp
+  exact cuspExtension_eq_zpow_mul_twistedExtension_of_ne_zero_of_norm_lt_one D k f hf hq_ne
+    (by simpa only [Metric.mem_ball, dist_zero_right] using hq)
 
 /-- A cusp-invariant holomorphic function satisfying the exponential bound for an integer twist
 has a meromorphic q-extension at the cusp. -/
