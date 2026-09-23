@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom
-import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # Continuous characters and the pro-`p` Frattini subgroup
