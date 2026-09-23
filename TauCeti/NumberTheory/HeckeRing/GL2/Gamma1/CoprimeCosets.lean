@@ -140,11 +140,12 @@ lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     ⟨!![(n : ℤ), -v; (N : ℤ), u], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
   let B : SL(2, ℤ) :=
     ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
-  refine ⟨A, Gamma0_mem.mpr (by simp [A]), eq_inv_of_mul_eq_one_left <| Units.ext ?_, B,
-    mem_Gamma1_iff_dvd_lowerRow.mpr (by simp [B]), adjugateGL_natDiagGL_eq_of_coe_mapGL huv
-      (by rw [coe_mapGL_fin_two]; simp [A]) (by rw [coe_mapGL_fin_two]; simp [B])⟩
+  refine ⟨A, mem_Gamma0_iff_dvd.mpr dvd_rfl, eq_inv_of_mul_eq_one_left <| Units.ext ?_, B,
+    mem_Gamma1_of_dvd_lowerRow (dvd_neg.mpr dvd_rfl) (dvd_zero _),
+    adjugateGL_natDiagGL_eq_of_coe_mapGL huv (by rw [coe_mapGL_fin_two]; simp [A])
+      (by rw [coe_mapGL_fin_two]; simp [B])⟩
   -- the diamond label of `A` is its lower-right entry `u`, and `u n ≡ 1 (mod N)`
-  simpa [A, Gamma0Map] using congrArg (Int.cast : ℤ → ZMod N) huv
+  simpa [A, Gamma0Map_apply] using congrArg (Int.cast : ℤ → ZMod N) huv
 
 /-- **The family of `p + 1` matrices out of which the good-prime `Tₚ` is built.** The `p`
 upper-triangular matrices `!![1, b; 0, p]`, indexed by `some b`, together with the twisted
@@ -176,8 +177,8 @@ lemma coe_primeRep_none (hp : 0 < p) :
     Matrix.mul_fin_two]
   congrm !![?_, ?_; ?_, ?_] <;> ring1
 
--- Kept separate so that the rational matrix computation of the forward inclusion
--- `exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd` runs on entrywise atoms.
+-- Kept separate so that the rational matrix computation of its one caller,
+-- `exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd`, runs on entrywise atoms.
 private lemma natDiagGL_mul_mapGL_eq_mapGL_mul_primeRep_none_of_entries (hp : 0 < p)
     (hσ10 : σ 1 0 = (N : ℤ)) (hσ11 : σ 1 1 = (p : ℤ))
     {γ δ : SL(2, ℤ)} {a' : ℤ} (ha' : γ 0 0 = (p : ℤ) * a')
@@ -249,8 +250,8 @@ lemma exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (hp : 0 < p) (hσ10 : σ 
 /-- **The forward inclusion.** The product `diag(1, p) · γ` lies in one of the `p + 1` right cosets
 `Γ₁(N) · primeRep σ p i` for every `γ ∈ Γ₁(N)`, if `p` is prime and `σ` has bottom row `(N, p)`. -/
 lemma exists_mem_Gamma1_natDiagGL_mul_primeRep (hp : p.Prime) (hσ10 : σ 1 0 = (N : ℤ))
-    (hσ11 : σ 1 1 = (p : ℤ)) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) : ∃ i : Option (Fin p),
-    ∃ δ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * primeRep σ p i := by
+    (hσ11 : σ 1 1 = (p : ℤ)) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
+    ∃ i, ∃ δ ∈ Gamma1 N, natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * primeRep σ p i := by
   -- for `γ = !![a, b; c, d]`: the twisted coset when `p ∣ a`, an upper-triangular one otherwise
   by_cases hpa : (p : ℤ) ∣ γ 0 0
   · exact ⟨none, exists_mem_Gamma1_natDiagGL_mul_primeRep_none_of_dvd hp.pos hσ10 hσ11 hγ hpa⟩
