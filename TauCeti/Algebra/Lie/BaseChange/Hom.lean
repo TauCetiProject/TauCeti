@@ -58,17 +58,7 @@ Its underlying map is `LinearMap.baseChange`, so it agrees with
 `A` rather than over `R`, which is what makes its kernel an ideal of `A ⊗[R] L` over `A`. -/
 def baseChange : A ⊗[R] L →ₗ⁅A⁆ A ⊗[R] L' where
   __ := LinearMap.baseChange A (f : L →ₗ[R] L')
-  map_lie' {x y} := by
-    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom]
-    induction x using TensorProduct.induction_on with
-    | zero => simp
-    | tmul a u =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
-      | tmul b v =>
-        simp [LieAlgebra.ExtendScalars.bracket_tmul]
-      | add y z hy hz => simp only [lie_add, map_add, hy, hz]
-    | add x z hx hz => simp only [add_lie, map_add, hx, hz]
+  map_lie' {x y} := (LieAlgebra.ExtendScalars.map (AlgHom.id R A) f).map_lie x y
 
 @[simp]
 theorem coe_baseChange :
