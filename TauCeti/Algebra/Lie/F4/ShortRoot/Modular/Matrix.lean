@@ -391,7 +391,7 @@ private theorem f4ShortRootSignedSimpleAdjoint_basis (k : Fin 4 ⊕ Fin 4) (b : 
 
 /-- The structural adjoint action on the modular short-root ideal is the reduction modulo two
 of the original sparse root matrix. -/
-theorem f4ShortRootSignedSimpleAdjointMatrix_eq_rootMatrix_map (k : Fin 4 ⊕ Fin 4) :
+@[simp] theorem f4ShortRootSignedSimpleAdjointMatrix_eq_rootMatrix_map (k : Fin 4 ⊕ Fin 4) :
     f4ShortRootSignedSimpleAdjointMatrix k = (rootMatrix k).map (Int.cast : ℤ → ZMod 2) := by
   ext a b
   rw [f4ShortRootSignedSimpleAdjointMatrix_apply]
