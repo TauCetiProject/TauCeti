@@ -237,7 +237,7 @@ noncomputable def f4ShortRootDividedAdjointSquare (k : Fin 4 ⊕ Fin 4) :
 
 /-- The divided-square endomorphism is realized, in the canonical short-root basis, by the
 reduction modulo two of the integral divided-square matrix. -/
-theorem f4ShortRootDividedAdjointSquare_toMatrix (k : Fin 4 ⊕ Fin 4) :
+@[simp] theorem f4ShortRootDividedAdjointSquare_toMatrix (k : Fin 4 ⊕ Fin 4) :
     LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
         (f4ShortRootDividedAdjointSquare k) =
       (rootDividedSquareMatrix k).map (Int.cast : ℤ → ZMod 2) := by

@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Basis
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.SpecialMap
 
 /-!
 # Torus pinning for the modular F4 quotient
