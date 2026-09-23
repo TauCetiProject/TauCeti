@@ -137,8 +137,9 @@ theorem mem_range_geodesicLine_one_iff {u : ℍ} : u ∈ Set.range (geodesicLine
     simp [coe_re, coe_im, hu, Real.exp_log u.im_pos]
 
 /-- Any two points `z`, `w` lie on a common geodesic line, `z` at parameter `0` and `w` at a
-nonnegative parameter. -/
-theorem exists_geodesicLine_zero_eq_and_eq (z w : ℍ) :
+nonnegative parameter; the parameter is identified as `dist z w` in
+`exists_geodesicLine_zero_eq_and_dist_eq`. -/
+private theorem exists_nonneg_geodesicLine_zero_eq_and_apply_eq (z w : ℍ) :
     ∃ g : PSL(2, ℝ), ∃ t : ℝ, 0 ≤ t ∧ geodesicLine g 0 = z ∧ geodesicLine g t = w := by
   obtain ⟨h, hz⟩ := MulAction.exists_smul_eq PSL(2, ℝ) z UpperHalfPlane.I
   obtain ⟨θ, -, hθ⟩ := exists_rotation_smul_re_eq_zero (h • w)
@@ -164,7 +165,7 @@ theorem exists_geodesicLine_zero_eq_and_eq (z w : ℍ) :
 common geodesic line, with `z` at parameter `0` and `w` at parameter `dist z w`. -/
 theorem exists_geodesicLine_zero_eq_and_dist_eq (z w : ℍ) :
     ∃ g : PSL(2, ℝ), geodesicLine g 0 = z ∧ geodesicLine g (dist z w) = w := by
-  obtain ⟨g, t, ht, hz, hw⟩ := exists_geodesicLine_zero_eq_and_eq z w
+  obtain ⟨g, t, ht, hz, hw⟩ := exists_nonneg_geodesicLine_zero_eq_and_apply_eq z w
   refine ⟨g, hz, ?_⟩
   rw [← hz, ← hw, dist_geodesicLine, zero_sub, abs_neg, abs_of_nonneg ht]
 

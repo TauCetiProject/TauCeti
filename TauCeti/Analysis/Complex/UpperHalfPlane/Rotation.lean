@@ -27,7 +27,8 @@ computed explicitly.
 ## Main declarations
 
 * `TauCeti.UpperHalfPlane.rotation θ` — the matrix `!![cos θ, sin θ; -sin θ, cos θ]` in
-  `SL(2, ℝ)`; `coe_rotation` exposes it and `rotation_zero` is the identity.
+  `SL(2, ℝ)`; `coe_rotation` exposes it, and `rotation_zero`, `rotation_add`, `rotation_neg` make
+  the family a one-parameter subgroup.
 * `TauCeti.UpperHalfPlane.coe_rotation_smul` — its Möbius action, as a complex number.
 * `TauCeti.UpperHalfPlane.rotation_smul_I` — every rotation fixes `I`.
 * `TauCeti.UpperHalfPlane.rotation_pi_div_two_smul` — `rotation (π/2)` acts as `z ↦ -1/z`.
@@ -50,16 +51,29 @@ def rotation (θ : ℝ) : SL(2, ℝ) :=
     rw [Matrix.det_fin_two_of]
     linear_combination Real.cos_sq_add_sin_sq θ⟩
 
+/-- The matrix of `rotation θ`. -/
 @[simp]
 theorem coe_rotation (θ : ℝ) :
     (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) =
       !![Real.cos θ, Real.sin θ; -Real.sin θ, Real.cos θ] :=
   Matrix.SpecialLinearGroup.coe_mk _ _
 
+/-- The rotation by `0` is the identity. -/
 @[simp]
 theorem rotation_zero : rotation 0 = 1 :=
   Matrix.SpecialLinearGroup.ext _ _ fun i j => by
     fin_cases i <;> fin_cases j <;> simp
+
+/-- The rotations form a one-parameter subgroup: `rotation (θ + φ) = rotation θ * rotation φ`. -/
+theorem rotation_add (θ φ : ℝ) : rotation (θ + φ) = rotation θ * rotation φ :=
+  Matrix.SpecialLinearGroup.ext _ _ fun i j => by
+    fin_cases i <;> fin_cases j <;>
+      simp [Real.cos_add, Real.sin_add, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- The inverse of `rotation θ` is `rotation (-θ)`. -/
+@[simp]
+theorem rotation_neg (θ : ℝ) : rotation (-θ) = (rotation θ)⁻¹ := by
+  rw [eq_inv_iff_mul_eq_one, ← rotation_add, neg_add_cancel, rotation_zero]
 
 private theorem rotation_denom_ne_zero (θ : ℝ) (z : ℍ) :
     -(Real.sin θ : ℂ) * z + Real.cos θ ≠ 0 := by
@@ -71,6 +85,8 @@ private theorem rotation_denom_ne_zero (θ : ℝ) (z : ℍ) :
     nlinarith [Real.sin_sq_add_cos_sq θ]
   simpa using linear_ne_zero (cd := ![-Real.sin θ, Real.cos θ]) z h
 
+/-- The Möbius action of `rotation θ`, as a complex number:
+`(cos θ · z + sin θ) / (-sin θ · z + cos θ)`. -/
 theorem coe_rotation_smul (θ : ℝ) (z : ℍ) :
     ((rotation θ • z : ℍ) : ℂ) =
       ((Real.cos θ : ℂ) * z + Real.sin θ) / (-(Real.sin θ : ℂ) * z + Real.cos θ) := by
