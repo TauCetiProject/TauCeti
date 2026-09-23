@@ -222,9 +222,64 @@ theorem not_affineE7 {c : ℕ → T.Component}
   -- Relabel the eight components by the canonical affine-`E₇` numbering. The existing root-system
   -- marks then give the positive vector excluded by negative definiteness.
   let d : ℕ → T.Component := fun i ↦ if i < 7 then c i else branch
-  let e : Fin 8 → Fin AffineDynkinType.E7.nodes := ![4, 3, 2, 0, 5, 6, 7, 1]
+  let e : Fin 8 ≃ Fin AffineDynkinType.E7.nodes :=
+    Equiv.ofBijective ![4, 3, 2, 0, 5, 6, 7, 1] (by decide)
   let y : ℕ → ℤ := fun i ↦
     if hi : i < 8 then AffineDynkinType.E7.marks (e ⟨i, hi⟩) else 0
+  have hcartan (i j : Fin 8) :
+      AffineDynkinType.E7.cartanMatrix (e i) (e j) =
+        if i = j then 2 else if
+          ((i : ℕ) < 7 ∧ (j : ℕ) < 7 ∧
+            ((i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i)) ∨
+          ((i : ℕ) = 3 ∧ (j : ℕ) = 7) ∨
+          ((i : ℕ) = 7 ∧ (j : ℕ) = 3) then -1 else 0 := by
+    change AffineDynkinType.E7.cartanMatrix
+      (![4, 3, 2, 0, 5, 6, 7, 1] i) (![4, 3, 2, 0, 5, 6, 7, 1] j) = _
+    fin_cases i <;> fin_cases j <;>
+      rw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E7] <;>
+      simp only [AffineDynkinType.graph_E7_adj] <;>
+      decide
+  have hintersection (i j : Fin 8) :
+      T.intersection (d i) (d j) =
+        -(w : ℤ) * AffineDynkinType.E7.cartanMatrix (e i) (e j) := by
+    rw [hcartan]
+    by_cases hi : (i : ℕ) < 7
+    · by_cases hj : (j : ℕ) < 7
+      · rw [show d i = c i by simp [d, hi], show d j = c j by simp [d, hj], hentry hi hj]
+        simp only [Fin.ext_iff]
+        split_ifs <;> omega
+      · have hj7 : (j : ℕ) = 7 := by omega
+        rw [show d i = c i by simp [d, hi], show d j = branch by simp [d, hj],
+          hbranch_entry hi]
+        simp only [Fin.ext_iff]
+        split_ifs <;> omega
+    · have hi7 : (i : ℕ) = 7 := by omega
+      by_cases hj : (j : ℕ) < 7
+      · rw [show d i = branch by simp [d, hi], show d j = c j by simp [d, hj],
+          T.intersection_comm, hbranch_entry hj]
+        simp only [Fin.ext_iff]
+        split_ifs <;> omega
+      · have hj7 : (j : ℕ) = 7 := by omega
+        rw [show d i = branch by simp [d, hi], show d j = branch by simp [d, hj],
+          hbranch_self, hwb]
+        rw [ite_eq_left (Fin.ext (by omega))]
+        ring
+  have hrow (i : Fin 8) :
+      ∑ j : Fin 8, T.intersection (d i) (d j) * AffineDynkinType.E7.marks (e j) = 0 := by
+    calc
+      _ = -(w : ℤ) * ∑ j : Fin 8,
+          AffineDynkinType.E7.cartanMatrix (e i) (e j) * AffineDynkinType.E7.marks (e j) := by
+        simp_rw [hintersection, mul_assoc, Finset.mul_sum]
+      _ = -(w : ℤ) * ∑ j : Fin AffineDynkinType.E7.nodes,
+          AffineDynkinType.E7.cartanMatrix (e i) j * AffineDynkinType.E7.marks j := by
+        exact congrArg (-(w : ℤ) * ·) (e.sum_comp fun j ↦
+          AffineDynkinType.E7.cartanMatrix (e i) j * AffineDynkinType.E7.marks j)
+      _ = -(w : ℤ) *
+          AffineDynkinType.E7.cartanMatrix.mulVec AffineDynkinType.E7.marks (e i) := by
+        rfl
+      _ = 0 := by
+        rw [AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero AffineDynkinType.valid_E7]
+        simp
   have hd_inj : ∀ i < 8, ∀ j < 8, d i = d j → i = j := by
     intro i hi j hj hij
     by_cases hi7 : i < 7
@@ -244,10 +299,8 @@ theorem not_affineE7 {c : ℕ → T.Component}
   · refine ⟨0, by omega, ?_⟩
     simpa [y] using (AffineDynkinType.marks_pos (e ⟨0, by omega⟩))
   · intro i hi
-    interval_cases i <;>
-      norm_num [Finset.sum_range_succ, d, y, e, AffineDynkinType.marks_E7] <;>
-      simp [hentry, hbranch_entry, T.intersection_comm branch, hbranch_self, hwb] <;>
-      omega
+    rw [← Fin.sum_univ_eq_sum_range]
+    simpa [y] using (hrow ⟨i, hi⟩).ge
 
 end IsSelfIntersectionMinusTwoChain
 
