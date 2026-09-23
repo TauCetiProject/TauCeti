@@ -117,6 +117,12 @@ noncomputable def arborescenceEdgeEquiv (T : WideSubquiver V) [Arborescence T] :
     exact Quiver.Total.ext hab rfl hedge
   right_inv b := by rfl
 
+/-- The forward map of `arborescenceEdgeEquiv` sends an edge to its target vertex. -/
+@[simp] theorem arborescenceEdgeEquiv_apply_val (T : WideSubquiver V) [Arborescence T]
+    (e : Quiver.Total T) : (arborescenceEdgeEquiv T e).val = e.right := by
+  change ((arborescenceEdgeEquiv T).toFun e).val = e.right
+  rfl
+
 /-- The directed edges of a finite arborescence have cardinality one less than its vertices. -/
 theorem arborescenceEdgeCard [Finite V]
     (T : WideSubquiver V) [Arborescence T] :
