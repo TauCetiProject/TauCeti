@@ -10,7 +10,9 @@ public import Mathlib.Order.SupIndep
 /-!
 # Finite supremum-independent families
 
-This file develops the API for finite supremum-independent families in bounded lattices.
+This file develops the API for finite supremum-independent families in bounded lattices. The
+complement result turns an independent spanning family into complementary summands, enabling
+projections or retractions onto individual members.
 
 ## Main declarations
 
