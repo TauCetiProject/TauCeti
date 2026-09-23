@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import Mathlib.Algebra.Lie.Derivation.BaseChange
+public import TauCeti.LinearAlgebra.TensorProduct.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Range
 
 /-!
@@ -55,11 +56,12 @@ Mathlib's Lie theorem applies, and then descended.
 function, recorded as `LieDerivation.coe_ofLieDerivation`; only the ring over which each is
 registered as linear differs.
 
-The descent is not specific to derivations, so it lives one level down, in
-`TauCeti/LinearAlgebra/TensorProduct/Range.lean`: `LinearMap.mapsTo_baseChange_iff`,
-`LinearMap.range_baseChange_le_baseChange_iff`, `LinearMap.baseChange_injective` and
-`LinearMap.isNilpotent_baseChange_iff` are the statements for a bare linear map, and reach a
-derivation through `LieDerivation.baseChange_toLinearMap`.
+The descent is not specific to derivations, so it lives one level down:
+`LinearMap.mapsTo_baseChange_iff` and `LinearMap.range_baseChange_le_baseChange_iff` in
+`TauCeti/LinearAlgebra/TensorProduct/Range.lean`, `LinearMap.baseChange_injective` and
+`LinearMap.isNilpotent_baseChange_iff` in
+`TauCeti/LinearAlgebra/TensorProduct/BaseChange.lean`.  These are the statements for a bare linear
+map, and reach a derivation through `LieDerivation.baseChange_toLinearMap`.
 
 Mathlib provides the extension for a derivation of `L` into `L` and not for one into a general
 Lie module `M`, so that is the generality available by reuse and the generality used here; it is
