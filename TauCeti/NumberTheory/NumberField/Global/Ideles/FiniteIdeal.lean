@@ -23,13 +23,14 @@ open scoped NumberField
 
 namespace TauCeti.GlobalNumberFields
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- The fractional ideal of an idele's finite component is trivial exactly when the idele is a
 unit at every finite place. -/
-theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup (𝓞 K) K} :
-    toFractionalIdeal (IdeleGroup.toFiniteIdele (𝓞 K) K x) = 1 ↔
-      ∀ v : HeightOneSpectrum (𝓞 K), Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
+theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup R K} :
+    toFractionalIdeal (IdeleGroup.toFiniteIdele R K x) = 1 ↔
+      ∀ v : HeightOneSpectrum R, Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1 := by
   simp only [toFractionalIdeal_eq_one_iff, adicOrd_eq_zero_iff, IdeleGroup.coe_toFiniteIdele,
     HeightOneSpectrum.coe_ideleFiniteCoord]
 

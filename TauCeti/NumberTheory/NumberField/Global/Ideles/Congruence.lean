@@ -145,6 +145,18 @@ def ideleCongrOneSubgroup (𝔪 : Modulus K) : Subgroup (IdeleGroup (𝓞 K) K) 
             (w.1.ideleInfiniteCoord x : w.1.Completion) :=
   Iff.rfl
 
+/-- The trivial modulus imposes no congruence conditions on an idele. -/
+@[simp] theorem ideleCongrOneSubgroup_one :
+    ideleCongrOneSubgroup (Modulus.one K) = ⊤ := by
+  apply eq_top_iff.mpr
+  intro x _
+  rw [mem_ideleCongrOneSubgroup_iff]
+  constructor
+  · intro v hv
+    exact (v.prime.not_dvd_one (by
+      simpa [Modulus.one_finitePart, ← Ideal.one_eq_top] using hv)).elim
+  · simp [Modulus.one_infinitePart]
+
 /-- **An idele congruent to one is a unit at every finite divisor of the modulus**, because the
 prescribed exponent there is positive. -/
 theorem ideleCongrOneSubgroup.valued_ideleFiniteCoord_eq_one {𝔪 : Modulus K}

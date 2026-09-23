@@ -191,6 +191,16 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofFiniteIdele
     rw [coe_ideleInfiniteCoord, IdeleGroup.coe_ofFiniteIdele]
     rfl
 
+/-- The finite coordinate of an idele built from a finite idele is its original coordinate. -/
+@[simp]
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele
+    (v : HeightOneSpectrum R) (a : (FiniteAdeleRing R K)ˣ) :
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K a) =
+      Units.map (RestrictedProduct.evalMonoidHom _ v) a :=
+  Units.ext <| by
+    rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele]
+    exact (Units.coe_map (RestrictedProduct.evalMonoidHom _ v) a).symm
+
 /-- The finite coordinates of an idele concentrated at an infinite place are trivial. -/
 @[simp]
 theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofCompletion
