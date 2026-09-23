@@ -56,6 +56,7 @@ noncomputable section
 
 /-- The half-staircase simple occurs in the left-regular CAR module with multiplicity
 `2 ^ (N * (N + 1) / 2)`. -/
+@[simp]
 theorem isotypicMultiplicity_glIrreducible_car
     (K : Type*) [Field K] [CharZero K] [IsAlgClosed K] (N : ℕ) :
     _root_.LieModule.isotypicMultiplicity K (Matrix (Fin N) (Fin N) K)
@@ -77,6 +78,7 @@ theorem isotypicMultiplicity_glIrreducible_car
     _ = _ := finrank_weightSpace_glHalfStaircase_car N
 
 /-- The half-staircase simple has dimension `2 ^ (N * (N - 1) / 2)`. -/
+@[simp]
 theorem finrank_glIrreducible_glHalfStaircase
     (K : Type*) [Field K] [CharZero K] [IsAlgClosed K] (N : ℕ) :
     Module.finrank K (glIrreducible N (glHalfStaircase K N)) =
@@ -90,7 +92,7 @@ theorem finrank_glIrreducible_glHalfStaircase
     (S := glIrreducible N (glHalfStaircase K N))
     (isIsotypicOfType_glIrreducible_car K N)
   rw [finrank_cliffordAlgebra_traceQuadraticForm] at hdim
-  rw [isotypicMultiplicity_glIrreducible_car K N, Fintype.card_fin] at hdim
+  simp only [isotypicMultiplicity_glIrreducible_car K N, Fintype.card_fin] at hdim
   have hexp : N * (N + 1) / 2 + N * (N - 1) / 2 = N * N := by
     calc
       N * (N + 1) / 2 + N * (N - 1) / 2 =
@@ -98,7 +100,8 @@ theorem finrank_glIrreducible_glHalfStaircase
         rw [Nat.choose_two_right]
       _ = N.choose 2 + N * (N + 1) / 2 := Nat.add_comm _ _
       _ = N * N := Nat.choose_two_add_mul_succ_div_two N
-  apply Nat.eq_of_mul_eq_mul_left (show 0 < 2 ^ (N * (N + 1) / 2) by positivity)
+  have hpos : 0 < 2 ^ (N * (N + 1) / 2) := by positivity
+  apply Nat.eq_of_mul_eq_mul_left hpos
   rw [← pow_add, hexp]
   exact hdim.symm
 
