@@ -231,6 +231,7 @@ private lemma quotient_obj_obj_as_private (X : CochainComplex.Bounded C) :
     ((quotient C).obj X).obj.as = X.obj := rfl
 
 /-- The underlying complex of a bounded quotient object is the original complex. -/
+@[simp]
 lemma quotient_obj_obj_as (X : CochainComplex.Bounded C) :
     ((quotient C).obj X).obj.as = X.obj := quotient_obj_obj_as_private C X
 
@@ -278,6 +279,12 @@ private lemma quotientCompιIso_hom_app_private (X : CochainComplex.Bounded C) :
 lemma quotientCompιIso_hom_app (X : CochainComplex.Bounded C) :
     (quotientCompιIso C).hom.app X = eqToHom (quotient_obj_obj C X) :=
   quotientCompιIso_hom_app_private C X
+
+/-- The inverse comparison has the reverse canonical component at each bounded complex. -/
+@[simp]
+lemma quotientCompιIso_inv_app (X : CochainComplex.Bounded C) :
+    (quotientCompιIso C).inv.app X = eqToHom (quotient_obj_obj C X).symm := by
+  rfl
 
 noncomputable instance : (quotient C).CommShift ℤ :=
   Functor.CommShift.ofComp (quotientCompιIso C) ℤ
