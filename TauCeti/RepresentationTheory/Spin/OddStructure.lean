@@ -106,7 +106,7 @@ dimension, the extra dimension being taken up by the anisotropic remainder, so t
 give spinor modules of the same size. -/
 theorem finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one {l : ℕ}
     (hV : finrank F V = 2 * l + 1) : finrank F (ExteriorAlgebra F P.W) = 2 ^ l := by
-  rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, P.finrank_W_of_finrank_eq_two_mul_add_one hV]
+  rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, P.finrank_W_eq_of_finrank_eq_two_mul_add_one hV]
 
 /-- **The even Clifford subalgebra and the operator algebra of the spinor module have equal
 dimension** in odd dimension: writing `finrank F V = 2 * l + 1`, that is `2 ^ (2 * l + 1 - 1)` on
