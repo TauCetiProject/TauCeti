@@ -167,8 +167,8 @@ lemma S_smul_mem_fd_of_norm_eq_one {p : ℍ} (hre : |p.re| ≤ 1 / 2) (hnorm : �
 lemma S_smul_S_smul (p : ℍ) : _root_.ModularGroup.S • (_root_.ModularGroup.S • p) = p := by
   rw [← _root_.ModularGroup.SL_neg_smul, ← _root_.ModularGroup.S_inv, inv_smul_smul]
 
-/-- `g` and `-g` act alike on `ℍ`: the sign ambiguity in Mathlib's classification
-`ModularGroup.cases_of_mem_fd_smul_mem_fd`. -/
+-- Absorbs the sign ambiguity `g = k ∨ g = -k` in each case of Mathlib's classification
+-- `ModularGroup.cases_of_mem_fd_smul_mem_fd`: `-k` acts on `ℍ` as `k` does.
 private lemma smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} (z : ℍ) (hg : g = k ∨ g = -k) :
     g • z = k • z := by
   obtain rfl | rfl := hg
@@ -201,25 +201,20 @@ its translate `ρ + 1`: the two corners the boundary identifications of `𝒟` e
 lemma orbit_mk_eq_ρ_iff {p : ℍ} (hp : p ∈ 𝒟) :
     (Quotient.mk'' p : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) = Quotient.mk'' ρ ↔
       p = ρ ∨ p = (1 : ℝ) +ᵥ ρ := by
-  constructor
-  · intro h
-    obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • (ρ : ℍ) = p := Quotient.exact' h
-    rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd _root_.ModularGroup.ρ_mem_fd hp with
-      hg | ⟨hg, -⟩ | ⟨-, hre⟩ | ⟨hg, -⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨hg, -⟩ | ⟨hg, -⟩ |
-      ⟨hg, -⟩
-    · exact .inl ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans (one_smul _ _))
-    · exact .inr ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans (modular_T_smul _))
-    · norm_num [re_ρ] at hre
-    · exact .inr ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans S_smul_ρ)
-    · exact absurd hρ ρ_ne_vadd_ρ
-    · exact absurd hρ ρ_ne_vadd_ρ
-    · exact absurd hρ ρ_ne_vadd_ρ
-    · exact .inl ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans ST_smul_ρ)
-    · exact .inr ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans TST_smul_ρ)
-    · exact .inl ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans T_inv_S_smul_ρ)
-  · rintro (rfl | rfl)
-    · rfl
-    · simpa using orbit_mk_int_vadd 1 ρ
+  refine ⟨fun h ↦ ?_, fun h ↦ h.elim (· ▸ rfl) (· ▸ Quotient.sound' ⟨_, modular_T_smul ρ⟩)⟩
+  obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • (ρ : ℍ) = p := Quotient.exact' h
+  rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd _root_.ModularGroup.ρ_mem_fd hp with
+    hg | ⟨hg, -⟩ | ⟨-, hre⟩ | ⟨hg, -⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨hg, -⟩ | ⟨hg, -⟩ | ⟨hg, -⟩
+  · exact .inl <| (smul_eq_smul_of_eq_or_eq_neg _ hg).trans (one_smul _ _)
+  · exact .inr <| (smul_eq_smul_of_eq_or_eq_neg _ hg).trans (modular_T_smul _)
+  · norm_num at hre
+  · exact .inr <| (smul_eq_smul_of_eq_or_eq_neg _ hg).trans S_smul_ρ
+  · exact absurd hρ ρ_ne_vadd_ρ
+  · exact absurd hρ ρ_ne_vadd_ρ
+  · exact absurd hρ ρ_ne_vadd_ρ
+  · exact .inl <| (smul_eq_smul_of_eq_or_eq_neg _ hg).trans ST_smul_ρ
+  · exact .inr <| (smul_eq_smul_of_eq_or_eq_neg _ hg).trans TST_smul_ρ
+  · exact .inl <| (smul_eq_smul_of_eq_or_eq_neg _ hg).trans T_inv_S_smul_ρ
 
 /-- **The two elliptic orbits are distinct.** -/
 theorem orbit_mk_I_ne_orbit_mk_ρ :
