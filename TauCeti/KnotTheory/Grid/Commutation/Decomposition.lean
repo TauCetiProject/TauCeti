@@ -51,6 +51,9 @@ geometric pairing makes the exact target of the juxtaposition argument explicit.
 * `TauCeti.GridPentagonRectangleDecomposition.turn_mem_toRectangleDecomposition_first` and
   `TauCeti.GridRectanglePentagonDecomposition.turn_mem_toRectangleDecomposition_second` transport
   the pentagon turn point to the underlying rectangles.
+* `TauCeti.GridPentagonRectangleDecomposition.isEmpty_toRectangleDecomposition_first` and
+  `TauCeti.GridRectanglePentagonDecomposition.isEmpty_toRectangleDecomposition_second` transport
+  emptiness to the underlying rectangle decomposition.
 
 ## References
 
@@ -271,6 +274,22 @@ theorem toRectangleDecomposition_second_toGridRectangle
   unfold toRectangleDecomposition
   rfl
 
+/-- Emptiness of the pentagon implies emptiness of its first underlying rectangle. -/
+theorem isEmpty_toRectangleDecomposition_first
+    (D : GridPentagonRectangleDecomposition a s x z) (h : D.pentagon.IsEmpty) :
+    D.toRectangleDecomposition.first.IsEmpty := by
+  change D.toRectangleDecomposition.first.toGridRectangle.IsEmptyFor x
+  rw [D.toRectangleDecomposition_first_toGridRectangle]
+  exact h
+
+/-- Emptiness of the rectangle implies emptiness of the second underlying rectangle. -/
+theorem isEmpty_toRectangleDecomposition_second
+    (D : GridPentagonRectangleDecomposition a s x z) (h : D.rectangle.IsEmpty) :
+    D.toRectangleDecomposition.second.IsEmpty := by
+  unfold GridRectangleBetween.IsEmpty
+  rw [D.toRectangleDecomposition_second_toGridRectangle]
+  exact h
+
 /-- The pentagon's turn row lies between the sides of the first forgotten rectangle. -/
 theorem turn_mem_toRectangleDecomposition_first
     (D : GridPentagonRectangleDecomposition a s x z) :
@@ -368,6 +387,22 @@ theorem toRectangleDecomposition_second_toGridRectangle
     D.toRectangleDecomposition.second.toGridRectangle = D.pentagon.toGridRectangle := by
   unfold toRectangleDecomposition
   rfl
+
+/-- Emptiness of the rectangle implies emptiness of the first underlying rectangle. -/
+theorem isEmpty_toRectangleDecomposition_first
+    (D : GridRectanglePentagonDecomposition a s x z) (h : D.rectangle.IsEmpty) :
+    D.toRectangleDecomposition.first.IsEmpty := by
+  change D.toRectangleDecomposition.first.toGridRectangle.IsEmptyFor x
+  rw [D.toRectangleDecomposition_first_toGridRectangle]
+  exact h
+
+/-- Emptiness of the pentagon implies emptiness of its second underlying rectangle. -/
+theorem isEmpty_toRectangleDecomposition_second
+    (D : GridRectanglePentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
+    D.toRectangleDecomposition.second.IsEmpty := by
+  unfold GridRectangleBetween.IsEmpty
+  rw [D.toRectangleDecomposition_second_toGridRectangle]
+  exact h
 
 /-- A rectangle--pentagon decomposition is determined by its underlying pair of rectangles. -/
 theorem toRectangleDecomposition_injective :
