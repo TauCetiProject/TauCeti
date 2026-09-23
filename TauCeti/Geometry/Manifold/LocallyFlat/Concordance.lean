@@ -13,14 +13,13 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 This file records the topological analogue of the collared smooth concordance in
 `TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance`. A track from `f` to `g` is a locally flat
 embedding of `M × ℝ` into `N × ℝ` which is a product at both ends and preserves the open slab
-`(0, 1)`. The use of the real line keeps the two product collars disjoint and avoids introducing
-manifolds with corners.
+`(0, 1)`. The real parameter avoids a source with boundary, while the collar conditions make the
+track a product for `t ≤ ε` and `t ≥ 1 − ε`.
 
 The complementary model of the locally flat track is explicit data, as it is in
 `IsLocallyFlat`; no smooth structure is smuggled into the topological relation. Reversing the real
-parameter and the ambient time coordinate gives the symmetry operation. Stacking tracks requires
-the locally flat gluing input supplied by the later 4-dimensional cobordism development, so it is
-deliberately not asserted here.
+parameter and the ambient time coordinate gives the symmetry operation. Transitivity is not proved
+in this file.
 
 The relation is intended for the locally flat concordance variant of the knot concordance layer:
 specialising `M` to the circle and `N` to `S³` gives the topological concordance relation on the
@@ -60,8 +59,8 @@ variable {M N F F' : Type*} [TopologicalSpace M] [TopologicalSpace N]
 
 The track is a locally flat embedding of `M × ℝ` into `N × ℝ`. It agrees with the product of the
 initial (respectively final) map and the identity on a positive-width end collar, and its time
-coordinate stays in `(0, 1)` over the open slab. The complementary model `F'` is part of the
-parameters, matching `IsLocallyFlat F F'`.
+coordinate stays in `(0, 1)` over the open slab. Here `F` is the model of `M`, so the track is
+locally flat with source model `F × ℝ` and complementary model `F'`.
 -/
 structure TopologicalConcordance (F F' : Type*) [TopologicalSpace F] [TopologicalSpace F']
     [Zero F'] (f g : M → N) where
@@ -93,62 +92,113 @@ instance instFunLike {f g : M → N} :
 
 variable {f g h : M → N}
 
-/-! ### Endpoint embeddings -/
+@[simp]
+theorem coe_toFun (C : TopologicalConcordance F F' f g) : ⇑C = C.toFun :=
+  rfl
 
-/-- The initial map of a topological concordance is an embedding, because it is the zero-time
-slice of the locally flat track. -/
-theorem isEmbedding_left (C : TopologicalConcordance F F' f g) : IsEmbedding f := by
-  obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_left'
-  have htrack : IsEmbedding (fun x : M => C.toFun (x, 0)) :=
-    C.isLocallyFlat.isEmbedding.comp (isEmbedding_prodMkLeft (0 : ℝ))
-  have hzero : ∀ x : M, C.toFun (x, 0) = (f x, 0) :=
-    fun x => hC x 0 (le_of_lt hε)
-  have hprod : IsEmbedding ((fun y : N => (y, (0 : ℝ))) ∘ f) := by
-    simpa only [Function.comp_def, hzero] using htrack
-  exact (isEmbedding_prodMkLeft (0 : ℝ)).of_comp_iff.mp hprod
+@[ext]
+theorem ext {C D : TopologicalConcordance F F' f g} (h : ∀ p, C p = D p) : C = D :=
+  DFunLike.coe_injective (funext h)
 
-/-- The final map of a topological concordance is an embedding, because it is the unit-time slice
-of the locally flat track. -/
-theorem isEmbedding_right (C : TopologicalConcordance F F' f g) : IsEmbedding g := by
-  obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_right'
-  have htrack : IsEmbedding (fun x : M => C.toFun (x, 1)) :=
-    C.isLocallyFlat.isEmbedding.comp (isEmbedding_prodMkLeft (1 : ℝ))
-  have hone : ∀ x : M, C.toFun (x, 1) = (g x, 1) :=
-    fun x => hC x 1 (by linarith)
-  have hprod : IsEmbedding ((fun y : N => (y, (1 : ℝ))) ∘ g) := by
-    simpa only [Function.comp_def, hone] using htrack
-  exact (isEmbedding_prodMkLeft (1 : ℝ)).of_comp_iff.mp hprod
+variable (C : TopologicalConcordance F F' f g)
 
-private def sourceTimeReverse : (M × ℝ) ≃ₜ (M × ℝ) :=
-  Homeomorph.prodCongr (Homeomorph.refl M) (Homeomorph.subLeft (1 : ℝ))
+/-- The underlying track is locally flat with the chosen complementary model. -/
+theorem isLocallyFlat' : IsLocallyFlat (F × ℝ) F' (⇑C) :=
+  C.isLocallyFlat
 
-private def targetTimeReverse : (N × ℝ) ≃ₜ (N × ℝ) :=
-  Homeomorph.prodCongr (Homeomorph.refl N) (Homeomorph.subLeft (1 : ℝ))
+/-! ### Collar API -/
+
+/-- A topological concordance is the product of its initial map on a positive-width collar. -/
+theorem exists_pos_apply_eq_left :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), t ≤ ε → C (x, t) = (f x, t) := by
+  rcases C.exists_pos_apply_eq_left' with ⟨ε, hε, hC⟩
+  exact ⟨ε, hε, hC⟩
+
+/-- A topological concordance is the product of its final map on a positive-width collar. -/
+theorem exists_pos_apply_eq_right :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), 1 - ε ≤ t → C (x, t) = (g x, t) := by
+  rcases C.exists_pos_apply_eq_right' with ⟨ε, hε, hC⟩
+  exact ⟨ε, hε, hC⟩
+
+/-- A topological concordance is the product of its initial map for nonpositive times. -/
+theorem apply_of_nonpos (x : M) {t : ℝ} (ht : t ≤ 0) : C (x, t) = (f x, t) := by
+  rcases C.exists_pos_apply_eq_left with ⟨ε, hε, hC⟩
+  exact hC x t (ht.trans hε.le)
+
+/-- A topological concordance is the product of its final map for times at least one. -/
+theorem apply_of_one_le (x : M) {t : ℝ} (ht : 1 ≤ t) : C (x, t) = (g x, t) := by
+  rcases C.exists_pos_apply_eq_right with ⟨ε, hε, hC⟩
+  exact hC x t (by linarith)
+
+/-- At time `0` a topological concordance is its initial map. -/
+@[simp]
+theorem apply_zero (x : M) : C (x, 0) = (f x, 0) :=
+  C.apply_of_nonpos x le_rfl
+
+/-- At time `1` a topological concordance is its final map. -/
+@[simp]
+theorem apply_one (x : M) : C (x, 1) = (g x, 1) :=
+  C.apply_of_one_le x le_rfl
+
+/-- The time coordinate of the track lies in the open slab at interior source times. -/
+theorem snd_apply_mem_Ioo (x : M) (t : ℝ) (ht : t ∈ Ioo 0 1) :
+    (C (x, t)).2 ∈ Ioo 0 1 :=
+  C.snd_apply_mem_Ioo' x t ht
+
+/-- A topological concordance maps the open slab into the open slab and conversely. -/
+theorem snd_apply_mem_Ioo_iff (x : M) {t : ℝ} :
+    (C (x, t)).2 ∈ Ioo 0 1 ↔ t ∈ Ioo 0 1 := by
+  constructor
+  · intro h
+    constructor
+    · by_contra ht
+      have ht' : t ≤ 0 := le_of_not_gt ht
+      have htime : (C (x, t)).2 = t := congrArg Prod.snd (C.apply_of_nonpos x ht')
+      linarith [h.1]
+    · by_contra ht
+      have ht' : 1 ≤ t := le_of_not_gt ht
+      have htime : (C (x, t)).2 = t := congrArg Prod.snd (C.apply_of_one_le x ht')
+      linarith [h.2]
+  · exact C.snd_apply_mem_Ioo x t
+
+private theorem isEmbedding_of_slice {φ : M → N} {c : ℝ}
+    (h : ∀ x : M, C (x, c) = (φ x, c)) : IsEmbedding φ := by
+  have htrack : IsEmbedding (fun x : M => C (x, c)) :=
+    C.isLocallyFlat'.isEmbedding.comp (isEmbedding_prodMkLeft c)
+  have hprod : IsEmbedding ((fun y : N => (y, c)) ∘ φ) := by
+    simpa only [Function.comp_def, h] using htrack
+  exact (isEmbedding_prodMkLeft c).of_comp_iff.mp hprod
+
+private def timeReverse (X : Type*) [TopologicalSpace X] : (X × ℝ) ≃ₜ (X × ℝ) :=
+  Homeomorph.prodCongr (Homeomorph.refl X) (Homeomorph.subLeft (1 : ℝ))
+
+@[simp]
+private theorem timeReverse_apply (X : Type*) [TopologicalSpace X] (p : X × ℝ) :
+    timeReverse X p = (p.1, 1 - p.2) :=
+  rfl
+
+/-! ### Symmetry -/
 
 /-- Reverse a topological concordance by reflecting both source and target time. -/
 def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f where
-  toFun p := targetTimeReverse (C.toFun (sourceTimeReverse p))
+  toFun p := timeReverse N (C (timeReverse M p))
   isLocallyFlat := by
-    have hsource := C.isLocallyFlat.comp_homeomorph sourceTimeReverse
-    have htarget := hsource.homeomorph_comp targetTimeReverse
+    have hsource := C.isLocallyFlat'.comp_homeomorph (timeReverse M)
+    have htarget := hsource.homeomorph_comp (timeReverse N)
     simpa only [Function.comp_def] using htarget
   exists_pos_apply_eq_left' := by
-    obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_right'
+    obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_right
     refine ⟨ε, hε, fun x t ht => ?_⟩
     have ht' : 1 - ε ≤ 1 - t := by linarith
-    change targetTimeReverse (C.toFun (x, 1 - t)) = (g x, t)
-    rw [hC x (1 - t) ht']
-    change (g x, 1 - (1 - t)) = (g x, t)
+    rw [timeReverse_apply, timeReverse_apply, hC x (1 - t) ht']
     apply Prod.ext
     · rfl
     · ring
   exists_pos_apply_eq_right' := by
-    obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_left'
+    obtain ⟨ε, hε, hC⟩ := C.exists_pos_apply_eq_left
     refine ⟨ε, hε, fun x t ht => ?_⟩
     have ht' : 1 - t ≤ ε := by linarith
-    change targetTimeReverse (C.toFun (x, 1 - t)) = (f x, t)
-    rw [hC x (1 - t) ht']
-    change (f x, 1 - (1 - t)) = (f x, t)
+    rw [timeReverse_apply, timeReverse_apply, hC x (1 - t) ht']
     apply Prod.ext
     · rfl
     · ring
@@ -156,21 +206,36 @@ def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f
     have ht' : 1 - t ∈ Ioo (0 : ℝ) 1 := by
       constructor <;> linarith [ht.1, ht.2]
     have hC := C.snd_apply_mem_Ioo' x (1 - t) ht'
-    change (1 - (C.toFun (x, 1 - t)).2) ∈ Ioo (0 : ℝ) 1
+    change (C (x, 1 - t)).2 ∈ Ioo (0 : ℝ) 1 at hC
+    change (1 - (C (x, 1 - t)).2) ∈ Ioo (0 : ℝ) 1
     constructor <;> linarith [hC.1, hC.2]
 
+/-! ### Endpoint embeddings -/
+
+/-- The initial map of a topological concordance is an embedding, because it is the zero-time
+slice of the locally flat track. -/
+theorem isEmbedding_left (C : TopologicalConcordance F F' f g) : IsEmbedding f := by
+  exact C.isEmbedding_of_slice C.apply_zero
+
+/-- The final map of a topological concordance is an embedding, because the reversed track has it
+as its initial map. -/
+theorem isEmbedding_right (C : TopologicalConcordance F F' f g) : IsEmbedding g := by
+  exact C.symm.isEmbedding_left
+
+/-- The reversed track evaluated at `(x, t)`. -/
 @[simp]
 theorem symm_apply (C : TopologicalConcordance F F' f g) (x : M) (t : ℝ) :
-    C.symm (x, t) = ((C (x, 1 - t)).1, 1 - (C (x, 1 - t)).2) :=
-  by
-    change targetTimeReverse (C.toFun (x, 1 - t)) = _
-    rfl
+    C.symm (x, t) = ((C (x, 1 - t)).1, 1 - (C (x, 1 - t)).2) := by
+  change timeReverse N (C (timeReverse M (x, t))) = _
+  rw [timeReverse_apply, timeReverse_apply]
 
+/-- Reversing a track twice gives it back. -/
 @[simp]
 theorem symm_symm (C : TopologicalConcordance F F' f g) : C.symm.symm = C := by
   apply DFunLike.coe_injective
   funext ⟨x, t⟩
-  simp [symm_apply]
+  rw [symm_apply, symm_apply]
+  simp only [sub_sub_cancel]
 
 end TopologicalConcordance
 
@@ -179,19 +244,25 @@ def TopologicallyConcordant (F F' : Type*) [TopologicalSpace F] [TopologicalSpac
     (f g : M → N) : Prop :=
   Nonempty (TopologicalConcordance F F' f g)
 
+/-- Topological concordance is exactly the nonemptiness of its track type. -/
+theorem topologicallyConcordant_iff_nonempty {f g : M → N} :
+    TopologicallyConcordant F F' f g ↔ Nonempty (TopologicalConcordance F F' f g) :=
+  Iff.rfl
+
 namespace TopologicallyConcordant
 
 variable {f g : M → N}
 
-/-! The relation is intentionally exposed before transitivity: stacking requires the locally flat
-gluing theorem for 4-dimensional tracks, which is a separate prerequisite of the concordance
-group. -/
+/-- A topological concordance witnesses the relation. -/
+theorem of_concordance (C : TopologicalConcordance F F' f g) :
+    TopologicallyConcordant F F' f g :=
+  ⟨C⟩
 
 /-- Topological concordance is symmetric by reversing the time coordinate. -/
 @[symm]
 theorem symm (h : TopologicallyConcordant F F' f g) :
     TopologicallyConcordant F F' g f :=
-  h.elim fun C => ⟨C.symm⟩
+  h.elim fun C => of_concordance C.symm
 
 end TopologicallyConcordant
 
