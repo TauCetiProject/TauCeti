@@ -210,6 +210,9 @@ abbrev fullyFaithfulι : (ι C).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
 
 /-- The quotient functor from bounded cochain complexes to their bounded homotopy category. -/
+-- The corresponding Mathlib declarations inherit `expose` from their enclosing
+-- `@[expose] public section`; here it is restricted to the two definitions that require it for
+-- their exported `simps` lemmas and shift instances.
 @[expose, implicit_reducible, simps!]
 def quotient : BoundedCochainComplex C ⥤ BoundedHomotopyCategory C :=
   ObjectProperty.lift _
