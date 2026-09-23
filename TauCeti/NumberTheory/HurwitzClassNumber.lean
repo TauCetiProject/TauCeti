@@ -144,12 +144,11 @@ theorem hurwitzClassNumber_of_ne_zero {D : ℕ} (hD : D ≠ 0) :
       else if t.1 = t.2.1 ∧ t.2.1 = t.2.2 then 1 / 3 else 1 :=
   ite_eq_right hD
 
-/-- **`H D = 0` for `D ≡ 1, 2 (mod 4)`**: no discriminant `b² - 4 a c` is `-1` or `-2`
-modulo `4`. -/
+/-- The Hurwitz class number `H D` is `0` for `D ≡ 1, 2 (mod 4)`. -/
 theorem hurwitzClassNumber_eq_zero_of_mod_four {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
     hurwitzClassNumber D = 0 := by
-  have : D ≠ 0 := by omega
-  simp [hurwitzClassNumber, this, reducedForms_eq_empty_of_mod_four hD]
+  -- a discriminant `b² - 4 a c` is `0` or `1` modulo `4`, so no reduced form has discriminant `-D`
+  rw [hurwitzClassNumber_of_ne_zero (by lia), reducedForms_eq_empty_of_mod_four hD, sum_empty]
 
 /-! ### The first values -/
 
