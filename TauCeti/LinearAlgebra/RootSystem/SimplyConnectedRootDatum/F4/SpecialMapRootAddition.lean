@@ -24,18 +24,14 @@ public section
 
 namespace TauCeti.DynkinType
 
-private theorem f4SpecialIsogenyIndexEquiv_involutive (i : Fin 48) :
-    f4SpecialIsogenyIndexEquiv (f4SpecialIsogenyIndexEquiv i) = i := by
-  simp only [f4SpecialIsogenyIndexEquiv_apply]
-  exact f4SpecialIsogenyIndex_involutive i
-
 private theorem f4SpecialIsogenyMatrix_mulVec_root_image (i : Fin 48) :
     Matrix.mulVec f4SpecialIsogenyMatrix
         (f4SimplyConnectedRootDatum.root (f4SpecialIsogenyIndexEquiv i)) =
       f4Length (f4SpecialIsogenyIndexEquiv i) •
         f4SimplyConnectedRootDatum.root i := by
   rw [f4SpecialIsogenyMatrix_mulVec_root,
-    f4SpecialIsogenyIndexEquiv_involutive]
+    show f4SpecialIsogenyIndexEquiv (f4SpecialIsogenyIndexEquiv i) = i by
+      simpa only [f4SpecialIsogenyIndexEquiv_apply] using f4SpecialIsogenyIndex_involutive i]
 
 private theorem f4SpecialIsogenyMatrix_mulVec_injective :
     Function.Injective (Matrix.mulVec f4SpecialIsogenyMatrix) :=
