@@ -49,14 +49,6 @@ theorem tristramLevineForm_enlargeColumn (V : Matrix ι ι ℝ) (ξ : ι → ℝ
   · fin_cases i <;> simp [Matrix.conjTranspose_apply]
   · fin_cases i <;> fin_cases j <;> simp
 
-private theorem enlargeRow_eq_transpose_enlargeColumn (V : Matrix ι ι ℝ) (η : ι → ℝ) :
-    enlargeRow V η = (enlargeColumn Vᵀ η)ᵀ := by
-  ext (i | i) (j | j)
-  · simp [Matrix.transpose_apply]
-  · fin_cases j <;> simp [Matrix.transpose_apply]
-  · fin_cases i <;> simp [Matrix.transpose_apply]
-  · fin_cases i <;> fin_cases j <;> simp [Matrix.transpose_apply]
-
 /-- The Tristram--Levine form of a row enlargement: the transpose-symmetric counterpart of the
 column enlargement equation. -/
 @[simp]
@@ -66,7 +58,7 @@ theorem tristramLevineForm_enlargeRow (V : Matrix ι ι ℝ) (η : ι → ℝ) (
         ((1 - conj ω) • (enlargeBlock η).map ((↑) : ℝ → ℂ))
         (((1 - conj ω) • (enlargeBlock η).map ((↑) : ℝ → ℂ))ᴴ)
         !![0, 1 - conj ω; 1 - ω, 0] := by
-  rw [enlargeRow_eq_transpose_enlargeColumn, tristramLevineForm_transpose,
+  rw [enlargeRow_def, tristramLevineForm_transpose,
     tristramLevineForm_enlargeColumn]
   simp [Function.comp_def]
 
@@ -129,7 +121,7 @@ theorem tristramLevineSignature_enlargeColumn (V : Matrix ι ι ℝ) (ξ : ι �
 @[simp]
 theorem tristramLevineSignature_enlargeRow (V : Matrix ι ι ℝ) (η : ι → ℝ) (ω : ℂ) :
     tristramLevineSignature (enlargeRow V η) ω = tristramLevineSignature V ω := by
-  rw [enlargeRow_eq_transpose_enlargeColumn, tristramLevineSignature_transpose,
+  rw [enlargeRow_def, tristramLevineSignature_transpose,
     tristramLevineSignature_enlargeColumn, tristramLevineSignature_transpose]
 
 end TauCeti.KnotTheory
