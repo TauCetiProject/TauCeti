@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-import TauCeti.Algebra.Group.Prod
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.ZMod.Torsion
 import Mathlib.Data.Fintype.EquivFin
