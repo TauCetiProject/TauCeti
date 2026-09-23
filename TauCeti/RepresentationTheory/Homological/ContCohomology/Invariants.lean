@@ -225,24 +225,6 @@ variable (G : Type*) [Group G]
 variable (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M]
 
-private def fixedPointsToCanonicalInvariants (H : Subgroup G) :
-    FixedPoints.addSubgroup H M →L[ℤ]
-      ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype).invariants :=
-  { toLinearMap :=
-      { toFun := fun m =>
-          ⟨(m : M), fun h => by
-            -- Normalize the canonical invariant condition to the fixed-point condition.
-            change (h : G) • (m : M) = (m : M)
-            exact (FixedPoints.mem_addSubgroup H M (m : M)).1 m.2 h⟩
-        map_add' := fun _ _ => rfl
-        map_smul' := fun _ _ => rfl }
-    cont := continuous_of_discreteTopology }
-
-private theorem fixedPointsToCanonicalInvariants_apply (H : Subgroup G)
-    (m : FixedPoints.addSubgroup H M) :
-    (fixedPointsToCanonicalInvariants G M H m).1 = (m : M) :=
-  rfl
-
 /-- **The coefficient dictionary commutes with quotient invariants.** The explicit fixed-point
 module `M^H`, regarded as a discrete module over `G ⧸ H`, maps canonically to the invariants of
 the restricted canonical object. Its underlying function preserves the coefficient in `M`; only
@@ -252,22 +234,30 @@ This is the coefficient morphism used to compare explicit and canonical inflatio
 def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
     ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M) ⟶
       TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H :=
+  let f : FixedPoints.addSubgroup H M →L[ℤ]
+      ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype).invariants :=
+    (@addSubgroupContinuousLinearEquivInvariants H _ M _ _
+      (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+        ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) fun m ↦
+          (ContRepresentation.mem_invariants m).trans
+            (FixedPoints.mem_addSubgroup H M m).symm).toContinuousLinearMap
   TopRep.ofHom
-    { toContinuousLinearMap := fixedPointsToCanonicalInvariants G M H
+    { toContinuousLinearMap := f
       isIntertwining' q := by
         induction q using QuotientGroup.induction_on with
         | H g =>
           ext m
-          -- Evaluate both sides on a quotient representative and their underlying coefficients.
+          have f_apply (x : FixedPoints.addSubgroup H M) : (f x).1 = (x : M) := by
+            rfl
+          -- `isIntertwining'` stores an equality of composed linear maps; after extensionality,
+          -- expose their applications so the public evaluation lemmas can rewrite both sides.
           change
-            (fixedPointsToCanonicalInvariants G M H
-                ((ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M)).ρ
-                  (QuotientGroup.mk g) m)).1 =
+            (f ((ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M)).ρ
+                (QuotientGroup.mk g) m)).1 =
               (((ofDiscreteModule ℤ G M).ρ.quotientToInvariants H)
-                (QuotientGroup.mk g) (fixedPointsToCanonicalInvariants G M H m)).1
-          simp only [fixedPointsToCanonicalInvariants]
+                (QuotientGroup.mk g) (f m)).1
           rw [ContRepresentation.coe_quotientToInvariants_mk_apply,
-            ofDiscreteModule_ρ_apply_apply]
+            ofDiscreteModule_ρ_apply_apply, f_apply, f_apply]
           exact congrArg (fun x : FixedPoints.addSubgroup H M => (x : M))
             (coe_quotient_smul_fixedPoints_addSubgroup g m) }
 
@@ -276,7 +266,7 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
 theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
     (ofDiscreteModuleQuotient G M H m).1 = (m : M) :=
-  fixedPointsToCanonicalInvariants_apply G M H m
+  (rfl)
 
 /-- Including the quotient-invariants dictionary morphism into the ambient canonical object
 preserves the underlying coefficient. This is the pointwise coefficient identity in the

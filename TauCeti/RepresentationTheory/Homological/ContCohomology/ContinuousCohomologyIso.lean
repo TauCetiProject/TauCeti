@@ -102,15 +102,10 @@ the canonical object `TauCeti.ofDiscreteModule ℤ G M`, by the identity on unde
 Both carry the subspace topology of the discrete `M`, so the identification is a homeomorphism as
 well as an isomorphism of `ℤ`-modules. -/
 def H0ContinuousLinearEquivInvariants :
-    H0 G M ≃L[ℤ] (ofDiscreteModule ℤ G M).ρ.invariants where
-  toFun m := ⟨m.1, (mem_invariants_ofDiscreteModule_iff_mem_H0 G M m.1).2 m.2⟩
-  invFun m := ⟨m.1, (mem_invariants_ofDiscreteModule_iff_mem_H0 G M m.1).1 m.2⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 continuous_subtype_val
-  continuous_invFun := continuous_induced_rng.2 continuous_subtype_val
+    H0 G M ≃L[ℤ] (ofDiscreteModule ℤ G M).ρ.invariants :=
+  @addSubgroupContinuousLinearEquivInvariants G _ M _ _
+    (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)
 
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
