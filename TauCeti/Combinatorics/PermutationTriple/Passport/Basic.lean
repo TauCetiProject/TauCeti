@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
+public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 public import TauCeti.Algebra.Group.Subgroup.Map
 public import TauCeti.GroupTheory.Perm.PermCongr
 
@@ -14,8 +15,9 @@ public import TauCeti.GroupTheory.Perm.PermCongr
 
 A passport records the coarse invariants of a connected permutation triple: the conjugacy class
 of its monodromy subgroup in the ambient symmetric group and the ordered full cycle partitions at
-the three branch points.  This file introduces connected triples as a carrier, their relabeling
-classes, passport specifications, and the membership relation between the two.
+the three branch points.  This file introduces passport specifications and the membership
+relation between connected triples (`TauCeti.ConnectedTriple`) and passports, together with its
+descent to isomorphism classes (`TauCeti.ConnectedIsoClass`).
 
 The cycle partitions include fixed points.  Admissibility therefore says that each partition has
 positive parts summing to the degree.  The degree is also required to be nonzero: transitivity on
@@ -23,8 +25,6 @@ positive parts summing to the degree.  The degree is also required to be nonzero
 
 ## Main definitions
 
-* `TauCeti.ConnectedTriple`: a permutation triple together with connectedness.
-* `TauCeti.ConnectedIsoClass`: connected triples modulo simultaneous relabeling.
 * `TauCeti.PassportSpec`: a reference monodromy subgroup and three ordered cycle partitions.
 * `TauCeti.PassportSpec.IsAdmissible`: well-formed passport data.
 * `TauCeti.PassportSpec.HasPassport`: membership of a connected triple in a passport.
@@ -41,71 +41,6 @@ open Equiv MulAction
 public section
 
 namespace TauCeti
-
-/-! ## Connected triples and their isomorphism classes -/
-
-/-- A connected permutation triple of degree `n`.
-
-Connectedness is part of the carrier because passports are invariants of connected covers. -/
-abbrev ConnectedTriple (n : ℕ) : Type :=
-  {t : PermutationTriple n // t.IsConnected}
-
-namespace ConnectedTriple
-
-variable {n : ℕ}
-
-/-- Relabeling a connected triple simultaneously conjugates its three permutations. -/
-instance : MulAction (Perm (Fin n)) (ConnectedTriple n) where
-  smul τ t := ⟨τ • t.1, (PermutationTriple.isConnected_smul_iff τ t.1).2 t.2⟩
-  one_smul t := Subtype.ext (one_smul _ t.1)
-  mul_smul τ υ t := Subtype.ext (mul_smul τ υ t.1)
-
-noncomputable instance : Fintype (ConnectedTriple n) := Fintype.ofFinite _
-
-instance : DecidableEq (ConnectedTriple n) := inferInstance
-
-@[simp]
-theorem coe_smul (τ : Perm (Fin n)) (t : ConnectedTriple n) :
-    ((τ • t : ConnectedTriple n) : PermutationTriple n) = τ • (t : PermutationTriple n) :=
-  (rfl)
-
-end ConnectedTriple
-
-/-- Isomorphism classes of connected permutation triples of degree `n`. -/
-def ConnectedIsoClass (n : ℕ) : Type :=
-  MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedTriple n)
-
-namespace ConnectedIsoClass
-
-variable {n : ℕ}
-
-/-- The isomorphism class of a connected triple. -/
-def mk (t : ConnectedTriple n) : ConnectedIsoClass n :=
-  Quotient.mk'' t
-
-/-- Two connected triples determine the same isomorphism class exactly when they are related by
-simultaneous relabeling. -/
-@[simp]
-theorem mk_eq_mk_iff {t t' : ConnectedTriple n} :
-    mk t = mk t' ↔ MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n) t t' :=
-  Quotient.eq''
-
-/-- Two connected triples determine the same isomorphism class exactly when some relabeling
-carries the second onto the first. -/
-theorem mk_eq_mk_iff_exists_smul {t t' : ConnectedTriple n} :
-    mk t = mk t' ↔ ∃ τ : Perm (Fin n), τ • t' = t := by
-  rw [mk_eq_mk_iff, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-
-theorem mk_surjective : Function.Surjective (mk : ConnectedTriple n → ConnectedIsoClass n) :=
-  Quotient.mk''_surjective
-
-noncomputable instance : Fintype (ConnectedIsoClass n) := by
-  classical
-  exact Fintype.ofSurjective mk mk_surjective
-
-noncomputable instance : DecidableEq (ConnectedIsoClass n) := Classical.decEq _
-
-end ConnectedIsoClass
 
 /-! ## Passport specifications -/
 

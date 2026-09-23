@@ -10,7 +10,7 @@ public import Mathlib.Probability.Independence.CharacteristicFunction
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.GeneratingFunction
-import TauCeti.Probability.Distributions.Bernoulli
+import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # Elementary theory of the binomial distribution

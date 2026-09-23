@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.Infinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.Algebra.GroupAction.TypeTags
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action

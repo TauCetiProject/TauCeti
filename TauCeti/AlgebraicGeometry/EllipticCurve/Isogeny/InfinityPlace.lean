@@ -14,7 +14,7 @@ import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 -- Proof-only: `Valuation.IsTrivialOn.comap`, which carries triviality on `F` across restriction
 -- along the field pullback.
 import TauCeti.RingTheory.Valuation.IsTrivialOn
-import TauCeti.RingTheory.Valuation.IntegralOfValuationLeOne
+import TauCeti.RingTheory.Valuation.Integral.OfValuationLeOne
 import TauCeti.RingTheory.Valuation.Polynomial
 import Mathlib.RingTheory.Valuation.Integral
 

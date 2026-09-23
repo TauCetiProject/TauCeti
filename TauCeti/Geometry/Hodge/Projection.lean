@@ -82,6 +82,12 @@ theorem ker_projection : LinearMap.ker (projection P W) = (orthogonal P W).WQ :=
 theorem isIdempotentElem_projection : IsIdempotentElem (projection P W) :=
   Submodule.isIdempotentElem_projection _
 
+/-- The Hodge projector is the submodule projection along the orthogonal complement. -/
+theorem projection_eq_submodule_projection :
+    projection P W =
+      W.WQ.projection (orthogonal P W).WQ (isCompl_WQ_orthogonal_WQ P W) :=
+  by rw [projection]
+
 /-- The Hodge projector fixes the rational Hodge substructure it projects onto. -/
 @[simp]
 theorem projection_apply_of_mem {x : Vℚ} (hx : x ∈ W.WQ) : projection P W x = x :=
@@ -97,16 +103,28 @@ theorem projection_apply_of_mem_orthogonal {x : Vℚ}
     rw [orthogonal_WQ, LinearMap.BilinForm.mem_orthogonal_iff]
     exact hx
 
-/-- The complexification of the Hodge projector is a morphism of pure Hodge structures. -/
-theorem isMorphism_rationalMapToComplex_projection :
-    HodgeStructureOn.IsMorphism hs hs (rationalMapToComplex hℚ hℂ hℚ hℂ (projection P W)) := by
+omit [Module.Finite ℚ Vℚ] in
+/-- Projection along complementary rational Hodge substructures is a morphism of the ambient pure
+Hodge structure. -/
+theorem isMorphism_rationalMapToComplex_projection_of_isCompl
+    (W' : RationalHodgeSubstructure hℚ hs) (h : IsCompl W W') :
+    HodgeStructureOn.IsMorphism hs hs
+      (rationalMapToComplex hℚ hℂ hℚ hℂ
+        (W.WQ.projection W'.WQ (isCompl_iff_WQ.1 h))) := by
   -- Apply the idempotent criterion using the projector's range and kernel.
   refine HodgeStructureOn.isMorphism_of_isIdempotentElem
-    (isIdempotentElem_rationalMapToComplex hℚ hℂ (isIdempotentElem_projection P W)) ?_ ?_
-  · rw [range_rationalMapToComplex, range_projection, ← WC_def]
+    (isIdempotentElem_rationalMapToComplex hℚ hℂ
+      (Submodule.isIdempotentElem_projection (isCompl_iff_WQ.1 h))) ?_ ?_
+  · rw [range_rationalMapToComplex, Submodule.range_projection, ← WC_def]
     exact W.isSubstructure
-  · rw [ker_rationalMapToComplex, ker_projection, ← WC_def]
-    exact (orthogonal P W).isSubstructure
+  · rw [ker_rationalMapToComplex, Submodule.ker_projection, ← W'.WC_def]
+    exact W'.isSubstructure
+
+/-- The complexification of the Hodge projector is a morphism of pure Hodge structures. -/
+theorem isMorphism_rationalMapToComplex_projection :
+    HodgeStructureOn.IsMorphism hs hs (rationalMapToComplex hℚ hℂ hℚ hℂ (projection P W)) :=
+  W.isMorphism_rationalMapToComplex_projection_of_isCompl (orthogonal P W)
+    (isCompl_orthogonal P W)
 
 end RationalHodgeSubstructure
 

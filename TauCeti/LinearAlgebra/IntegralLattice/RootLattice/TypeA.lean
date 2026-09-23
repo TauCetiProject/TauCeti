@@ -503,6 +503,50 @@ theorem typeAStandardQuadraticModule_pairing_intCast (j k : ℤ) :
   push_cast
   field_simp
 
+/-- In the standard `A₂` discriminant module, the quadratic value of a symbol is `0` at zero
+and `1/3` at either nonzero symbol. -/
+@[simp]
+theorem typeAStandardQuadraticModule_two_quadratic (a : ZMod 3) :
+    (typeAStandardQuadraticModule 2).quadratic a =
+      (((if a ≠ 0 then 1 else 0 : ℚ) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
+  have ha : (((a.val : ℤ) : ZMod 3)) = a := by
+    exact_mod_cast ZMod.natCast_rightInverse a
+  conv_lhs => rw [← ha]
+  rw [typeAStandardQuadraticModule_quadratic_intCast]
+  have ha_le : a.val < 3 := a.isLt
+  interval_cases hval : a.val
+  · rw [← ha]
+    simp
+  · have ha0 : a ≠ 0 := by
+      intro ha0
+      rw [ha0] at hval
+      norm_num at hval
+    rw [ite_eq_left ha0]
+    norm_num
+  · have ha0 : a ≠ 0 := by
+      intro ha0
+      rw [ha0] at hval
+      norm_num at hval
+    rw [ite_eq_left ha0]
+    norm_num only [Nat.cast_ofNat]
+    rw [show (4 / 3 : ℚ) = 1 + 1 / 3 by norm_num, AddCircle.coe_add]
+    norm_num
+
+/-- The polar pairing of arbitrary symbols in the `A₂` discriminant form is `2ab/3`, using
+their canonical representatives in `{0, 1, 2}`. -/
+@[simp]
+theorem typeAStandardQuadraticModule_two_pairing (a b : ZMod 3) :
+    (typeAStandardQuadraticModule 2).toFiniteBilinearModule.pairing a b =
+      (((2 * (a.val : ℚ) * (b.val : ℚ)) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
+  have ha : (((a.val : ℤ) : ZMod 3)) = a := by
+    exact_mod_cast ZMod.natCast_rightInverse a
+  have hb : (((b.val : ℤ) : ZMod 3)) = b := by
+    exact_mod_cast ZMod.natCast_rightInverse b
+  conv_lhs => rw [← ha, ← hb]
+  rw [typeAStandardQuadraticModule_pairing_intCast]
+  norm_num
+  ring_nf
+
 /-- The generator of the cyclic model has quadratic value `n / (2 (n + 1))`. -/
 @[simp]
 theorem typeAStandardQuadraticModule_quadratic_one :

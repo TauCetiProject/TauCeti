@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Finiteness
+public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
-import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Algebra.OpenSubgroup
+import Mathlib.GroupTheory.Schreier
 
 /-!
 # Topological generation of a topological group
@@ -38,6 +40,9 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   `TauCeti.IsTopologicallyFinitelyGenerated.of_surjective`,
   `TauCeti.IsTopologicallyFinitelyGenerated.quotient`: topological finite generation passes along
   continuous homomorphisms with dense range, along continuous surjections, and to quotients.
+* `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex`,
+  `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup`: topological finite generation
+  passes to open finite-index subgroups, in particular to open subgroups of compact groups.
 * `MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`: a continuous homomorphism into a
   Hausdorff group is determined by its values on a topological generating set.
 * `MonoidHom.eq_of_eqOn_of_isOpen_ker`: the same uniqueness statement for a homomorphism with
@@ -45,6 +50,12 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
 * `TauCeti.IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker`: only finitely many
   homomorphisms with open kernel go from a topologically finitely generated group to a fixed
   finite group.
+
+## References
+
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Corollary 3.6.3.
+* Mathlib's `Subgroup.fg_of_index_ne_zero` and
+  `DenseRange.subset_closure_image_preimage_of_isOpen`.
 -/
 
 public section
@@ -123,6 +134,63 @@ theorem IsTopologicallyFinitelyGenerated.of_surjective
 theorem IsTopologicallyFinitelyGenerated.quotient (hG : IsTopologicallyFinitelyGenerated G)
     (N : Subgroup G) [N.Normal] : IsTopologicallyFinitelyGenerated (G ⧸ N) :=
   hG.of_surjective QuotientGroup.continuous_mk (QuotientGroup.mk'_surjective N)
+
+/-- An open finite-index subgroup of a topologically finitely generated group is topologically
+finitely generated. -/
+theorem IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex
+    (hG : IsTopologicallyFinitelyGenerated G) (U : OpenSubgroup G)
+    [hUindex : U.toSubgroup.FiniteIndex] :
+    IsTopologicallyFinitelyGenerated (↥U.toSubgroup) := by
+  obtain ⟨s, hs⟩ := isTopologicallyFinitelyGenerated_iff.mp hG
+  let D : Subgroup G := Subgroup.closure (s : Set G)
+  have hD : Dense (D : Set G) := by
+    rw [dense_iff_closure_eq, ← Subgroup.topologicalClosure_coe, hs, Subgroup.coe_top]
+  let K : Subgroup D := U.toSubgroup.subgroupOf D
+  have hKfg : Group.FG K := by
+    have hDfg : Group.FG D := Group.closure_finset_fg s
+    have hKindex : K.FiniteIndex :=
+      @Subgroup.instFiniteIndex_subgroupOf G _ U.toSubgroup D inferInstance
+    exact @Subgroup.fg_of_index_ne_zero D _ K hDfg hKindex
+  let f : K →* ↥U.toSubgroup :=
+    (D.subtype.comp K.subtype).codRestrict U.toSubgroup (fun x => x.2)
+  have hf : Continuous f := by
+    apply continuous_induced_rng.mpr
+    have hval : Subtype.val ∘ f = fun x : K => (x : G) := by
+      funext x
+      rfl
+    rw [hval]
+    exact continuous_subtype_val.comp continuous_subtype_val
+  have hfrange : DenseRange f := by
+    rw [DenseRange, Subtype.dense_iff]
+    intro x hx
+    have hx' : (x : G) ∈ closure ((D : Set G) ∩ (U : Set G)) := by
+      simpa only [Set.image_preimage_eq_inter_range, Subtype.range_coe,
+        Set.inter_comm] using
+          hD.denseRange_val.subset_closure_image_preimage_of_isOpen U.isOpen hx
+    have hrange_coe : (Subtype.val : ↥U.toSubgroup → G) '' Set.range f =
+        (D : Set G) ∩ (U : Set G) := by
+      ext g
+      constructor
+      · rintro ⟨x, ⟨y, rfl⟩, rfl⟩
+        exact ⟨y.1.2, y.2⟩
+      · rintro ⟨hgD, hgU⟩
+        refine ⟨⟨g, hgU⟩, ?_, rfl⟩
+        refine ⟨⟨⟨g, hgD⟩, hgU⟩, ?_⟩
+        exact Subtype.ext rfl
+    rw [← hrange_coe] at hx'
+    exact hx'
+  have hK : IsTopologicallyFinitelyGenerated K := by
+    let _ : Group.FG K := hKfg
+    exact isTopologicallyFinitelyGenerated_of_fg
+  exact hK.of_denseRange hf hfrange
+
+/-- An open subgroup of a topologically finitely generated compact topological group is
+topologically finitely generated. -/
+theorem IsTopologicallyFinitelyGenerated.of_openSubgroup [CompactSpace G]
+    (hG : IsTopologicallyFinitelyGenerated G) (U : OpenSubgroup G) :
+    IsTopologicallyFinitelyGenerated (↥U.toSubgroup) := by
+  have hUindex : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  exact hG.of_openSubgroup_of_finiteIndex (U := U) (hUindex := hUindex)
 
 /-- Topological finite generation is invariant under topological group isomorphism. -/
 theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :

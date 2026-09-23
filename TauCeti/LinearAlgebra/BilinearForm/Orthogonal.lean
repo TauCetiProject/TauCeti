@@ -8,19 +8,40 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
-# Extending left-separating subspaces by an orthogonal vector
+# Orthogonal complements of bilinear forms
 
-This file records that adjoining an orthogonal vector whose self-pairing is a right non-zero-divisor
-to a left-separating subspace of a reflexive bilinear space produces a nondegenerate restriction.
-It is the structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace.
+This file records two facts about the orthogonal complement `LinearMap.BilinForm.orthogonal` that
+Mathlib lacks. A vector lies in the orthogonal complement of the span of two vectors exactly when
+it is orthogonal to both. Adjoining an orthogonal vector whose self-pairing is a right
+non-zero-divisor to a left-separating subspace of a reflexive bilinear space produces a
+nondegenerate restriction; this is the structural step used when a Cartan--Dieudonne argument
+enlarges a fixed subspace.
 
-## Main result
+## Main results
 
+* `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: membership in the orthogonal complement of
+  the span of two vectors.
 * `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
   to a left-separating subspace produces a nondegenerate restriction.
 -/
 
 public section
+
+namespace LinearMap.BilinForm
+
+variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
+
+/-- A vector is orthogonal to the span of two vectors exactly when it is orthogonal to both. -/
+theorem mem_orthogonal_span_pair_iff (B : LinearMap.BilinForm K V) {x y z : V} :
+    z ∈ B.orthogonal (Submodule.span K {x, y}) ↔ B x z = 0 ∧ B y z = 0 := by
+  constructor
+  · intro hz
+    exact ⟨hz x (Submodule.subset_span (by simp)), hz y (Submodule.subset_span (by simp))⟩
+  · rintro ⟨hx, hy⟩ n hn
+    obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hn
+    simp [hx, hy]
+
+end LinearMap.BilinForm
 
 namespace TauCeti
 

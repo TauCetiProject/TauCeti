@@ -13,7 +13,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 Mathlib carries ellipticity through `WeierstrassCurve.map`. This module exposes the same instance
 for the canonical affine base-change spelling `W⁄A`, so consumers of the point and function-field
 base-change APIs do not have to unfold that abbreviation. It also records that base change along
-the identity algebra map returns the original curve.
+the identity algebra map returns the original curve, and a coordinate descent lemma for points
+whose abscissa is already rational.
 
 This is infrastructure for the base-change lane of
 `TauCetiRoadmap/EllipticCurves/README.md`, Layer 0.5.
@@ -45,6 +46,36 @@ lemma baseChange_self : (W⁄R).toAffine = W := by
   exact W.map_id
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {R A : Type*} [CommRing R] [CommRing A] [NoZeroDivisors A] [Algebra R A]
+  (W : WeierstrassCurve R) {x y : A}
+
+/-- **The `y`-coordinate of a point with rational `x` is rational** whenever the Weierstrass
+equation at that `x` has one rational solution: the two roots of the resulting monic quadratic
+sum to minus its linear coefficient, so the other one is rational as well. -/
+theorem mem_range_y_of_equation_of_mem_range_x_of_exists_point
+    (heq : (W.baseChange A).toAffine.Equation x y) {x₀ : R} (hx : algebraMap R A x₀ = x)
+    (hex : ∃ y₀ : R, W.toAffine.Equation x₀ y₀) :
+    y ∈ Set.range (algebraMap R A) := by
+  subst hx
+  obtain ⟨y₀, hy₀⟩ := hex
+  rw [Affine.equation_iff] at heq hy₀
+  simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at heq
+  have hy₀' := congrArg (algebraMap R A) hy₀
+  simp only [map_add, map_mul, map_pow] at hy₀'
+  -- The two roots of the quadratic in `y`, one of which is the image of `y₀`.
+  have hroots : (y - algebraMap R A y₀) *
+      (y + algebraMap R A y₀ + (algebraMap R A W.a₁ * algebraMap R A x₀ + algebraMap R A W.a₃))
+        = 0 := by linear_combination heq - hy₀'
+  rcases mul_eq_zero.mp hroots with hk | hk
+  · exact ⟨y₀, by linear_combination -hk⟩
+  · refine ⟨-y₀ - W.a₁ * x₀ - W.a₃, ?_⟩
+    simp only [map_sub, map_neg, map_mul]
+    linear_combination -hk
+
+end WeierstrassCurve
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
   {W : _root_.WeierstrassCurve.Affine R} [W.IsElliptic]

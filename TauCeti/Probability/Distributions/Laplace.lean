@@ -12,6 +12,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Fourier.ExpNegAbs
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Measure.WithDensity
@@ -367,20 +368,6 @@ theorem cdf_laplaceMeasure_eq (hb : 0 < b) (μ x : ℝ) :
 
 /-! ### Moments -/
 
-/-- An even function integrable on the positive half-line is integrable on the whole line. -/
-private lemma integrable_comp_abs {f : ℝ → ℝ} (hf : IntegrableOn f (Ioi 0)) :
-    Integrable fun y : ℝ => f |y| := by
-  have hIoi : IntegrableOn (fun y : ℝ => f |y|) (Ioi 0) :=
-    hf.congr_fun (fun y hy => by rw [abs_of_pos hy]) measurableSet_Ioi
-  have hIic : IntegrableOn (fun y : ℝ => f |y|) (Iic 0) := by
-    have hemb : MeasurableEmbedding fun y : ℝ => -y := (Homeomorph.neg ℝ).measurableEmbedding
-    have h := ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
-      hemb (f := fun u : ℝ => f |u|) (s := Ici (0 : ℝ))).2
-      (Iff.mpr integrableOn_Ici_iff_integrableOn_Ioi hIoi)
-    simpa [Function.comp_def, abs_neg] using h
-  rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ))]
-  exact hIic.union hIoi
-
 /-- Algebraic normalization shared by the absolute-moment value and integrability proofs. -/
 private lemma neg_div_eq_neg_inv_mul (t b : ℝ) : -t / b = -b⁻¹ * t := by
   ring
@@ -431,7 +418,7 @@ theorem integrable_pow_abs_sub_laplaceMeasure (μ : ℝ) (n : ℕ) :
         (fun t _ => ?_) measurableSet_Ioi
       rw [neg_div_eq_neg_inv_mul]
       ring
-    have habs := integrable_comp_abs hIoi
+    have habs := TauCeti.MeasureTheory.integrable_comp_abs hIoi
     refine (habs.comp_sub_right μ).congr (ae_of_all _ fun y => ?_)
     simp only [laplacePDFReal_of_pos hb]
     ring
