@@ -132,7 +132,8 @@ theorem surjective_restrictedProductMap_iff_eventually_bijOn {H : ι → Type w}
 induce an equivalence of restricted products. The witness uses identity maps on
 `Multiplicative ℤ`, with every source reference subgroup `⊥` and every target reference subgroup
 `⊤`: the induced map is the inclusion of the finitely supported elements into the full product,
-which is not surjective. -/
+which is not surjective. This is rejection test 9 in
+`TauCetiRoadmap/RestrictedProducts/README.md`, "Worked examples and rejection tests". -/
 theorem not_forall_surjective_restrictedProductMap :
     ¬ ∀ (U U' : ℕ → Subgroup (Multiplicative ℤ))
         (φ : ∀ _ : ℕ, Multiplicative ℤ ≃* Multiplicative ℤ)

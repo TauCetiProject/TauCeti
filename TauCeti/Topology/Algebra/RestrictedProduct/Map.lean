@@ -132,11 +132,10 @@ theorem surjective_restrictedProductMap_iff {H : ι → Type w} [∀ i, Group (H
   · intro h
     refine ⟨fun i z ↦ ?_, ?_⟩
     · -- Hit the element supported at `i` with value `z`.
-      obtain ⟨x, hx⟩ := h ⟨Pi.mulSingle i z,
-        (eventually_cofinite_ne i).mono fun j hj ↦ by simp [Pi.mulSingle_eq_of_ne hj]⟩
+      obtain ⟨x, hx⟩ := h (RestrictedProduct.mulSingle U' i z)
       refine ⟨x i, ?_⟩
-      rw [← restrictedProductMap_apply U U' φ hφ, hx, RestrictedProduct.mk_apply,
-        Pi.mulSingle_eq_same]
+      rw [← restrictedProductMap_apply U U' φ hφ, hx,
+        RestrictedProduct.mulSingle_eq_same]
     · -- At each index where `φ j` misses part of `U' j`, pick a missed element; elsewhere pick
       -- `1`. A preimage of the result must leave `U j` at every index of the first kind.
       have hmiss : ∀ j, ∃ z ∈ U' j, ¬ Set.SurjOn (φ j) (U j) (U' j) → z ∉ φ j '' U j := by
