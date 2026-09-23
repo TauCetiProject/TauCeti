@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.Kostka
-public import TauCeti.Combinatorics.Young.OfRowLens
+import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
 # Interlacing shapes and the branching of bounded tableaux
