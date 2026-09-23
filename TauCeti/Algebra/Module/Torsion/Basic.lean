@@ -46,6 +46,37 @@ namespace TauCeti
 
 namespace AddSubgroup
 
+/-- Torsion in a product of additive commutative groups is additively equivalent to the product
+of their torsion subgroups. -/
+def torsionByPiEquiv {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)] (n : ℕ) :
+    _root_.AddSubgroup.torsionBy (∀ i, A i) (n : ℤ) ≃+
+      (∀ i, _root_.AddSubgroup.torsionBy (A i) (n : ℤ)) where
+  toFun x i := ⟨x.1 i, by
+    change (n : ℤ) • x.1 i = 0
+    exact congrFun x.2 i⟩
+  invFun x := ⟨fun i ↦ x i, by
+    change (n : ℤ) • (fun i ↦ (x i : A i)) = 0
+    funext i
+    exact (x i).2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+/-- `torsionByPiEquiv` sends a torsion element to its pointwise torsion elements. -/
+@[simp]
+theorem torsionByPiEquiv_apply_coe {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
+    (n : ℕ) (x : _root_.AddSubgroup.torsionBy (∀ i, A i) (n : ℤ)) (i : ι) :
+    ((torsionByPiEquiv A n x i : _root_.AddSubgroup.torsionBy (A i) (n : ℤ)) : A i) = x.1 i :=
+  by simp [torsionByPiEquiv]
+
+/-- The inverse of `torsionByPiEquiv` assembles torsion elements pointwise. -/
+@[simp]
+theorem torsionByPiEquiv_symm_apply_coe {ι : Type*} (A : ι → Type*) [∀ i, AddCommGroup (A i)]
+    (n : ℕ) (x : ∀ i, _root_.AddSubgroup.torsionBy (A i) (n : ℤ)) (i : ι) :
+    (((torsionByPiEquiv A n).symm x : _root_.AddSubgroup.torsionBy (∀ i, A i) (n : ℤ)) :
+      ∀ i, A i) i = (x i).1 :=
+  by simp [torsionByPiEquiv]
+
 /-- Torsion by `a` inside the `b`-torsion subgroup is the ambient `a`-torsion when `a ∣ b`. -/
 def torsionByTorsionByEquiv {A : Type*} [AddCommGroup A] {a b : ℕ} (hab : a ∣ b) :
     _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A (b : ℤ)) (a : ℤ) ≃+

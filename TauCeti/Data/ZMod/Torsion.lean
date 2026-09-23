@@ -65,6 +65,7 @@ noncomputable def zmodTorsionByEquiv (p k : ℕ) [NeZero p] :
     rw [ZMod.lift_coe]
     simp only [zmultiplesHom_apply]
     rw [natCast_zsmul]
+    -- Expose the ambient equality, since the preceding expression is an equality of subtypes.
     change (x.1.val / p ^ k) • (p ^ k : ZMod (p ^ (k + 1))) = x.1
     rw [nsmul_eq_mul]
     rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
@@ -90,7 +91,8 @@ theorem zmodTorsionByEquiv_apply_coe (p k : ℕ) [NeZero p] (x : ZMod p) :
   rw [ZMod.lift_coe]
   simp [zmultiplesHom_apply]
 
-/-- Membership in the image of `zmodTorsionByEquiv` is characterized in the ambient residue ring. -/
+/-- Equality with the image of a chosen residue under `zmodTorsionByEquiv` is characterized in
+the ambient residue ring. -/
 @[simp]
 theorem zmodTorsionByEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
     (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) :
@@ -108,9 +110,15 @@ theorem zmodTorsionByEquiv_symm_apply_eq_iff (p k : ℕ) [NeZero p]
     (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) (x : ZMod p) :
     (zmodTorsionByEquiv p k).symm y = x ↔
       (x.val * p ^ k : ℕ) = (y.1 : ZMod (p ^ (k + 1))) := by
-  change (zmodTorsionByEquiv p k).toEquiv.symm y = x ↔ _
-  rw [Equiv.symm_apply_eq, eq_comm]
-  exact zmodTorsionByEquiv_apply_eq_iff p k x y
+  constructor
+  · intro h
+    apply (zmodTorsionByEquiv_apply_eq_iff p k x y).mp
+    rw [← h]
+    exact (zmodTorsionByEquiv p k).apply_symm_apply y
+  · intro h
+    rw [← (zmodTorsionByEquiv_apply_eq_iff p k x y)] at h
+    rw [← h]
+    exact (zmodTorsionByEquiv p k).symm_apply_apply x
 
 end TauCeti
 

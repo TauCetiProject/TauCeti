@@ -94,20 +94,6 @@ namespace TauCeti
 
 namespace Nat
 
-/-- Distinct primary powers in a factorization are coprime over the integers. -/
-theorem primePowerCoprimeInt (N : ℕ) : (N.primeFactors : Set ℕ).Pairwise
-    (Function.onFun IsCoprime fun p ↦ ((p ^ N.factorization p : ℕ) : ℤ)) := by
-  intro p hp r hr hpr
-  exact (_root_.Nat.Coprime.cast <| N.pairwise_coprime_pow_primeFactors_factorization
-    (show (⟨p, hp⟩ : N.primeFactors) ≠ ⟨r, hr⟩ by
-      intro h
-      exact hpr (congrArg Subtype.val h)))
-
-/-- The product of the integer primary powers is the original nonzero natural number. -/
-theorem prodPrimePowerInt {N : ℕ} (hN : N ≠ 0) :
-    ∏ p ∈ N.primeFactors, (((p ^ N.factorization p : ℕ) : ℤ)) = (N : ℤ) := by
-  exact_mod_cast (Nat.prod_primeFactors_pow_factorization hN).symm
-
 /-- For `1 < n` the least prime factor of `n` is one of its primes. -/
 private theorem minFac_mem_primeFactors {n : ℕ} (hn : 1 < n) : n.minFac ∈ n.primeFactors :=
   Nat.mem_primeFactors.2 ⟨Nat.minFac_prime hn.ne', n.minFac_dvd, by omega⟩

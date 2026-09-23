@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Prod
-import Mathlib.Algebra.DirectSum.Decomposition
 
 /-!
 # Homomorphisms out of a product of monoids and additive equivalences of products
@@ -73,10 +72,7 @@ def piProd {ι : Type*} (B C : ι → Type*)
 @[simp]
 theorem piProd_apply (B C : ι → Type*) [∀ i, AddMonoid (B i)] [∀ i, AddMonoid (C i)]
     (f : ∀ i, B i × C i) : piProd B C f = (fun i ↦ (f i).1, fun i ↦ (f i).2) :=
-  by
-    -- `AddEquiv` is built by extending this underlying `Equiv`.
-    change Equiv.arrowProdEquivProdArrow ι B C f = _
-    exact Equiv.arrowProdEquivProdArrow_apply ι B C f
+  Equiv.arrowProdEquivProdArrow_apply ι B C f
 
 /-- The inverse of `piProd` pairs component functions pointwise. -/
 @[simp]
@@ -86,8 +82,6 @@ theorem piProd_symm_apply (B C : ι → Type*) [∀ i, AddMonoid (B i)]
   by
     apply funext
     intro i
-    -- The inverse likewise reduces to the inverse of the underlying `Equiv`.
-    change (Equiv.arrowProdEquivProdArrow ι B C).symm f i = _
     exact Equiv.arrowProdEquivProdArrow_symm_apply ι B C f i
 
 end AddEquiv

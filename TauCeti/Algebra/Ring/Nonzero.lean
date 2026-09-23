@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Basic
-public import Mathlib.Algebra.Field.Basic
 
 /-!
 # Nonzero natural casts in semirings

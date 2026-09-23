@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 import TauCeti.GroupTheory.FiniteAbelian.RankTwo
-import TauCeti.Algebra.Field.Nonzero
+import TauCeti.Algebra.Ring.Nonzero
 import TauCeti.Algebra.Group.Prod
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.Nat.Factorization.PrimePowerProd.Basic
@@ -109,8 +109,17 @@ private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
     Submodule.torsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))
       ((p ^ N.factorization p : ℕ) : ℤ) := by
   have hN0 : N ≠ 0 := NeZero.ne N
-  apply Submodule.torsionBy_isInternal (TauCeti.Nat.primePowerCoprimeInt N)
-  rw [TauCeti.Nat.prodPrimePowerInt hN0]
+  have hcoprime : (N.primeFactors : Set ℕ).Pairwise
+      (Function.onFun IsCoprime fun p ↦ ((p ^ N.factorization p : ℕ) : ℤ)) := by
+    intro p hp r hr hpr
+    have hne : (⟨p, hp⟩ : N.primeFactors) ≠ ⟨r, hr⟩ :=
+      fun h ↦ hpr (congrArg Subtype.val h)
+    exact _root_.Nat.Coprime.cast <| N.pairwise_coprime_pow_primeFactors_factorization
+      hne
+  apply Submodule.torsionBy_isInternal hcoprime
+  have hprod : ∏ p ∈ N.primeFactors, (((p ^ N.factorization p : ℕ) : ℤ)) = (N : ℤ) := by
+    exact_mod_cast (Nat.prod_primeFactors_pow_factorization hN0).symm
+  rw [hprod]
   -- `AddSubgroup.torsionBy` is the underlying subtype of this `Module.IsTorsionBy` instance.
   change Module.IsTorsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) (N : ℤ)
   exact Submodule.torsionBy_isTorsionBy (R := ℤ) (M := W.toAffine.Point) (N : ℤ)
