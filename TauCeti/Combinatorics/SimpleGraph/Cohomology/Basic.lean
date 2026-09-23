@@ -96,7 +96,7 @@ variable (G A)
 
 /-- The **first cohomology** `H¹(G, A)` of a simple graph with coefficients in a commutative
 group: its `1`-cochains modulo the coboundaries of functions on its vertices. -/
-def FirstCohomology : Type _ :=
+@[expose] def FirstCohomology : Type _ :=
   G.oneCochains A ⧸ (G.coboundary A).range
 
 namespace FirstCohomology
@@ -105,7 +105,7 @@ instance : CommGroup (G.FirstCohomology A) :=
   inferInstanceAs (CommGroup (G.oneCochains A ⧸ (G.coboundary A).range))
 
 /-- The **cohomology class** of a `1`-cochain. -/
-def mk : G.oneCochains A →* G.FirstCohomology A :=
+@[expose] def mk : G.oneCochains A →* G.FirstCohomology A :=
   QuotientGroup.mk' _
 
 variable {G A}
