@@ -193,9 +193,11 @@ theorem hasTrivialRadical_baseChange_iff :
 finite-dimensional Lie algebra over a field of characteristic zero, the radical of the extension
 of scalars is the extension of the radical.
 
-The substance is that extending scalars creates no new solvable ideals.  Characteristic zero is a
-genuine hypothesis, inherited from `LieAlgebra.hasTrivialRadical_baseChange_iff`; the reduction to
-that special case is described in the module docstring. -/
+The substance is the inclusion `≤`: extending scalars adds no new elements to the radical, so the
+extension of the radical is still the largest solvable ideal.  This says nothing about individual
+solvable ideals of `A ⊗[K] L`, which need not themselves be extended from `L`.  Characteristic
+zero is a genuine hypothesis, inherited from `LieAlgebra.hasTrivialRadical_baseChange_iff`; the
+reduction to that special case is described in the module docstring. -/
 @[simp]
 theorem radical_baseChange :
     radical A (A ⊗[K] L) = (radical K L).baseChange A := by

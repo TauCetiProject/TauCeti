@@ -66,13 +66,9 @@ theorem coe_baseChange :
       LinearMap.baseChange A (f : L →ₗ[R] L') :=
   (rfl)
 
-theorem baseChange_apply (x : A ⊗[R] L) :
-    baseChange A f x = LinearMap.baseChange A (f : L →ₗ[R] L') x :=
-  (rfl)
-
 @[simp]
-theorem baseChange_tmul (a : A) (x : L) : baseChange A f (a ⊗ₜ[R] x) = a ⊗ₜ[R] f x := by
-  rw [baseChange_apply, LinearMap.baseChange_tmul, coe_toLinearMap]
+theorem baseChange_tmul (a : A) (x : L) : baseChange A f (a ⊗ₜ[R] x) = a ⊗ₜ[R] f x :=
+  LinearMap.baseChange_tmul (f : L →ₗ[R] L') a x
 
 /-- Extension of scalars preserves surjectivity: the tensor product is right exact. -/
 theorem baseChange_surjective (hf : Function.Surjective f) :
