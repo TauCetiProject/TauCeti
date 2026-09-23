@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PGroup
-public import Mathlib.Topology.Defs.Basic
+public import Mathlib.Topology.Algebra.Group.Defs
 import Mathlib.GroupTheory.Coset.Card
 import TauCeti.GroupTheory.PGroup
 
@@ -70,7 +70,8 @@ universe u
 `π : G ↠ Q` onto a finite group, together with a surjection `α : E ↠ Q` of finite groups.
 Continuity of `π` is recorded as openness of its kernel, which is what continuity into a finite
 discrete group amounts to. -/
-structure FiniteEmbeddingProblem (G : Type u) [Group G] [TopologicalSpace G] where
+structure FiniteEmbeddingProblem (G : Type u) [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] where
   /-- The finite quotient of `G` the problem sits over. -/
   Q : Type u
   [groupQ : Group Q]
@@ -95,7 +96,8 @@ attribute [instance] FiniteEmbeddingProblem.groupQ FiniteEmbeddingProblem.finite
 
 namespace FiniteEmbeddingProblem
 
-variable {G : Type u} [Group G] [TopologicalSpace G] (P : FiniteEmbeddingProblem G)
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    (P : FiniteEmbeddingProblem G)
 
 /-- A **solution** of a finite embedding problem `P`: a homomorphism `β : G → E` with open kernel
 (that is, continuous for the discrete topology on `E`) such that `α ∘ β = π`. A solution need not
@@ -120,7 +122,7 @@ theorem IsSolution.comp_eq {β : G →* P.E} (hβ : P.IsSolution β) : P.α.comp
 
 end FiniteEmbeddingProblem
 
-variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G]
+variable (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- `HasElementaryAbelianSolutions p G`: every finite embedding problem for `G` whose kernel
 `ker α` is an elementary abelian `p`-group (commutative, with every element killed by `p`) has a
