@@ -14,20 +14,19 @@ import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 # Extreme exchangeable graph laws
 
 The exchangeable probability measures on the graphs on `ℕ` form a convex set,
-`exchangeableGraphProbabilityMeasures`, and its extreme points are the dissociated laws: an
-exchangeable law on infinite graphs is extreme if and only if its finite law is dissociated
-(`mem_extremePoints_iff_isDissociated`). The array law and the graph law of the adapter are
-mutually inverse affine maps between this set and the jointly exchangeable probability laws
-carried by the symmetric `false`-diagonal arrays, so extremality transports along the adapter
-(`mem_extremePoints_iff_arrayLaw_mem_extremePoints`) and the array characterisation of joint
-dissociation as extremality gives the graph one.
+`exchangeableGraphProbabilityMeasures`. Its extreme points are the dissociated laws: an
+exchangeable law on infinite graphs is an extreme point if and only if its finite law is
+dissociated (`mem_extremePoints_iff_isDissociated`). This is the graph-side form of the
+characterisation of joint dissociation as extremality among jointly exchangeable array laws, for
+callers who work with graph laws; the two convex sets correspond under the graph-law/array-law
+adapter (`arrayLaw_mem_iff`, `mem_extremePoints_iff_arrayLaw_mem_extremePoints`).
 
-Two consequences. The infinite sampling law of a graphon is extreme
-(`infiniteSampleLaw_mem_extremePoints`), its finite law being dissociated. And a dissociated
-exchangeable graph law does not mix: a mixture of exchangeable graph laws equal to it has almost
-every component equal to it (`InfiniteExchangeableGraphLaw.ae_eq_of_comp_eq`), by pushing the
-mixture through the adjacency array, applying the array theorem, and recovering equality of graph
-laws through the inverse of the adapter.
+Two consequences. The infinite sampling law of a graphon is an extreme exchangeable graph measure
+(`infiniteSampleLaw_mem_extremePoints`). And a dissociated exchangeable graph law does not mix:
+a mixture of exchangeable graph laws equal to it has almost every component equal to it
+(`InfiniteExchangeableGraphLaw.ae_eq_of_comp_eq`), the graph counterpart of
+`JointlyDissociated.ae_eq_of_comp_eq`; it is the uniqueness input for representing an
+exchangeable graph law as a mixture of dissociated ones. Both conclude equality of laws.
 
 ## Main results
 
@@ -70,6 +69,7 @@ theorem mem_exchangeableGraphProbabilityMeasures_iff {μ : Measure (SimpleGraph 
 
 /-- A law on graphs is an exchangeable probability measure exactly when its array law is a
 jointly exchangeable probability law carried by the symmetric `false`-diagonal arrays. -/
+@[simp]
 theorem arrayLaw_mem_iff {μ : Measure (SimpleGraph ℕ)} :
     arrayLaw μ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false
       ↔ μ ∈ exchangeableGraphProbabilityMeasures := by
@@ -141,6 +141,7 @@ theorem mem_extremePoints_iff_arrayLaw_mem_extremePoints {μ : Measure (SimpleGr
 
 /-- **Extremality is dissociation**: an exchangeable law on infinite graphs is an extreme point of
 the exchangeable probability measures on graphs if and only if its finite law is dissociated. -/
+@[simp]
 theorem mem_extremePoints_iff_isDissociated (L : InfiniteExchangeableGraphLaw) :
     L.law ∈ extremePoints ℝ≥0∞ exchangeableGraphProbabilityMeasures ↔
       (exchangeableGraphLawEquivInfinite.symm L).IsDissociated := by
