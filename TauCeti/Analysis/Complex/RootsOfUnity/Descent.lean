@@ -31,18 +31,12 @@ The descended function `TauCeti.descendPow m f` evaluates `f` at the principal `
 invariant under the rotations (`TauCeti.descendPow_pow`), and it undoes pulling back along
 `u ↦ u ^ m` (`TauCeti.descendPow_comp_pow`), so the choice of branch is invisible in the results.
 
-## Implementation notes
-
-Away from `0`, holomorphy of the descent comes from a holomorphic branch of the `m`-th root
-through any given point, and at `0` from Riemann's removable singularity theorem. The
-meromorphic case reduces to the analytic one after multiplying `f` by a power of `u ^ m`. The
-order formulas are Mathlib's orders of a composition, `AnalyticAt.analyticOrderAt_comp` (through
-`TauCeti.analyticOrderAt_comp_pow_zero`) and `MeromorphicAt.meromorphicOrderAt_comp`.
-
 ## Main declarations
 
 * `TauCeti.descendPow`: the descent of a function through `u ↦ u ^ m`.
 * `TauCeti.descendPow_pow`: `descendPow m f (u ^ m) = f u` when `f` is invariant at `u`.
+* `TauCeti.eq_descendPow_iff`: the criterion for a globally invariant function to factor
+  through the power map.
 * `TauCeti.differentiableOn_descendPow`: the descent of a function holomorphic and invariant on
   an open set `s` is holomorphic on the open set `(· ^ m) '' s`.
 * `TauCeti.analyticAt_descendPow` and `TauCeti.meromorphicAt_descendPow`: the descent of a function
@@ -76,16 +70,6 @@ noncomputable def descendPow (f : ℂ → E) (w : ℂ) : E :=
 theorem descendPow_apply (f : ℂ → E) (w : ℂ) : descendPow m f w = f (w ^ (m⁻¹ : ℂ)) :=
   (rfl)
 
-/-- Invariance under the `m`-th roots of unity on a punctured neighbourhood of `0` is invariance
-on a neighbourhood of `0`, since every rotation fixes `0`. -/
-private theorem eventually_nhds_of_nhdsNE {f : ℂ → E}
-    (hf : ∀ᶠ u in 𝓝[≠] 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
-    ∀ᶠ u in 𝓝 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u := by
-  refine (eventually_nhdsWithin_iff.mp hf).mono fun u hu ζ ↦ ?_
-  rcases eq_or_ne u 0 with rfl | h
-  · rw [rootsOfUnity.smul_eq_mul, mul_zero]
-  · exact hu h ζ
-
 variable [NeZero m]
 
 /-- Descending a function pulled back along `u ↦ u ^ m` recovers the function. -/
@@ -95,6 +79,7 @@ theorem descendPow_comp_pow (g : ℂ → E) : descendPow m (fun u ↦ g (u ^ m))
   rw [descendPow_apply, Complex.cpow_nat_inv_pow w (NeZero.ne m)]
 
 /-- Descent through `u ↦ u ^ m` is linear over functions pulled back along `u ↦ u ^ m`. -/
+@[simp]
 theorem descendPow_smul_comp_pow [SMul ℂ E] (φ : ℂ → ℂ) (f : ℂ → E) :
     descendPow m (fun u ↦ φ (u ^ m) • f u) = fun w ↦ φ w • descendPow m f w := by
   funext w
@@ -102,18 +87,32 @@ theorem descendPow_smul_comp_pow [SMul ℂ E] (φ : ℂ → ℂ) (f : ℂ → E)
 
 /-- If `f` takes the same value at all rotations of `u` by `m`-th roots of unity, then the descent
 of `f` takes that value at `u ^ m`. -/
+@[simp]
 theorem descendPow_pow {f : ℂ → E} {u : ℂ} (hf : ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
     descendPow m f (u ^ m) = f u := by
   obtain ⟨ζ, hζ⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne m)).mp
     (Complex.cpow_nat_inv_pow (u ^ m) (NeZero.ne m)).symm
   rw [descendPow_apply, ← hζ, hf ζ]
 
+/-- For a globally rotation-invariant function, a function is its descent precisely when its
+pullback along `u ↦ u ^ m` is the original function. -/
+theorem eq_descendPow_iff {f g : ℂ → E}
+    (hf : ∀ u, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
+    g = descendPow m f ↔ ∀ u, g (u ^ m) = f u := by
+  constructor
+  · rintro rfl u
+    exact descendPow_pow (hf u)
+  · intro h
+    funext w
+    obtain ⟨u, rfl⟩ := (Complex.isOpenQuotientMap_pow m).surjective w
+    rw [h u, descendPow_pow (hf u)]
+
 /-- A function invariant under the `m`-th roots of unity on a punctured neighbourhood of `0`
 agrees near `0` with the pullback of its descent along `u ↦ u ^ m`. -/
 theorem descendPow_pow_eventuallyEq {f : ℂ → E}
     (hf : ∀ᶠ u in 𝓝[≠] 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
     (fun u ↦ descendPow m f (u ^ m)) =ᶠ[𝓝 0] f := by
-  exact (eventually_nhds_of_nhdsNE hf).mono fun _ hu ↦ descendPow_pow hu
+  exact (eventually_rootsOfUnity_invariant_nhds_of_nhdsNE hf).mono fun _ hu ↦ descendPow_pow hu
 
 variable [NormedAddCommGroup E] [NormedSpace ℂ E]
 
@@ -173,7 +172,7 @@ theorem analyticAt_descendPow [CompleteSpace E] {f : ℂ → E} (hfa : AnalyticA
     (hf : ∀ᶠ u in 𝓝[≠] 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
     AnalyticAt ℂ (descendPow m f) 0 := by
   obtain ⟨r, hr, h⟩ := Metric.eventually_nhds_iff_ball.mp
-    (hfa.eventually_analyticAt.and (eventually_nhds_of_nhdsNE hf))
+    (hfa.eventually_analyticAt.and (eventually_rootsOfUnity_invariant_nhds_of_nhdsNE hf))
   have hd := differentiableOn_descendPow Metric.isOpen_ball
     (fun u hu ↦ (h u hu).1.differentiableAt.differentiableWithinAt) fun u hu ↦ (h u hu).2
   rw [image_pow_ball hr.le] at hd
@@ -198,14 +197,6 @@ theorem meromorphicAt_descendPow [CompleteSpace E] {f : ℂ → E} (hfm : Meromo
   rw [descendPow_smul_comp_pow (· ^ n) f] at hd
   exact ⟨n, by simpa using hd⟩
 
-/-- The analytic order at `0` of `u ↦ u ^ m`. -/
-private theorem analyticOrderAt_pow_sub_pow_zero :
-    analyticOrderAt (fun u : ℂ ↦ u ^ m - (0 : ℂ) ^ m) 0 = m := by
-  have h : (fun u : ℂ ↦ u ^ m - (0 : ℂ) ^ m) = (· - 0) ^ m := by
-    funext u
-    simp [zero_pow (NeZero.ne m)]
-  rw [h, analyticOrderAt_centeredMonomial]
-
 /-- The order of vanishing at `0` of a function analytic at `0` and invariant under the `m`-th
 roots of unity near `0` is `m` times the order of vanishing of its descent. -/
 theorem analyticOrderAt_descendPow_mul [CompleteSpace E] {f : ℂ → E} (hfa : AnalyticAt ℂ f 0)
@@ -219,12 +210,17 @@ roots of unity near `0` is `m` times the meromorphic order of its descent. -/
 theorem meromorphicOrderAt_descendPow_mul [CompleteSpace E] {f : ℂ → E} (hfm : MeromorphicAt f 0)
     (hf : ∀ᶠ u in 𝓝[≠] 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
     meromorphicOrderAt (descendPow m f) 0 * m = meromorphicOrderAt f 0 := by
+  have horder : analyticOrderAt (fun u : ℂ ↦ u ^ m - (0 : ℂ) ^ m) 0 = m := by
+    have h : (fun u : ℂ ↦ u ^ m - (0 : ℂ) ^ m) = (· - 0) ^ m := by
+      funext u
+      simp [zero_pow (NeZero.ne m)]
+    rw [h, analyticOrderAt_centeredMonomial]
   have hnc : ¬EventuallyConst (fun u : ℂ ↦ u ^ m) (𝓝 0) := by
-    rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top, analyticOrderAt_pow_sub_pow_zero]
+    rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top, horder]
     exact ENat.natCast_ne_top m
   have hcomp := MeromorphicAt.meromorphicOrderAt_comp (g := (· ^ m)) (x := 0)
     (by rw [zero_pow (NeZero.ne m)]; exact meromorphicAt_descendPow hfm hf) (by fun_prop) hnc
-  rw [analyticOrderAt_pow_sub_pow_zero, zero_pow (NeZero.ne m), Function.comp_def,
+  rw [horder, zero_pow (NeZero.ne m), Function.comp_def,
     meromorphicOrderAt_congr ((descendPow_pow_eventuallyEq hf).filter_mono nhdsWithin_le_nhds)]
     at hcomp
   simpa using hcomp.symm

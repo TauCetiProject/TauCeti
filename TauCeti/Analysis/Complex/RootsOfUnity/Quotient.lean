@@ -59,7 +59,7 @@ restricted power map with its image.
 
 public section
 
-open MulAction Set
+open Filter MulAction Set Topology
 
 namespace SubMulAction
 
@@ -111,6 +111,17 @@ end SubMulAction
 namespace TauCeti
 
 variable {m : ℕ} [NeZero m]
+
+omit [NeZero m] in
+/-- Invariance under the `m`-th roots of unity on a punctured neighbourhood of `0` extends to a
+neighbourhood of `0`, since every rotation fixes `0`. -/
+theorem eventually_rootsOfUnity_invariant_nhds_of_nhdsNE {E : Type*} {f : ℂ → E}
+    (hf : ∀ᶠ u in 𝓝[≠] 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
+    ∀ᶠ u in 𝓝 0, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u := by
+  refine (eventually_nhdsWithin_iff.mp hf).mono fun u hu ζ ↦ ?_
+  rcases eq_or_ne u 0 with rfl | h
+  · rw [rootsOfUnity.smul_eq_mul, mul_zero]
+  · exact hu h ζ
 
 variable (m) in
 /-- The open disc of radius `r` about `0`, as a set invariant under the `m`-th roots of
