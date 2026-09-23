@@ -77,7 +77,6 @@ local instance : IsDedekindDomain W₁.CoordinateRing :=
 pulled-back coordinate `φ^* x₂` has a pole at the affine point `(x, y)` of `W₁`, that is, if the
 point lies in the fibre of `φ` over the point at infinity of `W₂`, then `⟨X - x, Y - y⟩` generates
 the unit ideal, the intermediate ring containing `φ^* x₂`. -/
-@[simp]
 theorem map_XYIdeal_eq_top_of_one_lt_valuation {x y : F} (h : W₁.Equation x y)
     (hP : 1 < (CoordinateRing.pointPlace h).valuation W₁.FunctionField
       (φ.pullback (algebraMap F[X] W₂.CoordinateRing X))) :
@@ -130,7 +129,6 @@ height one prime `𝔓` of the intermediate ring has the valuation of the affine
 no ramification. Every point off the fibre over `O₂` has such a prime, by
 `valuation_le_one_of_valuation_pullback_X_le_one` and
 `Valuation.existsUnique_heightOneSpectrum_valuation_eq`. -/
-@[simp]
 theorem map_XYIdeal_eq_asIdeal_of_valuation_eq [IsDedekindDomain φ.intermediateRing] {x y : F}
     (h : W₁.Equation x y) (𝔓 : HeightOneSpectrum φ.intermediateRing)
     (h𝔓 : 𝔓.valuation W₁.FunctionField =

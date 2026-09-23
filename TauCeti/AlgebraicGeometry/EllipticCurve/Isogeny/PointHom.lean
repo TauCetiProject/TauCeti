@@ -132,7 +132,6 @@ local instance [IsIntegrallyClosed W₁.CoordinateRing] : IsDedekindDomain W₁.
 /-- **A point over the point at infinity is sent to `0`.** If the place of the affine point
 `(x, y)` of `W₁` restricts along `φ` to the place at infinity of `W₂` — the point lies in the fibre
 `φ⁻¹(O₂)` — then `φ.toPointHom` sends it to the point at infinity. -/
-@[simp]
 theorem toPointHom_some_eq_zero_of_isEquiv_comap_infinityPlace
     [IsIntegrallyClosed W₁.CoordinateRing] {x y : F} (h : W₁.Nonsingular x y)
     (hP : (((CoordinateRing.pointPlace h.1).valuation W₁.FunctionField).comap

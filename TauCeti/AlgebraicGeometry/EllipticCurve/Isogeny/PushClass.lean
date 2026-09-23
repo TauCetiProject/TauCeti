@@ -194,7 +194,6 @@ theorem pushClassMonoidHom_mk0 [IsIntegrallyClosed W₁.CoordinateRing]
 
 /-- **An ideal extending to the unit ideal of the intermediate ring has trivial class under the
 induced map**: the relative norm of the unit ideal is the unit ideal. -/
-@[simp]
 theorem pushClassMonoidHom_mk0_eq_one_of_map_eq_top [IsIntegrallyClosed W₁.CoordinateRing]
     (I : (Ideal W₁.CoordinateRing)⁰)
     (hI : (I : Ideal W₁.CoordinateRing).map φ.toIntermediateRing = ⊤) :
