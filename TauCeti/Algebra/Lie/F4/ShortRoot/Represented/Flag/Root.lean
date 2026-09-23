@@ -64,9 +64,8 @@ theorem f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul
     f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul X
   have harg : e (a ⊗ₜ[𝔽₂] X) = a • e ((1 : A) ⊗ₜ[𝔽₂] X) := by
     calc
-      _ = e (a • ((1 : A) ⊗ₜ[𝔽₂] X)) := congrArg e (by
-        simpa only [smul_eq_mul, mul_one] using
-          (TensorProduct.smul_tmul' (R := 𝔽₂) a (1 : A) X).symm)
+      _ = e (a • ((1 : A) ⊗ₜ[𝔽₂] X)) :=
+        congrArg e (TensorProduct.tmul_eq_smul_one_tmul a X)
       _ = _ := e.toLinearEquiv.map_smul a ((1 : A) ⊗ₜ[𝔽₂] X)
   rw [harg, map_smul, heval]
 
@@ -82,33 +81,9 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
   | zero => simp
   | add x y hx hy => simpa using add_mem hx hy
   | tmul a X =>
-      have hgen : f4ShortRootAdjointMatrixBaseChange (A := A) X ∈
-          f4ShortRootRepresentedRangeMatrixSpan (A := A) :=
-        Submodule.subset_span (Set.mem_range_self X)
-      have heval : f4ShortRootBaseChangeAdjointMatrixLinearMap
-          (e ((1 : A) ⊗ₜ[𝔽₂] X)) =
-          f4ShortRootAdjointMatrixBaseChange (A := A) X :=
-        f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul X
-      have harg : e (a ⊗ₜ[𝔽₂] X) =
-          a • e ((1 : A) ⊗ₜ[𝔽₂] X) := by
-        calc
-          _ = e (a • ((1 : A) ⊗ₜ[𝔽₂] X)) := congrArg e (by
-            simpa only [smul_eq_mul, mul_one] using
-              (TensorProduct.smul_tmul' (R := 𝔽₂) a (1 : A) X).symm)
-          _ = _ := e.toLinearEquiv.map_smul a ((1 : A) ⊗ₜ[𝔽₂] X)
-      have hrho :
-          f4ShortRootBaseChangeAdjointMatrixLinearMap (e (a ⊗ₜ[𝔽₂] X)) =
-            a • f4ShortRootAdjointMatrixBaseChange (A := A) X := by
-        calc
-          f4ShortRootBaseChangeAdjointMatrixLinearMap (e (a ⊗ₜ[𝔽₂] X)) =
-            f4ShortRootBaseChangeAdjointMatrixLinearMap
-              (a • e ((1 : A) ⊗ₜ[𝔽₂] X)) := congrArg _ harg
-          _ = a • f4ShortRootBaseChangeAdjointMatrixLinearMap
-              (e ((1 : A) ⊗ₜ[𝔽₂] X)) := map_smul _ _ _
-          _ = a • f4ShortRootAdjointMatrixBaseChange (A := A) X :=
-            congrArg (a • ·) heval
-      rw [hrho]
-      exact Submodule.smul_mem _ a hgen
+      rw [f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul]
+      exact Submodule.smul_mem _ a
+        (Submodule.subset_span (Set.mem_range_self X))
 
 /-- Conjugation by a carrier root-subgroup point, as a linear map on matrices. -/
 @[expose] noncomputable def f4ShortRootRootConjLinearMap
@@ -209,45 +184,10 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_ideal
   | zero => simp
   | add x y hx hy => simpa using add_mem hx hy
   | tmul a y =>
-      have hgen : f4ShortRootAdjointMatrixBaseChange (A := A)
-          (y : f4ModularChevalleyLieAlgebra) ∈
-          f4ShortRootRepresentedIdealMatrixSpan (A := A) :=
-        Submodule.subset_span (Set.mem_range_self y)
-      let e := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
-      have heval : f4ShortRootBaseChangeAdjointMatrixLinearMap
-          (e ((1 : A) ⊗ₜ[𝔽₂] (y : f4ModularChevalleyLieAlgebra))) =
-          f4ShortRootAdjointMatrixBaseChange (A := A)
-            (y : f4ModularChevalleyLieAlgebra) :=
-        f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul
-          (y : f4ModularChevalleyLieAlgebra)
       rw [f4ShortRootBaseChangeInclusion_tmul]
-      have harg : e (a ⊗ₜ[𝔽₂] (y : f4ModularChevalleyLieAlgebra)) =
-          a • e ((1 : A) ⊗ₜ[𝔽₂] (y : f4ModularChevalleyLieAlgebra)) := by
-        calc
-          _ = e (a • ((1 : A) ⊗ₜ[𝔽₂]
-              (y : f4ModularChevalleyLieAlgebra))) := congrArg e (by
-                simpa only [smul_eq_mul, mul_one] using
-                  (TensorProduct.smul_tmul' (R := 𝔽₂) a (1 : A)
-                    (y : f4ModularChevalleyLieAlgebra)).symm)
-          _ = _ := e.toLinearEquiv.map_smul a
-            ((1 : A) ⊗ₜ[𝔽₂] (y : f4ModularChevalleyLieAlgebra))
-      have hrho :
-          f4ShortRootBaseChangeAdjointMatrixLinearMap
-            (e (a ⊗ₜ[𝔽₂] (y : f4ModularChevalleyLieAlgebra))) =
-          a • f4ShortRootAdjointMatrixBaseChange (A := A)
-            (y : f4ModularChevalleyLieAlgebra) := by
-        calc
-          f4ShortRootBaseChangeAdjointMatrixLinearMap
-            (e (a ⊗ₜ[𝔽₂] (y : f4ModularChevalleyLieAlgebra))) =
-            f4ShortRootBaseChangeAdjointMatrixLinearMap
-              (a • e ((1 : A) ⊗ₜ[𝔽₂]
-                (y : f4ModularChevalleyLieAlgebra))) := congrArg _ harg
-          _ = a • f4ShortRootBaseChangeAdjointMatrixLinearMap
-              (e ((1 : A) ⊗ₜ[𝔽₂]
-                (y : f4ModularChevalleyLieAlgebra))) := map_smul _ _ _
-          _ = _ := congrArg (a • ·) heval
-      rw [hrho]
-      exact Submodule.smul_mem _ a hgen
+      rw [f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul]
+      exact Submodule.smul_mem _ a
+        (Submodule.subset_span (Set.mem_range_self y))
 
 /-- Carrier root-subgroup conjugation preserves the represented ideal matrix span. -/
 theorem f4ShortRootRootConj_mem_representedIdeal
