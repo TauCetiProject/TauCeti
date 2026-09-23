@@ -229,6 +229,28 @@ abbrev twistedHomologyCoefficientMap
     P.twistedHomology L k ⟶ P.twistedHomology K k :=
   HomologicalComplex.homologyMap (P.twistedChainComplexCoefficientMap f) k
 
+/-- Relative coefficient maps commute with the quotient maps from ambient to relative twisted
+homology. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologyπ_comp_twistedHomologyCoefficientMap
+    {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) (k : ℕ) :
+    P.twistedHomologyπ L k ≫ P.twistedHomologyCoefficientMap f k =
+      LocalCoefficientSystem.twistedHomologyCoefficientMap f k ≫ P.twistedHomologyπ K k := by
+  calc
+    _ = HomologicalComplex.homologyMap
+          (P.twistedChainComplexπ L ≫ P.twistedChainComplexCoefficientMap f) k :=
+      (HomologicalComplex.homologyMap_comp _ _ _).symm
+    _ = HomologicalComplex.homologyMap
+          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f ≫
+            P.twistedChainComplexπ K) k :=
+      congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
+        (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap f)
+    _ = _ := by
+      simpa only [LocalCoefficientSystem.twistedHomologyCoefficientMap] using
+        HomologicalComplex.homologyMap_comp
+          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f)
+          (P.twistedChainComplexπ K) k
+
 /-- The identity coefficient morphism induces the identity on relative twisted homology. -/
 @[simp]
 lemma twistedHomologyCoefficientMap_id (k : ℕ) :

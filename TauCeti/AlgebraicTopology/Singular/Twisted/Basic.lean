@@ -361,16 +361,9 @@ lemma twistedChainComplexCoefficientIso_inv (e : L ≅ K) :
   (rfl)
 
 /-- The map on twisted homology induced by a morphism of local coefficient systems. -/
-def twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
+abbrev twistedHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
     twistedHomology L k ⟶ twistedHomology K k :=
-  (HomologicalComplex.homologyFunctor _ _ k).map (twistedChainComplexCoefficientMap η)
-
-/-- The map on twisted homology induced by a coefficient morphism is the homology map of the
-corresponding map of twisted chain complexes. -/
-lemma twistedHomologyCoefficientMap_eq (η : L ⟶ K) (k : ℕ) :
-    twistedHomologyCoefficientMap η k =
-      HomologicalComplex.homologyMap (twistedChainComplexCoefficientMap η) k :=
-  (rfl)
+  HomologicalComplex.homologyMap (twistedChainComplexCoefficientMap η) k
 
 /-- The identity morphism of a coefficient system induces the identity of twisted homology. -/
 @[simp]

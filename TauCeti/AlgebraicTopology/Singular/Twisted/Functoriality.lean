@@ -44,6 +44,18 @@ namespace TopPair
 variable {R : Type u} [Ring R] {P Q : TopPair.{v}} (f : P ⟶ Q)
   (L : LocalCoefficientSystem.{u, v, max v w} R Q.fst)
 
+/-- The ambient component of the identity map of a topological pair is the identity. -/
+@[simp]
+lemma Hom.fst_id (P : TopPair.{v}) : Hom.fst (𝟙 P) = 𝟙 P.fst :=
+  rfl
+
+/-- The ambient component of a composite map of topological pairs is the composite of the
+ambient components. -/
+@[simp]
+lemma Hom.fst_comp {S : TopPair.{v}} (f : P ⟶ Q) (g : Q ⟶ S) :
+    Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g :=
+  rfl
+
 /-- Restricting a pulled-back local coefficient system to the subspace agrees canonically with
 pulling the restricted system back along the subspace component of a map of pairs. -/
 def subspaceSystemPullbackIso :
@@ -133,7 +145,7 @@ def fstPullbackIdIso (P : TopPair.{v})
     (LocalCoefficientSystem.pullback (Hom.fst (𝟙 P)).hom).obj L ≅ L :=
   eqToIso (congrArg (fun k : P.fst ⟶ P.fst ↦
     (LocalCoefficientSystem.pullback k.hom).obj L)
-      (show Hom.fst (𝟙 P) = 𝟙 P.fst from rfl)) ≪≫
+      (Hom.fst_id P)) ≪≫
     (LocalCoefficientSystem.pullbackIdIso P.fst).app L
 
 /-- The identity map of a pair induces the coefficient-change map coming from the canonical
@@ -150,7 +162,7 @@ lemma twistedChainComplexMap_id (L : LocalCoefficientSystem.{u, v, max v w} R P.
   rw [fstPullbackIdIso, Iso.trans_hom,
     LocalCoefficientSystem.twistedChainComplexCoefficientMap_comp]
   rw [LocalCoefficientSystem.twistedChainComplexMap_congr (Hom.fst (𝟙 P)) L
-    (show Hom.fst (𝟙 P) = 𝟙 P.fst from rfl),
+    (Hom.fst_id P),
     LocalCoefficientSystem.twistedChainComplexMap_id]
   rw [Iso.app_hom]
 
@@ -165,7 +177,7 @@ def fstPullbackCompIso :
         ((LocalCoefficientSystem.pullback (Hom.fst g).hom).obj K) :=
   eqToIso (congrArg (fun k : P.fst ⟶ S.fst ↦
     (LocalCoefficientSystem.pullback k.hom).obj K)
-      (show Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g from rfl)) ≪≫
+      (Hom.fst_comp f g)) ≪≫
     (LocalCoefficientSystem.pullbackCompIso (Hom.fst f).hom (Hom.fst g).hom).app K
 
 /-- Maps of relative twisted chain complexes respect composition of maps of pairs, after the
@@ -186,7 +198,7 @@ lemma twistedChainComplexMap_comp :
   simp only [fstPullbackCompIso, Iso.trans_hom,
     LocalCoefficientSystem.twistedChainComplexCoefficientMap_comp]
   rw [LocalCoefficientSystem.twistedChainComplexMap_congr (Hom.fst (f ≫ g)) K
-    (show Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g from rfl),
+    (Hom.fst_comp f g),
     LocalCoefficientSystem.twistedChainComplexMap_comp]
   simp only [Iso.app_hom, Category.assoc]
 
@@ -263,7 +275,6 @@ lemma homologyMap_twistedSubspaceChainComplexMap (k : ℕ) :
           (subspaceSystemPullbackIso f L).hom k ≫
         LocalCoefficientSystem.twistedHomologyMap (Hom.snd f) (Q.subspaceSystem L) k := by
   rw [twistedSubspaceChainComplexMap, HomologicalComplex.homologyMap_comp]
-  rw [LocalCoefficientSystem.twistedHomologyCoefficientMap_eq]
 
 /-- The connecting morphism in relative twisted homology is natural in maps of topological
 pairs. -/
