@@ -35,6 +35,8 @@ product of the Dedekind zeta function.
 
 * `TauCeti.EulerProductData.hasProd_eulerFactor`: the **analytic Euler product**, when the
   ideal-indexed Dirichlet series converges absolutely at `s`.
+* `TauCeti.EulerProductData.norm_absNorm_cpow_neg_le_radius_localPowerSeries`: a lower bound for
+  the convergence radius of a local power series from its real abscissa of absolute convergence.
 * `TauCeti.MultiplicativeIdealWeight.hasProd_eulerFactor`: the same product, with the local factors
   in the closed geometric form available for a completely multiplicative weight.
 * `TauCeti.MultiplicativeIdealWeight.LSeries_ne_zero_of_summable_idealTerm`: the `L`-series is
@@ -236,6 +238,32 @@ theorem abscissaOfAbsConv_localArithmeticFactor_le (P : HeightOneSpectrum (𝓞 
   rw [LSeries.abscissaOfAbsConv, idealAbscissaOfAbsConv_def]
   exact sInf_le_sInf <| Set.image_mono fun _ hx ↦
     D.LSeriesSummable_localArithmeticFactor hx P
+
+/-- Absolute convergence of a local Euler factor at a real point gives a lower bound for the
+analytic radius of its local power series. -/
+theorem norm_absNorm_cpow_neg_le_radius_localPowerSeries
+    (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ}
+    (hσ : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < σ) :
+    (‖(Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))‖₊ : ENNReal) ≤
+      (FormalMultilinearSeries.ofScalars ℂ fun n ↦
+        PowerSeries.coeff n (D.localPowerSeries P)).radius := by
+  let q : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-(σ : ℂ))
+  have hlocal : Summable fun e : ℕ ↦ D (P.primeIdealPow e) * q ^ e := by
+    have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re (s := (σ : ℂ)) (by simpa using hσ)
+    rw [LSeriesSummable] at hsum
+    have hsum' := hsum.comp_injective <|
+      Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
+    refine hsum'.congr fun e ↦ ?_
+    simp only [Function.comp_apply]
+    rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
+        (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
+      D.localArithmeticFactor_apply_pow]
+    dsimp [q]
+    rw [Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul,
+      Complex.cpow_neg]
+    ring
+  apply FormalMultilinearSeries.le_radius_of_summable
+  simpa [q, FormalMultilinearSeries.ofScalars_norm] using hlocal.norm
 
 /-- **Convergence of the finite Euler product.** Where the local Euler factors over a finite set
 `S` of primes are absolutely convergent `LSeries`, so are the norm coefficients of the restriction
