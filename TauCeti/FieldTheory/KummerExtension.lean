@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+public import Mathlib.FieldTheory.KummerPolynomial
+public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
 # Square roots and the binomial `X ^ n - C a`
@@ -24,13 +26,20 @@ splits the binomial and generates its splitting field, because the only other ro
   adjunction of `X ^ 2 - C a`.
 * `Polynomial.splits_map_X_pow_two_sub_C`: a square root of `a` in an extension splits
   `X ^ 2 - C a` there.
+* `Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one`: `X ^ n - C a` is irreducible when `n`
+  is coprime to the order of `a` at a discrete valuation.
+
+## References
+
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
+  Proposition 3.7.3.
 -/
 
 public section
 
 open Polynomial
 
-open scoped IntermediateField
+open scoped IntermediateField WithZero
 
 namespace TauCeti
 
@@ -86,5 +95,43 @@ theorem _root_.Polynomial.splits_map_X_pow_two_sub_C (hδ : δ ^ 2 = algebraMap 
   exact (Splits.X_sub_C δ).mul (Splits.X_sub_C (-δ))
 
 end Splits
+
+section Valuation
+
+variable {F : Type u} [Field F]
+
+/-- **A valuative irreducibility criterion for `X ^ n - C a`**: if `n ≠ 0` is coprime to the
+order of `a` at a discrete valuation `v`, then `X ^ n - C a` is irreducible. No root of unity and
+no hypothesis on the characteristic is needed. For `a = 0` the order is the junk value `0`, so the
+hypothesis forces `n = 1`, where the statement holds trivially. -/
+theorem _root_.Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one (v : Valuation F ℤᵐ⁰)
+    {n : ℕ} (hn : n ≠ 0) {a : F} (h : Int.gcd n (v.ord a) = 1) :
+    Irreducible (X ^ n - C a) := by
+  have hpos : 0 < n := Nat.pos_of_ne_zero hn
+  have hne : X ^ n - C a ≠ 0 := X_pow_sub_C_ne_zero hpos a
+  have hnu : ¬IsUnit (X ^ n - C a) := by
+    rw [Polynomial.isUnit_iff_degree_eq_zero, degree_X_pow_sub_C hpos, Nat.cast_eq_zero]
+    exact hn
+  obtain ⟨g, hg, hg'⟩ := WfDvdMonoid.exists_irreducible_factor hnu hne
+  suffices natDegree g = n from (associated_of_dvd_of_natDegree_le hg' hne
+    (this.trans natDegree_X_pow_sub_C.symm).ge).irreducible hg
+  -- The norm `N` of a root of `g` satisfies `N ^ n = a ^ deg g`.
+  have key : (Algebra.norm F (AdjoinRoot.root g)) ^ n = a ^ g.natDegree := by
+    have := eval₂_eq_zero_of_dvd_of_eval₂_eq_zero _ _ hg' (AdjoinRoot.eval₂_root g)
+    rw [eval₂_sub, eval₂_pow, eval₂_C, eval₂_X, sub_eq_zero] at this
+    rw [← map_pow, this, ← AdjoinRoot.algebraMap_eq, Algebra.norm_algebraMap,
+      (AdjoinRoot.powerBasis hg.ne_zero).finrank, AdjoinRoot.powerBasis_dim hg.ne_zero]
+  -- Taking orders, `n` divides `deg g · ord_v a`, hence `deg g`.
+  have hord : (n : ℤ) * v.ord (Algebra.norm F (AdjoinRoot.root g)) =
+      g.natDegree * v.ord a := by
+    rw [← Valuation.ord_pow, key, Valuation.ord_pow]
+  have hdvd : (n : ℤ) ∣ g.natDegree :=
+    Int.dvd_of_dvd_mul_left_of_gcd_one ⟨_, hord.symm⟩ h
+  have hle : g.natDegree ≤ n :=
+    (natDegree_le_of_dvd hg' hne).trans_eq natDegree_X_pow_sub_C
+  have hdeg : 0 < g.natDegree := natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible hg)
+  exact hle.antisymm (Nat.le_of_dvd hdeg (Int.natCast_dvd_natCast.mp hdvd))
+
+end Valuation
 
 end TauCeti
