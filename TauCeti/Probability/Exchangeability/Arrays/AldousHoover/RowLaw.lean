@@ -59,6 +59,10 @@ one global and i.i.d. column variables.
   separate coding are conditionally i.i.d. with directing measure the random row law;
 * `TauCeti.Probability.AldousHoover.map_separateRowLaw_noiseMeasure` — its law is the law of
   `separateRowLaw g` under uniform noise;
+* `TauCeti.Probability.AldousHoover.separateRowLaw_colReindex` — permuting columns reindexes
+  the row law;
+* `TauCeti.Probability.AldousHoover.map_separateRowLaw_colReindex` — the row mixing law is
+  invariant under column permutations;
 * `TauCeti.Probability.AldousHoover.map_eq_map_separateArray_iff` — an array has the law of the
   coding `g` if and only if its row mixing law is that law.
 
@@ -70,8 +74,6 @@ one global and i.i.d. column variables.
 * O. Kallenberg, [*Probabilistic Symmetries and Invariance Principles*]
   (https://doi.org/10.1007/0-387-28836-4), Springer, 2005, Chapter 7.
 
-No material is adapted from `cameronfreer/exchangeability`, which treats sequences rather than
-exchangeable arrays.
 -/
 
 public section
@@ -122,6 +124,49 @@ theorem measurable_separateRowLaw {g : I × I × I × I → α} (hg : Measurable
     Measurable (separateRowLaw g) :=
   (TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry
     (measurable_separateRow hg)).subtype_mk
+
+/-- Permuting the columns of the noise reindexes the corresponding row law. -/
+theorem separateRowLaw_colReindex {g : I × I × I × I → α} (hg : Measurable g)
+    (z : I × (ℕ → I)) (τ : Equiv.Perm ℕ) :
+    (separateRowLaw g z).map (permReindex τ) =
+      separateRowLaw g (z.1, fun j => z.2 (τ j)) := by
+  apply ProbabilityMeasure.toMeasure_injective
+  let ρ : Measure (I × (ℕ → I)) :=
+    (volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))
+  let reindex : (I × (ℕ → I)) → I × (ℕ → I) :=
+    fun r => (r.1, fun j => r.2 (τ j))
+  have hreindex : Measurable reindex :=
+    measurable_fst.prodMk ((measurable_reindex τ).comp measurable_snd)
+  have hpi : (Measure.infinitePi fun _ : ℕ => (volume : Measure I)).map
+      (fun c j => c (τ j)) = Measure.infinitePi fun _ : ℕ => (volume : Measure I) := by
+    simpa only using (Measure.map_infinitePi_infinitePi_of_inj
+      (P := fun _ : ℕ => (volume : Measure I)) τ.injective)
+  have hρ : ρ.map reindex = ρ := by
+    calc
+      ρ.map reindex = ((volume : Measure I).map id).prod
+          ((Measure.infinitePi fun _ : ℕ => (volume : Measure I)).map
+            fun c j => c (τ j)) := by
+              exact (Measure.map_prod_map _ _ measurable_id (measurable_reindex τ)).symm
+      _ = ρ := by simp [hpi, ρ]
+  have hrow : Measurable (fun (r : I × (ℕ → I)) j => g (z.1, r.1, z.2 j, r.2 j)) :=
+    (measurable_separateRow hg).comp (measurable_const.prodMk measurable_id)
+  have hrow' : Measurable (fun (r : I × (ℕ → I)) j =>
+      g (z.1, r.1, z.2 (τ j), r.2 j)) :=
+    (measurable_separateRow hg).comp
+      ((measurable_const : Measurable fun _ : I × (ℕ → I) =>
+        (z.1, fun j => z.2 (τ j))).prodMk measurable_id)
+  have hfun : ((permReindex τ) ∘ (fun (r : I × (ℕ → I)) j =>
+      g (z.1, r.1, z.2 j, r.2 j))) =
+      (fun (r : I × (ℕ → I)) j => g (z.1, r.1, z.2 (τ j), r.2 j)) ∘ reindex := by
+    funext r j
+    rfl
+  simp only [ProbabilityMeasure.toMeasure_map, separateRowLaw_toMeasure]
+  rw [show (permReindex τ : (ℕ → α) → ℕ → α) = (fun x j => x (τ j)) from rfl]
+  rw [Measure.map_map (measurable_reindex τ) hrow]
+  change ρ.map ((permReindex τ) ∘ (fun (r : I × (ℕ → I)) j =>
+      g (z.1, r.1, z.2 j, r.2 j))) =
+    ρ.map (fun (r : I × (ℕ → I)) j => g (z.1, r.1, z.2 (τ j), r.2 j))
+  rw [hfun, ← Measure.map_map hrow' hreindex, hρ]
 
 /-! ## Splitting the separate-coding noise -/
 
@@ -216,7 +261,8 @@ theorem conditionallyIIDWith_arrayRow_separateArray {g : I × I × I × I → α
       iidMixtureLaw ((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => volume))
         (separateRowLaw g) := by
     rw [← Measure.map_map hΨ measurable_splitNoise, map_splitNoise_noiseMeasure]
-    exact map_prod_infinitePi_eq_iidMixtureLaw _ (measurable_separateRow hg) fun _ => rfl
+    exact map_prod_infinitePi_eq_iidMixtureLaw _ (measurable_separateRow hg)
+      fun z => (separateRowLaw_toMeasure g z).symm
   have h := conditionallyIIDWith_iidMixtureLaw
     (π := (volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => volume))
     (measurable_separateRowLaw hg)
@@ -238,6 +284,35 @@ theorem map_separateRowLaw_noiseMeasure {g : I × I × I × I → α} (hg : Meas
       (measurable_fst.comp measurable_splitNoise),
     ← Measure.map_map measurable_fst measurable_splitNoise, map_splitNoise_noiseMeasure,
     Measure.map_fst_prod, measure_univ, one_smul]
+
+/-- The mixing law of a separate coding is invariant under reindexing the columns of its random
+row law. -/
+theorem map_separateRowLaw_colReindex {g : I × I × I × I → α} (hg : Measurable g)
+    (τ : Equiv.Perm ℕ) :
+    (((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
+        (separateRowLaw g)).map (fun P => P.map (permReindex τ)) =
+      ((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
+        (separateRowLaw g) := by
+  rw [← map_separateRowLaw_noiseMeasure hg]
+  have hnoise : Measurable (fun u : NoiseIndex Axis (ℕ × ℕ) → I =>
+      separateRowLaw g (u .global, fun j => u (.vertex .column j))) :=
+    (measurable_separateRowLaw hg).comp <|
+      (measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
+  have hpush : Measurable fun P : ProbabilityMeasure (ℕ → α) =>
+      P.map (permReindex τ) :=
+    TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
+  rw [Measure.map_map hpush hnoise]
+  have hfun : (fun P : ProbabilityMeasure (ℕ → α) => P.map (permReindex τ)) ∘
+      (fun u : NoiseIndex Axis (ℕ × ℕ) → I =>
+        separateRowLaw g (u .global, fun j => u (.vertex .column j))) =
+      (fun u => separateRowLaw g (u .global, fun j => u (.vertex .column j))) ∘
+        separateNoiseCongr 1 τ := by
+    funext u
+    dsimp only [Function.comp_apply]
+    rw [separateRowLaw_colReindex hg, separateNoiseCongr_apply_global]
+    simp only [separateNoiseCongr_apply_vertex, separateVertexPerm_column]
+  rw [hfun, ← Measure.map_map hnoise (separateNoiseCongr 1 τ).measurable,
+    map_separateNoiseCongr_noiseMeasure]
 
 /-! ## Codings through the row mixing law -/
 
