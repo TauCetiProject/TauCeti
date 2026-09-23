@@ -374,7 +374,7 @@ theorem biproduct_ι_comp_substructureBiproductIso_hom
 
 /-- Each component of the inverse of the biproduct isomorphism is projection along the supremum of
 the other substructures. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem substructureBiproductIso_inv_comp_biproduct_π
     [DecidableEq (RationalHodgeSubstructure X.isBaseChangeRat X.hs)]
     (s : Finset (RationalHodgeSubstructure X.isBaseChangeRat X.hs))
