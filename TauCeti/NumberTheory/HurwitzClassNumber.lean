@@ -156,7 +156,7 @@ theorem hurwitzClassNumber_eq_zero_of_mod_four {D : ℕ} (hD : D % 4 = 1 ∨ D %
 `1/3`. -/
 theorem hurwitzClassNumber_three : hurwitzClassNumber 3 = 1 / 3 := by decide +kernel
 
-/-- `H 4 = 1/2`: the only reduced form of discriminant `-4` is `x² + y²`. -/
+/-- `H 4 = 1/2`: the only reduced form of discriminant `-4` is `x² + y²`, which counts `1/2`. -/
 theorem hurwitzClassNumber_four : hurwitzClassNumber 4 = 1 / 2 := by decide +kernel
 
 /-- `H 7 = 1`: the only reduced form of discriminant `-7` is `x² + x y + 2 y²`. -/
