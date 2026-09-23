@@ -91,7 +91,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
         obtain ⟨j, hj⟩ := Nat.exists_eq_succ_of_ne_zero (ha_pos i).ne'
         rw [hj]
         simpa only [Nat.card_zmod] using
-          Nat.card_congr (TauCeti.ZMod.torsionByEquiv p j).symm.toEquiv
+          Nat.card_congr (TauCeti.zmodTorsionByEquiv p j).symm.toEquiv
       _ = p ^ Fintype.card ι := by simp
   have hmap : (AddSubgroup.torsionBy G (p : ℤ)).map E.toAddMonoidHom =
       AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) := by
