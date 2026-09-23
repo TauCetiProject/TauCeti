@@ -307,7 +307,6 @@ theorem coordinatePower_typeD4QuaternaryQuadraticModule_pairing [Algebra (ZMod 2
 
 /-- A quaternary additive code is quadratic-isotropic in the `D₄` coordinate alphabet exactly
 when all of its Hamming weights are even. -/
-@[simp]
 theorem isIsotropic_coordinatePower_typeD4QuaternaryQuadraticModule_iff [DecidableEq F]
     (hF : Nat.card F = 4) (C : AdditiveCode F ι) :
     ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsIsotropic C ↔
