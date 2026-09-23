@@ -32,22 +32,35 @@ noncomputable section
 
 namespace TauCeti
 
-variable (F : Type*) [Field F] [Finite F]
+variable (F : Type*) [Finite F]
 
-/-- In a finite field with `q` elements, `q - 1` reduces to `-1`; in particular it is nonzero. -/
+section AddGroupWithOne
+
+variable [AddGroupWithOne F] [Nontrivial F]
+
+/-- In a finite nontrivial additive group with one, `q - 1` reduces to `-1`, where `q` is its
+cardinality. -/
 theorem natCast_natCard_sub_one_eq_neg_one : ((Nat.card F - 1 : ℕ) : F) = -1 := by
   have := Fintype.ofFinite F
   have hq : ((Nat.card F : ℕ) : F) = 0 := by simp [Nat.card_eq_fintype_card]
   rw [Nat.cast_sub Finite.one_lt_card.le, hq, Nat.cast_one, zero_sub]
 
-/-- **Every unit of a finite field with `q` elements is a `(q-1)`-st root of unity.** -/
+end AddGroupWithOne
+
+section CommGroupWithZero
+
+variable [CommGroupWithZero F]
+
+/-- **Every unit of a finite commutative group with zero with `q` elements is a `(q-1)`-st root
+of unity**; in particular every unit of a finite field is. -/
 theorem rootsOfUnity_natCard_sub_one_eq_top : rootsOfUnity (Nat.card F - 1) F = ⊤ := by
   have := Fintype.ofFinite F
   ext α
   simp only [mem_rootsOfUnity', Subgroup.mem_top, iff_true, Nat.card_eq_fintype_card]
   exact FiniteField.pow_card_sub_one_eq_one (α : F) α.ne_zero
 
-/-- The `(q-1)`-st roots of unity of a finite field with `q` elements are its units. -/
+/-- The `(q-1)`-st roots of unity of a finite commutative group with zero with `q` elements, a
+finite field for instance, are its units. -/
 def rootsOfUnityEquivUnits : rootsOfUnity (Nat.card F - 1) F ≃* Fˣ :=
   (MulEquiv.subgroupCongr (rootsOfUnity_natCard_sub_one_eq_top F)).trans Subgroup.topEquiv
 
@@ -55,5 +68,7 @@ def rootsOfUnityEquivUnits : rootsOfUnity (Nat.card F - 1) F ≃* Fˣ :=
 theorem rootsOfUnityEquivUnits_apply (ζ : rootsOfUnity (Nat.card F - 1) F) :
     rootsOfUnityEquivUnits F ζ = (ζ : Fˣ) :=
   (rfl)
+
+end CommGroupWithZero
 
 end TauCeti
