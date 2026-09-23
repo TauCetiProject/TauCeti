@@ -28,6 +28,9 @@ morphism extends uniquely to a morphism of sequences. The reindexing shift is tr
 this equivalence with Mathlib's `HasShift.induced`.
 Reindexing by one corresponds to `e.functor` under evaluation, which identifies the shift by one.
 
+The sequence and functor definitions are exposed so their generated component lemmas and
+dependent functor fields can reduce in Lean's module system.
+
 This is how the suspension autoequivalence of the stable category of a Frobenius exact category
 becomes the shift of that category.
 
