@@ -127,10 +127,11 @@ theorem smul_c (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
 
 /-- `f ↦ f ∘ γ⁻¹` is a left action of `SL(2, R)` on binary quadratic forms. -/
 instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
-  one_smul f := by ext <;> simp
+  one_smul f := by simp [BinaryQuadraticForm.ext_iff]
   mul_smul γ δ f := by
-    ext <;> simp only [smul_a, smul_b, smul_c, SpecialLinearGroup.coe_mul, Matrix.mul_apply,
-      Fin.sum_univ_two] <;> ring
+    simp only [BinaryQuadraticForm.ext_iff, smul_a, smul_b, smul_c, SpecialLinearGroup.coe_mul,
+      Matrix.mul_apply, Fin.sum_univ_two]
+    refine ⟨?_, ?_, ?_⟩ <;> ring
 
 /-- The discriminant `b² - 4 a c` of a binary quadratic form is invariant under `SL(2, R)`. -/
 theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
