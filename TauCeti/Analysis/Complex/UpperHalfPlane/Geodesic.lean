@@ -16,7 +16,7 @@ upward unit-speed parametrisation `t ↦ mk ⟨0, exp t⟩ _`, as a geodesic lin
 `IsIsometricSMul PSL(2, ℝ) ℍ` (`ProperAction.lean`) already gives the isometric action of the
 group Fuchsian groups are subgroups of. This file only composes the two: the `PSL(2, ℝ)`-translate
 of the imaginary axis by any `g` is again a geodesic line, and every one of these is unit-speed
-(`geodesicLine_isometry`), hence injective (`geodesicLine_injective`) and at explicit distance
+(`isometry_geodesicLine`), hence injective (`geodesicLine_injective`) and at explicit distance
 `|s - t|` between its parameters (`dist_geodesicLine`).
 
 This is the transport step behind the classical description of hyperbolic geodesics in `ℍ` as
@@ -31,13 +31,14 @@ existence of a `geodesicLine` through two prescribed points, are not proved here
 
 * `TauCeti.UpperHalfPlane.geodesicLine g` — the imaginary axis in its upward unit-speed
   parametrisation, moved by `g`: the map `t ↦ g • UpperHalfPlane.mk ⟨0, exp t⟩ _`.
-* `TauCeti.UpperHalfPlane.geodesicLine_isometry` — `geodesicLine g` is an isometric embedding
+* `TauCeti.UpperHalfPlane.isometry_geodesicLine` — `geodesicLine g` is an isometric embedding
   of `ℝ`.
 * `TauCeti.UpperHalfPlane.dist_geodesicLine` — the distance between two of its points is
   `|s - t|`.
 * `TauCeti.UpperHalfPlane.smul_geodesicLine` — further translating a geodesic line by `h` gives
-  the geodesic line of `h * g`, so these lines are permuted, not merely mapped into each other,
-  by the `PSL(2, ℝ)`-action.
+  the geodesic line of `h * g`, pointwise; `TauCeti.UpperHalfPlane.smul_range_geodesicLine` is
+  the same fact at the level of the line as a set, so these lines are permuted, not merely
+  mapped into each other, by the `PSL(2, ℝ)`-action.
 -/
 
 public section
@@ -45,36 +46,35 @@ public section
 noncomputable section
 
 open UpperHalfPlane
-open scoped MatrixGroups
+open scoped MatrixGroups Pointwise
 
 namespace TauCeti.UpperHalfPlane
 
 /-- The geodesic line obtained by moving the (upward, unit-speed) imaginary axis by `g`. -/
-@[expose]
 def geodesicLine (g : PSL(2, ℝ)) (t : ℝ) : ℍ :=
   g • UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t)
 
 theorem geodesicLine_def (g : PSL(2, ℝ)) (t : ℝ) :
-    geodesicLine g t = g • UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) :=
+    geodesicLine g t = g • UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
   rfl
 
-/-- The geodesic line of the identity is the raw vertical axis, as a function of `t`; stated
-without applying `t`, so the fixed slot (the group argument) is unambiguous from the name. -/
+/-- The geodesic line of the identity is the upward unit-speed imaginary axis. -/
+@[simp]
 theorem geodesicLine_one :
     geodesicLine (1 : PSL(2, ℝ)) = fun t => UpperHalfPlane.mk ⟨0, Real.exp t⟩ (Real.exp_pos t) := by
   funext t
   simp [geodesicLine_def]
 
-theorem geodesicLine_isometry (g : PSL(2, ℝ)) : Isometry (geodesicLine g) :=
+theorem isometry_geodesicLine (g : PSL(2, ℝ)) : Isometry (geodesicLine g) :=
   (isometry_smul ℍ g).comp (UpperHalfPlane.isometry_vertical_line 0)
 
 theorem geodesicLine_injective (g : PSL(2, ℝ)) : Function.Injective (geodesicLine g) :=
-  (geodesicLine_isometry g).injective
+  (isometry_geodesicLine g).injective
 
 @[simp]
 theorem dist_geodesicLine (g : PSL(2, ℝ)) (s t : ℝ) :
     dist (geodesicLine g s) (geodesicLine g t) = |s - t| := by
-  rw [(geodesicLine_isometry g).dist_eq, Real.dist_eq]
+  rw [(isometry_geodesicLine g).dist_eq, Real.dist_eq]
 
 @[simp]
 theorem geodesicLine_zero (g : PSL(2, ℝ)) : geodesicLine g 0 = g • UpperHalfPlane.I := by
@@ -82,11 +82,17 @@ theorem geodesicLine_zero (g : PSL(2, ℝ)) : geodesicLine g 0 = g • UpperHalf
   congr 1
   simp [UpperHalfPlane.ext_iff, UpperHalfPlane.coe_I, Complex.ext_iff]
 
-/-- Translating a geodesic line by `h` gives the geodesic line of `h * g`: the `PSL(2, ℝ)`-action
-permutes these lines rather than merely mapping into their union. -/
+/-- Translating a geodesic line by `h` gives the geodesic line of `h * g`, pointwise. -/
 @[simp]
 theorem smul_geodesicLine (h g : PSL(2, ℝ)) (t : ℝ) :
     h • geodesicLine g t = geodesicLine (h * g) t := by
   simp [geodesicLine_def, mul_smul]
+
+/-- The same fact as `smul_geodesicLine`, at the level of the line as a set: the `PSL(2, ℝ)`-action
+permutes these lines rather than merely mapping into their union. -/
+theorem smul_range_geodesicLine (h g : PSL(2, ℝ)) :
+    h • Set.range (geodesicLine g) = Set.range (geodesicLine (h * g)) := by
+  rw [Set.smul_set_range]
+  simp [smul_geodesicLine]
 
 end TauCeti.UpperHalfPlane
