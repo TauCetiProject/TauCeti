@@ -167,6 +167,14 @@ lemma S_smul_mem_fd_of_norm_eq_one {p : ℍ} (hre : |p.re| ≤ 1 / 2) (hnorm : �
 lemma S_smul_S_smul (p : ℍ) : _root_.ModularGroup.S • (_root_.ModularGroup.S • p) = p := by
   rw [← _root_.ModularGroup.SL_neg_smul, ← _root_.ModularGroup.S_inv, inv_smul_smul]
 
+/-- `g` and `-g` act alike on `ℍ`: the sign ambiguity in Mathlib's classification
+`ModularGroup.cases_of_mem_fd_smul_mem_fd`. -/
+private lemma smul_eq_smul_of_eq_or_eq_neg {g k : SL(2, ℤ)} (z : ℍ) (hg : g = k ∨ g = -k) :
+    g • z = k • z := by
+  obtain rfl | rfl := hg
+  · rfl
+  · exact _root_.ModularGroup.SL_neg_smul _ _
+
 /-- A point of the closed fundamental domain lying in the `SL(2, ℤ)`-orbit of `i` is `i`
 itself: the boundary identifications of `𝒟` fix `i`. -/
 @[simp]
@@ -175,14 +183,11 @@ lemma orbit_mk_eq_I_iff {p : ℍ} (hp : p ∈ 𝒟) :
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
   obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • (I : ℍ) = p := Quotient.exact' h
   rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd _root_.ModularGroup.I_mem_fd hp with
-    (rfl | rfl) | ⟨-, hre⟩ | ⟨-, hre⟩ | ⟨rfl | rfl, -⟩ | ⟨-, hI⟩ | ⟨-, hI⟩ | ⟨-, hI⟩ |
-    ⟨-, hI⟩ | ⟨-, hI⟩ | ⟨-, hI⟩
-  · exact one_smul _ _
-  · exact (_root_.ModularGroup.SL_neg_smul _ _).trans (one_smul _ _)
+    hg | ⟨-, hre⟩ | ⟨-, hre⟩ | ⟨hg, -⟩ | ⟨-, hI⟩ | ⟨-, hI⟩ | ⟨-, hI⟩ | ⟨-, hI⟩ | ⟨-, hI⟩ | ⟨-, hI⟩
+  · exact (smul_eq_smul_of_eq_or_eq_neg _ hg).trans (one_smul _ _)
   · norm_num at hre
   · norm_num at hre
-  · exact S_smul_I
-  · exact (_root_.ModularGroup.SL_neg_smul _ _).trans S_smul_I
+  · exact (smul_eq_smul_of_eq_or_eq_neg _ hg).trans S_smul_I
   · exact absurd hI I_ne_vadd_ρ
   · exact absurd hI I_ne_vadd_ρ
   · exact absurd hI I_ne_vadd_ρ
@@ -200,24 +205,18 @@ lemma orbit_mk_eq_ρ_iff {p : ℍ} (hp : p ∈ 𝒟) :
   · intro h
     obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • (ρ : ℍ) = p := Quotient.exact' h
     rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd _root_.ModularGroup.ρ_mem_fd hp with
-      (rfl | rfl) | ⟨rfl | rfl, -⟩ | ⟨-, hre⟩ | ⟨rfl | rfl, -⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ |
-      ⟨rfl | rfl, -⟩ | ⟨rfl | rfl, -⟩ | ⟨rfl | rfl, -⟩
-    · exact .inl (one_smul _ _)
-    · exact .inl ((_root_.ModularGroup.SL_neg_smul _ _).trans (one_smul _ _))
-    · exact .inr (modular_T_smul _)
-    · exact .inr ((_root_.ModularGroup.SL_neg_smul _ _).trans (modular_T_smul _))
+      hg | ⟨hg, -⟩ | ⟨-, hre⟩ | ⟨hg, -⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨-, hρ⟩ | ⟨hg, -⟩ | ⟨hg, -⟩ |
+      ⟨hg, -⟩
+    · exact .inl ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans (one_smul _ _))
+    · exact .inr ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans (modular_T_smul _))
     · norm_num [re_ρ] at hre
-    · exact .inr S_smul_ρ
-    · exact .inr ((_root_.ModularGroup.SL_neg_smul _ _).trans S_smul_ρ)
+    · exact .inr ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans S_smul_ρ)
     · exact absurd hρ ρ_ne_vadd_ρ
     · exact absurd hρ ρ_ne_vadd_ρ
     · exact absurd hρ ρ_ne_vadd_ρ
-    · exact .inl ST_smul_ρ
-    · exact .inl ((_root_.ModularGroup.SL_neg_smul _ _).trans ST_smul_ρ)
-    · exact .inr TST_smul_ρ
-    · exact .inr ((_root_.ModularGroup.SL_neg_smul _ _).trans TST_smul_ρ)
-    · exact .inl T_inv_S_smul_ρ
-    · exact .inl ((_root_.ModularGroup.SL_neg_smul _ _).trans T_inv_S_smul_ρ)
+    · exact .inl ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans ST_smul_ρ)
+    · exact .inr ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans TST_smul_ρ)
+    · exact .inl ((smul_eq_smul_of_eq_or_eq_neg _ hg).trans T_inv_S_smul_ρ)
   · rintro (rfl | rfl)
     · rfl
     · simpa using orbit_mk_int_vadd 1 ρ
@@ -236,27 +235,23 @@ lemma orbit_mk_injOn_fd_left :
       {p : ℍ | p ∈ 𝒟 ∧ p.re < 1 / 2 ∧ (‖(p : ℂ)‖ = 1 → p.re ≤ 0)} := by
   rintro p₁ ⟨hp₁fd, hp₁re, hp₁arc⟩ p₂ ⟨hp₂fd, hp₂re, hp₂arc⟩ h
   obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • p₂ = p₁ := Quotient.exact' h
-  have hsign {k : SL(2, ℤ)} (hg : g = k ∨ g = -k) : g • p₂ = k • p₂ := by
-    obtain rfl | rfl := hg
-    · rfl
-    · exact _root_.ModularGroup.SL_neg_smul _ _
   rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd hp₂fd hp₁fd with
     hg | ⟨hg, hre⟩ | ⟨-, hre⟩ | ⟨hg, hnorm⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨hg, rfl⟩ |
     ⟨hg, rfl⟩ | ⟨hg, rfl⟩
-  · exact (hsign hg).trans (one_smul _ _)
-  · rw [hsign hg, _root_.ModularGroup.re_T_smul, hre] at hp₁re
+  · exact (smul_eq_smul_of_eq_or_eq_neg _ hg).trans (one_smul _ _)
+  · rw [smul_eq_smul_of_eq_or_eq_neg _ hg, _root_.ModularGroup.re_T_smul, hre] at hp₁re
     norm_num at hp₁re
   · exact absurd hre hp₂re.ne
-  · rw [hsign hg] at hp₁arc ⊢
+  · rw [smul_eq_smul_of_eq_or_eq_neg _ hg] at hp₁arc ⊢
     have h1 := hp₁arc (norm_coe_S_smul_of_norm_eq_one hnorm)
     rw [re_S_smul_of_norm_eq_one hnorm, neg_nonpos] at h1
     rw [eq_I_of_re_eq_zero hnorm ((hp₂arc hnorm).antisymm h1), S_smul_I]
   · exact absurd re_vadd_ρ hp₂re.ne
   · exact absurd re_vadd_ρ hp₂re.ne
   · exact absurd re_vadd_ρ hp₂re.ne
-  · exact (hsign hg).trans ST_smul_ρ
-  · exact absurd (by rw [hsign hg, TST_smul_ρ, re_vadd_ρ]) hp₁re.ne
-  · exact (hsign hg).trans T_inv_S_smul_ρ
+  · exact (smul_eq_smul_of_eq_or_eq_neg _ hg).trans ST_smul_ρ
+  · exact absurd (by rw [smul_eq_smul_of_eq_or_eq_neg _ hg, TST_smul_ρ, re_vadd_ρ]) hp₁re.ne
+  · exact (smul_eq_smul_of_eq_or_eq_neg _ hg).trans T_inv_S_smul_ρ
 
 end ModularGroup
 
