@@ -133,27 +133,30 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockSplitEquiv_blockMargina
 @[simp]
 theorem _root_.MeasureTheory.ProbabilityMeasure.map_blockRestriction_blockMarginals_mul
     (P : ProbabilityMeasure (ℕ → α)) (m n : ℕ) [NeZero m] (i : ℕ) (r : Fin n) :
-    (@ProbabilityMeasure.blockMarginals α _ P (n * m)
-      ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
-        (blockRestriction (α := α) m n r) =
+    (P.map fun x (j : Fin (n * m)) => x (i * (n * m) + j)).map
+      (blockRestriction (α := α) m n r) =
       P.blockMarginals m (i * n + r) := by
   let _ : NeZero n := r.neZero
-  have hcomp : blockRestriction (α := α) m n r =
-      (fun x : Fin n → Fin m → α => x r) ∘ blockSplitEquiv α m n := by
-    funext x j
-    simp only [blockRestriction_apply, Function.comp_apply, blockSplitEquiv_apply]
-  apply ProbabilityMeasure.toMeasure_injective
-  have h := congrArg
-    (fun Q : ProbabilityMeasure (Fin n → Fin m → α) =>
-      (Q.map fun x => x r).toMeasure)
-    (P.map_blockSplitEquiv_blockMarginals_mul m n i)
-  simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply] at h ⊢
-  rw [Measure.map_map (measurable_pi_apply r) (blockSplitEquiv α m n).measurable] at h
-  rw [Measure.map_map (μ := P.toMeasure) (g := fun x => x r)
-    (f := fun x (r : Fin n) j => x ((Nat.divModEquiv m).symm (i * n + r, j)))
-    (measurable_pi_apply r) (Measurable.of_eval fun r => Measurable.of_eval fun j =>
-      measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
-  simpa only [hcomp, Function.comp_def] using h
+  have hOld : (@ProbabilityMeasure.blockMarginals α _ P (n * m)
+      ⟨Nat.mul_ne_zero r.neZero.out (NeZero.ne m)⟩ i).map
+        (blockRestriction (α := α) m n r) = P.blockMarginals m (i * n + r) := by
+    have hcomp : blockRestriction (α := α) m n r =
+        (fun x : Fin n → Fin m → α => x r) ∘ blockSplitEquiv α m n := by
+      funext x j
+      simp only [blockRestriction_apply, Function.comp_apply, blockSplitEquiv_apply]
+    apply ProbabilityMeasure.toMeasure_injective
+    have h := congrArg
+      (fun Q : ProbabilityMeasure (Fin n → Fin m → α) =>
+        (Q.map fun x => x r).toMeasure)
+      (P.map_blockSplitEquiv_blockMarginals_mul m n i)
+    simp only [ProbabilityMeasure.toMeasure_map, ProbabilityMeasure.blockMarginals_apply] at h ⊢
+    rw [Measure.map_map (measurable_pi_apply r) (blockSplitEquiv α m n).measurable] at h
+    rw [Measure.map_map (μ := P.toMeasure) (g := fun x => x r)
+      (f := fun x (r : Fin n) j => x ((Nat.divModEquiv m).symm (i * n + r, j)))
+      (measurable_pi_apply r) (Measurable.of_eval fun r => Measurable.of_eval fun j =>
+        measurable_pi_apply ((Nat.divModEquiv m).symm (i * n + r, j)))] at h
+    simpa only [hcomp, Function.comp_def] using h
+  simpa only [ProbabilityMeasure.blockMarginals_apply, Nat.divModEquiv_symm_apply] using hOld
 
 /-- The permutation of path coordinates induced by permuting blocks and preserving the position
 inside each block. -/
