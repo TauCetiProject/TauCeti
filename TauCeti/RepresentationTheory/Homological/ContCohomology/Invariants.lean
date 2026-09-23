@@ -233,29 +233,32 @@ the two equivalent proofs of invariance differ.
 This is the coefficient morphism used to compare explicit and canonical inflation. -/
 def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
     ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M) ⟶
-      TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H :=
+      TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H := by
+  let _ : IsTopologicalAddGroup M := isTopologicalAddGroup_of_discreteTopology
   let f : FixedPoints.addSubgroup H M →L[ℤ]
       ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype).invariants :=
     (@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
-      (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+      (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
         ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) fun m ↦
           (ContRepresentation.mem_invariants m).trans
             (FixedPoints.mem_addSubgroup H M m).symm).toContinuousLinearMap
-  TopRep.ofHom
+  exact TopRep.ofHom
     { toContinuousLinearMap := f
       isIntertwining' q := by
         induction q using QuotientGroup.induction_on with
         | H g =>
           ext m
           have f_apply (x : FixedPoints.addSubgroup H M) : (f x).1 = (x : M) := by
+            -- `f x` lies in the semireducibly bundled carrier `(ofDiscreteModule ℤ G M).V`,
+            -- while the evaluation lemma is stated in `M`; expose only that carrier wrapper.
             change
               ((@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
-                (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+                (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
                 ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
                   (ContRepresentation.mem_invariants m).trans
                     (FixedPoints.mem_addSubgroup H M m).symm) x).1) = x.1
             exact @AddSubgroup.continuousLinearEquivInvariants_val H M _ _ _
-              (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+              (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
               ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
                 (ContRepresentation.mem_invariants m).trans
                   (FixedPoints.mem_addSubgroup H M m).symm) x
@@ -276,14 +279,17 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
 theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
     (ofDiscreteModuleQuotient G M H m).1 = (m : M) := by
+  let _ : IsTopologicalAddGroup M := isTopologicalAddGroup_of_discreteTopology
+  -- The categorical morphism hides the same semireducible carrier wrapper as `f_apply` above.
+  -- After crossing it, the public evaluation lemma proves the coefficient-level statement.
   change
     ((@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
-      (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+      (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
       ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
         (ContRepresentation.mem_invariants m).trans
           (FixedPoints.mem_addSubgroup H M m).symm) m).1) = m.1
   exact @AddSubgroup.continuousLinearEquivInvariants_val H M _ _ _
-    (inferInstance : DiscreteTopology M) (FixedPoints.addSubgroup H M)
+    (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
     ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
       (ContRepresentation.mem_invariants m).trans
         (FixedPoints.mem_addSubgroup H M m).symm) m

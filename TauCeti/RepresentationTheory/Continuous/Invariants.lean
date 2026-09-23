@@ -18,8 +18,8 @@ the unbundled language and in the category `TopRep`, together with the inclusion
 back into the ambient object.
 
 It also provides the elementary continuous linear equivalence between an additive subgroup of a
-discrete module and the invariants of a continuous representation when their underlying elements
-agree. This coefficient-level identification is independent of the quotient-representation
+topological additive group and the invariants of a continuous representation when their underlying
+elements agree. This coefficient-level identification is independent of the quotient-representation
 construction.
 
 These are the continuous counterparts of Mathlib's `Representation.toInvariants`,
@@ -30,8 +30,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main definitions
 
-* `AddSubgroup.continuousLinearEquivInvariants`: an additive subgroup of a discrete module is
-  continuously linearly equivalent to a representation's invariants when membership agrees.
+* `AddSubgroup.continuousLinearEquivInvariants`: an additive subgroup is continuously linearly
+  equivalent to a representation's invariants when membership agrees.
 * `ContRepresentation.toInvariants`: the representation of `G` on the invariants of `π|_S`.
 * `ContRepresentation.quotientToInvariants`: the representation of `G ⧸ S` on the
   invariants of `π|_S`.
@@ -62,14 +62,13 @@ open CategoryTheory TauCeti.ContRepresentation
 namespace AddSubgroup
 
 variable {G M : Type*} [Monoid G] [AddCommGroup M] [TopologicalSpace M]
-  [DiscreteTopology M]
+  [IsTopologicalAddGroup M]
 
-/-- An additive subgroup of a discrete module is continuously linearly equivalent to the
+/-- An additive subgroup of a topological additive group is continuously linearly equivalent to the
 invariants of a continuous representation when they have the same underlying elements. -/
 def continuousLinearEquivInvariants (S : AddSubgroup M) (pi : ContRepresentation ℤ G M)
-    (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) : S ≃L[ℤ] pi.invariants := by
-  letI := isTopologicalAddGroup_of_discreteTopology (H := M)
-  exact ContinuousLinearEquiv.ofEq S.toIntSubmodule pi.invariants
+    (h : ∀ m, m ∈ pi.invariants ↔ m ∈ S) : S ≃L[ℤ] pi.invariants :=
+  ContinuousLinearEquiv.ofEq S.toIntSubmodule pi.invariants
     (SetLike.ext fun m ↦ (h m).symm)
 
 @[simp]

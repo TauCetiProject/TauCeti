@@ -105,31 +105,34 @@ well as an isomorphism of `ℤ`-modules. -/
 def H0ContinuousLinearEquivInvariants :
     H0 G M ≃L[ℤ] (ofDiscreteModule ℤ G M).ρ.invariants :=
   @AddSubgroup.continuousLinearEquivInvariants G M _ _ _
-    (inferInstance : DiscreteTopology M) (H0 G M)
-      (ofDiscreteModule ℤ G M).ρ
+    (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
       (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)
 
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_val (m : H0 G M) :
     (H0ContinuousLinearEquivInvariants G M m).1 = m.1 := by
+  -- The goal is an equality in the semireducibly bundled carrier
+  -- `(ofDiscreteModule ℤ G M).V`, whereas the evaluation lemma is an equality in `M`.
+  -- `change` crosses only that carrier wrapper before applying the public evaluation API.
   change
     ((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
-      (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
       (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m).1) = m.1
   exact @AddSubgroup.continuousLinearEquivInvariants_val G M _ _ _
-    (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+    (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
 @[simp]
 theorem H0ContinuousLinearEquivInvariants_symm_val
     (m : (ofDiscreteModule ℤ G M).ρ.invariants) :
     ((H0ContinuousLinearEquivInvariants G M).symm m).1 = m.1 := by
+  -- As above, expose only the bundled carrier so the public inverse evaluation lemma applies.
   change
     (((@AddSubgroup.continuousLinearEquivInvariants G M _ _ _
-      (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+      (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
       (mem_invariants_ofDiscreteModule_iff_mem_H0 G M)).symm m).1) = m.1
   exact @AddSubgroup.continuousLinearEquivInvariants_symm_val G M _ _ _
-    (inferInstance : DiscreteTopology M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
+    (inferInstance : IsTopologicalAddGroup M) (H0 G M) (ofDiscreteModule ℤ G M).ρ
     (mem_invariants_ofDiscreteModule_iff_mem_H0 G M) m
 
 end Carriers
