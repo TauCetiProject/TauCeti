@@ -28,6 +28,9 @@ credits Arthur Freitas Ramos, David Hulak, and Ruy de Queiroz.  This version use
 
 ## Main results
 
+* `WideSubquiver.arborescenceEdgeEquiv`: tree edges are in bijection with non-root vertices.
+* `WideSubquiver.arborescenceEdgeCard`: the directed edges of a finite arborescence have
+  cardinality one less than its vertices.
 * `WideSubquiver.symmetrifiedTreeSetCard`: a spanning tree has one fewer unoriented edge than
   vertices.
 * `WideSubquiver.nonTreeEdgeCard`: the exact number of directed edges outside that tree.
@@ -97,7 +100,8 @@ private lemma targetNeRoot (T : WideSubquiver V) [Arborescence T]
   have hzero := defaultPathLengthRoot T e.right h
   simp [p, hzero] at hlen
 
-private noncomputable def treeEdgeEquiv (T : WideSubquiver V) [Arborescence T] :
+/-- The directed edges of an arborescence correspond to the vertices other than its root. -/
+noncomputable def arborescenceEdgeEquiv (T : WideSubquiver V) [Arborescence T] :
     Quiver.Total T ≃ {b : T // b ≠ root T} where
   toFun e := ⟨e.right, targetNeRoot T e⟩
   invFun b :=
@@ -113,15 +117,16 @@ private noncomputable def treeEdgeEquiv (T : WideSubquiver V) [Arborescence T] :
     exact Quiver.Total.ext hab rfl hedge
   right_inv b := by rfl
 
-private lemma arborescenceCard [Finite V]
+/-- The directed edges of a finite arborescence have cardinality one less than its vertices. -/
+theorem arborescenceEdgeCard [Finite V]
     (T : WideSubquiver V) [Arborescence T] :
     Nat.card (Quiver.Total T) = Nat.card V - 1 := by
   classical
   exact (letI := Fintype.ofFinite V
-    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (treeEdgeEquiv T).symm
+    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (arborescenceEdgeEquiv T).symm
     show _ from by
       rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
-        Fintype.card_congr (treeEdgeEquiv T), Fintype.card_subtype_compl]
+        Fintype.card_congr (arborescenceEdgeEquiv T), Fintype.card_subtype_compl]
       have hcard : Fintype.card T = Fintype.card V := Fintype.card_congr (Equiv.refl V)
       rw [hcard]
       simp)
@@ -213,7 +218,7 @@ theorem symmetrifiedTreeSetCard [Finite V]
       Set (Quiver.Total V)) = Nat.card V - 1 := by
   classical
   exact (letI := Fintype.ofFinite V
-    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (treeEdgeEquiv T).symm
+    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (arborescenceEdgeEquiv T).symm
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Fintype.ofEquiv _ (symEdgeEquiv T)
     letI : Fintype (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
@@ -225,7 +230,7 @@ theorem symmetrifiedTreeSetCard [Finite V]
         ← Fintype.card_congr (symEdgeEquiv T)]
       have hcard : Fintype.card (Symmetrify V) = Fintype.card V :=
         Fintype.card_congr (Equiv.refl V)
-      simpa [hcard] using arborescenceCard T
+      simpa [hcard] using arborescenceEdgeCard T
   )
 
 /-- The directed edges outside the underlying unoriented spanning tree are exactly the total
@@ -244,7 +249,7 @@ theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Fintype.ofEquiv _ (wideTotalEquiv _).symm
     letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (symEdgeEquiv T).symm
-    letI : Fintype {b : T // b ≠ root T} := Fintype.ofEquiv _ (treeEdgeEquiv T)
+    letI : Fintype {b : T // b ≠ root T} := Fintype.ofEquiv _ (arborescenceEdgeEquiv T)
     let f : Option {b : T // b ≠ root T} → T := fun b => b.elim (root T) Subtype.val
     let hf : Function.Surjective f := by
       intro b
@@ -255,7 +260,7 @@ theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
     letI : Finite (Symmetrify V) := ‹Finite T›
     letI : Finite V := ‹Finite T›
     letI := Fintype.ofFinite V
-    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (treeEdgeEquiv T).symm
+    letI : Fintype (Quiver.Total T) := Fintype.ofEquiv _ (arborescenceEdgeEquiv T).symm
     letI : Fintype (Quiver.Total (wideSubquiverSymmetrify T)) :=
       Fintype.ofEquiv _ (symEdgeEquiv T)
     letI : Fintype (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :

@@ -121,6 +121,8 @@ noncomputable def spanningTreeBasis
     (e : ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ : Set _)) :
     spanningTreeBasis T e =
       IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom) := by
+  -- `ofUniqueLift` builds the basis through `ofLift`; expose that wrapper's underlying free-group
+  -- lift so Mathlib's `FreeGroup.lift_apply_of` equation applies to this generator.
   change FreeGroup.lift
       (fun e => IsFreeGroupoid.SpanningTree.loopOfHom T (IsFreeGroupoid.of e.val.hom))
       (FreeGroup.of e) = _
