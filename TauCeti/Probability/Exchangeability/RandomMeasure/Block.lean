@@ -171,6 +171,7 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.blockMarginals_zero_eq_map_prefi
       (fun x : ℕ → α => fun j : Fin m => x ((Nat.divModEquiv m).symm (0, j))) =
         prefixProj α m := by
     funext x j
+    -- Unfold the quotient-remainder inverse to expose the zeroth block coordinate.
     change x (0 * m + j) = x j
     simp
   rw [ProbabilityMeasure.blockMarginals_apply, hproj]
