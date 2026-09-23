@@ -41,6 +41,7 @@ the unit arc right of `i`.
 * `TauCeti.ModularGroup.orbit_mk_I_ne_orbit_mk_ρ`: the two elliptic orbits are distinct.
 * `TauCeti.ModularGroup.orbit_mk_injOn_fd_left`: the orbit map is injective on `𝒟` minus the
   right vertical edge and the part of the unit arc right of `i`.
+* `TauCeti.ModularGroup.exists_smul_mem_fd_left`: every orbit meets that part of `𝒟`.
 
 ## References
 
@@ -269,6 +270,22 @@ lemma orbit_mk_injOn_fd_left :
   · exact (hsign hg).trans ST_smul_ρ
   · exact absurd (by rw [hsign hg, TST_smul_ρ, re_vadd_ρ]) hp₁re.ne
   · exact (hsign hg).trans T_inv_S_smul_ρ
+
+/-- Every `SL(2, ℤ)`-orbit of `ℍ` meets the part of `𝒟` left of the boundary identifications: the
+points with `re < 1/2` which, if on the unit circle, have `re ≤ 0`. Move into `𝒟`, then off the
+right vertical edge by `T⁻¹` or off the arc right of `i` by `S`. -/
+lemma exists_smul_mem_fd_left (z : ℍ) :
+    ∃ g : SL(2, ℤ), g • z ∈ 𝒟 ∧ (g • z).re < 1 / 2 ∧ (‖(↑(g • z) : ℂ)‖ = 1 → (g • z).re ≤ 0) := by
+  obtain ⟨g, hg⟩ := _root_.ModularGroup.exists_smul_mem_fd z
+  rcases (le_abs_self _).trans hg.2 |>.lt_or_eq with hlt | heq
+  · by_cases harc : ‖(↑(g • z) : ℂ)‖ = 1 ∧ 0 < (g • z).re
+    · refine ⟨_root_.ModularGroup.S * g, ?_⟩
+      rw [mul_smul, re_S_smul_of_norm_eq_one harc.1]
+      exact ⟨S_smul_mem_fd_of_norm_eq_one hg.2 harc.1, by linarith, fun _ ↦ by linarith⟩
+    · exact ⟨g, hg, hlt, fun h ↦ not_lt.mp fun h' ↦ harc ⟨h, h'⟩⟩
+  · refine ⟨_root_.ModularGroup.T⁻¹ * g, ?_⟩
+    rw [mul_smul, ← zpow_neg_one, modular_T_zpow_smul, Int.cast_neg, Int.cast_one, vadd_re, heq]
+    exact ⟨vadd_mem_fd_of_re_eq hg (heq.trans (by norm_num)), by norm_num, fun _ ↦ by norm_num⟩
 
 end ModularGroup
 
