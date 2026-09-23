@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.RealForm
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.UnitLevel
 public import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
@@ -79,29 +80,28 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
     (hw : realCliffordForm n 0 w = 1) :
     Joined (1 : realCliffordSpinGroupZero n)
       (spinReflectionPair (realCliffordForm n 0) v w hv hw) := by
-  let e := EuclideanSpace.equiv (Fin n) ℝ
-  let uv : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
-    ⟨e.symm v, by
-      rw [mem_sphere, dist_zero_right]
-      exact norm_euclideanSpaceEquiv_symm_eq_one_of_realCliffordForm_zero_eq_one hv⟩
-  let uw : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
-    ⟨e.symm w, by
-      rw [mem_sphere, dist_zero_right]
-      exact norm_euclideanSpaceEquiv_symm_eq_one_of_realCliffordForm_zero_eq_one hw⟩
+  let e := realCliffordUnitLevelHomeomorphSphere n
+  let uv : realCliffordUnitLevel n :=
+    ⟨v, (mem_realCliffordUnitLevel n v).mpr hv⟩
+  let uw : realCliffordUnitLevel n :=
+    ⟨w, (mem_realCliffordUnitLevel n w).mpr hw⟩
   have hrank : 1 < Module.rank ℝ (EuclideanSpace ℝ (Fin n)) := by
     rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin, Nat.one_lt_cast]
     omega
-  have hjoined : Joined uv uw :=
+  have hjoined : Joined (e uv) (e uw) :=
     ((isPathConnected_sphere hrank (0 : EuclideanSpace ℝ (Fin n)) zero_le_one).joinedIn
-      uv.1 uv.2 uw.1 uw.2).joined_subtype
+      (e uv).1 (e uv).2 (e uw).1 (e uw).2).joined_subtype
   let g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 →
       {u : Fin n → ℝ // realCliffordForm n 0 u = 1} :=
-    fun u => ⟨e u, realCliffordForm_zero_euclideanSpaceEquiv_eq_one u⟩
-  have hg : Continuous g :=
-    continuous_induced_rng.mpr (e.continuous.comp continuous_subtype_val)
+    fun u => ⟨(e.symm u).1, (mem_realCliffordUnitLevel n _).mp (e.symm u).2⟩
+  have hg : Continuous g := by
+    apply continuous_induced_rng.mpr
+    dsimp only [g]
+    convert continuous_subtype_val.comp e.symm.continuous using 1
+    rfl
   have hcoordinates :
       Joined (⟨v, hv⟩ : {u : Fin n → ℝ // realCliffordForm n 0 u = 1}) ⟨w, hw⟩ := by
-    simpa only [g, uv, uw, e, ContinuousLinearEquiv.apply_symm_apply] using hjoined.map hg
+    simpa only [g, uv, uw, e, Homeomorph.symm_apply_apply] using hjoined.map hg
   exact joined_one_spinReflectionPair_of_joined v w hv hw hcoordinates
 
 end CliffordAlgebra
