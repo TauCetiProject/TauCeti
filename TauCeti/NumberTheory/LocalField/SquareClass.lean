@@ -129,15 +129,11 @@ element of `Kˣ` with normalized valuation zero. -/
 theorem exists_not_isSquare_of_toAdd_normalizedValuation_eq_zero
     (h2 : (2 : K) ≠ 0) :
     ∃ u : Kˣ, (normalizedValuation K u).toAdd = 0 ∧ ¬IsSquare u := by
-  have h0 := not_unitFiltration_le_range_powMonoidHom_two h2
-  obtain ⟨u, hu, hsq⟩ := SetLike.not_le_iff_exists.mp h0
-  refine ⟨u, ?_, ?_⟩
-  · have hu0 : u ∈ unitFiltration K 0 :=
-      unitFiltration_antitone (Nat.zero_le _) hu
-    have hu' : u ∈ (normalizedValuation K).ker := (ker_normalizedValuation K).symm ▸ hu0
-    exact congrArg Multiplicative.toAdd (MonoidHom.mem_ker.mp hu')
-  · simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm]
-      using hsq
+  obtain ⟨u, hu, hsq⟩ := exists_mem_unitFiltration_not_isSquare h2
+  refine ⟨u, ?_, hsq⟩
+  apply toAdd_eq_zero.mpr
+  rw [normalizedValuation_eq_one_iff]
+  exact (mem_unitFiltration_zero u).mp (unitFiltration_antitone (Nat.zero_le _) hu)
 
 /-- Away from residue characteristic two, the square-class group of a nonarchimedean local field
 is a Klein four-group. -/

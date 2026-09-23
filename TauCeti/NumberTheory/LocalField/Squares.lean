@@ -37,6 +37,8 @@ characteristic: when it is odd, `v_K(2) = 0` and the statement is that some unit
 
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2) + 1) ⊆ (Kˣ)²`.
 * `TauCeti.not_unitFiltration_le_range_powMonoidHom_two`: `U(K, 2 v_K(2)) ⊄ (Kˣ)²`.
+* `TauCeti.exists_mem_unitFiltration_not_isSquare`: a nonsquare witness in
+  `U(K, 2 v_K(2))`.
 * `TauCeti.unitFiltration_le_range_powMonoidHom_two_iff`: `U(K, n) ⊆ (Kˣ)²` exactly when
   `2 v_K(2) + 1 ≤ n`.
 * `TauCeti.dyadicLevel`: the valuation `v_K(2)` used in the square interface.
@@ -140,6 +142,16 @@ theorem not_unitFiltration_le_range_powMonoidHom_two (h2 : (2 : K) ≠ 0) :
   obtain ⟨t, ht⟩ := (ValuationRing.isSquare_one_add_four_mul_iff h2').mp
     ⟨⟨y, hyO⟩, Subtype.ext (by simpa [pow_two, h4] using hyK.symm)⟩
   exact ha (IsLocalRing.residue 𝒪[K] t) (by rw [← ht]; simp)
+
+/-- There is a nonsquare in the last unit-filtration step not entirely contained in the
+squares. -/
+theorem exists_mem_unitFiltration_not_isSquare (h2 : (2 : K) ≠ 0) :
+    ∃ u : Kˣ, u ∈ unitFiltration K (2 * natCastValuation K 2 h2) ∧ ¬IsSquare u := by
+  obtain ⟨u, hu, hsq⟩ := SetLike.not_le_iff_exists.mp
+    (not_unitFiltration_le_range_powMonoidHom_two h2)
+  exact ⟨u, hu, by
+    simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm]
+      using hsq⟩
 
 /-- Every unit of depth `2 * dyadicLevel K + 1` is a square. -/
 theorem unitFiltration_le_square (h2 : (2 : K) ≠ 0) :
