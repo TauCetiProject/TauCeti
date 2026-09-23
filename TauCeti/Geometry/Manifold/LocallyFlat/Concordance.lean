@@ -202,9 +202,11 @@ def symm (C : TopologicalConcordance F F' f g) : TopologicalConcordance F F' g f
     have ht' : 1 - t ∈ Ioo (0 : ℝ) 1 := by
       constructor <;> linarith [ht.1, ht.2]
     have hC := C.snd_apply_mem_Ioo x (1 - t) ht'
-    -- Unfold the product homeomorphisms and concordance coercion by definitional equality.
-    change (1 - (C (x, 1 - t)).2) ∈ Ioo (0 : ℝ) 1
-    constructor <;> linarith [hC.1, hC.2]
+    have hreflected : (1 - (C (x, 1 - t)).2) ∈ Ioo (0 : ℝ) 1 := by
+      constructor <;> linarith [hC.1, hC.2]
+    -- Reduce the assigned track map to the reflected coordinate expression.
+    dsimp
+    exact hreflected
 
 /-! ### Endpoint embeddings -/
 
@@ -222,6 +224,10 @@ theorem isEmbedding_right (C : TopologicalConcordance F F' f g) : IsEmbedding g 
 @[simp]
 theorem symm_apply (C : TopologicalConcordance F F' f g) (x : M) (t : ℝ) :
     C.symm (x, t) = ((C (x, 1 - t)).1, 1 - (C (x, 1 - t)).2) := by
+  -- Unfold the coercion of the `symm` structure to expose its two reflected coordinates.
+  change Prod.map id (fun s : ℝ => 1 - s)
+      (C (Prod.map id (fun s : ℝ => 1 - s) (x, t))) = _
+  simp only [Prod.map_apply, id_eq]
   rfl
 
 /-- Reversing a track twice gives it back. -/
