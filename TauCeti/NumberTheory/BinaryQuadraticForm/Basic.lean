@@ -50,6 +50,7 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 ## Main definitions
 
 * `TauCeti.BinaryQuadraticForm R`: the binary quadratic form `a x² + b x y + c y²` over `R`.
+* `TauCeti.BinaryQuadraticForm.discrim`: its discriminant `b² - 4 a c`.
 * The instance `MulAction SL(2, R) (TauCeti.BinaryQuadraticForm R)`: the action
   `γ • f = f ∘ γ⁻¹`, for a commutative ring `R`.
 * `TauCeti.BinaryQuadraticForm.posDef D`: for `D ≠ 0`, the positive definite integral forms of
@@ -93,6 +94,10 @@ namespace BinaryQuadraticForm
 
 variable {R : Type*} [CommRing R]
 
+/-- The discriminant `b² - 4 a c` of the form `a x² + b x y + c y²`. -/
+def discrim (f : BinaryQuadraticForm R) : R :=
+  _root_.discrim f.a f.b f.c
+
 /-- `γ • f` is the form `f ∘ γ⁻¹`, so `(γ • f)(x, y) = f(s x - q y, -r x + p y)` for
 `γ = !![p, q; r, s]`. The coefficients are written through the entries of the adjugate
 `γ⁻¹ = !![s, -q; -r, p]`, so each is a polynomial in the entries of `γ`. -/
@@ -134,20 +139,20 @@ instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
     refine ⟨?_, ?_, ?_⟩ <;> ring
 
 /-- The discriminant `b² - 4 a c` of a binary quadratic form is invariant under `SL(2, R)`. -/
-theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
-    discrim (γ • f).a (γ • f).b (γ • f).c = discrim f.a f.b f.c := by
-  simp only [smul_a, smul_b, smul_c, discrim]
+@[simp]
+theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).discrim = f.discrim := by
+  simp only [BinaryQuadraticForm.discrim, _root_.discrim, smul_a, smul_b, smul_c]
   linear_combination (f.b ^ 2 - 4 * f.a * f.c) * congr($(γ.fin_two_mul_sub_mul_eq_one) ^ 2)
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/
 def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm ℤ) where
-  carrier := {f | discrim f.a f.b f.c = -D ∧ 0 < f.a}
+  carrier := {f | f.discrim = -D ∧ 0 < f.a}
   smul_mem' γ f := by
     rintro ⟨hD, ha⟩
     refine ⟨(discrim_smul γ f).trans hD, pos_of_mul_pos_right (a := 4 * f.a) ?_ (by positivity)⟩
     have key : 4 * f.a * (γ • f).a = (2 * f.a * γ 1 1 - f.b * γ 1 0) ^ 2 + D * γ 1 0 ^ 2 := by
-      rw [discrim] at hD
+      rw [BinaryQuadraticForm.discrim, _root_.discrim] at hD
       rw [smul_a]
       linear_combination (-γ 1 0 ^ 2) * hD
     rw [key]
@@ -164,7 +169,7 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
 positive. -/
 @[simp]
 theorem mem_posDef {D : ℕ} [NeZero D] {f : BinaryQuadraticForm ℤ} :
-    f ∈ posDef D ↔ discrim f.a f.b f.c = -D ∧ 0 < f.a :=
+    f ∈ posDef D ↔ f.discrim = -D ∧ 0 < f.a :=
   Iff.rfl
 
 /-! The convention `γ • f = f ∘ γ⁻¹`, checked on `T`, `S * T` and `S`. -/
