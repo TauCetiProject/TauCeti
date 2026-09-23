@@ -7,17 +7,16 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom
-public import Mathlib.Topology.Instances.ZMod
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
-import Mathlib.Topology.Algebra.ContinuousMonoidHom
 
 /-!
 # Continuous characters and the pro-`p` Frattini subgroup
 
 A continuous homomorphism to a discrete group of cardinality `p` is either trivial or has kernel
-of index `p`. Thus every continuous character to `𝔽_p` factors through the pro-`p` Frattini
-quotient. This is the character-theoretic input to describing the generator rank of a pro-`p`
-group by its continuous `𝔽_p`-valued characters. The lift uses the quotient topology.
+of index `p`. Thus every continuous character into the multiplicative encoding
+`Multiplicative (ZMod p)` of `𝔽_p` factors through the pro-`p` Frattini quotient. This is the
+character-theoretic input to describing the generator rank of a pro-`p` group by its continuous
+`𝔽_p`-valued characters. The lift uses the quotient topology.
 
 ## References
 
@@ -58,7 +57,7 @@ theorem _root_.ContinuousMonoidHom.proPFrattini_le_ker {H : Type*} [Group H]
 /-- Precomposition with the Frattini quotient projection identifies continuous homomorphisms
 from the quotient with continuous homomorphisms from `G` for a discrete target of cardinality
 `p`. -/
-@[expose] def _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv {H : Type*} [Group H]
+def _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv {H : Type*} [Group H]
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) :
     ((G ⧸ proPFrattini p G) →ₜ* H) ≃ (G →ₜ* H) :=
   (ContinuousMonoidHom.quotientHomEquiv (proPFrattini p G)).trans
@@ -70,7 +69,9 @@ theorem _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv_apply {H : Type*} [G
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p)
     (g : (G ⧸ proPFrattini p G) →ₜ* H) :
     ContinuousMonoidHom.frattiniQuotientHomEquiv hH g =
-      g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) := rfl
+      g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) := by
+  change (ContinuousMonoidHom.quotientHomEquiv (proPFrattini p G) g).val = _
+  exact ContinuousMonoidHom.quotientHomEquiv_apply_coe _ _
 
 /-- Evaluation of the inverse Frattini quotient homomorphism equivalence. -/
 @[simp]
@@ -79,7 +80,10 @@ theorem _root_.ContinuousMonoidHom.frattiniQuotientHomEquiv_symm_apply {H : Type
     (f : G →ₜ* H) :
     (ContinuousMonoidHom.frattiniQuotientHomEquiv hH).symm f =
       ContinuousMonoidHom.quotientLift (proPFrattini p G) f
-        (ContinuousMonoidHom.proPFrattini_le_ker hH f) := rfl
+        (ContinuousMonoidHom.proPFrattini_le_ker hH f) := by
+  change (ContinuousMonoidHom.quotientHomEquiv (proPFrattini p G)).symm
+    ⟨f, ContinuousMonoidHom.proPFrattini_le_ker hH f⟩ = _
+  exact ContinuousMonoidHom.quotientHomEquiv_symm_apply _ _
 
 /-- Continuous homomorphisms to a discrete group of cardinality `p` factor uniquely through the
 pro-`p` Frattini quotient. -/
@@ -87,6 +91,7 @@ theorem _root_.ContinuousMonoidHom.existsUnique_frattiniQuotient_lift {H : Type*
     [TopologicalSpace H] [DiscreteTopology H] (hH : Nat.card H = p) (f : G →ₜ* H) :
     ∃! g : (G ⧸ proPFrattini p G) →ₜ* H,
       g.comp (ContinuousMonoidHom.quotientMk (proPFrattini p G)) = f := by
-  exact (ContinuousMonoidHom.frattiniQuotientHomEquiv hH).bijective.existsUnique f
+  simpa only [ContinuousMonoidHom.frattiniQuotientHomEquiv_apply] using
+    (ContinuousMonoidHom.frattiniQuotientHomEquiv hH).bijective.existsUnique f
 
 end TauCeti
