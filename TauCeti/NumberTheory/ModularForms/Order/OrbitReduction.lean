@@ -137,7 +137,7 @@ theorem orbit_mk_injOn_canonicalReps [ModularFormClass F 𝒮ℒ k] (f : F) :
     rcases hcond with ⟨hgt, -⟩ | ⟨-, hgt⟩ | ⟨-, -, hre⟩
     · norm_num [hnorm] at hgt
     · norm_num [hnorm] at hgt
-    · exact coe_re p ▸ hre
+    · exact (coe_re p ▸ hre).le
 
 private lemma normSq_coe_vadd_neg_one {p : ℍ} (hre : (p : ℂ).re = 1 / 2) :
     Complex.normSq (((-1 : ℝ) +ᵥ p : ℍ) : ℂ) = Complex.normSq (p : ℂ) := by

@@ -228,12 +228,12 @@ theorem orbit_mk_I_ne_orbit_mk_ρ :
   fun h ↦ I_ne_ρ ((orbit_mk_eq_I_iff _root_.ModularGroup.ρ_mem_fd).mp h.symm).symm
 
 /-- The orbit map is injective on the part of `𝒟` left of the boundary identifications: the
-points with `re < 1/2` which, if on the unit circle, have `re < 0`. `T` moves the right
-vertical edge onto the left one and `S` the right half-arc onto the left one, and this set
-meets what remains of each orbit at most once. -/
+points with `re < 1/2` which, if on the unit circle, have `re ≤ 0`. `T` moves the right
+vertical edge onto the left one and `S` the right half-arc onto the left one, fixing `i`, and
+this set meets what remains of each orbit at most once. -/
 lemma orbit_mk_injOn_fd_left :
     Set.InjOn (fun p : ℍ ↦ (Quotient.mk'' p : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ))
-      {p : ℍ | p ∈ 𝒟 ∧ p.re < 1 / 2 ∧ (‖(p : ℂ)‖ = 1 → p.re < 0)} := by
+      {p : ℍ | p ∈ 𝒟 ∧ p.re < 1 / 2 ∧ (‖(p : ℂ)‖ = 1 → p.re ≤ 0)} := by
   rintro p₁ ⟨hp₁fd, hp₁re, hp₁arc⟩ p₂ ⟨hp₂fd, hp₂re, hp₂arc⟩ h
   obtain ⟨g, rfl⟩ : ∃ g : SL(2, ℤ), g • p₂ = p₁ := Quotient.exact' h
   rcases _root_.ModularGroup.cases_of_mem_fd_smul_mem_fd hp₂fd hp₁fd with
@@ -249,10 +249,12 @@ lemma orbit_mk_injOn_fd_left :
   · exact absurd hre hp₂re.ne
   · have h1 := hp₁arc (norm_coe_S_smul_of_norm_eq_one hnorm)
     rw [re_S_smul_of_norm_eq_one hnorm] at h1
-    linarith [hp₂arc hnorm]
+    obtain rfl := eq_I_of_re_eq_zero hnorm (by linarith [hp₂arc hnorm, coe_re p₂])
+    exact S_smul_I
   · have h1 := hp₁arc (norm_coe_S_smul_of_norm_eq_one hnorm)
     rw [re_S_smul_of_norm_eq_one hnorm] at h1
-    linarith [hp₂arc hnorm]
+    obtain rfl := eq_I_of_re_eq_zero hnorm (by linarith [hp₂arc hnorm, coe_re p₂])
+    exact S_smul_I
   · norm_num [re_ρ] at hp₂re
   · norm_num [re_ρ] at hp₂re
   · norm_num [re_ρ] at hp₂re
