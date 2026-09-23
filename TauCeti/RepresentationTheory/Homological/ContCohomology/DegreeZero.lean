@@ -213,10 +213,13 @@ noncomputable def degreeZeroClass (X : TopRep R G) (u : X.V) (hu : ∀ g : G, X.
     continuousCohomology 0 X :=
   (zeroIso X).inv ⟨u, (ContRepresentation.mem_invariants u).2 hu⟩
 
+-- `simp` reduces the carrier of the `abbrev` `TopModuleCat.of R X.ρ.invariants`, the target of
+-- `zeroIso X`, in the implicit type arguments of the applied morphism before it looks a term up,
+-- so this `simp` lemma states its left-hand side through `dsimp% only`, as in #8315.
 /-- `zeroIso` recovers the invariant vector a degree-zero class was built from. -/
 @[simp]
 theorem coe_zeroIso_hom_degreeZeroClass (u : X.V) (hu : ∀ g : G, X.ρ g u = u) :
-    (((zeroIso X).hom (degreeZeroClass X u hu)) : X.V) = u := by
+    (dsimp% only (((zeroIso X).hom (degreeZeroClass X u hu)) : X.V)) = u := by
   simp [degreeZeroClass]
 
 /-- Every degree-zero class is the class of an invariant vector. -/
