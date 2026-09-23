@@ -111,7 +111,10 @@ theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace �
   · intro i hi
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
 
-/-- The Lebesgue integral against a finite empirical population is the average of the values. -/
+/-- The Lebesgue integral against a finite empirical population is the average of the values.
+
+Use this lemma explicitly: `simp` expands the empirical measure via
+`empiricalMeasureOfFintype_toMeasure` before this formula can match. -/
 theorem lintegral_empiricalMeasureOfFintype {x : κ → α} {f : α → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ y, f y ∂(empiricalMeasureOfFintype x : Measure α) =
       ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (x i) := by
@@ -190,7 +193,10 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
   · intro i hi
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
 
-/-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/
+/-- The Lebesgue integral against an empirical measure is the average of the sampled values.
+
+Use this lemma explicitly: `simp` expands the empirical measure via `empiricalMeasure_toMeasure`
+before this formula can match. -/
 theorem lintegral_empiricalMeasure {x : ℕ → α} {n : ℕ} {f : α → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ y, f y ∂(empiricalMeasure x n : Measure α) =
       ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ * ∑ i ∈ Finset.range (n + 1), f (x i) := by
