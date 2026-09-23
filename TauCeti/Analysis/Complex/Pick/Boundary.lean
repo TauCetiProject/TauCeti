@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
@@ -304,9 +305,7 @@ theorem eq_integral_nevanlinnaKernel_add_of_eqOn_upperHalfPlane
       F z = (b : ℂ) * z + ∫ x, nevanlinnaKernel z x ∂rho + c) :
     F t = (b : ℂ) * t + ∫ x, nevanlinnaKernel t x ∂rho + c := by
   have hnebot : (𝓝[UpperHalfPlane.upperHalfPlaneSet] (t : ℂ)).NeBot :=
-    mem_closure_iff_nhdsWithin_neBot.1 (by
-      rw [UpperHalfPlane.upperHalfPlaneSet, Complex.closure_setOfPred_lt_im]
-      simp)
+    Real.nhdsWithin_upperHalfPlaneSet_neBot t
   have hright : ContinuousAt
       (fun w : ℂ => (b : ℂ) * w + ∫ x, nevanlinnaKernel w x ∂rho + c) t :=
     ((continuousAt_const.mul continuousAt_id).add

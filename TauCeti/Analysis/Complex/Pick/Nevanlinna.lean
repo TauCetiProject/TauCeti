@@ -250,6 +250,11 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
   (1 + (x : ℂ) * z) / ((x : ℂ) - z)
 
+/-- The Nevanlinna kernel is the quotient `(1 + x z) / (x - z)`. -/
+theorem nevanlinnaKernel_def (z : ℂ) (x : ℝ) :
+    nevanlinnaKernel z x = (1 + (x : ℂ) * z) / ((x : ℂ) - z) := by
+  rw [nevanlinnaKernel]
+
 /-- The Nevanlinna kernel is measurable in its real variable at every complex parameter. -/
 @[fun_prop]
 theorem measurable_nevanlinnaKernel (z : ℂ) : Measurable (nevanlinnaKernel z) := by
