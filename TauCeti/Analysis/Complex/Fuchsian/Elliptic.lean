@@ -41,7 +41,6 @@ def stabilizerBallQuotientChart [Finite (stabilizer Γ z)] (hε : 0 < ε)
 
 /-- In the elliptic quotient chart, the orbit of a point in the stabilizer ball has coordinate
 equal to the corresponding power of its disc coordinate. -/
-@[simp]
 theorem stabilizerBallQuotientChart_mk [Finite (stabilizer Γ z)] (hε : 0 < ε)
     (hopen : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
     (τ : stabilizerBall Γ z ε) :
