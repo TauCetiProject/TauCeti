@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Reduction
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Basic
 
 import Mathlib.Algebra.Polynomial.Eval.Irreducible
+import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.Tactic.ComputeDegree
 
 /-!
@@ -39,9 +40,10 @@ certificates, while keeping the proof of primality bundled with the factor-degre
   the Galois image with that full cycle type.
 * `TauCeti.HasFactorDegrees.irreducible_map_rat`: singleton evidence proves irreducibility over
   `ℚ`.
-* `TauCeti.HasFactorDegrees.exists_orderOf_eq_two` and
-  `TauCeti.HasFactorDegrees.exists_orderOf_eq_six`: the two factor types used by the dihedral and
-  symmetric certificate routes produce elements of the required orders.
+* `TauCeti.HasFactorDegrees.exists_orderOf_eq_two`,
+  `TauCeti.HasFactorDegrees.exists_orderOf_eq_three`, and
+  `TauCeti.HasFactorDegrees.exists_orderOf_eq_six`: the factor types used by the dihedral,
+  alternating, and symmetric certificate routes produce elements of the required orders.
 * `TauCeti.HasSexticRoot.isRoot_specialize_rat` and
   `TauCeti.HasSexticRoot.separable_specialize_rat`: the two consequences of resolvent evidence in
   the rational specialization used by quintic labels.
@@ -120,6 +122,15 @@ theorem HasFactorDegrees.exists_orderOf_eq_six {f : ℤ[X]} {p : ℕ}
     (h : HasFactorDegrees f p {2, 3}) (hf : f.Monic) :
     ∃ σ ∈ (Polynomial.Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ).range,
       orderOf σ = 6 := by
+  obtain ⟨σ, hσ, horder⟩ := h.exists_orderOf_eq_lcm hf
+  exact ⟨σ, hσ, horder.trans (by decide)⟩
+
+/-- Factor degrees `(1,1,3)` exhibit an element of order three in the Galois image. In degree
+five, this is the lower-bound evidence for the alternating label. -/
+theorem HasFactorDegrees.exists_orderOf_eq_three {f : ℤ[X]} {p : ℕ}
+    (h : HasFactorDegrees f p {1, 1, 3}) (hf : f.Monic) :
+    ∃ σ ∈ (Polynomial.Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ).range,
+      orderOf σ = 3 := by
   obtain ⟨σ, hσ, horder⟩ := h.exists_orderOf_eq_lcm hf
   exact ⟨σ, hσ, horder.trans (by decide)⟩
 
@@ -228,6 +239,30 @@ theorem HasSecondRootInRootField.modByMonic_ne_X_modByMonic {f : ℤ[X]} {b : �
     (h : HasSecondRootInRootField f b) :
     b %ₘ (f.map (Int.castRingHom ℚ)) ≠ X %ₘ (f.map (Int.castRingHom ℚ)) :=
   h.2
+
+/-- Under the hypotheses making `AdjoinRoot` the root field, formal second-root evidence gives
+the represented root and proves that it differs from the distinguished root. -/
+theorem HasSecondRootInRootField.isRoot_mk_and_ne_root {f : ℤ[X]} {b : ℚ[X]}
+    (h : HasSecondRootInRootField f b) (hf : f.Monic)
+    (hirr : Irreducible (f.map (Int.castRingHom ℚ))) :
+    let fℚ := f.map (Int.castRingHom ℚ)
+    ((fℚ.map (algebraMap ℚ (AdjoinRoot fℚ))).IsRoot (AdjoinRoot.mk fℚ b)) ∧
+      AdjoinRoot.mk fℚ b ≠ AdjoinRoot.root fℚ := by
+  let fℚ := f.map (Int.castRingHom ℚ)
+  let _ : Fact (Irreducible fℚ) := ⟨hirr⟩
+  have hfℚ : fℚ.Monic := hf.map _
+  constructor
+  · rw [Polynomial.IsRoot, eval_map, ← aeval_def, ← AdjoinRoot.aeval_eq b, ← aeval_comp,
+      AdjoinRoot.aeval_eq,
+      AdjoinRoot.mk_eq_zero, ← modByMonic_eq_zero_iff_dvd hfℚ]
+    exact h.comp_modByMonic_eq_zero
+  · intro heq
+    apply h.modByMonic_ne_X_modByMonic
+    have heq' : AdjoinRoot.mk fℚ b = AdjoinRoot.mk fℚ X := by
+      exact heq
+    have hmod := congrArg (AdjoinRoot.modByMonicHom hfℚ) heq'
+    rw [AdjoinRoot.modByMonicHom_mk, AdjoinRoot.modByMonicHom_mk] at hmod
+    exact hmod
 
 /-- The polynomial `X² - 2` supplies formal second-root evidence for the cyclic quintic
 `X⁵ + X⁴ - 4X³ - 3X² + 3X + 1`. For this monic irreducible quintic, it represents a second
