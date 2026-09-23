@@ -40,8 +40,10 @@ This proves Stage 4, item 11 of the Tau Ceti universal-covers roadmap
   equalities.
 * `Circle.subsingleton_homotopyGroup`, `Circle.homotopyGroup_eq_one` and
   `Circle.homotopyGroupPi_eq_one`: the same statements for the complex unit circle.
-* `TauCeti.EuclideanSpace.subsingleton_homotopyGroup_sphere`: the same vanishing for the unit
-  circle of `EuclideanSpace ℝ (Fin 2)`, the model in which the Euclidean spheres are stated.
+* `TauCeti.EuclideanSpace.subsingleton_homotopyGroup_sphere`,
+  `TauCeti.EuclideanSpace.homotopyGroup_eq_one_sphere` and
+  `TauCeti.EuclideanSpace.homotopyGroupPi_eq_one_sphere`: the same statements for the unit circle
+  of `EuclideanSpace ℝ (Fin 2)`, the model in which the Euclidean spheres are stated.
 
 The covering map is Junyan Xu's `AddCircle.isCoveringMap_coe` in
 `Mathlib.Topology.Covering.AddCircle`.
@@ -110,6 +112,18 @@ instance subsingleton_homotopyGroup_sphere :
     Subsingleton (HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) y) :=
   (HomotopyGroup.homeomorphEquiv (N := N) sphereHomeomorphCircle y).subsingleton_congr.mpr
     inferInstance
+
+/-- Every higher homotopy class of the unit circle of `EuclideanSpace ℝ (Fin 2)` is the
+identity. -/
+theorem homotopyGroup_eq_one_sphere [DecidableEq N]
+    (a : HomotopyGroup N (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) y) : a = 1 :=
+  Subsingleton.elim _ _
+
+/-- Every element of `π_(n + 2)` of the unit circle of `EuclideanSpace ℝ (Fin 2)` is the
+identity. -/
+theorem homotopyGroupPi_eq_one_sphere (n : ℕ)
+    (a : π_ (n + 2) (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) y) : a = 1 :=
+  homotopyGroup_eq_one_sphere y a
 
 end EuclideanSpace
 
