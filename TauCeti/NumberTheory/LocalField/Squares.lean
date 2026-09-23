@@ -296,7 +296,7 @@ theorem isSquare_zpow_mul_iff {π w : Kˣ} (hπ : IsUniformizer K π)
     IsSquare (π ^ m * w) ↔ Even m ∧ IsSquare w := by
   have hπ' := (isUniformizer_def π).mp hπ
   refine ⟨fun hsq ↦ ?_, ?_⟩
-  · -- The valuation of `π ^ m * w` is `m`, so `m` is even.
+  · -- The valuation of `π ^ m * w` is `m` plus the even valuation of `w`, so `m` is even.
     have hm : Even m := by
       have hev := even_toAdd_normalizedValuation_of_isSquare hsq
       rw [map_mul, toAdd_mul, normalizedValuation_zpow_of_eq_ofAdd_one hπ', toAdd_ofAdd] at hev
