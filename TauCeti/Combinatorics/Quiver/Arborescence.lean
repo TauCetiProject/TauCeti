@@ -229,7 +229,7 @@ theorem symmetrifiedTreeEdgeMap_apply_inr (T : WideSubquiver (Symmetrify V))
     symmetrifiedTreeEdgeMap T ⟨a, b, ⟨Sum.inr e, he⟩⟩ = ⟨b, a, ⟨e, Or.inr he⟩⟩ := rfl
 
 /-- The unoriented edges of an arborescence have cardinality one less than its vertex set. -/
-@[simp] theorem symmetrifiedTreeSetCard [Finite V]
+theorem symmetrifiedTreeSetCard [Finite V]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
     Nat.card (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
       Set (Quiver.Total V)) = Nat.card V - 1 := by
@@ -275,7 +275,7 @@ private lemma finiteVertices_of_finiteTotal [Finite (Quiver.Total V)]
 
 /-- The directed edges outside the underlying unoriented spanning tree are exactly the total
 number of directed edges plus one minus the number of vertices. -/
-@[simp] theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
+theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
     Nat.card
         ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ :
