@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Relrank
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.RatFunc.PowerTower
 public import TauCeti.RingTheory.Valuation.Discrete.Frobenius
@@ -124,9 +123,8 @@ theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionFi
     _ = Subfield.relfinrank k⟮y⟯.toSubfield ⊤ * p := Nat.mul_comm _ _
 
 /-- **The kernel of the universal derivation is the Frobenius subfield**: in a one-variable
-function field over a perfect field, `d x = 0` exactly when `x` is a `p`-th power. The kernel is
-an intermediate field containing `F^p`, and `[F : F^p] = p` is prime, so the two coincide unless
-the kernel is all of `F` — which a separating element rules out. -/
+function field over a perfect field, `d x = 0` exactly when `x` is a `p`-th power. This identifies
+differential nonvanishing with the Frobenius-subfield obstruction used by separating criteria. -/
 theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] (x : F) :
     D k F x = 0 ↔ x ∈ (frobenius F p).fieldRange := by

@@ -73,9 +73,8 @@ namespace TauCeti
 
 open scoped IntermediateField
 
-/-- **`[k(x) : k(x ^ n)] = n`** for an element `x` transcendental over `k`: the identification
-of `k(X)` with `k⟮x⟯` carries `k⟮X ^ n⟯` to `k⟮x ^ n⟯`, so `TauCeti.RatFunc.finrank_adjoin_X_pow`
-transports. -/
+/-- **`[k(x) : k(x ^ n)] = n`** for an element `x` transcendental over `k`. This supplies the
+power-subfield degree formula for arbitrary transcendental parameters. -/
 theorem relfinrank_adjoin_pow_adjoin {k : Type*} [Field k] {F : Type*} [Field F] [Algebra k F]
     {x : F} (hx : Transcendental k x) (n : ℕ) :
     IntermediateField.relfinrank k⟮x ^ n⟯ k⟮x⟯ = n := by
@@ -96,8 +95,9 @@ theorem relfinrank_adjoin_pow_adjoin {k : Type*} [Field k] {F : Type*} [Field F]
   have hvalPow : (IntermediateField.adjoin k
       {(⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) ^ n}).map k⟮x⟯.val =
       k⟮x ^ n⟯ := by
-    rw [IntermediateField.adjoin_map, Set.image_singleton, map_pow]
-    rfl
+    simpa only [IntermediateField.lift, IntermediateField.coe_pow] using
+      (IntermediateField.lift_adjoin_simple k k⟮x⟯
+        ((⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) ^ n))
   have hvalTop : (⊤ : IntermediateField k k⟮x⟯).map k⟮x⟯.val = k⟮x⟯ :=
     IntermediateField.lift_top (F := k) k⟮x⟯
   calc

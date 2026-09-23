@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import TauCeti.FieldTheory.FunctionField.SeparablyGenerated
 public import TauCeti.FieldTheory.RatFunc.Transcendental
+public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 
 /-!
@@ -154,9 +155,8 @@ theorem derivativeOfSeparating_self : derivativeOfSeparating hx x = 1 :=
 
 end Separating
 
-/-- **A separable algebraic element has vanishing differential**: differentiating the relation
-`(minpoly k x)(x) = 0` gives `(minpoly k x)'(x) • d x = 0`, and separability makes the scalar
-nonzero. -/
+/-- A separable algebraic element has vanishing universal differential, so the universal
+derivation detects only the inseparable or transcendental part of an extension. -/
 theorem D_eq_zero_of_isSeparable (hx : IsSeparable k x) : D k F x = 0 := by
   have hcoeff : aeval x (minpoly k x).derivative ≠ 0 :=
     Separable.aeval_derivative_ne_zero hx (minpoly.aeval k x)
@@ -195,16 +195,13 @@ theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
   have hunr : Algebra.IsSeparable k⟮x⟯ F ↔ Subsingleton Ω[F⁄k⟮x⟯] := by
     rw [← Algebra.FormallyUnramified.iff_isSeparable, Algebra.formallyUnramified_iff]
   have hmap : Subsingleton Ω[F⁄k⟮x⟯] ↔
-      (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range = ⊤ := by
-    rw [KaehlerDifferential.range_mapBaseChange, LinearMap.ker_eq_top]
-    refine ⟨fun h ↦ LinearMap.ext fun a ↦ Subsingleton.elim _ _, fun h ↦ ⟨fun a b ↦ ?_⟩⟩
-    obtain ⟨a, rfl⟩ := KaehlerDifferential.map_surjective k k⟮x⟯ F a
-    obtain ⟨b, rfl⟩ := KaehlerDifferential.map_surjective k k⟮x⟯ F b
-    rw [h, LinearMap.zero_apply, LinearMap.zero_apply]
+      (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range = ⊤ :=
+    subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k k⟮x⟯ F
   have hrange : (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range =
       Submodule.span F {D k F x} := by
     let x' : k⟮x⟯ := ⟨x, IntermediateField.subset_adjoin k {x} rfl⟩
-    have hx'val : algebraMap k⟮x⟯ F x' = x := rfl
+    have hx'val : algebraMap k⟮x⟯ F x' = x := by
+      simpa only [x'] using IntermediateField.algebraMap_apply k⟮x⟯ x'
     have hx' : Transcendental k x' :=
       (Subalgebra.transcendental_iff_transcendental_val
         (S := k⟮x⟯.toSubalgebra)).mpr hx
@@ -218,34 +215,17 @@ theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
         ext z
         simp [e])
     obtain ⟨b, hb⟩ := exists_basis_unit_D hx'
-    refine le_antisymm ?_ ?_
-    · rintro v ⟨t, rfl⟩
-      induction t using TensorProduct.induction_on with
-      | zero => rw [map_zero]; exact Submodule.zero_mem _
-      | tmul c η =>
-        let a := b.repr η ()
-        have hη : a • b () = η := by simpa [a] using b.sum_repr η
-        rw [← hη, KaehlerDifferential.mapBaseChange_tmul, map_smul, hb,
-          KaehlerDifferential.map_D]
-        exact Submodule.smul_mem _ _ (Submodule.smul_of_tower_mem _ _
-          (Submodule.mem_span_singleton_self _))
-      | add a b ha hb => rw [map_add]; exact Submodule.add_mem _ ha hb
-    · rw [Submodule.span_le, Set.singleton_subset_iff]
-      refine ⟨1 ⊗ₜ D k k⟮x⟯ x', ?_⟩
-      rw [KaehlerDifferential.mapBaseChange_tmul, one_smul, KaehlerDifferential.map_D]
-      exact congrArg (D k F) hx'val
+    have hspan : Submodule.span k⟮x⟯ {D k k⟮x⟯ x'} = ⊤ := by
+      rw [← hb]
+      simpa only [Set.range_unique] using b.span_eq
+    rw [range_mapBaseChange_eq_span_singleton k k⟮x⟯ F
+      (D k k⟮x⟯ x') hspan, KaehlerDifferential.map_D, hx'val]
   have hdim : finrank F Ω[F⁄k] = 1 := by
     obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
     let _ := hsep
     exact finrank_kaehlerDifferential_eq_one_of_separating hy
-  have hspan : Submodule.span F {D k F x} = ⊤ ↔ D k F x ≠ 0 := by
-    constructor
-    · intro h hdx
-      rw [hdx, Submodule.span_zero_singleton] at h
-      obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
-      let _ := hsep
-      exact D_ne_zero_of_separating hy ((Submodule.mem_bot _).1 (h ▸ Submodule.mem_top))
-    · exact fun hdx ↦ (finrank_eq_one_iff_of_nonzero _ hdx).mp hdim
+  have hspan : Submodule.span F {D k F x} = ⊤ ↔ D k F x ≠ 0 :=
+    span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one hdim _
   rw [hunr, hmap, hrange, hspan]
 
 end IsFunctionField
