@@ -24,6 +24,8 @@ norm: the Clifford norm descends modulo squares through the kernel of that actio
 * `CliffordAlgebra.self_mul_star_eq_algebraMap_lipschitzNorm`: its second
   characteristic Clifford-product equation.
 * `CliffordAlgebra.lipschitzNorm_unitι`: its value on a generating vector.
+* `CliffordAlgebra.mem_pinGroup_iff_lipschitzNorm_eq_one`: the Pin group is cut out of the
+  Lipschitz group by this norm.
 * `CliffordAlgebra.lipschitzNorm_scalarUnits`: the norm of a scalar unit is its square.
 
 ## References
@@ -203,6 +205,14 @@ theorem lipschitzNorm_unitι (Q : QuadraticForm R V) (v : V) [Invertible (Q v)] 
       ⟨unitι Q v, unitι_mem_lipschitzGroup v⟩ : R) =
     algebraMap R (CliffordAlgebra Q) (-Q v)
   exact h.symm.trans (map_neg _ _).symm
+
+/-- A Lipschitz element lies in the Pin group exactly when its `lipschitzNorm` is one. -/
+theorem mem_pinGroup_iff_lipschitzNorm_eq_one (Q : QuadraticForm R V) (x : lipschitzGroup Q) :
+    ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ pinGroup Q ↔ lipschitzNorm Q x = 1 := by
+  rw [pinGroup.units_mem_iff, Unitary.mem_iff, star_mul_self_eq_algebraMap_lipschitzNorm,
+    self_mul_star_eq_algebraMap_lipschitzNorm, and_self, ← map_one (algebraMap R _),
+    (algebraMap_injective Q).eq_iff, ← Units.val_one, Units.val_inj]
+  exact and_iff_right x.2
 
 /-- A Lipschitz element equal to a scalar unit has norm equal to the square of that scalar. -/
 theorem lipschitzNorm_eq_of_coe_eq_algebraMap {Q : QuadraticForm R V}
