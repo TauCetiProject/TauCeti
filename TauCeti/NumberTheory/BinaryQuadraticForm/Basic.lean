@@ -137,8 +137,7 @@ instance : MulAction SL(2, R) (BinaryQuadraticForm R) where
 theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) :
     discrim (γ • f).a (γ • f).b (γ • f).c = discrim f.a f.b f.c := by
   simp only [smul_a, smul_b, smul_c, discrim]
-  linear_combination (γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 + 1) * (f.b ^ 2 - 4 * f.a * f.c) *
-    SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+  linear_combination (f.b ^ 2 - 4 * f.a * f.c) * congr($(γ.fin_two_mul_sub_mul_eq_one) ^ 2)
 
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/
