@@ -142,7 +142,8 @@ noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups (x : E)
   have he : MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) ≃
       MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F))
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :=
-    e.trans (Equiv.subtypeEquivRight fun J ↦ by rw [← hy])
+    e.trans (Equiv.subtypeEquivRight fun J ↦ by
+      rw [← hy, MulEquiv.toMonoidHom_eq_coe])
   exact (IntermediateField.conjugateFieldsEquivConjugateSubgroups
     (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))).trans he.symm
 
@@ -157,7 +158,7 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply (x : E)
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (K : conjugateSimpleFields (F := F) x) :
     ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy K).1).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom = K.1.fixingSubgroup := by
+      ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) = K.1.fixingSubgroup := by
   let _ : FiniteDimensional F F⟮x⟯ :=
     adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
@@ -173,13 +174,14 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply (x : E)
   let h : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y) ≃
       MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F)) E₀.fixingSubgroup :=
-    g.trans (Equiv.subtypeEquivRight fun J ↦ by rw [← hy])
-  change ((h.symm (f K)).1).map e.toMonoidHom = K.1.fixingSubgroup
-  have hh (J) : (h J).1 = J.1.map e.toMonoidHom := by
-    change (g J).1 = J.1.map e.toMonoidHom
+    g.trans (Equiv.subtypeEquivRight fun J ↦ by
+      rw [← hy, MulEquiv.toMonoidHom_eq_coe])
+  change ((h.symm (f K)).1).map (e : _ →* _) = K.1.fixingSubgroup
+  have hh (J) : (h J).1 = J.1.map (e : _ →* _) := by
+    change (g J).1 = J.1.map (e : _ →* _)
     exact MulEquiv.conjugateSubgroupsEquiv_apply e _ J
   calc
-    ((h.symm (f K)).1).map e.toMonoidHom = (h (h.symm (f K))).1 := (hh _).symm
+    ((h.symm (f K)).1).map (e : _ →* _) = (h (h.symm (f K))).1 := (hh _).symm
     _ = (f K).1 := congrArg Subtype.val (h.apply_symm_apply _)
     _ = K.1.fixingSubgroup :=
       IntermediateField.conjugateFieldsEquivConjugateSubgroups_apply E₀ K
@@ -196,7 +198,7 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply (x : E)
     (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y)) :
     (((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy).symm H).1).fixingSubgroup =
-      H.1.map (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom := by
+      H.1.map ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) := by
   rw [← conjugateSimpleFieldsEquivConjugateSubgroups_apply x hsep y hy
     ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy).symm H),
     Equiv.apply_symm_apply]

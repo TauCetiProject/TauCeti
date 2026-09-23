@@ -44,7 +44,7 @@ namespace MulEquiv
 def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G) :
     MulAction.orbit (ConjAct G) H ≃
-      MulAction.orbit (ConjAct G') (H.map e.toMonoidHom) :=
+      MulAction.orbit (ConjAct G') (H.map (e : G →* G')) :=
   e.mapSubgroup.subtypeEquiv fun J ↦ by
     constructor
     · intro h
@@ -78,7 +78,7 @@ def conjugateSubgroupsEquiv {G G' : Type*} [Group G] [Group G']
 @[simp]
 theorem conjugateSubgroupsEquiv_apply {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G) (J : MulAction.orbit (ConjAct G) H) :
-    ((conjugateSubgroupsEquiv e H) J).1 = J.1.map e.toMonoidHom := by
+    ((conjugateSubgroupsEquiv e H) J).1 = J.1.map (e : G →* G') := by
   change e.mapSubgroup J.1 = J.1.map e.toMonoidHom
   rfl
 
@@ -86,8 +86,8 @@ theorem conjugateSubgroupsEquiv_apply {G G' : Type*} [Group G] [Group G']
 @[simp]
 theorem conjugateSubgroupsEquiv_symm_apply {G G' : Type*} [Group G] [Group G']
     (e : G ≃* G') (H : Subgroup G)
-    (J : MulAction.orbit (ConjAct G') (H.map e.toMonoidHom)) :
-    (((conjugateSubgroupsEquiv e H).symm J).1) = J.1.map e.symm.toMonoidHom := by
+    (J : MulAction.orbit (ConjAct G') (H.map (e : G →* G'))) :
+    (((conjugateSubgroupsEquiv e H).symm J).1) = J.1.map (e.symm : G' →* G) := by
   change e.mapSubgroup.symm J.1 = J.1.map e.symm.toMonoidHom
   rfl
 
