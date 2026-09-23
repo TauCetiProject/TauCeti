@@ -278,7 +278,7 @@ theorem toRectangleDecomposition_second_toGridRectangle
 theorem isEmpty_toRectangleDecomposition_first
     (D : GridPentagonRectangleDecomposition a s x z) (h : D.pentagon.IsEmpty) :
     D.toRectangleDecomposition.first.IsEmpty := by
-  change D.toRectangleDecomposition.first.toGridRectangle.IsEmptyFor x
+  unfold GridRectangleBetween.IsEmpty
   rw [D.toRectangleDecomposition_first_toGridRectangle]
   exact h
 
@@ -392,7 +392,7 @@ theorem toRectangleDecomposition_second_toGridRectangle
 theorem isEmpty_toRectangleDecomposition_first
     (D : GridRectanglePentagonDecomposition a s x z) (h : D.rectangle.IsEmpty) :
     D.toRectangleDecomposition.first.IsEmpty := by
-  change D.toRectangleDecomposition.first.toGridRectangle.IsEmptyFor x
+  unfold GridRectangleBetween.IsEmpty
   rw [D.toRectangleDecomposition_first_toGridRectangle]
   exact h
 
