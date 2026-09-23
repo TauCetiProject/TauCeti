@@ -55,6 +55,22 @@ open IdealArithmeticFunction
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- A local Euler factor is nonzero at `s` if the corresponding local power series is nonzero at
+`N(P) ^ (-s)`. -/
+theorem eulerFactor_ne_zero_of_localPowerSeries_ne_zero (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hne : FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+      (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ≠ 0) :
+    D.eulerFactor P s ≠ 0 := by
+  rw [D.eulerFactor_eq_tsum]
+  rw [FormalMultilinearSeries.ofScalars_sum_eq] at hne
+  convert hne using 1
+  exact tsum_congr fun e ↦ by
+    rw [D.coeff_localPowerSeries]
+    exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
+      D.toIdealArithmeticFunction P s e)
+
 /-- **Evaluation of a local formal logarithmic derivative.** If the coefficient series of
 `X F_P'(X) / F_P(X)` converges at `X = N(P) ^ (-s)` and the local Euler factor does not vanish at
 `s`, then the analytic logarithmic derivative is `-log N(P)` times that sum.
