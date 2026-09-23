@@ -24,10 +24,10 @@ in every characteristic and without any root of unity in the constants. The uppe
 `char k ∤ n`: it is the statement that adjoining an `r_P`-th root of a unit of `𝒪_P` is
 unramified.
 
-When `n` is coprime to `ord_P u` the lower bound is already the whole degree. If `y` generates
-`F'` over `F`, then `X ^ n - C u` is irreducible by the valuative criterion
-`Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one`, so `[F' : F] = n`, and `n ∣ e(P' ∣ P)`
-forces `e(P' ∣ P) = n`: the place `P` is totally ramified in `F'`, and `ord_{P'} y = ord_P u`.
+When `n` is coprime to `ord_P u` the lower bound is already the whole degree if `[F' : F] = n`.
+If `y` generates `F'` over `F`, this degree equality follows from
+`Valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one`. Then `n ∣ e(P' ∣ P)` forces
+`e(P' ∣ P) = n`: the place `P` is totally ramified in `F'`, and `ord_{P'} y = ord_P u`.
 This covers, for instance, the places of `k(x)` at the simple zeros of a squarefree `f` in
 `y ^ 2 = f(x)`, and the place at infinity when `f` has odd degree.
 
@@ -38,11 +38,9 @@ This covers, for instance, the places of `k(x)` at the simple zeros of a squaref
 * `TauCeti.Place.div_gcd_ord_dvd_ramificationIdx_of_pow_eq`: `n / gcd(n, ord_P u)` divides
   `e(P' ∣ P)`.
 * `TauCeti.Place.isTotallyRamified_of_pow_eq_of_gcd_ord_eq_one` and
-  `TauCeti.Place.ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one`: if `F' = F(y)` and
+  `TauCeti.Place.ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one`: if `[F' : F] = n` and
   `gcd(n, ord_P u) = 1`, then `P'` is totally ramified over `F` with `e(P' ∣ P) = n`.
 * `TauCeti.Place.ord_eq_of_pow_eq_of_gcd_ord_eq_one`: in that case `ord_{P'} y = ord_P u`.
-* `TauCeti.Place.finrank_eq_of_pow_eq_of_gcd_ord_eq_one`: `[F(y) : F] = n` as soon as one place
-  of `F` has `gcd(n, ord_P u) = 1`.
 
 ## References
 
@@ -66,23 +64,6 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-
-omit [Algebra k F'] [IsScalarTower k F F'] in
-/-- **The degree of a radical extension** (Stichtenoth, Proposition 3.7.3): if `y` generates `F'`
-over `F` with `y ^ n = u`, and some place `P` of `F / k` has `gcd(n, ord_P u) = 1`, then
-`[F' : F] = n`, because `X ^ n - C u` is irreducible. -/
-theorem finrank_eq_of_pow_eq_of_gcd_ord_eq_one (P : Place k F) {y : F'} {n : ℕ} {u : F}
-    (htop : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
-    (h : Int.gcd n (P.ord u) = 1) : Module.finrank F F' = n := by
-  have hord : P.valuation.ord u = P.ord u := by rw [Valuation.ord_def, P.ord_def]
-  have hirr : Irreducible (X ^ n - C u) :=
-    P.valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one hn (hord ▸ h)
-  have hroot : aeval y (X ^ n - C u) = 0 := by rw [map_sub, aeval_X_pow, aeval_C, hy, sub_self]
-  have hint : IsIntegral F y := ⟨X ^ n - C u, monic_X_pow_sub_C u hn, by rwa [← aeval_def]⟩
-  have hmin : X ^ n - C u = minpoly F y :=
-    minpoly.eq_of_irreducible_of_monic hirr hroot (monic_X_pow_sub_C u hn)
-  rw [← IntermediateField.finrank_top', ← htop, IntermediateField.adjoin.finrank hint, ← hmin,
-    natDegree_X_pow_sub_C]
 
 variable (k F) [Algebra.IsIntegral F F'] {P' : Place k' F'}
 
@@ -119,11 +100,13 @@ theorem div_gcd_ord_dvd_ramificationIdx_of_pow_eq {y : F'} {n : ℕ} {u : F} (hn
   rw [← Int.natCast_dvd_natCast, Int.natCast_div]
   exact hdvd
 
-private theorem ramificationIdx_eq_and_finrank_eq {y : F'} {n : ℕ} {u : F}
-    (htop : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
+/-- **Total ramification in a radical extension** (Stichtenoth, Proposition 3.7.3(b)): if
+`[F' : F] = n` with `y ^ n = u`, `n ≠ 0`, and `n` is coprime to the order of `u` at the place `P`
+of `F` below `P'`, then `e(P' ∣ P) = n`. -/
+theorem ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : ℕ} {u : F}
+    (hfr : Module.finrank F F' = n) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
     (h : Int.gcd n ((P'.restrict k F).ord u) = 1) :
-    ramificationIdx F P' = n ∧ Module.finrank F F' = n := by
-  have hfr := finrank_eq_of_pow_eq_of_gcd_ord_eq_one (P'.restrict k F) htop hy hn h
+    ramificationIdx F P' = n := by
   have hfin : FiniteDimensional F F' := FiniteDimensional.of_finrank_pos (by
     rw [hfr]
     exact Nat.pos_of_ne_zero hn)
@@ -131,38 +114,29 @@ private theorem ramificationIdx_eq_and_finrank_eq {y : F'} {n : ℕ} {u : F}
   rw [h, Nat.div_one] at hdvd
   have hle : ramificationIdx F P' ≤ n :=
     hfr ▸ @ramificationIdx_le_finrank k' F F' _ _ _ _ _ P' hfin
-  exact ⟨hle.antisymm (Nat.le_of_dvd (ramificationIdx_pos F P') hdvd), hfr⟩
+  exact hle.antisymm (Nat.le_of_dvd (ramificationIdx_pos F P') hdvd)
 
 /-- **Total ramification in a radical extension** (Stichtenoth, Proposition 3.7.3(b)): if
-`F' = F(y)` with `y ^ n = u`, `n ≠ 0`, and `n` is coprime to the order of `u` at the place `P`
-of `F` below `P'`, then `e(P' ∣ P) = n`. -/
-theorem ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : ℕ} {u : F}
-    (htop : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
-    (h : Int.gcd n ((P'.restrict k F).ord u) = 1) :
-    ramificationIdx F P' = n :=
-  (ramificationIdx_eq_and_finrank_eq k F htop hy hn h).1
-
-/-- **Total ramification in a radical extension** (Stichtenoth, Proposition 3.7.3(b)): if
-`F' = F(y)` with `y ^ n = u`, `n ≠ 0`, and `n` is coprime to the order of `u` at the place `P`
+`[F' : F] = n` with `y ^ n = u`, `n ≠ 0`, and `n` is coprime to the order of `u` at the place `P`
 of `F` below `P'`, then `P'` is totally ramified over `F`. With
 `TauCeti.Place.setOf_restrict_eq_eq_singleton_of_isTotallyRamified` this says that `P'` is the
 only place of `F'` over `P`, with relative degree `1`. -/
 theorem isTotallyRamified_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : ℕ} {u : F}
-    (htop : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
+    (hfr : Module.finrank F F' = n) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
     (h : Int.gcd n ((P'.restrict k F).ord u) = 1) :
     IsTotallyRamified F P' := by
-  obtain ⟨he, hfr⟩ := ramificationIdx_eq_and_finrank_eq k F htop hy hn h
+  have he := ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one k F hfr hy hn h
   rw [isTotallyRamified_iff, he, hfr]
 
-/-- **The order of the radical at a totally ramified place**: if `F' = F(y)` with `y ^ n = u`,
+/-- **The order of the radical at a totally ramified place**: if `[F' : F] = n` with `y ^ n = u`,
 `n ≠ 0`, and `n` is coprime to the order of `u` at the place `P` of `F` below `P'`, then
 `ord_{P'} y = ord_P u`. In particular `y` is a prime element at `P'` when `u` is one at `P`. -/
 theorem ord_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : ℕ} {u : F}
-    (htop : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
+    (hfr : Module.finrank F F' = n) (hy : y ^ n = algebraMap F F' u) (hn : n ≠ 0)
     (h : Int.gcd n ((P'.restrict k F).ord u) = 1) :
     P'.ord y = (P'.restrict k F).ord u := by
   have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_eq k F (P' := P') hy
-  rw [ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one k F htop hy hn h] at hkey
+  rw [ramificationIdx_eq_of_pow_eq_of_gcd_ord_eq_one k F hfr hy hn h] at hkey
   exact mul_left_cancel₀ (by exact_mod_cast hn) hkey
 
 end Place
