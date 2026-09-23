@@ -65,14 +65,14 @@ noncomputable def torsionByPrimeEquiv (p k : ℕ) [NeZero p] :
     rw [nsmul_eq_mul]
     rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
 
+end ZMod
+
 /-- Equality after `torsionByPrimeEquiv` is characterized by its inverse map. -/
 @[simp]
-theorem torsionByPrimeEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
+theorem zmod_torsionByPrimeEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
     (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) :
-    torsionByPrimeEquiv p k x = y ↔ x = (torsionByPrimeEquiv p k).symm y :=
-  (torsionByPrimeEquiv p k).toEquiv.eq_symm_apply.symm
-
-end ZMod
+    ZMod.torsionByPrimeEquiv p k x = y ↔ x = (ZMod.torsionByPrimeEquiv p k).symm y :=
+  (ZMod.torsionByPrimeEquiv p k).toEquiv.eq_symm_apply.symm
 
 end TauCeti
 
