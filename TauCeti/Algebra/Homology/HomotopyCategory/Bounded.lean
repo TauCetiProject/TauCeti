@@ -16,9 +16,9 @@ quotient functor from bounded cochain complexes and proves that this functor is 
 essentially surjective.
 
 The boundedness predicate records both bounds at once. This matters for closure under cones: if
-the source and target of a cochain map are bounded, the standard mapping cone is bounded by the
-minimum of their lower bounds and the maximum of their upper bounds. Consequently the full
-subcategory is stable under shifts and distinguished triangles.
+the source has bounds `(a₁, b₁)` and the target has bounds `(a₂, b₂)`, the standard mapping
+cone has bounds `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. Consequently the full subcategory is
+stable under shifts and distinguished triangles.
 
 The construction follows the organization of Mathlib's bounded-below category
 `HomotopyCategory.Plus`, replacing its one-sided support condition by two-sided boundedness.
@@ -161,10 +161,14 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
     let _ := hb₁
     let _ := ha₂
     let _ := hb₂
+    have quotient_obj_of_as (K : HomotopyCategory C (.up ℤ)) :
+        (HomotopyCategory.quotient C (.up ℤ)).obj K.as = K := by
+      cases K
+      rfl
     let e₁ : (HomotopyCategory.quotient C (.up ℤ)).obj T.obj₁.as ≅ T.obj₁ :=
-      eqToIso (by rfl)
+      eqToIso (quotient_obj_of_as T.obj₁)
     let e₂ : (HomotopyCategory.quotient C (.up ℤ)).obj T.obj₂.as ≅ T.obj₂ :=
-      eqToIso (by rfl)
+      eqToIso (quotient_obj_of_as T.obj₂)
     obtain ⟨f : T.obj₁.as ⟶ T.obj₂.as, hf⟩ :=
       (HomotopyCategory.quotient C (.up ℤ)).map_surjective
         (e₁.hom ≫ T.mor₁ ≫ e₂.inv)
@@ -180,6 +184,8 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
         rw [CochainComplex.mappingCone.isZero_X_iff]
         exact ⟨CochainComplex.isZero_of_isStrictlyLE (K := T.obj₁.as) b₁ (i + 1) (by omega),
           CochainComplex.isZero_of_isStrictlyLE (K := T.obj₂.as) b₂ i (by omega)⟩
+    -- Unfold the compatibility condition from `isoTriangleOfIso₁₂`; the explicit transports
+    -- `e₁` and `e₂` avoid the nonstandard definitional-equality options used by Mathlib's proof.
     · change T.mor₁ ≫ e₂.inv =
         e₁.inv ≫ (HomotopyCategory.quotient C (.up ℤ)).map f
       rw [hf]
