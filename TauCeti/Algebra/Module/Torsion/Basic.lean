@@ -42,6 +42,62 @@ theorem le_torsionBy_natCard {A : Type*} [AddCommGroup A] {H : AddSubgroup A} :
 
 end AddSubgroup
 
+namespace TauCeti
+
+namespace AddSubgroup
+
+/-- Torsion by `a` inside the `b`-torsion subgroup is the ambient `a`-torsion when `a ∣ b`. -/
+def torsionByTorsionByEquiv {A : Type*} [AddCommGroup A] {a b : ℕ} (hab : a ∣ b) :
+    _root_.AddSubgroup.torsionBy (_root_.AddSubgroup.torsionBy A (b : ℤ)) (a : ℤ) ≃+
+      _root_.AddSubgroup.torsionBy A (a : ℤ) := by
+  have ha (x : _root_.AddSubgroup.torsionBy A (a : ℤ)) : a • (x.1 : A) = 0 := by
+    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
+    rwa [natCast_zsmul] at hx
+  exact
+    { toFun := fun x ↦ ⟨x.1.1, _root_.AddSubgroup.torsionBy.nsmul_iff.2 <| by
+          have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
+          rw [natCast_zsmul] at hx
+          exact congrArg Subtype.val hx⟩
+      invFun := fun x ↦
+        ⟨⟨x.1, _root_.AddSubgroup.torsionBy.nsmul_iff.2 <| by
+            obtain ⟨c, rfl⟩ := hab
+            calc
+              (a * c) • (x.1 : A) = c • (a • (x.1 : A)) := by rw [mul_nsmul]
+              _ = 0 := by simp only [ha x, nsmul_zero]⟩,
+          _root_.AddSubgroup.torsionBy.nsmul_iff.2 <| Subtype.ext <| ha x⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl }
+
+end AddSubgroup
+
+namespace AddEquiv
+
+/-- An additive equivalence carries the `n`-torsion subgroup to the `n`-torsion subgroup. -/
+def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B) (n : ℕ) :
+    _root_.AddSubgroup.torsionBy A (n : ℤ) ≃+ _root_.AddSubgroup.torsionBy B (n : ℤ) where
+  toFun x := ⟨e x, _root_.AddSubgroup.torsionBy.nsmul_iff.2 <| by
+    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
+    rw [natCast_zsmul] at hx
+    calc
+      n • e x = e (n • (x.1 : A)) := (map_nsmul e n x.1).symm
+      _ = e 0 := congrArg e hx
+      _ = 0 := map_zero e⟩
+  invFun x := ⟨e.symm x, _root_.AddSubgroup.torsionBy.nsmul_iff.2 <| by
+    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
+    rw [natCast_zsmul] at hx
+    calc
+      n • e.symm x = e.symm (n • (x.1 : B)) := (map_nsmul e.symm n x.1).symm
+      _ = e.symm 0 := congrArg e.symm hx
+      _ = 0 := map_zero e.symm⟩
+  left_inv x := Subtype.ext (e.left_inv x)
+  right_inv x := Subtype.ext (e.right_inv x)
+  map_add' _ _ := Subtype.ext (e.map_add _ _)
+
+end AddEquiv
+
+end TauCeti
+
 open scoped nonZeroDivisors
 
 namespace TauCeti

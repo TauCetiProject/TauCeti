@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Algebra.DirectSum.Decomposition
 
 /-!
 # Homomorphisms out of a product of monoids
@@ -54,3 +56,21 @@ theorem coprodEquiv_symm_apply (f : M × N →* P) :
     coprodEquiv.symm f = (f.comp (inl M N), f.comp (inr M N)) := (rfl)
 
 end MonoidHom
+
+namespace TauCeti
+
+namespace AddEquiv
+
+/-- Functions into products are additively equivalent to products of function spaces. -/
+def piProd {ι : Type*} (B C : ι → Type*)
+    [∀ i, AddCommGroup (B i)] [∀ i, AddCommGroup (C i)] :
+    (∀ i, B i × C i) ≃+ (∀ i, B i) × (∀ i, C i) :=
+  { Equiv.arrowProdEquivProdArrow ι B C with map_add' := fun _ _ ↦ rfl }
+
+/-- A product of two copies of an additive group, presented as functions on `Fin 2`. -/
+def finTwoArrowEquivProd (A : Type*) [AddCommGroup A] : (Fin 2 → A) ≃+ A × A :=
+  { finTwoArrowEquiv A with map_add' := fun _ _ ↦ rfl }
+
+end AddEquiv
+
+end TauCeti

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
+import TauCeti.Algebra.Group.Prod
+import TauCeti.Data.ZMod.Torsion
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.GroupTheory.Index
@@ -34,54 +36,6 @@ open scoped DirectSum
 
 variable {G : Type*} [AddCommGroup G]
 
-/-- The subgroup of `ZMod (p ^ (k + 1))` killed by `p` is additively equivalent to `ZMod p`. -/
-private noncomputable def torsionByPrimeEquiv (p k : ℕ) [NeZero p] :
-    ZMod p ≃+ AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ) := by
-  let P : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ) :=
-    ⟨(p ^ k : ZMod (p ^ (k + 1))), AddSubgroup.torsionBy.nsmul_iff.2 (by
-      simp only [nsmul_eq_mul]
-      rw [mul_comm, ← pow_succ, ← Nat.cast_pow, ZMod.natCast_self])⟩
-  let f : ZMod p →+ AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ) :=
-    ZMod.lift p ⟨zmultiplesHom _ P, by
-      exact (zmultiplesHom_apply _ P (p : ℤ)).trans <|
-        (natCast_zsmul P p).trans (AddSubgroup.torsionBy.nsmul P)⟩
-  refine AddEquiv.ofBijective f ⟨?_, ?_⟩
-  · dsimp only [f]
-    rw [ZMod.lift_injective]
-    intro m hm
-    have hm' : ((m * (p : ℤ) ^ k : ℤ) : ZMod (p ^ (k + 1))) = 0 := by
-      simpa [P, ZMod.lift_coe, zmultiplesHom_apply, mul_comm] using congrArg Subtype.val hm
-    rw [ZMod.intCast_zmod_eq_zero_iff_dvd] at hm'
-    have hp0 : (p : ℤ) ^ k ≠ 0 := pow_ne_zero _ (by exact_mod_cast NeZero.ne p)
-    have hm'' : (p : ℤ) ^ k * p ∣ (p : ℤ) ^ k * m := by
-      simpa [pow_succ, mul_comm] using hm'
-    have hpm : (p : ℤ) ∣ m := by
-      exact (mul_dvd_mul_iff_left hp0).mp hm''
-    exact (ZMod.intCast_zmod_eq_zero_iff_dvd m p).2 hpm
-  · intro x
-    have hx : ((p : ℤ) : ZMod (p ^ (k + 1))) * x.1 = 0 := by
-      simpa only [Int.cast_smul_eq_zsmul, zsmul_eq_mul] using
-        (Submodule.mem_torsionBy_iff _ _).mp x.2
-    have hdiv : p ^ k ∣ x.1.val := by
-      rw [← ZMod.natCast_zmod_val x.1] at hx
-      simp only [Int.cast_natCast] at hx
-      rw [← Nat.cast_mul, ZMod.natCast_eq_zero_iff] at hx
-      have hx' : p * p ^ k ∣ p * x.1.val := by
-        simpa only [pow_succ, mul_comm (p ^ k)] using hx
-      exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne p))).mp hx'
-    refine ⟨(((x.1.val / p ^ k : ℕ) : ℤ) : ZMod p), Subtype.ext ?_⟩
-    dsimp only [f]
-    rw [ZMod.lift_coe]
-    simp only [zmultiplesHom_apply]
-    rw [natCast_zsmul]
-    -- `Subtype.ext` leaves equality in the ambient `ZMod`; its scalar action is inherited.
-    change (x.1.val / p ^ k) • (p ^ k : ZMod (p ^ (k + 1))) = x.1
-    rw [nsmul_eq_mul]
-    rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
-
-/-- A product of two copies of an additive group, presented as functions on `Fin 2`. -/
-private def finTwoAddEquivProd (A : Type*) [AddCommGroup A] : (Fin 2 → A) ≃+ A × A :=
-  { finTwoArrowEquiv A with map_add' := fun _ _ ↦ rfl }
 
 /-- **Rank-two prime-power characterisation.** A finite abelian group killed by `p ^ k`, with
 order `p ^ (2 * k)` and `p ^ 2` elements killed by `p`, is additively equivalent to
@@ -136,7 +90,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
         obtain ⟨j, hj⟩ := Nat.exists_eq_succ_of_ne_zero (ha_pos i).ne'
         rw [hj]
         simpa only [Nat.card_zmod] using
-          Nat.card_congr (torsionByPrimeEquiv p j).symm.toEquiv
+          Nat.card_congr (TauCeti.ZMod.torsionByPrimeEquiv p j).symm.toEquiv
       _ = p ^ Fintype.card ι := by simp
   have hmap : (AddSubgroup.torsionBy G (p : ℤ)).map E.toAddMonoidHom =
       AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) := by
@@ -174,7 +128,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
   refine ⟨E |>.trans (AddEquiv.piCongrRight fun i ↦
       (ZMod.ringEquivCongr (by rw [ha i, ha_eq i])).toAddEquiv) |>.trans
       (AddEquiv.arrowCongr r (AddEquiv.refl (ZMod (p ^ k)))) |>.trans
-      (finTwoAddEquivProd (ZMod (p ^ k)))⟩
+      (TauCeti.AddEquiv.finTwoArrowEquivProd (ZMod (p ^ k)))⟩
 
 end AddCommGroup
 

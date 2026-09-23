@@ -7,8 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 import TauCeti.GroupTheory.FiniteAbelian.RankTwo
+import TauCeti.Algebra.Field.Nonzero
+import TauCeti.Algebra.Group.Prod
+import TauCeti.Algebra.Module.Torsion.Basic
+import TauCeti.Data.Nat.Factorization.PrimePowerProd.Basic
 import Mathlib.Algebra.DirectSum.Decomposition
-import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Data.ZMod.QuotientRing
 
 /-!
@@ -34,67 +37,7 @@ namespace WeierstrassCurve
 
 open scoped DirectSum
 
-variable {A : Type*} [AddCommGroup A]
-
-/-- Torsion by `a` inside the `b`-torsion subgroup is the ambient `a`-torsion when `a ∣ b`. -/
-private def torsionByTorsionByEquiv {a b : ℕ} (hab : a ∣ b) :
-    AddSubgroup.torsionBy (AddSubgroup.torsionBy A (b : ℤ)) (a : ℤ) ≃+
-      AddSubgroup.torsionBy A (a : ℤ) := by
-  have ha (x : AddSubgroup.torsionBy A (a : ℤ)) : a • (x.1 : A) = 0 := by
-    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
-    rwa [natCast_zsmul] at hx
-  exact
-    { toFun := fun x ↦ ⟨x.1.1, AddSubgroup.torsionBy.nsmul_iff.2 <| by
-          have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
-          rw [natCast_zsmul] at hx
-          exact congrArg Subtype.val hx⟩
-      invFun := fun x ↦
-        ⟨⟨x.1, AddSubgroup.torsionBy.nsmul_iff.2 <| by
-            obtain ⟨c, rfl⟩ := hab
-            calc
-              (a * c) • (x.1 : A) = c • (a • (x.1 : A)) := by rw [mul_nsmul]
-              _ = 0 := by simp only [ha x, nsmul_zero]⟩,
-          AddSubgroup.torsionBy.nsmul_iff.2 <| Subtype.ext <| ha x⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      map_add' := fun _ _ ↦ rfl }
-
-/-- An additive equivalence carries the `n`-torsion subgroup to the `n`-torsion subgroup. -/
-private def torsionByCongr {B : Type*} [AddCommGroup B] (e : A ≃+ B) (n : ℕ) :
-    AddSubgroup.torsionBy A (n : ℤ) ≃+ AddSubgroup.torsionBy B (n : ℤ) where
-  toFun x := ⟨e x, AddSubgroup.torsionBy.nsmul_iff.2 <| by
-    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
-    rw [natCast_zsmul] at hx
-    calc
-      n • e x = e (n • (x.1 : A)) := (map_nsmul e n x.1).symm
-      _ = e 0 := congrArg e hx
-      _ = 0 := map_zero e⟩
-  invFun x := ⟨e.symm x, AddSubgroup.torsionBy.nsmul_iff.2 <| by
-    have hx := (Submodule.mem_torsionBy_iff _ _).mp x.2
-    rw [natCast_zsmul] at hx
-    calc
-      n • e.symm x = e.symm (n • (x.1 : B)) := (map_nsmul e.symm n x.1).symm
-      _ = e.symm 0 := congrArg e.symm hx
-      _ = 0 := map_zero e.symm⟩
-  left_inv x := Subtype.ext (e.left_inv x)
-  right_inv x := Subtype.ext (e.right_inv x)
-  map_add' _ _ := Subtype.ext (e.map_add _ _)
-
-/-- Functions into products are additively equivalent to products of function spaces. -/
-private def piProdAddEquiv {ι : Type*} (B C : ι → Type*)
-    [∀ i, AddCommGroup (B i)] [∀ i, AddCommGroup (C i)] :
-    (∀ i, B i × C i) ≃+ (∀ i, B i) × (∀ i, C i) :=
-  { Equiv.arrowProdEquivProdArrow ι B C with map_add' := fun _ _ ↦ rfl }
-
 variable {K : Type*} [Field K] [IsSepClosed K]
-
-omit [IsSepClosed K] in
-/-- A divisor of a nonzero field element is nonzero. -/
-private theorem natCast_ne_zero_of_dvd {N d : ℕ} (hN : (N : K) ≠ 0) (hd : d ∣ N) :
-    (d : K) ≠ 0 := by
-  obtain ⟨c, rfl⟩ := hd
-  contrapose! hN
-  rw [Nat.cast_mul, hN, zero_mul]
 
 open scoped Classical in
 /-- The known geometric torsion count, transported across base change by the identity map. -/
@@ -103,9 +46,9 @@ private theorem natCard_torsionBy_self (W : WeierstrassCurve K) [W.IsElliptic]
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point (d : ℤ)) = d ^ 2 := by
   let eSelf : (W.toAffine⁄K).toAffine.Point ≃+ W.toAffine.Point :=
     AddEquiv.cast (M := fun V : Affine K ↦ V.Point) W.toAffine.baseChange_self
-  rw [← Nat.card_congr (torsionByCongr eSelf d).toEquiv]
+  rw [← Nat.card_congr (TauCeti.AddEquiv.torsionByCongr eSelf d).toEquiv]
   simpa only [Int.natAbs_natCast] using W.toAffine.natCard_torsionBy (n := (d : ℤ)) (by
-    exact_mod_cast natCast_ne_zero_of_dvd hN hd)
+    exact_mod_cast TauCeti.Nat.cast_ne_zero_of_dvd hN hd)
 
 open scoped Classical in
 omit [IsSepClosed K] in
@@ -117,7 +60,7 @@ private theorem finite_torsionBy_self (W : WeierstrassCurve K) [W.IsElliptic]
     AddEquiv.cast (M := fun V : Affine K ↦ V.Point) W.toAffine.baseChange_self
   let : Finite (AddSubgroup.torsionBy (W.toAffine⁄K).toAffine.Point (d : ℤ)) :=
     W.toAffine.finite_torsionBy (n := (d : ℤ)) (by exact_mod_cast hd)
-  exact Finite.of_equiv _ (torsionByCongr eSelf d).toEquiv
+  exact Finite.of_equiv _ (TauCeti.AddEquiv.torsionByCongr eSelf d).toEquiv
 
 open scoped Classical in
 /-- A primary component of `E[N]` is a product of two cyclic groups of the expected order. -/
@@ -137,7 +80,8 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
       (Nat.dvd_of_mem_primeFactors p.2)).ne'
   let : Finite G := finite_torsionBy_self W hN0
   let e : Submodule.torsionBy ℤ G (q : ℤ) ≃+
-      AddSubgroup.torsionBy W.toAffine.Point (q : ℤ) := torsionByTorsionByEquiv hq_dvd
+      AddSubgroup.torsionBy W.toAffine.Point (q : ℤ) :=
+        TauCeti.AddSubgroup.torsionByTorsionByEquiv hq_dvd
   have hpow (x : Submodule.torsionBy ℤ G (q : ℤ)) : q • x = 0 :=
     AddSubgroup.torsionBy.nsmul x
   have hcardq : Nat.card (Submodule.torsionBy ℤ G (q : ℤ)) = q ^ 2 := by
@@ -145,7 +89,8 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
     exact natCard_torsionBy_self W hN hq_dvd
   have hcardp : Nat.card
       (AddSubgroup.torsionBy (Submodule.torsionBy ℤ G (q : ℤ)) (p : ℤ)) = p ^ 2 := by
-    let ep := (torsionByCongr e p).trans (torsionByTorsionByEquiv hp_dvd_q)
+    let ep := (TauCeti.AddEquiv.torsionByCongr e p).trans
+      (TauCeti.AddSubgroup.torsionByTorsionByEquiv hp_dvd_q)
     rw [Nat.card_congr ep.toEquiv]
     exact natCard_torsionBy_self W hN (Nat.dvd_of_mem_primeFactors p.2)
   have hcardq' : Nat.card (Submodule.torsionBy ℤ G (q : ℤ)) =
@@ -157,23 +102,6 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
     (Nat.prime_of_mem_primeFactors p.2) hpow hcardq' hcardp).some
 
 open scoped Classical in
-/-- Distinct primary powers in a factorization are coprime over the integers. -/
-private theorem primePowerCoprimeInt (N : ℕ) : (N.primeFactors : Set ℕ).Pairwise
-    (Function.onFun IsCoprime fun p ↦ ((p ^ N.factorization p : ℕ) : ℤ)) := by
-  intro p hp r hr hpr
-  exact (Nat.Coprime.cast <| N.pairwise_coprime_pow_primeFactors_factorization
-    -- The factorization theorem indexes by prime-factor subtypes, so lift `p ≠ r` to them.
-    (show (⟨p, hp⟩ : N.primeFactors) ≠ ⟨r, hr⟩ by
-      intro h
-      exact hpr (congrArg Subtype.val h)))
-
-open scoped Classical in
-/-- The product of the integer primary powers is the original nonzero natural number. -/
-private theorem prodPrimePowerInt {N : ℕ} (hN : N ≠ 0) :
-    ∏ p ∈ N.primeFactors, (((p ^ N.factorization p : ℕ) : ℤ)) = (N : ℤ) := by
-  exact_mod_cast (Nat.prod_primeFactors_pow_factorization hN).symm
-
-open scoped Classical in
 omit [IsSepClosed K] in
 /-- The primary torsion subgroups form an internal direct sum of `E[N]`. -/
 private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
@@ -181,8 +109,8 @@ private theorem torsionPrimaryIsInternal (W : WeierstrassCurve K)
     Submodule.torsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ))
       ((p ^ N.factorization p : ℕ) : ℤ) := by
   have hN0 : N ≠ 0 := NeZero.ne N
-  apply Submodule.torsionBy_isInternal (primePowerCoprimeInt N)
-  rw [prodPrimePowerInt hN0]
+  apply Submodule.torsionBy_isInternal (TauCeti.Nat.primePowerCoprimeInt N)
+  rw [TauCeti.Nat.prodPrimePowerInt hN0]
   -- `AddSubgroup.torsionBy` is the underlying subtype of this `Module.IsTorsionBy` instance.
   change Module.IsTorsionBy ℤ (AddSubgroup.torsionBy W.toAffine.Point (N : ℤ)) (N : ℤ)
   exact Submodule.torsionBy_isTorsionBy (R := ℤ) (M := W.toAffine.Point) (N : ℤ)
@@ -221,7 +149,7 @@ theorem torsion_addEquiv_prod (W : WeierstrassCurve K) [W.IsElliptic] (N : ℕ) 
   let primary := primaryDecompositionEquiv W N hN
   let crt : (∀ p : N.primeFactors, ZMod (q p)) ≃+ ZMod N :=
     (ZMod.equivPi (n := N) hN0).symm.toAddEquiv
-  exact ⟨primary |>.trans (piProdAddEquiv _ _) |>.trans (crt.prodCongr crt)⟩
+  exact ⟨primary |>.trans (TauCeti.AddEquiv.piProd _ _) |>.trans (crt.prodCongr crt)⟩
 
 end WeierstrassCurve
 
