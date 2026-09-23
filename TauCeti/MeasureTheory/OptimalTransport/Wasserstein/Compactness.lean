@@ -172,8 +172,9 @@ theorem isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow
   -- Weak convergence and convergence of the `p`-moments give convergence in `W_p`.
   have hmoment := tendsto_lintegral_edist_rpow (q := p.toReal) (ENNReal.toReal_pos hp0 hp) hlim x
     fun ε hε ↦ ⟨R ε hε, hFT.mono fun μ hμ ↦ hμ.2 ε hε⟩
-  exact (tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral hp x (μs := id)).2
-    ⟨by simpa using hlim, by simpa using hmoment⟩
+  exact Filter.tendsto_id'.1 <|
+    (tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral hp x (μs := id)).2
+      ⟨by simpa using hlim, by simpa using hmoment⟩
 
 end Sufficiency
 

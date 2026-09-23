@@ -71,7 +71,19 @@ namespace TauCeti
 
 section Tails
 
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+variable {X : Type*} [PseudoMetricSpace X]
+
+/-- The nonnegative distance to the power `q` coerces to the corresponding extended distance. -/
+theorem coe_nndist_rpow {q : ℝ} (hq : 0 ≤ q) (x y : X) :
+    ((nndist x y ^ q : ℝ≥0) : ℝ≥0∞) = edist x y ^ q := by
+  rw [ENNReal.coe_rpow_of_nonneg _ hq, edist_nndist]
+
+/-- The nonnegative distance to a fixed point, raised to a nonnegative power, is continuous. -/
+theorem continuous_nndist_rpow_const {q : ℝ} (hq : 0 ≤ q) (x : X) :
+    Continuous fun y ↦ nndist x y ^ q :=
+  (NNReal.continuous_rpow_const hq).comp (continuous_const.nndist continuous_id)
+
+variable [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
 /-- **Uniformly small moment tails.** For a finite nonzero exponent `p`, along a weakly convergent
@@ -87,11 +99,11 @@ theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral (hp0 : p ≠ 0) (
       ∂(μs i : Measure X) ≤ ε := by
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   set g : X → ℝ≥0 := fun y ↦ nndist x y ^ p.toReal
-  have hg : Continuous g :=
-    (NNReal.continuous_rpow_const hq.le).comp (continuous_const.nndist continuous_id)
-  have hcoe (y : X) : (g y : ℝ≥0∞) = edist x y ^ p.toReal := by
-    rw [ENNReal.coe_rpow_of_nonneg _ hq.le, edist_nndist]
-  obtain ⟨R, hR⟩ := exists_setLIntegral_le_of_tendsto_lintegral hg h (by simpa only [hcoe] using hμ)
+  have hg : Continuous g := continuous_nndist_rpow_const hq.le x
+  have hcoe (y : X) : (g y : ℝ≥0∞) = edist x y ^ p.toReal :=
+    coe_nndist_rpow hq.le x y
+  obtain ⟨R, hR⟩ := exists_setLIntegral_le_of_tendsto_lintegral hg h
+    (by simpa only [hcoe] using hμ)
     (by simpa only [hcoe] using hlim) hε
   refine ⟨R ^ p.toReal⁻¹, hR.mono fun i hi ↦ ?_⟩
   have hset : {y | R ^ p.toReal⁻¹ ≤ nndist x y} = {y | R ≤ g y} := by
@@ -144,17 +156,15 @@ theorem tendsto_lintegral_edist_rpow {q : ℝ} (hq : 0 < q) {γ : Type*} {L : Fi
       ∫⁻ y in {y | r < nndist x y}, edist x y ^ q ∂(μs i : Measure X) ≤ ε) :
     Tendsto (fun i ↦ ∫⁻ y, edist x y ^ q ∂(μs i : Measure X)) L
       (𝓝 (∫⁻ y, edist x y ^ q ∂(μ : Measure X))) := by
-  have hcoe (y : X) : ((nndist x y ^ q : ℝ≥0) : ℝ≥0∞) = edist x y ^ q := by
-    rw [ENNReal.coe_rpow_of_nonneg _ hq.le, edist_nndist]
-  simp_rw [← hcoe]
+  simp_rw [← coe_nndist_rpow hq.le x]
   refine tendsto_lintegral_of_tendsto_probabilityMeasure
-    ((NNReal.continuous_rpow_const hq.le).comp (continuous_const.nndist continuous_id)) h
+    (continuous_nndist_rpow_const hq.le x) h
     fun ε hε ↦ ?_
   obtain ⟨r, hr⟩ := htail ε hε
   refine ⟨(r + 1) ^ q, hr.mono fun i hi ↦ ?_⟩
   have hsub : {y | (r + 1) ^ q ≤ nndist x y ^ q} ⊆ {y | r < nndist x y} :=
     fun y hy ↦ (lt_add_one r).trans_le ((NNReal.rpow_le_rpow_iff hq).1 hy)
-  simp_rw [hcoe]
+  simp_rw [coe_nndist_rpow hq.le x]
   exact (lintegral_mono_set hsub).trans hi
 
 end Tails
