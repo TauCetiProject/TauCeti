@@ -33,8 +33,9 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
   composable.
 * `TauCeti.pathAlgebra k Q`: the path algebra, with `TauCeti.PathAlgebra.single` its basis
   elements. For any quiver it is a non-unital semiring or ring, associative or not, whenever `k`
-  is, and it carries `Semiring`, `Ring` and `Algebra k` structures once the vertex type is
-  `Finite`, finiteness being what makes the unit `1 = ∑ᵥ eᵥ` exist.
+  is, with scalars from `k` passing through products (on both sides when `k` is commutative), and
+  it carries `Semiring`, `Ring` and `Algebra k` structures once the vertex type is `Finite`,
+  finiteness being what makes the unit `1 = ∑ᵥ eᵥ` exist.
 * `TauCeti.PathAlgebra.vertexIdempotent`: the idempotent `eᵥ` given by the trivial path at `v`.
 * `TauCeti.pathAlgebraBasis`: the paths of `Q` as a `k`-basis of `kQ`.
 * `TauCeti.PathAlgebra.liftAlgHom`: **the universal property of the path algebra**, extending an
@@ -465,6 +466,9 @@ section Semiring
 
 variable {k : Type w} {Q : Type u} [Semiring k] [Quiver.{v} Q]
 
+instance : IsScalarTower k (pathAlgebra k Q) (pathAlgebra k Q) :=
+  ⟨by exact fun r f g => smul_mul' r f g⟩
+
 /-- The basis element of the path algebra attached to a path. -/
 noncomputable def ofPath (x : Quiver.TotalPath Q) : pathAlgebra k Q :=
   single x 1
@@ -682,10 +686,13 @@ private theorem mul'_smul (r : k) (f g : Quiver.TotalPath Q →₀ k) :
       rw [Finsupp.smul_single, mul'_single_single, mul'_single_single, smul_singleOption,
         smul_eq_mul, mul_left_comm]
 
+instance : SMulCommClass k (pathAlgebra k Q) (pathAlgebra k Q) :=
+  ⟨fun r f g => by exact (mul'_smul r f g).symm⟩
+
 variable [Finite Q]
 
 noncomputable instance : Algebra k (pathAlgebra k Q) :=
-  Algebra.ofModule (by exact fun r x y => smul_mul' r x y) (by exact fun r x y => mul'_smul r x y)
+  Algebra.ofModule smul_mul_assoc mul_smul_comm
 
 /-- The image of a scalar in the path algebra spreads it over the vertex idempotents. -/
 theorem algebraMap_apply [Fintype Q] (r : k) :
