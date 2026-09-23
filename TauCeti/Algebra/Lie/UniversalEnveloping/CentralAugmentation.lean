@@ -21,10 +21,11 @@ of the centre with the augmentation ideal, and of the ideal `H C(H)` it generate
 `p`-polynomials and, for adjoint-nilpotent `x`, Frobenius powers of `ι x`.
 
 As soon as `Module.End R L` is Noetherian, the central `p`-polynomial attached to each element of
-`L` belongs to `C(U(L))`; over a field, finite-dimensionality of `L` supplies this hypothesis.  If
-`x` is nilpotent in the adjoint representation, a Frobenius power of `ι x` itself belongs to
-`C(U(L))`.  Taking powers then puts explicit powers of `ι x` in every power of the generated
-ideal.  This is the input that later makes `x` act nilpotently on a quotient by such a power.
+`L` belongs to `C(U(L))`; over a field, finite-dimensionality of `L` supplies this hypothesis.  In
+exponential characteristic `p ≠ 1`, if `x` is nilpotent in the adjoint representation, a Frobenius
+power of `ι x` itself belongs to `C(U(L))`.  Taking powers then puts explicit powers of `ι x` in
+every power of the generated ideal.  This is the input that later makes `x` act nilpotently on a
+quotient by such a power.
 
 ## Main results
 
@@ -32,8 +33,8 @@ ideal.  This is the input that later makes `x` act nilpotently on a quotient by 
   belongs to the intersection.
 * `exists_pCentralPolynomial_mem_centralAugmentation_of_isNoetherian`:
   under the Noetherian hypothesis, every element of `L` has such a `p`-polynomial.
-* `exists_pow_ι_mem_centralAugmentation_of_isNilpotent_ad`: a Frobenius power of `ι x` lies in
-  the intersection when `ad x` is nilpotent.
+* `exists_pow_ι_mem_centralAugmentation_of_isNilpotent_ad`: in exponential characteristic
+  `p ≠ 1`, a Frobenius power of `ι x` lies in the intersection when `ad x` is nilpotent.
 * `exists_pow_mul_ι_mem_centralAugmentationIdeal_pow_of_isNilpotent_ad`:
   one Frobenius exponent works in every power of the generated ideal when `ad x` is nilpotent.
 
