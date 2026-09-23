@@ -10,13 +10,13 @@ public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 /-!
 # Internal Hom comparison for monoidal functors
 
-A strong monoidal functor `F : C ⥤ D` between monoidal closed categories has a canonical
+A lax monoidal functor `F : C ⥤ D` between monoidal closed categories has a canonical
 comparison morphism
 
 `F.obj (A ⟶[C] B) ⟶ (F.obj A ⟶[D] F.obj B)`.
 
 It is the mate, under the two tensor--Hom adjunctions, of the tensorator
-`F.obj A ⊗ F.obj B ≅ F.obj (A ⊗ B)`. This file packages the comparison as a natural
+`F.obj A ⊗ F.obj B ⟶ F.obj (A ⊗ B)`. This file packages the comparison as a natural
 transformation in `B`, characterizes it by evaluation and coevaluation, and proves its
 contravariant naturality in `A`. These formulas allow closed-structure comparisons to be used
 without unfolding the mates construction.
@@ -27,10 +27,13 @@ definition and characteristic formulas follow the mate-based development in
 
 ## Main declarations
 
-* `TauCeti.ihomComparison`: the internal Hom comparison of a strong monoidal functor;
-* `TauCeti.ihomComparison_ev`: its characteristic equation against evaluation;
-* `TauCeti.coev_ihomComparison`: its characteristic equation against coevaluation;
-* `TauCeti.ihomComparison_whiskerLeft`: its naturality in the source of the internal Hom.
+* `CategoryTheory.Functor.ihomComparison`: the internal Hom comparison of a lax monoidal
+  functor;
+* `CategoryTheory.Functor.ihomComparison_ev`: its characteristic equation against evaluation;
+* `CategoryTheory.Functor.coev_ihomComparison`: its characteristic equation against
+  coevaluation;
+* `CategoryTheory.Functor.ihomComparison_whiskerLeft`: its naturality in the source of the
+  internal Hom.
 -/
 
 public section
@@ -39,19 +42,24 @@ noncomputable section
 
 open CategoryTheory CategoryTheory.Functor MonoidalCategory MonoidalClosed
 
-namespace TauCeti
+namespace CategoryTheory.Functor
 
 universe v₁ v₂ u₁ u₂
 
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [MonoidalClosed C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D] [MonoidalClosed D]
-variable (F : C ⥤ D) [F.Monoidal]
+variable (F : C ⥤ D) [F.LaxMonoidal]
+
+private def laxCommTensorLeft (A : C) :
+    TwoSquare F (tensorLeft A) (tensorLeft (F.obj A)) F :=
+  .mk _ _ _ _ { app := fun B => Functor.LaxMonoidal.μ F A B
+                naturality := fun _ _ f => Functor.LaxMonoidal.μ_natural_right F A f }
 
 /-- The canonical comparison from the image of an internal Hom to the internal Hom of the
-images under a strong monoidal functor. It is natural in the target of the internal Hom. -/
+images under a lax monoidal functor. It is natural in the target of the internal Hom. -/
 def ihomComparison (A : C) : TwoSquare (ihom A) F F (ihom (F.obj A)) :=
   mateEquiv (ihom.adjunction A) (ihom.adjunction (F.obj A))
-    (Functor.Monoidal.commTensorLeft F A).hom
+    (laxCommTensorLeft F A)
 
 /-- Evaluation after the internal Hom comparison is the image of evaluation, preceded by the
 tensorator. This equation characterizes `ihomComparison`. -/
@@ -59,8 +67,12 @@ theorem ihomComparison_ev (A B : C) :
     F.obj A ◁ (ihomComparison F A).natTrans.app B ≫
         (ihom.ev (F.obj A)).app (F.obj B) =
       Functor.LaxMonoidal.μ F A ((ihom A).obj B) ≫ F.map ((ihom.ev A).app B) := by
+  change (tensorLeft (F.obj A)).map ((ihomComparison F A).app B) ≫
+      (ihom.adjunction (F.obj A)).counit.app (F.obj B) =
+    (laxCommTensorLeft F A).app ((ihom A).obj B) ≫
+      F.map ((ihom.adjunction A).counit.app B)
   exact mateEquiv_counit (ihom.adjunction A) (ihom.adjunction (F.obj A))
-    (Functor.Monoidal.commTensorLeft F A).hom B
+    (laxCommTensorLeft F A) B
 
 /-- The image of coevaluation followed by the internal Hom comparison is coevaluation followed
 by the internal Hom of the tensorator. -/
@@ -69,8 +81,12 @@ theorem coev_ihomComparison (A B : C) :
         (ihomComparison F A).natTrans.app (A ⊗ B) =
       (ihom.coev (F.obj A)).app (F.obj B) ≫
         (ihom (F.obj A)).map (Functor.LaxMonoidal.μ F A B) := by
+  change F.map ((ihom.adjunction A).unit.app B) ≫
+      (ihomComparison F A).app ((tensorLeft A).obj B) =
+    (ihom.adjunction (F.obj A)).unit.app (F.obj ((𝟭 C).obj B)) ≫
+      (ihom (F.obj A)).map ((laxCommTensorLeft F A).app ((𝟭 C).obj B))
   exact unit_mateEquiv (ihom.adjunction A) (ihom.adjunction (F.obj A))
-    (Functor.Monoidal.commTensorLeft F A).hom B
+    (laxCommTensorLeft F A) B
 
 /-- Uncurrying the internal Hom comparison gives the tensorator followed by the image of
 evaluation. -/
@@ -86,10 +102,10 @@ theorem ihomComparison_whiskerLeft {A A' : C} (f : A' ⟶ A) :
   unfold ihomComparison pre
   have vcomp₁ := mateEquiv_conjugateEquiv_vcomp
     (ihom.adjunction A) (ihom.adjunction (F.obj A)) (ihom.adjunction (F.obj A'))
-    (Functor.Monoidal.commTensorLeft F A).hom ((curriedTensor D).map (F.map f))
+    (laxCommTensorLeft F A) ((curriedTensor D).map (F.map f))
   have vcomp₂ := conjugateEquiv_mateEquiv_vcomp
     (ihom.adjunction A) (ihom.adjunction A') (ihom.adjunction (F.obj A'))
-    ((curriedTensor C).map f) (Functor.Monoidal.commTensorLeft F A').hom
+    ((curriedTensor C).map f) (laxCommTensorLeft F A')
   rw [← vcomp₁, ← vcomp₂]
   unfold TwoSquare.whiskerLeft TwoSquare.whiskerRight
   congr 1
@@ -97,7 +113,7 @@ theorem ihomComparison_whiskerLeft {A A' : C} (f : A' ⟶ A) :
   ext B
   simp only [Functor.comp_obj, curriedTensor_obj_obj, NatTrans.comp_app,
     Functor.whiskerLeft_app, curriedTensor_map_app, Functor.whiskerRight_app,
-    Functor.Monoidal.commTensorLeft_hom_app]
+    laxCommTensorLeft]
   rw [Functor.LaxMonoidal.μ_natural_left]
 
-end TauCeti
+end CategoryTheory.Functor
