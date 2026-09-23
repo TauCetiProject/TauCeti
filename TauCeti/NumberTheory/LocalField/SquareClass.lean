@@ -51,6 +51,8 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
 
 ## References
 
+* `TauCetiRoadmap/QuadraticFormInvariants/README.md`, Layer 6A, for the choice of
+  representatives with a nonsquare-residue unit.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §63A.
 * J.-P. Serre, *A Course in Arithmetic*, Chapter II, §3, for `K = ℚ_p`.
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, §5.
