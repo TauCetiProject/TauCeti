@@ -42,8 +42,8 @@ assembled from these charts needs.
   `TauCeti.Toric.coneChartEquiv_fst_apply` and `TauCeti.Toric.val_coneChartEquiv_snd_apply`
   identifying its coordinate functions with the dual basis characters and
   `TauCeti.Toric.coneChartEquiv_symm_apply_single` and
-  `TauCeti.Toric.coneChartEquiv_apply_single_ne_zero_iff` describing the value and nonvanishing
-  of a point on an arbitrary monomial.
+  `TauCeti.Toric.apply_single_ne_zero_iff_coneChartEquiv_fst_ne_zero` describing the value and
+  nonvanishing of a point on an arbitrary monomial.
 * `TauCeti.Toric.coneChartHomeomorph`: the chart is a homeomorphism for the monomial-embedding
   topology of any finite generating family of the dual semigroup.
 * `TauCeti.Toric.coneChartEquiv_fst_apply_basisChange` and
@@ -99,7 +99,7 @@ theorem coneChartEquiv_symm_apply_single (z : (ToricRay σ → ℂ) × (ι → �
 
 /-- A monomial is nonzero at a complex point exactly when every ray coordinate occurring in its
 support is nonzero. The complementary-coordinate factor is always a unit. -/
-theorem coneChartEquiv_apply_single_ne_zero_iff
+theorem apply_single_ne_zero_iff_coneChartEquiv_fst_ne_zero
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) (m : dualSemigroup hi σ) :
     x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0 ↔
       ∀ ρ ∈ (regularDualSemigroupEquiv hi hσ hb m).1.support,

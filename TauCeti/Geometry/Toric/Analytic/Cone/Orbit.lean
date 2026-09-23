@@ -27,6 +27,7 @@ chart, and their closure order is the reverse of the face order.
 
 * `TauCeti.Toric.affineConeOrbit`: the intrinsic stratum associated to a face.
 * `TauCeti.Toric.mem_affineConeOrbit_iff_coneChartEquiv`: its coordinate zero-pattern.
+* `TauCeti.Toric.closure_affineConeOrbit_eq_coordinate`: the coordinate form of its closure.
 * `TauCeti.Toric.isLocallyClosed_affineConeOrbit`: every affine-cone orbit is locally closed.
 * `TauCeti.Toric.closure_affineConeOrbit`: the intrinsic union formula for its closure.
 * `TauCeti.Toric.affineConeOrbit_subset_closure_iff`: face inclusion is the reverse closure order.
@@ -96,7 +97,7 @@ theorem mem_affineConeOrbit_iff_coneChartEquiv (hi : IsIntegralLattice i)
     simpa using not_congr hmcoord
   · intro hx m
     rw [hσ.realCharacter_eq_zero_on_face_iff hi hb F m,
-      coneChartEquiv_apply_single_ne_zero_iff hi hσ.toIsToricCone hb x m]
+      apply_single_ne_zero_iff_coneChartEquiv_fst_ne_zero hi hσ.toIsToricCone hb x m]
     constructor
     · intro hz ρ hρ
       by_contra hm
@@ -238,7 +239,7 @@ theorem isLocallyClosed_affineConeOrbit (hi : IsIntegralLattice i)
 
 /-- The closure of the orbit of `F` consists of the points whose coordinates at all rays of `F`
 vanish; coordinates at other rays may vanish as well. -/
-private theorem closure_affineConeOrbit_eq_coordinate (hi : IsIntegralLattice i)
+theorem closure_affineConeOrbit_eq_coordinate (hi : IsIntegralLattice i)
     (hσ : IsRegularCone i σ)
     {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
