@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.InformationTheory.Coding.Hexacode.WeightEnumerator
+public import TauCeti.FieldTheory.Finite.Four
+public import TauCeti.InformationTheory.Coding.Basic
+public import TauCeti.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 
@@ -29,11 +31,9 @@ Neither formula depends on the choice of `ω`. On a coordinate power the quadrat
 quaternary word is its Hamming weight divided by two, and the pairing of two words is
 `Tr(∑ᵢ xᵢ yᵢ²) / 2`.
 
-This file constructs this quaternary alphabet as a finite quadratic module, identifies it with the
-actual discriminant module of `D₄` (the checkerboard lattice of rank four), and places the
-hexacode as a quadratic-isotropic Lagrangian subgroup of the coordinate power `(F₄)⁶`, both in the
-quaternary model and in six copies of the `D₄` discriminant group. This is the glue subgroup used
-by lattice constructions from orthogonal sums of `D₄` root lattices.
+This file constructs this quaternary alphabet as a finite quadratic module and identifies it with
+the actual discriminant module of `D₄` (the checkerboard lattice of rank four). The hexacode
+application is in `TauCeti.InformationTheory.Coding.Hexacode.D4`.
 
 ## Main declarations
 
@@ -47,9 +47,6 @@ by lattice constructions from orthogonal sums of `D₄` root lattices.
   `q(x) = wt(x) / 2` and `b(x, y) = Tr(∑ᵢ xᵢ yᵢ²) / 2`.
 * `TauCeti.codeInTypeD4Discriminant`: transport a quaternary additive code to a coordinate power
   of the `D₄` discriminant group.
-* `TauCeti.Hexacode.isLagrangian_typeD4` and
-  `TauCeti.Hexacode.isLagrangian_codeInTypeD4Discriminant`: the hexacode is a quadratic
-  Lagrangian.
 
 ## References
 
@@ -307,6 +304,7 @@ theorem coordinatePower_typeD4QuaternaryQuadraticModule_pairing [Algebra (ZMod 2
 
 /-- A quaternary additive code is quadratic-isotropic in the `D₄` coordinate alphabet exactly
 when all of its Hamming weights are even. -/
+@[simp high]
 theorem isIsotropic_coordinatePower_typeD4QuaternaryQuadraticModule_iff [DecidableEq F]
     (hF : Nat.card F = 4) (C : AdditiveCode F ι) :
     ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsIsotropic C ↔
@@ -408,45 +406,5 @@ theorem isLagrangian_codeInTypeD4Discriminant_iff (hF : Nat.card F = 4) {ω : F}
     ← typeD4QuaternaryDiscriminantQuadraticIsometry_coordinatePower_toAddEquiv]
   exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
     ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι) C
-
-namespace Hexacode
-
-variable (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
-include hF hω
-
-/-- The hexacode is quadratic-isotropic in the `D₄` coordinate alphabet, since its weights
-`0, 4, 6` are even. -/
-theorem isIsotropic_typeD4 :
-    ((typeD4QuaternaryQuadraticModule hF).coordinatePower (Fin 6)).IsIsotropic
-      (code ω).toAddSubgroup := by
-  classical
-  let := Fintype.ofFinite F
-  rw [isIsotropic_coordinatePower_typeD4QuaternaryQuadraticModule_iff]
-  intro x hx
-  rcases hammingNorm_eq_zero_or_eq_four_or_eq_six_of_mem_code
-      (Nat.card_eq_fintype_card.symm.trans hF) hω hx with h | h | h <;>
-    rw [h] <;> norm_num
-
-/-- **The hexacode is a quadratic Lagrangian in the `D₄` coordinate alphabet.** -/
-theorem isLagrangian_typeD4 :
-    ((typeD4QuaternaryQuadraticModule hF).coordinatePower (Fin 6)).IsLagrangian
-      (code ω).toAddSubgroup := by
-  apply FiniteQuadraticModule.IsIsotropic.isLagrangian_of_card_sq_eq _ (isIsotropic_typeD4 hF hω)
-    ((isNondegenerate_typeD4QuaternaryQuadraticModule hF).coordinatePower (Fin 6))
-  have hcard : Nat.card (code ω).toAddSubgroup = Nat.card F ^ 3 := natCard_code ω
-  rw [hcard, Nat.card_pi, Finset.prod_const, Finset.card_univ, Fintype.card_fin, hF]
-  norm_num
-
-/-- **The hexacode, transported to six copies of the actual `D₄` discriminant group, is a
-quadratic-isotropic Lagrangian subgroup.** The coordinate identification may use either root of
-`X² + X + 1`, independently of the root defining the hexacode. -/
-theorem isLagrangian_codeInTypeD4Discriminant {ω' : F} (hω' : ω' ^ 2 + ω' + 1 = 0) :
-    (((checkerboardLattice 4).discriminantQuadraticModule
-        (isEven_checkerboardLattice 4)).coordinatePower (Fin 6)).IsLagrangian
-      (codeInTypeD4Discriminant hF hω' (code ω).toAddSubgroup) := by
-  rw [isLagrangian_codeInTypeD4Discriminant_iff]
-  exact isLagrangian_typeD4 hF hω
-
-end Hexacode
 
 end TauCeti
