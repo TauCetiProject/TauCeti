@@ -152,14 +152,13 @@ def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm �
     rintro ⟨hD, ha⟩
     refine ⟨(discrim_smul γ f).trans hD, pos_of_mul_pos_right (a := 4 * f.a) ?_ (by positivity)⟩
     have key : 4 * f.a * (γ • f).a = (2 * f.a * γ 1 1 - f.b * γ 1 0) ^ 2 + D * γ 1 0 ^ 2 := by
-      rw [BinaryQuadraticForm.discrim, _root_.discrim] at hD
-      rw [smul_a]
+      simp only [BinaryQuadraticForm.discrim, _root_.discrim, smul_a] at hD ⊢
       linear_combination (-γ 1 0 ^ 2) * hD
     rw [key]
     rcases eq_or_ne (γ 1 0) 0 with hr | hr
     · have hs : γ 1 1 ≠ 0 := by
-        rintro hs
-        simpa [hr, hs] using SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+        intro hs
+        simpa [hr, hs] using γ.fin_two_mul_sub_mul_eq_one
       simp only [hr, mul_zero, sub_zero, zero_pow two_ne_zero, add_zero]
       positivity
     · have := NeZero.pos D
