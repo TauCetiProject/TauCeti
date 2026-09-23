@@ -25,23 +25,9 @@ convergence half is
 `TauCeti.WassersteinSpace.tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral`. The criterion
 does not depend on the basepoint, since the equivalence holds for each one.
 
-Both directions reduce to Prokhorov's theorem in Mathlib, which relates tightness to relative
-compactness for the weak topology on `ProbabilityMeasure X`.
-
-* Tightness of a relatively compact set is Mathlib's
-  `MeasureTheory.isTightMeasureSet_of_isCompact_closure` applied to its weakly compact image, since
-  the Wasserstein topology is finer than the weak one.
-  Uniformly small tails follow by contradiction: a sequence with persistent tails beyond larger
-  and larger radii has a `W_p`-convergent subsequence, along which the tails are uniformly small by
-  `TauCeti.WassersteinSpace.exists_setLIntegral_edist_rpow_le`.
-* Conversely, a tight set with uniformly small tails lies in the set `T` of laws in the weak closure
-  of the set whose tails beyond the same radii, taken over open regions, obey the same bounds. An
-  ultrafilter on `T` converges weakly by Prokhorov's theorem (Mathlib's
-  `isCompact_closure_of_isTightMeasureSet`); the open-region tails are weakly lower
-  semicontinuous, so the limit lies in `T` and has finite `p`-moment; and uniformly small tails give
-  convergence of the `p`-moments by `TauCeti.tendsto_lintegral_of_tendsto_probabilityMeasure`, hence
-  convergence in `W_p`. So `T` is compact. This direction needs neither completeness of `X` nor
-  that of the Wasserstein space.
+The corresponding weak compactness criterion is Mathlib's Prokhorov theorem, stated in
+`MeasureTheory.isTightMeasureSet_of_isCompact_closure` and
+`MeasureTheory.isCompact_closure_of_isTightMeasureSet`.
 
 ## Main statements
 
