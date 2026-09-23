@@ -119,16 +119,19 @@ theorem reducedForms_eq_empty_of_mod_four {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 
     lia
 
 /-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `0 < D` the number of reduced forms
-of discriminant `-D`, the multiples of `x² + y²` (the forms `(a, 0, a)`) weighted by `1/2` and the
-multiples of `x² + x y + y²` (the forms `(a, a, a)`) by `1/3`.
+of discriminant `-D`, primitive or not, the multiples of `x² + y²` (the forms `(a, 0, a)`) weighted
+by `1/2` and the multiples of `x² + x y + y²` (the forms `(a, a, a)`) by `1/3`.
 
-This is Zagier's normalisation, the one in which the `t² = 4 n` terms of the Eichler–Selberg trace
-formula absorb the identity contribution through `H 0`. It vanishes for `D ≡ 1, 2 (mod 4)`
-(`hurwitzClassNumber_eq_zero_of_mod_four`). -/
+The value `H 0 = -1/12` is Zagier's normalisation, the one in which the `t² = 4 n` terms of the
+Eichler–Selberg trace formula absorb the contribution of the scalar matrices. `H D` vanishes for
+`D ≡ 1, 2 (mod 4)` (`hurwitzClassNumber_eq_zero_of_mod_four`). -/
 def hurwitzClassNumber (D : ℕ) : ℚ :=
-  if D = 0 then -1 / 12 else
+  if D = 0 then -1 / 12
+  else
     ∑ t ∈ reducedForms D,
-      if t.2.1 = 0 ∧ t.1 = t.2.2 then 1 / 2 else if t.1 = t.2.1 ∧ t.2.1 = t.2.2 then 1 / 3 else 1
+      if t.2.1 = 0 ∧ t.1 = t.2.2 then 1 / 2
+      else if t.1 = t.2.1 ∧ t.2.1 = t.2.2 then 1 / 3
+      else 1
 
 @[simp] theorem hurwitzClassNumber_zero : hurwitzClassNumber 0 = -1 / 12 := rfl
 
