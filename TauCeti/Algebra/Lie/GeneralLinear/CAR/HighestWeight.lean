@@ -262,13 +262,9 @@ private theorem positive_iota_mul_carHighestWeightVector_eq_zero
     apply carPositiveUnits_ortho hij
     simpa only [carPositiveRootPairs, Finset.mem_filter, Finset.mem_univ, true_and] using hr
 
-private noncomputable abbrev carD (i j : n) :
-    CliffordAlgebra (traceQuadraticForm K n) :=
-  CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i j 1)
-
 private theorem raisingTerm_mul_carHighestWeightVector_eq_zero
     {i j : n} (hij : i < j) (k : n) :
-    carD i k * carD k j * carHighestWeightVector K n = 0 := by
+    carGenerator (K := K) i k * carGenerator (K := K) k j * carHighestWeightVector K n = 0 := by
   by_cases hkj : k < j
   · rw [mul_assoc, positive_iota_mul_carHighestWeightVector_eq_zero hkj, mul_zero]
   · have hik : i < k := lt_of_lt_of_le hij (le_of_not_gt hkj)
@@ -277,13 +273,13 @@ private theorem raisingTerm_mul_carHighestWeightVector_eq_zero
       positive_iota_mul_carHighestWeightVector_eq_zero hik, mul_zero, neg_zero]
 
 private theorem diagonalTerm_mul_carHighestWeightVector (i k : n) :
-    carD i k * carD k i * carHighestWeightVector K n =
+    carGenerator (K := K) i k * carGenerator (K := K) k i * carHighestWeightVector K n =
       if k < i then 0 else if k = i then carHighestWeightVector K n
       else (2 : K) • carHighestWeightVector K n := by
   rcases lt_trichotomy k i with hki | rfl | hik
   · simp only [hki, ↓reduceIte]
     rw [mul_assoc, positive_iota_mul_carHighestWeightVector_eq_zero hki, mul_zero]
-  · simp [carD]
+  · simp [carGenerator]
   · simp only [not_lt_of_ge hik.le, ne_of_gt hik, ↓reduceIte]
     have hcar := traceQuadraticForm_ι_single_mul_ι_single_add_swap
       (R := K) i k k i 1 1
@@ -293,7 +289,7 @@ private theorem diagonalTerm_mul_carHighestWeightVector (i k : n) :
     simp only [add_mul, mul_assoc, positive_iota_mul_carHighestWeightVector_eq_zero hik,
       mul_zero, add_zero] at hmul
     rw [mul_assoc]
-    simpa [carD, Algebra.smul_def] using hmul
+    simpa [carGenerator, Algebra.smul_def] using hmul
 
 private theorem diagonalScalarSum (i : n) :
     (∑ k : n, if k = i then (1 : K) else if i < k then 2 else 0) =
@@ -314,7 +310,7 @@ private theorem diagonalScalarSum (i : n) :
       rw [hfirst, hsecond]
 
 private theorem diagonalTerm_mul_carHighestWeightVector_eq_smul (i k : n) :
-    carD i k * carD k i * carHighestWeightVector K n =
+    carGenerator (K := K) i k * carGenerator (K := K) k i * carHighestWeightVector K n =
       (if k = i then (1 : K) else if i < k then 2 else 0) •
         carHighestWeightVector K n := by
   rw [diagonalTerm_mul_carHighestWeightVector]
@@ -324,7 +320,7 @@ private theorem diagonalTerm_mul_carHighestWeightVector_eq_smul (i k : n) :
   · simp [hik, ne_of_gt hik, not_lt_of_ge hik.le]
 
 private theorem diagonalSum_mul_carHighestWeightVector (i : n) :
-    (∑ k : n, carD i k * carD k i) * carHighestWeightVector K n =
+    (∑ k : n, carGenerator (K := K) i k * carGenerator (K := K) k i) * carHighestWeightVector K n =
       (1 + 2 * ((Finset.univ.filter fun k : n => i < k).card : K)) •
         carHighestWeightVector K n := by
   rw [Finset.sum_mul]

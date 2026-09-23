@@ -29,6 +29,7 @@ corresponding Clifford algebra.
 * `TauCeti.glCliffordHom_injective`: it is injective once `Fintype.card n` is invertible, which
   the quadratic part alone is not — the centre of `gl n K` is what the normal-ordering constant
   separates.
+* `TauCeti.carGenerator`: the Clifford generator associated to a matrix unit.
 
 ## References
 
@@ -44,9 +45,29 @@ open CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {K n : Type*} [Field K] [Fintype n] [Invertible (2 : K)]
-
 attribute [local instance] Classical.decEq
+
+/-! ### Matrix-unit Clifford generators -/
+
+/-- The Clifford generator associated to the matrix unit `Eᵢⱼ`.
+
+This is the common CAR generator used by the highest-weight, occupation, Casimir, and weight
+multiplicity calculations. Apart from the decidable equality used to form a matrix unit, it only
+needs the field and finite-index hypotheses; in particular, it does not require `2` to be
+invertible. -/
+noncomputable abbrev carGenerator {K : Type*} [Field K] {n : Type*} [Fintype n]
+    [DecidableEq n]
+    (i j : n) : CliffordAlgebra (traceQuadraticForm K n) :=
+  CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i j 1)
+
+/-- The matrix-unit formula for `carGenerator`, with an explicitly chosen decidable equality. -/
+theorem carGenerator_def {K : Type*} [Field K] {n : Type*} [Fintype n]
+    [decEq : DecidableEq n] (i j : n) :
+    carGenerator (K := K) i j =
+      CliffordAlgebra.ι (traceQuadraticForm K n) (Matrix.single i j 1) := by
+  rfl
+
+variable {K n : Type*} [Field K] [Fintype n] [Invertible (2 : K)]
 
 private noncomputable def traceQuadraticLift :
     Matrix n n K →ₗ⁅K⁆ CliffordAlgebra (traceQuadraticForm K n) :=
