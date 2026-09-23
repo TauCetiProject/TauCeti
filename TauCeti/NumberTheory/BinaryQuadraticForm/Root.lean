@@ -70,6 +70,7 @@ noncomputable def root (f : posDef D) : ℍ :=
 theorem re_root (f : posDef D) : (root f).re = -(f.1.b : ℝ) / (2 * f.1.a) :=
   rfl
 
+/-- The imaginary part of the root of `a x² + b x y + c y²` is `√D / (2 a)`. -/
 @[simp]
 theorem im_root (f : posDef D) : (root f).im = √(D : ℝ) / (2 * f.1.a) :=
   rfl
