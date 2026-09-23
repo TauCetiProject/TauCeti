@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.PowerSeries.Log.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Coeff
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Eval
 
 /-!
 # Evaluating the logarithm of a local Euler factor
@@ -110,6 +110,7 @@ theorem exp_tsum_coeff_localLogSeries_eq_eulerFactor_of_zeroFree
         rw [enorm_eq_nnnorm, ENNReal.coe_lt_coe] at hz'
         exact_mod_cast hz'
       · exact hz
-    _ = D.eulerFactor P s := D.ofScalarsSum_localPowerSeries_eq_eulerFactor P s
+    _ = D.eulerFactor P s := by
+      simpa only [D.coeff_localPowerSeries] using D.localPowerSeries_eval_eq_eulerFactor P s
 
 end TauCeti.EulerProductData

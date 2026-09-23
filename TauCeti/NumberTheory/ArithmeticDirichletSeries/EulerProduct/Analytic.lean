@@ -233,19 +233,6 @@ open IdealArithmeticFunction
 
 variable (D : EulerProductData K) {s : ℂ}
 
-/-- Evaluating the local power series at `N(P) ^ (-s)` gives the Euler factor at `s`. -/
-@[simp]
-theorem ofScalarsSum_localPowerSeries_eq_eulerFactor
-    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
-    FormalMultilinearSeries.ofScalarsSum (E := ℂ)
-      (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
-      ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) = D.eulerFactor P s := by
-  rw [FormalMultilinearSeries.ofScalars_sum_eq, D.eulerFactor_eq_tsum]
-  exact tsum_congr fun e ↦ by
-    rw [D.coeff_localPowerSeries]
-    exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
-      D.toIdealArithmeticFunction P s e).symm
-
 /-- Absolute convergence of the ideal-indexed Dirichlet series makes every bundled local Euler
 factor an absolutely convergent `LSeries`. -/
 theorem LSeriesSummable_localArithmeticFactor
