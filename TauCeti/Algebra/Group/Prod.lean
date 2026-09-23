@@ -10,7 +10,7 @@ public import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.DirectSum.Decomposition
 
 /-!
-# Homomorphisms out of a product of monoids
+# Homomorphisms out of a product of monoids and additive equivalences of products
 
 A product of two monoids is their coproduct in commutative monoids: a homomorphism
 `M × N →* P` with `P` commutative is the same data as a pair of homomorphisms `M →* P` and
@@ -18,6 +18,10 @@ A product of two monoids is their coproduct in commutative monoids: a homomorphi
 separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `MonoidHom.inr`,
 together with the fact that they are mutually inverse; this file packages them as the
 corresponding equivalence.
+
+The file also provides the additive equivalences between functions into a product and pairs of
+function spaces, and between functions on `Fin 2` and binary products.  These package the
+underlying `Equiv`s with their pointwise additive structure.
 
 ## Main definitions
 
@@ -63,56 +67,61 @@ namespace AddEquiv
 
 /-- Functions into products are additively equivalent to products of function spaces. -/
 def piProd {ι : Type*} (B C : ι → Type*)
-    [∀ i, AddCommGroup (B i)] [∀ i, AddCommGroup (C i)] :
+    [∀ i, AddCommMonoid (B i)] [∀ i, AddCommMonoid (C i)] :
     (∀ i, B i × C i) ≃+ (∀ i, B i) × (∀ i, C i) :=
   { Equiv.arrowProdEquivProdArrow ι B C with map_add' := fun _ _ ↦ rfl }
 
 /-- `piProd` maps a function to its two component functions. -/
 @[simp]
-theorem piProd_apply (B C : ι → Type*) [∀ i, AddCommGroup (B i)] [∀ i, AddCommGroup (C i)]
+theorem piProd_apply (B C : ι → Type*) [∀ i, AddCommMonoid (B i)] [∀ i, AddCommMonoid (C i)]
     (f : ∀ i, B i × C i) : piProd B C f = (fun i ↦ (f i).1, fun i ↦ (f i).2) :=
   by
+    -- `AddEquiv` is built by extending this underlying `Equiv`.
     change Equiv.arrowProdEquivProdArrow ι B C f = _
     exact Equiv.arrowProdEquivProdArrow_apply ι B C f
 
 /-- The inverse of `piProd` pairs component functions pointwise. -/
 @[simp]
-theorem piProd_symm_apply (B C : ι → Type*) [∀ i, AddCommGroup (B i)]
-    [∀ i, AddCommGroup (C i)] (f : (∀ i, B i) × (∀ i, C i)) :
+theorem piProd_symm_apply (B C : ι → Type*) [∀ i, AddCommMonoid (B i)]
+    [∀ i, AddCommMonoid (C i)] (f : (∀ i, B i) × (∀ i, C i)) :
     (piProd B C).symm f = fun i ↦ (f.1 i, f.2 i) :=
   by
     apply funext
     intro i
+    -- The inverse likewise reduces to the inverse of the underlying `Equiv`.
     change (Equiv.arrowProdEquivProdArrow ι B C).symm f i = _
     exact Equiv.arrowProdEquivProdArrow_symm_apply ι B C f i
 
-/-- A product of two copies of an additive group, presented as functions on `Fin 2`. -/
-def finTwoArrowEquivProd (A : Type*) [AddCommGroup A] : (Fin 2 → A) ≃+ A × A :=
+/-- A product of two copies of an additive commutative monoid, presented as functions on `Fin 2`. -/
+def finTwoArrowEquivProd (A : Type*) [AddCommMonoid A] : (Fin 2 → A) ≃+ A × A :=
   { finTwoArrowEquiv A with map_add' := fun _ _ ↦ rfl }
 
 /-- `finTwoArrowEquivProd` evaluates a function at `0` and `1`. -/
 @[simp]
-theorem finTwoArrowEquivProd_apply (A : Type*) [AddCommGroup A] (f : Fin 2 → A) :
+theorem finTwoArrowEquivProd_apply (A : Type*) [AddCommMonoid A] (f : Fin 2 → A) :
     finTwoArrowEquivProd A f = (f 0, f 1) :=
   by
+    -- `finTwoArrowEquivProd` extends this underlying `Equiv`.
     change finTwoArrowEquiv A f = _
     rw [finTwoArrowEquiv_apply]
     rfl
 
 /-- The inverse of `finTwoArrowEquivProd` evaluates to the first component at `0`. -/
 @[simp]
-theorem finTwoArrowEquivProd_symm_apply_zero (A : Type*) [AddCommGroup A] (x : A × A) :
+theorem finTwoArrowEquivProd_symm_apply_zero (A : Type*) [AddCommMonoid A] (x : A × A) :
     (finTwoArrowEquivProd A).symm x 0 = x.1 :=
   by
+    -- The additive equivalence has the inverse of `finTwoArrowEquiv` definitionally.
     change (finTwoArrowEquiv A).symm x 0 = _
     rw [finTwoArrowEquiv_symm_apply]
     rfl
 
 /-- The inverse of `finTwoArrowEquivProd` evaluates to the second component at `1`. -/
 @[simp]
-theorem finTwoArrowEquivProd_symm_apply_one (A : Type*) [AddCommGroup A] (x : A × A) :
+theorem finTwoArrowEquivProd_symm_apply_one (A : Type*) [AddCommMonoid A] (x : A × A) :
     (finTwoArrowEquivProd A).symm x 1 = x.2 :=
   by
+    -- The additive equivalence has the inverse of `finTwoArrowEquiv` definitionally.
     change (finTwoArrowEquiv A).symm x 1 = _
     rw [finTwoArrowEquiv_symm_apply]
     rfl

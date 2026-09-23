@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 import TauCeti.Algebra.Group.Prod
 import TauCeti.Data.ZMod.Torsion
 import Mathlib.Data.Fintype.EquivFin
-import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.GroupTheory.Index
 
 /-!
@@ -36,6 +35,22 @@ open scoped DirectSum
 
 variable {G : Type*} [AddCommGroup G]
 
+/-- Torsion in a product of additive groups is equivalent to the product of the torsion groups. -/
+private def torsionByPiEquiv {ι : Type*} (p : ℕ) (n : ι → ℕ) :
+    AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) ≃
+      (∀ i, AddSubgroup.torsionBy (ZMod (n i)) (p : ℤ)) :=
+  { toFun := fun x i ↦ ⟨x.1 i, by
+      -- Torsion membership in a product is pointwise scalar annihilation.
+      change (p : ℤ) • x.1 i = 0
+      have hx : (p : ℤ) • x.1 = 0 := x.2
+      exact congrFun hx i⟩
+    invFun := fun x ↦ ⟨fun i ↦ x i, by
+      -- The scalar action and zero of a dependent function are defined pointwise.
+      change (p : ℤ) • (fun i ↦ (x i : ZMod (n i))) = 0
+      funext i
+      exact (x i).2⟩
+    left_inv := fun _ ↦ rfl
+    right_inv := fun _ ↦ rfl }
 
 /-- **Rank-two prime-power characterisation.** A finite abelian group killed by `p ^ k`, with
 order `p ^ (2 * k)` and `p ^ 2` elements killed by `p`, is additively equivalent to
@@ -66,21 +81,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
     simp only [Nat.card_zmod]
   have hcard_torsion_pi :
       Nat.card (AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ)) = p ^ Fintype.card ι := by
-    let T : AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) ≃
-        (∀ i : ι, AddSubgroup.torsionBy (ZMod (n i)) (p : ℤ)) :=
-      { toFun := fun x i ↦ ⟨x.1 i, by
-          -- Torsion membership in a product is pointwise scalar annihilation.
-          change (p : ℤ) • x.1 i = 0
-          have hx : (p : ℤ) • x.1 = 0 := x.2
-          exact congrFun hx i⟩
-        invFun := fun x ↦ ⟨fun i ↦ x i, by
-          -- The scalar action and zero of a dependent function are defined pointwise.
-          change (p : ℤ) • (fun i ↦ (x i : ZMod (n i))) = 0
-          funext i
-          exact (x i).2⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl }
-    rw [Nat.card_congr T, Nat.card_pi]
+    rw [Nat.card_congr (torsionByPiEquiv p n), Nat.card_pi]
     let : NeZero p := ⟨hp.ne_zero⟩
     calc
       ∏ i, Nat.card (AddSubgroup.torsionBy (ZMod (n i)) (p : ℤ)) = ∏ _i : ι, p := by
@@ -90,7 +91,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
         obtain ⟨j, hj⟩ := Nat.exists_eq_succ_of_ne_zero (ha_pos i).ne'
         rw [hj]
         simpa only [Nat.card_zmod] using
-          Nat.card_congr (TauCeti.ZMod.torsionByPrimeEquiv p j).symm.toEquiv
+          Nat.card_congr (TauCeti.ZMod.torsionByEquiv p j).symm.toEquiv
       _ = p ^ Fintype.card ι := by simp
   have hmap : (AddSubgroup.torsionBy G (p : ℤ)).map E.toAddMonoidHom =
       AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) := by
