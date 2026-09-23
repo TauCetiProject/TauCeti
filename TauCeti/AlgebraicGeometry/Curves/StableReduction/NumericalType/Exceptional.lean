@@ -356,14 +356,9 @@ theorem not_affineE7 {c : ℕ → T.Component}
     simpa [y, hi] using
       (AffineDynkinType.marks_pos (t := AffineDynkinType.E7) (⟨i, hi⟩ : Fin 8)).le
   · refine ⟨0, by omega, ?_⟩
-    change 0 < AffineDynkinType.E7.marks (0 : Fin 8)
-    exact AffineDynkinType.marks_pos (t := AffineDynkinType.E7) (0 : Fin 8)
+    simp [y]
   · intro i hi
     let ii : Fin AffineDynkinType.E7.nodes := ⟨i, by simpa using hi⟩
-    rw [← Fin.sum_univ_eq_sum_range]
-    simp only [d', y, hi, Fin.is_lt, dite_true]
-    change 0 ≤ ∑ x : Fin AffineDynkinType.E7.nodes,
-      T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x
     have hsum :
         (∑ x : Fin AffineDynkinType.E7.nodes,
           T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x) =
@@ -373,7 +368,20 @@ theorem not_affineE7 {c : ℕ → T.Component}
       simpa only [Equiv.symm_apply_apply] using e.sum_comp
         (fun x : Fin AffineDynkinType.E7.nodes ↦
           T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x)
-    rw [hsum, hrow]
+    have hcanonical : 0 ≤ ∑ x : Fin AffineDynkinType.E7.nodes,
+        T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x := by
+      rw [hsum, hrow]
+    rw [← Fin.sum_univ_eq_sum_range]
+    have hnormalize :
+        (∑ x : Fin 8, T.intersection (d' i) (d' x) * y x) =
+          ∑ x : Fin AffineDynkinType.E7.nodes,
+            T.intersection (d (e.symm ii)) (d (e.symm x)) * AffineDynkinType.E7.marks x := by
+      apply Finset.sum_congr rfl
+      intro x _
+      simp only [d', y, hi, Fin.is_lt, dite_true]
+      congr 4
+    rw [hnormalize]
+    exact hcanonical
 
 end IsSelfIntersectionMinusTwoChain
 
