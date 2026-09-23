@@ -59,7 +59,7 @@ variable {X : Type u} {rels : Set (freeProfiniteGroup X)}
 
 /-- A continuous homomorphism from the free profinite group that kills the relators factors through
 the presented profinite group. -/
-noncomputable def lift {G : Type u} [Group G] [TopologicalSpace G] [T1Space G]
+noncomputable def lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProfiniteGroup X rels →ₜ* G := by
   let R : Subgroup (freeProfiniteGroup X) := (Subgroup.normalClosure rels).topologicalClosure
@@ -81,7 +81,7 @@ noncomputable def lift {G : Type u} [Group G] [TopologicalSpace G] [T1Space G]
 /-- The factorisation through a presented profinite group recovers the original map after the
 canonical quotient projection. -/
 @[simp]
-theorem lift_comp_mk {G : Type u} [Group G] [TopologicalSpace G] [T1Space G]
+theorem lift_comp_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk rels) = ψ := by
   have hR : (Subgroup.normalClosure rels).topologicalClosure ≤ ψ.toMonoidHom.ker :=
@@ -98,7 +98,7 @@ theorem lift_comp_mk {G : Type u} [Group G] [TopologicalSpace G] [T1Space G]
 /-- The factorisation from a presented profinite group evaluates on its generators as the original
 map does on the free generators. -/
 @[simp]
-theorem lift_of {G : Type u} [Group G] [TopologicalSpace G] [T1Space G]
+theorem lift_of {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
     lift ψ hψ (of rels x) = ψ (freeProfiniteGroup.of x) := by
   -- Expand the named generator to the quotient-map composite this theorem characterizes.
@@ -118,7 +118,7 @@ theorem hom_ext {G : Type v} [Group G] [TopologicalSpace G]
 
 /-- A continuous homomorphism out of the free profinite group that kills the relators factors
 uniquely through the presented profinite group. -/
-theorem existsUnique_lift {G : Type u} [Group G] [TopologicalSpace G] [T1Space G]
+theorem existsUnique_lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     ∃! φ : presentedProfiniteGroup X rels →ₜ* G, φ.comp (mk rels) = ψ := by
   refine ⟨lift ψ hψ, lift_comp_mk ψ hψ, ?_⟩
@@ -153,7 +153,7 @@ variable {p : ℕ} {X : Type u} {rels : Set (freeProP p X)}
 
 /-- A continuous homomorphism from the free pro-`p` group that kills the relators factors through
 the presented pro-`p` group. -/
-noncomputable def lift {P : Type u} [Group P] [TopologicalSpace P] [T1Space P]
+noncomputable def lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProP p X rels →ₜ* P := by
   let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
@@ -175,7 +175,7 @@ noncomputable def lift {P : Type u} [Group P] [TopologicalSpace P] [T1Space P]
 /-- The factorisation through a presented pro-`p` group recovers the original map after the
 canonical quotient projection. -/
 @[simp]
-theorem lift_comp_mk {P : Type u} [Group P] [TopologicalSpace P] [T1Space P]
+theorem lift_comp_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk p rels) = ψ := by
   have hR : (Subgroup.normalClosure rels).topologicalClosure ≤ ψ.toMonoidHom.ker :=
@@ -192,7 +192,7 @@ theorem lift_comp_mk {P : Type u} [Group P] [TopologicalSpace P] [T1Space P]
 /-- The factorisation from a presented pro-`p` group evaluates on its generators as the original
 map does on the free generators. -/
 @[simp]
-theorem lift_of {P : Type u} [Group P] [TopologicalSpace P] [T1Space P]
+theorem lift_of {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) (x : X) :
     lift ψ hψ (of p rels x) = ψ (freeProP.of x) := by
   -- Expand the named generator to the quotient-map composite this theorem characterizes.
@@ -212,7 +212,7 @@ theorem hom_ext {P : Type v} [Group P] [TopologicalSpace P]
 
 /-- A continuous homomorphism out of the free pro-`p` group that kills the relators factors
 uniquely through the presented pro-`p` group. -/
-theorem existsUnique_lift {P : Type u} [Group P] [TopologicalSpace P] [T1Space P]
+theorem existsUnique_lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     ∃! φ : presentedProP p X rels →ₜ* P, φ.comp (mk p rels) = ψ := by
   refine ⟨lift ψ hψ, lift_comp_mk ψ hψ, ?_⟩
