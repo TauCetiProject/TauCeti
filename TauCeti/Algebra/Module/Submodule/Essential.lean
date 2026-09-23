@@ -56,11 +56,6 @@ essential along **any** linear map (`TauCeti.IsEssential.comap`, the analogue of
 
 ## References
 
-This is the essential-image vocabulary behind the injective-envelope half of the "projective covers
-and injective envelopes" bullet of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for
-`injectiveEnvelope M` dually to a projective cover.
-
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.4, and T. Y. Lam, *Lectures on Modules and Rings*, §3.
 -/
@@ -207,23 +202,18 @@ theorem isEssential_iff_forall_atom_le [IsAtomic (Submodule R M)] {N : Submodule
 
 end Semiring
 
-section Ring
+section AddCommGroup
 
-variable {R : Type u} {M : Type v} {M₂ : Type w} [Ring R] [AddCommGroup M₂] [Module R M₂]
-
-section AddCommMonoid
-
-variable [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} {M₂ : Type w}
+  [Semiring R] [AddCommMonoid M] [Module R M] [AddCommGroup M₂] [Module R M₂]
 
 /-- **An essential range is a minimality condition.** If `f : M →ₗ[R] M₂` has essential range and
-`h : M₂ →ₗ[R] M₃` is such that `h ∘ₗ f` is injective, then `h` is already injective.
-
-This is what makes an injective envelope minimal; it is `TauCeti.IsInjectiveEnvelope`'s workhorse,
-and uses nothing about `f` beyond its range. -/
-theorem IsEssential.injective_of_injective_comp {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+`h : M₂ →ₗ[R] M₃` is such that `h ∘ₗ f` is injective, then `h` is already injective. This is what
+makes an injective envelope minimal. -/
+theorem IsEssential.injective_of_injective_comp {M₃ : Type*} [AddCommMonoid M₃] [Module R M₃]
     {f : M →ₗ[R] M₂} (hf : IsEssential (LinearMap.range f)) {h : M₂ →ₗ[R] M₃}
     (hhf : Function.Injective (h ∘ₗ f)) : Function.Injective h := by
-  rw [← LinearMap.ker_eq_bot]
+  rw [injective_iff_map_eq_zero, ← LinearMap.ker_eq_bot']
   -- A nonzero element of the kernel would come from a nonzero element killed by `h ∘ₗ f`.
   refine isEssential_iff.mp hf _ ((Submodule.eq_bot_iff _).mpr fun y hy => ?_)
   obtain ⟨x, hx⟩ := hy.1
@@ -231,15 +221,17 @@ theorem IsEssential.injective_of_injective_comp {M₃ : Type*} [AddCommGroup M�
   have hx0 : x = 0 := hhf (by simp [LinearMap.comp_apply, hx, hy2])
   rw [← hx, hx0, map_zero]
 
-end AddCommMonoid
+end AddCommGroup
 
-variable [AddCommGroup M] [Module R M]
+section Ring
+
+variable {R : Type u} {M : Type v} {M₂ : Type w}
+  [Ring R] [AddCommMonoid M] [Module R M] [AddCommGroup M₂] [Module R M₂]
 
 /-- **Essential ranges are exactly the essential monomorphisms.** An embedding `f : M →ₗ[R] M₂` has
 essential range precisely when no map out of `M₂` can precompose to an embedding without already
-being one; the quotient maps of `M₂` witness the nontrivial direction, so it suffices to quantify
-over targets in the universe of `M₂` (over larger targets the implication is
-`TauCeti.IsEssential.injective_of_injective_comp`). -/
+being one. It suffices to quantify over targets in the universe of `M₂`; for arbitrary targets the
+forward implication is `TauCeti.IsEssential.injective_of_injective_comp`. -/
 theorem isEssential_range_iff_forall_injective {f : M →ₗ[R] M₂} (hf : Function.Injective f) :
     IsEssential (LinearMap.range f) ↔
       ∀ {M₃ : Type w} [AddCommGroup M₃] [Module R M₃] (h : M₂ →ₗ[R] M₃),
@@ -249,12 +241,11 @@ theorem isEssential_range_iff_forall_injective {f : M →ₗ[R] M₂} (hf : Func
     exact hrange.injective_of_injective_comp hhf
   · intro H K hK
     -- The quotient by `K` is the test map: it kills `K` and nothing of the range of `f`.
-    have hinj : Function.Injective (K.mkQ ∘ₗ f) := by
-      rw [← LinearMap.ker_eq_bot, LinearMap.ker_comp, Submodule.ker_mkQ]
-      refine (Submodule.eq_bot_iff _).mpr fun x hx => ?_
-      have hmem : f x ∈ LinearMap.range f ⊓ K := ⟨⟨x, rfl⟩, hx⟩
-      rw [hK, Submodule.mem_bot] at hmem
-      exact hf (by simpa using hmem)
+    have hinj : Function.Injective (K.mkQ ∘ₗ f) := fun a b hab => by
+      have hmem : f a - f b ∈ LinearMap.range f ⊓ K :=
+        ⟨sub_mem ⟨a, rfl⟩ ⟨b, rfl⟩, (Submodule.Quotient.eq K).mp hab⟩
+      rw [hK, Submodule.mem_bot, sub_eq_zero] at hmem
+      exact hf hmem
     have hmk := H K.mkQ hinj
     rwa [← LinearMap.ker_eq_bot, Submodule.ker_mkQ] at hmk
 
