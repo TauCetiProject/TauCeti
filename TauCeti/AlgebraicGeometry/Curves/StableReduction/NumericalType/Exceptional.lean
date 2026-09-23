@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Star
 This file continues the classification of connected proper subgraphs of `(-2)`-indices in a
 numerical type with the exceptional diagram `E₇`.  A chain of six components with an extra leaf
 at its fourth component is simply laced: all seven weights and all six displayed intersections
-agree, and there are no other edges.  This is
+agree, and there are no other edges.  This gives the weight and intersection part of
 [Stacks, Lemma 55.5.13](https://stacks.math.columbia.edu/tag/0C8J).
 
 Extending the length-two arm of this diagram by one component produces the affine `E₇`
@@ -48,8 +48,8 @@ variable (T : NumericalType.{u})
 /-- A chain `c₁ - c₂ - c₃ - c₄ - c₅ - c₆` of `(-2)`-indices, together with a
 seventh `(-2)`-index meeting `c₄`, is simply laced.  Thus all seven weights agree, every
 displayed intersection is that common weight, and the seventh component meets no other component
-of the chain.  Together with the chain's no-chord theorem, this gives the classification of the
-proper `E₇` configuration in
+of the chain.  Together with the chain's no-chord theorem, this gives the weight and intersection
+claims for the proper `E₇` configuration in
 [Stacks, Lemma 55.5.13](https://stacks.math.columbia.edu/tag/0C8J). -/
 theorem exists_weight_intersection_branch_seven_eq
     {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain 6 c)
@@ -383,6 +383,7 @@ theorem intersection_branch_eq_zero {c : ℕ → T.Component}
     rw [← Fin.sum_univ_eq_sum_range]
     have hd'i : d' i = d (e.symm ii) := by
       simp only [d', hi, dite_true]
+      -- The proof attached to the bound in `d'` is not definitionally the one used in `ii`.
       rw [show nodeEquiv ⟨i, _⟩ = ii by
         apply nodeEquiv.injective
         exact Fin.ext rfl]
