@@ -102,14 +102,37 @@ variable {N p : ℕ} {σ : SL(2, ℤ)}
 
 local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap ℚ ℝ)
 
+-- Kept separate so that the real matrix computation of `exists_adjugateGL_natDiagGL_eq` runs on
+-- the explicit matrices of `A` and `B`, away from the congruence conditions.
+private lemma adjugateGL_natDiagGL_eq_of_coe_mapGL {n : ℕ} [NeZero n] {u v : ℤ}
+    (huv : u * n + v * N = 1) {A B : SL(2, ℤ)}
+    (hA : (↑(mapGL ℝ A) : Matrix (Fin 2) (Fin 2) ℝ) = !![(n : ℝ), -v; (N : ℝ), u])
+    (hB : (↑(mapGL ℝ B) : Matrix (Fin 2) (Fin 2) ℝ) = !![(u : ℝ) * n, v; -(N : ℝ), 1]) :
+    TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) = mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+      TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+        φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
+  have hR : (u : ℝ) * n + v * N = 1 := by exact_mod_cast huv
+  -- over `ℝ`, every entry of either factorisation is a multiple of `u n + v N = 1`
+  refine ⟨Units.ext ?_, Units.ext ?_⟩
+  all_goals
+    rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
+      Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one, hA, hB,
+      Matrix.adjugate_fin_two_of, Matrix.mul_fin_two, Matrix.mul_fin_two]
+    congrm !![?_, ?_; ?_, ?_]
+    · linear_combination -(n : ℝ) * hR
+    · ring
+    · ring
+    · linear_combination -hR
+
 /-- **The adjugate of `diag(1, n)` is an inverse-diamond translate of its double coset, on
-either side.** The translating matrix `A ∈ Γ₀(N)` has diamond label `⟨n⟩⁻¹` (its lower-right
-entry is `n⁻¹ mod N`), while `B ∈ Γ₁(N)` moves `diag(1, n)` within its double coset. -/
+either side.** For `n` coprime to `N` there are `A ∈ Γ₀(N)` with diamond label `⟨n⟩⁻¹` (its
+lower-right entry is `n⁻¹ mod N`) and `B ∈ Γ₁(N)` with
+`adj(diag(1, n)) = A · diag(1, n) · B = B · diag(1, n) · A` in `GL₂(ℝ)`. -/
 lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     ∃ A : SL(2, ℤ), ∃ hA : A ∈ Gamma0 N,
-      (Gamma0Map N).toHomUnits ⟨A, hA⟩ = (ZMod.unitOfCoprime n hn)⁻¹ ∧
-      ∃ B ∈ Gamma1 N, TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
-        mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
+      (Gamma0Map N).toHomUnits ⟨A, hA⟩ = (ZMod.unitOfCoprime n hn)⁻¹ ∧ ∃ B ∈ Gamma1 N,
+        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
+          mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
         TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
           φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
   obtain ⟨u, v, huv⟩ := Nat.isCoprime_iff_coprime.mpr hn
@@ -117,40 +140,11 @@ lemma exists_adjugateGL_natDiagGL_eq {n : ℕ} [NeZero n] (hn : n.Coprime N) :
     ⟨!![(n : ℤ), -v; (N : ℤ), u], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
   let B : SL(2, ℤ) :=
     ⟨!![u * n, v; -(N : ℤ), 1], by rw [Matrix.det_fin_two_of]; linear_combination huv⟩
-  have hZ := congrArg (Int.cast : ℤ → ZMod N) huv
-  push_cast at hZ
-  rw [ZMod.natCast_self, mul_zero, add_zero] at hZ
-  have hA : A ∈ Gamma0 N := by rw [Gamma0_mem]; simp [A]
-  have hR := congrArg (Int.cast : ℤ → ℝ) huv
-  push_cast at hR
-  have hAcoe : ((mapGL ℝ A : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
-      !![(n : ℝ), -v; (N : ℝ), u] := by
-    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [A]
-  have hBcoe : ((mapGL ℝ B : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
-      !![(u : ℝ) * n, v; -(N : ℝ), 1] := by
-    rw [mapGL_coe_matrix, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [B]
-  have hfactor :
-      TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
-          mapGL ℝ A * φ (natDiagGL 2 ![1, n] * mapGL ℚ B) ∧
-        TauCeti.adjugateGL (φ (natDiagGL 2 ![1, n])) =
-          φ (mapGL ℚ B * natDiagGL 2 ![1, n]) * mapGL ℝ A := by
-    constructor <;>
-      refine Units.ext ?_ <;>
-      rw [map_mul, map_mapGL, TauCeti.adjugateGL_val, Units.val_mul, Units.val_mul,
-        Matrix.GeneralLinearGroup.val_map_apply, coe_map_natDiagGL_one, hAcoe, hBcoe,
-        Matrix.adjugate_fin_two] <;>
-      ext i j <;>
-      fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two]
-    all_goals nlinarith [hR]
-  refine ⟨A, hA, ?_, B, mem_Gamma1_iff_dvd_lowerRow.mpr (by simp [B]), hfactor.1, hfactor.2⟩
-  rw [eq_inv_iff_mul_eq_one]
-  refine Units.ext ?_
-  simpa [A, Gamma0Map] using hZ
+  refine ⟨A, Gamma0_mem.mpr (by simp [A]), eq_inv_of_mul_eq_one_left <| Units.ext ?_, B,
+    mem_Gamma1_iff_dvd_lowerRow.mpr (by simp [B]), adjugateGL_natDiagGL_eq_of_coe_mapGL huv
+      (by rw [coe_mapGL_fin_two]; simp [A]) (by rw [coe_mapGL_fin_two]; simp [B])⟩
+  -- the diamond label of `A` is its lower-right entry `u`, and `u n ≡ 1 (mod N)`
+  simpa [A, Gamma0Map] using congrArg (Int.cast : ℤ → ZMod N) huv
 
 /-- **The family of `p + 1` matrices out of which the good-prime `Tₚ` is built.** The `p`
 upper-triangular matrices `!![1, b; 0, p]`, indexed by `some b`, together with the twisted
