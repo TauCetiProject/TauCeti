@@ -8,12 +8,11 @@ module
 public import Mathlib.Topology.UnitInterval
 
 /-!
-# Subdividing a homotopy square under an open cover
+# Subdividing a continuous-map square under an open cover
 
 A continuous square whose image is covered by open sets admits a finite grid subdivision such
-that every closed grid cell maps into one member of the cover. This is the geometric subdivision
-used to turn a homotopy between paths into relations among paths lying in members of an open
-cover.
+that every closed grid cell maps into one member of the cover. This is useful, in particular, for
+turning a homotopy between paths into relations among paths lying in members of an open cover.
 
 The grid construction adapts `coveredPartwise_exists` from
 `LeanPool.DirectedTopologyLean4.DihomotopyCover.lean` (LeanPool commit
@@ -27,11 +26,11 @@ public section
 open Set
 open scoped unitInterval
 
-namespace TauCeti.FundamentalGroupoid
+namespace TauCeti.ContinuousMap
 
-/-- A continuous square can be subdivided into a finite grid whose cells each map into one member
-of any given open cover of its image. The times are monotone, start at `0`, and are eventually
-constant at `1`; `m` is a bound after which they are constant. -/
+/-- A continuous map from the unit square can be subdivided into a finite grid whose cells each
+map into one member of any given open cover of its image. The times are monotone, start at `0`,
+and are eventually constant at `1`; `m` is a bound after which they are constant. -/
 theorem exists_grid_subdivision {X : Type*} [TopologicalSpace X] {ι : Sort*}
     (K : C(↥unitInterval × ↥unitInterval, X)) (U : ι → Set X)
     (hopen : ∀ i, IsOpen (U i)) (hcover : ∀ x, ∃ i, K x ∈ U i) :
@@ -50,4 +49,4 @@ theorem exists_grid_subdivision {X : Type*} [TopologicalSpace X] {ι : Sort*}
   obtain ⟨i, hsubset⟩ := hcell j k
   exact ⟨i, fun x hx => hsubset hx⟩
 
-end TauCeti.FundamentalGroupoid
+end TauCeti.ContinuousMap
