@@ -35,7 +35,7 @@ noncomputable instance [EssentiallySmall.{w₁} C] [EssentiallySmall.{w₂} D] :
   EssentiallySmall.mk' ((equivSmallModel C).prod (equivSmallModel D))
 
 /-- The componentwise preadditive structure on a product category. -/
-instance [Preadditive C] [Preadditive D] : Preadditive (C × D) where
+instance instPreadditiveProd [Preadditive C] [Preadditive D] : Preadditive (C × D) where
   homGroup X Y := inferInstanceAs (AddCommGroup ((X.1 ⟶ Y.1) × (X.2 ⟶ Y.2)))
   add_comp _ _ _ _ _ _ := by ext <;> simp
   comp_add _ _ _ _ _ _ := by ext <;> simp
