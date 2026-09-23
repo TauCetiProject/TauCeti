@@ -242,6 +242,32 @@ theorem isRecut_recutLeftEqLeft
     hone (D.isEmpty_toRectangleDecomposition_first hrectangle)
     (D.isEmpty_toRectangleDecomposition_second hpentagon)
 
+/-- The promoted pentagon in the overlap recut is empty. -/
+@[simp]
+theorem isEmpty_pentagon_recutLeftEqLeft
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.left = D.pentagon.left)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).pentagon.IsEmpty := by
+  simpa only [recutLeftEqLeft, GridPentagonBetween.ofRightEq_toGridRectangleBetween] using
+    (D.toRectangleDecomposition.isRecut_recut hone
+      (D.isEmpty_toRectangleDecomposition_first hrectangle)
+      (D.isEmpty_toRectangleDecomposition_second hpentagon)).isEmpty_first
+
+/-- The rectangle in the overlap recut is empty. -/
+@[simp]
+theorem isEmpty_rectangle_recutLeftEqLeft
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.left = D.pentagon.left)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    (D.recutLeftEqLeft hcommon hone hrectangle hpentagon).rectangle.IsEmpty := by
+  simpa only [recutLeftEqLeft] using
+    (D.toRectangleDecomposition.isRecut_recut hone
+      (D.isEmpty_toRectangleDecomposition_first hrectangle)
+      (D.isEmpty_toRectangleDecomposition_second hpentagon)).isEmpty_second
+
 /-- The underlying rectangles of the promoted overlap recut cover the same squares as the
 original rectangle and the rectangle underlying the original pentagon. -/
 theorem coveredSquares_union_recutLeftEqLeft
