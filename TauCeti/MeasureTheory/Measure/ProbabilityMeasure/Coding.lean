@@ -92,13 +92,15 @@ theorem probabilityMeasureCode_injective :
 
 omit [CountablyGenerated α] in
 /-- Coding commutes with pushing a probability measure forward, coordinate by coordinate: the
-value at a generating set is the original measure of its preimage. -/
-theorem probabilityMeasureCode_map_apply {β : Type*} [MeasurableSpace β]
-    [CountablyGenerated β] (P : ProbabilityMeasure α) (f : α → β) (hf : Measurable f)
+value at a member of the coding set algebra is the original measure of its preimage. -/
+@[simp]
+theorem _root_.MeasureTheory.ProbabilityMeasure.probabilityMeasureCode_map_apply
+    {β : Type*} [MeasurableSpace β] [CountablyGenerated β]
+    (P : ProbabilityMeasure α) (f : α → β) (hf : AEMeasurable f P)
     (s : ProbabilityMeasureCodeIndex β) :
     probabilityMeasureCode (P.map f) s = (P : Measure α) (f ⁻¹' (s : Set β)) := by
-  simp only [probabilityMeasureCode_apply, ProbabilityMeasure.toMeasure_map]
-  exact Measure.map_apply hf (measurableSet_probabilityMeasureCodeIndex s)
+  rw [probabilityMeasureCode_apply, ProbabilityMeasure.toMeasure_map]
+  exact Measure.map_apply_of_aemeasurable hf (measurableSet_probabilityMeasureCodeIndex s)
 
 omit [CountablyGenerated α] in
 /-- A measurable pushforward followed by the canonical measure code is measurable in the input
