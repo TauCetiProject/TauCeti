@@ -281,36 +281,26 @@ private lemma exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout {a b c' f :
   · rw [add_sub_cancel_left]
     exact ((dvd_mul_right _ _).mul_left _).mul_right _
 
-/-- **Conjugation by `Γ₀(N)` fixes the double coset of `diag(1, p)`**, in the case where `p`
-divides the conjugating matrix's lower-right entry. -/
+/-- **Conjugation by `Γ₀(N)` fixes the double coset of `diag(1, p)`**, when `p` divides the
+lower-right entry of the conjugating matrix. The complementary case, where that entry is coprime to
+`p`, is `conj_natDiagGL_mem_doubleCoset_of_isCoprime`. -/
 theorem conj_natDiagGL_mem_doubleCoset_of_dvd (hp : 0 < p) {g : SL(2, ℤ)} (hg : g ∈ Gamma0 N)
     (he : (p : ℤ) ∣ g 1 1) :
-    mapGL ℚ g * natDiagGL 2 ![1, p] * mapGL ℚ g⁻¹ ∈
-      doubleCoset (natDiagGL 2 ![1, p] : GL (Fin 2) ℚ)
-        ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
+    mapGL ℚ g * natDiagGL 2 ![1, p] * mapGL ℚ g⁻¹ ∈ doubleCoset (natDiagGL 2 ![1, p] : GL (Fin 2) ℚ)
+      ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
   obtain ⟨f, hf⟩ := he
   obtain ⟨c', hc'⟩ := mem_Gamma0_iff_dvd.mp hg
   have hσ : g 0 0 * f * (p : ℤ) - g 0 1 * c' * (N : ℤ) = 1 := by
-    have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one g
-    rw [hf, hc'] at hdet
-    linear_combination hdet
+    linear_combination g.fin_two_mul_sub_mul_eq_one - g 0 0 * hf + g 0 1 * hc'
   -- the last right coset's twisted representative, with bottom row `(N, p)`
-  have hσdet : (!![g 0 0 * f, g 0 1 * c'; (N : ℤ), (p : ℤ)] :
-      Matrix (Fin 2) (Fin 2) ℤ).det = 1 := by
-    rw [Matrix.det_fin_two_of]
-    linear_combination hσ
-  set σ : SL(2, ℤ) := ⟨_, hσdet⟩ with hσdef
-  obtain ⟨γ, hγ, hγeq⟩ := exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (N := N) (σ := σ) hp
-    (by simp [hσdef]) (by simp [hσdef])
+  let σ : SL(2, ℤ) := ⟨!![g 0 0 * f, g 0 1 * c'; N, p], (Matrix.det_fin_two_of _ _ _ _).trans hσ⟩
+  obtain ⟨γ, hγ, hγeq⟩ := exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (σ := σ) hp rfl rfl
   obtain ⟨τ, hτ, hτeq⟩ := exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout hσ
-  refine mem_doubleCoset.mpr
-    ⟨_, Subgroup.mem_map_of_mem _ hτ, _, Subgroup.mem_map_of_mem _ hγ, ?_⟩
+  refine mem_doubleCoset.mpr ⟨_, Subgroup.mem_map_of_mem _ hτ, _, Subgroup.mem_map_of_mem _ hγ, ?_⟩
   rw [mul_assoc (mapGL ℚ τ), hγeq]
   refine (eq_mapGL_mul_mul_mapGL_of_intMatrix_eq 2 τ 1 _ _ _ _ (coe_primeRep_none_eq_map hp σ)
-    (coe_conj_natDiagGL hp g) ?_).trans ?_
-  · rw [hc', hf]
-    simpa [hσdef] using hτeq
-  · simp
+    (coe_conj_natDiagGL hp g) ?_).trans <| by rw [map_one, mul_one]
+  rwa [hc', hf, coe_one, mul_one]
 
 /-- **The `Γ₁(N)` double coset of `diag(1, p)` is stable under conjugation by `Γ₀(N)`**, for `p`
 prime.
