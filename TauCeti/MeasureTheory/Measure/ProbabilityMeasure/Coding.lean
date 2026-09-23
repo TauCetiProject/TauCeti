@@ -98,8 +98,8 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.probabilityMeasureCode_map_apply
     {β : Type*} [MeasurableSpace β] [CountablyGenerated β]
     (P : ProbabilityMeasure α) (f : α → β) (hf : AEMeasurable f P)
     (s : ProbabilityMeasureCodeIndex β) :
-    probabilityMeasureCode (P.map f) s = (P : Measure α) (f ⁻¹' (s : Set β)) := by
-  rw [probabilityMeasureCode_apply, ProbabilityMeasure.toMeasure_map]
+    (Measure.map f (P : Measure α)) (s : Set β) =
+      (P : Measure α) (f ⁻¹' (s : Set β)) := by
   exact Measure.map_apply_of_aemeasurable hf (measurableSet_probabilityMeasureCodeIndex s)
 
 omit [CountablyGenerated α] in
