@@ -32,9 +32,9 @@ four classes are represented by
 The choice of `u` is part of the statement. Up to squares `u` is a unit of `𝒪[K]`, and by
 `TauCeti.isSquare_unitsMap_subtype_iff` such a unit is a nonsquare exactly when its residue is a
 nonsquare of `𝓀[K]`. The theorem
-`TauCeti.exists_not_isSquare_of_toAdd_normalizedValuation_eq_zero` produces such a `u` whenever
-`K` has characteristic different from two. This is the list of representatives used to compute
-Hilbert symbols over `K` and to count its quadratic extensions.
+`TauCeti.exists_mem_unitFiltration_not_isSquare` supplies a nonsquare in the unit filtration
+whenever `K` has characteristic different from two. This is the list of representatives used to
+compute Hilbert symbols over `K` and to count its quadratic extensions.
 
 ## Main results
 
@@ -47,8 +47,6 @@ Hilbert symbols over `K` and to count its quadratic extensions.
   characteristic two the literal quotient by squares has four elements.
 * `TauCeti.natCard_squareClassGroup_of_isUnit_two`: away from residue characteristic two the
   square-class group has four elements.
-* `TauCeti.exists_not_isSquare_of_toAdd_normalizedValuation_eq_zero`: in characteristic different
-  from two there is a nonsquare of normalized valuation zero.
 * `TauCeti.isAddKleinFour_squareClassGroup_of_isUnit_two`: away from residue characteristic two
   the square-class group is a Klein four-group.
 * `TauCeti.squareClasses_pairwise_ne_of_isUniformizer`: the four specified square classes are
@@ -123,17 +121,6 @@ theorem natCard_squareClassGroup_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (SquareClassGroup K) = 4 := by
   rw [← natCard_multiplicativeSquareClassGroup]
   exact natCard_multiplicativeSquareClassGroup_of_isUnit_two h2
-
-/-- In characteristic different from two, there is a nonsquare unit class, represented by an
-element of `Kˣ` with normalized valuation zero. -/
-theorem exists_not_isSquare_of_toAdd_normalizedValuation_eq_zero
-    (h2 : (2 : K) ≠ 0) :
-    ∃ u : Kˣ, (normalizedValuation K u).toAdd = 0 ∧ ¬IsSquare u := by
-  obtain ⟨u, hu, hsq⟩ := exists_mem_unitFiltration_not_isSquare h2
-  refine ⟨u, ?_, hsq⟩
-  apply toAdd_eq_zero.mpr
-  rw [normalizedValuation_eq_one_iff]
-  exact (mem_unitFiltration_zero u).mp (unitFiltration_antitone (Nat.zero_le _) hu)
 
 /-- Away from residue characteristic two, the square-class group of a nonarchimedean local field
 is a Klein four-group. -/
