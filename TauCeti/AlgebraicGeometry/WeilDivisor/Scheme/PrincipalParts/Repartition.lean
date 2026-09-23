@@ -54,8 +54,11 @@ noncomputable section
 namespace SchemeWeilDivisor
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [X.Over (Spec (.of k))]
-  [IsNoetherian X]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+
+section
+
+variable [IsLocallyNoetherian X]
 
 /-- Membership in the stalk of `𝒪_X(D)` at `x` is the valuation bound imposed by `D(x)`. -/
 theorem mem_stalkSubmodule_iff_valuation_le_exp (D : SchemeWeilDivisor X)
@@ -69,7 +72,9 @@ theorem mem_stalkSubmodule_iff_valuation_le_exp (D : SchemeWeilDivisor X)
       WithZero.exp_le_exp, CodimensionOnePoint.toPlace_ord]
     omega
 
-variable [X.IsSeparated]
+end
+
+variable [IsNoetherian X] [X.IsSeparated]
 
 variable (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
   (hdim : ∀ x : X, coheight x ≤ 1)
@@ -271,54 +276,16 @@ theorem repartitionToPrincipalParts_surjective (D : SchemeWeilDivisor X) :
     simp only [a, b, hix_apply]
   rw [ha_apply, hrepresentative]
 
-/-- The linear map from the repartition quotient by the divisor filtration to global principal
-parts. -/
-def repartitionQuotientToPrincipalParts (D : SchemeWeilDivisor X) :
-    (↥(repartitionSpace k X.functionField) ⧸
-      (adeleFiltration (equivFunctionFieldDivisor hex hdim D)).submoduleOf
-        (repartitionSpace k X.functionField)) →ₗ[k] Γ(principalParts D, ⊤) :=
-  ((adeleFiltration (equivFunctionFieldDivisor hex hdim D)).submoduleOf
-    (repartitionSpace k X.functionField)).liftQ
-      (repartitionToPrincipalParts hex hdim D) (by
-        intro a ha
-        rw [ker_repartitionToPrincipalParts hex hdim D]
-        exact ha)
-
-/-- The quotient map sends the class of a repartition to its family of principal parts. -/
-@[simp]
-theorem repartitionQuotientToPrincipalParts_mk (D : SchemeWeilDivisor X)
-    (a : repartitionSpace k X.functionField) :
-    repartitionQuotientToPrincipalParts hex hdim D (Submodule.Quotient.mk a) =
-      repartitionToPrincipalParts hex hdim D a := by
-  rw [repartitionQuotientToPrincipalParts, Submodule.liftQ_apply]
-
-private theorem repartitionQuotientToPrincipalParts_bijective (D : SchemeWeilDivisor X) :
-    Function.Bijective (repartitionQuotientToPrincipalParts hex hdim D) := by
-  constructor
-  · apply LinearMap.ker_eq_bot.mp
-    apply LinearMap.ker_eq_bot'.mpr
-    intro q hq
-    obtain ⟨a, rfl⟩ := ((adeleFiltration
-      (equivFunctionFieldDivisor hex hdim D)).submoduleOf
-        (repartitionSpace k X.functionField)).mkQ_surjective q
-    rw [repartitionQuotientToPrincipalParts, Submodule.mkQ_apply,
-      Submodule.liftQ_apply] at hq
-    rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    rw [← ker_repartitionToPrincipalParts hex hdim D, LinearMap.mem_ker]
-    exact hq
-  · intro s
-    obtain ⟨a, ha⟩ := repartitionToPrincipalParts_surjective hex hdim D s
-    exact ⟨Submodule.Quotient.mk a, by
-      rw [repartitionQuotientToPrincipalParts_mk, ha]⟩
-
 /-- **Global principal parts as a repartition quotient.** The quotient of the repartition space
 by the repartitions bounded by `D` is linearly equivalent to the global principal parts of `D`. -/
 def adeleFiltrationQuotientEquivPrincipalParts (D : SchemeWeilDivisor X) :
     (↥(repartitionSpace k X.functionField) ⧸
       (adeleFiltration (equivFunctionFieldDivisor hex hdim D)).submoduleOf
         (repartitionSpace k X.functionField)) ≃ₗ[k] Γ(principalParts D, ⊤) := by
-  exact LinearEquiv.ofBijective (repartitionQuotientToPrincipalParts hex hdim D)
-    (repartitionQuotientToPrincipalParts_bijective hex hdim D)
+  exact (Submodule.quotEquivOfEq _ _
+    (ker_repartitionToPrincipalParts hex hdim D).symm).trans
+      ((repartitionToPrincipalParts hex hdim D).quotKerEquivOfSurjective
+        (repartitionToPrincipalParts_surjective hex hdim D))
 
 /-- The repartition-quotient equivalence sends the class of a repartition to its family of
 principal parts. -/
@@ -327,8 +294,8 @@ theorem adeleFiltrationQuotientEquivPrincipalParts_mk (D : SchemeWeilDivisor X)
     (a : repartitionSpace k X.functionField) :
     adeleFiltrationQuotientEquivPrincipalParts hex hdim D (Submodule.Quotient.mk a) =
       repartitionToPrincipalParts hex hdim D a := by
-  rw [adeleFiltrationQuotientEquivPrincipalParts]
-  exact repartitionQuotientToPrincipalParts_mk hex hdim D a
+  rw [adeleFiltrationQuotientEquivPrincipalParts, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 end SchemeWeilDivisor
 
