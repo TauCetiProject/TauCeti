@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Principal complex powers: positive real scaling and inversion on a sector
@@ -23,6 +23,8 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.ofReal_cpow_sum` -- a principal power of a finite sum splits into a product for a
+  positive real base.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
 -/
@@ -49,6 +51,20 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
+
+/-- A principal complex power with positive real base takes a finite sum of real exponents to
+the corresponding product. -/
+theorem ofReal_cpow_sum {ι : Type*} {r : ℝ} (hr : 0 < r) (f : ι → ℝ) (s : Finset ι) :
+    (r : ℂ) ^ ((∑ i ∈ s, f i : ℝ) : ℂ) = ∏ i ∈ s, (r : ℂ) ^ (f i : ℂ) := by
+  calc
+    _ = ((r ^ ∑ i ∈ s, f i : ℝ) : ℂ) := (Complex.ofReal_cpow hr.le _).symm
+    _ = ((∏ i ∈ s, r ^ f i : ℝ) : ℂ) :=
+      congr_arg ((↑) : ℝ → ℂ) (Real.rpow_sum_of_pos hr f s)
+    _ = ∏ i ∈ s, ((r ^ f i : ℝ) : ℂ) := Complex.ofReal_prod s _
+    _ = ∏ i ∈ s, (r : ℂ) ^ (f i : ℂ) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      exact Complex.ofReal_cpow hr.le (f i)
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate

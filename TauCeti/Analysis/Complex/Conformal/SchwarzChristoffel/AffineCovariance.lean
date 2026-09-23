@@ -57,15 +57,7 @@ theorem schwarzChristoffelIntegrand_affine_prevertices (a e : ι → ℝ) {c : �
     ring
   simp_rw [h_affine, TauCeti.ofReal_mul_cpow hc.le, Finset.prod_mul_distrib]
   congr 1
-  calc
-    ∏ i, (c : ℂ) ^ (e i : ℂ) = ∏ i, ((c ^ e i : ℝ) : ℂ) := by
-      apply Finset.prod_congr rfl
-      intro i _
-      exact (Complex.ofReal_cpow hc.le (e i)).symm
-    _ = ((∏ i, c ^ e i : ℝ) : ℂ) := (Complex.ofReal_prod Finset.univ _).symm
-    _ = ((c ^ ∑ i, e i : ℝ) : ℂ) :=
-      congr_arg ((↑) : ℝ → ℂ) (Real.rpow_sum_of_pos hc e Finset.univ).symm
-    _ = (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) := Complex.ofReal_cpow hc.le _
+  exact (ofReal_cpow_sum hc e Finset.univ).symm
 
 /-- The normalized Schwarz--Christoffel primitive is covariant under a simultaneous positive
 affine change of its prevertices, base point, and argument.  Its scale exponent is one more than
