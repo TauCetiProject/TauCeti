@@ -507,7 +507,8 @@ theorem Gamma1_map_le_conjAct_scaleGL_of_dvd {M d N : ℕ} [NeZero d] (h : d * M
       ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma1 M).map (mapGL ℝ)) :=
   (Gamma1_map_le_Gamma1_map_of_dvd h).trans (Gamma1_map_le_conjAct_scaleGL M d)
 
-/-- **Level transport for `Γ₀`**: conjugation by `diag(d, 1)` carries `Γ₀(dM)` into `Γ₀(M)`. -/
+/-- **Level transport for `Γ₀`**: conjugation by `diag(d, 1)` carries `Γ₀(dM)` into `Γ₀(M)`.
+This is what makes `V_d` a map `M_k(Γ₀(M)) → M_k(Γ₀(dM))`. -/
 theorem Gamma0_map_le_conjAct_scaleGL (M d : ℕ) [NeZero d] :
     ((Gamma0 (d * M)).map (mapGL ℝ) : Subgroup (GL (Fin 2) ℝ)) ≤
       ConjAct.toConjAct (scaleGL d)⁻¹ • ((Gamma0 M).map (mapGL ℝ)) := by
