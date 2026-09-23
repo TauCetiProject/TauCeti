@@ -47,27 +47,32 @@ namespace SheafOfModules
 
 variable (R : Sheaf J CommRingCat.{u}) (X : C)
 
-set_option quotPrecheck false in
+/-- The source sheafification functor used to descend restriction to sheaves. -/
 local notation "sourceSheafification" =>
-  PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)
+  PresheafOfModules.sheafification
+    (𝟙 (ObjectProperty.FullSubcategory.obj (ringCatSheaf R)))
 
-set_option quotPrecheck false in
+/-- The sheafification functor on the slice site used to descend restriction. -/
 local notation "targetSheafification" =>
-  PresheafOfModules.sheafification (𝟙 ((ringCatSheaf R).over X).obj)
+  PresheafOfModules.sheafification
+    (𝟙 (ObjectProperty.FullSubcategory.obj (Sheaf.over (ringCatSheaf R) X)))
 
-set_option quotPrecheck false in
+/-- Restriction of presheaves of modules to the slice site. -/
 local notation "presheafRestriction" =>
   PresheafOfModules.pushforward (F := Over.forget X)
-    (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X) (ringCatSheaf R)).inv
+    (Iso.inv (pushforwardRingIso (J := J.over X) (K := J) (Over.forget X)
+      (ringCatSheaf R)))
 
-set_option quotPrecheck false in
+/-- Restriction of presheaves followed by sheafification on the slice site. -/
 local notation "restrictionSheafification" => presheafRestriction ⋙ targetSheafification
 
-set_option quotPrecheck false in
+/-- The source morphisms inverted by sheafification. -/
 local notation "sourceW" =>
-  (J.W (A := AddCommGrpCat)).inverseImage
-    (PresheafOfModules.toPresheaf (ringCatSheaf R).obj)
+  MorphismProperty.inverseImage (J.W (A := AddCommGrpCat))
+    (PresheafOfModules.toPresheaf (ObjectProperty.FullSubcategory.obj (ringCatSheaf R)))
 
+/-- The localization lifting comparing restriction after source sheafification with restriction
+followed by target sheafification. -/
 local instance overSheafificationLifting : CategoryTheory.Localization.Lifting
     sourceSheafification sourceW restrictionSheafification
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) where
@@ -113,21 +118,25 @@ local instance : SymmetricCategory
     (PresheafOfModules.{u} ((ringCatSheaf R).over X).obj) :=
   PresheafOfModules.symmetricCategory (R := (R.over X).obj)
 
+/-- Restriction of presheaves to the slice is strong monoidal. -/
 local instance overPresheafFunctorMonoidal : (presheafRestriction).Monoidal := by
   -- `pushforwardRingIso` is definitionally `Iso.refl`, so this is the canonical strong monoidal
   -- structure on `pushforward₀OfCommRingCat`, not a separately chosen tensorator.
   change (PresheafOfModules.pushforward₀OfCommRingCat (Over.forget X) R.obj).Monoidal
   infer_instance
 
+/-- Restriction of presheaves to the slice preserves the braiding. -/
 local instance overPresheafFunctorBraided : (presheafRestriction).Braided where
   -- After the preceding identification, both the canonical pushforward tensorator and the
   -- braiding are defined sectionwise, so their compatibility is pointwise reflexivity.
   braided _ _ := by
     rfl
 
+/-- Sheafification on the slice site preserves the braiding. -/
 local instance overTargetSheafificationBraided : (targetSheafification).Braided :=
   sheafificationBraided (R.over X)
 
+/-- Restriction of presheaves followed by slice sheafification preserves the braiding. -/
 local instance overSheafificationBraided : (restrictionSheafification).Braided := by
   exact @Functor.Braided.instComp _ _ _ _ _ _ _ _ _ _ _ _
     presheafRestriction targetSheafification inferInstance inferInstance
