@@ -30,8 +30,9 @@ come later.
 
 ## References
 
-The generator convention is the one used in Ozsváth--Stipsicz--Szabó, *Holomorphic Disks and
-Topological Invariants for Closed Three-Manifolds*, Section 2.
+The generator convention is the one used in P. Ozsváth and Z. Szabó, *Holomorphic disks and
+topological invariants for closed three-manifolds*, Ann. of Math. **159** (2004),
+[arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1.
 -/
 
 public section
@@ -60,6 +61,55 @@ variable {n : ℕ} {Point : Type u}
 abbrev Generator : Type u :=
   (σ : Equiv.Perm (Fin n)) ×
     ∀ i, ↥({p | D.alpha p = i} ∩ {p | D.beta p = σ i})
+
+/-- The generators are finite because the intersection point type is finite. -/
+noncomputable instance : Fintype D.Generator := by
+  letI := D.pointFintype
+  classical
+  letI (σ : Equiv.Perm (Fin n)) (i : Fin n) : Fintype
+      ↥({p | D.alpha p = i} ∩ {p | D.beta p = σ i}) := inferInstance
+  exact Fintype.ofFinite _
+
+/-- The generators of `D` are the common points of the symmetric products of its `α`- and
+`β`-label fibers. -/
+noncomputable def generatorEquivPiInter : D.Generator ≃
+    ↥(Sym.pi (fun i => {p | D.alpha p = i}) ∩ Sym.pi (fun j => {p | D.beta p = j})) := by
+  change ((σ : Equiv.Perm (Fin n)) ×
+    ∀ i, ↥({p | D.alpha p = i} ∩ {p | D.beta p = σ i})) ≃ _
+  refine Sym.piInterEquiv (A := fun i => {p | D.alpha p = i})
+    (B := fun j => {p | D.beta p = j}) ?_ ?_
+  · intro i j hij
+    change Disjoint {p | D.alpha p = i} {p | D.alpha p = j}
+    rw [Set.disjoint_left]
+    intro p hpi hpj
+    exact hij (hpi.symm.trans hpj)
+  · intro i j hij
+    change Disjoint {p | D.beta p = i} {p | D.beta p = j}
+    rw [Set.disjoint_left]
+    intro p hpi hpj
+    exact hij (hpi.symm.trans hpj)
+
+/-- The generator equivalence sends a matching to its unordered tuple of intersection points. -/
+@[simp]
+theorem generatorEquivPiInter_apply (g : D.Generator) :
+    D.generatorEquivPiInter g = Sym.matchingTuple g := by
+  have hA : Pairwise (Function.onFun Disjoint (fun i => {p | D.alpha p = i})) := by
+    intro i j hij
+    change Disjoint {p | D.alpha p = i} {p | D.alpha p = j}
+    rw [Set.disjoint_left]
+    intro p hpi hpj
+    exact hij (hpi.symm.trans hpj)
+  have hB : Pairwise (Function.onFun Disjoint (fun j => {p | D.beta p = j})) := by
+    intro i j hij
+    change Disjoint {p | D.beta p = i} {p | D.beta p = j}
+    rw [Set.disjoint_left]
+    intro p hpi hpj
+    exact hij (hpi.symm.trans hpj)
+  change Sym.piInterEquiv (A := fun i => {p | D.alpha p = i})
+    (B := fun j => {p | D.beta p = j}) hA hB g =
+      Sym.matchingTuple (A := fun i => {p | D.alpha p = i})
+        (B := fun j => {p | D.beta p = j}) g
+  exact Sym.piInterEquiv_apply hA hB g
 
 /-- A diagonal incidence system has one intersection point for each corresponding pair of
 curves, and its identity choice is a generator. This supplies a concrete nonempty example of the
