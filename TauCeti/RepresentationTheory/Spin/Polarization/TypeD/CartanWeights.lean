@@ -38,7 +38,9 @@ namespace TauCeti.SpinPolarizationData
 
 universe u v
 
-variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+section CommRing
+
+variable {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
   {n : ℕ} (b : Module.Basis (Fin n) K P.W) [Invertible (2 : K)]
 
@@ -50,9 +52,7 @@ theorem spinAction_typeDSimpleCorootBivector_basis
       algebraMap ℤ K (DynkinType.typeDSpinWeight s i) • b.ExteriorAlgebra s := by
   rw [P.typeDSimpleCorootBivector_eq_diagonalBivector b hn i]
   by_cases hnext : (i : ℕ) + 1 < n
-  · rw [dite_eq_left hnext, map_sub, LinearMap.sub_apply,
-      P.spinAction_diagonalBivector_basis b, P.spinAction_diagonalBivector_basis b,
-      ← sub_smul]
+  · rw [dite_eq_left hnext, P.spinAction_diagonalBivector_sub_diagonalBivector_basis b]
     have hwt := DynkinType.algebraMap_typeDSpinWeight_apply (K := K) s i
     rw [dite_eq_left hnext] at hwt
     exact (congrArg (fun z : K => z • b.ExteriorAlgebra s)
@@ -77,6 +77,14 @@ theorem spinAction_typeDSimpleCorootBivector_basis
     simpa only [hprev, hspin] using
       (congrArg (fun z : K => z • b.ExteriorAlgebra s) hwt).symm
 
+end CommRing
+
+section Field
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+  {n : ℕ} (b : Module.Basis (Fin n) K P.W) [Invertible (2 : K)]
+
 /-- The numbered type-`D` Cartan generator acts on an exterior-basis spinor by the corresponding
 integral spin weight in the simply connected root datum. -/
 theorem spinAction_typeDQuadraticEquiv_cartanGenerator_basis
@@ -87,5 +95,7 @@ theorem spinAction_typeDQuadraticEquiv_cartanGenerator_basis
       algebraMap ℤ K (DynkinType.typeDSpinWeight s i) • b.ExteriorAlgebra s := by
   rw [P.typeDQuadraticEquiv_cartanGenerator b hn hline i]
   exact P.spinAction_typeDSimpleCorootBivector_basis b (by omega) i s
+
+end Field
 
 end TauCeti.SpinPolarizationData
