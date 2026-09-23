@@ -273,7 +273,9 @@ theorem induction_on {motive : PresentedK0 rels → Prop} (x : PresentedK0 rels)
   rw [closure_range_of]
   trivial
 
-variable {G : Type*} [AddCommGroup G]
+section HomExt
+
+variable {G : Type*} [SubtractionMonoid G]
 
 /-- Two homomorphisms out of a presented Grothendieck group agreeing on the classes of objects of
 `C` are equal. -/
@@ -285,6 +287,10 @@ theorem hom_ext {f g : PresentedK0 rels →+ G} (h : ∀ X : C, f (of X) = g (of
   | of X => exact h X
   | add a b ha hb => rw [map_add, map_add, ha, hb]
   | neg a ha => rw [map_neg, map_neg, ha]
+
+end HomExt
+
+variable {G : Type*} [AddCommGroup G]
 
 /-- The additive homomorphism induced by an additive invariant. -/
 noncomputable def lift (a : AdditiveInvariant rels G) : PresentedK0 rels →+ G :=
