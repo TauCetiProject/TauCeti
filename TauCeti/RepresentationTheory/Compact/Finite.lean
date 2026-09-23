@@ -163,7 +163,9 @@ orthogonality of the summands, which needs the inner product Mathlib's complemen
 purely algebraic conclusion, that `π.toRepresentation.asModule` is a semisimple
 `MonoidAlgebra 𝕜 G`-module whenever `|G|` is invertible in `𝕜`, is Mathlib's own instance and is
 neither restated nor reproved here. Peter-Weyl for a finite group, that `peterWeylBasis` is the
-matrix-coefficient basis of `k[G]`, is not proved here either.
+matrix-coefficient basis of the functions on `G`, is proved in
+`TauCeti/RepresentationTheory/Compact/DegreeSum.lean`, on top of the identification
+`TauCeti.lpHaarProbEquivFun` built below.
 -/
 
 public section
