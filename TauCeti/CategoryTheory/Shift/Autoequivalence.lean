@@ -23,8 +23,9 @@ We obtain the coherence by strictification. An `e.IntSequence` is a family of ob
 `n : ℤ`, together with isomorphisms `e (X n) ≅ X (n + 1)`. On these sequences reindexing
 `X ↦ (n ↦ X (n + k))` is a shift by `ℤ` whose coherence isomorphisms are identities up to
 `eqToHom`, so the axioms hold componentwise. Evaluation in degree zero is an equivalence from
-sequences to `C`, since a sequence is determined up to unique isomorphism by its term in degree
-zero, and the reindexing shift is transported along it with Mathlib's `HasShift.induced`.
+sequences to `C`: every object of `C` occurs as a degree-zero term, and a specified degree-zero
+morphism extends uniquely to a morphism of sequences. The reindexing shift is transported along
+this equivalence with Mathlib's `HasShift.induced`.
 Reindexing by one corresponds to `e.functor` under evaluation, which identifies the shift by one.
 
 This is how the suspension autoequivalence of the stable category of a Frobenius exact category
@@ -54,9 +55,7 @@ becomes the shift of that category.
 
 universe v u
 
--- The category structure, reindexing and evaluation of `IntSequence e` are exposed so that their
--- componentwise `rfl` lemmas can be stated.
-@[expose] public section
+public section
 
 namespace CategoryTheory.Equivalence
 
@@ -127,7 +126,7 @@ lemma Hom.f_eq {X Y : IntSequence e} (φ : X ⟶ Y) {n n' : ℤ} (h : n = n') :
 /-! ### Reindexing -/
 
 /-- The sequence `n ↦ X (g n)`, for an index map `g` compatible with successors. -/
-@[simps]
+@[expose, simps]
 def comap (X : IntSequence e) (g : ℤ → ℤ) (hg : ∀ n m, n + 1 = m → g n + 1 = g m) :
     IntSequence e where
   X n := X.X (g n)
@@ -142,7 +141,7 @@ lemma comap_congr (X : IntSequence e) {g g' : ℤ → ℤ} (h : g = g')
 
 /-- Reindexing sequences by `k`: the term in degree `n` of the reindexed sequence is the term in
 degree `n + k`. This is the shift by `k` of `IntSequence e`. -/
-@[simps]
+@[expose, simps]
 def reindex (k : ℤ) : IntSequence e ⥤ IntSequence e where
   obj X := X.comap (· + k) (fun _ _ _ ↦ by omega)
   map φ := { f n := φ.f (n + k), comm _ _ _ := φ.comm _ _ _ }
@@ -181,9 +180,10 @@ instance : HasShift (IntSequence e) ℤ :=
 
 /-! ### Evaluation in degree zero -/
 
-/-- Evaluation of a sequence in degree zero. It is an equivalence of categories: a sequence is
-determined up to unique isomorphism by its term in degree zero. -/
-@[simps]
+/-- Evaluation of a sequence in degree zero. It is an equivalence of categories: every object of
+`C` occurs as a degree-zero term, and each degree-zero morphism extends uniquely to a morphism
+of sequences. -/
+@[expose, simps]
 def eval : IntSequence e ⥤ C where
   obj X := X.X 0
   map φ := φ.f 0
