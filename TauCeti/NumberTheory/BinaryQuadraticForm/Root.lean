@@ -75,9 +75,9 @@ theorem re_root (f : posDef D) : (root f).re = -(f.1.b : ℝ) / (2 * f.1.a) :=
 theorem im_root (f : posDef D) : (root f).im = √(D : ℝ) / (2 * f.1.a) :=
   rfl
 
-theorem coe_root (f : posDef D) :
-    (root f : ℂ) = (-(f.1.b : ℂ) + √(D : ℝ) * I) / (2 * f.1.a) := by
-  apply Complex.ext <;> simp [Complex.div_re, Complex.div_im, normSq] <;> field_simp
+/-- As a complex number, the root of `a x² + b x y + c y²` is `(-b + i √D) / (2 a)`. -/
+theorem coe_root (f : posDef D) : (root f : ℂ) = (-(f.1.b : ℂ) + √(D : ℝ) * I) / (2 * f.1.a) := by
+  simp [← (root f).re_add_im, add_div, mul_div_right_comm]
 
 /-- Over `ℂ` the discriminant `-D` of a form in `posDef D` is the square of `i √D`. -/
 private theorem discrim_eq_mul_self (f : posDef D) :
