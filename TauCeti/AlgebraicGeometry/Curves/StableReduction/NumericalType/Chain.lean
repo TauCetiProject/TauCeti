@@ -394,17 +394,6 @@ theorem intersection_eq_ite {t : ℕ} {c : ℕ → T.Component} {w : ℤ}
     · simp only [hadj, ↓reduceIte]
       exact hc.intersection_eq_zero hcard hi hj hij (by omega) (by omega)
 
-/-- The intersection entries of a leaf meeting just one component of a chain. -/
-lemma intersection_branch_eq_ite {t : ℕ} {c : ℕ → T.Component} {branch : T.Component}
-    {k : ℕ} {w : ℤ} (hbranch : T.intersection (c k) branch = w)
-    (hzero : ∀ i < t, i ≠ k → T.intersection (c i) branch = 0)
-    {i : ℕ} (hi : i < t) :
-    T.intersection (c i) branch = if i = k then w else 0 := by
-  by_cases hik : i = k
-  · subst i
-    simp [hbranch]
-  · simpa [hik] using hzero i hi hik
-
 end IsSelfIntersectionMinusTwoChain
 
 /-- In a proper chain with at least two components, the left-end row of an intersection sum

@@ -13,10 +13,10 @@ import Mathlib.Tactic.IntervalCases
 /-!
 # Exceptional `E₈` configurations of `(-2)`-indices
 
-This file treats the `E₈` part of the classification of connected proper subgraphs of
-`(-2)`-indices in a numerical type. A chain of seven components with an extra leaf at its fifth
-component is simply laced: all eight weights and all seven displayed intersections agree, and
-there are no other edges. This is
+This file treats finite and affine `E₈` configurations of `(-2)`-indices occurring in the
+classification of connected proper subgraphs of a numerical type. A chain of seven components
+with an extra leaf at its fifth component is simply laced: all eight weights and all seven
+displayed intersections agree, and there are no other edges. This is
 [Stacks, Lemma 55.5.14](https://stacks.math.columbia.edu/tag/0C8L).
 
 Extending the long arm by one component produces the affine `E₈` diagram. Its marks form a
@@ -51,8 +51,8 @@ namespace IsSelfIntersectionMinusTwoChain
 /-- A chain `c₀ - c₁ - ⋯ - c₆` of `(-2)`-indices, together with an eighth
 `(-2)`-index meeting `c₄`, is simply laced. Thus all eight weights agree, every displayed
 intersection is that common weight, and the eighth component meets no other component of the
-chain. This gives the classification of the proper
-`E₈` configuration in [Stacks, Lemma 55.5.14](https://stacks.math.columbia.edu/tag/0C8L). -/
+chain. This gives the classification of the `E₈` configuration in
+[Stacks, Lemma 55.5.14](https://stacks.math.columbia.edu/tag/0C8L). -/
 theorem exists_weight_intersection_branch_eight_eq
     {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain 7 c)
     {branch : T.Component} (hbranch_ne : ∀ i < 7, branch ≠ c i)
@@ -61,7 +61,6 @@ theorem exists_weight_intersection_branch_eight_eq
     ∃ w : ℕ+, (∀ i < 7, (T.weight (c i) : ℤ) = w) ∧
       (T.weight branch : ℤ) = w ∧
       (∀ i, i + 1 < 7 → T.intersection (c i) (c (i + 1)) = w) ∧
-      (∀ i j, i < 7 → j < 7 → i + 1 < j → T.intersection (c i) (c j) = 0) ∧
       T.intersection (c 4) branch = w ∧
       ∀ i < 7, i ≠ 4 → T.intersection (c i) branch = 0 := by
   -- The first six chain components and the extra leaf form a fork. Its generic classification
@@ -101,7 +100,7 @@ theorem exists_weight_intersection_branch_eight_eq
   have hw6 : (T.weight (c 6) : ℤ) = w := hw₆.trans hww
   have ha56 : T.intersection (c 5) (c 6) = w := by
     rw [T.intersection_comm, ha₆₅, hww]
-  refine ⟨w, ?_, hwb, ?_, ?_, hab, ?_⟩
+  refine ⟨w, ?_, hwb, ?_, hab, ?_⟩
   · intro i hi
     by_cases hi6 : i < 6
     · exact hw i hi6
@@ -112,8 +111,6 @@ theorem exists_weight_intersection_branch_eight_eq
     · exact hedge i (by omega)
     · have : i = 5 := by omega
       simpa [this] using ha56
-  · intro i j hi hj hij
-    exact hc.intersection_eq_zero hcard hi hj (by omega) (by omega) (by omega)
   · intro i hi hi4
     by_cases hi6 : i < 6
     · exact hf.branch_intersection_eq_zero hi6 (by omega)
@@ -146,7 +143,7 @@ theorem not_affineE8 {c : ℕ → T.Component}
   have hrbranch_ne : ∀ i < 7, branch ≠ r i := by
     intro i hi
     exact hbranch_ne (1 + i) (by omega)
-  obtain ⟨w', hwr, -, hredge, -, -, hrbranch_zero⟩ :=
+  obtain ⟨w', hwr, -, hredge, -, hrbranch_zero⟩ :=
     hr.exists_weight_intersection_branch_eight_eq hrbranch_ne hbranch_self
       (by simpa [r] using hbranch_pos)
   have hww : (w' : ℤ) = w := (hwr 4 (by omega)).symm.trans (hw 5 (by omega))
@@ -181,7 +178,10 @@ theorem not_affineE8 {c : ℕ → T.Component}
     exact hc.intersection_eq_ite (by omega) hweight hedge' hi hj
   have hbranch_entry {i : ℕ} (hi : i < 8) :
       T.intersection (c i) branch = if i = 5 then (w : ℤ) else 0 := by
-    exact IsSelfIntersectionMinusTwoChain.intersection_branch_eq_ite hab hbranch_zero hi
+    split_ifs with h
+    · subst h
+      exact hab
+    · exact hbranch_zero i hi h
   -- Relabel the nine components by the canonical affine-`E₈` numbering. The existing marks
   -- then give the positive vector excluded by negative definiteness.
   let d : ℕ → T.Component := fun i ↦ if i = 8 then branch else c i

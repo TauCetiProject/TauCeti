@@ -29,8 +29,6 @@ and [Stacks, Lemma 55.5.7](https://stacks.math.columbia.edu/tag/0C87).
 
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork`: a chain of length at least three with a
   distinct extra component of self-intersection `-2w` meeting the component indexed by `t - 2`.
-* `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.le_card`: a fork contains at least `t + 1`
-  distinct components.
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.branch_intersection_eq_zero`: the extra
   component meets no other component of the chain, without a properness assumption.
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoFork.exists_weight_intersection_eq`: the
@@ -68,17 +66,6 @@ structure IsSelfIntersectionMinusTwoFork (t : ℕ) (c : ℕ → T.Component)
 variable {T : NumericalType.{u}} {t : ℕ} {c : ℕ → T.Component} {branch : T.Component}
 
 namespace IsSelfIntersectionMinusTwoFork
-
-/-- The chain followed by the extra branch component is injective on its first `t + 1` terms. -/
-lemma injOn_snoc (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
-    ∀ i < t + 1, ∀ j < t + 1,
-      (if i = t then branch else c i) = (if j = t then branch else c j) → i = j := by
-  exact hf.toIsSelfIntersectionMinusTwoChain.injOn_snoc hf.branch_ne
-
-/-- A fork contains at least `t + 1` distinct components. -/
-lemma le_card (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
-    t + 1 ≤ Fintype.card T.Component := by
-  exact hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
 
 private lemma chain_branch_last (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
     T.IsSelfIntersectionMinusTwoChain t fun j ↦ if j = t - 1 then branch else c j where
@@ -118,7 +105,7 @@ lemma branch_intersection_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork t c bra
     {i : ℕ} (hi : i < t) (hne : i ≠ t - 2) :
     T.intersection (c i) branch = 0 := by
   have ht := hf.two_lt
-  have hforkCard := hf.le_card
+  have hforkCard := hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
   let d : ℕ → T.Component := fun j ↦ if j = t - 1 then branch else c j
   have hd_lt {j : ℕ} (hj : j < t - 1) : d j = c j := by simp [d, ne_of_lt hj]
   have hd_last : d (t - 1) = branch := by simp [d]
@@ -146,7 +133,7 @@ private lemma affine_interior_sum_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork
     (hedge : ∀ i, 0 < i → i + 1 < t → T.intersection (c i) (c (i + 1)) = w)
     {i : ℕ} (hi : 1 < i) (hit : i < t) (hic : i ≠ t - 2) (hilast : i ≠ t - 1) :
     ∑ j ∈ range (t + 1), T.intersection (d i) (d j) * y j = 0 := by
-  have hforkCard := hf.le_card
+  have hforkCard := hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
   have hchainCard : t < Fintype.card T.Component := by omega
   have hprefix : (∑ j ∈ range t, T.intersection (c i) (d j) * y j) =
       ∑ j ∈ range t, T.intersection (c i) (c j) * y j :=
@@ -175,7 +162,7 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     (hrow1 : T.intersection (c 1) (c 0) * α + T.intersection (c 1) (c 1) * 2 +
       T.intersection (c 1) (c 2) * 2 = 0) :
     ∀ i < t + 1, 0 ≤ ∑ j ∈ range (t + 1), T.intersection (d i) (d j) * y j := by
-  have hforkCard := hf.le_card
+  have hforkCard := hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
   have hchainCard : t < Fintype.card T.Component := by omega
   have hw₂ := hinterior (t - 2) (by omega) (by omega)
   have ha₃₂ : T.intersection (c (t - 3)) (c (t - 2)) = w := by
@@ -323,7 +310,7 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
       have ht_ne_zero : t ≠ 0 := by omega
       simp [y, ht_ne_zero]
     have hinj : ∀ i < t + 1, ∀ j < t + 1, d i = d j → i = j := by
-      simpa only [d] using hf.injOn_snoc
+      simpa only [d] using hf.toIsSelfIntersectionMinusTwoChain.injOn_snoc hf.branch_ne
     have hrow : ∀ i < t + 1,
         0 ≤ ∑ j ∈ range (t + 1), T.intersection (d i) (d j) * y j :=
       affine_sum_nonneg hf ht α d y hd_lt hd_t hy0 hyInterior hyLast hyt
