@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Orbit.Homeomorph
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Orbit.Basic
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 
 /-!
 # The compact Spin orbit map as a quotient map
