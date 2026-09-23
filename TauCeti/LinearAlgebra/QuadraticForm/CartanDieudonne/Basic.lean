@@ -60,19 +60,13 @@ theorem det_list_prod_of_reflectionOrthogonal [FiniteDimensional K V]
     (hl : ∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
       QuadraticMap.reflectionOrthogonal Q v = r) :
     LinearEquiv.det (l.prod : V ≃ₗ[K] V) = (-1 : Kˣ) ^ l.length := by
-  let detOrthogonal : QuadraticMap.orthogonalGroup Q →* Kˣ :=
-    LinearEquiv.det.comp (QuadraticMap.orthogonalGroup Q).subtype
-  -- The goal's determinant coerces the subgroup product directly to a linear equivalence. Expose
-  -- the definitionally equal composite monoid hom so `map_list_prod` can distribute over the list.
-  change detOrthogonal l.prod = _
-  rw [map_list_prod, ← List.length_map detOrthogonal]
+  rw [← QuadraticMap.orthogonalDet_apply, map_list_prod,
+    ← List.length_map (QuadraticMap.orthogonalDet Q)]
   apply List.prod_eq_pow_length
   rw [List.forall_mem_map]
   intro r hr
   obtain ⟨v, _, rfl⟩ := hl r hr
-  simpa only [detOrthogonal, MonoidHom.coe_comp, Function.comp_apply,
-    Subgroup.coe_subtype, QuadraticMap.coe_reflectionOrthogonal] using
-    TauCeti.QuadraticMap.det_reflection Q v
+  exact QuadraticMap.orthogonalDet_reflectionOrthogonal Q v
 
 private theorem det_reflectionWord [FiniteDimensional K V] (Q : QuadraticForm K V)
     (l : List (AnisotropicVector Q)) :

@@ -24,6 +24,8 @@ remains canonical.
   orthogonal Spin action.
 * `CliffordAlgebra.coe_spinToSpecialOrthogonal_apply` identifies its underlying action
   with the Spin action on the quadratic module.
+* `CliffordAlgebra.specialOrthogonalToOrthogonal_spinToSpecialOrthogonal`: followed by the
+  inclusion of `SO(Q)` into `O(Q)`, it is the orthogonal Spin action.
 
 ## References
 
@@ -259,5 +261,16 @@ theorem coe_spinToSpecialOrthogonal_apply (Q : QuadraticForm R M) (x : spinGroup
   -- The codomain restriction does not change the underlying orthogonal action.
   change (((spinToOrthogonal Q x : QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) m) = _
   rw [coe_spinToOrthogonal_apply]
+
+/-- The Spin action into `SO(Q)`, followed by the inclusion `SO(Q) →* O(Q)`, is the Spin action
+into `O(Q)`. -/
+@[simp]
+theorem specialOrthogonalToOrthogonal_spinToSpecialOrthogonal (Q : QuadraticForm R M)
+    (x : spinGroup Q) :
+    QuadraticMap.specialOrthogonalToOrthogonal Q (spinToSpecialOrthogonal Q x) =
+      spinToOrthogonal Q x := by
+  ext m
+  rw [QuadraticMap.coe_specialOrthogonalToOrthogonal, coe_spinToSpecialOrthogonal_apply,
+    coe_spinToOrthogonal_apply]
 
 end CliffordAlgebra
