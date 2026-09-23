@@ -69,7 +69,6 @@ theorem mem_exchangeableGraphProbabilityMeasures_iff {μ : Measure (SimpleGraph 
 
 /-- A law on graphs is an exchangeable probability measure exactly when its array law is a
 jointly exchangeable probability law carried by the symmetric `false`-diagonal arrays. -/
-@[simp]
 theorem arrayLaw_mem_iff {μ : Measure (SimpleGraph ℕ)} :
     arrayLaw μ ∈ jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false
       ↔ μ ∈ exchangeableGraphProbabilityMeasures := by
