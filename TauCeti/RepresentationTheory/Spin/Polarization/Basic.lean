@@ -22,9 +22,10 @@ form vanishes identically on each isotropic summand, and a basis of the first su
 Kronecker-dual family of vectors in the second.
 
 The decomposition also counts dimensions. Over any nontrivial ring the remainder embeds in the
-scalar line, so is at most a line; over a field the two isotropic summands are moreover dual to
-each other, so equidimensional. Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the parity of `dim V` decides which,
-giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in dimension `2l + 1` (type `Bₗ`).
+scalar line, so is at most a line; over a field the two isotropic summands are moreover dual to each
+other, so equidimensional. Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the parity
+of `dim V` decides which, giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in dimension
+`2l + 1` (type `Bₗ`).
 
 ## Main definitions
 
