@@ -64,7 +64,9 @@ proved here is upgraded to analyticity in
 elementary-symmetric chart is in `TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. The complex
 structure itself and the totally real tori `T_α`, `T_β`, are separate later steps. For transition
 maps at colliding tuples, this file handles the case induced by a univariate polynomial; the
-general holomorphic case remains open.
+general holomorphic case over `ℂ` is
+`TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
+`TauCeti/Analysis/Polynomial/RootSum.lean`.
 -/
 
 public section
