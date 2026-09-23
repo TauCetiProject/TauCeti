@@ -84,18 +84,15 @@ theorem liftQ_apply (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (x : L) :
 /-- The homomorphism induced on the quotient is injective as soon as the ideal quotiented by
 exhausts the kernel. -/
 theorem liftQ_injective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : f.ker ≤ I) :
-    Function.Injective (I.liftQ f h) := by
-  refine (injective_iff_map_eq_zero _).mpr fun u hu => ?_
-  obtain ⟨x, rfl⟩ := I.mkQ_surjective u
-  rw [mkQ_apply, liftQ_apply] at hu
-  rw [mkQ_apply]
-  exact (LieSubmodule.Quotient.mk_eq_zero _).mpr (h' (LieHom.mem_ker.mpr hu))
+    Function.Injective (I.liftQ f h) :=
+  LinearMap.ker_eq_bot.mp <| Submodule.ker_liftQ_eq_bot _ (f : L →ₗ[R] L') h <| by
+    rw [← LieHom.ker_toSubmodule, LieSubmodule.toSubmodule_le_toSubmodule]; exact h'
 
 /-- The homomorphism induced on the quotient by a surjective homomorphism is surjective. -/
 theorem liftQ_surjective (f : L →ₗ⁅R⁆ L') (h : I ≤ f.ker) (h' : Function.Surjective f) :
-    Function.Surjective (I.liftQ f h) := fun y => by
-  obtain ⟨x, hx⟩ := h' y
-  exact ⟨LieSubmodule.Quotient.mk x, (I.liftQ_apply f h x).trans hx⟩
+    Function.Surjective (I.liftQ f h) :=
+  LinearMap.range_eq_top.mp <|
+    (Submodule.range_liftQ _ (f : L →ₗ[R] L') h).trans (LinearMap.range_eq_top.mpr h')
 
 /-- The induced homomorphism on the quotient composed with the quotient map is the original
 homomorphism. -/
