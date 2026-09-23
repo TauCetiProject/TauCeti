@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The root of a positive definite binary quadratic form
