@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.ProP
+public import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Profinite groups defined by generators and relators
@@ -30,13 +31,6 @@ namespace TauCeti
 
 universe u v
 
-/-- The closed normal closure of a set is a normal subgroup. This instance supplies the group
-quotient structure used by the presented profinite and pro-`p` carriers below. -/
-instance instNormal_topologicalClosure_normalClosure {G : Type u} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] (s : Set G) :
-    ((Subgroup.normalClosure s).topologicalClosure).Normal := by
-  exact Subgroup.is_normal_topologicalClosure _
-
 /-- The profinite group presented by generators `X` and relators `rels`, obtained by quotienting
 the free profinite group by the closed normal closure of the relators. -/
 noncomputable abbrev presentedProfiniteGroup (X : Type u)
@@ -57,26 +51,28 @@ noncomputable def of {X : Type u} (rels : Set (freeProfiniteGroup X)) (x : X) :
 
 variable {X : Type u} {rels : Set (freeProfiniteGroup X)}
 
+/-- The quotient map kills every relator. -/
+@[simp]
+theorem mk_relator (r : freeProfiniteGroup X) (hr : r ∈ rels) : mk rels r = 1 := by
+  change (r : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1
+  exact (QuotientGroup.eq_one_iff r).mpr
+    (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
+
+/-- The kernel of the quotient map is the closed normal closure of the relators. -/
+@[simp]
+theorem mem_ker_mk_iff (x : freeProfiniteGroup X) :
+    x ∈ (mk rels).ker ↔ x ∈ (Subgroup.normalClosure rels).topologicalClosure := by
+  change (x : freeProfiniteGroup X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
+  exact QuotientGroup.eq_one_iff x
+
 /-- A continuous homomorphism from the free profinite group that kills the relators factors through
 the presented profinite group. -/
 noncomputable def lift {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProfiniteGroup X rels →ₜ* G := by
   let R : Subgroup (freeProfiniteGroup X) := (Subgroup.normalClosure rels).topologicalClosure
-  have hR : R ≤ ψ.toMonoidHom.ker := by
-    exact Subgroup.topologicalClosure_minimal (Subgroup.normalClosure rels)
-      (Subgroup.normalClosure_le_normal fun r hr ↦ MonoidHom.mem_ker.mpr (hψ r hr))
-      (isClosed_singleton.preimage ψ.continuous)
-  let f : presentedProfiniteGroup X rels →* G := QuotientGroup.lift R ψ.toMonoidHom hR
-  refine ⟨f, ?_⟩
-  apply (QuotientGroup.isQuotientMap_mk R).continuous_iff.mpr
-  -- The quotient-map criterion reduces continuity to this composite with the quotient projection.
-  change Continuous (fun x => f (QuotientGroup.mk x))
-  have hcomp : (fun x => f (QuotientGroup.mk x)) = ψ := by
-    funext x
-    exact QuotientGroup.lift_mk' (N := R) hR x
-  rw [hcomp]
-  exact ψ.continuous
+  exact ContinuousMonoidHom.quotientLift R ψ
+    (topologicalClosure_normalClosure_le_ker rels ψ hψ)
 
 /-- The factorisation through a presented profinite group recovers the original map after the
 canonical quotient projection. -/
@@ -84,16 +80,10 @@ canonical quotient projection. -/
 theorem lift_comp_mk {G : Type v} [Group G] [TopologicalSpace G] [T1Space G]
     (ψ : freeProfiniteGroup X →ₜ* G) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk rels) = ψ := by
-  have hR : (Subgroup.normalClosure rels).topologicalClosure ≤ ψ.toMonoidHom.ker :=
-    Subgroup.topologicalClosure_minimal (Subgroup.normalClosure rels)
-      (Subgroup.normalClosure_le_normal fun r hr ↦ MonoidHom.mem_ker.mpr (hψ r hr))
-      (isClosed_singleton.preimage ψ.continuous)
-  apply ContinuousMonoidHom.ext
-  intro x
-  -- Unfold the topological map wrappers to expose the quotient group's algebraic lift equation.
-  change QuotientGroup.lift (N := (Subgroup.normalClosure rels).topologicalClosure)
-    ψ.toMonoidHom hR (QuotientGroup.mk' _ x) = ψ x
-  exact QuotientGroup.lift_mk' (N := (Subgroup.normalClosure rels).topologicalClosure) hR x
+  change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
+    (topologicalClosure_normalClosure_le_ker rels ψ hψ)).comp
+      (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
+  exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation from a presented profinite group evaluates on its generators as the original
 map does on the free generators. -/
@@ -110,11 +100,24 @@ precomposition with its quotient map. -/
 theorem hom_ext {G : Type v} [Group G] [TopologicalSpace G]
     {φ ψ : presentedProfiniteGroup X rels →ₜ* G}
     (h : φ.comp (mk rels) = ψ.comp (mk rels)) : φ = ψ := by
-  apply ContinuousMonoidHom.ext
-  intro x
-  obtain ⟨y, rfl⟩ := QuotientGroup.mk'_surjective (Subgroup.topologicalClosure
-    (Subgroup.normalClosure rels)) x
-  exact DFunLike.congr_fun h y
+  let R : Subgroup (freeProfiniteGroup X) :=
+    (Subgroup.normalClosure rels).topologicalClosure
+  let f := ψ.comp (mk rels)
+  have hR : R ≤ f.ker := ContinuousMonoidHom.le_ker_comp_quotientMk R ψ
+  have hφ := ContinuousMonoidHom.quotientLift_unique R f hR φ (fun x => by
+    exact DFunLike.congr_fun h x)
+  have hψ := ContinuousMonoidHom.quotientLift_unique R f hR ψ (fun _ => rfl)
+  exact hφ.trans hψ.symm
+
+/-- Two continuous homomorphisms out of a presented profinite group are equal if they agree on
+the canonical generators. -/
+@[ext]
+theorem hom_ext_of {G : Type v} [Group G] [TopologicalSpace G] [T2Space G]
+    {φ ψ : presentedProfiniteGroup X rels →ₜ* G}
+    (h : ∀ x : X, φ (of rels x) = ψ (of rels x)) : φ = ψ := by
+  apply hom_ext
+  apply freeProfiniteGroup.hom_ext
+  exact h
 
 /-- A continuous homomorphism out of the free profinite group that kills the relators factors
 uniquely through the presented profinite group. -/
@@ -151,26 +154,28 @@ theorem isProP (p : ℕ) (X : Type u) (rels : Set (freeProP p X)) :
 
 variable {p : ℕ} {X : Type u} {rels : Set (freeProP p X)}
 
+/-- The quotient map kills every relator. -/
+@[simp]
+theorem mk_relator (r : freeProP p X) (hr : r ∈ rels) : mk p rels r = 1 := by
+  change (r : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1
+  exact (QuotientGroup.eq_one_iff r).mpr
+    (Subgroup.le_topologicalClosure _ (Subgroup.subset_normalClosure hr))
+
+/-- The kernel of the quotient map is the closed normal closure of the relators. -/
+@[simp]
+theorem mem_ker_mk_iff (x : freeProP p X) :
+    x ∈ (mk p rels).ker ↔ x ∈ (Subgroup.normalClosure rels).topologicalClosure := by
+  change (x : freeProP p X ⧸ (Subgroup.normalClosure rels).topologicalClosure) = 1 ↔ _
+  exact QuotientGroup.eq_one_iff x
+
 /-- A continuous homomorphism from the free pro-`p` group that kills the relators factors through
 the presented pro-`p` group. -/
 noncomputable def lift {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     presentedProP p X rels →ₜ* P := by
   let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
-  have hR : R ≤ ψ.toMonoidHom.ker := by
-    exact Subgroup.topologicalClosure_minimal (Subgroup.normalClosure rels)
-      (Subgroup.normalClosure_le_normal fun r hr ↦ MonoidHom.mem_ker.mpr (hψ r hr))
-      (isClosed_singleton.preimage ψ.continuous)
-  let f : presentedProP p X rels →* P := QuotientGroup.lift R ψ.toMonoidHom hR
-  refine ⟨f, ?_⟩
-  apply (QuotientGroup.isQuotientMap_mk R).continuous_iff.mpr
-  -- The quotient-map criterion reduces continuity to this composite with the quotient projection.
-  change Continuous (fun x => f (QuotientGroup.mk x))
-  have hcomp : (fun x => f (QuotientGroup.mk x)) = ψ := by
-    funext x
-    exact QuotientGroup.lift_mk' (N := R) hR x
-  rw [hcomp]
-  exact ψ.continuous
+  exact ContinuousMonoidHom.quotientLift R ψ
+    (topologicalClosure_normalClosure_le_ker rels ψ hψ)
 
 /-- The factorisation through a presented pro-`p` group recovers the original map after the
 canonical quotient projection. -/
@@ -178,16 +183,10 @@ canonical quotient projection. -/
 theorem lift_comp_mk {P : Type v} [Group P] [TopologicalSpace P] [T1Space P]
     (ψ : freeProP p X →ₜ* P) (hψ : ∀ r ∈ rels, ψ r = 1) :
     (lift ψ hψ).comp (mk p rels) = ψ := by
-  have hR : (Subgroup.normalClosure rels).topologicalClosure ≤ ψ.toMonoidHom.ker :=
-    Subgroup.topologicalClosure_minimal (Subgroup.normalClosure rels)
-      (Subgroup.normalClosure_le_normal fun r hr ↦ MonoidHom.mem_ker.mpr (hψ r hr))
-      (isClosed_singleton.preimage ψ.continuous)
-  apply ContinuousMonoidHom.ext
-  intro x
-  -- Unfold the topological map wrappers to expose the quotient group's algebraic lift equation.
-  change QuotientGroup.lift (N := (Subgroup.normalClosure rels).topologicalClosure)
-    ψ.toMonoidHom hR (QuotientGroup.mk' _ x) = ψ x
-  exact QuotientGroup.lift_mk' (N := (Subgroup.normalClosure rels).topologicalClosure) hR x
+  change (ContinuousMonoidHom.quotientLift (Subgroup.normalClosure rels).topologicalClosure ψ
+    (topologicalClosure_normalClosure_le_ker rels ψ hψ)).comp
+      (ContinuousMonoidHom.quotientMk (Subgroup.normalClosure rels).topologicalClosure) = ψ
+  exact ContinuousMonoidHom.quotientLift_comp_quotientMk _ _ _
 
 /-- The factorisation from a presented pro-`p` group evaluates on its generators as the original
 map does on the free generators. -/
@@ -204,11 +203,23 @@ precomposition with its quotient map. -/
 theorem hom_ext {P : Type v} [Group P] [TopologicalSpace P]
     {φ ψ : presentedProP p X rels →ₜ* P}
     (h : φ.comp (mk p rels) = ψ.comp (mk p rels)) : φ = ψ := by
-  apply ContinuousMonoidHom.ext
-  intro x
-  obtain ⟨y, rfl⟩ := QuotientGroup.mk'_surjective (Subgroup.topologicalClosure
-    (Subgroup.normalClosure rels)) x
-  exact DFunLike.congr_fun h y
+  let R : Subgroup (freeProP p X) := (Subgroup.normalClosure rels).topologicalClosure
+  let f := ψ.comp (mk p rels)
+  have hR : R ≤ f.ker := ContinuousMonoidHom.le_ker_comp_quotientMk R ψ
+  have hφ := ContinuousMonoidHom.quotientLift_unique R f hR φ (fun x => by
+    exact DFunLike.congr_fun h x)
+  have hψ := ContinuousMonoidHom.quotientLift_unique R f hR ψ (fun _ => rfl)
+  exact hφ.trans hψ.symm
+
+/-- Two continuous homomorphisms out of a presented pro-`p` group are equal if they agree on
+the canonical generators. -/
+@[ext]
+theorem hom_ext_of {P : Type v} [Group P] [TopologicalSpace P] [T2Space P]
+    {φ ψ : presentedProP p X rels →ₜ* P}
+    (h : ∀ x : X, φ (of p rels x) = ψ (of p rels x)) : φ = ψ := by
+  apply hom_ext
+  apply freeProP.hom_ext
+  exact h
 
 /-- A continuous homomorphism out of the free pro-`p` group that kills the relators factors
 uniquely through the presented pro-`p` group. -/
