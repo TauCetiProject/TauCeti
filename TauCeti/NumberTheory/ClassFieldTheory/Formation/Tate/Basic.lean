@@ -131,4 +131,75 @@ def trivialTateRangeIso (T : LayerRestriction small big) (r : ℤ) :
     (e' := LinearEquiv.refl ℤ ℤ)
     (trivial_isIntertwiningRange T) r
 
+/-- In degree zero, the trivial-coefficient range comparison preserves the integral invariant
+representing a Tate class. -/
+@[simp]
+theorem trivialTateRangeIso_hom_H0π (T : LayerRestriction small big)
+    (x : (Rep.trivial ℤ small.Gal ℤ).ρ.invariants) :
+    (T.trivialTateRangeIso 0).hom (TauCeti.TateCohomology.H0π _ x) =
+      TauCeti.TateCohomology.H0π
+        (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+        ⟨(x : ℤ), fun _ ↦ rfl⟩ := by
+  rw [trivialTateRangeIso, TauCeti.TateCohomology.mapIso_hom,
+    TauCeti.TateCohomology.H0π_comp_map_apply]
+  congr 1
+  ext
+  exact TauCeti.TateCohomology.mapInvariants_apply_coe _ _
+
+/-- In positive degrees, the trivial-coefficient range comparison agrees with the ordinary
+group-cohomology change-of-group isomorphism. -/
+@[reassoc]
+theorem trivialTateRangeIso_hom_comp_isoGroupCohomology_hom
+    (T : LayerRestriction small big) (n : ℕ) [NeZero n] :
+    (T.trivialTateRangeIso n).hom ≫
+        (TateCohomology.isoGroupCohomology n).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) =
+      (TateCohomology.isoGroupCohomology n).hom.app (Rep.trivial ℤ small.Gal ℤ) ≫
+        (groupCohomology.mapIso
+          (B := Rep.trivial ℤ small.Gal ℤ)
+          (A := Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ))
+          (MonoidHom.ofInjective T.galHom_injective) (LinearEquiv.refl ℤ ℤ)
+          (fun _ ↦ LinearMap.ext fun _ ↦ rfl) n).hom := by
+  rw [trivialTateRangeIso, TauCeti.TateCohomology.mapIso_hom,
+    TauCeti.TateCohomology.map_comp_isoGroupCohomology_hom,
+    groupCohomology.mapIso_hom]
+  congr 1
+  apply groupCohomology.map_congr rfl _ n
+  ext
+  simp [Representation.IsIntertwiningMap.ofRes_hom_toLinearMap]
+
+/-- The identity on `ℤ` as an equivariant map from the smaller Galois group's trivial
+representation to the range-comparison representation. -/
+def trivialRangeRepHom (T : LayerRestriction small big) :
+    Rep.trivial ℤ small.Gal ℤ ⟶
+      Rep.res (MonoidHom.ofInjective T.galHom_injective)
+        (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) :=
+  Rep.ofHom ⟨LinearMap.id, fun _ ↦ by ext; rfl⟩
+
+/-- The trivial range comparison fixes each integer coefficient. -/
+@[simp]
+theorem trivialRangeRepHom_apply (T : LayerRestriction small big) (x : ℤ) :
+    T.trivialRangeRepHom x = x :=
+  (rfl)
+
+/-- Below degree minus one, the trivial-coefficient range comparison agrees with the
+group-homology change-of-group isomorphism. -/
+@[reassoc]
+theorem trivialTateRangeIso_hom_comp_isoGroupHomology_hom
+    (T : LayerRestriction small big) (n : ℕ) :
+    (T.trivialTateRangeIso (Int.negSucc (n + 1))).hom ≫
+        (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+          (by rw [Int.negSucc_eq])).hom.app
+          (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) =
+      (TateCohomology.isoGroupHomology (Int.negSucc (n + 1)) (n + 1)
+          (by rw [Int.negSucc_eq])).hom.app (Rep.trivial ℤ small.Gal ℤ) ≫
+        groupHomology.map (MonoidHom.ofInjective T.galHom_injective)
+          T.trivialRangeRepHom (n + 1) := by
+  rw [trivialTateRangeIso, TauCeti.TateCohomology.mapIso_hom,
+    TauCeti.TateCohomology.map_comp_isoGroupHomology_hom]
+  congr 1
+  apply groupHomology.map_congr rfl _ (n + 1)
+  ext
+  simp [Representation.IsIntertwiningMap.toRes_hom_toLinearMap, trivialRangeRepHom]
+
 end TauCeti.ClassFieldTheory.LayerRestriction
