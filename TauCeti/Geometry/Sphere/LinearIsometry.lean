@@ -120,7 +120,7 @@ namespace LinearMap
 section Normed
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-variable [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+variable [AddCommMonoid F] [Module ℝ F]
 
 /-- A real linear map is determined by its values on the unit sphere, since every nonzero vector
 is a positive multiple of a unit vector. -/
