@@ -178,6 +178,7 @@ namespace IsFunctionField
 /-- An element of a one-variable function field over a perfect field is separating exactly when
 its universal differential is nonzero. Both sides fail for an algebraic `x`: its differential
 vanishes, while separability of `F / k⟮x⟯` would make the function field algebraic over `k`. -/
+@[simp]
 theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
     Algebra.IsSeparable k⟮x⟯ F ↔ D k F x ≠ 0 := by
   by_cases hx : Transcendental k x

@@ -20,15 +20,14 @@ which the order of `x` is not divisible by `p` certifies that `x` is separating.
 The proof combines three ingredients.  A separating parameter exists over a perfect field; the
 rational function field has degree `p` over its `p`-th-power subfield; and the kernel of a nonzero
 derivation is an intermediate field.  The first two facts give `[F : F^p] = p`.  Since this degree
-is prime, the kernel of a nonzero derivation that contains `F^p` must equal `F^p`.
+is prime in positive characteristic, the kernel of a nonzero derivation that contains `F^p` must
+equal `F^p`.
 
 ## Main results
 
 * `TauCeti.IsFunctionField.finrank_fieldRange_frobenius`: `[F : F^p] = p`.
 * `TauCeti.IsFunctionField.D_eq_zero_iff_mem_fieldRange_frobenius`: the kernel of the universal
   derivation is exactly `F^p`.
-* `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_not_mem_fieldRange_frobenius`:
-  an element not in `F^p` is separating.
 * `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_not_dvd_ord`: the
   valuation-order criterion.
 
@@ -125,6 +124,7 @@ theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionFi
 /-- **The kernel of the universal derivation is the Frobenius subfield**: in a one-variable
 function field over a perfect field, `d x = 0` exactly when `x` is a `p`-th power. This identifies
 differential nonvanishing with the Frobenius-subfield obstruction used by separating criteria. -/
+@[simp]
 theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] (x : F) :
     D k F x = 0 ↔ x ∈ (frobenius F p).fieldRange := by
@@ -189,32 +189,24 @@ theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
   have hKC : K ≤ C := IntermediateField.relfinrank_eq_one_iff.mp hrel
   exact ⟨fun h ↦ (hmemC x).mp (hKC ((hmemK x).mpr h)), fun h ↦ (hmemK x).mp (hCK ((hmemC x).mpr h))⟩
 
-/-- In a one-variable function field over a perfect field, an element outside the image of
-Frobenius has nonzero universal differential. -/
-theorem D_ne_zero_of_not_mem_fieldRange_frobenius [PerfectField k]
-    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] {x : F}
-    (hx : x ∉ (frobenius F p).fieldRange) : D k F x ≠ 0 := fun h ↦
-  hx ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
-
-/-- An element outside the image of Frobenius is a separating parameter. -/
-theorem transcendental_and_isSeparable_adjoin_of_not_mem_fieldRange_frobenius [PerfectField k]
-    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] {x : F}
-    (hx : x ∉ (frobenius F p).fieldRange) :
-    Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  have hDx := hF.D_ne_zero_of_not_mem_fieldRange_frobenius p hx
-  exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
-
 /-- **The valuation-order criterion for a separating element** (Stichtenoth, Proposition
 3.10.2): if the order of `x` at a discrete valuation is not divisible by the exponential
 characteristic `p`, then `x` is transcendental and `F / k(x)` is separable. -/
 theorem transcendental_and_isSeparable_adjoin_of_not_dvd_ord [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) (v : Valuation F ℤᵐ⁰) (p : ℕ)
-    [ExpChar F p] [Fact p.Prime] {x : F} (hx : ¬ (p : ℤ) ∣ v.ord x) :
+    [ExpChar F p] {x : F} (hx : ¬ (p : ℤ) ∣ v.ord x) :
     Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  apply hF.transcendental_and_isSeparable_adjoin_of_not_mem_fieldRange_frobenius p
-  rw [← iterateFrobenius_one (R := F) p]
-  apply v.not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord p 1
-  simpa using hx
+  cases (inferInstance : ExpChar F p) with
+  | zero => exact (hx (one_dvd _)).elim
+  | prime hp =>
+    let _ : Fact p.Prime := ⟨hp⟩
+    have hnotmem : x ∉ (frobenius F p).fieldRange := by
+      rw [← iterateFrobenius_one (R := F) p]
+      apply v.not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord p 1
+      simpa using hx
+    have hDx : D k F x ≠ 0 := fun h ↦
+      hnotmem ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
+    exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
 
 end IsFunctionField
 
