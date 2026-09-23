@@ -135,6 +135,14 @@ def hurwitzClassNumber (D : ℕ) : ℚ :=
 
 @[simp] theorem hurwitzClassNumber_zero : hurwitzClassNumber 0 = -1 / 12 := rfl
 
+/-- For `D ≠ 0`, `H D` is the weighted count of the reduced forms of discriminant `-D`. -/
+theorem hurwitzClassNumber_of_ne_zero {D : ℕ} (hD : D ≠ 0) :
+    hurwitzClassNumber D = ∑ t ∈ reducedForms D,
+      if t.2.1 = 0 ∧ t.1 = t.2.2 then 1 / 2
+      else if t.1 = t.2.1 ∧ t.2.1 = t.2.2 then 1 / 3
+      else 1 :=
+  ite_eq_right hD
+
 /-- **`H D = 0` for `D ≡ 1, 2 (mod 4)`**: no discriminant `b² - 4 a c` is `-1` or `-2`
 modulo `4`. -/
 theorem hurwitzClassNumber_eq_zero_of_mod_four {D : ℕ} (hD : D % 4 = 1 ∨ D % 4 = 2) :
