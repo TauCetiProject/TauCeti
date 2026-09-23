@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.Quiver.Arborescence
 public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Option
+public import Mathlib.Data.Set.Card
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Quiver.WideSubquiver
 
@@ -230,10 +231,11 @@ def symmetrifiedTreeEdgeEquiv (T : WideSubquiver (Symmetrify V)) [Arborescence T
   simp [symmetrifiedTreeEdgeMap]
 
 /-- The unoriented edges of an arborescence have cardinality one less than its vertex set. -/
-theorem symmetrifiedTreeSetCard [Finite V]
+@[simp] theorem symmetrifiedTreeSetCard [Finite V]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
-    Nat.card (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) :
-      Set (Quiver.Total V)) = Nat.card V - 1 := by
+    (wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T) : Set (Quiver.Total V)).ncard =
+      Nat.card V - 1 := by
+  rw [← Nat.card_coe_set_eq]
   let vertexEquiv : T ≃ V := Equiv.refl V
   exact (letI : Finite T := Finite.of_equiv V vertexEquiv.symm
     show _ from calc
@@ -259,12 +261,12 @@ private lemma finiteVertices_of_finiteTotal [Finite (Quiver.Total V)]
 
 /-- The directed edges outside the underlying unoriented spanning tree are exactly the total
 number of directed edges plus one minus the number of vertices. -/
-theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
+@[simp] theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
     (T : WideSubquiver (Symmetrify V)) [Arborescence T] :
-    Nat.card
-        ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ :
-          Set (Quiver.Total V)) =
+    ((wideSubquiverEquivSetTotal (wideSubquiverSymmetrify T))ᶜ :
+      Set (Quiver.Total V)).ncard =
     Nat.card (Quiver.Total V) + 1 - Nat.card V := by
+  rw [← Nat.card_coe_set_eq]
   classical
   exact (letI : Fintype (Quiver.Total V) := Fintype.ofFinite _
     let A : Set (Quiver.Total V) :=
@@ -280,7 +282,8 @@ theorem nonTreeEdgeCard [Finite (Quiver.Total V)]
         Fintype.card (Quiver.Total V) + 1 - Fintype.card V
       have hcomplement := Fintype.card_subtype_compl (fun e : Quiver.Total V ↦ e ∈ A)
       have htree : Fintype.card A = Fintype.card V - 1 := by
-        simpa only [Nat.card_eq_fintype_card] using symmetrifiedTreeSetCard T
+        simpa only [← Set.fintypeCard_eq_ncard, Nat.card_eq_fintype_card] using
+          symmetrifiedTreeSetCard T
       have hle : Fintype.card V - 1 ≤ Fintype.card (Quiver.Total V) := by
         rw [← htree]
         exact Fintype.card_subtype_le _
