@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Modular
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 public import TauCeti.NumberTheory.ModularForms.Order.OfVanishing
+import TauCeti.Analysis.Complex.UpperHalfPlane.Translation
 import TauCeti.NumberTheory.Modular.Orbits
 
 /-!
@@ -72,9 +73,10 @@ private lemma vadd_mem_of_re_eq (hS : ∀ q ∈ S, orderOfVanishingAt g q ≠ 0 
     (hcomp : ∀ q, q ∈ 𝒟 → orderOfVanishingAt g q ≠ 0 → q ∈ S)
     (hord : orderOfVanishingAt g (r +ᵥ p) = orderOfVanishingAt g p) (hp : p ∈ S)
     (hre : (p : ℂ).re = -r / 2) (hne : orderOfVanishingAt g p ≠ 0) :
-    r +ᵥ p ∈ S ∧ ((r +ᵥ p : ℍ) : ℂ).re = r / 2 ∧ ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ :=
-  ⟨hcomp _ (ModularGroup.vadd_mem_fd_of_re_eq (hS p hp hne) hre) (hord ▸ hne),
-    by rw [coe_vadd, add_re, ofReal_re, hre]; ring, ModularGroup.norm_coe_vadd_of_re_eq hre⟩
+    r +ᵥ p ∈ S ∧ ((r +ᵥ p : ℍ) : ℂ).re = r / 2 ∧ ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
+  have hre' : p.re = -r / 2 := (coe_re p).symm.trans hre
+  exact ⟨hcomp _ (ModularGroup.vadd_mem_fd_of_re_eq (hS p hp hne) hre') (hord ▸ hne),
+    by rw [coe_vadd, add_re, ofReal_re, hre]; ring, norm_coe_vadd_of_re_eq hre'⟩
 
 -- Translation by `r` matches the points of modulus `> 1` on `re = a` with those on `re = -a`.
 private theorem sum_orderOfVanishingAt_vertical_aux {a : ℝ} (ha : a = -r / 2)

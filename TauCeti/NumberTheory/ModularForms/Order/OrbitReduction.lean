@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Order.Orbits
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
+import TauCeti.Analysis.Complex.UpperHalfPlane.Translation
 import TauCeti.NumberTheory.Modular.Orbits
 import TauCeti.NumberTheory.ModularForms.FiniteZeros
 
@@ -142,10 +143,10 @@ private lemma exists_of_re_eq_half [ModularFormClass F 𝒮ℒ k] {f : F} {p₀ 
       Quotient.mk'' p₀ := by
     simpa using ModularGroup.orbit_mk_int_vadd (-1) p₀
   -- the translation lemmas take the edge as the line `re = -r / 2`; here `r = -1`
-  have hre' : p₀.re = -(-1) / 2 := hre.trans (by norm_num)
+  have hre' : p₀.re = -(-1) / 2 := (coe_re p₀).symm.trans (hre.trans (by norm_num))
   refine ⟨(-1 : ℝ) +ᵥ p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr
     ⟨ModularGroup.vadd_mem_fd_of_re_eq hfd hre', ?_⟩,
-      Or.inr (Or.inl ⟨?_, ModularGroup.norm_coe_vadd_of_re_eq hre' ▸ hlt⟩)⟩, horb⟩
+      Or.inr (Or.inl ⟨?_, norm_coe_vadd_of_re_eq hre' ▸ hlt⟩)⟩, horb⟩
   · rwa [← orderOfVanishingOnOrbit_mk (k := k) f, horb, orderOfVanishingOnOrbit_mk]
   · rw [coe_re, vadd_re, hre']
     norm_num

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Modular
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
+import TauCeti.Analysis.Complex.UpperHalfPlane.Translation
 
 /-!
 # Orbits of the modular group on the upper half-plane
@@ -75,24 +76,15 @@ lemma orbit_mk_int_vadd (n : ℤ) (z : ℍ) :
       Quotient.mk'' z :=
   Quotient.sound' ⟨_root_.ModularGroup.T ^ n, UpperHalfPlane.modular_T_zpow_smul z n⟩
 
-/-- On the perpendicular bisector `re = -r / 2` of `0` and `-r`, translation by `r` preserves the
-norm-square. For `r = ±1` that line contains a vertical edge of `𝒟`. -/
-lemma normSq_coe_vadd_of_re_eq {r : ℝ} {p : ℍ} (hre : p.re = -r / 2) :
-    Complex.normSq ((r +ᵥ p : ℍ) : ℂ) = Complex.normSq (p : ℂ) := by
-  simp [Complex.normSq_add, hre]
-  ring
-
-/-- On the line `re = -r / 2`, translation by `r` preserves the norm. -/
-lemma norm_coe_vadd_of_re_eq {r : ℝ} {p : ℍ} (hre : p.re = -r / 2) :
-    ‖((r +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
-  rw [Complex.norm_def, Complex.norm_def, normSq_coe_vadd_of_re_eq hre]
-
 /-- Translation by `r` carries a point of `𝒟` on the line `re = -r / 2` into `𝒟`. -/
-lemma vadd_mem_fd_of_re_eq {r : ℝ} {p : ℍ} (hp : p ∈ 𝒟) (hre : p.re = -r / 2) : r +ᵥ p ∈ 𝒟 :=
-  -- the translate keeps the modulus and is the mirror image `-p.re` of `p` in real part
-  ⟨normSq_coe_vadd_of_re_eq hre ▸ hp.1, by
-    rw [vadd_re, show r + p.re = -p.re by rw [hre]; ring, abs_neg]
-    exact hp.2⟩
+lemma vadd_mem_fd_of_re_eq {r : ℝ} {p : ℍ} (hp : p ∈ 𝒟) (hre : p.re = -r / 2) : r +ᵥ p ∈ 𝒟 := by
+  -- the translate keeps the modulus, and its real part is the mirror image `-p.re` of `p`'s
+  have hmirror : (r +ᵥ p).re = -p.re := by
+    rw [vadd_re, hre]
+    ring
+  refine ⟨normSq_coe_vadd_of_re_eq hre ▸ hp.1, ?_⟩
+  rw [hmirror, abs_neg]
+  exact hp.2
 
 /-- Distinct points of the **open** fundamental domain lie in distinct `SL(2, ℤ)`-orbits: the
 orbit map is injective there. This is the Second Fundamental Domain Lemma
