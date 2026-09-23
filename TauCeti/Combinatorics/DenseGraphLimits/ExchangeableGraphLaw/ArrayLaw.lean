@@ -213,12 +213,6 @@ noncomputable def graphLawArrayLawEquiv :
   left_inv L := InfiniteExchangeableGraphLaw.ext (graphLawOfArray_arrayLaw L.law)
   right_inv ρ := Subtype.ext (arrayLaw_infiniteGraphLawOfArray ρ)
 
-/-- The forward direction of the adapter is the array law. -/
-@[simp]
-theorem graphLawArrayLawEquiv_apply_coe (L : InfiniteExchangeableGraphLaw) :
-    (graphLawArrayLawEquiv L : Measure (ℕ × ℕ → Bool)) = arrayLaw L.law :=
-  (rfl)
-
 /-! ### Dissociation -/
 
 /-- A block of `[k, m)²`, `m = k + n`, read as a pair of labels in `Fin n`. -/
