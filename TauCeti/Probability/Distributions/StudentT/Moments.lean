@@ -326,33 +326,16 @@ theorem not_integrable_exp_mul_id_studentTMeasure (hν : 0 < ν) {t : ℝ} (ht :
     ¬ Integrable (fun x : ℝ => Real.exp (t * x)) (studentTMeasure ν) := by
   intro hint
   -- reflection in the origin turns the rate `t` into `-t`
-  have hmap : (studentTMeasure ν).map (fun x : ℝ => -x) = studentTMeasure ν :=
-    studentTMeasure_map_neg ν
   have hkey : Integrable (fun y : ℝ => Real.exp (t * y))
       ((studentTMeasure ν).map (fun x : ℝ => -x)) := by
-    rw [hmap]
-    exact hint
-  have hcomp : Integrable (fun x : ℝ => Real.exp (t * (-x))) (studentTMeasure ν) :=
-    (integrable_map_measure hkey.aestronglyMeasurable measurable_neg.aemeasurable).mp hkey
+    rwa [studentTMeasure_map_neg]
   have hneg : Integrable (fun x : ℝ => Real.exp (-t * x)) (studentTMeasure ν) := by
-    simpa [mul_neg] using hcomp
+    simpa [Function.comp_def, mul_neg] using
+      (integrable_map_measure hkey.aestronglyMeasurable measurable_neg.aemeasurable).mp hkey
   -- both one-sided exponential moments would force every polynomial moment to be finite
-  have hmom : Integrable (fun x : ℝ => |x| ^ ν) (studentTMeasure ν) :=
-    integrable_rpow_abs_of_integrable_exp_mul ht hint hneg hν.le
-  have hden : Integrable (fun x : ℝ => studentTPDFReal ν x * |x| ^ ν) :=
-    (integrable_studentTMeasure_iff (ν := ν) (f := fun x : ℝ => |x| ^ ν)).mp hmom
-  have hIoi : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * x ^ ν) (Ioi (0 : ℝ)) := by
-    have h1 : IntegrableOn (fun x : ℝ => studentTPDFReal ν x * |x| ^ ν) (Ioi (0 : ℝ)) :=
-      hden.integrableOn
-    have h2 : ∀ x ∈ Ioi (0 : ℝ), studentTPDFReal ν x * |x| ^ ν = studentTPDFReal ν x * x ^ ν := by
-      intro x hx
-      have hx0 : 0 < x := hx
-      have habs : |x| = x := abs_of_pos hx0
-      rw [habs]
-    exact h1.congr_fun h2 measurableSet_Ioi
-  have hq : -1 < ν := by linarith
-  have : ν < ν := (integrableOn_pow_mul_studentTPDFReal_Ioi_iff hν hq).mp hIoi
-  linarith
+  exact (not_lt_of_ge (Nat.le_ceil ν))
+    ((integrable_pow_studentTMeasure_iff hν ⌈ν⌉₊).mp
+      (integrable_pow_of_integrable_exp_mul ht hint hneg ⌈ν⌉₊))
 
 /-- The exponential integrand of a Student t law is integrable exactly at rate zero. -/
 @[simp]
