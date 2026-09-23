@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.UniformIntegrable
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.WeakConvergence
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.WeakConvergence
 public import TauCeti.Topology.MetricSpace.DisplacementTail
 
@@ -97,21 +98,6 @@ theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral (hp0 : p ≠ 0) (
     ext y
     exact NNReal.rpow_inv_le_iff hq
   simpa only [hset, hcoe] using hi
-
-/-- The finite-moment condition for a probability measure is equivalent to finiteness of its
-`p`-moment about any basepoint. -/
-theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top (hp0 : p ≠ 0) (hp : p ≠ ∞) (x : X)
-    (ν : Measure X) [IsProbabilityMeasure ν] :
-    HasFiniteMoment p ν ↔ ∫⁻ y, edist x y ^ p.toReal ∂ν ≠ ∞ := by
-  rw [hasFiniteMoment_iff_memLp_edist (x := x) measurable_edist_right.aestronglyMeasurable]
-  constructor
-  · intro h
-    rw [← eLpNorm_rpow_eq_lintegral hp0 hp]
-    exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg h.eLpNorm_ne_top
-  · intro h
-    refine ⟨measurable_edist_right.aestronglyMeasurable, ?_⟩
-    rw [eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp]
-    simpa only [enorm_eq_self] using h.lt_top
 
 /-- The part of a moment coming from the open region beyond a radius is a weakly lower
 semicontinuous function of the law, its integrand being lower semicontinuous. -/

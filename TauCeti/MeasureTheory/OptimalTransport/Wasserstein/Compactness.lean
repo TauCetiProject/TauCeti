@@ -76,8 +76,8 @@ private theorem setOf_toMeasure_eq_image {X : Type*} [PseudoMetricSpace X] [Meas
     {p : ℝ≥0∞}
     (S : Set (WassersteinSpace p X)) :
     {((μ : ProbabilityMeasure X) : Measure X) | μ ∈ S} =
-      (fun μ : ProbabilityMeasure X ↦ (μ : Measure X)) ''
-        ((fun μ : WassersteinSpace p X ↦ (μ : ProbabilityMeasure X)) '' S) := by
+      {((ν : ProbabilityMeasure X) : Measure X) |
+        ν ∈ ((↑) '' S : Set (ProbabilityMeasure X))} := by
   ext
   simp
 
@@ -137,12 +137,11 @@ theorem isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow
     IsCompact (closure S) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   choose R hR using hU
-  set S' : Set (ProbabilityMeasure X) := (↑) '' S
-  have hK : IsCompact (closure S') := _root_.isCompact_closure_of_isTightMeasureSet <| by
-    change IsTightMeasureSet ((fun μ : ProbabilityMeasure X ↦ (μ : Measure X)) ''
-      ((fun μ : WassersteinSpace p X ↦ (μ : ProbabilityMeasure X)) '' S))
+  have hK : IsCompact (closure ((↑) '' S : Set (ProbabilityMeasure X))) :=
+    _root_.isCompact_closure_of_isTightMeasureSet <| by
     rw [← setOf_toMeasure_eq_image]
     exact hT
+  set S' : Set (ProbabilityMeasure X) := (↑) '' S
   -- `S` lies in the set `T` of laws in the weak closure of `S` whose tails over the open regions
   -- beyond the radii `R ε` are at most `ε`; it suffices to show that `T` is compact.
   set T : Set (WassersteinSpace p X) := {μ | (μ : ProbabilityMeasure X) ∈ closure S' ∧
