@@ -29,7 +29,7 @@ pure zero-dimensional. The property is invariant under isomorphisms of arrows.
 
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension d f`: `f` has relative dimension at most `d`,
   and every fibre is pure-dimensional of dimension `d`.
-* `TauCeti.AlgebraicGeometry.pureRelativeDimension_iff_isPureDimensional_fiber`: the
+* `pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber`: the
   scheme-theoretic fibre characterization.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.isPureDimensional_fiber`: the
   scheme-theoretic fibre formulation.
@@ -64,7 +64,7 @@ variable {d : ℕ} {X Y Z : Scheme.{u}}
 
 /-- A morphism has pure relative dimension `d` if and only if it has relative dimension at most
 `d` and every scheme-theoretic fibre is pure-dimensional of dimension `d`. -/
-theorem pureRelativeDimension_iff_isPureDimensional_fiber (f : X ⟶ Y) :
+theorem pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber (f : X ⟶ Y) :
     PureRelativeDimension d f ↔
       RelativeDimensionLE d f ∧ ∀ y : Y, IsPureDimensional d (f.fiber y) := by
   constructor
@@ -81,7 +81,8 @@ namespace PureRelativeDimension
 pure-dimensional of dimension `d`. -/
 theorem isPureDimensional_fiber (f : X ⟶ Y) [PureRelativeDimension d f] (y : Y) :
     IsPureDimensional d (f.fiber y) :=
-  ((pureRelativeDimension_iff_isPureDimensional_fiber f).mp inferInstance).2 y
+  ((pureRelativeDimension_iff_relativeDimensionLE_and_isPureDimensional_fiber f).mp
+    inferInstance).2 y
 
 /-- A locally quasi-finite morphism has pure relative dimension zero. -/
 instance (priority := low) of_locallyQuasiFinite (f : X ⟶ Y) [LocallyQuasiFinite f] :

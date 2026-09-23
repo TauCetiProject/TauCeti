@@ -41,6 +41,14 @@ topological Krull dimension `d`. -/
 def IsPureDimensional (d : ℕ) (X : Type*) [TopologicalSpace X] : Prop :=
   ∀ Z ∈ irreducibleComponents X, topologicalKrullDim Z = d
 
+/-- An empty space is pure-dimensional of every dimension. -/
+@[simp]
+theorem isPureDimensional_of_isEmpty (d : ℕ) (X : Type*) [TopologicalSpace X] [IsEmpty X] :
+    IsPureDimensional d X := by
+  intro Z hZ
+  obtain ⟨x, hx⟩ := hZ.1.nonempty
+  exact isEmptyElim x
+
 /-- Pure dimension is preserved by a homeomorphism. -/
 theorem IsPureDimensional.homeomorph {d : ℕ} {X Y : Type*} [TopologicalSpace X]
     [TopologicalSpace Y] (hX : IsPureDimensional d X) (e : X ≃ₜ Y) :
