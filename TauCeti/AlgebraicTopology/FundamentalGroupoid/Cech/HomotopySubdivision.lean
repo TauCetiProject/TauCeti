@@ -1,6 +1,5 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
-Adapted from LeanPool, copyright (c) 2026 Dominique Lawson, Henning Basold, and Peter Bruin.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
@@ -18,7 +17,8 @@ cover.
 
 The grid construction adapts `coveredPartwise_exists` from
 `LeanPool.DirectedTopologyLean4.DihomotopyCover.lean` (LeanPool commit
-`34ba5ae88508eccb9d88380a7126a595e3796832`, Apache-2.0). The general form follows Mathlib's
+`34ba5ae88508eccb9d88380a7126a595e3796832`, Apache-2.0; copyright (c) 2026 Dominique Lawson,
+Henning Basold, and Peter Bruin). The general form follows Mathlib's
 `exists_monotone_Icc_subset_open_cover_unitInterval_prod_self`.
 -/
 
