@@ -73,8 +73,9 @@ namespace TauCeti
 universe u v
 
 /-- A **polarization** of a quadratic space `(V, Q)`: a decomposition `V = W ⊕ W' ⊕ line` into two
-isotropic submodules that the polar form puts in perfect duality, and an orthogonal remainder
-embedded in the scalar line by a coordinate whose square is `Q`. It is the data from which the
+isotropic submodules, paired by the polar form so that `W'` is identified with the dual of `W` and
+no nonzero vector of `W` pairs to zero with all of `W'`, and an orthogonal remainder embedded in
+the scalar line by a coordinate whose square is `Q`. It is the data from which the
 exterior model `⋀·W` of a spin representation is built. -/
 @[ext]
 structure SpinPolarizationData {K : Type u} [CommRing K] {V : Type v}
@@ -288,8 +289,8 @@ theorem nondegenerate_of_line_eq_bot {K : Type u} [CommRing K] {V : Type v}
   simpa [hline] using P.mem_line_of_polarBilin_eq_zero hv
 
 /-- **A polarization has nondegenerate quadratic form**, whatever its orthogonal remainder, over a
-reduced ring in which `2` is a regular scalar. So nondegeneracy never needs to be assumed alongside
-polarization data. When the remainder vanishes,
+reduced ring in which `2` is a regular scalar. So over such a ring nondegeneracy never needs to be
+assumed alongside polarization data. When the remainder vanishes,
 `TauCeti.SpinPolarizationData.nondegenerate_of_line_eq_bot` gives the same conclusion with neither
 hypothesis. -/
 theorem nondegenerate {K : Type u} [CommRing K] [IsReduced K]
@@ -330,8 +331,8 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 
 /-! ### The dimensions of the three summands
 
-A polarization is a decomposition `V = W ⊕ W' ⊕ L` in which the polar form pairs `W` with `W'`
-perfectly and `L` sits inside the scalar line. The first fact makes the two isotropic summands
+A polarization is a decomposition `V = W ⊕ W' ⊕ L` in which the polar form identifies `W'` with
+the dual of `W` and `L` sits inside the scalar line. The first fact makes the two isotropic summands
 equidimensional and the second, `finrank_line_le_one` above, bounds the remainder by one
 dimension, so the dimension of `V` determines the dimension of `W` up to the parity of
 `finrank V`. -/
@@ -343,12 +344,9 @@ theorem finrank_W'_eq_finrank_W : finrank K P.W' = finrank K P.W := by
 /-- **A nonzero orthogonal remainder is coordinatized onto the scalars**: its coordinate takes every
 value in the base field. -/
 theorem lineCoordinate_surjective_of_ne_bot (hline : P.line ≠ ⊥) :
-    Function.Surjective P.lineCoordinate := by
-  have hrange : LinearMap.range P.lineCoordinate ≠ ⊥ := by
-    rw [Ne, LinearMap.range_eq_bot]
-    refine fun h0 => hline ((Submodule.eq_bot_iff _).2 fun z hz => ?_)
-    simpa using P.lineCoordinate_injective (a₁ := ⟨z, hz⟩) (a₂ := 0) (by simp [h0])
-  exact LinearMap.range_eq_top.1 ((Ideal.eq_bot_or_top _).resolve_left hrange)
+    Function.Surjective P.lineCoordinate :=
+  LinearMap.surjective fun h0 => hline ((Submodule.eq_bot_iff _).2 fun z hz => by
+    simpa using P.lineCoordinate_injective (a₁ := ⟨z, hz⟩) (a₂ := 0) (by simp [h0]))
 
 variable [FiniteDimensional K V]
 
