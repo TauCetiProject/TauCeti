@@ -46,8 +46,9 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- The length assigned by the Schwarz--Christoffel formula to the bounded side between the
-consecutive prevertices `a i` and `a (i + 1)`. -/
+/-- The oriented candidate side-length integral between consecutive prevertices `a i` and
+`a (i + 1)`.  For strictly ordered prevertices and integrable endpoint singularities it is
+positive and equals the geometric side length, as proved below. -/
 noncomputable def schwarzChristoffelSideLength (a e : Fin (n + 1) → ℝ) (i : Fin n) : ℝ :=
   ∫ x in a i.castSucc..a i.succ, schwarzChristoffelDensity a e x
 
@@ -209,12 +210,8 @@ theorem schwarzChristoffelSideLength_pos (a e : Fin (n + 1) → ℝ) (ha : Stric
     (intervalIntegrable_schwarzChristoffelDensity_succ a e ha i hleft hright) _
     (ha i.castSucc_lt_succ)
   intro x hx
-  rw [schwarzChristoffelDensity_def]
-  refine Finset.prod_pos fun (k : Fin (n + 1)) _ ↦ Real.rpow_pos_of_pos
-    (abs_pos.mpr (sub_ne_zero.mpr ?_)) _
-  intro hxk
-  apply not_mem_Ioo_prevertices_succ a ha i k
-  simpa only [← hxk] using hx
+  exact schwarzChristoffelDensity_pos a e fun k _ hxk ↦
+    not_mem_Ioo_prevertices_succ a ha i k (hxk ▸ hx)
 
 /-- The side-length integral is the Euclidean distance between the corresponding consecutive
 Schwarz--Christoffel vertices. -/

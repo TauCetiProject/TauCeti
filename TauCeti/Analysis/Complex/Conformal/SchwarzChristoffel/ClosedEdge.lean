@@ -82,9 +82,7 @@ private theorem exists_nonneg_schwarzChristoffelBoundary_sub_eq_Ioo (a e : ι �
         (c : ℂ) * Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) :=
   -- the multiple is the integral of the density, which is nonnegative
   ⟨∫ t in y..x, schwarzChristoffelDensity a e t,
-    intervalIntegral.integral_nonneg_of_forall hyx fun t => by
-      rw [schwarzChristoffelDensity_def]
-      exact Finset.prod_nonneg fun _ _ => Real.rpow_nonneg (abs_nonneg _) _,
+    intervalIntegral.integral_nonneg_of_forall hyx (schwarzChristoffelDensity_nonneg a e),
     schwarzChristoffelBoundary_sub_eq a e z₀ ha hx hy⟩
 
 /-- The same statement on the *closed* interval, both of whose endpoints are assumed to carry total

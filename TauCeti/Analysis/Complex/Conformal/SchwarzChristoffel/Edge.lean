@@ -41,8 +41,9 @@ prevertex `a i` rotates the edge direction by `-π · e i`, which for the classi
 
 ## Main definitions
 
-* `TauCeti.schwarzChristoffelDensity` -- the positive real density obtained by taking the norm
-  of the Schwarz--Christoffel integrand on the boundary.
+* `TauCeti.schwarzChristoffelDensity` -- the nonnegative real density obtained by taking the norm
+  of the Schwarz--Christoffel integrand on the boundary; it is positive away from prevertices
+  carrying nonzero exponent.
 * `TauCeti.schwarzChristoffelContinuedIntegrand` -- the Schwarz--Christoffel integrand with the
   branch of every factor to the right of a reference point reflected, so that, as long as no
   prevertex equals that point, it continues holomorphically across the real axis near it.
@@ -92,6 +93,22 @@ noncomputable def schwarzChristoffelDensity (a e : ι → ℝ) (x : ℝ) : ℝ :
 theorem schwarzChristoffelDensity_def (a e : ι → ℝ) (x : ℝ) :
     schwarzChristoffelDensity a e x = ∏ k, |x - a k| ^ e k :=
   (rfl)
+
+/-- The Schwarz--Christoffel boundary density is nonnegative. -/
+theorem schwarzChristoffelDensity_nonneg (a e : ι → ℝ) (x : ℝ) :
+    0 ≤ schwarzChristoffelDensity a e x := by
+  rw [schwarzChristoffelDensity_def]
+  exact Finset.prod_nonneg fun k _ ↦ Real.rpow_nonneg (abs_nonneg (x - a k)) _
+
+/-- The Schwarz--Christoffel boundary density is positive away from every prevertex carrying a
+nonzero exponent. -/
+theorem schwarzChristoffelDensity_pos (a e : ι → ℝ) {x : ℝ}
+    (hx : ∀ k, e k ≠ 0 → x ≠ a k) : 0 < schwarzChristoffelDensity a e x := by
+  rw [schwarzChristoffelDensity_def]
+  refine Finset.prod_pos fun k _ ↦ ?_
+  rcases eq_or_ne (e k) 0 with he | he
+  · simp [he]
+  · exact Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero.mpr (hx k he))) _
 
 /-- Zero turning exponents give constant boundary density one. -/
 @[simp]
@@ -410,21 +427,13 @@ theorem exists_tendsto_schwarzChristoffelPrimitive_injOn_collinear (a e : ι →
     · simpa [he] using continuousWithinAt_const
     · exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
         (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne (hne t ht i he))))).continuousWithinAt
-  have hprodpos : ∀ t : ℝ, (∀ i, e i ≠ 0 → t ≠ a i) →
-      0 < schwarzChristoffelDensity a e t := by
-    intro t ht
-    rw [schwarzChristoffelDensity]
-    refine Finset.prod_pos fun i _ => ?_
-    rcases eq_or_ne (e i) 0 with he | he
-    · simp [he]
-    · exact Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero_of_ne (ht i he))) _
   have key : ∀ x ∈ Ioo p q, ∀ y ∈ Ioo p q, y < x → L x - L y ≠ 0 := by
     intro x hx y hy hyx
     rw [hdiff x hx y hy]
     have hsub' : uIcc y x ⊆ Ioo p q := Set.ordConnected_Ioo.uIcc_subset hy hx
     have hpos : 0 < ∫ t in y..x, schwarzChristoffelDensity a e t :=
       intervalIntegral.intervalIntegral_pos_of_pos_on (hfcont.mono hsub').intervalIntegrable
-        (fun t ht => hprodpos t
+        (fun t ht => schwarzChristoffelDensity_pos a e
           (hne t (hsub' (Set.Icc_subset_uIcc (Set.Ioo_subset_Icc_self ht))))) hyx
     exact mul_ne_zero (mod_cast hpos.ne') (Complex.exp_ne_zero _)
   have hinj : InjOn L (Ioo p q) := by

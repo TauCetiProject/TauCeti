@@ -186,34 +186,36 @@ theorem hasDerivAt_schwarzChristoffelBoundary (a e : ι → ℝ)
     HasDerivAt (schwarzChristoffelBoundary a e z₀)
       ((schwarzChristoffelDensity a e x : ℂ) *
         Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)) x := by
-  let d : ℝ → ℝ := schwarzChristoffelDensity a e
   let C : ℂ := Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I)
-  have hdcontOn : ContinuousOn d (Ioo p q) := by
-    rw [show d = fun y : ℝ => ∏ k, |y - a k| ^ e k by
-      ext y
-      exact schwarzChristoffelDensity_def a e y]
-    refine continuousOn_finsetProd _ fun k _ y hy ↦ ?_
-    rcases eq_or_ne (e k) 0 with hk | hk
-    · simpa [d, schwarzChristoffelDensity_def, hk] using continuousWithinAt_const
-    · have hyk : y ≠ a k := fun h ↦ ha k hk (h ▸ hy)
-      exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
-        (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hyk)))).continuousWithinAt
-  have hdcont : ContinuousAt d x :=
+  have hdcontOn : ContinuousOn (schwarzChristoffelDensity a e) (Ioo p q) := by
+    have hprod : ContinuousOn (fun y : ℝ ↦ ∏ k, |y - a k| ^ e k) (Ioo p q) := by
+      refine continuousOn_finsetProd _ fun k _ y hy ↦ ?_
+      rcases eq_or_ne (e k) 0 with hk | hk
+      · simpa [hk] using continuousWithinAt_const
+      · have hyk : y ≠ a k := fun h ↦ ha k hk (h ▸ hy)
+        exact (((continuous_id.sub continuous_const).abs.continuousAt).rpow_const
+          (Or.inl (abs_ne_zero.mpr (sub_ne_zero_of_ne hyk)))).continuousWithinAt
+    exact hprod.congr fun y _ ↦ schwarzChristoffelDensity_def a e y
+  have hdcont : ContinuousAt (schwarzChristoffelDensity a e) x :=
     (hdcontOn x hx).continuousAt (isOpen_Ioo.mem_nhds hx)
-  have hInt : HasDerivAt (fun y : ℝ ↦ ∫ t in x..y, d t) (d x) x :=
+  have hInt : HasDerivAt (fun y : ℝ ↦ ∫ t in x..y, schwarzChristoffelDensity a e t)
+      (schwarzChristoffelDensity a e x) x :=
     intervalIntegral.integral_hasDerivAt_right (by simp)
       (ContinuousAt.stronglyMeasurableAtFilter isOpen_Ioo
         (fun y hy ↦ (hdcontOn y hy).continuousAt (isOpen_Ioo.mem_nhds hy)) x hx) hdcont
-  have hcast : HasDerivAt (fun y : ℝ ↦ ((∫ t in x..y, d t : ℝ) : ℂ)) (d x : ℂ) x := by
+  have hcast : HasDerivAt
+      (fun y : ℝ ↦ ((∫ t in x..y, schwarzChristoffelDensity a e t : ℝ) : ℂ))
+      (schwarzChristoffelDensity a e x : ℂ) x := by
     simpa [Function.comp_def] using Complex.ofRealCLM.hasDerivAt.scomp x hInt
   have hmodel : HasDerivAt
       (fun y : ℝ ↦ schwarzChristoffelBoundary a e z₀ x +
-        ((∫ t in x..y, d t : ℝ) : ℂ) * C) ((d x : ℂ) * C) x :=
+        ((∫ t in x..y, schwarzChristoffelDensity a e t : ℝ) : ℂ) * C)
+      ((schwarzChristoffelDensity a e x : ℂ) * C) x :=
     (hcast.mul_const C).const_add _
   apply hmodel.congr_of_eventuallyEq
   filter_upwards [Ioo_mem_nhds hx.1 hx.2] with y hy
   have h := schwarzChristoffelBoundary_sub_eq a e z₀ ha hy hx
-  simp only [d, C] at h ⊢
+  simp only [C] at h ⊢
   linear_combination h
 
 /-- The canonical Schwarz--Christoffel boundary map is injective on every real interval free of
