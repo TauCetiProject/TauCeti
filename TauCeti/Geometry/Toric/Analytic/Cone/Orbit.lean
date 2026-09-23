@@ -95,28 +95,14 @@ theorem mem_affineConeOrbit_iff_coneChartEquiv (hi : IsIntegralLattice i)
     rw [hrhs] at hmcoord
     simpa using not_congr hmcoord
   · intro hx m
-    rw [hσ.realCharacter_eq_zero_on_face_iff hi hb F m]
-    let z := coneChartEquiv hi hσ.toIsToricCone hb x
-    have heval := coneChartEquiv_symm_apply_single hi hσ.toIsToricCone hb z m
-    rw [Equiv.symm_apply_apply] at heval
+    rw [hσ.realCharacter_eq_zero_on_face_iff hi hb F m,
+      coneChartEquiv_apply_single_ne_zero_iff hi hσ.toIsToricCone hb x m]
     constructor
-    · intro he ρ hρ
-      have hprod : (regularDualSemigroupEquiv hi hσ.toIsToricCone hb m).1.prod
-          (fun ρ n ↦ z.1 ρ ^ n) ≠ 0 := (mul_ne_zero_iff.mp (heval ▸ he)).1
-      rw [Finsupp.prod_ne_zero_iff] at hprod
-      by_contra hn
-      have hsupp : ρ ∈ (regularDualSemigroupEquiv hi hσ.toIsToricCone hb m).1.support :=
-        Finsupp.mem_support_iff.mpr hn
-      have hz : z.1 ρ = 0 := by simpa [z] using (hx ρ).mpr hρ
-      exact hprod ρ hsupp (by simp [hz, hn])
-    · intro hm
-      rw [heval]
-      refine mul_ne_zero ?_ (Units.ne_zero _)
-      rw [Finsupp.prod_ne_zero_iff]
-      intro ρ hρ
-      apply pow_ne_zero
-      intro hz
-      exact Finsupp.mem_support_iff.mp hρ (hm ρ ((hx ρ).mp (by simpa [z] using hz)))
+    · intro hz ρ hρ
+      by_contra hm
+      exact hz ρ (Finsupp.mem_support_iff.mpr hm) ((hx ρ).mpr hρ)
+    · intro hm ρ hρ hz
+      exact Finsupp.mem_support_iff.mp hρ (hm ρ ((hx ρ).mp hz))
 
 /-! ### Coordinate strata -/
 

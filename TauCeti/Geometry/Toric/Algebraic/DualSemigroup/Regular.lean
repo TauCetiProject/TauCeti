@@ -29,7 +29,7 @@ generated.
 * `TauCeti.Toric.regularDualSemigroupEquiv`: the regular-coordinate equivalence of the dual
   semigroup attached to a basis extending the primitive ray generators, with
   `TauCeti.Toric.coe_regularDualSemigroupEquiv_fst_apply`,
-  `TauCeti.Toric.IsRegularCone.realCharacter_apply_primitiveGenerator`,
+  `TauCeti.Toric.realCharacter_apply_primitiveGenerator`,
   `TauCeti.Toric.regularDualSemigroupEquiv_snd_apply`,
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inl` and
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inr` computing both directions.
@@ -102,12 +102,11 @@ theorem coe_regularDualSemigroupEquiv_fst_apply (m : dualSemigroup hi σ) (ρ : 
 
 /-- Evaluating the real character of a dual-semigroup element at a primitive ray generator gives
 the corresponding regular ray coordinate, viewed in `ℝ`. -/
-theorem IsRegularCone.realCharacter_apply_primitiveGenerator (hσ : IsRegularCone i σ)
-    (m : dualSemigroup hi σ) (ρ : ToricRay σ) :
-    hi.realCharacter (m : N →+ ℤ) (i (primitiveGenerator hi hσ.toIsToricCone ρ)) =
-      ((regularDualSemigroupEquiv hi hσ.toIsToricCone hb m).1 ρ : ℝ) := by
+theorem realCharacter_apply_primitiveGenerator (m : dualSemigroup hi σ) (ρ : ToricRay σ) :
+    hi.realCharacter (m : N →+ ℤ) (i (primitiveGenerator hi hσ ρ)) =
+      ((regularDualSemigroupEquiv hi hσ hb m).1 ρ : ℝ) := by
   rw [hi.realCharacter_apply,
-    ← (hb ρ).eq_primitiveGenerator hi hσ.toIsToricCone,
+    ← (hb ρ).eq_primitiveGenerator hi hσ,
     ← coe_regularDualSemigroupEquiv_fst_apply]
   norm_cast
 

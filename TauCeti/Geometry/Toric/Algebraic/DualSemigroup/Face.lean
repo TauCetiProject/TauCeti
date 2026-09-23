@@ -132,7 +132,7 @@ theorem IsRegularCone.realCharacter_eq_zero_on_face_iff {I : Type*}
     have hmem : i (primitiveGenerator hi hσ.toIsToricCone ρ) ∈ F :=
       (hσ.mem_faceOrderIso_iff hi F ρ).mp hρ
     have hzero := hm _ hmem
-    rw [hσ.realCharacter_apply_primitiveGenerator hi hb] at hzero
+    rw [realCharacter_apply_primitiveGenerator hi hσ.toIsToricCone hb] at hzero
     exact_mod_cast hzero
   · intro hm y hy
     have hF : F.toPointedCone = PointedCone.hull ℝ
@@ -146,7 +146,7 @@ theorem IsRegularCone.realCharacter_eq_zero_on_face_iff {I : Type*}
       rintro _ ⟨_, ⟨ρ, hρ, rfl⟩, rfl⟩
       apply PointedCone.mem_ofSubmodule_iff.mpr
       apply LinearMap.mem_ker.mpr
-      rw [hσ.realCharacter_apply_primitiveGenerator hi hb]
+      rw [realCharacter_apply_primitiveGenerator hi hσ.toIsToricCone hb]
       exact_mod_cast hm ρ hρ
     rw [← PointedCone.Face.mem_toPointedCone, hF] at hy
     have hker := hle hy

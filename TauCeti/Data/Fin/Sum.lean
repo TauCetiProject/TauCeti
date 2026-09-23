@@ -22,9 +22,9 @@ More generally, an embedding of a type `α` into `Fin n` identifies `Fin n` with
 and a finite complementary type.  This packages the standard splitting of a finite type along
 the range of an embedding.
 
-These are Mathlib's own compositions — `finOneEquiv` on each summand, then `finSumFinEquiv` —
-given a name and their evaluation lemmas, so that call sites reindexing a two- or three-variable
-object can rewrite rather than unfold them.
+The two `Unit`-sum equivalences are Mathlib's own compositions — `finOneEquiv` on each summand,
+then `finSumFinEquiv` — given a name and their evaluation lemmas, so that call sites reindexing a
+two- or three-variable object can rewrite rather than unfold them.
 
 ## Main definitions
 
@@ -54,7 +54,7 @@ theorem exists_equiv_sum_fin {α : Type*} {n : ℕ} (s : α ↪ Fin n) :
   have _ : Fintype α := Fintype.ofInjective s s.injective
   exact ⟨Fintype.card {j : Fin n // j ∉ Set.range s},
     (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
-      (Equiv.sumCompl fun j : Fin n ↦ j ∈ Set.range s), fun a ↦ rfl⟩
+      (Equiv.sumCompl fun j : Fin n ↦ j ∈ Set.range s), fun a ↦ by simp⟩
 
 end Function.Embedding
 

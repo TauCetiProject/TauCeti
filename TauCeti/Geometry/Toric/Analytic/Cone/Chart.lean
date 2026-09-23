@@ -41,8 +41,9 @@ assembled from these charts needs.
 * `TauCeti.Toric.coneChartEquiv`: the affine analytic chart of a cone with an extending basis, with
   `TauCeti.Toric.coneChartEquiv_fst_apply` and `TauCeti.Toric.val_coneChartEquiv_snd_apply`
   identifying its coordinate functions with the dual basis characters and
-  `TauCeti.Toric.coneChartEquiv_symm_apply_single` giving the value of a point on an arbitrary
-  monomial.
+  `TauCeti.Toric.coneChartEquiv_symm_apply_single` and
+  `TauCeti.Toric.coneChartEquiv_apply_single_ne_zero_iff` describing the value and nonvanishing
+  of a point on an arbitrary monomial.
 * `TauCeti.Toric.coneChartHomeomorph`: the chart is a homeomorphism for the monomial-embedding
   topology of any finite generating family of the dual semigroup.
 * `TauCeti.Toric.coneChartEquiv_fst_apply_basisChange` and
@@ -95,6 +96,22 @@ theorem coneChartEquiv_symm_apply_single (z : (ToricRay σ → ℂ) × (ι → �
       ((regularDualSemigroupEquiv hi hσ hb m).1.prod fun ρ n ↦ z.1 ρ ^ n) *
         ((regularDualSemigroupEquiv hi hσ hb m).2.prod fun j n ↦ z.2 j ^ n : ℂˣ) :=
   regularAffinePointEquiv_symm_apply_single _ z m
+
+/-- A monomial is nonzero at a complex point exactly when every ray coordinate occurring in its
+support is nonzero. The complementary-coordinate factor is always a unit. -/
+theorem coneChartEquiv_apply_single_ne_zero_iff
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) (m : dualSemigroup hi σ) :
+    x (MonoidAlgebra.single (ofAdd m) 1) ≠ 0 ↔
+      ∀ ρ ∈ (regularDualSemigroupEquiv hi hσ hb m).1.support,
+        (coneChartEquiv hi hσ hb x).1 ρ ≠ 0 := by
+  obtain ⟨z, rfl⟩ := (coneChartEquiv hi hσ hb).symm.surjective x
+  rw [coneChartEquiv_symm_apply_single, mul_ne_zero_iff, Finsupp.prod_ne_zero_iff]
+  simp only [Equiv.apply_symm_apply]
+  constructor
+  · rintro ⟨hz, -⟩ ρ hρ hzero
+    exact hz ρ hρ (by simp [hzero, Finsupp.mem_support_iff.mp hρ])
+  · intro hz
+    exact ⟨fun ρ hρ ↦ pow_ne_zero _ (hz ρ hρ), Units.ne_zero _⟩
 
 /-- The coordinate of a complex point indexed by a ray is its value on the monomial of the dual
 basis character of that ray. -/
