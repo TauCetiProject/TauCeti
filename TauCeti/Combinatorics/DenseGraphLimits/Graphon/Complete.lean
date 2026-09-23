@@ -120,8 +120,9 @@ instance Graphon.instCompleteSpaceUnitInterval :
   have hcauchy : ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N,
       cutNorm P ((V m).toSymmKernel - (V n).toSymmKernel) < ε := by
     intro ε hε
-    obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one (show 0 < ε / 4 by positivity)
-      (show (1 / 2 : ℝ) < 1 by norm_num)
+    have hε4 : 0 < ε / 4 := by positivity
+    have hhalf : (1 / 2 : ℝ) < 1 := by norm_num
+    obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one hε4 hhalf
     refine ⟨N, fun m hm n hn => ?_⟩
     have hbound := cutNorm_sub_le_of_cutNorm_sub_succ_lt (fun n => (V n).toSymmKernel) hVlt N
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hm
