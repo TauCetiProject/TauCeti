@@ -134,24 +134,6 @@ theorem orbit_mk_injOn_canonicalReps [ModularFormClass F 𝒮ℒ k] (f : F) :
   · exact ⟨hre.trans_lt (by norm_num), fun h ↦ absurd h hgt.ne'⟩
   · exact ⟨hre.trans (by norm_num), fun _ ↦ hre.le⟩
 
-private lemma normSq_coe_vadd_neg_one {p : ℍ} (hre : (p : ℂ).re = 1 / 2) :
-    Complex.normSq (((-1 : ℝ) +ᵥ p : ℍ) : ℂ) = Complex.normSq (p : ℂ) := by
-  rw [coe_re] at hre
-  simp [coe_vadd, Complex.normSq_apply, hre]
-  ring
-
-private lemma norm_coe_vadd_neg_one {p : ℍ} (hre : (p : ℂ).re = 1 / 2) :
-    ‖(((-1 : ℝ) +ᵥ p : ℍ) : ℂ)‖ = ‖(p : ℂ)‖ := by
-  rw [Complex.norm_def, Complex.norm_def, normSq_coe_vadd_neg_one hre]
-
-private lemma vadd_neg_one_mem_fd {p : ℍ} (hp : p ∈ 𝒟) (hre : (p : ℂ).re = 1 / 2) :
-    (-1 : ℝ) +ᵥ p ∈ 𝒟 := by
-  refine ⟨?_, ?_⟩
-  · rw [normSq_coe_vadd_neg_one hre]
-    exact hp.1
-  · rw [vadd_re, (coe_re p ▸ hre : p.re = 1 / 2)]
-    norm_num
-
 private lemma exists_of_re_eq_half [ModularFormClass F 𝒮ℒ k] {f : F}
     {p₀ : ℍ} (hfd : p₀ ∈ 𝒟) (hord : orderOfVanishingAt f p₀ ≠ 0) (hre : (p₀ : ℂ).re = 1 / 2)
     (hlt : 1 < ‖(p₀ : ℂ)‖) : ∃ p ∈ canonicalReps f,
@@ -162,11 +144,13 @@ private lemma exists_of_re_eq_half [ModularFormClass F 𝒮ℒ k] {f : F}
   have hord' : orderOfVanishingAt f ((-1 : ℝ) +ᵥ p₀) ≠ 0 := by
     rw [← orderOfVanishingOnOrbit_mk (k := k) f, horb, orderOfVanishingOnOrbit_mk]
     exact hord
+  have hre' : p₀.re = -(-1 : ℝ) / 2 := hre.trans (by norm_num)
   refine ⟨(-1 : ℝ) +ᵥ p₀, mem_canonicalReps.mpr ⟨mem_fdZeros.mpr
-    ⟨vadd_neg_one_mem_fd hfd hre, hord'⟩, Or.inr (Or.inl ⟨?_, ?_⟩)⟩, horb⟩
+    ⟨ModularGroup.vadd_mem_fd_of_re_eq (by norm_num) hfd hre', hord'⟩,
+      Or.inr (Or.inl ⟨?_, ?_⟩)⟩, horb⟩
   · rw [coe_vadd, Complex.add_re, Complex.ofReal_re, hre]
     norm_num
-  · rw [norm_coe_vadd_neg_one hre]
+  · rw [ModularGroup.norm_coe_vadd_of_re_eq hre']
     exact hlt
 
 private lemma exists_of_norm_eq_one_of_re_pos [ModularFormClass F 𝒮ℒ k] {f : F}
