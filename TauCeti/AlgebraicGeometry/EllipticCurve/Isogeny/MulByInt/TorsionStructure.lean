@@ -46,7 +46,7 @@ private theorem natCard_torsionBy_self (W : WeierstrassCurve K) [W.IsElliptic]
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point (d : ℤ)) = d ^ 2 := by
   let eSelf : (W.toAffine⁄K).toAffine.Point ≃+ W.toAffine.Point :=
     AddEquiv.cast (M := fun V : Affine K ↦ V.Point) W.toAffine.baseChange_self
-  rw [← Nat.card_congr (TauCeti.AddEquiv.torsionByCongr eSelf d).toEquiv]
+  rw [← Nat.card_congr (AddEquiv.torsionByCongr eSelf d).toEquiv]
   simpa only [Int.natAbs_natCast] using W.toAffine.natCard_torsionBy (n := (d : ℤ)) (by
     exact_mod_cast TauCeti.Nat.cast_ne_zero_of_dvd hN hd)
 
@@ -60,7 +60,7 @@ private theorem finite_torsionBy_self (W : WeierstrassCurve K) [W.IsElliptic]
     AddEquiv.cast (M := fun V : Affine K ↦ V.Point) W.toAffine.baseChange_self
   let : Finite (AddSubgroup.torsionBy (W.toAffine⁄K).toAffine.Point (d : ℤ)) :=
     W.toAffine.finite_torsionBy (n := (d : ℤ)) (by exact_mod_cast hd)
-  exact Finite.of_equiv _ (TauCeti.AddEquiv.torsionByCongr eSelf d).toEquiv
+  exact Finite.of_equiv _ (AddEquiv.torsionByCongr eSelf d).toEquiv
 
 open scoped Classical in
 /-- A primary component of `E[N]` is a product of two cyclic groups of the expected order. -/
@@ -89,7 +89,7 @@ private noncomputable def primePowerComponentEquiv (W : WeierstrassCurve K) [W.I
     exact natCard_torsionBy_self W hN hq_dvd
   have hcardp : Nat.card
       (AddSubgroup.torsionBy (Submodule.torsionBy ℤ G (q : ℤ)) (p : ℤ)) = p ^ 2 := by
-    let ep := (TauCeti.AddEquiv.torsionByCongr e p).trans
+    let ep := (AddEquiv.torsionByCongr e p).trans
       (TauCeti.AddSubgroup.torsionByTorsionByEquiv hp_dvd_q)
     rw [Nat.card_congr ep.toEquiv]
     exact natCard_torsionBy_self W hN (Nat.dvd_of_mem_primeFactors p.2)

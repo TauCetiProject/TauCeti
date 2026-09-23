@@ -71,6 +71,8 @@ def torsionByTorsionByEquiv {A : Type*} [AddCommGroup A] {a b : ℕ} (hab : a �
 
 end AddSubgroup
 
+end TauCeti
+
 namespace AddEquiv
 
 /-- An additive equivalence carries the `n`-torsion subgroup to the `n`-torsion subgroup. -/
@@ -95,8 +97,6 @@ def torsionByCongr {A B : Type*} [AddCommGroup A] [AddCommGroup B] (e : A ≃+ B
   map_add' _ _ := Subtype.ext (e.map_add _ _)
 
 end AddEquiv
-
-end TauCeti
 
 open scoped nonZeroDivisors
 
