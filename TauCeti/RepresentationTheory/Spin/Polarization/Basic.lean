@@ -21,11 +21,11 @@ scalar line. It also records the two elementary consequences that every consumer
 form vanishes identically on each isotropic summand, and a basis of the first summand has a
 Kronecker-dual family of vectors in the second.
 
-The decomposition also counts dimensions. Over any nontrivial ring the remainder embeds in the
-scalar line, so is at most a line; over a field the two isotropic summands are moreover dual to each
-other, so equidimensional. Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the parity
-of `dim V` decides which, giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in dimension
-`2l + 1` (type `Bₗ`).
+The decomposition also counts dimensions. Over any commutative ring the remainder embeds in the
+scalar line, so is at most a line; over a field the two isotropic summands are moreover dual to
+each other, so equidimensional. Hence `dim V = 2 · dim W + dim line` with `dim line ≤ 1`, and the
+parity of `dim V` decides which, giving `dim W = l` both in dimension `2l` (type `Dₗ`) and in
+dimension `2l + 1` (type `Bₗ`).
 
 ## Main definitions
 
@@ -325,9 +325,10 @@ theorem nondegenerate {K : Type u} [CommRing K] [IsReduced K]
 
 /-- **The orthogonal remainder of a polarization is at most a line.** Its scalar coordinate
 `SpinPolarizationData.lineCoordinate` is injective into `K`, which is one-dimensional. -/
-theorem finrank_line_le_one {K : Type u} [CommRing K] [Nontrivial K] {V : Type v} [AddCommGroup V]
+theorem finrank_line_le_one {K : Type u} [CommRing K] {V : Type v} [AddCommGroup V]
     [Module K V] {Q : QuadraticForm K V} (P : SpinPolarizationData Q) :
     Module.finrank K P.line ≤ 1 := by
+  nontriviality K
   have h := LinearMap.finrank_le_finrank_of_injective (f := P.lineCoordinate)
     P.lineCoordinate_injective
   simpa using h
