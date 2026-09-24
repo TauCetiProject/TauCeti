@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Prokhorov
+public import Mathlib.MeasureTheory.Measure.Tight
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Moment
+
+import Mathlib.MeasureTheory.Measure.Prokhorov
 
 /-!
 # Relatively compact sets of the Wasserstein space
