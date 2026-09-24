@@ -30,8 +30,7 @@ formula uses `B` and `Q`, never `B / 2`, so it makes sense verbatim for integral
 ## Main definitions
 
 * `TauCeti.QuadraticMap.transvection Q hu huw`: the Eichler transvection `E_{u,w}`, as a linear
-  automorphism of `M`. It is built as a composite of two of Mathlib's linear transvections
-  `LinearEquiv.transvection`, so its determinant is `1` on any module.
+  automorphism of `M` with determinant `1`.
 * `TauCeti.QuadraticMap.transvectionHom Q hu`: the homomorphism `w ↦ E_{u,w}` from the additive
   group of `u^⊥ / R ∙ u` into `specialOrthogonalGroup Q`.
 
@@ -66,18 +65,18 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 variable (Q : QuadraticForm R M) {u w w' : M}
 
 /-- The Eichler transvection `E_{u,w} x = x + B x u • w - B x w • u - (Q w * B x u) • u`, for an
-isotropic vector `u` and a vector `w` orthogonal to it, where `B = polar Q`.
-
-It is the composite of two of Mathlib's linear transvections: first `x ↦ x + B u x • w`, then
-`y ↦ y + (Q w * B u y - B w y) • u`. Each has determinant one, so `E_{u,w}` does too
-(`det_transvection`). -/
+isotropic vector `u` and a vector `w` orthogonal to it, where `B = polar Q`. It is a proper
+isometry of `Q`. -/
 noncomputable def transvection (hu : Q u = 0) (huw : polar Q u w = 0) : M ≃ₗ[R] M :=
+  -- Two linear transvections give the formula and show that its determinant is one.
   (LinearEquiv.transvection (f := Q.polarBilin u) (v := w) (by simpa using huw)).trans
     (LinearEquiv.transvection (f := Q w • Q.polarBilin u - Q.polarBilin w) (v := u) (by
       simp [polar_self, hu, polar_comm Q w u, huw]))
 
 variable {Q}
 
+/-- The Eichler transvection acts by
+`E_{u,w} x = x + B x u • w - B x w • u - (Q w * B x u) • u`, where `B = polar Q`. -/
 theorem transvection_apply (hu : Q u = 0) (huw : polar Q u w = 0) (x : M) :
     transvection Q hu huw x
       = x + polar Q x u • w - polar Q x w • u - (Q w * polar Q x u) • u := by
@@ -109,18 +108,26 @@ theorem transvection_mem_specialOrthogonalGroup (hu : Q u = 0) (huw : polar Q u 
   mem_specialOrthogonalGroup_iff.mpr
     ⟨transvection_mem_orthogonalGroup hu huw, det_transvection hu huw⟩
 
+/-- An Eichler transvection `E_{u,w}` fixes its isotropic vector `u`. -/
+@[simp]
+theorem transvection_apply_self (hu : Q u = 0) (huw : polar Q u w = 0) :
+    transvection Q hu huw u = u := by
+  simp [transvection_apply, polar_self, hu, huw]
+
 /-- An Eichler transvection fixes every vector orthogonal to both `u` and `w`. -/
+@[simp]
 theorem transvection_apply_of_polar_eq_zero (hu : Q u = 0) (huw : polar Q u w = 0) {x : M}
     (hxu : polar Q x u = 0) (hxw : polar Q x w = 0) : transvection Q hu huw x = x := by
   simp [transvection_apply, hxu, hxw]
 
-/-- An Eichler transvection `E_{u,w}` fixes its isotropic vector `u`. -/
+/-- The Eichler transvection with `w = 0` is the identity. -/
 @[simp]
-theorem transvection_apply_self (hu : Q u = 0) (huw : polar Q u w = 0) :
-    transvection Q hu huw u = u :=
-  transvection_apply_of_polar_eq_zero hu huw (by simp [polar_self, hu]) huw
+theorem transvection_zero (hu : Q u = 0) : transvection Q (w := 0) hu (by simp) = 1 := by
+  ext x
+  simp [transvection_apply]
 
 /-- The Eichler transvection `E_{u,w}` is trivial when `w` is a multiple of `u`. -/
+@[simp]
 theorem transvection_eq_one_of_mem_span (hu : Q u = 0) (huw : polar Q u w = 0)
     (hw : w ∈ R ∙ u) : transvection Q hu huw = 1 := by
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
@@ -129,15 +136,10 @@ theorem transvection_eq_one_of_mem_span (hu : Q u = 0) (huw : polar Q u w = 0)
     LinearEquiv.coe_one, id_eq]
   module
 
-/-- The Eichler transvection with `w = 0` is the identity. -/
-@[simp]
-theorem transvection_zero (hu : Q u = 0) (h : polar Q u 0 = 0) : transvection Q hu h = 1 :=
-  transvection_eq_one_of_mem_span hu h (Submodule.zero_mem _)
-
 /-- The Eichler transvections with a fixed isotropic vector `u` compose additively in `w`. -/
 theorem transvection_add (hu : Q u = 0) (huw : polar Q u w = 0) (huw' : polar Q u w' = 0)
-    (h : polar Q u (w + w') = 0) :
-    transvection Q hu h = transvection Q hu huw * transvection Q hu huw' := by
+    : transvection Q (w := w + w') hu (by simp [huw, huw']) =
+      transvection Q hu huw * transvection Q hu huw' := by
   ext x
   simp only [LinearEquiv.mul_apply, transvection_apply, polar_add_left, polar_sub_left,
     polar_smul_left, polar_add_right, QuadraticMap.map_add Q, polar_self, hu, polar_comm Q w' u,
@@ -145,17 +147,20 @@ theorem transvection_add (hu : Q u = 0) (huw : polar Q u w = 0) (huw' : polar Q 
   module
 
 /-- The inverse of an Eichler transvection is the Eichler transvection of `-w`. -/
-theorem transvection_neg (hu : Q u = 0) (huw : polar Q u w = 0) (h : polar Q u (-w) = 0) :
-    transvection Q hu h = (transvection Q hu huw)⁻¹ := by
+theorem transvection_neg (hu : Q u = 0) (huw : polar Q u w = 0) :
+    transvection Q (w := -w) hu (by simpa using huw) =
+      (transvection Q hu huw)⁻¹ := by
   refine eq_inv_of_mul_eq_one_left ?_
-  rw [← transvection_add hu h huw (by simp)]
+  rw [← transvection_add hu (by simpa using huw) huw]
   exact transvection_eq_one_of_mem_span hu _ (by simp)
 
 /-- An Eichler transvection depends on `w` only through its class modulo `R ∙ u`. -/
+@[simp]
 theorem transvection_add_smul (hu : Q u = 0) (huw : polar Q u w = 0) (c : R)
-    (h : polar Q u (w + c • u) = 0) : transvection Q hu h = transvection Q hu huw := by
+    : transvection Q (w := w + c • u) hu (by simp [polar_self, hu, huw]) =
+      transvection Q hu huw := by
   have hcu : polar Q u (c • u) = 0 := by simp [polar_self, hu]
-  rw [transvection_add hu huw hcu h, transvection_eq_one_of_mem_span hu hcu
+  rw [transvection_add hu huw hcu, transvection_eq_one_of_mem_span hu hcu
     (Submodule.smul_mem _ c (Submodule.mem_span_singleton_self u)), mul_one]
 
 /-- **The conjugation law.** Conjugating an Eichler transvection by an isometry moves the defining
@@ -187,7 +192,6 @@ private noncomputable def transvectionAddHom (hu : Q u = 0) :
       refine Subtype.ext ?_
       rw [Subgroup.coe_mul]
       exact transvection_add hu (polar_eq_zero_of_mem_ker w.2) (polar_eq_zero_of_mem_ker w'.2)
-        (polar_eq_zero_of_mem_ker (w + w').2)
 
 private theorem coe_toMul_transvectionAddHom (hu : Q u = 0) (w : LinearMap.ker (Q.polarBilin u)) :
     ((Additive.toMul (transvectionAddHom hu w) : specialOrthogonalGroup Q) : M ≃ₗ[R] M) =
@@ -196,14 +200,14 @@ private theorem coe_toMul_transvectionAddHom (hu : Q u = 0) (w : LinearMap.ker (
 
 variable (Q) in
 /-- **The Eichler transvections with a fixed isotropic vector `u`**, as a homomorphism
-`w ↦ E_{u,w}` from the additive group of `u^⊥ / R ∙ u` into `SO(Q)`. It is well defined by
-`transvection_add_smul`, and injective over a field when `u` is not in the kernel of the polar
-form (`transvectionHom_injective`). -/
+`w ↦ E_{u,w}` from the additive group of `u^⊥ / R ∙ u` into `SO(Q)`. Over a field it is
+injective when `u` is not in the kernel of the polar form (`transvectionHom_injective`). -/
 noncomputable def transvectionHom (hu : Q u = 0) :
     (LinearMap.ker (Q.polarBilin u) ⧸
         (R ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) →+
       Additive (specialOrthogonalGroup Q) :=
   QuotientAddGroup.lift _ (transvectionAddHom hu) fun w hw => by
+    -- The transvection is trivial on the span of `u`, so the map descends to the quotient.
     -- Membership in the comapped span is membership of the underlying vector in `R ∙ u`.
     have hw' : (w : M) ∈ R ∙ u := hw
     apply Additive.toMul.injective
@@ -211,6 +215,7 @@ noncomputable def transvectionHom (hu : Q u = 0) :
     exact Subtype.ext ((coe_toMul_transvectionAddHom hu w).trans
       (transvection_eq_one_of_mem_span hu _ hw'))
 
+/-- The quotient homomorphism sends the class of `w` to the Eichler transvection `E_{u,w}`. -/
 @[simp]
 theorem coe_transvectionHom_mk (hu : Q u = 0) (huw : polar Q u w = 0) :
     ((Additive.toMul (transvectionHom Q hu (Submodule.Quotient.mk ⟨w, by simpa using huw⟩)) :
