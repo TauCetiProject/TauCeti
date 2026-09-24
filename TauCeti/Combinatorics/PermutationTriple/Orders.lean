@@ -112,8 +112,9 @@ theorem HasExactOrders.hasDividingOrders (h : t.HasExactOrders a b c) :
 
 /-- Every triple has dividing orders given by its own order triple. -/
 theorem hasDividingOrders_orderTriple :
-    t.HasDividingOrders t.orderTriple.1 t.orderTriple.2.1 t.orderTriple.2.2 :=
-  (show t.HasExactOrders _ _ _ from rfl).hasDividingOrders
+    t.HasDividingOrders t.orderTriple.1 t.orderTriple.2.1 t.orderTriple.2.2 := by
+  rw [hasDividingOrders_iff_orderTriple_dvd]
+  exact ⟨dvd_rfl, dvd_rfl, dvd_rfl⟩
 
 /-- Surjectivity onto the monodromy group follows from the dividing relations. -/
 @[simp] theorem hasSurjectiveMonodromy_iff : t.HasSurjectiveMonodromy a b c ↔
