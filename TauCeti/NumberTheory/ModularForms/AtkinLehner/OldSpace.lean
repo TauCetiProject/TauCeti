@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.AtkinLehner.Normalized
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
 import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
+import Mathlib.NumberTheory.ModularForms.NormTrace
 
 /-!
 # The Atkin–Lehner operators preserve the old subspace
@@ -243,19 +244,106 @@ private lemma sum_diamondOpCusp_mem_cuspFormCharSpace_one [NeZero N]
   exact Fintype.sum_equiv (Equiv.mulLeft w) _ _ fun u ↦ by
     rw [Equiv.coe_mulLeft, map_mul, diamondOpCusp_mul, LinearMap.comp_apply]
 
+/-- The cosets of `Γ₁(N)` in `Γ₀(N)` are indexed by `Gamma0Map` and hence by the diamond
+operators. -/
+private noncomputable def cosetDiamondEquiv (N : ℕ) :
+    (Gamma0 N).map (mapGL ℝ) ⧸
+      ((Gamma1 N).map (mapGL ℝ)).subgroupOf ((Gamma0 N).map (mapGL ℝ)) ≃ (ZMod N)ˣ := by
+  let e := Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ) mapGL_injective
+  let G := (Gamma1 N).map (mapGL ℝ)
+  let H := (Gamma0 N).map (mapGL ℝ)
+  have key (y : H) : (y : GL (Fin 2) ℝ) ∈ G ↔
+      (e.symm y) ∈ (Gamma0Map N).toHomUnits.ker := by
+    have hy : mapGL ℝ ((e.symm y : Gamma0 N) : SL(2, ℤ)) = y := by
+      rw [← Subgroup.coe_equivMapOfInjective_apply (Gamma0 N) (mapGL ℝ)
+        mapGL_injective, e.apply_symm_apply]
+    rw [← hy, Subgroup.mem_map_iff_mem mapGL_injective, MonoidHom.mem_ker]
+    rw [mem_Gamma1_iff]
+    simp [Gamma0Map_apply, MonoidHom.coe_toHomUnits, Units.ext_iff]
+  let E : H ⧸ G.subgroupOf H ≃ (Gamma0 N) ⧸ (Gamma0Map N).toHomUnits.ker :=
+    Quotient.congr e.symm.toEquiv (by
+      intro x y
+      rw [QuotientGroup.leftRel_apply, QuotientGroup.leftRel_apply,
+        Subgroup.mem_subgroupOf, key]
+      simp)
+  exact E.trans (QuotientGroup.quotientKerEquivOfSurjective
+    (Gamma0Map N).toHomUnits Gamma0Map_toHomUnits_surjective).toEquiv
+
+private lemma cosetDiamondEquiv_mk (N : ℕ) (g : Gamma0 N) :
+    cosetDiamondEquiv N
+      (QuotientGroup.mk (Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ)
+        mapGL_injective g)) = (Gamma0Map N).toHomUnits g := by
+  unfold cosetDiamondEquiv
+  dsimp only [Equiv.trans_apply]
+  rw [Quotient.congr_mk]
+  simp [QuotientGroup.quotientKerEquivOfSurjective]
+
+private instance gamma1MapFiniteRelIndexGamma0 (N : ℕ) [NeZero N] :
+    ((Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma0 N).map (mapGL ℝ)) :=
+  Subgroup.IsFiniteRelIndex.map (mapGL ℝ)
+    (Subgroup.isFiniteRelIndex_of_finiteIndex (H := Gamma1 N) (K := Gamma0 N))
+
+/-- Mathlib's cusp-form trace from `Γ₁(N)` to `Γ₀(N)` is the diamond sum. The inverse in
+`Equiv.inv` accounts for the inverse coset representative in the trace definition. -/
+private lemma trace_eq_diamond_sum (N : ℕ) [NeZero N] (k : ℤ)
+    (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    ⇑(CuspForm.trace ((Gamma0 N).map (mapGL ℝ)) F) =
+      ⇑(∑ u : (ZMod N)ˣ, diamondOpCusp k u F) := by
+  let qFintype : Fintype (((Gamma0 N).map (mapGL ℝ)) ⧸
+      ((Gamma1 N).map (mapGL ℝ)).subgroupOf ((Gamma0 N).map (mapGL ℝ))) :=
+    Fintype.ofFinite _
+  let E := (cosetDiamondEquiv N).trans (Equiv.inv (ZMod N)ˣ)
+  funext τ
+  rw [CuspForm.coe_trace]
+  simp only [Finset.sum_apply]
+  have hsum : (∑ u : (ZMod N)ˣ, diamondOpCusp k u F) τ =
+      ∑ u : (ZMod N)ˣ, (diamondOpCusp k u F) τ := by simp
+  rw [hsum]
+  apply @Fintype.sum_equiv _ _ _ qFintype inferInstance _ E
+  intro q
+  let e := Subgroup.equivMapOfInjective (Gamma0 N) (mapGL ℝ) mapGL_injective
+  let g : Gamma0 N := e.symm q.out
+  have hq : (q.out : GL (Fin 2) ℝ) = mapGL ℝ (g : SL(2, ℤ)) := by
+    change (q.out : GL (Fin 2) ℝ) =
+      (mapGL ℝ) ((e.symm q.out : Gamma0 N) : SL(2, ℤ))
+    rw [← Subgroup.coe_equivMapOfInjective_apply (Gamma0 N) (mapGL ℝ)
+      mapGL_injective, e.apply_symm_apply]
+  have hE : E q = ((Gamma0Map N).toHomUnits g)⁻¹ := by
+    change (cosetDiamondEquiv N q)⁻¹ = _
+    rw [← Quotient.out_eq q, ← show e g = q.out from e.apply_symm_apply q.out]
+    exact congrArg Inv.inv (cosetDiamondEquiv_mk N g)
+  have hg : (Gamma0Map N).toHomUnits g⁻¹ = E q := by simp [hE]
+  conv_lhs => rw [← Quotient.out_eq q]
+  rw [SlashInvariantForm.quotientFunc_mk]
+  rw [coe_diamondOpCusp k (E q) g⁻¹ hg F]
+  simpa only [Subgroup.coe_inv, map_inv] using
+    congrArg (fun x : GL (Fin 2) ℝ ↦ (⇑F ∣[k] x⁻¹) τ) hq
+
 variable (N k) in
-/-- The sum of the diamond operators of level `N`, read as a cusp form on `Γ₀(N)`. On a form of
-trivial nebentypus it is multiplication by `#(ZMod N)ˣ`. -/
+/-- Mathlib's trace from `Γ₁(N)` to `Γ₀(N)`, as a linear map. Its diamond-sum formula
+supplies linearity and the oldspace computation below. -/
 private noncomputable def diamondSumGamma0 [NeZero N] :
-    CuspForm ((Gamma1 N).map (mapGL ℝ)) k →ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k :=
-  (cuspFormCharSpaceOneEquiv N k).toLinearMap ∘ₗ
-    (∑ u : (ZMod N)ˣ, diamondOpCusp k u).codRestrict (cuspFormCharSpace k 1) fun F ↦ by
-      simpa using sum_diamondOpCusp_mem_cuspFormCharSpace_one
-        (φ := MonoidHom.id _) Function.surjective_id F
+    CuspForm ((Gamma1 N).map (mapGL ℝ)) k →ₗ[ℂ] CuspForm ((Gamma0 N).map (mapGL ℝ)) k where
+  toFun F := CuspForm.trace ((Gamma0 N).map (mapGL ℝ)) F
+  map_add' F G := by
+    apply DFunLike.coe_injective
+    simp only [FunLike.coe_add]
+    rw [trace_eq_diamond_sum N k (F + G), trace_eq_diamond_sum N k F,
+      trace_eq_diamond_sum N k G]
+    simp only [map_add]
+    rw [Finset.sum_add_distrib]
+    rfl
+  map_smul' c F := by
+    apply DFunLike.coe_injective
+    simp only [FunLike.coe_smul]
+    rw [trace_eq_diamond_sum N k (c • F), trace_eq_diamond_sum N k F]
+    simp only [map_smul]
+    rw [← Finset.smul_sum]
+    rfl
 
 private lemma coe_diamondSumGamma0 [NeZero N] (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ⇑(diamondSumGamma0 N k F) = ⇑(∑ u : (ZMod N)ˣ, diamondOpCusp k u F) := by
-  simp [diamondSumGamma0]
+    ⇑(diamondSumGamma0 N k F) = ⇑(∑ u : (ZMod N)ˣ, diamondOpCusp k u F) :=
+  trace_eq_diamond_sum N k F
 
 /-- `W_Q` carries a level-raise `V_d g` of a cusp form `g` on `Γ₀(M)`, `M` a proper divisor of
 `N`, to an old form, once `Q`, `N`, `M` and `d` factor as in
