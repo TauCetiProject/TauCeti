@@ -25,8 +25,6 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
   complex base.
-* `TauCeti.zpow_mul_cpow` -- an integer power times a principal power of a nonzero complex base
-  is the principal power with the summed exponent.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
 -/
@@ -60,12 +58,6 @@ theorem cpow_sum {ι : Type*} {x : ℂ} (hx : x ≠ 0) (f : ι → ℂ) (s : Fin
     x ^ (∑ i ∈ s, f i) = ∏ i ∈ s, x ^ f i :=
   map_sum (⟨⟨fun y ↦ x ^ y, Complex.cpow_zero x⟩,
     fun y z ↦ Complex.cpow_add y z hx⟩ : ℂ →+ Additive ℂ) f s
-
-/-- For a nonzero complex base, an integer power times a principal complex power is the principal
-power with the summed exponent: `x ^ n * x ^ w = x ^ (n + w)`. -/
-theorem zpow_mul_cpow {x : ℂ} (hx : x ≠ 0) (n : ℤ) (w : ℂ) :
-    x ^ n * x ^ w = x ^ ((n : ℂ) + w) := by
-  rw [Complex.cpow_add _ _ hx, Complex.cpow_intCast]
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate
