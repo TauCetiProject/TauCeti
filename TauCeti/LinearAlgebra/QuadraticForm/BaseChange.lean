@@ -382,7 +382,6 @@ noncomputable def orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M) :
 
 /-- The linear equivalence underlying an orthogonal automorphism after scalar extension is the
 base change of its original linear equivalence. -/
-@[simp]
 theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
     (g : orthogonalGroup Q) :
     (orthogonalGroupBaseChange (A := A) Q g :
@@ -438,7 +437,6 @@ noncomputable def specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Fin
 
 /-- The linear equivalence underlying a base-changed special orthogonal automorphism is the base
 change of its underlying linear equivalence. -/
-@[simp]
 theorem coe_specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
     (specialOrthogonalGroupBaseChange (A := A) Q g :
