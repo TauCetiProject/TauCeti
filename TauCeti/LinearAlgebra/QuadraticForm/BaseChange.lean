@@ -551,6 +551,65 @@ theorem baseChangeBaseChange_symm_tmul (Q : _root_.QuadraticForm R M)
 
 end QuadraticForm
 
+namespace TauCeti.QuadraticMap
+
+/-- Conjugating a directly extended orthogonal automorphism by the canonical scalar-tower
+equivalence agrees with extending it successively. -/
+theorem orthogonalGroupBaseChange_baseChange (Q : _root_.QuadraticForm R M)
+    (g : orthogonalGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    orthogonalGroupCongr (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
+        (orthogonalGroupBaseChange (A := B) Q g) =
+      orthogonalGroupBaseChange (A := B) (Q.baseChange A)
+        (orthogonalGroupBaseChange (A := A) Q g) := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro x
+  induction x using TensorProduct.induction_on with
+  | zero => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul b m =>
+      induction m using TensorProduct.induction_on with
+      | zero => rw [TensorProduct.tmul_zero, map_zero, map_zero]
+      | add m n hm hn => rw [TensorProduct.tmul_add, map_add, map_add, hm, hn]
+      | tmul a v =>
+          rw [coe_orthogonalGroupCongr_apply]
+          have hsymm := QuadraticForm.baseChangeBaseChange_symm_tmul
+            (A := A) (B := B) Q b a v
+          have hinner := congrArg (fun z : B ⊗[R] M ↦
+            ((orthogonalGroupBaseChange (A := B) Q g :
+              B ⊗[R] M ≃ₗ[B] B ⊗[R] M) z)) hsymm
+          calc
+            _ = (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
+                ((orthogonalGroupBaseChange (A := B) Q g :
+                  B ⊗[R] M ≃ₗ[B] B ⊗[R] M) ((a • b) ⊗ₜ[R] v)) := congrArg _ hinner
+            _ = b ⊗ₜ[A] (a ⊗ₜ[R] (g : M ≃ₗ[R] M) v) := by
+              simp only [orthogonalGroupBaseChange_apply_tmul,
+                QuadraticForm.baseChangeBaseChange_tmul]
+              rw [TensorProduct.smul_tmul (R := A) a b
+                (1 ⊗ₜ[R] (g : M ≃ₗ[R] M) v)]
+              simp [TensorProduct.smul_tmul']
+
+/-- The special-orthogonal scalar-extension maps satisfy the same scalar-tower law, read through
+the canonical inclusion into the orthogonal group. -/
+theorem specialOrthogonalGroupBaseChange_baseChange [Module.Free R M] [Module.Finite R M]
+    (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    orthogonalGroupCongr (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
+        (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange B))
+          (specialOrthogonalGroupBaseChange (A := B) Q g)) =
+      Subgroup.inclusion
+        (specialOrthogonalGroup_le_orthogonalGroup ((Q.baseChange A).baseChange B))
+        (specialOrthogonalGroupBaseChange (A := B) (Q.baseChange A)
+          (specialOrthogonalGroupBaseChange (A := A) Q g)) := by
+  simpa only [specialOrthogonalGroupBaseChange_to_orthogonalGroup] using
+    orthogonalGroupBaseChange_baseChange Q
+      (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g)
+
+end TauCeti.QuadraticMap
+
 end ScalarTower
 
 section Field
