@@ -98,6 +98,17 @@ theorem IsHomogeneous.linearSubst {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHo
   exact hp.aeval _ fun i ↦ IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j
 
 omit [Fintype σ] in
+/-- The scalar action on a monomial induced by `Xᵢ ↦ c Xᵢ`. -/
+private theorem aeval_C_mul_X_monomial (c : R) (d : σ →₀ ℕ) (r : R) :
+    MvPolynomial.aeval (fun i ↦ C c * X i) (monomial d r) =
+      c ^ d.sum (fun _ e ↦ e) • monomial d r := by
+  rw [aeval_monomial, Finsupp.prod]
+  simp only [mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
+  rw [← map_pow, algebraMap_eq, smul_eq_C_mul, monomial_eq, Finsupp.prod]
+  simp only [Finsupp.sum]
+  ring
+
+omit [Fintype σ] in
 /-- Substituting `Xᵢ ↦ c Xᵢ` in a form of degree `n` multiplies it by `cⁿ`. -/
 theorem IsHomogeneous.aeval_C_mul_X {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
     (c : R) : MvPolynomial.aeval (fun i ↦ C c * X i) p = c ^ n • p := by
@@ -105,11 +116,9 @@ theorem IsHomogeneous.aeval_C_mul_X {p : MvPolynomial σ R} {n : ℕ} (hp : p.Is
   conv_rhs => rw [p.as_sum]
   rw [map_sum, Finset.smul_sum]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
-  rw [aeval_monomial, Finsupp.prod]
-  simp only [mul_pow, Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum]
-  rw [← hp.degree_eq_sum_deg_support hd, ← map_pow, algebraMap_eq, smul_eq_C_mul, monomial_eq,
-    Finsupp.prod]
-  ring
+  rw [aeval_C_mul_X_monomial]
+  simp only [Finsupp.sum]
+  rw [← hp.degree_eq_sum_deg_support hd]
 
 /-- Rescaling the matrix by `c` rescales a form of degree `n` by `cⁿ`. -/
 theorem IsHomogeneous.linearSubst_smul {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n)
