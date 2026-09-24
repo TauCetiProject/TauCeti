@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Data.Int.Order.Units
-public import Mathlib.Data.PNat.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.InformationTheory.Hamming
 
@@ -182,7 +181,7 @@ theorem signedEquiv_restrictScalars_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x 
 
 /-- A monomial coordinate change over `ZMod m` agrees with a signed coordinate change when its
 coordinate units are reductions of integer units. -/
-theorem monomialEquiv_eq_signedEquiv_of_intUnits {m : ℕ+} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ)
+theorem monomialEquiv_eq_signedEquiv_of_intUnits {m : ℕ} (u : ι → (ZMod m)ˣ) (e : ι ≃ κ)
     (v : ι → ℤˣ) (hv : ∀ i, (v i : ZMod m) = u i) :
     monomialEquiv u e = signedEquiv v e := by
   ext x j
