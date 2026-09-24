@@ -118,6 +118,7 @@ theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
 
 /-- The norm of the Minkowski mixed-space image of an infinite adele is its norm: the product over
 the infinite places of the local absolute values, squared at the complex places. -/
+@[simp]
 theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField K]
     (x : InfiniteAdeleRing K) :
     mixedEmbedding.norm (InfiniteAdeleRing.ringEquiv_mixedSpace K x) = ‖x‖ := by

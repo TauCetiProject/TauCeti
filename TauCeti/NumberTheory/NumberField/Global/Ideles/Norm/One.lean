@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 
 /-!
@@ -36,6 +38,8 @@ for `C_K¹`, the adelic form of the finiteness of the class group and Dirichlet'
   closed.
 * `TauCeti.GlobalNumberFields.IdeleClassGroup.comap_normOne`: the ideles whose class has norm one
   are exactly the ideles of norm one.
+* `TauCeti.GlobalNumberFields.mixedEmbedding_norm_eq_ideleNorm`: when the finite component is
+  everywhere integral, the idele norm equals the mixed norm of the infinite component.
 
 ## References
 
@@ -46,12 +50,27 @@ for `C_K¹`, the adelic form of the finiteness of the class group and Dirichlet'
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
 open scoped NNReal
 
 namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- For an idele whose finite part is an everywhere-integral unit, the idele norm is the mixed norm
+of its infinite part. -/
+theorem mixedEmbedding_norm_eq_ideleNorm {z : IdeleGroup (𝓞 K) K}
+    (hz : IdeleGroup.toFiniteIdele (𝓞 K) K z ∈ FiniteAdeleRing.integralUnits (𝓞 K) K) :
+    mixedEmbedding.norm (InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1) =
+      ((ideleNorm z : NNReal) : ℝ) := by
+  have hfin (v : HeightOneSpectrum (𝓞 K)) :
+      ‖(v.ideleFiniteCoord z : v.adicCompletion K)‖ = 1 := by
+    have hv := FiniteAdeleRing.mem_integralUnits_iff.mp hz v
+    rw [IdeleGroup.coe_toFiniteIdele] at hv
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord, FinitePlace.norm_def, hv, map_one, NNReal.coe_one]
+  simp only [coe_ideleNorm, finprod_congr hfin, finprod_one, mul_one,
+    infiniteCompletionNormalizedAbsValue_apply, InfinitePlace.coe_ideleInfiniteCoord,
+    InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace, InfiniteAdeleRing.norm_def]
 
 /-- The idele norm on the idele class group of a number field: the idele norm descends along the
 quotient by the principal ideles, on which it is trivial by the product formula. -/

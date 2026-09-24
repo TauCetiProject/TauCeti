@@ -62,21 +62,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable (K : Type*) [Field K] [NumberField K]
 
-/-- For an idele whose finite part is an everywhere-integral unit, the idele norm is the mixed norm
-of its infinite part. -/
-private lemma mixedEmbedding_norm_eq_ideleNorm {z : IdeleGroup (𝓞 K) K}
-    (hz : IdeleGroup.toFiniteIdele (𝓞 K) K z ∈ FiniteAdeleRing.integralUnits (𝓞 K) K) :
-    mixedEmbedding.norm (InfiniteAdeleRing.ringEquiv_mixedSpace K (z : AdeleRing (𝓞 K) K).1) =
-      ((ideleNorm z : NNReal) : ℝ) := by
-  have hfin (v : HeightOneSpectrum (𝓞 K)) :
-      ‖(v.ideleFiniteCoord z : v.adicCompletion K)‖ = 1 := by
-    have hv := FiniteAdeleRing.mem_integralUnits_iff.mp hz v
-    rw [IdeleGroup.coe_toFiniteIdele] at hv
-    rw [HeightOneSpectrum.coe_ideleFiniteCoord, FinitePlace.norm_def, hv, map_one, NNReal.coe_one]
-  simp only [coe_ideleNorm, finprod_congr hfin, finprod_one, mul_one,
-    infiniteCompletionNormalizedAbsValue_apply, InfinitePlace.coe_ideleInfiniteCoord,
-    InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace, InfiniteAdeleRing.norm_def]
-
 /-- There is a compact set of ideles meeting the orbit under the global units of every idele of
 norm one whose finite part is an everywhere-integral unit. -/
 private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
@@ -113,7 +98,7 @@ private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
       (hC.prod (MulOpposite.opHomeomorph.symm.isCompact_preimage.mpr hD)), ?_⟩
   intro z hz hzf
   have hnorm : mixedEmbedding.norm (e (z : AdeleRing (𝓞 K) K).1) = 1 := by
-    rw [mixedEmbedding_norm_eq_ideleNorm K hzf, hz, Units.val_one, NNReal.coe_one]
+    rw [mixedEmbedding_norm_eq_ideleNorm (K := K) hzf, hz, Units.val_one, NNReal.coe_one]
   -- Dirichlet's unit theorem moves the infinite part into the fundamental cone.
   obtain ⟨u, hu⟩ := fundamentalCone.exists_unit_smul_mem (hnorm ▸ one_ne_zero)
   refine ⟨u, ?_⟩
@@ -141,27 +126,6 @@ private lemma exists_isCompact_forall_exists_mul_unitEmbedding_mem :
       (MonoidHom.fst _ (FiniteAdeleRing (𝓞 K) K))) z')
   · simpa [← map_inv] using (hint v).2
 
-/-- Every ideal class is the class of the finite part of an idele of norm one. -/
-private lemma exists_ideleNorm_eq_one_and_toClassGroup_eq (c : ClassGroup (𝓞 K)) :
-    ∃ b : IdeleGroup (𝓞 K) K, ideleNorm b = 1 ∧
-      FiniteAdeleRing.toClassGroup (𝓞 K) K (IdeleGroup.toFiniteIdele (𝓞 K) K b) = c := by
-  obtain ⟨f, hf⟩ := FiniteAdeleRing.toClassGroup_surjective (R := 𝓞 K) (K := K) c
-  -- Correct the norm at one infinite place, which does not change the finite part.
-  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-  obtain ⟨x, hx⟩ := exists_infiniteCompletionNormalizedAbsValue_eq w
-    ((ideleNorm (IdeleGroup.ofFiniteIdele (𝓞 K) K f))⁻¹ : NNReal).coe_nonneg
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    rw [map_zero] at hx
-    exact Units.ne_zero _ (by exact_mod_cast hx.symm)
-  refine ⟨IdeleGroup.ofFiniteIdele (𝓞 K) K f * IdeleGroup.ofCompletion (𝓞 K) K w (Units.mk0 x hx0),
-    ?_, ?_⟩
-  · ext
-    rw [map_mul, Units.val_mul, NNReal.coe_mul, coe_ideleNorm_ofCompletion, Units.val_mk0, hx]
-    simp
-  · rw [map_mul, map_mul, IdeleGroup.toFiniteIdele_ofFiniteIdele,
-      IdeleGroup.toFiniteIdele_ofCompletion, map_one, mul_one, hf]
-
 namespace IdeleClassGroup
 
 /-- **The norm-one idele class group is compact.**  This is the adelic form of the finiteness of
@@ -169,7 +133,7 @@ the class group together with Dirichlet's unit theorem. -/
 theorem isCompact_normOne : IsCompact (normOne K : Set (IdeleClassGroup (𝓞 K) K)) := by
   classical
   obtain ⟨W, hW, hWmem⟩ := exists_isCompact_forall_exists_mul_unitEmbedding_mem K
-  choose b hb1 hbc using exists_ideleNorm_eq_one_and_toClassGroup_eq K
+  choose b hb1 hbc using exists_ideleNorm_eq_one_and_toClassGroup_eq (K := K)
   have hq : Continuous (QuotientGroup.mk : IdeleGroup (𝓞 K) K → IdeleClassGroup (𝓞 K) K) :=
     continuous_quot_mk
   -- `C_K¹` is a closed subset of the union over the finitely many ideal classes `c` of the
