@@ -45,9 +45,12 @@ theorem eventually_mem_iff_exists_mul_eq_of_mem
     (h : ∀ᶠ x in 𝓝 (1 : G), x ∈ K ↔ ∃ y ∈ s, f y = x) :
     ∀ᶠ x in 𝓝 g, x ∈ K ↔ ∃ y ∈ s, g * f y = x := by
   have hmap : Tendsto (fun x : G => g⁻¹ * x) (𝓝 g) (𝓝 (1 : G)) := by
-    simpa only [ContinuousAt, smul_eq_mul, inv_mul_cancel] using
-      ((continuous_const_smul (T := G) g⁻¹).continuousAt :
-        ContinuousAt (fun x : G => g⁻¹ • x) g)
+    have hcont : ContinuousAt (fun x : G => g⁻¹ • x) g := by
+      -- Expose the bundled homeomorphism's action coercion before applying its continuity.
+      convert ((Homeomorph.smul (α := G) g⁻¹).continuous.continuousAt :
+        ContinuousAt (Homeomorph.smul (α := G) g⁻¹) g) using 1
+      rfl
+    simpa only [ContinuousAt, smul_eq_mul, inv_mul_cancel] using hcont
   filter_upwards [hmap.eventually h] with x hx
   constructor
   · intro hKx
