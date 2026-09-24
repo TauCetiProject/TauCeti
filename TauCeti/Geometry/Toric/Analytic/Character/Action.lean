@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Geometry.Toric.Analytic.RegularChart
+public import TauCeti.Geometry.Toric.Analytic.Torus.Topology
 
 /-!
 # The character action on the complex points of an affine semigroup
@@ -32,8 +33,8 @@ torus of a toric variety.
 
 Translation by a fixed character is a homeomorphism for the monomial-embedding topology of any
 finite generating family, packaged as a `ContinuousConstSMul` fact so that Mathlib's
-`Homeomorph.smul` applies. Joint continuity in the character is not stated here: the invertible
-characters carry no topology yet.
+`Homeomorph.smul` applies. The coordinate-free complex torus also acts jointly continuously on
+the complex points of any submonoid of its character lattice.
 
 ## Main declarations
 
@@ -54,6 +55,9 @@ characters carry no topology yet.
   translation by a character is continuous for the monomial-embedding topology, and
   `TauCeti.Toric.AffineSemigroupComplexPoint.isOpen_orbit_default`: the orbit of the distinguished
   point is open.
+* `TauCeti.Toric.AffineSemigroupComplexPoint.continuousSMul_affinePointTopology_complexTorus`:
+  the complex torus acts jointly continuously on the complex points of any finitely generated
+  submonoid of its character lattice.
 * `TauCeti.Toric.regularAffinePointEquiv_smul_fst` and
   `TauCeti.Toric.regularAffinePointEquiv_smul_snd`: in the mixed coordinates of a split semigroup
   the action is coordinatewise multiplication;
@@ -238,6 +242,18 @@ theorem continuousConstSMul_affinePointTopology_ambient (g : AddGeneratingFamily
   ⟨fun t ↦ continuous_const_smul_affinePointTopology g (t.compAddMonoidHom S.subtype)⟩
 
 end Ambient
+
+/-- The torus acts jointly continuously on the complex points of a submonoid of the character
+lattice, for the monomial-embedding topology of any finite generating family. -/
+theorem continuousSMul_affinePointTopology_complexTorus {N : Type*} [AddCommGroup N]
+    {S : AddSubmonoid (IntegralCharacter N)} (g : AddGeneratingFamily S r) :
+    letI := affinePointTopology g
+    ContinuousSMul (ComplexTorus N) (AffineSemigroupComplexPoint S) := by
+  let _ := affinePointTopology g
+  refine ⟨(continuous_iff_forall_continuous_apply_single g _).2 fun s ↦ ?_⟩
+  simp only [ambient_smul_apply_single]
+  exact (Units.continuous_val.comp ((continuous_complexTorus_apply (s : IntegralCharacter N)).comp
+    continuous_fst)).mul ((continuous_apply_single g s).comp continuous_snd)
 
 end AffineSemigroupComplexPoint
 

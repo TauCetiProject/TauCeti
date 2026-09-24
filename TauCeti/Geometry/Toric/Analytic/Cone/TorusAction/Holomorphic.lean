@@ -17,12 +17,10 @@ public import TauCeti.Geometry.Toric.Analytic.Torus.Manifold
 The coordinate-free complex torus `ComplexTorus N` acts on the complex points of every submonoid
 `S` of the character lattice `N →+ ℤ`, and in particular on the affine chart of a toric cone, by
 multiplying the value of a point on the monomial of `s ∈ S` by the value of the torus point on
-`s`. This file proves that the action is jointly continuous and, for a cone with an extending
-basis, jointly holomorphic.
+`s`. This file proves that the action is jointly holomorphic for a cone with an extending basis.
 
-Continuity holds for an arbitrary submonoid and for the monomial-embedding topology of any finite
-generating family: every monomial value of `t • x` is the product of a character evaluation of `t`
-and a monomial value of `x`. Holomorphy is stated for the charted-space structures of the torus
+Joint continuity for arbitrary submonoids is proved in `Character.Action`. Holomorphy is stated
+for the charted-space structures of the torus
 attached to any free presentation of its character lattice and of the affine chart attached to any
 extending basis, numbering of the rays and generating family. In these coordinates a torus point
 multiplies each chart coordinate by its value on the corresponding dual basis character, and both
@@ -33,9 +31,6 @@ realization of a fan is glued from.
 
 ## Main declarations
 
-* `TauCeti.Toric.AffineSemigroupComplexPoint.continuousSMul_affinePointTopology_complexTorus`: the
-  torus acts jointly continuously on the complex points of any finitely generated submonoid of the
-  character lattice.
 * `TauCeti.Toric.contMDiffSMul_coneChartedSpace`: the torus acts holomorphically on the affine
   chart of a cone with an extending basis.
 
@@ -53,22 +48,6 @@ open Multiplicative Topology
 namespace TauCeti.Toric
 
 variable {N : Type*} [AddCommGroup N] {r : ℕ}
-
-namespace AffineSemigroupComplexPoint
-
-/-- The torus acts jointly continuously on the complex points of a submonoid of the character
-lattice, for the monomial-embedding topology of any finite generating family. -/
-theorem continuousSMul_affinePointTopology_complexTorus {S : AddSubmonoid (IntegralCharacter N)}
-    (g : AddGeneratingFamily S r) :
-    letI := affinePointTopology g
-    ContinuousSMul (ComplexTorus N) (AffineSemigroupComplexPoint S) := by
-  let _ := affinePointTopology g
-  refine ⟨(continuous_iff_forall_continuous_apply_single g _).2 fun s ↦ ?_⟩
-  simp only [ambient_smul_apply_single]
-  exact (Units.continuous_val.comp ((continuous_complexTorus_apply (s : IntegralCharacter N)).comp
-    continuous_fst)).mul ((continuous_apply_single g s).comp continuous_snd)
-
-end AffineSemigroupComplexPoint
 
 variable {V ι : Type*} [AddCommGroup V] [Module ℝ V] {i : N →+ V} {σ : PointedCone ℝ V}
   {s k l : ℕ} [Fintype ι]
