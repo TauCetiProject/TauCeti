@@ -43,6 +43,7 @@ Twisted conjugation is the one that extends to the odd part.
 
 ## Main results
 
+* `CliffordAlgebra.coe_unitι_inv`: the inverse of a vector of invertible norm is a vector.
 * `CliffordAlgebra.lipschitzVectorAction_unitι`: **a vector acts by the reflection in its
   orthogonal hyperplane.** This is the identification of the generators referred to above.
 * `CliffordAlgebra.lipschitzVectorAction_map_app`: twisted conjugation by a Lipschitz
@@ -126,6 +127,14 @@ variable {Q}
 theorem coe_unitι (v : M) [Invertible (Q v)] : (unitι Q v : CliffordAlgebra Q) = ι Q v := by
   rw [unitι]
   rfl
+
+/-- The inverse of a vector of invertible norm `v` is the vector `⅟(Q v) • v`. -/
+@[simp]
+theorem coe_unitι_inv (v : M) [Invertible (Q v)] :
+    (((unitι Q v)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = ι Q (⅟(Q v) • v) := by
+  let _ := invertibleιOfInvertible Q v
+  rw [← invOf_ι Q v]
+  exact Units.inv_eq_of_mul_eq_one_left (by rw [coe_unitι, invOf_mul_self])
 
 /-- The vectors of invertible norm are the generators of the Lipschitz group. -/
 theorem unitι_mem_lipschitzGroup (v : M) [Invertible (Q v)] : unitι Q v ∈ lipschitzGroup Q := by
@@ -328,6 +337,14 @@ theorem coe_pinToOrthogonal_apply (x : pinGroup Q) (m : M) :
     ((pinToOrthogonal Q x : QuadraticMap.orthogonalGroup Q) : M ≃ₗ[R] M) m =
       lipschitzVectorAction Q (pinToLipschitz Q x) m := by
   rw [pinToOrthogonal, MonoidHom.comp_apply, coe_lipschitzToOrthogonal_apply]
+
+/-- The Pin action is the Lipschitz action through the canonical inclusion. -/
+theorem pinToOrthogonal_eq_lipschitzToOrthogonal (x : pinGroup Q) :
+    pinToOrthogonal Q x = lipschitzToOrthogonal Q (pinToLipschitz Q x) := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  simp only [coe_pinToOrthogonal_apply, coe_lipschitzToOrthogonal_apply]
 
 /-- A Pin element acts on a vector by twisted conjugation inside the Clifford algebra. Since a Pin
 element is unitary, the inverse appearing there is `star`. -/

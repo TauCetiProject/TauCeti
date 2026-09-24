@@ -80,16 +80,22 @@ noncomputable def cochainsMapShortComplex (Φ : Y.map (resFunctor f) ⟶ X) :
     (cochainsMap_comp f (MonoidHom.id G) Φ.τ₂ X.g).symm.trans
       ((congrArg (cochainsMap f) Φ.comm₂₃).trans (cochainsMap_comp (MonoidHom.id H) f Y.g Φ.τ₃))
 
+/-- The first component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair `(f,
+Φ.τ₁)`. -/
 @[simp]
 theorem cochainsMapShortComplex_τ₁ (Φ : Y.map (resFunctor f) ⟶ X) :
     (cochainsMapShortComplex f Φ).τ₁ = cochainsMap f Φ.τ₁ := by
   rw [cochainsMapShortComplex.eq_def]
 
+/-- The second component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair
+`(f, Φ.τ₂)`. -/
 @[simp]
 theorem cochainsMapShortComplex_τ₂ (Φ : Y.map (resFunctor f) ⟶ X) :
     (cochainsMapShortComplex f Φ).τ₂ = cochainsMap f Φ.τ₂ := by
   rw [cochainsMapShortComplex.eq_def]
 
+/-- The third component of `cochainsMapShortComplex f Φ` is the cochain map induced by the pair `(f,
+Φ.τ₃)`. -/
 @[simp]
 theorem cochainsMapShortComplex_τ₃ (Φ : Y.map (resFunctor f) ⟶ X) :
     (cochainsMapShortComplex f Φ).τ₃ = cochainsMap f Φ.τ₃ := by

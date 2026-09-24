@@ -107,7 +107,7 @@ theorem f4ShortRootBasisCoordinate_injective :
       exact i.property
     · simp only [f4ShortRootBasisCoordinate, h, mem_f4ShortChevalleyIndices_iff,
         f4ChevalleyIndexIsShort_inr_iff]
-      rw [f4PinnedSimpleIndex_baseSupportEquiv]
+      rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv]
       fin_cases k <;> simp [f4ShortSimpleIndex]
   · intro hx
     rcases x with α | j
@@ -118,7 +118,7 @@ theorem f4ShortRootBasisCoordinate_injective :
       refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inl i), ?_⟩
       simp only [f4ShortRootBasisCoordinate, Equiv.apply_symm_apply]
       exact congrArg Sum.inl (f4KillingRootLabel_f4PinnedRootIndex α)
-    · have hx' : f4PinnedSimpleIndex j = 2 ∨ f4PinnedSimpleIndex j = 3 :=
+    · have hx' : f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3 :=
         f4ChevalleyIndexIsShort_inr_iff j |>.mp
           (mem_f4ShortChevalleyIndices_iff (Sum.inr j) |>.mp hx)
       rcases hx' with h2 | h3
@@ -129,7 +129,7 @@ theorem f4ShortRootBasisCoordinate_injective :
             f4ShortSimpleIndex 0 := by
           apply Fin.ext
           have hv := congrArg Fin.val h2
-          simp only [f4PinnedSimpleIndex, Fin.val_cast] at hv
+          simp only [f4PinnedSimpleIndexEquiv_apply, Fin.val_cast] at hv
           simp only [f4ShortSimpleIndex, Fin.val_cast]
           omega
         exact (congrArg (F4.lieBasis valid_F4).baseSupportEquiv hu.symm).trans
@@ -141,7 +141,7 @@ theorem f4ShortRootBasisCoordinate_injective :
             f4ShortSimpleIndex 1 := by
           apply Fin.ext
           have hv := congrArg Fin.val h3
-          simp only [f4PinnedSimpleIndex, Fin.val_cast] at hv
+          simp only [f4PinnedSimpleIndexEquiv_apply, Fin.val_cast] at hv
           simp only [f4ShortSimpleIndex, Fin.val_cast]
           omega
         exact (congrArg (F4.lieBasis valid_F4).baseSupportEquiv hu.symm).trans

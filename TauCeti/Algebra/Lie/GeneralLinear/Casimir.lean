@@ -290,6 +290,72 @@ theorem glCasimir_eigenvalue_glHalfStaircase
       field_simp [h4]
       ring
 
+/-- Lowering the `t`-th entry of the half-shifted staircase changes the Casimir scalar by
+`-3 N + 3 + 4 t`. -/
+theorem glCasimir_eigenvalue_glHalfStaircase_sub_single
+    {F : Type*} [Field F] [Invertible (2 : F)] (N : ℕ) (t : Fin N) :
+    (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+      ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+        (N : F) - 1 - 2 * (i : F))) =
+        (N : F) * (2 * (N : F) ^ 2 - 1) / 4 - 3 * (N : F) + 3 + 4 * (t : F) := by
+  have hterm (i : Fin N) :
+      (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+          ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+            (N : F) - 1 - 2 * (i : F)) =
+        glHalfStaircase F N i *
+            (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F)) +
+          if i = t then -3 * (N : F) + 3 + 4 * (t : F) else 0 := by
+    by_cases hit : i = t
+    · subst i
+      simp [glHalfStaircase_apply]
+      have h2 : (2 : F) ≠ 0 := Invertible.ne_zero (2 : F)
+      field_simp [h2]
+      ring
+    · simp [hit]
+  simp_rw [hterm, Finset.sum_add_distrib]
+  rw [Finset.sum_ite_eq' Finset.univ t]
+  simp only [Finset.mem_univ, ite_true, glCasimir_eigenvalue_glHalfStaircase]
+  ring
+
+/-- The difference of the lowered half-shifted staircase Casimir scalars is `4 (t - s)`. -/
+theorem glCasimir_eigenvalue_glHalfStaircase_sub_single_diff
+    {F : Type*} [Field F] [Invertible (2 : F)] (N : ℕ) (s t : Fin N) :
+    (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+      ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+        (N : F) - 1 - 2 * (i : F))) -
+      (∑ i : Fin N, (glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i *
+      ((glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i +
+        (N : F) - 1 - 2 * (i : F))) =
+      4 * ((t : F) - (s : F)) := by
+  rw [glCasimir_eigenvalue_glHalfStaircase_sub_single N t,
+    glCasimir_eigenvalue_glHalfStaircase_sub_single N s]
+  have h2 : (2 : F) ≠ 0 := Invertible.ne_zero (2 : F)
+  field_simp [h2]
+  ring
+
+/-- The lowered half-shifted staircase Casimir scalars are distinct at distinct indices. -/
+theorem glCasimir_eigenvalue_glHalfStaircase_sub_single_ne
+    {F : Type*} [Field F] [CharZero F] (N : ℕ) (s t : Fin N) (hst : s ≠ t) :
+    (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+      ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+        (N : F) - 1 - 2 * (i : F))) ≠
+      (∑ i : Fin N, (glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i *
+      ((glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i +
+        (N : F) - 1 - 2 * (i : F))) := by
+  let _ : Invertible (2 : F) := invertibleOfNonzero (by norm_num)
+  intro hEq
+  have hzero : (4 : F) * ((t : F) - (s : F)) = 0 := by
+    rw [← glCasimir_eigenvalue_glHalfStaircase_sub_single_diff N s t]
+    exact sub_eq_zero.mpr hEq
+  have hnonzero : (4 : F) * ((t : F) - (s : F)) ≠ 0 := by
+    apply mul_ne_zero (by norm_num)
+    apply sub_ne_zero.mpr
+    intro h
+    apply hst
+    apply Fin.ext
+    exact_mod_cast h.symm
+  exact hnonzero hzero
+
 /-- The trace-form `gl_N` Casimir polynomial at the rational staircase weight is
 `N (2 N² - 1) / 4`. -/
 theorem glCasimir_eigenvalue_glStaircase

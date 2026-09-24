@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.RestrictedProduct.CongrRight
+public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 
 /-!
 # Diagonal homomorphisms into restricted products
@@ -17,13 +17,13 @@ argument of the construction: for the classical example `Γ = G(K)` and `G i = G
 arithmetic theorem about `Γ`, and nothing here manufactures it.
 
 This file records the diagonal, its coordinate formula, its kernel and the resulting injectivity
-criterion, its compatibility with componentwise maps and with a change of factors, and the
-continuity criterion. Continuity does not follow from continuity of the coordinate maps, because
-the restricted-product topology is finer than the topology induced from `Π i, G i`. The criterion
-asks for one cofinite set `S` of indices at which every `γ` is integral. Such a uniform set is
-what the restricted-product topology rewards: on the subset `{x | ∀ i ∈ S, x i ∈ U i}`, which
-then contains the image of the diagonal, it coincides with the topology induced from
-`Π i, G i`, so continuity there is decided by the coordinates.
+criterion, its compatibility with componentwise maps, with a change of factors and with a
+change of reference family, and the continuity criterion. Continuity does not follow from
+continuity of the coordinate maps, because the restricted-product topology is finer than the
+topology induced from `Π i, G i`. The criterion asks for one cofinite set `S` of indices at which
+every `γ` is integral. Such a uniform set is what the restricted-product topology rewards: on the
+subset `{x | ∀ i ∈ S, x i ∈ U i}`, which then contains the image of the diagonal, it coincides
+with the topology induced from `Π i, G i`, so continuity there is decided by the coordinates.
 
 ## References
 
@@ -120,6 +120,20 @@ theorem restrictedProductCongrRight_comp_rationalDiagonal {Γ : Type w} [MulOneC
     (restrictedProductCongrRight U V ψ hψ).toMonoidHom.comp (rationalDiagonal φ U hU) =
       rationalDiagonal (fun i ↦ (ψ i).toMonoidHom.comp (φ i)) V
         (fun γ ↦ by filter_upwards [hU γ, hψ] with i hi hψi using hψi.mapsTo hi) := by
+  ext γ i
+  simp
+
+/-- A change of reference family applied after the diagonal is the diagonal with respect to the
+new family. The eventual-integrality evidence for the new family is an argument, so that the
+statement applies to whichever such evidence a consumer holds. -/
+@[simp]
+theorem rationalDiagonal_change_family {Γ : Type w} [MulOneClass Γ] (φ : ∀ i, Γ →* G i)
+    (U U' : ∀ i, Subgroup (G i))
+    (hU : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U i)
+    (hU' : ∀ γ : Γ, ∀ᶠ i in cofinite, φ i γ ∈ U' i)
+    (h : ∀ᶠ i in cofinite, U i = U' i) :
+    (restrictedProductCongr U U' h : _ →* _).comp (rationalDiagonal φ U hU) =
+      rationalDiagonal φ U' hU' := by
   ext γ i
   simp
 

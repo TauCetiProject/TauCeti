@@ -31,6 +31,10 @@ have inverses.
   `ν`-integral coefficients and `1 < ν t`.
 * `Valuation.le_one_of_root_monic`: a root of a monic polynomial with `ν`-integral coefficients
   has value at most one.
+* `Valuation.map_quadratic_eq_of_one_lt` and `Valuation.one_lt_map_sq_add_mul_sub_iff`:
+  `map_eval_eq_of_one_lt` for the monic quadratic `t² + at + c`, and its consequence that
+  `t² + at - c` has a pole exactly where `t` does — the `x`-coordinate `λ² + a₁λ - a₂ - x₁ - x₂`
+  of a chord sum, read in its slope `λ`.
 * `Valuation.map_cubic_eq_of_one_lt` and `Valuation.le_one_of_root_cubic`: the two statements above
   for the monic cubic `t³ + at² + bt + c`, which is the shape a Weierstrass equation takes.
 
@@ -95,6 +99,41 @@ lemma le_one_of_root_monic {p : L[X]} (hp : p.Monic)
   have h := ν.map_eval_eq_of_one_lt hp hcoeff ht
   rw [heq, map_zero] at h
   exact (pow_ne_zero _ (zero_lt_one.trans ht).ne') h.symm
+
+section Quadratic
+
+variable {c : L}
+
+/-- A monic quadratic with integral coefficients, evaluated at an element of value `> 1`, is
+dominated by its leading term. -/
+lemma map_quadratic_eq_of_one_lt (ha : ν a ≤ 1) (hc : ν c ≤ 1) (ht : 1 < ν t) :
+    ν (t ^ 2 + a * t + c) = ν t ^ 2 := by
+  nontriviality Γ
+  have := domain_nontrivial ν ν.map_zero ν.map_one
+  have hp : (X ^ 2 + C a * X + C c).Monic := by monicity!
+  have hdeg : (X ^ 2 + C a * X + C c).natDegree = 2 := by compute_degree!
+  have h := ν.map_eval_eq_of_one_lt hp (fun i hi ↦ by
+    rw [hdeg] at hi
+    interval_cases i <;> simp [ha, hc]) ht
+  rw [hdeg] at h
+  simpa [eval_X_pow] using h
+
+/-- **A monic quadratic with integral coefficients has a pole exactly where its variable does**:
+`1 < ν (t² + a t - c)` if and only if `1 < ν t`, for `ν a ≤ 1` and `ν c ≤ 1`. -/
+lemma one_lt_map_sq_add_mul_sub_iff (ha : ν a ≤ 1) (hc : ν c ≤ 1) :
+    1 < ν (t ^ 2 + a * t - c) ↔ 1 < ν t := by
+  refine ⟨fun h ↦ ?_, fun ht ↦ ?_⟩
+  · by_contra ht
+    push Not at ht
+    refine h.not_ge (ν.map_sub_le (ν.map_add_le ?_ ?_) hc)
+    · rw [map_pow]
+      exact pow_le_one₀ zero_le ht
+    · rw [map_mul]
+      exact mul_le_one' ha ht
+  · rw [sub_eq_add_neg, map_quadratic_eq_of_one_lt ν ha (by rwa [Valuation.map_neg]) ht]
+    exact lt_of_lt_of_le ht (by simpa using pow_le_pow_right₀ ht.le one_le_two)
+
+end Quadratic
 
 section Cubic
 

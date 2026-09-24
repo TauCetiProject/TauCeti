@@ -63,12 +63,13 @@ standard Borel hypothesis and for an arbitrary parameter space and arbitrary exc
 
 ## Implementation
 
-Everything reduces to two identities about `Measure.prod`: evaluating the pushforward of
-`π ⊗ (uniform)^{⊗ℕ}` fibrewise over the parameter turns the coding into the countable power
-`map_infinitePi_volume_unitIntervalCoding`, which is exactly the integrand of
-`deFinettiBarycenter_apply` and of `iidMixtureLaw`. No new measure theory is needed: the analytic
-content is Mathlib's `ProbabilityTheory.Kernel.exists_measurable_map_eq_unitInterval` and the
-probabilistic content is the already-proved de Finetti theorem.
+Everything reduces to one identity about `Measure.prod`: a parameter drawn from `π` together with
+independent i.i.d. noise, pushed through a map carrying the noise law to `P t`, has the canonical
+law `iidMixtureLaw` (`map_prod_infinitePi_eq_iidMixtureLaw`). At the coding map this is
+`map_volume_unitIntervalCoding`, and forgetting the parameter gives the barycenter. No new measure
+theory is needed: the analytic content is Mathlib's
+`ProbabilityTheory.Kernel.exists_measurable_map_eq_unitInterval` and the probabilistic content is
+the already-proved de Finetti theorem.
 
 This advances `TauCetiRoadmap/Exchangeability/README.md`, Layer 8, "exchangeable arrays and the
 Aldous–Hoover representation": a functional representation is the form those theorems take, and the
@@ -112,20 +113,9 @@ measure. -/
 theorem map_prod_unitIntervalCoding_eq_iidMixtureLaw (π : Measure (ProbabilityMeasure α)) :
     (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
         (fun p => (p.1, fun i => unitIntervalCoding α p.1 (p.2 i)))
-      = iidMixtureLaw π id := by
-  have hG : Measurable fun p : ProbabilityMeasure α × (ℕ → I) =>
-      (p.1, fun i => unitIntervalCoding α p.1 (p.2 i)) :=
-    measurable_fst.prodMk measurable_unitIntervalCodingPath
-  refine Measure.ext fun s hs => ?_
-  rw [Measure.map_apply hG hs, Measure.prod_apply (hG hs), iidMixtureLaw_def,
-    Measure.bind_apply hs (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const
-      (id : ProbabilityMeasure α → ProbabilityMeasure α) measurable_id).aemeasurable]
-  refine lintegral_congr fun P => ?_
-  rw [Measure.dirac_prod, Measure.map_apply measurable_prodMk_left hs, id_eq,
-    ← map_infinitePi_volume_unitIntervalCoding (ι := ℕ) P,
-    Measure.map_apply (measurable_pi_unitIntervalCoding P) (measurable_prodMk_left hs)]
-  -- Both preimages are `{u | (P, fun i => unitIntervalCoding α P (u i)) ∈ s}`.
-  rfl
+      = iidMixtureLaw π id :=
+  map_prod_infinitePi_eq_iidMixtureLaw _ (measurable_uncurry_unitIntervalCoding α)
+    map_volume_unitIntervalCoding
 
 /-- **Coding a mixing law.** Drawing a probability measure from `π`, then coding an independent
 i.i.d. uniform sequence by it, produces the de Finetti barycenter of `π`. -/

@@ -40,6 +40,13 @@ theorem toZModSubmodule_code_eq_euclideanDual :
 noncomputable def constructionALattice : IntegralLattice (Fin 24 → ℚ) :=
   ConstructionA.integralLattice 2 code.toAddSubgroup toZModSubmodule_code_eq_euclideanDual.le
 
+/-- The Golay lattice is Construction A applied to the explicit extended binary Golay code. -/
+@[simp]
+theorem constructionALattice_eq_integralLattice :
+    constructionALattice = ConstructionA.integralLattice 2 code.toAddSubgroup
+      toZModSubmodule_code_eq_euclideanDual.le := by
+  rw [constructionALattice]
+
 /-- The Golay Construction A lattice has rank `24`. -/
 theorem finrank_constructionALattice : Module.finrank ℤ constructionALattice = 24 := by
   rw [IntegralLattice.finrank_carrier]

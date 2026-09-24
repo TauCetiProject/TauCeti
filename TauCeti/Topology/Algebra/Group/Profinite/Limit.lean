@@ -5,9 +5,9 @@ Authors: Tau Ceti AI contributors
 -/
 module
 
+public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
-public import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Profinite groups: the finite-quotient limit description
@@ -23,10 +23,13 @@ The unbundled workhorse of profinite group theory, phrased for the type-class st
   Proposition 1.1.4). This is the unbundled counterpart of `ProfiniteGrp.toLimit_surjective`
   and `ProfiniteGrp.toLimit_injective`, which describe the same identification for the
   `ProfiniteGrp` category. The compactness input is
-  `TauCeti.nonempty_iInter_of_directed_nonempty_isClosed`.
+  `IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed`.
 * Two companion forms of the same identification: a point of `G` is determined by its images in
   the finite quotients (`eq_of_forall_mk_eq`), and a map into `G` is continuous as soon as all
   of its finite-quotient shadows are (`continuous_iff_forall_continuous_mk`).
+* The same identification for homomorphisms: a family of homomorphisms `H →* G ⧸ U` compatible
+  along the quotient maps is induced by a unique homomorphism `H →* G`
+  (`existsUnique_monoidHom_mk'_comp_eq`).
 * The same for subgroups: a family `H` of subgroups of the quotients `G ⧸ U` cuts out the closed
   subgroup `limitSubgroup H` of `G` (`isClosed_limitSubgroup`), and when `H` is compatible along
   the quotient maps and `G` is compact, its image in every `G ⧸ U` is exactly `H U`
@@ -69,8 +72,9 @@ theorem existsUnique_forall_mk_eq (x : ∀ U : OpenNormalSubgroup G, G ⧸ (U : 
       exact hcompat (U ⊓ V) U inf_le_left g hgU
     · rw [Set.mem_preimage, Set.mem_singleton_iff] at hgV ⊢
       exact hcompat (U ⊓ V) V inf_le_right g hgV
-  obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed
-    (fun U : OpenNormalSubgroup G => (QuotientGroup.mk' (U : Subgroup G)) ⁻¹' {x U}) hdir hne hcl
+  obtain ⟨g, hg⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed
+    (fun U : OpenNormalSubgroup G => (QuotientGroup.mk' (U : Subgroup G)) ⁻¹' {x U}) hdir hne
+    (fun U ↦ (hcl U).isCompact) hcl
   refine ⟨g, fun U => Set.mem_iInter.mp hg U, fun g' hg' => ?_⟩
   have hgg : ∀ U : OpenNormalSubgroup G, QuotientGroup.mk' (U : Subgroup G) g = x U :=
     fun U => Set.mem_iInter.mp hg U
@@ -108,6 +112,35 @@ theorem continuous_iff_forall_continuous_mk {X : Type*} [TopologicalSpace X] {f 
   have hmem : (f x₀)⁻¹ * f x ∈ U.toSubgroup := by
     simpa using U.toSubgroup.inv_mem (QuotientGroup.eq.mp hx)
   exact hWV (by simpa using hU hmem)
+
+/-- **Limit description of a profinite group, for homomorphisms.** A family of homomorphisms
+`x N : H →* G ⧸ N` into the quotients of `G` by its open normal subgroups, compatible along the
+quotient maps `G ⧸ N → G ⧸ N'` for `N ≤ N'`, is induced by a unique homomorphism `H →* G`. This is
+the universal property of `G` as the inverse limit of its finite quotients, for abstract
+homomorphisms out of a monoid `H` that carries no topology. -/
+theorem existsUnique_monoidHom_mk'_comp_eq {H : Type*} [MulOneClass H]
+    (x : ∀ N : OpenNormalSubgroup G, H →* G ⧸ N.toSubgroup)
+    (hx : ∀ ⦃N N' : OpenNormalSubgroup G⦄ (hle : N ≤ N'),
+      (QuotientGroup.mapOfLE hle).comp (x N) = x N') :
+    ∃! φ : H →* G, ∀ N : OpenNormalSubgroup G, (QuotientGroup.mk' N.toSubgroup).comp φ = x N := by
+  -- For a fixed `a : H`, the classes `x N a` form a compatible family of cosets, so the limit
+  -- description of `G` realizes them by a unique element `φ a`.
+  have hcompat : ∀ a : H, ∀ (U V : OpenNormalSubgroup G) (hle : (U : Subgroup G) ≤ V) (g : G),
+      QuotientGroup.mk' (U : Subgroup G) g = x U a →
+        QuotientGroup.mk' (V : Subgroup G) g = x V a := by
+    intro a U V hle g hg
+    rw [← hx hle, MonoidHom.comp_apply, ← hg, QuotientGroup.mk'_apply, QuotientGroup.mk'_apply,
+      QuotientGroup.mapOfLE_mk]
+  choose φ hφ using fun a : H ↦ (existsUnique_forall_mk_eq (fun N ↦ x N a) (hcompat a)).exists
+  refine ⟨MonoidHom.mk' φ fun a b ↦ eq_of_forall_mk_eq fun N ↦ ?_, fun N ↦ MonoidHom.ext (hφ · N),
+    fun ψ hψ ↦ MonoidHom.ext fun a ↦ eq_of_forall_mk_eq fun N ↦ ?_⟩
+  · -- Multiplicativity is checked in every finite quotient, where it is that of `x N`.
+    calc (φ (a * b) : G ⧸ N.toSubgroup) = x N (a * b) := hφ (a * b) N
+      _ = x N a * x N b := map_mul _ _ _
+      _ = ((φ a * φ b : G) : G ⧸ N.toSubgroup) := by
+        rw [QuotientGroup.mk_mul, ← hφ a N, ← hφ b N, QuotientGroup.mk'_apply,
+          QuotientGroup.mk'_apply]
+  · exact (DFunLike.congr_fun (hψ N) a).trans (hφ a N).symm
 
 end LimitDescription
 
@@ -195,8 +228,9 @@ theorem map_mk'_limitSubgroup [CompactSpace G]
         rwa [hH inf_le_right] at this
     let _ : Nonempty (OpenNormalSubgroup G) :=
       ⟨{ toOpenSubgroup := ⊤, isNormal' := Subgroup.normal_top }⟩
-    obtain ⟨g, hg⟩ := nonempty_iInter_of_directed_nonempty_isClosed t ht_directed
-      ht_nonempty ht_closed
+    obtain ⟨g, hg⟩ :=
+      IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t ht_directed ht_nonempty
+        (fun V ↦ (ht_closed V).isCompact) ht_closed
     exact ⟨g, mem_limitSubgroup_iff.mpr fun V ↦ (Set.mem_iInter.mp hg V).2,
       (Set.mem_iInter.mp hg U).1⟩
 

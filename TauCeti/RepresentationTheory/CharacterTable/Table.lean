@@ -37,7 +37,8 @@ take their familiar Hermitian form, because inversion conjugates character value
   by `Fin (Nat.card (ConjClasses G))`, together with `TauCeti.irreducibleRepresentation`, an
   irreducible representation affording it, and `TauCeti.characterDegree`, its degree.
 * `TauCeti.characterTable`: the character table of `G`.
-* `TauCeti.basisIrreducibleCharacter`: its rows, as a basis of the class functions.
+* `TauCeti.basisIrreducibleCharacter`: its rows, as a basis of the class functions, so that
+  `TauCeti.linearIndependent_irreducibleCharacter` holds in `G → k`.
 
 ## Main results
 
@@ -329,6 +330,17 @@ theorem basisIrreducibleCharacter_apply (i : Fin (Nat.card (ConjClasses G))) (g 
     (basisIrreducibleCharacter k G i).1 g = irreducibleCharacter k i g := by
   rw [basisIrreducibleCharacter, ClassFunction.basisOfIrreducibleCharacters_apply,
     ClassFunction.ofCharacter_apply, character_irreducibleRepresentation]
+
+/-- **The irreducible characters are linearly independent** as functions `G → k`: they are the
+basis `TauCeti.basisIrreducibleCharacter` of the class functions, read in the ambient space. -/
+theorem linearIndependent_irreducibleCharacter :
+    LinearIndependent k (irreducibleCharacter (G := G) k) := by
+  have h : irreducibleCharacter (G := G) k =
+      (ClassFunction k G).subtype ∘ basisIrreducibleCharacter k G := by
+    ext i g
+    simp
+  rw [h]
+  exact (basisIrreducibleCharacter k G).linearIndependent.map' _ (Submodule.ker_subtype _)
 
 end Table
 

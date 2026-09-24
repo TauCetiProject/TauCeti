@@ -177,19 +177,14 @@ theorem integralIdealsAway_hom_ext {M : Type*} [MulOneClass M]
     (h : ∀ (v : HeightOneSpectrum (𝓞 K)) (hv : v.asIdeal ∈ integralIdealsAway (K := K) S),
       f ⟨v.asIdeal, hv⟩ = g ⟨v.asIdeal, hv⟩) : f = g := by
   refine MonoidHom.ext fun ⟨I, hI⟩ ↦ ?_
-  induction I using UniqueFactorizationMonoid.induction_on_prime with
-  | h₁ => exact absurd rfl (mem_integralIdealsAway_iff.mp hI).1
-  | h₂ x hx =>
-    obtain rfl := isUnit_iff_eq_one.mp hx
-    exact (map_one f).trans (map_one g).symm
-  | h₃ a p ha hp ih =>
-    obtain ⟨-, hS⟩ := mem_integralIdealsAway_iff.mp hI
-    have hpS : p ∈ integralIdealsAway (K := K) S := mem_integralIdealsAway_iff.mpr
-      ⟨hp.ne_zero, fun v hv hvp ↦ hS v hv (hvp.mul_right a)⟩
-    have haS : a ∈ integralIdealsAway (K := K) S := mem_integralIdealsAway_iff.mpr
-      ⟨ha, fun v hv hva ↦ hS v hv (hva.mul_left p)⟩
-    rw [← Submonoid.mk_mul_mk _ p a hpS haS, map_mul, map_mul, ih haS,
-      h ⟨p, Ideal.isPrime_of_prime hp, hp.ne_zero⟩ hpS]
+  -- The carrier of `integralIdealsAway S` is `Ideal.IsPrimeTo`, whose induction principle applies.
+  refine Ideal.IsPrimeTo.induction_on (motive := fun J ↦ ∀ hJ : J ∈ integralIdealsAway (K := K) S,
+    f ⟨J, hJ⟩ = g ⟨J, hJ⟩) hI (fun htop ↦ ?_) (fun v J hv hJ ih _ ↦ ?_) hI
+  · have hone : (⟨⊤, htop⟩ : integralIdealsAway (K := K) S) = 1 :=
+      Subtype.ext Ideal.one_eq_top.symm
+    rw [hone, map_one, map_one]
+  · have hvS : v.asIdeal ∈ integralIdealsAway (K := K) S := Ideal.isPrimeTo_asIdeal_iff.mpr hv
+    rw [← Submonoid.mk_mul_mk _ _ _ hvS hJ, map_mul, map_mul, ih hJ, h v hvS]
 
 /-- Divisibility in `integralIdealsAway S` is divisibility of the underlying ideals: a cofactor
 of two ideals prime to `S` is itself prime to `S`. -/

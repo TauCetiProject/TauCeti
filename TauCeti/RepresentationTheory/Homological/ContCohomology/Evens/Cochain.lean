@@ -132,11 +132,13 @@ noncomputable def evensExtend : G → ZMod 2 :=
 
 variable {U α}
 
+/-- On `U`, the extension by zero of `α` is `α`, read additively. -/
 @[simp]
 theorem evensExtend_of_mem {γ : G} (h : γ ∈ U) :
     evensExtend U α γ = Multiplicative.toAdd (α ⟨γ, h⟩) :=
   dite_eq_left h
 
+/-- Off `U`, the extension by zero of `α` vanishes. -/
 @[simp]
 theorem evensExtend_of_notMem {γ : G} (h : γ ∉ U) : evensExtend U α γ = 0 :=
   dite_eq_right h
@@ -219,17 +221,21 @@ noncomputable def evensCorCochain : G → ZMod 2 :=
 
 variable {U s α}
 
+/-- On `U`, the first Shapiro component `b₁` is the extension by zero of `α`. -/
 @[simp]
 theorem evensB1_of_mem {γ : G} (h : γ ∈ U) : evensB1 U s α γ = evensExtend U α γ :=
   ite_eq_left h
 
+/-- Off `U`, the first Shapiro component is `b₁ γ = α (γ s)`, with `α` extended by zero. -/
 @[simp]
 theorem evensB1_of_notMem {γ : G} (h : γ ∉ U) : evensB1 U s α γ = evensExtend U α (γ * s) :=
   ite_eq_right h
 
+/-- The second Shapiro component is `b_s γ = b₁ (s⁻¹ γ)`. -/
 @[simp]
 theorem evensBs_apply (γ : G) : evensBs U s α γ = evensB1 U s α (s⁻¹ * γ) := (rfl)
 
+/-- The corestriction cochain is the sum `b₁ + b_s` of the two Shapiro components. -/
 @[simp]
 theorem evensCorCochain_apply (γ : G) :
     evensCorCochain U s α γ = evensB1 U s α γ + evensBs U s α γ := (rfl)
@@ -370,11 +376,13 @@ noncomputable def evensGraphCochain : G × G → ZMod 2 :=
 
 variable {U s α}
 
+/-- For `γ ∈ U`, the graph cochain takes `(γ, η)` to `b₁ γ · b_s η`. -/
 @[simp]
 theorem evensGraphCochain_of_mem {γ : G} (h : γ ∈ U) (η : G) :
     evensGraphCochain U s α (γ, η) = evensB1 U s α γ * evensBs U s α η :=
   ite_eq_left h
 
+/-- For `γ ∉ U`, the graph cochain takes `(γ, η)` to `b₁ γ · b₁ η + b₁ η · b_s η`. -/
 @[simp]
 theorem evensGraphCochain_of_notMem {γ : G} (h : γ ∉ U) (η : G) :
     evensGraphCochain U s α (γ, η) =

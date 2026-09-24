@@ -116,7 +116,7 @@ theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
     ext i
     simp only [f]
     rw [TauCeti.Representation.ofModule'_apply]
-    rw [Pi.smul_apply, Pi.smul_apply, _root_.Representation.single_smul, one_smul,
+    simp only [Pi.smul_apply, _root_.Representation.single_smul, one_smul,
       _root_.Representation.asModuleEquiv_apply]
     rfl
   rw [LinearMap.trace_pi_of_apply_eq_dependent _ f htarget]
@@ -141,7 +141,8 @@ theorem character_cliffordSum {k : Type u} {G : Type v} [Field k] [Group G]
       rw [LinearEquiv.apply_symm_apply, _root_.Representation.asModuleEquiv_apply]
       rfl
     rw [LinearMap.trace_pi_of_apply_eq (f q) id (fun _ ↦ g q) hfg]
-    simp [hg]
+    simp only [id_eq, ↓reduceIte, hg, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
   simp_rw [hf]
   rw [Finset.mul_sum]
 

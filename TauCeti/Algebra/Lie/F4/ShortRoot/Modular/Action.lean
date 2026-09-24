@@ -91,6 +91,13 @@ noncomputable def f4ShortRootAdjointMatrix
         f4ModularChevalleyBasis.repr Y (f4ShortRootBasisCoordinate i))
       (coe_f4ShortRootAdjoint_apply X (f4ShortRootLieIdealBasis j))
 
+/-- The named adjoint matrix is the matrix of the restricted adjoint endomorphism. -/
+theorem f4ShortRootAdjointMatrix_eq_toMatrix (X : f4ModularChevalleyLieAlgebra) :
+    f4ShortRootAdjointMatrix X =
+      LinearMap.toMatrix f4ShortRootLieIdealBasis f4ShortRootLieIdealBasis
+        (f4ShortRootAdjoint X) := by
+  rfl
+
 /-- The signed simple-root adjoint operator restricted to the modular short-root ideal. -/
 noncomputable def f4ShortRootSignedSimpleAdjoint (k : Fin 4 ⊕ Fin 4) :
     Module.End (ZMod 2) f4ShortRootLieIdeal :=
@@ -144,7 +151,8 @@ theorem f4ShortRootAdjoint_rootVector_of_add_eq_short (alpha beta gamma : Fin 48
         (f4ShortRootWeightIndexEquiv.symm (Sum.inl ⟨gamma, hgamma⟩)) := by
   apply Subtype.ext
   simp only [coe_f4ShortRootAdjoint_apply, coe_f4ShortRootLieIdealBasis_symm_inl]
-  exact f4Modular_lie_rootVector_of_add_eq_short alpha beta gamma hbeta hgamma h
+  exact f4Modular_lie_rootVector_of_add_of_length_eq alpha beta gamma
+    (hbeta.trans hgamma.symm) h
 
 /-- On the root coordinate opposite a short root, the restricted adjoint action lands in the
 corresponding modular coroot. -/
@@ -169,8 +177,8 @@ theorem coe_f4ShortRootAdjoint_simpleCoroot (alpha : Fin 48) (i : Fin F4.rank)
       f4ModularChevalleyLieAlgebra) =
       -(f4SimplyConnectedRootDatum.pairing alpha
         (Fin.castAdd 44 (Fin.cast rank_F4 i)) : ZMod 2) • f4ModularRootVector alpha := by
-  rw [coe_f4ShortRootAdjoint_apply, Subtype.coe_mk, ← lie_skew,
-    f4Modular_lie_simpleCoroot_rootVector, neg_smul]
+  rw [coe_f4ShortRootAdjoint_apply, Subtype.coe_mk,
+    f4Modular_lie_rootVector_simpleCoroot]
 
 end
 

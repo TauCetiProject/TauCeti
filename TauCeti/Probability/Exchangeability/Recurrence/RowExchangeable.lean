@@ -89,7 +89,7 @@ variable {α : Type*} {m : ℕ}
 
 /-- A finite path word read as a sequence, by repeating its last letter forever. -/
 private def wordSeq (u : Fin (m + 1) → α) : ℕ → α :=
-  fun j => u (Fin.clamp j m)
+  fun j ↦ u (Fin.clamp j m)
 
 private theorem wordSeq_apply (u : Fin (m + 1) → α) (j : ℕ) :
     wordSeq u j = u (Fin.clamp j m) :=
@@ -104,12 +104,12 @@ private theorem wordSeq_val (u : Fin (m + 1) → α) (i : Fin (m + 1)) : wordSeq
   rw [wordSeq_of_le u (Nat.lt_succ_iff.1 i.isLt)]
 
 private theorem wordSeq_comp (u : Fin (m + 1) → α) :
-    (fun i : Fin (m + 1) => wordSeq u i.val) = u :=
+    (fun i : Fin (m + 1) ↦ wordSeq u i.val) = u :=
   funext (wordSeq_val u)
 
 /-- A finite path word rebuilt after reindexing each row of its successor array. -/
 private def reindexWord (π : α → Equiv.Perm ℕ) (m : ℕ) (u : Fin (m + 1) → α) : Fin (m + 1) → α :=
-  fun i => pathOfReindexedSuccessors π (wordSeq u) i.val
+  fun i ↦ pathOfReindexedSuccessors π (wordSeq u) i.val
 
 private theorem reindexWord_apply (π : α → Equiv.Perm ℕ) (u : Fin (m + 1) → α)
     (i : Fin (m + 1)) :
@@ -124,16 +124,16 @@ private theorem visitCount_wordSeq_reindexWord {π : α → Equiv.Perm ℕ} {u :
     (h : LastExitAdmissible π (wordSeq u) m) (a : α) :
     visitCount (wordSeq (reindexWord π m u)) a m = visitCount (wordSeq u) a m := by
   rw [visitCount_congr (y := pathOfReindexedSuccessors π (wordSeq u))
-      fun _ hj => wordSeq_reindexWord π u hj.le]
+      fun _ hj ↦ wordSeq_reindexWord π u hj.le]
   exact visitCount_pathOfReindexedSuccessors π (wordSeq u) m h a
 
 private theorem reindexWord_symm_reindexWord {π : α → Equiv.Perm ℕ} {u : Fin (m + 1) → α}
     (h : LastExitAdmissible π (wordSeq u) m) :
-    reindexWord (fun a => (π a).symm) m (reindexWord π m u) = u := by
+    reindexWord (fun a ↦ (π a).symm) m (reindexWord π m u) = u := by
   funext i
   have hi : (i : ℕ) ≤ m := Nat.lt_succ_iff.1 i.isLt
-  have hcongr := pathOfReindexedSuccessors_congr (π := fun a => (π a).symm)
-    h.symm_pathOfReindexedSuccessors (fun j hj => (wordSeq_reindexWord π u hj).symm) i.val hi
+  have hcongr := pathOfReindexedSuccessors_congr (π := fun a ↦ (π a).symm)
+    h.symm_pathOfReindexedSuccessors (fun j hj ↦ (wordSeq_reindexWord π u hj).symm) i.val hi
   rw [reindexWord_apply, ← hcongr, pathOfReindexedSuccessors_symm_apply_apply h hi, wordSeq_val]
 
 private theorem reindexWord_zero (π : α → Equiv.Perm ℕ) (u : Fin (m + 1) → α) :
@@ -155,15 +155,15 @@ private theorem successorArray_wordSeq_reindexWord {π : α → Equiv.Perm ℕ} 
     rwa [visitCount_pathOfReindexedSuccessors π (wordSeq u) m h a]
   have hshift : successorArray (pathOfReindexedSuccessors π (wordSeq u)) a k
       = successorArray (wordSeq (reindexWord π m u)) a k :=
-    successorArray_congr (m := m) (fun j hj => (wordSeq_reindexWord π u hj).symm) hk'
+    successorArray_congr (m := m) (fun j hj ↦ (wordSeq_reindexWord π u hj).symm) hk'
   rw [← hshift]
   exact successorArray_pathOfReindexedSuccessors_of_lt_visitCount π (wordSeq u) a hk'
 
 /-- A word visits a letter exactly when its visit count through its last letter is positive. -/
 private theorem exists_wordSeq_eq_iff (u : Fin (m + 1) → α) (a : α) :
     (∃ n, wordSeq u n = a) ↔ 0 < visitCount (wordSeq u) a (m + 1) :=
-  Iff.trans ⟨fun ⟨n, hn⟩ => ⟨Fin.clamp n m, (Fin.clamp n m).isLt, (wordSeq_val u _).trans hn⟩,
-    fun ⟨i, _, hi⟩ => ⟨i, hi⟩⟩ visitCount_pos_iff.symm
+  Iff.trans ⟨fun ⟨n, hn⟩ ↦ ⟨Fin.clamp n m, (Fin.clamp n m).isLt, (wordSeq_val u _).trans hn⟩,
+    fun ⟨i, _, hi⟩ ↦ ⟨i, hi⟩⟩ visitCount_pos_iff.symm
 
 /-- A last-exit reindexing keeps the visit counts of a word through its last letter, since it keeps
 both the counts before the last letter and the last letter itself. -/
@@ -209,20 +209,20 @@ variable {π : α → Equiv.Perm ℕ} {F : Finset (α × ℕ)} {g : F → α} {u
 private theorem lt_visitCount_of_mem_horizonWords (hu : u ∈ HorizonWords π F m) {p : α × ℕ}
     (hp : π p.1 p.2 ≠ p.2 ∨ p ∈ F) (hpos : 0 < visitCount (wordSeq u) p.1 m) :
     p.2 + 1 < visitCount (wordSeq u) p.1 m ∧ π p.1 p.2 + 1 < visitCount (wordSeq u) p.1 m := by
-  refine (hu p hp).resolve_left fun h0 => ?_
+  refine (hu p hp).resolve_left fun h0 ↦ ?_
   have := visitCount_monotone (wordSeq u) p.1 (Nat.le_add_right m 1)
   omega
 
 private theorem lastExitAdmissible_of_mem_horizonWords (hu : u ∈ HorizonWords π F m) :
     LastExitAdmissible π (wordSeq u) m :=
-  lastExitAdmissible_of_support_lt_visitCount fun a ha k hk =>
+  lastExitAdmissible_of_support_lt_visitCount fun a ha k hk ↦
     (lt_visitCount_of_mem_horizonWords hu (p := (a, k)) (Or.inl hk) ha).1
 
 private theorem lastExitAdmissible_symm_of_mem_horizonWords (hu : u ∈ HorizonWords π F m) :
-    LastExitAdmissible (fun a => (π a).symm) (wordSeq u) m := by
-  refine lastExitAdmissible_of_support_lt_visitCount fun a ha k hk =>
+    LastExitAdmissible (fun a ↦ (π a).symm) (wordSeq u) m := by
+  refine lastExitAdmissible_of_support_lt_visitCount fun a ha k hk ↦
     (lt_visitCount_of_mem_horizonWords hu (p := (a, k)) (Or.inl ?_) ha).1
-  exact fun hfix => hk ((Equiv.symm_apply_eq _).2 hfix.symm)
+  exact fun hfix ↦ hk ((Equiv.symm_apply_eq _).2 hfix.symm)
 
 private theorem reindexWord_mem_horizonWords {ρ : α → Equiv.Perm ℕ}
     (hu : u ∈ HorizonWords π F m) (hρ : LastExitAdmissible ρ (wordSeq u) m) :
@@ -238,38 +238,38 @@ private theorem visitedSuccessorArray_reindexWord_cell (hu : u ∈ HorizonWords 
   rcases Nat.eq_zero_or_pos (visitCount (wordSeq u) (p : α × ℕ).1 m) with h0 | hpos
   · -- A row not visited before the last letter holds no consumed cell of `F`, so it is unvisited.
     have hunv : visitCount (wordSeq u) (p : α × ℕ).1 (m + 1) = 0 := by
-      refine (hu (p : α × ℕ) (Or.inr p.2)).resolve_right fun h => ?_
+      refine (hu (p : α × ℕ) (Or.inr p.2)).resolve_right fun h ↦ ?_
       omega
     have hne : ∀ v : Fin (m + 1) → α, visitCount (wordSeq v) (p : α × ℕ).1 (m + 1) = 0 →
-        ∀ n, wordSeq v n ≠ (p : α × ℕ).1 := fun v hv n hn => by
+        ∀ n, wordSeq v n ≠ (p : α × ℕ).1 := fun v hv n hn ↦ by
       have := (exists_wordSeq_eq_iff v _).1 ⟨n, hn⟩
       omega
     rw [visitedSuccessorArray_eq_self_of_not_mem_range
-        (fun hmem => (Set.mem_range.1 hmem).elim (hne u hunv)),
+        (fun hmem ↦ (Set.mem_range.1 hmem).elim (hne u hunv)),
       visitedSuccessorArray_eq_self_of_not_mem_range
-        (fun hmem => (Set.mem_range.1 hmem).elim
+        (fun hmem ↦ (Set.mem_range.1 hmem).elim
           (hne _ ((visitCount_succ_wordSeq_reindexWord hadm _).trans hunv)))]
   · exact visitedSuccessorArray_wordSeq_reindexWord hadm
       (by have := (lt_visitCount_of_mem_horizonWords hu (Or.inr p.2) hpos).1; omega)
 
 private theorem reindexWord_reindexWord_symm (hu : u ∈ HorizonWords π F m) :
-    reindexWord π m (reindexWord (fun a => (π a).symm) m u) = u := by
-  have hmain := reindexWord_symm_reindexWord (π := fun a => (π a).symm)
+    reindexWord π m (reindexWord (fun a ↦ (π a).symm) m u) = u := by
+  have hmain := reindexWord_symm_reindexWord (π := fun a ↦ (π a).symm)
     (lastExitAdmissible_symm_of_mem_horizonWords hu)
   simpa only [Equiv.symm_symm] using hmain
 
 /-- **The last-exit reconstruction pairs the words realizing the reindexed cell values with those
 realizing the original ones.** -/
 private def reindexEquiv (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (m : ℕ) (g : F → α) :
-    (HorizonWords π F m ∩ CellWords (fun a k => π a k) F m g : Set (Fin (m + 1) → α)) ≃
-      (HorizonWords π F m ∩ CellWords (fun _ k => k) F m g : Set (Fin (m + 1) → α)) where
+    (HorizonWords π F m ∩ CellWords (fun a k ↦ π a k) F m g : Set (Fin (m + 1) → α)) ≃
+      (HorizonWords π F m ∩ CellWords (fun _ k ↦ k) F m g : Set (Fin (m + 1) → α)) where
   toFun u := ⟨reindexWord π m u.1,
     reindexWord_mem_horizonWords u.2.1 (lastExitAdmissible_of_mem_horizonWords u.2.1),
-    fun p => (visitedSuccessorArray_reindexWord_cell u.2.1 p).trans (u.2.2 p)⟩
-  invFun v := ⟨reindexWord (fun a => (π a).symm) m v.1,
+    fun p ↦ (visitedSuccessorArray_reindexWord_cell u.2.1 p).trans (u.2.2 p)⟩
+  invFun v := ⟨reindexWord (fun a ↦ (π a).symm) m v.1,
     reindexWord_mem_horizonWords v.2.1 (lastExitAdmissible_symm_of_mem_horizonWords v.2.1),
-    fun p => by
-      have hmem := reindexWord_mem_horizonWords (ρ := fun a => (π a).symm) v.2.1
+    fun p ↦ by
+      have hmem := reindexWord_mem_horizonWords (ρ := fun a ↦ (π a).symm) v.2.1
         (lastExitAdmissible_symm_of_mem_horizonWords v.2.1)
       have hcell := visitedSuccessorArray_reindexWord_cell hmem p
       rw [reindexWord_reindexWord_symm v.2.1] at hcell
@@ -286,32 +286,32 @@ private theorem eventually_prefix_mem_iff {x : ℕ → α} (hio : ∀ k, {n | x 
     (hπ : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite) {ρ : α → ℕ → ℕ}
     (hρ : ∀ p : F, ρ (p : α × ℕ).1 (p : α × ℕ).2 = (p : α × ℕ).2 ∨
       ρ (p : α × ℕ).1 (p : α × ℕ).2 = π (p : α × ℕ).1 (p : α × ℕ).2) :
-    ∀ᶠ m in atTop, (fun i : Fin (m + 1) => x i.val) ∈ HorizonWords π F m ∩ CellWords ρ F m g ↔
+    ∀ᶠ m in atTop, (fun i : Fin (m + 1) ↦ x i.val) ∈ HorizonWords π F m ∩ CellWords ρ F m g ↔
       ∀ p : F, visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p := by
   have hfin : {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F}.Finite :=
-    (hπ.union F.finite_toSet).subset fun _ hp => hp
+    (hπ.union F.finite_toSet).subset fun _ hp ↦ hp
   have hev : ∀ᶠ m : ℕ in atTop, ∀ p ∈ {p : α × ℕ | π p.1 p.2 ≠ p.2 ∨ p ∈ F},
       (∀ n, x n ≠ p.1) ∨ (p.2 + 1 < visitCount x p.1 m ∧ π p.1 p.2 + 1 < visitCount x p.1 m) := by
-    refine hfin.eventually_all.2 fun p _ => ?_
+    refine hfin.eventually_all.2 fun p _ ↦ ?_
     by_cases hvis : ∃ n, x n = p.1
     · obtain ⟨n, hn⟩ := hvis
       obtain ⟨j, -, hj⟩ := exists_visitCount_of_infinite (hn ▸ hio n)
         (max (p.2 + 2) (π p.1 p.2 + 2))
-      refine eventually_atTop.2 ⟨j, fun m hjm => Or.inr ?_⟩
+      refine eventually_atTop.2 ⟨j, fun m hjm ↦ Or.inr ?_⟩
       have := visitCount_monotone x p.1 hjm
       omega
-    · exact Eventually.of_forall fun _ => Or.inl (not_exists.1 hvis)
+    · exact Eventually.of_forall fun _ ↦ Or.inl (not_exists.1 hvis)
   filter_upwards [hev] with m hm
-  set u : Fin (m + 1) → α := fun i => x i.val
-  have hxu : ∀ i ≤ m, x i = wordSeq u i := fun i hi => (wordSeq_of_le u hi).symm
+  set u : Fin (m + 1) → α := fun i ↦ x i.val
+  have hxu : ∀ i ≤ m, x i = wordSeq u i := fun i hi ↦ (wordSeq_of_le u hi).symm
   have hvc : ∀ a : α, visitCount (wordSeq u) a m = visitCount x a m :=
-    fun a => visitCount_congr fun i hi => (hxu i hi.le).symm
+    fun a ↦ visitCount_congr fun i hi ↦ (hxu i hi.le).symm
   have hunv : ∀ a : α, (∀ n, x n ≠ a) → ∀ n, wordSeq u n ≠ a :=
-    fun a ha n => by rw [wordSeq_apply]; exact ha _
+    fun a ha n ↦ by rw [wordSeq_apply]; exact ha _
   have hhor : u ∈ HorizonWords π F m := by
     intro p hp
     rcases hm p hp with ha | ha
-    · exact Or.inl (visitCount_eq_zero_of_forall_ne fun i _ => hunv p.1 ha i)
+    · exact Or.inl (visitCount_eq_zero_of_forall_ne fun i _ ↦ hunv p.1 ha i)
     · exact Or.inr (by rw [hvc]; exact ha)
   have hcell : ∀ p : F,
       visitedSuccessorArray (wordSeq u) (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) =
@@ -319,9 +319,9 @@ private theorem eventually_prefix_mem_iff {x : ℕ → α} (hio : ∀ k, {n | x 
     intro p
     rcases hm (p : α × ℕ) (Or.inr p.2) with ha | ha
     · rw [visitedSuccessorArray_eq_self_of_not_mem_range
-          (fun hmem => (Set.mem_range.1 hmem).elim ha),
+          (fun hmem ↦ (Set.mem_range.1 hmem).elim ha),
         visitedSuccessorArray_eq_self_of_not_mem_range
-          (fun hmem => (Set.mem_range.1 hmem).elim (hunv _ ha))]
+          (fun hmem ↦ (Set.mem_range.1 hmem).elim (hunv _ ha))]
     · refine (visitedSuccessorArray_congr hxu ?_).symm
       rcases hρ p with hr | hr <;> rw [hr] <;> omega
   simp only [Set.mem_inter_iff, CellWords, Set.mem_ofPred_eq, hcell]
@@ -337,11 +337,11 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure
 `TauCeti.Probability.prefixLaw_singleton_eq_measure`. -/
 private theorem measure_setOf_eqOn [MeasurableSingletonClass α]
     (hX : ∀ i, AEMeasurable (X i) μ) (w : ℕ → α) (m : ℕ) :
-    μ {ω | ∀ i ≤ m, X i ω = w i} = prefixLaw μ X (m + 1) {fun i : Fin (m + 1) => w i.val} := by
+    μ {ω | ∀ i ≤ m, X i ω = w i} = prefixLaw μ X (m + 1) {fun i : Fin (m + 1) ↦ w i.val} := by
   rw [prefixLaw_singleton_eq_measure hX]
-  exact congrArg μ (Set.ext fun ω =>
-    ⟨fun hω i => hω i.val (Nat.lt_succ_iff.1 i.isLt),
-      fun hω i hi => hω ⟨i, Nat.lt_succ_of_le hi⟩⟩)
+  exact congrArg μ (Set.ext fun ω ↦
+    ⟨fun hω i ↦ hω i.val (Nat.lt_succ_iff.1 i.isLt),
+      fun hω i hi ↦ hω ⟨i, Nat.lt_succ_of_le hi⟩⟩)
 
 /-- **A finite path and its last-exit reconstruction are equally likely under a Markov
 exchangeable process.** Rebuilding a prefix from row-permuted successor entries preserves the
@@ -355,11 +355,11 @@ theorem MarkovExchangeable.measure_setOf_eqOn_pathOfReindexedSuccessors
     μ {ω | ∀ i ≤ m, X i ω = pathOfReindexedSuccessors π w i} = μ {ω | ∀ i ≤ m, X i ω = w i} := by
   have := h.countable
   have := h.measurableSingletonClass
-  set u : Fin (m + 1) → α := fun i : Fin (m + 1) => w i.val
-  have hws : ∀ i ≤ m, w i = wordSeq u i := fun i hi => (wordSeq_of_le u hi).symm
+  set u : Fin (m + 1) → α := fun i : Fin (m + 1) ↦ w i.val
+  have hws : ∀ i ≤ m, w i = wordSeq u i := fun i hi ↦ (wordSeq_of_le u hi).symm
   have hadm' : LastExitAdmissible π (wordSeq u) m := hadm.congr hws
-  have hre : (fun i : Fin (m + 1) => pathOfReindexedSuccessors π w i.val) = reindexWord π m u :=
-    funext fun i =>
+  have hre : (fun i : Fin (m + 1) ↦ pathOfReindexedSuccessors π w i.val) = reindexWord π m u :=
+    funext fun i ↦
       pathOfReindexedSuccessors_congr hadm hws i.val (Nat.lt_succ_iff.1 i.isLt)
   rw [measure_setOf_eqOn h.aemeasurable _ m, measure_setOf_eqOn h.aemeasurable _ m, hre]
   exact h.prefixLaw_singleton_eq m _ u (reindexWord_zero π u)
@@ -375,11 +375,11 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] {μ : Measure
 original ones have the same prefix-law mass: the last-exit reconstruction pairs them. -/
 private theorem prefixLaw_horizonWords_inter_cellWords (h : MarkovExchangeable μ X)
     (π : α → Equiv.Perm ℕ) (F : Finset (α × ℕ)) (m : ℕ) (g : F → α) :
-    prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun a k => π a k) F m g)
-      = prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun _ k => k) F m g) :=
+    prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun a k ↦ π a k) F m g)
+      = prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords (fun _ k ↦ k) F m g) :=
   h.prefixLaw_apply_eq_of_equiv m (reindexEquiv π F m g)
-    (fun w => reindexWord_zero π w.1)
-    (fun w => transitionCount_reindexWord (lastExitAdmissible_of_mem_horizonWords w.2.1))
+    (fun w ↦ reindexWord_zero π w.1)
+    (fun w ↦ transitionCount_reindexWord (lastExitAdmissible_of_mem_horizonWords w.2.1))
 
 /-- **The mass of an event of the visited successor array is the limit of the masses of its
 horizon prefix events**, because along almost every path of a recurrent process those events
@@ -389,30 +389,30 @@ private theorem tendsto_prefixLaw_horizonWords_inter_cellWords [IsFiniteMeasure 
     (hπ : {p : α × ℕ | π p.1 p.2 ≠ p.2}.Finite) {F : Finset (α × ℕ)} {g : F → α}
     {ρ : α → ℕ → ℕ} (hρ : ∀ p : F, ρ (p : α × ℕ).1 (p : α × ℕ).2 = (p : α × ℕ).2 ∨
       ρ (p : α × ℕ).1 (p : α × ℕ).2 = π (p : α × ℕ).1 (p : α × ℕ).2) :
-    Tendsto (fun m => prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords ρ F m g)) atTop
-      (𝓝 (μ {ω | ∀ p : F, visitedSuccessorArray (fun n => X n ω) (p : α × ℕ).1
+    Tendsto (fun m ↦ prefixLaw μ X (m + 1) (HorizonWords π F m ∩ CellWords ρ F m g)) atTop
+      (𝓝 (μ {ω | ∀ p : F, visitedSuccessorArray (fun n ↦ X n ω) (p : α × ℕ).1
         (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p})) := by
   have := h.countable
   have := h.measurableSingletonClass
-  have hΦ : AEMeasurable (fun ω n => X n ω) μ := AEMeasurable.of_eval h.aemeasurable
+  have hΦ : AEMeasurable (fun ω n ↦ X n ω) μ := AEMeasurable.of_eval h.aemeasurable
   -- Almost every path of the process revisits each of its states infinitely often.
-  have hio : ∀ᵐ x ∂(μ.map fun ω n => X n ω), ∀ k, {n | x n = x k}.Infinite := by
+  have hio : ∀ᵐ x ∂(μ.map fun ω n ↦ X n ω), ∀ k, {n | x n = x k}.Infinite := by
     have hpath := ((recurrent_pathLaw_iff h.aemeasurable).2 hrec).ae_infinite_setOf_eq
     rwa [pathLaw_def] at hpath
   have hcell : MeasurableSet {x : ℕ → α | ∀ p : F,
       visitedSuccessorArray x (p : α × ℕ).1 (ρ (p : α × ℕ).1 (p : α × ℕ).2) = g p} := by
     simp only [Set.ofPred_forall]
-    exact MeasurableSet.iInter fun p => measurable_visitedSuccessorArray_apply _ _
+    exact MeasurableSet.iInter fun p ↦ measurable_visitedSuccessorArray_apply _ _
       (measurableSet_singleton _) (measurableSet_singleton _)
-  have hpre : ∀ m, MeasurableSet ((fun (x : ℕ → α) (i : Fin (m + 1)) => x i.val) ⁻¹'
-      (HorizonWords π F m ∩ CellWords ρ F m g)) := fun m =>
-    (Measurable.of_eval fun i => measurable_pi_apply _) MeasurableSet.of_discrete
+  have hpre : ∀ m, MeasurableSet ((fun (x : ℕ → α) (i : Fin (m + 1)) ↦ x i.val) ⁻¹'
+      (HorizonWords π F m ∩ CellWords ρ F m g)) := fun m ↦
+    (Measurable.of_eval fun i ↦ measurable_pi_apply _) MeasurableSet.of_discrete
   have hlim := tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop hcell hpre
-    (hio.mono fun x hx => eventually_prefix_mem_iff hx hπ hρ)
+    (hio.mono fun x hx ↦ eventually_prefix_mem_iff hx hπ hρ)
   rw [Measure.map_apply_of_aemeasurable hΦ hcell] at hlim
-  refine hlim.congr fun m => ?_
+  refine hlim.congr fun m ↦ ?_
   rw [Measure.map_apply_of_aemeasurable hΦ (hpre m), prefixLaw_def,
-    blockLaw_apply_of_measurable _ _ _ (fun i : Fin (m + 1) => h.aemeasurable i.val)
+    blockLaw_apply_of_measurable _ _ _ (fun i : Fin (m + 1) ↦ h.aemeasurable i.val)
       MeasurableSet.of_discrete]
   rfl
 
@@ -441,25 +441,25 @@ theorem MarkovExchangeable.rowExchangeable_visitedSuccessorProcess [IsFiniteMeas
     rw [← Equiv.Perm.compl_fixedBy_prodCongrRight]
     exact Equiv.Perm.mem_finitary.1 hπ
   rw [ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq
-    (AEMeasurable.of_eval fun p : α × ℕ => hSA (p.1, π p.1 p.2)) (AEMeasurable.of_eval hSA)]
+    (AEMeasurable.of_eval fun p : α × ℕ ↦ hSA (p.1, π p.1 p.2)) (AEMeasurable.of_eval hSA)]
   intro F
-  refine Measure.ext_of_singleton fun g => ?_
-  have hm₁ : AEMeasurable (fun ω => F.restrict fun p : α × ℕ =>
+  refine Measure.ext_of_singleton fun g ↦ ?_
+  have hm₁ : AEMeasurable (fun ω ↦ F.restrict fun p : α × ℕ ↦
       visitedSuccessorProcess X (p.1, π p.1 p.2) ω) μ :=
-    AEMeasurable.of_eval fun p => hSA ((p : α × ℕ).1, π (p : α × ℕ).1 (p : α × ℕ).2)
-  have hm₂ : AEMeasurable (fun ω => F.restrict fun p : α × ℕ => visitedSuccessorProcess X p ω) μ :=
-    AEMeasurable.of_eval fun p => hSA (p : α × ℕ)
+    AEMeasurable.of_eval fun p ↦ hSA ((p : α × ℕ).1, π (p : α × ℕ).1 (p : α × ℕ).2)
+  have hm₂ : AEMeasurable (fun ω ↦ F.restrict fun p : α × ℕ ↦ visitedSuccessorProcess X p ω) μ :=
+    AEMeasurable.of_eval fun p ↦ hSA (p : α × ℕ)
   rw [Measure.map_apply_of_aemeasurable hm₁ MeasurableSet.of_discrete,
     Measure.map_apply_of_aemeasurable hm₂ MeasurableSet.of_discrete]
-  have hcellπ : (fun ω => F.restrict fun p : α × ℕ =>
+  have hcellπ : (fun ω ↦ F.restrict fun p : α × ℕ ↦
       visitedSuccessorProcess X (p.1, π p.1 p.2) ω) ⁻¹' {g} = {ω | ∀ p : F,
-        visitedSuccessorArray (fun n => X n ω) (p : α × ℕ).1 (π (p : α × ℕ).1 (p : α × ℕ).2)
+        visitedSuccessorArray (fun n ↦ X n ω) (p : α × ℕ).1 (π (p : α × ℕ).1 (p : α × ℕ).2)
           = g p} := by
     ext ω
     simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
       visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
-  have hcellid : (fun ω => F.restrict fun p : α × ℕ => visitedSuccessorProcess X p ω) ⁻¹' {g}
-      = {ω | ∀ p : F, visitedSuccessorArray (fun n => X n ω) (p : α × ℕ).1 (p : α × ℕ).2
+  have hcellid : (fun ω ↦ F.restrict fun p : α × ℕ ↦ visitedSuccessorProcess X p ω) ⁻¹' {g}
+      = {ω | ∀ p : F, visitedSuccessorArray (fun n ↦ X n ω) (p : α × ℕ).1 (p : α × ℕ).2
           = g p} := by
     ext ω
     simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
@@ -467,9 +467,9 @@ theorem MarkovExchangeable.rowExchangeable_visitedSuccessorProcess [IsFiniteMeas
   rw [hcellπ, hcellid]
   -- Both masses are limits of horizon prefix masses, and those agree term by term.
   exact tendsto_nhds_unique
-    ((tendsto_prefixLaw_horizonWords_inter_cellWords h hrec hsupp fun _ => Or.inr rfl).congr
-      fun m => prefixLaw_horizonWords_inter_cellWords h π F m g)
-    (tendsto_prefixLaw_horizonWords_inter_cellWords h hrec hsupp fun _ => Or.inl rfl)
+    ((tendsto_prefixLaw_horizonWords_inter_cellWords h hrec hsupp fun _ ↦ Or.inr rfl).congr
+      fun m ↦ prefixLaw_horizonWords_inter_cellWords h π F m g)
+    (tendsto_prefixLaw_horizonWords_inter_cellWords h hrec hsupp fun _ ↦ Or.inl rfl)
 
 /-- **The successor array of a recurrent Markov exchangeable process that almost surely attains
 every state is row exchangeable.** Almost surely it coincides with the visited successor array.
@@ -487,12 +487,12 @@ theorem MarkovExchangeable.rowExchangeable_successorProcess [IsFiniteMeasure μ]
     filter_upwards [hvis] with ω hω p
     rw [visitedSuccessorProcess_apply, successorProcess_apply]
     exact visitedSuccessorArray_eq_successorArray_of_mem_range (hω p.1)
-  refine rowExchangeable_def.2 fun π => ?_
+  refine rowExchangeable_def.2 fun π ↦ ?_
   refine (Measure.map_congr ?_).trans
     ((rowExchangeable_def.1 (h.rowExchangeable_visitedSuccessorProcess hrec) π).trans
       (Measure.map_congr ?_))
   · filter_upwards [hae] with ω hω
-    exact funext fun p => (hω _).symm
+    exact funext fun p ↦ (hω _).symm
   · filter_upwards [hae] with ω hω
     exact funext hω
 
@@ -505,7 +505,7 @@ theorem MarkovExchangeable.mixedMarkovChain [IsProbabilityMeasure μ] {a₀ : α
   have := h.measurableSingletonClass
   exact mixedMarkovChain_of_rowExchangeable h.aemeasurable h0
     (aemeasurable_visitedSuccessorProcess h.aemeasurable)
-    (ae_of_all _ fun ω n => visitedSuccessorProcess_visitCell X n ω)
+    (ae_of_all _ fun ω n ↦ visitedSuccessorProcess_visitCell X n ω)
     (h.rowExchangeable_visitedSuccessorProcess hrec)
 
 end Representation

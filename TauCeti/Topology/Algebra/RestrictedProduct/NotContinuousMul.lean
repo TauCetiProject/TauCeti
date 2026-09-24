@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.RestrictedProduct.Away
+public import TauCeti.Topology.Algebra.RestrictedProduct.Sum
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Instances.Rat
@@ -29,10 +31,21 @@ for all rational `t` of small absolute value and `s • eₙ` for all rational `
 value, and for `n` large and `t` rational close to `√2 / (n + 1)` the sum `t • e₀ + s • eₙ`
 escapes `W`.
 
-Multiplication on this space factors through the inverse of the splitting of the restricted product
-over `ℕ ⊕ ℕ` into two restricted products, and through the inverse of the decomposition into the
-`{0}` factor times the rest, so neither of those inverses is continuous for this family either;
-openness of the reference subgroups is the hypothesis that restores their continuity.
+Multiplication on this space factors through the inverse of the splitting `restrictedProductSum` of
+the restricted product over `ℕ ⊕ ℕ` into two restricted products, followed by the coordinatewise
+product of the two halves, which is continuous for every family. So that inverse is not continuous
+for this family either (`not_continuous_restrictedProductSum_symm`), although
+`continuous_restrictedProductSum_symm` makes it continuous once the reference subgroups are open;
+openness is a fact about the topology, not a limitation of that proof.
+
+The same set `W` shows that recombining a coordinate at `0` with an element of the restricted
+product over the indices `n ≠ 0` is not continuous
+(`not_continuous_restrictedProduct_of_apply_eq_rat_bot`): here the open neighbourhoods of `0` come
+from the plain product over `{0}` and from the restricted product away from `0`, and the same
+choice of `t` and `s` escapes `W`. This is the discontinuity of the inverse of the decomposition of
+a restricted product into the product over a finite set of indices times the restricted product
+away from it, when the reference subgroups away from that set are not open; compare
+`continuous_restrictedProduct_of_apply_eq_of_isOpen`.
 
 The openness of the witness is checked stage by stage with `isOpen_restrictedProduct_iff`, and the
 neighbourhood argument uses `continuous_restrictedProduct_mulSingle`.
@@ -141,19 +154,17 @@ private theorem isOpen_escapeSet : IsOpen escapeSet := by
 
 /-- Every open neighbourhood of the identity contains the element `ofAdd t` inserted at the `n`-th
 coordinate, for all rationals `t` of small enough absolute value. -/
-private theorem exists_pos_mulSingle_mem {V : Set (Πʳ _ : ℕ, [Multiplicative ℚ,
+private theorem exists_pos_mulSingle_mem {ι : Type*} [DecidableEq ι]
+    {V : Set (Πʳ _ : ι, [Multiplicative ℚ,
       ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))])}
-    (hV : IsOpen V) (h1 : 1 ∈ V) (n : ℕ) :
+    (hV : IsOpen V) (h1 : 1 ∈ V) (n : ι) :
     ∃ δ : ℝ, 0 < δ ∧ ∀ t : ℚ, |(t : ℝ)| < δ →
-      RestrictedProduct.mulSingle (fun _ : ℕ ↦ (⊥ : Subgroup (Multiplicative ℚ))) n (ofAdd t)
+      RestrictedProduct.mulSingle (fun _ : ι ↦ (⊥ : Subgroup (Multiplicative ℚ))) n (ofAdd t)
         ∈ V := by
-  have hpre : IsOpen ((fun t : ℚ ↦ RestrictedProduct.mulSingle
-      (fun _ : ℕ ↦ (⊥ : Subgroup (Multiplicative ℚ))) n (ofAdd t)) ⁻¹' V) :=
-    hV.preimage ((continuous_restrictedProduct_mulSingle _ n).comp continuous_ofAdd)
-  have h0 : (0 : ℚ) ∈ (fun t : ℚ ↦ RestrictedProduct.mulSingle
-      (fun _ : ℕ ↦ (⊥ : Subgroup (Multiplicative ℚ))) n (ofAdd t)) ⁻¹' V := by
-    simpa using h1
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1 hpre 0 h0
+  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1
+    (hV.preimage ((continuous_restrictedProduct_mulSingle _ n).comp continuous_ofAdd)) 0
+    (by simpa only [Set.mem_preimage, Function.comp_apply, ofAdd_zero,
+      RestrictedProduct.mulSingle_one] using h1)
   refine ⟨δ, hδ, fun t ht ↦ hball ?_⟩
   rw [Metric.mem_ball, Rat.dist_eq]
   simpa using ht
@@ -215,5 +226,101 @@ theorem not_isTopologicalGroup_restrictedProduct_rat_bot :
     ¬ IsTopologicalGroup (Πʳ _ : ℕ, [Multiplicative ℚ,
       ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))]) :=
   fun h ↦ not_continuousMul_restrictedProduct_rat_bot h.toContinuousMul
+
+/-- Multiplying the two halves of the splitting of `Πʳ k : ℕ ⊕ ℕ, [Multiplicative ℚ, ⊥]` is
+continuous, although multiplication on `Πʳ n : ℕ, [Multiplicative ℚ, ⊥]` itself is not. -/
+private theorem continuous_mul_restrictedProductSum_rat_bot :
+    Continuous fun z : Πʳ _ : ℕ ⊕ ℕ, [Multiplicative ℚ,
+        ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))] ↦
+      (restrictedProductSum (fun _ ↦ ⊥) z).1 * (restrictedProductSum (fun _ ↦ ⊥) z).2 := by
+  rw [RestrictedProduct.continuous_dom]
+  intro T hT
+  -- The stage of `ℕ` on which both halves of the stage `T` are integral.
+  have hT' : cofinite ≤ 𝓟 {n : ℕ | Sum.inl n ∈ T ∧ Sum.inr n ∈ T} := by
+    rw [le_principal_iff]
+    have h := eventually_mem_set.2 (le_principal_iff.1 hT)
+    filter_upwards [Sum.inl_injective.tendsto_cofinite.eventually h,
+      Sum.inr_injective.tendsto_cofinite.eventually h] with n hl hr using ⟨hl, hr⟩
+  -- The coordinatewise product between the two stages, through which the composite factors.
+  let g : (Πʳ _ : ℕ ⊕ ℕ, [Multiplicative ℚ,
+      ((⊥ : Subgroup (Multiplicative ℚ)) : Set (Multiplicative ℚ))]_[𝓟 T]) →
+        Πʳ _ : ℕ, [Multiplicative ℚ, ((⊥ : Subgroup (Multiplicative ℚ)) :
+          Set (Multiplicative ℚ))]_[𝓟 {n : ℕ | Sum.inl n ∈ T ∧ Sum.inr n ∈ T}] :=
+    fun z ↦ RestrictedProduct.mk (fun n ↦ z (Sum.inl n) * z (Sum.inr n)) (by
+      rw [eventually_principal]
+      intro n hn
+      exact mul_mem (eventually_principal.1 z.2 _ hn.1) (eventually_principal.1 z.2 _ hn.2))
+  have hg : Continuous g := by
+    refine RestrictedProduct.continuous_rng_of_principal.mpr (continuous_pi fun n ↦ ?_)
+    exact (RestrictedProduct.continuous_eval (Sum.inl n)).mul
+      (RestrictedProduct.continuous_eval (Sum.inr n))
+  refine ((RestrictedProduct.continuous_inclusion hT').comp hg).congr fun z ↦ ?_
+  ext n : 1
+  simp only [Function.comp_apply, RestrictedProduct.inclusion_apply, RestrictedProduct.mul_apply,
+    restrictedProductSum_apply_inl, restrictedProductSum_apply_inr, RestrictedProduct.mk_apply, g]
+
+/-- The inverse of the splitting `restrictedProductSum` of a restricted product over a sum of index
+types is not continuous in general: for `Πʳ k : ℕ ⊕ ℕ, [Multiplicative ℚ, ⊥]`, with the trivial,
+non-open, reference subgroup at every index, it is a discontinuous bijection. The openness
+hypothesis of `continuous_restrictedProductSum_symm` therefore cannot be dropped. -/
+theorem not_continuous_restrictedProductSum_symm :
+    ¬ Continuous (restrictedProductSum (G := fun _ : ℕ ⊕ ℕ ↦ Multiplicative ℚ)
+      fun _ ↦ (⊥ : Subgroup (Multiplicative ℚ))).symm := by
+  intro h
+  refine not_continuousMul_restrictedProduct_rat_bot
+    ⟨(continuous_mul_restrictedProductSum_rat_bot.comp h).congr fun p ↦ ?_⟩
+  simp
+
+/-- Recombining a coordinate at the index `0` with an element of the restricted product away from
+`0` is not continuous for `Πʳ n : ℕ, [Multiplicative ℚ, ⊥]`: every map
+`(Π i : {0}, Multiplicative ℚ) × Πʳ n : {n // n ∉ {0}}, [Multiplicative ℚ, ⊥] →
+Πʳ n : ℕ, [Multiplicative ℚ, ⊥]` that returns the coordinate of its first component on `{0}` and
+the coordinates of its second component away from `{0}` is discontinuous. So the
+openness hypothesis of `continuous_restrictedProduct_of_apply_eq_of_isOpen` on the reference
+subgroups away from the finite set cannot be dropped, and neither can the corresponding hypothesis
+for the inverse of the decomposition of a restricted product into the product over a finite set of
+indices times the restricted product away from it. -/
+theorem not_continuous_restrictedProduct_of_apply_eq_rat_bot
+    {f : (∀ _ : ({0} : Set ℕ), Multiplicative ℚ) ×
+        RestrictedProductGroupAway {0} (fun _ : ℕ ↦ (⊥ : Subgroup (Multiplicative ℚ))) →
+      RestrictedProductGroup fun _ : ℕ ↦ (⊥ : Subgroup (Multiplicative ℚ))}
+    (hmem : ∀ p (i : ({0} : Set ℕ)), f p i = p.1 i)
+    (hnotMem : ∀ p (j : {j // j ∉ ({0} : Set ℕ)}), f p j = p.2 j) :
+    ¬ Continuous f := by
+  intro hf
+  have hf1 : f 1 = 1 := by
+    ext n
+    by_cases hn : n ∈ ({0} : Set ℕ)
+    · exact hmem 1 ⟨n, hn⟩
+    · exact hnotMem 1 ⟨n, hn⟩
+  obtain ⟨V, V', hV, hV', h1V, h1V', hVV'⟩ := isOpen_prod_iff.1
+    (hf.isOpen_preimage _ isOpen_escapeSet) 1 1
+    (by rw [Set.mem_preimage, Prod.mk_one_one, hf1]; exact one_mem_escapeSet)
+  -- Near `0`, the finite factor contains the constant `ofAdd t`, and the restricted factor
+  -- contains `ofAdd s` inserted at any index `n ≠ 0`.
+  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1
+    (hV.preimage (continuous_pi fun _ ↦ continuous_ofAdd)) 0
+    (by rw [Set.mem_preimage, ofAdd_zero]; exact h1V)
+  have hδV : ∀ t : ℚ, |(t : ℝ)| < δ → (fun _ ↦ ofAdd t) ∈ V := fun t ht ↦ hball (by
+    rw [Metric.mem_ball, Rat.dist_eq]
+    simpa using ht)
+  choose ε hε hεV' using fun j : {j // j ∉ ({0} : Set ℕ)} ↦ exists_pos_mulSingle_mem hV' h1V' j
+  obtain ⟨n, hn, t, s, ht, hs, hts⟩ := exists_rat_escape hδ
+    (ε := fun n ↦ if h : n ∈ ({0} : Set ℕ) then 1 else ε ⟨n, h⟩)
+    fun n ↦ by split_ifs <;> simp [hε]
+  have hn0 : n ∉ ({0} : Set ℕ) := by rw [Set.mem_singleton_iff]; omega
+  simp only [hn0, dite_false] at hs
+  have hmemW := (mem_escapeSet_iff _).1
+    (hVV' (Set.mk_mem_prod (hδV t ht) (hεV' ⟨n, hn0⟩ s hs))) n hn
+  have h0 := hmem (fun _ ↦ ofAdd t, RestrictedProduct.mulSingle
+    (fun _ : {j // j ∉ ({0} : Set ℕ)} ↦ (⊥ : Subgroup (Multiplicative ℚ))) ⟨n, hn0⟩ (ofAdd s))
+    ⟨0, rfl⟩
+  have hn' := hnotMem (fun _ ↦ ofAdd t, RestrictedProduct.mulSingle
+    (fun _ : {j // j ∉ ({0} : Set ℕ)} ↦ (⊥ : Subgroup (Multiplicative ℚ))) ⟨n, hn0⟩ (ofAdd s))
+    ⟨n, hn0⟩
+  simp only [realCoord] at hmemW
+  rw [h0, hn', RestrictedProduct.mulSingle_eq_same] at hmemW
+  simp only [toAdd_ofAdd] at hmemW
+  exact absurd hmemW (not_lt.2 hts)
 
 end TauCeti

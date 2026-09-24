@@ -54,8 +54,11 @@ variable {k G : Type u} [Field k] [Group G] {S : Subgroup G} [S.FiniteIndex]
 Mathlib's adjunction `Rep.indResAdjunction`, transported to the small carrier of `indFDRep`
 along `indFDRepForgetIso`.  Under that comparison it sends `a` to the generator `⟦1 ⊗ a⟧`. -/
 noncomputable def indFDRepUnit (A : FDRep k S) : A ⟶ resFDRep S (indFDRep A) :=
+  -- The universes of `Rep.indResAdjunction` are pinned: left to unification, the constraint
+  -- `max u u ?w = u` makes elaborating this composite cost most of a second (see #8353).
   (forget₂ (FDRep k S) (Rep k S)).preimage <|
-    (Rep.indResAdjunction k S.subtype).unit.app ((forget₂ (FDRep k S) (Rep k S)).obj A) ≫
+    (Rep.indResAdjunction.{u, u, u, u} k S.subtype).unit.app
+        ((forget₂ (FDRep k S) (Rep k S)).obj A) ≫
       (Rep.resFunctor S.subtype).map (indFDRepForgetIso A).inv
 
 /-- After forgetting finite-dimensionality, `indFDRepUnit` is Mathlib's adjunction unit followed
@@ -118,23 +121,25 @@ theorem indFDRepUnit_injective (A : FDRep k S) : Function.Injective (indFDRepUni
     congrArg (indFDRepForgetIso A).hom.hom hab
   rw [indFDRepUnit_apply, indFDRepUnit_apply] at h
   let _ : DecidableRel (QuotientGroup.rightRel S) := Classical.decRel _
+  -- The universes of `Rep.indCoindIso` are pinned throughout: left to unification, the
+  -- constraint `max ?w u = u` makes the `rw [show …]` below cost seconds (see #8353).
   have h' := congrArg
-    (fun x => ((Rep.indCoindIso
+    (fun x => ((Rep.indCoindIso.{u, u, u}
       ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom x).1 1) h
   have heval (x : (forget₂ (FDRep k S) (Rep k S)).obj A) :
-      ((Rep.indCoindIso ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom
+      ((Rep.indCoindIso.{u, u, u} ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom
         (Representation.IndV.mk S.subtype
           ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 x)).1 1 = x := by
     -- Pass from the bundled representation morphism to its linear map so the generated
     -- `indCoindIso_hom_hom_toLinearMap` equation can rewrite it.
-    change (((Rep.indCoindIso
+    change (((Rep.indCoindIso.{u, u, u}
       ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom.toLinearMap
         (Representation.IndV.mk S.subtype
           ((forget₂ (FDRep k S) (Rep k S)).obj A).ρ 1 x))).1 1 = x
-    rw [show (Rep.indCoindIso
+    rw [show (Rep.indCoindIso.{u, u, u}
       ((forget₂ (FDRep k S) (Rep k S)).obj A)).hom.hom.toLinearMap =
         Rep.indToCoind ((forget₂ (FDRep k S) (Rep k S)).obj A) from
-      Rep.indCoindIso_hom_hom_toLinearMap _]
+      Rep.indCoindIso_hom_hom_toLinearMap.{u, u, u} _]
     simp only [FGModuleCat.obj_carrier, LinearMap.coe_comp, Function.comp_apply,
       TensorProduct.mk_apply, Representation.Coinvariants.lift_mk, TensorProduct.lift.tmul,
       LinearEquiv.coe_coe, MonoidAlgebra.coeffLinearEquiv_apply,

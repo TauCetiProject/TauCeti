@@ -105,6 +105,21 @@ theorem AffineSemigroupComplexPoint.ext {x y : AffineSemigroupComplexPoint S}
     x = y :=
   MonoidAlgebra.algHom_ext (fun m ↦ h (toAdd m)) (Subsingleton.elim _ _)
 
+/-- A complex point is multiplicative on monomials: its value on the monomial of a sum is the
+product of its values on the monomials of the summands. -/
+theorem AffineSemigroupComplexPoint.apply_single_add (x : AffineSemigroupComplexPoint S)
+    (s t : S) :
+    x (MonoidAlgebra.single (ofAdd (s + t)) 1) =
+      x (MonoidAlgebra.single (ofAdd s) 1) * x (MonoidAlgebra.single (ofAdd t) 1) := by
+  rw [← map_mul, MonoidAlgebra.single_mul_single, ofAdd_add, mul_one]
+
+/-- The value of a complex point on the monomial of a multiple is the corresponding power of its
+value on the monomial. -/
+theorem AffineSemigroupComplexPoint.apply_single_nsmul (x : AffineSemigroupComplexPoint S)
+    (n : ℕ) (s : S) :
+    x (MonoidAlgebra.single (ofAdd (n • s)) 1) = x (MonoidAlgebra.single (ofAdd s) 1) ^ n := by
+  rw [← map_pow, MonoidAlgebra.single_pow, ofAdd_nsmul, one_pow]
+
 /-- A finite family generating a commutative additive monoid. The affine complex points of `S`
 are topologized through evaluation on such a family, so the chosen indexed family, and not just
 the finite generation of `S`, is part of the data. -/

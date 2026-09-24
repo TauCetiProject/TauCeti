@@ -26,7 +26,8 @@ through the universal property of the restricted product.
   universal property with parameters, `RestrictedProduct.continuous_dom_prod_left`, and it is
   asked only at the indices carrying a reference set. This is the topological input for the
   inverse of the decomposition of a restricted product into the plain product over a finite set
-  of indices times the restricted product away from it.
+  of indices times the restricted product away from it. The openness hypothesis cannot be
+  dropped: see `not_continuous_restrictedProduct_of_apply_eq_rat_bot`.
 
 ## References
 

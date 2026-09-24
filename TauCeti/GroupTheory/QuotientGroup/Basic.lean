@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import TauCeti.Algebra.Group.Subgroup.Finite
 
 /-!
 # Left translation on a coset space
@@ -48,6 +49,10 @@ public section
 
 open MulAction
 open scoped Pointwise
+
+-- Mathlib's `Subgroup.quotientEquivOfEq_mk` (a `rfl` lemma) is not a `simp` lemma. With it, `simp`
+-- carries the class of a representative across an equality of subgroups.
+attribute [simp] Subgroup.quotientEquivOfEq_mk
 
 namespace TauCeti
 
@@ -112,14 +117,9 @@ theorem quotientBot_smul_eq_self_iff (g : G) (q : G ⧸ (⊥ : Subgroup G)) :
 
 section Finite
 
+attribute [local instance] Subgroup.fintypeOfFinite Subgroup.fintypeQuotientOfFiniteIndex
+
 variable {M : Type*} [AddCommMonoid M] [Fintype G] (H : Subgroup G)
-
-/-- A subgroup of a finite group is a finite type. -/
-noncomputable local instance fintypeSubgroup : Fintype H := Fintype.ofFinite H
-
-/-- The quotient of a finite group by a subgroup is a finite type. -/
-noncomputable local instance fintypeQuotientGroup : Fintype (G ⧸ H) :=
-  H.fintypeQuotientOfFiniteIndex
 
 /-- Every element of a finite group `G` is uniquely the product of the `Quotient.out`
 representative of a left coset of `H` and an element of `H`. -/

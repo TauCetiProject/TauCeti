@@ -90,6 +90,7 @@ theorem coeffMap_def {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
     coeffMap f n = _root_.ContinuousCohomology.map (X := X) (ContinuousMonoidHom.id G) f n :=
   (rfl)
 
+/-- Coefficient maps preserve identities. -/
 @[simp]
 theorem coeffMap_id (X : TopRep R G) (n : ℕ) : coeffMap (𝟙 X) n = 𝟙 _ :=
   _root_.ContinuousCohomology.map_id X n
@@ -155,6 +156,7 @@ noncomputable def resNatTrans (n : ℕ) :
   app X := res S X n
   naturality _ _ f := coeffMap_comp_res S f n
 
+/-- The component at `X` of the restriction natural transformation is restriction `res S X n`. -/
 @[simp]
 theorem resNatTrans_app (X : TopRep R G) (n : ℕ) : (resNatTrans R S n).app X = res S X n :=
   (rfl)
@@ -164,9 +166,11 @@ inclusion. -/
 @[reassoc]
 theorem res_comp_res (T : Subgroup S) (X : TopRep R G) (n : ℕ) :
     res S X n ≫ res T (TopRep.res (S.subtype : S →* G) X) n =
-      _root_.ContinuousCohomology.map (X := X)
+      -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
+      -- (This follows the ascription idiom of #8346.)
+      (_root_.ContinuousCohomology.map (X := X)
         ((ContinuousMonoidHom.subgroupSubtype S).comp (ContinuousMonoidHom.subgroupSubtype T))
-        (𝟙 (TopRep.res (T.subtype : T →* S) (TopRep.res (S.subtype : S →* G) X))) n := by
+        (𝟙 (TopRep.res (T.subtype : T →* S) (TopRep.res (S.subtype : S →* G) X))) n :) := by
   refine (_root_.ContinuousCohomology.map_comp (X := X) (ContinuousMonoidHom.subgroupSubtype S)
       (ContinuousMonoidHom.subgroupSubtype T) (𝟙 _) (𝟙 _) n).symm.trans
     (map_congr rfl (heq_of_eq ?_) n)
@@ -193,14 +197,20 @@ noncomputable def infl (X : TopRep R G) (n : ℕ) :
 /-- The defining equation of `infl`: it is `ContinuousCohomology.map` for the compatible pair
 consisting of the quotient homomorphism `G → G ⧸ N` and the inclusion `Xᴺ ↪ X`. -/
 theorem infl_def (X : TopRep R G) (n : ℕ) :
-    infl N X n = _root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk N)
-      (TopRep.quotientToInvariantsι X N) n :=
+    infl N X n =
+      -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
+      -- (This follows the ascription idiom of #8346.)
+      (_root_.ContinuousCohomology.map (ContinuousMonoidHom.quotientMk N)
+        (TopRep.quotientToInvariantsι X N) n :) :=
   (rfl)
 
 /-- Inflation is natural in the coefficients. -/
 @[reassoc]
 theorem coeffMap_comp_infl {X Y : TopRep R G} (f : X ⟶ Y) (n : ℕ) :
-    coeffMap (TopRep.quotientToInvariantsMap f N) n ≫ infl N Y n = infl N X n ≫ coeffMap f n := by
+    coeffMap (TopRep.quotientToInvariantsMap f N) n ≫ infl N Y n =
+      -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
+      -- (This follows the ascription idiom of #8346.)
+      (infl N X n ≫ coeffMap f n :) := by
   refine ((_root_.ContinuousCohomology.map_comp (X := TopRep.quotientToInvariants X N)
       (Y := TopRep.quotientToInvariants Y N) (Z := Y) (ContinuousMonoidHom.id (G ⧸ N))
       (ContinuousMonoidHom.quotientMk N) (TopRep.quotientToInvariantsMap f N)
@@ -220,8 +230,12 @@ noncomputable def inflNatTrans (n : ℕ) :
   app X := infl N X n
   naturality _ _ f := coeffMap_comp_infl N f n
 
+/-- The component at `X` of the inflation natural transformation is inflation `infl N X n`. -/
 @[simp]
-theorem inflNatTrans_app (X : TopRep R G) (n : ℕ) : (inflNatTrans R N n).app X = infl N X n :=
+theorem inflNatTrans_app (X : TopRep R G) (n : ℕ) : (inflNatTrans R N n).app X =
+    -- Ascribed: otherwise an open `max v ?w` universe sends `=` into a slow coercion search.
+    -- (This follows the ascription idiom of #8346.)
+    (infl N X n :) :=
   (rfl)
 
 /-- Inflating from `(G ⧸ N) ⧸ P` to `G ⧸ N` and then from `G ⧸ N` to `G` is the map induced by the

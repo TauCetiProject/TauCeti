@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Corestriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Basic
 
 /-!
 # Corestriction of finite-layer Tate cohomology
@@ -321,7 +321,10 @@ def trivialTateCor (T : LayerRestriction small big) :
       (T.trivialTateRangeIso 0).hom ≫
         TauCeti.TateCohomology.H0Cor (Rep.trivial ℤ big.Gal ℤ) T.galHom.range
   | .ofNat (n + 1) =>
-      (T.trivialTateRangeIso (n + 1)).hom ≫
+      -- The ascription elaborates the comparison before it meets the branch type
+      -- `Int.ofNat (n + 1)`: matched first, the still-pending literal in `n + 1` makes that
+      -- unification fail slowly (see #8346).
+      ((T.trivialTateRangeIso (n + 1)).hom :) ≫
         (TateCohomology.isoGroupCohomology (n + 1)).hom.app
           (Rep.res T.galHom.range.subtype (Rep.trivial ℤ big.Gal ℤ)) ≫
         TauCeti.groupCohomology.corestriction

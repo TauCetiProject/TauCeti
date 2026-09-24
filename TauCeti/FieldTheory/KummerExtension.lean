@@ -74,10 +74,9 @@ theorem _root_.IntermediateField.adjoin_rootSet_X_pow_two_sub_C
   refine le_antisymm (IntermediateField.adjoin_le_iff.mpr fun x hx ↦ ?_)
     (IntermediateField.adjoin_simple_le_iff.mpr (IntermediateField.subset_adjoin F _ hmem))
   have hx' : x ^ 2 = algebraMap F E a := (Polynomial.mem_rootSet_X_pow_sub_C two_ne_zero).mp hx
-  have hfac : (x - δ) * (x + δ) = 0 := by linear_combination hx' - hδ
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact (sub_eq_zero.mp h) ▸ IntermediateField.mem_adjoin_simple_self F δ
-  · exact (eq_neg_of_add_eq_zero_left h) ▸ neg_mem (IntermediateField.mem_adjoin_simple_self F δ)
+  rcases sq_eq_sq_iff_eq_or_eq_neg.mp (hx'.trans hδ.symm) with h | h
+  · exact h ▸ IntermediateField.mem_adjoin_simple_self F δ
+  · exact h ▸ neg_mem (IntermediateField.mem_adjoin_simple_self F δ)
 
 end Adjoin
 
