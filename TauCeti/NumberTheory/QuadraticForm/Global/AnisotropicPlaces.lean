@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Representation
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
-public import TauCeti.RingTheory.DedekindDomain.SelmerGroup
-public import TauCeti.RingTheory.Henselian.Basic
-public import TauCeti.RingTheory.Henselian.BinaryForm
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.RingTheory.DedekindDomain.SelmerGroup
+import TauCeti.RingTheory.Henselian.Basic
+import TauCeti.RingTheory.Henselian.BinaryForm
 
 /-!
 # Quadratic forms of rank at least three are isotropic at almost every finite place
@@ -64,44 +64,19 @@ theorem not_anisotropic_atFinitePlace_weightedSumSquares {ι : Type*} [Fintype �
   classical
   rw [Equivalent.anisotropic_iff ⟨atFinitePlaceWeightedSumSquares v a⟩]
   -- The ring of integers of `K_v` is Henselian with finite residue field, and `2` is a unit there.
-  have : Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
-    Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
-  -- An element of `K` of valuation one is a unit of the ring of integers of `K_v`.
-  have hunit {c : K} (hc : v.valuation K c = 1) : ∃ u : v.adicCompletionIntegers K, IsUnit u ∧
-      (u : v.adicCompletion K) = algebraMap K (v.adicCompletion K) c := by
-    have hv : Valued.v (algebraMap K (v.adicCompletion K) c) = 1 := by
-      rw [HeightOneSpectrum.algebraMap_adicCompletion, Function.comp_apply,
-        HeightOneSpectrum.valuedAdicCompletion_eq_valuation']
-      simpa using hc
-    exact ⟨⟨_, (HeightOneSpectrum.mem_adicCompletionIntegers _ K v).mpr hv.le⟩,
-      HeightOneSpectrum.adicCompletionIntegers.isUnit_iff_valued_eq_one.mpr hv, rfl⟩
-  obtain ⟨t, ht, ht2⟩ := hunit h2
+  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  obtain ⟨t, ht, ht2⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one h2
   have ht2' : t = 2 := Subtype.ext (by rw [ht2, map_ofNat]; norm_cast)
-  obtain ⟨uᵢ, huᵢ, huᵢa⟩ := hunit hi
-  obtain ⟨uⱼ, huⱼ, huⱼa⟩ := hunit hj
-  obtain ⟨uₖ, huₖ, huₖa⟩ := hunit hk
+  obtain ⟨uᵢ, huᵢ, huᵢa⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one hi
+  obtain ⟨uⱼ, huⱼ, huⱼa⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one hj
+  obtain ⟨uₖ, huₖ, huₖa⟩ := v.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one hk
   -- The binary form `⟨aᵢ, aⱼ⟩` represents `-aₖ` over the integers of `K_v`.
   obtain ⟨x, y, hxy⟩ := TauCeti.exists_mul_sq_add_mul_sq_eq_of_isUnit (ht2' ▸ ht) huᵢ huⱼ huₖ.neg
   have hxy' := congrArg (fun z : v.adicCompletionIntegers K ↦ (z : v.adicCompletion K)) hxy
   push_cast at hxy'
   rw [huᵢa, huⱼa, huₖa] at hxy'
-  -- So `x eᵢ + y eⱼ + eₖ` is a nonzero isotropic vector.
-  let f : ι → v.adicCompletion K := Pi.single i (x : v.adicCompletion K) + Pi.single j ↑y +
-    Pi.single k 1
-  intro hanis
-  have hf : f = 0 := hanis f <| by
-    rw [weightedSumSquares_apply, ← Finset.sum_subset (Finset.subset_univ {i, j, k})]
-    · rw [Finset.sum_insert (by simp [hij, hik]), Finset.sum_insert (by simp [hjk]),
-        Finset.sum_singleton]
-      simp only [f, Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne hij.symm,
-        Pi.single_eq_of_ne hik.symm, Pi.single_eq_of_ne hij, Pi.single_eq_of_ne hjk.symm,
-        Pi.single_eq_of_ne hik, Pi.single_eq_of_ne hjk, smul_eq_mul]
-      linear_combination hxy'
-    · intro l _ hl
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hl
-      simp [f, hl.1, hl.2.1, hl.2.2]
-  have hfk := congrFun hf k
-  simp [f, hik.symm, hjk.symm] at hfk
+  apply not_anisotropic_weightedSumSquares_of_ternary_eq_zero _ hij hik hjk one_ne_zero
+  simpa only [one_pow, mul_one, add_eq_zero_iff_eq_neg] using hxy'
 
 /-- **Almost-all isotropy.** A quadratic form over a number field on a space of dimension at
 least three is isotropic at all but finitely many finite places. -/

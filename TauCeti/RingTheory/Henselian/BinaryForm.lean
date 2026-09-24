@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.Henselian
+import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # Binary forms with unit coefficients over a Henselian local ring
@@ -51,26 +52,18 @@ private theorem exists_mul_sq_add_mul_sq_eq_of_residue (h2 : IsUnit (2 : R)) {a 
   obtain ⟨x₀, rfl⟩ := residue_surjective s
   obtain ⟨y, rfl⟩ := residue_surjective t
   obtain ⟨a', ha'⟩ := ha.exists_right_inv
-  -- Hensel's lemma for `X² - u`, with `u = a⁻¹ (c - b y²)`, at the approximate root `x₀`.
+  -- Lift the square root of `u = a⁻¹ (c - b y²)` from the residue field.
   set u := a' * (c - b * y ^ 2) with hu
-  have heval : (X ^ 2 - C u).eval x₀ ∈ maximalIdeal R := by
-    rw [← residue_eq_zero_iff, eval_sub, eval_pow, eval_X, eval_C, hu]
+  have hu_res : residue R x₀ ^ 2 = residue R u := by
+    rw [hu]
     have hres := congrArg (residue R) ha'
     simp only [map_mul, map_one] at hres
     simp only [map_sub, map_pow, map_mul]
     linear_combination residue R a' * hst - residue R x₀ ^ 2 * hres
-  have hder : IsUnit ((X ^ 2 - C u).derivative.eval x₀) := by
-    have hx₀ : IsUnit x₀ := (residue_ne_zero_iff_isUnit x₀).mp hs
-    have h : (X ^ 2 - C u).derivative.eval x₀ = 2 * x₀ := by
-      simp only [derivative_sub, derivative_X_pow, derivative_C, sub_zero, eval_mul,
-        eval_X, eval_C, Nat.cast_ofNat, Nat.add_one_sub_one, pow_one]
-    exact h ▸ h2.mul hx₀
-  obtain ⟨x, hx, -⟩ := HenselianLocalRing.is_henselian _ (monic_X_pow_sub_C u two_ne_zero)
-    x₀ heval hder
+  obtain ⟨x, hx, -⟩ := HenselianLocalRing.exists_pow_eq_of_residue_pow_eq h2
+    ((residue_ne_zero_iff_isUnit x₀).mp hs) hu_res
   refine ⟨x, y, ?_⟩
-  have hx' : x ^ 2 = u := by
-    simpa [sub_eq_zero] using hx
-  linear_combination a * hx' + (c - b * y ^ 2) * ha'
+  linear_combination a * hx + (c - b * y ^ 2) * ha'
 
 /-- **Binary forms with unit coefficients are universal over a Henselian local ring.** If the
 residue field of the Henselian local ring `R` is finite and `2` is a unit of `R`, then for units
@@ -89,7 +82,7 @@ theorem exists_mul_sq_add_mul_sq_eq_of_isUnit [Finite (ResidueField R)] (h2 : Is
       degree (C (residue R r) * X ^ 2 + C d) = 2 := by
     rw [degree_add_C (by rw [degree_C_mul_X_pow 2 (hunit hr)]; norm_num),
       degree_C_mul_X_pow 2 (hunit hr)]
-    rfl
+    exact Nat.cast_ofNat
   obtain ⟨s, t, hst⟩ := FiniteField.exists_root_sum_quadratic (hdeg ha (-residue R c))
     (hdeg hb 0) (FiniteField.odd_card_of_char_ne_two hchar)
   simp only [eval_add, eval_mul, eval_C, eval_pow, eval_X, map_zero, add_zero] at hst

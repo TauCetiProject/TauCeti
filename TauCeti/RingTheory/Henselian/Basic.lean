@@ -38,6 +38,8 @@ square roots in residue characteristic two, by solving `t² + t = c` for `c ∈ 
   is a Henselian local ring.
 * `TauCeti.IsAdicComplete.henselianLocalRing`: a local ring that is complete for the adic topology
   of its maximal ideal is a Henselian local ring.
+* `TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq`: a simple power root in the
+  residue field lifts to a root with the same residue.
 * `TauCeti.HenselianRing.exists_pow_eq_and_sub_one_mem_of_sub_one_mem`: if `n` is invertible,
   `I ≤ J` and `w ≡ 1 mod I`, then `w = a ^ n` for some `a ≡ 1 mod I`.
 
@@ -74,6 +76,32 @@ ring. This is Mathlib's `IsAdicComplete.henselianRing` at `I = 𝔪`, read throu
 instance IsAdicComplete.henselianLocalRing (R : Type*) [CommRing R] [IsLocalRing R]
     [IsAdicComplete (maximalIdeal R) R] : HenselianLocalRing R :=
   HenselianRing.henselianLocalRing R
+
+namespace HenselianLocalRing
+
+/-- If `n` is a unit, a unit residue root of `X ^ n - u` lifts to a root with the same residue. -/
+theorem exists_pow_eq_of_residue_pow_eq {R : Type*} [CommRing R] [HenselianLocalRing R]
+    {n : ℕ} (hn : IsUnit (n : R)) {x₀ u : R} (hx₀ : IsUnit x₀)
+    (h : residue R x₀ ^ n = residue R u) :
+    ∃ x : R, x ^ n = u ∧ residue R x = residue R x₀ := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact ⟨x₀, Subsingleton.elim _ _, rfl⟩
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  have heval : (X ^ n - C u).eval x₀ ∈ maximalIdeal R := by
+    rw [← residue_eq_zero_iff]
+    simp [map_sub, map_pow, h]
+  have hder : IsUnit ((X ^ n - C u).derivative.eval x₀) := by
+    have hd : (X ^ n - C u).derivative.eval x₀ = (n : R) * x₀ ^ (n - 1) := by
+      simp [derivative_X_pow]
+    exact hd ▸ hn.mul (hx₀.pow _)
+  obtain ⟨x, hx, hres⟩ := HenselianLocalRing.is_henselian _
+    (monic_X_pow_sub_C u hn0) x₀ heval hder
+  refine ⟨x, by simpa [sub_eq_zero] using hx, ?_⟩
+  exact (Ideal.Quotient.eq).mpr hres
+
+end HenselianLocalRing
 
 namespace HenselianRing
 
