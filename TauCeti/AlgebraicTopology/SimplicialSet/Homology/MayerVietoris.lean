@@ -79,11 +79,6 @@ abbrev mayerVietorisShortComplex (sq : CommSq t l r b) : ShortComplex (ChainComp
   g := biprod.desc (chainComplexMap r R) (chainComplexMap b R)
   zero := by simp [← Functor.map_comp, sq.w]
 
-/-- The chain map induced by a monomorphism of simplicial sets is a monomorphism. -/
-instance mono_chainComplexMap (f : X₁ ⟶ X₂) [Mono f] : Mono (chainComplexMap f R) :=
-  HomologicalComplex.mono_of_mono_f _ fun _ ↦
-    inferInstanceAs (Mono ((sigmaConst.obj R).map (f.app _)))
-
 /-- **The Mayer–Vietoris short exact sequence of chain complexes.** For a pushout square of
 simplicial sets whose top map is a monomorphism, the Mayer–Vietoris short complex is short
 exact. -/

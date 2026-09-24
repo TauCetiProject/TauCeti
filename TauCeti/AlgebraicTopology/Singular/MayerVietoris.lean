@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Types.Pushouts
+public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
+public import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # The Mayer–Vietoris sequence in singular homology
@@ -56,15 +57,6 @@ namespace TopCat
 
 variable {X : TopCat.{w}}
 
-/-- The inclusion of a subspace is a monomorphism of topological spaces. -/
-instance mono_ofHom_subtypeVal (S : Set X) : Mono (ofHom (ContinuousMap.subtypeVal S)) :=
-  (TopCat.mono_iff_injective _).mpr Subtype.val_injective
-
-/-- The inclusion of one subspace in another is a monomorphism of topological spaces. -/
-instance mono_ofHom_inclusion {S T : Set X} (h : S ⊆ T) :
-    Mono (ofHom (ContinuousMap.inclusion h)) :=
-  (TopCat.mono_iff_injective _).mpr (Set.inclusion_injective h)
-
 private lemma range_ofHom_subtypeVal (S : Set X) :
     Set.range (ofHom (ContinuousMap.subtypeVal S)) = S :=
   Subtype.range_coe
@@ -72,6 +64,15 @@ private lemma range_ofHom_subtypeVal (S : Set X) :
 private lemma isInducing_ofHom_subtypeVal (S : Set X) :
     IsInducing (ofHom (ContinuousMap.subtypeVal S)) :=
   IsInducing.subtypeVal
+
+private lemma mem_range_toSSet_subtypeVal_iff (S : Set X) (n : SimplexCategoryᵒᵖ)
+    (σ : (toSSet.obj X).obj n) :
+    σ ∈ (SSet.Subcomplex.range
+      (toSSet.map (ofHom (ContinuousMap.subtypeVal S)))).obj n ↔
+      Set.range (X.toSSetObjEquiv n σ) ⊆ S := by
+  change σ ∈ Set.range ((toSSet.map (ofHom (ContinuousMap.subtypeVal S))).app n) ↔ _
+  rw [(isInducing_ofHom_subtypeVal S).mem_range_toSSet_map_app_iff n σ,
+    range_ofHom_subtypeVal]
 
 variable (U V : Set X)
 
@@ -90,46 +91,51 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
       (toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U)))))
       (toSmallSingularSubcomplex ![U, V] (Matrix.cons_val_zero U ![V]).superset)
       (toSmallSingularSubcomplex ![U, V]
-        ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset) where
-  w := by
-    rw [← cancel_mono (X.smallSingularSubcomplex ![U, V]).ι, Category.assoc, Category.assoc,
-      toSmallSingularSubcomplex_ι, toSmallSingularSubcomplex_ι, ← Functor.map_comp,
-      ← Functor.map_comp, (commSq_ofHom_inter U V).w]
-  isColimit' := ⟨evaluationJointlyReflectsColimits _ fun n ↦ by
-    refine (isColimitMapCoconePushoutCoconeEquiv _ _).2 (IsPushout.isColimit ?_)
-    have : Mono ((X.smallSingularSubcomplex ![U, V]).ι.app n) :=
-      (CategoryTheory.mono_iff_injective _).mpr Subtype.val_injective
-    refine Types.isPushout_of_isPullback_of_mono (k := (X.smallSingularSubcomplex ![U, V]).ι.app n)
-      (r' := (toSSet.map (ofHom (ContinuousMap.subtypeVal U))).app n)
-      (b' := (toSSet.map (ofHom (ContinuousMap.subtypeVal V))).app n) ?_
-      (congr_app (toSmallSingularSubcomplex_ι ![U, V] (Matrix.cons_val_zero U ![V]).superset) n)
-      (congr_app (toSmallSingularSubcomplex_ι ![U, V]
-        ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset) n) ?_
-      (fun _ _ _ _ h ↦ injective_of_mono ((toSSet.map _).app n) h)
-    · rw [Types.isPullback_iff]
-      refine ⟨?_, fun _ _ h ↦ injective_of_mono ((toSSet.map _).app n) h.1, fun x₂ x₃ h ↦ ?_⟩
-      · simp only [evaluation_obj_map, ← NatTrans.comp_app, ← Functor.map_comp,
-          (commSq_ofHom_inter U V).w]
-      -- A simplex of `U` which is also a simplex of `V` is a simplex of `U ∩ V`.
-      obtain ⟨x₁, hx₁⟩ := ((isInducing_ofHom_subtypeVal (U ∩ V)).mem_range_toSSet_map_app_iff n
-        ((toSSet.map (ofHom (ContinuousMap.subtypeVal U))).app n x₂)).mpr (by
-          rw [range_ofHom_subtypeVal]
-          rintro _ ⟨z, rfl⟩
-          refine ⟨((TopCat.of U).toSSetObjEquiv n x₂ z).2, ?_⟩
-          rw [h]
-          exact ((TopCat.of V).toSSetObjEquiv n x₃ z).2)
-      exact ⟨x₁, injective_of_mono ((toSSet.map (ofHom (ContinuousMap.subtypeVal U))).app n) hx₁,
-        injective_of_mono ((toSSet.map (ofHom (ContinuousMap.subtypeVal V))).app n)
-          (hx₁.trans h)⟩
-    · refine Set.eq_univ_of_forall fun σ ↦ ?_
-      obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff _ _ σ.1).mp σ.2
-      fin_cases i
-      · obtain ⟨τ, hτ⟩ := ((isInducing_ofHom_subtypeVal U).mem_range_toSSet_map_app_iff n
-          σ.1).mpr (by rw [range_ofHom_subtypeVal]; exact hi)
-        exact Or.inl ⟨τ, Subtype.ext ((toSmallSingularSubcomplex_app_coe _ _ τ).trans hτ)⟩
-      · obtain ⟨τ, hτ⟩ := ((isInducing_ofHom_subtypeVal V).mem_range_toSSet_map_app_iff n
-          σ.1).mpr (by rw [range_ofHom_subtypeVal]; exact hi)
-        exact Or.inr ⟨τ, Subtype.ext ((toSmallSingularSubcomplex_app_coe _ _ τ).trans hτ)⟩⟩
+        ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset) := by
+  let fI := toSSet.map (ofHom (ContinuousMap.subtypeVal (U ∩ V)))
+  let fU := toSSet.map (ofHom (ContinuousMap.subtypeVal U))
+  let fV := toSSet.map (ofHom (ContinuousMap.subtypeVal V))
+  let A := SSet.Subcomplex.range fI
+  let B := SSet.Subcomplex.range fU
+  let C := SSet.Subcomplex.range fV
+  let D := X.smallSingularSubcomplex ![U, V]
+  have h_inf : B ⊓ C = A := by
+    ext n σ
+    change (σ ∈ B.obj n ∧ σ ∈ C.obj n) ↔ σ ∈ A.obj n
+    rw [mem_range_toSSet_subtypeVal_iff U,
+      mem_range_toSSet_subtypeVal_iff V,
+      mem_range_toSSet_subtypeVal_iff (U ∩ V)]
+    exact Set.subset_inter_iff.symm
+  have h_sup : B ⊔ C = D := by
+    ext n σ
+    change (σ ∈ B.obj n ∨ σ ∈ C.obj n) ↔ σ ∈ D.obj n
+    rw [mem_range_toSSet_subtypeVal_iff U,
+      mem_range_toSSet_subtypeVal_iff V, mem_smallSingularSubcomplex_iff]
+    simp only [Fin.exists_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
+  have sq : SSet.Subcomplex.BicartSq A B C D := ⟨h_sup, h_inf⟩
+  have hi : Mono fI := Functor.map_mono _ _
+  have hu : Mono fU := Functor.map_mono _ _
+  have hv : Mono fV := Functor.map_mono _ _
+  refine sq.isPushout.of_iso'
+    (asIso (SSet.Subcomplex.toRange fI))
+    (asIso (SSet.Subcomplex.toRange fU))
+    (asIso (SSet.Subcomplex.toRange fV)) (Iso.refl _) ?_ ?_ ?_ ?_
+  · rw [← cancel_mono B.ι]
+    change fI = toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_left (t := V)))) ≫ fU
+    rw [← Functor.map_comp]
+    rfl
+  · rw [← cancel_mono C.ι]
+    change fI = toSSet.map (ofHom (ContinuousMap.inclusion (Set.inter_subset_right (s := U)))) ≫ fV
+    rw [← Functor.map_comp]
+    rfl
+  · rw [← cancel_mono D.ι]
+    change fU = toSmallSingularSubcomplex ![U, V]
+      (Matrix.cons_val_zero U ![V]).superset ≫ D.ι
+    exact (toSmallSingularSubcomplex_ι _ _).symm
+  · rw [← cancel_mono D.ι]
+    change fV = toSmallSingularSubcomplex ![U, V]
+      ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset ≫ D.ι
+    exact (toSmallSingularSubcomplex_ι _ _).symm
 
 /-! ### The Mayer–Vietoris sequence of an open cover by two sets -/
 
