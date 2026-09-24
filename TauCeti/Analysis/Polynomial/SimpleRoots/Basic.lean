@@ -83,7 +83,9 @@ tuples. That is the analytic ingredient for the transition maps of the atlas of
 lying in `k` disjoint patches, of degrees `m 1, …, m k`, and regroups the resulting blocks of
 coefficients along a bijection `(Σ i, Fin (m i)) ≃ Fin n`; that assembly is carried out in
 `TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. The diagonal, where the points of a tuple
-collide, is not treated here.
+collide, is not treated here; over `ℂ` it is covered, by contour integration rather than the
+implicit function theorem, by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt`
+in `TauCeti/Analysis/Polynomial/RootSum.lean`.
 
 Everything is stated over an `RCLike` field, so it covers the real as well as the complex case,
 except for the elementary polynomial calculus, which needs only a nontrivially normed field; only

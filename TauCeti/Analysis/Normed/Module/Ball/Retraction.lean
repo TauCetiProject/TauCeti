@@ -28,6 +28,8 @@ constant never matters for cutting off, where one is free to shrink the radius i
 * `TauCeti.radialRetraction`: scaling by `min 1 (r / ‖x‖)`; when `0 ≤ r`, this is the retraction
   onto the closed ball of radius `r` centred at the origin.
 * `TauCeti.norm_radialRetraction`: for `0 ≤ r`, its norm is `min ‖x‖ r`.
+* `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
+  identity.
 * `TauCeti.lipschitzWith_radialRetraction`: for `0 ≤ r`, it is `2`-Lipschitz.
 * `LipschitzOnWith.comp_radialRetraction`: precomposing with it makes a map that is Lipschitz on
   the closed ball of radius `r` globally Lipschitz, with twice the constant.
@@ -40,7 +42,7 @@ constant never matters for cutting off, where one is free to shrink the radius i
 
 public section
 
-open Metric Set
+open Filter Metric Set
 
 open scoped NNReal
 
@@ -63,6 +65,13 @@ theorem radialRetraction_of_norm_le (h : ‖x‖ ≤ r) : radialRetraction r x =
   rcases eq_or_lt_of_le (norm_nonneg x) with hx | hx
   · rw [radialRetraction, norm_eq_zero.1 hx.symm, smul_zero]
   · rw [radialRetraction, min_eq_left ((le_div_iff₀ hx).2 (by linarith)), one_smul]
+
+/-- The radial retraction agrees with the identity on a neighborhood of every point in the open
+ball. -/
+theorem radialRetraction_eventuallyEq_id (hx : ‖x‖ < r) :
+    radialRetraction r =ᶠ[nhds x] id :=
+  eventuallyEq_of_mem (isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)) fun _ hy ↦
+    radialRetraction_of_norm_le (mem_ball_zero_iff.1 hy).le
 
 /-- Outside the closed ball of radius `r` the radial retraction scales by `r / ‖x‖`. -/
 theorem radialRetraction_of_le_norm (h : r ≤ ‖x‖) :

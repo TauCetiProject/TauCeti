@@ -107,10 +107,13 @@ noncomputable def resHom (f : H →* G) (n : ℕ) :
     free k H (Fin n → H) ⟶ res f (free k G (Fin n → G)) :=
   freeLift k H (res f (free k G (Fin n → G))) fun x => single (f ∘ x) (MonoidAlgebra.single 1 1)
 
+-- `simp` reduces the carriers of the `abbrev`s `Rep.free` and `Rep.res` in implicit type
+-- arguments before it looks a term up, so the left-hand side is stated through `dsimp% only`, as
+-- in #8315.
 /-- `resHom f n` applies `f` to the tuple and to the group coefficient of a basis element. -/
 @[simp]
 theorem resHom_single (f : H →* G) (n : ℕ) (x : Fin n → H) (h : H) (r : k) :
-    (resHom f n).hom (single x (MonoidAlgebra.single h r)) =
+    (dsimp% only ((resHom f n).hom (single x (MonoidAlgebra.single h r)))) =
       single (f ∘ x) (MonoidAlgebra.single (f h) r) := by
   simp [resHom]
 

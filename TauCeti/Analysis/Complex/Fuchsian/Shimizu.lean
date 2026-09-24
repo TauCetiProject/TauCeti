@@ -32,6 +32,9 @@ Discreteness forces the sequence to reach `T`, whose lower-left entry vanishes, 
 
 * `Subgroup.inv_le_abs_apply_one_zero_of_upperRightHom_mem`: Shimizu's lemma in coordinates.
 * `Subgroup.im_smul_mul_im_le_sq_of_upperRightHom_mem`: its geometric form.
+* `Subgroup.im_smul_mul_im_le_abs_mul_of_upperRightHom_mem`: the geometric form for a
+  transformation conjugating a second translation into `Γ`, which compares the heights above
+  two cusps.
 
 ## References
 
@@ -255,28 +258,36 @@ theorem inv_le_abs_apply_one_zero_of_upperRightHom_mem [DiscreteTopology Γ] (hw
   · simpa [abs_of_pos hwpos] using
       inv_le_abs_apply_one_zero_of_upperRightHom_mem_of_pos hwpos hT hA hA0
 
-/-- **Shimizu's lemma, geometric form.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup containing
-the translation `z ↦ z + w` with `w ≠ 0`. An element of `Γ` that does not fix `∞` moves every
-point `z` of the upper half-plane to a point with `(g • z).im * z.im ≤ w ^ 2`; in particular it
-cannot keep a point of imaginary part greater than `|w|` that high. -/
-theorem im_smul_mul_im_le_sq_of_upperRightHom_mem [DiscreteTopology Γ] (hw : w ≠ 0)
-    (hT : upperRightHom w ∈ Γ) {g : PSL(2, ℝ)} (hg : g ∈ Γ)
-    (hginf : g • (∞ : OnePoint ℝ) ≠ ∞) (z : ℍ) :
-    (g • z).im * z.im ≤ w ^ 2 := by
-  induction g using QuotientGroup.induction_on with | H A => ?_
-  have hA0 : A 1 0 ≠ 0 := fun h => hginf (by
+/-- **Shimizu's lemma for two parabolic fixed points, geometric form.** Let `Γ ≤ PSL(2, ℝ)` be
+a discrete subgroup containing the translation `z ↦ z + w` with `w ≠ 0`, and let
+`h ∈ PSL(2, ℝ)` conjugate the translation `z ↦ z + w'`, `w' ≠ 0`, into `Γ`. If `h` does not fix
+`∞`, then `(h • z).im * z.im ≤ |w * w'|` for every `z` in the upper half-plane.
+
+Applied to `h = σ g σ'⁻¹`, where `σ` and `σ'` send two cusps of `Γ` to `∞` and `g ∈ Γ`, this
+bounds the heights above two cusps simultaneously; for `h ∈ Γ` and `w' = w` it is
+`Subgroup.im_smul_mul_im_le_sq_of_upperRightHom_mem`. -/
+theorem im_smul_mul_im_le_abs_mul_of_upperRightHom_mem [DiscreteTopology Γ] {w' : ℝ}
+    (hw : w ≠ 0) (hw' : w' ≠ 0) (hT : upperRightHom w ∈ Γ) {h : PSL(2, ℝ)}
+    (hh : h * upperRightHom w' * h⁻¹ ∈ Γ) (hinf : h • (∞ : OnePoint ℝ) ≠ ∞) (z : ℍ) :
+    (h • z).im * z.im ≤ |w * w'| := by
+  induction h using QuotientGroup.induction_on with | H A => ?_
+  have hA0 : A 1 0 ≠ 0 := fun h => hinf (by
     rw [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
       SpecialLinearGroup.coe_GL_coe_matrix]
     exact h)
-  have hbound := inv_le_abs_apply_one_zero_of_upperRightHom_mem hw hT hg hA0
-  have hone : 1 ≤ w ^ 2 * A 1 0 ^ 2 := by
-    have h1 : |w|⁻¹ ^ 2 ≤ A 1 0 ^ 2 := by
-      rw [← sq_abs (A 1 0)]
-      exact pow_le_pow_left₀ (by positivity) hbound 2
-    calc (1 : ℝ) = |w| ^ 2 * |w|⁻¹ ^ 2 := by field_simp
-      _ = w ^ 2 * |w|⁻¹ ^ 2 := by rw [sq_abs]
-      _ ≤ w ^ 2 * A 1 0 ^ 2 := mul_le_mul_of_nonneg_left h1 (sq_nonneg w)
-  -- the imaginary part of `g • z` is `z.im` divided by the squared automorphy factor
+  -- Shimizu's lemma applies to the conjugated transvection, with lower-left entry `-w' c²`
+  have hB : ((A * transSL w' * A⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ := by
+    rwa [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv, coe_transSL]
+  have hB0 : (A * transSL w' * A⁻¹) 1 0 ≠ 0 := by
+    rw [conj_transSL_apply_one_zero, neg_ne_zero]
+    exact mul_ne_zero hw' (pow_ne_zero 2 hA0)
+  have hbound := inv_le_abs_apply_one_zero_of_upperRightHom_mem hw hT hB hB0
+  rw [conj_transSL_apply_one_zero, abs_neg, abs_mul, abs_pow, sq_abs] at hbound
+  have hone : 1 ≤ |w * w'| * A 1 0 ^ 2 := by
+    rw [inv_le_iff_one_le_mul₀ (abs_pos.mpr hw)] at hbound
+    calc (1 : ℝ) ≤ |w'| * A 1 0 ^ 2 * |w| := hbound
+      _ = |w * w'| * A 1 0 ^ 2 := by rw [abs_mul]; ring
+  -- the imaginary part of `h • z` is `z.im` divided by the squared automorphy factor
   have hdenom : (A 1 0 * z.im) ^ 2 ≤ Complex.normSq (denom (mapGL ℝ A) z) := by
     simpa [Matrix.SpecialLinearGroup.coe_mapGL_fin_two] using
       UpperHalfPlane.c_mul_im_sq_le_normSq_denom (mapGL ℝ A) z
@@ -287,9 +298,21 @@ theorem im_smul_mul_im_le_sq_of_upperRightHom_mem [DiscreteTopology Γ] (hw : w 
       UpperHalfPlane.im_smul_eq_div_normSq, det_mapGL, Units.val_one, abs_one, one_mul]
   rw [him, div_mul_eq_mul_div, div_le_iff₀ hpos]
   calc z.im * z.im = z.im ^ 2 := by ring
-    _ ≤ w ^ 2 * A 1 0 ^ 2 * z.im ^ 2 := le_mul_of_one_le_left (by positivity) hone
-    _ = w ^ 2 * (A 1 0 * z.im) ^ 2 := by ring
-    _ ≤ w ^ 2 * Complex.normSq (denom (mapGL ℝ A) z) :=
-        mul_le_mul_of_nonneg_left hdenom (sq_nonneg w)
+    _ ≤ |w * w'| * A 1 0 ^ 2 * z.im ^ 2 := le_mul_of_one_le_left (by positivity) hone
+    _ = |w * w'| * (A 1 0 * z.im) ^ 2 := by ring
+    _ ≤ |w * w'| * Complex.normSq (denom (mapGL ℝ A) z) :=
+        mul_le_mul_of_nonneg_left hdenom (abs_nonneg _)
+
+/-- **Shimizu's lemma, geometric form.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup containing
+the translation `z ↦ z + w` with `w ≠ 0`. An element of `Γ` that does not fix `∞` moves every
+point `z` of the upper half-plane to a point with `(g • z).im * z.im ≤ w ^ 2`; in particular it
+cannot keep a point of imaginary part greater than `|w|` that high. -/
+theorem im_smul_mul_im_le_sq_of_upperRightHom_mem [DiscreteTopology Γ] (hw : w ≠ 0)
+    (hT : upperRightHom w ∈ Γ) {g : PSL(2, ℝ)} (hg : g ∈ Γ)
+    (hginf : g • (∞ : OnePoint ℝ) ≠ ∞) (z : ℍ) :
+    (g • z).im * z.im ≤ w ^ 2 := by
+  have hgT : g * upperRightHom w * g⁻¹ ∈ Γ := Γ.mul_mem (Γ.mul_mem hg hT) (Γ.inv_mem hg)
+  simpa [abs_mul_abs_self, sq] using
+    im_smul_mul_im_le_abs_mul_of_upperRightHom_mem hw hw hT hgT hginf z
 
 end Subgroup

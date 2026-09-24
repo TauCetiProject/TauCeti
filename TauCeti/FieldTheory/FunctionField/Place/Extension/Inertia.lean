@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Invariant.Galois
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Decomposition
 
 /-!

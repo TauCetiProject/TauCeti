@@ -5,17 +5,18 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
-public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
+public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import TauCeti.RepresentationTheory.Induction.TrivialSubgroup
+import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 
 /-!
 # Cohomology of modules coinduced from the trivial subgroup
 
 By Shapiro's lemma, the representation `Coind_⊥^G X` coinduced from the trivial subgroup has
-vanishing cohomology in positive degrees, and so does its restriction to any subgroup `S`, since
-that restriction is again coinduced from the trivial subgroup (`Rep.resCoindBotIso`)
-(Milne, *Class Field Theory*, II 1.11).
+vanishing cohomology in positive degrees (Milne, *Class Field Theory*, II 1.11–1.12), and so does
+its restriction to any subgroup `S`, since that restriction is again coinduced from the trivial
+subgroup (`Rep.resCoindBotIso`).
 
 The statements follow `ClassFieldTheory/Cohomology/IndCoind/TrivialCohomology.lean` in
 `kbuzzard/ClassFieldTheory`, commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
@@ -43,14 +44,17 @@ namespace groupCohomology
 variable {k G : Type u} [CommRing k] [Group G]
 
 /-- Positive-degree cohomology of a representation coinduced from the trivial subgroup vanishes
-(Shapiro's lemma, Milne II 1.11). -/
+(Milne II 1.12). Unlike the Tate analogue `TauCeti.TateCohomology.isZero_coindBot`, no finiteness
+is needed. -/
 theorem isZero_coindBot_succ (X : Type u) [AddCommGroup X] [Module k X] (n : ℕ) :
     Limits.IsZero (groupCohomology (coindBot k G X) (n + 1)) :=
-  (isZero_groupCohomology_succ_of_subsingleton (trivial k (⊥ : Subgroup G) X) n).of_iso
-    (coindIso (trivial k (⊥ : Subgroup G) X) (n + 1))
+  -- Shapiro's lemma (Milne II 1.11) identifies this with `Hⁿ⁺¹(⊥, X)`, and the trivial group has
+  -- no positive-degree cohomology.
+  (isZero_groupCohomology_succ_of_subsingleton _ n).of_iso (coindIso _ _)
 
-/-- Positive-degree cohomology of the restriction to a subgroup of a representation coinduced
-from the trivial subgroup vanishes. -/
+/-- Positive-degree cohomology of the restriction to a subgroup of a representation coinduced from
+the trivial subgroup vanishes. Unlike the Tate analogue
+`TauCeti.TateCohomology.isZero_res_coindBot`, no finiteness is needed. -/
 theorem isZero_res_coindBot_succ (S : Subgroup G) (X : Type u) [AddCommGroup X] [Module k X]
     (n : ℕ) : Limits.IsZero (groupCohomology (res S.subtype (coindBot k G X)) (n + 1)) :=
   (isZero_coindBot_succ (G := S) (G ⧸ S → X) n).of_iso

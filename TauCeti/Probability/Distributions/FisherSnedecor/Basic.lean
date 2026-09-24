@@ -354,30 +354,8 @@ theorem toReal_fisherSnedecorPDF (m n x : ℝ) :
 @[fun_prop]
 theorem measurable_fisherSnedecorPDFReal (m n : ℝ) :
     Measurable (fisherSnedecorPDFReal m n) := by
-  by_cases hvalid : 0 < m ∧ 0 < n
-  · have heq : fisherSnedecorPDFReal m n = fun x ↦ if 0 < x then
-        Real.Gamma ((m + n) / 2) / (Real.Gamma (m / 2) * Real.Gamma (n / 2)) *
-          Real.exp (Real.log (m / n) * (m / 2)) *
-            Real.exp (Real.log x * (m / 2 - 1)) *
-              Real.exp (Real.log (1 + m * x / n) * (-((m + n) / 2))) else 0 := by
-      funext x
-      by_cases hx : 0 < x
-      · have hbase : 0 < 1 + m * x / n := by
-          have : 0 < m * x / n := div_pos (mul_pos hvalid.1 hx) hvalid.2
-          linarith
-        rw [fisherSnedecorPDFReal_of_pos hvalid.1 hvalid.2 hx, ite_eq_left hx,
-          Real.rpow_def_of_pos (div_pos hvalid.1 hvalid.2), Real.rpow_def_of_pos hx,
-          Real.rpow_def_of_pos hbase]
-      · rw [fisherSnedecorPDFReal_of_nonpos (not_lt.mp hx), ite_eq_right hx]
-    rw [heq]
-    exact Measurable.ite (measurableSet_lt measurable_const measurable_id) (by fun_prop)
-      measurable_const
-  · have heq : fisherSnedecorPDFReal m n = 0 := by
-      funext x
-      rw [fisherSnedecorPDFReal_of_not_pos hvalid]
-      rfl
-    rw [heq]
-    fun_prop
+  unfold fisherSnedecorPDFReal
+  exact Measurable.ite (by measurability) (by fun_prop) measurable_const
 
 /-- The `ℝ≥0∞`-valued Fisher--Snedecor density is measurable in the sample point. -/
 @[fun_prop]

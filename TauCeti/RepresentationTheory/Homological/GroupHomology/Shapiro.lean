@@ -36,6 +36,8 @@ This is the homological counterpart of `TauCeti.groupCohomology.coindIso_hom`.
   `groupHomology.map S.subtype ((indResAdjunction k S.subtype).unit.app A) n`.
 * `TauCeti.groupHomology.indIso_inv_comp_map_counit`: read through Shapiro's isomorphism,
   corestriction from `S` to `G` is the map induced by the counit `Ind_S^G Res_S B ⟶ B`.
+* `TauCeti.groupHomology.indIso_inv_naturality`, `TauCeti.groupHomology.indIso_hom_naturality`:
+  Shapiro's isomorphism is natural in the coefficients.
 
 ## References
 
@@ -151,5 +153,25 @@ theorem indIso_inv_comp_map_counit (B : Rep.{u} k G) (n : ℕ) :
   rw [indIso_inv, ← map_comp, (indResAdjunction k S.subtype).right_triangle_components B]
   -- `(MonoidHom.id G).comp S.subtype` is `S.subtype` by definition.
   rfl
+
+/-- **The inverse of Shapiro's isomorphism is natural in the coefficients**: for a morphism
+`φ : A ⟶ B` of `S`-representations, it intertwines the maps induced by `φ` and by `Ind_S^G φ`. -/
+@[reassoc]
+theorem indIso_inv_naturality {B : Rep.{u} k S} (φ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id S) φ n ≫ (indIso S B n).inv =
+      (indIso S A n).inv ≫ map (MonoidHom.id G) ((indFunctor k S.subtype).map φ) n := by
+  rw [indIso_inv, indIso_inv, ← map_comp, ← map_comp]
+  -- Comparing the underlying linear maps through `map_congr` avoids unifying the free universe
+  -- of `indResAdjunction` against `map`'s arguments, which costs seconds.
+  refine map_congr rfl ?_ n
+  exact congrArg (·.hom.toLinearMap) ((indResAdjunction k S.subtype).unit.naturality φ)
+
+/-- **Shapiro's isomorphism is natural in the coefficients**: `indIso_inv_naturality` for
+`(indIso S A n).hom`. -/
+@[reassoc]
+theorem indIso_hom_naturality {B : Rep.{u} k S} (φ : A ⟶ B) (n : ℕ) :
+    map (MonoidHom.id G) ((indFunctor k S.subtype).map φ) n ≫ (indIso S B n).hom =
+      (indIso S A n).hom ≫ map (MonoidHom.id S) φ n := by
+  rw [← Iso.inv_comp_eq, ← indIso_inv_naturality_assoc, Iso.inv_hom_id, Category.comp_id]
 
 end TauCeti.groupHomology

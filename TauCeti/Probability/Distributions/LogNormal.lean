@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Dirac
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
-public import TauCeti.Probability.Distributions.Measurability
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -441,7 +440,7 @@ theorem charFun_logNormalMeasure_zero_var (m t : ℝ) :
 theorem measurable_logNormalMeasure :
     Measurable fun p : ℝ × ℝ≥0 => logNormalMeasure p.1 p.2 := by
   simp only [logNormalMeasure_map_exp]
-  exact (Measure.measurable_map _ measurable_exp).comp measurable_gaussianReal
+  exact (Measure.measurable_map _ measurable_exp).comp ProbabilityTheory.measurable_gaussianReal
 
 end Probability
 

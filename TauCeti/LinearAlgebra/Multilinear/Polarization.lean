@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Data.Fintype.Perm
-public import Mathlib.Data.Nat.Choose.Sum
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Polarization for multilinear maps
@@ -23,7 +23,7 @@ of `f` at `m`.
 Expanding each argument by multilinearity turns the left side into a sum over all functions
 `g : ι → ι`, weighted by `∑_{S ⊆ (range g)ᶜ} (-1)^{#S}`, which vanishes unless `g` is onto; the
 surviving terms are the permutations. Nothing is inverted along the way, so the identity holds
-over an arbitrary commutative ring.
+over an arbitrary ring, commutative or not.
 
 The instance for the tensor power `⨂[R] (_ : ι), M` is recorded here too: there the diagonal
 values are the pure powers `⨂ₜ i, x`, the tensors with the same vector in every slot.
@@ -49,7 +49,7 @@ universe u v w z
 
 namespace TauCeti
 
-variable {R : Type u} {ι : Type w} [CommRing R] [DecidableEq ι]
+variable {ι : Type w} [DecidableEq ι]
 
 /-- The functions into a fixed finset, as a filter on all functions. -/
 private theorem piFinset_const [Fintype ι] (T : Finset ι) :
@@ -64,20 +64,12 @@ private theorem filter_subset_compl [Fintype ι] (A : Finset ι) :
   ext S
   simp [Finset.mem_powerset, Finset.subset_compl_comm]
 
-/-- The alternating sum over the subsets of a finset, in an arbitrary commutative ring. -/
-private theorem sum_powerset_neg_one_pow_card (A : Finset ι) :
-    ∑ S ∈ A.powerset, (-1 : R) ^ #S = if A = ∅ then 1 else 0 := by
-  have := congrArg (Int.cast (R := R)) (Finset.sum_powerset_neg_one_pow_card (x := A))
-  rw [Int.cast_sum] at this
-  simpa only [Int.cast_pow, Int.cast_neg, Int.cast_one, apply_ite (Int.cast (R := R)),
-    Int.cast_zero] using this
-
 end TauCeti
 
 namespace MultilinearMap
 
 variable {R : Type u} {M : Type v} {N : Type z} {ι : Type w}
-variable [CommRing R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+variable [Ring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 variable [Fintype ι] [DecidableEq ι]
 
 /-- **Polarization.** For a multilinear map of `ι` arguments, the alternating sum over the subsets
@@ -105,7 +97,7 @@ theorem sum_neg_one_pow_card_smul_apply_sum_compl
       refine Iff.trans ?_ (Finite.surjective_iff_bijective (f := g))
       simp [Finset.eq_univ_iff_forall, Finset.mem_image, Function.Surjective]
     rw [← Finset.sum_filter, TauCeti.filter_subset_compl, ← Finset.sum_smul,
-      TauCeti.sum_powerset_neg_one_pow_card]
+      Finset.sum_powerset_neg_one_pow_card_of_ring]
     exact congrArg (fun r : R => r • f fun i => m (g i)) (if_congr hiff rfl rfl)
   have unweight : ∀ g : ι → ι, (if Function.Bijective g then (1 : R) else 0) •
       f (fun i => m (g i)) = if Function.Bijective g then f (fun i => m (g i)) else 0 := by

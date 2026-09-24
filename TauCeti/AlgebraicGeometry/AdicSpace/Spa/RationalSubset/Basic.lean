@@ -309,6 +309,14 @@ theorem spaBasicOpen_le_spaBasicOpen_iff {Aplus : Subring A} {T T' : Finset A} {
     h ((mem_spaBasicOpen (v := ⟨v, rationalSubset_subset_spa Aplus T' s' hv⟩)).mpr hv),
     fun h _ hv ↦ mem_spaBasicOpen.mpr (h (mem_spaBasicOpen.mp hv))⟩
 
+/-- **Equal basic opens have equal rational subsets**: the presentation data `(T, s)` is not
+determined by the subset it presents, but the subset is determined by the basic open, by
+antisymmetry of `spaBasicOpen_le_spaBasicOpen_iff`. -/
+theorem rationalSubset_eq_of_spaBasicOpen_eq {Aplus : Subring A} {T T' : Finset A} {s s' : A}
+    (h : spaBasicOpen Aplus T s = spaBasicOpen Aplus T' s') :
+    rationalSubset Aplus T s = rationalSubset Aplus T' s' :=
+  (spaBasicOpen_le_spaBasicOpen_iff.mp h.le).antisymm (spaBasicOpen_le_spaBasicOpen_iff.mp h.ge)
+
 open scoped Classical Pointwise in
 /-- **The set-level half of Wedhorn Remark 7.30(5)**: writing `Uᵢ = insert sᵢ Tᵢ` for each
 numerator set augmented by its own denominator,

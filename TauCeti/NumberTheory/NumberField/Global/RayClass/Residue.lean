@@ -39,6 +39,8 @@ class.
   finite-place conditions in `IsCongrOne`.
 * `TauCeti.GlobalNumberFields.residueHom_eq_one_of_mem_congruenceSubgroup`: an element congruent to
   one maps to one under reduction.
+* `TauCeti.GlobalNumberFields.IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul`: an element
+  congruent to one is a quotient of two algebraic integers congruent to one.
 * `TauCeti.GlobalNumberFields.residueHom_surjective`: every residue unit modulo the finite part is
   the reduction of an element of `Kˣ` that is a unit at that finite part.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_refl` and
@@ -262,6 +264,20 @@ theorem residueHom_eq_one_of_mem_congruenceSubgroup {𝔪 : Modulus K} {x : prim
   rw [coe_residueHom, Units.val_one]
   exact (residue_eq_one_iff x).mpr fun v hv ↦
     (mem_congruenceSubgroup.mp hx).valuation_sub_one_le hv
+
+/-- **An element congruent to one is a quotient of integers congruent to one.** If
+`IsCongrOne 𝔪 x`, then `x = a / b` with `a b : 𝓞 K` both congruent to one modulo
+`𝔪.finitePart`. -/
+theorem IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul {𝔪 : Modulus K} {x : Kˣ}
+    (hx : IsCongrOne 𝔪 x) : ∃ a b : 𝓞 K, a - 1 ∈ 𝔪.finitePart ∧ b - 1 ∈ 𝔪.finitePart ∧
+      algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b * (x : K) := by
+  have hxp : x ∈ primeToSubgroup 𝔪 :=
+    congruenceSubgroup_le_primeToSubgroup _ (mem_congruenceSubgroup.mpr hx)
+  obtain ⟨a, b, hb, hab⟩ := exists_algebraMap_eq_mul_of_mem_primeToSubgroup hxp
+  -- the reduction of `x` modulo the finite part is that of `a`, and is one
+  refine ⟨a, b, Ideal.Quotient.eq.mp ?_, hb, hab⟩
+  rw [map_one, ← residue_eq ⟨x, hxp⟩ hb hab, ← coe_residueHom,
+    residueHom_eq_one_of_mem_congruenceSubgroup (mem_congruenceSubgroup.mpr hx), Units.val_one]
 
 /-! ### Surjectivity of the reduction -/
 

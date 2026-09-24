@@ -19,7 +19,7 @@ covers every ring of odd characteristic.
 ## Main results
 
 * `Matrix.transpose_map_of_transpose_eq_neg`: the condition passes to the image of the matrix
-  under an additive morphism of the value rings.
+  under an additive morphism of the entry types.
 * `Matrix.diag_eq_zero_of_transpose_eq_neg`: the diagonal vanishes when doubling is injective at
   zero, with `Matrix.diag_eq_zero_of_transpose_eq_neg_of_charP` reading that off an odd
   characteristic.
@@ -34,9 +34,9 @@ namespace Matrix
 variable {n : Type*} {S T : Type*}
 
 /-- **The condition `Mᵀ = -M` passes to the image of the matrix** under an additive morphism of
-the value rings. -/
-theorem transpose_map_of_transpose_eq_neg [AddGroup S] [AddGroup T] {F : Type*} [FunLike F S T]
-    [AddMonoidHomClass F S T] (f : F) {M : Matrix n n S} (hM : Mᵀ = -M) :
+the entry types. -/
+theorem transpose_map_of_transpose_eq_neg [AddGroup S] [SubtractionMonoid T] {F : Type*}
+    [FunLike F S T] [AddMonoidHomClass F S T] (f : F) {M : Matrix n n S} (hM : Mᵀ = -M) :
     (M.map f)ᵀ = -M.map f := by
   ext a b
   have h := congrFun (congrFun hM a) b
@@ -44,7 +44,7 @@ theorem transpose_map_of_transpose_eq_neg [AddGroup S] [AddGroup T] {F : Type*} 
   rw [Matrix.transpose_apply, Matrix.neg_apply, Matrix.map_apply, Matrix.map_apply, h, map_neg]
 
 /-- **The diagonal of a matrix equal to the negative of its transpose vanishes**, as soon as zero
-is the only element of the value ring that doubles to zero. -/
+is the only entry that doubles to zero. -/
 theorem diag_eq_zero_of_transpose_eq_neg [AddGroup S] {M : Matrix n n S} (hM : Mᵀ = -M)
     (h2 : ∀ x : S, x + x = 0 → x = 0) (a : n) : M a a = 0 := by
   refine h2 _ ?_
@@ -70,7 +70,7 @@ theorem diag_eq_zero_of_transpose_eq_neg_of_charP [Ring S] (p : ℕ) [CharP S p]
 /-- **Two matrices equal to the negatives of their transposes agree as soon as they agree above
 the diagonal**, provided both diagonals vanish: the entries below the diagonal are the negatives
 of their mirror images. -/
-theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [AddGroup S] {M N : Matrix n n S}
+theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [Zero S] [Neg S] {M N : Matrix n n S}
     (hM : Mᵀ = -M) (hN : Nᵀ = -N) (hMd : ∀ a, M a a = 0) (hNd : ∀ a, N a a = 0)
     (h : ∀ a b : n, a < b → M a b = N a b) : M = N := by
   have hskew : ∀ K : Matrix n n S, Kᵀ = -K → ∀ a b, K b a = -K a b := by

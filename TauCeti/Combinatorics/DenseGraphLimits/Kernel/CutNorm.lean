@@ -215,6 +215,16 @@ theorem cutNorm_le_integral_abs (K : SymmKernel Ω μ) :
     cutNorm μ K ≤ ∫ p, |K p.1 p.2| ∂(μ.prod μ) :=
   cutNorm_le μ fun S _ T _ => K.abs_rectIntegral_le_integral_abs μ S T
 
+/-- The cut norm is bounded by the `L¹` seminorm of the kernel, read as a real number.  This is
+`cutNorm_le_integral_abs` in the `eLpNorm` language of `L¹` convergence. -/
+theorem cutNorm_le_toReal_eLpNorm (K : SymmKernel Ω μ) :
+    cutNorm μ K ≤ (eLpNorm (fun p : Ω × Ω => K p.1 p.2) 1 (μ.prod μ)).toReal := by
+  refine (cutNorm_le_integral_abs μ K).trans (le_of_eq ?_)
+  rw [eLpNorm_one_eq_lintegral_enorm,
+    ← integral_norm_eq_lintegral_enorm (f := fun p : Ω × Ω => K p.1 p.2)
+      K.measurable.aestronglyMeasurable]
+  simp only [Real.norm_eq_abs]
+
 /-- A pointwise bound on a kernel bounds its cut norm, on a probability carrier.
 
 The rectangle integrals defining the cut norm are integrals over subsets of a probability space, so
@@ -262,6 +272,12 @@ theorem cutNorm_add_le (K L : SymmKernel Ω μ) :
 theorem cutNorm_sub_le (K L : SymmKernel Ω μ) :
     cutNorm μ (K - L) ≤ cutNorm μ K + cutNorm μ L := by
   simpa [sub_eq_add_neg] using cutNorm_add_le μ K (-L)
+
+/-- The triangle inequality for the cut norm of differences. -/
+theorem cutNorm_sub_le_cutNorm_sub_add_cutNorm_sub (K L M : SymmKernel Ω μ) :
+    cutNorm μ (K - M) ≤ cutNorm μ (K - L) + cutNorm μ (L - M) := by
+  rw [← sub_add_sub_cancel K L M]
+  exact cutNorm_add_le μ _ _
 
 /-- The cut norm is absolutely homogeneous. -/
 @[simp]

@@ -450,13 +450,7 @@ theorem _root_.Subgroup.transitiveGroupLabel_map_permCongrHom_iff {α : Type*} {
     {j : TransitiveGroupIndex n} (G : Subgroup (Perm α)) (e e' : α ≃ Fin n) :
     TransitiveGroupLabel j (G.map e.permCongrHom.toMonoidHom) ↔
       TransitiveGroupLabel j (G.map e'.permCongrHom.toMonoidHom) := by
-  have h : G.map e'.permCongrHom.toMonoidHom =
-      Subgroup.map (MulAut.conj (e.symm.trans e')) (G.map e.permCongrHom.toMonoidHom) := by
-    rw [Subgroup.map_map]
-    congr 1
-    ext σ x
-    simp [Equiv.permCongrHom_coe]
-  rw [h, transitiveGroupLabel_map_conj_iff]
+  rw [Equiv.map_permCongrHom_eq_map_conj e e' G, transitiveGroupLabel_map_conj_iff]
 
 /-- A subgroup carrying a transitive-group label has the order of its reference subgroup. -/
 theorem TransitiveGroupLabel.natCard_eq {n : ℕ} {j : TransitiveGroupIndex n}

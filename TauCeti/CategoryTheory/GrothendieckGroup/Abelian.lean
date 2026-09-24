@@ -148,12 +148,18 @@ theorem induction_on {motive : AbelianK0 C → Prop} (x : AbelianK0 C) (zero : m
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   ExactK0.induction_on x zero of add neg
 
-variable {G : Type*} [AddCommGroup G]
+section HomExt
+
+variable {G : Type*} [AddMonoid G]
 
 /-- Two homomorphisms out of abelian `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
 theorem hom_ext {f g : AbelianK0 C →+ G} (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   ExactK0.hom_ext h
+
+end HomExt
+
+variable {G : Type*} [AddCommGroup G]
 
 section KernelCokernel
 

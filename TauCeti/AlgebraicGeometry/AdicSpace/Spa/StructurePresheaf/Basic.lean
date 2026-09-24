@@ -72,8 +72,11 @@ priori on presentation data. Two ingredients toward closing the gap are availabl
   `TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Cofinality`; its `Initial` instance is
   the categorical comparison needed for limits.
 
-A coordinate-ring diagram on rational subsets and its compatibility with the presentation diagram
-still need to be constructed before these ingredients identify the two limits.
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SubsetLimit` constructs the
+coordinate-ring diagram on rational subsets and its comparison with the presentation diagram, and
+puts these ingredients together into
+`TauCeti.ValuationSpectrum.presentationLimitIsoRationalSubsetLimit`. What that leaves open is the
+restriction maps: the two limits are identified value by value, not as presheaves.
 
 Nothing in this file computes `𝒪_X(V)`. What it establishes is self-contained: the limit exists,
 restriction along a containment is reindexing, and the two functor laws hold. On a rational open
@@ -359,6 +362,16 @@ noncomputable def presentationLimitπToPresentation (Aplus : Subring A)
     (V : Opens ↥(spa Aplus)) (i : PresentationIndex (P := P) Aplus V) :
     presentationLimit (P := P) Aplus V ⟶ i.pres.completionLocObj :=
   presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i)
+
+/-- The transported projection is the projection followed by the transport. -/
+-- The body of `presentationLimitπToPresentation` is not exposed, so this is the defining equation
+-- a consumer in another module has. It is deliberately not `@[simp]`: tagging it takes
+-- `presentationLimitπ_comp_restriction` out of simp-normal form, confirmed with
+-- `scripts/lint-env.sh`.
+theorem presentationLimitπToPresentation_eq (Aplus : Subring A) (V : Opens ↥(spa Aplus))
+    (i : PresentationIndex (P := P) Aplus V) :
+    presentationLimitπToPresentation Aplus V i =
+      presentationLimitπ Aplus V i ≫ eqToHom (presentationIndexDiagram_obj Aplus V i) := (rfl)
 
 /-- **Projections are compatible with refinement**: projecting then restricting along a refinement
 is projecting at the finer index. -/

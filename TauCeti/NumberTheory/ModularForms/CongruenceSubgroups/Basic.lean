@@ -55,6 +55,9 @@ infrastructure independent of the diamond operators.
   quotient. Valid at every level, `N = 0` included.
 * `CongruenceSubgroup.mem_Gamma1_iff`: `Γ₁(N)` is cut out inside `Γ₀(N)` by the
   single congruence `d ≡ 1`.
+* `CongruenceSubgroup.mem_Gamma1_iff_dvd_lowerRow`: `Γ₁(N)` membership read as the two integer
+  divisibilities `(N : ℤ) ∣ c` and `(N : ℤ) ∣ d - 1` on the lower row, the `Γ₁` counterpart of
+  `mem_Gamma0_iff_dvd`.
 * `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`: a `Γ₀(N)` matrix has
   unit upper-left entry modulo `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
@@ -178,16 +181,23 @@ theorem mem_Gamma1_iff {γ : SL(2, ℤ)} :
   ⟨fun h ↦ ⟨Gamma1_in_Gamma0 N h, (Gamma1_mem N γ).mp h |>.2.1⟩,
     fun ⟨h₀, h₁⟩ ↦ (Gamma1_mem N γ).mpr ((Gamma1_to_Gamma0_mem ⟨γ, h₀⟩).mp h₁)⟩
 
-/-- **`Γ₁(N)` membership from two divisibilities on the lower row.** The congruence `a ≡ 1`
-that `Gamma1_mem` also asks for is forced by the determinant, so `mem_Gamma1_iff` leaves only
-these two to check — and a construction that produces an explicit matrix has them as integer
-divisibilities rather than as `ZMod N` congruences. -/
-theorem mem_Gamma1_of_dvd_lowerRow {N : ℕ} {M : SL(2, ℤ)} (h10 : (N : ℤ) ∣ M 1 0)
-    (h11 : (N : ℤ) ∣ M 1 1 - 1) : M ∈ Gamma1 N := by
-  refine mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ((ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mpr h10), ?_⟩
-  have := (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mpr h11
-  push_cast at this ⊢
-  linear_combination this
+/-- **`Γ₁(N)` membership is exactly two divisibilities on the lower row**, `(N : ℤ) ∣ c` and
+`(N : ℤ) ∣ d - 1`: `mem_Gamma1_iff` with both conditions read in `ℤ`, as `mem_Gamma0_iff_dvd` reads
+`Gamma0_mem`. The congruence `a ≡ 1` is forced by the determinant, so it is omitted. Integer
+divisibilities are the form an explicitly constructed matrix has; `mem_Gamma1_of_dvd_lowerRow` is
+the unbundled `mpr`. -/
+theorem mem_Gamma1_iff_dvd_lowerRow {γ : SL(2, ℤ)} :
+    γ ∈ Gamma1 N ↔ (N : ℤ) ∣ γ 1 0 ∧ (N : ℤ) ∣ γ 1 1 - 1 :=
+  mem_Gamma1_iff.trans <| mem_Gamma0_iff_dvd.and <| eq_comm.trans <| by
+    rw [← ZMod.intCast_eq_intCast_iff_dvd_sub, Int.cast_one]
+
+/-- **`Γ₁(N)` membership from two divisibilities on the lower row**, the `mpr` direction of
+`mem_Gamma1_iff_dvd_lowerRow` with the conjunction unbundled — the shape a construction that has
+just built an explicit matrix wants to apply. When the two divisibilities arrive as one conjunction,
+pass it to `mem_Gamma1_iff_dvd_lowerRow.mpr` directly rather than destructuring it. -/
+theorem mem_Gamma1_of_dvd_lowerRow {γ : SL(2, ℤ)} (h10 : (N : ℤ) ∣ γ 1 0)
+    (h11 : (N : ℤ) ∣ γ 1 1 - 1) : γ ∈ Gamma1 N :=
+  mem_Gamma1_iff_dvd_lowerRow.mpr ⟨h10, h11⟩
 
 /-- **The diagonal entries of a `Γ₀(M)` matrix are mutually inverse modulo `M`**: the determinant
 identity `ad - bc = 1` with the `bc` term killed by `M ∣ c`. It refines

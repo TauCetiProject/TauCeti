@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Basic
-public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Character
-public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Group
 import Mathlib.Data.Int.NatAbs
 
 /-!
@@ -19,9 +18,12 @@ this character is primitive. Thus the quadratic character of a fundamental discr
 has conductor `|D|`, the character-theoretic input for identifying the least cyclotomic level
 of its quadratic field.
 
-The construction lifts the primitive prime-discriminant characters to a common level and
-multiplies them. Distinct factors, with at most one even factor, have coprime absolute values,
-so their conductors multiply. The empty factorization gives the trivial character at level one.
+The construction is the whole-family case of `genusCharAtLevel`, which lifts the primitive
+prime-discriminant characters to the common level `|∏ P ∈ s, P|` and multiplies those indexed by
+a subset: `genusChar s hs` is `genusCharAtLevel s hs Finset.univ`. Distinct factors, with at most
+one even factor, have coprime absolute values, so their conductors multiply
+(`conductor_genusCharAtLevel`), which is what makes the whole product primitive. The empty
+factorization gives the trivial character at level one.
 
 The character description follows K. Ireland and M. Rosen, *A Classical Introduction to Modern
 Number Theory*, Chapter 6, and D. A. Cox, *Primes of the Form x² + ny²*, §3.B.
@@ -37,16 +39,17 @@ open DirichletCharacter
 of the discriminants. Its value on integers is `genusCharFun`. -/
 noncomputable def genusChar (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
     DirichletCharacter ℤ (∏ P ∈ s, P).natAbs :=
-  ∏ P : s, changeLevel
-    (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem (fun P : ℤ ↦ P) P.property))
-    (primeDiscriminantChar P (hs P P.property))
+  genusCharAtLevel s hs Finset.univ
+
+/-- The character indexed by the whole family is the genus character of that family. -/
+@[simp] theorem genusCharAtLevel_univ (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
+    genusCharAtLevel s hs s.attach = genusChar s hs := (rfl)
 
 /-- The expression for `genusChar` in terms of prime-discriminant characters at a common level. -/
 theorem genusChar_def (s : Finset ℤ) (hs : ∀ P ∈ s, IsPrimeDiscriminant P) :
-    genusChar s hs =
-      ∏ P : s, changeLevel
-        (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem (fun P : ℤ ↦ P) P.property))
-        (primeDiscriminantChar P (hs P P.property)) := (rfl)
+    genusChar s hs = ∏ P : s, primeDiscriminantCharAtLevel s hs P := by
+  rw [← genusCharAtLevel_univ, genusCharAtLevel_def]
+  simp only [← Finset.univ_eq_attach]
 
 /-- The bundled genus character agrees with the existing character function on every integer,
 including integers not coprime to the level. -/
@@ -55,21 +58,10 @@ including integers not coprime to the level. -/
   by_cases hn : IsCoprime n (∏ P ∈ s, P)
   · have hn' : IsCoprime n ((∏ P ∈ s, P).natAbs : ℤ) := by
       simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using hn
-    have hu : IsUnit (n : ZMod (∏ P ∈ s, P).natAbs) :=
-      (ZMod.coe_int_isUnit_iff_isCoprime _ _).mpr hn'.symm
-    rw [genusChar_def, genusCharFun_def]
-    -- Evaluation preserves the empty product only at units: the trivial character
-    -- vanishes at nonunits. Pass through unit homomorphisms to use `map_prod`.
-    let ev := (Units.coeHom ℤ).comp
-      ((MonoidHom.eval hu.unit).comp MulChar.mulEquivToUnitHom.toMonoidHom)
-    have heval := map_prod ev (fun P : s ↦ changeLevel
-      (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem (fun P : ℤ ↦ P) P.property))
-      (primeDiscriminantChar P (hs P P.property))) Finset.univ
-    simp only [ev, MonoidHom.comp_apply, Units.coeHom_apply, MonoidHom.eval_apply_apply,
-      MulEquiv.coe_toMonoidHom, MulChar.mulEquivToUnitHom_apply, MulChar.coe_equivToUnitHom,
-      IsUnit.unit_spec, changeLevel_eq_cast_of_dvd' _ _ hn',
-      primeDiscriminantChar_apply_int] at heval
-    exact heval.trans (Finset.prod_coe_sort s (fun P ↦ primeDiscriminantCharFun P n))
+    rw [← genusCharAtLevel_univ, genusCharAtLevel_apply_int s hs s.attach n hn',
+      genusCharFun_def]
+    simpa only [Finset.univ_eq_attach] using
+      Finset.prod_coe_sort s fun P ↦ primeDiscriminantCharFun P n
   · rw [(genusCharFun_eq_zero_iff hs).mpr hn, apply_eq_zero_iff]
     simpa only [Int.isCoprime_iff_nat_coprime, Int.natAbs_natCast] using hn
 
@@ -78,23 +70,10 @@ primitive: its conductor is the absolute value of the product of the discriminan
 theorem isPrimitive_genusChar {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
     (heven : ∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     IsPrimitive (genusChar s hs) := by
-  let : NeZero (∏ P ∈ s, P).natAbs :=
-    ⟨Int.natAbs_ne_zero.mpr (Finset.prod_ne_zero_iff.mpr fun P hP ↦ (hs P hP).ne_zero)⟩
-  have hc (P : s) :
-      (changeLevel (Int.natAbs_dvd_natAbs.mpr (Finset.dvd_prod_of_mem (fun P : ℤ ↦ P) P.property))
-        (primeDiscriminantChar P (hs P P.property))).conductor = P.val.natAbs := by
-    rw [conductor_changeLevel]
-    exact (isPrimitive_primeDiscriminantChar P (hs P P.property))
-  rw [isPrimitive_def, genusChar_def, conductor_prod_eq_prod_of_pairwise_coprime]
-  · simp_rw [hc]
-    rw [Finset.prod_coe_sort]
-    exact (map_prod Int.natAbsHom (fun P ↦ P) s).symm
-  · intro P _ Q _ hPQ
-    rw [hc, hc]
-    exact Int.isCoprime_iff_nat_coprime.mp
-      (isCoprime_primeDiscriminant_of_ne_of_not_both_even (hs P P.property) (hs Q Q.property)
-        (fun h ↦ hPQ (Subtype.ext h))
-        (fun h ↦ hPQ (Subtype.ext (heven P P.property Q Q.property h.1 h.2))))
-  · exact Or.inr (NeZero.ne _)
+  rw [isPrimitive_def, ← genusCharAtLevel_univ,
+    conductor_genusCharAtLevel s hs s.attach
+      (fun P _ Q _ hP hQ ↦ Subtype.ext (heven P P.property Q Q.property hP hQ)),
+    ← Finset.univ_eq_attach s, Finset.prod_coe_sort s fun P ↦ P.natAbs]
+  exact (map_prod Int.natAbsHom (fun P ↦ P) s).symm
 
 end TauCeti.Multiquadratic

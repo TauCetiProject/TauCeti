@@ -212,6 +212,20 @@ theorem Isometry.coordinatePower_apply (f : Isometry A B) (ι : Type v) [Fintype
     (x : ι → A) (i : ι) : f.coordinatePower ι x i = f (x i) :=
   (rfl)
 
+/-- The additive equivalence underlying a coordinatewise quadratic isometry is the
+coordinatewise additive equivalence. -/
+@[simp]
+theorem Isometry.coordinatePower_toAddEquiv (f : Isometry A B) (ι : Type v) [Fintype ι] :
+    (f.coordinatePower ι).toAddEquiv = AddEquiv.piCongrRight fun _ ↦ f.toAddEquiv := by
+  ext x i
+  have hleft : ((f.coordinatePower ι).toAddEquiv x) i = (f.coordinatePower ι x) i :=
+    congrFun (congrFun
+      (QuadraticMap.IsometryEquiv.coe_toLinearEquiv (f.coordinatePower ι)) x) i
+  calc
+    ((f.coordinatePower ι).toAddEquiv x) i = (f.coordinatePower ι x) i := hleft
+    _ = f (x i) := Isometry.coordinatePower_apply f ι x i
+    _ = (AddEquiv.piCongrRight (fun _ ↦ f.toAddEquiv) x) i := rfl
+
 /-- Forgetting the quadratic data from a coordinatewise isometry gives the corresponding
 coordinatewise bilinear isometry. -/
 @[simp]

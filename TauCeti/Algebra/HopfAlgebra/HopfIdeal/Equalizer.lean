@@ -177,7 +177,7 @@ private theorem antipode_mem_equalizerIdeal ⦃x : K⦄ (hx : x ∈ equalizerIde
     intro a
     simp only [Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       HopfAlgebra.antipodeAlgHom_apply, map_sub]
-    rw [← BialgHom.map_antipode f, ← BialgHom.map_antipode g]
+    rw [← BialgHomClass.map_antipode f, ← BialgHomClass.map_antipode g]
     exact sub_mem_equalizerIdeal f g _
   simpa using Ideal.mem_comap.mp (h hx)
 

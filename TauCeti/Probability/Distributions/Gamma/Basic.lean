@@ -11,7 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import TauCeti.Probability.Distributions.PDFInstances
+import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Moments.Basic
 import TauCeti.Probability.Moments.Determinacy
 

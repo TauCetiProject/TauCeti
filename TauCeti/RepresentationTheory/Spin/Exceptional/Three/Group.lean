@@ -296,10 +296,12 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
   let _ : FiniteDimensional K V := .of_finrank_eq_succ (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   have hW : finrank K P.W = 1 :=
-    P.finrank_W_of_finrank_eq_two_mul_add_one (l := 1) (by omega)
+    P.finrank_W_eq_of_finrank_eq_two_mul_add_one (l := 1) (by omega)
   let b := Module.finBasisOfFinrankEq K P.W hW
-  obtain ⟨z, hzcoord⟩ :=
-    P.lineCoordinate_surjective_of_finrank_eq_two_mul_add_one (l := 1) (by omega) (1 : K)
+  have hline : P.line ≠ ⊥ := Submodule.finrank_eq_zero.not.1 <| by
+    rw [P.finrank_line_eq_one_of_finrank_eq_two_mul_add_one (l := 1) (by omega)]
+    exact one_ne_zero
+  obtain ⟨z, hzcoord⟩ := P.lineCoordinate_surjective_of_ne_bot hline (1 : K)
   have hz : Q (z : V) = 1 := by rw [← P.lineCoordinate_sq, hzcoord, one_mul]
   let e := spinThreeEquivMatrix P b hV
   let f := spinThreeHom hV e

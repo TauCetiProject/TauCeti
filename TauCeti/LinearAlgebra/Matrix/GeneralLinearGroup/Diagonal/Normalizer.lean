@@ -23,6 +23,8 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
 ## Main declarations
 
 * `TauCeti.permutationGL`: the permutation-matrix embedding in `GL`.
+* `TauCeti.diagGL_mul_permutationGL`: moving a permutation matrix past a diagonal one relabels
+  the diagonal entries.
 * `TauCeti.exists_eq_diagGL_mul_permutationGL_of_forall_ne`: an invertible matrix whose
   conjugation keeps a coordinate-separating family of diagonal matrices diagonal is monomial.
 * `TauCeti.mem_normalizer_diagonalTorus_iff_exists`: normalizing matrices are precisely products
@@ -81,6 +83,18 @@ theorem permutationGL_mul_diagGL_mul_inv (σ : Equiv.Perm (Fin n)) (t : Fin n �
     (g := permutationGL (k := k) σ) (π := σ⁻¹) (permutationGL_coe σ),
     mul_inv_cancel_right]
   congr
+
+/-- Moving a permutation matrix past a diagonal one relabels the diagonal entries. -/
+theorem diagGL_mul_permutationGL (σ : Equiv.Perm (Fin n)) (t : Fin n → kˣ) :
+    diagGL t * permutationGL (k := k) σ =
+      permutationGL (k := k) σ * diagGL fun i ↦ t (σ i) := by
+  have h : permutationGL (k := k) σ * (diagGL fun i ↦ t (σ i)) * (permutationGL (k := k) σ)⁻¹
+      = diagGL t := by
+    rw [permutationGL_mul_diagGL_mul_inv]
+    congr 1
+    funext i
+    simp
+  rw [← h, inv_mul_cancel_right]
 
 /-- Permutation matrices normalize the diagonal torus. -/
 theorem permutationGL_mem_normalizer (σ : Equiv.Perm (Fin n)) :

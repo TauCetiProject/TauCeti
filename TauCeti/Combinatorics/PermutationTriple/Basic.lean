@@ -102,7 +102,9 @@ def component (t : PermutationTriple n) : Fin 3 → Perm (Fin n) :=
 @[simp] theorem component_two (t : PermutationTriple n) : t.component 2 = t.σinf := (rfl)
 
 /-- The triple with prescribed first two components, the third being forced. -/
-def ofTwo (σ0 σ1 : Perm (Fin n)) : PermutationTriple n where
+-- Exposed: the `Fintype` and `DecidableEq` instances on triples go through `ofTwo` and
+-- `equivPair`, and kernel computations in importing modules must reduce through them.
+@[expose] def ofTwo (σ0 σ1 : Perm (Fin n)) : PermutationTriple n where
   σ0 := σ0
   σ1 := σ1
   σinf := (σ1 * σ0)⁻¹
@@ -149,7 +151,7 @@ theorem ext_of_two {t t' : PermutationTriple n} (h0 : t.σ0 = t'.σ0) (h1 : t.σ
   exact ⟨h0, h1, hinf⟩
 
 /-- A permutation triple is the same thing as a pair of permutations. -/
-def equivPair (n : ℕ) : PermutationTriple n ≃ Perm (Fin n) × Perm (Fin n) where
+@[expose] def equivPair (n : ℕ) : PermutationTriple n ≃ Perm (Fin n) × Perm (Fin n) where
   toFun t := (t.σ0, t.σ1)
   invFun p := ofTwo p.1 p.2
   left_inv _ := ext_of_two rfl rfl

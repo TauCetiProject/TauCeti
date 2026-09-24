@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Degree
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
+import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # The transitive-group label of a polynomial
@@ -53,6 +54,7 @@ by the degree alone, and in degree two by separability and irreducibility.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
   primitivity of the Galois image, respectively of the Galois group, on the roots.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
+* `TauCeti.HasGaloisLabel.eq_one_of_smul_eq_self`: a regular label acts freely on the roots.
 * `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible, and
   `TauCeti.exists_hasGaloisLabel_of_irreducible`: conversely, an irreducible separable polynomial
   has a label in every degree where each transitive subgroup has one.
@@ -167,6 +169,20 @@ theorem HasGaloisLabel.irreducible (h : HasGaloisLabel f j) : Irreducible f := b
   obtain ⟨hsep, rfl, e, he⟩ := h
   have := he.isPretransitive
   exact (isPretransitive_map_range_galActionHom_iff hsep (pos_of_transitiveGroupIndex j) e).mp this
+
+/-- **A regular label acts freely on the roots.** If the reference subgroup of the label of `f`
+has as many elements as `f` has roots, then the only element of the Galois group of `f` fixing a
+root in a splitting extension `E` is the identity: the Galois group acts transitively on the
+roots and has as many elements as there are roots. Among the quartic labels this singles out the
+cyclic label `4T1`, whose reference subgroup has order four, from the dihedral label `4T3`. -/
+theorem HasGaloisLabel.eq_one_of_smul_eq_self (h : HasGaloisLabel f j)
+    (hreg : Nat.card (referenceSubgroup n j) = n) {E : Type*} [Field E] [Algebra F E]
+    [Fact ((f.map (algebraMap F E)).Splits)] {σ : f.Gal} {x : f.rootSet E} (hx : σ • x = x) :
+    σ = 1 := by
+  have := Gal.galAction_isPretransitive f E h.irreducible
+  refine eq_one_of_natCard_eq_of_smul_eq_self ?_ hx
+  rw [h.natCard_gal, hreg, Nat.card_eq_fintype_card,
+    card_rootSet_eq_natDegree h.separable Fact.out, h.natDegree_eq]
 
 /-- **A label exists as soon as the classification supplies one.** A separable irreducible
 polynomial of degree `n` carries a label in degree `n` provided every transitive subgroup of

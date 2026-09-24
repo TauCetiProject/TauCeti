@@ -23,6 +23,8 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 
 * `QuadraticMap.radical_neg`: negating a quadratic map does not change its radical.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot`: a quadratic map whose polar form has
+  trivial kernel is nondegenerate.
 * `QuadraticMap.isSymm_polarBilin`: the polar form is symmetric.
 * `QuadraticMap.polarBilin_restrict`: polarization commutes with restriction to a submodule.
 * `QuadraticMap.Nondegenerate.isCompl_orthogonal`: a subspace on which the form restricts
@@ -88,6 +90,14 @@ theorem radical_prod [Invertible (2 : R)] (Q : QuadraticMap R M P) (Q' : Quadrat
     exact ⟨fun x ↦ by simpa using hp (x, 0), fun x ↦ by simpa using hp (0, x)⟩
   · rintro ⟨hp, hp'⟩ x
     simpa using congrArg₂ (· + ·) (hp x.1) (hp' x.2)
+
+/-- A quadratic map whose polar form has trivial kernel is nondegenerate. -/
+theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
+    (hker : Q.polarBilin.ker = ⊥) : Q.Nondegenerate := by
+  refine ⟨le_antisymm (Q.radical_le_ker_polarBilin.trans hker.le) bot_le, ?_⟩
+  rw [hker]
+  nontriviality R
+  simp only [rank_subsingleton', zero_le]
 
 end QuadraticMap
 

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
@@ -32,6 +32,8 @@ and the residue field of the valuative relation with the ones `K_v` already has.
   infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
   completion with finite residue field is a nonarchimedean local field.
+* `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
+  zero-preserving normalized valuation of such a completion is the inverse of its adic valuation.
 * `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
   of an adic completion carrying a nonarchimedean local-field structure is compact.
 
@@ -206,6 +208,15 @@ instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
         inferInstanceAs (IsDiscreteValuationRing (v.adicCompletionIntegers K)),
         inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))⟩
   exact ⟨⟩
+
+/-- The zero-preserving normalized valuation of the completion `K_v` is the inverse of its adic
+valuation `Valued.v`. -/
+@[simp]
+theorem normalizedValuationWithZero_adicCompletion [Finite (R ⧸ v.asIdeal)]
+    (x : v.adicCompletion K) :
+    TauCeti.normalizedValuationWithZero (v.adicCompletion K) x = (Valued.v x)⁻¹ :=
+  Valuation.normalizedValuationWithZero_eq_inv_of_surjective _
+    (v.valuedAdicCompletion_surjective K) x
 
 /-- The ring of integers in an adic completion that is a nonarchimedean local field is compact. -/
 instance compactSpace_adicCompletionIntegers

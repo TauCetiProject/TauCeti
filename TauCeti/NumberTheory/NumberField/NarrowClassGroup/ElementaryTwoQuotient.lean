@@ -37,6 +37,8 @@ genus-field milestone of `TauCetiRoadmap/Multiquadratic/README.md`.
 * `NumberField.NarrowClassGroup.twoRank` and
   `NumberField.NarrowClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the
   `ZMod 2`-dimension of the quotient, with cardinality `2 ^ twoRank K`.
+* `NumberField.NarrowClassGroup.card_eq_two_pow_twoRank_of_classNumber_eq_one`: when the
+  ordinary class number is one, the narrow class group is its own elementary-`2` quotient.
 * `NumberField.NarrowClassGroup.classGroupTwoRank_le_twoRank`: the ordinary class-group
   2-rank is at most the narrow class-group 2-rank.
 * `NumberField.NarrowClassGroup.toClassGroupElementaryTwoQuotientEquiv`: for a totally
@@ -98,6 +100,29 @@ noncomputable def twoRank : ℕ :=
 theorem card_elementaryTwoQuotient_eq_two_pow_twoRank :
     Nat.card (ElementaryTwoQuotient K) = 2 ^ twoRank K :=
   TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (NarrowClassGroup K)
+
+/-- **A class-number-one field has narrow class number `2` to the narrow `2`-rank.** When the
+ordinary class group is trivial, every narrow class lies in the kernel of `Cl⁺(K) → Cl(K)` and
+hence has square one. Thus `Cl⁺(K)` is its own maximal elementary-`2` quotient. -/
+theorem card_eq_two_pow_twoRank_of_classNumber_eq_one
+    (hclass : NumberField.classNumber K = 1) :
+    Nat.card (NarrowClassGroup K) = 2 ^ twoRank K := by
+  have _ : Subsingleton (ClassGroup (𝓞 K)) :=
+    Fintype.card_le_one_iff_subsingleton.mp hclass.le
+  have hsq : ∀ C : NarrowClassGroup K, C ^ 2 = 1 := by
+    intro C
+    apply sq_eq_one_of_mem_ker_toClassGroup
+    exact MonoidHom.mem_ker.mpr (Subsingleton.elim _ _)
+  have hbot : Subgroup.square (NarrowClassGroup K) = ⊥ := by
+    ext C
+    simp only [Subgroup.mem_square, Subgroup.mem_bot]
+    refine ⟨?_, fun h => h ▸ IsSquare.one⟩
+    rintro ⟨r, rfl⟩
+    rw [← pow_two]
+    exact hsq r
+  have hcard := card_elementaryTwoQuotient_eq_two_pow_twoRank K
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square, hbot, Subgroup.index_bot] at hcard
+  simpa using hcard
 
 /-- The ordinary class-group 2-rank is at most the narrow class-group 2-rank. The inequality can
 be strict for real fields because forgetting positivity is only a surjection. -/

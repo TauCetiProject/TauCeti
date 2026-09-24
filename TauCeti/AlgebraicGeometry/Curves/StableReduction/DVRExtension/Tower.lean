@@ -18,9 +18,21 @@ form the category of chosen extensions. It also records the finite separable fie
 occur between such extensions; these maps are the compatible pieces used by later
 common-refinement arguments.
 
-The existence of a common refinement for two arbitrary chosen extensions is not asserted here.
-Constructing it requires the compositum together with a compatible choice of a place.
+A map is determined by its field component, and conversely a `K`-embedding of the extension
+fields under which the chosen places correspond extends uniquely to a map: the local-ring component
+is the localisation of the restriction of the field embedding to the integral closures. The
+existence of a common refinement for two arbitrary chosen extensions is proved in
+`TauCeti.AlgebraicGeometry.Curves.StableReduction.DVRExtension.CommonRefinement`.
 
+## Main declarations
+
+* `TauCeti.FiniteDVRExtension.Hom`: a map of chosen extensions, and the category instance
+  `TauCeti.FiniteDVRExtension.finiteDVRExtensionCategory`.
+* `TauCeti.FiniteDVRExtension.Hom.comap_prime`: the chosen places correspond under the field
+  component of a map.
+* `TauCeti.FiniteDVRExtension.Hom.ext_field`: a map is determined by its field component.
+* `TauCeti.FiniteDVRExtension.Hom.ofAlgHom`: the map extending a field embedding under which the
+  chosen places correspond.
 -/
 
 public section
@@ -61,7 +73,6 @@ attribute [simp] Hom.field_local
 namespace Hom
 
 /-- Two maps are equal when their field and local-ring components agree. -/
-@[ext (iff := false)]
 lemma ext {E F : FiniteDVRExtension R K} {f g : Hom E F}
     (hfield : f.field = g.field) (hlocal : f.localMap = g.localMap) : f = g := by
   cases f
@@ -139,6 +150,81 @@ namespace Hom
 @[simp] lemma comp_localMap {E F G : FiniteDVRExtension R K} (f : E ⟶ F) (g : F ⟶ G) :
     (f ≫ g).localMap = g.localMap.comp f.localMap := by
   rfl
+
+variable {E F : FiniteDVRExtension R K}
+
+/-- The local-ring component of a map agrees, on the integral closure, with the restriction of the
+field component to the integral closures. -/
+@[simp]
+theorem localMap_algebraMap (T : E ⟶ F) (x : E.integralClosure) :
+    T.localMap (algebraMap E.integralClosure E.localRing x) =
+      algebraMap F.integralClosure F.localRing
+        ((T.field.restrictScalars R).mapIntegralClosure x) := by
+  apply IsFractionRing.injective F.localRing F.extensionField
+  rw [← T.field_local, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+  -- both sides are `T.field x`: the algebra maps out of the integral closures are the inclusions
+  rfl
+
+/-- The chosen places correspond under the field component of a map: the chosen prime of the
+target pulls back, along the restriction of the field embedding to the integral closures, to the
+chosen prime of the source. -/
+@[simp]
+theorem comap_prime (T : E ⟶ F) :
+    F.prime.comap (T.field.restrictScalars R).mapIntegralClosure = E.prime := by
+  ext x
+  rw [Ideal.mem_comap, ← IsLocalization.AtPrime.to_map_mem_maximal_iff F.localRing F.prime,
+    ← localMap_algebraMap, ← IsLocalization.AtPrime.to_map_mem_maximal_iff E.localRing E.prime,
+    ← IsLocalRing.maximalIdeal_comap T.localMap.toRingHom, Ideal.mem_comap]
+  -- the ring-hom coercion of `T.localMap` is `T.localMap`
+  rfl
+
+/-- A map of chosen extensions is determined by its field component. -/
+@[ext (iff := false)]
+theorem ext_field {f g : E ⟶ F} (h : f.field = g.field) : f = g :=
+  Hom.ext h <| AlgHom.ext fun x => IsFractionRing.injective F.localRing F.extensionField <| by
+    rw [← f.field_local, ← g.field_local, h]
+
+/-- The map of chosen extensions extending a `K`-embedding `φ` of the extension fields under which
+the chosen places correspond. Its local-ring component is the localisation of the restriction of
+`φ` to the integral closures. -/
+noncomputable def ofAlgHom (φ : E.extensionField →ₐ[K] F.extensionField)
+    (hφ : F.prime.comap (φ.restrictScalars R).mapIntegralClosure = E.prime) : E ⟶ F :=
+  let ψ : E.integralClosure →ₐ[R] F.localRing :=
+    (IsScalarTower.toAlgHom R F.integralClosure F.localRing).comp
+      (φ.restrictScalars R).mapIntegralClosure
+  have hψ : ∀ y : E.prime.primeCompl, IsUnit (ψ y) := fun y => by
+    rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+      IsLocalization.AtPrime.isUnit_to_map_iff F.localRing F.prime]
+    intro h
+    exact y.2 (hφ.le (Ideal.mem_comap.mpr h))
+  let l : E.localRing →ₐ[R] F.localRing := IsLocalization.liftAlgHom hψ
+  have hl : ∀ c, l (algebraMap E.integralClosure E.localRing c) = ψ c := fun c =>
+    IsLocalization.lift_eq hψ c
+  { field := φ
+    localMap := l
+    field_local := fun x =>
+      RingHom.congr_fun (IsLocalization.ringHom_ext E.prime.primeCompl
+        (j := φ.toRingHom.comp (algebraMap E.localRing E.extensionField))
+        (k := (algebraMap F.localRing F.extensionField).comp l.toRingHom)
+        (RingHom.ext fun c => by
+          simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hl, ψ,
+            AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', ← IsScalarTower.algebraMap_apply]
+          -- both sides are `φ c`: the algebra maps out of the integral closures are the inclusions
+          rfl)) x
+    isLocalHom_localMap := by
+      refine ((IsLocalRing.local_hom_TFAE _).out 4 1).mp ?_
+      rw [← IsLocalization.AtPrime.map_eq_maximalIdeal E.prime E.localRing,
+        Ideal.map_le_iff_le_comap]
+      intro x hx
+      rw [← hφ, Ideal.mem_comap] at hx
+      rw [Ideal.mem_comap, Ideal.mem_comap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hl,
+        AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+        IsLocalization.AtPrime.to_map_mem_maximal_iff F.localRing F.prime]
+      exact hx }
+
+@[simp] lemma field_ofAlgHom (φ : E.extensionField →ₐ[K] F.extensionField)
+    (hφ : F.prime.comap (φ.restrictScalars R).mapIntegralClosure = E.prime) :
+    (ofAlgHom φ hφ).field = φ := (rfl)
 
 end Hom
 

@@ -125,7 +125,11 @@ end Finite
 
 section Quadratic
 
-variable {K L : Type*} [Field K] [Finite K] [Field L] [Algebra K L]
+variable {K L : Type*} [Field K] [Finite K]
+
+section DivisionRing
+
+variable [DivisionRing L] [Algebra K L]
 
 /-- **In a quadratic extension of a field with `q` elements the `q`-power map is an involution**:
 `L` has `q²` elements, so `a ^ (q²) = a`.
@@ -149,6 +153,10 @@ theorem units_pow_natCard_pow_natCard (h2 : Module.finrank K L = 2) (a : Lˣ) :
   Units.ext (by
     rw [Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
     exact pow_natCard_pow_natCard h2 (a : L))
+
+end DivisionRing
+
+variable [Field L] [Algebra K L]
 
 /-- **In a quadratic extension the `q`-th power of an element outside the base field is again
 outside it**: the `q`-power map is an involution there, so a fixed value would force `a` itself to
