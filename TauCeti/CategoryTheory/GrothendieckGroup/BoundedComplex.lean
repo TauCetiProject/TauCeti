@@ -314,7 +314,7 @@ namespace SplitK0
 omit [HasBinaryBiproducts C] [HasZeroObject C] [EssentiallySmall.{w} C] in
 private lemma exists_finset_isZero_X (K : HomotopyCategory.Bounded C) :
     ∃ s : Finset ℤ, ∀ n ∉ s, IsZero (K.obj.as.X n) :=
-  (CochainComplex.bounded_iff_exists_finset _ K.obj.as).1
+  (CochainComplex.bounded_iff_exists_finset_isZero_X _ K.obj.as).1
     ((HomotopyCategory.bounded_quotient_obj_iff _).1 K.property)
 
 variable (C) in
@@ -507,7 +507,7 @@ noncomputable def boundedHomotopyEquiv :
       simp [eulerChar])
     (TriangulatedK0.hom_ext fun K ↦ by
       obtain ⟨K, rfl⟩ := HomotopyCategory.Bounded.quotient_obj_surjective K
-      obtain ⟨s, hs⟩ := (CochainComplex.bounded_iff_exists_finset _ K.obj).1 K.property
+      obtain ⟨s, hs⟩ := (CochainComplex.bounded_iff_exists_finset_isZero_X _ K.obj).1 K.property
       rw [AddMonoidHom.comp_apply, TriangulatedK0.lift_of,
         boundedHomotopyEulerChar_obj_quotient _ hs, AddMonoidHom.id_apply,
         TriangulatedK0.of_bounded_quotient_obj K hs]

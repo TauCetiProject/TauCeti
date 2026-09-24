@@ -72,7 +72,7 @@ lemma bounded_iff [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
     exact ⟨⟨a, ha⟩, b, hb⟩
 
 /-- A cochain complex is bounded exactly when it vanishes outside a finite set of degrees. -/
-lemma bounded_iff_exists_finset [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
+lemma bounded_iff_exists_finset_isZero_X [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
     CochainComplex.bounded C K ↔ ∃ s : Finset ℤ, ∀ n ∉ s, IsZero (K.X n) := by
   rw [CochainComplex.bounded_iff]
   constructor
