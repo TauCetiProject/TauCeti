@@ -89,6 +89,7 @@ theorem Divisor.principal_X :
 
 /-- **The pole divisor of `x`**: `(x)_∞ = P_∞`.  The function `x` has a simple pole at infinity
 and is regular at every other place. -/
+@[simp]
 theorem Divisor.poles_X :
     Divisor.poles (IsFunctionField.ratFunc k)
         (Units.mk0 (RatFunc.X : RatFunc k) RatFunc.X_ne_zero) =

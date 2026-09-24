@@ -375,6 +375,7 @@ theorem conorm_principal (hF : IsFunctionField k F) (hF' : IsFunctionField k' F'
     Place.ord_algebraMap_restrict k F P' (z : F)]
 
 /-- The conorm of the zero divisor `(z)₀` is the zero divisor of the image of `z` in `F'`. -/
+@[simp]
 theorem conorm_zeros (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (z : Fˣ) :
     conorm k' F' (zeros hF z) = zeros hF' (Units.map (algebraMap F F' : F →* F') z) := by
   refine WeilDivisor.ext fun P' ↦ ?_
@@ -383,6 +384,7 @@ theorem conorm_zeros (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (z
     mul_zero]
 
 /-- The conorm of the pole divisor `(z)_∞` is the pole divisor of the image of `z` in `F'`. -/
+@[simp]
 theorem conorm_poles (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (z : Fˣ) :
     conorm k' F' (poles hF z) = poles hF' (Units.map (algebraMap F F' : F →* F') z) := by
   rw [poles_eq_zeros_inv, poles_eq_zeros_inv, conorm_zeros k' F' hF hF', map_inv]
