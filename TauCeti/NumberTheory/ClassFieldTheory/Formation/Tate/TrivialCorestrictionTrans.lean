@@ -154,7 +154,6 @@ private theorem comp_of_compare {A B C A' B' C' : ModuleCat ℤ}
     _ = f ≫ g ≫ iC.hom := congrArg (f ≫ ·) hg.symm
 
 /-- Trivial-coefficient Tate corestriction is functorial in towers of finite normal layers. -/
-@[simp]
 theorem trivialTateCor_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) (r : ℤ) :
     (T.trans T').trivialTateCor r = T.trivialTateCor r ≫ T'.trivialTateCor r := by
   -- The four cases use ordinary cohomology, the norm quotient, the vanishing of degree minus
