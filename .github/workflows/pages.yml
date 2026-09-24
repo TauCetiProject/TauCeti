@@ -635,7 +635,23 @@ jobs:
           # GITHUB_ENV carries the cache settings into every later step, and this is a
           # different project.
           LAKE_NO_CACHE: "true"
-        run: lake build
+          # ...but LAKE_NO_CACHE alone does not do it, which is what made this so persistent.
+          # In Lake it means only "do not download build caches for packages"
+          # (Lake/Config/Env.lean); the artifact cache is these three, so all three kept the
+          # values the docs step wrote into GITHUB_ENV and this project went on sharing the docs
+          # build's cache. Clearing them is Lake's own off switch: the environment is read ahead
+          # of any package configuration, `false` is an accepted off value, and a set-but-empty
+          # LAKE_CACHE_DIR reads as "no system cache".
+          LAKE_ARTIFACT_CACHE: "false"
+          LAKE_RESTORE_ARTIFACTS: "false"
+          LAKE_CACHE_DIR: ""
+        # The default target type-checks the showcased theorems. The site's nested call is
+        # `lake build :examples`, a different target -- the SubVerso extraction -- so build it
+        # here as well: when extraction breaks, it then fails in this step, under its own name,
+        # instead of inside Verso elaboration two steps later.
+        run: |
+          lake build
+          lake build :examples
 
       - name: Build site (extracts the checked snippets, compiles Verso)
         env:
@@ -653,6 +669,11 @@ jobs:
           # has nothing to cache and the leak is harmless. That is why it presented as a roughly
           # every-other-run failure rather than a consistent one.
           LAKE_NO_CACHE: "true"
+          # Cleared for the same reason, and this step is where it mattered most: the nested
+          # `lake build :examples` inherits the environment set here.
+          LAKE_ARTIFACT_CACHE: "false"
+          LAKE_RESTORE_ARTIFACTS: "false"
+          LAKE_CACHE_DIR: ""
         run: lake build
 
       - name: Generate static site
