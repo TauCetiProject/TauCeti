@@ -73,7 +73,7 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.finiteDimensional_fixedField_of_finite`,
   `IntermediateField.isGalois_fixedField_of_finite`, and
   `IntermediateField.finrank_fixedField_eq_card_of_finite`
-* `IntermediateField.subgroupEquivAlgEquiv_of_finite`
+* `IntermediateField.subgroupEquivAlgEquivOfFinite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
@@ -288,7 +288,7 @@ theorem finrank_fixedField_eq_card_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Fin
   simpa only [Nat.card_eq_fintype_card] using FixedPoints.finrank_eq_card H M
 
 /-- A finite group of automorphisms is the Galois group over its fixed field. -/
-noncomputable def subgroupEquivAlgEquiv_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
+noncomputable def subgroupEquivAlgEquivOfFinite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     H ≃* (M ≃ₐ[fixedField H] M) :=
   (MulEquiv.subgroupCongr (fixingSubgroup_fixedField_of_finite H).symm).trans
     (fixingSubgroupEquiv _)
