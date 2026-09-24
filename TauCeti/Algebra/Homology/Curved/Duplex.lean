@@ -77,9 +77,11 @@ namespace TauCeti
 
 open CategoryTheory Category Limits Preadditive
 
--- The constructions below are exposed, as for Mathlib's short complexes: a morphism `X ⟶ Y` of
--- curved duplexes must unfold to a `CurvedDuplex.Hom X Y`, and the functors and constructors
--- are used through their definitional component formulas.
+-- The category structure, functors and constructors below are exposed, as for Mathlib's short
+-- complexes: a morphism `X ⟶ Y` of curved duplexes must unfold to a `CurvedDuplex.Hom X Y`, and
+-- they are used through their definitional component formulas. The null-homotopic morphisms,
+-- their ideal and the disk correspondence below are used through their component and membership
+-- lemmas instead, so their bodies stay hidden.
 @[expose] public section
 
 variable (C : Type u) [Category.{v} C] [Preadditive C] {R : Type w'} [Semiring R] [Linear R C]
@@ -290,16 +292,36 @@ def parityShiftEquivalence : CurvedDuplex C w ≌ CurvedDuplex C w where
 instance : (parityShiftEquivalence C w).functor.Additive :=
   inferInstanceAs (parityShift C w).Additive
 
+end CurvedDuplex
+
+end
+
+namespace CurvedDuplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {R : Type w'} [Semiring R] [Linear R C]
+  {w : R} {X Y Z : CurvedDuplex C w}
+
+attribute [local simp] Hom.comm₀ Hom.comm₁ Hom.comm₀_assoc Hom.comm₁_assoc
+
 /-! ### Null-homotopic morphisms -/
 
 /-- The **null-homotopic morphism** `d h + h d` attached to an odd map `h = (h₀, h₁)` from `X` to
 `Y`. It commutes with the differentials because `X` and `Y` have the same curvature. -/
-@[simps]
 def nullHomotopicMap (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) : X ⟶ Y where
   f₀ := X.d₀ ≫ h₁ + h₀ ≫ Y.d₁
   f₁ := X.d₁ ≫ h₀ + h₁ ≫ Y.d₀
   comm₀ := by simp [add_comm]
   comm₁ := by simp [add_comm]
+
+@[simp]
+theorem nullHomotopicMap_f₀ (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) :
+    (nullHomotopicMap h₀ h₁).f₀ = X.d₀ ≫ h₁ + h₀ ≫ Y.d₁ := by
+  unfold nullHomotopicMap; rfl
+
+@[simp]
+theorem nullHomotopicMap_f₁ (h₀ : X.X₀ ⟶ Y.X₁) (h₁ : X.X₁ ⟶ Y.X₀) :
+    (nullHomotopicMap h₀ h₁).f₁ = X.d₁ ≫ h₀ + h₁ ≫ Y.d₀ := by
+  unfold nullHomotopicMap; rfl
 
 @[simp]
 theorem nullHomotopicMap_zero : nullHomotopicMap (0 : X.X₀ ⟶ Y.X₁) 0 = 0 := by
@@ -371,8 +393,9 @@ theorem comap_parityShift_nullHomotopic :
 /-! ### Elementary disks -/
 
 variable (w) in
-/-- The **elementary disk** `A --𝟙--> A --w•𝟙--> A` on an object `A`. -/
-@[implicit_reducible, simps]
+/-- The **elementary disk** `A --𝟙--> A --w•𝟙--> A` on an object `A`. It is exposed so that its
+components unfold to `A`. -/
+@[expose, implicit_reducible, simps]
 def disk (A : C) : CurvedDuplex C w where
   X₀ := A
   X₁ := A
@@ -382,10 +405,11 @@ def disk (A : C) : CurvedDuplex C w where
   d₁_comp_d₀ := by simp
 
 /-- A morphism out of the disk on `A` is determined by its even component, which is an arbitrary
-morphism `A ⟶ X₀`. -/
-@[simps]
-def diskHomEquiv (A : C) (X : CurvedDuplex C w) : (disk w A ⟶ X) ≃ (A ⟶ X.X₀) where
+morphism `A ⟶ X₀`; this correspondence is `R`-linear. -/
+def diskHomEquiv (A : C) (X : CurvedDuplex C w) : (disk w A ⟶ X) ≃ₗ[R] (A ⟶ X.X₀) where
   toFun f := f.f₀
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
   invFun g :=
     { f₀ := g
       f₁ := g ≫ X.d₀ }
@@ -395,20 +419,26 @@ def diskHomEquiv (A : C) (X : CurvedDuplex C w) : (disk w A ⟶ X) ≃ (A ⟶ X.
     · simp
   right_inv _ := rfl
 
+@[simp]
+theorem diskHomEquiv_apply (A : C) (X : CurvedDuplex C w) (f : disk w A ⟶ X) :
+    diskHomEquiv A X f = f.f₀ := by
+  unfold diskHomEquiv; rfl
+
+@[simp]
+theorem diskHomEquiv_symm_apply_f₀ (A : C) (X : CurvedDuplex C w) (g : A ⟶ X.X₀) :
+    ((diskHomEquiv A X).symm g).f₀ = g := by
+  unfold diskHomEquiv; rfl
+
+@[simp]
+theorem diskHomEquiv_symm_apply_f₁ (A : C) (X : CurvedDuplex C w) (g : A ⟶ X.X₀) :
+    ((diskHomEquiv A X).symm g).f₁ = g ≫ X.d₀ := by
+  unfold diskHomEquiv; rfl
+
 /-- The identity of the disk on `A` is null-homotopic: it is `d h + h d` for the odd map which is
 the identity from the odd to the even component. -/
 theorem nullHomotopicMap_disk (A : C) :
     nullHomotopicMap (X := disk w A) (Y := disk w A) 0 (𝟙 A) = 𝟙 (disk w A) := by
   ext <;> simp
-
-end CurvedDuplex
-
-end
-
-namespace CurvedDuplex
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] {R : Type w'} [Semiring R] [Linear R C]
-  {w : R} {X Y : CurvedDuplex C w}
 
 /-! ### The homotopy category -/
 
