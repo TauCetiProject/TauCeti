@@ -95,6 +95,7 @@ theorem eq_root_iff (f : posDef D) (z : ℍ) :
 
 /-- The root map is `SL(2, ℤ)`-equivariant: `root (γ • f) = γ • root f`, with the action
 `γ • f = f ∘ γ⁻¹` on forms and the Möbius action on `ℍ`. -/
+@[simp]
 theorem root_smul (γ : SL(2, ℤ)) (f : posDef D) : root (γ • f) = γ • root f := by
   have hden : (γ 1 0 : ℂ) * root f + γ 1 1 ≠ 0 := denom_ne_zero γ (root f)
   rw [eq_comm, eq_root_iff]
@@ -116,6 +117,7 @@ theorem root_injective : Function.Injective (root (D := D)) := by
   rfl
 
 /-- The squared absolute value of the root of `a x² + b x y + c y²` is `c / a`. -/
+@[simp]
 theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := by
   obtain ⟨hdf, hfa⟩ := mem_posDef.1 f.2
   have hD : (f.1.b : ℝ) ^ 2 - 4 * f.1.a * f.1.c = -D := mod_cast hdf
@@ -124,6 +126,7 @@ theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := 
   linear_combination hD + Real.sq_sqrt D.cast_nonneg
 
 /-- The stabiliser of the root of `f` in `SL(2, ℤ)` is the stabiliser of `f`. -/
+@[simp]
 theorem stabilizer_root (f : posDef D) :
     MulAction.stabilizer SL(2, ℤ) (root f) = MulAction.stabilizer SL(2, ℤ) f := by
   ext γ
