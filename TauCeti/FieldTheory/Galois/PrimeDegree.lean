@@ -29,9 +29,9 @@ theorem isGalois_of_prime_finrank_of_exists_aut_ne_one
   have hdvd : Nat.card (E ≃ₐ[F] E) ∣ Module.finrank F E := by
     rw [← Subgroup.card_top (G := E ≃ₐ[F] E),
       ← IntermediateField.finrank_fixedField_eq_card (H := H)]
-    exact ⟨Module.finrank F (IntermediateField.fixedField H),
-      by simpa only [mul_comm] using
-        (Module.finrank_mul_finrank F (IntermediateField.fixedField H) E).symm⟩
+    simpa only [IntermediateField.finrank_bot'] using
+      (IntermediateField.finrank_dvd_of_le_left
+        (bot_le : (⊥ : IntermediateField F E) ≤ IntermediateField.fixedField H))
   have hne : Nat.card (E ≃ₐ[F] E) ≠ 1 := by
     intro hone
     have : Subsingleton (E ≃ₐ[F] E) := (Nat.card_eq_one_iff_unique.mp hone).1

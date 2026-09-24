@@ -249,12 +249,12 @@ theorem hasGaloisLabel_five_zero_of_exists_rootField_aut_ne_one
   have he := hlabel.transitiveGroupLabel e
   let G := (Gal.galActionHom q q.SplittingField).range.map e.permCongrHom.toMonoidHom
   have hG : MulAction.IsPretransitive G (Fin 5) := he.isPretransitive
+  have hGcardGal : Nat.card G = Nat.card q.Gal :=
+    (Subgroup.card_map_of_injective e.permCongrHom.injective).trans
+      (natCard_galActionHom_range q q.SplittingField)
   have hGcard : Nat.card G = Nat.card (referenceSubgroup 5
       (⟨0, by simp⟩ : TransitiveGroupIndex 5)) := by
-    rw [show Nat.card G = Nat.card q.Gal by
-      exact (Subgroup.card_map_of_injective e.permCongrHom.injective).trans
-        (natCard_galActionHom_range q q.SplittingField), hcard,
-      natCard_referenceSubgroup_five_zero]
+    rw [hGcardGal, hcard, natCard_referenceSubgroup_five_zero]
   exact HasGaloisLabel.mk hsep hdeg e
     ((@transitiveGroupLabel_five_iff_natCard_eq _ G hG).mpr hGcard)
 
