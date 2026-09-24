@@ -320,7 +320,6 @@ open _root_.DirectSum
 
 /-- The unary operation commutes with the homogeneous projections, up to the degree shift by
 one. -/
-@[simp]
 theorem differential_decompose (𝒜 : AInfinityAlgebra R A) (p : ℤ) (x : A) :
     𝒜.differential (decompose 𝒜.grading.piece x p : A) =
       (decompose 𝒜.grading.piece (𝒜.differential x) (p + 1) : A) :=
