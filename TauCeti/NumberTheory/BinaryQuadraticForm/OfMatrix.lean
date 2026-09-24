@@ -54,8 +54,8 @@ namespace BinaryQuadraticForm
 
 variable {R : Type*} [CommRing R]
 
-/-- The binary quadratic form `Q_M = c x² + (d - a) x y - b y²` of the matrix `M = !![a, b; c, d]`.
-Its value at `v = (x, y)` is the determinant of the matrix with columns `v` and `M v`. -/
+/-- The binary quadratic form `Q_M = c x² + (d - a) x y - b y²` of the matrix `M = !![a, b; c, d]`
+(see `eval_ofMatrix`). -/
 def ofMatrix (M : Matrix (Fin 2) (Fin 2) R) : BinaryQuadraticForm R :=
   ⟨M 1 0, M 1 1 - M 0 0, -M 0 1⟩
 
@@ -94,9 +94,9 @@ theorem ofMatrix_conj (γ : SL(2, R)) (M : Matrix (Fin 2) (Fin 2) R) :
     cons_val', cons_val_zero, cons_val_one]
   refine ⟨?_, ?_, ?_⟩ <;> ring
 
-private theorem two_dvd_sub_b_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
-    (hf : f.discrim = t ^ 2 - 4 * n) : 2 ∣ t - f.b := by
-  grind [discrim_def, discrim, Int.sq_emod_four t, Int.sq_emod_four f.b]
+private theorem two_mul_ediv_two_of_discrim_eq {f : BinaryQuadraticForm ℤ} {t n : ℤ}
+    (hf : f.discrim = t ^ 2 - 4 * n) : 2 * ((t - f.b) / 2) = t - f.b :=
+  Int.mul_ediv_cancel' (by grind [discrim_def, discrim, Int.sq_emod_four t, Int.sq_emod_four f.b])
 
 /-- For `t n : ℤ`, `M ↦ Q_M` is a bijection from the integer matrices of trace `t` and determinant
 `n` to the integral forms of discriminant `t² - 4 n`. The inverse sends `f = ⟨a, b, c⟩` to
@@ -107,16 +107,15 @@ def ofMatrixEquiv (t n : ℤ) : {M : Matrix (Fin 2) (Fin 2) ℤ // M.trace = t �
   toFun M := ⟨ofMatrix M.1, by rw [discrim_ofMatrix, M.2.1, M.2.2]⟩
   invFun f := ⟨!![(t - f.1.b) / 2, -f.1.c; f.1.a, t - (t - f.1.b) / 2], by
     rw [trace_fin_two_of, det_fin_two_of]
-    grind [Int.mul_ediv_cancel' (two_dvd_sub_b_of_discrim_eq f.2), f.2, discrim_def, discrim]⟩
+    grind [two_mul_ediv_two_of_discrim_eq f.2, discrim_def, discrim]⟩
   left_inv M := by
-    obtain ⟨M, ht, -⟩ := M
-    rw [trace_fin_two] at ht
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp only [ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_neg, Fin.zero_eta, Fin.mk_one, of_apply,
-        cons_val', cons_val_zero, cons_val_one, cons_val_fin_one] <;> lia
+    obtain ⟨M, rfl, -⟩ := M
+    ext1
+    dsimp only
+    rw [trace_fin_two, ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_neg,
+      show (M 0 0 + M 1 1 - (M 1 1 - M 0 0)) / 2 = M 0 0 by lia, add_sub_cancel_left, ← eta_fin_two]
   right_inv f := by
-    ext <;> simp [sub_sub, ← two_mul, Int.mul_ediv_cancel' (two_dvd_sub_b_of_discrim_eq f.2)]
+    ext <;> simp [sub_sub, ← two_mul, two_mul_ediv_two_of_discrim_eq f.2]
 
 /-- `ofMatrixEquiv t n` sends a matrix `M` to its form `Q_M`. -/
 @[simp]
