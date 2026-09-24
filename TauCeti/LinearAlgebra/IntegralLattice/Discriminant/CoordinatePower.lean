@@ -52,7 +52,7 @@ Lagrangian condition transfer along this isometry by
 * `TauCeti/LinearAlgebra/IntegralLattice/Discriminant/Operations.lean`: the binary orthogonal-sum
   isometries `A_(L ⊥ M) ≃ A_L × A_M` (`discriminantBilinearIsometryOrthogonalSum` and
   `discriminantQuadraticIsometryOrthogonalSum`). The isometries of this file are their analogue
-  for the `ι`-fold orthogonal sum `L^ι`, and their proofs are adapted from there.
+  for the `ι`-fold orthogonal sum `L^ι`.
 -/
 
 public section
@@ -197,14 +197,6 @@ theorem discriminantBilinearIsometryCoordinatePower_apply [L.IsNondegenerate]
       L.discriminantGroupCoordinatePowerEquiv ι x :=
   (rfl)
 
-/-- The coordinate-power discriminant-bilinear isometry maps a representative to the family of
-classes of its coordinates. -/
-theorem discriminantBilinearIsometryCoordinatePower_mk [L.IsNondegenerate]
-    (x : (L.coordinatePower ι).dualCarrier) :
-    L.discriminantBilinearIsometryCoordinatePower ι (Submodule.Quotient.mk x) =
-      fun i ↦ Submodule.Quotient.mk (L.coordinatePowerDualCarrierEquiv ι x i) :=
-  L.discriminantGroupCoordinatePowerEquiv_mk ι x
-
 /-! ## The discriminant quadratic module -/
 
 /-- For an even lattice `L`, the coordinate-power equivalence of discriminant groups is an
@@ -248,14 +240,6 @@ theorem discriminantQuadraticIsometryCoordinatePower_apply [L.IsNondegenerate] (
     L.discriminantQuadraticIsometryCoordinatePower ι hL x =
       L.discriminantGroupCoordinatePowerEquiv ι x :=
   (rfl)
-
-/-- The coordinate-power discriminant-quadratic isometry maps a representative to the family of
-classes of its coordinates. -/
-theorem discriminantQuadraticIsometryCoordinatePower_mk [L.IsNondegenerate] (hL : L.IsEven)
-    (x : (L.coordinatePower ι).dualCarrier) :
-    L.discriminantQuadraticIsometryCoordinatePower ι hL (Submodule.Quotient.mk x) =
-      fun i ↦ Submodule.Quotient.mk (L.coordinatePowerDualCarrierEquiv ι x i) :=
-  L.discriminantGroupCoordinatePowerEquiv_mk ι x
 
 /-- Forgetting the quadratic maps from the coordinate-power discriminant isometry recovers the
 coordinate-power discriminant-bilinear isometry. -/
