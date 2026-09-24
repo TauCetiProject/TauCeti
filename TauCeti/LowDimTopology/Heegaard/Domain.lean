@@ -24,8 +24,10 @@ its `α`- and `β`-curve. Orient every attaching curve. The intersection points 
 `α_i` cut it into arcs, one starting at each point `p` on `α_i` and ending at the next point
 along `α_i`, `alphaNext p`; the points on `α_i` form a single cycle of `alphaNext`. Each such
 arc has a region on its left and one on its right. The `β`-curves are recorded in the same way,
-and each basepoint lies in a region. Every attaching curve is assumed to meet the other family,
-so that it is subdivided into arcs; this holds as soon as the diagram has a generator.
+with compatible region labels at each crossing and every region incident to an arc unless there
+are no intersection arcs. Each basepoint lies in a region. Every attaching curve is assumed to
+meet the other family, so that it is subdivided into arcs; this holds as soon as the diagram has
+a generator.
 
 In these terms the `α`-part of the boundary of a domain `D` is the `1`-chain on `α`-arcs whose
 coefficient on the arc starting at `p` is `D (alphaLeft p) - D (alphaRight p)`, and the boundary
@@ -54,6 +56,8 @@ differential of `HF̂` is a finite count.
 
 ## Main results
 
+* `TauCeti.HeegaardRegionSystem.boundary_boundary_eq_zero`: the full boundary of every region
+  chain is a cycle.
 * `TauCeti.HeegaardRegionSystem.alphaArcBoundary_eq_zero_iff`: a `1`-chain on the `α`-arcs is a
   cycle exactly when it is a combination of whole `α`-curves.
 * `TauCeti.HeegaardRegionSystem.mem_periodicDomains_iff_exists_curves`: a domain is periodic
@@ -89,7 +93,8 @@ universe u v w
 intersection data it records, for each intersection point `p`, the next intersection point along
 the oriented `α`- and `β`-curve through `p`, the regions to the left and to the right of the arcs
 starting at `p`, and the region containing each basepoint. The points on each curve form a single
-cycle of the corresponding successor permutation. -/
+cycle of the corresponding successor permutation. Region labels agree around each crossing, and
+each region is incident to an arc (apart from the one-region case with no arcs). -/
 @[ext]
 structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Basepoint : Type w)
     extends HeegaardIntersectionSystem n Point where
@@ -109,6 +114,24 @@ structure HeegaardRegionSystem (n : ℕ) (Point : Type u) (Region : Type v) (Bas
   betaLeft : Point → Region
   /-- The region to the right of the `β`-arc starting at an intersection point. -/
   betaRight : Point → Region
+  /-- The diagram has a complementary region. -/
+  regionNonempty : Nonempty Region
+  /-- The four region labels around each transverse crossing agree on the `α`- and `β`-arc
+  sides. The two alternatives are the two possible local crossing orientations. -/
+  crossingCompatible (p : Point) :
+    (alphaLeft (alphaNext.symm p) = betaLeft p ∧
+      alphaRight (alphaNext.symm p) = betaLeft (betaNext.symm p) ∧
+      alphaLeft p = betaRight p ∧
+      alphaRight p = betaRight (betaNext.symm p)) ∨
+    (alphaLeft (alphaNext.symm p) = betaRight (betaNext.symm p) ∧
+      alphaRight (alphaNext.symm p) = betaRight p ∧
+      alphaLeft p = betaLeft (betaNext.symm p) ∧
+      alphaRight p = betaLeft p)
+  /-- Every region meets an arc, except for the unique region of a diagram with no
+  intersection arcs. -/
+  regionCovered (r : Region) :
+    (∃ p : Point, alphaLeft p = r ∨ alphaRight p = r ∨
+      betaLeft p = r ∨ betaRight p = r) ∨ (IsEmpty Point ∧ Subsingleton Region)
   /-- The region containing a basepoint. -/
   basepoint : Basepoint → Region
 
@@ -190,6 +213,19 @@ theorem alphaArcBoundary_apply (c : Point → ℤ) (q : Point) :
 theorem betaArcBoundary_apply (c : Point → ℤ) (q : Point) :
     H.betaArcBoundary c q = c (H.betaNext.symm q) - c q :=
   (rfl)
+
+/-- The full boundary of a region chain is a cycle. -/
+theorem boundary_boundary_eq_zero (D : Region → ℤ) :
+    H.alphaArcBoundary (H.alphaBoundary D) +
+      H.betaArcBoundary (H.betaBoundary D) = 0 := by
+  funext p
+  simp only [Pi.add_apply, Pi.zero_apply, alphaArcBoundary_apply, betaArcBoundary_apply,
+    alphaBoundary_apply, betaBoundary_apply]
+  rcases H.crossingCompatible p with ⟨h₁, h₂, h₃, h₄⟩ | ⟨h₁, h₂, h₃, h₄⟩
+  · rw [h₁, h₂, h₃, h₄]
+    abel
+  · rw [h₁, h₂, h₃, h₄]
+    abel
 
 /-- A `1`-chain on the `α`-arcs is a cycle exactly when it is a combination of whole `α`-curves,
 that is, constant along each `α`-curve. -/

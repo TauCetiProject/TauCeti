@@ -83,6 +83,18 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   alphaRight := ![0, 2]
   betaLeft := ![0, 2]
   betaRight := ![1, 0]
+  regionNonempty := inferInstance
+  crossingCompatible := by
+    intro p
+    fin_cases p
+    · left
+      simp
+    · right
+      simp
+  regionCovered := by
+    intro s
+    left
+    fin_cases s <;> simp [Fin.exists_fin_two]
   basepoint _ := r
 
 /-- The generator of `circleTimesSphere r` at the intersection point `a`. -/
