@@ -38,6 +38,7 @@ abbrev f4ShortRootCarrierCoordinateHopfAlgebra :=
   CommHopfAlgCat.quotient H₂₆
     (CommHopfAlgCat.commonKernelHopfIdeal F4ShortRoot.PrimeField.generator)
 
+/-- The ambient adjoint cotangent comodule used before corestricting to the F4 carrier. -/
 local instance f4ShortRootAmbientCotangentComodule :
     Comodule 𝔽₂ H₂₆ f4ShortRootCotangentDual :=
   Derivation.adjointComodule (R := 𝔽₂) (H := H₂₆)
