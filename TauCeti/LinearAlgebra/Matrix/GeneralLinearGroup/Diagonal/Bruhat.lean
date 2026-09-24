@@ -43,6 +43,8 @@ its normalizer is all of `GL₂` and the displayed rank-one intersection would i
 * `TauCeti.UpperTriangularGroup.inf_normalizer_diagonalTorus_eq`: in every dimension, the
   intersection of the upper-triangular subgroup with the diagonal normalizer is the diagonal
   torus.
+* `TauCeti.UpperTriangularGroup.permutationGL_inv_mul_mul_permutationGL_mem_iff`: when a
+  conjugate by a permutation matrix is upper triangular.
 
 ## References
 
@@ -121,6 +123,15 @@ theorem diagonalTorus_le :
   intro i j hji
   rw [diagGL_coe]
   exact Matrix.diagonal_apply_ne _ (ne_of_gt hji)
+
+/-- Conjugating by the permutation matrix of `σ` gives an upper-triangular matrix exactly when
+the entries of `g` at `(σ i, σ j)` vanish for all `j < i`. -/
+theorem permutationGL_inv_mul_mul_permutationGL_mem_iff {ι : Type*} [Fintype ι]
+    [LinearOrder ι] (σ : Equiv.Perm ι) (g : GL ι R) :
+    (permutationGL (k := R) σ)⁻¹ * g * permutationGL (k := R) σ ∈ upperTriangularGroup ι R ↔
+      ∀ ⦃i j : ι⦄, j < i → (g : Matrix ι ι R) (σ i) (σ j) = 0 := by
+  rw [mem_iff, Matrix.IsUpperTriangular, Matrix.BlockTriangular]
+  simp only [id, coe_permutationGL_inv_mul_mul_permutationGL_apply]
 
 end UpperTriangularGroup
 
