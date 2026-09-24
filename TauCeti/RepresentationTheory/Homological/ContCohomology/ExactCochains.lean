@@ -89,6 +89,7 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
 
 /-- The level-`(n + 1)` map of the coinduced resolution is postcomposition with the level-`n`
 map. -/
+@[simp]
 theorem resolutionMap_id_succ_apply (f : X ⟶ Y) (n : ℕ)
     (F : C(G, (TopRep.resolutionX X n).V)) (x : G) :
     ((resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom F :
@@ -154,6 +155,7 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
 
 /-- A homogeneous cochain is carried by the cochain map to its image under the level map of the
 coinduced resolution. -/
+@[simp]
 theorem coe_cochainsMap_id_f_hom_apply (f : X ⟶ Y) (n : ℕ)
     (v : (TopRep.resolutionX X (n + 1)).ρ.invariants) :
     Subtype.val (((cochainsMap (ContinuousMonoidHom.id G) f).f n).hom v) =
@@ -277,6 +279,8 @@ theorem cochainsMap_id_f_surjective_of_section (g : Y ⟶ Z) (σ : C(G × Z.V, Y
           (TopRep.resolutionX Y n).ρ k (L (k⁻¹ * y)) :=
         resolutionX_succ_ρ_apply_apply Y n k L y
       _ = levelLift σ n (y, F₀ y) := by
+        -- The invariant condition is stated for the successor resolution; unfold its action
+        -- to apply the equivariance rule for `levelLift` at level `n`.
         change (TopRep.resolutionX Y n).ρ k
           (levelLift σ n (k⁻¹ * y, F₀ (k⁻¹ * y))) = levelLift σ n (y, F₀ y)
         rw [ρ_levelLift σ hσ', mul_inv_cancel_left]
@@ -341,12 +345,15 @@ theorem continuousCochainsShortExact_g_surjective [LocallyCompactSpace G]
       ((continuous_of_discreteTopology (f := s)).comp (continuous_fst.inv.smul continuous_snd))⟩
   refine cochainsMap_id_f_surjective_of_section _ σ (fun h (c : C) ↦ ?_)
     (fun k h (c : C) ↦ ?_) n
-  · change S.toShortComplex.g.hom (h • s (h⁻¹ • c)) = c
+  · -- Unfold `σ` to use the public rule identifying the short-complex projection with `proj`.
+    change S.toShortComplex.g.hom (h • s (h⁻¹ • c)) = c
     rw [S.toShortComplex_g_hom_apply]
     rw [S.proj_equivariant, Function.surjInv_eq S.proj_surjective, smul_inv_smul]
-  · change (S.toShortComplex.X₂).ρ k (σ (h, c)) =
+  · -- Unfold the bundled coefficient actions before reducing the equivariance identity.
+    change (S.toShortComplex.X₂).ρ k (σ (h, c)) =
       σ (k * h, (S.toShortComplex.X₃).ρ k c)
     rw [S.toShortComplex_X₂_ρ_apply, S.toShortComplex_X₃_ρ_apply]
+    -- Both sides now have the original coefficient carriers, so unfold `σ` to compare actions.
     change k • (h • s (h⁻¹ • c)) = (k * h) • s ((k * h)⁻¹ • (k • c))
     rw [mul_inv_rev, mul_smul, mul_smul, inv_smul_smul]
 
