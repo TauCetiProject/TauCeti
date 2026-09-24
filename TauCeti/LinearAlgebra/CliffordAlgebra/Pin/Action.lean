@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
 
 /-!
