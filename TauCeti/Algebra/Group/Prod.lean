@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Prod
 
 /-!
-# Homomorphisms out of a product of monoids and additive equivalences of products
+# Homomorphisms out of a product of monoids
 
 A product of two monoids is their coproduct in commutative monoids: a homomorphism
 `M × N →* P` with `P` commutative is the same data as a pair of homomorphisms `M →* P` and
@@ -16,9 +16,6 @@ A product of two monoids is their coproduct in commutative monoids: a homomorphi
 separately, as `MonoidHom.coprod` and composition with `MonoidHom.inl` and `MonoidHom.inr`,
 together with the fact that they are mutually inverse; this file packages them as the
 corresponding equivalence.
-
-The file also provides an additive equivalence between functions into a product and pairs of
-function spaces, packaging the underlying `Equiv` with pointwise addition.
 
 ## Main definitions
 
@@ -57,33 +54,3 @@ theorem coprodEquiv_symm_apply (f : M × N →* P) :
     coprodEquiv.symm f = (f.comp (inl M N), f.comp (inr M N)) := (rfl)
 
 end MonoidHom
-
-namespace TauCeti
-
-namespace AddEquiv
-
-/-- Functions into products are additively equivalent to products of function spaces. -/
-def piProd {ι : Type*} (B C : ι → Type*)
-    [∀ i, AddMonoid (B i)] [∀ i, AddMonoid (C i)] :
-    (∀ i, B i × C i) ≃+ (∀ i, B i) × (∀ i, C i) :=
-  { Equiv.arrowProdEquivProdArrow ι B C with map_add' := fun _ _ ↦ rfl }
-
-/-- `piProd` maps a function to its two component functions. -/
-@[simp]
-theorem piProd_apply (B C : ι → Type*) [∀ i, AddMonoid (B i)] [∀ i, AddMonoid (C i)]
-    (f : ∀ i, B i × C i) : piProd B C f = (fun i ↦ (f i).1, fun i ↦ (f i).2) :=
-  Equiv.arrowProdEquivProdArrow_apply ι B C f
-
-/-- The inverse of `piProd` pairs component functions pointwise. -/
-@[simp]
-theorem piProd_symm_apply (B C : ι → Type*) [∀ i, AddMonoid (B i)]
-    [∀ i, AddMonoid (C i)] (f : (∀ i, B i) × (∀ i, C i)) :
-    (piProd B C).symm f = fun i ↦ (f.1 i, f.2 i) :=
-  by
-    apply funext
-    intro i
-    exact Equiv.arrowProdEquivProdArrow_symm_apply ι B C f i
-
-end AddEquiv
-
-end TauCeti

@@ -31,6 +31,18 @@ private def zmodTorsionByEquivHom (p k : ℕ) :
     exact (zmultiplesHom_apply _ P (p : ℤ)).trans <|
       (natCast_zsmul P p).trans (AddSubgroup.torsionBy.nsmul P)⟩
 
+/-- The underlying homomorphism multiplies a residue by `p ^ k`. -/
+private theorem zmodTorsionByEquivHom_apply_coe (p k : ℕ) [NeZero p] (x : ZMod p) :
+    ((zmodTorsionByEquivHom p k x :
+      AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) : ZMod (p ^ (k + 1))) =
+      (x.val * p ^ k : ℕ) := by
+  conv_lhs => rw [← ZMod.natCast_zmod_val x]
+  unfold zmodTorsionByEquivHom
+  dsimp only
+  conv_lhs => rw [← Int.cast_natCast x.val]
+  rw [ZMod.lift_coe]
+  simp [zmultiplesHom_apply]
+
 /-- The subgroup of `ZMod (p ^ (k + 1))` killed by `p` is additively equivalent to `ZMod p`. -/
 noncomputable def zmodTorsionByEquiv (p k : ℕ) [NeZero p] :
     ZMod p ≃+ AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ) := by
@@ -62,35 +74,22 @@ noncomputable def zmodTorsionByEquiv (p k : ℕ) [NeZero p] :
         simpa only [pow_succ, mul_comm (p ^ k)] using hx
       exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne p))).mp hx'
     refine ⟨(((x.1.val / p ^ k : ℕ) : ℤ) : ZMod p), Subtype.ext ?_⟩
-    dsimp only [f, zmodTorsionByEquivHom]
-    rw [ZMod.lift_coe]
-    simp only [zmultiplesHom_apply]
-    rw [natCast_zsmul]
-    -- Expose the ambient equality, since the preceding expression is an equality of subtypes.
-    change (x.1.val / p ^ k) • (p ^ k : ZMod (p ^ (k + 1))) = x.1
-    rw [nsmul_eq_mul]
-    rw [← Nat.cast_pow, ← Nat.cast_mul, Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
-  exact
-    { toFun := f
-      invFun := fun x ↦ Classical.choose (hf_surj x)
-      left_inv := fun x ↦ hf_inj (by exact Classical.choose_spec (hf_surj (f x)))
-      right_inv := fun x ↦ Classical.choose_spec (hf_surj x)
-      map_add' := fun x y ↦ f.map_add x y }
+    dsimp only [f]
+    simp only [Int.cast_natCast]
+    rw [zmodTorsionByEquivHom_apply_coe]
+    have hlt : x.1.val / p ^ k < p := by
+      apply (Nat.div_lt_iff_lt_mul (pow_pos (Nat.pos_of_ne_zero (NeZero.ne p)) k)).2
+      simpa only [pow_succ, mul_comm] using x.1.val_lt
+    rw [ZMod.val_natCast_of_lt hlt]
+    rw [Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
+  exact AddEquiv.ofBijective f ⟨hf_inj, hf_surj⟩
 
 /-- `zmodTorsionByEquiv` sends a residue to its multiple by `p ^ k` in the ambient residue ring. -/
 @[simp]
 theorem zmodTorsionByEquiv_apply_coe (p k : ℕ) [NeZero p] (x : ZMod p) :
     ((zmodTorsionByEquiv p k x : ZMod (p ^ (k + 1))) : ZMod (p ^ (k + 1))) =
-      (x.val * p ^ k : ℕ) := by
-  -- The equivalence uses `zmodTorsionByEquivHom` as its forward map.
-  change ((zmodTorsionByEquivHom p k x :
-    AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) : ZMod (p ^ (k + 1))) = _
-  conv_lhs => rw [← ZMod.natCast_zmod_val x]
-  unfold zmodTorsionByEquivHom
-  dsimp only
-  conv_lhs => rw [← Int.cast_natCast x.val]
-  rw [ZMod.lift_coe]
-  simp [zmultiplesHom_apply]
+      (x.val * p ^ k : ℕ) :=
+  zmodTorsionByEquivHom_apply_coe p k x
 
 /-- Equality with the image of a chosen residue under `zmodTorsionByEquiv` is characterized in
 the ambient residue ring. -/

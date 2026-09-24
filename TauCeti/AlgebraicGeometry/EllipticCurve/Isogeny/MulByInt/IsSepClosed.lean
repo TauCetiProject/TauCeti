@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.IsSepClosed
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.TorsionRank
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.TorsionSurjective
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Rank
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Surjective
+import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
 # Torsion over a separably closed field
@@ -21,6 +22,7 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
 
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny` and `WeierstrassCurve.Affine.natCard_torsionBy`:
   `#E[n] = n ²`, in the kernel and the torsion-subgroup forms.
+* `WeierstrassCurve.natCard_torsionBy_self`: the same count over the original field.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`,
   `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
   `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: `E[ℓ] ≅ (ZMod ℓ) ²` at a prime.
@@ -109,5 +111,21 @@ theorem exists_zsmul_eq_of_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0)
       (by push_cast; exact pow_ne_zero 2 hchar) hP) hchar hT
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {K : Type*} [Field K] [IsSepClosed K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+open scoped Classical in
+/-- The `n`-torsion over a separably closed original field has order `n.natAbs ^ 2` when `n`
+is invertible in that field. -/
+theorem natCard_torsionBy_self {n : ℤ} (hn : (n : K) ≠ 0) :
+    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) = n.natAbs ^ 2 := by
+  let eSelf : (W.toAffine⁄K).toAffine.Point ≃+ W.toAffine.Point :=
+    AddEquiv.cast (M := fun V : Affine K ↦ V.Point) W.toAffine.baseChange_self
+  rw [← Nat.card_congr (AddEquiv.torsionByCongr eSelf n).toEquiv]
+  exact W.toAffine.natCard_torsionBy hn
+
+end WeierstrassCurve
 
 end

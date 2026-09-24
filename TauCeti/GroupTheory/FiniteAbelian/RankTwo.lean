@@ -25,12 +25,12 @@ explicit generators.  It determines both the number of cyclic factors and their 
 
 ## Main result
 
-* `AddCommGroup.nonempty_addEquiv_prod_zmod_primePow`: the rank-two characterisation.
+* `TauCeti.AddCommGroup.nonempty_addEquiv_prod_zmod_primePow`: the rank-two characterisation.
 -/
 
 public section
 
-namespace AddCommGroup
+namespace TauCeti.AddCommGroup
 
 open scoped DirectSum
 
@@ -47,6 +47,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
   classical
   obtain ⟨ι, hι, n, hn, ⟨e⟩⟩ := AddCommGroup.equiv_directSum_zmod_of_finite' G
   let E : G ≃+ (∀ i : ι, ZMod (n i)) := e.trans (DirectSum.addEquivProd _)
+  -- Each cyclic factor has order dividing the exponent of `G`.
   have hn_dvd (i : ι) : n i ∣ p ^ k := by
     let x : (j : ι) → ZMod (n j) := Function.update 0 i 1
     have hx : p ^ k • x = 0 := by
@@ -63,6 +64,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
   have hcard_prod : ∏ i, n i = p ^ (2 * k) := by
     rw [← hcard, Nat.card_congr E.toEquiv, Nat.card_pi]
     simp only [Nat.card_zmod]
+  -- Every nontrivial cyclic factor contributes exactly `p` points to the first torsion layer.
   have hcard_torsion_pi :
       Nat.card (AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ)) = p ^ Fintype.card ι := by
     rw [Nat.card_congr (TauCeti.AddSubgroup.torsionByPiEquiv (fun i ↦ ZMod (n i)) (p : ℤ)).toEquiv,
@@ -78,23 +80,10 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
         simpa only [Nat.card_zmod] using
           Nat.card_congr (TauCeti.zmodTorsionByEquiv p j).symm.toEquiv
       _ = p ^ Fintype.card ι := by simp
-  have hmap : (AddSubgroup.torsionBy G (p : ℤ)).map E.toAddMonoidHom =
-      AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ) := by
-    ext x
-    rw [AddSubgroup.mem_map_equiv]
-    -- Membership in both torsion subgroups unfolds to the displayed annihilation equations.
-    change (p : ℤ) • E.symm x = 0 ↔ (p : ℤ) • x = 0
-    constructor
-    · intro hx
-      simpa using congrArg E hx
-    · intro hx
-      apply E.injective
-      simpa using hx
   have hιcard : Fintype.card ι = 2 := by
     have ht : p ^ Fintype.card ι = p ^ 2 := by
-      rw [← hcard_torsion_pi, ← hcardp, ← hmap]
-      exact Nat.card_congr
-        (AddSubgroup.equivMapOfInjective _ E.toAddMonoidHom E.injective).symm.toEquiv
+      rw [← hcard_torsion_pi, ← hcardp]
+      exact Nat.card_congr (AddEquiv.torsionByCongr E (p : ℤ)).symm.toEquiv
     exact Nat.pow_right_injective hp.two_le ht
   have hsum : ∑ i, a i = 2 * k := by
     apply Nat.pow_right_injective hp.two_le
@@ -116,6 +105,6 @@ theorem nonempty_addEquiv_prod_zmod_primePow [Finite G] {p k : ℕ} (hp : p.Prim
       (AddEquiv.arrowCongr r (AddEquiv.refl (ZMod (p ^ k)))) |>.trans
       (LinearEquiv.finTwoArrow ℕ (ZMod (p ^ k))).toAddEquiv⟩
 
-end AddCommGroup
+end TauCeti.AddCommGroup
 
 end
