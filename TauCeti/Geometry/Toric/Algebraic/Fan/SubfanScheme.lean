@@ -33,7 +33,7 @@ namespace Fan
 
 /-- On every affine cone chart, the map of toric schemes induced by a subfan inclusion is the
 ordinary inclusion of that chart into the ambient fan scheme. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem affineToricChartι_comp_subfanInclusion_algebraicMap
     (hΦ : Φ.IsRegular) (σ : (Φ.subfan S hS hface).cones) :
     (Φ.subfan S hS hface).affineToricChartι
@@ -41,11 +41,8 @@ theorem affineToricChartι_comp_subfanInclusion_algebraicMap
       (Φ.subfanInclusion S hS hface).algebraicMap (hΦ.subfan S hS hface) hΦ =
       Φ.affineToricChartι hΦ ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ := by
   let f := Φ.subfanInclusion S hS hface
-  have hσleast : σ.1.IsFaceOf (f.leastCone σ.2) :=
-    Φ.isFaceOf_of_le (f.leastCone_mem σ.2)
-      (hS (by simpa only [subfan_cones] using σ.2)) (by
-        simpa only [f, subfanInclusion_realMap, PointedCone.map_id] using
-          f.map_le_leastCone σ.2)
+  have hσleast : σ.1.IsFaceOf (f.leastCone σ.2) := by
+    rw [show f.leastCone σ.2 = σ.1 from subfanInclusion_leastCone Φ S hS hface σ]
   have hmap : f.affineToricChartMap σ =
       faceAffineToricSchemeMap Φ.lattice hσleast := by
     rw [FanHom.affineToricChartMap_def, faceAffineToricSchemeMap_eq_affineToricSchemeMap]

@@ -420,19 +420,21 @@ variable (Φ : Fan i) (S : Set (PointedCone ℝ V)) (hS : S ⊆ Φ.cones)
 
 /-- The inclusion of a subfan in its ambient fan, as a fan morphism with identity lattice and
 real maps. -/
-def subfanInclusion : FanHom (Φ.subfan S hS hface) Φ where
-  latticeMap := AddMonoidHom.id N
-  realMap := LinearMap.id
-  map_lattice _ := rfl
-  map_cone σ hσ := ⟨σ, hS (by simpa only [subfan_cones] using hσ), by simp⟩
+noncomputable def subfanInclusion : FanHom (Φ.subfan S hS hface) Φ :=
+  FanHom.ofLatticeMap (Φ.subfan S hS hface) Φ (AddMonoidHom.id N) fun σ hσ ↦ by
+    rw [(Φ.subfan S hS hface).lattice.extend_id, PointedCone.map_id]
+    exact ⟨σ, hS (by simpa only [subfan_cones] using hσ), le_rfl⟩
 
 @[simp]
 theorem subfanInclusion_latticeMap :
-    (Φ.subfanInclusion S hS hface).latticeMap = AddMonoidHom.id N := (rfl)
+    (Φ.subfanInclusion S hS hface).latticeMap = AddMonoidHom.id N := by
+  rw [subfanInclusion, FanHom.ofLatticeMap_latticeMap]
 
 @[simp]
 theorem subfanInclusion_realMap :
-    (Φ.subfanInclusion S hS hface).realMap = LinearMap.id := (rfl)
+    (Φ.subfanInclusion S hS hface).realMap = LinearMap.id := by
+  rw [subfanInclusion, FanHom.ofLatticeMap_realMap,
+    (Φ.subfan S hS hface).lattice.extend_id]
 
 /-- The least ambient cone containing a cone of a subfan is that cone itself. -/
 @[simp]
