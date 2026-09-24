@@ -391,6 +391,7 @@ theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
 
 /-- On a pure tensor, base change of an orthogonal automorphism applies the automorphism to the
 second tensor factor. -/
+@[simp]
 theorem orthogonalGroupBaseChange_apply_tmul (Q : _root_.QuadraticForm R M)
     (g : orthogonalGroup Q) (a : A) (m : M) :
     ((orthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
@@ -400,6 +401,7 @@ theorem orthogonalGroupBaseChange_apply_tmul (Q : _root_.QuadraticForm R M)
 
 /-- The determinant of a base-changed orthogonal automorphism is the image of its original
 determinant. -/
+@[simp]
 theorem det_orthogonalGroupBaseChange [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : orthogonalGroup Q) :
     LinearEquiv.det (orthogonalGroupBaseChange (A := A) Q g :
@@ -415,8 +417,8 @@ theorem orthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Flat R M]
   apply Subtype.ext
   apply LinearEquiv.toLinearMap_injective
   apply LinearMap.baseChangeHom_injective (R := R) (S := A) (M := M) (N := M)
-  change (g : M ≃ₗ[R] M).toLinearMap.baseChange A = (h : M ≃ₗ[R] M).toLinearMap.baseChange A
-  simpa only [coe_orthogonalGroupBaseChange, LinearEquiv.coe_baseChange] using
+  simpa only [LinearMap.baseChangeHom_apply, coe_orthogonalGroupBaseChange,
+    LinearEquiv.coe_baseChange] using
     congrArg LinearEquiv.toLinearMap (congrArg Subtype.val hgh)
 
 /-- Base change preserves the determinant-one condition, giving the corresponding map on special
@@ -447,18 +449,25 @@ theorem coe_specialOrthogonalGroupBaseChange [Module.Free R M] [Module.Finite R 
 determinant-one subgroup. -/
 theorem specialOrthogonalGroupBaseChange_to_orthogonalGroup [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
-    (specialOrthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
-      (orthogonalGroupBaseChange (A := A) Q
-        ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩ : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) := by
-  rw [coe_specialOrthogonalGroupBaseChange, coe_orthogonalGroupBaseChange]
+    Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange A))
+        (specialOrthogonalGroupBaseChange (A := A) Q g) =
+      orthogonalGroupBaseChange (A := A) Q
+        (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g) := by
+  rfl
 
 /-- On pure tensors, base change of a special orthogonal automorphism acts on the second factor. -/
+@[simp]
 theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Finite R M]
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) (a : A) (m : M) :
     ((specialOrthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
       a ⊗ₜ (g : M ≃ₗ[R] M) m := by
-  rw [coe_specialOrthogonalGroupBaseChange]
-  exact LinearEquiv.baseChange_tmul R A M M a m
+  have h := congrArg (fun x : orthogonalGroup (Q.baseChange A) =>
+    (x : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m))
+    (specialOrthogonalGroupBaseChange_to_orthogonalGroup (A := A) Q g)
+  change ((Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange A))
+    (specialOrthogonalGroupBaseChange (A := A) Q g) : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) (a ⊗ₜ m)) =
+      a ⊗ₜ (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g : M ≃ₗ[R] M) m
+  simpa only [orthogonalGroupBaseChange_apply_tmul] using h
 
 /-- Scalar extension of special orthogonal automorphisms is injective whenever the extension is
 faithful and the original module is flat. -/
@@ -466,12 +475,24 @@ theorem specialOrthogonalGroupBaseChange_injective [FaithfulSMul R A] [Module.Fl
     [Module.Free R M] [Module.Finite R M] (Q : _root_.QuadraticForm R M) :
     Function.Injective (specialOrthogonalGroupBaseChange (A := A) Q) := by
   intro g h hgh
+  have hO : Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g =
+      Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) h :=
+    orthogonalGroupBaseChange_injective (A := A) Q <| by
+      calc
+        orthogonalGroupBaseChange (A := A) Q
+            (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g) =
+            Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange A))
+              (specialOrthogonalGroupBaseChange (A := A) Q g) :=
+          (specialOrthogonalGroupBaseChange_to_orthogonalGroup (A := A) Q g).symm
+        _ = Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange A))
+              (specialOrthogonalGroupBaseChange (A := A) Q h) :=
+          congrArg (Subgroup.inclusion
+            (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange A))) hgh
+        _ = orthogonalGroupBaseChange (A := A) Q
+            (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) h) :=
+          specialOrthogonalGroupBaseChange_to_orthogonalGroup (A := A) Q h
   apply Subtype.ext
-  apply LinearEquiv.toLinearMap_injective
-  apply LinearMap.baseChangeHom_injective (R := R) (S := A) (M := M) (N := M)
-  change (g : M ≃ₗ[R] M).toLinearMap.baseChange A = (h : M ≃ₗ[R] M).toLinearMap.baseChange A
-  simpa only [coe_specialOrthogonalGroupBaseChange, LinearEquiv.coe_baseChange] using
-    congrArg LinearEquiv.toLinearMap (congrArg Subtype.val hgh)
+  exact congrArg (fun x : orthogonalGroup Q => (x : M ≃ₗ[R] M)) hO
 
 end QuadraticMap
 
