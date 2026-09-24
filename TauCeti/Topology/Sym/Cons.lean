@@ -91,13 +91,14 @@ theorem isClosed_basepointDivisor [T1Space α] (a : α) :
     IsClosed (basepointDivisor a : Set (Sym α n)) := by
   cases n with
   | zero =>
-    rw [show basepointDivisor a = ∅ by
+    have h_empty : (basepointDivisor a : Set (Sym α 0)) = ∅ := by
       ext s
       constructor
       · intro hs
         rw [_root_.Sym.eq_nil_of_card_zero s, mem_basepointDivisor] at hs
         exact (_root_.Sym.notMem_nil a hs).elim
-      · simp]
+      · simp
+    rw [h_empty]
     exact isClosed_empty
   | succ n =>
     rw [← range_cons a]
