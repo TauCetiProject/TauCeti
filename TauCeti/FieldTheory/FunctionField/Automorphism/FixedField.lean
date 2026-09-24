@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.RingTheory.Invariant.Basic
 
 /-!
 # Fixed fields of finite automorphism groups of function fields
@@ -16,7 +17,8 @@ is again an algebraic function field over `k`. The extension of the fixed field 
 and its Galois group is the acting group. This is the field-theoretic input to applying
 Riemann--Hurwitz to a quotient by a finite automorphism group.
 
-Algebraic-extension descent is `TauCeti.IsFunctionField.of_isAlgebraic_top`.
+Algebraic-extension descent is `TauCeti.IsFunctionField.of_isAlgebraic_top`, applied via the
+integrality of `F` over the fixed field (`Algebra.IsInvariant.isIntegral`).
 `FixedPoints.finrank_eq_card` gives the degree,
 `IsGalois.of_fixed_field` gives the Galois extension, and
 `FixedPoints.toAlgAutMulEquiv` identifies the Galois group.
@@ -39,10 +41,12 @@ with `H`. -/
 theorem IsFunctionField.fixedField (hF : IsFunctionField k F)
     (H : Subgroup (F ≃ₐ[k] F)) [Finite H] :
     IsFunctionField k (IntermediateField.fixedField H) := by
-  -- `fixedField H` is definitionally `FixedPoints.subfield H F`, which carries Mathlib's
-  -- finite-dimensionality instance for finite `H`.
-  have : FiniteDimensional (IntermediateField.fixedField H) F :=
-    inferInstanceAs (FiniteDimensional (FixedPoints.subfield H F) F)
+  -- Every `H`-fixed element lies in `fixedField H`, so `F` is integral over it.
+  have : Algebra.IsInvariant (IntermediateField.fixedField H) F H :=
+    ⟨fun x hx ↦ ⟨⟨x, (IntermediateField.mem_fixedField_iff H x).2 fun σ hσ ↦ by
+      simpa only [Subgroup.mk_smul, AlgEquiv.smul_def] using hx ⟨σ, hσ⟩⟩,
+      IntermediateField.algebraMap_apply _ _⟩⟩
+  have := Algebra.IsInvariant.isIntegral (IntermediateField.fixedField H) F H
   exact hF.of_isAlgebraic_top (E := IntermediateField.fixedField H)
 
 end TauCeti
