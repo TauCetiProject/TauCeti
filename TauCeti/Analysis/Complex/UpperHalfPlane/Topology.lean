@@ -17,6 +17,10 @@ which it approaches infinity is nontrivial and limits taken along it are unique.
 For a function conjugation-symmetric near infinity, decay along the upper half-plane implies
 decay along the whole plane, provided it is continuous at sufficiently distant real points.
 
+A continuous injection of the closed upper half-plane sends every real point to the frontier of
+the image of the open half-plane.  The inversion `w ↦ -w⁻¹` preserves the closed upper
+half-plane.
+
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
 
@@ -25,6 +29,8 @@ period exactly when the original function is invariant under the corresponding t
 * `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
 * `TauCeti.cobounded_inf_principal_upperHalfPlaneSet_neBot`.
 * `TauCeti.tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet`.
+* `TauCeti.mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero`.
+* `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 
 ## References
@@ -101,6 +107,27 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
   · exact hupper z hz hi
   · have h := hupper ((starRingEnd ℂ) z) (by simpa using hz) (by simpa using hi.le)
     simpa only [hzconj, norm_conj] using h
+
+/-- A continuous injection of the closed upper half-plane sends every real point to the frontier
+of the image of the open upper half-plane. -/
+theorem mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero {f : ℂ → ℂ}
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) {z : ℂ}
+    (hz : z.im = 0) : f z ∈ frontier (f '' upperHalfPlaneSet) := by
+  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
+  have hz0 : z ∈ {z : ℂ | 0 ≤ z.im} := hz.symm.le
+  refine ⟨((hfc z hz0).mono hH0).mem_closure_image ?_, fun h => ?_⟩
+  · simp [upperHalfPlaneSet, hz]
+  · obtain ⟨y, hy, hyz⟩ := interior_subset h
+    have hyz' : y = z := hfi (hH0 hy) hz0 hyz
+    simp only [upperHalfPlaneSet, mem_ofPred_eq, hyz', hz, lt_self_iff_false] at hy
+
+/-- The inversion `w ↦ -w⁻¹` sends `w` into the closed upper half-plane exactly when `w` lies in
+it. -/
+theorem im_neg_inv_nonneg {w : ℂ} : 0 ≤ (-w⁻¹).im ↔ 0 ≤ w.im := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · rw [show (-w⁻¹).im = w.im / normSq w by simp [neg_div], le_div_iff₀ (normSq_pos.mpr hw),
+      zero_mul]
 
 end TauCeti
 

@@ -61,60 +61,40 @@ the bounding line. -/
 private theorem im_div_eq_zero_of_mem_frontier {w q b z : ℂ} {ρ : ℝ}
     (hU : ∀ y ∈ ball w ρ, (y ∈ U ↔ 0 < ((y - q) / b).im)) (hz : z ∈ ball w ρ)
     (hzU : z ∈ frontier U) : ((z - q) / b).im = 0 := by
-  have hφ : Continuous fun y : ℂ => ((y - q) / b).im := by fun_prop
-  refine le_antisymm (not_lt.mp fun hpos => hzU.2 ?_) ?_
-  · -- a point strictly inside the half-plane is an interior point of `U`
-    refine mem_interior_iff_mem_nhds.mpr ?_
-    filter_upwards [isOpen_ball.mem_nhds hz, continuousAt_const.eventually_lt hφ.continuousAt hpos]
-      with y hy hy' using (hU y hy).mpr hy'
-  · exact ContinuousWithinAt.closure_le (isOpen_ball.inter_closure ⟨hz, hzU.1⟩)
-      continuousWithinAt_const hφ.continuousWithinAt fun y hy => ((hU y hy.1).mp hy.2).le
+  have hUO : U ∩ ball w ρ = {y : ℂ | 0 < ((y - q) / b).im} ∩ ball w ρ :=
+    Set.ext fun y => and_congr_left (hU y)
+  have h : z ∈ frontier {y : ℂ | 0 < ((y - q) / b).im} ∩ ball w ρ := by
+    rw [← frontier_inter_open_inter isOpen_ball, ← hUO, frontier_inter_open_inter isOpen_ball]
+    exact ⟨hzU, hz⟩
+  exact (frontier_lt_subset_eq continuous_const (by fun_prop) h.1).symm
 
 /-- Near a vertex where `U` coincides with the open sector `{|arg ((z - v) / b)| < α}`, the
 frontier of `U` away from the vertex lies on the two bounding rays `|arg ((z - v) / b)| = α`. -/
 private theorem abs_arg_div_eq_of_mem_frontier {v b z : ℂ} {ρ α : ℝ} (hb : b ≠ 0)
     (hU : ∀ y ∈ ball v ρ, y ≠ v → (y ∈ U ↔ |((y - v) / b).arg| < α)) (hz : z ∈ ball v ρ)
     (hzv : z ≠ v) (hzU : z ∈ frontier U) : |((z - v) / b).arg| = α := by
+  set O := ball v ρ \ {v}
+  have hO : IsOpen O := isOpen_ball.sdiff isClosed_singleton
   -- `|arg|` is the unoriented angle with `1`, which is continuous away from `0`
-  have hφ : ContinuousAt (fun y : ℂ => |((y - v) / b).arg|) z := by
-    have hz0 : (z - v) / b ≠ 0 := div_ne_zero (sub_ne_zero.mpr hzv) hb
-    have hangle : ContinuousAt (fun y : ℂ => InnerProductGeometry.angle ((y - v) / b) 1) z :=
-      (InnerProductGeometry.continuousAt_angle (x := ((z - v) / b, (1 : ℂ))) hz0
+  have hφ : ContinuousOn (fun y : ℂ => |((y - v) / b).arg|) O := fun y hy => by
+    have hy0 : (y - v) / b ≠ 0 := div_ne_zero (sub_ne_zero.mpr hy.2) hb
+    have hangle : ContinuousAt (fun y : ℂ => InnerProductGeometry.angle ((y - v) / b) 1) y :=
+      (InnerProductGeometry.continuousAt_angle (x := ((y - v) / b, (1 : ℂ))) hy0
         one_ne_zero).comp (f := fun y : ℂ => ((y - v) / b, (1 : ℂ))) (by fun_prop)
-    refine hangle.congr ?_
-    filter_upwards [isOpen_ne.mem_nhds hzv] with y hy
+    refine (hangle.congr ?_).continuousWithinAt
+    filter_upwards [isOpen_ne.mem_nhds hy.2] with y hy
     exact angle_one_right (div_ne_zero (sub_ne_zero.mpr hy) hb)
-  have hO : IsOpen (ball v ρ \ {v}) := isOpen_ball.sdiff isClosed_singleton
-  refine le_antisymm ?_ (not_lt.mp fun hlt => hzU.2 ?_)
-  · exact ContinuousWithinAt.closure_le (hO.inter_closure ⟨⟨hz, hzv⟩, hzU.1⟩)
-      hφ.continuousWithinAt continuousWithinAt_const fun y hy =>
-        ((hU y hy.1.1 hy.1.2).mp hy.2).le
-  · -- a point strictly inside the sector is an interior point of `U`
-    refine mem_interior_iff_mem_nhds.mpr ?_
-    filter_upwards [hO.mem_nhds ⟨hz, hzv⟩, hφ.eventually_lt continuousAt_const hlt]
-      with y hy hy' using (hU y hy.1 hy.2).mpr hy'
+  -- on the punctured ball `U` is the strict sublevel set of `|arg|`
+  have hfr : (⟨z, hz, hzv⟩ : O) ∈ frontier {y : O | |((y - v : ℂ) / b).arg| < α} := by
+    rw [← show ((↑) : O → ℂ) ⁻¹' U = {y : O | |((y - v : ℂ) / b).arg| < α} from
+      Set.ext fun y => hU y y.2.1 y.2.2,
+      ← hO.isOpenMap_subtype_val.preimage_frontier_eq_frontier_preimage continuous_subtype_val]
+    exact hzU
+  exact frontier_lt_subset_eq hφ.domRestrict continuous_const hfr
 
 /-! ### Boundary values of a conformal map onto `U` -/
 
 variable {f : ℂ → ℂ}
-
-/-- A continuous injection of the closed upper half-plane that maps the open half-plane onto `U`
-sends every real point to the frontier of `U`. -/
-private theorem mem_frontier_of_im_eq_zero (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
-    (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U) {z : ℂ}
-    (hz : z.im = 0) : f z ∈ frontier U := by
-  subst hfU
-  have hH0 : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} := ofPred_subset_ofPred.mpr fun _ => le_of_lt
-  have hz0 : z ∈ {z : ℂ | 0 ≤ z.im} := hz.symm.le
-  refine ⟨((hfc z hz0).mono hH0).mem_closure_image ?_, fun h => ?_⟩
-  · simp [upperHalfPlaneSet, hz]
-  · obtain ⟨y, hy, hyz⟩ := interior_subset h
-    have hyz' : y = z := hfi (hH0 hy) hz0 hyz
-    simp only [upperHalfPlaneSet, mem_ofPred_eq, hyz', hz, lt_self_iff_false] at hy
-
-/-- The inversion `w ↦ -w⁻¹` preserves the closed upper half-plane. -/
-private theorem im_neg_inv_nonneg {w : ℂ} (hw : 0 ≤ w.im) : 0 ≤ (-w⁻¹).im := by
-  simpa [neg_div] using div_nonneg hw (normSq_nonneg w)
 
 /-- **Side condition.**  Near a real point `x` whose image lies on a side of `U`, the boundary
 values of `f` run along the line of that side and the nearby upper half-plane is carried to the
@@ -127,7 +107,7 @@ private theorem exists_ball_im_div_of_image_eq (hfc : ContinuousOn f {z : ℂ | 
   obtain ⟨r, hr, hball⟩ := Metric.continuousWithinAt_iff.mp (hfc x hx.symm.le) ρ hρ
   refine ⟨r, hr, fun z hz hz0 => ?_, fun z hz hz0 => ?_⟩
   · exact im_div_eq_zero_of_mem_frontier hU (hball hz0.symm.le hz)
-      (mem_frontier_of_im_eq_zero hfc hfi hfU hz0)
+      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi hz0)
   · exact (hU _ (hball hz0.le hz)).mp (hfU ▸ mem_image_of_mem f hz0)
 
 /-- **Corner condition.**  Near a real point `x` whose image is a vertex of `U`, the nearby upper
@@ -145,7 +125,7 @@ private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : �
       simp [hfi hz0.le hx.symm.le h, hx] at hz0
     exact (hU _ (hball hz0.le hz) hzx).mp (hfU ▸ mem_image_of_mem f hz0)
   · exact abs_arg_div_eq_of_mem_frontier hb hU (hball hz0.symm.le hz) hzx
-      (mem_frontier_of_im_eq_zero hfc hfi hfU hz0)
+      (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi hz0)
 
 /-- **Condition at infinity.**  If `f` tends at infinity to a point `p` on a side of `U` which is
 not a value of `f`, then in the coordinate `w ↦ -w⁻¹` at infinity, and after normalizing that side
@@ -167,7 +147,7 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     refine hp.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
     · exact (tendsto_neg_cobounded.comp tendsto_inv₀_nhdsNE_zero).mono_left
         (nhdsWithin_mono _ fun w hw => hw.2)
-    · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg hw.1
+    · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg.mpr hw.1
   obtain ⟨r, hr, hball⟩ : ∃ r > 0, ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
       f (-w⁻¹) ∈ ball p ρ := by
     obtain ⟨r, hr, h⟩ := Metric.mem_nhdsWithin_iff.mp (hT (ball_mem_nhds p hρ))
@@ -179,16 +159,16 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
   -- the value `(p - q) / b` at `0` is not taken elsewhere
   have hnotp : ∀ w : ℂ, 0 ≤ w.im → (p - q) / b ≠ (f (-w⁻¹) - q) / b := fun w hw h => by
     rw [div_left_inj' hb, sub_left_inj] at h
-    exact hpf ⟨-w⁻¹, im_neg_inv_nonneg hw, h.symm⟩
+    exact hpf ⟨-w⁻¹, im_neg_inv_nonneg.mpr hw, h.symm⟩
   refine ⟨r, hr, update (fun w => (f (-w⁻¹) - q) / b) 0 ((p - q) / b),
     fun w hw => update_of_ne (hne w hw.2) _ _, ?_, fun w hw hw0 => ?_, fun w hw => ?_,
     fun w₁ hw₁ w₂ hw₂ h => ?_⟩
   · refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
     · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
         (continuousAt_inv₀ hw.2).neg.continuousWithinAt
-      exact (((hfc _ (im_neg_inv_nonneg hw.1.2)).comp (f := fun w : ℂ => -w⁻¹) hinv
+      exact (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp (f := fun w : ℂ => -w⁻¹) hinv
         fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
-          im_neg_inv_nonneg hy.1.2).sub_const q).div_const b
+          im_neg_inv_nonneg.mpr hy.1.2).sub_const q).div_const b
     · exact ((hT.mono_left (nhdsWithin_mono _
         (sdiff_subset_sdiff_left inter_subset_right))).sub_const q).div_const b
   · by_cases h0 : w = 0
@@ -197,7 +177,7 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
       exact im_div_eq_zero_of_mem_frontier hU (mem_ball_self hρ) hpU
     · rw [update_of_ne h0]
       exact im_div_eq_zero_of_mem_frontier hU (hball w hw hw0.symm.le h0)
-        (mem_frontier_of_im_eq_zero hfc hfi hfU (by simp [hw0]))
+        (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi (by simp [hw0]))
   · rw [update_of_ne (hne w hw.2)]
     exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2))).mp
       (hfU ▸ mem_image_of_mem f (hmem w hw.2))
@@ -208,7 +188,7 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     · rw [h₂, update_self, update_of_ne h₁] at h
       exact (hnotp w₁ hw₁.2 h.symm).elim
     · rw [update_of_ne h₁, update_of_ne h₂, div_left_inj' hb, sub_left_inj] at h
-      simpa using hfi (im_neg_inv_nonneg hw₁.2) (im_neg_inv_nonneg hw₂.2) h
+      simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h
 
 /-! ### The Schwarz--Christoffel formula -/
 
@@ -246,7 +226,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_injOn_of_image_eq
     have hxv : ∀ i, f x ≠ v i := fun i h =>
       hx i (by exact_mod_cast hfi (by simp) (by simp) ((hfv i).trans h.symm))
     obtain ⟨ρ, hρ, q, b, hb, hU⟩ :=
-      hside _ (mem_frontier_of_im_eq_zero hfc hfi hfU (ofReal_im x)) hxv
+      hside _ (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero hfc hfi (ofReal_im x)) hxv
     obtain ⟨r, hr, hreal, hupper⟩ := exists_ball_im_div_of_image_eq hfc hfi hfU (ofReal_im x) hρ hU
     exact ⟨r, hr, q, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hreal,
       hupper⟩
