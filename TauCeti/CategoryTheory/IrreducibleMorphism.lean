@@ -39,10 +39,11 @@ notion for an arbitrary category and specializes only where the statement forces
   isomorphisms of its source and target, so it descends to the arrows of a skeleton.
 * `TauCeti.not_isIrreducibleMorphism_zero`: **a zero morphism is never irreducible**, and its
   contrapositive `TauCeti.IsIrreducibleMorphism.ne_zero`.
-* `TauCeti.IsIrreducibleMorphism.mono_or_epi`: **an irreducible morphism of an abelian category is
-  a monomorphism or an epimorphism**, and by
-  `TauCeti.IsIrreducibleMorphism.not_mono_and_epi` never both, so
-  `TauCeti.IsIrreducibleMorphism.mono_iff_not_epi` is a genuine dichotomy.
+* `TauCeti.IsIrreducibleMorphism.mono_or_epi`: **an irreducible morphism of a category with
+  equalizers and images is a monomorphism or an epimorphism**, and by
+  `TauCeti.IsIrreducibleMorphism.not_mono_and_epi` never both in a balanced category, so there,
+  as in an abelian category, `TauCeti.IsIrreducibleMorphism.mono_iff_not_epi` is a genuine
+  dichotomy.
 
 Two general facts about split morphisms and composition are proved on the way and stated for
 reuse: `TauCeti.isSplitMono_of_isSplitMono_comp` and `TauCeti.isSplitEpi_of_isSplitEpi_comp`.
@@ -66,9 +67,9 @@ almost-split sequence are *not* stable under enlarging the category, whereas the
 is a factorization property of a single morphism and so is simply inherited by any full
 subcategory containing `X` and `Y`).
 
-The dichotomy `mono_or_epi` is proved by feeding the image factorization `f = e ≫ i` of an abelian
-category to the definition: `e` is epi, so if it splits it is an isomorphism and `f` is mono; `i`
-is mono, so if it splits it is an isomorphism and `f` is epi.
+The dichotomy `mono_or_epi` is proved by feeding the image factorization `f = e ≫ i` to the
+definition: `e` is epi (the category has equalizers), so if it splits it is an isomorphism and `f`
+is mono; `i` is mono, so if it splits it is an isomorphism and `f` is epi.
 
 ## References
 
@@ -259,13 +260,15 @@ epimorphism**, since it would then be an isomorphism. -/
 theorem IsIrreducibleMorphism.not_mono_and_epi [Balanced C] (hf : IsIrreducibleMorphism f) :
     ¬ (Mono f ∧ Epi f) := fun ⟨_, _⟩ => hf.not_isIso (isIso_of_mono_of_epi f)
 
-/-- **An irreducible morphism of an abelian category is a monomorphism or an epimorphism.**
+/-- **An irreducible morphism of a category with equalizers and images is a monomorphism or an
+epimorphism.**
 
 Apply the definition to the image factorization `f = e ≫ i`. If `e`, which is epi, is a split
 mono, then it is an isomorphism and `f` is the composite of an isomorphism with the mono `i`. If
 `i`, which is mono, is a split epi, then it is an isomorphism and `f` is the composite of the epi
 `e` with an isomorphism. -/
-theorem IsIrreducibleMorphism.mono_or_epi [Abelian C] (hf : IsIrreducibleMorphism f) :
+theorem IsIrreducibleMorphism.mono_or_epi [HasEqualizers C] [HasImages C]
+    (hf : IsIrreducibleMorphism f) :
     Mono f ∨ Epi f := by
   rcases hf.factors (factorThruImage f) (image.ι f) (image.fac f) with h | h
   · refine Or.inl ?_
@@ -277,14 +280,16 @@ theorem IsIrreducibleMorphism.mono_or_epi [Abelian C] (hf : IsIrreducibleMorphis
     rw [← image.fac f]
     infer_instance
 
-/-- **The dichotomy**: an irreducible morphism of an abelian category is a monomorphism exactly
-when it fails to be an epimorphism. -/
-theorem IsIrreducibleMorphism.mono_iff_not_epi [Abelian C] (hf : IsIrreducibleMorphism f) :
+/-- **The dichotomy**: an irreducible morphism of a balanced category with equalizers and images,
+such as an abelian category, is a monomorphism exactly when it fails to be an epimorphism. -/
+theorem IsIrreducibleMorphism.mono_iff_not_epi [HasEqualizers C] [HasImages C] [Balanced C]
+    (hf : IsIrreducibleMorphism f) :
     Mono f ↔ ¬ Epi f :=
   ⟨fun hm he => hf.not_mono_and_epi ⟨hm, he⟩, fun he => hf.mono_or_epi.resolve_right he⟩
 
 /-- The other half of the dichotomy of `TauCeti.IsIrreducibleMorphism.mono_iff_not_epi`. -/
-theorem IsIrreducibleMorphism.epi_iff_not_mono [Abelian C] (hf : IsIrreducibleMorphism f) :
+theorem IsIrreducibleMorphism.epi_iff_not_mono [HasEqualizers C] [HasImages C] [Balanced C]
+    (hf : IsIrreducibleMorphism f) :
     Epi f ↔ ¬ Mono f :=
   ⟨fun he hm => hf.not_mono_and_epi ⟨hm, he⟩, fun hm => hf.mono_or_epi.resolve_left hm⟩
 
