@@ -101,6 +101,7 @@ theorem range_diagonalRationalFunctionsToRepartitions (hF : IsFunctionField k X.
       (diagonalRepartitions k X.functionField).submoduleOf
         (repartitionSpace k X.functionField) := by
   ext a
+  -- Unfold range membership and the submodule trace to membership of the underlying family.
   change (∃ f, diagonalRationalFunctionsToRepartitions hF f = a) ↔
     (a : Place k X.functionField → X.functionField) ∈ diagonalRepartitions k X.functionField
   rw [mem_diagonalRepartitions_iff]

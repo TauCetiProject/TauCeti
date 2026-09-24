@@ -171,6 +171,7 @@ theorem finiteDimensional_quotient_repartitionSpace (D : Divisor k F) :
   obtain ⟨E, hDE, hiE⟩ := Nat.find_spec hp
   have hmin (E' : Divisor k F) (hDE' : D ≤ E') :
       Divisor.indexOfSpecialty E ≤ Divisor.indexOfSpecialty E' := by
+    -- Instantiate minimality at the natural-number index of `E'` before using its witness.
     have hfind := Nat.find_min' hp (show p (Divisor.indexOfSpecialty E').toNat from
       ⟨E', hDE', by rw [Int.toNat_of_nonneg (Divisor.indexOfSpecialty_nonneg hF E')]⟩)
     have hnonneg := Divisor.indexOfSpecialty_nonneg hF E'
