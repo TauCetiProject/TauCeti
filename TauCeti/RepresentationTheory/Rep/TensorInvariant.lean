@@ -28,7 +28,6 @@ variable {k G : Type u} [CommRing k] [Group G]
 
 /-- For an invariant `y` of the representation `N`, the morphism of representations
 `M ⟶ M ⊗ N`, `m ↦ m ⊗ₜ y`. -/
-@[expose]
 def tensorInvariant (M : Rep k G) {N : Rep k G} (y : N.ρ.invariants) : M ⟶ M ⊗ N :=
   Rep.ofHom <| ((TensorProduct.mk k M.V N.V).flip y).intertwiningMap_of_isIntertwiningMap
     (ρ := M.ρ) (σ := (M ⊗ N).ρ) fun g m ↦ by

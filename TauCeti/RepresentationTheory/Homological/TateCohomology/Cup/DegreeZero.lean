@@ -116,6 +116,8 @@ theorem cupH0_H0π_H0π (x : M.ρ.invariants) (y : N.ρ.invariants) :
         simp [Representation.tprod_apply, x.2 g, y.2 g]⟩ := by
   rw [cupH0_H0π, H0π_comp_tateCohomologyFunctor_map_apply]
   congr 1
+  apply Subtype.ext
+  exact Rep.tensorInvariant_hom_apply M y x
 
 /-- The cup product with a degree-zero class is natural in the first coefficient
 representation. -/
@@ -154,8 +156,8 @@ theorem δ_cupH0 {S : ShortComplex (Rep k G)} (hS : S.ShortExact)
       { τ₁ := Rep.tensorInvariant S.X₁ y
         τ₂ := Rep.tensorInvariant S.X₂ y
         τ₃ := Rep.tensorInvariant S.X₃ y
-        comm₁₂ := Rep.hom_comp_tensorInvariant _ S.f y
-        comm₂₃ := Rep.hom_comp_tensorInvariant _ S.g y }
+        comm₁₂ := by simpa using (Rep.hom_comp_tensorInvariant _ S.f y).symm
+        comm₂₃ := by simpa using (Rep.hom_comp_tensorInvariant _ S.g y).symm }
     rw [cupH0_H0π, cupH0_H0π, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply]
     exact congrArg (fun φ ↦ φ x) (_root_.TateCohomology.δ_naturality hS hSN F n).symm
 
