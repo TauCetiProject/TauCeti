@@ -29,15 +29,13 @@ public section
 
 open CategoryTheory HomologicalComplex
 
-namespace TauCeti
-
 universe v u₁ u₂ u₃
 
 variable {R : Type v} [CommRing R]
 variable {C : Type u₁} {D : Type u₂} {E : Type u₃}
-variable [DGCategory R C] [DGCategory R D] [DGCategory R E]
+variable [TauCeti.DGCategory R C] [TauCeti.DGCategory R D] [TauCeti.DGCategory R E]
 
-namespace DGFunctor
+namespace CategoryTheory.EnrichedFunctor
 
 /-- A DG functor is quasi-fully faithful if its map on each Hom complex is a
 quasi-isomorphism, in every cohomological degree. -/
@@ -49,7 +47,7 @@ def IsQuasiFullyFaithful
 complex in every degree. -/
 theorem IsQuasiFullyFaithful.isIso_homologyMap
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
-    (hF : IsQuasiFullyFaithful F) (X Y : C) (n : ℤ) :
+    (hF : EnrichedFunctor.IsQuasiFullyFaithful F) (X Y : C) (n : ℤ) :
     IsIso (homologyMap (F.map X Y) n) := by
   exact (quasiIsoAt_iff_isIso_homologyMap (F.map X Y) n).mp ((hF X Y).quasiIsoAt n)
 
@@ -70,7 +68,8 @@ theorem isQuasiFullyFaithful_iff_isIso_homologyMap
 /-- The identity DG functor is quasi-fully faithful. -/
 @[simp]
 theorem isQuasiFullyFaithful_id :
-    IsQuasiFullyFaithful (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C) := by
+    EnrichedFunctor.IsQuasiFullyFaithful
+      (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C) := by
   intro X Y
   -- `EnrichedFunctor.id` defines `map` to be the identity morphism; expose that
   -- definitional reduction so the isomorphism instance for identities applies.
@@ -81,8 +80,9 @@ theorem isQuasiFullyFaithful_id :
 theorem IsQuasiFullyFaithful.comp
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     {G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) D E}
-    (hF : IsQuasiFullyFaithful F) (hG : IsQuasiFullyFaithful G) :
-    IsQuasiFullyFaithful (F.comp (CochainComplex (ModuleCat.{v} R) ℤ) G) := by
+    (hF : EnrichedFunctor.IsQuasiFullyFaithful F)
+    (hG : EnrichedFunctor.IsQuasiFullyFaithful G) :
+    EnrichedFunctor.IsQuasiFullyFaithful (F.comp (CochainComplex (ModuleCat.{v} R) ℤ) G) := by
   intro X Y
   rw [EnrichedFunctor.comp_map]
   exact quasiIso_comp (F.map X Y) (G.map (F.obj X) (F.obj Y))
@@ -94,29 +94,34 @@ def IsQuasiEquivalence
     (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) : Prop :=
   IsQuasiFullyFaithful F ∧
     ∀ Y : D, ∃ X : C,
-      Nonempty (DGHomotopyCategory.of R (F.obj X) ≅ DGHomotopyCategory.of R Y)
+      Nonempty (TauCeti.DGHomotopyCategory.of R (F.obj X) ≅
+        TauCeti.DGHomotopyCategory.of R Y)
 
 /-- A quasi-equivalence is quasi-fully faithful. -/
 theorem IsQuasiEquivalence.isQuasiFullyFaithful
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
-    (hF : IsQuasiEquivalence F) : IsQuasiFullyFaithful F := hF.1
+    (hF : EnrichedFunctor.IsQuasiEquivalence F) :
+    EnrichedFunctor.IsQuasiFullyFaithful F := hF.1
 
 /-- A quasi-equivalence reaches every target object up to isomorphism in `H⁰`. -/
 theorem IsQuasiEquivalence.essentiallySurjective
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
-    (hF : IsQuasiEquivalence F) (Y : D) :
-    ∃ X : C, Nonempty (DGHomotopyCategory.of R (F.obj X) ≅
-      DGHomotopyCategory.of R Y) := hF.2 Y
+    (hF : EnrichedFunctor.IsQuasiEquivalence F) (Y : D) :
+    ∃ X : C, Nonempty (TauCeti.DGHomotopyCategory.of R (F.obj X) ≅
+      TauCeti.DGHomotopyCategory.of R Y) := hF.2 Y
 
 /-- The identity DG functor is a quasi-equivalence. -/
 @[simp]
 theorem isQuasiEquivalence_id :
-    IsQuasiEquivalence (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C) := by
+    EnrichedFunctor.IsQuasiEquivalence
+      (EnrichedFunctor.id (CochainComplex (ModuleCat.{v} R) ℤ) C) := by
   refine ⟨isQuasiFullyFaithful_id, ?_⟩
   intro Y
   exact ⟨Y, ⟨Iso.refl _⟩⟩
 
-end DGFunctor
+end CategoryTheory.EnrichedFunctor
+
+namespace TauCeti
 
 namespace DGFullSubcategory
 
@@ -126,7 +131,7 @@ variable {P : C → Prop}
 are identity maps. -/
 @[simp]
 theorem isQuasiFullyFaithful_inclusion :
-    DGFunctor.IsQuasiFullyFaithful (inclusion (R := R) (P := P)) := by
+    EnrichedFunctor.IsQuasiFullyFaithful (inclusion (R := R) (P := P)) := by
   intro X Y
   rw [inclusion_map]
   infer_instance
@@ -135,7 +140,7 @@ theorem isQuasiFullyFaithful_inclusion :
 object is isomorphic in `H⁰` to an object satisfying its predicate. -/
 @[simp]
 theorem isQuasiEquivalence_inclusion_iff :
-    DGFunctor.IsQuasiEquivalence (inclusion (R := R) (P := P)) ↔
+    EnrichedFunctor.IsQuasiEquivalence (inclusion (R := R) (P := P)) ↔
       ∀ Y : C, ∃ X : C, P X ∧
         Nonempty (DGHomotopyCategory.of R X ≅ DGHomotopyCategory.of R Y) := by
   constructor
