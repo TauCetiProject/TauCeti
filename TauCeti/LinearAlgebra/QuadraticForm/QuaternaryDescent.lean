@@ -130,7 +130,7 @@ theorem _root_.QuadraticForm.not_anisotropic_of_not_anisotropic_baseChange_quate
       rintro rfl
       exact d.ne_zero (by rw [← hr, mul_zero])
     exact hdsq ⟨Units.mk0 r hr0, Units.ext hr.symm⟩
-  have hli := linearIndependent_one_of_notMem_range_algebraMap F E hs'
+  have hli := TauCeti.linearIndependent_one_of_notMem_range_algebraMap F E hs'
   -- Every vector of `E ⊗ V` is `1 ⊗ x + s ⊗ y`, using the basis `1, s` of `E`.
   have hdecomp (z : E ⊗[F] V) : ∃ x y : V, z = (1 : E) ⊗ₜ x + s ⊗ₜ y := by
     induction z using TensorProduct.induction_on with

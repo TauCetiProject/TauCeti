@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Basic
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
 
@@ -38,6 +39,7 @@ graded-algebra structure and computes the concrete pieces.
   two backtracks of an arrow have degree two.
 * `TauCeti.localPreprojectiveRelator_mem_grade_two` and
   `TauCeti.preprojectiveRelator_mem_grade_two`: the local and global relators have degree two.
+* `TauCeti.signlessPreprojectiveRelator_mem_grade_two`: so does the signless local relator.
 * `TauCeti.isHomogeneous_preprojectiveIdeal`: **the preprojective relation ideal is
   homogeneous.**
 * `TauCeti.isInternal_preprojectiveGrade`: **the preprojective algebra is the internal direct
@@ -120,6 +122,20 @@ theorem preprojectiveRelator_mem_grade_two :
       (headBacktrackElem_mem_grade_two k a) (tailBacktrackElem_mem_grade_two k a)
 
 end Relators
+
+section SignlessRelator
+
+variable (k : Type w) {R : Type u} [Semiring k] [Quiver.{v} R] [HasReverse R]
+
+/-- **The signless local relator has degree two**: it is a sum of backtracks, each of them the
+basis element of a single length-two path. -/
+theorem signlessPreprojectiveRelator_mem_grade_two (v : R) [Fintype (Quiver.Star v)] :
+    signlessPreprojectiveRelator k v ∈ grade k R 2 := by
+  rw [signlessPreprojectiveRelator_def]
+  refine Submodule.sum_mem _ fun x _ => ofPath_mem_grade_of_length ?_
+  simp only [Path.length_comp, Quiver.Path.length_toPath]
+
+end SignlessRelator
 
 /-! ### The relation ideal is homogeneous -/
 

@@ -8,7 +8,9 @@ module
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 public import Mathlib.Probability.Distributions.Poisson.Basic
-import TauCeti.Probability.Distributions.Measurability
+
+import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import TauCeti.Probability.Distributions.Poisson.Measurability
 
 /-!
 # Gamma mixtures of Poisson distributions
@@ -95,7 +97,7 @@ private lemma integral_poissonMass_gammaMeasure {r p : ℝ} (hr : 0 < r) (hp : 0
     field_simp [h1mp.ne']
     ring
   -- Collect the Poisson mass with the Gamma density on its positive support.
-  rw [TauCeti.integral_gammaMeasure_eq_integral_Ioi hr hrate]
+  rw [TauCeti.Probability.integral_gammaMeasure_eq_integral_Ioi hr hrate]
   -- In this real-valued specialization, scalar multiplication is ordinary multiplication.
   change (∫ x in Ioi 0,
     ((p / (1 - p)) ^ r / Real.Gamma r * x ^ (r - 1) *
@@ -156,7 +158,7 @@ theorem bind_gammaMeasure_poissonMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (
   rw [← integral_toReal hmassMeas (ae_of_all _ fun lam => measure_lt_top _ _)]
   simp_rw [← measureReal_def, poissonMeasure_real_singleton]
   rw [integral_congr_ae (by
-    filter_upwards [TauCeti.ae_pos_gammaMeasure r (p / (1 - p))] with lam hlam
+    filter_upwards [TauCeti.Probability.ae_pos_gammaMeasure r (p / (1 - p))] with lam hlam
     rw [Real.coe_toNNReal lam hlam.le])]
   exact integral_poissonMass_gammaMeasure hr hp hp1 k
 

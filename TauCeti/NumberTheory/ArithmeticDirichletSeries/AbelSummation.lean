@@ -192,6 +192,45 @@ private theorem norm_deriv_ofReal_cpow_neg (z : ℂ) (hz : z.re = 0) (hz0 : z �
     Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.sub_re, Complex.neg_re, Complex.one_re, hneg,
     Real.rpow_neg_one]
 
+/-- **The integral term of the Abel decomposition of an imaginary-power twist.** On `[1, x]` the
+derivative of `t ↦ t ^ (-z)` has norm `‖z‖ / t`, so a partial-sum bound `C t ^ θ` integrates to
+`(‖z‖ C / θ) x ^ θ`. The exponent is unchanged; the `1 / t` is what the integration absorbs. -/
+private theorem norm_integral_deriv_ofReal_cpow_neg_mul_summatory_le (w : ι → ℂ)
+    {C θ x : ℝ} (hx : 1 ≤ x) (hθ : 0 < θ) (z : ℂ) (hz : z.re = 0) (hz0 : z ≠ 0) (hC0 : 0 ≤ C)
+    (hC : ∀ t ∈ Set.Icc 1 x, ‖summatory N w t‖ ≤ C * t ^ θ) :
+    ‖∫ t in Set.Ioc 1 x, deriv (fun t : ℝ ↦ (t : ℂ) ^ (-z)) t * summatory N w t‖ ≤
+      (‖z‖ * C / θ) * x ^ θ := by
+  rw [← intervalIntegral.integral_of_le hx]
+  calc
+    ‖∫ t in (1 : ℝ)..x, deriv (fun t : ℝ ↦ (t : ℂ) ^ (-z)) t * summatory N w t‖
+        ≤ ∫ t in (1 : ℝ)..x, (‖z‖ * C) * t ^ (θ - 1) := by
+          refine intervalIntegral.norm_integral_le_of_norm_le hx ?_
+            ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).const_mul _)
+          filter_upwards with t
+          intro ht
+          have ht0 : 0 < t := by linarith [ht.1]
+          have hinv : 0 ≤ t⁻¹ := inv_nonneg.mpr ht0.le
+          calc
+            ‖deriv (fun t : ℝ ↦ (t : ℂ) ^ (-z)) t * summatory N w t‖ =
+                ‖z‖ * t⁻¹ * ‖summatory N w t‖ := by
+                  rw [norm_mul, norm_deriv_ofReal_cpow_neg z hz hz0 ht0]
+            _ ≤ ‖z‖ * t⁻¹ * (C * t ^ θ) :=
+                  mul_le_mul_of_nonneg_left (hC t (Set.Ioc_subset_Icc_self ht))
+                    (mul_nonneg (norm_nonneg _) hinv)
+            _ = ‖z‖ * C * t ^ (θ - 1) := by
+              rw [sub_eq_add_neg, Real.rpow_add ht0, Real.rpow_neg_one]
+              ring
+    _ = (‖z‖ * C) * ((x ^ θ - 1) / θ) := by
+      rw [intervalIntegral.integral_const_mul,
+        integral_rpow (Or.inl (by linarith)), sub_add_cancel, Real.one_rpow]
+    _ ≤ (‖z‖ * C / θ) * x ^ θ := by
+      have hzC : 0 ≤ ‖z‖ * C := mul_nonneg (norm_nonneg _) hC0
+      calc
+        (‖z‖ * C) * ((x ^ θ - 1) / θ) ≤ (‖z‖ * C) * (x ^ θ / θ) :=
+          mul_le_mul_of_nonneg_left
+            (div_le_div_of_nonneg_right (sub_le_self _ zero_le_one) hθ.le) hzC
+        _ = (‖z‖ * C / θ) * x ^ θ := by ring
+
 /-- **An imaginary-power Abel bound.** Suppose every index has `N`-value at least `1`, and the
 partial sums of `w` are bounded by `C * t ^ θ` on `[1, x]` for a positive exponent `θ`. Twisting
 the weight by `(N i) ^ (-z)` with `Re z = 0` preserves that exponent, at the cost of the explicit
@@ -218,37 +257,8 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
     (norm_nonneg (summatory N w 1)).trans (by simpa using hC 1 ⟨le_rfl, hx⟩)
   have hbound_int :
       ‖∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖ ≤
-        (‖z‖ * C / θ) * x ^ θ := by
-    rw [← intervalIntegral.integral_of_le hx]
-    calc
-      ‖∫ t in (1 : ℝ)..x, deriv g t * summatory N w t‖
-          ≤ ∫ t in (1 : ℝ)..x, (‖z‖ * C) * t ^ (θ - 1) := by
-            refine intervalIntegral.norm_integral_le_of_norm_le hx ?_
-              ((intervalIntegral.intervalIntegrable_rpow' (by linarith)).const_mul _)
-            filter_upwards with t
-            intro ht
-            have ht0 : 0 < t := by linarith [ht.1]
-            have hinv : 0 ≤ t⁻¹ := inv_nonneg.mpr ht0.le
-            calc
-              ‖deriv g t * summatory N w t‖ =
-                  ‖z‖ * t⁻¹ * ‖summatory N w t‖ := by
-                    rw [norm_mul, norm_deriv_ofReal_cpow_neg z hz hz0 ht0]
-              _ ≤ ‖z‖ * t⁻¹ * (C * t ^ θ) :=
-                    mul_le_mul_of_nonneg_left (hC t (Set.Ioc_subset_Icc_self ht))
-                      (mul_nonneg (norm_nonneg _) hinv)
-              _ = ‖z‖ * C * t ^ (θ - 1) := by
-                rw [sub_eq_add_neg, Real.rpow_add ht0, Real.rpow_neg_one]
-                ring
-      _ = (‖z‖ * C) * ((x ^ θ - 1) / θ) := by
-        rw [intervalIntegral.integral_const_mul,
-          integral_rpow (Or.inl (by linarith)), sub_add_cancel, Real.one_rpow]
-      _ ≤ (‖z‖ * C / θ) * x ^ θ := by
-        have hzC : 0 ≤ ‖z‖ * C := mul_nonneg (norm_nonneg _) hC0
-        calc
-          (‖z‖ * C) * ((x ^ θ - 1) / θ) ≤ (‖z‖ * C) * (x ^ θ / θ) :=
-            mul_le_mul_of_nonneg_left
-              (div_le_div_of_nonneg_right (sub_le_self _ zero_le_one) hθ.le) hzC
-          _ = (‖z‖ * C / θ) * x ^ θ := by ring
+        (‖z‖ * C / θ) * x ^ θ :=
+    norm_integral_deriv_ofReal_cpow_neg_mul_summatory_le N w hx hθ z hz hz0 hC0 hC
   rw [hformula]
   calc
     ‖g x * summatory N w x - ∫ t in Set.Ioc 1 x, deriv g t * summatory N w t‖

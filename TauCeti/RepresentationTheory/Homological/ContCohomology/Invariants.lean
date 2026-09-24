@@ -9,7 +9,9 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
+public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
 
 /-!
 # Invariants of a discrete module as a module over a quotient
@@ -28,7 +30,8 @@ inclusions and coefficient-map functoriality. What this file adds is the topolog
 finite-level facts the tower needs — directedness over the open normal subgroups and continuity of
 the discrete quotient action — together with the two facts inflation needs, namely continuity of
 the `G ⧸ H`-action for an *arbitrary* normal `H` over a continuously acting `G`, and continuity of
-the inclusion `M ^ H ↪ M`.
+the inclusion `M ^ H ↪ M`. It also identifies the explicit fixed-point coefficient object with
+the quotient invariants of the corresponding object in the discrete-module dictionary.
 
 The fixed-point functoriality and finite-level facts are first stated for an additive monoid with a
 distributive `G`-action, then specialized to `FixedPoints.addSubgroup` for additive groups; an
@@ -49,6 +52,9 @@ unbundled classes freely.
   `H` of a group with a topology acting continuously on a discrete module, the quotient `G ⧸ H`
   acts continuously on `M ^ H`; no compatibility of the topology of `G` with its group structure
   is used.
+* `TauCeti.ofDiscreteModuleQuotient`: the coefficient dictionary identifies the explicit
+  fixed-point module with `TopRep.quotientToInvariants`, compatibly with both inclusions into the
+  ambient coefficient module.
 * `TauCeti.ContCohomology.fixedPointsInclusion_continuousFiniteQuotientMap_smul`: the inclusion
   `M^U → M^V` for open normal subgroups `V ≤ U` commutes with the actions along the continuous
   quotient map `G ⧸ V → G ⧸ U`.
@@ -62,7 +68,7 @@ inclusion form the compatible pair used by finite-quotient cohomology transition
 
 public section
 
-open MulAction
+open CategoryTheory MulAction
 
 namespace TauCeti
 
@@ -212,5 +218,85 @@ instance continuousSMulQuotientFixedPointsOfContinuousSMul (H : Subgroup G) [H.N
     exact (continuous_id.smul continuous_const : Continuous fun g : G => g • (m : M))
 
 end ArbitraryNormalSubgroup
+
+section Dictionary
+
+variable (G : Type*) [Group G]
+variable (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  [DistribMulAction G M]
+
+/-- **The coefficient dictionary commutes with quotient invariants.** The explicit fixed-point
+module `M^H`, regarded as a discrete module over `G ⧸ H`, maps canonically to the invariants of
+the restricted canonical object. Its underlying function preserves the coefficient in `M`; only
+the two equivalent proofs of invariance differ.
+
+This is the coefficient morphism used to compare explicit and canonical inflation. -/
+def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
+    ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M) ⟶
+      TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H := by
+  let _ : IsTopologicalAddGroup M := isTopologicalAddGroup_of_discreteTopology
+  let f : FixedPoints.addSubgroup H M →L[ℤ]
+      ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype).invariants :=
+    (@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
+      (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
+        ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) fun m ↦
+          (ContRepresentation.mem_invariants m).trans
+            (FixedPoints.mem_addSubgroup H M m).symm).toContinuousLinearMap
+  exact TopRep.ofHom
+    { toContinuousLinearMap := f
+      isIntertwining' q := by
+        induction q using QuotientGroup.induction_on with
+        | H g =>
+          ext m
+          have f_apply (x : FixedPoints.addSubgroup H M) : (f x).1 = (x : M) := by
+            -- `f x` lies in the semireducibly bundled carrier `(ofDiscreteModule ℤ G M).V`,
+            -- while the evaluation lemma is stated in `M`; expose only that carrier wrapper.
+            change
+              ((@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
+                (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
+                ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+                  (ContRepresentation.mem_invariants m).trans
+                    (FixedPoints.mem_addSubgroup H M m).symm) x).1) = x.1
+            exact @AddSubgroup.continuousLinearEquivInvariants_val H M _ _ _
+              (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
+              ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+                (ContRepresentation.mem_invariants m).trans
+                  (FixedPoints.mem_addSubgroup H M m).symm) x
+          -- `isIntertwining'` stores an equality of composed linear maps; after extensionality,
+          -- expose their applications so the public evaluation lemmas can rewrite both sides.
+          change
+            (f ((ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M)).ρ
+                (QuotientGroup.mk g) m)).1 =
+              (((ofDiscreteModule ℤ G M).ρ.quotientToInvariants H)
+                (QuotientGroup.mk g) (f m)).1
+          rw [ContRepresentation.coe_quotientToInvariants_mk_apply,
+            ofDiscreteModule_ρ_apply_apply, f_apply, f_apply]
+          exact congrArg (fun x : FixedPoints.addSubgroup H M => (x : M))
+            (coe_quotient_smul_fixedPoints_addSubgroup g m) }
+
+-- `simp` reduces the carrier of the `abbrev` `TopRep.quotientToInvariants` in implicit type
+-- arguments before it looks a term up, so the left-hand side is stated through `dsimp% only`, as
+-- in #8315.
+/-- The quotient-invariants dictionary morphism preserves the underlying coefficient. -/
+@[simp]
+theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
+    (m : FixedPoints.addSubgroup H M) :
+    (dsimp% only ((ofDiscreteModuleQuotient G M H m).1)) = (m : M) := by
+  let _ : IsTopologicalAddGroup M := isTopologicalAddGroup_of_discreteTopology
+  -- The categorical morphism hides the same semireducible carrier wrapper as `f_apply` above.
+  -- After crossing it, the public evaluation lemma proves the coefficient-level statement.
+  change
+    ((@AddSubgroup.continuousLinearEquivInvariants H M _ _ _
+      (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
+      ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+        (ContRepresentation.mem_invariants m).trans
+          (FixedPoints.mem_addSubgroup H M m).symm) m).1) = m.1
+  exact @AddSubgroup.continuousLinearEquivInvariants_val H M _ _ _
+    (inferInstance : IsTopologicalAddGroup M) (FixedPoints.addSubgroup H M)
+    ((ofDiscreteModule ℤ G M).ρ.restrict H.subtype) (fun m ↦
+      (ContRepresentation.mem_invariants m).trans
+        (FixedPoints.mem_addSubgroup H M m).symm) m
+
+end Dictionary
 
 end TauCeti

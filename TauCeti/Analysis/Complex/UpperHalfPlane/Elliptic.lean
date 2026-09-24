@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RootsOfUnityQuotient
+public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 public import TauCeti.Analysis.Complex.UpperHalfPlane.ProperAction
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 public import TauCeti.Topology.MetricSpace.ProperlyDiscontinuous

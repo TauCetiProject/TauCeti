@@ -218,6 +218,17 @@ theorem absNorm_eq_absNorm_primePowerBase_pow (A : IdealPrimePower K) :
       Ideal.absNorm (primePowerBase A).asIdeal ^ primePowerExponent A := by
   rw [← primePowerBase_pow_primePowerExponent A, map_pow]
 
+/-- **Membership in the prime-power cutoff, read off the base and the exponent.** The cutoff
+bounds a prime power's own absolute norm, and that norm is `N(𝔭) ^ k`, so membership is exactly
+the bound the counting arguments use. Both steps are equivalences, so this is an `iff`.
+
+Deliberately not `@[simp]`: `mem_normLE` already carries `@[simp, grind =]` on the same
+reducible head and would compete with it. -/
+theorem mem_primePowersLE_iff {x : ℝ} {A : IdealPrimePower K} :
+    A ∈ primePowersLE K x ↔
+      ((Ideal.absNorm (primePowerBase A).asIdeal : ℝ)) ^ primePowerExponent A ≤ x := by
+  rw [mem_normLE, absNorm_eq_absNorm_primePowerBase_pow, Nat.cast_pow]
+
 /-- The absolute norm of a prime-power ideal is a prime power: `N(𝔭 ^ k) = p ^ (f k)` for the
 rational prime `p` below `𝔭` and the residue degree `f`. -/
 theorem isPrimePow_absNorm (A : IdealPrimePower K) :

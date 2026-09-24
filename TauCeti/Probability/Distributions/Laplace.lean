@@ -12,9 +12,10 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Fourier.ExpNegAbs
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 
 /-!
@@ -367,20 +368,6 @@ theorem cdf_laplaceMeasure_eq (hb : 0 < b) (μ x : ℝ) :
 
 /-! ### Moments -/
 
-/-- An even function integrable on the positive half-line is integrable on the whole line. -/
-private lemma integrable_comp_abs {f : ℝ → ℝ} (hf : IntegrableOn f (Ioi 0)) :
-    Integrable fun y : ℝ => f |y| := by
-  have hIoi : IntegrableOn (fun y : ℝ => f |y|) (Ioi 0) :=
-    hf.congr_fun (fun y hy => by rw [abs_of_pos hy]) measurableSet_Ioi
-  have hIic : IntegrableOn (fun y : ℝ => f |y|) (Iic 0) := by
-    have hemb : MeasurableEmbedding fun y : ℝ => -y := (Homeomorph.neg ℝ).measurableEmbedding
-    have h := ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
-      hemb (f := fun u : ℝ => f |u|) (s := Ici (0 : ℝ))).2
-      (Iff.mpr integrableOn_Ici_iff_integrableOn_Ioi hIoi)
-    simpa [Function.comp_def, abs_neg] using h
-  rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ))]
-  exact hIic.union hIoi
-
 /-- Algebraic normalization shared by the absolute-moment value and integrability proofs. -/
 private lemma neg_div_eq_neg_inv_mul (t b : ℝ) : -t / b = -b⁻¹ * t := by
   ring
@@ -431,7 +418,7 @@ theorem integrable_pow_abs_sub_laplaceMeasure (μ : ℝ) (n : ℕ) :
         (fun t _ => ?_) measurableSet_Ioi
       rw [neg_div_eq_neg_inv_mul]
       ring
-    have habs := integrable_comp_abs hIoi
+    have habs := TauCeti.MeasureTheory.integrable_comp_abs hIoi
     refine (habs.comp_sub_right μ).congr (ae_of_all _ fun y => ?_)
     simp only [laplacePDFReal_of_pos hb]
     ring
@@ -508,39 +495,14 @@ theorem variance_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
   rw [h]
   norm_num
 
-private theorem laplaceMeasure_apply_eq_integral (μ b : ℝ) {s : Set ℝ} (hs : MeasurableSet s) :
-    laplaceMeasure μ b s = ENNReal.ofReal (∫ x in s, laplacePDFReal μ b x) := by
-  rw [laplaceMeasure_eq_withDensity, withDensity_apply _ hs]
-  simp_rw [laplacePDF_eq_ofReal]
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_laplacePDFReal μ).integrableOn
-    (.of_forall fun x ↦ laplacePDFReal_nonneg μ b x)]
-
 /-- Translating a Laplace distribution adds the translation to its location parameter. -/
 @[simp]
 theorem laplaceMeasure_map_add_const (μ y b : ℝ) :
     (laplaceMeasure μ b).map (· + y) = laplaceMeasure (μ + y) b := by
-  by_cases hb : 0 < b
-  · let e : ℝ ≃ᵐ ℝ := (Homeomorph.addRight y).symm.toMeasurableEquiv
-    have he' : ∀ x, HasDerivAt e ((fun _ ↦ 1) x) x := fun x ↦ (hasDerivAt_id x).sub_const y
-    have he_symm : e.symm = (fun x : ℝ ↦ x + y) := by
-      ext x
-      simp [e, Homeomorph.addRight]
-    rw [← he_symm]
-    ext s hs
-    have hpdf : laplacePDF μ b = fun x ↦ ENNReal.ofReal (laplacePDFReal μ b x) := by
-      funext x
-      rw [laplacePDF_eq_ofReal]
-    rw [laplaceMeasure_eq_withDensity, hpdf]
-    rw [e.withDensity_ofReal_map_symm_apply_eq_integral_abs_deriv_mul' hs he'
-      (.of_forall fun x ↦ laplacePDFReal_nonneg μ b x) (integrable_laplacePDFReal μ),
-      laplaceMeasure_apply_eq_integral (μ + y) b hs]
-    simp only [abs_one, one_mul]
-    congr 2 with x
-    dsimp [e, Homeomorph.addRight]
-    rw [laplacePDFReal_of_pos hb, laplacePDFReal_of_pos hb]
-    congr 3
-    ring_nf
-  · simp [laplaceMeasure_of_nonpos (not_lt.mp hb)]
+  rw [laplaceMeasure_eq_withDensity, laplaceMeasure_eq_withDensity,
+    Measure.map_add_right_withDensity]
+  congr with x
+  simp only [laplacePDF_eq_ofReal, laplacePDFReal, sub_sub, add_comm y]
 
 /-! ### Exponential moments and transforms -/
 

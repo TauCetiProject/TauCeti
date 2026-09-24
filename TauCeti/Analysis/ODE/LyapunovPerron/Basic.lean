@@ -825,6 +825,15 @@ theorem norm_lyapunovPerronSolution_le (hN0 : N 0 = 0) {β : ℝ} (hβ : 0 ≤ �
       K / (1 - 2 * K * ε / (α - β)) * Real.exp (-β * t) * ‖ξ‖ := by
   simpa [hN0] using norm_lyapunovPerronSolution_sub_le hs hu hα hN hsmall hβ hβα ξ 0 t
 
+/-- The unweighted bound for a Lyapunov--Perron solution whose nonlinearity vanishes at the
+origin. -/
+theorem norm_lyapunovPerronSolution_le_mul_norm (hN0 : N 0 = 0) (ξ : X) (t : ℝ≥0) :
+    ‖lyapunovPerronSolution A P N hs hu hα hN hsmall ξ t‖ ≤
+      K / (1 - 2 * K * ε / α) * ‖ξ‖ := by
+  have hsmall' : 2 * (K : ℝ) * ε < α := by exact_mod_cast hsmall
+  simpa using norm_lyapunovPerronSolution_le hs hu hα hN hsmall hN0 (hβ := le_rfl)
+    (hβα := by simpa using hsmall') ξ t
+
 /-- If the nonlinearity vanishes at the origin, every Lyapunov--Perron solution tends to `0`
 in forward time. -/
 theorem tendsto_lyapunovPerronSolution (hN0 : N 0 = 0) (ξ : X) :

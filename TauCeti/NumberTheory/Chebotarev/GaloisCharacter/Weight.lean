@@ -192,7 +192,7 @@ noncomputable def galoisCharacterWeight (χ : (L ≃ₐ[K] L) →* ℂˣ) :
   finite_setOf_apply_eq_zero := (ramifiedPrimes K L).finite_toSet.subset fun 𝔭 h𝔭 ↦
     (galoisCharacterWeightFun_heightOne_eq_zero_iff χ 𝔭).mp h𝔭
 
-/-- Defining equation of `galoisCharacterWeight`; its body is not exposed. -/
+/-- Defining equation of `galoisCharacterWeight`. -/
 private theorem galoisCharacterWeight_apply (χ : (L ≃ₐ[K] L) →* ℂˣ) (𝔞 : Ideal (𝓞 K)) :
     galoisCharacterWeight (L := L) χ 𝔞 = galoisCharacterWeightFun (L := L) χ 𝔞 := (rfl)
 

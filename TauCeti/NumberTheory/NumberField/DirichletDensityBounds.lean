@@ -35,6 +35,9 @@ comparison also gives the natural interval restrictions on one-sided bounds.
 * `NumberField.Set.HasDirichletDensity.isLowerDirichletDensityBound` and
   `NumberField.Set.HasDirichletDensity.isUpperDirichletDensityBound`: a Dirichlet density is
   both a lower and an upper bound.
+* `NumberField.Set.isLowerDirichletDensityBound_of_forall_lt` and
+  `NumberField.Set.isUpperDirichletDensityBound_of_forall_gt`: a value is a lower (upper) bound as
+  soon as every smaller (larger) value is.
 * `NumberField.Set.IsLowerDirichletDensityBound.le_of_isUpperDirichletDensityBound`:
   every lower bound is at most every upper bound.
 * `NumberField.Set.hasDirichletDensity_of_upperBound_of_lowerBound`: matching one-sided bounds
@@ -157,6 +160,13 @@ theorem IsLowerDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))}
   filter_upwards [h ε hε] with s hs
   exact lt_of_le_of_lt (sub_le_sub_right hδ ε) hs
 
+/-- If every value below `δ` is a lower Dirichlet-density bound for `S`, then so is `δ`. -/
+theorem isLowerDirichletDensityBound_of_forall_lt {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
+    (h : ∀ δ' < δ, IsLowerDirichletDensityBound S δ') : IsLowerDirichletDensityBound S δ :=
+  isLowerDirichletDensityBound_iff.mpr fun ε hε ↦
+    (isLowerDirichletDensityBound_iff.mp (h (δ - ε / 2) (by linarith)) (ε / 2) (half_pos hε)).mono
+      fun _ hs ↦ by linarith
+
 /-- An upper Dirichlet-density bound remains an upper bound when its value is increased. -/
 theorem IsUpperDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))} {δ δ' : ℝ}
     (h : IsUpperDirichletDensityBound S δ) (hδ : δ ≤ δ') :
@@ -164,6 +174,13 @@ theorem IsUpperDirichletDensityBound.mono {S : Set (HeightOneSpectrum (𝓞 K))}
   intro ε hε
   filter_upwards [h ε hε] with s hs
   exact hs.trans_le (by linarith)
+
+/-- If every value above `δ` is an upper Dirichlet-density bound for `S`, then so is `δ`. -/
+theorem isUpperDirichletDensityBound_of_forall_gt {S : Set (HeightOneSpectrum (𝓞 K))} {δ : ℝ}
+    (h : ∀ δ' > δ, IsUpperDirichletDensityBound S δ') : IsUpperDirichletDensityBound S δ :=
+  isUpperDirichletDensityBound_iff.mpr fun ε hε ↦
+    (isUpperDirichletDensityBound_iff.mp (h (δ + ε / 2) (by linarith)) (ε / 2) (half_pos hε)).mono
+      fun _ hs ↦ by linarith
 
 /-- A Dirichlet density is a lower Dirichlet-density bound. -/
 theorem HasDirichletDensity.isLowerDirichletDensityBound

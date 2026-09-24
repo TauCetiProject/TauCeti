@@ -40,6 +40,8 @@ a right DG module into a right module over the cohomology algebra.
   element acts by a boundary on a module cycle.
 * `TauCeti.isDGRightModule_zero`: a graded right module with zero differential is a DG right
   module over a graded algebra with zero differential.
+* `TauCeti.IsDGAlgebra.isDGRightModule`: a differential graded algebra is a differential graded
+  right module over itself, the free rank-one right module.
 
 ## References
 
@@ -153,6 +155,16 @@ theorem op_map_smul_mem_range_of_map_eq_zero (hM : IsDGRightModule h ℳ dM) (a 
   exact key
 
 end IsDGRightModule
+
+/-- A differential graded algebra is a differential graded right module over itself, the **free
+rank-one** right module.  Its Leibniz rule is the algebra Leibniz rule, whose sign is carried by
+the module element because that is the left-hand factor of the product. -/
+theorem IsDGAlgebra.isDGRightModule (h : IsDGAlgebra 𝒜 d) : IsDGRightModule h 𝒜 d where
+  isHomogeneous := LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ h.map_mem ha
+  sq_zero := h.sq_zero
+  leibniz {_ _} hx a := by
+    simp only [op_smul_eq_mul]
+    exact h.leibniz hx a
 
 /-- A graded right module with zero differential over a graded algebra with zero differential is a
 differential graded right module. -/

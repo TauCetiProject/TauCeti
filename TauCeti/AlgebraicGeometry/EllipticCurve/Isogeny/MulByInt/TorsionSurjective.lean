@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
--- Proof-only: an algebraically closed base contains all torsion points over its extensions.
-import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.AlgClosed
 -- Proof-only: a homomorphism of finite groups is onto once its kernel is no larger than the
 -- quotient of the two orders.
 import Mathlib.GroupTheory.Index
@@ -15,9 +13,9 @@ import Mathlib.GroupTheory.Index
 /-!
 # `[n]` carries `E[n ²]` onto `E[n]`
 
-Multiplication by `n` sends an `n ²`-torsion point to an `n`-torsion point, and over an
-algebraically closed field in which `n` is invertible that map is **onto**: every `n`-torsion point
-is `n` times an `n ²`-torsion point.
+Multiplication by `n` sends an `n ²`-torsion point to an `n`-torsion point, and once `n` is
+invertible in the base field and the geometric `n ²`-torsion is rational that map is **onto**:
+every `n`-torsion point is `n` times an `n ²`-torsion point.
 
 The argument is counting, not geometry. `#E[m] = m ²` for every invertible `m`, so `#E[n ²] = n ⁴`
 and `#E[n] = n ²`; the kernel of `[n] : E[n ²] → E[n]` consists of `n`-torsion points, so it has at
@@ -26,9 +24,10 @@ kernel is that small is surjective.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.zsmulTorsionSqHom_surjective`: `[n] : E[n ²] → E[n]` is onto.
-* `WeierstrassCurve.Affine.exists_zsmul_eq_of_zsmul_eq_zero`: hence every `n`-torsion point is
-  `n • P` for some `P` killed by `n ²`.
+* `WeierstrassCurve.Affine.zsmulTorsionSqHom_surjective_of_torsion_rational`:
+  `[n] : E[n ²] → E[n]` is onto.
+* `WeierstrassCurve.Affine.exists_zsmul_eq_of_zsmul_eq_zero_of_torsion_rational`: hence every
+  `n`-torsion point is `n • P` for some `P` killed by `n ²`.
 
 ## References
 
@@ -42,8 +41,9 @@ The counting argument is adapted from the AINTLIB `HasseWeil` project
 declarations `mulByEllTorsionHom_surjective` and `exists_preimage_of_torsion`: the same three
 steps — the two torsion orders, the kernel's injection into `E[n]`, and
 `AddMonoidHom.surjective_of_card_ker_le_div`. The orders come from this repository's own
-`card_ker_mulByIntIsogeny` rather than from that project's separable-kernel torsor, and the
-statement is on `AddSubgroup.torsionBy` rather than on a bespoke torsion subgroup.
+`card_ker_mulByIntIsogeny_of_torsion_rational` rather than from that project's separable-kernel
+torsor, and the statement is on `AddSubgroup.torsionBy` rather than on a bespoke torsion
+subgroup.
 -/
 
 public section
@@ -130,16 +130,6 @@ theorem zsmulTorsionSqHom_surjective_of_torsion_rational {n : ℤ}
   exact natCard_ker_zsmulTorsionSqHom_le W (by rintro rfl; exact hchar (by simp))
 
 open scoped Classical in
-/-- **`[n]` carries `E[n ²]` onto `E[n]`** over an algebraically closed field in which `n` is
-invertible. -/
-theorem zsmulTorsionSqHom_surjective [IsAlgClosed F] {n : ℤ} (hchar : (n : F) ≠ 0) :
-    Function.Surjective (zsmulTorsionSqHom W n) := by
-  apply zsmulTorsionSqHom_surjective_of_torsion_rational W _ hchar
-  intro P hP
-  exact W.mem_range_baseChange_of_zsmul_eq_zero
-    (pow_ne_zero 2 (by rintro rfl; exact hchar (by simp))) hP
-
-open scoped Classical in
 /-- **Every `n`-torsion point is `n` times an `n ²`-torsion point** when the geometric `n ²`-torsion
 is rational and `n` is invertible: the consumer-facing reading of
 `zsmulTorsionSqHom_surjective_of_torsion_rational`. -/
@@ -154,17 +144,6 @@ theorem exists_zsmul_eq_of_zsmul_eq_zero_of_torsion_rational {n : ℤ}
   have hPval := congrArg Subtype.val hP
   rw [zsmulTorsionSqHom_apply] at hPval
   exact ⟨P.val, hPval, (Submodule.mem_torsionBy_iff _ _).mp P.2⟩
-
-open scoped Classical in
-/-- **Every `n`-torsion point is `n` times an `n ²`-torsion point**, over an algebraically closed
-field in which `n` is invertible. -/
-theorem exists_zsmul_eq_of_zsmul_eq_zero [IsAlgClosed F] {n : ℤ} (hchar : (n : F) ≠ 0)
-    {T : (W⁄F).toAffine.Point} (hT : n • T = 0) :
-    ∃ P : (W⁄F).toAffine.Point, n • P = T ∧ (n ^ 2 : ℤ) • P = 0 := by
-  apply exists_zsmul_eq_of_zsmul_eq_zero_of_torsion_rational W _ hchar hT
-  intro P hP
-  exact W.mem_range_baseChange_of_zsmul_eq_zero
-    (pow_ne_zero 2 (by rintro rfl; exact hchar (by simp))) hP
 
 end WeierstrassCurve.Affine
 

@@ -72,18 +72,22 @@ def resBotIsoTrivial (A : Rep k G) :
     ext
     simp
 
+-- `simp` reduces the carriers of the `abbrev`s `coindBot`, `indBot`, `Rep.trivial`,
+-- `Rep.leftRegular` and `Rep.res` in implicit type arguments before it looks a term up, so the
+-- `simp` lemmas evaluating this file's maps state their left-hand sides through `dsimp% only`,
+-- as in #8315.
 /-- The identification of the restriction to the trivial subgroup with the trivial representation
 does not move elements. -/
 @[simp]
 theorem resBotIsoTrivial_hom_hom_apply (A : Rep k G) (x : A.V) :
-    (resBotIsoTrivial A).hom.hom x = x :=
+    (dsimp% only ((resBotIsoTrivial A).hom.hom x)) = x :=
   (rfl)
 
 /-- The inverse identification of the trivial representation with the restriction to the trivial
 subgroup does not move elements. -/
 @[simp]
 theorem resBotIsoTrivial_inv_hom_apply (A : Rep k G) (x : A.V) :
-    (resBotIsoTrivial A).inv.hom x = x :=
+    (dsimp% only ((resBotIsoTrivial A).inv.hom x)) = x :=
   (rfl)
 
 section Coinduction
@@ -131,7 +135,7 @@ def coindBotUnit (A : Rep k G) : A ⟶ coindBot k G A.V :=
 /-- The embedding into the coinduced representation sends `a` to the function `g ↦ A.ρ g a`. -/
 @[simp]
 theorem coindBotUnit_hom_apply_coe (A : Rep k G) (a : A) (g : G) :
-    ((coindBotUnit A).hom a).1 g = A.ρ g a :=
+    (dsimp% only (((coindBotUnit A).hom a).1 g)) = A.ρ g a :=
   (rfl)
 
 /-- The embedding into the coinduced representation is a monomorphism. -/
@@ -158,14 +162,14 @@ def coindBotEquivPi (X : Type u) [AddCommGroup X] [Module k X] :
 /-- The identification of the coinduced module with functions is the underlying function. -/
 @[simp]
 theorem coindBotEquivPi_apply (X : Type u) [AddCommGroup X] [Module k X] (f : coindBot k G X) :
-    coindBotEquivPi k G X f = f.1 :=
+    (dsimp% only (coindBotEquivPi k G X f)) = f.1 :=
   (rfl)
 
 /-- The inverse identification of functions with the coinduced module is the underlying
 function. -/
 @[simp]
 theorem coindBotEquivPi_symm_apply_coe (X : Type u) [AddCommGroup X] [Module k X] (f : G → X) :
-    ((coindBotEquivPi k G X).symm f).1 = f :=
+    (dsimp% only (((coindBotEquivPi k G X).symm f).1)) = f :=
   (rfl)
 
 end Coinduction
@@ -273,6 +277,49 @@ theorem indBotEquivFinsupp_ρ_apply (X : Type u) [AddCommGroup X] [Module k X] (
 def indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G :=
   TauCeti.indTrivialIso k (⊥ : Subgroup G) ≪≫ TauCeti.quotientBotIsoLeftRegular k
 
+/-- The isomorphism from induction out of the trivial subgroup to the left regular
+representation reads the underlying finitely supported function with inverted indices. -/
+@[simp]
+theorem indBotIsoLeftRegular_hom_hom_apply_coeff (v : indBot k G k) (g : G) :
+    (dsimp% only
+        (((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom v).coeff g)) =
+      indBotEquivFinsupp k G k v g⁻¹ := by
+  refine LinearMap.congr_fun
+    (f := Finsupp.lapply g ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap ∘ₗ
+      (indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom.toLinearMap)
+    (g := Finsupp.lapply g⁻¹ ∘ₗ (indBotEquivFinsupp k G k).toLinearMap)
+    (IndV.hom_ext _ _ fun h ↦ LinearMap.ext fun a ↦ ?_) v
+  -- Keep `IndV.mk` folded while exposing the two composed representation maps: rewriting the
+  -- composition directly unfolds this reducible generator, after which the generator lemmas below
+  -- no longer match.
+  change ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).hom.hom
+      (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a)).coeff
+    g = indBotEquivFinsupp k G k
+      (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) k) h a) g⁻¹
+  simp only [indBotIsoLeftRegular, Iso.trans_hom, hom_comp,
+    IntertwiningMap.comp_apply]
+  rw [TauCeti.indTrivialIso_hom_hom_apply_mk,
+    TauCeti.quotientBotIsoLeftRegular_hom_hom_single_mk,
+    indBotEquivFinsupp_mk]
+  simp only [MonoidAlgebra.coeff_single, Finsupp.single_apply]
+  by_cases hg : h⁻¹ = g
+  · have hg' : h = g⁻¹ := inv_eq_iff_eq_inv.mp hg
+    simp [hg']
+  · have hg' : h ≠ g⁻¹ := fun e ↦ hg (inv_eq_iff_eq_inv.mpr e)
+    simp [hg, hg']
+
+/-- The inverse isomorphism, from the left regular representation back to induction out of the
+trivial subgroup, likewise reads the underlying finitely supported function with inverted
+indices. -/
+@[simp]
+theorem indBotEquivFinsupp_indBotIsoLeftRegular_inv_hom (v : leftRegular k G) (g : G) :
+    (dsimp% only (indBotEquivFinsupp k G k
+        ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).inv.hom v) g)) = v.coeff g⁻¹ := by
+  have h := indBotIsoLeftRegular_hom_hom_apply_coeff
+    ((indBotIsoLeftRegular : indBot k G k ≅ leftRegular k G).inv.hom v) g⁻¹
+  rw [hom_inv_apply, inv_inv] at h
+  exact h.symm
+
 end Induction
 
 section Finite
@@ -323,7 +370,7 @@ def resCoindBotIso (X : Type u) [AddCommGroup X] [Module k X] :
 @[simp]
 theorem resCoindBotIso_hom_hom_apply_coe (X : Type u) [AddCommGroup X] [Module k X]
     (f : coindBot k G X) (s : S) (y : G ⧸ S) :
-    (((resCoindBotIso S X).hom.hom f).1 s) y = f.1 (y.out * s) :=
+    (dsimp% only ((((resCoindBotIso S X).hom.hom f).1 s) y)) = f.1 (y.out * s) :=
   -- The forward map evaluates `f` at the point of `G` with coset `y` and subgroup part `s`.
   congrArg f.1 (Subgroup.groupEquivQuotientProdSubgroup_symm_apply y s)
 
@@ -333,7 +380,7 @@ theorem resCoindBotIso_hom_hom_apply_coe (X : Type u) [AddCommGroup X] [Module k
 @[simp]
 theorem resCoindBotIso_inv_hom_apply_coe (X : Type u) [AddCommGroup X] [Module k X]
     (F : coindBot k S (G ⧸ S → X)) (g : G) :
-    ((resCoindBotIso S X).inv.hom F).1 g =
+    (dsimp% only (((resCoindBotIso S X).inv.hom F).1 g)) =
       F.1 (Subgroup.groupEquivQuotientProdSubgroup g).2
         (Subgroup.groupEquivQuotientProdSubgroup g).1 :=
   (rfl)
@@ -365,7 +412,7 @@ to `v` sends `s` to the finitely supported function `y ↦ v (y.out * s)`. -/
 @[simp]
 theorem indBotEquivFinsupp_resIndBotIso_hom_hom_apply (X : Type u) [AddCommGroup X] [Module k X]
     (v : indBot k G X) (s : S) (y : G ⧸ S) :
-    indBotEquivFinsupp k S (G ⧸ S →₀ X) ((resIndBotIso S X).hom.hom v) s y =
+    (dsimp% only (indBotEquivFinsupp k S (G ⧸ S →₀ X) ((resIndBotIso S X).hom.hom v) s y)) =
       indBotEquivFinsupp k G X v (y.out * s) := by
   rw [resIndBotIso, Rep.mkIso_hom_hom_apply, Representation.Equiv.coe_toLinearMap,
     Representation.Equiv.mk_apply]
@@ -380,7 +427,7 @@ of `g` into a coset and an element of `S`. -/
 @[simp]
 theorem indBotEquivFinsupp_resIndBotIso_inv_hom_apply (X : Type u) [AddCommGroup X] [Module k X]
     (W : indBot k S (G ⧸ S →₀ X)) (g : G) :
-    indBotEquivFinsupp k G X ((resIndBotIso S X).inv.hom W) g =
+    (dsimp% only (indBotEquivFinsupp k G X ((resIndBotIso S X).inv.hom W) g)) =
       indBotEquivFinsupp k S (G ⧸ S →₀ X) W (Subgroup.groupEquivQuotientProdSubgroup g).2
         (Subgroup.groupEquivQuotientProdSubgroup g).1 := by
   rw [resIndBotIso, Rep.mkIso_inv_hom_apply, Representation.Equiv.mk_symm,

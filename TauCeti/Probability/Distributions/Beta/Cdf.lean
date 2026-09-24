@@ -32,13 +32,15 @@ integral divided by itself, namely `1`.
 
 ## Main results
 
-* `TauCeti.cdf_betaMeasure_eq` — the closed-form cdf `I_x(α, β)`;
-* `TauCeti.measureReal_Iic_betaMeasure` — the same in measure form;
-* `TauCeti.measureReal_Ioc_betaMeasure` — the mass of a bounded interval, as a difference of two
+* `TauCeti.Probability.cdf_betaMeasure_eq` — the closed-form cdf `I_x(α, β)`;
+* `TauCeti.Probability.measureReal_Iic_betaMeasure` — the same in measure form;
+* `TauCeti.Probability.measureReal_Ioc_betaMeasure` — the mass of a bounded interval, as a
+  difference of two
   values of `I_·(α, β)`;
-* `TauCeti.measureReal_Ioi_betaMeasure` — the upper tail `1 - I_x(α, β)`;
-* `TauCeti.continuous_cdf_betaMeasure` — the cdf is continuous, so a beta law has no atoms;
-* `TauCeti.measureReal_le_of_hasLaw_betaMeasure` — the random-variable corollary.
+* `TauCeti.Probability.measureReal_Ioi_betaMeasure` — the upper tail `1 - I_x(α, β)`;
+* `TauCeti.Probability.continuous_cdf_betaMeasure` — the cdf is continuous, so a beta law has no
+  atoms;
+* `TauCeti.Probability.measureReal_le_of_hasLaw_betaMeasure` — the random-variable corollary.
 
 ## References
 
@@ -54,7 +56,7 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory Set
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {α β x : ℝ}
 
@@ -189,4 +191,4 @@ theorem measureReal_le_of_hasLaw_betaMeasure {Ω : Type*} [MeasurableSpace Ω] {
   rw [hX.measureReal_eq (p := fun y : ℝ => y ≤ x) measurableSet_Iic, Set.Iic_def]
   exact measureReal_Iic_betaMeasure hα hβ x
 
-end TauCeti
+end TauCeti.Probability

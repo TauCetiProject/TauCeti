@@ -45,10 +45,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
   [ContMDiffCovariantDerivative cov ∞]
 
--- Fix the fibre norm for the curvature tensor, as in the Ricci-curvature API.
 local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
   (V := TangentSpace I)
-  (fiberNorm := fun x : M ↦ (inferInstance : NormedAddCommGroup (TangentSpace I x)))
 
 /-- The scalar curvature of a smooth connection on the tangent bundle, defined as the metric
 trace of its Ricci tensor. -/

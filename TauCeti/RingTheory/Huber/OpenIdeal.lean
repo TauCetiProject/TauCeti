@@ -28,6 +28,9 @@ work is that an *ideal* of `A` containing the image of `Iⁿ` automatically cont
   radical contains `I · A`.
 * `TauCeti.Huber.PairOfDefinition.isOpen_mul`: the product of two open ideals is open — the
   powers of `I · A` witnessing each add.
+* `TauCeti.Huber.PairOfDefinition.isOpen_map_of_isOpen_map_extendedIdealOfDefinition`: a ring
+  homomorphism that maps an ideal of definition to an open ideal maps every open ideal to an open
+  ideal.
 * `TauCeti.Huber.PairOfDefinition.isOpen_span_mul`: the span of a pointwise product of sets is
   open when the two spans are.
 * `TauCeti.Huber.PairOfDefinition.isOpen_span_insert_mul_insert`: its `Finset` form with the two
@@ -118,6 +121,24 @@ theorem isOpen_mul (P : PairOfDefinition A) {a b : Ideal A} (ha : IsOpen (a : Se
   refine (P.isOpen_iff_exists_pow_le _).mpr ⟨n + m, ?_⟩
   rw [pow_add]
   exact Ideal.mul_mono hn hm
+
+/-- **A map taking an ideal of definition to an open ideal takes every open ideal to an open
+ideal.** This criterion transports openness of ideals along ring homomorphisms once it is known
+for one ideal of definition. -/
+theorem isOpen_map_of_isOpen_map_extendedIdealOfDefinition {B : Type*} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition A) (Q : PairOfDefinition B)
+    (f : A →+* B) (hP : IsOpen (Ideal.map f P.extendedIdealOfDefinition : Set B))
+    {a : Ideal A} (ha : IsOpen (a : Set A)) : IsOpen (Ideal.map f a : Set B) := by
+  have hpow : ∀ n : ℕ,
+      IsOpen (((Ideal.map f P.extendedIdealOfDefinition) ^ n : Ideal B) : Set B) := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih => simpa [pow_succ] using Q.isOpen_mul ih hP
+  obtain ⟨n, hn⟩ := (P.isOpen_iff_exists_pow_le a).mp ha
+  apply Ideal.isOpen_of_isOpen_subideal (Ideal.map_mono hn)
+  rw [Ideal.map_pow]
+  exact hpow n
 
 open scoped Pointwise in
 /-- **A span over a pointwise product of sets is open** when the two factors' spans are, since

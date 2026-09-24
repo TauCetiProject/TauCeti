@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Scheme.Place
+public import TauCeti.AlgebraicGeometry.Scheme.Place.Injective
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
 /-!

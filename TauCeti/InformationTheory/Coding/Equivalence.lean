@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.LinearAlgebra.Pi
 public import TauCeti.InformationTheory.Hamming
 
 /-!
@@ -39,6 +38,11 @@ distributions and pairwise Hamming distances are invariants of the resulting equ
   monomially equivalent codes have the same dimension and the same number of codewords.
 * `TauCeti.IsPermutationEquivalent.finrank_eq`, `TauCeti.IsPermutationEquivalent.card_eq`: the
   corresponding invariants for permutation-equivalent codes.
+* `TauCeti.monomialGroup_eq_permutationGroup`,
+  `TauCeti.isMonomialEquivalent_iff_isPermutationEquivalent`,
+  `TauCeti.monomialAut_eq_permutationAut`: over a ring whose only unit is one — the binary field
+  in particular — monomial transformations are exactly coordinate permutations, so the two
+  notions of equivalence and the two automorphism groups agree.
 
 Invariance of the weight distribution and weight enumerator is in
 `TauCeti.InformationTheory.Coding.Weight.Enumerator`.
@@ -132,6 +136,10 @@ theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι →
 end Fintype
 
 end Monomial
+
+end TauCeti
+
+namespace TauCeti
 
 /-! ### Permutation equivalence of linear codes -/
 
@@ -273,6 +281,29 @@ theorem IsMonomialEquivalent.trans (h : IsMonomialEquivalent C D)
   obtain ⟨v, f, rfl⟩ := h'
   exact ⟨fun i ↦ u i * v (e i), e.trans f, by
     rw [← monomialEquiv_trans, LinearEquiv.coe_trans, Submodule.map_comp]⟩
+
+/-- A monomial equivalence matches every word of the target code with a word of the source code
+of the same Hamming weight. -/
+theorem IsMonomialEquivalent.exists_mem_hammingNorm_eq [Fintype ι] [Fintype κ] [DecidableEq R]
+    (h : IsMonomialEquivalent C D) {y : κ → R} (hy : y ∈ D) :
+    ∃ x ∈ C, hammingNorm x = hammingNorm y := by
+  obtain ⟨u, e, rfl⟩ := h
+  obtain ⟨x, hx, rfl⟩ := hy
+  exact ⟨x, hx, (hammingNorm_monomialEquiv u e x).symm⟩
+
+/-- Monomial equivalence preserves divisibility of all codeword weights. -/
+theorem IsMonomialEquivalent.forall_dvd_hammingNorm_iff [Fintype ι] [Fintype κ]
+    [DecidableEq R] (h : IsMonomialEquivalent C D) (k : ℕ) :
+    (∀ x ∈ C, k ∣ hammingNorm x) ↔ ∀ y ∈ D, k ∣ hammingNorm y := by
+  constructor
+  · intro hC y hy
+    obtain ⟨x, hx, hxy⟩ := h.exists_mem_hammingNorm_eq hy
+    rw [← hxy]
+    exact hC x hx
+  · intro hD x hx
+    obtain ⟨y, hy, hyx⟩ := h.symm.exists_mem_hammingNorm_eq hx
+    rw [← hyx]
+    exact hD y hy
 
 /-- Monomially equivalent codes have the same dimension. -/
 theorem IsMonomialEquivalent.finrank_eq (h : IsMonomialEquivalent C D) :
@@ -444,14 +475,14 @@ theorem hammingNorm_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x : ι → R) :
     hammingNorm (f x) = hammingNorm x := by
   obtain ⟨e, rfl⟩ := hf
-  exact Equiv.hammingNorm_comp e.symm x
+  exact Equiv.hammingNorm_funLeft e.symm x
 
 /-- A permutation-group element preserves Hamming distance. -/
 theorem hammingDist_apply_of_mem_permutationGroup [Fintype ι] [DecidableEq R]
     {f : (ι → R) ≃ₗ[R] (ι → R)} (hf : f ∈ permutationGroup R ι) (x y : ι → R) :
     hammingDist (f x) (f y) = hammingDist x y := by
   obtain ⟨e, rfl⟩ := hf
-  exact Equiv.hammingDist_comp e.symm x y
+  exact Equiv.hammingDist_funLeft e.symm x y
 
 variable (C : Submodule R (ι → R))
 
@@ -545,5 +576,43 @@ theorem permutationAut_le_monomialAut : permutationAut C ≤ monomialAut C := fu
     (mem_permutationAut.1 hf).2⟩
 
 end PermutationLeMonomial
+
+/-! ### Monomial transformations when one is the only unit -/
+
+section TrivialUnits
+
+variable [CommSemiring R] [Subsingleton Rˣ]
+
+/-- When one is the only unit, a monomial transformation is its underlying coordinate
+permutation. -/
+@[simp]
+theorem monomialEquiv_eq_funCongrLeft (u : ι → Rˣ) (e : ι ≃ κ) :
+    monomialEquiv u e = LinearEquiv.funCongrLeft R R e.symm := by
+  rw [Subsingleton.elim u 1, monomialEquiv_one]
+
+/-- When one is the only unit, the monomial group is the coordinate-permutation group. -/
+@[simp]
+theorem monomialGroup_eq_permutationGroup : monomialGroup R ι = permutationGroup R ι := by
+  refine le_antisymm (fun f hf ↦ ?_) permutationGroup_le_monomialGroup
+  obtain ⟨u, e, rfl⟩ := mem_monomialGroup.mp hf
+  exact mem_permutationGroup.mpr ⟨e, (monomialEquiv_eq_funCongrLeft u e).symm⟩
+
+/-- When one is the only unit, monomial equivalence is permutation equivalence. -/
+@[simp]
+theorem isMonomialEquivalent_iff_isPermutationEquivalent {C : Submodule R (ι → R)}
+    {D : Submodule R (κ → R)} : IsMonomialEquivalent C D ↔ IsPermutationEquivalent C D := by
+  refine ⟨?_, IsPermutationEquivalent.isMonomialEquivalent⟩
+  rintro ⟨u, e, h⟩
+  exact ⟨e, (monomialEquiv_eq_funCongrLeft u e) ▸ h⟩
+
+/-- When one is the only unit, the monomial and permutation automorphism groups of a code
+coincide. -/
+@[simp]
+theorem monomialAut_eq_permutationAut (C : Submodule R (ι → R)) :
+    monomialAut C = permutationAut C := by
+  ext f
+  rw [mem_monomialAut, mem_permutationAut, monomialGroup_eq_permutationGroup]
+
+end TrivialUnits
 
 end TauCeti

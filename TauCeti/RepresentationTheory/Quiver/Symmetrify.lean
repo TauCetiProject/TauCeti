@@ -14,6 +14,10 @@ public import Mathlib.Data.Fintype.Sum
 
 This file supplies general infrastructure for Mathlib's `Quiver.Symmetrify` construction.
 
+## Main results
+
+* `TauCeti.symmetrify_of_obj`: the doubling inclusion is the identity on vertices.
+
 ## References
 
 This file supplies a prerequisite for Layer 4 of
@@ -46,6 +50,13 @@ instance instFintypeSymmetrifyHom (Q : Type u) [Quiver.{v} Q] [∀ i j : Q, Fint
     (x y : Symmetrify Q) : Fintype (x ⟶ y) :=
   inferInstanceAs (Fintype (((show Q from x) ⟶ (show Q from y)) ⊕
     ((show Q from y) ⟶ (show Q from x))))
+
+/-- The inclusion `Quiver.Symmetrify.of` of a quiver in its doubled quiver is the identity on
+vertices.  Deliberately not a `simp` lemma: the two vertex types are definitionally equal, so
+rewriting `Quiver.Symmetrify.of` away erases the only record of which of the two quiver structures
+a vertex was meant to carry. -/
+theorem symmetrify_of_obj {Q : Type u} [Quiver.{v} Q] (x : Q) :
+    (Symmetrify.of (V := Q)).obj x = x := rfl
 
 /-- The inclusion `Quiver.Symmetrify.of` of a quiver in its doubled quiver is the identity on
 vertices, hence bijective on them. -/

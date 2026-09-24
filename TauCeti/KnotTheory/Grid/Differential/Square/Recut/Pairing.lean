@@ -65,6 +65,13 @@ the recut's own side data holds.
 * `TauCeti.GridRectangleDecomposition.recut_ne`: it has no fixed point.
 * `TauCeti.GridRectangleDecomposition.hasOneCommonSide_recut`: the recut again shares exactly one
   side column, so the involution stays inside the one-common-side terms.
+* `TauCeti.GridRectangleDecomposition.sideColumns_union_recut`: recutting preserves the three
+  columns used by the composite domain.
+* `TauCeti.GridRectangleDecomposition.isRecutOfLeftEqLeft_recut` and its three siblings: the
+  recut is classified by the orientation of the original decomposition's common side.
+* The `side_eq`, `recut_sides` and `recut_branch` theorems on each orientation predicate, together
+  with `TauCeti.GridRectangleDecomposition.IsRecut.orientation`, expose the recut data without
+  unfolding these predicates.
 
 ## References
 
@@ -134,6 +141,96 @@ def IsRecut (D E : GridRectangleDecomposition x z) : Prop :=
   D.IsRepartition E ∧ E.middle ≠ D.middle ∧ E.first.IsEmpty ∧ E.second.IsEmpty ∧
     (D.IsRecutOfLeftEqLeft E ∨ D.IsRecutOfRightEqRight E ∨
       D.IsRecutOfLeftEqRight E ∨ D.IsRecutOfRightEqLeft E)
+
+namespace IsRecutOfLeftEqLeft
+
+/-- The common initial side in the `left = left` recut orientation. -/
+theorem side_eq {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfLeftEqLeft E) :
+    D.first.left = D.second.left := h.1
+
+/-- The outer sides retained by a `left = left` recut. -/
+theorem recut_sides {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfLeftEqLeft E) :
+    E.first.right = D.second.right ∧ E.second.right = D.first.right := ⟨h.2.1, h.2.2.1⟩
+
+/-- The column and branch data of a `left = left` recut. -/
+theorem recut_branch {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfLeftEqLeft E) :
+    (D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
+        E.middle = x.swapColumns D.first.right D.second.right ∧
+          E.first.left = D.first.right ∧ E.second.left = D.first.left) ∨
+      (D.second.right ∈ Grid.cIoo D.first.left D.first.right ∧
+        E.middle = x.swapColumns D.first.left D.second.right ∧
+          E.first.left = D.first.left ∧ E.second.left = D.second.right) := h.2.2.2
+
+end IsRecutOfLeftEqLeft
+
+namespace IsRecutOfRightEqRight
+
+/-- The common terminal side in the `right = right` recut orientation. -/
+theorem side_eq {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfRightEqRight E) :
+    D.first.right = D.second.right := h.1
+
+/-- The outer sides retained by a `right = right` recut. -/
+theorem recut_sides {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfRightEqRight E) :
+    E.first.left = D.second.left ∧ E.second.left = D.first.left := ⟨h.2.1, h.2.2.1⟩
+
+/-- The column and branch data of a `right = right` recut. -/
+theorem recut_branch {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfRightEqRight E) :
+    (D.first.left ∈ Grid.cIoo D.second.left D.first.right ∧
+        E.middle = x.swapColumns D.second.left D.first.left ∧
+          E.first.right = D.first.left ∧ E.second.right = D.first.right) ∨
+      (D.second.left ∈ Grid.cIoo D.first.left D.first.right ∧
+        E.middle = x.swapColumns D.second.left D.first.right ∧
+          E.first.right = D.first.right ∧ E.second.right = D.second.left) := h.2.2.2
+
+end IsRecutOfRightEqRight
+
+namespace IsRecutOfLeftEqRight
+
+/-- The mixed common side in the `left = right` recut orientation. -/
+theorem side_eq {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfLeftEqRight E) :
+    D.first.left = D.second.right := h.1
+
+/-- The outer sides retained by a `left = right` recut. -/
+theorem recut_sides {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfLeftEqRight E) :
+    E.first.bottom = D.second.bottom ∧ E.second.bottom = D.first.bottom := ⟨h.2.1, h.2.2.1⟩
+
+/-- The row and branch data of a `left = right` recut. -/
+theorem recut_branch {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfLeftEqRight E) :
+    (D.first.bottom ∈ Grid.cIoo D.second.bottom D.first.top ∧
+        E.middle = x.swapRows D.second.bottom D.first.bottom ∧
+          E.first.top = D.first.bottom ∧ E.second.top = D.first.top) ∨
+      (D.second.bottom ∈ Grid.cIoo D.first.bottom D.first.top ∧
+        E.middle = x.swapRows D.second.bottom D.first.top ∧
+          E.first.top = D.first.top ∧ E.second.top = D.second.bottom) := h.2.2.2
+
+end IsRecutOfLeftEqRight
+
+namespace IsRecutOfRightEqLeft
+
+/-- The mixed common side in the `right = left` recut orientation. -/
+theorem side_eq {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfRightEqLeft E) :
+    D.first.right = D.second.left := h.1
+
+/-- The outer sides retained by a `right = left` recut. -/
+theorem recut_sides {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfRightEqLeft E) :
+    E.first.top = D.second.top ∧ E.second.top = D.first.top := ⟨h.2.1, h.2.2.1⟩
+
+/-- The row and branch data of a `right = left` recut. -/
+theorem recut_branch {D E : GridRectangleDecomposition x z} (h : D.IsRecutOfRightEqLeft E) :
+    (D.first.top ∈ Grid.cIoo D.first.bottom D.second.top ∧
+        E.middle = x.swapRows D.first.top D.second.top ∧
+          E.first.bottom = D.first.top ∧ E.second.bottom = D.first.bottom) ∨
+      (D.second.top ∈ Grid.cIoo D.first.bottom D.first.top ∧
+        E.middle = x.swapRows D.first.bottom D.second.top ∧
+          E.first.bottom = D.first.bottom ∧ E.second.bottom = D.second.top) := h.2.2.2
+
+end IsRecutOfRightEqLeft
+
+/-- The side-data orientation of a recut. -/
+theorem IsRecut.orientation {D E : GridRectangleDecomposition x z} (h : D.IsRecut E) :
+    D.IsRecutOfLeftEqLeft E ∨ D.IsRecutOfRightEqRight E ∨
+      D.IsRecutOfLeftEqRight E ∨ D.IsRecutOfRightEqLeft E := by
+  exact h.2.2.2.2
 
 /-! ### Existence and uniqueness of the recut -/
 
@@ -503,12 +600,87 @@ theorem isRecut_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommo
     D.IsRecut (D.recut hone hfirst hsecond) :=
   (D.existsUnique_isRecut hone hfirst hsecond).choose_spec.1
 
+/-- A decomposition whose rectangles share their initial side has a recut classified by the
+`left = left` side data of the original decomposition. -/
+theorem isRecutOfLeftEqLeft_recut (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.left) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    D.IsRecutOfLeftEqLeft (D.recut hone hfirst hsecond) := by
+  have hrecut := D.isRecut_recut hone hfirst hsecond
+  rcases hrecut.orientation with hdata | hdata | hdata | hdata
+  · exact hdata
+  · apply False.elim
+    apply D.sideColumns_ne_of_hasOneCommonSide hone
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon,
+      hdata.side_eq]
+  · exact (D.second.left_ne_right (hcommon.symm.trans hdata.side_eq)).elim
+  · exact (D.first.left_ne_right (hcommon.trans hdata.side_eq.symm)).elim
+
+/-- A decomposition whose rectangles share their terminal side has a recut classified by the
+`right = right` side data of the original decomposition. -/
+theorem isRecutOfRightEqRight_recut (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.right) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    D.IsRecutOfRightEqRight (D.recut hone hfirst hsecond) := by
+  have hrecut := D.isRecut_recut hone hfirst hsecond
+  rcases hrecut.orientation with hdata | hdata | hdata | hdata
+  · apply False.elim
+    apply D.sideColumns_ne_of_hasOneCommonSide hone
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hdata.side_eq,
+      hcommon]
+  · exact hdata
+  · exact (D.first.left_ne_right (hdata.side_eq.trans hcommon.symm)).elim
+  · exact (D.second.left_ne_right (hdata.side_eq.symm.trans hcommon)).elim
+
+/-- A decomposition whose first initial side is the second terminal side has a recut classified
+by the `left = right` side data of the original decomposition. -/
+theorem isRecutOfLeftEqRight_recut (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.right) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    D.IsRecutOfLeftEqRight (D.recut hone hfirst hsecond) := by
+  have hrecut := D.isRecut_recut hone hfirst hsecond
+  rcases hrecut.orientation with hdata | hdata | hdata | hdata
+  · exact (D.second.left_ne_right (hdata.side_eq.symm.trans hcommon)).elim
+  · exact (D.first.left_ne_right (hcommon.trans hdata.side_eq.symm)).elim
+  · exact hdata
+  · apply False.elim
+    apply D.sideColumns_ne_of_hasOneCommonSide hone
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon,
+      hdata.side_eq, Finset.pair_comm]
+
+/-- A decomposition whose first terminal side is the second initial side has a recut classified
+by the `right = left` side data of the original decomposition. -/
+theorem isRecutOfRightEqLeft_recut (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.left) (hone : D.HasOneCommonSide)
+    (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    D.IsRecutOfRightEqLeft (D.recut hone hfirst hsecond) := by
+  have hrecut := D.isRecut_recut hone hfirst hsecond
+  rcases hrecut.orientation with hdata | hdata | hdata | hdata
+  · exact (D.first.left_ne_right (hdata.side_eq.trans hcommon.symm)).elim
+  · exact (D.second.left_ne_right (hcommon.symm.trans hdata.side_eq)).elim
+  · apply False.elim
+    apply D.sideColumns_ne_of_hasOneCommonSide hone
+    rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns, hcommon,
+      hdata.side_eq, Finset.pair_comm]
+  · exact hdata
+
 /-- The recut of a decomposition again shares exactly one side column. -/
 theorem hasOneCommonSide_recut (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
     (D.recut hone hfirst hsecond).HasOneCommonSide :=
   hasOneCommonSide_of_isRecut ((D.isRecut_recut hone hfirst hsecond).symm hone hfirst hsecond)
     (D.target_ne_source_of_hasOneCommonSide hone)
+
+/-- Recutting a decomposition with one common side preserves the union of its three side
+columns. -/
+@[simp]
+theorem sideColumns_union_recut (D : GridRectangleDecomposition x z)
+    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    (D.recut hone hfirst hsecond).first.sideColumns ∪
+        (D.recut hone hfirst hsecond).second.sideColumns =
+      D.first.sideColumns ∪ D.second.sideColumns :=
+  sideColumns_union_eq_of_hasOneCommonSide _ _
+    (D.hasOneCommonSide_recut hone hfirst hsecond) hone
 
 /-- The recut of a decomposition is different from it: the two pass through different
 intermediate grid states. -/

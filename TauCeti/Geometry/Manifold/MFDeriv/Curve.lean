@@ -49,8 +49,9 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   named velocity to a `HasMFDerivWithinAt` witness.
 * `TauCeti.Manifold.curveVelocityWithin_subset` and
   `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
-  chain rule under reparametrization, with `TauCeti.Manifold.curveVelocity_comp` as the
-  unrestricted form.
+  chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
+  curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
+  reparametrizations.
 * `TauCeti.Manifold.hasDerivWithinAt_extChartAt_comp_curve`: reading the curve in the chart
   centred at the current point differentiates it to the velocity itself, with
   `TauCeti.Manifold.hasDerivAt_extChartAt_comp_curve` its unrestricted case and
@@ -175,6 +176,55 @@ theorem curveVelocityWithin_subset {u : Set 𝕜} (hus : u ⊆ s)
     curveVelocityWithin I γ u t = curveVelocityWithin I γ s t := by
   rw [curveVelocityWithin_apply, curveVelocityWithin_apply,
     mfderivWithin_subset hus hu.uniqueMDiffWithinAt hγ]
+
+end TauCeti.Manifold
+
+namespace MDifferentiableAt
+
+open Bundle TauCeti.Manifold
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {t : 𝕜}
+
+/-- **The manifold chain rule for the velocity of a curve.** If `g` is a curve through a normed
+space with velocity `w`, then the velocity of `f ∘ g` is the manifold differential of `f`
+applied to `w`. -/
+theorem curveVelocity_comp_mfderiv {f : F → M} {g : 𝕜 → F} {w : F}
+    (hf : MDifferentiableAt 𝓘(𝕜, F) I f (g t)) (hg : HasDerivAt g w t) :
+    curveVelocity I (f ∘ g) t = mfderiv 𝓘(𝕜, F) I f (g t) w := by
+  have hcomp := hf.hasMFDerivAt.comp t hg.hasFDerivAt.hasMFDerivAt
+  have hwithin : curveVelocityWithin I (f ∘ g) Set.univ t =
+      mfderiv 𝓘(𝕜, F) I f (g t) w := by
+    apply curveVelocityWithin_eq_of_hasMFDerivWithinAt
+      (w := mfderiv 𝓘(𝕜, F) I f (g t) w) _ uniqueDiffWithinAt_univ
+    apply hcomp.hasMFDerivWithinAt.congr_mfderiv
+    apply ContinuousLinearMap.ext
+    intro z
+    -- The source model of a scalar curve is one-dimensional; exposing its scalar coordinate lets
+    -- linearity identify the derivative on `z` with its value on `1`.
+    change mfderiv 𝓘(𝕜, F) I f (g t) ((show 𝕜 from z) • w) =
+      (show 𝕜 from z) • mfderiv 𝓘(𝕜, F) I f (g t) w
+    exact map_smul _ _ _
+  simpa only [curveVelocityWithin_univ] using hwithin
+
+end MDifferentiableAt
+
+namespace TauCeti.Manifold
+
+open Bundle
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜} {w : TangentSpace I (γ t)}
 
 /-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
 the derivative of the reparametrization. -/

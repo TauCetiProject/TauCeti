@@ -12,7 +12,8 @@ public import TauCeti.Probability.Distributions.Gamma.Basic
 # Finite sums of independent gamma variables
 
 The gamma family is closed under sums of independent variables sharing a rate: adding two of them
-adds their shapes, which is `TauCeti.gammaMeasure_conv_gammaMeasure`.  This file iterates that
+adds their shapes, which is `TauCeti.Probability.gammaMeasure_conv_gammaMeasure`.  This file
+iterates that
 identity over a nonempty finite family, so that a sum of independent gamma variables with a common
 positive rate has the gamma law whose shape is the total of the individual shapes.
 
@@ -22,7 +23,8 @@ coordinate marginals of the Dirichlet distribution.
 
 ## Main result
 
-* `TauCeti.iIndepFun.hasLaw_sum_gammaMeasure` — a nonempty finite sum of independent gamma
+* `ProbabilityTheory.iIndepFun.hasLaw_sum_gammaMeasure` — a nonempty finite sum of independent
+  gamma
   variables with a common rate is gamma with the summed shape.
 
 ## References
@@ -33,9 +35,9 @@ coordinate marginals of the Dirichlet distribution.
 
 public section
 
-namespace TauCeti
+namespace ProbabilityTheory
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory TauCeti.Probability
 
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → ℝ} {a : ι → ℝ} {r : ℝ}
 
@@ -74,4 +76,4 @@ theorem iIndepFun.hasLaw_sum_gammaMeasure {s : Finset ι} (hindep : iIndepFun X 
   rw [hfun, ← Finset.sum_coe_sort s a]
   exact key Finset.univ Finset.univ_nonempty
 
-end TauCeti
+end ProbabilityTheory

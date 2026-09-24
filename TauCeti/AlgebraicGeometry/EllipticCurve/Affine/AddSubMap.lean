@@ -48,9 +48,11 @@ namespace WeierstrassCurve
 
 namespace Affine
 
-variable {F : Type*} [Field F] {W : Affine F}
-
 /-! ### `sym2x` and the addition-and-subtraction map -/
+
+section CommRing
+
+variable {F : Type*} [CommRing F] {W : Affine F}
 
 /-- `sym2x` written out in the projective `xRep` coordinates.
 
@@ -87,6 +89,10 @@ private lemma Point.sym2x_P_P_eq_addSubMap (P : W.Point) :
     simp only [sym2x_some_some, succ_eq_add_one, reduceAdd, sym2x_some_zero, addSubMap, Fin.isValue]
     ext i : 1
     fin_cases i <;> simp [pow_two, two_mul]
+
+end CommRing
+
+variable {F : Type*} [Field F] {W : Affine F}
 
 section Decidable
 

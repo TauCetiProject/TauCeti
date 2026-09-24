@@ -30,6 +30,8 @@ permutations of the same type.
   orbit count one.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
+* `Equiv.Perm.card_le_orderOf_mul_orbitCount`: conversely, the number of points is at most the
+  order of the permutation times its number of orbits, each orbit length dividing the order.
 * `Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount`: the sign is determined by the parity of
   the number of points minus the number of orbits.
 * `TauCeti.orbitCount_add_one_eq_of_semiconj`: if `σ : Equiv.Perm α` is carried by an injection
@@ -106,6 +108,14 @@ theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :
     orbitCount σ ≤ Nat.card α :=
   Nat.card_le_card_of_surjective (Quotient.mk (SameCycle.setoid σ)) Quotient.mk_surjective
 
+/-- A permutation of a finite nonempty type has a positive number of orbits. -/
+theorem _root_.Equiv.Perm.orbitCount_pos [Finite α] [Nonempty α] (σ : Equiv.Perm α) :
+    0 < orbitCount σ := by
+  let _ : Nonempty (Quotient (SameCycle.setoid σ)) :=
+    ⟨Quotient.mk _ (Classical.choice (inferInstance : Nonempty α))⟩
+  rw [orbitCount_def]
+  exact Nat.card_pos
+
 /-- Conjugate permutations have the same number of orbits: conjugation by `g` relabels the points
 by `g`, hence relabels the orbits. -/
 @[simp]
@@ -171,6 +181,16 @@ theorem _root_.Equiv.Perm.sign_eq_neg_one_pow_card_sub_orbitCount (σ : Equiv.Pe
   simp
 
 end Finite
+
+/-- A permutation of a finite type has at least `Nat.card α / orderOf σ` orbits: every orbit has
+length dividing the order of `σ`, so at most `orderOf σ` points. -/
+theorem _root_.Equiv.Perm.card_le_orderOf_mul_orbitCount [Finite α] (σ : Equiv.Perm α) :
+    Nat.card α ≤ orderOf σ * orbitCount σ := by
+  classical
+  have := Fintype.ofFinite α
+  rw [Nat.card_eq_fintype_card, orbitCount_eq_card_parts_partition, mul_comm, ← smul_eq_mul]
+  exact σ.partition.parts_sum.symm.le.trans <| Multiset.sum_le_card_nsmul _ _ fun k hk ↦
+    Nat.le_of_dvd (orderOf_pos σ) (dvd_of_mem_parts_partition hk)
 
 /-- Propagate a one-step comparison over all integer powers: if every point `x` of `β` lies in the
 same `π`-cycle as its image `g x` does after one step of `σ`, then it lies in the same `π`-cycle

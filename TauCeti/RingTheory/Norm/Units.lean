@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Norm.Defs
+public import Mathlib.Algebra.Group.Subgroup.Defs
 
 /-!
 # The norm on unit groups
@@ -25,6 +26,7 @@ finiteness where the value is computed.
 ## Main definitions
 
 * `TauCeti.Algebra.normUnits`: the algebra norm read as a homomorphism `Sˣ →* Rˣ`.
+* `TauCeti.normGroup`: the image of the norm on units in a finite field extension.
 -/
 
 public section
@@ -42,5 +44,24 @@ noncomputable def Algebra.normUnits : Sˣ →* Rˣ :=
 @[simp]
 theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.norm R (x : S) := by
   simp [Algebra.normUnits]
+
+section NormGroup
+
+variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+
+/-- The norm group `N_{L/K}(Lˣ)` of a finite field extension `L/K`: the image in `Kˣ` of the field
+norm on units, `Algebra.normUnits K : Lˣ →* Kˣ`. Finiteness is required because `Algebra.norm K`
+is identically `1` on an infinite extension. -/
+noncomputable def normGroup [_hfin : Module.Finite K L] : Subgroup Kˣ :=
+  (Algebra.normUnits K : Lˣ →* Kˣ).range
+
+variable {K L} in
+/-- An element of `Kˣ` lies in the norm group exactly when it is the norm of a unit of `L`. -/
+@[simp]
+theorem mem_normGroup_iff [Module.Finite K L] {x : Kˣ} :
+    x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.norm K (y : L) = x := by
+  simp [normGroup, Units.ext_iff]
+
+end NormGroup
 
 end TauCeti

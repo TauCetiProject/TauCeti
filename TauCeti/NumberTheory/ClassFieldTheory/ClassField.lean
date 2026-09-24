@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.FieldTheory.Galois.Infinite
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbelianLayer
 
 /-!

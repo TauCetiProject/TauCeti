@@ -184,6 +184,31 @@ noncomputable def indTrivialIso :
     Rep.ind H.subtype (Rep.trivial k H k) ≅ Rep.ofMulAction k G (G ⧸ H) :=
   Rep.mkIso (indTrivialEquiv k H)
 
+/-- The generator computation rule for `TauCeti.indTrivialIso`. This is the characterizing
+statement for the bundled isomorphism in `Rep k G`, which downstream files use instead of its
+construction; the underlying rule for the bare equivalence is
+`TauCeti.indTrivialEquiv_apply_mk`. Not a `simp` lemma: `simp` unfolds the reducible
+`Representation.IndV.mk`, so the left-hand side is not in `simp`-normal form. -/
+theorem indTrivialIso_hom_hom_apply_mk (x : G) (a : k) :
+    (indTrivialIso k H).hom.hom (IndV.mk H.subtype (Representation.trivial k H k) x a) =
+      MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a := by
+  rw [indTrivialIso, Rep.mkIso_hom_hom_apply]
+  exact indTrivialEquiv_apply_mk k H x a
+
+-- `simp` reduces the carriers of the `abbrev`s `Rep.ind`, `Rep.trivial` and `Rep.ofMulAction`
+-- in implicit type arguments before it looks a term up, so the left-hand side is stated through
+-- `dsimp% only`, as in #8315.
+/-- The computation rule for the inverse of `TauCeti.indTrivialIso` on the standard basis of
+`k[G ⧸ H]`; the underlying rule for the bare equivalence is
+`TauCeti.indTrivialEquiv_symm_apply_single`. -/
+@[simp]
+theorem indTrivialIso_inv_hom_apply_single (x : G) (r : k) :
+    (dsimp% only
+        ((indTrivialIso k H).inv.hom (MonoidAlgebra.single (QuotientGroup.mk x : G ⧸ H) r))) =
+      r • IndV.mk H.subtype (Representation.trivial k H k) x⁻¹ (1 : k) := by
+  rw [indTrivialIso, Rep.mkIso_inv_hom_apply]
+  exact indTrivialEquiv_symm_apply_single k H x r
+
 /-- `Ind_H^G (trivial)` is a finite module whenever `H` has finite index, by transport along
 `TauCeti.indTrivialEquiv`; over a field this is the `FiniteDimensional` instance that lets one
 even state its character. -/
@@ -212,12 +237,7 @@ noncomputable def indResProjection :
 theorem indResProjection_hom_hom_apply (x : G) (y : Y) :
     (indResProjection Y).hom.hom (IndV.mk H.subtype (Rep.res H.subtype Y).ρ x y)
       = MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) (1 : k) ⊗ₜ[k] Y.ρ x⁻¹ y := by
-  have hmk : (indTrivialIso k H).hom.hom
-      (IndV.mk H.subtype (Representation.trivial k H k) x (1 : k)) =
-        MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) (1 : k) := by
-    rw [indTrivialIso, Rep.mkIso_hom_hom_apply]
-    exact indTrivialEquiv_apply_mk k H x 1
-  refine Eq.trans ?_ (congrArg (· ⊗ₜ[k] Y.ρ x⁻¹ y) hmk)
+  refine Eq.trans ?_ (congrArg (· ⊗ₜ[k] Y.ρ x⁻¹ y) (indTrivialIso_hom_hom_apply_mk k H x 1))
   refine Eq.trans ?_ (congrArg (Rep.Hom.hom (indTrivialIso k H ⊗ᵢ Iso.refl Y).hom)
     (indProjection_hom_hom_apply H.subtype (𝟙_ (Rep k H)) Y x 1 y))
   simp [indResProjection, Rep.indMap]

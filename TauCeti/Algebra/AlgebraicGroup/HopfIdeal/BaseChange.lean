@@ -13,7 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
 # Base change of Hopf ideals

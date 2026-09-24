@@ -219,12 +219,8 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_nevanlinnaKernel
       (f t : ℂ) = (b : ℂ) * t + (∫ x : ℝ, nevanlinnaKernel (t : ℂ) x ∂ρ) + c)
     (hpos : ∀ t : ℝ, 0 < t → 0 ≤ f t) :
     ∃ g : ℝ → ℝ, IsCompleteBernsteinFunction g ∧ EqOn g f (Ioi 0) := by
-  have hale : ∀ᵐ x ∂ρ, x ≤ 0 := by
-    have hset : {x : ℝ | ¬ x ≤ 0} = Ioi 0 := by
-      ext x
-      simp [not_le]
-    rw [ae_iff, hset]
-    exact hρ
+  have hale : ∀ᵐ x ∂ρ, x ≤ 0 :=
+    (measure_eq_zero_iff_ae_notMem.mp hρ).mono fun x hx => not_lt.mp hx
   set ν : Measure ℝ≥0 := ρ.map (fun x => (-x).toNNReal) with hν
   have : IsFiniteMeasure ν := by
     rw [hν]

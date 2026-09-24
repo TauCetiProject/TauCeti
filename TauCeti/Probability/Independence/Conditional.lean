@@ -51,7 +51,7 @@ namespace Probability
 /-- Pointwise product with the constant-`1` indicator of `s` restricts a function to the
 indicator of `s`. Lets indicator products be rewritten without pointwise case splits. -/
 private lemma mul_indicator_one_eq_indicator {Ω : Type*} (s : Set Ω) (φ : Ω → ℝ) :
-    φ * s.indicator (fun _ => (1 : ℝ)) = s.indicator φ := by
+    φ * s.indicator (fun _ ↦ (1 : ℝ)) = s.indicator φ := by
   funext ω
   rw [Pi.mul_apply, ← Set.indicator_mul_right]
   simp
@@ -62,45 +62,47 @@ private lemma mul_indicator_one_eq_indicator {Ω : Type*} (s : Set Ω) (φ : Ω 
 theorem condIndep_of_indicator_condExp_eq {Ω : Type*} {mΩ : MeasurableSpace Ω}
     [StandardBorelSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ] {mF mG mH : MeasurableSpace Ω}
     (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ) (hmH : mH ≤ mΩ) (h : ∀ H, MeasurableSet[mH] H →
-      μ[H.indicator (fun _ => (1 : ℝ)) | mF ⊔ mG]
-        =ᵐ[μ] μ[H.indicator (fun _ => (1 : ℝ)) | mG]) :
+      μ[H.indicator (fun _ ↦ (1 : ℝ)) | mF ⊔ mG]
+        =ᵐ[μ] μ[H.indicator (fun _ ↦ (1 : ℝ)) | mG]) :
     CondIndep mG mF mH hmG μ := by
   classical
   refine (condIndep_iff mG mF mH hmG hmF hmH μ).2 ?_
   intro tF tH htF htH
-  set f1 : Ω → ℝ := tF.indicator (fun _ : Ω => (1 : ℝ)) with hf1
-  set f2 : Ω → ℝ := tH.indicator (fun _ : Ω => (1 : ℝ)) with hf2
+  set f1 : Ω → ℝ := tF.indicator (fun _ : Ω ↦ (1 : ℝ)) with hf1
+  set f2 : Ω → ℝ := tH.indicator (fun _ : Ω ↦ (1 : ℝ)) with hf2
   -- The product of the two indicators is the indicator of the intersection; named once and reused.
-  have h_f1f2 : (fun ω => f1 ω * f2 ω) = (tF ∩ tH).indicator (fun _ => (1 : ℝ)) := by
-    rw [hf1, hf2]; exact (Set.inter_indicator_one (s := tF) (t := tH) (M₀ := ℝ)).symm
+  have h_f1f2 : (fun ω ↦ f1 ω * f2 ω) = (tF ∩ tH).indicator (fun _ ↦ (1 : ℝ)) := by
+    rw [hf1, hf2]
+    exact (Set.inter_indicator_one (s := tF) (t := tH) (M₀ := ℝ)).symm
   have hf1_int : Integrable f1 μ := Integrable.indicator (integrable_const (1 : ℝ)) (hmF _ htF)
   have hf2_int : Integrable f2 μ := Integrable.indicator (integrable_const (1 : ℝ)) (hmH _ htH)
   have hf1_aesm : AEStronglyMeasurable[mF ⊔ mG] f1 μ :=
     ((stronglyMeasurable_const.indicator htF).aestronglyMeasurable).mono
       (le_sup_left : mF ≤ mF ⊔ mG)
   have hProj : μ[f2 | mF ⊔ mG] =ᵐ[μ] μ[f2 | mG] := h tH htH
-  have h_tower : μ[(fun ω => f1 ω * f2 ω) | mG]
-      =ᵐ[μ] μ[ μ[(fun ω => f1 ω * f2 ω) | mF ⊔ mG] | mG] := by
+  have h_tower : μ[(fun ω ↦ f1 ω * f2 ω) | mG]
+      =ᵐ[μ] μ[ μ[(fun ω ↦ f1 ω * f2 ω) | mF ⊔ mG] | mG] := by
     simpa using (condExp_condExp_of_le (μ := μ) (hm₁₂ := le_sup_right) (hm₂ := sup_le hmF hmG)
-      (f := fun ω => f1 ω * f2 ω)).symm
-  have hf1f2_int : Integrable (fun ω => f1 ω * f2 ω) μ := by
+      (f := fun ω ↦ f1 ω * f2 ω)).symm
+  have hf1f2_int : Integrable (fun ω ↦ f1 ω * f2 ω) μ := by
     rw [h_f1f2]
     exact Integrable.indicator (integrable_const (1 : ℝ))
       (MeasurableSet.inter (hmF _ htF) (hmH _ htH))
-  have h_pull_middle : μ[(fun ω => f1 ω * f2 ω) | mF ⊔ mG] =ᵐ[μ] f1 * μ[f2 | mF ⊔ mG] :=
+  have h_pull_middle : μ[(fun ω ↦ f1 ω * f2 ω) | mF ⊔ mG] =ᵐ[μ] f1 * μ[f2 | mF ⊔ mG] :=
     condExp_mul_of_aestronglyMeasurable_left (μ := μ) (m := mF ⊔ mG) hf1_aesm hf1f2_int hf2_int
-  have h_middle_to_G : μ[(fun ω => f1 ω * f2 ω) | mF ⊔ mG] =ᵐ[μ] f1 * μ[f2 | mG] :=
+  have h_middle_to_G : μ[(fun ω ↦ f1 ω * f2 ω) | mF ⊔ mG] =ᵐ[μ] f1 * μ[f2 | mG] :=
     h_pull_middle.trans <| Filter.EventuallyEq.mul Filter.EventuallyEq.rfl hProj
   have hf1_condExp_int : Integrable (f1 * μ[f2 | mG]) μ := by
-    have heq : f1 * μ[f2 | mG] = tF.indicator (fun ω => μ[f2 | mG] ω) := by
-      rw [hf1, mul_comm]; exact mul_indicator_one_eq_indicator tF _
+    have heq : f1 * μ[f2 | mG] = tF.indicator (fun ω ↦ μ[f2 | mG] ω) := by
+      rw [hf1, mul_comm]
+      exact mul_indicator_one_eq_indicator tF _
     rw [heq]
     exact Integrable.indicator (integrable_condExp (μ := μ) (m := mG) (f := f2)) (hmF _ htF)
   have h_pull_outer : μ[f1 * μ[f2 | mG] | mG] =ᵐ[μ] μ[f1 | mG] * μ[f2 | mG] :=
     condExp_mul_of_aestronglyMeasurable_right (μ := μ) (m := mG)
       (stronglyMeasurable_condExp (μ := μ) (m := mG) (f := f2)).aestronglyMeasurable
       hf1_condExp_int hf1_int
-  have h_prod : μ[(fun ω => f1 ω * f2 ω) | mG] =ᵐ[μ] μ[f1 | mG] * μ[f2 | mG] :=
+  have h_prod : μ[(fun ω ↦ f1 ω * f2 ω) | mG] =ᵐ[μ] μ[f1 | mG] * μ[f2 | mG] :=
     h_tower.trans ((condExp_congr_ae h_middle_to_G).trans h_pull_outer)
   rw [h_f1f2] at h_prod
   simpa only [hf1, hf2] using h_prod
@@ -109,7 +111,7 @@ theorem condIndep_of_indicator_condExp_eq {Ω : Type*} {mΩ : MeasurableSpace Ω
 integrating `φ * 1_s` over `t` is integrating `φ` over the rectangle `s ∩ t`. -/
 private lemma setIntegral_mul_indicator_one {Ω : Type*} {m0 : MeasurableSpace Ω} {μ : Measure Ω}
     {s : Set Ω} (hs : MeasurableSet[m0] s) (t : Set Ω) (φ : Ω → ℝ) :
-    ∫ x in t, (φ * s.indicator fun _ => (1 : ℝ)) x ∂μ = ∫ x in s ∩ t, φ x ∂μ := by
+    ∫ x in t, (φ * s.indicator fun _ ↦ (1 : ℝ)) x ∂μ = ∫ x in s ∩ t, φ x ∂μ := by
   rw [mul_indicator_one_eq_indicator, setIntegral_indicator hs, Set.inter_comm]
 
 /-- If the conditional expectation of a product splits, then over a `mG`-measurable set one
@@ -129,7 +131,8 @@ private lemma setIntegral_condExp_mul_eq_setIntegral_mul {Ω : Type*} {m0 mG : M
       = ∫ x in t, μ[(μ[f | mG]) * g | mG] x ∂μ := (setIntegral_condExp hmG hint_ceg ht).symm
     _ = ∫ x in t, μ[f * g | mG] x ∂μ :=
         setIntegral_congr_ae (hmG _ ht) <| by
-          filter_upwards [h_pull, hsplit] with x h1 h2 _; rw [h1, h2]
+          filter_upwards [h_pull, hsplit] with x h1 h2 _
+          rw [h1, h2]
     _ = ∫ x in t, (f * g) x ∂μ := setIntegral_condExp hmG hint_fg ht
 
 /-- Rectangle step for `condExp_indicator_sup_eq_of_condIndep`: over a rectangle `tF ∩ tG` (`tF`
@@ -140,16 +143,16 @@ private lemma setIntegral_condExp_indicator_eq_on_rectangle {Ω : Type*} {mΩ : 
     (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ) (hmH : mH ≤ mΩ) (hCI : CondIndep mG mF mH hmG μ)
     {H : Set Ω} (hH : MeasurableSet[mH] H)
     {tF tG : Set Ω} (htF : MeasurableSet[mF] tF) (htG : MeasurableSet[mG] tG) :
-    ∫ x in tF ∩ tG, (μ[H.indicator (fun _ => (1 : ℝ)) | mG]) x ∂μ
-      = ∫ x in tF ∩ tG, H.indicator (fun _ => (1 : ℝ)) x ∂μ := by
+    ∫ x in tF ∩ tG, (μ[H.indicator (fun _ ↦ (1 : ℝ)) | mG]) x ∂μ
+      = ∫ x in tF ∩ tG, H.indicator (fun _ ↦ (1 : ℝ)) x ∂μ := by
   classical
-  set f : Ω → ℝ := H.indicator (fun _ => (1 : ℝ)) with hf_def
-  set gB : Ω → ℝ := tF.indicator (fun _ => (1 : ℝ)) with hgB_def
+  set f : Ω → ℝ := H.indicator (fun _ ↦ (1 : ℝ)) with hf_def
+  set gB : Ω → ℝ := tF.indicator (fun _ ↦ (1 : ℝ)) with hgB_def
   have htF_m0 : MeasurableSet[mΩ] tF := hmF _ htF
   have hint_ceg : Integrable (μ[f | mG] * gB) μ := by
     rw [hgB_def, mul_indicator_one_eq_indicator]
     exact integrable_condExp.indicator htF_m0
-  have hfg : (f * gB) = (tF ∩ H).indicator (fun _ => (1 : ℝ)) := by
+  have hfg : (f * gB) = (tF ∩ H).indicator (fun _ ↦ (1 : ℝ)) := by
     rw [hgB_def, mul_indicator_one_eq_indicator, hf_def, Set.indicator_indicator]
   have hprod_int : Integrable (f * gB) μ := by
     rw [hfg]
@@ -198,15 +201,15 @@ private lemma setIntegral_condExp_indicator_eq_of_measurableSet_sup {Ω : Type*}
     {mF mG mH : MeasurableSpace Ω} (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ) (hmH : mH ≤ mΩ)
     (hCI : CondIndep mG mF mH hmG μ) {H : Set Ω} (hH : MeasurableSet[mH] H)
     {s : Set Ω} (hs : MeasurableSet[mF ⊔ mG] s) :
-    ∫ x in s, (μ[H.indicator (fun _ => (1 : ℝ)) | mG]) x ∂μ
-      = ∫ x in s, H.indicator (fun _ => (1 : ℝ)) x ∂μ := by
+    ∫ x in s, (μ[H.indicator (fun _ ↦ (1 : ℝ)) | mG]) x ∂μ
+      = ∫ x in s, H.indicator (fun _ ↦ (1 : ℝ)) x ∂μ := by
   classical
-  set f : Ω → ℝ := H.indicator (fun _ => (1 : ℝ))
+  set f : Ω → ℝ := H.indicator (fun _ ↦ (1 : ℝ))
   have hmFG_le : mF ⊔ mG ≤ mΩ := sup_le hmF hmG
   have hf_int : Integrable f μ := Integrable.indicator (integrable_const (1 : ℝ)) (hmH _ hH)
   -- Induct over the π-system of rectangles `tF ∩ tG` generating the join.
   apply MeasurableSpace.induction_on_inter
-    (C := fun s _ => ∫ x in s, (μ[f | mG]) x ∂μ = ∫ x in s, f x ∂μ)
+    (C := fun s _ ↦ ∫ x in s, (μ[f | mG]) x ∂μ = ∫ x in s, f x ∂μ)
     (sup_eq_generateFrom_inter_measurableSet mF mG) (isPiSystem_inter_measurableSet mF mG)
   · simp
   · rintro t ⟨tF, tG, htF, htG, rfl⟩
@@ -222,11 +225,11 @@ private lemma setIntegral_condExp_indicator_eq_of_measurableSet_sup {Ω : Type*}
     linarith
   · intro t_seq hdisjoint htm_seq ht_ind_seq
     have hd : Pairwise (Function.onFun Disjoint t_seq) := hdisjoint
-    have h1 := hasSum_integral_iUnion (fun i => hmFG_le _ (htm_seq i)) hd
+    have h1 := hasSum_integral_iUnion (fun i ↦ hmFG_le _ (htm_seq i)) hd
       (integrable_condExp : Integrable (μ[f | mG]) μ).integrableOn
-    have h2 := hasSum_integral_iUnion (fun i => hmFG_le _ (htm_seq i)) hd hf_int.integrableOn
-    exact h1.unique ((funext ht_ind_seq : (fun i => ∫ x in t_seq i, (μ[f | mG]) x ∂μ)
-      = fun i => ∫ x in t_seq i, f x ∂μ) ▸ h2)
+    have h2 := hasSum_integral_iUnion (fun i ↦ hmFG_le _ (htm_seq i)) hd hf_int.integrableOn
+    exact h1.unique ((funext ht_ind_seq : (fun i ↦ ∫ x in t_seq i, (μ[f | mG]) x ∂μ)
+      = fun i ↦ ∫ x in t_seq i, f x ∂μ) ▸ h2)
   · exact hs
 
 /-- **Projection from conditional independence.** If `mF` and `mH` are conditionally independent
@@ -237,13 +240,13 @@ theorem condExp_indicator_sup_eq_of_condIndep {Ω : Type*} {mΩ : MeasurableSpac
     [StandardBorelSpace Ω] {μ : @Measure Ω mΩ} [IsFiniteMeasure μ] {mF mG mH : MeasurableSpace Ω}
     (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ) (hmH : mH ≤ mΩ) (hCI : CondIndep mG mF mH hmG μ)
     {H : Set Ω} (hH : MeasurableSet[mH] H) :
-    μ[H.indicator (fun _ => (1 : ℝ)) | mF ⊔ mG]
+    μ[H.indicator (fun _ ↦ (1 : ℝ)) | mF ⊔ mG]
       =ᵐ[μ]
-    μ[H.indicator (fun _ => (1 : ℝ)) | mG] := by
-  have hf_int : Integrable (H.indicator (fun _ => (1 : ℝ))) μ :=
+    μ[H.indicator (fun _ ↦ (1 : ℝ)) | mG] := by
+  have hf_int : Integrable (H.indicator (fun _ ↦ (1 : ℝ))) μ :=
     Integrable.indicator (integrable_const (1 : ℝ)) (hmH _ hH)
   refine (ae_eq_condExp_of_forall_setIntegral_eq (sup_le hmF hmG) hf_int
-    (fun _ _ _ => integrable_condExp.integrableOn) (fun s hs _ =>
+    (fun _ _ _ ↦ integrable_condExp.integrableOn) (fun s hs _ ↦
       setIntegral_condExp_indicator_eq_of_measurableSet_sup hmF hmG hmH hCI hH hs)
     (stronglyMeasurable_condExp.aestronglyMeasurable.mono le_sup_right)).symm
 
@@ -261,7 +264,7 @@ variable {Ω α γ : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Measurabl
 /-- From the pair-law equality `(X, W) =ᵈ (X, W')`, extract the marginal `W =ᵈ W'`. -/
 private lemma marginal_law_eq_of_pair_law (X : Ω → α) (W W' : Ω → γ)
     (hX : Measurable X) (hW : Measurable W) (hW' : Measurable W')
-    (h_law : Measure.map (fun ω => (X ω, W ω)) μ = Measure.map (fun ω => (X ω, W' ω)) μ) :
+    (h_law : Measure.map (fun ω ↦ (X ω, W ω)) μ = Measure.map (fun ω ↦ (X ω, W' ω)) μ) :
     Measure.map W μ = Measure.map W' μ := by
   have h := congrArg (Measure.map (Prod.snd : α × γ → γ)) h_law
   rwa [Measure.map_map measurable_snd (hX.prodMk hW),
@@ -271,20 +274,20 @@ private lemma marginal_law_eq_of_pair_law (X : Ω → α) (W W' : Ω → γ)
 over `W ⁻¹' B` as over `W' ⁻¹' B`. -/
 private lemma setIntegral_indicator_preimage_eq_of_pair_law (X : Ω → α) (W W' : Ω → γ)
     (hX : Measurable X) (hW : Measurable W) (hW' : Measurable W')
-    (h_law : Measure.map (fun ω => (X ω, W ω)) μ = Measure.map (fun ω => (X ω, W' ω)) μ)
+    (h_law : Measure.map (fun ω ↦ (X ω, W ω)) μ = Measure.map (fun ω ↦ (X ω, W' ω)) μ)
     {A : Set α} (hA : MeasurableSet A) {B : Set γ} (hB : MeasurableSet B) :
-    ∫ ω in W ⁻¹' B, (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) ω ∂μ
-      = ∫ ω in W' ⁻¹' B, (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) ω ∂μ := by
+    ∫ ω in W ⁻¹' B, (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) ω ∂μ
+      = ∫ ω in W' ⁻¹' B, (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) ω ∂μ := by
   rw [setIntegral_indicator (hX hA), setIntegral_indicator (hX hA),
     setIntegral_const, setIntegral_const]
   congr 1
   rw [Set.inter_comm (W ⁻¹' B), Set.inter_comm (W' ⁻¹' B)]
   rw [← Set.mk_preimage_prod X W, ← Set.mk_preimage_prod X W']
-  have h_meas1 : μ ((fun ω => (X ω, W ω)) ⁻¹' (A ×ˢ B))
-      = (Measure.map (fun ω => (X ω, W ω)) μ) (A ×ˢ B) :=
+  have h_meas1 : μ ((fun ω ↦ (X ω, W ω)) ⁻¹' (A ×ˢ B))
+      = (Measure.map (fun ω ↦ (X ω, W ω)) μ) (A ×ˢ B) :=
     (Measure.map_apply (hX.prodMk hW) (hA.prod hB)).symm
-  have h_meas2 : μ ((fun ω => (X ω, W' ω)) ⁻¹' (A ×ˢ B))
-      = (Measure.map (fun ω => (X ω, W' ω)) μ) (A ×ˢ B) :=
+  have h_meas2 : μ ((fun ω ↦ (X ω, W' ω)) ⁻¹' (A ×ˢ B))
+      = (Measure.map (fun ω ↦ (X ω, W' ω)) μ) (A ×ˢ B) :=
     (Measure.map_apply (hX.prodMk hW') (hA.prod hB)).symm
   simp only [Measure.real, ENNReal.toReal_eq_toReal_iff]
   left
@@ -305,7 +308,7 @@ private lemma setIntegral_map_eq_setIntegral_preimage_of_condExp_comp
       = ∫ ω in W ⁻¹' B, g (W ω) ∂μ :=
           setIntegral_map hB hg hW.aemeasurable
     _ = ∫ ω in W ⁻¹' B, μ[φ | MeasurableSpace.comap W inferInstance] ω ∂μ :=
-          setIntegral_congr_fun (hW hB) fun ω _ => (congrFun hg_eq ω).symm
+          setIntegral_congr_fun (hW hB) fun ω _ ↦ (congrFun hg_eq ω).symm
     _ = ∫ ω in W ⁻¹' B, φ ω ∂μ :=
           setIntegral_condExp hmW_le hφ_int
             (MeasurableSpace.measurableSet_comap.mpr ⟨B, hB, rfl⟩)
@@ -337,7 +340,7 @@ private lemma integral_mul_self_condExp_comap_eq_integral_sq_map
   calc ∫ ω, (μ[φ | MeasurableSpace.comap W inferInstance]) ω
           * (μ[φ | MeasurableSpace.comap W inferInstance]) ω ∂μ
       = ∫ ω, (g (W ω)) ^ 2 ∂μ := by
-        refine integral_congr_ae (.of_forall fun ω => ?_)
+        refine integral_congr_ae (.of_forall fun ω ↦ ?_)
         simp only [hg_eq, Function.comp_apply, pow_two]
     _ = ∫ y, (g y) ^ 2 ∂(Measure.map W μ) :=
         (integral_map hW (hg.pow 2)).symm
@@ -347,26 +350,26 @@ pair law makes their set-integrals over corresponding preimages match, and an in
 is determined a.e. by those. -/
 private lemma ae_eq_of_condExp_comap_comp_of_pair_law [IsFiniteMeasure μ] (X : Ω → α) (W W' : Ω → γ)
     (hX : Measurable X) (hW : Measurable W) (hW' : Measurable W')
-    (h_law : Measure.map (fun ω => (X ω, W ω)) μ = Measure.map (fun ω => (X ω, W' ω)) μ)
+    (h_law : Measure.map (fun ω ↦ (X ω, W ω)) μ = Measure.map (fun ω ↦ (X ω, W' ω)) μ)
     {A : Set α} (hA : MeasurableSet A) {g₁ g₂ : γ → ℝ}
     (hg₁_sm : AEStronglyMeasurable g₁ (Measure.map W μ))
     (hg₂_sm : AEStronglyMeasurable g₂ (Measure.map W' μ))
     (hg₁_int : Integrable g₁ (Measure.map W μ)) (hg₂_int : Integrable g₂ (Measure.map W μ))
-    (hμ₁_eq : μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ))
+    (hμ₁_eq : μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ))
       | MeasurableSpace.comap W inferInstance] = g₁ ∘ W)
-    (hμ₂_eq : μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ))
+    (hμ₂_eq : μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ))
       | MeasurableSpace.comap W' inferInstance] = g₂ ∘ W') :
     g₁ =ᵐ[Measure.map W μ] g₂ := by
   have hρ_eq : Measure.map W μ = Measure.map W' μ :=
     marginal_law_eq_of_pair_law X W W' hX hW hW' h_law
-  have hφ_int : Integrable ((X ⁻¹' A).indicator (fun _ => (1 : ℝ))) μ :=
+  have hφ_int : Integrable ((X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ))) μ :=
     Integrable.indicator (integrable_const 1) (hX hA)
-  refine Integrable.ae_eq_of_forall_setIntegral_eq g₁ g₂ hg₁_int hg₂_int fun B hB _ => ?_
+  refine Integrable.ae_eq_of_forall_setIntegral_eq g₁ g₂ hg₁_int hg₂_int fun B hB _ ↦ ?_
   calc ∫ y in B, g₁ y ∂(Measure.map W μ)
-      = ∫ ω in W ⁻¹' B, (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) ω ∂μ :=
+      = ∫ ω in W ⁻¹' B, (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) ω ∂μ :=
         setIntegral_map_eq_setIntegral_preimage_of_condExp_comp hW hg₁_sm
           hφ_int hμ₁_eq hB
-    _ = ∫ ω in W' ⁻¹' B, (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) ω ∂μ :=
+    _ = ∫ ω in W' ⁻¹' B, (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) ω ∂μ :=
         setIntegral_indicator_preimage_eq_of_pair_law X W W' hX hW hW' h_law hA hB
     _ = ∫ y in B, g₂ y ∂(Measure.map W μ) := by
         rw [hρ_eq]
@@ -376,25 +379,27 @@ private lemma ae_eq_of_condExp_comap_comp_of_pair_law [IsFiniteMeasure μ] (X : 
 /-- Helper for Kallenberg 1.3: the square-integrals of the two conditional expectations agree. -/
 private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ] (X : Ω → α) (W W' : Ω → γ)
     (hX : Measurable X) (hW : Measurable W) (hW' : Measurable W')
-    (h_law : Measure.map (fun ω => (X ω, W ω)) μ = Measure.map (fun ω => (X ω, W' ω)) μ)
+    (h_law : Measure.map (fun ω ↦ (X ω, W ω)) μ = Measure.map (fun ω ↦ (X ω, W' ω)) μ)
     {A : Set α} (hA : MeasurableSet A) :
-    ∫ ω, (μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ))
+    ∫ ω, (μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ))
             | MeasurableSpace.comap W inferInstance]) ω
-        * (μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ))
+        * (μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ))
             | MeasurableSpace.comap W inferInstance]) ω ∂μ
-      = ∫ ω, (μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ))
+      = ∫ ω, (μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ))
               | MeasurableSpace.comap W' inferInstance]) ω
-          * (μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ))
+          * (μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ))
               | MeasurableSpace.comap W' inferInstance]) ω ∂μ := by
   have hρ_eq : Measure.map W μ = Measure.map W' μ :=
     marginal_law_eq_of_pair_law X W W' hX hW hW' h_law
-  set φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) with hφ_def
+  set φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) with hφ_def
   -- Doob–Dynkin factorisation `μ₁ = g₁ ∘ W`, `μ₂ = g₂ ∘ W'`.
   obtain ⟨g₁, hg₁_sm, hg₁_int, hμ₁_eq⟩ :=
     exists_stronglyMeasurable_integrable_condExp_comap_eq_comp (μ := μ) hW.aemeasurable φ
   obtain ⟨g₂, hg₂_sm, hg₂_int, hμ₂_eq⟩ :=
     exists_stronglyMeasurable_integrable_condExp_comap_eq_comp (μ := μ) hW'.aemeasurable φ
-  have hg₂_int' : Integrable g₂ (Measure.map W μ) := by rw [hρ_eq]; exact hg₂_int
+  have hg₂_int' : Integrable g₂ (Measure.map W μ) := by
+    rw [hρ_eq]
+    exact hg₂_int
   have hg_eq := ae_eq_of_condExp_comap_comp_of_pair_law X W W' hX hW hW' h_law hA
     hg₁_sm.aestronglyMeasurable hg₂_sm.aestronglyMeasurable hg₁_int hg₂_int' hμ₁_eq hμ₂_eq
   -- Push the square through the two factorisations; the middle step is `hg_eq`.
@@ -404,7 +409,9 @@ private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ] (X : Ω �
         integral_mul_self_condExp_comap_eq_integral_sq_map hW.aemeasurable
           hg₁_sm.aestronglyMeasurable hμ₁_eq
     _ = ∫ y, (g₂ y) ^ 2 ∂(Measure.map W μ) := by
-        refine integral_congr_ae ?_; filter_upwards [hg_eq] with y hy; rw [hy]
+        refine integral_congr_ae ?_
+        filter_upwards [hg_eq] with y hy
+        rw [hy]
     _ = ∫ y, (g₂ y) ^ 2 ∂(Measure.map W' μ) := by rw [hρ_eq]
     _ = ∫ ω, (μ[φ | MeasurableSpace.comap W' inferInstance]) ω
           * (μ[φ | MeasurableSpace.comap W' inferInstance]) ω ∂μ :=
@@ -416,28 +423,33 @@ integral (`∫ g₂ g₁ = ∫ g₁²`) are a.e. equal: the `L²` distance polar
 `∫ (g₂ - g₁)² = ∫ g₂² - 2 ∫ g₂ g₁ + ∫ g₁² = 0`. The products `g₁²`, `g₂²`, `g₂ g₁` are assumed
 integrable. -/
 private lemma ae_eq_of_integral_mul_eq_of_integral_sq_eq {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} {g₁ g₂ : Ω → ℝ} (hg₁sq : Integrable (fun ω => g₁ ω * g₁ ω) μ)
-    (hg₂sq : Integrable (fun ω => g₂ ω * g₂ ω) μ) (hg₂g₁ : Integrable (fun ω => g₂ ω * g₁ ω) μ)
+    {μ : Measure Ω} {g₁ g₂ : Ω → ℝ} (hg₁sq : Integrable (fun ω ↦ g₁ ω * g₁ ω) μ)
+    (hg₂sq : Integrable (fun ω ↦ g₂ ω * g₂ ω) μ) (hg₂g₁ : Integrable (fun ω ↦ g₂ ω * g₁ ω) μ)
     (h_cross : ∫ ω, g₂ ω * g₁ ω ∂μ = ∫ ω, g₁ ω * g₁ ω ∂μ)
     (h_sq : ∫ ω, g₁ ω * g₁ ω ∂μ = ∫ ω, g₂ ω * g₂ ω ∂μ) :
     g₁ =ᵐ[μ] g₂ := by
   have h_L2_zero : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ = 0 := by
     have h_expand : ∀ᵐ ω ∂μ,
         (g₂ ω - g₁ ω) ^ 2 = g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
-      filter_upwards with ω; ring
-    have hc2_int : Integrable (fun ω => 2 * (g₂ ω * g₁ ω)) μ := hg₂g₁.const_mul 2
-    have hsub_int : Integrable (fun ω => g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω)) μ := hg₂sq.sub hc2_int
+      filter_upwards with ω
+      ring
+    have hc2_int : Integrable (fun ω ↦ 2 * (g₂ ω * g₁ ω)) μ := hg₂g₁.const_mul 2
+    have hsub_int : Integrable (fun ω ↦ g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω)) μ := hg₂sq.sub hc2_int
     have h1 : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ =
         ∫ ω, g₂ ω * g₂ ω ∂μ - 2 * ∫ ω, g₂ ω * g₁ ω ∂μ + ∫ ω, g₁ ω * g₁ ω ∂μ := by
       rw [integral_congr_ae h_expand, integral_add hsub_int hg₁sq,
         integral_sub hg₂sq hc2_int, integral_const_mul]
-    rw [h1, h_cross, h_sq]; ring
-  have h_sq_int : Integrable (fun ω => (g₂ ω - g₁ ω) ^ 2) μ := by
-    have h_eq : (fun ω => (g₂ ω - g₁ ω) ^ 2)
-        = fun ω => g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by funext ω; ring
-    rw [h_eq]; exact (hg₂sq.sub (hg₂g₁.const_mul 2)).add hg₁sq
+    rw [h1, h_cross, h_sq]
+    ring
+  have h_sq_int : Integrable (fun ω ↦ (g₂ ω - g₁ ω) ^ 2) μ := by
+    have h_eq : (fun ω ↦ (g₂ ω - g₁ ω) ^ 2)
+        = fun ω ↦ g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
+      funext ω
+      ring
+    rw [h_eq]
+    exact (hg₂sq.sub (hg₂g₁.const_mul 2)).add hg₁sq
   have h_diff_zero : ∀ᵐ ω ∂μ, (g₂ ω - g₁ ω) ^ 2 = 0 :=
-    (integral_eq_zero_iff_of_nonneg_ae (ae_of_all μ fun ω => sq_nonneg _) h_sq_int).mp h_L2_zero
+    (integral_eq_zero_iff_of_nonneg_ae (ae_of_all μ fun ω ↦ sq_nonneg _) h_sq_int).mp h_L2_zero
   filter_upwards [h_diff_zero] with ω hω
   exact (sub_eq_zero.mp (sq_eq_zero_iff.mp hω)).symm
 
@@ -445,23 +457,23 @@ private lemma ae_eq_of_integral_mul_eq_of_integral_sq_eq {Ω : Type*} {mΩ : Mea
 on any sub-σ-algebra: the indicator itself is, and conditioning does not increase the bound. -/
 private lemma ae_norm_condExp_indicator_le_one {Ω : Type*} {m0 : MeasurableSpace Ω}
     {μ : Measure Ω} (m' : MeasurableSpace Ω) {s : Set Ω} :
-    ∀ᵐ ω ∂μ, ‖μ[s.indicator (fun _ => (1 : ℝ)) | m'] ω‖ ≤ 1 :=
-  ae_bdd_norm_condExp_of_ae_bdd_norm (m := m') <| Filter.Eventually.of_forall fun ω => by
-    simpa only [norm_one] using norm_indicator_le_norm_self (fun _ => (1 : ℝ)) ω
+    ∀ᵐ ω ∂μ, ‖μ[s.indicator (fun _ ↦ (1 : ℝ)) | m'] ω‖ ≤ 1 :=
+  ae_bdd_norm_condExp_of_ae_bdd_norm (m := m') <| Filter.Eventually.of_forall fun ω ↦ by
+    simpa only [norm_one] using norm_indicator_le_norm_self (fun _ ↦ (1 : ℝ)) ω
 
 /-- **Kallenberg Lemma 1.3 (contraction-independence).** If `(X, W) =ᵈ (X, W')` and
 `σ(W) ≤ σ(W')` (so `W` is a contraction of `W'`), then conditioning the indicator of `X` on the
 finer `σ(W')` equals conditioning on the coarser `σ(W)`, almost everywhere. -/
 theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω → α) (W W' : Ω → γ)
     (hX : Measurable X) (hW : Measurable W) (hW' : Measurable W')
-    (h_law : Measure.map (fun ω => (X ω, W ω)) μ = Measure.map (fun ω => (X ω, W' ω)) μ)
+    (h_law : Measure.map (fun ω ↦ (X ω, W ω)) μ = Measure.map (fun ω ↦ (X ω, W' ω)) μ)
     (h_le : MeasurableSpace.comap W inferInstance ≤ MeasurableSpace.comap W' inferInstance)
     {A : Set α} (hA : MeasurableSet A) :
-    μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap W' inferInstance]
+    μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) | MeasurableSpace.comap W' inferInstance]
       =ᵐ[μ]
-    μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
+    μ[(X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
   have h_sq_eq_raw := integral_sq_condExp_eq_of_pair_law X W W' hX hW hW' h_law hA
-  set φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) with hφ_def
+  set φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) with hφ_def
   let mW : MeasurableSpace Ω := MeasurableSpace.comap W inferInstance
   let mW' : MeasurableSpace Ω := MeasurableSpace.comap W' inferInstance
   have hmW_le : mW ≤ _ := measurable_iff_comap_le.mp hW
@@ -477,24 +489,28 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
   have hμ₁_int : Integrable μ₁ μ := integrable_condExp
   have hμ₂_int : Integrable μ₂ μ := integrable_condExp
   have hμ₁_bound : ∀ᵐ ω ∂μ, ‖μ₁ ω‖ ≤ 1 := by
-    rw [hμ₁_def, hφ_def]; exact ae_norm_condExp_indicator_le_one mW
+    rw [hμ₁_def, hφ_def]
+    exact ae_norm_condExp_indicator_le_one mW
   have hμ₂_bound : ∀ᵐ ω ∂μ, ‖μ₂ ω‖ ≤ 1 := by
-    rw [hμ₂_def, hφ_def]; exact ae_norm_condExp_indicator_le_one mW'
-  have hμ₁sq_int : Integrable (fun ω => μ₁ ω * μ₁ ω) μ :=
+    rw [hμ₂_def, hφ_def]
+    exact ae_norm_condExp_indicator_le_one mW'
+  have hμ₁sq_int : Integrable (fun ω ↦ μ₁ ω * μ₁ ω) μ :=
     hμ₁_int.bdd_mul hμ₁_int.aestronglyMeasurable hμ₁_bound
-  have hμ₂sq_int : Integrable (fun ω => μ₂ ω * μ₂ ω) μ :=
+  have hμ₂sq_int : Integrable (fun ω ↦ μ₂ ω * μ₂ ω) μ :=
     hμ₂_int.bdd_mul hμ₂_int.aestronglyMeasurable hμ₂_bound
-  have hμ₂μ₁_int : Integrable (fun ω => μ₂ ω * μ₁ ω) μ :=
+  have hμ₂μ₁_int : Integrable (fun ω ↦ μ₂ ω * μ₁ ω) μ :=
     hμ₁_int.bdd_mul hμ₂_int.aestronglyMeasurable hμ₂_bound
   -- Cross term `∫ μ₂ μ₁ = ∫ μ₁ μ₁` via pull-out and the tower property.
   have h_cross : ∫ ω, μ₂ ω * μ₁ ω ∂μ = ∫ ω, μ₁ ω * μ₁ ω ∂μ := by
     have hμ₁_meas : StronglyMeasurable[mW] μ₁ := stronglyMeasurable_condExp
     have h_pullout := condExp_mul_of_stronglyMeasurable_right (m := mW) hμ₁_meas hμ₂μ₁_int hμ₂_int
     calc ∫ ω, μ₂ ω * μ₁ ω ∂μ
-        = ∫ ω, μ[fun ω => μ₂ ω * μ₁ ω | mW] ω ∂μ := (integral_condExp hmW_le).symm
+        = ∫ ω, μ[fun ω ↦ μ₂ ω * μ₁ ω | mW] ω ∂μ := (integral_condExp hmW_le).symm
       _ = ∫ ω, μ[μ₂ | mW] ω * μ₁ ω ∂μ := integral_congr_ae h_pullout
       _ = ∫ ω, μ₁ ω * μ₁ ω ∂μ := by
-          refine integral_congr_ae ?_; filter_upwards [h_tower] with ω hω; rw [hω]
+          refine integral_congr_ae ?_
+          filter_upwards [h_tower] with ω hω
+          rw [hω]
   have h_sq_eq : ∫ ω, μ₁ ω * μ₁ ω ∂μ = ∫ ω, μ₂ ω * μ₂ ω ∂μ := h_sq_eq_raw
   -- `μ₁ =ᵐ μ₂` from the polarisation `∫ (μ₂ - μ₁)² = ∫ μ₂² - 2 ∫ μ₂ μ₁ + ∫ μ₁² = 0`.
   exact (ae_eq_of_integral_mul_eq_of_integral_sq_eq hμ₁sq_int hμ₂sq_int hμ₂μ₁_int

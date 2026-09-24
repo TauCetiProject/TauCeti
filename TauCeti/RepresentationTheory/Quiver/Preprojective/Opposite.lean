@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Opposite
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Gauge
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 
 /-!
 # The opposite of a preprojective algebra
@@ -16,7 +17,8 @@ original arrow. It therefore preserves every gauged preprojective relator `ρ_ε
 labelling `ε`, and descends to an isomorphism from the gauged preprojective algebra to its
 opposite. Specializing to the constant labelling `1` gives the same isomorphism for the additive
 preprojective algebra. On a path class the isomorphism takes the class of the path to the opposite
-of the class of its reverse.
+of the class of its reverse. The same palindromy fixes the signless local relator of any quiver
+with an involutive reversal, since each of its summands is a backtrack.
 
 ## Main results
 
@@ -28,6 +30,8 @@ of the class of its reverse.
 * `TauCeti.gaugedPreprojectiveOpAlgEquiv`: every gauged preprojective algebra is isomorphic to its
   opposite.
 * `TauCeti.preprojectiveOpAlgEquiv`: the preprojective algebra is isomorphic to its opposite.
+* `TauCeti.reverseOpAlgEquiv_signlessPreprojectiveRelator`: path reversal preserves every signless
+  local relator, up to passage to the opposite algebra.
 
 ## References
 
@@ -116,6 +120,23 @@ theorem reverseOpAlgEquiv_localPreprojectiveRelator (v : Q) :
     reverseOpAlgEquiv_preprojectiveRelator, ← op_mul, ← op_mul, mul_assoc]
 
 end Relator
+
+section Signless
+
+variable (k : Type w) {R : Type u} [CommSemiring k] [Quiver.{v} R] [HasInvolutiveReverse R]
+  [Finite R]
+
+/-- **Path reversal preserves every signless local relator**, up to passage to the opposite path
+algebra. Each summand traverses an arrow and returns along its reverse, so it is a palindrome. -/
+@[simp]
+theorem reverseOpAlgEquiv_signlessPreprojectiveRelator (v : R) [Fintype (Quiver.Star v)] :
+    reverseOpAlgEquiv k R (signlessPreprojectiveRelator k v) =
+      op (signlessPreprojectiveRelator k v) := by
+  rw [signlessPreprojectiveRelator_def]
+  simp only [map_sum, reverseOpAlgEquiv_ofPath, Quiver.TotalPath.reverse_mk, Finset.op_sum,
+    Path.reverse_comp, Path.reverse_toPath, Quiver.reverse_reverse]
+
+end Signless
 
 section Quotient
 

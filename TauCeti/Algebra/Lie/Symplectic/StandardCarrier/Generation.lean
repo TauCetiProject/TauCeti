@@ -225,6 +225,7 @@ theorem coe_pointsMulEquivGLSymplecticFin_symm_apply (g : GLSymplecticFin (n + 1
 
 /-- Under the point-group equivalence, the final positive simple-root subgroup is the positive
 long-root transvection subgroup of the symplectic group. -/
+@[simp]
 theorem pointsMulEquivGLSymplecticFin_rootSubgroupPoints_inl_last
     (u : Multiplicative K) :
     pointsMulEquivGLSymplecticFin n K

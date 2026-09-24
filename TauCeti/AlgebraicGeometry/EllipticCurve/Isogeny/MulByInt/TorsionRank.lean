@@ -20,8 +20,8 @@ it a `ZMod ℓ`-module, and `ZMod ℓ` is a field, so the kernel is a vector spa
 `ℓ ²` reads off its dimension.
 
 Beyond `ℓ` being invertible, rationality is the only thing the base field is asked for, so the
-statements take the two together; an algebraically closed base supplies the rationality outright
-and gives the corollaries below.
+statements take the two together, and a closure assumption enters only where the rationality is
+discharged.
 
 Rank two is what lets an endomorphism act on the torsion as a `2 × 2` matrix over `ZMod ℓ`, which
 is the form the degree and the trace are read off in.
@@ -31,9 +31,6 @@ is the form the degree and the trace are read off in.
 * `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny_of_torsion_rational`: it has dimension two.
 * `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny_of_torsion_rational`: hence
   `E[ℓ] ≅ (ZMod ℓ) ²`.
-* `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
-  `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: their algebraically closed
-  corollaries.
 
 ## References
 
@@ -88,18 +85,6 @@ theorem nonempty_linearEquiv_ker_mulByPrimeIsogeny_of_torsion_rational
     Nonempty ((mulByPrimeIsogeny W l).ker ≃ₗ[ZMod l] (Fin 2 → ZMod l)) :=
   nonempty_linearEquiv_of_finrank_eq W
     (finrank_ker_mulByPrimeIsogeny_of_torsion_rational W hrat hchar)
-
-/-- **`E[ℓ]` is two-dimensional over `ZMod ℓ`** for `ℓ` invertible in an algebraically closed base
-field, where no extension carries new torsion and the rationality is automatic. -/
-@[simp]
-theorem finrank_ker_mulByPrimeIsogeny [IsAlgClosed F] (hchar : (l : F) ≠ 0) :
-    Module.finrank (ZMod l) (mulByPrimeIsogeny W l).ker = 2 :=
-  finrank_ker_of_card_eq W (card_ker_mulByPrimeIsogeny W hchar)
-
-/-- **`E[ℓ] ≅ (ZMod ℓ)²`** for `ℓ` invertible in an algebraically closed base field. -/
-theorem nonempty_linearEquiv_ker_mulByPrimeIsogeny [IsAlgClosed F] (hchar : (l : F) ≠ 0) :
-    Nonempty ((mulByPrimeIsogeny W l).ker ≃ₗ[ZMod l] (Fin 2 → ZMod l)) :=
-  nonempty_linearEquiv_of_finrank_eq W (finrank_ker_mulByPrimeIsogeny W hchar)
 
 end TauCeti.Isogeny
 

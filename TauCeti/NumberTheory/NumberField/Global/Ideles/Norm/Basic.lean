@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.AdeleRing
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
 
@@ -137,6 +137,21 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_
     exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v').trans
       (Pi.mulSingle_eq_of_ne h _)
 
+/-- The finite coordinates of a product of ideles, one concentrated at each place of a finite set
+`S` of finite places: the prescribed unit at a place of `S`, and `1` elsewhere. -/
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_prod_ofAdicCompletion
+    [DecidableEq (HeightOneSpectrum R)] (v' : HeightOneSpectrum R)
+    (S : Finset (HeightOneSpectrum R)) (u : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ) :
+    v'.ideleFiniteCoord (∏ v ∈ S, IdeleGroup.ofAdicCompletion R K v (u v)) =
+      if v' ∈ S then u v' else 1 := by
+  rw [map_prod]
+  split_ifs with hv'
+  · rw [Finset.prod_eq_single_of_mem v' hv' fun v _ hv ↦
+      v'.ideleFiniteCoord_ofAdicCompletion_of_ne (Ne.symm hv) (u v)]
+    exact v'.ideleFiniteCoord_ofAdicCompletion_self (u v')
+  · exact Finset.prod_eq_one fun v hv ↦
+      v'.ideleFiniteCoord_ofAdicCompletion_of_ne (ne_of_mem_of_not_mem hv hv').symm (u v)
+
 /-- The infinite coordinates of an idele concentrated at a finite place are trivial. -/
 @[simp]
 theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofAdicCompletion
@@ -166,6 +181,25 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne
     classical
     exact (InfiniteAdeleRing.ofCompletion_apply w u w').trans
       (Pi.mulSingle_eq_of_ne h _)
+
+/-- The infinite coordinates of an idele with trivial infinite components are trivial. -/
+@[simp]
+theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofFiniteIdele
+    (w : InfinitePlace K) (a : (FiniteAdeleRing R K)ˣ) :
+    w.ideleInfiniteCoord (IdeleGroup.ofFiniteIdele R K a) = 1 :=
+  Units.ext <| by
+    rw [coe_ideleInfiniteCoord, IdeleGroup.coe_ofFiniteIdele]
+    rfl
+
+/-- The finite coordinate of an idele built from a finite idele is its original coordinate. -/
+@[simp]
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele
+    (v : HeightOneSpectrum R) (a : (FiniteAdeleRing R K)ˣ) :
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K a) =
+      Units.map (RestrictedProduct.evalMonoidHom _ v) a :=
+  Units.ext <| by
+    rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele]
+    exact (Units.coe_map (RestrictedProduct.evalMonoidHom _ v) a).symm
 
 /-- The finite coordinates of an idele concentrated at an infinite place are trivial. -/
 @[simp]

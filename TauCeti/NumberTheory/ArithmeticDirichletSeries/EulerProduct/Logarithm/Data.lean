@@ -42,6 +42,8 @@ vanishes for some `s`.
 
 * `TauCeti.EulerProductData.summable_eulerFactor_sub_one`: the local Euler factors differ from `1`
   by a summable error.
+* `TauCeti.EulerProductData.norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re`: the deviation of a
+  local factor from `1` is uniformly bounded on a right half-plane by a prime-power tail.
 * `TauCeti.EulerProductData.eulerFactor_ne_zero_of_tsum_norm_lt_one` and
   `TauCeti.EulerProductData.finite_setOf_eulerFactor_eq_zero`: a local factor whose prime-power
   tail has norm sum less than `1` is nonzero, and only finitely many local factors vanish.
@@ -113,6 +115,24 @@ theorem norm_eulerFactor_sub_one_le {P : HeightOneSpectrum (𝓞 K)}
       ∑' e : ℕ, ‖idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow (e + 1))‖ := by
   rw [D.eulerFactor_eq_one_add_tsum hsP, add_sub_cancel_left]
   exact norm_tsum_le_tsum_norm (summable_norm_iff.mpr ((summable_nat_add_iff 1).mpr hsP))
+
+/-- **The local Euler factors approach `1` uniformly on a half-plane of absolute convergence.**
+To the right of a point `w` at which the local series at `P` converges absolutely, the deviation of
+the local factor at `P` from `1` is bounded, independently of the point, by the prime-power tail at
+`P` computed at `w`. -/
+theorem norm_eulerFactor_sub_one_le_tsum_norm_of_re_le_re {P : HeightOneSpectrum (𝓞 K)} {w z : ℂ}
+    (hwP : Summable fun e : ℕ ↦
+      idealTerm K D.toIdealArithmeticFunction w (P.primeIdealPow e)) (hz : w.re ≤ z.re) :
+    ‖D.eulerFactor P z - 1‖ ≤ ∑' e : ℕ,
+      ‖idealTerm K D.toIdealArithmeticFunction w (P.primeIdealPow (e + 1))‖ := by
+  have hzP : Summable fun e : ℕ ↦
+      idealTerm K D.toIdealArithmeticFunction z (P.primeIdealPow e) :=
+    .of_norm_bounded (summable_norm_iff.mpr hwP)
+      fun e ↦ norm_idealTerm_le_of_re_le_re K _ hz _
+  refine (D.norm_eulerFactor_sub_one_le hzP).trans (Summable.tsum_le_tsum
+    (fun e ↦ norm_idealTerm_le_of_re_le_re K _ hz _)
+    (summable_norm_iff.mpr ((summable_nat_add_iff 1).mpr hzP))
+    (summable_norm_iff.mpr ((summable_nat_add_iff 1).mpr hwP)))
 
 /-! ### Nonvanishing -/
 

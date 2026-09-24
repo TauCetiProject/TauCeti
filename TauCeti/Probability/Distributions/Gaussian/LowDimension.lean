@@ -45,7 +45,8 @@ conditional distribution needs a positive observed variance.
   variance in terms of the correlation;
 * `EuclideanSpace.gaussianCondKernel_apply_of_unique_of_posSemidef` — the bivariate conditional
   law itself;
-* `TauCeti.condDistrib_multivariateGaussian_of_unique` — that law as the regular conditional
+* `TauCeti.Probability.condDistrib_multivariateGaussian_of_unique` — that law as the regular
+  conditional
   distribution of a bivariate Gaussian pair, for a positive observed variance.
 
 ## References
@@ -230,7 +231,7 @@ read on the unique coordinate of the first block.
 
 This is an identity between the conditional Gaussian kernel and a real Gaussian law, and as such
 needs no constraint on the observed variance; reading it as the regular conditional distribution
-of the pair does, and is `TauCeti.condDistrib_multivariateGaussian_of_unique`. -/
+of the pair does, and is `TauCeti.Probability.condDistrib_multivariateGaussian_of_unique`. -/
 theorem gaussianCondKernel_apply_of_unique_of_posSemidef [Unique ι] [Unique κ] [DecidableEq ι]
     [DecidableEq κ] (m : EuclideanSpace ℝ (ι ⊕ κ)) {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (hS : S.PosSemidef) (x₂ : EuclideanSpace ℝ κ) {v₁ v₂ ρ : ℝ}
@@ -247,7 +248,7 @@ theorem gaussianCondKernel_apply_of_unique_of_posSemidef [Unique ι] [Unique κ]
 
 end EuclideanSpace
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 /-- **The regular conditional distribution of a bivariate Gaussian pair.**  For a jointly Gaussian
 pair with positive semidefinite covariance and a positive observed variance, the conditional law
@@ -272,4 +273,4 @@ theorem condDistrib_multivariateGaussian_of_unique {Ω : Type*} [MeasurableSpace
   filter_upwards [condDistrib_multivariateGaussian X m hX hS hS₂₂] with x₂ hx₂
   rw [hx₂, EuclideanSpace.gaussianCondKernel_apply_of_unique_of_posSemidef m hS x₂ hv₁ hv₂ hρ]
 
-end TauCeti
+end TauCeti.Probability

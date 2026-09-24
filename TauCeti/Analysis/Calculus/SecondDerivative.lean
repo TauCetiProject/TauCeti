@@ -22,17 +22,20 @@ on some punctured neighbourhood of the point, the neighbourhood being allowed to
 That fixed-value avoidance is the local rigidity behind the isolation of nondegenerate critical
 points, and it asks nothing of the value taken.
 
-The file also records the second-order chain rule at a point where the differential of the outer
-function vanishes: there the first-order term drops out, so the second derivative of a composition
-is the second derivative of the outer function evaluated on the images of the differential of the
-inner one, i.e. the second derivative transforms as a bilinear form. No statement here mentions
-critical points as such, so all of them belong here rather than with the Morse theory that uses
-them.
+The file also records that on an open set the second directional derivative
+`x ↦ D(Dg(·) v)(x) v` of a `C²` map is continuous, and the second-order chain rule at a point where
+the differential of the outer function vanishes: there the first-order term drops out, so the
+second derivative of a composition is the second derivative of the outer function evaluated on the
+images of the differential of the inner one, i.e. the second derivative transforms as a bilinear
+form. No statement here mentions critical points as such, so all of them belong here rather than
+with the Morse theory that uses them.
 
 ## Main results
 
 * `ContDiffAt.hasFDerivAt_fderiv`: at a twice continuously differentiable point,
   `fderiv 𝕜 g` is differentiable, with derivative the second derivative of `g`.
+* `ContDiffOn.continuousOn_fderiv_fderiv_apply`: on an open set, the second directional
+  derivative of a `C²` map in a fixed direction is continuous.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
   avoids any prescribed value on a punctured neighbourhood of the point.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
@@ -55,6 +58,14 @@ theorem _root_.ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} 
     (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) :
     HasFDerivAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) x) x :=
   ((h.fderiv_right (m := 1) (by exact_mod_cast hn)).differentiableAt one_ne_zero).hasFDerivAt
+
+/-- On an open set `s`, the second directional derivative `x ↦ D(Dg(·) v)(x) v` of a `C²` map `g`
+in a fixed direction `v` is continuous. -/
+theorem _root_.ContDiffOn.continuousOn_fderiv_fderiv_apply {g : E → F} {s : Set E}
+    (hg : ContDiffOn 𝕜 2 g s) (hs : IsOpen s) (v : E) :
+    ContinuousOn (fun x ↦ fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y v) x v) s :=
+  (((hg.fderiv_of_isOpen hs (by norm_num)).clm_apply contDiffOn_const).continuousOn_fderiv_of_isOpen
+    hs le_rfl).clm_apply continuousOn_const
 
 /-- **Where the second derivative is invertible, the differential avoids any prescribed value near
 the point.** Nothing is assumed about the value `c`, and in particular the differential need not

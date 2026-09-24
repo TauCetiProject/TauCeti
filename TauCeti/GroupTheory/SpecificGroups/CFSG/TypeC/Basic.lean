@@ -55,11 +55,12 @@ the centre of that derived subgroup,
 H_d = fixedSubgroup d.steinberg,        d.Group = [H_d, H_d] / Z([H_d, H_d]).
 ```
 
-Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
-the symplectic group scheme or the pinned simply connected Chevalley--Demazure group scheme of type
-`Cₙ`, or that its point group or any group formed from it is finite, perfect, or simple. The
-Steinberg endomorphism and the candidate group transfer to that pinned group scheme only along an
-identification of the carrier with it, once one is proved.
+Nothing here asserts that the carrier is reductive, that its weight torus is maximal, or that its
+point group or any group formed from it is finite, perfect, or simple. The identification of its
+points with the points of the symplectic group scheme over `ℤ`, matching the numbered simple-root
+subgroups and intertwining the Steinberg endomorphism with entrywise Frobenius, is
+`TauCeti.TypeCLieIndex.carrierEquivPinned` in
+`TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Agreement`.
 
 ## Main declarations
 
@@ -156,8 +157,8 @@ theorem cartanMatrix_C_carrierNode (i j : Fin d.1.rank) :
 /-- **The ambient group this file attaches to a validated type-`C` index**: the points of the
 explicit full-weight standard symplectic Chevalley carrier at the index's rank, over the algebraic
 closure of its prime field. No finiteness, reductivity, pinning or maximality statement is attached
-to it, and it is not claimed to be the points of the pinned simply connected group scheme of type
-`Cₙ`, no identification of the two carriers being proved. -/
+to it; its identification with the points of the symplectic group scheme over `ℤ` is
+`TauCeti.TypeCLieIndex.carrierEquivPinned`. -/
 abbrev AmbientGroup : Type := SpStd.points d.carrierRank d.1.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the type-`C` diagram. It
@@ -328,9 +329,9 @@ ambient group, `q` being the field order the index records. The family is untwis
 automorphism and no half-Frobenius enters; `TauCeti.TypeCLieIndex.diagramPerm_eq_one` records that
 the diagram permutation attached to the index is trivial.
 
-It is formed on the standard symplectic carrier, which is not identified with the pinned simply
-connected group scheme of type `Cₙ`; it transfers to that pinned group only along such an
-identification, and not before. -/
+It is formed on the standard symplectic carrier;
+`TauCeti.TypeCLieIndex.carrierEquivPinned_steinberg` matches it with entrywise Frobenius on the
+points of the symplectic group scheme over `ℤ`. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup := d.frobenius
 
 /-- The Steinberg map of a type-`C` index equals the carrier's Frobenius. -/
@@ -367,8 +368,7 @@ abbrev FixedPoints : Type := ↥(fixedSubgroup d.steinberg)
 
 /-- **The finite-simple-group candidate attached to a type-`C` index**: the derived subgroup of
 the Steinberg fixed points, modulo the centre of that derived subgroup. No finiteness or
-simplicity assertion is part of this definition, nor any identification of the standard symplectic
-carrier with the pinned simply connected group scheme of type `Cₙ`. -/
+simplicity assertion is part of this definition. -/
 abbrev Group : Type := FixedPointCandidate d.steinberg
 
 /-- The candidate carries a group structure; the quotient construction supplies it. -/

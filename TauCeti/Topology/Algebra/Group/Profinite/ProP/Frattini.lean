@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.GroupTheory.ExponentPrime
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
@@ -159,6 +161,20 @@ theorem exponent_quotient_proPFrattini_dvd :
   obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective (proPFrattini p G) x
   rw [QuotientGroup.mk'_apply, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
   exact pow_mem_proPFrattini g
+
+/-- The Frattini quotient is an abelian group, with its existing quotient operations. -/
+instance instCommGroupQuotientProPFrattini [Fact p.Prime] :
+    CommGroup (G ⧸ proPFrattini p G) where
+  mul_comm := by
+    have := isMulCommutative_quotient_proPFrattini (G := G) (Fact.out : p.Prime)
+    exact mul_comm'
+
+/-- The additive Frattini quotient is a vector space over `𝔽_p`. Scalar multiplication is
+the canonical action on an abelian group killed by `p`, from `AddCommGroup.zmodModule`. -/
+instance instModuleQuotientProPFrattini [Fact p.Prime] :
+    Module (ZMod p) (Additive (G ⧸ proPFrattini p G)) :=
+  AddCommGroup.zmodModule fun x ↦
+    Monoid.exponent_dvd_iff_forall_pow_eq_one.mp exponent_quotient_proPFrattini_dvd x.toMul
 
 /-! ### Functoriality -/
 

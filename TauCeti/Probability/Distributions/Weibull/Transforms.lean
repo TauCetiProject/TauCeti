@@ -10,7 +10,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Distributions.Weibull.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Probability.Distributions.Exponential
+import TauCeti.Probability.Distributions.Exponential.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!

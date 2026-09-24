@@ -33,6 +33,9 @@ assumed.
   `TauCeti.quotientStabilizerEquiv_smul`: its equivariance.
 * `TauCeti.natCard_dvd_natCard_of_isPretransitive`: the number of points of a nonempty set acted
   on transitively divides the order of the group.
+* `TauCeti.stabilizer_eq_bot_of_natCard_eq`, `TauCeti.eq_one_of_natCard_eq_of_smul_eq_self`: a
+  transitive action of a group with as many elements as the finite set acted on is regular, so
+  only the identity fixes a point.
 * `TauCeti.isPretransitive_prod_left`: a product with a subsingleton stays pretransitive.
 
 ## Implementation notes
@@ -99,5 +102,24 @@ Both cardinalities are `Nat.card`, so the statement also holds, trivially, for i
 theorem natCard_dvd_natCard_of_isPretransitive [Nonempty X] : Nat.card X ∣ Nat.card G := by
   obtain ⟨x⟩ := ‹Nonempty X›
   simpa [index_stabilizer_of_transitive G x] using (stabilizer G x).index_dvd_card
+
+variable {G} in
+/-- **A transitive action of a group with as many elements as the finite set acted on is
+regular**: every point stabiliser is trivial. The index of a point stabiliser is the number of
+points, by `MulAction.index_stabilizer_of_transitive`, so the stabiliser has one element. -/
+theorem stabilizer_eq_bot_of_natCard_eq [Finite X] (h : Nat.card G = Nat.card X) (x : X) :
+    stabilizer G x = ⊥ := by
+  have : Nonempty X := ⟨x⟩
+  have hmul := (stabilizer G x).index_mul_card
+  rw [index_stabilizer_of_transitive G x, h] at hmul
+  exact Subgroup.card_eq_one.mp
+    (Nat.eq_of_mul_eq_mul_left Nat.card_pos (by rw [hmul, mul_one]))
+
+variable {G} in
+/-- In a transitive action of a group with as many elements as the finite set acted on, an
+element fixing a point is the identity. -/
+theorem eq_one_of_natCard_eq_of_smul_eq_self [Finite X] (h : Nat.card G = Nat.card X) {g : G}
+    {x : X} (hgx : g • x = x) : g = 1 :=
+  Subgroup.mem_bot.mp (stabilizer_eq_bot_of_natCard_eq h x ▸ mem_stabilizer_iff.mpr hgx)
 
 end TauCeti

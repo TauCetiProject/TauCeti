@@ -107,11 +107,11 @@ theorem negSuccCor_comp_isoGroupHomology_hom (M : Rep R G) (f : H →* G) (n : �
   rw [(negSuccIsoGroupHomology R G n).inv_hom_id_app, Category.comp_id]
 
 /-- Negative-degree Tate corestriction is natural in the coefficient representation. -/
+-- Stated with `Rep.resMap f φ`, the form to which `simp` reduces `(Rep.resFunctor f).map φ`
+-- before looking a term up, so that this lemma and `map_comp_HNegTwoCor` fire.
 @[reassoc (attr := simp)]
-theorem map_comp_negSuccCor {M N : Rep R G} (f : H →* G) (n : ℕ) [NeZero n]
-    (φ : M ⟶ N) :
-    (tateCohomologyFunctor (Int.negSucc n)).map ((Rep.resFunctor f).map φ) ≫
-        negSuccCor N f n =
+theorem map_comp_negSuccCor {M N : Rep R G} (f : H →* G) (n : ℕ) [NeZero n] (φ : M ⟶ N) :
+    (tateCohomologyFunctor (Int.negSucc n)).map (Rep.resMap f φ) ≫ negSuccCor N f n =
       negSuccCor M f n ≫ (tateCohomologyFunctor (Int.negSucc n)).map φ :=
   (negSuccCorNatTrans f n).naturality φ
 
@@ -124,7 +124,7 @@ def HNegTwoCor (M : Rep R G) (f : H →* G) :
 /-- Degree-`-2` corestriction is natural in the coefficient representation. -/
 @[reassoc (attr := simp)]
 theorem map_comp_HNegTwoCor {M N : Rep R G} (f : H →* G) (φ : M ⟶ N) :
-    (tateCohomologyFunctor (-2)).map ((Rep.resFunctor f).map φ) ≫ HNegTwoCor N f =
+    (tateCohomologyFunctor (-2)).map (Rep.resMap f φ) ≫ HNegTwoCor N f =
       HNegTwoCor M f ≫ (tateCohomologyFunctor (-2)).map φ :=
   map_comp_negSuccCor f 1 φ
 

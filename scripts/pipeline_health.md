@@ -54,6 +54,33 @@ whether it is trusted. Not `baseline_left_count`, which counts departures: a
 spell can leave a period it never began in, so a handful of those would vouch
 for a median resting on one observation.
 
+**Filling is asked as added drain time, not as a rate.** `anomalies` calls a stage
+filling when the window's net arrivals added more than `GROWTH_DRAIN_HOURS` of
+work at the pace the stage normally clears — `growth_per_hour × window_hours /
+baseline_left_per_hour`, published per anomaly as `added_drain_hours` — and at
+least one whole pull request accumulated. A stage with no baseline throughput to
+divide by falls back to a rate margin of
+`max(GROWTH_PER_HOUR, GROWTH_FRACTION × entered_per_hour)`, published as
+`growth_margin_per_hour`.
+
+A flat rate was the whole test until schema version 5, and it aged out from under
+itself: 0.05/h was chosen when the busiest stage ran at a few pull requests an
+hour, so at forty an hour it fired on a couple of items. The published report for
+2026-09-22 named awaiting-review an anomaly for "arriving at 40.33/h and leaving
+at 40.25/h" — 1.9 pull requests across a day, under five minutes of work for a
+stage clearing 24.56 an hour, on a queue ten deep that was draining in about
+twenty minutes.
+
+A *fraction* of arrivals cannot replace it either, which is the trap this avoids.
+Five percent is equivalent to demanding departures fall below 95% of arrivals, so
+a smaller persistent loss is invisible for ever rather than merely needing more
+evidence: forty in and thirty-nine out gains twenty-four pull requests a day and
+stays under the margin at every window length. The dwell tests do not cover that
+case — if 97.5% of spells still finish quickly, the median and the survival at
+twice it both stay healthy while the queue grows all week. Drain time separates
+the two: five minutes against an hour. It is an operational policy rather than a
+confidence level, and it is stated in the unit the decision is about.
+
 **A stall is asked as survival, not as a ratio.** `anomalies` calls a stage
 stalled when at least half of the spells that began in it are still running at
 `stall_horizon_hours`, which is `SLOWDOWN_FACTOR` times the dwell the stage used

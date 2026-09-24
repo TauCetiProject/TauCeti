@@ -34,10 +34,8 @@ exchangeable array, the canonical law retains the full two-axis symmetry: row pe
 on the coded array alone, while column permutations act simultaneously on the array and by
 pushforward on `P`.
 
-This is the coupled interface needed by the second level of the exchangeable-arrays milestone in
-`TauCetiRoadmap/Exchangeability/README.md`, Layer 8.  It does not assert the final
-Aldous--Hoover representation: resolving the random path law into column and cell noise remains
-the next step.
+This file stops short of the final Aldous--Hoover representation, which further resolves the
+random path law into column and cell noise.
 
 ## Main definitions and results
 
@@ -81,24 +79,24 @@ variable [StandardBorelSpace α] [Nonempty α]
 /-- The measurable map which retains a path law and uses one independent uniform variable to
 sample each row from it. -/
 theorem measurable_arrayRowCoding :
-    Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) =>
-      (q.1, fun p : ℕ × ℕ => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
-  measurable_fst.prodMk (Measurable.of_eval fun p => measurable_unitIntervalCoding_entry p)
+    Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
+      (q.1, fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
+  measurable_fst.prodMk (Measurable.of_eval fun p ↦ measurable_unitIntervalCoding_entry p)
 
 /-- The canonical coupled law of a random path measure and the array obtained by independently
 sampling its rows. -/
 def arrayRowCodingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
     Measure (ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α)) :=
-  (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
-    fun q => (q.1,
-      fun p : ℕ × ℕ => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2)
+  (π.prod (Measure.infinitePi fun _ : ℕ ↦ (volume : Measure unitInterval))).map
+    fun q ↦ (q.1,
+      fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2)
 
 /-- The defining pushforward formula for `arrayRowCodingLaw`. -/
 theorem arrayRowCodingLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
     arrayRowCodingLaw π =
-      (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
-        fun q => (q.1,
-          fun p : ℕ × ℕ => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
+      (π.prod (Measure.infinitePi fun _ : ℕ ↦ (volume : Measure unitInterval))).map
+        fun q ↦ (q.1,
+          fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
   (rfl)
 
 /-- Coding a probability law of random path measures gives a probability law of the coupled
@@ -115,8 +113,8 @@ theorem map_fst_arrayRowCodingLaw (π : Measure (ProbabilityMeasure (ℕ → α)
     (arrayRowCodingLaw π).map Prod.fst = π := by
   rw [arrayRowCodingLaw_def, Measure.map_map measurable_fst measurable_arrayRowCoding]
   have hcomp :
-      Prod.fst ∘ (fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) =>
-        (q.1, fun p : ℕ × ℕ => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2)) =
+      Prod.fst ∘ (fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
+        (q.1, fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2)) =
           Prod.fst := rfl
   rw [hcomp, Measure.map_fst_prod, measure_univ, one_smul]
 
@@ -140,14 +138,14 @@ theorem ConditionallyIIDWith.jointLaw_arrayRow_eq_arrayRowCodingLaw
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α}
     {ν : Ω → ProbabilityMeasure (ℕ → α)}
     (h : ConditionallyIIDWith μ (arrayRow X) ν) :
-    (μ.map fun ω => (ν ω, fun p : ℕ × ℕ => X p ω)) =
+    (μ.map fun ω ↦ (ν ω, fun p : ℕ × ℕ ↦ X p ω)) =
       arrayRowCodingLaw (μ.map ν) := by
   have hX : ∀ p, AEMeasurable (X p) μ :=
     aemeasurable_entry_of_aemeasurable_arrayRow h.aemeasurable
   rw [← map_uncurry_jointPathLaw_arrayRow hX h.measurable_directing,
     h.jointPathLaw_eq_map_unitIntervalCoding, arrayRowCodingLaw_def]
-  have hinner : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) =>
-      (q.1, fun i => unitIntervalCoding (ℕ → α) q.1 (q.2 i)) :=
+  have hinner : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
+      (q.1, fun i ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 i)) :=
     measurable_fst.prodMk measurable_unitIntervalCodingPath
   rw [Measure.map_map (measurable_id.prodMap measurable_uncurry) hinner]
   refine congrArg (Measure.map · _) ?_
@@ -165,19 +163,19 @@ theorem SeparatelyExchangeable.map_pairReindex_arrayRowCodingLaw_eq
     (h : SeparatelyExchangeable μ X)
     (hν : ConditionallyIIDWith μ (arrayRow X) ν) (σ τ : Equiv.Perm ℕ) :
     (arrayRowCodingLaw (μ.map ν)).map
-        (fun q =>
-          (q.1.map (fun x : ℕ → α => fun k => x (τ k)), pairReindex σ τ q.2)) =
+        (fun q ↦
+          (q.1.map (fun x : ℕ → α ↦ fun k ↦ x (τ k)), pairReindex σ τ q.2)) =
       arrayRowCodingLaw (μ.map ν) := by
   have hX : ∀ p, AEMeasurable (X p) μ :=
     aemeasurable_entry_of_aemeasurable_arrayRow hν.aemeasurable
   rw [← hν.jointLaw_arrayRow_eq_arrayRowCodingLaw,
     AEMeasurable.map_map_of_aemeasurable]
   · have hfun :
-        ((fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) =>
-            (q.1.map (fun x : ℕ → α => fun k => x (τ k)), pairReindex σ τ q.2)) ∘
-          fun ω => (ν ω, fun p : ℕ × ℕ => X p ω)) =
-            fun ω => ((ν ω).map (fun x : ℕ → α => fun k => x (τ k)),
-              fun p : ℕ × ℕ => X (σ p.1, τ p.2) ω) := by
+        ((fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
+            (q.1.map (fun x : ℕ → α ↦ fun k ↦ x (τ k)), pairReindex σ τ q.2)) ∘
+          fun ω ↦ (ν ω, fun p : ℕ × ℕ ↦ X p ω)) =
+            fun ω ↦ ((ν ω).map (fun x : ℕ → α ↦ fun k ↦ x (τ k)),
+              fun p : ℕ × ℕ ↦ X (σ p.1, τ p.2) ω) := by
           funext ω
           rw [Function.comp_apply]
           refine Prod.ext rfl ?_
@@ -199,15 +197,15 @@ obtained from an already exchangeable array. -/
 theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
     (π : Measure (ProbabilityMeasure (ℕ → α)))
     (σ τ : Equiv.Perm ℕ)
-    (hπ : π.map (fun P => P.map (permReindex τ)) = π) :
+    (hπ : π.map (fun P ↦ P.map (permReindex τ)) = π) :
     (arrayRowCodingLaw π).map
-        (fun q =>
+        (fun q ↦
           (q.1.map (permReindex τ), pairReindex σ τ q.2)) =
       arrayRowCodingLaw π := by
   let f : ProbabilityMeasure (ℕ → α) → ProbabilityMeasure (ℕ → α) :=
-    fun P => P.map (permReindex τ)
+    fun P ↦ P.map (permReindex τ)
   let g : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) :=
-    fun x i => permReindex τ (x (σ i))
+    fun x i ↦ permReindex τ (x (σ i))
   let J : ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) →
       ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) := Prod.map f g
   let C : ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) →
@@ -216,12 +214,12 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
     exact ((Measure.measurable_map _ (measurable_reindex τ)).comp
       measurable_subtype_coe).subtype_mk
   have hg : Measurable g := by
-    exact Measurable.of_eval fun i =>
+    exact Measurable.of_eval fun i ↦
       (measurable_reindex τ).comp (measurable_pi_apply (σ i))
   have hJ : Measurable J := hf.prodMap hg
   have hC : Measurable C := measurable_id.prodMap measurable_uncurry
-  have hK : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) =>
-      (q.1, fun i => unitIntervalCoding (ℕ → α) q.1 (q.2 i)) :=
+  have hK : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) ↦
+      (q.1, fun i ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 i)) :=
     measurable_fst.prodMk measurable_unitIntervalCodingPath
   have hcode : arrayRowCodingLaw π =
       (iidMixtureLaw π id).map C := by
@@ -230,38 +228,38 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
       Measure.map_map hC hK]
     rfl
   have hrow (P : ProbabilityMeasure (ℕ → α)) :
-      (Measure.infinitePi fun _ : ℕ => (P : Measure (ℕ → α))).map
-          (fun x i => x (σ i)) =
-        Measure.infinitePi fun _ : ℕ => (P : Measure (ℕ → α)) := by
+      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map
+          (fun x i ↦ x (σ i)) =
+        Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)) := by
     have h := Measure.infinitePi_map_piCongrLeft
-      (fun _ : ℕ => (P : Measure (ℕ → α))) σ.symm
-    have heq : (MeasurableEquiv.piCongrLeft (fun _ : ℕ => (ℕ → α)) σ.symm :
+      (fun _ : ℕ ↦ (P : Measure (ℕ → α))) σ.symm
+    have heq : (MeasurableEquiv.piCongrLeft (fun _ : ℕ ↦ (ℕ → α)) σ.symm :
         (ℕ → (ℕ → α)) → (ℕ → (ℕ → α))) =
-        (fun x : ℕ → (ℕ → α) => fun i : ℕ => x (σ i)) := by
+        (fun x : ℕ → (ℕ → α) ↦ fun i : ℕ ↦ x (σ i)) := by
       funext x i
       have hi := MeasurableEquiv.piCongrLeft_apply_apply
-        (β := fun _ : ℕ => (ℕ → α)) σ.symm x (σ i)
+        (β := fun _ : ℕ ↦ (ℕ → α)) σ.symm x (σ i)
       simpa using hi
     rw [← heq]
     exact h
   have hcol (P : ProbabilityMeasure (ℕ → α)) :
-      (Measure.infinitePi fun _ : ℕ => (P : Measure (ℕ → α))).map
-          (fun x i => permReindex τ (x i)) =
-        Measure.infinitePi fun _ : ℕ => (f P : Measure (ℕ → α)) := by
+      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map
+          (fun x i ↦ permReindex τ (x i)) =
+        Measure.infinitePi fun _ : ℕ ↦ (f P : Measure (ℕ → α)) := by
     have h := Measure.infinitePi_map_pi
-      (μ := fun _ : ℕ => (P : Measure (ℕ → α)))
-      (f := fun _ : ℕ => permReindex τ)
-      (fun _ => measurable_reindex τ)
+      (μ := fun _ : ℕ ↦ (P : Measure (ℕ → α)))
+      (f := fun _ : ℕ ↦ permReindex τ)
+      (fun _ ↦ measurable_reindex τ)
     rw [h]
     congr 1
   have hgf (P : ProbabilityMeasure (ℕ → α)) :
-      (Measure.infinitePi fun _ : ℕ => (P : Measure (ℕ → α))).map g =
-        Measure.infinitePi fun _ : ℕ => (f P : Measure (ℕ → α)) := by
-    let r : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i => x (σ i)
-    let c : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i => permReindex τ (x i)
-    let z : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i => permReindex τ (x (σ i))
-    have hr : Measurable r := Measurable.of_eval fun i => measurable_pi_apply (σ i)
-    have hc : Measurable c := Measurable.of_eval fun i =>
+      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))).map g =
+        Measure.infinitePi fun _ : ℕ ↦ (f P : Measure (ℕ → α)) := by
+    let r : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i ↦ x (σ i)
+    let c : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i ↦ permReindex τ (x i)
+    let z : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) := fun x i ↦ permReindex τ (x (σ i))
+    have hr : Measurable r := Measurable.of_eval fun i ↦ measurable_pi_apply (σ i)
+    have hc : Measurable c := Measurable.of_eval fun i ↦
       (measurable_reindex τ).comp (measurable_pi_apply i)
     have hz : z = c ∘ r := by
       funext x i
@@ -273,14 +271,14 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
     rw [hz, ← Measure.map_map hc hr, hrow, hcol]
   have hfib (P : ProbabilityMeasure (ℕ → α)) :
       ((Measure.dirac P).prod
-          (Measure.infinitePi fun _ : ℕ => (P : Measure (ℕ → α)))).map J =
+          (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)))).map J =
         (Measure.dirac (f P)).prod
-          (Measure.infinitePi fun _ : ℕ => (f P : Measure (ℕ → α))) := by
+          (Measure.infinitePi fun _ : ℕ ↦ (f P : Measure (ℕ → α))) := by
     rw [← Measure.map_prod_map (Measure.dirac P)
-      (Measure.infinitePi fun _ : ℕ => (P : Measure (ℕ → α)))
+      (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α)))
       hf hg, Measure.map_dirac' hf, hgf]
-  have hkernel : Measurable fun P : ProbabilityMeasure (ℕ → α) =>
-      (Measure.dirac P).prod (Measure.infinitePi fun _ : ℕ => (P : Measure (ℕ → α))) :=
+  have hkernel : Measurable fun P : ProbabilityMeasure (ℕ → α) ↦
+      (Measure.dirac P).prod (Measure.infinitePi fun _ : ℕ ↦ (P : Measure (ℕ → α))) :=
     TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const id measurable_id
   have hmix : (iidMixtureLaw π id).map J = iidMixtureLaw (π.map f) id := by
     rw [iidMixtureLaw_def, iidMixtureLaw_def]
@@ -291,13 +289,13 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
     rfl
   have hJlaw : (iidMixtureLaw π id).map J = iidMixtureLaw π id := by
     rw [hmix, hπ]
-  have hH : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) =>
+  have hH : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
       (q.1.map (permReindex τ), pairReindex σ τ q.2) :=
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_map
       (measurable_reindex (α := α) τ)).comp measurable_fst |>.prodMk
       ((measurable_pairReindex σ τ).comp measurable_snd)
   have hcomp :
-      (fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) =>
+      (fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
         (q.1.map (permReindex τ), pairReindex σ τ q.2)) ∘ C =
       C ∘ J := by
     funext q
@@ -308,13 +306,13 @@ theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
       simp [Function.uncurry, pairReindex_apply, g, permReindex_apply]
   calc
     (arrayRowCodingLaw π).map
-        (fun q =>
+        (fun q ↦
           (q.1.map (permReindex τ), pairReindex σ τ q.2)) =
-        ((iidMixtureLaw π id).map C).map (fun q =>
+        ((iidMixtureLaw π id).map C).map (fun q ↦
           (q.1.map (permReindex τ), pairReindex σ τ q.2)) := by
       rw [hcode]
     _ = (iidMixtureLaw π id).map
-        ((fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) =>
+        ((fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
           (q.1.map (permReindex τ), pairReindex σ τ q.2)) ∘ C) :=
       Measure.map_map hH hC
     _ = (iidMixtureLaw π id).map (C ∘ J) := by rw [hcomp]

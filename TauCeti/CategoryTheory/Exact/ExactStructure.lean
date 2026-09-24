@@ -150,6 +150,16 @@ theorem conflation_iff_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e 
     E.Conflation S ↔ E.Conflation T :=
   E.Conflation.prop_iff_of_iso e
 
+/-- The negation of an inflation is an inflation: negating the source of a conflation is an
+isomorphism of short complexes. -/
+theorem IsInflation.neg {E : ConflationClass C} {X Y : C} {i : X ⟶ Y}
+    (hi : E.IsInflation i) : E.IsInflation (-i) := by
+  obtain ⟨Z, p, zero, hS⟩ := hi
+  let e : X ≅ X := { hom := -𝟙 X, inv := -𝟙 X, hom_inv_id := by simp, inv_hom_id := by simp }
+  refine ⟨Z, p, by simp [zero], E.conflation_of_iso
+    (S := ShortComplex.mk i p zero) (T := ShortComplex.mk (-i) p (by simp [zero]))
+    (ShortComplex.isoMk e (Iso.refl _) (Iso.refl _) (by simp [e]) (by simp)) hS⟩
+
 /-- A short complex whose first map is an inflation and whose second map is a cokernel of the
 first is a conflation: the conflation witnessing the inflation has the same cokernel, so the two
 short complexes are isomorphic.

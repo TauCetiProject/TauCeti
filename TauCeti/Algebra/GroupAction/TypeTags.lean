@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+public import Mathlib.GroupTheory.GroupAction.Hom
 
 /-!
 # A distributive action on the additive type tag
@@ -22,7 +23,9 @@ Mathlib records the same transport only as a representation,
 `Representation.ofMulDistribMulAction : Representation ℤ M (Additive G)` for a commutative `G`,
 which is not usable where a bare `DistribMulAction M (Additive A)` instance is what typeclass
 search must find. Multiplicative coefficient modules — the units of a field, the roots of unity —
-reach the additive world of cohomology through exactly this instance.
+reach the additive world of cohomology through exactly this instance, and their equivariant
+homomorphisms through `MulDistribMulActionHom.toAdditive`, which reads an `M`-equivariant monoid
+homomorphism `A →*[M] B` as an `M`-equivariant additive homomorphism `Additive A →+[M] Additive B`.
 -/
 
 public section
@@ -49,3 +52,23 @@ theorem toMul_smul (g : M) (x : Additive A) : (g • x).toMul = g • x.toMul :=
   rfl
 
 end Additive
+
+namespace MulDistribMulActionHom
+
+variable {M A B : Type*} [Monoid M] [Monoid A] [Monoid B] [MulDistribMulAction M A]
+  [MulDistribMulAction M B]
+
+/-- An `M`-equivariant monoid homomorphism, read on the additive type tags as an `M`-equivariant
+additive homomorphism for the distributive actions `Additive.distribMulAction`. -/
+def toAdditive (f : A →*[M] B) : Additive A →+[M] Additive B where
+  toFun x := Additive.ofMul (f x.toMul)
+  map_smul' g x := congrArg Additive.ofMul (f.map_smul g x.toMul)
+  map_zero' := congrArg Additive.ofMul (map_one f)
+  map_add' x y := congrArg Additive.ofMul (map_mul f x.toMul y.toMul)
+
+@[simp]
+theorem toAdditive_apply (f : A →*[M] B) (x : Additive A) :
+    f.toAdditive x = Additive.ofMul (f x.toMul) :=
+  (rfl)
+
+end MulDistribMulActionHom

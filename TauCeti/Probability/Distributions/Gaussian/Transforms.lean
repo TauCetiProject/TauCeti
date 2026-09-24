@@ -30,9 +30,10 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `ProbabilityTheory.IsGaussian.mgf_dual` computes the moment-generating function of an almost
   everywhere measurable continuous linear functional of a Gaussian measure from its mean and
   variance.
-* `TauCeti.integrableExpSet_inner_multivariateGaussian` gives the exact domain for a directional
+* `TauCeti.Probability.integrableExpSet_inner_multivariateGaussian` gives the exact domain for a
+  directional
   functional of a multivariate Gaussian.
-* `TauCeti.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
+* `TauCeti.Probability.mgf_inner_multivariateGaussian` gives the corresponding closed formula.
 
 ## References
 
@@ -80,7 +81,7 @@ end ProbabilityTheory
 open ProbabilityTheory
 open scoped RealInnerProductSpace
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -122,4 +123,4 @@ theorem mgf_inner_multivariateGaussian (m θ : EuclideanSpace ℝ ι)
     exact (Matrix.inner_toEuclideanCLM S θ θ).symm
   rw [hL, IsGaussian.mgf_dual, hmean, hvar]
 
-end TauCeti
+end TauCeti.Probability

@@ -17,8 +17,8 @@ The Ricci tensor of a connection on the tangent bundle is the bilinear form
 of basis. Applying it to the Levi-Civita connection gives Riemannian Ricci curvature.
 A general connection need not have symmetric Ricci curvature.
 
-We work with a `RiemannianBundle` on the tangent bundle to supply the fibre norms used
-by `curvatureTensor`. The connection need not preserve this metric or be torsion free,
+We work with a `RiemannianBundle` on the tangent bundle for the orthonormal-basis formulas.
+The connection need not preserve this metric or be torsion free,
 and the metric need not vary smoothly. Compactness and absence of boundary are not required.
 
 We give the coordinate formula in any basis and the inner-product formula in an
@@ -45,15 +45,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  [RiemannianBundle (TangentSpace I : M → Type _)]
   (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
   [ContMDiffCovariantDerivative cov ∞]
 
--- Fix the fibre norm before elaborating the contraction: tangent spaces deliberately have
--- no default norm, and their implementation as copies of E otherwise selects the model norm.
 local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
   (V := TangentSpace I)
-  (fiberNorm := fun x : M ↦ (inferInstance : NormedAddCommGroup (TangentSpace I x)))
 
 /-- The Ricci tensor of a smooth connection on the tangent bundle, defined by
 `Ric(u,v) = trace (w ↦ R(w,u)v)`. Metric compatibility and vanishing torsion are not
@@ -81,7 +77,8 @@ theorem ricciTensor_eq_sum {ι : Type*} [Fintype ι] (x : M)
 
 /-- In an orthonormal basis, Ricci curvature is the sum of the corresponding inner
 products for the given fibre metric. -/
-theorem ricciTensor_eq_sum_inner {ι : Type*} [Fintype ι] (x : M)
+theorem ricciTensor_eq_sum_inner {ι : Type*} [Fintype ι]
+    [RiemannianBundle (TangentSpace I : M → Type _)] (x : M)
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) (u v : TangentSpace I x) :
     cov.ricciTensor x u v = ∑ i, inner ℝ (b i) (curvature x (b i) u v) := by
   rw [ricciTensor_apply, LinearMap.trace_eq_sum_inner _ b]

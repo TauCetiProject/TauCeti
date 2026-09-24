@@ -127,14 +127,18 @@ theorem IsUnitary.congr {π : ContRepresentation 𝕜 G V} (hπ : IsUnitary π) 
     IsUnitary (ContRepresentation.congr e.toContinuousLinearEquiv π) :=
   (isUnitary_iff_norm_map _).mpr fun g x ↦ by simp [hπ.norm_map]
 
+-- The `simp` lemmas below take the continuity of the transported representation, as it occurs on
+-- the left-hand side, and derive that of `π` on the right: a hypothesis occurring on the left only
+-- inside a proof is not assigned by unification, and `simp` cannot prove it for a symbolic `π`.
+-- This follows #8348.
 /-- **Transport along a linear isometry equivalence does not change matrix coefficients.** The
 matrix coefficient of the transported representation at the transported vectors is the matrix
 coefficient of the original. -/
 @[simp]
-theorem matrixCoeff_congr (e : V ≃ₗᵢ[𝕜] W) {π : ContRepresentation 𝕜 G V} (hπ : Continuous π)
-    (v w : V) :
-    matrixCoeff (congr e.toContinuousLinearEquiv π) (continuous_congr _ hπ) (e v) (e w) =
-      matrixCoeff π hπ v w := by
+theorem matrixCoeff_congr (e : V ≃ₗᵢ[𝕜] W) {π : ContRepresentation 𝕜 G V}
+    (hπ : Continuous (congr e.toContinuousLinearEquiv π)) (v w : V) :
+    matrixCoeff (congr e.toContinuousLinearEquiv π) hπ (e v) (e w) =
+      matrixCoeff π (by simpa using continuous_congr e.toContinuousLinearEquiv.symm hπ) v w := by
   ext g
   simp
 
@@ -157,9 +161,9 @@ a matrix coefficient depends only on the *equivalence class* of a representation
 representation may be replaced by any conjugate of it — for instance by a unitary one. -/
 @[simp]
 theorem matrixCoeff_congr_adjoint (e : V ≃L[𝕜] W) {π : ContRepresentation 𝕜 G V}
-    (hπ : Continuous π) (v w : V) :
-    matrixCoeff (congr e π) (continuous_congr e hπ) (e v)
-        (ContinuousLinearMap.adjoint (e.symm : W →L[𝕜] V) w) = matrixCoeff π hπ v w := by
+    (hπ : Continuous (congr e π)) (v w : V) :
+    matrixCoeff (congr e π) hπ (e v) (ContinuousLinearMap.adjoint (e.symm : W →L[𝕜] V) w) =
+      matrixCoeff π (by simpa using continuous_congr e.symm hπ) v w := by
   ext g
   rw [matrixCoeff_apply, matrixCoeff_apply, congr_apply, ContinuousLinearMap.adjoint_inner_right]
   simp

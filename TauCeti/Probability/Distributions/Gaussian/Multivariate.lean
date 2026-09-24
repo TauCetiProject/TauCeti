@@ -23,13 +23,19 @@ linear maps and characterizes independence of complementary coordinate blocks.
 
 ## Main results
 
-* `TauCeti.covMatrix_multivariateGaussian` recovers the covariance parameter of a multivariate
+* `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
+  multivariate
   Gaussian law.
-* `TauCeti.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as an image
+* `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
+  random variable with a multivariate Gaussian law.
+* `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
+  an image
   of the standard Gaussian.
-* `TauCeti.covariance_inner_matrix_multivariateGaussian` computes covariance after two matrix
+* `TauCeti.Probability.covariance_inner_matrix_multivariateGaussian` computes covariance after two
+  matrix
   maps.
-* `TauCeti.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of two
+* `TauCeti.Probability.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of
+  two
   complementary coordinate blocks.
 
 ## References
@@ -45,7 +51,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 open scoped MatrixOrder Matrix.Norms.L2Operator RealInnerProductSpace
 
-namespace TauCeti
+namespace TauCeti.Probability
 
 variable {ι : Type*}
 
@@ -58,6 +64,14 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   classical
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
+
+/-- The Bochner mean of a random variable with a multivariate Gaussian law is its Gaussian mean. -/
+theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
+    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → EuclideanSpace ℝ ι} {m : EuclideanSpace ℝ ι}
+    {S : Matrix ι ι ℝ} (hX : HasLaw X (multivariateGaussian m S) P) :
+    ∫ ω, X ω ∂P = m := by
+  rw [hX.integral_eq, integral_id_multivariateGaussian]
 
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
 root of its matrix parameter. No hypothesis on that parameter is needed. -/
@@ -184,4 +198,4 @@ theorem indepFun_sumEquivProd_multivariateGaussian_iff
     convert hind_eval.comp (by fun_prop : Measurable (EuclideanSpace.equiv ι ℝ).symm)
       (by fun_prop : Measurable (EuclideanSpace.equiv κ ℝ).symm) using 1 <;> ext x i <;> rfl
 
-end TauCeti
+end TauCeti.Probability

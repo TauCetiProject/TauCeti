@@ -194,6 +194,11 @@ theorem genus_chebyshevTriple : chebyshevTriple.genus = 0 := by
   rw [genus_def, eulerChar_chebyshevTriple]
   norm_num
 
+/-- The orders of the components of the triple of `z ↦ 4z(1 - z)` are `(1, 2, 2)`. -/
+theorem orderTriple_chebyshevTriple : chebyshevTriple.orderTriple = (1, 2, 2) := by
+  rw [orderTriple_eq_lcm_cycleData, cycleData_chebyshevTriple]
+  decide
+
 /-! ### The torus triple -/
 
 /-- A degree-four triple of genus one: cyclic rotation around both `0` and `1`, and hence the

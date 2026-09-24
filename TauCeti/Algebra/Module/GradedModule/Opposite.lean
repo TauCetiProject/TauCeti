@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Equiv.Opposite
+public import Mathlib.Algebra.Module.GradedModule
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
@@ -28,6 +29,8 @@ opposite DG and `A∞` objects without changing their sign convention.
 
 * `InternalGrading.op_mem_opposite_piece_iff`: `op` preserves each degree.
 * `InternalGrading.oppositeGradedAlgebra`: a graded algebra induces one on its opposite.
+* `instGradedSMulOppositeSelf`: right multiplication makes a graded algebra a graded right module
+  over itself.
 * `InternalGrading.op_koszulTwist`: the Koszul twist commutes with `op`.
 * `InternalGrading.opLinearEquiv_comp_quadraticTwist`, `InternalGrading.op_quadraticTwist`, and
   `InternalGrading.unop_quadraticTwist`: the quadratic twist commutes with passage to and from the
@@ -191,5 +194,22 @@ noncomputable instance oppositeGradedAlgebra : GradedAlgebra G.opposite.piece :=
 end GradedAlgebra
 
 end InternalGrading
+
+section RightSelfAction
+
+variable {R : Type u} {A : Type v}
+  [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- Right multiplication makes a graded algebra a graded right module over itself: the degrees of
+the two factors add, in the order fixed by the opposite grading. -/
+instance instGradedSMulOppositeSelf (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜] :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece 𝒜 where
+  smul_mem := by
+    intro i j a b ha hb
+    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece 𝒜] at ha
+    rw [← op_unop a, op_smul_eq_mul, vadd_eq_add, add_comm i j]
+    exact SetLike.mul_mem_graded hb ha
+
+end RightSelfAction
 
 end TauCeti
