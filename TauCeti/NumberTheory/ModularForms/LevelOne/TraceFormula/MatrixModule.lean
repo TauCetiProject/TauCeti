@@ -320,6 +320,7 @@ theorem TraceFormulaMatrixModule.rightPSL_mul_rev (g h : PSL(2, ℤ))
   rfl
 
 /-- Left multiplication commutes with the right modular-group action on `ℳₙ`. -/
+@[simp]
 theorem TraceFormulaMatrixModule.smul_right (g h : SL(2, ℤ)) (x : TraceFormulaMatrixModule n) :
     (g • x).right h = g • x.right h := by
   refine Quotient.inductionOn' x fun A ↦ ?_
@@ -345,6 +346,7 @@ theorem TraceFormulaMatrixModule.conj_mul (g h : SL(2, ℤ))
   simp only [TraceFormulaMatrixModule.conj, right_mul_rev, mul_smul, smul_right]
 
 /-- Left multiplication commutes with inverse right multiplication on projective classes. -/
+@[simp]
 theorem TraceFormulaMatrixModule.psl_smul_right (g h : PSL(2, ℤ))
     (x : TraceFormulaMatrixModule n) :
     (g • x).rightPSL h = g • x.rightPSL h := by
@@ -353,7 +355,7 @@ theorem TraceFormulaMatrixModule.psl_smul_right (g h : PSL(2, ℤ))
   simpa only [psl_smul_mk, rightPSL_mk] using TraceFormulaMatrixModule.smul_right a b x
 
 /-- Conjugation of projective determinant-`n` matrices by `PSL(2, ℤ)`. -/
-def TraceFormulaMatrixModule.conjPSL (x : TraceFormulaMatrixModule n) (g : PSL(2, ℤ)) :
+public def TraceFormulaMatrixModule.conjPSL (x : TraceFormulaMatrixModule n) (g : PSL(2, ℤ)) :
     TraceFormulaMatrixModule n := g • x.rightPSL g
 
 /-- A representative conjugates by `A ↦ g A g⁻¹`. -/
@@ -374,5 +376,33 @@ theorem TraceFormulaMatrixModule.conjPSL_mul (g h : PSL(2, ℤ))
     x.conjPSL (g * h) = (x.conjPSL h).conjPSL g := by
   simp only [TraceFormulaMatrixModule.conjPSL, rightPSL_mul_rev, mul_smul,
     psl_smul_right]
+
+/-- Conjugation of `ℳₙ` by projective modular-group elements, packaged as permutations. -/
+public def TraceFormulaMatrixModule.conjPSLHom (n : ℤ) :
+    PSL(2, ℤ) →* Equiv.Perm (TraceFormulaMatrixModule n) where
+  toFun g := {
+    toFun := fun x ↦ x.conjPSL g
+    invFun := fun x ↦ x.conjPSL g⁻¹
+    left_inv := by
+      intro x
+      change (x.conjPSL g).conjPSL g⁻¹ = x
+      rw [← TraceFormulaMatrixModule.conjPSL_mul]
+      simp
+    right_inv := by
+      intro x
+      change (x.conjPSL g⁻¹).conjPSL g = x
+      rw [← TraceFormulaMatrixModule.conjPSL_mul]
+      simp
+  }
+  map_one' := Equiv.ext fun x ↦ TraceFormulaMatrixModule.conjPSL_one x
+  map_mul' g h := Equiv.ext fun x ↦ TraceFormulaMatrixModule.conjPSL_mul g h x
+
+/-- The packaged conjugation permutation acts by `conjPSL`. -/
+@[simp]
+theorem TraceFormulaMatrixModule.conjPSLHom_apply (g : PSL(2, ℤ))
+    (x : TraceFormulaMatrixModule n) :
+    TraceFormulaMatrixModule.conjPSLHom n g x = x.conjPSL g := by
+  unfold TraceFormulaMatrixModule.conjPSLHom
+  rfl
 
 end TauCeti
