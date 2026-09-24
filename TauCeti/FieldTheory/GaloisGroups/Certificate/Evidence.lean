@@ -84,6 +84,12 @@ theorem HasFactorDegrees.exists_fact {f : ℤ[X]} {p : ℕ} {t : Multiset ℕ}
   obtain ⟨hp, hgood, hfac⟩ := h
   exact ⟨⟨hp⟩, hgood, hfac⟩
 
+/-- The factor degrees recorded by evidence for a monic polynomial sum to its degree. -/
+theorem HasFactorDegrees.sum_eq_natDegree {f : ℤ[X]} {p : ℕ} {t : Multiset ℕ}
+    (h : HasFactorDegrees f p t) (hf : f.Monic) : t.sum = f.natDegree := by
+  obtain ⟨hp, -, rfl⟩ := h.exists_fact
+  exact hf.sum_factorDegrees p
+
 /-- Factor-degree evidence produces an element of the Galois image whose full cycle type is the
 specified multiset. -/
 theorem HasFactorDegrees.exists_fullCycleType {f : ℤ[X]} {p : ℕ} {t : Multiset ℕ}

@@ -163,6 +163,16 @@ theorem HasGaloisLabel.natCard_gal (h : HasGaloisLabel f j) :
   rw [← he.natCard_eq, Subgroup.card_map_of_injective e.permCongrHom.injective,
     natCard_galActionHom_range]
 
+/-- The order of a permutation of the roots induced by the Galois group of a polynomial with a
+label divides the order of the reference subgroup. The roots may be taken in any field where the
+polynomial splits. -/
+theorem HasGaloisLabel.orderOf_dvd_natCard_referenceSubgroup (h : HasGaloisLabel f j)
+    {E : Type*} [Field E] [Algebra F E] [Fact ((f.map (algebraMap F E)).Splits)]
+    {σ : Perm (f.rootSet E)} (hσ : σ ∈ (Gal.galActionHom f E).range) :
+    orderOf σ ∣ Nat.card (referenceSubgroup n j) := by
+  rw [← h.natCard_gal, ← natCard_galActionHom_range f E]
+  exact Subgroup.orderOf_dvd_natCard _ hσ
+
 /-- A polynomial with a label is irreducible, because every reference subgroup is transitive.
 There are no labels in degree zero, so no degree hypothesis is needed. -/
 theorem HasGaloisLabel.irreducible (h : HasGaloisLabel f j) : Irreducible f := by

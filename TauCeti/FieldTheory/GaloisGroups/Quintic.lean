@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Label
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Basic
 
 import TauCeti.FieldTheory.GaloisGroups.Resolvent.Quintic.Solvable
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Order
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 
 /-!
@@ -48,7 +49,8 @@ converse of each row.
 ## Main results
 
 * `TauCeti.existsUnique_hasGaloisLabel_five`: an irreducible separable quintic carries exactly one
-  label.
+  label, and `TauCeti.hasGaloisLabel_five_iff_natCard_gal_eq`: the order of its Galois group
+  recognizes that label.
 * `TauCeti.HasGaloisLabel.isSolvable_iff_five`: the Galois group of a quintic is solvable
   exactly for the labels `5T1`, `5T2` and `5T3`.
 * `TauCeti.HasGaloisLabel.isSquare_discr_iff_five`: **the discriminant reads the parity of the
@@ -86,6 +88,19 @@ theorem existsUnique_hasGaloisLabel_five (hsep : f.Separable) (hirr : Irreducibl
     (hdeg : f.natDegree = 5) : ∃! j : TransitiveGroupIndex 5, HasGaloisLabel f j :=
   existsUnique_hasGaloisLabel hsep hirr hdeg (fun G _ => exists_transitiveGroupLabel_five G)
     fun h h' => h.eq_of_five h'
+
+/-- **The order of the Galois group recognizes the label of a quintic.** An irreducible separable
+quintic has the label `5Tj` exactly when its Galois group has the order of the reference subgroup
+of `5Tj`; the orders `5, 10, 20, 60, 120` of the five labels are pairwise distinct. -/
+theorem hasGaloisLabel_five_iff_natCard_gal_eq (hsep : f.Separable) (hirr : Irreducible f)
+    (hdeg : f.natDegree = 5) (j : TransitiveGroupIndex 5) :
+    HasGaloisLabel f j ↔ Nat.card f.Gal = Nat.card (referenceSubgroup 5 j) := by
+  refine ⟨HasGaloisLabel.natCard_gal, fun h => ?_⟩
+  obtain ⟨k, hk, -⟩ := existsUnique_hasGaloisLabel_five hsep hirr hdeg
+  have := isPretransitive_referenceSubgroup 5 k
+  have hjk : TransitiveGroupLabel j (referenceSubgroup 5 k) :=
+    (transitiveGroupLabel_five_iff_natCard_eq j _).mpr (hk.natCard_gal.symm.trans h)
+  rwa [hjk.eq_of_five (transitiveGroupLabel_referenceSubgroup 5 k)]
 
 /-- **Solvability and the quintic labels.** The Galois group of a quintic with a label is solvable
 exactly for the labels `5T1`, `5T2` and `5T3`, the cyclic, dihedral and Frobenius groups. This is a
