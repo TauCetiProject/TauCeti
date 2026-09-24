@@ -16,16 +16,12 @@ centre and leaves the exponential image of the domain has length at least the ra
 tangent ball contained in that domain. It also provides a strict comparison with the radial segment
 to a point in the smaller ball when the path leaves the larger domain.
 
-Together with radial minimization, these estimates are used to obtain the local distance identity
-on a normal ball. The first-exit organization follows the Apache-2.0
-`frenzymath/Poincare-Conjecture` formalization, revision
-`24f32e4d600878bfaac6bc2f2f9324175571c321`, especially
-`DoCarmoLib/Riemannian/Exponential/NormalBallEDist.lean` and
-`DoCarmoLib/Riemannian/Exponential/MinimizingPathPiecewise.lean`; the proof here is written
-against Tau Ceti's normal-domain and Riemannian path-length APIs.
-
 ## References
 
+* The Apache-2.0 `frenzymath/Poincare-Conjecture` formalization, revision
+  `24f32e4d600878bfaac6bc2f2f9324175571c321`, especially
+  `DoCarmoLib/Riemannian/Exponential/NormalBallEDist.lean` and
+  `DoCarmoLib/Riemannian/Exponential/MinimizingPathPiecewise.lean`.
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 3, §3, Proposition 3.6.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, Springer, 2018, Ch. 6, Prop. 6.11.
 -/
