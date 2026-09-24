@@ -10,7 +10,10 @@ public import Mathlib.Algebra.Group.Prod
 /-!
 # Additive equivalences of Pi types
 
-Functions into products are additively equivalent to products of function spaces.
+Functions into products are additively equivalent to products of function spaces: a family of
+pairs regroups into a pair of families. In the torsion decomposition of an elliptic curve, each
+primary component of `E[N]` is a product of two cyclic groups; regrouping lets the Chinese
+remainder theorem reassemble the first and second cyclic factors separately into `ZMod N`.
 
 ## Main definitions
 

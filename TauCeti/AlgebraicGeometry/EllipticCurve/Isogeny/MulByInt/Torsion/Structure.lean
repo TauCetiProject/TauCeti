@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClos
 import TauCeti.GroupTheory.FiniteAbelian.RankTwo
 import TauCeti.Algebra.Group.Equiv.Pi
 import TauCeti.Algebra.Module.Torsion.Basic
+import TauCeti.Algebra.Module.Torsion.Decomposition
 import Mathlib.Algebra.DirectSum.Decomposition
 import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.RingTheory.Coprime.Lemmas
